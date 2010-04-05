@@ -1,0 +1,30 @@
+NetBeans: Executing 'mvn -DarchetypeVersion=1.2 -Darchetype.interactive=false -DgroupId=debikigenhtml -DarchetypeArtifactId=scala-archetype-simple -DarchetypeRepository=http://scala-tools.org/repo-releases -Dversion=0.0.1-SNAPSHOT -DarchetypeGroupId=org.scala-tools.archetypes -Darchetype.repository=http://scala-tools.org/repo-releases -Dbasedir=/home/magnus/dev/me-biz/debiki/mock -Dpackage=debikigenhtml -DartifactId=debiki-gen-html -Dnetbeans.execution=true --batch-mode org.apache.maven.plugins:maven-archetype-plugin:2.0-alpha-4:generate'
+NetBeans:      JAVA_HOME=/usr/lib/jvm/java-6-sun-1.6.0.16/jre
+Scanning for projects...
+------------------------------------------------------------------------
+Building Maven Default Project
+   task-segment: [org.apache.maven.plugins:maven-archetype-plugin:2.0-alpha-4:generate] (aggregator-style)
+------------------------------------------------------------------------
+Preparing archetype:generate
+No goals needed for project - skipping
+Setting property: classpath.resource.loader.class => 'org.codehaus.plexus.velocity.ContextClassLoaderResourceLoader'.
+Setting property: velocimacro.messages.on => 'false'.
+Setting property: resource.loader => 'classpath'.
+Setting property: resource.manager.logwhenfound => 'false'.
+[archetype:generate]
+Generating project in Batch mode
+Archetype defined by properties
+----------------------------------------------------------------------------
+Using following parameters for creating OldArchetype: scala-archetype-simple:1.2
+----------------------------------------------------------------------------
+Parameter: groupId, Value: debikigenhtml
+Parameter: packageName, Value: debikigenhtml
+Parameter: package, Value: debikigenhtml
+Parameter: artifactId, Value: debiki-gen-html
+Parameter: basedir, Value: /home/magnus/dev/me-biz/debiki/mock
+Parameter: version, Value: 0.0.1-SNAPSHOT
+********************* End of debug info from resources from generated POM ***********************
+OldArchetype created in dir: /home/magnus/dev/me-biz/debiki/mock/debiki-gen-html
+------------------------------------------------------------------------
+BUILD SUCCESSFUL
+
