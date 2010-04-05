@@ -1,11 +1,14 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <!-- vim: et ts=2 sw=2
+  -->
   <modelVersion>4.0.0</modelVersion>
   <groupId>debikigenhtml</groupId>
   <artifactId>debiki-gen-html</artifactId>
+  <name>debiki-gen-html</name>
   <version>0.0.1-SNAPSHOT</version>
-  <inceptionYear>2008</inceptionYear>
+  <inceptionYear>2010</inceptionYear>
   <properties>
-    <scala.version>2.7.0</scala.version>
+    <scala.version>2.8.0-SNAPSHOT</scala.version>
   </properties>
 
   <repositories>
@@ -14,7 +17,14 @@
       <name>Scala-Tools Maven2 Repository</name>
       <url>http://scala-tools.org/repo-releases</url>
     </repository>
-  </repositories>
+   <!-- Scala 2.8 Latest -->
+   <repository>
+      <id>scala-tools.org.snapshots</id>
+      <name>Scala Tools Maven2 Repository</name>
+      <url>http://scala-tools.org/repo-snapshots</url>
+      <snapshots />
+   </repository>
+</repositories>
 
   <pluginRepositories>
     <pluginRepository>
@@ -37,9 +47,9 @@
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>org.specs</groupId>
+      <groupId>org.scala-tools.testing</groupId>
       <artifactId>specs</artifactId>
-      <version>1.2.5</version>
+      <version>1.6.1-2.8.0.Beta1-RC5</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
@@ -61,6 +71,12 @@
         </executions>
         <configuration>
           <scalaVersion>${scala.version}</scalaVersion>
+        <launchers>
+          <launcher>
+            <id>main</id>
+            <mainClass>debikigenhtml.App</mainClass>
+          </launcher>
+        </launchers>
           <args>
             <arg>-target:jvm-1.5</arg>
           </args>
