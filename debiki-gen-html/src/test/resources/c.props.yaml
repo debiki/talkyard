@@ -1,0 +1,19 @@
+owner: Musse Mus
+parent: b
+votes:
+  placement:
+    up: 4
+    down: 1
+  relations:
+    b:
+      agrees: 3
+      dissents: 2
+    c:
+      summaries: 1
+  content:
+    interesting: 3
+    informative: 2
+    irrelevant: 2
+    funny: 2
+    obvious: 1
+

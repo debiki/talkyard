@@ -1,0 +1,55 @@
+# vim: fdm=marker et sw=1 ts=1
+---
+debate.props:
+---
+debate.layout:
+ a:
+  b:
+   c:
+    e:
+   d:
+---
+debate.log:
+---
+c.props:
+ owner: Musse Mus
+ votes:
+  placement:
+   b:
+    up: 4
+    down: 1
+  relations:
+   b:
+    agrees: 3
+    dissents: 2
+   e:
+    summaries: 1
+  content:
+   interesting: 3
+   informative: 2
+   irrelevant: 2
+   funny: 2
+   obvious: 1
+  topics:
+---
+c.text: |
+ *För frihetenss skull.*
+
+ Ska vi förbjuda allt i samhället som är lika farligt som MMA,
+ får vi en polisstat. Vi får förbjuda rökning, olika typer
+ av hästhoppning, kanske dykning, bergsklättring i för
+ farliga berg. Och ha polis som ser till lagen efterlevs.
+---
+c.log:
+---
+d.props:
+ owner: Smarty Smart
+ votes:
+   stupid: 2
+---
+d.text: |
+ *Kul med lite smällar* finns så många
+ fulingar att ge på käften!
+---
+d.log:
+...
