@@ -9,6 +9,7 @@
   <inceptionYear>2010</inceptionYear>
   <properties>
     <scala.version>2.8.0-SNAPSHOT</scala.version>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
   </properties>
 
   <repositories>
@@ -17,14 +18,14 @@
       <name>Scala-Tools Maven2 Repository</name>
       <url>http://scala-tools.org/repo-releases</url>
     </repository>
-   <!-- Scala 2.8 Latest -->
-   <repository>
+    <!-- Scala 2.8 Latest -->
+    <repository>
       <id>scala-tools.org.snapshots</id>
       <name>Scala Tools Maven2 Repository</name>
       <url>http://scala-tools.org/repo-snapshots</url>
       <snapshots />
-   </repository>
-</repositories>
+    </repository>
+  </repositories>
 
   <pluginRepositories>
     <pluginRepository>
@@ -39,6 +40,11 @@
       <groupId>org.scala-lang</groupId>
       <artifactId>scala-library</artifactId>
       <version>${scala.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.yaml</groupId>
+      <artifactId>snakeyaml</artifactId>
+      <version>1.6</version>
     </dependency>
     <dependency>
       <groupId>junit</groupId>
@@ -71,12 +77,19 @@
         </executions>
         <configuration>
           <scalaVersion>${scala.version}</scalaVersion>
-        <launchers>
-          <launcher>
-            <id>main</id>
-            <mainClass>debikigenhtml.App</mainClass>
-          </launcher>
-        </launchers>
+          <displayCmd>true</displayCmd>
+          <launchers>
+            <launcher>
+              <id>main</id>
+              <mainClass>debikigenhtml.App</mainClass>
+              <args>
+                <arg>-d</arg>
+                <arg>target/test-classes/</arg>
+                <arg>-o</arg>
+                <arg>test.xhtml</arg>
+              </args>
+            </launcher>
+          </launchers>
           <args>
             <arg>-target:jvm-1.5</arg>
           </args>
