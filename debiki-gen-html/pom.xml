@@ -8,7 +8,7 @@
   <version>0.0.1-SNAPSHOT</version>
   <inceptionYear>2010</inceptionYear>
   <properties>
-    <scala.version>2.8.0-SNAPSHOT</scala.version>
+    <scala.version>2.8.0.Beta1</scala.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
   </properties>
 
@@ -19,12 +19,12 @@
       <url>http://scala-tools.org/repo-releases</url>
     </repository>
     <!-- Scala 2.8 Latest -->
-    <repository>
+    <!-- repository>
       <id>scala-tools.org.snapshots</id>
       <name>Scala Tools Maven2 Repository</name>
       <url>http://scala-tools.org/repo-snapshots</url>
       <snapshots />
-    </repository>
+    </repository -->
   </repositories>
 
   <pluginRepositories>
