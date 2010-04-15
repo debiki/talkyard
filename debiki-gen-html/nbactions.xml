@@ -1,14 +1,30 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- vim: et ts=2 sw=2
--->
-<actions>
+--><actions>
   <action>
     <actionName>run</actionName>
     <goals>
       <goal>scala:run</goal>
+      <goal>-o</goal>
     </goals>
     <properties>
       <launcher>run.main</launcher>
+    </properties>
+  </action>
+  <action>
+    <actionName>debug</actionName>
+    <goals>
+      <goal>scala:run</goal>
+      <goal>-o</goal>
+    </goals>
+    <properties>
+      <launcher>debug.main</launcher>
+      <jpda.listen>true</jpda.listen>
+      <!-- Pass [the port on which the Netbeans debugger
+          listens] on to maven, as the Java system property
+          ``netbeans.listen.port', so the POM can be configured
+          to instruct the debuggee to connect to that port. -->
+      <netbeans.listen.port>${jpda.address}</netbeans.listen.port>
     </properties>
   </action>
 </actions>
