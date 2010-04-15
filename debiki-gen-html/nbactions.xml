@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- vim: et ts=2 sw=2
+-->
+<actions>
+  <action>
+    <actionName>run</actionName>
+    <goals>
+      <goal>scala:run</goal>
+    </goals>
+    <properties>
+      <launcher>run.main</launcher>
+    </properties>
+  </action>
+</actions>

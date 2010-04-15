@@ -80,7 +80,7 @@
           <displayCmd>true</displayCmd>
           <launchers>
             <launcher>
-              <id>main</id>
+              <id>run.main</id>
               <mainClass>debikigenhtml.App</mainClass>
               <args>
                 <arg>-d</arg>
@@ -88,6 +88,20 @@
                 <arg>-o</arg>
                 <arg>test.xhtml</arg>
               </args>
+            </launcher>
+            <launcher>
+              <id>debug.main</id>
+              <mainClass>debikigenhtml.App</mainClass>
+              <args>
+                <arg>-d</arg>
+                <arg>target/test-classes/compactDebate/_debate.yaml</arg>
+                <arg>-o</arg>
+                <arg>test.xhtml</arg>
+              </args>
+              <jvmArgs>
+                <jvmArg>-Xdebug</jvmArg>
+                <jvmArg>-Xrunjdwp:transport=dt_socket,server=n,suspend=n,address=${netbeans.listen.port}</jvmArg>
+              </jvmArgs>
             </launcher>
           </launchers>
           <args>
