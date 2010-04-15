@@ -66,8 +66,11 @@ class Debate (
 
   def get(post: String): Option[Post] = postsById.get(post)
 
-  def childrenOf(post: String): mut.Set[Post] =
-      childrenByParent.getOrElse(post, mut.Set[Post]())
+  def childrenOf(post: String): mut.Set[Post] = {
+    if (!childrenByParent.contains(post))
+      childrenByParent(post) = mut.Set[Post]()
+    childrenByParent(post)
+  }
 }
 
 case class LogEntry {
