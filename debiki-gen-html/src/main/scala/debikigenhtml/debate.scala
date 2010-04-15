@@ -4,24 +4,29 @@
 package debikigenhtml
 
 import collection.{mutable => mut}
+import Prelude._
+
+package object debate {
+  type ID = String
+}
 
 case class Forum(
   id: String
 )
 
-class Debate {
-  var id: String
-
+class Debate (
+  val id: String
+){
   val RootPostId = "root"
 
   var log = List[LogEntry]()
 
-  private val postsById = mut.Map[String, Post]()
+  val postsById = mut.Map[String, Post]()
 
-  private val childrenByParent = mut.Map[String, Set[Post]]()
+  private val childrenByParent = mut.Map[String, mut.Set[Post]]()
 
-  private def siblingsTo(post: Post): Set[Post] =
-        childrenByParent.get(post.parent).getOrElse(Set[Post]())
+  private def siblingsTo(post: Post): mut.Set[Post] =
+        childrenByParent.getOrElse(post.parent, mut.Set[Post]())
 
   /** Value {@code (post)(parent)} is the votes received by {@code post}
    *  when it was a child of {@code parent}.
@@ -32,14 +37,16 @@ class Debate {
    */
   private val postLogs = mut.Map[String, List[LogEntry]]()
 
-  def add(post: Post) {
-    postsById.put(post.id, post)
-    childrenByParent.put(post.parent, siblingsTo(post) + post)
+  def add(posts: Post*) {
+    for (p <- posts) {
+      postsById(p.id) = p
+      childrenOf(p.parent) += p
+    }
   }
 
   def voteOnAt(postId: String, parentId: String, votes: PostVotes) {
-    postVotes.get(postId).getOrElse(mut.Map[String, PostVotes]()).put(
-      parentId, votes)
+    postVotes.getOrElse(
+      postId, mut.Map[String, PostVotes]()).update(parentId, votes)
   }
 
   def logPostEvent(postId: String, event: LogEntry) {
@@ -47,20 +54,20 @@ class Debate {
   }
 
   def logFor(postId: String): List[LogEntry] =
-    postLogs.get(postId).getOrElse(Nil)
+    postLogs.getOrElse(postId, Nil)
 
   def remove(postId: String): Option[Post] = {
     val postOpt = postsById.get(postId)
     if (postOpt.isEmpty) return None
     val post = postOpt.get
     val siblings = siblingsTo(post) - post
-    throw new UnsupportedOperationException("Should children be removed?")
+    unimplemented("Should children be removed?")
   }
 
   def get(post: String): Option[Post] = postsById.get(post)
 
-  def childrenOf(post: String): Set[Post] =
-      childrenByParent.get(post).getOrElse(Set[Post]())
+  def childrenOf(post: String): mut.Set[Post] =
+      childrenByParent.getOrElse(post, mut.Set[Post]())
 }
 
 case class LogEntry {
@@ -73,11 +80,12 @@ class PostVotes {
   val relations = mut.Map[Relation, Int]()
 }
 
-class Post(val id: String) {
-  var parent: String
-  var owner: Option[String] = None
-  var text = ""
-}
+case class Post(
+  id: String,
+  parent: String,
+  owner: Option[String],
+  text: String
+)
 
 sealed class Move
 object Move {

@@ -9,6 +9,13 @@ import io._
 @Test
 class AppTest {
 
+  @Test
+  def testMain() {
+    
+
+  }
+
+  /*
 //  @Test
   def testYamlObj() {
     val path =
@@ -17,24 +24,6 @@ class AppTest {
     val yaml = DebikiYaml.newYaml
     val obj = yaml.load(Source.fromPath(path).mkString)
     println(yaml.dump(obj))
-  }
-
-  @Test
-  def testLoadPost() {
-    val path =
-        "/home/magnus/dev/me-biz/debiki/mock/debiki-gen-html/target/"+
-        "test-classes/"
-    val post = Post.fromFiles(path, "a")
-  }
-
-
-  @Test
-  def testLoadDiscussion() {
-    val path =
-        "/home/magnus/dev/me-biz/debiki/mock/debiki-gen-html/target/"+
-        "test-classes/"
-    val debate = Debate.fromDir(path)
-    println("Loaded a Debate!")
   }
 
 //  @Test
@@ -65,4 +54,5 @@ class AppTest {
     assertEquals("a: 1\nb:\n  c: 3\n  d: 4\n", yaml.dump(yaml.load(document)))
     println(yaml.dump(yaml.load(document)))
   }
+  */
 }

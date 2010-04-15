@@ -20,16 +20,15 @@ class SimpleLayoutManager extends LayoutManager {
 
   def layout(debate: Debate): NodeSeq = {
     this.debate = debate
-    _layoutChildren(Debate.RootPost)
+    _layoutChildren(debate.RootPostId)
   }
 
   private def _layoutChildren(post: String): NodeSeq = {
-    val childPosts = debate.layout.get(post).get
+    val childPosts = debate.childrenOf(post)
     <div class="thread">{
       for (c <- childPosts)
       yield {
-          val p = debate.posts.get(c).get
-          <div class="left">{p.text}</div> ++ { _layoutChildren(c) }
+          <div class="left">{c.text}</div> ++ { _layoutChildren(c.id) }
       }
     }</div>
   }

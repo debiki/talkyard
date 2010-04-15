@@ -1,226 +1,112 @@
 # vim: fdm=marker noet sw=5 ts=5
-#%TAG !d! org.debiki.
---- !debikigenhtml.Debate.Props
+#%TAG ! !org.debiki.v0.debikigenhtml.
+--- !Debate
 id: compactDebate
-#--- !debikigenhtml.DebateBean.Layout
-#id: compactDebate
-#layout:
-# a:
-#  b:
-#   c:
-#    e:
-#    f:
-#   d:
-#--- !debikigenhtml.DebateBean.Log
-#id: compactDebate
-#log: []
---- !debikigenhtml.Post.Props
-id: c
-parent: b
-owner: Musse Mus
-votes:
- b:
-  move:
-   up: 4
-   down: 1
-  modify:
-  relations:
-   agrees: 3
-   dissents: 2
-   summaries:
-    e: 1
-  content:
-   interesting: 3
-   informative: 2
-   irrelevant: 2
-   funny: 2
-   obvious: 1
-  topics:
---- !debikigenhtml.Post.Text
-id: c
-text: |
- *För frihetenss skull.*
-
- Ska vi förbjuda allt i samhället som är lika farligt som MMA,
- får vi en polisstat. Vi får förbjuda rökning, olika typer
- av hästhoppning, kanske dykning, bergsklättring i för
- farliga berg. Och ha polis som ser till lagen efterlevs.
---- !debikigenhtml.PostBean.Log
-id: c
-log: []
---- !debikigenhtml.Post.Props
-id: d
-parent: b
-owner: Smarty Smart
-votes:
- b:
-  content:
-   stupid: 2
---- !debikigenhtml.Post.Text
-id: d
-text: |
- *Kul med lite smällar* finns så många
- fulingar att ge på käften!
---- !debikigenhtml.Post.Log
-id: d
-log: []
---- !debikigenhtml.Post.Props
-id: f
-parent: c
-obsoleteChangeNo: 0
-owner: Smarty Smart
-votes:
- c:
-  modify:
-   1: 2
-  content:
-   stupid: 2
---- !debikigenhtml.Post.Text
-id: f
-text: |
- Såvida de gamla sura gubbarna inte i själva verket är ute efter
- att förbjuda sånt de inte gillar,
- precis som muslimerna vill förbjuda alla att inte ha slöja.
---- !debikigenhtml.Post.Log
-id: f
-log:
-- { time: 2001-12-14t21:59:43.10-05:00, who: GarboGris, what: 'Suggested rewrite, id 1' }
-- [ 2001-12-14t21:59:43.10-05:00, ModifyText, Suggested, Garbo Gris ]
-- [ 2001-12-14t21:59:43.10-05:00, ModifyText, VotedUp, Millan Murmeldjur ]
---- !debikigenhtml.Post.ModifyText
-postId: f
-suggestionNo: 1
-suggestedBy: Garbo Gris
-text: |
- Såvida de som är emot tävlingar inte i själva verket är ute efter
- att förbjuda sånt de inte gillar,
- snarare än sånt som är farligt.
----
-postId: f
-suggestionNo: 2
-suggestedBy: David Drummeldjur
-text: |
- Dela in i två.
-text: |
- Olika poster! Så de som är emot tävlingar inte i själva verket är ute efter
- att förbjuda sånt de inte gillar,
- snarare än sånt som är farligt.
-#...
-
-
-# Eller!
-%TAG !d! org.debiki.v0.debate.
---- !Vote
-time: 2001-12-14t21:59:43.10-05:00
-by: Person Name
-vote:
- move: { post: x, to: new-parent }
+#end-delims: .,:;!?)}]
+#start-delims: ({[
+#      a
+#   b     c
+# d
+#  e
+# f
+#  gh
 --- !Post
-time: 2001-12-14t21:59:43.10-05:00
-author: Person Name
 id: a
+parent: root
+time: 2001-12-14t21:59:43.10-05:00
+author: OP
 text: |
- A
- a	Hello!
- b	Yes hello.
- B
- a	There is a cat in my shoe.
- b	It likes milk.
- c	Cats do that.
- d	I.e. they like milk, yes indeed.
- e
- f
- g
- C
- a	Now, I'm going to buy no more cats.
- b	Instead I'll start eating cats.
- c	I can do that, as well as eating rats.
- D
- a	Cheers, Mr. Monkey
- b
- E
- a	Join these
- F
- a	two paragraphs
- G
- a	. . .
- b	Split this paragraph into two paragraphs, here.
- c	. . .
- H
- a	. . .
---- !Edit
-time: 2001-12-14t21:59:43.10-05:00
-author: Person Name
-postId: a
-edits: |
- Aa	r	Hi there, yes hello!
- Ab	d
- Ba-b	r	There is a cat, which likes milk, in my shoe.
- Be-g	d
- Da	r|
- 	a	Cheers,
- 	ab	Mr. Monkey
- Ea-Fa	r	Join these two paragraphs
- Gb	r|
- 	b	Split this paragraph into two paragraphs, he
- 	GA
- 	a	re.
---- !Edit
-time: 2001-12-14t21:59:43.10-05:00
-author: Person Name
-postId: a
-edits: |
- repl	A
- 	a	Hello!
- 	b	Yes hello
- with	A
- 	a	Hi there, yes hello!
- repl	B
-	a	There is a cat in my shoe.
-        b	It likes milk
- with	B
-	a	There is a cat, which likes milk, in my shoe.
- delete
-	Be
-	Bf
-	Bg
- Da	r|
- 	a	Cheers,
- 	ab	Mr. Monkey
- Ea-Fa	r	Join these two paragraphs
- Gb	r|
- 	b	Split this paragraph into two paragraphs, he
- 	GA
- 	a	re.
+ Bör MMA vara tillåtet i Sverige?
 
-# change word, everywhere:
-# A-H	w	this_word --> that_word
-# delete *paragraph*:
-# H	d
+ Mixed Martial Arts,
+ MMA,
+ är en sport där strypningar och slag mot huvudet ingår.
+ MMA-tävlingar är tillåtna i Sverige.
+ Bör MMA-tävlingar vara tillåtna i Sverige?
+--- !Post
+id: b
+parent: a
+time: 2001-12-14t21:59:43.10-05:00
+author: OP
+text: |
+ Tillåt MMA
 
-# Results in:
-#A
-#a	Hi there, yes hello!
-#B
-#a	There is a cat, which likes milk, in my shoe.
-#c	Cats do that.
-#d	I.e. they like milk, yes indeed.
-#C
-#a	Now, I'm going to buy no more cats.
-#b	Instead I'll start eating cats.
-#c	I can do that, as well as eating rats.
-#D
-#a	Cheers,
-#ab	Mr. Monkey
-#b
-#E
-#a	Join these two paragraphs
-#G
-#a	...
-#b	Split this paragraph into two paragraphs, he
-#GA
-#a	re.
-#c	...
-#H
-#a	...
- XFBcbu-FNRayg	r	hmm
+ Det är bra att MMA-tävlingar är tillåtna i Sverige.
+--- !Post
+id: c
+parent: a
+time: 2001-12-14t21:59:43.10-05:00
+author: OP
+text: |
+ Förbjud MMA
+
+ MMA-tävlingar borde förbjudas i Sverige.
+--- !Post
+id: d
+parent: b
+time: 2001-12-14t21:59:43.10-05:00
+author: Promma
+text: |
+ För frihetenss skull.
+ Ska vi förbjuda allt i samhället som är lika farligt som MMA,
+ får vi en polisstat.
+ Vi får förbjuda rökning,
+ olika typer av hästhoppning,
+ kanske dykning,
+ bergsklättring i för farliga berg.
+ Och ha polis som ser till lagen efterlevs.
+--- !Post
+id: e
+parent: d
+time: 2001-12-14t21:59:43.10-05:00
+author: PrommaStupiid
+text: |
+ Såvida de gamla sura gubbarna i själva verket är ute efter att förbjuda sånt de inte gillar,
+ precis som muslimerna vill förbjuda alla att inte ha slöja.
+--- !Post
+id: f
+parent: b
+time: 2001-12-14t21:59:43.10-05:00
+author: Promma2
+text: |
+ Håller ungdommar borta från gatan En del ungdommar riskerar hamna snett i livet:
+ riskerar börja supa och knarka och stjäla.
+ De kan räddas av MMA: Deras liv får en innebörd,
+ när de har en dröm att kämpa och begå stordåd i MMA-tävlingar.
+--- !Post
+id: g
+parent: f
+time: 2001-12-14t21:59:43.10-05:00
+author: Promma2Yes
+text: |
+ Ja,
+ liksom fotbollen ingjuder hopp och framtidstro hos ungdommar i Afrika,
+ ger MMA hopp och framtidstro till en del ungdommar i Sverige.
+--- !Post
+id: h
+parent: f
+time: 2001-12-14t21:59:43.10-05:00
+author: Promma2No
+text: |
+ De behöver inte slåss för att ha något att göra.
+ Det finns fotboll och basket och annat.
+#--- !Vote
+#time: 2001-12-14t21:59:43.10-05:00
+#by: Person Name
+#vote:
+# move: { post: x, to: new-parent }
+#--- !Edit
+#time: 2001-12-14t21:59:43.10-05:00
+#author: Person Name
+#postId: a
+#diff-ed: |
+# <an ed diff>
+#--- !debikigenhtml.Post.Log
+#id: f
+#log:
+#- { time: 2001-12-14t21:59:43.10-05:00, who: GarboGris, what: 'Suggested rewrite, id 1' }
+#- [ 2001-12-14t21:59:43.10-05:00, ModifyText, Suggested, Garbo Gris ]
+#- [ 2001-12-14t21:59:43.10-05:00, ModifyText, VotedUp, Millan Murmeldjur ]
+
+
+...

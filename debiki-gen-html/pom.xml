@@ -84,7 +84,7 @@
               <mainClass>debikigenhtml.App</mainClass>
               <args>
                 <arg>-d</arg>
-                <arg>target/test-classes/</arg>
+                <arg>target/test-classes/compactDebate/_debate.yaml</arg>
                 <arg>-o</arg>
                 <arg>test.xhtml</arg>
               </args>
