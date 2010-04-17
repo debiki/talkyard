@@ -12,56 +12,92 @@ object HtmlUtil {
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">"""
   val css = """
-/* Brief CSS-reset */
+
+/* === Standard tags === */
+
+/* --- Brief CSS-reset ---*/
 html, div, h1, h2, p, pre {
   padding: 0;
   margin: 0;
 }
-div {
-  margin: 0px auto;
-  padding: 3px;
+
+/* --- Standard elems ---*/
+p {
+  margin: 0 0 0.7em;
 }
+p:last-child {
+  margin-bottom: 0;
+}
+
+/* === Threads === */
+
+/* --- Indentation ---*/
+.thread.depth-0 {
+  /* center root post */
+  margin: 1em auto;
+  }
+.thread.depth-0 .thread {
+  margin: 1em 0 0 0;
+  border-top: 1px solid lightGrey;
+  }
+.thread.depth-1 .thread {
+  padding-left: 0.6em;
+  border-top: none;
+  border-left: 1px solid #A0A0A0;
+  }
+
+/* --- Float ---*/
 .thread {
   float: left;
-  margin: 7px 3px 3px 10px;
-  border: 1px;
-  border-color: #A0A0A0 #A0F0F0 #F0A0F0;
-  border-style: solid;
-  }
-.depth-1 {
-  width: 48%;
   }
 .depth-2 * {
   float: none;
   }
 
-* {
+/* --- Width ---*/
+.depth-1 {
+  max-width: 25em;
+  }
+.post {
+  max-width: 25em;
+  min-width: 22em;
+  }
+
+/* === Hover === */
+
+/* --- Overflow ---*/
+body * {
   overflow: hidden
   }
-*:hover {
+body *:hover {
   overflow: visible;
   }
 
+/* --- Color ---*/
 * {
-  background-color: inherit;
-  }
+	background-color: inherit;
+}
 .depth-1:hover {
-  background-color: #FEF;
-  }
+	background-color: #FAEAFA;
+}
 .depth-2:hover {
-  background-color: #FDF;
-  }
+	background-color: #FAE2FA;
+}
 .depth-3:hover {
-  background-color: #FCF;
-  }
+	background-color: #FADDFA;
+}
+.depth-4:hover {
+	background-color: #FAD7FA;
+}
 
+/* --- Posts --- */
 .post {
   position: relative;
   }
 .post .meta {
   display: none;
   position: absolute;
-  top: -10px;
+  top: -16px;
   margin: 0;
   padding: 0 1.2em;
   background-color: lightGrey;
@@ -69,6 +105,19 @@ div {
 .post:hover .meta {
   display: block
   }
+
+/* --- Post border ---*/
+.post .text {
+  /* invisible border, so tags won't move when border 
+    made visible (when hovering) */
+	border: 1px dashed rgba(1,1,1,0);
+	padding: 0 3px 3px;
+	padding-bottom: 0; /* tag p's bottom margin suffice */
+}
+.post:hover .text {
+	border: 1px dashed gray;
+}
+
 """
 }
 

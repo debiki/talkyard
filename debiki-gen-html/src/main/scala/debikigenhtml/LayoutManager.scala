@@ -7,7 +7,26 @@
 package debikigenhtml
 
 import collection.{mutable => mut}
-import _root_.scala.xml.{NodeSeq}
+import _root_.scala.xml.{NodeSeq, Elem}
+
+object LayoutManager {
+
+  def postToMeta(p: Post, depth: Int): Elem =
+    <pre class="meta">{
+      "id: "+ p.id +"  parent: "+ p.parent +"  depth: "+ depth
+    }</pre>
+
+  def textToHtml(text: String): Elem =
+    <div class="text">{
+      // Two newlines ends a paragraph.
+      for (par <- text.split("\n\n").toList)
+        yield <p>{par}</p>
+    }
+    </div>
+
+}
+
+import LayoutManager._
 
 abstract class LayoutManager {
 
@@ -36,12 +55,8 @@ class SimpleLayoutManager extends LayoutManager {
     yield
       <div id={cssThreadId} class={cssFloat + cssDepth + " thread"}>
         <div id={cssPostId} class="post">
-          <pre class="meta">{
-            "id: "+ c.id +"  parent: "+ c.parent +"  depth: "+ depth
-          }</pre>
-          <pre class="text">{
-            c.text
-          }</pre>
+          { postToMeta(c, depth) }
+          { textToHtml(c.text) }
         </div>
         { _layoutChildren(depth + 1, c.id) }
       </div>
