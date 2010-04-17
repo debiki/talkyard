@@ -1,0 +1,10 @@
+vim: fdm=marker et sw=2 ts=2
+
+A HTTP GET request from the Android 2.1 emulator: |
+ GET /debiki-gen-html/test.xhtml HTTP/1.1
+ Host: 10.0.2.2
+ Accept-Encoding: gzip
+ Accept-Language: en-US
+ Accept: application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5
+ User-Agent: Mozilla/5.0 (Linux; U; Android 2.1; en-us; sdk Build/ERD79) AppleWebKit/530.17 (KHTML, like Gecko) Version/4.0 Mobile Safari/530.17
+ Accept-Charset: utf-8, iso-8859-1, utf-16, *;q=0.7
