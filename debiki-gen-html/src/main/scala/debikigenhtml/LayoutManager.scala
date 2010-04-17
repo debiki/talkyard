@@ -6,7 +6,8 @@
 
 package debikigenhtml
 
-import _root_.scala.xml.{NodeSeq, Text, MetaData}
+import collection.{mutable => mut}
+import _root_.scala.xml.{NodeSeq}
 
 abstract class LayoutManager {
 
@@ -20,17 +21,30 @@ class SimpleLayoutManager extends LayoutManager {
 
   def layout(debate: Debate): NodeSeq = {
     this.debate = debate
-    _layoutChildren(debate.RootPostId)
+    _layoutChildren(0, debate.RootPostId)
   }
 
-  private def _layoutChildren(post: String): NodeSeq = {
-    val childPosts = debate.childrenOf(post)
-    <div class="thread">{
-      for (c <- childPosts)
-      yield {
-          <div class="left">{c.text}</div> ++ { _layoutChildren(c.id) }
-      }
-    }</div>
+  private def _layoutChildren(depth: Int, post: String): NodeSeq = {
+    val childPosts: mut.Set[Post] = debate.childrenOf(post)
+    for {
+      c <- childPosts.toStream
+      cssThreadId = "thread-"+ c.id
+      cssPostId = "post-"+ c.id
+      cssFloat = if (depth <= 1) "left " else ""
+      cssDepth = "depth-"+ depth
+    }
+    yield
+      <div id={cssThreadId} class={cssFloat + cssDepth + " thread"}>
+        <div id={cssPostId} class="post">
+          <pre class="meta">{
+            "id: "+ c.id +"  parent: "+ c.parent +"  depth: "+ depth
+          }</pre>
+          <pre class="text">{
+            c.text
+          }</pre>
+        </div>
+        { _layoutChildren(depth + 1, c.id) }
+      </div>
   }
 }
 
