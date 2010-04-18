@@ -1,12 +1,16 @@
 // vim: ts=2 sw=2 et
 package debikigenhtml
 
+// Nice threads:
+// http://springthistle.com/wp-content/uploads/2010/03/comments.png
+
 import org.yaml.{snakeyaml => y}
 import io._
 import scala.collection.JavaConversions._
 import scala.collection.{mutable => mut}
 
 object HtmlUtil {
+
   val htmlPrefix =
 """<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
@@ -29,6 +33,12 @@ p:last-child {
   margin-bottom: 0;
 }
 
+/* === Debate === */
+
+.debate {
+  margin-left: 0.3em;
+}
+
 /* === Threads === */
 
 /* --- Indentation ---*/
@@ -38,12 +48,27 @@ p:last-child {
   }
 .thread.depth-0 .thread {
   margin: 1em 0 0 0;
-  border-top: 1px solid lightGrey;
+  border-left: 5px solid white;
+  border-bottom: 5px solid white;
+  }
+.thread.depth-0 > .thread {
+  margin-left: 1em;
+  }
+.thread.depth-0 > .thread:nth-child(2) {
+  /* thread no. 2 is currently the leftmost one,
+   * need no left margin, since whole .debate already
+   * has left margin.
+   */
+  margin-left: 0;
   }
 .thread.depth-1 .thread {
-  padding-left: 0.6em;
+  margin-left: 0.0em;
+  padding-left: 0;
   border-top: none;
-  border-left: 1px solid #A0A0A0;
+  }
+.thread.depth-0 .thread:hover {
+  border-left: 5px solid #BBB;
+  border-bottom: 5px solid #666;
   }
 
 /* --- Float ---*/
@@ -61,11 +86,16 @@ p:last-child {
 .post {
   max-width: 25em;
   min-width: 22em;
+  --max-height: 4em;
   }
+.post:hover {
+  --z-index: 100;
+  --max-height: none;
+}
 
 /* === Hover === */
 
-/* --- Overflow ---*/
+/* --- Overflow --- (not in use) */
 body * {
   overflow: hidden
   }
@@ -73,26 +103,11 @@ body *:hover {
   overflow: visible;
   }
 
-/* --- Color ---*/
-* {
-	background-color: inherit;
-}
-.depth-1:hover {
-	background-color: #FAEAFA;
-}
-.depth-2:hover {
-	background-color: #FAE2FA;
-}
-.depth-3:hover {
-	background-color: #FADDFA;
-}
-.depth-4:hover {
-	background-color: #FAD7FA;
-}
-
 /* --- Posts --- */
 .post {
   position: relative;
+  border-top: 4px solid #EEE;
+  padding-top: 2px;
   }
 .post .meta {
   display: none;
@@ -108,14 +123,11 @@ body *:hover {
 
 /* --- Post border ---*/
 .post .text {
-  /* invisible border, so tags won't move when border 
-    made visible (when hovering) */
-	border: 1px dashed rgba(1,1,1,0);
-	padding: 0 3px 3px;
-	padding-bottom: 0; /* tag p's bottom margin suffice */
+	padding: 0 3px 3px 5px; /* there's a .thread border to the left */
 }
-.post:hover .text {
-	border: 1px dashed gray;
+.post:hover {
+	--outline: lightGrey dotted medium;
+	background-color: #EEE;
 }
 
 """

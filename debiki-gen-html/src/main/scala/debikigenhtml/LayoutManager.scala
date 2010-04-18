@@ -40,7 +40,9 @@ class SimpleLayoutManager extends LayoutManager {
 
   def layout(debate: Debate): NodeSeq = {
     this.debate = debate
-    _layoutChildren(0, debate.RootPostId)
+    <div class="debate">
+      { _layoutChildren(0, debate.RootPostId) }
+    </div>
   }
 
   private def _layoutChildren(depth: Int, post: String): NodeSeq = {
