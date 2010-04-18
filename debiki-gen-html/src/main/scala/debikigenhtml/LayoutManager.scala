@@ -58,6 +58,11 @@ class SimpleLayoutManager extends LayoutManager {
       <div id={cssThreadId} class={cssFloat + cssDepth + " thread"}>
         <div id={cssPostId} class="post">
           { postToMeta(c, depth) }
+          <div class="owner">{c.owner}</div>
+          <div class="time">April 1, 2010, 00:01</div>
+          <div class="reply">Reply</div>
+          <div class="rate">Rate</div>
+          <div class="edit">Edit</div>
           { textToHtml(c.text) }
         </div>
         { _layoutChildren(depth + 1, c.id) }

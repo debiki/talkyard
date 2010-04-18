@@ -20,7 +20,7 @@ object HtmlUtil {
 /* === Standard tags === */
 
 /* --- Brief CSS-reset ---*/
-html, div, h1, h2, p, pre {
+html, div, h1, h2, p, pre, hr {
   padding: 0;
   margin: 0;
 }
@@ -48,16 +48,17 @@ p:last-child {
   }
 .thread.depth-0 .thread {
   margin: 1em 0 0 0;
-  border-left: 5px solid white;
-  border-bottom: 5px solid white;
+  border-left: 1em solid white;
+  border-bottom: 1ex solid white;
   }
 .thread.depth-0 > .thread {
-  margin-left: 1em;
+  margin-left: 0.5em;
   }
-.thread.depth-0 > .thread:nth-child(2) {
+.xx.thread.depth-0 > .thread:nth-child(2) {
   /* thread no. 2 is currently the leftmost one,
    * need no left margin, since whole .debate already
    * has left margin.
+   * - no, disable. Might indent badly on Android.
    */
   margin-left: 0;
   }
@@ -67,8 +68,8 @@ p:last-child {
   border-top: none;
   }
 .thread.depth-0 .thread:hover {
-  border-left: 5px solid #BBB;
-  border-bottom: 5px solid #666;
+  border-left: 1em solid #CCC;
+  border-bottom: 1ex solid #777;
   }
 
 /* --- Float ---*/
@@ -81,6 +82,7 @@ p:last-child {
 
 /* --- Width ---*/
 .depth-1 {
+  /* Avoids >1 column for this depth */
   max-width: 25em;
   }
 .post {
@@ -103,31 +105,91 @@ body *:hover {
   overflow: visible;
   }
 
-/* --- Posts --- */
+/* === Posts === */
+
+.post {
+  border-top: 5px solid #EEE;
+  }
+
+.post:hover {
+	background-color: #DDFFDD;
+}
+
+/* --- Meta ---*/
 .post {
   position: relative;
-  border-top: 4px solid #EEE;
-  padding-top: 2px;
   }
 .post .meta {
   display: none;
   position: absolute;
   top: -16px;
   margin: 0;
-  padding: 0 1.2em;
+  padding: 0 1.2em 0 5px; /* there's a .thread border to the left */
   background-color: lightGrey;
   }
 .post:hover .meta {
-  display: block
+  --display: block
   }
 
-/* --- Post border ---*/
-.post .text {
-	padding: 0 3px 3px 5px; /* there's a .thread border to the left */
+/* --- Buttons ---*/
+.post .owner,
+.post .time {
+  float: left;
 }
-.post:hover {
-	--outline: lightGrey dotted medium;
-	background-color: #EEE;
+
+.post .owner {
+  padding-right: 1em;
+}
+
+.post .time {
+  margin-right: 1em;
+}
+
+.post .edit,
+.post .rate,
+.post .reply {
+  float: right;
+  margin-left: 1em;
+  visibility: hidden;
+}
+
+.post:hover .edit,
+.post:hover .rate,
+.post:hover .reply {
+  visibility: visible;
+}
+
+.post .owner,
+.post .time,
+.post .edit,
+.post .rate,
+.post .reply {
+  padding: 0 1ex;
+  background-color: #DDD;
+  position: relative;
+}
+
+.post:hover .owner,
+.post:hover .time,
+.post:hover .edit,
+.post:hover .rate,
+.post:hover .reply {
+  --background-color: #DDF;
+}
+
+.post .owner:hover,
+.post .time:hover,
+.post .edit:hover,
+.post .rate:hover,
+.post .reply:hover {
+  background-color: #CCF;
+  cursor: crosshair;
+}
+
+/* --- Text ---*/
+.post .text {
+  clear: both;
+	padding: 3px 3px 3px 0;
 }
 
 """
