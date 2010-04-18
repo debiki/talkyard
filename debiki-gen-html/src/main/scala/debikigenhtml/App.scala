@@ -15,14 +15,64 @@ object HtmlUtil {
 """<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">"""
+
   val css = """
 
 /* === Standard tags === */
 
-/* --- Brief CSS-reset ---*/
-html, div, h1, h2, p, pre, hr {
-  padding: 0;
-  margin: 0;
+/* --- CSS-reset ---*/
+/* http://meyerweb.com/eric/tools/css/reset/ */
+/* v1.0 | 20080212 */
+
+html, body, div, span, applet, object, iframe,
+h1, h2, h3, h4, h5, h6, p, blockquote, pre,
+a, abbr, acronym, address, big, cite, code,
+del, dfn, em, font, img, ins, kbd, q, s, samp,
+small, strike, strong, sub, sup, tt, var,
+b, u, i, center,
+dl, dt, dd, ol, ul, li,
+fieldset, form, label, legend,
+table, caption, tbody, tfoot, thead, tr, th, td {
+	margin: 0;
+	padding: 0;
+	border: 0;
+	outline: 0;
+	font-size: 100%;
+	vertical-align: baseline;
+	background: transparent;
+}
+body {
+	line-height: 1;
+}
+ol, ul {
+	list-style: none;
+}
+blockquote, q {
+	quotes: none;
+}
+blockquote:before, blockquote:after,
+q:before, q:after {
+	content: '';
+	content: none;
+}
+
+/* remember to define focus styles! */
+:focus {
+	outline: 0;
+}
+
+/* remember to highlight inserts somehow! */
+ins {
+	text-decoration: none;
+}
+del {
+	text-decoration: line-through;
+}
+
+/* tables still need 'cellspacing="0"' in the markup */
+table {
+	border-collapse: collapse;
+	border-spacing: 0;
 }
 
 /* --- Standard elems ---*/
@@ -135,21 +185,19 @@ body *:hover {
 .post .owner,
 .post .time {
   float: left;
+  background-color: #DDD;
 }
 
 .post .owner {
   padding-right: 1em;
 }
 
-.post .time {
-  margin-right: 1em;
-}
-
 .post .edit,
 .post .rate,
 .post .reply {
   float: right;
-  margin-left: 1em;
+  margin-left: 0.5em;
+  background-color: #BBF;
   visibility: hidden;
 }
 
@@ -164,17 +212,9 @@ body *:hover {
 .post .edit,
 .post .rate,
 .post .reply {
-  padding: 0 1ex;
-  background-color: #DDD;
+  padding: 1px 0.3em;
+  margin-bottom: 2px;
   position: relative;
-}
-
-.post:hover .owner,
-.post:hover .time,
-.post:hover .edit,
-.post:hover .rate,
-.post:hover .reply {
-  --background-color: #DDF;
 }
 
 .post .owner:hover,
@@ -183,7 +223,7 @@ body *:hover {
 .post .rate:hover,
 .post .reply:hover {
   background-color: #CCF;
-  cursor: crosshair;
+  cursor: default;
 }
 
 /* --- Text ---*/
@@ -192,7 +232,56 @@ body *:hover {
 	padding: 3px 3px 3px 0;
 }
 
+/* --- Menus ---*/
+.post .menu {
+  position: absolute;
+  background-color: #CCF;
+  left: 1ex;
+  z-index: 100;
+}
+
+.post .menu li {
+  padding: 3px 1ex;
+}
+
+.post .menu li:hover {
+  background-color: #EEF;
+  cursor: crosshair;
+}
+
+#hidden-menus {
+  display: none;
+}
+
 """
+
+  val Menus =
+    <div id="hidden-menus">
+      <ul id="edit-menu" class="menu">
+        <li>Edit</li>
+        <li>Copy&nbsp;&amp;&nbsp;edit</li>
+        <li>Delete</li>
+        <li>Move</li>
+      </ul>
+      <ul id="rate-menu" class="menu">
+        <li>Move up</li>
+        <li>Move down</li>
+        <li>Interesting</li>
+        <li>Obvious</li>
+        <li>Insightsful</li>
+        <li>Stupid</li>
+        <li>Off topic</li>
+        <li>Troll</li>
+      </ul>
+      <ul id="reply-menu" class="menu">
+        <li>Just&nbsp;reply</li>
+        <li>Agree</li>
+        <li>Dissent</li>
+        <li>Flame</li>
+        <li>Off&nbsp;topic</li>
+      </ul>
+    </div>
+
 }
 
 /**
@@ -231,10 +320,13 @@ object App {
           <title>Test mock layout</title>
           <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
           <style type="text/css">{HtmlUtil.css}</style>
+          <script type="text/javascript" src="jquery-1.4.2.js" />
+          <script type="text/javascript" src="debiki.js" />
         </head>
-        <body>{
-          layoutMgr.layout(debate)
-        }</body>
+        <body>
+          { layoutMgr.layout(debate) }
+          { HtmlUtil.Menus }
+        </body>
       </html>
     val html = HtmlUtil.htmlPrefix + xml
 
