@@ -6,9 +6,9 @@ $(".edit").hover(
   function(event){ $("#hidden-menus").append($("#edit-menu")); }
   );
 
-$(".rate").hover(
-  function(event){ $(this).append($("#rate-menu")); },
-  function(event){ $("#hidden-menus").append($("#rate-menu")); }
+$(".vote").hover(
+  function(event){ $(this).append($("#vote-menu")); },
+  function(event){ $("#hidden-menus").append($("#vote-menu")); }
   );
 
 $(".reply").hover(

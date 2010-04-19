@@ -61,13 +61,22 @@ class SimpleLayoutManager extends LayoutManager {
           <div class="owner">{c.owner}</div>
           <div class="time">April 1, 2010, 00:01</div>
           <div class="reply">Reply</div>
-          <div class="rate">Rate</div>
+          <div class="vote">Vote</div>
           <div class="edit">Edit</div>
           { textToHtml(c.text) }
         </div>
         { _layoutChildren(depth + 1, c.id) }
       </div>
   }
+
+  // Triggers compiler bug:
+  //private def test: NodeSeq = {
+  //  for (i <- 1 to 2)
+  //  yield
+  //    <div>
+  //      <div>
+  //    </div>
+  //}
 }
 
 // Intresting

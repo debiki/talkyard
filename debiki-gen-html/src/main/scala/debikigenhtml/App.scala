@@ -193,7 +193,7 @@ body *:hover {
 }
 
 .post .edit,
-.post .rate,
+.post .vote,
 .post .reply {
   float: right;
   margin-left: 0.5em;
@@ -202,7 +202,7 @@ body *:hover {
 }
 
 .post:hover .edit,
-.post:hover .rate,
+.post:hover .vote,
 .post:hover .reply {
   visibility: visible;
 }
@@ -210,7 +210,7 @@ body *:hover {
 .post .owner,
 .post .time,
 .post .edit,
-.post .rate,
+.post .vote,
 .post .reply {
   padding: 1px 0.3em;
   margin-bottom: 2px;
@@ -220,7 +220,7 @@ body *:hover {
 .post .owner:hover,
 .post .time:hover,
 .post .edit:hover,
-.post .rate:hover,
+.post .vote:hover,
 .post .reply:hover {
   background-color: #CCF;
   cursor: default;
@@ -241,7 +241,7 @@ body *:hover {
 }
 
 .post .menu li {
-  padding: 3px 1ex;
+  padding: 0.8ex 1ex;
 }
 
 .post .menu li:hover {
@@ -251,6 +251,30 @@ body *:hover {
 
 #hidden-menus {
   display: none;
+}
+
+.post .menu .sub.menu {
+  visibility: hidden;
+  left: 2em;
+  background-color: #DBF;
+}
+
+.post .menu li:hover > .sub.menu {
+  visibility: visible;
+}
+
+.post .sub.menu li:hover {
+  background-color: #EDF;
+}
+
+/* === Misc === */
+
+.parent-ref {
+  font-weight: bold;
+}
+
+.highlight {
+  outline: blue dotted medium
 }
 
 """
@@ -263,21 +287,37 @@ body *:hover {
         <li>Delete</li>
         <li>Move</li>
       </ul>
-      <ul id="rate-menu" class="menu">
-        <li>Move up</li>
-        <li>Move down</li>
-        <li>Interesting</li>
-        <li>Obvious</li>
-        <li>Insightsful</li>
-        <li>Stupid</li>
-        <li>Off topic</li>
-        <li>Troll</li>
+      <ul id="vote-menu" class="menu">
+        <li class="up">Vote&nbsp;up</li>
+        <li class="down">Vote&nbsp;down</li>
+        <li class="it">It...
+          <ul class="sub menu">
+            <li>Agrees&nbsp;(with&nbsp;the&nbsp;<span class="parent-ref">parent</span>&nbsp;post,
+              <i>but not necessarily with you</i>)</li>
+            <li>Disagrees</li>
+          </ul>
+        </li>
+        <li class="it-is">It is...
+          <ul class="sub menu">
+            <li>Interesting</li>
+            <li>Obvious</li>
+            <li>Insightsful</li>
+            <li>Stupid</li>
+            <li>Funny</li>
+            <li>Off topic</li>
+            <li>Troll</li>
+          </ul>
+        </li>
+        <li class="suggestions">Vote&nbsp;on&nbsp;suggestions...
+          <ul class="sub menu">
+            <li>Show&nbsp;all</li>
+          </ul>
+        </li>
       </ul>
       <ul id="reply-menu" class="menu">
         <li>Just&nbsp;reply</li>
         <li>Agree</li>
         <li>Dissent</li>
-        <li>Flame</li>
         <li>Off&nbsp;topic</li>
       </ul>
     </div>
