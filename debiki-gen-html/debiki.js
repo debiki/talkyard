@@ -28,4 +28,8 @@ $(".reply").hover(
   //function(event){
   //  $(this).remove(".menu");
   //});
+
+// Don't show the crosshair cursor for menu items that trigger no action.
+$(".menu li:has(.sub.menu)").css("cursor", "default");
+
 });
