@@ -32,4 +32,14 @@ $(".reply").hover(
 // Don't show the crosshair cursor for menu items that trigger no action.
 $(".menu li:has(.sub.menu)").css("cursor", "default");
 
+$(".parent-ref").hover(
+  function(event){
+    $(this).closest(".thread").parent().closest(".thread").
+            children(".post").addClass("highlight");
+  },
+  function(event){
+    $(this).closest(".thread").parent().closest(".thread").
+            children(".post").removeClass("highlight");
+  });
+
 });
