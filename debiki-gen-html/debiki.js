@@ -42,4 +42,15 @@ $(".parent-ref").hover(
             children(".post").removeClass("highlight");
   });
 
+$(".reply.preview").hover(
+  function(event){
+    $(this).parents().css("overflow", "visible");
+  },
+  function(event){
+    // leave overflow visible for now.
+    // (It's (perhaps) annoying if the reply-textarea
+    // is overflow-hidden, since the outline around it
+    // will be cropped in a usually ugly manner.)
+  });
+
 });
