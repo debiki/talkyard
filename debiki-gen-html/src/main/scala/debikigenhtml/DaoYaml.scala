@@ -15,6 +15,28 @@ import java.{io => jio, util => ju}
 
 class DaoYaml extends Dao {
 
+  private def buildDebate(iter: Iterable[Object]): Option[Debate] = {
+    var debate: Option[Debate] = None
+    var posts = List[Post]()
+    for (obj <- iter) obj match {
+      case d: Debate =>
+        if (debate.isDefined) unsupported("More than one debate found: "+
+                                "Don't know to which debate the posts belong")
+        debate = Some(d)
+      case p: Post => posts = p :: posts
+      case x => println("What is this: "+ x)
+    }
+    debate.foreach(_.add(posts: _*))
+    debate
+  }
+
+  def loadDebateFromText(yamlText: String): Option[Debate] = {
+    val dc = new DebateConstructor
+    val yaml = new y.Yaml(new y.Loader(dc))
+    val iterable = yaml.loadAll(yamlText)
+    buildDebate(iterable)
+  }
+
   override def getDebate(id: String): Debate = {
     var debate: Option[Debate] = None
     var posts = List[Post]()
