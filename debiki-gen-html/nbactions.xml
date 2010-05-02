@@ -27,4 +27,11 @@
       <netbeans.listen.port>${jpda.address}</netbeans.listen.port>
     </properties>
   </action>
+  <action>
+    <actionName>CUSTOM-Install</actionName>
+    <displayName>Install</displayName>
+    <goals>
+      <goal>install</goal>
+    </goals>
+  </action>
 </actions>
