@@ -1,4 +1,4 @@
-# vim: fdm=marker noet sw=5 ts=5
+# vim: fdm=marker et sw=4 ts=4
 #%TAG ! !org.debiki.v0.debikigenhtml.
 --- !Debate
 id: compactDebate
@@ -9,7 +9,9 @@ id: compactDebate
 # d
 #  e
 # f
-#  gh
+#  g h
+#     i
+#      j
 --- !Post
 id: a
 parent: root
@@ -48,6 +50,7 @@ time: 2001-12-14t21:59:43.10-05:00
 author: Promma
 text: |
  För frihetenss skull.
+
  Ska vi förbjuda allt i samhället som är lika farligt som MMA,
  får vi en polisstat.
  Vi får förbjuda rökning,
@@ -69,7 +72,9 @@ parent: b
 time: 2001-12-14t21:59:43.10-05:00
 author: Promma2
 text: |
- Håller ungdommar borta från gatan En del ungdommar riskerar hamna snett i livet:
+ Håller ungdommar borta från gatan
+
+ En del ungdommar riskerar hamna snett i livet:
  riskerar börja supa och knarka och stjäla.
  De kan räddas av MMA: Deras liv får en innebörd,
  när de har en dröm att kämpa och begå stordåd i MMA-tävlingar.
@@ -90,6 +95,32 @@ author: Promma2No
 text: |
  De behöver inte slåss för att ha något att göra.
  Det finns fotboll och basket och annat.
+--- !Post
+parent: h
+id: i
+time: 2001-12-14t21:59:43.10-05:00
+author: Promma2No
+text: |
+ Du kan inte jämföra ett härligt slagsmål med fotboll!
+--- !Post
+parent: i
+id: j
+time: 2001-12-14t21:59:43.10-05:00
+author: Promma2No
+text: |
+ Idiot
+--- !Post
+parent: j
+id: k
+time: 2001-12-14t21:59:43.10-05:00
+author: Promma2No
+text: |
+ ***NEJ***!!!
+
+ Trots att fotbollsmatcher spelas, stämmer ju ligorna
+ träff för att slåss! Där ser du att fotbollen
+ **inte** ersätter ett slagsmål med hjältedåd!!!
+
 #--- !Vote
 #time: 2001-12-14t21:59:43.10-05:00
 #by: Person Name
