@@ -2,9 +2,9 @@
   <!-- vim: et ts=2 sw=2
   -->
   <modelVersion>4.0.0</modelVersion>
-  <groupId>debikigenhtml</groupId>
-  <artifactId>debiki-gen-html</artifactId>
-  <name>debiki-gen-html</name>
+  <groupId>com.debiki</groupId>
+  <artifactId>debiki-core</artifactId>
+  <name>debiki-core</name>
   <version>0.0.1-SNAPSHOT</version>
   <inceptionYear>2010</inceptionYear>
   <properties>
@@ -81,7 +81,7 @@
           <launchers>
             <launcher>
               <id>run.main</id>
-              <mainClass>debikigenhtml.App</mainClass>
+              <mainClass>com.debiki.v0.App</mainClass>
               <args>
                 <arg>-d</arg>
                 <arg>target/test-classes/compactDebate/_debate.yaml</arg>
@@ -91,7 +91,7 @@
             </launcher>
             <launcher>
               <id>debug.main</id>
-              <mainClass>debikigenhtml.App</mainClass>
+              <mainClass>com.debiki.v0.App</mainClass>
               <args>
                 <arg>-d</arg>
                 <arg>target/test-classes/compactDebate/_debate.yaml</arg>
