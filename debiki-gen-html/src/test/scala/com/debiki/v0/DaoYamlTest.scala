@@ -14,8 +14,7 @@ object DaoYamlTest {
 
   object Paths {
     val MmaDebate =
-        "/home/magnus/dev/me-biz/debiki/mock-test/debiki-gen-html/"+
-        "src/test/resources/compactDebate/_debate.yaml"
+        "target/test-classes/v0/compactDebate/_debate.yaml"
   }
 }
 

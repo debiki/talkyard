@@ -84,7 +84,7 @@
               <mainClass>com.debiki.v0.App</mainClass>
               <args>
                 <arg>-d</arg>
-                <arg>target/test-classes/compactDebate/_debate.yaml</arg>
+                <arg>${project.build.testOutputDirectory}/v0/compactDebate/_debate.yaml</arg>
                 <arg>-o</arg>
                 <arg>test.xhtml</arg>
               </args>
@@ -94,7 +94,7 @@
               <mainClass>com.debiki.v0.App</mainClass>
               <args>
                 <arg>-d</arg>
-                <arg>target/test-classes/compactDebate/_debate.yaml</arg>
+                <arg>${project.build.testOutputDirectory}/v0/compactDebate/_debate.yaml</arg>
                 <arg>-o</arg>
                 <arg>test.xhtml</arg>
               </args>
