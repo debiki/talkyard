@@ -1,5 +1,5 @@
 // vim: ts=2 sw=2 et
-package debikigenhtml
+package com.debiki.v0
 
 import org.junit._
 import Assert._

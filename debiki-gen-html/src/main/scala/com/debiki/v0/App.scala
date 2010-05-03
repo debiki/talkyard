@@ -1,5 +1,6 @@
 // vim: ts=2 sw=2 et
-package debikigenhtml
+
+package com.debiki.v0
 
 // Nice threads:
 // http://springthistle.com/wp-content/uploads/2010/03/comments.png

@@ -1,7 +1,7 @@
 // vim: ts=2 sw=2 et
 
 
-package debikigenhtml
+package com.debiki.v0
 
 import collection.{mutable => mut}
 import Prelude._

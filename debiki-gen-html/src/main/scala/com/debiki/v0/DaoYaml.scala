@@ -4,9 +4,9 @@
  * and open the template in the editor.
  */
 
-package debikigenhtml
+package com.debiki.v0
 
-import debikigenhtml.Prelude._
+import com.debiki.v0.Prelude._
 import org.yaml.{snakeyaml => y}
 import y.{constructor => yc, nodes => yn}
 import scala.collection.JavaConversions._

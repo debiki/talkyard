@@ -1,6 +1,6 @@
 // vim: ts=2 sw=2 et
 
-package debikigenhtml
+package com.debiki.v0
 
 /** Debiki's Data Access Object interface.
  */

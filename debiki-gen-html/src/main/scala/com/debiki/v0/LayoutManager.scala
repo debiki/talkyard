@@ -4,7 +4,7 @@
  * and open the template in the editor.
  */
 
-package debikigenhtml
+package com.debiki.v0
 
 import collection.{mutable => mut}
 import _root_.scala.xml.{NodeSeq, Elem}

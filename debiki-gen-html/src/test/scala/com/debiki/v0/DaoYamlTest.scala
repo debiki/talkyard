@@ -4,7 +4,7 @@
  * and open the template in the editor.
  */
 
-package debikigenhtml
+package com.debiki.v0
 
 import org.junit._
 import Assert._
