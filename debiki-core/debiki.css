@@ -248,6 +248,13 @@ body *:hover {
   background-color: #EDF;
 }
 
+/* === Reply === */
+
+form.reply {
+  margin-top: 0.8em;
+  margin-bottom: 0.4em;
+}
+
 /* === Misc === */
 
 .parent-ref {

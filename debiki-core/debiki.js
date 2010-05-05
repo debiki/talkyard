@@ -11,10 +11,22 @@ $(".vote").hover(
   function(event){ $("#hidden-menus").append($("#vote-menu")); }
   );
 
+/*
 $(".reply").hover(
   function(event){ $(this).append($("#reply-menu")); },
   function(event){ $("#hidden-menus").append($("#reply-menu")); }
   );
+*/
+
+$(".reply").click(function() {
+  var post = $(this).closest(".post");
+  var reply = $("#hidden-menus .reply-template").clone();
+  var postId = post.attr('id').substr(5, 999); // drop initial "post-"
+  reply.find("input[name='parent']").attr('value', postId);
+  reply.find("input[name='author']").attr('value', 'Author unknown');
+  post.after(reply);
+  //$(this).closest(".post").after(reply);
+});
 
   //function(event){
   //  $(this).append($(
@@ -32,6 +44,7 @@ $(".reply").hover(
 // Don't show the crosshair cursor for menu items that trigger no action.
 $(".menu li:has(.sub.menu)").css("cursor", "default");
 
+// Highlight the parent post when hovering over a reference.
 $(".parent-ref").hover(
   function(event){
     $(this).closest(".thread").parent().closest(".thread").
@@ -42,7 +55,9 @@ $(".parent-ref").hover(
             children(".post").removeClass("highlight");
   });
 
-$(".reply.preview").hover(
+// When the .reply.preview is not inside the #hidden-menu,
+// but under a real .thread, leave it visible after hovering.
+$(".thread. .reply.preview").hover(
   function(event){
     $(this).parents().css("overflow", "visible");
   },

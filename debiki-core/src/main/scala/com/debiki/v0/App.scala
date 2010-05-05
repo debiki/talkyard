@@ -58,6 +58,24 @@ object HtmlUtil {
         <li>Dissent</li>
         <li>Off&nbsp;topic</li>
       </ul>
+      <div class='reply-template'>
+        <div class='depth-3 thread reply preview'>
+          <div class='post'>
+            <div class='owner'><i>Your reply</i></div>
+            <div class='text'>The cat was playing in the garden.</div>
+          </div>
+          <form class='agree reply'
+              action='http://localhost:8084/tinywiki/Wiki.jsp?page=Main'
+              accept-charset='UTF-8'
+              method='post'>
+            <input type='hidden' name='parent' value='a'/>
+            <input type='hidden' name='author' value='Unknown'/>
+            <textarea name='reply' rows='10' cols='30'
+              >The cat was playing in the garden.</textarea><br/>
+            <input type='submit' value='Submit reply'/>
+          </form>
+        </div>
+      </div>
     </div>
 
 }
