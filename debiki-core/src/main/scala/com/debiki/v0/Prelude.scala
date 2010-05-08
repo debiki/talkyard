@@ -22,4 +22,10 @@ object Prelude {
   def illegalArgIf(condition: Boolean, problem: String) =
     if (condition) throw new IllegalArgumentException(problem)
 
+  /** Converts {@code text} to a single line printable ASCII, not very long,
+   *  so it can be included in an error message even if it is end user defined
+   *  (i.e. possible destructive were it not made safe).
+   */
+  def safe(text: String): String = text // for now.
+
 }
