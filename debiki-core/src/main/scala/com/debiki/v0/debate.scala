@@ -71,6 +71,18 @@ class Debate (
       childrenByParent(post) = mut.Set[Post]()
     childrenByParent(post)
   }
+
+  def nextFreePostId: String = {
+    var nextFree = 0
+    for {
+      id <- postsById.keysIterator
+      num: Int = Base26.toInt(id)
+      if num + 1 > nextFree
+    }{
+      nextFree = num + 1
+    }
+    Base26.fromInt(nextFree)
+  }
 }
 
 case class LogEntry {
