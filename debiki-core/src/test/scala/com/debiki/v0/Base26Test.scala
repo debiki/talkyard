@@ -9,7 +9,7 @@ package com.debiki.v0
 import org.specs._
 
 
-class Base26Spec extends SpecificationWithJUnit {
+class Base26Test extends SpecificationWithJUnit {
 
   "Base26" should {
     "convert 'a' to 0" in { Base26.toInt('a') must be equalTo(0) }
