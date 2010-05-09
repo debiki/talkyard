@@ -6,7 +6,7 @@
 
 package com.debiki.v0
 
-import collection.{mutable => mut}
+import collection.{mutable => mut, immutable => imm}
 import _root_.scala.xml.{NodeSeq, Elem}
 
 object LayoutManager {
@@ -46,7 +46,7 @@ class SimpleLayoutManager extends LayoutManager {
   }
 
   private def _layoutChildren(depth: Int, post: String): NodeSeq = {
-    val childPosts: mut.Set[Post] = debate.childrenOf(post)
+    val childPosts: imm.Set[Post] = debate.repliesTo(post)
     for {
       c <- childPosts.toStream
       cssThreadId = "thread-"+ c.id

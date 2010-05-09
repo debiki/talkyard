@@ -26,8 +26,7 @@ class DaoYaml extends Dao {
       case p: Post => posts = p :: posts
       case x => println("What is this: "+ x)
     }
-    debate.foreach(_.add(posts: _*))
-    debate
+    debate.map(_.copy(posts = posts))
   }
 
   def loadDebateFromText(yamlText: String): Option[Debate] = {
@@ -39,21 +38,12 @@ class DaoYaml extends Dao {
 
   override def getDebate(id: String): Debate = {
     var debate: Option[Debate] = None
-    var posts = List[Post]()
-
     val dc = new DebateConstructor
     val yaml = new y.Yaml(new y.Loader(dc))
     val file = new jio.File(id)
     val iterable = yaml.loadAll(new jio.FileInputStream(file))
-    for (obj <- iterable) obj match {
-      case d: Debate => debate = Some(d)
-      case p: Post => posts = p :: posts
-      case x => println("What is this: "+ x)
-    }
-
+    debate = buildDebate(iterable)
     illegalArgIf(debate.isEmpty, "Debate not found: "+ id)
-
-    debate.get.add(posts: _*)
     debate.get
   }
 
@@ -75,7 +65,7 @@ class DaoYaml extends Dao {
           case _ => // ignore unknown entries
         }
         illegalArgIf(debateId.isEmpty, "Debate id missing")
-        new Debate(debateId.get)
+        new Debate(debateId.get, Nil)
       }
     }
 

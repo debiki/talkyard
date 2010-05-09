@@ -3,30 +3,37 @@
 
 package com.debiki.v0
 
-import collection.{mutable => mut}
+import collection.{immutable => imm, mutable => mut}
 import Prelude._
 
 package object debate {
   type ID = String
 }
 
-case class Forum(
+case class Forum private[debiki] (
   id: String
 )
 
-class Debate (
-  val id: String
+case class Debate private[debiki] (
+  val id: String,
+  private val posts: List[Post]
 ){
   val RootPostId = "root"
 
-  var log = List[LogEntry]()
+  private lazy val postsById =
+      imm.Map[String, Post](posts.map(x => (x.id, x)): _*)
 
-  val postsById = mut.Map[String, Post]()
-
-  private val childrenByParent = mut.Map[String, mut.Set[Post]]()
-
-  private def siblingsTo(post: Post): mut.Set[Post] =
-        childrenByParent.getOrElse(post.parent, mut.Set[Post]())
+  private lazy val postsByParentId: imm.Map[String, imm.Set[Post]] = {
+    // Add post -> replies mappings to a mutable multimap.
+    var mmap = mut.Map[String, mut.Set[Post]]()
+    for (p <- posts)
+      mmap.getOrElse(
+        p.parent, { val s = mut.Set[Post](); mmap.put(p.parent, s); s }) += p
+    // Copy to an immutable version.
+    imm.Map[String, Set[Post]](
+        (for ((parentId, children) <- mmap)
+          yield (parentId, imm.Set[Post](children.toList: _*))).toList: _*)
+  }
 
   /** Value {@code (post)(parent)} is the votes received by {@code post}
    *  when it was a child of {@code parent}.
@@ -37,13 +44,17 @@ class Debate (
    */
   private val postLogs = mut.Map[String, List[LogEntry]]()
 
-  def add(posts: Post*) {
-    for (p <- posts) {
-      postsById(p.id) = p
-      childrenOf(p.parent) += p
-    }
-  }
+  def postCount = posts.length
 
+  def post(id: String): Option[Post] = postsById.get(id)
+
+  def repliesTo(id: String): imm.Set[Post] =
+    postsByParentId.getOrElse(id, imm.Set.empty)
+
+  def + (post: Post): Debate = copy(posts = post :: posts)
+  def - (post: Post): Debate = copy(posts = posts filter (_ != post))
+
+  /*
   def voteOnAt(postId: String, parentId: String, votes: PostVotes) {
     postVotes.getOrElse(
       postId, mut.Map[String, PostVotes]()).update(parentId, votes)
@@ -55,34 +66,20 @@ class Debate (
 
   def logFor(postId: String): List[LogEntry] =
     postLogs.getOrElse(postId, Nil)
+  */
 
-  def remove(postId: String): Option[Post] = {
-    val postOpt = postsById.get(postId)
-    if (postOpt.isEmpty) return None
-    val post = postOpt.get
-    val siblings = siblingsTo(post) - post
-    unimplemented("Should children be removed?")
-  }
-
-  def get(post: String): Option[Post] = postsById.get(post)
-
-  def childrenOf(post: String): mut.Set[Post] = {
-    if (!childrenByParent.contains(post))
-      childrenByParent(post) = mut.Set[Post]()
-    childrenByParent(post)
-  }
-
-  def nextFreePostId: String = {
+  lazy val nextFreePostId: String = {
     var nextFree = 0
     for {
-      id <- postsById.keysIterator
-      num: Int = Base26.toInt(id)
+      post <- posts
+      num: Int = Base26.toInt(post.id)
       if num + 1 > nextFree
     }{
       nextFree = num + 1
     }
     Base26.fromInt(nextFree)
   }
+
 }
 
 case class LogEntry {
