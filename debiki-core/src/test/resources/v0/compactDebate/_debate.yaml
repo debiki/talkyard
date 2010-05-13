@@ -121,11 +121,42 @@ text: |
  träff för att slåss! Där ser du att fotbollen
  **inte** ersätter ett slagsmål med hjältedåd!!!
 
+--- !Vote
+by: Person Name
+time: 2001-12-14t21:59:43.10-05:00
+post: j
+it: [dissents]
+is: [stupid, off-topic, troll]
+score: -1
+--- !Vote
+by: Misse-Muu
+time: 2001-12-14t21:59:43.10-05:00
+post: h
+score: 1
+--- !Vote
+by: Anders-And
+time: 2001-12-14t21:59:43.10-05:00
+post: h
+score: 2
+
+
 #--- !Vote
 #time: 2001-12-14t21:59:43.10-05:00
 #by: Person Name
-#vote:
-# move: { post: x, to: new-parent }
+#votes: { post: x, [ is: stupid ] }
+#--- !Vote
+#time: 2001-12-14t21:59:43.10-05:00
+#by: Person Name
+#votes:
+#- post: x
+#  - it: dissents
+#  - is: [stupid, off-topic]
+#  - score: -1
+#- post: y
+#  - is: insightful
+#  - score: +1
+#- post: z
+#  - it: agrees
 #--- !Edit
 #time: 2001-12-14t21:59:43.10-05:00
 #author: Person Name

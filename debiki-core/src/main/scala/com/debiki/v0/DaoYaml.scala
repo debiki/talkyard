@@ -18,15 +18,17 @@ class DaoYaml extends Dao {
   private def buildDebate(iter: Iterable[Object]): Option[Debate] = {
     var debate: Option[Debate] = None
     var posts = List[Post]()
+    var votes = List[Vote]()
     for (obj <- iter) obj match {
       case d: Debate =>
         if (debate.isDefined) unsupported("More than one debate found: "+
                                 "Don't know to which debate the posts belong")
         debate = Some(d)
-      case p: Post => posts = p :: posts
-      case x => println("What is this: "+ x)
+      case p: Post => posts ::= p
+      case v: Vote => votes ::= v
+      case x => unimplemented("Handling of: "+ x)
     }
-    debate.map(_.copy(posts = posts))
+    debate.map(_.copy(posts = posts, votes = votes))
   }
 
   def loadDebateFromText(yamlText: String): Option[Debate] = {
@@ -55,6 +57,8 @@ class DaoYaml extends Dao {
       new yn.Tag(yamlTagPrefix +"Debate"), new ConstrDebate)
     yamlConstructors.put(
       new yn.Tag(yamlTagPrefix +"Post"), new ConstrPost)
+    yamlConstructors.put(
+      new yn.Tag(yamlTagPrefix +"Vote"), new ConstrVote)
 
     private class ConstrDebate extends DebikiMapConstr {
 
@@ -65,7 +69,7 @@ class DaoYaml extends Dao {
           case _ => // ignore unknown entries
         }
         illegalArgIf(debateId.isEmpty, "Debate id missing")
-        new Debate(debateId.get, Nil)
+        new Debate(debateId.get, posts = Nil, votes = Nil)
       }
     }
 
@@ -94,6 +98,30 @@ class DaoYaml extends Dao {
       }
     }
 
+    private class ConstrVote extends DebikiMapConstr {
+
+      override def handleTuples(tuples: ju.List[yn.NodeTuple]): Vote = {
+        var voterId: Option[String] = None
+        var postId: Option[String] = None
+        var score: Option[Int] = None
+        var it = List[String]()
+        var is = List[String]()
+
+        for (t <- tuples) asText(t.getKeyNode) match {
+          case "by" => voterId = Some(asText(t.getValueNode))
+          case "post" => postId = Some(asText(t.getValueNode))
+          case "score" => score = Some(asInt(t.getValueNode))
+          case _ => // not implemented
+        }
+
+        illegalArgIf(voterId.isEmpty, "`id' entry missing")
+        illegalArgIf(postId.isEmpty, "`parent' entry missing")
+
+        Vote(postId = postId.get, voterId = voterId.get,
+             it = it, is = is, score = score.getOrElse(0))
+      }
+    }
+
     // Helper class: Loops through all Yaml map entries in a Yaml map node.
     private abstract class DebikiMapConstr extends yc.AbstractConstruct {
       override def construct(node: yn.Node): Object = {
@@ -107,6 +135,8 @@ class DaoYaml extends Dao {
     }
 
   }
+
+  private def asInt(n: yn.Node) = asText(n).toInt
 
   private def asText(n: yn.Node) = n match {
     case s: yn.ScalarNode => s.getValue
