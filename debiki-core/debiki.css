@@ -79,8 +79,10 @@ p:last-child {
   }
 .thread.depth-0 .thread {
   margin: 1em 0 0 0;
-  border-left: 1em solid white;
-  border-bottom: 1ex solid white;
+  border-left: 0.4em solid white;
+  margin-left: 0.6em;
+  border-bottom: 0.8ex solid white;
+  margin-bottom: 0.2ex;
   }
 .thread.depth-0 > .thread {
   margin-left: 0.5em;
@@ -94,13 +96,8 @@ p:last-child {
   margin-left: 0;
   }
 .thread.depth-1 .thread {
-  margin-left: 0.0em;
   padding-left: 0;
   border-top: none;
-  }
-.thread.depth-0 .thread:hover {
-  border-left: 1em solid #CCC;
-  border-bottom: 1ex solid #777;
   }
 
 /* --- Float ---*/
@@ -130,10 +127,10 @@ p:last-child {
 
 /* --- Overflow --- (not in use) */
 body * {
-  overflow: hidden
+  --overflow: hidden
   }
 body *:hover {
-  overflow: visible;
+  --overflow: visible;
   }
 
 /* === Posts === */
@@ -146,11 +143,12 @@ body *:hover {
 
 .thread-summary {
   background-color: #F3F3D0;
+  opacity: 0;
   padding: 0.3ex;
   font-size: 93%;
   min-width: 22em;
   cursor: help;
-  border: 0px solid #C3C3A8;
+  border-color: #C3C3A8; /* javascript border */
 }
 
 .thread-summary:hover {
@@ -284,7 +282,7 @@ body *:hover {
 /* --- Text ---*/
 .post .text {
   clear: both;
-	padding: 3px 3px 3px 0;
+  padding: 3px;
 }
 
 /* --- Menus ---*/

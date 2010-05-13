@@ -17,9 +17,13 @@ $(".post, .thread-summary").hover(
     // Fade last summary, unless thread collapsed.
     if (lastThreadSummary && !lastThreadSummary.hasClass('collapsed')) {
       lastThreadSummary.fadeTo(300, 0);
+      lastThreadSummary.closest('.thread').animate(
+          { borderLeftColor: '#fff', borderBottomColor: '#fff' }, 'fast');
     }
     // Show summary for current thread.
     nextThreadSummary.fadeTo(300, 1);
+    nextThreadSummary.closest('.thread').animate(
+        { borderLeftColor: '#F3F3D0', borderBottomColor: '#D3D3B0' }, 'fast');
     lastThreadSummary = nextThreadSummary;
   },
   function(event){

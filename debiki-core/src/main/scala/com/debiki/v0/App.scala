@@ -83,7 +83,7 @@ object HtmlUtil {
 /**
  * Test conversion from YAML to HTML of debate / discussion.
  */
-object App {
+private[debiki] object App {
   def main(args: Array[String]) {
     var dir = ""
     var out = "-"
@@ -117,6 +117,7 @@ object App {
           <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
           <link rel='stylesheet' type='text/css' href='debiki.css' />
           <script type="text/javascript" src="jquery-1.4.2.js" />
+          <script type="text/javascript" src="jquery.color.js" />
           <script type="text/javascript" src="debiki.js" />
         </head>
         <body>
@@ -135,6 +136,7 @@ object App {
   }
 }
 
+/*
 object DebikiYaml {
 
   def newYaml: y.Yaml = {
@@ -148,3 +150,4 @@ object DebikiYaml {
   }
 
 }
+*/
