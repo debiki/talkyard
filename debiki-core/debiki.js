@@ -62,12 +62,16 @@ $(".reply").hover(
 
 $(".reply").click(function() {
   var post = $(this).closest(".post");
-  var reply = $("#hidden-menus .reply-template").clone();
+  var reply = $("#hidden-menus .reply-template").clone(true);
   var postId = post.attr('id').substr(5, 999); // drop initial "post-"
   reply.find("input[name='parent']").attr('value', postId);
   reply.find("input[name='author']").attr('value', 'Author unknown');
   post.after(reply);
   //$(this).closest(".post").after(reply);
+});
+
+$("#hidden-menus button.cancel").click(function() {
+  $(this).closest('.thread.reply.preview').remove();
 });
 
   //function(event){

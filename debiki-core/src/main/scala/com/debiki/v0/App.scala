@@ -72,7 +72,8 @@ object HtmlUtil {
             <input type='hidden' name='author' value='Unknown'/>
             <textarea name='reply' rows='10' cols='30'
               >The cat was playing in the garden.</textarea><br/>
-            <input type='submit' value='Submit reply'/>
+            <input class='submit' type='submit' value='Submit reply'/>
+            <button class='cancel' type='button'>Cancel</button>
           </form>
         </div>
       </div>
