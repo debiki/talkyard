@@ -11,11 +11,6 @@ import _root_.scala.xml.{NodeSeq, Elem}
 
 object LayoutManager {
 
-  def postToMeta(p: Post, depth: Int): Elem =
-    <pre class="meta">{
-      "id: "+ p.id +"  parent: "+ p.parent +"  depth: "+ depth
-    }</pre>
-
   def textToHtml(text: String): Elem =
     <div class="text">{
       // Two newlines ends a paragraph.
@@ -46,9 +41,9 @@ class SimpleLayoutManager extends LayoutManager {
   }
 
   private def _layoutChildren(depth: Int, post: String): NodeSeq = {
-    val childPosts: imm.Set[Post] = debate.repliesTo(post)
+    val childPosts: List[Post] = debate.repliesTo(post)
     for {
-      c <- childPosts.toStream
+      c <- childPosts.sortBy(p => debate.postScore(p.id))
       cssThreadId = "thread-"+ c.id
       cssPostId = "post-"+ c.id
       cssFloat = if (depth <= 1) "left " else ""
@@ -56,8 +51,9 @@ class SimpleLayoutManager extends LayoutManager {
     }
     yield
       <div id={cssThreadId} class={cssFloat + cssDepth + " thread"}>
+        { threadSummary(c) }
         <div id={cssPostId} class="post">
-          { postToMeta(c, depth) }
+          { voteSummary(c) }
           <div class="owner">{c.owner}</div>
           <div class="time">April 1, 2010, 00:01</div>
           <div class="reply">Reply</div>
@@ -68,6 +64,29 @@ class SimpleLayoutManager extends LayoutManager {
         { _layoutChildren(depth + 1, c.id) }
       </div>
   }
+
+  private def threadSummary(post: Post): NodeSeq = {
+    val count = debate.successorsTo(post.id).length + 1
+    if (count == 1)
+      <ul class="thread-summary">
+        <li class="post-count">1 post</li>
+      </ul>
+    else
+      <ul class="thread-summary">
+        <li class="post-count">{count} posts</li>
+        <li class="summary-score">score -1..+2..+5</li>
+        <li class="summary-is">interesting</li>
+        <li class="summary-is">funny</li>
+      </ul>
+  }
+
+  private def voteSummary(p: Post): NodeSeq =
+    <ul class="vote-summary">
+      <li class="vote-score">+X</li>
+      <li class="vote-it">agrees<span class="count">2</span></li>
+      <li class="vote-is">interesting<span class="count">3</span></li>
+      <li class="vote-is">funny<span class="count">1</span></li>
+    </ul>
 
   // Triggers compiler bug:
   //private def test: NodeSeq = {

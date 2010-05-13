@@ -138,12 +138,86 @@ body *:hover {
 
 /* === Posts === */
 
-.post {
-  border-top: 5px solid #EEE;
-  }
-
 .post:hover {
-	background-color: #DDFFDD;
+  background-color: #DDFFDD;
+}
+
+/* --- Thread summary ---*/
+
+.thread-summary {
+  background-color: #F3F3D0;
+  padding: 0.3ex;
+  font-size: 93%;
+  min-width: 22em;
+  cursor: help;
+  border: 0px solid #C3C3A8;
+}
+
+.thread-summary:hover {
+  background-color: #FEFEDD;
+}
+
+.thread-summary li {
+  display: inline;
+  margin-left: 1ex;
+}
+
+/*
+.thread-summary .post-count:before {
+  content: 'Thread with ';
+}
+
+.thread-summary li:after {
+  content: ',';
+}
+
+.thread-summary .summary-score:after {
+  content: ', mostly';
+}
+*/
+
+/* --- Vote summary ---*/
+
+.vote-summary {
+  --background-color: #F6F6F6;
+  background-color: #EEE;
+  font-size: 93%;
+  --max-width: 25em;
+  --min-width: 22em;
+  padding: 0.3ex;
+}
+
+.vote-summary:hover {
+  background-color: #FDFDFD;
+  cursor: help;
+}
+
+.vote-summary li {
+  display: inline;
+  margin-left: 1ex;
+}
+
+.vote-summary .vote-score {
+  margin-left: 3px;
+  margin-right: 1em;
+}
+
+/* Won't work, because float:right reorders tags.
+.vote-summary .vote-it + .vote-is {
+  margin-left: 3em;
+} */
+
+.vote-summary .vote-is {
+  float: right;
+}
+
+.vote-summary li:hover {
+  --background-color: #DFF;
+  --cursor: crosshair;
+}
+
+.vote-summary .count:before {
+  content: "×"; /* The multiplication sign, U+00D7 */
 }
 
 /* --- Meta ---*/

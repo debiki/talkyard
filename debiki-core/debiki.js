@@ -1,5 +1,43 @@
 // vim: fdm=marker et ts=2 sw=2
+
+lastThreadSummary = null;
+
 $(document).ready(function(){
+
+
+$(".post, .thread-summary").hover(
+  function(event){
+    console.log('enter');
+    var nextThreadSummary =
+      $(this).closest('.thread').children(".thread-summary");
+
+    if (lastThreadSummary && lastThreadSummary[0] == nextThreadSummary[0])
+      return;
+
+    // Fade last summary, unless thread collapsed.
+    if (lastThreadSummary && !lastThreadSummary.hasClass('collapsed')) {
+      lastThreadSummary.fadeTo(300, 0);
+    }
+    // Show summary for current thread.
+    nextThreadSummary.fadeTo(300, 1);
+    lastThreadSummary = nextThreadSummary;
+  },
+  function(event){
+    console.log('left');
+  });
+
+$(".thread-summary").click(function() {
+  $(this).closest(".thread")
+    .children(":not(.thread-summary)").slideToggle(800)
+    .end()
+    .children(".thread-summary").toggleClass('collapsed');
+    //.animate({"border-bottom-width": 5}, "slow");
+});
+
+$(".vote-summary").click(function() {
+  $(this).closest(".thread").children(".post")
+      .children(":not(.vote-summary)").slideToggle(200);
+});
 
 $(".edit").hover(
   function(event){ $(this).append($("#edit-menu")); },
