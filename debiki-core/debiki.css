@@ -95,6 +95,10 @@ p:last-child {
    */
   margin-left: 0;
   }
+.thread.depth-0 .thread.demarcated {
+  border-left-color: #F3F3D0;
+  border-bottom-color: #D3D3B0;
+}
 .thread.depth-1 .thread {
   padding-left: 0;
   border-top: none;

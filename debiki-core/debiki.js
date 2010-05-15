@@ -2,12 +2,11 @@
 
 lastThreadSummary = null;
 
-$(document).ready(function(){
+$(function() {
 
 
 $(".post, .thread-summary").hover(
   function(event){
-    console.log('enter');
     var nextThreadSummary =
       $(this).closest('.thread').children(".thread-summary");
 
@@ -16,18 +15,17 @@ $(".post, .thread-summary").hover(
 
     // Fade last summary, unless thread collapsed.
     if (lastThreadSummary && !lastThreadSummary.hasClass('collapsed')) {
-      lastThreadSummary.fadeTo(300, 0);
-      lastThreadSummary.closest('.thread').animate(
-          { borderLeftColor: '#fff', borderBottomColor: '#fff' }, 'fast');
+      lastThreadSummary.stop(true, true).fadeTo(1000, 0);
+      lastThreadSummary.closest('.thread') .stop(true, true)
+          .removeClass('demarcated', 1000);
     }
     // Show summary for current thread.
-    nextThreadSummary.fadeTo(300, 1);
-    nextThreadSummary.closest('.thread').animate(
-        { borderLeftColor: '#F3F3D0', borderBottomColor: '#D3D3B0' }, 'fast');
+    nextThreadSummary.stop(true, true).fadeTo(600, 1);
+    nextThreadSummary.closest('.thread').stop(true, true)
+        .addClass('demarcated', 600);
     lastThreadSummary = nextThreadSummary;
   },
   function(event){
-    console.log('left');
   });
 
 $(".thread-summary").click(function() {

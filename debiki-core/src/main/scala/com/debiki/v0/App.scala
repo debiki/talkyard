@@ -118,7 +118,7 @@ private[debiki] object App {
           <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
           <link rel='stylesheet' type='text/css' href='debiki.css' />
           <script type="text/javascript" src="jquery-1.4.2.js" />
-          <script type="text/javascript" src="jquery.color.js" />
+          <script type="text/javascript" src="js/debiki-jquery-ui-1.8.1.custom.min.js" />
           <script type="text/javascript" src="debiki.js" />
         </head>
         <body>
