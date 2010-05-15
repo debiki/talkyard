@@ -78,7 +78,7 @@ p:last-child {
   margin: 1em auto;
   }
 .thread.depth-0 .thread {
-  margin: 1em 0 0 0;
+  margin: 0.3em 0 0 0;
   border-left: 0.4em solid white;
   margin-left: 0.6em;
   border-bottom: 0.8ex solid white;
@@ -98,6 +98,13 @@ p:last-child {
 .thread.depth-0 .thread.demarcated {
   border-left-color: #F3F3D0;
   border-bottom-color: #D3D3B0;
+}
+.thread.depth-0 .thread.collapsed-fx {
+  /* Thread is collapsed, hence its summary is visible,
+  so add extra margin to previous tag (which is a .post or .thread tag)
+  so there's space for a position=absolute Reply button,
+  although the thread summary tag is visible. */
+  margin-top: 1.2em;
 }
 .thread.depth-1 .thread {
   padding-left: 0;

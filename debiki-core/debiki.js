@@ -1,39 +1,38 @@
 // vim: fdm=marker et ts=2 sw=2
 
-lastThreadSummary = null;
+threadHovered = null;
 
 $(function() {
 
 
 $(".post, .thread-summary").hover(
   function(event){
-    var nextThreadSummary =
-      $(this).closest('.thread').children(".thread-summary");
+    var nextThread = $(this).closest('.thread');
 
-    if (lastThreadSummary && lastThreadSummary[0] == nextThreadSummary[0])
+    if (threadHovered && threadHovered[0] == nextThread[0])
       return;
 
     // Fade last summary, unless thread collapsed.
-    if (lastThreadSummary && !lastThreadSummary.hasClass('collapsed')) {
-      lastThreadSummary.stop(true, true).fadeTo(1000, 0);
-      lastThreadSummary.closest('.thread') .stop(true, true)
-          .removeClass('demarcated', 1000);
+    if (threadHovered && !threadHovered.hasClass('collapsed')) {
+      threadHovered.children('.thread-summary')
+                      .stop(true, true).fadeTo(1000, 0);
+      threadHovered.stop(true, true).removeClass('demarcated', 1000);
     }
     // Show summary for current thread.
-    nextThreadSummary.stop(true, true).fadeTo(600, 1);
-    nextThreadSummary.closest('.thread').stop(true, true)
-        .addClass('demarcated', 600);
-    lastThreadSummary = nextThreadSummary;
+    nextThread.children('.thread-summary').stop(true, true).fadeTo(600, 1);
+    nextThread.stop(true, true).addClass('demarcated', 600);
+    threadHovered = nextThread;
   },
   function(event){
   });
 
 $(".thread-summary").click(function() {
   $(this).closest(".thread")
-    .children(":not(.thread-summary)").slideToggle(800)
+    .children(":not(.thread-summary)").stop(true,true).slideToggle(800)
     .end()
-    .children(".thread-summary").toggleClass('collapsed');
-    //.animate({"border-bottom-width": 5}, "slow");
+    .stop(true, true)
+    .toggleClass('collapsed')
+    .toggleClass('collapsed-fx', 600);
 });
 
 $(".vote-summary").click(function() {
