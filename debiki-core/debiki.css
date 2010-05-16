@@ -72,19 +72,22 @@ p:last-child {
 
 /* === Threads === */
 
-/* --- Indentation ---*/
-.thread.depth-0 {
+.depth-0.thread {
   /* center root post */
   margin: 1em auto;
-  }
-.thread.depth-0 .thread {
+}
+.depth-0 .thread {
   margin: 0.3em 0 0 0;
-  border-left: 0.4em solid white;
-  margin-left: 0.6em;
-  border-bottom: 0.8ex solid white;
+  /* transparent won't work: jQuery's class animation would fade
+  to *white*, but the color shining through should be
+  .depth-1.thread's background-color. */
+  border-left: 0.5em solid #fcfaf5; /*transparent*/
+  margin-left: 0.5em;
+  border-bottom: 0.8ex solid #fcfaf5; /*transparent*/
   margin-bottom: 0.2ex;
+  background-color: inherit;
   }
-.thread.depth-0 > .thread {
+.depth-0 > .thread {
   margin-left: 0.5em;
   }
 .xx.thread.depth-0 > .thread:nth-child(2) {
@@ -95,18 +98,26 @@ p:last-child {
    */
   margin-left: 0;
   }
-.thread.depth-0 .thread.demarcated {
-  border-left-color: #F3F3D0;
-  border-bottom-color: #D3D3B0;
+.depth-0 .thread.demarcated {
+  /* Unfortunately animating the background color won't
+  look nice since there migh be child threads whose
+  background color it *not* animated. Perhaps this can
+  be fixed with more javascript.*/
+  --background-color: #faf7ea;
+  border-left-color: #f3f1dc;
+  border-bottom-color: #d1d1ae;
 }
-.thread.depth-0 .thread.collapsed-fx {
+.depth-0 .thread.collapsed-fx {
   /* Thread is collapsed, hence its summary is visible,
   so add extra margin to previous tag (which is a .post or .thread tag)
   so there's space for a position=absolute Reply button,
   although the thread summary tag is visible. */
   margin-top: 1.2em;
 }
-.thread.depth-1 .thread {
+.depth-1.thread {
+  background-color: #fcfaf5;
+}
+.depth-1 .thread {
   padding-left: 0;
   border-top: none;
   }
@@ -120,34 +131,27 @@ p:last-child {
   }
 
 /* --- Width ---*/
-.depth-1 {
+.depth-1,
+.depth-1 .thread {
   /* Avoids >1 column for this depth */
   max-width: 25em;
-  }
-.post {
-  max-width: 25em;
-  min-width: 22em;
-  --max-height: 4em;
-  }
-.post:hover {
-  --z-index: 100;
-  --max-height: none;
-}
-
-/* === Hover === */
-
-/* --- Overflow --- (not in use) */
-body * {
-  --overflow: hidden
-  }
-body *:hover {
-  --overflow: visible;
   }
 
 /* === Posts === */
 
+.post {
+  overflow: hidden;
+  min-height: 1.1em;
+  height: 6em;
+  min-width: 22em;
+  background-color: #fcfaf5;
+  margin: 0 5px 3px 0;
+  }
 .post:hover {
-  background-color: #DDFFDD;
+  outline: #888 dashed thin;
+  /* In case the post has been up-sized, its up-sized
+  parts might be hidden by a thread, unless: */
+  z-index: 100;
 }
 
 /* --- Thread summary ---*/
@@ -158,7 +162,7 @@ body *:hover {
   padding: 0.3ex;
   font-size: 93%;
   min-width: 22em;
-  cursor: help;
+  cursor: s-resize;
   border-color: #C3C3A8; /* javascript border */
 }
 
@@ -194,11 +198,6 @@ body *:hover {
   --max-width: 25em;
   --min-width: 22em;
   padding: 0.3ex;
-}
-
-.vote-summary:hover {
-  background-color: #FDFDFD;
-  cursor: help;
 }
 
 .vote-summary li {
@@ -277,7 +276,6 @@ body *:hover {
 .post .vote,
 .post .reply {
   padding: 1px 0.3em;
-  margin-bottom: 2px;
   position: relative;
 }
 
@@ -293,7 +291,7 @@ body *:hover {
 /* --- Text ---*/
 .post .text {
   clear: both;
-  padding: 3px;
+  padding: 3px 1px 3px;
 }
 
 /* --- Menus ---*/

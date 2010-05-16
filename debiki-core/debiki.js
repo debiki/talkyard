@@ -4,7 +4,6 @@ threadHovered = null;
 
 $(function() {
 
-
 $(".post, .thread-summary").hover(
   function(event){
     var nextThread = $(this).closest('.thread');
@@ -35,10 +34,13 @@ $(".thread-summary").click(function() {
     .toggleClass('collapsed-fx', 600);
 });
 
+/*
 $(".vote-summary").click(function() {
   $(this).closest(".thread").children(".post")
       .children(":not(.vote-summary)").slideToggle(200);
-});
+}); */
+
+$(".post").resizable({ autoHide: true });
 
 $(".edit").hover(
   function(event){ $(this).append($("#edit-menu")); },
