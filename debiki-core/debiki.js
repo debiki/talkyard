@@ -40,7 +40,11 @@ $(".vote-summary").click(function() {
       .children(":not(.vote-summary)").slideToggle(200);
 }); */
 
-$(".post").resizable({ autoHide: true });
+$(".post").resizable({ autoHide: true })
+  // Remove the small grip, replace with the normal one:
+  .find('.ui-resizable-se')
+  .removeClass('.ui-icon-gripsmall-diagonal-se')
+  .addClass('ui-icon-grip-diagonal-se');
 
 $(".edit").hover(
   function(event){ $(this).append($("#edit-menu")); },

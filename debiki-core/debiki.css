@@ -139,6 +139,17 @@ p:last-child {
 
 /* === Posts === */
 
+.post .ui-resizable-se {
+  /* The small grip has been replaced with the normal grip
+  (search for "ui-icon-grip" in debiki.js), so we make the
+  tag a few pixels wider. */
+  height: 15px;
+  width: 15px;
+  /* Paint color above any text below, otherwise it's easy never
+  to see there is a rezise-post-grip. */
+  background-color: #FCFAF5;
+}
+
 .post {
   overflow: hidden;
   min-height: 1.1em;
