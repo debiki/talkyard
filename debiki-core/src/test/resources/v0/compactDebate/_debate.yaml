@@ -16,7 +16,7 @@ id: compactDebate
 id: a
 parent: root
 time: 2001-12-14t21:59:43.10-05:00
-author: OP
+owner: OP
 text: |
  Bör MMA vara tillåtet i Sverige?
 
@@ -29,7 +29,7 @@ text: |
 id: b
 parent: a
 time: 2001-12-14t21:59:43.10-05:00
-author: OP
+owner: OP
 text: |
  Tillåt MMA
 
@@ -38,7 +38,7 @@ text: |
 id: c
 parent: a
 time: 2001-12-14t21:59:43.10-05:00
-author: OP
+owner: OP
 text: |
  Förbjud MMA
 
@@ -47,7 +47,7 @@ text: |
 id: d
 parent: b
 time: 2001-12-14t21:59:43.10-05:00
-author: Promma
+owner: Promma
 text: |
  För frihetenss skull.
 
@@ -62,7 +62,7 @@ text: |
 id: e
 parent: d
 time: 2001-12-14t21:59:43.10-05:00
-author: PrommaStupiid
+owner: PrommaStupiid
 text: |
  Såvida de gamla sura gubbarna i själva verket är ute efter att förbjuda sånt de inte gillar,
  precis som muslimerna vill förbjuda alla att inte ha slöja.
@@ -70,7 +70,7 @@ text: |
 id: f
 parent: b
 time: 2001-12-14t21:59:43.10-05:00
-author: Promma2
+owner: Promma2
 text: |
  Håller ungdommar borta från gatan
 
@@ -82,7 +82,7 @@ text: |
 id: g
 parent: f
 time: 2001-12-14t21:59:43.10-05:00
-author: Promma2Yes
+owner: Ephemeriis
 text: |
  Ja,
  liksom fotbollen ingjuder hopp och framtidstro hos ungdommar i Afrika,
@@ -91,7 +91,7 @@ text: |
 id: h
 parent: f
 time: 2001-12-14t21:59:43.10-05:00
-author: Promma2No
+owner: LittleLebowskiUrbanA
 text: |
  De behöver inte slåss för att ha något att göra.
  Det finns fotboll och basket och annat.
@@ -99,21 +99,21 @@ text: |
 parent: h
 id: i
 time: 2001-12-14t21:59:43.10-05:00
-author: Promma2No
+owner: Anonymous Coward
 text: |
  Du kan inte jämföra ett härligt slagsmål med fotboll!
 --- !Post
 parent: i
 id: j
 time: 2001-12-14t21:59:43.10-05:00
-author: Promma2No
+owner: LittleLebowskiUrbanA
 text: |
  Idiot
 --- !Post
 parent: j
 id: k
 time: 2001-12-14t21:59:43.10-05:00
-author: Promma2No
+owner: Anonymous Coward
 text: |
  ***NEJ***!!!
 
@@ -159,7 +159,7 @@ score: 2
 #  - it: agrees
 #--- !Edit
 #time: 2001-12-14t21:59:43.10-05:00
-#author: Person Name
+#owner: Person Name
 #postId: a
 #diff-ed: |
 # <an ed diff>
