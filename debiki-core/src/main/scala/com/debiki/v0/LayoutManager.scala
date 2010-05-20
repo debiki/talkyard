@@ -54,11 +54,8 @@ class SimpleLayoutManager extends LayoutManager {
         { threadSummary(c) }
         <div id={cssPostId} class="post">
           { voteSummary(c) }
-          <div class="owner">{c.owner}</div>
+          <div class="owner">{c.owner.getOrElse("Unknown")}</div>
           <div class="time">April 1, 2010, 00:01</div>
-          <div class="reply">Reply</div>
-          <div class="vote">Vote</div>
-          <div class="edit">Edit</div>
           { textToHtml(c.text) }
         </div>
         { _layoutChildren(depth + 1, c.id) }

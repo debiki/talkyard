@@ -98,7 +98,7 @@ p:last-child {
    */
   margin-left: 0;
   }
-.depth-0 .thread.demarcated {
+.depth-0 .thread.demarcated-fx {
   /* Unfortunately animating the background color won't
   look nice since there migh be child threads whose
   background color it *not* animated. Perhaps this can
@@ -162,7 +162,7 @@ p:last-child {
   outline: #888 dashed thin;
   /* In case the post has been up-sized, its up-sized
   parts might be hidden by a thread, unless: */
-  z-index: 100;
+  z-index: 10;
 }
 
 /* --- Thread summary ---*/
@@ -173,12 +173,16 @@ p:last-child {
   padding: 0.3ex;
   font-size: 93%;
   min-width: 22em;
-  cursor: s-resize;
+  cursor: default; /* otherwise the `text' cursor sometimes appears */
   border-color: #C3C3A8; /* javascript border */
 }
 
 .thread-summary:hover {
   background-color: #FEFEDD;
+}
+
+.thread.demarcated > .thread-summary {
+  cursor: s-resize;
 }
 
 .thread-summary li {
@@ -258,36 +262,45 @@ p:last-child {
 /* --- Buttons ---*/
 .post .owner,
 .post .time {
-  float: left;
+  float: right;
+  padding: 1px 0.3em;
+  position: relative;
   background-color: #DDD;
 }
 
 .post .owner {
-  padding-right: 1em;
+  /* Make it wider than the .time tag. */
+  min-width: 9em;
+}
+.post .time {
+  clear: right;
 }
 
-.post .edit,
-.post .vote,
-.post .reply {
-  float: right;
-  margin-left: 0.5em;
-  background-color: #BBF;
-  visibility: hidden;
+#action-menu {
+  position: absolute;
 }
-
-.post:hover .edit,
-.post:hover .vote,
-.post:hover .reply {
-  visibility: visible;
+#action-menu .edit,
+#action-menu .vote,
+#action-menu .reply {
+  position: absolute;
+  top: -2px;
+  z-index: 20;
+  padding: 2px 1ex;
+  --clear: both;
+  --float: right;
+  --display: inline;
+  --margin: 0.5em;
+  --margin-top: 0.5em;
+  color: #0c93ca;
+  font-weight: bold;
+  background-color: #fcfaf5;
+  cursor: crosshair;
 }
-
-.post .owner,
-.post .time,
-.post .edit,
-.post .vote,
-.post .reply {
-  padding: 1px 0.3em;
-  position: relative;
+#action-menu .edit {
+  left: 5em;
+}
+#action-menu .vote {
+  left: 10em;
 }
 
 .post .owner:hover,
@@ -301,23 +314,22 @@ p:last-child {
 
 /* --- Text ---*/
 .post .text {
-  clear: both;
   padding: 3px 1px 3px;
 }
 
 /* --- Menus ---*/
-.post .menu {
+.menu {
   position: absolute;
   background-color: #CCF;
   left: 1ex;
-  z-index: 100;
+  z-index: 20;
 }
 
-.post .menu li {
+.menu li {
   padding: 0.8ex 1ex;
 }
 
-.post .menu li:hover {
+.menu li:hover {
   background-color: #EEF;
   cursor: crosshair;
 }
@@ -326,17 +338,17 @@ p:last-child {
   display: none;
 }
 
-.post .menu .sub.menu {
+.menu .sub.menu {
   visibility: hidden;
   left: 2em;
   background-color: #DBF;
 }
 
-.post .menu li:hover > .sub.menu {
+.menu li:hover > .sub.menu {
   visibility: visible;
 }
 
-.post .sub.menu li:hover {
+.menu .sub.menu li:hover {
   background-color: #EDF;
 }
 

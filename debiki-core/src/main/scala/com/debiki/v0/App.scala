@@ -19,6 +19,11 @@ object HtmlUtil {
 
   val Menus =
     <div id="hidden-menus">
+      <div id='action-menu' class='ui-state-default'>
+        <div class='reply'>Reply</div>
+        <div class='vote'>Vote</div>
+        <div class='edit'>Edit</div>
+      </div>
       <ul id="edit-menu" class="menu">
         <li>Edit</li>
         <li>Copy&nbsp;&amp;&nbsp;edit</li>
