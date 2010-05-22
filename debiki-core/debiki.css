@@ -143,11 +143,27 @@ p:last-child {
   /* The small grip has been replaced with the normal grip
   (search for "ui-icon-grip" in debiki.js), so we make the
   tag a few pixels wider. */
-  height: 15px;
-  width: 15px;
+  height: 17px;
+  width: 17px;
+  background-position: -80px -222px;
   /* Paint color above any text below, otherwise it's easy never
   to see there is a rezise-post-grip. */
   background-color: #FCFAF5;
+}
+
+/* Make the s,n,e,w handles larger (else hard to drag) and place them
+1 layer below the .ui-resizable-se handle (see above),
+so as not to hide that handle (which is assigned z-index 1001 by
+some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
+.post .ui-resizable-n,
+.post .ui-resizable-s {
+  height: 20px;
+  z-index: 1000;
+}
+.post .ui-resizable-e,
+.post .ui-resizable-w {
+  width: 20px;
+  z-index: 1000;
 }
 
 .post {
