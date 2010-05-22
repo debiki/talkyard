@@ -2,7 +2,7 @@
 
 threadHovered = null;
 
-$(function() {
+jQuery.noConflict()(function($){
 
 $(".post, .thread-summary").hover(
   function(event){
