@@ -151,6 +151,11 @@ p:last-child {
   background-color: #FCFAF5;
 }
 
+.post p {
+  /* Don't span whole screen even if .post.cropped-e is removed. */
+  max-width: 50em;
+}
+
 /* Make the s,n,e,w handles larger (else hard to drag) and place them
 1 layer below the .ui-resizable-se handle (see above),
 so as not to hide that handle (which is assigned z-index 1001 by
@@ -166,11 +171,19 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
   z-index: 1000;
 }
 
+.post.cropped-s {
+  max-height: 4em;
+  cursor: s-resize;
+}
+
+.post.cropped-e {
+  max-width: 25em;
+}
+
 .post {
   overflow: hidden;
   min-height: 1.1em;
-  height: 6em;
-  min-width: 22em;
+  min-width: 5em;
   background-color: #fcfaf5;
   margin: 0 5px 3px 0;
   }
@@ -188,7 +201,6 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
   opacity: 0;
   padding: 0.3ex;
   font-size: 93%;
-  min-width: 22em;
   cursor: default; /* otherwise the `text' cursor sometimes appears */
   border-color: #C3C3A8; /* javascript border */
 }
@@ -226,8 +238,6 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
   --background-color: #F6F6F6;
   background-color: #EEE;
   font-size: 93%;
-  --max-width: 25em;
-  --min-width: 22em;
   padding: 0.3ex;
 }
 

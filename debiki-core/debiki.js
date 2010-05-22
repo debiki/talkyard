@@ -73,11 +73,47 @@ $(".vote-summary").click(function() {
       .children(":not(.vote-summary)").slideToggle(200);
 }); */
 
-$(".post").resizable({ autoHide: true })
-  // Remove the small grip, replace with the normal one:
+var posts = $(".debiki .post");
+
+// Makes whole post visible on click.
+//
+posts.filter('.cropped-s').click(function(){
+  console.log('click: Removind cropped-s.');
+  // (Some rather long posts are cropped, using max-width and -height.
+  // Don't remove max-width, or some posts might end up rather wide.)
+  $(this).closest('.post').removeClass('cropped-s');
+})
+
+// Make posts resizable.
+// Fails with a TypeError on Android: Cathching it and ignoring it.
+// (On Android, posts won't be resizable.)
+try {
+  posts
+  .resizable({ autoHide: true })
+  // Make the resize grip larger.
   .find('.ui-resizable-se')
-  .removeClass('.ui-icon-gripsmall-diagonal-se')
-  .addClass('ui-icon-grip-diagonal-se');
+    .removeClass('.ui-icon-gripsmall-diagonal-se')  // exchange small grip...
+    .addClass('ui-icon-grip-diagonal-se')  // ...against the normal one
+  .end()
+  // Remove max-height or -width when mouse down on a resize handle.
+  .find('.ui-resizable-se, .ui-resizable-e')
+    .mousedown(function(){
+      // (Removing only max-width usually results in nothing:
+      // The thread usually has a max-width.).
+      console.log('mousedown: Removind cropped-s and -e.');
+      $(this).closest('.post').removeClass('cropped-s cropped-e'); })
+  .end()
+  .find('.ui-resizable-s')
+    .mousedown(function(){
+      console.log('mousedown: Removind cropped-s.');
+      $(this).closest('.post').removeClass('cropped-s'); })
+  .end();
+}
+catch (e) {
+  if (e.name == 'TypeError') console.log(e.name +': Failed to make '+
+      'post resizable. Ignoring error (this is a smartphone?)');
+  else throw e;
+}
 
 $(".edit").hover(
   function(event){ $(this).append($("#edit-menu")); },

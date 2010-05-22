@@ -73,7 +73,7 @@ class SimpleLayoutManager extends LayoutManager {
 
   private def postXml(p: Post): NodeSeq = {
     val cssPostId = "post-"+ p.id
-    <div id={cssPostId} class="post">
+    <div id={cssPostId} class="post cropped-s cropped-e">
       <ul class="vote-summary">
         <li class="vote-score">+X</li>
         <li class="vote-is">interesting<span class="count">3</span></li>
