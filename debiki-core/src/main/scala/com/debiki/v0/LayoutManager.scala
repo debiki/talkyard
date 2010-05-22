@@ -45,24 +45,18 @@ class SimpleLayoutManager extends LayoutManager {
     for {
       c <- childPosts.sortBy(p => debate.postScore(p.id))
       cssThreadId = "thread-"+ c.id
-      cssPostId = "post-"+ c.id
       cssFloat = if (depth <= 1) "left " else ""
       cssDepth = "depth-"+ depth
     }
     yield
       <div id={cssThreadId} class={cssFloat + cssDepth + " thread"}>
-        { threadSummary(c) }
-        <div id={cssPostId} class="post">
-          { voteSummary(c) }
-          <div class="owner">{c.owner.getOrElse("Unknown")}</div>
-          <div class="time">April 1, 2010, 00:01</div>
-          { textToHtml(c.text) }
-        </div>
+        { threadSummaryXml(c) }
+        { postXml(c) }
         { _layoutChildren(depth + 1, c.id) }
       </div>
   }
 
-  private def threadSummary(post: Post): NodeSeq = {
+  private def threadSummaryXml(post: Post): NodeSeq = {
     val count = debate.successorsTo(post.id).length + 1
     if (count == 1)
       <ul class="thread-summary">
@@ -77,15 +71,24 @@ class SimpleLayoutManager extends LayoutManager {
       </ul>
   }
 
-  private def voteSummary(p: Post): NodeSeq =
-    <ul class="vote-summary">
-      <li class="vote-score">+X</li>
-      <li class="vote-it">agrees<span class="count">2</span></li>
-      <li class="vote-is">interesting<span class="count">3</span></li>
-      <li class="vote-is">funny<span class="count">1</span></li>
-    </ul>
+  private def postXml(p: Post): NodeSeq = {
+    val cssPostId = "post-"+ p.id
+    <div id={cssPostId} class="post">
+      <ul class="vote-summary">
+        <li class="vote-score">+X</li>
+        <li class="vote-is">interesting<span class="count">3</span></li>
+        <li class="vote-is">funny<span class="count">1</span></li>
+        {/* <li class="vote-it">agrees<span class="count">2</span></li> */}
+        <li>by&#160;<span class="owner">{
+              p.owner.getOrElse("Unknown")}</span></li>
+        {/*<li class="owner">{p.owner.getOrElse("Unknown")}</li>*/}
+      </ul>
+      <div class="time">April 1, 2010, 00:01</div>
+      { textToHtml(p.text) }
+    </div>
+  }
 
-  // Triggers compiler bug:
+  // Triggers compiler bug: -- in Scala 2.8.0-Beta1. Fixed in RC2 obviously.
   //private def test: NodeSeq = {
   //  for (i <- 1 to 2)
   //  yield

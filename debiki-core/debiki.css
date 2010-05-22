@@ -222,16 +222,10 @@ p:last-child {
 
 .vote-summary .vote-score {
   margin-left: 3px;
-  margin-right: 1em;
 }
 
-/* Won't work, because float:right reorders tags.
-.vote-summary .vote-it + .vote-is {
-  margin-left: 3em;
-} */
-
-.vote-summary .vote-is {
-  float: right;
+.vote-summary .owner {
+  font-style: italic;
 }
 
 .vote-summary li:hover {
@@ -260,19 +254,11 @@ p:last-child {
   }
 
 /* --- Buttons ---*/
-.post .owner,
 .post .time {
   float: right;
   padding: 1px 0.3em;
   position: relative;
   background-color: #DDD;
-}
-
-.post .owner {
-  /* Make it wider than the .time tag. */
-  min-width: 9em;
-}
-.post .time {
   clear: right;
 }
 
@@ -303,8 +289,6 @@ p:last-child {
   left: 10em;
 }
 
-.post .owner:hover,
-.post .time:hover,
 .post .edit:hover,
 .post .vote:hover,
 .post .reply:hover {
