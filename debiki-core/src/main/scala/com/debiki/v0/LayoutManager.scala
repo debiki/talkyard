@@ -11,13 +11,22 @@ import _root_.scala.xml.{NodeSeq, Elem}
 
 object LayoutManager {
 
-  def textToHtml(text: String): Elem =
-    <div class="text">{
-      // Two newlines ends a paragraph.
-      for (par <- text.split("\n\n").toList)
-        yield <p>{par}</p>
-    }
-    </div>
+  /** Converts text to xml, returns (html, approx-line-count).
+   */
+  def textToHtml(text: String, charsPerLine: Int): Tuple2[Elem, Int] = {
+    var lines = 0
+    val xml =
+        <div class="text">{
+          // Two newlines ends a paragraph.
+          for (par <- text.split("\n\n").toList)
+          yield {
+            lines += 1 + par.length / charsPerLine
+            <p>{par}</p>
+          }
+        }
+        </div>
+    (xml, lines)
+  }
 
 }
 
@@ -73,7 +82,10 @@ class SimpleLayoutManager extends LayoutManager {
 
   private def postXml(p: Post): NodeSeq = {
     val cssPostId = "post-"+ p.id
-    <div id={cssPostId} class="post cropped-s cropped-e">
+    val (xmlText, numLines) = textToHtml(p.text, charsPerLine = 80)
+    val long = numLines > 9
+    val cropped_s = if (long) " cropped-s" else ""
+    <div id={cssPostId} class={"post cropped-e" + cropped_s}>
       <ul class="vote-summary">
         <li class="vote-score">+X</li>
         <li class="vote-is">interesting<span class="count">3</span></li>
@@ -84,7 +96,7 @@ class SimpleLayoutManager extends LayoutManager {
         {/*<li class="owner">{p.owner.getOrElse("Unknown")}</li>*/}
       </ul>
       <div class="time">April 1, 2010, 00:01</div>
-      { textToHtml(p.text) }
+      { xmlText }
     </div>
   }
 

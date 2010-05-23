@@ -173,11 +173,36 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
 
 .post.cropped-s {
   max-height: 4em;
-  cursor: s-resize;
+  cursor: help;
 }
 
 .post.cropped-e {
   max-width: 25em;
+}
+
+.post.cropped-s .cropped-mark {
+  display: block;
+  position: absolute;
+  bottom: 0px;
+  right: -3px;
+  padding: 4px 25px 0 10px; /* there's a resizable-se grip to the right */
+  height: 17px;
+  background: #fcfaf5;/*#dddddd;*/
+  font-style: italic;
+  letter-spacing: 0.3ex;
+}
+.post.cropped-s:hover .ui-resizable-se,
+.post.cropped-s:hover .cropped-mark {
+  background-color: #fdc;
+  color: #363636;
+}
+/*
+.post.cropped-s .cropped-mark .ui-icon {
+  height: 15px;
+  display: inline-block;
+}*/
+.post .cropped-mark {
+  display: none; /* no longer cropped */
 }
 
 .post {

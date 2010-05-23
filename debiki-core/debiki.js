@@ -76,6 +76,10 @@ $(".vote-summary").click(function() {
 
 var posts = $(".debiki .post");
 
+// Indicate which posts are cropped.
+posts.filter('.cropped-s').append(
+    '<div class="cropped-mark">. . . truncated</div>');
+
 // Makes whole post visible on click.
 //
 posts.filter('.cropped-s').click(function(){
