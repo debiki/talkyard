@@ -159,12 +159,12 @@ catch (e) {
   else throw e;
 }
 
-$(".edit").hover(
+$("#action-menu .edit").hover(
   function(event){ $(this).append($("#edit-menu")); },
   function(event){ $("#hidden-menus").append($("#edit-menu")); }
   );
 
-$(".vote").hover(
+$("#action-menu .vote").hover(
   function(event){ $(this).append($("#vote-menu")); },
   function(event){ $("#hidden-menus").append($("#vote-menu")); }
   );
@@ -230,5 +230,11 @@ $(".thread. .reply.preview").hover(
     // is overflow-hidden, since the outline around it
     // will be cropped in a usually ugly manner.)
   });
+
+// Lazy adding (less important) CSS classes.
+// (So all these classes won't clutter the Scala source code files
+// and waste bandwidth.)
+//posts.find('.vote-summary .vote, .thread-summary .vote')
+//  .addClass('ui-corner-all');
 
 });

@@ -270,28 +270,29 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
 /* --- Vote summary ---*/
 
 .vote-summary {
-  --background-color: #F6F6F6;
   background-color: #EEE;
-  font-size: 93%;
+  font-size: 95%;
   padding: 0.3ex;
 }
 
 .vote-summary li {
   display: inline;
-  margin-left: 1ex;
+  margin-left: 0.7ex;
+}
+
+.thread-summary .vote,
+.vote-summary .vote {
+  position: relative;
+  top: -2px;
+  padding: 0px 3px 1px 5px;
+  font-size: 85%;
+  background-color: #f6f6f6; /*#E0EAF1;*/
+  border-bottom: 1px solid gray; /* #3E6D8E;*/
+  border-right: 1px solid gray; /*#7F9FB6;*/
 }
 
 .vote-summary .vote-score {
   margin-left: 3px;
-}
-
-.vote-summary .owner {
-  font-style: italic;
-}
-
-.vote-summary li:hover {
-  --background-color: #DFF;
-  --cursor: crosshair;
 }
 
 .vote-summary .count:before {
@@ -319,7 +320,7 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
   float: right;
   padding: 1px 0.3em;
   position: relative;
-  background-color: #DDD;
+  background-color: #eee;
   clear: right;
 }
 

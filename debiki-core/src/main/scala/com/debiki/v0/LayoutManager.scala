@@ -28,6 +28,11 @@ object LayoutManager {
     (xml, lines)
   }
 
+  /** Replaces spaces with the Unicode representation of non-breaking space,
+   *  which is interpreted as {@code &nbsp;} by Web browsers.
+   */
+  def spaceToNbsp(text: String): String = text.replace(' ', '\u00a0')
+
 }
 
 import LayoutManager._
@@ -74,9 +79,9 @@ class SimpleLayoutManager extends LayoutManager {
     else
       <ul class="thread-summary">
         <li class="post-count">{count} posts</li>
-        <li class="summary-score">score -1..+2..+5</li>
-        <li class="summary-is">interesting</li>
-        <li class="summary-is">funny</li>
+        <li class="vote-score">score -1..+2..+5</li>
+        <li class="vote">interesting</li>
+        <li class="vote">funny</li>
       </ul>
   }
 
@@ -88,12 +93,17 @@ class SimpleLayoutManager extends LayoutManager {
     <div id={cssPostId} class={"post cropped-e" + cropped_s}>
       <ul class="vote-summary">
         <li class="vote-score">+X</li>
-        <li class="vote-is">interesting<span class="count">3</span></li>
-        <li class="vote-is">funny<span class="count">1</span></li>
+        <li class="vote-is">
+          <span class="vote">interesting</span>
+          <span class="count">3</span>
+        </li>
+        <li class="vote-is">
+          <span class="vote">funny</span>
+          <span class="count">1</span>
+        </li>
         {/* <li class="vote-it">agrees<span class="count">2</span></li> */}
         <li>by&#160;<span class="owner">{
-              p.owner.getOrElse("Unknown")}</span></li>
-        {/*<li class="owner">{p.owner.getOrElse("Unknown")}</li>*/}
+              spaceToNbsp(p.owner.getOrElse("Unknown"))}</span></li>
       </ul>
       <div class="time">April 1, 2010, 00:01</div>
       { xmlText }
