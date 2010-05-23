@@ -139,7 +139,7 @@ p:last-child {
 
 /* === Posts === */
 
-.post .ui-resizable-se {
+.debiki .ui-resizable-se {
   /* The small grip has been replaced with the normal grip
   (search for "ui-icon-grip" in debiki.js), so we make the
   tag a few pixels wider. */
@@ -160,13 +160,13 @@ p:last-child {
 1 layer below the .ui-resizable-se handle (see above),
 so as not to hide that handle (which is assigned z-index 1001 by
 some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
-.post .ui-resizable-n,
-.post .ui-resizable-s {
+.debiki .ui-resizable-n,
+.debiki .ui-resizable-s {
   height: 20px;
   z-index: 1000;
 }
-.post .ui-resizable-e,
-.post .ui-resizable-w {
+.debiki .ui-resizable-e,
+.debiki .ui-resizable-w {
   width: 20px;
   z-index: 1000;
 }
@@ -203,6 +203,9 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
   font-size: 93%;
   cursor: default; /* otherwise the `text' cursor sometimes appears */
   border-color: #C3C3A8; /* javascript border */
+  padding-right: 1em; /* for the resizable-e handle */
+  overflow: hidden; /* if resized so text wrapped */
+  line-height: 110%; /* else upper parts of chars on wrapped line visible */
 }
 
 .thread-summary:hover {
@@ -211,6 +214,13 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
 
 .thread.demarcated > .thread-summary {
   cursor: s-resize;
+}
+
+.thread.collapsed .thread-summary .ui-resizable-handle {
+  display: none; /* thread is collapsed; show no resize handle */
+}
+.thread.collapsed .thread-summary:hover .ui-resizable-handle {
+  display: block; /* show resize handle when hovering collapsed thread */
 }
 
 .thread-summary li {

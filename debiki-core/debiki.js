@@ -84,9 +84,9 @@ posts.filter('.cropped-s').click(function(){
   $(this).closest('.post').removeClass('cropped-s');
 })
 
-// Make posts resizable.
+// Make posts and threads resizable.
 // Fails with a TypeError on Android: Cathching it and ignoring it.
-// (On Android, posts won't be resizable.)
+// (On Android, posts and threads won't be resizable.)
 try {
   posts
   .resizable({ autoHide: true })
@@ -108,6 +108,26 @@ try {
       console.log('mousedown: Removind cropped-s.');
       $(this).closest('.post').removeClass('cropped-s'); })
   .end();
+
+  // Resize threads.
+  // Bug: Resizing a thread might toggle it collapsed / expanded, since
+  // a click on the .thread-summary might happen.
+  $('.debiki .thread-summary').each(function(index) {
+    var thread = $(this).closest('.thread');
+    $(this).resizable({
+        alsoResize: thread,
+        handles: 'e',
+        stop: function(event, ui) {
+          // jQuery has added `height: ...' to the thread's style attribute.
+          // Unless removed, the therad won't resize itself when child
+          // threads are opened/closed.
+          thread.css('height', null);
+        }
+      })
+      // Add a resize icon.
+      .children('.ui-resizable-e')
+      .addClass('ui-icon ui-icon-grip-solid-vertical');
+  });
 }
 catch (e) {
   if (e.name == 'TypeError') console.log(e.name +': Failed to make '+
