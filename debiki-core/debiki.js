@@ -1,8 +1,9 @@
 // vim: fdm=marker et ts=2 sw=2
 
-threadHovered = null;
-
 jQuery.noConflict()(function($){
+
+var threadHovered = null;
+var didResize = false;
 
 $(".post, .thread-summary").hover(
   function(event){
@@ -89,24 +90,43 @@ posts.filter('.cropped-s').click(function(){
 // (On Android, posts and threads won't be resizable.)
 try {
   posts
-  .resizable({ autoHide: true })
-  // Make the resize grip larger.
+  .resizable({
+      autoHide: true,
+      start: function(event, ui) {
+        // Remove max height and width restrictions.
+        $(this).closest('.post').removeClass('cropped-s cropped-e');
+        didResize = true;
+      }
+     })
   .find('.ui-resizable-se')
+    // Make the resize grip larger.
     .removeClass('.ui-icon-gripsmall-diagonal-se')  // exchange small grip...
     .addClass('ui-icon-grip-diagonal-se')  // ...against the normal one
   .end()
-  // Remove max-height or -width when mouse down on a resize handle.
-  .find('.ui-resizable-se, .ui-resizable-e')
-    .mousedown(function(){
+  // Remove max-height and -width when mouse *up* on the resize-e handle.
+  // (This is a shortcut to reveal the whole post - only triggered if
+  // *clicking* the resize handle, but not dragging it.)
+  .find('.ui-resizable-e')
+    .mouseup(function(){
       // (Removing only max-width usually results in nothing:
       // The thread usually has a max-width.).
-      console.log('mousedown: Removind cropped-s and -e.');
-      $(this).closest('.post').removeClass('cropped-s cropped-e'); })
+      var post = $(this).closest('.post');
+      post.removeClass('cropped-s cropped-e');
+      // Expand post eastwards if resize handle was clicked not dragged.
+      // (Also expands southwards, but browsers usually expand to east first.)
+      if (!didResize) post.css('width', null).css('height', null);
+    })
   .end()
-  .find('.ui-resizable-s')
+  .find('.ui-resizable-s, .ui-resizable-se')
+    // Expand post southwards if resize handle was clicked not dragged.
+    .mouseup(function(){
+      if (!didResize) $(this).closest('.post').css('height', null);
+    })
+  .end()
+  .find('.ui-resizable-handle')
     .mousedown(function(){
-      console.log('mousedown: Removind cropped-s.');
-      $(this).closest('.post').removeClass('cropped-s'); })
+      didResize = false;
+    })
   .end();
 
   // Resize threads.
