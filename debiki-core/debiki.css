@@ -68,6 +68,10 @@ p:last-child {
 
 .debate {
   margin-left: 0.3em;
+  font-family: Verdana, sans-serif;
+  /* In the future: Georgia for titles? */
+  font-size: 93%;
+  line-height: 110%;
 }
 
 /* === Threads === */
