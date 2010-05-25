@@ -130,6 +130,7 @@ private[debiki] object App {
           <!-- <script type="text/javascript"
               src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.1/jquery-ui.min.js"/> -->
           <script type="text/javascript" src="debiki.js" />
+          <script type="text/javascript" src="js/debiki-layout.js" />
         </head>
         <body>
           { layoutMgr.layout(debate) }
