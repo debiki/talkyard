@@ -16,7 +16,13 @@ case class Forum private[debiki] (
 )
 */
 
-case class Debate private[debiki] (
+object Debate {
+
+  def empty(id: String) = Debate(id, Nil, Nil)
+
+}
+
+case class Debate (
   val id: String,
   private val posts: List[Post],
   private val votes: List[Vote]
