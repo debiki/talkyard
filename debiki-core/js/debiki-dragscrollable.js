@@ -28,12 +28,12 @@
  *                       | to find which will be the dragging elements. 
  *                       | Defaults to '>:first' which is the first child of 
  *                       | scrollable element
- * ------------------------------------------------------------------------		
- *  acceptPropagatedEvent| Will the dragging element accept propagated 
- *	                     | events? default is yes, a propagated mouse event 
- *	                     | on a inner element will be accepted and processed.
- *	                     | If set to false, only events originated on the
- *	                     | draggable elements will be processed.
+ * ------------------------------------------------------------------------
+ *  [Debiki]
+ *  scrollable           | Only scroll if the mouse-down event happened on
+ *                       | something scrollable, i.e. on somethin in
+ *                       | $(event.target).filter(scrollable).
+ *                       | Defaults to any element, i.e. '*'.
  * ------------------------------------------------------------------------
  *  preventDefault       | Prevents the event to propagate further effectivey
  *                       | dissabling other default actions. Defaults to true
@@ -44,15 +44,6 @@
  *  To add the scroll by drag to the element id=viewport when dragging its 
  *  first child accepting any propagated events
  *	$('#viewport').debiki_dragscrollable();
- *
- *  To add the scroll by drag ability to any element div of class viewport
- *  when dragging its first descendant of class dragMe responding only to
- *  evcents originated on the '.dragMe' elements.
- *	$('div.viewport').dragscrollable({dragSelector:'.dragMe:first',
- *									  acceptPropagatedEvent: false});
- *
- *  Notice that some 'viewports' could be nested within others but events
- *  would not interfere as acceptPropagatedEvent is set to false.
  *		
  */
 // [Debiki] Renamed from dragscrollable to debiki_dragscrollable,
@@ -62,19 +53,22 @@ $.fn.debiki_dragscrollable = function( options ){
 	var settings = $.extend(
 		{   
 			dragSelector:'>:first',
-			acceptPropagatedEvent: true,
+			scrollable: '*',
             preventDefault: true
 		},options || {});
 	 
 	
 	var dragscroll= {
 		mouseDownHandler : function(event) {
-			// mousedown, left click, check propagation
-			if (event.which!=1 ||
-				(!event.data.acceptPropagatedEvent && event.target != this)){ 
-				return false; 
-			}
-			
+			// Only left button drag-scrolls.
+			if (event.which !=1 )
+				return false;
+
+			// [Debiki]
+			// Only scroll if the mouse-down event was on something scrollable.
+			if (! $(event.target).filter(settings.scrollable).length)
+				return true;
+
 			// Initial coordinates will be the last when dragging
 			event.data.lastCoord = {left: event.clientX, top: event.clientY}; 
 		
