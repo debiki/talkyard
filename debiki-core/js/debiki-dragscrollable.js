@@ -71,7 +71,10 @@ $.fn.debiki_dragscrollable = function( options ){
 
 			// Initial coordinates will be the last when dragging
 			event.data.lastCoord = {left: event.clientX, top: event.clientY}; 
-		
+
+			// [Debiki] Remember start coordinates
+			event.data.startCoord = {left: event.clientX, top: event.clientY};
+
 			$.event.add( document, "mouseup", 
 						 dragscroll.mouseUpHandler, event.data );
 			$.event.add( document, "mousemove", 
@@ -85,7 +88,26 @@ $.fn.debiki_dragscrollable = function( options ){
 			// How much did the mouse move?
 			var delta = {left: (event.clientX - event.data.lastCoord.left),
 						 top: (event.clientY - event.data.lastCoord.top)};
-			
+
+			// [Debiki]
+			// Find movement since drag start.
+			var deltaAccum = {
+					left: Math.abs(event.clientX - event.data.startCoord.left),
+					top: Math.abs(event.clientY - event.data.startCoord.top)};
+			// If moved alot, move faster. Then can easily move viewport
+			// large distances, and still retain high precision when
+			// moving small distances. (The calculations below are just
+			// heuristics that works well on my computer.)
+			var mul;
+			if (deltaAccum.left > 9){
+				mul = Math.log((deltaAccum.left - 9) / 3);
+				if (mul > 1) delta.left *= mul;
+			}
+			if (deltaAccum.top > 5){
+				mul = Math.log((deltaAccum.top - 5) / 2);
+				if (mul > 1) delta.top *= mul;
+			}
+
 			// Set the scroll position relative to what ever the scroll is now
 			event.data.scrollable.scrollLeft(
 							event.data.scrollable.scrollLeft() - delta.left);
