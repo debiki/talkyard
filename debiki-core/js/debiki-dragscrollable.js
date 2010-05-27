@@ -8,6 +8,12 @@
  *   http://www.gnu.org/licenses/gpl.html
  *
  */
+/*
+ * Modified by Kaj Magnus Lindberg.
+ * Those changes indicated with "[Debiki]".
+ * Dual licensed under the above licenses: MIT, GPL.
+ */
+
 ;(function($){ // secure $ jQuery alias
 
 /**
@@ -37,7 +43,7 @@
  *
  *  To add the scroll by drag to the element id=viewport when dragging its 
  *  first child accepting any propagated events
- *	$('#viewport').dragscrollable(); 
+ *	$('#viewport').debiki_dragscrollable();
  *
  *  To add the scroll by drag ability to any element div of class viewport
  *  when dragging its first descendant of class dragMe responding only to
@@ -49,7 +55,9 @@
  *  would not interfere as acceptPropagatedEvent is set to false.
  *		
  */
-$.fn.dragscrollable = function( options ){
+// [Debiki] Renamed from dragscrollable to debiki_dragscrollable,
+// so as to not clash with unmodified versions of this plugin.
+$.fn.debiki_dragscrollable = function( options ){
    
 	var settings = $.extend(
 		{   
@@ -118,6 +126,6 @@ $.fn.dragscrollable = function( options ){
 		$(this).find(settings.dragSelector).
 						bind('mousedown', data, dragscroll.mouseDownHandler);
 	});
-}; //end plugin dragscrollable
+}; //end plugin debiki_dragscrollable
 
 })( jQuery ); // confine scope
