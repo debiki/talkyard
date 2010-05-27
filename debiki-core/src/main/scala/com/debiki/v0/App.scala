@@ -129,8 +129,15 @@ private[debiki] object App {
               src="js/debiki-jquery-ui-1.8.1.custom.min.js" />
           <!-- <script type="text/javascript"
               src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.1/jquery-ui.min.js"/> -->
+          <script type="text/javascript" src="js/debiki-dragscrollable.js" />
           <script type="text/javascript" src="debiki.js" />
           <script type="text/javascript" src="js/debiki-layout.js" />
+          <script type="text/javascript">
+            jQuery.noConflict()(function($){{
+              $('body').debiki_dragscrollable(
+                  {{ dragSelector: '.thread', scrollable: '.thread' }});
+            }});
+          </script>
         </head>
         <body>
           { layoutMgr.layout(debate) }
