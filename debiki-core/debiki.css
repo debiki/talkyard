@@ -129,6 +129,7 @@ p:last-child {
 /* --- Float ---*/
 .thread {
   float: left;
+  position: relative; /* #action-menu is absolute positioned relative thread */
   }
 .depth-2 * {
   float: none;
