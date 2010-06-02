@@ -16,7 +16,7 @@ object LayoutManager {
   def textToHtml(text: String, charsPerLine: Int): Tuple2[Elem, Int] = {
     var lines = 0
     val xml =
-        <div class="text">{
+        <div class="dw-text">{
           // Two newlines ends a paragraph.
           for (par <- text.split("\n\n").toList)
           yield {
@@ -49,7 +49,7 @@ class SimpleLayoutManager extends LayoutManager {
 
   def layout(debate: Debate): NodeSeq = {
     this.debate = debate
-    <div class="debiki debate">
+    <div class="debiki dw-debate">
       { _layoutChildren(0, debate.RootPostId) }
     </div>
   }
@@ -58,12 +58,12 @@ class SimpleLayoutManager extends LayoutManager {
     val childPosts: List[Post] = debate.repliesTo(post)
     for {
       c <- childPosts.sortBy(p => debate.postScore(p.id))
-      cssThreadId = "thread-"+ c.id
-      cssFloat = if (depth <= 1) "left " else ""
-      cssDepth = "depth-"+ depth
+      cssThreadId = "dw-thread-"+ c.id
+      cssFloat = if (depth <= 1) "dw-left " else ""
+      cssDepth = "dw-depth-"+ depth
     }
     yield
-      <div id={cssThreadId} class={cssFloat + cssDepth + " thread"}>
+      <div id={cssThreadId} class={cssFloat + cssDepth + " dw-thread"}>
         { threadSummaryXml(c) }
         { postXml(c) }
         { _layoutChildren(depth + 1, c.id) }
@@ -73,39 +73,39 @@ class SimpleLayoutManager extends LayoutManager {
   private def threadSummaryXml(post: Post): NodeSeq = {
     val count = debate.successorsTo(post.id).length + 1
     if (count == 1)
-      <ul class="thread-summary">
-        <li class="post-count">1 post</li>
+      <ul class="dw-thread-summary">
+        <li class="dw-post-count">1 post</li>
       </ul>
     else
-      <ul class="thread-summary">
-        <li class="post-count">{count} posts</li>
-        <li class="vote-score">score -1..+2..+5</li>
-        <li class="vote">interesting</li>
-        <li class="vote">funny</li>
+      <ul class="dw-thread-summary">
+        <li class="dw-post-count">{count} posts</li>
+        <li class="dw-vote-score">score -1..+2..+5</li>
+        <li class="dw-vote">interesting</li>
+        <li class="dw-vote">funny</li>
       </ul>
   }
 
   private def postXml(p: Post): NodeSeq = {
-    val cssPostId = "post-"+ p.id
+    val cssPostId = "dw-post-"+ p.id
     val (xmlText, numLines) = textToHtml(p.text, charsPerLine = 80)
     val long = numLines > 9
-    val cropped_s = if (long) " cropped-s" else ""
-    <div id={cssPostId} class={"post cropped-e" + cropped_s}>
-      <ul class="vote-summary">
-        <li class="vote-score">+X</li>
-        <li class="vote-is">
-          <span class="vote">interesting</span>
-          <span class="count">3</span>
+    val cropped_s = if (long) " dw-cropped-s" else ""
+    <div id={cssPostId} class={"dw-post dw-cropped-e" + cropped_s}>
+      <ul class="dw-vote-summary">
+        <li class="dw-vote-score">+X</li>
+        <li class="dw-vote-is">
+          <span class="dw-vote">interesting</span>
+          <span class="dw-count">3</span>
         </li>
-        <li class="vote-is">
-          <span class="vote">funny</span>
-          <span class="count">1</span>
+        <li class="dw-vote-is">
+          <span class="dw-vote">funny</span>
+          <span class="dw-count">1</span>
         </li>
-        {/* <li class="vote-it">agrees<span class="count">2</span></li> */}
-        <li>by&#160;<span class="owner">{
+        {/* <li class="dw-vote-it">agrees<span class="dw-count">2</span></li> */}
+        <li>by&#160;<span class="dw-owner">{
               spaceToNbsp(p.owner.getOrElse("Unknown"))}</span></li>
       </ul>
-      <div class="time">April 1, 2010, 00:01</div>
+      <div class="dw-time">April 1, 2010, 00:01</div>
       { xmlText }
     </div>
   }

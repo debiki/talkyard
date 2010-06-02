@@ -18,30 +18,30 @@ object HtmlUtil {
  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">"""
 
   val Menus =
-    <div id="hidden-menus">
-      <div id='action-menu' class='ui-state-default'>
-        <div class='reply'>Reply</div>
-        <div class='vote'>Vote</div>
-        <div class='edit'>Edit</div>
+    <div id="dw-hidden-menus">
+      <div id='dw-action-menu' class='ui-state-default'>
+        <div class='dw-reply'>Reply</div>
+        <div class='dw-vote'>Vote</div>
+        <div class='dw-edit'>Edit</div>
       </div>
-      <ul id="edit-menu" class="menu">
+      <ul id="dw-edit-menu" class="dw-menu">
         <li>Edit</li>
         <li>Copy&nbsp;&amp;&nbsp;edit</li>
         <li>Delete</li>
         <li>Move</li>
       </ul>
-      <ul id="vote-menu" class="menu">
-        <li class="up">Vote&nbsp;up</li>
-        <li class="down">Vote&nbsp;down</li>
-        <li class="it">It...
-          <ul class="sub menu">
-            <li>Agrees&nbsp;(with&nbsp;the&nbsp;<span class="parent-ref">parent</span>&nbsp;post,
+      <ul id="dw-vote-menu" class="dw-menu">
+        <li class="dw-up">Vote&nbsp;up</li>
+        <li class="dw-down">Vote&nbsp;down</li>
+        <li class="dw-it">It...
+          <ul class="dw-sub dw-menu">
+            <li>Agrees&nbsp;(with&nbsp;the&nbsp;<span class="dw-parent-ref">parent</span>&nbsp;post,
               <i>but not necessarily with you</i>)</li>
             <li>Disagrees</li>
           </ul>
         </li>
-        <li class="it-is">It is...
-          <ul class="sub menu">
+        <li class="dw-it-is">It is...
+          <ul class="dw-sub dw-menu">
             <li>Interesting</li>
             <li>Obvious</li>
             <li>Insightsful</li>
@@ -51,25 +51,25 @@ object HtmlUtil {
             <li>Troll</li>
           </ul>
         </li>
-        <li class="suggestions">Vote&nbsp;on&nbsp;suggestions...
-          <ul class="sub menu">
+        <li class="dw-suggestions">Vote&nbsp;on&nbsp;suggestions...
+          <ul class="dw-sub dw-menu">
             <li>Show&nbsp;all</li>
           </ul>
         </li>
       </ul>
-      <ul id="reply-menu" class="menu">
+      <ul id="dw-reply-menu" class="dw-menu">
         <li>Just&nbsp;reply</li>
         <li>Agree</li>
         <li>Dissent</li>
         <li>Off&nbsp;topic</li>
       </ul>
-      <div class='reply-template'>
-        <div class='depth-3 thread reply preview'>
-          <div class='post'>
-            <div class='owner'><i>Your reply</i></div>
-            <div class='text'>The cat was playing in the garden.</div>
+      <div class='dw-reply-template'>
+        <div class='dw-depth-3 dw-thread dw-reply dw-preview'>
+          <div class='dw-post'>
+            <div class='dw-owner'><i>Your reply</i></div>
+            <div class='dw-text'>The cat was playing in the garden.</div>
           </div>
-          <form class='agree reply'
+          <form class='dw-agree dw-reply'
               action='http://localhost:8084/tinywiki/Wiki.jsp?page=Main'
               accept-charset='UTF-8'
               method='post'>
@@ -77,8 +77,8 @@ object HtmlUtil {
             <input type='hidden' name='author' value='Unknown'/>
             <textarea name='reply' rows='10' cols='30'
               >The cat was playing in the garden.</textarea><br/>
-            <input class='submit' type='submit' value='Submit reply'/>
-            <button class='cancel' type='button'>Cancel</button>
+            <input class='dw-submit' type='submit' value='Submit reply'/>
+            <button class='dw-cancel' type='button'>Cancel</button>
           </form>
         </div>
       </div>
@@ -135,7 +135,7 @@ private[debiki] object App {
           <script type="text/javascript">
             jQuery.noConflict()(function($){{
               $('body').debiki_dragscrollable(
-                  {{ dragSelector: '.thread', scrollable: '.thread' }});
+                  {{ dragSelector: '.dw-thread', scrollable: '.dw-thread' }});
             }});
           </script>
         </head>

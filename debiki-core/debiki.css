@@ -66,7 +66,7 @@ p:last-child {
 
 /* === Debate === */
 
-.debate {
+.dw-debate {
   margin-left: 0.3em;
   font-family: Verdana, sans-serif;
   /* In the future: Georgia for titles? */
@@ -76,25 +76,25 @@ p:last-child {
 
 /* === Threads === */
 
-.depth-0.thread {
+.dw-depth-0.dw-thread {
   /* center root post */
   margin: 1em auto;
 }
-.depth-0 .thread {
+.dw-depth-0 .dw-thread {
   margin: 0.3em 0 0 0;
   /* transparent won't work: jQuery's class animation would fade
   to *white*, but the color shining through should be
-  .depth-1.thread's background-color. */
+  .dw-depth-1.dw-thread's background-color. */
   border-left: 0.5em solid #fcfaf5; /*transparent*/
   margin-left: 0.5em;
   border-bottom: 0.8ex solid #fcfaf5; /*transparent*/
   margin-bottom: 0.2ex;
   background-color: inherit;
   }
-.depth-0 > .thread {
+.dw-depth-0 > .dw-thread {
   margin-left: 0.5em;
   }
-.xx.thread.depth-0 > .thread:nth-child(2) {
+.xx.dw-thread.dw-depth-0 > .dw-thread:nth-child(2) {
   /* thread no. 2 is currently the leftmost one,
    * need no left margin, since whole .debate already
    * has left margin.
@@ -102,7 +102,7 @@ p:last-child {
    */
   margin-left: 0;
   }
-.depth-0 .thread.demarcated-fx {
+.dw-depth-0 .dw-thread.dw-demarcated-fx {
   /* Unfortunately animating the background color won't
   look nice since there migh be child threads whose
   background color it *not* animated. Perhaps this can
@@ -111,33 +111,33 @@ p:last-child {
   border-left-color: #f3f1dc;
   border-bottom-color: #d1d1ae;
 }
-.depth-0 .thread.collapsed-fx {
+.dw-depth-0 .dw-thread.dw-collapsed-fx {
   /* Thread is collapsed, hence its summary is visible,
   so add extra margin to previous tag (which is a .post or .thread tag)
   so there's space for a position=absolute Reply button,
   although the thread summary tag is visible. */
   margin-top: 1.2em;
 }
-.depth-1.thread {
+.dw-depth-1.dw-thread {
   background-color: #fcfaf5;
 }
-.depth-1 .thread {
+.dw-depth-1 .dw-thread {
   padding-left: 0;
   border-top: none;
   }
 
 /* --- Float ---*/
-.thread {
+.dw-thread {
   float: left;
   position: relative; /* #action-menu is absolute positioned relative thread */
   }
-.depth-2 * {
+.dw-depth-2 * {
   float: none;
   }
 
 /* --- Width ---*/
-.depth-1,
-.depth-1 .thread {
+.dw-depth-1,
+.dw-depth-1 .dw-thread {
   /* Avoids >1 column for this depth */
   max-width: 25em;
   }
@@ -156,7 +156,7 @@ p:last-child {
   background-color: #FCFAF5;
 }
 
-.post p {
+.dw-post p {
   /* Don't span whole screen even if .post.cropped-e is removed. */
   max-width: 50em;
 }
@@ -176,16 +176,16 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
   z-index: 1000;
 }
 
-.post.cropped-s {
+.dw-post.dw-cropped-s {
   max-height: 4em;
   cursor: help;
 }
 
-.post.cropped-e {
+.dw-post.dw-cropped-e {
   max-width: 25em;
 }
 
-.post.cropped-s .cropped-mark {
+.dw-post.dw-cropped-s .dw-cropped-mark {
   display: block;
   position: absolute;
   bottom: 0px;
@@ -196,28 +196,28 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
   font-style: italic;
   letter-spacing: 0.3ex;
 }
-.post.cropped-s:hover .ui-resizable-se,
-.post.cropped-s:hover .cropped-mark {
+.dw-post.dw-cropped-s:hover .ui-resizable-se,
+.dw-post.dw-cropped-s:hover .dw-cropped-mark {
   background-color: #fdc;
   color: #363636;
 }
 /*
-.post.cropped-s .cropped-mark .ui-icon {
+.dw-post.dw-cropped-s .dw-cropped-mark .ui-icon {
   height: 15px;
   display: inline-block;
 }*/
-.post .cropped-mark {
+.dw-post .dw-cropped-mark {
   display: none; /* no longer cropped */
 }
 
-.post {
+.dw-post {
   overflow: hidden;
   min-height: 1.1em;
   min-width: 5em;
   background-color: #fcfaf5;
   margin: 0 5px 3px 0;
   }
-.post:hover {
+.dw-post:hover {
   outline: #888 dashed thin;
   /* In case the post has been up-sized, its up-sized
   parts might be hidden by a thread, unless: */
@@ -226,7 +226,7 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
 
 /* --- Thread summary ---*/
 
-.thread-summary {
+.dw-thread-summary {
   background-color: #F3F3D0;
   opacity: 0;
   padding: 0.3ex;
@@ -238,55 +238,55 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
   line-height: 110%; /* else upper parts of chars on wrapped line visible */
 }
 
-.thread-summary:hover {
+.dw-thread-summary:hover {
   background-color: #FEFEDD;
 }
 
-.thread.demarcated > .thread-summary {
+.dw-thread.dw-demarcated > .dw-thread-summary {
   cursor: s-resize;
 }
 
-.thread.collapsed .thread-summary .ui-resizable-handle {
+.dw-thread.dw-collapsed .dw-thread-summary .ui-resizable-handle {
   display: none; /* thread is collapsed; show no resize handle */
 }
-.thread.collapsed .thread-summary:hover .ui-resizable-handle {
+.dw-thread.dw-collapsed .dw-thread-summary:hover .ui-resizable-handle {
   display: block; /* show resize handle when hovering collapsed thread */
 }
 
-.thread-summary li {
+.dw-thread-summary li {
   display: inline;
   margin-left: 1ex;
 }
 
 /*
-.thread-summary .post-count:before {
+.dw-thread-summary .dw-post-count:before {
   content: 'Thread with ';
 }
 
-.thread-summary li:after {
+.dw-thread-summary li:after {
   content: ',';
 }
 
-.thread-summary .summary-score:after {
+.dw-thread-summary .dw-summary-score:after {
   content: ', mostly';
 }
 */
 
 /* --- Vote summary ---*/
 
-.vote-summary {
+.dw-vote-summary {
   background-color: #EEE;
   font-size: 95%;
   padding: 0.3ex;
 }
 
-.vote-summary li {
+.dw-vote-summary li {
   display: inline;
   margin-left: 0.7ex;
 }
 
-.thread-summary .vote,
-.vote-summary .vote {
+.dw-thread-summary .dw-vote,
+.dw-vote-summary .dw-vote {
   position: relative;
   top: -2px;
   padding: 0px 3px 1px 5px;
@@ -296,19 +296,19 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
   border-right: 1px solid gray; /*#7F9FB6;*/
 }
 
-.vote-summary .vote-score {
+.dw-vote-summary .dw-vote-score {
   margin-left: 3px;
 }
 
-.vote-summary .count:before {
+.dw-vote-summary .dw-count:before {
   content: "×"; /* The multiplication sign, U+00D7 */
 }
 
 /* --- Meta ---*/
-.post {
+.dw-post {
   position: relative;
   }
-.post .meta {
+.dw-post .dw-meta {
   display: none;
   position: absolute;
   top: -16px;
@@ -316,12 +316,12 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
   padding: 0 1.2em 0 5px; /* there's a .thread border to the left */
   background-color: lightGrey;
   }
-.post:hover .meta {
+.dw-post:hover .dw-meta {
   --display: block
   }
 
 /* --- Buttons ---*/
-.post .time {
+.dw-post .dw-time {
   float: right;
   padding: 1px 0.3em;
   position: relative;
@@ -329,12 +329,12 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
   clear: right;
 }
 
-#action-menu {
+#dw-action-menu {
   position: absolute;
 }
-#action-menu .edit,
-#action-menu .vote,
-#action-menu .reply {
+#dw-action-menu .dw-edit,
+#dw-action-menu .dw-vote,
+#dw-action-menu .dw-reply {
   position: absolute;
   top: -2px;
   z-index: 20;
@@ -349,74 +349,74 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
   background-color: #fcfaf5;
   cursor: crosshair;
 }
-#action-menu .edit {
+#dw-action-menu .dw-edit {
   left: 5em;
 }
-#action-menu .vote {
+#dw-action-menu .dw-vote {
   left: 10em;
 }
 
-.post .edit:hover,
-.post .vote:hover,
-.post .reply:hover {
+.dw-post .dw-edit:hover,
+.dw-post .dw-vote:hover,
+.dw-post .dw-reply:hover {
   background-color: #CCF;
   cursor: default;
 }
 
 /* --- Text ---*/
-.post .text {
+.dw-post .dw-text {
   padding: 3px 1px 3px;
 }
 
 /* --- Menus ---*/
-.menu {
+.dw-menu {
   position: absolute;
   background-color: #CCF;
   left: 1ex;
   z-index: 20;
 }
 
-.menu li {
+.dw-menu li {
   padding: 0.8ex 1ex;
 }
 
-.menu li:hover {
+.dw-menu li:hover {
   background-color: #EEF;
   cursor: crosshair;
 }
 
-#hidden-menus {
+#dw-hidden-menus {
   display: none;
 }
 
-.menu .sub.menu {
+.dw-menu .dw-sub.dw-menu {
   visibility: hidden;
   left: 2em;
   background-color: #DBF;
 }
 
-.menu li:hover > .sub.menu {
+.dw-menu li:hover > .dw-sub.dw-menu {
   visibility: visible;
 }
 
-.menu .sub.menu li:hover {
+.dw-menu .dw-sub.dw-menu li:hover {
   background-color: #EDF;
 }
 
 /* === Reply === */
 
-form.reply {
+form.dw-reply {
   margin-top: 0.8em;
   margin-bottom: 0.4em;
 }
 
 /* === Misc === */
 
-.parent-ref {
+.dw-parent-ref {
   font-weight: bold;
 }
 
-.highlight {
+.dw-highlight {
   outline: blue dotted medium
 }
 

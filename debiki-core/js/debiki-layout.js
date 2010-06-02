@@ -10,8 +10,8 @@ var dummyScope;
 // Make root thread wide enough to contain all its child posts.
 dummyScope = function(){
   var width = 200;
-  var root = $('.debiki > .thread');
-  root.children('.thread').each(function(){
+  var root = $('.debiki > .dw-thread');
+  root.children('.dw-thread').each(function(){
     width += $(this).outerWidth(true);
   });
   root.css('width', width);
