@@ -17,6 +17,13 @@ object HtmlUtil {
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">"""
 
+  val ccWikiLicense =
+    <a rel="license" href="http://creativecommons.org/licenses/by/3.0/">
+      Creative Commons Attribution 3.0 Unported License
+    </a>
+
+  val submitButtonText = "Submit reply"
+
   val Menus =
     <div id="dw-hidden-menus">
       <div id='dw-action-menu' class='ui-state-default'>
@@ -67,7 +74,6 @@ object HtmlUtil {
         <div class='dw-depth-3 dw-thread dw-reply dw-preview'>
           <div class='dw-post'>
             <div class='dw-owner'><i>Your reply</i></div>
-            <div class='dw-text'>The cat was playing in the garden.</div>
           </div>
           <form class='dw-agree dw-reply'
               action='http://localhost:8084/tinywiki/Wiki.jsp?page=Main'
@@ -75,9 +81,13 @@ object HtmlUtil {
               method='post'>
             <input type='hidden' name='parent' value='a'/>
             <input type='hidden' name='author' value='Unknown'/>
-            <textarea name='reply' rows='10' cols='30'
+            <textarea name='reply' rows='10' cols='34'
               >The cat was playing in the garden.</textarea><br/>
-            <input class='dw-submit' type='submit' value='Submit reply'/>
+            <p class='dw-user-contrib-license'>
+              By clicking <i>{submitButtonText}</i>, you agree to license
+              the text you submit under the {ccWikiLicense}.
+            </p>
+            <input class='dw-submit' type='submit' value={submitButtonText}/>
             <button class='dw-cancel' type='button'>Cancel</button>
           </form>
         </div>

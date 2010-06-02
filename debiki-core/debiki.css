@@ -405,9 +405,25 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
 
 /* === Reply === */
 
+.dw-thread.dw-reply {
+  z-index: 99999; /* license agreement should always be visible */
+  background-color: #fcfaf5; /*FCFAF5*/
+  padding: 5px; /* push outline away */
+  outline: #e9e dotted thick;
+}
+
 form.dw-reply {
   margin-top: 0.8em;
   margin-bottom: 0.4em;
+}
+
+.dw-user-contrib-license {
+  color: #666;
+  font-size: 70%;
+  margin: 1em 0px;
+}
+.dw-user-contrib-license a {
+  color: #777;
 }
 
 /* === Misc === */
