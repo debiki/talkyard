@@ -332,7 +332,6 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
 #dw-action-menu {
   position: absolute;
 }
-#dw-action-menu .dw-edit,
 #dw-action-menu .dw-vote,
 #dw-action-menu .dw-reply {
   position: absolute;
@@ -349,14 +348,10 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
   background-color: #fcfaf5;
   cursor: crosshair;
 }
-#dw-action-menu .dw-edit {
-  left: 5em;
-}
 #dw-action-menu .dw-vote {
   left: 10em;
 }
 
-.dw-post .dw-edit:hover,
 .dw-post .dw-vote:hover,
 .dw-post .dw-reply:hover {
   background-color: #CCF;

@@ -160,11 +160,6 @@ catch (e) {
   else throw e;
 }
 
-$("#dw-action-menu .dw-edit").hover(
-  function(event){ $(this).append($("#dw-edit-menu")); },
-  function(event){ $("#dw-hidden-menus").append($("#dw-edit-menu")); }
-  );
-
 $("#dw-action-menu .dw-vote").hover(
   function(event){ $(this).append($("#dw-vote-menu")); },
   function(event){ $("#dw-hidden-menus").append($("#dw-vote-menu")); }

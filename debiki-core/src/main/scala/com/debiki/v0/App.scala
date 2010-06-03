@@ -29,14 +29,7 @@ object HtmlUtil {
       <div id='dw-action-menu' class='ui-state-default'>
         <div class='dw-reply'>Reply</div>
         <div class='dw-vote'>Vote</div>
-        <div class='dw-edit'>Edit</div>
       </div>
-      <ul id="dw-edit-menu" class="dw-menu">
-        <li>Edit</li>
-        <li>Copy&nbsp;&amp;&nbsp;edit</li>
-        <li>Delete</li>
-        <li>Move</li>
-      </ul>
       <ul id="dw-vote-menu" class="dw-menu">
         <li class="dw-up">Vote&nbsp;up</li>
         <li class="dw-down">Vote&nbsp;down</li>
