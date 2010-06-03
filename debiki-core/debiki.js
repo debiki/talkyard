@@ -194,6 +194,8 @@ $("#dw-action-menu .dw-reply").click(function() {
   post.after(reply);
   // Dismiss action menu
   $('#dw-action-menu').appendTo($('#dw-hidden-menus'));
+  // Resize the root thread (in case this reply-thread is a new child of it).
+  DebikiLayout.resizeRootThread(); // see debiki-layout.js
 });
 
 $("#dw-hidden-menus .dw-reply .dw-cancel").click(function() {
