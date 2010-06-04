@@ -133,6 +133,7 @@ p:last-child {
   }
 .dw-depth-2 * {
   float: none;
+  clear: both; /* else the vote form might float to the left */
   }
 
 /* --- Width ---*/
@@ -352,12 +353,6 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
   left: 10em;
 }
 
-.dw-post .dw-vote:hover,
-.dw-post .dw-reply:hover {
-  background-color: #CCF;
-  cursor: default;
-}
-
 /* --- Text ---*/
 .dw-post .dw-text {
   padding: 3px 1px 3px;
@@ -398,13 +393,21 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
   background-color: #EDF;
 }
 
+/* === Forms === */
+
+.debiki form label,
+.debiki form input {
+  margin-top: 1em;
+}
+
 /* === Reply === */
 
 .dw-thread.dw-reply {
   z-index: 99999; /* license agreement should always be visible */
   background-color: #fcfaf5; /*FCFAF5*/
   padding: 5px; /* push outline away */
-  outline: #e9e dotted thick;
+  outline: #e9e solid thick;
+  margin: 1em;
 }
 
 form.dw-reply {
@@ -416,9 +419,24 @@ form.dw-reply {
   color: #666;
   font-size: 70%;
   margin: 1em 0px;
+  max-width: 32em; /* else license text makes reply-thread very wide */
 }
 .dw-user-contrib-license a {
   color: #777;
+}
+
+/* === Vote === */
+
+form.dw-vote {
+  background-color: #fcfaf5; /*FCFAF5*/
+  padding: 1em; /* push outline away */
+  margin: 1em;
+  outline: #9ee solid thick;
+  float: left; /* else: sometimes very wide; reply-form might appear inside! */
+}
+
+form.dw-vote fieldset {
+  margin-bottom: 1em;
 }
 
 /* === Misc === */

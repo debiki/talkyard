@@ -85,6 +85,24 @@ object HtmlUtil {
           </form>
         </div>
       </div>
+      <div class='dw-vote-template'>
+        <form class='dw-vote'
+            action='http://localhost:8084/tinywiki/Wiki.jsp?page=Main'
+            accept-charset='UTF-8'
+            method='post'>
+          <input type='hidden' name='post' value='?'/>
+          <fieldset>
+            {/* <legend>Up or down</legend> -- what a silly legend */}
+            <input type='radio' name='vote' value='up' id='dw-vote-up'/>
+            <label for='dw-vote-up'>Vote up</label><br/>
+            <input type='radio' name='vote' value='down' id='dw-vote-down'/>
+            <label for='dw-vote-down'>Vote down</label><br/>
+          </fieldset>
+          <input class='dw-submit' type='submit' value='Submit votes'
+              disabled='disabled'/> {/* enabled on radio button click */}
+          <input class='dw-cancel' type='button' value='Cancel'/>
+        </form>
+      </div>
     </div>
 
 }

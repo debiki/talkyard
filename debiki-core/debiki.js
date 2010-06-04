@@ -10,10 +10,15 @@ $(".dw-post, .dw-thread-summary").hover(
     var nextThread = $(this).closest('.dw-thread');
 
     if ($(this).hasClass('dw-post')) {
-      // Show the #action-menu, unless the thread is closing,
-      // and unless the thread itself is already a .reply thread.
-      if (!nextThread.hasClass('dw-collapsed') &&
-          !nextThread.hasClass('dw-reply')) {
+      // Show the #action-menu, unless the thread is closing (A)
+      // and unless the thread itself is already a .reply thread (B)
+      // and unless the thread doesn't already have a vote-form (C)
+      // or a reply-form child (D).
+      // (C and D: Better not open many action forms at once.)
+      if (!nextThread.hasClass('dw-collapsed') &&  // A
+          !nextThread.hasClass('dw-reply') &&  // B
+          !nextThread.children()
+              .filter('.dw-reply, .dw-vote').length) {  // C, D
         $(this).after($('#dw-action-menu'))
       }
     }
@@ -160,21 +165,29 @@ catch (e) {
   else throw e;
 }
 
-$("#dw-action-menu .dw-vote").hover(
-  function(event){ $(this).append($("#dw-vote-menu")); },
-  function(event){ $("#dw-hidden-menus").append($("#dw-vote-menu")); }
-  );
+$('#dw-action-menu .dw-vote').click(function(){
+  // Warning: Some duplicated code, see .dw-reply click() below.
+  var post = $(this).closest('.dw-thread').children('.dw-post');
+  var vote = $('#dw-hidden-menus .dw-vote-template').children().clone(true);
+  var postId = post.attr('id').substr(8, 999); // drop initial 'dw-post-'
+  vote.find("input[name='post']").attr('value', postId);
+  post.after(vote);
+  // Dismiss action menu
+  $('#dw-action-menu').appendTo($('#dw-hidden-menus'));
+  // Enable submit button when votes specified
+  vote.find("input[type='radio']").click(function(){
+    vote.find("input[type='submit']")[0].disabled = false;
+  });
+});
 
-/*
-$(".dw-reply").hover(
-  function(event){ $(this).append($("#dw-reply-menu")); },
-  function(event){ $("#dw-hidden-menus").append($("#dw-reply-menu")); }
-  );
-*/
+$("#dw-hidden-menus .dw-vote .dw-cancel").click(function() {
+  $(this).closest('form.dw-vote').remove();
+});
 
 $("#dw-action-menu .dw-reply").click(function() {
+  // Warning: Some duplicated code, see .dw-vote click() above.
   var post = $(this).closest(".dw-thread").children(".dw-post");
-  var reply = $("#dw-hidden-menus .dw-reply-template").clone(true);
+  var reply = $("#dw-hidden-menus .dw-reply-template").children().clone(true);
   var postId = post.attr('id').substr(8, 999); // drop initial "dw-post-"
   reply.find("input[name='parent']").attr('value', postId);
   reply.find("input[name='author']").attr('value', 'Author unknown');
@@ -183,7 +196,7 @@ $("#dw-action-menu .dw-reply").click(function() {
   $('#dw-action-menu').appendTo($('#dw-hidden-menus'));
 });
 
-$("#dw-hidden-menus button.dw-cancel").click(function() {
+$("#dw-hidden-menus .dw-reply .dw-cancel").click(function() {
   $(this).closest('.dw-thread.dw-reply.dw-preview').remove();
 });
 
