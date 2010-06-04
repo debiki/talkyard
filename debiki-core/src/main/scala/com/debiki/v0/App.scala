@@ -73,9 +73,11 @@ object HtmlUtil {
               accept-charset='UTF-8'
               method='post'>
             <input type='hidden' name='parent' value='a'/>
-            <input type='hidden' name='author' value='Unknown'/>
             <textarea name='reply' rows='10' cols='34'
               >The cat was playing in the garden.</textarea><br/>
+            <label for='dw-reply-author'>Your name or alias:</label>
+            <input type='text' name='author'
+                  value='Anonymous' id='dw-reply-author'/><br/>
             <p class='dw-user-contrib-license'>
               By clicking <i>{submitButtonText}</i>, you agree to license
               the text you submit under the {ccWikiLicense}.

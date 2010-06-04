@@ -190,7 +190,6 @@ $("#dw-action-menu .dw-reply").click(function() {
   var reply = $("#dw-hidden-menus .dw-reply-template").children().clone(true);
   var postId = post.attr('id').substr(8, 999); // drop initial "dw-post-"
   reply.find("input[name='parent']").attr('value', postId);
-  reply.find("input[name='author']").attr('value', 'Author unknown');
   post.after(reply);
   // Dismiss action menu
   $('#dw-action-menu').appendTo($('#dw-hidden-menus'));
