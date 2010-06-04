@@ -1,20 +1,9 @@
 // vim: ts=2 sw=2 et
 
-
 package com.debiki.v0
 
 import collection.{immutable => imm, mutable => mut}
 import Prelude._
-
-/*
-package object debate {
-  type ID = String
-}
-
-case class Forum private[debiki] (
-  id: String
-)
-*/
 
 object Debate {
 
@@ -68,11 +57,6 @@ case class Debate (
   def + (vote: Vote): Debate = copy(votes = vote :: votes)
   def - (vote: Vote): Debate = copy(votes = votes filter (_ != vote))
 
-  /*
-  def logFor(postId: String): List[LogEntry] =
-    postLogs.getOrElse(postId, Nil)
-  */
-
   lazy val nextFreePostId: String = {
     var nextFree = 0
     for {
@@ -87,11 +71,6 @@ case class Debate (
 
 }
 
-/*
-case class LogEntry {
-}
-*/
-
 case class Vote private[debiki] (
   postId: String,
   voterId: String,
@@ -99,76 +78,9 @@ case class Vote private[debiki] (
   is: List[String],
   score: Int)
 
-/*
-class PostVotes {
-  val move = mut.Map[Move, Int]()
-  val topics = mut.Map[String, Int]()
-  val contents = mut.Map[String, Int]()
-  val relations = mut.Map[Relation, Int]()
-}
-*/
-
 case class Post(
   id: String,
   parent: String,
   owner: Option[String],
   text: String
 )
-
-/*
-sealed class Move
-object Move {
-  case object Up extends Move
-  case object Down extends Move
-}
-
-sealed class Relation
-object Relation {
-  case class Aggrees(postId: String) extends Relation
-  case class Dissents(postId: String) extends Relation
-}
-*/
-
-
-/*
-class VoteCategory extends Enumeration {
-  val Placement, Relations, Content, Topic = Value
-  type VoteCategory = Value
-}
-
-import reflect.BeanProperty
-
-object Log {
-  class EntryBean {
-  }
-}
-
-class LogBean{
-  import Log._
-  @BeanProperty var id = ""
-  @BeanProperty var log: java.util.List[EntryBean] = null
-}
-
-object DebateBean {
-  class Props {
-    @BeanProperty var id = ""
-  }
-  class Layout {
-    @BeanProperty var id = ""
-  }
-  class Log extends LogBean {
-  }
-}
-
-object PostBean {
-  class Props {
-    @BeanProperty var id = ""
-  }
-  class Text {
-    @BeanProperty var id = ""
-    @BeanProperty var text = ""
-  }
-  class Log extends LogBean {
-  }
-}
-*/

@@ -120,6 +120,3 @@ class SimpleLayoutManager extends LayoutManager {
   //}
 }
 
-// Intresting
-// http://www.dailykos.com/story/2010/4/1/853138/-Kaptur:-More-Agents-Needed-for-Financial-Prosecutions#c35
-

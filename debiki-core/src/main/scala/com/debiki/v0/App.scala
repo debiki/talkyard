@@ -2,9 +2,6 @@
 
 package com.debiki.v0
 
-// Nice threads:
-// http://springthistle.com/wp-content/uploads/2010/03/comments.png
-
 import org.yaml.{snakeyaml => y}
 import io._
 import scala.collection.JavaConversions._
@@ -177,19 +174,3 @@ private[debiki] object App {
     }
   }
 }
-
-/*
-object DebikiYaml {
-
-  def newYaml: y.Yaml = {
-    val opts = new y.DumperOptions
-    //opts.setDefaultFlowStyle(y.DumperOptions.FlowStyle.BLOCK)
-    //opts.setDefaultScalarStyle(y.DumperOptions.ScalarStyle.LITERAL)
-    opts.setLineBreak(y.DumperOptions.LineBreak.UNIX)
-    opts.setIndent(1)
-    val loader = new y.Loader(new y.constructor.SafeConstructor)
-    new y.Yaml(loader, new y.Dumper(opts))
-  }
-
-}
-*/
