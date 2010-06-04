@@ -65,6 +65,9 @@ case class Debate (
   def + (post: Post): Debate = copy(posts = post :: posts)
   def - (post: Post): Debate = copy(posts = posts filter (_ != post))
 
+  def + (vote: Vote): Debate = copy(votes = vote :: votes)
+  def - (vote: Vote): Debate = copy(votes = votes filter (_ != vote))
+
   /*
   def logFor(postId: String): List[LogEntry] =
     postLogs.getOrElse(postId, Nil)
