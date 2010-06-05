@@ -46,9 +46,11 @@ abstract class LayoutManager {
 class SimpleLayoutManager extends LayoutManager {
 
   private var debate: Debate = null
+  private var scorecalc: ScoreCalculator = null;
 
   def layout(debate: Debate): NodeSeq = {
     this.debate = debate
+    this.scorecalc = new ScoreCalculator(debate)
     <div class="debiki dw-debate">
       { _layoutChildren(0, debate.RootPostId) }
     </div>
@@ -57,7 +59,7 @@ class SimpleLayoutManager extends LayoutManager {
   private def _layoutChildren(depth: Int, post: String): NodeSeq = {
     val childPosts: List[Post] = debate.repliesTo(post)
     for {
-      c <- childPosts.sortBy(p => debate.postScore(p.id))
+      c <- childPosts.sortBy(p => -scorecalc.scoreFor(p.id).score)
       cssThreadId = "dw-thread-"+ c.id
       cssFloat = if (depth <= 1) "dw-left " else ""
       cssDepth = "dw-depth-"+ depth
@@ -92,7 +94,7 @@ class SimpleLayoutManager extends LayoutManager {
     val cropped_s = if (long) " dw-cropped-s" else ""
     <div id={cssPostId} class={"dw-post dw-cropped-e" + cropped_s}>
       <ul class="dw-vote-summary">
-        <li class="dw-vote-score">+X</li>
+        <li class="dw-vote-score">{ scorecalc.scoreFor(p.id).score }</li>
         <li class="dw-vote-is">
           <span class="dw-vote">interesting</span>
           <span class="dw-count">3</span>
