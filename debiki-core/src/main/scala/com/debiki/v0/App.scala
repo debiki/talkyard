@@ -14,96 +14,6 @@ object HtmlUtil {
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">"""
 
-  val ccWikiLicense =
-    <a rel="license" href="http://creativecommons.org/licenses/by/3.0/">
-      Creative Commons Attribution 3.0 Unported License
-    </a>
-
-  val submitButtonText = "Submit reply"
-
-  val Menus =
-    <div id="dw-hidden-menus">
-      <div id='dw-action-menu' class='ui-state-default'>
-        <div class='dw-reply'>Reply</div>
-        <div class='dw-vote'>Vote</div>
-      </div>
-      <ul id="dw-vote-menu" class="dw-menu">
-        <li class="dw-up">Vote&nbsp;up</li>
-        <li class="dw-down">Vote&nbsp;down</li>
-        <li class="dw-it">It...
-          <ul class="dw-sub dw-menu">
-            <li>Agrees&nbsp;(with&nbsp;the&nbsp;<span class="dw-parent-ref">parent</span>&nbsp;post,
-              <i>but not necessarily with you</i>)</li>
-            <li>Disagrees</li>
-          </ul>
-        </li>
-        <li class="dw-it-is">It is...
-          <ul class="dw-sub dw-menu">
-            <li>Interesting</li>
-            <li>Obvious</li>
-            <li>Insightsful</li>
-            <li>Stupid</li>
-            <li>Funny</li>
-            <li>Off topic</li>
-            <li>Troll</li>
-          </ul>
-        </li>
-        <li class="dw-suggestions">Vote&nbsp;on&nbsp;suggestions...
-          <ul class="dw-sub dw-menu">
-            <li>Show&nbsp;all</li>
-          </ul>
-        </li>
-      </ul>
-      <ul id="dw-reply-menu" class="dw-menu">
-        <li>Just&nbsp;reply</li>
-        <li>Agree</li>
-        <li>Dissent</li>
-        <li>Off&nbsp;topic</li>
-      </ul>
-      <div class='dw-reply-template'>
-        <div class='dw-depth-3 dw-thread dw-reply dw-preview'>
-          <div class='dw-post'>
-            <div class='dw-owner'><i>Your reply</i></div>
-          </div>
-          <form class='dw-agree dw-reply'
-              action='http://localhost:8084/tinywiki/Wiki.jsp?page=Main'
-              accept-charset='UTF-8'
-              method='post'>
-            <input type='hidden' name='parent' value='a'/>
-            <textarea name='reply' rows='10' cols='34'
-              >The cat was playing in the garden.</textarea><br/>
-            <label for='dw-reply-author'>Your name or alias:</label>
-            <input type='text' name='author'
-                  value='Anonymous' id='dw-reply-author'/><br/>
-            <p class='dw-user-contrib-license'>
-              By clicking <i>{submitButtonText}</i>, you agree to license
-              the text you submit under the {ccWikiLicense}.
-            </p>
-            <input class='dw-submit' type='submit' value={submitButtonText}/>
-            <button class='dw-cancel' type='button'>Cancel</button>
-          </form>
-        </div>
-      </div>
-      <div class='dw-vote-template'>
-        <form class='dw-vote'
-            action='http://localhost:8084/tinywiki/Wiki.jsp?page=Main'
-            accept-charset='UTF-8'
-            method='post'>
-          <input type='hidden' name='post' value='?'/>
-          <fieldset>
-            {/* <legend>Up or down</legend> -- what a silly legend */}
-            <input type='radio' name='vote' value='up' id='dw-vote-up'/>
-            <label for='dw-vote-up'>Vote up</label><br/>
-            <input type='radio' name='vote' value='down' id='dw-vote-down'/>
-            <label for='dw-vote-down'>Vote down</label><br/>
-          </fieldset>
-          <input class='dw-submit' type='submit' value='Submit votes'
-              disabled='disabled'/> {/* enabled on radio button click */}
-          <input class='dw-cancel' type='button' value='Cancel'/>
-        </form>
-      </div>
-    </div>
-
 }
 
 /**
@@ -161,7 +71,7 @@ private[debiki] object App {
         </head>
         <body>
           { layoutMgr.layout(debate) }
-          { HtmlUtil.Menus }
+          { layoutMgr.menus }
         </body>
       </html>
     val html = HtmlUtil.htmlPrefix + xml
