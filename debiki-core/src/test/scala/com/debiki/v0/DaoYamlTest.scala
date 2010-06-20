@@ -12,9 +12,10 @@ import org.yaml.{snakeyaml => y}
 
 object DaoYamlTest {
 
+  private val testOutDir = System.getProperty("build.testOutputDirectory")
+
   object Paths {
-    val MmaDebate =
-        "target/test-classes/v0/compactDebate/_debate.yaml"
+    val MmaDebate = testOutDir +"/v0/compactDebate/_debate.yaml"
   }
 }
 
