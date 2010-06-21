@@ -9,6 +9,15 @@ package com.debiki.v0
 import collection.{mutable => mut, immutable => imm}
 import _root_.scala.xml.{NodeSeq, Elem}
 
+// Should be a LayoutManager static class, but how can I then acces
+// it from Java?
+class LayoutConfig {
+  // These default form action values (the empty string) reload the current
+  // page, says this RFC: http://www.apps.ietf.org/rfc/rfc3986.html#sec-5.4
+  var replyAction = ""
+  var voteAction = ""
+}
+
 object LayoutManager {
 
   /** Converts text to xml, returns (html, approx-line-count).
@@ -39,6 +48,7 @@ import LayoutManager._
 
 abstract class LayoutManager {
 
+  def configure(conf: LayoutConfig)
   def layout(debate: Debate): NodeSeq
   def menus: NodeSeq
 
@@ -46,8 +56,12 @@ abstract class LayoutManager {
 
 class SimpleLayoutManager extends LayoutManager {
 
+  private var config = new LayoutConfig
+
   private var debate: Debate = null
   private var scorecalc: ScoreCalculator = null;
+
+  override def configure(conf: LayoutConfig) { this.config = conf }
 
   def layout(debate: Debate): NodeSeq = {
     this.debate = debate
@@ -131,7 +145,8 @@ class SimpleLayoutManager extends LayoutManager {
         <li class="dw-down">Vote&nbsp;down</li>
         <li class="dw-it">It...
           <ul class="dw-sub dw-menu">
-            <li>Agrees&nbsp;(with&nbsp;the&nbsp;<span class="dw-parent-ref">parent</span>&nbsp;post,
+            <li>Agrees&nbsp;(with&nbsp;the&nbsp;<span
+                  class="dw-parent-ref">parent</span>&nbsp;post,
               <i>but not necessarily with you</i>)</li>
             <li>Disagrees</li>
           </ul>
@@ -165,7 +180,7 @@ class SimpleLayoutManager extends LayoutManager {
             <div class='dw-owner'><i>Your reply</i></div>
           </div>
           <form class='dw-agree dw-reply'
-              action='http://localhost:8084/tinywiki/Wiki.jsp?page=Main'
+              action={config.replyAction}
               accept-charset='UTF-8'
               method='post'>
             <input type='hidden' name='parent' value='a'/>
@@ -185,7 +200,7 @@ class SimpleLayoutManager extends LayoutManager {
       </div>
       <div class='dw-vote-template'>
         <form class='dw-vote'
-            action='http://localhost:8084/tinywiki/Wiki.jsp?page=Main'
+            action={config.voteAction}
             accept-charset='UTF-8'
             method='post'>
           <input type='hidden' name='post' value='?'/>
