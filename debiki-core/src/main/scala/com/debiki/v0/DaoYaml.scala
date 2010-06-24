@@ -78,12 +78,14 @@ class DaoYaml extends Dao {
       override def handleTuples(tuples: ju.List[yn.NodeTuple]): Post = {
         var id: Option[String] = None
         var parent: Option[String] = None
+        var date: Option[ju.Date] = None
         var owner: Option[String] = None
         var text: Option[String] = None
 
         for (t <- tuples) asText(t.getKeyNode) match {
           case "id" => id = Some(asText(t.getValueNode))
           case "parent" => parent = Some(asText(t.getValueNode))
+          case "date" => date = Some(asDate(t.getValueNode))
           case "owner" => owner = Some(asText(t.getValueNode))
           case "text" => text = Some(asText(t.getValueNode))
           case _ => // ignore unknown entries
@@ -91,9 +93,10 @@ class DaoYaml extends Dao {
 
         illegalArgIf(id.isEmpty, "`id' entry missing")
         illegalArgIf(parent.isEmpty, "`parent' entry missing")
+        illegalArgIf(date.isEmpty, "`date' entry missing")
         illegalArgIf(text.isEmpty, "`text' entry missing")
 
-        new Post(id = id.get, parent = parent.get,
+        new Post(id = id.get, parent = parent.get, date = date.get,
                   owner = owner, text = text.get)
       }
     }
@@ -103,6 +106,7 @@ class DaoYaml extends Dao {
       override def handleTuples(tuples: ju.List[yn.NodeTuple]): Vote = {
         var voterId: Option[String] = None
         var postId: Option[String] = None
+        var date: Option[ju.Date] = None
         var score: Option[Int] = None
         var it = List[String]()
         var is = List[String]()
@@ -110,14 +114,16 @@ class DaoYaml extends Dao {
         for (t <- tuples) asText(t.getKeyNode) match {
           case "by" => voterId = Some(asText(t.getValueNode))
           case "post" => postId = Some(asText(t.getValueNode))
+          case "date" => date = Some(asDate(t.getValueNode))
           case "score" => score = Some(asInt(t.getValueNode))
           case _ => // not implemented
         }
 
         illegalArgIf(voterId.isEmpty, "`id' entry missing")
         illegalArgIf(postId.isEmpty, "`parent' entry missing")
+        illegalArgIf(date.isEmpty, "`date' entry missing")
 
-        Vote(postId = postId.get, voterId = voterId.get,
+        Vote(postId = postId.get, voterId = voterId.get, date = date.get,
              it = it, is = is, score = score.getOrElse(0))
       }
     }
@@ -134,13 +140,20 @@ class DaoYaml extends Dao {
       def handleTuples(tuples: ju.List[yn.NodeTuple]): Object
     }
 
-  }
+    private def asInt(n: yn.Node) = asText(n).toInt
 
-  private def asInt(n: yn.Node) = asText(n).toInt
+    private def asText(n: yn.Node) = n match {
+      case s: yn.ScalarNode => s.getValue
+      case x => illegalArgBadClass("A Yaml map key", "ScalarNode", x)
+    }
 
-  private def asText(n: yn.Node) = n match {
-    case s: yn.ScalarNode => s.getValue
-    case x => illegalArgBadClass("A Yaml map key", "ScalarNode", x)
+    private def asDate(n: yn.Node): ju.Date = {
+      // ConstructYamlTimestamp throws a YAMLException if the node
+      // cannot be parsed as a Date.
+      val date = yamlConstructors.get(yn.Tag.TIMESTAMP).construct(n)
+      date.asInstanceOf[ju.Date]
+    }
+
   }
 
   private def illegalArgBadClass(what: String,

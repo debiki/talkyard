@@ -2,6 +2,7 @@
 
 package com.debiki.v0
 
+import java.{util => ju}
 import collection.{immutable => imm, mutable => mut}
 import Prelude._
 
@@ -74,6 +75,7 @@ case class Debate (
 case class Vote private[debiki] (
   postId: String,
   voterId: String,
+  date: ju.Date,
   it: List[String],
   is: List[String],
   score: Int)
@@ -81,6 +83,7 @@ case class Vote private[debiki] (
 case class Post(
   id: String,
   parent: String,
+  date: ju.Date,
   owner: Option[String],
   text: String
 )

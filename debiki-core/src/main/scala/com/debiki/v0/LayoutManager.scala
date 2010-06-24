@@ -8,6 +8,7 @@ package com.debiki.v0
 
 import collection.{mutable => mut, immutable => imm}
 import _root_.scala.xml.{NodeSeq, Elem}
+import Prelude._
 
 // Should be a LayoutManager static class, but how can I then acces
 // it from Java?
@@ -122,7 +123,7 @@ class SimpleLayoutManager extends LayoutManager {
         <li>by&#160;<span class="dw-owner">{
               spaceToNbsp(p.owner.getOrElse("Unknown"))}</span></li>
       </ul>
-      <div class="dw-time">April 1, 2010, 00:01</div>
+      <div class="dw-date">{toIso8601(p.date)}</div>
       { xmlText }
     </div>
   }

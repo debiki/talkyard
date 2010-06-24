@@ -15,7 +15,7 @@ id: compactDebate
 --- !Post
 id: a
 parent: root
-time: 2001-12-14t21:59:43.10-05:00
+date: 2001-12-14t21:59:43.10-05:00
 owner: OP
 text: |
  Bör MMA vara tillåtet i Sverige?
@@ -28,7 +28,7 @@ text: |
 --- !Post
 id: b
 parent: a
-time: 2001-12-14t21:59:43.10-05:00
+date: 2001-12-14t21:59:43.10-05:00
 owner: OP
 text: |
  Tillåt MMA
@@ -37,7 +37,7 @@ text: |
 --- !Post
 id: c
 parent: a
-time: 2001-12-14t21:59:43.10-05:00
+date: 2001-12-14t21:59:43.10-05:00
 owner: OP
 text: |
  Förbjud MMA
@@ -46,7 +46,7 @@ text: |
 --- !Post
 id: ca
 parent: c
-time: 2001-12-14t21:59:43.10-05:00
+date: 2001-12-14t21:59:43.10-05:00
 owner: Anonymous Elevator Man
 text: |
  1
@@ -88,7 +88,7 @@ text: |
 --- !Post
 id: cb
 parent: c
-time: 2001-12-14t21:59:43.10-05:00
+date: 2001-12-14t21:59:43.10-05:00
 owner: Anonymous Hero
 text: |
  MMA bidrar till brotslighet och samhällets fördärv. MMA förvandlar
@@ -107,7 +107,7 @@ text: |
 --- !Post
 id: d
 parent: b
-time: 2001-12-14t21:59:43.10-05:00
+date: 2001-12-14t21:59:43.10-05:00
 owner: Promma
 text: |
  För frihetenss skull.
@@ -122,7 +122,7 @@ text: |
 --- !Post
 id: e
 parent: d
-time: 2001-12-14t21:59:43.10-05:00
+date: 2001-12-14t21:59:43.10-05:00
 owner: PrommaStupiid
 text: |
  Såvida de gamla sura gubbarna i själva verket är ute efter att förbjuda sånt de inte gillar,
@@ -130,21 +130,21 @@ text: |
 --- !Post
 id: e2
 parent: d
-time: 2001-12-14t21:59:43.10-05:00
+date: 2001-12-14t21:59:43.10-05:00
 owner: Inhuman-Human
 text: |
  Mauris mauris ante, blandit et, ultrices a, suscipit eget, quam. Integer ut neque. Vivamus nisi metus, molestie vel, gravida in, condimentum sit amet, nunc. Nam a nibh. Donec suscipit eros. Nam mi. Proin viverra leo ut odio. Curabitur malesuada. Vestibulum a velit eu ante scelerisque vulputate.
 --- !Post
 id: e3
 parent: d
-time: 2001-12-14t21:59:43.10-05:00
+date: 2001-12-14t21:59:43.10-05:00
 owner: Someone
 text: |
  Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
 --- !Post
 id: f
 parent: b
-time: 2001-12-14t21:59:43.10-05:00
+date: 2001-12-14t21:59:43.10-05:00
 owner: Promma2
 text: |
  Håller ungdommar borta från gatan
@@ -156,7 +156,7 @@ text: |
 --- !Post
 id: g
 parent: f
-time: 2001-12-14t21:59:43.10-05:00
+date: 2001-12-14t21:59:43.10-05:00
 owner: Ephemeriis
 text: |
  Ja,
@@ -165,7 +165,7 @@ text: |
 --- !Post
 id: h
 parent: f
-time: 2001-12-14t21:59:43.10-05:00
+date: 2001-12-14t21:59:43.10-05:00
 owner: LittleLebowskiUrbanA
 text: |
  De behöver inte slåss för att ha något att göra.
@@ -173,7 +173,7 @@ text: |
 --- !Post
 id: fc
 parent: f
-time: 2001-12-14t21:59:43.10-05:00
+date: 2001-12-14t21:59:43.10-05:00
 owner: Promma2
 text: |
  Håller INTE ungdommar borta från gatan
@@ -182,7 +182,7 @@ text: |
 --- !Post
 id: fd
 parent: f
-time: 2001-12-14t21:59:43.10-05:00
+date: 2001-12-14t21:59:43.10-05:00
 owner: Promma2
 text: |
  Safari and Chrome Desktop use the values as if no zoom occurs. Thus the values will be wrong after a zoom.
@@ -192,7 +192,7 @@ text: |
 --- !Post
 id: bc
 parent: b
-time: 2001-12-14t21:59:43.10-05:00
+date: 2001-12-14t21:59:43.10-05:00
 owner: Child-BC
 text: |
  What is the simplest way to manage dependencies of Java classes to data files present in the classpath?
@@ -213,7 +213,7 @@ text: |
 --- !Post
 id: bd
 parent: b
-time: 2001-12-14t21:59:43.10-05:00
+date: 2001-12-14t21:59:43.10-05:00
 owner: Child-BD
 text: |
  Can't you refactor your project so that you have submodules that each contain the relevant files for the project itself ; Bar class and Bar related files will be packaged in their bundle while Foo ones will packed into another?
@@ -222,28 +222,28 @@ text: |
 --- !Post
 id: be
 parent: b
-time: 2001-12-14t21:59:43.10-05:00
+date: 2001-12-14t21:59:43.10-05:00
 owner: Child-BE
 text: |
  Gives the width and height of the HTML element in “browser pixels.” Should either become smaller with zooming (desktop), or stay the same, if the minimum viewport is fixed (some mobile browsers).
 --- !Post
 parent: h
 id: i
-time: 2001-12-14t21:59:43.10-05:00
+date: 2001-12-14t21:59:43.10-05:00
 owner: Anonymous Coward
 text: |
  Du kan inte jämföra ett härligt slagsmål med fotboll!
 --- !Post
 parent: i
 id: j
-time: 2001-12-14t21:59:43.10-05:00
+date: 2001-12-14t21:59:43.10-05:00
 owner: LittleLebowskiUrbanA
 text: |
  Idiot
 --- !Post
 parent: j
 id: k
-time: 2001-12-14t21:59:43.10-05:00
+date: 2001-12-14t21:59:43.10-05:00
 owner: Anonymous Coward
 text: |
  ***NEJ***!!!
@@ -266,25 +266,25 @@ text: |
  Nej
 --- !Vote
 by: Person Name
-time: 2001-12-14t21:59:43.10-05:00
+date: 2001-12-14t21:59:43.10-05:00
 post: j
 it: [dissents]
 is: [stupid, off-topic, troll]
 score: -1
 --- !Vote
 by: Misse-Muu
-time: 2001-12-14t21:59:43.10-05:00
+date: 2001-12-14t21:59:43.10-05:00
 post: h
 score: 1
 --- !Vote
 by: Anders-And
-time: 2001-12-14t21:59:43.10-05:00
+date: 2001-12-14t21:59:43.10-05:00
 post: h
 score: 2
 --- !Post
 parent: e
 id: ea
-time: 2001-12-14t21:59:43.10-05:00
+date: 2001-12-14t21:59:43.10-05:00
 owner: RobertM1968
 text: |
  Besides the possibilities of "what could possibly go wrong?" the simple fact is, I am hoping IBM has done their research on this.
@@ -304,14 +304,14 @@ text: |
 --- !Post
 parent: a
 id: ac
-time: 2001-12-14t21:59:43.10-05:00
+date: 2001-12-14t21:59:43.10-05:00
 owner: Child-AC
 text: |
  Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
 --- !Post
 parent: a
 id: ad
-time: 2001-12-14t21:59:43.10-05:00
+date: 2001-12-14t21:59:43.10-05:00
 owner: Child-AD
 text: |
  An anonymous reader writes:
@@ -320,31 +320,31 @@ text: |
 --- !Post
 parent: ad
 id: ada
-time: 2001-12-14t21:59:43.10-05:00
+date: 2001-12-14t21:59:43.10-05:00
 owner: Child-ADA
 text: |
  Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
 --- !Post
 parent: a
 id: ae
-time: 2001-12-14t21:59:43.10-05:00
+date: 2001-12-14t21:59:43.10-05:00
 owner: Child-AC
 text: |
  Proin viverra leo ut odio. Curabitur malesuada. Vestibulum a velit eu ante scelerisque vulputate.
 --- !Post
 parent: a
 id: af
-time: 2001-12-14t21:59:43.10-05:00
+date: 2001-12-14t21:59:43.10-05:00
 owner: Child-AC
 text: |
  roh2cool writes "As the dates for E3 Convention approaches, we expect more updates and leaks while game publishing and developing companies prefer to stay tight-lipped. Amongst the hustle-bustle of Google’s announcements, we managed to pick few important updates from the gaming industry happenings. Take a quick look at this gaming roundup snapshot for this week."
 
 #--- !Vote
-#time: 2001-12-14t21:59:43.10-05:00
+#date: 2001-12-14t21:59:43.10-05:00
 #by: Person Name
 #votes: { post: x, [ is: stupid ] }
 #--- !Vote
-#time: 2001-12-14t21:59:43.10-05:00
+#date: 2001-12-14t21:59:43.10-05:00
 #by: Person Name
 #votes:
 #- post: x
@@ -357,7 +357,7 @@ text: |
 #- post: z
 #  - it: agrees
 #--- !Edit
-#time: 2001-12-14t21:59:43.10-05:00
+#date: 2001-12-14t21:59:43.10-05:00
 #owner: Person Name
 #postId: a
 #diff-ed: |

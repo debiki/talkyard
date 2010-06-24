@@ -322,7 +322,7 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
   }
 
 /* --- Buttons ---*/
-.dw-post .dw-time {
+.dw-post .dw-date {
   float: right;
   padding: 1px 0.3em;
   position: relative;
