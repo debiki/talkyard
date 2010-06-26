@@ -13,7 +13,7 @@
   <version>0.0.1-SNAPSHOT</version>
   <inceptionYear>2010</inceptionYear>
   <properties>
-    <scala.version>2.8.0.Beta1</scala.version>
+    <scala.version>2.8.0.RC6</scala.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
   </properties>
 
