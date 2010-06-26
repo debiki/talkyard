@@ -4,6 +4,7 @@ jQuery.noConflict()(function($){
 
 var threadHovered = null;
 var didResize = false;
+var posts = $(".debiki .dw-post");
 
 $(".dw-post, .dw-thread-summary").hover(
   function(event){
@@ -80,7 +81,15 @@ $(".dw-vote-summary").click(function() {
       .children(":not(.dw-vote-summary)").slideToggle(200);
 }); */
 
-var posts = $(".debiki .dw-post");
+// Outline new posts
+(function(){
+  var myLastVersion = $.cookie('myLastPageVersion') || myLastPageVersion;
+  var lastChangeDate = $('.dw-last-changed').attr('title');
+  var newPosts = posts.filter(function(index){
+    return $(this).find('.dw-date').attr('title') > myLastVersion;
+  })
+  newPosts.closest('.dw-thread').addClass('dw-new');
+})()
 
 // Indicate which posts are cropped.
 posts.filter('.dw-cropped-s').append(

@@ -71,7 +71,6 @@ private[debiki] object App {
         </head>
         <body>
           { layoutMgr.layout(debate) }
-          { layoutMgr.menus }
         </body>
       </html>
     val html = HtmlUtil.htmlPrefix + xml

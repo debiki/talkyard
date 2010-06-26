@@ -70,6 +70,37 @@ case class Debate (
     Base26.fromInt(nextFree)
   }
 
+  lazy val lastChangeDate: Option[ju.Date] = {
+    def maxDate(a: ju.Date, b: ju.Date) = if (a.compareTo(b) > 0) a else b
+    val allDates: Iterator[ju.Date] = votes.iterator.map(_.date) ++
+                                        posts.iterator.map(_.date)
+    if (allDates isEmpty) None
+    else Some(allDates reduceLeft (maxDate(_, _)))
+  }
+
+  /* With structural typing (I think this is very verbose code):
+  def max(d1: ju.Date, d2: ju.Date) =
+      if (d1.compareTo(d2) > 0) d1 else d2
+  private def maxDate(list: List[{ def date: ju.Date }]): Option[ju.Date] = {
+    if (list isEmpty) None
+    else {
+      val maxDate = (list.head.date /: list.tail)((d, o) => max(d, o.date))
+            // ((d: ju.Date, o: WithDate) => max(d, o.date))
+            // Results in: missing arguments for method foldLeft in
+            // trait LinearSeqOptimized;
+            // follow this method with `_' if you want to treat it
+            // as a partially applied function
+      // Date is mutable so return a copy
+      Some(maxDate.clone.asInstanceOf[ju.Date])
+    }
+  }
+  lazy val lastChangeDate = {
+    val dateOpts = List(maxDate(votes), maxDate(posts)).filter (!_.isEmpty)
+    if (dateOpts isEmpty) None
+    else dateOpts.tail.foldLeft(dateOpts.head.get)((d, o) => max(d, o.get))
+  }
+ */
+
 }
 
 case class Vote private[debiki] (

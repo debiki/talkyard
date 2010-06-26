@@ -6,6 +6,7 @@
 
 package com.debiki.v0
 
+import java.{util => ju}
 import collection.{mutable => mut, immutable => imm}
 import _root_.scala.xml.{NodeSeq, Elem}
 import Prelude._
@@ -19,6 +20,12 @@ class LayoutConfig {
   var voteAction = ""
 }
 
+class LayoutVariables {
+  var lastPageVersion: Option[ju.Date] = None
+  var newReply: Option[String] = None
+}
+
+private[v0]
 object LayoutManager {
 
   /** Converts text to xml, returns (html, approx-line-count).
@@ -43,6 +50,36 @@ object LayoutManager {
    */
   def spaceToNbsp(text: String): String = text.replace(' ', '\u00a0')
 
+  def dateToAbbr(date: ju.Date, cssClass: String): NodeSeq =
+    <abbr class={"dw-date "+ cssClass} title={toIso8601(date)} />
+
+  /** WARNING: XSS / DoS attacks possible?
+   */
+  def optionToJsVar[E](o: Option[E], varName: String): String =
+    "\n"+ varName +" = "+ (o match {
+      case None => "undefined"
+      case Some(null) => "null"
+      case Some(d: ju.Date) => "'"+ toIso8601(d) +"'"
+      case Some(x) => "'"+ x.toString +"'"
+    }) +";"
+
+  /** WARNING: XSS / DoS attacks possible?
+   *  All available options:
+   *    "expires: 7, path: '/', domain: 'jquery.com', secure: true"
+   */
+  def optionToJsCookie[E](
+          o: Option[E], cookieName: String, options: String = ""): String =
+    if (o.isEmpty) ""  // do nothing with cookie
+    else
+      "\njQuery.cookie('"+ cookieName +"', "+
+      (o match {
+        case Some(null) => "null"  // delete cookie
+        case Some(d: ju.Date) => "'"+ toIso8601(d) +"'"
+        case Some(x) => "'"+ x.toString + "'"
+      }) +
+      (if (options.isEmpty) "" else ", {"+ options +"}") +
+      ");"
+
 }
 
 import LayoutManager._
@@ -50,8 +87,8 @@ import LayoutManager._
 abstract class LayoutManager {
 
   def configure(conf: LayoutConfig)
-  def layout(debate: Debate): NodeSeq
-  def menus: NodeSeq
+  def layout(debate: Debate,
+             vars: LayoutVariables = new LayoutVariables): NodeSeq
 
 }
 
@@ -60,16 +97,31 @@ class SimpleLayoutManager extends LayoutManager {
   private var config = new LayoutConfig
 
   private var debate: Debate = null
-  private var scorecalc: ScoreCalculator = null;
+  private var scorecalc: ScoreCalculator = null
+  private var lastChange: Option[String] = null
+  private var vars: LayoutVariables = null
 
   override def configure(conf: LayoutConfig) { this.config = conf }
 
-  def layout(debate: Debate): NodeSeq = {
+  def layout(debate: Debate, vars: LayoutVariables): NodeSeq = {
     this.debate = debate
+    this.vars = vars
     this.scorecalc = new ScoreCalculator(debate)
-    <div class="debiki dw-debate">
-      { _layoutChildren(0, debate.RootPostId) }
-    </div>
+    this.lastChange = debate.lastChangeDate.map(toIso8601(_))
+    layoutPosts ++ menus ++ variables
+  }
+
+  private def layoutPosts(): NodeSeq = {
+    <div class="debiki dw-debate">{
+        if (lastChange isDefined) {
+          <p>Last changed on
+          <abbr class="dw-last-changed dw-date"
+                title={lastChange.get}>{lastChange.get}</abbr>
+          </p>
+        }
+      }{
+      _layoutChildren(0, debate.RootPostId)
+    }</div>
   }
 
   private def _layoutChildren(depth: Int, post: String): NodeSeq = {
@@ -108,6 +160,7 @@ class SimpleLayoutManager extends LayoutManager {
     val (xmlText, numLines) = textToHtml(p.text, charsPerLine = 80)
     val long = numLines > 9
     val cropped_s = if (long) " dw-cropped-s" else ""
+    val date = toIso8601(p.date)
     <div id={cssPostId} class={"dw-post dw-cropped-e" + cropped_s}>
       <ul class="dw-vote-summary">
         <li class="dw-vote-score">{ scorecalc.scoreFor(p.id).score }</li>
@@ -123,7 +176,7 @@ class SimpleLayoutManager extends LayoutManager {
         <li>by&#160;<span class="dw-owner">{
               spaceToNbsp(p.owner.getOrElse("Unknown"))}</span></li>
       </ul>
-      <div class="dw-date">{toIso8601(p.date)}</div>
+      <abbr class="dw-date" title={date}>{date}</abbr>
       { xmlText }
     </div>
   }
@@ -133,9 +186,9 @@ class SimpleLayoutManager extends LayoutManager {
       Creative Commons Attribution 3.0 Unported License
     </a>
 
-  val submitButtonText = "Submit reply"
+  private val submitButtonText = "Submit reply"
 
-  val menus =
+  private def menus =
     <div id="dw-hidden-menus">
       <div id='dw-action-menu' class='ui-state-default'>
         <div class='dw-reply'>Reply</div>
@@ -185,6 +238,7 @@ class SimpleLayoutManager extends LayoutManager {
               accept-charset='UTF-8'
               method='post'>
             <input type='hidden' name='parent' value='a'/>
+            { hiddenCurrentPageVersion }
             <textarea name='reply' rows='10' cols='34'
               >The cat was playing in the garden.</textarea><br/>
             <label for='dw-reply-author'>Your name or alias:</label>
@@ -205,6 +259,7 @@ class SimpleLayoutManager extends LayoutManager {
             accept-charset='UTF-8'
             method='post'>
           <input type='hidden' name='post' value='?'/>
+          { hiddenCurrentPageVersion }
           <fieldset>
             {/* <legend>Up or down</legend> -- what a silly legend */}
             <input type='radio' name='vote' value='up' id='dw-vote-up'/>
@@ -218,6 +273,27 @@ class SimpleLayoutManager extends LayoutManager {
         </form>
       </div>
     </div>
+
+  private def variables: NodeSeq =
+    // Should I use cookies instead? -- Or should the last-download-
+    // -date be sent back on the GET line? (perhaps via a redirect?)
+    <script class='dw-js-variables'>{
+      // TODO: Don't use globals!
+      // TODO: Doesn't this open for XSS attacks?
+      // Save last-page-version in a cookie, and in a JS variable
+      // in case cookies are disabled?
+      var lastVersion = vars.lastPageVersion.orElse(lastChange)
+      optionToJsCookie(lastVersion, "myLastPageVersion",
+                          "expires: 370") +
+      optionToJsVar(lastVersion, "myLastPageVersion") +
+      optionToJsVar(vars.newReply, "myNewReply")
+    }</script>
+    //vars.myLastDownloadDate.toList.map(dateToAbbr(_, "dw-last-downloaded"))
+    //vars.myNewReply.toList.map((r) => <span class="dw-my-new-replydateToAbbr(_, "dw-last-downloaded"))
+
+  def hiddenCurrentPageVersion: NodeSeq =
+    <input type='hidden' name='curPageVersion'
+            value={lastChange.getOrElse("")} />
 
   // Triggers compiler bug: -- in Scala 2.8.0-Beta1. Fixed in RC2 obviously.
   //private def test: NodeSeq = {
