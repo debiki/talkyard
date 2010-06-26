@@ -131,11 +131,17 @@ class DaoYaml extends Dao {
     // Helper class: Loops through all Yaml map entries in a Yaml map node.
     private abstract class DebikiMapConstr extends yc.AbstractConstruct {
       override def construct(node: yn.Node): Object = {
-        val tuples: ju.List[yn.NodeTuple] = node match {
-          case m: yn.MappingNode => m.getValue
-          case x => illegalArgBadClass("`node'", "MappingNode", x)
+        try {
+          val tuples: ju.List[yn.NodeTuple] = node match {
+            case m: yn.MappingNode => m.getValue
+            case x => illegalArgBadClass("`node'", "MappingNode", x)
+          }
+          handleTuples(tuples)
         }
-        handleTuples(tuples)
+        catch {
+          case e: Exception => throw new RuntimeException(
+              "Error parsing this node: "+ debugReprOf(node), e)
+        }
       }
       def handleTuples(tuples: ju.List[yn.NodeTuple]): Object
     }
@@ -152,6 +158,39 @@ class DaoYaml extends Dao {
       // cannot be parsed as a Date.
       val date = yamlConstructors.get(yn.Tag.TIMESTAMP).construct(n)
       date.asInstanceOf[ju.Date]
+    }
+
+    /** Debug-prints a SnakeYaml node. The default toString prints
+     *  not-very-usable info (for my particular need) so I've copy-edited
+     *  org.yaml.snakeyaml.nodes.MappingNode's toString to include some
+     *  more info.
+     *  DoS attacks possible? Flooding appservers with long log messages?
+     *  XSS attack? User provided data included in exception, shown in browser?
+     */
+    private def debugReprOf(node: yn.Node): String = node match {
+      case m: yn.MappingNode =>
+        val sb = new StringBuilder
+        val ns: Iterator[yn.NodeTuple] = m.getValue.iterator
+        while (ns.hasNext) {
+          val n = ns.next()
+          sb.append("{ key=")
+          sb.append(n.getKeyNode.toString)
+          sb.append("; value=Node<")
+          // SnakeYaml here appends
+          //   System.identityHashCode(node.getValueNode()),
+          // so as to avoid overflow in case of recursive structures.
+          // Including values 1 layer down should be safe though:
+          sb.append(n.getValueNode.toString)
+          sb.append("> }")
+        }
+        val repr = "<"+ m.getClass.getName + ", tag="+ m.getTag +", values="+
+                    sb.toString +">"
+        // Sanitize HTML. Is some DoS attack possible, since end user
+        // provided text is/might be included here?
+        repr.replace('<', '[')
+        repr.replace('>', ']')
+      case _ =>
+        node.toString
     }
 
   }
