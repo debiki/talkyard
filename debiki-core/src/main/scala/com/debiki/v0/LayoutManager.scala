@@ -182,7 +182,8 @@ class SimpleLayoutManager extends LayoutManager {
   }
 
   val ccWikiLicense =
-    <a rel="license" href="http://creativecommons.org/licenses/by/3.0/">
+    <a rel="license" href="http://creativecommons.org/licenses/by/3.0/"
+       target="_blank">
       Creative Commons Attribution 3.0 Unported License
     </a>
 
