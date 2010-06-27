@@ -74,6 +74,13 @@ p:last-child {
   line-height: 110%;
 }
 
+.dw-dragscrollable {
+  cursor: move !important; /* important, or next rule might set to `auto' */
+}
+.dw-dragscrollable > * {
+  cursor: auto; /* don't inherit `move' cursor */
+}
+
 /* === Threads === */
 
 .dw-depth-0.dw-thread {
