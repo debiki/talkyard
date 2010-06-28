@@ -28,7 +28,6 @@ object Prelude {
    *  so it can be included in an error message even if it is end user defined
    *  (i.e. possible destructive were it not made safe).
    */
-
   def safe(text: String): String = text // for now.
 
   /** Returns the date formatted according to ISO 8601,
@@ -37,6 +36,6 @@ object Prelude {
   def toIso8601(date: ju.Date): String = {
     val sdf = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss'Z'")
     sdf.format(date).toString
- }
+  }
 
 }

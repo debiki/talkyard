@@ -8,3 +8,9 @@ A HTTP GET request from the Android 2.1 emulator: |
  Accept: application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5
  User-Agent: Mozilla/5.0 (Linux; U; Android 2.1; en-us; sdk Build/ERD79) AppleWebKit/530.17 (KHTML, like Gecko) Version/4.0 Mobile Safari/530.17
  Accept-Charset: utf-8, iso-8859-1, utf-16, *;q=0.7
+
+Tid!
+Scala: http://github.com/jorgeortiz85/scala-time/tree/master/src/main/scala/org/scala_tools/time/
+JavaScript: http://code.google.com/p/datejs/
+microformats: http://microformats.org/wiki/datetime-design-pattern
+Det blir så här: <abbr class="foo" title="YYYY-MM-DDTHH:MM:SSZ">Date Time</abbr>

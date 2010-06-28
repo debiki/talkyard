@@ -192,7 +192,7 @@ class SimpleLayoutManager extends LayoutManager {
 
   private val submitButtonText = "Submit reply"
 
-  private def menus =
+  private def menus = {
     <div id="dw-hidden-menus">
       <div id='dw-action-menu' class='ui-state-default'>
         <div class='dw-reply'>Reply</div>
@@ -265,7 +265,6 @@ class SimpleLayoutManager extends LayoutManager {
           <input type='hidden' name='post' value='?'/>
           { hiddenCurrentPageVersion }
           <fieldset>
-            {/* <legend>Up or down</legend> -- what a silly legend */}
             <input type='radio' name='vote' value='up' id='dw-vote-up'/>
             <label for='dw-vote-up'>Vote up</label><br/>
             <input type='radio' name='vote' value='down' id='dw-vote-down'/>
@@ -277,6 +276,7 @@ class SimpleLayoutManager extends LayoutManager {
         </form>
       </div>
     </div>
+  }
 
   private def variables: NodeSeq =
     // Should I use cookies instead? -- Or should the last-download-
@@ -292,20 +292,10 @@ class SimpleLayoutManager extends LayoutManager {
       optionToJsVar(lastVersion, "myLastPageVersion") +
       optionToJsVar(vars.newReply, "myNewReply")
     }</script>
-    //vars.myLastDownloadDate.toList.map(dateToAbbr(_, "dw-last-downloaded"))
-    //vars.myNewReply.toList.map((r) => <span class="dw-my-new-replydateToAbbr(_, "dw-last-downloaded"))
 
   def hiddenCurrentPageVersion: NodeSeq =
     <input type='hidden' name='curPageVersion'
             value={lastChange.getOrElse("")} />
 
-  // Triggers compiler bug: -- in Scala 2.8.0-Beta1. Fixed in RC2 obviously.
-  //private def test: NodeSeq = {
-  //  for (i <- 1 to 2)
-  //  yield
-  //    <div>
-  //      <div>
-  //    </div>
-  //}
 }
 

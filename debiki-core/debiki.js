@@ -75,12 +75,6 @@ $(".dw-thread-info").click(function() {
     .toggleClass('dw-collapsed-fx', 600);
 });
 
-/*
-$(".dw-post-info").click(function() {
-  $(this).closest(".dw-thread").children(".dw-post")
-      .children(":not(.dw-post-info)").slideToggle(200);
-}); */
-
 // Outline new posts
 (function(){
   var myLastVersion = $.cookie('myLastPageVersion') || myLastPageVersion;
