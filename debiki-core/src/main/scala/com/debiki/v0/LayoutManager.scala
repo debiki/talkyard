@@ -198,40 +198,6 @@ class SimpleLayoutManager extends LayoutManager {
         <div class='dw-reply'>Reply</div>
         <div class='dw-vote'>Vote</div>
       </div>
-      <ul id="dw-vote-menu" class="dw-menu">
-        <li class="dw-up">Vote&nbsp;up</li>
-        <li class="dw-down">Vote&nbsp;down</li>
-        <li class="dw-it">It...
-          <ul class="dw-sub dw-menu">
-            <li>Agrees&nbsp;(with&nbsp;the&nbsp;<span
-                  class="dw-parent-ref">parent</span>&nbsp;post,
-              <i>but not necessarily with you</i>)</li>
-            <li>Disagrees</li>
-          </ul>
-        </li>
-        <li class="dw-it-is">It is...
-          <ul class="dw-sub dw-menu">
-            <li>Interesting</li>
-            <li>Obvious</li>
-            <li>Insightsful</li>
-            <li>Stupid</li>
-            <li>Funny</li>
-            <li>Off topic</li>
-            <li>Troll</li>
-          </ul>
-        </li>
-        <li class="dw-suggestions">Vote&nbsp;on&nbsp;suggestions...
-          <ul class="dw-sub dw-menu">
-            <li>Show&nbsp;all</li>
-          </ul>
-        </li>
-      </ul>
-      <ul id="dw-reply-menu" class="dw-menu">
-        <li>Just&nbsp;reply</li>
-        <li>Agree</li>
-        <li>Dissent</li>
-        <li>Off&nbsp;topic</li>
-      </ul>
       <div class='dw-reply-template'>
         <div class='dw-depth-3 dw-thread dw-reply dw-preview'>
           <div class='dw-post'>
