@@ -144,12 +144,11 @@ class SimpleLayoutManager extends LayoutManager {
     val count = debate.successorsTo(post.id).length + 1
     if (count == 1)
       <ul class="dw-thread-summary">
-        <li class="dw-post-count">1 post</li>
+        <li class="dw-post-count">1 reply</li>
       </ul>
     else
       <ul class="dw-thread-summary">
-        <li class="dw-post-count">{count} posts</li>
-        <li class="dw-vote-score">score -1..+2..+5</li>
+        <li class="dw-post-count">{count} replies</li>
         <li class="dw-vote">interesting</li>
         <li class="dw-vote">funny</li>
       </ul>
@@ -163,6 +162,8 @@ class SimpleLayoutManager extends LayoutManager {
     val date = toIso8601(p.date)
     <div id={cssPostId} class={"dw-post dw-cropped-e" + cropped_s}>
       <ul class="dw-vote-summary">
+        <li>by&#160;<span class="dw-owner">{
+              spaceToNbsp(p.owner.getOrElse("Unknown"))}</span></li>
         <li class="dw-vote-score">{ scorecalc.scoreFor(p.id).score }</li>
         <li class="dw-vote-is">
           <span class="dw-vote">interesting</span>
@@ -172,9 +173,6 @@ class SimpleLayoutManager extends LayoutManager {
           <span class="dw-vote">funny</span>
           <span class="dw-count">1</span>
         </li>
-        {/* <li class="dw-vote-it">agrees<span class="dw-count">2</span></li> */}
-        <li>by&#160;<span class="dw-owner">{
-              spaceToNbsp(p.owner.getOrElse("Unknown"))}</span></li>
       </ul>
       <abbr class="dw-date" title={date}>{date}</abbr>
       { xmlText }
