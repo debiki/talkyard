@@ -242,7 +242,6 @@ class SimpleLayoutManager extends LayoutManager {
               accept-charset='UTF-8'
               method='post'>
             <input type='hidden' name='parent' value='a'/>
-            { hiddenCurrentPageVersion }
             <textarea name='reply' rows='10' cols='34'
               >The cat was playing in the garden.</textarea><br/>
             <label for='dw-reply-author'>Your name or alias:</label>
@@ -263,7 +262,6 @@ class SimpleLayoutManager extends LayoutManager {
             accept-charset='UTF-8'
             method='post'>
           <input type='hidden' name='post' value='?'/>
-          { hiddenCurrentPageVersion }
           <fieldset>
             <input type='radio' name='vote' value='up' id='dw-vote-up'/>
             <label for='dw-vote-up'>Vote up</label><br/>
@@ -279,23 +277,13 @@ class SimpleLayoutManager extends LayoutManager {
   }
 
   private def variables: NodeSeq =
-    // Should I use cookies instead? -- Or should the last-download-
-    // -date be sent back on the GET line? (perhaps via a redirect?)
     <script class='dw-js-variables'>{
-      // TODO: Don't use globals!
-      // TODO: Doesn't this open for XSS attacks?
-      // Save last-page-version in a cookie, and in a JS variable
-      // in case cookies are disabled?
-      var lastVersion = vars.lastPageVersion.orElse(lastChange)
-      optionToJsCookie(lastVersion, "myLastPageVersion",
+      // TODO: Could this open for XSS attacks?
+      optionToJsCookie(vars.lastPageVersion, "myLastPageVersion",
                           "expires: 370") +
-      optionToJsVar(lastVersion, "myLastPageVersion") +
-      optionToJsVar(vars.newReply, "myNewReply")
+      optionToJsCookie(lastChange, "myCurrentPageVersion") +
+      optionToJsCookie(vars.newReply, "myNewReply")
     }</script>
-
-  def hiddenCurrentPageVersion: NodeSeq =
-    <input type='hidden' name='curPageVersion'
-            value={lastChange.getOrElse("")} />
 
 }
 

@@ -77,9 +77,8 @@ $(".dw-thread-info").click(function() {
 
 // Outline new posts
 (function(){
-  var myLastVersion = $.cookie('myLastPageVersion') || myLastPageVersion;
-  var lastChangeDate =
-        $('.dw-debate-info .dw-last-changed .dw-date').attr('title');
+  var myLastVersion = $.cookie('myLastPageVersion');
+  if (!myLastVersion) return;
   var newPosts = posts.filter(function(index){
     return $(this).find('.dw-date').attr('title') > myLastVersion;
   })
