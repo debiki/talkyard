@@ -6,7 +6,7 @@ var threadHovered = null;
 var didResize = false;
 var posts = $(".debiki .dw-post");
 
-$(".dw-post, .dw-thread-summary").hover(
+$(".dw-post, .dw-thread-info").hover(
   function(event){
     var nextThread = $(this).closest('.dw-thread');
 
@@ -24,9 +24,9 @@ $(".dw-post, .dw-thread-summary").hover(
       }
     }
     else if (nextThread.find('#dw-action-menu').length) {
-      // This is a .thread-summary and it has the #action-menu inside.
+      // This is a .thread-info and it has the #action-menu inside.
       // This is not a safe place for the menu! If this
-      // .thread-summary is clicked, the thread will
+      // .thread-info is clicked, the thread will
       // collapsed itself, and the #action-menu will be hidden inside
       // the collapsed thread -- the menu becomes buggy gone -- unless
       // moved to somewhere safe.
@@ -36,26 +36,26 @@ $(".dw-post, .dw-thread-summary").hover(
     if (threadHovered && threadHovered[0] == nextThread[0])
       return;
 
-    if ($(this).hasClass('dw-thread-summary') &&
+    if ($(this).hasClass('dw-thread-info') &&
         !threadHovered.hasClass('dw-collapsed')) {
-      // This .thread-summary is not visible (it's only visible by default
+      // This .thread-info is not visible (it's only visible by default
       // if the thread is collapsed). Don't fade it in, because the user
       // might be navigating the #action-menu, and then we don't want
-      // this .thread-summary to appear below that menu. Instead,
-      // only open the .thread-summary if the threaad's *post* is hovered.
+      // this .thread-info to appear below that menu. Instead,
+      // only open the .thread-info if the threaad's *post* is hovered.
       return;
     }
 
-    // Fade last summary, unless thread collapsed.
+    // Fade last thread-info, unless thread collapsed.
     if (threadHovered && !threadHovered.hasClass('dw-collapsed')) {
-      threadHovered.children('.dw-thread-summary')
+      threadHovered.children('.dw-thread-info')
                       .stop(true, true).fadeTo(1000, 0);
       threadHovered.stop(true, true)
           .removeClass('dw-demarcated')
           .removeClass('dw-demarcated-fx', 1000);
     }
-    // Show summary for current thread.
-    nextThread.children('.dw-thread-summary').stop(true, true).fadeTo(600, 1);
+    // Show thread-info for current thread.
+    nextThread.children('.dw-thread-info').stop(true, true).fadeTo(600, 1);
     nextThread.stop(true, true)
         .addClass('dw-demarcated') // gives functionality instantly
         .addClass('dw-demarcated-fx', 600); // just for class animation effects
@@ -64,11 +64,11 @@ $(".dw-post, .dw-thread-summary").hover(
   function(event){
   });
 
-$(".dw-thread-summary").click(function() {
+$(".dw-thread-info").click(function() {
   var thread = $(this).closest(".dw-thread");
   if (! thread.hasClass('dw-demarcated')) return;
   thread
-    .children(":not(.dw-thread-summary)").stop(true,true).slideToggle(800)
+    .children(":not(.dw-thread-info)").stop(true,true).slideToggle(800)
     .end()
     .stop(true, true)
     .toggleClass('dw-collapsed')
@@ -76,15 +76,16 @@ $(".dw-thread-summary").click(function() {
 });
 
 /*
-$(".dw-vote-summary").click(function() {
+$(".dw-post-info").click(function() {
   $(this).closest(".dw-thread").children(".dw-post")
-      .children(":not(.dw-vote-summary)").slideToggle(200);
+      .children(":not(.dw-post-info)").slideToggle(200);
 }); */
 
 // Outline new posts
 (function(){
   var myLastVersion = $.cookie('myLastPageVersion') || myLastPageVersion;
-  var lastChangeDate = $('.dw-last-changed').attr('title');
+  var lastChangeDate =
+        $('.dw-debate-info .dw-last-changed .dw-date').attr('title');
   var newPosts = posts.filter(function(index){
     return $(this).find('.dw-date').attr('title') > myLastVersion;
   })
@@ -150,8 +151,8 @@ try {
 
   // Resize threads.
   // Bug: Resizing a thread might toggle it collapsed / expanded, since
-  // a click on the .thread-summary might happen.
-  $('.debiki .dw-thread-summary').each(function(index) {
+  // a click on the .thread-info might happen.
+  $('.debiki .dw-thread-info').each(function(index) {
     var thread = $(this).closest('.dw-thread');
     $(this).resizable({
         alsoResize: thread,
@@ -240,7 +241,7 @@ $(".dw-thread. .dw-reply.dw-preview").hover(
 // Lazy adding (less important) CSS classes.
 // (So all these classes won't clutter the Scala source code files
 // and waste bandwidth.)
-//posts.find('.dw-vote-summary .dw-vote, .dw-thread-summary .dw-vote')
+//posts.find('.dw-post-info .dw-vote, .dw-thread-info .dw-vote')
 //  .addClass('ui-corner-all');
 
 });

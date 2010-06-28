@@ -92,10 +92,10 @@ p:last-child {
   /* transparent won't work: jQuery's class animation would fade
   to *white*, but the color shining through should be
   .dw-depth-1.dw-thread's background-color. */
-  border-left: 0.5em solid #fcfaf5; /*transparent*/
-  margin-left: 0.5em;
-  border-bottom: 0.8ex solid #fcfaf5; /*transparent*/
-  margin-bottom: 0.2ex;
+  border-left: 0.9em solid #fcfaf5; /*transparent*/
+  margin-left: 0.7em;
+  border-bottom: 1ex solid #fcfaf5; /*transparent*/
+  margin-bottom: 0ex;
   background-color: inherit;
   }
 .dw-depth-0 > .dw-thread {
@@ -115,8 +115,8 @@ p:last-child {
   background color it *not* animated. Perhaps this can
   be fixed with more javascript.*/
   --background-color: #faf7ea;
-  border-left-color: #f3f1dc;
-  border-bottom-color: #d1d1ae;
+  border-left-color: #eae8ca;
+  border-bottom-color: #d6d3b2;
 }
 .dw-depth-0 .dw-thread.dw-collapsed-fx {
   /* Thread is collapsed, hence its summary is visible,
@@ -138,7 +138,7 @@ p:last-child {
   float: left;
   position: relative; /* #action-menu is absolute positioned relative thread */
   }
-.dw-depth-2 * {
+.dw-depth-2 .dw-thread {
   float: none;
   clear: both; /* else the vote form might float to the left */
   }
@@ -219,6 +219,7 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
 }
 
 .dw-post {
+  position: relative;
   overflow: hidden;
   min-height: 1.1em;
   min-width: 5em;
@@ -238,8 +239,8 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
 
 /* --- Thread summary ---*/
 
-.dw-thread-summary {
-  background-color: #F3F3D0;
+.dw-thread-info {
+  background-color: #eae8ca;
   opacity: 0;
   padding: 0.3ex;
   font-size: 93%;
@@ -250,101 +251,79 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
   line-height: 110%; /* else upper parts of chars on wrapped line visible */
 }
 
-.dw-thread-summary:hover {
+.dw-thread-info:hover {
   background-color: #FEFEDD;
 }
 
-.dw-thread.dw-demarcated > .dw-thread-summary {
+.dw-thread.dw-demarcated > .dw-thread-info {
   cursor: s-resize;
 }
 
-.dw-thread.dw-collapsed .dw-thread-summary .ui-resizable-handle {
+.dw-thread.dw-collapsed .dw-thread-info .ui-resizable-handle {
   display: none; /* thread is collapsed; show no resize handle */
 }
-.dw-thread.dw-collapsed .dw-thread-summary:hover .ui-resizable-handle {
+.dw-thread.dw-collapsed .dw-thread-info:hover .ui-resizable-handle {
   display: block; /* show resize handle when hovering collapsed thread */
 }
 
-.dw-thread-summary li {
+.dw-thread-info li {
   display: inline;
   margin-left: 1ex;
 }
 
-/*
-.dw-thread-summary .dw-post-count:before {
-  content: 'Thread with ';
-}
-
-.dw-thread-summary li:after {
-  content: ',';
-}
-
-.dw-thread-summary .dw-summary-score:after {
-  content: ', mostly';
-}
-*/
-
 /* --- Vote summary ---*/
 
-.dw-vote-summary {
-  background-color: #EEE;
+.dw-post-info {
   font-size: 95%;
-  padding: 0.3ex;
+  padding: 0.3ex 0;
+  height: 1.25em; /* make the upmost part of the post gray */
+  background-color: #e7e7e7; /* the <li>:s are also gray */
 }
 
-.dw-vote-summary li {
+.dw-post-info li {
   display: inline;
-  margin-left: 0.7ex;
+  padding-left: 0.5em;
+  float: left;
+  background-color: #e7e7e7;
 }
 
-.dw-thread-summary .dw-vote,
-.dw-vote-summary .dw-vote {
+.dw-post-info li:first-child {
+  padding-left: 0.3em; /* no <li> to the left, pad only a little bit */
+}
+
+.dw-thread-info .dw-vote,
+.dw-post-info .dw-vote {
   position: relative;
   top: -1px;
   padding: 0px 0px 1px 5px;
   font-size: 85%;
 }
 
-.dw-vote-summary .dw-vote-score {
+.dw-post-info .dw-vote-score {
   margin-left: 3px;
   display: none; /* it's for debugging mostly; makes non-developers confused */
 }
 
-.dw-vote-summary .dw-count {
+.dw-post-info .dw-count {
   font-size: 90%;
   position: relative;
   left: -2px;
 }
-.dw-vote-summary .dw-count:before {
+.dw-post-info .dw-count:before {
   content: "×"; /* The multiplication sign, U+00D7 */
   position: relative;
   left: -1px;
 }
 
-/* --- Meta ---*/
-.dw-post {
-  position: relative;
-  }
-.dw-post .dw-meta {
-  display: none;
-  position: absolute;
-  top: -16px;
-  margin: 0;
-  padding: 0 1.2em 0 5px; /* there's a .thread border to the left */
-  background-color: lightGrey;
-  }
-.dw-post:hover .dw-meta {
-  --display: block
-  }
-
-/* --- Buttons ---*/
-.dw-post .dw-date {
+.dw-post-info .dw-last-changed {
   float: right;
-  padding: 1px 0.3em;
+  padding: 1px 3px 3px 1ex;
+  margin-left: 1ex;
   position: relative;
-  background-color: #eee;
-  clear: right;
+  font-size: 85%;
 }
+
+/* --- Actions ---*/
 
 #dw-action-menu {
   position: absolute;
@@ -371,7 +350,8 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
 
 /* --- Text ---*/
 .dw-post .dw-text {
-  padding: 3px 1px 3px;
+  clear: left;
+  padding: 4px 1px 3px 3px;
 }
 
 /* --- Menus ---*/

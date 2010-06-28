@@ -112,16 +112,18 @@ class SimpleLayoutManager extends LayoutManager {
   }
 
   private def layoutPosts(): NodeSeq = {
-    <div class="debiki dw-debate">{
+    <div class="debiki dw-debate">
+      <div class="dw-debate-info">{
         if (lastChange isDefined) {
-          <p>Last changed on
-          <abbr class="dw-last-changed dw-date"
+          <p class="dw-last-changed">Last changed on
+          <abbr class="dw-date"
                 title={lastChange.get}>{lastChange.get}</abbr>
           </p>
         }
-      }{
-      _layoutChildren(0, debate.RootPostId)
-    }</div>
+      }
+      </div>
+      { _layoutChildren(0, debate.RootPostId) }
+    </div>
   }
 
   private def _layoutChildren(depth: Int, post: String): NodeSeq = {
@@ -129,25 +131,24 @@ class SimpleLayoutManager extends LayoutManager {
     for {
       c <- childPosts.sortBy(p => -scorecalc.scoreFor(p.id).score)
       cssThreadId = "dw-thread-"+ c.id
-      cssFloat = if (depth <= 1) "dw-left " else ""
       cssDepth = "dw-depth-"+ depth
     }
     yield
-      <div id={cssThreadId} class={cssFloat + cssDepth + " dw-thread"}>
-        { threadSummaryXml(c) }
+      <div id={cssThreadId} class={cssDepth + " dw-thread"}>
+        { threadInfoXml(c) }
         { postXml(c) }
         { _layoutChildren(depth + 1, c.id) }
       </div>
   }
 
-  private def threadSummaryXml(post: Post): NodeSeq = {
+  private def threadInfoXml(post: Post): NodeSeq = {
     val count = debate.successorsTo(post.id).length + 1
     if (count == 1)
-      <ul class="dw-thread-summary">
+      <ul class="dw-thread-info">
         <li class="dw-post-count">1 reply</li>
       </ul>
     else
-      <ul class="dw-thread-summary">
+      <ul class="dw-thread-info">
         <li class="dw-post-count">{count} replies</li>
         <li class="dw-vote">interesting</li>
         <li class="dw-vote">funny</li>
@@ -161,8 +162,8 @@ class SimpleLayoutManager extends LayoutManager {
     val cropped_s = if (long) " dw-cropped-s" else ""
     val date = toIso8601(p.date)
     <div id={cssPostId} class={"dw-post dw-cropped-e" + cropped_s}>
-      <ul class="dw-vote-summary">
-        <li>by&#160;<span class="dw-owner">{
+      <ul class="dw-post-info">
+        <li>By&#160;<span class="dw-owner">{
               spaceToNbsp(p.owner.getOrElse("Unknown"))}</span></li>
         <li class="dw-vote-score">{ scorecalc.scoreFor(p.id).score }</li>
         <li class="dw-vote-is">
@@ -173,8 +174,12 @@ class SimpleLayoutManager extends LayoutManager {
           <span class="dw-vote">funny</span>
           <span class="dw-count">1</span>
         </li>
+        <li class="dw-last-changed">
+          {/* Show date on one line (10 chars), time on another. */}
+          <abbr class="dw-date" title={date}>
+            {date.take(10)}<br/>at {date.drop(11)}</abbr>
+        </li>
       </ul>
-      <abbr class="dw-date" title={date}>{date}</abbr>
       { xmlText }
     </div>
   }
