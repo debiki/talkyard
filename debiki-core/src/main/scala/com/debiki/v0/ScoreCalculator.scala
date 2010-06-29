@@ -21,7 +21,7 @@ private[debiki] class ScoreCalculator(val debate: Debate) {
     var voteCount = 0
 
     def += (vote: Vote): PostScoreImpl = {
-      score += vote.score
+      score += 0 // was: vote.score, TODO: good votes - bad votes
       voteCount += 1
       this
     }

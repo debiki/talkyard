@@ -25,11 +25,76 @@ class LayoutVariables {
   var newReply: Option[String] = None
 }
 
-private[v0]
 object LayoutManager {
+
+  /** Digs a {@code Reply} or a {@code Vote} out of a 
+   *  {@code javax.servlet.ServletRequest.getParameterMap()}.
+   *
+   *  If {@code userName} specifies, ignores {@code dw-fi-author}
+   *  and {@code dw-fi-voter}.
+   *
+   *  If {@code date} is {@code None}, uses the current date-time.
+   *
+   *  The param map maps input-names to input-value-arrays. This function
+   *  searches the map for Debiki specific input/value data,
+   *  and constructs a vote or a reply or nothing.
+   */
+  def digServletRequestParamMap(
+        map: ju.Map[String, Array[String]],
+        userName: Option[String],
+        date: Option[ju.Date]): Option[Object] = {
+
+    def hasValues(arr: Array[String]) = arr != null && !arr.isEmpty
+
+    // Check the form-input-action map entry, to find out how to interpret
+    // other map entries.
+    map.get("dw-fi-action") match {
+      case Array("reply") =>
+        val posts = map.get("dw-fi-reply-to")
+        val replyTexts = map.get("dw-fi-reply-text")
+        val authors = map.get("dw-fi-reply-author")
+        require(hasValues(posts), "Found no reply-to post")
+        require(posts.length == 1, "More than one reply-to post")
+        require(hasValues(replyTexts), "Found no reply text")
+        require(replyTexts.length == 1, "More than one reply text")
+        require(userName.isDefined || hasValues(authors), "Found no author")
+        require(userName.isDefined || authors.length == 1,
+                "Found more than one author")
+        Some(Post(
+                id = "?", // illegal id, only a-z allowed
+                parent = posts.head,
+                date = date.getOrElse(new ju.Date),
+                owner = userName.orElse(Some(authors.head)),
+                text = replyTexts.head))
+      case Array("vote") =>
+        val posts = map.get("dw-fi-vote-on")
+        val votes = map.get("dw-fi-vote")
+        val voters = map.get("dw-fi-voter")
+        require(hasValues(posts), "Found no vote-on post")
+        require(posts.length == 1, "Found more than one vote-on post")
+        require(hasValues(votes), "Found no vote")
+        require(votes.length < 100, "Less than 100 votes") // feels safer
+        require(userName.isDefined || hasValues(voters), "Found no voter")
+        require(userName.isDefined || voters.length == 1,
+                "Found more than one voter")
+        Some(Vote(
+                postId = posts.head,
+                voterId = voters.head,
+                date = date.getOrElse(new ju.Date),
+                votes = votes.toList))
+      case Array(value) =>
+        throw new IllegalArgumentException(
+                  "Unknown dw-fi-action value ["+ safe(value) +"]")
+      case Array(_, _, _*) =>
+        throw new IllegalArgumentException("Too many action values")
+      case _ =>
+        None
+    }
+  }
 
   /** Converts text to xml, returns (html, approx-line-count).
    */
+  private[v0]
   def textToHtml(text: String, charsPerLine: Int): Tuple2[Elem, Int] = {
     var lines = 0
     val xml =
@@ -48,13 +113,16 @@ object LayoutManager {
   /** Replaces spaces with the Unicode representation of non-breaking space,
    *  which is interpreted as {@code &nbsp;} by Web browsers.
    */
+  private[v0]
   def spaceToNbsp(text: String): String = text.replace(' ', '\u00a0')
 
+  private[v0]
   def dateToAbbr(date: ju.Date, cssClass: String): NodeSeq =
     <abbr class={"dw-date "+ cssClass} title={toIso8601(date)} />
 
   /** WARNING: XSS / DoS attacks possible?
    */
+  private[v0]
   def optionToJsVar[E](o: Option[E], varName: String): String =
     "\n"+ varName +" = "+ (o match {
       case None => "undefined"
@@ -67,12 +135,13 @@ object LayoutManager {
    *  All available options:
    *    "expires: 7, path: '/', domain: 'jquery.com', secure: true"
    */
+  private[v0]
   def optionToJsCookie[E](
           o: Option[E], cookieName: String, options: String = ""): String =
     if (o.isEmpty) ""  // do nothing with cookie
     else
       "\njQuery.cookie('"+ cookieName +"', "+
-      (o match {
+      ((o: @unchecked) match {
         case Some(null) => "null"  // delete cookie
         case Some(d: ju.Date) => "'"+ toIso8601(d) +"'"
         case Some(x) => "'"+ x.toString + "'"
@@ -192,6 +261,14 @@ class SimpleLayoutManager extends LayoutManager {
 
   private val submitButtonText = "Submit reply"
 
+  /**
+   *  Naming notes:
+   *   - Form input names and ids always starts with "dw-fi-"
+   *     ("fi" is for "form input").
+   *  Security notes:
+   *   - Only send [<form>s with side effects] using the POST
+   *     method (never GET), to make XSRF attacks harder.
+   */
   private def menus = {
     <div id="dw-hidden-menus">
       <div id='dw-action-menu' class='ui-state-default'>
@@ -203,16 +280,17 @@ class SimpleLayoutManager extends LayoutManager {
           <div class='dw-post'>
             <div class='dw-owner'><i>Your reply</i></div>
           </div>
-          <form class='dw-agree dw-reply'
+          <form class='dw-reply'
               action={config.replyAction}
               accept-charset='UTF-8'
               method='post'>
-            <input type='hidden' name='parent' value='a'/>
-            <textarea name='reply' rows='10' cols='34'
+            <input type='hidden' name='dw-fi-action' value='reply'/>
+            <input type='hidden' name='dw-fi-reply-to' value='?'/>
+            <textarea name='dw-fi-reply-text' rows='10' cols='34'
               >The cat was playing in the garden.</textarea><br/>
-            <label for='dw-reply-author'>Your name or alias:</label>
-            <input type='text' name='author'
-                  value='Anonymous' id='dw-reply-author'/><br/>
+            <label for='dw-fi-reply-author'>Your name or alias:</label>
+            <input id='dw-fi-reply-author' type='text'
+                  name='dw-fi-reply-author' value='Anonymous'/><br/>
             <p class='dw-user-contrib-license'>
               By clicking <i>{submitButtonText}</i>, you agree to license
               the text you submit under the {ccWikiLicense}.
@@ -227,15 +305,38 @@ class SimpleLayoutManager extends LayoutManager {
             action={config.voteAction}
             accept-charset='UTF-8'
             method='post'>
-          <input type='hidden' name='post' value='?'/>
-          <fieldset>
-            <input type='radio' name='vote' value='up' id='dw-vote-up'/>
-            <label for='dw-vote-up'>Vote up</label><br/>
-            <input type='radio' name='vote' value='down' id='dw-vote-down'/>
-            <label for='dw-vote-down'>Vote down</label><br/>
-          </fieldset>
+          <input type='hidden' name='dw-fi-action' value='vote'/>
+          <input type='hidden' name='dw-fi-vote-on' value='?'/>
+          <input type='hidden' name='dw-fi-voter' value='?'/> {/* for now */}
+          {
+            var boxCount = 1
+            def voteBox(value: String) = {
+              val name = "dw-fi-vote"
+              val id = name +"-"+ boxCount
+              boxCount += 1
+              <input id={id} type='checkbox' name={name} value={value} />
+              <label for={id}>{value}</label><br/>
+            }
+
+            {/* temporary layout hack */}
+            <div class='dw-vote-column-1'>{
+              voteBox("Interesting") ++
+              voteBox("Boring") ++
+              voteBox("Funny")
+            }</div>
+            <div class='dw-vote-column-2'>{
+              voteBox("Insightful") ++
+              voteBox("Faulty")
+              /* <a class='dw-show-more-votes'>More...</a> */
+            }</div>
+            <div class='dw-vote-column dw-more-votes'>{
+              voteBox("Off topic") ++
+              voteBox("Spam") ++
+              voteBox("Troll")
+            }</div>
+          }
           <input class='dw-submit' type='submit' value='Submit votes'
-              disabled='disabled'/> {/* enabled on radio button click */}
+              disabled='disabled'/> {/* enabled on checkbox click */}
           <input class='dw-cancel' type='button' value='Cancel'/>
         </form>
       </div>

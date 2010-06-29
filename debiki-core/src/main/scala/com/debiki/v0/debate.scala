@@ -42,7 +42,6 @@ case class Debate (
   def postVotes(id: String): List[Vote] = votes.filter(_.postId == id)
 
   // For now.
-  def postScore(id: String): Int = (0 /: postVotes(id)) (_ + _.score)
 
   def repliesTo(id: String): List[Post] =
     postsByParentId.getOrElse(id, Nil)
@@ -107,9 +106,8 @@ case class Vote private[debiki] (
   postId: String,
   voterId: String,
   date: ju.Date,
-  it: List[String],
-  is: List[String],
-  score: Int)
+  votes: List[String]
+)
 
 case class Post(
   id: String,

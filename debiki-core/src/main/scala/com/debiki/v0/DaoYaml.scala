@@ -13,6 +13,45 @@ import scala.collection.JavaConversions._
 import scala.collection.{mutable => mut}
 import java.{io => jio, util => ju}
 
+object DaoYaml {
+
+  /** Notice: DoS or XSS attack: Bad input gives corrupt Yaml.
+   */
+  def toYaml(post: Post): String = {
+    val sb = new mut.StringBuilder
+    sb ++= "\n--- !Post"
+    sb ++= "\nparent: " ++= post.parent
+    sb ++= "\nid: " ++= post.id
+
+    // (If `owner' is inlined on the subsequent `sb ++= ...' line,
+    // the below compilation error follows. If it's converted to a String
+    // all is fine though. Weird.
+    // [INFO]  found   : java.lang.Comparable[java.lang.String]
+    // [INFO]  required: scala.collection.TraversableOnce[Char]  )
+    val owner = post.owner.getOrElse("?") // compilation error if...
+    sb ++= "\nowner: \"" ++= owner += '"' //... inlined here
+
+    sb ++= "\ndate: " ++= toIso8601(post.date)
+    var indentedText = post.text.replaceAll("\n", "\n ") // indents 1 space
+    indentedText = indentedText.replace("\r", "") // convert \r\n to \n
+    sb ++= "\ntext: |1\n " ++= indentedText // note: ' ' after \n!
+    sb.toString
+  }
+
+  /** Warning: DoS or XSS attack: Bad input gives corrupt Yaml.
+   */
+  def toYaml(vote: Vote): String = {
+    val sb = new mut.StringBuilder
+    sb ++= "\n--- !Vote"
+    sb ++= "\nby: \"" ++= vote.voterId += '"'
+    sb ++= "\ndate: " ++= toIso8601(vote.date)
+    sb ++= "\npost: " ++= vote.postId
+    sb ++= "\nvotes: " ++= vote.votes.mkString("[\"", "\", \"", "\"]")
+    sb.toString
+  }
+
+}
+
 class DaoYaml extends Dao {
 
   private def buildDebate(iter: Iterable[Object]): Option[Debate] = {
@@ -124,7 +163,7 @@ class DaoYaml extends Dao {
         illegalArgIf(date.isEmpty, "`date' entry missing")
 
         Vote(postId = postId.get, voterId = voterId.get, date = date.get,
-             it = it, is = is, score = score.getOrElse(0))
+             votes = Nil)
       }
     }
 

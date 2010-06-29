@@ -173,14 +173,18 @@ $('#dw-action-menu .dw-vote').click(function(){
   var post = $(this).closest('.dw-thread').children('.dw-post');
   var vote = $('#dw-hidden-menus .dw-vote-template').children().clone(true);
   var postId = post.attr('id').substr(8, 999); // drop initial 'dw-post-'
-  vote.find("input[name='post']").attr('value', postId);
+  vote.find("input[name='dw-fi-vote-on']").attr('value', postId);
   post.after(vote);
   // Dismiss action menu
   $('#dw-action-menu').appendTo($('#dw-hidden-menus'));
   // Enable submit button when votes specified
-  vote.find("input[type='radio']").click(function(){
+  vote.find("input[type='checkbox']").click(function(){
     vote.find("input[type='submit']")[0].disabled = false;
   });
+  // TODO: Rename all id attributes (append `postId'), to avoid name
+  // clashes with other copies of the dw-vote-template.
+  // (Currently, if you open 2 vote menus and click on checkboxes
+  // in the 2nd, the ones in the 1st menu are changed.)
 });
 
 $("#dw-hidden-menus .dw-vote .dw-cancel").click(function() {
@@ -192,7 +196,7 @@ $("#dw-action-menu .dw-reply").click(function() {
   var post = $(this).closest(".dw-thread").children(".dw-post");
   var reply = $("#dw-hidden-menus .dw-reply-template").children().clone(true);
   var postId = post.attr('id').substr(8, 999); // drop initial "dw-post-"
-  reply.find("input[name='parent']").attr('value', postId);
+  reply.find("input[name='dw-fi-reply-to']").attr('value', postId);
   post.after(reply);
   // Dismiss action menu
   $('#dw-action-menu').appendTo($('#dw-hidden-menus'));
