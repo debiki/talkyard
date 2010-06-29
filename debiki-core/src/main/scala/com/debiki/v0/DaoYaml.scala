@@ -127,7 +127,7 @@ class DaoYaml extends Dao {
           case "date" => date = Some(asDate(t.getValueNode))
           case "owner" => owner = Some(asText(t.getValueNode))
           case "text" => text = Some(asText(t.getValueNode))
-          case _ => // ignore unknown entries
+          case _ => // fine, allow future extensions
         }
 
         illegalArgIf(id.isEmpty, "`id' entry missing")
@@ -146,24 +146,23 @@ class DaoYaml extends Dao {
         var voterId: Option[String] = None
         var postId: Option[String] = None
         var date: Option[ju.Date] = None
-        var score: Option[Int] = None
-        var it = List[String]()
-        var is = List[String]()
+        var votes: List[String] = null
 
         for (t <- tuples) asText(t.getKeyNode) match {
           case "by" => voterId = Some(asText(t.getValueNode))
           case "post" => postId = Some(asText(t.getValueNode))
           case "date" => date = Some(asDate(t.getValueNode))
-          case "score" => score = Some(asInt(t.getValueNode))
-          case _ => // not implemented
+          case "votes" => votes = asTextList(t.getValueNode)
+          case _ => // fine, allow future extensions
         }
 
         illegalArgIf(voterId.isEmpty, "`id' entry missing")
         illegalArgIf(postId.isEmpty, "`parent' entry missing")
         illegalArgIf(date.isEmpty, "`date' entry missing")
+        illegalArgIf(votes == null, "`votes' entry missing")
 
         Vote(postId = postId.get, voterId = voterId.get, date = date.get,
-             votes = Nil)
+             votes = votes)
       }
     }
 
@@ -197,6 +196,13 @@ class DaoYaml extends Dao {
       // cannot be parsed as a Date.
       val date = yamlConstructors.get(yn.Tag.TIMESTAMP).construct(n)
       date.asInstanceOf[ju.Date]
+    }
+
+    private def asTextList(n: yn.Node): List[String] = n match {
+      case s: yn.SequenceNode =>
+        val values: ju.List[yn.Node] = s.getValue
+        values.toList.map(asText(_))
+      case x => illegalArgBadClass("`votes'", "SequenceNode", x)
     }
 
     /** Debug-prints a SnakeYaml node. The default toString prints
