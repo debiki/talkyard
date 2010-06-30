@@ -231,24 +231,24 @@ class SimpleLayoutManager extends LayoutManager {
     val cropped_s = if (long) " dw-cropped-s" else ""
     val date = toIso8601(p.date)
     <div id={cssPostId} class={"dw-post dw-cropped-e" + cropped_s}>
-      <ul class="dw-post-info">
-        <li>By&#160;<span class="dw-owner">{
-              spaceToNbsp(p.owner.getOrElse("Unknown"))}</span></li>
-        <li class="dw-vote-score">{ scorecalc.scoreFor(p.id).score }</li>
-        {
+      <div class='dw-post-info'>
+        <div class='dw-owner-info'>By&#160;<span class="dw-owner">{
+              spaceToNbsp(p.owner.getOrElse("whom?"))}</span></div>
+        <div class="dw-vote-score">{ scorecalc.scoreFor(p.id).score }</div>
+        <ul class='dw-vote-info'>{
           // Todo: Sort by sum?
           for ((value: String, sum: Int) <- debate.voteSumsFor(p.id)) yield
             <li class="dw-vote-is">
               <span class="dw-vote">{value}</span>
               <span class="dw-count">{sum}</span>
             </li>
-        }
-        <li class="dw-last-changed">
-          {/* Show date on one line (10 chars), time on another. */}
+        }</ul>
+        <div class="dw-last-changed">
           <abbr class="dw-date" title={date}>
+            {/* Show date on one line (10 chars), time on another. */}
             {date.take(10)}<br/>at {date.drop(11)}</abbr>
-        </li>
-      </ul>
+        </div>
+      </div>
       { xmlText }
     </div>
   }

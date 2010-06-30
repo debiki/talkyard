@@ -221,7 +221,7 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
 .dw-post {
   position: relative;
   overflow: hidden;
-  min-height: 1.1em;
+  min-height: 1.3em;
   min-width: 5em;
   background-color: #fcfaf5;
   margin: 0 5px 3px 0;
@@ -275,27 +275,35 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
 
 .dw-post-info {
   font-size: 95%;
-  padding: 0.3ex 0;
-  height: 1.25em; /* make the upmost part of the post gray */
-  background-color: #e7e7e7; /* the <li>:s are also gray */
+  padding: 0.2ex 0;
+  height: 1.4em; /* make the upmost part of the post gray */
+  background-color: #e7e7e7;
+  xx-nice-color-background-color: lightblue;
 }
 
-.dw-post-info li {
-  display: inline;
-  padding-left: 0.5em;
+.dw-post-info .dw-owner-info {
   float: left;
+  padding-left: 0.3em; /* no <li> to the left, pad only a little bit */
+  margin-right: 0.5em; /* vote-info <li>s to the right */
+}
+
+.dw-post-info .dw-vote-info {
+  display: inline;
+  /* Possible TODO:
+    height: 1.4em;
+    overflow: hidden;
+  and remove height restriction on click. Then, all votes shown, on click.
+  */
+}
+
+.dw-post-info .dw-vote-info li {
+  float: left;
+  padding: 0 1px 3px 0.5em;
   background-color: #e7e7e7;
 }
 
-.dw-post-info li:first-child {
-  padding-left: 0.3em; /* no <li> to the left, pad only a little bit */
-}
-
 .dw-thread-info .dw-vote,
-.dw-post-info .dw-vote {
-  position: relative;
-  top: -1px;
-  padding: 0px 0px 1px 5px;
+.dw-post-info .dw-vote-info .dw-vote {
   font-size: 85%;
 }
 
@@ -304,12 +312,12 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
   display: none; /* it's for debugging mostly; makes non-developers confused */
 }
 
-.dw-post-info .dw-count {
+.dw-post-info .dw-vote-info .dw-count {
   font-size: 90%;
   position: relative;
   left: -2px;
 }
-.dw-post-info .dw-count:before {
+.dw-post-info .dw-vote-info .dw-count:before {
   content: "×"; /* The multiplication sign, U+00D7 */
   position: relative;
   left: -1px;
@@ -321,6 +329,8 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
   margin-left: 1ex;
   position: relative;
   font-size: 85%;
+  background-color: #e7e7e7; /* parent elem, .dw-post-info, has same bg-color,
+                                but its height is restricted */
 }
 
 /* --- Actions ---*/
