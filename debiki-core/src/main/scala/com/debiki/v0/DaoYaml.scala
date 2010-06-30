@@ -228,12 +228,18 @@ class DaoYaml extends Dao {
           sb.append(n.getValueNode.toString)
           sb.append("> }")
         }
-        val repr = "<"+ m.getClass.getName + ", tag="+ m.getTag +", values="+
-                    sb.toString +">"
-        // Sanitize HTML. Is some DoS attack possible, since end user
+        var repr = "<"+ m.getClass.getSimpleName +
+                    " "+ m.getTag +" "+ sb.toString +">"
+        // Sanitize HTML somewhat. Is some DoS attack possible, since end user
         // provided text is/might be included here?
-        repr.replace('<', '[')
-        repr.replace('>', ']')
+        repr = repr.replace('<', '«') // « is not <
+        repr = repr.replace('>', '»')
+        // Remove obvious info
+        repr = repr.replace("org.yaml.snakeyaml.nodes.", "")
+        repr = repr.replace("tag=tag:yaml.org,2002:", "!")
+        repr = repr.replace("tag=", "!")
+        repr = repr.replace("key=","")
+        repr.replace("value=","")
       case _ =>
         node.toString
     }
