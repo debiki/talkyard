@@ -14,8 +14,8 @@ object Debate {
 
 case class Debate (
   val id: String,
-  private val posts: List[Post],
-  private val votes: List[Vote]
+  private[debiki] val posts: List[Post],
+  private[debiki] val votes: List[Vote]
 ){
   val RootPostId = "root"
 
@@ -34,14 +34,47 @@ case class Debate (
           yield (parentId, children.toList)).toList: _*)
   }
 
+  private class VoteCacheItem {
+    var votes: List[Vote] = Nil
+    var valueSums: imm.Map[String, Int] = null
+  }
+
+  private lazy val voteCache: mut.Map[String, VoteCacheItem] = {
+    val cache = mut.Map[String, VoteCacheItem]()
+    // Gather votes
+    for (v <- votes) {
+      var ci = cache.get(v.postId)
+      if (ci.isEmpty) {
+        cache(v.postId) = new VoteCacheItem
+        ci = cache.get(v.postId)
+      }
+      ci.get.votes = v :: ci.get.votes
+    }
+    // Sum vote values
+    for ((postId, ci) <- cache) ci.valueSums = {
+      val mutmap = mut.Map[String, Int]()
+      for (vote <- ci.votes; value <- vote.votes) {
+        val sum = mutmap.getOrElse(value, 0)
+        mutmap(value) = sum + 1
+      }
+      imm.Map[String, Int](mutmap.toSeq: _*)
+    }
+    cache
+  }
+
   def postCount = posts.length
 
   def post(id: String): Option[Post] = postsById.get(id)
 
-  // For now.
-  def postVotes(id: String): List[Vote] = votes.filter(_.postId == id)
+  def votesOn(postId: String): List[Vote] = {
+    val ci = voteCache.get(postId)
+    if (ci.isDefined) ci.get.votes else Nil
+  }
 
-  // For now.
+  def voteSumsFor(postId: String): imm.Map[String, Int] = {
+    val ci = voteCache.get(postId)
+    if (ci.isDefined) ci.get.valueSums else imm.Map.empty
+  }
 
   def repliesTo(id: String): List[Post] =
     postsByParentId.getOrElse(id, Nil)

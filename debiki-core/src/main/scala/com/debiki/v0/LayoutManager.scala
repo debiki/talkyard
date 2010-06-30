@@ -235,14 +235,14 @@ class SimpleLayoutManager extends LayoutManager {
         <li>By&#160;<span class="dw-owner">{
               spaceToNbsp(p.owner.getOrElse("Unknown"))}</span></li>
         <li class="dw-vote-score">{ scorecalc.scoreFor(p.id).score }</li>
-        <li class="dw-vote-is">
-          <span class="dw-vote">interesting</span>
-          <span class="dw-count">3</span>
-        </li>
-        <li class="dw-vote-is">
-          <span class="dw-vote">funny</span>
-          <span class="dw-count">1</span>
-        </li>
+        {
+          // Todo: Sort by sum?
+          for ((value: String, sum: Int) <- debate.voteSumsFor(p.id)) yield
+            <li class="dw-vote-is">
+              <span class="dw-vote">{value}</span>
+              <span class="dw-count">{sum}</span>
+            </li>
+        }
         <li class="dw-last-changed">
           {/* Show date on one line (10 chars), time on another. */}
           <abbr class="dw-date" title={date}>

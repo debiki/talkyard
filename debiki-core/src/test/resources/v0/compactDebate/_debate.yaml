@@ -268,19 +268,17 @@ text: |
 by: Person Name
 date: 2001-12-14t21:59:43.10-05:00
 post: j
-it: [dissents]
-is: [stupid, off-topic, troll]
-score: -1
+votes: [stupid, off-topic, troll]
 --- !Vote
 by: Misse-Muu
 date: 2001-12-14t21:59:43.10-05:00
 post: h
-score: 1
+votes: [stupid, off-topic, troll]
 --- !Vote
 by: Anders-And
 date: 2001-12-14t21:59:43.10-05:00
 post: h
-score: 2
+votes: ["buu", "buu huu", "»»määäää I'm a clever animal määä««"]
 --- !Post
 parent: e
 id: ea
