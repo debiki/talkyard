@@ -84,41 +84,46 @@ p:last-child {
 /* === Threads === */
 
 .dw-depth-0.dw-thread {
-  /* center root post */
-  margin: 1em auto;
+  margin: 0.3em 0 0 0.7em;
+  border-left: 0.9em solid transparent;
+  border-bottom: 1ex solid transparent;
+  background-color: inherit;
 }
-.dw-depth-0 .dw-thread {
-  margin: 0.3em 0 0 0;
+
+/* The very first post */
+.dw-depth-0.dw-thread > .dw-post {
+  margin-bottom: 0.8em;
+}
+.dw-depth-0.dw-thread > .dw-post.dw-cropped-e {
+  /* Make the root post wider than other posts, so it spans > 1 child.
+  Then it is easier (?) to understand which threads are its
+  children, although the children are spread horizontally. */
+  max-width: 60em;
+}
+.dw-depth-0.dw-thread > .dw-post.dw-cropped-e > .dw-text {
+  padding-right: 15em; /* the text would be hard to read were it very wide */
+  padding-bottom: 1.3em; /* litte more airy? first post */
+}
+
+.dw-thread {
+  margin: 0.3em 0 0 0.7em;
   /* transparent won't work: jQuery's class animation would fade
   to *white*, but the color shining through should be
   .dw-depth-1.dw-thread's background-color. */
   border-left: 0.9em solid #fcfaf5; /*transparent*/
-  margin-left: 0.7em;
   border-bottom: 1ex solid #fcfaf5; /*transparent*/
-  margin-bottom: 0ex;
   background-color: inherit;
   }
-.dw-depth-0 > .dw-thread {
-  margin-left: 0.5em;
-  }
-.xx.dw-thread.dw-depth-0 > .dw-thread:nth-child(2) {
-  /* thread no. 2 is currently the leftmost one,
-   * need no left margin, since whole .debate already
-   * has left margin.
-   * - no, disable. Might indent badly on Android.
-   */
-  margin-left: 0;
-  }
-.dw-depth-0 .dw-thread.dw-demarcated-fx {
+.dw-thread.dw-demarcated-fx {
   /* Unfortunately animating the background color won't
   look nice since there migh be child threads whose
   background color it *not* animated. Perhaps this can
   be fixed with more javascript.*/
-  --background-color: #faf7ea;
+  xx-background-color: #faf7ea;
   border-left-color: #eae8ca;
   border-bottom-color: #d6d3b2;
 }
-.dw-depth-0 .dw-thread.dw-collapsed-fx {
+.dw-thread.dw-collapsed-fx {
   /* Thread is collapsed, hence its summary is visible,
   so add extra margin to previous tag (which is a .post or .thread tag)
   so there's space for a position=absolute Reply button,
