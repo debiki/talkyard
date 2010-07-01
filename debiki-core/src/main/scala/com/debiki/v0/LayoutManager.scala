@@ -68,12 +68,12 @@ object LayoutManager {
                 text = replyTexts.head))
       case Array("vote") =>
         val posts = map.get("dw-fi-vote-on")
-        val votes = map.get("dw-fi-vote")
+        val values = map.get("dw-fi-vote-value")
         val voters = map.get("dw-fi-voter")
         require(hasValues(posts), "Found no vote-on post")
         require(posts.length == 1, "Found more than one vote-on post")
-        require(hasValues(votes), "Found no vote")
-        require(votes.length < 100, "Less than 100 votes") // feels safer
+        require(hasValues(values), "Found no vote value")
+        require(values.length < 100, "Less than 100 vote values") // safer?
         require(userName.isDefined || hasValues(voters), "Found no voter")
         require(userName.isDefined || voters.length == 1,
                 "Found more than one voter")
@@ -81,7 +81,7 @@ object LayoutManager {
                 postId = posts.head,
                 voterId = voters.head,
                 date = date.getOrElse(new ju.Date),
-                votes = votes.toList))
+                values = values.toList))
       case Array(value) =>
         throw new IllegalArgumentException(
                   "Unknown dw-fi-action value ["+ safe(value) +"]")
@@ -319,7 +319,7 @@ class SimpleLayoutManager extends LayoutManager {
           {
             var boxCount = 1
             def voteBox(value: String) = {
-              val name = "dw-fi-vote"
+              val name = "dw-fi-vote-value"
               val id = name +"-"+ boxCount
               boxCount += 1
               <input id={id} type='checkbox' name={name} value={value} />

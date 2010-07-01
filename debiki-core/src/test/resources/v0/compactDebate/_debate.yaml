@@ -268,82 +268,82 @@ text: |
 by: Pelle Svanslös
 date: 2002-01-01t10:11:12.13Z
 post: b
-votes: [interesting]
+values: [interesting]
 --- !Vote
 by: Pelle Svanslös
 date: 2002-01-01t10:11:12.13Z
 post: c
-votes: [boring]
+values: [boring]
 --- !Vote
 by: Maja Gräddnos
 date: 2002-01-01t10:11:12.13Z
 post: c
-votes: [faulty, boring]
+values: [faulty, boring]
 --- !Vote
 by: Majas avlägsna släkting i Amerikat
 date: 2002-01-01t10:11:12.13Z
 post: ac
-votes: [faulty, boring, spam, troll, off-topic]
+values: [faulty, boring, spam, troll, off-topic]
 --- !Vote
 by: Majas avlägsna släkting i Norge
 date: 2002-01-01t10:11:12.13Z
 post: ac
-votes: [faulty, boring, spam, troll]
+values: [faulty, boring, spam, troll]
 --- !Vote
 by: Maja Gräddnos
 date: 2002-01-01t10:11:12.13Z
 post: ac
-votes: [faulty, boring, spam]
+values: [faulty, boring, spam]
 --- !Vote
 by: Majas syster
 date: 2002-01-01t10:11:12.13Z
 post: ac
-votes: [faulty, boring]
+values: [faulty, boring]
 --- !Vote
 by: Majas moster
 date: 2002-01-01t10:11:12.13Z
 post: ac
-votes: [faulty]
+values: [faulty]
 --- !Vote
 by: Plåtniklas
 date: 2002-01-01t10:11:12.13Z
 post: ad
-votes: [off-topic]
+values: [off-topic]
 --- !Vote
 by: Karlsson på Taket
 date: 2002-01-01t10:11:12.13Z
 post: ad
-votes: [spam]
+values: [spam]
 --- !Vote
 by: Nisse Nyfiken
 date: 2002-01-01t10:11:12.13Z
 post: ad
-votes: [spam]
+values: [spam]
 --- !Vote
 by: Bull den Bullige
 date: 2002-01-01t10:11:12.13Z
 post: d
-votes: [spam, off-topic, troll]
+values: [spam, off-topic, troll]
 --- !Vote
 by: Måns
 date: 2002-01-01t10:11:12.13Z
 post: cb
-votes: [troll, spam]
+values: [troll, spam]
 --- !Vote
 by: Bill den Knasige
 date: 2001-12-14t21:59:43.10-05:00
 post: j
-votes: [stupid, off-topic, troll]
+values: [stupid, off-topic, troll]
 --- !Vote
 by: Misse-Muu
 date: 2001-12-14t21:59:43.10-05:00
 post: h
-votes: [stupid, off-topic, troll]
+values: [stupid, off-topic, troll]
 --- !Vote
 by: Anders-And
 date: 2001-12-14t21:59:43.10-05:00
 post: h
-votes: ["interesting", "faulty", "»määäh-unicode«"]
+values: ["interesting", "faulty", "»määäh-unicode«"]
 --- !Post
 parent: e
 id: ea
@@ -405,7 +405,7 @@ text: |
 #--- !Vote
 #date: 2001-12-14t21:59:43.10-05:00
 #by: Person Name
-#votes: { post: x, [ is: stupid ] }
+#values: { post: x, [ is: stupid ] }
 #--- !Vote
 #date: 2001-12-14t21:59:43.10-05:00
 #by: Person Name

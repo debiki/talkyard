@@ -57,10 +57,10 @@ private[debiki] class ScoreCalculator(val debate: Debate) {
     }
 
     def += (vote: Vote): PostScoreImpl = {
-      if (vote.votes.isEmpty)
+      if (vote.values.isEmpty)
         return this
-      val weight = 1f / vote.votes.length
-      for (value <- vote.votes) {
+      val weight = 1f / vote.values.length
+      for (value <- vote.values) {
         val curSum = mutValSums.getOrElse(value, 0f)
         mutValSums(value) = curSum + 1f * weight
         // results in: "illegal cyclic reference involving trait Iterable"

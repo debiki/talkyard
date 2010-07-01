@@ -53,7 +53,7 @@ case class Debate (
     // Sum vote values
     for ((postId, ci) <- cache) ci.valueSums = {
       val mutmap = mut.Map[String, Int]()
-      for (vote <- ci.votes; value <- vote.votes) {
+      for (vote <- ci.votes; value <- vote.values) {
         val sum = mutmap.getOrElse(value, 0)
         mutmap(value) = sum + 1
       }
@@ -139,7 +139,7 @@ case class Vote private[debiki] (
   postId: String,
   voterId: String,
   date: ju.Date,
-  votes: List[String]
+  values: List[String]
 )
 
 case class Post(

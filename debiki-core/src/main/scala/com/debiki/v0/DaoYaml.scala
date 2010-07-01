@@ -46,7 +46,7 @@ object DaoYaml {
     sb ++= "\nby: \"" ++= vote.voterId += '"'
     sb ++= "\ndate: " ++= toIso8601(vote.date)
     sb ++= "\npost: " ++= vote.postId
-    sb ++= "\nvotes: " ++= vote.votes.mkString("[\"", "\", \"", "\"]")
+    sb ++= "\nvalues: " ++= vote.values.mkString("[\"", "\", \"", "\"]")
     sb.toString
   }
 
@@ -146,23 +146,23 @@ class DaoYaml extends Dao {
         var voterId: Option[String] = None
         var postId: Option[String] = None
         var date: Option[ju.Date] = None
-        var votes: List[String] = null
+        var values: List[String] = null
 
         for (t <- tuples) asText(t.getKeyNode) match {
           case "by" => voterId = Some(asText(t.getValueNode))
           case "post" => postId = Some(asText(t.getValueNode))
           case "date" => date = Some(asDate(t.getValueNode))
-          case "votes" => votes = asTextList(t.getValueNode)
+          case "values" => values = asTextList(t.getValueNode)
           case _ => // fine, allow future extensions
         }
 
         illegalArgIf(voterId.isEmpty, "`id' entry missing")
         illegalArgIf(postId.isEmpty, "`parent' entry missing")
         illegalArgIf(date.isEmpty, "`date' entry missing")
-        illegalArgIf(votes == null, "`votes' entry missing")
+        illegalArgIf(values == null, "`values' entry missing")
 
         Vote(postId = postId.get, voterId = voterId.get, date = date.get,
-             votes = votes)
+             values = values)
       }
     }
 
@@ -202,7 +202,7 @@ class DaoYaml extends Dao {
       case s: yn.SequenceNode =>
         val values: ju.List[yn.Node] = s.getValue
         values.toList.map(asText(_))
-      case x => illegalArgBadClass("`votes'", "SequenceNode", x)
+      case x => illegalArgBadClass("`values'", "SequenceNode", x)
     }
 
     /** Debug-prints a SnakeYaml node. The default toString prints
