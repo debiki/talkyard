@@ -323,6 +323,10 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
   left: -1px;
 }
 
+.dw-post-info .dw-vote-info-non-weighted {
+  display: none; /* -non-weighted is only for debugging */
+}
+
 .dw-post-info .dw-last-changed {
   float: right;
   padding: 1px 3px 3px 1ex;

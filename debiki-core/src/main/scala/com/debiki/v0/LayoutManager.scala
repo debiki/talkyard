@@ -236,7 +236,15 @@ class SimpleLayoutManager extends LayoutManager {
               spaceToNbsp(p.owner.getOrElse("whom?"))}</span></div>
         <div class="dw-vote-score">{ scorecalc.scoreFor(p.id).score }</div>
         <ul class='dw-vote-info'>{
-          // Todo: Sort by sum?
+          for ((value: String, sum: Float) <-
+                  scorecalc.scoreFor(p.id).valueSumsSorted) yield
+            <li class="dw-vote-is">
+              <span class="dw-vote">{value}</span>
+              <span class="dw-count">{"%.2f" format sum}</span>
+            </li>
+        }</ul>
+        <ul class='dw-vote-info-non-weighted'>{
+          // **Only for debugging**, css display is `none'.
           for ((value: String, sum: Int) <- debate.voteSumsFor(p.id)) yield
             <li class="dw-vote-is">
               <span class="dw-vote">{value}</span>
@@ -320,19 +328,19 @@ class SimpleLayoutManager extends LayoutManager {
 
             {/* temporary layout hack */}
             <div class='dw-vote-column-1'>{
-              voteBox("Interesting") ++
-              voteBox("Boring") ++
-              voteBox("Funny")
+              voteBox("interesting") ++
+              voteBox("boring") ++
+              voteBox("funny")
             }</div>
             <div class='dw-vote-column-2'>{
-              voteBox("Insightful") ++
-              voteBox("Faulty")
+              voteBox("insightful") ++
+              voteBox("faulty")
               /* <a class='dw-show-more-votes'>More...</a> */
             }</div>
             <div class='dw-vote-column dw-more-votes'>{
-              voteBox("Off topic") ++
-              voteBox("Spam") ++
-              voteBox("Troll")
+              voteBox("off-topic") ++
+              voteBox("spam") ++
+              voteBox("troll")
             }</div>
           }
           <input class='dw-submit' type='submit' value='Submit votes'

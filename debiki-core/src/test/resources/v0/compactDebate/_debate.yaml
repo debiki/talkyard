@@ -265,7 +265,72 @@ text: |
 
  Nej
 --- !Vote
-by: Person Name
+by: Pelle Svanslös
+date: 2002-01-01t10:11:12.13Z
+post: b
+votes: [interesting]
+--- !Vote
+by: Pelle Svanslös
+date: 2002-01-01t10:11:12.13Z
+post: c
+votes: [boring]
+--- !Vote
+by: Maja Gräddnos
+date: 2002-01-01t10:11:12.13Z
+post: c
+votes: [faulty, boring]
+--- !Vote
+by: Majas avlägsna släkting i Amerikat
+date: 2002-01-01t10:11:12.13Z
+post: ac
+votes: [faulty, boring, spam, troll, off-topic]
+--- !Vote
+by: Majas avlägsna släkting i Norge
+date: 2002-01-01t10:11:12.13Z
+post: ac
+votes: [faulty, boring, spam, troll]
+--- !Vote
+by: Maja Gräddnos
+date: 2002-01-01t10:11:12.13Z
+post: ac
+votes: [faulty, boring, spam]
+--- !Vote
+by: Majas syster
+date: 2002-01-01t10:11:12.13Z
+post: ac
+votes: [faulty, boring]
+--- !Vote
+by: Majas moster
+date: 2002-01-01t10:11:12.13Z
+post: ac
+votes: [faulty]
+--- !Vote
+by: Plåtniklas
+date: 2002-01-01t10:11:12.13Z
+post: ad
+votes: [off-topic]
+--- !Vote
+by: Karlsson på Taket
+date: 2002-01-01t10:11:12.13Z
+post: ad
+votes: [spam]
+--- !Vote
+by: Nisse Nyfiken
+date: 2002-01-01t10:11:12.13Z
+post: ad
+votes: [spam]
+--- !Vote
+by: Bull den Bullige
+date: 2002-01-01t10:11:12.13Z
+post: d
+votes: [spam, off-topic, troll]
+--- !Vote
+by: Måns
+date: 2002-01-01t10:11:12.13Z
+post: cb
+votes: [troll, spam]
+--- !Vote
+by: Bill den Knasige
 date: 2001-12-14t21:59:43.10-05:00
 post: j
 votes: [stupid, off-topic, troll]
@@ -278,7 +343,7 @@ votes: [stupid, off-topic, troll]
 by: Anders-And
 date: 2001-12-14t21:59:43.10-05:00
 post: h
-votes: ["buu", "buu huu", "»»määäää I'm a clever animal määä««"]
+votes: ["interesting", "faulty", "»määäh-unicode«"]
 --- !Post
 parent: e
 id: ea

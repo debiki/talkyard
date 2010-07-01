@@ -30,6 +30,7 @@ class DaoYamlTest {
     assert(debate.id == "compactDebate")
     assert(debate.postCount == 26)
     assert(debate.votesOn("j").length == 1)
+    assert(debate.votesOn("c").length == 2)
     //assert(debate.postScore("h") == 3)
   }
 
