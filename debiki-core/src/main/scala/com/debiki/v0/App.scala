@@ -57,6 +57,7 @@ private[debiki] object App {
           <script type="text/javascript" src="jquery-1.4.2.js" />
           <script type="text/javascript"
               src="js/debiki-jquery-ui-1.8.1.custom.min.js" />
+          <script type="text/javascript" src="js/jquery.cookie.js" />
           <!-- <script type="text/javascript"
               src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.1/jquery-ui.min.js"/> -->
           <script type="text/javascript" src="js/debiki-dragscrollable.js" />
