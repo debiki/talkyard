@@ -5,6 +5,7 @@ jQuery.noConflict()(function($){
 var threadHovered = null;
 var didResize = false;
 var posts = $(".debiki .dw-post");
+var voteFormTemplate = $("#dw-hidden-menus .dw-vote-template form");
 
 $(".dw-post, .dw-thread-info").hover(
   function(event){
@@ -98,6 +99,8 @@ posts.filter('.dw-cropped-s').click(function(){
   $(this).closest('.dw-post').removeClass('dw-cropped-s');
 })
 
+// ------- Resizing
+
 // Make posts and threads resizable.
 // Fails with a TypeError on Android: Cathching it and ignoring it.
 // (On Android, posts and threads won't be resizable.)
@@ -168,10 +171,12 @@ catch (e) {
   else throw e;
 }
 
+// ------- Voting
+
 $('#dw-action-menu .dw-vote').click(function(){
   // Warning: Some duplicated code, see .dw-reply click() below.
   var post = $(this).closest('.dw-thread').children('.dw-post');
-  var vote = $('#dw-hidden-menus .dw-vote-template').children().clone(true);
+  var vote = voteFormTemplate.clone(true);
   var postId = post.attr('id').substr(8, 999); // drop initial 'dw-post-'
   vote.find("input[name='dw-fi-vote-on']").attr('value', postId);
   post.after(vote);
@@ -187,9 +192,19 @@ $('#dw-action-menu .dw-vote').click(function(){
   // in the 2nd, the ones in the 1st menu are changed.)
 });
 
-$("#dw-hidden-menus .dw-vote .dw-cancel").click(function() {
+voteFormTemplate.find('.dw-cancel').click(function() {
   $(this).closest('form.dw-vote').remove();
 });
+
+// Show more vote values when clicking the "More..." button.
+voteFormTemplate.find('.dw-more-votes').hide();
+voteFormTemplate.find('.dw-show-more-votes').show().
+  click(function() {
+    $(this).hide().
+      closest('form.dw-vote').find('.dw-more-votes').show();
+  });
+
+// ------- Replying
 
 $("#dw-action-menu .dw-reply").click(function() {
   // Warning: Some duplicated code, see .dw-vote click() above.
@@ -207,6 +222,8 @@ $("#dw-action-menu .dw-reply").click(function() {
 $("#dw-hidden-menus .dw-reply .dw-cancel").click(function() {
   $(this).closest('.dw-thread.dw-reply.dw-preview').remove();
 });
+
+// ------- Miscellaneous
 
 // Don't show the crosshair cursor for menu items that trigger no action.
 $(".dw-menu li:has(.dw-sub.dw-menu)").css("cursor", "default");
@@ -235,10 +252,5 @@ $(".dw-thread. .dw-reply.dw-preview").hover(
     // will be cropped in a usually ugly manner.)
   });
 
-// Lazy adding (less important) CSS classes.
-// (So all these classes won't clutter the Scala source code files
-// and waste bandwidth.)
-//posts.find('.dw-post-info .dw-vote, .dw-thread-info .dw-vote')
-//  .addClass('ui-corner-all');
-
 });
+

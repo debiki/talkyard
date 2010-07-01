@@ -1,3 +1,5 @@
+/* vim: fdm=marker et sw=2 ts=2
+ */
 
 /* === Standard tags === */
 
@@ -452,6 +454,22 @@ form.dw-vote {
 
 form.dw-vote fieldset {
   margin-bottom: 1em;
+}
+
+form.dw-vote .dw-vote-column {
+  float: left;
+}
+
+/* Javascript shows clickable .dw-show-more-votes,
+ and hides .dw-more-votes. */
+form.dw-vote .dw-show-more-votes {
+  display: none;
+  margin-top: 1em;
+  float: left; /* otherwise margin-top has no effect, why not? */
+  clear: both;
+  cursor: crosshair;
+  font-size: 85%;
+  border: none; /* from where comes the border? jQuery-UI. */
 }
 
 /* === Misc === */

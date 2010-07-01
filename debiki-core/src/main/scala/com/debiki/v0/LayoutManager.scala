@@ -325,23 +325,28 @@ class SimpleLayoutManager extends LayoutManager {
               <input id={id} type='checkbox' name={name} value={value} />
               <label for={id}>{value}</label><br/>
             }
-
-            {/* temporary layout hack */}
-            <div class='dw-vote-column-1'>{
-              voteBox("interesting") ++
-              voteBox("boring") ++
-              voteBox("funny")
-            }</div>
-            <div class='dw-vote-column-2'>{
-              voteBox("insightful") ++
-              voteBox("faulty")
-              /* <a class='dw-show-more-votes'>More...</a> */
-            }</div>
-            <div class='dw-vote-column dw-more-votes'>{
-              voteBox("off-topic") ++
-              voteBox("spam") ++
-              voteBox("troll")
-            }</div>
+            {/* Don't show *all* available values immediately -- that'd
+            be too many values, people can't keep them all in mind. Read this:
+            en.wikipedia.org/wiki/The_Magical_Number_Seven,_Plus_or_Minus_Two
+            although 3 - 5 items is probably much better than 7 - 9. */}
+            <div>
+              {/* temporary layout hack */}
+              <div class='dw-vote-column'>{
+                voteBox("interesting") ++
+                voteBox("boring") ++
+                voteBox("funny")
+              }</div>
+              <div class='dw-vote-column'>{
+                voteBox("insightful") ++
+                voteBox("faulty") ++
+                <a class='dw-show-more-votes'>More...</a>
+              }</div>
+              <div class='dw-vote-column dw-more-votes'>{
+                voteBox("off-topic") ++
+                voteBox("spam") ++
+                voteBox("troll")
+              }</div>
+            </div>
           }
           <input class='dw-submit' type='submit' value='Submit votes'
               disabled='disabled'/> {/* enabled on checkbox click */}
