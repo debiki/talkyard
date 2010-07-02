@@ -412,9 +412,14 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
 
 /* === Forms === */
 
-.debiki form label,
-.debiki form input {
-  margin-top: 1em;
+.dw-submit-group {
+  float: left;
+  clear: both;
+  margin-top: 1.7em;
+}
+
+.dw-submit-group input.dw-cancel {
+  cursor: crosshair;
 }
 
 /* === Reply === */
@@ -430,6 +435,11 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
 form.dw-reply {
   margin-top: 0.8em;
   margin-bottom: 0.4em;
+}
+
+form.dw-reply label,
+form.dw-reply input {
+  margin-top: 1em;
 }
 
 .dw-user-contrib-license {
@@ -448,16 +458,18 @@ form.dw-vote {
   background-color: #fcfaf5; /*FCFAF5*/
   padding: 1em; /* push outline away */
   margin: 1em;
-  outline: #9ee solid thick;
+  outline: #83c5df solid thick; /* was: #9ee */
   float: left; /* else: sometimes very wide; reply-form might appear inside! */
 }
 
-form.dw-vote fieldset {
-  margin-bottom: 1em;
+form.dw-vote .dw-vote-group {
+  float: left;
+  max-width: 8em;
 }
 
-form.dw-vote .dw-vote-column {
-  float: left;
+form.dw-vote .dw-vote-group .ui-button {
+  cursor: crosshair;
+  min-width: 7em;
 }
 
 /* Javascript shows clickable .dw-show-more-votes,
@@ -469,7 +481,17 @@ form.dw-vote .dw-show-more-votes {
   clear: both;
   cursor: crosshair;
   font-size: 85%;
-  border: none; /* from where comes the border? jQuery-UI. */
+}
+
+/* stack more-votes horizontally */
+form.dw-vote .dw-more-votes {
+  clear: both;
+  margin-top: 1em;
+  max-width: none;
+}
+form.dw-vote .dw-more-votes label {
+  float: left;
+  min-width: 0 !important;
 }
 
 /* === Misc === */
@@ -481,4 +503,25 @@ form.dw-vote .dw-show-more-votes {
 .dw-highlight {
   outline: blue dotted medium
 }
+
+/* === jQuery UI integration === */
+
+/* Here's a color blender: http://websitetips.com/colortools/colorblender/
+ */
+
+/* Same color as the ui-buttons */
+.dw-color-from-ui-state-default { color: #1c94c4; }
+.dw-color-bright-from-ui-state-default { color: #83c5df; }
+.dw-color-brighter-from-ui-state-default { color: #c1e2ef; }
+.dw-color-brightest-from-ui-state-default { color: #eaf5fa; }
+
+/* Makes a jQuery-UI-button():ized <a> tag look more like a link */
+.dw-linkify-ui-state-default {
+  border: none !important;
+  background: none !important;
+}
+
+/* jQuery UI bug fix: in the jQuery-auto-generated file, ".debiki"
+ is missing (on the next line). */
+.debiki input.ui-button { padding: .4em 1em; }
 

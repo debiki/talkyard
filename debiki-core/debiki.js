@@ -190,8 +190,19 @@ $('#dw-action-menu .dw-vote').click(function(){
   $('#dw-action-menu').appendTo($('#dw-hidden-menus'));
   // Enable submit button when votes specified
   vote.find("input[type='checkbox']").click(function(){
-    vote.find("input[type='submit']")[0].disabled = false;
+    vote.find("input[type='submit']").button("option", "disabled", false);
   });
+  //
+  // Fancy GUI
+  // Seems this must be done *after* the voteFormTemplate has been
+  // copied --- otherwise, if the Cancel button is clicked,
+  // the voteFormTemplate itself has all its jQueryUI markup removed.
+  // (Is that a jQuery bug? Only the *clone* ought to be affected?)
+  vote.find('.dw-vote-group input, .dw-submit-group input').button();
+  // Disable the submit button (until any checkbox clicked)
+  vote.find("input[type='submit']").button("option", "disabled", true);
+  vote.find('.dw-show-more-votes').
+    button().addClass('dw-linkify-ui-state-default');
 });
 
 voteFormTemplate.find('.dw-cancel').click(function() {

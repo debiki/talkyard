@@ -303,8 +303,10 @@ class SimpleLayoutManager extends LayoutManager {
               By clicking <i>{submitButtonText}</i>, you agree to license
               the text you submit under the {ccWikiLicense}.
             </p>
-            <input class='dw-submit' type='submit' value={submitButtonText}/>
-            <button class='dw-cancel' type='button'>Cancel</button>
+            <div class='dw-submit-group'>
+              <input class='dw-submit' type='submit' value={submitButtonText}/>
+              <input class='dw-cancel' type='button' value='Cancel'/>
+            </div>
           </form>
         </div>
       </div>
@@ -323,7 +325,7 @@ class SimpleLayoutManager extends LayoutManager {
               val id = name +"-"+ boxCount
               boxCount += 1
               <input id={id} type='checkbox' name={name} value={value} />
-              <label for={id}>{value}</label><br/>
+              <label for={id}>{value}</label>
             }
             {/* Don't show *all* available values immediately -- that'd
             be too many values, people can't keep them all in mind. Read this:
@@ -331,26 +333,27 @@ class SimpleLayoutManager extends LayoutManager {
             although 3 - 5 items is probably much better than 7 - 9. */}
             <div>
               {/* temporary layout hack */}
-              <div class='dw-vote-column'>{
+              <div class='dw-vote-group'>{
                 voteBox("interesting") ++
                 voteBox("boring") ++
                 voteBox("funny")
               }</div>
-              <div class='dw-vote-column'>{
+              <div class='dw-vote-group'>{
                 voteBox("insightful") ++
-                voteBox("faulty") ++
-                <a class='dw-show-more-votes'>More...</a>
+                voteBox("faulty")
               }</div>
-              <div class='dw-vote-column dw-more-votes'>{
+              <a class='dw-show-more-votes'>More...</a>
+              <div class='dw-vote-group dw-more-votes'>{
                 voteBox("off-topic") ++
                 voteBox("spam") ++
                 voteBox("troll")
               }</div>
             </div>
           }
-          <input class='dw-submit' type='submit' value='Submit votes'
-              disabled='disabled'/> {/* enabled on checkbox click */}
-          <input class='dw-cancel' type='button' value='Cancel'/>
+          <div class='dw-submit-group'>
+            <input class='dw-submit' type='submit' value='Submit votes'/>
+            <input class='dw-cancel' type='button' value='Cancel'/>
+          </div>
         </form>
       </div>
     </div>
