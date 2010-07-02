@@ -13,14 +13,12 @@ $(".dw-post, .dw-thread-info").hover(
 
     if ($(this).hasClass('dw-post')) {
       // Show the #action-menu, unless the thread is closing (A)
-      // and unless the thread itself is already a .reply thread (B)
-      // and unless the thread doesn't already have a vote-form (C)
-      // or a reply-form child (D).
+      // and unless the thread doesn't already have a reply-form (B)
+      // or a vote-form child (C).
       // (C and D: Better not open many action forms at once.)
       if (!nextThread.hasClass('dw-collapsed') &&  // A
-          !nextThread.hasClass('dw-reply') &&  // B
           !nextThread.children()
-              .filter('.dw-reply, .dw-vote').length) {  // C, D
+              .filter('.dw-reply-form, .dw-vote-form').length) {  // B, C
         $(this).after($('#dw-action-menu'))
       }
     }
@@ -171,6 +169,13 @@ catch (e) {
   else throw e;
 }
 
+// ------- Forms and actions
+
+// Generic cancel button
+$("#dw-hidden-menus form .dw-cancel").click(function() {
+  $(this).closest('form').remove();
+});
+
 // ------- Voting
 
 $('#dw-action-menu .dw-vote').button().click(function(){
@@ -205,16 +210,12 @@ $('#dw-action-menu .dw-vote').button().click(function(){
     button().addClass('dw-linkify-ui-state-default');
 });
 
-voteFormTemplate.find('.dw-cancel').click(function() {
-  $(this).closest('form.dw-vote').remove();
-});
-
 // Show more vote values when clicking the "More..." button.
 voteFormTemplate.find('.dw-more-votes').hide();
 voteFormTemplate.find('.dw-show-more-votes').show().
   click(function() {
     $(this).hide().
-      closest('form.dw-vote').find('.dw-more-votes').show();
+      closest('form').find('.dw-more-votes').show();
   });
 
 // ------- Replying
@@ -235,10 +236,6 @@ $("#dw-action-menu .dw-reply").button().click(function() {
     'dw-color-from-ui-state-default dw-font-from-ui-widget');
   // Resize the root thread (in case this reply-thread is a new child of it).
   DebikiLayout.resizeRootThread(); // see debiki-layout.js
-});
-
-$("#dw-hidden-menus .dw-reply .dw-cancel").click(function() {
-  $(this).closest('.dw-thread.dw-reply.dw-preview').remove();
 });
 
 // ------- Miscellaneous
@@ -267,19 +264,6 @@ $(".dw-parent-ref").hover(
   function(event){
     $(this).closest(".dw-thread").parent().closest(".dw-thread").
             children(".dw-post").removeClass("dw-highlight");
-  });
-
-// When the .reply.preview is not inside the #hidden-menu,
-// but under a real .thread, leave it visible after hovering.
-$(".dw-thread. .dw-reply.dw-preview").hover(
-  function(event){
-    $(this).parents().css("overflow", "visible");
-  },
-  function(event){
-    // leave overflow visible for now.
-    // (It's (perhaps) annoying if the reply-textarea
-    // is overflow-hidden, since the outline around it
-    // will be cropped in a usually ugly manner.)
   });
 
 });

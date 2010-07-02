@@ -284,36 +284,34 @@ class SimpleLayoutManager extends LayoutManager {
         <a class='dw-vote'>Vote</a>
       </div>
       <div class='dw-reply-template'>
-        <div class='dw-depth-3 dw-thread dw-reply dw-preview'>
-          <form class='dw-reply'
-              action={config.replyAction}
-              accept-charset='UTF-8'
-              method='post'>
-            <input type='hidden' name='dw-fi-action' value='reply'/>
-            <input type='hidden' name='dw-fi-reply-to' value='?'/>
-            <p>
-              <label for='dw-fi-reply-text'>Your reply:</label><br/>
-              <textarea id='dw-fi-reply-text' name='dw-fi-reply-text' rows='13'
-                cols='38'>The cat was playing in the garden.</textarea>
-            </p>
-            <p>
-              <label for='dw-fi-reply-author'>Your name or alias</label>
-              <input id='dw-fi-reply-author' type='text'
-                    name='dw-fi-reply-author' value='Anonymous'/>
-            </p>
-            <p class='dw-user-contrib-license'>
-              By clicking <i>{submitButtonText}</i>, you agree to license
-              the text you submit under the {ccWikiLicense}.
-            </p>
-            <div class='dw-submit-group'>
-              <input class='dw-submit' type='submit' value={submitButtonText}/>
-              <input class='dw-cancel' type='button' value='Cancel'/>
-            </div>
-          </form>
-        </div>
+        <form class='dw-reply-form'
+            action={config.replyAction}
+            accept-charset='UTF-8'
+            method='post'>
+          <input type='hidden' name='dw-fi-action' value='reply'/>
+          <input type='hidden' name='dw-fi-reply-to' value='?'/>
+          <p>
+            <label for='dw-fi-reply-text'>Your reply:</label><br/>
+            <textarea id='dw-fi-reply-text' name='dw-fi-reply-text' rows='13'
+              cols='38'>The cat was playing in the garden.</textarea>
+          </p>
+          <p>
+            <label for='dw-fi-reply-author'>Your name or alias:</label>
+            <input id='dw-fi-reply-author' type='text'
+                  name='dw-fi-reply-author' value='Anonymous'/>
+          </p>
+          <p class='dw-user-contrib-license'>
+            By clicking <i>{submitButtonText}</i>, you agree to license
+            the text you submit under the {ccWikiLicense}.
+          </p>
+          <div class='dw-submit-group'>
+            <input class='dw-submit' type='submit' value={submitButtonText}/>
+            <input class='dw-cancel' type='button' value='Cancel'/>
+          </div>
+        </form>
       </div>
       <div class='dw-vote-template'>
-        <form class='dw-vote'
+        <form class='dw-vote-form'
             action={config.voteAction}
             accept-charset='UTF-8'
             method='post'>

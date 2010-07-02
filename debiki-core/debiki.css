@@ -406,8 +406,8 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
 
 /* === Forms === */
 
-form.dw-reply,
-form.dw-vote {
+form.dw-reply-form,
+form.dw-vote-form {
   background-color: #fcfaf5; /*FCFAF5*/
   padding: 1em; /* push outline away */
   margin: 1em;
@@ -433,18 +433,14 @@ form.dw-vote {
   max-width: none; /* allow user to rezise textarea as s/he see fit */
 }
 
-form.dw-reply label {
+form.dw-reply-form label {
   display: inline-block;
   margin-right: 0.4em;
 }
 
-form.dw-reply input[type='text'],
-form.dw-reply textarea {
+form.dw-reply-form input[type='text'],
+form.dw-reply-form textarea {
   font-family: Verdana, sans-serif;
-  margin-top: 0.7em;
-}
-
-form.dw-reply div {
   margin-top: 0.7em;
 }
 
@@ -460,23 +456,23 @@ form.dw-reply div {
 
 /* === Vote === */
 
-form.dw-vote {
+form.dw-vote-form {
   min-width: 16.5em; /* at least 2 vote-group:s wide */
 }
 
-form.dw-vote .dw-vote-group {
+form.dw-vote-form .dw-vote-group {
   float: left;
   max-width: 8em;
 }
 
-form.dw-vote .dw-vote-group .ui-button {
+form.dw-vote-form .dw-vote-group .ui-button {
   cursor: crosshair;
   min-width: 7em;
 }
 
 /* Javascript shows clickable .dw-show-more-votes,
  and hides .dw-more-votes. */
-form.dw-vote .dw-show-more-votes {
+form.dw-vote-form .dw-show-more-votes {
   display: none;
   margin-top: 1em;
   float: left; /* otherwise margin-top has no effect, why not? */
@@ -486,12 +482,12 @@ form.dw-vote .dw-show-more-votes {
 }
 
 /* stack more-votes horizontally */
-form.dw-vote .dw-more-votes {
+form.dw-vote-form .dw-more-votes {
   clear: both;
   margin-top: 1em;
   max-width: none;
 }
-form.dw-vote .dw-more-votes label {
+form.dw-vote-form .dw-more-votes label {
   float: left;
   min-width: 0 !important;
 }
