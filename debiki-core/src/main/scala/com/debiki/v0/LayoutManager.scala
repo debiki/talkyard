@@ -279,26 +279,28 @@ class SimpleLayoutManager extends LayoutManager {
    */
   private def menus = {
     <div id="dw-hidden-menus">
-      <div id='dw-action-menu' class='ui-state-default'>
-        <div class='dw-reply'>Reply</div>
-        <div class='dw-vote'>Vote</div>
+      <div id='dw-action-menu'>
+        <a class='dw-reply'>Reply</a>
+        <a class='dw-vote'>Vote</a>
       </div>
       <div class='dw-reply-template'>
         <div class='dw-depth-3 dw-thread dw-reply dw-preview'>
-          <div class='dw-post'>
-            <div class='dw-owner'><i>Your reply</i></div>
-          </div>
           <form class='dw-reply'
               action={config.replyAction}
               accept-charset='UTF-8'
               method='post'>
             <input type='hidden' name='dw-fi-action' value='reply'/>
             <input type='hidden' name='dw-fi-reply-to' value='?'/>
-            <textarea name='dw-fi-reply-text' rows='10' cols='34'
-              >The cat was playing in the garden.</textarea><br/>
-            <label for='dw-fi-reply-author'>Your name or alias:</label>
-            <input id='dw-fi-reply-author' type='text'
-                  name='dw-fi-reply-author' value='Anonymous'/><br/>
+            <p>
+              <label for='dw-fi-reply-text'>Your reply:</label><br/>
+              <textarea id='dw-fi-reply-text' name='dw-fi-reply-text' rows='13'
+                cols='38'>The cat was playing in the garden.</textarea>
+            </p>
+            <p>
+              <label for='dw-fi-reply-author'>Your name or alias</label>
+              <input id='dw-fi-reply-author' type='text'
+                    name='dw-fi-reply-author' value='Anonymous'/>
+            </p>
             <p class='dw-user-contrib-license'>
               By clicking <i>{submitButtonText}</i>, you agree to license
               the text you submit under the {ccWikiLicense}.

@@ -349,24 +349,18 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
 #dw-action-menu {
   position: absolute;
 }
+
 #dw-action-menu .dw-vote,
 #dw-action-menu .dw-reply {
-  position: absolute;
-  top: -2px;
+  position: relative;
+  top: 2px;
   z-index: 20;
-  padding: 2px 1ex;
-  --clear: both;
-  --float: right;
-  --display: inline;
-  --margin: 0.5em;
-  --margin-top: 0.5em;
-  color: #0c93ca;
-  font-weight: bold;
-  background-color: #fcfaf5;
+  margin: 0 -10px 0 5px; /* remove void between buttons, move 5px right */
   cursor: crosshair;
 }
-#dw-action-menu .dw-vote {
-  left: 10em;
+
+#dw-action-menu .ui-button-text {
+  padding: 0.1em 1.5em 0.2em !important; /* reduce height, make wider */
 }
 
 /* --- Text ---*/
@@ -412,6 +406,15 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
 
 /* === Forms === */
 
+form.dw-reply,
+form.dw-vote {
+  background-color: #fcfaf5; /*FCFAF5*/
+  padding: 1em; /* push outline away */
+  margin: 1em;
+  outline: #83c5df solid thick; /* was: #9ee */
+  float: left; /* else: sometimes very wide; reply-form might appear inside! */
+}
+
 .dw-submit-group {
   float: left;
   clear: both;
@@ -424,22 +427,25 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
 
 /* === Reply === */
 
-.dw-thread.dw-reply {
+.xx-dw-thread.dw-reply {
   z-index: 99999; /* license agreement should always be visible */
   background-color: #fcfaf5; /*FCFAF5*/
-  padding: 5px; /* push outline away */
-  outline: #e9e solid thick;
-  margin: 1em;
+  max-width: none; /* allow user to rezise textarea as s/he see fit */
 }
 
-form.dw-reply {
-  margin-top: 0.8em;
-  margin-bottom: 0.4em;
+form.dw-reply label {
+  display: inline-block;
+  margin-right: 0.4em;
 }
 
-form.dw-reply label,
-form.dw-reply input {
-  margin-top: 1em;
+form.dw-reply input[type='text'],
+form.dw-reply textarea {
+  font-family: Verdana, sans-serif;
+  margin-top: 0.7em;
+}
+
+form.dw-reply div {
+  margin-top: 0.7em;
 }
 
 .dw-user-contrib-license {
@@ -455,11 +461,7 @@ form.dw-reply input {
 /* === Vote === */
 
 form.dw-vote {
-  background-color: #fcfaf5; /*FCFAF5*/
-  padding: 1em; /* push outline away */
-  margin: 1em;
-  outline: #83c5df solid thick; /* was: #9ee */
-  float: left; /* else: sometimes very wide; reply-form might appear inside! */
+  min-width: 16.5em; /* at least 2 vote-group:s wide */
 }
 
 form.dw-vote .dw-vote-group {
@@ -514,6 +516,11 @@ form.dw-vote .dw-more-votes label {
 .dw-color-bright-from-ui-state-default { color: #83c5df; }
 .dw-color-brighter-from-ui-state-default { color: #c1e2ef; }
 .dw-color-brightest-from-ui-state-default { color: #eaf5fa; }
+
+/* Same font */
+.dw-font-from-ui-widget {
+  font-family: 'Trebuchet MS', Tahoma, Verdana, Arial, sans-serif;
+}
 
 /* Makes a jQuery-UI-button():ized <a> tag look more like a link */
 .dw-linkify-ui-state-default {

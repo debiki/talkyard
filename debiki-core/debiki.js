@@ -173,7 +173,7 @@ catch (e) {
 
 // ------- Voting
 
-$('#dw-action-menu .dw-vote').click(function(){
+$('#dw-action-menu .dw-vote').button().click(function(){
   // Warning: Some duplicated code, see .dw-reply click() below.
   var post = $(this).closest('.dw-thread').children('.dw-post');
   var vote = voteFormTemplate.clone(true);
@@ -219,7 +219,7 @@ voteFormTemplate.find('.dw-show-more-votes').show().
 
 // ------- Replying
 
-$("#dw-action-menu .dw-reply").click(function() {
+$("#dw-action-menu .dw-reply").button().click(function() {
   // Warning: Some duplicated code, see .dw-vote click() above.
   var post = $(this).closest(".dw-thread").children(".dw-post");
   var reply = $("#dw-hidden-menus .dw-reply-template").children().clone(true);
@@ -229,6 +229,10 @@ $("#dw-action-menu .dw-reply").click(function() {
   post.after(reply);
   // Dismiss action menu
   $('#dw-action-menu').appendTo($('#dw-hidden-menus'));
+  // Build fancy jQuery UI widgets
+  reply.find('.dw-submit-group input').button();
+  reply.find('label').addClass( // color and font that matches <input> buttons
+    'dw-color-from-ui-state-default dw-font-from-ui-widget');
   // Resize the root thread (in case this reply-thread is a new child of it).
   DebikiLayout.resizeRootThread(); // see debiki-layout.js
 });
