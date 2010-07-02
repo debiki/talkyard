@@ -179,6 +179,12 @@ $('#dw-action-menu .dw-vote').click(function(){
   var vote = voteFormTemplate.clone(true);
   var postId = post.attr('id').substr(8, 999); // drop initial 'dw-post-'
   vote.find("input[name='dw-fi-vote-on']").attr('value', postId);
+
+  // The vote-value inputs are labeled checkboxes. Hence they 
+  // have ids --- which right now remain the same as the ids
+  // in the voteFormTemplate. Make the cloned ids unique:
+  makeIdsUniqueUpdateLabels(vote, '-post-'+ postId);
+
   post.after(vote);
   // Dismiss action menu
   $('#dw-action-menu').appendTo($('#dw-hidden-menus'));
@@ -186,10 +192,6 @@ $('#dw-action-menu .dw-vote').click(function(){
   vote.find("input[type='checkbox']").click(function(){
     vote.find("input[type='submit']")[0].disabled = false;
   });
-  // TODO: Rename all id attributes (append `postId'), to avoid name
-  // clashes with other copies of the dw-vote-template.
-  // (Currently, if you open 2 vote menus and click on checkboxes
-  // in the 2nd, the ones in the 1st menu are changed.)
 });
 
 voteFormTemplate.find('.dw-cancel').click(function() {
@@ -212,6 +214,7 @@ $("#dw-action-menu .dw-reply").click(function() {
   var reply = $("#dw-hidden-menus .dw-reply-template").children().clone(true);
   var postId = post.attr('id').substr(8, 999); // drop initial "dw-post-"
   reply.find("input[name='dw-fi-reply-to']").attr('value', postId);
+  makeIdsUniqueUpdateLabels(reply, '-post-'+ postId);
   post.after(reply);
   // Dismiss action menu
   $('#dw-action-menu').appendTo($('#dw-hidden-menus'));
@@ -224,6 +227,18 @@ $("#dw-hidden-menus .dw-reply .dw-cancel").click(function() {
 });
 
 // ------- Miscellaneous
+
+// Finds all tags with an id attribute, and (hopefully) makes
+// the ids unique by appending `suffix' to the ids.
+// Updates any <label> `for' attributes to match the new ids.
+function makeIdsUniqueUpdateLabels(jqueryObj, suffix) {
+  jqueryObj.find("*[id]").each(function(ix) {
+      $(this).attr('id', $(this).attr('id') + suffix);
+    });
+  jqueryObj.find('label').each(function(ix) {
+      $(this).attr('for', $(this).attr('for') + suffix);
+    });
+}
 
 // Don't show the crosshair cursor for menu items that trigger no action.
 $(".dw-menu li:has(.dw-sub.dw-menu)").css("cursor", "default");
