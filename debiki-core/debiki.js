@@ -5,7 +5,7 @@ jQuery.noConflict()(function($){
 var threadHovered = null;
 var didResize = false;
 var posts = $(".debiki .dw-post");
-var voteFormTemplate = $("#dw-hidden-menus .dw-vote-template form");
+var voteFormTemplate = $("#dw-hidden-templates .dw-vote-template form");
 
 $(".dw-post, .dw-thread-info").hover(
   function(event){
@@ -29,7 +29,7 @@ $(".dw-post, .dw-thread-info").hover(
       // collapsed itself, and the #action-menu will be hidden inside
       // the collapsed thread -- the menu becomes buggy gone -- unless
       // moved to somewhere safe.
-      $('#dw-hidden-menus').append($('#dw-action-menu'));
+      $('#dw-hidden-templates').append($('#dw-action-menu'));
     }
 
     if (threadHovered && threadHovered[0] == nextThread[0])
@@ -172,7 +172,7 @@ catch (e) {
 // ------- Forms and actions
 
 // Generic cancel button
-$("#dw-hidden-menus form .dw-cancel").click(function() {
+$("#dw-hidden-templates form .dw-cancel").click(function() {
   $(this).closest('form').remove();
 });
 
@@ -192,7 +192,7 @@ $('#dw-action-menu .dw-vote').button().click(function(){
 
   post.after(vote);
   // Dismiss action menu
-  $('#dw-action-menu').appendTo($('#dw-hidden-menus'));
+  $('#dw-action-menu').appendTo($('#dw-hidden-templates'));
   // Enable submit button when votes specified
   vote.find("input[type='checkbox']").click(function(){
     vote.find("input[type='submit']").button("option", "disabled", false);
@@ -223,13 +223,14 @@ voteFormTemplate.find('.dw-show-more-votes').show().
 $("#dw-action-menu .dw-reply").button().click(function() {
   // Warning: Some duplicated code, see .dw-vote click() above.
   var post = $(this).closest(".dw-thread").children(".dw-post");
-  var reply = $("#dw-hidden-menus .dw-reply-template").children().clone(true);
+  var reply = $("#dw-hidden-templates .dw-reply-template").
+                children().clone(true);
   var postId = post.attr('id').substr(8, 999); // drop initial "dw-post-"
   reply.find("input[name='dw-fi-reply-to']").attr('value', postId);
   makeIdsUniqueUpdateLabels(reply, '-post-'+ postId);
   post.after(reply);
   // Dismiss action menu
-  $('#dw-action-menu').appendTo($('#dw-hidden-menus'));
+  $('#dw-action-menu').appendTo($('#dw-hidden-templates'));
   // Build fancy jQuery UI widgets
   reply.find('.dw-submit-group input').button();
   reply.find('label').addClass( // color and font that matches <input> buttons
@@ -251,9 +252,6 @@ function makeIdsUniqueUpdateLabels(jqueryObj, suffix) {
       $(this).attr('for', $(this).attr('for') + suffix);
     });
 }
-
-// Don't show the crosshair cursor for menu items that trigger no action.
-$(".dw-menu li:has(.dw-sub.dw-menu)").css("cursor", "default");
 
 // Highlight the parent post when hovering over a reference.
 $(".dw-parent-ref").hover(

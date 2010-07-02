@@ -278,7 +278,7 @@ class SimpleLayoutManager extends LayoutManager {
    *     method (never GET), to make XSRF attacks harder.
    */
   private def menus = {
-    <div id="dw-hidden-menus">
+    <div id="dw-hidden-templates">
       <div id='dw-action-menu'>
         <a class='dw-reply'>Reply</a>
         <a class='dw-vote'>Vote</a>

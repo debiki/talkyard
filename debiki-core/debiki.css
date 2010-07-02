@@ -346,6 +346,10 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
 
 /* --- Actions ---*/
 
+#dw-hidden-templates {
+  display: none;
+}
+
 #dw-action-menu {
   position: absolute;
 }
@@ -367,41 +371,6 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
 .dw-post .dw-text {
   clear: left;
   padding: 4px 1px 3px 3px;
-}
-
-/* --- Menus ---*/
-.dw-menu {
-  position: absolute;
-  background-color: #CCF;
-  left: 1ex;
-  z-index: 20;
-}
-
-.dw-menu li {
-  padding: 0.8ex 1ex;
-}
-
-.dw-menu li:hover {
-  background-color: #EEF;
-  cursor: crosshair;
-}
-
-#dw-hidden-menus {
-  display: none;
-}
-
-.dw-menu .dw-sub.dw-menu {
-  visibility: hidden;
-  left: 2em;
-  background-color: #DBF;
-}
-
-.dw-menu li:hover > .dw-sub.dw-menu {
-  visibility: visible;
-}
-
-.dw-menu .dw-sub.dw-menu li:hover {
-  background-color: #EDF;
 }
 
 /* === Forms === */
