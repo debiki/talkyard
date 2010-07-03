@@ -180,7 +180,9 @@ $("#dw-hidden-templates form .dw-cancel").click(function() {
 
 $('#dw-action-menu .dw-vote').button().click(function(){
   // Warning: Some duplicated code, see .dw-reply click() below.
-  var post = $(this).closest('.dw-thread').children('.dw-post');
+  var thread = $(this).closest('.dw-thread');
+  clearfix(thread); // ensures the vote appears nested inside the thread
+  var post = thread.children('.dw-post');
   var vote = voteFormTemplate.clone(true);
   var postId = post.attr('id').substr(8, 999); // drop initial 'dw-post-'
   vote.find("input[name='dw-fi-vote-on']").attr('value', postId);
@@ -222,7 +224,9 @@ voteFormTemplate.find('.dw-show-more-votes').show().
 
 $("#dw-action-menu .dw-reply").button().click(function() {
   // Warning: Some duplicated code, see .dw-vote click() above.
-  var post = $(this).closest(".dw-thread").children(".dw-post");
+  var thread = $(this).closest('.dw-thread');
+  clearfix(thread); // ensures the reply appears nested inside the thread
+  var post = thread.children('.dw-post');
   var reply = $("#dw-hidden-templates .dw-reply-template").
                 children().clone(true);
   var postId = post.attr('id').substr(8, 999); // drop initial "dw-post-"
@@ -240,6 +244,13 @@ $("#dw-action-menu .dw-reply").button().click(function() {
 });
 
 // ------- Miscellaneous
+
+// Applies the clearfix fix to `thread' iff it has no child threads.
+function clearfix(thread) {
+  if (!thread.find(':has(.dw-thread)').length) {
+    thread.addClass('ui-helper-clearfix');
+  }
+}
 
 // Finds all tags with an id attribute, and (hopefully) makes
 // the ids unique by appending `suffix' to the ids.
