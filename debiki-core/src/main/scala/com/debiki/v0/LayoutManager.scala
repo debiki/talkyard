@@ -198,7 +198,7 @@ class SimpleLayoutManager extends LayoutManager {
   private def _layoutChildren(depth: Int, post: String): NodeSeq = {
     val childPosts: List[Post] = debate.repliesTo(post)
     for {
-      c <- childPosts.sortBy(p => -scorecalc.scoreFor(p.id).score)
+      c <- childPosts.sortBy(p => -scorecalc.scoreFor(p.id).liking)
       cssThreadId = "dw-thread-"+ c.id
       cssDepth = "dw-depth-"+ depth
     }
@@ -230,17 +230,24 @@ class SimpleLayoutManager extends LayoutManager {
     val long = numLines > 9
     val cropped_s = if (long) " dw-cropped-s" else ""
     val date = toIso8601(p.date)
+    val score = scorecalc.scoreFor(p.id)
     <div id={cssPostId} class={"dw-post dw-cropped-e" + cropped_s}>
       <div class='dw-post-info'>
         <div class='dw-owner-info'>By&#160;<span class="dw-owner">{
               spaceToNbsp(p.owner.getOrElse("whom?"))}</span></div>
-        <div class="dw-vote-score">{ scorecalc.scoreFor(p.id).score }</div>
+        <span class="dw-post-liking">{score.liking}</span>
+        <span class="dw-vote-count">{score.voteCount}</span>
+        <span class="dw-vote-valsum-max">{score.maxLabelSum}</span>
         <ul class='dw-vote-info'>{
-          for ((value: String, sum: Float) <-
-                  scorecalc.scoreFor(p.id).valueSumsSorted) yield
+          for ((label: String, stats: LabelStats) <- score.labelStatsSorted)
+          yield
             <li class="dw-vote-is">
-              <span class="dw-vote">{value}</span>
-              <span class="dw-count">{"%.2f" format sum}</span>
+              <span class="dw-vote">{label}</span>
+              <span class="dw-count">{
+                  "%.0f" format (100 * stats.fraction) }%</span>
+              <span class="dw-vote-label-fraction-lower-bound">{
+                  "%.0f" format (100 * stats.fractionLowerBound) }%</span>
+              <span class="dw-vote-label-sum">{stats.sum}%</span>
             </li>
         }</ul>
         <ul class='dw-vote-info-non-weighted'>{

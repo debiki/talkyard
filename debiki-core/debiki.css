@@ -314,8 +314,11 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
   font-size: 85%;
 }
 
-.dw-post-info .dw-vote-score {
+.dw-post-info .dw-post-liking,
+.dw-post-info .dw-vote-count,
+.dw-post-info .dw-vote-valsum-max {
   margin-left: 3px;
+  font-weight: bold;
   display: none; /* it's for debugging mostly; makes non-developers confused */
 }
 
@@ -324,7 +327,7 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
   position: relative;
   left: -2px;
 }
-.dw-post-info .dw-vote-info .dw-count:before {
+.xxx-dw-post-info .dw-vote-info .dw-count:before {
   content: "×"; /* The multiplication sign, U+00D7 */
   position: relative;
   left: -1px;
