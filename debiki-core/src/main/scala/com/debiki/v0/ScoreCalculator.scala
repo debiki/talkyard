@@ -16,7 +16,45 @@ case class LabelStats (
    *  incremented with 1/3.
    */
   sum: Float,
+
+  /** The fraction ratings that include this label, i.e.
+   *  {@code this.sum / PostRating.maxLabelSum}.
+   */
   fraction: Float,
+
+  /** A lower confidence bound on `fraction', used to sort posts and
+   *  threads by popularity.
+   *
+   *  We cannot use `fraction' directly, when sorting posts (or threads)
+   *  by popularity.
+   *  For example, assume a post has 1 rating, with the value "interesting".
+   *  Then {@code fractioin} would be 1.0 (i.e. it'd be rated 100%
+   *  "interesting")."
+   *
+   *  That 100% "interesting" post, with only 1 rating, would be
+   *  ranked higher than a 95% interesting post with 100 ratings.
+   *  -- although the 100-ratings post is probably more interesting
+   *  than the 1-ratings.post.
+   *
+   *  To solve this, we can calculat confidence interval bounds on
+   *  `fraction' (i.e. the values 100% and 90% above), and sort posts
+   *  by the the lower bounds on `fraction' (instead of `fraction' itself).
+   *
+   *  How do we calculate confidence bounds on `fraction'?
+   *
+   *  Either a rating includes a certain label, or it does not include it.
+   *  So we have a binomial distribution --- except for the fact that
+   *  the successes (i.e. when a rating *includes* the label) are
+   *  weighted by 1/the_number_of_other_labels_also_included_in_the_rating,
+   *  i.e. weighted by values 1, 1/2, 1/3, ... 1/n, where `n' is the
+   *  number of labels available.
+   *
+   *  I think we can consider the distribution a binomial distribution
+   *  anyway. Therefore, I've used [a formula for calculating
+   *  binomial proportion confidence intervals] to calculate
+   *  a lower bound on `fraction'. Find details in the description of the
+   *  function {@code binomialProportionConfidenceIntervalLowerBound}.
+   */
   fractionLowerBound: Float
 )
 
@@ -42,13 +80,13 @@ private[debiki] abstract class PostRating {
    *  Each vote increments {@code maxLabelSum} with 1/number-of-labels.
    *  Example: If there are 2 votes, on values [interesting] and
    *  [interesting, funny], then maxLabelSum will be 1/1 + 1/2 = 1.5,
-   *  and labelStats("interesting") is 1.5 (the maximum value sum -- reasonable,
-   *  since everyone voted for the post being interesting).
-   *  However, labelStats("funny") is only 0.5, which is 1/3 of the maxLabelSum.
-   *  Dividing labelStats with maxLabelSum results in the relevant post
-   *  being 100% interesting and 33% funny. This is reasonable, I think,
-   *  since both voters (100%) thought it was "interesting".
-   *  One label out of 3 labels specified "funny", so
+   *  and labelStats("interesting") is 1.5 (the maximum value sum
+   *  -- reasonable, since everyone voted for the post being interesting).
+   *  However, labelStats("funny") is only 0.5, which is 1/3 of the
+   *  maxLabelSum. Dividing labelStats with maxLabelSum results in
+   *  the relevant post being 100% interesting and 33% funny. This is
+   *  reasonable, I think, since both voters (100%) thought it was
+   *  "interesting". One label out of 3 labels specified "funny", so
    *  the post being 33% "funny" might also be reasonable.
    */
   def maxLabelSum: Float
@@ -138,19 +176,60 @@ private[debiki] class ScoreCalculator(val debate: Debate) {
 
   /** Uses the Agresti-Coull method to calculate the lower bound
    *  of a binomial proportion confidence interval.
-   *  `percent' must currently be exactly 10.0f. (In the future,
-   *  perhaps more values will be accepted, but that would require
-   *  some kind of a statistical table for the standard normal
-   *  distribution.)
+   *  `percent' must currently be exactly 10.0f. (Because that's the
+   *  only cumulative standard normal probability table value I've
+   *  included in the function.)
    *
-   *  Find details in a very long comment at the end of this file.
+   *  The Agresti-Coull method is used because it works also for small
+   *  sample sizes, i.e. < 30 samples (it'll probably be common with
+   *  posts that have been rated only a few times).
+   *  And because I think it's the simplest method.
+   *
+   *  The method works as follows. It basically adds 4 fake samples to the
+   *  population, 2 with value 0 and 2 with value 1. Hence it works also
+   *  when there's only one single sample (since it fakes 4 more samples).
+   *  This is the formula:
+   *
+   *    Let n^ = number_of_samples + 4
+   *
+   *    Let p^ = number_of_successes + 2 / n^
+   *      where number_of_successes is the number of successes in a
+   *      Bernoulli trial process (e.g. flipping a coin n = 10 times,
+   *      and considering each head a success).
+   *
+   *    Now, a confidence interval on the proportion can be calculated,
+   *    like so:
+   *      p^ +- Z_{1-α/2} sqrt( p^ (1 - p^) / n^)
+   *
+   *    where Z_{1-α/2} is the 1−α/2 percentile of a standard
+   *    normal distribution.
+   *
+   *  Let us (somewhat arbitrarily) choose α = 0.2 (i.e. 2 * 10%), and
+   *  estimate a lower bound only (not an upper bound) for the proportion:
+   *
+   *      lower-bound = p^ - Z_{1-α/2} sqrt( p^ (1 - p^) / n^)
+   *
+   *  -Z_{1-0.2/2} = +Z_{10%} = -1.28. (That is, with a probability
+   *  of 10%, a standard normal random value is < -1.28.)
+   *
+   *  Some nearby values:
+   *    Z_{ 1%} = -2.33
+   *    Z_{ 5%} = -1.65
+   *    Z_{10%} = -1.28   <-- let's use 10%
+   *    Z_{20%} = -0.84
+   *
+   *  Why 90%? 90% is (is it??) a fairly low percentile
+   *  (95% or higher is more common?). The efefct should be that
+   *  new posts (well, posts with few ratings) are shown to relatively many
+   *  people, instead of falling into oblivion, unread.
    */
   private def binomialProportionConfidenceIntervalLowerBound(
       sampleSize: Int, proportionOfSuccesses: Float, percent: Float)
       : Float = {
     require(percent == 10.0f)
-    require(sampleSize > 0f) // need not be an integer (Debiki specific)
-    require(proportionOfSuccesses > 0f)
+    require(sampleSize >= 1)
+    require(proportionOfSuccesses >= 0f)
+    require(proportionOfSuccesses <= 1f)
     val adjustment = 4f
     val n_ = sampleSize + adjustment
     val p_ = (proportionOfSuccesses * sampleSize + adjustment * 0.5) / n_
@@ -193,116 +272,3 @@ Other:
 Annat:
 
  */
-
-/*
- * Confidence bounds on label fractions
- *
- * Unless you have taken a course in probability and statistics,
- * perhaps you will understand nothing of what follows.
- *
- * (I'll be fairly verbose, because I've forgotten much of this stuff
- * and within a few years I will forget everything again, and then I'll
- * appreciate having this documentation nearby.)
- *
- * Let the label percentage, for a certain label, be
- *
- *  label-%  =  label-sum / max-possible-label-sum
- *
- * We cannot use the label-% as is.
- * For example, assume there's one vote on the relevant post.
- * Assume the label-sum for "interesting" is 1.
- * Then that post's label-% is 100% (since 1 of 1 people
- * thought it was "interesting").
- * That post would be ranked higher than a post with, say,
- * 90 votes that iniclude the "interesting" label,
- * and 10 votes that don't. (This post is only 90% interesting.)
- *
- * It's not reasonable to show all posts with 1 single vote,
- * that contain the "interesting" label, in front of
- * posts with 100 votes that are 90% interesting.
- *
- * To solve this, we can calculat confidence bounds on
- * the lower bounds of the label-%, and use these lower
- * bounds instead of the actual label-%. (Keep in mind
- * that the label-% are only *estimates* of the *real*
- * percentages for the labels. We don't know what
- * all-humans thinks, only what those-that-happened-to-read-
- * -the-post-and-vote-on-it.)
- *
- *  (TODO? Rewording? Use "rate" instead of "vote"?)
- *
- * How do we calculate confidence bounds on the label-%?
- *
- * I think the label-% is a binomial proportion.
- * This might not be obvious, since we sum values like
- * 1/1 and 1/2 and 1/3 ... to find the label-sum and
- * the-max-possible-label-sum, but in a binomial distributions
- * we add only values 1 and 0.
- * However, imagine that we multiply all these 1/1, 1/2, 1/3 ...
- * fractions with the greatest-common-divisor, gdc,
- * then we'd be adding gdc, gdc/2, gdc/3 and so on,
- * and we can (I think) consider adding gdc equivalent
- * to adding gdc successful-outcomes to a binomial distribution,
- * and adding gdc/2 being equivalent to adding gdc/2 successes,
- * and so on. In this manner we can, I think, convert our
- * vote-sum distribution to a binomial distribution, and
- * the label-% becomes the binomial proportion of that
- * binomial distribution.
- *
- * Now, my Probability and Statistics text book (from University)
- * does not explain how to compute binomial proportion confidence
- * bounds when the sample size is small (below 30 samples,
- * which in our case perhaps means below 30 votes). However,
- * if you google for "confidence bounds binomial distribution",
- * you'll find a Wikipedia article:
- *
- *   http://en.wikipedia.org/wiki/Binomial_proportion_confidence_interval
- *
- * It says (3 July, 2010):
- *   "There are several ways to compute a confidence interval for
- *   a binomial proportion. The normal approximation interval is the
- *   simplest formula, and the one introduced in most basic Statistics
- *   classes and textbooks. This formula, however, is based on an
- *   approximation that does not always work well. Several competing
- *   formulas are available that perform better, especially for situations
- *   with a small sample size and a proportion very close to zero or one.
- *   The choice of interval will depend on how important it is to use
- *   a simple and easy to explain interval versus the desire for
- *   better accuracy."
- *
- * The article lists a few ways to estimate condidence bounds
- * for binomial proportions. The simplest method is (I think)
- * the Agresti-Coull interval. It basically adds 4 samples to the
- * population, 2 with value 0 and 2 with value 1. Hence it produces
- * some reasonable results also with small populations (e.g. only
- * one single vote). This is the formula:
- *
- *   Let n^ = n + 4
- *     where n is the number of samples
- *
- *   Let p^ = X + 2 / n^
- *     where X is the number of successes in a Bernoulli trial
- *     process (e.g. flipping a coin n = 10 times, and considering
- *     each head a success).
- *
- *   Now, a confidence interval on the proportion can be calculated,
- *   like so:
- *     p^ +- Z_{1-α/2} sqrt( p^ (1 - p^) / n^)
- *
- *   where Z_{1-α/2} is the 1−α/2 percentile of a standard
- *   normal distribution.
- *
- * Let us (somewhat arbitrarily) choose α = 0.1 (10%), and estimate
- * a lower bound only (not an upper bound) for the proportion:
- *
- *     lower-bound = p^ - Z_{1-α} sqrt( p^ (1 - p^) / n^)
- *
- * -Z_{1-0.1} = +Z_{10%} = -1.28. (That is, with a probability
- * of 10% a standard normal random value is < -1.28.)
- * 
- *   Z_{ 1%} = -2.33
- *   Z_{ 5%} = -1.65
- *   Z_{10%} = -1.28   <-- let's use 10%
- *   Z_{20%} = -0.84
- */
-
