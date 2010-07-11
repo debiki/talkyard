@@ -52,14 +52,14 @@ private[debiki] object App {
           <title>Test mock layout</title>
           <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
           <link type="text/css" rel="stylesheet"
-              href="css/debiki/jquery-ui-1.8.1.custom.css"/>
+              href="css/debiki/jquery-ui-1.8.2.custom.css"/>
           <link type='text/css' rel='stylesheet' href='debiki.css' />
           <script type="text/javascript" src="jquery-1.4.2.js" />
           <script type="text/javascript"
-              src="js/debiki-jquery-ui-1.8.1.custom.min.js" />
+              src="js/debiki-jquery-ui-1.8.2.custom.min.js" />
           <script type="text/javascript" src="js/jquery.cookie.js" />
           <!-- <script type="text/javascript"
-              src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.1/jquery-ui.min.js"/> -->
+              src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.2/jquery-ui.min.js"/> -->
           <script type="text/javascript" src="js/debiki-dragscrollable.js" />
           <script type="text/javascript" src="debiki.js" />
           <script type="text/javascript" src="js/debiki-layout.js" />
