@@ -97,8 +97,8 @@ private[debiki] abstract class PostRating {
    *  Another reader might be looking for [funny] posts.
    *
    *  Currently, however, it's assumed that all humans like the labels
-   *  listed in {@code ScoreCalculator.good} and dislike those in
-   *  {@code ScoreCalculator.bad}.
+   *  listed in {@code StatsCalc.good} and dislike those in
+   *  {@code StatsCalc.bad}.
    *
    *  Should perhaps be calculated on the client side, JavaScript?
    */
@@ -106,7 +106,7 @@ private[debiki] abstract class PostRating {
 
 }
 
-private[debiki] class ScoreCalculator(val debate: Debate) {
+private[debiki] class StatsCalc(val debate: Debate) {
 
   private val good = imm.Set("interesting", "funny", "insightful", "helpful")
   private val bad = imm.Set("boring", "faulty", "off-topic", "spam", "troll")

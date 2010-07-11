@@ -166,7 +166,7 @@ class SimpleLayoutManager extends LayoutManager {
   private var config = new LayoutConfig
 
   private var debate: Debate = null
-  private var scorecalc: ScoreCalculator = null
+  private var statscalc: StatsCalc = null
   private var lastChange: Option[String] = null
   private var vars: LayoutVariables = null
 
@@ -175,7 +175,7 @@ class SimpleLayoutManager extends LayoutManager {
   def layout(debate: Debate, vars: LayoutVariables): NodeSeq = {
     this.debate = debate
     this.vars = vars
-    this.scorecalc = new ScoreCalculator(debate)
+    this.statscalc = new StatsCalc(debate)
     this.lastChange = debate.lastChangeDate.map(toIso8601(_))
     layoutPosts ++ menus ++ variables
   }
@@ -198,7 +198,7 @@ class SimpleLayoutManager extends LayoutManager {
   private def _layoutChildren(depth: Int, post: String): NodeSeq = {
     val childPosts: List[Post] = debate.repliesTo(post)
     for {
-      c <- childPosts.sortBy(p => -scorecalc.scoreFor(p.id).liking)
+      c <- childPosts.sortBy(p => -statscalc.scoreFor(p.id).liking)
       cssThreadId = "dw-thread-"+ c.id
       cssDepth = "dw-depth-"+ depth
     }
@@ -230,7 +230,7 @@ class SimpleLayoutManager extends LayoutManager {
     val long = numLines > 9
     val cropped_s = if (long) " dw-cropped-s" else ""
     val date = toIso8601(p.date)
-    val score = scorecalc.scoreFor(p.id)
+    val score = statscalc.scoreFor(p.id)
     <div id={cssPostId} class={"dw-post dw-cropped-e" + cropped_s}>
       <div class='dw-post-info'>
         <div class='dw-owner-info'>By&#160;<span class="dw-owner">{
