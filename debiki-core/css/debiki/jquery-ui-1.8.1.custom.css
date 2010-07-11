@@ -41,7 +41,7 @@
 * jQuery UI CSS Framework
 * Copyright (c) 2010 AUTHORS.txt (http://jqueryui.com/about)
 * Dual licensed under the MIT (MIT-LICENSE.txt) and GPL (GPL-LICENSE.txt) licenses.
-* To view and modify this theme, visit http://jqueryui.com/themeroller/?ctl=themeroller&ffDefault=Trebuchet%20MS,%20Tahoma,%20Verdana,%20Arial,%20sans-serif&fwDefault=bold&fsDefault=1.1em&cornerRadius=4px&bgColorHeader=e8e8e8&bgTextureHeader=03_highlight_soft.png&bgImgOpacityHeader=35&borderColorHeader=a3a3a3&fcHeader=000000&iconColorHeader=65b2d2&bgColorContent=eeeeee&bgTextureContent=03_highlight_soft.png&bgImgOpacityContent=100&borderColorContent=dddddd&fcContent=333333&iconColorContent=0c93ca&bgColorDefault=f6f6f6&bgTextureDefault=02_glass.png&bgImgOpacityDefault=100&borderColorDefault=cccccc&fcDefault=1c94c4&iconColorDefault=e9911c&bgColorHover=fdf5ce&bgTextureHover=02_glass.png&bgImgOpacityHover=100&borderColorHover=fbcb09&fcHover=c77405&iconColorHover=ef8c08&bgColorActive=ffffff&bgTextureActive=02_glass.png&bgImgOpacityActive=65&borderColorActive=fbd850&fcActive=eb8f00&iconColorActive=ef8c08&bgColorHighlight=ffe45c&bgTextureHighlight=03_highlight_soft.png&bgImgOpacityHighlight=75&borderColorHighlight=fed22f&fcHighlight=363636&iconColorHighlight=228ef1&bgColorError=b81900&bgTextureError=08_diagonals_thick.png&bgImgOpacityError=18&borderColorError=cd0a0a&fcError=ffffff&iconColorError=ffd27a&bgColorOverlay=666666&bgTextureOverlay=08_diagonals_thick.png&bgImgOpacityOverlay=20&opacityOverlay=50&bgColorShadow=000000&bgTextureShadow=01_flat.png&bgImgOpacityShadow=10&opacityShadow=20&thicknessShadow=5px&offsetTopShadow=-5px&offsetLeftShadow=-5px&cornerRadiusShadow=5px
+* To view and modify this theme, visit http://jqueryui.com/themeroller/?ctl=themeroller&ffDefault=Trebuchet%20MS,%20Tahoma,%20Verdana,%20Arial,%20sans-serif&fwDefault=bold&fsDefault=1.1em&cornerRadius=4px&bgColorHeader=e8e8e8&bgTextureHeader=03_highlight_soft.png&bgImgOpacityHeader=35&borderColorHeader=a3a3a3&fcHeader=000000&iconColorHeader=6FBBD9&bgColorContent=eeeeee&bgTextureContent=03_highlight_soft.png&bgImgOpacityContent=100&borderColorContent=dddddd&fcContent=333333&iconColorContent=0c93ca&bgColorDefault=f6f6f6&bgTextureDefault=02_glass.png&bgImgOpacityDefault=100&borderColorDefault=cccccc&fcDefault=1c94c4&iconColorDefault=e9911c&bgColorHover=fdf5ce&bgTextureHover=02_glass.png&bgImgOpacityHover=100&borderColorHover=fbcb09&fcHover=c77405&iconColorHover=ef8c08&bgColorActive=ffffff&bgTextureActive=02_glass.png&bgImgOpacityActive=65&borderColorActive=fbd850&fcActive=de8800&iconColorActive=ef8c08&bgColorHighlight=ffe45c&bgTextureHighlight=03_highlight_soft.png&bgImgOpacityHighlight=75&borderColorHighlight=fed22f&fcHighlight=363636&iconColorHighlight=228ef1&bgColorError=b81900&bgTextureError=08_diagonals_thick.png&bgImgOpacityError=18&borderColorError=cd0a0a&fcError=ffffff&iconColorError=ffd27a&bgColorOverlay=666666&bgTextureOverlay=08_diagonals_thick.png&bgImgOpacityOverlay=20&opacityOverlay=50&bgColorShadow=000000&bgTextureShadow=01_flat.png&bgImgOpacityShadow=10&opacityShadow=20&thicknessShadow=5px&offsetTopShadow=-5px&offsetLeftShadow=-5px&cornerRadiusShadow=5px
 */
 
 
@@ -61,8 +61,8 @@
 .debiki .ui-state-default a, .debiki .ui-state-default a:link, .debiki .ui-state-default a:visited { color: #1c94c4; text-decoration: none; }
 .debiki .ui-state-hover, .debiki .ui-widget-content .ui-state-hover, .debiki .ui-widget-header .ui-state-hover, .debiki .ui-state-focus, .debiki .ui-widget-content .ui-state-focus, .debiki .ui-widget-header .ui-state-focus { border: 1px solid #fbcb09; background: #fdf5ce url(images/ui-bg_glass_100_fdf5ce_1x400.png) 50% 50% repeat-x; font-weight: bold; color: #c77405; }
 .debiki .ui-state-hover a, .debiki .ui-state-hover a:hover { color: #c77405; text-decoration: none; }
-.debiki .ui-state-active, .debiki .ui-widget-content .ui-state-active, .debiki .ui-widget-header .ui-state-active { border: 1px solid #fbd850; background: #ffffff url(images/ui-bg_glass_65_ffffff_1x400.png) 50% 50% repeat-x; font-weight: bold; color: #eb8f00; }
-.debiki .ui-state-active a, .debiki .ui-state-active a:link, .debiki .ui-state-active a:visited { color: #eb8f00; text-decoration: none; }
+.debiki .ui-state-active, .debiki .ui-widget-content .ui-state-active, .debiki .ui-widget-header .ui-state-active { border: 1px solid #fbd850; background: #ffffff url(images/ui-bg_glass_65_ffffff_1x400.png) 50% 50% repeat-x; font-weight: bold; color: #de8800; }
+.debiki .ui-state-active a, .debiki .ui-state-active a:link, .debiki .ui-state-active a:visited { color: #de8800; text-decoration: none; }
 .debiki .ui-widget :active { outline: none; }
 
 /* Interaction Cues
@@ -82,7 +82,7 @@
 /* states and images */
 .debiki .ui-icon { width: 16px; height: 16px; background-image: url(images/ui-icons_0c93ca_256x240.png); }
 .debiki .ui-widget-content .ui-icon {background-image: url(images/ui-icons_0c93ca_256x240.png); }
-.debiki .ui-widget-header .ui-icon {background-image: url(images/ui-icons_65b2d2_256x240.png); }
+.debiki .ui-widget-header .ui-icon {background-image: url(images/ui-icons_6fbbd9_256x240.png); }
 .debiki .ui-state-default .ui-icon { background-image: url(images/ui-icons_e9911c_256x240.png); }
 .debiki .ui-state-hover .ui-icon, .debiki .ui-state-focus .ui-icon {background-image: url(images/ui-icons_ef8c08_256x240.png); }
 .debiki .ui-state-active .ui-icon {background-image: url(images/ui-icons_ef8c08_256x240.png); }
@@ -295,7 +295,60 @@
 .debiki .ui-resizable-se { cursor: se-resize; width: 12px; height: 12px; right: 1px; bottom: 1px; }
 .debiki .ui-resizable-sw { cursor: sw-resize; width: 9px; height: 9px; left: -5px; bottom: -5px; }
 .debiki .ui-resizable-nw { cursor: nw-resize; width: 9px; height: 9px; left: -5px; top: -5px; }
-.debiki .ui-resizable-ne { cursor: ne-resize; width: 9px; height: 9px; right: -5px; top: -5px;}/* Button
+.debiki .ui-resizable-ne { cursor: ne-resize; width: 9px; height: 9px; right: -5px; top: -5px;}/* Selectable
+----------------------------------*/
+.debiki .ui-selectable-helper { border:1px dotted black }
+/* Accordion
+----------------------------------*/
+.debiki .ui-accordion .ui-accordion-header { cursor: pointer; position: relative; margin-top: 1px; zoom: 1; }
+.debiki .ui-accordion .ui-accordion-li-fix { display: inline; }
+.debiki .ui-accordion .ui-accordion-header-active { border-bottom: 0 !important; }
+.debiki .ui-accordion .ui-accordion-header a { display: block; font-size: 1em; padding: .5em .5em .5em .7em; }
+/* IE7-/Win - Fix extra vertical space in lists */
+.debiki .ui-accordion a { zoom: 1; }
+.debiki .ui-accordion-icons .ui-accordion-header a { padding-left: 2.2em; }
+.debiki .ui-accordion .ui-accordion-header .ui-icon { position: absolute; left: .5em; top: 50%; margin-top: -8px; }
+.debiki .ui-accordion .ui-accordion-content { padding: 1em 2.2em; border-top: 0; margin-top: -2px; position: relative; top: 1px; margin-bottom: 2px; overflow: auto; display: none; zoom: 1; }
+.debiki .ui-accordion .ui-accordion-content-active { display: block; }/* Autocomplete
+----------------------------------*/
+.debiki .ui-autocomplete { position: absolute; cursor: default; }	
+.debiki .ui-autocomplete-loading { background: white url('images/ui-anim_basic_16x16.gif') right center no-repeat; }
+
+/* workarounds */
+* html .ui-autocomplete { width:1px; } /* without this, the menu expands to 100% in IE6 */
+
+/* Menu
+----------------------------------*/
+.debiki .ui-menu {
+	list-style:none;
+	padding: 2px;
+	margin: 0;
+	display:block;
+}
+.debiki .ui-menu .ui-menu {
+	margin-top: -3px;
+}
+.debiki .ui-menu .ui-menu-item {
+	margin:0;
+	padding: 0;
+	zoom: 1;
+	float: left;
+	clear: left;
+	width: 100%;
+}
+.debiki .ui-menu .ui-menu-item a {
+	text-decoration:none;
+	display:block;
+	padding:.2em .4em;
+	line-height:1.5;
+	zoom:1;
+}
+.debiki .ui-menu .ui-menu-item a.ui-state-hover,
+.debiki .ui-menu .ui-menu-item a.ui-state-active {
+	font-weight: normal;
+	margin: -1px;
+}
+/* Button
 ----------------------------------*/
 
 .debiki .ui-button { display: inline-block; position: relative; padding: 0; margin-right: .1em; text-decoration: none !important; cursor: pointer; text-align: center; zoom: 1; overflow: visible; } /* the overflow property removes extra width in IE */
@@ -343,7 +396,23 @@ button.ui-button::-moz-focus-inner { border: 0; padding: 0; } /* reset extra pad
 .debiki .ui-dialog .ui-dialog-buttonpane button { float: right; margin: .5em .4em .5em 0; cursor: pointer; padding: .2em .6em .3em .6em; line-height: 1.4em; width:auto; overflow:visible; }
 .debiki .ui-dialog .ui-resizable-se { width: 14px; height: 14px; right: 3px; bottom: 3px; }
 .debiki .ui-draggable .ui-dialog-titlebar { cursor: move; }
-/* Tabs
+/* Slider
+----------------------------------*/
+.debiki .ui-slider { position: relative; text-align: left; }
+.debiki .ui-slider .ui-slider-handle { position: absolute; z-index: 2; width: 1.2em; height: 1.2em; cursor: default; }
+.debiki .ui-slider .ui-slider-range { position: absolute; z-index: 1; font-size: .7em; display: block; border: 0; background-position: 0 0; }
+
+.debiki .ui-slider-horizontal { height: .8em; }
+.debiki .ui-slider-horizontal .ui-slider-handle { top: -.3em; margin-left: -.6em; }
+.debiki .ui-slider-horizontal .ui-slider-range { top: 0; height: 100%; }
+.debiki .ui-slider-horizontal .ui-slider-range-min { left: 0; }
+.debiki .ui-slider-horizontal .ui-slider-range-max { right: 0; }
+
+.debiki .ui-slider-vertical { width: .8em; height: 100px; }
+.debiki .ui-slider-vertical .ui-slider-handle { left: -.3em; margin-left: 0; margin-bottom: -.6em; }
+.debiki .ui-slider-vertical .ui-slider-range { left: 0; width: 100%; }
+.debiki .ui-slider-vertical .ui-slider-range-min { bottom: 0; }
+.debiki .ui-slider-vertical .ui-slider-range-max { top: 0; }/* Tabs
 ----------------------------------*/
 .debiki .ui-tabs { position: relative; padding: .2em; zoom: 1; } /* position: relative prevents IE scroll bug (element with position: relative inside container with overflow: auto appear as "fixed") */
 .debiki .ui-tabs .ui-tabs-nav { margin: 0; padding: .2em .2em 0; }
@@ -354,3 +423,67 @@ button.ui-button::-moz-focus-inner { border: 0; padding: 0; } /* reset extra pad
 .debiki .ui-tabs .ui-tabs-nav li a, .debiki .ui-tabs.ui-tabs-collapsible .ui-tabs-nav li.ui-tabs-selected a { cursor: pointer; } /* first selector in group seems obsolete, but required to overcome bug in Opera applying cursor: text overall if defined elsewhere... */
 .debiki .ui-tabs .ui-tabs-panel { display: block; border-width: 0; padding: 1em 1.4em; background: none; }
 .debiki .ui-tabs .ui-tabs-hide { display: none !important; }
+/* Datepicker
+----------------------------------*/
+.debiki .ui-datepicker { width: 17em; padding: .2em .2em 0; }
+.debiki .ui-datepicker .ui-datepicker-header { position:relative; padding:.2em 0; }
+.debiki .ui-datepicker .ui-datepicker-prev, .debiki .ui-datepicker .ui-datepicker-next { position:absolute; top: 2px; width: 1.8em; height: 1.8em; }
+.debiki .ui-datepicker .ui-datepicker-prev-hover, .debiki .ui-datepicker .ui-datepicker-next-hover { top: 1px; }
+.debiki .ui-datepicker .ui-datepicker-prev { left:2px; }
+.debiki .ui-datepicker .ui-datepicker-next { right:2px; }
+.debiki .ui-datepicker .ui-datepicker-prev-hover { left:1px; }
+.debiki .ui-datepicker .ui-datepicker-next-hover { right:1px; }
+.debiki .ui-datepicker .ui-datepicker-prev span, .debiki .ui-datepicker .ui-datepicker-next span { display: block; position: absolute; left: 50%; margin-left: -8px; top: 50%; margin-top: -8px;  }
+.debiki .ui-datepicker .ui-datepicker-title { margin: 0 2.3em; line-height: 1.8em; text-align: center; }
+.debiki .ui-datepicker .ui-datepicker-title select { font-size:1em; margin:1px 0; }
+.debiki .ui-datepicker select.ui-datepicker-month-year {width: 100%;}
+.debiki .ui-datepicker select.ui-datepicker-month, 
+.debiki .ui-datepicker select.ui-datepicker-year { width: 49%;}
+.debiki .ui-datepicker table {width: 100%; font-size: .9em; border-collapse: collapse; margin:0 0 .4em; }
+.debiki .ui-datepicker th { padding: .7em .3em; text-align: center; font-weight: bold; border: 0;  }
+.debiki .ui-datepicker td { border: 0; padding: 1px; }
+.debiki .ui-datepicker td span, .debiki .ui-datepicker td a { display: block; padding: .2em; text-align: right; text-decoration: none; }
+.debiki .ui-datepicker .ui-datepicker-buttonpane { background-image: none; margin: .7em 0 0 0; padding:0 .2em; border-left: 0; border-right: 0; border-bottom: 0; }
+.debiki .ui-datepicker .ui-datepicker-buttonpane button { float: right; margin: .5em .2em .4em; cursor: pointer; padding: .2em .6em .3em .6em; width:auto; overflow:visible; }
+.debiki .ui-datepicker .ui-datepicker-buttonpane button.ui-datepicker-current { float:left; }
+
+/* with multiple calendars */
+.debiki .ui-datepicker.ui-datepicker-multi { width:auto; }
+.debiki .ui-datepicker-multi .ui-datepicker-group { float:left; }
+.debiki .ui-datepicker-multi .ui-datepicker-group table { width:95%; margin:0 auto .4em; }
+.debiki .ui-datepicker-multi-2 .ui-datepicker-group { width:50%; }
+.debiki .ui-datepicker-multi-3 .ui-datepicker-group { width:33.3%; }
+.debiki .ui-datepicker-multi-4 .ui-datepicker-group { width:25%; }
+.debiki .ui-datepicker-multi .ui-datepicker-group-last .ui-datepicker-header { border-left-width:0; }
+.debiki .ui-datepicker-multi .ui-datepicker-group-middle .ui-datepicker-header { border-left-width:0; }
+.debiki .ui-datepicker-multi .ui-datepicker-buttonpane { clear:left; }
+.debiki .ui-datepicker-row-break { clear:both; width:100%; }
+
+/* RTL support */
+.debiki .ui-datepicker-rtl { direction: rtl; }
+.debiki .ui-datepicker-rtl .ui-datepicker-prev { right: 2px; left: auto; }
+.debiki .ui-datepicker-rtl .ui-datepicker-next { left: 2px; right: auto; }
+.debiki .ui-datepicker-rtl .ui-datepicker-prev:hover { right: 1px; left: auto; }
+.debiki .ui-datepicker-rtl .ui-datepicker-next:hover { left: 1px; right: auto; }
+.debiki .ui-datepicker-rtl .ui-datepicker-buttonpane { clear:right; }
+.debiki .ui-datepicker-rtl .ui-datepicker-buttonpane button { float: left; }
+.debiki .ui-datepicker-rtl .ui-datepicker-buttonpane button.ui-datepicker-current { float:right; }
+.debiki .ui-datepicker-rtl .ui-datepicker-group { float:right; }
+.debiki .ui-datepicker-rtl .ui-datepicker-group-last .ui-datepicker-header { border-right-width:0; border-left-width:1px; }
+.debiki .ui-datepicker-rtl .ui-datepicker-group-middle .ui-datepicker-header { border-right-width:0; border-left-width:1px; }
+
+/* IE6 IFRAME FIX (taken from datepicker 1.5.3 */
+.debiki .ui-datepicker-cover {
+    display: none; /*sorry for IE5*/
+    display/**/: block; /*sorry for IE5*/
+    position: absolute; /*must have*/
+    z-index: -1; /*must have*/
+    filter: mask(); /*must have*/
+    top: -4px; /*must have*/
+    left: -4px; /*must have*/
+    width: 200px; /*must have*/
+    height: 200px; /*must have*/
+}/* Progressbar
+----------------------------------*/
+.debiki .ui-progressbar { height:2em; text-align: left; }
+.debiki .ui-progressbar .ui-progressbar-value {margin: -1px; height:100%; }
