@@ -316,6 +316,8 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
 
 .dw-post-info .dw-post-liking,
 .dw-post-info .dw-vote-count,
+.dw-post-info .dw-vote-label-fraction-lower-bound,
+.dw-post-info .dw-vote-label-sum,
 .dw-post-info .dw-vote-valsum-max {
   margin-left: 3px;
   font-weight: bold;
@@ -357,6 +359,7 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
   position: absolute;
 }
 
+#dw-action-menu .dw-edit,
 #dw-action-menu .dw-vote,
 #dw-action-menu .dw-reply {
   position: relative;
@@ -378,13 +381,19 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
 
 /* === Forms === */
 
-form.dw-reply-form,
-form.dw-vote-form {
+.debiki form {
+  position: relative;
+  z-index: 9999;
   background-color: #fcfaf5; /*FCFAF5*/
   padding: 1em; /* push outline away */
   margin: 1em;
   outline: #83c5df solid thick; /* was: #9ee */
   float: left; /* else: sometimes very wide; reply-form might appear inside! */
+}
+
+.debiki form input[type='text'],
+.debiki form textarea {
+  font-family: Verdana, sans-serif; /* the font .dw-post .dw-text uses */
 }
 
 .dw-submit-group {
@@ -410,9 +419,16 @@ form.dw-reply-form label {
   margin-right: 0.4em;
 }
 
+form.dw-reply-form textarea {
+  width: 97%;
+  height: 97%;
+  resize: none; /* need to disable Chrome's default-resizing-of-textarea,
+                  because the parent <form> (which is also resizable)
+                  isn't resized when the textarea is resized */
+}
+
 form.dw-reply-form input[type='text'],
 form.dw-reply-form textarea {
-  font-family: Verdana, sans-serif;
   margin-top: 0.7em;
 }
 
@@ -464,6 +480,49 @@ form.dw-vote-form .dw-more-votes label {
   min-width: 0 !important;
 }
 
+/* === Edit === */
+
+.dw-edit-form .ui-accordion-content {
+  padding: 0.5em !important; /* otherwise too much padding */
+}
+
+.dw-edit-form .dw-edit-suggestions p {
+  /* Use same font/size as .dw-debate */
+  font-family: Verdana, sans-serif;
+  font-size: 93%;
+  line-height: 110%;
+}
+
+.dw-edit-form h4 {
+  font-weight: normal !important;
+  font-size: 93%;
+}
+
+.dw-edit-form h4.dw-your-edit {
+  font-weight: bold !important;
+}
+
+.dw-edit-form .dw-live-edit {
+  background: none !important; /* it's distracting, behind the textarea */
+  padding: 0 !important; /* otherwise textarea very small */
+}
+
+.dw-edit-form .dw-live-edit textarea {
+  width: 97%;
+  height: 94%;
+  resize: none; /* disable Chrome's default-resizable (and
+                   make the accordion resizable instead) */
+}
+
+.dw-new-edit-btn {
+  float: left;
+  margin: 0em;
+}
+
+.dw-hidden-new-edit {
+  display: none;
+}
+
 /* === Misc === */
 
 .dw-parent-ref {
@@ -494,6 +553,11 @@ form.dw-vote-form .dw-more-votes label {
 .dw-linkify-ui-state-default {
   border: none !important;
   background: none !important;
+}
+
+/* Use the crosshair cursor for buttons that don't leave the page */
+.ui-accordion-header {
+  cursor: crosshair !important;
 }
 
 /* jQuery UI bug fix: in the jQuery-auto-generated file, ".debiki"

@@ -17,8 +17,8 @@ $(".dw-post, .dw-thread-info").hover(
       // or a vote-form child (C).
       // (C and D: Better not open many action forms at once.)
       if (!nextThread.hasClass('dw-collapsed') &&  // A
-          !nextThread.children()
-              .filter('.dw-reply-form, .dw-vote-form').length) {  // B, C
+          !nextThread.children().filter(
+            '.dw-reply-form, .dw-vote-form, .dw-edit-form').length) {  // B, C
         $(this).after($('#dw-action-menu'))
       }
     }
@@ -179,7 +179,7 @@ $("#dw-hidden-templates form .dw-cancel").click(function() {
 // ------- Voting
 
 $('#dw-action-menu .dw-vote').button().click(function(){
-  // Warning: Some duplicated code, see .dw-reply click() below.
+  // Warning: Some duplicated code, see .dw-reply and dw-edit click() below.
   var thread = $(this).closest('.dw-thread');
   clearfix(thread); // ensures the vote appears nested inside the thread
   var post = thread.children('.dw-post');
@@ -223,7 +223,7 @@ voteFormTemplate.find('.dw-show-more-votes').show().
 // ------- Replying
 
 $("#dw-action-menu .dw-reply").button().click(function() {
-  // Warning: Some duplicated code, see .dw-vote click() above.
+  // Warning: Some duplicated code, see .dw-vote and dw-edit click() above.
   var thread = $(this).closest('.dw-thread');
   clearfix(thread); // ensures the reply appears nested inside the thread
   var post = thread.children('.dw-post');
@@ -232,12 +232,76 @@ $("#dw-action-menu .dw-reply").button().click(function() {
   var postId = post.attr('id').substr(8, 999); // drop initial "dw-post-"
   reply.find("input[name='dw-fi-reply-to']").attr('value', postId);
   makeIdsUniqueUpdateLabels(reply, '-post-'+ postId);
+  reply.resizable({ alsoResize: reply.find('textarea') });
   post.after(reply);
   // Dismiss action menu
   $('#dw-action-menu').appendTo($('#dw-hidden-templates'));
   // Build fancy jQuery UI widgets
   reply.find('.dw-submit-group input').button();
   reply.find('label').addClass( // color and font that matches <input> buttons
+    'dw-color-from-ui-state-default dw-font-from-ui-widget');
+  // Resize the root thread (in case this reply-thread is a new child of it).
+  DebikiLayout.resizeRootThread(); // see debiki-layout.js
+});
+
+// ------- Editing
+
+$("#dw-action-menu .dw-edit").button().click(function() {
+  // Warning: Some duplicated code, see .dw-vote and .dw-reply click() above.
+  var $thread = $(this).closest('.dw-thread');
+  clearfix($thread); // makes edit area appear inside $thread
+  var $post = $thread.children('.dw-post');
+  var $editForm = $("#dw-hidden-templates .dw-edit-template").
+        children().clone(true);
+  var $accordion = $editForm.find('.dw-edit-suggestions');
+  var postId = $post.attr('id').substr(8, 999); // drop initial "dw-post-"
+  //$editForm.find("input[name='dw-fi-reply-to']").attr('value', postId);
+  makeIdsUniqueUpdateLabels($editForm, '-post-'+ postId);
+
+  // Copy the post text to -edit-your tab.
+  var curText = '';
+  $post.find('.dw-text p').each(
+      function(){ curText += $(this).text() + '\n\n'; });
+  $editForm.find('textarea').val(curText.trim() + '\n');
+
+  // Make form and accordion resizable
+  $accordion.wrap("<div class='dw-resize-accordion' />");
+  var $accwrap = $editForm.find('.dw-resize-accordion');
+  $editForm.resizable({
+      alsoResize: $accwrap,
+			resize: function(){ $accordion.accordion("resize"); },
+			minHeight: 140
+		});
+
+  // Adjust dimensions
+  $editForm.css('width', $post.css('width'));
+  $accwrap.css('height', '300px');
+  $accordion.accordion("resize"); // parent container height changed
+
+  $post.after($editForm);
+  
+  // jQuery.tabs() must be invoked after above line, weird!
+  // Cannot use autoHeight, since other people's edit suggestions
+  // might be arbitrary long?
+  $accordion.accordion({ autoHeight: false, fillSpace: true });
+
+  // Dismiss action menu
+  $('#dw-action-menu').appendTo($('#dw-hidden-templates'));
+
+  $editForm.find('.dw-new-edit-btn').click(function(){
+    $(this).remove();
+    $editForm.find('.dw-hidden-new-edit').removeClass(
+      'dw-hidden-new-edit').addClass(
+      'dw-your-edit dw-live-edit dw-your-new-edit');
+    $accordion.accordion('activate', '.dw-your-new-edit');
+  });
+
+  // Build fancy jQuery UI widgets
+  $editForm.find(
+      "input[type='button'], input[type='submit'], input[type='radio']").
+      button();
+  $editForm.find('label, .dw-edit-suggestions-label').addClass(
+    // color and font matching <input> buttons
     'dw-color-from-ui-state-default dw-font-from-ui-widget');
   // Resize the root thread (in case this reply-thread is a new child of it).
   DebikiLayout.resizeRootThread(); // see debiki-layout.js

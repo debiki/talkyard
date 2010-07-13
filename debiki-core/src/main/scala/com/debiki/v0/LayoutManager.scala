@@ -18,6 +18,7 @@ class LayoutConfig {
   // page, says this RFC: http://www.apps.ietf.org/rfc/rfc3986.html#sec-5.4
   var replyAction = ""
   var voteAction = ""
+  var editAction = ""
 }
 
 class LayoutVariables {
@@ -289,6 +290,7 @@ class SimpleLayoutManager extends LayoutManager {
       <div id='dw-action-menu'>
         <a class='dw-reply'>Reply</a>
         <a class='dw-vote'>Vote</a>
+        <a class='dw-edit'>Edit</a>
       </div>
       <div class='dw-reply-template'>
         <form class='dw-reply-form'
@@ -359,6 +361,55 @@ class SimpleLayoutManager extends LayoutManager {
           }
           <div class='dw-submit-group'>
             <input class='dw-submit' type='submit' value='Submit votes'/>
+            <input class='dw-cancel' type='button' value='Cancel'/>
+          </div>
+        </form>
+      </div>
+      <div class='dw-edit-template'>
+        <form class='dw-edit-form'
+            action={config.editAction}
+            accept-charset='UTF-8'
+            method='post'>
+          <input type='hidden' name='dw-fi-action' value='edit'/>
+          <div class='dw-edit-suggestions-label'>Edit suggestions:</div>
+          <div class='dw-edit-suggestions'>
+            <h4 class='dw-your-edit'>You, 2010-05-16 00:02</h4>
+            <div class='dw-your-edit'>
+              <p>Someone has voted on this,
+              therefore you cannot edit it any more</p>
+            </div>
+            <h4>Anders And, 2010-05-15 22:30</h4>
+            <div>
+              <p>There's a blue cat in my hat</p>
+              <input id='dw-test-1' type='radio' name='dw-test-12' value='' />
+              <label for='dw-test-1'>Like</label>
+              <input id='dw-test-2' type='radio' name='dw-test-12' value='' />
+              <label for='dw-test-2'>Dislike</label>
+            </div>
+            <h4 class='dw-your-edit'>You, 2010-05-18 11:02</h4>
+            <div class='dw-your-edit dw-live-edit'>
+              <textarea rows='12'>Text you have written
+              once upon a time, and no one has voted on.
+              </textarea>
+            </div>
+            <h4>Musse Pig, 2010-05-15 22:30</h4>
+            <div><p>Where is my blue cat? I'm going to place it in
+                 my hat, if only I can find it.</p>
+              <p>Or should I buy some other animal, and place it
+              in my hat?</p>
+              <p>Where do people usually keep all their stuff.</p>
+              <input id='dw-test-3' type='radio' name='dw-test-34' value='' />
+              <label for='dw-test-3'>Like</label>
+              <input id='dw-test-4' type='radio' name='dw-test-34' value='' />
+              <label for='dw-test-4'>Dislike</label>
+            </div>
+            <h4 class='dw-hidden-new-edit'>Your new sugggestion</h4>
+            <div class='dw-hidden-new-edit'><textarea rows='12'/></div>
+          </div>
+          <input class='dw-new-edit-btn' type='button'
+                value='New edit suggestion...'/>
+          <div class='dw-submit-group'>
+            <input class='dw-submit' type='submit' value='Submit'/>
             <input class='dw-cancel' type='button' value='Cancel'/>
           </div>
         </form>
