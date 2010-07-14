@@ -91,7 +91,7 @@
                 <arg>-d</arg>
                 <arg>${project.build.testOutputDirectory}/v0/compactDebate/_debate.yaml</arg>
                 <arg>-o</arg>
-                <arg>test.html</arg>
+                <arg>target/run/</arg>
               </args>
             </launcher>
             <launcher>
@@ -101,7 +101,7 @@
                 <arg>-d</arg>
                 <arg>${project.build.testOutputDirectory}/v0/compactDebate/_debate.yaml</arg>
                 <arg>-o</arg>
-                <arg>test.html</arg>
+                <arg>target/run/</arg>
               </args>
               <jvmArgs>
                 <jvmArg>-Xdebug</jvmArg>

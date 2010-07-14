@@ -6,6 +6,7 @@ import org.yaml.{snakeyaml => y}
 import io._
 import scala.collection.JavaConversions._
 import scala.collection.{mutable => mut}
+import java.{io => jio}
 
 object HtmlUtil {
 
@@ -16,10 +17,10 @@ object HtmlUtil {
 
 }
 
-/**
- * Test conversion from YAML to HTML of debate / discussion.
+/** Converts a debate from YAML to HTML.
  */
 private[debiki] object App {
+
   def main(args: Array[String]) {
     var dir = ""
     var out = "-"
@@ -44,6 +45,9 @@ private[debiki] object App {
       i += 1
     }
 
+    createDirTree(out)
+    copyResources(out)
+
     val debate: Debate = (new DaoYaml).getDebate(dir)
     val xml =
       <html xmlns="http://www.w3.org/1999/xhtml"
@@ -51,18 +55,15 @@ private[debiki] object App {
         <head>
           <title>Test mock layout</title>
           <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
-          <link type="text/css" rel="stylesheet"
-              href="css/debiki/jquery-ui-1.8.2.custom.css"/>
-          <link type='text/css' rel='stylesheet' href='debiki.css' />
-          <script type="text/javascript" src="jquery-1.4.2.js" />
-          <script type="text/javascript"
-              src="js/debiki-jquery-ui-1.8.2.custom.min.js" />
-          <script type="text/javascript" src="js/jquery.cookie.js" />
-          <!-- <script type="text/javascript"
-              src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.2/jquery-ui.min.js"/> -->
-          <script type="text/javascript" src="js/debiki-dragscrollable.js" />
-          <script type="text/javascript" src="debiki.js" />
-          <script type="text/javascript" src="js/debiki-layout.js" />
+          {
+            for (f <- resourceFiles) yield
+              if (f endsWith ".css")
+                <link type="text/css" rel="stylesheet" href={f}/>
+              else if (f endsWith ".js")
+                <script type="text/javascript" src={f}/>
+              else
+                throw new RuntimeException("Bad resource: "+ f)
+          }
           <script type="text/javascript">
             jQuery.noConflict()(function($){{
               $('body').debiki_dragscrollable(
@@ -74,13 +75,104 @@ private[debiki] object App {
           { layoutMgr.layout(debate) }
         </body>
       </html>
-    val html = HtmlUtil.htmlPrefix + xml
 
-    if (out == "-") println(html)
-    else {
-      val writer = new java.io.FileWriter(out)
-      writer.write(html.toString)
-      writer.close
+    val html = HtmlUtil.htmlPrefix + xml
+    val writer = new jio.FileWriter(out + "debate.html")
+    writer.write(html.toString)
+    writer.close
+  }
+
+  /** All css and javascript files.
+   */
+  private val resourceFiles = List(
+      "css/debiki/jquery-ui-1.8.2.custom.css",
+      "css/debiki.css",
+      "js/jquery-1.4.2.js",
+      "js/debiki-jquery-ui-1.8.2.custom.min.js",
+      "js/jquery.cookie.js",
+      "js/debiki-dragscrollable.js",
+      "js/debiki.js",
+      "js/debiki-layout.js")
+
+  /** Image files, currently jQuery UI images only.
+   *  Perhaps I can list the contents of a Jar directory like so:
+   *    // Load the directory as a resource
+   *    URL dir_url = ClassLoader.getSystemResource(dir_path);
+   *    // Turn the resource into a File object
+   *    File dir = new File(dir_url.toURI());
+   *    // List the directory
+   *    String files = dir.list()
+   *
+   *  See: http://stackoverflow.com/questions/676097/java-resource-as-file
+   *  Instead of this hard coded list, which I'll need to update
+   *  when jQuery UI adds new files:
+   */
+  private val imageFiles = List(
+      "ui-anim_basic_16x16.gif",
+      "ui-bg_diagonals-thick_18_b81900_40x40.png",
+      "ui-bg_diagonals-thick_20_666666_40x40.png",
+      "ui-bg_flat_10_000000_40x100.png",
+      "ui-bg_glass_100_f6f6f6_1x400.png",
+      "ui-bg_glass_100_fdf5ce_1x400.png",
+      "ui-bg_glass_65_ffffff_1x400.png",
+      "ui-bg_highlight-soft_100_eeeeee_1x100.png",
+      "ui-bg_highlight-soft_35_e8e8e8_1x100.png",
+      "ui-bg_highlight-soft_75_ffe45c_1x100.png",
+      "ui-icons_0c93ca_256x240.png",
+      "ui-icons_228ef1_256x240.png",
+      "ui-icons_6fbbd9_256x240.png",
+      "ui-icons_e9911c_256x240.png",
+      "ui-icons_ef8c08_256x240.png",
+      "ui-icons_ffd27a_256x240.png") map ("css/debiki/images/"+ _)
+
+  /** Creates directories into which css and javascript files will be placed.
+   */
+  private def createDirTree(dir: String) {
+    val root = new jio.File(dir)
+    if (!root.exists) {
+      // (not mkdirs, that'd be somewhat unsafe in case of a typo?)
+      root.mkdir()
+    }
+    else if (!root.isDirectory)
+      throw new IllegalArgumentException("Not a directory: "+ dir)
+    new jio.File(dir +"/js/").mkdir()
+    new jio.File(dir +"/css/debiki/images/").mkdirs()
+  }
+
+  /** Copies javascript, css files and images to folders in `dir'.
+   */
+  private def copyResources(dir: String) {
+    val loader = getClass.getClassLoader
+    for (res <- resourceFiles ::: imageFiles) {
+      val inputStream = loader.getResourceAsStream(res)
+      copy(fromStream = inputStream, toPath = dir +"/"+ res)
+      inputStream.close()
     }
   }
+
+  /** Copies the stream to a file; works also for binary files.
+   *  Could also use Apache file utils:
+   *  http://commons.apache.org/
+   *                   io/api-release/org/apache/commons/io/FileUtils.html
+   *  but can't have such a dependency.
+   *
+   *  Caller closes `fromStream'.
+   */
+  private def copy(fromStream: jio.InputStream, toPath: String) {
+    var ostream: jio.FileOutputStream = null
+    try {
+      ostream = new jio.FileOutputStream(toPath)
+      val buffer = new Array[Byte](4096)
+      var bytesRead: Int = fromStream.read(buffer)
+      while (bytesRead != -1) {
+        ostream.write(buffer, 0, bytesRead)
+        bytesRead = fromStream.read(buffer)
+      }
+    }
+    finally {
+      // caller closes `from'.
+      if (ostream != null) ostream.close()
+    }
+  }
+
 }
