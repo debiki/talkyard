@@ -8,14 +8,15 @@ import Prelude._
 
 object Debate {
 
-  def empty(id: String) = Debate(id, Nil, Nil)
+  def empty(id: String) = Debate(id, Nil, Nil, Nil)
 
 }
 
 case class Debate (
   val id: String,
   private[debiki] val posts: List[Post],
-  private[debiki] val votes: List[Vote]
+  private[debiki] val votes: List[Vote],
+  private[debiki] val edits: List[Edit]
 ){
   val RootPostId = "root"
 
@@ -66,6 +67,9 @@ case class Debate (
 
   def post(id: String): Option[Post] = postsById.get(id)
 
+  def postsWithEditProposals: List[Post] =
+    posts.filter(p => editProposalsByPostId.contains(p.id))
+
   def votesOn(postId: String): List[Vote] = {
     val ci = voteCache.get(postId)
     if (ci.isDefined) ci.get.votes else Nil
@@ -83,6 +87,12 @@ case class Debate (
     val res = repliesTo(postId)
     res.flatMap(r => successorsTo(r.id)) ::: res
   }
+
+  private lazy val editProposalsByPostId: imm.Map[String, List[Edit]] =
+    edits.groupBy(_.postId)
+
+  def editsProposedFor(postId: String): List[Edit] =
+    editProposalsByPostId.getOrElse(postId, Nil)
 
   def + (post: Post): Debate = copy(posts = post :: posts)
   def - (post: Post): Debate = copy(posts = posts filter (_ != post))
@@ -149,3 +159,12 @@ case class Post(
   owner: Option[String],
   text: String
 )
+
+case class Edit(
+  id: String,
+  postId: String,
+  date: ju.Date,
+  author: String,
+  text: String
+)
+

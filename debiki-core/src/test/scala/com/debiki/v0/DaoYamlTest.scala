@@ -27,7 +27,7 @@ class DaoYamlTest {
   def testLoad() {
     val dao: Dao = new DaoYaml
     val debate = dao.getDebate(Paths.MmaDebate)
-    assert(debate.id == "compactDebate")
+    assert(debate.id == "test-debate")
     assert(debate.postCount == 26)
     assert(debate.votesOn("j").length == 1)
     assert(debate.votesOn("c").length == 2)

@@ -58,6 +58,7 @@ class DaoYaml extends Dao {
     var debate: Option[Debate] = None
     var posts = List[Post]()
     var votes = List[Vote]()
+    var edits = List[Edit]()
     for (obj <- iter) obj match {
       case d: Debate =>
         if (debate.isDefined) unsupported("More than one debate found: "+
@@ -65,9 +66,11 @@ class DaoYaml extends Dao {
         debate = Some(d)
       case p: Post => posts ::= p
       case v: Vote => votes ::= v
+      case e: Edit => edits ::= e
       case x => unimplemented("Handling of: "+ x)
     }
-    debate.map(_.copy(posts = posts, votes = votes))
+    debate.map(_.copy(posts = posts, votes = votes,
+                      edits = edits))
   }
 
   def loadDebateFromText(yamlText: String): Option[Debate] = {
@@ -98,6 +101,8 @@ class DaoYaml extends Dao {
       new yn.Tag(yamlTagPrefix +"Post"), new ConstrPost)
     yamlConstructors.put(
       new yn.Tag(yamlTagPrefix +"Vote"), new ConstrVote)
+    yamlConstructors.put(
+      new yn.Tag(yamlTagPrefix +"Edit"), new ConstrEdit)
 
     private class ConstrDebate extends DebikiMapConstr {
 
@@ -108,7 +113,7 @@ class DaoYaml extends Dao {
           case _ => // ignore unknown entries
         }
         illegalArgIf(debateId.isEmpty, "Debate id missing")
-        new Debate(debateId.get, posts = Nil, votes = Nil)
+        Debate.empty(debateId.get)
       }
     }
 
@@ -166,6 +171,15 @@ class DaoYaml extends Dao {
       }
     }
 
+    private class ConstrEdit extends DebikiMapConstr2 {
+
+      val text = new KeyVal[String]("text", asText)
+
+      override def construct() = Edit(
+          id = id.value, postId = postId.value, date = date.value,
+          author = by.value, text = text.value)
+    }
+
     // Helper class: Loops through all Yaml map entries in a Yaml map node.
     private abstract class DebikiMapConstr extends yc.AbstractConstruct {
       override def construct(node: yn.Node): Object = {
@@ -182,6 +196,66 @@ class DaoYaml extends Dao {
         }
       }
       def handleTuples(tuples: ju.List[yn.NodeTuple]): Object
+    }
+
+    /** Loops through all Yaml map entries in a Yaml map node,
+     *  and stores some frequently used values in certain fields,
+     *  based on their key names. The same key-name/field combination
+     *  is used regardless of what type of Yaml object is being read.
+     *  This entails a map entry with a given name means the same,
+     *  regardless of context.  For example, `post' is always a String;
+     *  `date' is always a ju.Date.
+     *  Subclasses can add their own unique key/value fields.
+     */
+    private abstract class DebikiMapConstr2 extends yc.AbstractConstruct {
+
+      var keyVals: List[KeyVal[_]] = Nil
+
+      class KeyVal[E](
+        val key: String,
+        private val valueFromNode: Function1[yn.Node, E]
+      ){
+        private var _value: Option[E] = None
+        def parseValue(n: yn.Node) { _value = Some(valueFromNode(n)) }
+        def value: E = {
+          _read = true;
+          _value.getOrElse(
+            throw new RuntimeException("`"+ key +"' entry missing"))
+        }
+        var _read = false
+        def read = _read
+        keyVals ::= this
+      }
+
+      val id = new KeyVal[String]("id", asText)
+      val postId = new KeyVal[String]("post", asText)
+      val date = new KeyVal[ju.Date]("date", asDate)
+      val by = new KeyVal[String]("by", asText)
+
+      def construct(): Object
+
+      override def construct(node: yn.Node): Object = {
+        try {
+          val tuples: ju.List[yn.NodeTuple] = node match {
+            case m: yn.MappingNode => m.getValue
+            case x => illegalArgBadClass("`node'", "MappingNode", x)
+          }
+
+          for (t <- tuples; kv <- keyVals) {
+            val key = asText(t.getKeyNode)
+            if (kv.key == key) {
+              kv.parseValue(t.getValueNode)
+              // break -- no, there is no break?
+            }
+          }
+
+          construct()
+        }
+        catch {
+          case e: Exception => throw new RuntimeException(
+              "Error parsing this node: "+ debugReprOf(node), e)
+        }
+      }
     }
 
     private def asInt(n: yn.Node) = asText(n).toInt

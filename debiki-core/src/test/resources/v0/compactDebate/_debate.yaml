@@ -1,7 +1,7 @@
 # vim: fdm=marker et sw=4 ts=4
 #%TAG ! !org.debiki.v0.debikigenhtml.
 --- !Debate
-id: compactDebate
+id: test-debate
 #end-delims: .,:;!?)}]
 #start-delims: ({[
 #      a
@@ -34,6 +34,45 @@ text: |
  Tillåt MMA
 
  Det är bra att MMA-tävlingar är tillåtna i Sverige.
+--- !Edit
+id: aea
+post: b
+date: 2001-12-14t21:59:43.10-05:00
+by: Misse Mu
+text: |1
+ Tillåt MMU
+ MMUuuurk på burk, drick en slurk
+--- !Edit
+id: aeb
+post: b
+date: 2001-12-14t21:59:43.10-05:00
+by: Mjau-Mjam
+text: |1
+ Abianie irnst eirntier  nirstn tsi!
+ Abneir wfr nrnrinti ni, nrist inrt nrisn ineit n eirneini tieirsn tir.
+ Wfr nii rstrn ti ni, nrist inrt trsien tsrww; guwq nrisn
+ ineit n eirneini tieirsn tir.
+--- !Edit
+id: aec
+post: b
+date: 2001-12-14t21:59:43.10-05:00
+by: Frääs-Klös
+text: |1
+ Minritnir i its! Norntii niifg. Nritxgwkdb, rtis, rtis, rtis!!!
+ Nao noiu irneinwf  nrsie... Rrnsig niex nwww nbe. irnt??
+#--- !EditVote
+#suggestion: a
+#date: 2001-12-14t21:59:43.10-05:00
+#voter: Misse Mu
+#vote: +1
+#--- !EditVote
+#suggestion: a
+#date: 2001-12-14t21:59:43.10-05:00
+#voter: Määä Hää
+#vote: +1
+#--- !EditApplied
+#suggestion: a
+#debug: algorithm, statistics, ...?
 --- !Post
 id: c
 parent: a
@@ -127,6 +166,14 @@ owner: PrommaStupiid
 text: |
  Såvida de gamla sura gubbarna i själva verket är ute efter att förbjuda sånt de inte gillar,
  precis som muslimerna vill förbjuda alla att inte ha slöja.
+--- !Edit
+id: a
+post: e
+date: 2001-12-14t21:59:43.10-05:00
+by: Promma2
+text: |1
+ Såvida inte de som är för MMA,
+ i själva verket är ute efter att förbjuda sånt de inte gillar.
 --- !Post
 id: e2
 parent: d
