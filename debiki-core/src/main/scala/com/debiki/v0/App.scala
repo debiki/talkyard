@@ -25,7 +25,6 @@ private[debiki] object App {
     var dir = ""
     var out = "-"
     var widths = List[Int]()
-    var layoutMgr: LayoutManager = new SimpleLayoutManager
     var i = 0
     while (i < args.length) {
       args(i) match {
@@ -34,21 +33,34 @@ private[debiki] object App {
             if (i + 1 >= args.length)
               error("Value missing for option: "+ a)
             a match {
-              case "-d" => dir = args(i+1)
-              case "-o" => out = args(i+1)
+              case "-d" =>
+                dir = args(i+1)
+              case "-o" =>
+                out = args(i+1)
+                if (!out.endsWith("/")) out = out + '/'
               case "-w" =>
                 widths = args(i+1).split(",").toList.map(_.toInt)
-              case _ => error("Bad option: "+ a)
+              case _ =>
+                error("Bad option: "+ a)
             }
             i += 1
       }
       i += 1
     }
 
-    createDirTree(out)
-    copyResources(out)
 
     val debate: Debate = (new DaoYaml).getDebate(dir)
+    val layoutMgr: LayoutManager = new SimpleLayoutManager
+
+    createDirTree(out, debate)
+    copyResources(out)
+    writeDebateHtml(debate, out, layoutMgr)
+    for (post <- debate.posts)//WithEditProposals)
+      writeEditProposalsHtml(post.id, debate, layoutMgr, out)
+  }
+
+  private def writeDebateHtml(
+      debate: Debate, out: String, layoutMgr: LayoutManager) {
     val xml =
       <html xmlns="http://www.w3.org/1999/xhtml"
         xmlns:lift="http://liftweb.net/">
@@ -77,8 +89,27 @@ private[debiki] object App {
       </html>
 
     val html = HtmlUtil.htmlPrefix + xml
-    val writer = new jio.FileWriter(out + "debate.html")
+    val writer = new jio.FileWriter(out + debate.id + ".html")
     writer.write(html.toString)
+    writer.close
+  }
+
+  private def writeEditProposalsHtml(postId: String, debate:
+      Debate, layout: LayoutManager, out: String) {
+    val xml =
+      <html xmlns="http://www.w3.org/1999/xhtml">
+        <head>
+          <title>Edit suggestions</title>
+          <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+        </head>
+        <body>
+        { layout.editForm(postId) }
+        </body>
+      </html>
+    val editPropsDir = out + debate.id +'/'+ Paths.EditsProposed
+    new jio.File(editPropsDir).mkdirs()
+    val writer = new jio.FileWriter(editPropsDir + postId +".html")
+    writer.write(HtmlUtil.htmlPrefix + xml.toString)
     writer.close
   }
 
@@ -127,16 +158,18 @@ private[debiki] object App {
 
   /** Creates directories into which css and javascript files will be placed.
    */
-  private def createDirTree(dir: String) {
+  private def createDirTree(dir: String, debate: Debate) {
     val root = new jio.File(dir)
     if (!root.exists) {
-      // (not mkdirs, that'd be somewhat unsafe in case of a typo?)
+      // (not mkdirs, that'd be somewhat unsafe in case of a typo when
+      // the user specifies `dir' on the command line?)
       root.mkdir()
     }
     else if (!root.isDirectory)
       throw new IllegalArgumentException("Not a directory: "+ dir)
-    new jio.File(dir +"/js/").mkdir()
-    new jio.File(dir +"/css/debiki/images/").mkdirs()
+    new jio.File(dir +"js/").mkdir()
+    new jio.File(dir +"css/debiki/images/").mkdirs()
+    new jio.File(dir + debate.id +"/edits/proposed/post/").mkdirs()
   }
 
   /** Copies javascript, css files and images to folders in `dir'.

@@ -11,6 +11,11 @@ import collection.{mutable => mut, immutable => imm}
 import _root_.scala.xml.{NodeSeq, Elem}
 import Prelude._
 
+private[debiki]
+object Paths {
+  val EditsProposed = "edits/proposed/post/"
+}
+
 // Should be a LayoutManager static class, but how can I then acces
 // it from Java?
 class LayoutConfig {
@@ -96,7 +101,8 @@ object LayoutManager {
   /** Converts text to xml, returns (html, approx-line-count).
    */
   private[v0]
-  def textToHtml(text: String, charsPerLine: Int): Tuple2[Elem, Int] = {
+  def textToHtml(text: String, charsPerLine: Int = 80)
+      : Tuple2[Elem, Int] = {
     var lines = 0
     val xml =
         <div class="dw-text">{
@@ -159,10 +165,13 @@ abstract class LayoutManager {
   def configure(conf: LayoutConfig)
   def layout(debate: Debate,
              vars: LayoutVariables = new LayoutVariables): NodeSeq
+  def editForm(postId: String): NodeSeq
 
 }
 
 class SimpleLayoutManager extends LayoutManager {
+
+  import LayoutManager._
 
   private var config = new LayoutConfig
 
@@ -182,7 +191,7 @@ class SimpleLayoutManager extends LayoutManager {
   }
 
   private def layoutPosts(): NodeSeq = {
-    <div class="debiki dw-debate">
+    <div id={debate.id} class="debiki dw-debate">
       <div class="dw-debate-info">{
         if (lastChange isDefined) {
           <p class="dw-last-changed">Last changed on
@@ -227,7 +236,7 @@ class SimpleLayoutManager extends LayoutManager {
 
   private def postXml(p: Post): NodeSeq = {
     val cssPostId = "dw-post-"+ p.id
-    val (xmlText, numLines) = textToHtml(p.text, charsPerLine = 80)
+    val (xmlText, numLines) = textToHtml(p.text)
     val long = numLines > 9
     val cropped_s = if (long) " dw-cropped-s" else ""
     val date = toIso8601(p.date)
@@ -266,6 +275,40 @@ class SimpleLayoutManager extends LayoutManager {
         </div>
       </div>
       { xmlText }
+    </div>
+  }
+
+  def editForm(postId: String): NodeSeq = {
+    <form class='dw-edit-form'
+        action={config.editAction}
+        accept-charset='UTF-8'
+        method='post'>
+      <input type='hidden' name='dw-fi-action' value='edit'/>
+      <div class='dw-edit-suggestions-label'>Edit suggestions:</div>
+      <div class='dw-edit-suggestions'>
+        { debate.editsProposedFor(postId) map (editXml(_)) }
+        <h4 class='dw-hidden-new-edit'>Your new sugggestion</h4>
+        <div class='dw-hidden-new-edit'><textarea rows='12'/></div>
+      </div>
+      <input class='dw-new-edit-btn' type='button'
+            value='New edit suggestion...'/>
+      <div class='dw-submit-group'>
+        <input class='dw-submit' type='submit' value='Submit'/>
+        <input class='dw-cancel' type='button' value='Cancel'/>
+      </div>
+    </form>
+  }
+
+  private def editXml(e: Edit): NodeSeq = {
+    val likeId = "dw-like-edit-"+ e.id
+    val dissId = "dw-dislike-edit-"+ e.id
+    <h4>{e.author}</h4>
+    <div>
+      {textToHtml(e.text)}
+      <input id={likeId} type='radio' name='todo' value='todo'/>
+      <label for={likeId} >Like</label>
+      <input id={dissId} type='radio' name='todo' value='todo'/>
+      <label for={dissId} >Dislike</label>
     </div>
   }
 
@@ -361,55 +404,6 @@ class SimpleLayoutManager extends LayoutManager {
           }
           <div class='dw-submit-group'>
             <input class='dw-submit' type='submit' value='Submit votes'/>
-            <input class='dw-cancel' type='button' value='Cancel'/>
-          </div>
-        </form>
-      </div>
-      <div class='dw-edit-template'>
-        <form class='dw-edit-form'
-            action={config.editAction}
-            accept-charset='UTF-8'
-            method='post'>
-          <input type='hidden' name='dw-fi-action' value='edit'/>
-          <div class='dw-edit-suggestions-label'>Edit suggestions:</div>
-          <div class='dw-edit-suggestions'>
-            <h4 class='dw-your-edit'>You, 2010-05-16 00:02</h4>
-            <div class='dw-your-edit'>
-              <p>Someone has voted on this,
-              therefore you cannot edit it any more</p>
-            </div>
-            <h4>Anders And, 2010-05-15 22:30</h4>
-            <div>
-              <p>There's a blue cat in my hat</p>
-              <input id='dw-test-1' type='radio' name='dw-test-12' value='' />
-              <label for='dw-test-1'>Like</label>
-              <input id='dw-test-2' type='radio' name='dw-test-12' value='' />
-              <label for='dw-test-2'>Dislike</label>
-            </div>
-            <h4 class='dw-your-edit'>You, 2010-05-18 11:02</h4>
-            <div class='dw-your-edit dw-live-edit'>
-              <textarea rows='12'>Text you have written
-              once upon a time, and no one has voted on.
-              </textarea>
-            </div>
-            <h4>Musse Pig, 2010-05-15 22:30</h4>
-            <div><p>Where is my blue cat? I'm going to place it in
-                 my hat, if only I can find it.</p>
-              <p>Or should I buy some other animal, and place it
-              in my hat?</p>
-              <p>Where do people usually keep all their stuff.</p>
-              <input id='dw-test-3' type='radio' name='dw-test-34' value='' />
-              <label for='dw-test-3'>Like</label>
-              <input id='dw-test-4' type='radio' name='dw-test-34' value='' />
-              <label for='dw-test-4'>Dislike</label>
-            </div>
-            <h4 class='dw-hidden-new-edit'>Your new sugggestion</h4>
-            <div class='dw-hidden-new-edit'><textarea rows='12'/></div>
-          </div>
-          <input class='dw-new-edit-btn' type='button'
-                value='New edit suggestion...'/>
-          <div class='dw-submit-group'>
-            <input class='dw-submit' type='submit' value='Submit'/>
             <input class='dw-cancel' type='button' value='Cancel'/>
           </div>
         </form>

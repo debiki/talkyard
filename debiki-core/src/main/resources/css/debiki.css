@@ -402,8 +402,12 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
   margin-top: 1.7em;
 }
 
-.dw-submit-group input.dw-cancel {
-  cursor: crosshair;
+.debiki .ui-button {
+  cursor: crosshair !important; /* has only client side side effects */
+}
+
+.debiki .ui-button.dw-submit {
+  cursor: pointer !important; /* has servede side effects, might reload page */
 }
 
 /* === Reply === */
@@ -454,7 +458,6 @@ form.dw-vote-form .dw-vote-group {
 }
 
 form.dw-vote-form .dw-vote-group .ui-button {
-  cursor: crosshair;
   min-width: 7em;
 }
 
@@ -520,7 +523,7 @@ form.dw-vote-form .dw-more-votes label {
 }
 
 .dw-hidden-new-edit {
-  display: none;
+  display: none !important;
 }
 
 /* === Misc === */
@@ -555,7 +558,7 @@ form.dw-vote-form .dw-more-votes label {
   background: none !important;
 }
 
-/* Use the crosshair cursor for buttons that don't leave the page */
+/* Use the crosshair cursor for only client side side effects */
 .ui-accordion-header {
   cursor: crosshair !important;
 }
