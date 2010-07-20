@@ -29,8 +29,8 @@ class DaoYamlTest {
     val debate = dao.getDebate(Paths.MmaDebate)
     assert(debate.id == "test-debate")
     assert(debate.postCount == 26)
-    assert(debate.votesOn("j").length == 1)
-    assert(debate.votesOn("c").length == 2)
+    assert(debate.ratingsOn("j").length == 1)
+    assert(debate.ratingsOn("c").length == 2)
     //assert(debate.postScore("h") == 3)
   }
 

@@ -35,13 +35,14 @@ NetBeans says:
 
   val post = Post("a", "root", new ju.Date, None, "test")
   val debate = Debate("test", post :: Nil, Nil)
-  val vote_interesting = Vote(post.id, "?", new ju.Date, List("interesting"))
+  val rating_interesting =
+        Rating(post.id, "?", new ju.Date, List("interesting"))
 
   "For an unrated post, StatsCalc" should {
     "find no statistics" in {
       val calcer = new StatsCalc(debate)
       val rating = calcer.scoreFor(post.id)
-      rating.voteCount must_== 0
+      rating.ratingCount must_== 0
       rating.maxLabelSum must_== 0
       rating.labelStats.size must_== 0
     }
@@ -49,17 +50,17 @@ NetBeans says:
 
   "For a post with one rating, StatsCalc" should {
     "find one rating" in {
-      val debate2 = debate + vote_interesting
+      val debate2 = debate + rating_interesting
       val calcer = new StatsCalc(debate2)
       val rating = calcer.scoreFor(post.id)
-      rating.voteCount must_== 1
+      rating.ratingCount must_== 1
       rating.maxLabelSum must_== 1.0f
       rating.labelStats.size must_== 1
       val labelStats = rating.labelStats("interesting")
       labelStats.sum must_== 1.0f
       labelStats.fraction must_== 1.0f
       // Don't know exactly what fractionLowerBound should be,
-      // but rather low, since the algorithm adds 4 fake votes, 2 of which
+      // but rather low, since the algorithm adds 4 fake ratings, 2 of which
       // excludes the "interesting" label.
       labelStats.fractionLowerBound must be_>(0.0f)
       labelStats.fractionLowerBound must be_<(0.5f)

@@ -22,7 +22,7 @@ class LayoutConfig {
   // These default form action values (the empty string) reload the current
   // page, says this RFC: http://www.apps.ietf.org/rfc/rfc3986.html#sec-5.4
   var replyAction = ""
-  var voteAction = ""
+  var rateAction = ""
   var editAction = ""
 }
 
@@ -33,17 +33,16 @@ class LayoutVariables {
 
 object LayoutManager {
 
-  /** Digs a {@code Reply} or a {@code Vote} out of a 
+  /** Digs a {@code Reply} or a {@code Rating} out of a
    *  {@code javax.servlet.ServletRequest.getParameterMap()}.
    *
-   *  If {@code userName} specifies, ignores {@code dw-fi-author}
-   *  and {@code dw-fi-voter}.
+   *  If {@code userName} specifies, ignores {@code dw-fi-by}.
    *
    *  If {@code date} is {@code None}, uses the current date-time.
    *
    *  The param map maps input-names to input-value-arrays. This function
    *  searches the map for Debiki specific input/value data,
-   *  and constructs a vote or a reply or nothing.
+   *  and constructs a rating or a reply or nothing.
    */
   def digServletRequestParamMap(
         map: ju.Map[String, Array[String]],
@@ -56,9 +55,9 @@ object LayoutManager {
     // other map entries.
     map.get("dw-fi-action") match {
       case Array("reply") =>
-        val posts = map.get("dw-fi-reply-to")
+        val posts = map.get("dw-fi-post")
         val replyTexts = map.get("dw-fi-reply-text")
-        val authors = map.get("dw-fi-reply-author")
+        val authors = map.get("dw-fi-by")
         require(hasValues(posts), "Found no reply-to post")
         require(posts.length == 1, "More than one reply-to post")
         require(hasValues(replyTexts), "Found no reply text")
@@ -70,31 +69,31 @@ object LayoutManager {
                 id = "?", // illegal id, only a-z allowed
                 parent = posts.head,
                 date = date.getOrElse(new ju.Date),
-                owner = userName.orElse(Some(authors.head)),
+                by = userName.orElse(Some(authors.head)),
                 text = replyTexts.head))
-      case Array("vote") =>
-        val posts = map.get("dw-fi-vote-on")
-        val values = map.get("dw-fi-vote-value")
-        val voters = map.get("dw-fi-voter")
-        require(hasValues(posts), "Found no vote-on post")
-        require(posts.length == 1, "Found more than one vote-on post")
-        require(hasValues(values), "Found no vote value")
-        require(values.length < 100, "Less than 100 vote values") // safer?
-        require(userName.isDefined || hasValues(voters), "Found no voter")
-        require(userName.isDefined || voters.length == 1,
-                "Found more than one voter")
-        Some(Vote(
+      case Array("rate") =>
+        val posts = map.get("dw-fi-post")
+        val tags = map.get("dw-fi-rat-tag")
+        val raters = map.get("dw-fi-by")
+        require(hasValues(posts), "Found no post to rate")
+        require(posts.length == 1, "Found more than one post to rate")
+        require(hasValues(tags), "Found no rating tag")
+        require(tags.length < 100, "Less than 100 rating tags") // safer?
+        require(userName.isDefined || hasValues(raters), "Found no rater")
+        require(userName.isDefined || raters.length == 1,
+                "Found more than one rater")
+        Some(Rating(
                 postId = posts.head,
-                voterId = voters.head,
+                by = raters.head,
                 date = date.getOrElse(new ju.Date),
-                values = values.toList))
-      case Array(value) =>
-        throw new IllegalArgumentException(
-                  "Unknown dw-fi-action value ["+ safe(value) +"]")
-      case Array(_, _, _*) =>
-        throw new IllegalArgumentException("Too many action values")
-      case _ =>
-        None
+                tags = tags.toList))
+      case Array(value) => illegalArg("Unknown dw-fi-action value: "+
+                                      safe(value))
+      case Array() => illegalArg("No dw-fi-action value")
+      case Array(_, _, _*) => illegalArg("Too many dw-fi-action values")
+      case null => None
+      case x => illegalArg("Request map value is no array, it is a: "+
+                          x.getClass.getSimpleName)
     }
   }
 
@@ -229,8 +228,8 @@ class SimpleLayoutManager extends LayoutManager {
     else
       <ul class="dw-thread-info">
         <li class="dw-post-count">{count} replies</li>
-        <li class="dw-vote">interesting</li>
-        <li class="dw-vote">funny</li>
+        <li class="dw-rat-tag">interesting</li>
+        <li class="dw-rat-tag">funny</li>
       </ul>
   }
 
@@ -244,28 +243,28 @@ class SimpleLayoutManager extends LayoutManager {
     <div id={cssPostId} class={"dw-post dw-cropped-e" + cropped_s}>
       <div class='dw-post-info'>
         <div class='dw-owner-info'>By&#160;<span class="dw-owner">{
-              spaceToNbsp(p.owner.getOrElse("whom?"))}</span></div>
+              spaceToNbsp(p.by.getOrElse("whom?"))}</span></div>
         <span class="dw-post-liking">{score.liking}</span>
-        <span class="dw-vote-count">{score.voteCount}</span>
-        <span class="dw-vote-valsum-max">{score.maxLabelSum}</span>
-        <ul class='dw-vote-info'>{
-          for ((label: String, stats: LabelStats) <- score.labelStatsSorted)
+        <span class="dw-rat-count">{score.ratingCount}</span>
+        <span class="dw-rat-valsum-max">{score.maxLabelSum}</span>
+        <ul class='dw-rats'>{
+          for ((tag: String, stats: LabelStats) <- score.labelStatsSorted)
           yield
-            <li class="dw-vote-is">
-              <span class="dw-vote">{label}</span>
-              <span class="dw-count">{
+            <li class="dw-rat">
+              <span class="dw-rat-tag">{tag}</span>
+              <span class="dw-rat-tag-frac">{
                   "%.0f" format (100 * stats.fraction) }%</span>
-              <span class="dw-vote-label-fraction-lower-bound">{
+              <span class="dw-rat-tag-frac-min">{
                   "%.0f" format (100 * stats.fractionLowerBound) }%</span>
-              <span class="dw-vote-label-sum">{stats.sum}%</span>
+              <span class="dw-rat-tag-sum">{stats.sum}%</span>
             </li>
         }</ul>
-        <ul class='dw-vote-info-non-weighted'>{
+        <ul class='dw-rats-non-weighted'>{
           // **Only for debugging**, css display is `none'.
-          for ((value: String, sum: Int) <- debate.voteSumsFor(p.id)) yield
-            <li class="dw-vote-is">
-              <span class="dw-vote">{value}</span>
-              <span class="dw-count">{sum}</span>
+          for ((tag: String, sum: Int) <- debate.ratingSumsFor(p.id)) yield
+            <li class="dw-rat">
+              <span class="dw-rat-tag">{tag}</span>
+              <span class="dw-rat-tag-sum">{sum}</span>
             </li>
         }</ul>
         <div class="dw-last-changed">
@@ -292,7 +291,7 @@ class SimpleLayoutManager extends LayoutManager {
       </div>
       <input class='dw-new-edit-btn' type='button'
             value='New edit suggestion...'/>
-      <div class='dw-submit-group'>
+      <div class='dw-submit-set'>
         <input class='dw-submit' type='submit' value='Submit'/>
         <input class='dw-cancel' type='button' value='Cancel'/>
       </div>
@@ -302,9 +301,9 @@ class SimpleLayoutManager extends LayoutManager {
   private def editXml(e: Edit): NodeSeq = {
     val likeId = "dw-like-edit-"+ e.id
     val dissId = "dw-dislike-edit-"+ e.id
-    <h4>{e.author}</h4>
+    <h4>{e.by}</h4>
     <div>
-      {textToHtml(e.text)}
+      { textToHtml(e.text) }
       <input id={likeId} type='radio' name='todo' value='todo'/>
       <label for={likeId} >Like</label>
       <input id={dissId} type='radio' name='todo' value='todo'/>
@@ -332,7 +331,7 @@ class SimpleLayoutManager extends LayoutManager {
     <div id="dw-hidden-templates">
       <div id='dw-action-menu'>
         <a class='dw-reply'>Reply</a>
-        <a class='dw-vote'>Vote</a>
+        <a class='dw-rate'>Rate</a>
         <a class='dw-edit'>Edit</a>
       </div>
       <div class='dw-reply-template'>
@@ -341,7 +340,7 @@ class SimpleLayoutManager extends LayoutManager {
             accept-charset='UTF-8'
             method='post'>
           <input type='hidden' name='dw-fi-action' value='reply'/>
-          <input type='hidden' name='dw-fi-reply-to' value='?'/>
+          <input type='hidden' name='dw-fi-post' value='?'/>
           <p>
             <label for='dw-fi-reply-text'>Your reply:</label><br/>
             <textarea id='dw-fi-reply-text' name='dw-fi-reply-text' rows='13'
@@ -350,30 +349,30 @@ class SimpleLayoutManager extends LayoutManager {
           <p>
             <label for='dw-fi-reply-author'>Your name or alias:</label>
             <input id='dw-fi-reply-author' type='text'
-                  name='dw-fi-reply-author' value='Anonymous'/>
+                  name='dw-fi-by' value='Anonymous'/>
           </p>
           <p class='dw-user-contrib-license'>
             By clicking <i>{submitButtonText}</i>, you agree to license
             the text you submit under the {ccWikiLicense}.
           </p>
-          <div class='dw-submit-group'>
+          <div class='dw-submit-set'>
             <input class='dw-submit' type='submit' value={submitButtonText}/>
             <input class='dw-cancel' type='button' value='Cancel'/>
           </div>
         </form>
       </div>
-      <div class='dw-vote-template'>
-        <form class='dw-vote-form'
-            action={config.voteAction}
+      <div class='dw-rat-template'>
+        <form class='dw-rat-form'
+            action={config.rateAction}
             accept-charset='UTF-8'
             method='post'>
-          <input type='hidden' name='dw-fi-action' value='vote'/>
-          <input type='hidden' name='dw-fi-vote-on' value='?'/>
-          <input type='hidden' name='dw-fi-voter' value='?'/> {/* for now */}
+          <input type='hidden' name='dw-fi-action' value='rate'/>
+          <input type='hidden' name='dw-fi-post' value='?'/>
+          <input type='hidden' name='dw-fi-by' value='?'/> {/* for now */}
           {
             var boxCount = 1
-            def voteBox(value: String) = {
-              val name = "dw-fi-vote-value"
+            def rateBox(value: String) = {
+              val name = "dw-fi-rat-tag"
               val id = name +"-"+ boxCount
               boxCount += 1
               <input id={id} type='checkbox' name={name} value={value} />
@@ -385,25 +384,25 @@ class SimpleLayoutManager extends LayoutManager {
             although 3 - 5 items is probably much better than 7 - 9. */}
             <div>
               {/* temporary layout hack */}
-              <div class='dw-vote-group'>{
-                voteBox("interesting") ++
-                voteBox("boring") ++
-                voteBox("funny")
+              <div class='dw-rat-tag-set'>{
+                rateBox("interesting") ++
+                rateBox("boring") ++
+                rateBox("funny")
               }</div>
-              <div class='dw-vote-group'>{
-                voteBox("insightful") ++
-                voteBox("faulty")
+              <div class='dw-rat-tag-set'>{
+                rateBox("insightful") ++
+                rateBox("faulty")
               }</div>
-              <a class='dw-show-more-votes'>More...</a>
-              <div class='dw-vote-group dw-more-votes'>{
-                voteBox("off-topic") ++
-                voteBox("spam") ++
-                voteBox("troll")
+              <a class='dw-show-more-rat-tags'>More...</a>
+              <div class='dw-rat-tag-set dw-more-rat-tags'>{
+                rateBox("off-topic") ++
+                rateBox("spam") ++
+                rateBox("troll")
               }</div>
             </div>
           }
-          <div class='dw-submit-group'>
-            <input class='dw-submit' type='submit' value='Submit votes'/>
+          <div class='dw-submit-set'>
+            <input class='dw-submit' type='submit' value='Submit ratings'/>
             <input class='dw-cancel' type='button' value='Cancel'/>
           </div>
         </form>

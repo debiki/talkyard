@@ -5,7 +5,7 @@ jQuery.noConflict()(function($){
 var threadHovered = null;
 var didResize = false;
 var posts = $(".debiki .dw-post");
-var voteFormTemplate = $("#dw-hidden-templates .dw-vote-template form");
+var rateFormTemplate = $("#dw-hidden-templates .dw-rat-template form");
 var debateId = $('.debiki').attr('id');
 
 $(".dw-post, .dw-thread-info").hover(
@@ -15,11 +15,11 @@ $(".dw-post, .dw-thread-info").hover(
     if ($(this).hasClass('dw-post')) {
       // Show the #action-menu, unless the thread is closing (A)
       // and unless the thread doesn't already have a reply-form (B)
-      // a vote-form (C) or an edit form child (D).
-      // (C and D: Better not open many action forms at once.)
+      // or a rating-form (C) or an edit form child (D).
+      // (B, C and D: Better not open many action forms at once.)
       if (!nextThread.hasClass('dw-collapsed') &&  // A
           !nextThread.children().filter( // B, C, D
-            '.dw-reply-form, .dw-vote-form, .dw-edit-form-wrap').length) {
+            '.dw-reply-form, .dw-rat-form, .dw-edit-form-wrap').length) {
         $(this).after($('#dw-action-menu'))
       }
     }
@@ -179,66 +179,66 @@ $('.debiki').delegate('.dw-cancel', 'click', function() {
 
 // ------- Voting
 
-$('#dw-action-menu .dw-vote').button().click(function(){
+$('#dw-action-menu .dw-rate').button().click(function(){
   // Warning: Some duplicated code, see .dw-reply and dw-edit click() below.
   var thread = $(this).closest('.dw-thread');
-  clearfix(thread); // ensures the vote appears nested inside the thread
+  clearfix(thread); // ensures the rating appears nested inside the thread
   var post = thread.children('.dw-post');
-  var vote = voteFormTemplate.clone(true);
+  var $rateForm = rateFormTemplate.clone(true);
   var postId = post.attr('id').substr(8, 999); // drop initial 'dw-post-'
-  vote.find("input[name='dw-fi-vote-on']").attr('value', postId);
+  $rateForm.find("input[name='dw-fi-post']").attr('value', postId);
 
-  // The vote-value inputs are labeled checkboxes. Hence they
+  // The rating-value inputs are labeled checkboxes. Hence they
   // have ids --- which right now remain the same as the ids
-  // in the voteFormTemplate. Make the cloned ids unique:
-  makeIdsUniqueUpdateLabels(vote, '-post-'+ postId);
+  // in the rateFormTemplate. Make the cloned ids unique:
+  makeIdsUniqueUpdateLabels($rateForm, '-post-'+ postId);
 
-  post.after(vote);
+  post.after($rateForm);
   // Dismiss action menu
   $('#dw-action-menu').appendTo($('#dw-hidden-templates'));
-  // Enable submit button when votes specified
-  vote.find("input[type='checkbox']").click(function(){
-    vote.find("input[type='submit']").button("option", "disabled", false);
+  // Enable submit button when ratings specified
+  $rateForm.find("input[type='checkbox']").click(function(){
+    $rateForm.find("input[type='submit']").button("option", "disabled", false);
   });
   //
   // Fancy GUI
-  // Seems this must be done *after* the voteFormTemplate has been
+  // Seems this must be done *after* the rateFormTemplate has been
   // copied --- otherwise, if the Cancel button is clicked,
-  // the voteFormTemplate itself has all its jQueryUI markup removed.
+  // the rateFormTemplate itself has all its jQueryUI markup removed.
   // (Is that a jQuery bug? Only the *clone* ought to be affected?)
-  vote.find('.dw-vote-group input, .dw-submit-group input').button();
+  $rateForm.find('.dw-rat-tag-set input, .dw-submit-set input').button();
   // Disable the submit button (until any checkbox clicked)
-  vote.find("input[type='submit']").button("option", "disabled", true);
-  vote.find('.dw-show-more-votes').
+  $rateForm.find("input[type='submit']").button("option", "disabled", true);
+  $rateForm.find('.dw-show-more-rat-tags').
     button().addClass('dw-linkify-ui-state-default');
 });
 
-// Show more vote values when clicking the "More..." button.
-voteFormTemplate.find('.dw-more-votes').hide();
-voteFormTemplate.find('.dw-show-more-votes').show().
+// Show more rating tags when clicking the "More..." button.
+rateFormTemplate.find('.dw-more-rat-tags').hide();
+rateFormTemplate.find('.dw-show-more-rat-tags').show().
   click(function() {
     $(this).hide().
-      closest('form').find('.dw-more-votes').show();
+      closest('form').find('.dw-more-rat-tags').show();
   });
 
 // ------- Replying
 
 $("#dw-action-menu .dw-reply").button().click(function() {
-  // Warning: Some duplicated code, see .dw-vote and dw-edit click() above.
+  // Warning: Some duplicated code, see .dw-rat-tag and dw-edit click() above.
   var thread = $(this).closest('.dw-thread');
   clearfix(thread); // ensures the reply appears nested inside the thread
   var post = thread.children('.dw-post');
   var reply = $("#dw-hidden-templates .dw-reply-template").
                 children().clone(true);
   var postId = post.attr('id').substr(8, 999); // drop initial "dw-post-"
-  reply.find("input[name='dw-fi-reply-to']").attr('value', postId);
+  reply.find("input[name='dw-fi-post']").attr('value', postId);
   makeIdsUniqueUpdateLabels(reply, '-post-'+ postId);
   reply.resizable({ alsoResize: reply.find('textarea') });
   post.after(reply);
   // Dismiss action menu
   $('#dw-action-menu').appendTo($('#dw-hidden-templates'));
   // Build fancy jQuery UI widgets
-  reply.find('.dw-submit-group input').button();
+  reply.find('.dw-submit-set input').button();
   reply.find('label').addClass( // color and font that matches <input> buttons
     'dw-color-from-ui-state-default dw-font-from-ui-widget');
   // Resize the root thread (in case this reply-thread is a new child of it).
@@ -248,7 +248,7 @@ $("#dw-action-menu .dw-reply").button().click(function() {
 // ------- Editing
 
 $("#dw-action-menu .dw-edit").button().click(function() {
-  // Warning: Some duplicated code, see .dw-vote and .dw-reply click() above.
+  // Warning: Some duplicated code, see .dw-rat-tag and .dw-reply click() above.
   var $thread = $(this).closest('.dw-thread');
   clearfix($thread); // makes edit area appear inside $thread
   var $post = $thread.children('.dw-post');
@@ -260,7 +260,7 @@ $("#dw-action-menu .dw-edit").button().click(function() {
 
     var $editForm = $formWrap.find('form');
     var $accordion = $editForm.find('.dw-edit-suggestions');
-    //$editForm.find("input[name='dw-fi-reply-to']").attr('value', postId);
+    //$editForm.find("input[name='dw-fi-post']").attr('value', postId);
     makeIdsUniqueUpdateLabels($editForm, '-post-'+ postId);
 
     // Copy the post text to -edit-your tab.

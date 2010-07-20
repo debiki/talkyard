@@ -16,7 +16,7 @@ id: test-debate
 id: a
 parent: root
 date: 2001-12-14t21:59:43.10-05:00
-owner: OP
+by: OP
 text: |
  Bör MMA vara tillåtet i Sverige?
 
@@ -29,7 +29,7 @@ text: |
 id: b
 parent: a
 date: 2001-12-14t21:59:43.10-05:00
-owner: OP
+by: OP
 text: |
  Tillåt MMA
 
@@ -77,7 +77,7 @@ text: |1
 id: c
 parent: a
 date: 2001-12-14t21:59:43.10-05:00
-owner: OP
+by: OP
 text: |
  Förbjud MMA
 
@@ -86,7 +86,7 @@ text: |
 id: ca
 parent: c
 date: 2001-12-14t21:59:43.10-05:00
-owner: Anonymous Elevator Man
+by: Anonymous Elevator Man
 text: |
  1
 
@@ -128,7 +128,7 @@ text: |
 id: cb
 parent: c
 date: 2001-12-14t21:59:43.10-05:00
-owner: Anonymous Hero
+by: Anonymous Hero
 text: |
  MMA bidrar till brotslighet och samhällets fördärv. MMA förvandlar
  annars vänliga människor till blodtörstiga våldsbrottslingar som
@@ -147,7 +147,7 @@ text: |
 id: d
 parent: b
 date: 2001-12-14t21:59:43.10-05:00
-owner: Promma
+by: Promma
 text: |
  För frihetenss skull.
 
@@ -162,7 +162,7 @@ text: |
 id: e
 parent: d
 date: 2001-12-14t21:59:43.10-05:00
-owner: PrommaStupiid
+by: PrommaStupiid
 text: |
  Såvida de gamla sura gubbarna i själva verket är ute efter att förbjuda sånt de inte gillar,
  precis som muslimerna vill förbjuda alla att inte ha slöja.
@@ -178,21 +178,21 @@ text: |1
 id: e2
 parent: d
 date: 2001-12-14t21:59:43.10-05:00
-owner: Inhuman-Human
+by: Inhuman-Human
 text: |
  Mauris mauris ante, blandit et, ultrices a, suscipit eget, quam. Integer ut neque. Vivamus nisi metus, molestie vel, gravida in, condimentum sit amet, nunc. Nam a nibh. Donec suscipit eros. Nam mi. Proin viverra leo ut odio. Curabitur malesuada. Vestibulum a velit eu ante scelerisque vulputate.
 --- !Post
 id: e3
 parent: d
 date: 2001-12-14t21:59:43.10-05:00
-owner: Someone
+by: Someone
 text: |
  Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
 --- !Post
 id: f
 parent: b
 date: 2001-12-14t21:59:43.10-05:00
-owner: Promma2
+by: Promma2
 text: |
  Håller ungdommar borta från gatan
 
@@ -204,7 +204,7 @@ text: |
 id: g
 parent: f
 date: 2001-12-14t21:59:43.10-05:00
-owner: Ephemeriis
+by: Ephemeriis
 text: |
  Ja,
  liksom fotbollen ingjuder hopp och framtidstro hos ungdommar i Afrika,
@@ -213,7 +213,7 @@ text: |
 id: h
 parent: f
 date: 2001-12-14t21:59:43.10-05:00
-owner: LittleLebowskiUrbanA
+by: LittleLebowskiUrbanA
 text: |
  De behöver inte slåss för att ha något att göra.
  Det finns fotboll och basket och annat.
@@ -221,7 +221,7 @@ text: |
 id: fc
 parent: f
 date: 2001-12-14t21:59:43.10-05:00
-owner: Promma2
+by: Promma2
 text: |
  Håller INTE ungdommar borta från gatan
 
@@ -230,7 +230,7 @@ text: |
 id: fd
 parent: f
 date: 2001-12-14t21:59:43.10-05:00
-owner: Promma2
+by: Promma2
 text: |
  Safari and Chrome Desktop use the values as if no zoom occurs. Thus the values will be wrong after a zoom.
  Note that Opera Desktop, while giving window.innerWidth/Height the wrong values, nonetheless uses the correct, zoomed ones in order to calculate this media query.
@@ -240,7 +240,7 @@ text: |
 id: bc
 parent: b
 date: 2001-12-14t21:59:43.10-05:00
-owner: Child-BC
+by: Child-BC
 text: |
  What is the simplest way to manage dependencies of Java classes to data files present in the classpath?
 
@@ -261,7 +261,7 @@ text: |
 id: bd
 parent: b
 date: 2001-12-14t21:59:43.10-05:00
-owner: Child-BD
+by: Child-BD
 text: |
  Can't you refactor your project so that you have submodules that each contain the relevant files for the project itself ; Bar class and Bar related files will be packaged in their bundle while Foo ones will packed into another?
 
@@ -270,28 +270,28 @@ text: |
 id: be
 parent: b
 date: 2001-12-14t21:59:43.10-05:00
-owner: Child-BE
+by: Child-BE
 text: |
  Gives the width and height of the HTML element in “browser pixels.” Should either become smaller with zooming (desktop), or stay the same, if the minimum viewport is fixed (some mobile browsers).
 --- !Post
 parent: h
 id: i
 date: 2001-12-14t21:59:43.10-05:00
-owner: Anonymous Coward
+by: Anonymous Coward
 text: |
  Du kan inte jämföra ett härligt slagsmål med fotboll!
 --- !Post
 parent: i
 id: j
 date: 2001-12-14t21:59:43.10-05:00
-owner: LittleLebowskiUrbanA
+by: LittleLebowskiUrbanA
 text: |
  Idiot
 --- !Post
 parent: j
 id: k
 date: 2001-12-14t21:59:43.10-05:00
-owner: Anonymous Coward
+by: Anonymous Coward
 text: |
  ***NEJ***!!!
 
@@ -311,91 +311,91 @@ text: |
  Det du, det kommer du inte undan
 
  Nej
---- !Vote
+--- !Rating
 by: Pelle Svanslös
 date: 2002-01-01t10:11:12.13Z
 post: b
-values: [interesting]
---- !Vote
+tags: [interesting]
+--- !Rating
 by: Pelle Svanslös
 date: 2002-01-01t10:11:12.13Z
 post: c
-values: [boring]
---- !Vote
+tags: [boring]
+--- !Rating
 by: Maja Gräddnos
 date: 2002-01-01t10:11:12.13Z
 post: c
-values: [faulty, boring]
---- !Vote
+tags: [faulty, boring]
+--- !Rating
 by: Majas avlägsna släkting i Amerikat
 date: 2002-01-01t10:11:12.13Z
 post: ac
-values: [faulty, boring, spam, troll, off-topic]
---- !Vote
+tags: [faulty, boring, spam, troll, off-topic]
+--- !Rating
 by: Majas avlägsna släkting i Norge
 date: 2002-01-01t10:11:12.13Z
 post: ac
-values: [faulty, boring, spam, troll]
---- !Vote
+tags: [faulty, boring, spam, troll]
+--- !Rating
 by: Maja Gräddnos
 date: 2002-01-01t10:11:12.13Z
 post: ac
-values: [faulty, boring, spam]
---- !Vote
+tags: [faulty, boring, spam]
+--- !Rating
 by: Majas syster
 date: 2002-01-01t10:11:12.13Z
 post: ac
-values: [faulty, boring]
---- !Vote
+tags: [faulty, boring]
+--- !Rating
 by: Majas moster
 date: 2002-01-01t10:11:12.13Z
 post: ac
-values: [faulty]
---- !Vote
+tags: [faulty]
+--- !Rating
 by: Plåtniklas
 date: 2002-01-01t10:11:12.13Z
 post: ad
-values: [off-topic]
---- !Vote
+tags: [off-topic]
+--- !Rating
 by: Karlsson på Taket
 date: 2002-01-01t10:11:12.13Z
 post: ad
-values: [spam]
---- !Vote
+tags: [spam]
+--- !Rating
 by: Nisse Nyfiken
 date: 2002-01-01t10:11:12.13Z
 post: ad
-values: [spam]
---- !Vote
+tags: [spam]
+--- !Rating
 by: Bull den Bullige
 date: 2002-01-01t10:11:12.13Z
 post: d
-values: [spam, off-topic, troll]
---- !Vote
+tags: [spam, off-topic, troll]
+--- !Rating
 by: Måns
 date: 2002-01-01t10:11:12.13Z
 post: cb
-values: [troll, spam]
---- !Vote
+tags: [troll, spam]
+--- !Rating
 by: Bill den Knasige
 date: 2001-12-14t21:59:43.10-05:00
 post: j
-values: [stupid, off-topic, troll]
---- !Vote
+tags: [stupid, off-topic, troll]
+--- !Rating
 by: Misse-Muu
 date: 2001-12-14t21:59:43.10-05:00
 post: h
-values: [stupid, off-topic, troll]
---- !Vote
+tags: [stupid, off-topic, troll]
+--- !Rating
 by: Anders-And
 date: 2001-12-14t21:59:43.10-05:00
 post: h
-values: ["interesting", "faulty", "»määäh-unicode«"]
+tags: ["interesting", "faulty", "»määäh-unicode«"]
 --- !Post
 parent: e
 id: ea
 date: 2001-12-14t21:59:43.10-05:00
-owner: RobertM1968
+by: RobertM1968
 text: |
  Besides the possibilities of "what could possibly go wrong?" the simple fact is, I am hoping IBM has done their research on this.
 
@@ -415,14 +415,14 @@ text: |
 parent: a
 id: ac
 date: 2001-12-14t21:59:43.10-05:00
-owner: Child-AC
+by: Child-AC
 text: |
  Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
 --- !Post
 parent: a
 id: ad
 date: 2001-12-14t21:59:43.10-05:00
-owner: Child-AD
+by: Child-AD
 text: |
  An anonymous reader writes:
 
@@ -431,29 +431,29 @@ text: |
 parent: ad
 id: ada
 date: 2001-12-14t21:59:43.10-05:00
-owner: Child-ADA
+by: Child-ADA
 text: |
  Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
 --- !Post
 parent: a
 id: ae
 date: 2001-12-14t21:59:43.10-05:00
-owner: Child-AC
+by: Child-AC
 text: |
  Proin viverra leo ut odio. Curabitur malesuada. Vestibulum a velit eu ante scelerisque vulputate.
 --- !Post
 parent: a
 id: af
 date: 2001-12-14t21:59:43.10-05:00
-owner: Child-AC
+by: Child-AC
 text: |
  roh2cool writes "As the dates for E3 Convention approaches, we expect more updates and leaks while game publishing and developing companies prefer to stay tight-lipped. Amongst the hustle-bustle of Google’s announcements, we managed to pick few important updates from the gaming industry happenings. Take a quick look at this gaming roundup snapshot for this week."
 
-#--- !Vote
+#--- !Rating
 #date: 2001-12-14t21:59:43.10-05:00
 #by: Person Name
-#values: { post: x, [ is: stupid ] }
-#--- !Vote
+#tags: { post: x, [ is: stupid ] }
+#--- !Rating
 #date: 2001-12-14t21:59:43.10-05:00
 #by: Person Name
 #votes:
@@ -468,7 +468,7 @@ text: |
 #  - it: agrees
 #--- !Edit
 #date: 2001-12-14t21:59:43.10-05:00
-#owner: Person Name
+#by: Person Name
 #postId: a
 #diff-ed: |
 # <an ed diff>

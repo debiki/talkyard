@@ -8,15 +8,15 @@ import Prelude._
 
 object Debate {
 
-  def empty(id: String) = Debate(id, Nil, Nil, Nil)
+  def empty(id: String) = Debate(id)
 
 }
 
 case class Debate (
   val id: String,
-  private[debiki] val posts: List[Post],
-  private[debiki] val votes: List[Vote],
-  private[debiki] val edits: List[Edit]
+  private[debiki] val posts: List[Post] = Nil,
+  private[debiki] val ratings: List[Rating] = Nil,
+  private[debiki] val edits: List[Edit] = Nil
 ){
   val RootPostId = "root"
 
@@ -35,26 +35,26 @@ case class Debate (
           yield (parentId, children.toList)).toList: _*)
   }
 
-  private class VoteCacheItem {
-    var votes: List[Vote] = Nil
+  private class RatingCacheItem {
+    var ratings: List[Rating] = Nil
     var valueSums: imm.Map[String, Int] = null
   }
 
-  private lazy val voteCache: mut.Map[String, VoteCacheItem] = {
-    val cache = mut.Map[String, VoteCacheItem]()
-    // Gather votes
-    for (v <- votes) {
-      var ci = cache.get(v.postId)
+  private lazy val ratingCache: mut.Map[String, RatingCacheItem] = {
+    val cache = mut.Map[String, RatingCacheItem]()
+    // Gather ratings
+    for (r <- ratings) {
+      var ci = cache.get(r.postId)
       if (ci.isEmpty) {
-        cache(v.postId) = new VoteCacheItem
-        ci = cache.get(v.postId)
+        cache(r.postId) = new RatingCacheItem
+        ci = cache.get(r.postId)
       }
-      ci.get.votes = v :: ci.get.votes
+      ci.get.ratings = r :: ci.get.ratings
     }
-    // Sum vote values
-    for ((postId, ci) <- cache) ci.valueSums = {
+    // Sum rating tags
+    for ((postId, cacheItem) <- cache) cacheItem.valueSums = {
       val mutmap = mut.Map[String, Int]()
-      for (vote <- ci.votes; value <- vote.values) {
+      for (r <- cacheItem.ratings; value <- r.tags) {
         val sum = mutmap.getOrElse(value, 0)
         mutmap(value) = sum + 1
       }
@@ -70,13 +70,13 @@ case class Debate (
   def postsWithEditProposals: List[Post] =
     posts.filter(p => editProposalsByPostId.contains(p.id))
 
-  def votesOn(postId: String): List[Vote] = {
-    val ci = voteCache.get(postId)
-    if (ci.isDefined) ci.get.votes else Nil
+  def ratingsOn(postId: String): List[Rating] = {
+    val ci = ratingCache.get(postId)
+    if (ci.isDefined) ci.get.ratings else Nil
   }
 
-  def voteSumsFor(postId: String): imm.Map[String, Int] = {
-    val ci = voteCache.get(postId)
+  def ratingSumsFor(postId: String): imm.Map[String, Int] = {
+    val ci = ratingCache.get(postId)
     if (ci.isDefined) ci.get.valueSums else imm.Map.empty
   }
 
@@ -97,8 +97,9 @@ case class Debate (
   def + (post: Post): Debate = copy(posts = post :: posts)
   def - (post: Post): Debate = copy(posts = posts filter (_ != post))
 
-  def + (vote: Vote): Debate = copy(votes = vote :: votes)
-  def - (vote: Vote): Debate = copy(votes = votes filter (_ != vote))
+  def + (rating: Rating): Debate = copy(ratings = rating :: ratings)
+  def - (rating: Rating): Debate = copy(ratings = ratings filter
+                                                                (_ != rating))
 
   lazy val nextFreePostId: String = {
     var nextFree = 0
@@ -114,7 +115,7 @@ case class Debate (
 
   lazy val lastChangeDate: Option[ju.Date] = {
     def maxDate(a: ju.Date, b: ju.Date) = if (a.compareTo(b) > 0) a else b
-    val allDates: Iterator[ju.Date] = votes.iterator.map(_.date) ++
+    val allDates: Iterator[ju.Date] = ratings.iterator.map(_.date) ++
                                         posts.iterator.map(_.date)
     if (allDates isEmpty) None
     else Some(allDates reduceLeft (maxDate(_, _)))
@@ -137,7 +138,7 @@ case class Debate (
     }
   }
   lazy val lastChangeDate = {
-    val dateOpts = List(maxDate(votes), maxDate(posts)).filter (!_.isEmpty)
+    val dateOpts = List(maxDate(ratings), maxDate(posts)).filter (!_.isEmpty)
     if (dateOpts isEmpty) None
     else dateOpts.tail.foldLeft(dateOpts.head.get)((d, o) => max(d, o.get))
   }
@@ -145,18 +146,18 @@ case class Debate (
 
 }
 
-case class Vote private[debiki] (
+case class Rating private[debiki] (
   postId: String,
-  voterId: String,
+  by: String,
   date: ju.Date,
-  values: List[String]
+  tags: List[String]
 )
 
 case class Post(
   id: String,
   parent: String,
   date: ju.Date,
-  owner: Option[String],
+  by: Option[String],
   text: String
 )
 
@@ -164,7 +165,7 @@ case class Edit(
   id: String,
   postId: String,
   date: ju.Date,
-  author: String,
+  by: String,
   text: String
 )
 

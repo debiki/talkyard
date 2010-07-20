@@ -21,6 +21,12 @@ object Prelude {
   def unimplemented = throw new UOE("Not implemented")
   def unimplemented(what: String) = throw new UOE("Not implemented: "+ what)
 
+  def errorIf(condition: Boolean, problem: String) =
+    if (condition) throw new RuntimeException(problem)
+
+  def illegalArg(problem: String) =
+    throw new IllegalArgumentException(problem)
+
   def illegalArgIf(condition: Boolean, problem: String) =
     if (condition) throw new IllegalArgumentException(problem)
 

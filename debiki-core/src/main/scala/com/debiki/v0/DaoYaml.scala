@@ -23,13 +23,13 @@ object DaoYaml {
     sb ++= "\nparent: " ++= post.parent
     sb ++= "\nid: " ++= post.id
 
-    // (If `owner' is inlined on the subsequent `sb ++= ...' line,
+    // (If `by' is inlined on the subsequent `sb ++= ...' line,
     // the below compilation error follows. If it's converted to a String
     // all is fine though. Weird.
     // [INFO]  found   : java.lang.Comparable[java.lang.String]
     // [INFO]  required: scala.collection.TraversableOnce[Char]  )
-    val owner = post.owner.getOrElse("?") // compilation error if...
-    sb ++= "\nowner: \"" ++= owner += '"' //... inlined here
+    val owner = post.by.getOrElse("?") // compilation error if...
+    sb ++= "\nby: \"" ++= owner += '"' //... inlined here
 
     sb ++= "\ndate: " ++= toIso8601(post.date)
     var indentedText = post.text.replaceAll("\n", "\n ") // indents 1 space
@@ -40,13 +40,13 @@ object DaoYaml {
 
   /** Warning: DoS or XSS attack: Bad input gives corrupt Yaml.
    */
-  def toYaml(vote: Vote): String = {
+  def toYaml(rating: Rating): String = {
     val sb = new mut.StringBuilder
-    sb ++= "\n--- !Vote"
-    sb ++= "\nby: \"" ++= vote.voterId += '"'
-    sb ++= "\ndate: " ++= toIso8601(vote.date)
-    sb ++= "\npost: " ++= vote.postId
-    sb ++= "\nvalues: " ++= vote.values.mkString("[\"", "\", \"", "\"]")
+    sb ++= "\n--- !Rating"
+    sb ++= "\nby: \"" ++= rating.by += '"'
+    sb ++= "\ndate: " ++= toIso8601(rating.date)
+    sb ++= "\npost: " ++= rating.postId
+    sb ++= "\ntags: " ++= rating.tags.mkString("[\"", "\", \"", "\"]")
     sb.toString
   }
 
@@ -57,7 +57,7 @@ class DaoYaml extends Dao {
   private def buildDebate(iter: Iterable[Object]): Option[Debate] = {
     var debate: Option[Debate] = None
     var posts = List[Post]()
-    var votes = List[Vote]()
+    var ratings = List[Rating]()
     var edits = List[Edit]()
     for (obj <- iter) obj match {
       case d: Debate =>
@@ -65,11 +65,11 @@ class DaoYaml extends Dao {
                                 "Don't know to which debate the posts belong")
         debate = Some(d)
       case p: Post => posts ::= p
-      case v: Vote => votes ::= v
+      case r: Rating => ratings ::= r
       case e: Edit => edits ::= e
       case x => unimplemented("Handling of: "+ x)
     }
-    debate.map(_.copy(posts = posts, votes = votes,
+    debate.map(_.copy(posts = posts, ratings = ratings,
                       edits = edits))
   }
 
@@ -100,7 +100,7 @@ class DaoYaml extends Dao {
     yamlConstructors.put(
       new yn.Tag(yamlTagPrefix +"Post"), new ConstrPost)
     yamlConstructors.put(
-      new yn.Tag(yamlTagPrefix +"Vote"), new ConstrVote)
+      new yn.Tag(yamlTagPrefix +"Rating"), new ConstrRating)
     yamlConstructors.put(
       new yn.Tag(yamlTagPrefix +"Edit"), new ConstrEdit)
 
@@ -123,14 +123,14 @@ class DaoYaml extends Dao {
         var id: Option[String] = None
         var parent: Option[String] = None
         var date: Option[ju.Date] = None
-        var owner: Option[String] = None
+        var by: Option[String] = None
         var text: Option[String] = None
 
         for (t <- tuples) asText(t.getKeyNode) match {
           case "id" => id = Some(asText(t.getValueNode))
           case "parent" => parent = Some(asText(t.getValueNode))
           case "date" => date = Some(asDate(t.getValueNode))
-          case "owner" => owner = Some(asText(t.getValueNode))
+          case "by" => by = Some(asText(t.getValueNode))
           case "text" => text = Some(asText(t.getValueNode))
           case _ => // fine, allow future extensions
         }
@@ -141,33 +141,33 @@ class DaoYaml extends Dao {
         illegalArgIf(text.isEmpty, "`text' entry missing")
 
         new Post(id = id.get, parent = parent.get, date = date.get,
-                  owner = owner, text = text.get)
+                  by = by, text = text.get)
       }
     }
 
-    private class ConstrVote extends DebikiMapConstr {
+    private class ConstrRating extends DebikiMapConstr {
 
-      override def handleTuples(tuples: ju.List[yn.NodeTuple]): Vote = {
-        var voterId: Option[String] = None
+      override def handleTuples(tuples: ju.List[yn.NodeTuple]): Rating = {
+        var by: Option[String] = None
         var postId: Option[String] = None
         var date: Option[ju.Date] = None
-        var values: List[String] = null
+        var tags: List[String] = null
 
         for (t <- tuples) asText(t.getKeyNode) match {
-          case "by" => voterId = Some(asText(t.getValueNode))
+          case "by" => by = Some(asText(t.getValueNode))
           case "post" => postId = Some(asText(t.getValueNode))
           case "date" => date = Some(asDate(t.getValueNode))
-          case "values" => values = asTextList(t.getValueNode)
+          case "tags" => tags = asTextList(t.getValueNode)
           case _ => // fine, allow future extensions
         }
 
-        illegalArgIf(voterId.isEmpty, "`id' entry missing")
+        illegalArgIf(by.isEmpty, "`by' entry missing")
         illegalArgIf(postId.isEmpty, "`parent' entry missing")
         illegalArgIf(date.isEmpty, "`date' entry missing")
-        illegalArgIf(values == null, "`values' entry missing")
+        illegalArgIf(tags == null, "`tags' entry missing")
 
-        Vote(postId = postId.get, voterId = voterId.get, date = date.get,
-             values = values)
+        Rating(postId = postId.get, by = by.get, date = date.get,
+             tags = tags)
       }
     }
 
@@ -177,7 +177,7 @@ class DaoYaml extends Dao {
 
       override def construct() = Edit(
           id = id.value, postId = postId.value, date = date.value,
-          author = by.value, text = text.value)
+          by = by.value, text = text.value)
     }
 
     // Helper class: Loops through all Yaml map entries in a Yaml map node.

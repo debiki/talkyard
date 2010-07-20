@@ -1,4 +1,8 @@
 /* vim: fdm=marker et sw=2 ts=2
+ *
+ * Tips: List all CSS classes like so:
+ *   find debiki-core-basedir/src -type f -print0 | \
+ *     xargs -0 egrep -ho "dw-[[:alnum:]-]+" | sort | uniq -c
  */
 
 /* === Standard tags === */
@@ -147,7 +151,7 @@ p:last-child {
   }
 .dw-depth-2 .dw-thread {
   float: none;
-  clear: both; /* else the vote form might float to the left */
+  clear: both; /* else the rating form might float to the left */
   }
 
 /* --- Width ---*/
@@ -278,7 +282,7 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
   margin-left: 1ex;
 }
 
-/* --- Vote summary ---*/
+/* --- Post info ---*/
 
 .dw-post-info {
   font-size: 95%;
@@ -291,51 +295,51 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
 .dw-post-info .dw-owner-info {
   float: left;
   padding-left: 0.3em; /* no <li> to the left, pad only a little bit */
-  margin-right: 0.5em; /* vote-info <li>s to the right */
+  margin-right: 0.5em; /* post-info <li>s to the right */
 }
 
-.dw-post-info .dw-vote-info {
+.dw-post-info .dw-rats {
   display: inline;
   /* Possible TODO:
     height: 1.4em;
     overflow: hidden;
-  and remove height restriction on click. Then, all votes shown, on click.
+  and remove height restriction on click. Then, all ratings shown, on click.
   */
 }
 
-.dw-post-info .dw-vote-info li {
+.dw-post-info .dw-rats li {
   float: left;
   padding: 0 1px 3px 0.5em;
   background-color: #e7e7e7;
 }
 
-.dw-thread-info .dw-vote,
-.dw-post-info .dw-vote-info .dw-vote {
+.dw-thread-info .dw-rat-tag,
+.dw-post-info .dw-rats .dw-rat-tag {
   font-size: 85%;
 }
 
 .dw-post-info .dw-post-liking,
-.dw-post-info .dw-vote-count,
-.dw-post-info .dw-vote-label-fraction-lower-bound,
-.dw-post-info .dw-vote-label-sum,
-.dw-post-info .dw-vote-valsum-max {
+.dw-post-info .dw-rat-count,
+.dw-post-info .dw-rat-tag-frac-min,
+.dw-post-info .dw-rat-tag-sum,
+.dw-post-info .dw-rat-valsum-max {
   margin-left: 3px;
   font-weight: bold;
   display: none; /* it's for debugging mostly; makes non-developers confused */
 }
 
-.dw-post-info .dw-vote-info .dw-count {
+.dw-post-info .dw-rats .dw-rat-tag-frac {
   font-size: 90%;
   position: relative;
   left: -2px;
 }
-.xxx-dw-post-info .dw-vote-info .dw-count:before {
+.xxx-dw-post-info .dw-rats .dw-rat-tag-frac:before {
   content: "×"; /* The multiplication sign, U+00D7 */
   position: relative;
   left: -1px;
 }
 
-.dw-post-info .dw-vote-info-non-weighted {
+.dw-post-info .dw-rats-non-weighted {
   display: none; /* -non-weighted is only for debugging */
 }
 
@@ -360,7 +364,7 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
 }
 
 #dw-action-menu .dw-edit,
-#dw-action-menu .dw-vote,
+#dw-action-menu .dw-rate,
 #dw-action-menu .dw-reply {
   position: relative;
   top: 2px;
@@ -396,7 +400,7 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
   font-family: Verdana, sans-serif; /* the font .dw-post .dw-text uses */
 }
 
-.dw-submit-group {
+.dw-submit-set {
   float: left;
   clear: both;
   margin-top: 1.7em;
@@ -446,24 +450,24 @@ form.dw-reply-form textarea {
   color: #777;
 }
 
-/* === Vote === */
+/* === Rate === */
 
-form.dw-vote-form {
-  min-width: 16.5em; /* at least 2 vote-group:s wide */
+form.dw-rat-form {
+  min-width: 16.5em; /* at least 2 rat-tag-set:s wide */
 }
 
-form.dw-vote-form .dw-vote-group {
+form.dw-rat-form .dw-rat-tag-set {
   float: left;
   max-width: 8em;
 }
 
-form.dw-vote-form .dw-vote-group .ui-button {
+form.dw-rat-form .dw-rat-tag-set .ui-button {
   min-width: 7em;
 }
 
-/* Javascript shows clickable .dw-show-more-votes,
- and hides .dw-more-votes. */
-form.dw-vote-form .dw-show-more-votes {
+/* Javascript shows clickable .dw-show-more-rat-tags,
+ and hides .dw-more-rat-tags. */
+form.dw-rat-form .dw-show-more-rat-tags {
   display: none;
   margin-top: 1em;
   float: left; /* otherwise margin-top has no effect, why not? */
@@ -472,13 +476,13 @@ form.dw-vote-form .dw-show-more-votes {
   font-size: 85%;
 }
 
-/* stack more-votes horizontally */
-form.dw-vote-form .dw-more-votes {
+/* stack more-rating-tags horizontally */
+form.dw-rat-form .dw-more-rat-tags {
   clear: both;
   margin-top: 1em;
   max-width: none;
 }
-form.dw-vote-form .dw-more-votes label {
+form.dw-rat-form .dw-more-rat-tags label {
   float: left;
   min-width: 0 !important;
 }
