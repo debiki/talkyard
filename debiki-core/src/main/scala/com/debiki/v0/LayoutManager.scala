@@ -285,7 +285,11 @@ class SimpleLayoutManager extends LayoutManager {
       <input type='hidden' name='dw-fi-action' value='edit'/>
       <div class='dw-edit-suggestions-label'>Edit suggestions:</div>
       <div class='dw-edit-suggestions'>
-        { debate.editsProposedFor(postId) map (editXml(_)) }
+        {
+          for (e <- debate.editsProposedFor(postId).
+                sortBy(e => -statscalc.likingFor(e).lowerBound))
+            yield editXml(e)
+        }
         <h4 class='dw-hidden-new-edit'>Your new sugggestion</h4>
         <div class='dw-hidden-new-edit'><textarea rows='12'/></div>
       </div>
@@ -303,12 +307,21 @@ class SimpleLayoutManager extends LayoutManager {
     val dissId = "dw-dislike-edit-"+ e.id
     <h4>{e.by}</h4>
     <div>
-      { textToHtml(e.text) }
+      <div>{textToHtml(e.text)._1}</div>
       <input id={likeId} type='radio' name='todo' value='todo'/>
       <label for={likeId} >Like</label>
       <input id={dissId} type='radio' name='todo' value='todo'/>
       <label for={dissId} >Dislike</label>
-    </div>
+      {/*<a class='dw-show-edit-liking-stats'>Complicated statistics...</a>*/}
+      <pre class='dw-edit-liking-stats'>{
+          val liking = statscalc.likingFor(e)
+          "Votes: "+ liking.voteCount +
+          (if (liking.voteCount == 0) ""
+           else "\nLiking: %.0f%%" format 100 * liking.frac) +
+          ("\nLower bound: %.0f%%" format 100 * liking.lowerBound) +
+          ("\nUpper bound: %.0f%%" format 100 * liking.upperBound)
+      }</pre>
+     </div>
   }
 
   val ccWikiLicense =

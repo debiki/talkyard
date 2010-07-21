@@ -53,7 +53,7 @@ case class LabelStats (
    *  anyway. Therefore, I've used [a formula for calculating
    *  binomial proportion confidence intervals] to calculate
    *  a lower bound on `fraction'. Find details in the description of the
-   *  function {@code binomialProportionConfidenceIntervalLowerBound}.
+   *  function {@code binPropConfIntAC}.
    */
   fractionLowerBound: Float
 )
@@ -106,7 +106,18 @@ private[debiki] abstract class PostRating {
 
 }
 
+/** Immutable.
+ */
+abstract class EditLiking {
+  def voteCount: Int
+  def upperBound: Float
+  def lowerBound: Float
+  def frac: Float
+}
+
 private[debiki] class StatsCalc(val debate: Debate) {
+
+  import StatsCalc._
 
   private val good = imm.Set("interesting", "funny", "insightful", "helpful")
   private val bad = imm.Set("boring", "faulty", "off-topic", "spam", "troll")
@@ -141,10 +152,31 @@ private[debiki] class StatsCalc(val debate: Debate) {
     }
   }
 
-  private val postRatings = mut.Map[String, PostRatingImpl]()
+  private class EditLikingImpl extends EditLiking {
+    var voteCount = 0
+    var sum = 0f
+    def frac = sum / voteCount
+    var lowerBound = binProp80ConfIntACNoSamples._1
+    var upperBound = binProp80ConfIntACNoSamples._2
+    def += (vote: EditVote): EditLikingImpl = {
+      sum += vote.value // 0 or 1
+      voteCount += 1
+      this
+    }
+  }
 
-  // Calculate temporary label sums, in PostRatingImpl.labelSums
-  for (v <- debate.ratings) ratingImplFor(v.postId) += v
+  private val postRatings = mut.Map[String, PostRatingImpl]()
+  private val postRatingEmpty = new PostRatingImpl
+
+  private val editLikings = mut.Map[String, EditLikingImpl]()
+  private val editLikingNoVotes = new EditLikingImpl
+
+  // Calculate temporary label sums, in PostRatingImpl.labelSums,
+  // and edit vote sums:
+  for (r <- debate.ratings) postRatings.getOrElseUpdate(
+                              r.postId, new PostRatingImpl) += r
+  for (v <- debate.editVotes) editLikings.getOrElseUpdate(
+                                v.editId, new EditLikingImpl) += v
 
   // Convert temporary sums to immutable LabelStats
   for ((postId, rating) <- postRatings) {
@@ -155,9 +187,8 @@ private[debiki] class StatsCalc(val debate: Debate) {
           // With a probability of 90%, the *real* fraction is above
           // this value:
           val fractionLowerConfidenceBound =
-            binomialProportionConfidenceIntervalLowerBound(
-                sampleSize = rating.ratingCount,
-                proportionOfSuccesses = fraction, percent = 10.0f)
+            binPropConfIntAC(sampleSize = rating.ratingCount,
+                proportionOfSuccesses = fraction, percent = 80.0f)._1
           LabelStats(sum = sum, fraction = fraction,
               fractionLowerBound = fractionLowerConfidenceBound)
         }).
@@ -166,17 +197,31 @@ private[debiki] class StatsCalc(val debate: Debate) {
     rating.labelSums = null
   }
 
-  private def ratingImplFor(postId: String): PostRatingImpl =
-    postRatings.getOrElse(postId, {
-        val s = new PostRatingImpl
-        postRatings.put(postId, s)
-        s })
+  // Calculate edit likings from edit votes.
+  for ((editId, liking) <- editLikings) {
+    val bounds = binPropConfIntAC(sampleSize = liking.voteCount,
+          proportionOfSuccesses = liking.frac, percent = 80.0f)
+    liking.lowerBound = bounds._1
+    liking.upperBound = bounds._2
+  }
 
-  def scoreFor(postId: String): PostRating = ratingImplFor(postId)
+  def scoreFor(postId: String): PostRating =
+    postRatings.getOrElse(postId, postRatingEmpty)
 
-  /** Uses the Agresti-Coull method to calculate the lower bound
-   *  of a binomial proportion confidence interval.
-   *  `percent' must currently be exactly 10.0f. (Because that's the
+
+  /** The lower bound of a 90% confidence interval of the proportion
+   *  of voters that like the edit (a value between 0 and 1).
+   */
+  def likingFor(e: Edit): EditLiking =
+    editLikings.getOrElse(e.id, editLikingNoVotes)
+
+}
+
+private[debiki] object StatsCalc {
+
+  /** Uses the Agresti-Coull method to calculate upper and lower bounds
+   *  of a binomial proportion 80% confidence interval.
+   *  `percent' must currently be exactly 80.0f. (Because that's the
    *  only cumulative standard normal probability table value I've
    *  included in the function.)
    *
@@ -215,19 +260,19 @@ private[debiki] class StatsCalc(val debate: Debate) {
    *  Some nearby values:
    *    Z_{ 1%} = -2.33
    *    Z_{ 5%} = -1.65
-   *    Z_{10%} = -1.28   <-- let's use 10%
+   *    Z_{10%} = -1.28   <-- let's use 20%, 20% / 2 = 10%
    *    Z_{20%} = -0.84
    *
-   *  Why 90%? 90% is (is it??) a fairly low percentile
+   *  Why 80%? 80% is (is it??) a fairly low percentile
    *  (95% or higher is more common?). The efefct should be that
-   *  new posts (well, posts with few ratings) are shown to relatively many
-   *  people, instead of falling into oblivion, unread.
+   *  new posts (probably those with few ratings) are shown to
+   *  relatively many people, instead of falling into oblivion, unread.
    */
-  private def binomialProportionConfidenceIntervalLowerBound(
+  private def binPropConfIntAC(
       sampleSize: Int, proportionOfSuccesses: Float, percent: Float)
-      : Float = {
-    require(percent == 10.0f)
-    require(sampleSize >= 1)
+      : (Float, Float) = {
+    require(percent == 80.0f)
+    require(sampleSize >= 0)
     require(proportionOfSuccesses >= 0f)
     require(proportionOfSuccesses <= 1f)
     val adjustment = 4f
@@ -235,15 +280,23 @@ private[debiki] class StatsCalc(val debate: Debate) {
     val p_ = (proportionOfSuccesses * sampleSize + adjustment * 0.5) / n_
     require(p_ >= 0f)
     require(p_ <= 1f)
-    // With a probability of 10%, a random value from a
-    // standard normal distribution (usually denoted Z) is < -1.28.
-    val z_10 = -1.28
-    // With a probability of 90%, the real value of the binomial
-    // proportion is *above* this value:
-    val lowerBound: Double = p_ + z_10 * math.sqrt(p_ * (1 - p_) / n_)
-    lowerBound.toFloat
+    // With a probability of 90%, a random value from a
+    // standard normal distribution (usually denoted Z) is > 1.28.
+    val z_90 = 1.28
+    val square = z_90 * math.sqrt(p_ * (1 - p_) / n_)
+    // With a probability of 80%, the real value of the binomial
+    // proportion is between lowerBound and upperBound.
+    val lowerBound: Double = p_ - square
+    val upperBound: Double = p_ + square
+    (lowerBound.toFloat, upperBound.toFloat)
   }
 
+  /** Pre-calculated binomial proportion 80% confidence interval,
+   *  for a binomial proportion with no samples (!),
+   *  calculated using the Agresti-Coull (AC) method.
+   */
+  val binProp80ConfIntACNoSamples: (Float, Float) = binPropConfIntAC(
+                sampleSize = 0, proportionOfSuccesses = 0, percent = 80.0f)
 }
 
 /*

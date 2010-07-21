@@ -9,7 +9,7 @@ package com.debiki.v0
 import org.specs._
 import org.specs.runner.{ConsoleRunner, JUnit4}
 
-class SimpleLayoutManagerTest extends JUnit4(SimpleLayoutManagerSpec)
+class LayoutManagerTest extends JUnit4(SimpleLayoutManagerSpec)
 //class MySpecSuite extends ScalaTestSuite(MySpec)
 
 object LayoutManagerTestRunner

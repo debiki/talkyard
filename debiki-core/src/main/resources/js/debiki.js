@@ -260,6 +260,8 @@ $("#dw-action-menu .dw-edit").button().click(function() {
 
     var $editForm = $formWrap.find('form');
     var $accordion = $editForm.find('.dw-edit-suggestions');
+    // (Concerning > 1, not > 0: One suggestion is a hidden template.)
+    var anyEditSuggestions = $accordion.children('h4').length > 1;
     //$editForm.find("input[name='dw-fi-post']").attr('value', postId);
     makeIdsUniqueUpdateLabels($editForm, '-post-'+ postId);
 
@@ -275,15 +277,14 @@ $("#dw-action-menu .dw-edit").button().click(function() {
     $editForm.resizable({
         alsoResize: $accwrap,
         resize: function(){ $accordion.accordion("resize"); },
-        minHeight: 140
+        minHeight: 100
       });
 
-    // Adjust dimensions
+    // Adjust dimensions. (Smaller if no suggestions, or only my.)
+    var initialHeight = anyEditSuggestions ? 300 : 180;
     $editForm.css('width', $post.css('width'));
-    $accwrap.css('height', '300px');
+    $accwrap.css('height', '' + initialHeight + 'px');
     $accordion.accordion("resize"); // parent container height changed
-
-    $post.after($editForm);
 
     // jQuery.tabs() must be invoked after above line, weird!
     // Cannot use autoHeight, since other people's edit suggestions
@@ -299,6 +300,7 @@ $("#dw-action-menu .dw-edit").button().click(function() {
         'dw-hidden-new-edit').addClass(
         'dw-your-edit dw-live-edit dw-your-new-edit');
       $accordion.accordion('activate', '.dw-your-new-edit');
+      $editForm.css('height', null); // otherwise it might be too high
     });
 
     // Build fancy jQuery UI widgets
@@ -346,5 +348,6 @@ $(".dw-parent-ref").hover(
   });
 
 });
+
 
 

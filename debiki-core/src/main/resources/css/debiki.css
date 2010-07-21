@@ -523,11 +523,15 @@ form.dw-rat-form .dw-more-rat-tags label {
 
 .dw-new-edit-btn {
   float: left;
-  margin: 0em;
+  margin: 1em 0 0;
 }
 
 .dw-hidden-new-edit {
   display: none !important;
+}
+
+.dw-edit-liking-stats {
+  margin: 1em 0 0;
 }
 
 /* === Misc === */
