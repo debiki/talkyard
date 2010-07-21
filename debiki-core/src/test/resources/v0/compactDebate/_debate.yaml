@@ -60,19 +60,25 @@ by: Frääs-Klös
 text: |1
  Minritnir i its! Norntii niifg. Nritxgwkdb, rtis, rtis, rtis!!!
  Nao noiu irneinwf  nrsie... Rrnsig niex nwww nbe. irnt??
-#--- !EditVote
-#suggestion: a
-#date: 2001-12-14t21:59:43.10-05:00
-#voter: Misse Mu
-#vote: +1
-#--- !EditVote
-#suggestion: a
-#date: 2001-12-14t21:59:43.10-05:00
-#voter: Määä Hää
-#vote: +1
-#--- !EditApplied
-#suggestion: a
-#debug: algorithm, statistics, ...?
+--- !EditVote
+edit: aeb
+date: 2001-12-14t21:59:43.10-05:00
+by: Misse Mu
+value: 1
+--- !EditApplied
+edit: aeb
+date: 2001-12-14t21:59:43.10-05:00
+debug: undefined plain text, e.g. 80% prob liked
+--- !EditVote
+edit: aec
+date: 2001-12-14t21:59:43.10-05:00
+by: Maja Gräddnos Snälla Syster
+value: 1
+--- !EditVote
+edit: aec
+date: 2001-12-14t21:59:43.10-05:00
+by: Morgan Murmeldjur
+value: 0
 --- !Post
 id: c
 parent: a
@@ -82,6 +88,26 @@ text: |
  Förbjud MMA
 
  MMA-tävlingar borde förbjudas i Sverige.
+--- !Edit
+id: CcEa
+post: c
+date: 2001-12-14t21:59:43.10-05:00
+by: Frääs-Morr-Morr-Morr
+text: |1
+ Norntii niifg. rtis, rtis, rtis!!!
+ Rtis, rtis!! Rtis! Rtis! Rtis! Rtis atirfr rtis!!!
+--- !EditVote
+edit: CcEa
+date: 2001-12-14t21:59:43.10-05:00
+by: Mister Mjau
+value: 0
+--- !Edit
+id: CcEb
+post: c
+date: 2001-12-14t21:59:43.10-05:00
+by: Frääs-Morr-Morr-Morr
+text: |1
+ Mraits infienfrv rsti ywfuglwy.
 --- !Post
 id: ca
 parent: c

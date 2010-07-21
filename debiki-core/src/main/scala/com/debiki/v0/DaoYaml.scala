@@ -59,6 +59,8 @@ class DaoYaml extends Dao {
     var posts = List[Post]()
     var ratings = List[Rating]()
     var edits = List[Edit]()
+    var editVotes = List[EditVote]()
+    var editsApplied = List[EditApplied]()
     for (obj <- iter) obj match {
       case d: Debate =>
         if (debate.isDefined) unsupported("More than one debate found: "+
@@ -67,10 +69,12 @@ class DaoYaml extends Dao {
       case p: Post => posts ::= p
       case r: Rating => ratings ::= r
       case e: Edit => edits ::= e
+      case v: EditVote => editVotes ::= v
+      case a: EditApplied => editsApplied ::= a
       case x => unimplemented("Handling of: "+ x)
     }
     debate.map(_.copy(posts = posts, ratings = ratings,
-                      edits = edits))
+        edits = edits, editVotes = editVotes, editsApplied = editsApplied))
   }
 
   def loadDebateFromText(yamlText: String): Option[Debate] = {
@@ -103,6 +107,10 @@ class DaoYaml extends Dao {
       new yn.Tag(yamlTagPrefix +"Rating"), new ConstrRating)
     yamlConstructors.put(
       new yn.Tag(yamlTagPrefix +"Edit"), new ConstrEdit)
+    yamlConstructors.put(
+      new yn.Tag(yamlTagPrefix +"EditVote"), new ConstrEditVote)
+    yamlConstructors.put(
+      new yn.Tag(yamlTagPrefix +"EditApplied"), new ConstrEditApplied)
 
     private class ConstrDebate extends DebikiMapConstr {
 
@@ -180,6 +188,25 @@ class DaoYaml extends Dao {
           by = by.value, text = text.value)
     }
 
+    private class ConstrEditVote extends DebikiMapConstr2 {
+
+      val edit = new KeyVal[String]("edit", asText)
+      val value = new KeyVal[Int]("value", asInt)
+
+      override def construct() = EditVote(
+          editId = edit.value, voterId = by.value,
+          date = date.value, value = value.value)
+    }
+
+    private class ConstrEditApplied extends DebikiMapConstr2 {
+
+      val edit = new KeyVal[String]("edit", asText)
+      val value = new KeyVal[Int]("value", asInt)
+
+      override def construct() = EditApplied(
+                  editId = edit.value, date = date.value)
+    }
+
     // Helper class: Loops through all Yaml map entries in a Yaml map node.
     private abstract class DebikiMapConstr extends yc.AbstractConstruct {
       override def construct(node: yn.Node): Object = {
@@ -231,6 +258,7 @@ class DaoYaml extends Dao {
       val postId = new KeyVal[String]("post", asText)
       val date = new KeyVal[ju.Date]("date", asDate)
       val by = new KeyVal[String]("by", asText)
+      val debug = new KeyVal[String]("debug", asText)
 
       def construct(): Object
 

@@ -16,7 +16,9 @@ case class Debate (
   val id: String,
   private[debiki] val posts: List[Post] = Nil,
   private[debiki] val ratings: List[Rating] = Nil,
-  private[debiki] val edits: List[Edit] = Nil
+  private[debiki] val edits: List[Edit] = Nil,
+  private[debiki] val editVotes: List[EditVote] = Nil,
+  private[debiki] val editsApplied: List[EditApplied] = Nil
 ){
   val RootPostId = "root"
 
@@ -101,6 +103,15 @@ case class Debate (
   //def - (rating: Rating): Debate = copy(ratings = ratings filter
   //                                                            (_ != rating))
 
+  def + (edit: Edit): Debate = copy(edits = edit :: edits)
+  //def - (edit: Edit): Debate = copy(edits = edits filter (_ != edit))
+
+  def + (vote: EditVote): Debate = copy(editVotes = vote :: editVotes)
+  //def - (vote: EditVote): Debate = copy(editVotes = editVotes filter
+  //                                                              (_ != vote))
+
+  def + (ea: EditApplied): Debate = copy(editsApplied = ea :: editsApplied)
+
   lazy val nextFreePostId: String = {
     var nextFree = 0
     for {
@@ -169,3 +180,17 @@ case class Edit(
   text: String
 )
 
+case class EditVote(
+  editId: String,
+  voterId: String,
+  date: ju.Date,
+  value: Int
+){
+  require(value == 0 || value == 1)
+}
+
+case class EditApplied (
+  editId: String,
+  date: ju.Date,
+  debug: String = ""
+)
