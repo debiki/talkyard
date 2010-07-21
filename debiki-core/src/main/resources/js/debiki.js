@@ -19,7 +19,7 @@ $(".dw-post, .dw-thread-info").hover(
       // (B, C and D: Better not open many action forms at once.)
       if (!nextThread.hasClass('dw-collapsed') &&  // A
           !nextThread.children().filter( // B, C, D
-            '.dw-reply-form, .dw-rat-form, .dw-edit-form-wrap').length) {
+            '.dw-reply-form, .dw-rat-form, .dw-edit-form').length) {
         $(this).after($('#dw-action-menu'))
       }
     }
@@ -259,6 +259,10 @@ $("#dw-action-menu .dw-edit").button().click(function() {
       function(editFormHtml) {
 
     var $editForm = $formWrap.find('form');
+    // Unwrap, since the form must be a thread child (not grandchild)
+    // or the action menu will appear if hovering the post.
+    $editForm.unwrap();
+
     var $accordion = $editForm.find('.dw-edit-suggestions');
     // (Concerning > 1, not > 0: One suggestion is a hidden template.)
     var anyEditSuggestions = $accordion.children('h4').length > 1;
