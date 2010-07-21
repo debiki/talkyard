@@ -95,11 +95,11 @@ case class Debate (
     editProposalsByPostId.getOrElse(postId, Nil)
 
   def + (post: Post): Debate = copy(posts = post :: posts)
-  def - (post: Post): Debate = copy(posts = posts filter (_ != post))
+  //def - (post: Post): Debate = copy(posts = posts filter (_ != post))
 
   def + (rating: Rating): Debate = copy(ratings = rating :: ratings)
-  def - (rating: Rating): Debate = copy(ratings = ratings filter
-                                                                (_ != rating))
+  //def - (rating: Rating): Debate = copy(ratings = ratings filter
+  //                                                            (_ != rating))
 
   lazy val nextFreePostId: String = {
     var nextFree = 0
