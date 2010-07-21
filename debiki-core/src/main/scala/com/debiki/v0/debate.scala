@@ -65,12 +65,13 @@ case class Debate (
     cache
   }
 
+  // -------- Posts
+
   def postCount = posts.length
 
   def post(id: String): Option[Post] = postsById.get(id)
 
-  def postsWithEditProposals: List[Post] =
-    posts.filter(p => editProposalsByPostId.contains(p.id))
+  // -------- Ratings
 
   def ratingsOn(postId: String): List[Rating] = {
     val ci = ratingCache.get(postId)
@@ -82,6 +83,8 @@ case class Debate (
     if (ci.isDefined) ci.get.valueSums else imm.Map.empty
   }
 
+  // -------- Replies
+
   def repliesTo(id: String): List[Post] =
     postsByParentId.getOrElse(id, Nil)
 
@@ -90,11 +93,42 @@ case class Debate (
     res.flatMap(r => successorsTo(r.id)) ::: res
   }
 
-  private lazy val editProposalsByPostId: imm.Map[String, List[Edit]] =
-    edits.groupBy(_.postId)
+  // -------- Edits
 
-  def editsProposedFor(postId: String): List[Edit] =
-    editProposalsByPostId.getOrElse(postId, Nil)
+  private lazy val editsById: imm.Map[String, Edit] = {
+    val m = edits.groupBy(_.id)
+    m.mapValues(list => {
+      errorIf(list.tail.nonEmpty,
+              "Two ore more Edit:s with this id: "+ list.head.id)
+      list.head
+    })
+  }
+
+  private lazy val editsAppliedById: imm.Map[String, EditApplied] = {
+    val m = editsApplied.groupBy(_.editId)
+    m.mapValues(list => {
+      errorIf(list.tail.nonEmpty, "Two ore more EditApplied:s with "+
+              "same edit id: "+ list.head.editId)
+      list.head
+    })
+  }
+
+  private lazy val editsPendingByPostId: imm.Map[String, List[Edit]] =
+    edits.filterNot(editsAppliedById contains _.id).groupBy(_.postId)
+
+  private lazy val editsAppliedByPostId
+      : imm.Map[String, List[EditApplied]] =
+    editsApplied.groupBy(ea => editsById(ea.editId).postId)
+
+  def editsPendingFor(postId: String): List[Edit] =
+    editsPendingByPostId.getOrElse(postId, Nil)
+
+  /** Edits applied to the specified post, sorted chronologically.
+   */
+  def editsAppliedTo(postId: String): List[EditApplied] =
+    editsAppliedByPostId.getOrElse(postId, Nil).sortBy(_.date.getTime)
+
+  // -------- Construction
 
   def + (post: Post): Debate = copy(posts = post :: posts)
   //def - (post: Post): Debate = copy(posts = posts filter (_ != post))
@@ -111,6 +145,8 @@ case class Debate (
   //                                                              (_ != vote))
 
   def + (ea: EditApplied): Debate = copy(editsApplied = ea :: editsApplied)
+
+  // -------- Misc
 
   lazy val nextFreePostId: String = {
     var nextFree = 0
@@ -192,5 +228,17 @@ case class EditVote(
 case class EditApplied (
   editId: String,
   date: ju.Date,
+
+  /** The text after the edit was applied. Needed, in case an `Edit'
+   *  contains a diff, not the resulting text itself. Then we'd better not
+   *  find the resulting text by applying the diff to the previous
+   *  version, more than once -- that wouldn't be future compatible: the diff
+   *  algorithm might functioni differently depending on software version
+   *  (e.g. because of bugs).
+   *  So, only apply the diff algorithm once, to find the EddidApplied.result,
+   *  and thereafter always use EditApplied.result.
+   */
+  result: String,
+
   debug: String = ""
 )

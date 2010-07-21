@@ -201,10 +201,10 @@ class DaoYaml extends Dao {
     private class ConstrEditApplied extends DebikiMapConstr2 {
 
       val edit = new KeyVal[String]("edit", asText)
-      val value = new KeyVal[Int]("value", asInt)
+      val result = new KeyVal[String]("result", asText)
 
       override def construct() = EditApplied(
-                  editId = edit.value, date = date.value)
+          editId = edit.value, date = date.value, result = result.value)
     }
 
     // Helper class: Loops through all Yaml map entries in a Yaml map node.

@@ -235,7 +235,9 @@ class SimpleLayoutManager extends LayoutManager {
 
   private def postXml(p: Post): NodeSeq = {
     val cssPostId = "dw-post-"+ p.id
-    val (xmlText, numLines) = textToHtml(p.text)
+    val lastEditApplied = debate.editsAppliedTo(p.id).lastOption
+    val (xmlText, numLines) = textToHtml(
+                            lastEditApplied.map(_.result).getOrElse(p.text))
     val long = numLines > 9
     val cropped_s = if (long) " dw-cropped-s" else ""
     val date = toIso8601(p.date)
@@ -243,7 +245,14 @@ class SimpleLayoutManager extends LayoutManager {
     <div id={cssPostId} class={"dw-post dw-cropped-e" + cropped_s}>
       <div class='dw-post-info'>
         <div class='dw-owner-info'>By&#160;<span class="dw-owner">{
-              spaceToNbsp(p.by.getOrElse("whom?"))}</span></div>
+            spaceToNbsp(p.by.getOrElse("whom?"))
+          }</span>{
+            // TODO: If the original author has voted on all edits
+            // proposed, write "<his/her-name> et al.",
+            // otherwise write "Various people"
+            if (lastEditApplied.isDefined) <i> et al.</i> else ""
+          }
+        </div>
         <span class="dw-post-liking">{score.liking}</span>
         <span class="dw-rat-count">{score.ratingCount}</span>
         <span class="dw-rat-valsum-max">{score.maxLabelSum}</span>
@@ -286,7 +295,7 @@ class SimpleLayoutManager extends LayoutManager {
       <div class='dw-edit-suggestions-label'>Edit suggestions:</div>
       <div class='dw-edit-suggestions'>
         {
-          for (e <- debate.editsProposedFor(postId).
+          for (e <- debate.editsPendingFor(postId).
                 sortBy(e => -statscalc.likingFor(e).lowerBound))
             yield editXml(e)
         }
