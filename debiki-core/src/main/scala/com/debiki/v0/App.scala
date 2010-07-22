@@ -50,7 +50,7 @@ private[debiki] object App {
 
 
     val debate: Debate = (new DaoYaml).getDebate(dir)
-    val layoutMgr: LayoutManager = new SimpleLayoutManager
+    val layoutMgr = new LayoutManager(debate)
 
     createDirTree(out, debate)
     copyResources(out)
@@ -84,7 +84,7 @@ private[debiki] object App {
           </script>
         </head>
         <body>
-          { layoutMgr.layout(debate) }
+          { layoutMgr.layoutDebate() }
         </body>
       </html>
 

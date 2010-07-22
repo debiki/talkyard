@@ -159,32 +159,21 @@ object LayoutManager {
 
 import LayoutManager._
 
-abstract class LayoutManager {
-
-  def configure(conf: LayoutConfig)
-  def layout(debate: Debate,
-             vars: LayoutVariables = new LayoutVariables): NodeSeq
-  def editForm(postId: String): NodeSeq
-
-}
-
-class SimpleLayoutManager extends LayoutManager {
+class LayoutManager(val debate: Debate) {
 
   import LayoutManager._
 
   private var config = new LayoutConfig
 
-  private var debate: Debate = null
-  private var statscalc: StatsCalc = null
+  private lazy val statscalc: StatsCalc = new StatsCalc(debate)
   private var lastChange: Option[String] = null
   private var vars: LayoutVariables = null
 
-  override def configure(conf: LayoutConfig) { this.config = conf }
+  def configure(conf: LayoutConfig) { this.config = conf }
 
-  def layout(debate: Debate, vars: LayoutVariables): NodeSeq = {
-    this.debate = debate
+  def layoutDebate(vars: LayoutVariables = new LayoutVariables)
+      : NodeSeq = {
     this.vars = vars
-    this.statscalc = new StatsCalc(debate)
     this.lastChange = debate.lastChangeDate.map(toIso8601(_))
     layoutPosts ++ menus ++ variables
   }
