@@ -1,6 +1,34 @@
 // vim: fdm=marker et ts=2 sw=2
 
-jQuery.noConflict()(function($){
+// In this file: Implementation of the Debiki module, and
+// a jQuery onload handler.
+
+Debiki = {};  // TODO: Error handling?
+Debiki.v0 = {};
+Debiki.v0.Settings = {};
+
+//========================================
+   (function(){
+//========================================
+
+var Settings = {};
+
+Settings.makeEditUrl = function(debateId, postId) {
+  // Default:
+  return debateId +'/edits/proposed/post/'+ postId +'.html'
+};
+
+// Export functions:
+
+// A function that builds the GET line to download edit suggestions
+// for a certain post.
+Debiki.v0.setEditUrl = function(editUrlBuilder) {
+  Settings.makeEditUrl = editUrlBuilder;
+};
+
+//----------------------------------------
+   jQuery.noConflict()(function($){
+//----------------------------------------
 
 var threadHovered = null;
 var didResize = false;
@@ -255,7 +283,8 @@ $("#dw-action-menu .dw-edit").button().click(function() {
   //var $actions = $thread.children('.dw-post');
   var $formWrap = $("<div class='dw-edit-form-wrap'></div>").insertAfter($post);
   var postId = $post.attr('id').substr(8, 999); // drop initial "dw-post-"
-  $formWrap.load(debateId +'/edits/proposed/post/'+ postId +'.html form',
+  //$formWrap.load(debateId +'/edits/proposed/post/'+ postId +'.html form',
+  $formWrap.load(Settings.makeEditUrl(debateId, postId) + ' form',
       function(editFormHtml) {
 
     var $editForm = $formWrap.find('form');
@@ -351,7 +380,10 @@ $(".dw-parent-ref").hover(
             children(".dw-post").removeClass("dw-highlight");
   });
 
-});
+//----------------------------------------
+   }); // end jQuery onload
+//----------------------------------------
 
-
-
+//========================================
+   })(); // end Debiki module
+//========================================
