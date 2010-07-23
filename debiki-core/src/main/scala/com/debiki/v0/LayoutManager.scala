@@ -292,6 +292,14 @@ class LayoutManager(val debate: Debate) {
             {/* Show date on one line (10 chars), time on another. */}
             {date.take(10)}<br/>at {date.drop(11)}</abbr>
         </div>
+        {
+          val num = debate.editsPendingFor(p.id).length
+          if (num == 0) Nil
+          else
+            <div class="dw-edits">{
+              num + (if (num == 1) " edit?" else " edits?")
+            }</div>
+        }
       </div>
       { xmlText }
     </div>
