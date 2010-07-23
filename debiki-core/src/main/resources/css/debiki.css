@@ -567,8 +567,14 @@ form.dw-rat-form .dw-more-rat-tags label {
 }
 
 /* Use the crosshair cursor for only client side side effects */
-.ui-accordion-header {
+.ui-accordion-header,
+.ui-accordion-header a {
   cursor: crosshair !important;
+}
+
+/* Make accordions smaller; jQuery UI padds a little bit too much? */
+.debiki .ui-accordion .ui-accordion-header a {
+  padding: 0.2em 0.2em 0.2em 0.7em;
 }
 
 /* jQuery UI bug fix: in the jQuery-auto-generated file, ".debiki"

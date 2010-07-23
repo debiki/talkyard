@@ -322,7 +322,7 @@ $("#dw-action-menu .dw-edit").button().click(function() {
     // jQuery.tabs() must be invoked after above line, weird!
     // Cannot use autoHeight, since other people's edit suggestions
     // might be arbitrary long?
-    $accordion.accordion({ autoHeight: false, fillSpace: true });
+    $accordion.accordion({ autoHeight: false, fillSpace: true, icons: false });
 
     // Dismiss action menu
     $('#dw-action-menu').appendTo($('#dw-hidden-templates'));

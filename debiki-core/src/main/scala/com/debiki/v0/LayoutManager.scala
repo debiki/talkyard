@@ -288,7 +288,9 @@ class LayoutManager(val debate: Debate) {
                 sortBy(e => -statscalc.likingFor(e).lowerBound))
             yield editXml(e)
         }
-        <h4 class='dw-hidden-new-edit'>Your new sugggestion</h4>
+        <h4 class='dw-hidden-new-edit'>
+          <a href='#'>Your new sugggestion</a>
+        </h4>
         <div class='dw-hidden-new-edit'><textarea rows='12'/></div>
       </div>
       <input class='dw-new-edit-btn' type='button'
@@ -303,7 +305,7 @@ class LayoutManager(val debate: Debate) {
   private def editXml(e: Edit): NodeSeq = {
     val likeId = "dw-like-edit-"+ e.id
     val dissId = "dw-dislike-edit-"+ e.id
-    <h4>{e.by}</h4>
+    <h4><a href='#'>{e.by}</a></h4>
     <div>
       <div>{textToHtml(e.text)._1}</div>
       <input id={likeId} type='radio' name='todo' value='todo'/>
