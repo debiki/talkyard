@@ -53,47 +53,69 @@ object LayoutManager {
 
     // Check the form-input-action map entry, to find out how to interpret
     // other map entries.
-    map.get("dw-fi-action") match {
-      case Array("reply") =>
+    val actionOrNull = map.get("dw-fi-action")
+    var action = ""
+    
+    actionOrNull match {
+      case null => return None
+      case Array(value) =>
+        require(List("reply", "rate", "edit").contains(value),
+                "Unknown dw-fi-action value: "+ safe(value))
+        action = value
+      case Array() => illegalArg("No dw-fi-action value")
+      case Array(_, _, _*) => illegalArg("Too many dw-fi-action values")
+      case x => illegalArg("Request map value is no array, it is a: "+
+                          x.getClass.getSimpleName)
+    }
+
+    val by = map.get("dw-fi-by")
+    require(userName.isDefined || hasValues(by),
+            "A user must be specified")
+    require(userName.isDefined || by.length == 1,
+            "Not more than one user specified")
+
+    action match {
+      case "reply" =>
         val posts = map.get("dw-fi-post")
         val replyTexts = map.get("dw-fi-reply-text")
-        val authors = map.get("dw-fi-by")
         require(hasValues(posts), "Found no reply-to post")
         require(posts.length == 1, "More than one reply-to post")
         require(hasValues(replyTexts), "Found no reply text")
         require(replyTexts.length == 1, "More than one reply text")
-        require(userName.isDefined || hasValues(authors), "Found no author")
-        require(userName.isDefined || authors.length == 1,
-                "Found more than one author")
         Some(Post(
                 id = "?", // illegal id, only a-z allowed
                 parent = posts.head,
                 date = date.getOrElse(new ju.Date),
-                by = userName.orElse(Some(authors.head)),
+                by = userName.orElse(Some(by.head)),
                 text = replyTexts.head))
-      case Array("rate") =>
+      case "rate" =>
         val posts = map.get("dw-fi-post")
         val tags = map.get("dw-fi-rat-tag")
-        val raters = map.get("dw-fi-by")
         require(hasValues(posts), "Found no post to rate")
         require(posts.length == 1, "Found more than one post to rate")
         require(hasValues(tags), "Found no rating tag")
         require(tags.length < 100, "Less than 100 rating tags") // safer?
-        require(userName.isDefined || hasValues(raters), "Found no rater")
-        require(userName.isDefined || raters.length == 1,
-                "Found more than one rater")
         Some(Rating(
                 postId = posts.head,
-                by = raters.head,
+                by = by.head,
                 date = date.getOrElse(new ju.Date),
                 tags = tags.toList))
-      case Array(value) => illegalArg("Unknown dw-fi-action value: "+
-                                      safe(value))
-      case Array() => illegalArg("No dw-fi-action value")
-      case Array(_, _, _*) => illegalArg("Too many dw-fi-action values")
-      case null => None
-      case x => illegalArg("Request map value is no array, it is a: "+
-                          x.getClass.getSimpleName)
+      case "edit" =>
+        val editText = map.get("dw-fi-edit-text")
+        val postId = map.get("dw-fi-edit-post")
+        if (!hasValues(editText)) return None // perhaps edit-votes only
+        require(editText.length <= 1, "More than one new-edit-text")
+        require(hasValues(postId), "Which post-to-edit must be specified")
+        require(postId.length == 1, "More than one post-to-edit specified")
+        Some(Edit(
+                id = "?",
+                postId = postId.head,
+                by = by.head,
+                date = date.getOrElse(new ju.Date),
+                text = editText.head))
+      case x =>
+        assertionError("Unknown case: "+ x)
+
     }
   }
 
@@ -291,8 +313,12 @@ class LayoutManager(val debate: Debate) {
         <h4 class='dw-hidden-new-edit'>
           <a href='#'>Your new sugggestion</a>
         </h4>
-        <div class='dw-hidden-new-edit'><textarea rows='12'/></div>
+        <div class='dw-hidden-new-edit'>
+          <textarea name='dw-fi-edit-text'/>
+        </div>
       </div>
+      <input type='hidden' name='dw-fi-edit-post' value={postId}/>
+      <input type='hidden' name='dw-fi-by' value='?'/> {/* for now */}
       <input class='dw-new-edit-btn' type='button'
             value='New edit suggestion...'/>
       <div class='dw-submit-set'>
@@ -303,14 +329,15 @@ class LayoutManager(val debate: Debate) {
   }
 
   private def editXml(e: Edit): NodeSeq = {
-    val likeId = "dw-like-edit-"+ e.id
-    val dissId = "dw-dislike-edit-"+ e.id
+    val likeId = "dw-fi-like-edit-"+ e.id
+    val dissId = "dw-fi-dislike-edit-"+ e.id
+    val name = "dw-fi-edit-vote-"+ e.id
     <h4><a href='#'>{e.by}</a></h4>
     <div>
       <div>{textToHtml(e.text)._1}</div>
-      <input id={likeId} type='radio' name='todo' value='todo'/>
+      <input id={likeId} type='radio' name={name} value='1'/>
       <label for={likeId} >Like</label>
-      <input id={dissId} type='radio' name='todo' value='todo'/>
+      <input id={dissId} type='radio' name={name} value='0'/>
       <label for={dissId} >Dislike</label>
       {/*<a class='dw-show-edit-liking-stats'>Complicated statistics...</a>*/}
       <pre class='dw-edit-liking-stats'>{

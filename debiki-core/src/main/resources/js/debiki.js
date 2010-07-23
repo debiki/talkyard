@@ -287,6 +287,8 @@ $("#dw-action-menu .dw-edit").button().click(function() {
   $formWrap.load(Settings.makeEditUrl(debateId, postId) + ' form',
       function(editFormHtml) {
 
+    // (Need not make ids unique; the post id was known when html generated.)
+
     var $editForm = $formWrap.find('form');
     // Unwrap, since the form must be a thread child (not grandchild)
     // or the action menu will appear if hovering the post.
@@ -296,7 +298,6 @@ $("#dw-action-menu .dw-edit").button().click(function() {
     // (Concerning > 1, not > 0: One suggestion is a hidden template.)
     var anyEditSuggestions = $accordion.children('h4').length > 1;
     //$editForm.find("input[name='dw-fi-post']").attr('value', postId);
-    makeIdsUniqueUpdateLabels($editForm, '-post-'+ postId);
 
     // Copy the post text to -edit-your tab.
     var curText = '';

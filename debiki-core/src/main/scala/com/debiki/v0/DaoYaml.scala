@@ -32,9 +32,7 @@ object DaoYaml {
     sb ++= "\nby: \"" ++= owner += '"' //... inlined here
 
     sb ++= "\ndate: " ++= toIso8601(post.date)
-    var indentedText = post.text.replaceAll("\n", "\n ") // indents 1 space
-    indentedText = indentedText.replace("\r", "") // convert \r\n to \n
-    sb ++= "\ntext: |1\n " ++= indentedText // note: ' ' after \n!
+    sb ++= "\ntext: |1\n" ++= indent(post.text)
     sb.toString
   }
 
@@ -50,6 +48,23 @@ object DaoYaml {
     sb.toString
   }
 
+  /** Warning: DoS or XSS attack: Bad input gives corrupt Yaml.
+   */
+  def toYaml(edit: Edit): String = {
+    val sb = new mut.StringBuilder
+    sb ++= "\n--- !Edit"
+    sb ++= "\nid: " ++= edit.id
+    sb ++= "\nby: \"" ++= edit.by += '"'
+    sb ++= "\ndate: " ++= toIso8601(edit.date)
+    sb ++= "\npost: " ++= edit.postId
+    sb ++= "\ntext: |1\n" ++= indent(edit.text)
+    sb.toString
+  }
+
+  private def indent(text: String) =
+    " " + // indent first line, 1 space
+    text.replaceAll("\n", "\n "). // indent other lines
+        replace("\r", "") // convert \r\n to \n
 }
 
 class DaoYaml extends Dao {

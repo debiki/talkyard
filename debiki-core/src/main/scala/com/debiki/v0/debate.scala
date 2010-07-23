@@ -120,6 +120,9 @@ case class Debate (
       : imm.Map[String, List[EditApplied]] =
     editsApplied.groupBy(ea => editsById(ea.editId).postId)
 
+  def editsFor(postId: String): List[Edit] =
+    edits.filter(_.postId == postId)
+
   def editsPendingFor(postId: String): List[Edit] =
     editsPendingByPostId.getOrElse(postId, Nil)
 
@@ -148,7 +151,10 @@ case class Debate (
 
   // -------- Misc
 
-  lazy val nextFreePostId: String = {
+  def assignIdTo(p: Post): Post = p.copy(id = nextFreePostId)
+  def assignIdTo(e: Edit): Edit = e.copy(id = nextFreeEditId(e.postId))
+
+  private lazy val nextFreePostId: String = {
     var nextFree = 0
     for {
       post <- posts
@@ -158,6 +164,36 @@ case class Debate (
       nextFree = num + 1
     }
     Base26.fromInt(nextFree)
+  }
+
+  private def nextFreeEditId(editeeId: String): String = {
+    UNTESTED
+    // Edit id format: <baseId> 'E' <subid>
+    // Don't change the <baseId>. By not changing it, we can easily
+    // identify what thing is being edited (the item with id = base-id).
+    // By including 'E' between the base-id and the sub-id, we know,
+    // only from looking at the ID, that the id identifies an Edit.
+    val edits: List[Edit] = editsFor(editeeId)
+    var nextFree = 0
+    for {
+      edit <- edits
+      lastUpperIx: Int = edit.id.lastIndexWhere(_.isUpper)
+      val (baseid, subid) = if (lastUpperIx == -1) ("", edit.id)
+                            else edit.id splitAt lastUpperIx
+      num: Int = Base26.toInt(subid drop 1) // drop 'E'
+      if num + 1 > nextFree
+    }{
+      require(lastUpperIx == -1 || edit.id(lastUpperIx) == 'E',
+              "Invalid Edit id, last upper is not `E': "+ safe(edit.id))
+      require(editeeId == baseid, "Found bad id, when checking free ids: "+
+              "Edit id ["+ safe(edit.id) + "] not prefixed by editee id ["+
+              safe(editeeId) +"]")
+      //else if (allBaseId != baseId) error("Different base id's: ["+
+      //                        safe(allBaseId) +"] and ["+ safe(baseId) +"]")
+      nextFree = num + 1
+    }
+    //if (allBaseId == null) allBaseId = ""
+    editeeId +"E"+ Base26.fromInt(nextFree)
   }
 
   lazy val lastChangeDate: Option[ju.Date] = {

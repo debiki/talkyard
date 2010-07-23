@@ -21,8 +21,17 @@ object Prelude {
   def unimplemented = throw new UOE("Not implemented")
   def unimplemented(what: String) = throw new UOE("Not implemented: "+ what)
 
+  /** Write UNTESTED anywhere, not in a comment, and the compiler
+   *  ensures you don't do a typo, so you'll find all UNTESTED should
+   *  you search for UNTESTED before a release (intending to write unit tests).
+   */
+  def UNTESTED = ()
+
   def errorIf(condition: Boolean, problem: String) =
     if (condition) throw new RuntimeException(problem)
+
+  def assertionError(problem: String) =
+    throw new AssertionError(problem)
 
   def illegalArg(problem: String) =
     throw new IllegalArgumentException(problem)
