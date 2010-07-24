@@ -262,7 +262,13 @@ $("#dw-action-menu .dw-reply").button().click(function() {
   reply.find("input[name='dw-fi-post']").attr('value', postId);
   makeIdsUniqueUpdateLabels(reply, '-post-'+ postId);
   reply.resizable({ alsoResize: reply.find('textarea') });
-  post.after(reply);
+  // Slide in the form -- I think it's harder to understand
+  // how it's related to other elems if it just appears abruptly.
+  reply.hide().insertAfter(post);
+  thread.filter('.dw-depth-0').children('form').
+      effect('slide', 'slow'); // siblings ordered horizontally
+  thread.filter(':not(.dw-depth-0)').children('form').
+      slideDown('slow'); // siblings ordered vertically
   // Dismiss action menu
   $('#dw-action-menu').appendTo($('#dw-hidden-templates'));
   // Build fancy jQuery UI widgets
