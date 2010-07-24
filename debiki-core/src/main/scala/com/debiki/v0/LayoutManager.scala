@@ -47,6 +47,7 @@ object LayoutManager {
   def digServletRequestParamMap(
         map: ju.Map[String, Array[String]],
         userName: Option[String],
+        ip: Option[String],
         date: Option[ju.Date]): Option[Object] = {
 
     def hasValues(arr: Array[String]) = arr != null && !arr.isEmpty
@@ -73,6 +74,7 @@ object LayoutManager {
             "A user must be specified")
     require(userName.isDefined || by.length == 1,
             "Not more than one user specified")
+    val ip_ = ip.getOrElse("?.?.?.?")
 
     action match {
       case "reply" =>
@@ -86,7 +88,8 @@ object LayoutManager {
                 id = "?", // illegal id, only a-z allowed
                 parent = posts.head,
                 date = date.getOrElse(new ju.Date),
-                by = userName.orElse(Some(by.head)),
+                by = userName.getOrElse(by.head),
+                ip = ip_,
                 text = replyTexts.head))
       case "rate" =>
         val posts = map.get("dw-fi-post")
@@ -97,7 +100,8 @@ object LayoutManager {
         require(tags.length < 100, "Less than 100 rating tags") // safer?
         Some(Rating(
                 postId = posts.head,
-                by = by.head,
+                by = userName.getOrElse(by.head),
+                ip = ip_,
                 date = date.getOrElse(new ju.Date),
                 tags = tags.toList))
       case "edit" =>
@@ -110,7 +114,8 @@ object LayoutManager {
         Some(Edit(
                 id = "?",
                 postId = postId.head,
-                by = by.head,
+                by = userName.getOrElse(by.head),
+                ip = ip_,
                 date = date.getOrElse(new ju.Date),
                 text = editText.head))
       case x =>
@@ -256,7 +261,7 @@ class LayoutManager(val debate: Debate) {
     <div id={cssPostId} class={"dw-post dw-cropped-e" + cropped_s}>
       <div class='dw-post-info'>
         <div class='dw-owner-info'>By&#160;<span class="dw-owner">{
-            spaceToNbsp(p.by.getOrElse("whom?"))
+            spaceToNbsp(p.by)
           }</span>{
             // TODO: If the original author has voted on all edits
             // proposed, write "<his/her-name> et al.",

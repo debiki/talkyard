@@ -22,15 +22,8 @@ object DaoYaml {
     sb ++= "\n--- !Post"
     sb ++= "\nparent: " ++= post.parent
     sb ++= "\nid: " ++= post.id
-
-    // (If `by' is inlined on the subsequent `sb ++= ...' line,
-    // the below compilation error follows. If it's converted to a String
-    // all is fine though. Weird.
-    // [INFO]  found   : java.lang.Comparable[java.lang.String]
-    // [INFO]  required: scala.collection.TraversableOnce[Char]  )
-    val owner = post.by.getOrElse("?") // compilation error if...
-    sb ++= "\nby: \"" ++= owner += '"' //... inlined here
-
+    sb ++= "\nby: \"" ++= post.by += '"'
+    sb ++= "\nip: \"" ++= post.ip += '"'
     sb ++= "\ndate: " ++= toIso8601(post.date)
     sb ++= "\ntext: |1\n" ++= indent(post.text)
     sb.toString
@@ -42,6 +35,7 @@ object DaoYaml {
     val sb = new mut.StringBuilder
     sb ++= "\n--- !Rating"
     sb ++= "\nby: \"" ++= rating.by += '"'
+    sb ++= "\nip: \"" ++= rating.ip += '"'
     sb ++= "\ndate: " ++= toIso8601(rating.date)
     sb ++= "\npost: " ++= rating.postId
     sb ++= "\ntags: " ++= rating.tags.mkString("[\"", "\", \"", "\"]")
@@ -55,6 +49,7 @@ object DaoYaml {
     sb ++= "\n--- !Edit"
     sb ++= "\nid: " ++= edit.id
     sb ++= "\nby: \"" ++= edit.by += '"'
+    sb ++= "\nip: \"" ++= edit.ip += '"'
     sb ++= "\ndate: " ++= toIso8601(edit.date)
     sb ++= "\npost: " ++= edit.postId
     sb ++= "\ntext: |1\n" ++= indent(edit.text)
@@ -148,12 +143,14 @@ class DaoYaml extends Dao {
         var date: Option[ju.Date] = None
         var by: Option[String] = None
         var text: Option[String] = None
+        var ip = "?.?.?.?"
 
         for (t <- tuples) asText(t.getKeyNode) match {
           case "id" => id = Some(asText(t.getValueNode))
           case "parent" => parent = Some(asText(t.getValueNode))
           case "date" => date = Some(asDate(t.getValueNode))
           case "by" => by = Some(asText(t.getValueNode))
+          case "ip" => ip = asText(t.getValueNode)
           case "text" => text = Some(asText(t.getValueNode))
           case _ => // fine, allow future extensions
         }
@@ -164,7 +161,7 @@ class DaoYaml extends Dao {
         illegalArgIf(text.isEmpty, "`text' entry missing")
 
         new Post(id = id.get, parent = parent.get, date = date.get,
-                  by = by, text = text.get)
+                  by = by.get, ip = ip, text = text.get)
       }
     }
 
@@ -175,9 +172,11 @@ class DaoYaml extends Dao {
         var postId: Option[String] = None
         var date: Option[ju.Date] = None
         var tags: List[String] = null
+        var ip = "?.?.?.?"
 
         for (t <- tuples) asText(t.getKeyNode) match {
           case "by" => by = Some(asText(t.getValueNode))
+          case "ip" => ip = asText(t.getValueNode)
           case "post" => postId = Some(asText(t.getValueNode))
           case "date" => date = Some(asDate(t.getValueNode))
           case "tags" => tags = asTextList(t.getValueNode)
@@ -189,8 +188,8 @@ class DaoYaml extends Dao {
         illegalArgIf(date.isEmpty, "`date' entry missing")
         illegalArgIf(tags == null, "`tags' entry missing")
 
-        Rating(postId = postId.get, by = by.get, date = date.get,
-             tags = tags)
+        Rating(postId = postId.get, by = by.get, ip = ip,
+               date = date.get, tags = tags)
       }
     }
 
@@ -200,7 +199,7 @@ class DaoYaml extends Dao {
 
       override def construct() = Edit(
           id = id.value, postId = postId.value, date = date.value,
-          by = by.value, text = text.value)
+          by = by.value, ip = ip.value, text = text.value)
     }
 
     private class ConstrEditVote extends DebikiMapConstr2 {
@@ -209,7 +208,7 @@ class DaoYaml extends Dao {
       val value = new KeyVal[Int]("value", asInt)
 
       override def construct() = EditVote(
-          editId = edit.value, voterId = by.value,
+          editId = edit.value, by = by.value, ip = ip.value,
           date = date.value, value = value.value)
     }
 
@@ -255,14 +254,15 @@ class DaoYaml extends Dao {
 
       class KeyVal[E](
         val key: String,
-        private val valueFromNode: Function1[yn.Node, E]
+        private val valueFromNode: Function1[yn.Node, E],
+        private val default: Option[E] = None
       ){
         private var _value: Option[E] = None
         def parseValue(n: yn.Node) { _value = Some(valueFromNode(n)) }
         def value: E = {
           _read = true;
-          _value.getOrElse(
-            throw new RuntimeException("`"+ key +"' entry missing"))
+          _value.getOrElse(default.getOrElse(
+            throw new RuntimeException("`"+ key +"' entry missing")))
         }
         var _read = false
         def read = _read
@@ -273,6 +273,7 @@ class DaoYaml extends Dao {
       val postId = new KeyVal[String]("post", asText)
       val date = new KeyVal[ju.Date]("date", asDate)
       val by = new KeyVal[String]("by", asText)
+      val ip = new KeyVal[String]("ip", asText, Some("?.?.?.?"))
       val debug = new KeyVal[String]("debug", asText)
 
       def construct(): Object

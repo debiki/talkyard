@@ -232,6 +232,7 @@ case class Debate (
 case class Rating private[debiki] (
   postId: String,
   by: String,
+  ip: String,
   date: ju.Date,
   tags: List[String]
 )
@@ -240,7 +241,8 @@ case class Post(
   id: String,
   parent: String,
   date: ju.Date,
-  by: Option[String],
+  by: String,
+  ip: String,
   text: String
 )
 
@@ -249,12 +251,14 @@ case class Edit(
   postId: String,
   date: ju.Date,
   by: String,
+  ip: String,
   text: String
 )
 
 case class EditVote(
   editId: String,
-  voterId: String,
+  by: String,
+  ip: String,
   date: ju.Date,
   value: Int
 ){

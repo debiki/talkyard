@@ -284,7 +284,7 @@ $("#dw-action-menu .dw-edit").button().click(function() {
   var $formWrap = $("<div class='dw-edit-form-wrap'></div>").insertAfter($post);
   var postId = $post.attr('id').substr(8, 999); // drop initial "dw-post-"
   //$formWrap.load(debateId +'/edits/proposed/post/'+ postId +'.html form',
-  $formWrap.load(Settings.makeEditUrl(debateId, postId) + ' form',
+  $formWrap.load(Settings.makeEditUrl(debateId, postId) + ' form.dw-edit-form',
       function(editFormHtml) {
 
     // (Need not make ids unique; the post id was known when html generated.)
