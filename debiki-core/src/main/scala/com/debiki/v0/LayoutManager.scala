@@ -311,6 +311,7 @@ class LayoutManager(val debate: Debate) {
   }
 
   def editForm(postId: String): NodeSeq = {
+    val nameInputId = "dw-fi-edit-"+ postId +"-author"
     <form class='dw-edit-form'
         action={config.editAction}
         accept-charset='UTF-8'
@@ -331,9 +332,13 @@ class LayoutManager(val debate: Debate) {
         </div>
       </div>
       <input type='hidden' name='dw-fi-edit-post' value={postId}/>
-      <input type='hidden' name='dw-fi-by' value='?'/> {/* for now */}
       <input class='dw-new-edit-btn' type='button'
             value='New edit suggestion...'/>
+      <div class='dw-name-or-alias'>
+        <label for={nameInputId}>Your name or alias:</label>
+        <input id={nameInputId} type='text'
+              name='dw-fi-by' value='Anonymous'/>
+      </div>
       <div class='dw-submit-set'>
         <input class='dw-submit' type='submit' value='Submit'/>
         <input class='dw-cancel' type='button' value='Cancel'/>
@@ -399,7 +404,7 @@ class LayoutManager(val debate: Debate) {
             <textarea id='dw-fi-reply-text' name='dw-fi-reply-text' rows='13'
               cols='38'>The cat was playing in the garden.</textarea>
           </p>
-          <p>
+          <p class='dw-name-or-alias'>
             <label for='dw-fi-reply-author'>Your name or alias:</label>
             <input id='dw-fi-reply-author' type='text'
                   name='dw-fi-by' value='Anonymous'/>

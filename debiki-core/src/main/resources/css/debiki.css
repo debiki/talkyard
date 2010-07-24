@@ -80,6 +80,10 @@ p:last-child {
   line-height: 110%;
 }
 
+.dw-debate-info {
+  margin-bottom: 1em;
+}
+
 .dw-dragscrollable {
   cursor: move !important; /* important, or next rule might set to `auto' */
 }
@@ -99,6 +103,9 @@ p:last-child {
 /* The very first post */
 .dw-depth-0.dw-thread > .dw-post {
   margin-bottom: 0.8em;
+}
+.dw-depth-0.dw-thread > #dw-action-menu {
+  top: -0.8em; /* cancel above margin-bottom */
 }
 .dw-depth-0.dw-thread > .dw-post.dw-cropped-e {
   /* Make the root post wider than other posts, so it spans > 1 child.
@@ -238,7 +245,7 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
   margin: 0 5px 3px 0;
   }
 .dw-post:hover {
-  outline: #888 dashed thin;
+  outline: #999 dashed thin;
   /* In case the post has been up-sized, its up-sized
   parts might be hidden by a thread, unless: */
   z-index: 10;
@@ -362,17 +369,18 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
 }
 
 #dw-action-menu {
-  position: absolute;
+  position: relative;
+  height: 0px; /* otherwise pushes contents below downwards;
+                  buttons inside visible anyway */
 }
 
-#dw-action-menu .dw-edit,
-#dw-action-menu .dw-rate,
-#dw-action-menu .dw-reply {
+#dw-action-menu a {
   position: relative;
-  top: 2px;
+  top: -3px;
   z-index: 20;
-  margin: 0 -10px 0 5px; /* remove void between buttons, move 5px right */
-  cursor: crosshair;
+  margin: 0 -11px 0 5px; /* remove void between buttons, move 5px right */
+  border: 1px solid #bbb;
+  border-top: 1px solid #ddd;
 }
 
 #dw-action-menu .ui-button-text {
@@ -400,6 +408,12 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
 .debiki form input[type='text'],
 .debiki form textarea {
   font-family: Verdana, sans-serif; /* the font .dw-post .dw-text uses */
+}
+
+.dw-name-or-alias {
+  float: left; /* TODO: need not float everything? */
+  clear: both;
+  margin-top: 1.8em;
 }
 
 .dw-submit-set {
@@ -443,6 +457,8 @@ form.dw-reply-form textarea {
 }
 
 .dw-user-contrib-license {
+  float: left; /* TODO? Stop floating everything in the <form>s */
+  clear: both;
   color: #666;
   font-size: 70%;
   margin: 1em 0px;
@@ -502,6 +518,10 @@ form.dw-rat-form .dw-more-rat-tags label {
   line-height: 110%;
 }
 
+.dw-edit-form .ui-accordion {
+  margin-top: 0.75em;
+}
+
 .dw-edit-form h4 {
   font-weight: normal !important;
   font-size: 93%;
@@ -516,11 +536,17 @@ form.dw-rat-form .dw-more-rat-tags label {
   padding: 0 !important; /* otherwise textarea very small */
 }
 
+.dw-edit-form .dw-live-edit.ui-accordion-content {
+  overflow: hidden !important; /* textarea sometimes a few pixels too high */
+}
+
 .dw-edit-form .dw-live-edit textarea {
-  width: 97%;
-  height: 94%;
+  width: 98%;
+  height: 97%; /* else too small */
   resize: none; /* disable Chrome's default-resizable (and
                    make the accordion resizable instead) */
+  padding-right: 0px;  /* else 97% (above) often too large, so... */
+  padding-bottom: 0px; /* ...scrollbars appear */
 }
 
 .dw-new-edit-btn {

@@ -335,6 +335,7 @@ $("#dw-action-menu .dw-edit").button().click(function() {
         'dw-your-edit dw-live-edit dw-your-new-edit');
       $accordion.accordion('activate', '.dw-your-new-edit');
       $editForm.css('height', null); // otherwise it might be too high
+      $accordion.accordion("resize"); // new element was made visible
     });
 
     // Build fancy jQuery UI widgets
