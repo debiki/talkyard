@@ -304,11 +304,14 @@ $("#dw-action-menu .dw-edit").button().click(function() {
   var $thread = $(this).closest('.dw-thread');
   clearfix($thread); // makes edit area appear inside $thread
   var $post = $thread.children('.dw-post');
-  //var $actions = $thread.children('.dw-post');
-  var $formWrap = $("<div class='dw-edit-form-wrap'></div>").insertAfter($post);
+  // Create a div into which to load the edit <form> -- the div class should
+  // match the edit form's class, so the action-menu won't be displayed
+  // again until the request has completed and the edit form has been closed.
+  var $formWrap = $("<div class='dw-edit-form'></div>").insertAfter($post);
   $formWrap.hide(); // slide in later
   var postId = $post.attr('id').substr(8, 999); // drop initial "dw-post-"
-  //$formWrap.load(debateId +'/edits/proposed/post/'+ postId +'.html form',
+  dismissActionMenu();  // before ajax request, or 2 edit <forms> will
+                        // appear if you double click.
   $formWrap.load(Settings.makeEditUrl(debateId, postId) + ' form.dw-edit-form',
       function(editFormHtml) {
 
@@ -340,10 +343,11 @@ $("#dw-action-menu .dw-edit").button().click(function() {
       });
 
     // Adjust dimensions. (Smaller if no suggestions, or only my.)
-    var initialHeight = anyEditSuggestions ? 300 : 180;
-    $editForm.css('width', $post.css('width'));
-    $accwrap.css('height', '' + initialHeight + 'px');
-    $accordion.accordion("resize"); // parent container height changed
+    var height = anyEditSuggestions ? 300 : 180;
+    var width = Math.min(410, $post.outerWidth()); // root post very wide
+    width = Math.max(250, width); // deeply nested posts too thin
+    $editForm.css('width', '' + width + 'px');
+    $accwrap.css('height', '' + height + 'px');
 
     $editForm.find('.dw-new-edit-btn').click(function(){
       $(this).remove();
@@ -367,7 +371,6 @@ $("#dw-action-menu .dw-edit").button().click(function() {
     // Must be done before accordion() is invoked (below) otherwise
     // jQuery UI (as of 1.8.2) will make it very small.
     slideInActionForm($editForm);
-    dismissActionMenu();
 
     // Cannot use autoHeight, since other people's edit suggestions
     // might be arbitrary long?
