@@ -200,12 +200,36 @@ catch (e) {
 
 // ------- Forms and actions
 
-// Generic cancel button
+// Action <form> cancel button
 $('.debiki').delegate('.dw-cancel', 'click', function() {
-  $(this).closest('form').remove();
+  // Slide away <form> and remove it.
+  var thread = $(this).closest('.dw-thread');
+  var that = this;
+  function rm(next) { $(that).closest('form').remove(); next(); }
+  thread.filter('.dw-depth-0').children('form').hide('fold', 800).queue(rm);
+  thread.filter(':not(.dw-depth-0)').children('form').slideUp().queue(rm);
 });
 
-// ------- Voting
+// Slide in reply, edit and rate forms -- I think it's
+// easier to understand how they are related to other elems
+// if they slides in, instead of just appearing abruptly.
+function slideInActionForm(form, thread) { 
+  if (thread) form.insertAfter(thread.children('.dw-post'));
+  else thread = form.parent('.dw-thread');
+  // Slide in from left, if <form> siblings ordered horizontally.
+  // Otherwise slide down (siblings ordered vertically).
+  thread.filter('.dw-depth-0').children('form').show('fold', 800);
+  thread.filter(':not(.dw-depth-0)').children('form').slideDown(530);
+}
+
+// Hide all action forms, since they will be slided in.
+$('#dw-hidden-templates form').hide();
+
+function dismissActionMenu() {
+  $('#dw-action-menu').appendTo($('#dw-hidden-templates'));
+}
+
+// ------- Rating
 
 $('#dw-action-menu .dw-rate').button().click(function(){
   // Warning: Some duplicated code, see .dw-reply and dw-edit click() below.
@@ -221,9 +245,6 @@ $('#dw-action-menu .dw-rate').button().click(function(){
   // in the rateFormTemplate. Make the cloned ids unique:
   makeIdsUniqueUpdateLabels($rateForm, '-post-'+ postId);
 
-  post.after($rateForm);
-  // Dismiss action menu
-  $('#dw-action-menu').appendTo($('#dw-hidden-templates'));
   // Enable submit button when ratings specified
   $rateForm.find("input[type='checkbox']").click(function(){
     $rateForm.find("input[type='submit']").button("option", "disabled", false);
@@ -239,6 +260,9 @@ $('#dw-action-menu .dw-rate').button().click(function(){
   $rateForm.find("input[type='submit']").button("option", "disabled", true);
   $rateForm.find('.dw-show-more-rat-tags').
     button().addClass('dw-linkify-ui-state-default');
+  // Reveal the form
+  slideInActionForm($rateForm, thread);
+  dismissActionMenu();
 });
 
 // Show more rating tags when clicking the "More..." button.
@@ -262,19 +286,13 @@ $("#dw-action-menu .dw-reply").button().click(function() {
   reply.find("input[name='dw-fi-post']").attr('value', postId);
   makeIdsUniqueUpdateLabels(reply, '-post-'+ postId);
   reply.resizable({ alsoResize: reply.find('textarea') });
-  // Slide in the form -- I think it's harder to understand
-  // how it's related to other elems if it just appears abruptly.
-  reply.hide().insertAfter(post);
-  thread.filter('.dw-depth-0').children('form').
-      effect('slide', 'slow'); // siblings ordered horizontally
-  thread.filter(':not(.dw-depth-0)').children('form').
-      slideDown('slow'); // siblings ordered vertically
-  // Dismiss action menu
-  $('#dw-action-menu').appendTo($('#dw-hidden-templates'));
   // Build fancy jQuery UI widgets
   reply.find('.dw-submit-set input').button();
   reply.find('label').addClass( // color and font that matches <input> buttons
     'dw-color-from-ui-state-default dw-font-from-ui-widget');
+  // Reveal the form
+  slideInActionForm(reply, thread);
+  dismissActionMenu();
   // Resize the root thread (in case this reply-thread is a new child of it).
   DebikiLayout.resizeRootThread(); // see debiki-layout.js
 });
@@ -288,6 +306,7 @@ $("#dw-action-menu .dw-edit").button().click(function() {
   var $post = $thread.children('.dw-post');
   //var $actions = $thread.children('.dw-post');
   var $formWrap = $("<div class='dw-edit-form-wrap'></div>").insertAfter($post);
+  $formWrap.hide(); // slide in later
   var postId = $post.attr('id').substr(8, 999); // drop initial "dw-post-"
   //$formWrap.load(debateId +'/edits/proposed/post/'+ postId +'.html form',
   $formWrap.load(Settings.makeEditUrl(debateId, postId) + ' form.dw-edit-form',
@@ -295,7 +314,7 @@ $("#dw-action-menu .dw-edit").button().click(function() {
 
     // (Need not make ids unique; the post id was known when html generated.)
 
-    var $editForm = $formWrap.find('form');
+    var $editForm = $formWrap.find('form').hide();
     // Unwrap, since the form must be a thread child (not grandchild)
     // or the action menu will appear if hovering the post.
     $editForm.unwrap();
@@ -326,14 +345,6 @@ $("#dw-action-menu .dw-edit").button().click(function() {
     $accwrap.css('height', '' + initialHeight + 'px');
     $accordion.accordion("resize"); // parent container height changed
 
-    // jQuery.tabs() must be invoked after above line, weird!
-    // Cannot use autoHeight, since other people's edit suggestions
-    // might be arbitrary long?
-    $accordion.accordion({ autoHeight: false, fillSpace: true, icons: false });
-
-    // Dismiss action menu
-    $('#dw-action-menu').appendTo($('#dw-hidden-templates'));
-
     $editForm.find('.dw-new-edit-btn').click(function(){
       $(this).remove();
       $editForm.find('.dw-hidden-new-edit').removeClass(
@@ -351,6 +362,17 @@ $("#dw-action-menu .dw-edit").button().click(function() {
     $editForm.find('label, .dw-edit-suggestions-label').addClass(
       // color and font matching <input> buttons
       'dw-color-from-ui-state-default dw-font-from-ui-widget');
+
+    // Reveal the form.
+    // Must be done before accordion() is invoked (below) otherwise
+    // jQuery UI (as of 1.8.2) will make it very small.
+    slideInActionForm($editForm);
+    dismissActionMenu();
+
+    // Cannot use autoHeight, since other people's edit suggestions
+    // might be arbitrary long?
+    $accordion.accordion({ autoHeight: false, fillSpace: true, icons: false });
+
     // Resize the root thread (in case this reply-thread is a new child of it).
     DebikiLayout.resizeRootThread(); // see debiki-layout.js
   });
@@ -395,3 +417,4 @@ $(".dw-parent-ref").hover(
 //========================================
    })(); // end Debiki module
 //========================================
+
