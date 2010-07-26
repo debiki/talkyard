@@ -196,9 +196,12 @@ case class Debate (
     editeeId +"E"+ Base26.fromInt(nextFree)
   }
 
+  /** When the most recent post was made,
+   *  or the mos recent edit was applied or reverted.
+   */
   lazy val lastChangeDate: Option[ju.Date] = {
     def maxDate(a: ju.Date, b: ju.Date) = if (a.compareTo(b) > 0) a else b
-    val allDates: Iterator[ju.Date] = ratings.iterator.map(_.date) ++
+    val allDates: Iterator[ju.Date] = editsApplied.iterator.map(_.date) ++
                                         posts.iterator.map(_.date)
     if (allDates isEmpty) None
     else Some(allDates reduceLeft (maxDate(_, _)))
