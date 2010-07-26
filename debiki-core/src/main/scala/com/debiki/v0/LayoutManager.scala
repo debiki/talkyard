@@ -107,8 +107,8 @@ object LayoutManager {
       case "edit" =>
         val editText = map.get("dw-fi-edit-text")
         val postId = map.get("dw-fi-edit-post")
-        if (!hasValues(editText)) return None // perhaps edit-votes only
-        require(editText.length <= 1, "More than one new-edit-text")
+        require(hasValues(editText), "No edit-text found")
+        require(editText.length <= 1, "More than one edit-text")
         require(hasValues(postId), "Which post-to-edit must be specified")
         require(postId.length == 1, "More than one post-to-edit specified")
         Some(Edit(
@@ -311,52 +311,89 @@ class LayoutManager(val debate: Debate) {
   }
 
   def editForm(postId: String): NodeSeq = {
+    val editInputId = "dw-fi-edit-"+ postId +"-text"
     val nameInputId = "dw-fi-edit-"+ postId +"-author"
-    <form class='dw-edit-form'
-        action={config.editAction}
-        accept-charset='UTF-8'
-        method='post'>
-      <input type='hidden' name='dw-fi-action' value='edit'/>
-      <div class='dw-edit-suggestions-label'>Edit suggestions:</div>
-      <div class='dw-edit-suggestions'>
-        {
-          for (e <- debate.editsPendingFor(postId).
-                sortBy(e => -statscalc.likingFor(e).lowerBound))
-            yield editXml(e)
-        }
-        <h4 class='dw-hidden-new-edit'>
-          <a href='#'>Your new sugggestion</a>
-        </h4>
-        <div class='dw-hidden-new-edit'>
-          <textarea name='dw-fi-edit-text'/>
+    val editsPending = debate.editsPendingFor(postId).
+                        sortBy(e => -statscalc.likingFor(e).lowerBound)
+    val editsApplied = debate.editsAppliedTo(postId)
+    <div class='dw-edit-forms'>
+      <a class='dw-show-edits-pending-btn'>Show edits suggested...</a>
+      <form class='dw-edits-others-form'
+          action={config.editAction}
+          accept-charset='UTF-8'
+          method='post'>
+        <div class='dw-edits-lbl'>Edits suggested:</div>
+        <div class='dw-edits'>
+          {
+            for (e <- editsPending)
+            yield editXml(e, applied = false)
+          }
         </div>
-      </div>
-      <input type='hidden' name='dw-fi-edit-post' value={postId}/>
-      <input class='dw-new-edit-btn' type='button'
-            value='New edit suggestion...'/>
-      <div class='dw-name-or-alias'>
-        <label for={nameInputId}>Your name or alias:</label>
-        <input id={nameInputId} type='text'
-              name='dw-fi-by' value='Anonymous'/>
-      </div>
-      <div class='dw-submit-set'>
-        <input class='dw-submit' type='submit' value='Submit'/>
-        <input class='dw-cancel' type='button' value='Cancel'/>
-      </div>
-    </form>
+        <div class='dw-submit-set'>
+          <input class='dw-submit' type='submit' value='Submit votes'/>
+          <input class='dw-cancel' type='button' value='Cancel'/>
+          <input type='hidden' name='dw-fi-edit-post' value={postId}/>
+          <input type='hidden' name='dw-fi-action' value='vote-on-edits'/>
+        </div>
+      </form>
+      <a class='dw-new-edit-btn'>New edit suggestion...</a>
+      <form class='dw-new-edit-form'
+          action={config.editAction}
+          accept-charset='UTF-8'
+          method='post'>
+        <label for={editInputId}>Your new sugggestion:</label><br/>
+        <textarea id={editInputId} name='dw-fi-edit-text' rows='10'/>
+        <div class='dw-name-or-alias'>
+          <label for={nameInputId}>Your name or alias:</label>
+          <input id={nameInputId} type='text'
+                name='dw-fi-by' value='Anonymous'/>
+        </div>
+        <div class='dw-submit-set'>
+          <input class='dw-submit' type='submit' value='Submit suggestion'/>
+          <input class='dw-cancel' type='button' value='Cancel'/>
+          <input type='hidden' name='dw-fi-edit-post' value={postId}/>
+          <input type='hidden' name='dw-fi-action' value='edit'/>
+        </div>
+      </form>
+      <a class='dw-show-edits-applied-btn'>Show edits applied...</a>
+      <form class='dw-edits-applied-form'
+          action={config.editAction}
+          accept-charset='UTF-8'
+          method='post'>
+        <div class='dw-edits-lbl'>Edits already applied:</div>
+        <div class='dw-edits dw-edits-applied'>
+          {
+            for {
+              ea <- editsApplied
+              e = debate.editsById(ea.editId)
+            } yield
+                editXml(e, applied = true)
+          }
+        </div>
+        <div class='dw-submit-set'>
+          <input class='dw-submit' type='submit' value='Submit votes'/>
+          <input class='dw-cancel' type='button' value='Cancel'/>
+          <input type='hidden' name='dw-fi-edit-post' value={postId}/>
+          <input type='hidden' name='dw-fi-action' value='vote-on-edits'/>
+        </div>
+      </form>
+    </div>
   }
 
-  private def editXml(e: Edit): NodeSeq = {
-    val likeId = "dw-fi-like-edit-"+ e.id
-    val dissId = "dw-fi-dislike-edit-"+ e.id
+  private def editXml(e: Edit, applied: Boolean): NodeSeq = {
+    val appl = if (applied) "applied-" else ""
+    val likeId = "dw-fi-like-edit-"+ appl + e.id
+    val dissId = "dw-fi-diss-edit-"+ appl + e.id
     val name = "dw-fi-edit-vote-"+ e.id
     <h4><a href='#'>{e.by}</a></h4>
     <div>
       <div>{textToHtml(e.text)._1}</div>
-      <input id={likeId} type='radio' name={name} value='1'/>
-      <label for={likeId} >Like</label>
-      <input id={dissId} type='radio' name={name} value='0'/>
-      <label for={dissId} >Dislike</label>
+      <div class='dw-edit-vote-btns'>
+        <input id={likeId} type='radio' name={name} value='1'/>
+        <label for={likeId}>Like</label>
+        <input id={dissId} type='radio' name={name} value='0'/>
+        <label for={dissId}>Dislike</label>
+      </div>
       {/*<a class='dw-show-edit-liking-stats'>Complicated statistics...</a>*/}
       <pre class='dw-edit-liking-stats'>{
           val liking = statscalc.likingFor(e)

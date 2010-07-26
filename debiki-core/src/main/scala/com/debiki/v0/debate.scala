@@ -95,7 +95,7 @@ case class Debate (
 
   // -------- Edits
 
-  private lazy val editsById: imm.Map[String, Edit] = {
+  lazy val editsById: imm.Map[String, Edit] = {
     val m = edits.groupBy(_.id)
     m.mapValues(list => {
       errorIf(list.tail.nonEmpty,

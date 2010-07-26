@@ -47,7 +47,7 @@ $(".dw-post, .dw-thread-info").hover(
       // (B, C and D: Better not open many action forms at once.)
       if (!nextThread.hasClass('dw-collapsed') &&  // A
           !nextThread.children().filter( // B, C, D
-            '.dw-reply-form, .dw-rat-form, .dw-edit-form').length) {
+            '.dw-reply-form, .dw-rat-form, .dw-edit-forms').length) {
         $(this).after($('#dw-action-menu'))
       }
     }
@@ -200,26 +200,32 @@ catch (e) {
 
 // ------- Forms and actions
 
-// Action <form> cancel button
-$('.debiki').delegate('.dw-cancel', 'click', function() {
+// Action <form> cancel button -- won't work for the Edit form...?
+function slideAwayRemove($form) {
   // Slide away <form> and remove it.
-  var thread = $(this).closest('.dw-thread');
-  var that = this;
-  function rm(next) { $(that).closest('form').remove(); next(); }
-  thread.filter('.dw-depth-0').children('form').hide('fold', 800).queue(rm);
-  thread.filter(':not(.dw-depth-0)').children('form').slideUp().queue(rm);
-});
+  var $parent = $form.parent();
+  function rm(next) { $form.remove(); next(); }
+  if ($parent.filter('.dw-depth-0').length) $form.hide('fold', 800).queue(rm);
+  else $form.slideUp(530).queue(rm);
+};
+
+// Remove new-reply and rating forms on cancel, but 
+// the edit form has some own special logic.
+$('.debiki').delegate(
+    '.dw-reply-form .dw-cancel, ' +
+    '.dw-rat-form .dw-cancel',
+    'click', function(){ slideAwayRemove($(this).closest('form')); });
 
 // Slide in reply, edit and rate forms -- I think it's
 // easier to understand how they are related to other elems
-// if they slides in, instead of just appearing abruptly.
-function slideInActionForm(form, thread) { 
-  if (thread) form.insertAfter(thread.children('.dw-post'));
-  else thread = form.parent('.dw-thread');
+// if they slide in, instead of just appearing abruptly.
+function slideInActionForm($form, $thread) { 
+  if ($thread) $form.insertAfter($thread.children('.dw-post'));
+  else $thread = $form.closest('.dw-thread');
   // Slide in from left, if <form> siblings ordered horizontally.
   // Otherwise slide down (siblings ordered vertically).
-  thread.filter('.dw-depth-0').children('form').show('fold', 800);
-  thread.filter(':not(.dw-depth-0)').children('form').slideDown(530);
+  if ($thread.filter('.dw-depth-0').length) $form.show('fold', 800);
+  else $form.slideDown(530);
 }
 
 // Hide all action forms, since they will be slided in.
@@ -304,77 +310,121 @@ $("#dw-action-menu .dw-edit").button().click(function() {
   var $thread = $(this).closest('.dw-thread');
   clearfix($thread); // makes edit area appear inside $thread
   var $post = $thread.children('.dw-post');
-  // Create a div into which to load the edit <form> -- the div class should
-  // match the edit form's class, so the action-menu won't be displayed
+  // Create a div into which to load the edit <form>s -- the div class should
+  // match the edit form div's class, so the action-menu won't be displayed
   // again until the request has completed and the edit form has been closed.
-  var $formWrap = $("<div class='dw-edit-form'></div>").insertAfter($post);
+  var $formWrap = $("<div class='dw-edit-forms'></div>").insertAfter($post);
   $formWrap.hide(); // slide in later
   var postId = $post.attr('id').substr(8, 999); // drop initial "dw-post-"
   dismissActionMenu();  // before ajax request, or 2 edit <forms> will
                         // appear if you double click.
-  $formWrap.load(Settings.makeEditUrl(debateId, postId) + ' form.dw-edit-form',
+  $formWrap.load(Settings.makeEditUrl(debateId, postId) + ' .dw-edit-forms',
       function(editFormHtml) {
 
     // (Need not make ids unique; the post id was known when html generated.)
 
-    var $editForm = $formWrap.find('form').hide();
+    var $editDiv = $formWrap.find('.dw-edit-forms').hide();
+    var $accordions = $editDiv.find('.dw-edits');
+
+    var $editsPendingForm = $editDiv.find('.dw-edits-others-form'); 
+    var $editsYoursForm = $editDiv.find('.dw-new-edit-form'); 
+    var $editsAppliedForm = $editDiv.find('.dw-edits-applied-form'); 
+
+    var $showEditsPendingBtn = $editDiv.find('.dw-show-edits-pending-btn');
+    var $showNewEditBtn = $editDiv.find('.dw-new-edit-btn');
+    var $showEditsAppliedBtn = $editDiv.find('.dw-show-edits-applied-btn');
+
+    var $forms = $editsPendingForm.add($editsYoursForm).add($editsAppliedForm);
+    var $showBtns = $showEditsPendingBtn.add($showNewEditBtn).
+                                                    add($showEditsAppliedBtn);
+    $forms.addClass('ui-helper-clearfix');
+
+    $editsYoursForm.hide();
+    $editsAppliedForm.hide();
+
     // Unwrap, since the form must be a thread child (not grandchild)
     // or the action menu will appear if hovering the post.
-    $editForm.unwrap();
+    $editDiv.unwrap();
 
-    var $accordion = $editForm.find('.dw-edit-suggestions');
-    // (Concerning > 1, not > 0: One suggestion is a hidden template.)
-    var anyEditSuggestions = $accordion.children('h4').length > 1;
-    //$editForm.find("input[name='dw-fi-post']").attr('value', postId);
-
-    // Copy the post text to -edit-your tab.
-    var curText = '';
-    $post.find('.dw-text p').each(
-        function(){ curText += $(this).text() + '\n\n'; });
-    $editForm.find('textarea').val(curText.trim() + '\n');
-
-    // Make form and accordion resizable
-    $accordion.wrap("<div class='dw-resize-accordion' />");
-    var $accwrap = $editForm.find('.dw-resize-accordion');
-    $editForm.resizable({
-        alsoResize: $accwrap,
-        resize: function(){ $accordion.accordion("resize"); },
-        minHeight: 100
-      });
-
-    // Adjust dimensions. (Smaller if no suggestions, or only my.)
-    var height = anyEditSuggestions ? 300 : 180;
-    var width = Math.min(410, $post.outerWidth()); // root post very wide
-    width = Math.max(250, width); // deeply nested posts too thin
-    $editForm.css('width', '' + width + 'px');
-    $accwrap.css('height', '' + height + 'px');
-
-    $editForm.find('.dw-new-edit-btn').click(function(){
-      $(this).remove();
-      $editForm.find('.dw-hidden-new-edit').removeClass(
-        'dw-hidden-new-edit').addClass(
-        'dw-your-edit dw-live-edit dw-your-new-edit');
-      $accordion.accordion('activate', '.dw-your-new-edit');
-      $editForm.css('height', null); // otherwise it might be too high
-      $accordion.accordion("resize"); // new element was made visible
+    // Make forms and accordions resizable
+    $editsYoursForm.resizable(
+        { alsoResize: $editsYoursForm.find('textarea') });
+    $accordions.wrap("<div class='dw-resize-accordion' />");
+    $accordions.each(function(){
+      var $this = $(this);
+      var $accwrap = $this.parent();
+      $this.closest('form').resizable({
+          alsoResize: $accwrap,
+          resize: function(){ $this.accordion("resize"); },
+          minHeight: 100
+        });
     });
 
-    // Build fancy jQuery UI widgets
-    $editForm.find(
+    // (Concerning > 1, not > 0: One suggestion is a hidden template.)
+    //var anyEditSuggestions = $accordions.children('h4').length > 1;
+
+    // Adjust dimensions. (Smaller if no suggestions, or only my.)
+    var height = 250; // or fix this: anyEditSuggestions ? 300 : 180;
+    var width = Math.min(400, $post.outerWidth()); // root post very wide
+    width = Math.max(250, width); // deeply nested posts too thin
+    $editDiv.css('width', '' + width + 'px');
+    $accordions.parent().css('height', '' + height + 'px');
+
+    $showEditsPendingBtn.button().hide().click(function(){
+      $(this).slideUp();
+      $editsPendingForm.slideDown();
+      $accordions.accordion("resize"); // new element was made visible
+    });
+
+    $showNewEditBtn.button().click(function(){
+      // Copy post text to textarea.
+      var curText = '';
+      $post.find('.dw-text p').each(function(){
+            curText += $(this).text() + '\n\n'; });
+      $editsYoursForm.find('textarea').val(curText.trim() + '\n');
+
+      $(this).slideUp();
+      $editsYoursForm.slideDown();
+    });
+
+    $showEditsAppliedBtn.button().click(function(){
+      $(this).slideUp();
+      $editsAppliedForm.slideDown();
+      $accordions.accordion("resize");
+    });
+
+    // Close forms, and show open-form buttons, on Cancel click.
+    // Remove the whole edit <div> if all forms are closed (not visible).
+    $forms.each(function(ix){
+      $(this).find('.dw-cancel').click(function(){
+        $showBtns.slice(ix,ix+1).slideDown();
+        $(this).closest('form').slideUp().queue(function(next){
+            if ($editsPendingForm.is(':visible') +
+                $editsYoursForm.is(':visible') +
+                $editsAppliedForm.is(':visible') == 0)
+              slideAwayRemove($editDiv);
+            next();
+          });
+      });
+    });
+
+    // Fancy fancy
+    $editDiv.find(
         "input[type='button'], input[type='submit'], input[type='radio']").
         button();
-    $editForm.find('label, .dw-edit-suggestions-label').addClass(
+    $editDiv.find('label').addClass(
       // color and font matching <input> buttons
       'dw-color-from-ui-state-default dw-font-from-ui-widget');
 
     // Reveal the form.
     // Must be done before accordion() is invoked (below) otherwise
     // jQuery UI (as of 1.8.2) will make it very small.
-    slideInActionForm($editForm);
+    slideInActionForm($editDiv);
 
     // Cannot use autoHeight, since other people's edit suggestions
     // might be arbitrary long?
-    $accordion.accordion({ autoHeight: false, fillSpace: true, icons: false });
+    $accordions.accordion(
+        { autoHeight: false, fillSpace: true, icons: false });
 
     // Resize the root thread (in case this reply-thread is a new child of it).
     DebikiLayout.resizeRootThread(); // see debiki-layout.js
@@ -420,4 +470,5 @@ $(".dw-parent-ref").hover(
 //========================================
    })(); // end Debiki module
 //========================================
+
 

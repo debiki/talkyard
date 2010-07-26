@@ -398,8 +398,8 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
 .debiki form {
   position: relative;
   z-index: 9999;
-  background-color: #fcfaf5; /*FCFAF5*/
-  padding: 1em; /* push outline away */
+  background-color: #fcfaf5;
+  padding: 1em;
   margin: 1em;
   outline: #83c5df solid thick; /* was: #9ee */
   float: left; /* else: sometimes very wide; reply-form might appear inside! */
@@ -408,6 +408,16 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
 .debiki form input[type='text'],
 .debiki form textarea {
   font-family: Verdana, sans-serif; /* the font .dw-post .dw-text uses */
+  margin-top: 0.7em;
+}
+
+.debiki form textarea {
+  width: 98%;
+  height: 97%; /* or too small */
+  resize: none; /* disable Chrome's default-resizable (and
+                   make the accordion resizable instead) */
+  padding-right: 0px;  /* else 97% (above) often too large, so... */
+  padding-bottom: 0px; /* ...scrollbars appear */
 }
 
 .dw-name-or-alias {
@@ -434,7 +444,7 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
 
 .xx-dw-thread.dw-reply {
   z-index: 99999; /* license agreement should always be visible */
-  background-color: #fcfaf5; /*FCFAF5*/
+  background-color: #fcfaf5;
   max-width: none; /* allow user to rezise textarea as s/he see fit */
 }
 
@@ -449,11 +459,6 @@ form.dw-reply-form textarea {
   resize: none; /* need to disable Chrome's default-resizing-of-textarea,
                   because the parent <form> (which is also resizable)
                   isn't resized when the textarea is resized */
-}
-
-form.dw-reply-form input[type='text'],
-form.dw-reply-form textarea {
-  margin-top: 0.7em;
 }
 
 .dw-user-contrib-license {
@@ -507,57 +512,60 @@ form.dw-rat-form .dw-more-rat-tags label {
 
 /* === Edit === */
 
-.dw-edit-form .ui-accordion-content {
-  padding: 0.5em !important; /* otherwise too much padding */
+.dw-edit-forms { /* currently almost identical to <form> */
+  position: relative;
+  z-index: 9999;
+  background-color: #fcfaf5;
+  padding: 1em;
+  margin: 1em;
+  outline: #ddeff6 /*#83c5df*/ solid thick;
+  float: left; /* or sometimes very wide */
 }
 
-.dw-edit-form .dw-edit-suggestions p {
+.dw-edit-forms form {
+  margin: 1em 0;
+  float: none; /* or won't be wide enough to fill up parent */
+  clear: both; /* or show-form buttons appear to the left */
+}
+
+.dw-edit-forms > a {
+  margin: 0.8em 0;
+  float: left; /* or 100% wide when sliding up/down, weird */
+  clear: both; /* or stacked horiz. when forms sliding up/down */
+}
+
+.dw-edit-forms form:first-of-type,
+.dw-edit-forms > a:first-of-type {
+  margin-top: 0;
+}
+
+.dw-edit-forms .ui-accordion {
+  margin-top: 0.75em;
+}
+
+.dw-edit-forms .ui-accordion-content {
+  padding: 1em 0.2em 0 0.6em !important; /* otherwise too much padding */
+  background: #f2f2f2; /* jQuery UI's default bg is somewhat obtrusive*/
+  border: 1px solid #BBB;
+}
+
+.dw-edit-forms .ui-accordion-content p {
   /* Use same font/size as .dw-debate */
   font-family: Verdana, sans-serif;
   font-size: 93%;
   line-height: 110%;
 }
 
-.dw-edit-form .ui-accordion {
-  margin-top: 0.75em;
-}
-
-.dw-edit-form h4 {
+.dw-edit-forms .ui-accordion h4 {
   font-weight: normal !important;
   font-size: 93%;
 }
 
-.dw-edit-form h4.dw-your-edit {
+.dw-edit-forms h4.dw-your-edit {
   font-weight: bold !important;
 }
 
-.dw-edit-form .dw-live-edit {
-  background: none !important; /* it's distracting, behind the textarea */
-  padding: 0 !important; /* otherwise textarea very small */
-}
-
-.dw-edit-form .dw-live-edit.ui-accordion-content {
-  overflow: hidden !important; /* textarea sometimes a few pixels too high */
-}
-
-.dw-edit-form .dw-live-edit textarea {
-  width: 98%;
-  height: 97%; /* else too small */
-  resize: none; /* disable Chrome's default-resizable (and
-                   make the accordion resizable instead) */
-  padding-right: 0px;  /* else 97% (above) often too large, so... */
-  padding-bottom: 0px; /* ...scrollbars appear */
-}
-
-.dw-new-edit-btn {
-  float: left;
-  margin: 1em 0 0;
-}
-
-.dw-hidden-new-edit {
-  display: none !important;
-}
-
+.dw-edit-vote-btns,
 .dw-edit-liking-stats {
   margin: 1em 0 0;
 }
