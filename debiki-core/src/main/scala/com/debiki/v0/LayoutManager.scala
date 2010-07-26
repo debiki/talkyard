@@ -7,6 +7,7 @@
 package com.debiki.v0
 
 import java.{util => ju}
+import scala.collection.JavaConversions._
 import collection.{mutable => mut, immutable => imm}
 import _root_.scala.xml.{NodeSeq, Elem}
 import Prelude._
@@ -60,8 +61,8 @@ object LayoutManager {
     actionOrNull match {
       case null => return None
       case Array(value) =>
-        require(List("reply", "rate", "edit").contains(value),
-                "Unknown dw-fi-action value: "+ safe(value))
+        require(List("reply", "rate", "edit", "vote-on-edits").
+            contains(value), "Unknown dw-fi-action value: "+ safe(value))
         action = value
       case Array() => illegalArg("No dw-fi-action value")
       case Array(_, _, _*) => illegalArg("Too many dw-fi-action values")
@@ -69,11 +70,15 @@ object LayoutManager {
                           x.getClass.getSimpleName)
     }
 
-    val by = map.get("dw-fi-by")
-    require(userName.isDefined || hasValues(by),
-            "A user must be specified")
-    require(userName.isDefined || by.length == 1,
-            "Not more than one user specified")
+    def requireUser() = {
+      val by = map.get("dw-fi-by")
+      require(userName.isDefined || hasValues(by),
+              "A user must be specified")
+      require(userName.isDefined || by.length == 1,
+              "Not more than one user specified")
+      userName.getOrElse(by.head)
+    }
+
     val ip_ = ip.getOrElse("?.?.?.?")
 
     action match {
@@ -88,7 +93,7 @@ object LayoutManager {
                 id = "?", // illegal id, only a-z allowed
                 parent = posts.head,
                 date = date.getOrElse(new ju.Date),
-                by = userName.getOrElse(by.head),
+                by = requireUser(),
                 ip = ip_,
                 text = replyTexts.head))
       case "rate" =>
@@ -100,7 +105,7 @@ object LayoutManager {
         require(tags.length < 100, "Less than 100 rating tags") // safer?
         Some(Rating(
                 postId = posts.head,
-                by = userName.getOrElse(by.head),
+                by = "?", // TODO: Remove `by'?
                 ip = ip_,
                 date = date.getOrElse(new ju.Date),
                 tags = tags.toList))
@@ -114,13 +119,36 @@ object LayoutManager {
         Some(Edit(
                 id = "?",
                 postId = postId.head,
-                by = userName.getOrElse(by.head),
+                by = requireUser(),
                 ip = ip_,
                 date = date.getOrElse(new ju.Date),
                 text = editText.head))
+      case "vote-on-edits" =>
+        var likes = List[String]()
+        var disses = List[String]()
+        val prefix = "dw-fi-vote-edit-"
+        for ((key, array) <- map; if key startsWith prefix) {
+          val editId = key.drop(prefix.length)
+          array match {
+            case Array("1") => likes ::= editId
+            case Array("0") => disses ::= editId
+            case Array(x) => illegalArg("Bad vote value: "+ safe(x))
+            case Array(x, y, _) => illegalArg("More than one vote value")
+            case Array() => illegalArg("Map entry is empty array")
+            case x => illegalArg("Map entry not an array: "+
+                                    x.getClass.getSimpleName)
+          }
+        }
+        if (likes.length + disses.length == 0) return None
+        Some(EditVote(
+                id = "?",
+                by = "?", // TODO: Remove `by'?
+                ip = ip_,
+                date = date.getOrElse(new ju.Date),
+                like = likes,
+                diss = disses))
       case x =>
         assertionError("Unknown case: "+ x)
-
     }
   }
 
@@ -384,7 +412,7 @@ class LayoutManager(val debate: Debate) {
     val appl = if (applied) "applied-" else ""
     val likeId = "dw-fi-like-edit-"+ appl + e.id
     val dissId = "dw-fi-diss-edit-"+ appl + e.id
-    val name = "dw-fi-edit-vote-"+ e.id
+    val name = "dw-fi-vote-edit-"+ e.id
     <h4><a href='#'>{e.by}</a></h4>
     <div>
       <div>{textToHtml(e.text)._1}</div>
@@ -463,7 +491,6 @@ class LayoutManager(val debate: Debate) {
             method='post'>
           <input type='hidden' name='dw-fi-action' value='rate'/>
           <input type='hidden' name='dw-fi-post' value='?'/>
-          <input type='hidden' name='dw-fi-by' value='?'/> {/* for now */}
           {
             var boxCount = 1
             def rateBox(value: String) = {

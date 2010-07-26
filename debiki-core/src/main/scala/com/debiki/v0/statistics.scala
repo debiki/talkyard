@@ -158,10 +158,10 @@ private[debiki] class StatsCalc(val debate: Debate) {
     def frac = sum / voteCount
     var lowerBound = binProp80ConfIntACNoSamples._1
     var upperBound = binProp80ConfIntACNoSamples._2
-    def += (vote: EditVote): EditLikingImpl = {
-      sum += vote.value // 0 or 1
+    def addLiking(value: Int) {
+      require(value == 0 || value == 1)
+      sum += value
       voteCount += 1
-      this
     }
   }
 
@@ -175,8 +175,12 @@ private[debiki] class StatsCalc(val debate: Debate) {
   // and edit vote sums:
   for (r <- debate.ratings) postRatings.getOrElseUpdate(
                               r.postId, new PostRatingImpl) += r
-  for (v <- debate.editVotes) editLikings.getOrElseUpdate(
-                                v.editId, new EditLikingImpl) += v
+  for (editVote <- debate.editVotes) {
+    def addLiking(id: String, value: Int) =
+      editLikings.getOrElseUpdate(id, new EditLikingImpl).addLiking(value)
+    for (editId <- editVote.like) addLiking(editId, 1)
+    for (editId <- editVote.diss) addLiking(editId, 0)
+  }
 
   // Convert temporary sums to immutable LabelStats
   for ((postId, rating) <- postRatings) {

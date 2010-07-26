@@ -47,12 +47,26 @@ object DaoYaml {
   def toYaml(edit: Edit): String = {
     val sb = new mut.StringBuilder
     sb ++= "\n--- !Edit"
-    sb ++= "\nid: " ++= edit.id
+    sb ++= "\nid: \"" ++= edit.id += '"'
     sb ++= "\nby: \"" ++= edit.by += '"'
     sb ++= "\nip: \"" ++= edit.ip += '"'
     sb ++= "\ndate: " ++= toIso8601(edit.date)
     sb ++= "\npost: " ++= edit.postId
     sb ++= "\ntext: |1\n" ++= indent(edit.text)
+    sb.toString
+  }
+
+  /** Warning: DoS or XSS attack: Bad input gives corrupt Yaml.
+   */
+  def toYaml(editVote: EditVote): String = {
+    val sb = new mut.StringBuilder
+    sb ++= "\n--- !EditVote"
+    sb ++= "\nid: \"" ++= editVote.id += '"'
+    sb ++= "\nby: \"" ++= editVote.by += '"'
+    sb ++= "\nip: \"" ++= editVote.ip += '"'
+    sb ++= "\ndate: " ++= toIso8601(editVote.date)
+    sb ++= "\nlike: " ++= editVote.like.mkString("[\"", "\", \"", "\"]")
+    sb ++= "\ndiss: " ++= editVote.diss.mkString("[\"", "\", \"", "\"]")
     sb.toString
   }
 
@@ -205,11 +219,12 @@ class DaoYaml extends Dao {
     private class ConstrEditVote extends DebikiMapConstr2 {
 
       val edit = new KeyVal[String]("edit", asText)
-      val value = new KeyVal[Int]("value", asInt)
+      val like = new KeyVal[List[String]]("like", asTextList, Some(Nil))
+      val diss = new KeyVal[List[String]]("diss", asTextList, Some(Nil))
 
       override def construct() = EditVote(
-          editId = edit.value, by = by.value, ip = ip.value,
-          date = date.value, value = value.value)
+          id = id.value, by = by.value, ip = ip.value,
+          date = date.value, like = like.value, diss = diss.value)
     }
 
     private class ConstrEditApplied extends DebikiMapConstr2 {
@@ -320,6 +335,8 @@ class DaoYaml extends Dao {
       case s: yn.SequenceNode =>
         val values: ju.List[yn.Node] = s.getValue
         values.toList.map(asText(_))
+      case s: yn.ScalarNode =>
+        List[String](s.getValue)
       case x => illegalArgBadClass("`values'", "SequenceNode", x)
     }
 

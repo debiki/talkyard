@@ -255,15 +255,17 @@ case class Edit(
   text: String
 )
 
+// Verify: No duplicate like/diss ids, no edit both liked and dissed
 case class EditVote(
-  editId: String,
+  id: String,
   by: String,
   ip: String,
   date: ju.Date,
-  value: Int
-){
-  require(value == 0 || value == 1)
-}
+  /** Ids of edits liked */
+  like: List[String],
+  /** Ids of edits disliked */
+  diss: List[String]
+)
 
 case class EditApplied (
   editId: String,

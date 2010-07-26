@@ -43,12 +43,12 @@ text: |1
  Tillåt MMU
  MMUuuurk på burk, drick en slurk
 --- !Edit
-id: aeb
+id: bEa
 post: b
 date: 2001-12-14t21:59:43.10-05:00
 by: Mjau-Mjam
 text: |1
- (Edit aeb text)
+ (Edit bEa text)
  Abianie irnst eirntier  nirstn tsi!
  Abneir wfr nrnrinti ni, nrist inrt nrisn ineit n eirneini tieirsn tir.
  Wfr nii rstrn ti ni, nrist inrt trsien tsrww; guwq nrisn
@@ -62,30 +62,30 @@ text: |1
  Minritnir i its! Norntii niifg. Nritxgwkdb, rtis, rtis, rtis!!!
  Nao noiu irneinwf  nrsie... Rrnsig niex nwww nbe. irnt??
 --- !EditVote
-edit: aeb
+id: bEVa
+like: bEa
 date: 2001-12-14t21:59:43.10-05:00
 by: Misse Mu
-value: 1
 --- !EditApplied
-edit: aeb
+edit: bEa
 date: 2001-12-14t21:59:43.10-05:00
 debug: undefined plain text, e.g. 80% prob liked
 result: |1
- (Edit aeb applied!)
+ (Edit bEa applied!)
  Abianie irnst eirntier  nirstn tsi!
  Abneir wfr nrnrinti ni, nrist inrt nrisn ineit n eirneini tieirsn tir.
  Wfr nii rstrn ti ni, nrist inrt trsien tsrww; guwq nrisn
  ineit n eirneini tieirsn tir.
 --- !EditVote
-edit: aec
+id: ??
+like: aec
 date: 2001-12-14t21:59:43.10-05:00
 by: Maja Gräddnos Snälla Syster
-value: 1
 --- !EditVote
-edit: aec
+id: ??
+like: aec
 date: 2001-12-14t21:59:43.10-05:00
 by: Morgan Murmeldjur
-value: 0
 --- !Post
 id: c
 parent: a
@@ -104,10 +104,10 @@ text: |1
  Norntii niifg. rtis, rtis, rtis!!!
  Rtis, rtis!! Rtis! Rtis! Rtis! Rtis atirfr rtis!!!
 --- !EditVote
-edit: CcEa
+id: ??
+like: CcEa
 date: 2001-12-14t21:59:43.10-05:00
 by: Mister Mjau
-value: 0
 --- !Edit
 id: CcEb
 post: c
