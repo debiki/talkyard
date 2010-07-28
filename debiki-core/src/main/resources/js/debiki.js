@@ -424,12 +424,22 @@ $("#dw-action-menu .dw-edit").button().click(function() {
                                                     add($showEditsAppliedBtn);
     $forms.addClass('ui-helper-clearfix');
 
-    $editsYoursForm.hide();
+    // If there are any edits suggested, show them (or people will
+    // never understand they're supposed to vote them up/down).
+    // Otherwise, show the new-edit-suggestion form.
+    if ($editsPendingForm.length) $editsYoursForm.hide();
+    else $showNewEditBtn.hide();
     $editsAppliedForm.hide();
 
     // Unwrap, since the form must be a thread child (not grandchild)
     // or the action menu will appear if hovering the post.
     $editDiv.unwrap();
+
+    // Copy post text to edit-suggestion textarea.
+    var curText = '';
+    $post.find('.dw-text p').each(function(){
+          curText += $(this).text() + '\n\n'; });
+    $editsYoursForm.find('textarea').val(curText.trim() + '\n');
 
     // Make forms and accordions resizable
     $editsYoursForm.resizable({
@@ -450,15 +460,11 @@ $("#dw-action-menu .dw-edit").button().click(function() {
         });
     });
 
-    // (Concerning > 1, not > 0: One suggestion is a hidden template.)
-    //var anyEditSuggestions = $accordions.children('h4').length > 1;
-
-    // Adjust dimensions. (Smaller if no suggestions, or only my.)
-    var height = 250; // or fix this: anyEditSuggestions ? 300 : 180;
+    // Adjust dimensions.
     var width = Math.min(400, $post.outerWidth()); // root post very wide
     width = Math.max(250, width); // deeply nested posts too thin
     $editDiv.css('width', '' + width + 'px');
-    $accordions.parent().css('height', '' + height + 'px');
+    $accordions.parent().css('height', '300px');
 
     $showEditsPendingBtn.button().hide().click(function(){
       $(this).slideUp();
@@ -467,12 +473,6 @@ $("#dw-action-menu .dw-edit").button().click(function() {
     });
 
     $showNewEditBtn.button().click(function(){
-      // Copy post text to textarea.
-      var curText = '';
-      $post.find('.dw-text p').each(function(){
-            curText += $(this).text() + '\n\n'; });
-      $editsYoursForm.find('textarea').val(curText.trim() + '\n');
-
       $(this).slideUp();
       $editsYoursForm.slideDown();
     });

@@ -344,13 +344,14 @@ class LayoutManager(val debate: Debate) {
     val editsPending = debate.editsPendingFor(postId).
                         sortBy(e => -statscalc.likingFor(e).lowerBound)
     val editsApplied = debate.editsAppliedTo(postId)
-    <div class='dw-edit-forms'>
+
+    def editsPendingStuff = {
       <a class='dw-show-edits-pending-btn'>Show edits suggested...</a>
       <form class='dw-edits-others-form'
           action={config.editAction}
           accept-charset='UTF-8'
           method='post'>
-        <div class='dw-edits-lbl'>Edits suggested:</div>
+        <div class='dw-edits-lbl'>Vote on edits suggested:</div>
         <div class='dw-edits'>
           {
             for (e <- editsPending)
@@ -362,8 +363,13 @@ class LayoutManager(val debate: Debate) {
           <input class='dw-cancel' type='button' value='Cancel'/>
           <input type='hidden' name='dw-fi-edit-post' value={postId}/>
           <input type='hidden' name='dw-fi-action' value='vote-on-edits'/>
+          <p>If many people like a certain edit suggestion,
+          it will be applied.</p>
         </div>
       </form>
+    }
+
+    def newSuggestionStuff = {
       <a class='dw-new-edit-btn'>New edit suggestion...</a>
       <form class='dw-new-edit-form'
           action={config.editAction}
@@ -383,6 +389,9 @@ class LayoutManager(val debate: Debate) {
           <input type='hidden' name='dw-fi-action' value='edit'/>
         </div>
       </form>
+    }
+
+    def editsAppliedStuff = {
       <a class='dw-show-edits-applied-btn'>Show edits applied...</a>
       <form class='dw-edits-applied-form'
           action={config.editAction}
@@ -404,8 +413,18 @@ class LayoutManager(val debate: Debate) {
           <input class='dw-cancel' type='button' value='Cancel'/>
           <input type='hidden' name='dw-fi-edit-post' value={postId}/>
           <input type='hidden' name='dw-fi-action' value='vote-on-edits'/>
+          <p>If many people dislike the most recent edit applied,
+          it will be reverted. (No, *not implemented.*)</p>
         </div>
       </form>
+    }
+
+    <div class='dw-edit-forms'>
+    {
+      (if (editsPending.nonEmpty) editsPendingStuff else Nil) ++
+      newSuggestionStuff ++
+      (if (editsApplied.nonEmpty) editsAppliedStuff else Nil)
+    }
     </div>
   }
 
