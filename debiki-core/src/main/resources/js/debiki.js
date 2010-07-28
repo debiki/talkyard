@@ -51,11 +51,19 @@ $(".dw-post, .dw-thread-info").hover(
     if ($(this).hasClass('dw-post')) {
       // Show the #action-menu, unless the thread is closing (A)
       // and unless the thread doesn't already have a reply-form (B)
-      // or a rating-form (C) or an edit form child (D).
-      // (B, C and D: Better not open many action forms at once.)
+      // or a rating-form (C) or an edit form child (D),
+      // or a .ui-effects-wrapper (E).
+      // (B, C and D: Better not open many action forms at once.
+      // E: The jQuery-UI fold-in effect seems to wrap the things it
+      // folds-in inside a .ui-effects-wrapper div,
+      // so B, C, D above won't work.
+      // TODO: Wrap reply/rate/edit forms in a div with a dedicated class,
+      // so tests B, C, D, E can be replaced with one single test.)
       if (!nextThread.hasClass('dw-collapsed') &&  // A
-          !nextThread.children().filter( // B, C, D
-            '.dw-reply-form, .dw-rat-form, .dw-edit-forms').length) {
+          !nextThread.children().filter(
+            '.dw-reply-form, .dw-rat-form, .dw-edit-forms, ' + // B, C, D
+            '.ui-effects-wrapper' // E
+            ).length) {
         $(this).after($('#dw-action-menu'))
       }
     }
