@@ -70,6 +70,24 @@ object DaoYaml {
     sb.toString
   }
 
+  /** Warning: DoS or XSS attack: Bad input gives corrupt Yaml.
+   */
+  def toYaml(ea: EditApplied): String = {
+    val sb = new mut.StringBuilder
+    sb ++= "\n--- !EditApplied"
+    sb ++= "\nedit: \"" ++= ea.editId += '"'
+    sb ++= "\ndate: " ++= toIso8601(ea.date)
+    sb ++= "\ndebug: |1\n" ++= indent(ea.debug)
+    sb ++= "\nresult: |1\n" ++= indent(ea.result)
+    sb.toString
+  }
+
+  def toYaml(result: AddVoteResults): String = {
+    val sb = new mut.StringBuilder
+    for (ea <- result.newEditsApplied) sb ++= toYaml(ea)
+    sb.toString
+  }
+
   private def indent(text: String) =
     " " + // indent first line, 1 space
     text.replaceAll("\n", "\n "). // indent other lines

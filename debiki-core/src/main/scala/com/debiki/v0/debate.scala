@@ -6,11 +6,17 @@ import java.{util => ju}
 import collection.{immutable => imm, mutable => mut}
 import Prelude._
 
+
 object Debate {
 
   def empty(id: String) = Debate(id)
 
 }
+
+class AddVoteResults private[debiki] (
+  val debate: Debate,
+  val newEditsApplied: List[EditApplied]
+)
 
 case class Debate (
   val id: String,
@@ -126,10 +132,13 @@ case class Debate (
   def editsPendingFor(postId: String): List[Edit] =
     editsPendingByPostId.getOrElse(postId, Nil)
 
-  /** Edits applied to the specified post, sorted chronologically.
+  /** Edits applied to the specified post, sorted by most-recent first.
    */
   def editsAppliedTo(postId: String): List[EditApplied] =
-    editsAppliedByPostId.getOrElse(postId, Nil).sortBy(_.date.getTime)
+    // The list is probably already sorted, since new EditApplied:s are
+    // prefixed to the editsApplied list.
+    editsAppliedByPostId.getOrElse(postId, Nil).sortBy(- _.date.getTime)
+
 
   // -------- Construction
 
@@ -143,11 +152,53 @@ case class Debate (
   def + (edit: Edit): Debate = copy(edits = edit :: edits)
   //def - (edit: Edit): Debate = copy(edits = edits filter (_ != edit))
 
-  def + (vote: EditVote): Debate = copy(editVotes = vote :: editVotes)
-  //def - (vote: EditVote): Debate = copy(editVotes = editVotes filter
-  //                                                              (_ != vote))
+  def addVote(vote: EditVote, applyEdits: Boolean): AddVoteResults = {
+    var editsToApply = List[EditApplied]()
+    //var editsToRevert = List[EditReverted]()  ??
 
-  def + (ea: EditApplied): Debate = copy(editsApplied = ea :: editsApplied)
+    def findEditsToApply(editId: String, likes: Boolean) {
+      val edit = editsById(editId)  // throw unless found
+      val ea = editsAppliedById.get(editId)
+      val lastEditApplied = editsAppliedTo(edit.postId).headOption
+      val isApplied = ea.isDefined
+      val isLastApplied = isApplied && ea == lastEditApplied.headOption
+      if (isApplied && !isLastApplied) {
+        // This vote doesn't matter; can revert only the last edit applied.
+        return
+      }
+      val liking = stats.likingFor(edit)  // rather expensive calcs?
+      if (!isApplied) {
+        if (likes && liking.lowerBound > 0.5) {
+          // Most people seem to like this edit; apply it.
+          val a = EditApplied(editId = editId, date = vote.date,
+                    result = edit.text, // in the future perahps apply a diff?
+                    debug = liking.toString)
+          editsToApply ::= a
+        }
+      }
+      else if (!likes && liking.upperBound < 0.5) {
+        // Most people don't like this edit. And it's the last one applied.
+        // Revert it.
+        // TODO:
+        // val r = EditReverted(...)
+        // d2 = d2.copy(...)
+      }
+    }
+
+    for (editId <- vote.like) findEditsToApply(editId, likes = true)
+    for (editId <- vote.diss) findEditsToApply(editId, likes = false)
+    val d2 = copy(
+      editVotes = vote :: editVotes,
+      editsApplied = if (applyEdits) editsToApply ::: editsApplied
+                      else editsApplied
+    )
+    new AddVoteResults(d2, editsToApply)
+  }
+
+  // -------- Statistics
+
+  lazy val stats = new StatsCalc(this)
+
 
   // -------- Misc
 

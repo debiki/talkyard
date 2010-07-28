@@ -163,6 +163,8 @@ private[debiki] class StatsCalc(val debate: Debate) {
       sum += value
       voteCount += 1
     }
+    override def toString = "EditLiking[votes: "+ voteCount + ", frac: "+
+        frac + ", lower: "+ lowerBound +", upper: "+ upperBound +"]"
   }
 
   private val postRatings = mut.Map[String, PostRatingImpl]()
@@ -216,9 +218,10 @@ private[debiki] class StatsCalc(val debate: Debate) {
   /** The lower bound of a 90% confidence interval of the proportion
    *  of voters that like the edit (a value between 0 and 1).
    */
-  def likingFor(e: Edit): EditLiking =
-    editLikings.getOrElse(e.id, editLikingNoVotes)
+  def likingFor(e: Edit): EditLiking = likingFor(e.id)
 
+  def likingFor(editId: String): EditLiking =
+    editLikings.getOrElse(editId, editLikingNoVotes)
 }
 
 private[debiki] object StatsCalc {

@@ -279,7 +279,7 @@ class LayoutManager(val debate: Debate) {
 
   private def postXml(p: Post): NodeSeq = {
     val cssPostId = "dw-post-"+ p.id
-    val lastEditApplied = debate.editsAppliedTo(p.id).lastOption
+    val lastEditApplied = debate.editsAppliedTo(p.id).headOption
     val (xmlText, numLines) = textToHtml(
                             lastEditApplied.map(_.result).getOrElse(p.text))
     val long = numLines > 9
@@ -388,7 +388,8 @@ class LayoutManager(val debate: Debate) {
           action={config.editAction}
           accept-charset='UTF-8'
           method='post'>
-        <div class='dw-edits-lbl'>Edits already applied:</div>
+        <div class='dw-edits-lbl'
+          >Edits already applied, most recent first:</div>
         <div class='dw-edits dw-edits-applied'>
           {
             for {
