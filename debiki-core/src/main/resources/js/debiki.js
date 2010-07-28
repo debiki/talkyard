@@ -5,11 +5,14 @@
 
 Debiki = {};  // TODO: Error handling?
 Debiki.v0 = {};
-Debiki.v0.Settings = {};
 
 //========================================
    (function(){
 //========================================
+
+//----------------------------------------
+// Implement public functions
+//----------------------------------------
 
 var Settings = {};
 
@@ -18,7 +21,10 @@ Settings.makeEditUrl = function(debateId, postId) {
   return debateId +'/edits/proposed/post/'+ postId +'.html'
 };
 
-// Export functions:
+
+//----------------------------------------
+// Export functions
+//----------------------------------------
 
 // A function that builds the GET line to download edit suggestions
 // for a certain post.
@@ -26,6 +32,8 @@ Debiki.v0.setEditUrl = function(editUrlBuilder) {
   Settings.makeEditUrl = editUrlBuilder;
 };
 
+
+// Onload
 //----------------------------------------
    jQuery.noConflict()(function($){
 //----------------------------------------
@@ -92,15 +100,18 @@ $(".dw-post, .dw-thread-info").hover(
   function(event){
   });
 
+// Open/close threads if the thread-info div is clicked.
 $(".dw-thread-info").click(function() {
   var thread = $(this).closest(".dw-thread");
   if (! thread.hasClass('dw-demarcated')) return;
-  thread
-    .children(":not(.dw-thread-info)").stop(true,true).slideToggle(800)
-    .end()
-    .stop(true, true)
-    .toggleClass('dw-collapsed')
-    .toggleClass('dw-collapsed-fx', 600);
+  resizeRootThreadExtraWide();
+  thread.
+    children(":not(.dw-thread-info)").stop(true,true).slideToggle(800).
+    end().
+    stop(true, true).
+    toggleClass('dw-collapsed').
+    toggleClass('dw-collapsed-fx', 600).
+    queue(function(next){ resizeRootThreadNowAndLater(); next(); });
 });
 
 // Outline new posts
@@ -127,6 +138,67 @@ posts.filter('.dw-cropped-s').click(function(){
 })
 
 // ------- Resizing
+
+// Makes the root thread wide enough to contain all its child posts.
+// Is this not done e.g. when child posts are resized or stacked eastwards,
+// or a reply/rate/edit form is shown/resized, the east-most threads
+// will float-drop below the other threads.
+var resizeRootThreadImpl = function(extraWidth){
+  if (extraWidth === true) extraWidth = 1000; // 3 x reply/edit form width
+  else {
+    // If a user drag-resizes a form quicker than this amount of pixels
+    // per browser refresh, div-drop might happen anyway, because
+    // this function isn't invoked until after the
+    // browser has decided to float-drop the divs?
+    // Also, zooming in/out might cause float drop (it seems all elems
+    // aren't scaled exactly in the same way), if too small.
+    // Hence it's a rather wide value. (Otherwise = 50 would do.)
+    extraWidth = 150;
+  }
+  var width = extraWidth;
+  var root = $('.debiki > .dw-thread');
+  root.children('.dw-thread, form, .dw-edit-forms').each(function(){
+    width += $(this).outerWidth(true);
+  });
+  root.css('width', width);
+}
+
+// Makes the root thread wide enough to contain all its child posts.
+// Is this not done e.g. when child posts are resized or stacked eastwards,
+// or a reply/rate/edit form is shown/resized, the east-most threads
+// will float-drop below the other threads.
+var resizeRootThread = function(){
+  resizeRootThreadImpl();
+}
+
+// Resizes the root thread so it becomes extra wide.
+// This almost avoids all float drops, when quickly resizing an element
+// (making it larger).
+var resizeRootThreadExtraWide = function() {
+  resizeRootThreadImpl(true);
+}
+
+// Export resize functions, for debugging.
+// (Otherwise too late to export from here, inside onload event?)
+Debiki.v0.resizeRootThread = resizeRootThread;
+Debiki.v0.resizeRootThreadExtraWide = resizeRootThreadExtraWide;
+
+// After an elem has been resized, the root thread is resized by
+// a call to resizeRootThread(). However, it seems the browser
+// (Google Chrome) calls that function before all elements
+// are in their final position, in some weird manner, causing
+// floats to drop, as if resizeRootThread() had not been called.
+// This can be fixed by calling resizeRootThread() again,
+// after a while when the browser is (probably) done
+// doing its layout stuff.
+var resizeRootThreadNowAndLater = (function(){
+  var handle;
+  return function() {
+    resizeRootThread();
+    if (handle) clearTimeout(handle);
+    handle = setTimeout(resizeRootThread, 1500);
+  }
+})();
 
 // Make posts and threads resizable.
 // Fails with a TypeError on Android: Cathching it and ignoring it.
@@ -179,12 +251,14 @@ try {
     var thread = $(this).closest('.dw-thread');
     $(this).resizable({
         alsoResize: thread,
+        resize: resizeRootThreadExtraWide,
         handles: 'e',
         stop: function(event, ui) {
           // jQuery has added `height: ...' to the thread's style attribute.
           // Unless removed, the therad won't resize itself when child
           // threads are opened/closed.
           thread.css('height', null);
+          resizeRootThreadNowAndLater();
         }
       })
       // Add a resize icon.
@@ -204,7 +278,7 @@ catch (e) {
 function slideAwayRemove($form) {
   // Slide away <form> and remove it.
   var $parent = $form.parent();
-  function rm(next) { $form.remove(); next(); }
+  function rm(next) { $form.remove(); resizeRootThread(); next(); }
   if ($parent.filter('.dw-depth-0').length) $form.hide('fold', 800).queue(rm);
   else $form.slideUp(530).queue(rm);
 };
@@ -222,10 +296,19 @@ $('.debiki').delegate(
 function slideInActionForm($form, $thread) { 
   if ($thread) $form.insertAfter($thread.children('.dw-post'));
   else $thread = $form.closest('.dw-thread');
+  // Extra width prevents float drop.
+  resizeRootThreadExtraWide();
   // Slide in from left, if <form> siblings ordered horizontally.
   // Otherwise slide down (siblings ordered vertically).
   if ($thread.filter('.dw-depth-0').length) $form.show('fold', 800);
   else $form.slideDown(530);
+  // Cancel extra width. Or add even more width, to prevent float drops
+  // -- needs to be done also when sliding downwards, since that sometimes 
+  // makes the root thread child threads wider.
+  $form.queue(function(next){
+      resizeRootThreadNowAndLater();
+      next();
+    });
 }
 
 // Hide all action forms, since they will be slided in.
@@ -291,7 +374,11 @@ $("#dw-action-menu .dw-reply").button().click(function() {
   var postId = post.attr('id').substr(8, 999); // drop initial "dw-post-"
   reply.find("input[name='dw-fi-post']").attr('value', postId);
   makeIdsUniqueUpdateLabels(reply, '-post-'+ postId);
-  reply.resizable({ alsoResize: reply.find('textarea') });
+  reply.resizable({
+      alsoResize: reply.find('textarea'),
+      resize: resizeRootThreadExtraWide,
+      stop: resizeRootThreadNowAndLater
+    });
   // Build fancy jQuery UI widgets
   reply.find('.dw-submit-set input').button();
   reply.find('label').addClass( // color and font that matches <input> buttons
@@ -299,8 +386,6 @@ $("#dw-action-menu .dw-reply").button().click(function() {
   // Reveal the form
   slideInActionForm(reply, thread);
   dismissActionMenu();
-  // Resize the root thread (in case this reply-thread is a new child of it).
-  DebikiLayout.resizeRootThread(); // see debiki-layout.js
 });
 
 // ------- Editing
@@ -347,8 +432,11 @@ $("#dw-action-menu .dw-edit").button().click(function() {
     $editDiv.unwrap();
 
     // Make forms and accordions resizable
-    $editsYoursForm.resizable(
-        { alsoResize: $editsYoursForm.find('textarea') });
+    $editsYoursForm.resizable({
+        alsoResize: $editsYoursForm.find('textarea')
+        // (Need not resizeRootThread,
+        // since the $editDiv is not resized.)
+      });
     $accordions.wrap("<div class='dw-resize-accordion' />");
     $accordions.each(function(){
       var $this = $(this);
@@ -356,6 +444,8 @@ $("#dw-action-menu .dw-edit").button().click(function() {
       $this.closest('form').resizable({
           alsoResize: $accwrap,
           resize: function(){ $this.accordion("resize"); },
+          // (Need not resizeRootThread,
+          // since the $editDiv is not resized.)
           minHeight: 100
         });
     });
@@ -425,9 +515,6 @@ $("#dw-action-menu .dw-edit").button().click(function() {
     // might be arbitrary long?
     $accordions.accordion(
         { autoHeight: false, fillSpace: true, icons: false });
-
-    // Resize the root thread (in case this reply-thread is a new child of it).
-    DebikiLayout.resizeRootThread(); // see debiki-layout.js
   });
 });
 
@@ -462,6 +549,10 @@ $(".dw-parent-ref").hover(
     $(this).closest(".dw-thread").parent().closest(".dw-thread").
             children(".dw-post").removeClass("dw-highlight");
   });
+
+// ------- Layout
+
+resizeRootThread();
 
 //----------------------------------------
    }); // end jQuery onload
