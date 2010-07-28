@@ -401,7 +401,10 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
   background-color: #fcfaf5;
   padding: 1em;
   margin: 1em;
-  outline: #83c5df solid thick; /* was: #9ee */
+  /* My Firifox 3.6 draws outlines very incorrectly for the Rating form,
+  (but correctly for Reply and Edit), use borders instead. */
+  /* outline: #83c5df solid thick; */
+  border: 5px solid #83c5df;
   float: left; /* else: sometimes very wide; reply-form might appear inside! */
 }
 
