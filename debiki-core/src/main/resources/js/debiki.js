@@ -129,7 +129,7 @@ $(".dw-thread-info").click(function() {
   var newPosts = posts.filter(function(index){
     return $(this).find('.dw-date').attr('title') > myLastVersion;
   })
-  newPosts.closest('.dw-thread').addClass('dw-new');
+  newPosts.addClass('dw-new');
 })()
 
 // Indicate which posts are cropped.
