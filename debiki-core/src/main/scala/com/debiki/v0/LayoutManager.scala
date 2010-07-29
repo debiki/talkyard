@@ -339,6 +339,7 @@ class LayoutManager(val debate: Debate) {
   }
 
   def editForm(postId: String): NodeSeq = {
+    val post = debate.post(postId).get
     val editInputId = "dw-fi-edit-"+ postId +"-text"
     val nameInputId = "dw-fi-edit-"+ postId +"-author"
     val editsPending = debate.editsPendingFor(postId).
@@ -352,6 +353,8 @@ class LayoutManager(val debate: Debate) {
           accept-charset='UTF-8'
           method='post'>
         <div class='dw-edits-lbl'>Vote on edits suggested:</div>
+        <p>(If many people like a certain edit suggestion,
+        it will be applied.)</p>
         <div class='dw-edits'>
           {
             for (e <- editsPending)
@@ -363,8 +366,6 @@ class LayoutManager(val debate: Debate) {
           <input class='dw-cancel' type='button' value='Cancel'/>
           <input type='hidden' name='dw-fi-edit-post' value={postId}/>
           <input type='hidden' name='dw-fi-action' value='vote-on-edits'/>
-          <p>If many people like a certain edit suggestion,
-          it will be applied.</p>
         </div>
       </form>
     }
@@ -399,6 +400,8 @@ class LayoutManager(val debate: Debate) {
           method='post'>
         <div class='dw-edits-lbl'
           >Edits already applied, most recent first:</div>
+        <p>(If many people dislike the most recent edit,
+        it will be reverted.) <i>Not implemented</i></p>
         <div class='dw-edits dw-edits-applied'>
           {
             for {
@@ -407,14 +410,14 @@ class LayoutManager(val debate: Debate) {
             } yield
                 editXml(e, applied = true)
           }
+          <h4><a href='#'>Original text, by {post.by}</a></h4>
+          <div>{textToHtml(post.text)._1}</div>
         </div>
         <div class='dw-submit-set'>
           <input class='dw-submit' type='submit' value='Submit votes'/>
           <input class='dw-cancel' type='button' value='Cancel'/>
           <input type='hidden' name='dw-fi-edit-post' value={postId}/>
           <input type='hidden' name='dw-fi-action' value='vote-on-edits'/>
-          <p>If many people dislike the most recent edit applied,
-          it will be reverted. (No, *not implemented.*)</p>
         </div>
       </form>
     }
