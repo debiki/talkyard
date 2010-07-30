@@ -44,69 +44,72 @@ var posts = $(".debiki .dw-post");
 var rateFormTemplate = $("#dw-hidden-templates .dw-rat-template form");
 var debateId = $('.debiki').attr('id');
 
-$(".dw-post, .dw-thread-info").hover(
-  function(event){
-    var nextThread = $(this).closest('.dw-thread');
 
-    if ($(this).hasClass('dw-post')) {
-      // Show the #action-menu, unless the thread is closing (A)
-      // and unless the thread doesn't already have a reply-form (B)
-      // or a rating-form (C) or an edit form child (D),
-      // or a .ui-effects-wrapper (E).
-      // (B, C and D: Better not open many action forms at once.
-      // E: The jQuery-UI fold-in effect seems to wrap the things it
-      // folds-in inside a .ui-effects-wrapper div,
-      // so B, C, D above won't work.
-      // TODO: Wrap reply/rate/edit forms in a div with a dedicated class,
-      // so tests B, C, D, E can be replaced with one single test.)
-      if (!nextThread.hasClass('dw-collapsed') &&  // A
-          !nextThread.children().filter(
-            '.dw-reply-form, .dw-rat-form, .dw-edit-forms, ' + // B, C, D
-            '.ui-effects-wrapper' // E
-            ).length) {
-        $(this).after($('#dw-action-menu'))
-      }
-    }
-    else if (nextThread.find('#dw-action-menu').length) {
-      // This is a .thread-info and it has the #action-menu inside.
-      // This is not a safe place for the menu! If this
-      // .thread-info is clicked, the thread will
-      // collapsed itself, and the #action-menu will be hidden inside
-      // the collapsed thread -- the menu becomes buggy gone -- unless
-      // moved to somewhere safe.
-      $('#dw-hidden-templates').append($('#dw-action-menu'));
-    }
+// ------- Hovering, open/close
 
-    if (threadHovered && threadHovered[0] == nextThread[0])
-      return;
+// (Better not use delegates for very frequent events such as mouseenter.)
+$('.dw-post, .dw-thread-info').mouseenter(onPostOrThreadMouseEnter);
 
-    if ($(this).hasClass('dw-thread-info') &&
-        !threadHovered.hasClass('dw-collapsed')) {
-      // This .thread-info is not visible (it's only visible by default
-      // if the thread is collapsed). Don't fade it in, because the user
-      // might be navigating the #action-menu, and then we don't want
-      // this .thread-info to appear below that menu. Instead,
-      // only open the .thread-info if the threaad's *post* is hovered.
-      return;
-    }
+function onPostOrThreadMouseEnter(event) {
+  var nextThread = $(this).closest('.dw-thread');
 
-    // Fade last thread-info, unless thread collapsed.
-    if (threadHovered && !threadHovered.hasClass('dw-collapsed')) {
-      threadHovered.children('.dw-thread-info')
-                      .stop(true, true).fadeTo(1000, 0);
-      threadHovered.stop(true, true)
-          .removeClass('dw-demarcated')
-          .removeClass('dw-demarcated-fx', 1000);
+  if ($(this).hasClass('dw-post')) {
+    // Show the #action-menu, unless the thread is closing (A)
+    // and unless the thread doesn't already have a reply-form (B)
+    // or a rating-form (C) or an edit form child (D),
+    // or a .ui-effects-wrapper (E).
+    // (B, C and D: Better not open many action forms at once.
+    // E: The jQuery-UI fold-in effect seems to wrap the things it
+    // folds-in inside a .ui-effects-wrapper div,
+    // so B, C, D above won't work.
+    // TODO: Wrap reply/rate/edit forms in a div with a dedicated class,
+    // so tests B, C, D, E can be replaced with one single test.)
+    if (!nextThread.hasClass('dw-collapsed') &&  // A
+        !nextThread.children().filter(
+          '.dw-reply-form, .dw-rat-form, .dw-edit-forms, ' + // B, C, D
+          '.ui-effects-wrapper' // E
+          ).length) {
+      $(this).after($('#dw-action-menu'))
     }
-    // Show thread-info for current thread.
-    nextThread.children('.dw-thread-info').stop(true, true).fadeTo(600, 1);
-    nextThread.stop(true, true)
-        .addClass('dw-demarcated') // gives functionality instantly
-        .addClass('dw-demarcated-fx', 600); // just for class animation effects
-    threadHovered = nextThread;
-  },
-  function(event){
-  });
+  }
+  else if (nextThread.find('#dw-action-menu').length) {
+    // This is a .thread-info and it has the #action-menu inside.
+    // This is not a safe place for the menu! If this
+    // .thread-info is clicked, the thread will
+    // collapsed itself, and the #action-menu will be hidden inside
+    // the collapsed thread -- the menu becomes buggy gone -- unless
+    // moved to somewhere safe.
+    $('#dw-hidden-templates').append($('#dw-action-menu'));
+  }
+
+  if (threadHovered && threadHovered[0] == nextThread[0])
+    return;
+
+  if ($(this).hasClass('dw-thread-info') &&
+      !threadHovered.hasClass('dw-collapsed')) {
+    // This .thread-info is not visible (it's only visible by default
+    // if the thread is collapsed). Don't fade it in, because the user
+    // might be navigating the #action-menu, and then we don't want
+    // this .thread-info to appear below that menu. Instead,
+    // only open the .thread-info if the threaad's *post* is hovered.
+    return;
+  }
+
+  // Fade last thread-info, unless thread collapsed.
+  if (threadHovered && !threadHovered.hasClass('dw-collapsed')) {
+    threadHovered.children('.dw-thread-info')
+                    .stop(true, true).fadeTo(1000, 0);
+    threadHovered.stop(true, true)
+        .removeClass('dw-demarcated')
+        .removeClass('dw-demarcated-fx', 1000);
+  }
+  // Show thread-info for current thread.
+  nextThread.children('.dw-thread-info').stop(true, true).fadeTo(600, 1);
+  nextThread.stop(true, true)
+      .addClass('dw-demarcated') // gives functionality instantly
+      .addClass('dw-demarcated-fx', 600); // just for class animation effects
+  threadHovered = nextThread;
+}
 
 // Open/close threads if the thread-info div is clicked.
 $(".dw-thread-info").click(function() {
