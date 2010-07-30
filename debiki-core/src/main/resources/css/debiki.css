@@ -314,10 +314,14 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
   */
 }
 
-.dw-post-info .dw-rats li {
+.dw-post-info .dw-rats .dw-rat {
   float: left;
   padding: 0 1px 3px 0.5em;
   background-color: #e7e7e7;
+}
+
+.dw-post-info .dw-rats .dw-rat.dw-you-rated {
+  background-color: #f4c4f4;
 }
 
 .dw-thread-info .dw-rat-tag,

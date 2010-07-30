@@ -1,7 +1,9 @@
 // vim: fdm=marker et ts=2 sw=2
 
-// In this file: Implementation of the Debiki module, and
-// a jQuery onload handler.
+// In this file:
+// - jQuery extension functinos, prefixed with "dw_" to avoid name clashes
+// - The implementation of the Debiki module
+// - A jQuery onload handler
 
 Debiki = {};  // TODO: Error handling?
 Debiki.v0 = {};
@@ -9,6 +11,18 @@ Debiki.v0 = {};
 //========================================
    (function(){
 //========================================
+
+//----------------------------------------
+// jQuery object extensions
+//----------------------------------------
+
+jQuery.fn.dw_disable = function() {
+  return this.each(function(){ jQuery(this).attr('disabled', 'disabled'); });
+};
+
+jQuery.fn.dw_enable = function() {
+  return this.each(function(){ jQuery(this).removeAttr('disabled'); });
+};
 
 //----------------------------------------
 // Implement public functions
@@ -21,6 +35,13 @@ Settings.makeEditUrl = function(debateId, postId) {
   return debateId +'/edits/proposed/post/'+ postId +'.html'
 };
 
+Settings.makeRatePostUrl = function(debateId, postId) {
+  // Default:
+  // (Firefox doesn't accept an Ajax post request "" (i.e. the same page);
+  // nsIXMLHttpRequest.open fails with NS_ERROR_ILLEGAL_VALUE.)
+  return '?';
+};
+
 
 //----------------------------------------
 // Export functions
@@ -28,10 +49,13 @@ Settings.makeEditUrl = function(debateId, postId) {
 
 // A function that builds the GET line to download edit suggestions
 // for a certain post.
-Debiki.v0.setEditUrl = function(editUrlBuilder) {
-  Settings.makeEditUrl = editUrlBuilder;
+Debiki.v0.setEditUrl = function(urlBuilder) {
+  Settings.makeEditUrl = urlBuilder;
 };
 
+Debiki.v0.setRatePostUrl = function(urlBuilder) {
+  Settings.makeRatePostUrl = urlBuilder;
+};
 
 // Onload
 //----------------------------------------
@@ -335,9 +359,9 @@ $('#dw-action-menu .dw-rate').button().click(function(){
   // Warning: Some duplicated code, see .dw-reply and dw-edit click() below.
   var thread = $(this).closest('.dw-thread');
   clearfix(thread); // ensures the rating appears nested inside the thread
-  var post = thread.children('.dw-post');
+  var $post = thread.children('.dw-post');
   var $rateForm = rateFormTemplate.clone(true);
-  var postId = post.attr('id').substr(8, 999); // drop initial 'dw-post-'
+  var postId = $post.attr('id').substr(8, 999); // drop initial 'dw-post-'
   $rateForm.find("input[name='dw-fi-post']").attr('value', postId);
 
   // The rating-value inputs are labeled checkboxes. Hence they
@@ -349,8 +373,55 @@ $('#dw-action-menu .dw-rate').button().click(function(){
   $rateForm.find("input[type='checkbox']").click(function(){
     $rateForm.find("input[type='submit']").button("option", "disabled", false);
   });
-  //
-  // Fancy GUI
+
+  // Ajax-post ratings on submit.
+  //  - Disable form until request completed.
+  //  - When completed, highlight the user's own ratings.
+  $rateForm.submit(function(){
+    // Find rating tags selected
+    var ratedTags = $rateForm.find("input:checked").map(function(){
+      return $(this).val().toLowerCase();
+    }).get();
+
+    $.post(Settings.makeRatePostUrl(debateId, postId),
+          $rateForm.serialize(), function(data){
+
+        // Find the new version of the post, with new ratings.
+        var $wrap =
+            // From jQuery 1.4.2, jQuery.fn.load():
+            // Create a dummy div to hold the results
+            jQuery('<div />')
+            // inject the contents of the document in, removing the scripts
+            // to avoid any 'Permission Denied' errors in IE
+            .append(data.replace(/<script(.|\s)*?\/script>/gi, ''));
+        // Don't lookup by id -- won't work for certain documents
+        // (at leat not for JSPWiki pages), because somewhere inside
+        // jQuery Sizzle, getElementById returns 'false'.
+        // Don't: $wrap.find('#'+ $post.attr('id'));
+        // This works:
+        var $newPost = $wrap.find('.dw-post[id="dw-post-' + postId + '"]');
+        $newPost.replaceAll($post);
+
+        // Highligt the user's ratings.
+        $newPost.find('.dw-rats .dw-rat').each(function(){
+            var text = $(this).find('.dw-rat-tag').text().toLowerCase();
+            for (ix in ratedTags) {
+              if (text == ratedTags[ix]) {
+                $(this).addClass('dw-you-rated');
+                break;
+              }
+            }
+          });
+
+        $newPost.mouseenter(onPostOrThreadMouseEnter);
+        slideAwayRemove($rateForm);
+      }, 'html');
+
+    $rateForm.find('input').dw_disable();
+    return false;
+  });
+
+  // Fancy fancy
   // Seems this must be done *after* the rateFormTemplate has been
   // copied --- otherwise, if the Cancel button is clicked,
   // the rateFormTemplate itself has all its jQueryUI markup removed.
