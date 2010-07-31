@@ -110,16 +110,18 @@ function onPostOrThreadMouseEnter(event) {
     return;
 
   if ($(this).hasClass('dw-thread-info') &&
-      !threadHovered.hasClass('dw-collapsed')) {
-    // This .thread-info is not visible (it's only visible by default
-    // if the thread is collapsed). Don't fade it in, because the user
-    // might be navigating the #action-menu, and then we don't want
-    // this .thread-info to appear below that menu. Instead,
-    // only open the .thread-info if the threaad's *post* is hovered.
+      threadHovered && !threadHovered.hasClass('dw-collapsed')) {
+    // This .thread-info is not visible (it's invisible by default
+    // unless the thread is collapsed). Don't fade it in, because the user
+    // might currently be navigating the #action-menu of the parent post,
+    // (the action-menu would partially overlap this thread-info)
+    // and this .thread-info shouldn't pop up below the menu. Instead,
+    // only fade-in this .thread-info if this thread's *post* is hovered
+    // (then the parent post's action-menu is hidden for sure).
     return;
   }
 
-  // Fade last thread-info, unless thread collapsed.
+  // Fade out last thread-info, unless thread collapsed.
   if (threadHovered && !threadHovered.hasClass('dw-collapsed')) {
     threadHovered.children('.dw-thread-info')
                     .stop(true, true).fadeTo(1000, 0);
