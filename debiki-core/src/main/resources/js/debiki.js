@@ -42,6 +42,9 @@ Settings.makeRatePostUrl = function(debateId, postId) {
   return '?';
 };
 
+Settings.makeReplyUrl = function(debateId, postId) {
+  return '?';
+}
 
 //----------------------------------------
 // Export functions
@@ -55,6 +58,10 @@ Debiki.v0.setEditUrl = function(urlBuilder) {
 
 Debiki.v0.setRatePostUrl = function(urlBuilder) {
   Settings.makeRatePostUrl = urlBuilder;
+};
+
+Debiki.v0.setReplyUrl = function(urlBuilder) {
+  Settings.makeReplyUrl = urlBuilder;
 };
 
 // Onload
@@ -309,6 +316,46 @@ catch (e) {
   else throw e;
 }
 
+// ------- Update
+
+// Finds new/updated versions of threads/ratings/edits in newDebateHtml,
+// adds them / replaces [the currently displayed but out-of-date versions].
+// Highlights the changes done.
+// Does not reorder elems currently shown (even if their likeability have
+// changed significantly), to avoid surprising the user (by
+// shuffling everything around).
+function updateDebate(newDebateHtml) {
+  var $curDebate = $('.dw-debate');
+  var $newDebate = buildTagFind(newDebateHtml, '.dw-debate');
+  $newDebate.find('.dw-thread')
+    .filter(function(){
+        // Add new threads
+        var parentThreadId = $(this).parents('.dw-thread').attr('id');
+        var isNewThread = $curDebate.find('#'+ this.id).length == 0;
+        var $oldParentThread = $curDebate.find('#'+ parentThreadId);
+        var isSubThread = !$oldParentThread.length;
+        if (!isNewThread || isSubThread) {
+          // A thread that is a sub-thread of another new thread, is added
+          // automatically when that other new thread is added.
+          return false;
+        }
+        $(this).insertAfter($oldParentThread.children('.dw-post'));
+        return true;
+        // TODO: Include recently edited threads?
+        // Or handle them separately?
+      })
+    .mouseenter(onPostOrThreadMouseEnter)
+    .find('.dw-post')
+    .mouseenter(onPostOrThreadMouseEnter)
+    .addClass('dw-new'); // highlight new posts (also in sub threads)
+
+  //$newThread.insertAfter($post)
+  //    .mouseenter(onPostOrThreadMouseEnter);
+  //$newThread.find('> .dw-post')
+  //    .mouseenter(onPostOrThreadMouseEnter)
+  //    .addClass('dw-new');
+}
+
 // ------- Forms and actions
 
 // Action <form> cancel button -- won't work for the Edit form...?
@@ -450,25 +497,39 @@ rateFormTemplate.find('.dw-show-more-rat-tags').show().
 
 $("#dw-action-menu .dw-reply").button().click(function() {
   // Warning: Some duplicated code, see .dw-rat-tag and dw-edit click() above.
-  var thread = $(this).closest('.dw-thread');
-  clearfix(thread); // ensures the reply appears nested inside the thread
-  var post = thread.children('.dw-post');
-  var reply = $("#dw-hidden-templates .dw-reply-template").
+  var $thread = $(this).closest('.dw-thread');
+  clearfix($thread); // ensures the reply appears nested inside the thread
+  var $post = $thread.children('.dw-post');
+  var $replyForm = $("#dw-hidden-templates .dw-reply-template").
                 children().clone(true);
-  var postId = post.attr('id').substr(8, 999); // drop initial "dw-post-"
-  reply.find("input[name='dw-fi-post']").attr('value', postId);
-  makeIdsUniqueUpdateLabels(reply, '-post-'+ postId);
-  reply.resizable({
-      alsoResize: reply.find('textarea'),
+  var postId = $post.attr('id').substr(8, 999); // drop initial "dw-post-"
+  $replyForm.find("input[name='dw-fi-post']").attr('value', postId);
+  makeIdsUniqueUpdateLabels($replyForm, '-post-'+ postId);
+  $replyForm.resizable({
+      alsoResize: $replyForm.find('textarea'),
       resize: resizeRootThreadExtraWide,
       stop: resizeRootThreadNowAndLater
     });
-  // Build fancy jQuery UI widgets
-  reply.find('.dw-submit-set input').button();
-  reply.find('label').addClass( // color and font that matches <input> buttons
+  //
+  // Ajax-post reply on submit.
+  //  - Disable form until request completed.
+  //  - When completed, insert the new reply, highlighted.
+  $replyForm.submit(function(){
+    $.post(Settings.makeReplyUrl(debateId, postId),
+        $replyForm.serialize(), function(newDebateHtml){
+      updateDebate(newDebateHtml);
+      slideAwayRemove($replyForm);
+    }, 'html');
+    $replyForm.find('input').dw_disable();
+    return false;
+  });
+  //
+  // Fancy fancy
+  $replyForm.find('.dw-submit-set input').button();
+  $replyForm.find('label').addClass( // color and font matching <input> buttons
     'dw-color-from-ui-state-default dw-font-from-ui-widget');
   // Reveal the form
-  slideInActionForm(reply, thread);
+  slideInActionForm($replyForm, $thread);
   dismissActionMenu();
 });
 
@@ -623,6 +684,28 @@ function makeIdsUniqueUpdateLabels(jqueryObj, suffix) {
     });
 }
 
+function buildTagFind(html, selector) {
+  if (selector.indexOf('#') != -1) throw Error('Cannot lookup by ID: '+
+      'getElementById might return false, so use buildTagFindId instead');
+  // From jQuery 1.4.2, jQuery.fn.load():
+  var $wrap =
+      // Create a dummy div to hold the results
+      jQuery('<div />')
+      // inject the contents of the document in, removing the scripts
+      // to avoid any 'Permission Denied' errors in IE
+      .append(html.replace(/<script(.|\s)*?\/script>/gi, ''));
+  var $tag = $wrap.find(selector);
+  return $tag;
+}
+
+// Builds HTML tags from `html' and returns the tag with the specified id.
+// Works also when $.find('#id') won't (because of corrupt XML?).
+function buildTagFindId(html, id) {
+  if (id.indexOf('#') != -1) throw Error('Include no # in id');
+  var $tag = buildTagFind(html, '[id="'+ id +'"]');
+  return $tag;
+}
+
 // Highlight the parent post when hovering over a reference.
 $(".dw-parent-ref").hover(
   function(event){
@@ -645,5 +728,6 @@ resizeRootThread();
 //========================================
    })(); // end Debiki module
 //========================================
+
 
 
