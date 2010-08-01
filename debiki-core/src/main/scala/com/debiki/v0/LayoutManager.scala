@@ -272,8 +272,6 @@ class LayoutManager(val debate: Debate) {
     else
       <ul class="dw-thread-info">
         <li class="dw-post-count">{count} replies</li>
-        <li class="dw-rat-tag">interesting</li>
-        <li class="dw-rat-tag">funny</li>
       </ul>
   }
 
