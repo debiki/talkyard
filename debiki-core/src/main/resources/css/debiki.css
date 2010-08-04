@@ -302,7 +302,9 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
 .dw-post-info .dw-owner-info {
   float: left;
   padding-left: 0.3em; /* no <li> to the left, pad only a little bit */
-  margin-right: 0.5em; /* post-info <li>s to the right */
+  padding-bottom: 0.4em;
+  padding-right: 0.5em; /* post-info <li>s to the right */
+  background-color: #e7e7e7;
 }
 
 .dw-post-info .dw-rats {
@@ -551,7 +553,7 @@ form.dw-rat-form .dw-more-rat-tags label {
 }
 
 .dw-edit-forms .ui-accordion-content {
-  padding: 1em 0.2em 0 0.6em !important; /* otherwise too much padding */
+  padding: 0.7em 0.2em 0 0.6em !important; /* otherwise too much padding */
   background: #f2f2f2; /* jQuery UI's default bg is somewhat obtrusive*/
   border: 1px solid #BBB;
 }
@@ -575,6 +577,16 @@ form.dw-rat-form .dw-more-rat-tags label {
 .dw-edit-vote-btns,
 .dw-edit-liking-stats {
   margin: 1em 0 0;
+}
+
+.dw-edit-dates {
+  margin: 0 0 1.1em;
+}
+
+.dw-edit-dates,
+.dw-edit-liking-stats {
+  font-style: italic;
+  font-size: 85%;
 }
 
 /* === Misc === */

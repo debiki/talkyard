@@ -277,7 +277,8 @@ class LayoutManager(val debate: Debate) {
 
   private def postXml(p: Post): NodeSeq = {
     val cssPostId = "dw-post-"+ p.id
-    val lastEditApplied = debate.editsAppliedTo(p.id).headOption
+    val editApplications = debate.editsAppliedTo(p.id)
+    val lastEditApplied = editApplications.headOption
     val (xmlText, numLines) = textToHtml(
                             lastEditApplied.map(_.result).getOrElse(p.text))
     val long = numLines > 9
@@ -288,11 +289,22 @@ class LayoutManager(val debate: Debate) {
       <div class='dw-post-info'>
         <div class='dw-owner-info'>By&#160;<span class="dw-owner">{
             spaceToNbsp(p.by)
-          }</span>{
-            // TODO: If the original author has voted on all edits
-            // proposed, write "<his/her-name> et al.",
-            // otherwise write "Various people"
-            if (lastEditApplied.isDefined) <i> et al.</i> else ""
+          }</span><br/>{
+            // (TODO) If the original author has voted on all edits
+            // proposed, write "<his/her-name> et al.". ("et al." suggests
+            // that the original author *likes* the edits done.)
+            if (editApplications.isEmpty) Nil
+            else
+              <span>Edited&#160;by&#160;</span>
+              <span>{
+                  if (editApplications.map(
+                        a => debate.editsById(a.editId).by).distinct.length > 1)
+                    <span>various people</span>
+                  else
+                    <span class="dw-owner">{
+                      debate.editsById(lastEditApplied.get.editId).by
+                    }</span>
+              }</span>
           }
         </div>
         <span class="dw-post-liking">{score.liking}</span>
@@ -356,7 +368,7 @@ class LayoutManager(val debate: Debate) {
         <div class='dw-edits'>
           {
             for (e <- editsPending)
-            yield editXml(e, applied = false)
+            yield editXml(e, applied = None)
           }
         </div>
         <div class='dw-submit-set'>
@@ -406,7 +418,7 @@ class LayoutManager(val debate: Debate) {
               ea <- editsApplied
               e = debate.editsById(ea.editId)
             } yield
-                editXml(e, applied = true)
+                editXml(e, Some(ea))
           }
           <h4><a href='#'>Original text, by {post.by}</a></h4>
           <div>{textToHtml(post.text)._1}</div>
@@ -429,14 +441,18 @@ class LayoutManager(val debate: Debate) {
     </div>
   }
 
-  private def editXml(e: Edit, applied: Boolean): NodeSeq = {
-    val appl = if (applied) "applied-" else ""
-    val likeId = "dw-fi-like-edit-"+ appl + e.id
-    val dissId = "dw-fi-diss-edit-"+ appl + e.id
-    val name = "dw-fi-vote-edit-"+ e.id
-    <h4><a href='#'>{e.by}</a></h4>
+  private def editXml(edit: Edit, applied: Option[EditApplied]): NodeSeq = {
+    val appl = if (applied.isDefined) "applied-" else ""
+    val likeId = "dw-fi-like-edit-"+ appl + edit.id
+    val dissId = "dw-fi-diss-edit-"+ appl + edit.id
+    val name = "dw-fi-vote-edit-"+ edit.id
+    <h4><a href='#'>By {edit.by}</a></h4>
     <div>
-      <div>{textToHtml(e.text)._1}</div>
+      <div class='dw-edit-dates'>Submitted on { toIso8601(edit.date) +
+          (if (applied.isDefined) ", applied on "+ applied.get.date
+            else "")
+      }</div>
+      <div>{textToHtml(edit.text)._1}</div>
       <div class='dw-edit-vote-btns'>
         <input id={likeId} type='radio' name={name} value='1'/>
         <label for={likeId}>Like</label>
@@ -444,14 +460,14 @@ class LayoutManager(val debate: Debate) {
         <label for={dissId}>Dislike</label>
       </div>
       {/*<a class='dw-show-edit-liking-stats'>Complicated statistics...</a>*/}
-      <pre class='dw-edit-liking-stats'>{
-          val liking = statscalc.likingFor(e)
-          "Votes: "+ liking.voteCount +
-          (if (liking.voteCount == 0) ""
-           else "\nLiking: %.0f%%" format 100 * liking.frac) +
-          ("\nLower bound: %.0f%%" format 100 * liking.lowerBound) +
-          ("\nUpper bound: %.0f%%" format 100 * liking.upperBound)
-      }</pre>
+      <div class='dw-edit-liking-stats'>{
+          val liking = statscalc.likingFor(edit)
+          liking.voteCount +" votes, liking: "+
+          (if (liking.voteCount == 0) "?"
+           else "%.0f%%" format 100 * liking.frac) +
+          ", 80%% confidence interval: %.0f%%...%.0f%%".format(
+                100 * liking.lowerBound, 100 * liking.upperBound)
+      }</div>
      </div>
   }
 
