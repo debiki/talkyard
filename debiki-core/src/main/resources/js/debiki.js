@@ -402,6 +402,16 @@ function dismissActionMenu() {
   $('#dw-action-menu').appendTo($('#dw-hidden-templates'));
 }
 
+// Remembers the user name in a cookie, synchronizes with
+// edit/reply forms.
+function syncNameInputWithNameCookie($form) {
+  var $nameInput = $form.find("input[name='dw-fi-by']");
+  $nameInput.val($.cookie('dwUserName'));
+  $nameInput.blur(function(){
+      $.cookie('dwUserName', $nameInput.val());
+    });
+}
+
 // ------- Rating
 
 $('#dw-action-menu .dw-rate').button().click(function(){
@@ -504,6 +514,7 @@ $("#dw-action-menu .dw-reply").button().click(function() {
                 children().clone(true);
   var postId = $post.attr('id').substr(8, 999); // drop initial "dw-post-"
   $replyForm.find("input[name='dw-fi-post']").attr('value', postId);
+  syncNameInputWithNameCookie($replyForm);
   makeIdsUniqueUpdateLabels($replyForm, '-post-'+ postId);
   $replyForm.resizable({
       alsoResize: $replyForm.find('textarea'),
@@ -585,6 +596,8 @@ $("#dw-action-menu .dw-edit").button().click(function() {
     $post.find('.dw-text p').each(function(){
           curText += $(this).text() + '\n\n'; });
     $editsYoursForm.find('textarea').val(curText.trim() + '\n');
+
+    syncNameInputWithNameCookie($editsYoursForm);
 
     // Make forms and accordions resizable
     $editsYoursForm.resizable({
