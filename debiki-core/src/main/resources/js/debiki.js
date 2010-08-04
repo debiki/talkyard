@@ -24,6 +24,11 @@ jQuery.fn.dw_enable = function() {
   return this.each(function(){ jQuery(this).removeAttr('disabled'); });
 };
 
+jQuery.fn.dw_postModTime = function() {
+  return this.find(
+      '.dw-post-info .dw-last-changed .dw-date').attr('title');
+};
+
 //----------------------------------------
 // Implement public functions
 //----------------------------------------
@@ -163,9 +168,9 @@ $(".dw-thread-info").click(function() {
   var myLastVersion = $.cookie('myLastPageVersion');
   if (!myLastVersion) return;
   var newPosts = posts.filter(function(index){
-    return $(this).find('.dw-date').attr('title') > myLastVersion;
+    return $(this).dw_postModTime() > myLastVersion;
   })
-  newPosts.addClass('dw-new');
+  newPosts.addClass('dw-post-new'); // TODO: sometimes .dw-post-edited instead
 })()
 
 // Indicate which posts are cropped.
@@ -318,7 +323,7 @@ catch (e) {
 
 // ------- Update
 
-// Finds new/updated versions of threads/ratings/edits in newDebateHtml,
+// Finds new/updated versions of posts/edits in newDebateHtml,
 // adds them / replaces [the currently displayed but out-of-date versions].
 // Highlights the changes done.
 // Does not reorder elems currently shown (even if their likeability have
@@ -327,33 +332,33 @@ catch (e) {
 function updateDebate(newDebateHtml) {
   var $curDebate = $('.dw-debate');
   var $newDebate = buildTagFind(newDebateHtml, '.dw-debate');
-  $newDebate.find('.dw-thread')
-    .filter(function(){
-        // Add new threads
-        var parentThreadId = $(this).parents('.dw-thread').attr('id');
-        var isNewThread = $curDebate.find('#'+ this.id).length == 0;
-        var $oldParentThread = $curDebate.find('#'+ parentThreadId);
-        var isSubThread = !$oldParentThread.length;
-        if (!isNewThread || isSubThread) {
-          // A thread that is a sub-thread of another new thread, is added
-          // automatically when that other new thread is added.
-          return false;
-        }
-        $(this).insertAfter($oldParentThread.children('.dw-post'));
-        return true;
-        // TODO: Include recently edited threads?
-        // Or handle them separately?
-      })
-    .mouseenter(onPostOrThreadMouseEnter)
-    .find('.dw-post')
-    .mouseenter(onPostOrThreadMouseEnter)
-    .addClass('dw-new'); // highlight new posts (also in sub threads)
-
-  //$newThread.insertAfter($post)
-  //    .mouseenter(onPostOrThreadMouseEnter);
-  //$newThread.find('> .dw-post')
-  //    .mouseenter(onPostOrThreadMouseEnter)
-  //    .addClass('dw-new');
+  $newDebate.find('.dw-thread').each(function(){
+      var parentId = $(this).parents('.dw-thread').attr('id');
+      var $oldParent = $curDebate.find('#'+ parentId);
+      var $oldThis = $curDebate.find('#'+ this.id);
+      var isNewThread = $oldThis.length == 0;
+      var isSubThread = !$oldParent.length;
+      var isPostEdited = !isNewThread &&
+              $oldThis.children('.dw-post').dw_postModTime() <
+              $(this).children('.dw-post').dw_postModTime();
+      // TODO: Some more jQuery should be registered below, e.g. resizing.
+      if (isPostEdited) {
+        $(this).children('.dw-post')
+          .replaceAll($oldThis.children('.dw-post'))
+          .mouseenter(onPostOrThreadMouseEnter)
+          .addClass('dw-post-edited'); // outlines it
+      }
+      else if (isNewThread && !isSubThread) {
+        // (A thread that *is* a sub-thread of another new thread, is added
+        // automatically when that other new thread is added.)
+        $(this)
+          .insertAfter($oldParent.children('.dw-post'))
+          .mouseenter(onPostOrThreadMouseEnter)
+          .find('.dw-post')
+          .mouseenter(onPostOrThreadMouseEnter)
+          .addClass('dw-post-new'); // outlines it, and its sub thread posts
+      }
+    })
 }
 
 // ------- Forms and actions

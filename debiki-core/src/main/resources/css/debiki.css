@@ -251,8 +251,9 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
   z-index: 10;
 }
 
-.dw-new {
-  outline: #f4c4f4 solid thick; /* make unread threads stand out */
+.dw-post-edited,
+.dw-post-new {
+  outline: #f4c4f4 solid thick;
 }
 
 /* --- Thread summary ---*/
