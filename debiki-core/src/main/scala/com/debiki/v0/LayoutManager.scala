@@ -282,7 +282,7 @@ class LayoutManager(val debate: Debate) {
                             lastEditApplied.map(_.result).getOrElse(p.text))
     val long = numLines > 9
     val cropped_s = if (long) " dw-cropped-s" else ""
-    val date = toIso8601(p.date)
+    val date = toIso8601(lastEditApplied.map(_.date).getOrElse(p.date))
     val score = statscalc.scoreFor(p.id)
     <div id={cssPostId} class={"dw-post dw-cropped-e" + cropped_s}>
       <div class='dw-post-info'>
