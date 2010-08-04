@@ -8,15 +8,6 @@ import scala.collection.JavaConversions._
 import scala.collection.{mutable => mut}
 import java.{io => jio}
 
-object HtmlUtil {
-
-  val htmlPrefix =
-"""<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
- "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">"""
-
-}
-
 /** Converts a debate from YAML to HTML.
  */
 private[debiki] object App {
@@ -88,7 +79,7 @@ private[debiki] object App {
         </body>
       </html>
 
-    val html = HtmlUtil.htmlPrefix + xml
+    val html = "<!DOCTYPE html>\n" + xml
     val writer = new jio.FileWriter(out + debate.id + ".html")
     writer.write(html.toString)
     writer.close
@@ -109,7 +100,7 @@ private[debiki] object App {
     val editPropsDir = out + debate.id +'/'+ Paths.EditsProposed
     new jio.File(editPropsDir).mkdirs()
     val writer = new jio.FileWriter(editPropsDir + postId +".html")
-    writer.write(HtmlUtil.htmlPrefix + xml.toString)
+    writer.write("<!DOCTYPE html>\n" + xml.toString)
     writer.close
   }
 
