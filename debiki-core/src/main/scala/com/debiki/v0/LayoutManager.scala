@@ -273,29 +273,29 @@ class LayoutManager(val debate: Debate) {
     val editApps = debate.editsAppliedTo(post.id)
     val lastEditApp = editApps.headOption
     val lastEditDate = editApps.headOption.map(ea => toIso8601(ea.date))
-    val cssPostId = "dw-"+ post.id
+    val cssPostId = "dw-post-"+ post.id
     val (xmlText, numLines) =
         textToHtml(lastEditApp.map(_.result).getOrElse(post.text))
     val long = numLines > 9
     val cropped_s = if (long) " dw-cropped-s" else ""
 
-    <span class='dw-cmt-x'>[-]</span>
+    // the – on the next line is an `en dash' not a minus
+    <span class='dw-cmt-x'>[–]</span>
     <div class='dw-cmt-hdr'>
-      By <span class='dw-cmt-by'>{spaceToNbsp(post.by)}</span>,
+      By <a class='dw-cmt-by'>{post.by}</a>,
       <abbr class='dw-cmt-at dw-date' title={dateCreated}>{dateCreated}</abbr>,
-      rated <ol class='dw-cmt-rats'><li>interesting</li></ol>
-      {/* If closed: <span class='dw-cmt-re-cnt'>{count} replies</span> */}
-      {
+      rated <ol class='dw-cmt-rats'><li>interesting</li></ol> {
+        // If closed: <span class='dw-cmt-re-cnt'>{count} replies</span>
         if (editApps.isEmpty) Nil
         else
           <div class='dw-cmt-hdr-ed'>Edited by {
             if (editApps.map(a => debate.editsById(a.editId).by).
                 distinct.length > 1)
-              <span>various people</span>
+              <a>various people</a>
            else
-              <span class='dw-cmt-by'>{
+              <a class='dw-cmt-by'>{
                 debate.editsById(lastEditApp.get.editId).by
-              }</span>
+              }</a>
             },
             <abbr class='dw-cmt-at dw-date' title={lastEditDate.get}>{
                 lastEditDate.get}</abbr>
@@ -305,7 +305,7 @@ class LayoutManager(val debate: Debate) {
     <div id={cssPostId} class={"dw-cmt-bdy dw-cropped-e" + cropped_s}>
       { xmlText }
     </div>
-    //<a class='dw-cmt-act' href='#'>React</a>
+    //<a class='dw-cmt-act' href={'#'+ cssPostId}>React</a>
   }
 
 /*

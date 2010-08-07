@@ -142,8 +142,15 @@ $(".dw-cmt-x").click(function() {
   var thread = $(this).closest(".dw-cmt");
   resizeRootThreadExtraWide();
   thread.
-    children(":not(.dw-cmt-hdr, .dw-cmt-x)")
-      .stop(true,true).slideToggle(800).
+    children(":not(.dw-cmt-hdr, .dw-cmt-x)").
+      stop(true,true).slideToggle(800).
+    end().
+    children(".dw-cmt-x").
+      each(function(){
+        // The – is not a - but an &endash;.
+        var newText = $(this).text().indexOf('+') == -1 ? '[+]' : '[–]';
+        $(this).text(newText);
+      }).
     end().
     stop(true, true).
     toggleClass('dw-collapsed').
@@ -158,7 +165,8 @@ $(".dw-cmt-x").click(function() {
   var newPosts = posts.filter(function(index){
     return $(this).dw_postModTime() > myLastVersion;
   })
-  newPosts.addClass('dw-post-new'); // TODO: sometimes .dw-post-edited instead
+  newPosts.closest('.dw-cmt').addClass('dw-post-new');
+  // TODO: sometimes .dw-post-edited instead of -new
 })()
 
 // Indicate which posts are cropped.
@@ -285,7 +293,7 @@ try {
   // Bug: Resizing a thread might toggle it collapsed / expanded, since
   // a click on the .thread-info might happen.
   $('.debiki .dw-thread-info').each(function(index) {
-    var thread = $(this).closest('.dw-thread');
+    var thread = $(this).closest('.dw-cmt');
     $(this).resizable({
         alsoResize: thread,
         resize: resizeRootThreadExtraWide,
@@ -320,36 +328,43 @@ catch (e) {
 function updateDebate(newDebateHtml) {
   var $curDebate = $('.dw-debate');
   var $newDebate = buildTagFind(newDebateHtml, '.dw-debate');
-  $newDebate.find('.dw-thread').each(function(){
-      var parentId = $(this).parents('.dw-thread').attr('id');
+  $newDebate.find('.dw-cmt').each(function(){
+      var parentId = $(this).parents('.dw-cmt').attr('id');
       var $oldParent = $curDebate.find('#'+ parentId);
       var $oldThis = $curDebate.find('#'+ this.id);
       var isNewThread = $oldThis.length == 0;
       var isSubThread = !$oldParent.length;
       var isPostEdited = !isNewThread &&
-              $oldThis.children('.dw-post').dw_postModTime() <
-              $(this).children('.dw-post').dw_postModTime();
+              $oldThis.children('.dw-cmt-bdy').dw_postModTime() <
+              $(this).children('.dw-cmt-bdy').dw_postModTime();
       // TODO: Some more jQuery should be registered below, e.g. resizing.
       if (isPostEdited) {
-        $(this).children('.dw-post')
-          .replaceAll($oldThis.children('.dw-post'))
+        $(this).children('.dw-cmt-bdy')
+          .replaceAll($oldThis.children('.dw-cmt-bdy'))
           .mouseenter(onPostOrThreadMouseEnter)
-          .addClass('dw-post-edited'); // outlines it
+          .addClass('dw-post-edited'); // outlines it - TODO: Add to cmt not cmt-bdy
       }
       else if (isNewThread && !isSubThread) {
         // (A thread that *is* a sub-thread of another new thread, is added
         // automatically when that other new thread is added.)
         $(this)
-          .insertAfter($oldParent.children('.dw-post'))
+          .addClass('dw-post-new') // outlines it, and its sub thread posts
+          .insertAfter($oldParent.children('.dw-cmt-bdy'))
           .mouseenter(onPostOrThreadMouseEnter)
-          .find('.dw-post')
-          .mouseenter(onPostOrThreadMouseEnter)
-          .addClass('dw-post-new'); // outlines it, and its sub thread posts
+          .find('.dw-cmt-bdy')
+          .mouseenter(onPostOrThreadMouseEnter);
       }
     })
 }
 
 // ------- Forms and actions
+
+// Replace the .dw-act link with reply/edit/rate buttons.
+/*
+$('.dw-cmt-act').each(function(){
+    $(this).replaceWith($('#dw-action-menu').clone());
+  });
+*/
 
 // Action <form> cancel button -- won't work for the Edit form...?
 function slideAwayRemove($form) {
@@ -371,7 +386,7 @@ $('.debiki').delegate(
 // easier to understand how they are related to other elems
 // if they slide in, instead of just appearing abruptly.
 function slideInActionForm($form, $thread) { 
-  if ($thread) $form.insertAfter($thread.children('.dw-post'));
+  if ($thread) $form.insertAfter($thread.children('.dw-cmt-bdy'));
   else $thread = $form.closest('.dw-cmt');
   // Extra width prevents float drop.
   resizeRootThreadExtraWide();
@@ -451,7 +466,7 @@ $('#dw-action-menu .dw-rate').button().click(function(){
         // jQuery Sizzle, getElementById returns 'false'.
         // Don't: $wrap.find('#'+ $post.attr('id'));
         // This works:
-        var $newPost = $wrap.find('.dw-post[id="dw-post-' + postId + '"]');
+        var $newPost = $wrap.find('.dw-cmt-bdy[id="dw-post-' + postId + '"]');
         $newPost.replaceAll($post);
 
         // Highligt the user's ratings.
@@ -500,9 +515,9 @@ rateFormTemplate.find('.dw-show-more-rat-tags').show().
 
 $("#dw-action-menu .dw-reply").button().click(function() {
   // Warning: Some duplicated code, see .dw-rat-tag and dw-edit click() above.
-  var $thread = $(this).closest('.dw-thread');
+  var $thread = $(this).closest('.dw-cmt');
   clearfix($thread); // ensures the reply appears nested inside the thread
-  var $post = $thread.children('.dw-post');
+  var $post = $thread.children('.dw-cmt-bdy');
   var $replyForm = $("#dw-hidden-templates .dw-reply-template").
                 children().clone(true);
   var postId = $post.attr('id').substr(8, 999); // drop initial "dw-post-"
@@ -541,9 +556,9 @@ $("#dw-action-menu .dw-reply").button().click(function() {
 
 $("#dw-action-menu .dw-edit").button().click(function() {
   // Warning: Some duplicated code, see .dw-rat-tag and .dw-reply click() above.
-  var $thread = $(this).closest('.dw-thread');
+  var $thread = $(this).closest('.dw-cmt');
   clearfix($thread); // makes edit area appear inside $thread
-  var $post = $thread.children('.dw-post');
+  var $post = $thread.children('.dw-cmt-bdy');
   // Create a div into which to load the edit <form>s -- the div class should
   // match the edit form div's class, so the action-menu won't be displayed
   // again until the request has completed and the edit form has been closed.
@@ -673,7 +688,7 @@ $("#dw-action-menu .dw-edit").button().click(function() {
 
 // Applies the clearfix fix to `thread' iff it has no child threads.
 function clearfix(thread) {
-  if (!thread.find(':has(.dw-thread)').length) {
+  if (!thread.find(':has(.dw-cmt)').length) {
     thread.addClass('ui-helper-clearfix');
   }
 }
@@ -715,12 +730,12 @@ function buildTagFindId(html, id) {
 // Highlight the parent post when hovering over a reference.
 $(".dw-parent-ref").hover(
   function(event){
-    $(this).closest(".dw-thread").parent().closest(".dw-thread").
-            children(".dw-post").addClass("dw-highlight");
+    $(this).closest(".dw-cmt").parent().closest(".dw-cmt").
+            children(".dw-cmt-bdy").addClass("dw-highlight");
   },
   function(event){
-    $(this).closest(".dw-thread").parent().closest(".dw-thread").
-            children(".dw-post").removeClass("dw-highlight");
+    $(this).closest(".dw-cmt").parent().closest(".dw-cmt").
+            children(".dw-cmt-bdy").removeClass("dw-highlight");
   });
 
 // ------- Layout
@@ -734,9 +749,4 @@ resizeRootThread();
 //========================================
    })(); // end Debiki module
 //========================================
-
-
-
-
-
 

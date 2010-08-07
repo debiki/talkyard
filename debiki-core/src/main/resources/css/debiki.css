@@ -66,8 +66,8 @@ table {
 p {
   margin: 0 0 0.7em;
 }
-p:last-child {
-  margin-bottom: 0;
+p:last-of-type {
+  /*margin-bottom: 0;*/
 }
 
 /* === Debate === */
@@ -148,6 +148,10 @@ p:last-child {
   /* Avoids >1 column for this depth */
   max-width: 25em;
 }
+.dw-depth-1.dw-cmt.dw-collapsed-fx {
+  max-width: 8.5em;
+  overflow: hidden;
+}
 
 /* === Posts === */
 
@@ -217,26 +221,6 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
   display: none; /* no longer cropped */
 }
 
-.dw-cmt-bdy {
-  position: relative;
-  overflow: hidden;
-  min-height: 1.3em;
-  min-width: 5em;
-  /*background-color: #fcfaf5;*/
-  margin: 0 5px 3px 0;
-  }
-.dw-cmt-bdy:hover {
-  outline: #999 dashed thin;
-  /* In case the post has been up-sized, its up-sized
-  parts might be hidden by a thread, unless: */
-  z-index: 10;
-}
-
-.dw-post-edited,
-.dw-post-new {
-  outline: #f4c4f4 solid thick;
-}
-
 /* --- Thread summary ---*/
 
 .dw-thread-info {
@@ -269,11 +253,11 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
 /* --- Comments ---*/
 
 .dw-cmt {
-  margin: 8px 0 0 5px;
+  margin: 14px 0 0 5px;
 }
 
 .dw-cmts {
-  margin: 11px 0px 0px 28px;
+  margin: 0 0px 0px 28px;
   padding-top: 5px;
   border-left: 1px dotted #ddf;
 }
@@ -302,14 +286,41 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
   position: absolute;
   color: #369;
   cursor: crosshair;
+  font-size: 85%;
 }
 
 .dw-cmt-bdy {
   padding: 4px 1px 0 3px;
   margin-left: 25px; /* + 3 = 28 */
+  position: relative;
+  overflow: hidden;
+  background-color: white;
+  min-width: 5em;
+  padding: 0 5px 3px 0;
+  margin: 0 0 0 28px;
+}
+
+.dw-post-edited .dw-cmt-hdr,
+.dw-post-new .dw-cmt-hdr {
+  border: 7px solid #f4c4f4;
+  border-bottom: none; /* -cmt-bdy is below, also with border */
+}
+
+.dw-post-edited .dw-cmt-bdy,
+.dw-post-new .dw-cmt-bdy {
+  border: 7px solid #f4c4f4;
+  border-top: none;
+}
+
+.dw-cmt-bdy:hover {
+  outline: #999 dashed thin;
+  /* In case the post has been up-sized, its up-sized
+  parts might be hidden by a thread, unless: */
+  z-index: 10;
 }
 
 .dw-cmt-act {
+  margin-left: 28px;
   display: block;
 }
 
@@ -368,6 +379,7 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
 
 #dw-action-menu {
   position: relative;
+  left: 22px;
   height: 0px; /* otherwise pushes contents below downwards;
                   buttons inside visible anyway */
 }
@@ -615,6 +627,8 @@ form.dw-rat-form .dw-more-rat-tags label {
 /* jQuery UI bug fix: in the jQuery-auto-generated file, ".debiki"
  is missing (on the next line). */
 .debiki input.ui-button { padding: .4em 1em; }
+
+
 
 
 
