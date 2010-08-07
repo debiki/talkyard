@@ -156,18 +156,15 @@ object LayoutManager {
    */
   private[v0]
   def textToHtml(text: String, charsPerLine: Int = 80)
-      : Tuple2[Elem, Int] = {
+      : Tuple2[NodeSeq, Int] = {
     var lines = 0
     val xml =
-        <div class="dw-text">{
-          // Two newlines ends a paragraph.
-          for (par <- text.split("\n\n").toList)
-          yield {
-            lines += 1 + par.length / charsPerLine
-            <p>{par}</p>
-          }
-        }
-        </div>
+      // Two newlines ends a paragraph.
+      for (par <- text.split("\n\n").toList)
+      yield {
+        lines += 1 + par.length / charsPerLine
+        <p>{par}</p>
+      }
     (xml, lines)
   }
 
@@ -259,11 +256,14 @@ class LayoutManager(val debate: Debate) {
     }
     yield
       <li id={cssThreadId} class={"dw-cmt "+ cssDepth + " dw-thread"}>
-        { comment(c) }
-        {/* postXml(c) */}
-        <ol class='dw-cmts'>
-          { _layoutChildren(depth + 1, c.id) }
-        </ol>
+      {
+        comment(c) ++
+        (if (debate.repliesTo(c.id).isEmpty) Nil
+        else
+          <ol class='dw-cmts'>
+            { _layoutChildren(depth + 1, c.id) }
+          </ol>)
+      }
       </li>
   }
 
@@ -279,12 +279,12 @@ class LayoutManager(val debate: Debate) {
     val long = numLines > 9
     val cropped_s = if (long) " dw-cropped-s" else ""
 
+    <span class='dw-cmt-x'>[-]</span>
     <div class='dw-cmt-hdr'>
       By <span class='dw-cmt-by'>{spaceToNbsp(post.by)}</span>,
       <abbr class='dw-cmt-at dw-date' title={dateCreated}>{dateCreated}</abbr>,
       rated <ol class='dw-cmt-rats'><li>interesting</li></ol>
       {/* If closed: <span class='dw-cmt-re-cnt'>{count} replies</span> */}
-      <span class='dw-cmt-x'>[-]</span>
       {
         if (editApps.isEmpty) Nil
         else
@@ -305,9 +305,10 @@ class LayoutManager(val debate: Debate) {
     <div id={cssPostId} class={"dw-cmt-bdy dw-cropped-e" + cropped_s}>
       { xmlText }
     </div>
-    <a class='dw-cmt-act' href='#'>React</a>
+    //<a class='dw-cmt-act' href='#'>React</a>
   }
 
+/*
   private def postXml(p: Post): NodeSeq = {
     val cssPostId = "dw-post-"+ p.id
     val editApplications = debate.editsAppliedTo(p.id)
@@ -380,6 +381,7 @@ class LayoutManager(val debate: Debate) {
       { xmlText }
     </div>
   }
+*/
 
   def editForm(postId: String): NodeSeq = {
     val post = debate.post(postId).get

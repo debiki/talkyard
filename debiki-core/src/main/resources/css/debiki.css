@@ -93,7 +93,7 @@ p:last-child {
 
 /* === Threads === */
 
-.dw-depth-0.dw-thread {
+.dw-depth-0.dw-cmt {
   margin: 0.3em 0 0 0.7em;
   border-left: 0.9em solid transparent;
   border-bottom: 1ex solid transparent;
@@ -101,33 +101,24 @@ p:last-child {
 }
 
 /* The very first post */
-.dw-depth-0.dw-thread > .dw-post {
+.dw-depth-0.dw-cmt > .dw-post {
   margin-bottom: 0.8em;
 }
-.dw-depth-0.dw-thread > #dw-action-menu {
+.dw-depth-0.dw-cmt > #dw-action-menu {
   top: -0.8em; /* cancel above margin-bottom */
 }
-.dw-depth-0.dw-thread > .dw-post.dw-cropped-e {
+.dw-depth-0.dw-cmt > .dw-cmt-bdy.dw-cropped-e {
   /* Make the root post wider than other posts, so it spans > 1 child.
   Then it is easier (?) to understand which threads are its
   children, although the children are spread horizontally. */
   max-width: 60em;
 }
-.dw-depth-0.dw-thread > .dw-post.dw-cropped-e > .dw-text {
+.dw-depth-0.dw-cmt > .dw-cmt-bdy.dw-cropped-e > .dw-text {
   padding-right: 15em; /* the text would be hard to read were it very wide */
   padding-bottom: 1.3em; /* litte more airy? first post */
 }
 
-.dw-thread {
-  margin: 0.3em 0 0 0.7em;
-  /* transparent won't work: jQuery's class animation would fade
-  to *white*, but the color shining through should be
-  .dw-depth-1.dw-thread's background-color. */
-  /*border-left: 0.9em solid #fcfaf5; [>transparent<]*/
-  /*border-bottom: 1ex solid #fcfaf5; [>transparent<]*/
-  background-color: inherit;
-  }
-.dw-thread.dw-demarcated-fx {
+.dw-cmt.dw-demarcated-fx {
   /* Unfortunately animating the background color won't
   look nice since there migh be child threads whose
   background color it *not* animated. Perhaps this can
@@ -136,37 +127,27 @@ p:last-child {
   border-left-color: #eae8ca;
   border-bottom-color: #d6d3b2;
 }
-.dw-thread.dw-collapsed-fx {
-  /* Thread is collapsed, hence its summary is visible,
-  so add extra margin to previous tag (which is a .post or .thread tag)
-  so there's space for a position=absolute Reply button,
-  although the thread summary tag is visible. */
-  margin-top: 1.2em;
-}
-.dw-depth-1.dw-thread {
-  /*background-color: #fcfaf5;*/
-}
-.dw-depth-1 .dw-thread {
+.dw-depth-1 .dw-cmt {
   padding-left: 0;
   border-top: none;
   }
 
 /* --- Float ---*/
-.dw-thread {
+.dw-cmt {
   float: left;
-  position: relative; /* #action-menu is absolute positioned relative thread */
-  }
-.dw-depth-2 .dw-thread {
+  position: relative; /* #action-menu is absolute positioned relative cmt */
+}
+.dw-depth-1 .dw-cmt {
   float: none;
   clear: both; /* else the rating form might float to the left */
-  }
+}
 
 /* --- Width ---*/
 .dw-depth-1,
-.dw-depth-1 .dw-thread {
+.dw-depth-1 .dw-cmt {
   /* Avoids >1 column for this depth */
   max-width: 25em;
-  }
+}
 
 /* === Posts === */
 
@@ -182,7 +163,7 @@ p:last-child {
   /*background-color: #FCFAF5;*/
 }
 
-.dw-post p {
+.dw-cmt-bdy p {
   /* Don't span whole screen even if .post.cropped-e is removed. */
   max-width: 50em;
 }
@@ -202,28 +183,28 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
   z-index: 1000;
 }
 
-.dw-post.dw-cropped-s {
+.dw-cmt-bdy.dw-cropped-s {
   max-height: 4em;
   cursor: help;
 }
 
-.dw-post.dw-cropped-e {
+.dw-cmt-bdy.dw-cropped-e {
   max-width: 25em;
 }
 
-.dw-post.dw-cropped-s .dw-cropped-mark {
+.dw-cmt-bdy.dw-cropped-s .dw-cropped-mark {
   display: block;
   position: absolute;
   bottom: 0px;
   right: -3px;
   padding: 4px 25px 0 10px; /* there's a resizable-se grip to the right */
   height: 17px;
-  /*background: #fcfaf5;[>#dddddd;<]*/
+  background: white;
   font-style: italic;
   letter-spacing: 0.3ex;
 }
-.dw-post.dw-cropped-s:hover .ui-resizable-se,
-.dw-post.dw-cropped-s:hover .dw-cropped-mark {
+.dw-cmt .dw-cropped-s:hover .ui-resizable-se,
+.dw-cmt .dw-cropped-s:hover .dw-cropped-mark {
   background-color: #fdc;
   color: #363636;
 }
@@ -232,11 +213,11 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
   height: 15px;
   display: inline-block;
 }*/
-.dw-post .dw-cropped-mark {
+.dw-cmt-bdy .dw-cropped-mark {
   display: none; /* no longer cropped */
 }
 
-.dw-post {
+.dw-cmt-bdy {
   position: relative;
   overflow: hidden;
   min-height: 1.3em;
@@ -244,7 +225,7 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
   /*background-color: #fcfaf5;*/
   margin: 0 5px 3px 0;
   }
-.dw-post:hover {
+.dw-cmt-bdy:hover {
   outline: #999 dashed thin;
   /* In case the post has been up-sized, its up-sized
   parts might be hidden by a thread, unless: */
@@ -274,30 +255,31 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
   background-color: #FEFEDD;
 }
 
-.dw-thread.dw-demarcated > .dw-thread-info {
+.dw-cmt.dw-demarcated > .dw-thread-info {
   cursor: s-resize;
 }
 
-.dw-thread.dw-collapsed .dw-thread-info .ui-resizable-handle {
+.dw-cmt.dw-collapsed .dw-thread-info .ui-resizable-handle {
   display: none; /* thread is collapsed; show no resize handle */
 }
-.dw-thread.dw-collapsed .dw-thread-info:hover .ui-resizable-handle {
+.dw-cmt.dw-collapsed .dw-thread-info:hover .ui-resizable-handle {
   display: block; /* show resize handle when hovering collapsed thread */
-}
-
-.dw-thread-info li {
-  display: inline;
-  margin-left: 1ex;
 }
 
 /* --- Comments ---*/
 
+.dw-cmt {
+  margin: 8px 0 0 5px;
+}
+
 .dw-cmts {
-  margin-top: 1em;
-  border-left: 1px solid lightblue;
+  margin: 11px 0px 0px 28px;
+  padding-top: 5px;
+  border-left: 1px dotted #ddf;
 }
 
 .dw-cmt-hdr {
+  margin-left: 28px;
   font-size: smaller;
   color: #000;
   background-color: #eee;
@@ -317,11 +299,14 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
 }
 
 .dw-cmt-x {
+  position: absolute;
   color: #369;
+  cursor: crosshair;
 }
 
 .dw-cmt-bdy {
-  padding: 4px 1px 3px 3px;
+  padding: 4px 1px 0 3px;
+  margin-left: 25px; /* + 3 = 28 */
 }
 
 .dw-cmt-act {
@@ -330,57 +315,25 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
 
 /* --- Post info ---*/
 
-.dw-post-info {
-  font-size: 95%;
-  padding: 0.2ex 0;
-  height: 1.4em; /* make the upmost part of the post gray */
-  background-color: #e7e7e7;
-  xx-nice-color-background-color: lightblue;
-}
-
-.dw-post-info .dw-owner-info {
-  float: left;
-  padding-left: 0.3em; /* no <li> to the left, pad only a little bit */
-  padding-bottom: 0.4em;
-  padding-right: 0.5em; /* post-info <li>s to the right */
-  background-color: #e7e7e7;
-}
-
-.dw-post-info .dw-rats {
-  display: inline;
-  /* Possible TODO:
-    height: 1.4em;
-    overflow: hidden;
-  and remove height restriction on click. Then, all ratings shown, on click.
-  */
-}
-
-.dw-post-info .dw-rats .dw-rat {
-  float: left;
-  padding: 0 1px 3px 0.5em;
-  background-color: #e7e7e7;
-}
-
-.dw-post-info .dw-rats .dw-rat.dw-you-rated {
+.dw-cmt-hdr .dw-rats .dw-rat.dw-you-rated {
   background-color: #f4c4f4;
 }
 
-.dw-thread-info .dw-rat-tag,
-.dw-post-info .dw-rats .dw-rat-tag {
+.dw-cmt-hdr .dw-rats .dw-rat-tag {
   font-size: 85%;
 }
 
-.dw-post-info .dw-post-liking,
-.dw-post-info .dw-rat-count,
-.dw-post-info .dw-rat-tag-frac-min,
-.dw-post-info .dw-rat-tag-sum,
-.dw-post-info .dw-rat-valsum-max {
+.dw-cmt-hdr .dw-post-liking,
+.dw-cmt-hdr .dw-rat-count,
+.dw-cmt-hdr .dw-rat-tag-frac-min,
+.dw-cmt-hdr .dw-rat-tag-sum,
+.dw-cmt-hdr .dw-rat-valsum-max {
   margin-left: 3px;
   font-weight: bold;
   display: none; /* it's for debugging mostly; makes non-developers confused */
 }
 
-.dw-post-info .dw-rats .dw-rat-tag-frac {
+.dw-cmt-hdr .dw-rats .dw-rat-tag-frac {
   font-size: 90%;
   position: relative;
   left: -2px;
@@ -430,12 +383,6 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
 
 #dw-action-menu .ui-button-text {
   padding: 0.1em 1.5em 0.2em !important; /* reduce height, make wider */
-}
-
-/* --- Text ---*/
-.dw-post .dw-text {
-  clear: left;
-  padding: 4px 1px 3px 3px;
 }
 
 /* === Forms === */
@@ -489,12 +436,6 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
 }
 
 /* === Reply === */
-
-.xx-dw-thread.dw-reply {
-  z-index: 99999; /* license agreement should always be visible */
-  background-color: #fcfaf5;
-  max-width: none; /* allow user to rezise textarea as s/he see fit */
-}
 
 form.dw-reply-form label {
   display: inline-block;
@@ -674,5 +615,8 @@ form.dw-rat-form .dw-more-rat-tags label {
 /* jQuery UI bug fix: in the jQuery-auto-generated file, ".debiki"
  is missing (on the next line). */
 .debiki input.ui-button { padding: .4em 1em; }
+
+
+
 
 

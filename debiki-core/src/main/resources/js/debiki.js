@@ -76,7 +76,7 @@ Debiki.v0.setReplyUrl = function(urlBuilder) {
 
 var threadHovered = null;
 var didResize = false;
-var posts = $(".debiki .dw-post");
+var posts = $(".debiki .dw-cmt-bdy");
 var rateFormTemplate = $("#dw-hidden-templates .dw-rat-template form");
 var debateId = $('.debiki').attr('id');
 
@@ -84,10 +84,10 @@ var debateId = $('.debiki').attr('id');
 // ------- Hovering, open/close
 
 // (Better not use delegates for very frequent events such as mouseenter.)
-$('.dw-cmt').mouseenter(onPostOrThreadMouseEnter);
+$('.dw-cmt-bdy').mouseenter(onPostOrThreadMouseEnter);
 
 function onPostOrThreadMouseEnter(event) {
-  var nextThread = $(this).closest('.dw-cmts');
+  var nextThread = $(this).closest('.dw-cmt');
 
   if ($(this).hasClass('dw-cmt-bdy')) {
     // Show the #action-menu, unless the thread is closing (A)
@@ -139,11 +139,11 @@ function onPostOrThreadMouseEnter(event) {
 
 // Open/close threads if the thread-info div is clicked.
 $(".dw-cmt-x").click(function() {
-  var thread = $(this).closest(".dw-cmts");
-  if (! thread.hasClass('dw-demarcated')) return;
+  var thread = $(this).closest(".dw-cmt");
   resizeRootThreadExtraWide();
   thread.
-    children(":not(.dw-cmt-hdr)").stop(true,true).slideToggle(800).
+    children(":not(.dw-cmt-hdr, .dw-cmt-x)")
+      .stop(true,true).slideToggle(800).
     end().
     stop(true, true).
     toggleClass('dw-collapsed').
@@ -171,7 +171,7 @@ posts.filter('.dw-cropped-s').click(function(){
   console.log('click: Removind cropped-s.');
   // (Some rather long posts are cropped, using max-width and -height.
   // Don't remove max-width, or some posts might end up rather wide.)
-  $(this).closest('.dw-post').removeClass('dw-cropped-s');
+  $(this).closest('.dw-cmt-bdy').removeClass('dw-cropped-s');
 })
 
 // ------- Resizing
@@ -193,8 +193,8 @@ var resizeRootThreadImpl = function(extraWidth){
     extraWidth = 150;
   }
   var width = extraWidth;
-  var root = $('.debiki > .dw-thread');
-  root.children('.dw-thread, form, .dw-edit-forms').each(function(){
+  var root = $('.debiki > .dw-cmts > .dw-cmt > .dw-cmts');
+  root.children('.dw-cmt, form, .dw-edit-forms').each(function(){
     width += $(this).outerWidth(true);
   });
   root.css('width', width);
@@ -246,7 +246,7 @@ try {
       autoHide: true,
       start: function(event, ui) {
         // Remove max height and width restrictions.
-        $(this).closest('.dw-post').removeClass('dw-cropped-s dw-cropped-e');
+        $(this).closest('.dw-cmt-bdy').removeClass('dw-cropped-s dw-cropped-e');
         didResize = true;
       }
      })
@@ -262,7 +262,7 @@ try {
     .mouseup(function(){
       // (Removing only max-width usually results in nothing:
       // The thread usually has a max-width.).
-      var post = $(this).closest('.dw-post');
+      var post = $(this).closest('.dw-cmt-bdy');
       post.removeClass('dw-cropped-s dw-cropped-e');
       // Expand post eastwards if resize handle was clicked not dragged.
       // (Also expands southwards, but browsers usually expand to east first.)
@@ -272,7 +272,7 @@ try {
   .find('.ui-resizable-s, .ui-resizable-se')
     // Expand post southwards if resize handle was clicked not dragged.
     .mouseup(function(){
-      if (!didResize) $(this).closest('.dw-post').css('height', null);
+      if (!didResize) $(this).closest('.dw-cmt-bdy').css('height', null);
     })
   .end()
   .find('.ui-resizable-handle')
@@ -372,7 +372,7 @@ $('.debiki').delegate(
 // if they slide in, instead of just appearing abruptly.
 function slideInActionForm($form, $thread) { 
   if ($thread) $form.insertAfter($thread.children('.dw-post'));
-  else $thread = $form.closest('.dw-thread');
+  else $thread = $form.closest('.dw-cmt');
   // Extra width prevents float drop.
   resizeRootThreadExtraWide();
   // Slide in from left, if <form> siblings ordered horizontally.
@@ -409,9 +409,9 @@ function syncNameInputWithNameCookie($form) {
 
 $('#dw-action-menu .dw-rate').button().click(function(){
   // Warning: Some duplicated code, see .dw-reply and dw-edit click() below.
-  var thread = $(this).closest('.dw-thread');
+  var thread = $(this).closest('.dw-cmt');
   clearfix(thread); // ensures the rating appears nested inside the thread
-  var $post = thread.children('.dw-post');
+  var $post = thread.children('.dw-cmt-bdy');
   var $rateForm = rateFormTemplate.clone(true);
   var postId = $post.attr('id').substr(8, 999); // drop initial 'dw-post-'
   $rateForm.find("input[name='dw-fi-post']").attr('value', postId);
@@ -734,6 +734,9 @@ resizeRootThread();
 //========================================
    })(); // end Debiki module
 //========================================
+
+
+
 
 
 
