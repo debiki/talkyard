@@ -84,12 +84,12 @@ var debateId = $('.debiki').attr('id');
 // ------- Hovering, open/close
 
 // (Better not use delegates for very frequent events such as mouseenter.)
-$('.dw-post, .dw-thread-info').mouseenter(onPostOrThreadMouseEnter);
+$('.dw-cmt').mouseenter(onPostOrThreadMouseEnter);
 
 function onPostOrThreadMouseEnter(event) {
-  var nextThread = $(this).closest('.dw-thread');
+  var nextThread = $(this).closest('.dw-cmts');
 
-  if ($(this).hasClass('dw-post')) {
+  if ($(this).hasClass('dw-cmt-bdy')) {
     // Show the #action-menu, unless the thread is closing (A)
     // and unless the thread doesn't already have a reply-form (B)
     // or a rating-form (C) or an edit form child (D),
@@ -121,18 +121,6 @@ function onPostOrThreadMouseEnter(event) {
   if (threadHovered && threadHovered[0] == nextThread[0])
     return;
 
-  if ($(this).hasClass('dw-thread-info') &&
-      threadHovered && !threadHovered.hasClass('dw-collapsed')) {
-    // This .thread-info is not visible (it's invisible by default
-    // unless the thread is collapsed). Don't fade it in, because the user
-    // might currently be navigating the #action-menu of the parent post,
-    // (the action-menu would partially overlap this thread-info)
-    // and this .thread-info shouldn't pop up below the menu. Instead,
-    // only fade-in this .thread-info if this thread's *post* is hovered
-    // (then the parent post's action-menu is hidden for sure).
-    return;
-  }
-
   // Fade out last thread-info, unless thread collapsed.
   if (threadHovered && !threadHovered.hasClass('dw-collapsed')) {
     threadHovered.children('.dw-thread-info')
@@ -150,12 +138,12 @@ function onPostOrThreadMouseEnter(event) {
 }
 
 // Open/close threads if the thread-info div is clicked.
-$(".dw-thread-info").click(function() {
-  var thread = $(this).closest(".dw-thread");
+$(".dw-cmt-x").click(function() {
+  var thread = $(this).closest(".dw-cmts");
   if (! thread.hasClass('dw-demarcated')) return;
   resizeRootThreadExtraWide();
   thread.
-    children(":not(.dw-thread-info)").stop(true,true).slideToggle(800).
+    children(":not(.dw-cmt-hdr)").stop(true,true).slideToggle(800).
     end().
     stop(true, true).
     toggleClass('dw-collapsed').

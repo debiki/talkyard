@@ -123,8 +123,8 @@ p:last-child {
   /* transparent won't work: jQuery's class animation would fade
   to *white*, but the color shining through should be
   .dw-depth-1.dw-thread's background-color. */
-  border-left: 0.9em solid #fcfaf5; /*transparent*/
-  border-bottom: 1ex solid #fcfaf5; /*transparent*/
+  /*border-left: 0.9em solid #fcfaf5; [>transparent<]*/
+  /*border-bottom: 1ex solid #fcfaf5; [>transparent<]*/
   background-color: inherit;
   }
 .dw-thread.dw-demarcated-fx {
@@ -144,7 +144,7 @@ p:last-child {
   margin-top: 1.2em;
 }
 .dw-depth-1.dw-thread {
-  background-color: #fcfaf5;
+  /*background-color: #fcfaf5;*/
 }
 .dw-depth-1 .dw-thread {
   padding-left: 0;
@@ -179,7 +179,7 @@ p:last-child {
   background-position: -80px -222px;
   /* Paint color above any text below, otherwise it's easy never
   to see there is a rezise-post-grip. */
-  background-color: #FCFAF5;
+  /*background-color: #FCFAF5;*/
 }
 
 .dw-post p {
@@ -218,7 +218,7 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
   right: -3px;
   padding: 4px 25px 0 10px; /* there's a resizable-se grip to the right */
   height: 17px;
-  background: #fcfaf5;/*#dddddd;*/
+  /*background: #fcfaf5;[>#dddddd;<]*/
   font-style: italic;
   letter-spacing: 0.3ex;
 }
@@ -241,7 +241,7 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
   overflow: hidden;
   min-height: 1.3em;
   min-width: 5em;
-  background-color: #fcfaf5;
+  /*background-color: #fcfaf5;*/
   margin: 0 5px 3px 0;
   }
 .dw-post:hover {
@@ -288,6 +288,44 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
 .dw-thread-info li {
   display: inline;
   margin-left: 1ex;
+}
+
+/* --- Comments ---*/
+
+.dw-cmts {
+  margin-top: 1em;
+  border-left: 1px solid lightblue;
+}
+
+.dw-cmt-hdr {
+  font-size: smaller;
+  color: #000;
+  background-color: #eee;
+}
+
+.dw-cmt-hdr-ed {
+}
+
+.dw-cmt-by {
+  color: #369; /* same as reddit */
+  font-weight: bold;
+}
+
+.dw-cmt-rats,
+.dw-cmt-rats li {
+  display: inline;
+}
+
+.dw-cmt-x {
+  color: #369;
+}
+
+.dw-cmt-bdy {
+  padding: 4px 1px 3px 3px;
+}
+
+.dw-cmt-act {
+  display: block;
 }
 
 /* --- Post info ---*/
@@ -636,4 +674,5 @@ form.dw-rat-form .dw-more-rat-tags label {
 /* jQuery UI bug fix: in the jQuery-auto-generated file, ".debiki"
  is missing (on the next line). */
 .debiki input.ui-button { padding: .4em 1em; }
+
 

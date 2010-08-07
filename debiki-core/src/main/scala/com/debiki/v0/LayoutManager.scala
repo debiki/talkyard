@@ -244,7 +244,9 @@ class LayoutManager(val debate: Debate) {
         }
       }
       </div>
-      { _layoutChildren(0, debate.RootPostId) }
+      <ol class='dw-cmts'>
+        { _layoutChildren(0, debate.RootPostId) }
+      </ol>
     </div>
   }
 
@@ -256,23 +258,54 @@ class LayoutManager(val debate: Debate) {
       cssDepth = "dw-depth-"+ depth
     }
     yield
-      <div id={cssThreadId} class={cssDepth + " dw-thread"}>
-        { threadInfoXml(c) }
-        { postXml(c) }
-        { _layoutChildren(depth + 1, c.id) }
-      </div>
+      <li id={cssThreadId} class={"dw-cmt "+ cssDepth + " dw-thread"}>
+        { comment(c) }
+        {/* postXml(c) */}
+        <ol class='dw-cmts'>
+          { _layoutChildren(depth + 1, c.id) }
+        </ol>
+      </li>
   }
 
-  private def threadInfoXml(post: Post): NodeSeq = {
+  private def comment(post: Post): NodeSeq = {
     val count = debate.successorsTo(post.id).length + 1
-    if (count == 1)
-      <ul class="dw-thread-info">
-        <li class="dw-post-count">1 reply</li>
-      </ul>
-    else
-      <ul class="dw-thread-info">
-        <li class="dw-post-count">{count} replies</li>
-      </ul>
+    val dateCreated = toIso8601(post.date)
+    val editApps = debate.editsAppliedTo(post.id)
+    val lastEditApp = editApps.headOption
+    val lastEditDate = editApps.headOption.map(ea => toIso8601(ea.date))
+    val cssPostId = "dw-"+ post.id
+    val (xmlText, numLines) =
+        textToHtml(lastEditApp.map(_.result).getOrElse(post.text))
+    val long = numLines > 9
+    val cropped_s = if (long) " dw-cropped-s" else ""
+
+    <div class='dw-cmt-hdr'>
+      By <span class='dw-cmt-by'>{spaceToNbsp(post.by)}</span>,
+      <abbr class='dw-cmt-at dw-date' title={dateCreated}>{dateCreated}</abbr>,
+      rated <ol class='dw-cmt-rats'><li>interesting</li></ol>
+      {/* If closed: <span class='dw-cmt-re-cnt'>{count} replies</span> */}
+      <span class='dw-cmt-x'>[-]</span>
+      {
+        if (editApps.isEmpty) Nil
+        else
+          <div class='dw-cmt-hdr-ed'>Edited by {
+            if (editApps.map(a => debate.editsById(a.editId).by).
+                distinct.length > 1)
+              <span>various people</span>
+           else
+              <span class='dw-cmt-by'>{
+                debate.editsById(lastEditApp.get.editId).by
+              }</span>
+            },
+            <abbr class='dw-cmt-at dw-date' title={lastEditDate.get}>{
+                lastEditDate.get}</abbr>
+          </div>
+      }
+    </div>
+    <div id={cssPostId} class={"dw-cmt-bdy dw-cropped-e" + cropped_s}>
+      { xmlText }
+    </div>
+    <a class='dw-cmt-act' href='#'>React</a>
   }
 
   private def postXml(p: Post): NodeSeq = {
