@@ -45,6 +45,13 @@ object Prelude {
    */
   def safe(text: String): String = text // for now.
 
+  def stripStartEndBlanks(text: String): String = {
+    val start = text.indexWhere(_ > ' ')
+    if (start == -1) return ""
+    var end = text.lastIndexWhere(_ > ' ')
+    text.slice(start, end + 1)
+  }
+
   /** Returns the date formatted according to ISO 8601,
    *  e.g. "2010-06-23 11:37:15Z".
    */
