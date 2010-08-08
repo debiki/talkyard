@@ -281,8 +281,8 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
   font-weight: bold;
 }
 
-.dw-cmt-rats,
-.dw-cmt-rats li {
+.dw-rats,
+.dw-rats li {
   display: inline;
 }
 
@@ -335,7 +335,7 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
 }
 
 .dw-cmt-hdr .dw-rats .dw-rat-tag {
-  font-size: 85%;
+  /*font-size: 85%;*/
 }
 
 .dw-cmt-hdr .dw-post-liking,
@@ -631,6 +631,7 @@ form.dw-rat-form .dw-more-rat-tags label {
 /* jQuery UI bug fix: in the jQuery-auto-generated file, ".debiki"
  is missing (on the next line). */
 .debiki input.ui-button { padding: .4em 1em; }
+
 
 
 

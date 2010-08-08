@@ -285,8 +285,8 @@ class LayoutManager(val debate: Debate) {
     val ratsList =
       if (rats.isEmpty) Nil
       else
-        Text(", "+ rats.length +" ratings:") ++
-        <ol class='dw-cmt-rats'>{
+        <br/> ++ Text(rats.length +" ratings:") ++
+        <ol class='dw-rats'>{
           // Avoid whitespace between tags, by moving '>' to next Scala line,
           // so `editInfo' can append a ',' with no leading whitespace.
           for ((tag: String, stats: LabelStats) <- rats) yield
@@ -303,7 +303,8 @@ class LayoutManager(val debate: Debate) {
       // If closed: <span class='dw-cmt-re-cnt'>{count} replies</span>
       if (editApps.isEmpty) Nil
       else
-        <span class='dw-cmt-hdr-ed'>. <b>Edited</b> by {
+        //<span class='dw-cmt-hdr-ed'>. <b>Edited</b> by {
+        <div class='dw-cmt-hdr-ed'><b>Edited</b> by {
           if (editApps.map(a => debate.editsById(a.editId).by).
               distinct.length > 1)
             <a>various people</a>
@@ -313,19 +314,21 @@ class LayoutManager(val debate: Debate) {
             }</a>
           }, <abbr class='dw-cmt-at dw-date' title={lastEditDate.get}>{
               lastEditDate.get}</abbr>
-        </span>
+        </div>
 
     // the – on the next line is an `en dash' not a minus
     <span class='dw-cmt-x'>[–]</span>
-    <div class='dw-cmt-hdr'>
-      By <a class='dw-cmt-by'>{post.by}</a>,
-      <abbr class='dw-cmt-at dw-date'
-          title={dateCreated}>{dateCreated}</abbr>{
-          ratsList }{
-          editInfo } 
-    </div>
-    <div id={cssPostId} class={"dw-cmt-bdy dw-cropped-e" + cropped_s}>
-      { xmlText }
+    <div id={cssPostId} class='dw-cmt-wrap'>
+      <div class='dw-cmt-hdr'>
+        By <a class='dw-cmt-by'>{post.by}</a>,
+        <abbr class='dw-cmt-at dw-date'
+            title={dateCreated}>{dateCreated}</abbr>{
+            ratsList }{
+            editInfo } 
+      </div>
+      <div class={"dw-cmt-bdy dw-cropped-e" + cropped_s}>
+        { xmlText }
+      </div>
     </div>
     //<a class='dw-cmt-act' href={'#'+ cssPostId}>React</a>
   }

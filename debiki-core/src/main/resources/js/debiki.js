@@ -142,20 +142,24 @@ $(".dw-cmt-x").click(function() {
   var thread = $(this).closest(".dw-cmt");
   resizeRootThreadExtraWide();
   thread.
-    children(":not(.dw-cmt-hdr, .dw-cmt-x)").
-      stop(true,true).slideToggle(800).
+    find("> :not(.dw-cmt-wrap, .dw-cmt-x), > .dw-cmt-wrap > .dw-cmt-bdy").
+      //add(thread.find('> .dw-cmt-wrap > .dw-cmt-bdy')).
+      stop(true,true).
+      slideToggle(800).
+      //queue(function(next){
+      //    thread
+      //      .toggleClass('dw-collapsed')
+      //      .toggleClass('dw-collapsed-fx', 600);
+      //    next();
+      //  }).
+      queue(function(next){ resizeRootThreadNowAndLater(); next(); }).
     end().
     children(".dw-cmt-x").
       each(function(){
         // The – is not a - but an &endash;.
         var newText = $(this).text().indexOf('+') == -1 ? '[+]' : '[–]';
         $(this).text(newText);
-      }).
-    end().
-    stop(true, true).
-    toggleClass('dw-collapsed').
-    toggleClass('dw-collapsed-fx', 600).
-    queue(function(next){ resizeRootThreadNowAndLater(); next(); });
+      });
 });
 
 // Outline new posts
@@ -335,23 +339,28 @@ function updateDebate(newDebateHtml) {
       var isNewThread = $oldThis.length == 0;
       var isSubThread = !$oldParent.length;
       var isPostEdited = !isNewThread &&
-              $oldThis.children('.dw-cmt-bdy').dw_postModTime() <
-              $(this).children('.dw-cmt-bdy').dw_postModTime();
+              $oldThis.children('.dw-cmt-wrap').dw_postModTime() <
+              $(this).children('.dw-cmt-wrap').dw_postModTime();
       // TODO: Some more jQuery should be registered below, e.g. resizing.
       if (isPostEdited) {
-        $(this).children('.dw-cmt-bdy')
-          .replaceAll($oldThis.children('.dw-cmt-bdy'))
+        $(this).children('.dw-cmt-wrap')
+          .replaceAll($oldThis.children('.dw-cmt-wrap'))
           .mouseenter(onPostOrThreadMouseEnter)
           .addClass('dw-post-edited'); // outlines it - TODO: Add to cmt not cmt-bdy
       }
       else if (isNewThread && !isSubThread) {
         // (A thread that *is* a sub-thread of another new thread, is added
         // automatically when that other new thread is added.)
+        var $res = $oldParent.children('.dw-cmts');
+        if (!$res.length) {
+          // This is the first reply; create the reply list.
+          $res = $("<ol class='dw-cmts'/>").appendTo($oldParent);
+        }
         $(this)
           .addClass('dw-post-new') // outlines it, and its sub thread posts
-          .insertAfter($oldParent.children('.dw-cmt-bdy'))
+          .prependTo($res)
           .mouseenter(onPostOrThreadMouseEnter)
-          .find('.dw-cmt-bdy')
+          .find('.dw-cmt-wrap')
           .mouseenter(onPostOrThreadMouseEnter);
       }
     })
@@ -386,7 +395,7 @@ $('.debiki').delegate(
 // easier to understand how they are related to other elems
 // if they slide in, instead of just appearing abruptly.
 function slideInActionForm($form, $thread) { 
-  if ($thread) $form.insertAfter($thread.children('.dw-cmt-bdy'));
+  if ($thread) $form.insertAfter($thread.children('.dw-cmt-wrap'));
   else $thread = $form.closest('.dw-cmt');
   // Extra width prevents float drop.
   resizeRootThreadExtraWide();
@@ -426,7 +435,7 @@ $('#dw-action-menu .dw-rate').button().click(function(){
   // Warning: Some duplicated code, see .dw-reply and dw-edit click() below.
   var thread = $(this).closest('.dw-cmt');
   clearfix(thread); // ensures the rating appears nested inside the thread
-  var $post = thread.children('.dw-cmt-bdy');
+  var $post = thread.children('.dw-cmt-wrap');
   var $rateForm = rateFormTemplate.clone(true);
   var postId = $post.attr('id').substr(8, 999); // drop initial 'dw-post-'
   $rateForm.find("input[name='dw-fi-post']").attr('value', postId);
@@ -466,14 +475,14 @@ $('#dw-action-menu .dw-rate').button().click(function(){
         // jQuery Sizzle, getElementById returns 'false'.
         // Don't: $wrap.find('#'+ $post.attr('id'));
         // This works:
-        var $newPost = $wrap.find('.dw-cmt-bdy[id="dw-post-' + postId + '"]');
+        var $newPost = $wrap.find('.dw-cmt-wrap[id="dw-post-' + postId + '"]');
         $newPost.replaceAll($post);
 
         // Highligt the user's ratings.
         $newPost.find('.dw-rats .dw-rat').each(function(){
             var text = $(this).find('.dw-rat-tag').text().toLowerCase();
             for (ix in ratedTags) {
-              if (text == ratedTags[ix]) {
+              if ($.trim(text) == ratedTags[ix]) {
                 $(this).addClass('dw-you-rated');
                 break;
               }
@@ -517,7 +526,7 @@ $("#dw-action-menu .dw-reply").button().click(function() {
   // Warning: Some duplicated code, see .dw-rat-tag and dw-edit click() above.
   var $thread = $(this).closest('.dw-cmt');
   clearfix($thread); // ensures the reply appears nested inside the thread
-  var $post = $thread.children('.dw-cmt-bdy');
+  var $post = $thread.children('.dw-cmt-wrap');
   var $replyForm = $("#dw-hidden-templates .dw-reply-template").
                 children().clone(true);
   var postId = $post.attr('id').substr(8, 999); // drop initial "dw-post-"
@@ -558,7 +567,7 @@ $("#dw-action-menu .dw-edit").button().click(function() {
   // Warning: Some duplicated code, see .dw-rat-tag and .dw-reply click() above.
   var $thread = $(this).closest('.dw-cmt');
   clearfix($thread); // makes edit area appear inside $thread
-  var $post = $thread.children('.dw-cmt-bdy');
+  var $post = $thread.children('.dw-cmt-wrap');
   // Create a div into which to load the edit <form>s -- the div class should
   // match the edit form div's class, so the action-menu won't be displayed
   // again until the request has completed and the edit form has been closed.
@@ -731,11 +740,11 @@ function buildTagFindId(html, id) {
 $(".dw-parent-ref").hover(
   function(event){
     $(this).closest(".dw-cmt").parent().closest(".dw-cmt").
-            children(".dw-cmt-bdy").addClass("dw-highlight");
+            children(".dw-cmt-wrap").addClass("dw-highlight");
   },
   function(event){
     $(this).closest(".dw-cmt").parent().closest(".dw-cmt").
-            children(".dw-cmt-bdy").removeClass("dw-highlight");
+            children(".dw-cmt-wrap").removeClass("dw-highlight");
   });
 
 // ------- Layout
@@ -749,4 +758,7 @@ resizeRootThread();
 //========================================
    })(); // end Debiki module
 //========================================
+
+
+
 
