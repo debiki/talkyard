@@ -9,7 +9,7 @@ package com.debiki.v0
 import java.{util => ju}
 import scala.collection.JavaConversions._
 import collection.{mutable => mut, immutable => imm}
-import _root_.scala.xml.{NodeSeq, Elem}
+import _root_.scala.xml.{NodeSeq, Elem, Text}
 import Prelude._
 
 private[debiki]
@@ -279,28 +279,50 @@ class LayoutManager(val debate: Debate) {
     val long = numLines > 9
     val cropped_s = if (long) " dw-cropped-s" else ""
 
+    val score = statscalc.scoreFor(post.id)
+    val ratStatsSorted = score.labelStatsSorted
+    val rats = ratStatsSorted //.takeWhile(_.fractionLowerBound > 0.25)
+    val ratsList =
+      if (rats.isEmpty) Nil
+      else
+        Text(", "+ rats.length +" ratings:") ++
+        <ol class='dw-cmt-rats'>{
+          // Avoid whitespace between tags, by moving '>' to next Scala line,
+          // so `editInfo' can append a ',' with no leading whitespace.
+          for ((tag: String, stats: LabelStats) <- rats) yield
+          <li class="dw-rat"
+            ><span class="dw-rat-tag"> {tag} </span
+            ><span class="dw-rat-tag-frac">{
+                "%.0f" format (100 * stats.fraction) }%</span
+            ><span class="dw-rat-tag-frac-min">{
+                "%.0f" format (100 * stats.fractionLowerBound) }%</span
+            ><span class="dw-rat-tag-sum">{stats.sum}%</span
+          ></li>
+        }</ol>
+    val editInfo =
+      // If closed: <span class='dw-cmt-re-cnt'>{count} replies</span>
+      if (editApps.isEmpty) Nil
+      else
+        <span class='dw-cmt-hdr-ed'>. <b>Edited</b> by {
+          if (editApps.map(a => debate.editsById(a.editId).by).
+              distinct.length > 1)
+            <a>various people</a>
+          else
+            <a class='dw-cmt-by'>{
+              debate.editsById(lastEditApp.get.editId).by
+            }</a>
+          }, <abbr class='dw-cmt-at dw-date' title={lastEditDate.get}>{
+              lastEditDate.get}</abbr>
+        </span>
+
     // the – on the next line is an `en dash' not a minus
     <span class='dw-cmt-x'>[–]</span>
     <div class='dw-cmt-hdr'>
       By <a class='dw-cmt-by'>{post.by}</a>,
-      <abbr class='dw-cmt-at dw-date' title={dateCreated}>{dateCreated}</abbr>,
-      rated <ol class='dw-cmt-rats'><li>interesting</li></ol> {
-        // If closed: <span class='dw-cmt-re-cnt'>{count} replies</span>
-        if (editApps.isEmpty) Nil
-        else
-          <div class='dw-cmt-hdr-ed'>Edited by {
-            if (editApps.map(a => debate.editsById(a.editId).by).
-                distinct.length > 1)
-              <a>various people</a>
-           else
-              <a class='dw-cmt-by'>{
-                debate.editsById(lastEditApp.get.editId).by
-              }</a>
-            },
-            <abbr class='dw-cmt-at dw-date' title={lastEditDate.get}>{
-                lastEditDate.get}</abbr>
-          </div>
-      }
+      <abbr class='dw-cmt-at dw-date'
+          title={dateCreated}>{dateCreated}</abbr>{
+          ratsList }{
+          editInfo } 
     </div>
     <div id={cssPostId} class={"dw-cmt-bdy dw-cropped-e" + cropped_s}>
       { xmlText }

@@ -256,6 +256,10 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
   margin: 14px 0 0 5px;
 }
 
+.dw-cmt.dw-depth-1 {
+  margin-left: 22px;
+}
+
 .dw-cmts {
   margin: 0 0px 0px 28px;
   padding-top: 5px;
