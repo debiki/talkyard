@@ -84,7 +84,7 @@ var debateId = $('.debiki').attr('id');
 // ------- Hovering, open/close
 
 // (Better not use delegates for very frequent events such as mouseenter.)
-$('.dw-cmt-bdy').mouseenter(onPostOrThreadMouseEnter);
+//$('.dw-cmt-bdy').mouseenter(onPostOrThreadMouseEnter);
 
 function onPostOrThreadMouseEnter(event) {
   var nextThread = $(this).closest('.dw-cmt');
@@ -142,7 +142,9 @@ $(".dw-cmt-x").click(function() {
   var thread = $(this).closest(".dw-cmt");
   resizeRootThreadExtraWide();
   thread.
-    find("> :not(.dw-cmt-wrap, .dw-cmt-x), > .dw-cmt-wrap > .dw-cmt-bdy").
+    find('> :not(.dw-cmt-wrap, .dw-cmt-x), '+
+        '> .dw-cmt-wrap > .dw-cmt-bdy, '+
+        '> .dw-cmt-wrap > .dw-cmt-acts').
       //add(thread.find('> .dw-cmt-wrap > .dw-cmt-bdy')).
       stop(true,true).
       slideToggle(800).
@@ -369,11 +371,13 @@ function updateDebate(newDebateHtml) {
 // ------- Forms and actions
 
 // Replace the .dw-act link with reply/edit/rate buttons.
-/*
 $('.dw-cmt-act').each(function(){
-    $(this).replaceWith($('#dw-action-menu').clone());
+    $(this).replaceWith(
+        $('#dw-action-menu')
+          .clone()
+          .attr('id','')
+          .addClass('dw-cmt-acts'));
   });
-*/
 
 // Action <form> cancel button -- won't work for the Edit form...?
 function slideAwayRemove($form) {
@@ -758,6 +762,7 @@ resizeRootThread();
 //========================================
    })(); // end Debiki module
 //========================================
+
 
 
 

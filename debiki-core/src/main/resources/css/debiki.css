@@ -32,7 +32,7 @@ body {
 	line-height: 1;
 }
 ol, ul {
-	list-style: none;
+  list-style-type: none;
 }
 blockquote, q {
 	quotes: none;
@@ -253,7 +253,7 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
 /* --- Comments ---*/
 
 .dw-cmt {
-  margin: 14px 0 0 5px;
+  margin: 8px 0 0 5px;
 }
 
 .dw-cmt.dw-depth-1 {
@@ -262,12 +262,15 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
 
 .dw-cmts {
   margin: 0 0px 0px 28px;
-  padding-top: 5px;
+  padding-top: 3px;
   border-left: 1px dotted #ddf;
 }
 
-.dw-cmt-hdr {
+.dw-cmt-wrap {
   margin-left: 28px;
+}
+
+.dw-cmt-hdr {
   font-size: smaller;
   color: #000;
   background-color: #eee;
@@ -291,17 +294,16 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
   color: #369;
   cursor: crosshair;
   font-size: 85%;
+  text-decoration:none;
 }
 
 .dw-cmt-bdy {
-  padding: 4px 1px 0 3px;
-  margin-left: 25px; /* + 3 = 28 */
+  padding: 6px 1px 0 3px;
+  margin-left: -3px; /* cancel padding */
   position: relative;
   overflow: hidden;
   background-color: white;
   min-width: 5em;
-  padding: 0 5px 3px 0;
-  margin: 0 0 0 28px;
 }
 
 .dw-post-edited .dw-cmt-hdr,
@@ -324,8 +326,28 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
 }
 
 .dw-cmt-act {
-  margin-left: 28px;
   display: block;
+}
+
+.dw-cmt-wrap:hover > .dw-cmt-acts a {
+  visibility: visible;
+}
+
+.dw-cmt-acts a {
+  visibility: hidden;
+  margin-right: 10px;
+  cursor: crosshair;
+  font-size: 13px;
+  text-decoration: none;
+  color: #369; /*#228ef1;
+/*
+ui-icons_0c93ca_256x240.png
+ui-icons_228ef1_256x240.png
+ui-icons_6fbbd9_256x240.png
+ui-icons_e9911c_256x240.png
+ui-icons_ef8c08_256x240.png
+ui-icons_ffd27a_256x240.png
+*/
 }
 
 /* --- Post info ---*/
@@ -631,6 +653,7 @@ form.dw-rat-form .dw-more-rat-tags label {
 /* jQuery UI bug fix: in the jQuery-auto-generated file, ".debiki"
  is missing (on the next line). */
 .debiki input.ui-button { padding: .4em 1em; }
+
 
 
 

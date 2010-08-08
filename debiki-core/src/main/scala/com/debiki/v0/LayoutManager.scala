@@ -317,7 +317,7 @@ class LayoutManager(val debate: Debate) {
         </div>
 
     // the – on the next line is an `en dash' not a minus
-    <span class='dw-cmt-x'>[–]</span>
+    <a class='dw-cmt-x'>[–]</a>
     <div id={cssPostId} class='dw-cmt-wrap'>
       <div class='dw-cmt-hdr'>
         By <a class='dw-cmt-by'>{post.by}</a>,
@@ -329,8 +329,8 @@ class LayoutManager(val debate: Debate) {
       <div class={"dw-cmt-bdy dw-cropped-e" + cropped_s}>
         { xmlText }
       </div>
+      <a class='dw-cmt-act' href={'#'+ cssPostId}>React</a>
     </div>
-    //<a class='dw-cmt-act' href={'#'+ cssPostId}>React</a>
   }
 
 /*
