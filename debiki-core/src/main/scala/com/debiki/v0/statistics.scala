@@ -68,8 +68,10 @@ private[debiki] abstract class PostRating {
 
   def labelStats: imm.Map[String, LabelStats]
 
-  /** Sorted by LabelStats.fraction. An alternative is to sort by the
-   *  lower confidence interval bound of the fraction.
+  /** Sorted by LabelStats.fraction, descending.
+   *  (No point in sorting by fractionLowerBound, because single votes
+   *  cannot give a rating-tag a high fraction, if there are already many votes
+   *  on other tags.)
    */
   def labelStatsSorted: List[(String, LabelStats)] = {
     labelStats.toList.sortWith((a, b) => a._2.fraction > b._2.fraction)
