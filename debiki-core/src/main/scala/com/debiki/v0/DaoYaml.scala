@@ -25,7 +25,7 @@ object DaoYaml {
     sb ++= "\nby: \"" ++= post.by += '"'
     sb ++= "\nip: \"" ++= post.ip += '"'
     sb ++= "\ndate: " ++= toIso8601(post.date)
-    sb ++= "\ntext: |1\n" ++= indent(post.text)
+    sb ++= "\ntext: |1\n" ++= stripIndent(post.text)
     sb.toString
   }
 
@@ -52,7 +52,7 @@ object DaoYaml {
     sb ++= "\nip: \"" ++= edit.ip += '"'
     sb ++= "\ndate: " ++= toIso8601(edit.date)
     sb ++= "\npost: " ++= edit.postId
-    sb ++= "\ntext: |1\n" ++= indent(edit.text)
+    sb ++= "\ntext: |1\n" ++= stripIndent(edit.text)
     sb.toString
   }
 
@@ -77,8 +77,8 @@ object DaoYaml {
     sb ++= "\n--- !EditApplied"
     sb ++= "\nedit: \"" ++= ea.editId += '"'
     sb ++= "\ndate: " ++= toIso8601(ea.date)
-    sb ++= "\ndebug: |1\n" ++= indent(ea.debug)
-    sb ++= "\nresult: |1\n" ++= indent(ea.result)
+    sb ++= "\ndebug: |1\n" ++= stripIndent(ea.debug)
+    sb ++= "\nresult: |1\n" ++= stripIndent(ea.result)
     sb.toString
   }
 
@@ -88,9 +88,10 @@ object DaoYaml {
     sb.toString
   }
 
-  private def indent(text: String) =
+  private def stripIndent(text: String) =
     " " + // indent first line, 1 space
-    text.replaceAll("\n", "\n "). // indent other lines
+    stripStartEndBlanks(text).
+        replaceAll("\n", "\n "). // indent other lines
         replace("\r", "") // convert \r\n to \n
 }
 
