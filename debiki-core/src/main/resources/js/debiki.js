@@ -336,7 +336,7 @@ function updateDebate(newDebateHtml) {
   var $newDebate = buildTagFind(newDebateHtml, '.dw-debate');
   $newDebate.find('.dw-cmt').each(function(){
       var parentId = $(this).parents('.dw-cmt').attr('id');
-      var $oldParent = $curDebate.find('#'+ parentId);
+      var $oldParent = parentId ? $curDebate.find('#'+ parentId) : $curDebate;
       var $oldThis = $curDebate.find('#'+ this.id);
       var isNewThread = $oldThis.length == 0;
       var isSubThread = !$oldParent.length;
@@ -545,7 +545,7 @@ rateFormTemplate.find('.dw-show-more-rat-tags').show().
 $('.debiki').delegate('.dw-reply', 'click', function() {
   // Warning: Some duplicated code, see .dw-rat-tag and dw-edit click() above.
   var $post;
-  var postId = 'A'; // means is-reply-to-the-article-itself
+  var postId = 'root'; // means is-reply-to-the-article-itself, TODO: 'A'
   var $thread = $(this).closest('.dw-cmt');
   if ($thread.length) {
     // Change postId to refer to the comment not the article.
