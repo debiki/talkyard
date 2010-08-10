@@ -207,11 +207,12 @@ var resizeRootThreadImpl = function(extraWidth){
     extraWidth = 150;
   }
   var width = extraWidth;
-  var root = $('.dw-depth-0.dw-cmt > .dw-cmts');
-  root.children('.dw-cmt, form, .dw-edit-forms').each(function(){
+  var $root = $('.dw-depth-0');
+  if (!$root.length) $root = $('.dw-debate'); // there's no root reply
+  $root.find('> .dw-cmts > .dw-cmt, > form, > .dw-edit-forms').each(function(){
     width += $(this).outerWidth(true);
   });
-  root.css('width', width);
+  $root.css('width', width);
 }
 
 // Makes the root thread wide enough to contain all its child posts.
