@@ -138,7 +138,7 @@ function onPostOrThreadMouseEnter(event) {
 }
 
 // Open/close threads if the thread-info div is clicked.
-$(".dw-cmt-x").click(function() {
+$('.debiki').delegate('.dw-cmt-x', 'click', function() {
   var thread = $(this).closest(".dw-cmt");
   resizeRootThreadExtraWide();
   thread.
@@ -347,7 +347,6 @@ function updateDebate(newDebateHtml) {
       if (isPostEdited) {
         $(this).children('.dw-cmt-wrap')
           .replaceAll($oldThis.children('.dw-cmt-wrap'))
-          .mouseenter(onPostOrThreadMouseEnter)
           .addClass('dw-post-edited'); // outlines it - TODO: Add to cmt not cmt-bdy
       }
       else if (isNewThread && !isSubThread) {
@@ -361,23 +360,27 @@ function updateDebate(newDebateHtml) {
         $(this)
           .addClass('dw-post-new') // outlines it, and its sub thread posts
           .prependTo($res)
-          .mouseenter(onPostOrThreadMouseEnter)
           .find('.dw-cmt-wrap')
-          .mouseenter(onPostOrThreadMouseEnter);
       }
+      else
+        return;
+      makeReplyRateEtcLinks($(this));
     })
 }
 
 // ------- Forms and actions
 
-// Replace the .dw-act link with reply/edit/rate buttons.
-$('.dw-cmt-act').each(function(){
-    $(this).replaceWith(
-        $('#dw-action-menu')
-          .clone()
-          .attr('id','')
-          .addClass('dw-cmt-acts'));
-  });
+// Replace .dw-act links with reply/edit/rate links (visible on hover).
+function makeReplyRateEtcLinks($cmtOrChild){
+  $cmtOrChild.closest('.dw-cmt').find('> .dw-cmt-wrap > .dw-cmt-act')
+      .replaceWith(
+      $('#dw-action-menu')
+        .clone()
+        .attr('id','')
+        .addClass('dw-cmt-acts'));
+}
+posts.each(function(){ makeReplyRateEtcLinks($(this)); });
+
 
 // Action <form> cancel button -- won't work for the Edit form...?
 function slideAwayRemove($form) {
@@ -506,7 +509,7 @@ $('.debiki').delegate('.dw-rate', 'click', function() {
             }
           });
 
-        $newPost.mouseenter(onPostOrThreadMouseEnter);
+        makeReplyRateEtcLinks($newPost);
         slideAwayRemove($rateForm);
       }, 'html');
 
