@@ -7,6 +7,7 @@ import io._
 import scala.collection.JavaConversions._
 import scala.collection.{mutable => mut}
 import java.{io => jio}
+import Prelude._
 
 /** Converts a debate from YAML to HTML.
  */
@@ -154,10 +155,11 @@ private[debiki] object App {
     if (!root.exists) {
       // (not mkdirs, that'd be somewhat unsafe in case of a typo when
       // the user specifies `dir' on the command line?)
-      root.mkdir()
+      if (!root.mkdir())
+        illegalArg("Please create the parent directory of: "+ dir)
     }
     else if (!root.isDirectory)
-      throw new IllegalArgumentException("Not a directory: "+ dir)
+      illegalArg("Not a directory: "+ dir)
     new jio.File(dir +"js/").mkdir()
     new jio.File(dir +"css/debiki/images/").mkdirs()
     new jio.File(dir + debate.id +"/edits/proposed/post/").mkdirs()
