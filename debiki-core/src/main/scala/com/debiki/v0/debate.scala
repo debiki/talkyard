@@ -360,6 +360,8 @@ case class EditVote(
   diss: List[String]
 )
 
+// + EditApplication/Utilization/Introduction/Commit/PutOn?
+// + EditRevocation/Reversal?
 case class EditApplied (
   editId: String,
   date: ju.Date,

@@ -1,5 +1,88 @@
 vim: fdm=marker et sw=2 ts=2
 
+
+TODO: Rename class dw-owner, split into:? dw-user dw-author dw-editor
+
+Mini-comments:
+<div style="border-top-width: 1px; border-top-style: dotted; border-top-color: rgb(170, 170, 170); font-size: 13px; color: rgb(68, 68, 68); margin-left: 20px; ">
+<div style="border-bottom: 1px dotted #DDD"><i>Tony Hanks says:</i> Spelling error: not "irsn" bust "itsnris", should we perhaps fix that?</div>
+<div style="border-bottom: 1px dotted #DDD"><i>Misse Muuu Gris says:</i> Link to http://muumäq.org/ristn broken, should be: http://muu.com/mää/rad/rstir/basri.html</div>
+</div>
+
+New layout:
+
+<ol class='dw-cmts'>
+  <li class='dw-cmt' id='dw-Ca'>
+    <div class='dw-cmt-hdr'>
+    <div class='dw-cmt-bdy'>
+    <a class='dw-cmt-act' href='...'>React</a>
+    <ol class='dw-cmt-res'>
+      <li class='dw-cmt' id='dw-Cb'>
+        <div class='dw-cmt-hdr'>
+        <div class='dw-cmt-bdy'>
+        <a class='dw-cmt-act'>
+        <ol class='dw-cmt-res'>
+          ...
+        </ol>
+      </li>
+      <li class='dw-cmt' id='dw-Aa3d03feCc'>
+        <div class='dw-cmt-hdr'>
+        <div class='dw-cmt-bdy'>
+        <a class='dw-cmt-act'>
+      </li>
+    </ol>
+  </li>
+  <li id='dw-cmt_f'>
+    <li id='dw-cmt_c'>
+      <div class='dw-cmt-hdr'>
+      <div class='dw-cmt-bdy'>
+      <a class='dw-cmt-act'>
+      <form class='dw-f-re'>
+        <input class='dw-f-re-by'>
+        <input class='dw-f-re-to'>
+        <input class='dw-f-re-ip'>
+      </form>
+    </li>
+  </li>
+</ol>
+
+
+Cookies?
+  debiki_unread_posts
+  debiki_my_ratings
+  debiki_my_posts
+  debiki_my_edits
+
+  dw-unread-posts
+  dw-my-ratings
+  dw-my-posts
+  dw-my-edits
+
+  DebikiUnreadPosts
+  DebikiMyRatings
+  DebikiMyPosts
+  DebikiMyEdits
+
+  debikiUnreadPosts
+  debikiMyRatings
+  debikiMyPosts
+  debikiMyEdits
+
+  dwUnreadEditsApplied
+  dwUnreadEditsSuggested
+  dwUnreadPosts
+  dwMyRatings
+  dwMyPosts
+  dwMyEditsApplied
+  dwMyEditsSuggested
+  dwPageCurrentVersion
+  dwPageLastVersion
+
+
+http://valdebatt.debiki.com/test/
+  ab35fe1215c/högre-akassa.html
+
+
 A HTTP GET request from the Android 2.1 emulator: |
  GET /debiki-gen-html/test.xhtml HTTP/1.1
  Host: 10.0.2.2
@@ -14,3 +97,47 @@ Scala: http://github.com/jorgeortiz85/scala-time/tree/master/src/main/scala/org/
 JavaScript: http://code.google.com/p/datejs/
 microformats: http://microformats.org/wiki/datetime-design-pattern
 Det blir så här: <abbr class="foo" title="YYYY-MM-DDTHH:MM:SSZ">Date Time</abbr>
+
+
+Reddit URL for single thread:
+  http://www.reddit.com/r/politics/comments/cxofg/massive_censorship_of_digg_uncovered_is_reddit/c0w16s5
+
+
+*** Reputation systems ***
+
+http://en.wikipedia.org/wiki/Reputation_system
+
+
+*** API ***
+
+Jardiff is a tool to help visualise API differences between two different versions of a project.
+
+
+*** Security ***
+
+Web sites have various CSRF countermeasures available:
+Requiring authentication in GET and POST parameters, not only cookies;
+Checking the HTTP Referer header;
+Ensuring there's no crossdomain.xml file granting unintended access to Flash movies[14]
+Limiting the lifetime of authentication cookies
+When processing a POST, disregard URL parameters if you know they should come from a form
+Requiring a secret, user-specific token in all form submissions and side-effect URLs prevents CSRF; the attacker's site can't put the right token in its submissions.[1]
+
+Clickjacking: Use a new HTTP header, X-FRAME-OPTIONS. This header can have two values, DENY  and SAMEORIGIN, which will block any framing or framing by external sites, respectively.
+http://en.wikipedia.org/wiki/Clickjacking
+
+
+<span class="ui-icon ui-icon-pencil" style="border-style: initial; border-top-width: 1px; border-right-width: 1px; border-bottom-width: 1px; border-left-width: 1px; border-top-color: rgb(28, 148, 196); border-right-color: rgb(28, 148, 196); border-bottom-color: rgb(28, 148, 196); border-left-color: rgb(28, 148, 196); float: right; margin-left: 9px; clear: right; cursor: crosshair; z-index: 9999; position: relative; background-color: rgb(231, 231, 231); padding-top: 2px; padding-right: 2px; padding-bottom: 2px; padding-left: 2px; ">
+      </span>
+1. ratings, date
+2. Owner:  By orig-author, ..., and last-editor
+
+
+
+!! Ha med polls! Som:
+  "Poll
+  Can you name all the uses of “_”? :"
+Men för genomskådning-av-demagogi?
+
+-- Långt och bra debattexempel:
+http://yro.slashdot.org/comments.pl?sid=10/07/06/1659255
