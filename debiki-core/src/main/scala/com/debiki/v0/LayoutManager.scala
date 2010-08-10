@@ -231,6 +231,14 @@ class LayoutManager(val debate: Debate) {
   }
 
   private def layoutPosts(): NodeSeq = {
+    val rootPosts = debate.repliesTo(debate.RootPostId)
+    val articleActions =
+      if (rootPosts.length == 1) Nil // TODO: Nil iff no article
+      else {
+        <div class='dw-art-acts'>
+          <a class='dw-reply'>Reply</a>
+        </div>
+      }
     <div id={debate.id} class="debiki dw-debate">
       <div class="dw-debate-info">{
         if (lastChange isDefined) {
@@ -241,16 +249,23 @@ class LayoutManager(val debate: Debate) {
         }
       }
       </div>
-      <ol class='dw-cmts'>
-        { _layoutChildren(0, debate.RootPostId) }
+      { articleActions }
+      <ol class='dw-cmts'>{
+        // If there is only 1 root post, start on depth 0. Then it
+        // will be made wide (via CSS), so it covers the whole first
+        // row. Otherwise start on depth 1: posts on depth 1
+        // are layed out into columns.
+        _layoutPosts(
+            if (rootPosts.length == 1) 0 else 1,
+            rootPosts)
+      }
       </ol>
     </div>
   }
 
-  private def _layoutChildren(depth: Int, post: String): NodeSeq = {
-    val childPosts: List[Post] = debate.repliesTo(post)
+  private def _layoutPosts(depth: Int, posts: List[Post]): NodeSeq = {
     for {
-      c <- childPosts.sortBy(p => -statscalc.scoreFor(p.id).liking)
+      c <- posts.sortBy(p => -statscalc.scoreFor(p.id).liking)
       cssThreadId = "dw-thread-"+ c.id
       cssDepth = "dw-depth-"+ depth
     }
@@ -261,7 +276,7 @@ class LayoutManager(val debate: Debate) {
         (if (debate.repliesTo(c.id).isEmpty) Nil
         else
           <ol class='dw-cmts'>
-            { _layoutChildren(depth + 1, c.id) }
+            { _layoutPosts(depth + 1, debate.repliesTo(c.id)) }
           </ol>)
       }
       </li>

@@ -207,7 +207,7 @@ var resizeRootThreadImpl = function(extraWidth){
     extraWidth = 150;
   }
   var width = extraWidth;
-  var root = $('.debiki > .dw-cmts > .dw-cmt > .dw-cmts');
+  var root = $('.dw-depth-0.dw-cmt > .dw-cmts');
   root.children('.dw-cmt, form, .dw-edit-forms').each(function(){
     width += $(this).outerWidth(true);
   });
@@ -384,7 +384,8 @@ function slideAwayRemove($form) {
   // Slide away <form> and remove it.
   var $parent = $form.parent();
   function rm(next) { $form.remove(); resizeRootThread(); next(); }
-  if ($parent.filter('.dw-depth-0').length) $form.hide('fold', 800).queue(rm);
+  if ($parent.filter('.dw-depth-0, .dw-debate').length)
+    $form.hide('fold', 800).queue(rm);
   else $form.slideUp(530).queue(rm);
 };
 
@@ -398,14 +399,26 @@ $('.debiki').delegate(
 // Slide in reply, edit and rate forms -- I think it's
 // easier to understand how they are related to other elems
 // if they slide in, instead of just appearing abruptly.
-function slideInActionForm($form, $thread) { 
-  if ($thread) $form.insertAfter($thread.children('.dw-cmt-wrap'));
-  else $thread = $form.closest('.dw-cmt');
+function slideInActionForm($form, $where) { 
+  var $dst;
+  if ($where) {
+    $dst = $where.children('.dw-cmts');
+    if ($dst.length) {
+      // This works when repling to the article itself,
+      // or to a reply that already has other replies.
+      $form.insertBefore($dst);
+    }
+    else {
+      // This works when replying to a reply without replies.
+      $form.insertAfter($where.children('.dw-cmt-wrap'));
+    }
+  }
+  else $where = $form.closest('.dw-cmt');
   // Extra width prevents float drop.
   resizeRootThreadExtraWide();
   // Slide in from left, if <form> siblings ordered horizontally.
   // Otherwise slide down (siblings ordered vertically).
-  if ($thread.filter('.dw-depth-0').length) $form.show('fold', 800);
+  if ($where.filter('.dw-depth-0, .dw-debate').length) $form.show('fold', 800);
   else $form.slideDown(530);
   // Cancel extra width. Or add even more width, to prevent float drops
   // -- needs to be done also when sliding downwards, since that sometimes 
@@ -435,7 +448,7 @@ function syncNameInputWithNameCookie($form) {
 
 // ------- Rating
 
-$('#dw-action-menu .dw-rate').button().click(function(){
+$('.debiki').delegate('.dw-rate', 'click', function() {
   // Warning: Some duplicated code, see .dw-reply and dw-edit click() below.
   var thread = $(this).closest('.dw-cmt');
   clearfix(thread); // ensures the rating appears nested inside the thread
@@ -526,14 +539,22 @@ rateFormTemplate.find('.dw-show-more-rat-tags').show().
 
 // ------- Replying
 
-$("#dw-action-menu .dw-reply").button().click(function() {
+$('.debiki').delegate('.dw-reply', 'click', function() {
   // Warning: Some duplicated code, see .dw-rat-tag and dw-edit click() above.
+  var $post;
+  var postId = 'A'; // means is-reply-to-the-article-itself
   var $thread = $(this).closest('.dw-cmt');
-  clearfix($thread); // ensures the reply appears nested inside the thread
-  var $post = $thread.children('.dw-cmt-wrap');
+  if ($thread.length) {
+    // Change postId to refer to the comment not the article.
+    clearfix($thread); // ensures the reply appears nested inside the thread
+    $post = $thread.children('.dw-cmt-wrap');
+    postId = $post.attr('id').substr(8, 999); // drop initial "dw-post-"
+  }
+  else {
+    $thread = $(this).closest('.dw-debate');
+  }
   var $replyForm = $("#dw-hidden-templates .dw-reply-template").
                 children().clone(true);
-  var postId = $post.attr('id').substr(8, 999); // drop initial "dw-post-"
   $replyForm.find("input[name='dw-fi-post']").attr('value', postId);
   syncNameInputWithNameCookie($replyForm);
   makeIdsUniqueUpdateLabels($replyForm, '-post-'+ postId);
@@ -567,7 +588,7 @@ $("#dw-action-menu .dw-reply").button().click(function() {
 
 // ------- Editing
 
-$("#dw-action-menu .dw-edit").button().click(function() {
+$('.debiki').delegate('.dw-edit', 'click', function() {
   // Warning: Some duplicated code, see .dw-rat-tag and .dw-reply click() above.
   var $thread = $(this).closest('.dw-cmt');
   clearfix($thread); // makes edit area appear inside $thread

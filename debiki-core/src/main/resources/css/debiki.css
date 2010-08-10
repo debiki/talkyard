@@ -261,9 +261,21 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
 }
 
 .dw-cmts {
-  margin: 0 0px 0px 28px;
+  margin: 0;
   padding-top: 3px;
   border-left: 1px dotted #ddf;
+}
+
+.dw-depth-1 .dw-cmts {
+  margin: 0 0 0 28px;
+}
+
+.dw-depth-2 .dw-cmts {
+  margin: 0 0 0 28px;
+}
+
+.dw-cmt.dw-depth-1 {
+  margin-right: 12px;
 }
 
 .dw-cmt-wrap {
@@ -329,25 +341,38 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
   display: block;
 }
 
-.dw-cmt-wrap:hover > .dw-cmt-acts a {
-  visibility: visible;
+.dw-art-acts {
+  margin-bottom: 2em;
+}
+
+.dw-art-acts a {
+  display: block;
+  font-size: 110%;
+}
+
+.dw-art-acts a,
+.dw-cmt-acts a {
+  cursor: crosshair;
+  text-decoration: none;
+  color: #369; /*#228ef1; */
+  /*
+  ui-icons_0c93ca_256x240.png
+  ui-icons_228ef1_256x240.png
+  ui-icons_6fbbd9_256x240.png
+  ui-icons_e9911c_256x240.png
+  ui-icons_ef8c08_256x240.png
+  ui-icons_ffd27a_256x240.png
+  */
 }
 
 .dw-cmt-acts a {
   visibility: hidden;
   margin-right: 10px;
-  cursor: crosshair;
   font-size: 13px;
-  text-decoration: none;
-  color: #369; /*#228ef1;
-/*
-ui-icons_0c93ca_256x240.png
-ui-icons_228ef1_256x240.png
-ui-icons_6fbbd9_256x240.png
-ui-icons_e9911c_256x240.png
-ui-icons_ef8c08_256x240.png
-ui-icons_ffd27a_256x240.png
-*/
+}
+
+.dw-cmt-wrap:hover > .dw-cmt-acts a {
+  visibility: visible;
 }
 
 /* --- Post info ---*/
