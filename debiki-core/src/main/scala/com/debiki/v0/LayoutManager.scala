@@ -620,12 +620,11 @@ class LayoutManager(val debate: Debate) {
               {/* temporary layout hack */}
               <div class='dw-rat-tag-set'>{
                 rateBox("interesting") ++
-                rateBox("boring") ++
                 rateBox("funny")
               }</div>
               <div class='dw-rat-tag-set'>{
-                rateBox("insightful") ++
-                rateBox("faulty")
+                rateBox("boring") ++
+                rateBox("stupid")
               }</div>
               <a class='dw-show-more-rat-tags'>More...</a>
               <div class='dw-rat-tag-set dw-more-rat-tags'>{

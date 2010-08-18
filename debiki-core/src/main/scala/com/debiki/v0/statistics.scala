@@ -122,7 +122,8 @@ private[debiki] class StatsCalc(val debate: Debate) {
   import StatsCalc._
 
   private val good = imm.Set("interesting", "funny", "insightful", "helpful")
-  private val bad = imm.Set("boring", "faulty", "off-topic", "spam", "troll")
+  private val bad = imm.Set("boring", "faulty", "off-topic", "spam", "troll",
+                            "stupid")
 
   private class PostRatingImpl extends PostRating {
     var ratingCount = 0
