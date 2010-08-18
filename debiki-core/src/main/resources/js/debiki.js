@@ -252,6 +252,19 @@ var resizeRootThreadNowAndLater = (function(){
   }
 })();
 
+$('.dw-cmt.dw-depth-1').resizable({
+    //alsoResize: thread,
+    resize: resizeRootThreadExtraWide,
+    handles: 'e',
+    stop: function(event, ui) {
+      // jQuery has added `height: ...' to the thread's style attribute.
+      // Unless removed, the therad won't resize itself when child
+      // threads are opened/closed.
+      $(this).css('height', null);
+      resizeRootThreadNowAndLater();
+    }
+  })
+
 // Make posts and threads resizable.
 // Fails with a TypeError on Android: Cathching it and ignoring it.
 // (On Android, posts and threads won't be resizable.)

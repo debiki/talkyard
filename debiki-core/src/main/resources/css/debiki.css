@@ -107,13 +107,13 @@ p:last-of-type {
 .dw-depth-0.dw-cmt > #dw-action-menu {
   top: -0.8em; /* cancel above margin-bottom */
 }
-.dw-depth-0.dw-cmt > .dw-cmt-bdy.dw-cropped-e {
+.dw-depth-0.dw-cmt > .dw-cmt-wrap > .dw-cmt-bdy.dw-cropped-e {
   /* Make the root post wider than other posts, so it spans > 1 child.
   Then it is easier (?) to understand which threads are its
   children, although the children are spread horizontally. */
   max-width: 60em;
 }
-.dw-depth-0.dw-cmt > .dw-cmt-bdy.dw-cropped-e > .dw-text {
+.dw-depth-0.dw-cmt > .dw-cmt-wrap > .dw-cmt-bdy.dw-cropped-e > .dw-text {
   padding-right: 15em; /* the text would be hard to read were it very wide */
   padding-bottom: 1.3em; /* litte more airy? first post */
 }
@@ -143,10 +143,9 @@ p:last-of-type {
 }
 
 /* --- Width ---*/
-.dw-depth-1,
-.dw-depth-1 .dw-cmt {
+.dw-depth-1 {
   /* Avoids >1 column for this depth */
-  max-width: 25em;
+  width: 25em;
 }
 .dw-depth-1.dw-cmt.dw-collapsed-fx {
   max-width: 8.5em;
@@ -192,7 +191,7 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
   cursor: help;
 }
 
-.dw-cmt-bdy.dw-cropped-e {
+.dw-cmt-bdy.dw-cropped-e { /* TODO: Don't need this class? */
   max-width: 25em;
 }
 
@@ -256,8 +255,17 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
   margin: 8px 0 0 5px;
 }
 
+/*.dw-depth-0 > form, -- cannot, already a border/outline
+.dw-depth-0 > .dw-edit-forms, */
 .dw-cmt.dw-depth-1 {
-  margin-left: 22px;
+  padding: 0 20px 0 0;
+  margin: 0 16px 0 0;
+  border-right: 2px solid lightgray;
+}
+
+.xx.dw-cmt.dw-depth-1:first-of-type,
+.xx.dw-cmt.dw-depth-1:last-of-type {
+  border-right: 0;
 }
 
 .dw-cmts {
@@ -272,10 +280,6 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
 
 .dw-depth-2 .dw-cmts {
   margin: 0 0 0 28px;
-}
-
-.dw-cmt.dw-depth-1 {
-  margin-right: 12px;
 }
 
 .dw-cmt-wrap {
