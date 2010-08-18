@@ -144,7 +144,7 @@ $('.debiki').delegate('.dw-cmt-x', 'click', function() {
   thread.
     find('> :not(.dw-cmt-wrap, .dw-cmt-x), '+
         '> .dw-cmt-wrap > .dw-cmt-bdy, '+
-        '> .dw-cmt-wrap > .dw-cmt-acts').
+        '> .dw-cmt-acts').
       //add(thread.find('> .dw-cmt-wrap > .dw-cmt-bdy')).
       stop(true,true).
       slideToggle(800).
@@ -269,12 +269,12 @@ $('.dw-cmt.dw-depth-1').resizable({
 // Fails with a TypeError on Android: Cathching it and ignoring it.
 // (On Android, posts and threads won't be resizable.)
 try {
-  posts
+  $('.dw-cmt-wrap')
   .resizable({
       autoHide: true,
       start: function(event, ui) {
         // Remove max height and width restrictions.
-        $(this).closest('.dw-cmt-bdy').removeClass('dw-cropped-s dw-cropped-e');
+        $(this).closest('.dw-cmt-wrap').removeClass('dw-cropped-s dw-cropped-e');
         didResize = true;
       }
      })
@@ -290,7 +290,7 @@ try {
     .mouseup(function(){
       // (Removing only max-width usually results in nothing:
       // The thread usually has a max-width.).
-      var post = $(this).closest('.dw-cmt-bdy');
+      var post = $(this).closest('.dw-cmt-wrap');
       post.removeClass('dw-cropped-s dw-cropped-e');
       // Expand post eastwards if resize handle was clicked not dragged.
       // (Also expands southwards, but browsers usually expand to east first.)
@@ -300,7 +300,7 @@ try {
   .find('.ui-resizable-s, .ui-resizable-se')
     // Expand post southwards if resize handle was clicked not dragged.
     .mouseup(function(){
-      if (!didResize) $(this).closest('.dw-cmt-bdy').css('height', null);
+      if (!didResize) $(this).closest('.dw-cmt-wrap').css('height', null);
     })
   .end()
   .find('.ui-resizable-handle')
@@ -386,14 +386,30 @@ function updateDebate(newDebateHtml) {
 
 // Replace .dw-act links with reply/edit/rate links (visible on hover).
 function makeReplyRateEtcLinks($cmtOrChild){
-  $cmtOrChild.closest('.dw-cmt').find('> .dw-cmt-wrap > .dw-cmt-act')
+  var $cmt = $cmtOrChild.closest('.dw-cmt');
+  $cmt.find('> .dw-cmt-act')
       .replaceWith(
       $('#dw-action-menu')
         .clone()
         .attr('id','')
-        .addClass('dw-cmt-acts'));
+        .addClass('dw-cmt-acts')
+        .css('visibility', 'hidden'));
+  updateAuthorInfo($cmt, $.cookie('dwUserName'));
 }
+
 posts.each(function(){ makeReplyRateEtcLinks($(this)); });
+
+// Show actions when hovering post.
+var $lastActions = null;
+$('.dw-cmt-wrap').mouseenter(function(){
+    if ($lastActions) {
+      $lastActions.closest('.dw-cmt').children('.dw-cmt-acts')
+        .css('visibility', 'hidden');
+    }
+    $lastActions = $(this);
+    $lastActions.closest('.dw-cmt').children('.dw-cmt-acts')
+      .css('visibility', 'visible');
+  });
 
 
 // Action <form> cancel button -- won't work for the Edit form...?
@@ -417,19 +433,7 @@ $('.debiki').delegate(
 // easier to understand how they are related to other elems
 // if they slide in, instead of just appearing abruptly.
 function slideInActionForm($form, $where) { 
-  var $dst;
-  if ($where) {
-    $dst = $where.children('.dw-cmts');
-    if ($dst.length) {
-      // This works when repling to the article itself,
-      // or to a reply that already has other replies.
-      $form.insertBefore($dst);
-    }
-    else {
-      // This works when replying to a reply without replies.
-      $form.insertAfter($where.children('.dw-cmt-wrap'));
-    }
-  }
+  if ($where) $form.insertAfter($where.children('.dw-cmt-acts'));
   else $where = $form.closest('.dw-cmt');
   // Extra width prevents float drop.
   resizeRootThreadExtraWide();
@@ -453,15 +457,32 @@ function dismissActionMenu() {
   $('#dw-action-menu').appendTo($('#dw-hidden-templates'));
 }
 
+// ------- User name
+
 // Remembers the user name in a cookie, synchronizes with
-// edit/reply forms.
-function syncNameInputWithNameCookie($form) {
+// edit/reply forms. Adds .dw-mine class to all posts by someone
+// with the new name.
+function syncUserName($form) {
   var $nameInput = $form.find("input[name='dw-fi-by']");
   $nameInput.val($.cookie('dwUserName'));
   $nameInput.blur(function(){
-      $.cookie('dwUserName', $nameInput.val());
+      var name = $nameInput.val();
+      $.cookie('dwUserName', name);
+      $('.debiki .dw-cmt').each(function(){
+          updateAuthorInfo($(this), name); });
     });
 }
+
+function updateAuthorInfo($post, name) {
+  var by = $post.find('> .dw-cmt-wrap .dw-cmt-by').text();
+  if (by == name) $post.addClass('dw-mine');
+}
+
+// Add .dw-mine class to all .dw-cmt:s written by this user.
+$('.debiki .dw-cmt').each(function(){
+    updateAuthorInfo($(this), $.cookie('dwUserName'));
+  });
+
 
 // ------- Rating
 
@@ -573,7 +594,7 @@ $('.debiki').delegate('.dw-reply', 'click', function() {
   var $replyForm = $("#dw-hidden-templates .dw-reply-template").
                 children().clone(true);
   $replyForm.find("input[name='dw-fi-post']").attr('value', postId);
-  syncNameInputWithNameCookie($replyForm);
+  syncUserName($replyForm);
   makeIdsUniqueUpdateLabels($replyForm, '-post-'+ postId);
   $replyForm.resizable({
       alsoResize: $replyForm.find('textarea'),
@@ -613,7 +634,8 @@ $('.debiki').delegate('.dw-edit', 'click', function() {
   // Create a div into which to load the edit <form>s -- the div class should
   // match the edit form div's class, so the action-menu won't be displayed
   // again until the request has completed and the edit form has been closed.
-  var $formWrap = $("<div class='dw-edit-forms'></div>").insertAfter($post);
+  var $formWrap = $("<div class='dw-edit-forms'></div>")
+      .insertAfter($thread.children('.dw-cmt-acts'));
   $formWrap.hide(); // slide in later
   var postId = $post.attr('id').substr(8, 999); // drop initial "dw-post-"
   dismissActionMenu();  // before ajax request, or 2 edit <forms> will
@@ -656,7 +678,7 @@ $('.debiki').delegate('.dw-edit', 'click', function() {
           curText += $(this).text() + '\n\n'; });
     $editsYoursForm.find('textarea').val(curText.trim() + '\n');
 
-    syncNameInputWithNameCookie($editsYoursForm);
+    syncUserName($editsYoursForm);
 
     // Make forms and accordions resizable
     $editsYoursForm.resizable({

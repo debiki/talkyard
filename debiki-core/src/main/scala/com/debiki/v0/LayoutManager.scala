@@ -324,7 +324,7 @@ class LayoutManager(val debate: Debate) {
               distinct.length > 1)
             <a>various people</a>
           else
-            <a class='dw-cmt-by'>{
+            <a class='dw-cmt-ed-by'>{
               debate.editsById(lastEditApp.get.editId).by
             }</a>
           }, <abbr class='dw-cmt-at dw-date' title={lastEditDate.get}>{
@@ -333,7 +333,7 @@ class LayoutManager(val debate: Debate) {
 
     // the – on the next line is an `en dash' not a minus
     <a class='dw-cmt-x'>[–]</a>
-    <div id={cssPostId} class='dw-cmt-wrap'>
+    <div id={cssPostId} class={"dw-cmt-wrap dw-cropped-e" + cropped_s}>
       <div class='dw-cmt-hdr'>
         By <a class='dw-cmt-by'>{post.by}</a>,
         <abbr class='dw-cmt-at dw-date'
@@ -341,11 +341,11 @@ class LayoutManager(val debate: Debate) {
             ratsList }{
             editInfo } 
       </div>
-      <div class={"dw-cmt-bdy dw-cropped-e" + cropped_s}>
+      <div class='dw-cmt-bdy'>
         { xmlText }
       </div>
-      <a class='dw-cmt-act' href={'#'+ cssPostId}>React</a>
     </div>
+    <a class='dw-cmt-act' href={'#'+ cssPostId}>React</a>
   }
 
 /*

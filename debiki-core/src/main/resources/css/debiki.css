@@ -164,6 +164,7 @@ p:last-of-type {
   /* Paint color above any text below, otherwise it's easy never
   to see there is a rezise-post-grip. */
   /*background-color: #FCFAF5;*/
+  background-color: white; /* hides text beneath, else grip hard to notice */
 }
 
 .dw-cmt-bdy p {
@@ -259,7 +260,7 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
 .dw-depth-0 > .dw-edit-forms, */
 .dw-cmt.dw-depth-1 {
   padding: 0 20px 0 0;
-  margin: 0 16px 0 0;
+  margin: 10px 16px 0 0;
   border-right: 2px solid lightgray;
 }
 
@@ -275,18 +276,21 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
 }
 
 .dw-depth-1 .dw-cmts {
-  margin: 0 0 0 28px;
+  margin: 0 0 0 25px;
 }
 
 .dw-depth-2 .dw-cmts {
-  margin: 0 0 0 28px;
+  margin: 0 0 0 25px;
 }
 
 .dw-cmt-wrap {
-  margin-left: 28px;
+  margin-left: 25px;
+  overflow: hidden;
+  background-color: white;
 }
 
 .dw-cmt-hdr {
+  padding-left: 3px;
   font-size: smaller;
   color: #000;
   background-color: #eee;
@@ -295,7 +299,8 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
 .dw-cmt-hdr-ed {
 }
 
-.dw-cmt-by {
+.dw-cmt-by,
+.dw-cmt-ed-by {
   color: #369; /* same as reddit */
   font-weight: bold;
 }
@@ -315,9 +320,7 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
 
 .dw-cmt-bdy {
   padding: 6px 1px 0 3px;
-  margin-left: -3px; /* cancel padding */
   position: relative;
-  overflow: hidden;
   background-color: white;
   min-width: 5em;
 }
@@ -334,7 +337,7 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
   border-top: none;
 }
 
-.dw-cmt-bdy:hover {
+.dw-cmt-wrap:hover {
   outline: #999 dashed thin;
   /* In case the post has been up-sized, its up-sized
   parts might be hidden by a thread, unless: */
@@ -342,10 +345,12 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
 }
 
 .dw-cmt-act {
+  margin-left: 28px;
   display: block;
 }
 
 .dw-art-acts {
+  margin-left: 28px;
   margin-bottom: 2em;
 }
 
@@ -370,13 +375,9 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
 }
 
 .dw-cmt-acts a {
-  visibility: hidden;
+  margin-left: 28px;
   margin-right: 10px;
   font-size: 13px;
-}
-
-.dw-cmt-wrap:hover > .dw-cmt-acts a {
-  visibility: visible;
 }
 
 /* --- Post info ---*/
@@ -682,6 +683,8 @@ form.dw-rat-form .dw-more-rat-tags label {
 /* jQuery UI bug fix: in the jQuery-auto-generated file, ".debiki"
  is missing (on the next line). */
 .debiki input.ui-button { padding: .4em 1em; }
+
+
 
 
 
