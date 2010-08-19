@@ -365,7 +365,7 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
 .dw-cmt-acts a {
   cursor: crosshair;
   text-decoration: none;
-  color: #369; /*#228ef1; */
+  color: #3872ab; /*#369; /*#228ef1; */
   /*
   ui-icons_0c93ca_256x240.png
   ui-icons_228ef1_256x240.png
@@ -460,13 +460,13 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
 .debiki form {
   position: relative;
   z-index: 9999;
-  background-color: #fcfaf5;
+  background-color: #fdfbf6; /*#fcfaf5;*/
   padding: 1em;
   margin: 1em;
   /* My Firifox 3.6 draws outlines very incorrectly for the Rating form,
   (but correctly for Reply and Edit), use borders instead. */
   /* outline: #83c5df solid thick; */
-  border: 5px solid #83c5df;
+  border: 5px solid #cbcbcb; /*#83c5df; */
   float: left; /* else: sometimes very wide; reply-form might appear inside! */
 }
 
@@ -574,10 +574,10 @@ form.dw-rat-form .dw-more-rat-tags label {
 .dw-edit-forms { /* currently almost identical to <form> */
   position: relative;
   z-index: 9999;
-  background-color: #fcfaf5;
+  background-color: #fefdfa; /*#fcfaf5;*/
   padding: 1em;
   margin: 1em;
-  outline: #ddeff6 /*#83c5df*/ solid thick;
+  outline: #eee /*#ddeff6 /*#83c5df*/ solid thick;
   float: left; /* or sometimes very wide */
 }
 
@@ -655,7 +655,7 @@ form.dw-rat-form .dw-more-rat-tags label {
  */
 
 /* Same color as the ui-buttons */
-.dw-color-from-ui-state-default { color: #1c94c4; }
+.dw-color-from-ui-state-default { color: #1c80c4; /*1c94c4;*/ }
 .dw-color-bright-from-ui-state-default { color: #83c5df; }
 .dw-color-brighter-from-ui-state-default { color: #c1e2ef; }
 .dw-color-brightest-from-ui-state-default { color: #eaf5fa; }
