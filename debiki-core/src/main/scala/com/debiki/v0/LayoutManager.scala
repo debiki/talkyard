@@ -579,7 +579,7 @@ class LayoutManager(val debate: Debate) {
           <p>
             <label for='dw-fi-reply-text'>Your reply:</label><br/>
             <textarea id='dw-fi-reply-text' name='dw-fi-reply-text' rows='13'
-              cols='38'>The cat was playing in the garden.</textarea>
+              cols='38'/>
           </p>
           <p class='dw-name-or-alias'>
             <label for='dw-fi-reply-author'>Your name or alias:</label>

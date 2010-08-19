@@ -674,7 +674,7 @@ $('.debiki').delegate('.dw-edit', 'click', function() {
 
     // Copy post text to edit-suggestion textarea.
     var curText = '';
-    $post.find('.dw-text p').each(function(){
+    $post.find('.dw-cmt-bdy p').each(function(){
           curText += $(this).text() + '\n\n'; });
     $editsYoursForm.find('textarea').val(curText.trim() + '\n');
 
