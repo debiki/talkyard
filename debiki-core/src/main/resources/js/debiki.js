@@ -752,8 +752,12 @@ $('.debiki').delegate('.dw-edit', 'click', function() {
 
     // Cannot use autoHeight, since other people's edit suggestions
     // might be arbitrary long?
-    $accordions.accordion(
-        { autoHeight: false, fillSpace: true, icons: false });
+    $accordions.each(function(){
+        var numElems = $(this).find('h4').length;
+        $(this).accordion(
+        { collapsible: true, active: (numElems == 1 ? 0 : false),
+          autoHeight: false, fillSpace: true, icons: false });
+      });
   });
 });
 
