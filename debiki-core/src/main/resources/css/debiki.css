@@ -161,10 +161,11 @@ p:last-of-type {
   height: 17px;
   width: 17px;
   background-position: -80px -222px;
-  /* Paint color above any text below, otherwise it's easy never
-  to see there is a rezise-post-grip. */
-  /*background-color: #FCFAF5;*/
   background-color: white; /* hides text beneath, else grip hard to notice */
+}
+
+.debiki form .ui-resizable-se {
+  background-color: #fcfaf5; /* (see above) match form background */
 }
 
 .dw-cmt-bdy p {
@@ -187,7 +188,8 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
   z-index: 1000;
 }
 
-.dw-cmt-bdy.dw-cropped-s {
+.dw-cmt-wrap.dw-cropped-s .dw-cmt-bdy,
+.dw-cmt-wrap.dw-cropped-s .dw-cmt-hdr {
   max-height: 4em;
   cursor: help;
 }
@@ -196,7 +198,7 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
   max-width: 25em;
 }
 
-.dw-cmt-bdy.dw-cropped-s .dw-cropped-mark {
+.dw-cmt-wrap.dw-cropped-s .dw-cropped-mark {
   display: block;
   position: absolute;
   bottom: 0px;
@@ -217,8 +219,8 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
   height: 15px;
   display: inline-block;
 }*/
-.dw-cmt-bdy .dw-cropped-mark {
-  display: none; /* no longer cropped */
+.dw-cmt-wrap .dw-cropped-mark {
+  display: none; /* no longer cropped, class .dw-cropped-s gone */
 }
 
 /* --- Thread summary ---*/

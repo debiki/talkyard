@@ -175,18 +175,6 @@ $('.debiki').delegate('.dw-cmt-x', 'click', function() {
   // TODO: sometimes .dw-post-edited instead of -new
 })()
 
-// Indicate which posts are cropped.
-posts.filter('.dw-cropped-s').append(
-    '<div class="dw-cropped-mark">. . . truncated</div>');
-
-// Makes whole post visible on click.
-//
-posts.filter('.dw-cropped-s').click(function(){
-  console.log('click: Removind cropped-s.');
-  // (Some rather long posts are cropped, using max-width and -height.
-  // Don't remove max-width, or some posts might end up rather wide.)
-  $(this).closest('.dw-cmt-bdy').removeClass('dw-cropped-s');
-})
 
 // ------- Resizing
 
@@ -270,6 +258,17 @@ $('.dw-cmt.dw-depth-1').resizable({
 // (On Android, posts and threads won't be resizable.)
 try {
   $('.dw-cmt-wrap')
+  // Indicate which posts are cropped, and make visible on click.
+  .filter('.dw-cropped-s')
+    .append(
+      '<div class="dw-cropped-mark">. . . truncated</div>')
+    .click(function(){
+      console.log('click: Removing cropped-s.');
+      // (Some rather long posts are cropped, using max-width and -height.
+      // Don't remove max-width, or some posts might end up rather wide.)
+      $(this).removeClass('dw-cropped-s');
+    })
+  .end()
   .resizable({
       autoHide: true,
       start: function(event, ui) {
