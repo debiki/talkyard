@@ -1,4 +1,4 @@
-/*
+/* vim: ts=2 sw=2
  * jQuery dragscrollable Plugin
  * version: 1.0 (25-Jun-2009)
  * Copyright (c) 2009 Miquel Herrera
@@ -109,11 +109,33 @@ $.fn.debiki_dragscrollable = function( options ){
 			}
 
 			// Set the scroll position relative to what ever the scroll is now
-			event.data.scrollable.scrollLeft(
-							event.data.scrollable.scrollLeft() - delta.left);
-			event.data.scrollable.scrollTop(
-							event.data.scrollable.scrollTop() - delta.top);
-			
+			//--------------------------------
+			// This won't work in Opera, debiki-core run:
+			//   event.data.scrollable.scrollLeft(
+			//			event.data.scrollable.scrollLeft() - delta.left);
+			//event.data.scrollable.scrollTop(
+			//			event.data.scrollable.scrollTop() - delta.top);
+			// with this initialization:
+			//   jQuery(window).load(function(){
+			//     var selectors =
+			//       '.dw-thread, .dw-cmts, .dw-cmt, .dw-cmt-wrap, .dw-cmt-bdy, '+
+			//       '.dw-cmt-acts';
+			//     $('body').debiki_dragscrollable({ scrollable: selectors });
+			//   });
+			// but works with debiki-jspwiki-forum, with this init:
+			//  dragRoot = $('body');
+			//  scrollSelectors = '#content, #page, .leftmenu, .userbox, '+
+			//      '.dw-thread, .dw-cmts, .dw-cmt, .dw-cmt-wrap, .dw-cmt-acts';
+			//  $(scrollSelectors).addClass('dw-dragscrollable'); //--> cursor: move
+			//  dragRoot.debiki_dragscrollable({ scrollable: scrollSelectors });
+			//
+			//--------------------------------
+			// This works in all browsers, but... it's a hack!
+			// debiki_dragscrollable wasn't applied to `window'!
+			window.scrollTo($(window).scrollLeft() - delta.left,
+					$(window).scrollTop() - delta.top);
+			//--------------------------------
+
 			// Save where the cursor is
 			event.data.lastCoord={left: event.clientX, top: event.clientY}
 			if (event.data.preventDefault) {
