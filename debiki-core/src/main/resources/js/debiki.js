@@ -534,7 +534,9 @@ $('.debiki').delegate('.dw-rate', 'click', function() {
 
         // Highligt the user's ratings.
         $newPost.find('.dw-rats .dw-rat').each(function(){
-            var text = $(this).find('.dw-rat-tag').text().toLowerCase();
+            // .dw-rat text is e.g. " interesting 80% ". Make lowercase,
+            // and drop " 80% ", so tag-name comparison works.
+            var text = $(this).text().toLowerCase().replace(/ \d+% /, '');
             for (ix in ratedTags) {
               if ($.trim(text) == ratedTags[ix]) {
                 $(this).addClass('dw-you-rated');

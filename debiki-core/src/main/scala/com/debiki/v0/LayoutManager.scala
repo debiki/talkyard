@@ -302,17 +302,13 @@ class LayoutManager(val debate: Debate) {
       else
         <br/> ++ Text(rats.length +" ratings:") ++
         <ol class='dw-rats'>{
-          // Avoid whitespace between tags, by moving '>' to next Scala line,
-          // so `editInfo' can append a ',' with no leading whitespace.
+          // Don't change whitespace, or `editInfo' perhaps won't
+          // be able to append a ',' with no whitespace in front.
           for ((tag: String, stats: LabelStats) <- rats) yield
-          <li class="dw-rat"
-            ><span class="dw-rat-tag"> {tag} </span
-            ><span class="dw-rat-tag-frac">{
-                "%.0f" format (100 * stats.fraction) }%</span
-            ><span class="dw-rat-tag-frac-min">{
-                "%.0f" format (100 * stats.fractionLowerBound) }%</span
-            ><span class="dw-rat-tag-sum">{stats.sum}%</span
-          ></li>
+          <li class="dw-rat" data-stats={
+              ("lo: %.0f" format (100 * stats.fractionLowerBound)) +"%, "+
+              "sum: "+ stats.sum}> {
+            tag +" %.0f" format (100 * stats.fraction)}% </li>
         }</ol>
     val editInfo =
       // If closed: <span class='dw-cmt-re-cnt'>{count} replies</span>
