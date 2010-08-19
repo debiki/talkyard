@@ -71,7 +71,8 @@ private[debiki] object App {
           <script type="text/javascript">
             jQuery.noConflict()(function($){{
               var selectors =
-                '.dw-thread, .dw-cmts, .dw-cmt, .dw-cmt-wrap, .dw-cmt-acts';
+                '.dw-thread, .dw-cmts, .dw-cmt, .dw-cmt-wrap, .dw-cmt-bdy, '+
+                '.dw-cmt-acts';
               $('body').debiki_dragscrollable({{
                   dragSelector: selectors, scrollable: selectors }});
             }});
