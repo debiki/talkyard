@@ -259,21 +259,21 @@ $('.dw-cmt.dw-depth-1').resizable({
 try {
   $('.dw-cmt-wrap')
   // Indicate which posts are cropped, and make visible on click.
-  .filter('.dw-cropped-s')
+  .filter('.dw-x-s')
     .append(
-      '<div class="dw-cropped-mark">. . . truncated</div>')
+      '<div class="dw-x-mark">. . . truncated</div>')
     .click(function(){
       console.log('click: Removing cropped-s.');
       // (Some rather long posts are cropped, using max-width and -height.
       // Don't remove max-width, or some posts might end up rather wide.)
-      $(this).removeClass('dw-cropped-s');
+      $(this).removeClass('dw-x-s');
     })
   .end()
   .resizable({
       autoHide: true,
       start: function(event, ui) {
         // Remove max height and width restrictions.
-        $(this).closest('.dw-cmt-wrap').removeClass('dw-cropped-s dw-cropped-e');
+        $(this).closest('.dw-cmt-wrap').removeClass('dw-x-s dw-x-e');
         didResize = true;
       }
      })
@@ -290,7 +290,7 @@ try {
       // (Removing only max-width usually results in nothing:
       // The thread usually has a max-width.).
       var post = $(this).closest('.dw-cmt-wrap');
-      post.removeClass('dw-cropped-s dw-cropped-e');
+      post.removeClass('dw-x-s dw-x-e');
       // Expand post eastwards if resize handle was clicked not dragged.
       // (Also expands southwards, but browsers usually expand to east first.)
       if (!didResize) post.css('width', null).css('height', null);

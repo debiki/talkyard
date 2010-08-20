@@ -292,7 +292,7 @@ class LayoutManager(val debate: Debate) {
     val (xmlText, numLines) =
         textToHtml(lastEditApp.map(_.result).getOrElse(post.text))
     val long = numLines > 9
-    val cropped_s = if (long) " dw-cropped-s" else ""
+    val cropped_s = if (long) " dw-x-s" else ""
 
     val score = statscalc.scoreFor(post.id)
     val ratStatsSorted = score.labelStatsSorted
@@ -329,7 +329,7 @@ class LayoutManager(val debate: Debate) {
 
     // the – on the next line is an `en dash' not a minus
     <a class='dw-cmt-x'>[–]</a>
-    <div id={cssPostId} class={"dw-cmt-wrap dw-cropped-e" + cropped_s}>
+    <div id={cssPostId} class={"dw-cmt-wrap dw-x-e" + cropped_s}>
       <div class='dw-cmt-hdr'>
         By <a class='dw-cmt-by'>{post.by}</a>,
         <abbr class='dw-cmt-at dw-date'
