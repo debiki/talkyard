@@ -118,15 +118,6 @@ p:last-of-type {
   padding-bottom: 1.3em; /* litte more airy? first post */
 }
 
-.dw-cmt.dw-demarcated-fx {
-  /* Unfortunately animating the background color won't
-  look nice since there migh be child threads whose
-  background color it *not* animated. Perhaps this can
-  be fixed with more javascript.*/
-  xx-background-color: #faf7ea;
-  border-left-color: #eae8ca;
-  border-bottom-color: #d6d3b2;
-}
 .dw-depth-1 .dw-cmt {
   padding-left: 0;
   border-top: none;
@@ -221,35 +212,6 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
 }*/
 .dw-cmt-wrap .dw-x-mark {
   display: none; /* no longer cropped, class .dw-x-s gone */
-}
-
-/* --- Thread summary ---*/
-
-.dw-thread-info {
-  background-color: #eae8ca;
-  opacity: 0;
-  padding: 0.3ex;
-  font-size: 93%;
-  cursor: default; /* otherwise the `text' cursor sometimes appears */
-  border-color: #C3C3A8; /* javascript border */
-  padding-right: 1em; /* for the resizable-e handle */
-  overflow: hidden; /* if resized so text wrapped */
-  line-height: 110%; /* else upper parts of chars on wrapped line visible */
-}
-
-.dw-thread-info:hover {
-  background-color: #FEFEDD;
-}
-
-.dw-cmt.dw-demarcated > .dw-thread-info {
-  cursor: s-resize;
-}
-
-.dw-cmt.dw-collapsed .dw-thread-info .ui-resizable-handle {
-  display: none; /* thread is collapsed; show no resize handle */
-}
-.dw-cmt.dw-collapsed .dw-thread-info:hover .ui-resizable-handle {
-  display: block; /* show resize handle when hovering collapsed thread */
 }
 
 /* --- Comments ---*/

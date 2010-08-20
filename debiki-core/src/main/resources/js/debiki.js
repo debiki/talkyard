@@ -256,28 +256,6 @@ try {
       didResize = false;
     })
   .end();
-
-  // Resize threads.
-  // Bug: Resizing a thread might toggle it collapsed / expanded, since
-  // a click on the .thread-info might happen.
-  $('.debiki .dw-thread-info').each(function(index) {
-    var thread = $(this).closest('.dw-cmt');
-    $(this).resizable({
-        alsoResize: thread,
-        resize: resizeRootThreadExtraWide,
-        handles: 'e',
-        stop: function(event, ui) {
-          // jQuery has added `height: ...' to the thread's style attribute.
-          // Unless removed, the therad won't resize itself when child
-          // threads are opened/closed.
-          thread.css('height', null);
-          resizeRootThreadNowAndLater();
-        }
-      })
-      // Add a resize icon.
-      .children('.ui-resizable-e')
-      .addClass('ui-icon ui-icon-grip-solid-vertical');
-  });
 }
 catch (e) {
   if (e.name == 'TypeError') console.log(e.name +': Failed to make '+
