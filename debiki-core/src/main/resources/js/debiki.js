@@ -189,8 +189,9 @@ var resizeRootThreadNowAndLater = (function(){
   }
 })();
 
-$('.dw-cmt.dw-depth-1').resizable({
-    //alsoResize: thread,
+// Makes [threads layed out vertically] resizable.
+function $makeEastResizable() {
+  $(this).resizable({
     resize: resizeRootThreadExtraWide,
     handles: 'e',
     stop: function(event, ui) {
@@ -200,15 +201,17 @@ $('.dw-cmt.dw-depth-1').resizable({
       $(this).css('height', null);
       resizeRootThreadNowAndLater();
     }
-  })
+  });
+}
 
 // Make posts and threads resizable.
 // Fails with a TypeError on Android: Cathching it and ignoring it.
 // (On Android, posts and threads won't be resizable.)
-try {
-  $('.dw-cmt-wrap')
+function $makePostResizable() {
+  try {
   // Indicate which posts are cropped, and make visible on click.
-  .filter('.dw-x-s')
+  $(this)
+    .filter('.dw-x-s')
     .append(
       '<div class="dw-x-mark">. . . truncated</div>')
     .click(function(){
@@ -256,11 +259,12 @@ try {
       didResize = false;
     })
   .end();
-}
-catch (e) {
-  if (e.name == 'TypeError') console.log(e.name +': Failed to make '+
-      'post resizable. Ignoring error (this is a smartphone?)');
-  else throw e;
+  }
+  catch (e) {
+    if (e.name == 'TypeError') console.log(e.name +': Failed to make '+
+        'post resizable. Ignoring error (this is a smartphone?)');
+    else throw e;
+  }
 }
 
 // ------- Update
@@ -304,40 +308,48 @@ function updateDebate(newDebateHtml) {
       }
       else
         return;
-      makeReplyRateEtcLinks($(this));
+      $(this).each($initPost);
     })
 }
 
 // ------- Forms and actions
 
 // Replace .dw-act links with reply/edit/rate links (visible on hover).
-function makeReplyRateEtcLinks($cmtOrChild){
-  var $cmt = $cmtOrChild.closest('.dw-cmt');
-  $cmt.find('> .dw-cmt-act')
-      .replaceWith(
+posts.each($initPost);
+function $initPost(){
+  var $cmt = $(this).closest('.dw-cmt');
+  $cmt.find('> .dw-cmt-act').replaceWith(
       $('#dw-action-menu')
         .clone()
         .attr('id','')
         .addClass('dw-cmt-acts')
         .css('visibility', 'hidden'));
+  // $makeEastResizable must be called before $makePostResizable,
+  // or $makeEastResizable has no effect. No idea why -- my guess
+  // is some jQuery code does something similar to `$.find(..)',
+  // and finds the wrong resizable stuff,
+  // if the *inner* tag is made resizable before the *outer* tag.
+  // (Note that $makePostResizable is invoked on a $cmt *child*.)
+  $cmt.filter('.dw-depth-1').each($makeEastResizable);
+  // Show actions when hovering post.
+  // (Better avoid delegates for frequent events such as mouseenter.)
+  $cmt.children('.dw-cmt-wrap')
+    .mouseenter($showActions)
+    .each($makePostResizable);
   updateAuthorInfo($cmt, $.cookie('dwUserName'));
 }
 
-posts.each(function(){ makeReplyRateEtcLinks($(this)); });
-
-// Show actions when hovering post.
-// (Better not use delegates for very frequent events such as mouseenter.)
+// Shows actions for the current post, or the last post hovered.
 var $lastActions = null;
-$('.dw-cmt-wrap').mouseenter(function(){
-    if ($lastActions) {
-      $lastActions.closest('.dw-cmt').children('.dw-cmt-acts')
-        .css('visibility', 'hidden');
-    }
-    $lastActions = $(this);
+function $showActions() {
+  if ($lastActions) {
     $lastActions.closest('.dw-cmt').children('.dw-cmt-acts')
-      .css('visibility', 'visible');
-  });
-
+      .css('visibility', 'hidden');
+  }
+  $lastActions = $(this);
+  $lastActions.closest('.dw-cmt').children('.dw-cmt-acts')
+    .css('visibility', 'visible');
+}
 
 // Action <form> cancel button -- won't work for the Edit form...?
 function slideAwayRemove($form) {
@@ -473,7 +485,7 @@ $('.debiki').delegate('.dw-rate', 'click', function() {
             }
           });
 
-        makeReplyRateEtcLinks($newPost);
+        $newPost.each($initPost);
         slideAwayRemove($rateForm);
       }, 'html');
 
@@ -755,6 +767,7 @@ resizeRootThread();
 //========================================
    })(); // end Debiki module
 //========================================
+
 
 
 

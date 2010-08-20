@@ -178,6 +178,11 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
   width: 20px;
   z-index: 1000;
 }
+/* But don't raise the vertical lines between depth-1 threads
+ above the threads (with z-index: 10) */
+.dw-depth-1 > .ui-resizable-handle {
+  z-index: 6;
+}
 
 .dw-cmt-wrap.dw-x-s .dw-cmt-bdy,
 .dw-cmt-wrap.dw-x-s .dw-cmt-hdr {
@@ -289,16 +294,9 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
   min-width: 5em;
 }
 
-.dw-post-edited .dw-cmt-hdr,
-.dw-post-new .dw-cmt-hdr {
+.dw-post-edited .dw-cmt-wrap,
+.dw-post-new .dw-cmt-wrap {
   border: 7px solid #f4c4f4;
-  border-bottom: none; /* -cmt-bdy is below, also with border */
-}
-
-.dw-post-edited .dw-cmt-bdy,
-.dw-post-new .dw-cmt-bdy {
-  border: 7px solid #f4c4f4;
-  border-top: none;
 }
 
 .dw-cmt-wrap:hover {
