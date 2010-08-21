@@ -136,8 +136,7 @@ p:last-of-type {
 
 /* --- Width ---*/
 .dw-depth-1 {
-  /* Avoids >1 column for this depth */
-  width: 25em;
+  width: 25em; /* avoids >1 column for this depth */
 }
 .dw-depth-1.dw-cmt.dw-collapsed-fx {
   max-width: 8.5em;
@@ -229,9 +228,10 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
 /*.dw-depth-0 > form, -- cannot, already a border/outline
 .dw-depth-0 > .dw-edit-forms, */
 .dw-cmt.dw-depth-1 {
-  padding: 0 20px 0 0;
+  padding: 0 20px 10px 0;
   margin: 10px 16px 0 0;
-  border-right: 2px solid lightgray;
+  border-right: 2px solid lightgray; /* column separator and resizor */
+  min-height: 100px; /* makes the column separator at least this high */
 }
 
 .xx.dw-cmt.dw-depth-1:first-of-type,
@@ -241,12 +241,12 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
 
 .dw-cmts {
   margin: 0;
-  padding-top: 3px;
-  border-left: 1px dotted #ddf;
 }
 
 .dw-depth-1 .dw-cmts {
   margin: 0 0 0 25px;
+  padding-top: 3px;
+  border-left: 1px dotted #ddf;
 }
 
 .dw-depth-2 .dw-cmts {
@@ -421,13 +421,13 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
 .debiki form {
   position: relative;
   z-index: 9999;
-  background-color: #fdfbf6; /*#fcfaf5;*/
+  background-color: #fffdfa;
   padding: 1em;
   margin: 1em;
   /* My Firifox 3.6 draws outlines very incorrectly for the Rating form,
   (but correctly for Reply and Edit), use borders instead. */
   /* outline: #83c5df solid thick; */
-  border: 5px solid #cbcbcb; /*#83c5df; */
+  border: 1px solid #cbcbcb; /*#83c5df; */
   float: left; /* else: sometimes very wide; reply-form might appear inside! */
 }
 
@@ -444,6 +444,7 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
                    make the accordion resizable instead) */
   padding-right: 0px;  /* else 97% (above) often too large, so... */
   padding-bottom: 0px; /* ...scrollbars appear */
+  border-color: #aaa; /* default black is too sharp */
 }
 
 .dw-name-or-alias {
@@ -535,10 +536,10 @@ form.dw-rat-form .dw-more-rat-tags label {
 .dw-edit-forms { /* currently almost identical to <form> */
   position: relative;
   z-index: 9999;
-  background-color: #fefdfa; /*#fcfaf5;*/
+  background-color: #fffefc;
   padding: 1em;
   margin: 1em;
-  outline: #eee /*#ddeff6 /*#83c5df*/ solid thick;
+  border: 1px solid #d9d9d9;
   float: left; /* or sometimes very wide */
 }
 
