@@ -81,6 +81,7 @@ p:last-of-type {
 }
 
 .dw-debate-info {
+  display: none; /* need to place somewhere where it won't confuse newbies */
   margin-bottom: 1em;
 }
 
