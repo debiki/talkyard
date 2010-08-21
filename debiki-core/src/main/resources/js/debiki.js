@@ -406,7 +406,7 @@ function dismissActionMenu() {
 // with the new name.
 function syncUserName($form) {
   var $nameInput = $form.find("input[name='dw-fi-by']");
-  $nameInput.val($.cookie('dwUserName'));
+  $nameInput.val($.cookie('dwUserName') || 'Anonymous');
   $nameInput.blur(function(){
       var name = $nameInput.val();
       $.cookie('dwUserName', name);
