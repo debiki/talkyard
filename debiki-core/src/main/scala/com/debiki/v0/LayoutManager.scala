@@ -250,7 +250,7 @@ class LayoutManager(val debate: Debate) {
       }
       </div>
       { articleActions }
-      <ol class='dw-cmts'>{
+      <ol class='dw-cmts ui-helper-clearfix'>{
         // If there is only 1 root post, start on depth 0. Then it
         // will be made wide (via CSS), so it covers the whole first
         // row. Otherwise start on depth 1: posts on depth 1

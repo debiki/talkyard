@@ -149,7 +149,7 @@ var resizeRootThreadImpl = function(extraWidth){
   $root.find('> .dw-cmts > .dw-cmt, > form, > .dw-edit-forms').each(function(){
     width += $(this).outerWidth(true);
   });
-  $root.css('width', width);
+  $root.css('min-width', width +'px');
 }
 
 // Makes the root thread wide enough to contain all its child posts.
