@@ -372,7 +372,10 @@ $('.debiki').delegate(
 // easier to understand how they are related to other elems
 // if they slide in, instead of just appearing abruptly.
 function slideInActionForm($form, $where) { 
-  if ($where) $form.insertAfter($where.children('.dw-cmt-acts'));
+  if ($where) {
+    // Either .dw-cmt-acts or -art-acts is the actions placeholder.
+    $form.insertAfter($where.children('.dw-cmt-acts, .dw-art-acts'));
+  }
   else $where = $form.closest('.dw-cmt');
   // Extra width prevents float drop.
   resizeRootThreadExtraWide();
