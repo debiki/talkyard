@@ -13,7 +13,7 @@ id: test-debate
 #     i
 #      j
 --- !Post
-id: a
+id: root
 parent: root
 date: 2001-12-14t21:59:43.10-05:00
 by: OP
@@ -28,7 +28,7 @@ text: |
 --- !Post
 id: b
 # was: a
-parent: a
+parent: root
 date: 2001-12-14t21:59:43.10-05:00
 by: OP
 text: |
@@ -90,7 +90,7 @@ by: Morgan Murmeldjur
 --- !Post
 id: c
 # was: a
-parent: a
+parent: root
 date: 2001-12-14t21:59:43.10-05:00
 by: OP
 text: |
@@ -447,14 +447,14 @@ text: |
  Which brings us full circle to: "I hope IBM has done their research in this" - guess I could have left it at that in the first line or two, but I was bored. I wonder if there is a "+1/2 Bored" moderation? (Hey, the effort hasta be worth something!) ;-)
 
 --- !Post
-parent: a
+parent: root
 id: ac
 date: 2001-12-14t21:59:43.10-05:00
 by: Child-AC
 text: |
  Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
 --- !Post
-parent: a
+parent: root
 id: ad
 date: 2001-12-14t21:59:43.10-05:00
 by: Child-AD
@@ -470,14 +470,14 @@ by: Child-ADA
 text: |
  Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
 --- !Post
-parent: a
+parent: root
 id: ae
 date: 2001-12-14t21:59:43.10-05:00
 by: Child-AC
 text: |
  Proin viverra leo ut odio. Curabitur malesuada. Vestibulum a velit eu ante scelerisque vulputate.
 --- !Post
-parent: a
+parent: root
 id: af
 date: 2001-12-14t21:59:43.10-05:00
 by: Child-AC

@@ -3,6 +3,23 @@
  * Tips: List all CSS classes like so:
  *   find debiki-core-basedir/src -type f -print0 | \
  *     xargs -0 egrep -ho "dw-[[:alnum:]-]+" | sort | uniq -c
+ *
+ * Form names decrypted:
+ *
+ *  dw-           prefix, avoids name clashes
+ *  -ed-          edit
+ *  -f-           form
+ *  -fs-          form group
+ *  -hor-         horizontal layout
+ *  -rat-         rating
+ *  -re-          reply
+ *
+ *  dw-fs         form group
+ *  dw-fs-ed      edit form group
+ *  dw-fs-re      reply form group
+ *  dw-fs-rat     rating form group
+ *
+ *  ... and so on, hmm.
  */
 
 /* === Standard tags === */
@@ -134,15 +151,6 @@ p:last-of-type {
   clear: both; /* else the rating form might float to the left */
 }
 
-/* --- Width ---*/
-.dw-depth-1 {
-  width: 25em; /* avoids >1 column for this depth */
-}
-.dw-depth-1.dw-cmt.dw-collapsed-fx {
-  max-width: 8.5em;
-  overflow: hidden;
-}
-
 /* === Posts === */
 
 .debiki .ui-resizable-se {
@@ -225,13 +233,22 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
   margin: 8px 0 0 5px;
 }
 
-/*.dw-depth-0 > form, -- cannot, already a border/outline
-.dw-depth-0 > .dw-edit-forms, */
-.dw-cmt.dw-depth-1 {
+.dw-hor > .dw-fs,
+.dw-hor > .dw-act,
+.dw-depth-1 {
   padding: 0 20px 10px 0;
   margin: 10px 16px 0 0;
   border-right: 2px solid lightgray; /* column separator and resizor */
   min-height: 100px; /* makes the column separator at least this high */
+}
+
+.dw-depth-1 {
+  width: 25em; /* avoids > 1 column for this depth */
+}
+
+.dw-depth-1.dw-collapsed-fx {
+  max-width: 8.5em;
+  overflow: hidden;
 }
 
 .xx.dw-cmt.dw-depth-1:first-of-type,
@@ -307,40 +324,30 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
   z-index: 10;
 }
 
-.dw-cmt-act {
-  margin-left: 28px;
-  display: block;
+.dw-act {
+  float: left; /* else won't wrap if in narrow column */
+  margin: 4px 0px 9px 27px;
 }
 
-.dw-art-acts {
-  margin-left: 28px;
-  margin-bottom: 2em;
+.dw-depth-0 > .dw-act {
+  float: left;
+  padding-right: 20px;
+  margin-top: 10px;
+  margin-right: 16px;
+  border-right: 2px solid lightgray; /* same as for .dw-depth-0 */
+  min-height: 100px; /* makes the column separator at least this high */
 }
 
-.dw-art-acts a {
-  display: block;
-  font-size: 110%;
-}
-
-.dw-art-acts a,
-.dw-cmt-acts a {
+a.dw-act,
+.dw-act a {
   cursor: crosshair;
   text-decoration: none;
-  color: #3872ab; /*#369; /*#228ef1; */
-  /*
-  ui-icons_0c93ca_256x240.png
-  ui-icons_228ef1_256x240.png
-  ui-icons_6fbbd9_256x240.png
-  ui-icons_e9911c_256x240.png
-  ui-icons_ef8c08_256x240.png
-  ui-icons_ffd27a_256x240.png
-  */
+  color: #3872ab;
+  font-size: 13px;
 }
 
-.dw-cmt-acts a {
-  margin-left: 28px;
-  margin-right: 10px;
-  font-size: 13px;
+.dw-depth-0 > .dw-act a {
+  font-size: 15px;
 }
 
 /* --- Post info ---*/
@@ -418,7 +425,13 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
 
 /* === Forms === */
 
-.debiki form {
+.dw-fs {
+  float: left; /* or sometimes very wide */
+  margin: 10px 0 20px 35px; /* left-indents somewhat more than reply indent */
+}
+
+.dw-fs form {
+  float: left; /* or won't wrap all children, some children float */
   position: relative;
   z-index: 9999;
   /* A distinct border retults in confusingly many vertical lines
@@ -430,11 +443,9 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
   background-color: #fbf7f2;
   border: 1px solid #f7f3ed; /* almost background color */
   padding: 1em;
-  margin: 1em;
   /* My Firifox 3.6 draws outlines very incorrectly for the Rating form,
   (but correctly for Reply and Edit), use borders instead. */
   /* outline: #83c5df solid thick; */
-  float: left; /* else: sometimes very wide; reply-form might appear inside! */
 }
 
 .debiki form input[type='text'],
@@ -539,54 +550,51 @@ form.dw-rat-form .dw-more-rat-tags label {
 
 /* === Edit === */
 
-.dw-edit-forms { /* currently almost identical to <form> */
+.dw-fs-ed { /* currently almost identical to <form> */
   position: relative;
   z-index: 9999;
-  padding: 1em;
-  margin: 1em;
-  float: left; /* or sometimes very wide */
 }
 
-.dw-edit-forms form {
+.dw-fs-ed form {
   margin: 1em 0;
   float: none; /* or won't be wide enough to fill up parent */
   clear: both; /* or show-form buttons appear to the left */
 }
 
-.dw-edit-forms > a {
+.dw-fs-ed > a {
   margin: 0.8em 0;
   float: left; /* or 100% wide when sliding up/down, weird */
   clear: both; /* or stacked horiz. when forms sliding up/down */
 }
 
-.dw-edit-forms form:first-of-type,
-.dw-edit-forms > a:first-of-type {
+.dw-fs-ed form:first-of-type,
+.dw-fs-ed > a:first-of-type {
   margin-top: 0;
 }
 
-.dw-edit-forms .ui-accordion {
+.dw-fs-ed .ui-accordion {
   margin-top: 0.75em;
 }
 
-.dw-edit-forms .ui-accordion-content {
+.dw-fs-ed .ui-accordion-content {
   padding: 0.7em 0.2em 0 0.6em !important; /* otherwise too much padding */
   background: #f2f2f2; /* jQuery UI's default bg is somewhat obtrusive*/
   border: 1px solid #BBB;
 }
 
-.dw-edit-forms .ui-accordion-content p {
+.dw-fs-ed .ui-accordion-content p {
   /* Use same font/size as .dw-debate */
   font-family: Verdana, sans-serif;
   font-size: 93%;
   line-height: 110%;
 }
 
-.dw-edit-forms .ui-accordion h4 {
+.dw-fs-ed .ui-accordion h4 {
   font-weight: normal !important;
   font-size: 93%;
 }
 
-.dw-edit-forms h4.dw-your-edit {
+.dw-fs-ed h4.dw-your-edit {
   font-weight: bold !important;
 }
 

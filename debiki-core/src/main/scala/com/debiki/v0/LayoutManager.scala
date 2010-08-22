@@ -232,13 +232,8 @@ class LayoutManager(val debate: Debate) {
 
   private def layoutPosts(): NodeSeq = {
     val rootPosts = debate.repliesTo(debate.RootPostId)
-    val articleActions =
-      if (rootPosts.length == 1) Nil // TODO: Nil iff no article
-      else {
-        <div class='dw-art-acts'>
-          <a class='dw-reply'>Reply</a>
-        </div>
-      }
+    val rootPost = debate.post(debate.RootPostId)
+    val cssThreadId = "dw-thread-"+ debate.RootPostId
     <div id={debate.id} class="debiki dw-debate">
       <div class="dw-debate-info">{
         if (lastChange isDefined) {
@@ -249,17 +244,16 @@ class LayoutManager(val debate: Debate) {
         }
       }
       </div>
-      { articleActions }
-      <ol class='dw-cmts ui-helper-clearfix'>{
-        // If there is only 1 root post, start on depth 0. Then it
-        // will be made wide (via CSS), so it covers the whole first
-        // row. Otherwise start on depth 1: posts on depth 1
-        // are layed out into columns.
-        _layoutPosts(
-            if (rootPosts.length == 1) 0 else 1,
-            rootPosts)
+      <div id={cssThreadId} class='dw-cmt dw-depth-0 dw-thread dw-hor'>
+      {
+        rootPost.map(comment(_)).getOrElse(Nil) ++
+        <div class='dw-act'><a class='dw-reply'>Reply</a></div>
+        <ol class='dw-cmts ui-helper-clearfix'>{
+          _layoutPosts(1, rootPosts)
+        }
+        </ol>
       }
-      </ol>
+      </div>
     </div>
   }
 
@@ -340,8 +334,10 @@ class LayoutManager(val debate: Debate) {
       <div class='dw-cmt-bdy'>
         { xmlText }
       </div>
-    </div>
-    <a class='dw-cmt-act' href={'#'+ cssPostId}>React</a>
+    </div> ++ (
+      if (post.id == debate.RootPostId) Nil // actions already added by caller
+      else <a class='dw-react' href={'#'+ cssPostId}>React</a>
+    )
   }
 
 /*
@@ -503,8 +499,7 @@ class LayoutManager(val debate: Debate) {
       </form>
     }
 
-    <div class='dw-edit-forms'>
-    {
+    <div class='dw-fs dw-fs-ed'>{
       (if (editsPending.nonEmpty) editsPendingStuff else Nil) ++
       newSuggestionStuff ++
       (if (editsApplied.nonEmpty) editsAppliedStuff else Nil)
@@ -565,7 +560,7 @@ class LayoutManager(val debate: Debate) {
         <a class='dw-rate'>Rate</a>
         <a class='dw-edit'>Edit</a>
       </div>
-      <div class='dw-reply-template'>
+      <div class='dw-fs dw-fs-re'>
         <form class='dw-reply-form'
             action={config.replyAction}
             accept-charset='UTF-8'
@@ -592,7 +587,7 @@ class LayoutManager(val debate: Debate) {
           </div>
         </form>
       </div>
-      <div class='dw-rat-template'>
+      <div class='dw-fs dw-fs-rat'>
         <form class='dw-rat-form'
             action={config.rateAction}
             accept-charset='UTF-8'

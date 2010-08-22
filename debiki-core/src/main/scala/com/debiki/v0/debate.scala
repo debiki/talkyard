@@ -92,7 +92,7 @@ case class Debate (
   // -------- Replies
 
   def repliesTo(id: String): List[Post] =
-    postsByParentId.getOrElse(id, Nil)
+    postsByParentId.getOrElse(id, Nil).filterNot(_.id == id)
 
   def successorsTo(postId: String): List[Post] = {
     val res = repliesTo(postId)

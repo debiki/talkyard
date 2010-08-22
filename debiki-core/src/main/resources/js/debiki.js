@@ -77,7 +77,7 @@ Debiki.v0.setReplyUrl = function(urlBuilder) {
 var threadHovered = null;
 var didResize = false;
 var posts = $(".debiki .dw-cmt-bdy");
-var rateFormTemplate = $("#dw-hidden-templates .dw-rat-template form");
+var rateFormTemplate = $("#dw-hidden-templates .dw-fs-rat");
 var debateId = $('.debiki').attr('id');
 
 
@@ -90,7 +90,7 @@ $('.debiki').delegate('.dw-cmt-x', 'click', function() {
   thread.
     find('> :not(.dw-cmt-wrap, .dw-cmt-x), '+
         '> .dw-cmt-wrap > .dw-cmt-bdy, '+
-        '> .dw-cmt-acts').
+        '> .dw-act').
       //add(thread.find('> .dw-cmt-wrap > .dw-cmt-bdy')).
       stop(true,true).
       slideToggle(800).
@@ -146,7 +146,7 @@ var resizeRootThreadImpl = function(extraWidth){
   var width = extraWidth;
   var $root = $('.dw-depth-0');
   if (!$root.length) $root = $('.dw-debate'); // there's no root reply
-  $root.find('> .dw-cmts > .dw-cmt, > form, > .dw-edit-forms').each(function(){
+  $root.find('> .dw-cmts > .dw-cmt, > .dw-fs').each(function(){
     width += $(this).outerWidth(true);
   });
   $root.css('min-width', width +'px');
@@ -318,11 +318,10 @@ function updateDebate(newDebateHtml) {
 posts.each($initPost);
 function $initPost(){
   var $cmt = $(this).closest('.dw-cmt');
-  $cmt.find('> .dw-cmt-act').replaceWith(
-      $('#dw-action-menu')
+  $cmt.find('> .dw-react').replaceWith(
+      $('#dw-action-menu > a')
         .clone()
-        .attr('id','')
-        .addClass('dw-cmt-acts')
+        .addClass('dw-act')
         .css('visibility', 'hidden'));
   // $makeEastResizable must be called before $makePostResizable,
   // or $makeEastResizable has no effect. No idea why -- my guess
@@ -332,8 +331,9 @@ function $initPost(){
   // (Note that $makePostResizable is invoked on a $cmt *child*.)
   $cmt.filter('.dw-depth-1').each($makeEastResizable);
   // Show actions when hovering post.
+  // But always show the leftmost Reply, at depth-0, that creates a new column.
   // (Better avoid delegates for frequent events such as mouseenter.)
-  $cmt.children('.dw-cmt-wrap')
+  $cmt.filter(':not(.dw-depth-0)').children('.dw-cmt-wrap')
     .mouseenter($showActions)
     .each($makePostResizable);
   updateAuthorInfo($cmt, $.cookie('dwUserName'));
@@ -343,11 +343,11 @@ function $initPost(){
 var $lastActions = null;
 function $showActions() {
   if ($lastActions) {
-    $lastActions.closest('.dw-cmt').children('.dw-cmt-acts')
+    $lastActions.closest('.dw-cmt').children('.dw-act')
       .css('visibility', 'hidden');
   }
   $lastActions = $(this);
-  $lastActions.closest('.dw-cmt').children('.dw-cmt-acts')
+  $lastActions.closest('.dw-cmt').children('.dw-act')
     .css('visibility', 'visible');
 }
 
@@ -366,15 +366,18 @@ function slideAwayRemove($form) {
 $('.debiki').delegate(
     '.dw-reply-form .dw-cancel, ' +
     '.dw-rat-form .dw-cancel',
-    'click', function(){ slideAwayRemove($(this).closest('form')); });
+    'click', function(){ slideAwayRemove($(this).closest('.dw-fs')); });
 
 // Slide in reply, edit and rate forms -- I think it's
 // easier to understand how they are related to other elems
 // if they slide in, instead of just appearing abruptly.
 function slideInActionForm($form, $where) { 
   if ($where) {
-    // Either .dw-cmt-acts or -art-acts is the actions placeholder.
-    $form.insertAfter($where.children('.dw-cmt-acts, .dw-art-acts'));
+    // Insert before the first .dw-fs, or the .dw-cmts, or append.
+    var $post = $where.closest('.dw-cmt');
+    var $oldFormOrCmts = $post.children('.dw-fs, .dw-cmts').filter(':eq(0)');
+    if ($oldFormOrCmts.length) $oldFormOrCmts.before($form);
+    else $post.append($form);
   }
   else $where = $form.closest('.dw-cmt');
   // Extra width prevents float drop.
@@ -393,7 +396,7 @@ function slideInActionForm($form, $where) {
 }
 
 // Hide all action forms, since they will be slided in.
-$('#dw-hidden-templates form').hide();
+$('#dw-hidden-templates .dw-fs').hide();
 
 function dismissActionMenu() {
   $('#dw-action-menu').appendTo($('#dw-hidden-templates'));
@@ -433,7 +436,7 @@ $('.debiki').delegate('.dw-rate', 'click', function() {
   var thread = $(this).closest('.dw-cmt');
   clearfix(thread); // ensures the rating appears nested inside the thread
   var $post = thread.children('.dw-cmt-wrap');
-  var $rateForm = rateFormTemplate.clone(true);
+  var $rateForm = rateFormTemplate.clone(true); // TODO: Rename to $formWrap?
   var postId = $post.attr('id').substr(8, 999); // drop initial 'dw-post-'
   $rateForm.find("input[name='dw-fi-post']").attr('value', postId);
 
@@ -457,7 +460,7 @@ $('.debiki').delegate('.dw-rate', 'click', function() {
     }).get();
 
     $.post(Settings.makeRatePostUrl(debateId, postId),
-          $rateForm.serialize(), function(data){
+          $rateForm.children('form').serialize(), function(data){
 
         // Find the new version of the post, with new ratings.
         var $wrap =
@@ -530,19 +533,23 @@ $('.debiki').delegate('.dw-reply', 'click', function() {
     // Change postId to refer to the comment not the article.
     clearfix($thread); // ensures the reply appears nested inside the thread
     $post = $thread.children('.dw-cmt-wrap');
-    postId = $post.attr('id').substr(8, 999); // drop initial "dw-post-"
+    if ($post.length)
+      postId = $post.attr('id').substr(8, 999); // drop initial "dw-post-"
+    else {
+      // There's no parent post -- leave postId = 'root', which means
+      // a reply to the article (e.g. blog post) itself.
+    }
   }
   else {
     $thread = $(this).closest('.dw-debate');
   }
-  var $replyForm = $("#dw-hidden-templates .dw-reply-template").
-                children().clone(true);
+  var $replyForm = $('#dw-hidden-templates .dw-fs-re').clone(true);
   $replyForm.find("input[name='dw-fi-post']").attr('value', postId);
   syncUserName($replyForm);
   makeIdsUniqueUpdateLabels($replyForm, '-post-'+ postId);
-  $replyForm.resizable({
+  $replyForm.children('form').resizable({
       alsoResize: $replyForm.find('textarea'),
-      resize: resizeRootThreadExtraWide,
+      resize: resizeRootThreadExtraWide, // TODO rm textarea width?
       stop: resizeRootThreadNowAndLater
     });
   //
@@ -551,7 +558,7 @@ $('.debiki').delegate('.dw-reply', 'click', function() {
   //  - When completed, insert the new reply, highlighted.
   $replyForm.submit(function(){
     $.post(Settings.makeReplyUrl(debateId, postId),
-        $replyForm.serialize(), function(newDebateHtml){
+        $replyForm.children('form').serialize(), function(newDebateHtml){
       updateDebate(newDebateHtml);
       slideAwayRemove($replyForm);
     }, 'html');
@@ -578,18 +585,18 @@ $('.debiki').delegate('.dw-edit', 'click', function() {
   // Create a div into which to load the edit <form>s -- the div class should
   // match the edit form div's class, so the action-menu won't be displayed
   // again until the request has completed and the edit form has been closed.
-  var $formWrap = $("<div class='dw-edit-forms'></div>")
-      .insertAfter($thread.children('.dw-cmt-acts'));
+  var $formWrap = $("<div class='dw-fs'></div>")
+      .insertAfter($thread.children('.dw-edit'));  // TODO: not after dw-edit
   $formWrap.hide(); // slide in later
   var postId = $post.attr('id').substr(8, 999); // drop initial "dw-post-"
   dismissActionMenu();  // before ajax request, or 2 edit <forms> will
                         // appear if you double click.
-  $formWrap.load(Settings.makeEditUrl(debateId, postId) + ' .dw-edit-forms',
+  $formWrap.load(Settings.makeEditUrl(debateId, postId) + ' .dw-fs-ed',
       function(editFormHtml) {
 
     // (Need not make ids unique; the post id was known when html generated.)
 
-    var $editDiv = $formWrap.find('.dw-edit-forms').hide();
+    var $editDiv = $formWrap.find('.dw-fs-ed').hide(); // TODO? Remove `find'?
     var $accordions = $editDiv.find('.dw-edits');
 
     var $editsPendingForm = $editDiv.find('.dw-edits-others-form'); 
