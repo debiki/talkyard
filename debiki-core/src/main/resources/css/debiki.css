@@ -349,8 +349,14 @@ a.dw-act,
   font-size: 13px;
 }
 
+a.dw-act:hover,
+.dw-act a:hover {
+  color: #c77405; /* jQuery UI's ui-state-hover color */
+  text-decoration: underline;
+}
+
 .dw-depth-0 > .dw-act a {
-  font-size: 15px;
+  font-size: 17px;
 }
 
 /* --- Post info ---*/
