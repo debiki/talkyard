@@ -319,9 +319,8 @@ posts.each($initPost);
 function $initPost(){
   var $cmt = $(this).closest('.dw-cmt');
   $cmt.find('> .dw-react').replaceWith(
-      $('#dw-action-menu > a')
+      $('#dw-action-menu > .dw-act')
         .clone()
-        .addClass('dw-act')
         .css('visibility', 'hidden'));
   // $makeEastResizable must be called before $makePostResizable,
   // or $makeEastResizable has no effect. No idea why -- my guess
@@ -585,8 +584,8 @@ $('.debiki').delegate('.dw-edit', 'click', function() {
   // Create a div into which to load the edit <form>s -- the div class should
   // match the edit form div's class, so the action-menu won't be displayed
   // again until the request has completed and the edit form has been closed.
-  var $formWrap = $("<div class='dw-fs'></div>")
-      .insertAfter($thread.children('.dw-edit'));  // TODO: not after dw-edit
+  var $formWrap = $("<div class='dw-fs'></div>").insertAfter(
+      $thread.children('.dw-act:last'));//TODO: use $.get & update() instead
   $formWrap.hide(); // slide in later
   var postId = $post.attr('id').substr(8, 999); // drop initial "dw-post-"
   dismissActionMenu();  // before ajax request, or 2 edit <forms> will

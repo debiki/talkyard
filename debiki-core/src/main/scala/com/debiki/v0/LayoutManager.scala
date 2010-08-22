@@ -556,9 +556,9 @@ class LayoutManager(val debate: Debate) {
   private def menus = {
     <div id="dw-hidden-templates">
       <div id='dw-action-menu'>
-        <a class='dw-reply'>Reply</a>
-        <a class='dw-rate'>Rate</a>
-        <a class='dw-edit'>Edit</a>
+        <div class='dw-act'><a class='dw-reply'>Reply</a></div>
+        <div class='dw-act'><a class='dw-rate'>Rate</a></div>
+        <div class='dw-act'><a class='dw-edit'>Edit</a></div>
       </div>
       <div class='dw-fs dw-fs-re'>
         <form class='dw-reply-form'

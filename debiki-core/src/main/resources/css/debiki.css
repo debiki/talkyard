@@ -341,7 +341,6 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
   min-height: 100px; /* makes the column separator at least this high */
 }
 
-a.dw-act,
 .dw-act a {
   cursor: crosshair;
   text-decoration: none;
@@ -349,7 +348,6 @@ a.dw-act,
   font-size: 13px;
 }
 
-a.dw-act:hover,
 .dw-act a:hover {
   color: #c77405; /* jQuery UI's ui-state-hover color */
   text-decoration: underline;
