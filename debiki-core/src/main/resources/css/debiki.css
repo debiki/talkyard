@@ -111,20 +111,14 @@ p:last-of-type {
 
 /* === Threads === */
 
-.dw-depth-0.dw-cmt {
-  margin: 0.3em 0 0 0.7em;
-  border-left: 0.9em solid transparent;
-  border-bottom: 1ex solid transparent;
-  background-color: inherit;
-}
-
 /* The very first post */
-.dw-depth-0.dw-cmt > .dw-post {
+.dw-depth-0 > .dw-cmt-wrap {
   margin-bottom: 0.8em;
 }
-.dw-depth-0.dw-cmt > #dw-action-menu {
+.dw-depth-0.dw-cmt > .dw-act {
   top: -0.8em; /* cancel above margin-bottom */
 }
+
 .dw-depth-0.dw-cmt > .dw-cmt-wrap > .dw-cmt-bdy.dw-x-e {
   /* Make the root post wider than other posts, so it spans > 1 child.
   Then it is easier (?) to understand which threads are its
@@ -303,6 +297,15 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
   cursor: crosshair;
   font-size: 85%;
   text-decoration:none;
+}
+
+/* Un-indent any root post, by hiding the collapse button.
+ (Why would one need to hide the original post?) */
+.dw-depth-0 > .dw-cmt-x {
+  display: none;
+}
+.dw-depth-0 > .dw-cmt-wrap {
+  margin-left: 0;
 }
 
 .dw-cmt-bdy {
