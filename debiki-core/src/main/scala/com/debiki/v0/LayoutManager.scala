@@ -461,7 +461,7 @@ class LayoutManager(val debate: Debate) {
                 name='dw-fi-by' value='Anonymous'/>
         </div>
         <div class='dw-submit-set'>
-          <input class='dw-submit' type='submit' value='Submit suggestion'/>
+          <input class='dw-submit' type='submit' value='Submit'/>
           <input class='dw-cancel' type='button' value='Cancel'/>
           <input type='hidden' name='dw-fi-edit-post' value={postId}/>
           <input type='hidden' name='dw-fi-action' value='edit'/>
@@ -543,7 +543,7 @@ class LayoutManager(val debate: Debate) {
       Creative Commons Attribution 3.0 Unported License
     </a>
 
-  private val submitButtonText = "Submit reply"
+  private val submitButtonText = "Submit"
 
   /**
    *  Naming notes:
@@ -626,7 +626,7 @@ class LayoutManager(val debate: Debate) {
             </div>
           }
           <div class='dw-submit-set'>
-            <input class='dw-submit' type='submit' value='Submit ratings'/>
+            <input class='dw-submit' type='submit' value='Submit'/>
             <input class='dw-cancel' type='button' value='Cancel'/>
           </div>
         </form>
