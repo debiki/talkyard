@@ -449,6 +449,10 @@ $('.debiki').delegate('.dw-rate', 'click', function() {
     $rateForm.find("input[type='submit']").button("option", "disabled", false);
   });
 
+  // Set user name input.
+  $rateForm.find("input[name='dw-fi-by']").val(
+      $.cookie('dwUserName') || 'Anonymous');
+
   // Ajax-post ratings on submit.
   //  - Disable form until request completed.
   //  - When completed, highlight the user's own ratings.

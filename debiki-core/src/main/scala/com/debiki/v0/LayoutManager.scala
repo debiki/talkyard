@@ -105,7 +105,7 @@ object LayoutManager {
         require(tags.length < 100, "Less than 100 rating tags") // safer?
         Some(Rating(
                 postId = posts.head,
-                by = "?", // TODO: Remove `by'?
+                by = requireUser(),
                 ip = ip_,
                 date = date.getOrElse(new ju.Date),
                 tags = tags.toList))
@@ -594,6 +594,7 @@ class LayoutManager(val debate: Debate) {
             method='post'>
           <input type='hidden' name='dw-fi-action' value='rate'/>
           <input type='hidden' name='dw-fi-post' value='?'/>
+          <input type='hidden' name='dw-fi-by' value='?'/>
           {
             var boxCount = 1
             def rateBox(value: String) = {
