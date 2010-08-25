@@ -3,6 +3,8 @@
  * Tips: List all CSS classes like so:
  *   find debiki-core-basedir/src -type f -print0 | \
  *     xargs -0 egrep -ho "dw-[[:alnum:]-]+" | sort | uniq -c
+ * Narrower:
+ *   find src/main/scala/com/debiki/v0/LayoutManager.scala src/main/scala/com/debiki/v0/App.scala src/main/resources/js/debiki.js src/main/resources/css/debiki.css ../../debiki-jspwiki-forum/src/main -type f -print0 | xargs -0 egrep -ho "dw-[[:alnum:]-]+" | sort | uniq -c
  *
  * Form names decrypted:
  *
@@ -112,35 +114,35 @@ p:last-of-type {
 /* === Threads === */
 
 /* The very first post */
-.dw-depth-0 > .dw-cmt-wrap {
+.dw-depth-0 > .dw-p {
   margin-bottom: 0.8em;
 }
-.dw-depth-0.dw-cmt > .dw-act {
+.dw-depth-0.dw-t > .dw-act {
   top: -0.8em; /* cancel above margin-bottom */
 }
 
-.dw-depth-0.dw-cmt > .dw-cmt-wrap > .dw-cmt-bdy.dw-x-e {
+.dw-depth-0.dw-t > .dw-p > .dw-p-bdy.dw-x-e {
   /* Make the root post wider than other posts, so it spans > 1 child.
   Then it is easier (?) to understand which threads are its
   children, although the children are spread horizontally. */
   max-width: 60em;
 }
-.dw-depth-0.dw-cmt > .dw-cmt-wrap > .dw-cmt-bdy.dw-x-e > .dw-text {
+.dw-depth-0.dw-t > .dw-p > .dw-p-bdy.dw-x-e > .dw-text {
   padding-right: 15em; /* the text would be hard to read were it very wide */
   padding-bottom: 1.3em; /* litte more airy? first post */
 }
 
-.dw-depth-1 .dw-cmt {
+.dw-depth-1 .dw-t {
   padding-left: 0;
   border-top: none;
   }
 
 /* --- Float ---*/
-.dw-cmt {
+.dw-t {
   float: left;
   position: relative; /* #action-menu is absolute positioned relative cmt */
 }
-.dw-depth-1 .dw-cmt {
+.dw-depth-1 .dw-t {
   float: none;
   clear: both; /* else the rating form might float to the left */
 }
@@ -161,7 +163,7 @@ p:last-of-type {
   background-color: #fcfaf5; /* (see above) match form background */
 }
 
-.dw-cmt-bdy p {
+.dw-p-bdy p {
   /* Don't span whole screen even if .post.cropped-e is removed. */
   max-width: 50em;
 }
@@ -186,17 +188,17 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
   z-index: 6;
 }
 
-.dw-cmt-wrap.dw-x-s .dw-cmt-bdy,
-.dw-cmt-wrap.dw-x-s .dw-cmt-hdr {
+.dw-p.dw-x-s .dw-p-bdy,
+.dw-p.dw-x-s .dw-p-hdr {
   max-height: 4em;
   cursor: help;
 }
 
-.dw-cmt-bdy.dw-x-e { /* TODO: Don't need this class? */
+.dw-p-bdy.dw-x-e { /* TODO: Don't need this class? */
   max-width: 25em;
 }
 
-.dw-cmt-wrap.dw-x-s .dw-x-mark {
+.dw-p.dw-x-s .dw-x-mark {
   display: block;
   position: absolute;
   bottom: 0px;
@@ -207,8 +209,8 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
   font-style: italic;
   letter-spacing: 0.3ex;
 }
-.dw-cmt .dw-x-s:hover .ui-resizable-se,
-.dw-cmt .dw-x-s:hover .dw-x-mark {
+.dw-t .dw-x-s:hover .ui-resizable-se,
+.dw-t .dw-x-s:hover .dw-x-mark {
   background-color: #fdc;
   color: #363636;
 }
@@ -217,13 +219,13 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
   height: 15px;
   display: inline-block;
 }*/
-.dw-cmt-wrap .dw-x-mark {
+.dw-p .dw-x-mark {
   display: none; /* no longer cropped, class .dw-x-s gone */
 }
 
 /* --- Comments ---*/
 
-.dw-cmt {
+.dw-t {
   margin: 8px 0 0 5px;
 }
 
@@ -245,43 +247,43 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
   overflow: hidden;
 }
 
-.xx.dw-cmt.dw-depth-1:first-of-type,
-.xx.dw-cmt.dw-depth-1:last-of-type {
+.xx.dw-t.dw-depth-1:first-of-type,
+.xx.dw-t.dw-depth-1:last-of-type {
   border-right: 0;
 }
 
-.dw-cmts {
+.dw-res {
   margin: 0;
 }
 
-.dw-depth-1 .dw-cmts {
+.dw-depth-1 .dw-res {
   margin: 0 0 0 25px;
   padding-top: 3px;
   border-left: 1px dotted #ddf;
 }
 
-.dw-depth-2 .dw-cmts {
+.dw-depth-2 .dw-res {
   margin: 0 0 0 25px;
 }
 
-.dw-cmt-wrap {
+.dw-p {
   margin-left: 25px;
   overflow: hidden;
   background-color: white;
 }
 
-.dw-cmt-hdr {
+.dw-p-hdr {
   padding-left: 3px;
   font-size: smaller;
   color: #000;
   background-color: #eee;
 }
 
-.dw-cmt-hdr-ed {
+.dw-p-hdr-ed {
 }
 
-.dw-cmt-by,
-.dw-cmt-ed-by {
+.dw-p-by,
+.dw-p-ed-by {
   color: #369; /* same as reddit */
   font-weight: bold;
 }
@@ -291,7 +293,7 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
   display: inline;
 }
 
-.dw-cmt-x {
+.dw-p-x {
   position: absolute;
   color: #369;
   cursor: crosshair;
@@ -301,26 +303,26 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
 
 /* Un-indent any root post, by hiding the collapse button.
  (Why would one need to hide the original post?) */
-.dw-depth-0 > .dw-cmt-x {
+.dw-depth-0 > .dw-p-x {
   display: none;
 }
-.dw-depth-0 > .dw-cmt-wrap {
+.dw-depth-0 > .dw-p {
   margin-left: 0;
 }
 
-.dw-cmt-bdy {
+.dw-p-bdy {
   padding: 6px 1px 0 3px;
   position: relative;
   background-color: white;
   min-width: 5em;
 }
 
-.dw-post-edited .dw-cmt-wrap,
-.dw-post-new .dw-cmt-wrap {
+.dw-post-edited .dw-p,
+.dw-post-new .dw-p {
   border: 7px solid #f4c4f4;
 }
 
-.dw-cmt-wrap:hover {
+.dw-p:hover {
   outline: #999 dashed thin;
   /* In case the post has been up-sized, its up-sized
   parts might be hidden by a thread, unless: */
@@ -359,25 +361,25 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
 
 /* --- Post info ---*/
 
-.dw-cmt-hdr .dw-rats .dw-rat.dw-you-rated {
+.dw-p-hdr .dw-rats .dw-rat.dw-you-rated {
   background-color: #f4c4f4;
 }
 
-.dw-cmt-hdr .dw-rats .dw-rat-tag {
+.dw-p-hdr .dw-rats .dw-rat-tag {
   /*font-size: 85%;*/
 }
 
-.dw-cmt-hdr .dw-post-liking,
-.dw-cmt-hdr .dw-rat-count,
-.dw-cmt-hdr .dw-rat-tag-frac-min,
-.dw-cmt-hdr .dw-rat-tag-sum,
-.dw-cmt-hdr .dw-rat-valsum-max {
+.dw-p-hdr .dw-post-liking,
+.dw-p-hdr .dw-rat-count,
+.dw-p-hdr .dw-rat-tag-frac-min,
+.dw-p-hdr .dw-rat-tag-sum,
+.dw-p-hdr .dw-rat-valsum-max {
   margin-left: 3px;
   font-weight: bold;
   display: none; /* it's for debugging mostly; makes non-developers confused */
 }
 
-.dw-cmt-hdr .dw-rats .dw-rat-tag-frac {
+.dw-p-hdr .dw-rats .dw-rat-tag-frac {
   font-size: 90%;
   position: relative;
   left: -2px;
@@ -487,7 +489,7 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
   cursor: crosshair !important; /* has only client side side effects */
 }
 
-.debiki .ui-button.dw-submit {
+.debiki .ui-button.dw-fi-submit {
   cursor: pointer !important; /* has servede side effects, might reload page */
 }
 

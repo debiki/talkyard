@@ -233,7 +233,7 @@ class LayoutManager(val debate: Debate) {
   private def layoutPosts(): NodeSeq = {
     val rootPosts = debate.repliesTo(debate.RootPostId)
     val rootPost = debate.post(debate.RootPostId)
-    val cssThreadId = "dw-thread-"+ debate.RootPostId
+    val cssThreadId = "dw-t-"+ debate.RootPostId
     <div id={debate.id} class="debiki dw-debate">
       <div class="dw-debate-info">{
         if (lastChange isDefined) {
@@ -244,11 +244,11 @@ class LayoutManager(val debate: Debate) {
         }
       }
       </div>
-      <div id={cssThreadId} class='dw-cmt dw-depth-0 dw-thread dw-hor'>
+      <div id={cssThreadId} class='dw-t dw-depth-0 dw-hor'>
       {
         rootPost.map(comment(_)).getOrElse(Nil) ++
-        <div class='dw-act'><a class='dw-reply'>Reply</a></div>
-        <ol class='dw-cmts ui-helper-clearfix'>{
+        <div class='dw-act'><a class='dw-act-reply'>Reply</a></div>
+        <ol class='dw-res ui-helper-clearfix'>{
           _layoutPosts(1, rootPosts)
         }
         </ol>
@@ -260,16 +260,16 @@ class LayoutManager(val debate: Debate) {
   private def _layoutPosts(depth: Int, posts: List[Post]): NodeSeq = {
     for {
       c <- posts.sortBy(p => -statscalc.scoreFor(p.id).liking)
-      cssThreadId = "dw-thread-"+ c.id
+      cssThreadId = "dw-t-"+ c.id
       cssDepth = "dw-depth-"+ depth
     }
     yield
-      <li id={cssThreadId} class={"dw-cmt "+ cssDepth + " dw-thread"}>
+      <li id={cssThreadId} class={"dw-t "+ cssDepth}>
       {
         comment(c) ++
         (if (debate.repliesTo(c.id).isEmpty) Nil
         else
-          <ol class='dw-cmts'>
+          <ol class='dw-res'>
             { _layoutPosts(depth + 1, debate.repliesTo(c.id)) }
           </ol>)
       }
@@ -305,33 +305,33 @@ class LayoutManager(val debate: Debate) {
             tag +" %.0f" format (100 * stats.fraction)}% </li>
         }</ol>
     val editInfo =
-      // If closed: <span class='dw-cmt-re-cnt'>{count} replies</span>
+      // If closed: <span class='dw-p-re-cnt'>{count} replies</span>
       if (editApps.isEmpty) Nil
       else
-        //<span class='dw-cmt-hdr-ed'>. <b>Edited</b> by {
-        <div class='dw-cmt-hdr-ed'><b>Edited</b> by {
+        //<span class='dw-p-hdr-ed'>. <b>Edited</b> by {
+        <div class='dw-p-hdr-ed'><b>Edited</b> by {
           if (editApps.map(a => debate.editsById(a.editId).by).
               distinct.length > 1)
             <a>various people</a>
           else
-            <a class='dw-cmt-ed-by'>{
+            <a class='dw-p-ed-by'>{
               debate.editsById(lastEditApp.get.editId).by
             }</a>
-          }, <abbr class='dw-cmt-at dw-date' title={lastEditDate.get}>{
+          }, <abbr class='dw-p-at dw-date' title={lastEditDate.get}>{
               lastEditDate.get}</abbr>
         </div>
 
     // the – on the next line is an `en dash' not a minus
-    <a class='dw-cmt-x'>[–]</a>
-    <div id={cssPostId} class={"dw-cmt-wrap dw-x-e" + cropped_s}>
-      <div class='dw-cmt-hdr'>
-        By <a class='dw-cmt-by'>{post.by}</a>,
-        <abbr class='dw-cmt-at dw-date'
+    <a class='dw-p-x'>[–]</a>
+    <div id={cssPostId} class={"dw-p dw-x-e" + cropped_s}>
+      <div class='dw-p-hdr'>
+        By <a class='dw-p-by'>{post.by}</a>,
+        <abbr class='dw-p-at dw-date'
             title={dateCreated}>{dateCreated}</abbr>{
             ratsList }{
             editInfo } 
       </div>
-      <div class='dw-cmt-bdy'>
+      <div class='dw-p-bdy'>
         { xmlText }
       </div>
     </div> ++ (
@@ -439,8 +439,8 @@ class LayoutManager(val debate: Debate) {
           }
         </div>
         <div class='dw-submit-set'>
-          <input class='dw-submit' type='submit' value='Submit votes'/>
-          <input class='dw-cancel' type='button' value='Cancel'/>
+          <input class='dw-fi-submit' type='submit' value='Submit votes'/>
+          <input class='dw-fi-cancel' type='button' value='Cancel'/>
           <input type='hidden' name='dw-fi-edit-post' value={postId}/>
           <input type='hidden' name='dw-fi-action' value='vote-on-edits'/>
         </div>
@@ -461,8 +461,8 @@ class LayoutManager(val debate: Debate) {
                 name='dw-fi-by' value='Anonymous'/>
         </div>
         <div class='dw-submit-set'>
-          <input class='dw-submit' type='submit' value='Submit'/>
-          <input class='dw-cancel' type='button' value='Cancel'/>
+          <input class='dw-fi-submit' type='submit' value='Submit'/>
+          <input class='dw-fi-cancel' type='button' value='Cancel'/>
           <input type='hidden' name='dw-fi-edit-post' value={postId}/>
           <input type='hidden' name='dw-fi-action' value='edit'/>
         </div>
@@ -491,8 +491,8 @@ class LayoutManager(val debate: Debate) {
           <div>{textToHtml(post.text)._1}</div>
         </div>
         <div class='dw-submit-set'>
-          <input class='dw-submit' type='submit' value='Submit votes'/>
-          <input class='dw-cancel' type='button' value='Cancel'/>
+          <input class='dw-fi-submit' type='submit' value='Submit votes'/>
+          <input class='dw-fi-cancel' type='button' value='Cancel'/>
           <input type='hidden' name='dw-fi-edit-post' value={postId}/>
           <input type='hidden' name='dw-fi-action' value='vote-on-edits'/>
         </div>
@@ -556,9 +556,9 @@ class LayoutManager(val debate: Debate) {
   private def menus = {
     <div id="dw-hidden-templates">
       <div id='dw-action-menu'>
-        <div class='dw-act'><a class='dw-reply'>Reply</a></div>
-        <div class='dw-act'><a class='dw-rate'>Rate</a></div>
-        <div class='dw-act'><a class='dw-edit'>Edit</a></div>
+        <div class='dw-act'><a class='dw-act-reply'>Reply</a></div>
+        <div class='dw-act'><a class='dw-act-rate'>Rate</a></div>
+        <div class='dw-act'><a class='dw-act-edit'>Edit</a></div>
       </div>
       <div class='dw-fs dw-fs-re'>
         <form class='dw-reply-form'
@@ -582,8 +582,8 @@ class LayoutManager(val debate: Debate) {
             the text you submit under the {ccWikiLicense}.
           </p>
           <div class='dw-submit-set'>
-            <input class='dw-submit' type='submit' value={submitButtonText}/>
-            <input class='dw-cancel' type='button' value='Cancel'/>
+            <input class='dw-fi-submit' type='submit' value={submitButtonText}/>
+            <input class='dw-fi-cancel' type='button' value='Cancel'/>
           </div>
         </form>
       </div>
@@ -627,8 +627,8 @@ class LayoutManager(val debate: Debate) {
             </div>
           }
           <div class='dw-submit-set'>
-            <input class='dw-submit' type='submit' value='Submit'/>
-            <input class='dw-cancel' type='button' value='Cancel'/>
+            <input class='dw-fi-submit' type='submit' value='Submit'/>
+            <input class='dw-fi-cancel' type='button' value='Cancel'/>
           </div>
         </form>
       </div>
