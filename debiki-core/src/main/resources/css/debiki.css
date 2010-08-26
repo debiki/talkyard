@@ -242,7 +242,7 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
   width: 25em; /* avoids > 1 column for this depth */
 }
 
-.dw-depth-1.dw-collapsed-fx {
+.dw-depth-1.dw-zd-fx {
   max-width: 8.5em;
   overflow: hidden;
 }
@@ -293,7 +293,7 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
   display: inline;
 }
 
-.dw-p-x {
+.dw-z {
   position: absolute;
   color: #369;
   cursor: crosshair;
@@ -303,7 +303,7 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
 
 /* Un-indent any root post, by hiding the collapse button.
  (Why would one need to hide the original post?) */
-.dw-depth-0 > .dw-p-x {
+.dw-depth-0 > .dw-z {
   display: none;
 }
 .dw-depth-0 > .dw-p {
@@ -495,12 +495,12 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
 
 /* === Reply === */
 
-form.dw-reply-form label {
+.dw-fs-re label {
   display: inline-block;
   margin-right: 0.4em;
 }
 
-form.dw-reply-form textarea {
+.dw-fs-re textarea {
   width: 97%;
   height: 97%;
   resize: none; /* need to disable Chrome's default-resizing-of-textarea,
@@ -522,22 +522,22 @@ form.dw-reply-form textarea {
 
 /* === Rate === */
 
-form.dw-rat-form {
+.dw-fs-rat {
   min-width: 16.5em; /* at least 2 rat-tag-set:s wide */
 }
 
-form.dw-rat-form .dw-rat-tag-set {
+.dw-fs-rat .dw-rat-tag-set {
   float: left;
   max-width: 8em;
 }
 
-form.dw-rat-form .dw-rat-tag-set .ui-button {
+.dw-fs-rat .dw-rat-tag-set .ui-button {
   min-width: 7em;
 }
 
 /* Javascript shows clickable .dw-show-more-rat-tags,
  and hides .dw-more-rat-tags. */
-form.dw-rat-form .dw-show-more-rat-tags {
+.dw-fs-rat .dw-show-more-rat-tags {
   display: none;
   margin-top: 1em;
   float: left; /* otherwise margin-top has no effect, why not? */
@@ -547,12 +547,12 @@ form.dw-rat-form .dw-show-more-rat-tags {
 }
 
 /* stack more-rating-tags horizontally */
-form.dw-rat-form .dw-more-rat-tags {
+.dw-fs-rat .dw-more-rat-tags {
   clear: both;
   margin-top: 1em;
   max-width: none;
 }
-form.dw-rat-form .dw-more-rat-tags label {
+.dw-fs-rat .dw-more-rat-tags label {
   float: left;
   min-width: 0 !important;
 }
@@ -607,7 +607,7 @@ form.dw-rat-form .dw-more-rat-tags label {
   font-weight: bold !important;
 }
 
-.dw-edit-vote-btns,
+.dw-f-ed-btns-vote,
 .dw-edit-liking-stats {
   margin: 1em 0 0;
 }
@@ -638,18 +638,18 @@ form.dw-rat-form .dw-more-rat-tags label {
  */
 
 /* Same color as the ui-buttons */
-.dw-color-from-ui-state-default { color: #1c80c4; /*1c94c4;*/ }
-.dw-color-bright-from-ui-state-default { color: #83c5df; }
-.dw-color-brighter-from-ui-state-default { color: #c1e2ef; }
-.dw-color-brightest-from-ui-state-default { color: #eaf5fa; }
+.dw-ui-state-default-color { color: #1c80c4; /*1c94c4;*/ }
+.dw-ui-state-default-color-bright { color: #83c5df; }
+.dw-ui-state-default-color-brighter { color: #c1e2ef; }
+.dw-ui-state-default-color-brightest { color: #eaf5fa; }
 
 /* Same font */
-.dw-font-from-ui-widget {
+.dw-ui-widget-font {
   font-family: 'Trebuchet MS', Tahoma, Verdana, Arial, sans-serif;
 }
 
 /* Makes a jQuery-UI-button():ized <a> tag look more like a link */
-.dw-linkify-ui-state-default {
+.dw-ui-state-default-linkified {
   border: none !important;
   background: none !important;
 }

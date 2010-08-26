@@ -322,7 +322,7 @@ class LayoutManager(val debate: Debate) {
         </div>
 
     // the – on the next line is an `en dash' not a minus
-    <a class='dw-p-x'>[–]</a>
+    <a class='dw-z'>[–]</a>
     <div id={cssPostId} class={"dw-p dw-x-e" + cropped_s}>
       <div class='dw-p-hdr'>
         By <a class='dw-p-by'>{post.by}</a>,
@@ -424,8 +424,8 @@ class LayoutManager(val debate: Debate) {
     val editsApplied = debate.editsAppliedTo(postId)
 
     def editsPendingStuff = {
-      <a class='dw-show-edits-pending-btn'>Show edits suggested...</a>
-      <form class='dw-edits-others-form'
+      <a class='dw-f-ed-btn-show-pending'>Show edits suggested...</a>
+      <form class='dw-f-ed-others'
           action={config.editAction}
           accept-charset='UTF-8'
           method='post'>
@@ -448,8 +448,8 @@ class LayoutManager(val debate: Debate) {
     }
 
     def newSuggestionStuff = {
-      <a class='dw-new-edit-btn'>New edit suggestion...</a>
-      <form class='dw-new-edit-form'
+      <a class='dw-f-ed-btn-new-edit'>New edit suggestion...</a>
+      <form class='dw-f-ed-new'
           action={config.editAction}
           accept-charset='UTF-8'
           method='post'>
@@ -470,8 +470,8 @@ class LayoutManager(val debate: Debate) {
     }
 
     def editsAppliedStuff = {
-      <a class='dw-show-edits-applied-btn'>Show edits applied...</a>
-      <form class='dw-edits-applied-form'
+      <a class='dw-f-ed-btn-show-applied'>Show edits applied...</a>
+      <form class='dw-f-ed-applied'
           action={config.editAction}
           accept-charset='UTF-8'
           method='post'>
@@ -519,13 +519,13 @@ class LayoutManager(val debate: Debate) {
             else "")
       }</div>
       <div>{textToHtml(edit.text)._1}</div>
-      <div class='dw-edit-vote-btns'>
+      <div class='dw-f-ed-btns-vote'>
         <input id={likeId} type='radio' name={name} value='1'/>
         <label for={likeId}>Like</label>
         <input id={dissId} type='radio' name={name} value='0'/>
         <label for={dissId}>Dislike</label>
       </div>
-      {/*<a class='dw-show-edit-liking-stats'>Complicated statistics...</a>*/}
+      {/*<a class='dw-f-ed-btn-show-liking-stats'>Complicated statistics...</a>*/}
       <div class='dw-edit-liking-stats'>{
           val liking = statscalc.likingFor(edit)
           liking.voteCount +" votes, liking: "+
@@ -561,7 +561,7 @@ class LayoutManager(val debate: Debate) {
         <div class='dw-act'><a class='dw-act-edit'>Edit</a></div>
       </div>
       <div class='dw-fs dw-fs-re'>
-        <form class='dw-reply-form'
+        <form
             action={config.replyAction}
             accept-charset='UTF-8'
             method='post'>
@@ -588,7 +588,7 @@ class LayoutManager(val debate: Debate) {
         </form>
       </div>
       <div class='dw-fs dw-fs-rat'>
-        <form class='dw-rat-form'
+        <form
             action={config.rateAction}
             accept-charset='UTF-8'
             method='post'>

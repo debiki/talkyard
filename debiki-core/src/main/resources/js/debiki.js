@@ -84,11 +84,11 @@ var debateId = $('.debiki').attr('id');
 // ------- Open/close
 
 // Open/close threads if the thread-info div is clicked.
-$('.debiki').delegate('.dw-p-x', 'click', function() {
+$('.debiki').delegate('.dw-z', 'click', function() {
   var thread = $(this).closest(".dw-t");
   resizeRootThreadExtraWide();
   thread.
-    find('> :not(.dw-p, .dw-p-x), '+
+    find('> :not(.dw-p, .dw-z), '+
         '> .dw-p > .dw-p-bdy, '+
         '> .dw-act').
       //add(thread.find('> .dw-p > .dw-p-bdy')).
@@ -96,13 +96,13 @@ $('.debiki').delegate('.dw-p-x', 'click', function() {
       slideToggle(800).
       //queue(function(next){
       //    thread
-      //      .toggleClass('dw-collapsed')
-      //      .toggleClass('dw-collapsed-fx', 600);
+      //      .toggleClass('dw-zd')
+      //      .toggleClass('dw-zd-fx', 600);
       //    next();
       //  }).
       queue(function(next){ resizeRootThreadNowAndLater(); next(); }).
     end().
-    children(".dw-p-x").
+    children(".dw-z").
       each(function(){
         // The – is not a - but an &endash;.
         var newText = $(this).text().indexOf('+') == -1 ? '[+]' : '[–]';
@@ -363,8 +363,8 @@ function slideAwayRemove($form) {
 // Remove new-reply and rating forms on cancel, but 
 // the edit form has some own special logic.
 $('.debiki').delegate(
-    '.dw-reply-form .dw-fi-cancel, ' +
-    '.dw-rat-form .dw-fi-cancel',
+    '.dw-fs-re .dw-fi-cancel, ' +
+    '.dw-fs-rat .dw-fi-cancel',
     'click', function(){ slideAwayRemove($(this).closest('.dw-fs')); });
 
 // Slide in reply, edit and rate forms -- I think it's
@@ -511,7 +511,7 @@ $('.debiki').delegate('.dw-act-rate', 'click', function() {
   // Disable the submit button (until any checkbox clicked)
   $rateForm.find("input[type='submit']").button("option", "disabled", true);
   $rateForm.find('.dw-show-more-rat-tags').
-    button().addClass('dw-linkify-ui-state-default');
+    button().addClass('dw-ui-state-default-linkified');
   // Reveal the form
   slideInActionForm($rateForm, thread);
   dismissActionMenu();
@@ -572,7 +572,7 @@ $('.debiki').delegate('.dw-act-reply', 'click', function() {
   // Fancy fancy
   $replyForm.find('.dw-submit-set input').button();
   $replyForm.find('label').addClass( // color and font matching <input> buttons
-    'dw-color-from-ui-state-default dw-font-from-ui-widget');
+    'dw-ui-state-default-color dw-ui-widget-font');
   // Reveal the form
   slideInActionForm($replyForm, $thread);
   dismissActionMenu();
@@ -602,13 +602,13 @@ $('.debiki').delegate('.dw-act-edit', 'click', function() {
     var $editDiv = $formWrap.find('.dw-fs-ed').hide(); // TODO? Remove `find'?
     var $accordions = $editDiv.find('.dw-edits');
 
-    var $editsPendingForm = $editDiv.find('.dw-edits-others-form'); 
-    var $editsYoursForm = $editDiv.find('.dw-new-edit-form'); 
-    var $editsAppliedForm = $editDiv.find('.dw-edits-applied-form'); 
+    var $editsPendingForm = $editDiv.find('.dw-f-ed-others');
+    var $editsYoursForm = $editDiv.find('.dw-f-ed-new');
+    var $editsAppliedForm = $editDiv.find('.dw-f-ed-applied');
 
-    var $showEditsPendingBtn = $editDiv.find('.dw-show-edits-pending-btn');
-    var $showNewEditBtn = $editDiv.find('.dw-new-edit-btn');
-    var $showEditsAppliedBtn = $editDiv.find('.dw-show-edits-applied-btn');
+    var $showEditsPendingBtn = $editDiv.find('.dw-f-ed-btn-show-pending');
+    var $showNewEditBtn = $editDiv.find('.dw-f-ed-btn-new-edit');
+    var $showEditsAppliedBtn = $editDiv.find('.dw-f-ed-btn-show-applied');
 
     var $forms = $editsPendingForm.add($editsYoursForm).add($editsAppliedForm);
     var $showBtns = $showEditsPendingBtn.add($showNewEditBtn).
@@ -697,7 +697,7 @@ $('.debiki').delegate('.dw-act-edit', 'click', function() {
         button();
     $editDiv.find('label').addClass(
       // color and font matching <input> buttons
-      'dw-color-from-ui-state-default dw-font-from-ui-widget');
+      'dw-ui-state-default-color dw-ui-widget-font');
 
     // Reveal the form.
     // Must be done before accordion() is invoked (below) otherwise
