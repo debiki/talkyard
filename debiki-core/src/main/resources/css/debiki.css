@@ -113,10 +113,6 @@ p:last-of-type {
 
 /* === Threads === */
 
-/* The very first post */
-.dw-depth-0 > .dw-p {
-  margin-bottom: 0.8em;
-}
 .dw-depth-0.dw-t > .dw-act {
   top: -0.8em; /* cancel above margin-bottom */
 }
@@ -232,13 +228,24 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
   margin: 8px 0 0 5px;
 }
 
+.dw-depth-1:hover {
+  border-right: 2px dashed lightgray; /* column separator and resizor */
+}
+
 .dw-hor > .dw-fs,
 .dw-hor > .dw-act,
 .dw-depth-1 {
   padding: 0 20px 10px 0;
   margin: 10px 16px 0 0;
-  border-right: 2px solid lightgray; /* column separator and resizor */
+  border-right: 2px dashed transparent; /* shown on hover */
   min-height: 100px; /* makes the column separator at least this high */
+}
+
+/* Empty space between a post and its child threads, when laid
+ out horizontally. SVG relationship arrows drawn here. */
+.dw-t-vspace {
+  visibility: hidden;
+  height: 0.8em;
 }
 
 .dw-depth-1 {
@@ -260,17 +267,17 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
 }
 
 .dw-depth-1 .dw-res {
-  margin: 0 0 0 25px;
+  margin: 0 0 0 35px;
   padding-top: 3px;
   /* border-left: 1px dotted #ddf; -- now using bezier curves instead */
 }
 
 .dw-depth-2 .dw-res {
-  margin: 0 0 0 25px;
+  margin: 0 0 0 35px;
 }
 
 .dw-p {
-  margin-left: 25px;
+  margin-left: 35px;
   overflow: hidden;
   background-color: white;
 }
@@ -334,7 +341,7 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
 
 .dw-act {
   float: left; /* else won't wrap if in narrow column */
-  margin: 4px 0px 9px 27px;
+  margin: 4px 0px 9px 37px;
 }
 
 .dw-depth-0 > .dw-act {
@@ -342,8 +349,6 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
   padding-right: 20px;
   margin-top: 10px;
   margin-right: 16px;
-  border-right: 2px solid lightgray; /* same as for .dw-depth-0 */
-  min-height: 100px; /* makes the column separator at least this high */
 }
 
 .dw-act a {

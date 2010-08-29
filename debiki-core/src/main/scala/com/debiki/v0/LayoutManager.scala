@@ -252,6 +252,7 @@ class LayoutManager(val debate: Debate) {
       <div id={cssThreadId} class='dw-t dw-depth-0 dw-hor'>
       {
         rootPost.map(comment(_)).getOrElse(Nil) ++
+        <div class='dw-t-vspace'/>
         <div class='dw-act'><a class='dw-act-reply'>Reply</a></div>
         <ol class='dw-res ui-helper-clearfix'>{
           _layoutPosts(1, rootPosts)

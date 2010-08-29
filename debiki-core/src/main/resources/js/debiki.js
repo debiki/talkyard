@@ -746,30 +746,53 @@ SVG = {};
 SVG.$win = $('#dw-svg-win');
 SVG.XML_NS = 'http://www.w3.org/2000/svg';
 
-SVG.curveTreadToReply = function($from, $to) {
-  var from = $from.offset(), to = $to.offset(); // from, to
+SVG.curveTreadToReply = function($thread, $to) {
+  var from = $thread.offset(), to = $to.offset(); // from, to
   var r = document.createElementNS(SVG.XML_NS, 'path');
-  var xs = from.left, ys = from.top; // x,y-start
-  var xe = to.left, ye = to.top; // x,y-end,
+  var xs = from.left; // start
+  var ys = from.top;
+  var xe = to.left; // end
+  var ye = to.top;
+  var xm = (xs + xe) / 2;
   var ym = (ys + ye) / 2;
-  var d = 'M '+ (xs+5) +' '+ (ys+40) +
-        ' C '+ (xs) +' '+ (ys+50) +' '+ // start Bezier curve
-               (xs) +' '+ (ys+60) +' '+
-               xs +' '+ ym +' '+
-        ' C '+ xs +' '+ ym +' '+  // continue to child post
-               xs +' '+ (ye-30) +' '+
-               (xe + 8) +' '+ (ye - 8) +
-        ' l -6 1 m 7 -1 l -2 -6'; + // arrow end: _|
-  r.setAttribute('d', d);
-	r.setAttribute('id', 'dw-curve-'+ $from.attr('id') +'-'+ $to.attr('id'));
+  var strokes;
+  if ($thread.filter('.dw-hor').length) {
+    // Thread laid out horizontally, so draw west-east curve:  `------.
+    // There's a visibility:hidden div that acts as a placeholder for this
+    // curve, and it's been resized properly by the caller.
+    from = $thread.children('.dw-t-vspace').offset();
+    xs += from.left + 30;
+    ys += from.top;
+    xe += 10;
+    ye -= 9;
+    strokes = 'M '+ xs +' '+ ys +
+             ' C '+ (xs) +' '+ (ys+20) +' '+ // draw Bezier curve  \
+                    (xe) +' '+ (ye-60) +' '+ //                     '-----.
+                    xe +' '+ ye +' '+        //                            \
+             ' l -7 -1 m 8 1 l 2 -8'; // arrow end: _|                      v
+  } else {
+    // Draw north-south curve.
+    strokes = 'M '+ (xs+5) +' '+ (ys+30) +
+             ' C '+ xs +' '+ ym +' '+        // Draw curve to child post  |
+                    xs +' '+ (ye-30) +' '+   //                           \
+                    (xe-7) +' '+ (ye + 4) +  //                            \
+             ' l -8 -1 m 9 1 l 0 -8'; // arrow end: _|                      '>
+  }
+  r.setAttribute('d', strokes);
+	r.setAttribute('id', 'dw-curve-'+ $thread.attr('id') +'-'+ $to.attr('id'));
   SVG.$win.append(r);
   r = false;
 }
 
 // Draw curves from threads to children
 SVG.drawRelationships = function() {
-  // Remove old curves, then create new.
+  // Remove old curves
   SVG.$win.find('path').remove();
+  // Add more space between a post and its children, if the post is layed out
+  // horizontally, since then a horizontal arrow will be drawn from the post
+  // to its child posts.
+  $('.dw-t-vspace').css('height', '80px')
+  // Create new.curves
   $('.dw-t').each(function(){
     var $t = $(this);
     $t.find('> .dw-res > .dw-t:visible').each(function(){
