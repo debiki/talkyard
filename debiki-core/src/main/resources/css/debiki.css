@@ -641,12 +641,6 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
   outline: blue dotted medium
 }
 
-#dw-zoom-width-test {
-  visibility: hidden;
-  position: absolute;
-  width: 100%; /* width-in-pixel changes on zoom, poll width to detect zoom */
-}
-
 /* === jQuery UI integration === */
 
 /* Here's a color blender: http://websitetips.com/colortools/colorblender/

@@ -87,11 +87,11 @@ var debateId = $('.debiki').attr('id');
 var zoomListeners = [];
 
 (function(){
-  // Poll the pixel width of a dedicated hidden 100% wide tag;
-  // invoke zoom listeners if the width has been changed.
+  // Poll the pixel width of the window; invoke zoom listeners
+  // if the width has been changed.
   var lastWidth = 0;
   function pollZoomFireEvent() {
-    var widthNow = jQuery('#dw-zoom-width-test').width();
+    var widthNow = jQuery(window).width();
     if (lastWidth == widthNow) return;
     lastWidth = widthNow;
     // Length changed, user must have zoomed, invoke listeners.
