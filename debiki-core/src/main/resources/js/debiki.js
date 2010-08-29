@@ -747,22 +747,21 @@ SVG.$win = $('#dw-svg-win');
 SVG.XML_NS = 'http://www.w3.org/2000/svg';
 
 SVG.curveTreadToReply = function($thread, $to) {
+  var svgof = SVG.$win.offset();
   var from = $thread.offset(), to = $to.offset(); // from, to
   var r = document.createElementNS(SVG.XML_NS, 'path');
-  var xs = from.left; // start
-  var ys = from.top;
-  var xe = to.left; // end
-  var ye = to.top;
-  var xm = (xs + xe) / 2;
-  var ym = (ys + ye) / 2;
+  var xs = from.left - svgof.left; // start
+  var ys = from.top - svgof.top;
+  var xe = to.left - svgof.left; // end
+  var ye = to.top - svgof.top;
   var strokes;
   if ($thread.filter('.dw-hor').length) {
     // Thread laid out horizontally, so draw west-east curve:  `------.
     // There's a visibility:hidden div that acts as a placeholder for this
     // curve, and it's been resized properly by the caller.
     from = $thread.children('.dw-t-vspace').offset();
-    xs += from.left + 30;
-    ys += from.top;
+    xs += from.left - svgof.left + 30;
+    ys += from.top - svgof.top;
     xe += 10;
     ye -= 9;
     strokes = 'M '+ xs +' '+ ys +
@@ -772,6 +771,7 @@ SVG.curveTreadToReply = function($thread, $to) {
              ' l -7 -1 m 8 1 l 2 -8'; // arrow end: _|                      v
   } else {
     // Draw north-south curve.
+    var ym = (ys + ye) / 2;
     strokes = 'M '+ (xs+5) +' '+ (ys+30) +
              ' C '+ xs +' '+ ym +' '+        // Draw curve to child post  |
                     xs +' '+ (ye-30) +' '+   //                           \

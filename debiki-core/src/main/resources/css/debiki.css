@@ -97,6 +97,7 @@ p:last-of-type {
   /* In the future: Georgia for titles? */
   font-size: 93%;
   line-height: 110%;
+  position: relative;
 }
 
 .dw-debate-info {
