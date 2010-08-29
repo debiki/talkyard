@@ -167,7 +167,7 @@ var resizeRootThreadImpl = function(extraWidth){
   var width = extraWidth;
   var $root = $('.dw-depth-0');
   if (!$root.length) $root = $('.dw-debate'); // there's no root reply
-  $root.find('> .dw-res > .dw-t, > .dw-fs').each(function(){
+  $root.find('> .dw-res > .dw-t, > .dw-fs, > .dw-act').each(function(){
     width += $(this).outerWidth(true);
   });
   $root.css('min-width', width +'px');
