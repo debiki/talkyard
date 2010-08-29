@@ -29,6 +29,7 @@ jQuery.fn.dw_postModTime = function() {
       '.dw-post-info .dw-last-changed .dw-date').attr('title');
 };
 
+
 //----------------------------------------
 // Implement public functions
 //----------------------------------------
@@ -80,6 +81,26 @@ var posts = $(".debiki .dw-p-bdy");
 var rateFormTemplate = $("#dw-hidden-templates .dw-fs-rat");
 var debateId = $('.debiki').attr('id');
 
+
+// ------- Zoom event
+
+var zoomListeners = [];
+
+(function(){
+  // Poll the pixel width of a dedicated hidden 100% wide tag;
+  // invoke zoom listeners if the width has been changed.
+  var lastWidth = 0;
+  function pollZoomFireEvent() {
+    var widthNow = jQuery('#dw-zoom-width-test').width();
+    if (lastWidth == widthNow) return;
+    lastWidth = widthNow;
+    // Length changed, user must have zoomed, invoke listeners.
+    for (i = zoomListeners.length - 1; i >= 0; --i) {
+      zoomListeners[i]();
+    }
+  }
+  setInterval(pollZoomFireEvent, 100);
+})();
 
 // ------- Open/close
 
@@ -141,7 +162,7 @@ var resizeRootThreadImpl = function(extraWidth){
     // Also, zooming in/out might cause float drop (it seems all elems
     // aren't scaled exactly in the same way), if too small.
     // Hence it's a rather wide value. (Otherwise = 50 would do.)
-    extraWidth = 150;
+    extraWidth = 200;
   }
   var width = extraWidth;
   var $root = $('.dw-depth-0');
@@ -150,6 +171,10 @@ var resizeRootThreadImpl = function(extraWidth){
     width += $(this).outerWidth(true);
   });
   $root.css('min-width', width +'px');
+
+  // Something has been resized, so parent-->child thread bezier curves
+  // might need to be redrawn.
+  SVG.drawRelationships();
 }
 
 // Makes the root thread wide enough to contain all its child posts.
@@ -714,6 +739,117 @@ $('.debiki').delegate('.dw-act-edit', 'click', function() {
       });
   });
 });
+
+// ------- SVG
+
+SVG = {};
+SVG.$win = $('#dw-svg-win');
+SVG.XML_NS = 'http://www.w3.org/2000/svg';
+
+SVG.curveTreadToReply = function($from, $to) {
+  var from = $from.offset(), to = $to.offset(); // from, to
+  var r = document.createElementNS(SVG.XML_NS, 'path');
+  var xs = from.left, ys = from.top; // x,y-start
+  var xe = to.left, ye = to.top; // x,y-end,
+  var ym = (ys + ye) / 2;
+  var d = 'M '+ (xs+5) +' '+ (ys+40) +
+        ' C '+ (xs) +' '+ (ys+50) +' '+ // start Bezier curve
+               (xs) +' '+ (ys+60) +' '+
+               xs +' '+ ym +' '+
+        ' C '+ xs +' '+ ym +' '+  // continue to child post
+               xs +' '+ (ye-30) +' '+
+               (xe + 8) +' '+ (ye - 8) +
+        ' l -6 1 m 7 -1 l -2 -6'; + // arrow end: _|
+  r.setAttribute('d', d);
+	r.setAttribute('id', 'dw-curve-'+ $from.attr('id') +'-'+ $to.attr('id'));
+  SVG.$win.append(r);
+  r = false;
+}
+
+// Draw curves from threads to children
+SVG.drawRelationships = function() {
+  // Remove old curves, then create new.
+  SVG.$win.find('path').remove();
+  $('.dw-t').each(function(){
+    var $t = $(this);
+    $t.find('> .dw-res > .dw-t:visible').each(function(){
+      SVG.curveTreadToReply($t, $(this));
+    });
+  });
+  // The browser internal stylesheet defaults to height: 100%.
+  $('#dw-svg-win').height($('.dw-depth-0').height() + 100);
+  $('#dw-svg-win').width($('.dw-depth-0').width());
+};
+
+SVG.drawRelationships();
+
+// Poll for zoom in/out events, and redraw arrows if zoomed,
+// because svg and html are not resized in the same manner: Unless
+// arrows redrawn, their ends are incorrectly offsett.
+zoomListeners.push(SVG.drawRelationships);
+
+//$('.dw-t').each(SVG.$curvesToChildren);
+Debiki.v0.SVG = SVG; // debug-export: Debiki.v0.SVG.curvesToChildren()
+
+// Indent action links, or Reply links overlap with relationship arrows.
+$('.dw-t').each(function(){
+  $(this).children('.dw-act').first().css('margin-left', '45px'); // 27 + 10
+});
+
+/*
+ Per thread <svg>.
+ Pros:
+  - Curves from X to child C hidden automatically when thread closed.
+ Cons:
+  - More HTML (costs bandwidth)
+  - Curves from thread P to X needs to be hidden manually, when X closed,
+     so the single Pros above doesn't really matter, code complexity wise.
+  - No idea why, but if height() is set to the height of the thread,
+    the curve is cropped downwards (the lower part of the curve
+    disappears. This doesn't happen with the other approach,
+    a single global <svg>.
+  - In Firefox (not Chrome, nor Opera), the local <svg> currently appears
+    on top of the action links, when they've been clicked *once*. Weird.
+    Could probably be fixed with z-index.
+
+SVG.newCurveFromToIn = function($from, $to, $svg) {
+  $svg = $svg || SVG.$win;
+  var from = $from.offset(), to = $to.offset();
+  var r = document.createElementNS(SVG.XML_NS, 'path');
+  var xe = to.left - from.left, ye = to.top - from.top; // x,y-end,
+  var ym = ye / 2;
+  var d = 'M 12 30'+
+        ' C 0 40' + // start curve
+          ' 0 50' +
+          ' 0 60' +
+        ' C 0 '+ ym +  // curve to child post
+          ' 0 '+ (ye-30) +
+          ' '+ xe +' '+ ye +
+        ' l -10 0 m 10 0 l 0 -10'; + // arrow: _|
+  r.setAttribute('d', d);
+  //r.setAttribute('fill', 'none');
+  r.setAttribute('id', 'dw-curve-'+ $from.attr('id') +'-'+ $to.attr('id'));
+	//r.setAttribute('stroke', '#eee');
+	//r.setAttribute('stroke-width', 2);
+  $svg.append(r);
+  r = false;
+}
+
+// Draw curves from a thread to children
+SVG.$curvesToChildren = function() {
+  // Remove old curves, then create new.
+  var $thread = $(this);
+  var $svg = $thread.find('> .dw-t-svg'); //?why broken: children('.dw-t-svg');
+  if (!$svg.length) return;
+  $svg.find('path').remove();
+  $thread.find('> .dw-res > .dw-t').each(function(){
+    SVG.newCurveFromToIn($thread, $(this), $svg);
+  });
+}
+
+$('.dw-t').each(SVG.$curvesToChildren);
+*/
+
 
 // ------- Miscellaneous
 

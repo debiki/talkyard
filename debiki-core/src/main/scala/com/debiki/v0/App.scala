@@ -59,14 +59,15 @@ private[debiki] object App {
         <head>
           <title>Test mock layout</title>
           <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+          {/* svgweb won't work with Flash, why not?
+            <meta name="svg.render.forceflash" content="true" />
+          */}
           {
             for (f <- resourceFiles) yield
               if (f endsWith ".css")
                 <link type="text/css" rel="stylesheet" href={f}/>
               else if (f endsWith ".js")
                 <script type="text/javascript" src={f}/>
-              else
-                throw new RuntimeException("Bad resource: "+ f)
           }
           <script type="text/javascript">
             jQuery.noConflict()(function($){{
@@ -113,6 +114,9 @@ private[debiki] object App {
   private val resourceFiles = List(
       "css/debiki/jquery-ui-1.8.4.custom.css",
       "css/debiki.css",
+      "js/svg.js", // must be first js, says svgweb docs
+      "js/svg.htc",
+      "js/svg.swf",
       "js/jquery-1.4.2.js",
       "js/debiki-jquery-ui-1.8.4.custom.min.js",
       "js/jquery.cookie.js",

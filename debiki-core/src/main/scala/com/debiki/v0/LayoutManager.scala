@@ -235,6 +235,11 @@ class LayoutManager(val debate: Debate) {
     val rootPost = debate.post(debate.RootPostId)
     val cssThreadId = "dw-t-"+ debate.RootPostId
     <div id={debate.id} class="debiki dw-debate">
+      <div id='dw-zoom-width-test'/>
+      <script type="image/svg+xml">
+        <svg id="dw-svg-win"/> {/* Need not declare the XLink or SVG
+                                   namespaces; the defaults are correct. */}
+      </script>
       <div class="dw-debate-info">{
         if (lastChange isDefined) {
           <p class="dw-last-changed">Last changed on

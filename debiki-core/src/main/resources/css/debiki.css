@@ -142,6 +142,9 @@ p:last-of-type {
   float: left;
   position: relative; /* #action-menu is absolute positioned relative cmt */
 }
+.dw-depth-0.dw-t {
+  float: none; /* else won't expand eastwards, even if zoomed out much */
+}
 .dw-depth-1 .dw-t {
   float: none;
   clear: both; /* else the rating form might float to the left */
@@ -259,7 +262,7 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
 .dw-depth-1 .dw-res {
   margin: 0 0 0 25px;
   padding-top: 3px;
-  border-left: 1px dotted #ddf;
+  /* border-left: 1px dotted #ddf; -- now using bezier curves instead */
 }
 
 .dw-depth-2 .dw-res {
@@ -632,6 +635,12 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
   outline: blue dotted medium
 }
 
+#dw-zoom-width-test {
+  visibility: hidden;
+  position: absolute;
+  width: 100%; /* width-in-pixel changes on zoom, poll width to detect zoom */
+}
+
 /* === jQuery UI integration === */
 
 /* Here's a color blender: http://websitetips.com/colortools/colorblender/
@@ -670,12 +679,16 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
 .debiki input.ui-button { padding: .4em 1em; }
 
 
+/* === SVG === */
 
+#dw-svg-win {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
 
-
-
-
-
-
-
-
+#dw-svg-win path {
+  fill: none;
+  stroke: #dde;
+  stroke-width: 3;
+}
