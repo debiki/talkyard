@@ -747,21 +747,20 @@ SVG.$win = $('#dw-svg-win');
 SVG.XML_NS = 'http://www.w3.org/2000/svg';
 
 SVG.curveTreadToReply = function($thread, $to) {
-  var svgof = SVG.$win.offset();
   var from = $thread.offset(), to = $to.offset(); // from, to
   var r = document.createElementNS(SVG.XML_NS, 'path');
-  var xs = from.left - svgof.left; // start
-  var ys = from.top - svgof.top;
-  var xe = to.left - svgof.left; // end
-  var ye = to.top - svgof.top;
+  var xs = from.left - SVG.winoffs.left; // start
+  var ys = from.top - SVG.winoffs.top;
+  var xe = to.left - SVG.winoffs.left; // end
+  var ye = to.top - SVG.winoffs.top;
   var strokes;
   if ($thread.filter('.dw-hor').length) {
     // Thread laid out horizontally, so draw west-east curve:  `------.
     // There's a visibility:hidden div that acts as a placeholder for this
     // curve, and it's been resized properly by the caller.
     from = $thread.children('.dw-t-vspace').offset();
-    xs += from.left - svgof.left + 30;
-    ys += from.top - svgof.top;
+    xs = from.left - SVG.winoffs.left + 30;
+    ys = from.top - SVG.winoffs.top;
     xe += 10;
     ye -= 9;
     strokes = 'M '+ xs +' '+ ys +
@@ -792,6 +791,11 @@ SVG.drawRelationships = function() {
   // horizontally, since then a horizontal arrow will be drawn from the post
   // to its child posts.
   $('.dw-t-vspace').css('height', '80px')
+  // Remember where $win is placed, because Firefox [v3.6.8] changes the
+  // offset when the first path is added, so it's not always safe to use
+  // the value returned by offset() (but safe now). (The offset is set a bit
+  // to the north-west of the path start point, must be a FF bug?)
+  SVG.winoffs = SVG.$win.offset();
   // Create new.curves
   $('.dw-t').each(function(){
     var $t = $(this);
