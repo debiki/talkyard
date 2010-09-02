@@ -765,7 +765,7 @@ SVG.curveTreadToReply = function($thread, $to) {
     ye -= 9;
     strokes = 'M '+ xs +' '+ ys +
              ' C '+ (xs) +' '+ (ys+20) +' '+ // draw Bezier curve  \
-                    (xe) +' '+ (ye-60) +' '+ //                     '-----.
+                    (xe) +' '+ (ye-60) +' '+ //                     `-----.
                     xe +' '+ ye +' '+        //                            \
              ' l -7 -1 m 8 1 l 2 -8'; // arrow end: _|                      v
   } else {
@@ -775,7 +775,7 @@ SVG.curveTreadToReply = function($thread, $to) {
              ' C '+ xs +' '+ ym +' '+        // Draw curve to child post  |
                     xs +' '+ (ye-30) +' '+   //                           \
                     (xe-7) +' '+ (ye + 4) +  //                            \
-             ' l -8 -1 m 9 1 l 0 -8'; // arrow end: _|                      '>
+             ' l -8 -1 m 9 1 l 0 -8'; // arrow end: _|                      `>
   }
   r.setAttribute('d', strokes);
 	r.setAttribute('id', 'dw-curve-'+ $thread.attr('id') +'-'+ $to.attr('id'));
@@ -822,60 +822,6 @@ Debiki.v0.SVG = SVG; // debug-export: Debiki.v0.SVG.curvesToChildren()
 $('.dw-t').each(function(){
   $(this).children('.dw-act').first().css('margin-left', '45px'); // 27 + 10
 });
-
-/*
- Per thread <svg>.
- Pros:
-  - Curves from X to child C hidden automatically when thread closed.
- Cons:
-  - More HTML (costs bandwidth)
-  - Curves from thread P to X needs to be hidden manually, when X closed,
-     so the single Pros above doesn't really matter, code complexity wise.
-  - No idea why, but if height() is set to the height of the thread,
-    the curve is cropped downwards (the lower part of the curve
-    disappears. This doesn't happen with the other approach,
-    a single global <svg>.
-  - In Firefox (not Chrome, nor Opera), the local <svg> currently appears
-    on top of the action links, when they've been clicked *once*. Weird.
-    Could probably be fixed with z-index.
-
-SVG.newCurveFromToIn = function($from, $to, $svg) {
-  $svg = $svg || SVG.$win;
-  var from = $from.offset(), to = $to.offset();
-  var r = document.createElementNS(SVG.XML_NS, 'path');
-  var xe = to.left - from.left, ye = to.top - from.top; // x,y-end,
-  var ym = ye / 2;
-  var d = 'M 12 30'+
-        ' C 0 40' + // start curve
-          ' 0 50' +
-          ' 0 60' +
-        ' C 0 '+ ym +  // curve to child post
-          ' 0 '+ (ye-30) +
-          ' '+ xe +' '+ ye +
-        ' l -10 0 m 10 0 l 0 -10'; + // arrow: _|
-  r.setAttribute('d', d);
-  //r.setAttribute('fill', 'none');
-  r.setAttribute('id', 'dw-curve-'+ $from.attr('id') +'-'+ $to.attr('id'));
-	//r.setAttribute('stroke', '#eee');
-	//r.setAttribute('stroke-width', 2);
-  $svg.append(r);
-  r = false;
-}
-
-// Draw curves from a thread to children
-SVG.$curvesToChildren = function() {
-  // Remove old curves, then create new.
-  var $thread = $(this);
-  var $svg = $thread.find('> .dw-t-svg'); //?why broken: children('.dw-t-svg');
-  if (!$svg.length) return;
-  $svg.find('path').remove();
-  $thread.find('> .dw-res > .dw-t').each(function(){
-    SVG.newCurveFromToIn($thread, $(this), $svg);
-  });
-}
-
-$('.dw-t').each(SVG.$curvesToChildren);
-*/
 
 
 // ------- Miscellaneous
