@@ -114,6 +114,9 @@ private[debiki] object App {
   private val resourceFiles = List(
       "css/debiki/jquery-ui-1.8.4.custom.css",
       "css/debiki.css",
+      "css/img/dw-svg-fake-hcurve.png",
+      "css/img/dw-svg-fake-hcurve-start.png",
+      "css/img/dw-svg-fake-vcurve-short.png",
       "js/svg.js",
       "js/svg.htc",
       "js/svg.swf",
@@ -167,6 +170,7 @@ private[debiki] object App {
     else if (!root.isDirectory)
       illegalArg("Not a directory: "+ dir)
     new jio.File(dir +"js/").mkdir()
+    new jio.File(dir +"css/img/").mkdirs()
     new jio.File(dir +"css/debiki/images/").mkdirs()
     new jio.File(dir + debate.id +"/edits/proposed/post/").mkdirs()
   }

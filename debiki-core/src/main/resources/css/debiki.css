@@ -692,3 +692,92 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
   stroke: #dde;
   stroke-width: 3;
 }
+
+.dw-svg-fake-varrow,
+.dw-svg-fake-harrow,
+.dw-svg-fake-harrow-end {
+  background-color: #dde;
+  position: absolute;
+  z-index: -10;
+}
+
+.dw-svg-fake-harrow,
+.dw-svg-fake-harrow-end {
+  height: 3px;
+  width: 100%;
+  top: -50px;
+}
+
+.dw-svg-fake-harrow-end {
+  width: 30px;
+  left: -30px;
+}
+
+.dw-svg-fake-varrow {
+  height: 100%;
+  width: 3px;
+  left: 3px;
+}
+
+.dw-svg-fake-vcurve-short {
+  background-color: transparent;
+  background-image: url(img/dw-svg-fake-vcurve-short.png);
+  background-position: 0 0;
+  background-repeat: no-repeat;
+  position: absolute;
+  top: -52px;
+  left: -44px;
+  height: 59px;
+  width: 39px;
+  z-index: -11;
+}
+
+.dw-svg-fake-hcurve,
+.dw-svg-fake-hcurve-start {
+  background-color: transparent;
+  background-image: url(img/dw-svg-fake-hcurve.png);
+  background-position: 0 0;
+  background-repeat: no-repeat;
+  position: absolute;
+  top: -57px;
+  left: -24px;
+  height: 39px;
+  width: 59px;
+  z-index: -11;
+}
+
+.dw-svg-fake-hcurve-start {
+  background-image: url(img/dw-svg-fake-hcurve-start.png);
+  top: -89px;
+  left: -93px;
+  height: 80px;
+  width: 105px;
+  z-index: -11;
+}
+
+.dw-svg-fake-arrow-hider {
+  z-index: -9; /* hides the varrow or harrow */
+}
+
+.dw-svg-fake-varrow-hider-hi,
+.dw-svg-fake-varrow-hider-lo,
+.dw-svg-fake-varrow-hider-left {
+  background-color: white;
+  position: absolute;
+  height: 35px;
+  width: 30px; /* the curve images are fairly wide */
+  z-index: -9;
+}
+
+.dw-svg-fake-varrow-hider-lo {
+  bottom: 0px;
+  height: 40px;
+}
+
+.dw-svg-fake-varrow-hider-left {
+  bottom: 0px;
+  height: 100%;
+  left: -55px;
+}
+
+

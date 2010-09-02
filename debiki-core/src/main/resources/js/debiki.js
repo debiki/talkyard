@@ -109,7 +109,9 @@ $('.debiki').delegate('.dw-z', 'click', function() {
   var thread = $(this).closest(".dw-t");
   resizeRootThreadExtraWide();
   thread.
-    find('> :not(.dw-p, .dw-z), '+
+    find('> :not(.dw-p, .dw-z, .dw-svg-fake-vcurve-short, '+
+        '.dw-svg-fake-harrow, .dw-svg-fake-harrow-end, '+
+        '.dw-svg-fake-hcurve, .dw-svg-fake-hcurve-start), '+
         '> .dw-p > .dw-p-bdy, '+
         '> .dw-act').
       //add(thread.find('> .dw-p > .dw-p-bdy')).
@@ -742,71 +744,110 @@ $('.debiki').delegate('.dw-act-edit', 'click', function() {
 
 // ------- SVG
 
+// Add more space between a post and its children, if the post is layed out
+// horizontally, since then a horizontal arrow will be drawn from the post
+// to its child posts.
+$('.dw-t-vspace').css('height', '80px')
+
 SVG = {};
-SVG.$win = $('#dw-svg-win');
-SVG.XML_NS = 'http://www.w3.org/2000/svg';
 
-SVG.curveTreadToReply = function($thread, $to) {
-  var from = $thread.offset(), to = $to.offset(); // from, to
-  var r = document.createElementNS(SVG.XML_NS, 'path');
-  var xs = from.left - SVG.winoffs.left; // start
-  var ys = from.top - SVG.winoffs.top;
-  var xe = to.left - SVG.winoffs.left; // end
-  var ye = to.top - SVG.winoffs.top;
-  var strokes;
-  if ($thread.filter('.dw-hor').length) {
-    // Thread laid out horizontally, so draw west-east curve:  `------.
-    // There's a visibility:hidden div that acts as a placeholder for this
-    // curve, and it's been resized properly by the caller.
-    from = $thread.children('.dw-t-vspace').offset();
-    xs = from.left - SVG.winoffs.left + 30;
-    ys = from.top - SVG.winoffs.top;
-    xe += 10;
-    ye -= 9;
-    strokes = 'M '+ xs +' '+ ys +
-             ' C '+ (xs) +' '+ (ys+20) +' '+ // draw Bezier curve  \
-                    (xe) +' '+ (ye-60) +' '+ //                     `-----.
-                    xe +' '+ ye +' '+        //                            \
-             ' l -7 -1 m 8 1 l 2 -8'; // arrow end: _|                      v
-  } else {
-    // Draw north-south curve.
-    var ym = (ys + ye) / 2;
-    strokes = 'M '+ (xs+5) +' '+ (ys+30) +
-             ' C '+ xs +' '+ ym +' '+        // Draw curve to child post  |
-                    xs +' '+ (ye-30) +' '+   //                           \
-                    (xe-7) +' '+ (ye + 4) +  //                            \
-             ' l -8 -1 m 9 1 l 0 -8'; // arrow end: _|                      `>
+if (svgweb.getHandlerType() == 'native') {(function(){
+  SVG.$win = $('#dw-svg-win');
+  SVG.XML_NS = 'http://www.w3.org/2000/svg';
+
+  SVG.curveTreadToReply = function($thread, $to) {
+    var from = $thread.offset(), to = $to.offset(); // from, to
+    var r = document.createElementNS(SVG.XML_NS, 'path');
+    var xs = from.left - SVG.winoffs.left; // start
+    var ys = from.top - SVG.winoffs.top;
+    var xe = to.left - SVG.winoffs.left; // end
+    var ye = to.top - SVG.winoffs.top;
+    var strokes;
+    if ($thread.filter('.dw-hor').length) {
+      // Thread laid out horizontally, so draw west-east curve:  `------.
+      // There's a visibility:hidden div that acts as a placeholder for this
+      // curve, and it's been resized properly by the caller.
+      from = $thread.children('.dw-t-vspace').offset();
+      xs = from.left - SVG.winoffs.left + 30;
+      ys = from.top - SVG.winoffs.top;
+      xe += 10;
+      ye -= 9;
+      strokes = 'M '+ xs +' '+ ys +
+               ' C '+ (xs) +' '+ (ys+20) +' '+ // draw Bezier curve  \
+                      (xe) +' '+ (ye-60) +' '+ //                     `-----.
+                      xe +' '+ ye +' '+        //                            \
+               ' l -7 -1 m 8 1 l 2 -8'; // arrow end: _|                      v
+    } else {
+      // Draw north-south curve.
+      var ym = (ys + ye) / 2;
+      strokes = 'M '+ (xs+5) +' '+ (ys+30) +
+               ' C '+ xs +' '+ ym +' '+        // Draw curve to child post  |
+                      xs +' '+ (ye-30) +' '+   //                           \
+                      (xe-7) +' '+ (ye + 4) +  //                            \
+               ' l -8 -1 m 9 1 l 0 -8'; // arrow end: _|                      `>
+    }
+    r.setAttribute('d', strokes);
+    r.setAttribute('id', 'dw-curve-'+ $thread.attr('id') +'-'+ $to.attr('id'));
+    SVG.$win.append(r);
+    r = false;
   }
-  r.setAttribute('d', strokes);
-	r.setAttribute('id', 'dw-curve-'+ $thread.attr('id') +'-'+ $to.attr('id'));
-  SVG.$win.append(r);
-  r = false;
-}
 
-// Draw curves from threads to children
-SVG.drawRelationships = function() {
-  // Remove old curves
-  SVG.$win.find('path').remove();
-  // Add more space between a post and its children, if the post is layed out
-  // horizontally, since then a horizontal arrow will be drawn from the post
-  // to its child posts.
-  $('.dw-t-vspace').css('height', '80px')
-  // Remember where $win is placed, because Firefox [v3.6.8] changes the
-  // offset when the first path is added, so it's not always safe to use
-  // the value returned by offset() (but safe now). (The offset is set a bit
-  // to the north-west of the path start point, must be a FF bug?)
-  SVG.winoffs = SVG.$win.offset();
-  // Create new.curves
-  $('.dw-t').each(function(){
-    var $t = $(this);
-    $t.find('> .dw-res > .dw-t:visible').each(function(){
-      SVG.curveTreadToReply($t, $(this));
+  // Draw curves from threads to children
+  SVG.drawRelationships = function() {
+    // Remove old curves
+    SVG.$win.find('path').remove();
+    // Remember where $win is placed, because Firefox [v3.6.8] changes the
+    // offset when the first path is added, so it's not always safe to use
+    // the value returned by offset() (but safe now). (The offset is set a bit
+    // to the north-west of the path start point, must be a FF bug?)
+    SVG.winoffs = SVG.$win.offset();
+    // Create new.curves
+    $('.dw-t').each(function(){
+      var $t = $(this);
+      $t.find('> .dw-res > .dw-t:visible').each(function(){
+        SVG.curveTreadToReply($t, $(this));
+      });
     });
+    // The browser internal stylesheet defaults to height: 100%.
+    $('#dw-svg-win').height($('.dw-depth-0').height() + 100);
+    $('#dw-svg-win').width($('.dw-depth-0').width());
+  };
+})()}
+else {(function(){
+  // No SVG support. The svgweb Flash renderer seems far too slow
+  // when resizing the Flash screen to e.g. 2000x2000 pixels.
+  // And scrolldrag stops working (no idea why). Seems easier
+  // to add these images of arrows instead.
+  //
+  // North-south arrows: (for vertical layout)
+  $('.dw-depth-0 .dw-t:has(.dw-t)').each(function(){
+    $(this).prepend("<div class='dw-svg-fake-varrow'/>");
+    $(this).prepend("<div class='dw-svg-fake-varrow-hider-hi'/>");
+    $(this).prepend("<div class='dw-svg-fake-varrow-hider-lo'/>");
   });
-  // The browser internal stylesheet defaults to height: 100%.
-  $('#dw-svg-win').height($('.dw-depth-0').height() + 100);
-  $('#dw-svg-win').width($('.dw-depth-0').width());
-};
+  $('.dw-depth-1 .dw-t').each(function(){
+    var hider = $(this).filter(':last-child').length ?
+                  ' dw-svg-fake-arrow-hider' : '';
+    $(this).prepend('<div class="dw-svg-fake-vcurve-short'+ hider +'"/>');
+  });
+  $('.dw-depth-1 .dw-t:last-child').each(function(){
+    $(this).prepend("<div class='dw-svg-fake-varrow-hider-left'/>");
+  });
+  // West-east arrows: (for horizontal Layout)
+  $('.dw-hor > .dw-res > li:first-child').each(function(){
+    $(this).prepend('<div class="dw-svg-fake-hcurve-start"/>');
+  });
+  $('.dw-hor > .dw-res > .dw-t:not(:last-child)').each(function(){
+    $(this).prepend("<div class='dw-svg-fake-harrow'/>");
+    $(this).prepend("<div class='dw-svg-fake-harrow-end'/>");
+  });
+  $('.dw-hor > .dw-res > .dw-t').each(function(){
+    $(this).prepend('<div class="dw-svg-fake-hcurve"/>');
+  });
+  SVG.drawRelationships = function() {
+    // Need do nothing.
+  }
+})()}
 
 SVG.drawRelationships();
 
@@ -822,7 +863,6 @@ Debiki.v0.SVG = SVG; // debug-export: Debiki.v0.SVG.curvesToChildren()
 $('.dw-t').each(function(){
   $(this).children('.dw-act').first().css('margin-left', '45px'); // 27 + 10
 });
-
 
 // ------- Miscellaneous
 
@@ -889,6 +929,8 @@ resizeRootThread();
 //========================================
    })(); // end Debiki module
 //========================================
+
+
 
 
 
