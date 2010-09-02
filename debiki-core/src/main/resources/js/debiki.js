@@ -859,10 +859,6 @@ zoomListeners.push(SVG.drawRelationships);
 //$('.dw-t').each(SVG.$curvesToChildren);
 Debiki.v0.SVG = SVG; // debug-export: Debiki.v0.SVG.curvesToChildren()
 
-// Indent action links, or Reply links overlap with relationship arrows.
-$('.dw-t').each(function(){
-  $(this).children('.dw-act').first().css('margin-left', '45px'); // 27 + 10
-});
 
 // ------- Miscellaneous
 
