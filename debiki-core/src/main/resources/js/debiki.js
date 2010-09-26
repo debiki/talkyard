@@ -776,14 +776,20 @@ if (svgweb.getHandlerType() == 'native') {(function(){
       // curve, and it's been resized properly by the caller.
       from = $thread.children('.dw-t-vspace').offset();
       xs = from.left - SVG.winoffs.left + 30;
-      ys = from.top - SVG.winoffs.top;
+      ys = from.top - SVG.winoffs.top + 3;
       xe += 10;
       ye -= 9;
+      var dx = 40;
+      var xm = (xe - xs - dx) / 2;
+      var dy = 28;
       strokes = 'M '+ xs +' '+ ys +
-               ' C '+ (xs) +' '+ (ys+20) +' '+ // draw Bezier curve  \
-                      (xe) +' '+ (ye-60) +' '+ //                     `-----.
-                      xe +' '+ ye +' '+        //                            \
-               ' l -7 -1 m 8 1 l 2 -8'; // arrow end: _|                      v
+               ' C '+ (xs) +' '+ (ys+dy) +' '+ // draw Bezier curve  \
+               '   '+ (xs+dx) +' '+ (ys+dy) +' '+     //              \  
+               '   '+ (xs+dx) +' '+ (ys+dy) +' '+     //               `----
+               ' C '+ (xe-70) +' '+ (ys+dy+5) +' '+
+                      (xe) +' '+ (ye-55) +' '+ //                   ------.
+                      xe +' '+ ye +' '+        //                          \
+               ' l -7 -1 m 8 1 l 2 -8'; // arrow end: _|                    v
     } else {
       // Draw north-south curve.
       var ym = (ys + ye) / 2;
