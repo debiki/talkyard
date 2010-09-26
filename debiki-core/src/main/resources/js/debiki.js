@@ -169,7 +169,7 @@ var resizeRootThreadImpl = function(extraWidth){
   var width = extraWidth;
   var $root = $('.dw-depth-0');
   if (!$root.length) $root = $('.dw-debate'); // there's no root reply
-  $root.find('> .dw-res > .dw-t, > .dw-fs, > .dw-act').each(function(){
+  $root.find('> .dw-res > li, > .dw-fs, > .dw-act').each(function(){
     width += $(this).outerWidth(true);
   });
   $root.css('min-width', width +'px');
@@ -331,7 +331,7 @@ function updateDebate(newDebateHtml) {
         $(this)
           .addClass('dw-post-new') // outlines it, and its sub thread posts
           .prependTo($res)
-          .find('.dw-p')
+          .each(SVG.$updateThreadGraphics);
       }
       else
         return;
@@ -601,7 +601,14 @@ $('.debiki').delegate('.dw-act-reply', 'click', function() {
   $replyForm.find('label').addClass( // color and font matching <input> buttons
     'dw-ui-state-default-color dw-ui-widget-font');
   // Reveal the form
-  slideInActionForm($replyForm, $thread);
+  var $res = $thread.children('.dw-res');
+  if (!$res.length) {
+    // This is the first reply; create the reply list. // TODO: DUPL CODE
+    $res = $("<ol class='dw-res'/>").appendTo($thread);
+  }
+  $res.prepend($replyForm)
+  $replyForm.each(SVG.$updateThreadGraphics);
+  slideInActionForm($replyForm);
   dismissActionMenu();
 });
 
@@ -812,6 +819,8 @@ if (svgweb.getHandlerType() == 'native') {(function(){
     $('#dw-svg-win').height($('.dw-depth-0').height() + 100);
     $('#dw-svg-win').width($('.dw-depth-0').width());
   };
+
+  SVG.$updateThreadGraphics = function() {} // not implemented
 })()}
 else {(function(){
   // No SVG support. The svgweb Flash renderer seems far too slow
@@ -819,6 +828,7 @@ else {(function(){
   // And scrolldrag stops working (no idea why). Seems easier
   // to add these images of arrows instead.
   //
+
   // North-south arrows: (for vertical layout)
   $('.dw-depth-0 .dw-t:has(.dw-t)').each(function(){
     $(this).prepend("<div class='dw-svg-fake-varrow'/>");
@@ -833,17 +843,26 @@ else {(function(){
   $('.dw-depth-1 .dw-t:last-child').each(function(){
     $(this).prepend("<div class='dw-svg-fake-varrow-hider-left'/>");
   });
+  //
   // West-east arrows: (for horizontal Layout)
-  $('.dw-hor > .dw-res > li:first-child').each(function(){
-    $(this).prepend('<div class="dw-svg-fake-hcurve-start"/>');
+  //
+  // Arrow start, for horizontal layout, and arrow to reply link.
+  $('.dw-hor > .dw-act > .dw-act-reply').each(function(){
+    $(this).before('<div class="dw-svg-fake-hcurve-start"/>');
   });
-  $('.dw-hor > .dw-res > .dw-t:not(:last-child)').each(function(){
-    $(this).prepend("<div class='dw-svg-fake-harrow'/>");
-    $(this).prepend("<div class='dw-svg-fake-harrow-end'/>");
-  });
-  $('.dw-hor > .dw-res > .dw-t').each(function(){
-    $(this).prepend('<div class="dw-svg-fake-hcurve"/>');
-  });
+  // Arrows to each child thread.
+  SVG.$updateThreadGraphics = function() {
+    if ($(this).parent().closest('.dw-t').filter('.dw-hor').length) {
+      $(this).filter(':not(:last-child)').each(function(){
+        $(this).prepend("<div class='dw-svg-fake-harrow'/>");
+        $(this).prepend("<div class='dw-svg-fake-harrow-end'/>");
+      });
+      $(this).prepend('<div class="dw-svg-fake-hcurve"/>');
+    } else {
+      // vertical arrow
+    }
+  }
+  $('.dw-hor > .dw-res > li').each(SVG.$updateThreadGraphics);
   SVG.drawRelationships = function() {
     // Need do nothing.
   }
@@ -925,11 +944,4 @@ resizeRootThread();
 //========================================
    })(); // end Debiki module
 //========================================
-
-
-
-
-
-
-
 

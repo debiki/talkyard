@@ -565,7 +565,7 @@ class LayoutManager(val debate: Debate) {
         <div class='dw-act'><a class='dw-act-rate'>Rate</a></div>
         <div class='dw-act'><a class='dw-act-edit'>Edit</a></div>
       </div>
-      <div class='dw-fs dw-fs-re'>
+      <li class='dw-fs dw-fs-re'>
         <form
             action={config.replyAction}
             accept-charset='UTF-8'
@@ -591,7 +591,7 @@ class LayoutManager(val debate: Debate) {
             <input class='dw-fi-cancel' type='button' value='Cancel'/>
           </div>
         </form>
-      </div>
+      </li>
       <div class='dw-fs dw-fs-rat'>
         <form
             action={config.rateAction}

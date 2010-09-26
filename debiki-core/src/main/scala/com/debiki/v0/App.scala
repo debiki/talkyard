@@ -116,6 +116,7 @@ private[debiki] object App {
       "css/debiki.css",
       "css/img/dw-svg-fake-hcurve.png",
       "css/img/dw-svg-fake-hcurve-start.png",
+      "css/img/dw-svg-fake-hcurve-start-w-reply-arrow.png",
       "css/img/dw-svg-fake-vcurve-short.png",
       "js/svg.js",
       "js/svg.htc",
