@@ -758,7 +758,8 @@ $('.dw-t-vspace').css('height', '80px')
 
 SVG = {};
 
-if (svgweb.getHandlerType() == 'native') {(function(){
+if (this.svgweb && svgweb.getHandlerType() == 'native' &&
+    document.URL.indexOf('svg=true') != -1) {(function(){
   SVG.$win = $('#dw-svg-win');
   SVG.XML_NS = 'http://www.w3.org/2000/svg';
 
