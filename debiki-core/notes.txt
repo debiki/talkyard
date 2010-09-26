@@ -1,5 +1,321 @@
 vim: fdm=marker et sw=2 ts=2
 
+Rename CSS classes:
+
+  From              To                          Means
+  debiki            dw-debiki
+ 
+  dw-depth-0        dw-d_0
+
+d dw-thread         ''
+d dw-thread-<id>    dw-t-<id>
+d dw-cmt            dw-t                        thread
+d dw-cmt-x          dw-z                        fold
+d dw-collapsed      dw-zd                       folded
+d dw-collapsed-fx   dw-zd-fx                    folded
+ 
+x dw-cropped-e      dw-x-e                      cut east
+x dw-cropped-s      dw-x-s                      cut south
+  
+d dw-cmts           dw-res                      replies
+ 
+d dw-cmt-wrap       dw-p                        post
+d dw-cmt-hdr        dw-p-hdr                    post header
+d dw-cmt-bdy        dw-p-bdy                    post body
+d dw-cmt-x          dw-p-x
+
+  dw-cmt-by         dw-p-hdr > dw-by            author
+  dw-cmt-at         dw-p-hdr > dw-date          creation date
+
+  dw-rats           dw-p-rats                   ratings
+  dw-rat            dw-p-rats > dw-rat
+  dw-you-rated      dw-p-rats > dw-rat.dw-mine  
+  dw-more-rat-tags  dw-rat-more
+ 
+  dw-cmt-hdr-ed     dw-res-ed                     edit
+  dw-cmt-ed-by      dw-res-ed > dw-by
+  dw-cmt-at         dw-res-ed > dw-date           
+ 
+s dw-react          dw-act                      action)
+d dw-act            dw-act                      action)
+d dw-reply          dw-act-reply                reply)
+d dw-edit           dw-act-edit                 edit)
+d dw-rat            dw-act-rate                 rate)
+ 
+d dw-cancel         dw-fi-cancel
+d dw-submit         dw-fi-submit
+ 
+  dw-cmt-re-cnt     ''
+  dw-dragscrollable dw-scroll
+
+  dw-edit-??        ??
+
+d dw-font-from-ui-widget -> dw-ui-widget-font
+d dw-linkify-ui-state-default -> dw-ui-state-default-linkified
+
+  dw-js-variables   dw-js-vars
+
+  dw-post-*         '' ??
+  dw-post-new       dw-new-post
+  dw-post-edited    dw-new-edit
+
+  dw-show-*         dw-fs-ed/rat-show-*
+
+Skip:
+  dw-cmt-by         dw-res-by                     author
+  dw-cmt-at         dw-res-date
+  dw-date           dw-res-date
+ 
+  dw-cmt-ed-by      dw-res-ed-by
+  dw-cmt-at         dw-res-ed-date
+  dw-date           dw-res-ed-date
+
+--------
+     {{{ Initially
+     17 dw-act
+      6 dw-action-menu
+      2 dw-cmt-at
+      3 dw-cmt-by
+      2 dw-cmt-ed-by
+      1 dw-cmt-re-cnt
+      1 dw-collapsed
+      2 dw-collapsed-fx
+      1 dw-color-brighter-from-ui-state-default
+      1 dw-color-brightest-from-ui-state-default
+      1 dw-color-bright-from-ui-state-default
+      3 dw-color-from-ui-state-default
+      1 dw-cropped-e
+      1 dw-cropped-s
+      6 dw-date
+      9 dw-debate
+      2 dw-debate-info
+      1 dw-depth-
+      2 dw-dragscrollable
+      3 dw-edit-dates
+      3 dw-edit-liking-stats
+      5 dw-edits
+      1 dw-edits-applied
+      2 dw-edits-applied-form
+      2 dw-edits-lbl
+      2 dw-edits-others-form
+      2 dw-edit-vote-btns
+      1 dw-fi-
+      9 dw-fi-action
+      7 dw-fi-by
+      1 dw-fi-diss-edit-
+      2 dw-fi-edit-
+      4 dw-fi-edit-post
+      2 dw-fi-edit-text
+      1 dw-fi-like-edit-
+      6 dw-fi-post
+      2 dw-fi-rat-tag
+      2 dw-fi-reply-author
+      4 dw-fi-reply-text
+      2 dw-fi-vote-edit-
+      3 dw-font-from-ui-widget
+     13 dw-fs
+     14 dw-fs-ed
+      3 dw-fs-rat
+      3 dw-fs-re
+      6 dw-hidden-templates
+      3 dw-highlight
+      3 dw-hor
+      1 dw-js-variables
+      4 dw-last-changed
+      2 dw-linkify-ui-state-default
+      3 dw-mine
+      6 dw-more-rat-tags
+      3 dw-name-or-alias
+      2 dw-new-edit-btn
+      2 dw-new-edit-form
+      2 dw-owner
+      1 dw-owner-info
+      2 dw-parent-ref
+      3 dw-post
+      6 dw-post-
+      3 dw-post-edited
+      7 dw-post-info
+      2 dw-post-liking
+      3 dw-post-new
+      6 dw-rat
+      2 dw-rat-count
+      8 dw-rat-form
+      9 dw-rats
+      2 dw-rats-non-weighted
+      5 dw-rat-tag
+      3 dw-rat-tag-frac
+      2 dw-rat-tag-frac-min
+      6 dw-rat-tag-set
+      3 dw-rat-tag-sum
+      2 dw-rat-valsum-max
+      2 dw-react
+      4 dw-reply-form
+      1 dw-resize-accordion
+      1 dw-show-edit-liking-stats
+      2 dw-show-edits-applied-btn
+      2 dw-show-edits-pending-btn
+      5 dw-show-more-rat-tags
+      8 dw-submit-set
+      2 dw-text
+      3 dw-user-contrib-license
+      6 dw-x-e
+      5 dw-x-mark
+     12 dw-x-s
+      2 dw-you-rated
+      1 dw-your-edit
+}}}
+
+{{{ After 1st checkin
+     19 dw-act
+      4 dw-act-edit
+      6 dw-action-menu
+      2 dw-act-rate
+      5 dw-act-reply
+      6 dw-date
+      9 dw-debate
+      2 dw-debate-info
+      1 dw-depth-
+     14 dw-depth-0
+     10 dw-depth-1
+      1 dw-depth-2
+      3 dw-dragscrollable
+      5 dw-dragscroll-wiewport
+      3 dw-edit-dates
+      3 dw-edit-liking-stats
+      5 dw-edits
+      1 dw-edits-applied
+      2 dw-edits-lbl
+      1 dw-fi-
+      9 dw-fi-action
+      7 dw-fi-by
+      8 dw-fi-cancel
+      1 dw-fi-diss-edit-
+      2 dw-fi-edit-
+      4 dw-fi-edit-post
+      2 dw-fi-edit-text
+      1 dw-fi-like-edit-
+      6 dw-fi-post
+      2 dw-fi-rat-tag
+      2 dw-fi-reply-author
+      4 dw-fi-reply-text
+      6 dw-fi-submit
+      2 dw-fi-vote-edit-
+     15 dw-fs
+     14 dw-fs-ed
+      3 dw-fs-rat
+      3 dw-fs-re
+      6 dw-hidden-templates
+      3 dw-highlight
+      3 dw-hor
+      1 dw-js-variables
+      4 dw-last-changed
+      3 dw-mine
+      6 dw-more-rat-tags
+      3 dw-name-or-alias
+      2 dw-owner
+      1 dw-owner-info
+     34 dw-p
+      2 dw-parent-ref
+      2 dw-p-at
+     12 dw-p-bdy
+      3 dw-p-by
+      2 dw-p-ed-by
+     11 dw-p-hdr
+      3 dw-p-hdr-ed
+      3 dw-post
+      7 dw-post-
+      3 dw-post-edited
+      7 dw-post-info
+      2 dw-post-liking
+      3 dw-post-new
+      1 dw-p-re-cnt
+      6 dw-rat
+      2 dw-rat-count
+      9 dw-rats
+      2 dw-rats-non-weighted
+      5 dw-rat-tag
+      3 dw-rat-tag-frac
+      2 dw-rat-tag-frac-min
+      6 dw-rat-tag-set
+      3 dw-rat-tag-sum
+      2 dw-rat-valsum-max
+      2 dw-react
+     12 dw-res
+      1 dw-resize-accordion
+      1 dw-show-edit-liking-stats
+      5 dw-show-more-rat-tags
+      8 dw-submit-set
+      2 dw-text
+      3 dw-user-contrib-license
+      2 dw-you-rated
+      1 dw-your-edit
+
+}}}
+
+todo: Check fold function, broken?
+Wip:
+Done:
+      1 dw-collapsed      --> dw-zd
+      2 dw-collapsed-fx   --> dw-zd-fx
+
+      2 dw-edit-vote-btns
+                          --> dw-f-ed-btns-vote
+      2 dw-new-edit-btn
+                          --> dw-f-ed-btn-new-edit
+      2 dw-show-edits-applied-btn
+                          --> dw-f-ed-btn-show-applied
+      2 dw-show-edits-pending-btn
+                          --> dw-f-ed-btn-show-pending
+      1 dw-show-edit-liking-stats
+                          --> dw-f-ed-btn-show-liking-stats
+
+
+      4 dw-reply-form     --> '' / dw-fs-re
+      8 dw-rat-form       --> '' / dw-fs-rat
+      2 dw-new-edit-form  --> dw-f-ed-new
+      2 dw-edits-applied-form
+                          --> dw-f-ed-applied
+      2 dw-edits-others-form
+                          --> dw-f-ed-others
+
+      6 dw-p-x            --> dw-z (fold, folded paper
+                                looks like z, from side)
+      3 dw-font-from-ui-widget
+                          --> dw-ui-widget-font
+      2 dw-linkify-ui-state-default
+                          --> dw-ui-state-default-linkified
+
+      1 dw-color-brighter-from-ui-state-default
+      1 dw-color-brightest-from-ui-state-default
+      1 dw-color-bright-from-ui-state-default
+      3 dw-color-from-ui-state-default
+                          --> dw-ui-state-default-color(-bright...)
+      ---
+
+      2 dw-thread         --> gone
+      2 dw-thread-<id>    --> dw-t-<id>
+     34 dw-cmt            -- -t
+
+      2 dw-rate           --> dw-act-rate
+      5 dw-reply
+      4 dw-edit
+
+      8 dw-cancel
+      6 dw-submit
+
+     10 dw-cmts           --> res
+     32 dw-cmt-wrap       --> -p-
+      6 dw-cmt-x
+     11 dw-cmt-bdy
+     11 dw-cmt-hdr
+      3 dw-cmt-hdr-ed
+
+
+Wip:
+
+
+-------
+
 
 TODO: Rename class dw-owner, split into:? dw-user dw-author dw-editor
 
@@ -141,3 +457,10 @@ Men för genomskådning-av-demagogi?
 
 -- Långt och bra debattexempel:
 http://yro.slashdot.org/comments.pl?sid=10/07/06/1659255
+
+
+*** Misc ***
+
+Backtype: länka Reddit/HackerNews etc om de diskuterar mina artiklar
+http://www.backtype.com/plugins/connect
+
