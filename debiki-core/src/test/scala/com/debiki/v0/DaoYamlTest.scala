@@ -15,7 +15,7 @@ object DaoYamlTest {
   private val testOutDir = System.getProperty("build.testOutputDirectory")
 
   object Paths {
-    val MmaDebate = testOutDir +"/v0/compactDebate/_debate.yaml"
+    val MmaDebate = testOutDir +"/v0/_debate.yaml"
   }
 }
 
