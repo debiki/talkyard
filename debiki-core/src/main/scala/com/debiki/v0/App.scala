@@ -63,7 +63,7 @@ private[debiki] object App {
           <meta name="svg.render.forceflash" content="true" /> */}
           <script type='text/javascript' src='js/svg.js' data-path='js'/>
           {
-            for (f <- resourceFiles) yield
+            for (f0 <- resourceFiles; f = f0.stripPrefix(serveDir)) yield
               if (f endsWith ".css")
                 <link type="text/css" rel="stylesheet" href={f}/>
               else if (f.endsWith(".js") && !f.endsWith("/svg.js"))
@@ -109,6 +109,8 @@ private[debiki] object App {
     writer.close
   }
 
+  val serveDir = "toserve/"
+
   /** All css and javascript files.
    */
   private val resourceFiles = List(
@@ -126,7 +128,7 @@ private[debiki] object App {
       "js/jquery.cookie.js",
       "js/debiki-dragscrollable.js",
       "js/debiki.js",
-      "js/debiki-layout.js")
+      "js/debiki-layout.js") map (serveDir + _)
 
   /** Image files, currently jQuery UI images only.
    *  Perhaps I can list the contents of a Jar directory like so:
@@ -156,7 +158,7 @@ private[debiki] object App {
       "ui-icons_238ed7_256x240.png",
       "ui-icons_e9911c_256x240.png",
       "ui-icons_ef8c08_256x240.png",
-      "ui-icons_ffd27a_256x240.png") map ("css/debiki/images/"+ _)
+      "ui-icons_ffd27a_256x240.png") map (serveDir +"css/debiki/images/"+ _)
 
   /** Creates directories into which css and javascript files will be placed.
    */
@@ -183,7 +185,8 @@ private[debiki] object App {
     for (res <- resourceFiles ::: imageFiles) {
       val inputStream = loader.getResourceAsStream(res)
       errorIf(inputStream eq null, "Not found: "+ res)
-      copy(fromStream = inputStream, toPath = dir +"/"+ res)
+      copy(fromStream = inputStream,
+           toPath = dir +"/"+ res.stripPrefix(serveDir))
       inputStream.close()
     }
   }
