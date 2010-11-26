@@ -9,6 +9,8 @@ import Prelude._
 
 object Debate {
 
+  val RootPostId = "root"
+
   def empty(id: String) = Debate(id)
 
 }
@@ -26,8 +28,6 @@ case class Debate (
   private[debiki] val editVotes: List[EditVote] = Nil,
   private[debiki] val editsApplied: List[EditApplied] = Nil
 ){
-  val RootPostId = "root"
-
   private lazy val postsById =
       imm.Map[String, Post](posts.map(x => (x.id, x)): _*)
 

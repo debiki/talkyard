@@ -25,6 +25,9 @@ class LayoutConfig {
   var replyAction = ""
   var rateAction = ""
   var editAction = ""
+  /** A function from debate-id and post-id to a react URL.
+   */
+  var reactAction: Function2[String, String, String] = (ign, ore) => ""
 }
 
 class LayoutVariables {
@@ -221,7 +224,10 @@ class LayoutManager(val debate: Debate) {
   private var lastChange: Option[String] = null
   private var vars: LayoutVariables = null
 
-  def configure(conf: LayoutConfig) { this.config = conf }
+  def configure(conf: LayoutConfig): LayoutManager = {
+    this.config = conf
+    this
+  }
 
   def layoutDebate(vars: LayoutVariables = new LayoutVariables)
       : NodeSeq = {
@@ -231,9 +237,9 @@ class LayoutManager(val debate: Debate) {
   }
 
   private def layoutPosts(): NodeSeq = {
-    val rootPosts = debate.repliesTo(debate.RootPostId)
-    val rootPost = debate.post(debate.RootPostId)
-    val cssThreadId = "dw-t-"+ debate.RootPostId
+    val rootPosts = debate.repliesTo(Debate.RootPostId)
+    val rootPost = debate.post(Debate.RootPostId)
+    val cssThreadId = "dw-t-"+ Debate.RootPostId
     <div id={debate.id} class="debiki dw-debate">
       <script type="image/svg+xml">
         <svg id="dw-svg-win"/> {/* Need not declare the XLink or SVG
@@ -340,8 +346,9 @@ class LayoutManager(val debate: Debate) {
         { xmlText }
       </div>
     </div> ++ (
-      if (post.id == debate.RootPostId) Nil // actions already added by caller
-      else <a class='dw-react' href={'#'+ cssPostId}>React</a>
+      if (post.id == Debate.RootPostId) Nil // actions already added by caller
+      else <a class='dw-react' href={config.reactAction(debate.id, cssPostId)}
+            >React</a>
     )
   }
 
