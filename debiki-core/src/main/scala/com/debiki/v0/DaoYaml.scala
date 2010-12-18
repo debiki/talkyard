@@ -12,6 +12,7 @@ import y.{constructor => yc, nodes => yn}
 import scala.collection.JavaConversions._
 import scala.collection.{mutable => mut}
 import java.{io => jio, util => ju}
+import net.liftweb.common.{Box, Empty, Full, Failure}
 
 object DaoYaml {
 
@@ -97,8 +98,8 @@ object DaoYaml {
 
 class DaoYaml extends Dao {
 
-  private def buildDebate(iter: Iterable[Object]): Option[Debate] = {
-    var debate: Option[Debate] = None
+  private def buildDebate(iter: Iterable[Object]): Box[Debate] = {
+    var debate: Box[Debate] = Empty
     var posts = List[Post]()
     var ratings = List[Rating]()
     var edits = List[Edit]()
@@ -127,15 +128,27 @@ class DaoYaml extends Dao {
     buildDebate(iterable)
   }
 
-  override def getDebate(id: String): Debate = {
+  override def getDebate(path: String): Debate = {
+    val debate = loadDebate(new jio.File(path))
+    illegalArgIf(debate.isEmpty, "Debate not found: "+ path)
+    debate.open_!
+  }
+
+  def loadDebate(file: jio.File): Box[Debate] = {
     var debate: Option[Debate] = None
     val dc = new DebateConstructor
     val yaml = new y.Yaml(new y.Loader(dc))
-    val file = new jio.File(id)
-    val iterable = yaml.loadAll(new jio.FileInputStream(file))
-    debate = buildDebate(iterable)
-    illegalArgIf(debate.isEmpty, "Debate not found: "+ id)
-    debate.get
+    try {
+      val ios = new jio.FileInputStream(file)
+      val iterable = yaml.loadAll(ios)
+      buildDebate(iterable)
+    }
+    catch {
+      case e: jio.IOException => return Failure(
+        "IO error, file: " + file, Full(e), Empty)
+      case e: jio.FileNotFoundException => return Failure(
+        "File not found: " + file, Full(e), Empty)
+    }
   }
 
   private class DebateConstructor extends yc.SafeConstructor {
