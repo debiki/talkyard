@@ -15,7 +15,7 @@
   <properties>
     <scala.version>2.8.0</scala.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <test.yaml>_debate.yaml</test.yaml>
+    <test.yaml>big-forum-debate.yaml</test.yaml>
     <!-- My IDEA debug server listens on this listenport:
     (So I can debug with both NetBeans and IDEA) -->
     <netbeans.listen.port>15698</netbeans.listen.port>
@@ -104,7 +104,7 @@
               <mainClass>com.debiki.v0.App</mainClass>
               <args>
                 <arg>-d</arg>
-                <arg>${project.build.testOutputDirectory}/v0/${test.yaml}</arg>
+                <arg>${project.build.testOutputDirectory}/v0/debates/${test.yaml}</arg>
                 <arg>-o</arg>
                 <arg>target/run/${test.yaml}/</arg>
               </args>
@@ -115,7 +115,7 @@
               <mainClass>com.debiki.v0.App</mainClass>
               <args>
                 <arg>-d</arg>
-                <arg>${project.build.testOutputDirectory}/v0/${test.yaml}</arg>
+                <arg>${project.build.testOutputDirectory}/v0/debates/${test.yaml}</arg>
                 <arg>-o</arg>
                 <arg>target/run/${test.yaml}/</arg>
               </args>
@@ -176,9 +176,10 @@
 
   <profiles>
     <profile>
-      <id>blog-replies.yaml</id>
+      <!-- Invoke like so: mvn scala:run -Pbig-blog-debate -->
+      <id>big-blog-debate</id>
       <properties>
-        <test.yaml>blog-replies.yaml</test.yaml>
+        <test.yaml>big-blog-debate.yaml</test.yaml>
       </properties>
     </profile>
   </profiles>
