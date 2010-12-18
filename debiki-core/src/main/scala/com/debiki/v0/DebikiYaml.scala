@@ -14,7 +14,7 @@ import scala.collection.{mutable => mut}
 import java.{io => jio, util => ju}
 import net.liftweb.common.{Box, Empty, Full, Failure}
 
-object DaoYaml {
+object DebikiYaml {
 
   /** Notice: DoS or XSS attack: Bad input gives corrupt Yaml.
    */
@@ -96,7 +96,7 @@ object DaoYaml {
         replace("\r", "") // convert \r\n to \n
 }
 
-class DaoYaml extends Dao {
+class DebikiYaml extends Dao {
 
   private def buildDebate(iter: Iterable[Object]): Box[Debate] = {
     var debate: Box[Debate] = Empty

@@ -41,7 +41,7 @@ private[debiki] object App {
     }
 
 
-    val debate: Debate = (new DaoYaml).getDebate(dir)
+    val debate: Debate = (new DebikiYaml).getDebate(dir)
     val layoutMgr = new LayoutManager(debate)
 
     createDirTree(out, debate)

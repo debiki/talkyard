@@ -10,7 +10,7 @@ import org.junit._
 import Assert._
 import org.yaml.{snakeyaml => y}
 
-object DaoYamlTest {
+object DebikiYamlTest {
 
   private val testOutDir = System.getProperty("build.testOutputDirectory")
 
@@ -20,12 +20,12 @@ object DaoYamlTest {
 }
 
 @Test
-class DaoYamlTest {
-  import DaoYamlTest._
+class DebikiYamlTest {
+  import DebikiYamlTest._
 
   @Test
   def testLoad() {
-    val dao: Dao = new DaoYaml
+    val dao: Dao = new DebikiYaml
     val debate = dao.getDebate(Paths.MmaDebate)
     assert(debate.id == "test-debate")
     assert(debate.postCount == 26)
