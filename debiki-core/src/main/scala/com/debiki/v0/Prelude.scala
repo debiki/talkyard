@@ -33,6 +33,9 @@ object Prelude {
   def assertionError(problem: String) =
     throw new AssertionError(problem)
 
+  def assErr(problem: String) =
+    throw new AssertionError(problem)
+
   def illegalArg(problem: String) =
     throw new IllegalArgumentException(problem)
 
@@ -44,6 +47,15 @@ object Prelude {
    *  (i.e. possible destructive were it not made safe).
    */
   def safe(text: String): String = text // for now.
+
+  def classNameOf(x: Any): String = x match {
+    case x: AnyRef => x.getClass.getSimpleName
+    case _: Int => "Int"
+    case _: Long => "Long"
+    case _: Char => "Char"
+    case _: Byte => "Byte"
+    case _: Any => "Any"
+  }
 
   def stripStartEndBlanks(text: String): String = {
     val start = text.indexWhere(_ > ' ')
