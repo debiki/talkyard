@@ -25,8 +25,7 @@ class DebikiYamlTest {
 
   @Test
   def testLoad() {
-    val dao: Dao = new DebikiYaml
-    val debate = dao.getDebate(Paths.MmaDebate)
+    val debate = DebikiYaml().loadDebateFromPath(Paths.MmaDebate).open_!
     assert(debate.id == "test-debate")
     assert(debate.postCount == 26)
     assert(debate.ratingsOn("j").length == 1)

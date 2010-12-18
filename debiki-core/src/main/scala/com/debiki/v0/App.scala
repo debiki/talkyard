@@ -40,8 +40,7 @@ private[debiki] object App {
       i += 1
     }
 
-
-    val debate: Debate = (new DebikiYaml).getDebate(dir)
+    val debate: Debate = DebikiYaml().loadDebateFromPath(dir).open_!
     val layoutMgr = new LayoutManager(debate)
 
     createDirTree(out, debate)

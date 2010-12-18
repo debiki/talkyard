@@ -16,6 +16,8 @@ import net.liftweb.common.{Box, Empty, Full, Failure}
 
 object DebikiYaml {
 
+  def apply() = new DebikiYaml
+  
   /** Notice: DoS or XSS attack: Bad input gives corrupt Yaml.
    */
   def toYaml(post: Post): String = {
@@ -96,7 +98,7 @@ object DebikiYaml {
         replace("\r", "") // convert \r\n to \n
 }
 
-class DebikiYaml extends Dao {
+class DebikiYaml {
 
   private def buildDebate(iter: Iterable[Object]): Box[Debate] = {
     var debate: Box[Debate] = Empty
@@ -121,20 +123,24 @@ class DebikiYaml extends Dao {
         edits = edits, editVotes = editVotes, editsApplied = editsApplied))
   }
 
-  def loadDebateFromText(yamlText: String): Option[Debate] = {
+  /** Loads a debate from all Yaml documents in a text.
+   */
+  def loadDebateFromText(text: String): Box[Debate] = {
     val dc = new DebateConstructor
     val yaml = new y.Yaml(new y.Loader(dc))
-    val iterable = yaml.loadAll(yamlText)
+    val iterable = yaml.loadAll(text)
     buildDebate(iterable)
   }
 
-  override def getDebate(path: String): Debate = {
-    val debate = loadDebate(new jio.File(path))
-    illegalArgIf(debate.isEmpty, "Debate not found: "+ path)
-    debate.open_!
-  }
+  def loadDebateFromPath(path: String): Box[Debate] =
+    loadDebateFromFile(new jio.File(path))
 
-  def loadDebate(file: jio.File): Box[Debate] = {
+  /** Loads a debate from all Yaml documents in a file.
+   *
+   * Unimplemented: Many files, varargs. And: If a directory is specified,
+   * all files in that directory are loaded.
+   */
+  def loadDebateFromFile(file: jio.File): Box[Debate] = {
     var debate: Option[Debate] = None
     val dc = new DebateConstructor
     val yaml = new y.Yaml(new y.Loader(dc))
