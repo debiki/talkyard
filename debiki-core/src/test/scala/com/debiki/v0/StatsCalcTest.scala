@@ -45,7 +45,7 @@ object Util {
     require(prop >= 0f && prop <= 1f)
     var n2 = trials + 4
     var p2 = (prop * trials + 2) / n2
-    val root = Math.sqrt(p2 * (1-p2) / n2).toFloat
+    val root = math.sqrt(p2 * (1-p2) / n2).toFloat
     val z10 = 1.28f
     (p2 - z10 * root, p2 + z10 * root)
   }
