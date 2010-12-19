@@ -11,7 +11,7 @@ import org.yaml.{snakeyaml => y}
 import y.{constructor => yc, nodes => yn}
 import scala.collection.JavaConversions._
 import scala.collection.{mutable => mut}
-import java.{io => jio, util => ju}
+import java.{io => jio, util => ju, lang => jl}
 import net.liftweb.common.{Box, Empty, Full, Failure}
 
 object DebikiYaml {
@@ -133,27 +133,47 @@ class DebikiYaml {
   }
 
   def loadDebateFromPath(path: String): Box[Debate] =
-    loadDebateFromFile(new jio.File(path))
+    loadDebateFromFiles(new jio.File(path))
 
-  /** Loads a debate from all Yaml documents in a file.
+  /** Loads a debate from all Yaml documents specified.
    *
-   * Unimplemented: Many files, varargs. And: If a directory is specified,
-   * all files in that directory are loaded.
+   * If many files are specified, they are sorted by name and then
+   * concatenated to a single stream. If a directory is specified,
+   * all files in that directory are loaded (but no recursion into child
+   * directories).
    */
-  def loadDebateFromFile(file: jio.File): Box[Debate] = {
+  def loadDebateFromFiles(files: jio.File*): Box[Debate] = {
     var debate: Option[Debate] = None
     val dc = new DebateConstructor
-    val yaml = new y.Yaml(new y.Loader(dc))
     try {
-      val ios = new jio.FileInputStream(file)
-      val iterable = yaml.loadAll(ios)
-      buildDebate(iterable)
+      var fs = files flatMap { f =>
+        if (f.isFile) f :: Nil
+        else if (f.isDirectory) f.listFiles.filter(_.isFile)
+        else if (!f.exists) throw new jio.FileNotFoundException(f.getPath)
+        else throw new jio.IOException("Weird file: "+ f.getPath)
+      }
+      fs = fs sortBy (_.getName)  // for deterministic behavior
+      val isEnum: ju.Enumeration[jio.FileInputStream] =
+            fs.map((f: jio.File) => new jio.FileInputStream(f)).iterator
+            //.asJavaEnumeration  -- required in 2.8.1?
+      val is = new jio.SequenceInputStream(isEnum)
+      val iter: jl.Iterable[Object] = new y.Yaml(new y.Loader(dc)).loadAll(is)
+      buildDebate(iter)
+
+      // `iter' becomes Nil, or keeps only iters.head(), weird:
+      //val iters = for (f <- files2) yield {
+      //  val is = new jio.FileInputStream(f)
+      //  val javaIterable = new y.Yaml(new y.Loader(dc)).loadAll(is)
+      //  javaIterable: Iterable[Object]
+      //}
+      //val iter: Iterable[Object] = collection.Iterable.concat(iters: _*)
+      //buildDebate(iter)
     }
     catch {
       case e: jio.IOException => return Failure(
-        "IO error, file: " + file, Full(e), Empty)
+        "IO error, files: " + files, Full(e), Empty)
       case e: jio.FileNotFoundException => return Failure(
-        "File not found: " + file, Full(e), Empty)
+        "Files not found: " + files, Full(e), Empty)
     }
   }
 
