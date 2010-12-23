@@ -17,7 +17,17 @@ import net.liftweb.common.{Box, Empty, Full, Failure}
 object DebikiYaml {
 
   def apply() = new DebikiYaml
-  
+
+  /** Notice: DoS or XSS attack: Bad input gives corrupt Yaml.
+   */
+  def toYaml(debate: Debate): String = {
+    unimplementedIf(debate.postCount > 0, "Saving of posts and other stuff")
+    val sb = new mut.StringBuilder
+    sb ++= "\n--- !Debate"
+    sb ++= "\nid: " ++= debate.id
+    sb.toString
+  }
+
   /** Notice: DoS or XSS attack: Bad input gives corrupt Yaml.
    */
   def toYaml(post: Post): String = {

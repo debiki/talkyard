@@ -20,6 +20,8 @@ object Prelude {
   def unsupported(what: String) = throw new UOE(what)
   def unimplemented = throw new UOE("Not implemented")
   def unimplemented(what: String) = throw new UOE("Not implemented: "+ what)
+  def unimplementedIf(condition: Boolean, what: String) =
+    if (condition) unimplemented(what)
 
   /** Write UNTESTED anywhere, not in a comment, and the compiler
    *  ensures you don't do a typo, so you'll find all UNTESTED should
@@ -70,6 +72,13 @@ object Prelude {
   def toIso8601(date: ju.Date): String = {
     val sdf = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss'Z'")
     sdf.format(date).toString
+  }
+
+  // Is thread safe.
+  private val _random = new java.security.SecureRandom();
+
+  def nextRandomString(): String = {
+    new java.math.BigInteger(130, _random).toString(36); // 0...9, a...z
   }
 
 }
