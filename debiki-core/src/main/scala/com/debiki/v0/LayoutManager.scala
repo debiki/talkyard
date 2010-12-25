@@ -22,12 +22,12 @@ object Paths {
 class LayoutConfig {
   // These default form action values (the empty string) reload the current
   // page, says this RFC: http://www.apps.ietf.org/rfc/rfc3986.html#sec-5.4
-  var replyAction = ""
-  var rateAction = ""
-  var editAction = ""
+  def replyAction = ""
+  def rateAction = ""
+  def editAction = ""
   /** A function from debate-id and post-id to a react URL.
    */
-  var reactAction: Function2[String, String, String] = (ign, ore) => ""
+  def reactLink(debateId: String, postId: String) = ""
 }
 
 class LayoutVariables {
@@ -347,9 +347,8 @@ class LayoutManager(val debate: Debate) {
       </div>
     </div> ++ (
       if (post.id == Debate.RootPostId) Nil // actions already added by caller
-      else <a class='dw-react' href={config.reactAction(debate.id, cssPostId)}
-            >React</a>
-    )
+      else <a class='dw-react' href={config.reactLink(debate.id, post.id)}
+            >React</a> )
   }
 
   def editForm(postId: String): NodeSeq = {

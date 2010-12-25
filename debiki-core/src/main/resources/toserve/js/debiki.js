@@ -29,9 +29,8 @@ jQuery.fn.dw_postModTime = function() {
       '.dw-post-info .dw-last-changed .dw-date').attr('title');
 };
 
-
 //----------------------------------------
-// Implement public functions
+// Customizable functions: Default implementations
 //----------------------------------------
 
 var Settings = {};
@@ -52,8 +51,23 @@ Settings.makeReplyUrl = function(debateId, postId) {
   return '?';
 }
 
+Settings.replyFormLoader = function(debateId, postId, complete) {
+  // Simply clone a hidden reply form template.
+  var $replyForm = $('#dw-hidden-templates .dw-fs-re').clone(true);
+  $replyForm.find("input[name='dw-fi-post']").attr('value', postId);
+  complete($replyForm);
+}
+
+Settings.replyFormSubmitter = function(debateId, postId, complete) {
+  // This worked with JSPWiki:
+  // $.post(Settings.makeReplyUrl(debateId, postId),
+  //    $replyForm.children('form').serialize(), complete, 'html');
+  // By default, post no reply.
+  alert("Cannot post reply. [debiki_error_85ei23rnir]");
+}
+
 //----------------------------------------
-// Export functions
+// Customizable functions: Export setters
 //----------------------------------------
 
 // A function that builds the GET line to download edit suggestions
@@ -70,6 +84,14 @@ Debiki.v0.setReplyUrl = function(urlBuilder) {
   Settings.makeReplyUrl = urlBuilder;
 };
 
+Debiki.v0.setReplyFormLoader = function(loader) {
+  Settings.replyFormLoader = loader;
+};
+
+Debiki.v0.setReplyFormSubmitter = function(submitter) {
+  Settings.replyFormSubmitter = submitter;
+};
+
 // Onload
 //----------------------------------------
    jQuery.noConflict()(function($){
@@ -80,6 +102,10 @@ var didResize = false;
 var posts = $(".debiki .dw-p-bdy");
 var rateFormTemplate = $("#dw-hidden-templates .dw-fs-rat");
 var debateId = $('.debiki').attr('id');
+// When forms are loaded from the server, they might have ID fields.
+// If the same form is loaded twice (e.g. to reply twice to the same comment),
+// their ids would clash. So their ids are made unique by appending a form no.
+var idSuffixSequence = 0
 
 
 // ------- Zoom event
@@ -434,7 +460,9 @@ function dismissActionMenu() {
 // edit/reply forms. Adds .dw-mine class to all posts by someone
 // with the new name.
 function syncUserName($form) {
-  var $nameInput = $form.find("input[name='dw-fi-by']");
+  // Match on the start of the id, since makeIdsUniqueUpdateLabels might
+  // have appended a unique suffix.
+  var $nameInput = $form.find("input[id^='dw-fi-reply-author']");
   $nameInput.val($.cookie('dwUserName') || 'Anonymous');
   $nameInput.blur(function(){
       var name = $nameInput.val();
@@ -469,7 +497,7 @@ $('.debiki').delegate('.dw-act-rate', 'click', function() {
   // The rating-value inputs are labeled checkboxes. Hence they
   // have ids --- which right now remain the same as the ids
   // in the rateFormTemplate. Make the cloned ids unique:
-  makeIdsUniqueUpdateLabels($rateForm, '-post-'+ postId);
+  makeIdsUniqueUpdateLabels($rateForm);
 
   // Enable submit button when ratings specified
   $rateForm.find("input[type='checkbox']").click(function(){
@@ -573,42 +601,47 @@ $('.debiki').delegate('.dw-act-reply', 'click', function() {
   else {
     $thread = $(this).closest('.dw-debate');
   }
-  var $replyForm = $('#dw-hidden-templates .dw-fs-re').clone(true);
-  $replyForm.find("input[name='dw-fi-post']").attr('value', postId);
-  syncUserName($replyForm);
-  makeIdsUniqueUpdateLabels($replyForm, '-post-'+ postId);
-  $replyForm.children('form').resizable({
-      alsoResize: $replyForm.find('textarea'),
-      resize: resizeRootThreadExtraWide, // TODO rm textarea width?
-      stop: resizeRootThreadNowAndLater
+  // Create a reply form, or Ajax-load it (depending on the Web framework
+  // specifics).
+  Settings.replyFormLoader(debateId, postId, function($replyFormParent) {
+    var $replyForm = $replyFormParent.children('form')
+    syncUserName($replyForm);
+    makeIdsUniqueUpdateLabels($replyForm);
+    $replyForm.resizable({
+        alsoResize: $replyForm.find('textarea'),
+        resize: resizeRootThreadExtraWide, // TODO rm textarea width?
+        stop: resizeRootThreadNowAndLater
+      });
+
+    // Ajax-post reply on submit.
+    $replyForm.submit(function() {
+      Settings.replyFormSubmitter($replyForm, debateId, postId,
+        function(newDebateHtml){
+          // The server has replied. Merge in the data from the server
+          // (i.e. the new post) in the debate, and remove the form.
+          updateDebate(newDebateHtml);
+          slideAwayRemove($replyFormParent);
+        });
+      // Disable the form; it's been submitted.
+      $replyForm.find('input').dw_disable();
+      return false;
     });
-  //
-  // Ajax-post reply on submit.
-  //  - Disable form until request completed.
-  //  - When completed, insert the new reply, highlighted.
-  $replyForm.submit(function(){
-    $.post(Settings.makeReplyUrl(debateId, postId),
-        $replyForm.children('form').serialize(), function(newDebateHtml){
-      updateDebate(newDebateHtml);
-      slideAwayRemove($replyForm);
-    }, 'html');
-    $replyForm.find('input').dw_disable();
-    return false;
+
+    // Fancy fancy
+    $replyForm.find('.dw-submit-set input').button();
+    $replyForm.find('label').addClass(
+      // color and font matching <input> buttons
+      'dw-ui-state-default-color dw-ui-widget-font');
+    // Reveal the form
+    var $res = $thread.children('.dw-res');
+    if (!$res.length) {
+      // This is the first reply; create the reply list. // TODO: DUPL CODE
+      $res = $("<ol class='dw-res'/>").appendTo($thread);
+    }
+    $res.prepend($replyFormParent)
+    $replyFormParent.each(SVG.$updateThreadGraphics);
+    slideInActionForm($replyFormParent);
   });
-  //
-  // Fancy fancy
-  $replyForm.find('.dw-submit-set input').button();
-  $replyForm.find('label').addClass( // color and font matching <input> buttons
-    'dw-ui-state-default-color dw-ui-widget-font');
-  // Reveal the form
-  var $res = $thread.children('.dw-res');
-  if (!$res.length) {
-    // This is the first reply; create the reply list. // TODO: DUPL CODE
-    $res = $("<ol class='dw-res'/>").appendTo($thread);
-  }
-  $res.prepend($replyForm)
-  $replyForm.each(SVG.$updateThreadGraphics);
-  slideInActionForm($replyForm);
   dismissActionMenu();
 });
 
@@ -896,14 +929,15 @@ function clearfix(thread) {
 }
 
 // Finds all tags with an id attribute, and (hopefully) makes
-// the ids unique by appending `suffix' to the ids.
-// Updates any <label> `for' attributes to match the new ids.
-function makeIdsUniqueUpdateLabels(jqueryObj, suffix) {
+// the ids unique by appending a unique (within this Web page) number to
+// the ids. Updates any <label> `for' attributes to match the new ids.
+function makeIdsUniqueUpdateLabels(jqueryObj) {
+  var seqNo = '_sno-'+ (++idSuffixSequence);
   jqueryObj.find("*[id]").each(function(ix) {
-      $(this).attr('id', $(this).attr('id') + suffix);
+      $(this).attr('id', $(this).attr('id') + seqNo);
     });
   jqueryObj.find('label').each(function(ix) {
-      $(this).attr('for', $(this).attr('for') + suffix);
+      $(this).attr('for', $(this).attr('for') + seqNo);
     });
 }
 
