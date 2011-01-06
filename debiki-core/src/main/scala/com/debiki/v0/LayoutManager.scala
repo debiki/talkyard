@@ -297,7 +297,7 @@ class LayoutManager(val debate: Debate) {
     val (xmlText, numLines) =
         textToHtml(lastEditApp.map(_.result).getOrElse(post.text))
     val long = numLines > 9
-    val cropped_s = if (long) " dw-x-s" else ""
+    val cropped_s = if (long && post.id != "root") " dw-x-s" else ""
 
     val score = statscalc.scoreFor(post.id)
     val ratStatsSorted = score.labelStatsSorted
