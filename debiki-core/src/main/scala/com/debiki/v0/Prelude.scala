@@ -50,6 +50,11 @@ object Prelude {
    */
   def safe(text: String): String = text // for now.
 
+  /** Like {@code safe}, but wraps the string between start and end
+   * *d*elimiters "`" and "'", like so: <i>`the-dangerous-string'</i>
+   */
+  def safed(text: String): String = "`"+ text +"'"
+
   def classNameOf(x: Any): String = x match {
     case x: AnyRef => x.getClass.getSimpleName
     case _: Int => "Int"
