@@ -1,2 +1,14 @@
-target/
 scratch.txt
+
+# Maven
+target/
+
+# SBT
+lib_managed/
+src_managed/
+project/boot/
+
+# Idea
+debiki-core.iml
+debiki-core.ipr
+debiki-core.iws
