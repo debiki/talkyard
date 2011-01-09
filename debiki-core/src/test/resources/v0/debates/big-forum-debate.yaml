@@ -18,13 +18,13 @@ parent: root
 date: 2001-12-14t21:59:43.10-05:00
 by: OP
 text: |
- Bör MMA vara tillåtet i Sverige?
+ <header><h1>Bör MMA vara tillåtet i Sverige?</h1></header>
 
- Mixed Martial Arts,
+ **Mixed Martial Arts**,
  MMA,
  är en sport där strypningar och slag mot huvudet ingår.
  MMA-tävlingar är tillåtna i Sverige.
- Bör MMA-tävlingar vara tillåtna i Sverige?
+ *Bör MMA-tävlingar vara tillåtna i Sverige?*
 --- !Post
 id: b
 # was: a

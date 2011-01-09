@@ -13,6 +13,7 @@
  *  -f-           form
  *  -fs-          form group
  *  -hor-         horizontal layout
+ *  -mup-         markup, dw-mup means "html generated from markup"
  *  -rat-         rating
  *  -re-          reply
  *
@@ -87,6 +88,18 @@ p {
 }
 p:last-of-type {
   /*margin-bottom: 0;*/
+}
+
+/* --- Markup --- */
+
+/* Show list item marks. */
+.dw-mup ul li,
+ul.dw-mup li {
+  list-style-type: disc;
+}
+.dw-mup ol li,
+ol.dw-mup li {
+  list-style-type: decimal;
 }
 
 /* === Debate === */

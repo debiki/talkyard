@@ -6,10 +6,10 @@
 
 package com.debiki.v0
 
-import java.{util => ju}
+import java.{util => ju, io => jio}
 import scala.collection.JavaConversions._
 import collection.{mutable => mut, immutable => imm}
-import _root_.scala.xml.{NodeSeq, Elem, Text}
+import _root_.scala.xml.{NodeSeq, Elem, Text, XML}
 import Prelude._
 
 private[debiki]
@@ -171,6 +171,47 @@ object LayoutManager {
     (xml, lines)
   }
 
+  // A markdown parser, in JavaScript, namely Showdown.
+  private val _jsShowdown = new javax.script.ScriptEngineManager()
+        .getEngineByName("js")
+  private def _showdown = toserve.DebikiCoreResourceBase.getClass
+        .getResourceAsStream("0/js/wmd/showdown.js")
+  _jsShowdown.eval(new jio.InputStreamReader(_showdown))
+
+  // A html sanitizer, in JavaScript, from google-caja.
+  private val _jsSanitizer = new javax.script.ScriptEngineManager()
+        .getEngineByName("js")
+  private def _cajaSanitizer = toserve.DebikiCoreResourceBase.getClass
+        .getResourceAsStream("0/js/html-sanitizer-minified.js")
+  _jsSanitizer.eval(new jio.InputStreamReader(_cajaSanitizer))
+  _jsSanitizer.eval("""
+      |function urlX(url) { if(/^https?:\/\//.test(url)) { return url }}
+      |function idX(id) { return id }
+      |""".stripMargin)
+
+  /** Converts markdown to xml.
+   */
+  def markdownToHtml(source: String): NodeSeq = {
+    val htmlTextUnsafe = _jsShowdown.asInstanceOf[javax.script.Invocable]
+          .invokeMethod(_jsShowdown.eval("new Showdown.converter()"),
+          "makeHtml", source).toString
+    var htmlTextSafe = _jsSanitizer.asInstanceOf[javax.script.Invocable]
+          .invokeFunction("html_sanitize", htmlTextUnsafe, "urlX", "idX")
+          .toString
+    // Caja writes <br> not <br /> and scala.xml.XML chokes on that. Add "/".
+    htmlTextSafe = htmlTextSafe.replaceAll("<br>", "<br />")
+    htmlTextSafe = htmlTextSafe.replaceAll("<hr>", "<hr />")
+    // This won't handle e.g. empty <img/> tags. So:
+    // TODO: Make google-caja's html-sanitizer.js close tags that were closed.
+    // On line 308:
+    //   handler.startTag(tagName, attribs, param);
+    // it seems possible to add a 4th param: tagClosed, and
+    // then close the tag in the default sanitizer
+    // (html.makeHtmlSanitizer, line 385). Because m[4] contains either
+    // "/>" or ">" and if it's "/>" then pass tagClosed = true.
+    XML.loadString("<div class='dw-mup'>"+ htmlTextSafe +"</div>")
+  }
+
   /** Replaces spaces with the Unicode representation of non-breaking space,
    *  which is interpreted as {@code &nbsp;} by Web browsers.
    */
@@ -294,10 +335,13 @@ class LayoutManager(val debate: Debate) {
     val lastEditApp = editApps.headOption
     val lastEditDate = editApps.headOption.map(ea => toIso8601(ea.date))
     val cssPostId = "dw-post-"+ post.id
+    val sourceText = lastEditApp.map(_.result).getOrElse(post.text)
     val (xmlText, numLines) =
-        textToHtml(lastEditApp.map(_.result).getOrElse(post.text))
+        // Apply markup to the root post (e.g. blog entry).
+        if (post.id == Debate.RootPostId) (markdownToHtml(sourceText), -1)
+        else textToHtml(sourceText)
     val long = numLines > 9
-    val cropped_s = if (long && post.id != "root") " dw-x-s" else ""
+    val cutS = if (long && post.id != Debate.RootPostId) " dw-x-s" else ""
 
     val score = statscalc.scoreFor(post.id)
     val ratStatsSorted = score.labelStatsSorted
@@ -334,7 +378,7 @@ class LayoutManager(val debate: Debate) {
 
     // the – on the next line is an `en dash' not a minus
     <a class='dw-z'>[–]</a>
-    <div id={cssPostId} class={"dw-p dw-x-e" + cropped_s}>
+    <div id={cssPostId} class={"dw-p dw-x-e" + cutS}>
       <div class='dw-p-hdr'>
         By <a class='dw-p-by'>{post.by}</a>,
         <abbr class='dw-p-at dw-date'
