@@ -66,6 +66,18 @@ Settings.replyFormSubmitter = function(debateId, postId, complete) {
   alert("Cannot post reply. [debiki_error_85ei23rnir]");
 }
 
+Settings.editFormLoader = function(debateId, postId, complete) {
+  alert('Edits not implemented. [debiki_error_239sx8]');
+}
+
+Settings.editFormSubmitter = function(debateId, postId, complete) {
+  // This worked with JSPWiki:
+  // $.post(Settings.makeReplyUrl(debateId, postId),
+  //    $replyForm.children('form').serialize(), complete, 'html');
+  // By default, post no reply.
+  alert("Edits not implemented. [debiki_error_19x3g35]");
+}
+
 //----------------------------------------
 // Customizable functions: Export setters
 //----------------------------------------
@@ -90,6 +102,14 @@ Debiki.v0.setReplyFormLoader = function(loader) {
 
 Debiki.v0.setReplyFormSubmitter = function(submitter) {
   Settings.replyFormSubmitter = submitter;
+};
+
+Debiki.v0.setEditFormLoader = function(loader) {
+  Settings.editFormLoader = loader;
+};
+
+Debiki.v0.setEditFormSubmitter = function(submitter) {
+  Settings.editFormSubmitter = submitter;
 };
 
 // Onload
@@ -661,8 +681,10 @@ $('.debiki').delegate('.dw-act-edit', 'click', function() {
   var postId = $post.attr('id').substr(8, 999); // drop initial "dw-post-"
   dismissActionMenu();  // before ajax request, or 2 edit <forms> will
                         // appear if you double click.
-  $formWrap.load(Settings.makeEditUrl(debateId, postId) + ' .dw-fs-ed',
-      function(editFormHtml) {
+
+  Settings.editFormLoader(debateId, postId, function($editFormParent) {
+    var $editForm = $editFormParent.children('form');
+    $formWrap.prepend($editFormParent);
 
     // (Need not make ids unique; the post id was known when html generated.)
 
