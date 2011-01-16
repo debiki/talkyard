@@ -5,6 +5,8 @@
 // - The implementation of the Debiki module
 // - A jQuery onload handler
 
+//"use strict;"
+
 Debiki = {};  // TODO: Error handling?
 Debiki.v0 = {};
 
@@ -803,6 +805,28 @@ $('.debiki').delegate('.dw-act-edit', 'click', function() {
       });
   });
 });
+
+// ------- Edit anything, attempt 0
+
+// When clicking text, open a textarea, so the user can modify the text
+// and submit an edit suggestion.
+
+// TODO Fix font size, make edit area reasonably large.
+// TODO Add http://code.google.com/p/google-caja/wiki/JsHtmlSanitizer
+//   ?? via ttp://google-caja.googlecode.com/svn/maven/caja/caja/*/caja-*.jar
+// TODO Don't close textarea on click outside.
+// TODO Merge 2 textareas if they're next to each other.
+/*
+<script type="text/javascript" src="/classpath/0/js/jquery.jeditable.js" />
+
+$('.debiki p').editable('http://www.example.com/save.php', {
+  type      : 'textarea',
+  cancel    : 'Cancel',
+  submit    : 'Submit suggestion',
+  indicator : '<img src="img/indicator.gif">',
+  tooltip   : 'Click to edit...'
+});
+*/
 
 // ------- SVG
 
