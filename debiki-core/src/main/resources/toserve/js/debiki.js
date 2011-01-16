@@ -624,7 +624,7 @@ $('.debiki').delegate('.dw-act-reply', 'click', function() {
   // Create a reply form, or Ajax-load it (depending on the Web framework
   // specifics).
   Settings.replyFormLoader(debateId, postId, function($replyFormParent) {
-    var $replyForm = $replyFormParent.children('form')
+    var $replyForm = $replyFormParent.children('form');
     syncUserName($replyForm);
     makeIdsUniqueUpdateLabels($replyForm);
     $replyForm.resizable({
@@ -658,7 +658,7 @@ $('.debiki').delegate('.dw-act-reply', 'click', function() {
       // This is the first reply; create the reply list. // TODO: DUPL CODE
       $res = $("<ol class='dw-res'/>").appendTo($thread);
     }
-    $res.prepend($replyFormParent)
+    $res.prepend($replyFormParent.hide());
     $replyFormParent.each(SVG.$updateThreadGraphics);
     slideInActionForm($replyFormParent);
   });
