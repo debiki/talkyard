@@ -65,11 +65,21 @@ d dw-cmt-x          dw-p-x
   dw-cmt-ed-by      dw-res-ed > dw-by
   dw-cmt-at         dw-res-ed > dw-date           
  
-s dw-react          dw-act                      action)
-d dw-act            dw-act                      action)
-d dw-reply          dw-act-reply                reply)
-d dw-edit           dw-act-edit                 edit)
-d dw-rat            dw-act-rate                 rate)
+d dw-react          dw-as                       actions
+d dw-act            dw-a                        action
+d dw-act-reply      dw-a-reply                  new reply
+d dw-act-rate       dw-a-rate                   rate reply
+d dw-act-edit       dw-a-edit                   list edit suggestions
+d dw-a-nes          dw-a-edit-new               new edit suggestion
+  -                 dw-a-edit-vote              vote on edit suggestion
+
+  {{{ -n-  and  -v-  (didn't do it this way)
+  dw-act-reply      dw-a-n-re                   new reply
+  dw-a-nes          dw-a-n-es                   new edit suggestion
+  dw-act-rate       dw-a-v-re                   vote on reply
+  -                 dw-a-v-es                   vote on edit suggestion
+  dw-act-edit       dw-a-l-es                   list edit suggestions
+ }}}
  
 d dw-cancel         dw-fi-cancel
 d dw-submit         dw-fi-submit
@@ -77,7 +87,7 @@ d dw-submit         dw-fi-submit
   dw-cmt-re-cnt     ''
   dw-dragscrollable dw-scroll
 
-  dw-edit-??        ??
+  dw-edit-??        ??  (xml will probably be rewritten, so ignore)
 
 d dw-font-from-ui-widget -> dw-ui-widget-font
 d dw-linkify-ui-state-default -> dw-ui-state-default-linkified

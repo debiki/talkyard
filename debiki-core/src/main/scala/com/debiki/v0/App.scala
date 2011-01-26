@@ -72,7 +72,7 @@ private[debiki] object App {
             jQuery.noConflict()(function($){{
               var selectors =
                 '.dw-res, .dw-t, .dw-p, .dw-p-bdy, '+
-                '.dw-act, .dw-fs';
+                '.dw-a, .dw-fs';
               $('body').debiki_dragscrollable({{
                   dragSelector: selectors, scrollable: selectors }});
             }});

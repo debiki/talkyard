@@ -137,7 +137,7 @@ ol.dw-mup li {
 
 /* === Threads === */
 
-.dw-depth-0.dw-t > .dw-act {
+.dw-depth-0.dw-t > .dw-a {
   position: relative; /* curve image placed relative */
 }
 
@@ -257,7 +257,7 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
 }
 
 .dw-hor > .dw-res > .dw-fs,
-.dw-hor > .dw-act,
+.dw-hor > .dw-a,
 .dw-depth-1 {
   padding: 0 20px 10px 0;
   margin: 10px 16px 0 0;
@@ -367,31 +367,31 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
   z-index: 10;
 }
 
-.dw-act {
+.dw-a {
   float: left; /* else won't wrap if in narrow column */
   margin: 4px 0px 9px 37px;
 }
 
-.dw-depth-0 > .dw-act {
+.dw-depth-0 > .dw-a {
   float: left;
   padding-right: 20px;
   margin-top: 10px;
   margin-right: 16px;
 }
 
-.dw-act a {
+.dw-a a {
   cursor: crosshair;
   text-decoration: none;
   color: #3872ab;
   font-size: 13px;
 }
 
-.dw-act a:hover {
+.dw-a a:hover {
   color: #c77405; /* jQuery UI's ui-state-hover color */
   text-decoration: underline;
 }
 
-.dw-depth-0 > .dw-act a {
+.dw-depth-0 > .dw-a a {
   font-size: 17px;
 }
 
@@ -505,7 +505,7 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
 .dw-ed-at {
 }
 
-.dw-a-nes {
+.dw-a-edit-new {
   margin: -13px 0 16px; /* move closer to the edit suggestions list
                           and push the below post further away */
   display: block; /* or inlined */

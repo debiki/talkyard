@@ -183,7 +183,7 @@ class LayoutManager(val debate: Debate) {
       {
         rootPost.map(comment(_)).getOrElse(Nil) ++
         <div class='dw-t-vspace'/>
-        <div class='dw-act'><a class='dw-act-reply'>Reply</a></div>
+        <div class='dw-a'><a class='dw-a-reply'>Reply</a></div>
         <ol class='dw-res ui-helper-clearfix'>{
           _layoutPosts(1, rootPosts)
         }
@@ -284,7 +284,7 @@ class LayoutManager(val debate: Debate) {
           <ul class='dw-ess'>
             { for (edit <- suggestions) yield xmlFor(edit) }
           </ul>
-          <div class='dw-act'><a class='dw-a-nes'>Suggest edit</a></div>
+          <div class='dw-a'><a class='dw-a-edit-new'>Suggest edit</a></div>
       }
 
     // the – on the next line is an `en dash' not a minus
@@ -302,7 +302,7 @@ class LayoutManager(val debate: Debate) {
       </div>
     </div> ++ (
       if (post.id == Debate.RootPostId) Nil // actions already added by caller
-      else <a class='dw-react' href={config.reactLink(debate.id, post.id)}
+      else <a class='dw-as' href={config.reactLink(debate.id, post.id)}
             >React</a> ) ++
     { editSuggestions }
   }
@@ -448,9 +448,9 @@ class LayoutManager(val debate: Debate) {
   private def menus = {
     <div id="dw-hidden-templates">
       <div id='dw-action-menu'>
-        <div class='dw-act'><a class='dw-act-reply'>Reply</a></div>
-        <div class='dw-act'><a class='dw-act-rate'>Rate</a></div>
-        <div class='dw-act'><a class='dw-act-edit'>Edit</a></div>
+        <div class='dw-a'><a class='dw-a-reply'>Reply</a></div>
+        <div class='dw-a'><a class='dw-a-rate'>Rate</a></div>
+        <div class='dw-a'><a class='dw-a-edit'>Edit</a></div>
       </div>
       <li class='dw-fs dw-fs-re'>
         <form

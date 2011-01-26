@@ -161,7 +161,7 @@ $('.debiki').delegate('.dw-z', 'click', function() {
         '.dw-svg-fake-harrow, .dw-svg-fake-harrow-end, '+
         '.dw-svg-fake-hcurve, .dw-svg-fake-hcurve-start), '+
         '> .dw-p > .dw-p-bdy, '+
-        '> .dw-act').
+        '> .dw-a').
       //add(thread.find('> .dw-p > .dw-p-bdy')).
       stop(true,true).
       slideToggle(800).
@@ -217,7 +217,7 @@ var resizeRootThreadImpl = function(extraWidth){
   var width = extraWidth;
   var $root = $('.dw-depth-0');
   if (!$root.length) $root = $('.dw-debate'); // there's no root reply
-  $root.find('> .dw-res > li, > .dw-fs, > .dw-act').each(function(){
+  $root.find('> .dw-res > li, > .dw-fs, > .dw-a').each(function(){
     width += $(this).outerWidth(true);
   });
   $root.css('min-width', width +'px');
@@ -389,12 +389,12 @@ function updateDebate(newDebateHtml) {
 
 // ------- Forms and actions
 
-// Replace .dw-act links with reply/edit/rate links (visible on hover).
+// Replace .dw-as links with reply/edit/rate links (visible on hover).
 posts.each($initPost);
 function $initPost(){
   var $cmt = $(this).closest('.dw-t');
-  $cmt.find('> .dw-react').replaceWith(
-      $('#dw-action-menu > .dw-act')
+  $cmt.find('> .dw-as').replaceWith(
+      $('#dw-action-menu > .dw-a')
         .clone()
         .css('visibility', 'hidden'));
   // $makeEastResizable must be called before $makePostResizable,
@@ -417,11 +417,11 @@ function $initPost(){
 var $lastActions = null;
 function $showActions() {
   if ($lastActions) {
-    $lastActions.closest('.dw-t').children('.dw-act')
+    $lastActions.closest('.dw-t').children('.dw-a')
       .css('visibility', 'hidden');
   }
   $lastActions = $(this);
-  $lastActions.closest('.dw-t').children('.dw-act')
+  $lastActions.closest('.dw-t').children('.dw-a')
     .css('visibility', 'visible');
 }
 
@@ -507,8 +507,8 @@ $('.debiki .dw-t').each(function(){
 
 // ------- Rating
 
-$('.debiki').delegate('.dw-act-rate', 'click', function() {
-  // Warning: Some duplicated code, see .dw-act-reply and dw-act-edit click() below.
+$('.debiki').delegate('.dw-a-rate', 'click', function() {
+  // Warning: Some duplicated code, see .dw-a-reply and dw-a-edit click() below.
   var thread = $(this).closest('.dw-t');
   clearfix(thread); // ensures the rating appears nested inside the thread
   var $post = thread.children('.dw-p');
@@ -604,8 +604,8 @@ rateFormTemplate.find('.dw-show-more-rat-tags').show().
 
 // ------- Replying
 
-$('.debiki').delegate('.dw-act-reply', 'click', function() {
-  // Warning: Some duplicated code, see .dw-rat-tag and dw-act-edit click() above.
+$('.debiki').delegate('.dw-a-reply', 'click', function() {
+  // Warning: Some duplicated code, see .dw-rat-tag and dw-a-edit click() above.
   var $post;
   var postId = 'root'; // means is-reply-to-the-article-itself, TODO: 'A'
   var $thread = $(this).closest('.dw-t');
@@ -669,8 +669,8 @@ $('.debiki').delegate('.dw-act-reply', 'click', function() {
 
 // ------- Editing
 
-$('.debiki').delegate('.dw-act-edit', 'click', function() {
-  // Warning: Some duplicated code, see .dw-rat-tag and .dw-act-reply click() above.
+$('.debiki').delegate('.dw-a-edit', 'click', function() {
+  // Warning: Some duplicated code, see .dw-rat-tag and .dw-a-reply click() above.
   var $thread = $(this).closest('.dw-t');
   clearfix($thread); // makes edit area appear inside $thread
   var $post = $thread.children('.dw-p');
@@ -678,7 +678,7 @@ $('.debiki').delegate('.dw-act-edit', 'click', function() {
   // match the edit form div's class, so the action-menu won't be displayed
   // again until the request has completed and the edit form has been closed.
   var $formWrap = $("<div class='dw-fs'></div>").insertAfter(
-      $thread.children('.dw-act:last'));//TODO: use $.get & update() instead
+      $thread.children('.dw-a:last'));//TODO: use $.get & update() instead
   $formWrap.hide(); // slide in later
   var postId = $post.attr('id').substr(8, 999); // drop initial "dw-post-"
   dismissActionMenu();  // before ajax request, or 2 edit <forms> will
@@ -933,7 +933,7 @@ else {(function(){
   // West-east arrows: (for horizontal Layout)
   //
   // Arrow start, for horizontal layout, and arrow to reply link.
-  $('.dw-hor > .dw-act > .dw-act-reply').each(function(){
+  $('.dw-hor > .dw-a > .dw-a-reply').each(function(){
     $(this).before('<div class="dw-svg-fake-hcurve-start"/>');
   });
   // Arrows to each child thread.
