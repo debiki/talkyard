@@ -1,4 +1,4 @@
-// vim: fdm=marker et ts=2 sw=2 et tw=78 fo=tcqwn wiw=82 list
+// vim: fdm=marker ts=2 sw=2 et tw=78 wiw=82 fo=tcqwn list
 /*
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
