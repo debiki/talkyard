@@ -1,4 +1,4 @@
-// vim: ts=2 sw=2 et
+// vim: fdm=marker et ts=2 sw=2 et tw=78 fo=tcqwn wiw=82 list
 /*
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
@@ -28,6 +28,8 @@ class LayoutConfig {
   /** A function from debate-id and post-id to a react URL.
    */
   def reactLink(debateId: String, postId: String) = ""
+  /** Whether or not to show edit suggestions. */
+  def showEdits_? = true
 }
 
 class LayoutVariables {
@@ -257,6 +259,33 @@ class LayoutManager(val debate: Debate) {
           }, <abbr class='dw-p-at dw-date' title={lastEditDate.get}>{
               lastEditDate.get}</abbr>
         </div>
+    val editSuggestions: NodeSeq =
+      if (!config.showEdits_?) Nil
+      else {
+        def xmlFor(edit: Edit): NodeSeq = {
+          val dateCreated = toIso8601(edit.date)
+          <li class='dw-es'>
+            <div class='dw-es-vs' />
+            <div class='dw-es-ed'>
+              <div class='dw-ed-text'>
+                {textToHtml(edit.text)._1}
+              </div>{
+              /* The dash below is an em dash no a minus. */}
+              — <a class='dw-ed-by'>{edit.by}</a>,
+              <abbr class='dw-ed-at dw-date'
+                  title={dateCreated}>{dateCreated}</abbr>
+            </div>
+          </li>
+        }
+        val suggestions = debate.editsPendingFor(post.id)
+                          .sortBy(e => -statscalc.likingFor(e).lowerBound)
+        if (suggestions isEmpty) Nil
+        else
+          <ul class='dw-ess'>
+            { for (edit <- suggestions) yield xmlFor(edit) }
+          </ul>
+          <div class='dw-act'><a class='dw-a-nes'>Suggest edit</a></div>
+      }
 
     // the – on the next line is an `en dash' not a minus
     <a class='dw-z'>[–]</a>
@@ -274,7 +303,8 @@ class LayoutManager(val debate: Debate) {
     </div> ++ (
       if (post.id == Debate.RootPostId) Nil // actions already added by caller
       else <a class='dw-react' href={config.reactLink(debate.id, post.id)}
-            >React</a> )
+            >React</a> ) ++
+    { editSuggestions }
   }
 
   def editForm(postId: String): NodeSeq = {

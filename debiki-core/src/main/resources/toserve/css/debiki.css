@@ -9,18 +9,28 @@
  * Form names decrypted:
  *
  *  dw-           prefix, avoids name clashes
+ *  -a-           action
  *  -ed-          edit
+ *  -es-          edit suggestion
+ *  -ess-         edit suggestions
  *  -f-           form
  *  -fs-          form group
  *  -hor-         horizontal layout
  *  -mup-         markup, dw-mup means "html generated from markup"
+ *  -p-           post
  *  -rat-         rating
  *  -re-          reply
+ *  -vs-          votes
  *
+ *  dw-a-nes      new edit suggestion
+ *  dw-ess        edit suggestions
+ *  dw-es-vs      votes on a certain edit suggestion
  *  dw-fs         form group
  *  dw-fs-ed      edit form group
  *  dw-fs-re      reply form group
  *  dw-fs-rat     rating form group
+ *  dw-p-bdy      post body
+ *  dw-p-hdr      post header
  *
  *  ... and so on, hmm.
  */
@@ -456,6 +466,49 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
 
 #dw-action-menu .ui-button-text {
   padding: 0.1em 1.5em 0.2em !important; /* reduce height, make wider */
+}
+
+/* --- Edit suggestions ---*/
+
+.dw-ess {
+  border-top: dotted 1px #aaa;
+  clear: both; /* or action links push contents rightwards */
+  font-size: 85%;
+  line-height: 100%;
+  color: #444;
+  margin: 0 0 25px 40px;
+}
+
+.dw-es {
+  border-bottom: dotted 1px #ccc;
+  padding: 0 0 10px 0;
+  margin: 7px 0 0 0;
+}
+
+.dw-es-vs {
+  float: left;
+  width: 30px;
+}
+
+.dw-es-ed {
+  position: relative;
+  margin-left: 30px;
+}
+
+.dw-ed-text {
+}
+
+.dw-ed-by {
+  color: #3872ab; /* same as action links */
+}
+
+.dw-ed-at {
+}
+
+.dw-a-nes {
+  margin: -13px 0 16px; /* move closer to the edit suggestions list
+                          and push the below post further away */
+  display: block; /* or inlined */
 }
 
 /* === Forms === */
