@@ -418,6 +418,10 @@ var $lastActions = null;
 function $showActions() {
   if ($lastActions) {
     $lastActions.closest('.dw-t').children('.dw-a')
+      // Leave the new-edit button always visible, since it's
+      // placed a bit away from the post, so it wouldn't be obvious
+      // that you needed to hover the post to show the action.
+      .not('.dw-a-edit-new')
       .css('visibility', 'hidden');
   }
   $lastActions = $(this);
@@ -508,7 +512,8 @@ $('.debiki .dw-t').each(function(){
 // ------- Rating
 
 $('.debiki').delegate('.dw-a-rate', 'click', function() {
-  // Warning: Some duplicated code, see .dw-a-reply and dw-a-edit click() below.
+  // Warning: Some duplicated code, see .dw-a-reply and
+  // dw-a-edit-new click() below.
   var thread = $(this).closest('.dw-t');
   clearfix(thread); // ensures the rating appears nested inside the thread
   var $post = thread.children('.dw-p');
@@ -605,7 +610,8 @@ rateFormTemplate.find('.dw-show-more-rat-tags').show().
 // ------- Replying
 
 $('.debiki').delegate('.dw-a-reply', 'click', function() {
-  // Warning: Some duplicated code, see .dw-rat-tag and dw-a-edit click() above.
+  // Warning: Some duplicated code, see .dw-rat-tag and
+  // dw-a-edit-new click() above.
   var $post;
   var postId = 'root'; // means is-reply-to-the-article-itself, TODO: 'A'
   var $thread = $(this).closest('.dw-t');
@@ -669,7 +675,15 @@ $('.debiki').delegate('.dw-a-reply', 'click', function() {
 
 // ------- Editing
 
+// Show edit suggestions, and a new-suggestion button
 $('.debiki').delegate('.dw-a-edit', 'click', function() {
+  $(this).closest('.dw-t').children('.dw-ess, .dw-a-edit-new')
+      .stop(true,true)
+      .slideToggle(500);
+});
+
+// New edit suggestion
+$('.debiki').delegate('.dw-a-edit-new', 'click', function() {
   // Warning: Some duplicated code, see .dw-rat-tag and .dw-a-reply click() above.
   var $thread = $(this).closest('.dw-t');
   clearfix($thread); // makes edit area appear inside $thread

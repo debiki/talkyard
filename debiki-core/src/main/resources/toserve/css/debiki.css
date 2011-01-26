@@ -22,7 +22,10 @@
  *  -re-          reply
  *  -vs-          votes
  *
- *  dw-a-nes      new edit suggestion
+ *  dw-a-rate     rate reply
+ *  dw-a-reply    new reply
+ *  dw-a-edit     list edit suggestion
+ *  dw-a-edit-new new edit suggestion
  *  dw-ess        edit suggestions
  *  dw-es-vs      votes on a certain edit suggestion
  *  dw-fs         form group
@@ -379,19 +382,19 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
   margin-right: 16px;
 }
 
-.dw-a a {
+.dw-a {
   cursor: crosshair;
   text-decoration: none;
   color: #3872ab;
   font-size: 13px;
 }
 
-.dw-a a:hover {
+.dw-a:hover {
   color: #c77405; /* jQuery UI's ui-state-hover color */
   text-decoration: underline;
 }
 
-.dw-depth-0 > .dw-a a {
+.dw-depth-0 > .dw-a {
   font-size: 17px;
 }
 
@@ -506,8 +509,9 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
 }
 
 .dw-a-edit-new {
-  margin: -13px 0 16px; /* move closer to the edit suggestions list
-                          and push the below post further away */
+  /* Move closer to the edit suggestions list
+  and push the below post further away, and indent 40px + 30px. */
+  margin: -13px 0 30px 70px;
   display: block; /* or inlined */
 }
 

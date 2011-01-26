@@ -181,9 +181,12 @@ class LayoutManager(val debate: Debate) {
       </div>
       <div id={cssThreadId} class='dw-t dw-depth-0 dw-hor'>
       {
+        // In the vspace and the .dw-a below, arrows are drawn.
         rootPost.map(comment(_)).getOrElse(Nil) ++
         <div class='dw-t-vspace'/>
-        <div class='dw-a'><a class='dw-a-reply'>Reply</a></div>
+        <div class='dw-a'>
+          <a class='dw-a-reply'>Reply</a>
+        </div>
         <ol class='dw-res ui-helper-clearfix'>{
           _layoutPosts(1, rootPosts)
         }
@@ -284,7 +287,7 @@ class LayoutManager(val debate: Debate) {
           <ul class='dw-ess'>
             { for (edit <- suggestions) yield xmlFor(edit) }
           </ul>
-          <div class='dw-a'><a class='dw-a-edit-new'>Suggest edit</a></div>
+          <a class='dw-a dw-a-edit-new'>Suggest edit</a>
       }
 
     // the – on the next line is an `en dash' not a minus
@@ -448,9 +451,9 @@ class LayoutManager(val debate: Debate) {
   private def menus = {
     <div id="dw-hidden-templates">
       <div id='dw-action-menu'>
-        <div class='dw-a'><a class='dw-a-reply'>Reply</a></div>
-        <div class='dw-a'><a class='dw-a-rate'>Rate</a></div>
-        <div class='dw-a'><a class='dw-a-edit'>Edit</a></div>
+        <a class='dw-a dw-a-reply'>Reply</a>
+        <a class='dw-a dw-a-rate'>Rate</a>
+        <a class='dw-a dw-a-edit'>Edit</a>
       </div>
       <li class='dw-fs dw-fs-re'>
         <form
