@@ -357,7 +357,7 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
   margin-left: 0;
 }
 
-.dw-p-bdy {
+.dw-p-bdy, .dw-p-diff {
   padding: 6px 1px 0 3px;
   position: relative;
   background-color: white;
