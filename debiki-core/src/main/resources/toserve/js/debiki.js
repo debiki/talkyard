@@ -854,6 +854,9 @@ $('.debiki').delegate('.dw-a-edit-new', 'click', function() {
     // the diff will flicker visible/hidden annoyingly frequently.
     //$editForm.mouseleave(function(){ $post.each($removeEditDiff); });
 
+    // On cancel, remove the diff.
+    $editForm.find('.dw-fi-cancel').click($removeEditDiff);
+
     // Make forms and accordions resizable
     $editsYoursForm.resizable({
         alsoResize: $editTextArea
