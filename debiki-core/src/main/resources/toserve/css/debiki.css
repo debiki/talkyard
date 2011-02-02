@@ -200,13 +200,19 @@ so as not to hide that handle (which is assigned z-index 1001 by
 some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
 .debiki .ui-resizable-n,
 .debiki .ui-resizable-s {
-  height: 20px;
+  height: 15px;
   z-index: 1000;
+}
+.debiki .ui-resizable-s {
+  bottom: 0; /* jquery-ui says -5 which overflows */
 }
 .debiki .ui-resizable-e,
 .debiki .ui-resizable-w {
-  width: 20px;
+  width: 15px;
   z-index: 1000;
+}
+.debiki .ui-resizable-e {
+  right: 0; /* jquery-ui says -5 which overflows */
 }
 /* But don't raise the vertical lines between depth-1 threads
  above the threads (with z-index: 10) */
@@ -667,6 +673,10 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
   margin: 1em 0;
   float: none; /* or won't be wide enough to fill up parent */
   clear: both; /* or show-form buttons appear to the left */
+}
+
+.dw-depth-0 .dw-fs-ed {
+  clear: both; /* or placed to the right of the action links */
 }
 
 .dw-fs-ed > a {
