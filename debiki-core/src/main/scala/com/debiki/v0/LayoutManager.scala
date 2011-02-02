@@ -283,12 +283,10 @@ class LayoutManager(val debate: Debate) {
         }
         val suggestions = debate.editsPendingFor(post.id)
                           .sortBy(e => -statscalc.likingFor(e).lowerBound)
-        if (suggestions isEmpty) Nil
-        else
-          <ul class='dw-ess'>
-            { for (edit <- suggestions) yield xmlFor(edit) }
-          </ul>
-          <a class='dw-a dw-a-edit-new'>Suggest edit</a>
+        <ul class='dw-ess'>
+          { for (edit <- suggestions) yield xmlFor(edit) }
+        </ul>
+        <a class='dw-a dw-a-edit-new'>Suggest edit</a>
       }
 
     // the – on the next line is an `en dash' not a minus
