@@ -270,13 +270,14 @@ class LayoutManager(val debate: Debate) {
           <li class='dw-es'>
             <div class='dw-es-vs' />
             <div class='dw-es-ed'>
-              <div class='dw-ed-text'>
-                {textToHtml(edit.text)._1}
+              <div class='dw-ed-desc'>
+                {textToHtml(edit.desc)._1}
               </div>{
               /* The dash below is an em dash no a minus. */}
               — <a class='dw-ed-by'>{edit.by}</a>,
               <abbr class='dw-ed-at dw-date'
                   title={dateCreated}>{dateCreated}</abbr>
+              <pre class='dw-ed-text'>{edit.text}</pre>
             </div>
           </li>
         }

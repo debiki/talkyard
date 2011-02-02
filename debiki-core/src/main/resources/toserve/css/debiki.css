@@ -473,6 +473,14 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
 
 /* --- Edit suggestions ---*/
 
+.dw-debate ins {
+  background:#e6ffe6;
+}
+
+.dw-debate del {
+  background:#ffe6e6;
+}
+
 .dw-ess {
   border-top: dotted 1px #aaa;
   clear: both; /* or action links push contents rightwards */
@@ -484,8 +492,12 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
 
 .dw-es {
   border-bottom: dotted 1px #ccc;
-  padding: 0 0 10px 0;
-  margin: 7px 0 0 0;
+  padding: 7px 0 10px 0;
+  margin: 0 0 0 0;
+}
+
+.dw-es:hover {
+  background-color: #f9f9f9;
 }
 
 .dw-es-vs {
@@ -498,14 +510,18 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
   margin-left: 30px;
 }
 
-.dw-ed-text {
+.dw-es .dw-ed-text {
+  display: none; /* text used by javascript diff algorithm */
 }
 
-.dw-ed-by {
+.dw-es .dw-ed-desc {
+}
+
+.dw-es .dw-ed-by {
   color: #3872ab; /* same as action links */
 }
 
-.dw-ed-at {
+.dw-es .dw-ed-at {
 }
 
 .dw-a-edit-new {

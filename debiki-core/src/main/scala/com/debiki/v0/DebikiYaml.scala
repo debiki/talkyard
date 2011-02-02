@@ -66,6 +66,7 @@ object DebikiYaml {
     sb ++= "\ndate: " ++= toIso8601(edit.date)
     sb ++= "\npost: " ++= edit.postId
     sb ++= "\ntext: |1\n" ++= stripIndent(edit.text)
+    sb ++= "\ndesc: |1\n" ++= stripIndent(edit.desc)
     sb.toString
   }
 
@@ -278,10 +279,12 @@ class DebikiYaml {
     private class ConstrEdit extends DebikiMapConstr2 {
 
       val text = new KeyVal[String]("text", asText)
+      val desc = new KeyVal[String]("desc", asText)
 
       override def construct() = Edit(
           id = id.value, postId = postId.value, date = date.value,
-          by = by.value, ip = ip.value, text = text.value)
+          by = by.value, ip = ip.value, text = text.value,
+          desc = desc.value)
     }
 
     private class ConstrEditVote extends DebikiMapConstr2 {

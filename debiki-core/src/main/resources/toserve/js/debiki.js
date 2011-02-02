@@ -119,7 +119,9 @@ Debiki.v0.setEditFormSubmitter = function(submitter) {
    jQuery.noConflict()(function($){
 //----------------------------------------
 
-var threadHovered = null;
+var diffMatchPatch = new diff_match_patch();
+diffMatchPatch.Diff_Timeout = 1; // seconds
+
 var didResize = false;
 var posts = $(".debiki .dw-p-bdy");
 var rateFormTemplate = $("#dw-hidden-templates .dw-fs-rat");
@@ -387,7 +389,7 @@ function updateDebate(newDebateHtml) {
     })
 }
 
-// ------- Forms and actions
+// ------- Posts
 
 // Replace .dw-as links with reply/edit/rate links (visible on hover).
 posts.each($initPost);
@@ -412,6 +414,15 @@ function $initPost(){
     .each($makePostResizable);
   updateAuthorInfo($cmt, $.cookie('dwUserName'));
 }
+
+// Extracts markup source from html.
+function $htmlToMarkup() {
+  var mup = '';
+  $(this).find('p').each(function(){ mup += $(this).text() +'\n\n'; });
+  return mup.trim() +'\n';
+}
+
+// ------- Forms and actions
 
 // Shows actions for the current post, or the last post hovered.
 var $lastActions = null;
@@ -675,12 +686,69 @@ $('.debiki').delegate('.dw-a-reply', 'click', function() {
 
 // ------- Editing
 
-// Show edit suggestions, and a new-suggestion button
+// On Edit button click, show edit suggestions, and a new-suggestion button.
 $('.debiki').delegate('.dw-a-edit', 'click', function() {
   $(this).closest('.dw-t').children('.dw-ess, .dw-a-edit-new')
       .stop(true,true)
       .slideToggle(500);
 });
+
+// When hovering an edit suggestion, show a change diff where the dw-p is.
+$('.debiki').delegate('.dw-es', 'mouseenter', $showEditDiff)
+            .delegate('.dw-es', 'mouseleave', $hideEditDiff);
+
+function $showEditDiff() {
+  var $postBody = $(this).closest('.dw-t').find('> .dw-p > .dw-p-bdy');
+  var oldText = $postBody.map($htmlToMarkup)[0];
+  var newText = $(this).find('.dw-ed-text').text().trim() +'\n';
+  var diff = diffMatchPatch.diff_main(oldText, newText);
+  diffMatchPatch.diff_cleanupSemantic(diff);
+  var htmlString = prettyHtmlFor(diff);
+  $postBody.hide();
+  $postBody.after('<div class="dw-p-diff">'+ htmlString +'</div>\n');
+}
+
+function $hideEditDiff() {
+  var $post = $(this).closest('.dw-t').children('.dw-p');
+  $post.children('.dw-p-diff').remove();
+  $post.children('.dw-p-bdy').show();
+}
+
+// Convert a google-diff-match-patch diff array into a pretty HTML report.
+// Based on diff_match_patch.prototype.diff_prettyHtml(), here:
+//  http://code.google.com/p/google-diff-match-patch/source/browse/
+//    trunk/javascript/diff_match_patch_uncompressed.js
+// @param {!Array.<!diff_match_patch.Diff>} diffs Array of diff tuples.
+// @return {string} HTML representation.
+function prettyHtmlFor(diffs) {
+  var html = [];
+  var i = 0;
+  var pattern_amp = /&/g;
+  var pattern_lt = /</g;
+  var pattern_gt = />/g;
+  var pattern_para = /\n/g;
+  for (var x = 0; x < diffs.length; x++) {
+    var op = diffs[x][0];    // Operation (insert, delete, equal)
+    var data = diffs[x][1];  // Text of change.
+    var text = data.replace(pattern_amp, '&amp;').replace(pattern_lt, '&lt;')
+        .replace(pattern_gt, '&gt;').replace(pattern_para, '¶<br />');
+    switch (op) {
+      case DIFF_INSERT:
+        html[x] = '<ins>' + text + '</ins>';
+        break;
+      case DIFF_DELETE:
+        html[x] = '<del>' + text + '</del>';
+        break;
+      case DIFF_EQUAL:
+        html[x] = '<span>' + text + '</span>';
+        break;
+    }
+    if (op !== DIFF_DELETE) {
+      i += data.length;
+    }
+  }
+  return html.join('');
+}
 
 // New edit suggestion
 $('.debiki').delegate('.dw-a-edit-new', 'click', function() {

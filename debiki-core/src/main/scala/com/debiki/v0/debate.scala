@@ -345,7 +345,9 @@ case class Edit(
   date: ju.Date,
   by: String,
   ip: String,
-  text: String
+  text: String,
+  /** The author's description and motivation for this edit */
+  desc: String
 )
 
 // Verify: No duplicate like/diss ids, no edit both liked and dissed
