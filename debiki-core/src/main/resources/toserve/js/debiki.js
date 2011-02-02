@@ -693,28 +693,60 @@ $('.debiki').delegate('.dw-a-edit', 'click', function() {
       .slideToggle(500);
 });
 
-// When hovering an edit suggestion, show a change diff where the dw-p is.
-$('.debiki').delegate('.dw-es', 'mouseenter', $showEditDiff)
-            .delegate('.dw-es', 'mouseleave', $hideEditDiff);
+// Show a change diff instead of the post text, when hovering an edit 
+// suggestion.
+$('.debiki')
+    .delegate('.dw-es', 'mouseenter', function(){
+      $(this).find('.dw-ed-text').each($showEditDiff);
+    })
+    .delegate('.dw-ess', 'mouseleave', $removeEditDiff);
 
+// Hides the closest post text; shows a diff instead,
+// of the-text-of-the-post and $(this).val() or .text().
+// $removeEditDiff shows the post again.
 function $showEditDiff() {
-  var $postBody = $(this).closest('.dw-t').find('> .dw-p > .dw-p-bdy');
+  // Find the closest post
+  var $post = $(this).closest('.dw-t').children('.dw-p');
+  var height = $post.height();
+  // Remove any old diff
+  var $oldDiff = $post.children('.dw-p-diff');
+  $oldDiff.remove();
+  // Extract the post's current text.
+  var $postBody = $post.children('.dw-p-bdy');
   var oldText = $postBody.map($htmlToMarkup)[0];
-  var newText = $(this).find('.dw-ed-text').text().trim() +'\n';
+  // Try both val() and text() -- `this' might be a textarea or
+  // an elem with text inside.
+  var newText = $(this).val();
+  if (newText == '') newText = $(this).text();
+  newText = newText.trim() +'\n';  // $htmlToMarkup trims in this way
+  // Run diff
   var diff = diffMatchPatch.diff_main(oldText, newText);
   diffMatchPatch.diff_cleanupSemantic(diff);
   var htmlString = prettyHtmlFor(diff);
+  // Hide the post body, show the diff instead.
   $postBody.hide();
   $postBody.after('<div class="dw-p-diff">'+ htmlString +'</div>\n');
+  // Fix the height of the post, so it won't change when showing
+  // another diff, causing everything below to jump up/down.
+
+  // For now, make it somewhat higher than its current height,
+  // so there's room for <ins> elems.
+  //$post.css('height', null);
+  //$post.css('height', $post.height() + 50 +'px');
+  //$post.height(height + ($oldDiff.length ? 0 : 75));
+  $post.height(height);
+  $post.css('overflow-y', 'auto');
 }
 
-function $hideEditDiff() {
+// Removes any diff of the closest post; shows the post text instead.
+function $removeEditDiff() {
   var $post = $(this).closest('.dw-t').children('.dw-p');
   $post.children('.dw-p-diff').remove();
   $post.children('.dw-p-bdy').show();
+  $post.css('overflow-y', 'hidden');
 }
 
-// Convert a google-diff-match-patch diff array into a pretty HTML report.
+// Converts a google-diff-match-patch diff array into a pretty HTML report.
 // Based on diff_match_patch.prototype.diff_prettyHtml(), here:
 //  http://code.google.com/p/google-diff-match-patch/source/browse/
 //    trunk/javascript/diff_match_patch_uncompressed.js
@@ -786,6 +818,8 @@ $('.debiki').delegate('.dw-a-edit-new', 'click', function() {
     var $forms = $editsPendingForm.add($editsYoursForm).add($editsAppliedForm);
     var $showBtns = $showEditsPendingBtn.add($showNewEditBtn).
                                                     add($showEditsAppliedBtn);
+    var $editTextArea = $editsYoursForm.find('textarea');
+
     $forms.addClass('ui-helper-clearfix');
 
     // If there are any edits suggested, show them (or people will
@@ -803,13 +837,26 @@ $('.debiki').delegate('.dw-a-edit-new', 'click', function() {
     var curText = '';
     $post.find('.dw-p-bdy p').each(function(){
           curText += $(this).text() + '\n\n'; });
-    $editsYoursForm.find('textarea').val(curText.trim() + '\n');
+    $editTextArea.val(curText.trim() + '\n');
 
     syncUserName($editsYoursForm);
 
+    // Show and update a diff of the edits suggested.
+    // Remove the diff when the form loses focus.
+    var showDiff = function(){
+      $editTextArea.each($showEditDiff);
+    };
+    $editTextArea.bind('change keyup', showDiff); // updates diff
+    $editForm.mouseenter(showDiff);
+    // COULD: Hide diff when the form loses focus.
+    // But: mouseleave fires when focusing the textarea, although it's placed
+    // inside the form. So, right now, with the below line commented in,
+    // the diff will flicker visible/hidden annoyingly frequently.
+    //$editForm.mouseleave(function(){ $post.each($removeEditDiff); });
+
     // Make forms and accordions resizable
     $editsYoursForm.resizable({
-        alsoResize: $editsYoursForm.find('textarea')
+        alsoResize: $editTextArea
         // (Need not resizeRootThread,
         // since the $editDiv is not resized.)
       });
