@@ -1,4 +1,4 @@
-// vim: fdm=marker ts=2 sw=2 et tw=78 wiw=82 fo=tcqwn list
+// vim: fdm=marker et ts=2 sw=2 tw=80 fo=tcqwn list
 
 // In this file:
 // - jQuery extension functinos, prefixed with "dw_" to avoid name clashes
