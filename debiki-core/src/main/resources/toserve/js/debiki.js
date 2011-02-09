@@ -566,13 +566,16 @@ $('.debiki').delegate(
 // Slide in reply, edit and rate forms -- I think it's
 // easier to understand how they are related to other elems
 // if they slide in, instead of just appearing abruptly.
-function slideInActionForm($form, $where) { 
+// If $where is specified, $form is appended to the thread 
+// $where.closest('.dw-t'), otherwise it is assumed that it has
+// alread been inserted appropriately.
+function slideInActionForm($form, $where) {
   if ($where) {
     // Insert before the first .dw-fs, or the .dw-res, or append.
-    var $post = $where.closest('.dw-t');
-    var $oldFormOrCmts = $post.children('.dw-fs, .dw-res').filter(':eq(0)');
+    var $thread = $where.closest('.dw-t');
+    var $oldFormOrCmts = $thread.children('.dw-fs, .dw-res').filter(':eq(0)');
     if ($oldFormOrCmts.length) $oldFormOrCmts.before($form);
-    else $post.append($form);
+    else $thread.append($form);
   }
   else $where = $form.closest('.dw-t');
   // Extra width prevents float drop.
