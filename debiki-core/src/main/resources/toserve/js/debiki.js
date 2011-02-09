@@ -424,8 +424,10 @@ var tagDog = {
   },
   barkHtml: function(tagDogText) {
     // For now:
-    return tagDogText;
+    var htmlParas = tagDogText.split('\n\n');
+    var html = '<p>'+ htmlParas.join('</p><p>') + '</p>';
     // TODO prevent XSS attacks, use google html-sanitizer
+    return html;
   },
 };
 
