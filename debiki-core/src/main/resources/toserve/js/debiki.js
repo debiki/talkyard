@@ -123,6 +123,8 @@ var diffMatchPatch = new diff_match_patch();
 diffMatchPatch.Diff_Timeout = 1; // seconds
 
 var didResize = false;
+// Set to true if a truncated post was clicked and expanded.
+var didExpandTruncated = false;
 var posts = $(".debiki .dw-p-bdy");
 var rateFormTemplate = $("#dw-hidden-templates .dw-fs-rat");
 var debateId = $('.debiki').attr('id');
@@ -130,6 +132,12 @@ var debateId = $('.debiki').attr('id');
 // If the same form is loaded twice (e.g. to reply twice to the same comment),
 // their ids would clash. So their ids are made unique by appending a form no.
 var idSuffixSequence = 0
+
+// Reset all per click state variables when a new click starts.
+$.event.add(document, "mousedown", function() {
+  didExpandTruncated = false;
+  //didResize = false; -- currently handled in another mousedown
+});
 
 
 // ------- Zoom event
@@ -285,24 +293,40 @@ function $makeEastResizable() {
 // Fails with a TypeError on Android: Cathching it and ignoring it.
 // (On Android, posts and threads won't be resizable.)
 function $makePostResizable() {
+  var $expandSouth = function() {
+    console.log('click: Removing cropped-s.');
+    if ($(this).filter('.dw-x-s').length > 0) {
+      // The post is truncated.
+      if (didExpandTruncated) {
+        // Some other nested post (an inline comment thread?) has already
+        // handled this click, and expanded itself. Ignore click.
+      }
+      else {
+        $(this).removeClass('dw-x-s');
+        didExpandTruncated = true;
+      }
+    }
+  }
+  var $expandSouthEast = function() {
+    $expandSouth.apply(this);
+    $(this).removeClass('dw-x-e');
+  }
   try {
   // Indicate which posts are cropped, and make visible on click.
   $(this)
     .filter('.dw-x-s')
     .append(
       '<div class="dw-x-mark">. . . truncated</div>')
-    .click(function(){
-      console.log('click: Removing cropped-s.');
-      // (Some rather long posts are cropped, using max-width and -height.
-      // Don't remove max-width, or some posts might end up rather wide.)
-      $(this).removeClass('dw-x-s');
-    })
+    .click(
+        // (Some rather long posts are cropped, using max-width and -height.
+        // Don't remove max-width, or some posts might end up rather wide.)
+        $expandSouth)
   .end()
   .resizable({
       autoHide: true,
       start: function(event, ui) {
         // Remove max height and width restrictions.
-        $(this).closest('.dw-p').removeClass('dw-x-s dw-x-e');
+        $(this).closest('.dw-p').each($expandSouthEast);
         didResize = true;
       }
      })
@@ -318,11 +342,11 @@ function $makePostResizable() {
     .mouseup(function(){
       // (Removing only max-width usually results in nothing:
       // The thread usually has a max-width.).
-      var post = $(this).closest('.dw-p');
-      post.removeClass('dw-x-s dw-x-e');
+      var $post = $(this).closest('.dw-p');
+      $post.each($expandSouthEast);
       // Expand post eastwards if resize handle was clicked not dragged.
       // (Also expands southwards, but browsers usually expand to east first.)
-      if (!didResize) post.css('width', null).css('height', null);
+      if (!didResize) $post.css('width', null).css('height', null);
     })
   .end()
   .find('.ui-resizable-s, .ui-resizable-se')
@@ -501,6 +525,11 @@ Debiki.v0.placeInlineThreads();
 $('.debiki').delegate('.dw-p-bdy p', 'click', function(event){
   if ($(event.target).closest('.dw-fs').length) {
     // A form was clicked. Ignore click.
+    return;
+  }
+  if (didExpandTruncated) {
+    // The post is truncated. This click expands it; don't
+    // let the click result in a reply form appearing, too.
     return;
   }
   var sel = window.getSelection();
