@@ -119,6 +119,7 @@ private[debiki] object App {
       "css/img/dw-svg-fake-hcurve-start.png",
       "css/img/dw-svg-fake-hcurve-start-w-reply-arrow.png",
       "css/img/dw-svg-fake-vcurve-short.png",
+      "0/js/diff_match_patch.js",
       "js/svg.js",
       "js/svg.htc",
       "js/svg.swf",
@@ -171,6 +172,8 @@ private[debiki] object App {
     }
     else if (!root.isDirectory)
       illegalArg("Not a directory: "+ dir)
+    new jio.File(dir +"0/js/").mkdirs()
+    new jio.File(dir +"0/css/").mkdir()
     new jio.File(dir +"js/").mkdir()
     new jio.File(dir +"css/img/").mkdirs()
     new jio.File(dir +"css/debiki/images/").mkdirs()
