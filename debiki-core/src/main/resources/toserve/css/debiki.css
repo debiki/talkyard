@@ -220,8 +220,8 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
   z-index: 6;
 }
 
-.dw-p.dw-x-s .dw-p-bdy,
-.dw-p.dw-x-s .dw-p-hdr {
+.dw-p.dw-x-s > .dw-p-bdy,
+.dw-p.dw-x-s > .dw-p-hdr {
   max-height: 4em;
   cursor: help;
 }
@@ -230,7 +230,7 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
   max-width: 25em;
 }
 
-.dw-p.dw-x-s .dw-x-mark {
+.dw-p.dw-x-s > .dw-x-mark {
   display: block;
   position: absolute;
   bottom: 0px;
@@ -241,8 +241,8 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
   font-style: italic;
   letter-spacing: 0.3ex;
 }
-.dw-t .dw-x-s:hover .ui-resizable-se,
-.dw-t .dw-x-s:hover .dw-x-mark {
+.dw-t .dw-p.dw-x-s:hover > .ui-resizable-se,
+.dw-t .dw-p.dw-x-s:hover > .dw-x-mark {
   background-color: #fdc;
   color: #363636;
 }
@@ -251,7 +251,7 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
   height: 15px;
   display: inline-block;
 }*/
-.dw-p .dw-x-mark {
+.dw-p > .dw-x-mark {
   display: none; /* no longer cropped, class .dw-x-s gone */
 }
 
