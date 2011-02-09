@@ -9,7 +9,7 @@ package com.debiki.v0
 import java.{util => ju, io => jio}
 import scala.collection.JavaConversions._
 import collection.{mutable => mut, immutable => imm}
-import _root_.scala.xml.{NodeSeq, Elem, Text, XML}
+import _root_.scala.xml.{NodeSeq, Elem, Text, XML, Attribute}
 import Prelude._
 
 private[debiki]
@@ -198,21 +198,28 @@ class LayoutManager(val debate: Debate) {
 
   private def _layoutPosts(depth: Int, posts: List[Post]): NodeSeq = {
     for {
-      c <- posts.sortBy(p => -statscalc.scoreFor(p.id).liking)
-      cssThreadId = "dw-t-"+ c.id
+      p <- posts.sortBy(p => -statscalc.scoreFor(p.id).liking)
+      cssThreadId = "dw-t-"+ p.id
       cssDepth = "dw-depth-"+ depth
+      cssInlineThread = if (p.where isDefined) " dw-i-t" else ""
     }
-    yield
-      <li id={cssThreadId} class={"dw-t "+ cssDepth}>
-      {
-        comment(c) ++
-        (if (debate.repliesTo(c.id).isEmpty) Nil
-        else
-          <ol class='dw-res'>
-            { _layoutPosts(depth + 1, debate.repliesTo(c.id)) }
-          </ol>)
-      }
-      </li>
+    yield {
+      var li =
+        <li id={cssThreadId} class={"dw-t "+ cssDepth + cssInlineThread}>
+        {
+          comment(p) ++
+          (if (debate.repliesTo(p.id).isEmpty) Nil
+          else
+            <ol class='dw-res'>
+              { _layoutPosts(depth + 1, debate.repliesTo(p.id)) }
+            </ol>)
+        }
+        </li>
+      // For inline comments, add info on where to place them.
+      if (p.where isDefined) li = li % Attribute(
+          None, "data-dw-i-t-where", Text(p.where.get), scala.xml.Null)
+      li
+    }
   }
 
   private def comment(post: Post): NodeSeq = {

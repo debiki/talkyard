@@ -336,7 +336,12 @@ case class Post(
   date: ju.Date,
   by: String,
   ip: String,
-  text: String
+  text: String,
+
+  /** If defined, this is an inline comment and the value
+   *  specifies where in the parent post it is to be placed.
+   */
+  where: Option[String] = None
 )
 
 case class Edit(

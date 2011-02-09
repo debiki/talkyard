@@ -389,6 +389,22 @@ function updateDebate(newDebateHtml) {
     })
 }
 
+// ------- Tag Dog
+
+// The tag dog searches text inside html tags, without being so very
+// confused by tags and attributes.
+var tagDog = {
+  sniffHtml: function($tag) {
+    // For now:
+    return $tag.map($htmlToMarkup)[0]
+  },
+  barkHtml: function(tagDogText) {
+    // For now:
+    return tagDogText;
+    // TODO prevent XSS attacks, use google html-sanitizer
+  },
+};
+
 // ------- Posts
 
 // Replace .dw-as links with reply/edit/rate links (visible on hover).
@@ -421,6 +437,96 @@ function $htmlToMarkup() {
   $(this).find('p').each(function(){ mup += $(this).text() +'\n\n'; });
   return mup.trim() +'\n';
 }
+
+// Places marks where inline threads are to be placed.
+// This is a mark:  <a class='dw-i-m' href='#dw-t-(thread_id)' />
+Debiki.v0.placeInlineMarks =
+function() {
+  $('.dw-i-t').each(function(){
+    // Search the parent post for the text where this mark starts.
+    // Insert a mark (i.e. an <a/> tag) and render the parent post again.
+    var markStartText = $(this).attr('data-dw-i-t-where');
+    var $parentPost = $(this).parent().closest('.dw-t').children('.dw-p');
+    var tagDogText = tagDog.sniffHtml($parentPost);
+    var loc = 10; // TODO should be included in the data attr
+    var match = diffMatchPatch.match_main(tagDogText, markStartText, loc);
+    var beforeMatch = parentText.substring(0, match);
+    var afterMatch = parentText.substring(match, 999999);
+    var tagDogTextWithMark =
+        [beforeMatch,
+          '<a class="dw-i-m-start" href="#', this.id, '"/>',
+          afterMatch].join('');
+    var htmlWithMark =
+        ['<div class="dw-p-bdy dw-with-inline-marks">',
+          tagDog.barkHtml(tagDogTextWithMark),
+          '</div>'].join();
+    $parentPost.children('.dw-p-bdy').hide();
+    $parentPost.children('.dw-p-bdy').after(postWithMark);
+
+    // Or simply:
+    // var htmlWithMark = tagDogsniffAndMark(markStartText,
+    //                                      $parentPost.find('.dw-p-bdy');
+    // $parentPost.children('.dw-p-bdy').replace($(htmlWithMark));
+  });
+}
+
+// Places inline threads at the relevant inline marks, so the threads
+// become inlined.
+Debiki.v0.placeInlineThreads =
+function() {
+  // For each inline comment start anchor (-ic-a-start), move the relevant post 
+  // from the reply list to just before the paragraph in which the anchor is 
+  // placed. (We cannot place the inline comment in the <p> itself, since a 
+  // <p> cannot contain block-level elements.)
+  // Add a class that makes the comment float right etc.
+  $('.dw-i-m-start').each(function(){
+    var threadRef = $(this).attr('href'); // will be '#dw-t-<id>'
+    $inlineThread = $(threadRef); // TODO change from <li> to <div>
+    $p = $(this).closest('p');
+    if (!$p.length) $p = $(this); // currently, placeInlineMarks removes <p>s
+    $p.before($inlineThread);
+  });
+}
+// anchor ex:    <a class="dw-i-a-start" href="#dw-t-h">(IC)</a>
+
+Debiki.v0.placeInlineMarks();
+Debiki.v0.placeInlineThreads();
+
+
+// ------- Inline actions
+
+// On post text click, open a menu with Inline Reply and
+// Edit endries.
+// For now: Don't open a menu, assume a click means an inline reply.
+
+$('.debiki').delegate('.dw-p-bdy p', 'click', function(event){
+  if ($(event.target).closest('.dw-fs').length) {
+    // A form was clicked. Ignore click.
+    return;
+  }
+  var sel = window.getSelection();
+  if (sel.baseNode.data.substr(sel.baseOffset, 1).length == 0) {
+    // No text clicked. Ignore.
+    return;
+  }
+
+  // Find out what piece of text was cliced or selected.
+  // See: http://stackoverflow.com/questions/3968520/how-to-use-jquery-prevall-to-select-nearby-text-nodes/3968929#3968929
+
+  // If the user clicked e.g. inside a short <b> tag, the range might be only a 
+  // few characters long, and these few characters might occur somewhere else
+  // in the same post. This could result in Google's diff-match-patch finding 
+  // the wrong occurrance.
+  // jQuery(window.getSelection().baseNode).parent().parent().contents()
+
+  // TODO: Find out where to show the menu. And show menu.
+  // TODO: Show a mark where the click was? See insertNodeAtCursor here: http://stackoverflow.com/questions/2213376/how-to-find-cursor-position-in-a-contenteditable-div/2213514#2213514
+  // Use event.clientX, event.clientY.
+
+  // For now: pretend the user clicked Reply and open an inline reply form.
+  $showReplyForm.apply(this, [event]);
+});
+
 
 // ------- Forms and actions
 
@@ -618,9 +724,15 @@ rateFormTemplate.find('.dw-show-more-rat-tags').show().
       closest('form').find('.dw-more-rat-tags').show();
   });
 
+
 // ------- Replying
 
-$('.debiki').delegate('.dw-a-reply', 'click', function() {
+$('.debiki').delegate('.dw-a-reply', 'click', $showReplyForm);
+
+// Shows a reply form, either below the relevant post, or inside it,
+// if the reply is an inline comment -- whichever is the case is determined
+// by event.target.
+function $showReplyForm(event) {
   // Warning: Some duplicated code, see .dw-rat-tag and
   // dw-a-edit-new click() above.
   var $post;
@@ -671,18 +783,43 @@ $('.debiki').delegate('.dw-a-reply', 'click', function() {
     $replyForm.find('label').addClass(
       // color and font matching <input> buttons
       'dw-ui-state-default-color dw-ui-widget-font');
-    // Reveal the form
-    var $res = $thread.children('.dw-res');
-    if (!$res.length) {
-      // This is the first reply; create the reply list. // TODO: DUPL CODE
-      $res = $("<ol class='dw-res'/>").appendTo($thread);
+
+    if ($(event.target).closest('.dw-p-bdy').length) {
+      // The post body was clicked, which means the user replies to a specific 
+      // piece of text inside the post but not to the whole post.
+
+      if ($(event.target).closest('.dw-fs').length) {
+        // Clicks on forms in the post body should not result in this
+        // function being called. Bug.
+        throw Error('A form was clicked [debiki_error_67xr21]');
+      }
+
+      // Place the reply inline, where the textClicked.selection ends.
+      var sel = window.getSelection();
+      $(sel.extentNode).after($replyFormParent);
+      // Fill in the `where' form field with the text where the
+      // click/selection was made. Google's diff-match-patch can match
+      // only 32 chars so specify only 32 chars.
+      // (All selected text: sel.getRangeAt(0).toString().substr(0,32);
+      // but we're interested in the start and end of the selection/click.)
+      var textStart = sel.baseNode.data.substr(sel.baseOffset, 32)
+      var textEnd = sel.extentNode.data.substr(sel.extentOffset, 32)
+      $replyForm.find('input[id^="dw-fi-reply-where"]').val(textStart);
     }
-    $res.prepend($replyFormParent.hide());
+    else {
+      // Place the form below the post, in the .dw-res list.
+      var $res = $thread.children('.dw-res');
+      if (!$res.length) {
+        // This is the first reply; create the reply list. // TODO: DUPL CODE
+        $res = $("<ol class='dw-res'/>").appendTo($thread);
+      }
+      $res.prepend($replyFormParent.hide());
+    }
     $replyFormParent.each(SVG.$updateThreadGraphics);
     slideInActionForm($replyFormParent);
   });
   dismissActionMenu();
-});
+};
 
 // ------- Editing
 

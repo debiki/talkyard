@@ -19,6 +19,11 @@ object DebikiYaml {
 
   def apply() = new DebikiYaml
 
+  def escape(text: String) = {
+    var t = text.replace("\n", "\\n"); // For now. DoS or XSS attack possible.
+    t
+  }
+
   /** Notice: DoS or XSS attack: Bad input gives corrupt Yaml.
    */
   def toYaml(debate: Debate): String = {
@@ -39,6 +44,8 @@ object DebikiYaml {
     sb ++= "\nby: \"" ++= post.by += '"'
     sb ++= "\nip: \"" ++= post.ip += '"'
     sb ++= "\ndate: " ++= toIso8601(post.date)
+    if (post.where isDefined)
+      sb ++= "\nwhere: \"" ++= escape(post.where.get) += '"'
     sb ++= "\ntext: |1\n" ++= stripIndent(post.text)
     sb.toString
   }
@@ -224,6 +231,7 @@ class DebikiYaml {
       override def handleTuples(tuples: ju.List[yn.NodeTuple]): Post = {
         var id: Option[String] = None
         var parent: Option[String] = None
+        var where: Option[String] = None
         var date: Option[ju.Date] = None
         var by: Option[String] = None
         var text: Option[String] = None
@@ -232,6 +240,7 @@ class DebikiYaml {
         for (t <- tuples) asText(t.getKeyNode) match {
           case "id" => id = Some(asText(t.getValueNode))
           case "parent" => parent = Some(asText(t.getValueNode))
+          case "where" => where = Some(asText(t.getValueNode))
           case "date" => date = Some(asDate(t.getValueNode))
           case "by" => by = Some(asText(t.getValueNode))
           case "ip" => ip = asText(t.getValueNode)
@@ -244,8 +253,8 @@ class DebikiYaml {
         illegalArgIf(date.isEmpty, "`date' entry missing")
         illegalArgIf(text.isEmpty, "`text' entry missing")
 
-        new Post(id = id.get, parent = parent.get, date = date.get,
-                  by = by.get, ip = ip, text = text.get)
+        new Post(id = id.get, parent = parent.get, where = where,
+          date = date.get, by = by.get, ip = ip, text = text.get)
       }
     }
 

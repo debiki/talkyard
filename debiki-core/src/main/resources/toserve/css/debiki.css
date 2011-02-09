@@ -451,7 +451,21 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
                                 but its height is restricted */
 }
 
-/* --- Actions ---*/
+/* === Inline comments === */
+
+.dw-i-m-start {
+  color: blue;
+}
+
+/* Inline [inline posts and reply forms] by making them float right. */
+.dw-p-bdy .dw-fs,
+.dw-p-bdy .dw-i-t {
+  float: right;
+  clear: right; /* clear any earlier inline stuff */
+}
+
+
+/* === Actions === */
 
 #dw-hidden-templates {
   display: none;
