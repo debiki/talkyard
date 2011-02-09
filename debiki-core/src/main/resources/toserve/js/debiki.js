@@ -450,18 +450,17 @@ function() {
     var tagDogText = tagDog.sniffHtml($parentPost);
     var loc = 10; // TODO should be included in the data attr
     var match = diffMatchPatch.match_main(tagDogText, markStartText, loc);
-    var beforeMatch = parentText.substring(0, match);
-    var afterMatch = parentText.substring(match, 999999);
+    var beforeMatch = tagDogText.substring(0, match);
+    var afterMatch = tagDogText.substring(match, 999999);
     var tagDogTextWithMark =
         [beforeMatch,
           '<a class="dw-i-m-start" href="#', this.id, '"/>',
           afterMatch].join('');
-    var htmlWithMark =
+    var bodyWithMark =
         ['<div class="dw-p-bdy dw-with-inline-marks">',
           tagDog.barkHtml(tagDogTextWithMark),
-          '</div>'].join();
-    $parentPost.children('.dw-p-bdy').hide();
-    $parentPost.children('.dw-p-bdy').after(postWithMark);
+          '</div>'].join('');
+    $parentPost.children('.dw-p-bdy').replaceWith(bodyWithMark);
 
     // Or simply:
     // var htmlWithMark = tagDogsniffAndMark(markStartText,
