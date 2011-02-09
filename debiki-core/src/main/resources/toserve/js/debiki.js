@@ -55,7 +55,7 @@ Settings.makeReplyUrl = function(debateId, postId) {
 
 Settings.replyFormLoader = function(debateId, postId, complete) {
   // Simply clone a hidden reply form template.
-  var $replyForm = $('#dw-hidden-templates .dw-fs-re').clone(true);
+  var $replyForm = jQuery('#dw-hidden-templates .dw-fs-re').clone(true);
   $replyForm.find("input[name='dw-fi-post']").attr('value', postId);
   complete($replyForm);
 }
