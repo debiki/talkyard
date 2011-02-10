@@ -294,39 +294,51 @@ function $makeEastResizable() {
 // (On Android, posts and threads won't be resizable.)
 function $makePostResizable() {
   var $expandSouth = function() {
-    console.log('click: Removing cropped-s.');
-    if ($(this).filter('.dw-x-s').length > 0) {
-      // The post is truncated.
-      if (didExpandTruncated) {
-        // Some other nested post (an inline comment thread?) has already
-        // handled this click, and expanded itself. Ignore click.
-      }
-      else {
-        $(this).removeClass('dw-x-s');
-        didExpandTruncated = true;
-      }
-    }
+    // Expand post southwards on resize handle click. But not if
+    // the resize handle was dragged and the post thus manually resized.
+    if (!didResize) $(this).closest('.dw-p').css('height', null);
+  }
+  var $expandEast = function() {
+    var $post = $(this).closest('.dw-p');
+    $post.removeClass('dw-x-e');
+    // Expand post eastwards on resize east handle click.
+    if (!didResize) $post.css('width', null);
   }
   var $expandSouthEast = function() {
     $expandSouth.apply(this);
-    $(this).removeClass('dw-x-e');
+    $expandEast.apply(this);
   }
+
   try {
   // Indicate which posts are cropped, and make visible on click.
   $(this)
     .filter('.dw-x-s')
     .append(
       '<div class="dw-x-mark">. . . truncated</div>')
-    .click(
-        // (Some rather long posts are cropped, using max-width and -height.
-        // Don't remove max-width, or some posts might end up rather wide.)
-        $expandSouth)
+    // Expand truncated posts on click.
+    .click(function(){
+      if ($(this).filter('.dw-x-s').length > 0) {
+        // This post is truncated (because it is rather long).
+        if (didExpandTruncated) {
+          // Some other nested post (an inline comment thread?) has already
+          // handled this click, and expanded itself. Ignore click.
+        }
+        else {
+          // Don't remove max-width (i.e. dw-x-e), or some posts might
+          // end up rather wide.
+          $(this).removeClass('dw-x-s');
+          didExpandTruncated = true;
+        }
+      }
+    })
   .end()
   .resizable({
       autoHide: true,
       start: function(event, ui) {
-        // Remove max height and width restrictions.
+        // Remove height and width restrictions, so the post can be resized.
         $(this).closest('.dw-p').each($expandSouthEast);
+        // Remember that this post is being resized, so heigh and width
+        // are not removed on mouse up.
         didResize = true;
       }
      })
@@ -335,26 +347,13 @@ function $makePostResizable() {
     .removeClass('.ui-icon-gripsmall-diagonal-se')  // exchange small grip...
     .addClass('ui-icon-grip-diagonal-se')  // ...against the normal one
   .end()
-  // Remove max-height and -width when mouse *up* on the resize-e handle.
-  // (This is a shortcut to reveal the whole post - only triggered if
-  // *clicking* the resize handle, but not dragging it.)
-  .find('.ui-resizable-e')
-    .mouseup(function(){
-      // (Removing only max-width usually results in nothing:
-      // The thread usually has a max-width.).
-      var $post = $(this).closest('.dw-p');
-      $post.each($expandSouthEast);
-      // Expand post eastwards if resize handle was clicked not dragged.
-      // (Also expands southwards, but browsers usually expand to east first.)
-      if (!didResize) $post.css('width', null).css('height', null);
-    })
-  .end()
-  .find('.ui-resizable-s, .ui-resizable-se')
-    // Expand post southwards if resize handle was clicked not dragged.
-    .mouseup(function(){
-      if (!didResize) $(this).closest('.dw-p').css('height', null);
-    })
-  .end()
+  // Expand east/south/southeast on east/south/southeast resize handle
+  // *clicks*, by removing height and width restrictions on mouse *up* on
+  // resize handles.  (These triggers are shortcuts to reveal the whole post
+  // - only triggered if *clicking* the resize handle, but not dragging it.)
+  .find('.ui-resizable-e').mouseup($expandEast).end()
+  .find('.ui-resizable-s').mouseup($expandSouth).end()
+  .find('.ui-resizable-se').mouseup($expandSouthEast).end()
   .find('.ui-resizable-handle')
     .mousedown(function(){
       didResize = false;
