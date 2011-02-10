@@ -1,0 +1,5 @@
+
+You can run App.scala with SBT like so:
+
+run -d src/test/resources/v0/debates/inline-post-test.yaml -o target/run/test
+
