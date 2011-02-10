@@ -230,6 +230,15 @@ var resizeRootThreadImpl = function(extraWidth){
   $root.find('> .dw-res > li, > .dw-fs, > .dw-a').each(function(){
     width += $(this).outerWidth(true);
   });
+
+  // Set the min width to something wider than the max width of a
+  // .dw-p-bdy <p>, so paragaphs won't expand when child threads or
+  // reply forms are added below the root post.
+  // TODO: Use e.g. http://www.bramstein.com/projects/jsizes/ to find the
+  // max-width of a .dw-p-bdy p. Or specify the <p> max width in px:s not em:s.
+  // Or use http://jquery.lukelutman.com/plugins/px/jquery.px.js, mentioned
+  // here: http://www.mail-archive.com/jquery-en@googlegroups.com/msg13257.html.
+  width = Math.max(width, 650); // today <p> max-width is 50 em and 650 fine
   $root.css('min-width', width +'px');
 
   // Something has been resized, so parent-->child thread bezier curves
@@ -299,10 +308,8 @@ function $makePostResizable() {
     if (!didResize) $(this).closest('.dw-p').css('height', null);
   }
   var $expandEast = function() {
-    var $post = $(this).closest('.dw-p');
-    $post.removeClass('dw-x-e');
     // Expand post eastwards on resize east handle click.
-    if (!didResize) $post.css('width', null);
+    if (!didResize) $(this).closest('.dw-p').css('width', null);
   }
   var $expandSouthEast = function() {
     $expandSouth.apply(this);
@@ -324,8 +331,6 @@ function $makePostResizable() {
           // handled this click, and expanded itself. Ignore click.
         }
         else {
-          // Don't remove max-width (i.e. dw-x-e), or some posts might
-          // end up rather wide.
           $(this).removeClass('dw-x-s');
           didExpandTruncated = true;
         }

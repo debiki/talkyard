@@ -298,7 +298,7 @@ class LayoutManager(val debate: Debate) {
 
     // the – on the next line is an `en dash' not a minus
     <a class='dw-z'>[–]</a>
-    <div id={cssPostId} class={"dw-p dw-x-e" + cutS}>
+    <div id={cssPostId} class={"dw-p" + cutS}>
       <div class='dw-p-hdr'>
         By <a class='dw-p-by'>{post.by}</a>,
         <abbr class='dw-p-at dw-date'

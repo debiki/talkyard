@@ -144,14 +144,7 @@ ol.dw-mup li {
   position: relative; /* curve image placed relative */
 }
 
-.dw-depth-0.dw-t > .dw-p > .dw-p-bdy.dw-x-e {
-  /* Make the root post wider than other posts, so it spans > 1 child.
-  Then it is easier (?) to understand which threads are its
-  children, although the children are spread horizontally. */
-  max-width: 60em;
-}
-.dw-depth-0.dw-t > .dw-p > .dw-p-bdy.dw-x-e > .dw-text {
-  padding-right: 15em; /* the text would be hard to read were it very wide */
+.dw-depth-0.dw-t > .dw-p {
   padding-bottom: 1.3em; /* litte more airy? first post */
 }
 
@@ -224,10 +217,6 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
 .dw-p.dw-x-s > .dw-p-hdr {
   max-height: 4em;
   cursor: help;
-}
-
-.dw-p-bdy.dw-x-e { /* TODO: Don't need this class? */
-  max-width: 25em;
 }
 
 .dw-p.dw-x-s > .dw-x-mark {
