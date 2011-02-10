@@ -1,0 +1,142 @@
+# vim: fdm=marker et sw=4 ts=4
+#%TAG ! !org.debiki.v0.debikigenhtml.
+--- !Debate
+id: test-debate
+#end-delims: .,:;!?)}]
+#start-delims: ({[
+#      a
+#   b     c
+# d
+#  e
+# f
+#  g h
+#     i
+#      j
+--- !Post
+id: root
+parent: root
+date: 2001-12-14t21:59:43.10-05:00
+by: OP
+text: |
+ <header><h1>Bör MMA vara tillåtet i Sverige?</h1></header>
+
+ **Mixed Martial Arts**,
+ MMA,
+ är en sport där strypningar och slag mot huvudet ingår.
+ MMA-tävlingar är tillåtna i Sverige.
+ *Bör MMA-tävlingar vara tillåtna i Sverige?*
+--- !Post
+id: b
+# was: a
+parent: root
+date: 2001-12-14t21:59:43.10-05:00
+by: OP
+text: |
+ Tillåt MMA
+
+ Det är bra att MMA-tävlingar är tillåtna i Sverige.
+--- !Edit
+id: aea
+post: b
+date: 2001-12-14t21:59:43.10-05:00
+by: Misse Mu
+desc: "En ändring..."
+text: |1
+ Tillåt MMU
+ MMUuuurk på burk, drick en slurk
+--- !Edit
+id: bEa
+post: b
+date: 2001-12-14t21:59:43.10-05:00
+by: Mjau-Mjam
+desc: "En ändring till..."
+text: |1
+ (Edit bEa text)
+ Abianie irnst eirntier  nirstn tsi!
+ Abneir wfr nrnrinti ni, nrist inrt nrisn ineit n eirneini tieirsn tir.
+ Wfr nii rstrn ti ni, nrist inrt trsien tsrww; guwq nrisn
+ ineit n eirneini tieirsn tir.
+--- !Edit
+id: aec
+post: b
+date: 2001-12-14t21:59:43.10-05:00
+by: Frääs-Klös
+text: |1
+ Minritnir i its! Norntii niifg. Nritxgwkdb, rtis, rtis, rtis!!!
+ Nao noiu irneinwf  nrsie... Rrnsig niex nwww nbe. irnt??
+--- !Post
+id: ca
+parent: b
+date: 2001-12-14t21:59:43.10-05:00
+by: Anonymous Elevator Man
+text: |
+ 1
+
+ 1
+
+ 1
+
+ 1
+
+ 1
+
+ 1
+
+ 1
+
+ 1
+
+ 1
+
+ 2
+
+
+
+
+
+
+
+
+ Many empty lines... I like that, it's like spam :-)
+
+
+
+
+
+
+
+ En hiss i en låda gör ingen glad.
+--- !Post
+id: cb
+parent: b
+date: 2001-12-14t21:59:43.10-05:00
+by: Anonymous Hero
+text: |
+ MMA bidrar till brotslighet och samhällets fördärv. MMA förvandlar
+ annars vänliga människor till blodtörstiga våldsbrottslingar som
+ längtar efter att nita sina gamla far- och morföräldrar.
+
+ MMA ger ett samhälle där pengar och bråk är det männiksorna strävar
+ efter, att få slåss helt enkelt. Det är så fruktansvärd och måste stoppas,
+ innan det inte längre finns kvar någon som kan stoppa det hela.
+
+ För så långt kan det gå, att samhället blir alldeles förstört och inte
+ ens hoppet finns kvar, långt färre några människor med själen i behåll.
+ Ondska och världens kättiska förfall, hädelse är ordet som ligger
+ mig närmast om hjärtat. Pris ske Gud.
+
+--- !Post
+id: d
+parent: b
+date: 2001-12-14t21:59:43.10-05:00
+by: Promma
+text: |
+ För frihetenss skull.
+
+ Ska vi förbjuda allt i samhället som är lika farligt som MMA,
+ får vi en polisstat.
+ Vi får förbjuda rökning,
+ olika typer av hästhoppning,
+ kanske dykning,
+ bergsklättring i för farliga berg.
+ Och ha polis som ser till lagen efterlevs.

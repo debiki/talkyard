@@ -40,6 +40,7 @@ id: aea
 post: b
 date: 2001-12-14t21:59:43.10-05:00
 by: Misse Mu
+desc: "Skriv MMUuuurk."
 text: |1
  Tillåt MMU
  MMUuuurk på burk, drick en slurk
@@ -48,6 +49,7 @@ id: bEa
 post: b
 date: 2001-12-14t21:59:43.10-05:00
 by: Mjau-Mjam
+desc: "Ändra något."
 text: |1
  (Edit bEa text)
  Abianie irnst eirntier  nirstn tsi!
@@ -59,6 +61,7 @@ id: aec
 post: b
 date: 2001-12-14t21:59:43.10-05:00
 by: Frääs-Klös
+desc: "Ändra mer."
 text: |1
  Minritnir i its! Norntii niifg. Nritxgwkdb, rtis, rtis, rtis!!!
  Nao noiu irneinwf  nrsie... Rrnsig niex nwww nbe. irnt??
@@ -102,6 +105,7 @@ id: CcEa
 post: c
 date: 2001-12-14t21:59:43.10-05:00
 by: Frääs-Morr-Morr-Morr
+desc: "Skriv Norntii niifg, viktigt!"
 text: |1
  Norntii niifg. rtis, rtis, rtis!!!
  Rtis, rtis!! Rtis! Rtis! Rtis! Rtis atirfr rtis!!!
@@ -115,6 +119,7 @@ id: CcEb
 post: c
 date: 2001-12-14t21:59:43.10-05:00
 by: Frääs-Morr-Morr-Morr
+desc: "Viktigt att införa denna högprio-ändring!"
 text: |1
  Mraits infienfrv rsti ywfuglwy.
 --- !Post
@@ -206,6 +211,7 @@ id: a
 post: e
 date: 2001-12-14t21:59:43.10-05:00
 by: Promma2
+desc: "Gör trevligare."
 text: |1
  Såvida inte de som är för MMA,
  i själva verket är ute efter att förbjuda sånt de inte gillar.
