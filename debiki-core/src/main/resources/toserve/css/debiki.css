@@ -453,6 +453,10 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
   clear: right; /* clear any earlier inline stuff */
 }
 
+.dw-p-bdy .dw-i-t {
+  margin-top: 1.5em;
+  margin-left: 2.5em; /* leave place for an arrow to the inline thread mark */
+}
 
 /* === Actions === */
 

@@ -511,6 +511,10 @@ function() {
   $('.dw-i-m-start').each(function(){
     var threadRef = $(this).attr('href'); // will be '#dw-t-<id>'
     $inlineThread = $(threadRef); // TODO change from <li> to <div>
+    var postWidth = $(this).closest('.dw-p-bdy').width();
+    // Make the inline comment wide enough to contain all action buttons.
+    var inlinePostWidth = Math.max(postWidth/3, 180); // 180 works today
+    $inlineThread.children('.dw-p').width(inlinePostWidth);
     $p = $(this).closest('p');
     if (!$p.length) $p = $(this); // currently, placeInlineMarks removes <p>s
     $p.before($inlineThread);
