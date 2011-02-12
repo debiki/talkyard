@@ -366,6 +366,7 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
 }
 .dw-depth-0 > .dw-p {
   margin-left: 0;
+  float: left; /* or the header will be as wide as the root thread */
 }
 
 .dw-p-bdy, .dw-p-diff {
