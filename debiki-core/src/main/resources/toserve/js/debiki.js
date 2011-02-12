@@ -507,35 +507,26 @@ function() {
 // become inlined.
 Debiki.v0.placeInlineThreads =
 function() {
-  // For each inline comment start anchor (-ic-a-start), move the relevant post 
-  // from the reply list to just before the paragraph in which the anchor is 
-  // placed. (We cannot place the inline comment in the <p> itself, since a 
-  // <p> cannot contain block-level elements.)
-  // Add a class that makes the comment float right etc.
+  // For each inline-thread mark start (-i-m-start), move the
+  // relevant post from the reply list to just before the paragraph in
+  // which the anchor is placed. (We cannot place the inline thread
+  // in the <p> itself, since a <p> cannot contain block-level elements.)
+  // The inline thread already has a CSS class that makes it float right.
   $('.dw-i-m-start').each(function(){
     var threadRef = $(this).attr('href'); // will be '#dw-t-<id>'
     $inlineThread = $(threadRef); // TODO change from <li> to <div>
-    var $postBody = $(this).closest('.dw-p-bdy');
-    // Make the inline comment wide enough to contain all action buttons.
-    var inlinePostWidth = Math.max($postBody.width()/3, 180); // 180 works today
-    $inlineThread.children('.dw-p').css('min-width', inlinePostWidth +'px');
-    $p = $(this).closest('p');
-    if (!$p.length) $p = $(this); // currently, placeInlineMarks removes <p>s
-    $p.before($inlineThread);
+    $(this).closest('p').before($inlineThread);
   });
 
-  // For each thread with inline threads, wrap all <p>s in <div>s,
-  // which are 50% wide. Make the inline thread also 50% wide.
+  // For each thread with inline threads, wrap all <p>s in <div>s.
+  // In debiki.css, these divs are placed to the left and the inline
+  // threads to the right.
   $('.dw-p-bdy.dw-with-inline-marks').each(function() {
     $(this).children('p').wrap(
-      '<div style="width: 50%"></div>' // inline style for now
+      '<div class="dw-p-bdy-blk"></div>'
     );
-    $(this).children('.dw-i-t').each(function() {
-      $(this).css('width', '49%'); // TODO remove above 180 px width
-    });
   });
 }
-// anchor ex:    <a class="dw-i-a-start" href="#dw-t-h">(IC)</a>
 
 Debiki.v0.placeInlineMarks();
 Debiki.v0.placeInlineThreads();
@@ -859,6 +850,8 @@ function $showReplyForm(event) {
       // only 32 chars so specify only 32 chars.
       // (All selected text: sel.getRangeAt(0).toString().substr(0,32);
       // but we're interested in the start and end of the selection/click.)
+      // TODO Consider using http://code.google.com/p/ierange/, so this stuff
+      // works also with IE (6)/7/8.
       var textStart = sel.baseNode.data.substr(sel.baseOffset, 32)
       var textEnd = sel.extentNode.data.substr(sel.extentOffset, 32)
       $replyForm.find('input[id^="dw-fi-reply-where"]').val(textStart);

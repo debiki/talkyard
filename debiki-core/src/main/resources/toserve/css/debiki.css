@@ -16,10 +16,13 @@
  *  -f-           form
  *  -fs-          form group
  *  -hor-         horizontal layout
+ *  -i-           inline
  *  -mup-         markup, dw-mup means "html generated from markup"
  *  -p-           post
  *  -rat-         rating
  *  -re-          reply
+ *  -res-         replies
+ *  -t-           thread
  *  -vs-          votes
  *
  *  dw-a-rate     rate reply
@@ -32,7 +35,9 @@
  *  dw-fs-ed      edit form group
  *  dw-fs-re      reply form group
  *  dw-fs-rat     rating form group
+ *  dw-i-t        inline thread
  *  dw-p-bdy      post body
+ *  dw-p-bdy-blk  post body block, a <div> that wraps e.g. a <p>
  *  dw-p-hdr      post header
  *
  *  ... and so on, hmm.
@@ -217,6 +222,23 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
 .dw-p.dw-x-s > .dw-p-hdr {
   max-height: 4em;
   cursor: help;
+  /* The max-height of a truncated .dw-p-bdy is 4em, but if floating
+  elements are present inside the -p-bdy (e.g. inline reply threads)
+  its height might grow to e.g. 2000 px. Then at least Chrome places the
+  truncation mark far away, so the parent .dw-p grows to e.g. 2000 px.
+  By hiding overflow, the truncation mark won't be pushed down by other
+  tags inside the .dw-p-bdy, and the parent .dw-p won't be larger than
+  what it's supposed to be (i.e. roughly 4em + 4em). */
+  /*overflow: hidden;  -- no, doesn't work well: in some unfathomable
+  weird way, the inline thread disappear upwards, but space is reserved for
+  them below, as if I had added `relative: -2000px' (which I have not).  */
+}
+
+.dw-p.dw-x-s {
+  /* Since `overflow: hidden' on .dw-p-bdy doesn't work well (see the
+  long comment above), restrict max-height of the .dw-p instead (again
+  see the long comment above, for info on why this is done). */
+  max-height: 8em;
 }
 
 .dw-p.dw-x-s > .dw-x-mark {
@@ -455,7 +477,11 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
 
 .dw-p-bdy .dw-i-t {
   margin-top: 1.5em;
-  margin-left: 2.5em; /* leave place for an arrow to the inline thread mark */
+  margin-left: 0; /* or inline threads might float drop */
+  width: 44%;
+}
+.dw-p-bdy-blk {
+  width: 55%; /* 55% + 44% (for .dw-i-t above) = 99% < 100% */
 }
 
 /* === Actions === */
