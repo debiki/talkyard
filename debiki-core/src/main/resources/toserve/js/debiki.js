@@ -421,19 +421,21 @@ function updateDebate(newDebateHtml) {
 
 // The tag dog searches text inside html tags, without being so very
 // confused by tags and attributes.
-var tagDog = {
-  sniffHtml: function($tag) {
-    // For now:
-    return $tag.map($htmlToMarkup)[0]
-  },
-  barkHtml: function(tagDogText) {
-    // For now:
-    var htmlParas = tagDogText.split('\n\n');
-    var html = '<p>'+ htmlParas.join('</p><p>') + '</p>';
-    // TODO prevent XSS attacks, use google html-sanitizer
-    return html;
-  },
-};
+var tagDog = (function(){
+  var sniffAndMem;
+  return {
+    sniffHtml: function($tag) {
+      var htmlText = $tag.html();
+      sniffAndMem = TagDog.sniffHtml(htmlText);
+      return sniffAndMem.sniffedHtml;
+    },
+    barkHtml: function(sniffedHtml) {
+      sniffAndMem.sniffedHtml = sniffedHtml;
+      var htmlText = TagDog.barkHtml(sniffAndMem);
+      return htmlText;
+    }
+  };
+})();
 
 // ------- Posts
 
@@ -476,26 +478,28 @@ function() {
     // Search the parent post for the text where this mark starts.
     // Insert a mark (i.e. an <a/> tag) and render the parent post again.
     var markStartText = $(this).attr('data-dw-i-t-where');
-    var $parentPost = $(this).parent().closest('.dw-t').children('.dw-p');
-    var tagDogText = tagDog.sniffHtml($parentPost);
+    var $parentPostBody =
+        $(this).parent().closest('.dw-t').find('> .dw-p > .dw-p-bdy');
+    var tagDogText = tagDog.sniffHtml($parentPostBody);
     var loc = 10; // TODO should be included in the data attr
     var match = diffMatchPatch.match_main(tagDogText, markStartText, loc);
     var beforeMatch = tagDogText.substring(0, match);
     var afterMatch = tagDogText.substring(match, 999999);
     var tagDogTextWithMark =
         [beforeMatch,
-          '<a class="dw-i-m-start" href="#', this.id, '"/>',
+          '<a class="dw-i-m-start" href="#',
+          this.id,
+          '">[IM]</a>', // write [IM] for now, testing
           afterMatch].join('');
     var bodyWithMark =
         ['<div class="dw-p-bdy dw-with-inline-marks">',
           tagDog.barkHtml(tagDogTextWithMark),
           '</div>'].join('');
-    $parentPost.children('.dw-p-bdy').replaceWith(bodyWithMark);
+    $parentPostBody.replaceWith(bodyWithMark);
 
     // Or simply:
-    // var htmlWithMark = tagDogsniffAndMark(markStartText,
-    //                                      $parentPost.find('.dw-p-bdy');
-    // $parentPost.children('.dw-p-bdy').replace($(htmlWithMark));
+    // var htmlWithMark = tagDogsniffAndMark(markStartText, $parentPostBody);
+    // $parentPostBody.replace($(htmlWithMark));
   });
 }
 
@@ -511,13 +515,24 @@ function() {
   $('.dw-i-m-start').each(function(){
     var threadRef = $(this).attr('href'); // will be '#dw-t-<id>'
     $inlineThread = $(threadRef); // TODO change from <li> to <div>
-    var postWidth = $(this).closest('.dw-p-bdy').width();
+    var $postBody = $(this).closest('.dw-p-bdy');
     // Make the inline comment wide enough to contain all action buttons.
-    var inlinePostWidth = Math.max(postWidth/3, 180); // 180 works today
-    $inlineThread.children('.dw-p').width(inlinePostWidth);
+    var inlinePostWidth = Math.max($postBody.width()/3, 180); // 180 works today
+    $inlineThread.children('.dw-p').css('min-width', inlinePostWidth +'px');
     $p = $(this).closest('p');
     if (!$p.length) $p = $(this); // currently, placeInlineMarks removes <p>s
     $p.before($inlineThread);
+  });
+
+  // For each thread with inline threads, wrap all <p>s in <div>s,
+  // which are 50% wide. Make the inline thread also 50% wide.
+  $('.dw-p-bdy.dw-with-inline-marks').each(function() {
+    $(this).children('p').wrap(
+      '<div style="width: 50%"></div>' // inline style for now
+    );
+    $(this).children('.dw-i-t').each(function() {
+      $(this).css('width', '49%'); // TODO remove above 180 px width
+    });
   });
 }
 // anchor ex:    <a class="dw-i-a-start" href="#dw-t-h">(IC)</a>
@@ -543,7 +558,8 @@ $('.debiki').delegate('.dw-p-bdy p', 'click', function(event){
     return;
   }
   var sel = window.getSelection();
-  if (sel.baseNode.data.substr(sel.baseOffset, 1).length == 0) {
+  if (!sel.baseNode.data ||
+      sel.baseNode.data.substr(sel.baseOffset, 1).length == 0) {
     // No text clicked. Ignore.
     return;
   }

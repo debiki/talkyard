@@ -120,6 +120,8 @@ private[debiki] object App {
       "css/img/dw-svg-fake-hcurve-start-w-reply-arrow.png",
       "css/img/dw-svg-fake-vcurve-short.png",
       "0/js/diff_match_patch.js",
+      "0/js/html-sanitizer-minified.js",
+      "0/js/tagdog.js",
       "js/svg.js",
       "js/svg.htc",
       "js/svg.swf",
