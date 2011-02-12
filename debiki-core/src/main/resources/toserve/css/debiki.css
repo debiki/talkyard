@@ -69,7 +69,7 @@ table, caption, tbody, tfoot, thead, tr, th, td {
 body {
 	line-height: 1;
 }
-ol, ul {
+ol, ul, li {
   list-style-type: none;
 }
 blockquote, q {
@@ -110,14 +110,14 @@ p:last-of-type {
 
 /* --- Markup --- */
 
-/* Show list item marks. */
-.dw-mup ul li,
-ul.dw-mup li {
+/* Show list item marks, but not for nested threads. */
+.dw-p-bdy :not(.dw-t) ul li {
   list-style-type: disc;
+  margin-left: 2.5em;
 }
-.dw-mup ol li,
-ol.dw-mup li {
+.dw-p-bdy :not(.dw-t) ol li {
   list-style-type: decimal;
+  margin-left: 2.5em;
 }
 
 /* === Debate === */
