@@ -87,6 +87,7 @@ where: 'MY CAT IS EVIL.'
 date: 2001-12-14t21:59:43.10-05:00
 by: Glad komentator
 text: |
+ Inline post no 1.
  Lorem ipsum dolor sit amet, consectetur adipiscing elit. Maecenas rhoncus
  ligula lorem, a rhoncus justo. Mauris nec magna eu risus gravida blandit id
  quis libero. Quisque eu consectetur enim. Integer eros ipsum, aliquet sed
@@ -103,6 +104,64 @@ text: |
  nisl vel tortor bibendum porta non vehicula purus. Aenean imperdiet, erat vitae
  porta viverra, lorem justo sagittis nunc, facilisis facilisis urna orci non
  leo. Vestibulum venenatis elementum ornare. Aenean tincidunt ornare nulla eget
+ cursus. Nunc faucibus, sapien sed suscipit accumsan, magna diam commodo diam,
+ laoreet malesuada felis enim id lorem.
+--- !Post
+id: cbc
+parent: cb
+where: 'MY CAT IS EVIL.'
+#where:
+# before: 'Crazy cows eat grass YES.'
+# start: 'MY CAT IS EVIL.'
+# end: ' Vivamus accumsan tempus'
+# after: 'In hac habitasse platea'
+date: 2001-12-14t21:59:43.10-05:00
+by: Glad komentator
+text: |
+ Inline post 2. My-cat-is-evil comment no 2.
+ Vestibulum venenatis elementum ornare. Aenean tincidunt ornare nulla eget
+ cursus. Nunc faucibus, sapien sed suscipit accumsan, magna diam commodo diam,
+ laoreet malesuada felis enim id lorem.
+--- !Post
+id: cbd
+parent: cb
+where: 'MY CAT IS EVIL.'
+#where:
+# before: 'Crazy cows eat grass YES.'
+# start: 'MY CAT IS EVIL.'
+# end: ' Vivamus accumsan tempus'
+# after: 'In hac habitasse platea'
+date: 2001-12-14t21:59:43.10-05:00
+by: Glad komentator
+text: |
+ Inline post 3. My-cat-is-evil comment no 3.
+ 
+ 3 paragraphs. Vestibulum venenatis elementum ornare. Aenean tincidunt ornare nulla eget
+ cursus. Nunc faucibus, sapien sed suscipit accumsan, magna diam commodo diam,
+ laoreet malesuada felis enim id lorem.
+
+ No. 3. Vestibulum venenatis elementum ornare. Aenean tincidunt ornare nulla eget
+ cursus. Nunc faucibus, sapien sed suscipit accumsan, magna diam commodo diam,
+ laoreet malesuada felis enim id lorem.
+--- !Post
+id: cbe
+parent: cb
+where: 'Cras varius'
+#where:
+# before: 'Crazy cows eat grass YES.'
+# start: 'MY CAT IS EVIL.'
+# end: ' Vivamus accumsan tempus'
+# after: 'In hac habitasse platea'
+date: 2001-12-14t21:59:43.10-05:00
+by: Glad komentator
+text: |
+ Inline post 4: "Cras varius"
+ 
+ 3 paragraphs. Vestibulum venenatis elementum ornare. Aenean tincidunt ornare nulla eget
+ cursus. Nunc faucibus, sapien sed suscipit accumsan, magna diam commodo diam,
+ laoreet malesuada felis enim id lorem.
+
+ Paragraph no. 3. Vestibulum venenatis elementum ornare. Aenean tincidunt ornare nulla eget
  cursus. Nunc faucibus, sapien sed suscipit accumsan, magna diam commodo diam,
  laoreet malesuada felis enim id lorem.
 --- !Post
