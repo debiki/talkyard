@@ -121,6 +121,7 @@ Debiki.v0.setEditFormSubmitter = function(submitter) {
 
 var diffMatchPatch = new diff_match_patch();
 diffMatchPatch.Diff_Timeout = 1; // seconds
+diffMatchPatch.Match_Distance = 100*1000; // for now
 
 var didResize = false;
 // Set to true if a truncated post was clicked and expanded.
@@ -483,14 +484,19 @@ function() {
     var tagDogText = tagDog.sniffHtml($parentPostBody);
     var loc = 10; // TODO should be included in the data attr
     var match = diffMatchPatch.match_main(tagDogText, markStartText, loc);
+    var mark = // TODO underline matched text? or something
+        '<a class="dw-i-m-start" href="#'+ this.id +'">[IM]</a>'; // for now
+    if (match == -1) {
+      // Text not found. Has the parent post been edited since the mark
+      // was set? Should diffMatchPatch.Match_Distance and other settings
+      // be tweaked?
+      // TODO How to indicate that no match was found?
+      $parentPostBody.prepend(mark.replace('[IM]', '[??]')); // for now
+      return;
+    }
     var beforeMatch = tagDogText.substring(0, match);
     var afterMatch = tagDogText.substring(match, 999999);
-    var tagDogTextWithMark =
-        [beforeMatch,
-          '<a class="dw-i-m-start" href="#',
-          this.id,
-          '">[IM]</a>', // write [IM] for now, testing
-          afterMatch].join('');
+    var tagDogTextWithMark = [beforeMatch, mark, afterMatch].join('');
     var bodyWithMark =
         ['<div class="dw-p-bdy dw-with-inline-marks">',
           tagDog.barkHtml(tagDogTextWithMark),
