@@ -460,6 +460,9 @@ function $initPost(){
       $('#dw-action-menu > .dw-a')
         .clone()
         .css('visibility', 'hidden'));
+  // Initially, hide edit suggestions.
+  $(this).closest('.dw-t').children('.dw-ess, .dw-a-edit-new').hide();
+
   // $makeEastResizable must be called before $makePostResizable,
   // or $makeEastResizable has no effect. No idea why -- my guess
   // is some jQuery code does something similar to `$.find(..)',
