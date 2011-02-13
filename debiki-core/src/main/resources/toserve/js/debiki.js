@@ -536,11 +536,11 @@ function() {
     $(this).closest('p').before($inlineThread);
   });
 
-  // For each thread with inline threads, wrap all <p>s in <div>s.
+  // For each thread with inline threads, wrap all body elems in <div>s.
   // In debiki.css, these divs are placed to the left and the inline
   // threads to the right.
   $('.dw-p-bdy.dw-with-inline-marks').each(function() {
-    $(this).children('p').wrap(
+    $(this).children(':not(.dw-i-t)').wrap(
       '<div class="dw-p-bdy-blk"></div>'
     );
   });

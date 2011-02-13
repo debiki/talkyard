@@ -93,7 +93,9 @@ object LayoutManager {
     // then close the tag in the default sanitizer
     // (html.makeHtmlSanitizer, line 385). Because m[4] contains either
     // "/>" or ">" and if it's "/>" then pass tagClosed = true.
-    XML.loadString("<div class='dw-mup'>"+ htmlTextSafe +"</div>")
+
+    // (Wrapping the html text in a dummy tag to avoid a SAXParseException.)
+    XML.loadString("<div>"+ htmlTextSafe +"</div>").child
   }
 
   /** Replaces spaces with the Unicode representation of non-breaking space,

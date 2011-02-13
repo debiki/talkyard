@@ -18,7 +18,6 @@
  *  -fs-          form group
  *  -hor-         horizontal layout
  *  -i-           inline
- *  -mup-         markup, dw-mup means "html generated from markup"
  *  -p-           post
  *  -rat-         rating
  *  -re-          reply
@@ -116,11 +115,11 @@ p:last-of-type {
 /* --- Markup --- */
 
 /* Show list item marks, but not for nested threads. */
-.dw-p-bdy :not(.dw-t) ul li {
+.dw-p-bdy-blk ul li {
   list-style-type: disc;
   margin-left: 2.5em;
 }
-.dw-p-bdy :not(.dw-t) ol li {
+.dw-p-bdy-blk ol li {
   list-style-type: decimal;
   margin-left: 2.5em;
 }
