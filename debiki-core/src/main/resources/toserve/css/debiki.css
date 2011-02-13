@@ -10,6 +10,7 @@
  *
  *  dw-           prefix, avoids name clashes
  *  -a-           action
+ *  -e            east (COULD change to "ew", eastwards, and use "e" for edit)
  *  -ed-          edit
  *  -es-          edit suggestion
  *  -ess-         edit suggestions
@@ -22,8 +23,11 @@
  *  -rat-         rating
  *  -re-          reply
  *  -res-         replies
+ *  -rez-         resized
+ *  -s            south
  *  -t-           thread
  *  -vs-          votes
+ *  -z-           fold (z looks like a folded paper from the side)
  *
  *  dw-a-rate     rate reply
  *  dw-a-reply    new reply
@@ -39,6 +43,7 @@
  *  dw-p-bdy      post body
  *  dw-p-bdy-blk  post body block, a <div> that wraps e.g. a <p>
  *  dw-p-hdr      post header
+ *  dw-p-rez-e    post resized eastwards
  *
  *  ... and so on, hmm.
  */
@@ -218,6 +223,8 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
   z-index: 6;
 }
 
+/* === Cropped and resized posts === */
+
 .dw-p.dw-x-s > .dw-p-bdy,
 .dw-p.dw-x-s > .dw-p-hdr {
   max-height: 4em;
@@ -241,7 +248,7 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
   max-height: 8em;
 }
 
-.dw-p.dw-x-s > .dw-x-mark {
+.dw-p > .dw-x-mark {
   display: block;
   position: absolute;
   bottom: 0px;
@@ -252,18 +259,29 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
   font-style: italic;
   letter-spacing: 0.3ex;
 }
-.dw-t .dw-p.dw-x-s:hover > .ui-resizable-se,
-.dw-t .dw-p.dw-x-s:hover > .dw-x-mark {
+.dw-p.dw-x-s:hover > .ui-resizable-se,
+.dw-p.dw-x-s:hover > .dw-x-mark {
   background-color: #fdc;
   color: #363636;
 }
-/*
-.dw-post.dw-x-s .dw-x-mark .ui-icon {
-  height: 15px;
-  display: inline-block;
-}*/
-.dw-p > .dw-x-mark {
-  display: none; /* no longer cropped, class .dw-x-s gone */
+
+/* Indicate which borders the user has resized. */
+.dw-p-rez-e {
+  border-right: 1px solid #888;
+  padding-right: 3px; /* or text to close to the border */
+  /* This post might extend over [a thread to the right], since
+  it has been resized eastwards. So as not to draw this post and
+  [the post to the right] over each other, let this post hide 
+  [the post to the right] by specifying a higher z-index. */
+  z-index: 11;
+}
+.dw-p-rez-e:hover {
+  z-index: 12; /* or resized thread might be merged with each other */
+}
+.dw-p-rez-s {
+  border-bottom: 1px solid #888;
+  /* padding-bottom: 3px; -- pointless: because of overflow, text might
+                          end up immediately next to the border anyway */
 }
 
 /* --- Comments ---*/
@@ -383,8 +401,9 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
 
 .dw-p:hover {
   outline: #999 dashed thin;
-  /* In case the post has been up-sized, its up-sized
-  parts might be hidden by a thread, unless: */
+  /* If the post is beeing up-sized, its up-sized parts might be hidden
+  by another thread, because its z-index has not yet been set to 11
+  by the adding of class dw-p-rez-e. Therefore: */
   z-index: 10;
 }
 

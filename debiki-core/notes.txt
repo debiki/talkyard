@@ -1,6 +1,25 @@
 vim: fdm=marker et sw=2 ts=2
 
 
+{{{ Remove post height/width restrictions
+
+function $makePostResizable() {
+
+  // Remember initial dimentsions, so we knows how much the post was
+  // actually resized.
+  var startWidth = 0;
+  var startHeight = 0;
+
+  ...
+
+        // Remove height and width restrictions, so the post can be resized.
+        var $expand = $expandSouthEast;
+        var $origTgt = $(event.originalEvent.target);
+        if ($origTgt.hasClass('ui-resizable-e')) $expand = $expandEast;
+        else if ($origTgt.hasClass('ui-resizable-s')) $expand = $expandSouth;
+        $post.each($expand);
+
+}}}
 {{{ Diff-implementation !?
 
 Skriv X. framför varje markdown-stycke.

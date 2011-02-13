@@ -306,11 +306,15 @@ function $makePostResizable() {
   var $expandSouth = function() {
     // Expand post southwards on resize handle click. But not if
     // the resize handle was dragged and the post thus manually resized.
-    if (!didResize) $(this).closest('.dw-p').css('height', null);
+    if (didResize) return;
+    $(this).closest('.dw-p')
+        .css('height', null).removeClass('dw-p-rez-s');
   }
   var $expandEast = function() {
     // Expand post eastwards on resize east handle click.
-    if (!didResize) $(this).closest('.dw-p').css('width', null);
+    if (didResize) return;
+    $(this).closest('.dw-p')
+        .css('width', null).removeClass('dw-p-rez-e');
   }
   var $expandSouthEast = function() {
     $expandSouth.apply(this);
@@ -330,9 +334,13 @@ function $makePostResizable() {
         if (didExpandTruncated) {
           // Some other nested post (an inline comment thread?) has already
           // handled this click, and expanded itself. Ignore click.
+          // SHOULD let the outer thread consume the first click. Hardly
+          // matters though, since nested posts are rarely visible when the
+          // parent post is cropped.
         }
         else {
-          $(this).removeClass('dw-x-s');
+          $(this).removeClass('dw-x-s')
+              .children('.dw-x-mark').remove();
           didExpandTruncated = true;
         }
       }
@@ -341,11 +349,15 @@ function $makePostResizable() {
   .resizable({
       autoHide: true,
       start: function(event, ui) {
-        // Remove height and width restrictions, so the post can be resized.
-        $(this).closest('.dw-p').each($expandSouthEast);
+        $post = $(this).closest('.dw-p');
         // Remember that this post is being resized, so heigh and width
         // are not removed on mouse up.
         didResize = true;
+      },
+      stop: function(event, ui) {
+        // Add classes that draw east and south borders, so one can tell
+        // from looking at the post that its size has been fixed by the user.
+        $(this).closest('.dw-p').addClass('dw-p-rez-e dw-p-rez-s');
       }
      })
   .find('.ui-resizable-se')
