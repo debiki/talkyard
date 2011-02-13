@@ -526,14 +526,15 @@ function() {
 Debiki.v0.placeInlineThreads =
 function() {
   // For each inline-thread mark start (-i-m-start), move the
-  // relevant post from the reply list to just before the paragraph in
+  // relevant post from the reply list to after the paragraph in
   // which the anchor is placed. (We cannot place the inline thread
   // in the <p> itself, since a <p> cannot contain block-level elements.)
-  // The inline thread already has a CSS class that makes it float right.
+  // The inline thread already has a CSS class that place it to the right of,
+  // or below, the <p>.
   $('.dw-i-m-start').each(function(){
     var threadRef = $(this).attr('href'); // will be '#dw-t-<id>'
     $inlineThread = $(threadRef); // TODO change from <li> to <div>
-    $(this).closest('p').before($inlineThread);
+    $(this).closest('p').after($inlineThread);
   });
 
   // For each thread with inline threads, wrap all body elems in <div>s.

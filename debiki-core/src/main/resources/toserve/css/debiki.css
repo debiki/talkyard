@@ -487,20 +487,30 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
   color: blue;
 }
 
-/* Inline [inline posts and reply forms] by making them float right. */
+/* In the root post: Inline [inline posts and reply forms] by stacking them
+to the right of the relevant .dw-p-bdy-blk. */
 .dw-p-bdy .dw-fs,
 .dw-p-bdy .dw-i-t {
-  float: right;
-  clear: right; /* clear any earlier inline stuff */
+  float: left;
+}
+/* But elsewhere, place inline threads below the .dw-p-bdy-blk, indented. */
+.dw-t:not(.dw-depth-0) .dw-i-t {
+  margin-left: 5em;
+  clear: left;
 }
 
 .dw-p-bdy .dw-i-t {
   margin-top: 1.5em;
-  margin-left: 0; /* or inline threads might float drop */
-  width: 44%;
 }
+
 .dw-p-bdy-blk {
-  width: 55%; /* 55% + 44% (for .dw-i-t above) = 99% < 100% */
+  float: left;
+  clear: left;
+}
+
+/* Adjust inline-replies to the root post. */
+.dw-hor > .dw-p > .dw-p-bdy > .dw-p-bdy-blk + .dw-i-t {
+  margin-left: 4em; /* move away from the root post text */
 }
 
 /* === Actions === */
