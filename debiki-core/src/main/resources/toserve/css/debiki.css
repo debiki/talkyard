@@ -11,7 +11,7 @@
  *  dw-           prefix, avoids name clashes
  *  -a-           action
  *  -e            east (COULD change to "ew", eastwards, and use "e" for edit)
- *  -ed-          edit
+ *  -ed-          edit (COULD change to "e")
  *  -es-          edit suggestion
  *  -ess-         edit suggestions
  *  -f-           form
@@ -19,11 +19,11 @@
  *  -hor-         horizontal layout
  *  -i-           inline
  *  -p-           post
- *  -rat-         rating
- *  -re-          reply
- *  -res-         replies
+ *  -rat-         rating  (COULD rename to "r")
+ *  -re-          reply   (COULD rename to "p", for "post")
+ *  -res-         replies (COULD rename to "ts", "threads")
  *  -rez-         resized
- *  -s            south
+ *  -s            south (COULD change to "sw", southwards)
  *  -t-           thread
  *  -vs-          votes
  *  -z-           fold (z looks like a folded paper from the side)
@@ -105,14 +105,13 @@ table {
 }
 
 /* --- Standard elems ---*/
+
 p {
+  margin: 0;
+}
+.dw-p-bdy-blk {
   margin: 0 0 0.7em;
 }
-p:last-of-type {
-  /*margin-bottom: 0;*/
-}
-
-/* --- Markup --- */
 
 /* Show list item marks, but not for nested threads. */
 .dw-p-bdy-blk ul li {
@@ -149,12 +148,13 @@ p:last-of-type {
 
 /* === Threads === */
 
-.dw-depth-0.dw-t > .dw-a {
-  position: relative; /* curve image placed relative */
+.dw-depth-0.dw-t > .dw-p {
+  padding-bottom: 0.8em; /* litte more airy? first post */
 }
 
-.dw-depth-0.dw-t > .dw-p {
-  padding-bottom: 1.3em; /* litte more airy? first post */
+.dw-depth-0.dw-t > .dw-p > .dw-p-bdy > .dw-p-bdy-blk,
+.dw-t:not(.dw-depth-1) .dw-p-bdy-bkl {
+  line-height: 165%; /* higher height makes the main post easier to read */
 }
 
 .dw-depth-1 .dw-t {
@@ -193,7 +193,7 @@ p:last-of-type {
 
 .dw-p-bdy p {
   /* Don't span whole screen even if .post.cropped-e is removed. */
-  max-width: 50em;
+  max-width: 35em;
 }
 
 /* Make the s,n,e,w handles larger (else hard to drag) and place them
@@ -383,7 +383,8 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
 }
 .dw-depth-0 > .dw-p {
   margin-left: 0;
-  float: left; /* or the header will be as wide as the root thread */
+  /*float: left; /* or the header will be as wide as the root thread */
+   /* fix the header instead? I need to fix it anayway */
 }
 
 .dw-p-bdy, .dw-p-diff {
@@ -413,6 +414,7 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
 
 .dw-depth-0 > .dw-a {
   float: left;
+  position: relative; /* curve image placed relative */
   padding-right: 20px;
   margin-top: 10px;
   margin-right: 16px;
