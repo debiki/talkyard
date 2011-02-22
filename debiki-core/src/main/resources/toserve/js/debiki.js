@@ -473,30 +473,31 @@ var tagDog = (function(){
 // ------- Posts
 
 // Replace .dw-as links with reply/edit/rate links (visible on hover).
-posts.each($initPost);
+$(".debiki .dw-p").each($initPost);
+
 function $initPost(){
-  var $cmt = $(this).closest('.dw-t');
-  $cmt.find('> .dw-as').replaceWith(
+  var $thread = $(this).closest('.dw-t');
+  $thread.find('> .dw-as').replaceWith(
       $('#dw-action-menu > .dw-a')
         .clone()
         .css('visibility', 'hidden'));
   // Initially, hide edit suggestions.
-  $(this).closest('.dw-t').children('.dw-ess, .dw-a-edit-new').hide();
+  $thread.children('.dw-ess, .dw-a-edit-new').hide();
 
   // $makeEastResizable must be called before $makePostResizable,
   // or $makeEastResizable has no effect. No idea why -- my guess
   // is some jQuery code does something similar to `$.find(..)',
   // and finds the wrong resizable stuff,
   // if the *inner* tag is made resizable before the *outer* tag.
-  // (Note that $makePostResizable is invoked on a $cmt *child*.)
-  $cmt.filter('.dw-depth-1').each($makeEastResizable);
+  // (Note that $makePostResizable is invoked on a $thread *child*.)
+  $thread.filter('.dw-depth-1').each($makeEastResizable);
   // Show actions when hovering post.
   // But always show the leftmost Reply, at depth-0, that creates a new column.
   // (Better avoid delegates for frequent events such as mouseenter.)
-  $cmt.filter(':not(.dw-depth-0)').children('.dw-p')
+  $thread.filter(':not(.dw-depth-0)').children('.dw-p')
     .mouseenter($showActions)
     .each($makePostResizable);
-  updateAuthorInfo($cmt, $.cookie('dwUserName'));
+  updateAuthorInfo($thread, $.cookie('dwUserName'));
 }
 
 // Extracts markup source from html.
