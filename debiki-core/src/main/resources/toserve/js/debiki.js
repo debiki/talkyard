@@ -126,7 +126,6 @@ diffMatchPatch.Match_Distance = 100*1000; // for now
 var didResize = false;
 // Set to true if a truncated post was clicked and expanded.
 var didExpandTruncated = false;
-var posts = $(".debiki .dw-p-bdy");
 var rateFormTemplate = $("#dw-hidden-templates .dw-fs-rat");
 var debateId = $('.debiki').attr('id');
 // When forms are loaded from the server, they might have ID fields.
@@ -196,15 +195,18 @@ $('.debiki').delegate('.dw-z', 'click', function() {
 // ------- Outlining
 
 // Outline new posts
+/*
 (function(){
   var myLastVersion = $.cookie('myLastPageVersion');
   if (!myLastVersion) return;
-  var newPosts = posts.filter(function(index){
+  var newPosts = posts.filter(function(index){ // BUG?…
+    //… relied on posts = $('.debiki .dw-p-bdy') but use '*.dw-p' instead?
     return $(this).dw_postModTime() > myLastVersion;
   })
   newPosts.closest('.dw-t').addClass('dw-post-new');
   // TODO: sometimes .dw-post-edited instead of -new
 })()
+*/
 
 
 // ------- Resizing
