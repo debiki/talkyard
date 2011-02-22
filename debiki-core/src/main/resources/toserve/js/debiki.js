@@ -881,6 +881,8 @@ function $showReplyForm(event) {
       // The post body was clicked, which means the user replies to a specific 
       // piece of text inside the post but not to the whole post.
 
+      // BUG: Triggered if a Reply btn clicked in an inline post.
+
       if ($(event.target).closest('.dw-fs').length) {
         // Clicks on forms in the post body should not result in this
         // function being called. Bug.
