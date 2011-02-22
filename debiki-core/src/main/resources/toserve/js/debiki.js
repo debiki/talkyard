@@ -478,6 +478,11 @@ var tagDog = (function(){
 $(".debiki .dw-p").each($initPost);
 
 function $initPost(){
+  // TODO rewrite-rename to initThread, which handles whole subtrees at once.
+  // Then, $(".debiki .dw-p").each($initPost)
+  // would be changed to $('#dw-root').each($initThread).
+  // And call $placeInlineMarks and $placeInlineThreads from here.
+
   var $thread = $(this).closest('.dw-t');
   $thread.find('> .dw-as').replaceWith(
       $('#dw-action-menu > .dw-a')
