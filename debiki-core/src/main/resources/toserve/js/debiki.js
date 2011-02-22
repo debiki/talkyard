@@ -510,10 +510,9 @@ function $htmlToMarkup() {
 }
 
 // Places marks where inline threads are to be placed.
-// This is a mark:  <a class='dw-i-m' href='#dw-t-(thread_id)' />
-Debiki.v0.placeInlineMarks =
-function() {
-  $('.dw-i-t').each(function(){
+// This is a mark:  <a class='dw-i-m-start' href='#dw-t-(thread_id)' />
+function $placeInlineMarks() {
+  $('.dw-i-t', this).each(function(){
     // Search the parent post for the text where this mark starts.
     // Insert a mark (i.e. an <a/> tag) and render the parent post again.
     var markStartText = $(this).attr('data-dw-i-t-where');
@@ -549,32 +548,34 @@ function() {
 
 // Places inline threads at the relevant inline marks, so the threads
 // become inlined.
-Debiki.v0.placeInlineThreads =
-function() {
+function $placeInlineThreads() {
   // For each inline-thread mark start (-i-m-start), move the
   // relevant post from the reply list to after the paragraph in
   // which the anchor is placed. (We cannot place the inline thread
   // in the <p> itself, since a <p> cannot contain block-level elements.)
   // The inline thread already has a CSS class that place it to the right of,
   // or below, the <p>.
-  $('.dw-i-m-start').each(function(){
+  $('.dw-i-m-start', this).each(function(){
     var threadRef = $(this).attr('href'); // will be '#dw-t-<id>'
     $inlineThread = $(threadRef); // TODO change from <li> to <div>
     $(this).closest('p').after($inlineThread);
   });
 
-  // For each thread with inline threads, wrap all body elems in <div>s.
-  // In debiki.css, these divs are placed to the left and the inline
-  // threads to the right.
-  $('.dw-p-bdy').each(function() {
+  // Wrap all body elems in <div>s. In debiki.css, these divs are
+  // placed to the left and the inline threads to the right.
+  // COULD tag each dw-p-bdy child with a .dw-p-bdy-blk, and skip
+  // the extra  <div>?
+  // WOULD include the .dw-p-bdy-blk in the server generated html,
+  // hadn't I been concerned about bandwidth usage — lots of paragraphs?
+  $('.dw-p-bdy', this).each(function() {
     $(this).children(':not(.dw-i-t)').wrap(
       '<div class="dw-p-bdy-blk"></div>'
     );
   });
 }
 
-Debiki.v0.placeInlineMarks();
-Debiki.v0.placeInlineThreads();
+$('.dw-depth-0').each($placeInlineMarks);
+$('.dw-depth-0').each($placeInlineThreads);
 
 
 // ------- Inline actions
