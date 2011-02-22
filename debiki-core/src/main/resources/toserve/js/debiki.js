@@ -513,7 +513,7 @@ function() {
     var afterMatch = tagDogText.substring(match, 999999);
     var tagDogTextWithMark = [beforeMatch, mark, afterMatch].join('');
     var bodyWithMark =
-        ['<div class="dw-p-bdy dw-with-inline-marks">',
+        ['<div class="dw-p-bdy">',
           tagDog.barkHtml(tagDogTextWithMark),
           '</div>'].join('');
     $parentPostBody.replaceWith(bodyWithMark);
@@ -543,7 +543,7 @@ function() {
   // For each thread with inline threads, wrap all body elems in <div>s.
   // In debiki.css, these divs are placed to the left and the inline
   // threads to the right.
-  $('.dw-p-bdy.dw-with-inline-marks').each(function() {
+  $('.dw-p-bdy').each(function() {
     $(this).children(':not(.dw-i-t)').wrap(
       '<div class="dw-p-bdy-blk"></div>'
     );
@@ -560,7 +560,7 @@ Debiki.v0.placeInlineThreads();
 // Edit endries.
 // For now: Don't open a menu, assume a click means an inline reply.
 
-$('.debiki').delegate('.dw-p-bdy p', 'click', function(event){
+$('.debiki').delegate('.dw-p-bdy-blk', 'click', function(event){
   if ($(event.target).closest('.dw-fs').length) {
     // A form was clicked. Ignore click.
     return;
@@ -866,7 +866,7 @@ function $showReplyForm(event) {
 
       // Place the reply inline, where the textClicked.selection ends.
       var sel = window.getSelection();
-      $(sel.extentNode).after($replyFormParent);
+      $(sel.extentNode).closest('.dw-p-bdy-blk').after($replyFormParent);
       // Fill in the `where' form field with the text where the
       // click/selection was made. Google's diff-match-patch can match
       // only 32 chars so specify only 32 chars.
