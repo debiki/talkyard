@@ -225,12 +225,16 @@ var resizeRootThreadImpl = function(extraWidth){
     // Hence it's a rather wide value. (Otherwise = 50 would do.)
     extraWidth = 200;
   }
-  var width = extraWidth;
+  var width = 0;
   var $root = $('.dw-depth-0');
   if (!$root.length) $root = $('.dw-debate'); // there's no root reply
   $root.find('> .dw-res > li, > .dw-fs, > .dw-a').each(function(){
     width += $(this).outerWidth(true);
   });
+
+  var maxInlineWidth = $root.map($findMaxInlineWidth)[0];
+  width = Math.max(width, maxInlineWidth);
+  width += extraWidth;
 
   // Set the min width to something wider than the max width of a
   // .dw-p-bdy <p>, so paragaphs won't expand when child threads or
@@ -245,6 +249,22 @@ var resizeRootThreadImpl = function(extraWidth){
   // Something has been resized, so parent-->child thread bezier curves
   // might need to be redrawn.
   SVG.drawRelationships();
+}
+
+// Finds the width of the widest [paragraph plus inline threads].
+function $findMaxInlineWidth(){
+  var accWidth = 0;
+  var maxWidth = 0;
+  $(this).find('> .dw-p > .dw-p-bdy').children().each(function(){
+    if ($(this).filter('.dw-p-bdy-blk').length) {
+      // New block, reset width
+      accWidth = 0;
+    }
+    // This elem floats-left to the right of the previous block.
+    accWidth += $(this).outerWidth(true);
+    if (accWidth > maxWidth) maxWidth = accWidth;
+  });
+  return maxWidth;
 }
 
 // Makes the root thread wide enough to contain all its child posts.
