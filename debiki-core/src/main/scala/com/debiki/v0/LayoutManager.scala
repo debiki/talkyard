@@ -199,7 +199,12 @@ class LayoutManager(val debate: Debate) {
   }
 
   private def _layoutPosts(depth: Int, posts: List[Post]): NodeSeq = {
+    // COULD rename to _layoutReplies.
+    // COULD let this function return Nil if posts.isEmpty, and otherwise
+    // wrap any posts in <ol>:s, with .dw-ts or .dw-i-ts CSS classes
+    // — this would reduce dupl wrapping code.
     for {
+      // COULD sort inline posts by position, not score.
       p <- posts.sortBy(p => -statscalc.scoreFor(p.id).liking)
       cssThreadId = "dw-t-"+ p.id
       cssDepth = "dw-depth-"+ depth

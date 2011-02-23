@@ -953,7 +953,7 @@ function $showEditDiff() {
   $oldDiff.remove();
   // Extract the post's current text.
   var $postBody = $post.children('.dw-p-bdy');
-  var oldText = $postBody.map($htmlToMarkup)[0];
+  var oldText = $postBody.map($htmlToMarkup)[0]; // TODO exclude inline threads
   // Try both val() and text() -- `this' might be a textarea or
   // an elem with text inside.
   var newText = $(this).val();
@@ -976,6 +976,8 @@ function $showEditDiff() {
   //$post.height(height + ($oldDiff.length ? 0 : 75));
   $post.height(height);
   $post.css('overflow-y', 'auto');
+
+  // COULD make inline comments point to marks in the diff.
 }
 
 // Removes any diff of the closest post; shows the post text instead.
