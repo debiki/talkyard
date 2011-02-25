@@ -110,27 +110,73 @@ text: |
 id: cbc
 parent: cb
 where: 'MY CAT IS EVIL.'
-#where:
-# before: 'Crazy cows eat grass YES.'
-# start: 'MY CAT IS EVIL.'
-# end: ' Vivamus accumsan tempus'
-# after: 'In hac habitasse platea'
 date: 2001-12-14t21:59:43.10-05:00
-by: Glad komentator
+by: Har-ID-cbc
 text: |
  Inline post 2. My-cat-is-evil comment no 2.
- Vestibulum venenatis elementum ornare. Aenean tincidunt ornare nulla eget
+ Vestibulum venenatis elementum ornare.
+ 
+ Cras arcu lectus, pellentesque vitae convallis ut, tristique ac dui. Aliquam 
+ erat volutpat. Morbi lectus est, ullamcorper ac lacinia congue, facilisis ac 
+ dui. Integer at dictum libero. End of para 2.
+ 
+ Aenean tincidunt ornare nulla eget
  cursus. Nunc faucibus, sapien sed suscipit accumsan, magna diam commodo diam,
  laoreet malesuada felis enim id lorem.
+--- !Post
+id: cbci1
+parent: cbc
+where: 'post 2.'
+date: 2001-12-14t21:59:43.10-05:00
+by: Recursive Inliner
+text: |
+ This is an inline post, in inline post 'cbc'.
+
+ Nulla facilisi. Cras facilisis consequat condimentum. Nullam ut elit dui, 
+ elementum sodales lectus. Curabitur non arcu a erat rutrum malesuada. Maecenas 
+ ut nulla dolor, et tristique enim. Etiam nibh erat, sagittis id venenatis vel, 
+ facilisis et neque. Duis quis posuere nulla. Vestibulum sit amet eros vitae 
+ arcu luctus pretium id nec lorem. Praesent pulvinar lobortis augue sit amet 
+ sollicitudin.
+
+ Morbi convallis dignissim justo eu accumsan. Maecenas orci neque, dignissim 
+ facilisis porta sed, mollis mattis ligula. Mauris mi lacus, tristique ut 
+ elementum eget, congue sit amet dui. Vestibulum egestas, dolor sit amet mollis 
+ gravida, est nibh euismod mauris, ut vehicula eros metus ut odio. Pellentesque 
+ gravida nulla non diam lobortis id porttitor orci placerat.
+--- !Post
+id: cbci2
+parent: cbc
+where: 'End of para 2'
+date: 2001-12-14t21:59:43.10-05:00
+by: Recursive Inliner
+text: |
+ This is another inline post, in inline post 'cbc'. Morbi convallis dignissim 
+ justo eu accumsan. Maecenas orci neque, dignissim facilisis porta sed, mollis 
+ mattis ligula. Mauris mi lacus, tristique ut elementum eget, congue sit amet 
+ dui.
+--- !Post
+id: cbcr1
+parent: cbc
+date: 2001-12-14t21:59:43.10-05:00
+by: Recursive Replyer
+text: |
+ This is a reply to inline post 'cbc'. Nulla facilisi. Cras facilisis consequat 
+ condimentum. Nullam ut elit dui, elementum sodales lectus. Curabitur non arcu a 
+ erat rutrum malesuada. Maecenas ut nulla dolor, et tristique enim.
+--- !Post
+id: cbcr2
+parent: cbc
+date: 2001-12-14t21:59:43.10-05:00
+by: Recursive Replyer
+text: |
+ Another reply to inline post 'cbc'. Nulla facilisi. Cras facilisis consequat 
+ condimentum. Nullam ut elit dui, elementum sodales lectus. Curabitur non arcu a 
+ erat rutrum malesuada. Maecenas ut nulla dolor, et tristique enim.
 --- !Post
 id: cbd
 parent: cb
 where: 'MY CAT IS EVIL.'
-#where:
-# before: 'Crazy cows eat grass YES.'
-# start: 'MY CAT IS EVIL.'
-# end: ' Vivamus accumsan tempus'
-# after: 'In hac habitasse platea'
 date: 2001-12-14t21:59:43.10-05:00
 by: Glad komentator
 text: |
