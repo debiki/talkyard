@@ -368,7 +368,7 @@ function $makePostResizable() {
       }
     })
   .end()
-  .resizable({
+  .resizable({  // TODO don't make non-root-thread inline posts resizable-e.
       autoHide: true,
       start: function(event, ui) {
         $post = $(this).closest('.dw-p');
@@ -491,13 +491,16 @@ function $initPost(){
   // Initially, hide edit suggestions.
   $thread.children('.dw-ess, .dw-a-edit-new').hide();
 
+  // Make replies to the root thread resizable horizontally.
+  // (But skip inline replies; they expand eastwards regardless.)
   // $makeEastResizable must be called before $makePostResizable,
   // or $makeEastResizable has no effect. No idea why -- my guess
   // is some jQuery code does something similar to `$.find(..)',
   // and finds the wrong resizable stuff,
   // if the *inner* tag is made resizable before the *outer* tag.
   // (Note that $makePostResizable is invoked on a $thread *child*.)
-  $thread.filter('.dw-depth-1').each($makeEastResizable);
+  $thread.filter('.dw-depth-1:not(.dw-i-t)').each($makeEastResizable);
+
   // Show actions when hovering post.
   // But always show the leftmost Reply, at depth-0, that creates a new column.
   // (Better avoid delegates for frequent events such as mouseenter.)
@@ -521,19 +524,24 @@ function $placeInlineMarks() {
     // Search the parent post for the text where this mark starts.
     // Insert a mark (i.e. an <a/> tag) and render the parent post again.
     var markStartText = $(this).attr('data-dw-i-t-where');
-    var $parentPostBody =
-        $(this).parent().closest('.dw-t').find('> .dw-p > .dw-p-bdy');
+    var $parentThread = $(this).parent().closest('.dw-t');
+    var $parentPostBody = $parentThread.find('> .dw-p > .dw-p-bdy');
     var tagDogText = tagDog.sniffHtml($parentPostBody);
     var loc = 10; // TODO should be included in the data attr
     var match = diffMatchPatch.match_main(tagDogText, markStartText, loc);
-    var mark = // TODO underline matched text? or something
-        '<a class="dw-i-m-start" href="#'+ this.id +'">[IM]</a>'; // for now
+    var arrow = $parentThread.filter('.dw-hor').length ?
+        'ui-icon-arrow-1-e' : 'ui-icon-arrow-1-s';
+    // TODO When possible to mark a text range: Underline matched text?
+    var mark =
+        '<a class="dw-i-m-start ui-icon '+ arrow +'" href="#'+
+        this.id +'" title="Inline comment" />';
     if (match == -1) {
       // Text not found. Has the parent post been edited since the mark
       // was set? Should diffMatchPatch.Match_Distance and other settings
       // be tweaked?
-      // TODO How to indicate that no match was found?
-      $parentPostBody.prepend(mark.replace('[IM]', '[??]')); // for now
+      // To indicate that no match was found, appen the mark to the post body.
+      // Then there's no text to the right of the mark — no text, no match.
+      $parentPostBody.append(mark);
       return;
     }
     var beforeMatch = tagDogText.substring(0, match);
@@ -554,28 +562,60 @@ function $placeInlineMarks() {
 // Places inline threads at the relevant inline marks, so the threads
 // become inlined.
 function $placeInlineThreads() {
-  // For each inline-thread mark start (-i-m-start), move the
-  // relevant post from the reply list to after the paragraph in
-  // which the anchor is placed. (We cannot place the inline thread
-  // in the <p> itself, since a <p> cannot contain block-level elements.)
-  // The inline thread already has a CSS class that place it to the right of,
-  // or below, the <p>.
-  $('.dw-i-m-start', this).each(function(){
-    var threadRef = $(this).attr('href'); // will be '#dw-t-<id>'
-    $inlineThread = $(threadRef); // TODO change from <li> to <div>
-    $(this).closest('p').after($inlineThread);
-  });
+  var $placeToTheRight = function() {
+    var accHeight = 0;
+    var elems = [];
+    $(this).children().each(function(){
+      accHeight += $(this).outerHeight(true);
+      elems.push(this);
+      if (accHeight < 200) return; // COULD make 200 configurable?
+      // TODO what about the very last elems? they'll be skipped!
+      // The total height of all accElemes is above the threshold;
+      // wrap them in a .dw-p-bdy-blk, and any inline replies to them will
+      // float to the right of that -body-block.
+      var $block = $('<div class="dw-p-bdy-blk"></div>').insertBefore(elems[0]);
+      $block.prepend(elems);
+      var $inlineThreads = $('<ol class="dw-i-ts"></ol>').insertAfter($block);
+      var accHeightInlines = 0;
+      var numInlines = 0;
+      $block.find('.dw-i-m-start').each(function(){
+        var threadRef = $(this).attr('href'); // will be '#dw-t-<id>'
+        $inline = $(threadRef); // TODO change from <li> to <div>
+        $inline.appendTo($inlineThreads);
+        accHeightInlines += $inline.outerHeight(true);
+        numInlines += 1;
+      });
+      // If the inline replies <ol> is higher than the -bdy-blk, there'll
+      // be empty space between this -bdy-blk and the next one (because a
+      // -bdy-blk clears floats). Avoid this, by reducing the height of
+      // each inline thread.
+      if (accHeightInlines > accHeight) {
+        // TODO // For now, simply set the height to accHeight / numInlines.
+      }
+      accHeight = 0;
+      elems = [];
+    });
+  };
 
-  // Wrap all body elems in <div>s. In debiki.css, these divs are
-  // placed to the left and the inline threads to the right.
-  // COULD tag each dw-p-bdy child with a .dw-p-bdy-blk, and skip
-  // the extra  <div>?
-  // WOULD include the .dw-p-bdy-blk in the server generated html,
-  // hadn't I been concerned about bandwidth usage — lots of paragraphs?
-  $('.dw-p-bdy', this).each(function() {
-    $(this).children(':not(.dw-i-t)').wrap(
-      '<div class="dw-p-bdy-blk"></div>'
-    );
+  var $placeInside = function() {
+    $(this).children().each(function(){
+      $(this).addClass('dw-p-bdy-blk'); // for CSS formatting
+      var $inlineThreads = $('<ol class="dw-i-ts"></ol>').insertAfter(this);
+      $('.dw-i-m-start', this).each(function(){
+        var threadRef = $(this).attr('href'); // will be '#dw-t-<id>'
+        $inline = $(threadRef); // TODO change from <li> to <div>
+        $inline.appendTo($inlineThreads);
+      });
+    });
+  };
+
+  // Group body elems in body-block <div>s. In debiki.css, these divs are
+  // placed to the left and inline threads in a <ol> to the right.
+  // COULD do this on the server, to simplify processing for smartphones?
+  $('.dw-p-bdy', this).each(function(){
+    var $placeFun = $(this).closest('.dw-t').filter('.dw-hor').length ?
+        $placeToTheRight : $placeInside;
+    $placeFun.apply(this);
   });
 }
 
@@ -897,7 +937,8 @@ function $showReplyForm(event) {
 
       // Place the reply inline, where the textClicked.selection ends.
       var sel = window.getSelection();
-      $(sel.extentNode).closest('.dw-p-bdy-blk').after($replyFormParent);
+      $(sel.extentNode).closest('.dw-p-bdy-blk')
+          .next('.dw-i-ts').prepend($replyFormParent);
       // Fill in the `where' form field with the text where the
       // click/selection was made. Google's diff-match-patch can match
       // only 32 chars so specify only 32 chars.

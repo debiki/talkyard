@@ -22,7 +22,7 @@
  *  -rat-         rating  (COULD rename to "r")
  *  -re-          reply   (COULD rename to "p", for "post")
  *  -res-         replies (COULD rename to "ts", "threads")
- *  -rez-         resized
+ *  -rez-         resized (COULD rename to "rzd" and let "rz" mean resize)
  *  -s            south (COULD change to "sw", southwards)
  *  -t-           thread
  *  -vs-          votes
@@ -289,13 +289,13 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
   margin: 8px 0 0 5px;
 }
 
-.dw-depth-1:hover {
+.dw-depth-1:not(.dw-i-t):hover {
   border-right: 2px dashed lightgray; /* column separator and resizor */
 }
 
 .dw-hor > .dw-res > .dw-fs,
 .dw-hor > .dw-a,
-.dw-depth-1 {
+.dw-depth-1:not(.dw-i-t) {
   padding: 0 20px 10px 0;
   margin: 10px 16px 0 0;
   border-right: 2px dashed transparent; /* shown on hover */
@@ -387,11 +387,26 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
    /* fix the header instead? I need to fix it anayway */
 }
 
-.dw-p-bdy, .dw-p-diff {
+.dw-p-bdy,
+.dw-p-diff {
   padding: 6px 1px 0 3px;
   position: relative;
   background-color: white;
   min-width: 5em;
+  float: left; /* wrap .dw-p-bdy-blk:s, which float left */
+}
+
+/* Make inline threads compact. */
+.dw-i-t > .dw-p > .dw-p-bdy,
+.dw-i-t > .dw-p > .dw-p-diff {
+  padding-top: 1px;
+}
+.dw-i-t > .dw-p > * /*.dw-p-bdy or -diff*/ > .dw-p-bdy-blk {
+  padding: 0;
+  margin: 0;
+}
+.dw-i-t > .dw-p > * /*.dw-p-bdy or -diff*/ > .dw-p-bdy-blk ~ .dw-p-bdy-blk {
+  margin-top: 0.6em;
 }
 
 .dw-post-edited .dw-p,
@@ -483,26 +498,76 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
                                 but its height is restricted */
 }
 
-/* === Inline comments === */
+/* === Inline replies === */
+
+/* --- Inline mark icons --- */
 
 .dw-i-m-start {
   color: blue;
 }
 
-/* In the root post: Inline [inline posts and reply forms] by stacking them
-to the right of the relevant .dw-p-bdy-blk. */
+.dw-i-m-start.ui-icon {
+  display: inline-block; /* otherwise display:block, and a new paragraph */
+  position: relative;
+}
+
+.dw-i-m-start.ui-icon + .dw-i-m-start.ui-icon {
+  margin-left: 4px; /* or the two mark icons touch each other */
+  /* COULD fix bug: If there are two .ui-icon:s in the same <p>,
+  this CSS is applied even if there is text between them.
+  Could fix this in JavaScript: add a class to [all icons but the first one,
+  among icons with exactly the same offset]? */
+}
+
+/* Remove white space around the inline marks. */
+.dw-i-m-start.ui-icon-arrow-1-e {
+  width: 6px; /* or too wide */
+  top: 3px;
+  left: -3px;
+  background-position: -37px -37px;
+}
+.dw-i-m-start.ui-icon-arrow-1-s {
+  width: 8px;
+  height: 13px; /* don't push next text line away; the smallest font-size seems
+                to be 13px. TODO: always specify font-size in px not %? */
+  top: -1px;
+  background-position: -70px -36px;
+}
+.dw-i-m-start.ui-icon-arrow-1-s {
+}
+
+
+/* --- Inline threads --- */
+
+.dw-hor > .dw-p > .dw-p-bdy > .dw-i-ts {
+  float: left;
+}
+
+/* Stack [inline posts and reply forms] vertically. */
 .dw-p-bdy .dw-fs,
 .dw-p-bdy .dw-i-t {
   float: left;
-}
-/* But elsewhere, place inline threads below the .dw-p-bdy-blk, indented. */
-.dw-t:not(.dw-depth-0) .dw-i-t {
-  margin-left: 5em;
   clear: left;
 }
 
-.dw-p-bdy .dw-i-t {
-  margin-top: 1.5em;
+/* For vertical layout, place inline threads below the .dw-p-bdy-blk, indented.
+(With horizontal layout, they're placed to the right of the post.) */
+.dw-t:not(.dw-hor) > .dw-p > .dw-p-bdy > .dw-i-ts {
+  float: left;
+  clear: left;
+}
+.dw-t:not(.dw-hor) > .dw-p > .dw-p-bdy > .dw-i-ts > .dw-i-t {
+  margin-left: 5em;
+}
+
+/* Make inline comments less conspicuous. */
+.dw-i-t {
+  color: #444;
+  font-size: 95%;
+}
+
+.dw-i-t > .dw-a {
+  margin-bottom: 0px; /* don't push next inline thread away */
 }
 
 .dw-p-bdy-blk {
