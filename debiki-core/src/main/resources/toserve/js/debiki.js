@@ -687,9 +687,14 @@ function slideAwayRemove($form) {
   // Slide away <form> and remove it.
   var $parent = $form.parent();
   function rm(next) { $form.remove(); resizeRootThread(); next(); }
-  if ($parent.filter('.dw-depth-0, .dw-debate').length)
-    $form.hide('fold', 800).queue(rm);
-  else $form.slideUp(530).queue(rm);
+  // COULD elliminate dupl code that determines whether to fold or slide.
+  if ($parent.filter('.dw-depth-0, .dw-debate').length &&
+      !$form.closest('ol').filter('.dw-i-ts').length) {
+    $form.hide('fold', {size: 27}, 800).queue(rm);
+  }
+  else {
+    $form.slideUp(530).queue(rm);
+  }
 };
 
 // Remove new-reply and rating forms on cancel, but 
@@ -718,8 +723,13 @@ function slideInActionForm($form, $where) {
   resizeRootThreadExtraWide();
   // Slide in from left, if <form> siblings ordered horizontally.
   // Otherwise slide down (siblings ordered vertically).
-  if ($where.filter('.dw-depth-0, .dw-debate').length) $form.show('fold', 800);
-  else $form.slideDown(530);
+  if ($where.filter('.dw-depth-0, .dw-debate').length &&
+      !$form.closest('ol').filter('.dw-i-ts').length) {
+    $form.show('fold', {size: 27}, 800);
+  } else {
+    $form.slideDown(530);
+  }
+
   // Cancel extra width. Or add even more width, to prevent float drops
   // -- needs to be done also when sliding downwards, since that sometimes 
   // makes the root thread child threads wider.
