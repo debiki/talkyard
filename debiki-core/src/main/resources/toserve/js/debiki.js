@@ -613,8 +613,8 @@ function $placeInlineThreads() {
 
   var $placeInside = function() {
     $(this).children().each(function(){
-      $(this).addClass('dw-p-bdy-blk'); // for CSS formatting
-      var $inlineThreads = $('<ol class="dw-i-ts"></ol>').insertAfter(this);
+      var $bdyBlk = $(this).wrap('<div class="dw-p-bdy-blk"></div>').parent();
+      var $inlineThreads = $('<ol class="dw-i-ts"></ol>').insertAfter($bdyBlk);
       $('.dw-i-m-start', this).each(function(){
         var threadRef = $(this).attr('href'); // will be '#dw-t-<id>'
         $inline = $(threadRef); // TODO change from <li> to <div>
