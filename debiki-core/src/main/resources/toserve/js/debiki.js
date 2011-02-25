@@ -1338,7 +1338,6 @@ else {(function(){
   // when resizing the Flash screen to e.g. 2000x2000 pixels.
   // And scrolldrag stops working (no idea why). Seems easier
   // to add these images of arrows instead.
-  //
 
   // North-south arrows: (for vertical layout)
   $('.dw-depth-0 .dw-t:has(.dw-t)').each(function(){
@@ -1346,17 +1345,20 @@ else {(function(){
     $(this).prepend("<div class='dw-svg-fake-varrow-hider-hi'/>");
     $(this).prepend("<div class='dw-svg-fake-varrow-hider-lo'/>");
   });
-  $('.dw-depth-1 .dw-t').each(function(){
+  $('.dw-depth-1 .dw-t:not(.dw-i-t)').each(function(){
     var hider = $(this).filter(':last-child').length ?
                   ' dw-svg-fake-arrow-hider' : '';
     $(this).prepend('<div class="dw-svg-fake-vcurve-short'+ hider +'"/>');
   });
-  $('.dw-depth-1 .dw-t:last-child').each(function(){
+  $('.dw-depth-1 .dw-t:not(.dw-i-t):last-child').each(function(){
     $(this).prepend("<div class='dw-svg-fake-varrow-hider-left'/>");
   });
-  //
+  // TODO: Inline threads:  .dw-t:not(.dw-hor) > .dw-i-ts > .dw-i-t
+  // TODO: First one:  .dw-t:not(.dw-hor) > .dw-i-ts > .dw-i-t:first-child
+  // TODO: Root post's inline threads:  .dw-t.dw-hor > .dw-i-ts > .dw-i-t
+
   // West-east arrows: (for horizontal Layout)
-  //
+
   // Arrow start, for horizontal layout, and arrow to reply link.
   $('.dw-hor > .dw-a > .dw-a-reply').each(function(){
     $(this).before('<div class="dw-svg-fake-hcurve-start"/>');
@@ -1364,16 +1366,20 @@ else {(function(){
   // Arrows to each child thread.
   SVG.$updateThreadGraphics = function() {
     if ($(this).parent().closest('.dw-t').filter('.dw-hor').length) {
+      // horizontal arrow
       $(this).filter(':not(:last-child)').each(function(){
         $(this).prepend("<div class='dw-svg-fake-harrow'/>");
         $(this).prepend("<div class='dw-svg-fake-harrow-end'/>");
       });
       $(this).prepend('<div class="dw-svg-fake-hcurve"/>');
     } else {
-      // vertical arrow
+      // vertical arrow, already handled above.
     }
   }
+  // To root post replies
   $('.dw-hor > .dw-res > li').each(SVG.$updateThreadGraphics);
+  // To inline root post replies
+  $('.dw-hor > .dw-p > .dw-p-bdy > .dw-i-t').each(SVG.$updateThreadGraphics);
   SVG.drawRelationships = function() {
     // Need do nothing.
   }
