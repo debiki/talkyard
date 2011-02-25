@@ -562,11 +562,25 @@ function $placeInlineMarks() {
 // Places inline threads at the relevant inline marks, so the threads
 // become inlined.
 function $placeInlineThreads() {
+  // Groups .dw-p-bdy child elems in groups around/above 200px high, and
+  // wrap them in a .dw-p-bdy-blk. Gathers all inline threads for each
+  // .dw-p-bdy-blk, and places them in an <ol> to the right of the 
+  // .dw-p-bdy-blk.
   var $placeToTheRight = function() {
+    // Height calculation issue:
+    //  After a .dw-p-bdy-blk and an <ol> have been added, there are
+    //  elems before [the current block to wrap in a .dw-p-bdy-blk] that
+    //  float left. The height of the block includes the height of these
+    //  floating blocks. So the current block might be excessively high!
+    //  Therefore, read the height of the *next* block, which has its
+    //  correct height, since there's a non-floating currunt elem
+    //  immediately in front of it. Save the result in `nextHeight'.
+    var nextHeight = null;
     var accHeight = 0;
     var elems = [];
     $(this).children().each(function(){
-      accHeight += $(this).outerHeight(true);
+      accHeight += nextHeight || $(this).outerHeight(true);
+      nextHeight = $(this).next().outerHeight(true); // null if no next
       elems.push(this);
       if (accHeight < 200) return; // COULD make 200 configurable?
       // TODO what about the very last elems? they'll be skipped!
