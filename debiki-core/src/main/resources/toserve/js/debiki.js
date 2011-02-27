@@ -533,8 +533,8 @@ function $placeInlineMarks() {
         'ui-icon-arrow-1-e' : 'ui-icon-arrow-1-s';
     // TODO When possible to mark a text range: Underline matched text?
     var mark =
-        '<a class="dw-i-m-start ui-icon '+ arrow +'" href="#'+
-        this.id +'" title="Inline comment" />';
+        '<a id="dw-i-m_'+ this.id +'" class="dw-i-m-start ui-icon '+
+        arrow +'" href="#'+ this.id +'" title="Inline comment" />';
     if (match == -1) {
       // Text not found. Has the parent post been edited since the mark
       // was set? Should diffMatchPatch.Match_Distance and other settings
@@ -635,6 +635,52 @@ function $placeInlineThreads() {
 
 $('.dw-depth-0').each($placeInlineMarks);
 $('.dw-depth-0').each($placeInlineThreads);
+
+// When hovering an inline mark or thread, highlight the corresponding
+// thread or mark.
+// TODO do this from $initPost, so it works also for ajax-loaded threads.
+// TODO don't remove the highlighting until hovering something else?
+//  So one can follow the svg path to the inline thread.
+$('.dw-i-m-start').hover(function(){
+  // TODO highligt arrow too. Break out highlighting code from
+  // $('.dw-i-t > .dw-p').hover(...) just below.
+  $($(this).attr('href')).children('.dw-p').add(this)
+      .addClass('dw-highlight');
+}, function() {
+  $($(this).attr('href')).children('.dw-p').add(this)
+      .removeClass('dw-highlight');
+});
+
+// When hovering an inline thread, highlight the mark.
+$('.dw-i-t > .dw-p').hover(function(){
+  // COULD write functions that constructs e.g. a mark ID given
+  // a thread ID, instead of duplicating that code everywhere?
+  var threadId = $(this).closest('.dw-t').attr('id');
+  var inlineMarkId = 'dw-i-m_'+ threadId; // i.e. 'dw-i-m_dw-t-<thread-id>'
+  var svgCurveId = 'dw-svg-c_'+ inlineMarkId;
+  $('#'+ inlineMarkId).add(this).addClass('dw-highlight');
+  // Add highlighting from the SVG path.
+  // However, addClass doesn't work with SVG paths.
+  // COULD define dummy invisible html tags, with the svg `path' highlight
+  // and non highlight style rules applied. And read the values of those
+  // tags here. Then I could still specify all CSS stuff in the CSS file,
+  // instead of duplicating & hardcoding styles here.
+  var curve = $('#'+ svgCurveId).get(0);
+  curve.style.stroke = '#f0a005';
+  curve.style.strokeWidth = 4;
+}, function() {
+  // WARNING dupl code, see the other `hover' callback right above.
+  var threadId = $(this).closest('.dw-t').attr('id');
+  var inlineMarkId = 'dw-i-m_'+ threadId;
+  var svgCurveId = 'dw-svg-c_'+ inlineMarkId;
+  $('#'+ inlineMarkId).add(this).removeClass('dw-highlight');
+  // Remove highlighting from the SVG path.
+  // WARNING dupl code: the stroke color & width below is also in the CSS file.
+  // See above callback for more info.
+  var curve = $('#'+ svgCurveId).get(0);
+  curve.style.stroke = '#dde';
+  curve.style.strokeWidth = 3;
+});
 
 
 // ------- Inline actions
@@ -1274,10 +1320,67 @@ $('.debiki p').editable('http://www.example.com/save.php', {
 // to its child posts.
 $('.dw-t-vspace').css('height', '80px')
 
-SVG = {};
+SVG = {
+  // SVG Web's Flash renderer won't do; we need native browser support.
+  nativeSupport: window.svgweb && window.svgweb.getHandlerType() == 'native'
+};
 
-if (window.svgweb && window.svgweb.getHandlerType() == 'native' &&
-    document.URL.indexOf('svg=true') != -1) {(function(){
+// Add functionality provided only in SVG (but not in fake .png arrow images).
+SVG.curveMarkToInline = function(){};
+
+if (SVG.nativeSupport) {
+  // Draws an arrow from a mark to an inline thread.
+  SVG.curveMarkToInline = function($mark, $inlineThread) {
+    var $bdyBlk = $mark.closest('.dw-p-bdy-blk');
+    var $thread = $bdyBlk.closest('.dw-t');
+    var horizontalLayout = Boolean($thread.filter('.dw-hor').length)
+    if (!horizontalLayout) return; // for now, perhaps avoids mem leaks?
+
+    var from = $mark.offset();
+    var to = $inlineThread.offset();
+    var r = document.createElementNS(SVG.XML_NS, 'path');
+    var xs = from.left - SVG.winoffs.left; // start
+    var ys = from.top - SVG.winoffs.top;
+    var xe = to.left - SVG.winoffs.left; // end
+    var ye = to.top - SVG.winoffs.top;
+    // Change x-start to the right edge of the .dw-p-bdy-blk in which
+    // the mark is placed, so the curve won't be drawn over the -blk itself.
+    xs = $bdyBlk.offset().left + $bdyBlk.outerWidth(false);
+    // Move the curve a bit downwards, so it starts and ends in the middle
+    // of the lines of text (12-13 px high).
+    ys += 9;
+    ye += 6;
+    // Leave some space between the -blk and the curve, and the curve and
+    // the iniline thread.
+    xs += 10;
+    xe -= 10;
+    var strokes;
+    if (horizontalLayout) {
+      // e.g.: m 530.57218,131.49742 c 50.35721,0 43.32956,-41.277737 89.52259,-41.277737
+
+      var dx = 60;
+      strokes = 'M '+ xs +' '+ ys +
+               ' C '+ (xe-dx) +' '+ (ys) +  // draw     --.
+                 ' '+ (xe-dx) +' '+ (ye) +  // Bezier      \
+                 ' '+ (xe) +' '+ (ye) +     // curve,       `--
+               ' l -6 -6 m 6 6 l -6 6';     // arrow end:  >
+    } else {
+      throw Error('dead code');; // TODO curves to vertical inline threads
+    }
+    r.setAttribute('d', strokes);
+    // The mark ID includes the thread ID. The curve ID will be:
+    // 'dw-svg-c_dw-i-m_dw-t-<thread-id>'.
+    r.setAttribute('id', 'dw-svg-c_'+ $mark.attr('id'));
+                                        // +'_'+ $inlineThread.attr('id'));
+    SVG.$win.append(r);
+    r = false;
+  }
+}
+
+// Optionally add functionality provided both in SVG and fake .png arrow images.
+// Currently the fake images actually work better. So by default, they are used,
+// even if there's native SVG support.
+if (SVG.nativeSupport && document.URL.indexOf('svg=true') != -1) {(function(){
   SVG.$win = $('#dw-svg-win');
   SVG.XML_NS = 'http://www.w3.org/2000/svg';
 
@@ -1319,7 +1422,7 @@ if (window.svgweb && window.svgweb.getHandlerType() == 'native' &&
                ' l -8 -1 m 9 1 l 0 -8'; // arrow end: _|                      `>
     }
     r.setAttribute('d', strokes);
-    r.setAttribute('id', 'dw-curve-'+ $thread.attr('id') +'-'+ $to.attr('id'));
+    r.setAttribute('id', 'dw-svg-c_'+ $thread.attr('id') +'_'+ $to.attr('id'));
     SVG.$win.append(r);
     r = false;
   }
@@ -1334,10 +1437,20 @@ if (window.svgweb && window.svgweb.getHandlerType() == 'native' &&
     // to the north-west of the path start point, must be a FF bug?)
     SVG.winoffs = SVG.$win.offset();
     // Create new.curves
-    $('.dw-t').each(function(){
+    $('.dw-t:visible').each(function(){
+      // Draw arrows to whole post replies.
       var $t = $(this);
       $t.find('> .dw-res > .dw-t:visible').each(function(){
         SVG.curveTreadToReply($t, $(this));
+      });
+      // To inline replies.
+      $t.find('> .dw-p > .dw-p-bdy > .dw-p-bdy-blk .dw-i-m-start')
+          .each(function(){
+        var $mark = $(this);
+        var $inlineThread = $($mark.attr('href')).filter(':visible');
+        if ($inlineThread.length) {
+          SVG.curveMarkToInline($mark, $inlineThread);
+        }
       });
     });
     // The browser internal stylesheet defaults to height: 100%.
@@ -1395,7 +1508,8 @@ else {(function(){
   // To inline root post replies
   $('.dw-hor > .dw-p > .dw-p-bdy > .dw-i-t').each(SVG.$updateThreadGraphics);
   SVG.drawRelationships = function() {
-    // Need do nothing.
+    // TODO: If any SVG native support: draw arrows to inline threads?
+    // Or implement via fake .png arrows?
   }
 })()}
 

@@ -18,12 +18,14 @@
  *  -fs-          form group
  *  -hor-         horizontal layout
  *  -i-           inline
+ *  -m-           mark
  *  -p-           post
  *  -rat-         rating  (COULD rename to "r")
  *  -re-          reply   (COULD rename to "p", for "post")
  *  -res-         replies (COULD rename to "ts", "threads")
  *  -rez-         resized (COULD rename to "rzd" and let "rz" mean resize)
  *  -s            south (COULD change to "sw", southwards)
+ *  -svg-         SVG graphics
  *  -t-           thread
  *  -vs-          votes
  *  -z-           fold (z looks like a folded paper from the side)
@@ -38,11 +40,15 @@
  *  dw-fs-ed      edit form group
  *  dw-fs-re      reply form group
  *  dw-fs-rat     rating form group
- *  dw-i-t        inline thread
+ *  dw-i-t        inline thread (COULD use dw-i instead, already has dw-t class)
+ *  dw-i-m        inline mark (COULD rename to dw-m — *all* marks are inline?)
+ *  dw-i-m_<#id>  mark for thread #id (e.g. dw-i-m_dw-t-<thread-id>)
  *  dw-p-bdy      post body
  *  dw-p-bdy-blk  post body block, a <div> that wraps e.g. a <p>
  *  dw-p-hdr      post header
  *  dw-p-rez-e    post resized eastwards
+ *  dw-svg-c_<x>  SVG curve from <x>
+ *  dw-svg-win    the SVG Web drawing area
  *
  *  ... and so on, hmm.
  */
@@ -352,7 +358,7 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
 .dw-p {
   margin-left: 35px;
   overflow: hidden;
-  background-color: white;
+  background-color: transparent; /* lets svg arrows shine through */
 }
 
 .dw-p-hdr {
@@ -399,7 +405,7 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
 .dw-p-diff {
   padding: 6px 1px 0 3px;
   position: relative;
-  background-color: white;
+  background-color: transparent; /* let svg arrows shine through */
   min-width: 5em;
   float: left; /* wrap .dw-p-bdy-blk:s, which float left */
 }
@@ -510,13 +516,13 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
 
 /* --- Inline mark icons --- */
 
-.dw-i-m-start {
-  color: blue;
-}
-
 .dw-i-m-start.ui-icon {
   display: inline-block; /* otherwise display:block, and a new paragraph */
   position: relative;
+}
+
+.dw-i-m-start:hover {
+  cursor: crosshair;
 }
 
 .dw-i-m-start.ui-icon + .dw-i-m-start.ui-icon {
@@ -549,6 +555,7 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
 
 .dw-hor > .dw-p > .dw-p-bdy > .dw-i-ts {
   float: left;
+  margin-left: 120px; /* arrows from inline-marks to -threads drawn here */
 }
 
 /* Stack [inline posts and reply forms] vertically. */
@@ -565,7 +572,7 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
   clear: left;
 }
 .dw-t:not(.dw-hor) > .dw-p > .dw-p-bdy > .dw-i-ts > .dw-i-t {
-  margin-left: 5em;
+  margin-left: 5em; /* indents, and leaves space for SVG/fake arrows */
 }
 
 /* Make inline comments less conspicuous. */
@@ -586,6 +593,17 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
 /* Adjust inline-replies to the root post. */
 .dw-hor > .dw-p > .dw-p-bdy > .dw-p-bdy-blk + .dw-i-t {
   margin-left: 4em; /* move away from the root post text */
+}
+
+/* --- Highlighting --- */
+
+.dw-i-m-start.dw-highlight {
+  outline: solid medium #f0a005;
+  background-color: yellow;
+}
+
+.dw-i-t > .dw-p.dw-highlight {
+  outline: solid medium #f0a005;
 }
 
 /* === Actions === */
@@ -929,6 +947,15 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
   stroke: #dde;
   stroke-width: 3;
 }
+
+/* This doesn't work; cannot add class dw-highlight to a <path> at runtime.
+TODO style an invisible elem in this manner, and read the props via
+JavaScript. Then I can still place all CSS stuff in this file. */
+/*
+#dw-svg-win path.dw-highlight {
+  stroke-width: 4;
+  stroke: #f0a005;
+} */
 
 .dw-svg-fake-varrow,
 .dw-svg-fake-harrow,
