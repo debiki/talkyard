@@ -582,8 +582,8 @@ function $placeInlineThreads() {
       accHeight += nextHeight || $(this).outerHeight(true);
       nextHeight = $(this).next().outerHeight(true); // null if no next
       elems.push(this);
-      if (accHeight < 200) return; // COULD make 200 configurable?
-      // TODO what about the very last elems? they'll be skipped!
+      if (accHeight < 270 && nextHeight) // COULD make 270 configurable?
+        return;
       // The total height of all accElemes is above the threshold;
       // wrap them in a .dw-p-bdy-blk, and any inline replies to them will
       // float to the right of that -body-block.
