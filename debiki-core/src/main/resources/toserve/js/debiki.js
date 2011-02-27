@@ -1315,6 +1315,24 @@ $('.debiki p').editable('http://www.example.com/save.php', {
 
 // ------- SVG
 
+/* {{{ SVG commands
+
+See e.g. http://tutorials.jenkov.com/svg/path-element.html
+
+Cmd Params          Name      Description
+M   x,y             moveto    Moves pen to x,y without drawing.
+m   x,y             moveto    Relative coordinates (to current pen location).
+
+L   x,y             lineto    Draws a line from current pen location to x,y.
+l   x,y             lineto    Relative coordinates.
+
+C   x1,y1 x2,y2 x,y curveto   Draws a cubic Bezier curve from current pen point
+                              to x,y. x1,y1 and x2,y2 are start and end control
+                              points of the curve, controlling how it bends.
+c   x1,y1 x2,y2 x,y curveto   Relative coordinates.
+
+}}} */
+
 // Add more space between a post and its children, if the post is layed out
 // horizontally, since then a horizontal arrow will be drawn from the post
 // to its child posts.
@@ -1405,21 +1423,21 @@ if (SVG.nativeSupport && document.URL.indexOf('svg=true') != -1) {(function(){
       var xm = (xe - xs - dx) / 2;
       var dy = 28;
       strokes = 'M '+ xs +' '+ ys +
-               ' C '+ (xs) +' '+ (ys+dy) +' '+ // draw Bezier curve  \
-               '   '+ (xs+dx) +' '+ (ys+dy) +' '+     //              \  
-               '   '+ (xs+dx) +' '+ (ys+dy) +' '+     //               `----
-               ' C '+ (xe-70) +' '+ (ys+dy+5) +' '+
-                      (xe) +' '+ (ye-55) +' '+ //                   ------.
-                      xe +' '+ ye +' '+        //                          \
-               ' l -7 -1 m 8 1 l 2 -8'; // arrow end: _|                    v
+               ' C '+ (xs) +' '+ (ys+dy) +    // draw Bezier  \
+                 ' '+ (xs+dx) +' '+ (ys+dy) + // curve         \
+                 ' '+ (xs+dx) +' '+ (ys+dy) + //                `----
+               ' C '+ (xe-70) +' '+ (ys+dy+5) +
+                 ' '+ (xe) +' '+ (ye-55) +    //             ------.
+                 ' '+ xe +' '+ ye +           //                    \
+               ' l -7 -1 m 8 1 l 2 -8'; // arrow end: _|             v
     } else {
       // Draw north-south curve.
       var ym = (ys + ye) / 2;
       strokes = 'M '+ (xs+5) +' '+ (ys+30) +
-               ' C '+ xs +' '+ ym +' '+        // Draw curve to child post  |
-                      xs +' '+ (ye-30) +' '+   //                           \
-                      (xe-7) +' '+ (ye + 4) +  //                            \
-               ' l -8 -1 m 9 1 l 0 -8'; // arrow end: _|                      `>
+               ' C '+ xs +' '+ ym +            // curve to child post  |
+                 ' '+ xs +' '+ (ye-30) +       //                      \
+                 ' '+ (xe-7) +' '+ (ye + 4) +  //                       \
+               ' l -8 -1 m 9 1 l 0 -8'; // arrow end: _|                 `>
     }
     r.setAttribute('d', strokes);
     r.setAttribute('id', 'dw-svg-c_'+ $thread.attr('id') +'_'+ $to.attr('id'));
