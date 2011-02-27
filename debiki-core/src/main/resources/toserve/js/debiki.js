@@ -5,14 +5,15 @@
 // - The implementation of the Debiki module
 // - A jQuery onload handler
 
-//"use strict;"
-
 Debiki = {};  // TODO: Error handling?
 Debiki.v0 = {};
 
 //========================================
    (function(){
 //========================================
+"use strict";
+
+var UNTESTED; // Indicates that a piece of code has not been tested.
 
 //----------------------------------------
 // jQuery object extensions
@@ -39,7 +40,7 @@ var Settings = {};
 
 Settings.makeEditUrl = function(debateId, postId) {
   // Default:
-  return debateId +'/edits/proposed/post/'+ postId +'.html'
+  return debateId +'/edits/proposed/post/'+ postId +'.html';
 };
 
 Settings.makeRatePostUrl = function(debateId, postId) {
@@ -51,14 +52,14 @@ Settings.makeRatePostUrl = function(debateId, postId) {
 
 Settings.makeReplyUrl = function(debateId, postId) {
   return '?';
-}
+};
 
 Settings.replyFormLoader = function(debateId, postId, complete) {
   // Simply clone a hidden reply form template.
   var $replyForm = jQuery('#dw-hidden-templates .dw-fs-re').clone(true);
   $replyForm.find("input[name='dw-fi-post']").attr('value', postId);
   complete($replyForm);
-}
+};
 
 Settings.replyFormSubmitter = function(debateId, postId, complete) {
   // This worked with JSPWiki:
@@ -66,11 +67,11 @@ Settings.replyFormSubmitter = function(debateId, postId, complete) {
   //    $replyForm.children('form').serialize(), complete, 'html');
   // By default, post no reply.
   alert("Cannot post reply. [debiki_error_85ei23rnir]");
-}
+};
 
 Settings.editFormLoader = function(debateId, postId, complete) {
   alert('Edits not implemented. [debiki_error_239sx8]');
-}
+};
 
 Settings.editFormSubmitter = function(debateId, postId, complete) {
   // This worked with JSPWiki:
@@ -78,7 +79,7 @@ Settings.editFormSubmitter = function(debateId, postId, complete) {
   //    $replyForm.children('form').serialize(), complete, 'html');
   // By default, post no reply.
   alert("Edits not implemented. [debiki_error_19x3g35]");
-}
+};
 
 //----------------------------------------
 // Customizable functions: Export setters
@@ -131,7 +132,7 @@ var debateId = $('.debiki').attr('id');
 // When forms are loaded from the server, they might have ID fields.
 // If the same form is loaded twice (e.g. to reply twice to the same comment),
 // their ids would clash. So their ids are made unique by appending a form no.
-var idSuffixSequence = 0
+var idSuffixSequence = 0;
 
 // Reset all per click state variables when a new click starts.
 $.event.add(document, "mousedown", function() {
@@ -149,8 +150,9 @@ var zoomListeners = [];
   // if the width has been changed.
   var lastWidth = 0;
   function pollZoomFireEvent() {
+    var i;
     var widthNow = jQuery(window).width();
-    if (lastWidth == widthNow) return;
+    if (lastWidth === widthNow) return;
     lastWidth = widthNow;
     // Length changed, user must have zoomed, invoke listeners.
     for (i = zoomListeners.length - 1; i >= 0; --i) {
@@ -158,7 +160,7 @@ var zoomListeners = [];
     }
   }
   setInterval(pollZoomFireEvent, 100);
-})();
+}());
 
 // ------- Open/close
 
@@ -186,7 +188,7 @@ $('.debiki').delegate('.dw-z', 'click', function() {
     children(".dw-z").
       each(function(){
         // The – is not a - but an &endash;.
-        var newText = $(this).text().indexOf('+') == -1 ? '[+]' : '[–]';
+        var newText = $(this).text().indexOf('+') === -1 ? '[+]' : '[–]';
         $(this).text(newText);
       });
 });
@@ -251,7 +253,7 @@ var resizeRootThreadImpl = function(extraWidth){
   // Something has been resized, so parent-->child thread bezier curves
   // might need to be redrawn.
   SVG.drawRelationships();
-}
+};
 
 // Finds the width of the widest [paragraph plus inline threads].
 function $findMaxInlineWidth(){
@@ -273,14 +275,14 @@ function $findMaxInlineWidth(){
 // Is this not done e.g. when child posts are resized or stacked eastwards,
 // or a reply/rate/edit form is shown/resized, the east-most threads
 // will float-drop below the other threads.
-var resizeRootThread = function(){
+function resizeRootThread(){
   resizeRootThreadImpl();
 }
 
 // Resizes the root thread so it becomes extra wide.
 // This almost avoids all float drops, when quickly resizing an element
 // (making it larger).
-var resizeRootThreadExtraWide = function() {
+function resizeRootThreadExtraWide() {
   resizeRootThreadImpl(true);
 }
 
@@ -303,10 +305,10 @@ var resizeRootThreadNowAndLater = (function(){
     resizeRootThread();
     if (handle) clearTimeout(handle);
     handle = setTimeout(resizeRootThread, 1500);
-  }
-})();
+  };
+}());
 
-// Makes [threads layed out vertically] resizable.
+// Makes [threads layed out vertically] horizontally resizable.
 function $makeEastResizable() {
   $(this).resizable({
     resize: resizeRootThreadExtraWide,
@@ -331,17 +333,17 @@ function $makePostResizable() {
     if (didResize) return;
     $(this).closest('.dw-p')
         .css('height', null).removeClass('dw-p-rez-s');
-  }
+  };
   var $expandEast = function() {
     // Expand post eastwards on resize east handle click.
     if (didResize) return;
     $(this).closest('.dw-p')
         .css('width', null).removeClass('dw-p-rez-e');
-  }
+  };
   var $expandSouthEast = function() {
     $expandSouth.apply(this);
     $expandEast.apply(this);
-  }
+  };
 
   try {
   // Indicate which posts are cropped, and make visible on click.
@@ -371,7 +373,6 @@ function $makePostResizable() {
   .resizable({  // TODO don't make non-root-thread inline posts resizable-e.
       autoHide: true,
       start: function(event, ui) {
-        $post = $(this).closest('.dw-p');
         // Remember that this post is being resized, so heigh and width
         // are not removed on mouse up.
         didResize = true;
@@ -401,7 +402,7 @@ function $makePostResizable() {
   .end();
   }
   catch (e) {
-    if (e.name == 'TypeError') console.log(e.name +': Failed to make '+
+    if (e.name === 'TypeError') console.log(e.name +': Failed to make '+
         'post resizable. Ignoring error (this is a smartphone?)');
     else throw e;
   }
@@ -422,7 +423,7 @@ function updateDebate(newDebateHtml) {
       var parentId = $(this).parents('.dw-t').attr('id');
       var $oldParent = parentId ? $curDebate.find('#'+ parentId) : $curDebate;
       var $oldThis = $curDebate.find('#'+ this.id);
-      var isNewThread = $oldThis.length == 0;
+      var isNewThread = $oldThis.length === 0;
       var isSubThread = !$oldParent.length;
       var isPostEdited = !isNewThread &&
               $oldThis.children('.dw-p').dw_postModTime() <
@@ -431,7 +432,7 @@ function updateDebate(newDebateHtml) {
       if (isPostEdited) {
         $(this).children('.dw-p')
           .replaceAll($oldThis.children('.dw-p'))
-          .addClass('dw-post-edited'); // outlines it - TODO: Add to cmt not cmt-bdy
+          .addClass('dw-post-edited'); // outlines it, COULD rename CSS class
       }
       else if (isNewThread && !isSubThread) {
         // (A thread that *is* a sub-thread of another new thread, is added
@@ -449,7 +450,7 @@ function updateDebate(newDebateHtml) {
       else
         return;
       $(this).each($initPost);
-    })
+    });
 }
 
 // ------- Tag Dog
@@ -470,7 +471,7 @@ var tagDog = (function(){
       return htmlText;
     }
   };
-})();
+}());
 
 // ------- Posts
 
@@ -535,7 +536,7 @@ function $placeInlineMarks() {
     var mark =
         '<a id="dw-i-m_'+ this.id +'" class="dw-i-m-start ui-icon '+
         arrow +'" href="#'+ this.id +'" title="Inline comment" />';
-    if (match == -1) {
+    if (match === -1) {
       // Text not found. Has the parent post been edited since the mark
       // was set? Should diffMatchPatch.Match_Distance and other settings
       // be tweaked?
@@ -594,7 +595,7 @@ function $placeInlineThreads() {
       var numInlines = 0;
       $block.find('.dw-i-m-start').each(function(){
         var threadRef = $(this).attr('href'); // will be '#dw-t-<id>'
-        $inline = $(threadRef); // TODO change from <li> to <div>
+        var $inline = $(threadRef); // TODO change from <li> to <div>
         $inline.appendTo($inlineThreads);
         accHeightInlines += $inline.outerHeight(true);
         numInlines += 1;
@@ -617,7 +618,7 @@ function $placeInlineThreads() {
       var $inlineThreads = $('<ol class="dw-i-ts"></ol>').insertAfter($bdyBlk);
       $('.dw-i-m-start', this).each(function(){
         var threadRef = $(this).attr('href'); // will be '#dw-t-<id>'
-        $inline = $(threadRef); // TODO change from <li> to <div>
+        var $inline = $(threadRef); // TODO change from <li> to <div>
         $inline.appendTo($inlineThreads);
       });
     });
@@ -701,13 +702,14 @@ $('.debiki').delegate('.dw-p-bdy-blk', 'click', function(event){
   }
   var sel = window.getSelection();
   if (!sel.baseNode.data ||
-      sel.baseNode.data.substr(sel.baseOffset, 1).length == 0) {
+      sel.baseNode.data.substr(sel.baseOffset, 1).length === 0) {
     // No text clicked. Ignore.
     return;
   }
 
   // Find out what piece of text was cliced or selected.
-  // See: http://stackoverflow.com/questions/3968520/how-to-use-jquery-prevall-to-select-nearby-text-nodes/3968929#3968929
+  // See: http://stackoverflow.com/questions/3968520/
+  //      how-to-use-jquery-prevall-to-select-nearby-text-nodes/3968929#3968929
 
   // If the user clicked e.g. inside a short <b> tag, the range might be only a 
   // few characters long, and these few characters might occur somewhere else
@@ -716,7 +718,9 @@ $('.debiki').delegate('.dw-p-bdy-blk', 'click', function(event){
   // jQuery(window.getSelection().baseNode).parent().parent().contents()
 
   // TODO: Find out where to show the menu. And show menu.
-  // TODO: Show a mark where the click was? See insertNodeAtCursor here: http://stackoverflow.com/questions/2213376/how-to-find-cursor-position-in-a-contenteditable-div/2213514#2213514
+  // TODO: Show a mark where the click was? See insertNodeAtCursor here:
+  //  http://stackoverflow.com/questions/2213376/
+  //    how-to-find-cursor-position-in-a-contenteditable-div/2213514#2213514
   // Use event.clientX, event.clientY.
 
   // For now: pretend the user clicked Reply and open an inline reply form.
@@ -755,7 +759,7 @@ function slideAwayRemove($form) {
   else {
     $form.slideUp(530).queue(rm);
   }
-};
+}
 
 // Remove new-reply and rating forms on cancel, but 
 // the edit form has some own special logic.
@@ -826,7 +830,7 @@ function syncUserName($form) {
 
 function updateAuthorInfo($post, name) {
   var by = $post.find('> .dw-p .dw-p-by').text();
-  if (by == name) $post.addClass('dw-mine');
+  if (by === name) $post.addClass('dw-mine');
 }
 
 // Add .dw-mine class to all .dw-t:s written by this user.
@@ -893,13 +897,15 @@ $('.debiki').delegate('.dw-a-rate', 'click', function() {
         $newPost.find('.dw-rats .dw-rat').each(function(){
             // .dw-rat text is e.g. " interesting 80% ". Make lowercase,
             // and drop " 80% ", so tag-name comparison works.
-            var text = $(this).text().toLowerCase().replace(/ \d+% /, '');
-            for (ix in ratedTags) {
-              if ($.trim(text) == ratedTags[ix]) {
-                $(this).addClass('dw-you-rated');
-                break;
+            var $rating = $(this);
+            var text = $rating.text().toLowerCase().replace(/ \d+% /, '');
+            $.each(ratedTags, function(ix, val) {
+              UNTESTED; // rewrote from for-in
+              if ($.trim(text) === val) {
+                $rating.addClass('dw-you-rated');
+                return false;
               }
-            }
+            });
           });
 
         $newPost.each($initPost);
@@ -951,9 +957,9 @@ function $showReplyForm(event) {
     // Change postId to refer to the comment not the article.
     clearfix($thread); // ensures the reply appears nested inside the thread
     $post = $thread.children('.dw-p');
-    if ($post.length)
+    if ($post.length) {
       postId = $post.attr('id').substr(8, 999); // drop initial "dw-post-"
-    else {
+    } else {
       // There's no parent post -- leave postId = 'root', which means
       // a reply to the article (e.g. blog post) itself.
     }
@@ -1002,7 +1008,7 @@ function $showReplyForm(event) {
       if ($(event.target).closest('.dw-fs').length) {
         // Clicks on forms in the post body should not result in this
         // function being called. Bug.
-        throw Error('A form was clicked [debiki_error_67xr21]');
+        die('A form was clicked [debiki_error_67xr21]');
       }
 
       // Place the reply inline, where the textClicked.selection ends.
@@ -1016,8 +1022,8 @@ function $showReplyForm(event) {
       // but we're interested in the start and end of the selection/click.)
       // TODO Consider using http://code.google.com/p/ierange/, so this stuff
       // works also with IE (6)/7/8.
-      var textStart = sel.baseNode.data.substr(sel.baseOffset, 32)
-      var textEnd = sel.extentNode.data.substr(sel.extentOffset, 32)
+      var textStart = sel.baseNode.data.substr(sel.baseOffset, 32);
+      var textEnd = sel.extentNode.data.substr(sel.extentOffset, 32);
       $replyForm.find('input[id^="dw-fi-reply-where"]').val(textStart);
     }
     else {
@@ -1033,7 +1039,7 @@ function $showReplyForm(event) {
     slideInActionForm($replyFormParent);
   });
   dismissActionMenu();
-};
+}
 
 // ------- Editing
 
@@ -1068,7 +1074,7 @@ function $showEditDiff() {
   // Try both val() and text() -- `this' might be a textarea or
   // an elem with text inside.
   var newText = $(this).val();
-  if (newText == '') newText = $(this).text();
+  if (newText === '') newText = $(this).text();
   newText = newText.trim() +'\n';  // $htmlToMarkup trims in this way
   // Run diff
   var diff = diffMatchPatch.diff_main(oldText, newText);
@@ -1107,12 +1113,12 @@ function $removeEditDiff() {
 // @return {string} HTML representation.
 function prettyHtmlFor(diffs) {
   var html = [];
-  var i = 0;
+  var x, i = 0;
   var pattern_amp = /&/g;
   var pattern_lt = /</g;
   var pattern_gt = />/g;
   var pattern_para = /\n/g;
-  for (var x = 0; x < diffs.length; x++) {
+  for (x = 0; x < diffs.length; x++) {
     var op = diffs[x][0];    // Operation (insert, delete, equal)
     var data = diffs[x][1];  // Text of change.
     var text = data.replace(pattern_amp, '&amp;').replace(pattern_lt, '&lt;')
@@ -1137,7 +1143,6 @@ function prettyHtmlFor(diffs) {
 
 // New edit suggestion
 $('.debiki').delegate('.dw-a-edit-new', 'click', function() {
-  // Warning: Some duplicated code, see .dw-rat-tag and .dw-a-reply click() above.
   var $thread = $(this).closest('.dw-t');
   clearfix($thread); // makes edit area appear inside $thread
   var $post = $thread.children('.dw-p');
@@ -1260,8 +1265,9 @@ $('.debiki').delegate('.dw-a-edit-new', 'click', function() {
         $(this).closest('form').slideUp().queue(function(next){
             if ($editsPendingForm.is(':visible') +
                 $editsYoursForm.is(':visible') +
-                $editsAppliedForm.is(':visible') == 0)
+                $editsAppliedForm.is(':visible') === 0) {
               slideAwayRemove($editDiv);
+            }
             next();
           });
       });
@@ -1285,7 +1291,7 @@ $('.debiki').delegate('.dw-a-edit-new', 'click', function() {
     $accordions.each(function(){
         var numElems = $(this).find('h4').length;
         $(this).accordion(
-        { collapsible: true, active: (numElems == 1 ? 0 : false),
+        { collapsible: true, active: (numElems === 1 ? 0 : false),
           autoHeight: false, fillSpace: true, icons: false });
       });
   });
@@ -1336,11 +1342,11 @@ c   x1,y1 x2,y2 x,y curveto   Relative coordinates.
 // Add more space between a post and its children, if the post is layed out
 // horizontally, since then a horizontal arrow will be drawn from the post
 // to its child posts.
-$('.dw-t-vspace').css('height', '80px')
+$('.dw-t-vspace').css('height', '80px');
 
 SVG = {
   // SVG Web's Flash renderer won't do; we need native browser support.
-  nativeSupport: window.svgweb && window.svgweb.getHandlerType() == 'native'
+  nativeSupport: window.svgweb && window.svgweb.getHandlerType() === 'native'
 };
 
 // Add functionality provided only in SVG (but not in fake .png arrow images).
@@ -1351,7 +1357,7 @@ if (SVG.nativeSupport) {
   SVG.curveMarkToInline = function($mark, $inlineThread) {
     var $bdyBlk = $mark.closest('.dw-p-bdy-blk');
     var $thread = $bdyBlk.closest('.dw-t');
-    var horizontalLayout = Boolean($thread.filter('.dw-hor').length)
+    var horizontalLayout = Boolean($thread.filter('.dw-hor').length);
     if (!horizontalLayout) return; // for now, perhaps avoids mem leaks?
 
     var from = $mark.offset();
@@ -1374,8 +1380,6 @@ if (SVG.nativeSupport) {
     xe -= 10;
     var strokes;
     if (horizontalLayout) {
-      // e.g.: m 530.57218,131.49742 c 50.35721,0 43.32956,-41.277737 89.52259,-41.277737
-
       var dx = 60;
       strokes = 'M '+ xs +' '+ ys +
                ' C '+ (xe-dx) +' '+ (ys) +  // draw     --.
@@ -1383,7 +1387,7 @@ if (SVG.nativeSupport) {
                  ' '+ (xe) +' '+ (ye) +     // curve,       `--
                ' l -6 -6 m 6 6 l -6 6';     // arrow end:  >
     } else {
-      throw Error('dead code');; // TODO curves to vertical inline threads
+      die('dead code'); // TODO curves to vertical inline threads
     }
     r.setAttribute('d', strokes);
     // The mark ID includes the thread ID. The curve ID will be:
@@ -1392,13 +1396,13 @@ if (SVG.nativeSupport) {
                                         // +'_'+ $inlineThread.attr('id'));
     SVG.$win.append(r);
     r = false;
-  }
+  };
 }
 
 // Optionally add functionality provided both in SVG and fake .png arrow images.
 // Currently the fake images actually work better. So by default, they are used,
 // even if there's native SVG support.
-if (SVG.nativeSupport && document.URL.indexOf('svg=true') != -1) {(function(){
+if (SVG.nativeSupport && document.URL.indexOf('svg=true') !== -1) {(function(){
   SVG.$win = $('#dw-svg-win');
   SVG.XML_NS = 'http://www.w3.org/2000/svg';
 
@@ -1443,7 +1447,7 @@ if (SVG.nativeSupport && document.URL.indexOf('svg=true') != -1) {(function(){
     r.setAttribute('id', 'dw-svg-c_'+ $thread.attr('id') +'_'+ $to.attr('id'));
     SVG.$win.append(r);
     r = false;
-  }
+  };
 
   // Draw curves from threads to children
   SVG.drawRelationships = function() {
@@ -1476,8 +1480,8 @@ if (SVG.nativeSupport && document.URL.indexOf('svg=true') != -1) {(function(){
     $('#dw-svg-win').width($('.dw-depth-0').width());
   };
 
-  SVG.$updateThreadGraphics = function() {} // not implemented
-})()}
+  SVG.$updateThreadGraphics = function() {}; // not implemented
+}());}
 else {(function(){
   // No SVG support. The svgweb Flash renderer seems far too slow
   // when resizing the Flash screen to e.g. 2000x2000 pixels.
@@ -1520,7 +1524,7 @@ else {(function(){
     } else {
       // vertical arrow, already handled above.
     }
-  }
+  };
   // To root post replies
   $('.dw-hor > .dw-res > li').each(SVG.$updateThreadGraphics);
   // To inline root post replies
@@ -1528,8 +1532,8 @@ else {(function(){
   SVG.drawRelationships = function() {
     // TODO: If any SVG native support: draw arrows to inline threads?
     // Or implement via fake .png arrows?
-  }
-})()}
+  };
+}());}
 
 SVG.drawRelationships();
 
@@ -1543,6 +1547,10 @@ Debiki.v0.SVG = SVG; // debug-export: Debiki.v0.SVG.curvesToChildren()
 
 
 // ------- Miscellaneous
+
+function die(message) {
+  throw new Error(message);
+}
 
 // Applies the clearfix fix to `thread' iff it has no child threads.
 function clearfix(thread) {
@@ -1565,7 +1573,7 @@ function makeIdsUniqueUpdateLabels(jqueryObj) {
 }
 
 function buildTagFind(html, selector) {
-  if (selector.indexOf('#') != -1) throw Error('Cannot lookup by ID: '+
+  if (selector.indexOf('#') !== -1) die('Cannot lookup by ID: '+
       'getElementById might return false, so use buildTagFindId instead');
   // From jQuery 1.4.2, jQuery.fn.load():
   var $wrap =
@@ -1581,7 +1589,7 @@ function buildTagFind(html, selector) {
 // Builds HTML tags from `html' and returns the tag with the specified id.
 // Works also when $.find('#id') won't (because of corrupt XML?).
 function buildTagFindId(html, id) {
-  if (id.indexOf('#') != -1) throw Error('Include no # in id');
+  if (id.indexOf('#') != -1) die('Include no # in id [debiki_error_985x2jh]');
   var $tag = buildTagFind(html, '[id="'+ id +'"]');
   return $tag;
 }
@@ -1596,6 +1604,6 @@ resizeRootThread();
 //----------------------------------------
 
 //========================================
-   })(); // end Debiki module
+   }()); // end Debiki module
 //========================================
 
