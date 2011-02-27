@@ -886,16 +886,6 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
   font-size: 85%;
 }
 
-/* === Misc === */
-
-.dw-parent-ref {
-  font-weight: bold;
-}
-
-.dw-highlight {
-  outline: blue dotted medium
-}
-
 /* === jQuery UI integration === */
 
 /* Here's a color blender: http://websitetips.com/colortools/colorblender/

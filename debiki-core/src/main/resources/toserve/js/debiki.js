@@ -1586,16 +1586,6 @@ function buildTagFindId(html, id) {
   return $tag;
 }
 
-// Highlight the parent post when hovering over a reference.
-$(".dw-parent-ref").hover(
-  function(event){
-    $(this).closest(".dw-t").parent().closest(".dw-t").
-            children(".dw-p").addClass("dw-highlight");
-  },
-  function(event){
-    $(this).closest(".dw-t").parent().closest(".dw-t").
-            children(".dw-p").removeClass("dw-highlight");
-  });
 
 // ------- Layout
 
