@@ -636,6 +636,20 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
   padding: 0.1em 1.5em 0.2em !important; /* reduce height, make wider */
 }
 
+/* --- Inline action menu ---*/
+
+.dw-as-inline {
+  position: absolute;
+  z-index: 20; /* COULD lower to below any overlapping hovered post.
+                Or will shine through the hovered post.
+                Needs to be painted above its own parent post though (z-ix 10).
+                Also see `.dw-action-menu a'. */
+}
+
+.dw-as-inline li {
+  margin: 0; /* or margin from `dw-p-bdy li' applied */
+}
+
 /* --- Edit suggestions ---*/
 
 .dw-debate ins {

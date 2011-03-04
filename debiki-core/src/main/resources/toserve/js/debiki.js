@@ -134,6 +134,8 @@ var debateId = $('.debiki').attr('id');
 // their ids would clash. So their ids are made unique by appending a form no.
 var idSuffixSequence = 0;
 
+var $lastInlineMenu = $();
+
 // Reset all per click state variables when a new click starts.
 $.event.add(document, "mousedown", function() {
   didExpandTruncated = false;
@@ -691,6 +693,9 @@ $('.dw-i-t > .dw-p').hover(function(){
 // For now: Don't open a menu, assume a click means an inline reply.
 
 $('.debiki').delegate('.dw-p-bdy-blk', 'click', function(event){
+  var $menu;
+  $lastInlineMenu.remove(); // prevents opening two inline menus at once
+
   if ($(event.target).closest('.dw-fs').length) {
     // A form was clicked. Ignore click.
     return;
@@ -723,8 +728,69 @@ $('.debiki').delegate('.dw-p-bdy-blk', 'click', function(event){
   //    how-to-find-cursor-position-in-a-contenteditable-div/2213514#2213514
   // Use event.clientX, event.clientY.
 
-  // For now: pretend the user clicked Reply and open an inline reply form.
-  $showReplyForm.apply(this, [event]);
+  // Find out where to place the relevant form.
+  var placeWhere = {
+    textStart: sel.baseNode.data.substr(sel.baseOffset, 32),
+    textEnd: sel.extentNode.data.substr(sel.extentOffset, 32),
+    elem: $(sel.extentNode).closest('.dw-p-bdy-blk')
+        .dw_bugIfEmpty('debiki_error_6u5962rf3')
+        .next('.dw-i-ts')
+        .dw_bugIfEmpty('debiki_error_17923xstq')
+  };
+
+
+  // Open a menu, with Edit, Reply and Cancel buttons. CSS: '-i' means inline.
+  $menu = $(  // TODO i18n
+      '<ul class="dw-as-inline">' +
+        //'<li><a class="dw-a-cancel">Cancel</a></li>' + // mouseleave instead
+        '<li><a class="dw-a-reply-i">Reply inline</a></li>' +
+        //'<li><a class="dw-a-mark-i">Mark</a></li>' + // COULD implement
+        //'<li><a class="dw-a-edit-i">Edit</a></li>' + // COULD implement
+      '</ul>');
+  $menu.find('a').button();//"option", "disabled", true);
+
+  // Place the center of the menu on the mouse click. Then the
+  // user needs move the mouse only a tiny amount up/dow or
+  // northeast/nw/se/sw, to click the relevant button (if there are
+  // <= 4 menu buttons). — no, then a double click causes a button click,
+  // instead of selecting a word.
+  var $thread = $(event.target).closest('.dw-t');
+  var threadOfs = $thread.offset();
+  $thread.append($menu);
+  var btnHeight = $menu.find('li:first').outerHeight(true); // after append
+
+  $menu.css('left', event.pageX - threadOfs.left + 13) // 13px east of button
+      .css('top', event.pageY - threadOfs.top - btnHeight/2); // in the middle
+
+  // Fill in the `where' form field with the text where the
+  // click/selection was made. Google's diff-match-patch can match
+  // only 32 chars so specify only 32 chars.
+  // (All selected text:
+  //    sel.getRangeAt(0).toString().substr(0,32);
+  // but we're interested in the start and end of the selection/click.)
+  // TODO Consider using http://code.google.com/p/ierange/, so this stuff
+  // works also with IE (6)/7/8.
+  // BUG: Next line: Uncaught TypeError: Cannot read property 'data' of null
+
+  // Bind actions.
+  $menu.find('.dw-a-reply-i').click(function(){
+    $showReplyForm.apply(this, [event, placeWhere]);
+    $menu.remove();
+  });
+  // Remove the menu after any action has been taken, and on Cancel click.
+  $menu.mouseleave(function(){
+    $menu.remove();
+  });
+  // If the user doesn't use the menu, remove it…
+  var removeMenuTimeout = setTimeout(function(){
+    $menu.remove();
+  }, 1500);
+  //… but cancel the remove-unused-menu timeout on mouseenter.
+  $menu.mouseenter(function(){
+    clearTimeout(removeMenuTimeout);
+  });
+
+  $lastInlineMenu = $menu;
 });
 
 
@@ -947,7 +1013,7 @@ $('.debiki').delegate('.dw-a-reply', 'click', $showReplyForm);
 // Shows a reply form, either below the relevant post, or inside it,
 // if the reply is an inline comment -- whichever is the case is determined
 // by event.target.
-function $showReplyForm(event) {
+function $showReplyForm(event, opt_where) {
   // Warning: Some duplicated code, see .dw-rat-tag and
   // dw-a-edit-new click() above.
   var $post;
@@ -999,34 +1065,14 @@ function $showReplyForm(event) {
       // color and font matching <input> buttons
       'dw-ui-state-default-color dw-ui-widget-font');
 
-    if ($(event.target).closest('.dw-p-bdy').length) {
-      // The post body was clicked, which means the user replies to a specific 
-      // piece of text inside the post but not to the whole post.
-
-      // BUG: Triggered if a Reply btn clicked in an inline post.
-
-      if ($(event.target).closest('.dw-fs').length) {
-        // Clicks on forms in the post body should not result in this
-        // function being called. Bug.
-        die('A form was clicked [debiki_error_67xr21]');
-      }
-
-      // Place the reply inline, where the textClicked.selection ends.
-      var sel = window.getSelection();
-      $(sel.extentNode).closest('.dw-p-bdy-blk')
-          .next('.dw-i-ts').prepend($replyFormParent);
-      // Fill in the `where' form field with the text where the
-      // click/selection was made. Google's diff-match-patch can match
-      // only 32 chars so specify only 32 chars.
-      // (All selected text: sel.getRangeAt(0).toString().substr(0,32);
-      // but we're interested in the start and end of the selection/click.)
-      // TODO Consider using http://code.google.com/p/ierange/, so this stuff
-      // works also with IE (6)/7/8.
-      var textStart = sel.baseNode.data.substr(sel.baseOffset, 32);
-      var textEnd = sel.extentNode.data.substr(sel.extentOffset, 32);
-      $replyForm.find('input[id^="dw-fi-reply-where"]').val(textStart);
-    }
-    else {
+    if (opt_where) {
+      // The user replies to a specific piece of text inside the post.
+      // Place the reply inline, and fill in the `where' form field with
+      // the text where the click/selection was made.
+      $replyFormParent.prependTo(opt_where.elem);
+      $replyForm.find('input[id^="dw-fi-reply-where"]')
+          .val(opt_where.textStart);
+    } else {
       // Place the form below the post, in the .dw-res list.
       var $res = $thread.children('.dw-res');
       if (!$res.length) {
