@@ -622,7 +622,11 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
 #dw-action-menu a {
   position: relative;
   top: -3px;
-  z-index: 20;
+  z-index: 20; /* COULD lower to below any overlapping hovered post.
+                Or will shine through the hovered post.
+                Needs to be painted above all its own parent posts though
+                (some of which are hovered, if the menu is for an inline post).
+                Also see .dw-as-inline. */
   margin: 0 -11px 0 5px; /* remove void between buttons, move 5px right */
   border: 1px solid #bbb;
   border-top: 1px solid #ddd;
