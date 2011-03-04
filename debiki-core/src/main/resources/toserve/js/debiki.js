@@ -1552,6 +1552,19 @@ function die(message) {
   throw new Error(message);
 }
 
+function dieIf(test, message) {
+  if (test) throw new Error(message);
+}
+
+function bugIf(test, errorGuid) {
+  if (test) throw new Error('Internal error ['+ errorGuid +']');
+}
+
+jQuery.fn.dw_bugIfEmpty = function(errorGuid) {
+  bugIf(!this.length, errorGuid);
+  return this;
+};
+
 // Applies the clearfix fix to `thread' iff it has no child threads.
 function clearfix(thread) {
   if (!thread.find(':has(.dw-t)').length) {
