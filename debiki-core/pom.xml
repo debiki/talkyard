@@ -2,11 +2,11 @@
   <!-- vim: et ts=2 sw=2
   -->
   <modelVersion>4.0.0</modelVersion>
-  <parent>
+  <!-- <parent>
     <groupId>com.debiki</groupId>
     <artifactId>debiki-parent</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-  </parent>
+  </parent> -->
   <groupId>com.debiki</groupId>
   <artifactId>debiki-core</artifactId>
   <name>debiki-core</name>
