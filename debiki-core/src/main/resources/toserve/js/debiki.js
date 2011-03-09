@@ -729,10 +729,15 @@ $('.debiki').delegate('.dw-p-bdy-blk', 'click', function(event){
   // Use event.clientX, event.clientY.
 
   // Find out where to place the relevant form.
+  // When finding the closest .dw-p-bdy-blk, start searching from a
+  // non-text node, because jQuery(text-node) results in TypeError:
+  //  Object #<a Text> has no method 'getAttribute'.
+  var extentNonText = sel.extentNode.nodeType === 3 ?  // 3 is text
+      sel.extentNode.parentNode : sel.extentNode;
   var placeWhere = {
     textStart: sel.baseNode.data.substr(sel.baseOffset, 32),
     textEnd: sel.extentNode.data.substr(sel.extentOffset, 32),
-    elem: $(sel.extentNode).closest('.dw-p-bdy-blk')
+    elem: $(extentNonText).closest('.dw-p-bdy-blk')
         .dw_bugIfEmpty('debiki_error_6u5962rf3')
         .next('.dw-i-ts')
         .dw_bugIfEmpty('debiki_error_17923xstq')
