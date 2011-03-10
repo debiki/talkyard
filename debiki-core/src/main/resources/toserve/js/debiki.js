@@ -615,7 +615,23 @@ function $placeInlineThreads() {
   };
 
   var $placeInside = function() {
+    // There are some .dw-i-m-start that are direct children of this .dw-p-bdy.
+    // They are inline marks for which no matching text was found, and are
+    // currently placed at the end of this .dw-p-bdy. Wrap them in a single
+    // .dw-p-bdy-blk, and their threads in an <ol>.
+    var $bdyBlkMatchless = $('<div class="dw-p-bdy-blk"></div>');
+    var $inlineThreadsMatchless = $('<ol class="dw-i-ts"></ol>');
+
     $(this).children().each(function(){
+      if ($(this).filter('.dw-i-m-start').length) {
+        // This is a mark with no matching text. Place it in the trailing
+        // Matchless block. (We wouldn't find this mark, when searching
+        // for ``$('.dw-i-m-start', this)'' below.)
+        $bdyBlkMatchless.append(this);
+        var threadRef = $(this).attr('href'); // will be '#dw-t-<id>'
+        $inlineThreadsMatchless.append($(threadRef));
+        return;
+      }
       var $bdyBlk = $(this).wrap('<div class="dw-p-bdy-blk"></div>').parent();
       var $inlineThreads = $('<ol class="dw-i-ts"></ol>').insertAfter($bdyBlk);
       $('.dw-i-m-start', this).each(function(){
@@ -624,6 +640,14 @@ function $placeInlineThreads() {
         $inline.appendTo($inlineThreads);
       });
     });
+
+    // Append any inline marks and threads that matched no text.
+    if ($bdyBlkMatchless.length) {
+      $(this).append($bdyBlkMatchless).append($inlineThreadsMatchless);
+    } else {
+      $bdyBlkMatchless.remove();
+      $inlineThreadsMatchless.remove();
+    }
   };
 
   // Group body elems in body-block <div>s. In debiki.css, these divs are
