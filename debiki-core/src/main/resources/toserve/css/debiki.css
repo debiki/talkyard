@@ -48,7 +48,7 @@
  *  dw-p-hdr      post header
  *  dw-p-rez-e    post resized eastwards
  *  dw-svg-c_<x>  SVG curve from <x>
- *  dw-svg-win    the SVG Web drawing area
+ *  dw-svg-parent Has a <svg> child
  *
  *  ... and so on, hmm.
  */
@@ -358,7 +358,7 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
 .dw-p {
   margin-left: 35px;
   overflow: hidden;
-  background-color: transparent; /* lets svg arrows shine through */
+  background-color: white;
 }
 
 .dw-p-hdr {
@@ -405,7 +405,7 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
 .dw-p-diff {
   padding: 6px 1px 0 3px;
   position: relative;
-  background-color: transparent; /* let svg arrows shine through */
+  background-color: white;
   min-width: 5em;
   float: left; /* wrap .dw-p-bdy-blk:s, which float left */
 }
@@ -944,13 +944,18 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
 
 /* === SVG === */
 
-#dw-svg-win {
+.dw-svg-parent {
+  z-index: 1; /* makes svg (with z-index -1, see below) visible (weird!) */
+}
+
+.dw-t svg {
   position: absolute;
   top: 0;
   left: 0;
+  z-index: -1; /* or overlays posts; they would not be clickable */
 }
 
-#dw-svg-win path {
+.dw-t svg path {
   fill: none;
   stroke: #dde;
   stroke-width: 3;
@@ -960,7 +965,7 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
 TODO style an invisible elem in this manner, and read the props via
 JavaScript. Then I can still place all CSS stuff in this file. */
 /*
-#dw-svg-win path.dw-highlight {
+.dw-t svg path.dw-highlight {
   stroke-width: 4;
   stroke: #f0a005;
 } */

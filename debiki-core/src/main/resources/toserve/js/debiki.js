@@ -1428,23 +1428,48 @@ SVG = {
 SVG.curveMarkToInline = function(){};
 
 if (SVG.nativeSupport) {
+  // Create a SVG tag for the root thread, and each post body.
+  // (An inline thread is drawn above its parent post's body,
+  // so an SVG tag is needed in each .dw-p-bdy with any inline thread.)
+  $('#dw-t-root, .dw-p-bdy').each(function(){
+    // See:
+    // http://svgweb.googlecode.com/svn/trunk/docs/UserManual.html#dynamic_root
+    var svg = document.createElementNS(svgns, 'svg');  // need not pass 'true'
+    svgweb.appendChild(svg, $(this).get(0));
+    $(this).addClass('dw-svg-parent');
+  });
+
+  SVG.findClosestRoot = function($elem) {
+    var $root = $elem.closest('.dw-svg-parent').children('svg');
+    dieIf(!$root.length, 'No SVG root found [debiki_error_84362qwkghd]');
+    return $root;
+  };
+
   // Draws an arrow from a mark to an inline thread.
   SVG.curveMarkToInline = function($mark, $inlineThread) {
     var $bdyBlk = $mark.closest('.dw-p-bdy-blk');
     var $thread = $bdyBlk.closest('.dw-t');
     var horizontalLayout = Boolean($thread.filter('.dw-hor').length);
     if (!horizontalLayout) return; // for now, perhaps avoids mem leaks?
-
+    var $svgRoot = SVG.findClosestRoot($mark);
+    // Do not use $svgRoot.offset() as offset, because that seems to be the
+    // offset of the northwest-most SVG element in the <svg> tag. Instead,
+    // use the parent elem's offset, which works fine since the <svg> has
+    // position:absolute, and top = left = 0.
+    // Details: When the first <path> is added to the $svgRoot, (at least)
+    // Chrome and FireFox change the offset of the <svg> tag to the offset
+    // of the <path>. Is that weird?
+    var svgOffs = $svgRoot.parent().offset();
     var from = $mark.offset();
     var to = $inlineThread.offset();
     var r = document.createElementNS(SVG.XML_NS, 'path');
-    var xs = from.left - SVG.winoffs.left; // start
-    var ys = from.top - SVG.winoffs.top;
-    var xe = to.left - SVG.winoffs.left; // end
-    var ye = to.top - SVG.winoffs.top;
+    var xs = from.left - svgOffs.left; // start
+    var ys = from.top - svgOffs.top;
+    var xe = to.left - svgOffs.left; // end
+    var ye = to.top - svgOffs.top;
     // Change x-start to the right edge of the .dw-p-bdy-blk in which
     // the mark is placed, so the curve won't be drawn over the -blk itself.
-    xs = $bdyBlk.offset().left + $bdyBlk.outerWidth(false);
+    xs = $bdyBlk.offset().left - svgOffs.left + $bdyBlk.outerWidth(false);
     // Move the curve a bit downwards, so it starts and ends in the middle
     // of the lines of text (12-13 px high).
     ys += 9;
@@ -1469,7 +1494,7 @@ if (SVG.nativeSupport) {
     // 'dw-svg-c_dw-i-m_dw-t-<thread-id>'.
     r.setAttribute('id', 'dw-svg-c_'+ $mark.attr('id'));
                                         // +'_'+ $inlineThread.attr('id'));
-    SVG.$win.append(r);
+    $svgRoot.append(r);
     r = false;
   };
 }
@@ -1478,24 +1503,27 @@ if (SVG.nativeSupport) {
 // Currently the fake images actually work better. So by default, they are used,
 // even if there's native SVG support.
 if (SVG.nativeSupport && document.URL.indexOf('svg=true') !== -1) {(function(){
-  SVG.$win = $('#dw-svg-win');
   SVG.XML_NS = 'http://www.w3.org/2000/svg';
 
   SVG.curveTreadToReply = function($thread, $to) {
+    var $svgRoot = SVG.findClosestRoot($thread);
+    // Do not use $svgRoot.offset() — see comment somewhere above, search
+    // for "$svgRoot.offset()". COULD merge this somewhat duplicated code?
+    var svgOffs = $svgRoot.parent().offset();
     var from = $thread.offset(), to = $to.offset(); // from, to
     var r = document.createElementNS(SVG.XML_NS, 'path');
-    var xs = from.left - SVG.winoffs.left; // start
-    var ys = from.top - SVG.winoffs.top;
-    var xe = to.left - SVG.winoffs.left; // end
-    var ye = to.top - SVG.winoffs.top;
+    var xs = from.left - svgOffs.left; // start
+    var ys = from.top - svgOffs.top;
+    var xe = to.left - svgOffs.left; // end
+    var ye = to.top - svgOffs.top;
     var strokes;
     if ($thread.filter('.dw-hor').length) {
       // Thread laid out horizontally, so draw west-east curve:  `------.
       // There's a visibility:hidden div that acts as a placeholder for this
       // curve, and it's been resized properly by the caller.
       from = $thread.children('.dw-t-vspace').offset();
-      xs = from.left - SVG.winoffs.left + 30;
-      ys = from.top - SVG.winoffs.top + 3;
+      xs = from.left - svgOffs.left + 30;
+      ys = from.top - svgOffs.top + 3;
       xe += 10;
       ye -= 9;
       var dx = 40;
@@ -1520,20 +1548,23 @@ if (SVG.nativeSupport && document.URL.indexOf('svg=true') !== -1) {(function(){
     }
     r.setAttribute('d', strokes);
     r.setAttribute('id', 'dw-svg-c_'+ $thread.attr('id') +'_'+ $to.attr('id'));
-    SVG.$win.append(r);
+    $svgRoot.append(r);
     r = false;
   };
 
   // Draw curves from threads to children
   SVG.drawRelationships = function() {
-    // Remove old curves
-    SVG.$win.find('path').remove();
-    // Remember where $win is placed, because Firefox [v3.6.8] changes the
-    // offset when the first path is added, so it's not always safe to use
-    // the value returned by offset() (but safe now). (The offset is set a bit
-    // to the north-west of the path start point, must be a FF bug?)
-    SVG.winoffs = SVG.$win.offset();
-    // Create new.curves
+    // Resize <svg> elems and remove old curves
+    $('.dw-debate svg').each(function(){
+      // Unless the <svg> is sized up in this manner, the SVG arrows
+      // will for some reason be cropped, when you zooom out. (Although
+      // overflow:visible!)
+      $parent = $(this).parent();
+      $(this).height($parent.height()).width($parent.width());
+      // Remove old curvese.
+      $('path', this).remove();
+    });
+    // Create new curves
     $('.dw-t:visible').each(function(){
       // Draw arrows to whole post replies.
       var $t = $(this);
