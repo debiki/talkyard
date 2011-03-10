@@ -153,12 +153,24 @@ table {
   margin-bottom: 1em;
 }
 
-.dw-dragscrollable {
-  cursor: move !important; /* important, or next rule might set to `auto' */
+.dw-dragscrollable,
+.dw-debate .dw-svg-parent svg { /* many specifiers gives higher precedence
+                                  than the cursor:auto rule just below */
+  cursor: move; /* or people won't realize they can scroll? */
 }
-.dw-dragscrollable > * {
+
+.dw-dragscrollable > *:not(.dw-dragscrollable) {
   cursor: auto; /* don't inherit `move' cursor */
 }
+
+/* The above "don't inherit move" rule destroys these three jQuery-UI rules,
+so they're repeadet here (*after* the above rule).
+COULD prefix jQuery-UI with #debiki not .debiki, so jQuery-UI's rules have
+higher precedence (then these three duplicated rules could be removed). */
+.debiki .ui-resizable-s  { cursor: s-resize;  }
+.debiki .ui-resizable-e  { cursor: e-resize;  }
+.debiki .ui-resizable-se { cursor: se-resize; }
+
 
 /* === Threads === */
 
@@ -450,7 +462,7 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
 }
 
 .dw-a {
-  cursor: crosshair;
+  cursor: crosshair !important; /* otherwise would show cursor:auto */
   text-decoration: none;
   color: #3872ab;
   font-size: 13px;

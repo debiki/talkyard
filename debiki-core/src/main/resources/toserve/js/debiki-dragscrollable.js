@@ -162,7 +162,10 @@ $.fn.debiki_dragscrollable = function( options ){
                     preventDefault : settings.preventDefault }
 		// Set mouse initiating event on the desired descendant
 		$(this).find(settings.dragSelector).
-						bind('mousedown', data, dragscroll.mouseDownHandler);
+					bind('mousedown', data, dragscroll.mouseDownHandler)
+					.filter(settings.scrollable)
+					.addClass('dw-dragscrollable'); // sets cursor:move.
+						
 	});
 }; //end plugin debiki_dragscrollable
 
