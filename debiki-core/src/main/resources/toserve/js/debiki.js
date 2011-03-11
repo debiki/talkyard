@@ -1529,14 +1529,22 @@ if (SVG.nativeSupport && document.URL.indexOf('svg=true') !== -1) {(function(){
       var dx = 40;
       var xm = (xe - xs - dx) / 2;
       var dy = 28;
+      var dx2 = 70;
+      if (dx2 > xe - xs - dx) {
+        // The second Bezier curve would start to the left of where
+        // the first one ends. Adjust dx and dx2.
+        dx2 = xe - xs - dx + 10;
+        dx -= 10;
+      }
+
       strokes = 'M '+ xs +' '+ ys +
                ' C '+ (xs) +' '+ (ys+dy) +    // draw Bezier  \
                  ' '+ (xs+dx) +' '+ (ys+dy) + // curve         \
                  ' '+ (xs+dx) +' '+ (ys+dy) + //                `----
-               ' C '+ (xe-70) +' '+ (ys+dy+5) +
+               ' C '+ (xe-dx2) +' '+ (ys+dy+5) +  // 2nd curve
                  ' '+ (xe) +' '+ (ye-55) +    //             ------.
                  ' '+ xe +' '+ ye +           //                    \
-               ' l -7 -1 m 8 1 l 2 -8'; // arrow end: _|             v
+               ' l -7 -4 m 8 4 l 5 -7'; // arrow end: _|             v
     } else {
       // Draw north-south curve.
       var ym = (ys + ye) / 2;
