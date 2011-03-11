@@ -1524,27 +1524,51 @@ if (SVG.nativeSupport && document.URL.indexOf('svg=true') !== -1) {(function(){
       from = $thread.children('.dw-t-vspace').offset();
       xs = from.left - svgOffs.left + 30;
       ys = from.top - svgOffs.top + 3;
-      xe += 10;
-      ye -= 9;
-      var dx = 40;
-      var xm = (xe - xs - dx) / 2;
-      var dy = 28;
-      var dx2 = 70;
-      if (dx2 > xe - xs - dx) {
-        // The second Bezier curve would start to the left of where
-        // the first one ends. Adjust dx and dx2.
-        dx2 = xe - xs - dx + 10;
-        dx -= 10;
+
+      // All curves start in this way.
+      var curveStart = function(xs, ys, dx, dy) {
+        return 'M '+ xs +' '+ ys +             // draw Bezier   |
+              ' C '+ (xs) +' '+ (ys+dy) +      // curve start   \
+                ' '+ (xs+dx) +' '+ (ys+dy);    //                `
       }
 
-      strokes = 'M '+ xs +' '+ ys +
-               ' C '+ (xs) +' '+ (ys+dy) +    // draw Bezier  \
-                 ' '+ (xs+dx) +' '+ (ys+dy) + // curve         \
-                 ' '+ (xs+dx) +' '+ (ys+dy) + //                `----
+      if (xe < xs) {
+        // $to is placed to the left of the arrow start. This happens e.g.
+        // for [the arrow to the Reply button of the root post].
+        // Draw a special north-south curve, that starts just like the west-east
+        // curve in the `else' block just below.
+        xe += $to.width() * 0.67;
+        ye -= 9;
+        var dx2 = xe - xs - dx + 10;
+        var dx = 40 - 10;
+        var xm = (xe - xs - dx) / 2;
+        var dy = 28;
+                                                // draw         \
+        strokes = curveStart(xs, ys, dx, dy) +  // Bezier        |
+                 ' '+ xe +' '+ ye +             // curve        /
+                 ' l -3 -9 m 3 9 l 10 -4';  // arrow end: _|   v
+      } else {
+        // $to is placed to the right of $thread. Draw west-east curve.
+        xe += 10;
+        ye -= 9;
+        var dx = 40;
+        var xm = (xe - xs - dx) / 2;
+        var dy = 28;
+        var dx2 = 70;
+        if (dx2 > xe - xs - dx) {
+          // The second Bezier curve would start to the left of where
+          // the first one ends. Adjust dx and dx2.
+          dx2 = xe - xs - dx + 10;
+          dx -= 10;
+        }
+
+        strokes = curveStart(xs, ys, dx, dy) +// Bezier   \
+                 ' '+ (xs+dx) +' '+ (ys+dy) + // curve     `--
                ' C '+ (xe-dx2) +' '+ (ys+dy+5) +  // 2nd curve
                  ' '+ (xe) +' '+ (ye-55) +    //             ------.
                  ' '+ xe +' '+ ye +           //                    \
                ' l -7 -4 m 8 4 l 5 -7'; // arrow end: _|             v
+      }
     } else {
       // Draw north-south curve.
       var ym = (ys + ye) / 2;
@@ -1574,9 +1598,11 @@ if (SVG.nativeSupport && document.URL.indexOf('svg=true') !== -1) {(function(){
     });
     // Create new curves
     $('.dw-t:visible').each(function(){
-      // Draw arrows to whole post replies.
+      // Draw arrows to whole post replies, and, for horizontal layout,
+      // to the Reply button.
       var $t = $(this);
-      $t.find('> .dw-res > .dw-t:visible').each(function(){
+      $t.find('> .dw-a:has(.dw-a-reply), > .dw-res > .dw-t:visible')
+          .each(function(){
         SVG.curveTreadToReply($t, $(this));
       });
       // To inline replies.
