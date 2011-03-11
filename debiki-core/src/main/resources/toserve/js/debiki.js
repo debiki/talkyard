@@ -1450,7 +1450,6 @@ if (SVG.nativeSupport) {
     var $bdyBlk = $mark.closest('.dw-p-bdy-blk');
     var $thread = $bdyBlk.closest('.dw-t');
     var horizontalLayout = Boolean($thread.filter('.dw-hor').length);
-    if (!horizontalLayout) return; // for now, perhaps avoids mem leaks?
     var $svgRoot = SVG.findClosestRoot($mark);
     // Do not use $svgRoot.offset() as offset, because that seems to be the
     // offset of the northwest-most SVG element in the <svg> tag. Instead,
@@ -1467,19 +1466,19 @@ if (SVG.nativeSupport) {
     var ys = from.top - svgOffs.top;
     var xe = to.left - svgOffs.left; // end
     var ye = to.top - svgOffs.top;
-    // Change x-start to the right edge of the .dw-p-bdy-blk in which
-    // the mark is placed, so the curve won't be drawn over the -blk itself.
-    xs = $bdyBlk.offset().left - svgOffs.left + $bdyBlk.outerWidth(false);
-    // Move the curve a bit downwards, so it starts and ends in the middle
-    // of the lines of text (12-13 px high).
-    ys += 9;
-    ye += 6;
-    // Leave some space between the -blk and the curve, and the curve and
-    // the iniline thread.
-    xs += 10;
-    xe -= 10;
     var strokes;
     if (horizontalLayout) {
+      // Change x-start to the right edge of the .dw-p-bdy-blk in which
+      // the mark is placed, so the curve won't be drawn over the -blk itself.
+      xs = $bdyBlk.offset().left - svgOffs.left + $bdyBlk.outerWidth(false);
+      // Move the curve a bit downwards, so it starts and ends in the middle
+      // of the lines of text (12-13 px high).
+      ys += 9;
+      ye += 6;
+      // Leave some space between the -blk and the curve, and the curve and
+      // the iniline thread.
+      xs += 10;
+      xe -= 10;
       var dx = 60;
       strokes = 'M '+ xs +' '+ ys +
                ' C '+ (xe-dx) +' '+ (ys) +  // draw     --.
@@ -1487,7 +1486,23 @@ if (SVG.nativeSupport) {
                  ' '+ (xe) +' '+ (ye) +     // curve,       `--
                ' l -6 -6 m 6 6 l -6 6';     // arrow end:  >
     } else {
-      die('dead code'); // TODO curves to vertical inline threads
+      // Move y-start to below the .dw-p-bdy-blk in which the mark is placed.
+      ys = $bdyBlk.offset().top - svgOffs.top + $bdyBlk.outerHeight(false) + 3;
+      // Always start the curve at the same x position, or arrows to
+      // different inline threads might overlap (unless the inline threads are
+      // sorted by the mark's x position — but x changes and wraps around when
+      // the thread width changes).
+      xs = $bdyBlk.offset().left - svgOffs.left + 30;
+      // Leave space between the arrow head and the inline thread.
+      xe -= 13;
+      // Make arrow point at middle of [-] (close/open thread button).
+      ye += 9;
+      // Arrow starting below the .dw-p-bdy-blk, pointing on the inline thread.
+      strokes = 'M '+ xs +' '+ ys +
+               ' C '+ (xs) +' '+ (ye) +     // draw        |
+                 ' '+ (xs+1) +' '+ (ye) +   // Bezier      \
+                 ' '+ (xe) +' '+ (ye) +     // curve,       `-
+               ' l -6 -6 m 6 6 l -6 6';     // arrow end:  >
     }
     r.setAttribute('d', strokes);
     // The mark ID includes the thread ID. The curve ID will be:

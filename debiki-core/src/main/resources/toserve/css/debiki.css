@@ -584,7 +584,7 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
   clear: left;
 }
 .dw-t:not(.dw-hor) > .dw-p > .dw-p-bdy > .dw-i-ts > .dw-i-t {
-  margin-left: 5em; /* indents, and leaves space for SVG/fake arrows */
+  margin-left: 70px; /* indents, and leaves space for SVG/fake arrows */
 }
 
 /* Make inline comments less conspicuous. */
