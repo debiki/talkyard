@@ -1522,13 +1522,13 @@ if (SVG.nativeSupport && document.URL.indexOf('svg=true') !== -1) {(function(){
       // There's a visibility:hidden div that acts as a placeholder for this
       // curve, and it's been resized properly by the caller.
       from = $thread.children('.dw-t-vspace').offset();
-      xs = from.left - svgOffs.left + 30;
+      xs = from.left - svgOffs.left + 10;
       ys = from.top - svgOffs.top + 3;
 
       // All curves start in this way.
       var curveStart = function(xs, ys, dx, dy) {
         return 'M '+ xs +' '+ ys +             // draw Bezier   |
-              ' C '+ (xs) +' '+ (ys+dy) +      // curve start   \
+              ' C '+ (xs+08) +' '+ (ys+dy) +   // curve start   \
                 ' '+ (xs+dx) +' '+ (ys+dy);    //                `
       }
 
@@ -1546,7 +1546,7 @@ if (SVG.nativeSupport && document.URL.indexOf('svg=true') !== -1) {(function(){
                                                 // draw         \
         strokes = curveStart(xs, ys, dx, dy) +  // Bezier        |
                  ' '+ xe +' '+ ye +             // curve        /
-                 ' l -3 -9 m 3 9 l 10 -4';  // arrow end: _|   v
+                 ' l -5 -7 m 5 7 l 8 -4';   // arrow end       v
       } else {
         // $to is placed to the right of $thread. Draw west-east curve.
         xe += 10;
@@ -1565,7 +1565,7 @@ if (SVG.nativeSupport && document.URL.indexOf('svg=true') !== -1) {(function(){
         strokes = curveStart(xs, ys, dx, dy) +// Bezier   \
                  ' '+ (xs+dx) +' '+ (ys+dy) + // curve     `--
                ' C '+ (xe-dx2) +' '+ (ys+dy+5) +  // 2nd curve
-                 ' '+ (xe) +' '+ (ye-55) +    //             ------.
+                 ' '+ (xe-9) +' '+ (ye-55) +  //             ------.
                  ' '+ xe +' '+ ye +           //                    \
                ' l -7 -4 m 8 4 l 5 -7'; // arrow end: _|             v
       }
