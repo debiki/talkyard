@@ -542,16 +542,20 @@ function $placeInlineMarks() {
     var arrow = $parentThread.filter('.dw-hor').length ?
         'ui-icon-arrow-1-e' : 'ui-icon-arrow-1-s';
     // TODO When possible to mark a text range: Underline matched text?
+    // COULD add i18n, here and in $(mark) below.
     var mark =
         '<a id="dw-i-m_'+ this.id +'" class="dw-i-m-start ui-icon '+
-        arrow +'" href="#'+ this.id +'" title="Inline comment" />';
+        arrow +'" href="#'+ this.id +'" title="Contextual comment" />';
     if (match === -1) {
       // Text not found. Has the parent post been edited since the mark
       // was set? Should diffMatchPatch.Match_Distance and other settings
       // be tweaked?
       // To indicate that no match was found, appen the mark to the post body.
       // Then there's no text to the right of the mark — no text, no match.
-      $parentPostBody.append(mark);
+      $(mark).attr('title',
+          'Contextual comment, but the context text was not found, '+
+          'so this comment was placed at the end of the post.'
+          ).appendTo($parentPostBody);
       return;
     }
     var beforeMatch = tagDogText.substring(0, match);
@@ -918,7 +922,7 @@ function updateAuthorInfo($post, name) {
   if (by === name) $post.addClass('dw-mine');
 }
 
-function $markMyPosts() {
+function $markIfMine() {
   updateAuthorInfo($(this), $.cookie('dwUserName'));
 }
 
@@ -1585,9 +1589,6 @@ function makeSvgDrawer() {
         }
       });
     });
-    // The browser internal stylesheet defaults to height: 100%.
-    $('#dw-svg-win').height($('.dw-depth-0').height() + 100);
-    $('#dw-svg-win').width($('.dw-depth-0').width());
   }
 
   return {
@@ -1632,7 +1633,8 @@ function makeFakeDrawer() {
     // To root post replies
     $('.dw-hor > .dw-res > li').each($updateThreadGraphics);
     // To inline root post replies
-    $('.dw-hor > .dw-p > .dw-p-bdy > .dw-i-t').each($updateThreadGraphics);
+    $('.dw-hor > .dw-p > .dw-p-bdy > .dw-i-ts > .dw-i-t').each(
+        $updateThreadGraphics);
   }
 
   // Arrows to each child thread.
@@ -1646,6 +1648,8 @@ function makeFakeDrawer() {
       $(this).prepend('<div class="dw-svg-fake-hcurve"/>');
     } else {
       // vertical arrow, already handled above.
+      // TODO not handled above, for *new* threads, no arrows to them :(
+      // BUG arrows should be drawn here, for replies to inline threads.
     }
   }
 
@@ -1759,7 +1763,7 @@ $('.debiki').delegate(
 $('#dw-hidden-templates .dw-fs').hide();
 
 // Add .dw-mine class to all .dw-t:s written by this user.
-$('.debiki .dw-t').each($markMyPosts);
+$('.debiki .dw-t').each($markIfMine);
 
 $('.debiki').delegate('.dw-a-rate', 'click', $showRatingForm);
 
