@@ -147,8 +147,13 @@ $.event.add(document, "mousedown", function() {
   //didResize = false; -- currently handled in another mousedown
 });
 
-// Later on, arrow drawing functions are placed in the SVG object.
-var SVG = {};
+// SVG Web's Flash renderer won't do; we need native browser support,
+// or we'll use images instead of SVG graphics.
+var nativeSvgSupport =
+    window.svgweb && window.svgweb.getHandlerType() === 'native';
+
+var SVG = nativeSvgSupport && document.URL.indexOf('svg=false') === -1 ?
+    makeSvgDrawer() : makeFakeDrawer();
 
 
 // ------- Zoom event
@@ -1382,7 +1387,7 @@ c   x1,y1 x2,y2 x,y curveto   Relative coordinates.
 // Returns an object with functions that draws SVG arrows between threads,
 // to illustrate their relationships. The arrows are drawn in whitespace
 // between threads, e.g. on the visibility:hidden .dw-t-vspace elems.
-function initSvgDrawer() {
+function makeSvgDrawer() {
   function $createSvgRoot() {
     // See:
     // http://svgweb.googlecode.com/svn/trunk/docs/UserManual.html#dynamic_root
@@ -1391,10 +1396,12 @@ function initSvgDrawer() {
     $(this).addClass('dw-svg-parent');
   }
 
-  // Create a SVG root elem for the root thread. An SVG root is created
-  // for each post body, from inside $initPost.
-  $('#dw-t-root').each($createSvgRoot);
-  $('.dw-p-bdy').each($createSvgRoot); // move to $initPost
+  function initialize() {
+    // Create a SVG root elem for the root thread. An SVG root is created
+    // for each post body, from inside $initPost.
+    $('#dw-t-root').each($createSvgRoot);
+    $('.dw-p-bdy').each($createSvgRoot); // move to $initPost
+  }
 
   function findClosestRoot($elem) {
     var $root = $elem.closest('.dw-svg-parent').children('svg');
@@ -1584,41 +1591,49 @@ function initSvgDrawer() {
   }
 
   return {
+    initialize: initialize,
     $updateThreadGraphics: function() {}, // not implemented
     drawRelationships: drawRelationships
   };
 }
 
-function initFakeDrawer() {
+function makeFakeDrawer() {
   // No SVG support. The svgweb Flash renderer seems far too slow
   // when resizing the Flash screen to e.g. 2000x2000 pixels.
   // And scrolldrag stops working (no idea why). Seems easier
   // to add these images of arrows instead.
 
-  // North-south arrows: (for vertical layout)
-  $('.dw-depth-0 .dw-t:has(.dw-t)').each(function(){
-    $(this).prepend("<div class='dw-svg-fake-varrow'/>");
-    $(this).prepend("<div class='dw-svg-fake-varrow-hider-hi'/>");
-    $(this).prepend("<div class='dw-svg-fake-varrow-hider-lo'/>");
-  });
-  $('.dw-depth-1 .dw-t:not(.dw-i-t)').each(function(){
-    var hider = $(this).filter(':last-child').length ?
-                  ' dw-svg-fake-arrow-hider' : '';
-    $(this).prepend('<div class="dw-svg-fake-vcurve-short'+ hider +'"/>');
-  });
-  $('.dw-depth-1 .dw-t:not(.dw-i-t):last-child').each(function(){
-    $(this).prepend("<div class='dw-svg-fake-varrow-hider-left'/>");
-  });
-  // TODO: Inline threads:  .dw-t:not(.dw-hor) > .dw-i-ts > .dw-i-t
-  // TODO: First one:  .dw-t:not(.dw-hor) > .dw-i-ts > .dw-i-t:first-child
-  // TODO: Root post's inline threads:  .dw-t.dw-hor > .dw-i-ts > .dw-i-t
+  function initialize() {
+    // North-south arrows: (for vertical layout)
+    $('.dw-depth-0 .dw-t:has(.dw-t)').each(function(){
+      $(this).prepend("<div class='dw-svg-fake-varrow'/>");
+      $(this).prepend("<div class='dw-svg-fake-varrow-hider-hi'/>");
+      $(this).prepend("<div class='dw-svg-fake-varrow-hider-lo'/>");
+    });
+    $('.dw-depth-1 .dw-t:not(.dw-i-t)').each(function(){
+      var hider = $(this).filter(':last-child').length ?
+                    ' dw-svg-fake-arrow-hider' : '';
+      $(this).prepend('<div class="dw-svg-fake-vcurve-short'+ hider +'"/>');
+    });
+    $('.dw-depth-1 .dw-t:not(.dw-i-t):last-child').each(function(){
+      $(this).prepend("<div class='dw-svg-fake-varrow-hider-left'/>");
+    });
+    // TODO: Inline threads:  .dw-t:not(.dw-hor) > .dw-i-ts > .dw-i-t
+    // TODO: First one:  .dw-t:not(.dw-hor) > .dw-i-ts > .dw-i-t:first-child
+    // TODO: Root post's inline threads:  .dw-t.dw-hor > .dw-i-ts > .dw-i-t
 
-  // West-east arrows: (for horizontal Layout)
+    // West-east arrows: (for horizontal Layout)
 
-  // Arrow start, for horizontal layout, and arrow to reply link.
-  $('.dw-hor > .dw-a > .dw-a-reply').each(function(){
-    $(this).before('<div class="dw-svg-fake-hcurve-start"/>');
-  });
+    // Arrow start, for horizontal layout, and arrow to reply link.
+    $('.dw-hor > .dw-a > .dw-a-reply').each(function(){
+      $(this).before('<div class="dw-svg-fake-hcurve-start"/>');
+    });
+
+    // To root post replies
+    $('.dw-hor > .dw-res > li').each($updateThreadGraphics);
+    // To inline root post replies
+    $('.dw-hor > .dw-p > .dw-p-bdy > .dw-i-t').each($updateThreadGraphics);
+  }
 
   // Arrows to each child thread.
   function $updateThreadGraphics() {
@@ -1633,10 +1648,6 @@ function initFakeDrawer() {
       // vertical arrow, already handled above.
     }
   }
-  // To root post replies
-  $('.dw-hor > .dw-res > li').each($updateThreadGraphics);
-  // To inline root post replies
-  $('.dw-hor > .dw-p > .dw-p-bdy > .dw-i-t').each($updateThreadGraphics);
 
   function drawRelationships() {
     // TODO: If any SVG native support: draw arrows to inline threads?
@@ -1644,6 +1655,7 @@ function initFakeDrawer() {
   }
 
   return {
+    initialize: initialize,
     $updateThreadGraphics: $updateThreadGraphics,
     drawRelationships: drawRelationships
   };
@@ -1772,14 +1784,7 @@ $('.debiki')
 
 $('.debiki').delegate('.dw-a-edit-new', 'click', $showEditForm);
 
-// SVG Web's Flash renderer won't do; we need native browser support,
-// or we'll use images instead of SVG graphics.
-var nativeSvgSupport =
-    window.svgweb && window.svgweb.getHandlerType() === 'native';
-
-SVG = nativeSvgSupport && document.URL.indexOf('svg=false') === -1 ?
-    initSvgDrawer() : initFakeDrawer();
-
+SVG.initialize();
 SVG.drawRelationships();
 
 // Poll for zoom in/out events, and redraw arrows if zoomed,
