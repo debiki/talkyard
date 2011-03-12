@@ -618,34 +618,10 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
   outline: solid medium #f0a005;
 }
 
-/* === Actions === */
+/* --- Hidden templates --- */
 
 #dw-hidden-templates {
   display: none;
-}
-
-#dw-action-menu {
-  position: relative;
-  left: 22px;
-  height: 0px; /* otherwise pushes contents below downwards;
-                  buttons inside visible anyway */
-}
-
-#dw-action-menu a {
-  position: relative;
-  top: -3px;
-  z-index: 20; /* COULD lower to below any overlapping hovered post.
-                Or will shine through the hovered post.
-                Needs to be painted above all its own parent posts though
-                (some of which are hovered, if the menu is for an inline post).
-                Also see .dw-as-inline. */
-  margin: 0 -11px 0 5px; /* remove void between buttons, move 5px right */
-  border: 1px solid #bbb;
-  border-top: 1px solid #ddd;
-}
-
-#dw-action-menu .ui-button-text {
-  padding: 0.1em 1.5em 0.2em !important; /* reduce height, make wider */
 }
 
 /* --- Inline action menu ---*/

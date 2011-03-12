@@ -889,9 +889,6 @@ function slideInActionForm($form, $where) {
     });
 }
 
-function dismissActionMenu() {
-  $('#dw-action-menu').appendTo($('#dw-hidden-templates'));
-}
 
 // ------- User name
 
@@ -1008,7 +1005,6 @@ function $showRatingForm() {
     button().addClass('dw-ui-state-default-linkified');
   // Reveal the form
   slideInActionForm($rateForm, thread);
-  dismissActionMenu();
 }
 
 function $showMoreRatingTags() {
@@ -1093,7 +1089,6 @@ function $showReplyForm(event, opt_where) {
     $replyFormParent.each(SVG.$updateThreadGraphics);
     slideInActionForm($replyFormParent);
   });
-  dismissActionMenu();
 }
 
 // ------- Editing
@@ -1200,8 +1195,6 @@ function $showEditForm() {
       $thread.children('.dw-a:last'));//TODO: use $.get & update() instead
   $formWrap.hide(); // slide in later
   var postId = $post.attr('id').substr(8, 999); // drop initial "dw-post-"
-  dismissActionMenu();  // before ajax request, or 2 edit <forms> will
-                        // appear if you double click.
 
   Settings.editFormLoader(debateId, postId, function($editFormParent) {
     var $editForm = $editFormParent.children('form');
