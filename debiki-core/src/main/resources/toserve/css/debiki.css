@@ -336,7 +336,7 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
  out horizontally. SVG relationship arrows drawn here. */
 .dw-t-vspace {
   visibility: hidden;
-  height: 0.8em;
+  height: 80px;
 }
 
 .dw-depth-1 {
@@ -825,10 +825,7 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
   min-width: 7em;
 }
 
-/* Javascript shows clickable .dw-show-more-rat-tags,
- and hides .dw-more-rat-tags. */
 .dw-fs-rat .dw-show-more-rat-tags {
-  display: none;
   margin-top: 1em;
   float: left; /* otherwise margin-top has no effect, why not? */
   clear: both;
@@ -836,8 +833,9 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
   font-size: 85%;
 }
 
-/* stack more-rating-tags horizontally */
+/* Stack more-rating-tags horizontally. */
 .dw-fs-rat .dw-more-rat-tags {
+  display: none; /* shown on .dw-show-more-rat-tags click */
   clear: both;
   margin-top: 1em;
   max-width: none;

@@ -147,6 +147,9 @@ $.event.add(document, "mousedown", function() {
   //didResize = false; -- currently handled in another mousedown
 });
 
+// Later on, arrow drawing functions are placed in the SVG object.
+var SVG = {};
+
 
 // ------- Zoom event
 
@@ -170,9 +173,6 @@ var zoomListeners = [];
 }());
 
 // ------- Open/close
-
-// Open/close threads if the thread-info div is clicked.
-$('.debiki').delegate('.dw-z', 'click', $openCloseThread);
 
 function $openCloseThread() {
   var thread = $(this).closest(".dw-t");
@@ -294,11 +294,6 @@ function resizeRootThread() {
 function resizeRootThreadExtraWide() {
   resizeRootThreadImpl(true);
 }
-
-// Export resize functions, for debugging.
-// (Otherwise too late to export from here, inside onload event?)
-Debiki.v0.resizeRootThread = resizeRootThread;
-Debiki.v0.resizeRootThreadExtraWide = resizeRootThreadExtraWide;
 
 // After an elem has been resized, the root thread is resized by
 // a call to resizeRootThread(). However, it seems the browser
@@ -485,9 +480,8 @@ var tagDog = (function(){
 
 // ------- Posts
 
-// Replace .dw-as links with reply/edit/rate links (visible on hover).
-$(".debiki .dw-p").each($initPost);
-
+// Makes posts resizable, activates mouseenter/leave functionality,
+// draws arrows to child threads, etc.
 function $initPost(){
   // TODO rewrite-rename to initThread, which handles whole subtrees at once.
   // Then, $(".debiki .dw-p").each($initPost)
@@ -668,16 +662,6 @@ function $placeInlineThreads() {
   });
 }
 
-$('.dw-depth-0').each($placeInlineMarks);
-$('.dw-depth-0').each($placeInlineThreads);
-
-// When hovering an inline mark or thread, highlight the corresponding
-// thread or mark.
-// TODO do this from $initPost, so it works also for ajax-loaded threads.
-// TODO don't remove the highlighting until hovering something else?
-//  So one can follow the svg path to the inline thread.
-$('.dw-i-m-start').hover($inlineMarkHighlightOn, $inlineMarkHighlightOff);
-
 function $inlineMarkHighlightOn() {
   // TODO highligt arrow too. Break out highlighting code from
   // $('.dw-i-t > .dw-p').hover(...) just below.
@@ -689,10 +673,6 @@ function $inlineMarkHighlightOff() {
   $($(this).attr('href')).children('.dw-p').add(this)
       .removeClass('dw-highlight');
 }
-
-// When hovering an inline thread, highlight the mark.
-$('.dw-i-t > .dw-p').hover($inlineThreadHighlightOn,
-    $inlineThreadHighlightOff);
 
 function $inlineThreadHighlightOn() {
   // COULD write functions that constructs e.g. a mark ID given
@@ -729,12 +709,7 @@ function $inlineThreadHighlightOff() {
 
 // ------- Inline actions
 
-// On post text click, open a menu with Inline Reply and
-// Edit endries.
-// For now: Don't open a menu, assume a click means an inline reply.
-
-$('.debiki').delegate('.dw-p-bdy-blk', 'click', $showInlineActionMenu);
-
+// Opens a menu with Inline Reply and Edit endries.
 function $showInlineActionMenu(event) {
   var $menu;
   $lastInlineMenu.remove(); // prevents opening two inline menus at once
@@ -875,13 +850,6 @@ function slideAwayRemove($form) {
   }
 }
 
-// Remove new-reply and rating forms on cancel, but 
-// the edit form has some own special logic.
-$('.debiki').delegate(
-    '.dw-fs-re .dw-fi-cancel, ' +
-    '.dw-fs-rat .dw-fi-cancel',
-    'click', $removeClosestForms);
-
 function $removeClosestForms() {
   slideAwayRemove($(this).closest('.dw-fs'));
 }
@@ -921,9 +889,6 @@ function slideInActionForm($form, $where) {
     });
 }
 
-// Hide all action forms, since they will be slided in.
-$('#dw-hidden-templates .dw-fs').hide();
-
 function dismissActionMenu() {
   $('#dw-action-menu').appendTo($('#dw-hidden-templates'));
 }
@@ -951,17 +916,12 @@ function updateAuthorInfo($post, name) {
   if (by === name) $post.addClass('dw-mine');
 }
 
-// Add .dw-mine class to all .dw-t:s written by this user.
-$('.debiki .dw-t').each($markMyPosts);
-
 function $markMyPosts() {
   updateAuthorInfo($(this), $.cookie('dwUserName'));
 }
 
 
 // ------- Rating
-
-$('.debiki').delegate('.dw-a-rate', 'click', $showRatingForm);
 
 function $showRatingForm() {
   var thread = $(this).closest('.dw-t');
@@ -1051,18 +1011,13 @@ function $showRatingForm() {
   dismissActionMenu();
 }
 
-// Show more rating tags when clicking the "More..." button.
-rateFormTemplate.find('.dw-more-rat-tags').hide();
-rateFormTemplate.find('.dw-show-more-rat-tags').show().
-  click(function() {
-    $(this).hide().
+function $showMoreRatingTags() {
+  $(this).hide().
       closest('form').find('.dw-more-rat-tags').show();
-  });
+}
 
 
 // ------- Replying
-
-$('.debiki').delegate('.dw-a-reply', 'click', $showReplyForm);
 
 // Shows a reply form, either below the relevant post, or inside it,
 // if the reply is an inline comment -- whichever is the case is determined
@@ -1143,24 +1098,16 @@ function $showReplyForm(event, opt_where) {
 
 // ------- Editing
 
-// On Edit button click, show edit suggestions, and a new-suggestion button.
-$('.debiki').delegate('.dw-a-edit', 'click', function() {
+// Shows edit suggestions and a new-suggestion button.
+function $showEditSuggestions() {
   $(this).closest('.dw-t').children('.dw-ess, .dw-a-edit-new')
       .stop(true,true)
       .slideToggle(500);
-});
+}
 
-// Show a change diff instead of the post text, when hovering an edit 
-// suggestion.
-$('.debiki')
-    .delegate('.dw-es', 'mouseenter', function(){
-      $(this).find('.dw-ed-text').each($showEditDiff);
-    })
-    .delegate('.dw-ess', 'mouseleave', $removeEditDiff);
-
-// Hides the closest post text; shows a diff instead,
-// of the-text-of-the-post and $(this).val() or .text().
-// $removeEditDiff shows the post again.
+// Invoke this function on a textarea or an edit suggestion.
+// It hides the closest post text and shows a diff of the-text-of-the-post
+// and $(this).val() or .text(). $removeEditDiff shows the post again.
 function $showEditDiff() {
   // Find the closest post
   var $post = $(this).closest('.dw-t').children('.dw-p');
@@ -1241,9 +1188,7 @@ function prettyHtmlFor(diffs) {
   return html.join('');
 }
 
-// New edit suggestion
-$('.debiki').delegate('.dw-a-edit-new', 'click', $showEditForm);
-
+// Shows a new edit suggestion form.
 function $showEditForm() {
   var $thread = $(this).closest('.dw-t');
   clearfix($thread); // makes edit area appear inside $thread
@@ -1441,16 +1386,9 @@ c   x1,y1 x2,y2 x,y curveto   Relative coordinates.
 
 }}} */
 
-// Add more space between a post and its children, if the post is layed out
-// horizontally, since then a horizontal arrow will be drawn from the post
-// to its child posts.
-$('.dw-t-vspace').css('height', '80px');
-
-// SVG Web's Flash renderer won't do; we need native browser support,
-// or we'll use images instead of SVG graphics.
-var nativeSvgSupport =
-    window.svgweb && window.svgweb.getHandlerType() === 'native';
-
+// Returns an object with functions that draws SVG arrows between threads,
+// to illustrate their relationships. The arrows are drawn in whitespace
+// between threads, e.g. on the visibility:hidden .dw-t-vspace elems.
 function initSvgDrawer() {
   function $createSvgRoot() {
     // See:
@@ -1718,17 +1656,6 @@ function initFakeDrawer() {
   };
 }
 
-var SVG =
-    nativeSvgSupport && document.URL.indexOf('svg=false') === -1 ?
-    initSvgDrawer() : initFakeDrawer();
-
-SVG.drawRelationships();
-
-// Poll for zoom in/out events, and redraw arrows if zoomed,
-// because svg and html are not resized in the same manner: Unless
-// arrows redrawn, their ends are incorrectly offsett.
-zoomListeners.push(SVG.drawRelationships);
-
 
 // ------- Miscellaneous
 
@@ -1792,7 +1719,81 @@ function buildTagFindId(html, id) {
 }
 
 
-// ------- Layout
+// ------- Invoke functions, do layout
+
+// Open/close threads if the thread-info div is clicked.
+$('.debiki').delegate('.dw-z', 'click', $openCloseThread);
+
+$(".debiki .dw-p").each($initPost);
+
+$('.dw-depth-0').each($placeInlineMarks);
+$('.dw-depth-0').each($placeInlineThreads);
+
+// When hovering an inline mark or thread, highlight the corresponding
+// thread or mark.
+// TODO do this from $initPost, so it works also for ajax-loaded threads.
+// TODO don't remove the highlighting until hovering something else?
+//  So one can follow the svg path to the inline thread.
+$('.dw-i-m-start').hover($inlineMarkHighlightOn, $inlineMarkHighlightOff);
+
+// When hovering an inline thread, highlight the mark.
+$('.dw-i-t > .dw-p').hover($inlineThreadHighlightOn,
+    $inlineThreadHighlightOff);
+
+// On post text click, open the inline action menu.
+$('.debiki').delegate('.dw-p-bdy-blk', 'click', $showInlineActionMenu);
+
+// Remove new-reply and rating forms on cancel, but 
+// the edit form has some own special logic.
+$('.debiki').delegate(
+    '.dw-fs-re .dw-fi-cancel, ' +
+    '.dw-fs-rat .dw-fi-cancel',
+    'click', $removeClosestForms);
+
+// Hide all action forms, since they will be slided in.
+$('#dw-hidden-templates .dw-fs').hide();
+
+// Add .dw-mine class to all .dw-t:s written by this user.
+$('.debiki .dw-t').each($markMyPosts);
+
+$('.debiki').delegate('.dw-a-rate', 'click', $showRatingForm);
+
+// Show more rating tags when clicking the "More..." button.
+rateFormTemplate.find('.dw-show-more-rat-tags').click($showMoreRatingTags);
+
+
+$('.debiki').delegate('.dw-a-reply', 'click', $showReplyForm);
+
+
+$('.debiki').delegate('.dw-a-edit', 'click', $showEditSuggestions);
+
+// Show a change diff instead of the post text, when hovering an edit 
+// suggestion.
+$('.debiki')
+    .delegate('.dw-es', 'mouseenter', function(){
+      // COULD move find(...) to inside $showEditDiff?
+      // (Don't want such logic placed down here.)
+      $(this).find('.dw-ed-text').each($showEditDiff);
+    })
+    .delegate('.dw-ess', 'mouseleave', $removeEditDiff);
+
+$('.debiki').delegate('.dw-a-edit-new', 'click', $showEditForm);
+
+// SVG Web's Flash renderer won't do; we need native browser support,
+// or we'll use images instead of SVG graphics.
+var nativeSvgSupport =
+    window.svgweb && window.svgweb.getHandlerType() === 'native';
+
+SVG = nativeSvgSupport && document.URL.indexOf('svg=false') === -1 ?
+    initSvgDrawer() : initFakeDrawer();
+
+SVG.drawRelationships();
+
+// Poll for zoom in/out events, and redraw arrows if zoomed,
+// because svg and html are not resized in the same manner: Unless
+// arrows redrawn, their ends are incorrectly offsett.
+zoomListeners.push(SVG.drawRelationships);
+
 
 resizeRootThread();
 
