@@ -1,6 +1,29 @@
 vim: fdm=marker et sw=2 ts=2
 
 
+{{{ Fresh SVG arrows
+
+Split $initPost into:
+- $initThread, which: $(this).closest('.dw-t').find('.dw-t').each($initPost)
+- $initPost
+
+
+Split SVG.drawRelationships into:
+- SVG.$drawPost()
+- SVG.$drawThread()
+
+Split SVG.initialize into:
+- SVG.$initPost()
+- SVG.$initRootThread()
+
+Remove $updateThreadGraphics, superseeded by drawThread().
+Rename $updateThreadGraphics in makeFakeDrawer to drawThread.
+
+Call $drawThread/Post instead of $updateThreadGraphics.
+
+(Make makeFakeDrawer().drawPost() draw all arrows it should draw, see TODO & BUG.)
+
+}}}
 {{{ Remove post height/width restrictions
 
 function $makePostResizable() {
@@ -18,6 +41,55 @@ function $makePostResizable() {
         if ($origTgt.hasClass('ui-resizable-e')) $expand = $expandEast;
         else if ($origTgt.hasClass('ui-resizable-s')) $expand = $expandSouth;
         $post.each($expand);
+
+}}}
+{{{ Searching comments
+
+Unicode code points for underline, kbd, em, etc:
+Miscellaneous Technical
+http://www.unicode.org/charts/PDF/U2300.pdf
+
+http://www.unicode.org/charts/PDF/U2000.pdf
+(line sep, par sep)
+(black left/rightwards bullet -- bold?)
+
+http://www.unicode.org/charts/PDF/U25A0.pdf
+(geometrical shapes)
+
+}}}
+{{{ Inline comments, planning
+
+Post entries, add:
+ where:
+   before: "Text to match in previous paragraph"
+   after: "Text to match in the subsequent paragraph"
+   start: "The first 32 chars of the marked text"
+   end: "The first 32 chars just after the text"
+ but initially, only this:
+ where: "The first 32 chars of the marked text"
+
+Before converting from markdown to html:
+ Find match indexes,
+ insert: <a class='dw-ic' href='#guid-of-comment'>...</a>
+ where the mark starts and ends. Or simply <a .../>.
+ (dw-ic means "inline comment start/end")
+ 
+ Details:
+   For each reply, match its `where' against the post text.
+   Remember before/after/start/end indexes,
+     store in a map: index --> type of match & the child post id
+   Sort the map by index, descending sort order.
+   For each map entry, insert
+    <a class='dw-ic dw-ic-start/end/before/after' href='#post-id' />
+
+Add the inline comments to the .dw-res list as usual.
+
+jQuery-loop through all <a class='dw-ic'>, look up the matching dw-p by id
+and prepend it to the <a> or the a's paren <p>, and change from <li> to <div>.
+
+Then lots of CSS tweaks to make everything work OK?
+ - the inline post should be:
+      float:right, clear:right
 
 }}}
 {{{ Diff-implementation !?
@@ -113,7 +185,7 @@ d dw-linkify-ui-state-default -> dw-ui-state-default-linkified
 
   dw-js-variables   dw-js-vars
 
-  dw-post-*         '' ??
+  dw-post-*         dw-p-* (e.g. post ids)
   dw-post-new       dw-new-post
   dw-post-edited    dw-new-edit
 

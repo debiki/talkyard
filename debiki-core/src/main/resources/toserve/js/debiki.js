@@ -425,6 +425,19 @@ function $makePostResizable() {
 // Does not reorder elems currently shown (even if their likeability have
 // changed significantly), to avoid surprising the user (by
 // shuffling everything around).
+// {{{ COULD include SHA1:s of each thread, and avoid reloading threads whose
+// SHA1 is the same in the server's reply. The server need not upload
+// those threads at all — that would require the server to generate
+// unique replies to each client.
+// The server COULD check SHA1:s from the client, and find all threads
+// that has been changed (since the client got its version), and add
+// all those threads in an <ul> and upload it. The client would then
+// replace threads with the never versions in the <ul> — but keeping old
+// subtrees whose SHA1 hadn't been changed.
+// The server COULD include a <del data-what='thread-id, thread-id, ...'></del>
+// but perhaps not needed — [the parent of each deleted thread] will have
+// a new SHA1 and it'll be reloaded automatically.
+// }}}
 function updateDebate(newDebateHtml) {
   var $curDebate = $('.dw-debate');
   var $newDebate = buildTagFind(newDebateHtml, '.dw-debate');
@@ -438,10 +451,12 @@ function updateDebate(newDebateHtml) {
               $oldThis.children('.dw-p').dw_postModTime() <
               $(this).children('.dw-p').dw_postModTime();
       // TODO: Some more jQuery should be registered below, e.g. resizing.
+      // TODO: Inline threads.
       if (isPostEdited) {
         $(this).children('.dw-p')
           .replaceAll($oldThis.children('.dw-p'))
           .addClass('dw-post-edited'); // outlines it, COULD rename CSS class
+        // BUG? New child threads aren't added?
       }
       else if (isNewThread && !isSubThread) {
         // (A thread that *is* a sub-thread of another new thread, is added
@@ -453,12 +468,14 @@ function updateDebate(newDebateHtml) {
         }
         $(this)
           .addClass('dw-post-new') // outlines it, and its sub thread posts
+              // TODO Highlight arrows too? To new replies / one's own reply.
           .prependTo($res)
           .each(SVG.$updateThreadGraphics);
       }
       else
         return;
-      // TODO when $initPost handles subtrees, stop calling per child thread.
+      // BUG $initPost is never called on child threads (isSubThread true).
+      // So e.g. the <a ... class="dw-as">React</a> link isn't replaced.
       $(this).each($initPost);
     });
 }
@@ -1735,7 +1752,10 @@ $('.debiki').delegate('.dw-z', 'click', $openCloseThread);
 
 $(".debiki .dw-p").each($initPost);
 
+// COULD rewrite so places marks per post (in addition to whole threads).
 $('.dw-depth-0').each($placeInlineMarks);
+
+// COULD rewrite so places threads per post (in addition to whole threads).
 $('.dw-depth-0').each($placeInlineThreads);
 
 // When hovering an inline mark or thread, highlight the corresponding

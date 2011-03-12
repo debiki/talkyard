@@ -36,8 +36,8 @@
  *  dw-a-edit-new new edit suggestion
  *  dw-ess        edit suggestions
  *  dw-es-vs      votes on a certain edit suggestion
- *  dw-fs         form group
- *  dw-fs-ed      edit form group
+ *  dw-fs         form group      (COULD remove — there're no groups any more?)
+ *  dw-fs-ed      edit form group (COULD rename to -f-ed/re/rat ?)
  *  dw-fs-re      reply form group
  *  dw-fs-rat     rating form group
  *  dw-i-t        inline thread (COULD use dw-i instead, already has dw-t class)
