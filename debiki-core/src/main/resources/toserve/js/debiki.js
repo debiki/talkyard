@@ -1446,26 +1446,24 @@ c   x1,y1 x2,y2 x,y curveto   Relative coordinates.
 // to its child posts.
 $('.dw-t-vspace').css('height', '80px');
 
-var SVG = {
-  // SVG Web's Flash renderer won't do; we need native browser support.
-  nativeSupport: window.svgweb && window.svgweb.getHandlerType() === 'native',
-  // Dummy functions, in case there's no native support:
-  $createSvgRoot: function(){}
-};
+// SVG Web's Flash renderer won't do; we need native browser support,
+// or we'll use images instead of SVG graphics.
+var nativeSvgSupport =
+    window.svgweb && window.svgweb.getHandlerType() === 'native';
 
-if (SVG.nativeSupport) {
-  SVG.$createSvgRoot = function() {
+function initSvgDrawer() {
+  function $createSvgRoot() {
     // See:
     // http://svgweb.googlecode.com/svn/trunk/docs/UserManual.html#dynamic_root
     var svg = document.createElementNS(svgns, 'svg');  // need not pass 'true'
     svgweb.appendChild(svg, $(this).get(0));
     $(this).addClass('dw-svg-parent');
-  };
+  }
 
   // Create a SVG root elem for the root thread. An SVG root is created
   // for each post body, from inside $initPost.
-  $('#dw-t-root').each(SVG.$createSvgRoot);
-  $('.dw-p-bdy').each(SVG.$createSvgRoot); // move to $initPost
+  $('#dw-t-root').each($createSvgRoot);
+  $('.dw-p-bdy').each($createSvgRoot); // move to $initPost
 
   function findClosestRoot($elem) {
     var $root = $elem.closest('.dw-svg-parent').children('svg');
@@ -1539,13 +1537,8 @@ if (SVG.nativeSupport) {
                                         // +'_'+ $inlineThread.attr('id'));
     $svgRoot.append(r);
     r = false;
-  };
-}
+  }
 
-// Optionally add functionality provided both in SVG and fake .png arrow images.
-// Currently the fake images actually work better. So by default, they are used,
-// even if there's native SVG support.
-if (SVG.nativeSupport && document.URL.indexOf('svg=true') !== -1) {(function(){
   function arrowFromThreadToReply($thread, $to) {
     var $svgRoot = findClosestRoot($thread);
     // Do not use $svgRoot.offset() — see comment somewhere above, search
@@ -1624,7 +1617,7 @@ if (SVG.nativeSupport && document.URL.indexOf('svg=true') !== -1) {(function(){
   }
 
   // Draw curves from threads to children
-  SVG.drawRelationships = function() {
+  function drawRelationships() {
     // Resize <svg> elems and remove old curves
     $('.dw-debate svg').each(function(){
       // Unless the <svg> is sized up in this manner, the SVG arrows
@@ -1657,11 +1650,15 @@ if (SVG.nativeSupport && document.URL.indexOf('svg=true') !== -1) {(function(){
     // The browser internal stylesheet defaults to height: 100%.
     $('#dw-svg-win').height($('.dw-depth-0').height() + 100);
     $('#dw-svg-win').width($('.dw-depth-0').width());
-  };
+  }
 
-  SVG.$updateThreadGraphics = function() {}; // not implemented
-}());}
-else {(function(){
+  return {
+    $updateThreadGraphics: function() {}, // not implemented
+    drawRelationships: drawRelationships
+  };
+}
+
+function initFakeDrawer() {
   // No SVG support. The svgweb Flash renderer seems far too slow
   // when resizing the Flash screen to e.g. 2000x2000 pixels.
   // And scrolldrag stops working (no idea why). Seems easier
@@ -1691,8 +1688,9 @@ else {(function(){
   $('.dw-hor > .dw-a > .dw-a-reply').each(function(){
     $(this).before('<div class="dw-svg-fake-hcurve-start"/>');
   });
+
   // Arrows to each child thread.
-  SVG.$updateThreadGraphics = function() {
+  function $updateThreadGraphics() {
     if ($(this).parent().closest('.dw-t').filter('.dw-hor').length) {
       // horizontal arrow
       $(this).filter(':not(:last-child)').each(function(){
@@ -1703,16 +1701,26 @@ else {(function(){
     } else {
       // vertical arrow, already handled above.
     }
-  };
+  }
   // To root post replies
-  $('.dw-hor > .dw-res > li').each(SVG.$updateThreadGraphics);
+  $('.dw-hor > .dw-res > li').each($updateThreadGraphics);
   // To inline root post replies
-  $('.dw-hor > .dw-p > .dw-p-bdy > .dw-i-t').each(SVG.$updateThreadGraphics);
-  SVG.drawRelationships = function() {
+  $('.dw-hor > .dw-p > .dw-p-bdy > .dw-i-t').each($updateThreadGraphics);
+
+  function drawRelationships() {
     // TODO: If any SVG native support: draw arrows to inline threads?
     // Or implement via fake .png arrows?
+  }
+
+  return {
+    $updateThreadGraphics: $updateThreadGraphics,
+    drawRelationships: drawRelationships
   };
-}());}
+}
+
+var SVG =
+    nativeSvgSupport && document.URL.indexOf('svg=false') === -1 ?
+    initSvgDrawer() : initFakeDrawer();
 
 SVG.drawRelationships();
 
@@ -1720,9 +1728,6 @@ SVG.drawRelationships();
 // because svg and html are not resized in the same manner: Unless
 // arrows redrawn, their ends are incorrectly offsett.
 zoomListeners.push(SVG.drawRelationships);
-
-//$('.dw-t').each(SVG.$curvesToChildren);
-Debiki.v0.SVG = SVG; // debug-export: Debiki.v0.SVG.curvesToChildren()
 
 
 // ------- Miscellaneous
