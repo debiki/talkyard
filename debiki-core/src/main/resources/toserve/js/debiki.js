@@ -5,6 +5,9 @@
 // - The implementation of the Debiki module
 // - A jQuery onload handler
 
+// Google Closure Linter: Run like so:
+//  gjslint src/main/resources/toserve/js/debiki.js | egrep -v 'E:0002:'
+
 Debiki = {};  // TODO: Error handling?
 Debiki.v0 = {};
 
@@ -120,6 +123,8 @@ Debiki.v0.setEditFormSubmitter = function(submitter) {
    jQuery.noConflict()(function($){
 //----------------------------------------
 
+// ------- Variables
+
 var diffMatchPatch = new diff_match_patch();
 diffMatchPatch.Diff_Timeout = 1; // seconds
 diffMatchPatch.Match_Distance = 100*1000; // for now
@@ -167,7 +172,9 @@ var zoomListeners = [];
 // ------- Open/close
 
 // Open/close threads if the thread-info div is clicked.
-$('.debiki').delegate('.dw-z', 'click', function() {
+$('.debiki').delegate('.dw-z', 'click', $openCloseThread);
+
+function $openCloseThread() {
   var thread = $(this).closest(".dw-t");
   resizeRootThreadExtraWide();
   thread.
@@ -193,7 +200,7 @@ $('.debiki').delegate('.dw-z', 'click', function() {
         var newText = $(this).text().indexOf('+') === -1 ? '[+]' : '[–]';
         $(this).text(newText);
       });
-});
+}
 
 
 // ------- Outlining
@@ -219,7 +226,7 @@ $('.debiki').delegate('.dw-z', 'click', function() {
 // Is this not done e.g. when child posts are resized or stacked eastwards,
 // or a reply/rate/edit form is shown/resized, the east-most threads
 // will float-drop below the other threads.
-var resizeRootThreadImpl = function(extraWidth){
+function resizeRootThreadImpl(extraWidth) {
   if (extraWidth === true) extraWidth = 1000; // 3 x reply/edit form width
   else {
     // If a user drag-resizes a form quicker than this amount of pixels
@@ -255,10 +262,10 @@ var resizeRootThreadImpl = function(extraWidth){
   // Something has been resized, so parent-->child thread bezier curves
   // might need to be redrawn.
   SVG.drawRelationships();
-};
+}
 
 // Finds the width of the widest [paragraph plus inline threads].
-function $findMaxInlineWidth(){
+function $findMaxInlineWidth() {
   var accWidth = 0;
   var maxWidth = 0;
   $(this).find('> .dw-p > .dw-p-bdy').children().each(function(){
@@ -277,7 +284,7 @@ function $findMaxInlineWidth(){
 // Is this not done e.g. when child posts are resized or stacked eastwards,
 // or a reply/rate/edit form is shown/resized, the east-most threads
 // will float-drop below the other threads.
-function resizeRootThread(){
+function resizeRootThread() {
   resizeRootThreadImpl();
 }
 
@@ -451,6 +458,7 @@ function updateDebate(newDebateHtml) {
       }
       else
         return;
+      // TODO when $initPost handles subtrees, stop calling per child thread.
       $(this).each($initPost);
     });
 }
@@ -668,18 +676,25 @@ $('.dw-depth-0').each($placeInlineThreads);
 // TODO do this from $initPost, so it works also for ajax-loaded threads.
 // TODO don't remove the highlighting until hovering something else?
 //  So one can follow the svg path to the inline thread.
-$('.dw-i-m-start').hover(function(){
+$('.dw-i-m-start').hover($inlineMarkHighlightOn, $inlineMarkHighlightOff);
+
+function $inlineMarkHighlightOn() {
   // TODO highligt arrow too. Break out highlighting code from
   // $('.dw-i-t > .dw-p').hover(...) just below.
   $($(this).attr('href')).children('.dw-p').add(this)
       .addClass('dw-highlight');
-}, function() {
+}
+
+function $inlineMarkHighlightOff() {
   $($(this).attr('href')).children('.dw-p').add(this)
       .removeClass('dw-highlight');
-});
+}
 
 // When hovering an inline thread, highlight the mark.
-$('.dw-i-t > .dw-p').hover(function(){
+$('.dw-i-t > .dw-p').hover($inlineThreadHighlightOn,
+    $inlineThreadHighlightOff);
+
+function $inlineThreadHighlightOn() {
   // COULD write functions that constructs e.g. a mark ID given
   // a thread ID, instead of duplicating that code everywhere?
   var threadId = $(this).closest('.dw-t').attr('id');
@@ -695,7 +710,9 @@ $('.dw-i-t > .dw-p').hover(function(){
   var curve = $('#'+ svgCurveId).get(0);
   curve.style.stroke = '#f0a005';
   curve.style.strokeWidth = 4;
-}, function() {
+}
+
+function $inlineThreadHighlightOff() {
   // WARNING dupl code, see the other `hover' callback right above.
   var threadId = $(this).closest('.dw-t').attr('id');
   var inlineMarkId = 'dw-i-m_'+ threadId;
@@ -707,7 +724,7 @@ $('.dw-i-t > .dw-p').hover(function(){
   var curve = $('#'+ svgCurveId).get(0);
   curve.style.stroke = '#dde';
   curve.style.strokeWidth = 3;
-});
+}
 
 
 // ------- Inline actions
@@ -716,7 +733,9 @@ $('.dw-i-t > .dw-p').hover(function(){
 // Edit endries.
 // For now: Don't open a menu, assume a click means an inline reply.
 
-$('.debiki').delegate('.dw-p-bdy-blk', 'click', function(event){
+$('.debiki').delegate('.dw-p-bdy-blk', 'click', $showInlineActionMenu);
+
+function $showInlineActionMenu(event) {
   var $menu;
   $lastInlineMenu.remove(); // prevents opening two inline menus at once
 
@@ -820,7 +839,7 @@ $('.debiki').delegate('.dw-p-bdy-blk', 'click', function(event){
   });
 
   $lastInlineMenu = $menu;
-});
+}
 
 
 // ------- Forms and actions
@@ -861,7 +880,11 @@ function slideAwayRemove($form) {
 $('.debiki').delegate(
     '.dw-fs-re .dw-fi-cancel, ' +
     '.dw-fs-rat .dw-fi-cancel',
-    'click', function(){ slideAwayRemove($(this).closest('.dw-fs')); });
+    'click', $removeClosestForms);
+
+function $removeClosestForms() {
+  slideAwayRemove($(this).closest('.dw-fs'));
+}
 
 // Slide in reply, edit and rate forms -- I think it's
 // easier to understand how they are related to other elems
@@ -929,16 +952,18 @@ function updateAuthorInfo($post, name) {
 }
 
 // Add .dw-mine class to all .dw-t:s written by this user.
-$('.debiki .dw-t').each(function(){
-    updateAuthorInfo($(this), $.cookie('dwUserName'));
-  });
+$('.debiki .dw-t').each($markMyPosts);
+
+function $markMyPosts() {
+  updateAuthorInfo($(this), $.cookie('dwUserName'));
+}
 
 
 // ------- Rating
 
-$('.debiki').delegate('.dw-a-rate', 'click', function() {
-  // Warning: Some duplicated code, see .dw-a-reply and
-  // dw-a-edit-new click() below.
+$('.debiki').delegate('.dw-a-rate', 'click', $showRatingForm);
+
+function $showRatingForm() {
   var thread = $(this).closest('.dw-t');
   clearfix(thread); // ensures the rating appears nested inside the thread
   var $post = thread.children('.dw-p');
@@ -1024,7 +1049,7 @@ $('.debiki').delegate('.dw-a-rate', 'click', function() {
   // Reveal the form
   slideInActionForm($rateForm, thread);
   dismissActionMenu();
-});
+}
 
 // Show more rating tags when clicking the "More..." button.
 rateFormTemplate.find('.dw-more-rat-tags').hide();
@@ -1217,7 +1242,9 @@ function prettyHtmlFor(diffs) {
 }
 
 // New edit suggestion
-$('.debiki').delegate('.dw-a-edit-new', 'click', function() {
+$('.debiki').delegate('.dw-a-edit-new', 'click', $showEditForm);
+
+function $showEditForm() {
   var $thread = $(this).closest('.dw-t');
   clearfix($thread); // makes edit area appear inside $thread
   var $post = $thread.children('.dw-p');
@@ -1370,7 +1397,7 @@ $('.debiki').delegate('.dw-a-edit-new', 'click', function() {
           autoHeight: false, fillSpace: true, icons: false });
       });
   });
-});
+}
 
 // ------- Edit anything, attempt 0
 
@@ -1419,38 +1446,39 @@ c   x1,y1 x2,y2 x,y curveto   Relative coordinates.
 // to its child posts.
 $('.dw-t-vspace').css('height', '80px');
 
-SVG = {
+var SVG = {
   // SVG Web's Flash renderer won't do; we need native browser support.
-  nativeSupport: window.svgweb && window.svgweb.getHandlerType() === 'native'
+  nativeSupport: window.svgweb && window.svgweb.getHandlerType() === 'native',
+  // Dummy functions, in case there's no native support:
+  $createSvgRoot: function(){}
 };
 
-// Add functionality provided only in SVG (but not in fake .png arrow images).
-SVG.curveMarkToInline = function(){};
-
 if (SVG.nativeSupport) {
-  // Create a SVG tag for the root thread, and each post body.
-  // (An inline thread is drawn above its parent post's body,
-  // so an SVG tag is needed in each .dw-p-bdy with any inline thread.)
-  $('#dw-t-root, .dw-p-bdy').each(function(){
+  SVG.$createSvgRoot = function() {
     // See:
     // http://svgweb.googlecode.com/svn/trunk/docs/UserManual.html#dynamic_root
     var svg = document.createElementNS(svgns, 'svg');  // need not pass 'true'
     svgweb.appendChild(svg, $(this).get(0));
     $(this).addClass('dw-svg-parent');
-  });
+  };
 
-  SVG.findClosestRoot = function($elem) {
+  // Create a SVG root elem for the root thread. An SVG root is created
+  // for each post body, from inside $initPost.
+  $('#dw-t-root').each(SVG.$createSvgRoot);
+  $('.dw-p-bdy').each(SVG.$createSvgRoot); // move to $initPost
+
+  function findClosestRoot($elem) {
     var $root = $elem.closest('.dw-svg-parent').children('svg');
     dieIf(!$root.length, 'No SVG root found [debiki_error_84362qwkghd]');
     return $root;
-  };
+  }
 
   // Draws an arrow from a mark to an inline thread.
-  SVG.curveMarkToInline = function($mark, $inlineThread) {
+  function arrowFromMarkToInline($mark, $inlineThread) {
     var $bdyBlk = $mark.closest('.dw-p-bdy-blk');
     var $thread = $bdyBlk.closest('.dw-t');
     var horizontalLayout = Boolean($thread.filter('.dw-hor').length);
-    var $svgRoot = SVG.findClosestRoot($mark);
+    var $svgRoot = findClosestRoot($mark);
     // Do not use $svgRoot.offset() as offset, because that seems to be the
     // offset of the northwest-most SVG element in the <svg> tag. Instead,
     // use the parent elem's offset, which works fine since the <svg> has
@@ -1461,7 +1489,7 @@ if (SVG.nativeSupport) {
     var svgOffs = $svgRoot.parent().offset();
     var from = $mark.offset();
     var to = $inlineThread.offset();
-    var r = document.createElementNS(SVG.XML_NS, 'path');
+    var r = document.createElementNS(svgns, 'path');
     var xs = from.left - svgOffs.left; // start
     var ys = from.top - svgOffs.top;
     var xe = to.left - svgOffs.left; // end
@@ -1518,15 +1546,13 @@ if (SVG.nativeSupport) {
 // Currently the fake images actually work better. So by default, they are used,
 // even if there's native SVG support.
 if (SVG.nativeSupport && document.URL.indexOf('svg=true') !== -1) {(function(){
-  SVG.XML_NS = 'http://www.w3.org/2000/svg';
-
-  SVG.curveTreadToReply = function($thread, $to) {
-    var $svgRoot = SVG.findClosestRoot($thread);
+  function arrowFromThreadToReply($thread, $to) {
+    var $svgRoot = findClosestRoot($thread);
     // Do not use $svgRoot.offset() — see comment somewhere above, search
     // for "$svgRoot.offset()". COULD merge this somewhat duplicated code?
     var svgOffs = $svgRoot.parent().offset();
     var from = $thread.offset(), to = $to.offset(); // from, to
-    var r = document.createElementNS(SVG.XML_NS, 'path');
+    var r = document.createElementNS(svgns, 'path');
     var xs = from.left - svgOffs.left; // start
     var ys = from.top - svgOffs.top;
     var xe = to.left - svgOffs.left; // end
@@ -1543,9 +1569,9 @@ if (SVG.nativeSupport && document.URL.indexOf('svg=true') !== -1) {(function(){
       // All curves start in this way.
       var curveStart = function(xs, ys, dx, dy) {
         return 'M '+ xs +' '+ ys +             // draw Bezier   |
-              ' C '+ (xs+08) +' '+ (ys+dy) +   // curve start   \
+              ' C '+ (xs+ 8) +' '+ (ys+dy) +   // curve start   \
                 ' '+ (xs+dx) +' '+ (ys+dy);    //                `
-      }
+      };
 
       if (xe < xs) {
         // $to is placed to the left of the arrow start. This happens e.g.
@@ -1554,9 +1580,7 @@ if (SVG.nativeSupport && document.URL.indexOf('svg=true') !== -1) {(function(){
         // curve in the `else' block just below.
         xe += $to.width() * 0.67;
         ye -= 9;
-        var dx2 = xe - xs - dx + 10;
         var dx = 40 - 10;
-        var xm = (xe - xs - dx) / 2;
         var dy = 28;
                                                 // draw         \
         strokes = curveStart(xs, ys, dx, dy) +  // Bezier        |
@@ -1597,7 +1621,7 @@ if (SVG.nativeSupport && document.URL.indexOf('svg=true') !== -1) {(function(){
     r.setAttribute('id', 'dw-svg-c_'+ $thread.attr('id') +'_'+ $to.attr('id'));
     $svgRoot.append(r);
     r = false;
-  };
+  }
 
   // Draw curves from threads to children
   SVG.drawRelationships = function() {
@@ -1606,7 +1630,7 @@ if (SVG.nativeSupport && document.URL.indexOf('svg=true') !== -1) {(function(){
       // Unless the <svg> is sized up in this manner, the SVG arrows
       // will for some reason be cropped, when you zooom out. (Although
       // overflow:visible!)
-      $parent = $(this).parent();
+      var $parent = $(this).parent();
       $(this).height($parent.height()).width($parent.width());
       // Remove old curvese.
       $('path', this).remove();
@@ -1618,7 +1642,7 @@ if (SVG.nativeSupport && document.URL.indexOf('svg=true') !== -1) {(function(){
       var $t = $(this);
       $t.find('> .dw-a:has(.dw-a-reply), > .dw-res > .dw-t:visible')
           .each(function(){
-        SVG.curveTreadToReply($t, $(this));
+        arrowFromThreadToReply($t, $(this));
       });
       // To inline replies.
       $t.find('> .dw-p > .dw-p-bdy > .dw-p-bdy-blk .dw-i-m-start')
@@ -1626,7 +1650,7 @@ if (SVG.nativeSupport && document.URL.indexOf('svg=true') !== -1) {(function(){
         var $mark = $(this);
         var $inlineThread = $($mark.attr('href')).filter(':visible');
         if ($inlineThread.length) {
-          SVG.curveMarkToInline($mark, $inlineThread);
+          arrowFromMarkToInline($mark, $inlineThread);
         }
       });
     });
@@ -1757,7 +1781,7 @@ function buildTagFind(html, selector) {
 // Builds HTML tags from `html' and returns the tag with the specified id.
 // Works also when $.find('#id') won't (because of corrupt XML?).
 function buildTagFindId(html, id) {
-  if (id.indexOf('#') != -1) die('Include no # in id [debiki_error_985x2jh]');
+  if (id.indexOf('#') !== -1) die('Include no # in id [debiki_error_985x2jh]');
   var $tag = buildTagFind(html, '[id="'+ id +'"]');
   return $tag;
 }
