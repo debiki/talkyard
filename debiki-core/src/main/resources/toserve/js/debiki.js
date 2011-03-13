@@ -266,7 +266,7 @@ function resizeRootThreadImpl(extraWidth) {
 
   // Something has been resized, so parent-->child thread bezier curves
   // might need to be redrawn.
-  SVG.drawRelationships();
+  SVG.drawEverything();
 }
 
 // Finds the width of the widest [paragraph plus inline threads].
@@ -470,7 +470,7 @@ function updateDebate(newDebateHtml) {
           .addClass('dw-post-new') // outlines it, and its sub thread posts
               // TODO Highlight arrows too? To new replies / one's own reply.
           .prependTo($res)
-          .each(SVG.$updateThreadGraphics);
+          .each(SVG.$drawPost);  // TODO? use drawTree instead?
       }
       else
         return;
@@ -535,6 +535,8 @@ function $initPost(){
     .mouseenter($showActions)
     .each($makePostResizable);
   updateAuthorInfo($thread, $.cookie('dwUserName'));
+
+  $thread.children('.dw-p').each(SVG.$initPostSvg);
 }
 
 // Extracts markup source from html.
@@ -1112,7 +1114,7 @@ function $showReplyForm(event, opt_where) {
       }
       $res.prepend($replyFormParent.hide());
     }
-    $replyFormParent.each(SVG.$updateThreadGraphics);
+    $replyFormParent.each(SVG.$drawPost);
     slideInActionForm($replyFormParent);
   });
 }
@@ -1417,11 +1419,19 @@ function makeSvgDrawer() {
     $(this).addClass('dw-svg-parent');
   }
 
-  function initialize() {
-    // Create a SVG root elem for the root thread. An SVG root is created
-    // for each post body, from inside $initPost.
+  function initRootSvg() {
     $('#dw-t-root').each($createSvgRoot);
-    $('.dw-p-bdy').each($createSvgRoot); // move to $initPost
+    // Poll for zoom in/out events, and redraw arrows if zoomed,
+    // because svg and html are not resized in the same manner: Unless
+    // arrows redrawn, their ends are incorrectly offsett.
+    zoomListeners.push(drawEverything);
+  }
+
+  function $initPostSvg() {
+    // An inline thread is drawn above its parent post's body,
+    // so an SVG tag is needed in each .dw-p-bdy with any inline thread.
+    // (For simplicity, create a <svg> root in all .dw-p-bdy:s.)
+    $(this).children('.dw-p-bdy').each($createSvgRoot);
   }
 
   function findClosestRoot($elem) {
@@ -1575,10 +1585,12 @@ function makeSvgDrawer() {
     r = false;
   }
 
+  function $drawPost() {}  // TODO
+
   // Draw curves from threads to children
-  function drawRelationships() {
+  function $drawTree() {
     // Resize <svg> elems and remove old curves
-    $('.dw-debate svg').each(function(){
+    $('svg', this).each(function(){
       // Unless the <svg> is sized up in this manner, the SVG arrows
       // will for some reason be cropped, when you zooom out. (Although
       // overflow:visible!)
@@ -1588,7 +1600,7 @@ function makeSvgDrawer() {
       $('path', this).remove();
     });
     // Create new curves
-    $('.dw-t:visible').each(function(){
+    $('.dw-t:visible', this).each(function(){
       // Draw arrows to whole post replies, and, for horizontal layout,
       // to the Reply button.
       var $t = $(this);
@@ -1608,10 +1620,16 @@ function makeSvgDrawer() {
     });
   }
 
+  function drawEverything() {
+    $('.dw-debate').each(SVG.$drawTree);
+  }
+
   return {
-    initialize: initialize,
-    $updateThreadGraphics: function() {}, // not implemented
-    drawRelationships: drawRelationships
+    initRootSvg: initRootSvg,
+    $initPostSvg: $initPostSvg,
+    $drawPost: $drawPost,
+    $drawTree: $drawTree,
+    drawEverything: drawEverything
   };
 }
 
@@ -1648,15 +1666,16 @@ function makeFakeDrawer() {
     });
 
     // To root post replies
-    $('.dw-hor > .dw-res > li').each($updateThreadGraphics);
+    $('.dw-hor > .dw-res > li').each($initPostSvg);
     // To inline root post replies
     $('.dw-hor > .dw-p > .dw-p-bdy > .dw-i-ts > .dw-i-t').each(
-        $updateThreadGraphics);
+        $initPostSvg);
   }
 
   // Arrows to each child thread.
-  function $updateThreadGraphics() {
-    if ($(this).parent().closest('.dw-t').filter('.dw-hor').length) {
+  function $initPostSvg() {
+    var $parentThread = $(this).closest('.dw-t').parent().closest('.dw-t');
+    if ($parentThread.filter('.dw-hor').length) {
       // horizontal arrow
       $(this).filter(':not(:last-child)').each(function(){
         $(this).prepend("<div class='dw-svg-fake-harrow'/>");
@@ -1670,15 +1689,21 @@ function makeFakeDrawer() {
     }
   }
 
-  function drawRelationships() {
+  function $drawPost() {
     // TODO: If any SVG native support: draw arrows to inline threads?
     // Or implement via fake .png arrows?
   }
 
+  function $drawTree() {} // TODO
+
+  function drawEverything() {}
+
   return {
-    initialize: initialize,
-    $updateThreadGraphics: $updateThreadGraphics,
-    drawRelationships: drawRelationships
+    initRootSvg: initialize,
+    $initPostSvg: $initPostSvg,
+    $drawPost: $drawPost,
+    $drawTree: $drawTree,
+    drawEverything: drawEverything
   };
 }
 
@@ -1750,13 +1775,13 @@ function buildTagFindId(html, id) {
 // Open/close threads if the thread-info div is clicked.
 $('.debiki').delegate('.dw-z', 'click', $openCloseThread);
 
-$(".debiki .dw-p").each($initPost);
-
 // COULD rewrite so places marks per post (in addition to whole threads).
 $('.dw-depth-0').each($placeInlineMarks);
 
 // COULD rewrite so places threads per post (in addition to whole threads).
 $('.dw-depth-0').each($placeInlineThreads);
+
+$(".debiki .dw-p").each($initPost);
 
 // When hovering an inline mark or thread, highlight the corresponding
 // thread or mark.
@@ -1808,13 +1833,8 @@ $('.debiki')
 
 $('.debiki').delegate('.dw-a-edit-new', 'click', $showEditForm);
 
-SVG.initialize();
-SVG.drawRelationships();
-
-// Poll for zoom in/out events, and redraw arrows if zoomed,
-// because svg and html are not resized in the same manner: Unless
-// arrows redrawn, their ends are incorrectly offsett.
-zoomListeners.push(SVG.drawRelationships);
+SVG.initRootSvg();
+SVG.drawEverything();
 
 
 resizeRootThread();
