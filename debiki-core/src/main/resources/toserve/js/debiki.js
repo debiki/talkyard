@@ -476,7 +476,7 @@ function updateDebate(newDebateHtml) {
         return;
       // BUG $initPost is never called on child threads (isSubThread true).
       // So e.g. the <a ... class="dw-as">React</a> link isn't replaced.
-      $(this).each($initPost);
+      $('> .dw-p', this).each($initPost);
     });
 }
 
@@ -504,11 +504,11 @@ var tagDog = (function(){
 
 // Makes posts resizable, activates mouseenter/leave functionality,
 // draws arrows to child threads, etc.
+// Call on posts.
 function $initPost(){
-  // TODO rewrite-rename to initThread, which handles whole subtrees at once.
+  // COULD rewrite-rename to initThread, which handles whole subtrees at once.
   // Then, $(".debiki .dw-p").each($initPost)
   // would be changed to $('#dw-root').each($initThread).
-  // And call $placeInlineMarks and $placeInlineThreads from here.
 
   var $thread = $(this).closest('.dw-t');
   $thread.find('> .dw-as').replaceWith(
@@ -536,7 +536,26 @@ function $initPost(){
     .each($makePostResizable);
   updateAuthorInfo($thread, $.cookie('dwUserName'));
 
-  $thread.children('.dw-p').each(SVG.$initPostSvg);
+  // Add .dw-mine class if this post was written by this user.
+  $thread.each($markIfMine);
+
+  $(this)
+      .each($placeInlineMarks)
+      .each($placeInlineThreads)
+      .each(SVG.$initPostSvg);
+
+  // When hovering an inline mark or thread, highlight the corresponding
+  // thread or mark.
+  // TODO don't remove the highlighting until hovering something else?
+  //  So one can follow the svg path to the inline thread.
+  // When hovering an inline thread, highlight the mark.
+  // COULD highlight arrows when hovering any post, not just inline posts?
+  $('> .dw-p-bdy', this)
+      .find('> .dw-p-bdy-blk > .dw-i-m-start')
+        .hover($inlineMarkHighlightOn, $inlineMarkHighlightOff)
+      .end()
+      .find('> .dw-i-ts > .dw-i-t > .dw-p')
+        .hover($inlineThreadHighlightOn, $inlineThreadHighlightOff);
 }
 
 // Extracts markup source from html.
@@ -548,8 +567,9 @@ function $htmlToMarkup() {
 
 // Places marks where inline threads are to be placed.
 // This is a mark:  <a class='dw-i-m-start' href='#dw-t-(thread_id)' />
+// Call on posts.
 function $placeInlineMarks() {
-  $('.dw-i-t', this).each(function(){
+  $(this).parent().find('> .dw-res > .dw-i-t', this).each(function(){
     // Search the parent post for the text where this mark starts.
     // Insert a mark (i.e. an <a/> tag) and render the parent post again.
     var markStartText = $(this).attr('data-dw-i-t-where');
@@ -594,6 +614,7 @@ function $placeInlineMarks() {
 
 // Places inline threads at the relevant inline marks, so the threads
 // become inlined.
+// Call on posts.
 function $placeInlineThreads() {
   // Groups .dw-p-bdy child elems in groups around/above 200px high, and
   // wrap them in a .dw-p-bdy-blk. Gathers all inline threads for each
@@ -683,7 +704,7 @@ function $placeInlineThreads() {
   // Group body elems in body-block <div>s. In debiki.css, these divs are
   // placed to the left and inline threads in a <ol> to the right.
   // COULD do this on the server, to simplify processing for smartphones?
-  $('.dw-p-bdy', this).each(function(){
+  $(this).children('.dw-p-bdy').each(function(){
     var $placeFun = $(this).closest('.dw-t').filter('.dw-hor').length ?
         $placeToTheRight : $placeInside;
     $placeFun.apply(this);
@@ -981,6 +1002,7 @@ function $showRatingForm() {
 
     $.post(Settings.makeRatePostUrl(debateId, postId),
           $rateForm.children('form').serialize(), function(data){
+        // TODO call updateDebate instead, to add all posts in `data'.
 
         // Find the new version of the post, with new ratings.
         var $wrap =
@@ -1775,24 +1797,7 @@ function buildTagFindId(html, id) {
 // Open/close threads if the thread-info div is clicked.
 $('.debiki').delegate('.dw-z', 'click', $openCloseThread);
 
-// COULD rewrite so places marks per post (in addition to whole threads).
-$('.dw-depth-0').each($placeInlineMarks);
-
-// COULD rewrite so places threads per post (in addition to whole threads).
-$('.dw-depth-0').each($placeInlineThreads);
-
 $(".debiki .dw-p").each($initPost);
-
-// When hovering an inline mark or thread, highlight the corresponding
-// thread or mark.
-// TODO do this from $initPost, so it works also for ajax-loaded threads.
-// TODO don't remove the highlighting until hovering something else?
-//  So one can follow the svg path to the inline thread.
-$('.dw-i-m-start').hover($inlineMarkHighlightOn, $inlineMarkHighlightOff);
-
-// When hovering an inline thread, highlight the mark.
-$('.dw-i-t > .dw-p').hover($inlineThreadHighlightOn,
-    $inlineThreadHighlightOff);
 
 // On post text click, open the inline action menu.
 $('.debiki').delegate('.dw-p-bdy-blk', 'click', $showInlineActionMenu);
@@ -1806,9 +1811,6 @@ $('.debiki').delegate(
 
 // Hide all action forms, since they will be slided in.
 $('#dw-hidden-templates .dw-fs').hide();
-
-// Add .dw-mine class to all .dw-t:s written by this user.
-$('.debiki .dw-t').each($markIfMine);
 
 $('.debiki').delegate('.dw-a-rate', 'click', $showRatingForm);
 
