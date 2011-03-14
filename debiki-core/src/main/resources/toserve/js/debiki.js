@@ -730,15 +730,7 @@ function $inlineThreadHighlightOn() {
   var inlineMarkId = 'dw-i-m_'+ threadId; // i.e. 'dw-i-m_dw-t-<thread-id>'
   var svgCurveId = 'dw-svg-c_'+ inlineMarkId;
   $('#'+ inlineMarkId).add(this).addClass('dw-highlight');
-  // Add highlighting from the SVG path.
-  // However, addClass doesn't work with SVG paths.
-  // COULD define dummy invisible html tags, with the svg `path' highlight
-  // and non highlight style rules applied. And read the values of those
-  // tags here. Then I could still specify all CSS stuff in the CSS file,
-  // instead of duplicating & hardcoding styles here.
-  var curve = $('#'+ svgCurveId).get(0);
-  curve.style.stroke = '#f0a005';
-  curve.style.strokeWidth = 4;
+  $('#'+ svgCurveId).each(SVG.$highlightOn);
 }
 
 function $inlineThreadHighlightOff() {
@@ -747,12 +739,7 @@ function $inlineThreadHighlightOff() {
   var inlineMarkId = 'dw-i-m_'+ threadId;
   var svgCurveId = 'dw-svg-c_'+ inlineMarkId;
   $('#'+ inlineMarkId).add(this).removeClass('dw-highlight');
-  // Remove highlighting from the SVG path.
-  // WARNING dupl code: the stroke color & width below is also in the CSS file.
-  // See above callback for more info.
-  var curve = $('#'+ svgCurveId).get(0);
-  curve.style.stroke = '#dde';
-  curve.style.strokeWidth = 3;
+  $('#'+ svgCurveId).each(SVG.$highlightOff);
 }
 
 
@@ -1646,12 +1633,33 @@ function makeSvgDrawer() {
     $('.dw-debate').each(SVG.$drawTree);
   }
 
+  function $highlightOn() {
+    // Add highlighting from the SVG path. However, addClass doesn't work
+    // with SVG paths, so I've hardcoded the styling stuff here, for now.
+    // COULD define dummy invisible SVG tags, with and w/o highlight.
+    // And read the values of those tags here. Then I could still specify
+    // all CSS stuff in the CSS file, instead of duplicating & hardcoding
+    // styles here.
+    this.style.stroke = '#f0a005';
+    this.style.strokeWidth = 4;
+  }
+
+  function $highlightOff() {
+    // Remove highlighting from the SVG path.
+    // WARNING dupl code: the stroke color & width below is also in debiki.css.
+    // See $highlightOn() for more info.
+    this.style.stroke = '#dde';
+    this.style.strokeWidth = 3;
+  }
+
   return {
     initRootSvg: initRootSvg,
     $initPostSvg: $initPostSvg,
     $drawPost: $drawPost,
     $drawTree: $drawTree,
-    drawEverything: drawEverything
+    drawEverything: drawEverything,
+    $highlightOn: $highlightOn,
+    $highlightOff: $highlightOff
   };
 }
 
@@ -1720,12 +1728,22 @@ function makeFakeDrawer() {
 
   function drawEverything() {}
 
+  function $highlightOn() {
+    // TODO replace arrow image with a highlighted version
+  }
+
+  function $highlightOff() {
+    // TODO replace arrow image with a highlighted version
+  }
+
   return {
     initRootSvg: initialize,
     $initPostSvg: $initPostSvg,
     $drawPost: $drawPost,
     $drawTree: $drawTree,
-    drawEverything: drawEverything
+    drawEverything: drawEverything,
+    $highlightOn: $highlightOn,
+    $highlightOff: $highlightOff
   };
 }
 
@@ -1796,6 +1814,7 @@ function buildTagFindId(html, id) {
 
 // Open/close threads if the thread-info div is clicked.
 $('.debiki').delegate('.dw-z', 'click', $openCloseThread);
+
 
 $(".debiki .dw-p").each($initPost);
 
