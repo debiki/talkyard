@@ -47,7 +47,8 @@
  *  dw-p-bdy-blk  post body block, a <div> that wraps e.g. a <p>
  *  dw-p-hdr      post header
  *  dw-p-rez-e    post resized eastwards
- *  dw-svg-c_<x>  SVG curve from <x>
+ *  dw-svg-c_<x>  SVG curve from <x>  COULD rename to -svg-p, for `path'
+ *  dw-svg-gparnt Has a <svg> child or grandchild (but no grand-grand-child)
  *  dw-svg-parent Has a <svg> child
  *
  *  ... and so on, hmm.
@@ -335,8 +336,7 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
 /* Empty space between a post and its child threads, when laid
  out horizontally. SVG relationship arrows drawn here. */
 .dw-t-vspace {
-  visibility: hidden;
-  height: 80px;
+  height: 84px;
 }
 
 .dw-depth-1 {
@@ -930,7 +930,7 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
 
 /* === SVG === */
 
-.dw-svg-parent {
+.dw-p-bdy.dw-svg-parent {
   z-index: 1; /* makes svg (with z-index -1, see below) visible (weird!) */
 }
 
@@ -939,6 +939,10 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
   top: 0;
   left: 0;
   z-index: -1; /* or overlays posts; they would not be clickable */
+}
+
+.dw-t-vspace svg {
+  position: static; /* or won't stay inside the -vspace */
 }
 
 .dw-t svg path {

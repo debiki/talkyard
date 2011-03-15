@@ -1420,31 +1420,46 @@ c   x1,y1 x2,y2 x,y curveto   Relative coordinates.
 // to illustrate their relationships. The arrows are drawn in whitespace
 // between threads, e.g. on the visibility:hidden .dw-t-vspace elems.
 function makeSvgDrawer() {
-  function $createSvgRoot() {
+  jQuery.fn.dw_createSvgRoot = function() {
     // See:
     // http://svgweb.googlecode.com/svn/trunk/docs/UserManual.html#dynamic_root
     var svg = document.createElementNS(svgns, 'svg');  // need not pass 'true'
     svgweb.appendChild(svg, $(this).get(0));
     $(this).addClass('dw-svg-parent');
-  }
+    return svg;
+  };
 
   function initRootSvg() {
-    $('#dw-t-root').each($createSvgRoot);
     // Poll for zoom in/out events, and redraw arrows if zoomed,
     // because svg and html are not resized in the same manner: Unless
     // arrows redrawn, their ends are incorrectly offsett.
     zoomListeners.push(drawEverything);
+
+    // (In the future, here will probably be created a global full window SVG
+    // that can draw arrows between any elems.)
   }
 
   function $initPostSvg() {
+    // Create root for contextual replies.
     // An inline thread is drawn above its parent post's body,
     // so an SVG tag is needed in each .dw-p-bdy with any inline thread.
     // (For simplicity, create a <svg> root in all .dw-p-bdy:s.)
-    $(this).children('.dw-p-bdy').each($createSvgRoot);
+    $(this).children('.dw-p-bdy').dw_createSvgRoot();
+
+    // Create root for whole post replies.
+    var $p = $(this).parent();
+    if ($p.hasClass('dw-hor')) {
+      // Place the root in the .dw-t-vspace before the reply list.
+      $p.addClass('dw-svg-gparnt').children('.dw-t-vspace').dw_createSvgRoot();
+    } else {
+      $p.dw_createSvgRoot();
+    }
   }
 
   function findClosestRoot($elem) {
     var $root = $elem.closest('.dw-svg-parent').children('svg');
+    if (!$root.length)
+      $root = $elem.closest('.dw-svg-gparnt').find('> .dw-svg-parent > svg');
     dieIf(!$root.length, 'No SVG root found [debiki_error_84362qwkghd]');
     return $root;
   }
@@ -1550,7 +1565,7 @@ function makeSvgDrawer() {
         // Draw a special north-south curve, that starts just like the west-east
         // curve in the `else' block just below.
         xe += $to.width() * 0.67;
-        ye -= 9;
+        ye -= 13;
         var dx = 40 - 10;
         var dy = 28;
                                                 // draw         \
@@ -1560,7 +1575,7 @@ function makeSvgDrawer() {
       } else {
         // $to is placed to the right of $thread. Draw west-east curve.
         xe += 10;
-        ye -= 9;
+        ye -= 13;
         var dx = 40;
         var xm = (xe - xs - dx) / 2;
         var dy = 28;
