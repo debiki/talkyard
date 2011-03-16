@@ -263,10 +263,6 @@ function resizeRootThreadImpl(extraWidth) {
   // here: http://www.mail-archive.com/jquery-en@googlegroups.com/msg13257.html.
   width = Math.max(width, 650); // today <p> max-width is 50 em and 650 fine
   $root.css('min-width', width +'px');
-
-  // Something has been resized, so parent-->child thread bezier curves
-  // might need to be redrawn.
-  SVG.drawEverything();
 }
 
 // Finds the width of the widest [paragraph plus inline threads].
@@ -320,7 +316,10 @@ var resizeRootThreadNowAndLater = (function(){
 // Makes [threads layed out vertically] horizontally resizable.
 function $makeEastResizable() {
   $(this).resizable({
-    resize: resizeRootThreadExtraWide,
+    resize: function() {
+      resizeRootThreadExtraWide();
+      SVG.$drawParentsAndTree.apply(this);
+    },
     handles: 'e',
     stop: function(event, ui) {
       // jQuery has added `height: ...' to the thread's style attribute.
@@ -336,18 +335,26 @@ function $makeEastResizable() {
 // Fails with a TypeError on Android: Cathching it and ignoring it.
 // (On Android, posts and threads won't be resizable.)
 function $makePostResizable() {
+  var arrowsRedrawn = false;
+  function drawArrows(where) {
+    if (arrowsRedrawn) return;
+    SVG.$drawParentsAndTree.apply(where);
+    arrowsRedrawn = true;
+  }
   var $expandSouth = function() {
     // Expand post southwards on resize handle click. But not if
     // the resize handle was dragged and the post thus manually resized.
     if (didResize) return;
     $(this).closest('.dw-p')
         .css('height', null).removeClass('dw-p-rez-s');
+    drawArrows(this);
   };
   var $expandEast = function() {
     // Expand post eastwards on resize east handle click.
     if (didResize) return;
     $(this).closest('.dw-p')
         .css('width', null).removeClass('dw-p-rez-e');
+    drawArrows(this);
   };
   var $expandSouthEast = function() {
     $expandSouth.apply(this);
@@ -375,6 +382,7 @@ function $makePostResizable() {
           $(this).removeClass('dw-x-s')
               .children('.dw-x-mark').remove();
           didExpandTruncated = true;
+          $(this).closest('.dw-t').each(SVG.$drawParentsAndTree);
         }
       }
     })
@@ -385,6 +393,9 @@ function $makePostResizable() {
         // Remember that this post is being resized, so heigh and width
         // are not removed on mouse up.
         didResize = true;
+      },
+      resize: function(event, ui) {
+        $(this).closest('.dw-t').each(SVG.$drawParentsAndTree);
       },
       stop: function(event, ui) {
         // Add classes that draw east and south borders, so one can tell
@@ -406,6 +417,7 @@ function $makePostResizable() {
   .find('.ui-resizable-se').mouseup($expandSouthEast).end()
   .find('.ui-resizable-handle')
     .mousedown(function(){
+      arrowsRedrawn = false;
       didResize = false;
     })
   .end();
@@ -875,7 +887,13 @@ function $showActions() {
 function slideAwayRemove($form) {
   // Slide away <form> and remove it.
   var $parent = $form.parent();
-  function rm(next) { $form.remove(); resizeRootThread(); next(); }
+  function rm(next) {
+    $form.remove();
+    resizeRootThread();
+    // COULD animate arrows on each slide-in animation step.
+    $parent.closest('.dw-t').each(SVG.$drawParentsAndTree);
+    next();
+  }
   // COULD elliminate dupl code that determines whether to fold or slide.
   if ($parent.filter('.dw-depth-0, .dw-debate').length &&
       !$form.closest('ol').filter('.dw-i-ts').length) {
@@ -921,6 +939,7 @@ function slideInActionForm($form, $where) {
   // makes the root thread child threads wider.
   $form.queue(function(next){
       resizeRootThreadNowAndLater();
+      $where.each(SVG.$drawParentsAndTree); // COULD do on each animation step
       next();
     });
 }
@@ -1609,38 +1628,46 @@ function makeSvgDrawer() {
     r = false;
   }
 
-  function $drawPost() {}  // TODO
+  function $drawParentsAndTree() {
+    $(this).parents('.dw-t').each(function() {
+      $drawPost.apply(this);
+    });
+    $drawTree.apply(this);
+  }
 
   // Draw curves from threads to children
   function $drawTree() {
+    $('.dw-t', this).add(this).each($drawPost);
+  }
+
+  function $drawPost() {
+    var $i = $(this);
+    var $bdy = $('> .dw-p > .dw-p-bdy', this);
     // Resize <svg> elems and remove old curves
-    $('svg', this).each(function(){
+    //'> .dw-t-vspace > svg, > .dw-p > .dw-p-bdy > svg')
+    $i.add('> .dw-t-vspace').add($bdy).children('svg').each(function() {
       // Unless the <svg> is sized up in this manner, the SVG arrows
       // will for some reason be cropped, when you zooom out. (Although
       // overflow:visible!)
       var $parent = $(this).parent();
       $(this).height($parent.height()).width($parent.width());
-      // Remove old curvese.
+      // Remove old curves.
       $('path', this).remove();
     });
-    // Create new curves
-    $('.dw-t:visible', this).each(function(){
-      // Draw arrows to whole post replies, and, for horizontal layout,
-      // to the Reply button.
-      var $t = $(this);
-      $t.find('> .dw-a:has(.dw-a-reply), > .dw-res > .dw-t:visible')
-          .each(function(){
-        arrowFromThreadToReply($t, $(this));
-      });
-      // To inline replies.
-      $t.find('> .dw-p > .dw-p-bdy > .dw-p-bdy-blk .dw-i-m-start')
-          .each(function(){
-        var $mark = $(this);
-        var $inlineThread = $($mark.attr('href')).filter(':visible');
-        if ($inlineThread.length) {
-          arrowFromMarkToInline($mark, $inlineThread);
-        }
-      });
+    // Draw arrows to whole post replies, and, for horizontal layout,
+    // to the Reply button.
+    $i.find('> .dw-a:has(.dw-a-reply), > .dw-res > .dw-t:visible')
+        .each(function(){
+      arrowFromThreadToReply($i, $(this));
+    });
+    // To inline replies.
+    $bdy.find('> .dw-p-bdy-blk .dw-i-m-start')
+        .each(function(){
+      var $mark = $(this);
+      var $inlineThread = $($mark.attr('href')).filter(':visible');
+      if ($inlineThread.length) {
+        arrowFromMarkToInline($mark, $inlineThread);
+      }
     });
   }
 
@@ -1672,6 +1699,7 @@ function makeSvgDrawer() {
     $initPostSvg: $initPostSvg,
     $drawPost: $drawPost,
     $drawTree: $drawTree,
+    $drawParentsAndTree: $drawParentsAndTree,
     drawEverything: drawEverything,
     $highlightOn: $highlightOn,
     $highlightOff: $highlightOff
