@@ -179,8 +179,10 @@ class LayoutManager(val debate: Debate) {
       </div>
       <div id={cssThreadId} class='dw-t dw-depth-0 dw-hor'>
       {
-        // In the vspace and the .dw-a below, arrows are drawn.
-        rootPost.map(comment(_)).getOrElse(Nil) ++
+        // If there's no root post, add an empty <div .dw-p>. It's required
+        // because JavaScript elsewhere finds .dw-t:s by finding .dw-p parents.
+        rootPost.map(comment(_)).getOrElse(
+            <div id={"dw-t-"+ Debate.RootPostId} class={"dw-p"} />) ++
         <div class='dw-t-vspace'/>
         <div class='dw-a'>
           <a class='dw-a-reply'>Reply</a>

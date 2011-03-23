@@ -1439,14 +1439,13 @@ c   x1,y1 x2,y2 x,y curveto   Relative coordinates.
 // to illustrate their relationships. The arrows are drawn in whitespace
 // between threads, e.g. on the visibility:hidden .dw-t-vspace elems.
 function makeSvgDrawer() {
-  jQuery.fn.dw_createSvgRoot = function() {
+  function $createSvgRoot() {
     // See:
     // http://svgweb.googlecode.com/svn/trunk/docs/UserManual.html#dynamic_root
     var svg = document.createElementNS(svgns, 'svg');  // need not pass 'true'
     svgweb.appendChild(svg, $(this).get(0));
     $(this).addClass('dw-svg-parent');
-    return svg;
-  };
+  }
 
   function initRootSvg() {
     // Poll for zoom in/out events, and redraw arrows if zoomed,
@@ -1463,15 +1462,16 @@ function makeSvgDrawer() {
     // An inline thread is drawn above its parent post's body,
     // so an SVG tag is needed in each .dw-p-bdy with any inline thread.
     // (For simplicity, create a <svg> root in all .dw-p-bdy:s.)
-    $(this).children('.dw-p-bdy').dw_createSvgRoot();
+    $(this).children('.dw-p-bdy').each($createSvgRoot);
 
     // Create root for whole post replies.
     var $p = $(this).parent();
     if ($p.hasClass('dw-hor')) {
       // Place the root in the .dw-t-vspace before the reply list.
-      $p.addClass('dw-svg-gparnt').children('.dw-t-vspace').dw_createSvgRoot();
+      $p.addClass('dw-svg-gparnt')
+          .children('.dw-t-vspace').each($createSvgRoot);
     } else {
-      $p.dw_createSvgRoot();
+      $p.each($createSvgRoot);
     }
   }
 
