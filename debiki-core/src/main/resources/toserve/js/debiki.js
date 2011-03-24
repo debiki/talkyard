@@ -1388,9 +1388,12 @@ function $showEditForm() {
 
     // Make forms and accordions resizable
     $editsYoursForm.resizable({
-        alsoResize: $editTextArea
-        // (Need not resizeRootThread,
-        // since the $editDiv is not resized.)
+        alsoResize: $editTextArea,
+        resize: function(){
+          // (Need not resizeRootThread,
+          // since the $editDiv is not resized.)
+          $post.each(SVG.$drawParents);
+        }
       });
     $accordions.wrap("<div class='dw-resize-accordion' />");
     $accordions.each(function(){
@@ -1433,6 +1436,8 @@ function $showEditForm() {
     $forms.each(function(ix){
       $(this).find('.dw-fi-cancel').click(function(){
         $showBtns.slice(ix,ix+1).slideDown();
+        // results in weird bugs:
+        // $(this).closest('form').each($slideUp).queue(function(next){
         $(this).closest('form').slideUp().queue(function(next){
             if ($editsPendingForm.is(':visible') +
                 $editsYoursForm.is(':visible') +
