@@ -325,7 +325,7 @@ function $makeEastResizable() {
       // jQuery has added `height: ...' to the thread's style attribute.
       // Unless removed, the therad won't resize itself when child
       // threads are opened/closed.
-      $(this).css('height', null);
+      $(this).css('height', '');
       resizeRootThreadNowAndLater();
     }
   });
@@ -346,14 +346,14 @@ function $makePostResizable() {
     // the resize handle was dragged and the post thus manually resized.
     if (didResize) return;
     $(this).closest('.dw-p')
-        .css('height', null).removeClass('dw-p-rez-s');
+        .css('height', '').removeClass('dw-p-rez-s');
     drawArrows(this);
   };
   var $expandEast = function() {
     // Expand post eastwards on resize east handle click.
     if (didResize) return;
     $(this).closest('.dw-p')
-        .css('width', null).removeClass('dw-p-rez-e');
+        .css('width', '').removeClass('dw-p-rez-e');
     drawArrows(this);
   };
   var $expandSouthEast = function() {
@@ -1265,7 +1265,7 @@ function $showEditDiff() {
 
   // For now, make it somewhat higher than its current height,
   // so there's room for <ins> elems.
-  //$post.css('height', null);
+  //$post.css('height', '');
   //$post.css('height', $post.height() + 50 +'px');
   //$post.height(height + ($oldDiff.length ? 0 : 75));
   $post.height(height);
