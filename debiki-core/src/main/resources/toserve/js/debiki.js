@@ -1564,7 +1564,8 @@ function makeSvgDrawer() {
   }
 
   // Draws an arrow from a mark to an inline thread.
-  function arrowFromMarkToInline($mark, $inlineThread) {
+  function arrowFromMarkToInline($mark, $inlineThread, cache) {
+    // COULD make use of `cache'. See arrowFromThreadToReply(…).
     var $bdyBlk = $mark.closest('.dw-p-bdy-blk');
     var $thread = $bdyBlk.closest('.dw-t');
     var horizontalLayout = Boolean($thread.filter('.dw-hor').length);
@@ -1631,25 +1632,34 @@ function makeSvgDrawer() {
     r = false;
   }
 
-  function arrowFromThreadToReply($thread, $to) {
-    var $svgRoot = findClosestRoot($thread);
-    // Do not use $svgRoot.offset() — see comment somewhere above, search
-    // for "$svgRoot.offset()". COULD merge this somewhat duplicated code?
-    var svgOffs = $svgRoot.parent().offset();
-    var from = $thread.offset(), to = $to.offset(); // from, to
+  function arrowFromThreadToReply($thread, $to, cache) {
+    // Performance note: It seems the very first call to offset() is very
+    // slow, but subsequent calls are fast. So caching the offsets only
+    // helps a few percent.
+    if (cache.is === undefined) {
+      cache.is = 'filled';
+      cache.$svgRoot = findClosestRoot($thread);
+      // Do not use $svgRoot.offset() — see comment somewhere above, search
+      // for "$svgRoot.offset()". COULD merge this somewhat duplicated code?
+      cache.svgOffs = cache.$svgRoot.parent().offset();
+      cache.horizontalLayout = $thread.filter('.dw-hor').length > 0
+      cache.from =
+        (cache.horizontalLayout ? $thread.children('.dw-t-vspace') : $thread)
+        .offset();
+    }
+    var to = $to.offset();
     var r = document.createElementNS(svgns, 'path');
-    var xs = from.left - svgOffs.left; // start
-    var ys = from.top - svgOffs.top;
-    var xe = to.left - svgOffs.left; // end
-    var ye = to.top - svgOffs.top;
+    var xs = cache.from.left - cache.svgOffs.left; // start
+    var ys = cache.from.top - cache.svgOffs.top;
+    var xe = to.left - cache.svgOffs.left; // end
+    var ye = to.top - cache.svgOffs.top;
     var strokes;
-    if ($thread.filter('.dw-hor').length) {
+    if (cache.horizontalLayout) {
       // Thread laid out horizontally, so draw west-east curve:  `------.
       // There's a visibility:hidden div that acts as a placeholder for this
       // curve, and it's been resized properly by the caller.
-      from = $thread.children('.dw-t-vspace').offset();
-      xs = from.left - svgOffs.left + 10;
-      ys = from.top - svgOffs.top + 3;
+      xs = cache.from.left - cache.svgOffs.left + 10;
+      ys = cache.from.top - cache.svgOffs.top + 3;
 
       // All curves start in this way.
       var curveStart = function(xs, ys, dx, dy) {
@@ -1704,7 +1714,7 @@ function makeSvgDrawer() {
     }
     r.setAttribute('d', strokes);
     r.setAttribute('id', 'dw-svg-c_'+ $thread.attr('id') +'_'+ $to.attr('id'));
-    $svgRoot.append(r);
+    cache.$svgRoot.append(r);
     r = false;
   }
 
@@ -1745,16 +1755,20 @@ function makeSvgDrawer() {
     // to the Reply button.
     var $replyBtn = $i.find('> .dw-a > .dw-a-reply').parent(); // :has is slow
     var $wholePostReplies = $i.find('> .dw-res > .dw-t');
+    var cache = {};
     $replyBtn.add($wholePostReplies).each(function(){
-      arrowFromThreadToReply($i, $(this));
+      arrowFromThreadToReply($i, $(this), cache);
     });
     // To inline replies.
-    $bdy.find('> .dw-p-bdy-blk .dw-i-m-start').each(function(){
-      var $mark = $(this);
-      var $inlineThread = $($mark.attr('href'));
-      if ($inlineThread.length) {
-        arrowFromMarkToInline($mark, $inlineThread);
-      }
+    $bdy.children('.dw-p-bdy-blk').each(function() {
+      var cache = {};
+      $(this).find('.dw-i-m-start').each(function() {
+        var $mark = $(this);
+        var $inlineThread = $($mark.attr('href'));
+        if ($inlineThread.length) {
+          arrowFromMarkToInline($mark, $inlineThread, cache);
+        }
+      });
     });
   }
 
