@@ -1156,23 +1156,10 @@ function $showMoreRatingTags() {
 function $showReplyForm(event, opt_where) {
   // Warning: Some duplicated code, see .dw-rat-tag and
   // dw-a-edit-new click() above.
-  var $post;
-  var postId = 'root'; // means is-reply-to-the-article-itself, TODO: 'A'
   var $thread = $(this).closest('.dw-t');
-  if ($thread.length) {
-    // Change postId to refer to the comment not the article.
-    clearfix($thread); // ensures the reply appears nested inside the thread
-    $post = $thread.children('.dw-p');
-    if ($post.length) {
-      postId = $post.attr('id').substr(8, 999); // drop initial "dw-post-"
-    } else {
-      // There's no parent post -- leave postId = 'root', which means
-      // a reply to the article (e.g. blog post) itself.
-    }
-  }
-  else {
-    $thread = $(this).closest('.dw-debate');
-  }
+  var $post = $thread.children('.dw-p');
+  clearfix($thread); // ensures the reply appears nested inside the thread
+  postId = $post.attr('id').substr(8, 999); // drop initial "dw-post-"
   // Create a reply form, or Ajax-load it (depending on the Web framework
   // specifics).
   Settings.replyFormLoader(debateId, postId, function($replyFormParent) {
@@ -1181,7 +1168,10 @@ function $showReplyForm(event, opt_where) {
     makeIdsUniqueUpdateLabels($replyForm);
     $replyForm.resizable({
         alsoResize: $replyForm.find('textarea'),
-        resize: resizeRootThreadExtraWide, // TODO rm textarea width?
+        resize: function() {
+          resizeRootThreadExtraWide(); // TODO rm textarea width?
+          $post.each(SVG.$drawParents);
+        },
         stop: resizeRootThreadNowAndLater
       });
 
@@ -1708,10 +1698,14 @@ function makeSvgDrawer() {
   }
 
   function $drawParentsAndTree() {
+    $drawParents.apply(this);
+    $drawTree.apply(this);
+  }
+
+  function $drawParents() {
     $(this).parents('.dw-t').each(function() {
       $drawPost.apply(this);
     });
-    $drawTree.apply(this);
   }
 
   // Draw curves from threads to children
@@ -1778,6 +1772,7 @@ function makeSvgDrawer() {
     $initPostSvg: $initPostSvg,
     $drawPost: $drawPost,
     $drawTree: $drawTree,
+    $drawParents: $drawParents,
     $drawParentsAndTree: $drawParentsAndTree,
     drawEverything: drawEverything,
     $highlightOn: $highlightOn,
