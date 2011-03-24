@@ -576,8 +576,7 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
   margin-left: 120px; /* arrows from inline-marks to -threads drawn here */
 }
 
-/* Stack [inline posts and reply forms] vertically. */
-.dw-p-bdy .dw-fs,
+/* Stack inline posts vertically. */
 .dw-p-bdy .dw-i-t {
   float: left;
   clear: left;
@@ -708,7 +707,12 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
 
 .dw-fs {
   float: left; /* or sometimes very wide */
+  clear: left; /* or might appear to the right of the action links */
   margin: 10px 0 20px 35px; /* left-indents somewhat more than reply indent */
+}
+
+.dw-hor > .dw-res > .dw-fs {
+  clear: none; /* or root post forms would be stacked vertically */
 }
 
 .dw-fs form {
