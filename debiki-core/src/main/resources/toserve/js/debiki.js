@@ -180,6 +180,12 @@ var zoomListeners = [];
 // ------- Open/close
 
 function $openCloseThread() {
+  // TODO remove any manually set width & height of the .dw-p.
+  // Or it won't be closed. Do something like this:
+  // $post.css('height', '').removeClass('dw-p-rez-s')
+  //     .css('width', '').removeClass('dw-p-rez-e');
+  // Consider breaking out such a function from $makePostResizable().
+
   var thread = $(this).closest(".dw-t");
   resizeRootThreadExtraWide();
   thread.
