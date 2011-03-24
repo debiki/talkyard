@@ -883,6 +883,88 @@ function $showActions() {
     .css('visibility', 'visible');
 }
 
+function $slideUp() {
+  var $i = $(this);
+  var $post = $(this).closest('.dw-t').children('.dw-p');
+  var lastNow = -1;
+  return $i.animate({
+    height: 0,
+    paddingTop: 0,
+    paddingBottom: 0,
+    marginTop: 0,
+    marginBottom: 0
+  }, {
+    duration: 530,
+    step: function(now, fx) {
+      // This callback is called once per animated property, but
+      // we only need to redraw arrows once.
+      if (lastNow === now) return;
+      lastNow = now;
+      $post.each(SVG.$drawParentsAndTree);
+    }
+  });
+}
+
+function $slideDown() {
+  var $i = $(this);
+  var $post = $i.closest('.dw-t').children('.dw-p');
+  var realHeight = $i.height();
+  $i.height(0);
+  $i.animate({height: realHeight}, {
+    duration: 530,
+    step: function(now, fx) {
+      $post.each(SVG.$drawParentsAndTree);
+    }
+  });
+  // Clear height and width, so $i adjusts its size after its child elems.
+  $i.queue(function(next) {
+    $(this).css('height', '').css('width', '');
+    next();
+  });
+}
+
+function fold($elem, how) {
+  var $post = $elem.closest('.dw-t').children('.dw-p');
+  $elem.animate(how.firstProps, {
+    duration: how.firstDuration,
+    step: function(now, fx) {
+      $post.each(SVG.$drawParentsAndTree);
+    }
+  }).animate(how.lastProps, {
+    duration: how.lastDuration,
+    step: function(now, fx) {
+      $post.each(SVG.$drawParentsAndTree);
+    }
+  });
+}
+
+function $foldInLeft() {
+  var $i = $(this);
+  var realHeight = $i.height();
+  var realWidth = $i.width();
+  $i.height(30).width(0);
+  fold($i, {
+    firstProps: {width: realWidth},
+    firstDuration: 400,
+    lastProps: {height: realHeight},
+    lastDuration: 400
+  });
+  // Clear height and width, so $i adjusts its size after its child elems.
+  $i.queue(function(next) {
+    $(this).css('height', '').css('width', '');
+    next();
+  });
+}
+
+function $foldOutLeft() {
+  fold($(this), {
+    firstProps: {height: 30},
+    firstDuration: 400,
+    lastProps: {width: 0, margin: 0, padding: 0},
+    lastDuration: 400
+  });
+}
+
 // Action <form> cancel button -- won't work for the Edit form...?
 function slideAwayRemove($form) {
   // Slide away <form> and remove it.
@@ -895,10 +977,10 @@ function slideAwayRemove($form) {
   // COULD elliminate dupl code that determines whether to fold or slide.
   if ($thread.filter('.dw-depth-0, .dw-debate').length &&
       !$form.closest('ol').filter('.dw-i-ts').length) {
-    $form.hide('fold', {size: 27}, 800).queue(rm);
+    $form.each($foldOutLeft).queue(rm);
   }
   else {
-    $form.slideUp(530).queue(rm);
+    $form.each($slideUp).queue(rm);
   }
 }
 
@@ -927,9 +1009,9 @@ function slideInActionForm($form, $where) {
   // Otherwise slide down (siblings ordered vertically).
   if ($where.filter('.dw-depth-0, .dw-debate').length &&
       !$form.closest('ol').filter('.dw-i-ts').length) {
-    $form.show('fold', {size: 27}, 800);
+    $form.each($foldInLeft);
   } else {
-    $form.slideDown(530);
+    $form.each($slideDown);
   }
 
   // Cancel extra width. Or add even more width, to prevent float drops
@@ -937,7 +1019,6 @@ function slideInActionForm($form, $where) {
   // makes the root thread child threads wider.
   $form.queue(function(next){
       resizeRootThreadNowAndLater();
-      $where.each(SVG.$drawParentsAndTree); // COULD do on each animation step
       next();
     });
 }
