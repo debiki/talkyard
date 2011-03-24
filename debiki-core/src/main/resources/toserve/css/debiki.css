@@ -40,6 +40,7 @@
  *  dw-fs-ed      edit form group (COULD rename to -f-ed/re/rat ?)
  *  dw-fs-re      reply form group
  *  dw-fs-rat     rating form group
+ *  dw-hor-a      action stuff, layed out horizontally
  *  dw-i-t        inline thread (COULD use dw-i instead, already has dw-t class)
  *  dw-i-m        inline mark (COULD rename to dw-m — *all* marks are inline?)
  *  dw-i-m_<#id>  mark for thread #id (e.g. dw-i-m_dw-t-<thread-id>)
@@ -321,7 +322,7 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
 }
 
 .dw-hor > .dw-res > .dw-fs,
-.dw-hor > .dw-a,
+.dw-hor-a,
 .dw-depth-1:not(.dw-i-t) {
   padding: 0 20px 10px 0;
   margin: 10px 16px 0 0;
@@ -330,7 +331,7 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
 
 /* Make the column separator at least this high. But don't do this for
 .dw-fs because forms are folded/slided out, i.e. shrinked to zero height */
-.dw-hor > .dw-a,
+.dw-hor-a,
 .dw-depth-1:not(.dw-i-t) {
   min-height: 100px; 
 }
@@ -403,7 +404,7 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
 .dw-z {
   position: absolute;
   color: #369;
-  cursor: crosshair;
+  cursor: crosshair !important;
   font-size: 85%;
   text-decoration:none;
 }
@@ -459,7 +460,7 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
   margin: 4px 0px 9px 37px;
 }
 
-.dw-depth-0 > .dw-a {
+.dw-hor-a {
   float: left;
   position: relative; /* curve image placed relative */
   padding-right: 20px;
@@ -479,8 +480,9 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
   text-decoration: underline;
 }
 
-.dw-depth-0 > .dw-a {
+.dw-hor-a > .dw-a {
   font-size: 17px;
+  margin: 0;
 }
 
 /* --- Post info ---*/

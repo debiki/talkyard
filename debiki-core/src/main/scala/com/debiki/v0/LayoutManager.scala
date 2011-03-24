@@ -184,8 +184,8 @@ class LayoutManager(val debate: Debate) {
         rootPost.map(comment(_)).getOrElse(
             <div id={"dw-t-"+ Debate.RootPostId} class={"dw-p"} />) ++
         <div class='dw-t-vspace'/>
-        <div class='dw-a'>
-          <a class='dw-a-reply'>Reply</a>
+        <div class='dw-hor-a'>
+          <a class='dw-a dw-a-reply'>Reply</a>
         </div>
         <ol class='dw-res ui-helper-clearfix'>{
           _layoutPosts(1, rootPosts)

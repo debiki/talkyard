@@ -1753,7 +1753,7 @@ function makeSvgDrawer() {
     });
     // Draw arrows to whole post replies, and, for horizontal layout,
     // to the Reply button.
-    var $replyBtn = $i.find('> .dw-a > .dw-a-reply').parent(); // :has is slow
+    var $replyBtn = $i.children('.dw-hor-a');
     var $wholePostReplies = $i.find('> .dw-res > .dw-t');
     var cache = {};
     $replyBtn.add($wholePostReplies).each(function(){
@@ -1834,16 +1834,15 @@ function makeFakeDrawer() {
     // TODO: Root post's inline threads:  .dw-t.dw-hor > .dw-i-ts > .dw-i-t
 
     // West-east arrows: (for horizontal Layout)
-
+    var $threads = $('.dw-hor');
     // Arrow start, for horizontal layout, and arrow to reply link.
-    $('.dw-hor > .dw-a > .dw-a-reply').each(function(){
+    $threads.find('> .dw-hor-a > .dw-a').each(function(){
       $(this).before('<div class="dw-svg-fake-hcurve-start"/>');
     });
-
     // To root post replies
-    $('.dw-hor > .dw-res > li').each($initPostSvg);
+    $threads.find('> .dw-res > li').each($initPostSvg);
     // To inline root post replies
-    $('.dw-hor > .dw-p > .dw-p-bdy > .dw-i-ts > .dw-i-t').each(
+    $threads.find('> .dw-p > .dw-p-bdy > .dw-i-ts > .dw-i-t').each(
         $initPostSvg);
   }
 
