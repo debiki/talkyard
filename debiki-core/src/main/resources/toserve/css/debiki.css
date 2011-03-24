@@ -326,7 +326,13 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
   padding: 0 20px 10px 0;
   margin: 10px 16px 0 0;
   border-right: 2px dashed transparent; /* shown on hover */
-  min-height: 100px; /* makes the column separator at least this high */
+}
+
+/* Make the column separator at least this high. But don't do this for
+.dw-fs because forms are folded/slided out, i.e. shrinked to zero height */
+.dw-hor > .dw-a,
+.dw-depth-1:not(.dw-i-t) {
+  min-height: 100px; 
 }
 
 .dw-hor > .dw-res > li {

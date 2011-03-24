@@ -886,16 +886,14 @@ function $showActions() {
 // Action <form> cancel button -- won't work for the Edit form...?
 function slideAwayRemove($form) {
   // Slide away <form> and remove it.
-  var $parent = $form.parent();
+  var $thread = $form.closest('.dw-t');
   function rm(next) {
     $form.remove();
     resizeRootThread();
-    // COULD animate arrows on each slide-in animation step.
-    $parent.closest('.dw-t').each(SVG.$drawParentsAndTree);
     next();
   }
   // COULD elliminate dupl code that determines whether to fold or slide.
-  if ($parent.filter('.dw-depth-0, .dw-debate').length &&
+  if ($thread.filter('.dw-depth-0, .dw-debate').length &&
       !$form.closest('ol').filter('.dw-i-ts').length) {
     $form.hide('fold', {size: 27}, 800).queue(rm);
   }
