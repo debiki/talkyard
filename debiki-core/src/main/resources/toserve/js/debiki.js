@@ -275,7 +275,7 @@ function resizeRootThreadImpl(extraWidth) {
 function $findMaxInlineWidth() {
   var accWidth = 0;
   var maxWidth = 0;
-  $(this).find('> .dw-p > .dw-p-bdy').children().each(function(){
+  $(this).find('> .dw-p > .dw-p-bdy').children(':not(svg)').each(function(){
     if ($(this).filter('.dw-p-bdy-blk').length) {
       // New block, reset width
       accWidth = 0;
