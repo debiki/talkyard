@@ -945,6 +945,15 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
   top: 0;
   left: 0;
   z-index: -1; /* or overlays posts; they would not be clickable */
+  /* $.height(…) and width(…) are very expensive, so ensure we never
+  need to resize any <svg> — which we'd otherwise have to do in animation
+  step callbacks (e.g. on resize, fold, slide), i.e. very frequently. */
+  width: 99999px;
+  height: 99999px;
+}
+
+#dw-t-root {
+  overflow: hidden; /* hides the excessively wide <svg> elems, see above */
 }
 
 .dw-t-vspace svg {

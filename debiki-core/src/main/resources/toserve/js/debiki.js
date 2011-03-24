@@ -1725,30 +1725,33 @@ function makeSvgDrawer() {
   }
 
   function $drawPost() {
+    // This function is a HOTSPOT (shows the Chrome profiler).
+    // {{{ Performance notes
+    // - $elem.width(…) .height(…) are slow, so <svg> elems are
+    //   made excessively wide, in the .css file, so there's no need
+    //   to resize them, even if their parent elem is expanded.
+    // - The :has filter is slow, so I rewrote to find(...).parent() instead.
+    // - The :hidden filter is slow, so I removed it — don't think it's
+    //   needed now when arrows are placed in a per thread/post <svg>.
+    // - arrowFrom...() are SLOW! because they use $.offset.
+    // }}}
     var $i = $(this);
     var $bdy = $('> .dw-p > .dw-p-bdy', this);
-    // Resize <svg> elems and remove old curves
-    //'> .dw-t-vspace > svg, > .dw-p > .dw-p-bdy > svg')
+    // Remove old curves
     $i.add('> .dw-t-vspace').add($bdy).children('svg').each(function() {
-      // Unless the <svg> is sized up in this manner, the SVG arrows
-      // will for some reason be cropped, when you zooom out. (Although
-      // overflow:visible!)
-      var $parent = $(this).parent();
-      $(this).height($parent.height()).width($parent.width());
-      // Remove old curves.
-      $('path', this).remove();
+      $(this).find('path').remove();
     });
     // Draw arrows to whole post replies, and, for horizontal layout,
     // to the Reply button.
-    $i.find('> .dw-a:has(.dw-a-reply), > .dw-res > .dw-t:visible')
-        .each(function(){
+    var $replyBtn = $i.find('> .dw-a > .dw-a-reply').parent(); // :has is slow
+    var $wholePostReplies = $i.find('> .dw-res > .dw-t');
+    $replyBtn.add($wholePostReplies).each(function(){
       arrowFromThreadToReply($i, $(this));
     });
     // To inline replies.
-    $bdy.find('> .dw-p-bdy-blk .dw-i-m-start')
-        .each(function(){
+    $bdy.find('> .dw-p-bdy-blk .dw-i-m-start').each(function(){
       var $mark = $(this);
-      var $inlineThread = $($mark.attr('href')).filter(':visible');
+      var $inlineThread = $($mark.attr('href'));
       if ($inlineThread.length) {
         arrowFromMarkToInline($mark, $inlineThread);
       }
