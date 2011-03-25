@@ -1993,7 +1993,7 @@ $(".debiki .dw-p").each($initPost);
 // click is completed. Otherwise the inline menu gets in the
 // way when you double click to select whole words. (Or triple click to
 // select paragraphs.)
-$('.debiki').delegate('.dw-p-bdy-blk', 'click', $showInlineActionMenu)
+$('.debiki').delegate('.dw-p-bdy-blk', 'mouseup', $showInlineActionMenu)
     .delegate('.dw-p-bdy-blk', 'mousedown', $hideInlineActionMenu);
 
 // Remove new-reply and rating forms on cancel, but 
