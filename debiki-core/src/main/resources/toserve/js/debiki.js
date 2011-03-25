@@ -890,16 +890,19 @@ function $showActions() {
 }
 
 function $slideUp() {
+  // COULD optimize: Be a $ extension that loops many elems then lastNow
+  // would apply to all those (fewer calls to $drawParentsAndTree).
   var $i = $(this);
   var $post = $(this).closest('.dw-t').children('.dw-p');
   var lastNow = -1;
-  return $i.animate({
+  var props = {
     height: 0,
     paddingTop: 0,
     paddingBottom: 0,
     marginTop: 0,
     marginBottom: 0
-  }, {
+  };
+  $i.animate(props, {
     duration: 530,
     step: function(now, fx) {
       // This callback is called once per animated property, but
@@ -908,15 +911,22 @@ function $slideUp() {
       lastNow = now;
       $post.each(SVG.$drawParentsAndTree);
     }
+  }).queue(function(next) {
+    $i.hide();
+    // Clear height etc, so $slideDown works properly.
+    $.each(props, function(prop, val) {
+      $i.css(prop, '');
+    });
+    next();
   });
 }
 
 function $slideDown() {
+  // COULD optimize: See $slideUp(…).
   var $i = $(this);
   var $post = $i.closest('.dw-t').children('.dw-p');
   var realHeight = $i.height();
-  $i.height(0);
-  $i.animate({height: realHeight}, {
+  $i.height(0).show().animate({height: realHeight}, {
     duration: 530,
     step: function(now, fx) {
       $post.each(SVG.$drawParentsAndTree);
@@ -927,6 +937,14 @@ function $slideDown() {
     $(this).css('height', '').css('width', '');
     next();
   });
+}
+
+function $slideToggle() {
+  if ($(this).is(':visible')) {
+    $(this).each($slideUp);
+  } else {
+    $(this).each($slideDown);
+  }
 }
 
 function fold($elem, how) {
@@ -945,6 +963,7 @@ function fold($elem, how) {
 }
 
 function $foldInLeft() {
+  // COULD optimize: See $slideUp(…), but pointless right now.
   var $i = $(this);
   var realHeight = $i.height();
   var realWidth = $i.width();
@@ -963,12 +982,16 @@ function $foldInLeft() {
 }
 
 function $foldOutLeft() {
+  // COULD optimize: See $slideUp(…), but pointless right now.
   fold($(this), {
     firstProps: {height: 30},
     firstDuration: 400,
     lastProps: {width: 0, margin: 0, padding: 0},
     lastDuration: 400
   });
+  // COULD clear CSS, so the elem gets its proper size should it be folded out
+  // again later. Currently all elems that are folded out are also
+  // $.remove()d though.
 }
 
 // Action <form> cancel button -- won't work for the Edit form...?
@@ -1228,7 +1251,7 @@ function $showReplyForm(event, opt_where) {
 function $showEditSuggestions() {
   $(this).closest('.dw-t').children('.dw-ess, .dw-a-edit-new')
       .stop(true,true)
-      .slideToggle(500);
+      .each($slideToggle);
 }
 
 // Invoke this function on a textarea or an edit suggestion.
