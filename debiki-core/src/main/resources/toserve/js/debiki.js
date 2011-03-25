@@ -763,11 +763,13 @@ function $inlineThreadHighlightOff() {
 
 // ------- Inline actions
 
+function $hideInlineActionMenu(event) {
+  $lastInlineMenu.remove();
+}
+
 // Opens a menu with Inline Reply and Edit endries.
 function $showInlineActionMenu(event) {
   var $menu;
-  $lastInlineMenu.remove(); // prevents opening two inline menus at once
-
   if ($(event.target).closest('.dw-fs').length) {
     // A form was clicked. Ignore click.
     return;
@@ -1986,7 +1988,13 @@ $('.debiki').delegate('.dw-z', 'click', $openCloseThread);
 $(".debiki .dw-p").each($initPost);
 
 // On post text click, open the inline action menu.
-$('.debiki').delegate('.dw-p-bdy-blk', 'click', $showInlineActionMenu);
+// But hide it on mousedown, so the inline action menu disappears when you
+// start the 2nd click of a double click, and appears first when the 2nd
+// click is completed. Otherwise the inline menu gets in the
+// way when you double click to select whole words. (Or triple click to
+// select paragraphs.)
+$('.debiki').delegate('.dw-p-bdy-blk', 'click', $showInlineActionMenu)
+    .delegate('.dw-p-bdy-blk', 'mousedown', $hideInlineActionMenu);
 
 // Remove new-reply and rating forms on cancel, but 
 // the edit form has some own special logic.
