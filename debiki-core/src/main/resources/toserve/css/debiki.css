@@ -11,20 +11,24 @@
  *  dw-           prefix, avoids name clashes
  *  -a-           action
  *  -e            east (COULD change to "ew", eastwards, and use "e" for edit)
+ *                  and new (no good!, "new") sew etc. for northeastwards etc.
+ *                  Or 'de', direction-east, dn/w/s/e dnw/sw/se/ne ?
  *  -ed-          edit (COULD change to "e")
- *  -es-          edit suggestion
- *  -ess-         edit suggestions
+ *  -es-          edit suggestion (COULD change to -e-s, and let -es = edits)
+ *  -ess-         edit suggestions (COULD change to -e-ss)
  *  -f-           form
  *  -fs-          form group
  *  -hor-         horizontal layout
  *  -i-           inline
  *  -m-           mark
  *  -p-           post
+ *  -q-           ?? post-before (looks like p, but flipped — before, not after)
  *  -rat-         rating  (COULD rename to "r")
  *  -re-          reply   (COULD rename to "p", for "post")
  *  -res-         replies (COULD rename to "ts", "threads")
  *  -rez-         resized (COULD rename to "rzd" and let "rz" mean resize)
  *  -s            south (COULD change to "sw", southwards)
+ *                        COULD then use 's' for `summary'?
  *  -svg-         SVG graphics
  *  -t-           thread
  *  -vs-          votes
