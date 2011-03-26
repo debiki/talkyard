@@ -177,40 +177,38 @@ var zoomListeners = [];
   setInterval(pollZoomFireEvent, 100);
 }());
 
+
 // ------- Open/close
 
-function $openCloseThread() {
-  // TODO remove any manually set width & height of the .dw-p.
-  // Or it won't be closed. Do something like this:
-  // $post.css('height', '').removeClass('dw-p-rez-s')
-  //     .css('width', '').removeClass('dw-p-rez-e');
-  // Consider breaking out such a function from $makePostResizable().
-
-  var thread = $(this).closest(".dw-t");
+function $threadOpen() {
+  // In case the thread will be wider than the summary, prevent float drop.
   resizeRootThreadExtraWide();
-  thread.
-    find('> :not(.dw-p, .dw-z, .dw-svg-fake-vcurve-short, '+
-        '.dw-svg-fake-harrow, .dw-svg-fake-harrow-end, '+
-        '.dw-svg-fake-hcurve, .dw-svg-fake-hcurve-start), '+
-        '> .dw-p > .dw-p-bdy, '+
-        '> .dw-a').
-      //add(thread.find('> .dw-p > .dw-p-bdy')).
-      stop(true,true).
-      slideToggle(800).
-      //queue(function(next){
-      //    thread
-      //      .toggleClass('dw-zd')
-      //      .toggleClass('dw-zd-fx', 600);
-      //    next();
-      //  }).
-      queue(function(next){ resizeRootThreadNowAndLater(); next(); }).
-    end().
-    children(".dw-z").
-      each(function(){
-        // The – is not a - but an &endash;.
-        var newText = $(this).text().indexOf('+') === -1 ? '[+]' : '[–]';
-        $(this).text(newText);
-      });
+  // Replace the summary line with the thread, and slide it in.
+  var $summary = $(this);
+  var $thread = $summary.data('dw_$thread');
+  $summary.removeData('dw_$thread').each($slideUp).queue(function() {
+    // Need to dequeue() the thread. Why? Perhaps jQuery suspends
+    // animations when an elem is detach()ed?
+    $thread.replaceAll($summary).each($slideDown).dequeue();
+  });
+}
+
+function $threadClose() {
+  // Slide the thread away and replace it with a summary line. This summary
+  // line is a copy of the thread's <li>, emptied. Then the summary
+  // line will keep the position and ID and css classes of the actual thread.
+  var $thread = $(this).closest('.dw-t');
+  var postCount = $thread.find('.dw-p').length;
+  var $summary = $thread.clone().empty()
+      .append($('<span class="dw-z-open">[+] Click to show '+  // COULD add i18n
+          postCount +' posts</span>'))
+      .click($threadOpen);
+  $thread.each($slideUp).queue(function() {
+    $thread.before($summary).detach();
+    $summary.data('dw_$thread', $thread)
+        .each($makeEastResizable)
+        .each($slideDown);
+  });
 }
 
 
@@ -1982,7 +1980,7 @@ function buildTagFindId(html, id) {
 // ------- Invoke functions, do layout
 
 // Open/close threads if the thread-info div is clicked.
-$('.debiki').delegate('.dw-z', 'click', $openCloseThread);
+$('.debiki').delegate('.dw-z', 'click', $threadClose);
 
 
 $(".debiki .dw-p").each($initPost);

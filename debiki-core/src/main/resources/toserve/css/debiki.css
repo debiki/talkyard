@@ -403,6 +403,10 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
 
 .dw-z {
   position: absolute;
+}
+
+.dw-z,
+.dw-z-open {
   color: #369;
   cursor: crosshair !important;
   font-size: 85%;
