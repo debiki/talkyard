@@ -1,3 +1,4 @@
+// vim: fdm=marker ts=2 sw=2 list
 /*
  * jQuery wmd plugin.
  */
@@ -2474,6 +2475,39 @@ this.makeHtml = function(text) {
 	// attacklab: Restore tildes
 	text = text.replace(/~T/g,"~");
 
+
+	// [kajmagnus79@Debiki] GFM bug fix: Only linkify addresses that constitute whole words.
+	// Otherwise, e.g. <img src='http://path/to/image.png'> is changed to:
+	// <img src='<a href=…>…</a>'>, i.e. corrupt nonsense.
+	// But I'm not sure if links in html tags should be converted (e.g. in a <pre>).
+	// So, for now, disable (comment out) auto linking.
+	/*
+	// ** GFM **  Auto-link URLs and emails
+	// — but skip HTML tag attributes.
+	text = text.replace(/(<\w+[^>]*\s+\w+=['"])?(https?\:\/\/[^"\s\<\>]*[^.,;'">\:\s\<\>\)\]\!])/g, function(wholeMatch, $1, $2){
+		if ($1 !== undefined) return wholeMatch; // probably a html tag attribute
+		var left = '';
+		var right = '';
+		try {
+			// As of 2010-03-27, Chrome sometimes throws a Illegal Access exception, for `rightContext'.
+			// (See e.g. http://support.github.com/discussions/site/1528-github-flavored-markdown-javascript-preview-doesnt-work-in-chromechromium )
+			left = RegExp.leftContext;
+			right = RegExp.rightContext;
+		}
+		catch (ex) {
+			console.log('Ignored RegExp.leftContext or rightContext access error: '+ ex);
+		}
+		if (left.match(/<[^>]+$/) && right.match(/^[^>]*>/)) {return wholeMatch}
+		return "<a href='" + $2 + "'>" + $2 + "</a>";
+	});
+
+	text = text.replace(/(<\w+[^>]*\s+\w+=['"])?([a-z0-9_\-+=.]+@[a-z0-9\-]+(\.[a-z0-9-]+)+)/ig, function(wholeMatch, $1, $2){
+		if ($1 !== undefined) return wholeMatch; // probably a html tag attribute
+		return "<a href='mailto:" + $2 + "'>" + $2 + "</a>";
+	});
+	*/
+
+	/* [kajmagnus79@Debiki] RegExp.rightContext throws Illegal Access, at least for Chrome 9.0.597.83 beta.
         // ** GFM **  Auto-link URLs and emails
         text = text.replace(/https?\:\/\/[^"\s\<\>]*[^.,;'">\:\s\<\>\)\]\!]/g, function(wholeMatch){
             var left = RegExp.leftContext
@@ -2484,6 +2518,7 @@ this.makeHtml = function(text) {
         text = text.replace(/[a-z0-9_\-+=.]+@[a-z0-9\-]+(\.[a-z0-9-]+)+/ig, function(wholeMatch){
             return "<a href='mailto:" + wholeMatch + "'>" + wholeMatch + "</a>";
         });
+	*/
 
 
 	return text;
