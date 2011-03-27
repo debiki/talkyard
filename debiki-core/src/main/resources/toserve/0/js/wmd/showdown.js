@@ -438,7 +438,10 @@ var _RunSpanGamut = function(text) {
 	text = _DoItalicsAndBold(text);
 
 	// Do hard breaks:
+	/* [kajmagnus79@Debiki] No, don't. Instead, if the line ends with
+	 * a space, trim the \n, otherwise convert it to <br> (done elsewhere).
 	text = text.replace(/  +\n/g," <br />\n");
+	 */
 
 	return text;
 }
@@ -1110,7 +1113,15 @@ var _FormParagraphs = function(text) {
 		}
 		else if (str.search(/\S/) >= 0) {
 			str = _RunSpanGamut(str);
-                        str = str.replace(/\n/g,"<br />");  // ** GFM **
+
+			// [kajmagnus79@Debiki] Replace each linebreak with <br>, unless
+			// it's preceeded by a space. So, you can type a single HTML line
+			// on many source code lines, if you end each line with a space.
+			str = str.replace(/( ?)\n/g, function(wholeMatch, m1) {
+				if (!m1) return '<br>'
+				else return m1;
+			});
+
 			str = str.replace(/^([ \t]*)/g,"<p>");
 			str += "</p>"
 			grafsOut.push(str);
