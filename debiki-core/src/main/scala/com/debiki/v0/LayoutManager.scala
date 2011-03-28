@@ -233,8 +233,11 @@ class LayoutManager(val debate: Debate) {
     val sourceText = lastEditApp.map(_.result).getOrElse(post.text)
     val (xmlText, numLines) =
         // Apply markup to the root post (e.g. blog entry).
-        if (post.id == Debate.RootPostId) (markdownToHtml(sourceText), -1)
-        else textToHtml(sourceText)
+        //if (post.id == Debate.RootPostId) (markdownToHtml(sourceText), -1)
+        //else textToHtml(sourceText)
+        (markdownToHtml(sourceText), -1)  // TODO convert only <img> & <pre>…
+        //… but nothing that makes text stand out, e.g. skip <h1>, <section>.
+        // For the root post, allow everything but javascript though.
     val long = numLines > 9
     val cutS = if (long && post.id != Debate.RootPostId) " dw-x-s" else ""
 
