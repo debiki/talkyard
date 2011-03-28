@@ -20,6 +20,7 @@
  *  -fs-          form group
  *  -hor-         horizontal layout
  *  -i-           inline
+ *  -img-         image
  *  -m-           mark
  *  -p-           post
  *  -q-           ?? post-before (looks like p, but flipped — before, not after)
@@ -141,6 +142,12 @@ table {
 .dw-p-bdy-blk ol li {
   list-style-type: decimal;
   margin-left: 2.5em;
+}
+
+.dw-p-bdy-blk img {
+  width: 100%;
+  display: block; /* TODO inline those with no \n\n inbetween preceeding text */
+  margin: 1.5em auto; /* TODO margin-bottom 0 if post ends there */
 }
 
 /* === Debate === */

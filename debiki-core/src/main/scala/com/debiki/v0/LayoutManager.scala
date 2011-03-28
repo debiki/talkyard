@@ -72,6 +72,8 @@ object LayoutManager {
       |function urlX(url) { if(/^https?:\/\//.test(url)) { return url }}
       |function idX(id) { return id }
       |""".stripMargin)
+  private val _jsUrlX = _jsSanitizer.get("urlX")
+  private val _jsIdX = _jsSanitizer.get("idX")
 
   /** Converts markdown to xml.
    */
@@ -80,22 +82,16 @@ object LayoutManager {
           .invokeMethod(_jsShowdown.eval("new Showdown.converter()"),
           "makeHtml", source).toString
     var htmlTextSafe = _jsSanitizer.asInstanceOf[javax.script.Invocable]
-          .invokeFunction("html_sanitize", htmlTextUnsafe, "urlX", "idX")
+          .invokeFunction("html_sanitize", htmlTextUnsafe, _jsUrlX, _jsIdX)
           .toString
-    // Caja writes <br> not <br /> and scala.xml.XML chokes on that. Add "/".
-    htmlTextSafe = htmlTextSafe.replaceAll("<br>", "<br />")
-    htmlTextSafe = htmlTextSafe.replaceAll("<hr>", "<hr />")
-    // This won't handle e.g. empty <img/> tags. So:
-    // TODO: Make google-caja's html-sanitizer.js close tags that were closed.
-    // On line 308:
-    //   handler.startTag(tagName, attribs, param);
-    // it seems possible to add a 4th param: tagClosed, and
-    // then close the tag in the default sanitizer
-    // (html.makeHtmlSanitizer, line 385). Because m[4] contains either
-    // "/>" or ">" and if it's "/>" then pass tagClosed = true.
-
-    // (Wrapping the html text in a dummy tag to avoid a SAXParseException.)
-    XML.loadString("<div>"+ htmlTextSafe +"</div>").child
+    // Use a HTML5 parser; html_sanitize outputs HTML5, which Scala's XML
+    // parser don't understand (e.g. an <img src=…> tag with no </img>).
+    // Lift-Web uses a certain nu.validator HTML5 parser; use it.
+    // (html_sanitize, from Google Caja, also uses the very same parser.
+    // So html_sanitize probably generates html that Lift-Web's version
+    // of the nu.validator parser understands.)
+    // Wrap the html text in a dummy tag to avoid a SAXParseException.
+    net.liftweb.util.Html5.parse("<div>"+ htmlTextSafe +"</div>").open_!
   }
 
   /** Replaces spaces with the Unicode representation of non-breaking space,
