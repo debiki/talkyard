@@ -30,6 +30,7 @@ class LayoutConfig {
   def reactLink(debateId: String, postId: String) = ""
   /** Whether or not to show edit suggestions. */
   def showEdits_? = true
+  def hostAndPort = "localhost"
 }
 
 class LayoutVariables {
@@ -77,10 +78,10 @@ object LayoutManager {
 
   /** Converts markdown to xml.
    */
-  def markdownToHtml(source: String): NodeSeq = {
+  def markdownToHtml(source: String, hostAndPort: String): NodeSeq = {
     val htmlTextUnsafe = _jsShowdown.asInstanceOf[javax.script.Invocable]
           .invokeMethod(_jsShowdown.eval("new Showdown.converter()"),
-          "makeHtml", source).toString
+          "makeHtml", source, hostAndPort).toString
     var htmlTextSafe = _jsSanitizer.asInstanceOf[javax.script.Invocable]
           .invokeFunction("html_sanitize", htmlTextUnsafe, _jsUrlX, _jsIdX)
           .toString
@@ -235,7 +236,8 @@ class LayoutManager(val debate: Debate) {
         // Apply markup to the root post (e.g. blog entry).
         //if (post.id == Debate.RootPostId) (markdownToHtml(sourceText), -1)
         //else textToHtml(sourceText)
-        (markdownToHtml(sourceText), -1)  // TODO convert only <img> & <pre>…
+        (markdownToHtml(sourceText, config.hostAndPort), -1)
+        // COULD convert only <img> & <pre> tags,
         //… but nothing that makes text stand out, e.g. skip <h1>, <section>.
         // For the root post, allow everything but javascript though.
     val long = numLines > 9
