@@ -900,7 +900,7 @@ var PreviewManager = function(wmd){ // {{{
         }
         
         if (converter) {
-            text = converter.makeHtml(text);
+            text = converter.makeHtml(text, 'server-addr:port');
         }
         
         // Calculate the processing time of the HTML creation.
@@ -1722,7 +1722,7 @@ var wmdBase = function(wmd, wmd_options){ // {{{
             
             if (!/markdown/.test(wmd_options.output_format.toLowerCase())) {
                 if (markdownConverter) {
-                    inputBox.value = markdownConverter.makeHtml(text);
+                    inputBox.value = markdownConverter.makeHtml(text, 'server-addr:port');
                     top.setTimeout(callback, 0);
                 }
             }
@@ -2416,13 +2416,21 @@ var g_html_blocks;
 var g_list_level = 0;
 
 
-this.makeHtml = function(text) {
+// [kajmagnus79@Debiki] Add `hostAndPort' parameter.
+this.makeHtml = function(text, hostAndPort) {
 //
 // Main function. The order in which other subs are called here is
 // essential. Link and image substitutions need to happen before
 // _EscapeSpecialCharsWithinTagAttributes(), so that any *'s or _'s in the <a>
 // and <img> tags get encoded.
 //
+
+	// [kajmagnus79@Debiki] Insert host name and port into links starting
+	// with `http(s)?:///'. For now, ignore the fact that non-links might also
+	// be affected (e.g. "NO_LINKhttps:///_NO_LINK")
+	if (hostAndPort) {
+		text = text.replace(/(https?:\/\/)\//g, '$1'+ hostAndPort +'/');
+	}
 
 	// Clear the global hashes. If we don't clear these, you get conflicts
 	// from other articles when generating a page which contains more than
