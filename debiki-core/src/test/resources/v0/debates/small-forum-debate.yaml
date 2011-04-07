@@ -16,7 +16,7 @@ id: test-debate
 id: root
 parent: root
 date: 2001-12-14t21:59:43.10-05:00
-by: OP
+by: "0||OP||"
 text: |
  <header><h1>Bör MMA vara tillåtet i Sverige?</h1></header>
 
@@ -30,7 +30,7 @@ id: b
 # was: a
 parent: root
 date: 2001-12-14t21:59:43.10-05:00
-by: OP
+by: "0||OP||"
 text: |
  Tillåt MMA
 
@@ -39,7 +39,7 @@ text: |
 id: aea
 post: b
 date: 2001-12-14t21:59:43.10-05:00
-by: Misse Mu
+by: "0||Misse Mu||"
 desc: "En ändring..."
 text: |1
  Tillåt MMU
@@ -48,7 +48,7 @@ text: |1
 id: bEa
 post: b
 date: 2001-12-14t21:59:43.10-05:00
-by: Mjau-Mjam
+by: "0||Mjau-Mjam||"
 desc: "En ändring till..."
 text: |1
  (Edit bEa text)
@@ -60,7 +60,7 @@ text: |1
 id: aec
 post: b
 date: 2001-12-14t21:59:43.10-05:00
-by: Frääs-Klös
+by: "0||Frääs-Klös||"
 text: |1
  Minritnir i its! Norntii niifg. Nritxgwkdb, rtis, rtis, rtis!!!
  Nao noiu irneinwf  nrsie... Rrnsig niex nwww nbe. irnt??
@@ -68,7 +68,7 @@ text: |1
 id: ca
 parent: b
 date: 2001-12-14t21:59:43.10-05:00
-by: Anonymous Elevator Man
+by: "0||Anonymous Elevator Man||"
 text: |
  1
 
@@ -110,7 +110,7 @@ text: |
 id: cb
 parent: b
 date: 2001-12-14t21:59:43.10-05:00
-by: Anonymous Hero
+by: "0||Anonymous Hero||"
 text: |
  MMA bidrar till brotslighet och samhällets fördärv. MMA förvandlar
  annars vänliga människor till blodtörstiga våldsbrottslingar som
@@ -129,7 +129,7 @@ text: |
 id: d
 parent: b
 date: 2001-12-14t21:59:43.10-05:00
-by: Promma
+by: "0||Promma||"
 text: |
  För frihetenss skull.
 

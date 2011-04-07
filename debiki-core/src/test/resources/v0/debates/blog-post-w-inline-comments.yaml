@@ -5,7 +5,7 @@ id: blog-post-w-inline-comments
 id: root
 parent: root
 date: 2001-12-14t21:59:43.10-05:00
-by: OP
+by: "0||OP||"
 text: |
  Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Aenean commodo ligula eget dolor.
  
@@ -29,7 +29,7 @@ id: cba
 parent: root
 where: 'Aenean massa.'
 date: 2001-12-14t21:59:43.10-05:00
-by: Glad komentator
+by: "0||Glad komentator||"
 text: |
  Inline post no 1.
  Lorem ipsum dolor sit amet, consectetur adipiscing elit. Maecenas rhoncus
@@ -62,7 +62,7 @@ id: cbc
 parent: root
 where: 'Cum sociis natoque'
 date: 2001-12-14t21:59:43.10-05:00
-by: Glad komentator
+by: "0||Glad komentator||"
 text: |
  Inline post 2. My-cat-is-evil comment no 2.
  Vestibulum venenatis elementum ornare. Aenean tincidunt ornare nulla eget
@@ -73,7 +73,7 @@ id: cbd
 parent: root
 where: 'Donec sodales sagittis'
 date: 2001-12-14t21:59:43.10-05:00
-by: Glad komentator
+by: "0||Glad komentator||"
 text: |
  Inline post 3. My-cat-is-evil comment no 3.
  
@@ -89,7 +89,7 @@ id: cbe
 parent: root
 where: 'Aenean massa'
 date: 2001-12-14t21:59:43.10-05:00
-by: Glad komentator
+by: "0||Glad komentator||"
 text: |
  Inline post 4: "Cras varius"
  
@@ -105,7 +105,7 @@ id: d
 parent: root
 where: 'Duis leo.'
 date: 2001-12-14t21:59:43.10-05:00
-by: Promma
+by: "0||Promma||"
 text: |
  Pellentesque commodo eros a enim. Vestibulum turpis sem, aliquet eget, lobortis 
  pellentesque, rutrum eu, nisl. Sed libero. Aliquam erat volutpat. Etiam vitae 
@@ -125,7 +125,7 @@ id: d2
 parent: root
 where: 'hendrerit quis, nisi'
 date: 2001-12-14t21:59:43.10-05:00
-by: Latin Lover
+by: "0||Latin Lover||"
 text: |
  Aenean in nisl neque. Praesent fermentum, lacus vel tristique facilisis, erat
  velit laoreet lacus, eu rutrum ipsum quam at turpis. Vivamus ut consequat
@@ -155,7 +155,7 @@ id: oneai0
 parent: root
 where: 'ipsum dolor sit amet'
 date: 2001-12-14t21:59:43.10-05:00
-by: Oneliner oneai0
+by: "0||Oneliner oneai0||"
 text: |
  Donec interdum luctus dolor non consectetur. Fusce non ornare quam. Etiam vulputate venenatis dui in feugiat. Aliquam ut dolor eros. Aliquam in facilisis urna.
  
@@ -165,7 +165,7 @@ id: oneaia
 parent: root
 where: 'oone mromfo kie3kiex'
 date: 2001-12-14t21:59:43.10-05:00
-by: Oneliner oneaia
+by: "0||Oneliner oneaia||"
 text: |
  Class aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos himenaeos. Aliquam urna risus, interdum ut mollis vel, porttitor quis ipsum. Nullam risus massa, consectetur ac aliquam ac, tristique eget lectus.  Quisque sed arcu at risus pharetra viverra. Sed eleifend malesuada porttitor.  Nulla sollicitudin lobortis tortor quis euismod. Morbi sed urna velit.  
 --- !Post
@@ -173,7 +173,7 @@ id: oneaib
 parent: root
 where: 'oone mromfo kie3kiex'
 date: 2001-12-14t21:59:43.10-05:00
-by: Oneliner oneaib
+by: "0||Oneliner oneaib||"
 text: |
  Morbi id semper metus. Morbi sapien dui, pellentesque vitae elementum ac, varius sed nisi. Nam nibh eros, ultrices interdum fringilla quis, tristique ac odio. In imperdiet augue ut urna blandit sagittis. Nullam nec elit ac libero sollicitudin tristique at id risus. Vestibulum eget lectus eleifend justo.
 --- !Post
@@ -181,7 +181,7 @@ id: onebia
 parent: root
 where: 'twoo iriesir'
 date: 2001-12-14t21:59:43.10-05:00
-by: Oneliner onebia
+by: "0||Oneliner onebia||"
 text: |
  Pellentesque id ante justo. In hac habitasse platea dictumst. Nunc sem felis, dictum eu bibendum cursus, aliquam viverra massa.
 --- !Post
@@ -189,7 +189,7 @@ id: onecia
 parent: root
 where: 'three iriesir vimrsirnsei'
 date: 2001-12-14t21:59:43.10-05:00
-by: Oneliner onecia
+by: "0||Oneliner onecia||"
 text: |
  sodales sodales vel ut libero. Integer sit amet sem ac sem porttitor tempus a eu arcu. Cras consectetur, est ac vestibulum mattis, ante nisi viverra lacus, et posuere diam nisi eget diam. Donec metus mi, ultricies eu rhoncus a, tristique scelerisque odio. Aliquam iaculis quam eu felis semper in viverra metus rhoncus. Donec pretium pharetra ante, eget tincidunt turpis congue eu.
  
@@ -198,7 +198,7 @@ text: |
 id: rootea
 post: root
 date: 2001-12-14t21:59:43.10-05:00
-by: Misse Mu
+by: "0||Misse Mu||"
 desc: "Clarify what dogs eat."
 text: |1
  Lorem ipsum GRAY DOGS EAT GLASSFISH elit. Aenean commodo ligula eget dolor.

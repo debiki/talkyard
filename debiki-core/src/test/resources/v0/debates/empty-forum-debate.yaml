@@ -16,7 +16,7 @@ id: test-debate
 id: root
 parent: root
 date: 2001-12-14t21:59:43.10-05:00
-by: OP
+by: "0||OP||"
 text: |
  <header><h1>Bör MMA vara tillåtet i Sverige?</h1></header>
 

@@ -16,7 +16,7 @@ id: test-debate
 id: a
 parent: root
 date: 2001-12-14t21:59:43.10-05:00
-by: OP
+by: "0||OP||"
 text: |
  Bör MMA vara tillåtet i Sverige?
  
@@ -29,7 +29,7 @@ text: |
 id: b
 parent: root
 date: 2001-12-14t21:59:43.10-05:00
-by: OP
+by: "0||OP||"
 text: |
  Tillåt MMA
 
@@ -38,7 +38,7 @@ text: |
 id: c
 parent: root
 date: 2001-12-14t21:59:43.10-05:00
-by: OP
+by: "0||OP||"
 text: |
  Förbjud MMA
 
@@ -47,7 +47,7 @@ text: |
 id: cb
 parent: c
 date: 2001-12-14t21:59:43.10-05:00
-by: Anonymous Hero
+by: "0||Anonymous Hero||"
 text: |
  Crazy cows eat grass YES. Accumsan. Nulla sodales est sit amet neque dignissim
  tincidunt. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices
@@ -85,7 +85,7 @@ where: 'MY CAT IS EVIL.'
 # end: ' Vivamus accumsan tempus'
 # after: 'In hac habitasse platea'
 date: 2001-12-14t21:59:43.10-05:00
-by: Glad komentator
+by: "0||Glad komentator||"
 text: |
  Inline post no 1.
  Lorem ipsum dolor sit amet, consectetur adipiscing elit. Maecenas rhoncus
@@ -111,7 +111,7 @@ id: cbc
 parent: cb
 where: 'MY CAT IS EVIL.'
 date: 2001-12-14t21:59:43.10-05:00
-by: Har-ID-cbc
+by: "0||Har-ID-cbc||"
 text: |
  Inline post 2. My-cat-is-evil comment no 2.
  Vestibulum venenatis elementum ornare.
@@ -128,7 +128,7 @@ id: cbci1
 parent: cbc
 where: 'post 2.'
 date: 2001-12-14t21:59:43.10-05:00
-by: Recursive Inliner
+by: "0||Recursive Inliner||"
 text: |
  This is an inline post, in inline post 'cbc'.
 
@@ -149,7 +149,7 @@ id: cbci2
 parent: cbc
 where: 'End of para 2'
 date: 2001-12-14t21:59:43.10-05:00
-by: Recursive Inliner
+by: "0||Recursive Inliner||"
 text: |
  This is another inline post, in inline post 'cbc'. Morbi convallis dignissim 
  justo eu accumsan. Maecenas orci neque, dignissim facilisis porta sed, mollis 
@@ -159,7 +159,7 @@ text: |
 id: cbcr1
 parent: cbc
 date: 2001-12-14t21:59:43.10-05:00
-by: Recursive Replyer
+by: "0||Recursive Replyer||"
 text: |
  This is a reply to inline post 'cbc'. Nulla facilisi. Cras facilisis consequat 
  condimentum. Nullam ut elit dui, elementum sodales lectus. Curabitur non arcu a 
@@ -168,7 +168,7 @@ text: |
 id: cbcr2
 parent: cbc
 date: 2001-12-14t21:59:43.10-05:00
-by: Recursive Replyer
+by: "0||Recursive Replyer||"
 text: |
  Another reply to inline post 'cbc'. Nulla facilisi. Cras facilisis consequat 
  condimentum. Nullam ut elit dui, elementum sodales lectus. Curabitur non arcu a 
@@ -178,7 +178,7 @@ id: cbd
 parent: cb
 where: 'MY CAT IS EVIL.'
 date: 2001-12-14t21:59:43.10-05:00
-by: Glad komentator
+by: "0||Glad komentator||"
 text: |
  Inline post 3. My-cat-is-evil comment no 3.
  
@@ -199,7 +199,7 @@ where: 'Cras varius'
 # end: ' Vivamus accumsan tempus'
 # after: 'In hac habitasse platea'
 date: 2001-12-14t21:59:43.10-05:00
-by: Glad komentator
+by: "0||Glad komentator||"
 text: |
  Inline post 4: "Cras varius"
  
@@ -214,7 +214,7 @@ text: |
 id: d
 parent: b
 date: 2001-12-14t21:59:43.10-05:00
-by: Promma
+by: "0||Promma||"
 text: |
  För frihetenss skull.
  
@@ -229,7 +229,7 @@ text: |
 id: e
 parent: d
 date: 2001-12-14t21:59:43.10-05:00
-by: PrommaStupiid
+by: "0||PrommaStupiid||"
 text: |
  Såvida de gamla sura gubbarna i själva verket är ute efter att förbjuda sånt de
  inte gillar, precis som muslimerna vill förbjuda alla att inte ha slöja.
@@ -237,7 +237,7 @@ text: |
 id: d2
 parent: d
 date: 2001-12-14t21:59:43.10-05:00
-by: Latin Lover
+by: "0||Latin Lover||"
 text: |
  Aenean in nisl neque. Praesent fermentum, lacus vel tristique facilisis, erat
  velit laoreet lacus, eu rutrum ipsum quam at turpis. Vivamus ut consequat
