@@ -1201,7 +1201,9 @@ function $showReplyForm(event, opt_where) {
           resizeRootThreadExtraWide(); // TODO rm textarea width?
           $post.each(SVG.$drawParents);
         },
-        stop: resizeRootThreadNowAndLater
+        stop: resizeRootThreadNowAndLater,
+        minHeight: 400,  // or lower parts of form might overflow
+        minWidth: 210  // or Cancel button might float drop
       });
 
     // Ajax-post reply on submit.
