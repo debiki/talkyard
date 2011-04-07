@@ -401,9 +401,17 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
 .dw-p-hdr-ed {
 }
 
-.dw-p-by,
-.dw-p-ed-by {
+/* Users with links to more info, e.g. website or blog */
+a.dw-p-by,
+a.dw-p-ed-by {
   color: #369; /* same as reddit */
+  font-weight: bold;
+}
+
+/* Users with no links to more info */
+span.dw-p-by,
+span.dw-p-ed-by {
+  color: #555;
   font-weight: bold;
 }
 

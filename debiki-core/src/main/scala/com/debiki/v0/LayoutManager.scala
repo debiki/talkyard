@@ -9,6 +9,8 @@ package com.debiki.v0
 import java.{util => ju, io => jio}
 import scala.collection.JavaConversions._
 import collection.{mutable => mut, immutable => imm}
+import _root_.net.liftweb.common.{Box, EmptyBox, Failure}
+import _root_.net.liftweb.util.ControlHelpers.tryo
 import _root_.scala.xml.{NodeSeq, Elem, Text, XML, Attribute}
 import Prelude._
 
@@ -28,9 +30,24 @@ class LayoutConfig {
   /** A function from debate-id and post-id to a react URL.
    */
   def reactLink(debateId: String, postId: String) = ""
+
+  /** Constructs a URL to more info on a certain user,
+   *  adds "http://" if needed.
+   */
+  def userLink(user: User) = {
+    if (user.website isEmpty) {
+      ""
+    } else if ("https\\?://".r.findFirstIn(user.website) isDefined) {
+      user.website
+    } else {
+      "http://"+ user.website
+    }
+  }
+
   /** Whether or not to show edit suggestions. */
   def showEdits_? = true
   def hostAndPort = "localhost"
+  def people = new People()
 }
 
 class LayoutVariables {
@@ -242,6 +259,20 @@ class LayoutManager(val debate: Debate) {
         // For the root post, allow everything but javascript though.
     val long = numLines > 9
     val cutS = if (long && post.id != Debate.RootPostId) " dw-x-s" else ""
+    val author = config.people.authorOf(post) openOr {
+      // COULD remember an error somewhere?
+      User.unknown
+    }
+
+    def tryLinkTo(user: User) = {
+      val url = config.userLink(author)
+      if (url nonEmpty) {
+        <a class='dw-p-by' href={url}
+          rel='nofollow' target='_blank'>{author.name}</a>
+      } else {
+        <span class='dw-p-by'>{author.name}</span>
+      }
+    }
 
     val score = statscalc.scoreFor(post.id)
     val ratStatsSorted = score.labelStatsSorted
@@ -263,15 +294,15 @@ class LayoutManager(val debate: Debate) {
       // If closed: <span class='dw-p-re-cnt'>{count} replies</span>
       if (editApps.isEmpty) Nil
       else
-        //<span class='dw-p-hdr-ed'>. <b>Edited</b> by {
         <div class='dw-p-hdr-ed'><b>Edited</b> by {
-          if (editApps.map(a => debate.editsById(a.editId).by).
-              distinct.length > 1)
-            <a>various people</a>
-          else
-            <a class='dw-p-ed-by'>{
-              debate.editsById(lastEditApp.get.editId).by
-            }</a>
+            if (editApps.map(a => debate.editsById(a.editId).by).
+                distinct.length > 1) {
+              <a>various people</a>
+            } else {
+              val editor = config.people.authorOf(debate.editsById(
+                           lastEditApp.get.editId)) openOr User.unknown
+              tryLinkTo(editor)
+            }
           }, <abbr class='dw-p-at dw-date' title={lastEditDate.get}>{
               lastEditDate.get}</abbr>
         </div>
@@ -285,9 +316,11 @@ class LayoutManager(val debate: Debate) {
             <div class='dw-es-ed'>
               <div class='dw-ed-desc'>
                 {textToHtml(edit.desc)._1}
-              </div>{
-              /* The dash below is an em dash no a minus. */}
-              — <a class='dw-ed-by'>{edit.by}</a>,
+              </div>
+              — { // (the dash is an em dash no a minus)
+                val editor = config.people.authorOf(edit) openOr User.unknown
+                tryLinkTo(editor)
+              },
               <abbr class='dw-ed-at dw-date'
                   title={dateCreated}>{dateCreated}</abbr>
               <pre class='dw-ed-text'>{edit.text}</pre>
@@ -306,7 +339,7 @@ class LayoutManager(val debate: Debate) {
     <a class='dw-z'>[–]</a>
     <div id={cssPostId} class={"dw-p" + cutS}>
       <div class='dw-p-hdr'>
-        By <a class='dw-p-by'>{post.by}</a>,
+        By { tryLinkTo(author) },
         <abbr class='dw-p-at dw-date'
             title={dateCreated}>{dateCreated}</abbr>{
             ratsList }{

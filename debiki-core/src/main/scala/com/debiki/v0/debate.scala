@@ -334,6 +334,9 @@ case class Post(
   id: String,
   parent: String,
   date: ju.Date,
+
+  /** An id that identifies the author, formatted as User.id.
+   */
   by: String,
   ip: String,
   text: String,
