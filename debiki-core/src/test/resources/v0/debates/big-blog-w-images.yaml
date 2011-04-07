@@ -1,0 +1,575 @@
+# vim: fdm=marker et sw=4 ts=4 list
+#%TAG ! !org.debiki.v0.debikigenhtml.
+--- !Debate
+id: test-debate
+#end-delims: .,:;!?)}]
+#start-delims: ({[
+#      a
+#   b     c
+# d
+#  e
+# f
+#  g h
+#     i
+#      j
+--- !Post
+id: root
+parent: root
+date: 2001-12-14t21:59:43.10-05:00
+by: "0||OP||"
+text: |
+ Bör MMA vara tillåtet i Sverige?
+ 
+ <pre id="raw">Raw HTML goes here.</pre>
+ <pre id="raw">Raw HTML goes here.</pre>
+ 
+ Mixed Martial Arts, 
+ MMA, 
+ är en sport där strypningar och slag mot huvudet ingår. 
+ MMA-tävlingar är tillåtna i Sverige. 
+ Bör MMA-tävlingar vara tillåtna i Sverige?
+ 
+ MD syndax:
+ ![image-alt-text](http://images.free-extras.com/pics/m/mountains-1264.jpg)
+ 
+ ----
+ 
+ <a href='http://example.com'>A link in tags</a>
+ 
+ [A link w md syntax](http://example.com)
+ 
+ Bör man så bör man.
+ <img src='http://images.free-extras.com/pics/m/mountains-1264.jpg'>
+ <img src='javascript:alert("RSnake says, XSS")'>
+--- !Post
+id: a
+parent: root
+date: 2001-12-14t21:59:43.10-05:00
+by: "0||First Man||"
+text: |
+ Bör MMA vara tillåtet i Sverige?
+ **boold**
+ 
+ Mixed Martial Arts,
+ MMA,
+ är en sport där strypningar och slag mot huvudet ingår.
+ MMA-tävlingar är tillåtna i Sverige.
+ Bör MMA-tävlingar vara tillåtna i Sverige?
+ 
+ <img src='http://images.free-extras.com/pics/m/mountains-1264.jpg'>
+ 
+ Minns man så finns man.
+#<img id="logo" class="doodle" usemap="#doodle"
+#src="//s.ytimg.com/yt/img/pixel-vfl3z5WfW.gif"
+#style="background: url(//s.ytimg.com/yt/img/doodles/earth_hour_sprite-vflOT--SR.png) 0 0 no-repeat">
+--- !Post
+id: b
+# was: a
+parent: root
+date: 2001-12-14t21:59:43.10-05:00
+by: "0||OP||"
+text: |
+ **bollar**
+ Tillåt MMA
+ 
+ <img src='http://www.3dfreedesktopwallpaper.com/desktop-wallpapers/tropical-desktop-wallpaper-1280x1024.jpg'>
+ Det är bra att MMA-tävlingar är tillåtna i Sverige.
+--- !Edit
+id: aea
+post: b
+date: 2001-12-14t21:59:43.10-05:00
+by: "0||Misse Mu||"
+desc: "Skriv \"burk\" och \"slurk\"."
+text: |1
+ **Tillåt MMU**
+ MMUuuurk på burk, drick en slurk
+--- !Edit
+id: bEa
+post: b
+date: 2001-12-14t21:59:43.10-05:00
+by: "0||Mjau-Mjam||"
+desc: "Test-ändring, jaa"
+text: |1
+ **(Edit bEa text)**
+ Abianie irnst eirntier  nirstn tsi!
+ Abneir wfr nrnrinti ni, nrist inrt nrisn ineit n eirneini tieirsn tir.
+ Wfr nii rstrn ti ni, nrist inrt trsien tsrww; guwq nrisn
+ ineit n eirneini tieirsn tir.
+ 
+ E.g. give these trees a try:
+ <img src='http://vistawallpapers.files.wordpress.com/2007/03/vista-wallpaper-aero-woods.jpg'>
+--- !Edit
+id: aec
+post: b
+date: 2001-12-14t21:59:43.10-05:00
+by: "0||Frääs-Klös||"
+desc: "Mer test-ändringar, jaa"
+text: |1
+ Minritnir i its! Norntii niifg. Nritxgwkdb, rtis, rtis, rtis!!!
+ Nao noiu irneinwf  nrsie... Rrnsig niex nwww nbe. irnt??
+--- !EditVote
+id: bEVa
+like: bEa
+date: 2001-12-14t21:59:43.10-05:00
+by: "0||Misse Mu||"
+--- !EditApplied
+edit: bEa
+date: 2001-12-14t21:59:43.10-05:00
+debug: undefined plain text, e.g. 80% prob liked
+result: |1
+ **(Edit bEa applied!)**
+ Abianie irnst eirntier  nirstn tsi!
+ Abneir wfr nrnrinti ni, nrist inrt nrisn ineit n eirneini tieirsn tir.
+ Wfr nii rstrn ti ni, nrist inrt trsien tsrww; guwq nrisn
+ ineit n eirneini tieirsn tir.
+ 
+ E.g. give these trees a try:
+ <img src='http://vistawallpapers.files.wordpress.com/2007/03/vista-wallpaper-aero-woods.jpg'>
+--- !EditVote
+id: ??
+like: aec
+date: 2001-12-14t21:59:43.10-05:00
+by: "0||Maja Gräddnos Snälla Syster||"
+--- !EditVote
+id: ??
+like: aec
+date: 2001-12-14t21:59:43.10-05:00
+by: "0||Morgan Murmeldjur||"
+--- !Post
+id: c
+# was: a
+parent: root
+date: 2001-12-14t21:59:43.10-05:00
+by: "0||OP||"
+text: |
+ Förbjud MMA
+
+ <img src='http://www.travelblog.org/Wallpaper/pix/tb_jungle_guatemala.jpg'>
+
+ MMA-tävlingar borde förbjudas i Sverige.
+--- !Edit
+id: CcEa
+post: c
+date: 2001-12-14t21:59:43.10-05:00
+by: "0||Frääs-Morr-Morr-Morr||"
+desc: "Skriv Norntii niifg"
+text: |1
+ Norntii niifg. rtis, rtis, rtis!!!
+ Rtis, rtis!! Rtis! Rtis! Rtis! Rtis atirfr rtis!!!
+--- !EditVote
+id: ??
+like: CcEa
+date: 2001-12-14t21:59:43.10-05:00
+by: "0||Mister Mjau||"
+--- !Edit
+id: CcEb
+post: c
+date: 2001-12-14t21:59:43.10-05:00
+by: "0||Frääs-Morr-Morr-Morr||"
+desc: "Skriv Mraits..."
+text: |1
+ Mraits infienfrv rsti ywfuglwy.
+--- !Post
+id: ca
+parent: c
+date: 2001-12-14t21:59:43.10-05:00
+by: "0||Anonymous Elevator Man||"
+text: |
+ 1
+
+ 1
+
+ 1
+
+ 1
+
+ 1
+
+ 1
+
+ 1
+
+ 1
+
+ 1
+
+ 2
+
+
+
+
+
+
+
+
+ Many empty lines... I like that, it's like spam :-)
+
+
+
+
+
+
+
+ En hiss i en låda gör ingen glad.
+--- !Post
+id: cb
+parent: c
+date: 2001-12-14t21:59:43.10-05:00
+by: "0||Anonymous Hero||"
+text: |
+ MMA bidrar till brotslighet och samhällets fördärv. MMA förvandlar
+ annars vänliga människor till blodtörstiga våldsbrottslingar som
+ längtar efter att nita sina gamla far- och morföräldrar.
+
+ MMA ger ett samhälle där pengar och bråk är det männiksorna strävar
+ efter, att få slåss helt enkelt. Det är så fruktansvärd och måste stoppas,
+ innan det inte längre finns kvar någon som kan stoppa det hela.
+
+ För så långt kan det gå, att samhället blir alldeles förstört och inte
+ ens hoppet finns kvar, långt färre några människor med själen i behåll.
+ Ondska och världens kättiska förfall, hädelse är ordet som ligger
+ mig närmast om hjärtat. Pris ske Gud.
+
+--- !Post
+id: d
+parent: b
+date: 2001-12-14t21:59:43.10-05:00
+by: "0||Promma||"
+text: |
+ För frihetenss skull.
+
+ Ska vi förbjuda allt i samhället som är lika farligt som MMA,
+ får vi en polisstat.
+ Vi får förbjuda rökning,
+ olika typer av hästhoppning,
+ kanske dykning,
+ bergsklättring i för farliga berg.
+ Och ha polis som ser till lagen efterlevs.
+--- !Post
+id: e
+parent: d
+date: 2001-12-14t21:59:43.10-05:00
+by: "0||PrommaStupiid||"
+text: |
+ Såvida de gamla sura gubbarna i själva verket är ute efter att förbjuda sånt de inte gillar,
+ precis som muslimerna vill förbjuda alla att inte ha slöja.
+--- !Edit
+id: a
+post: e
+date: 2001-12-14t21:59:43.10-05:00
+by: "0||Promma2||"
+text: |1
+ Såvida inte de som är för MMA,
+ i själva verket är ute efter att förbjuda sånt de inte gillar.
+--- !Post
+id: e2
+parent: d
+date: 2001-12-14t21:59:43.10-05:00
+by: "0||Inhuman-Human||"
+text: |
+ Mauris mauris ante, blandit et, ultrices a, suscipit eget, quam. Integer ut neque. Vivamus nisi metus, molestie vel, gravida in, condimentum sit amet, nunc. Nam a nibh. Donec suscipit eros. Nam mi. Proin viverra leo ut odio. Curabitur malesuada. Vestibulum a velit eu ante scelerisque vulputate.
+--- !Post
+id: e3
+parent: d
+date: 2001-12-14t21:59:43.10-05:00
+by: "0||Someone||"
+text: |
+ Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+--- !Post
+id: f
+parent: b
+date: 2001-12-14t21:59:43.10-05:00
+by: "0||Promma2||"
+text: |
+ Håller ungdommar borta från gatan
+
+ En del ungdommar riskerar hamna snett i livet:
+ riskerar börja supa och knarka och stjäla.
+ De kan räddas av MMA: Deras liv får en innebörd,
+ när de har en dröm att kämpa och begå stordåd i MMA-tävlingar.
+--- !Post
+id: g
+parent: f
+date: 2001-12-14t21:59:43.10-05:00
+by: "0||Ephemeriis||"
+text: |
+ Ja,
+ liksom fotbollen ingjuder hopp och framtidstro hos ungdommar i Afrika,
+ ger MMA hopp och framtidstro till en del ungdommar i Sverige.
+--- !Post
+id: h
+parent: f
+date: 2001-12-14t21:59:43.10-05:00
+by: "0||LittleLebowskiUrbanA||"
+text: |
+ De behöver inte slåss för att ha något att göra.
+ Det finns fotboll och basket och annat.
+--- !Post
+id: fc
+parent: f
+date: 2001-12-14t21:59:43.10-05:00
+by: "0||Promma2||"
+text: |
+ Håller INTE ungdommar borta från gatan
+
+ Nej, tvingar dem vara dar.
+--- !Post
+id: fd
+parent: f
+date: 2001-12-14t21:59:43.10-05:00
+by: "0||Promma2||"
+text: |
+ Safari and Chrome Desktop use the values as if no zoom occurs. Thus the values will be wrong after a zoom.
+ Note that Opera Desktop, while giving window.innerWidth/Height the wrong values, nonetheless uses the correct, zoomed ones in order to calculate this media query.
+ I cannot interpret Ozone’s results.
+ The M1’s height is wrong. The H1’s is correct (although the window.innerHeight source data might not).
+--- !Post
+id: bc
+parent: b
+date: 2001-12-14t21:59:43.10-05:00
+by: "0||Child-BC||"
+text: |
+ What is the simplest way to manage dependencies of Java classes to data files present in the classpath?
+
+ More specifically:
+ How should data dependencies be annotated? Perhaps using Java annotations (e.g., @Data)? Or rather some build entries in a build script or a properties file? Is there build tool that integrates and evaluates such information (Ant, Scons, ...)? Do you have examples?
+
+ Consider the following scenario:
+ A few lines of Ant create a Jar from my sources that includes everything found on the classpath. Then jarjar is used to remove all .class files that are not necessary to execute, say, class Foo. The problem is that all the data files that class Bar depends upon are still there in the Jar. The ideal deployment script, however, would recognize that the data files on which only class Bar depends can be removed while data files on which class Foo depends must be retained.
+
+ Any hints?
+
+ Or no hints?
+
+ Or many?
+
+ Very many? Thanks
+--- !Post
+id: bd
+parent: b
+date: 2001-12-14t21:59:43.10-05:00
+by: "0||Child-BD||"
+text: |
+ Can't you refactor your project so that you have submodules that each contain the relevant files for the project itself ; Bar class and Bar related files will be packaged in their bundle while Foo ones will packed into another?
+ 
+ Another possibility would be to use some package naming convention to be able to filter the files you want to see i your bundles.
+--- !Post
+id: be
+parent: b
+date: 2001-12-14t21:59:43.10-05:00
+by: "0||Child-BE||"
+text: |
+ Gives the width and height of the HTML element in “browser pixels.” Should either become smaller with zooming (desktop), or stay the same, if the minimum viewport is fixed (some mobile browsers).
+--- !Post
+parent: h
+id: i
+date: 2001-12-14t21:59:43.10-05:00
+by: "0||Anonymous Coward||"
+text: |
+ Du kan inte jämföra ett härligt slagsmål med fotboll!
+--- !Post
+parent: i
+id: j
+date: 2001-12-14t21:59:43.10-05:00
+by: "0||LittleLebowskiUrbanA||"
+text: |
+ Idiot
+--- !Post
+parent: j
+id: k
+date: 2001-12-14t21:59:43.10-05:00
+by: "0||Anonymous Coward||"
+text: |
+ ***NEJ***!!!
+
+ Trots att fotbollsmatcher spelas, stämmer ju ligorna
+ träff för att slåss! Där ser du att fotbollen
+ **inte** ersätter ett slagsmål med hjältedåd!!!
+
+ Viktigt att vi visar mod!
+ Apor fega
+
+ Människor kloka
+
+ Vem vet hur det går, om vi blir lata som gäss
+
+ Och fega som en fet get!
+
+ Det du, det kommer du inte undan
+
+ Nej
+--- !Rating
+by: "0||Pelle Svanslös||"
+date: 2002-01-01t10:11:12.13Z
+post: b
+tags: [interesting]
+--- !Rating
+by: "0||Pelle Svanslös||"
+date: 2002-01-01t10:11:12.13Z
+post: c
+tags: [boring]
+--- !Rating
+by: "0||Maja Gräddnos||"
+date: 2002-01-01t10:11:12.13Z
+post: c
+tags: [faulty, boring]
+--- !Rating
+by: "0||Majas avlägsna släkting i Amerikat||"
+date: 2002-01-01t10:11:12.13Z
+post: ac
+tags: [faulty, boring, spam, troll, off-topic]
+--- !Rating
+by: "0||Majas avlägsna släkting i Norge||"
+date: 2002-01-01t10:11:12.13Z
+post: ac
+tags: [faulty, boring, spam, troll]
+--- !Rating
+by: "0||Maja Gräddnos||"
+date: 2002-01-01t10:11:12.13Z
+post: ac
+tags: [faulty, boring, spam]
+--- !Rating
+by: "0||Majas syster||"
+date: 2002-01-01t10:11:12.13Z
+post: ac
+tags: [faulty, boring]
+--- !Rating
+by: "0||Majas moster||"
+date: 2002-01-01t10:11:12.13Z
+post: ac
+tags: [faulty]
+--- !Rating
+by: "0||Plåtniklas||"
+date: 2002-01-01t10:11:12.13Z
+post: ad
+tags: [off-topic]
+--- !Rating
+by: "0||Karlsson på Taket||"
+date: 2002-01-01t10:11:12.13Z
+post: ad
+tags: [spam]
+--- !Rating
+by: "0||Nisse Nyfiken||"
+date: 2002-01-01t10:11:12.13Z
+post: ad
+tags: [spam]
+--- !Rating
+by: "0||Bull den Bullige||"
+date: 2002-01-01t10:11:12.13Z
+post: d
+tags: [spam, off-topic, troll]
+--- !Rating
+by: "0||Måns||"
+date: 2002-01-01t10:11:12.13Z
+post: cb
+tags: [troll, spam]
+--- !Rating
+by: "0||Bill den Knasige||"
+date: 2001-12-14t21:59:43.10-05:00
+post: j
+tags: [stupid, off-topic, troll]
+--- !Rating
+by: "0||Misse-Muu||"
+date: 2001-12-14t21:59:43.10-05:00
+post: h
+tags: [stupid, off-topic, troll]
+--- !Rating
+by: "0||Anders-And||"
+date: 2001-12-14t21:59:43.10-05:00
+post: h
+tags: ["interesting", "faulty", "»määäh-unicode«"]
+--- !Post
+parent: e
+id: ea
+date: 2001-12-14t21:59:43.10-05:00
+by: "0||RobertM1968||"
+text: |
+ Besides the possibilities of "what could possibly go wrong?" the simple fact is, I am hoping IBM has done their research on this.
+
+ Some car manufacturers claim that stopping and restarting the engine will use more gas, and cause increased wear on the starter. Others claim it will save as much as 10% in gas and not cause wear on the starter. I wonder where the truth really lies? Jeep recommends (for some of their vehicles) at least 1 minute of idle time expected before one turns off the engine to save gas. The government says (basically) "do it every time" - but the government also says that modern cars only need 20 seconds to warm up to a usable temperature in the winter. For those of you who have an actual temperature gauge in your car, you know that is not true... so I am not sure how accurate the rest of the government's data/speculation is (or quite simply, they did not test enough cars).
+
+ That aside, there are other problems I have not seen mentioned, for instance dead batteries. If you are a city driver, and barely get over engine idle rpm during your drive, constantly stopping and restarting your engine can drain your battery. There are times I've had to drive in NYC and been on a two way main street going against the flow of traffic lights, meaning I've gotten stuck at a bunch of traffic lights during my trip. As anyone who has had engine (or lack of fuel) problems has noticed, if one repeatedly tries to start their engine, the battery will eventually get below "restart power levels" - meaning a bunch of people stuck at a traffic light without enough power to restart their engine. Add a cold winter day into the mix and this definitely should apply. As it is, I have experienced "uber cold" days on my visits to upstate New York where it sounded like if I had two or three attempts to start my engine, I would be lucky. Fortunately, my car only requires one. But driving a few hundred feet, shutting it off and trying again, then repeating that 5-10 times in under a mile would probably run me into problems as the car wouldnt have been running long enough at high enough RPM (1800?) to (a) recharge the battery enough for another start at those temperatures and/or (b) heat the battery enough for it to be able to deliver more starts.
+
+ Also, unless starter technology has changed recently, the starter has a cool-down period between start attempts. Something mentioned in only a few car manuals simply because one starts the car, drives it, then shuts it off - usually exceeding the cooldown period. If you are needing to stop at a traffic light every city block, and restart your engine, then chances are, you aren't reaching the end of the cooldown cycle. The more the starter is turned on without reaching it, the hotter it gets. Anyone who has played with an electric motor knows what happens if they overheat.
+
+ And as for the engine wear part of the equation, as anyone who knows a little physics can tell you, starting an engine does wear it more than normal driving... something to do with overcoming inertia (ie: the massive flywheel, and the internal inertia of the engine itself). Yes, above-normal driving (and to a much lesser extent, normal driving) still has similar factors to overcome, but there are other differences involved, namely that the flywheel is before the torque converter or clutch and the torque converter/clutch "absorbs" some of the "stand-still" force being overcome in driving/accelerating (ie: not as jarring to the engine - in comparison to "wrenching" a standing still flywheel into motion).
+
+ And of course, all of the above could entirely be speculation... but that's not really the point that matters... the point that matters is, it's all based off one or more combinations of vehicle manufacturer information, various studies on the matter, and various real world applications of the situation (cold starts and battery power available), etc.
+
+ Which brings us full circle to: "I hope IBM has done their research in this" - guess I could have left it at that in the first line or two, but I was bored. I wonder if there is a "+1/2 Bored" moderation? (Hey, the effort hasta be worth something!) ;-)
+
+--- !Post
+parent: a
+id: ac
+date: 2001-12-14t21:59:43.10-05:00
+by: "0||Child-AC||"
+text: |
+ Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+--- !Post
+# was: a
+parent: root
+id: ad
+date: 2001-12-14t21:59:43.10-05:00
+by: "0||Child-AD||"
+text: |
+ **An anonymous _reader_ writes:**
+
+ "Vimeo has plans in progress to offer WebM video content in the near future. In response to a question posted on the community forums, Vimeo's Andrew Pile responded, 'We've been working for it for a few weeks now and hope to have some preliminary videos for people to play with soon. It looks promising!'"
+
+ <img src='http://static.travelblog.org/Wallpaper/pix/waterfall_desktop_background-1600x1200.jpg'>
+--- !Post
+parent: ad
+id: ada
+date: 2001-12-14t21:59:43.10-05:00
+by: "0||Child-ADA||"
+text: |
+ Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. 
+ <img src='http://static.travelblog.org/Wallpaper/pix/mountain_wallpaper.jpg'>
+--- !Post
+parent: a
+id: ae
+date: 2001-12-14t21:59:43.10-05:00
+by: "0||Child-AC||"
+text: |
+ Proin viverra leo ut odio. Curabitur malesuada. Vestibulum a velit eu ante scelerisque vulputate.
+--- !Post
+parent: a
+id: af
+date: 2001-12-14t21:59:43.10-05:00
+by: "0||Child-AC||"
+text: |
+ roh2cool writes "As the dates for E3 Convention approaches, we expect more updates and leaks while game publishing and developing companies prefer to stay tight-lipped. Amongst the hustle-bustle of Google’s announcements, we managed to pick few important updates from the gaming industry happenings. Take a quick look at this gaming roundup snapshot for this week."
+
+#--- !Rating
+#date: 2001-12-14t21:59:43.10-05:00
+#by: "0||Person Name||"
+#tags: { post: x, [ is: stupid ] }
+#--- !Rating
+#date: 2001-12-14t21:59:43.10-05:00
+#by: "0||Person Name||"
+#votes:
+#- post: x
+#  - it: dissents
+#  - is: [stupid, off-topic]
+#  - score: -1
+#- post: y
+#  - is: insightful
+#  - score: +1
+#- post: z
+#  - it: agrees
+#--- !Edit
+#date: 2001-12-14t21:59:43.10-05:00
+#by: "0||Person Name||"
+#postId: a
+#diff-ed: |
+# <an ed diff>
+#--- !debikigenhtml.Post.Log
+#id: f
+#log:
+#- { time: 2001-12-14t21:59:43.10-05:00, who: GarboGris, what: 'Suggested rewrite, id 1' }
+#- [ 2001-12-14t21:59:43.10-05:00, ModifyText, Suggested, Garbo Gris ]
+#- [ 2001-12-14t21:59:43.10-05:00, ModifyText, VotedUp, Millan Murmeldjur ]
+
+
+...
+
