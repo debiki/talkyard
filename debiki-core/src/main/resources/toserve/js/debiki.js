@@ -1081,6 +1081,44 @@ function $markIfMine() {
 }
 
 
+// ------- Login
+
+function initLoginDialog() {
+  $('#dw-fs-openid-login').dialog({
+    autoOpen: false,
+    height: 410,
+    width: 720,
+    modal: true,
+    draggable: false,  // it would move faster than the mouse, why?
+    resizable: false,  // it would teleport itself far away, why?
+    zIndex: 1200,  // the default, 1000, is lower than <form>s z-index
+    buttons: {
+      Cancel: function() {
+        $(this).dialog('close');
+      }
+    },
+    close: function() {
+      // Perhaps reset form? Something like this:
+      // allFields.val('').removeClass('ui-state-error');
+    }
+  });
+  // Debiki's jQuery UI CSS selectors are prefixed with .debiki.
+  // jQuery has moved the dialog to directly below the <body>,
+  // so the dialog currently has no .debiki parent, so:
+  // Ooops, this doesn't work, jQuery UI's dialog completely broken:
+  //$('#openid_form').parent().wrap('<div class="debiki"></div>');
+  // This works though, but makes my `.debiki' jQuery UI CSS prefix pointless:
+  $('body').addClass('debiki'); // COULD either remove the .debiki
+  // prefix to all jQuery UI CSS selectors, or make jQuery UI dialog
+  // style stuff work without class `debiki' on <body>, but how?
+}
+
+function $showLoginDialog() {
+  $('#dw-fs-openid-login').dialog('open');
+  return false;  // skip default action
+}
+
+
 // ------- Rating
 
 function $showRatingForm() {
@@ -1987,6 +2025,14 @@ $('.debiki').delegate('.dw-z', 'click', $threadClose);
 
 $(".debiki .dw-p").each($initPost);
 
+
+openid.img_path = '/classpath/0/lib/openid-selector/images/';
+// Keep default openid.cookie_expires, 1000 days; COULD remove cookie on logout?
+openid.init('openid_identifier');
+initLoginDialog();
+$('.debiki').delegate('.dw-a-login', 'click', $showLoginDialog);
+
+
 // On post text click, open the inline action menu.
 // But hide it on mousedown, so the inline action menu disappears when you
 // start the 2nd click of a double click, and appears first when the 2nd
@@ -2012,7 +2058,7 @@ $('.debiki').delegate('.dw-a-rate', 'click', $showRatingForm);
 rateFormTemplate.find('.dw-show-more-rat-tags').click($showMoreRatingTags);
 
 
-$('.debiki').delegate('.dw-a-reply', 'click', $showReplyForm);
+$('.debiki .dw-a-reply').click($showReplyForm);
 
 
 $('.debiki').delegate('.dw-a-edit', 'click', $showEditSuggestions);

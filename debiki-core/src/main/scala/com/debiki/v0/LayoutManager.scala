@@ -27,6 +27,7 @@ class LayoutConfig {
   def replyAction = ""
   def rateAction = ""
   def editAction = ""
+  def loginAction = ""
   /** A function from debate-id and post-id to a react URL.
    */
   def reactLink(debateId: String, postId: String) = ""
@@ -499,6 +500,32 @@ class LayoutManager(val debate: Debate) {
         <a class='dw-a dw-a-reply'>Reply</a>
         <a class='dw-a dw-a-rate'>Rate</a>
         <a class='dw-a dw-a-edit'>Edit</a>
+      </div>{
+      // The login form below is based on this JavaScript OpenID Selector
+      // example file:
+      // debiki-core/src/main/resources/toserve/0/lib/openid-selector/demo.html
+      }
+      <div class='dw-fs' id='dw-fs-openid-login'
+            title="Sign In or Create New Account">
+        <form action={config.loginAction} method='post' id='openid_form'>
+          <input type='hidden' name='action' value='verify' />
+          <div id='openid_choice'>
+            <p>Please click your account provider:</p>
+            <div id='openid_btns'></div>
+          </div>
+          <div id='openid_input_area'>
+            <input id='openid_identifier' name='openid_identifier' type='text'
+                value='http://' />
+            <input id='openid_submit' type='submit' value='Sign-In'/>
+          </div>
+          <noscript>
+            <p>OpenID is a service that allows you to log-on to many different
+            websites using a single indentity. Find out
+            <a href='http://openid.net/what/'>more about OpenID</a>
+            and <a href='http://openid.net/get/'>how to get an OpenID enabled
+            account</a>.</p>
+          </noscript>
+        </form>
       </div>
       <li class='dw-fs dw-fs-re'>
         <form

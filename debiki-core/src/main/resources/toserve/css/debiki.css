@@ -743,7 +743,7 @@ span.dw-p-ed-by {
 .dw-fs form {
   float: left; /* or won't wrap all children, some children float */
   position: relative;
-  z-index: 9999;
+  z-index: 1100;
   /* A distinct border retults in confusingly many vertical lines
   (there're vertical lines between columns, and for thread
   indentation). So, don't have a border -- but yes, have a border
@@ -756,6 +756,18 @@ span.dw-p-ed-by {
   /* My Firifox 3.6 draws outlines very incorrectly for the Rating form,
   (but correctly for Reply and Edit), use borders instead. */
   /* outline: #83c5df solid thick; */
+}
+
+/* jQuery UI dialogs have forms inside. Set the dialog bg color
+to the forms bg color. */
+.debiki .ui-dialog-buttonpane {
+  background-color: #fbf7f2;
+}
+.dw-fs.ui-dialog-content > form {
+  border: none; /* the buttonpane is outside, same color as form */
+  /* Cancel z-index:1100 rule, otherwise the <form> would be placed
+  lower than the jQuery UI dialog itself, and jQuery would stop clicks. */
+  z-index: auto; /* cancel rule */
 }
 
 .debiki form input[type='text'],
@@ -860,7 +872,7 @@ span.dw-p-ed-by {
 
 .dw-fs-ed { /* currently almost identical to <form> */
   position: relative;
-  z-index: 9999;
+  z-index: 1100;
 }
 
 .dw-fs-ed form {
