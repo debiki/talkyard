@@ -29,6 +29,14 @@ openid = {
 	provider_url : null,
 	provider_id : null,
 
+	// [kajmagnus79@Debiki]
+	// A function($openIdForm) that creates a popup window, submits the
+	// form in that popup (by changing the "target" attribute of the form)
+	// and listens for the popup window to close.
+	// If null, the current window submits the form, and is
+	// redirected to the OpenID provider login page.
+	submitInPopup : null, 
+
 	/**
 	 * Class constructor
 	 * 
@@ -121,6 +129,13 @@ openid = {
 			url = url.substr("javascript:".length);
 			eval(url);
 			return false;
+		}
+		// [kajmagnus79@Debiki] Optionally, submit the form in a popup.
+		if (openid.submitInPopup) {
+			openid.submitInPopup($('#openid_form'));
+			// The `target' attribute of the form should now have been
+			// set by submitInPopup to the relevant popup window name.
+			// The default submit action thus opens the form in the popup.
 		}
 		return true;
 	},
