@@ -19,6 +19,16 @@ Debiki.v0 = {};
 var UNTESTED; // Indicates that a piece of code has not been tested.
 
 //----------------------------------------
+//  Helpers
+//----------------------------------------
+
+function isBlank(str) {
+  return !str || !/\S/.test(str);
+  // (!/\S/ is supposedly much faster than /^\s*$/,
+  // see http://zipalong.com/blog/?p=287)
+}
+
+//----------------------------------------
 // jQuery object extensions
 //----------------------------------------
 
@@ -140,6 +150,10 @@ var debateId = $('.debiki').attr('id');
 var idSuffixSequence = 0;
 
 var $lastInlineMenu = $();
+
+// Remembers which "Post as..." button (if any) was clicked when 
+// a login dialog is shown.
+var submitReplyButtonClicked = null;
 
 // Reset all per click state variables when a new click starts.
 $.event.add(document, "mousedown", function() {
@@ -1053,7 +1067,7 @@ function slideInActionForm($form, $where) {
 }
 
 
-// ------- User name
+// ------- User properties
 
 // Remembers the user name in a cookie, synchronizes with
 // edit/reply forms. Adds .dw-mine class to all posts by someone
@@ -1080,10 +1094,152 @@ function $markIfMine() {
   updateAuthorInfo($(this), $.cookie('dwUserName'));
 }
 
+// Updates cookies and elements to show the user name, email etc.
+// as appropriate. Unless !propsUnsafe, throws if name or email missing.
+// Parameters:
+//  props: {name, email, website}, will be sanitized unless
+//  sanitize: unless `false', {name, email, website} will be sanitized.
+function setUserPropsOrThrow(propsUnsafe, sanitize) {
+  if (!propsUnsafe)
+    return;
+  var propsSafe = propsUnsafe;   // XSS attack, TODO sanitize!
+  if (isBlank(propsSafe.name) || isBlank(propsSafe.email)) {
+    throw new Error('Name or email missing [debiki_error_28yx19]');
+  }
+  if (false) {  // COULD throw e.g. if name empty, email has no '@' etc
+    throw new Error('[debiki_error_...]');
+  }
 
-// ------- Login
+  $.cookie('dwUserName', propsSafe.name);
+  $.cookie('dwUserEmail', propsSafe.email);
+  if (propsSafe.website) $.cookie('dwUserWebsite', propsSafe.website);
 
-function initLoginDialog() {
+  $('#dw-login-info').show().find('.dw-login-name').text(propsSafe.name);
+  $('#dw-a-logout').show();
+  $('#dw-a-login').hide();
+
+  // Hereafter, on `Post ...' click, submit the form instead of opening
+  // the login dialog.
+  $('.dw-fs-re .dw-fi-submit')
+      .unbind('click', $showLoginSimple)
+      .attr('value', 'Post as '+ propsSafe.name);
+}
+
+// Returns user properties: {name, email, website}, but false iff the name
+// or email address is unknown.
+function getUserProps() {
+  var name = $.cookie('dwUserName');
+  var email = $.cookie('dwUserEmail');
+  return name && email ? {
+    name: name,
+    email: email,
+    website: $.cookie('dwUserWebsite')
+  } : false;
+}
+
+function clearUserProps() {
+  $.cookie('dwUserName', null);
+  $.cookie('dwUserEmail', null);
+  $.cookie('dwUserWebsite', null);
+  $('#dw-login-info').hide();
+  $('#dw-a-logout').hide();
+  $('#dw-a-login').show();
+  $('.dw-fs-re .dw-fi-submit')
+      .click($showLoginSimple)
+      .attr('value', 'Post as ...'); // COULD make a dedicated btn w this text
+}
+
+
+// ------- Logout
+
+function showLogout() {
+  $('#dw-fs-logout').dialog('open');
+}
+
+function initLogout() {
+  var $logout = $('#dw-fs-logout');
+  var $logoutForm = $logout.find('form');
+  $logout.find('input').hide(); // Use jQuery UI's dialog buttons instead
+  $logout.dialog({
+    autoOpen: false,
+    height: 260,
+    width: 350,
+    modal: true,
+    draggable: false,  // it would move faster than the mouse, why?
+    resizable: false,  // it would teleport itself far away, why?
+    zIndex: 1190,  // the default, 1000, is lower than <form>s z-index
+    buttons: {
+      Cancel: function() {
+        $(this).dialog('close');
+      },
+      'Log out': function() {
+        $(this).dialog('close');
+        $logoutForm.submit();
+      }
+    }
+  });
+  $logoutForm.submit(function() {
+    var postData = $logoutForm.serialize();
+    $.post($logoutForm.attr("action"), postData, function() { //TODO handle form
+      clearUserProps();
+    }, 'html');
+    return false;
+  });
+}
+
+
+// ------- Login, simple
+
+function initLoginSimple() {
+  var $login = $('#dw-fs-login-simple');
+  $login.find('.dw-fi-submit').hide();  // don't show before name known
+  $login.dialog({
+    autoOpen: false,
+    height: 410,
+    width: 600,
+    modal: true,
+    draggable: false,  // it would move faster than the mouse, why?
+    resizable: false,  // it would teleport itself far away, why?
+    zIndex: 1190,  // the default, 1000, is lower than <form>s z-index
+    buttons: {
+      Cancel: function() {
+        $(this).dialog('close');
+      },
+      OK: function() {
+        setUserPropsOrThrow({  // throws on invalid data
+          name: $login.find('#dw-fi-reply-author').val(),
+          email: $login.find('#dw-fi-reply-mail').val(),
+          website: $login.find('#dw-fi-reply-website').val()
+        });
+        // We won't get here if the name or email is invalid.
+        $(this).dialog('close');
+        // click() instead of submit() skips the custom submit handler, weird?
+        $(submitReplyButtonClicked).submit();
+        submitReplyButtonClicked = null;
+      }
+    },
+    close: function() {
+      // Perhaps reset form? Something like this:
+      // allFields.val('').removeClass('ui-state-error');
+    }
+  });
+  $login.find('.dw-a-login-openid')
+      .button().click($showLoginOpenId);
+}
+
+function $showLoginSimple() {
+  submitReplyButtonClicked = this;
+  showLoginSimple();
+  return false;  // skip default action
+}
+
+function showLoginSimple() {
+  $('#dw-fs-login-simple').dialog('open');
+}
+
+// ------- Login, OpenID
+
+function initLoginOpenId() {
   $('#dw-fs-openid-login').dialog({
     autoOpen: false,
     height: 410,
@@ -1102,6 +1258,7 @@ function initLoginDialog() {
       // allFields.val('').removeClass('ui-state-error');
     }
   });
+
   // Debiki's jQuery UI CSS selectors are prefixed with .debiki.
   // jQuery has moved the dialog to directly below the <body>,
   // so the dialog currently has no .debiki parent, so:
@@ -1113,7 +1270,7 @@ function initLoginDialog() {
   // style stuff work without class `debiki' on <body>, but how?
 }
 
-function $showLoginDialog() {
+function $showLoginOpenId() {
   $('#dw-fs-openid-login').dialog('open');
   return false;  // skip default action
 }
@@ -1332,9 +1489,20 @@ function $showReplyForm(event, opt_where) {
           $post.each(SVG.$drawParents);
         },
         stop: resizeRootThreadNowAndLater,
-        minHeight: 400,  // or lower parts of form might overflow
+        minHeight: 180,  // or lower parts of form might overflow
         minWidth: 210  // or Cancel button might float drop
       });
+
+    if (getUserProps()) {
+      // User name known. Submit button text should already have been
+      // changed, by setUserPropsOrThrow(…), to ``Post as <user name>''.
+    }
+    else {
+      // When clicking the submit button, instead of submitting, open
+      // a login dialog. The login dialog handler is unbound
+      // by setUserPropsOrThrow(…) when the user specifies its name.
+      $replyForm.find('.dw-fi-submit').click($showLoginSimple);
+    }
 
     // Ajax-post reply on submit.
     $replyForm.submit(function() {
@@ -2118,12 +2286,25 @@ $('.debiki').delegate('.dw-z', 'click', $threadClose);
 $(".debiki .dw-p").each($initPost);
 
 
+// If the user's name, email & website are remembered in cookies,
+// call setUserPropsOrThrow, which will then update all relevant
+// html elements so they show the user's name.
+// COULD do this on the server instead (must, if javascript disabled).
+setUserPropsOrThrow(getUserProps(),
+    false); // need not sanitize; cookies are already sanitized
+
+
+initLogout();
+initLoginSimple();
+$('#dw-a-login').click(showLoginSimple);
+$('#dw-a-logout').click(showLogout);
+
+
 openid.img_path = '/classpath/0/lib/openid-selector/images/';
 openid.submitInPopup = submitLoginInPopup;
 // Keep default openid.cookie_expires, 1000 days; COULD remove cookie on logout?
 openid.init('openid_identifier');
-initLoginDialog();
-$('.debiki').delegate('.dw-a-login', 'click', $showLoginDialog);
+initLoginOpenId();
 
 
 // On post text click, open the inline action menu.

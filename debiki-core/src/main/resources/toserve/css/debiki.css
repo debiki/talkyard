@@ -795,7 +795,7 @@ to the forms bg color. */
 .dw-submit-set {
   float: left;
   clear: both;
-  margin-top: 1.7em;
+  margin-top: 1em;
 }
 
 .debiki .ui-button {
@@ -806,7 +806,61 @@ to the forms bg color. */
   cursor: pointer !important; /* has servede side effects, might reload page */
 }
 
+/* --- Login dialog --- */
+
+/* Assume user logged out */
+#dw-login-info,
+#dw-a-logout {
+  display: none;
+}
+
+.dw-login {
+  float: left;
+  clear: both;
+  margin: 10px 0;
+}
+
+.dw-login-a-wrap {
+  float: left;
+  padding: 57px 45px 0 0;
+  margin-right: 45px;
+  height: 105px;
+  border-right: 1px solid #ccc;
+  position: relative;
+}
+
+.dw-a-login {
+  font-size: 200%;
+  margin-left: 10px;
+  color: #3872AB;
+}
+
+.dw-login-or-word {
+  top: 66px;
+  right: -6px;
+  position: absolute;
+  background-color: #FBF7F2;
+  padding: 4px 0 4px;
+}
+
+.dw-login-fields {
+  float: left;
+}
+
+.dw-login-fields label {
+  margin-top: 0.7em;
+}
+
+.dw-login-fields input {
+  margin-top: 3px !important; /* COULD remove my own conflicting rule */
+  width: 200px;
+}
+
 /* === Reply === */
+
+.dw-fs-re > form {
+  min-width: 210px;
+}
 
 .dw-fs-re label {
   display: inline-block;
@@ -826,7 +880,7 @@ to the forms bg color. */
   clear: both;
   color: #666;
   font-size: 70%;
-  margin: 1em 0px;
+  margin: 9px 0 0;
   max-width: 32em; /* else license text makes reply-thread very wide */
 }
 .dw-user-contrib-license a {

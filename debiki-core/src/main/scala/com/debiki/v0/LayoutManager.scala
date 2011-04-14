@@ -28,6 +28,7 @@ class LayoutConfig {
   def rateAction = ""
   def editAction = ""
   def loginAction = ""
+  def logoutAction = ""
   /** A function from debate-id and post-id to a react URL.
    */
   def reactLink(debateId: String, postId: String) = ""
@@ -152,6 +153,20 @@ object LayoutManager {
       (if (options.isEmpty) "" else ", {"+ options +"}") +
       ");"
 
+  /** XML for the user name and login/out links.
+   */
+  def loginInfo(userName: Option[String]): NodeSeq = {
+    <div id='dw-login-info'>Logged in as
+      <span class='dw-login-name'>{
+        userName match {
+          case Some(name) => Text("Logged in as "+ name)
+          case None => Nil
+        }
+      }</span>
+    </div>
+    <a id='dw-a-login'>Log in</a>
+    <a id='dw-a-logout'>Log out</a>
+  }
 }
 
 import LayoutManager._
@@ -484,7 +499,7 @@ class LayoutManager(val debate: Debate) {
       Creative Commons Attribution 3.0 Unported License
     </a>
 
-  private val submitButtonText = "Submit"
+  private val submitButtonText = "Post as ..."
 
   /**
    *  Naming notes:
@@ -505,6 +520,45 @@ class LayoutManager(val debate: Debate) {
       // example file:
       // debiki-core/src/main/resources/toserve/0/lib/openid-selector/demo.html
       }
+
+      <div class='dw-fs' id='dw-fs-login-simple' title='Who are you?'>
+        <form action={config.loginAction} method='post'>
+          <p>Please enter your name, or click Log in, to login with
+          e.g. your Google or Yahoo! account.
+          </p>
+
+          <div id='dw-login'>
+           <div class='dw-login-a-wrap'>
+            <a class='dw-a dw-a-login-openid'>Log in</a>
+            <div class='dw-login-or-word'>or</div>
+           </div>
+           <div class='dw-login-fields'>
+            <div>
+             <label for='dw-fi-reply-author'>Name</label><br/>
+             <input id='dw-fi-reply-author' type='text' size='40' maxlength='100'
+                  name='dw-fi-by' value='Anonymous'/>
+             <br/>
+
+            </div>
+            <div>
+             <label for='dw-fi-reply-mail'>Email</label><br/>
+             <input id='dw-fi-reply-mail' type='text' size='40' maxlength='100'
+                  name='dw-fi-reply-mail' value=''/><br/>
+             <!-- <span class='edit-field-overlay'
+                >required, but never shown</span> -->
+            </div>
+            <div>
+             <label for='dw-fi-reply-website'>Website</label><br/>
+             <input id='dw-fi-reply-website' type='text' size='40' maxlength='200'
+                  name='dw-fi-reply-website' value=''/><br/>
+             <!-- COULD add tabindex='...' -->
+            </div>
+           </div>
+          </div>
+
+        </form>
+      </div>
+
       <div class='dw-fs' id='dw-fs-openid-login'
             title="Sign In or Create New Account">
         <form action={config.loginAction} method='post' id='openid_form'>
@@ -527,6 +581,17 @@ class LayoutManager(val debate: Debate) {
           </noscript>
         </form>
       </div>
+
+      <div class='dw-fs' id='dw-fs-logout' title='Log out'>
+        <form action={config.logoutAction} method='post'>
+          <p>Are you sure?</p>
+          <div class='dw-submit-set'>
+            <input class='dw-fi-cancel' type='button' value='Cancel'/>
+            <input class='dw-fi-submit' type='submit' value='Log out'/>
+          </div>
+        </form>
+      </div>
+
       <li class='dw-fs dw-fs-re'>
         <form
             action={config.replyAction}
@@ -539,21 +604,20 @@ class LayoutManager(val debate: Debate) {
             <textarea id='dw-fi-reply-text' name='dw-fi-reply-text' rows='13'
               cols='38'/>
           </p>
-          <p class='dw-name-or-alias'>
-            <label for='dw-fi-reply-author'>Your name or alias:</label>
-            <input id='dw-fi-reply-author' type='text'
-                  name='dw-fi-by' value='Anonymous'/>
-          </p>
           <p class='dw-user-contrib-license'>
             By clicking <i>{submitButtonText}</i>, you agree to license
             the text you submit under the {ccWikiLicense}.
           </p>
           <div class='dw-submit-set'>
-            <input class='dw-fi-submit' type='submit' value={submitButtonText}/>
             <input class='dw-fi-cancel' type='button' value='Cancel'/>
+            <input class='dw-fi-submit' type='submit' value={submitButtonText}/>
           </div>
+         <!-- TODO on click, save draft, map to '#dw-a-login' in some way?
+          e.g.: href='/users/login?returnurl=%2fquestions%2f10314%2fiphone-...'
+          -->
         </form>
       </li>
+
       <div class='dw-fs dw-fs-rat'>
         <form
             action={config.rateAction}
