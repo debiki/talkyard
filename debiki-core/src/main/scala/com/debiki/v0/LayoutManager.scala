@@ -156,13 +156,14 @@ object LayoutManager {
   /** XML for the user name and login/out links.
    */
   def loginInfo(userName: Option[String]): NodeSeq = {
-    <div id='dw-login-info'>Logged in as
-      <span class='dw-login-name'>{
+    <div id='dw-login-info'>
+      <div class='dw-login-lgd-in-as'>Logged in as</div>
+      <div class='dw-login-name'>{
         userName match {
           case Some(name) => Text("Logged in as "+ name)
           case None => Nil
         }
-      }</span>
+      }</div>
     </div>
     <a id='dw-a-login'>Log in</a>
     <a id='dw-a-logout'>Log out</a>
@@ -523,10 +524,6 @@ class LayoutManager(val debate: Debate) {
 
       <div class='dw-fs' id='dw-fs-login-simple' title='Who are you?'>
         <form action={config.loginAction} method='post'>
-          <p>Please enter your name, or click Log in, to login with
-          e.g. your Google or Yahoo! account.
-          </p>
-
           <div id='dw-login'>
            <div class='dw-login-a-wrap'>
             <a class='dw-a dw-a-login-openid'>Log in</a>
