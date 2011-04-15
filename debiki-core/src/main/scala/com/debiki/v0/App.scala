@@ -60,7 +60,7 @@ private[debiki] object App {
           <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
           {/* svg.js must be first js, says svgweb docs.
           <meta name="svg.render.forceflash" content="true" /> */}
-          <script type='text/javascript' src='js/svg.js' data-path='js'/>
+          <script type='text/javascript' src='0/js/svg.js' data-path='0/js'/>
           {
             for (f0 <- resourceFiles; f = f0.stripPrefix(serveDir)) yield
               if (f endsWith ".css")
@@ -109,6 +109,7 @@ private[debiki] object App {
   }
 
   val serveDir = "toserve/"
+  val resourcesDir = serveDir + "0/"
 
   /** All css and javascript files.
    */
@@ -119,9 +120,10 @@ private[debiki] object App {
       "css/img/dw-svg-fake-hcurve-start.png",
       "css/img/dw-svg-fake-hcurve-start-w-reply-arrow.png",
       "css/img/dw-svg-fake-vcurve-short.png",
-      "0/js/diff_match_patch.js",
-      "0/js/html-sanitizer-minified.js",
-      "0/js/tagdog.js",
+      "lib/openid-selector/css/openid.css",
+      "js/diff_match_patch.js",
+      "js/html-sanitizer-minified.js",
+      "js/tagdog.js",
       "js/svg.js",
       "js/svg.htc",
       "js/svg.swf",
@@ -130,7 +132,10 @@ private[debiki] object App {
       "js/jquery.cookie.js",
       "js/debiki-dragscrollable.js",
       "js/debiki.js",
-      "js/debiki-layout.js") map (serveDir + _)
+      "js/debiki-layout.js",
+      "lib/openid-selector/js/openid-jquery.js",
+      "lib/openid-selector/js/openid-en.js",
+      "js/popuplib.js") map (resourcesDir + _)
 
   /** Image files, currently jQuery UI images only.
    *  Perhaps I can list the contents of a Jar directory like so:
@@ -160,7 +165,7 @@ private[debiki] object App {
       "ui-icons_238ed7_256x240.png",
       "ui-icons_e9911c_256x240.png",
       "ui-icons_ef8c08_256x240.png",
-      "ui-icons_ffd27a_256x240.png") map (serveDir +"css/debiki/images/"+ _)
+      "ui-icons_ffd27a_256x240.png") map (resourcesDir +"css/debiki/images/"+ _)
 
   /** Creates directories into which css and javascript files will be placed.
    */
@@ -175,10 +180,13 @@ private[debiki] object App {
     else if (!root.isDirectory)
       illegalArg("Not a directory: "+ dir)
     new jio.File(dir +"0/js/").mkdirs()
-    new jio.File(dir +"0/css/").mkdir()
-    new jio.File(dir +"js/").mkdir()
-    new jio.File(dir +"css/img/").mkdirs()
-    new jio.File(dir +"css/debiki/images/").mkdirs()
+    new jio.File(dir +"0/css/img/").mkdirs()
+    new jio.File(dir +"0/css/debiki/images/").mkdirs()
+    new jio.File(dir +"0/lib/openid-selector/css/").mkdirs()
+    new jio.File(dir +"0/lib/openid-selector/images/").mkdirs()
+    new jio.File(dir +"0/lib/openid-selector/images.large/").mkdirs()
+    new jio.File(dir +"0/lib/openid-selector/images.small/").mkdirs()
+    new jio.File(dir +"0/lib/openid-selector/js/").mkdirs()
     new jio.File(dir + debate.id +"/edits/proposed/post/").mkdirs()
   }
 
