@@ -775,6 +775,13 @@ to the forms bg color. */
 .debiki .ui-dialog-buttonpane {
   background-color: #fbf7f2;
 }
+
+.dw-fs.ui-dialog-content {
+  /*margin: 20px 0 0; /* cancel .dw-fs too wide margin */
+  /*padding: 0 !important; /* cancel jQuery UI's inline style */
+  width: 100% !important; /* otherwise sometimes float drop */
+}
+
 .dw-fs.ui-dialog-content > form {
   border: none; /* the buttonpane is outside, same color as form */
   /* Cancel z-index:1100 rule, otherwise the <form> would be placed
