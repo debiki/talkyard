@@ -793,6 +793,7 @@ function $showInlineActionMenu(event) {
   }
   var sel = window.getSelection();
   if (!sel.baseNode.data ||
+      // COULD fix rare bug: TypeError: Cannot read property 'data' of null
       sel.baseNode.data.substr(sel.baseOffset, 1).length === 0) {
     // No text clicked. Ignore.
     return;

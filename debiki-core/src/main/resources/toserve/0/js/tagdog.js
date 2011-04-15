@@ -192,7 +192,7 @@ return {
     // TODO: Make google-caja's html-sanitizer.js close tags that were closed.
     // See the exact same TODO in LayoutManager.scala.
     result = result.join('');
-    result = result.replace(/<br>/gi, '<br />')
+    result = result.replace(/<br>/gi, '<br />') // HTML5 now, need not do this?
     result = result.replace(/<hr>/gi, '<hr />')
     return result;
   }
