@@ -1,4 +1,18 @@
-// vim: fdm=marker et ts=2 sw=2 tw=80 fo=tcqwn list
+// {{{ Copyright (c) 2010 - 2011 Kaj Magnus Lindberg.
+// Please note that the licensing information below concerns this file only.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+// }}}
 
 // The tag dog simplifies searching text inside html tags, without
 // being so very confused by tags and attributes.
@@ -37,8 +51,7 @@
 // function html.makeHtmlSanitizer, from html-sanitizer.js,
 // from google-caja,
 //    http://google-caja.googlecode.com/svn/trunk/src/com/google/caja
-//
-// {{{ The license
+// {{{ It's licensed under the Apace 2 license:
 // Copyright (C) 2006 Google Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -189,3 +202,4 @@ return {
    })(); // end TagDog
 //========================================
 
+// vim: fdm=marker et ts=2 sw=2 tw=80 fo=tcqwn list
