@@ -130,6 +130,18 @@ table {
                     has high line height */
 }
 
+.dw-depth-0 > .dw-p > .dw-p-bdy > div.dw-p-bdy-blk > h1 {
+  margin: 26px 0 15px !important;
+  padding: 0;
+  color: #42525E;
+}
+
+.dw-depth-0 > .dw-p > .dw-p-bdy > div.dw-p-bdy-blk > h2 {
+  font-size: 24px;
+  color: #28323B;
+  margin: 26px 0 18px 0 !important;
+}
+
 .dw-p-bdy-blk {
   margin: 0;
 }
