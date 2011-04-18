@@ -41,15 +41,15 @@ private[debiki] object App {
     }
 
     val debate: Debate = DebikiYaml().loadDebateFromPath(dir).open_!
-    val layoutMgr = new LayoutManager(debate)
+    val debateHtml = new DebateHtml(debate)
 
     createDirTree(out, debate)
     copyResources(out)
-    writeDebateHtml(debate, out, layoutMgr)
+    writeDebateHtml(debate, out, debateHtml)
   }
 
   private def writeDebateHtml(
-      debate: Debate, out: String, layoutMgr: LayoutManager) {
+      debate: Debate, out: String, debateHtml: DebateHtml) {
     val xml =
       <html xmlns="http://www.w3.org/1999/xhtml"
         xmlns:lift="http://liftweb.net/">
@@ -77,7 +77,7 @@ private[debiki] object App {
           </script>
         </head>
         <body>
-          { layoutMgr.layoutDebate() }
+          { debateHtml.layoutDebate() }
         </body>
       </html>
 

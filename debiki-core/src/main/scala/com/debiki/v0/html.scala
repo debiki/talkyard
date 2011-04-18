@@ -14,14 +14,14 @@ import _root_.net.liftweb.util.ControlHelpers.tryo
 import _root_.scala.xml.{NodeSeq, Elem, Text, XML, Attribute}
 import Prelude._
 
+
 private[debiki]
 object Paths {
   val EditsProposed = "edits/proposed/post/"
 }
 
-// Should be a LayoutManager static class, but how can I then acces
-// it from Java?
-class LayoutConfig {
+
+class HtmlConfig {
   // These default form action values (the empty string) reload the current
   // page, says this RFC: http://www.apps.ietf.org/rfc/rfc3986.html#sec-5.4
   def replyAction = ""
@@ -52,12 +52,16 @@ class LayoutConfig {
   def people = new People()
 }
 
+
 class LayoutVariables {
   var lastPageVersion: Option[ju.Date] = None
   var newReply: Option[String] = None
 }
 
-object LayoutManager {
+
+object DebateHtml {
+
+  def apply(debate: Debate) = new DebateHtml(debate)
 
   /** Converts text to xml, returns (html, approx-line-count).
    */
@@ -170,19 +174,18 @@ object LayoutManager {
   }
 }
 
-import LayoutManager._
 
-class LayoutManager(val debate: Debate) {
+class DebateHtml(val debate: Debate) {
 
-  import LayoutManager._
+  import DebateHtml._
 
-  private var config = new LayoutConfig
+  private var config = new HtmlConfig
 
   private lazy val statscalc: StatsCalc = new StatsCalc(debate)
   private var lastChange: Option[String] = null
   private var vars: LayoutVariables = null
 
-  def configure(conf: LayoutConfig): LayoutManager = {
+  def configure(conf: HtmlConfig): DebateHtml = {
     this.config = conf
     this
   }
@@ -191,7 +194,7 @@ class LayoutManager(val debate: Debate) {
       : NodeSeq = {
     this.vars = vars
     this.lastChange = debate.lastChangeDate.map(toIso8601(_))
-    layoutPosts ++ menus ++ variables
+    layoutPosts ++ FormHtml(config).menus ++ variables
   }
 
   private def layoutPosts(): NodeSeq = {
@@ -372,6 +375,25 @@ class LayoutManager(val debate: Debate) {
     { editSuggestions }
   }
 
+  private def variables: NodeSeq =
+    <script class='dw-js-variables'>{
+      // TODO: Could this open for XSS attacks?
+      optionToJsCookie(vars.lastPageVersion, "myLastPageVersion",
+                          "expires: 370") +
+      optionToJsCookie(lastChange, "myCurrentPageVersion") +
+      optionToJsCookie(vars.newReply, "myNewReply")
+    }</script>
+}
+
+
+object FormHtml {
+  def apply(config: HtmlConfig = new HtmlConfig) =
+    new FormHtml(config)
+}
+
+
+class FormHtml(val config: HtmlConfig) {
+
   val ccWikiLicense =
     <a rel="license" href="http://creativecommons.org/licenses/by/3.0/"
        target="_blank">
@@ -380,26 +402,30 @@ class LayoutManager(val debate: Debate) {
 
   private val submitButtonText = "Post as ..."
 
-  /**
-   *  Naming notes:
-   *   - Form input names and ids always starts with "dw-fi-"
-   *     ("fi" is for "form input").
-   *  Security notes:
-   *   - Only send [<form>s with side effects] using the POST
-   *     method (never GET), to make XSRF attacks harder.
-   */
-  private def menus = {
+  private[v0]
+  def menus =
     <div id="dw-hidden-templates">
+    { actionMenu ++
+      loginFormSimple ++
+      loginFormOpenId ++
+      logoutForm ++
+      replyForm ++
+      ratingForm }
+    </div>
+
+  def actionMenu =
       <div id='dw-action-menu'>
         <a class='dw-a dw-a-reply'>Reply</a>
         <a class='dw-a dw-a-rate'>Rate</a>
         <a class='dw-a dw-a-edit'>Edit</a>
-      </div>{
-      // The login form below is based on this JavaScript OpenID Selector
-      // example file:
-      // debiki-core/src/main/resources/toserve/0/lib/openid-selector/demo.html
-      }
+      </div>
 
+  /**
+   *  The login form below is based on this JavaScript OpenID Selector
+   *  example file:
+   *    debiki-core/src/main/resources/toserve/0/lib/openid-selector/demo.html
+   */
+  def loginFormSimple =
       <div class='dw-fs' id='dw-fs-login-simple' title='Who are you?'>
         <form action={config.loginAction} method='post'>
           <div id='dw-login'>
@@ -413,7 +439,6 @@ class LayoutManager(val debate: Debate) {
              <input id='dw-fi-reply-author' type='text' size='40' maxlength='100'
                   name='dw-fi-by' value='Anonymous'/>
              <br/>
-
             </div>
             <div>
              <label for='dw-fi-reply-mail'>Email</label><br/>
@@ -430,10 +455,10 @@ class LayoutManager(val debate: Debate) {
             </div>
            </div>
           </div>
-
         </form>
       </div>
 
+  def loginFormOpenId =
       <div class='dw-fs' id='dw-fs-openid-login'
             title="Sign In or Create New Account">
         <form action={config.loginAction} method='post' id='openid_form'>
@@ -457,6 +482,7 @@ class LayoutManager(val debate: Debate) {
         </form>
       </div>
 
+  def logoutForm =
       <div class='dw-fs' id='dw-fs-logout' title='Log out'>
         <form action={config.logoutAction} method='post'>
           <p>Are you sure?</p>
@@ -467,6 +493,7 @@ class LayoutManager(val debate: Debate) {
         </form>
       </div>
 
+  def replyForm =
       <li class='dw-fs dw-fs-re'>
         <form
             action={config.replyAction}
@@ -493,6 +520,7 @@ class LayoutManager(val debate: Debate) {
         </form>
       </li>
 
+  def ratingForm =
       <div class='dw-fs dw-fs-rat'>
         <form
             action={config.rateAction}
@@ -538,17 +566,6 @@ class LayoutManager(val debate: Debate) {
           </div>
         </form>
       </div>
-    </div>
-  }
-
-  private def variables: NodeSeq =
-    <script class='dw-js-variables'>{
-      // TODO: Could this open for XSS attacks?
-      optionToJsCookie(vars.lastPageVersion, "myLastPageVersion",
-                          "expires: 370") +
-      optionToJsCookie(lastChange, "myCurrentPageVersion") +
-      optionToJsCookie(vars.newReply, "myNewReply")
-    }</script>
 
 }
 

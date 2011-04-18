@@ -9,14 +9,14 @@ package com.debiki.v0
 import org.specs._
 import org.specs.runner.{ConsoleRunner, JUnit4}
 
-class LayoutManagerTest extends JUnit4(SimpleLayoutManagerSpec)
+class DebateHtmlTest extends JUnit4(SimpleDebateHtmlSpec)
 //class MySpecSuite extends ScalaTestSuite(MySpec)
 
-object LayoutManagerTestRunner
-  extends ConsoleRunner(SimpleLayoutManagerSpec)
+object DebateHtmlTestRunner
+  extends ConsoleRunner(SimpleDebateHtmlSpec)
 
-object SimpleLayoutManagerSpec extends Specification {
-  "SimpleLayoutManager" should {
+object SimpleDebateHtmlSpec extends Specification {
+  "DebateHtml" should {
     "print an empty div" in {
       val list = Nil
       list must beEmpty
