@@ -122,7 +122,7 @@ class PostRatingTest extends SpecificationWithJUnit {
 class EditLikingTest extends SpecificationWithJUnit {
 
   val edit = Edit(post.id +"Ea", postId = post.id, date = new ju.Date,
-                  by = "?", ip = "1.2.3.4", text = "text")
+                  by = "?", ip = "1.2.3.4", text = "text", desc = "desc")
   val upVote = EditVote(edit.id, "?", "1.2.3.4", new ju.Date, List(edit.id), Nil)
   // Yet another up vote:
   val upVote2 = EditVote("?", "?", "1.2.3.4", new ju.Date, List(edit.id), Nil)
