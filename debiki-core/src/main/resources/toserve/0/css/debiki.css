@@ -4,7 +4,7 @@
  *   find debiki-core-basedir/src -type f -print0 | \
  *     xargs -0 egrep -ho "dw-[[:alnum:]-]+" | sort | uniq -c
  * Narrower:
- *   find src/main/scala/com/debiki/v0/LayoutManager.scala src/main/scala/com/debiki/v0/App.scala src/main/resources/js/debiki.js src/main/resources/css/debiki.css ../../debiki-jspwiki-forum/src/main -type f -print0 | xargs -0 egrep -ho "dw-[[:alnum:]-]+" | sort | uniq -c
+ *   find src/main/scala/com/debiki/v0/html.scala src/main/scala/com/debiki/v0/App.scala src/main/resources/js/debiki.js src/main/resources/css/debiki.css ../../debiki-jspwiki-forum/src/main -type f -print0 | xargs -0 egrep -ho "dw-[[:alnum:]-]+" | sort | uniq -c
  *
  * Form names decrypted:
  *

@@ -190,7 +190,7 @@ return {
       if (i < splits.length - 1) result.push(sniffAndMem.tagMemory[i]);
     };
     // TODO: Make google-caja's html-sanitizer.js close tags that were closed.
-    // See the exact same TODO in LayoutManager.scala.
+    // See the exact same TODO in debiki/v0/html.scala.
     result = result.join('');
     result = result.replace(/<br>/gi, '<br />') // HTML5 now, need not do this?
     result = result.replace(/<hr>/gi, '<hr />')
