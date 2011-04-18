@@ -46,8 +46,6 @@ private[debiki] object App {
     createDirTree(out, debate)
     copyResources(out)
     writeDebateHtml(debate, out, layoutMgr)
-    for (post <- debate.posts)//WithEditProposals)
-      writeEditProposalsHtml(post.id, debate, layoutMgr, out)
   }
 
   private def writeDebateHtml(
@@ -86,25 +84,6 @@ private[debiki] object App {
     val html = "<!DOCTYPE html>\n" + xml
     val writer = new jio.FileWriter(out + debate.id + ".html")
     writer.write(html.toString)
-    writer.close
-  }
-
-  private def writeEditProposalsHtml(postId: String, debate:
-      Debate, layout: LayoutManager, out: String) {
-    val xml =
-      <html xmlns="http://www.w3.org/1999/xhtml">
-        <head>
-          <title>Edit suggestions</title>
-          <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
-        </head>
-        <body>
-        { layout.editForm(postId) }
-        </body>
-      </html>
-    val editPropsDir = out + debate.id +'/'+ Paths.EditsProposed
-    new jio.File(editPropsDir).mkdirs()
-    val writer = new jio.FileWriter(editPropsDir + postId +".html")
-    writer.write("<!DOCTYPE html>\n" + xml.toString)
     writer.close
   }
 
@@ -187,7 +166,6 @@ private[debiki] object App {
     new jio.File(dir +"0/lib/openid-selector/images.large/").mkdirs()
     new jio.File(dir +"0/lib/openid-selector/images.small/").mkdirs()
     new jio.File(dir +"0/lib/openid-selector/js/").mkdirs()
-    new jio.File(dir + debate.id +"/edits/proposed/post/").mkdirs()
   }
 
   /** Copies javascript, css files and images to folders in `dir'.
