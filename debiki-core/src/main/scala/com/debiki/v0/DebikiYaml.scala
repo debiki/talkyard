@@ -15,6 +15,8 @@ import scala.collection.{mutable => mut}
 import java.{io => jio, util => ju, lang => jl}
 import net.liftweb.common.{Box, Empty, Full, Failure}
 
+// TODO Ensure post.parent etc not empty. Currently one can answer to parent="".
+
 object DebikiYaml {
 
   def apply() = new DebikiYaml

@@ -402,7 +402,7 @@ class FormHtml(val config: HtmlConfig) {
       Creative Commons Attribution 3.0 Unported License
     </a>
 
-  private val submitButtonText = "Post as ..."
+  private val submitButtonText = "Post as ..." // TODO read name from `config'
 
   private[v0]
   def menus =
