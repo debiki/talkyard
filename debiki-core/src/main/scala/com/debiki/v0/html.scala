@@ -22,16 +22,18 @@ object Paths {
 
 
 class HtmlConfig {
-  // These default form action values (the empty string) reload the current
-  // page, says this RFC: http://www.apps.ietf.org/rfc/rfc3986.html#sec-5.4
+  // If a form action is the empty string, the browser POSTS to the current
+  // page, says the URI spec: http://www.apps.ietf.org/rfc/rfc3986.html#sec-5.4
+  // COULD rename replyAction -> replyLink (or reactLink -> reactAction).
   def replyAction = ""
   def rateAction = ""
   def editAction = ""
   def loginAction = ""
   def logoutAction = ""
+
   /** A function from debate-id and post-id to a react URL.
    */
-  def reactLink(debateId: String, postId: String) = ""
+  def reactLink(debateId: String, postId: String) = postId +"?act"
 
   /** Constructs a URL to more info on a certain user,
    *  adds "http://" if needed.
