@@ -389,12 +389,22 @@ class DebateHtml(val debate: Debate) {
 
 
 object FormHtml {
+
   def apply(config: HtmlConfig = new HtmlConfig) =
     new FormHtml(config)
+
+  object Reply {
+    object InputNames {
+      val Text = "dw-fi-reply-text"
+      val Where = "dw-fi-reply-where"
+    }
+  }
 }
 
 
 class FormHtml(val config: HtmlConfig) {
+
+  import FormHtml._
 
   val ccWikiLicense =
     <a rel="license" href="http://creativecommons.org/licenses/by/3.0/"
@@ -411,7 +421,7 @@ class FormHtml(val config: HtmlConfig) {
       loginFormSimple ++
       loginFormOpenId ++
       logoutForm ++
-      replyForm ++
+      replyForm() ++
       ratingForm }
     </div>
 
@@ -495,18 +505,19 @@ class FormHtml(val config: HtmlConfig) {
         </form>
       </div>
 
-  def replyForm =
+  def replyForm(text: String = "", extraInputs: NodeSeq = Nil) = {
+      import Reply.{InputNames => Inp}
       <li class='dw-fs dw-fs-re'>
         <form
             action={config.replyAction}
             accept-charset='UTF-8'
             method='post'>
-          <input type='hidden' name='dw-fi-action' value='reply'/>
-          <input type='hidden' name='dw-fi-post' value='?'/>
+          { extraInputs }
+          <input type='hidden' id={Inp.Where} name={Inp.Where} value='' />
           <p>
-            <label for='dw-fi-reply-text'>Your reply:</label><br/>
-            <textarea id='dw-fi-reply-text' name='dw-fi-reply-text' rows='13'
-              cols='38'/>
+            <label for={Inp.Text}>Your reply:</label><br/>
+            <textarea id={Inp.Text} name={Inp.Text} rows='13'
+              cols='38'>{text}</textarea>
           </p>
           <p class='dw-user-contrib-license'>
             By clicking <i>{submitButtonText}</i>, you agree to license
@@ -521,6 +532,7 @@ class FormHtml(val config: HtmlConfig) {
           -->
         </form>
       </li>
+  }
 
   def ratingForm =
       <div class='dw-fs dw-fs-rat'>
