@@ -1476,7 +1476,7 @@ function $showReplyForm(event, opt_where) {
   var $thread = $(this).closest('.dw-t');
   var $post = $thread.children('.dw-p');
   clearfix($thread); // ensures the reply appears nested inside the thread
-  postId = $post.attr('id').substr(8, 999); // drop initial "dw-post-"
+  var postId = $post.attr('id').substr(8, 999); // drop initial "dw-post-"
   // Create a reply form, or Ajax-load it (depending on the Web framework
   // specifics).
   Settings.replyFormLoader(debateId, postId, function($replyFormParent) {
