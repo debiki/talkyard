@@ -1111,9 +1111,10 @@ function setUserPropsOrThrow(propsUnsafe, sanitize) {
     throw new Error('[debiki_error_...]');
   }
 
-  $.cookie('dwUserName', propsSafe.name);
-  $.cookie('dwUserEmail', propsSafe.email);
-  if (propsSafe.website) $.cookie('dwUserWebsite', propsSafe.website);
+  var path = {path: '/'};
+  $.cookie('dwUserName', propsSafe.name, path);
+  $.cookie('dwUserEmail', propsSafe.email, path);
+  if (propsSafe.website) $.cookie('dwUserWebsite', propsSafe.website, path);
 
   $('#dw-login-info').show().find('.dw-login-name').text(propsSafe.name);
   $('#dw-a-logout').show();
@@ -1180,8 +1181,11 @@ function initLogout() {
     }
   });
   $logoutForm.submit(function() {
+    // Don't clear the user name and email cookies until the server has
+    // indeed logged out the user.
     var postData = $logoutForm.serialize();
-    $.post($logoutForm.attr("action"), postData, function() { //TODO handle form
+    $.post($logoutForm.attr("action"), postData, function() {
+      // The server has now logged out the user.
       clearUserProps();
     }, 'html');
     return false;
