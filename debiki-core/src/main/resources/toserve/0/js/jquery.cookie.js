@@ -86,7 +86,15 @@ jQuery.cookie = function(name, value, options) {
                 var cookie = jQuery.trim(cookies[i]);
                 // Does this cookie string begin with the name we want?
                 if (cookie.substring(0, name.length + 1) == (name + '=')) {
-                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    // [kajmagnus79@debiki] Debiki's cookie values are URI
+                    // encoded, but sometimes surrounded by double quotes;
+                    // remove those:
+                    // old: cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    cookieValue = cookie.substring(name.length + 1);
+                    cookieValue = cookieValue.replace(/"/g, '');  // [debiki]
+                    cookieValue = decodeURIComponent(cookieValue);
+
+
                     break;
                 }
             }
