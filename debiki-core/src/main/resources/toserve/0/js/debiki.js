@@ -1282,7 +1282,8 @@ function $showLoginSimple() {
 }
 
 function showLoginSimple() {
-  $('#dw-fs-login-simple').dialog('open');
+  $('#dw-fs-login-simple').dialog('open');  // BUG Tag absent unless…
+          //… a debate is shown, so the dw-hidden-templates included.
 }
 
 // ------- Login, OpenID
