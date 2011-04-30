@@ -1095,6 +1095,15 @@ function $markIfMine() {
   updateAuthorInfo($(this), $.cookie('dwUserName'));
 }
 
+function updateUserPropsHtml() {
+  // If the user's name, email & website are remembered in cookies,
+  // call setUserPropsOrThrow, which will then update all relevant
+  // html elements so they show the user's name.
+  // COULD do this on the server instead (must, if javascript disabled).
+  setUserPropsOrThrow(getUserProps(),
+        false); // need not sanitize; cookies are already sanitized
+}
+
 // Updates cookies and elements to show the user name, email etc.
 // as appropriate. Unless !propsUnsafe, throws if name or email missing.
 // Parameters:
@@ -1154,6 +1163,9 @@ function clearUserProps() {
 
 // ------- Logout
 
+// COULD refactor jQuery UI dialog usage: a function that creates a default
+// Debiki dialog. E.g. hide the submit input, and set defaut properties.
+
 function showLogout() {
   $('#dw-fs-logout').dialog('open');
 }
@@ -1189,6 +1201,37 @@ function initLogout() {
       clearUserProps();
     }, 'html');
     return false;
+  });
+}
+
+// ------- Login result
+
+function showLoginOkay() {
+  $('#dw-fs-login-ok-name').text(getUserProps().name);
+  $('#dw-fs-login-ok').dialog('open');
+}
+
+function showLoginFailed(errorMessage) {
+  $('#dw-fs-login-failed-errmsg').text(errorMessage);
+  $('#dw-fs-login-failed').dialog('open');
+}
+
+function initLoginResultForms() {
+  var $loginResult = $('#dw-fs-login-ok, #dw-fs-login-failed');
+  var $loginResultForm = $loginResult.find('form');
+  $loginResult.find('input').hide(); // Use jQuery UI's dialog buttons instead
+  $loginResult.dialog({
+    autoOpen: false,
+    autoResize: true,
+    modal: true,
+    draggable: false,  // COULD extend an obj w default values instead
+    resizable: false,
+    zIndex: 1190,
+    buttons: {
+      'OK': function() {
+        $(this).dialog('close');
+      }
+    }
   });
 }
 
@@ -1310,7 +1353,7 @@ function submitLoginInPopup($openidLoginForm) {
       darkCover.style.visibility = 'hidden';
     }
     if (Debiki.handleLoginResponse !== null) {
-      Debiki.handleLoginResponse();
+      Debiki.handleLoginResponse({status: 'LoginFailed'});
     }
     if (waitCallback !== null) {
       window.clearInterval(waitCallback);
@@ -1319,15 +1362,20 @@ function submitLoginInPopup($openidLoginForm) {
   }
 
   // This callback is called from the return_to page:
-  Debiki.handleLoginResponse = function(queryString) {
+  Debiki.handleLoginResponse = function(result) {
     Debiki.handleLoginResponse = null;
-    // When I click "No thanks", Google says:
-    // "openid.mode=cancel&
-    //  openid.ns=http%3A%2F%2Fspecs.openid.net%2Fauth%2F2.0"
-    if (/openid\.mode=cancel/.test(queryString)) {
-      // Login failed: User clicked No Thanks in some login dialog.
-    } else if (!queryString) {
-      // Login failed: User closed popup window?
+    var errorMsg;
+    if (/openid\.mode=cancel/.test(result.queryString)) {
+      // This seems to happen if the user clicked No Thanks in some
+      // login dialog; when I click "No thanks", Google says:
+      // "openid.mode=cancel&
+      //  openid.ns=http%3A%2F%2Fspecs.openid.net%2Fauth%2F2.0"
+      errorMsg = 'You cancelled the login process? [debiki_error_89k5gwJm43]';
+    } else if (result.status === 'LoginFailed') {
+      // User closed popup window?
+      errorMsg = 'You closed the login window? [debiki_error_5k33rs83k0]';
+    } else if (result.status !== 'LoginOk') {
+      errorMsg = 'Unknown login problem [debiki_error_3kirsrts12d]';
     } else {
       // Login OK
       // {{{ The queryString is e.g. …
@@ -1353,14 +1401,21 @@ function submitLoginInPopup($openidLoginForm) {
       // openid.ext1.type.country=http://axschema.org/contact/country/home
       // openid.ext1.value.country=SE
       // }}}
-      // TODO the server should remember email, first-name & country.
-      // TODO javascript-update everything, say Welcome X and replace
-      // "Log in" buttons with info "Logged in as ..." ??
+
+      $('#dw-fs-openid-login').dialog('close');
+      $('#dw-fs-login-simple').dialog('close');
+
+      // User info should now be available in cookies, so:
+      updateUserPropsHtml();
+      showLoginOkay();
+
+      $(submitReplyButtonClicked).submit();
+      submitReplyButtonClicked = null;
 
       return;
     }
-    // Handle failures: Close all login dialogs and show a modal failure
-    // info dialog.
+
+    showLoginFailed(errorMsg);
   }
 
   // TODO dim the main win, open a modal dialog: "Waiting for you to log in",
@@ -2291,14 +2346,9 @@ $('.debiki').delegate('.dw-z', 'click', $threadClose);
 $(".debiki .dw-p").each($initPost);
 
 
-// If the user's name, email & website are remembered in cookies,
-// call setUserPropsOrThrow, which will then update all relevant
-// html elements so they show the user's name.
-// COULD do this on the server instead (must, if javascript disabled).
-setUserPropsOrThrow(getUserProps(),
-    false); // need not sanitize; cookies are already sanitized
+updateUserPropsHtml();
 
-
+initLoginResultForms();
 initLogout();
 initLoginSimple();
 $('#dw-a-login').click(showLoginSimple);

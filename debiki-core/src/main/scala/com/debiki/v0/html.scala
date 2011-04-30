@@ -29,6 +29,8 @@ class HtmlConfig {
   def rateAction = ""
   def editAction = ""
   def loginAction = ""
+  def loginOkAction = ""
+  def loginFailedAction = ""
   def logoutAction = ""
 
   /** A function from debate-id and post-id to a react URL.
@@ -420,6 +422,8 @@ class FormHtml(val config: HtmlConfig) {
     { actionMenu ++
       loginFormSimple ++
       loginFormOpenId ++
+      loginOkForm() ++
+      loginFailedForm() ++
       logoutForm ++
       replyForm() ++
       ratingForm }
@@ -491,6 +495,30 @@ class FormHtml(val config: HtmlConfig) {
             and <a href='http://openid.net/get/'>how to get an OpenID enabled
             account</a>.</p>
           </noscript>
+        </form>
+      </div>
+
+  def loginOkForm(name: String = "Anonymous") =
+      <div class='dw-fs' id='dw-fs-login-ok' title='Welcome'>
+        <form action={config.loginOkAction} method='post'>
+          <p>You have been logged in, welcome
+            <span id='dw-fs-login-ok-name'>{name}</span>!
+          </p>
+          <div class='dw-submit-set'>
+            <input class='dw-fi-submit' type='submit' value='OK'/>
+          </div>
+        </form>
+      </div>
+
+  def loginFailedForm(error: String = "unknown error") =
+      <div class='dw-fs' id='dw-fs-login-failed' title='Login Error'>
+        <form action={config.loginFailedAction} method='post'>
+          <p>Login failed:
+            <span id='dw-fs-login-failed-errmsg'>{error}</span>
+          </p>
+          <div class='dw-submit-set'>
+            <input class='dw-fi-submit' type='submit' value='OK'/>
+          </div>
         </form>
       </div>
 
