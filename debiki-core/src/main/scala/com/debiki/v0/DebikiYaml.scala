@@ -29,10 +29,14 @@ object DebikiYaml {
   /** Notice: DoS or XSS attack: Bad input gives corrupt Yaml.
    */
   def toYaml(debate: Debate): String = {
-    unimplementedIf(debate.postCount > 0, "Saving of posts and other stuff")
+    unimplementedIf(debate.ratings.length > 0, "Saving of ratings")
+    unimplementedIf(debate.edits.length > 0, "Saving of edits")
+    unimplementedIf(debate.editVotes.length > 0, "Saving of editVotes")
+    unimplementedIf(debate.editsApplied.length > 0, "Saving of editsApplied")
     val sb = new mut.StringBuilder
     sb ++= "\n--- !Debate"
     sb ++= "\nid: " ++= debate.id
+    debate.posts.foreach { sb ++= toYaml(_) }
     sb.toString
   }
 
