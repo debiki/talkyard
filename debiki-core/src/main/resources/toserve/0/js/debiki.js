@@ -792,9 +792,9 @@ function $showInlineActionMenu(event) {
     return;
   }
   var sel = window.getSelection();
-  if (!sel.baseNode.data ||
+  if (!sel.anchorNode.data ||
       // COULD fix rare bug: TypeError: Cannot read property 'data' of null
-      sel.baseNode.data.substr(sel.baseOffset, 1).length === 0) {
+      sel.anchorNode.data.substr(sel.anchorOffset, 1).length === 0) {
     // No text clicked. Ignore.
     return;
   }
@@ -807,7 +807,7 @@ function $showInlineActionMenu(event) {
   // few characters long, and these few characters might occur somewhere else
   // in the same post. This could result in Google's diff-match-patch finding 
   // the wrong occurrance.
-  // jQuery(window.getSelection().baseNode).parent().parent().contents()
+  // jQuery(window.getSelection().anchorNode).parent().parent().contents()
 
   // TODO: Find out where to show the menu. And show menu.
   // TODO: Show a mark where the click was? See insertNodeAtCursor here:
@@ -819,12 +819,12 @@ function $showInlineActionMenu(event) {
   // When finding the closest .dw-p-bdy-blk, start searching from a
   // non-text node, because jQuery(text-node) results in TypeError:
   //  Object #<a Text> has no method 'getAttribute'.
-  var extentNonText = sel.extentNode.nodeType === 3 ?  // 3 is text
-      sel.extentNode.parentNode : sel.extentNode;
+  var focusNonText = sel.focusNode.nodeType === 3 ?  // 3 is text
+      sel.focusNode.parentNode : sel.focusNode;
   var placeWhere = {
-    textStart: sel.baseNode.data.substr(sel.baseOffset, 32),
-    textEnd: sel.extentNode.data.substr(sel.extentOffset, 32),
-    elem: $(extentNonText).closest('.dw-p-bdy-blk')
+    textStart: sel.anchorNode.data.substr(sel.anchorOffset, 32),
+    textEnd: sel.focusNode.data.substr(sel.focusOffset, 32),
+    elem: $(focusNonText).closest('.dw-p-bdy-blk')
         .dw_bugIfEmpty('debiki_error_6u5962rf3')
         .next('.dw-i-ts')
         .dw_bugIfEmpty('debiki_error_17923xstq')
