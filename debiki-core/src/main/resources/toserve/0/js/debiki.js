@@ -1307,16 +1307,6 @@ function initLoginOpenId() {
       // allFields.val('').removeClass('ui-state-error');
     }
   });
-
-  // Debiki's jQuery UI CSS selectors are prefixed with .debiki.
-  // jQuery has moved the dialog to directly below the <body>,
-  // so the dialog currently has no .debiki parent, so:
-  // Ooops, this doesn't work, jQuery UI's dialog completely broken:
-  //$('#openid_form').parent().wrap('<div class="debiki"></div>');
-  // This works though, but makes my `.debiki' jQuery UI CSS prefix pointless:
-  $('body').addClass('debiki'); // COULD either remove the .debiki
-  // prefix to all jQuery UI CSS selectors, or make jQuery UI dialog
-  // style stuff work without class `debiki' on <body>, but how?
 }
 
 function $showLoginOpenId() {
@@ -2339,6 +2329,8 @@ function buildTagFindId(html, id) {
 
 
 // ------- Invoke functions, do layout
+
+$('body').addClass('dw-pri');
 
 // Open/close threads if the thread-info div is clicked.
 $('.debiki').delegate('.dw-z', 'click', $threadClose);

@@ -53,6 +53,7 @@
  *  dw-p-bdy-blk  post body block, a <div> that wraps e.g. a <p>
  *  dw-p-hdr      post header
  *  dw-p-rez-e    post resized eastwards
+ *  dw-pri        placed on the <body>, use it to boost CSS rule priorities
  *  dw-svg-c_<x>  SVG curve from <x>  COULD rename to -svg-p, for `path'
  *  dw-svg-gparnt Has a <svg> child or grandchild (but no grand-grand-child)
  *  dw-svg-parent Has a <svg> child
@@ -190,11 +191,13 @@ table {
 
 /* The above "don't inherit move" rule destroys these three jQuery-UI rules,
 so they're repeadet here (*after* the above rule).
-COULD prefix jQuery-UI with #debiki not .debiki, so jQuery-UI's rules have
-higher precedence (then these three duplicated rules could be removed). */
-.debiki .ui-resizable-s  { cursor: s-resize;  }
-.debiki .ui-resizable-e  { cursor: e-resize;  }
-.debiki .ui-resizable-se { cursor: se-resize; }
+COULD prefix jQuery-UI with #dw-pri not .dw-pri, so jQuery-UI's rules have
+higher precedence (then these three duplicated rules could be removed).
+— But #dw-pri needs to be placed on the <body>, so it applies also to
+jQuery UI's dialgos. Might that be incompatible with other libs? */
+.dw-pri .ui-resizable-s  { cursor: s-resize;  }
+.dw-pri .ui-resizable-e  { cursor: e-resize;  }
+.dw-pri .ui-resizable-se { cursor: se-resize; }
 
 
 /* === Threads === */
@@ -228,7 +231,7 @@ higher precedence (then these three duplicated rules could be removed). */
 
 /* === Posts === */
 
-.debiki .ui-resizable-se {
+.dw-pri .ui-resizable-se {
   /* The small grip has been replaced with the normal grip
   (search for "ui-icon-grip" in debiki.js), so we make the
   tag a few pixels wider. */
@@ -238,7 +241,7 @@ higher precedence (then these three duplicated rules could be removed). */
   background-color: white; /* hides text beneath, else grip hard to notice */
 }
 
-.debiki form .ui-resizable-se {
+.dw-pri form .ui-resizable-se {
   background-color: #fcfaf5; /* (see above) match form background */
 }
 
@@ -251,20 +254,20 @@ higher precedence (then these three duplicated rules could be removed). */
 1 layer below the .ui-resizable-se handle (see above),
 so as not to hide that handle (which is assigned z-index 1001 by
 some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
-.debiki .ui-resizable-n,
-.debiki .ui-resizable-s {
+.dw-pri .ui-resizable-n,
+.dw-pri .ui-resizable-s {
   height: 15px;
   z-index: 1000;
 }
-.debiki .ui-resizable-s {
+.dw-pri .ui-resizable-s {
   bottom: 0; /* jquery-ui says -5 which overflows */
 }
-.debiki .ui-resizable-e,
-.debiki .ui-resizable-w {
+.dw-pri .ui-resizable-e,
+.dw-pri .ui-resizable-w {
   width: 15px;
   z-index: 1000;
 }
-.debiki .ui-resizable-e {
+.dw-pri .ui-resizable-e {
   right: 0; /* jquery-ui says -5 which overflows */
 }
 /* But don't raise the vertical lines between depth-1 threads
@@ -772,7 +775,7 @@ span.dw-p-ed-by {
 
 /* jQuery UI dialogs have forms inside. Set the dialog bg color
 to the forms bg color. */
-.debiki .ui-dialog-buttonpane {
+.dw-pri .ui-dialog-buttonpane {
   background-color: #fbf7f2;
 }
 
@@ -790,13 +793,13 @@ to the forms bg color. */
   z-index: auto; /* cancel rule */
 }
 
-.debiki form input[type='text'],
-.debiki form textarea {
+.dw-pri form input[type='text'],
+.dw-pri form textarea {
   font-family: Verdana, sans-serif; /* the font .dw-post .dw-text uses */
   margin-top: 0.7em;
 }
 
-.debiki form textarea {
+.dw-pri form textarea {
   width: 98%;
   height: 97%; /* or too small */
   resize: none; /* disable Chrome's default-resizable (and
@@ -818,11 +821,11 @@ to the forms bg color. */
   margin-top: 1em;
 }
 
-.debiki .ui-button {
+.dw-pri .ui-button {
   cursor: crosshair !important; /* has only client side side effects */
 }
 
-.debiki .ui-button.dw-fi-submit {
+.dw-pri .ui-button.dw-fi-submit {
   cursor: pointer !important; /* has servede side effects, might reload page */
 }
 
@@ -1040,13 +1043,13 @@ to the forms bg color. */
 }
 
 /* Make accordions smaller; jQuery UI padds a little bit too much? */
-.debiki .ui-accordion .ui-accordion-header a {
+.dw-pri .ui-accordion .ui-accordion-header a {
   padding: 0.2em 0.2em 0.2em 0.7em;
 }
 
 /* jQuery UI bug fix: in the jQuery-auto-generated file, ".debiki"
  is missing (on the next line). */
-.debiki input.ui-button { padding: .4em 1em; }
+.dw-pri input.ui-button { padding: .4em 1em; }
 
 
 /* === SVG === */
