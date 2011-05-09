@@ -88,7 +88,7 @@ object Prelude {
   // Is thread safe.
   private val _random = new java.security.SecureRandom();
 
-  def nextRandomString(): String = {
+  def nextRandomString(): String = {  // TODO exclude vowels, so no bad words
     new java.math.BigInteger(130, _random).toString(36); // 0...9, a...z
   }
 

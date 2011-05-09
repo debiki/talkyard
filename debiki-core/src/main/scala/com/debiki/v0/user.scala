@@ -83,6 +83,8 @@ abstract class User(
    *  These 4 parts can safely be written to HTML, so people can ask for
    *  more information for a distinct not-logged-in-user.
    */
+  // COULD rename to `guid', and let id = "-"+ guid,
+  // since guid ids start with '-', but paths with '/'.
   val id: String
 ){
   def name: String
