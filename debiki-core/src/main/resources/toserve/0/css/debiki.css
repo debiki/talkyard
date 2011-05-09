@@ -417,8 +417,8 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
 }
 
 /* Users with links to more info, e.g. website or blog */
-a.dw-p-by,
-a.dw-p-ed-by {
+.dw-pri a.dw-p-by,
+.dw-pri a.dw-p-ed-by {
   color: #369; /* same as reddit */
   font-weight: bold;
 }
@@ -428,6 +428,16 @@ span.dw-p-by,
 span.dw-p-ed-by {
   color: #555;
   font-weight: bold;
+}
+
+/* For the article itself, make author and post date info less conspicuous,
+or it steals attention from the page title. */
+.dw-depth-0 > .dw-p > .dw-p-hdr {
+  background-color: transparent;
+  opacity: 0.72;
+}
+.dw-depth-0 > .dw-p > .dw-p-hdr > .dw-p-by {
+  color: #396D99;
 }
 
 .dw-rats,
