@@ -502,6 +502,9 @@ or it steals attention from the page title. */
   by the adding of class dw-p-rez-e. Therefore: */
   z-index: 10;
 }
+.dw-depth-0 > .dw-p:hover {
+  outline: none;
+}
 
 .dw-a {
   float: left; /* else won't wrap if in narrow column */
