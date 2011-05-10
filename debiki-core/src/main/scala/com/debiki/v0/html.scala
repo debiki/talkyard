@@ -401,6 +401,12 @@ object FormHtml {
       val Where = "dw-fi-reply-where"
     }
   }
+
+  object Edit {
+    object InputNames {
+      val Text = "dw-fi-ed-txt"
+    }
+  }
 }
 
 
@@ -608,6 +614,35 @@ class FormHtml(val config: HtmlConfig) {
           </div>
         </form>
       </div>
+
+  def editForm(newText: String = "", oldText: String = "",
+              extraInputs: NodeSeq = Nil) = {
+    import Edit.{InputNames => Inp}
+    <form class='dw-f dw-f-ed'>
+      { extraInputs /* Or *require* a XSRF token also/instead? */ }
+      <div id='dw-ed-tabs'>
+        <ul>
+          <li><a href='#dw-ed-tab-edit'>Edit</a></li>
+          <li><a href='#dw-ed-tab-diff'>Diff</a></li>
+          <li><a href='#dw-ed-tab-preview'>Preview</a></li>
+        </ul>
+        <div id='dw-ed-tab-edit' class='dw-ed-tab'>
+          <textarea id='dw-fi-edit-text' name={Inp.Text} rows='10' cols='38'>{
+            newText
+          }</textarea>
+        </div>
+        <div id='dw-ed-tab-preview' class='dw-ed-tab'>
+        </div>
+        <div id='dw-ed-tab-diff' class='dw-ed-tab'>
+        </div>
+      </div>
+
+      <div class='dw-submit-set'>
+       <input type='submit' class='dw-fi-submit' value='Preview and save ...'/>
+       <input class='dw-fi-cancel' type='button' value='Cancel'/>
+      </div>
+    </form>
+  }
 
 }
 

@@ -834,10 +834,9 @@ function $showInlineActionMenu(event) {
   // Open a menu, with Edit, Reply and Cancel buttons. CSS: '-i' means inline.
   $menu = $(  // TODO i18n
       '<ul class="dw-as-inline">' +
-        //'<li><a class="dw-a-cancel">Cancel</a></li>' + // mouseleave instead
+        '<li><a class="dw-a-edit-i">Edit</a></li>' +
         '<li><a class="dw-a-reply-i">Reply inline</a></li>' +
         //'<li><a class="dw-a-mark-i">Mark</a></li>' + // COULD implement
-        //'<li><a class="dw-a-edit-i">Edit</a></li>' + // COULD implement
       '</ul>');
   $menu.find('a').button();//"option", "disabled", true);
 
@@ -849,10 +848,10 @@ function $showInlineActionMenu(event) {
   var $thread = $(event.target).closest('.dw-t');
   var threadOfs = $thread.offset();
   $thread.append($menu);
-  var btnHeight = $menu.find('li:first').outerHeight(true); // after append
+  var menuHeight = $menu.outerHeight(true);  // after append
 
-  $menu.css('left', event.pageX - threadOfs.left + 13) // 13px east of button
-      .css('top', event.pageY - threadOfs.top - btnHeight/2); // in the middle
+  $menu.css('left', event.pageX - threadOfs.left - 50)  // 50 px to the left
+      .css('top', event.pageY - threadOfs.top - menuHeight - 10); // above click
 
   // Fill in the `where' form field with the text where the
   // click/selection was made. Google's diff-match-patch can match
@@ -865,6 +864,10 @@ function $showInlineActionMenu(event) {
   // BUG: Next line: Uncaught TypeError: Cannot read property 'data' of null
 
   // Bind actions.
+  $menu.find('.dw-a-edit-i').click(function(){
+    $thread.each($showEditForm2);
+    $menu.remove();
+  });
   $menu.find('.dw-a-reply-i').click(function(){
     $showReplyForm.apply(this, [event, placeWhere]);
     $menu.remove();
@@ -1028,8 +1031,9 @@ function slideAwayRemove($form) {
   }
 }
 
-function $removeClosestForms() {
-  slideAwayRemove($(this).closest('.dw-fs'));
+function $removeClosestForms() {  // COULD rewrite and remove .dw-fs everywhere
+  var fs = $(this).closest('.dw-fs, .dw-f');
+  slideAwayRemove(fs);
 }
 
 // Slide in reply, edit and rate forms -- I think it's
@@ -1593,6 +1597,46 @@ function $showReplyForm(event, opt_where) {
     }
     $replyFormParent.each(SVG.$drawPost);
     slideInActionForm($replyFormParent);
+  });
+}
+
+// ------- Inline edits
+
+// Shows the edit form.
+function $showEditForm2() {
+  var $thread = $(this).closest('.dw-t');
+  var $post = $thread.children('.dw-p');
+  var $postBody = $post.children('.dw-p-bdy');
+  var postId = $post.attr('id').substr(8, 999); // drop initial "dw-post-"
+
+  // COULD move function to debiki-lift.js:
+  function editFormLoader(debateId, postId, complete) {
+    // see comments in setReplyFormLoader above on using datatype text
+    $.get('+'+ postId +'?edit', function(editFormText) {
+      var $editForm = $(editFormText);
+      complete($editForm)
+    }, 'text');
+  }
+
+  editFormLoader(debateId, postId, function($editForm) {
+    $editForm.insertBefore($postBody);
+    $postBody.hide();
+    $editForm.tabs();
+    // TODO set to size of article.
+
+    // Ajax-post edit on submit.
+    $editForm.submit(function() {
+      Settings.editFormSubmitter($editForm, debateId, postId,
+          function(dummyHtml){
+        // COULD merge in the data from the server into the debate?
+        //updateDebate(newDebateHtml); ?
+        slideAwayRemove($editForm);
+      });
+      // Disable the form; it's been submitted.
+      $editForm.find('input').dw_disable();
+      return false;
+    });
+
   });
 }
 

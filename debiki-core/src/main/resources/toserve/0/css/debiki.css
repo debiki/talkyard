@@ -691,6 +691,11 @@ or it steals attention from the page title. */
 
 .dw-as-inline li {
   margin: 0; /* or margin from `dw-p-bdy li' applied */
+  float: left;
+}
+
+.dw-as-inline .ui-button {
+  margin-right: 0; /* or space between inline action menu buttons */
 }
 
 /* --- Edit suggestions ---*/
