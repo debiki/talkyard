@@ -28,92 +28,77 @@ object DebikiYaml {
 
   /** Notice: DoS or XSS attack: Bad input gives corrupt Yaml.
    */
-  def toYaml(debate: Debate): String = {
-    unimplementedIf(debate.ratings.length > 0, "Saving of ratings")
-    unimplementedIf(debate.editVotes.length > 0, "Saving of editVotes")
-    unimplementedIf(debate.editsApplied.length > 0, "Saving of editsApplied")
-    val sb = new mut.StringBuilder
-    sb ++= "\n--- !Debate"
-    sb ++= "\nid: " ++= debate.id
-    debate.posts.foreach { sb ++= toYaml(_) }
-    debate.edits.foreach { sb ++= toYaml(_) }
-    sb.toString
-  }
+  def toYaml(x: AnyRef): String = x match {
+    case debate: Debate =>
+      unimplementedIf(debate.ratings.length > 0, "Saving of ratings")
+      unimplementedIf(debate.editVotes.length > 0, "Saving of editVotes")
+      unimplementedIf(debate.editsApplied.length > 0, "Saving of editsApplied")
+      val sb = new mut.StringBuilder
+      sb ++= "\n--- !Debate"
+      sb ++= "\nid: " ++= debate.id
+      debate.posts.foreach { sb ++= toYaml(_) }
+      debate.edits.foreach { sb ++= toYaml(_) }
+      sb.toString
 
-  /** Notice: DoS or XSS attack: Bad input gives corrupt Yaml.
-   */
-  def toYaml(post: Post): String = {
-    val sb = new mut.StringBuilder
-    sb ++= "\n--- !Post"
-    sb ++= "\nparent: " ++= post.parent
-    sb ++= "\nid: " ++= post.id
-    sb ++= "\nby: \"" ++= post.by += '"'
-    sb ++= "\nip: \"" ++= post.ip += '"'
-    sb ++= "\ndate: " ++= toIso8601(post.date)
-    if (post.where isDefined)
-      sb ++= "\nwhere: \"" ++= escape(post.where.get) += '"'
-    sb ++= "\ntext: |1\n" ++= stripIndent(post.text)
-    sb.toString
-  }
+    case post: Post =>  // XSS-attack possible
+      val sb = new mut.StringBuilder
+      sb ++= "\n--- !Post"
+      sb ++= "\nparent: " ++= post.parent
+      sb ++= "\nid: " ++= post.id
+      sb ++= "\nby: \"" ++= post.by += '"'
+      sb ++= "\nip: \"" ++= post.ip += '"'
+      sb ++= "\ndate: " ++= toIso8601(post.date)
+      if (post.where isDefined)
+        sb ++= "\nwhere: \"" ++= escape(post.where.get) += '"'
+      sb ++= "\ntext: |1\n" ++= stripIndent(post.text)
+      sb.toString
 
-  /** Warning: DoS or XSS attack: Bad input gives corrupt Yaml.
-   */
-  def toYaml(rating: Rating): String = {
-    val sb = new mut.StringBuilder
-    sb ++= "\n--- !Rating"
-    sb ++= "\nby: \"" ++= rating.by += '"'
-    sb ++= "\nip: \"" ++= rating.ip += '"'
-    sb ++= "\ndate: " ++= toIso8601(rating.date)
-    sb ++= "\npost: " ++= rating.postId
-    sb ++= "\ntags: " ++= rating.tags.mkString("[\"", "\", \"", "\"]")
-    sb.toString
-  }
+    case rating: Rating =>  // XSS-attack possible
+      val sb = new mut.StringBuilder
+      sb ++= "\n--- !Rating"
+      sb ++= "\nby: \"" ++= rating.by += '"'
+      sb ++= "\nip: \"" ++= rating.ip += '"'
+      sb ++= "\ndate: " ++= toIso8601(rating.date)
+      sb ++= "\npost: " ++= rating.postId
+      sb ++= "\ntags: " ++= rating.tags.mkString("[\"", "\", \"", "\"]")
+      sb.toString
 
-  /** Warning: DoS or XSS attack: Bad input gives corrupt Yaml.
-   */
-  def toYaml(edit: Edit): String = {
-    val sb = new mut.StringBuilder
-    sb ++= "\n--- !Edit"
-    sb ++= "\nid: \"" ++= edit.id += '"'
-    sb ++= "\nby: \"" ++= edit.by += '"'
-    sb ++= "\nip: \"" ++= edit.ip += '"'
-    sb ++= "\ndate: " ++= toIso8601(edit.date)
-    sb ++= "\npost: " ++= edit.postId
-    sb ++= "\ntext: |1\n" ++= stripIndent(edit.text)
-    sb ++= "\ndesc: |1\n" ++= stripIndent(edit.desc)
-    sb.toString
-  }
+    case edit: Edit =>  // XSS-attack possible
+      val sb = new mut.StringBuilder
+      sb ++= "\n--- !Edit"
+      sb ++= "\nid: \"" ++= edit.id += '"'
+      sb ++= "\nby: \"" ++= edit.by += '"'
+      sb ++= "\nip: \"" ++= edit.ip += '"'
+      sb ++= "\ndate: " ++= toIso8601(edit.date)
+      sb ++= "\npost: " ++= edit.postId
+      sb ++= "\ntext: |1\n" ++= stripIndent(edit.text)
+      sb ++= "\ndesc: |1\n" ++= stripIndent(edit.desc)
+      sb.toString
 
-  /** Warning: DoS or XSS attack: Bad input gives corrupt Yaml.
-   */
-  def toYaml(editVote: EditVote): String = {
-    val sb = new mut.StringBuilder
-    sb ++= "\n--- !EditVote"
-    sb ++= "\nid: \"" ++= editVote.id += '"'
-    sb ++= "\nby: \"" ++= editVote.by += '"'
-    sb ++= "\nip: \"" ++= editVote.ip += '"'
-    sb ++= "\ndate: " ++= toIso8601(editVote.date)
-    sb ++= "\nlike: " ++= editVote.like.mkString("[\"", "\", \"", "\"]")
-    sb ++= "\ndiss: " ++= editVote.diss.mkString("[\"", "\", \"", "\"]")
-    sb.toString
-  }
+    case editVote: EditVote =>  // XSS-attack possible
+      val sb = new mut.StringBuilder
+      sb ++= "\n--- !EditVote"
+      sb ++= "\nid: \"" ++= editVote.id += '"'
+      sb ++= "\nby: \"" ++= editVote.by += '"'
+      sb ++= "\nip: \"" ++= editVote.ip += '"'
+      sb ++= "\ndate: " ++= toIso8601(editVote.date)
+      sb ++= "\nlike: " ++= editVote.like.mkString("[\"", "\", \"", "\"]")
+      sb ++= "\ndiss: " ++= editVote.diss.mkString("[\"", "\", \"", "\"]")
+      sb.toString
 
-  /** Warning: DoS or XSS attack: Bad input gives corrupt Yaml.
-   */
-  def toYaml(ea: EditApplied): String = {
-    val sb = new mut.StringBuilder
-    sb ++= "\n--- !EditApplied"
-    sb ++= "\nedit: \"" ++= ea.editId += '"'
-    sb ++= "\ndate: " ++= toIso8601(ea.date)
-    sb ++= "\ndebug: |1\n" ++= stripIndent(ea.debug)
-    sb ++= "\nresult: |1\n" ++= stripIndent(ea.result)
-    sb.toString
-  }
+    case ea: EditApplied =>  // XSS-attack possible
+      val sb = new mut.StringBuilder
+      sb ++= "\n--- !EditApplied"
+      sb ++= "\nedit: \"" ++= ea.editId += '"'
+      sb ++= "\ndate: " ++= toIso8601(ea.date)
+      sb ++= "\ndebug: |1\n" ++= stripIndent(ea.debug)
+      sb ++= "\nresult: |1\n" ++= stripIndent(ea.result)
+      sb.toString
 
-  def toYaml(result: AddVoteResults): String = {
-    val sb = new mut.StringBuilder
-    for (ea <- result.newEditsApplied) sb ++= toYaml(ea)
-    sb.toString
+    case result: AddVoteResults =>
+      val sb = new mut.StringBuilder
+      for (ea <- result.newEditsApplied) sb ++= toYaml(ea)
+      sb.toString
   }
 
   private def stripIndent(text: String) =

@@ -241,8 +241,13 @@ case class Debate (
   def hasSameAuthor(edit: Edit, post: Post): Boolean =
     edit.by == post.by && edit.ip == post.ip  //TODO: Cmp cookies, login name?
 
-  def assignIdTo(p: Post): Post = p.copy(id = nextFreePostId)
-  def assignIdTo(e: Edit): Edit = e.copy(id = nextFreeEditId(e.postId))
+  def assignIdTo[T](x: T): T = x match {
+    case p: Post => p.copy(id = nextFreePostId).asInstanceOf[T]
+    case e: Edit => e.copy(id = nextFreeEditId(e.postId)).asInstanceOf[T]
+    case x =>
+      // COULD T be restricted at compile time instead?
+      error("Cannot assign id to `"+ classNameOf(x) +"' [debiki_error_p8kKT]")
+  }
 
   private lazy val nextFreePostId: String = {
     var nextFree = 0
