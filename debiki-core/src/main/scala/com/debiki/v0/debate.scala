@@ -244,12 +244,28 @@ case class Debate (
   def hasSameAuthor(edit: Edit, post: Post): Boolean =
     edit.by == post.by && edit.ip == post.ip  //TODO: Cmp cookies, login name?
 
-  def assignIdTo[T](x: T): T = x match {
-    case p: Post => p.copy(id = nextFreePostId).asInstanceOf[T]
-    case e: Edit => e.copy(id = nextFreeEditId(e.postId)).asInstanceOf[T]
-    case x =>
-      // COULD T be restricted at compile time instead?
-      error("Cannot assign id to `"+ classNameOf(x) +"' [debiki_error_p8kKT]")
+  /** Assigns ids to Post:s and Edit:s, and updates references from Edit:s
+   *  to Post ids. COULD move to Debiki$, since ids are randomized, stateless.
+   */
+  def assignIdTo(xs: List[AnyRef]): List[AnyRef] = {
+    val remaps = mut.Map[String, String]()
+    // Generate new ids, and check for foreign objects.
+    xs foreach (_ match {
+      case p: Post => remaps(p.id) = nextRandomString()
+      case e: Edit => remaps(e.id) = nextRandomString()
+      case a: EditApplied => // noop
+      case x => assErr(  // Can this check be done at compile time instead?
+        "Cannot remap ids for `"+ classNameOf(x) +"' [debiki_error_p8kKck3T]")
+    })
+    // Remap ids, and update references to ids.
+    val xs2: List[AnyRef] = xs map (_ match {
+      case p: Post => p.copy(id = remaps(p.id))
+      case e: Edit => e.copy(id = remaps(e.id),
+                            postId = remaps.getOrElse(e.postId, e.postId))
+      case a: EditApplied => a.copy(editId = remaps(a.editId))
+      case x => assErr("[debiki_error_3RSEKRS]")
+    })
+    xs2
   }
 
   private lazy val nextFreePostId: String = {
