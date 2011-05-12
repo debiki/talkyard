@@ -1614,6 +1614,7 @@ function $showEditForm2() {
     // see comments in setReplyFormLoader above on using datatype text
     $.get('+'+ postId +'?edit', function(editFormText) {
       var $editForm = $(editFormText);
+      makeIdsUniqueUpdateLabels($editForm, '#dw-ed-tab-');
       complete($editForm)
     }, 'text');
   }
@@ -2339,7 +2340,11 @@ function clearfix(thread) {
 // Finds all tags with an id attribute, and (hopefully) makes
 // the ids unique by appending a unique (within this Web page) number to
 // the ids. Updates any <label> `for' attributes to match the new ids.
-function makeIdsUniqueUpdateLabels(jqueryObj) {
+// If hrefStart specified, appends the unique number to hrefs that starts
+// with hrefStart.  (This is useful e.g. if many instances of a jQuery UI
+// widget is to be instantiated, and widget internal stuff reference other
+// widget internal stuff via ids.)
+function makeIdsUniqueUpdateLabels(jqueryObj, hrefStart) {
   var seqNo = '_sno-'+ (++idSuffixSequence);
   jqueryObj.find("*[id]").each(function(ix) {
       $(this).attr('id', $(this).attr('id') + seqNo);
@@ -2347,6 +2352,9 @@ function makeIdsUniqueUpdateLabels(jqueryObj) {
   jqueryObj.find('label').each(function(ix) {
       $(this).attr('for', $(this).attr('for') + seqNo);
     });
+  jqueryObj.find('*[href^='+ hrefStart + ']').each(function(ix) {
+    $(this).attr('href', $(this).attr('href') + seqNo);
+  });
 }
 
 function buildTagFind(html, selector) {
