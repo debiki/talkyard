@@ -77,6 +77,9 @@ case class Debate (
 
   def post(id: String): Option[Post] = postsById.get(id)
 
+  def vipo(postId: String): ViPo =
+    new ViPo(this, post(postId).getOrElse(error("[debiki_error_3krtEK]")))
+
   // -------- Ratings
 
   def ratingsOn(postId: String): List[Rating] = {
@@ -325,6 +328,21 @@ case class Debate (
   }
  */
 
+}
+
+/** A Virtual Post into account all edits applied to the actual post.
+ */
+class ViPo(val debate: Debate, val post: Post) {
+  def id: String = post.id
+  def parent: String = post.parent
+  // def date = lastEditApl.map(ea => toIso8601(ea.date))
+  def by: String = post.by
+  def ip: String = post.ip
+  def text: String = lastEditApl.map(_.result).getOrElse(post.text)
+  def textInitially: String = post.text
+  def where: Option[String] = post.where
+  // ...
+  val lastEditApl = debate.editsAppliedTo(post.id).headOption
 }
 
 case class Rating private[debiki] (
