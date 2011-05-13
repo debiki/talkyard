@@ -474,6 +474,9 @@ or it steals attention from the page title. */
   position: relative;
   background-color: white;
   min-width: 5em;
+}
+
+.dw-p-bdy {
   float: left; /* wrap .dw-p-bdy-blk:s, which float left */
 }
 

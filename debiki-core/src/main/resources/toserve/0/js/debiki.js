@@ -1610,19 +1610,55 @@ function $showEditForm2() {
   var postId = $post.attr('id').substr(8, 999); // drop initial "dw-post-"
 
   // COULD move function to debiki-lift.js:
-  function editFormLoader(debateId, postId, complete) {
+  var editFormLoader = function(debateId, postId, complete) {
     // see comments in setReplyFormLoader above on using datatype text
     $.get('+'+ postId +'?edit', function(editFormText) {
-      var $editForm = $(editFormText);
+      // Concerning filter(…): [0] and [2] are text nodes.
+      var $editForm = $(editFormText).filter('form');
       makeIdsUniqueUpdateLabels($editForm, '#dw-ed-tab-');
       complete($editForm)
     }, 'text');
+  };
+
+  // If the edit form has already been opened, but hidden by a Cancel click,
+  // reuse the old hidden form, so any edits aren't lost.
+  var $oldEditForm = $post.find('.dw-f-ed');
+  if ($oldEditForm.length) {
+    editFormLoader = function(dummy, dummy2, complete) {
+      $oldEditForm.show();
+      complete($oldEditForm);
+    };
   }
 
   editFormLoader(debateId, postId, function($editForm) {
     $editForm.insertBefore($postBody);
     $postBody.hide();
-    $editForm.tabs();
+    $editForm.find('.dw-fi-cancel').click(function() {
+      $postBody.show();
+      $editForm.hide();
+    });
+
+    // Find the post's current (old) source text, and store in
+    // .dw-ed-src-old, so it's easily accessible to $updateEditFormDiff(…).
+    if (!$editForm.data('dw-ed-src-old')) {
+      var oldSrc = $editForm.find('.dw-ed-src-old');
+      if (oldSrc.length) {
+        oldSrc = oldSrc.text();
+      }
+      else {
+        // html.scala excluded .dw-ed-src-old, if the textarea's text
+        // is identical to the old src. (To save bandwidth.)
+        oldSrc = $editForm.find('div[id^="dw-ed-tab-edit"] textarea').val();
+      }
+      $editForm.data('dw-ed-src-old', oldSrc);
+    }
+
+    $editForm.tabs({
+      event: 'mouseover',
+      show: function(event, ui) {
+        $(this).each($updateEditFormDiff);  // COULD skip unless diff tab shown
+      }
+    });
     // TODO set to size of article.
 
     // Ajax-post edit on submit.
@@ -1640,6 +1676,30 @@ function $showEditForm2() {
 
   });
 }
+
+// Call on a .dw-f-ed, to update the diff tab.
+function $updateEditFormDiff() {
+  // Find the closest post
+  var $editForm = $(this).closest('.dw-f-ed');
+  var $editTab = $(this).find('div[id^="dw-ed-tab-edit"]');
+  var $diffTab = $(this).find('div[id^="dw-ed-tab-diff"]');
+  var $textarea = $editTab.find('textarea');
+
+  // Find the current draft text, and the old post text.
+  var newSrc = $textarea.val();
+  var oldSrc = $editForm.data('dw-ed-src-old');
+
+  // Run new diff.
+  var diff = diffMatchPatch.diff_main(oldSrc, newSrc);
+  diffMatchPatch.diff_cleanupSemantic(diff);
+  var htmlString = prettyHtmlFor(diff);
+  // Remove any old diff.
+  $diffTab.children('.dw-p-diff').remove();
+  // Show the new diff.
+  $diffTab.append('<div class="dw-p-diff">'+ htmlString +'</div>\n');
+
+}
+
 
 // ------- Editing
 

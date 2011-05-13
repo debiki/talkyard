@@ -635,6 +635,10 @@ class FormHtml(val config: HtmlConfig) {
         </div>
         <div id='dw-ed-tab-diff' class='dw-ed-tab'>
         </div>
+        { // In debiki.js, updateEditFormDiff() uses textarea.val()
+          // (i.e. newText) if there's no .dw-ed-src-old tag.
+          if (oldText == newText) Nil
+          else <pre class='dw-ed-src-old'>{oldText}</pre> }
       </div>
 
       <div class='dw-submit-set'>
