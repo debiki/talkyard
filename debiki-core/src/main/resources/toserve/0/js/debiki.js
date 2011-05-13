@@ -28,6 +28,21 @@ function isBlank(str) {
   // see http://zipalong.com/blog/?p=287)
 }
 
+// Converts markdown to sanitized html.
+function markdownToSafeHtml(markdownSrc, hostAndPort) {
+  function urlX(url) {
+    if (/^https?:\/\//.test(url)) { return url; }
+  }
+  function idX(id) {
+    return id;
+  }
+
+  var converter = new Showdown.converter();
+  var htmlTextUnsafe = converter.makeHtml(markdownSrc, hostAndPort);
+  var htmlTextSafe = html_sanitize(htmlTextUnsafe, urlX, idX);
+  return htmlTextSafe;
+}
+
 //----------------------------------------
 // jQuery object extensions
 //----------------------------------------
@@ -1625,6 +1640,7 @@ function $showEditForm2() {
   var $oldEditForm = $post.find('.dw-f-ed');
   if ($oldEditForm.length) {
     editFormLoader = function(dummy, dummy2, complete) {
+      $oldEditForm.tabs('select' , 0);  // select the textarea tab
       $oldEditForm.show();
       complete($oldEditForm);
     };
@@ -1637,6 +1653,7 @@ function $showEditForm2() {
       $postBody.show();
       $editForm.hide();
     });
+    var $panels = $editForm.find('.dw-ed-tab');
 
     // Find the post's current (old) source text, and store in
     // .dw-ed-src-old, so it's easily accessible to $updateEditFormDiff(…).
@@ -1648,18 +1665,53 @@ function $showEditForm2() {
       else {
         // html.scala excluded .dw-ed-src-old, if the textarea's text
         // is identical to the old src. (To save bandwidth.)
-        oldSrc = $editForm.find('div[id^="dw-ed-tab-edit"] textarea').val();
+        oldSrc = $panels.filter('[id^="dw-ed-tab-edit"]')
+                        .find('textarea').val();
       }
       $editForm.data('dw-ed-src-old', oldSrc);
     }
 
+    // This makes the edit form at least as high as the post.
+    var lastPanelHeight = $postBody.height();
+
     $editForm.tabs({
+      selected: 0,
       event: 'mouseover',
       show: function(event, ui) {
-        $(this).each($updateEditFormDiff);  // COULD skip unless diff tab shown
+        // Update the tab to be shown.
+        var $panel = $(ui.panel);
+        var $fun = $.noop;
+        if (/^dw-ed-tab-diff/.test(ui.panel.id)) {
+          $fun = $updateEditFormDiff;
+        } else if (/^dw-ed-tab-preview/.test(ui.panel.id)) {
+          $fun = $updateEditFormPreview;
+        } else if (/^dw-ed-tab-edit/.test(ui.panel.id)) {
+          // noop
+        } else {
+          die('[debiki_error_4krERS]');
+        }
+        $(this).each($fun);
+
+        // Don't reduce the form heigt, because if the form is at the
+        // very bottom of the screen, everything would jump downwards
+        // when the browser window shrinks.
+        $panel.height('auto');
+        if (lastPanelHeight > $panel.height()) {
+          // jQuery UI shows the panels before the `show' event is triggered,
+          // so unless the other panels are resized *before* one of them is
+          // shown, that other panel might be smaller than the current one,
+          // causing the window to shrink and everything to jump downwards
+          // (if you're viewing the bottom of the page).
+          // So change the height of all panels — then they won't shrink
+          // later, when shown.
+          // (COULD make this work also if a panel is resized dynamically,
+          // whilst open — right now the other panels won't be resized.)
+          $panels.height(lastPanelHeight);
+        } else {
+          lastPanelHeight = $panel.height();
+        }
       }
     });
-    // TODO set to size of article.
 
     // Ajax-post edit on submit.
     $editForm.submit(function() {
@@ -1681,8 +1733,8 @@ function $showEditForm2() {
 function $updateEditFormDiff() {
   // Find the closest post
   var $editForm = $(this).closest('.dw-f-ed');
-  var $editTab = $(this).find('div[id^="dw-ed-tab-edit"]');
-  var $diffTab = $(this).find('div[id^="dw-ed-tab-diff"]');
+  var $editTab = $(this).find('div.dw-ed-tab[id^="dw-ed-tab-edit"]');
+  var $diffTab = $(this).find('div.dw-ed-tab[id^="dw-ed-tab-diff"]');
   var $textarea = $editTab.find('textarea');
 
   // Find the current draft text, and the old post text.
@@ -1697,7 +1749,18 @@ function $updateEditFormDiff() {
   $diffTab.children('.dw-p-diff').remove();
   // Show the new diff.
   $diffTab.append('<div class="dw-p-diff">'+ htmlString +'</div>\n');
+}
 
+// Call on a .dw-f-ed, to update the preview tab.
+function $updateEditFormPreview() {
+  var $editForm = $(this).closest('.dw-f-ed');
+  var $editTab = $editForm.find('div.dw-ed-tab[id^="dw-ed-tab-edit"]');
+  var $previewTab = $editForm.find('div.dw-ed-tab[id^="dw-ed-tab-preview"]');
+  var $textarea = $editTab.find('textarea');
+
+  var markdownSrc = $textarea.val();
+  var html = markdownToSafeHtml(markdownSrc);
+  $previewTab.html(html);
 }
 
 
