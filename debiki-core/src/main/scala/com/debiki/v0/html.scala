@@ -627,7 +627,7 @@ class FormHtml(val config: HtmlConfig) {
           <li><a href='#dw-ed-tab-preview'>Preview</a></li>
         </ul>
         <div id='dw-ed-tab-edit' class='dw-ed-tab'>
-          <textarea id='dw-fi-edit-text' name={Inp.Text} rows='10' cols='38'>{
+          <textarea id='dw-fi-edit-text' name={Inp.Text} rows='7' cols='38'>{
             newText
           }</textarea>
         </div>
@@ -642,11 +642,10 @@ class FormHtml(val config: HtmlConfig) {
       </div>
 
       <div class='dw-submit-set'>
-       <input type='submit' class='dw-fi-submit' value='Preview and save ...'/>
-       <input class='dw-fi-cancel' type='button' value='Cancel'/>
+       <input type='submit' class='dw-fi-submit' value='Save'/>
+       <input type='button' class='dw-fi-cancel' value='Cancel'/>
       </div>
     </form>
   }
 
 }
-
