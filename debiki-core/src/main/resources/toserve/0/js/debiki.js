@@ -1635,25 +1635,37 @@ function $showEditForm2() {
     }, 'text');
   };
 
+  function $setSubmitBtnTitleToPreview() {
+    // A submit button click doesn't submit, but shows the preview tab,
+    // unless the preview tab is already visible — then it submits.
+    $(this).find('input.dw-fi-submit').val('Preview and save ...'); // i18n;
+  }
+
   // If the edit form has already been opened, but hidden by a Cancel click,
   // reuse the old hidden form, so any edits aren't lost.
   var $oldEditForm = $post.find('.dw-f-ed');
   if ($oldEditForm.length) {
-    editFormLoader = function(dummy, dummy2, complete) {
-      $oldEditForm.tabs('select' , 0);  // select the textarea tab
-      $oldEditForm.show();
-      complete($oldEditForm);
-    };
+    $oldEditForm.each($setSubmitBtnTitleToPreview);
+    $oldEditForm.tabs('select' , 0);  // selects the textarea tab
+    $oldEditForm.show();
+    $postBody.hide();
+    return;
   }
 
   editFormLoader(debateId, postId, function($editForm) {
+    var $panels = $editForm.find('.dw-ed-tab');
+    var $editPanel = $panels.filter('[id^="dw-ed-tab-edit"]');
+    var $diffPanel = $panels.filter('[id^="dw-ed-tab-diff"]');
+    var $previewPanel = $panels.filter('[id^="dw-ed-tab-preview"]');
+    var $submitBtn = $editForm.find('input.dw-fi-submit');
+    var $cancelBtn = $editForm.find('input.dw-fi-cancel');
+
     $editForm.insertBefore($postBody);
     $postBody.hide();
-    $editForm.find('.dw-fi-cancel').click(function() {
+    $cancelBtn.click(function() {
       $postBody.show();
       $editForm.hide();
     });
-    var $panels = $editForm.find('.dw-ed-tab');
 
     // Find the post's current (old) source text, and store in
     // .dw-ed-src-old, so it's easily accessible to $updateEditFormDiff(…).
@@ -1665,10 +1677,13 @@ function $showEditForm2() {
       else {
         // html.scala excluded .dw-ed-src-old, if the textarea's text
         // is identical to the old src. (To save bandwidth.)
-        oldSrc = $panels.filter('[id^="dw-ed-tab-edit"]')
-                        .find('textarea').val();
+        oldSrc = $editPanel.find('textarea').val();
       }
       $editForm.data('dw-ed-src-old', oldSrc);
+    }
+
+    var setSubmitBtnTitleToSave = function() {
+      $submitBtn.val('Save');  // i18n
     }
 
     // This makes the edit form at least as high as the post.
@@ -1678,18 +1693,23 @@ function $showEditForm2() {
       selected: 0,
       event: 'mouseover',
       show: function(event, ui) {
+        $editForm.each($setSubmitBtnTitleToPreview);
+
         // Update the tab to be shown.
         var $panel = $(ui.panel);
         var $fun = $.noop;
-        if (/^dw-ed-tab-diff/.test(ui.panel.id)) {
-          $fun = $updateEditFormDiff;
-        } else if (/^dw-ed-tab-preview/.test(ui.panel.id)) {
-          $fun = $updateEditFormPreview;
-        } else if (/^dw-ed-tab-edit/.test(ui.panel.id)) {
-          // noop
-        } else {
-          die('[debiki_error_4krERS]');
-        }
+        switch (ui.panel.id) {
+          case $editPanel.attr('id'):
+            break;
+          case $diffPanel.attr('id'):
+            $fun = $updateEditFormDiff;
+            break;
+          case $previewPanel.attr('id'):
+            $fun = $updateEditFormPreview;
+            setSubmitBtnTitleToSave();
+            break;
+          default: die('[debiki_error_4krERS]');
+        };
         $(this).each($fun);
 
         // Don't reduce the form heigt, because if the form is at the
@@ -1710,6 +1730,16 @@ function $showEditForm2() {
         } else {
           lastPanelHeight = $panel.height();
         }
+      }
+    });
+
+    // Show the preview tab on submit click. Submit if it's already visible.
+    $submitBtn.click(function() {
+      if ($previewPanel.is(':hidden')) {
+        // Show the preview tab but don't submit.
+        $editForm.tabs('select', 2);
+        setSubmitBtnTitleToSave();
+        return false;
       }
     });
 
