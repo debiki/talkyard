@@ -966,7 +966,28 @@ to the forms bg color. */
   min-width: 0 !important;
 }
 
-/* === Edit === */
+
+/* === Edit form === */
+
+.dw-pri .dw-f-ed .ui-widget-header,
+.dw-pri .dw-f-ed.ui-widget-content {
+  background: transparent;
+  border: none;
+}
+
+.dw-pri .dw-f-ed .dw-ed-tab {
+  border: 1px solid #bbb;
+  padding: 1.4em 0.3em 1em 1.2em;
+}
+
+.dw-pri .dw-f-ed .dw-ed-tab textarea {
+  border: none;
+  margin: 0;
+  padding: 0;
+}
+
+
+/* === Edit history / suggestions === */
 
 .dw-fs-ed { /* currently almost identical to <form> */
   position: relative;

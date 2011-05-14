@@ -1660,6 +1660,9 @@ function $showEditForm2() {
     var $submitBtn = $editForm.find('input.dw-fi-submit');
     var $cancelBtn = $editForm.find('input.dw-fi-cancel');
 
+    $submitBtn.button();
+    $cancelBtn.button();
+
     $editForm.insertBefore($postBody);
     $postBody.hide();
     $cancelBtn.click(function() {
