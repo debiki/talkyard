@@ -426,14 +426,17 @@ class FormHtml(val config: HtmlConfig) {
   def menus =
     <div id="dw-hidden-templates">
     { actionMenu ++
-      loginFormSimple ++
-      loginFormOpenId ++
-      loginOkForm() ++
-      loginFailedForm() ++
-      logoutForm ++
+      loginForms ++
       replyForm() ++
       ratingForm }
     </div>
+
+  def loginForms =
+    loginFormSimple ++
+    loginFormOpenId ++
+    loginOkForm() ++
+    loginFailedForm() ++
+    logoutForm
 
   def actionMenu =
       <div id='dw-action-menu'>
