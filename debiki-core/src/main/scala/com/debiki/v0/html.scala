@@ -619,9 +619,10 @@ class FormHtml(val config: HtmlConfig) {
       </div>
 
   def editForm(newText: String = "", oldText: String = "",
+               userName: Box[String],
               extraInputs: NodeSeq = Nil) = {
     import Edit.{InputNames => Inp}
-    val submitBtnText = "Save as ..." // COULD read user name from `config'
+    val submitBtnText = "Save as "+ userName.openOr("...")
     <form class='dw-f dw-f-ed'>
       { extraInputs /* Or *require* a XSRF token also/instead? */ }
       <div id='dw-ed-tabs'>

@@ -166,9 +166,9 @@ var idSuffixSequence = 0;
 
 var $lastInlineMenu = $();
 
-// Remembers which "Post as..." button (if any) was clicked when 
-// a login dialog is shown.
-var submitReplyButtonClicked = null;
+// Remembers which .dw-login-on-click button (e.g. "Post as...")
+// was clicked when a login dialog is shown.
+var loginOnClickBtnClicked = null;
 
 // Reset all per click state variables when a new click starts.
 $.event.add(document, "mousedown", function() {
@@ -1150,9 +1150,14 @@ function setUserPropsOrThrow(propsUnsafe, sanitize) {
 
   // Hereafter, on `Post ...' click, submit the form instead of opening
   // the login dialog.
+  // Dupl code, COULD use class dw-login-on-click and dwEvLoggedInOut instead:
   $('.dw-fs-re .dw-fi-submit')
       .unbind('click', $showLoginSimple)
       .attr('value', 'Post as '+ propsSafe.name);
+
+  $('.dw-login-on-click')
+      .unbind('click', $showLoginSimple)
+      .trigger('dwEvLoggedInOut', [undefined, propsSafe]);
 }
 
 // Returns user properties: {name, email, website}, but false iff the name
@@ -1174,9 +1179,16 @@ function clearUserProps() {
   $('#dw-login-info').hide();
   $('#dw-a-logout').hide();
   $('#dw-a-login').show();
+
+  // Dupl code, COULD use class dw-login-on-click and dwEvLoggedInOut instead:
   $('.dw-fs-re .dw-fi-submit')
       .click($showLoginSimple)
       .attr('value', 'Post as ...'); // COULD make a dedicated btn w this text
+
+  var oldUserProps = undefined; // for now
+  $('.dw-login-on-click')
+      .click($showLoginSimple)
+      .trigger('dwEvLoggedInOut', [oldUserProps, undefined]);
 }
 
 
@@ -1281,8 +1293,7 @@ function initLoginSimple() {
         // We won't get here if the name or email is invalid.
         $(this).dialog('close');
         // click() instead of submit() skips the custom submit handler, weird?
-        $(submitReplyButtonClicked).submit();
-        submitReplyButtonClicked = null;
+        continueAfterLoginOnClick();
       }
     },
     close: function() {
@@ -1294,10 +1305,21 @@ function initLoginSimple() {
       .button().click($showLoginOpenId);
 }
 
+// Invoke on a .login-on-click submit <input>. After the login
+// has been completed, the button will be submitted, see
+// continueAfterLoginOnClick().
 function $showLoginSimple() {
-  submitReplyButtonClicked = this;
+  loginOnClickBtnClicked = this;
   showLoginSimple();
   return false;  // skip default action
+}
+
+function continueAfterLoginOnClick() {
+  // The user has logged in, and if the login was initiated via
+  // a click on a .dw-login-on-click button, continue the submit
+  // process that button is supposed to start.
+  $(loginOnClickBtnClicked).submit();
+  loginOnClickBtnClicked = null;
 }
 
 function showLoginSimple() {
@@ -1419,9 +1441,7 @@ function submitLoginInPopup($openidLoginForm) {
       updateUserPropsHtml();
       showLoginOkay();
 
-      $(submitReplyButtonClicked).submit();
-      submitReplyButtonClicked = null;
-
+      continueAfterLoginOnClick();
       return;
     }
 
@@ -1745,6 +1765,16 @@ function $showEditForm2() {
       $editForm.tabs('select', 2);
       showSaveBtnHidePreview();
       return false;
+    });
+
+    // When clicking the Save button, open a login dialog, unless logged in.
+    $submitBtn
+        .addClass('dw-login-on-click')  // COULD extract function from this?
+        .click($showLoginSimple)        //
+        .bind('dwEvLoggedInOut', function(event, oldUserProps, newUserProps) {
+      var text = newUserProps ?  // if absent, user logged out
+          'Save as '+ newUserProps.name : 'Save as ...';  // i18n
+      $(this).val(text);
     });
 
     // Ajax-post edit on submit.
