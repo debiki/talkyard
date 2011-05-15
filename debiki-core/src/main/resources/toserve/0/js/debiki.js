@@ -1635,17 +1635,18 @@ function $showEditForm2() {
     }, 'text');
   };
 
-  function $setSubmitBtnTitleToPreview() {
+  function $showPreviewBtnHideSave() {
     // A submit button click doesn't submit, but shows the preview tab,
     // unless the preview tab is already visible — then it submits.
-    $(this).find('input.dw-fi-submit').val('Preview and save ...'); // i18n;
+    $(this).find('input.dw-fi-submit').hide().end()
+      .find('input.dw-fi-ed-preview').show();
   }
 
   // If the edit form has already been opened, but hidden by a Cancel click,
   // reuse the old hidden form, so any edits aren't lost.
   var $oldEditForm = $post.find('.dw-f-ed');
   if ($oldEditForm.length) {
-    $oldEditForm.each($setSubmitBtnTitleToPreview);
+    $oldEditForm.each($showPreviewBtnHideSave);
     $oldEditForm.tabs('select' , 0);  // selects the textarea tab
     $oldEditForm.show();
     $postBody.hide();
@@ -1657,10 +1658,12 @@ function $showEditForm2() {
     var $editPanel = $panels.filter('[id^="dw-ed-tab-edit"]');
     var $diffPanel = $panels.filter('[id^="dw-ed-tab-diff"]');
     var $previewPanel = $panels.filter('[id^="dw-ed-tab-preview"]');
+    var $previewBtn = $editForm.find('input.dw-fi-ed-preview');
     var $submitBtn = $editForm.find('input.dw-fi-submit');
     var $cancelBtn = $editForm.find('input.dw-fi-cancel');
 
-    $submitBtn.button();
+    $previewBtn.button();
+    $submitBtn.button().hide();  // you need to preview before submit
     $cancelBtn.button();
 
     $editForm.insertBefore($postBody);
@@ -1685,8 +1688,9 @@ function $showEditForm2() {
       $editForm.data('dw-ed-src-old', oldSrc);
     }
 
-    var setSubmitBtnTitleToSave = function() {
-      $submitBtn.val('Save');  // i18n
+    var showSaveBtnHidePreview = function() {
+      $submitBtn.show();
+      $previewBtn.hide();
     }
 
     // This makes the edit form at least as high as the post.
@@ -1696,7 +1700,7 @@ function $showEditForm2() {
       selected: 0,
       event: 'mouseover',
       show: function(event, ui) {
-        $editForm.each($setSubmitBtnTitleToPreview);
+        $editForm.each($showPreviewBtnHideSave);
 
         // Update the tab to be shown.
         var $panel = $(ui.panel);
@@ -1709,7 +1713,7 @@ function $showEditForm2() {
             break;
           case $previewPanel.attr('id'):
             $fun = $updateEditFormPreview;
-            setSubmitBtnTitleToSave();
+            showSaveBtnHidePreview();
             break;
           default: die('[debiki_error_4krERS]');
         };
@@ -1736,14 +1740,11 @@ function $showEditForm2() {
       }
     });
 
-    // Show the preview tab on submit click. Submit if it's already visible.
-    $submitBtn.click(function() {
-      if ($previewPanel.is(':hidden')) {
-        // Show the preview tab but don't submit.
-        $editForm.tabs('select', 2);
-        setSubmitBtnTitleToSave();
-        return false;
-      }
+    // Show the preview tab on 'Preview and save ...' click.
+    $previewBtn.click(function() {
+      $editForm.tabs('select', 2);
+      showSaveBtnHidePreview();
+      return false;
     });
 
     // Ajax-post edit on submit.

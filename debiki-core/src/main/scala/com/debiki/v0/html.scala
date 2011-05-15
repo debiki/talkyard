@@ -405,6 +405,7 @@ object FormHtml {
   object Edit {
     object InputNames {
       val Text = "dw-fi-ed-txt"
+      val Preview = "dw-fi-ed-preview"
     }
   }
 }
@@ -419,8 +420,6 @@ class FormHtml(val config: HtmlConfig) {
        target="_blank">
       Creative Commons Attribution 3.0 Unported License
     </a>
-
-  private val submitButtonText = "Post as ..." // TODO read name from `config'
 
   private[v0]
   def menus =
@@ -544,6 +543,7 @@ class FormHtml(val config: HtmlConfig) {
 
   def replyForm(text: String = "", extraInputs: NodeSeq = Nil) = {
       import Reply.{InputNames => Inp}
+    val submitButtonText = "Post as ..." // COULD read user name from `config'
       <li class='dw-fs dw-fs-re'>
         <form
             action={config.replyAction}
@@ -621,6 +621,7 @@ class FormHtml(val config: HtmlConfig) {
   def editForm(newText: String = "", oldText: String = "",
               extraInputs: NodeSeq = Nil) = {
     import Edit.{InputNames => Inp}
+    val submitBtnText = "Save as ..." // COULD read user name from `config'
     <form class='dw-f dw-f-ed'>
       { extraInputs /* Or *require* a XSRF token also/instead? */ }
       <div id='dw-ed-tabs'>
@@ -645,7 +646,9 @@ class FormHtml(val config: HtmlConfig) {
       </div>
 
       <div class='dw-submit-set'>
-       <input type='submit' class='dw-fi-submit' value='Save'/>
+       <input type='button' class={Inp.Preview} name={Inp.Preview}
+              value='Preview and save ...'/>
+       <input type='submit' class='dw-fi-submit' value={submitBtnText}/>
        <input type='button' class='dw-fi-cancel' value='Cancel'/>
       </div>
     </form>
