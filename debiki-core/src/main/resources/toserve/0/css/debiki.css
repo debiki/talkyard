@@ -1056,6 +1056,21 @@ to the forms bg color. */
   font-size: 85%;
 }
 
+/* === Create page form === */
+
+.dw-f-cr {
+  margin: 60px 0 30px;
+}
+
+.dw-f-cr .dw-fi-submit {
+  margin-top: 30px;
+}
+
+.dw-f-cr ul > li {
+  list-style-type: disc; /* the page creation info list */
+}
+
+
 /* === jQuery UI integration === */
 
 /* Here's a color blender: http://websitetips.com/colortools/colorblender/
