@@ -289,12 +289,12 @@ class DebateHtml(val debate: Debate) {
     }
 
     def tryLinkTo(user: User) = {
-      val url = config.userLink(author)
+      val url = config.userLink(user)
       if (url nonEmpty) {
         <a class='dw-p-by' href={url}
-          rel='nofollow' target='_blank'>{author.name}</a>
+          rel='nofollow' target='_blank'>{user.name}</a>
       } else {
-        <span class='dw-p-by'>{author.name}</span>
+        <span class='dw-p-by'>{user.name}</span>
       }
     }
 
