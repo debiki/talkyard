@@ -10,6 +10,7 @@
  *
  *  dw-           prefix, avoids name clashes
  *  -a-           action
+ *  -cr-          create
  *  -e            east (COULD change to "ew", eastwards, and use "e" for edit)
  *                  and new (no good!, "new") sew etc. for northeastwards etc.
  *                  Or 'de', direction-east, dn/w/s/e dnw/sw/se/ne ?
@@ -21,6 +22,8 @@
  *  -hor-         horizontal layout
  *  -i-           inline
  *  -img-         image
+ *  -login-
+ *  -logout-
  *  -m-           mark
  *  -p-           post
  *  -q-           ?? post-before (looks like p, but flipped — before, not after)
@@ -41,6 +44,7 @@
  *  dw-a-edit-new new edit suggestion
  *  dw-ess        edit suggestions
  *  dw-es-vs      votes on a certain edit suggestion
+ *  dw-fi-ed-preview  edit form input, preview
  *  dw-fs         form group      (COULD remove — there're no groups any more?)
  *  dw-fs-ed      edit form group (COULD rename to -f-ed/re/rat ?)
  *  dw-fs-re      reply form group

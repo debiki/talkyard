@@ -8,6 +8,19 @@
 // Google Closure Linter: Run like so:
 //  gjslint src/main/resources/toserve/js/debiki.js | egrep -v 'E:0002:'
 
+/* {{{ Misc naming notes
+
+ dwUserName:  COULD rename to dwCoUserName — "Co" would mean cookie?
+  "dw" is a prefix, avoids name clashes.
+  "Co" ... would mean "Cookie", if added.
+  "UserName" is the cookie name.
+
+ dwEvLoggedInOut:
+  "Ev" means "event".
+  "LoggedInOut" is the event.
+
+}}}*/
+
 Debiki = {};  // TODO: Error handling?
 Debiki.v0 = {};
 
