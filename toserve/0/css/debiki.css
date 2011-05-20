@@ -1,0 +1,1244 @@
+/* vim: fdm=marker et ts=2 sw=2 tw=80 fo=tcqwn list
+ *
+ * Tips: List all CSS classes like so:
+ *   find debiki-core-basedir/src -type f -print0 | \
+ *     xargs -0 egrep -ho "dw-[[:alnum:]-]+" | sort | uniq -c
+ * Narrower:
+ *   find src/main/scala/com/debiki/v0/html.scala src/main/scala/com/debiki/v0/App.scala src/main/resources/js/debiki.js src/main/resources/css/debiki.css ../../debiki-jspwiki-forum/src/main -type f -print0 | xargs -0 egrep -ho "dw-[[:alnum:]-]+" | sort | uniq -c
+ *
+ * Form names decrypted:
+ *
+ *  dw-           prefix, avoids name clashes
+ *  -a-           action
+ *  -cr-          create
+ *  -e            east (COULD change to "ew", eastwards, and use "e" for edit)
+ *                  and new (no good!, "new") sew etc. for northeastwards etc.
+ *                  Or 'de', direction-east, dn/w/s/e dnw/sw/se/ne ?
+ *  -ed-          edit (COULD change to "e")
+ *  -es-          edit suggestion (COULD change to -e-s, and let -es = edits)
+ *  -ess-         edit suggestions (COULD change to -e-ss)
+ *  -f-           form
+ *  -fs-          form group
+ *  -hor-         horizontal layout
+ *  -i-           inline
+ *  -img-         image
+ *  -login-
+ *  -logout-
+ *  -m-           mark
+ *  -p-           post
+ *  -q-           ?? post-before (looks like p, but flipped — before, not after)
+ *  -rat-         rating  (COULD rename to "r")
+ *  -re-          reply   (COULD rename to "p", for "post")
+ *  -res-         replies (COULD rename to "ts", "threads")
+ *  -rez-         resized (COULD rename to "rzd" and let "rz" mean resize)
+ *  -s            south (COULD change to "sw", southwards)
+ *                        COULD then use 's' for `summary'?
+ *  -svg-         SVG graphics
+ *  -t-           thread
+ *  -vs-          votes
+ *  -z-           fold (z looks like a folded paper from the side)
+ *
+ *  dw-a-rate     rate reply
+ *  dw-a-reply    new reply
+ *  dw-a-edit     list edit suggestion
+ *  dw-a-edit-new new edit suggestion
+ *  dw-ess        edit suggestions
+ *  dw-es-vs      votes on a certain edit suggestion
+ *  dw-fi-ed-preview  edit form input, preview
+ *  dw-fs         form group      (COULD remove — there're no groups any more?)
+ *  dw-fs-ed      edit form group (COULD rename to -f-ed/re/rat ?)
+ *  dw-fs-re      reply form group
+ *  dw-fs-rat     rating form group
+ *  dw-hor-a      action stuff, layed out horizontally
+ *  dw-i-t        inline thread (COULD use dw-i instead, already has dw-t class)
+ *  dw-i-m        inline mark (COULD rename to dw-m — *all* marks are inline?)
+ *  dw-i-m_<#id>  mark for thread #id (e.g. dw-i-m_dw-t-<thread-id>)
+ *  dw-p-bdy      post body
+ *  dw-p-bdy-blk  post body block, a <div> that wraps e.g. a <p>
+ *  dw-p-hdr      post header
+ *  dw-p-rez-e    post resized eastwards
+ *  dw-pri        placed on the <body>, use it to boost CSS rule priorities
+ *  dw-svg-c_<x>  SVG curve from <x>  COULD rename to -svg-p, for `path'
+ *  dw-svg-gparnt Has a <svg> child or grandchild (but no grand-grand-child)
+ *  dw-svg-parent Has a <svg> child
+ *
+ *  ... and so on, hmm.
+ */
+
+/* === Standard tags === */
+
+/* --- CSS-reset ---*/
+/* http://meyerweb.com/eric/tools/css/reset/ */
+/* v1.0 | 20080212 */
+
+html, body, div, span, applet, object, iframe,
+h1, h2, h3, h4, h5, h6, p, blockquote, pre,
+a, abbr, acronym, address, big, cite, code,
+del, dfn, em, font, img, ins, kbd, q, s, samp,
+small, strike, strong, sub, sup, tt, var,
+b, u, i, center,
+dl, dt, dd, ol, ul, li,
+fieldset, form, label, legend,
+table, caption, tbody, tfoot, thead, tr, th, td {
+	margin: 0;
+	padding: 0;
+	border: 0;
+	outline: 0;
+	font-size: 100%;
+	vertical-align: baseline;
+	background: transparent;
+}
+body {
+	line-height: 1;
+}
+ol, ul, li {
+  list-style-type: none;
+}
+blockquote, q {
+	quotes: none;
+}
+blockquote:before, blockquote:after,
+q:before, q:after {
+	content: '';
+	content: none;
+}
+
+/* remember to define focus styles! */
+:focus {
+	outline: 0;
+}
+
+/* remember to highlight inserts somehow! */
+ins {
+	text-decoration: none;
+}
+del {
+	text-decoration: line-through;
+}
+
+/* tables still need 'cellspacing="0"' in the markup */
+table {
+	border-collapse: collapse;
+	border-spacing: 0;
+}
+
+/* --- Standard elems ---*/
+
+/* Spacing between e.g. <p>:s. */
+.dw-p-bdy-blk > * {
+  margin: 0 0 0.7em;
+}
+
+/* The root post. */
+.dw-depth-0 > .dw-p > .dw-p-bdy > div.dw-p-bdy-blk > * {
+  margin: 0 0 1em; /* or e.g. <p>:s not visible, because the root post
+                    has high line height */
+}
+
+.dw-depth-0 > .dw-p > .dw-p-bdy > div.dw-p-bdy-blk > h1 {
+  margin: 26px 0 15px !important;
+  padding: 0;
+  color: #42525E;
+}
+
+.dw-depth-0 > .dw-p > .dw-p-bdy > div.dw-p-bdy-blk > h2 {
+  font-size: 24px;
+  color: #28323B;
+  margin: 26px 0 18px 0 !important;
+}
+
+.dw-p-bdy-blk {
+  margin: 0;
+}
+
+/* Show list item marks, but not for nested threads. */
+.dw-p-bdy-blk ul li {
+  list-style-type: disc;
+  margin-left: 2.5em;
+}
+.dw-p-bdy-blk ol li {
+  list-style-type: decimal;
+  margin-left: 2.5em;
+}
+
+.dw-p-bdy-blk img {
+  width: 100%;
+  display: block; /* TODO inline those with no \n\n inbetween preceeding text */
+  margin: 1.5em auto; /* TODO margin-bottom 0 if post ends there */
+}
+
+/* === Debate === */
+
+.dw-debate {
+  margin-left: 0.3em;
+  font-family: Verdana, sans-serif;
+  /* In the future: Georgia for titles? */
+  font-size: 80%;
+  line-height: 120%;
+  position: relative;
+}
+
+.dw-debate-info {
+  display: none; /* need to place somewhere where it won't confuse newbies */
+  margin-bottom: 1em;
+}
+
+.dw-dragscrollable,
+.dw-debate .dw-svg-parent svg { /* many specifiers gives higher precedence
+                                  than the cursor:auto rule just below */
+  cursor: move; /* or people won't realize they can scroll? */
+}
+
+.dw-dragscrollable > *:not(.dw-dragscrollable) {
+  cursor: auto; /* don't inherit `move' cursor */
+}
+
+/* The above "don't inherit move" rule destroys these three jQuery-UI rules,
+so they're repeadet here (*after* the above rule).
+COULD prefix jQuery-UI with #dw-pri not .dw-pri, so jQuery-UI's rules have
+higher precedence (then these three duplicated rules could be removed).
+— But #dw-pri needs to be placed on the <body>, so it applies also to
+jQuery UI's dialgos. Might that be incompatible with other libs? */
+.dw-pri .ui-resizable-s  { cursor: s-resize;  }
+.dw-pri .ui-resizable-e  { cursor: e-resize;  }
+.dw-pri .ui-resizable-se { cursor: se-resize; }
+
+
+/* === Threads === */
+
+.dw-depth-0.dw-t > .dw-p {
+  padding-bottom: 0.8em; /* litte more airy? first post */
+}
+
+.dw-depth-0.dw-t > .dw-p > .dw-p-bdy > .dw-p-bdy-blk,
+.dw-t:not(.dw-depth-1) .dw-p-bdy-bkl {
+  line-height: 165%; /* higher height makes the main post easier to read */
+}
+
+.dw-depth-1 .dw-t {
+  padding-left: 0;
+  border-top: none;
+  }
+
+/* --- Float ---*/
+.dw-t {
+  float: left;
+  position: relative; /* #action-menu is absolute positioned relative cmt */
+}
+.dw-depth-0.dw-t {
+  float: none; /* else won't expand eastwards, even if zoomed out much */
+}
+.dw-depth-1 .dw-t {
+  float: none;
+  clear: both; /* else the rating form might float to the left */
+}
+
+/* === Posts === */
+
+.dw-pri .ui-resizable-se {
+  /* The small grip has been replaced with the normal grip
+  (search for "ui-icon-grip" in debiki.js), so we make the
+  tag a few pixels wider. */
+  height: 17px;
+  width: 17px;
+  background-position: -80px -222px;
+  background-color: white; /* hides text beneath, else grip hard to notice */
+}
+
+.dw-pri form .ui-resizable-se {
+  background-color: #fcfaf5; /* (see above) match form background */
+}
+
+.dw-p-bdy p {
+  /* Don't span whole screen even if .post.cropped-e is removed. */
+  max-width: 35em;
+}
+
+/* Make the s,n,e,w handles larger (else hard to drag) and place them
+1 layer below the .ui-resizable-se handle (see above),
+so as not to hide that handle (which is assigned z-index 1001 by
+some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
+.dw-pri .ui-resizable-n,
+.dw-pri .ui-resizable-s {
+  height: 15px;
+  z-index: 1000;
+}
+.dw-pri .ui-resizable-s {
+  bottom: 0; /* jquery-ui says -5 which overflows */
+}
+.dw-pri .ui-resizable-e,
+.dw-pri .ui-resizable-w {
+  width: 15px;
+  z-index: 1000;
+}
+.dw-pri .ui-resizable-e {
+  right: 0; /* jquery-ui says -5 which overflows */
+}
+/* But don't raise the vertical lines between depth-1 threads
+ above the threads (with z-index: 10) */
+.dw-depth-1 > .ui-resizable-handle {
+  z-index: 6;
+}
+
+/* === Cropped and resized posts === */
+
+.dw-p.dw-x-s > .dw-p-bdy,
+.dw-p.dw-x-s > .dw-p-hdr {
+  max-height: 4em;
+  cursor: help;
+  /* The max-height of a truncated .dw-p-bdy is 4em, but if floating
+  elements are present inside the -p-bdy (e.g. inline reply threads)
+  its height might grow to e.g. 2000 px. Then at least Chrome places the
+  truncation mark far away, so the parent .dw-p grows to e.g. 2000 px.
+  By hiding overflow, the truncation mark won't be pushed down by other
+  tags inside the .dw-p-bdy, and the parent .dw-p won't be larger than
+  what it's supposed to be (i.e. roughly 4em + 4em). */
+  /*overflow: hidden;  -- no, doesn't work well: in some unfathomable
+  weird way, the inline thread disappear upwards, but space is reserved for
+  them below, as if I had added `relative: -2000px' (which I have not).  */
+}
+
+.dw-p.dw-x-s {
+  /* Since `overflow: hidden' on .dw-p-bdy doesn't work well (see the
+  long comment above), restrict max-height of the .dw-p instead (again
+  see the long comment above, for info on why this is done). */
+  max-height: 8em;
+}
+
+.dw-p > .dw-x-mark {
+  display: block;
+  position: absolute;
+  bottom: 0px;
+  right: -3px;
+  padding: 4px 25px 0 10px; /* there's a resizable-se grip to the right */
+  height: 17px;
+  background: white;
+  font-style: italic;
+  letter-spacing: 0.3ex;
+}
+.dw-p.dw-x-s:hover > .ui-resizable-se,
+.dw-p.dw-x-s:hover > .dw-x-mark {
+  background-color: #fdc;
+  color: #363636;
+}
+
+/* Indicate which borders the user has resized. */
+.dw-p-rez-e {
+  border-right: 1px solid #888;
+  padding-right: 3px; /* or text to close to the border */
+  /* This post might extend over [a thread to the right], since
+  it has been resized eastwards. So as not to draw this post and
+  [the post to the right] over each other, let this post hide 
+  [the post to the right] by specifying a higher z-index. */
+  z-index: 11;
+}
+.dw-p-rez-e:hover {
+  z-index: 12; /* or resized thread might be merged with each other */
+}
+.dw-p-rez-s {
+  border-bottom: 1px solid #888;
+  /* padding-bottom: 3px; -- pointless: because of overflow, text might
+                          end up immediately next to the border anyway */
+}
+
+/* --- Comments ---*/
+
+.dw-t {
+  margin: 8px 0 0 5px;
+}
+
+.dw-depth-1:not(.dw-i-t):hover {
+  border-right: 2px dashed lightgray; /* column separator and resizor */
+}
+
+.dw-hor > .dw-res > .dw-fs,
+.dw-hor-a,
+.dw-depth-1:not(.dw-i-t) {
+  padding: 0 20px 10px 0;
+  margin: 10px 16px 0 0;
+  border-right: 2px dashed transparent; /* shown on hover */
+}
+
+/* Make the column separator at least this high. But don't do this for
+.dw-fs because forms are folded/slided out, i.e. shrinked to zero height */
+.dw-hor-a,
+.dw-depth-1:not(.dw-i-t) {
+  min-height: 100px; 
+}
+
+.dw-hor > .dw-res > li {
+  position: relative; /* gfx placed relative */
+}
+
+/* Empty space between a post and its child threads, when laid
+ out horizontally. SVG relationship arrows drawn here. */
+.dw-t-vspace {
+  height: 84px;
+}
+
+.dw-depth-1 {
+  width: 25em; /* avoids > 1 column for this depth */
+}
+
+.dw-depth-1.dw-zd-fx {
+  max-width: 8.5em;
+  overflow: hidden;
+}
+
+.xx.dw-t.dw-depth-1:first-of-type,
+.xx.dw-t.dw-depth-1:last-of-type {
+  border-right: 0;
+}
+
+.dw-res {
+  margin: 0;
+}
+
+.dw-depth-1 .dw-res {
+  margin: 0 0 0 35px;
+  padding-top: 3px;
+  /* border-left: 1px dotted #ddf; -- now using bezier curves instead */
+}
+
+.dw-depth-2 .dw-res {
+  margin: 0 0 0 35px;
+}
+
+.dw-p {
+  margin-left: 35px;
+  overflow: hidden;
+  background-color: white;
+}
+
+.dw-p-hdr {
+  padding-left: 3px;
+  font-size: smaller;
+  color: #000;
+  background-color: #eee;
+}
+
+.dw-p-hdr-ed {
+}
+
+/* Users with links to more info, e.g. website or blog */
+.dw-pri a.dw-p-by,
+.dw-pri a.dw-p-ed-by {
+  color: #369; /* same as reddit */
+  font-weight: bold;
+}
+
+/* Users with no links to more info */
+span.dw-p-by,
+span.dw-p-ed-by {
+  color: #555;
+  font-weight: bold;
+}
+
+/* For the article itself, make author and post date info less conspicuous,
+or it steals attention from the page title. */
+.dw-depth-0 > .dw-p > .dw-p-hdr {
+  background-color: transparent;
+  opacity: 0.72;
+}
+.dw-depth-0 > .dw-p > .dw-p-hdr > .dw-p-by {
+  color: #396D99;
+}
+
+.dw-rats,
+.dw-rats li {
+  display: inline;
+}
+
+.dw-z {
+  position: absolute;
+}
+
+.dw-z,
+.dw-z-open {
+  color: #369;
+  cursor: crosshair !important;
+  font-size: 85%;
+  text-decoration:none;
+}
+
+/* Un-indent any root post, by hiding the collapse button.
+ (Why would one need to hide the original post?) */
+.dw-depth-0 > .dw-z {
+  display: none;
+}
+.dw-depth-0 > .dw-p {
+  margin-left: 0;
+  /*float: left; /* or the header will be as wide as the root thread */
+   /* fix the header instead? I need to fix it anayway */
+}
+
+.dw-p-bdy,
+.dw-p-diff {
+  padding: 6px 1px 0 3px;
+  position: relative;
+  background-color: white;
+  min-width: 5em;
+}
+
+.dw-p-bdy {
+  float: left; /* wrap .dw-p-bdy-blk:s, which float left */
+}
+
+/* Make inline threads compact. */
+.dw-i-t > .dw-p > .dw-p-bdy,
+.dw-i-t > .dw-p > .dw-p-diff {
+  padding-top: 1px;
+}
+.dw-i-t > .dw-p > * /*.dw-p-bdy or -diff*/ > .dw-p-bdy-blk {
+  padding: 0;
+  margin: 0;
+}
+.dw-i-t > .dw-p > * /*.dw-p-bdy or -diff*/ > .dw-p-bdy-blk ~ .dw-p-bdy-blk {
+  margin-top: 0.6em;
+}
+
+.dw-post-edited .dw-p,
+.dw-post-new .dw-p {
+  border: 7px solid #f4c4f4;
+}
+
+.dw-p:hover {
+  outline: #999 dashed thin;
+  /* If the post is beeing up-sized, its up-sized parts might be hidden
+  by another thread, because its z-index has not yet been set to 11
+  by the adding of class dw-p-rez-e. Therefore: */
+  z-index: 10;
+}
+.dw-depth-0 > .dw-p:hover {
+  outline: none;
+}
+
+.dw-a {
+  float: left; /* else won't wrap if in narrow column */
+  margin: 4px 0px 9px 37px;
+}
+
+.dw-hor-a {
+  float: left;
+  position: relative; /* curve image placed relative */
+  padding-right: 20px;
+  margin-top: 10px;
+  margin-right: 16px;
+}
+
+.dw-a {
+  cursor: crosshair !important; /* otherwise would show cursor:auto */
+  text-decoration: none;
+  color: #3872ab;
+  font-size: 13px;
+}
+
+.dw-a:hover {
+  color: #c77405; /* jQuery UI's ui-state-hover color */
+  text-decoration: underline;
+}
+
+.dw-hor-a > .dw-a {
+  font-size: 17px;
+  margin: 0;
+}
+
+/* --- Post info ---*/
+
+.dw-p-hdr .dw-rats .dw-rat.dw-you-rated {
+  background-color: #f4c4f4;
+}
+
+.dw-p-hdr .dw-rats .dw-rat-tag {
+  /*font-size: 85%;*/
+}
+
+.dw-p-hdr .dw-post-liking,
+.dw-p-hdr .dw-rat-count,
+.dw-p-hdr .dw-rat-tag-frac-min,
+.dw-p-hdr .dw-rat-tag-sum,
+.dw-p-hdr .dw-rat-valsum-max {
+  margin-left: 3px;
+  font-weight: bold;
+  display: none; /* it's for debugging mostly; makes non-developers confused */
+}
+
+.dw-p-hdr .dw-rats .dw-rat-tag-frac {
+  font-size: 90%;
+  position: relative;
+  left: -2px;
+}
+.xxx-dw-post-info .dw-rats .dw-rat-tag-frac:before {
+  content: "×"; /* The multiplication sign, U+00D7 */
+  position: relative;
+  left: -1px;
+}
+
+.dw-post-info .dw-rats-non-weighted {
+  display: none; /* -non-weighted is only for debugging */
+}
+
+.dw-post-info .dw-last-changed,
+.dw-post-info .dw-edits {
+  float: right;
+  clear: right;
+  padding: 1px 3px 3px 1ex;
+  margin-left: 1ex;
+  position: relative;
+  font-size: 85%;
+  background-color: #e7e7e7; /* parent elem, .dw-post-info, has same bg-color,
+                                but its height is restricted */
+}
+
+/* === Inline replies === */
+
+/* --- Inline mark icons --- */
+
+.dw-i-m-start.ui-icon {
+  display: inline-block; /* otherwise display:block, and a new paragraph */
+  position: relative;
+}
+
+.dw-i-m-start:hover {
+  cursor: crosshair;
+}
+
+.dw-i-m-start.ui-icon + .dw-i-m-start.ui-icon {
+  margin-left: 4px; /* or the two mark icons touch each other */
+  /* COULD fix bug: If there are two .ui-icon:s in the same <p>,
+  this CSS is applied even if there is text between them.
+  Could fix this in JavaScript: add a class to [all icons but the first one,
+  among icons with exactly the same offset]? */
+}
+
+/* Remove white space around the inline marks. */
+.dw-i-m-start.ui-icon-arrow-1-e {
+  width: 6px; /* or too wide */
+  top: 3px;
+  left: -3px;
+  background-position: -37px -37px;
+}
+.dw-i-m-start.ui-icon-arrow-1-s {
+  width: 8px;
+  height: 13px; /* don't push next text line away; the smallest font-size seems
+                to be 13px. TODO: always specify font-size in px not %? */
+  top: -1px;
+  background-position: -70px -36px;
+}
+.dw-i-m-start.ui-icon-arrow-1-s {
+}
+
+
+/* --- Inline threads --- */
+
+.dw-hor > .dw-p > .dw-p-bdy > .dw-i-ts {
+  float: left;
+  margin-left: 120px; /* arrows from inline-marks to -threads drawn here */
+}
+
+/* Stack inline posts vertically. */
+.dw-p-bdy .dw-i-t {
+  float: left;
+  clear: left;
+}
+
+/* For vertical layout, place inline threads below the .dw-p-bdy-blk, indented.
+(With horizontal layout, they're placed to the right of the post.) */
+.dw-t:not(.dw-hor) > .dw-p > .dw-p-bdy > .dw-i-ts {
+  float: left;
+  clear: left;
+}
+.dw-t:not(.dw-hor) > .dw-p > .dw-p-bdy > .dw-i-ts > .dw-i-t {
+  margin-left: 70px; /* indents, and leaves space for SVG/fake arrows */
+}
+
+/* Make inline comments less conspicuous. */
+.dw-i-t {
+  color: #444;
+  font-size: 95%;
+}
+
+.dw-i-t > .dw-a {
+  margin-bottom: 0px; /* don't push next inline thread away */
+}
+
+.dw-p-bdy-blk {
+  float: left;
+  clear: left;
+}
+
+/* Adjust inline-replies to the root post. */
+.dw-hor > .dw-p > .dw-p-bdy > .dw-p-bdy-blk + .dw-i-t {
+  margin-left: 4em; /* move away from the root post text */
+}
+
+/* --- Highlighting --- */
+
+.dw-i-m-start.dw-highlight {
+  outline: solid medium #f0a005;
+  background-color: yellow;
+}
+
+.dw-i-t > .dw-p.dw-highlight {
+  outline: solid medium #f0a005;
+}
+
+/* --- Hidden templates --- */
+
+#dw-hidden-templates {
+  display: none;
+}
+
+/* --- Inline action menu ---*/
+
+.dw-as-inline {
+  position: absolute;
+  z-index: 20; /* COULD lower to below any overlapping hovered post.
+                Or will shine through the hovered post.
+                Needs to be painted above its own parent post though (z-ix 10).
+                Also see `.dw-action-menu a'. */
+}
+
+.dw-as-inline li {
+  margin: 0; /* or margin from `dw-p-bdy li' applied */
+  float: left;
+}
+
+.dw-as-inline .ui-button {
+  margin-right: 0; /* or space between inline action menu buttons */
+}
+
+/* --- Edit suggestions ---*/
+
+.dw-debate ins {
+  background:#e6ffe6;
+}
+
+.dw-debate del {
+  background:#ffe6e6;
+}
+
+.dw-ess {
+  border-top: dotted 1px #aaa;
+  clear: both; /* or action links push contents rightwards */
+  font-size: 85%;
+  line-height: 100%;
+  color: #444;
+  margin: 0 0 25px 40px;
+}
+
+.dw-es {
+  border-bottom: dotted 1px #ccc;
+  padding: 7px 0 10px 0;
+  margin: 0 0 0 0;
+}
+
+.dw-es:hover {
+  background-color: #f9f9f9;
+}
+
+.dw-es-vs {
+  float: left;
+  width: 30px;
+}
+
+.dw-es-ed {
+  position: relative;
+  margin-left: 30px;
+}
+
+.dw-es .dw-ed-text {
+  display: none; /* text used by javascript diff algorithm */
+}
+
+.dw-es .dw-ed-desc {
+}
+
+.dw-es .dw-ed-by {
+  color: #3872ab; /* same as action links */
+}
+
+.dw-es .dw-ed-at {
+}
+
+.dw-a-edit-new {
+  /* Move closer to the edit suggestions list
+  and push the below post further away, and indent 40px + 30px. */
+  margin: -13px 0 30px 70px;
+  display: block; /* or inlined */
+}
+
+/* === Forms === */
+
+.dw-fs {
+  float: left; /* or sometimes very wide */
+  clear: left; /* or might appear to the right of the action links */
+  margin: 10px 0 20px 35px; /* left-indents somewhat more than reply indent */
+}
+
+.dw-hor > .dw-res > .dw-fs {
+  clear: none; /* or root post forms would be stacked vertically */
+}
+
+.dw-fs form {
+  float: left; /* or won't wrap all children, some children float */
+  position: relative;
+  z-index: 1100;
+  /* A distinct border retults in confusingly many vertical lines
+  (there're vertical lines between columns, and for thread
+  indentation). So, don't have a border -- but yes, have a border
+  that's not noticeable, only slightly slightly darker than the form
+  background, increasing contrast, making it easier to see where the
+  form ends. */
+  background-color: #fbf7f2;
+  border: 1px solid #f7f3ed; /* almost background color */
+  padding: 1em;
+  /* My Firifox 3.6 draws outlines very incorrectly for the Rating form,
+  (but correctly for Reply and Edit), use borders instead. */
+  /* outline: #83c5df solid thick; */
+}
+
+/* jQuery UI dialogs have forms inside. Set the dialog bg color
+to the forms bg color. */
+.dw-pri .ui-dialog-buttonpane {
+  background-color: #fbf7f2;
+}
+
+/* Was needed by #dw-fs-openid-login or #dw-fs-login-simple. COULD delete. */
+-xx-.dw-fs.ui-dialog-content {
+  /*margin: 20px 0 0; /* cancel .dw-fs too wide margin */
+  /*padding: 0 !important; /* cancel jQuery UI's inline style */
+  width: 100% !important; /* otherwise sometimes float drop */
+}
+
+.dw-fs.ui-dialog-content > form {
+  border: none; /* the buttonpane is outside, same color as form */
+  /* Cancel z-index:1100 rule, otherwise the <form> would be placed
+  lower than the jQuery UI dialog itself, and jQuery would stop clicks. */
+  z-index: auto; /* cancel rule */
+}
+
+.dw-pri form input[type='text'],
+.dw-pri form textarea {
+  font-family: Verdana, sans-serif; /* the font .dw-post .dw-text uses */
+  margin-top: 0.7em;
+}
+
+.dw-pri form textarea {
+  width: 98%;
+  height: 97%; /* or too small */
+  resize: none; /* disable Chrome's default-resizable (and
+                   make the accordion resizable instead) */
+  padding-right: 0px;  /* else 97% (above) often too large, so... */
+  padding-bottom: 0px; /* ...scrollbars appear */
+  border-color: #aaa; /* default black is too sharp */
+}
+
+.dw-name-or-alias {
+  float: left; /* TODO: need not float everything? */
+  clear: both;
+  margin-top: 1.8em;
+}
+
+.dw-submit-set {
+  float: left;
+  clear: both;
+  margin-top: 1em;
+}
+
+.dw-pri .ui-button {
+  cursor: crosshair !important; /* has only client side side effects */
+}
+
+.dw-pri .ui-button.dw-fi-submit {
+  cursor: pointer !important; /* has servede side effects, might reload page */
+}
+
+/* --- Login dialog --- */
+
+/* Assume user logged out */
+#dw-login-info,
+#dw-a-logout {
+  display: none;
+}
+
+.dw-login {
+  float: left;
+  clear: both;
+  margin: 10px 0;
+}
+
+.dw-login-a-wrap {
+  float: left;
+  padding: 57px 45px 0 0;
+  margin-right: 45px;
+  height: 105px;
+  border-right: 1px solid #ccc;
+  position: relative;
+}
+
+.dw-a-login {
+  font-size: 200%;
+  margin-left: 10px;
+  color: #3872AB;
+}
+
+.dw-login-or-word {
+  top: 66px;
+  right: -6px;
+  position: absolute;
+  background-color: #FBF7F2;
+  padding: 4px 0 4px;
+}
+
+.dw-login-fields {
+  float: left;
+}
+
+.dw-login-fields label {
+  margin-top: 0.7em;
+}
+
+.dw-login-fields input {
+  margin-top: 3px !important; /* COULD remove my own conflicting rule */
+  width: 200px;
+}
+
+/* === Reply === */
+
+.dw-fs-re > form {
+  min-width: 210px;
+}
+
+.dw-fs-re label {
+  display: inline-block;
+  margin-right: 0.4em;
+}
+
+.dw-fs-re textarea {
+  width: 97%;
+  height: 97%;
+  resize: none; /* need to disable Chrome's default-resizing-of-textarea,
+                  because the parent <form> (which is also resizable)
+                  isn't resized when the textarea is resized */
+}
+
+.dw-user-contrib-license {
+  float: left; /* TODO? Stop floating everything in the <form>s */
+  clear: both;
+  color: #666;
+  font-size: 70%;
+  margin: 9px 0 0;
+  max-width: 32em; /* else license text makes reply-thread very wide */
+}
+.dw-user-contrib-license a {
+  color: #777;
+}
+
+/* === Rate === */
+
+.dw-fs-rat {
+  min-width: 16.5em; /* at least 2 rat-tag-set:s wide */
+}
+
+.dw-fs-rat .dw-rat-tag-set {
+  float: left;
+  max-width: 8em;
+}
+
+.dw-fs-rat .dw-rat-tag-set .ui-button {
+  min-width: 7em;
+}
+
+.dw-fs-rat .dw-show-more-rat-tags {
+  margin-top: 1em;
+  float: left; /* otherwise margin-top has no effect, why not? */
+  clear: both;
+  cursor: crosshair;
+  font-size: 85%;
+}
+
+/* Stack more-rating-tags horizontally. */
+.dw-fs-rat .dw-more-rat-tags {
+  display: none; /* shown on .dw-show-more-rat-tags click */
+  clear: both;
+  margin-top: 1em;
+  max-width: none;
+}
+.dw-fs-rat .dw-more-rat-tags label {
+  float: left;
+  min-width: 0 !important;
+}
+
+
+/* === Edit form === */
+
+.dw-pri .dw-f-ed .ui-widget-header,
+.dw-pri .dw-f-ed.ui-widget-content {
+  background: transparent;
+  border: none;
+}
+
+.dw-pri .dw-f-ed .dw-ed-tab {
+  border: 1px solid #bbb;
+  padding: 1.4em 0.3em 1em 1.2em;
+}
+
+.dw-pri .dw-f-ed .dw-ed-tab textarea {
+  border: none;
+  margin: 0;
+  padding: 0;
+}
+
+
+/* === Edit history / suggestions === */
+
+.dw-fs-ed { /* currently almost identical to <form> */
+  position: relative;
+  z-index: 1100;
+}
+
+.dw-fs-ed form {
+  margin: 1em 0;
+  float: none; /* or won't be wide enough to fill up parent */
+  clear: both; /* or show-form buttons appear to the left */
+}
+
+.dw-depth-0 .dw-fs-ed {
+  clear: both; /* or placed to the right of the action links */
+}
+
+.dw-fs-ed > a {
+  margin: 0.8em 0;
+  float: left; /* or 100% wide when sliding up/down, weird */
+  clear: both; /* or stacked horiz. when forms sliding up/down */
+}
+
+.dw-fs-ed form:first-of-type,
+.dw-fs-ed > a:first-of-type {
+  margin-top: 0;
+}
+
+.dw-fs-ed .ui-accordion {
+  margin-top: 0.75em;
+}
+
+.dw-fs-ed .ui-accordion-content {
+  padding: 0.7em 0.2em 0 0.6em !important; /* otherwise too much padding */
+  background: #f2f2f2; /* jQuery UI's default bg is somewhat obtrusive*/
+  border: 1px solid #BBB;
+}
+
+.dw-fs-ed .ui-accordion-content p {
+  /* Use same font/size as .dw-debate */
+  font-family: Verdana, sans-serif;
+  font-size: 93%;
+  line-height: 110%;
+}
+
+.dw-fs-ed .ui-accordion h4 {
+  font-weight: normal !important;
+  font-size: 93%;
+}
+
+.dw-fs-ed h4.dw-your-edit {
+  font-weight: bold !important;
+}
+
+.dw-f-ed-btns-vote,
+.dw-edit-liking-stats {
+  margin: 1em 0 0;
+}
+
+.dw-edit-dates {
+  margin: 0 0 1.1em;
+}
+
+.dw-edit-dates,
+.dw-edit-liking-stats {
+  font-style: italic;
+  font-size: 85%;
+}
+
+/* === Create page form === */
+
+.dw-f-cr {
+  margin: 60px 0 30px;
+}
+
+.dw-f-cr .dw-fi-submit {
+  margin-top: 30px;
+}
+
+.dw-f-cr ul > li {
+  list-style-type: disc; /* the page creation info list */
+}
+
+
+/* === jQuery UI integration === */
+
+/* Here's a color blender: http://websitetips.com/colortools/colorblender/
+ */
+
+/* Same color as the ui-buttons */
+.dw-ui-state-default-color { color: #1c80c4; /*1c94c4;*/ }
+.dw-ui-state-default-color-bright { color: #83c5df; }
+.dw-ui-state-default-color-brighter { color: #c1e2ef; }
+.dw-ui-state-default-color-brightest { color: #eaf5fa; }
+
+/* Same font */
+.dw-ui-widget-font {
+  font-family: 'Trebuchet MS', Tahoma, Verdana, Arial, sans-serif;
+}
+
+/* Makes a jQuery-UI-button():ized <a> tag look more like a link */
+.dw-ui-state-default-linkified {
+  border: none !important;
+  background: none !important;
+}
+
+/* Use the crosshair cursor for only client side side effects */
+.ui-accordion-header,
+.ui-accordion-header a {
+  cursor: crosshair !important;
+}
+
+/* Make accordions smaller; jQuery UI padds a little bit too much? */
+.dw-pri .ui-accordion .ui-accordion-header a {
+  padding: 0.2em 0.2em 0.2em 0.7em;
+}
+
+/* jQuery UI bug fix: in the jQuery-auto-generated file, ".debiki"
+ is missing (on the next line). */
+.dw-pri input.ui-button { padding: .4em 1em; }
+
+
+/* === SVG === */
+
+.dw-p-bdy.dw-svg-parent {
+  z-index: 1; /* makes svg (with z-index -1, see below) visible (weird!) */
+}
+
+.dw-t svg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: -1; /* or overlays posts; they would not be clickable */
+  /* $.height(…) and width(…) are very expensive, so ensure we never
+  need to resize any <svg> — which we'd otherwise have to do in animation
+  step callbacks (e.g. on resize, fold, slide), i.e. very frequently. */
+  width: 99999px;
+  height: 99999px;
+}
+
+#dw-t-root {
+  overflow: hidden; /* hides the excessively wide <svg> elems, see above */
+}
+
+.dw-t-vspace svg {
+  position: static; /* or won't stay inside the -vspace */
+}
+
+.dw-t svg path {
+  fill: none;
+  stroke: #dde;
+  stroke-width: 3;
+}
+
+/* This doesn't work; cannot add class dw-highlight to a <path> at runtime.
+TODO style an invisible elem in this manner, and read the props via
+JavaScript. Then I can still place all CSS stuff in this file. */
+/*
+.dw-t svg path.dw-highlight {
+  stroke-width: 4;
+  stroke: #f0a005;
+} */
+
+.dw-svg-fake-varrow,
+.dw-svg-fake-harrow,
+.dw-svg-fake-harrow-end {
+  background-color: #dde;
+  position: absolute;
+  z-index: -10;
+}
+
+.dw-svg-fake-harrow,
+.dw-svg-fake-harrow-end {
+  height: 3px;
+  width: 100%;
+  top: -50px;
+}
+
+.dw-svg-fake-harrow-end {
+  width: 30px;
+  left: -30px;
+}
+
+.dw-svg-fake-varrow {
+  height: 100%;
+  width: 3px;
+  left: 3px;
+}
+
+.dw-svg-fake-vcurve-short {
+  background-color: transparent;
+  background-image: url(img/dw-svg-fake-vcurve-short.png);
+  background-position: 0 0;
+  background-repeat: no-repeat;
+  position: absolute;
+  top: -52px;
+  left: -44px;
+  height: 59px;
+  width: 39px;
+  z-index: -11;
+}
+
+.dw-svg-fake-hcurve,
+.dw-svg-fake-hcurve-start {
+  background-color: transparent;
+  background-image: url(img/dw-svg-fake-hcurve.png);
+  background-position: 0 0;
+  background-repeat: no-repeat;
+  position: absolute;
+  top: -57px;
+  left: -24px;
+  height: 39px;
+  width: 59px;
+  z-index: -11;
+}
+
+.dw-svg-fake-hcurve-start {
+  background-image: url(img/dw-svg-fake-hcurve-start-w-reply-arrow.png);
+  top: -87px;
+  left: 3px;
+  height: 80px;
+  width: 105px;
+  z-index: -11;
+}
+
+.dw-svg-fake-arrow-hider {
+  z-index: -9; /* hides the varrow or harrow */
+}
+
+.dw-svg-fake-varrow-hider-hi,
+.dw-svg-fake-varrow-hider-lo,
+.dw-svg-fake-varrow-hider-left {
+  background-color: white;
+  position: absolute;
+  height: 35px;
+  width: 30px; /* the curve images are fairly wide */
+  z-index: -9;
+}
+
+.dw-svg-fake-varrow-hider-lo {
+  bottom: 0px;
+  height: 40px;
+}
+
+.dw-svg-fake-varrow-hider-left {
+  bottom: 0px;
+  height: 100%;
+  left: -55px;
+}
+
+
