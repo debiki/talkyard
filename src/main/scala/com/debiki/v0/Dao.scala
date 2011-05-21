@@ -8,7 +8,12 @@ import net.liftweb.common.Box
  */
 abstract class Dao {
 
-  def loadDebate(debateId: String,
-                 tenantId: Option[String] = None): Box[Debate]
+  def create(tenantId: String, debate: Debate): Box[Debate]
+
+  def save(tenantId: String, debateId: String, x: AnyRef): Box[AnyRef]
+
+  def save[T](tenantId: String, debateId: String, xs: List[T]): Box[List[T]]
+
+  def load(tenantId: String, debateId: String): Box[Debate]
 
 }
