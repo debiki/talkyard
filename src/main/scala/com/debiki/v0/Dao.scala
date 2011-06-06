@@ -10,10 +10,14 @@ abstract class Dao {
 
   def create(tenantId: String, debate: Debate): Box[Debate]
 
+  def close()
+
   def save(tenantId: String, debateId: String, x: AnyRef): Box[AnyRef]
 
   def save[T](tenantId: String, debateId: String, xs: List[T]): Box[List[T]]
 
   def load(tenantId: String, debateId: String): Box[Debate]
+
+  def checkRepoVersion(): Box[String]
 
 }
