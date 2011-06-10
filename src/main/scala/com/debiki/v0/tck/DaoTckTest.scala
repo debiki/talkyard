@@ -37,6 +37,8 @@ Could test:
 
 */
 
+import DebikiSpecs._
+
 trait TestContext {
   def dao: v0.Dao
   def close() = dao.close()
@@ -114,8 +116,16 @@ class DaoSpecEmptySchema(b: TestContextBuilder) extends DaoSpec(b, "0") {
 }
 
 
+object Templates {
+  val post = v0.Post(id = "?", parent = "", date = new ju.Date,
+    by = "Author", ip = "?.?.?.?", text = "")
+}
+
 class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
   val tablesAreEmpty = setup(EmptyTables)
+
+  import com.debiki.v0._
+  val T = Templates
 
   "A v0.DAO in an empty 0.0.2 repo" when tablesAreEmpty should {
     "find version 0.0.2" >> {
@@ -123,13 +133,83 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
     }
   }
 
-  //  val postTmpl = Post(id = "?", parent = "", date = new ju.Date,
-  //    by = "Author", ip = "?.?.?.?", text = "")
+  "A v0.DAO in an empty 0.0.2 repo" when tablesAreEmpty can {
+    shareVariables()
+    // -------------
+    val ex1_postText = "postText0-3kcvxts34wr"
+    var ex1_debate: Debate = null
 
-//    //val debatenoid = debate(id = "?")
-//    //val debatesaved = dao.create(tenantid, debatenoid).open_!
-//    //val debateloaded = dao.load(tenantid, debatesaved.id).open_!
-//    ////debatesaved.id must_== debateloaded.id
+    "create a debate with a root post" >> {
+      val rootPost = T.post.copy(id = "root", text = ex1_postText)
+      val debateNoId = Debate(id = "?", posts = rootPost::Nil)
+      dao.create(defaultTenantId, debateNoId) must beLike {
+        case Full(d: Debate) =>
+          ex1_debate = d
+          d.postCount must_== 1
+          d.id.length must be_>(1)  // not = '?'
+          d must havePostLike(T.post, id = "root", text = ex1_postText)
+          true
+      }
+    }
+
+    "find the debate and the post again" >> {
+      dao.load(defaultTenantId, ex1_debate.id) must beLike {
+        case Full(d: Debate) => {
+          d must havePostLike(T.post, id = "root", text = ex1_postText)
+          //d.post("root") must beLike {
+          //  case Some(p: Post) =>
+          //    p.id must_== "root"
+          //    p.parent must_== T.post.parent
+          //    p.date must match_(T.post.date)
+          //    p.by must_== T.post.by
+          //    p.ip must_== T.post.ip
+          //    p.text must_== ex1_postText
+          //    p.where must_== T.post.where
+          //    true
+          //}
+          true
+        }
+      }
+    }
+
+    val ex2_emptyPost = T.post.copy(parent = "root", text = "")
+    var ex2_id = ""
+    "save an empty root post child post" >> {
+      dao.save(defaultTenantId, ex1_debate.id, List(ex2_emptyPost)
+              ) must beLike {
+        case Full(List(p: Post)) =>
+          ex2_id = p.id
+          p must matchPost(ex2_emptyPost, id = ex2_id)
+          true
+      }
+    }
+
+    "find the empty post again" >> {
+      dao.load(defaultTenantId, ex1_debate.id) must beLike {
+        case Full(d: Debate) => {
+          d must havePostLike(ex2_emptyPost, id = ex2_id)
+
+          //d.post(ex2_id) must beLike {
+          //  case Some(p: Post) =>
+          //    p must matchPost(ex2_emptyPost, id = ex2_id,
+          //     by = "cats", where = "rats", date = new ju.Date)
+          //    //val ex = ex2_emptyPost
+          //    //p.id must_== ex2_id
+          //    //p.parent must_== ex.parent
+          //    //p.date must match_(ex.date)
+          //    //p.by must_== ex.by
+          //    //p.ip must_== ex.ip
+          //    //p.text must_== ex.text
+          //    //p.where must_== ex.where
+          //    true
+          //}
+          true
+        }
+      }
+    }
+    // -------------
+  }
+
 }
 
 
