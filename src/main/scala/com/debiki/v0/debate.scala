@@ -263,12 +263,14 @@ case class Debate (
 
   /** Assigns ids to Post:s and Edit:s, and updates references from Edit:s
    *  to Post ids. COULD move to Debiki$, since ids are randomized, stateless.
+   *  Does not remap a post with id "0" nor "root".
    */
   def assignIdTo(xs: List[AnyRef]): List[AnyRef] = {
     val remaps = mut.Map[String, String]()
     // Generate new ids, and check for foreign objects.
     xs foreach (_ match {
-      case p: Post => remaps(p.id) = nextRandomString()
+      case p: Post => remaps(p.id) = if (p.id == "0" || p.id == "root") p.id
+                                     else nextRandomString()
       case e: Edit => remaps(e.id) = nextRandomString()
       case a: EditApplied => // noop
       case x => assErr(  // Can this check be done at compile time instead?
@@ -377,6 +379,8 @@ class ViPo(val debate: Debate, val post: Post) {
   // ...
   val lastEditApl = debate.editsAppliedTo(post.id).headOption
 }
+
+// TODO parent class/trait Action
 
 case class Rating private[debiki] (
   postId: String,
