@@ -13,6 +13,23 @@ object Debate {
 
   def empty(id: String) = Debate(id)
 
+  def fromActions(id: String, actions: List[AnyRef]): Debate = {
+    var posts: List[Post] = Nil
+    var ratings: List[Rating] = Nil
+    var edits: List[Edit] = Nil
+    var editVotes: List[EditVote] = Nil
+    var editsApplied: List[EditApplied] = Nil
+    for (a <- actions) a match {
+      case p: Post => posts ::= p
+      case r: Rating => ratings ::= r
+      case e: Edit => edits ::= e
+      case v: EditVote => editVotes ::= v
+      case a: EditApplied => editsApplied ::= a
+      case x => error(
+          "Unknown action type: "+ classNameOf(x) +" [debiki_error_8k3EC]")
+    }
+    Debate(id, posts, ratings, edits, editVotes, editsApplied)
+  }
 }
 
 class AddVoteResults private[debiki] (
