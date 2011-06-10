@@ -68,6 +68,7 @@ object Prelude {
     case _: Char => "Char"
     case _: Byte => "Byte"
     case _: Any => "Any"
+    case null => "null"
   }
 
   def stripStartEndBlanks(text: String): String = {
