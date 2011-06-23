@@ -38,7 +38,7 @@ class AddVoteResults private[debiki] (
 )
 
 case class Debate (
-  val id: String,
+  val guid: String,
   private[debiki] val posts: List[Post] = Nil,
   private[debiki] val ratings: List[Rating] = Nil,
   private[debiki] val edits: List[Edit] = Nil,
@@ -87,6 +87,13 @@ case class Debate (
     }
     cache
   }
+
+  /** The guid prefixed with a dash.
+   *
+   * A debate page can be identified either by "-guid"
+   * or "/path/to/page/".
+   */
+  def guidd = "-"+ guid
 
   // -------- Posts
 

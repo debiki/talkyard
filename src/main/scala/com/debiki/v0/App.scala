@@ -82,7 +82,7 @@ private[debiki] object App {
       </html>
 
     val html = "<!DOCTYPE html>\n" + xml
-    val writer = new jio.FileWriter(out + debate.id + ".html")
+    val writer = new jio.FileWriter(out + debate.guid + ".html")
     writer.write(html.toString)
     writer.close
   }

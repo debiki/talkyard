@@ -1,7 +1,7 @@
 # vim: fdm=marker et sw=4 ts=4 list
 #%TAG ! !org.debiki.v0.debikigenhtml.
 --- !Debate
-id: test-debate
+guid: test_debate
 #end-delims: .,:;!?)}]
 #start-delims: ({[
 #      a

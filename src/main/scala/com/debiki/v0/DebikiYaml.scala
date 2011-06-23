@@ -35,7 +35,7 @@ object DebikiYaml {
       unimplementedIf(debate.editsApplied.length > 0, "Saving of editsApplied")
       val sb = new mut.StringBuilder
       sb ++= "\n--- !Debate"
-      sb ++= "\nid: " ++= debate.id
+      sb ++= "\nguid: " ++= debate.guid
       debate.posts.foreach { sb ++= toYaml(_) }
       debate.edits.foreach { sb ++= toYaml(_) }
       sb.toString
@@ -207,13 +207,13 @@ class DebikiYaml {
     private class ConstrDebate extends DebikiMapConstr {
 
       override def handleTuples(tuples: ju.List[yn.NodeTuple]): Debate = {
-        var debateId: Option[String] = None
+        var debateGuid: Option[String] = None
         for (t <- tuples) asText(t.getKeyNode) match {
-          case "id" => debateId = Some(asText(t.getValueNode))
+          case "guid" => debateGuid = Some(asText(t.getValueNode))
           case _ => // ignore unknown entries
         }
-        illegalArgIf(debateId.isEmpty, "Debate id missing")
-        Debate.empty(debateId.get)
+        illegalArgIf(debateGuid.isEmpty, "Debate guid missing")
+        Debate.empty(debateGuid.get)
       }
     }
 
