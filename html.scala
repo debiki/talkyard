@@ -205,7 +205,7 @@ class DebateHtml(val debate: Debate) {
     val rootPosts = debate.repliesTo(Debate.RootPostId)
     val rootPost = debate.post(Debate.RootPostId)
     val cssThreadId = "dw-t-"+ Debate.RootPostId
-    <div id={debate.id} class="debiki dw-debate">
+    <div id={debate.guid} class="debiki dw-debate">
       <div class="dw-debate-info">{
         if (lastChange isDefined) {
           <p class="dw-last-changed">Last changed on
@@ -374,7 +374,7 @@ class DebateHtml(val debate: Debate) {
       </div>
     </div> ++ (
       if (post.id == Debate.RootPostId) Nil // actions already added by caller
-      else <a class='dw-as' href={config.reactLink(debate.id, post.id)}
+      else <a class='dw-as' href={config.reactLink(debate.guid, post.id)}
             >React</a> ) ++
     { editSuggestions }
   }
