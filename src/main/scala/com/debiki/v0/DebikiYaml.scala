@@ -239,10 +239,10 @@ class DebikiYaml {
           case _ => // fine, allow future extensions
         }
 
-        illegalArgIf(id.isEmpty, "`id' entry missing")
-        illegalArgIf(parent.isEmpty, "`parent' entry missing")
-        illegalArgIf(date.isEmpty, "`date' entry missing")
-        illegalArgIf(text.isEmpty, "`text' entry missing")
+        illegalArgIf(id.isEmpty, "No `id' entry [debiki_error_3kRKq2]")
+        illegalArgIf(parent.isEmpty, "No `parent' entry [debiki_error_6fxvC8]")
+        illegalArgIf(date.isEmpty, "No `date' entry [debiki_error_8k3K7]")
+        illegalArgIf(text.isEmpty, "No `text' entry [debiki_error_2Wnr5]")
 
         new Post(id = id.get, parent = parent.get, where = where,
           date = date.get, by = by.get, ip = ip, text = text.get)
