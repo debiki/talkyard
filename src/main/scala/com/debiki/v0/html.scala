@@ -194,11 +194,11 @@ class DebateHtml(val debate: Debate) {
     this
   }
 
-  def layoutDebate(vars: LayoutVariables = new LayoutVariables)
-      : NodeSeq = {
+  def layoutDebate(pageRules: PageRules,
+                   vars: LayoutVariables = new LayoutVariables): NodeSeq = {
     this.vars = vars
     this.lastChange = debate.lastChangeDate.map(toIso8601(_))
-    layoutPosts ++ FormHtml(config).menus ++ variables
+    layoutPosts ++ FormHtml(config, pageRules).menus ++ variables
   }
 
   private def layoutPosts(): NodeSeq = {
@@ -392,8 +392,8 @@ class DebateHtml(val debate: Debate) {
 
 object FormHtml {
 
-  def apply(config: HtmlConfig = new HtmlConfig) =
-    new FormHtml(config)
+  def apply(config: HtmlConfig, pageRules: PageRules) =
+    new FormHtml(config, pageRules)
 
   object Reply {
     object InputNames {
@@ -411,7 +411,7 @@ object FormHtml {
 }
 
 
-class FormHtml(val config: HtmlConfig) {
+class FormHtml(val config: HtmlConfig, val pageRules: PageRules) {
 
   import FormHtml._
 
@@ -550,6 +550,7 @@ class FormHtml(val config: HtmlConfig) {
             accept-charset='UTF-8'
             method='post'>
           { extraInputs }
+          { timeWaistWarning("reply is") }
           <input type='hidden' id={Inp.Where} name={Inp.Where} value='' />
           <p>
             <label for={Inp.Text}>Your reply:</label><br/>
@@ -625,6 +626,7 @@ class FormHtml(val config: HtmlConfig) {
     val submitBtnText = "Save as "+ userName.openOr("...")
     <form class='dw-f dw-f-ed'>
       { extraInputs /* Or *require* a XSRF token also/instead? */ }
+      { timeWaistWarning("edits are") }
       <div id='dw-ed-tabs'>
         <ul>
           <li><a href='#dw-ed-tab-edit'>Edit</a></li>
@@ -655,4 +657,16 @@ class FormHtml(val config: HtmlConfig) {
     </form>
   }
 
+  def timeWaistWarning(action_is: String): NodeSeq = {
+    import PageRules._
+    pageRules match {
+      case AllOk => Nil
+      case HiddenTalk =>  // COULD fix nice CSS and show details on hover only
+        <div><i>Time waist warning: Your {action_is} shown only to
+        people who explicitly choose to view user interactions.
+        Perhaps no one will ever notice your contributions!
+        </i></div>
+      case Forbidden => assErr("[debiki_error_83kw15]")
+    }
+  }
 }

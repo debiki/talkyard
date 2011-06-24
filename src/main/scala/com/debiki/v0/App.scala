@@ -77,7 +77,7 @@ private[debiki] object App {
           </script>
         </head>
         <body>
-          { debateHtml.layoutDebate() }
+          { debateHtml.layoutDebate(PageRules.AllOk) }
         </body>
       </html>
 

@@ -18,6 +18,9 @@ abstract class Dao {
 
   def load(tenantId: String, debateId: String): Box[Debate]
 
+  def findRulesFor(tenantId: String, debateId: String, userId: String
+                      ): Either[String, PageRules]
+
   def checkRepoVersion(): Box[String]
 
 }
