@@ -291,6 +291,8 @@ class DebateHtml(val debate: Debate) {
     def tryLinkTo(user: User) = {
       val url = config.userLink(user)
       if (url nonEmpty) {
+        SECURITY // `url' is sometimes the email address!!
+        // When signed in @gmail.com, it seems.
         <a class='dw-p-by' href={url}
           rel='nofollow' target='_blank'>{user.name}</a>
       } else {
@@ -560,6 +562,9 @@ class FormHtml(val config: HtmlConfig, val pageRules: PageRules) {
           <p class='dw-user-contrib-license'>
             By clicking <i>{submitButtonText}</i>, you agree to license
             the text you submit under the {ccWikiLicense}.
+            {/* TODO "irrecoverably agree to ... sufficient attribution ...
+            URL in the history/change log page ... name OR alias ...
+            printed version" */}
           </p>
           <div class='dw-submit-set'>
             <input class='dw-fi-cancel' type='button' value='Cancel'/>
