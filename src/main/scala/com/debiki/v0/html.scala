@@ -666,7 +666,6 @@ class FormHtml(val config: HtmlConfig, val pageRules: PageRules) {
         people who explicitly choose to view user interactions.
         Perhaps no one will ever notice your contributions!
         </i></div>
-      case Forbidden => assErr("[debiki_error_83kw15]")
     }
   }
 }

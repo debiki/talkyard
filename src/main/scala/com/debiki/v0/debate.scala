@@ -13,7 +13,7 @@ object Debate {
 
   def empty(id: String) = Debate(id)
 
-  def fromActions(id: String, actions: List[AnyRef]): Debate = {
+  def fromActions(guid: String, actions: List[AnyRef]): Debate = {
     var posts: List[Post] = Nil
     var ratings: List[Rating] = Nil
     var edits: List[Edit] = Nil
@@ -28,7 +28,7 @@ object Debate {
       case x => error(
           "Unknown action type: "+ classNameOf(x) +" [debiki_error_8k3EC]")
     }
-    Debate(id, posts, ratings, edits, editVotes, editsApplied)
+    Debate(guid, posts, ratings, edits, editVotes, editsApplied)
   }
 }
 
