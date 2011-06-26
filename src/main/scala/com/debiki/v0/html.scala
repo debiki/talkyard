@@ -194,11 +194,11 @@ class DebateHtml(val debate: Debate) {
     this
   }
 
-  def layoutDebate(pageRules: PageRules,
+  def layoutDebate(intrsAllowed: IntrsAllowed,
                    vars: LayoutVariables = new LayoutVariables): NodeSeq = {
     this.vars = vars
     this.lastChange = debate.lastChangeDate.map(toIso8601(_))
-    layoutPosts ++ FormHtml(config, pageRules).menus ++ variables
+    layoutPosts ++ FormHtml(config, intrsAllowed).menus ++ variables
   }
 
   private def layoutPosts(): NodeSeq = {
@@ -394,8 +394,8 @@ class DebateHtml(val debate: Debate) {
 
 object FormHtml {
 
-  def apply(config: HtmlConfig, pageRules: PageRules) =
-    new FormHtml(config, pageRules)
+  def apply(config: HtmlConfig, intrsAllowed: IntrsAllowed) =
+    new FormHtml(config, intrsAllowed)
 
   object Reply {
     object InputNames {
@@ -413,7 +413,7 @@ object FormHtml {
 }
 
 
-class FormHtml(val config: HtmlConfig, val pageRules: PageRules) {
+class FormHtml(val config: HtmlConfig, val intrsAllowed: IntrsAllowed) {
 
   import FormHtml._
 
@@ -663,9 +663,9 @@ class FormHtml(val config: HtmlConfig, val pageRules: PageRules) {
   }
 
   def timeWaistWarning(action_is: String): NodeSeq = {
-    import PageRules._
-    pageRules match {
-      case AllOk => Nil
+    import IntrsAllowed._
+    intrsAllowed match {
+      case VisibleTalk => Nil
       case HiddenTalk =>  // COULD fix nice CSS and show details on hover only
         <div><i>Time waist warning: Your {action_is} shown only to
         people who explicitly choose to view user interactions.

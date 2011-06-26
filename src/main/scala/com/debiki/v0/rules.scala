@@ -4,47 +4,93 @@
 
 package com.debiki.v0
 
-// COULD rename this file to info? or meta? or ...
+import Prelude._
 
-/**
- */
-sealed abstract class PageInfo
+// COULD rename this file to info? or meta? or actions?...
 
-object PageInfo {
-
-  /**
-   */
-  case class Info(guid: String, path: String, rules: PageRules
-                     ) extends PageInfo
-
-  /** When looking up a page by guid, if the correct parent folder
-   *  and page name was not specified, a BadPath is returned by the DAO.
-   */
-  case class BadPath(correctPath: String) extends PageInfo
-
-  /**
-   */
-  case object Forbidden extends PageInfo
+object PagePath {
+  sealed abstract class Guid {
+    def value: Option[String]
+  }
+  case class GuidInPath(guid: String) extends Guid {
+    override val value = Some(guid)
+  }
+  case class GuidHidden(guid: String) extends Guid {
+    override val value = Some(guid)
+  }
+  case object GuidUnknown extends Guid {
+    override val value: Option[String] = None
+  }
 }
 
-/**
+import PagePath._
+
+/** Identifies a page, by guid or by path, and knows the path
+ *  component in the URL to the page.
  */
-sealed abstract class PageRules
+case class PagePath(
+  tenantId: String,
+  parent: String,
+  guid: Guid,
+  name: String
+){
+  require(tenantId.nonEmpty)
+  require(parent.startsWith("/"))
+  require(parent.endsWith("/"))
 
-object PageRules {
+  def path: String = guid match {
+    case GuidInPath(g) => parent +"-"+ g +"-"+ name
+    case _ => parent + name
+  }
+}
+
+/** Things an end user can do.
+ */
+sealed abstract class Action
+
+object Action {
+  def fromText(text: String): Action = text match {
+    // COULD find out how to do this automatically in Scala?
+    case "create" => Create
+    case "reply" => Reply
+    case "edit" => Edit
+    case "view" => View
+    case x => Unsupported(x)
+  }
+
+  case object Act extends Action
+  case object Create extends Action
+  case object Reply extends Action
+  case object Edit extends Action
+  case object View extends Action
+  case class Unsupported(whatUnsafe: String) extends Action {
+    override def toString: String = "Unsupported("+ safe(whatUnsafe) +")"
+  }
+}
+
+/** Interactions allowed.
+ *
+ *  Example: If the user is about to post a reply, but is only allowed to do
+ *  HiddenTalk, then s/he will be informed that only a few people will
+ *  see his/her contribution.
+ */
+sealed abstract class IntrsAllowed
+
+object IntrsAllowed {
 
   /**
    */
-  case object AllOk extends PageRules
+  case object VisibleTalk extends IntrsAllowed
 
   /**
    */
-  case object HiddenTalk extends PageRules
+  case object HiddenTalk extends IntrsAllowed
 
-  //case object HiddenFeedback extends PageRules
-  //case object ViewAll extends PageRules
-  //case object ViewHidden extends PageRules
-  //case object ViewArticle extends PageRules
+  //case object HiddenFeedback extends AccessGranted
+  //case object ViewAll extends AccessGranted
+  //case object ViewHidden extends AccessGranted
+  //case object ViewArticle extends AccessGranted
+
 }
 
 // vim: fdm=marker et ts=2 sw=2 tw=80 fo=tcqwn list

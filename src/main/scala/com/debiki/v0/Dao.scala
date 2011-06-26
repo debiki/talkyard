@@ -18,9 +18,10 @@ abstract class Dao {
 
   def load(tenantId: String, debateId: String): Box[Debate]
 
-  def findPageInfo(tenantId: String, parentFolder: String,
-                   pageGuid: String, pageName: String, userId: String
-                   ): Box[PageInfo]
+  def checkPagePath(pathToCheck: PagePath): Box[PagePath]
+
+  def checkAccess(pagePath: PagePath, userId: String, action: Action
+                     ): Option[IntrsAllowed]
 
   def checkRepoVersion(): Box[String]
 
