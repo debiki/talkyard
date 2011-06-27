@@ -9,6 +9,8 @@ import Prelude._
 // COULD rename this file to info? or meta? or actions?...
 
 object PagePath {
+  // COULD include the tenant id in Guid, because that'd simplify params to
+  // Dao, and the tenantId is actually part of the guid.
   sealed abstract class Guid {
     def value: Option[String]
   }
@@ -37,9 +39,14 @@ case class PagePath(
   require(tenantId.nonEmpty)
   require(parent.startsWith("/"))
   require(parent.endsWith("/"))
+  // In Oracle RDBMS, " " is stored instead of "", since Oracle
+  // converts "" to null:
+  require(name != " ")
 
   def path: String = guid match {
-    case GuidInPath(g) => parent +"-"+ g +"-"+ name
+    case GuidInPath(g) =>
+      if (name isEmpty) parent +"-"+ g
+      else parent +"-"+ g +"-"+ name
     case _ => parent + name
   }
 }
