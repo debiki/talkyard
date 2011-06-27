@@ -8,10 +8,11 @@ import net.liftweb.common.Box
  */
 abstract class Dao {
 
-  def create(tenantId: String, debate: Debate): Box[Debate]
+  def create(where: PagePath, debate: Debate): Box[Debate]
 
   def close()
 
+  // COULD use:  save(Guid(tenantId, pageGuid), xs)  instead?
   def save(tenantId: String, debateId: String, x: AnyRef): Box[AnyRef]
 
   def save[T](tenantId: String, debateId: String, xs: List[T]): Box[List[T]]
