@@ -2713,3 +2713,15 @@ resizeRootThread();
    }()); // end Debiki module
 //========================================
 
+
+/* Bug list:
+
+BUG: Another login dialog
+----------------------------------------
+   Click the Log in link to the left.
+   Login @gmail.com.
+   Edit a post.
+   Click Post as <your name>.
+   The login dialog appears! But you just logged in!
+
+*/
