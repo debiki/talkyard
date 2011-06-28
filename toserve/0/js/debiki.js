@@ -2442,6 +2442,8 @@ function makeSvgDrawer() {
   }
 
   return {
+    // DO NOT FORGET to update the fake SVG drawer too!
+    // And test both with and without SVG enabled.
     initRootSvg: initRootSvg,
     $initPostSvg: $initPostSvg,
     $drawPost: $drawPost,
@@ -2509,12 +2511,16 @@ function makeFakeDrawer() {
     }
   }
 
+  function $drawParentsAndTree() {}  // ?? do I need to do something?
+
+  function $drawParents() {}  // ?? do I need to do something?
+
+  function $drawTree() {} // TODO
+
   function $drawPost() {
     // TODO: If any SVG native support: draw arrows to inline threads?
     // Or implement via fake .png arrows?
   }
-
-  function $drawTree() {} // TODO
 
   function drawEverything() {}
 
@@ -2531,6 +2537,8 @@ function makeFakeDrawer() {
     $initPostSvg: $initPostSvg,
     $drawPost: $drawPost,
     $drawTree: $drawTree,
+    $drawParents: $drawParents,
+    $drawParentsAndTree: $drawParentsAndTree,
     drawEverything: drawEverything,
     $highlightOn: $highlightOn,
     $highlightOff: $highlightOff
