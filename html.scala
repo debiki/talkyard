@@ -629,7 +629,10 @@ class FormHtml(val config: HtmlConfig, val intrsAllowed: IntrsAllowed) {
               extraInputs: NodeSeq = Nil) = {
     import Edit.{InputNames => Inp}
     val submitBtnText = "Save as "+ userName.openOr("...")
-    <form class='dw-f dw-f-ed'>
+    <form class='dw-f dw-f-ed'
+          action={config.editAction}
+          accept-charset='UTF-8'
+          method='post'>
       { extraInputs /* Or *require* a XSRF token also/instead? */ }
       { timeWaistWarning("edits are") }
       <div id='dw-ed-tabs'>
@@ -654,6 +657,7 @@ class FormHtml(val config: HtmlConfig, val intrsAllowed: IntrsAllowed) {
       </div>
 
       <div class='dw-submit-set'>
+       {/* License agreement !! */}
        <input type='button' class={Inp.Preview} name={Inp.Preview}
               value='Preview and save ...'/>
        <input type='submit' class='dw-fi-submit' value={submitBtnText}/>
