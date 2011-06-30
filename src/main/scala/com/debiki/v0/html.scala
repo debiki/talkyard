@@ -35,7 +35,7 @@ class HtmlConfig {
 
   /** A function from debate-id and post-id to a react URL.
    */
-  def reactLink(debateId: String, postId: String) = postId +"?act"
+  def reactLink(debateId: String, postId: String) = "?act="+ postId
 
   /** Constructs a URL to more info on a certain user,
    *  adds "http://" if needed.
@@ -542,6 +542,16 @@ class FormHtml(val config: HtmlConfig, val intrsAllowed: IntrsAllowed) {
           </div>
         </form>
       </div>
+
+  def actLinks(pid: String) = {
+    val safePid = safe(pid)  // Prevent xss attacks.
+    // In the future, perhaps match on `intrsAllowed'.
+    <ul>
+     <li><a href={"?reply="+ safePid}>Reply to post</a></li>
+     <li><a href={"?rate="+ safePid}>Rate it</a></li>
+     <li><a href={"?edit="+ safePid}>Suggest edit</a></li>
+    </ul>
+  }
 
   def replyForm(text: String = "", extraInputs: NodeSeq = Nil) = {
       import Reply.{InputNames => Inp}

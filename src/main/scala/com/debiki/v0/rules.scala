@@ -56,14 +56,16 @@ case class PagePath(
 sealed abstract class Action
 
 object Action {
+  /*
   def fromText(text: String): Action = text match {
     // COULD find out how to do this automatically in Scala?
-    case "create" => Create
+    //case "create" => Create  // was renamed to "newpage" in
+                               // debiki-app-lift, Boot.scala
     case "reply" => Reply
     case "edit" => Edit
     case "view" => View
     case x => Unsupported(x)
-  }
+  }*/
 
   case object Act extends Action
   case object Create extends Action
