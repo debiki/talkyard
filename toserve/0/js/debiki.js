@@ -1792,14 +1792,12 @@ function $showEditForm2() {
     });
 
     // When clicking the Save button, open a login dialog, unless logged in.
-    $submitBtn
-        .addClass('dw-login-on-click')  // COULD extract function from this?
-        .click($showLoginSimple)        //
-        .bind('dwEvLoggedInOut', function(event, oldUserProps, newUserProps) {
+    $submitBtn.each($loginOnClick(
+        function(event, oldUserProps, newUserProps) {
       var text = newUserProps ?  // if absent, user logged out
           'Save as '+ newUserProps.name : 'Save as ...';  // i18n
       $(this).val(text);
-    });
+    }));
 
     // Ajax-post edit on submit.
     $editForm.submit(function() {
@@ -2713,15 +2711,3 @@ resizeRootThread();
    }()); // end Debiki module
 //========================================
 
-
-/* Bug list:
-
-BUG: Another login dialog
-----------------------------------------
-   Click the Log in link to the left.
-   Login @gmail.com.
-   Edit a post.
-   Click Post as <your name>.
-   The login dialog appears! But you just logged in!
-
-*/
