@@ -1671,7 +1671,7 @@ function $showEditForm2() {
   // COULD move function to debiki-lift.js:
   var editFormLoader = function(debateId, postId, complete) {
     // see comments in setReplyFormLoader above on using datatype text
-    $.get('+'+ postId +'?edit', function(editFormText) {
+    $.get('?edit='+ postId, function(editFormText) {
       // Concerning filter(…): [0] and [2] are text nodes.
       var $editForm = $(editFormText).filter('form');
       makeIdsUniqueUpdateLabels($editForm, '#dw-ed-tab-');
