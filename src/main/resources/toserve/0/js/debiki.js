@@ -1,7 +1,7 @@
 // vim: fdm=marker et ts=2 sw=2 tw=80 fo=tcqwn list
 
 // In this file:
-// - jQuery extension functinos, prefixed with "dw_" to avoid name clashes
+// - jQuery extension functions, prefixed with "dw" to avoid name clashes
 // - The implementation of the Debiki module
 // - A jQuery onload handler
 
@@ -60,15 +60,15 @@ function markdownToSafeHtml(markdownSrc, hostAndPort) {
 // jQuery object extensions
 //----------------------------------------
 
-jQuery.fn.dw_disable = function() {
+jQuery.fn.dwDisable = function() {
   return this.each(function(){ jQuery(this).attr('disabled', 'disabled'); });
 };
 
-jQuery.fn.dw_enable = function() {
+jQuery.fn.dwEnable = function() {
   return this.each(function(){ jQuery(this).removeAttr('disabled'); });
 };
 
-jQuery.fn.dw_postModTime = function() {
+jQuery.fn.dwLastChange = function() {
   var maxDate = '0';
   this.children('.dw-p-hdr').find('.dw-date').each(function(){
     var date = jQuery(this).text();  // creation date or last modification date
@@ -268,7 +268,7 @@ function $threadClose() {
   if (!myLastVersion) return;
   var newPosts = posts.filter(function(index){ // BUG?…
     //… relied on posts = $('.debiki .dw-p-bdy') but use '*.dw-p' instead?
-    return $(this).dw_postModTime() > myLastVersion;
+    return $(this).dwLastChange() > myLastVersion;
   })
   newPosts.closest('.dw-t').addClass('dw-post-new');
   // TODO: sometimes .dw-post-edited instead of -new
@@ -510,9 +510,9 @@ function updateDebate(newDebateHtml) {
       var $oldThis = $curDebate.find('#'+ this.id);
       var isNewThread = $oldThis.length === 0;
       var isSubThread = !$oldParent.length;
-      var isPostEdited = !isNewThread &&
-              $oldThis.children('.dw-p').dw_postModTime() <
-              $(this).children('.dw-p').dw_postModTime();
+      var oldDate = $oldThis.children('.dw-p').dwLastChange();
+      var newDate = $(this).children('.dw-p').dwLastChange();
+      var isPostEdited = !isNewThread && newDate > oldDate;
       // TODO: Some more jQuery should be registered below, e.g. resizing.
       // TODO: Inline threads.
       if (isPostEdited) {
@@ -520,6 +520,8 @@ function updateDebate(newDebateHtml) {
           .replaceAll($oldThis.children('.dw-p'))
           .addClass('dw-post-edited'); // outlines it, COULD rename CSS class
         // BUG? New child threads aren't added?
+        // BUG the inline menu won't appear on the new post because:
+        // BUG the dw-p-bdy contents won't be wrapped in .dw-p-bdy-blk:s!
       }
       else if (isNewThread && !isSubThread) {
         // (A thread that *is* a sub-thread of another new thread, is added
@@ -539,7 +541,10 @@ function updateDebate(newDebateHtml) {
         return;
       // BUG $initPost is never called on child threads (isSubThread true).
       // So e.g. the <a ... class="dw-as">React</a> link isn't replaced.
+      // BUG <new-post>.click($showReplyForm) won't happen
       $('> .dw-p', this).each($initPost);
+      // BUG if isPostEdited, then .dw-p has been moved from `this' to
+      // the actual debate DOM. (so $initPost isn't called!)
     });
 }
 
@@ -858,9 +863,9 @@ function $showInlineActionMenu(event) {
     textStart: sel.anchorNode.data.substr(sel.anchorOffset, 32),
     textEnd: sel.focusNode.data.substr(sel.focusOffset, 32),
     elem: $(focusNonText).closest('.dw-p-bdy-blk')
-        .dw_bugIfEmpty('debiki_error_6u5962rf3')
+        .dwBugIfEmpty('debiki_error_6u5962rf3')
         .next('.dw-i-ts')
-        .dw_bugIfEmpty('debiki_error_17923xstq')
+        .dwBugIfEmpty('debiki_error_17923xstq')
   };
 
 
@@ -1559,7 +1564,7 @@ function $showRatingForm() {
         slideAwayRemove($rateForm);
       }, 'html');
 
-    $rateForm.find('input').dw_disable();
+    $rateForm.find('input').dwDisable();
     return false;
   });
 
@@ -1633,7 +1638,7 @@ function $showReplyForm(event, opt_where) {
           slideAwayRemove($replyFormParent);
         });
       // Disable the form; it's been submitted.
-      $replyForm.find('input').dw_disable();
+      $replyForm.find('input').dwDisable();
       return false;
     });
 
@@ -1812,7 +1817,7 @@ function $showEditForm2() {
         updateDebate(newDebateHtml);
       });
       // Disable the form; it's been submitted.
-      $editForm.find('input').dw_disable();
+      $editForm.find('input').dwDisable();
       return false;
     });
 
@@ -2562,7 +2567,7 @@ function bugIf(test, errorGuid) {
   if (test) throw new Error('Internal error ['+ errorGuid +']');
 }
 
-jQuery.fn.dw_bugIfEmpty = function(errorGuid) {
+jQuery.fn.dwBugIfEmpty = function(errorGuid) {
   bugIf(!this.length, errorGuid);
   return this;
 };
