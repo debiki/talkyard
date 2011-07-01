@@ -69,8 +69,13 @@ jQuery.fn.dw_enable = function() {
 };
 
 jQuery.fn.dw_postModTime = function() {
-  return this.find(
-      '.dw-post-info .dw-last-changed .dw-date').attr('title');
+  var maxDate = '0';
+  this.children('.dw-p-hdr').find('.dw-date').each(function(){
+    var date = jQuery(this).text();  // creation date or last modification date
+    if (date > maxDate)
+      maxDate = date;
+  });
+  return maxDate;
 };
 
 //----------------------------------------
@@ -1799,13 +1804,12 @@ function $showEditForm2() {
       $(this).val(text);
     }));
 
-    // Ajax-post edit on submit.
+    // Ajax-post edit on submit, and update the page with all recent changes.
     $editForm.submit(function() {
       Settings.editFormSubmitter($editForm, debateId, postId,
-          function(dummyHtml){
-        // COULD merge in the data from the server into the debate?
-        //updateDebate(newDebateHtml); ?
+          function(newDebateHtml){
         slideAwayRemove($editForm);
+        updateDebate(newDebateHtml);
       });
       // Disable the form; it's been submitted.
       $editForm.find('input').dw_disable();
