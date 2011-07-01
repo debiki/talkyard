@@ -510,18 +510,20 @@ function updateDebate(newDebateHtml) {
       var $oldThis = $curDebate.find('#'+ this.id);
       var isNewThread = $oldThis.length === 0;
       var isSubThread = !$oldParent.length;
-      var oldDate = $oldThis.children('.dw-p').dwLastChange();
-      var newDate = $(this).children('.dw-p').dwLastChange();
+      var $oldPost = $oldThis.children('.dw-p');
+      var $newPost = $(this).children('.dw-p');
+      var oldDate = $oldPost.dwLastChange();
+      var newDate = $newPost.dwLastChange();
       var isPostEdited = !isNewThread && newDate > oldDate;
       // TODO: Some more jQuery should be registered below, e.g. resizing.
       // TODO: Inline threads.
       if (isPostEdited) {
-        $(this).children('.dw-p')
-          .replaceAll($oldThis.children('.dw-p'))
+        $newPost
+          .replaceAll($oldPost)
           .addClass('dw-post-edited'); // outlines it, COULD rename CSS class
-        // BUG? New child threads aren't added?
-        // BUG the inline menu won't appear on the new post because:
-        // BUG the dw-p-bdy contents won't be wrapped in .dw-p-bdy-blk:s!
+        // BUG? New/edited child posts aren't added? Can't simply replace
+        // them with newer versions — what would then happen if the user
+        // has opened an edit form for those posts?
       }
       else if (isNewThread && !isSubThread) {
         // (A thread that *is* a sub-thread of another new thread, is added
@@ -542,9 +544,7 @@ function updateDebate(newDebateHtml) {
       // BUG $initPost is never called on child threads (isSubThread true).
       // So e.g. the <a ... class="dw-as">React</a> link isn't replaced.
       // BUG <new-post>.click($showReplyForm) won't happen
-      $('> .dw-p', this).each($initPost);
-      // BUG if isPostEdited, then .dw-p has been moved from `this' to
-      // the actual debate DOM. (so $initPost isn't called!)
+      $newPost.each($initPost);
     });
 }
 
