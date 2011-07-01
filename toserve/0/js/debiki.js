@@ -524,6 +524,7 @@ function updateDebate(newDebateHtml) {
         // BUG? New/edited child posts aren't added? Can't simply replace
         // them with newer versions — what would then happen if the user
         // has opened an edit form for those posts?
+        $newPost.each($initPost);
       }
       else if (isNewThread && !isSubThread) {
         // (A thread that *is* a sub-thread of another new thread, is added
@@ -538,13 +539,14 @@ function updateDebate(newDebateHtml) {
               // TODO Highlight arrows too? To new replies / one's own reply.
           .prependTo($res)
           .each(SVG.$drawPost);  // TODO? use drawTree instead?
+        $newPost.each($initPostsThread);
       }
       else
         return;
+
       // BUG $initPost is never called on child threads (isSubThread true).
       // So e.g. the <a ... class="dw-as">React</a> link isn't replaced.
       // BUG <new-post>.click($showReplyForm) won't happen
-      $newPost.each($initPost);
     });
 }
 
@@ -570,19 +572,36 @@ var tagDog = (function(){
 
 // ------- Posts
 
+// Inits a post and its parent thread.
 // Makes posts resizable, activates mouseenter/leave functionality,
 // draws arrows to child threads, etc.
 // Call on posts.
-function $initPost(){
+function $initPostsThread() {
   // COULD rewrite-rename to initThread, which handles whole subtrees at once.
   // Then, $(".debiki .dw-p").each($initPost)
   // would be changed to $('#dw-root').each($initThread).
 
   var $thread = $(this).closest('.dw-t');
+
+  // Add action buttons.
   $thread.find('> .dw-as').replaceWith(
       $('#dw-action-menu > .dw-a')
         .clone()
         .css('visibility', 'hidden'));
+  // {{{ On delegating events for reply/rate/edit.
+  // Placing a jQuery delegate on e.g. .debiki instead, entails that
+  // these links are given excessively low precedence on Android:
+  // on a screen touch, any <a> nearby that has a real click event
+  // is clicked instead of the <a> with a delegate event. The reply/
+  // reply/rate/edit links becomes virtually unclickable (if event
+  // delegation is used instead). }}}
+  $thread.children('.dw-a-reply').click($showReplyForm);
+  $thread.children('.dw-a-rate').click($showRatingForm);
+  $thread.children('.dw-a-edit').click($showEditSuggestions);
+
+  // Open/close threads if the thread-info div is clicked.
+  $thread.children('.dw-z').click($threadClose);
+
   // Initially, hide edit suggestions.
   $thread.children('.dw-ess, .dw-a-edit-new').hide();
 
@@ -607,6 +626,11 @@ function $initPost(){
   // Add .dw-mine class if this post was written by this user.
   $thread.each($markIfMine);
 
+  $initPost.apply(this);
+}
+
+// Inits a post, not its parent thread.
+function $initPost() {
   $(this)
       .each($placeInlineMarks)
       .each($placeInlineThreads)
@@ -2626,11 +2650,7 @@ function buildTagFindId(html, id) {
 
 $('body').addClass('dw-pri');
 
-// Open/close threads if the thread-info div is clicked.
-$('.debiki').delegate('.dw-z', 'click', $threadClose);
-
-
-$(".debiki .dw-p").each($initPost);
+$(".debiki .dw-p").each($initPostsThread);
 
 
 initLoginResultForms();
@@ -2666,18 +2686,12 @@ $('.debiki').delegate(
 // Hide all action forms, since they will be slided in.
 $('#dw-hidden-templates .dw-fs').hide();
 
-$('.debiki').delegate('.dw-a-rate', 'click', $showRatingForm);
-
 // Show more rating tags when clicking the "More..." button.
 rateFormTemplate.find('.dw-show-more-rat-tags').click($showMoreRatingTags);
 
 
-$('.debiki .dw-a-reply').click($showReplyForm);
 
-
-$('.debiki').delegate('.dw-a-edit', 'click', $showEditSuggestions);
-
-// Show a change diff instead of the post text, when hovering an edit 
+// Show a change diff instead of the post text, when hovering an edit
 // suggestion.
 $('.debiki')
     .delegate('.dw-es', 'mouseenter', function(){
