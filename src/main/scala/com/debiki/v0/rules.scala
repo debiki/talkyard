@@ -49,6 +49,11 @@ case class PagePath(
       else parent +"-"+ g +"-"+ name
     case _ => parent + name
   }
+
+  /** True iff path ends with a `/'. Then this is a path to a  folder or
+   *  a folder's index page (which is a page with an empty name).
+   */
+  def isFolderPath = path endsWith "/"
 }
 
 /** Things an end user can do.
