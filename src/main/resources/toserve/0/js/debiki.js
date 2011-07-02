@@ -605,6 +605,8 @@ function $initPostsThread() {
   // Initially, hide edit suggestions.
   $thread.children('.dw-ess, .dw-a-edit-new').hide();
 
+  var $paras = $thread.filter(':not(.dw-depth-0)').children('.dw-p');
+
   // Make replies to the root thread resizable horizontally.
   // (But skip inline replies; they expand eastwards regardless.)
   // $makeEastResizable must be called before $makePostResizable,
@@ -613,14 +615,19 @@ function $initPostsThread() {
   // and finds the wrong resizable stuff,
   // if the *inner* tag is made resizable before the *outer* tag.
   // (Note that $makePostResizable is invoked on a $thread *child*.)
-  $thread.filter('.dw-depth-1:not(.dw-i-t)').each($makeEastResizable);
+  //
+  // However for touch devises, don't enable resizing of posts: it doesn't
+  // work, and the resize handles steal touch events from buttons nearby.
+  if (!Modernizr.touch) {
+    $thread.filter('.dw-depth-1:not(.dw-i-t)').each($makeEastResizable);
+    $paras.each($makePostResizable);
+  }
 
   // Show actions when hovering post.
   // But always show the leftmost Reply, at depth-0, that creates a new column.
   // (Better avoid delegates for frequent events such as mouseenter.)
-  $thread.filter(':not(.dw-depth-0)').children('.dw-p')
-    .mouseenter($showActions)
-    .each($makePostResizable);
+  $paras.mouseenter($showActions)
+
   updateAuthorInfo($thread, $.cookie('dwUserName'));
 
   // Add .dw-mine class if this post was written by this user.
