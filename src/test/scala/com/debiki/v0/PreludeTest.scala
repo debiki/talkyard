@@ -24,4 +24,14 @@ class PreludeTest extends SpecificationWithJUnit {
        stripStartEndBlanks("  xyz  ") must_== "xyz" }
   }
 
+  "nextRandomString" should {
+    "be 10 chars and contain no vowels but `uy'" >> {
+      for (i <- 1 to 50) {
+        val s = nextRandomString
+        // Vowels aoei forbidden, and only lowercase chars (+ numbers) allowed.
+        ("aoeiABCDEFGHIJKLMNOPQRSTUVWXYZ" intersect s) must_== ""
+        s.length must_== 10
+      }
+    }
+  }
 }

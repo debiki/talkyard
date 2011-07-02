@@ -89,8 +89,28 @@ object Prelude {
   // Is thread safe.
   private val _random = new java.security.SecureRandom();
 
+  // COULD split this in a random string function, and other id generation
+  // functions, with string length adjusted, depending on how the random
+  // string will be used.
   def nextRandomString(): String = {  // TODO exclude vowels, so no bad words
-    new java.math.BigInteger(130, _random).toString(36); // 0...9, a...z
+    var s = new java.math.BigInteger(130, _random).toString(36); // 0..9, a..z
+    // Remove vowels to reduce the possibility of ugly bad words.
+    // Keep vowels "uy" though, so there are 32 chars in total.
+    // "uy" are the least common vowels.
+    s = s filterNot ("aoei" contains _)
+    s = s take 10 // this'll do for now, the database will ensure
+                  // uniqueness? If I use a nosql database, then perhaps
+                  // use 15 instead?  (32^10 is huge: 1 million billions!)
+    s
+    /*
+    // Or use Apache Commons, org.apache.commons.lang.RandomStringUtils:
+    RandomStringUtils.random(10 /*count*/, 0 /*start*/, 32 /*end*/,
+      false /*letters only*/, false /*numbers only*/,
+      // Characters to pick from. Alphanumeric, but all vowels except for "uy"
+      // removed. This results in 32 characters, and (since most vowels are
+      // removed) virtually no possibility of ugly words, like "yourfatrat".
+      "bcdfghjklmnpqrstuvwxyz0123456789", _random)
+    */
   }
 
 }
