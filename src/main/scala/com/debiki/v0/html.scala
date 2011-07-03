@@ -383,7 +383,8 @@ class DebateHtml(val debate: Debate) {
       if (post.id == Debate.RootPostId) Nil // actions already added by caller
       else <a class='dw-as' href={config.reactLink(debate.guid, post.id)}
             >React</a> ) ++
-    { editSuggestions }
+     { editSuggestions // could skip for now, too complicated for the end user
+      }
   }
 
   private def variables: NodeSeq =
@@ -450,6 +451,8 @@ class FormHtml(val config: HtmlConfig, val intrsAllowed: IntrsAllowed) {
         <a class='dw-a dw-a-rate'>Rate</a>
         <a class='dw-a dw-a-edit'>Edit</a>
       </div>
+      // Could skip <a>Edit</a> for now, and teach people to
+      // use the inline menu instead?
 
   /**
    *  The login form below is based on this JavaScript OpenID Selector
