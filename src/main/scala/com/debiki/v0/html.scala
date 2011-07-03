@@ -362,15 +362,19 @@ class DebateHtml(val debate: Debate) {
         <a class='dw-a dw-a-edit-new'>Suggest edit</a>
       }
 
+    // COULD find a better name for the two data-p-by-...-sh attrs below.
+    // Also, perhaps they should be part of the .dw-p-by <a>?
     // the – on the next line is an `en dash' not a minus
     <a class='dw-z'>[–]</a>
-    <div id={cssPostId} class={"dw-p" + cutS}>
+    <div id={cssPostId} class={"dw-p" + cutS}
+         data-p-by-email-sh={author.emailSaltHash}
+         data-p-by-ip-sh={post.ipSaltHash}>
       <div class='dw-p-hdr'>
         By { tryLinkTo(author) },
         <abbr class='dw-p-at dw-date'
             title={dateCreated}>{dateCreated}</abbr>{
-            ratsList }{
-            editInfo } 
+        ratsList }{
+        editInfo }
       </div>
       <div class='dw-p-bdy'>
         { xmlText }

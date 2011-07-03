@@ -90,6 +90,7 @@ abstract class User(
   def name: String
   def website: String
   def email: String
+  def emailSaltHash: String = saltAndHashEmail(email)
 }
 
 class UserNoLogin(id: String) extends User(id) {

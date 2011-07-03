@@ -113,4 +113,24 @@ object Prelude {
     */
   }
 
+  // This isn't really a secret salt. A secret salt should be kept secret
+  // in the database, fetched via Dao.secretSalt and specified via useSalt().
+  private var _hashSalt = "9k2xIao_"
+
+  /** Sets the salt used when hashing (no related to the random numbers). */
+  def setHashSalt(salt: String) { _hashSalt = salt }
+
+  def saltAndHash(hashLength: Int)(text: String): String = {
+    val saltAndText = _hashSalt + text
+    // hash(saltAndText)
+    saltAndText take hashLength  // SECURITY for now, don't hash
+                                            // (easier to debug unhashed)
+  }
+
+  val hashLengthEmail = 20
+  val hashLengthIp = 20
+
+  def saltAndHashEmail = saltAndHash(hashLengthEmail) _
+  def saltAndHashIp = saltAndHash(hashLengthIp) _
+
 }

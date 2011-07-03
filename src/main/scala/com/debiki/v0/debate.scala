@@ -412,7 +412,9 @@ case class Post(
    *  specifies where in the parent post it is to be placed.
    */
   where: Option[String] = None
-)
+){
+  def ipSaltHash: String = saltAndHashIp(ip)
+}
 
 case class Edit(
   id: String,
