@@ -1333,6 +1333,7 @@ function initLoginResultForms() {
 
 function initLoginSimple() {
   var $login = $('#dw-fs-login-simple');
+  var $loginForm = $login.find('form');
   $login.find('.dw-fi-submit').hide();  // don't show before name known
   $login.dialog({
     autoOpen: false,
@@ -1347,15 +1348,12 @@ function initLoginSimple() {
         $(this).dialog('close');
       },
       OK: function() {
-        setUserPropsOrThrow({  // throws on invalid data
-          name: $login.find('#dw-fi-reply-author').val(),
-          email: $login.find('#dw-fi-reply-mail').val(),
-          website: $login.find('#dw-fi-reply-website').val()
-        });
-        // We won't get here if the name or email is invalid.
+        // COULD do javascript input validation. The server also validates
+        // inputs, but doing it here too could avoid a roundtrip.
+        // COULD show a "Logging in..." message, the roundtrip
+        // might take a second if the user is far away?
         $(this).dialog('close');
-        // click() instead of submit() skips the custom submit handler, weird?
-        continueAfterLoginOnClick();
+        $loginForm.submit();
       }
     },
     close: function() {
@@ -1363,6 +1361,21 @@ function initLoginSimple() {
       // allFields.val('').removeClass('ui-state-error');
     }
   });
+
+  $loginForm.submit(function() {
+    var postData = $loginForm.serialize();
+    // COULD handle a failed request, e.g. 401 in case the server
+    // considers the email corrupt?
+    $.post($loginForm.attr("action"), postData, function() {
+      // COULD elliminate this dupl code, see Debiki.handleLoginResponse.
+      // User info should now be available in cookies, so:
+      updateUserPropsHtml();
+      showLoginOkay();
+      continueAfterLoginOnClick();
+    }, 'html');
+    return false;
+  });
+
   $login.find('.dw-a-login-openid')
       .button().click($showLoginOpenId);
 }
