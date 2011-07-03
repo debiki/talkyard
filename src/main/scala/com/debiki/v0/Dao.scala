@@ -26,4 +26,8 @@ abstract class Dao {
 
   def checkRepoVersion(): Box[String]
 
+  /** Used as salt when hashing e.g. email and IP, before the hash
+   *  is included in HTML. */
+  def secretSalt(): String
+
 }
