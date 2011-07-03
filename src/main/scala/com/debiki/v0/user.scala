@@ -103,8 +103,8 @@ class UserNoLogin(id: String) extends User(id) {
   }
   def emailHash = part(1)
   override def name = part(2)
-  override def website = part(3)
-  override def email = part(4)
+  override def website = part(4)
+  override def email = part(3)
 }
 
 
