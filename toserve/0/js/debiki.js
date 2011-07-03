@@ -10,14 +10,16 @@
 
 /* {{{ Misc naming notes
 
- dwUserName:  COULD rename to dwCoUserName — "Co" would mean cookie?
+ dwCoUserName:
   "dw" is a prefix, avoids name clashes.
-  "Co" ... would mean "Cookie", if added.
+  "Co" means "Cookie".
   "UserName" is the cookie name.
 
  dwEvLoggedInOut:
   "Ev" means "event".
   "LoggedInOut" is the event.
+
+ So you can do: grep dwCo, grep dwEv
 
 }}}*/
 
@@ -628,7 +630,7 @@ function $initPostsThread() {
   // (Better avoid delegates for frequent events such as mouseenter.)
   $paras.mouseenter($showActions)
 
-  updateAuthorInfo($thread, $.cookie('dwUserName'));
+  updateAuthorInfo($thread, $.cookie('dwCoUserName'));
 
   // Add .dw-mine class if this post was written by this user.
   $thread.each($markIfMine);
@@ -1150,10 +1152,10 @@ function syncUserName($form) {
   // Match on the start of the id, since makeIdsUniqueUpdateLabels might
   // have appended a unique suffix.
   var $nameInput = $form.find("input[id^='dw-fi-reply-author']");
-  $nameInput.val($.cookie('dwUserName') || 'Anonymous');
+  $nameInput.val($.cookie('dwCoUserName') || 'Anonymous');
   $nameInput.blur(function(){
       var name = $nameInput.val();
-      $.cookie('dwUserName', name);
+      $.cookie('dwCoUserName', name);
       $('.debiki .dw-t').each(function(){
           updateAuthorInfo($(this), name); });
     });
@@ -1165,7 +1167,7 @@ function updateAuthorInfo($post, name) {
 }
 
 function $markIfMine() {
-  updateAuthorInfo($(this), $.cookie('dwUserName'));
+  updateAuthorInfo($(this), $.cookie('dwCoUserName'));
 }
 
 function updateUserPropsHtml() {  // COULD rename to fireLoggedInOut ?
@@ -1188,9 +1190,9 @@ function updateUserPropsHtml() {  // COULD rename to fireLoggedInOut ?
 function setUserPropsOrThrow(propsUnsafe, sanitize) {
   if (!propsUnsafe) {
     // Clear props, fire dwEvLoggedInOut event and return.
-    $.cookie('dwUserName', null);
-    $.cookie('dwUserEmail', null);
-    $.cookie('dwUserWebsite', null);
+    $.cookie('dwCoUserName', null);
+    $.cookie('dwCoUserEmail', null);
+    $.cookie('dwCoUserUrl', null);
     $('#dw-login-info').hide();
     $('#dw-a-logout').hide();
     $('#dw-a-login').show();
@@ -1216,9 +1218,9 @@ function setUserPropsOrThrow(propsUnsafe, sanitize) {
   }
 
   var path = {path: '/'};
-  $.cookie('dwUserName', propsSafe.name, path);
-  $.cookie('dwUserEmail', propsSafe.email, path);
-  if (propsSafe.website) $.cookie('dwUserWebsite', propsSafe.website, path);
+  $.cookie('dwCoUserName', propsSafe.name, path);
+  $.cookie('dwCoUserEmail', propsSafe.email, path);
+  if (propsSafe.website) $.cookie('dwCoUserUrl', propsSafe.website, path);
 
   $('#dw-login-info').show().find('.dw-login-name').text(propsSafe.name);
   $('#dw-a-logout').show();
@@ -1239,12 +1241,12 @@ function setUserPropsOrThrow(propsUnsafe, sanitize) {
 // Returns user properties: {name, email, website}, but false iff the name
 // or email address is unknown.
 function getUserProps() {  // XSS ensure server sanitizes cookies?
-  var name = $.cookie('dwUserName');
-  var email = $.cookie('dwUserEmail');
+  var name = $.cookie('dwCoUserName');
+  var email = $.cookie('dwCoUserEmail');
   return name && email ? {
     name: name,
     email: email,
-    website: $.cookie('dwUserWebsite')
+    website: $.cookie('dwCoUserUrl')
   } : false;
 }
 
@@ -1545,7 +1547,7 @@ function $showRatingForm() {
 
   // Set user name input.
   $rateForm.find("input[name='dw-fi-by']").val(
-      $.cookie('dwUserName') || 'Anonymous');
+      $.cookie('dwCoUserName') || 'Anonymous');
 
   // Ajax-post ratings on submit.
   //  - Disable form until request completed.
@@ -2718,9 +2720,10 @@ initCreateForm();
 // to the name of the logged in user, everywhere. This needs to be done
 // in JavaScript, cannot be done only server side — because when the user
 // logs in/out using JavaScript, and uses the browser's *back* button to
-// return to an earlier page, that page won't be reloaded, but this
-// javascript code updates the page to take into account that the user name
-// changed (since the user logged in/out).
+// return to an earlier page, that page might not be fetched again
+// from the server, but this javascript code updates the page to take
+// into account that the user name (and related cookies) has changed
+// (since the user logged in/out).
 // Do this when everything has been inited, so all dwEvLoggedInOut event
 // listeners have been registered. }}}
 updateUserPropsHtml();
