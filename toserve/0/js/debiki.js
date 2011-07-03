@@ -1813,7 +1813,6 @@ function $showEditForm2() {
 
     $editForm.tabs({
       selected: 0,
-      event: 'mouseover',
       show: function(event, ui) {
         $editForm.each($showPreviewBtnHideSave);
 
