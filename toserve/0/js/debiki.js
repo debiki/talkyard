@@ -601,6 +601,9 @@ function $initPostsThread() {
   $thread.children('.dw-a-rate').click($showRatingForm);
   $thread.children('.dw-a-edit').click($showEditSuggestions);
 
+  // For the root thread.
+  $thread.children('.dw-hor-a').children('.dw-a-reply').click($showReplyForm);
+
   // Open/close threads if the thread-info div is clicked.
   $thread.children('.dw-z').click($threadClose);
 
