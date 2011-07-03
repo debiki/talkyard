@@ -101,8 +101,11 @@ case class Debate (
 
   def post(id: String): Option[Post] = postsById.get(id)
 
-  def vipo(postId: String): ViPo =
-    new ViPo(this, post(postId).getOrElse(error("[debiki_error_3krtEK]")))
+  def vipo_!(postId: String): ViPo =
+    vipo(postId).getOrElse(error("[debiki_error_3krtEK]"))
+
+  def vipo(postId: String): Option[ViPo] =
+    post(postId).map(new ViPo(this, _))
 
   // -------- Ratings
 
