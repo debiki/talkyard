@@ -860,7 +860,8 @@ function $hideInlineActionMenu(event) {
 // Opens a menu with Inline Reply and Edit endries.
 function $showInlineActionMenu(event) {
   var $menu;
-  if ($(event.target).closest('.dw-fs').length) {
+  var $target = $(event.target);
+  if ($target.closest('.dw-fs').length) {
     // A form was clicked. Ignore click.
     return;
   }
@@ -908,11 +909,18 @@ function $showInlineActionMenu(event) {
         .dwBugIfEmpty('debiki_error_17923xstq')
   };
 
+  // Entitle the edit button `Suggest Edit' or `Edit', depending on
+  // whether or not it's the user's post.
+  var $post = $target.closest('.dw-p');
+  var postEmailSH = $post.attr('data-p-by-email-sh');
+  var userEmailSH = $.cookie('dwCoUserEmailSH');
+  var editTitle = userEmailSH === postEmailSH ?  // email hash comparison
+      'Edit' : '<i>Suggest</i> Edit'
 
   // Open a menu, with Edit, Reply and Cancel buttons. CSS: '-i' means inline.
   $menu = $(  // TODO i18n
       '<ul class="dw-as-inline">' +
-        '<li><a class="dw-a-edit-i">Edit</a></li>' +
+        '<li><a class="dw-a-edit-i">'+ editTitle +'</a></li>' +
         '<li><a class="dw-a-reply-i">Reply inline</a></li>' +
         //'<li><a class="dw-a-mark-i">Mark</a></li>' + // COULD implement
       '</ul>');
@@ -923,7 +931,7 @@ function $showInlineActionMenu(event) {
   // northeast/nw/se/sw, to click the relevant button (if there are
   // <= 4 menu buttons). — no, then a double click causes a button click,
   // instead of selecting a word.
-  var $thread = $(event.target).closest('.dw-t');
+  var $thread = $post.closest('.dw-t');
   var threadOfs = $thread.offset();
   $thread.append($menu);
   var menuHeight = $menu.outerHeight(true);  // after append
@@ -1867,6 +1875,10 @@ function $showEditForm2() {
       Settings.editFormSubmitter($editForm, debateId, postId,
           function(newDebateHtml){
         slideAwayRemove($editForm);
+        // If the edit was a *suggestion* only, the post body has not been
+        // changed. Unless we make it visible again, it'll remain hidden
+        // because updateDebate ignores it (since it hasn't changed).
+        $postBody.show();
         updateDebate(newDebateHtml);
       });
       // Disable the form; it's been submitted.
