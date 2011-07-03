@@ -28,7 +28,8 @@ class HtmlConfig {
   def replyAction = ""
   def rateAction = ""
   def editAction = ""
-  def loginAction = ""
+  def loginActionSimple = ""
+  def loginActionOpenId = ""
   def loginOkAction = ""
   def loginFailedAction = ""
   def logoutAction = ""
@@ -453,7 +454,7 @@ class FormHtml(val config: HtmlConfig, val intrsAllowed: IntrsAllowed) {
    */
   def loginFormSimple =
       <div class='dw-fs' id='dw-fs-login-simple' title='Who are you?'>
-        <form action={config.loginAction} method='post'>
+        <form action={config.loginActionSimple} method='post'>
           <div id='dw-login'>
            <div class='dw-login-a-wrap'>
             <a class='dw-a dw-a-login-openid'>Log in</a>
@@ -461,22 +462,22 @@ class FormHtml(val config: HtmlConfig, val intrsAllowed: IntrsAllowed) {
            </div>
            <div class='dw-login-fields'>
             <div>
-             <label for='dw-fi-reply-author'>Name</label><br/>
-             <input id='dw-fi-reply-author' type='text' size='40' maxlength='100'
-                  name='dw-fi-by' value='Anonymous'/>
+             <label for='dw-fi-login-name'>Name</label><br/>
+             <input id='dw-fi-login-name' type='text' size='40' maxlength='100'
+                  name='dw-fi-login-name' value='Anonymous'/>
              <br/>
             </div>
             <div>
-             <label for='dw-fi-reply-mail'>Email</label><br/>
-             <input id='dw-fi-reply-mail' type='text' size='40' maxlength='100'
-                  name='dw-fi-reply-mail' value=''/><br/>
+             <label for='dw-fi-login-email'>Email</label><br/>
+             <input id='dw-fi-login-email' type='text' size='40'
+                  maxlength='100' name='dw-fi-login-email' value=''/><br/>
              <!-- <span class='edit-field-overlay'
                 >required, but never shown</span> -->
             </div>
             <div>
-             <label for='dw-fi-reply-website'>Website</label><br/>
-             <input id='dw-fi-reply-website' type='text' size='40' maxlength='200'
-                  name='dw-fi-reply-website' value=''/><br/>
+             <label for='dw-fi-login-url'>Website</label><br/>
+             <input id='dw-fi-login-url' type='text' size='40' maxlength='200'
+                  name='dw-fi-login-url' value=''/><br/>
              <!-- COULD add tabindex='...' -->
             </div>
            </div>
@@ -487,7 +488,7 @@ class FormHtml(val config: HtmlConfig, val intrsAllowed: IntrsAllowed) {
   def loginFormOpenId =
       <div class='dw-fs' id='dw-fs-openid-login'
             title="Sign In or Create New Account">
-        <form action={config.loginAction} method='post' id='openid_form'>
+        <form action={config.loginActionOpenId} method='post' id='openid_form'>
           <input type='hidden' name='action' value='verify' />
           <div id='openid_choice'>
             <p>Please click your account provider:</p>
