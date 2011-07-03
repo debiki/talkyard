@@ -15,6 +15,10 @@
   "Co" means "Cookie".
   "UserName" is the cookie name.
 
+ dwCoEmailSH:
+  "SH" means "salted and hashed", that is, no one can find out what is
+  the email address, not even via dictionary attacks or rainbow tables.
+
  dwEvLoggedInOut:
   "Ev" means "event".
   "LoggedInOut" is the event.
