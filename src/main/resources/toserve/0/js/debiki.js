@@ -1202,7 +1202,7 @@ function fireLogout() {
   var oldUserProps = undefined; // for now
   $('.dw-login-on-click')
       .click($showLoginSimple)
-      .trigger('dwEvLoggedInOut', [oldUserProps, undefined]);
+      .trigger('dwEvLoggedInOut', [undefined]);
 }
 
 /*
@@ -1221,9 +1221,8 @@ function fireLogin() {
   // via a POST or via OpenID), which sets the dwCoUserEmailSH
   // cookie and other cookies.
 
-  var propsSafe = getUserProps();
-
-  $('#dw-login-info').show().find('.dw-login-name').text(propsSafe.name);
+  var user = getUserProps();
+  $('#dw-login-info').show().find('.dw-login-name').text(user.name);
   $('#dw-a-logout').show();
   $('#dw-a-login').hide();
 
@@ -1232,7 +1231,7 @@ function fireLogin() {
   // and they'll replace '...' with the user name.
   $('.dw-login-on-click')
       .unbind('click', $showLoginSimple)
-      .trigger('dwEvLoggedInOut', [undefined, propsSafe]);
+      .trigger('dwEvLoggedInOut', [user]);
 }
 
 // Returns user properties: {name, email, website}, but false iff the name
@@ -1662,12 +1661,11 @@ function $showReplyForm(event, opt_where) {
       });
 
     var $submitBtn = $replyForm.find('.dw-fi-submit');
-    var setSubmitBtnTitle = function(event, old, userProps) {
-      var text = userProps ?  // if absent, user logged out
-          'Post as '+ userProps.name : 'Post as ...';  // i18n
+    var setSubmitBtnTitle = function(event, user) {
+      var text = user ?  'Post as '+ user.name : 'Post as ...';  // i18n
       $submitBtn.val(text);
     }
-    setSubmitBtnTitle(null, null, getUserProps());
+    setSubmitBtnTitle(null, getUserProps());
     $submitBtn.each($loginOnClick(setSubmitBtnTitle));
 
     // Ajax-post reply on submit.
@@ -1843,10 +1841,8 @@ function $showEditForm2() {
     });
 
     // When clicking the Save button, open a login dialog, unless logged in.
-    $submitBtn.each($loginOnClick(
-        function(event, oldUserProps, newUserProps) {
-      var text = newUserProps ?  // if absent, user logged out
-          'Save as '+ newUserProps.name : 'Save as ...';  // i18n
+    $submitBtn.each($loginOnClick(function(event, user) {
+      var text = user ?  'Save as '+ user.name : 'Save as ...';  // i18n
       $(this).val(text);
     }));
 
@@ -2184,10 +2180,8 @@ $('.debiki p').editable('http://www.example.com/save.php', {
 // debiki-lift.js, so no ?create page code is in here.
 function initCreateForm() {
   var $submitBtn = $('form.dw-f-cr .dw-fi-submit');
-  $submitBtn.button().each(
-      $loginOnClick(function(event, oldUserProps, newUserProps) {
-    var text = newUserProps ?
-        'Create as '+ newUserProps.name : 'Create as ...';  // i18n
+  $submitBtn.button().each($loginOnClick(function(event, user) {
+    var text = user ? 'Create as '+ user.name : 'Create as ...';  // i18n
     $(this).val(text);
   }));
 }
