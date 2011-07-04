@@ -1196,11 +1196,9 @@ function fireLogout() {
   $('#dw-a-logout').hide();
   $('#dw-a-login').show();
 
-  // Dupl code, COULD use class dw-login-on-click and dwEvLoggedInOut instead:
-  $('.dw-fs-re .dw-fi-submit')
-      .click($showLoginSimple)
-      .attr('value', 'Post as ...'); // COULD make a dedicated btn w this text
-
+  // Let `Post as <username>' etc buttons update themselves:
+  // they'll replace <username> with `...', and register an on click
+  // handler that shows the login form.
   var oldUserProps = undefined; // for now
   $('.dw-login-on-click')
       .click($showLoginSimple)
@@ -1229,13 +1227,9 @@ function fireLogin() {
   $('#dw-a-logout').show();
   $('#dw-a-login').hide();
 
-  // Hereafter, on `Post ...' click, submit the form instead of opening
-  // the login dialog.
-  // Dupl code, COULD use class dw-login-on-click and dwEvLoggedInOut instead:
-  $('.dw-fs-re .dw-fi-submit')
-      .unbind('click', $showLoginSimple)
-      .attr('value', 'Post as '+ propsSafe.name);
-
+  // Let Post as ... and Save as ... buttons update themselves:
+  // they'll unregister an on click handler that shows the login form,
+  // and they'll replace '...' with the user name.
   $('.dw-login-on-click')
       .unbind('click', $showLoginSimple)
       .trigger('dwEvLoggedInOut', [undefined, propsSafe]);
@@ -1667,17 +1661,14 @@ function $showReplyForm(event, opt_where) {
         minWidth: 210  // or Cancel button might float drop
       });
 
-    if (getUserProps()) {
-      // User name known. Submit button text should already have been
-      // changed, via the dwEvLoggedInOut event, to ``Post as <user name>''.
+    var $submitBtn = $replyForm.find('.dw-fi-submit');
+    var setSubmitBtnTitle = function(event, old, userProps) {
+      var text = userProps ?  // if absent, user logged out
+          'Post as '+ userProps.name : 'Post as ...';  // i18n
+      $submitBtn.val(text);
     }
-    else {
-      // When clicking the submit button, instead of submitting, open
-      // a login dialog. The login dialog handler is unbound
-      // by fireLogin() when the user specifies its name.
-      // COULD listen to dwEvLoggedInOut instead of doing stuff in fireLogin().
-      $replyForm.find('.dw-fi-submit').click($showLoginSimple);
-    }
+    setSubmitBtnTitle(null, null, getUserProps());
+    $submitBtn.each($loginOnClick(setSubmitBtnTitle));
 
     // Ajax-post reply on submit.
     $replyForm.submit(function() {
