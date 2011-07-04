@@ -1185,57 +1185,45 @@ function $markIfMine() {
   updateAuthorInfo($(this), $.cookie('dwCoUserName'));
 }
 
-function updateUserPropsHtml() {  // COULD rename to fireLoggedInOut ?
-  // If the user's name, email & website are remembered in cookies,
-  // call setUserPropsOrThrow, which will then update all relevant
-  // html elements so they show the user's name.
-  // COULD do this on the server instead (must, if javascript disabled).
-  // This fires the dwEvLoggedInOut event, so all buttons etc will update
-  // their text with the correct user name.
-  setUserPropsOrThrow(getUserProps(),
-        false); // need not sanitize; cookies are already sanitized
-}
-
 // Updates cookies and elements to show the user name, email etc.
 // as appropriate. Unless !propsUnsafe, throws if name or email missing.
 // Fires the dwEvLoggedInOut event on all .dw-login-on-click elems.
 // Parameters:
 //  props: {name, email, website}, will be sanitized unless
 //  sanitize: unless `false', {name, email, website} will be sanitized.
-function setUserPropsOrThrow(propsUnsafe, sanitize) {
-  if (!propsUnsafe) {
-    // Clear props, fire dwEvLoggedInOut event and return.
-    $.cookie('dwCoUserName', null);
-    $.cookie('dwCoUserEmail', null);
-    $.cookie('dwCoUserUrl', null);
-    $('#dw-login-info').hide();
-    $('#dw-a-logout').hide();
-    $('#dw-a-login').show();
+function fireLogout() {
+  $('#dw-login-info').hide();
+  $('#dw-a-logout').hide();
+  $('#dw-a-login').show();
 
-    // Dupl code, COULD use class dw-login-on-click and dwEvLoggedInOut instead:
-    $('.dw-fs-re .dw-fi-submit')
-        .click($showLoginSimple)
-        .attr('value', 'Post as ...'); // COULD make a dedicated btn w this text
+  // Dupl code, COULD use class dw-login-on-click and dwEvLoggedInOut instead:
+  $('.dw-fs-re .dw-fi-submit')
+      .click($showLoginSimple)
+      .attr('value', 'Post as ...'); // COULD make a dedicated btn w this text
 
-    var oldUserProps = undefined; // for now
-    $('.dw-login-on-click')
-        .click($showLoginSimple)
-        .trigger('dwEvLoggedInOut', [oldUserProps, undefined]);
-    return;
-  }
+  var oldUserProps = undefined; // for now
+  $('.dw-login-on-click')
+      .click($showLoginSimple)
+      .trigger('dwEvLoggedInOut', [oldUserProps, undefined]);
+}
 
-  var propsSafe = propsUnsafe;   // XSS attack, TODO sanitize!
+/*
+function checkLoginProps(props) {
   if (isBlank(propsSafe.name) || isBlank(propsSafe.email)) {
     throw new Error('Name or email missing [debiki_error_28yx19]');
   }
   if (false) {  // COULD throw e.g. if name empty, email has no '@' etc
     throw new Error('[debiki_error_...]');
   }
+}*/
 
-  var path = {path: '/'};
-  $.cookie('dwCoUserName', propsSafe.name, path);
-  $.cookie('dwCoUserEmail', propsSafe.email, path);
-  if (propsSafe.website) $.cookie('dwCoUserUrl', propsSafe.website, path);
+function fireLogin() {
+  // The salted hash of the email cannot be calculated client side,
+  // so we must post the email addr to the server (already done,
+  // via a POST or via OpenID), which sets the dwCoUserEmailSH
+  // cookie and other cookies.
+
+  var propsSafe = getUserProps();
 
   $('#dw-login-info').show().find('.dw-login-name').text(propsSafe.name);
   $('#dw-a-logout').show();
@@ -1303,7 +1291,7 @@ function initLogout() {
     var postData = $logoutForm.serialize();
     $.post($logoutForm.attr("action"), postData, function() {
       // The server has now logged out the user.
-      setUserPropsOrThrow(undefined);
+      fireLogout();
     }, 'html');
     return false;
   });
@@ -1360,8 +1348,9 @@ function initLoginSimple() {
         $(this).dialog('close');
       },
       OK: function() {
-        // COULD do javascript input validation. The server also validates
-        // inputs, but doing it here too could avoid a roundtrip.
+        // COULD do javascript input validation, use checkLoginProps.
+        // The server also validates inputs, but doing it here too
+        // could avoid a roundtrip.
         // COULD show a "Logging in..." message, the roundtrip
         // might take a second if the user is far away?
         $(this).dialog('close');
@@ -1381,7 +1370,7 @@ function initLoginSimple() {
     $.post($loginForm.attr("action"), postData, function() {
       // COULD elliminate this dupl code, see Debiki.handleLoginResponse.
       // User info should now be available in cookies, so:
-      updateUserPropsHtml();
+      fireLogin();
       showLoginOkay();
       continueAfterLoginOnClick();
     }, 'html');
@@ -1533,7 +1522,7 @@ function submitLoginInPopup($openidLoginForm) {
       $('#dw-fs-login-simple').dialog('close');
 
       // User info should now be available in cookies, so:
-      updateUserPropsHtml();
+      fireLogin();
       showLoginOkay();
 
       continueAfterLoginOnClick();
@@ -1680,12 +1669,13 @@ function $showReplyForm(event, opt_where) {
 
     if (getUserProps()) {
       // User name known. Submit button text should already have been
-      // changed, by setUserPropsOrThrow(…), to ``Post as <user name>''.
+      // changed, via the dwEvLoggedInOut event, to ``Post as <user name>''.
     }
     else {
       // When clicking the submit button, instead of submitting, open
       // a login dialog. The login dialog handler is unbound
-      // by setUserPropsOrThrow(…) when the user specifies its name.
+      // by fireLogin() when the user specifies its name.
+      // COULD listen to dwEvLoggedInOut instead of doing stuff in fireLogin().
       $replyForm.find('.dw-fi-submit').click($showLoginSimple);
     }
 
@@ -2745,7 +2735,8 @@ $('.debiki').delegate('.dw-a-edit-new', 'click', $showEditForm);
 
 initCreateForm();
 
-// Use the correct user name everywhere and show login/out buttons.
+// Fire the dwEvLoggedInOut event, so all buttons etc will update
+// their text with the correct user name.
 // {{{ Details:
 // Firing the dwEvLoggedInOut event causes the user name to be updated
 // to the name of the logged in user, everywhere. This needs to be done
@@ -2757,7 +2748,8 @@ initCreateForm();
 // (since the user logged in/out).
 // Do this when everything has been inited, so all dwEvLoggedInOut event
 // listeners have been registered. }}}
-updateUserPropsHtml();
+if (getUserProps()) fireLogin();
+else fireLogout();
 
 
 // Draw SVG when the placement of all html tags is finished, or the SVG
