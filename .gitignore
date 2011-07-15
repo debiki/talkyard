@@ -7,7 +7,7 @@ target/
 # SBT
 lib_managed/
 src_managed/
-project/boot/
+project/
 
 # Idea
 debiki-core.iml
