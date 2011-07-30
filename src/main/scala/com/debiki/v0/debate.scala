@@ -14,21 +14,7 @@ object Debate {
   def empty(id: String) = Debate(id)
 
   def fromActions(guid: String, actions: List[AnyRef]): Debate = {
-    var posts: List[Post] = Nil
-    var ratings: List[Rating] = Nil
-    var edits: List[Edit] = Nil
-    var editVotes: List[EditVote] = Nil
-    var editsApplied: List[EditApplied] = Nil
-    for (a <- actions) a match {
-      case p: Post => posts ::= p
-      case r: Rating => ratings ::= r
-      case e: Edit => edits ::= e
-      case v: EditVote => editVotes ::= v
-      case a: EditApplied => editsApplied ::= a
-      case x => error(
-          "Unknown action type: "+ classNameOf(x) +" [debiki_error_8k3EC]")
-    }
-    Debate(guid, posts, ratings, edits, editVotes, editsApplied)
+    Debate(guid) ++ actions
   }
 }
 
@@ -178,6 +164,24 @@ case class Debate (
   def + (rating: Rating): Debate = copy(ratings = rating :: ratings)
   //def - (rating: Rating): Debate = copy(ratings = ratings filter
   //                                                            (_ != rating))
+
+  def ++[T >: AnyRef] (actions: List[T]): Debate = {
+    var posts2 = posts
+    var ratings2 = ratings
+    var edits2 = edits
+    var editVotes2 = editVotes
+    var editsApplied2 = editsApplied
+    for (a <- actions) a match {
+      case p: Post => posts2 ::= p
+      case r: Rating => ratings2 ::= r
+      case e: Edit => edits2 ::= e
+      case v: EditVote => editVotes2 ::= v
+      case a: EditApplied => editsApplied2 ::= a
+      case x => error(
+          "Unknown action type: "+ classNameOf(x) +" [debiki_error_8k3EC]")
+    }
+    Debate(guid, posts2, ratings2, edits2, editVotes2, editsApplied2)
+  }
 
   def addEdit(edit: Edit): AddVoteResults = {
     // Apply edit directly, if editing own post with no replies.
