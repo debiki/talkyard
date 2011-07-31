@@ -58,12 +58,6 @@ class HtmlConfig {
 }
 
 
-class LayoutVariables {
-  var lastPageVersion: Option[ju.Date] = None
-  var newReply: Option[String] = None
-}
-
-
 object DebateHtml {
 
   def apply(debate: Debate) = new DebateHtml(debate)
@@ -188,18 +182,15 @@ class DebateHtml(val debate: Debate) {
 
   private lazy val statscalc: StatsCalc = new StatsCalc(debate)
   private var lastChange: Option[String] = null
-  private var vars: LayoutVariables = null
 
   def configure(conf: HtmlConfig): DebateHtml = {
     this.config = conf
     this
   }
 
-  def layoutDebate(intrsAllowed: IntrsAllowed,
-                   vars: LayoutVariables = new LayoutVariables): NodeSeq = {
-    this.vars = vars
+  def layoutDebate(intrsAllowed: IntrsAllowed): NodeSeq = {
     this.lastChange = debate.lastChangeDate.map(toIso8601(_))
-    layoutPosts ++ FormHtml(config, intrsAllowed).menus ++ variables
+    layoutPosts ++ FormHtml(config, intrsAllowed).menus
   }
 
   private def layoutPosts(): NodeSeq = {
@@ -386,15 +377,6 @@ class DebateHtml(val debate: Debate) {
      { editSuggestions // could skip for now, too complicated for the end user
       }
   }
-
-  private def variables: NodeSeq =
-    <script class='dw-js-variables'>{
-      // TODO: Could this open for XSS attacks?
-      optionToJsCookie(vars.lastPageVersion, "myLastPageVersion",
-                          "expires: 370") +
-      optionToJsCookie(lastChange, "myCurrentPageVersion") +
-      optionToJsCookie(vars.newReply, "myNewReply")
-    }</script>
 }
 
 
