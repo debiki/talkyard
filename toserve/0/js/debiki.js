@@ -270,7 +270,7 @@ function $threadClose() {
 // Outline new posts
 /*
 (function(){
-  var myLastVersion = $.cookie('myLastPageVersion');
+  var myLastVersion = $.cookie('myLastPageVersion'); // cookie no longer exists
   if (!myLastVersion) return;
   var newPosts = posts.filter(function(index){ // BUG?…
     //… relied on posts = $('.debiki .dw-p-bdy') but use '*.dw-p' instead?
