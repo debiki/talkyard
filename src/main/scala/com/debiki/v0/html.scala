@@ -55,6 +55,8 @@ class HtmlConfig {
   def showEdits_? = true
   def hostAndPort = "localhost"
   def people = new People()
+
+  def xsrfToken: String = "dummy"
 }
 
 
@@ -356,6 +358,8 @@ object FormHtml {
   def apply(config: HtmlConfig, intrsAllowed: IntrsAllowed) =
     new FormHtml(config, intrsAllowed)
 
+  val XsrfInpName = "dw-fi-xsrf"
+
   object Reply {
     object InputNames {
       val Text = "dw-fi-reply-text"
@@ -407,6 +411,11 @@ class FormHtml(val config: HtmlConfig, val intrsAllowed: IntrsAllowed) {
       // Could skip <a>Edit</a> for now, and teach people to
       // use the inline menu instead?
 
+  private def _xsrfToken = {
+    val tkn = config.xsrfToken
+    <input type='hidden' class={XsrfInpName} name={XsrfInpName} value={tkn}/>
+  }
+
   /**
    *  The login form below is based on this JavaScript OpenID Selector
    *  example file:
@@ -415,6 +424,7 @@ class FormHtml(val config: HtmlConfig, val intrsAllowed: IntrsAllowed) {
   def loginFormSimple =
       <div class='dw-fs' id='dw-fs-login-simple' title='Who are you?'>
         <form action={config.loginActionSimple} method='post'>
+          { _xsrfToken }
           <div id='dw-login'>
            <div class='dw-login-a-wrap'>
             <a class='dw-a dw-a-login-openid'>Log in</a>
@@ -449,6 +459,7 @@ class FormHtml(val config: HtmlConfig, val intrsAllowed: IntrsAllowed) {
       <div class='dw-fs' id='dw-fs-openid-login'
             title="Sign In or Create New Account">
         <form action={config.loginActionOpenId} method='post' id='openid_form'>
+          { _xsrfToken }
           <input type='hidden' name='action' value='verify' />
           <div id='openid_choice'>
             <p>Please click your account provider:</p>
@@ -472,6 +483,7 @@ class FormHtml(val config: HtmlConfig, val intrsAllowed: IntrsAllowed) {
   def loginOkForm(name: String = "Anonymous") =
       <div class='dw-fs' id='dw-fs-login-ok' title='Welcome'>
         <form action={config.loginOkAction} method='post'>
+          { _xsrfToken }
           <p>You have been logged in, welcome
             <span id='dw-fs-login-ok-name'>{name}</span>!
           </p>
@@ -484,6 +496,7 @@ class FormHtml(val config: HtmlConfig, val intrsAllowed: IntrsAllowed) {
   def loginFailedForm(error: String = "unknown error") =
       <div class='dw-fs' id='dw-fs-login-failed' title='Login Error'>
         <form action={config.loginFailedAction} method='post'>
+          { _xsrfToken }
           <p>Login failed:
             <span id='dw-fs-login-failed-errmsg'>{error}</span>
           </p>
@@ -496,6 +509,7 @@ class FormHtml(val config: HtmlConfig, val intrsAllowed: IntrsAllowed) {
   def logoutForm =
       <div class='dw-fs' id='dw-fs-logout' title='Log out'>
         <form action={config.logoutAction} method='post'>
+          { _xsrfToken }
           <p>Are you sure?</p>
           <div class='dw-submit-set'>
             <input class='dw-fi-cancel' type='button' value='Cancel'/>
@@ -514,7 +528,7 @@ class FormHtml(val config: HtmlConfig, val intrsAllowed: IntrsAllowed) {
     </ul>
   }
 
-  def replyForm(text: String = "", extraInputs: NodeSeq = Nil) = {
+  def replyForm(text: String = "") = {
       import Reply.{InputNames => Inp}
     val submitButtonText = "Post as ..." // COULD read user name from `config'
       <li class='dw-fs dw-fs-re'>
@@ -522,7 +536,7 @@ class FormHtml(val config: HtmlConfig, val intrsAllowed: IntrsAllowed) {
             action={config.replyAction}
             accept-charset='UTF-8'
             method='post'>
-          { extraInputs }
+          { _xsrfToken }
           { timeWaistWarning("reply is") }
           <input type='hidden' id={Inp.Where} name={Inp.Where} value='' />
           <p>
@@ -554,6 +568,7 @@ class FormHtml(val config: HtmlConfig, val intrsAllowed: IntrsAllowed) {
             action={config.rateAction}
             accept-charset='UTF-8'
             method='post'>
+          { _xsrfToken }
           <input type='hidden' name='dw-fi-action' value='rate'/>
           <input type='hidden' name='dw-fi-post' value='?'/>
           <input type='hidden' name='dw-fi-by' value='?'/>
@@ -596,15 +611,14 @@ class FormHtml(val config: HtmlConfig, val intrsAllowed: IntrsAllowed) {
       </div>
 
   def editForm(newText: String = "", oldText: String = "",
-               userName: Box[String],
-              extraInputs: NodeSeq = Nil) = {
+               userName: Box[String]) = {
     import Edit.{InputNames => Inp}
     val submitBtnText = "Save as "+ userName.openOr("...")
     <form class='dw-f dw-f-ed'
           action={config.editAction}
           accept-charset='UTF-8'
           method='post'>
-      { extraInputs /* Or *require* a XSRF token also/instead? */ }
+      { _xsrfToken }
       { timeWaistWarning("edits are") }
       <div id='dw-ed-tabs'>
         <ul>
