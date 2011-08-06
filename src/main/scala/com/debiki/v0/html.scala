@@ -127,35 +127,6 @@ object DebateHtml {
   def dateToAbbr(date: ju.Date, cssClass: String): NodeSeq =
     <abbr class={"dw-date "+ cssClass} title={toIso8601(date)} />
 
-  /** WARNING: XSS / DoS attacks possible?
-   */
-  private[v0]
-  def optionToJsVar[E](o: Option[E], varName: String): String =
-    "\n"+ varName +" = "+ (o match {
-      case None => "undefined"
-      case Some(null) => "null"
-      case Some(d: ju.Date) => "'"+ toIso8601(d) +"'"
-      case Some(x) => "'"+ x.toString +"'"
-    }) +";"
-
-  /** WARNING: XSS / DoS attacks possible?
-   *  All available options:
-   *    "expires: 7, path: '/', domain: 'jquery.com', secure: true"
-   */
-  private[v0]
-  def optionToJsCookie[E](
-          o: Option[E], cookieName: String, options: String = ""): String =
-    if (o.isEmpty) ""  // do nothing with cookie
-    else
-      "\njQuery.cookie('"+ cookieName +"', "+
-      ((o: @unchecked) match {
-        case Some(null) => "null"  // delete cookie
-        case Some(d: ju.Date) => "'"+ toIso8601(d) +"'"
-        case Some(x) => "'"+ x.toString + "'"
-      }) +
-      (if (options.isEmpty) "" else ", {"+ options +"}") +
-      ");"
-
   /** XML for the user name and login/out links.
    */
   def loginInfo(userName: Option[String]): NodeSeq = {
