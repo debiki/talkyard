@@ -7,6 +7,8 @@
 package com.debiki.v0
 
 import java.{util => ju}
+import java.{security => js}
+import org.apache.commons.codec.{binary => acb}
 
 object Prelude {
 
@@ -122,7 +124,7 @@ object Prelude {
 
   def saltAndHash(hashLength: Int)(text: String): String = {
     val saltAndText = _hashSalt + text
-    // hash(saltAndText)
+    // hashSha1Base64UrlSafe(saltAndText)
     saltAndText take hashLength  // SECURITY for now, don't hash
                                             // (easier to debug unhashed)
   }
@@ -132,5 +134,10 @@ object Prelude {
 
   def saltAndHashEmail = saltAndHash(hashLengthEmail) _
   def saltAndHashIp = saltAndHash(hashLengthIp) _
+
+  private def mdSha1 = js.MessageDigest.getInstance("SHA-1") // not thread safe
+
+  def hashSha1Base64UrlSafe(text: String): String =
+    acb.Base64.encodeBase64URLSafeString(mdSha1.digest(text.getBytes("UTF-8")))
 
 }

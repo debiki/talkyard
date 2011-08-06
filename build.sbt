@@ -12,6 +12,7 @@ libraryDependencies ++= Seq(
   "org.scala-lang" % "scala-library" % "2.8.1",
   "org.yaml" % "snakeyaml" % "1.6",
   "com.google.guava" % "guava" % "r09",
+  "commons-codec" % "commons-codec" % "1.5",
   "net.liftweb" %% "lift-common" % "2.2",
   "net.liftweb" %% "lift-util" % "2.2",
   "junit" % "junit" % "4.7" % "test",
