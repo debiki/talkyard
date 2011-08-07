@@ -21,7 +21,9 @@ object Paths {
 }
 
 
-class HtmlConfig {
+abstract class HtmlConfig {
+  def termsOfUse: String
+
   // If a form action is the empty string, the browser POSTS to the current
   // page, says the URI spec: http://www.apps.ietf.org/rfc/rfc3986.html#sec-5.4
   // COULD rename replyAction -> replyLink (or reactLink -> reactAction).
@@ -56,7 +58,7 @@ class HtmlConfig {
   def hostAndPort = "localhost"
   def people = new People()
 
-  def xsrfToken: String = "dummy"
+  def xsrfToken: String
 }
 
 
@@ -151,7 +153,7 @@ class DebateHtml(val debate: Debate) {
 
   import DebateHtml._
 
-  private var config = new HtmlConfig
+  private var config: HtmlConfig = _  // COULD let be a ctor param
 
   private lazy val statscalc: StatsCalc = new StatsCalc(debate)
   private var lastChange: Option[String] = null
@@ -382,9 +384,7 @@ class FormHtml(val config: HtmlConfig, val intrsAllowed: IntrsAllowed) {
 
   val ccWikiLicense =
     <a rel="license" href="http://creativecommons.org/licenses/by/3.0/"
-       target="_blank">
-      Creative Commons Attribution 3.0 Unported License
-    </a>
+       target="_blank">CC BY-SA 3.0</a>
 
   private[v0]
   def menus =
@@ -544,13 +544,7 @@ class FormHtml(val config: HtmlConfig, val intrsAllowed: IntrsAllowed) {
             <textarea id={Inp.Text} name={Inp.Text} rows='13'
               cols='38'>{text}</textarea>
           </p>
-          <p class='dw-user-contrib-license'>
-            By clicking <i>{submitButtonText}</i>, you agree to license
-            the text you submit under the {ccWikiLicense}.
-            {/* TODO "irrecoverably agree to ... sufficient attribution ...
-            URL in the history/change log page ... name OR alias ...
-            printed version" */}
-          </p>
+          { termsAgreement("Post as ...") }
           <div class='dw-submit-set'>
             <input class='dw-fi-cancel' type='button' value='Cancel'/>
             <input class='dw-fi-submit' type='submit' value={submitButtonText}/>
@@ -640,9 +634,8 @@ class FormHtml(val config: HtmlConfig, val intrsAllowed: IntrsAllowed) {
           if (oldText == newText) Nil
           else <pre class='dw-ed-src-old'>{oldText}</pre> }
       </div>
-
+      { termsAgreement("Save as ...") }
       <div class='dw-submit-set'>
-       {/* License agreement !! */}
        <input type='button' class={Inp.Preview} name={Inp.Preview}
               value='Preview and save ...'/>
        <input type='submit' class='dw-fi-submit' value={submitBtnText}/>
@@ -662,4 +655,11 @@ class FormHtml(val config: HtmlConfig, val intrsAllowed: IntrsAllowed) {
         </i></div>
     }
   }
+
+  def termsAgreement(submitBtnText: String) =
+    <div class='dw-user-contrib-license'>By clicking <i>{submitBtnText}</i>,
+      you agree to release your contributions under the {ccWikiLicense}
+      license, and you agree to the
+      <a href={config.termsOfUse} target="_blank">Terms of Use</a>.
+    </div>
 }
