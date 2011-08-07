@@ -9,7 +9,7 @@ import Prelude._
 
 object Debate {
 
-  val RootPostId = "root"
+  val RootPostId = "0"
 
   def empty(id: String) = Debate(id)
 
@@ -277,13 +277,12 @@ case class Debate (
 
   /** Assigns ids to Post:s and Edit:s, and updates references from Edit:s
    *  to Post ids. COULD move to Debiki$, since ids are randomized, stateless.
-   *  Does not remap a post with id "0" nor "root".
    */
   def assignIdTo(xs: List[AnyRef]): List[AnyRef] = {
     val remaps = mut.Map[String, String]()
     // Generate new ids, and check for foreign objects.
     xs foreach (_ match {
-      case p: Post => remaps(p.id) = if (p.id == "0" || p.id == "root") p.id
+      case p: Post => remaps(p.id) = if (p.id == "0") p.id
                                      else nextRandomString()
       case e: Edit => remaps(e.id) = nextRandomString()
       case a: EditApplied => // noop

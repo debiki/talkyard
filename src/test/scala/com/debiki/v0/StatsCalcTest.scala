@@ -50,7 +50,7 @@ object Util {
     (p2 - z10 * root, p2 + z10 * root)
   }
 
-  val post = Post(id = "Ca", parent = "root", date = new ju.Date,
+  val post = Post(id = "Ca", parent = "0", date = new ju.Date,
                   by = "Someone", ip = "1.2.3.4", text = "test")
   val debate = Debate("test", post :: Nil, Nil)
   val rating_interesting =
