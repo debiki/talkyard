@@ -1234,8 +1234,8 @@ function fireLogin() {
   // draft texts, we shuldn't close them). Their xsrf prevention tokens
   // need to be updated to match the new session id cookie issued by
   // the server on login.
-  var sid = $.cookie('dwCoSid');
-  $('input.dw-fi-xsrf').attr('value', sid);
+  var token = $.cookie('dwCoXsrf');
+  $('input.dw-fi-xsrf').attr('value', token);
 
   // Let Post as ... and Save as ... buttons update themselves:
   // they'll unregister an on click handler that shows the login form,
