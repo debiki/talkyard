@@ -537,7 +537,7 @@ class FormHtml(val config: HtmlConfig, val intrsAllowed: IntrsAllowed) {
             accept-charset='UTF-8'
             method='post'>
           { _xsrfToken }
-          { timeWaistWarning("reply is") }
+          {/* timeWaistWarning("reply", "is") */}
           <input type='hidden' id={Inp.Where} name={Inp.Where} value='' />
           <p>
             <label for={Inp.Text}>Your reply:</label><br/>
@@ -613,7 +613,7 @@ class FormHtml(val config: HtmlConfig, val intrsAllowed: IntrsAllowed) {
           accept-charset='UTF-8'
           method='post'>
       { _xsrfToken }
-      { timeWaistWarning("edits are") }
+      {/* timeWaistWarning("edits", "are") */}
       <div id='dw-ed-tabs'>
         <ul>
           <li><a href='#dw-ed-tab-edit'>Edit</a></li>
@@ -644,14 +644,13 @@ class FormHtml(val config: HtmlConfig, val intrsAllowed: IntrsAllowed) {
     </form>
   }
 
-  def timeWaistWarning(action_is: String): NodeSeq = {
+  def timeWaistWarning(action: String, is: String): NodeSeq = {
     import IntrsAllowed._
     intrsAllowed match {
       case VisibleTalk => Nil
       case HiddenTalk =>  // COULD fix nice CSS and show details on hover only
-        <div><i>Time waist warning: Your {action_is} shown only to
-        people who explicitly choose to view user interactions.
-        Perhaps no one will ever notice your contributions!
+        <div><i>Time waist warning: On this page, your {action} {is} shown
+        only to people who explicitly choose to view user comments.
         </i></div>
     }
   }
