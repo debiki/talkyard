@@ -620,14 +620,14 @@ class FormHtml(val config: HtmlConfig, val intrsAllowed: IntrsAllowed) {
           <li><a href='#dw-ed-tab-diff'>Diff</a></li>
           <li><a href='#dw-ed-tab-preview'>Preview</a></li>
         </ul>
-        <div id='dw-ed-tab-edit' class='dw-ed-tab'>
+        <div id='dw-ed-tab-edit' class='dw-ed-tab dw-ed-tab-edit'>
           <textarea id='dw-fi-edit-text' name={Inp.Text} rows='7' cols='38'>{
             newText
           }</textarea>
         </div>
-        <div id='dw-ed-tab-preview' class='dw-ed-tab'>
+        <div id='dw-ed-tab-preview' class='dw-ed-tab dw-ed-tab-preview'>
         </div>
-        <div id='dw-ed-tab-diff' class='dw-ed-tab'>
+        <div id='dw-ed-tab-diff' class='dw-ed-tab dw-ed-tab-diff'>
         </div>
         { // In debiki.js, updateEditFormDiff() uses textarea.val()
           // (i.e. newText) if there's no .dw-ed-src-old tag.
