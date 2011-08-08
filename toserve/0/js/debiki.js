@@ -511,18 +511,18 @@ function updateDebate(newDebateHtml) {
   var $curDebate = $('.dw-debate');
   var $newDebate = buildTagFind(newDebateHtml, '.dw-debate');
   $newDebate.find('.dw-t').each(function(){
-      var parentId = $(this).parents('.dw-t').attr('id');
+      var $i = $(this);
+      var parentId = $i.parents('.dw-t').attr('id');
       var $oldParent = parentId ? $curDebate.find('#'+ parentId) : $curDebate;
       var $oldThis = $curDebate.find('#'+ this.id);
       var isNewThread = $oldThis.length === 0;
       var isSubThread = !$oldParent.length;
+      var isInline = $i.filter('.dw-i-t').length === 1;
       var $oldPost = $oldThis.children('.dw-p');
-      var $newPost = $(this).children('.dw-p');
+      var $newPost = $i.children('.dw-p');
       var oldDate = $oldPost.dwLastChange();
       var newDate = $newPost.dwLastChange();
       var isPostEdited = !isNewThread && newDate > oldDate;
-      // TODO: Some more jQuery should be registered below, e.g. resizing.
-      // TODO: Inline threads.
       if (isPostEdited) {
         $newPost
           .replaceAll($oldPost)
@@ -540,13 +540,28 @@ function updateDebate(newDebateHtml) {
           // This is the first reply; create the reply list.
           $res = $("<ol class='dw-res'/>").appendTo($oldParent);
         }
-        $(this)
-          .addClass('dw-post-new') // outlines it, and its sub thread posts
-              // TODO Highlight arrows too? To new replies / one's own reply.
-          .prependTo($res)
-          .each(SVG.$drawPost);  // TODO? use drawTree instead?
+        $i.addClass('dw-post-new') // outlines it, and its sub thread posts
+              // COULD highlight arrows too? To new replies / one's own reply.
+          .prependTo($res);
+        if (isInline) {
+          // Place this inline thread inside its parent, by
+          // undoing the parent's inline thread placement and doing
+          // it again, with the new thread included.
+          $oldParent.children('.dw-p')
+            .each($undoInlineThreads)
+            .each($initPost);
+          // BUG add an inline reply to an inline child post (i.e. add an
+          // inline grandchild), and then $oldParent won't be redrawn.
+        }
+        $i.each(SVG.$drawPost);  // TODO? use drawTree instead?
         $newPost.each($initPostsThread);
-      }
+        if (isInline) {
+          // Refresh arrows from the parent post to its inline threads
+          // *after* $newPost has been initialized, because $newPost' size
+          // changes somewhat when it's inited.
+          $oldParent.each(SVG.$drawPost);
+        }
+     }
       else
         return;
 
@@ -649,7 +664,7 @@ function $initPostsThread() {
 function $initPost() {
   $(this)
       .each($placeInlineMarks)
-      .each($placeInlineThreads)
+      .each($splitBodyPlaceInlines)
       .each(SVG.$initPostSvg);
 
   // When hovering an inline mark or thread, highlight the corresponding
@@ -673,8 +688,30 @@ function $htmlToMarkup() {
   return mup.trim() +'\n';
 }
 
+// Moves inline child threads back to the thread's list of child threads,
+// and removes inline marks and undoes wrapping of -bdy contents into
+// -bdy-blk:s. That is, undoes $placeInlineMarks and $splitBodyPlaceInlines.
+// Call on posts.
+function $undoInlineThreads() {
+  // Remove inline marks and unwrap block contents.
+  var $post = $(this);
+  var $body = $post.children('.dw-p-bdy');
+  $body.children('.dw-p-bdy-blk').each(function() {
+    var $block = $(this);
+    $block.find('.dw-i-m-start').remove();
+    $block.replaceWith($block.contents());
+  });
+  // Move inline threads back to the thread's list of child threads.
+  var $inlineThreads = $body.find('> .dw-i-ts .dw-i-t');
+  $inlineThreads.detach();
+  $body.children('.dw-i-ts').remove();
+  $post.parent().children(".dw-res").prepend($inlineThreads);
+}
+
 // Places marks where inline threads are to be placed.
 // This is a mark:  <a class='dw-i-m-start' href='#dw-t-(thread_id)' />
+// Better do this before splitBodyPlaceInlines, so as not to confuse the
+// TagDog unnecessarily much (it'd be confused by the -bdy-blk:s).
 // Call on posts.
 function $placeInlineMarks() {
   $(this).parent().find('> .dw-res > .dw-i-t', this).each(function(){
@@ -720,13 +757,14 @@ function $placeInlineMarks() {
   });
 }
 
-// Places inline threads at the relevant inline marks, so the threads
-// become inlined.
+// Splits the .dw-p-bdy contents into -bdy-blk:s.
+// Places inline threads in <ol>:s after the -blk:s after the relevant
+// inline marks, so the threads become inlined.
 // Call on posts.
-function $placeInlineThreads() {
+function $splitBodyPlaceInlines() {
   // Groups .dw-p-bdy child elems in groups around/above 200px high, and
   // wrap them in a .dw-p-bdy-blk. Gathers all inline threads for each
-  // .dw-p-bdy-blk, and places them in an <ol> to the right of the 
+  // .dw-p-bdy-blk, and places them in an <ol> to the right of the
   // .dw-p-bdy-blk.
   var $placeToTheRight = function() {
     // Height calculation issue:
@@ -751,6 +789,7 @@ function $placeInlineThreads() {
       // float to the right of that -body-block.
       var $block = $('<div class="dw-p-bdy-blk"></div>').insertBefore(elems[0]);
       $block.prepend(elems);
+      // Create an <ol> into which $block's inline threads will be placed.
       var $inlineThreads = $('<ol class="dw-i-ts"></ol>').insertAfter($block);
       var accHeightInlines = 0;
       var numInlines = 0;
@@ -791,6 +830,8 @@ function $placeInlineThreads() {
         $inlineThreadsMatchless.append($(threadRef));
         return;
       }
+      // Wrap the elem in a -blk and append an <ol> into which inline
+      // threads will be placed.
       var $bdyBlk = $(this).wrap('<div class="dw-p-bdy-blk"></div>').parent();
       var $inlineThreads = $('<ol class="dw-i-ts"></ol>').insertAfter($bdyBlk);
       $('.dw-i-m-start', this).each(function(){
