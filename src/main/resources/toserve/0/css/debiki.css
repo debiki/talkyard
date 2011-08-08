@@ -259,7 +259,8 @@ jQuery UI's dialgos. Might that be incompatible with other libs? */
   background-color: #fcfaf5; /* (see above) match form background */
 }
 
-.dw-p-bdy p {
+.dw-ed-tab,
+.dw-p-bdy-blk {
   /* Don't span whole screen even if .post.cropped-e is removed. */
   max-width: 35em;
 }
