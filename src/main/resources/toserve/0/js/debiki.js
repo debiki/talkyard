@@ -674,7 +674,7 @@ function $initPost() {
   // When hovering an inline thread, highlight the mark.
   // COULD highlight arrows when hovering any post, not just inline posts?
   $('> .dw-p-bdy', this)
-      .find('> .dw-p-bdy-blk > .dw-i-m-start')
+      .find('> .dw-p-bdy-blk .dw-i-m-start')
         .hover($inlineMarkHighlightOn, $inlineMarkHighlightOff)
       .end()
       .find('> .dw-i-ts > .dw-i-t > .dw-p')
@@ -861,34 +861,37 @@ function $splitBodyPlaceInlines() {
 }
 
 function $inlineMarkHighlightOn() {
-  // TODO highligt arrow too. Break out highlighting code from
-  // $('.dw-i-t > .dw-p').hover(...) just below.
-  $($(this).attr('href')).children('.dw-p').add(this)
-      .addClass('dw-highlight');
+  var threadId = $(this).attr('href').substr(1, 999); // drops '#'
+  toggleInlineHighlight(threadId, true);
 }
 
 function $inlineMarkHighlightOff() {
-  $($(this).attr('href')).children('.dw-p').add(this)
-      .removeClass('dw-highlight');
+  var threadId = $(this).attr('href').substr(1, 999); // drops '#'
+  toggleInlineHighlight(threadId, false);
 }
 
 function $inlineThreadHighlightOn() {
-  // COULD write functions that constructs e.g. a mark ID given
-  // a thread ID, instead of duplicating that code everywhere?
   var threadId = $(this).closest('.dw-t').attr('id');
-  var inlineMarkId = 'dw-i-m_'+ threadId; // i.e. 'dw-i-m_dw-t-<thread-id>'
-  var svgCurveId = 'dw-svg-c_'+ inlineMarkId;
-  $('#'+ inlineMarkId).add(this).addClass('dw-highlight');
-  $('#'+ svgCurveId).each(SVG.$highlightOn);
+  toggleInlineHighlight(threadId, true);
 }
 
 function $inlineThreadHighlightOff() {
-  // WARNING dupl code, see the other `hover' callback right above.
   var threadId = $(this).closest('.dw-t').attr('id');
-  var inlineMarkId = 'dw-i-m_'+ threadId;
+  toggleInlineHighlight(threadId, false);
+}
+
+function toggleInlineHighlight(threadId, on) {
+  var inlineMarkId = 'dw-i-m_'+ threadId; // i.e. 'dw-i-m_dw-t-<thread-id>'
   var svgCurveId = 'dw-svg-c_'+ inlineMarkId;
-  $('#'+ inlineMarkId).add(this).removeClass('dw-highlight');
-  $('#'+ svgCurveId).each(SVG.$highlightOff);
+  var $markAndPost = $('#'+ inlineMarkId +", #"+ threadId +" > .dw-p");
+  var $arrow = $('#'+ svgCurveId);
+  if (on) {
+    $markAndPost.addClass('dw-highlight');
+    $arrow.each(SVG.$highlightOn);
+  } else {
+    $markAndPost.removeClass('dw-highlight');
+    $arrow.each(SVG.$highlightOff);
+  }
 }
 
 
