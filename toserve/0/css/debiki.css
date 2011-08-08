@@ -124,6 +124,10 @@ table {
 
 /* --- Standard elems ---*/
 
+a:link {
+  color: #00c;
+}
+
 /* Spacing between e.g. <p>:s. */
 .dw-p-bdy-blk > * {
   margin: 0 0 0.7em;
@@ -135,12 +139,14 @@ table {
                     has high line height */
 }
 
+.dw-depth-0 > .dw-p > .dw-f-ed .dw-ed-tab-preview > h1,
 .dw-depth-0 > .dw-p > .dw-p-bdy > div.dw-p-bdy-blk > h1 {
   margin: 26px 0 15px !important;
   padding: 0;
   color: #42525E;
 }
 
+.dw-depth-0 > .dw-p > .dw-f-ed .dw-ed-tab-preview > h2,
 .dw-depth-0 > .dw-p > .dw-p-bdy > div.dw-p-bdy-blk > h2 {
   font-size: 24px;
   color: #28323B;
@@ -152,15 +158,18 @@ table {
 }
 
 /* Show list item marks, but not for nested threads. */
+.dw-ed-tab-preview ul li,
 .dw-p-bdy-blk ul li {
   list-style-type: disc;
   margin-left: 2.5em;
 }
+.dw-ed-tab-preview ol li,
 .dw-p-bdy-blk ol li {
   list-style-type: decimal;
   margin-left: 2.5em;
 }
 
+.dw-ed-tab-preview img,
 .dw-p-bdy-blk img {
   width: 100%;
   display: block; /* TODO inline those with no \n\n inbetween preceeding text */
@@ -210,6 +219,7 @@ jQuery UI's dialgos. Might that be incompatible with other libs? */
   padding-bottom: 0.8em; /* litte more airy? first post */
 }
 
+.dw-depth-0.dw-t > .dw-p > .dw-f-ed .dw-ed-tab-preview,
 .dw-depth-0.dw-t > .dw-p > .dw-p-bdy > .dw-p-bdy-blk,
 .dw-t:not(.dw-depth-1) .dw-p-bdy-bkl {
   line-height: 165%; /* higher height makes the main post easier to read */
@@ -478,6 +488,7 @@ or it steals attention from the page title. */
   position: relative;
   background-color: white;
   min-width: 5em;
+  line-height: normal; /* or becomes 120% so -diff lines lines overlap */
 }
 
 .dw-p-bdy {
@@ -973,6 +984,8 @@ to the forms bg color. */
 
 /* === Edit form === */
 
+/* (Some properties defined elsewhere, search for dw-ed-tab.) */
+
 .dw-pri .dw-f-ed .ui-widget-header,
 .dw-pri .dw-f-ed.ui-widget-content {
   background: transparent;
@@ -984,7 +997,7 @@ to the forms bg color. */
   padding: 1.4em 0.3em 1em 1.2em;
 }
 
-.dw-pri .dw-f-ed .dw-ed-tab textarea {
+.dw-pri .dw-f-ed .dw-ed-tab-edit textarea {
   border: none;
   margin: 0;
   padding: 0;
@@ -1089,6 +1102,24 @@ to the forms bg color. */
 /* Same font */
 .dw-ui-widget-font {
   font-family: 'Trebuchet MS', Tahoma, Verdana, Arial, sans-serif;
+}
+
+/* Undo settings to .dw-pri .ui-widget, when they affect contents
+inside widgets, rather than buttons and tabs. */
+.dw-pri .ui-widget.ui-widget-content {
+  font-family: Verdana, sans-serif; /* same as for .dw-debate */
+  font-size: 100%; /* jQuery UI sets .dw-pri .ui-widget to 1.1em */
+}
+
+/* Undo settings to .dw-pri .ui-widget textarea */
+.dw-pri .ui-widget textarea {
+  font-family: Verdana, sans-serif;
+  font-size: 100%; /* else jQuery UI sets 1em */
+}
+
+/* Undo link colors */
+.dw-pri .ui-widget-content a {
+  color: #00c;  /* same as a:link */
 }
 
 /* Makes a jQuery-UI-button():ized <a> tag look more like a link */
