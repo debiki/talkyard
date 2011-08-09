@@ -1385,8 +1385,7 @@ function initLoginSimple() {
   $login.find('.dw-fi-submit').hide();  // don't show before name known
   $login.dialog({
     autoOpen: false,
-    height: 410,
-    width: 600,
+    width: 580,
     modal: true,
     draggable: false,  // it would move faster than the mouse, why?
     resizable: false,  // it would teleport itself far away, why?

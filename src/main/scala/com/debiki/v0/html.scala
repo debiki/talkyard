@@ -426,11 +426,20 @@ class FormHtml(val config: HtmlConfig, val intrsAllowed: IntrsAllowed) {
         <form action={config.loginActionSimple} method='post'>
           { _xsrfToken }
           <div id='dw-login'>
-           <div class='dw-login-a-wrap'>
-            <a class='dw-a dw-a-login-openid'>Log in</a>
-            <div class='dw-login-or-word'>or</div>
+           <div class='dw-login-openid'>
+             <div class='dw-login-openid-info'>
+               Login with e.g. Gmail, OpenID, Yahoo:
+             </div>
+             <a class='dw-a dw-a-login-openid'>Log in</a>
            </div>
-           <div class='dw-login-fields'>
+           <div class='dw-login-or-wrap'>
+             <div class='dw-login-or-word'>or</div>
+           </div>
+           <div class='dw-login-simple'>
+            <div class='dw-login-simple-info'>
+              Login with username and<br/>
+              email (no password):
+            </div>
             <div>
              <label for='dw-fi-login-name'>Name</label><br/>
              <input id='dw-fi-login-name' type='text' size='40' maxlength='100'
