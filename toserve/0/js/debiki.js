@@ -914,6 +914,8 @@ function $showInlineActionMenu(event) {
     // let the click result in a reply form appearing, too.
     return;
   }
+  // BUG in IE8 (not in IE9), next row -> exception:
+  //  "Object doesn't support this property or method"
   var sel = window.getSelection();
   if (!sel.anchorNode.data ||
       // COULD fix rare bug: TypeError: Cannot read property 'data' of null
