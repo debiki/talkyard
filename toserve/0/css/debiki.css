@@ -880,13 +880,23 @@ to the forms bg color. */
   margin: 10px 0;
 }
 
-.dw-login-a-wrap {
-  float: left;
-  padding: 57px 45px 0 0;
+#dw-fs-login-simple {
+  /* Use whole parent jQuery UI dialog, else scrollbars tend to appear.
+   jQuery UI seems to change the width to `auto'. */
+  width: 100% !important;
+  overflow: visible; /* or north-south scrollbar appears in Chrome */
+}
+
+.dw-login-openid {
+  padding: 50px 35px 0 0;
   margin-right: 45px;
   height: 105px;
-  border-right: 1px solid #ccc;
-  position: relative;
+  width: 140px;
+  position: absolute;
+}
+
+.dw-login-openid-info {
+  margin-bottom: 1em;
 }
 
 .dw-a-login {
@@ -895,23 +905,39 @@ to the forms bg color. */
   color: #3872AB;
 }
 
+.dw-a-login-openid {
+  display: block;
+}
+
+.dw-login-or-wrap {
+  position: absolute;
+  height: 100%;
+  left: 190px; /* 50px + 140px, see .dw-login-openid */
+  background-color: #FBF7F2;
+  border-right: 1px solid #ccc;
+}
+
 .dw-login-or-word {
-  top: 66px;
-  right: -6px;
+  top: 96px;
+  right: -9px;
   position: absolute;
   background-color: #FBF7F2;
   padding: 4px 0 4px;
 }
 
-.dw-login-fields {
-  float: left;
+.dw-login-simple {
+  margin-left: 240px;
 }
 
-.dw-login-fields label {
+.dw-login-simple-info {
+  margin-bottom: 1em;
+}
+
+.dw-login-simple label {
   margin-top: 0.7em;
 }
 
-.dw-login-fields input {
+.dw-login-simple input {
   margin-top: 3px !important; /* COULD remove my own conflicting rule */
   width: 200px;
 }
