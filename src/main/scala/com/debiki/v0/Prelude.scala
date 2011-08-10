@@ -124,9 +124,7 @@ object Prelude {
 
   def saltAndHash(hashLength: Int)(text: String): String = {
     val saltAndText = _hashSalt + text
-    // hashSha1Base64UrlSafe(saltAndText)
-    saltAndText take hashLength  // SECURITY for now, don't hash
-                                            // (easier to debug unhashed)
+    hashSha1Base64UrlSafe(saltAndText) take hashLength
   }
 
   val hashLengthEmail = 20
