@@ -1281,6 +1281,7 @@ function fireLogin() {
   // need to be updated to match the new session id cookie issued by
   // the server on login.
   var token = $.cookie('dwCoXsrf');
+  $.cookie('dwCoXsrf', null, { path: '/' }); // don't send back to server
   $('input.dw-fi-xsrf').attr('value', token);
 
   // Let Post as ... and Save as ... buttons update themselves:
