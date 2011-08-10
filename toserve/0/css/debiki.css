@@ -545,6 +545,12 @@ or it steals attention from the page title. */
   font-size: 13px;
 }
 
+/* Make reply links easier to notice, except for the the root post link. */
+.dw-t > .dw-a-reply {
+  color: #ff4836;
+  font-weight: bold;
+}
+
 .dw-a:hover {
   color: #c77405; /* jQuery UI's ui-state-hover color */
   text-decoration: underline;
@@ -1156,6 +1162,8 @@ inside widgets, rather than buttons and tabs. */
 }
 
 /* Use the crosshair cursor for only client side side effects */
+.ui-state-default,
+.ui-state-default a,
 .ui-accordion-header,
 .ui-accordion-header a {
   cursor: crosshair !important;
