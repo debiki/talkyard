@@ -142,14 +142,14 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
     var ex1_debate: Debate = null
 
     "create a debate with a root post" >> {
-      val rootPost = T.post.copy(id = "root", text = ex1_postText)
+      val rootPost = T.post.copy(id = "0", text = ex1_postText)
       val debateNoId = Debate(guid = "?", posts = rootPost::Nil)
       dao.create(defaultPagePath, debateNoId) must beLike {
         case Full(d: Debate) =>
           ex1_debate = d
           d.postCount must_== 1
           d.guid.length must be_>(1)  // not = '?'
-          d must havePostLike(T.post, id = "root", text = ex1_postText)
+          d must havePostLike(T.post, id = "0", text = ex1_postText)
           true
       }
     }
@@ -157,13 +157,13 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
     "find the debate and the post again" >> {
       dao.load(defaultTenantId, ex1_debate.guidd) must beLike {
         case Full(d: Debate) => {
-          d must havePostLike(T.post, id = "root", text = ex1_postText)
+          d must havePostLike(T.post, id = "0", text = ex1_postText)
           true
         }
       }
     }
 
-    val ex2_emptyPost = T.post.copy(parent = "root", text = "")
+    val ex2_emptyPost = T.post.copy(parent = "0", text = "")
     var ex2_id = ""
     "save an empty root post child post" >> {
       dao.save(defaultTenantId, ex1_debate.guidd, List(ex2_emptyPost)
@@ -185,7 +185,7 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
     }
     // -------------
 
-    //val ex3_emptyPost = T.post.copy(parent = "root", text = "Lemmings!")
+    //val ex3_emptyPost = T.post.copy(parent = "0", text = "Lemmings!")
     //"create many many random posts" >> {
     //  for (i <- 1 to 10000) {
     //    dao.save(defaultTenantId, "-"+ ex1_debate.id, List(ex3_emptyPost)
