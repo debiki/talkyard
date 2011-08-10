@@ -58,7 +58,7 @@ abstract class HtmlConfig {
   }
 
   /** Whether or not to show edit suggestions. */
-  def showEdits_? = true
+  def showEdits_? = false  // doesn't work at all right now
   def hostAndPort = "localhost"
   def people = new People()
 
@@ -404,8 +404,9 @@ class FormHtml(val config: HtmlConfig, val intrsAllowed: IntrsAllowed) {
     <div id="dw-hidden-templates">
     { actionMenu ++
       loginForms ++
-      replyForm() ++
-      ratingForm }
+      replyForm()
+      //ratingForm   skip for now, doesn't work very well
+      }
     </div>
 
   def loginForms =
@@ -418,8 +419,11 @@ class FormHtml(val config: HtmlConfig, val intrsAllowed: IntrsAllowed) {
   def actionMenu =
       <div id='dw-action-menu'>
         <a class='dw-a dw-a-reply'>Reply</a>
+        {/*  Disable the Rate and Edit forms and links for now,
+        doesn't work very well right now, or not at all.
         <a class='dw-a dw-a-rate'>Rate</a>
         <a class='dw-a dw-a-edit'>Edit</a>
+        */}
       </div>
       // Could skip <a>Edit</a> for now, and teach people to
       // use the inline menu instead?
