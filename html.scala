@@ -44,12 +44,16 @@ abstract class HtmlConfig {
    *  adds "http://" if needed.
    */
   def userLink(user: User) = {
-    if (user.website isEmpty) {
+    // Lift-Web or Java? escapes cookie values, so unescape `://'.
+    // Scala 1.9? val ws = user.website.replaceAllLiterally("%3A%2F%2F", "://")
+    val ws = user.website.replaceAll("%3A%2F%2F", "://")
+    if (ws isEmpty) {
       ""
-    } else if ("https\\?://".r.findFirstIn(user.website) isDefined) {
-      user.website
+    } else if (ws.startsWith("http://") ||
+                ws.startsWith("https://")) {
+      ws
     } else {
-      "http://"+ user.website
+      "http://"+ ws
     }
   }
 
@@ -256,10 +260,17 @@ class DebateHtml(val debate: Debate) {
     }
 
     def tryLinkTo(user: User) = {
-      val url = config.userLink(user)
+      var url = config.userLink(user)
+      // TODO: investigate: `url' is sometimes the email address!!
+      // When signed in @gmail.com, it seems.
+      // For now: (this is actually a good test anyway, in case someone
+      // accidentally enters his email in the website field?)
+      if (url.contains('@') || url.containsSlice("%40")) {
+        System.err.println(
+            "URL contains email? It contains `@' or `%40': "+ url)
+        url = ""
+      }
       if (url nonEmpty) {
-        SECURITY // `url' is sometimes the email address!!
-        // When signed in @gmail.com, it seems.
         <a class='dw-p-by' href={url}
           rel='nofollow' target='_blank'>{user.name}</a>
       } else {
