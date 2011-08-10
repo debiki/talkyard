@@ -211,8 +211,10 @@ class DebateHtml(val debate: Debate) {
     // wrap any posts in <ol>:s, with .dw-ts or .dw-i-ts CSS classes
     // — this would reduce dupl wrapping code.
     for {
-      // COULD sort inline posts by position, not score.
-      p <- posts.sortBy(p => -statscalc.scoreFor(p.id).liking)
+      // Could skip sorting inline posts, since sorted by position later
+      // anyway, in javascript. But if javascript disabled?
+      p <- posts.sortBy(p => p.date.getTime). // the oldest first
+                sortBy(p => -statscalc.scoreFor(p.id).liking)
       cssThreadId = "dw-t-"+ p.id
       cssDepth = "dw-depth-"+ depth
       cssInlineThread = if (p.where isDefined) " dw-i-t" else ""
