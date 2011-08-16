@@ -155,7 +155,7 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
     }
 
     "find the debate and the post again" >> {
-      dao.load(defaultTenantId, ex1_debate.guidd) must beLike {
+      dao.load(defaultTenantId, ex1_debate.guid) must beLike {
         case Full(d: Debate) => {
           d must havePostLike(T.post, id = "0", text = ex1_postText)
           true
@@ -166,7 +166,7 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
     val ex2_emptyPost = T.post.copy(parent = "0", text = "")
     var ex2_id = ""
     "save an empty root post child post" >> {
-      dao.save(defaultTenantId, ex1_debate.guidd, List(ex2_emptyPost)
+      dao.save(defaultTenantId, ex1_debate.guid, List(ex2_emptyPost)
               ) must beLike {
         case Full(List(p: Post)) =>
           ex2_id = p.id
@@ -176,7 +176,7 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
     }
 
     "find the empty post again" >> {
-      dao.load(defaultTenantId, ex1_debate.guidd) must beLike {
+      dao.load(defaultTenantId, ex1_debate.guid) must beLike {
         case Full(d: Debate) => {
           d must havePostLike(ex2_emptyPost, id = ex2_id)
           true
