@@ -1038,15 +1038,13 @@ function $showInlineActionMenu(event) {
 // ------- Forms and actions
 
 // Shows actions for the current post, or the last post hovered.
-var $lastActions = null;
 function $showActions() {
-  if ($lastActions) {
-    $lastActions.closest('.dw-t').children('.dw-as')
-      .css('visibility', 'hidden')  // show actions for one post only
-      .removeAttr('id');  // remove #dw-p-as-shown
-  }
-  $lastActions = $(this);
-  $lastActions.closest('.dw-t').children('.dw-as')
+  // Hide any action links already shown; show actions for one post only.
+  $('#dw-p-as-shown')
+      .css('visibility', 'hidden')
+      .removeAttr('id');
+  // Show links for the the current post.
+  $(this).closest('.dw-t').children('.dw-as')
     .css('visibility', 'visible')
     .attr('id', 'dw-p-as-shown');
 }
