@@ -95,6 +95,9 @@ case class Debate (
 
   // -------- Ratings
 
+  // Currently using only by the DAO TCK, need not be fast.
+  def rating(id: String): Option[Rating] = ratings.find(_.id == id)
+
   def ratingsOn(postId: String): List[Rating] = {
     val ci = ratingCache.get(postId)
     if (ci.isDefined) ci.get.ratings else Nil
@@ -277,13 +280,20 @@ case class Debate (
 
   /** Assigns ids to Post:s and Edit:s, and updates references from Edit:s
    *  to Post ids. COULD move to Debiki$, since ids are randomized, stateless.
+   *  Does not remap the id of post "0", i.e. the root post.
+   *  COULD remap only IDs starting with "?" or being empty ""?
    */
   def assignIdTo(xs: List[AnyRef]): List[AnyRef] = {
     val remaps = mut.Map[String, String]()
+    def remap(id: String) {
+      require(!remaps.contains(id))
+      remaps(id) = nextRandomString()
+    }
     // Generate new ids, and check for foreign objects.
     xs foreach (_ match {
       case p: Post => remaps(p.id) = if (p.id == "0") p.id
                                      else nextRandomString()
+      case r: Rating => remap(r.id)
       case e: Edit => remaps(e.id) = nextRandomString()
       case a: EditApplied => // noop
       case x => assErr(  // Can this check be done at compile time instead?
@@ -292,6 +302,7 @@ case class Debate (
     // Remap ids, and update references to ids.
     val xs2: List[AnyRef] = xs map (_ match {
       case p: Post => p.copy(id = remaps(p.id))
+      case r: Rating => r.copy(id = remaps(r.id))
       case e: Edit => e.copy(id = remaps(e.id),
                             postId = remaps.getOrElse(e.postId, e.postId))
       case a: EditApplied => a.copy(editId = remaps(a.editId))
@@ -395,7 +406,8 @@ class ViPo(val debate: Debate, val post: Post) {
 
 // TODO parent class/trait Action
 
-case class Rating private[debiki] (
+case class Rating (
+  id: String,
   postId: String,
   by: String,
   ip: String,
@@ -447,7 +459,7 @@ case class EditVote(
 
 // + EditApplication/Utilization/Introduction/Commit/PutOn?
 // + EditRevocation/Reversal?
-case class EditApplied (
+case class EditApplied (  // TODO add ID field
   editId: String,
   date: ju.Date,
 

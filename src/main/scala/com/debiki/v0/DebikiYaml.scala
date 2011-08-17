@@ -272,7 +272,7 @@ class DebikiYaml {
         illegalArgIf(date.isEmpty, "`date' entry missing")
         illegalArgIf(tags == null, "`tags' entry missing")
 
-        Rating(postId = postId.get, by = by.get, ip = ip,
+        Rating(id = unimplemented, postId = postId.get, by = by.get, ip = ip,
                date = date.get, tags = tags)
       }
     }

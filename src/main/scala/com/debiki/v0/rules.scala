@@ -75,6 +75,7 @@ object Action {
   case object Act extends Action
   case object Create extends Action
   case object Reply extends Action
+  case object Rate extends Action
   case object Edit extends Action
   case object View extends Action
   case class Unsupported(whatUnsafe: String) extends Action {

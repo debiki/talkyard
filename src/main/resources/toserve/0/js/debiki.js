@@ -605,10 +605,11 @@ function $initPostsThread() {
   var $thread = $(this).closest('.dw-t');
 
   // Add action buttons.
-  $thread.find('> .dw-as').replaceWith(
-      $('#dw-action-menu > .dw-a')
+  var $actions = $('#dw-action-menu')
         .clone()
-        .css('visibility', 'hidden'));
+        .removeAttr('id')
+        .css('visibility', 'hidden');
+  $thread.find('> .dw-as').replaceWith($actions);
   // {{{ On delegating events for reply/rate/edit.
   // Placing a jQuery delegate on e.g. .debiki instead, entails that
   // these links are given excessively low precedence on Android:
@@ -616,9 +617,9 @@ function $initPostsThread() {
   // is clicked instead of the <a> with a delegate event. The reply/
   // reply/rate/edit links becomes virtually unclickable (if event
   // delegation is used instead). }}}
-  $thread.children('.dw-a-reply').click($showReplyForm);
-  $thread.children('.dw-a-rate').click($showRatingForm);
-  $thread.children('.dw-a-edit').click($showEditSuggestions);
+  $actions.children('.dw-a-reply').click($showReplyForm);
+  $actions.children('.dw-a-rate').click($showRatingForm);
+  $actions.children('.dw-a-edit').click($showEditSuggestions);
 
   // For the root thread.
   $thread.children('.dw-hor-a').children('.dw-a-reply').click($showReplyForm);
@@ -650,7 +651,20 @@ function $initPostsThread() {
   // Show actions when hovering post.
   // But always show the leftmost Reply, at depth-0, that creates a new column.
   // (Better avoid delegates for frequent events such as mouseenter.)
-  $paras.mouseenter($showActions)
+  $paras.mouseenter(function() {
+    // If actions are already shown for an inline child post, ignore event.
+    // (Sometimes the mouseenter event is fired first for an inline child
+    // post, then for its parent — and then actions should be shown for the
+    // child post; the parent should ignore the event.)
+    if (!$(this).find('#dw-p-as-shown').length)
+      $(this).each($showActions);
+  });
+
+  $thread.mouseleave(function() {
+    // If this is an inline post, show the action menu for the parent post
+    // since we're hovering that post now.
+    $(this).closest('.dw-p').each($showActions);
+  });
 
   updateAuthorInfo($thread, $.cookie('dwCoUserName'));
 
@@ -1027,16 +1041,14 @@ function $showInlineActionMenu(event) {
 var $lastActions = null;
 function $showActions() {
   if ($lastActions) {
-    $lastActions.closest('.dw-t').children('.dw-a')
-      // Leave the new-edit button always visible, since it's
-      // placed a bit away from the post, so it wouldn't be obvious
-      // that you needed to hover the post to show the action.
-      .not('.dw-a-edit-new')
-      .css('visibility', 'hidden');
+    $lastActions.closest('.dw-t').children('.dw-as')
+      .css('visibility', 'hidden')  // show actions for one post only
+      .removeAttr('id');  // remove #dw-p-as-shown
   }
   $lastActions = $(this);
-  $lastActions.closest('.dw-t').children('.dw-a')
-    .css('visibility', 'visible');
+  $lastActions.closest('.dw-t').children('.dw-as')
+    .css('visibility', 'visible')
+    .attr('id', 'dw-p-as-shown');
 }
 
 function $slideUp() {
@@ -1624,7 +1636,7 @@ function $showRatingForm() {
   //  - Disable form until request completed.
   //  - When completed, highlight the user's own ratings.
   $rateForm.submit(function(){
-    // Find rating tags selected
+    // Find selected rating tags, so they can be highlighted later.
     var ratedTags = $rateForm.find("input:checked").map(function(){
       return $(this).val().toLowerCase();
     }).get();

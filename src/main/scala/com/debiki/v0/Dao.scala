@@ -35,10 +35,33 @@ abstract class DaoSpi {
 
 /** Debiki's Data Access Object.
  *
- *  Delegates database requests to a DaoSpi implementation,
- *  and caches pages in a ConcurrentMap.
+ *  Delegates database requests to a DaoSpi implementation.
  */
-class Dao(impl: DaoSpi) {
+abstract class Dao {
+
+  def create(where: PagePath, debate: Debate): Box[Debate]
+
+  def close()
+
+  def save[T](tenantId: String, debateId: String, xs: List[T]): Box[List[T]]
+
+  def load(tenantId: String, debateId: String): Box[Debate]
+
+  def checkPagePath(pathToCheck: PagePath): Box[PagePath]
+
+  def checkAccess(pagePath: PagePath, userId: String, action: Action
+                     ): Option[IntrsAllowed]
+
+  def checkRepoVersion(): Box[String]
+
+  def secretSalt(): String
+}
+
+/** Caches pages in a ConcurrentMap.
+ *
+ *  Thread safe, if `impl' is thread safe.
+ */
+class CachingDao(impl: DaoSpi) extends Dao {
 
   private val _impl = impl
   private case class Key(tenantId: String, debateId: String)
@@ -104,3 +127,32 @@ class Dao(impl: DaoSpi) {
   def secretSalt(): String = _impl.secretSalt()
 
 }
+
+/** Always accesses the database, whenever you ask it do do something.
+ *
+ *  Useful when constructing test suites that should access the database.
+ */
+class NonCachingDao(impl: DaoSpi) extends Dao {
+  def create(where: PagePath, debate: Debate): Box[Debate] =
+    impl.create(where, debate)
+
+  def close() = impl.close
+
+  def save[T](tenantId: String, debateId: String, xs: List[T]): Box[List[T]] =
+    impl.save(tenantId, debateId, xs)
+
+  def load(tenantId: String, debateId: String): Box[Debate] =
+    impl.load(tenantId, debateId)
+
+  def checkPagePath(pathToCheck: PagePath): Box[PagePath] =
+    impl.checkPagePath(pathToCheck)
+
+  def checkAccess(pagePath: PagePath, userId: String, action: Action
+                     ): Option[IntrsAllowed] =
+    impl.checkAccess(pagePath, userId, action)
+
+  def checkRepoVersion(): Box[String] = impl.checkRepoVersion()
+
+  def secretSalt(): String = impl.secretSalt()
+}
+
