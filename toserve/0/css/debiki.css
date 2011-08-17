@@ -460,6 +460,10 @@ or it steals attention from the page title. */
   display: inline;
 }
 
+.dw-rats li {
+  margin-left: 0.5ex;
+}
+
 .dw-z {
   position: absolute;
 }
@@ -525,8 +529,7 @@ or it steals attention from the page title. */
   outline: none;
 }
 
-.dw-a {
-  float: left; /* else won't wrap if in narrow column */
+.dw-as {
   margin: 4px 0px 9px 37px;
 }
 
@@ -545,9 +548,18 @@ or it steals attention from the page title. */
   font-size: 13px;
 }
 
-/* Make reply links easier to notice, except for the the root post link. */
-.dw-t > .dw-a-reply {
-  color: #ff4836;
+
+.dw-t > .dw-as > .dw-a {
+  color: #ff4836; /* make action links stand out (but skip root post link) */
+  margin-right: 12px;
+}
+
+.dw-t > .dw-as > .dw-a:last-child {
+  margin-right: 0; /* avoid float drop */
+}
+
+/* Make the reply link especially easy to notice. */
+.dw-t > .dw-as > .dw-a-reply {
   font-weight: bold;
 }
 
