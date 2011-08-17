@@ -59,32 +59,80 @@ object DebikiSpecs {
         text: String = null,
         where: Option[String] = null) = new Matcher[Post] {
     def apply(left: => Post) = {
-      var errs = List[String]()
-      def test[T <: AnyRef](what: String, value: T, field: (Post) => T) {
-        var v = value
-        if ((value eq null) && (post ne null)) v = field(post)
-        val lv = field(left)
-        v match {
-          case null => // skip this field
-          case `lv` => // matched, fine
-          case bad: ju.Date =>
-            errs ::= "`"+ what +"' is: "+
-                d2s(lv.asInstanceOf[ju.Date]) + ", should be: "+ d2s(bad)
-          case bad =>
-            errs ::= "`"+ what +"' is: `"+ lv +"', should be: `"+ v +"'"
-        }
-      }
-      test("id", id, _.id)
-      test("parent", parent, _.parent)
-      test("date", date, _.date)
-      test("by", by, _.by)
-      test("ip", ip, _.ip)
-      test("text", text, _.text)
-      test("where", where, _.where)
+      val test = _test(left, post) _
+      var errs =
+          test("id", id, _.id) :::
+          test("parent", parent, _.parent) :::
+          test("date", date, _.date) :::
+          test("by", by, _.by) :::
+          test("ip", ip, _.ip) :::
+          test("text", text, _.text) :::
+          test("where", where, _.where) ::: Nil
       (errs isEmpty, "OK", errs.mkString(", and "))
     }
   }
 
+  def haveRatingLike(
+        rating: Rating = null,
+        id: String = null,
+        postId: String = null,
+        date: ju.Date = null,
+        by: String = null,
+        ip: String = null,
+        tags: List[String] = null) = new Matcher[Debate] {
+    def apply(left: => Debate) = {
+      assert((id ne null) || (rating ne null))  // must know id
+      var id2 = id
+      if (id2 eq null) id2 = rating.id
+      left.rating(id2) match {
+        case Some(r: Rating) =>
+          matchRating(rating, id = id, postId = postId, date = date,
+              by = by, ip = ip, tags = tags).apply(r)
+        case None =>
+          (false, "", "Rating missing, id: "+ id2)
+      }
+    }
+  }
+
+  def matchRating(
+        rating: Rating = null,
+        id: String = null,
+        postId: String = null,
+        date: ju.Date = null,
+        by: String = null,
+        ip: String = null,
+        tags: List[String] = null) = new Matcher[Rating] {
+    def apply(left: => Rating) = {
+      val test = _test(left, rating) _
+      val errs =
+          test("id", id, _.id) :::
+          test("postId", postId, _.postId) :::
+          test("date", date, _.date) :::
+          test("by", by, _.by) :::
+          test("ip", ip, _.ip) :::
+          test("tags", if (tags ne null) tags.sorted else null,
+                _.tags.sorted) ::: Nil
+      (errs isEmpty, "OK", errs.mkString(", and "))
+    }
+  }
+
+  /** Returns List(error: String), or Nil. */
+  private def _test[T <: AnyRef, V <: AnyRef]
+        (left: T, right: T)
+        (what: String, value: V, getValue: (T) => V): List[String] = {
+    var v = value
+    if ((value eq null) && (right ne null)) v = getValue(right)
+    val lv = getValue(left)
+    List(v match {
+      case null => return Nil // skip this field
+      case `lv` => return Nil // matched, fine
+      case bad: ju.Date =>
+        "`"+ what +"' is: "+
+            d2s(lv.asInstanceOf[ju.Date]) + ", should be: "+ d2s(bad)
+      case bad =>
+        "`"+ what +"' is: `"+ lv +"', should be: `"+ v +"'"
+    })
+  }
 }
 
 // vim: fdm=marker et ts=2 sw=2 tw=80 fo=tcqwn list

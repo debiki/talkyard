@@ -40,10 +40,11 @@ Could test:
 import DebikiSpecs._
 
 trait TestContext {
-  def dao: v0.Dao
+  def daoImpl: v0.DaoSpi
   def close() = dao.close()
   def createRestorePoint(): Unit
   def revertToRestorePoint(): Unit
+  lazy val dao = new v0.NonCachingDao(daoImpl)
 }
 
 object DaoTckTest {
@@ -121,6 +122,8 @@ class DaoSpecEmptySchema(b: TestContextBuilder) extends DaoSpec(b, "0") {
 object Templates {
   val post = v0.Post(id = "?", parent = "", date = new ju.Date,
     by = "Author", ip = "?.?.?.?", text = "")
+  val rating = v0.Rating(id = "?", postId = "", by = "Author",
+    ip = "?.?.?.?", date = new ju.Date, tags = Nil)
 }
 
 class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
@@ -179,6 +182,63 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
       dao.load(defaultTenantId, ex1_debate.guid) must beLike {
         case Full(d: Debate) => {
           d must havePostLike(ex2_emptyPost, id = ex2_id)
+          true
+        }
+      }
+    }
+
+    var ex3_ratingId = ""
+    val ex3_rating = T.rating.copy(
+        postId = "0",  tags = "Interesting"::"Funny"::Nil)  // 2 tags
+    "save a post rating, with 2 tags" >> {
+      dao.save(defaultTenantId, ex1_debate.guid, List(ex3_rating)
+              ) must beLike {
+        case Full(List(r: Rating)) =>
+          ex3_ratingId = r.id
+          r must matchRating(ex3_rating, id = ex3_ratingId)
+          true
+      }
+    }
+
+    "find the rating again" >> {
+      dao.load(defaultTenantId, ex1_debate.guid) must beLike {
+        case Full(d: Debate) => {
+          d must haveRatingLike(ex3_rating, id = ex3_ratingId)
+          true
+        }
+      }
+    }
+
+    var ex4_rating1Id = ""
+    val ex4_rating1 = T.rating.copy(id = "?1", postId = "0",
+                        tags = "Funny"::Nil)
+    var ex4_rating2Id = ""
+    val ex4_rating2 = T.rating.copy(id = "?2", postId = "0",
+                        tags = "Boring"::"Stupid"::Nil)
+    var ex4_rating3Id = ""
+    val ex4_rating3 = T.rating.copy(id = "?3", postId = "0",
+                        tags = "Boring"::"Stupid"::"Funny"::Nil)
+    "save 3 ratings, with 1, 2 and 3 tags" >> {
+      dao.save(defaultTenantId, ex1_debate.guid,
+                List(ex4_rating1, ex4_rating2, ex4_rating3)
+      ) must beLike {
+        case Full(List(r1: Rating, r2: Rating, r3: Rating)) =>
+          ex4_rating1Id = r1.id
+          r1 must matchRating(ex4_rating1, id = ex4_rating1Id)
+          ex4_rating2Id = r2.id
+          r2 must matchRating(ex4_rating2, id = ex4_rating2Id)
+          ex4_rating3Id = r3.id
+          r3 must matchRating(ex4_rating3, id = ex4_rating3Id)
+          true
+      }
+    }
+
+    "find the 3 ratings again" >> {
+      dao.load(defaultTenantId, ex1_debate.guid) must beLike {
+        case Full(d: Debate) => {
+          d must haveRatingLike(ex4_rating1, id = ex4_rating1Id)
+          d must haveRatingLike(ex4_rating2, id = ex4_rating2Id)
+          d must haveRatingLike(ex4_rating3, id = ex4_rating3Id)
           true
         }
       }
