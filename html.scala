@@ -382,6 +382,12 @@ object FormHtml {
     }
   }
 
+  object Rating {
+    object InputNames {
+      val Tag = "dw-fi-rat-tag"
+    }
+  }
+
   object Edit {
     object InputNames {
       val Text = "dw-fi-ed-txt"
@@ -404,9 +410,8 @@ class FormHtml(val config: HtmlConfig, val intrsAllowed: IntrsAllowed) {
     <div id="dw-hidden-templates">
     { actionMenu ++
       loginForms ++
-      replyForm()
-      //ratingForm   skip for now, doesn't work very well
-      }
+      replyForm() ++
+      ratingForm }
     </div>
 
   def loginForms =
@@ -417,11 +422,11 @@ class FormHtml(val config: HtmlConfig, val intrsAllowed: IntrsAllowed) {
     logoutForm
 
   def actionMenu =
-      <div id='dw-action-menu'>
+      <div id='dw-action-menu' class='dw-as dw-p-as'>
         <a class='dw-a dw-a-reply'>Reply</a>
-        {/*  Disable the Rate and Edit forms and links for now,
-        doesn't work very well right now, or not at all.
         <a class='dw-a dw-a-rate'>Rate</a>
+        {/*  Disable the Edit form and link for now,
+        doesn't work very well right now, or not at all.
         <a class='dw-a dw-a-edit'>Edit</a>
         */}
       </div>
@@ -595,7 +600,7 @@ class FormHtml(val config: HtmlConfig, val intrsAllowed: IntrsAllowed) {
           {
             var boxCount = 1
             def rateBox(value: String) = {
-              val name = "dw-fi-rat-tag"
+              val name = Rating.InputNames.Tag
               val id = name +"-"+ boxCount
               boxCount += 1
               <input id={id} type='checkbox' name={name} value={value} />
