@@ -527,6 +527,13 @@ function updateDebate(newDebateHtml) {
       var oldDate = $oldPost.dwLastChange();
       var newDate = $newPost.dwLastChange();
       var isPostEdited = !isNewThread && newDate > oldDate;
+      var oldRatsModTime =
+          $oldPost.find('> .dw-p-hdr > .dw-p-ra-all').attr('data-mtime');
+      var newRatsModTime =
+          $newPost.find('> .dw-p-hdr > .dw-p-ra-all').attr('data-mtime');
+      var hasNewRatings =
+          (!oldRatsModTime ^ !newRatsModTime) ||
+          (newRatsModTime > oldRatsModTime);
       if (isPostEdited) {
         $newPost
           .replaceAll($oldPost)
@@ -565,9 +572,24 @@ function updateDebate(newDebateHtml) {
           // changes somewhat when it's inited.
           $oldParent.each(SVG.$drawPost);
         }
-     }
-      else
-        return;
+      } else if (hasNewRatings) {
+        // Update rating info for this post.
+        // - All branches above automatically update ratings.
+        // - The old post might have no rating info at all (if there were
+        //   no ratings). So don't attempt to replace old elems with new
+        //   ones; instead remove any old elems and append the new ones to
+        //   the post creation timestamp, .dw-p-at, which exists for sure.
+        // - Show() the new .dw-p-ra-all, so the user notices his/her own
+        //   ratings, highlighted.
+        var $newHdr = $newPost.children('.dw-p-hdr');
+        $oldPost.children('.dw-p-hdr')
+            .children('.dw-p-ra-top, .dw-p-ra-all').remove().end()
+            .children('.dw-p-at').after(
+                $newHdr.children('.dw-p-ra-top, .dw-p-ra-all').show());
+      }
+      else {
+        // This post has not been changed, keep it as is.
+      }
 
       // BUG $initPost is never called on child threads (isSubThread true).
       // So e.g. the <a ... class="dw-as">React</a> link isn't replaced.
@@ -1675,26 +1697,10 @@ function $showRatingForm() {
     }).get();
 
     $.post(Settings.makeRatePostUrl(debateId, postId),
-          $rateForm.children('form').serialize(), function(data){
-        // TODO call updateDebate instead, to add all posts in `data'.
-
-        // Find the new version of the post, with new ratings.
-        var $wrap =
-            // From jQuery 1.4.2, jQuery.fn.load():
-            // Create a dummy div to hold the results
-            jQuery('<div />')
-            // inject the contents of the document in, removing the scripts
-            // to avoid any 'Permission Denied' errors in IE
-            .append(data.replace(/<script(.|\s)*?\/script>/gi, ''));
-        // Don't lookup by id -- won't work for certain documents
-        // (at leat not for JSPWiki pages), because somewhere inside
-        // jQuery Sizzle, getElementById returns 'false'.
-        // Don't: $wrap.find('#'+ $post.attr('id'));
-        // This works:
-        var $newPost = $wrap.find('.dw-p[id="dw-post-' + postId + '"]');
-        $newPost.replaceAll($post);
-
+          $rateForm.children('form').serialize(), function(recentChangesHtml) {
+        updateDebate(recentChangesHtml);
         // Highligt the user's ratings.
+        var $newPost = $('#dw-post-' + postId);
         $newPost.find('.dw-rats .dw-rat').each(function(){
             // .dw-rat text is e.g. " interesting 80% ". Make lowercase,
             // and drop " 80% ", so tag-name comparison works.
@@ -1708,8 +1714,6 @@ function $showRatingForm() {
               }
             });
           });
-
-        $newPost.each($initPost);
         slideAwayRemove($rateForm);
       }, 'html');
 
