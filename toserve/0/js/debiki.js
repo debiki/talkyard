@@ -1340,13 +1340,15 @@ function fireLogin() {
 }
 
 // Returns user properties: {name, email, website}, but false iff the name
-// or email address is unknown.
-function getUserProps() {  // XSS ensure server sanitizes cookies?
+// is unknown.
+// Warning: Never ever use the cookie values as html, that'd open for
+// xss attacks. E.g. never to: $(...).html(cookie-value), but the following
+// is okay though: $(...).text(cookie-value).
+function getUserProps() {
   var name = $.cookie('dwCoUserName');
-  var email = $.cookie('dwCoUserEmail');
-  return name && email ? {
+  return name ? {
     name: name,
-    email: email,
+    email: $.cookie('dwCoUserEmail'),
     website: $.cookie('dwCoUserUrl')
   } : false;
 }
