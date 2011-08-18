@@ -132,8 +132,11 @@ object DebateHtml {
   def spaceToNbsp(text: String): String = text.replace(' ', '\u00a0')
 
   private[v0]
-  def dateToAbbr(date: ju.Date, cssClass: String): NodeSeq =
-    <abbr class={"dw-date "+ cssClass} title={toIso8601(date)} />
+  def dateAbbr(date: ju.Date, cssClass: String): NodeSeq = {
+    val dateStr = toIso8601(date)
+    <abbr class={"dw-date "+ cssClass} title={toIso8601T(dateStr)}>, {
+      dateStr}</abbr>
+  }
 
   /** XML for the user name and login/out links.
    */
@@ -181,7 +184,7 @@ class DebateHtml(val debate: Debate) {
         if (lastChange isDefined) {
           <p class="dw-last-changed">Last changed on
           <abbr class="dw-date"
-                title={lastChange.get}>{lastChange.get}</abbr>
+                title={toIso8601T(lastChange.get)}>{lastChange.get}</abbr>
           </p>
         }
       }
@@ -240,10 +243,8 @@ class DebateHtml(val debate: Debate) {
 
   private def comment(post: Post): NodeSeq = {
     val count = debate.successorsTo(post.id).length + 1
-    val dateCreated = toIso8601(post.date)
     val editApps = debate.editsAppliedTo(post.id)
     val lastEditApp = editApps.headOption
-    val lastEditDate = editApps.headOption.map(ea => toIso8601(ea.date))
     val cssPostId = "dw-post-"+ post.id
     val sourceText = lastEditApp.map(_.result).getOrElse(post.text)
     val (xmlText, numLines) =
@@ -282,12 +283,19 @@ class DebateHtml(val debate: Debate) {
 
     val score = statscalc.scoreFor(post.id)
     val ratStatsSorted = score.labelStatsSorted
-    val rats = ratStatsSorted //.takeWhile(_.fractionLowerBound > 0.25)
-    val ratsList =
+    val topTags = ratStatsSorted.takeWhile(
+        _._2.fractionLowerBound > 0.4).map(_._1)
+    val rats = ratStatsSorted
+    val ratsList: NodeSeq =
       if (rats.isEmpty) Nil
-      else
-        <br/> ++ Text(rats.length +" ratings:") ++
-        <ol class='dw-rats'>{
+      else {
+        // List popular rating tags. Then all tags and their usage percents,
+        // but those details are shown only if one clicks the post header.
+        (if (topTags isEmpty) Nil
+        else <span class='dw-p-ra dw-p-ra-top'>, rated <i>{
+          topTags.take(3).mkString(", ") }</i></span>) ++
+        <div class='dw-p-ra-all'>{score.ratingCount} ratings:
+          <ol class='dw-p-ra dw-rats'>{
           // Don't change whitespace, or `editInfo' perhaps won't
           // be able to append a ',' with no whitespace in front.
           for ((tag: String, stats: LabelStats) <- rats) yield
@@ -295,12 +303,14 @@ class DebateHtml(val debate: Debate) {
               ("lo: %.0f" format (100 * stats.fractionLowerBound)) +"%, "+
               "sum: "+ stats.sum}> {
             tag +" %.0f" format (100 * stats.fraction)}% </li>
-        }</ol>
+        }</ol></div>
+      }
     val editInfo =
       // If closed: <span class='dw-p-re-cnt'>{count} replies</span>
       if (editApps.isEmpty) Nil
-      else
-        <div class='dw-p-hdr-ed'><b>Edited</b> by {
+      else {
+        val lastEditDate = editApps.head.date
+        <div class='dw-p-hdr-ed'>Edited by {
             if (editApps.map(a => debate.editsById(a.editId).by).
                 distinct.length > 1) {
               <a>various people</a>
@@ -309,14 +319,13 @@ class DebateHtml(val debate: Debate) {
                            lastEditApp.get.editId)) openOr User.unknown
               tryLinkTo(editor)
             }
-          }, <abbr class='dw-p-at dw-date' title={lastEditDate.get}>{
-              lastEditDate.get}</abbr>
+          }{dateAbbr(lastEditDate, "dw-p-at")}
         </div>
+      }
     val editSuggestions: NodeSeq =
       if (!config.showEdits_?) Nil
       else {
         def xmlFor(edit: Edit): NodeSeq = {
-          val dateCreated = toIso8601(edit.date)
           <li class='dw-es'>
             <div class='dw-es-vs' />
             <div class='dw-es-ed'>
@@ -326,9 +335,7 @@ class DebateHtml(val debate: Debate) {
               — { // (the dash is an em dash no a minus)
                 val editor = config.people.authorOf(edit) openOr User.unknown
                 tryLinkTo(editor)
-              },
-              <abbr class='dw-ed-at dw-date'
-                  title={dateCreated}>{dateCreated}</abbr>
+              }{ dateAbbr(edit.date, "dw-ed-at") }
               <pre class='dw-ed-text'>{edit.text}</pre>
             </div>
           </li>
@@ -349,11 +356,8 @@ class DebateHtml(val debate: Debate) {
          data-p-by-email-sh={author.emailSaltHash}
          data-p-by-ip-sh={post.ipSaltHash}>
       <div class='dw-p-hdr'>
-        By { tryLinkTo(author) },
-        <abbr class='dw-p-at dw-date'
-            title={dateCreated}>{dateCreated}</abbr>{
-        ratsList }{
-        editInfo }
+        By { tryLinkTo(author)}{ dateAbbr(post.date, "dw-p-at")
+        }{ ratsList }{ editInfo }
       </div>
       <div class='dw-p-bdy'>
         { xmlText }
