@@ -41,6 +41,10 @@ var UNTESTED; // Indicates that a piece of code has not been tested.
 //  Helpers
 //----------------------------------------
 
+function trunc(number) {
+  return number << 0;  // bitwise operations convert to integer
+}
+
 function isBlank(str) {
   return !str || !/\S/.test(str);
   // (!/\S/ is supposedly much faster than /^\s*$/,
@@ -676,10 +680,39 @@ function $initPostsThread() {
 
 // Inits a post, not its parent thread.
 function $initPost() {
-  $(this)
-      .each($placeInlineMarks)
+  var $i = $(this),
+      $hdr = $i.find('.dw-p-hdr'),
+      $postedAt = $hdr.children('.dw-p-at'),
+      postedAtTitle = $postedAt.attr('title'),
+      postedAt = Date.parse(postedAtTitle), // number, no Date, fine
+      $editedAt = $hdr.find('> .dw-p-hdr-ed > .dw-p-at'),
+      editedAtTitle = $editedAt.attr('title'),
+      editedAt = Date.parse(editedAtTitle),
+      now = new Date();  // COULD cache? e.g. when initing all posts
+  $i.each($placeInlineMarks)
       .each($splitBodyPlaceInlines)
       .each(SVG.$initPostSvg);
+
+  function timeAgoAbbr(title, then, now) {
+    return $('<abbr title="'+ title +'"> '+ prettyTimeBetween(then, now) +
+        '</span>');
+  };
+
+  // Hide detailed timestamps; show pretty how-long-ago info instead.
+  $postedAt.hide().before(timeAgoAbbr(postedAtTitle, postedAt, now));
+  $editedAt.hide().before(timeAgoAbbr(editedAtTitle, editedAt, now));
+
+  // If one clicks the header, show detailed timestamps and rating info.
+  $hdr.css('cursor', 'crosshair').click(function(event) {
+    if ($(event.target).is('a'))
+      return;  // don't expand header on link click
+    $(this)
+        .css('cursor', null)
+        .find('> .dw-p-at, > .dw-p-ra-all, > .dw-p-hdr-ed > .dw-p-at').show()
+        .end()
+        // This might have expanded the post, so redraw arrows.
+        .closest('.dw-p').each(SVG.$drawParents);
+  });
 
   // When hovering an inline mark or thread, highlight the corresponding
   // thread or mark.
@@ -2731,6 +2764,31 @@ function buildTagFindId(html, id) {
   return $tag;
 }
 
+// `then' and `now' can be Date:s or milliseconds.
+// Consider using: https://github.com/rmm5t/jquery-timeago.git, supports i18n.
+function prettyTimeBetween(then, now) {  // i18n
+  var thenMillis = then.getTime ? then.getTime() : then;
+  var nowMillis = now.getTime ? now.getTime() : now;
+  var diff = nowMillis - thenMillis;
+  var second = 1000;
+  var minute = second * 60;
+  var hour = second * 3600;
+  var day = hour * 24;
+  var week = day * 7;
+  var month = day * 31 * 30 / 2;  // integer
+  var year = day * 365;
+  // I prefer `30 hours ago' to `1 day ago', but `2 days ago' to `50 hours ago'.
+  if (diff > 2 * year) return trunc(diff / year) +" years ago";
+  if (diff > 2 * month) return trunc(diff / month) +" months ago";
+  if (diff > 2 * week) return trunc(diff / week) +" weeks ago";
+  if (diff > 2 * day) return trunc(diff / day) +" days ago";
+  if (diff > 2 * hour) return trunc(diff / hour) +" hours ago";
+  if (diff > 2 * minute) return trunc(diff / minute) +" minutes ago";
+  if (diff > 1 * minute) return "1 minute ago";
+  if (diff > 2 * second) return trunc(diff / second) +" seconds ago";
+  if (diff > 1 * second) return "1 second ago";
+  return "0 seconds ago";
+}
 
 // ------- Invoke functions, do layout
 

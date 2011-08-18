@@ -28,6 +28,7 @@
  *  -p-           post
  *  -q-           ?? post-before (looks like p, but flipped — before, not after)
  *  -rat-         rating  (COULD rename to "r")
+ *  -ra-          rating  (COULD rename to "r")
  *  -re-          reply   (COULD rename to "p", for "post")
  *  -res-         replies (COULD rename to "ts", "threads")
  *  -rez-         resized (COULD rename to "rzd" and let "rz" mean resize)
@@ -53,9 +54,9 @@
  *  dw-i-t        inline thread (COULD use dw-i instead, already has dw-t class)
  *  dw-i-m        inline mark (COULD rename to dw-m — *all* marks are inline?)
  *  dw-i-m_<#id>  mark for thread #id (e.g. dw-i-m_dw-t-<thread-id>)
- *  dw-p-bdy      post body
+ *  dw-p-bdy      post body  COULD rename to -bd
  *  dw-p-bdy-blk  post body block, a <div> that wraps e.g. a <p>
- *  dw-p-hdr      post header
+ *  dw-p-hdr      post header  COULD rename to -hd
  *  dw-p-rez-e    post resized eastwards
  *  dw-pri        placed on the <body>, use it to boost CSS rule priorities
  *  dw-svg-c_<x>  SVG curve from <x>  COULD rename to -svg-p, for `path'
@@ -574,6 +575,10 @@ or it steals attention from the page title. */
 }
 
 /* --- Post info ---*/
+
+.dw-p-ra-all {
+  display: none; /* shown on .dw-p-hdr click */
+}
 
 .dw-p-hdr .dw-rats .dw-rat.dw-you-rated {
   background-color: #f4c4f4;
