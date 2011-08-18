@@ -125,7 +125,11 @@ object Prelude {
 
   // This isn't really a secret salt. A secret salt should be kept secret
   // in the database, fetched via Dao.secretSalt and specified via useSalt().
-  private var _hashSalt = "9k2xIao_"
+  // I think the salt better be fairly long, otherwise it'd be possible to
+  // find out what is the salt, since you might guess that a salt + email
+  // is hashed to the dwCoUserEmailSH cookie, and you have your hash and
+  // your email and can thus do a brute force attack.
+  private var _hashSalt = "94k2xIf1AoVkbx928_"
 
   /** Sets the salt used when hashing (no related to the random numbers). */
   def setHashSalt(salt: String) { _hashSalt = salt }
