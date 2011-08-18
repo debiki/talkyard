@@ -3,6 +3,7 @@
 package com.debiki.v0
 
 import collection.{immutable => imm, mutable => mut}
+import java.{util => ju}
 import Prelude._
 
 case class LabelStats (
@@ -65,6 +66,12 @@ private[debiki] abstract class PostRating {
   /** How many times the related post has been rated.
    */
   def ratingCount: Int
+
+  /** When the last rating was posted.
+   *
+   *  A new Date instance is returned, since Date is mutable.
+   */
+  def lastRatingDate: ju.Date
 
   def labelStats: imm.Map[String, LabelStats]
 
@@ -131,6 +138,9 @@ private[debiki] class StatsCalc(val debate: Debate) {
     var labelStats = imm.Map[String, LabelStats]() // updated later
     var labelSums = mut.HashMap[String, Float]()  // thrown away later
 
+    def lastRatingDate = new ju.Date(_lastRatingDateMillis)
+    var _lastRatingDateMillis: Long = 0
+
     override lazy val liking: Float = {
       def sumMatching(set: imm.Set[String]): Float =
         (0f /: set) (_ + labelStats.get(_).map(_.fraction).getOrElse(0f))
@@ -151,6 +161,8 @@ private[debiki] class StatsCalc(val debate: Debate) {
       }
       maxLabelSum += weight
       ratingCount += 1
+      if (rat.date.getTime > _lastRatingDateMillis)
+        _lastRatingDateMillis = rat.date.getTime
       this
     }
   }

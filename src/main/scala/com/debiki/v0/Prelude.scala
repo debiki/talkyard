@@ -90,6 +90,12 @@ object Prelude {
     sdf.format(date).toString
   }
 
+  def toIso8601T(date: ju.Date): String = {
+    // SimpleDateFormat is not thread safe.
+    val sdf = new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'")
+    sdf.format(date).toString
+  }
+
   /** Changes any ' ' in a ISO 8601 date string to a 'T' (changes all spaces).
    *
    *  It seems javascript's Date.parse requires a 'T' between date and time.

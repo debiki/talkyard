@@ -294,7 +294,9 @@ class DebateHtml(val debate: Debate) {
         (if (topTags isEmpty) Nil
         else <span class='dw-p-ra dw-p-ra-top'>, rated <i>{
           topTags.take(3).mkString(", ") }</i></span>) ++
-        <div class='dw-p-ra-all'>{score.ratingCount} ratings:
+        <div class='dw-p-ra-all'
+             data-mtime={toIso8601T(score.lastRatingDate)}>{
+          score.ratingCount} ratings:
           <ol class='dw-p-ra dw-rats'>{
           // Don't change whitespace, or `editInfo' perhaps won't
           // be able to append a ',' with no whitespace in front.
