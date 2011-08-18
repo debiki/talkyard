@@ -81,12 +81,20 @@ object Prelude {
   }
 
   /** Returns the date formatted according to ISO 8601,
-   *  e.g. "2010-06-23 11:37:15Z".
+   *  e.g. "2010-06-23 11:37:15Z" (with a space not a 'T' between the
+   *  date and time).
    */
   def toIso8601(date: ju.Date): String = {
+    // SimpleDateFormat is not thread safe.
     val sdf = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss'Z'")
     sdf.format(date).toString
   }
+
+  /** Changes any ' ' in a ISO 8601 date string to a 'T' (changes all spaces).
+   *
+   *  It seems javascript's Date.parse requires a 'T' between date and time.
+   */
+  def toIso8601T(iso8601Date: String) = iso8601Date.replace(' ', 'T')
 
   // Is thread safe.
   private val _random = new java.security.SecureRandom();
