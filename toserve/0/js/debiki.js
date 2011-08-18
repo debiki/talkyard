@@ -1687,6 +1687,14 @@ function $showRatingForm() {
   $rateForm.find("input[name='dw-fi-by']").val(
       $.cookie('dwCoUserName') || 'Anonymous');
 
+  // Need to be logged in when submitting ratings, or there might
+  // be no xsrf token — the server would say Forbidden.
+  $rateForm.find('input[type="submit"]').each(
+      $loginOnClick(function(event, user) {
+    // Could change the submit button title to `Submit as <username>',
+    // but that'd make this not-so-very-important button rather large?
+  }));
+
   // Ajax-post ratings on submit.
   //  - Disable form until request completed.
   //  - When completed, highlight the user's own ratings.
