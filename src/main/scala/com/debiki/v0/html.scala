@@ -473,14 +473,14 @@ class FormHtml(val config: HtmlConfig, val intrsAllowed: IntrsAllowed) {
              <br/>
             </div>
             <div>
-             <label for='dw-fi-login-email'>Email</label><br/>
+             <label for='dw-fi-login-email'>Email (optional)</label><br/>
              <input id='dw-fi-login-email' type='text' size='40'
                   maxlength='100' name='dw-fi-login-email' value=''/><br/>
              <!-- <span class='edit-field-overlay'
                 >required, but never shown</span> -->
             </div>
             <div>
-             <label for='dw-fi-login-url'>Website</label><br/>
+             <label for='dw-fi-login-url'>Website (optional)</label><br/>
              <input id='dw-fi-login-url' type='text' size='40' maxlength='200'
                   name='dw-fi-login-url' value=''/><br/>
              <!-- COULD add tabindex='...' -->
