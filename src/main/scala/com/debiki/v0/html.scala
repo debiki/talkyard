@@ -115,6 +115,16 @@ object DebateHtml {
     var htmlTextSafe = _jsSanitizer.asInstanceOf[javax.script.Invocable]
           .invokeFunction("html_sanitize", htmlTextUnsafe, _jsUrlX, _jsIdX)
           .toString
+
+    // As of 2011-08-18 the sanitizer strips target='_blank',
+    // (Seems to be a bug:
+    // `Issue 1296: target="_blank" is allowed, but cleared by html_sanitize()'
+    // http://code.google.com/p/google-caja/issues/detail?id=1296  )
+    // Add target _blank here, and also make the links nofollow,
+    // so Google won't wipe out my site in case someone posts spam.
+    htmlTextSafe = htmlTextSafe.replace("<a ",
+          "<a target='_blank' rel='nofollow' ")
+
     // Use a HTML5 parser; html_sanitize outputs HTML5, which Scala's XML
     // parser don't understand (e.g. an <img src=…> tag with no </img>).
     // Lift-Web uses a certain nu.validator HTML5 parser; use it.
