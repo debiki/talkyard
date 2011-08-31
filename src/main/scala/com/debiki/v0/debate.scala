@@ -426,6 +426,15 @@ case class Post(
   ip: String,
   text: String,
 
+  /** The markup language to use when rendering this post.
+   *
+   *  `code' - render code
+   *  `code-javascript/whatever' - javascript/whatever highlighting
+   *  `plain' - split in <p>s, linkify urls.
+   *  `dfmd-0' - Debiki flavored markdown version 0
+   */
+  markup: String,
+
   /** If defined, this is an inline comment and the value
    *  specifies where in the parent post it is to be placed.
    */

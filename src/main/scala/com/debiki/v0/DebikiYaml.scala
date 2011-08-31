@@ -245,7 +245,8 @@ class DebikiYaml {
         illegalArgIf(text.isEmpty, "No `text' entry [debiki_error_2Wnr5]")
 
         new Post(id = id.get, parent = parent.get, where = where,
-          date = date.get, by = by.get, ip = ip, text = text.get)
+          date = date.get, by = by.get, ip = ip, text = text.get,
+          markup = "none") // for now
       }
     }
 

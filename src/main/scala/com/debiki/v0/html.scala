@@ -257,14 +257,37 @@ class DebateHtml(val debate: Debate) {
     val lastEditApp = editApps.headOption
     val cssPostId = "dw-post-"+ post.id
     val sourceText = lastEditApp.map(_.result).getOrElse(post.text)
-    val (xmlText, numLines) =
-        // Apply markup to the root post (e.g. blog entry).
-        //if (post.id == Debate.RootPostId) (markdownToHtml(sourceText), -1)
-        //else textToHtml(sourceText)
+    // Concerning post.markup:
+    // `code' - wrap the text in <code class="prettyprint">...</code>
+    // `code-javascript' - wrap the text in:
+    //     <pre class="prettyprint"><code class="language-javascript">
+    //     This is a HTML5 convention:
+    //     <http://dev.w3.org/html5/spec-author-view/
+    //         the-code-element.html#the-code-element>
+    //     Works with: http://code.google.com/p/google-code-prettify/
+    // `plain' - change `http://...' to `<a rel=nofollow href=...>...</a>'
+    //             and change "\n\n" to <p>:s.
+    // `dfmd-0' - Debiki flavored markdown version 0
+    val (xmlText, numLines) = post.markup match {
+      //case "" => (xml.Text(sourceText), sourceText.count(_ == '\n'))
+      //case "plain" => textToHtml(sourceText)
+      //case "dfmd-0" => // Debiki flavored markdown
+      case _ => // for now
         (markdownToHtml(sourceText, config.hostAndPort), -1)
         // COULD convert only <img> & <pre> tags,
         //… but nothing that makes text stand out, e.g. skip <h1>, <section>.
         // For the root post, allow everything but javascript though.
+      /*
+      case c if c startsWith "code" =>
+        var lang = c.dropWhile(_ != '-')
+        if (lang nonEmpty) lang = " lang"+lang  ; UNTESTED // if nonEmpty
+        (<pre class={"prettyprint"+ lang}>{sourceText}</pre>,
+          sourceText.count(_ == '\n'))
+        // COULD include google-code-prettify js and css, and
+        // onload="prettyPrint()".
+      case x => unimplemented("Markup of "+ safed(x))
+       */
+    }
     val long = numLines > 9
     val cutS = if (long && post.id != Debate.RootPostId) " dw-x-s" else ""
     val author = config.people.authorOf(post) openOr {
