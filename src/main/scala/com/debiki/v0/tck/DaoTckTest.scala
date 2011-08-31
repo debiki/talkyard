@@ -121,7 +121,7 @@ class DaoSpecEmptySchema(b: TestContextBuilder) extends DaoSpec(b, "0") {
 
 object Templates {
   val post = v0.Post(id = "?", parent = "", date = new ju.Date,
-    by = "Author", ip = "?.?.?.?", text = "")
+    by = "Author", ip = "?.?.?.?", text = "", markup = "")
   val rating = v0.Rating(id = "?", postId = "", by = "Author",
     ip = "?.?.?.?", date = new ju.Date, tags = Nil)
 }
