@@ -20,6 +20,8 @@ abstract class DaoSpi {
 
   def load(tenantId: String, debateId: String): Box[Debate]
 
+  def loadTemplates(perhapsTmpls: List[PagePath]): List[Debate]
+
   def checkPagePath(pathToCheck: PagePath): Box[PagePath]
 
   def checkAccess(pagePath: PagePath, userId: String, action: Action
@@ -46,6 +48,14 @@ abstract class Dao {
   def save[T](tenantId: String, debateId: String, xs: List[T]): Box[List[T]]
 
   def load(tenantId: String, debateId: String): Box[Debate]
+
+  /** Looks up guids for each possible template.
+   *
+   *  Each perhaps-template is represented by a PagePath.
+   *  The guids found are returned, but PagePaths that point to
+   *  non-existing templates are filtered out.
+   */
+  def loadTemplates(perhapsTmpls: List[PagePath]): List[Debate]
 
   def checkPagePath(pathToCheck: PagePath): Box[PagePath]
 
@@ -115,6 +125,9 @@ class CachingDao(impl: DaoSpi) extends Dao {
     }
   }
 
+  def loadTemplates(perhapsTmpls: List[PagePath]): List[Debate] =
+    _impl.loadTemplates(perhapsTmpls)
+
   def checkPagePath(pathToCheck: PagePath): Box[PagePath] =
     _impl.checkPagePath(pathToCheck)
 
@@ -143,6 +156,9 @@ class NonCachingDao(impl: DaoSpi) extends Dao {
 
   def load(tenantId: String, debateId: String): Box[Debate] =
     impl.load(tenantId, debateId)
+
+  def loadTemplates(perhapsTmpls: List[PagePath]): List[Debate] =
+    impl.loadTemplates(perhapsTmpls)
 
   def checkPagePath(pathToCheck: PagePath): Box[PagePath] =
     impl.checkPagePath(pathToCheck)
