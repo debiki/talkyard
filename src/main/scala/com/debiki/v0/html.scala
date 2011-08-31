@@ -293,17 +293,36 @@ class DebateHtml(val debate: Debate) {
 
     val score = statscalc.scoreFor(post.id)
     val ratStatsSorted = score.labelStatsSorted
-    val topTags = ratStatsSorted.takeWhile(
-        _._2.fractionLowerBound > 0.4).map(_._1)
+    val topTags = if (ratStatsSorted isEmpty) Nil else {
+      // If there're any really popular tags (lower liking bound > 0.4),
+      // show all those. Otherwise, show only the most popular tag(s).
+      val minLower = Math.min(0.4, ratStatsSorted.head._2.fractionLowerBound)
+      ratStatsSorted.takeWhile(_._2.fractionLowerBound >= minLower)
+    }
     val rats = ratStatsSorted
     val ratsList: NodeSeq =
       if (rats.isEmpty) Nil
       else {
+        def showRating(tagAndStats: Pair[String, LabelStats]): String = {
+          val tag = tagAndStats._1
+          val likingLowerBound = tagAndStats._2.fractionLowerBound
+          // A rating tag like "important!!" means "really important", many
+          // people agree. And "important?" means "perhaps somewhat important",
+          // some people agree.
+          // COULD reduce font-size of ? to 85%, it's too conspicuous.
+          val mark =
+            if (likingLowerBound > 0.9) "!!"
+            else if (likingLowerBound > 0.7) "!"
+            else if (likingLowerBound > 0.3) ""
+            else "?"
+          tag + mark
+          // COULD reduce font size of mark to 85%, or it clutters the ratings.
+        }
         // List popular rating tags. Then all tags and their usage percents,
         // but those details are shown only if one clicks the post header.
         (if (topTags isEmpty) Nil
         else <span class='dw-p-ra dw-p-ra-top'>, rated <i>{
-          topTags.take(3).mkString(", ") }</i></span>) ++
+          topTags.take(3).map(showRating(_)).mkString(", ") }</i></span>) ++
         <div class='dw-p-ra-all'
              data-mtime={toIso8601T(score.lastRatingDate)}>{
           score.ratingCount} ratings:
