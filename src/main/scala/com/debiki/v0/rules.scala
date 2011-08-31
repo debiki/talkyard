@@ -78,6 +78,9 @@ object Action {
   case object Rate extends Action
   case object Edit extends Action
   case object View extends Action
+  /** When you Action.Use e.g. CSS or a PNG image, it's returned to the
+   *  browser as text/css, or image/png, not wrapped in html. */
+  case object Use extends Action
   case class Unsupported(whatUnsafe: String) extends Action {
     override def toString: String = "Unsupported("+ safe(whatUnsafe) +")"
   }
