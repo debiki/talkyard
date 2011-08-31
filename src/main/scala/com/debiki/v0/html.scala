@@ -86,6 +86,12 @@ object DebateHtml {
     (xml, lines)
   }
 
+  // COULD compile javascripts, see:
+  // http://www.java2s.com/Code/Java/JDK-6/WorkingwithCompilableScripts.htm
+  // http://javasourcecode.org/html/open-source/jdk/jdk-6u23/
+  //                  com/sun/script/javascript/RhinoCompiledScript.html
+  // http://www.javalobby.org/java/forums/t87870.html
+
   // A markdown parser, in JavaScript, namely Showdown.
   private val _jsShowdown = new javax.script.ScriptEngineManager()
         .getEngineByName("js")
