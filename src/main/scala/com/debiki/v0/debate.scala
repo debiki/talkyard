@@ -15,10 +15,10 @@ object Debate {
 
   def fromActions(guid: String,
                   logins: List[Login],
-                  loginIdtys: List[LoginCreds],
+                  identities: List[Identity],
                   users: List[User],
                   actions: List[AnyRef]): Debate = {
-    Debate(guid, logins, loginIdtys, users) ++ actions
+    Debate(guid, logins, identities, users) ++ actions
   }
 }
 
@@ -30,7 +30,7 @@ class AddVoteResults private[debiki] (
 case class Debate (
   guid: String,
   logins: List[Login] = Nil,
-  loginCreds: List[LoginCreds] = Nil,
+  identities: List[Identity] = Nil,
   users: List[User] = Nil,
   private[debiki] val posts: List[Post] = Nil,
   private[debiki] val ratings: List[Rating] = Nil,
@@ -183,7 +183,7 @@ case class Debate (
 
   def ++[T >: AnyRef] (actions: List[T]): Debate = {
     var logins2 = logins
-    var loginCreds2 = loginCreds
+    var identities2 = identities
     var users2 = users
     var posts2 = posts
     var ratings2 = ratings
@@ -192,7 +192,7 @@ case class Debate (
     var editsApplied2 = editsApplied
     for (a <- actions) a match {
       case l: Login => logins2 ::= l
-      case i: LoginCreds => loginCreds2 ::= i
+      case i: Identity => identities2 ::= i
       case u: User => users2 ::= u
       case p: Post => posts2 ::= p
       case r: Rating => ratings2 ::= r
@@ -202,7 +202,7 @@ case class Debate (
       case x => error(
           "Unknown action type: "+ classNameOf(x) +" [debiki_error_8k3EC]")
     }
-    Debate(guid, logins2, loginCreds2, users2, posts2, ratings2,
+    Debate(guid, logins2, identities2, users2, posts2, ratings2,
         edits2, editVotes2, editsApplied2)
   }
 
@@ -431,8 +431,9 @@ class ViAc(val debate: Debate, val action: Action) {
   def id: String = action.id
   def login: Option[Login] = debate.login(action.loginId)
   def login_! : Login = login.get
-  def user: Option[User] = login.flatMap(l => debate.user(l.loginCredsId))
-  def user_! : User = debate.user_!(login_!.loginCredsId)
+  def identity: Option[Identity] = login.flatMap(l =>
+                                    debate.identity(l.identityId))
+  def identity_! : Identity = debate.identity_!(login.get.identityId)
   def ip: Option[String] = action.newIp.orElse(login.map(_.ip))
   def ip_! : String = action.newIp.getOrElse(login_!.ip)
   def ipSaltHash: Option[String] = ip.map(saltAndHashIp(_))

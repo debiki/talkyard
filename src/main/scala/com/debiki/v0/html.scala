@@ -370,7 +370,12 @@ class DebateHtml(val debate: Debate) {
       else {
         val lastEditDate = editApps.head.date
         <div class='dw-p-hdr-ed'>Edited by {
-            if (editApps.map(a => debate.vied_!(a.editId).user_!.id).
+            // This identityt test doesn't take into account that a user
+            // can have many identities (e.g. Twitter, Facebook, Gmail), so
+            // even if many different identities have edited the post,
+            // perhaps only one single user has edited it. Cannot easily
+            // compare users though, because IdentitySimple maps to no user!
+            if (editApps.map(a => debate.vied_!(a.editId).identity_!.id).
                 distinct.length > 1) {
               <a>various people</a>
             } else {

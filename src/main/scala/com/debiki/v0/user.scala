@@ -13,7 +13,7 @@ import Prelude._
 abstract trait People {
 
   def logins: List[Login]
-  def loginCreds: List[LoginCreds]
+  def identities: List[Identity]
   def users: List[User]
 
   /** Returns a NiLo with info on the author of the post.
@@ -34,8 +34,8 @@ abstract trait People {
   def login(id: String): Option[Login] = logins.find(_.id == id)
   def login_!(id: String): Login = login(id).get
 
-  def loginIdty(id: String): Option[LoginCreds] = loginCreds.find(_.id == id)
-  def loginIdty_!(id: String): LoginCreds = loginIdty(id).get
+  def identity(id: String): Option[Identity] = identities.find(_.id == id)
+  def identity_!(id: String): Identity = identity(id).get
 
   // -------- Users
 
@@ -50,13 +50,13 @@ abstract trait People {
   //def authorOf_!(e: Edit): User = user_!(login_!(e.loginId).userId)
 }
 
-/** A Nice Login: a Login, LoginIdty an User tuple, and utility methods.
+/** A Nice Login: a Login, Identity an User tuple, and utility methods.
  */
 class NiLo(people: People, val login: Login) {
   def user_! : Option[User] = None  // for now
-  def creds_! : LoginCreds = LoginCredsUnknown  // for now
+  def identity_! : Identity = IdentityUnknown  // for now
   def displayName: String =
-    user_!.map(_.displayName).getOrElse(creds_!.displayName)
+    user_!.map(_.displayName).getOrElse(identity_!.displayName)
 }
 
 case class User (
@@ -73,7 +73,7 @@ case class Login(
   prevLoginId: Option[String],
   ip: String,
   date: ju.Date,
-  loginCredsId: String)
+  identityId: String)
 
 object Login {
 
@@ -89,9 +89,9 @@ object Login {
   }
 }
 
-/** Login credentials.
+/** Login identity, e.g. an OpenID identity or a Twitter identity.
  */
-sealed abstract class LoginCreds {  // COULD rename to LoginIdty (identity)
+sealed abstract class Identity {
   /** A local id, not a guid. -- hmm, no, it'll be a database *unique* id?!
    *
    *  For example, if a user is loaded for inclusion on page X,
@@ -111,7 +111,7 @@ sealed abstract class LoginCreds {  // COULD rename to LoginIdty (identity)
   //def compareWith(user: User): UserComparison
 }
 
-/*case object LoginCredsSystem extends LoginCreds {
+/*case object IdentitySystem extends Identity {
   val id = "1"
   val displayName = "System"  // i18n?
   val email = ""
@@ -122,7 +122,7 @@ sealed abstract class LoginCreds {  // COULD rename to LoginIdty (identity)
   } */
 } */
 
-case object LoginCredsUnknown extends LoginCreds {
+case object IdentityUnknown extends Identity {
   val id = "2"
   val displayName = "?"
   val email = ""
@@ -133,14 +133,14 @@ case object LoginCredsUnknown extends LoginCreds {
   } */
 }
 
-case class LoginCredsSimple(
+case class IdentitySimple(
   id: String,
   name: String,  // TODO don't allow weird chars, e.g. '?' or '|'
   email: String,
   location: String,
   website: String
   // COULD include signed cookie random value, so we knows if is same browser.
-) extends LoginCreds {
+) extends Identity {
   // Indicate that the user was not logged in, that we're not sure
   // about his/her identity, by appending "??". If however s/he provided
   // an email address, it's harder for other people to impersonate her.
@@ -166,7 +166,7 @@ case class LoginCredsSimple(
   } */
 }
 
-case class LoginCredsOpenId(
+case class IdentityOpenId(
   id: String,
   oidEndpoint: String,
   oidVersion: String,
@@ -182,7 +182,7 @@ case class LoginCredsOpenId(
   firstName: String,
   email: String,
   country: String
-) extends LoginCreds {
+) extends Identity {
   def displayName = firstName
 
   /* def compareWith(user: User) = user match {

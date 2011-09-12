@@ -43,13 +43,13 @@ abstract class DaoSpi {
 
 
 object Dao {
-  case class LoginStuff(login: Login, creds: LoginCreds, user: Option[User]) {
+  case class LoginStuff(login: Login, identity: Identity, user: Option[User]) {
     def displayName: String = {
       // Authenticated users can specify their own name, it's saved
       // in some user table. Unauthenticated user specify any name when
       // they login (without password) and for them there is no this.user,
-      // only a this.creds.
-      user.map(_.displayName).getOrElse(creds.displayName)
+      // only a this.identity.
+      user.map(_.displayName).getOrElse(identity.displayName)
     }
   }
 }
@@ -146,11 +146,11 @@ class CachingDao(impl: DaoSpi) extends Dao {
         // the page from the database.
         // -- But bug: -------------
         // None$.get: newPage might not contain xs.loginId, nor the
-        // related LoginIdty (LoginCreds) and User. So later, when newPage
+        // related Identity and User. So later, when newPage
         // is rendered, there'll be a scala.None$.get, from inside
         // DebateHtml._layoutPosts.
         // -- So instead: ----------
-        // This loads all Logins, LoginIdtys and Users referenced by the page:
+        // This loads all Logins, Identity:s and Users referenced by the page:
         val newPage = _impl.load(tenantId, debateId).open_!
         // -------- Unfortunately.--
         replaced = _cache.replace(key, oldPage, newPage)
