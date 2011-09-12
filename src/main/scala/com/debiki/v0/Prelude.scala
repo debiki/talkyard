@@ -46,6 +46,9 @@ object Prelude {
   def assErr(problem: String) =
     throw new AssertionError(problem)
 
+  def assErrIf(condition: Boolean, problem: String) =
+    if (condition) throw new AssertionError(problem)
+
   def illegalArg(problem: String) =
     throw new IllegalArgumentException(problem)
 

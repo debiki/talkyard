@@ -58,9 +58,9 @@ case class PagePath(
 
 /** Things an end user can do.
  */
-sealed abstract class Action
+sealed abstract class Do
 
-object Action {
+object Do {
   /*
   def fromText(text: String): Action = text match {
     // COULD find out how to do this automatically in Scala?
@@ -72,16 +72,16 @@ object Action {
     case x => Unsupported(x)
   }*/
 
-  case object Act extends Action
-  case object Create extends Action
-  case object Reply extends Action
-  case object Rate extends Action
-  case object Edit extends Action
-  case object View extends Action
-  /** When you Action.Use e.g. CSS or a PNG image, it's returned to the
+  case object Act extends Do
+  case object Create extends Do
+  case object Reply extends Do
+  case object Rate extends Do
+  case object Edit extends Do
+  case object View extends Do
+  /** When you Do.Use e.g. CSS or a PNG image, it's returned to the
    *  browser as text/css, or image/png, not wrapped in html. */
-  case object Use extends Action
-  case class Unsupported(whatUnsafe: String) extends Action {
+  case object Use extends Do
+  case class Unsupported(whatUnsafe: String) extends Do {
     override def toString: String = "Unsupported("+ safe(whatUnsafe) +")"
   }
 }

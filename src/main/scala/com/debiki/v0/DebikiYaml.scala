@@ -1,9 +1,7 @@
 // vim: fdm=marker et ts=2 sw=2 tw=80 fo=tcqwn list
 
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
+/*  I added Login and User/Simple/OpenId/..., so now DebikiYaml
+    requires a partial rewrite.
 
 package com.debiki.v0
 
@@ -461,3 +459,5 @@ class DebikiYaml {
         obj.getClass.getSimpleName)
 
 }
+
+*/

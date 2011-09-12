@@ -6,6 +6,7 @@ import com.debiki.v0.Prelude._
 import com.google.{common => guava}
 import java.{util => ju}
 import net.liftweb.common.{Logger, Box, Empty, Full, Failure}
+import Dao._
 
 /** Debiki's Data Access Object service provider interface.
  */
@@ -15,7 +16,12 @@ abstract class DaoSpi {
 
   def close()
 
+  def saveLogin(tenantId: String, loginStuff: LoginStuff): LoginStuff
+
+  def saveLogout(loginId: String, logoutIp: String)
+
   // COULD use:  save(Guid(tenantId, pageGuid), xs)  instead?
+  // COULD rename to savePage.
   def save[T](tenantId: String, debateId: String, xs: List[T]): Box[List[T]]
 
   def load(tenantId: String, debateId: String): Box[Debate]
@@ -24,7 +30,7 @@ abstract class DaoSpi {
 
   def checkPagePath(pathToCheck: PagePath): Box[PagePath]
 
-  def checkAccess(pagePath: PagePath, userId: String, action: Action
+  def checkAccess(pagePath: PagePath, loginId: Option[String], doo: Do
                      ): Option[IntrsAllowed]
 
   def checkRepoVersion(): Box[String]
@@ -35,6 +41,20 @@ abstract class DaoSpi {
 
 }
 
+
+object Dao {
+  case class LoginStuff(login: Login, creds: LoginCreds, user: Option[User]) {
+    def displayName: String = {
+      // Authenticated users can specify their own name, it's saved
+      // in some user table. Unauthenticated user specify any name when
+      // they login (without password) and for them there is no this.user,
+      // only a this.creds.
+      user.map(_.displayName).getOrElse(creds.displayName)
+    }
+  }
+}
+
+
 /** Debiki's Data Access Object.
  *
  *  Delegates database requests to a DaoSpi implementation.
@@ -44,6 +64,14 @@ abstract class Dao {
   def create(where: PagePath, debate: Debate): Box[Debate]
 
   def close()
+
+  /** Assigns ids to the login stuff, saves them,
+   *  and returns them with ids.
+   */
+  def saveLogin(tenantId: String, loginStuff: LoginStuff): LoginStuff
+
+  /** Updates the specified login with logout IP and timestamp.*/
+  def saveLogout(loginId: String, logoutIp: String)
 
   def save[T](tenantId: String, debateId: String, xs: List[T]): Box[List[T]]
 
@@ -59,7 +87,7 @@ abstract class Dao {
 
   def checkPagePath(pathToCheck: PagePath): Box[PagePath]
 
-  def checkAccess(pagePath: PagePath, userId: String, action: Action
+  def checkAccess(pagePath: PagePath, loginId: Option[String], doo: Do
                      ): Option[IntrsAllowed]
 
   def checkRepoVersion(): Box[String]
@@ -99,6 +127,12 @@ class CachingDao(impl: DaoSpi) extends Dao {
 
   def close() = _impl.close
 
+  def saveLogin(tenantId: String, loginStuff: LoginStuff): LoginStuff =
+    _impl.saveLogin(tenantId, loginStuff)
+
+  def saveLogout(loginId: String, logoutIp: String) =
+    _impl.saveLogout(loginId, logoutIp)
+
   def save[T](tenantId: String, debateId: String, xs: List[T]
                  ): Box[List[T]] = {
     for (xsWithIds <- _impl.save(tenantId, debateId, xs)) yield {
@@ -106,11 +140,20 @@ class CachingDao(impl: DaoSpi) extends Dao {
       var replaced = false
       while (!replaced) {
         val oldPage = _cache.get(key)
-        val newPage = oldPage ++ xsWithIds
+        // -- Should to: -----------
+        // val newPage = oldPage ++ xsWithIds
         // newPage might == oldPage, if another thread just refreshed
         // the page from the database.
+        // -- But bug: -------------
+        // None$.get: newPage might not contain xs.loginId, nor the
+        // related LoginIdty (LoginCreds) and User. So later, when newPage
+        // is rendered, there'll be a scala.None$.get, from inside
+        // DebateHtml._layoutPosts.
+        // -- So instead: ----------
+        // This loads all Logins, LoginIdtys and Users referenced by the page:
+        val newPage = _impl.load(tenantId, debateId).open_!
+        // -------- Unfortunately.--
         replaced = _cache.replace(key, oldPage, newPage)
-        System.out.println("muu")
       }
       xsWithIds  // TODO return newPage instead? Or possibly a pair.
     }
@@ -131,9 +174,9 @@ class CachingDao(impl: DaoSpi) extends Dao {
   def checkPagePath(pathToCheck: PagePath): Box[PagePath] =
     _impl.checkPagePath(pathToCheck)
 
-  def checkAccess(pagePath: PagePath, userId: String, action: Action
+  def checkAccess(pagePath: PagePath, loginId: Option[String], doo: Do
                      ): Option[IntrsAllowed] =
-    _impl.checkAccess(pagePath, userId, action)
+    _impl.checkAccess(pagePath, loginId, doo)
 
   def checkRepoVersion(): Box[String] = _impl.checkRepoVersion()
 
@@ -151,6 +194,12 @@ class NonCachingDao(impl: DaoSpi) extends Dao {
 
   def close() = impl.close
 
+  def saveLogin(tenantId: String, loginStuff: LoginStuff): LoginStuff =
+    impl.saveLogin(tenantId, loginStuff)
+
+  def saveLogout(loginId: String, logoutIp: String) =
+    impl.saveLogout(loginId, logoutIp)
+
   def save[T](tenantId: String, debateId: String, xs: List[T]): Box[List[T]] =
     impl.save(tenantId, debateId, xs)
 
@@ -163,9 +212,9 @@ class NonCachingDao(impl: DaoSpi) extends Dao {
   def checkPagePath(pathToCheck: PagePath): Box[PagePath] =
     impl.checkPagePath(pathToCheck)
 
-  def checkAccess(pagePath: PagePath, userId: String, action: Action
+  def checkAccess(pagePath: PagePath, loginId: Option[String], doo: Do
                      ): Option[IntrsAllowed] =
-    impl.checkAccess(pagePath, userId, action)
+    impl.checkAccess(pagePath, loginId, doo)
 
   def checkRepoVersion(): Box[String] = impl.checkRepoVersion()
 

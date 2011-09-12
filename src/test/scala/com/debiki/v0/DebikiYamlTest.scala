@@ -1,8 +1,5 @@
 // vim: ts=2 sw=2 et
 /*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
 
 package com.debiki.v0
 
@@ -73,3 +70,5 @@ class DebikiYamlTest extends SpecificationWithJUnit with PendingUntilFixed {
   }
 
 }
+
+*/

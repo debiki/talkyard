@@ -51,14 +51,15 @@ object Util {
   }
 
   val post = Post(id = "Ca", parent = "0", date = new ju.Date,
-                  by = "Someone", ip = "1.2.3.4", text = "test")
-  val debate = Debate("test", post :: Nil, Nil)
+                  loginId = "?", newIp = None, text = "test",
+                  markup = "")
+  val debate = Debate("test", posts = post::Nil)
   val rating_interesting =
-        Rating(postId = post.id, by = "?", date = new ju.Date,
-               ip = "1.2.3.4", tags = List("interesting"))
+        Rating(id = "?", postId = post.id, loginId = "?", date = new ju.Date,
+               newIp = None, tags = List("interesting"))
   val rating_stupid =
-        Rating(postId = post.id, by = "?", date = new ju.Date,
-               ip = "2.3.4.5", tags = List("stupid"))
+        Rating(id = "?", postId = post.id, loginId = "?", date = new ju.Date,
+               newIp = None, tags = List("stupid"))
 }
 
 import Util._
@@ -122,7 +123,7 @@ class PostRatingTest extends SpecificationWithJUnit {
 class EditLikingTest extends SpecificationWithJUnit {
 
   val edit = Edit(post.id +"Ea", postId = post.id, date = new ju.Date,
-                  by = "?", ip = "1.2.3.4", text = "text", desc = "desc")
+                  loginId = "?", newIp = None, text = "text", desc = "desc")
   val upVote = EditVote(edit.id, "?", "1.2.3.4", new ju.Date, List(edit.id), Nil)
   // Yet another up vote:
   val upVote2 = EditVote("?", "?", "1.2.3.4", new ju.Date, List(edit.id), Nil)

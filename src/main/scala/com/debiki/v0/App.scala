@@ -40,7 +40,8 @@ private[debiki] object App {
       i += 1
     }
 
-    val debate: Debate = DebikiYaml().loadDebateFromPath(dir).open_!
+    val debate: Debate = unimplemented
+                    // DebikiYaml().loadDebateFromPath(dir).open_!
     val debateHtml = new DebateHtml(debate)
 
     createDirTree(out, debate)

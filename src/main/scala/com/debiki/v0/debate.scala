@@ -9,12 +9,16 @@ import Prelude._
 
 object Debate {
 
-  val RootPostId = "0"
+  val RootPostId = "0"  // COULD change to 1
 
   def empty(id: String) = Debate(id)
 
-  def fromActions(guid: String, actions: List[AnyRef]): Debate = {
-    Debate(guid) ++ actions
+  def fromActions(guid: String,
+                  logins: List[Login],
+                  loginIdtys: List[LoginCreds],
+                  users: List[User],
+                  actions: List[AnyRef]): Debate = {
+    Debate(guid, logins, loginIdtys, users) ++ actions
   }
 }
 
@@ -24,13 +28,16 @@ class AddVoteResults private[debiki] (
 )
 
 case class Debate (
-  val guid: String,
+  guid: String,
+  logins: List[Login] = Nil,
+  loginCreds: List[LoginCreds] = Nil,
+  users: List[User] = Nil,
   private[debiki] val posts: List[Post] = Nil,
   private[debiki] val ratings: List[Rating] = Nil,
   private[debiki] val edits: List[Edit] = Nil,
   private[debiki] val editVotes: List[EditVote] = Nil,
   private[debiki] val editsApplied: List[EditApplied] = Nil
-){
+) extends People {
   private lazy val postsById =
       imm.Map[String, Post](posts.map(x => (x.id, x)): _*)
 
@@ -120,6 +127,12 @@ case class Debate (
 
   // -------- Edits
 
+  def vied_!(editId: String): ViEd =
+    vied(editId).getOrElse(error("[debiki_error_08k32w2]"))
+
+  def vied(editId: String): Option[ViEd] =
+    editsById.get(editId).map(new ViEd(this, _))
+
   lazy val editsById: imm.Map[String, Edit] = {
     val m = edits.groupBy(_.id)
     m.mapValues(list => {
@@ -169,12 +182,18 @@ case class Debate (
   //                                                            (_ != rating))
 
   def ++[T >: AnyRef] (actions: List[T]): Debate = {
+    var logins2 = logins
+    var loginCreds2 = loginCreds
+    var users2 = users
     var posts2 = posts
     var ratings2 = ratings
     var edits2 = edits
     var editVotes2 = editVotes
     var editsApplied2 = editsApplied
     for (a <- actions) a match {
+      case l: Login => logins2 ::= l
+      case i: LoginCreds => loginCreds2 ::= i
+      case u: User => users2 ::= u
       case p: Post => posts2 ::= p
       case r: Rating => ratings2 ::= r
       case e: Edit => edits2 ::= e
@@ -183,7 +202,8 @@ case class Debate (
       case x => error(
           "Unknown action type: "+ classNameOf(x) +" [debiki_error_8k3EC]")
     }
-    Debate(guid, posts2, ratings2, edits2, editVotes2, editsApplied2)
+    Debate(guid, logins2, loginCreds2, users2, posts2, ratings2,
+        edits2, editVotes2, editsApplied2)
   }
 
   def addEdit(edit: Edit): AddVoteResults = {
@@ -194,6 +214,7 @@ case class Debate (
     var newEditsApplied = List[EditApplied]()
     if (replies.isEmpty && editsOwnPost)
       newEditsApplied ::= EditApplied(editId = edit.id, date = edit.date,
+          loginId = edit.loginId,
           result = edit.text, // in the future perahps apply a diff?
           debug = "Applying own edit directly, since no replies")
     val d2 = copy(edits = edit :: edits,
@@ -246,6 +267,7 @@ case class Debate (
 
       if (shouldApply) {
         val a = EditApplied(editId = editId, date = vote.date,
+            loginId = edit.loginId,
             result = edit.text, // in the future perahps apply a diff?
             debug = liking.map(_.toString).getOrElse(
                       "Own edit, own vote, no replies"))
@@ -275,8 +297,21 @@ case class Debate (
 
   // -------- Misc
 
+  def compareAuthors(edit: Edit, post: Post): Login.Comparison = {
+    unimplemented
+    /*(login(edit.loginId), login(post.loginId)) match {
+      case (Some(el: Login), Some(pl: Login)) =>
+        (user(el.userId), user(pl.userId)) match {
+          case (Some(eu: User), Some(pu: User)) =>
+            User.compare(eu, el, pu, pl)
+          case _ => User.NotSame
+        }
+      case _ => User.NotSame
+    } */
+  }
+
   def hasSameAuthor(edit: Edit, post: Post): Boolean =
-    edit.by == post.by && edit.ip == post.ip  //TODO: Cmp cookies, login name?
+    compareAuthors(edit, post) == Login.IsSame
 
   /** Assigns ids to Post:s and Edit:s, and updates references from Edit:s
    *  to Post ids. COULD move to Debiki$, since ids are randomized, stateless.
@@ -389,41 +424,67 @@ case class Debate (
 
 }
 
+/** A virtual Action, that is, an Action plus some utility methods that
+ *  look up other stuff in the relevant Debate.
+ */
+class ViAc(val debate: Debate, val action: Action) {
+  def id: String = action.id
+  def login: Option[Login] = debate.login(action.loginId)
+  def login_! : Login = login.get
+  def user: Option[User] = login.flatMap(l => debate.user(l.loginCredsId))
+  def user_! : User = debate.user_!(login_!.loginCredsId)
+  def ip: Option[String] = action.newIp.orElse(login.map(_.ip))
+  def ip_! : String = action.newIp.getOrElse(login_!.ip)
+  def ipSaltHash: Option[String] = ip.map(saltAndHashIp(_))
+  def ipSaltHash_! : String = saltAndHashIp(ip_!)
+}
+
 /** A Virtual Post into account all edits applied to the actual post.
  */
-class ViPo(val debate: Debate, val post: Post) {
-  def id: String = post.id
+class ViPo(debate: Debate, val post: Post) extends ViAc(debate, post) {
   def parent: String = post.parent
   // def date = lastEditApl.map(ea => toIso8601(ea.date))
-  def by: String = post.by
-  def ip: String = post.ip
   def text: String = lastEditApl.map(_.result).getOrElse(post.text)
   def textInitially: String = post.text
   def where: Option[String] = post.where
-  // ...
   val lastEditApl = debate.editsAppliedTo(post.id).headOption
 }
 
-// TODO parent class/trait Action
+class ViEd(debate: Debate, val edit: Edit) extends ViAc(debate, edit) {
+
+}
+
+sealed abstract class Action {
+  /** A local id, unique only in the Debate that this action modifies. */
+  def id: String
+
+  /** An id that identifies the login session, which in turn identifies
+   *  the user and IP and session creation time.
+   */
+  def loginId: String
+
+  /** Always None, unless the post was sent from somewhere else than
+   *  the relevant Login.ip.
+   */
+  def newIp: Option[String]
+  def date: ju.Date
+}
 
 case class Rating (
   id: String,
   postId: String,
-  by: String,
-  ip: String,
+  loginId: String,
+  newIp: Option[String],
   date: ju.Date,
   tags: List[String]
-)
+) extends Action
 
 case class Post(
   id: String,
   parent: String,
   date: ju.Date,
-
-  /** An id that identifies the author, formatted as User.id.
-   */
-  by: String,
-  ip: String,
+  loginId: String,
+  newIp: Option[String],
   text: String,
 
   /** The markup language to use when rendering this post.
@@ -439,26 +500,25 @@ case class Post(
    *  specifies where in the parent post it is to be placed.
    */
   where: Option[String] = None
-){
-  def ipSaltHash: String = saltAndHashIp(ip)
+) extends Action {
 }
 
-case class Edit(
+case class Edit (
   id: String,
   postId: String,
   date: ju.Date,
-  by: String,
-  ip: String,
+  loginId: String,
+  newIp: Option[String],
   text: String,
   /** The author's description and motivation for this edit */
   desc: String
-)
+) extends Action
 
 // Verify: No duplicate like/diss ids, no edit both liked and dissed
-case class EditVote(
+case class EditVote(  // should extend Action
   id: String,
-  by: String,
-  ip: String,
+  loginId: String,
+  ip: String,  // should change to newIp Option[String]
   date: ju.Date,
   /** Ids of edits liked */
   like: List[String],
@@ -468,9 +528,10 @@ case class EditVote(
 
 // + EditApplication/Utilization/Introduction/Commit/PutOn?
 // + EditRevocation/Reversal?
-case class EditApplied (  // TODO add ID field
+case class EditApplied (  // TODO extend Action
   editId: String,
   date: ju.Date,
+  loginId: String,
 
   /** The text after the edit was applied. Needed, in case an `Edit'
    *  contains a diff, not the resulting text itself. Then we'd better not
