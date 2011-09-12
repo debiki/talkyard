@@ -9,7 +9,7 @@ package com.debiki.v0
 import java.{util => ju, io => jio}
 import scala.collection.JavaConversions._
 import collection.{mutable => mut, immutable => imm}
-import _root_.net.liftweb.common.{Box, EmptyBox, Failure}
+import _root_.net.liftweb.common.{Box, Full, Empty, EmptyBox, Failure}
 import _root_.net.liftweb.util.ControlHelpers.tryo
 import _root_.scala.xml.{NodeSeq, Elem, Text, XML, Attribute}
 import Prelude._
@@ -43,7 +43,9 @@ abstract class HtmlConfig {
   /** Constructs a URL to more info on a certain user,
    *  adds "http://" if needed.
    */
-  def userLink(user: User) = {
+  def userLink(nilo: NiLo) = {
+    "" // for now, since OpenID users cannot specify url, fix ...
+    /*
     // Lift-Web or Java? escapes cookie values, so unescape `://'.
     // Scala 1.9? val ws = user.website.replaceAllLiterally("%3A%2F%2F", "://")
     val ws = user.website.replaceAll("%3A%2F%2F", "://")
@@ -54,13 +56,12 @@ abstract class HtmlConfig {
       ws
     } else {
       "http://"+ ws
-    }
+    } */
   }
 
   /** Whether or not to show edit suggestions. */
   def showEdits_? = false  // doesn't work at all right now
   def hostAndPort = "localhost"
-  def people = new People()
 
   def xsrfToken: String
 }
@@ -258,6 +259,7 @@ class DebateHtml(val debate: Debate) {
   }
 
   private def comment(post: Post): NodeSeq = {
+    val vipo = debate.vipo_!(post.id)
     val count = debate.successorsTo(post.id).length + 1
     val editApps = debate.editsAppliedTo(post.id)
     val lastEditApp = editApps.headOption
@@ -296,13 +298,10 @@ class DebateHtml(val debate: Debate) {
     }
     val long = numLines > 9
     val cutS = if (long && post.id != Debate.RootPostId) " dw-x-s" else ""
-    val author = config.people.authorOf(post) openOr {
-      // COULD remember an error somewhere?
-      User.unknown
-    }
+    val author = debate.authorOf_!(post)
 
-    def tryLinkTo(user: User) = {
-      var url = config.userLink(user)
+    def tryLinkTo(nilo: NiLo) = {
+      var url = config.userLink(nilo)
       // TODO: investigate: `url' is sometimes the email address!!
       // When signed in @gmail.com, it seems.
       // For now: (this is actually a good test anyway, in case someone
@@ -314,9 +313,9 @@ class DebateHtml(val debate: Debate) {
       }
       if (url nonEmpty) {
         <a class='dw-p-by' href={url}
-          rel='nofollow' target='_blank'>{user.name}</a>
+          rel='nofollow' target='_blank'>{nilo.displayName}</a>
       } else {
-        <span class='dw-p-by'>{user.name}</span>
+        <span class='dw-p-by'>{nilo.displayName}</span>
       }
     }
 
@@ -371,12 +370,12 @@ class DebateHtml(val debate: Debate) {
       else {
         val lastEditDate = editApps.head.date
         <div class='dw-p-hdr-ed'>Edited by {
-            if (editApps.map(a => debate.editsById(a.editId).by).
+            if (editApps.map(a => debate.vied_!(a.editId).user_!.id).
                 distinct.length > 1) {
               <a>various people</a>
             } else {
-              val editor = config.people.authorOf(debate.editsById(
-                           lastEditApp.get.editId)) openOr User.unknown
+              val editor = debate.authorOf_!(debate.editsById(
+                           lastEditApp.get.editId))
               tryLinkTo(editor)
             }
           }{dateAbbr(lastEditDate, "dw-p-at")}
@@ -393,7 +392,7 @@ class DebateHtml(val debate: Debate) {
                 {textToHtml(edit.desc)._1}
               </div>
               — { // (the dash is an em dash no a minus)
-                val editor = config.people.authorOf(edit) openOr User.unknown
+                val editor = debate.authorOf_!(edit)
                 tryLinkTo(editor)
               }{ dateAbbr(edit.date, "dw-ed-at") }
               <pre class='dw-ed-text'>{edit.text}</pre>
@@ -413,8 +412,8 @@ class DebateHtml(val debate: Debate) {
     // the – on the next line is an `en dash' not a minus
     <a class='dw-z'>[–]</a>
     <div id={cssPostId} class={"dw-p" + cutS}
-         data-p-by-email-sh={author.emailSaltHash}
-         data-p-by-ip-sh={post.ipSaltHash}>
+         data-p-by-email-sh={""/* author.emailSaltHash - consider security*/}
+         data-p-by-ip-sh={vipo.ipSaltHash_!}>
       <div class='dw-p-hdr'>
         By { tryLinkTo(author)}{ dateAbbr(post.date, "dw-p-at")
         }{ ratsList }{ editInfo }
