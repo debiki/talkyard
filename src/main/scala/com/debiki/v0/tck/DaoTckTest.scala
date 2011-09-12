@@ -130,10 +130,10 @@ class DaoSpecEmptySchema(b: TestContextBuilder) extends DaoSpec(b, "0") {
 
 object Templates {
   val login = v0.Login(id = "?", prevLoginId = None, ip = "?.?.?.?",
-    date = new ju.Date, loginCredsId = "?x")
-  val loginSimple = v0.LoginCredsSimple(id = "?", name = "Målligan",
+    date = new ju.Date, identityId = "?x")
+  val loginSimple = v0.IdentitySimple(id = "?", name = "Målligan",
     email = "no@email.no", location = "", website = "")
-  val loginOpenId = v0.LoginCredsOpenId(id = "?",
+  val loginOpenId = v0.IdentityOpenId(id = "?",
     oidEndpoint = "provider.com/endpoint", oidVersion = "2",
     oidRealm = "example.com", oidClaimedId = "claimed-id.com",
     oidOpLocalId = "provider.com/local/id",
@@ -220,7 +220,7 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
       }
     }
 
-    // COULD: Find the LoginIdty again, and the User.
+    // COULD: Find the Identity again, and the User.
 
     val exPagePath = defaultPagePath.copy(guid = GuidInPath(ex1_debate.guid))
     "recognize its correct PagePath" >> {
@@ -350,7 +350,7 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
           u.id must_!= "?"
           u.id must_!= ""
           exOpenId_userIds += u.id
-          //u.id must_== stuff.creds. what! which user ???
+          //u.id must_== stuff.identity. what! which user ???
           u must matchUser(
               displayName = T.loginOpenId.firstName,
               email = T.loginOpenId.email,
