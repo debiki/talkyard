@@ -116,11 +116,18 @@ class CachingDao(impl: DaoSpi) extends Dao {
           })
 
   def create(where: PagePath, debate: Debate): Box[Debate] = {
-    for (debateWithIds <- _impl.create(where, debate)) yield {
+    for (debateWithIdsNoUsers <- _impl.create(where, debate)) yield {
+      // ------------
+      // Bug workaround: Load the page *inclusive Login:s and User:s*.
+      // Otherwise only Actions will be included (in debateWithIdsNoUsers)
+      // and then the page cannot be rendered (there'll be None.get errors).
+      val debateWithIds =
+          _impl.load(where.tenantId, debateWithIdsNoUsers.guid).open_!
+      // ------------
       val key = Key(where.tenantId, debateWithIds.guid)
       val duplicate = _cache.putIfAbsent(key, debateWithIds)
       errorIf(duplicate ne null, "Newly created page "+ safed(debate.guid) +
-          " found in mem cache [debiki_error_38WcK905]")
+          " already present in mem cache [debiki_error_38WcK905]")
       debateWithIds
     }
   }
