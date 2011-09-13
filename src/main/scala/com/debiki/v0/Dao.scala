@@ -16,7 +16,7 @@ abstract class DaoSpi {
 
   def close()
 
-  def saveLogin(tenantId: String, loginStuff: LoginStuff): LoginStuff
+  def saveLogin(tenantId: String, loginStuff: LoginStuff): LoggedInStuff
 
   def saveLogout(loginId: String, logoutIp: String)
 
@@ -43,14 +43,18 @@ abstract class DaoSpi {
 
 
 object Dao {
-  case class LoginStuff(login: Login, identity: Identity, user: Option[User]) {
-    def displayName: String = {
-      // Authenticated users can specify their own name, it's saved
-      // in some user table. Unauthenticated user specify any name when
-      // they login (without password) and for them there is no this.user,
-      // only a this.identity.
-      user.map(_.displayName).getOrElse(identity.displayName)
-    }
+  case class LoginStuff(login: Login, identity: Identity) {
+    require(login.id startsWith "?")
+    require(identity.id startsWith "?")
+    require(identity.id == login.identityId)
+  }
+
+  case class LoggedInStuff(login: Login, identity: Identity, user: User) {
+    require(!login.id.contains('?'))
+    require(!identity.id.contains('?'))
+    require(!user.id.contains('?'))
+    require(login.identityId == identity.id)
+    require(identity.userId == user.id)
   }
 }
 
@@ -65,10 +69,10 @@ abstract class Dao {
 
   def close()
 
-  /** Assigns ids to the login stuff, saves them,
-   *  and returns them with ids.
+  /** Assigns ids to the login stuff, saves them, finds or creates a user
+   * for the specified Identity, and returns everything with ids filled in.
    */
-  def saveLogin(tenantId: String, loginStuff: LoginStuff): LoginStuff
+  def saveLogin(tenantId: String, loginStuff: LoginStuff): LoggedInStuff
 
   /** Updates the specified login with logout IP and timestamp.*/
   def saveLogout(loginId: String, logoutIp: String)
@@ -134,7 +138,7 @@ class CachingDao(impl: DaoSpi) extends Dao {
 
   def close() = _impl.close
 
-  def saveLogin(tenantId: String, loginStuff: LoginStuff): LoginStuff =
+  def saveLogin(tenantId: String, loginStuff: LoginStuff): LoggedInStuff =
     _impl.saveLogin(tenantId, loginStuff)
 
   def saveLogout(loginId: String, logoutIp: String) =
@@ -201,7 +205,7 @@ class NonCachingDao(impl: DaoSpi) extends Dao {
 
   def close() = impl.close
 
-  def saveLogin(tenantId: String, loginStuff: LoginStuff): LoginStuff =
+  def saveLogin(tenantId: String, loginStuff: LoginStuff): LoggedInStuff =
     impl.saveLogin(tenantId, loginStuff)
 
   def saveLogout(loginId: String, logoutIp: String) =

@@ -20,7 +20,7 @@ abstract trait People {
    */
   def authorOf_!(action: Action): NiLo = {  // COULD rename to loginFor?
                                          // or return a User?
-    new NiLo(null, null)  // for now
+    new NiLo(this, login_!(action.loginId))
   }
 
   def nilo(loginId: String): Option[NiLo] =
@@ -32,16 +32,19 @@ abstract trait People {
 
   // COULD optimize.
   def login(id: String): Option[Login] = logins.find(_.id == id)
-  def login_!(id: String): Login = login(id).get
+  def login_!(id: String): Login = login(id) getOrElse error(
+    "Login not found: "+ safed(id) +" [debiki_error_8K3520z23]")
 
   def identity(id: String): Option[Identity] = identities.find(_.id == id)
-  def identity_!(id: String): Identity = identity(id).get
+  def identity_!(id: String): Identity = identity(id) getOrElse error(
+    "Identity not found: "+ safed(id) +" [debiki_error_021kr3k09]")
 
   // -------- Users
 
   // COULD optimize.
   def user(id: String): Option[User] = users.find(_.id == id)
-  def user_!(id: String): User = user(id).get
+  def user_!(id: String): User = user(id) getOrElse error(
+    "User not found: "+ safed(id) +" [debiki_error_730krq849]")
 
   // COULD create Action parent class, use instead of Edit.
   //def authorOf(e: Edit): Option[User] =
@@ -53,10 +56,9 @@ abstract trait People {
 /** A Nice Login: a Login, Identity an User tuple, and utility methods.
  */
 class NiLo(people: People, val login: Login) {
-  def user_! : Option[User] = None  // for now
-  def identity_! : Identity = IdentityUnknown  // for now
-  def displayName: String =
-    user_!.map(_.displayName).getOrElse(identity_!.displayName)
+  def user_! : User = people.user_!(identity_!.userId)
+  def identity_! : Identity = people.identity_!(login.identityId)
+  def displayName: String = user_!.displayName
 }
 
 case class User (
@@ -77,7 +79,7 @@ case class Login(
 
 object Login {
 
-  abstract class Comparison { def isSameForSure = false }
+  abstract class Comparison { def isSameForSure = false }  // COULD Remove!??
   case object IsSame extends Comparison { override def isSameForSure = true }
   case object SeemsSame extends Comparison
   case object NotSame extends Comparison
@@ -106,35 +108,24 @@ sealed abstract class Identity {
    *  are used.
    */
   def id: String
-  def displayName: String
-  def email: String
-  //def compareWith(user: User): UserComparison
+  /** A user can have many identities, e.g. Twitter, Gmail and Facebook. */
+  def userId: String
+  //def displayName: String  // COULD remove! Use User.displayName instead.
+  //def email: String        // COULD remove! Use User.email instead?
 }
 
-/*case object IdentitySystem extends Identity {
-  val id = "1"
-  val displayName = "System"  // i18n?
-  val email = ""
-  /*
-  def compareWith(user: User) =
-    if (user eq UserSystem) SameIdentity
-    else AnotherIdentity
-  } */
-} */
-
-case object IdentityUnknown extends Identity {
+case object IdentityUnknown extends Identity {  // Try to get rid of?
   val id = "2"
   val displayName = "?"
   val email = ""
-  /*
-  def compareWith(user: User) =
-    if (user eq UserSystem) AnotherIdentity  // system user is never unknown
-    else PerhapsSameIdentity
-  } */
+  def userId = assErr("Identity unknown [debiki_error_3902kS1]")
+    // alternatively, return "?" -- then People.user("?") returns None, fine.
+    // But a.userId == b.userId, if == "?" which might be bad!
 }
 
 case class IdentitySimple(
   id: String,
+  override val userId: String,
   name: String,  // TODO don't allow weird chars, e.g. '?' or '|'
   email: String,
   location: String,
@@ -153,21 +144,11 @@ case class IdentitySimple(
   def displayName = name +
       (if (email isEmpty) "??" else "?") // for now. The '?' could be a
                                      // separate html elem, so can be styled.
-
-  //val id = displayName +"|"+ email +"|"+ location +"|"+ website
-  //errorIf(id.count(_ == '|') != 3,
-  //  "Bad user, too many `|' in id: "+ safed(id) +" [debiki_error_942h121r8]")
-  /*
-  def compareWith(user: User) = user match {
-    case UserSimple(`this.displayName`, `this.email`, _, _) =>
-      // User unverified (not really logged in) so we don't know if is same.
-      PerhapsSameIdentity
-    case _ => AnotherIdentity
-  } */
 }
 
 case class IdentityOpenId(
   id: String,
+  override val userId: String,
   oidEndpoint: String,
   oidVersion: String,
   oidRealm: String,  // perhaps need not load from db?
@@ -184,20 +165,6 @@ case class IdentityOpenId(
   country: String
 ) extends Identity {
   def displayName = firstName
-
-  /* def compareWith(user: User) = user match {
-    case UserOpenID(`this.provider`, `this.realm`, `this.oid`, _, _, _) =>
-      SameIdentity
-    /* could implement comparisons between different realms:
-    case UserOpenID(`this.provider`, anyRealm, `this.oid`, _, _, _) =>
-      SameIdentity
-    But Gmail lets the oid depend on the realm, so, for Gmail, cmp email addrs:
-    case UserOpenID("Gmail", _, _, _, _, _) =>
-      If same email, and a Gmail email, then SameIdentity
-      else AnotherIdentity? Or PerhapsSameIdentity?
-    */
-    case _ => AnotherIdentity
-  } */
 }
 
 
