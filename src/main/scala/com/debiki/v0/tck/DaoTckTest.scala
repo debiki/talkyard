@@ -148,7 +148,7 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
   val tablesAreEmpty = setup(EmptyTables)
 
   import com.debiki.v0._
-  import com.debiki.v0.Dao.{LoginStuff, LoggedInStuff}
+  import com.debiki.v0.Dao.{LoginRequest, LoginGrant}
   import com.debiki.v0.PagePath._  // Guid case classes
   val T = Templates
 
@@ -169,7 +169,7 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
     // -------------
     val ex1_postText = "postText0-3kcvxts34wr"
     var ex1_debate: Debate = null
-    var loggedInStuff: LoggedInStuff = null
+    var loginGrant: LoginGrant = null
 
     // -------- Simple logins
 
@@ -183,75 +183,77 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
     }
 
     "save an IdentitySimple login" >> {
-      val stuffNoId = LoginStuff(T.login, T.identitySimple)
-      loggedInStuff = dao.saveLogin(defaultTenantId, stuffNoId)
-      loggedInStuff.login.id must_!= "?"
-      loggedInStuff.user must matchUser(
+      val loginReq = LoginRequest(T.login, T.identitySimple)
+      loginGrant = dao.saveLogin(defaultTenantId, loginReq)
+      loginGrant.login.id must_!= "?"
+      loginGrant.user must matchUser(
           displayName = "Målligan", email = "no@email.no")
+      loginGrant.user.id must startWith("-") // dummy user ids start with -
     }
 
-    val loginId = loggedInStuff.login.id
+    val loginId = loginGrant.login.id
 
     "reuse the IdentitySimple and User" >> {
-      val stuff = LoginStuff(T.login.copy(date = new ju.Date),
+      val loginReq = LoginRequest(T.login.copy(date = new ju.Date),
                             T.identitySimple)  // same identity
-      var stuff2 = dao.saveLogin(defaultTenantId, stuff)
-      stuff2.login.id must_!= loggedInStuff.login.id  // new login id
-      stuff2.identity must_== loggedInStuff.identity  // same identity
-      stuff2.user must matchUser(loggedInStuff.user)  // same user
+      var grant = dao.saveLogin(defaultTenantId, loginReq)
+      grant.login.id must_!= loginGrant.login.id  // new login id
+      grant.identity must_== loginGrant.identity  // same identity
+      grant.user must matchUser(loginGrant.user)  // same user
     }
 
-    "create new IdentitySimple, if certain attrs changed, but reuse User" >> {
-      val stuff = LoginStuff(T.login.copy(date = new ju.Date),
-          T.identitySimple.copy(location = "weirdplace"))
-      var stuff2 = dao.saveLogin(defaultTenantId, stuff)
-      stuff2.login.id must_!= loggedInStuff.login.id  // new login id
-      // New identity because location changed.  COULD: create matchIdentity()
-      val si = stuff2.identity.asInstanceOf[IdentitySimple]
-      si.id must_!= loggedInStuff.identity.id
+    "create a new dummy User for an IdentitySimple with different website" >> {
+      val loginReq = LoginRequest(T.login.copy(date = new ju.Date),
+          T.identitySimple.copy(website = "weirdplace"))
+      var grant = dao.saveLogin(defaultTenantId, loginReq)
+      grant.login.id must_!= loginGrant.login.id  // new login id
+      // New identity because website changed.  COULD: create matchIdentity()
+      val si = grant.identity.asInstanceOf[IdentitySimple]
+      si.id must_!= loginGrant.identity.id
       si.name must_== "Målligan"
-      si.location must_== "weirdplace"
-      // Same user though, email+name hasn't changed and the location
-      // isn't included in class User:
-      stuff2.user must matchUser(loggedInStuff.user)
+      si.website must_== "weirdplace"
+      // New user too. A new dummy user is created for each IdentitySimple.
+      grant.user.id must_!= loginGrant.user.id
+      grant.user must matchUser(loginGrant.user, id = grant.user.id,
+                                website = "weirdplace")
     }
 
-    //"have exactly one user" >> {
+    //"have exactly one user" >> {  // no, 2??
     //}
 
     "create a new User for an IdentitySimple with different email" >> {
-      val stuff = LoginStuff(T.login.copy(date = new ju.Date),
+      val loginReq = LoginRequest(T.login.copy(date = new ju.Date),
         T.identitySimple.copy(email = "other@email.yes"))
-      var stuff2 = dao.saveLogin(defaultTenantId, stuff)
-      stuff2.login.id must_!= loggedInStuff.login.id  // new login id
+      var grant = dao.saveLogin(defaultTenantId, loginReq)
+      grant.login.id must_!= loginGrant.login.id  // new login id
       // New identity because email changed.
-      val si = stuff2.identity.asInstanceOf[IdentitySimple]
-      si.id must_!= loggedInStuff.identity.id
+      val si = grant.identity.asInstanceOf[IdentitySimple]
+      si.id must_!= loginGrant.identity.id
       si.name must_== "Målligan"
       si.email must_== "other@email.yes"
       // New user because email has changed.
       // (For an IdentitySimple, email+name identifies the user.)
-      stuff2.user.id must_!= loggedInStuff.user.id
-      stuff2.user must matchUser(loggedInStuff.user, id = stuff2.user.id,
+      grant.user.id must_!= loginGrant.user.id
+      grant.user must matchUser(loginGrant.user, id = grant.user.id,
                                 email = "other@email.yes")
      }
 
     "create a new User for an IdentitySimple with different name" >> {
-      val stuff = LoginStuff(T.login.copy(date = new ju.Date),
+      val loginReq = LoginRequest(T.login.copy(date = new ju.Date),
         T.identitySimple.copy(name = "Spöket Laban"))
-      var stuff2 = dao.saveLogin(defaultTenantId, stuff)
-      stuff2.login.id must_!= loggedInStuff.login.id  // new login id
+      var grant = dao.saveLogin(defaultTenantId, loginReq)
+      grant.login.id must_!= loginGrant.login.id  // new login id
       // New identity because name changed.
-      val si = stuff2.identity.asInstanceOf[IdentitySimple]
-      si.id must_!= loggedInStuff.identity.id
+      val si = grant.identity.asInstanceOf[IdentitySimple]
+      si.id must_!= loginGrant.identity.id
       si.name must_== "Spöket Laban"
       si.email must_== "no@email.no"
       // New user because email has changed.
       // (For an IdentitySimple, email+name identifies the user.)
-      stuff2.user.id must_!= loggedInStuff.user.id
-      //stuff2.user must matchUser(loggedInStuff.user, id = stuff2.user.id,
+      grant.user.id must_!= loginGrant.user.id
+      //grant.user must matchUser(loginGrant.user, id = grant.user.id,
       // why this ok?
-      stuff2.user must matchUser(loggedInStuff.user, id = stuff2.user.id,
+      grant.user must matchUser(loginGrant.user, id = grant.user.id,
         //email = "other@email.yes")
         displayName = "Spöket Laban")
     }
@@ -426,48 +428,57 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
 
     // -------- OpenID login
 
-    var exOpenId_stuff: LoggedInStuff = null
+    var exOpenId_loginReq: LoginGrant = null
     var exOpenId_userIds = mut.Set[String]()
     "save a new OpenID login and create a user" >> {
-      val stuffNoId = LoginStuff(T.login, T.identityOpenId)
-      exOpenId_stuff = dao.saveLogin(defaultTenantId, stuffNoId)
-      for (id <- exOpenId_stuff.login.id ::
-                  exOpenId_stuff.identity.id ::
-                  exOpenId_stuff.user.id :: Nil) {
+      val loginReq = LoginRequest(T.login, T.identityOpenId)
+      exOpenId_loginReq = dao.saveLogin(defaultTenantId, loginReq)
+      for (id <- exOpenId_loginReq.login.id ::
+                  exOpenId_loginReq.identity.id ::
+                  exOpenId_loginReq.user.id :: Nil) {
         id.contains("?") must_== false
         // weird! the compiler says: ';' expected but integer literal found
         // on the next row (if commented in).
         // id.length must be_> 1  // non-empty, and no weird 1 char id
+
+        // Only dummy user ids (created for each IdentitySimple)
+        // start with "-":
+        id must notStartWith("-")
       }
-      exOpenId_stuff.identity.id must_==  exOpenId_stuff.login.identityId
-      exOpenId_stuff.user.id must_== exOpenId_stuff.identity.userId
-      exOpenId_stuff.user must matchUser(
+      exOpenId_loginReq.identity.id must_==  exOpenId_loginReq.login.identityId
+      exOpenId_loginReq.user.id must_== exOpenId_loginReq.identity.userId
+      exOpenId_loginReq.user must matchUser(
           displayName = T.identityOpenId.firstName,
           email = T.identityOpenId.email,
           country = T.identityOpenId.country,
           website = "",
           isSuperAdmin = Boolean.box(false))
-      exOpenId_userIds += exOpenId_stuff.user.id
+      exOpenId_userIds += exOpenId_loginReq.user.id
     }
 
     "reuse the IdentityOpenId and User just created" >> {
-      val stuffNoId = LoginStuff(T.login.copy(date = new ju.Date),
+      val loginReq = LoginRequest(T.login.copy(date = new ju.Date),
           T.identityOpenId)
-      val stuff = dao.saveLogin(defaultTenantId, stuffNoId)
-      stuff.login.id must_!= exOpenId_stuff.login.id
+      val grant = dao.saveLogin(defaultTenantId, loginReq)
+      grant.login.id must_!= exOpenId_loginReq.login.id
+      grant.identity must_== exOpenId_loginReq.identity
       // The very same user should have been found.
-      stuff.user must matchUser(exOpenId_stuff.user)
+      grant.user must matchUser(exOpenId_loginReq.user)
     }
 
-    "create a new IdentityOpenId, if attributes changed, but reuse User" >> {
+    // COULD test to change name + email too, instead of only changing country.
+
+    "update the IdentityOpenId, if attributes (country) changed" >> {
       // Change the country attribute. The Dao should automatically save the
       // new value to the database, and use it henceforth.
-      val stuffNoId = LoginStuff(T.login.copy(date = new ju.Date),
+      val loginReq = LoginRequest(T.login.copy(date = new ju.Date),
           T.identityOpenId.copy(country = "Norway"))
-      val stuff = dao.saveLogin(defaultTenantId, stuffNoId)
-      stuff.login.id must_!= exOpenId_stuff.login.id
-      // Note that u.id must refer to the old user.
-      stuff.user must matchUser(exOpenId_stuff.user, country = "Norway")
+      val grant = dao.saveLogin(defaultTenantId, loginReq)
+      grant.login.id must_!= exOpenId_loginReq.login.id
+      grant.identity must_== exOpenId_loginReq.identity.
+          asInstanceOf[IdentityOpenId].copy(country = "Norway")
+      // The user shouldn't have been changed, only the OpenID identity attrs.
+      grant.user must matchUser(exOpenId_loginReq.user)
     }
 
     //"have exactly one user" >> {  // or, 3? there're 2 IdentitySimple users?
@@ -476,15 +487,15 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
     // COULD test w/ new tenant but same claimed_ID, should also result in
     // a new User. So you can customize your user, per tenant.
     "create new IdentityOpenId and User for a new claimed_id" >> {
-      val stuffNoId = LoginStuff(T.login.copy(date = new ju.Date),
+      val loginReq = LoginRequest(T.login.copy(date = new ju.Date),
         T.identityOpenId.copy(oidClaimedId = "something.else.com"))
-      val stuff = dao.saveLogin(defaultTenantId, stuffNoId)
-      stuff.login.id must_!= exOpenId_stuff.login.id
+      val grant = dao.saveLogin(defaultTenantId, loginReq)
+      grant.login.id must_!= exOpenId_loginReq.login.id
       // A new id to a new user, but otherwise identical.
-      stuff.user.id must_!= exOpenId_stuff.user.id
-      stuff.user must matchUser(exOpenId_stuff.user, id = stuff.user.id)
-      exOpenId_userIds.contains(stuff.user.id) must_== false
-      exOpenId_userIds += stuff.user.id
+      grant.user.id must_!= exOpenId_loginReq.user.id
+      grant.user must matchUser(exOpenId_loginReq.user, id = grant.user.id)
+      exOpenId_userIds.contains(grant.user.id) must_== false
+      exOpenId_userIds += grant.user.id
     }
 
     //"have exactly two users" >> {  // no, 4? 2 + 2 = 4
@@ -492,16 +503,16 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
 
     /*
     "create a new user, for a new tenant (but same claimed_id)" >> {
-      val stuffNoId = LoginStuff(T.login.copy(date = new ju.Date),
+      val loginReq = LoginRequest(T.login.copy(date = new ju.Date),
                               T.identityOpenId)
-      val stuff = dao.saveLogin("some-other-tenant-id", stuffNoId)
-      stuff.login.id must_!= exOpenId_stuff.login.id
-      stuff.user must beLike {
+      val grant = dao.saveLogin("some-other-tenant-id", loginReq)
+      grant.login.id must_!= exOpenId_loginReq.login.id
+      grant.user must beLike {
         case None => false
         case Some(u) =>
           // A new id to a new user, but otherwise identical.
-          u.id must_!= exOpenId_stuff.user.id
-          u must matchUser(exOpenId_stuff.user, id = u.id)
+          u.id must_!= exOpenId_loginReq.user.id
+          u must matchUser(exOpenId_loginReq.user, id = u.id)
           exOpenId_userIds += u.id
           true
       }
@@ -511,7 +522,7 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
       // Save a post, using the OpenID login. Load the page and verify
       // the OpenID identity and user were loaded with the page.
       val newPost = T.post.copy(parent = "0", text = "",
-                                loginId = exOpenId_stuff.login.id)
+                                loginId = exOpenId_loginReq.login.id)
       var postId = "?"
       dao.save(defaultTenantId, ex1_debate.guid, List(newPost)) must beLike {
         case Full(List(savedPost: Post)) =>
@@ -523,17 +534,18 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
       dao.load(defaultTenantId, ex1_debate.guid) must beLike {
         case Full(d: Debate) =>
           d must havePostLike(newPost, id = postId)
-          d.nilo(exOpenId_stuff.login.id) must beLike {
+          d.nilo(exOpenId_loginReq.login.id) must beLike {
             case Some(n: NiLo) =>  // COULD make separate NiLo test?
-              n.login.id must_== exOpenId_stuff.login.id
+              n.login.id must_== exOpenId_loginReq.login.id
               n.login.identityId must_== n.identity_!.id
+              // The OpenID country attr was changed from Sweden to Norway.
+              n.identity_! must_== exOpenId_loginReq.identity.
+                  asInstanceOf[IdentityOpenId].copy(country = "Norway")
               n.identity_!.asInstanceOf[IdentityOpenId].firstName must_==
                                                                       "Laban"
               n.identity_!.userId must_== n.user_!.id
               n.user_! must matchUser(displayName = "Laban",
-                  email = "oid@email.hmm",
-                  // The country was changed from Sweden to Norway.
-                  country = "Norway")
+                                      email = "oid@email.hmm")
               true
           }
           true
