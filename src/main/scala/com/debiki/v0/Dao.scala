@@ -16,7 +16,7 @@ abstract class DaoSpi {
 
   def close()
 
-  def saveLogin(tenantId: String, loginStuff: LoginStuff): LoggedInStuff
+  def saveLogin(tenantId: String, loginReq: LoginRequest): LoginGrant
 
   def saveLogout(loginId: String, logoutIp: String)
 
@@ -43,13 +43,13 @@ abstract class DaoSpi {
 
 
 object Dao {
-  case class LoginStuff(login: Login, identity: Identity) {
+  case class LoginRequest(login: Login, identity: Identity) {
     require(login.id startsWith "?")
     require(identity.id startsWith "?")
     require(identity.id == login.identityId)
   }
 
-  case class LoggedInStuff(login: Login, identity: Identity, user: User) {
+  case class LoginGrant(login: Login, identity: Identity, user: User) {
     require(!login.id.contains('?'))
     require(!identity.id.contains('?'))
     require(!user.id.contains('?'))
@@ -69,10 +69,10 @@ abstract class Dao {
 
   def close()
 
-  /** Assigns ids to the login stuff, saves them, finds or creates a user
+  /** Assigns ids to the login request, saves it, finds or creates a user
    * for the specified Identity, and returns everything with ids filled in.
    */
-  def saveLogin(tenantId: String, loginStuff: LoginStuff): LoggedInStuff
+  def saveLogin(tenantId: String, loginReq: LoginRequest): LoginGrant
 
   /** Updates the specified login with logout IP and timestamp.*/
   def saveLogout(loginId: String, logoutIp: String)
@@ -138,8 +138,8 @@ class CachingDao(impl: DaoSpi) extends Dao {
 
   def close() = _impl.close
 
-  def saveLogin(tenantId: String, loginStuff: LoginStuff): LoggedInStuff =
-    _impl.saveLogin(tenantId, loginStuff)
+  def saveLogin(tenantId: String, loginReq: LoginRequest): LoginGrant =
+    _impl.saveLogin(tenantId, loginReq)
 
   def saveLogout(loginId: String, logoutIp: String) =
     _impl.saveLogout(loginId, logoutIp)
@@ -205,8 +205,8 @@ class NonCachingDao(impl: DaoSpi) extends Dao {
 
   def close() = impl.close
 
-  def saveLogin(tenantId: String, loginStuff: LoginStuff): LoggedInStuff =
-    impl.saveLogin(tenantId, loginStuff)
+  def saveLogin(tenantId: String, loginReq: LoginRequest): LoginGrant =
+    impl.saveLogin(tenantId, loginReq)
 
   def saveLogout(loginId: String, logoutIp: String) =
     impl.saveLogout(loginId, logoutIp)
