@@ -60,10 +60,6 @@ object DaoTckTest {
   case object TablesWithData extends What
 
   type TestContextBuilder = Function2[What, String, TestContext]
-
-  val defaultTenantId = "default"
-  val defaultPagePath = v0.PagePath(defaultTenantId, "/folder/",
-                                    v0.PagePath.GuidUnknown, "page-title")
 }
 
 import DaoTckTest._
@@ -170,6 +166,32 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
     val ex1_postText = "postText0-3kcvxts34wr"
     var ex1_debate: Debate = null
     var loginGrant: LoginGrant = null
+
+    // -------- Create tenant
+
+    var defaultTenantId = ""
+
+    "find no tenant for non-existing host test.ex.com" >> {
+      val lookup = dao.lookupTenant("http", "test.ex.com")
+      lookup must_== FoundNothing
+    }
+
+    "create a Test tenant" >> {
+      val tenant = dao.createTenant("Test")
+      tenant.name must_== "Test"
+      tenant.id must notBeEmpty
+      defaultTenantId = tenant.id
+    }
+
+    "add and lookup host test.ex.com" >> {
+      dao.addTenantHost(defaultTenantId, TenantHost(
+          "test.ex.com", TenantHost.HttpsNone, isCanonical = true))
+      val lookup = dao.lookupTenant("http", "test.ex.com")
+      lookup must_== FoundChost(defaultTenantId)
+    }
+
+    val defaultPagePath = v0.PagePath(defaultTenantId, "/folder/",
+                                    v0.PagePath.GuidUnknown, "page-title")
 
     // -------- Simple logins
 
