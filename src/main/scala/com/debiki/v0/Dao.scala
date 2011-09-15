@@ -33,6 +33,12 @@ abstract class DaoSpi {
   def checkAccess(pagePath: PagePath, loginId: Option[String], doo: Do
                      ): Option[IntrsAllowed]
 
+  def createTenant(name: String): Tenant
+
+  def addTenantHost(tenantId: String, host: TenantHost)
+
+  def lookupTenant(scheme: String, host: String): TenantLookup
+
   def checkRepoVersion(): Box[String]
 
   /** Used as salt when hashing e.g. email and IP, before the hash
@@ -56,6 +62,7 @@ object Dao {
     require(login.identityId == identity.id)
     require(identity.userId == user.id)
   }
+
 }
 
 
@@ -93,6 +100,13 @@ abstract class Dao {
 
   def checkAccess(pagePath: PagePath, loginId: Option[String], doo: Do
                      ): Option[IntrsAllowed]
+
+  /** Creates a tenant, assigns it an id and and returns it. */
+  def createTenant(name: String): Tenant
+
+  def addTenantHost(tenantId: String, host: TenantHost)
+
+  def lookupTenant(scheme: String, host: String): TenantLookup
 
   def checkRepoVersion(): Box[String]
 
@@ -189,6 +203,15 @@ class CachingDao(impl: DaoSpi) extends Dao {
                      ): Option[IntrsAllowed] =
     _impl.checkAccess(pagePath, loginId, doo)
 
+  def createTenant(name: String): Tenant =
+    _impl.createTenant(name)
+
+  def addTenantHost(tenantId: String, host: TenantHost) =
+    _impl.addTenantHost(tenantId, host)
+
+  def lookupTenant(scheme: String, host: String): TenantLookup =
+    _impl.lookupTenant(scheme, host)
+
   def checkRepoVersion(): Box[String] = _impl.checkRepoVersion()
 
   def secretSalt(): String = _impl.secretSalt()
@@ -226,6 +249,15 @@ class NonCachingDao(impl: DaoSpi) extends Dao {
   def checkAccess(pagePath: PagePath, loginId: Option[String], doo: Do
                      ): Option[IntrsAllowed] =
     impl.checkAccess(pagePath, loginId, doo)
+
+  def createTenant(name: String): Tenant =
+    impl.createTenant(name)
+
+  def addTenantHost(tenantId: String, host: TenantHost) =
+    impl.addTenantHost(tenantId, host)
+
+  def lookupTenant(scheme: String, host: String): TenantLookup =
+    impl.lookupTenant(scheme, host)
 
   def checkRepoVersion(): Box[String] = impl.checkRepoVersion()
 
