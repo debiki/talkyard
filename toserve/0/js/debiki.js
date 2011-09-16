@@ -81,7 +81,7 @@ jQuery.fn.dwEnable = function() {
 jQuery.fn.dwLastChange = function() {
   var maxDate = '0';
   this.children('.dw-p-hdr').find('.dw-date').each(function(){
-    var date = jQuery(this).text();  // creation date or last modification date
+    var date = jQuery(this).attr('title'); // creation or last modification date
     if (date > maxDate)
       maxDate = date;
   });
