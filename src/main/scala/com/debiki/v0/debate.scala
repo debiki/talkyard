@@ -434,6 +434,8 @@ class ViAc(val debate: Debate, val action: Action) {
   def identity: Option[Identity] = login.flatMap(l =>
                                     debate.identity(l.identityId))
   def identity_! : Identity = debate.identity_!(login.get.identityId)
+  def user : Option[User] = identity.flatMap(i => debate.user(i.userId))
+  def user_! : User = debate.user_!(identity_!.userId)
   def ip: Option[String] = action.newIp.orElse(login.map(_.ip))
   def ip_! : String = action.newIp.getOrElse(login_!.ip)
   def ipSaltHash: Option[String] = ip.map(saltAndHashIp(_))

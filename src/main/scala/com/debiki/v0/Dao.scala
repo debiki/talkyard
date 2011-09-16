@@ -31,7 +31,7 @@ abstract class DaoSpi {
   def checkPagePath(pathToCheck: PagePath): Box[PagePath]
 
   def checkAccess(pagePath: PagePath, loginId: Option[String], doo: Do
-                     ): Option[IntrsAllowed]
+                     ): (Option[Identity], Option[User], Option[IntrsAllowed])
 
   def createTenant(name: String): Tenant
 
@@ -99,7 +99,7 @@ abstract class Dao {
   def checkPagePath(pathToCheck: PagePath): Box[PagePath]
 
   def checkAccess(pagePath: PagePath, loginId: Option[String], doo: Do
-                     ): Option[IntrsAllowed]
+                     ): (Option[Identity], Option[User], Option[IntrsAllowed])
 
   /** Creates a tenant, assigns it an id and and returns it. */
   def createTenant(name: String): Tenant
@@ -200,7 +200,7 @@ class CachingDao(impl: DaoSpi) extends Dao {
     _impl.checkPagePath(pathToCheck)
 
   def checkAccess(pagePath: PagePath, loginId: Option[String], doo: Do
-                     ): Option[IntrsAllowed] =
+                   ): (Option[Identity], Option[User], Option[IntrsAllowed]) =
     _impl.checkAccess(pagePath, loginId, doo)
 
   def createTenant(name: String): Tenant =
@@ -247,7 +247,7 @@ class NonCachingDao(impl: DaoSpi) extends Dao {
     impl.checkPagePath(pathToCheck)
 
   def checkAccess(pagePath: PagePath, loginId: Option[String], doo: Do
-                     ): Option[IntrsAllowed] =
+                   ): (Option[Identity], Option[User], Option[IntrsAllowed]) =
     impl.checkAccess(pagePath, loginId, doo)
 
   def createTenant(name: String): Tenant =
