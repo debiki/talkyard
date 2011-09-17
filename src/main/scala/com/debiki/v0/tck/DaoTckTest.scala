@@ -330,7 +330,7 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
 
     // COULD: Find the Identity again, and the User.
 
-    val exPagePath = defaultPagePath.copy(guid = GuidInPath(ex1_debate.guid))
+    val exPagePath = defaultPagePath.copy(guid = GuidHidden(ex1_debate.guid))
     "recognize its correct PagePath" >> {
       dao.checkPagePath(exPagePath) must beLike {
         case Full(correctPath: PagePath) =>
@@ -470,9 +470,10 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
       exOpenId_loginReq.identity.id must_==  exOpenId_loginReq.login.identityId
       exOpenId_loginReq.user.id must_== exOpenId_loginReq.identity.userId
       exOpenId_loginReq.user must matchUser(
-          displayName = T.identityOpenId.firstName,
-          email = T.identityOpenId.email,
-          country = T.identityOpenId.country,
+          // Identity data no longer copied to User.
+          displayName = "", // T.identityOpenId.firstName,
+          email = "", // T.identityOpenId.email,
+          country = "", // T.identityOpenId.country,
           website = "",
           isSuperAdmin = Boolean.box(false))
       exOpenId_userIds += exOpenId_loginReq.user.id
@@ -566,8 +567,9 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
               n.identity_!.asInstanceOf[IdentityOpenId].firstName must_==
                                                                       "Laban"
               n.identity_!.userId must_== n.user_!.id
-              n.user_! must matchUser(displayName = "Laban",
-                                      email = "oid@email.hmm")
+              // Identity data no longer copied to User.
+              //n.user_! must matchUser(displayName = "Laban",
+              //                        email = "oid@email.hmm")
               true
           }
           true
