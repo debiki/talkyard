@@ -61,6 +61,59 @@ class NiLo(people: People, val login: Login) {
   def displayName: String = user_!.displayName
 }
 
+case object User {
+
+  /** Checks for weird ASCII chars in an user name.
+    *
+    * Cannot be used with names from identity providers, e.g. OpenID
+    * or Twitter: the providers do their own user name sanity checks,
+    * and we should handle anything they accept?
+    */
+  def nameIsWeird(name: String): Boolean = {
+    // Could check for weird Unicode whitespace too, but that will
+    // probably be implicitly solved, when handling spam? ASCII,
+    // however, could mess up the internals of something, because
+    // sometimes the system assigns magic meanings to ASCII chars
+    // that only an attacker would use?
+    for (c <- name if c < 0x80) {
+      if (c < ' ') return true  // control chars
+      if (c < '0' && !(" '-." contains c)) return true  // punctuation
+      if (c > '9' && c < 'A') return true  // more punctuation
+      if (c > 'Z' && c < 'a') return true  // even more punctuation
+      if (c > 'z' && c <= 127) return true  // punctuation
+    }
+    false
+  }
+
+  /** Checks for weird ASCII chars in an email. Doesn't require that the
+    * address contain '@'. People can enter invalid email addresses
+    * anyway. Actually, I like to enter "no-email-please" when filling
+    * in an email form. (Javascript can notify people that they might
+    * have made a typo.)
+    */
+  def emailIsWeird(email: String): Boolean = {
+    // Differences from nameIsOk(): allow "@_", disallows "'".
+    for (c <- email if c < 0x80) {
+      if (c <= ' ') return true  // forbid control chars and space
+      if (c < '0' && !(" -." contains c)) return true  // punctuation
+      if (c > '9' && c < '@') return true  // email, so '@' ok
+      if (c > 'Z' && c < 'a' && !"_".contains(c)) return true  // punctuation
+      if (c > 'z' && c <= 127) return true  // punctuation
+    }
+    false
+  }
+
+  /** Allows all chars but control chars, space and < > */
+  def urlIsWeird(url: String): Boolean = {
+    for (c <- url if c < 0x80) {
+      if (c <= ' ') return true  // forbid control chars and space
+      if ("<>" contains c) return true
+      if (c == 127) return true  // control char?
+    }
+    false
+  }
+}
+
 case class User (
   id: String,
   displayName: String,
@@ -133,6 +186,9 @@ case class IdentitySimple(
   // COULD include signed cookie random value, so we knows if is same browser.
 ) extends Identity {
   def displayName = name
+  // Cannot check for e.g. weird name or email. That could prevent
+  // loading of data from database, after changing the weirdness rules.
+  // Don't:  require(! (User nameIsWeird name))
 }
 
 case class IdentityOpenId(
