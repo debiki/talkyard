@@ -1092,6 +1092,18 @@ function $showInlineActionMenu(event) {
 
 // ------- Forms and actions
 
+function confirmClosePage() {
+  // Count only :visible forms — non-visible forms are 1) hidden template
+  // forms and 2) forms the user has closed. They aren't removed, because
+  // it's nice to have your text reappear should you accidentally close
+  // a form and open it again.
+  var replyCount = $('.dw-fs-re:visible').length;
+  var editCount = $('.dw-f-ed:visible').length;
+  var msg = replyCount + editCount > 0 ?
+    'You have started writing. Really close page?' : null;  // i18n
+  return msg;
+}
+
 // Shows actions for the current post, or the last post hovered.
 function $showActions() {
   // Hide any action links already shown; show actions for one post only.
@@ -2840,6 +2852,8 @@ $('.debiki').delegate(
     '.dw-fs-re .dw-fi-cancel, ' +
     '.dw-fs-rat .dw-fi-cancel',
     'click', $removeClosestForms);
+
+window.onbeforeunload = confirmClosePage;
 
 // Hide all action forms, since they will be slided in.
 $('#dw-hidden-templates .dw-fs').hide();
