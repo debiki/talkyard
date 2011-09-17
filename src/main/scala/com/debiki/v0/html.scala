@@ -311,11 +311,30 @@ class DebateHtml(val debate: Debate) {
             "URL contains email? It contains `@' or `%40': "+ url)
         url = ""
       }
+      val nameElem: NodeSeq = nilo.identity_! match {
+        case s: IdentitySimple =>
+          // Indicate that the user was not logged in, that we're not sure
+          // about his/her identity, by appending "??". If however s/he
+          // provided an email address then only append one "?", because it's
+          // harder for other people to impersonate her.
+          // (Well, at least if I some day include a unique identity id,
+          // e.g. a salted hash of the name+email, in the HTML, so as to make
+          // it possible to distinguish between two UserSimple with the
+          // same claimedName but different emails.
+          //  -- Hmm, should the salt be changed from time to time, or vary
+          // from page to page / tenant to tenant, so other people
+          // cannot scrape the website and "stalk hashes"? Or expose the
+          // identity id. Hashed?)
+          xml.Text(nilo.displayName) ++
+              <span class='dw-lg-t-spl'>{
+                if (s.email isEmpty) "??" else "?"}</span>
+        case _ => xml.Text(nilo.displayName)
+      }
       if (url nonEmpty) {
         <a class='dw-p-by' href={url}
-          rel='nofollow' target='_blank'>{nilo.displayName}</a>
+          rel='nofollow' target='_blank'>{nameElem}</a>
       } else {
-        <span class='dw-p-by'>{nilo.displayName}</span>
+        <span class='dw-p-by'>{nameElem}</span>
       }
     }
 

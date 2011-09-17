@@ -132,18 +132,7 @@ case class IdentitySimple(
   website: String
   // COULD include signed cookie random value, so we knows if is same browser.
 ) extends Identity {
-  // Indicate that the user was not logged in, that we're not sure
-  // about his/her identity, by appending "??". If however s/he provided
-  // an email address, it's harder for other people to impersonate her.
-  // (Well, at least if I some day include a salted hash of the name+email
-  // in the HTML, so as to make it possible to distinguish between
-  // two UserSimple with the same claimedName but different emails.
-  // Hmm, should the salt should be changed from time to time, or vary
-  // from page to page / tenant to tenant, so other people cannot scrape
-  // the website and "stalk hashes"?) So then only append one "?".
-  def displayName = name +
-      (if (email isEmpty) "??" else "?") // for now. The '?' could be a
-                                     // separate html elem, so can be styled.
+  def displayName = name
 }
 
 case class IdentityOpenId(

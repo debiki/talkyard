@@ -62,6 +62,7 @@
  *  dw-svg-c_<x>  SVG curve from <x>  COULD rename to -svg-p, for `path'
  *  dw-svg-gparnt Has a <svg> child or grandchild (but no grand-grand-child)
  *  dw-svg-parent Has a <svg> child
+ *  dw-lg-t-spl   Login type simple
  *
  *  ... and so on, hmm.
  */
@@ -444,6 +445,11 @@ span.dw-p-by,
 span.dw-p-ed-by {
   color: #555;
   font-weight: bold;
+}
+
+.dw-lg-t-spl {
+  font-size: 90%;
+  padding-left: 2px;
 }
 
 /* For the article itself, make author and post date info less conspicuous,
