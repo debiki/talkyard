@@ -58,7 +58,14 @@ abstract trait People {
 class NiLo(people: People, val login: Login) {
   def user_! : User = people.user_!(identity_!.userId)
   def identity_! : Identity = people.identity_!(login.identityId)
-  def displayName: String = user_!.displayName
+  def displayName: String = {
+    var n = user_!.displayName
+    if (n nonEmpty) n else identity_!.displayName
+  }
+  def email: String = {
+    var e = user_!.email
+    if (e nonEmpty) e else identity_!.email
+  }
 }
 
 case object User {
@@ -163,8 +170,8 @@ sealed abstract class Identity {
   def id: String
   /** A user can have many identities, e.g. Twitter, Gmail and Facebook. */
   def userId: String
-  //def displayName: String  // COULD remove! Use User.displayName instead.
-  //def email: String        // COULD remove! Use User.email instead?
+  def displayName: String
+  def email: String
 }
 
 case object IdentityUnknown extends Identity {  // Try to get rid of?
