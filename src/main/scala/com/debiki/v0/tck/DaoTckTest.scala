@@ -563,7 +563,12 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
               n.login.identityId must_== n.identity_!.id
               // The OpenID country attr was changed from Sweden to Norway.
               n.identity_! must_== exOpenId_loginReq.identity.
-                  asInstanceOf[IdentityOpenId].copy(country = "Norway")
+                  asInstanceOf[IdentityOpenId].copy(country = "Norway",
+                      // When a page is loaded, uninteresting OpenID details
+                      // are not loaded, to save bandwidth. Instead they
+                      // are set to "?".
+                      oidEndpoint = "?", oidVersion = "?", oidRealm = "?",
+                      oidClaimedId = "?", oidOpLocalId = "?")
               n.identity_!.asInstanceOf[IdentityOpenId].firstName must_==
                                                                       "Laban"
               n.identity_!.userId must_== n.user_!.id
