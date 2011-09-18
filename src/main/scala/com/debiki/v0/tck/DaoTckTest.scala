@@ -134,9 +134,9 @@ object Templates {
     oidRealm = "example.com", oidClaimedId = "claimed-id.com",
     oidOpLocalId = "provider.com/local/id",
     firstName = "Laban", email = "oid@email.hmm", country = "Sweden")
-  val post = v0.Post(id = "?", parent = "0", date = new ju.Date,
+  val post = v0.Post(id = "?", parent = "1", date = new ju.Date,
     loginId = "?", newIp = None, text = "", markup = "", where = None)
-  val rating = v0.Rating(id = "?", postId = "0", loginId = "?",
+  val rating = v0.Rating(id = "?", postId = "1", loginId = "?",
     newIp = None, date = new ju.Date, tags = Nil)
 }
 
@@ -197,7 +197,7 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
 
     "throw error for an invalid login id" >> {
       val debateBadLogin = Debate(guid = "?", posts =
-          T.post.copy(id = "0", loginId = "9999999")::Nil) // bad login id
+          T.post.copy(id = "1", loginId = "9999999")::Nil) // bad login id
       SLog.info("Expecting ORA-02291: integrity constraint log message ------")
       dao.create(defaultPagePath, debateBadLogin
                 ) must throwAn[Exception]
@@ -286,7 +286,7 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
     // -------- Page creation
 
     val ex1_rootPost = T.post.copy(
-      id = "0", loginId = loginId, text = ex1_postText)
+      id = "1", loginId = loginId, text = ex1_postText)
 
     "create a debate with a root post" >> {
       val debateNoId = Debate(guid = "?", posts = ex1_rootPost::Nil)
@@ -366,7 +366,7 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
 
     // -------- Page actions
 
-    val ex2_emptyPost = T.post.copy(parent = "0", text = "",
+    val ex2_emptyPost = T.post.copy(parent = "1", text = "",
       loginId = loginId)
     var ex2_id = ""
     "save an empty root post child post" >> {
@@ -390,7 +390,7 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
 
     var ex3_ratingId = ""
     val ex3_rating = T.rating.copy(loginId = loginId,
-        postId = "0",  tags = "Interesting"::"Funny"::Nil)  // 2 tags
+        postId = "1",  tags = "Interesting"::"Funny"::Nil)  // 2 tags
     "save a post rating, with 2 tags" >> {
       dao.save(defaultTenantId, ex1_debate.guid, List(ex3_rating)
               ) must beLike {
@@ -412,15 +412,15 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
 
     var ex4_rating1Id = ""
     val ex4_rating1 =
-      T.rating.copy(id = "?1", postId = "0", loginId = loginId,
+      T.rating.copy(id = "?1", postId = "1", loginId = loginId,
                     tags = "Funny"::Nil)
     var ex4_rating2Id = ""
     val ex4_rating2 =
-      T.rating.copy(id = "?2", postId = "0", loginId = loginId,
+      T.rating.copy(id = "?2", postId = "1", loginId = loginId,
                     tags = "Boring"::"Stupid"::Nil)
     var ex4_rating3Id = ""
     val ex4_rating3 =
-      T.rating.copy(id = "?3", postId = "0", loginId = loginId,
+      T.rating.copy(id = "?3", postId = "1", loginId = loginId,
                     tags = "Boring"::"Stupid"::"Funny"::Nil)
     "save 3 ratings, with 1, 2 and 3 tags" >> {
       dao.save(defaultTenantId, ex1_debate.guid,
@@ -544,7 +544,7 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
     "load relevant OpenID logins, when loading a Page" >> {
       // Save a post, using the OpenID login. Load the page and verify
       // the OpenID identity and user were loaded with the page.
-      val newPost = T.post.copy(parent = "0", text = "",
+      val newPost = T.post.copy(parent = "1", text = "",
                                 loginId = exOpenId_loginReq.login.id)
       var postId = "?"
       dao.save(defaultTenantId, ex1_debate.guid, List(newPost)) must beLike {
@@ -583,7 +583,7 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
 
     // -------------
 
-    //val ex3_emptyPost = T.post.copy(parent = "0", text = "Lemmings!")
+    //val ex3_emptyPost = T.post.copy(parent = "1", text = "Lemmings!")
     //"create many many random posts" >> {
     //  for (i <- 1 to 10000) {
     //    dao.save(defaultTenantId, "-"+ ex1_debate.id, List(ex3_emptyPost)
