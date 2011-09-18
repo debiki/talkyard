@@ -5,11 +5,12 @@ package com.debiki.v0
 import java.{util => ju}
 import collection.{immutable => imm, mutable => mut}
 import Prelude._
+import Debate._
 
 
 object Debate {
 
-  val RootPostId = "0"  // COULD change to 1
+  val RootPostId = "1"
 
   def empty(id: String) = Debate(id)
 
@@ -315,7 +316,7 @@ case class Debate (
 
   /** Assigns ids to Post:s and Edit:s, and updates references from Edit:s
    *  to Post ids. COULD move to Debiki$, since ids are randomized, stateless.
-   *  Does not remap the id of post "0", i.e. the root post.
+   *  Does not remap the id of post "1", i.e. the root post.
    *  COULD remap only IDs starting with "?" or being empty ""?
    */
   def assignIdTo(xs: List[AnyRef]): List[AnyRef] = {
@@ -326,7 +327,7 @@ case class Debate (
     }
     // Generate new ids, and check for foreign objects.
     xs foreach (_ match {
-      case p: Post => remaps(p.id) = if (p.id == "0") p.id
+      case p: Post => remaps(p.id) = if (p.id == RootPostId) p.id
                                      else nextRandomString()
       case r: Rating => remap(r.id)
       case e: Edit => remaps(e.id) = nextRandomString()
@@ -458,8 +459,12 @@ class ViEd(debate: Debate, val edit: Edit) extends ViAc(debate, edit) {
 }
 
 sealed abstract class Action {
-  /** A local id, unique only in the Debate that this action modifies. */
+  /** A local id, unique only in the Debate that this action modifies.
+    * "?" means unknown.
+    */
   def id: String
+  require(id != "0")
+  require(id nonEmpty)
 
   /** An id that identifies the login session, which in turn identifies
    *  the user and IP and session creation time.
