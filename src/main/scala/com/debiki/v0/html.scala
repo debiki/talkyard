@@ -300,7 +300,7 @@ class DebateHtml(val debate: Debate) {
     val cutS = if (long && post.id != Debate.RootPostId) " dw-x-s" else ""
     val author = debate.authorOf_!(post)
 
-    def tryLinkTo(nilo: NiLo) = {
+    def tryLinkTo(nilo: NiLo): NodeSeq = {
       var url = config.userLink(nilo)
       // TODO: investigate: `url' is sometimes the email address!!
       // When signed in @gmail.com, it seems.
@@ -315,27 +315,27 @@ class DebateHtml(val debate: Debate) {
         case s: IdentitySimple =>
           // Indicate that the user was not logged in, that we're not sure
           // about his/her identity, by appending "??". If however s/he
-          // provided an email address then only append one "?", because it's
-          // harder for other people to impersonate her.
-          // (Well, at least if I some day include a unique identity id,
-          // e.g. a salted hash of the name+email, in the HTML, so as to make
-          // it possible to distinguish between two UserSimple with the
-          // same claimedName but different emails.
-          //  -- Hmm, should the salt be changed from time to time, or vary
-          // from page to page / tenant to tenant, so other people
-          // cannot scrape the website and "stalk hashes"? Or expose the
-          // identity id. Hashed?)
+          // provided an email address then only append one "?", because
+          // other people probaably don't know what is it, so it's harder
+          // for them people to impersonate her.
+          // (Well, at least if I some day in some way indicate that two
+          // persons with the same name actually have different emails.)
           xml.Text(nilo.displayName) ++
               <span class='dw-lg-t-spl'>{
                 if (s.email isEmpty) "??" else "?"}</span>
         case _ => xml.Text(nilo.displayName)
       }
-      if (url nonEmpty) {
-        <a class='dw-p-by' href={url}
+      val userLink = if (url nonEmpty) {
+        <a class='dw-p-by' href={url} data-dw-u-id={nilo.user_!.id}
           rel='nofollow' target='_blank'>{nameElem}</a>
       } else {
-        <span class='dw-p-by'>{nameElem}</span>
+        <span class='dw-p-by' data-dw-u-id={nilo.user_!.id}>{nameElem}</span>
       }
+      // Include user id if present.
+      //nilo.user.foreach { u =>
+      //  link % Attribute(None, "data-uid", Text(u.id), xml.Null)
+      //}
+      userLink
     }
 
     val score = statscalc.scoreFor(post.id)

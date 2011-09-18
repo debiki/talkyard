@@ -10,6 +10,7 @@
  *
  *  dw-           prefix, avoids name clashes
  *  -a-           action
+ *  -by           by whom post was written. COULD change -p-by -> -p-u (user)?
  *  -cr-          create
  *  -e            east (COULD change to "ew", eastwards, and use "e" for edit)
  *                  and new (no good!, "new") sew etc. for northeastwards etc.
@@ -36,6 +37,7 @@
  *                        COULD then use 's' for `summary'?
  *  -svg-         SVG graphics
  *  -t-           thread
+ *  -u-           user
  *  -vs-          votes
  *  -z-           fold (z looks like a folded paper from the side)
  *
@@ -63,6 +65,7 @@
  *  dw-svg-gparnt Has a <svg> child or grandchild (but no grand-grand-child)
  *  dw-svg-parent Has a <svg> child
  *  dw-lg-t-spl   Login type simple
+ *  dw-u-id-<x>   user id <x>
  *
  *  ... and so on, hmm.
  */
