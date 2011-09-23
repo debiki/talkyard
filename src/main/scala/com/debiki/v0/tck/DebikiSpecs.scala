@@ -30,14 +30,15 @@ object DebikiSpecs {
   def matchPagePath(
         pagePath: PagePath = null,
         tenantId: String = null,
-        parent: String = null,
-        guid: Guid = null,
+        folder: String = null,
+        guid: Option[String] = null,
+        //guidInPath: Option[Boolean] = None,  TODO
         name: String = null) = new Matcher[PagePath] {
     def apply(left: => PagePath) = {
       val test = _test(left, pagePath) _
       var errs =
         test("tenantId", tenantId, _.tenantId) :::
-        test("parent", parent, _.parent) :::
+        test("folder", folder, _.folder) :::
         test("guid", guid, _.guid) :::
         test("name", name, _.name) ::: Nil
       (errs isEmpty, "OK", errs.mkString(", and "))
