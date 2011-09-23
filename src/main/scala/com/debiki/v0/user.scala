@@ -131,7 +131,9 @@ case class User (
   country: String,
   website: String,
   isSuperAdmin: Boolean
-)
+){
+  def isAuthenticated = !id.startsWith("-") && !id.startsWith("?")
+}
 
 case class Login(
   id: String,

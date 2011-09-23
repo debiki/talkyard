@@ -187,9 +187,9 @@ class DebateHtml(val debate: Debate) {
     this
   }
 
-  def layoutDebate(intrsAllowed: IntrsAllowed): NodeSeq = {
+  def layoutDebate(permsOnPage: PermsOnPage): NodeSeq = {
     this.lastChange = debate.lastChangeDate.map(toIso8601(_))
-    layoutPosts ++ FormHtml(config, intrsAllowed).menus
+    layoutPosts ++ FormHtml(config, permsOnPage).menus
   }
 
   private def layoutPosts(): NodeSeq = {
@@ -457,8 +457,8 @@ class DebateHtml(val debate: Debate) {
 
 object FormHtml {
 
-  def apply(config: HtmlConfig, intrsAllowed: IntrsAllowed) =
-    new FormHtml(config, intrsAllowed)
+  def apply(config: HtmlConfig, permsOnPage: PermsOnPage) =
+    new FormHtml(config, permsOnPage)
 
   val XsrfInpName = "dw-fi-xsrf"
 
@@ -484,7 +484,7 @@ object FormHtml {
 }
 
 
-class FormHtml(val config: HtmlConfig, val intrsAllowed: IntrsAllowed) {
+class FormHtml(val config: HtmlConfig, val permsOnPage: PermsOnPage) {
 
   import FormHtml._
 
@@ -638,7 +638,7 @@ class FormHtml(val config: HtmlConfig, val intrsAllowed: IntrsAllowed) {
 
   def actLinks(pid: String) = {
     val safePid = safe(pid)  // Prevent xss attacks.
-    // In the future, perhaps match on `intrsAllowed'.
+    // COULD check permsOnPage.replyHidden/Visible etc.
     <ul>
      <li><a href={"?reply="+ safePid}>Reply to post</a></li>
      <li><a href={"?rate="+ safePid}>Rate it</a></li>
@@ -762,6 +762,7 @@ class FormHtml(val config: HtmlConfig, val intrsAllowed: IntrsAllowed) {
     </form>
   }
 
+  /*
   def timeWaistWarning(action: String, is: String): NodeSeq = {
     import IntrsAllowed._
     intrsAllowed match {
@@ -771,7 +772,7 @@ class FormHtml(val config: HtmlConfig, val intrsAllowed: IntrsAllowed) {
         only to people who explicitly choose to view user comments.
         </i></div>
     }
-  }
+  }*/
 
   def termsAgreement(submitBtnText: String) =
     <div class='dw-user-contrib-license'>By clicking <i>{submitBtnText}</i>,

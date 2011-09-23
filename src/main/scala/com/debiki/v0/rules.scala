@@ -6,49 +6,36 @@ package com.debiki.v0
 
 import Prelude._
 
-// COULD rename this file to info? or meta? or actions?...
-
-object PagePath {
-  // COULD include the tenant id in Guid, because that'd simplify params to
-  // Dao, and the tenantId is actually part of the guid.
-  sealed abstract class Guid {
-    def value: Option[String]
-  }
-  case class GuidInPath(guid: String) extends Guid {
-    override val value = Some(guid)
-  }
-  case class GuidHidden(guid: String) extends Guid {
-    override val value = Some(guid)
-  }
-  case object GuidUnknown extends Guid {
-    override val value: Option[String] = None
-  }
-}
-
-import PagePath._
+// COULD rename this file to perms.scala?  (permissions)
 
 /** Identifies a page, by guid or by path, and knows the path
  *  component in the URL to the page.
  */
-case class PagePath(
-  tenantId: String,
-  parent: String,
-  guid: Guid,
+case class PagePath(  // COULD move to debate.scala
+  tenantId: String,  // COULD be a Dao(parameter) instead?
+  folder: String,
+  guid: Option[String], // COULD break out PageLookup, so would never be None
+  guidInPath: Boolean,
   name: String
 ){
   require(tenantId.nonEmpty)
-  require(parent.startsWith("/"))
-  require(parent.endsWith("/"))
+  require(guid != Some("?"))
+  require(guid != Some(""))
+  require(folder.startsWith("/"))
+  require(folder.endsWith("/"))
   // In Oracle RDBMS, " " is stored instead of "", since Oracle
   // converts "" to null:
   require(name != " ")
 
-  def path: String = guid match {
-    case GuidInPath(g) =>
-      if (name isEmpty) parent +"-"+ g
-      else parent +"-"+ g +"-"+ name
-    case _ => parent + name
-  }
+  def path: String =
+    if (guidInPath) {
+      val g = guid.getOrElse(assErr( //  Break out GuidLookup so cannot happen?
+                "GUID unknown. [debiki_error_23r12]"))
+        if (name isEmpty) folder +"-"+ g
+        else folder +"-"+ g +"-"+ name
+    } else {
+      folder + name
+    }
 
   /** True iff path ends with a `/'. Then this is a path to a  folder or
    *  a folder's index page (which is a page with an empty name).
@@ -86,29 +73,47 @@ object Do {
   }
 }
 
-/** Interactions allowed.
- *
- *  Example: If the user is about to post a reply, but is only allowed to do
- *  HiddenTalk, then s/he will be informed that only a few people will
- *  see his/her contribution.
+// Could perhaps: -- but don't use numbers, use ordered case objects instead?
+//object Perms {
+//  val No = 0
+//  val Hidden = 1
+//  val ForReview = 2
+//  val Visible = 3
+//}
+
+/** A certain user's or group's permissions on something.
  */
-sealed abstract class IntrsAllowed
+sealed abstract class Perms
 
-object IntrsAllowed {
-
-  /**
-   */
-  case object VisibleTalk extends IntrsAllowed
-
-  /**
-   */
-  case object HiddenTalk extends IntrsAllowed
-
-  //case object HiddenFeedback extends AccessGranted
-  //case object ViewAll extends AccessGranted
-  //case object ViewHidden extends AccessGranted
-  //case object ViewArticle extends AccessGranted
-
+object PermsOnPage {
+  val All = PermsOnPage(true, true, true, true, true)
+  val Wiki = All.copy() // for now
+  val None = PermsOnPage()
 }
+
+/** PermsOnPage
+ *
+ *  A users permissions on a certain page.
+ */
+case class PermsOnPage(
+
+  val accessPage: Boolean = false,
+
+  val createPage: Boolean = false,
+
+  //val replyVisible: Boolean = false
+  //val replyHidden: Boolean = false  // will be reviewed later
+  //val giveFeedback: Boolean = false  // only shown to article author & editors
+
+  /** Edit the root post, i.e. the blog article, if this is a blog post. */
+  val editPage: Boolean = false,
+
+  /** Edit all users' replies. */
+  val editAnyReply: Boolean = false,
+
+  /** Edit non-authenticated users' replies. */
+  val editNonAutReply: Boolean = false
+
+) extends Perms
 
 // vim: fdm=marker et ts=2 sw=2 tw=80 fo=tcqwn list
