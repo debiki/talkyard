@@ -15,18 +15,12 @@ import _root_.scala.xml.{NodeSeq, Elem, Text, XML, Attribute}
 import Prelude._
 
 
-private[debiki]
-object Paths {
-  val EditsProposed = "edits/proposed/post/"
-}
-
-
 abstract class HtmlConfig {
-  def termsOfUse: String
+  def termsOfUseUrl: String
 
   // If a form action is the empty string, the browser POSTS to the current
   // page, says the URI spec: http://www.apps.ietf.org/rfc/rfc3986.html#sec-5.4
-  // COULD rename replyAction -> replyLink (or reactLink -> reactAction).
+  // COULD rename replyAction -> replyUrl (or reactUrl -> reactAction).
   def replyAction = ""
   def rateAction = ""
   def editAction = ""
@@ -38,12 +32,12 @@ abstract class HtmlConfig {
 
   /** A function from debate-id and post-id to a react URL.
    */
-  def reactLink(debateId: String, postId: String) = "?act="+ postId
+  def reactUrl(debateId: String, postId: String) = "?act="+ postId
 
   /** Constructs a URL to more info on a certain user,
    *  adds "http://" if needed.
    */
-  def userLink(nilo: NiLo) = {
+  def userUrl(nilo: NiLo) = {
     "" // for now, since OpenID users cannot specify url, fix ...
     /*
     // Lift-Web or Java? escapes cookie values, so unescape `://'.
@@ -301,7 +295,7 @@ class DebateHtml(val debate: Debate) {
     val author = debate.authorOf_!(post)
 
     def tryLinkTo(nilo: NiLo): NodeSeq = {
-      var url = config.userLink(nilo)
+      var url = config.userUrl(nilo)
       // TODO: investigate: `url' is sometimes the email address!!
       // When signed in @gmail.com, it seems.
       // For now: (this is actually a good test anyway, in case someone
@@ -447,7 +441,7 @@ class DebateHtml(val debate: Debate) {
       </div>
     </div> ++ (
       if (post.id == Debate.RootPostId) Nil // actions already added by caller
-      else <a class='dw-as' href={config.reactLink(debate.guid, post.id)}
+      else <a class='dw-as' href={config.reactUrl(debate.guid, post.id)}
             >React</a> ) ++
      { editSuggestions // could skip for now, too complicated for the end user
       }
@@ -778,6 +772,6 @@ class FormHtml(val config: HtmlConfig, val permsOnPage: PermsOnPage) {
     <div class='dw-user-contrib-license'>By clicking <i>{submitBtnText}</i>,
       you agree to release your contributions under the {ccWikiLicense}
       license, and you agree to the
-      <a href={config.termsOfUse} target="_blank">Terms of Use</a>.
+      <a href={config.termsOfUseUrl} target="_blank">Terms of Use</a>.
     </div>
 }

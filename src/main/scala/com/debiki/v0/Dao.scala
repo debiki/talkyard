@@ -12,7 +12,7 @@ import Dao._
  */
 abstract class DaoSpi {
 
-  def create(where: PagePath, debate: Debate): Box[Debate]
+  def createPage(where: PagePath, debate: Debate): Box[Debate]
 
   def close()
 
@@ -20,18 +20,17 @@ abstract class DaoSpi {
 
   def saveLogout(loginId: String, logoutIp: String)
 
-  // COULD use:  save(Guid(tenantId, pageGuid), xs)  instead?
-  // COULD rename to savePage.
-  def save[T](tenantId: String, debateId: String, xs: List[T]): Box[List[T]]
+  def savePageActions[T](tenantId: String, debateId: String, xs: List[T]
+                            ): Box[List[T]]
 
-  def load(tenantId: String, debateId: String): Box[Debate]
+  def loadPage(tenantId: String, debateId: String): Box[Debate]
 
   def loadTemplates(perhapsTmpls: List[PagePath]): List[Debate]
 
   def checkPagePath(pathToCheck: PagePath): Box[PagePath]
 
-  def checkAccess(pagePath: PagePath, loginId: Option[String], doo: Do
-                     ): (Option[Identity], Option[User], PermsOnPage)
+  def loadPermsOnPage(pagePath: PagePath, loginId: Option[String], doo: Do
+                         ): (Option[Identity], Option[User], PermsOnPage)
 
   def createTenant(name: String): Tenant
 
@@ -72,7 +71,7 @@ object Dao {
  */
 abstract class Dao {
 
-  def create(where: PagePath, debate: Debate): Box[Debate]
+  def createPage(where: PagePath, debate: Debate): Box[Debate]
 
   def close()
 
@@ -84,9 +83,10 @@ abstract class Dao {
   /** Updates the specified login with logout IP and timestamp.*/
   def saveLogout(loginId: String, logoutIp: String)
 
-  def save[T](tenantId: String, debateId: String, xs: List[T]): Box[List[T]]
+  def savePageActions[T](tenantId: String, debateId: String, xs: List[T]
+                            ): Box[List[T]]
 
-  def load(tenantId: String, debateId: String): Box[Debate]
+  def loadPage(tenantId: String, debateId: String): Box[Debate]
 
   /** Looks up guids for each possible template.
    *
@@ -98,8 +98,8 @@ abstract class Dao {
 
   def checkPagePath(pathToCheck: PagePath): Box[PagePath]
 
-  def checkAccess(pagePath: PagePath, loginId: Option[String], doo: Do
-                     ): (Option[Identity], Option[User], PermsOnPage)
+  def loadPermsOnPage(pagePath: PagePath, loginId: Option[String], doo: Do
+                         ): (Option[Identity], Option[User], PermsOnPage)
 
   /** Creates a tenant, assigns it an id and and returns it. */
   def createTenant(name: String): Tenant
@@ -129,18 +129,18 @@ class CachingDao(impl: DaoSpi) extends Dao {
           //expireAfterWrite(10. TimeUnits.MINUTES).
           makeComputingMap(new guava.base.Function[Key, Debate] {
             def apply(k: Key): Debate = {
-              _impl.load(k.tenantId, k.debateId) openOr null
+              _impl.loadPage(k.tenantId, k.debateId) openOr null
             }
           })
 
-  def create(where: PagePath, debate: Debate): Box[Debate] = {
-    for (debateWithIdsNoUsers <- _impl.create(where, debate)) yield {
+  def createPage(where: PagePath, debate: Debate): Box[Debate] = {
+    for (debateWithIdsNoUsers <- _impl.createPage(where, debate)) yield {
       // ------------
       // Bug workaround: Load the page *inclusive Login:s and User:s*.
       // Otherwise only Actions will be included (in debateWithIdsNoUsers)
       // and then the page cannot be rendered (there'll be None.get errors).
       val debateWithIds =
-          _impl.load(where.tenantId, debateWithIdsNoUsers.guid).open_!
+          _impl.loadPage(where.tenantId, debateWithIdsNoUsers.guid).open_!
       // ------------
       val key = Key(where.tenantId, debateWithIds.guid)
       val duplicate = _cache.putIfAbsent(key, debateWithIds)
@@ -158,9 +158,9 @@ class CachingDao(impl: DaoSpi) extends Dao {
   def saveLogout(loginId: String, logoutIp: String) =
     _impl.saveLogout(loginId, logoutIp)
 
-  def save[T](tenantId: String, debateId: String, xs: List[T]
-                 ): Box[List[T]] = {
-    for (xsWithIds <- _impl.save(tenantId, debateId, xs)) yield {
+  def savePageActions[T](tenantId: String, debateId: String, xs: List[T]
+                            ): Box[List[T]] = {
+    for (xsWithIds <- _impl.savePageActions(tenantId, debateId, xs)) yield {
       val key = Key(tenantId, debateId)
       var replaced = false
       while (!replaced) {
@@ -176,7 +176,7 @@ class CachingDao(impl: DaoSpi) extends Dao {
         // DebateHtml._layoutPosts.
         // -- So instead: ----------
         // This loads all Logins, Identity:s and Users referenced by the page:
-        val newPage = _impl.load(tenantId, debateId).open_!
+        val newPage = _impl.loadPage(tenantId, debateId).open_!
         // -------- Unfortunately.--
         replaced = _cache.replace(key, oldPage, newPage)
       }
@@ -184,7 +184,7 @@ class CachingDao(impl: DaoSpi) extends Dao {
     }
   }
 
-  def load(tenantId: String, debateId: String): Box[Debate] = {
+  def loadPage(tenantId: String, debateId: String): Box[Debate] = {
     try {
       Full(_cache.get(Key(tenantId, debateId)))
     } catch {
@@ -199,9 +199,9 @@ class CachingDao(impl: DaoSpi) extends Dao {
   def checkPagePath(pathToCheck: PagePath): Box[PagePath] =
     _impl.checkPagePath(pathToCheck)
 
-  def checkAccess(pagePath: PagePath, loginId: Option[String], doo: Do
-                   ): (Option[Identity], Option[User], PermsOnPage) =
-    _impl.checkAccess(pagePath, loginId, doo)
+  def loadPermsOnPage(pagePath: PagePath, loginId: Option[String], doo: Do
+                         ): (Option[Identity], Option[User], PermsOnPage) =
+    _impl.loadPermsOnPage(pagePath, loginId, doo)
 
   def createTenant(name: String): Tenant =
     _impl.createTenant(name)
@@ -223,8 +223,8 @@ class CachingDao(impl: DaoSpi) extends Dao {
  *  Useful when constructing test suites that should access the database.
  */
 class NonCachingDao(impl: DaoSpi) extends Dao {
-  def create(where: PagePath, debate: Debate): Box[Debate] =
-    impl.create(where, debate)
+  def createPage(where: PagePath, debate: Debate): Box[Debate] =
+    impl.createPage(where, debate)
 
   def close() = impl.close
 
@@ -234,11 +234,12 @@ class NonCachingDao(impl: DaoSpi) extends Dao {
   def saveLogout(loginId: String, logoutIp: String) =
     impl.saveLogout(loginId, logoutIp)
 
-  def save[T](tenantId: String, debateId: String, xs: List[T]): Box[List[T]] =
-    impl.save(tenantId, debateId, xs)
+  def savePageActions[T](tenantId: String, debateId: String, xs: List[T]
+                            ): Box[List[T]] =
+    impl.savePageActions(tenantId, debateId, xs)
 
-  def load(tenantId: String, debateId: String): Box[Debate] =
-    impl.load(tenantId, debateId)
+  def loadPage(tenantId: String, debateId: String): Box[Debate] =
+    impl.loadPage(tenantId, debateId)
 
   def loadTemplates(perhapsTmpls: List[PagePath]): List[Debate] =
     impl.loadTemplates(perhapsTmpls)
@@ -246,9 +247,9 @@ class NonCachingDao(impl: DaoSpi) extends Dao {
   def checkPagePath(pathToCheck: PagePath): Box[PagePath] =
     impl.checkPagePath(pathToCheck)
 
-  def checkAccess(pagePath: PagePath, loginId: Option[String], doo: Do
-                   ): (Option[Identity], Option[User], PermsOnPage) =
-    impl.checkAccess(pagePath, loginId, doo)
+  def loadPermsOnPage(pagePath: PagePath, loginId: Option[String], doo: Do
+                         ): (Option[Identity], Option[User], PermsOnPage) =
+    impl.loadPermsOnPage(pagePath, loginId, doo)
 
   def createTenant(name: String): Tenant =
     impl.createTenant(name)
