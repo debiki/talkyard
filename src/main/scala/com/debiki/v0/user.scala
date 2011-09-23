@@ -9,6 +9,7 @@ import _root_.net.liftweb.util.ControlHelpers.tryo
 import _root_.java.security.MessageDigest
 import _root_.java.{util => ju}
 import Prelude._
+import User.checkId
 
 abstract trait People {
 
@@ -122,6 +123,12 @@ case object User {
     }
     false
   }
+
+  def checkId(id: String, errcode: String) {
+    if (id == "") assErr("Empty ID "+ errcode)
+    if (id == "0") assErr("ID is `0' "+ errcode)
+    // "?" is okay, means unknown.
+  }
 }
 
 case class User (
@@ -132,6 +139,7 @@ case class User (
   website: String,
   isSuperAdmin: Boolean
 ){
+  checkId(id, "[debiki_error_02k125r]")
   def isAuthenticated = !id.startsWith("-") && !id.startsWith("?")
 }
 
@@ -140,7 +148,10 @@ case class Login(
   prevLoginId: Option[String],
   ip: String,
   date: ju.Date,
-  identityId: String)
+  identityId: String
+){
+  checkId(id, "[debiki_error_093jxh12]")
+}
 
 object Login {
 
@@ -177,6 +188,9 @@ sealed abstract class Identity {
   def userId: String
   def displayName: String
   def email: String
+
+  checkId(id, "[debiki_error_02krc3g]")
+  checkId(userId, "[debiki_error_864rsk215]")
 }
 
 case object IdentityUnknown extends Identity {  // Try to get rid of?
