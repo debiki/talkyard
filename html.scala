@@ -23,7 +23,9 @@ abstract class HtmlConfig {
   // COULD rename replyAction -> replyUrl (or reactUrl -> reactAction).
   def replyAction = ""
   def rateAction = ""
+  def flagAction = ""
   def editAction = ""
+  def deleteAction = ""
   def loginActionSimple = ""
   def loginActionOpenId = ""
   def loginOkAction = ""
@@ -469,10 +471,24 @@ object FormHtml {
     }
   }
 
+  object FlagForm {
+    object InputNames {
+      val Reason = "dw-fi-flg-reason"
+      val Details = "dw-fi-flg-details"
+    }
+  }
+
   object Edit {
     object InputNames {
       val Text = "dw-fi-ed-txt"
       val Preview = "dw-fi-ed-preview"
+    }
+  }
+
+  object Delete {
+    object InputNames {
+      val Reason = "dw-fi-dl-reason"
+      val DeleteTree = "dw-fi-dl-tree"
     }
   }
 }
@@ -492,7 +508,9 @@ class FormHtml(val config: HtmlConfig, val permsOnPage: PermsOnPage) {
     { actionMenu ++
       loginForms ++
       replyForm() ++
-      ratingForm }
+      ratingForm ++
+      flagForm ++
+      deleteForm }
     </div>
 
   def loginForms =
@@ -716,6 +734,37 @@ class FormHtml(val config: HtmlConfig, val permsOnPage: PermsOnPage) {
         </form>
       </div>
 
+  def flagForm = {
+    import FlagForm.{InputNames => Inp}
+    import Flag._
+    val r = Inp.Reason
+    <div class='dw-fs' id='dw-f-flg' title='Report Comment'>
+      <form action={config.flagAction} accept-charset='UTF-8' method='post'>
+        { _xsrfToken }
+        <div class='dw-f-flg-rsns'>{
+          def input(idSuffix: String, value: String, text: String) = {
+            val id = "dw-fi-flgs-"+ idSuffix
+              <input type='radio' id={id} name={r} value={value}/>
+              <label for={id}>{text}</label>
+          }
+          input("spam", Spam.toString, "Spam") ++
+          input("copy", Copyright.toString, "Copyright Violation") ++
+          input("ilgl", Illegal.toString, "Illegal") ++
+          input("othr", Other.toString, "Other")
+        }</div>
+        <div>
+          <label for={Inp.Details}>Details (optional)</label><br/>
+          <input id={Inp.Details} type='text' size='40' maxlength='100'
+                 name={Inp.Details} value=''/>
+        </div>
+        <div class='dw-submit-set'>
+          <input class='dw-fi-submit' type='submit' value='Submit'/>
+          <input class='dw-fi-cancel' type='button' value='Cancel'/>
+        </div>
+      </form>
+    </div>
+  }
+
   def editForm(newText: String = "", oldText: String = "",
                userName: Box[String]) = {
     import Edit.{InputNames => Inp}
@@ -755,6 +804,31 @@ class FormHtml(val config: HtmlConfig, val permsOnPage: PermsOnPage) {
       </div>
     </form>
   }
+
+  def deleteForm =
+    <div class='dw-fs' title='Delete Comment'>
+      <form id='dw-f-dl' action={config.deleteAction}
+            accept-charset='UTF-8' method='post'>{
+        import Delete.{InputNames => Inp}
+        val deleteTreeLabel = "Delete replies too"
+        _xsrfToken ++
+        <div>
+          <label for={Inp.Reason}>Reason for deletion? (optional)</label><br/>
+          <input id={Inp.Reason} type='text' size='40' maxlength='100'
+                 name={Inp.Reason} value=''/>
+        </div>
+        <div>
+          <label for={Inp.DeleteTree}>{deleteTreeLabel}</label>
+          <input id={Inp.DeleteTree} type='checkbox'
+                 name={Inp.DeleteTree} value={deleteTreeLabel} />
+        </div>
+        <div class='dw-submit-set'>
+          <input class='dw-fi-submit' type='submit' value='Delete'/>
+          <input class='dw-fi-cancel' type='button' value='Cancel'/>
+        </div>
+      }
+      </form>
+    </div>
 
   /*
   def timeWaistWarning(action: String, is: String): NodeSeq = {
