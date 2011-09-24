@@ -762,7 +762,7 @@ class FormHtml(val config: HtmlConfig, val permsOnPage: PermsOnPage) {
         }</div>
         <div>
           <label for={Inp.Details}>Details (optional)</label><br/>
-          <input id={Inp.Details} type='text' size='40' maxlength='100'
+          <textarea id={Inp.Details} rows='2' cols='30'
                  name={Inp.Details} value=''/>
         </div>
         <div class='dw-submit-set'>
@@ -822,7 +822,7 @@ class FormHtml(val config: HtmlConfig, val permsOnPage: PermsOnPage) {
         _xsrfToken ++
         <div>
           <label for={Inp.Reason}>Reason for deletion? (optional)</label><br/>
-          <input id={Inp.Reason} type='text' size='40' maxlength='100'
+          <textarea id={Inp.Reason} rows='2' cols='33'
                  name={Inp.Reason} value=''/>
         </div>
         <div>
