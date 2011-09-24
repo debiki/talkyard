@@ -647,7 +647,15 @@ function $initPostsThread() {
   // delegation is used instead). }}}
   $actions.children('.dw-a-reply').click($showReplyForm);
   $actions.children('.dw-a-rate').click($showRatingForm);
-  $actions.children('.dw-a-edit').click($showEditSuggestions);
+  $actions.children('.dw-a-more').click(function() {
+    $(this).remove();
+    $actions.children(
+        '.dw-a-link, .dw-a-edit, .dw-a-flag, .dw-a-delete').show();
+  });
+  //$actions.children('.dw-a-link').click($showLinkForm); — not implemented
+  $actions.children('.dw-a-flag').click($showFlagForm);
+  $actions.children('.dw-a-delete').click($showDeleteForm);
+  //$actions.children('.dw-a-edit').click($showEditSuggestions); — broken
 
   // For the root thread.
   $thread.children('.dw-hor-a').children('.dw-a-reply').click($showReplyForm);
@@ -1780,6 +1788,87 @@ function $showMoreRatingTags() {
 }
 
 
+// ------- Flagging
+
+// warning: dupl code, see initDeleteForm,
+// and initLogout/initLoginSimple/initLoginOpenId etc.
+// COULD break out some common dialog init/show functions?
+function initFlagForm() {
+  var $form = $('#dw-f-flg');
+  var $parent = $form.parent();
+  $form.find('.dw-submit-set input').hide(); // use jQuery UI's buttons instead
+  $form.find('.dw-f-flg-rsns').buttonset();
+  $parent.dialog({
+    autoOpen: false,
+    width: 580,
+    modal: true,
+    draggable: false,  // it would move faster than the mouse, why?
+    resizable: false,  // it would teleport itself far away, why?
+    zIndex: 1190,  // the default, 1000, is lower than <form>s z-index
+    buttons: {
+      'Cancel': function() {
+        $(this).dialog('close');
+      },
+      'Submit': function() {
+        // COULD ensure details specified if "Others" reason selected.
+        // COULD show a "Submitting..." message.
+        if (!getLoginId())
+          $form.each($showLoginSimple) // ask who are you
+        else
+          $form.submit();
+      }
+    },
+    /* buttons: [ // {{{ weird, this results in button titles '0' and '1'
+      { text: 'Cancel', click: function() {
+        $(this).dialog('close');
+      }},
+      { id: 'dw-fi-flg-submit', text: 'Submit', disabled: 'disabled',
+          click: function() {
+        // COULD ensure details specified if "Others" reason selected.
+        // COULD show a "Submitting..." message.
+        if (!getLoginId())
+          $form.each($showLoginSimple) // ask who are you
+        else
+          $form.submit();
+      }}],   }}} */
+    close: function() {
+      // TODO reset form.
+      // allFields.val('').removeClass('ui-state-error');
+    }
+  });
+
+  // {{{ How to enable the submit button on radio button click?
+  // Below button(option ...) stuff results in:
+  //    Uncaught TypeError: Object function () {
+  //       $('#dw-fi-flg-submit').button('option', 'disabled', false);
+  //     } has no method 'split'
+  //$('#dw-fi-flg-submit').button('option', 'disabled', true);
+  //$form.find('.dw-f-flg-rsns label').one(function() {
+  //  $('#dw-fi-flg-submit').button('option', 'disabled', false);
+  //});
+  // }}}
+
+  $form.submit(function() {
+    $(this).parent().dialog('close');
+    var postData = $form.serialize();
+    // COULD handle a failed request, e.g. 401 in case the server
+    // considers the email corrupt?
+    $.post($form.attr("action"), postData, function() {
+    }, 'html');
+    return false;
+  });
+}
+
+// warning, dupl code, see $showDeleteCommentForm.
+function $showFlagForm() {
+  var $i = $(this);
+  var $t = $i.closest('.dw-t');
+  var $post = $t.children('.dw-p');
+  $('#dw-f-flg').parent().dialog('open').parent();//position({
+      //my: 'center top', at: 'center bottom', of: $post, offset: '0 40'});
+}
+
+
 // ------- Replying
 
 // Shows a reply form, either below the relevant post, or inside it,
@@ -2322,7 +2411,66 @@ $('.debiki p').editable('http://www.example.com/save.php', {
 });
 */
 
-// ------- Create
+
+// ------- Delete comments
+
+// warning: dupl code, see initFlagForm.
+function initDeleteForm() {
+  var $form = $('#dw-f-dl');
+  var $parent = $form.parent();
+  $form.find('.dw-submit-set input').hide(); // use jQuery UI's buttons instead
+  // Don't make a button of -tree, because then it's a tiny bit
+  // harder to realize wethere it's checked or not, and this is a
+  // rather important button.
+  // Skip: $form.find('#dw-fi-dl-tree').button();
+  $parent.dialog({
+    autoOpen: false,
+    width: 580,
+    modal: true,
+    draggable: false,  // it would move faster than the mouse, why?
+    resizable: false,  // it would teleport itself far away, why?
+    zIndex: 1190,  // the default, 1000, is lower than <form>s z-index
+    buttons: {
+      Cancel: function() {
+        $(this).dialog('close');
+      },
+      Delete: function() {
+        // COULD ensure details specified if "Others" reason selected.
+        // COULD show a "Submitting..." message.
+        if (!getLoginId())
+          $form.each($showLoginSimple) // ask who are you
+        else
+          $form.submit();
+      }
+    },
+    close: function() {
+      // TODO reset form.
+      // allFields.val('').removeClass('ui-state-error');
+    }
+  });
+
+  $form.submit(function() {
+    $(this).parent().dialog('close');
+    var postData = $form.serialize();
+    // COULD handle a failed request, e.g. 401 in case the server
+    // considers the email corrupt?
+    $.post($form.attr("action"), postData, function() {
+    }, 'html');
+    return false;
+  });
+}
+
+// warning: dupl code, see $showFlagForm.
+function $showDeleteForm() {
+  var $i = $(this);
+  var $t = $i.closest('.dw-t');
+  var $post = $t.children('.dw-p');
+  $('#dw-f-dl').parent().dialog('open').parent();//position({
+      //my: 'center top', at: 'center bottom', of: $post, offset: '0 40'});
+}
+
+
+// ------- Create page
 
 // This is for the ?create page (e.g. GET /some/folder/page?create).
 // COULD REFACTOR: Export $loginOnClick, and place initCreateForm() in
@@ -2855,6 +3003,8 @@ openid.submitInPopup = submitLoginInPopup;
 openid.init('openid_identifier');
 initLoginOpenId();
 
+initFlagForm();
+initDeleteForm();
 
 // On post text click, open the inline action menu.
 // But hide it on mousedown, so the inline action menu disappears when you

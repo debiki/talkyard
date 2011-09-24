@@ -12,6 +12,7 @@
  *  -a-           action
  *  -by           by whom post was written. COULD change -p-by -> -p-u (user)?
  *  -cr-          create
+ *  -dl-          delete
  *  -e            east (COULD change to "ew", eastwards, and use "e" for edit)
  *                  and new (no good!, "new") sew etc. for northeastwards etc.
  *                  Or 'de', direction-east, dn/w/s/e dnw/sw/se/ne ?
@@ -43,6 +44,7 @@
  *
  *  dw-a-rate     rate reply
  *  dw-a-reply    new reply
+ *  dw-a-more     shows more actions: link/report/delete
  *  dw-a-edit     list edit suggestion
  *  dw-a-edit-new new edit suggestion
  *  dw-ess        edit suggestions
@@ -52,6 +54,7 @@
  *  dw-fs-ed      edit form group (COULD rename to -f-ed/re/rat ?)
  *  dw-fs-re      reply form group
  *  dw-fs-rat     rating form group
+ *  dw-fs-flg     flag for spam/abuse/etc form
  *  dw-hor-a      action stuff, layed out horizontally
  *  dw-i-t        inline thread (COULD use dw-i instead, already has dw-t class)
  *  dw-i-m        inline mark (COULD rename to dw-m — *all* marks are inline?)
@@ -564,12 +567,21 @@ or it steals attention from the page title. */
   margin-right: 12px;
 }
 
+.dw-t > .dw-as > .dw-a-more,
+.dw-t > .dw-as > .dw-a-link,
+.dw-t > .dw-as > .dw-a-edit,
+.dw-t > .dw-as > .dw-a-flag,
+.dw-t > .dw-as > .dw-a-delete {
+  color: #777; /* make rather uninteresting actions gray */
+}
+
 .dw-t > .dw-as > .dw-a:last-child {
   margin-right: 0; /* avoid float drop */
 }
 
-/* Make the reply link especially easy to notice. */
-.dw-t > .dw-as > .dw-a-reply {
+/* Make the reply and rate links easy to notice. */
+.dw-t > .dw-as > .dw-a-reply,
+.dw-t > .dw-as > .dw-a-rate {
   font-weight: bold;
 }
 
@@ -581,6 +593,13 @@ or it steals attention from the page title. */
 .dw-hor-a > .dw-a {
   font-size: 17px;
   margin: 0;
+}
+
+.dw-a-link,
+.dw-a-edit,
+.dw-a-flag,
+.dw-a-delete {
+  display: none; /* shown on .dw-a-more click */
 }
 
 /* --- Post info ---*/
@@ -1050,6 +1069,11 @@ to the forms bg color. */
   min-width: 0 !important;
 }
 
+/* === Flag === */
+
+.dw-f-flg-rsns {
+  margin: 0.5ex 0 1em;
+}
 
 /* === Edit form === */
 
@@ -1140,6 +1164,12 @@ to the forms bg color. */
 .dw-edit-liking-stats {
   font-style: italic;
   font-size: 85%;
+}
+
+/* === Delete comment form === */
+
+#dw-fi-dl-tree {
+  margin: 1em 0 0;
 }
 
 /* === Create page form === */
