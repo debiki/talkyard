@@ -67,11 +67,11 @@ function markdownToSafeHtml(markdownSrc, hostAndPort) {
 //----------------------------------------
 
 jQuery.fn.dwDisable = function() {
-  return this.each(function(){ jQuery(this).attr('disabled', 'disabled'); });
+  return this.each(function(){ jQuery(this).prop('disabled', true); });
 };
 
 jQuery.fn.dwEnable = function() {
-  return this.each(function(){ jQuery(this).removeAttr('disabled'); });
+  return this.each(function(){ jQuery(this).prop('disabled', false); });
 };
 
 jQuery.fn.dwLastChange = function() {
@@ -2737,7 +2737,7 @@ function makeSvgDrawer() {
     var $i = $(this);
     var $bdy = $('> .dw-p > .dw-p-bdy', this);
     // Remove old curves
-    $i.add('> .dw-t-vspace').add($bdy).children('svg').each(function() {
+    $i.add('> .dw-t-vspace', this).add($bdy).children('svg').each(function() {
       $(this).find('path').remove();
     });
     // Draw arrows to whole post replies, and, for horizontal layout,
