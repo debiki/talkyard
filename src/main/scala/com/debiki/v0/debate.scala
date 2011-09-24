@@ -2,6 +2,7 @@
 
 package com.debiki.v0
 
+import _root_.net.liftweb.common.{Box, Full, Empty, EmptyBox, Failure}
 import java.{util => ju}
 import collection.{immutable => imm, mutable => mut}
 import Prelude._
@@ -487,6 +488,39 @@ case class Rating (
   tags: List[String]
 ) extends Action
 
+object Flag {
+  abstract sealed class Reason
+  case object Spam extends Reason
+  case object Illegal extends Reason
+  /** Copyright violation */
+  case object Copyright extends Reason
+  case object Other extends Reason
+
+  // COULD use Enumeration instead, something like:
+  // object FlagReason extends Enumeration {
+  //  val Spam, Illegal, CopyRightViolation, Other = Value
+  // }
+  // and then: val reason = FlagReason withName "<name>".
+  def toReason(value: String): Box[Reason] = value match {
+    case "Spam" => Full(Spam)
+    case "Illegal" => Full(Illegal)
+    case "Copyright violation" => Full(Copyright)
+    case "Other" => Full(Other)
+    case "" => Empty
+    case x => Failure("Bad reason: "+ safed(x))
+  }
+}
+
+case class Flag(
+  id: String,
+  postId: String,
+  loginId: String,
+  newIp: Option[String],
+  date: ju.Date,
+  reason: Flag.Reason,
+  details: String
+) extends Action
+
 case class Post(
   id: String,
   parent: String,
@@ -554,3 +588,14 @@ case class EditApplied (  // TODO extend Action
 
   debug: String = ""
 )
+
+case class Delete(
+  id: String,
+  postId: String,
+  loginId: String,
+  newIp: Option[String],
+  date: ju.Date,
+  wholeTree: Boolean,
+  reason: String
+) extends Action
+

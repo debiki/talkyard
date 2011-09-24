@@ -63,7 +63,9 @@ object Do {
   case object Create extends Do
   case object Reply extends Do
   case object Rate extends Do
+  case object FlagPost extends Do
   case object Edit extends Do
+  case object DeletePost extends Do
   case object View extends Do
   /** When you Do.Use e.g. CSS or a PNG image, it's returned to the
    *  browser as text/css, or image/png, not wrapped in html. */
