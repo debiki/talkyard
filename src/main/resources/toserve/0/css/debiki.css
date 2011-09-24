@@ -820,6 +820,11 @@ or it steals attention from the page title. */
   margin: 10px 0 20px 35px; /* left-indents somewhat more than reply indent */
 }
 
+/* Reduce distance between a form and any parent jQuery UI dialog buttons. */
+.ui-dialog > .dw-fs {
+  margin-bottom: 11px; /* 20px (from just above) too much */
+}
+
 .dw-hor > .dw-res > .dw-fs {
   clear: none; /* or root post forms would be stacked vertically */
 }
@@ -840,6 +845,11 @@ or it steals attention from the page title. */
   /* My Firifox 3.6 draws outlines very incorrectly for the Rating form,
   (but correctly for Reply and Edit), use borders instead. */
   /* outline: #83c5df solid thick; */
+}
+ 
+.dw-fs form label {
+  margin-top: 0.8ex;
+  display: inline-block; /* or margin has no effect */
 }
 
 /* jQuery UI dialogs have forms inside. Set the dialog bg color
@@ -962,7 +972,7 @@ to the forms bg color. */
 }
 
 .dw-login-simple-info {
-  margin-bottom: 1em;
+  margin-bottom: 1.1ex;
 }
 
 .dw-login-simple label {
