@@ -877,8 +877,13 @@ to the forms bg color. */
   background-color: #fbf7f2;
 }
 
-/* Was needed by #dw-fs-openid-login or #dw-fs-login-simple. COULD delete. */
--xx-.dw-fs.ui-dialog-content {
+/* Float drop fix. Was needed by #dw-fs-openid-login or #dw-fs-login-simple.
+Now *sometimeis* needed by #dw-fs-flg, or some radio button float
+drops and scrollbars appear. Sometimes? Yes, in Chrome `14.0.835.186'
+on my KDE computer — but not in Chrome `14.0.835.186 beta' on my
+Gnome computer. Perhaps better keep this fix, since hard to know if
+it works everywhere, even if it works fine for you. */
+.dw-fs.ui-dialog-content {
   /*margin: 20px 0 0; /* cancel .dw-fs too wide margin */
   /*padding: 0 !important; /* cancel jQuery UI's inline style */
   width: 100% !important; /* otherwise sometimes float drop */
