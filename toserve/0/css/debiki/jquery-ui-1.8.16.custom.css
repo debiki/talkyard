@@ -1,7 +1,7 @@
 /*
- * jQuery UI CSS Framework @VERSION
+ * jQuery UI CSS Framework 1.8.16
  *
- * Copyright 2010, AUTHORS.txt (http://jqueryui.com/about)
+ * Copyright 2011, AUTHORS.txt (http://jqueryui.com/about)
  * Dual licensed under the MIT or GPL Version 2 licenses.
  * http://jquery.org/license
  *
@@ -11,7 +11,7 @@
 /* Layout helpers
 ----------------------------------*/
 .dw-pri .ui-helper-hidden { display: none; }
-.dw-pri .ui-helper-hidden-accessible { position: absolute; left: -99999999px; }
+.dw-pri .ui-helper-hidden-accessible { position: absolute !important; clip: rect(1px 1px 1px 1px); clip: rect(1px,1px,1px,1px); }
 .dw-pri .ui-helper-reset { margin: 0; padding: 0; border: 0; outline: 0; line-height: 1.3; text-decoration: none; font-size: 100%; list-style: none; }
 .dw-pri .ui-helper-clearfix:after { content: "."; display: block; height: 0; clear: both; visibility: hidden; }
 .dw-pri .ui-helper-clearfix { display: inline-block; }
@@ -42,15 +42,15 @@
 
 
 /*
- * jQuery UI CSS Framework @VERSION
+ * jQuery UI CSS Framework 1.8.16
  *
- * Copyright 2010, AUTHORS.txt (http://jqueryui.com/about)
+ * Copyright 2011, AUTHORS.txt (http://jqueryui.com/about)
  * Dual licensed under the MIT or GPL Version 2 licenses.
  * http://jquery.org/license
  *
  * http://docs.jquery.com/UI/Theming/API
  *
- * To view and modify this theme, visit http://jqueryui.com/themeroller/?ffDefault=Trebuchet%20MS,%20Tahoma,%20Verdana,%20Arial,%20sans-serif&fwDefault=bold&fsDefault=1.1em&cornerRadius=4px&bgColorHeader=ededed&bgTextureHeader=03_highlight_soft.png&bgImgOpacityHeader=35&borderColorHeader=a3a3a3&fcHeader=000000&iconColorHeader=238ed7&bgColorContent=f6f6f6&bgTextureContent=01_flat.png&bgImgOpacityContent=100&borderColorContent=dddddd&fcContent=333333&iconColorContent=0c93ca&bgColorDefault=fefefe&bgTextureDefault=02_glass.png&bgImgOpacityDefault=100&borderColorDefault=cccccc&fcDefault=1c80c4&iconColorDefault=e9911c&bgColorHover=fdf5ce&bgTextureHover=02_glass.png&bgImgOpacityHover=100&borderColorHover=fbcb09&fcHover=c77405&iconColorHover=ef8c08&bgColorActive=ffffff&bgTextureActive=02_glass.png&bgImgOpacityActive=65&borderColorActive=fbd850&fcActive=de8800&iconColorActive=ef8c08&bgColorHighlight=ffe45c&bgTextureHighlight=03_highlight_soft.png&bgImgOpacityHighlight=75&borderColorHighlight=fed22f&fcHighlight=363636&iconColorHighlight=228ef1&bgColorError=b81900&bgTextureError=08_diagonals_thick.png&bgImgOpacityError=18&borderColorError=cd0a0a&fcError=ffffff&iconColorError=ffd27a&bgColorOverlay=666666&bgTextureOverlay=08_diagonals_thick.png&bgImgOpacityOverlay=20&opacityOverlay=50&bgColorShadow=000000&bgTextureShadow=01_flat.png&bgImgOpacityShadow=10&opacityShadow=20&thicknessShadow=5px&offsetTopShadow=-5px&offsetLeftShadow=-5px&cornerRadiusShadow=5px
+ * To view and modify this theme, visit http://jqueryui.com/themeroller/?ctl=themeroller&ffDefault=Trebuchet%20MS,%20Tahoma,%20Verdana,%20Arial,%20sans-serif&fwDefault=bold&fsDefault=1.1em&cornerRadius=4px&bgColorHeader=ededed&bgTextureHeader=03_highlight_soft.png&bgImgOpacityHeader=35&borderColorHeader=a3a3a3&fcHeader=000000&iconColorHeader=238ed7&bgColorContent=fbf7f2&bgTextureContent=01_flat.png&bgImgOpacityContent=100&borderColorContent=fbf7f2&fcContent=333333&iconColorContent=0c93ca&bgColorDefault=fefefe&bgTextureDefault=02_glass.png&bgImgOpacityDefault=100&borderColorDefault=cccccc&fcDefault=1c80c4&iconColorDefault=e9911c&bgColorHover=fdf5ce&bgTextureHover=02_glass.png&bgImgOpacityHover=100&borderColorHover=fbcb09&fcHover=c77405&iconColorHover=ef8c08&bgColorActive=ffffff&bgTextureActive=02_glass.png&bgImgOpacityActive=65&borderColorActive=fbd850&fcActive=de8800&iconColorActive=ef8c08&bgColorHighlight=ffe45c&bgTextureHighlight=03_highlight_soft.png&bgImgOpacityHighlight=75&borderColorHighlight=fed22f&fcHighlight=363636&iconColorHighlight=228ef1&bgColorError=b81900&bgTextureError=08_diagonals_thick.png&bgImgOpacityError=18&borderColorError=cd0a0a&fcError=ffffff&iconColorError=ffd27a&bgColorOverlay=666666&bgTextureOverlay=08_diagonals_thick.png&bgImgOpacityOverlay=20&opacityOverlay=50&bgColorShadow=000000&bgTextureShadow=01_flat.png&bgImgOpacityShadow=10&opacityShadow=20&thicknessShadow=5px&offsetTopShadow=-5px&offsetLeftShadow=-5px&cornerRadiusShadow=5px
  */
 
 
@@ -59,7 +59,7 @@
 .dw-pri .ui-widget { font-family: Trebuchet MS, Tahoma, Verdana, Arial, sans-serif; font-size: 1.1em; }
 .dw-pri .ui-widget .ui-widget { font-size: 1em; }
 .dw-pri .ui-widget input, .dw-pri .ui-widget select, .dw-pri .ui-widget textarea, .dw-pri .ui-widget button { font-family: Trebuchet MS, Tahoma, Verdana, Arial, sans-serif; font-size: 1em; }
-.dw-pri .ui-widget-content { border: 1px solid #dddddd; background: #f6f6f6 url(images/ui-bg_flat_100_f6f6f6_40x100.png) 50% 50% repeat-x; color: #333333; }
+.dw-pri .ui-widget-content { border: 1px solid #fbf7f2; background: #fbf7f2 url(images/ui-bg_flat_100_fbf7f2_40x100.png) 50% 50% repeat-x; color: #333333; }
 .dw-pri .ui-widget-content a { color: #333333; }
 .dw-pri .ui-widget-header { border: 1px solid #a3a3a3; background: #ededed url(images/ui-bg_highlight-soft_35_ededed_1x100.png) 50% 50% repeat-x; color: #000000; font-weight: bold; }
 .dw-pri .ui-widget-header a { color: #000000; }
@@ -280,29 +280,24 @@
 ----------------------------------*/
 
 /* Corner radius */
-.dw-pri .ui-corner-tl { -moz-border-radius-topleft: 4px; -webkit-border-top-left-radius: 4px; border-top-left-radius: 4px; }
-.dw-pri .ui-corner-tr { -moz-border-radius-topright: 4px; -webkit-border-top-right-radius: 4px; border-top-right-radius: 4px; }
-.dw-pri .ui-corner-bl { -moz-border-radius-bottomleft: 4px; -webkit-border-bottom-left-radius: 4px; border-bottom-left-radius: 4px; }
-.dw-pri .ui-corner-br { -moz-border-radius-bottomright: 4px; -webkit-border-bottom-right-radius: 4px; border-bottom-right-radius: 4px; }
-.dw-pri .ui-corner-top { -moz-border-radius-topleft: 4px; -webkit-border-top-left-radius: 4px; border-top-left-radius: 4px; -moz-border-radius-topright: 4px; -webkit-border-top-right-radius: 4px; border-top-right-radius: 4px; }
-.dw-pri .ui-corner-bottom { -moz-border-radius-bottomleft: 4px; -webkit-border-bottom-left-radius: 4px; border-bottom-left-radius: 4px; -moz-border-radius-bottomright: 4px; -webkit-border-bottom-right-radius: 4px; border-bottom-right-radius: 4px; }
-.dw-pri .ui-corner-right {  -moz-border-radius-topright: 4px; -webkit-border-top-right-radius: 4px; border-top-right-radius: 4px; -moz-border-radius-bottomright: 4px; -webkit-border-bottom-right-radius: 4px; border-bottom-right-radius: 4px; }
-.dw-pri .ui-corner-left { -moz-border-radius-topleft: 4px; -webkit-border-top-left-radius: 4px; border-top-left-radius: 4px; -moz-border-radius-bottomleft: 4px; -webkit-border-bottom-left-radius: 4px; border-bottom-left-radius: 4px; }
-.dw-pri .ui-corner-all { -moz-border-radius: 4px; -webkit-border-radius: 4px; border-radius: 4px; }
+.dw-pri .ui-corner-all, .dw-pri .ui-corner-top, .dw-pri .ui-corner-left, .dw-pri .ui-corner-tl { -moz-border-radius-topleft: 4px; -webkit-border-top-left-radius: 4px; -khtml-border-top-left-radius: 4px; border-top-left-radius: 4px; }
+.dw-pri .ui-corner-all, .dw-pri .ui-corner-top, .dw-pri .ui-corner-right, .dw-pri .ui-corner-tr { -moz-border-radius-topright: 4px; -webkit-border-top-right-radius: 4px; -khtml-border-top-right-radius: 4px; border-top-right-radius: 4px; }
+.dw-pri .ui-corner-all, .dw-pri .ui-corner-bottom, .dw-pri .ui-corner-left, .dw-pri .ui-corner-bl { -moz-border-radius-bottomleft: 4px; -webkit-border-bottom-left-radius: 4px; -khtml-border-bottom-left-radius: 4px; border-bottom-left-radius: 4px; }
+.dw-pri .ui-corner-all, .dw-pri .ui-corner-bottom, .dw-pri .ui-corner-right, .dw-pri .ui-corner-br { -moz-border-radius-bottomright: 4px; -webkit-border-bottom-right-radius: 4px; -khtml-border-bottom-right-radius: 4px; border-bottom-right-radius: 4px; }
 
 /* Overlays */
 .dw-pri .ui-widget-overlay { background: #666666 url(images/ui-bg_diagonals-thick_20_666666_40x40.png) 50% 50% repeat; opacity: .50;filter:Alpha(Opacity=50); }
-.dw-pri .ui-widget-shadow { margin: -5px 0 0 -5px; padding: 5px; background: #000000 url(images/ui-bg_flat_10_000000_40x100.png) 50% 50% repeat-x; opacity: .20;filter:Alpha(Opacity=20); -moz-border-radius: 5px; -webkit-border-radius: 5px; border-radius: 5px; }/*
- * jQuery UI Resizable @VERSION
+.dw-pri .ui-widget-shadow { margin: -5px 0 0 -5px; padding: 5px; background: #000000 url(images/ui-bg_flat_10_000000_40x100.png) 50% 50% repeat-x; opacity: .20;filter:Alpha(Opacity=20); -moz-border-radius: 5px; -khtml-border-radius: 5px; -webkit-border-radius: 5px; border-radius: 5px; }/*
+ * jQuery UI Resizable 1.8.16
  *
- * Copyright 2010, AUTHORS.txt (http://jqueryui.com/about)
+ * Copyright 2011, AUTHORS.txt (http://jqueryui.com/about)
  * Dual licensed under the MIT or GPL Version 2 licenses.
  * http://jquery.org/license
  *
  * http://docs.jquery.com/UI/Resizable#theming
  */
 .dw-pri .ui-resizable { position: relative;}
-.dw-pri .ui-resizable-handle { position: absolute;font-size: 0.1px;z-index: 99999; display: block;}
+.dw-pri .ui-resizable-handle { position: absolute;font-size: 0.1px;z-index: 99999; display: block; }
 .dw-pri .ui-resizable-disabled .ui-resizable-handle, .dw-pri .ui-resizable-autohide .ui-resizable-handle { display: none; }
 .dw-pri .ui-resizable-n { cursor: n-resize; height: 7px; width: 100%; top: -5px; left: 0; }
 .dw-pri .ui-resizable-s { cursor: s-resize; height: 7px; width: 100%; bottom: -5px; left: 0; }
@@ -312,9 +307,9 @@
 .dw-pri .ui-resizable-sw { cursor: sw-resize; width: 9px; height: 9px; left: -5px; bottom: -5px; }
 .dw-pri .ui-resizable-nw { cursor: nw-resize; width: 9px; height: 9px; left: -5px; top: -5px; }
 .dw-pri .ui-resizable-ne { cursor: ne-resize; width: 9px; height: 9px; right: -5px; top: -5px;}/*
- * jQuery UI Selectable @VERSION
+ * jQuery UI Selectable 1.8.16
  *
- * Copyright 2010, AUTHORS.txt (http://jqueryui.com/about)
+ * Copyright 2011, AUTHORS.txt (http://jqueryui.com/about)
  * Dual licensed under the MIT or GPL Version 2 licenses.
  * http://jquery.org/license
  *
@@ -322,9 +317,9 @@
  */
 .dw-pri .ui-selectable-helper { position: absolute; z-index: 100; border:1px dotted black; }
 /*
- * jQuery UI Accordion @VERSION
+ * jQuery UI Accordion 1.8.16
  *
- * Copyright 2010, AUTHORS.txt (http://jqueryui.com/about)
+ * Copyright 2011, AUTHORS.txt (http://jqueryui.com/about)
  * Dual licensed under the MIT or GPL Version 2 licenses.
  * http://jquery.org/license
  *
@@ -339,10 +334,11 @@
 .dw-pri .ui-accordion-icons .ui-accordion-header a { padding-left: 2.2em; }
 .dw-pri .ui-accordion .ui-accordion-header .ui-icon { position: absolute; left: .5em; top: 50%; margin-top: -8px; }
 .dw-pri .ui-accordion .ui-accordion-content { padding: 1em 2.2em; border-top: 0; margin-top: -2px; position: relative; top: 1px; margin-bottom: 2px; overflow: auto; display: none; zoom: 1; }
-.dw-pri .ui-accordion .ui-accordion-content-active { display: block; }/*
- * jQuery UI Autocomplete @VERSION
+.dw-pri .ui-accordion .ui-accordion-content-active { display: block; }
+/*
+ * jQuery UI Autocomplete 1.8.16
  *
- * Copyright 2010, AUTHORS.txt (http://jqueryui.com/about)
+ * Copyright 2011, AUTHORS.txt (http://jqueryui.com/about)
  * Dual licensed under the MIT or GPL Version 2 licenses.
  * http://jquery.org/license
  *
@@ -354,7 +350,7 @@
 * html .ui-autocomplete { width:1px; } /* without this, the menu expands to 100% in IE6 */
 
 /*
- * jQuery UI Menu @VERSION
+ * jQuery UI Menu 1.8.16
  *
  * Copyright 2010, AUTHORS.txt (http://jqueryui.com/about)
  * Dual licensed under the MIT or GPL Version 2 licenses.
@@ -393,9 +389,9 @@
 	margin: -1px;
 }
 /*
- * jQuery UI Button @VERSION
+ * jQuery UI Button 1.8.16
  *
- * Copyright 2010, AUTHORS.txt (http://jqueryui.com/about)
+ * Copyright 2011, AUTHORS.txt (http://jqueryui.com/about)
  * Dual licensed under the MIT or GPL Version 2 licenses.
  * http://jquery.org/license
  *
@@ -431,17 +427,17 @@ input.ui-button { padding: .4em 1em; }
 /* workarounds */
 button.ui-button::-moz-focus-inner { border: 0; padding: 0; } /* reset extra padding in Firefox */
 /*
- * jQuery UI Dialog @VERSION
+ * jQuery UI Dialog 1.8.16
  *
- * Copyright 2010, AUTHORS.txt (http://jqueryui.com/about)
+ * Copyright 2011, AUTHORS.txt (http://jqueryui.com/about)
  * Dual licensed under the MIT or GPL Version 2 licenses.
  * http://jquery.org/license
  *
  * http://docs.jquery.com/UI/Dialog#theming
  */
 .dw-pri .ui-dialog { position: absolute; padding: .2em; width: 300px; overflow: hidden; }
-.dw-pri .ui-dialog .ui-dialog-titlebar { padding: .5em 1em .3em; position: relative;  }
-.dw-pri .ui-dialog .ui-dialog-title { float: left; margin: .1em 16px .2em 0; } 
+.dw-pri .ui-dialog .ui-dialog-titlebar { padding: .4em 1em; position: relative;  }
+.dw-pri .ui-dialog .ui-dialog-title { float: left; margin: .1em 16px .1em 0; } 
 .dw-pri .ui-dialog .ui-dialog-titlebar-close { position: absolute; right: .3em; top: 50%; width: 19px; margin: -10px 0 0 0; padding: 1px; height: 18px; }
 .dw-pri .ui-dialog .ui-dialog-titlebar-close span { display: block; margin: 1px; }
 .dw-pri .ui-dialog .ui-dialog-titlebar-close:hover, .dw-pri .ui-dialog .ui-dialog-titlebar-close:focus { padding: 0; }
@@ -452,9 +448,9 @@ button.ui-button::-moz-focus-inner { border: 0; padding: 0; } /* reset extra pad
 .dw-pri .ui-dialog .ui-resizable-se { width: 14px; height: 14px; right: 3px; bottom: 3px; }
 .dw-pri .ui-draggable .ui-dialog-titlebar { cursor: move; }
 /*
- * jQuery UI Slider @VERSION
+ * jQuery UI Slider 1.8.16
  *
- * Copyright 2010, AUTHORS.txt (http://jqueryui.com/about)
+ * Copyright 2011, AUTHORS.txt (http://jqueryui.com/about)
  * Dual licensed under the MIT or GPL Version 2 licenses.
  * http://jquery.org/license
  *
@@ -475,9 +471,9 @@ button.ui-button::-moz-focus-inner { border: 0; padding: 0; } /* reset extra pad
 .dw-pri .ui-slider-vertical .ui-slider-range { left: 0; width: 100%; }
 .dw-pri .ui-slider-vertical .ui-slider-range-min { bottom: 0; }
 .dw-pri .ui-slider-vertical .ui-slider-range-max { top: 0; }/*
- * jQuery UI Tabs @VERSION
+ * jQuery UI Tabs 1.8.16
  *
- * Copyright 2010, AUTHORS.txt (http://jqueryui.com/about)
+ * Copyright 2011, AUTHORS.txt (http://jqueryui.com/about)
  * Dual licensed under the MIT or GPL Version 2 licenses.
  * http://jquery.org/license
  *
@@ -493,15 +489,15 @@ button.ui-button::-moz-focus-inner { border: 0; padding: 0; } /* reset extra pad
 .dw-pri .ui-tabs .ui-tabs-panel { display: block; border-width: 0; padding: 1em 1.4em; background: none; }
 .dw-pri .ui-tabs .ui-tabs-hide { display: none !important; }
 /*
- * jQuery UI Datepicker @VERSION
+ * jQuery UI Datepicker 1.8.16
  *
- * Copyright 2010, AUTHORS.txt (http://jqueryui.com/about)
+ * Copyright 2011, AUTHORS.txt (http://jqueryui.com/about)
  * Dual licensed under the MIT or GPL Version 2 licenses.
  * http://jquery.org/license
  *
  * http://docs.jquery.com/UI/Datepicker#theming
  */
-.dw-pri .ui-datepicker { width: 17em; padding: .2em .2em 0; }
+.dw-pri .ui-datepicker { width: 17em; padding: .2em .2em 0; display: none; }
 .dw-pri .ui-datepicker .ui-datepicker-header { position:relative; padding:.2em 0; }
 .dw-pri .ui-datepicker .ui-datepicker-prev, .dw-pri .ui-datepicker .ui-datepicker-next { position:absolute; top: 2px; width: 1.8em; height: 1.8em; }
 .dw-pri .ui-datepicker .ui-datepicker-prev-hover, .dw-pri .ui-datepicker .ui-datepicker-next-hover { top: 1px; }
@@ -533,7 +529,7 @@ button.ui-button::-moz-focus-inner { border: 0; padding: 0; } /* reset extra pad
 .dw-pri .ui-datepicker-multi .ui-datepicker-group-last .ui-datepicker-header { border-left-width:0; }
 .dw-pri .ui-datepicker-multi .ui-datepicker-group-middle .ui-datepicker-header { border-left-width:0; }
 .dw-pri .ui-datepicker-multi .ui-datepicker-buttonpane { clear:left; }
-.dw-pri .ui-datepicker-row-break { clear:both; width:100%; }
+.dw-pri .ui-datepicker-row-break { clear:both; width:100%; font-size:0em; }
 
 /* RTL support */
 .dw-pri .ui-datepicker-rtl { direction: rtl; }
@@ -560,9 +556,9 @@ button.ui-button::-moz-focus-inner { border: 0; padding: 0; } /* reset extra pad
     width: 200px; /*must have*/
     height: 200px; /*must have*/
 }/*
- * jQuery UI Progressbar @VERSION
+ * jQuery UI Progressbar 1.8.16
  *
- * Copyright 2010, AUTHORS.txt (http://jqueryui.com/about)
+ * Copyright 2011, AUTHORS.txt (http://jqueryui.com/about)
  * Dual licensed under the MIT or GPL Version 2 licenses.
  * http://jquery.org/license
  *
