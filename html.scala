@@ -524,6 +524,11 @@ class FormHtml(val config: HtmlConfig, val permsOnPage: PermsOnPage) {
       <div id='dw-action-menu' class='dw-as dw-p-as'>
         <a class='dw-a dw-a-reply'>Reply</a>
         <a class='dw-a dw-a-rate'>Rate</a>
+        <a class='dw-a dw-a-more'>More...</a>
+        {/*<a class='dw-a dw-a-link'>Link</a>*/}
+        {/*<a class='dw-a dw-a-edit'>Edit</a>*/}
+        <a class='dw-a dw-a-flag'>Report</a>
+        <a class='dw-a dw-a-delete'>Delete</a>
         {/*  Disable the Edit form and link for now,
         doesn't work very well right now, or not at all.
         <a class='dw-a dw-a-edit'>Edit</a>
@@ -655,6 +660,8 @@ class FormHtml(val config: HtmlConfig, val permsOnPage: PermsOnPage) {
      <li><a href={"?reply="+ safePid}>Reply to post</a></li>
      <li><a href={"?rate="+ safePid}>Rate it</a></li>
      <li><a href={"?edit="+ safePid}>Suggest edit</a></li>
+     <li><a href={"?flag="+ safePid}>Report spam or abuse</a></li>
+     <li><a href={"?delete="+ safePid}>Delete</a></li>
     </ul>
   }
 
@@ -738,8 +745,9 @@ class FormHtml(val config: HtmlConfig, val permsOnPage: PermsOnPage) {
     import FlagForm.{InputNames => Inp}
     import Flag._
     val r = Inp.Reason
-    <div class='dw-fs' id='dw-f-flg' title='Report Comment'>
-      <form action={config.flagAction} accept-charset='UTF-8' method='post'>
+    <div class='dw-fs' title='Report Comment'>
+      <form id='dw-f-flg' action={config.flagAction} accept-charset='UTF-8'
+            method='post'>
         { _xsrfToken }
         <div class='dw-f-flg-rsns'>{
           def input(idSuffix: String, value: String, text: String) = {
