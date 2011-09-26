@@ -1103,11 +1103,16 @@ function $showInlineActionMenu(event) {
 // ------- Forms and actions
 
 function confirmClosePage() {
+  // If there're any reply forms with non-empty replies (textareas),
+  // or any edit forms, then return a confirm close message.
+  // (COULD avoid counting unchanged edits too.)
   // Count only :visible forms — non-visible forms are 1) hidden template
   // forms and 2) forms the user has closed. They aren't removed, because
   // it's nice to have your text reappear should you accidentally close
-  // a form and open it again.
-  var replyCount = $('.dw-fs-re:visible').length;
+  // a form, but open it again.
+  var replyCount = $('.dw-fs-re:visible').filter(function() {
+    return $(this).find('textarea').val().length > 0;
+  }).length;
   var editCount = $('.dw-f-ed:visible').length;
   var msg = replyCount + editCount > 0 ?
     'You have started writing. Really close page?' : null;  // i18n
