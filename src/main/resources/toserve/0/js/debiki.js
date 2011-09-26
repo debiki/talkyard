@@ -1296,12 +1296,58 @@ function slideInActionForm($form, $where) {
 }
 
 
+// ------- Templates and notifications
+
+// Returns $(an-error-message-in-a-<div>), which you can .insertAfter
+// something, to indicate e.g. the server refused to accept the
+// suggested edits.
+function notifErrorBox$(error, message, details) {
+  var when = '' // (Does toISOString exist in all browsers?)
+  try { when = (new Date).toISOString(); } catch (e) {}
+  var $box = $(
+      '<div class="ui-widget dw-ntf">' +
+        '<div class="ui-state-error ui-corner-all">' +
+          '<a class="ui-dialog-titlebar-close ui-corner-all" role="button">' +
+            '<span class="ui-icon ui-icon-closethick">close</span>' +
+          '</a>' +
+          '<span class="ui-icon ui-icon-alert" ' +
+                'style="float: left; margin-right: .3em;"></span>' +
+          '<div class="dw-ntf-bd">' +
+            '<div class="dw-ntf-sts"></div> ' +
+            '<div class="dw-ntf-msg"></div>' +
+            '<div class="dw-ntf-at">'+ when +'</div>' +
+            (details ?
+               '<br><a class="dw-ntf-shw">Show details</a>' +
+               '<pre class="dw-ntf-dtl"></pre>' : '') +
+          '</div>' +
+        '</div>' +
+      '</div>');
+  var $showDetails = $box.find('a.dw-ntf-shw');
+  var $details = $box.find('.dw-ntf-dtl');
+  error = error ? error +':' : ''
+  // I don't use jQuery's .tmpl: .text(...) is xss safe, .tmpl(...) is not?
+  $box.find('.dw-ntf-sts').text(error).end()
+      .find('.dw-ntf-msg').text(message).end()
+      .find('.dw-ntf-dtl').text(details || '').hide().end()
+      .find('.dw-ntf-shw').click(function() {
+        $details.toggle();
+        $showDetails.text(
+            $details.filter(':visible').length ?
+               'Hide details' : 'Show details');
+      }).end()
+      .find('a.ui-dialog-titlebar-close').click(function() {
+        $box.remove();
+      });
+  return $box;
+}
+
+
 // ------- User properties
 
 // Remembers the user name in a cookie, synchronizes with
 // edit/reply forms. Adds .dw-mine class to all posts by someone
 // with the new name.
-function syncUserName($form) {
+function syncUserName($form) {  // TODO don't use dwCoUserName, use it nowhere!
   // Match on the start of the id, since makeIdsUniqueUpdateLabels might
   // have appended a unique suffix.
   var $nameInput = $form.find("input[id^='dw-fi-reply-author']");
@@ -1913,12 +1959,21 @@ function $showReplyForm(event, opt_where) {
 
     // Ajax-post reply on submit.
     $replyForm.submit(function() {
-      Settings.replyFormSubmitter($replyForm, debateId, postId,
-        function(newDebateHtml){
+      Settings.replyFormSubmitter($replyForm, debateId, postId)
+        .done(function(newDebateHtml) {
           // The server has replied. Merge in the data from the server
           // (i.e. the new post) in the debate, and remove the form.
           updateDebate(newDebateHtml);
           slideAwayRemove($replyFormParent);
+        })
+        .fail(function(jqXHR, errorType, httpStatusText) {
+          // Show error info and enable submit/cancel buttons again.
+          var $submitBtns = $replyForm.find('.dw-submit-set');
+          var err = jqXHR.status ? (jqXHR.status +' '+ httpStatusText) : 'Error'
+          var msg = (jqXHR.responseText || errorType || 'Unknown error');
+          $submitBtns.after(notifErrorBox$(err, msg))
+          $thread.each(SVG.$drawParentsAndTree); // because of the notification
+          $replyForm.find('input, button').prop('disabled', false);
         });
       // Disable the form; it's been submitted.
       $replyForm.find('input').dwDisable();
