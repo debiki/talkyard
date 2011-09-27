@@ -64,6 +64,9 @@
  *  dw-i-t        inline thread (COULD use dw-i instead, already has dw-t class)
  *  dw-i-m        inline mark (COULD rename to dw-m — *all* marks are inline?)
  *  dw-i-m_<#id>  mark for thread #id (e.g. dw-i-m_dw-t-<thread-id>)
+ *  dw-m-p-mine   the user's own post
+ *  dw-m-p-edited the post was just edited (edits were axaj-fetched)
+ *  dw-m-t-new    this thread was just fetched via ajax, the user hasn't seen it
  *  dw-p-bdy      post body  COULD rename to -bd, already done for .dw-ntf-bd
  *  dw-p-bdy-blk  post body block, a <div> that wraps e.g. a <p>
  *  dw-p-hdr      post header  COULD rename to -hd
@@ -516,6 +519,8 @@ or it steals attention from the page title. */
 
 .dw-p-bdy {
   float: left; /* wrap .dw-p-bdy-blk:s, which float left */
+  width: 100%; /* or sometimes smaller than -p-hdr, looks weird when
+                background color applied */
 }
 
 /* Make inline threads compact. */
@@ -529,11 +534,6 @@ or it steals attention from the page title. */
 }
 .dw-i-t > .dw-p > * /*.dw-p-bdy or -diff*/ > .dw-p-bdy-blk ~ .dw-p-bdy-blk {
   margin-top: 0.6em;
-}
-
-.dw-post-edited .dw-p,
-.dw-post-new .dw-p {
-  border: 7px solid #f4c4f4;
 }
 
 .dw-p:hover {
@@ -1195,6 +1195,23 @@ it works everywhere, even if it works fine for you. */
 .dw-f-cr ul > li {
   list-style-type: disc; /* the page creation info list */
 }
+
+/* === Marks === */
+
+/* Outline all posts in a new thread. */
+.dw-m-t-new .dw-p {
+  border: 7px solid #f4c4f4; /* #f1ded5; */
+}
+
+.dw-m-p-edited {
+  border: 7px solid #f4c4f4; /*#ffebe8;*/
+}
+
+/* Mark the user's own posts. */
+.dw-m-p-mine > .dw-p-bdy {
+  background-color: #FBF7F2;
+}
+
 
 /* === Notifications === */
 
