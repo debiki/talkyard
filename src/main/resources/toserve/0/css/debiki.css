@@ -1215,6 +1215,11 @@ it works everywhere, even if it works fine for you. */
 
 /* === Notifications === */
 
+.dw-dlg-rsp {
+  height: auto !important; /* or jQuery UI [1.8.16] sets 38px and
+                              scrollbars appear */
+}
+
 form .dw-ntf {
   float: left; /* or floating stuff might end up floating inside the .dw-ntf */
   clear: both;
