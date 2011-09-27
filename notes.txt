@@ -1,5 +1,39 @@
 vim: fdm=marker et sw=2 ts=2
 
+{{{ Useful snippets
+
+function uppercaseFirstChar(text) {
+    var head = text.charAt(0).toUpperCase();
+    var tail = text.slice(1);
+    return head + tail;
+}
+
+}}}
+{{{ Useful snippet: ISO date: toISOString
+From:  http://williamsportwebdeveloper.com/cgi/wp/?p=503
+
+   1: function padzero(n) {
+   2:     return n < 10 ? '0' + n : n;
+   3: }
+   4: function pad2zeros(n) {
+   5:     if (n < 100) {
+   6:         n = '0' + n;
+   7:     }
+   8:     if (n < 10) {
+   9:         n = '0' + n;
+  10:     }
+  11:     return n;     
+  12: }
+  13: function toISOString(d) {
+  14:     return d.getUTCFullYear() + '-' +  padzero(d.getUTCMonth() + 1) + '-' + padzero(d.getUTCDate()) + 'T' + padzero(d.getUTCHours()) + ':' +  padzero(d.getUTCMinutes()) + ':' + padzero(d.getUTCSeconds()) + '.' + pad2zeros(d.getUTCMilliseconds()) + 'Z';
+  15: }
+  16: function fnToISO() {
+  17:     var now = new Date();
+  18:     alert(toISOString(now));
+  19: }
+
+
+}}}
 {{{ Login
 
 COULD "Use the max_auth_age parameter in the PAPE extension to ensure that the 
@@ -218,10 +252,12 @@ everywhere
 
 {{{ Rename CSS classes:
 
-  From              To                          Means
-  debiki            dw-debiki
- 
-  dw-depth-0        dw-d_0
+Done (= d)
+|
+| From              To                          Means
+| debiki            dw-debiki
+|
+v dw-depth-0        dw-d_0
 
 d dw-thread         ''
 d dw-thread-<id>    dw-t-<id>
