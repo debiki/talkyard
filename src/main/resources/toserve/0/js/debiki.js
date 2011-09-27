@@ -514,6 +514,15 @@ function $makePostResizable() {
 // a new SHA1 and it'll be reloaded automatically.
 // }}}
 function updateDebate(newDebateHtml) {
+  // Need to rewrite:
+  // 1. Find all new **threads** (ancestors only, don't count subthreads
+  //    of new threads).
+  // 2. Find all old edited posts.
+  // 3. Find all old posts that the user has just rated.
+  // 4. Init all new threads. Redraw exactly all SVG arrows?
+  //    Or $drawTree for each new thread, and find the union of all
+  //    their ancestor threads and redraw them.
+  // 5. Mark edits, mark own ratings.
   var $curDebate = $('.dw-debate');
   var $newDebate = buildTagFind(newDebateHtml, '.dw-debate');
   $newDebate.find('.dw-t').each(function(){
@@ -522,7 +531,11 @@ function updateDebate(newDebateHtml) {
       var $oldParent = parentId ? $curDebate.find('#'+ parentId) : $curDebate;
       var $oldThis = $curDebate.find('#'+ this.id);
       var isNewThread = $oldThis.length === 0;
-      var isSubThread = !$oldParent.length;
+      var isSubThread = !$oldParent.length;  // BUG, $oldParent might be a
+      // recently added *new* thread, but if this is a sub thread of another
+      // *new* thread, isSubThread should be true.
+      // Effect: new sub threads aren't inited properly it seems, or inits
+      // their parents many times.
       var isInline = $i.filter('.dw-i-t').length === 1;
       var $oldPost = $oldThis.children('.dw-p');
       var $newPost = $i.children('.dw-p');
@@ -539,7 +552,7 @@ function updateDebate(newDebateHtml) {
       if (isPostEdited) {
         $newPost
           .replaceAll($oldPost)
-          .addClass('dw-post-edited'); // outlines it, COULD rename CSS class
+          .addClass('dw-m-p-edited'); // outlines it
         // BUG? New/edited child posts aren't added? Can't simply replace
         // them with newer versions — what would then happen if the user
         // has opened an edit form for those posts?
@@ -548,32 +561,42 @@ function updateDebate(newDebateHtml) {
       else if (isNewThread && !isSubThread) {
         // (A thread that *is* a sub-thread of another new thread, is added
         // automatically when that other new thread is added.)
+        // BUG: isSubThread might be false, although the thread is a sub
+        // thread of a new thread. So below code is sometimes (depending on
+        // which thread is first found) incorrectly run
+        // on sub threads.
         var $res = $oldParent.children('.dw-res');
         if (!$res.length) {
           // This is the first reply; create the reply list.
           $res = $("<ol class='dw-res'/>").appendTo($oldParent);
         }
-        $i.addClass('dw-post-new') // outlines it, and its sub thread posts
+        $i.addClass('dw-m-t-new') // outlines all posts in thread
               // COULD highlight arrows too? To new replies / one's own reply.
           .prependTo($res);
         if (isInline) {
           // Place this inline thread inside its parent, by
           // undoing the parent's inline thread placement and doing
           // it again, with the new thread included.
-          $oldParent.children('.dw-p')
-            .each($undoInlineThreads)
+          $oldParent.children('.dw-p')  // BUG $oldParent might be a new thread
+            .each($undoInlineThreads)   // (see below)
             .each($initPost);
+          // BUG: $oldParent might be a new thread, because when
+          // 
           // BUG add an inline reply to an inline child post (i.e. add an
           // inline grandchild), and then $oldParent won't be redrawn.
         }
-        $i.each(SVG.$drawPost);  // TODO? use drawTree instead?
+        // COULD avoid redrawing the same posts over and over again,
+        // by inserting stuff to redraw in a map? and remove from the
+        // map all posts whose parents are already in the map.
+        // (Currently e.g. arrows from the root post are redrawn once
+        // per new thread, since $drawParents is used below.)
+        $i.each(SVG.$drawTree); // not $drawPost; $i might have child threads
         $newPost.each($initPostsThread);
-        if (isInline) {
-          // Refresh arrows from the parent post to its inline threads
-          // *after* $newPost has been initialized, because $newPost' size
-          // changes somewhat when it's inited.
-          $oldParent.each(SVG.$drawPost);
-        }
+        // Draw arrows from the parent post to its new child post,
+        // *after* $newPost has been initialized, because $newPost' size
+        // changes somewhat when it's inited. If some parent is an inline
+        // post, *its* parent might need to be redrawn. So redraw all parents.
+        $newPost.each(SVG.$drawParents);
       } else if (hasNewRatings) {
         // Update rating info for this post.
         // - All branches above automatically update ratings.
