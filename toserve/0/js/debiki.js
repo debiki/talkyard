@@ -115,7 +115,6 @@ Settings.makeReplyUrl = function(debateId, postId) {
 Settings.replyFormLoader = function(debateId, postId, complete) {
   // Simply clone a hidden reply form template.
   var $replyForm = jQuery('#dw-hidden-templates .dw-fs-re').clone(true);
-  $replyForm.find("input[name='dw-fi-post']").attr('value', postId);
   complete($replyForm);
 };
 
@@ -1745,7 +1744,6 @@ function $showRatingForm() {
   var $post = thread.children('.dw-p');
   var $rateForm = rateFormTemplate.clone(true); // TODO: Rename to $formWrap?
   var postId = $post.attr('id').substr(8, 999); // drop initial 'dw-post-'
-  $rateForm.find("input[name='dw-fi-post']").attr('value', postId);
 
   // The rating-value inputs are labeled checkboxes. Hence they
   // have ids --- which right now remain the same as the ids
@@ -1756,10 +1754,6 @@ function $showRatingForm() {
   $rateForm.find("input[type='checkbox']").click(function(){
     $rateForm.find("input[type='submit']").button("option", "disabled", false);
   });
-
-  // Set user name input.
-  $rateForm.find("input[name='dw-fi-by']").val(
-      $.cookie('dwCoUserName') || 'Anonymous');
 
   // Need to be logged in when submitting ratings, or there might
   // be no xsrf token — the server would say Forbidden.
