@@ -700,9 +700,6 @@ class FormHtml(val config: HtmlConfig, val permsOnPage: PermsOnPage) {
             accept-charset='UTF-8'
             method='post'>
           { _xsrfToken }
-          <input type='hidden' name='dw-fi-action' value='rate'/>
-          <input type='hidden' name='dw-fi-post' value='?'/>
-          <input type='hidden' name='dw-fi-by' value='?'/>
           {
             var boxCount = 1
             def rateBox(value: String) = {
