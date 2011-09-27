@@ -1322,6 +1322,11 @@ function slideInActionForm($form, $where) {
 // Returns $(an-error-message-in-a-<div>), which you can .insertAfter
 // something, to indicate e.g. the server refused to accept the
 // suggested edits.
+// COULD remove this function! And let the server reply via
+// FormHtml._responseDialog, and use (a modified version of?)
+// showServerResponseDialog() (below) to construct an error info box.
+// Then this would work with javascript disabled, and i18n would be
+// handled server side.
 function notifErrorBox$(error, message, details) {
   var when = '' // (Does toISOString exist in all browsers?)
   try { when = (new Date).toISOString(); } catch (e) {}
@@ -1360,6 +1365,25 @@ function notifErrorBox$(error, message, details) {
         $box.remove();
       });
   return $box;
+}
+
+// Constructs and shows a dialog, from a servers html response
+// (which must contain certain html elems and classes).
+function showServerResponseDialog(jqXhrOrHtml, errorType, httpStatusText) {
+  var $html = $(jqXhrOrHtml.responseText || jqXhrOrHtml).filter('.dw-dlg-rsp');
+  var title = $html.children('.dw-dlg-rsp-ttl').text();
+  $html.children('.dw-dlg-rsp-ttl').remove();
+  $html.dialog({
+    title: title,
+    autoOpen: true,
+    modal: true,
+    zIndex: 1190,
+    buttons: {
+      OK: function() {
+        $(this).dialog('close');
+      }
+    }
+  });
 }
 
 
@@ -1545,9 +1569,6 @@ function initLoginSimple() {
         $(this).dialog('close');
       },
       OK: function() {
-        // COULD show a "Logging in..." message, the roundtrip
-        // might take a second if the user is far away?
-        $(this).dialog('close');
         $loginForm.submit();
       }
     },
@@ -1558,16 +1579,21 @@ function initLoginSimple() {
   });
 
   $loginForm.submit(function() {
-    var postData = $loginForm.serialize();
-    // COULD handle a failed request, e.g. 401 in case the server
-    // considers the email corrupt?
-    $.post($loginForm.attr("action"), postData, function() {
-      // COULD elliminate this dupl code, see Debiki.handleLoginResponse.
-      // User info should now be available in cookies, so:
-      fireLogin();
-      showLoginOkay();
-      continueAfterLoginOnClick();
-    }, 'html');
+    // COULD show a "Logging in..." message — the roundtrip
+    // might take a second if the user is far away?
+    $.post($loginForm.attr("action"), $loginForm.serialize(), 'html')
+        .done(function(data) {
+          // Warning: Somewhat dupl code, see Debiki.handleLoginResponse.
+          // User info is now available in cookies.
+          $login.dialog('close');
+          fireLogin();
+          showServerResponseDialog(data);
+          continueAfterLoginOnClick();
+        })
+        .fail(showServerResponseDialog)
+        .always(function() {
+          // COULD hide any "Logging in ..." dialog.
+        });
     return false;
   });
 
@@ -1712,13 +1738,11 @@ function submitLoginInPopup($openidLoginForm) {
       // openid.ext1.value.country=SE
       // }}}
 
+      // Warning: Somewhat dupl code, compare w initLoginSimple.
       $('#dw-fs-openid-login').dialog('close');
       $('#dw-fs-login-simple').dialog('close');
-
-      // User info should now be available in cookies, so:
       fireLogin();
       showLoginOkay();
-
       continueAfterLoginOnClick();
       return;
     }
