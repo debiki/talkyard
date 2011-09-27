@@ -282,8 +282,8 @@ function $threadClose() {
     //… relied on posts = $('.debiki .dw-p-bdy') but use '*.dw-p' instead?
     return $(this).dwLastChange() > myLastVersion;
   })
-  newPosts.closest('.dw-t').addClass('dw-post-new');
-  // TODO: sometimes .dw-post-edited instead of -new
+  newPosts.closest('.dw-t').addClass('dw-m-t-new');
+  // TODO: sometimes .dw-m-p-edited instead of -new
 })()
 */
 
@@ -725,11 +725,6 @@ function $initPostsThread() {
     $(this).closest('.dw-p').each($showActions);
   });
 
-  updateAuthorInfo($thread, $.cookie('dwCoUserName'));
-
-  // Add .dw-mine class if this post was written by this user.
-  $thread.each($markIfMine);
-
   $initPost.apply(this);
 }
 
@@ -768,6 +763,10 @@ function $initPost() {
         // This might have expanded the post, so redraw arrows.
         .closest('.dw-p').each(SVG.$drawParents);
   });
+
+  // Mark the user's own posts. COULD mark her edits too? (of others' posts)
+  if (getUserId() === $i.dwAuthorId())
+    $i.addClass('dw-m-p-mine');
 
   // When hovering an inline mark or thread, highlight the corresponding
   // thread or mark.
@@ -1367,31 +1366,6 @@ function notifErrorBox$(error, message, details) {
 
 // ------- User properties
 
-// Remembers the user name in a cookie, synchronizes with
-// edit/reply forms. Adds .dw-mine class to all posts by someone
-// with the new name.
-function syncUserName($form) {  // TODO don't use dwCoUserName, use it nowhere!
-  // Match on the start of the id, since makeIdsUniqueUpdateLabels might
-  // have appended a unique suffix.
-  var $nameInput = $form.find("input[id^='dw-fi-reply-author']");
-  $nameInput.val($.cookie('dwCoUserName') || 'Anonymous');
-  $nameInput.blur(function(){
-      var name = $nameInput.val();
-      $.cookie('dwCoUserName', name);
-      $('.debiki .dw-t').each(function(){
-          updateAuthorInfo($(this), name); });
-    });
-}
-
-function updateAuthorInfo($post, name) {
-  var by = $post.find('> .dw-p .dw-p-by').text();
-  if (by === name) $post.addClass('dw-mine');
-}
-
-function $markIfMine() {
-  updateAuthorInfo($(this), $.cookie('dwCoUserName'));
-}
-
 // Updates cookies and elements to show the user name, email etc.
 // as appropriate. Unless !propsUnsafe, throws if name or email missing.
 // Fires the dwEvLoggedInOut event on all .dw-login-on-click elems.
@@ -1415,16 +1389,6 @@ function fireLogout() {
       .click($showLoginSimple)
       .trigger('dwEvLoggedInOut', [undefined]);
 }
-
-/*
-function checkLoginProps(props) {
-  if (isBlank(propsSafe.name) || isBlank(propsSafe.email)) {
-    throw new Error('Name or email missing [debiki_error_28yx19]');
-  }
-  if (false) {  // COULD throw e.g. if name empty, email has no '@' etc
-    throw new Error('[debiki_error_...]');
-  }
-}*/
 
 function fireLogin() {
   var name = getUserName();
@@ -1582,9 +1546,6 @@ function initLoginSimple() {
         $(this).dialog('close');
       },
       OK: function() {
-        // COULD do javascript input validation, use checkLoginProps.
-        // The server also validates inputs, but doing it here too
-        // could avoid a roundtrip.
         // COULD show a "Logging in..." message, the roundtrip
         // might take a second if the user is far away?
         $(this).dialog('close');
@@ -1959,7 +1920,6 @@ function $showReplyForm(event, opt_where) {
   // specifics).
   Settings.replyFormLoader(debateId, postId, function($replyFormParent) {
     var $replyForm = $replyFormParent.children('form');
-    syncUserName($replyForm);
     makeIdsUniqueUpdateLabels($replyForm);
     $replyForm.resizable({
         alsoResize: $replyForm.find('textarea'),
@@ -2366,8 +2326,6 @@ function $showEditForm() {
     $post.find('.dw-p-bdy p').each(function(){
           curText += $(this).text() + '\n\n'; });
     $editTextArea.val(curText.trim() + '\n');
-
-    syncUserName($editsYoursForm);
 
     // Show and update a diff of the edits suggested.
     // Remove the diff when the form loses focus.

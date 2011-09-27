@@ -279,11 +279,9 @@ d dw-submit         dw-fi-submit
 d dw-font-from-ui-widget -> dw-ui-widget-font
 d dw-linkify-ui-state-default -> dw-ui-state-default-linkified
 
-  dw-js-variables   dw-js-vars
-
   dw-post-*         dw-p-* (e.g. post ids)
-  dw-post-new       dw-new-post
-  dw-post-edited    dw-new-edit
+d dw-post-new       dw-m-t-new  (mark-thread-new)
+d dw-post-edited    dw-m-p-edited
 
   dw-show-*         dw-fs-ed/rat-show-*
 
