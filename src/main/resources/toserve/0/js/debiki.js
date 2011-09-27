@@ -1377,6 +1377,7 @@ function showServerResponseDialog(jqXhrOrHtml, errorType, httpStatusText) {
     title: title,
     autoOpen: true,
     modal: true,
+    resizable: false,
     zIndex: 1190,
     buttons: {
       OK: function() {
@@ -1494,8 +1495,7 @@ function initLogout() {
     height: 260,
     width: 350,
     modal: true,
-    draggable: false,  // it would move faster than the mouse, why?
-    resizable: false,  // it would teleport itself far away, why?
+    resizable: false,
     zIndex: 1190,  // the default, 1000, is lower than <form>s z-index
     buttons: {
       Cancel: function() {
@@ -1539,7 +1539,6 @@ function initLoginResultForms() {
     autoOpen: false,
     autoResize: true,
     modal: true,
-    draggable: false,  // COULD extend an obj w default values instead
     resizable: false,
     zIndex: 1190,
     buttons: {
@@ -1561,8 +1560,7 @@ function initLoginSimple() {
     autoOpen: false,
     width: 580,
     modal: true,
-    draggable: false,  // it would move faster than the mouse, why?
-    resizable: false,  // it would teleport itself far away, why?
+    resizable: false,
     zIndex: 1190,  // the default, 1000, is lower than <form>s z-index
     buttons: {
       Cancel: function() {
@@ -1639,8 +1637,7 @@ function initLoginOpenId() {
     height: 410,
     width: 720,
     modal: true,
-    draggable: false,  // it would move faster than the mouse, why?
-    resizable: false,  // it would teleport itself far away, why?
+    resizable: false,
     zIndex: 1200,  // the default, 1000, is lower than <form>s z-index
     buttons: {
       Cancel: function() {
@@ -1855,8 +1852,7 @@ function initFlagForm() {
     autoOpen: false,
     width: 580,
     modal: true,
-    draggable: false,  // it would move faster than the mouse, why?
-    resizable: false,  // it would teleport itself far away, why?
+    resizable: false,
     zIndex: 1190,  // the default, 1000, is lower than <form>s z-index
     buttons: {
       'Cancel': function() {
@@ -2486,8 +2482,7 @@ function initDeleteForm() {
     autoOpen: false,
     width: 580,
     modal: true,
-    draggable: false,  // it would move faster than the mouse, why?
-    resizable: false,  // it would teleport itself far away, why?
+    resizable: false,
     zIndex: 1190,  // the default, 1000, is lower than <form>s z-index
     buttons: {
       Cancel: function() {
