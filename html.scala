@@ -491,6 +491,29 @@ object FormHtml {
       val DeleteTree = "dw-fi-dl-tree"
     }
   }
+
+  def respDlgOk(title: String, summary: String, details: String) =
+    _responseDialog(
+      title, summary, details, debikiErrorCode = "", tyype = "dw-dlg-type-ok")
+
+  def respDlgError(title: String, summary: String, details: String,
+                   debikiErrorCode: String) =
+    _responseDialog(
+      title, summary, details, debikiErrorCode, tyype = "dw-dlg-type-err")
+
+  private def _responseDialog(title: String, summary: String, details: String,
+                              debikiErrorCode: String, tyype: String
+                                 ): NodeSeq = {
+    <div class={"dw-dlg-rsp "+ tyype}>
+      <h1 class='dw-dlg-rsp-ttl'>{title}</h1>{
+      (if (summary nonEmpty)
+        <strong class='dw-dlg-rsp-smr'>{summary} </strong> else Nil) ++
+      (if (details nonEmpty)
+        <span class='dw-dlg-rsp-dtl'>{details} </span> else Nil) ++
+      (if (debikiErrorCode nonEmpty)
+        <span class='dw-dlg-rsp-err'>{debikiErrorCode}</span> else Nil)
+    }</div>
+  }
 }
 
 
