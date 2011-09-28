@@ -7,6 +7,7 @@ import java.{util => ju}
 import collection.{immutable => imm, mutable => mut}
 import Prelude._
 import Debate._
+import FlagReason.FlagReason
 
 
 object Debate {
@@ -38,7 +39,9 @@ case class Debate (
   private[debiki] val ratings: List[Rating] = Nil,
   private[debiki] val edits: List[Edit] = Nil,
   private[debiki] val editVotes: List[EditVote] = Nil,
-  private[debiki] val editsApplied: List[EditApplied] = Nil
+  private[debiki] val editsApplied: List[EditApplied] = Nil,
+  private[debiki] val flags: List[Flag] = Nil,
+  private[debiki] val deletes: List[Delete] = Nil
 ) extends People {
   private lazy val postsById =
       imm.Map[String, Post](posts.map(x => (x.id, x)): _*)
@@ -192,6 +195,8 @@ case class Debate (
     var edits2 = edits
     var editVotes2 = editVotes
     var editsApplied2 = editsApplied
+    var flags2 = flags
+    var dels2 = deletes
     for (a <- actions) a match {
       case l: Login => logins2 ::= l
       case i: Identity => identities2 ::= i
@@ -201,11 +206,13 @@ case class Debate (
       case e: Edit => edits2 ::= e
       case v: EditVote => editVotes2 ::= v
       case a: EditApplied => editsApplied2 ::= a
+      case f: Flag => flags2 ::= f
+      case d: Delete => dels2 ::= d
       case x => error(
           "Unknown action type: "+ classNameOf(x) +" [debiki_error_8k3EC]")
     }
     Debate(guid, logins2, identities2, users2, posts2, ratings2,
-        edits2, editVotes2, editsApplied2)
+        edits2, editVotes2, editsApplied2, flags2, dels2)
   }
 
   def addEdit(edit: Edit): AddVoteResults = {
@@ -330,19 +337,22 @@ case class Debate (
     xs foreach (_ match {
       case p: Post => remaps(p.id) = if (p.id == RootPostId) p.id
                                      else nextRandomString()
-      case r: Rating => remap(r.id)
-      case e: Edit => remaps(e.id) = nextRandomString()
       case a: EditApplied => // noop
+      case a: Action => remap(a.id)
       case x => assErr(  // Can this check be done at compile time instead?
+                          // Yes if I let EditApp extend Action.
         "Cannot remap ids for `"+ classNameOf(x) +"' [debiki_error_p8kKck3T]")
     })
     // Remap ids, and update references to ids.
+    // (Can this be done in a generic manner: once `case' for most Action:s?)
     val xs2: List[AnyRef] = xs map (_ match {
       case p: Post => p.copy(id = remaps(p.id))
       case r: Rating => r.copy(id = remaps(r.id))
+      case f: Flag => f.copy(id = remaps(f.id))
       case e: Edit => e.copy(id = remaps(e.id),
                             postId = remaps.getOrElse(e.postId, e.postId))
       case a: EditApplied => a.copy(editId = remaps(a.editId))
+      case d: Delete => d.copy(id = remaps(d.id))
       case x => assErr("[debiki_error_3RSEKRS]")
     })
     xs2
@@ -488,27 +498,9 @@ case class Rating (
   tags: List[String]
 ) extends Action
 
-object Flag {
-  abstract sealed class Reason
-  case object Spam extends Reason
-  case object Illegal extends Reason
-  /** Copyright violation */
-  case object Copyright extends Reason
-  case object Other extends Reason
-
-  // COULD use Enumeration instead, something like:
-  // object FlagReason extends Enumeration {
-  //  val Spam, Illegal, CopyRightViolation, Other = Value
-  // }
-  // and then: val reason = FlagReason withName "<name>".
-  def toReason(value: String): Box[Reason] = value match {
-    case "Spam" => Full(Spam)
-    case "Illegal" => Full(Illegal)
-    case "Copyright violation" => Full(Copyright)
-    case "Other" => Full(Other)
-    case "" => Empty
-    case x => Failure("Bad reason: "+ safed(x))
-  }
+object FlagReason extends Enumeration {
+  type FlagReason = Value
+  val Spam, Illegal, /* Copyright Violation */ CopyVio, Other = Value
 }
 
 case class Flag(
@@ -517,7 +509,7 @@ case class Flag(
   loginId: String,
   newIp: Option[String],
   date: ju.Date,
-  reason: Flag.Reason,
+  reason: FlagReason,
   details: String
 ) extends Action
 

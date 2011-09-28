@@ -763,7 +763,6 @@ class FormHtml(val config: HtmlConfig, val permsOnPage: PermsOnPage) {
 
   def flagForm = {
     import FlagForm.{InputNames => Inp}
-    import Flag._
     val r = Inp.Reason
     <div class='dw-fs' title='Report Comment'>
       <form id='dw-f-flg' action={config.flagAction} accept-charset='UTF-8'
@@ -775,8 +774,9 @@ class FormHtml(val config: HtmlConfig, val permsOnPage: PermsOnPage) {
               <input type='radio' id={id} name={r} value={value}/>
               <label for={id}>{text}</label>
           }
+          import FlagReason._
           input("spam", Spam.toString, "Spam") ++
-          input("copy", Copyright.toString, "Copyright Violation") ++
+          input("copy", CopyVio.toString, "Copyright Violation") ++
           input("ilgl", Illegal.toString, "Illegal") ++
           input("othr", Other.toString, "Other")
         }</div>
@@ -848,7 +848,7 @@ class FormHtml(val config: HtmlConfig, val permsOnPage: PermsOnPage) {
         <div>
           <label for={Inp.DeleteTree}>{deleteTreeLabel}</label>
           <input id={Inp.DeleteTree} type='checkbox'
-                 name={Inp.DeleteTree} value={deleteTreeLabel} />
+                 name={Inp.DeleteTree} value='t' />
         </div>
         <div class='dw-submit-set'>
           <input class='dw-fi-submit' type='submit' value='Delete'/>
