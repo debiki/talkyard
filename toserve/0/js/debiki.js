@@ -516,6 +516,7 @@ function updateDebate(newDebateHtml) {
   // Need to rewrite:
   // 1. Find all new **threads** (ancestors only, don't count subthreads
   //    of new threads).
+  // X. Find all recently deleted posts. Threads?!
   // 2. Find all old edited posts.
   // 3. Find all old posts that the user has just rated.
   // 4. Init all new threads. Redraw exactly all SVG arrows?
@@ -1913,12 +1914,12 @@ function initFlagForm() {
   // }}}
 
   $form.submit(function() {
-    $(this).parent().dialog('close');
-    var postData = $form.serialize();
-    // COULD handle a failed request, e.g. 401 in case the server
-    // considers the email corrupt?
-    $.post($form.attr("action"), postData, function() {
-    }, 'html');
+    $.post($form.attr("action"), $form.serialize(), 'html')
+        .done(function() {
+          $parent.dialog('close');
+          // TODO updateDebate, in some manner
+        })
+        .fail(showServerResponseDialog);
     return false;
   });
 }
@@ -1928,7 +1929,11 @@ function $showFlagForm() {
   var $i = $(this);
   var $t = $i.closest('.dw-t');
   var $post = $t.children('.dw-p');
-  $('#dw-f-flg').parent().dialog('open').parent();//position({
+  var postId = $post.attr('id').substr(8, 999); // drop initial "dw-post-"
+  var $flagForm = $('#dw-f-flg');
+  $flagForm
+      .attr('action', '?flag='+ postId)
+      .parent().dialog('open');  //parent().position({
       //my: 'center top', at: 'center bottom', of: $post, offset: '0 40'});
 }
 
@@ -2519,12 +2524,12 @@ function initDeleteForm() {
   });
 
   $form.submit(function() {
-    $(this).parent().dialog('close');
-    var postData = $form.serialize();
-    // COULD handle a failed request, e.g. 401 in case the server
-    // considers the email corrupt?
-    $.post($form.attr("action"), postData, function() {
-    }, 'html');
+    $.post($form.attr("action"), $form.serialize(), 'html')
+        .done(function() {
+          $parent.dialog('close');
+          // TODO updateDebate, in some manner
+        })
+        .fail(showServerResponseDialog);
     return false;
   });
 }
@@ -2534,7 +2539,11 @@ function $showDeleteForm() {
   var $i = $(this);
   var $t = $i.closest('.dw-t');
   var $post = $t.children('.dw-p');
-  $('#dw-f-dl').parent().dialog('open').parent();//position({
+  var postId = $post.attr('id').substr(8, 999); // drop initial "dw-post-"
+  var $deleteForm = $('#dw-f-dl');
+  $deleteForm
+      .attr('action', '?delete='+ postId)
+      .parent().dialog('open');  //.parent().position({
       //my: 'center top', at: 'center bottom', of: $post, offset: '0 40'});
 }
 
