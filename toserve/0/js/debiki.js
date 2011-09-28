@@ -1367,15 +1367,30 @@ function notifErrorBox$(error, message, details) {
   return $box;
 }
 
-// Constructs and shows a dialog, from a servers html response
-// (which must contain certain html elems and classes).
-function showServerResponseDialog(jqXhrOrHtml, errorType, httpStatusText) {
+// Constructs and shows a dialog, from a servers html response,
+// which should contain certain html elems and classes — if not,
+// a HTTP status code dialog with the response as plain text is shown.
+function showServerResponseDialog(jqXhrOrHtml, opt_errorType,
+                                  opt_httpStatusText) {
   var $html = $(jqXhrOrHtml.responseText || jqXhrOrHtml).filter('.dw-dlg-rsp');
   var title = $html.children('.dw-dlg-rsp-ttl').text();
+  var width = 400;
+  if (!$html.length) {
+    // No html elems found. This is probably a plain text error response.
+    // Set title to something like "403 Forbidden", and show the
+    // text message inside the dialog.
+    title = jqXhrOrHtml.status ?
+              (jqXhrOrHtml.status +' '+ opt_httpStatusText) : 'Error'
+    $html = $('<pre class="dw-dlg-rsp"></pre>');
+    width = 'auto'; // avoids scrollbars in case of any long <pre> line
+    // Use text(), not plus (don't: `... + text + ...'), to prevent xss issues.
+    $html.text(jqXhrOrHtml.responseText || opt_errorType || 'Unknown error');
+  }
   $html.children('.dw-dlg-rsp-ttl').remove();
   $html.dialog({
     title: title,
     autoOpen: true,
+    width: width,
     modal: true,
     resizable: false,
     zIndex: 1190,
