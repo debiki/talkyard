@@ -176,7 +176,7 @@ class DebateHtml(val debate: Debate) {
 
   private var config: HtmlConfig = _  // COULD let be a ctor param
 
-  private lazy val statscalc: StatsCalc = new StatsCalc(debate)
+  private lazy val pageStats = new PageStats(debate)
   private var lastChange: Option[String] = null
 
   def configure(conf: HtmlConfig): DebateHtml = {
@@ -214,7 +214,7 @@ class DebateHtml(val debate: Debate) {
           <a class='dw-a dw-a-reply'>Reply</a>
         </div>
         <ol class='dw-res ui-helper-clearfix'>{
-          _layoutPosts(1, rootPosts)
+          _layoutComments(1, rootPosts)
         }
         </ol>
       }
@@ -222,8 +222,7 @@ class DebateHtml(val debate: Debate) {
     </div>
   }
 
-  private def _layoutPosts(depth: Int, posts: List[Post]): NodeSeq = {
-    // COULD rename to _layoutReplies.
+  private def _layoutComments(depth: Int, posts: List[Post]): NodeSeq = {
     // COULD let this function return Nil if posts.isEmpty, and otherwise
     // wrap any posts in <ol>:s, with .dw-ts or .dw-i-ts CSS classes
     // — this would reduce dupl wrapping code.
@@ -231,7 +230,7 @@ class DebateHtml(val debate: Debate) {
       // Could skip sorting inline posts, since sorted by position later
       // anyway, in javascript. But if javascript disabled?
       p <- posts.sortBy(p => p.date.getTime). // the oldest first
-                sortBy(p => -statscalc.scoreFor(p.id).liking)
+                sortBy(p => -pageStats.scoreFor(p.id).liking)
       cssThreadId = "dw-t-"+ p.id
       cssDepth = "dw-depth-"+ depth
       cssInlineThread = if (p.where isDefined) " dw-i-t" else ""
@@ -250,7 +249,7 @@ class DebateHtml(val debate: Debate) {
             (if (debate.repliesTo(p.id).isEmpty) Nil
             else
               <ol class='dw-res'>
-                { _layoutPosts(depth + 1, debate.repliesTo(p.id)) }
+                { _layoutComments(depth + 1, debate.repliesTo(p.id)) }
               </ol>)
           }
         }
@@ -347,7 +346,7 @@ class DebateHtml(val debate: Debate) {
       }
     }
 
-    val score = statscalc.scoreFor(post.id)
+    val score = pageStats.scoreFor(post.id)
     val ratStatsSorted = score.labelStatsSorted
     val topTags = if (ratStatsSorted isEmpty) Nil else {
       // If there're any really popular tags (lower liking bound > 0.4),
@@ -436,7 +435,7 @@ class DebateHtml(val debate: Debate) {
           </li>
         }
         val suggestions = debate.editsPendingFor(post.id)
-                          .sortBy(e => -statscalc.likingFor(e).lowerBound)
+                          .sortBy(e => -pageStats.likingFor(e).lowerBound)
         <ul class='dw-ess'>
           { for (edit <- suggestions) yield xmlFor(edit) }
         </ul>
