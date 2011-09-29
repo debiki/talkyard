@@ -23,6 +23,41 @@ object Debate {
                   actions: List[AnyRef]): Debate = {
     Debate(guid, logins, identities, users) ++ actions
   }
+
+  /** Assigns ids to actions and updates references from Edits to Posts.
+   *  Does not remap the id of post "1", i.e. the root post.
+   *  COULD remap only IDs starting with "?" or being empty ""?
+   */
+  def assignIdsTo(xs: List[AnyRef]): List[AnyRef] = {
+    val remaps = mut.Map[String, String]()
+    def remap(id: String) {
+      require(!remaps.contains(id))
+      remaps(id) = nextRandomString()
+    }
+    // Generate new ids, and check for foreign objects.
+    xs foreach (_ match {
+      case p: Post => remaps(p.id) = if (p.id == RootPostId) p.id
+      else nextRandomString()
+      case a: EditApplied => // noop
+      case a: Action => remap(a.id)
+      case x => assErr(  // Can this check be done at compile time instead?
+        // Yes if I let EditApp extend Action.
+        "Cannot remap ids for `"+ classNameOf(x) +"' [debiki_error_p8kKck3T]")
+    })
+    // Remap ids, and update references to ids.
+    // (Can this be done in a generic manner: once `case' for most Action:s?)
+    val xs2: List[AnyRef] = xs map (_ match {
+      case p: Post => p.copy(id = remaps(p.id))
+      case r: Rating => r.copy(id = remaps(r.id))
+      case f: Flag => f.copy(id = remaps(f.id))
+      case e: Edit => e.copy(id = remaps(e.id),
+        postId = remaps.getOrElse(e.postId, e.postId))
+      case a: EditApplied => a.copy(editId = remaps(a.editId))
+      case d: Delete => d.copy(id = remaps(d.id))
+      case x => assErr("[debiki_error_3RSEKRS]")
+    })
+    xs2
+  }
 }
 
 
@@ -306,43 +341,6 @@ case class Debate (
 
 
   // -------- Misc
-
-  // COULD make static?
-  /** Assigns ids to Post:s and Edit:s, and updates references from Edit:s
-   *  to Post ids. COULD move to Debiki$, since ids are randomized, stateless.
-   *  Does not remap the id of post "1", i.e. the root post.
-   *  COULD remap only IDs starting with "?" or being empty ""?
-   */
-  def assignIdTo(xs: List[AnyRef]): List[AnyRef] = {
-    val remaps = mut.Map[String, String]()
-    def remap(id: String) {
-      require(!remaps.contains(id))
-      remaps(id) = nextRandomString()
-    }
-    // Generate new ids, and check for foreign objects.
-    xs foreach (_ match {
-      case p: Post => remaps(p.id) = if (p.id == RootPostId) p.id
-                                     else nextRandomString()
-      case a: EditApplied => // noop
-      case a: Action => remap(a.id)
-      case x => assErr(  // Can this check be done at compile time instead?
-                          // Yes if I let EditApp extend Action.
-        "Cannot remap ids for `"+ classNameOf(x) +"' [debiki_error_p8kKck3T]")
-    })
-    // Remap ids, and update references to ids.
-    // (Can this be done in a generic manner: once `case' for most Action:s?)
-    val xs2: List[AnyRef] = xs map (_ match {
-      case p: Post => p.copy(id = remaps(p.id))
-      case r: Rating => r.copy(id = remaps(r.id))
-      case f: Flag => f.copy(id = remaps(f.id))
-      case e: Edit => e.copy(id = remaps(e.id),
-                            postId = remaps.getOrElse(e.postId, e.postId))
-      case a: EditApplied => a.copy(editId = remaps(a.editId))
-      case d: Delete => d.copy(id = remaps(d.id))
-      case x => assErr("[debiki_error_3RSEKRS]")
-    })
-    xs2
-  }
 
   /** When the most recent post was made,
    *  or the mos recent edit was applied or reverted.
