@@ -37,8 +37,7 @@ object Debate {
     // Generate new ids, and check for foreign objects.
     xs foreach (_ match {
       case p: Post => remaps(p.id) = if (p.id == RootPostId) p.id
-      else nextRandomString()
-      case a: EditApplied => // noop
+                                     else nextRandomString()
       case a: Action => remap(a.id)
       case x => assErr(  // Can this check be done at compile time instead?
         // Yes if I let EditApp extend Action.
@@ -52,7 +51,8 @@ object Debate {
       case f: Flag => f.copy(id = remaps(f.id))
       case e: Edit => e.copy(id = remaps(e.id),
         postId = remaps.getOrElse(e.postId, e.postId))
-      case a: EditApplied => a.copy(editId = remaps(a.editId))
+      case a: EditApp => a.copy(id = remaps(a.id),
+                                    editId = remaps(a.editId))
       case d: Delete => d.copy(id = remaps(d.id))
       case x => assErr("[debiki_error_3RSEKRS]")
     })
@@ -76,7 +76,7 @@ case class Debate (
   private[debiki] val ratings: List[Rating] = Nil,
   private[debiki] val edits: List[Edit] = Nil,
   private[debiki] val editVotes: List[EditVote] = Nil,
-  private[debiki] val editsApplied: List[EditApplied] = Nil,
+  private[debiki] val editApps: List[EditApp] = Nil,
   private[debiki] val flags: List[Flag] = Nil,
   private[debiki] val deletions: List[Delete] = Nil
 ) extends People {
@@ -184,21 +184,20 @@ case class Debate (
     })
   }
 
-  private lazy val editsAppliedById: imm.Map[String, EditApplied] = {
-    val m = editsApplied.groupBy(_.editId)
+  private lazy val editAppsById: imm.Map[String, EditApp] = {
+    val m = editApps.groupBy(_.editId)
     m.mapValues(list => {
-      errorIf(list.tail.nonEmpty, "Two ore more EditApplied:s with "+
+      errorIf(list.tail.nonEmpty, "Two ore more EditApps with "+
               "same edit id: "+ list.head.editId)
       list.head
     })
   }
 
   private lazy val editsPendingByPostId: imm.Map[String, List[Edit]] =
-    edits.filterNot(editsAppliedById contains _.id).groupBy(_.postId)
+    edits.filterNot(editAppsById contains _.id).groupBy(_.postId)
 
-  private lazy val editsAppliedByPostId
-      : imm.Map[String, List[EditApplied]] =
-    editsApplied.groupBy(ea => editsById(ea.editId).postId)
+  private lazy val editAppsByPostId: imm.Map[String, List[EditApp]] =
+    editApps.groupBy(ea => editsById(ea.editId).postId)
 
   def editsFor(postId: String): List[Edit] =
     edits.filter(_.postId == postId)
@@ -208,10 +207,10 @@ case class Debate (
 
   /** Edits applied to the specified post, sorted by most-recent first.
    */
-  def editsAppliedTo(postId: String): List[EditApplied] =
-    // The list is probably already sorted, since new EditApplied:s are
-    // prefixed to the editsApplied list.
-    editsAppliedByPostId.getOrElse(postId, Nil).sortBy(- _.date.getTime)
+  def editAppsTo(postId: String): List[EditApp] =
+    // The list is probably already sorted, since new EditApp:s are
+    // prefixed to the editApps list.
+    editAppsByPostId.getOrElse(postId, Nil).sortBy(- _.date.getTime)
 
 
   // -------- Construction
@@ -228,7 +227,7 @@ case class Debate (
     var ratings2 = ratings
     var edits2 = edits
     var editVotes2 = editVotes
-    var editsApplied2 = editsApplied
+    var editApps2 = editApps
     var flags2 = flags
     var dels2 = deletions
     for (a <- actions) a match {
@@ -239,14 +238,14 @@ case class Debate (
       case r: Rating => ratings2 ::= r
       case e: Edit => edits2 ::= e
       case v: EditVote => editVotes2 ::= v
-      case a: EditApplied => editsApplied2 ::= a
+      case a: EditApp => editApps2 ::= a
       case f: Flag => flags2 ::= f
       case d: Delete => dels2 ::= d
       case x => error(
           "Unknown action type: "+ classNameOf(x) +" [debiki_error_8k3EC]")
     }
     Debate(guid, logins2, identities2, users2, posts2, ratings2,
-        edits2, editVotes2, editsApplied2, flags2, dels2)
+        edits2, editVotes2, editApps2, flags2, dels2)
   }
 
   /* COULD remove
@@ -347,7 +346,7 @@ case class Debate (
    */
   lazy val lastChangeDate: Option[ju.Date] = {
     def maxDate(a: ju.Date, b: ju.Date) = if (a.compareTo(b) > 0) a else b
-    val allDates: Iterator[ju.Date] = editsApplied.iterator.map(_.date) ++
+    val allDates: Iterator[ju.Date] = editApps.iterator.map(_.date) ++
                                         posts.iterator.map(_.date)
     if (allDates isEmpty) None
     else Some(allDates reduceLeft (maxDate(_, _)))
@@ -377,11 +376,11 @@ class ViAc(val debate: Debate, val action: Action) {
  */
 class ViPo(debate: Debate, val post: Post) extends ViAc(debate, post) {
   def parent: String = post.parent
-  // def date = lastEditApl.map(ea => toIso8601(ea.date))
-  def text: String = lastEditApl.map(_.result).getOrElse(post.text)
+  // def date = lastEditApp.map(ea => toIso8601(ea.date))
+  def text: String = lastEditApp.map(_.result).getOrElse(post.text)
   def textInitially: String = post.text
   def where: Option[String] = post.where
-  val lastEditApl = debate.editsAppliedTo(post.id).headOption
+  val lastEditApp = debate.editAppsTo(post.id).headOption
 
   def isTreeDeleted = {
     // In case there are > 1 deletions, consider the first one only.
@@ -526,12 +525,14 @@ case class EditVote(  // should extend Action
   diss: List[String]
 )
 
-// + EditApplication/Utilization/Introduction/Commit/PutOn?
-// + EditRevocation/Reversal?
-case class EditApplied (  // TODO extend Action
+/** Edit applications (i.e. when edits are applied).
+ */
+case class EditApp(
+  id: String,
   editId: String,
-  date: ju.Date,
   loginId: String,
+  newIp: Option[String],
+  date: ju.Date,
 
   /** The text after the edit was applied. Needed, in case an `Edit'
    *  contains a diff, not the resulting text itself. Then we'd better not
@@ -545,7 +546,7 @@ case class EditApplied (  // TODO extend Action
   result: String,
 
   debug: String = ""
-)
+) extends Action
 
 case class Delete(
   id: String,

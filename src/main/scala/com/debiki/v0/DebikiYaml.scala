@@ -2,6 +2,10 @@
 
 /*  I added Login and User/Simple/OpenId/..., so now DebikiYaml
     requires a partial rewrite.
+    And EditApplied was renamed to EditApp,
+    editsApplied to editApps,
+    and all actions now extend Action.
+    And many other changes!?
 
 package com.debiki.v0
 
