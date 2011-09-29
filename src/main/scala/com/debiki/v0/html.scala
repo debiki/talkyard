@@ -235,12 +235,14 @@ class DebateHtml(val debate: Debate) {
       cssThreadId = "dw-t-"+ p.id
       cssDepth = "dw-depth-"+ depth
       cssInlineThread = if (p.where isDefined) " dw-i-t" else ""
+      vipo = debate.vipo_!(p.id)
+      cssThreadDeleted = if (vipo.isTreeDeleted) " dw-t-dl" else ""
     }
     yield {
       var li =
-        <li id={cssThreadId} class={"dw-t "+ cssDepth + cssInlineThread}>
+        <li id={cssThreadId} class={"dw-t "+ cssDepth + cssInlineThread +
+                                    cssThreadDeleted}>
         {
-          val vipo = debate.vipo_!(p.id)
           if (vipo.isTreeDeleted) _showDeletedTree(vipo)
           else {
             (if (vipo.isDeleted) _showDeletedComment(vipo)
@@ -261,11 +263,26 @@ class DebateHtml(val debate: Debate) {
   }
 
   private def _showDeletedTree(vipo: ViPo): NodeSeq = {
-    <i>Deleted tree</i>
+    _showDeletedComment(vipo, wholeTree = true)
   }
 
-  private def _showDeletedComment(vipo: ViPo): NodeSeq = {
-    <i>Deleted post</i>
+  private def _showDeletedComment(vipo: ViPo, wholeTree: Boolean = false
+                                     ): NodeSeq = {
+    val cssPostId = "dw-post-"+ vipo.id
+    val deletion = vipo.firstDelete.get
+    val deleter = debate.authorOf_!(deletion)
+    (if (wholeTree) Nil else <a class='dw-z'>[–]</a>) ++
+    <div id={cssPostId} class='dw-p dw-p-dl'>
+      <div class='dw-p-hdr'>{
+        if (wholeTree) "Thread" else "1 comment"
+        } deleted by { _linkTo(deleter)
+        /* TODO show flagsTop, e.g. "flagged spam".
+        COULD include details, shown on click:
+        Posted on ...,, rated ... deleted on ..., reasons for deletion: ...
+        X flags: ... -- but perhaps better / easier with a View link,
+        that opens the deleted post, incl. details, in a new browser tab?  */}
+      </div>
+    </div>
   }
 
   private def _showComment(vipo: ViPo): NodeSeq = {
@@ -309,44 +326,6 @@ class DebateHtml(val debate: Debate) {
     val long = numLines > 9
     val cutS = if (long && post.id != Debate.RootPostId) " dw-x-s" else ""
     val author = debate.authorOf_!(post)
-
-    def tryLinkTo(nilo: NiLo): NodeSeq = {
-      var url = config.userUrl(nilo)
-      // TODO: investigate: `url' is sometimes the email address!!
-      // When signed in @gmail.com, it seems.
-      // For now: (this is actually a good test anyway, in case someone
-      // accidentally enters his email in the website field?)
-      if (url.contains('@') || url.containsSlice("%40")) {
-        System.err.println(
-            "URL contains email? It contains `@' or `%40': "+ url)
-        url = ""
-      }
-      val nameElem: NodeSeq = nilo.identity_! match {
-        case s: IdentitySimple =>
-          // Indicate that the user was not logged in, that we're not sure
-          // about his/her identity, by appending "??". If however s/he
-          // provided an email address then only append one "?", because
-          // other people probaably don't know what is it, so it's harder
-          // for them people to impersonate her.
-          // (Well, at least if I some day in some way indicate that two
-          // persons with the same name actually have different emails.)
-          xml.Text(nilo.displayName) ++
-              <span class='dw-lg-t-spl'>{
-                if (s.email isEmpty) "??" else "?"}</span>
-        case _ => xml.Text(nilo.displayName)
-      }
-      val userLink = if (url nonEmpty) {
-        <a class='dw-p-by' href={url} data-dw-u-id={nilo.user_!.id}
-          rel='nofollow' target='_blank'>{nameElem}</a>
-      } else {
-        <span class='dw-p-by' data-dw-u-id={nilo.user_!.id}>{nameElem}</span>
-      }
-      // Include user id if present.
-      //nilo.user.foreach { u =>
-      //  link % Attribute(None, "data-uid", Text(u.id), xml.Null)
-      //}
-      userLink
-    }
 
     val (flagsTop: NodeSeq, flagsDetails: NodeSeq) = {
       if (vipo.flags isEmpty) (Nil: NodeSeq, Nil: NodeSeq)
@@ -433,7 +412,7 @@ class DebateHtml(val debate: Debate) {
             } else {
               val editor = debate.authorOf_!(debate.editsById(
                            lastEditApp.get.editId))
-              tryLinkTo(editor)
+              _linkTo(editor)
             }
           }{dateAbbr(lastEditDate, "dw-p-at")}
         </div>
@@ -450,7 +429,7 @@ class DebateHtml(val debate: Debate) {
               </div>
               — { // (the dash is an em dash no a minus)
                 val editor = debate.authorOf_!(edit)
-                tryLinkTo(editor)
+                _linkTo(editor)
               }{ dateAbbr(edit.date, "dw-ed-at") }
               <pre class='dw-ed-text'>{edit.text}</pre>
             </div>
@@ -471,7 +450,7 @@ class DebateHtml(val debate: Debate) {
     <div id={cssPostId} class={"dw-p" + cutS}
          data-p-by-ip-sh={vipo.ipSaltHash_!}>
       <div class='dw-p-hdr'>
-        By { tryLinkTo(author)}{ dateAbbr(post.date, "dw-p-at")
+        By { _linkTo(author)}{ dateAbbr(post.date, "dw-p-at")
         }{ flagsTop }{ ratsTop }{ editInfo }{ flagsDetails }{ ratsDetails }
       </div>
       <div class='dw-p-bdy'>
@@ -484,6 +463,43 @@ class DebateHtml(val debate: Debate) {
      { editSuggestions // could skip for now, too complicated for the end user
       }
   }
+
+  /** Shows a link to the user represented by NiLo.
+   */
+  private def _linkTo(nilo: NiLo): NodeSeq = {
+    var url = config.userUrl(nilo)
+    // TODO: investigate: `url' is sometimes the email address!!
+    // When signed in @gmail.com, it seems.
+    // For now: (this is actually a good test anyway, in case someone
+    // accidentally enters his email in the website field?)
+    if (url.contains('@') || url.containsSlice("%40")) {
+      System.err.println(
+        "URL contains email? It contains `@' or `%40': "+ url)
+      url = ""
+    }
+    val nameElem: NodeSeq = nilo.identity_! match {
+      case s: IdentitySimple =>
+        // Indicate that the user was not logged in, that we're not sure
+        // about his/her identity, by appending "??". If however s/he
+        // provided an email address then only append one "?", because
+        // other people probaably don't know what is it, so it's harder
+        // for them people to impersonate her.
+        // (Well, at least if I some day in some way indicate that two
+        // persons with the same name actually have different emails.)
+        xml.Text(nilo.displayName) ++
+            <span class='dw-lg-t-spl'>{
+              if (s.email isEmpty) "??" else "?"}</span>
+      case _ => xml.Text(nilo.displayName)
+    }
+    val userLink = if (url nonEmpty) {
+      <a class='dw-p-by' href={url} data-dw-u-id={nilo.user_!.id}
+         rel='nofollow' target='_blank'>{nameElem}</a>
+    } else {
+      <span class='dw-p-by' data-dw-u-id={nilo.user_!.id}>{nameElem}</span>
+    }
+    userLink
+  }
+
 }
 
 

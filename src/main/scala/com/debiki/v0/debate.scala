@@ -41,7 +41,7 @@ case class Debate (
   private[debiki] val editVotes: List[EditVote] = Nil,
   private[debiki] val editsApplied: List[EditApplied] = Nil,
   private[debiki] val flags: List[Flag] = Nil,
-  private[debiki] val deletes: List[Delete] = Nil
+  private[debiki] val deletions: List[Delete] = Nil
 ) extends People {
   private lazy val postsById =
       imm.Map[String, Post](posts.map(x => (x.id, x)): _*)
@@ -196,7 +196,7 @@ case class Debate (
     var editVotes2 = editVotes
     var editsApplied2 = editsApplied
     var flags2 = flags
-    var dels2 = deletes
+    var dels2 = deletions
     for (a <- actions) a match {
       case l: Login => logins2 ::= l
       case i: Identity => identities2 ::= i
@@ -464,14 +464,25 @@ class ViPo(debate: Debate, val post: Post) extends ViAc(debate, post) {
   def where: Option[String] = post.where
   val lastEditApl = debate.editsAppliedTo(post.id).headOption
 
-  def isTreeDeleted = lastDelete.map(_.wholeTree) == Some(true)
-  def isDeleted = lastDelete isDefined
-
-  lazy val lastDelete = {
-    // Deletions are infrequent? Need not optimize this?
-    debate.deletes.filter(_.postId == post.id).
-        sortBy(- _.date.getTime).headOption
+  def isTreeDeleted = {
+    // In case there are > 1 deletions, consider the first one only.
+    // (Once a post has been deleted, it isn't really possible to
+    // delete it again in some other manner? However non transactional
+    // (nosql) databases might return many deletions? and we should
+    // care only about the first.)
+    firstDelete.map(_.wholeTree) == Some(true)
   }
+
+  def isDeleted = deletions nonEmpty
+
+  // COULD optimize this, do once for all posts, store in map.
+  lazy val deletions = debate.deletions.filter(_.postId == post.id)
+
+  /** Deletions, the most recent first. */
+  lazy val deletionsSorted = deletions.sortBy(- _.date.getTime)
+
+  lazy val lastDelete = deletionsSorted.headOption
+  lazy val firstDelete = deletionsSorted.lastOption
 
   // COULD optimize this, do once for all flags.
   lazy val flags = debate.flags.filter(_.postId == post.id)

@@ -70,12 +70,14 @@
  *  dw-m-t-new    this thread was just fetched via ajax, the user hasn't seen it
  *  dw-p-bdy      post body  COULD rename to -bd, already done for .dw-ntf-bd
  *  dw-p-bdy-blk  post body block, a <div> that wraps e.g. a <p>
+ *  dw-p-dl       a post, deleted
  *  dw-p-hdr      post header  COULD rename to -hd
  *  dw-p-rez-e    post resized eastwards
  *  dw-pri        placed on the <body>, use it to boost CSS rule priorities
  *  dw-svg-c_<x>  SVG curve from <x>  COULD rename to -svg-p, for `path'
  *  dw-svg-gparnt Has a <svg> child or grandchild (but no grand-grand-child)
  *  dw-svg-parent Has a <svg> child
+ *  dw-t-dl       a thread, deleted
  *  dw-lg-t-spl   Login type simple
  *  dw-u-id-<x>   user id <x>
  *
@@ -438,11 +440,23 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
   background-color: white;
 }
 
+/* If the thread has been deleted, there's no fold/unfold button to the left. */
+.dw-t-dl > .dw-p {
+  margin-left: 0;
+}
+
 .dw-p-hdr {
   padding-left: 3px;
   font-size: smaller;
   color: #000;
   background-color: #eee;
+}
+
+.dw-p-dl > .dw-p-hdr {
+  margin-bottom: 24px; /* for now — there're currently no spacy hidden
+                          action links below deleted posts */
+  font-style: italic;
+  background-color: transparent;
 }
 
 .dw-p-hdr-ed {
