@@ -78,7 +78,7 @@ private[debiki] object App {
           </script>
         </head>
         <body>
-          { debateHtml.layoutDebate(permsOnPage = PermsOnPage.All) }
+          { debateHtml.layoutPageAndTemplates(permsOnPage = PermsOnPage.All) }
         </body>
       </html>
 
