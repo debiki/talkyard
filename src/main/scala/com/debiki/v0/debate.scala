@@ -463,6 +463,42 @@ class ViPo(debate: Debate, val post: Post) extends ViAc(debate, post) {
   def textInitially: String = post.text
   def where: Option[String] = post.where
   val lastEditApl = debate.editsAppliedTo(post.id).headOption
+
+  def isTreeDeleted = lastDelete.map(_.wholeTree) == Some(true)
+  def isDeleted = lastDelete isDefined
+
+  lazy val lastDelete = {
+    // Deletions are infrequent? Need not optimize this?
+    debate.deletes.filter(_.postId == post.id).
+        sortBy(- _.date.getTime).headOption
+  }
+
+  // COULD optimize this, do once for all flags.
+  lazy val flags = debate.flags.filter(_.postId == post.id)
+
+  lazy val lastFlag = flags.sortBy(- _.date.getTime).headOption
+
+  lazy val flagsByReason: imm.Map[FlagReason, List[Flag]] = {
+    // Add reasons and flags to a mutable map.
+    var mmap = mut.Map[FlagReason, mut.Set[Flag]]()
+    for (f <- flags)
+      mmap.getOrElse(f.reason, {
+        val s = mut.Set[Flag]()
+        mmap.put(f.reason, s)
+        s
+      }) += f
+    // Copy to an immutable version.
+    imm.Map[FlagReason, List[Flag]](
+      (for ((reason, flags) <- mmap)
+      yield (reason, flags.toList)).toList: _*)
+  }
+
+  /** Pairs of (FlagReason, flags-for-that-reason), sorted by
+   *  number of flags, descending.
+   */
+  lazy val flagsByReasonSorted: List[(FlagReason, List[Flag])] = {
+    flagsByReason.toList.sortWith((a, b) => a._2.length > b._2.length)
+  }
 }
 
 class ViEd(debate: Debate, val edit: Edit) extends ViAc(debate, edit) {

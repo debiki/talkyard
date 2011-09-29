@@ -12,6 +12,7 @@ import collection.{mutable => mut, immutable => imm}
 import _root_.net.liftweb.common.{Box, Full, Empty, EmptyBox, Failure}
 import _root_.net.liftweb.util.ControlHelpers.tryo
 import _root_.scala.xml.{NodeSeq, Elem, Text, XML, Attribute}
+import FlagReason.FlagReason
 import Prelude._
 
 
@@ -190,7 +191,7 @@ class DebateHtml(val debate: Debate) {
 
   private def layoutPosts(): NodeSeq = {
     val rootPosts = debate.repliesTo(Debate.RootPostId)
-    val rootPost = debate.post(Debate.RootPostId)
+    val rootPost = debate.vipo(Debate.RootPostId)
     val cssThreadId = "dw-t-"+ Debate.RootPostId
     <div id={debate.guid} class="debiki dw-debate">
       <div class="dw-debate-info">{
@@ -206,7 +207,7 @@ class DebateHtml(val debate: Debate) {
       {
         // If there's no root post, add an empty <div .dw-p>. It's required
         // because JavaScript elsewhere finds .dw-t:s by finding .dw-p parents.
-        rootPost.map(comment(_)).getOrElse(
+        rootPost.map(_showComment(_)).getOrElse(
             <div id={"dw-t-"+ Debate.RootPostId} class={"dw-p"} />) ++
         <div class='dw-t-vspace'/>
         <div class='dw-hor-a'>
@@ -239,12 +240,17 @@ class DebateHtml(val debate: Debate) {
       var li =
         <li id={cssThreadId} class={"dw-t "+ cssDepth + cssInlineThread}>
         {
-          comment(p) ++
-          (if (debate.repliesTo(p.id).isEmpty) Nil
-          else
-            <ol class='dw-res'>
-              { _layoutPosts(depth + 1, debate.repliesTo(p.id)) }
-            </ol>)
+          val vipo = debate.vipo_!(p.id)
+          if (vipo.isTreeDeleted) _showDeletedTree(vipo)
+          else {
+            (if (vipo.isDeleted) _showDeletedComment(vipo)
+            else _showComment(vipo)) ++
+            (if (debate.repliesTo(p.id).isEmpty) Nil
+            else
+              <ol class='dw-res'>
+                { _layoutPosts(depth + 1, debate.repliesTo(p.id)) }
+              </ol>)
+          }
         }
         </li>
       // For inline comments, add info on where to place them.
@@ -254,8 +260,16 @@ class DebateHtml(val debate: Debate) {
     }
   }
 
-  private def comment(post: Post): NodeSeq = {
-    val vipo = debate.vipo_!(post.id)
+  private def _showDeletedTree(vipo: ViPo): NodeSeq = {
+    <i>Deleted tree</i>
+  }
+
+  private def _showDeletedComment(vipo: ViPo): NodeSeq = {
+    <i>Deleted post</i>
+  }
+
+  private def _showComment(vipo: ViPo): NodeSeq = {
+    def post = vipo.post
     val count = debate.successorsTo(post.id).length + 1
     val editApps = debate.editsAppliedTo(post.id)
     val lastEditApp = editApps.headOption
@@ -334,6 +348,26 @@ class DebateHtml(val debate: Debate) {
       userLink
     }
 
+    val (flagsTop: NodeSeq, flagsDetails: NodeSeq) = {
+      if (vipo.flags isEmpty) (Nil: NodeSeq, Nil: NodeSeq)
+      else {
+        import FormHtml.FlagForm.prettify
+        val mtime = toIso8601T(vipo.lastFlag.get.date)
+        val fbr = vipo.flagsByReasonSorted
+        (<span class='dw-p-flgs-top'>, flagged <i>{
+            prettify(fbr.head._1).toLowerCase}</i></span>,
+        <div class='dw-p-flgs-all' data-mtime={mtime}>{
+          vipo.flags.length} flags: <ol class='dw-flgs'>{
+            for ((r: FlagReason, fs: List[Flag]) <- fbr) yield
+              <li class="dw-flg">{
+                // The `×' is the multiplication sign, "\u00D7".
+                prettify(r).toLowerCase +" × "+ fs.length.toString
+              } </li>
+          }</ol>
+        </div>)
+      }
+    }
+
     val score = statscalc.scoreFor(post.id)
     val ratStatsSorted = score.labelStatsSorted
     val topTags = if (ratStatsSorted isEmpty) Nil else {
@@ -342,9 +376,9 @@ class DebateHtml(val debate: Debate) {
       val minLower = Math.min(0.4, ratStatsSorted.head._2.fractionLowerBound)
       ratStatsSorted.takeWhile(_._2.fractionLowerBound >= minLower)
     }
-    val rats = ratStatsSorted
-    val ratsList: NodeSeq =
-      if (rats.isEmpty) Nil
+    val (ratsTop: NodeSeq, ratsDetails: NodeSeq) = {
+      val rats = ratStatsSorted
+      if (rats.isEmpty) (Nil: NodeSeq, Nil: NodeSeq)
       else {
         def showRating(tagAndStats: Pair[String, LabelStats]): String = {
           val tag = tagAndStats._1
@@ -363,9 +397,10 @@ class DebateHtml(val debate: Debate) {
         }
         // List popular rating tags. Then all tags and their usage percents,
         // but those details are shown only if one clicks the post header.
-        (if (topTags isEmpty) Nil
+        ((if (topTags isEmpty) Nil
         else <span class='dw-p-ra dw-p-ra-top'>, rated <i>{
-          topTags.take(3).map(showRating(_)).mkString(", ") }</i></span>) ++
+          topTags.take(3).map(showRating(_)).mkString(", ") }</i></span>
+        ),
         <div class='dw-p-ra-all'
              data-mtime={toIso8601T(score.lastRatingDate)}>{
           score.ratingCount} ratings:
@@ -377,8 +412,10 @@ class DebateHtml(val debate: Debate) {
               ("lo: %.0f" format (100 * stats.fractionLowerBound)) +"%, "+
               "sum: "+ stats.sum}> {
             tag +" %.0f" format (100 * stats.fraction)}% </li>
-        }</ol></div>
+        }</ol></div>)
       }
+    }
+
     val editInfo =
       // If closed: <span class='dw-p-re-cnt'>{count} replies</span>
       if (editApps.isEmpty) Nil
@@ -432,11 +469,10 @@ class DebateHtml(val debate: Debate) {
     // the – on the next line is an `en dash' not a minus
     <a class='dw-z'>[–]</a>
     <div id={cssPostId} class={"dw-p" + cutS}
-         data-p-by-email-sh={""/* author.emailSaltHash - consider security*/}
          data-p-by-ip-sh={vipo.ipSaltHash_!}>
       <div class='dw-p-hdr'>
         By { tryLinkTo(author)}{ dateAbbr(post.date, "dw-p-at")
-        }{ ratsList }{ editInfo }
+        }{ flagsTop }{ ratsTop }{ editInfo }{ flagsDetails }{ ratsDetails }
       </div>
       <div class='dw-p-bdy'>
         { xmlText }
@@ -476,6 +512,11 @@ object FormHtml {
       val Reason = "dw-fi-flg-reason"
       val Details = "dw-fi-flg-details"
     }
+    import FlagReason._
+    def prettify(reason: FlagReason): String = (reason match {  // i18n
+      case CopyVio => "Copyright Violation"
+      case x => x.toString
+    })
   }
 
   object Edit {
@@ -763,22 +804,21 @@ class FormHtml(val config: HtmlConfig, val permsOnPage: PermsOnPage) {
 
   def flagForm = {
     import FlagForm.{InputNames => Inp}
-    val r = Inp.Reason
     <div class='dw-fs' title='Report Comment'>
       <form id='dw-f-flg' action={config.flagAction} accept-charset='UTF-8'
             method='post'>
         { _xsrfToken }
         <div class='dw-f-flg-rsns'>{
-          def input(idSuffix: String, value: String, text: String) = {
+          def input(idSuffix: String, r: FlagReason) = {
             val id = "dw-fi-flgs-"+ idSuffix
-              <input type='radio' id={id} name={r} value={value}/>
-              <label for={id}>{text}</label>
+            <input type='radio' id={id} name={Inp.Reason} value={r.toString}/>
+            <label for={id}>{FlagForm.prettify(r)}</label>
           }
           import FlagReason._
-          input("spam", Spam.toString, "Spam") ++
-          input("copy", CopyVio.toString, "Copyright Violation") ++
-          input("ilgl", Illegal.toString, "Illegal") ++
-          input("othr", Other.toString, "Other")
+          input("spam", Spam) ++
+          input("copy", CopyVio) ++
+          input("ilgl", Illegal) ++
+          input("othr", Other)
         }</div>
         <div>
           <label for={Inp.Details}>Details (optional)</label><br/>

@@ -516,12 +516,15 @@ function updateDebate(newDebateHtml) {
   // Need to rewrite:
   // 1. Find all new **threads** (ancestors only, don't count subthreads
   //    of new threads).
-  // X. Find all recently deleted posts. Threads?!
+  // X. Find all recently deleted posts. Threads?! Could ignore for now?
+  //    only delete threads on reload?
   // 2. Find all old edited posts.
   // 3. Find all old posts that the user has just rated.
   // 4. Init all new threads. Redraw exactly all SVG arrows?
   //    Or $drawTree for each new thread, and find the union of all
   //    their ancestor threads and redraw them.
+  // Y. Also find new flags. (Could ignore for now, only show new flags
+  //    on complete reload.)
   // 5. Mark edits, mark own ratings.
   var $curDebate = $('.dw-debate');
   var $newDebate = buildTagFind(newDebateHtml, '.dw-debate');
@@ -758,7 +761,8 @@ function $initPost() {
       return;  // don't expand header on link click
     $(this)
         .css('cursor', null)
-        .find('> .dw-p-at, > .dw-p-ra-all, > .dw-p-hdr-ed > .dw-p-at').show()
+        .find('> .dw-p-at, > .dw-p-flgs-all, > .dw-p-ra-all, ' +
+              '> .dw-p-hdr-ed > .dw-p-at').show()
         .end()
         // This might have expanded the post, so redraw arrows.
         .closest('.dw-p').each(SVG.$drawParents);
