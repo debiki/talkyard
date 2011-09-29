@@ -21,6 +21,7 @@
  *  -ess-         edit suggestions (COULD change to -e-ss)
  *  -f-           form
  *  -fs-          form group
+ *  -flg-         flag
  *  -hor-         horizontal layout
  *  -i-           inline
  *  -img-         image
@@ -476,15 +477,6 @@ or it steals attention from the page title. */
   color: #396D99;
 }
 
-.dw-rats,
-.dw-rats li {
-  display: inline;
-}
-
-.dw-rats li {
-  margin-left: 0.5ex;
-}
-
 .dw-z {
   position: absolute;
 }
@@ -609,8 +601,25 @@ or it steals attention from the page title. */
 
 /* --- Post info ---*/
 
+.dw-p-flgs-top,
+.dw-p-rats-top {
+}
+
+.dw-p-flgs-all,
 .dw-p-ra-all {
   display: none; /* shown on .dw-p-hdr click */
+}
+
+.dw-flgs,
+.dw-flgs li,
+.dw-rats,
+.dw-rats li {
+  display: inline;
+}
+
+.dw-flgs li,
+.dw-rats li {
+  margin-left: 0.5ex;
 }
 
 .dw-p-hdr .dw-rats .dw-rat.dw-you-rated {
