@@ -106,8 +106,8 @@ private[debiki] abstract class PostRating {
    *  Another reader might be looking for [funny] posts.
    *
    *  Currently, however, it's assumed that all humans like the labels
-   *  listed in {@code StatsCalc.good} and dislike those in
-   *  {@code StatsCalc.bad}.
+   *  listed in {@code PageStats.good} and dislike those in
+   *  {@code PageStats.bad}.
    *
    *  Should perhaps be calculated on the client side, JavaScript?
    */
@@ -124,9 +124,9 @@ abstract class EditLiking {
   def frac: Float
 }
 
-private[debiki] class StatsCalc(val debate: Debate) {
+private[debiki] class PageStats(val debate: Debate) {
 
-  import StatsCalc._
+  import PageStats._
 
   private val good = imm.Set("interesting", "funny", "insightful", "helpful")
   private val bad = imm.Set("boring", "faulty", "off-topic", "spam", "troll",
@@ -239,7 +239,7 @@ private[debiki] class StatsCalc(val debate: Debate) {
     editLikings.getOrElse(editId, editLikingNoVotes)
 }
 
-private[debiki] object StatsCalc {
+private[debiki] object PageStats {
 
   /** Uses the Agresti-Coull method to calculate upper and lower bounds
    *  of a binomial proportion 80% confidence interval.

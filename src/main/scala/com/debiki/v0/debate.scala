@@ -25,10 +25,12 @@ object Debate {
   }
 }
 
+
+/*
 class AddVoteResults private[debiki] (
   val debate: Debate,
   val newEditsApplied: List[EditApplied]
-)
+) */
 
 case class Debate (
   guid: String,
@@ -180,11 +182,8 @@ case class Debate (
   // -------- Construction
 
   def + (post: Post): Debate = copy(posts = post :: posts)
-  //def - (post: Post): Debate = copy(posts = posts filter (_ != post))
 
   def + (rating: Rating): Debate = copy(ratings = rating :: ratings)
-  //def - (rating: Rating): Debate = copy(ratings = ratings filter
-  //                                                            (_ != rating))
 
   def ++[T >: AnyRef] (actions: List[T]): Debate = {
     var logins2 = logins
@@ -215,6 +214,7 @@ case class Debate (
         edits2, editVotes2, editsApplied2, flags2, dels2)
   }
 
+  /* COULD remove
   def addEdit(edit: Edit): AddVoteResults = {
     // Apply edit directly, if editing own post with no replies.
     val post = postsById(edit.postId)  // throw unless found
@@ -229,8 +229,9 @@ case class Debate (
     val d2 = copy(edits = edit :: edits,
                   editsApplied = newEditsApplied ::: editsApplied)
     new AddVoteResults(d2, newEditsApplied)
-  }
+  } */
 
+  /* COULD remove
   def addVote(vote: EditVote, applyEdits: Boolean): AddVoteResults = {
     var editsToApply = List[EditApplied]()
     //var editsToRevert = List[EditReverted]()  ??
@@ -297,31 +298,16 @@ case class Debate (
                       else editsApplied
     )
     new AddVoteResults(d2, editsToApply)
-  }
+  } */
 
   // -------- Statistics
 
-  lazy val stats = new StatsCalc(this)
+  lazy val stats = new PageStats(this)
 
 
   // -------- Misc
 
-  def compareAuthors(edit: Edit, post: Post): Login.Comparison = {
-    unimplemented
-    /*(login(edit.loginId), login(post.loginId)) match {
-      case (Some(el: Login), Some(pl: Login)) =>
-        (user(el.userId), user(pl.userId)) match {
-          case (Some(eu: User), Some(pu: User)) =>
-            User.compare(eu, el, pu, pl)
-          case _ => User.NotSame
-        }
-      case _ => User.NotSame
-    } */
-  }
-
-  def hasSameAuthor(edit: Edit, post: Post): Boolean =
-    compareAuthors(edit, post) == Login.IsSame
-
+  // COULD make static?
   /** Assigns ids to Post:s and Edit:s, and updates references from Edit:s
    *  to Post ids. COULD move to Debiki$, since ids are randomized, stateless.
    *  Does not remap the id of post "1", i.e. the root post.
@@ -358,48 +344,6 @@ case class Debate (
     xs2
   }
 
-  private lazy val nextFreePostId: String = {
-    var nextFree = 0
-    for {
-      post <- posts
-      num: Int = Base26.toInt(post.id)
-      if num + 1 > nextFree
-    }{
-      nextFree = num + 1
-    }
-    Base26.fromInt(nextFree)
-  }
-
-  private def nextFreeEditId(editeeId: String): String = {
-    UNTESTED
-    // Edit id format: <baseId> 'E' <subid>
-    // Don't change the <baseId>. By not changing it, we can easily
-    // identify what thing is being edited (the item with id = base-id).
-    // By including 'E' between the base-id and the sub-id, we know,
-    // only from looking at the ID, that the id identifies an Edit.
-    val edits: List[Edit] = editsFor(editeeId)
-    var nextFree = 0
-    for {
-      edit <- edits
-      lastUpperIx: Int = edit.id.lastIndexWhere(_.isUpper)
-      val (baseid, subid) = if (lastUpperIx == -1) ("", edit.id)
-                            else edit.id splitAt lastUpperIx
-      num: Int = Base26.toInt(subid drop 1) // drop 'E'
-      if num + 1 > nextFree
-    }{
-      require(lastUpperIx == -1 || edit.id(lastUpperIx) == 'E',
-              "Invalid Edit id, last upper is not `E': "+ safe(edit.id))
-      require(editeeId == baseid, "Found bad id, when checking free ids: "+
-              "Edit id ["+ safe(edit.id) + "] not prefixed by editee id ["+
-              safe(editeeId) +"]")
-      //else if (allBaseId != baseId) error("Different base id's: ["+
-      //                        safe(allBaseId) +"] and ["+ safe(baseId) +"]")
-      nextFree = num + 1
-    }
-    //if (allBaseId == null) allBaseId = ""
-    editeeId +"E"+ Base26.fromInt(nextFree)
-  }
-
   /** When the most recent post was made,
    *  or the mos recent edit was applied or reverted.
    */
@@ -410,29 +354,6 @@ case class Debate (
     if (allDates isEmpty) None
     else Some(allDates reduceLeft (maxDate(_, _)))
   }
-
-  /* With structural typing (I think this is very verbose code):
-  def max(d1: ju.Date, d2: ju.Date) =
-      if (d1.compareTo(d2) > 0) d1 else d2
-  private def maxDate(list: List[{ def date: ju.Date }]): Option[ju.Date] = {
-    if (list isEmpty) None
-    else {
-      val maxDate = (list.head.date /: list.tail)((d, o) => max(d, o.date))
-            // ((d: ju.Date, o: WithDate) => max(d, o.date))
-            // Results in: missing arguments for method foldLeft in
-            // trait LinearSeqOptimized;
-            // follow this method with `_' if you want to treat it
-            // as a partially applied function
-      // Date is mutable so return a copy
-      Some(maxDate.clone.asInstanceOf[ju.Date])
-    }
-  }
-  lazy val lastChangeDate = {
-    val dateOpts = List(maxDate(ratings), maxDate(posts)).filter (!_.isEmpty)
-    if (dateOpts isEmpty) None
-    else dateOpts.tail.foldLeft(dateOpts.head.get)((d, o) => max(d, o.get))
-  }
- */
 
 }
 
@@ -637,4 +558,17 @@ case class Delete(
   wholeTree: Boolean,
   reason: String
 ) extends Action
+
+
+// COULD make a Deletion class, and a DelApp (deletion application) class.
+// Then sometimes e.g. 3 people must delete a post for it to really
+// be deleted. Perhaps DelSug = deletion suggestion?
+// And rename Edit to EditSug?
+// EditSug & EditApp, + DelSug & DelApp - or join these 4 classes to 2 generic?
+// What about Flag and FlagApp? Eventually if flagged as spam e.g. 2 times
+// then the post would be automatically hidden?
+// What about only one ActionApp class, that applies the relevant action?
+// But then e.g. EditApp.result (resulting text) would be gone!?
+// And DelApp.wholeTree ... and FlagApp.reason + details.
+// Perhaps better have many small specialized classes.
 

@@ -10,15 +10,15 @@ import org.specs._
 import org.specs.runner.{ConsoleRunner, JUnit4}
 import java.{util => ju}
 
-//class StatsCalcTest extends JUnit4(StatsCalcSpec)
-//object StatsCalcTestRunner extends ConsoleRunner(StatsCalcSpec)
+//class PageStatsTest extends JUnit4(PageStatsSpec)
+//object PageStatsTestRunner extends ConsoleRunner(PageStatsSpec)
 
-//class StatsCalcTest extends SpecificationWithJUnit {
+//class PageStatsTest extends SpecificationWithJUnit {
 /*
 Cannot debug this:
-class StatsCalcTest extends SpecificationWithJUnit {
+class PageStatsTest extends SpecificationWithJUnit {
 NetBeans says:
-  Testsuite: com.debiki.v0.StatsCalcTest
+  Testsuite: com.debiki.v0.PageStatsTest
   Tests run: 1, Failures: 0, Errors: 1, Time elapsed: 0 sec
 
   Null Test:         Caused an ERROR
@@ -28,10 +28,10 @@ NetBeans says:
           at java.lang.Class.forName(Class.java:169)
   Caused by: java.lang.RuntimeException: Uncompilable source code
    - interface expected here
-          at com.debiki.v0.StatsCalcTest.<clinit>(StatsCalcTest.java:2)
+          at com.debiki.v0.PageStatsTest.<clinit>(PageStatsTest.java:2)
 */
 
-//object StatsCalcSpec extends Specification {
+//object PageStatsSpec extends Specification {
 
 object Util {
 
@@ -66,9 +66,9 @@ import Util._
 
 class PostRatingTest extends SpecificationWithJUnit {
 
-  "For an unrated post, StatsCalc" should {
+  "For an unrated post, PageStats" should {
     "find no statistics" in {
-      val calcer = new StatsCalc(debate)
+      val calcer = new PageStats(debate)
       val rating = calcer.scoreFor(post.id)
       rating.ratingCount must_== 0
       rating.maxLabelSum must_== 0
@@ -79,10 +79,10 @@ class PostRatingTest extends SpecificationWithJUnit {
     }
   }
 
-  "For a post with one rating, StatsCalc" should {
+  "For a post with one rating, PageStats" should {
     "find one rating" in {
       val debate2 = debate + rating_interesting
-      val calcer = new StatsCalc(debate2)
+      val calcer = new PageStats(debate2)
       val rating = calcer.scoreFor(post.id)
       rating.ratingCount must_== 1
       rating.maxLabelSum must_== 1.0f
@@ -97,10 +97,10 @@ class PostRatingTest extends SpecificationWithJUnit {
     }
   }
 
-  "For a post with two different rating tags, StatsCalc" should {
+  "For a post with two different rating tags, PageStats" should {
     "do something sensible" in {
       val debate2 = debate + rating_interesting + rating_stupid
-      val calcer = new StatsCalc(debate2)
+      val calcer = new PageStats(debate2)
       val rating = calcer.scoreFor(post.id)
       rating.ratingCount must_== 2
       rating.maxLabelSum must_== 2.0f
@@ -131,7 +131,7 @@ class EditLikingTest extends SpecificationWithJUnit {
 
   /* Won't compile, + no longer exists.
   "An Edit with no votes should have a certain liking" in {
-    val liking = new StatsCalc(debate + edit).likingFor(edit)
+    val liking = new PageStats(debate + edit).likingFor(edit)
     val bounds = binProp80ConfIntAC(trials = 0, prop = 0f)
     liking.lowerBound must beCloseTo(bounds._1, 0.01f)
     liking.upperBound must beCloseTo(bounds._2, 0.01f)
@@ -139,7 +139,7 @@ class EditLikingTest extends SpecificationWithJUnit {
   }
 
   "An Edit with 1 up vote should have a certain liking" in {
-    val liking = new StatsCalc(debate + edit + upVote).likingFor(edit)
+    val liking = new PageStats(debate + edit + upVote).likingFor(edit)
     val bounds = binProp80ConfIntAC(trials = 1, prop = 1f)
     liking.lowerBound must beCloseTo(bounds._1, 0.01f)
     liking.upperBound must beCloseTo(bounds._2, 0.01f)
@@ -147,7 +147,7 @@ class EditLikingTest extends SpecificationWithJUnit {
   }
 
   "An Edit with 2 up votes should have a certain liking" in {
-    val liking = new StatsCalc(debate + edit + upVote + upVote2).likingFor(edit)
+    val liking = new PageStats(debate + edit + upVote + upVote2).likingFor(edit)
     val bounds = binProp80ConfIntAC(trials = 2, prop = 1f)
     liking.lowerBound must beCloseTo(bounds._1, 0.01f)
     liking.upperBound must beCloseTo(bounds._2, 0.01f)
@@ -155,7 +155,7 @@ class EditLikingTest extends SpecificationWithJUnit {
   }
 
   "An Edit with 1 down vote should have a certain liking" in {
-    val liking = new StatsCalc(debate + edit + downVote).likingFor(edit)
+    val liking = new PageStats(debate + edit + downVote).likingFor(edit)
     val bounds = binProp80ConfIntAC(trials = 1, prop = 0f)
     liking.lowerBound must beCloseTo(bounds._1, 0.01f)
     liking.upperBound must beCloseTo(bounds._2, 0.01f)
@@ -163,7 +163,7 @@ class EditLikingTest extends SpecificationWithJUnit {
   }
 
   "An Edit with 2 up votes and 1 down vote should have a certain liking" in {
-    val liking = new StatsCalc(
+    val liking = new PageStats(
           debate + edit + upVote + upVote2 + downVote).likingFor(edit)
     val bounds = binProp80ConfIntAC(trials = 3, prop = 0.666667f)
     liking.lowerBound must beCloseTo(bounds._1, 0.01f)
