@@ -800,18 +800,23 @@ class FormHtml(val config: HtmlConfig, val permsOnPage: PermsOnPage) {
               {/* temporary layout hack */}
               <div class='dw-rat-tag-set'>{
                 rateBox("interesting") ++
-                rateBox("funny")
+                rateBox("funny") ++
+                rateBox("off-topic")
               }</div>
               <div class='dw-rat-tag-set'>{
                 rateBox("boring") ++
                 rateBox("stupid")
               }</div>
+              {/* One can report (flag) a comment as spam, so there's
+              no need for a spam tag too. I don't think the troll tag is
+              really needed? "Stupid + Boring" would work instead?
+              Or flag as Offensive (if I add such a flag option).
+
               <a class='dw-show-more-rat-tags'>More...</a>
               <div class='dw-rat-tag-set dw-more-rat-tags'>{
-                rateBox("off-topic") ++
                 rateBox("spam") ++
                 rateBox("troll")
-              }</div>
+              }</div>  */}
             </div>
           }
           <div class='dw-submit-set'>
