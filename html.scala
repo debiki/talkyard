@@ -177,19 +177,23 @@ class DebateHtml(val debate: Debate) {
   private var config: HtmlConfig = _  // COULD let be a ctor param
 
   private lazy val pageStats = new PageStats(debate)
-  private var lastChange: Option[String] = null
+
+  private def lastChange: Option[String] =
+    debate.lastChangeDate.map(toIso8601(_))
 
   def configure(conf: HtmlConfig): DebateHtml = {
     this.config = conf
     this
   }
 
-  def layoutDebate(permsOnPage: PermsOnPage): NodeSeq = {
-    this.lastChange = debate.lastChangeDate.map(toIso8601(_))
-    layoutPosts ++ FormHtml(config, permsOnPage).menus
+  def layoutPageAndTemplates(permsOnPage: PermsOnPage): NodeSeq = {
+    layoutPage() ++ FormHtml(config, permsOnPage).dialogTemplates
   }
 
-  private def layoutPosts(): NodeSeq = {
+  /** The results from layoutPosts doesn't depend on who the user is
+   *  and can thus be cached.
+   */
+  def layoutPage(): NodeSeq = {
     val rootPosts = debate.repliesTo(Debate.RootPostId)
     val rootPost = debate.vipo(Debate.RootPostId)
     val cssThreadId = "dw-t-"+ Debate.RootPostId
@@ -582,7 +586,7 @@ class FormHtml(val config: HtmlConfig, val permsOnPage: PermsOnPage) {
        target="_blank">CC BY-SA 3.0</a>
 
   private[v0]
-  def menus =
+  def dialogTemplates =
     <div id="dw-hidden-templates">
     { actionMenu ++
       loginForms ++
