@@ -287,7 +287,7 @@ class DebateHtml(val debate: Debate) {
   private def _showComment(vipo: ViPo): NodeSeq = {
     def post = vipo.post
     val count = debate.successorsTo(post.id).length + 1
-    val editApps = debate.editsAppliedTo(post.id)
+    val editApps = debate.editAppsTo(post.id)
     val lastEditApp = editApps.headOption
     val cssPostId = "dw-post-"+ post.id
     val sourceText = lastEditApp.map(_.result).getOrElse(post.text)
