@@ -88,8 +88,8 @@ object Do {
 sealed abstract class Perms
 
 object PermsOnPage {
-  val All = PermsOnPage(true, true, true, true, true)
-  val Wiki = All.copy() // for now
+  val All = PermsOnPage(true, true, true, true, true, true)
+  val Wiki = All.copy(deleteAnyReply = false)
   val None = PermsOnPage()
 }
 
@@ -114,7 +114,15 @@ case class PermsOnPage(
   val editAnyReply: Boolean = false,
 
   /** Edit non-authenticated users' replies. */
-  val editNonAutReply: Boolean = false
+  val editNonAutReply: Boolean = false,
+
+  /** Should be granted to admins, managers, moderators only.
+   *
+   *  Other people should instead flag posts, and if a post is flagged
+   *  e.g. Illegal X times it's automatically hidden.
+   *  So flagging, not deletions, is how most users remove bad posts.
+   */
+  val deleteAnyReply: Boolean = false
 
 ) extends Perms
 
