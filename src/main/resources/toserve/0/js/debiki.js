@@ -1079,6 +1079,10 @@ function $showInlineActionMenu(event) {
     // A form was clicked. Ignore click.
     return;
   }
+  if (event.which === 2 || event.which === 3) {
+    return; // ignore middle and right mouse buttons
+    // (What is `which' for touch events? This works fine on Android anyhow.)
+  }
   if (didExpandTruncated) {
     // The post is truncated. This click expands it; don't
     // let the click result in a reply form appearing, too.
