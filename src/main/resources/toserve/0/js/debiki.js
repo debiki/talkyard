@@ -652,6 +652,11 @@ var tagDog = (function(){
 // draws arrows to child threads, etc.
 // Call on posts.
 function $initPostsThread() {
+  $initPostsThreadStep1.apply(this);
+  $initPostsThreadStep2.apply(this);
+}
+
+function $initPostsThreadStep1() {
   // COULD rewrite-rename to initThread, which handles whole subtrees at once.
   // Then, $(".debiki .dw-p").each($initPost)
   // would be changed to $('#dw-root').each($initThread).
@@ -691,7 +696,11 @@ function $initPostsThread() {
 
   // Initially, hide edit suggestions.
   $thread.children('.dw-ess, .dw-a-edit-new').hide();
+}
 
+// Things that can be done a while after page load.
+function $initPostsThreadStep2() {
+  var $thread = $(this).closest('.dw-t');
   var $paras = $thread.filter(':not(.dw-depth-0)').children('.dw-p');
 
   // Make replies to the root thread resizable horizontally.
@@ -3065,92 +3074,120 @@ function prettyTimeBetween(then, now) {  // i18n
   return "0 seconds ago";
 }
 
-// ------- Invoke functions, do layout
 
-$('body').addClass('dw-pri');
+// ------- Initialization functions
 
-$(".debiki .dw-p").each($initPostsThread);
-
-
-initLoginResultForms();
-initLogout();
-initLoginSimple();
-$('#dw-a-login').click(showLoginSimple);
-$('#dw-a-logout').click(showLogout);
-
-
-openid.img_path = '/classpath/0/lib/openid-selector/images/';
-openid.submitInPopup = submitLoginInPopup;
-// Keep default openid.cookie_expires, 1000 days; COULD remove cookie on logout?
-openid.init('openid_identifier');
-initLoginOpenId();
-
-initFlagForm();
-initDeleteForm();
-
-// On post text click, open the inline action menu.
-// But hide it on mousedown, so the inline action menu disappears when you
-// start the 2nd click of a double click, and appears first when the 2nd
-// click is completed. Otherwise the inline menu gets in the
-// way when you double click to select whole words. (Or triple click to
-// select paragraphs.)
-$('.debiki').delegate('.dw-p-bdy-blk', 'mouseup', $showInlineActionMenu)
-    .delegate('.dw-p-bdy-blk', 'mousedown', $hideInlineActionMenu);
-
-// Remove new-reply and rating forms on cancel, but 
-// the edit form has some own special logic.
-$('.debiki').delegate(
-    '.dw-fs-re .dw-fi-cancel, ' +
-    '.dw-fs-rat .dw-fi-cancel',
-    'click', $removeClosestForms);
-
-window.onbeforeunload = confirmClosePage;
-
-// Hide all action forms, since they will be slided in.
-$('#dw-hidden-templates .dw-fs').hide();
-
-// Show more rating tags when clicking the "More..." button.
-rateFormTemplate.find('.dw-show-more-rat-tags').click($showMoreRatingTags);
+// Initializing forms and other stuff takes long, perhaps 1000 ms.
+// Wait a while before doing this, so the user won't notice that it takes long.
+function initForms() {
+  initLoginResultForms();
+  initLogout();
+  initLoginSimple();
+  $('#dw-a-login').click(showLoginSimple);
+  $('#dw-a-logout').click(showLogout);
 
 
+  openid.img_path = '/classpath/0/lib/openid-selector/images/';
+  openid.submitInPopup = submitLoginInPopup;
+  // Keep default openid.cookie_expires, 1000 days; COULD remove cookie on logout?
+  openid.init('openid_identifier');
+  initLoginOpenId();
 
-// Show a change diff instead of the post text, when hovering an edit
-// suggestion.
-$('.debiki')
-    .delegate('.dw-es', 'mouseenter', function(){
-      // COULD move find(...) to inside $showEditDiff?
-      // (Don't want such logic placed down here.)
-      $(this).find('.dw-ed-text').each($showEditDiff);
-    })
-    .delegate('.dw-ess', 'mouseleave', $removeEditDiff);
+  initFlagForm();
+  initDeleteForm();
 
-$('.debiki').delegate('.dw-a-edit-new', 'click', $showEditForm);
+  // On post text click, open the inline action menu.
+  // But hide it on mousedown, so the inline action menu disappears when you
+  // start the 2nd click of a double click, and appears first when the 2nd
+  // click is completed. Otherwise the inline menu gets in the
+  // way when you double click to select whole words. (Or triple click to
+  // select paragraphs.)
+  $('.debiki').delegate('.dw-p-bdy-blk', 'mouseup', $showInlineActionMenu)
+      .delegate('.dw-p-bdy-blk', 'mousedown', $hideInlineActionMenu);
 
-initCreateForm();
+  // Remove new-reply and rating forms on cancel, but 
+  // the edit form has some own special logic.
+  $('.debiki').delegate(
+      '.dw-fs-re .dw-fi-cancel, ' +
+      '.dw-fs-rat .dw-fi-cancel',
+      'click', $removeClosestForms);
 
-// Fire the dwEvLoggedInOut event, so all buttons etc will update
-// their text with the correct user name.
-// {{{ Details:
-// Firing the dwEvLoggedInOut event causes the user name to be updated
-// to the name of the logged in user, everywhere. This needs to be done
-// in JavaScript, cannot be done only server side — because when the user
-// logs in/out using JavaScript, and uses the browser's *back* button to
-// return to an earlier page, that page might not be fetched again
-// from the server, but this javascript code updates the page to take
-// into account that the user name (and related cookies) has changed
-// (since the user logged in/out).
-// Do this when everything has been inited, so all dwEvLoggedInOut event
-// listeners have been registered. }}}
-if (getLoginId()) fireLogin();
-else fireLogout();
+  window.onbeforeunload = confirmClosePage;
+
+  // Hide all action forms, since they will be slided in.
+  $('#dw-hidden-templates .dw-fs').hide();
+
+  // Show more rating tags when clicking the "More..." button.
+  rateFormTemplate.find('.dw-show-more-rat-tags').click($showMoreRatingTags);
 
 
-// Draw SVG when the placement of all html tags is finished, or the SVG
-// arrows might be offset incorrectly.
-SVG.initRootSvg();
-SVG.drawEverything();
+  // Show a change diff instead of the post text, when hovering an edit
+  // suggestion.
+  $('.debiki')
+      .delegate('.dw-es', 'mouseenter', function(){
+        // COULD move find(...) to inside $showEditDiff?
+        // (Don't want such logic placed down here.)
+        $(this).find('.dw-ed-text').each($showEditDiff);
+      })
+      .delegate('.dw-ess', 'mouseleave', $removeEditDiff);
 
-resizeRootThread();
+  $('.debiki').delegate('.dw-a-edit-new', 'click', $showEditForm);
+
+  initCreateForm();
+
+  // Fire the dwEvLoggedInOut event, so all buttons etc will update
+  // their text with the correct user name.
+  // {{{ Details:
+  // Firing the dwEvLoggedInOut event causes the user name to be updated
+  // to the name of the logged in user, everywhere. This needs to be done
+  // in JavaScript, cannot be done only server side — because when the user
+  // logs in/out using JavaScript, and uses the browser's *back* button to
+  // return to an earlier page, that page might not be fetched again
+  // from the server, but this javascript code updates the page to take
+  // into account that the user name (and related cookies) has changed
+  // (since the user logged in/out).
+  // Do this when everything has been inited, so all dwEvLoggedInOut event
+  // listeners have been registered. }}}
+  if (getLoginId()) fireLogin();
+  else fireLogout();
+}
+
+function initAndDrawSvg() {
+  // Don't draw SVG until all html tags has been placed, or the SVG
+  // arrows might be offset incorrectly.
+  // Actually, drawing SVG takes long, so wait for a while,
+  // don't do it on page load.
+  SVG.initRootSvg();
+  SVG.drawEverything();
+}
+
+
+// ------- Actually render the page
+
+// Render the page step by step, to reduce page loading time. (When the first
+// step is done, the user should conceive the page as mostly loaded.)
+
+(function() {
+  var $posts = $(".debiki .dw-p");
+  function initPostsThreadStep1() { $posts.each($initPostsThreadStep1) }
+  function initPostsThreadStep2() { $posts.each($initPostsThreadStep2) }
+
+  var ms = 1000;
+  function wait(millis) {
+    return $.Deferred(function(dfd) {
+      setTimeout(dfd.resolve, millis);
+    });
+  }
+
+  $('body').addClass('dw-pri');
+  resizeRootThread();
+
+  var d = wait(ms).then(initPostsThreadStep1);
+  d = $.when(d, wait(ms)).then(initPostsThreadStep2);
+  d = $.when(d, wait(ms)).then(initForms);
+  d = $.when(d, wait(ms)).then(initAndDrawSvg);
+})();
+
 
 //----------------------------------------
    }); // end jQuery onload
