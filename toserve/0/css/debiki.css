@@ -729,6 +729,12 @@ or it steals attention from the page title. */
 
 /* --- Inline threads --- */
 
+/* Avoid a flash of incorrectly placed inline threads: don't show them
+until they've been moved into the .dw-bdy-blk > .dw-i-ts. */
+.dw-res > .dw-i-t {
+  display: none;
+}
+
 .dw-hor > .dw-p > .dw-p-bdy > .dw-i-ts {
   float: left;
   margin-left: 120px; /* arrows from inline-marks to -threads drawn here */
