@@ -6,7 +6,7 @@ vim: fdm=marker et sw=2 ts=2
 
 ---- $initPost:
 
-223ms jquery-ui-1.8.16.custom.min.js:593 f.fn.extend.hide - move to CSS
+223ms jquery-ui-1.8.16.custom.min.js:593 f.fn.extend.hide - move to CSS - DONE
 78ms debiki.js:2615 $initPostSvg
 72ms debiki.js:869 $splitBodyPlaceInlines
 14ms debiki.js:821 $placeInlineMarks

@@ -751,9 +751,9 @@ function $initPost() {
         '</span>');
   };
 
-  // Hide detailed timestamps; show pretty how-long-ago info instead.
-  $postedAt.hide().before(timeAgoAbbr(postedAtTitle, postedAt, now));
-  $editedAt.hide().before(timeAgoAbbr(editedAtTitle, editedAt, now));
+  // Show pretty how-long-ago info. (The $posted/editedAt are already hidden.)
+  $postedAt.before(timeAgoAbbr(postedAtTitle, postedAt, now));
+  $editedAt.before(timeAgoAbbr(editedAtTitle, editedAt, now));
 
   // If one clicks the header, show detailed timestamps and rating info.
   $hdr.css('cursor', 'crosshair').click(function(event) {
