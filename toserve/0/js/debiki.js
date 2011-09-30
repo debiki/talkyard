@@ -404,6 +404,8 @@ function $makeEastResizable() {
 }
 
 // Make posts and threads resizable.
+// Currently not in use, except for when I test to resize posts.
+//   $('.dw-p').each($makePostResizable);
 // Fails with a TypeError on Android: Cathching it and ignoring it.
 // (On Android, posts and threads won't be resizable.)
 function $makePostResizable() {
@@ -713,32 +715,39 @@ function $initPostsThreadStep2() {
   var $thread = $(this).closest('.dw-t');
   var $paras = $thread.filter(':not(.dw-depth-0)').children('.dw-p');
 
-  // Make replies to the root thread resizable horizontally.
-  // (But skip inline replies; they expand eastwards regardless.)
-  // $makeEastResizable must be called before $makePostResizable,
-  // or $makeEastResizable has no effect. No idea why -- my guess
-  // is some jQuery code does something similar to `$.find(..)',
-  // and finds the wrong resizable stuff,
-  // if the *inner* tag is made resizable before the *outer* tag.
-  // (Note that $makePostResizable is invoked on a $thread *child*.)
-  //
-  // However for touch devises, don't enable resizing of posts: it doesn't
-  // work, and the resize handles steal touch events from buttons nearby.
-  if (!Modernizr.touch) {
-    $thread.filter('.dw-depth-1:not(.dw-i-t)').each($makeEastResizable);
-    $paras.each($makePostResizable);
-  }
-
-  // Show actions when hovering post.
+  // When hovering a post, show actions, and make it resizable.
   // But always show the leftmost Reply, at depth-0, that creates a new column.
   // (Better avoid delegates for frequent events such as mouseenter.)
   $paras.mouseenter(function() {
+    var $i = $(this);
     // If actions are already shown for an inline child post, ignore event.
     // (Sometimes the mouseenter event is fired first for an inline child
     // post, then for its parent — and then actions should be shown for the
     // child post; the parent should ignore the event.)
-    if (!$(this).find('#dw-p-as-shown').length)
-      $(this).each($showActions);
+    if (!$i.find('#dw-p-as-shown').length)
+      $i.each($showActions);
+
+    // {{{ Resizing of posts — disabled
+    // This takes really long (700 ms on my 6 core 2.8 GHz AMD) if done
+    // for all posts at once. Don't do it at all, unless hovering post.
+    // (Resizing of posts oesn't work on touch devices (Android), and
+    // the resize handles steal touch events.)
+    // But! If done like this, when you hover a post, jQuery UI won't show
+    // the resize handles until the mouse *leaves* the post an enters it
+    // *again*. So this doesn't work well. I think I might as well disable
+    // resizing of posts. It isn't very useful, *and* it does not work on
+    // mobile devices (Android). If I disable it, then browsers will work
+    // like mobile devices do and I will automatically build something
+    // that works on mobile devices.
+    //
+    // If you comment in this code, please note:
+    // $makeEastResizable must be called before $makePostResizable,
+    // or $makeEastResizable has no effect. Search for
+    // "each($makeEastResizable)" to find more info.
+    //
+    // if (!Modernizr.touch && !$i.children('.ui-resizable-handle').length)
+    //   $i.each($makePostResizable);
+    // }}}
   });
 
   $thread.mouseleave(function() {
@@ -748,6 +757,24 @@ function $initPostsThreadStep2() {
   });
 
   $initPost.apply(this);
+}
+
+function $initPostsThreadStep3() {
+  var $thread = $(this).closest('.dw-t');
+
+  // Make replies to the root thread resizable horizontally. (Takes
+  // perhaps 100 ms on my 6 core 2.8 GHz AMD, 24 depth-1 reply columns.)
+  // (But skip inline replies; they expand eastwards regardless.)
+  // $makeEastResizable must be called before $makePostResizable (not in
+  // use though!), or $makeEastResizable has no effect. No idea
+  // why -- my guess is some jQuery code does something similar to
+  // `$.find(..)', and finds the wrong resizable stuff,
+  // if the *inner* tag is made resizable before the *outer* tag.
+  //
+  // However for touch devises, don't enable resizing of posts: it doesn't
+  // work, and the resize handles steal touch events from buttons nearby.
+  if (!Modernizr.touch)
+    $thread.filter('.dw-depth-1:not(.dw-i-t)').each($makeEastResizable);
 }
 
 // Inits a post, not its parent thread.
@@ -3220,6 +3247,7 @@ function initAndDrawSvg() {
   var $posts = $(".debiki .dw-p");
   function initPostsThreadStep1() { $posts.each($initPostsThreadStep1) }
   function initPostsThreadStep2() { $posts.each($initPostsThreadStep2) }
+  function initPostsThreadStep3() { $posts.each($initPostsThreadStep3) }
 
   var ms = 1000;
   function wait(millis) {
@@ -3235,6 +3263,7 @@ function initAndDrawSvg() {
   if (!Modernizr.touch)
     d = $.when(d, wait(ms)).then(enableDragScroll);
   d = $.when(d, wait(ms)).then(initPostsThreadStep2);
+  d = $.when(d, wait(ms)).then(initPostsThreadStep3);
   d = $.when(d, wait(ms)).then(initForms);
   d = $.when(d, wait(ms)).then(initAndDrawSvg);
 })();
