@@ -751,9 +751,16 @@ function $initPost() {
       editedAtTitle = $editedAt.attr('title'),
       editedAt = Date.parse(editedAtTitle),
       now = new Date();  // COULD cache? e.g. when initing all posts
-  $i.each($placeInlineMarks)
-      .each($splitBodyPlaceInlines)
-      .each(SVG.$initPostSvg);
+
+  // If this post has any inline thread, place inline marks and split
+  // the single .dw-p-bdy-blk into many blocks with inline threads
+  // inbetween.
+  if ($i.parent().children('.dw-res').children('.dw-i-t').length) {
+    $i.each($placeInlineMarks)
+      .each($splitBodyPlaceInlines);
+  }
+
+  SVG.$initPostSvg.apply(this);
 
   function timeAgoAbbr(title, then, now) {
     return $('<abbr title="'+ title +'"> '+ prettyTimeBetween(then, now) +
@@ -810,11 +817,18 @@ function $undoInlineThreads() {
   // Remove inline marks and unwrap block contents.
   var $post = $(this);
   var $body = $post.children('.dw-p-bdy');
+  // The post body contents is placed in various <div .dw-p-bdy-blk>
+  // with inline threads, <div .dw-i-ts>, inbetween.
+  // Move the contents back to a single <div .dw-p-bdy-blk>,
+  // and also remove inline marks.
+  var $bodyBlock = $('<div class="dw-p-bdy-blk"></div>');
   $body.children('.dw-p-bdy-blk').each(function() {
     var $block = $(this);
     $block.find('.dw-i-m-start').remove();
-    $block.replaceWith($block.contents());
+    $block.contents().appendTo($bodyBlock);
+    $block.remove();
   });
+  $body.append($bodyBlock);
   // Move inline threads back to the thread's list of child threads.
   var $inlineThreads = $body.find('> .dw-i-ts .dw-i-t');
   $inlineThreads.detach();
@@ -833,8 +847,10 @@ function $placeInlineMarks() {
     // Insert a mark (i.e. an <a/> tag) and render the parent post again.
     var markStartText = $(this).attr('data-dw-i-t-where');
     var $parentThread = $(this).parent().closest('.dw-t');
-    var $parentPostBody = $parentThread.find('> .dw-p > .dw-p-bdy');
-    var tagDogText = tagDog.sniffHtml($parentPostBody);
+    var $bodyBlock = $parentThread.find(
+        '> .dw-p > .dw-p-bdy > .dw-p-bdy-blk');
+    bugIf($bodyBlock.length !== 1, 'debiki_error_6kiJ08');
+    var tagDogText = tagDog.sniffHtml($bodyBlock);
     var loc = 10; // TODO should be included in the data attr
     var match = diffMatchPatch.match_main(tagDogText, markStartText, loc);
     var arrow = $parentThread.filter('.dw-hor').length ?
@@ -853,27 +869,26 @@ function $placeInlineMarks() {
       $(mark).attr('title',
           'Contextual comment, but the context text was not found, '+
           'so this comment was placed at the end of the post.'
-          ).appendTo($parentPostBody);
+          ).appendTo($bodyBlock);
       return;
     }
     var beforeMatch = tagDogText.substring(0, match);
     var afterMatch = tagDogText.substring(match, 999999);
     var tagDogTextWithMark = [beforeMatch, mark, afterMatch].join('');
-    var bodyWithMark =
-        ['<div class="dw-p-bdy">',
+    var blockWithMarks =
+        ['<div class="dw-p-bdy-blk">',
           tagDog.barkHtml(tagDogTextWithMark),
           '</div>'].join('');
-    $parentPostBody.replaceWith(bodyWithMark);
+    $bodyBlock.replaceWith(blockWithMarks);
 
     // Or simply:
-    // var htmlWithMark = tagDogsniffAndMark(markStartText, $parentPostBody);
-    // $parentPostBody.replace($(htmlWithMark));
+    // var htmlWithMark = tagDogsniffAndMark(markStartText, $bodyBlock);
+    // $bodyBlock.replace($(htmlWithMark));
   });
 }
 
-// Splits the .dw-p-bdy contents into -bdy-blk:s.
-// Places inline threads in <ol>:s after the -blk:s after the relevant
-// inline marks, so the threads become inlined.
+// Splits the single .dw-p-bdy-blk into many -bdy-blk:s,
+// and places inline threads inbetween, in <ol .dw-i-ts> tags.
 // Call on posts.
 function $splitBodyPlaceInlines() {
   // Groups .dw-p-bdy child elems in groups around/above 200px high, and
@@ -965,12 +980,16 @@ function $splitBodyPlaceInlines() {
   };
 
   // Group body elems in body-block <div>s. In debiki.css, these divs are
-  // placed to the left and inline threads in a <ol> to the right.
-  // COULD do this on the server, to simplify processing for smartphones?
-  $(this).children('.dw-p-bdy').each(function(){
+  // placed to the left and inline threads in a <ol> to the right, or
+  // below (between) the body blocks.
+  $(this).find('> .dw-p-bdy > .dw-p-bdy-blk').each(function(){
     var $placeFun = $(this).closest('.dw-t').filter('.dw-hor').length ?
         $placeToTheRight : $placeInside;
     $placeFun.apply(this);
+    // Now there should be one <div .dw-p-bdy-blk> with many
+    // <div .dw-p-bdy-blk> and <div .dw-i-ts> inside. Unwrap that single
+    // parent <div .dw-p-bdy-blk>.
+    $(this).replaceWith($(this).contents());
   });
 }
 
@@ -1054,24 +1073,36 @@ function $showInlineActionMenu(event) {
   //    how-to-find-cursor-position-in-a-contenteditable-div/2213514#2213514
   // Use event.clientX, event.clientY.
 
-  // Find out where to place the relevant form.
-  // When finding the closest .dw-p-bdy-blk, start searching from a
-  // non-text node, because jQuery(text-node) results in TypeError:
-  //  Object #<a Text> has no method 'getAttribute'.
-  var focusNonText = sel.focusNode.nodeType === 3 ?  // 3 is text
-      sel.focusNode.parentNode : sel.focusNode;
   var placeWhere = {
     textStart: sel.anchorNode.data.substr(sel.anchorOffset, 32),
     textEnd: sel.focusNode.data.substr(sel.focusOffset, 32),
-    elem: $(focusNonText).closest('.dw-p-bdy-blk')
+  };
+
+  // Find the clicked node, or its parent if a text node was clicked.
+  // Later, when finding the closest .dw-p-bdy-blk, we must start searching
+  // from a non-text node, because jQuery(text-node) results in TypeError:
+  //  Object #<a Text> has no method 'getAttribute'.
+  var focusNonText = sel.focusNode.nodeType === 3 ?  // 3 is text
+      sel.focusNode.parentNode : sel.focusNode;
+
+  // To have somewhere to place the reply form, split the block into
+  // smaller .dw-p-bdy-blk:s, and add .dw-i-ts, if not already
+  // done (which is the case if this post has no inline replies).
+  var $post = $target.closest('.dw-p');
+  if (!$post.find('> .dw-p-bdy > .dw-i-ts').length) {
+    // This rearranging of elems destroys `sel', e.g. focusNode becomes null.
+    $post.each($splitBodyPlaceInlines);
+  }
+  sel = null; // fail fast (see comment just above)
+
+  // Find out where to place the relevant form.
+  placeWhere.elem = $(focusNonText).closest('.dw-p-bdy-blk')
         .dwBugIfEmpty('debiki_error_6u5962rf3')
         .next('.dw-i-ts')
-        .dwBugIfEmpty('debiki_error_17923xstq')
-  };
+        .dwBugIfEmpty('debiki_error_17923xstq');
 
   // Entitle the edit button `Suggest Edit' or `Edit', depending on
   // whether or not it's the user's post.
-  var $post = $target.closest('.dw-p');
   var authorId = $post.dwAuthorId();
   var curUserId = getUserId();
   var editTitle = curUserId === authorId ?
