@@ -138,6 +138,12 @@ Settings.editFormSubmitter = function(debateId, postId, complete) {
   alert("Edits not implemented. [debiki_error_19x3g35]");
 };
 
+Settings.draggableInternal =
+    '.dw-res, .dw-i-ts, .dw-t, .dw-t-vspace, '+
+    '.dw-p, .dw-p-bdy, .dw-hor-a, .dw-fs, '+
+    '.dw-debate, .dw-debate svg, '; // (draggableCustom appended)
+Settings.draggableCustom = '';
+
 //----------------------------------------
 // Customizable functions: Export setters
 //----------------------------------------
@@ -170,6 +176,10 @@ Debiki.v0.setEditFormLoader = function(loader) {
 
 Debiki.v0.setEditFormSubmitter = function(submitter) {
   Settings.editFormSubmitter = submitter;
+};
+
+Debiki.v0.makeDragscrollable = function(selectors) {
+  Settings.draggableCustom = selectors;
 };
 
 // Onload
@@ -3108,6 +3118,15 @@ function prettyTimeBetween(then, now) {  // i18n
 
 // ------- Initialization functions
 
+function enableDragScroll() {
+  // This takes perhaps 70 ms (on my 2.8 GHz 6 core AMD)
+  // and should thus not be done on page load. (jQuery takes long
+  // when finding all elements that match the selectors.)
+  var selectors = Settings.draggableInternal + Settings.draggableCustom;
+  $('body').debiki_dragscrollable({
+            dragSelector: selectors, scrollable: selectors });
+}
+
 // Initializing forms and other stuff takes long, perhaps 1000 ms.
 // Wait a while before doing this, so the user won't notice that it takes long.
 function initForms() {
@@ -3214,6 +3233,8 @@ function initAndDrawSvg() {
   resizeRootThread();
 
   var d = wait(ms).then(initPostsThreadStep1);
+  if (!Modernizr.touch)
+    d = $.when(d, wait(ms)).then(enableDragScroll);
   d = $.when(d, wait(ms)).then(initPostsThreadStep2);
   d = $.when(d, wait(ms)).then(initForms);
   d = $.when(d, wait(ms)).then(initAndDrawSvg);
