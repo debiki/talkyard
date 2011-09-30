@@ -456,9 +456,13 @@ class DebateHtml(val debate: Debate) {
         By { _linkTo(author)}{ dateAbbr(post.date, "dw-p-at")
         }{ flagsTop }{ ratsTop }{ editInfo }{ flagsDetails }{ ratsDetails }
       </div>
-      <div class='dw-p-bdy'>
-        { xmlText }
-      </div>
+      <div class='dw-p-bdy'><div class='dw-p-bdy-blk'>
+        { xmlText
+        // (Don't  place a .dw-i-ts here. Splitting the -bdy into
+        // -bdy-blks and -i-ts is better done client side, where the
+        // heights of stuff is known.)
+        }
+      </div></div>
     </div> ++ (
       if (post.id == Debate.RootPostId) Nil // actions already added by caller
       else <a class='dw-as' href={config.reactUrl(debate.guid, post.id)}
