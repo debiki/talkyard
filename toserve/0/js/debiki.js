@@ -1594,11 +1594,15 @@ function makeCurUser() {
 // Debiki dialog. E.g. hide the submit input, and set defaut properties.
 
 function showLogout() {
+  initLogout();
   $('#dw-fs-logout').dialog('open');
 }
 
 function initLogout() {
   var $logout = $('#dw-fs-logout');
+  if ($logout.is('.ui-dialog-content'))
+    return; // already inited
+
   var $logoutForm = $logout.find('form');
   $logout.find('input').hide(); // Use jQuery UI's dialog buttons instead
   $logout.dialog({
@@ -1633,16 +1637,21 @@ function initLogout() {
 // ------- Login result
 
 function showLoginOkay() {
+  initLoginResultForms();
   $('#dw-fs-login-ok-name').text(Me.getName());
   $('#dw-fs-login-ok').dialog('open');
 }
 
 function showLoginFailed(errorMessage) {
+  initLoginResultForms();
   $('#dw-fs-login-failed-errmsg').text(errorMessage);
   $('#dw-fs-login-failed').dialog('open');
 }
 
 function initLoginResultForms() {
+  if ($('#dw-fs-login-ok.ui-dialog-content').length)
+    return; // login-ok and -failed already inited
+
   var $loginResult = $('#dw-fs-login-ok, #dw-fs-login-failed');
   var $loginResultForm = $loginResult.find('form');
   $loginResult.find('input').hide(); // Use jQuery UI's dialog buttons instead
@@ -1665,6 +1674,9 @@ function initLoginResultForms() {
 
 function initLoginSimple() {
   var $login = $('#dw-fs-login-simple');
+  if ($login.is('.ui-dialog-content'))
+    return; // already inited
+
   var $loginForm = $login.find('form');
   $login.find('.dw-fi-submit').hide();  // don't show before name known
   $login.dialog({
@@ -1736,6 +1748,7 @@ function continueAfterLoginOnClick() {
 }
 
 function showLoginSimple() {
+  initLoginSimple();
   $('#dw-fs-login-simple').dialog('open');  // BUG Tag absent unless…
           //… a debate is shown, so the dw-hidden-templates included.
 }
@@ -1743,7 +1756,17 @@ function showLoginSimple() {
 // ------- Login, OpenID
 
 function initLoginOpenId() {
-  $('#dw-fs-openid-login').dialog({
+  var $openid = $('#dw-fs-openid-login');
+  if ($openid.is('.ui-dialog-content'))
+    return; // already inited
+
+  openid.img_path = '/classpath/0/lib/openid-selector/images/';
+  openid.submitInPopup = submitLoginInPopup;
+  // Keep default openid.cookie_expires, 1000 days
+  // — COULD remove cookie on logout?
+  openid.init('openid_identifier');
+
+  $openid.dialog({
     autoOpen: false,
     height: 410,
     width: 720,
@@ -1763,6 +1786,7 @@ function initLoginOpenId() {
 }
 
 function $showLoginOpenId() {
+  initLoginOpenId();
   $('#dw-fs-openid-login').dialog('open');
   return false;  // skip default action
 }
@@ -1957,6 +1981,9 @@ function $showMoreRatingTags() {
 function initFlagForm() {
   var $form = $('#dw-f-flg');
   var $parent = $form.parent();
+  if ($parent.is('.ui-dialog-content'))
+    return; // already inited
+
   $form.find('.dw-submit-set input').hide(); // use jQuery UI's buttons instead
   $form.find('.dw-f-flg-rsns').buttonset();
   $parent.dialog({
@@ -2021,6 +2048,7 @@ function initFlagForm() {
 
 // warning, dupl code, see $showDeleteCommentForm.
 function $showFlagForm() {
+  initFlagForm();
   var $i = $(this);
   var $t = $i.closest('.dw-t');
   var $post = $t.children('.dw-p');
@@ -2588,6 +2616,9 @@ $('.debiki p').editable('http://www.example.com/save.php', {
 function initDeleteForm() {
   var $form = $('#dw-f-dl');
   var $parent = $form.parent();
+  if ($parent.is('.ui-dialog-content'))
+    return; // already inited
+
   $form.find('.dw-submit-set input').hide(); // use jQuery UI's buttons instead
   // Don't make a button of -tree, because then it's a tiny bit
   // harder to realize wethere it's checked or not, and this is a
@@ -2631,6 +2662,7 @@ function initDeleteForm() {
 
 // warning: dupl code, see $showFlagForm.
 function $showDeleteForm() {
+  initDeleteForm();
   var $i = $(this);
   var $t = $i.closest('.dw-t');
   var $post = $t.children('.dw-p');
@@ -3168,24 +3200,9 @@ function enableDragScroll() {
             dragSelector: selectors, scrollable: selectors });
 }
 
-// Initializing forms and other stuff takes long, perhaps 1000 ms.
-// Wait a while before doing this, so the user won't notice that it takes long.
-function initForms() {
-  initLoginResultForms();
-  initLogout();
-  initLoginSimple();
+function registerEventHandlers() {
   $('#dw-a-login').click(showLoginSimple);
   $('#dw-a-logout').click(showLogout);
-
-
-  openid.img_path = '/classpath/0/lib/openid-selector/images/';
-  openid.submitInPopup = submitLoginInPopup;
-  // Keep default openid.cookie_expires, 1000 days; COULD remove cookie on logout?
-  openid.init('openid_identifier');
-  initLoginOpenId();
-
-  initFlagForm();
-  initDeleteForm();
 
   // On post text click, open the inline action menu.
   // But hide it on mousedown, so the inline action menu disappears when you
@@ -3280,7 +3297,7 @@ function initAndDrawSvg() {
     d = $.when(d, wait(ms)).then(enableDragScroll);
   d = $.when(d, wait(ms)).then(initPostsThreadStep2);
   d = $.when(d, wait(ms)).then(initPostsThreadStep3);
-  d = $.when(d, wait(ms)).then(initForms);
+  d = $.when(d, wait(ms)).then(registerEventHandlers);
   d = $.when(d, wait(ms)).then(initAndDrawSvg);
 })();
 
