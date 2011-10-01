@@ -808,6 +808,11 @@ function $initPostStep1() {
   // If this post has any inline thread, place inline marks and split
   // the single .dw-p-bdy-blk into many blocks with inline threads
   // inbetween.
+  // (This takes rather long (120 ms for 110 posts, of which 20 are inlined,
+  // on my 6 core 2.8 GHz AMD) but should nevertheless be done quite early,
+  // because it rearranges threads and posts, and that'd better not happen
+  // after a while when the user thinks the page has already finished
+  // loading.)
   if ($i.parent().children('.dw-res').children('.dw-i-t').length) {
     $i.each($placeInlineMarks)
       .each($splitBodyPlaceInlines);
@@ -2735,6 +2740,11 @@ function makeSvgDrawer() {
     // See:
     // http://svgweb.googlecode.com/svn/trunk/docs/UserManual.html#dynamic_root
     var svg = document.createElementNS(svgns, 'svg');  // need not pass 'true'
+    // {{{ appendChild takes long
+    // 199ms (100 posts, 2.8 GHz 6 core AMD), in svg.js,
+    // because it invokes _processSVGScript, in svg.js:45, which takes 130ms
+    // (for a page wit h100 posts and my 2.8 GHz 6 core AMD).
+    // Using <empty-svg-node>.cloneNode() has no effect. }}}
     svgweb.appendChild(svg, $(this).get(0));
     $(this).addClass('dw-svg-parent');
   }
