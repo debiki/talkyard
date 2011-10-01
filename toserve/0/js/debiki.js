@@ -664,10 +664,15 @@ var tagDog = (function(){
 // Inits a post and its parent thread.
 // Makes posts resizable, activates mouseenter/leave functionality,
 // draws arrows to child threads, etc.
+// Initing a thread is done in 4 steps. This function calls all those 4 steps.
+// (The initialization is split into steps, so everything need not be done
+// at once on page load.)
 // Call on posts.
 function $initPostsThread() {
   $initPostsThreadStep1.apply(this);
   $initPostsThreadStep2.apply(this);
+  $initPostsThreadStep3.apply(this);
+  $initPostsThreadStep4.apply(this);
 }
 
 function $initPostsThreadStep1() {
@@ -758,10 +763,14 @@ function $initPostsThreadStep2() {
     $(this).closest('.dw-p').each($showActions);
   });
 
-  $initPost.apply(this);
+  $initPostStep1.apply(this);
 }
 
 function $initPostsThreadStep3() {
+  $initPostStep2.apply(this);
+}
+
+function $initPostsThreadStep4() {
   var $thread = $(this).closest('.dw-t');
 
   // Make replies to the root thread resizable horizontally. (Takes
@@ -781,6 +790,11 @@ function $initPostsThreadStep3() {
 
 // Inits a post, not its parent thread.
 function $initPost() {
+  $initPostStep1();
+  $initPostStep2();
+}
+
+function $initPostStep1() {
   var $i = $(this),
       $hdr = $i.find('.dw-p-hdr'),
       $postedAt = $hdr.children('.dw-p-at'),
@@ -798,8 +812,6 @@ function $initPost() {
     $i.each($placeInlineMarks)
       .each($splitBodyPlaceInlines);
   }
-
-  SVG.$initPostSvg.apply(this);
 
   function timeAgoAbbr(title, then, now) {
     return $('<abbr title="'+ title +'"> '+ prettyTimeBetween(then, now) +
@@ -839,6 +851,12 @@ function $initPost() {
       .end()
       .find('> .dw-i-ts > .dw-i-t > .dw-p')
         .hover($inlineThreadHighlightOn, $inlineThreadHighlightOff);
+}
+
+function $initPostStep2() {
+  // $initPostSvg takes rather long (190 ms on my 6 core 2.8 GHz AMD, for
+  // 100 posts), and  need not be done until just before SVG is drawn.
+  SVG.$initPostSvg.apply(this);
 }
 
 // Extracts markup source from html.
@@ -3280,25 +3298,29 @@ function initAndDrawSvg() {
   function initPostsThreadStep1() { $posts.each($initPostsThreadStep1) }
   function initPostsThreadStep2() { $posts.each($initPostsThreadStep2) }
   function initPostsThreadStep3() { $posts.each($initPostsThreadStep3) }
-
-  var ms = 1000;
-  function wait(millis) {
-    return $.Deferred(function(dfd) {
-      setTimeout(dfd.resolve, millis);
-    });
-  }
+  function initPostsThreadStep4() { $posts.each($initPostsThreadStep4) }
 
   $('body').addClass('dw-pri');
   resizeRootThread();
   Me.refreshProps();
 
-  var d = wait(ms).then(initPostsThreadStep1);
-  if (!Modernizr.touch)
-    d = $.when(d, wait(ms)).then(enableDragScroll);
-  d = $.when(d, wait(ms)).then(initPostsThreadStep2);
-  d = $.when(d, wait(ms)).then(initPostsThreadStep3);
-  d = $.when(d, wait(ms)).then(registerEventHandlers);
-  d = $.when(d, wait(ms)).then(initAndDrawSvg);
+  var steps = [];
+  steps.push(initPostsThreadStep1);
+  if (!Modernizr.touch) steps.push(enableDragScroll);
+  steps.push(initPostsThreadStep2);
+  steps.push(initPostsThreadStep3);
+  steps.push(registerEventHandlers);
+  steps.push(initAndDrawSvg);
+  steps.push(initPostsThreadStep4);
+
+  function runNextStep() {
+    steps[0]();
+    steps.shift();
+    if (steps.length > 0)
+      setTimeout(runNextStep, 100);
+  }
+
+  setTimeout(runNextStep, 100);
 })();
 
 
