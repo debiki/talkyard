@@ -1,32 +1,37 @@
 vim: fdm=marker et sw=2 ts=2
 
-{{{ debiki.js performance notes
+{{{ debiki.js performance improvements (done, 2011-10-01)
 
-(Profiling was done on my 6 core AMD, 2 or 3 GHz.)
+(Profiling was done on my 6 core AMD, 2.8 GHz.)
 
 ---- $initPost:
 
 223ms jquery-ui-1.8.16.custom.min.js:593 f.fn.extend.hide - move to CSS - DONE
-78ms debiki.js:2615 $initPostSvg
-72ms debiki.js:869 $splitBodyPlaceInlines
-14ms debiki.js:821 $placeInlineMarks
-64ms debiki.js:1500 getUserId
+78ms debiki.js:2615 $initPostSvg — IMPROVED: Done later in $initPostStep2.
+72ms debiki.js:869 $splitBodyPlaceInlines - FIXED now only done if needed
+14ms debiki.js:821 $placeInlineMarks - FIXED now only done if needed
+64ms debiki.js:1500 getUserId - FIXED: cached
+(the next 4 are fairly fast)
 19ms jquery-1.6.4.js:5207 jQuery.fn.extend.find
 16ms debiki.js:749 timeAgoAbbr
 11ms debiki.js:88 jQuery.fn.dwAuthorId
 10ms jquery-1.6.4.js:5657 jQuery.fn.extend.before
 
 
+214ms debiki.js:2659 $initPostSvg
+ --> 204ms debiki.js:2635 $createSvgRoot
+          — svgweb som parsar svg, det tar tid
 
 16ms debiki.js:363 resizeRootThread
+
 
 Could do later:
 ================
 
 ---- $initPostsThread:
 
-489ms debiki.js:399 $makePostResizable
-119ms debiki.js:379 $makeEastResizable
+489ms debiki.js:399 $makePostResizable  - FIXED: skipped completely
+119ms debiki.js:379 $makeEastResizable  - FIXED: done later
 
 
 ---- At the end of debiki.js:
@@ -35,31 +40,35 @@ Could do later:
 
 117ms debiki.js:2863 drawEverything  ?
 
-53ms debiki.js:1571 initLoginResultForms
-35ms debiki.js:1883 initFlagForm
-18ms debiki.js:1671 initLoginOpenId
-8ms debiki.js:1592 initLoginSimple
-7ms debiki.js:1526 initLogout
-6ms debiki.js:2514 initDeleteForm
+53ms debiki.js:1571 initLoginResultForms - FIXED: now done lazily
+35ms debiki.js:1883 initFlagForm - FIXED: now done lazily
+18ms debiki.js:1671 initLoginOpenId - FIXED
+8ms debiki.js:1592 initLoginSimple - FIXED
+7ms debiki.js:1526 initLogout - FIXED
+6ms debiki.js:2514 initDeleteForm - FIXED
 
 117ms debiki-dragscrollable.js:51 $.fn.debiki_dragscrollable
                                               (Sizzle takes long)
   — create a config function, Debiki.makeScrollable(selectors),
-    and call debiki_dragscrollable later.
+    and call debiki_dragscrollable later.  DONE.
 
 Other
 ===============
 
-Cache user id?
+Cache user id?  - DONE.  80 ms --> 2 ms on ~= page load.
 64ms debiki.js:1500 getUserId
 64ms debiki.js:1471 parseSidCookie
 60ms jquery.cookie.js:56 jQuery.cookie
 
-Gaaah! SVG is drawn twice, when opening page. The second time is:
+{{{ Fixed: SVG is drawn twice, when opening page
+The second time was:
 373ms debiki.js:283 pollZoomFireEvent
 373ms debiki.js:2908 drawEverything
- — Actually, I could remove my manual invokation of SVG drawing,
+old: — Actually, I could remove my manual invokation of SVG drawing,
     and instead rely on pollZoomFireEvent ?
+ - no, I think the fix was to register the zoom listener later,
+ when the elems had their proper sizes.
+}}}
 
 }}}
 {{{ Useful snippets
