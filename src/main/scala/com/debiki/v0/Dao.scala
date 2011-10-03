@@ -29,8 +29,7 @@ abstract class DaoSpi {
 
   def checkPagePath(pathToCheck: PagePath): Box[PagePath]
 
-  def loadPermsOnPage(pagePath: PagePath, loginId: Option[String], doo: Do
-                         ): (Option[Identity], Option[User], PermsOnPage)
+  def loadPermsOnPage(reqInfo: RequestInfo): (RequesterInfo, PermsOnPage)
 
   def createTenant(name: String): Tenant
 
@@ -98,8 +97,7 @@ abstract class Dao {
 
   def checkPagePath(pathToCheck: PagePath): Box[PagePath]
 
-  def loadPermsOnPage(pagePath: PagePath, loginId: Option[String], doo: Do
-                         ): (Option[Identity], Option[User], PermsOnPage)
+  def loadPermsOnPage(reqInfo: RequestInfo): (RequesterInfo, PermsOnPage)
 
   /** Creates a tenant, assigns it an id and and returns it. */
   def createTenant(name: String): Tenant
@@ -199,9 +197,8 @@ class CachingDao(impl: DaoSpi) extends Dao {
   def checkPagePath(pathToCheck: PagePath): Box[PagePath] =
     _impl.checkPagePath(pathToCheck)
 
-  def loadPermsOnPage(pagePath: PagePath, loginId: Option[String], doo: Do
-                         ): (Option[Identity], Option[User], PermsOnPage) =
-    _impl.loadPermsOnPage(pagePath, loginId, doo)
+  def loadPermsOnPage(reqInfo: RequestInfo): (RequesterInfo, PermsOnPage) =
+    _impl.loadPermsOnPage(reqInfo)
 
   def createTenant(name: String): Tenant =
     _impl.createTenant(name)
@@ -247,9 +244,8 @@ class NonCachingDao(impl: DaoSpi) extends Dao {
   def checkPagePath(pathToCheck: PagePath): Box[PagePath] =
     impl.checkPagePath(pathToCheck)
 
-  def loadPermsOnPage(pagePath: PagePath, loginId: Option[String], doo: Do
-                         ): (Option[Identity], Option[User], PermsOnPage) =
-    impl.loadPermsOnPage(pagePath, loginId, doo)
+  def loadPermsOnPage(reqInfo: RequestInfo): (RequesterInfo, PermsOnPage) =
+    impl.loadPermsOnPage(reqInfo)
 
   def createTenant(name: String): Tenant =
     impl.createTenant(name)

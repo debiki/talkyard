@@ -6,6 +6,27 @@ package com.debiki.v0
 
 import Prelude._
 
+case class RequestInfo(
+  tenantId: String,
+  ip: String,
+  loginId: Option[String],
+  pagePath: PagePath,
+  doo: Do
+){
+  require(pagePath.tenantId == tenantId) // COULD remove tenantId from pagePath
+}
+
+/** Info on whoever makes the current request.
+ *  Sometimes only the ip is known.
+ */
+case class RequesterInfo(
+  ip: String,
+  login: Option[Login],
+  identity: Option[Identity],
+  user: Option[User],
+  /** Ids of groups to which the requester belongs. */
+  memships: List[String])
+
 // COULD rename this file to perms.scala?  (permissions)
 
 /** Identifies a page, by guid or by path, and knows the path
