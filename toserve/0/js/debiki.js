@@ -141,7 +141,7 @@ Settings.editFormSubmitter = function(debateId, postId, complete) {
 Settings.draggableInternal =
     '.dw-res, .dw-i-ts, .dw-t, .dw-t-vspace, '+
     '.dw-p, .dw-p-bdy, .dw-hor-a, .dw-fs, '+
-    '.dw-debate, .dw-debate svg, '; // (draggableCustom appended)
+    '.dw-debate, .dw-debate svg, path, '; // (draggableCustom appended)
 Settings.draggableCustom = '';
 
 //----------------------------------------
