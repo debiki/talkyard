@@ -790,8 +790,8 @@ function $initPostsThreadStep4() {
 
 // Inits a post, not its parent thread.
 function $initPost() {
-  $initPostStep1();
-  $initPostStep2();
+  $initPostStep1.apply(this);
+  $initPostStep2.apply(this);
 }
 
 function $initPostStep1() {
