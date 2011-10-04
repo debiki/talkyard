@@ -695,18 +695,12 @@ or it steals attention from the page title. */
 .dw-i-m-start.ui-icon {
   display: inline-block; /* otherwise display:block, and a new paragraph */
   position: relative;
+  margin-left: 5px; /* move away from the word to the left,
+                       hmm, this assumes a left-to-right language. LTR RTL */
 }
 
 .dw-i-m-start:hover {
   cursor: crosshair;
-}
-
-.dw-i-m-start.ui-icon + .dw-i-m-start.ui-icon {
-  margin-left: 4px; /* or the two mark icons touch each other */
-  /* COULD fix bug: If there are two .ui-icon:s in the same <p>,
-  this CSS is applied even if there is text between them.
-  Could fix this in JavaScript: add a class to [all icons but the first one,
-  among icons with exactly the same offset]? */
 }
 
 /* Remove white space around the inline marks. */
