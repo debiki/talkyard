@@ -1313,7 +1313,8 @@ function confirmClosePage() {
   }).length;
   var editCount = $('.dw-f-ed:visible').length;
   var msg = replyCount + editCount > 0 ?
-    'You have started writing. Really close page?' : null;  // i18n
+    'You have started writing. Really close page?' :  // i18n
+    undefined;  // don't return null, or IE asks roughly `confirm null?'
   return msg;
 }
 
