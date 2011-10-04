@@ -646,6 +646,7 @@ function updateDebate(newDebateHtml) {
 var tagDog = (function(){
   var sniffAndMem;
   return {
+    maxMatchLength: new diff_match_patch().Match_MaxBits,
     sniffHtml: function($tag) {
       var htmlText = $tag.html();
       sniffAndMem = TagDog.sniffHtml(htmlText);
@@ -914,6 +915,12 @@ function $placeInlineMarks() {
     bugIf($bodyBlock.length !== 1, 'debiki_error_6kiJ08');
     var tagDogText = tagDog.sniffHtml($bodyBlock);
     var loc = 10; // TODO should be included in the data attr
+    if (markStartText.length > tagDog.maxMatchLength) {
+      // Avoid a `Pattern too long for this browser' error (in case
+      // corrupt/too-long matches were sent by the server, the whole
+      // page would otherwise be messed up).
+      markStartText = markStartText.substr(0, tagDog.maxMatchLength);
+    }
     var match = diffMatchPatch.match_main(tagDogText, markStartText, loc);
     var arrow = $parentThread.filter('.dw-hor').length ?
         'ui-icon-arrow-1-e' : 'ui-icon-arrow-1-s';
@@ -1138,81 +1145,90 @@ function $showInlineActionMenu(event) {
   //    how-to-find-cursor-position-in-a-contenteditable-div/2213514#2213514
   // Use event.clientX, event.clientY.
 
-  var isTextNode = sel.focusNode.nodeType === 3;  // 3 is text
-
-  // Find the clicked node, or its parent if a text node was clicked.
+  // Remember the clicked node and, if it's a text node, its parent
+  // non-text node.
   // Later, when finding the closest .dw-p-bdy-blk, we must start searching
   // from a non-text node, because jQuery(text-node) results in TypeError:
   //  Object #<a Text> has no method 'getAttribute'.
-  var focusNonText = isTextNode ? sel.focusNode.parentNode : sel.focusNode;
+  var isTextNode = sel.focusNode.nodeType === 3;  // 3 is text
+  var focusText = isTextNode ? sel.focusNode : undefined;
+  var $focusNonText = $(isTextNode ? sel.focusNode.parentNode : sel.focusNode);
+  var $post = $target.closest('.dw-p');
+  var $postBody = $post.children('.dw-p-bdy');
 
   var placeWhere = (function() {
-    var startOfs = sel.anchorOffset;
-    if (!isTextNode) return {
-      textStart: sel.anchorNode.data.substr(sel.anchorOffset, 32),
-      textEnd: sel.focusNode.data.substr(sel.focusOffset, 32)
-    };
-    // Move textStart to the end of the clicked word, so the inline mark
-    // won't split it in two.
-    var start = sel.anchorNode.data.substr(sel.anchorOffset, 999)
-    var charsToEnd = start.search(/ |!|"|'|\)|\*|\+|\-|\/|<|>|\]|`|\||\}/i)
-    if (charsToEnd === -1) {
-      // The user clicked the last word in the text node?
-      // The mark ought to be placed at anchorOffset + start.length,
-      // but then textStart & textEnd would both become empty (below).
-      // I could 1) set textStart & textEnd to the last chars in the node,
-      // and in some way indicate that the mark should be placed where the
-      // text *ends* not where it starts, or 2) find the start of the text
-      // in the subsequent node (e.g. in the next <p> node if a <h1> was
-      // clicked). And textStart = "" would mean the end of the post. But
-      // then I must be careful to place the mark in the <h1> node not the
-      // <p> node — although the start text is in the <p> node.
-      // Alt. 1 will work poorly if the <h2> contains a single word only.
-      // I could 3) convert the whole post (with marks removed) to text
-      // (ask the TagDog) but insert a magic word where the click happened.
-      // And then find 32 chars before or after that magic word.
-      // Something like this, if a *text* node was clicked:
-      // var textOrig = $(sel.focusNode.parentNode).text()
-      // var textBefore =
-      //    $(sel.focusNode.parentNode).text().substr(1, offs);
-      // var textAfter =
-      //    $(sel.focusNode.parentNode).text().substr(offs, 99999);
-      // $(sel.focusNode.parentNode).text(
-      //  textBefore + magicWord + textAfter);
-      // var bodyClone = <clone-the-dw-p-bdy>
-      // $(sel.focusNode.parentNode).text(textOrig) // undo changes
-      // var sniffedHtml = TagDog.sniffHtml($bodyClone with marks and
-      //                                  blocks and -i-ts removed)
-      // var magicOffs = sniffedHtml.search(/magic-word/)
-      // var textStart = sniffedHtml.substr(magicOffs, 32);
-      // var textEnd = textStart;  // for now
-      //
-      // If !isTextNode, sel.focusNode.data seems to be undefined.
-      // (And an error is thrown above actually.)
-      // Then I'd insert the magic word inside the node:
-      // $(focusNonText).text(magic-word + $(focusNonText).text());  ??
-      // Hmm, hmm, hmm.
-      //
-      charsToEnd = 0;  // for now, place mark inside word
+    if (isTextNode) {
+      // Insert a magic token where the mouse was clicked.
+      // Convert the whole post to text, and find the text just
+      // after the magic token. That text (after the token) is
+      // where the inline mark should be placed.
+      // The *whole* post body is converted to text. If only
+      // the clicked node was considered, the text just after
+      // the click could be very short, e.g. only "You"
+      // if the node is <h1>Hey You</h1> and "you" could have many
+      // matches in the post (and when inline marks are placed
+      // the whole post is considered).
+      var origText = focusText.nodeValue;
+      var textAfterFocus = origText.substr(sel.focusOffset);
+      // "Move" the focus to the end of the clicked word, so the inline
+      // mark won't split the word in two.
+      var charsToEndOfWord = textAfterFocus.search(
+          / |!|"|'|\)|\*|\+|\-|\/|<|>|\]|`|\||\}/i)
+      if (charsToEndOfWord === -1) {
+        // The user clicked the last word in the text node.
+        // Place the mark after this last word.
+        charsToEndOfWord = textAfterFocus.length;
+      }
+      var endOfWordOffs = sel.focusOffset + charsToEndOfWord;
+      var textBefore = origText.substr(0, endOfWordOffs);
+      var textAfter = origText.substr(endOfWordOffs);
+      var token = '_magic_'+ Math.random() +'_'+ Math.random() +'_';
+      var textWithToken = textBefore + token + textAfter;
+      focusText.nodeValue = textWithToken; // this destroys `sel'
+      sel = null;
+      // Copy the post body, with the magic token, but skip inline threads.
+      var $clean = $('<div></div>');
+      $postBody.children('.dw-p-bdy-blk').each(function() {
+        $clean.append($(this).children().clone());  // .dw-i-ts skipped
+      });
+      // Undo the changes to the focused node.
+      focusText.nodeValue = origText;
+      // Remove all inline marks and threads from the copy.
+      $clean.find('.dw-i-m-start').remove();
+      var cleanHtmlWithMark = $clean.html();
+      var sniff = TagDog.sniffHtml(cleanHtmlWithMark);
+      // Find the text just after the mark.
+      var tokenOffs = sniff.sniffedHtml.search(token);
+      var justAfterMark = sniff.sniffedHtml.substr(
+                            tokenOffs + token.length, tagDog.maxMatchLength);
+      return {
+        textStart: justAfterMark,
+        // Currently not possible to mark a range of chars:
+        textEnd: justAfterMark
+      };
+    } else {
+      undefined // not implemented. No inline menu will appear.
+        // Seems to happen if you select a <li> or <p>,
+        // by selecting a line end just before such an elem.
+        // Or if you release the mouse button inside a .dw-i-m-start.
     }
-    return {
-      textStart: sel.anchorNode.data.substr(sel.anchorOffset + charsToEnd, 32),
-      textEnd: sel.focusNode.data.substr(sel.focusOffset + charsToEnd, 32)
-    };
   })();
+
+  if (!placeWhere)
+    return;
 
   // To have somewhere to place the reply form, split the block into
   // smaller .dw-p-bdy-blk:s, and add .dw-i-ts, if not already
   // done (which is the case if this post has no inline replies).
-  var $post = $target.closest('.dw-p');
-  if (!$post.find('> .dw-p-bdy > .dw-i-ts').length) {
+  if (!$postBody.children('.dw-i-ts').length) {
     // This rearranging of elems destroys `sel', e.g. focusNode becomes null.
     $post.each($splitBodyPlaceInlines);
   }
-  sel = null; // fail fast (see comment just above)
+
+  sel = null; // fail fast, it *might* be broken here
 
   // Find out where to place the relevant form.
-  placeWhere.elem = $(focusNonText).closest('.dw-p-bdy-blk')
+  placeWhere.elem = $focusNonText.closest('.dw-p-bdy-blk')
         .dwBugIfEmpty('debiki_error_6u5962rf3')
         .next('.dw-i-ts')
         .dwBugIfEmpty('debiki_error_17923xstq');
