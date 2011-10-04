@@ -1138,17 +1138,68 @@ function $showInlineActionMenu(event) {
   //    how-to-find-cursor-position-in-a-contenteditable-div/2213514#2213514
   // Use event.clientX, event.clientY.
 
-  var placeWhere = {
-    textStart: sel.anchorNode.data.substr(sel.anchorOffset, 32),
-    textEnd: sel.focusNode.data.substr(sel.focusOffset, 32),
-  };
+  var isTextNode = sel.focusNode.nodeType === 3;  // 3 is text
 
   // Find the clicked node, or its parent if a text node was clicked.
   // Later, when finding the closest .dw-p-bdy-blk, we must start searching
   // from a non-text node, because jQuery(text-node) results in TypeError:
   //  Object #<a Text> has no method 'getAttribute'.
-  var focusNonText = sel.focusNode.nodeType === 3 ?  // 3 is text
-      sel.focusNode.parentNode : sel.focusNode;
+  var focusNonText = isTextNode ? sel.focusNode.parentNode : sel.focusNode;
+
+  var placeWhere = (function() {
+    var startOfs = sel.anchorOffset;
+    if (!isTextNode) return {
+      textStart: sel.anchorNode.data.substr(sel.anchorOffset, 32),
+      textEnd: sel.focusNode.data.substr(sel.focusOffset, 32)
+    };
+    // Move textStart to the end of the clicked word, so the inline mark
+    // won't split it in two.
+    var start = sel.anchorNode.data.substr(sel.anchorOffset, 999)
+    var charsToEnd = start.search(/ |!|"|'|\)|\*|\+|\-|\/|<|>|\]|`|\||\}/i)
+    if (charsToEnd === -1) {
+      // The user clicked the last word in the text node?
+      // The mark ought to be placed at anchorOffset + start.length,
+      // but then textStart & textEnd would both become empty (below).
+      // I could 1) set textStart & textEnd to the last chars in the node,
+      // and in some way indicate that the mark should be placed where the
+      // text *ends* not where it starts, or 2) find the start of the text
+      // in the subsequent node (e.g. in the next <p> node if a <h1> was
+      // clicked). And textStart = "" would mean the end of the post. But
+      // then I must be careful to place the mark in the <h1> node not the
+      // <p> node — although the start text is in the <p> node.
+      // Alt. 1 will work poorly if the <h2> contains a single word only.
+      // I could 3) convert the whole post (with marks removed) to text
+      // (ask the TagDog) but insert a magic word where the click happened.
+      // And then find 32 chars before or after that magic word.
+      // Something like this, if a *text* node was clicked:
+      // var textOrig = $(sel.focusNode.parentNode).text()
+      // var textBefore =
+      //    $(sel.focusNode.parentNode).text().substr(1, offs);
+      // var textAfter =
+      //    $(sel.focusNode.parentNode).text().substr(offs, 99999);
+      // $(sel.focusNode.parentNode).text(
+      //  textBefore + magicWord + textAfter);
+      // var bodyClone = <clone-the-dw-p-bdy>
+      // $(sel.focusNode.parentNode).text(textOrig) // undo changes
+      // var sniffedHtml = TagDog.sniffHtml($bodyClone with marks and
+      //                                  blocks and -i-ts removed)
+      // var magicOffs = sniffedHtml.search(/magic-word/)
+      // var textStart = sniffedHtml.substr(magicOffs, 32);
+      // var textEnd = textStart;  // for now
+      //
+      // If !isTextNode, sel.focusNode.data seems to be undefined.
+      // (And an error is thrown above actually.)
+      // Then I'd insert the magic word inside the node:
+      // $(focusNonText).text(magic-word + $(focusNonText).text());  ??
+      // Hmm, hmm, hmm.
+      //
+      charsToEnd = 0;  // for now, place mark inside word
+    }
+    return {
+      textStart: sel.anchorNode.data.substr(sel.anchorOffset + charsToEnd, 32),
+      textEnd: sel.focusNode.data.substr(sel.focusOffset + charsToEnd, 32)
+    };
+  })();
 
   // To have somewhere to place the reply form, split the block into
   // smaller .dw-p-bdy-blk:s, and add .dw-i-ts, if not already
