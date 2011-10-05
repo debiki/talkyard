@@ -481,6 +481,7 @@ span.dw-p-ed-by {
 .dw-lg-t-spl {
   font-size: 90%;
   padding-left: 2px;
+  padding-right: 2px;
 }
 
 /* For the article itself, make author and post date info less conspicuous,

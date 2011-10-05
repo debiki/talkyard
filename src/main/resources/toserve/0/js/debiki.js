@@ -821,7 +821,7 @@ function $initPostStep1() {
 
   function timeAgoAbbr(title, then, now) {
     return $('<abbr title="'+ title +'"> '+ prettyTimeBetween(then, now) +
-        '</span>');
+        '</abbr>');
   };
 
   // Show pretty how-long-ago info. (The $posted/editedAt are already hidden.)
