@@ -1321,7 +1321,12 @@ function confirmClosePage() {
 // Shows actions for the current post, or the last post hovered.
 function $showActions() {
   // Hide any action links already shown; show actions for one post only.
-  $('#dw-p-as-shown')
+  // IE9 and svgweb bug: $('#dw-p-as-shown') calls
+  //  doc.setProperty('SelectionLanguage', 'XPath');  (in svg.js)
+  // which fails: Object doesn't support property or method 'setProperty'
+  // (line 1 column 319 in the minified svg.js) *if* the ID searched
+  // for does *not* exist. Workaround: $('body').find('#...').
+  $('body').find('#dw-p-as-shown')
       .css('visibility', 'hidden')
       .removeAttr('id');
   // Show links for the the current post.
