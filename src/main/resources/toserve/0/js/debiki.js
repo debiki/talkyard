@@ -8,6 +8,15 @@
 // Google Closure Linter: Run like so:
 //  gjslint src/main/resources/toserve/js/debiki.js | egrep -v 'E:0002:'
 
+/*{{{ Bug avoidance notes
+
+For an <a>, use this.hash not $(this).attr('href'), because in IE 7
+attr() prepends 'http://server/.../page' to the href.  Related:
+  http://goo.gl/OF16Q  — the JavaScript Bible page 603
+  http://webmasters.stackexchange.com/questions/20621/
+                    okay-to-use-the-hash-dom-node-property
+
+}}}*/
 /* {{{ Misc naming notes
 
  dwCoSid:
@@ -992,8 +1001,8 @@ function $splitBodyPlaceInlines() {
       var accHeightInlines = 0;
       var numInlines = 0;
       $block.find('.dw-i-m-start').each(function(){
-        var threadRef = $(this).attr('href'); // will be '#dw-t-<id>'
-        var $inline = $(threadRef); // TODO change from <li> to <div>
+        // TODO change from <li> to <div>
+        var $inline = $(this.hash); // this.hash is '#dw-t-<id>'
         $inline.appendTo($inlineThreads);
         accHeightInlines += $inline.outerHeight(true);
         numInlines += 1;
@@ -1024,8 +1033,7 @@ function $splitBodyPlaceInlines() {
         // Matchless block. (We wouldn't find this mark, when searching
         // for ``$('.dw-i-m-start', this)'' below.)
         $bdyBlkMatchless.append(this);
-        var threadRef = $(this).attr('href'); // will be '#dw-t-<id>'
-        $inlineThreadsMatchless.append($(threadRef));
+        $inlineThreadsMatchless.append($(this.hash)); // hash is '#dw-t-<id>'
         return;
       }
       // Wrap the elem in a -blk and append an <ol> into which inline
@@ -1033,8 +1041,7 @@ function $splitBodyPlaceInlines() {
       var $bdyBlk = $(this).wrap('<div class="dw-p-bdy-blk"></div>').parent();
       var $inlineThreads = $('<ol class="dw-i-ts"></ol>').insertAfter($bdyBlk);
       $('.dw-i-m-start', this).each(function(){
-        var threadRef = $(this).attr('href'); // will be '#dw-t-<id>'
-        var $inline = $(threadRef); // TODO change from <li> to <div>
+        var $inline = $(this.hash); // TODO change from <li> to <div>
         $inline.appendTo($inlineThreads);
       });
     });
@@ -1063,12 +1070,12 @@ function $splitBodyPlaceInlines() {
 }
 
 function $inlineMarkHighlightOn() {
-  var threadId = $(this).attr('href').substr(1, 999); // drops '#'
+  var threadId = this.hash.substr(1, 999); // drops '#'
   toggleInlineHighlight(threadId, true);
 }
 
 function $inlineMarkHighlightOff() {
-  var threadId = $(this).attr('href').substr(1, 999); // drops '#'
+  var threadId = this.hash.substr(1, 999); // drops '#'
   toggleInlineHighlight(threadId, false);
 }
 
@@ -3065,7 +3072,7 @@ function makeSvgDrawer() {
       var cache = {};
       $(this).find('.dw-i-m-start').each(function() {
         var $mark = $(this);
-        var $inlineThread = $($mark.attr('href'));
+        var $inlineThread = $(this.hash);
         if ($inlineThread.length) {
           arrowFromMarkToInline($mark, $inlineThread, cache);
         }
@@ -3243,7 +3250,7 @@ function makeIdsUniqueUpdateLabels(jqueryObj, hrefStart) {
       $(this).attr('for', $(this).attr('for') + seqNo);
     });
   jqueryObj.find('*[href^='+ hrefStart + ']').each(function(ix) {
-    $(this).attr('href', $(this).attr('href') + seqNo);
+    $(this).attr('href', this.hash + seqNo);
   });
 }
 
