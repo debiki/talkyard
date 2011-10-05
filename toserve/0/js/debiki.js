@@ -1104,6 +1104,7 @@ function $hideInlineActionMenu(event) {
 }
 
 // Opens a menu with Inline Reply and Edit endries.
+// Does currently not work (does nothing) in IE 7 and 8.
 function $showInlineActionMenu(event) {
   var $menu;
   var $target = $(event.target);
@@ -1121,9 +1122,14 @@ function $showInlineActionMenu(event) {
     return;
   }
 
+  // {{{ Could use ierange-m2.js (http://code.google.com/p/ierange/)
+  // for this to work in IE 7 and 8, if the user has actually selected
+  // a text range — mouse clicks, however, generate no range in IE 8 (and 7?)
+  // (with ierange-m2). But mouse clicks are what is interesting, so skip
+  // ierange for now. How find the *clicked* node and offset in IE 7 and 8? }}}
+  if (!window.getSelection) return;  // IE 7 and 8
   var sel = window.getSelection();
-  if (!sel.anchorNode || // absent in IE <= 8, see help.dottoro.com/ljkstboe.php
-      !sel.anchorNode.data ||
+  if (!sel.anchorNode || !sel.anchorNode.data ||
       sel.anchorNode.data.substr(sel.anchorOffset, 1).length === 0) {
     // No text clicked. Ignore.
     return;
