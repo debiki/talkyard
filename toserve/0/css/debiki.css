@@ -20,13 +20,13 @@
  *  -es-          edit suggestion (COULD change to -e-s, and let -es = edits)
  *  -ess-         edit suggestions (COULD change to -e-ss)
  *  -f-           form
- *  -fs-          form group
+ *  -fs-          form group - COULD change to -dlg- or -dg-
  *  -flg-         flag
- *  -hor-         horizontal layout
+ *  -hor-         horizontal layout COULD rename to -hz- ? -vt- = vertical?
  *  -i-           inline
  *  -img-         image
- *  -login-
- *  -logout-
+ *  -login-       COULD change to -lgi
+ *  -logout-                      -lgo
  *  -m-           mark
  *  -ntf-         notification
  *  -ntf-sts      notification status code
@@ -44,6 +44,8 @@
  *                        COULD then use 's' for `summary'?
  *  -svg-         SVG graphics
  *  -t-           thread
+ *  -ts-          threads
+ *  -ts-          timestamp? or use ds, datestamp?
  *  -u-           user
  *  -vs-          votes
  *  -z-           fold (z looks like a folded paper from the side)
