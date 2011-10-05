@@ -997,6 +997,7 @@ it works everywhere, even if it works fine for you. */
   height: 105px;
   width: 140px;
   position: absolute;
+  left: 0; /* or IE 7 places it far to the right */
 }
 
 .dw-login-openid-info {
