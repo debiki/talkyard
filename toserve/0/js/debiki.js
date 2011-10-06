@@ -2312,6 +2312,7 @@ function $showEditForm2() {
     $cancelBtn.click(function() {
       $postBody.show();
       $editForm.hide();
+      $post.each(SVG.$drawParents);
     });
 
     // Find the post's current (old) source text, and store in
@@ -2392,6 +2393,9 @@ function $showEditForm2() {
       var text = userName ?  'Save as '+ userName : 'Save as ...';  // i18n
       $(this).val(text);
     }));
+
+    // Redraw SVG arrows, since the edit form is larger than the post.
+    $post.each(SVG.$drawParents);
 
     // Ajax-post edit on submit, and update the page with all recent changes.
     $editForm.submit(function() {
