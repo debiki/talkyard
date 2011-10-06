@@ -1427,7 +1427,7 @@ function $foldInLeft() {
   var $i = $(this);
   var realHeight = $i.height();
   var realWidth = $i.width();
-  $i.height(30).width(0);
+  $i.height(30).width(0).show();
   fold($i, {
     firstProps: {width: realWidth},
     firstDuration: 400,
