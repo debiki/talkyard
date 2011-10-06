@@ -546,14 +546,10 @@ or it steals attention from the page title. */
 }
 
 .dw-p:hover {
-  outline: #999 dashed thin;
   /* If the post is beeing up-sized, its up-sized parts might be hidden
   by another thread, because its z-index has not yet been set to 11
   by the adding of class dw-p-rez-e. Therefore: */
   z-index: 10;
-}
-.dw-depth-0 > .dw-p:hover {
-  outline: none;
 }
 
 .dw-as {
@@ -778,10 +774,6 @@ until they've been moved into the .dw-bdy-blk > .dw-i-ts. */
 .dw-i-m-start.dw-highlight {
   outline: solid medium #f0a005;
   background-color: yellow;
-}
-
-.dw-i-t > .dw-p.dw-highlight {
-  outline: solid medium #f0a005;
 }
 
 /* --- Hidden templates --- */
