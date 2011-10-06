@@ -3409,6 +3409,11 @@ function initAndDrawSvg() {
   function initPostsThreadStep3() { $posts.each($initPostsThreadStep3) }
   function initPostsThreadStep4() { $posts.each($initPostsThreadStep4) }
 
+  if ($.browser.msie && $.browser.version < '8')
+    $('.dw-if-lte-ie7').show();
+  else if ($.browser.opera)
+    $('.dw-if-opera').show();
+
   $('body').addClass('dw-pri');
   resizeRootThread();
   Me.refreshProps();
