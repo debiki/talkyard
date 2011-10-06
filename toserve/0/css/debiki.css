@@ -1242,6 +1242,14 @@ it works everywhere, even if it works fine for you. */
 .dw-m-p-mine > .dw-p-bdy {
   background-color: #FBF7F2;
 }
+/* But skip the root post; only mark its -blk:s, since the -p-bdy
+ is very wide and it doesn't look nice with so very much bg color. */
+#dw-post-1.dw-m-p-mine > .dw-p-bdy {
+  background-color: transparent;
+}
+#dw-post-1.dw-m-p-mine > .dw-p-bdy > .dw-p-bdy-blk {
+  background-color: #FBF7F2;
+}
 
 
 /* === Notifications === */
