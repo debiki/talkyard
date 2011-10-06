@@ -713,6 +713,7 @@ function $initPostsThreadStep1() {
         '.dw-a-link, .dw-a-edit, .dw-a-flag, .dw-a-delete').show();
   });
   //$actions.children('.dw-a-link').click($showLinkForm); — not implemented
+  $actions.children('.dw-a-edit').click($showEditForm2);
   $actions.children('.dw-a-flag').click($showFlagForm);
   $actions.children('.dw-a-delete').click($showDeleteForm);
   //$actions.children('.dw-a-edit').click($showEditSuggestions); — broken
@@ -1693,7 +1694,11 @@ function makeCurUser() {
     getName: function() { return userProps.name; },
     isLoggedIn: function() { return userProps.loginId ? true : false; },
     getLoginId: function() { return userProps.loginId; },
-    getUserId: function() { return userProps.userId; }
+    getUserId: function() { return userProps.userId; },
+    mayEdit: function($post) {
+      return userProps.userId === $post.dwAuthorId(); // for now
+      // COULD check page permissions, e.g. edit-all-posts.
+    },
   };
 }
 
@@ -2314,6 +2319,10 @@ function $showEditForm2() {
       $editForm.hide();
       $post.each(SVG.$drawParents);
     });
+
+    // Notify the user if s/he is making an edit suggestion only.
+    var hideOrShow = Me.mayEdit($post) ? 'hide' : 'show';
+    $editForm.find('.dw-f-ed-sugg-info')[hideOrShow]();
 
     // Find the post's current (old) source text, and store in
     // .dw-ed-src-old, so it's easily accessible to $updateEditFormDiff(…).

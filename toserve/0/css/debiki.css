@@ -1140,6 +1140,11 @@ it works everywhere, even if it works fine for you. */
   padding: 0;
 }
 
+.dw-f-ed .dw-f-ed-sugg-info {
+  padding: 1em 0 1ex;
+  max-width: 32em;
+  clear: both;
+}
 
 /* === Edit history / suggestions === */
 
