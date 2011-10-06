@@ -89,6 +89,8 @@ $.fn.debiki_dragscrollable = function( options ){
 			var delta = {left: (event.clientX - event.data.lastCoord.left),
 						 top: (event.clientY - event.data.lastCoord.top)};
 
+			// var deltaOrg = ' orig: '+ delta.left +', '+ delta.top; // debug
+
 			// [Debiki]
 			// Find movement since drag start.
 			var deltaAccum = {
@@ -98,15 +100,30 @@ $.fn.debiki_dragscrollable = function( options ){
 			// large distances, and still retain high precision when
 			// moving small distances. (The calculations below are just
 			// heuristics that works well on my computer.)
+			// Don't move too fast for Opera though: it re-renders the screen
+			// slowly (unbearably slowly if there're lots of SVG arrows!) and
+			// the mouse deltas would becom terribly huge, e.g. 1000px,
+			// and then the viewport jumps randomly.
 			var mul;
 			if (deltaAccum.left > 9){
 				mul = Math.log((deltaAccum.left - 9) / 3);
+				if (mul > 1.7 && $.browser.opera) mul = 1.7;  // see comment above
 				if (mul > 1) delta.left *= mul;
 			}
 			if (deltaAccum.top > 5){
 				mul = Math.log((deltaAccum.top - 5) / 2);
+				if (mul > 1.3 && $.browser.opera) mul = 1.3;
 				if (mul > 1) delta.top *= mul;
 			}
+
+			/*
+			console.log(
+				' clnt: '+ event.clientX +', '+ event.clientY +
+				' data: '+ event.data.startCoord.left +', '+ event.data.startCoord.top +
+				deltaOrg + 
+				' accm: '+ deltaAccum.left +', '+ deltaAccum.top +
+				' rslt: '+ delta.left +', '+ delta.top);
+			*/
 
 			// Set the scroll position relative to what ever the scroll is now
 			//--------------------------------
