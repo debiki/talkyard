@@ -1698,7 +1698,7 @@ function makeCurUser() {
     mayEdit: function($post) {
       return userProps.userId === $post.dwAuthorId(); // for now
       // COULD check page permissions, e.g. edit-all-posts.
-    },
+    }
   };
 }
 
