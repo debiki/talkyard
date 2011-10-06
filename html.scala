@@ -84,6 +84,10 @@ object DebateHtml {
     (xml, lines)
   }
 
+  private[v0]
+  def ifThen(condition: Boolean, html: NodeSeq): NodeSeq =
+    if (condition) html else Nil
+
   // COULD compile javascripts, see:
   // http://www.java2s.com/Code/Java/JDK-6/WorkingwithCompilableScripts.htm
   // http://javasourcecode.org/html/open-source/jdk/jdk-6u23/
@@ -584,6 +588,7 @@ object FormHtml {
 class FormHtml(val config: HtmlConfig, val permsOnPage: PermsOnPage) {
 
   import FormHtml._
+  import DebateHtml._
 
   val ccWikiLicense =
     <a rel="license" href="http://creativecommons.org/licenses/by/3.0/"
@@ -613,9 +618,10 @@ class FormHtml(val config: HtmlConfig, val permsOnPage: PermsOnPage) {
         <a class='dw-a dw-a-rate'>Rate</a>
         <a class='dw-a dw-a-more'>More...</a>
         {/*<a class='dw-a dw-a-link'>Link</a>*/}
-        {/*<a class='dw-a dw-a-edit'>Edit</a>*/}
+        <a class='dw-a dw-a-edit'>Edit</a>
         <a class='dw-a dw-a-flag'>Report</a>
-        <a class='dw-a dw-a-delete'>Delete</a>
+        { ifThen(permsOnPage.deleteAnyReply, // hide for now only
+            <a class='dw-a dw-a-delete'>Delete</a>) }
         {/*  Disable the Edit form and link for now,
         doesn't work very well right now, or not at all.
         <a class='dw-a dw-a-edit'>Edit</a>
@@ -898,6 +904,9 @@ class FormHtml(val config: HtmlConfig, val permsOnPage: PermsOnPage) {
        <input type='submit' class='dw-fi-submit' value={submitBtnText}/>
        <input type='button' class='dw-fi-cancel' value='Cancel'/>
       </div>
+      <div class='dw-f-ed-sugg-info'>You are submitting an edit
+        <i>suggestion</i> — I don't know if someone will review it
+        and accept it.</div>
     </form>
   }
 
