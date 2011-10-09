@@ -196,6 +196,48 @@ Debiki.v0.makeDragscrollable = function(selectors) {
    jQuery.noConflict()(function($){
 //----------------------------------------
 
+// ------- Export functions
+
+// Shows all comments, which should have been hidden via the
+// DebateHtml$ hideCommentsStyle, in html.scala.
+Debiki.v0.showInteractionsOnClick = function() {
+  var interactions =  // sync with selectors in DebateHtml.hideCommentsTags
+      '#dw-post-1 > .dw-p-hdr, '+
+      '#dw-t-1 > .dw-res, ' +
+      '#dw-post-1 > .dw-p-bdy > .dw-i-ts, '+
+      '.dw-debate svg';
+  var intersInlBlk =
+      '#dw-post-1 > .dw-p-bdy > .dw-p-bdy-blk .dw-i-m-start';
+  // $(interactions).hide(); // won't work, because .dw-i-ts
+                            // are moved away from .dw-res, later.
+  var $replyBtn = $('#dw-t-1 > .dw-hor-a');
+  var $showBtn = $replyBtn.clone();
+  var numComments = $('.dw-p').length - 1;  // don't count the article
+  var text = numComments > 1 ?  'Visa '+ numComments +' kommentarer' : // i18n
+     (numComments == 1 ?  'Visa 1 kommentar' : 'Lämna en kommentar');
+  $replyBtn.hide();
+  $showBtn.find('a')
+      .removeClass('dw-a-reply')
+      .addClass('dw-a-show-interactions')
+      .text(text)
+      .css('font-size', '80%')
+      .end()
+      .insertBefore($replyBtn)
+      .click(function() {
+    $showBtn.remove();
+    $replyBtn.show();
+    $(interactions).show();
+    $(intersInlBlk).css('display', 'inline-block');
+    SVG.drawEverything(); // *sometimes* needed
+  });
+};
+
+function showInteractionsIfHidden() {
+  // If they're hidden, there's a button that shows them.
+  $('.dw-a-show-interactions').click();
+}
+
+
 // ------- Variables
 
 var diffMatchPatch = new diff_match_patch();
@@ -1288,10 +1330,16 @@ function $showInlineActionMenu(event) {
 
   // Bind actions.
   $menu.find('.dw-a-edit-i').click(function(){
+    showInteractionsIfHidden();
     $thread.each($showEditForm2);
     $menu.remove();
   });
   $menu.find('.dw-a-reply-i').click(function(){
+    // Showing interactions, if hidden, might result in [the paragraph
+    // that was clicked] being moved downwards, because inline threads
+    // are inserted. This'll be fixed later, when inline threads are
+    // shrinked, so the root post won't be affected by them being shown.
+    showInteractionsIfHidden(); // might move `placeWhere' to elsewhere
     $showReplyForm.apply(this, [event, placeWhere]);
     $menu.remove();
   });
