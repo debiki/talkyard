@@ -158,13 +158,13 @@ a:link {
 
 /* Spacing between e.g. <p>:s. */
 .dw-p-bdy-blk > * {
-  margin: 0 0 0.7em;
+  margin-bottom: 0.7em;
 }
 
 /* The root post. */
 .dw-depth-0 > .dw-p > .dw-p-bdy > div.dw-p-bdy-blk > * {
-  margin: 0 0 1em; /* or e.g. <p>:s not visible, because the root post
-                    has high line height */
+  margin-bottom: 1em; /* or e.g. <p>:s not visible, because the root post
+                        has high line height */
 }
 
 .dw-depth-0 > .dw-p > .dw-f-ed .dw-ed-tab-preview > h1,
