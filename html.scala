@@ -171,6 +171,28 @@ object DebateHtml {
     <a id='dw-a-login'>Log in</a>
     <a id='dw-a-logout'>Log out</a>
   }
+
+  /** A <style> that hides comments,
+   *  and a <script> that shows them on click.
+   */
+  val tagsThatHideShowInteractions = (
+    // COULD hide the "Log in" link too, unless logged in.
+    // Sync the selectors with showCommentsOnClick, in debiki.js.
+    <style type="text/css">
+    #dw-post-1 > .dw-p-hdr,
+    #dw-t-1 > .dw-res,
+    #dw-post-1 > .dw-p-bdy > .dw-p-bdy-blk .dw-i-m-start,
+    #dw-post-1 > .dw-p-bdy > .dw-i-ts,
+    .dw-debate svg {{
+      display: none;
+    }}
+    </style>
+    <script type="text/javascript">
+    jQuery.noConflict()(function($){{
+      Debiki.v0.showInteractionsOnClick();
+    }});
+    </script>
+  )
 }
 
 
