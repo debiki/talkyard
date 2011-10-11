@@ -160,16 +160,11 @@ object DebateHtml {
    */
   def loginInfo(userName: Option[String]): NodeSeq = {
     <div id='dw-login-info'>
-      <div class='dw-login-lgd-in-as'>Logged in as</div>
-      <div class='dw-login-name'>{
-        userName match {
-          case Some(name) => Text("Logged in as "+ name)
-          case None => Nil
-        }
-      }</div>
+      <div class='dw-login-lgd-in-as'>Inloggad som</div>
+      <div class='dw-login-name'>{userName.getOrElse("")}</div>
     </div>
-    <a id='dw-a-login'>Log in</a>
-    <a id='dw-a-logout'>Log out</a>
+    <a id='dw-a-login'>Logga in</a>
+    <a id='dw-a-logout'>Logga ut</a>
   }
 
   /** A <style> that hides comments,
