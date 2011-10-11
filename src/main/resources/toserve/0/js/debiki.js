@@ -1212,7 +1212,32 @@ function $showInlineActionMenu(event) {
   var $post = $target.closest('.dw-p');
   var $postBody = $post.children('.dw-p-bdy');
 
-  var placeWhere = (function() {
+  if (!isTextNode) {
+    // Finding the text clicked, when !isTextNode, is not implemented.
+    // So right now, no inline menu will appear.
+    // Seems to happen if you select a <li> or <p>,
+    // by selecting a line end just before such an elem.
+    // Or if you release the mouse button inside a .dw-i-m-start.
+    return;
+  }
+
+  // When the user clicks a menu button, `sel' will refer to this new click,
+  // so copy the old click forever:
+  var sel = {
+    focusOffset: sel.focusOffset,
+    focusNode: sel.focusNode,
+    anchorNode: sel.anchorNode,
+    anchorOffset: sel.anchorOffset
+  };
+
+  var placeWhereFunc = function() {
+    // Find out where to place the relevant form.
+    // This must be done when the -bdy has been split into -bdy-blks.
+    var elem = $focusNonText.closest('.dw-p-bdy-blk')
+          .dwBugIfEmpty('debiki_error_6u5962rf3')
+          .next('.dw-i-ts')
+          .dwBugIfEmpty('debiki_error_17923xstq');
+
     if (isTextNode) {
       // Insert a magic token where the mouse was clicked.
       // Convert the whole post to text, and find the text just
@@ -1260,34 +1285,13 @@ function $showInlineActionMenu(event) {
       return {
         textStart: justAfterMark,
         // Currently not possible to mark a range of chars:
-        textEnd: justAfterMark
+        textEnd: justAfterMark,
+        elem: elem
       };
     } else {
-      undefined // not implemented. No inline menu will appear.
-        // Seems to happen if you select a <li> or <p>,
-        // by selecting a line end just before such an elem.
-        // Or if you release the mouse button inside a .dw-i-m-start.
+      die('[debiki_error_09k12rs52]'); // dead code
     }
-  })();
-
-  if (!placeWhere)
-    return;
-
-  // To have somewhere to place the reply form, split the block into
-  // smaller .dw-p-bdy-blk:s, and add .dw-i-ts, if not already
-  // done (which is the case if this post has no inline replies).
-  if (!$postBody.children('.dw-i-ts').length) {
-    // This rearranging of elems destroys `sel', e.g. focusNode becomes null.
-    $post.each($splitBodyPlaceInlines);
-  }
-
-  sel = null; // fail fast, it *might* be broken here
-
-  // Find out where to place the relevant form.
-  placeWhere.elem = $focusNonText.closest('.dw-p-bdy-blk')
-        .dwBugIfEmpty('debiki_error_6u5962rf3')
-        .next('.dw-i-ts')
-        .dwBugIfEmpty('debiki_error_17923xstq');
+  };
 
   // Entitle the edit button `Suggest Edit' or `Edit', depending on
   // whether or not it's the user's post.
@@ -1334,7 +1338,21 @@ function $showInlineActionMenu(event) {
     $thread.each($showEditForm2);
     $menu.remove();
   });
+
   $menu.find('.dw-a-reply-i').click(function(){
+    // To have somewhere to place the reply form, split the block into
+    // smaller .dw-p-bdy-blk:s, and add .dw-i-ts, if not already
+    // done (which is the case if this post has no inline replies).
+    if (!$postBody.children('.dw-i-ts').length) {
+      // This rearranging of elems destroys `sel', e.g. focusNode becomes null.
+      $post.each($splitBodyPlaceInlines);
+    }
+    // Find the text that was clicked. Cannot be done until now, because
+    // this destroys the selection, `sel', and it wouldn't be possible
+    // to select text at all, were this done directly when the $menu was
+    // created. (Because your selection wound be destroyed when you made it.)
+    var placeWhere = placeWhereFunc();
+
     // Showing interactions, if hidden, might result in [the paragraph
     // that was clicked] being moved downwards, because inline threads
     // are inserted. This'll be fixed later, when inline threads are
@@ -1343,14 +1361,17 @@ function $showInlineActionMenu(event) {
     $showReplyForm.apply(this, [event, placeWhere]);
     $menu.remove();
   });
+
   // Remove the menu after any action has been taken, and on Cancel click.
   $menu.mouseleave(function(){
     $menu.remove();
   });
+
   // If the user doesn't use the menu, remove it…
   var removeMenuTimeout = setTimeout(function(){
     $menu.remove();
   }, 1500);
+
   //… but cancel the remove-unused-menu timeout on mouseenter.
   $menu.mouseenter(function(){
     clearTimeout(removeMenuTimeout);
