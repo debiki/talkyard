@@ -156,6 +156,42 @@ object DebateHtml {
       dateStr}</abbr>
   }
 
+  /** Shows a link to the user represented by NiLo.
+   */
+  def linkTo(nilo: NiLo, config: HtmlConfig): NodeSeq = {
+    var url = config.userUrl(nilo)
+    // TODO: investigate: `url' is sometimes the email address!!
+    // When signed in @gmail.com, it seems.
+    // For now: (this is actually a good test anyway, in case someone
+    // accidentally enters his email in the website field?)
+    if (url.contains('@') || url.containsSlice("%40")) {
+      System.err.println(
+        "URL contains email? It contains `@' or `%40': "+ url)
+      url = ""
+    }
+    val nameElem: NodeSeq = nilo.identity_! match {
+      case s: IdentitySimple =>
+        // Indicate that the user was not logged in, that we're not sure
+        // about his/her identity, by appending "??". If however s/he
+        // provided an email address then only append one "?", because
+        // other people probaably don't know what is it, so it's harder
+        // for them people to impersonate her.
+        // (Well, at least if I some day in some way indicate that two
+        // persons with the same name actually have different emails.)
+        xml.Text(nilo.displayName) ++
+            <span class='dw-lg-t-spl'>{
+              if (s.email isEmpty) "??" else "?"}</span>
+      case _ => xml.Text(nilo.displayName)
+    }
+    val userLink = if (url nonEmpty) {
+      <a class='dw-p-by' href={url} data-dw-u-id={nilo.user_!.id}
+         rel='nofollow' target='_blank'>{nameElem}</a>
+    } else {
+      <span class='dw-p-by' data-dw-u-id={nilo.user_!.id}>{nameElem}</span>
+    }
+    userLink
+  }
+
   /** XML for the user name and login/out links.
    */
   def loginInfo(userName: Option[String]): NodeSeq = {
@@ -441,31 +477,6 @@ class DebateHtml(val debate: Debate) {
           }{dateAbbr(lastEditDate, "dw-p-at")}
         </div>
       }
-    val editSuggestions: NodeSeq =
-      if (!config.showEdits_?) Nil
-      else {
-        def xmlFor(edit: Edit): NodeSeq = {
-          <li class='dw-es'>
-            <div class='dw-es-vs' />
-            <div class='dw-es-ed'>
-              <div class='dw-ed-desc'>
-                {textToHtml(edit.desc)._1}
-              </div>
-              — { // (the dash is an em dash no a minus)
-                val editor = debate.authorOf_!(edit)
-                _linkTo(editor)
-              }{ dateAbbr(edit.date, "dw-ed-at") }
-              <pre class='dw-ed-text'>{edit.text}</pre>
-            </div>
-          </li>
-        }
-        val suggestions = debate.editsPendingFor(post.id)
-                          .sortBy(e => -pageStats.likingFor(e).lowerBound)
-        <ul class='dw-ess'>
-          { for (edit <- suggestions) yield xmlFor(edit) }
-        </ul>
-        <a class='dw-a dw-a-edit-new'>Suggest edit</a>
-      }
 
     // COULD find a better name for the two data-p-by-...-sh attrs below.
     // Also, perhaps they should be part of the .dw-p-by <a>?
@@ -487,47 +498,10 @@ class DebateHtml(val debate: Debate) {
     </div> ++ (
       if (post.id == Debate.RootPostId) Nil // actions already added by caller
       else <a class='dw-as' href={config.reactUrl(debate.guid, post.id)}
-            >React</a> ) ++
-     { editSuggestions // could skip for now, too complicated for the end user
-      }
+            >React</a> )
   }
 
-  /** Shows a link to the user represented by NiLo.
-   */
-  private def _linkTo(nilo: NiLo): NodeSeq = {
-    var url = config.userUrl(nilo)
-    // TODO: investigate: `url' is sometimes the email address!!
-    // When signed in @gmail.com, it seems.
-    // For now: (this is actually a good test anyway, in case someone
-    // accidentally enters his email in the website field?)
-    if (url.contains('@') || url.containsSlice("%40")) {
-      System.err.println(
-        "URL contains email? It contains `@' or `%40': "+ url)
-      url = ""
-    }
-    val nameElem: NodeSeq = nilo.identity_! match {
-      case s: IdentitySimple =>
-        // Indicate that the user was not logged in, that we're not sure
-        // about his/her identity, by appending "??". If however s/he
-        // provided an email address then only append one "?", because
-        // other people probaably don't know what is it, so it's harder
-        // for them people to impersonate her.
-        // (Well, at least if I some day in some way indicate that two
-        // persons with the same name actually have different emails.)
-        xml.Text(nilo.displayName) ++
-            <span class='dw-lg-t-spl'>{
-              if (s.email isEmpty) "??" else "?"}</span>
-      case _ => xml.Text(nilo.displayName)
-    }
-    val userLink = if (url nonEmpty) {
-      <a class='dw-p-by' href={url} data-dw-u-id={nilo.user_!.id}
-         rel='nofollow' target='_blank'>{nameElem}</a>
-    } else {
-      <span class='dw-p-by' data-dw-u-id={nilo.user_!.id}>{nameElem}</span>
-    }
-    userLink
-  }
-
+  def _linkTo(nilo: NiLo) = linkTo(nilo, config)
 }
 
 
@@ -881,6 +855,60 @@ class FormHtml(val config: HtmlConfig, val permsOnPage: PermsOnPage) {
           <input class='dw-fi-cancel' type='button' value='Cancel'/>
         </div>
       </form>
+    </div>
+  }
+
+  def editsDialog(nipo: ViPo, page: Debate, userName: Option[String]
+                     ): NodeSeq = {
+    def xmlFor(edit: Edit, eapp: Option[EditApp]): NodeSeq = {
+      <li class='dw-es'>
+        <div class='dw-es-ed'>{
+          val editor = page.authorOf_!(edit)
+          xml.Text("From ") ++ linkTo(editor, config) ++
+          dateAbbr(edit.date, "dw-ed-at")
+          }
+          <div class='dw-as'>{
+            if (eapp isEmpty) <a href={"?applyedit="+ edit.id}>Apply</a>
+            else <a href={"?revertedit="+ edit.id}>Revert</a>
+          }</div>
+          <pre class='dw-ed-text'>{edit.text}</pre>
+          { eapp.map(ea => <pre class='dw-ed-rslt'>{ea.result}</pre>).toList }
+        </div>
+      </li>
+    }
+
+    val pending = nipo.editsPending
+          //.sortBy(e => -pageStats.likingFor(e).lowerBound)
+    val applied = nipo.editsApplied
+
+    <div id='dw-e-sgs' title='Improvement Suggestions'>
+      <div id='dw-e-sgss'>
+        <div>Improvement suggestions:</div>
+        <div id='dw-e-sgs-pending'>
+          <ol class='dw-ess'>{
+            for (edit <- pending) yield xmlFor(edit, None)
+          }</ol>
+        </div>
+        <div>Improvements already applied:</div>
+        <div id='dw-e-sgs-applied'>
+          <ol class='dw-ess'>{
+            for ((editApp, edit) <- applied) yield xmlFor(edit, Some(editApp))
+          }</ol>
+        </div>
+        {/* cold show original text on hover.
+        <div id='dw-e-sgs-org-lbl'>Original text</div> */}
+        <pre id='dw-e-sgs-org-src'>{nipo.textInitially}</pre>
+      </div>
+      <div id='dw-e-sgs-diff'>
+        <div>Differences:</div>
+        <div id='dw-e-sgs-diff-text'>
+        </div>
+      </div>
+      <div id='dw-e-sgs-prvw'>
+        <div>Preview:</div>
+        <div id='dw-e-sgs-prvw-html'>
+        </div>
+      </div>
     </div>
   }
 

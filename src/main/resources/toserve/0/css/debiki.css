@@ -84,6 +84,7 @@
  *  dw-t-dl       a thread, deleted
  *  dw-lg-t-spl   Login type simple
  *  dw-u-id-<x>   user id <x>
+ *  dw-x-         miscellaneous classes, perhaps to be renamed later
  *
  *  ... and so on, hmm.
  */
@@ -97,7 +98,7 @@
 html, body, div, span, applet, object, iframe,
 h1, h2, h3, h4, h5, h6, p, blockquote, pre,
 a, abbr, acronym, address, big, cite, code,
-del, dfn, em, font, img, ins, kbd, q, s, samp,
+ins, del, dfn, em, font, img, ins, kbd, q, s, samp,
 small, strike, strong, sub, sup, tt, var,
 b, u, i, center,
 dl, dt, dd, ol, ul, li,
@@ -131,14 +132,6 @@ q:before, q:after {
 	outline: 0;
 }
 
-/* remember to highlight inserts somehow! */
-ins {
-	text-decoration: none;
-}
-del {
-	text-decoration: line-through;
-}
-
 /* tables still need 'cellspacing="0"' in the markup */
 table {
 	border-collapse: collapse;
@@ -154,6 +147,16 @@ table {
 
 a:link {
   color: #00c;
+}
+
+.dw-pri ins {
+  text-decoration: none;
+  background: #9f9;
+}
+
+.dw-pri del {
+  text-decoration: line-through;
+  background: #ffd0d0;
 }
 
 /* Spacing between e.g. <p>:s. */
@@ -808,7 +811,7 @@ until they've been moved into the .dw-bdy-blk > .dw-i-ts. */
   margin-right: 0; /* or space between inline action menu buttons */
 }
 
-/* --- Edit suggestions ---*/
+/* --- Edit suggestions ---*/  /* — old not in use? */
 
 .dw-debate ins {
   background:#e6ffe6;
@@ -829,12 +832,12 @@ until they've been moved into the .dw-bdy-blk > .dw-i-ts. */
 
 .dw-es {
   border-bottom: dotted 1px #ccc;
-  padding: 7px 0 10px 0;
+  padding: 7px 0 2px 0;
   margin: 0 0 0 0;
 }
 
 .dw-es:hover {
-  background-color: #f9f9f9;
+  background-color: #e5e5e5;
 }
 
 .dw-es-vs {
@@ -847,7 +850,8 @@ until they've been moved into the .dw-bdy-blk > .dw-i-ts. */
   margin-left: 30px;
 }
 
-.dw-es .dw-ed-text {
+.dw-es .dw-ed-text,
+.dw-es .dw-ed-rslt {
   display: none; /* text used by javascript diff algorithm */
 }
 
@@ -1118,11 +1122,72 @@ it works everywhere, even if it works fine for you. */
   margin: 0.5ex 0 1em;
 }
 
+/* === Edits dialog === */
+/* Dialog background made white by javascript. */
+
+/*.ui-tabs-nav > li {
+  background-color: transparent;
+} */
+
+#dw-e-sgs-org-src {
+  display: none;
+}
+
+#dw-e-sgss {
+  float: left;
+  width: 290px;
+}
+
+#dw-e-sgs .dw-ess {
+  margin: 1ex 0 25px 0;
+}
+
+#dw-e-sgs .dw-es-ed {
+  margin-left: 9px;
+}
+
+#dw-e-sgs .dw-ess .dw-as {
+  visibility: hidden;
+  margin: 7px 0px 3px 0px;
+}
+
+#dw-e-sgs .dw-es:hover .dw-as {
+  visibility: visible;
+}
+
+#dw-e-sgs .dw-a {
+  cursor: crosshair;
+}
+
+#dw-e-sgs-diff {
+  float: left;
+  width: 290px;
+  margin: 5px;
+  padding: 1ex;
+}
+
+#dw-e-sgs-diff-text {
+  border: 1px solid #bbb;
+  background: white;
+}
+
+#dw-e-sgs-prvw {
+  float: left;
+  width: 330px;
+}
+
+#dw-e-sgs-prvw-html {
+  border: 1px solid #bbb;
+  margin: 5px;
+  padding: 1ex;
+  background: white;
+}
+
 /* === Edit form === */
 
 /* (Some properties defined elsewhere, search for dw-ed-tab.) */
 
-.dw-pri .dw-f-ed .ui-widget-header,
+.dw-pri .dw-f-ed .ui-widget-header, /* not needed, done in jQuery UI integr. */
 .dw-pri .dw-f-ed.ui-widget-content {
   background: transparent;
   border: none;
@@ -1145,7 +1210,7 @@ it works everywhere, even if it works fine for you. */
   clear: both;
 }
 
-/* === Edit history / suggestions === */
+/* === Edit history / suggestions === */  /* — old not in use? */
 
 .dw-fs-ed { /* currently almost identical to <form> */
   position: relative;
@@ -1324,6 +1389,16 @@ form .dw-ntf {
 /* Same font */
 .dw-ui-widget-font {
   font-family: 'Trebuchet MS', Tahoma, Verdana, Arial, sans-serif;
+}
+
+/* Remove tab navigation background color and border. */
+.dw-pri .ui-tabs .ui-tabs-nav {
+  background: transparent;
+  border: none;
+}
+
+.dw-pri .ui-tabs .ui-tabs-panel {
+  border: 1px solid #BBB;
 }
 
 /* Undo settings to .dw-pri .ui-widget, when they affect contents

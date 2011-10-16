@@ -86,6 +86,7 @@ object Do {
   case object Rate extends Do
   case object FlagPost extends Do
   case object Edit extends Do
+  case object ViewEdits extends Do
   case object DeletePost extends Do
   case object View extends Do
   /** When you Do.Use e.g. CSS or a PNG image, it's returned to the

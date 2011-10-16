@@ -380,6 +380,10 @@ class ViPo(debate: Debate, val post: Post) extends ViAc(debate, post) {
   def text: String = lastEditApp.map(_.result).getOrElse(post.text)
   def textInitially: String = post.text
   def where: Option[String] = post.where
+  def editsPending: List[Edit] = debate.editsPendingFor(post.id)
+  /** Most recent first. */
+  def editsApplied: List[(EditApp, Edit)] =
+    debate.editAppsTo(post.id) map (ea => (ea, debate.editsById(ea.editId)))
   val lastEditApp = debate.editAppsTo(post.id).headOption
 
   def isTreeDeleted = {
