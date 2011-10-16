@@ -755,7 +755,7 @@ function $initPostsThreadStep1() {
         '.dw-a-link, .dw-a-edit, .dw-a-flag, .dw-a-delete').show();
   });
   //$actions.children('.dw-a-link').click($showLinkForm); — not implemented
-  $actions.children('.dw-a-edit').click($showEditForm2);
+  $actions.children('.dw-a-edit').click($showEditsDialog);
   $actions.children('.dw-a-flag').click($showFlagForm);
   $actions.children('.dw-a-delete').click($showDeleteForm);
   //$actions.children('.dw-a-edit').click($showEditSuggestions); — broken
@@ -2526,6 +2526,84 @@ function $updateEditFormPreview() {
   var markdownSrc = $textarea.val();
   var html = markdownToSafeHtml(markdownSrc);
   $previewTab.html(html);
+}
+
+
+// ------- Edit suggestions and history
+
+function $showEditsDialog() {
+  var $thread = $(this).closest('.dw-t');
+  var $post = $thread.children('.dw-p');
+  var $postBody = $post.children('.dw-p-bdy');
+  var postId = $post[0].id.substr(8, 999); // drop initial "dw-post-"
+
+  // Could save and reuse dialog? instead of loading new one?
+  // ... and update dynamically? ... puh :-p   not right now
+
+  $.get('?viewedits='+ postId, 'text').fail(showServerResponseDialog)
+      .done(function(editsHtml) {
+    var $editDlg = $(editsHtml).filter('#dw-e-sgs'); // filter out text node
+    $editDlg.dialog({
+      autoOpen: false,
+      width: 1000,
+      height: 600,
+      modal: true,
+      resizable: false,
+      zIndex: 1190,  // the default, 1000, is lower than <form>s z-index
+      buttons: {
+        Close: function() {
+          $(this).dialog('close');
+        }
+      },
+      close: function() {
+        // TODO reset form.
+        // allFields.val('').removeClass('ui-state-error');
+      }
+    });
+
+    $editDlg.css({ border: 'white', background: '#FCFCFC' });
+
+    initSuggestions($editDlg); // later:? .find('#dw-e-tb-sgs'));
+    // For now, open directly, discard on close and
+    // load a new one, if "Edit" clicked again later.
+    $editDlg.dialog('open');
+  });
+
+  function initSuggestions($html) {
+    // Update diff and preview, when hovering a suggestion.
+    $html.find('li.dw-es').mouseenter(function() {
+      // The edit apps are sorted most recent first, so no. 0 is the
+      // current markup source for $post.
+      var $eapp = $html.find('#dw-e-sgs-applied li').first();
+      var curSrc = $eapp.length ? $eapp.first().text() :
+                      $html.find('#dw-e-sgs-org-src').text();
+      var newSrc = $(this).find('.dw-ed-text').text();
+      // later:var diffSrc = $(this).find('.dw-ed-text').val();
+      var diff = diffMatchPatch.diff_main(curSrc, newSrc);
+      diffMatchPatch.diff_cleanupSemantic(diff);
+      var diffHtml = prettyHtmlFor(diff);
+      // Remove any old diff and show the new one.
+      var $diff = $html.find('#dw-e-sgs-diff-text');
+      $diff.children('.dw-x-diff').remove();
+      $diff.append('<div class="dw-x-diff">'+ diffHtml +'</div>\n');
+      // Update the preview.
+      var html = markdownToSafeHtml(newSrc);
+      $html.find('#dw-e-sgs-prvw-html').html(html);
+
+      /*
+      var diffHtml = 'html-diff';
+      var previewSrc = 'apply-diff-to-src';
+      var previewHtml = 'markdownToSafeHtml(previewSrc)';
+      // Update diff.
+      var $diff.text(diff);  // TODO
+      // Update preview.
+      var $preview = $html.find('#dw-e-sgs-prvw');
+      var markdownSrc = $(this).find('.dw-ed-text').val();
+      var html = markdownToSafeHtml(markdownSrc);
+      $previewTab.html(html);
+      */
+    });
+  }
 }
 
 
