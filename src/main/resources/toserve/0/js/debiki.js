@@ -758,10 +758,15 @@ function $initPostsThreadStep1() {
   $actions.children('.dw-a-edit').click($showEditsDialog);
   $actions.children('.dw-a-flag').click($showFlagForm);
   $actions.children('.dw-a-delete').click($showDeleteForm);
-  //$actions.children('.dw-a-edit').click($showEditSuggestions); — broken
 
-  // For the root thread.
-  $thread.children('.dw-hor-a').children('.dw-a-reply').click($showReplyForm);
+  // For the root thread. (Could remove dupl code: merge w code just above)
+  $thread.children('.dw-hor-a')
+      .children('.dw-a-reply').click($showReplyForm).end()
+      .children('.dw-a-edit').click($showEditsDialog).end()
+      .children('.dw-a-more').click(function() {
+    $(this).closest('.dw-hor-a').find('.dw-a').css('visibility', 'visible');
+    $(this).remove();
+  });
 
   // Open/close threads if the thread-info div is clicked.
   $thread.children('.dw-z').click($threadClose);

@@ -273,6 +273,8 @@ class DebateHtml(val debate: Debate) {
         <div class='dw-t-vspace'/>
         <div class='dw-hor-a'>
           <a class='dw-a dw-a-reply'>Reply</a>
+          <a class='dw-a dw-a-more'>More...</a>
+          <a class='dw-a dw-a-edit'>Edits</a>
         </div>
         <ol class='dw-res ui-helper-clearfix'>{
           _layoutComments(1, rootPosts)
