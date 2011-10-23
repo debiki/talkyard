@@ -1141,13 +1141,33 @@ it works everywhere, even if it works fine for you. */
   background-color: transparent;
 } */
 
-#dw-e-sgs-org-src {
-  display: none;
+/* The dialog is 1000 px wide, see debiki.js: $showEditsDialog() */
+#dw-e-sgss,
+#dw-e-sgs-diff,
+#dw-e-sgs-save-diff,
+#dw-e-sgs-prvw {
+  float: left;
+  padding: 15px;
+  min-height: 5em;
+}
+#dw-e-sgss {
+  padding-left: 0;
+  width: 220px;
+}
+#dw-e-sgs-diff {
+  width: 290px;
+}
+#dw-e-sgs-save-diff {
+  width: 290px;
+  display: none; /* for now */
+}
+#dw-e-sgs-prvw {
+  padding-right: 0;
+  width: 380px;
 }
 
-#dw-e-sgss {
-  float: left;
-  width: 290px;
+#dw-e-sgs-org-src {
+  display: none;
 }
 
 #dw-e-sgs .dw-ess {
@@ -1159,39 +1179,28 @@ it works everywhere, even if it works fine for you. */
 }
 
 #dw-e-sgs .dw-ess .dw-as {
-  visibility: hidden;
   margin: 7px 0px 3px 0px;
 }
 
-#dw-e-sgs .dw-es:hover .dw-as {
-  visibility: visible;
+#dw-e-sgs .dw-es .dw-as .ui-button-text {
+  padding: .15em 1ex; /* or a relatively huge button */
 }
 
 #dw-e-sgs .dw-a {
   cursor: crosshair;
 }
 
-#dw-e-sgs-diff {
-  float: left;
-  width: 290px;
-  margin: 5px;
-  padding: 1ex;
-}
-
 #dw-e-sgs-diff-text {
+  margin-top: 5px;
+  padding: 0.7ex;
   border: 1px solid #bbb;
   background: white;
 }
 
-#dw-e-sgs-prvw {
-  float: left;
-  width: 330px;
-}
-
 #dw-e-sgs-prvw-html {
+  margin-top: 5px;
+  padding: 0.7ex;
   border: 1px solid #bbb;
-  margin: 5px;
-  padding: 1ex;
   background: white;
 }
 
