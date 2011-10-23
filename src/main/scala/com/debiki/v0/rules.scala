@@ -87,7 +87,9 @@ object Do {
   case object FlagPost extends Do
   case object Edit extends Do
   case object ViewEdits extends Do
-  case object DeletePost extends Do
+  case object ApplyEdits extends Do
+  case object Apply extends Do
+  case object DeletePost extends Do  // TODO rename to Delete
   case object View extends Do
   /** When you Do.Use e.g. CSS or a PNG image, it's returned to the
    *  browser as text/css, or image/png, not wrapped in html. */

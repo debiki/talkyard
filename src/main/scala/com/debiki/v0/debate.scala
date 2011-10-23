@@ -183,26 +183,27 @@ case class Debate (
     })
   }
 
-  private lazy val editAppsById: imm.Map[String, EditApp] = {
-    val m = editApps.groupBy(_.editId)
-    m.mapValues(list => {
-      errorIf(list.tail.nonEmpty, "Two ore more EditApps with "+
-              "same edit id: "+ list.head.editId)
-      list.head
-    })
+  def editAppsByEdit(id: String) = _editAppsByEditId.getOrElse(id, Nil)
+
+  private lazy val _editAppsByEditId: imm.Map[String, List[EditApp]] = {
+    editApps.groupBy(_.editId)
+    // Skip this List --> head conversion. There might be > 1 app per edit,
+    // since apps can be deleted -- then the edit can be applied again later.
+    //m.mapValues(list => {
+    //  errorIf(list.tail.nonEmpty, "Two ore more EditApps with "+
+    //          "same edit id: "+ list.head.editId)
+    //  list.head
+    //})
   }
 
-  private lazy val editsPendingByPostId: imm.Map[String, List[Edit]] =
-    edits.filterNot(editAppsById contains _.id).groupBy(_.postId)
+  private lazy val editsByPostId: imm.Map[String, List[Edit]] =
+    edits.groupBy(_.postId)
 
   private lazy val editAppsByPostId: imm.Map[String, List[EditApp]] =
     editApps.groupBy(ea => editsById(ea.editId).postId)
 
   def editsFor(postId: String): List[Edit] =
-    edits.filter(_.postId == postId)
-
-  def editsPendingFor(postId: String): List[Edit] =
-    editsPendingByPostId.getOrElse(postId, Nil)
+    editsByPostId.getOrElse(postId, Nil)
 
   /** Edits applied to the specified post, sorted by most-recent first.
    */
@@ -210,6 +211,18 @@ case class Debate (
     // The list is probably already sorted, since new EditApp:s are
     // prefixed to the editApps list.
     editAppsByPostId.getOrElse(postId, Nil).sortBy(- _.date.getTime)
+
+
+  // -------- Deletions
+
+  /** If actionId was explicitly deleted (not indirectly, via
+   *  wholeTree/recursively = true).
+   */
+  def deletionFor(actionId: String): Option[Delete] =
+    deletions.find(_.postId == actionId).headOption
+    // COULD check if the deletion itself was deleted!?
+    // That is, if the deletion was *undone*. Delete, undo, redo... a redo
+    // would be a deleted deletion of a deletion?
 
 
   // -------- Construction
@@ -369,6 +382,26 @@ class ViAc(val debate: Debate, val action: Action) {
   def ip_! : String = action.newIp.getOrElse(login_!.ip)
   def ipSaltHash: Option[String] = ip.map(saltAndHashIp(_))
   def ipSaltHash_! : String = saltAndHashIp(ip_!)
+
+  def isTreeDeleted = {
+    // In case there are > 1 deletions, consider the first one only.
+    // (Once an action has been deleted, it isn't really possible to
+    // delete it again in some other manner? However non transactional
+    // (nosql) databases might return many deletions? and we should
+    // care only about the first.)
+    firstDelete.map(_.wholeTree) == Some(true)
+  }
+
+  def isDeleted = deletions nonEmpty
+
+  // COULD optimize this, do once for all posts, store in map.
+  lazy val deletions = debate.deletions.filter(_.postId == action.id)
+
+  /** Deletions, the most recent first. */
+  lazy val deletionsSorted = deletions.sortBy(- _.date.getTime)
+
+  lazy val lastDelete = deletionsSorted.headOption
+  lazy val firstDelete = deletionsSorted.lastOption
 }
 
 /** A Virtual Post into account all edits applied to the actual post.
@@ -379,31 +412,40 @@ class ViPo(debate: Debate, val post: Post) extends ViAc(debate, post) {
   def text: String = lastEditApp.map(_.result).getOrElse(post.text)
   def textInitially: String = post.text
   def where: Option[String] = post.where
-  def editsPending: List[Edit] = debate.editsPendingFor(post.id)
-  /** Most recent first. */
-  def editsApplied: List[(EditApp, Edit)] =
-    debate.editAppsTo(post.id) map (ea => (ea, debate.editsById(ea.editId)))
-  val lastEditApp = debate.editAppsTo(post.id).headOption
-
-  def isTreeDeleted = {
-    // In case there are > 1 deletions, consider the first one only.
-    // (Once a post has been deleted, it isn't really possible to
-    // delete it again in some other manner? However non transactional
-    // (nosql) databases might return many deletions? and we should
-    // care only about the first.)
-    firstDelete.map(_.wholeTree) == Some(true)
+  def edits: List[Edit] = debate.editsFor(post.id)
+  lazy val (editsDeleted, editsPending, editsApplied, editsAppdRevd) = {
+    var deleted = List[(Edit, Delete)]()
+    var pending = List[Edit]()
+    var applied = List[(Edit, EditApp)]()
+    var appdRevd = List[(Edit, EditApp, Delete)]()
+    edits foreach { e =>
+      val del = debate.deletionFor(e.id)
+      if (del isDefined) {
+        deleted ::= e -> del.get
+      } else {
+        var eappsLive = List[(Edit, EditApp)]()
+        var eappsDeleted = List[(Edit, EditApp, Delete)]()
+        val eapps = debate.editAppsByEdit(e.id)
+        eapps foreach { ea =>
+          val del = debate.deletionFor(ea.id)
+          if (del isEmpty) eappsLive ::= e -> ea
+          else eappsDeleted ::= ((e, ea, del.get))
+        }
+        if (eappsLive isEmpty) pending ::= e
+        else applied ::= eappsLive.head
+        if (eappsDeleted nonEmpty) {
+          appdRevd :::= eappsDeleted
+        }
+      }
+    }
+    // Sort by 1) deletion, 2) application, 3) edit creation, most recent
+    // first.
+    (deleted.sortBy(- _._2.date.getTime),
+      pending.sortBy(- _.date.getTime),
+      applied.sortBy(- _._2.date.getTime),
+      appdRevd.sortBy(- _._3.date.getTime))
   }
-
-  def isDeleted = deletions nonEmpty
-
-  // COULD optimize this, do once for all posts, store in map.
-  lazy val deletions = debate.deletions.filter(_.postId == post.id)
-
-  /** Deletions, the most recent first. */
-  lazy val deletionsSorted = deletions.sortBy(- _.date.getTime)
-
-  lazy val lastDelete = deletionsSorted.headOption
-  lazy val firstDelete = deletionsSorted.lastOption
+  lazy val lastEditApp = editsApplied.headOption.map(_._2)
 
   // COULD optimize this, do once for all flags.
   lazy val flags = debate.flags.filter(_.postId == post.id)
@@ -517,6 +559,13 @@ case class Edit (
 ) extends Action
 
 // Verify: No duplicate like/diss ids, no edit both liked and dissed
+// COULD remove! Instead, introduce Action.Status = Suggestion/Published,
+// and instead of EditVote, use EditApp.status = Suggestion.
+// (Then you cannot vote on > 1 edit at once, but perhaps that's a good thing?)
+// When there are X EditApp suggestions, automatically create one
+// with status = Published?
+// "status=Suggestion/Published"? or "weight=Suggestion/Publication"?
+// or "effect=Immediate/SuggestionOnly"?
 case class EditVote(  // should extend Action
   id: String,
   loginId: String,
@@ -529,10 +578,17 @@ case class EditVote(  // should extend Action
 )
 
 /** Edit applications (i.e. when edits are applied).
+ *
+ *  COULD make generic: applying a Post means it's published.
+ *  Applying an Edit means the relevant Post is edited.
+ *  Applying a Flag means the relevant Post is hidden.
+ *  Applying a Delete means whatever is whatever-happens-when-it's-deleted.
+ *  And each Action could have a applied=true/false field?
+ *  so they can be applied directly on creation?
  */
-case class EditApp(
+case class EditApp(   // COULD rename to Appl?
   id: String,
-  editId: String,
+  editId: String,  // COULD rename to actionId?
   loginId: String,
   newIp: Option[String],
   date: ju.Date,
@@ -551,14 +607,26 @@ case class EditApp(
   debug: String = ""
 ) extends Action
 
+/** Deletes an action. When actionId (well, postId right now)
+ *  is a post, it won't be rendered. If `wholeTree', no reply is shown either.
+ *  If actionId is an EditApp, that edit is undone.
+ *  --- Not implemented: --------
+ *  If `wholeTree', all edit applications from actionId and up to
+ *  delete.date are undone.
+ *  If actionId is an Edit, the edit will no longer appear in the list of
+ *  edits you can choose to apply.
+ *  If `wholeTree', no Edit from actionId up to delete.date will appear
+ *  in the list of edits that can be applied.
+ *  -----------------------------
+ */
 case class Delete(
   id: String,
-  postId: String,
+  postId: String,  // COULD rename to actionId
   loginId: String,
   newIp: Option[String],
   date: ju.Date,
-  wholeTree: Boolean,
-  reason: String
+  wholeTree: Boolean,  // COULD rename to `recursively'?
+  reason: String  // COULD replace with a Post that is a reply to this Delete?
 ) extends Action
 
 

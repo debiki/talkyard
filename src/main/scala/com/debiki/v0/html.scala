@@ -349,10 +349,10 @@ class DebateHtml(val debate: Debate) {
 
   private def _showComment(vipo: ViPo): NodeSeq = {
     def post = vipo.post
-    val count = debate.successorsTo(post.id).length + 1
-    val editApps = debate.editAppsTo(post.id)
-    val lastEditApp = editApps.headOption
+    val editsAppld: List[(Edit, EditApp)] = vipo.editsApplied
+    val lastEditApp = editsAppld.headOption.map(_._2)
     val cssPostId = "dw-post-"+ post.id
+    // TODO apply diffs instead of:
     val sourceText = lastEditApp.map(_.result).getOrElse(post.text)
     // Concerning post.markup:
     // `code' - wrap the text in <code class="prettyprint">...</code>
@@ -459,16 +459,16 @@ class DebateHtml(val debate: Debate) {
 
     val editInfo =
       // If closed: <span class='dw-p-re-cnt'>{count} replies</span>
-      if (editApps.isEmpty) Nil
+      if (editsAppld.isEmpty) Nil
       else {
-        val lastEditDate = editApps.head.date
+        val lastEditDate = editsAppld.head._2.date
         <div class='dw-p-hdr-ed'>Edited by {
             // This identityt test doesn't take into account that a user
             // can have many identities (e.g. Twitter, Facebook, Gmail), so
             // even if many different identities have edited the post,
             // perhaps only one single user has edited it. Cannot easily
             // compare users though, because IdentitySimple maps to no user!
-            if (editApps.map(a => debate.vied_!(a.editId).identity_!.id).
+            if (editsAppld.map(edAp => debate.vied_!(edAp._1.id).identity_!.id).
                 distinct.length > 1) {
               <a>various people</a>
             } else {
@@ -611,7 +611,7 @@ class FormHtml(val config: HtmlConfig, val permsOnPage: PermsOnPage) {
         <a class='dw-a dw-a-rate'>Rate</a>
         <a class='dw-a dw-a-more'>More...</a>
         {/*<a class='dw-a dw-a-link'>Link</a>*/}
-        <a class='dw-a dw-a-edit'>Edit</a>
+        <a class='dw-a dw-a-edit'>Edits</a>
         <a class='dw-a dw-a-flag'>Report</a>
         { ifThen(permsOnPage.deleteAnyReply, // hide for now only
             <a class='dw-a dw-a-delete'>Delete</a>) }
@@ -870,8 +870,29 @@ class FormHtml(val config: HtmlConfig, val permsOnPage: PermsOnPage) {
           dateAbbr(edit.date, "dw-ed-at")
           }
           <div class='dw-as'>{
-            if (eapp isEmpty) <a href={"?applyedit="+ edit.id}>Apply</a>
-            else <a href={"?revertedit="+ edit.id}>Revert</a>
+            val name = "dw-fi-appdel"
+            // The checkbox value is e.g. "10-delete-r0m84610qy",
+            // i.e. <seq-no>-<action>-<edit-id>. The sequence no
+            // is added by javascript; it specifies in which order the
+            // changes are to be made.
+            // (Namely the order in which the user checks/unchecks the
+            // checkboxes.)
+            if (eapp isEmpty) {
+              val aplVal = "0-apply-"+ edit.id
+              val delVal = "0-delete-"+ edit.id
+              val aplId = name +"-apply-"+ edit.id
+              val delId = name +"-delete-"+ edit.id
+              <label for={aplId}>Apply</label>
+              <input id={aplId} type='checkbox' name={name} value={aplVal}/>
+              //<label for={delId}>Delete</label>
+              //<input id={delId} type='checkbox' name={name} value={delVal}/>
+            }
+            else {
+              val delVal = "0-delete-"+ eapp.get.id
+              val undoId = name +"-delete-"+ edit.id
+              <label for={undoId}>Undo</label>
+              <input id={undoId} type='checkbox' name={name} value={delVal}/>
+            }
           }</div>
           <pre class='dw-ed-text'>{edit.text}</pre>
           { eapp.map(ea => <pre class='dw-ed-rslt'>{ea.result}</pre>).toList }
@@ -880,10 +901,13 @@ class FormHtml(val config: HtmlConfig, val permsOnPage: PermsOnPage) {
     }
 
     val pending = nipo.editsPending
+          // Better keep sorted by time? and if people don't like them,
+          // they'll be deleted (faster)?
           //.sortBy(e => -pageStats.likingFor(e).lowerBound)
     val applied = nipo.editsApplied
 
-    <div id='dw-e-sgs' title='Improvement Suggestions'>
+    <form id='dw-e-sgs' action='?applyedits' title='Improvement Suggestions'>
+      { _xsrfToken }
       <div id='dw-e-sgss'>
         <div>Improvement suggestions:</div>
         <div id='dw-e-sgs-pending'>
@@ -894,16 +918,21 @@ class FormHtml(val config: HtmlConfig, val permsOnPage: PermsOnPage) {
         <div>Improvements already applied:</div>
         <div id='dw-e-sgs-applied'>
           <ol class='dw-ess'>{
-            for ((editApp, edit) <- applied) yield xmlFor(edit, Some(editApp))
+            for ((edit, editApp) <- applied) yield xmlFor(edit, Some(editApp))
           }</ol>
         </div>
         {/* cold show original text on hover.
         <div id='dw-e-sgs-org-lbl'>Original text</div> */}
         <pre id='dw-e-sgs-org-src'>{nipo.textInitially}</pre>
       </div>
-      <div id='dw-e-sgs-diff'>
-        <div>Differences:</div>
+      <div id='dw-e-sgs-diff'>{/* COULD rename to -imp-diff */}
+        <div>This improvement:</div>
         <div id='dw-e-sgs-diff-text'>
+        </div>
+      </div>
+      <div id='dw-e-sgs-save-diff'>
+        <div>Changes to save:</div>
+        <div id='dw-e-sgs-save-diff-text'>
         </div>
       </div>
       <div id='dw-e-sgs-prvw'>
@@ -911,7 +940,7 @@ class FormHtml(val config: HtmlConfig, val permsOnPage: PermsOnPage) {
         <div id='dw-e-sgs-prvw-html'>
         </div>
       </div>
-    </div>
+    </form>
   }
 
   def editForm(newText: String = "", oldText: String = "",

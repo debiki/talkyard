@@ -610,6 +610,13 @@ function updateDebate(newDebateHtml) {
       var oldDate = $oldPost.dwLastChange();
       var newDate = $newPost.dwLastChange();
       var isPostEdited = !isNewThread && newDate > oldDate;
+      // You can undo changes to a post, and revert it to an earlier version,
+      // too. COULD use as newDate the point in time when the post was
+      // reverted, so newDate would be > oldDate. Otherwise people might
+      // reply to a newer version, but then it's reverted to an old version,
+      // and the *old* date wold be shown, causing confusion: the replies
+      // would seemingly reply to the *old* version. For now though:
+      var isPostReverted = !isNewThread && newDate < oldDate;
       var oldRatsModTime =
           $oldPost.find('> .dw-p-hdr > .dw-p-ra-all').attr('data-mtime');
       var newRatsModTime =
@@ -617,7 +624,7 @@ function updateDebate(newDebateHtml) {
       var hasNewRatings =
           (!oldRatsModTime ^ !newRatsModTime) ||
           (newRatsModTime > oldRatsModTime);
-      if (isPostEdited) {
+      if (isPostEdited || isPostReverted) {
         $newPost
           .replaceAll($oldPost)
           .addClass('dw-m-p-edited'); // outlines it
@@ -2542,12 +2549,9 @@ function $showEditsDialog() {
   var $postBody = $post.children('.dw-p-bdy');
   var postId = $post[0].id.substr(8, 999); // drop initial "dw-post-"
 
-  // Could save and reuse dialog? instead of loading new one?
-  // ... and update dynamically? ... puh :-p   not right now
-
   $.get('?viewedits='+ postId, 'text').fail(showServerResponseDialog)
       .done(function(editsHtml) {
-    var $editDlg = $(editsHtml).filter('#dw-e-sgs'); // filter out text node
+    var $editDlg = $(editsHtml).filter('form#dw-e-sgs'); // filter out text node
     $editDlg.dialog({
       autoOpen: false,
       width: 1000,
@@ -2556,13 +2560,20 @@ function $showEditsDialog() {
       resizable: false,
       zIndex: 1190,  // the default, 1000, is lower than <form>s z-index
       buttons: {
-        Close: function() {
+        Cancel: function() {
           $(this).dialog('close');
+        },
+        Save: function() {
+          // COULD show "Saving..." dialog and close when done.
+          // Otherwise the new html might arrive when the user has started
+          // doing something else.
+          $(this).submit().dialog('close');
         }
       },
       close: function() {
-        // TODO reset form.
-        // allFields.val('').removeClass('ui-state-error');
+        // Need to remove() this, so ids won't clash should a new form
+        // be loaded later.
+        $(this).remove();
       }
     });
 
@@ -2572,28 +2583,39 @@ function $showEditsDialog() {
     // For now, open directly, discard on close and
     // load a new one, if "Edit" clicked again later.
     $editDlg.dialog('open');
+
+    // Don't focus the first checkbox input — jQuery UI's focus color makes
+    // it impossible to tell whether it has focus only, or if it's actually
+    // selected. TODO change jQuery UI's focus colors — the Theme Roller,
+    // change the Clickable: hover state.
+    // (By default, jQuery UI focuses the :first:tabbable element in the
+    // .ui-dialog-content, rather than the .ui-dialog-buttonpane.)
+    $editDlg.parent().find('.ui-dialog-buttonpane :tabbable:first').focus();
   });
 
-  function initSuggestions($html) {
+  var appdelSeqNo = 0;
+
+  function initSuggestions($form) {
     // Update diff and preview, when hovering a suggestion.
-    $html.find('li.dw-es').mouseenter(function() {
+    $form.find('li.dw-es').mouseenter(function() {
       // The edit apps are sorted most recent first, so no. 0 is the
       // current markup source for $post.
-      var $eapp = $html.find('#dw-e-sgs-applied li').first();
-      var curSrc = $eapp.length ? $eapp.first().text() :
-                      $html.find('#dw-e-sgs-org-src').text();
+      var $eapp = $form.find('#dw-e-sgs-applied li').first();
+      var curSrc = $eapp.length ?
+          $eapp.first().find('.dw-ed-text').text() :
+          $form.find('#dw-e-sgs-org-src').text();
       var newSrc = $(this).find('.dw-ed-text').text();
       // later:var diffSrc = $(this).find('.dw-ed-text').val();
       var diff = diffMatchPatch.diff_main(curSrc, newSrc);
       diffMatchPatch.diff_cleanupSemantic(diff);
       var diffHtml = prettyHtmlFor(diff);
       // Remove any old diff and show the new one.
-      var $diff = $html.find('#dw-e-sgs-diff-text');
+      var $diff = $form.find('#dw-e-sgs-diff-text');
       $diff.children('.dw-x-diff').remove();
       $diff.append('<div class="dw-x-diff">'+ diffHtml +'</div>\n');
       // Update the preview.
       var html = markdownToSafeHtml(newSrc);
-      $html.find('#dw-e-sgs-prvw-html').html(html);
+      $form.find('#dw-e-sgs-prvw-html').html(html);
 
       /*
       var diffHtml = 'html-diff';
@@ -2602,11 +2624,32 @@ function $showEditsDialog() {
       // Update diff.
       var $diff.text(diff);  // TODO
       // Update preview.
-      var $preview = $html.find('#dw-e-sgs-prvw');
+      var $preview = $form.find('#dw-e-sgs-prvw');
       var markdownSrc = $(this).find('.dw-ed-text').val();
       var html = markdownToSafeHtml(markdownSrc);
       $previewTab.html(html);
       */
+    });
+
+    $form.find('input').button().click(function() {
+      // Update a sequence number at the start of the input value,
+      // e.g. change '10-delete-r0m84610qy' to '15-delete-r0m84610qy'.
+      var v = $(this).val();
+      appdelSeqNo += 1;
+      var v2 = v.replace(/^\d*-/, appdelSeqNo +'-');
+      $(this).val(v2);
+      // TODO update save-diff and preview.
+    });
+
+    $form.submit(function() {
+      var postData = $form.serialize();
+      $.post($form.attr('action'), postData, 'html')
+          .fail(showServerResponseDialog)
+          .done(function(recentChangesHtml) {
+        updateDebate(recentChangesHtml);
+        $form.dialog('close');
+      });
+      return false;
     });
   }
 }
