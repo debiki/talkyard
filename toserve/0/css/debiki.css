@@ -610,9 +610,21 @@ or it steals attention from the page title. */
   text-decoration: underline;
 }
 
-.dw-hor-a > .dw-a {
+.dw-hor-a > .dw-a.dw-a-reply {
   font-size: 17px;
   margin: 0;
+}
+
+.dw-hor-a > .dw-a:not(.dw-a-reply) {
+  display: block;
+  margin-top: 1.3em;
+  visibility: hidden; /* shown on .dw-a-more click */
+  font-size: 80%;
+}
+
+.dw-hor-a > .dw-a.dw-a-more {
+  visibility: visible;
+  opacity: 0.65; /* the reply link is the important one */
 }
 
 .dw-a-link,
