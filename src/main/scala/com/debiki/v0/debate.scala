@@ -45,15 +45,14 @@ object Debate {
     })
     // Remap ids, and update references to ids.
     // (Can this be done in a generic manner: once `case' for most Action:s?)
+    def rmpd(id: String) = remaps.getOrElse(id, id)
     val xs2: List[AnyRef] = xs map (_ match {
-      case p: Post => p.copy(id = remaps(p.id))
-      case r: Rating => r.copy(id = remaps(r.id))
-      case f: Flag => f.copy(id = remaps(f.id))
-      case e: Edit => e.copy(id = remaps(e.id),
-        postId = remaps.getOrElse(e.postId, e.postId))
-      case a: EditApp => a.copy(id = remaps(a.id),
-                                    editId = remaps(a.editId))
-      case d: Delete => d.copy(id = remaps(d.id))
+      case p: Post => p.copy(id = remaps(p.id), parent = rmpd(p.parent))
+      case r: Rating => r.copy(id = remaps(r.id), postId = rmpd(r.postId))
+      case f: Flag => f.copy(id = remaps(f.id), postId = rmpd(f.postId))
+      case e: Edit => e.copy(id = remaps(e.id), postId = rmpd(e.postId))
+      case a: EditApp => a.copy(id = remaps(a.id), editId = rmpd(a.editId))
+      case d: Delete => d.copy(id = remaps(d.id), postId = rmpd(d.postId))
       case x => assErr("[debiki_error_3RSEKRS]")
     })
     xs2
