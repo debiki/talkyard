@@ -10,15 +10,19 @@
  *
  *  dw-           prefix, avoids name clashes
  *  -a-           action
+ *  -ap-          applied/application
  *  -by           by whom post was written. COULD change -p-by -> -p-u (user)?
  *  -cr-          create
  *  -dl-          delete
+ *  -dt           date?  currently, '-at' used instead
+ *  -dg-          dialog?
+ *  -e-           edit
  *  -e            east (COULD change to "ew", eastwards, and use "e" for edit)
  *                  and new (no good!, "new") sew etc. for northeastwards etc.
  *                  Or 'de', direction-east, dn/w/s/e dnw/sw/se/ne ?
  *  -ed-          edit (COULD change to "e")
- *  -es-          edit suggestion (COULD change to -e-s, and let -es = edits)
- *  -ess-         edit suggestions (COULD change to -e-ss)
+ *  -es-          edit suggestion (COULD change to -e-sg, and let -es = edits)
+ *  -ess-         edit suggestions (COULD change to -e-sgs)
  *  -f-           form
  *  -fs-          form group - COULD change to -dlg- or -dg-
  *  -flg-         flag
@@ -42,10 +46,11 @@
  *  -rez-         resized (COULD rename to "rzd" and let "rz" mean resize)
  *  -s            south (COULD change to "sw", southwards)
  *                        COULD then use 's' for `summary'?
+ *  -sg-          suggestion
  *  -svg-         SVG graphics
  *  -t-           thread
  *  -ts-          threads
- *  -ts-          timestamp? or use ds, datestamp?
+ *  -ts-          timestamp? or use ds, datestamp? or use -dt-, "date"?
  *  -u-           user
  *  -vs-          votes
  *  -z-           fold (z looks like a folded paper from the side)
@@ -55,8 +60,10 @@
  *  dw-a-more     shows more actions: link/report/delete
  *  dw-a-edit     list edit suggestion
  *  dw-a-edit-new new edit suggestion
- *  dw-ess        edit suggestions
- *  dw-es-vs      votes on a certain edit suggestion
+ *  dw-ess        edit suggestions --deprecated--
+ *  dw-e-ap-dt    edit application date
+ *  dw-e-sg-dt    edit suggestion date
+ *  dw-es-vs      votes on a certain edit suggestion --deprecated--
  *  dw-fi-ed-preview  edit form input, preview
  *  dw-fs         form group      (COULD remove — there're no groups any more?)
  *  dw-fs-ed      edit form group (COULD rename to -f-ed/re/rat ?)

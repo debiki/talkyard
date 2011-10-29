@@ -66,6 +66,7 @@ class AddVoteResults private[debiki] (
   val newEditsApplied: List[EditApplied]
 ) */
 
+// Could rename to Page.
 case class Debate (
   guid: String,
   logins: List[Login] = Nil,
@@ -574,6 +575,7 @@ case class Post(
 ) extends Action {
 }
 
+// Could rename to Patch? or Diff?
 case class Edit (
   id: String,
   postId: String,
