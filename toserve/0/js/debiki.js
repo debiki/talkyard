@@ -107,7 +107,7 @@ var Settings = {};
 
 Settings.makeEditUrl = function(debateId, postId) {
   // Default:
-  return debateId +'/edits/proposed/post/'+ postId +'.html';
+  alert('makeEditUrl missing. [debiki_error_053kr95]');
 };
 
 Settings.makeRatePostUrl = function(debateId, postId) {
