@@ -2577,8 +2577,6 @@ function $showEditsDialog() {
       }
     });
 
-    $editDlg.css({ border: 'white', background: '#FCFCFC' });
-
     initSuggestions($editDlg); // later:? .find('#dw-e-tb-sgs'));
     // For now, open directly, discard on close and
     // load a new one, if "Edit" clicked again later.

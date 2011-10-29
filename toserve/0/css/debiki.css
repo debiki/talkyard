@@ -825,14 +825,6 @@ until they've been moved into the .dw-bdy-blk > .dw-i-ts. */
 
 /* --- Edit suggestions ---*/  /* — old not in use? */
 
-.dw-debate ins {
-  background:#e6ffe6;
-}
-
-.dw-debate del {
-  background:#ffe6e6;
-}
-
 .dw-ess {
   border-top: dotted 1px #aaa;
   clear: both; /* or action links push contents rightwards */
@@ -1141,18 +1133,26 @@ it works everywhere, even if it works fine for you. */
   background-color: transparent;
 } */
 
+#dw-e-sgs {
+  overflow: hidden; /* child height is 100%, so border exdends downw */
+}
+
 /* The dialog is 1000 px wide, see debiki.js: $showEditsDialog() */
 #dw-e-sgss,
 #dw-e-sgs-diff,
 #dw-e-sgs-save-diff,
 #dw-e-sgs-prvw {
   float: left;
-  padding: 15px;
+  padding: 3px 18px 0;
+  margin-top: 10px;
   min-height: 5em;
+  border-left: 1px solid #DDD;
+  height: 100%; /* make border exdend downwards */
 }
 #dw-e-sgss {
   padding-left: 0;
   width: 220px;
+  border-left: none;
 }
 #dw-e-sgs-diff {
   width: 290px;
@@ -1193,14 +1193,12 @@ it works everywhere, even if it works fine for you. */
 #dw-e-sgs-diff-text {
   margin-top: 5px;
   padding: 0.7ex;
-  border: 1px solid #bbb;
   background: white;
 }
 
 #dw-e-sgs-prvw-html {
   margin-top: 5px;
   padding: 0.7ex;
-  border: 1px solid #bbb;
   background: white;
 }
 
