@@ -2598,17 +2598,31 @@ function $showEditsDialog() {
   function initSuggestions($form) {
     // Update diff and preview, when hovering a suggestion.
     $form.find('li.dw-es').mouseenter(function() {
-      // The edit apps are sorted most recent first, so no. 0 is the
-      // current markup source for $post.
-      var $eapp = $form.find('#dw-e-sgs-applied li').first();
-      var curSrc = $eapp.length ?
-          $eapp.first().find('.dw-ed-text').text() :
-          $form.find('#dw-e-sgs-org-src').text();
-      var newSrc = $(this).find('.dw-ed-text').text();
-      // later:var diffSrc = $(this).find('.dw-ed-text').val();
-      var diff = diffMatchPatch.diff_main(curSrc, newSrc);
+      // Compute the text of the post as of when this edit
+      // was *suggested*. This shows the *intentions* of the one
+      // who suggested the changes.
+      // COULD also show the results of applying the patch to
+      // the current text (as of now).
+      // - When hovering the edit <li>, show the intentions.
+      // - But when hovering the Apply/Undo button, show the results
+      //   of applying/undoing.
+      // - Add tabs at the top of the edit, which one can click,
+      //   to decide which diff to show.
+      var suggestionDate = $(this).find('.dw-e-sg-dt').attr('title');
+      var curSrc = textAsOf(suggestionDate);
+      var patchText = $(this).find('.dw-ed-text').text();
+
+      // Make a nice html diff.
+      // (I don't know how to convert patches to diffs, without
+      // actually applying the patch first, and calling diff_main.)
+      var patches = diffMatchPatch.patch_fromText(patchText);
+      // COULD check [1, 2, 3, …] to find out if the patch applied
+      // cleanaly. (The result is in [0].)
+      var newSrc = diffMatchPatch.patch_apply(patches, curSrc)[0];
+      var diff = diffMatchPatch.diff_main(curSrc, newSrc); // <- how to avoid?
       diffMatchPatch.diff_cleanupSemantic(diff);
       var diffHtml = prettyHtmlFor(diff);
+
       // Remove any old diff and show the new one.
       var $diff = $form.find('#dw-e-sgs-diff-text');
       $diff.children('.dw-x-diff').remove();
@@ -2616,20 +2630,38 @@ function $showEditsDialog() {
       // Update the preview.
       var html = markdownToSafeHtml(newSrc);
       $form.find('#dw-e-sgs-prvw-html').html(html);
-
-      /*
-      var diffHtml = 'html-diff';
-      var previewSrc = 'apply-diff-to-src';
-      var previewHtml = 'markdownToSafeHtml(previewSrc)';
-      // Update diff.
-      var $diff.text(diff);  // TODO
-      // Update preview.
-      var $preview = $form.find('#dw-e-sgs-prvw');
-      var markdownSrc = $(this).find('.dw-ed-text').val();
-      var html = markdownToSafeHtml(markdownSrc);
-      $previewTab.html(html);
-      */
     });
+
+    // Applies all edits up to, but not including, the specified date.
+    // Returns the resulting text.
+    // Keep in sync with textAsOf in debate.scala (renamed to page.scala?).
+    // TODO also consider edit suggestions marked for application.
+    // TODO consider skipping edit-apps marked for undo.
+    // TODO when showing the changes *intended*, take into account
+    // edit appls that were not deleted at the point in time when the
+    // suggestion was made (but perhaps were deleted later)
+    // (Otherwise, if [some patch that was in effect when the suggestion
+    // was made] has been reverted, it might not be possible to understand
+    // the intention of the patch.)
+    function textAsOf(dateIso8601) {
+      // The edit apps should already be sorted: most recent first,
+      // see html.scala.
+      var eapps = $form.find('#dw-e-sgs-applied li').filter(function() {
+        var eappDate = $(this).find('.dw-e-ap-dt').attr('title');
+        return eappDate < dateIso8601;
+      });
+      var origText = $form.find('#dw-e-sgs-org-src').text();
+      var curText = origText;
+      eapps.each(function() {
+        var patchText = $(this).find('.dw-ed-text').text();
+        var patches = diffMatchPatch.patch_fromText(patchText);
+        // COULD check [1, 2, 3, …] to find out if the patch applied
+        // cleanaly. (The result is in [0].)
+        var newText = diffMatchPatch.patch_apply(patches, curText)[0];
+        curText = newText;
+      });
+      return curText;
+    }
 
     $form.find('input').button().click(function() {
       // Update a sequence number at the start of the input value,

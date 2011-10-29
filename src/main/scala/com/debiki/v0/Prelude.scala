@@ -159,4 +159,15 @@ object Prelude {
   def hashSha1Base64UrlSafe(text: String): String =
     acb.Base64.encodeBase64URLSafeString(mdSha1.digest(text.getBytes("UTF-8")))
 
+  // ------ Diff, match, patch
+
+  def makePatch(from: String, to: String): String = {
+    val dmp = new name.fraser.neil.plaintext.diff_match_patch
+    var diffs = dmp.diff_main(from, to)
+    dmp.diff_cleanupSemantic(diffs)
+    val patches = dmp.patch_make(from, diffs)
+    val patchText = dmp.patch_toText(patches)
+    patchText
+  }
+
 }

@@ -409,11 +409,34 @@ class ViAc(val debate: Debate, val action: Action) {
 class ViPo(debate: Debate, val post: Post) extends ViAc(debate, post) {
   def parent: String = post.parent
   // def date = lastEditApp.map(ea => toIso8601(ea.date))
-  def text: String = lastEditApp.map(_.result).getOrElse(post.text)
+  lazy val text: String = textAsOf(Long.MaxValue)
+
+  /** Applies all edits up to, but not including, the specified date.
+   *  Returns the resulting text.
+   *  Keep in sync with textAsOf in debiki.js.
+   */
+  def textAsOf(millis: Long): String = {
+    var origText = post.text
+    var curText = origText
+    val dmp = new name.fraser.neil.plaintext.diff_match_patch
+    for ((edit, eapp) <- editsAppdAsc; if eapp.date.getTime < millis) {
+      val patchText = edit.text
+      // COULD check [1, 2, 3, …] to find out if the patch applied
+      // cleanaly. (The result is in [0].)
+      type P = name.fraser.neil.plaintext.diff_match_patch.Patch
+      val patches: ju.List[P] = dmp.patch_fromText(patchText) // silly API, ...
+      val p2 = patches.asInstanceOf[ju.LinkedList[P]] // returns List but needs...
+      val result = dmp.patch_apply(p2, curText) // ...a LinkedList
+      val newText = result(0).asInstanceOf[String]
+      curText = newText
+    }
+    curText
+  }
+
   def textInitially: String = post.text
   def where: Option[String] = post.where
   def edits: List[Edit] = debate.editsFor(post.id)
-  lazy val (editsDeleted, editsPending, editsApplied, editsAppdRevd) = {
+  lazy val (editsDeleted, editsPending, editsAppdDesc, editsAppdRevd) = {
     var deleted = List[(Edit, Delete)]()
     var pending = List[Edit]()
     var applied = List[(Edit, EditApp)]()
@@ -438,6 +461,7 @@ class ViPo(debate: Debate, val post: Post) extends ViAc(debate, post) {
         }
       }
     }
+
     // Sort by 1) deletion, 2) application, 3) edit creation, most recent
     // first.
     (deleted.sortBy(- _._2.date.getTime),
@@ -445,7 +469,10 @@ class ViPo(debate: Debate, val post: Post) extends ViAc(debate, post) {
       applied.sortBy(- _._2.date.getTime),
       appdRevd.sortBy(- _._3.date.getTime))
   }
-  lazy val lastEditApp = editsApplied.headOption.map(_._2)
+
+  def editsAppdAsc = editsAppdDesc.reverse
+
+  lazy val lastEditApp = editsAppdDesc.headOption.map(_._2)
 
   // COULD optimize this, do once for all flags.
   lazy val flags = debate.flags.filter(_.postId == post.id)

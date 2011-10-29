@@ -349,11 +349,10 @@ class DebateHtml(val debate: Debate) {
 
   private def _showComment(vipo: ViPo): NodeSeq = {
     def post = vipo.post
-    val editsAppld: List[(Edit, EditApp)] = vipo.editsApplied
+    val editsAppld: List[(Edit, EditApp)] = vipo.editsAppdDesc
     val lastEditApp = editsAppld.headOption.map(_._2)
     val cssPostId = "dw-post-"+ post.id
-    // TODO apply diffs instead of:
-    val sourceText = lastEditApp.map(_.result).getOrElse(post.text)
+    val sourceText = vipo.text
     // Concerning post.markup:
     // `code' - wrap the text in <code class="prettyprint">...</code>
     // `code-javascript' - wrap the text in:
@@ -863,11 +862,20 @@ class FormHtml(val config: HtmlConfig, val permsOnPage: PermsOnPage) {
   def editsDialog(nipo: ViPo, page: Debate, userName: Option[String]
                      ): NodeSeq = {
     def xmlFor(edit: Edit, eapp: Option[EditApp]): NodeSeq = {
+      val applied = eapp isDefined
+      val editor = page.authorOf_!(edit)
+      def applier_! = page.authorOf_!(eapp.get)
       <li class='dw-es'>
         <div class='dw-es-ed'>{
-          val editor = page.authorOf_!(edit)
-          xml.Text("From ") ++ linkTo(editor, config) ++
-          dateAbbr(edit.date, "dw-ed-at")
+            <div>{
+              (if (applied) "Suggested by " else "By ") ++
+              linkTo(editor, config) ++
+              dateAbbr(edit.date, "dw-e-sg-dt")
+              }</div> ++
+            (if (!applied) Nil
+            else <div>Applied by { linkTo(applier_!, config) ++
+              dateAbbr(eapp.get.date, "dw-e-ap-dt") }</div>
+            )
           }
           <div class='dw-as'>{
             val name = "dw-fi-appdel"
@@ -877,7 +885,7 @@ class FormHtml(val config: HtmlConfig, val permsOnPage: PermsOnPage) {
             // changes are to be made.
             // (Namely the order in which the user checks/unchecks the
             // checkboxes.)
-            if (eapp isEmpty) {
+            if (!applied) {
               val aplVal = "0-apply-"+ edit.id
               val delVal = "0-delete-"+ edit.id
               val aplId = name +"-apply-"+ edit.id
@@ -904,7 +912,8 @@ class FormHtml(val config: HtmlConfig, val permsOnPage: PermsOnPage) {
           // Better keep sorted by time? and if people don't like them,
           // they'll be deleted (faster)?
           //.sortBy(e => -pageStats.likingFor(e).lowerBound)
-    val applied = nipo.editsApplied
+    // Must be sorted by time, most recent first (debiki.js requires this).
+    val applied = nipo.editsAppdDesc
 
     <form id='dw-e-sgs' action='?applyedits' title='Improvement Suggestions'>
       { _xsrfToken }
