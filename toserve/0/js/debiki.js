@@ -886,7 +886,10 @@ function $initPostsThreadStep4() {
   // However for touch devises, don't enable resizing of posts: it doesn't
   // work, and the resize handles steal touch events from buttons nearby.
   if (!Modernizr.touch)
-    $thread.filter('.dw-depth-1:not(.dw-i-t)').each($makeEastResizable);
+    $thread.filter(function() {
+      var $i = $(this);
+      return !$i.is('.dw-i-t') && $i.parent().closest('.dw-t').is('.dw-hor');
+    }).each($makeEastResizable);
 }
 
 // Inits a post, not its parent thread.

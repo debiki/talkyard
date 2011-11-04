@@ -406,16 +406,16 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
   margin: 8px 0 0 5px;
 }
 
-.dw-depth-1:not(.dw-i-t):hover {
+.dw-hor > .dw-res > .dw-t:not(.dw-i-t):hover {
   border-right: 2px dashed lightgray; /* column separator and resizor */
 }
 
 .dw-hor > .dw-res > .dw-fs,
-.dw-hor-a,
-.dw-depth-1:not(.dw-i-t) {
+.dw-hor > .dw-res > .dw-t:not(.dw-i-t),
+.dw-hor-a {
   padding: 0 20px 10px 0;
   margin: 10px 16px 0 0;
-  border-right: 2px dashed transparent; /* shown on hover */
+  border-right: 2px dashed transparent; /* shown on hover (see above)*/
 }
 
 /* Make the column separator at least this high. But don't do this for
