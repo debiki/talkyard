@@ -368,15 +368,9 @@ function resizeRootThreadImpl(extraWidth) {
     // Hence it's a rather wide value. (Otherwise = 50 would do.)
     extraWidth = 200;
   }
-  var width = 0;
   var $root = $('.dw-depth-0');
   if (!$root.length) $root = $('.dw-debate'); // there's no root reply
-  $root.find('> .dw-res > li, > .dw-fs, > .dw-a').each(function(){
-    width += $(this).outerWidth(true);
-  });
-
-  var maxInlineWidth = $root.map($findMaxInlineWidth)[0];
-  width = Math.max(width, maxInlineWidth);
+  var width = $root.map($findThreadWidthHoriz)[0];
   width += extraWidth;
 
   // Set the min width to something wider than the max width of a
@@ -388,19 +382,61 @@ function resizeRootThreadImpl(extraWidth) {
   // here: http://www.mail-archive.com/jquery-en@googlegroups.com/msg13257.html.
   width = Math.max(width, 650); // today <p> max-width is 50 em and 650 fine
   $root.css('min-width', width +'px');
+
+  // COULD resize $('.dw-t svg') too, so they're not 99999px wide & tall?
+  // (see debiki.css) But then ensure SVG isn't cropped! on very
+  // tall/wide pages.
 }
 
-// Finds the width of the widest [paragraph plus inline threads].
-function $findMaxInlineWidth() {
+// Finds the width of a thread that is laid out horizontally.
+// Only tested on the root thread.
+function $findThreadWidthHoriz() {
+  var $i = $(this),
+      myWidth = $i.outerWidth(true),
+      childrenWidth = $i.map($findChildrenWidthHoriz)[0],
+      maxInlineWidth = $i.map($findMaxInlineWidthHoriz)[0];
+  return Math.max(myWidth, childrenWidth, maxInlineWidth);
+}
+
+function $findChildrenWidthHoriz() {
+  // This works for both the article and comments — because
+  // currently none of their child threads can have horizontal layout
+  // (only replies to inline-article-replies, and article replies,
+  // have horizontal layout).
+  var width = 0;
+  $(this).find('> .dw-res > li, > .dw-fs, > .dw-a').each(function(){
+    width += $(this).outerWidth(true);  // need not recurse, see comment above
+  });
+  return width;
+}
+
+// Finds the width of the widest [paragraph plus inline threads],
+// when the inline threads are placed to the right of the -bdy-blk:s
+// (horizontal layout).
+function $findMaxInlineWidthHoriz() {
   var accWidth = 0;
   var maxWidth = 0;
   $(this).find('> .dw-p > .dw-p-bdy').children(':not(svg)').each(function(){
-    if ($(this).filter('.dw-p-bdy-blk').length) {
+    var $i = $(this);
+    if ($i.is('.dw-p-bdy-blk')) {
       // New block, reset width
-      accWidth = 0;
+      accWidth = $i.outerWidth(true);
     }
-    // This elem floats-left to the right of the previous block.
-    accWidth += $(this).outerWidth(true);
+    else if ($i.is('.dw-i-ts')) {
+      // This inline thread group floats-left to the right of the previous
+      // bdy-blk. Find its width, and the width of the widest inline thread
+      // (they might be laid out horizontally).
+      var outerWidth = $i.outerWidth(true);
+      var fluffWidth = outerWidth - $i.width();
+      var maxChildWidth = 0;
+      $i.children().each(function() { // for each inline thread
+        var myWidth = $(this).map($findThreadWidthHoriz)[0];
+        if (myWidth > maxChildWidth) maxChildWidth = myWidth;
+      });
+      var width = Math.max(outerWidth, fluffWidth + maxChildWidth);
+      accWidth += width;
+    }
+    else die('[debiki_error_0kRK125]');
     if (accWidth > maxWidth) maxWidth = accWidth;
   });
   return maxWidth;
@@ -3684,8 +3720,13 @@ function initAndDrawSvg() {
     $('.dw-if-opera').show();
 
   $('body').addClass('dw-pri');
-  resizeRootThread();
   Me.refreshProps();
+
+  // The article might be too narrow and stuff might float drop,
+  // rersulting in SVG arrows pointing incorrectly. Avoid this, by
+  // making the root thread wide, whilst rendering the page. When done,
+  // call resizeRootThread, to size it properly (see below).
+  $('.dw-depth-0').width(99999);
 
   var steps = [];
   steps.push(initPostsThreadStep1);
@@ -3695,6 +3736,9 @@ function initAndDrawSvg() {
   steps.push(registerEventHandlers);
   steps.push(initAndDrawSvg);
   steps.push(initPostsThreadStep4);
+  // Resize the article after the page has been rendered, so all inline
+  // threads have been placed and can be taken into account.
+  steps.push(resizeRootThread);
 
   function runNextStep() {
     steps[0]();
