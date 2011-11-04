@@ -268,7 +268,7 @@ class DebateHtml(val debate: Debate) {
       {
         // If there's no root post, add an empty <div .dw-p>. It's required
         // because JavaScript elsewhere finds .dw-t:s by finding .dw-p parents.
-        rootPost.map(_showComment(_)).getOrElse(
+        rootPost.map(_showComment(_, horizontal = true)).getOrElse(
             <div id={"dw-t-"+ Debate.RootPostId} class={"dw-p"} />) ++
         <div class='dw-t-vspace'/>
         <div class='dw-hor-a'>
@@ -297,27 +297,39 @@ class DebateHtml(val debate: Debate) {
       cssThreadId = "dw-t-"+ p.id
       cssDepth = "dw-depth-"+ depth
       cssInlineThread = if (p.where isDefined) " dw-i-t" else ""
+      replies = debate.repliesTo(p.id)
+      // Layout replies horizontally, if this is an inline reply to
+      // the root post, i.e. depth is 1 -- because then there's unused space
+      // to the right. However, the horizontal layout results in a higher
+      // thread if there's only one reply. So only do this if there's more
+      // than one reply.
+      horizontal = p.where.isDefined && depth == 1 && replies.length > 1
+      (cssHoriz, cssClearfix) =
+          // Children will float, if horizontal. So clearafix .dw-res.
+          if (horizontal) (" dw-hor", " ui-helper-clearfix")
+          else ("", "")
       vipo = debate.vipo_!(p.id)
       cssThreadDeleted = if (vipo.isTreeDeleted) " dw-t-dl" else ""
     }
     yield {
       var li =
         <li id={cssThreadId} class={"dw-t "+ cssDepth + cssInlineThread +
-                                    cssThreadDeleted}>
+                                    cssHoriz + cssThreadDeleted}>
         {
           if (vipo.isTreeDeleted) _showDeletedTree(vipo)
           else {
             (if (vipo.isDeleted) _showDeletedComment(vipo)
-            else _showComment(vipo)) ++
+            else _showComment(vipo, horizontal = horizontal)) ++
             (if (debate.repliesTo(p.id).isEmpty) Nil
             else
-              <ol class='dw-res'>
-                { _layoutComments(depth + 1, debate.repliesTo(p.id)) }
+              <ol class={"dw-res"+ cssClearfix}>
+                { _layoutComments(depth + 1, replies) }
               </ol>)
           }
         }
         </li>
       // For inline comments, add info on where to place them.
+      // COULD rename attr to data-where, that's search/replace:able enough.
       if (p.where isDefined) li = li % Attribute(
           None, "data-dw-i-t-where", Text(p.where.get), scala.xml.Null)
       li
@@ -347,7 +359,7 @@ class DebateHtml(val debate: Debate) {
     </div>
   }
 
-  private def _showComment(vipo: ViPo): NodeSeq = {
+  private def _showComment(vipo: ViPo, horizontal: Boolean): NodeSeq = {
     def post = vipo.post
     val editsAppld: List[(Edit, EditApp)] = vipo.editsAppdDesc
     val lastEditApp = editsAppld.headOption.map(_._2)
@@ -479,11 +491,15 @@ class DebateHtml(val debate: Debate) {
         </div>
       }
 
+    // Make he root post wrap its (floating) children,
+    // (Don't know if this is needed or other horizontal threads.)
+    val clearfix = if (horizontal) " ui-helper-clearfix" else ""
+
     // COULD find a better name for the two data-p-by-...-sh attrs below.
     // Also, perhaps they should be part of the .dw-p-by <a>?
     // the – on the next line is an `en dash' not a minus
     <a class='dw-z'>[–]</a>
-    <div id={cssPostId} class={"dw-p" + cutS}
+    <div id={cssPostId} class={"dw-p" + cutS + clearfix}
          data-p-by-ip-sh={vipo.ipSaltHash_!}>
       <div class='dw-p-hdr'>
         By { _linkTo(author)}{ dateAbbr(post.date, "dw-p-at")
