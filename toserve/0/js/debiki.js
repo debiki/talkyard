@@ -1545,7 +1545,7 @@ function slideAwayRemove($form) {
     next();
   }
   // COULD elliminate dupl code that determines whether to fold or slide.
-  if ($thread.filter('.dw-depth-0, .dw-debate').length &&
+  if ($thread.filter('.dw-hor, .dw-debate').length &&  // COULD rm .dw-debate?
       !$form.closest('ol').filter('.dw-i-ts').length) {
     $form.each($foldOutLeft).queue(rm);
   }
@@ -1578,7 +1578,7 @@ function slideInActionForm($form, $where) {
   resizeRootThreadExtraWide();
   // Slide in from left, if <form> siblings ordered horizontally.
   // Otherwise slide down (siblings ordered vertically).
-  if ($where.filter('.dw-depth-0, .dw-debate').length &&
+  if ($where.filter('.dw-hor, .dw-debate').length && // COULD rm .dw-debate?
       !$form.closest('ol').filter('.dw-i-ts').length) {
     $form.each($foldInLeft);
   } else {
@@ -3092,10 +3092,11 @@ function makeSvgDrawer() {
 
     // Create root for whole post replies.
     var $p = $(this).parent();
-    if ($p.hasClass('dw-hor')) {
+    var $vspace = $p.children('.dw-t-vspace');
+    if ($vspace.length) {
       // Place the root in the .dw-t-vspace before the reply list.
-      $p.addClass('dw-svg-gparnt')
-          .children('.dw-t-vspace').each($createSvgRoot);
+      $p.addClass('dw-svg-gparnt');
+      $vspace.each($createSvgRoot);
     } else {
       $p.each($createSvgRoot);
     }
@@ -3114,7 +3115,7 @@ function makeSvgDrawer() {
     // COULD make use of `cache'. See arrowFromThreadToReply(…).
     var $bdyBlk = $mark.closest('.dw-p-bdy-blk');
     var $thread = $bdyBlk.closest('.dw-t');
-    var horizontalLayout = Boolean($thread.filter('.dw-hor').length);
+    var horizontalLayout = $thread.is('.dw-hor');
     var $svgRoot = findClosestRoot($mark);
     // Do not use $svgRoot.offset() as offset, because that seems to be the
     // offset of the northwest-most SVG element in the <svg> tag. Instead,
@@ -3188,10 +3189,11 @@ function makeSvgDrawer() {
       // Do not use $svgRoot.offset() — see comment somewhere above, search
       // for "$svgRoot.offset()". COULD merge this somewhat duplicated code?
       cache.svgOffs = cache.$svgRoot.parent().offset();
-      cache.horizontalLayout = $thread.filter('.dw-hor').length > 0
-      cache.from =
-        (cache.horizontalLayout ? $thread.children('.dw-t-vspace') : $thread)
-        .offset();
+      cache.horizontalLayout = $thread.is('.dw-hor');
+      // The root post has a -vspace, in which SVG is drawn.
+      cache.from = $thread.children('.dw-t-vspace').add($thread)
+          .last() // not first() — $.add() sorts in document order
+          .offset();
     }
     var to = $to.offset();
     var r = document.createElementNS(svgns, 'path');
@@ -3200,8 +3202,9 @@ function makeSvgDrawer() {
     var xe = to.left - cache.svgOffs.left; // end
     var ye = to.top - cache.svgOffs.top;
     var strokes;
-    if (cache.horizontalLayout) {
-      // Thread laid out horizontally, so draw west-east curve:  `------.
+    if (cache.horizontalLayout && $thread.is('.dw-depth-0')) {
+      // This is the root thread, and it is (always) laid out horizontally,
+      // so draw west-east curve:  `------.
       // There's a visibility:hidden div that acts as a placeholder for this
       // curve, and it's been resized properly by the caller.
       xs = cache.from.left - cache.svgOffs.left + 10;
@@ -3249,6 +3252,46 @@ function makeSvgDrawer() {
                  ' '+ xe +' '+ ye +           //                    \
                ' l -7 -4 m 8 4 l 5 -7'; // arrow end: _|             v
       }
+    } else if (cache.horizontalLayout) {
+      // This is an inline thread, which is layed out horizontally.
+      // Draw 2 Bezier curves and an arrow head at the end:
+      //
+      // x0,y0 [Here's the post body]
+      //   /   [...                 ]
+      //   |
+      //   | curve 1, from x0,y0 to x1,y1
+      //   \
+      //    `- x1,y1 ----. curve 2    -------------.  (another curve)
+      //                  \                         \
+      //                   x2,y2                    |
+      //    arrow head ->  v                        v
+      //                  [Here's the reply]       (Another reply)
+
+      var x0 = xs+5;
+      var y0 = ys+30;
+      var x1 = x0 + 27;
+      var y1 = ye - 30;
+      var x2 = xe + 35;
+      var y2 = ye - 13;
+
+      if (cache.index == 0) {
+        strokes =
+                'M '+ (x0     ) +' '+ (y0     ) +  //   /
+               ' C '+ (x0 -  3) +' '+ (y1 - 15) +  //   |
+                 ' '+ (x0 +  5) +' '+ (y1     ) +  //   \
+                 ' '+ (x1     ) +' '+ (y1     );   //    `-
+      } else {
+        // The first Bezier curve was drawn when we drew
+        // the index == 0 arrow. Start at x1,y1 instead.
+        strokes =
+                'M '+ (x1     ) +' '+ (y1     );
+      }
+      strokes = strokes +
+               ' C '+ (x2 - 20) +' '+ (y1     ) +  //    -----.
+                 ' '+ (x2     ) +' '+ (y1 -  5) +  //          \
+                 ' '+ (x2     ) +' '+ (y2     ) +  //          |
+               ' l -7 -4 m 8 4 l 5 -7';  // arrow end: _|      v
+
     } else {
       // Draw north-south curve.
       var ym = (ys + ye) / 2;
@@ -3302,7 +3345,8 @@ function makeSvgDrawer() {
     var $replyBtn = $i.children('.dw-hor-a');
     var $wholePostReplies = $i.find('> .dw-res > .dw-t');
     var cache = {};
-    $replyBtn.add($wholePostReplies).each(function(){
+    $replyBtn.add($wholePostReplies).each(function(index){
+      cache.index = index;
       arrowFromThreadToReply($i, $(this), cache);
     });
     // To inline replies.

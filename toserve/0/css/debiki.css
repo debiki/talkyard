@@ -268,7 +268,9 @@ jQuery UI's dialgos. Might that be incompatible with other libs? */
   border-top: none;
   }
 
-/* --- Float ---*/
+/* --- Horizontal layout ---*/
+/* (This could be simplified?) */
+
 .dw-t {
   float: left;
   position: relative; /* #action-menu is absolute positioned relative cmt */
@@ -276,10 +278,18 @@ jQuery UI's dialgos. Might that be incompatible with other libs? */
 .dw-depth-0.dw-t {
   float: none; /* else won't expand eastwards, even if zoomed out much */
 }
-.dw-depth-1 .dw-t {
+.dw-depth-1:not(.dw-hor) .dw-t {
   float: none;
   clear: both; /* else the rating form might float to the left */
 }
+
+.dw-depth-1.dw-hor > .dw-res {
+  width: 9999px; /* for now. COULD calculate in JavaScript instead
+                    — the hardcoded width is almost always too large, but
+                    sometimes too small and then causes float drop. */
+}
+
+
 
 /* === Posts === */
 
@@ -451,6 +461,12 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
 
 .dw-depth-2 .dw-res {
   margin: 0 0 0 35px;
+}
+
+/* Add some whitespace above replies, when laid out horizontally,
+so there's some space for the SVG arrows. */
+.dw-hor:not(.dw-depth-0) .dw-res {
+  margin-top: 30px;
 }
 
 .dw-p {
