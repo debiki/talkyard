@@ -83,16 +83,25 @@ case class Debate (
   private lazy val postsById =
       imm.Map[String, Post](posts.map(x => (x.id, x)): _*)
 
-  private lazy val postsByParentId: imm.Map[String, List[Post]] = {
-    // Add post -> replies mappings to a mutable multimap.
-    var mmap = mut.Map[String, mut.Set[Post]]()
-    for (p <- posts)
+  private lazy val (
+      postsByParentId: imm.Map[String, List[Post]],
+      metaByParentId: imm.Map[String, List[Post]]) = {
+    // Add post -> replies/meta mappings to mutable multimaps.
+    var postMap = mut.Map[String, mut.Set[Post]]()
+    var metaMap = mut.Map[String, mut.Set[Post]]()
+    for (p <- posts) {
+      val mmap = if (p isMeta) metaMap else postMap
       mmap.getOrElse(
         p.parent, { val s = mut.Set[Post](); mmap.put(p.parent, s); s }) += p
-    // Copy to an immutable version.
-    imm.Map[String, List[Post]](
-        (for ((parentId, children) <- mmap)
+    }
+    // Copy to immutable versions.
+    val immPostMap = imm.Map[String, List[Post]](
+        (for ((parentId, children) <- postMap)
           yield (parentId, children.toList)).toList: _*)
+    val immMetaMap = imm.Map[String, List[Post]](
+        (for ((parentId, meta) <- metaMap)
+          yield (parentId, meta.toList)).toList: _*)
+    (immPostMap, immMetaMap)
   }
 
   private class RatingCacheItem {
@@ -166,6 +175,14 @@ case class Debate (
     val res = repliesTo(postId)
     res.flatMap(r => successorsTo(r.id)) ::: res
   }
+
+  // -------- Meta
+
+  def metaFor(id: String): List[Post] =
+    metaByParentId.getOrElse(id, Nil).filterNot(_.id == id)
+
+  def metaFor(action: ViAc): List[Post] = metaFor(action.id)
+
 
   // -------- Edits
 
@@ -384,6 +401,8 @@ class ViAc(val debate: Debate, val action: Action) {
   def ipSaltHash: Option[String] = ip.map(saltAndHashIp(_))
   def ipSaltHash_! : String = saltAndHashIp(ip_!)
 
+  def meta = debate.metaFor(this)
+
   def isTreeDeleted = {
     // In case there are > 1 deletions, consider the first one only.
     // (Once an action has been deleted, it isn't really possible to
@@ -568,10 +587,20 @@ case class Post(
    */
   markup: String,
 
+  /** Whether this Post is meta info on something else,
+   *  e.g. the description/commit message for an Edit,
+   *  or HTML <head> data, for a root post (i.e. an article, html page).
+   *  By reusing Post also for meta info, versioning and editing
+   *  of meta info come for free.
+   */
+  isMeta: Boolean,
+
   /** If defined, this is an inline comment and the value
    *  specifies where in the parent post it is to be placed.
    */
-  where: Option[String] = None
+  where: Option[String] = None   // COULD move to separate Meta post?
+                                 // Benefits: Editing and versioning of
+                                 // `where', without affecting this Post.text.
 ) extends Action {
 }
 
