@@ -1611,13 +1611,22 @@ JavaScript. Then I can still place all CSS stuff in this file. */
   z-index: -11;
 }
 
-.dw-svg-fake-hcurve-start {
+.dw-svg-fake-hcurve-start,
+.dw-svg-fake-hcurve-start-solo {
   background-image: url(img/dw-svg-fake-hcurve-start-w-reply-arrow.png);
+  background-repeat: no-repeat;
+  position: absolute;
   top: -87px;
   left: 3px;
   height: 80px;
   width: 105px;
   z-index: -11;
+}
+
+.dw-svg-fake-hcurve-start-solo {
+  background-image: url(img/dw-svg-fake-hcurve-start-w-reply-arrow-solo.png);
+  height: 75px;
+  width: 45px;
 }
 
 .dw-svg-fake-arrow-hider {
