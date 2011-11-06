@@ -135,7 +135,8 @@ object Templates {
     oidOpLocalId = "provider.com/local/id",
     firstName = "Laban", email = "oid@email.hmm", country = "Sweden")
   val post = v0.Post(id = "?", parent = "1", date = new ju.Date,
-    loginId = "?", newIp = None, text = "", markup = "", where = None)
+    loginId = "?", newIp = None, text = "", markup = "", isMeta = false,
+    where = None)
   val rating = v0.Rating(id = "?", postId = "1", loginId = "?",
     newIp = None, date = new ju.Date, tags = Nil)
 }
@@ -443,6 +444,64 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
           d must haveRatingLike(ex4_rating1, id = ex4_rating1Id)
           d must haveRatingLike(ex4_rating2, id = ex4_rating2Id)
           d must haveRatingLike(ex4_rating3, id = ex4_rating3Id)
+          true
+        }
+      }
+    }
+
+    // -------- Meta info
+
+    var ex2MetaEmpty_id = ""
+    val exMeta_ex2EmptyMetaTmpl = T.post.copy(parent = ex2_id,
+        text = "", loginId = loginId, isMeta = true)
+    def exMeta_ex2EmptyMeta = exMeta_ex2EmptyMetaTmpl.copy(id = ex2MetaEmpty_id)
+    "save an empty meta post" >> {
+      dao.savePageActions(defaultTenantId, ex1_debate.guid,
+        List(exMeta_ex2EmptyMetaTmpl)
+      ) must beLike {
+        case Full(List(p: Post)) =>
+          ex2MetaEmpty_id = p.id
+          p must matchPost(exMeta_ex2EmptyMeta)
+          true
+      }
+    }
+
+    "find the empty meta again, understand it's for post ex2" >> {
+      dao.loadPage(defaultTenantId, ex1_debate.guid) must beLike {
+        case Full(d: Debate) => {
+          d must havePostLike(exMeta_ex2EmptyMeta, id = ex2MetaEmpty_id)
+          val postEx2 = d.vipo_!(ex2_id)
+          postEx2.meta must_== List(exMeta_ex2EmptyMeta)
+          postEx2.isArticleQuestion must_== false
+          true
+        }
+      }
+    }
+
+    var ex2MetaArtQst_id = ""
+    val exMeta_ex2ArtQstTmpl = T.post.copy(parent = ex2_id,
+        text = "article-question", loginId = loginId, isMeta = true)
+    def exMeta_ex2ArtQst = exMeta_ex2ArtQstTmpl.copy(id = ex2MetaArtQst_id)
+    "save another meta post, wich reads 'article-question'" >> {
+      dao.savePageActions(defaultTenantId, ex1_debate.guid,
+        List(exMeta_ex2ArtQstTmpl)
+      ) must beLike {
+        case Full(List(p: Post)) =>
+          ex2MetaArtQst_id = p.id
+          p must matchPost(exMeta_ex2ArtQst)
+          true
+      }
+    }
+
+    "find the article-question meta again, understand what it means" >> {
+      dao.loadPage(defaultTenantId, ex1_debate.guid) must beLike {
+        case Full(d: Debate) => {
+          d must havePostLike(exMeta_ex2ArtQst)
+          val postEx2 = d.vipo_!(ex2_id)
+          postEx2.meta.length must_== 2
+          postEx2.meta.find(_.id == ex2MetaArtQst_id) must_==
+                                                    Some(exMeta_ex2ArtQst)
+          postEx2.isArticleQuestion must_== true
           true
         }
       }
