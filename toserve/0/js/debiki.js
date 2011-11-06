@@ -3493,30 +3493,26 @@ function makeFakeDrawer() {
     // TODO: Inline threads:  .dw-t:not(.dw-hor) > .dw-i-ts > .dw-i-t
     // TODO: First one:  .dw-t:not(.dw-hor) > .dw-i-ts > .dw-i-t:first-child
     // TODO: Root post's inline threads:  .dw-t.dw-hor > .dw-i-ts > .dw-i-t
-
-    // West-east arrows: (for horizontal Layout)
-    var $threads = $('.dw-hor');
-    // Arrow start, for horizontal layout, and arrow to reply link.
-    $threads.find('> .dw-hor-a > .dw-a').each(function(){
-      $(this).before('<div class="dw-svg-fake-hcurve-start"/>');
-    });
-    // To root post replies
-    $threads.find('> .dw-res > li').each($initPostSvg);
-    // To inline root post replies
-    $threads.find('> .dw-p > .dw-p-bdy > .dw-i-ts > .dw-i-t').each(
-        $initPostSvg);
   }
 
   // Arrows to each child thread.
   function $initPostSvg() {
-    var $parentThread = $(this).closest('.dw-t').parent().closest('.dw-t');
-    if ($parentThread.filter('.dw-hor').length) {
+    var $p = $(this).filter('.dw-p').dwBugIfEmpty();
+    var $t = $p.closest('.dw-t');
+    var $pt = $t.parent().closest('.dw-t');  // parent thread
+    // If this is a horizontally laid out thread with an always visible
+    // Reply button, draw an arrow to that button.
+    $t.find('> .dw-hor-a > .dw-a-reply').each(function(){
+      $(this).before('<div class="dw-svg-fake-hcurve-start"/>');
+    });
+    if ($pt.is('.dw-hor')) {
       // horizontal arrow
-      $(this).filter(':not(:last-child)').each(function(){
-        $(this).prepend("<div class='dw-svg-fake-harrow'/>");
-        $(this).prepend("<div class='dw-svg-fake-harrow-end'/>");
+      $t.filter(':not(:last-child)').each(function(){
+        $(this)
+            .prepend("<div class='dw-svg-fake-harrow'/>")
+            .prepend("<div class='dw-svg-fake-harrow-end'/>");
       });
-      $(this).prepend('<div class="dw-svg-fake-hcurve"/>');
+      $t.prepend('<div class="dw-svg-fake-hcurve"/>');
     } else {
       // vertical arrow, already handled above.
       // TODO not handled above, for *new* threads, no arrows to them :(
