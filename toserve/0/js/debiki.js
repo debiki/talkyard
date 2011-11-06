@@ -3503,7 +3503,10 @@ function makeFakeDrawer() {
     // If this is a horizontally laid out thread with an always visible
     // Reply button, draw an arrow to that button.
     $t.find('> .dw-hor-a > .dw-a-reply').each(function(){
-      $(this).before('<div class="dw-svg-fake-hcurve-start"/>');
+      var arrow = $t.find('> .dw-res > li').length ?
+          "dw-svg-fake-hcurve-start" :     // branches out towards replies
+          "dw-svg-fake-hcurve-start-solo"; // does not
+      $(this).before('<div class="'+ arrow +'"/>');
     });
     if ($pt.is('.dw-hor')) {
       // horizontal arrow
@@ -3513,6 +3516,13 @@ function makeFakeDrawer() {
             .prepend("<div class='dw-svg-fake-harrow-end'/>");
       });
       $t.prepend('<div class="dw-svg-fake-hcurve"/>');
+      if ($t.is(':first-child')) {
+        // If there's a solo arrow to the Reply button, then replace
+        // it with an arrow that branches out to this and other replies.
+        $pt.find('.dw-hor-a > .dw-svg-fake-hcurve-start-solo')
+            .removeClass('dw-svg-fake-hcurve-start-solo')
+            .addClass('dw-svg-fake-hcurve-start');
+      }
     } else {
       // vertical arrow, already handled above.
       // TODO not handled above, for *new* threads, no arrows to them :(
