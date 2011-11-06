@@ -79,6 +79,7 @@
  *  dw-m-p-mine   the user's own post
  *  dw-m-p-edited the post was just edited (edits were axaj-fetched)
  *  dw-m-t-new    this thread was just fetched via ajax, the user hasn't seen it
+ *  dw-p-art-qst  (placed on a thread) the related post is an article question
  *  dw-p-bdy      post body  COULD rename to -bd, already done for .dw-ntf-bd
  *  dw-p-bdy-blk  post body block, a <div> that wraps e.g. a <p>
  *  dw-p-dl       a post, deleted
@@ -465,8 +466,12 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
 
 /* Add some whitespace above replies, when laid out horizontally,
 so there's some space for the SVG arrows. */
-.dw-hor:not(.dw-depth-0) .dw-res {
-  margin-top: 30px;
+.dw-hor:not(.dw-depth-0) > .dw-res {
+  margin-top: 35px;
+}
+.dw-hor:not(.dw-depth-0) > .dw-hor-a {
+  margin-top: 48px;a /* aligns with the .dw-p:s to the right, which
+                      have some padding */
 }
 
 .dw-p {
@@ -730,6 +735,33 @@ or it steals attention from the page title. */
   font-size: 85%;
   background-color: #e7e7e7; /* parent elem, .dw-post-info, has same bg-color,
                                 but its height is restricted */
+}
+
+/* --- Posts that are part of the article --- +/
+
+ - Author info not shown — because it's already shown, at the top
+    of the article (page).
+ - The [-] (fold) button is removed, and the post is unindented
+    (left-margin: 0), because you should not be able to hide/fold the
+    article itself.
+*/
+
+.dw-t.dw-p-art-qst > .dw-z,
+.dw-t.dw-p-art-qst > .dw-p > .dw-p-hdr {
+  display: none !important;
+}
+
+.dw-t.dw-p-art-qst > .dw-p {
+  margin-left: 5px;
+  top: -9px; /* moves it upwards, so it appears slightly above the SVG arrow
+              that presumably points to it, at its left side */
+  position: relative;
+}
+
+/* Style contents as the root post contents. */
+.dw-t.dw-p-art-qst > .dw-p > .dw-p-bdy > .dw-p-bdy-blk > p {
+  line-height: 20px;
+  font-size: 12px;
 }
 
 /* === Inline replies === */
