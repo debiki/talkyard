@@ -3291,6 +3291,31 @@ function makeSvgDrawer() {
                  ' '+ xe +' '+ ye +           //                    \
                ' l -7 -4 m 8 4 l 5 -7'; // arrow end: _|             v
       }
+    } else if (cache.horizontalLayout && cache.index == -1) {
+      // This is an inline thread, which is layed out horizontally,
+      // and we're drawing an arrow to the .dw-hor-a buttons, and there
+      // are no replies. Draw a nice looking arrow for this special case.
+      //
+      //       [Here's the post body]
+      //       [blah bla...         ]
+      //  x0,y0 |
+      //        \
+      //         \  curve 1, from x0,y0 to x1,y1
+      //          |
+      //   x1,y1  v
+      //       [Here's the  ]      (no replies here, only
+      //       [reply button]       the reply button is present)
+
+      var x0 = xs +  8;
+      var y0 = ye - 50; // (but not ys + …)
+      var x1 = xe + 18;
+      var y1 = ye -  8;
+      strokes = 'M '+ (x0     ) +' '+ (y0     ) +
+               ' C '+ (x0 -  4) +' '+ (y1 - 15) +
+                 ' '+ (x1 +  3) +' '+ (y1 - 15) +
+                 ' '+ (x1     ) +' '+ (y1     ) +
+                 ' l -6 -5 m 7 5 l 6 -7';  // arrow end
+
     } else if (cache.horizontalLayout) {
       // This is an inline thread, which is layed out horizontally.
       // Draw 2 Bezier curves and an arrow head at the end:
@@ -3300,28 +3325,31 @@ function makeSvgDrawer() {
       //   |
       //   | curve 1, from x0,y0 to x1,y1
       //   \
-      //    `- x1,y1 ----. curve 2    -------------.  (another curve)
-      //                  \                         \
-      //                   x2,y2                    |
-      //    arrow head ->  v                        v
-      //                  [Here's the reply]       (Another reply)
+      //    `- x1,y1 ------. curve 2      -----------.  (another curve)
+      //       |            \                         \
+      //       /    arrow    x2,y2                    |
+      //      v     head —>  v                        v
+      //     [Reply ]       [Here's the reply]       (Another reply)
+      //     [button]       [...             ]
 
-      var x0 = xs+5;
-      var y0 = ys+30;
+      var x0 = xs +  8;
+      var y0 = ys + 30;
       var x1 = x0 + 27;
       var y1 = ye - 30;
       var x2 = xe + 35;
       var y2 = ye - 13;
 
-      if (cache.index == 0) {
+      if (cache.index <= 1) {
+        // This is an arrow to the .dw-hor-a button (index <= 0)
+        // or the first reply (== 1).
         strokes =
                 'M '+ (x0     ) +' '+ (y0     ) +  //   /
-               ' C '+ (x0 -  3) +' '+ (y1 - 15) +  //   |
+               ' C '+ (x0 -  4) +' '+ (y1 - 15) +  //   |
                  ' '+ (x0 +  5) +' '+ (y1     ) +  //   \
                  ' '+ (x1     ) +' '+ (y1     );   //    `-
       } else {
-        // The first Bezier curve was drawn when we drew
-        // the index == 0 arrow. Start at x1,y1 instead.
+        // The first Bezier curve to this reply was drawn when
+        // we drew the index <= 0 arrow. Start at x1,y1 instead.
         strokes =
                 'M '+ (x1     ) +' '+ (y1     );
       }
@@ -3330,7 +3358,6 @@ function makeSvgDrawer() {
                  ' '+ (x2     ) +' '+ (y1 -  5) +  //          \
                  ' '+ (x2     ) +' '+ (y2     ) +  //          |
                ' l -7 -4 m 8 4 l 5 -7';  // arrow end: _|      v
-
     } else {
       // Draw north-south curve.
       var ym = (ys + ye) / 2;
@@ -3385,7 +3412,10 @@ function makeSvgDrawer() {
     var $wholePostReplies = $i.find('> .dw-res > .dw-t');
     var cache = {};
     $replyBtn.add($wholePostReplies).each(function(index){
-      cache.index = index;
+      // The first reply is index 1; any reply button index 0.
+      cache.index = $replyBtn.length ? index : index + 1;
+      // However if there's no reply, pass magic value:
+      if (!$wholePostReplies.length) cache.index = -1;
       arrowFromThreadToReply($i, $(this), cache);
     });
     // To inline replies.

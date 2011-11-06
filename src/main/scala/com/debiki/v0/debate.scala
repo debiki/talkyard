@@ -520,6 +520,15 @@ class ViPo(debate: Debate, val post: Post) extends ViAc(debate, post) {
   lazy val flagsByReasonSorted: List[(FlagReason, List[Flag])] = {
     flagsByReason.toList.sortWith((a, b) => a._2.length > b._2.length)
   }
+
+  lazy val isArticleQuestion: Boolean = {
+    // For now
+    if (id == RootPostId) true
+    else if (meta.length > 0) {  // so can place breakpoint
+      meta.find(_.text containsSlice "article-question").isDefined
+    }
+    else false
+  }
 }
 
 class ViEd(debate: Debate, val edit: Edit) extends ViAc(debate, edit) {
