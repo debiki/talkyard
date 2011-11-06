@@ -266,16 +266,10 @@ class DebateHtml(val debate: Debate) {
       </div>
       <div id={cssThreadId} class='dw-t dw-depth-0 dw-hor'>
       {
-        // If there's no root post, add an empty <div .dw-p>. It's required
+        // If there's no root post, use a dummy empty one, so an (empty)
+        // <div .dw-p> is created. It's required
         // because JavaScript elsewhere finds .dw-t:s by finding .dw-p parents.
-        rootPost.map(_showComment(_, horizontal = true)).getOrElse(
-            <div id={"dw-t-"+ Debate.RootPostId} class={"dw-p"} />) ++
-        <div class='dw-t-vspace'/>
-        <div class='dw-hor-a'>
-          <a class='dw-a dw-a-reply'>Reply</a>
-          <a class='dw-a dw-a-more'>More...</a>
-          <a class='dw-a dw-a-edit'>Edits</a>
-        </div>
+        _showComment(rootPost.getOrElse(unimplemented), horizontal = true) ++
         <ol class='dw-res ui-helper-clearfix'>{
           _layoutComments(1, rootPosts)
         }
@@ -298,23 +292,25 @@ class DebateHtml(val debate: Debate) {
       cssDepth = "dw-depth-"+ depth
       cssInlineThread = if (p.where isDefined) " dw-i-t" else ""
       replies = debate.repliesTo(p.id)
+      vipo = debate.vipo_!(p.id)
       // Layout replies horizontally, if this is an inline reply to
       // the root post, i.e. depth is 1 -- because then there's unused space
       // to the right. However, the horizontal layout results in a higher
       // thread if there's only one reply. So only do this if there's more
       // than one reply.
-      horizontal = p.where.isDefined && depth == 1 && replies.length > 1
+      horizontal = (p.where.isDefined && depth == 1 && replies.length > 1) ||
+                    vipo.isArticleQuestion
       (cssHoriz, cssClearfix) =
           // Children will float, if horizontal. So clearafix .dw-res.
           if (horizontal) (" dw-hor", " ui-helper-clearfix")
           else ("", "")
-      vipo = debate.vipo_!(p.id)
       cssThreadDeleted = if (vipo.isTreeDeleted) " dw-t-dl" else ""
+      cssArticleQuestion = if (vipo.isArticleQuestion) " dw-p-art-qst" else ""
     }
     yield {
       var li =
         <li id={cssThreadId} class={"dw-t "+ cssDepth + cssInlineThread +
-                                    cssHoriz + cssThreadDeleted}>
+            cssHoriz + cssThreadDeleted + cssArticleQuestion}>
         {
           if (vipo.isTreeDeleted) _showDeletedTree(vipo)
           else {
@@ -513,7 +509,20 @@ class DebateHtml(val debate: Debate) {
         }
       </div></div>
     </div> ++ (
-      if (post.id == Debate.RootPostId) Nil // actions already added by caller
+      if (vipo.isArticleQuestion) {
+        (if (vipo.id == Debate.RootPostId) <div class='dw-t-vspace'/>
+         else Nil) ++
+        // Don't show the Rate and Flag buttons. An article-question cannot
+        // be rated/flaged separately (instead, you flag the article).
+        <div class='dw-hor-a'>
+          <a class='dw-a dw-a-reply'>Reply</a>{/*
+          COULD remove More... and Edits, later when article questions
+          are merged into the root post, so that there's only one Post
+          to edit (but >= 1 posts are created when the page is rendered) */}
+          <a class='dw-a dw-a-more'>More...</a>
+          <a class='dw-a dw-a-edit'>Edits</a>
+        </div>
+      }
       else <a class='dw-as' href={config.reactUrl(debate.guid, post.id)}
             >React</a> )
   }
