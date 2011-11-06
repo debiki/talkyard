@@ -196,6 +196,12 @@ a:link {
   margin: 0;
 }
 
+.dw-t.dw-depth-0 > .dw-p > .dw-p-bdy > .dw-p-bdy-blk > p,
+.dw-t.dw-p-art-qst > .dw-p > .dw-p-bdy > .dw-p-bdy-blk > p {
+  line-height: 20px;
+  font-size: 13px;
+}
+
 /* Show list item marks, but not for nested threads. */
 .dw-ed-tab-preview ul li,
 .dw-p-bdy-blk ul li {
@@ -756,12 +762,6 @@ or it steals attention from the page title. */
   top: -9px; /* moves it upwards, so it appears slightly above the SVG arrow
               that presumably points to it, at its left side */
   position: relative;
-}
-
-/* Style contents as the root post contents. */
-.dw-t.dw-p-art-qst > .dw-p > .dw-p-bdy > .dw-p-bdy-blk > p {
-  line-height: 20px;
-  font-size: 12px;
 }
 
 /* === Inline replies === */
