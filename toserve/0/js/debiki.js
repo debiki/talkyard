@@ -1574,13 +1574,17 @@ function $foldOutLeft() {
   // $.remove()d though.
 }
 
+function removeInstantly($form) {
+  $form.remove();
+  resizeRootThread();
+}
+
 // Action <form> cancel button -- won't work for the Edit form...?
 function slideAwayRemove($form) {
   // Slide away <form> and remove it.
   var $thread = $form.closest('.dw-t');
   function rm(next) {
-    $form.remove();
-    resizeRootThread();
+    removeInstantly($form);
     next();
   }
   // COULD elliminate dupl code that determines whether to fold or slide.
@@ -2336,9 +2340,13 @@ function $showReplyForm(event, opt_where) {
       Settings.replyFormSubmitter($replyForm, debateId, postId)
         .done(function(newDebateHtml) {
           // The server has replied. Merge in the data from the server
-          // (i.e. the new post) in the debate, and remove the form.
+          // (i.e. the new post) in the debate.
+          // Remove the reply form first — if you do it afterwards,
+          // a .dw-t:last-child might fail (be false), because the form
+          // would be the last child, resulting in a superfluous
+          // dw-svg-fake-harrow.
+          removeInstantly($replyFormParent);
           updateDebate(newDebateHtml);
-          slideAwayRemove($replyFormParent);
         })
         .fail(function(jqXHR, errorType, httpStatusText) {
           // Show error info and enable submit/cancel buttons again.
