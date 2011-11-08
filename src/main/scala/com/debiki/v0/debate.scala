@@ -389,6 +389,7 @@ case class Debate (
  */
 class ViAc(val debate: Debate, val action: Action) {
   def id: String = action.id
+  def date = action.date
   def login: Option[Login] = debate.login(action.loginId)
   def login_! : Login = login.get
   def identity: Option[Identity] = login.flatMap(l =>
@@ -401,7 +402,8 @@ class ViAc(val debate: Debate, val action: Action) {
   def ipSaltHash: Option[String] = ip.map(saltAndHashIp(_))
   def ipSaltHash_! : String = saltAndHashIp(ip_!)
 
-  def meta = debate.metaFor(this)
+  def metaPosts = debate.metaFor(this)
+  lazy val metaText: String = metaPosts.foldLeft("")(_ + _.text)
 
   def isTreeDeleted = {
     // In case there are > 1 deletions, consider the first one only.
@@ -521,13 +523,17 @@ class ViPo(debate: Debate, val post: Post) extends ViAc(debate, post) {
     flagsByReason.toList.sortWith((a, b) => a._2.length > b._2.length)
   }
 
-  lazy val isArticleQuestion: Boolean = {
-    // For now
-    if (id == RootPostId) true
-    else if (meta.length > 0) {  // so can place breakpoint
-      meta.find(_.text containsSlice "article-question").isDefined
+  private val _FixPosRegex = """fixed-position: ?(\d+)""".r
+
+  lazy val meta: PostMeta = {
+    var fixedPos: Option[Int] = None
+    var isArticleQuestion = id == RootPostId
+    for (m <- metaPosts ; line <- m.text.lines) line match {
+      case "article-question" => isArticleQuestion = true
+      case _FixPosRegex(pos) => fixedPos = Some(pos.toInt)
+      case _ =>
     }
-    else false
+    PostMeta(isArticleQuestion = isArticleQuestion, fixedPos = fixedPos)
   }
 }
 
@@ -612,6 +618,11 @@ case class Post(
                                  // `where', without affecting this Post.text.
 ) extends Action {
 }
+
+case class PostMeta(
+  isArticleQuestion: Boolean = false,
+  fixedPos: Option[Int] = None
+)
 
 // Could rename to Patch? or Diff?
 case class Edit (

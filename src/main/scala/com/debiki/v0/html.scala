@@ -283,29 +283,32 @@ class DebateHtml(val debate: Debate) {
     // COULD let this function return Nil if posts.isEmpty, and otherwise
     // wrap any posts in <ol>:s, with .dw-ts or .dw-i-ts CSS classes
     // — this would reduce dupl wrapping code.
+    val vipos = posts.map(p => debate.vipo_!(p.id))
     for {
       // Could skip sorting inline posts, since sorted by position later
       // anyway, in javascript. But if javascript disabled?
-      p <- posts.sortBy(p => p.date.getTime). // the oldest first
-                sortBy(p => -pageStats.scoreFor(p.id).liking)
+      p <- vipos.sortBy(p => p.date.getTime). // the oldest first
+                sortBy(p => -pageStats.scoreFor(p.id).liking).
+                sortBy(p => p.meta.fixedPos.getOrElse(999999))
       cssThreadId = "dw-t-"+ p.id
       cssDepth = "dw-depth-"+ depth
       cssInlineThread = if (p.where isDefined) " dw-i-t" else ""
       replies = debate.repliesTo(p.id)
-      vipo = debate.vipo_!(p.id)
+      vipo = p // debate.vipo_!(p.id)
       // Layout replies horizontally, if this is an inline reply to
       // the root post, i.e. depth is 1 -- because then there's unused space
       // to the right. However, the horizontal layout results in a higher
       // thread if there's only one reply. So only do this if there's more
       // than one reply.
       horizontal = (p.where.isDefined && depth == 1 && replies.length > 1) ||
-                    vipo.isArticleQuestion
+                    vipo.meta.isArticleQuestion
       (cssHoriz, cssClearfix) =
           // Children will float, if horizontal. So clearafix .dw-res.
           if (horizontal) (" dw-hor", " ui-helper-clearfix")
           else ("", "")
       cssThreadDeleted = if (vipo.isTreeDeleted) " dw-t-dl" else ""
-      cssArticleQuestion = if (vipo.isArticleQuestion) " dw-p-art-qst" else ""
+      cssArticleQuestion = if (vipo.meta.isArticleQuestion) " dw-p-art-qst"
+                          else ""
     }
     yield {
       var li =
@@ -509,7 +512,7 @@ class DebateHtml(val debate: Debate) {
         }
       </div></div>
     </div> ++ (
-      if (vipo.isArticleQuestion) {
+      if (vipo.meta.isArticleQuestion) {
         (if (vipo.id == Debate.RootPostId) <div class='dw-t-vspace'/>
          else Nil) ++
         // Don't show the Rate and Flag buttons. An article-question cannot
