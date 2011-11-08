@@ -472,7 +472,7 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
           d must havePostLike(exMeta_ex2EmptyMeta, id = ex2MetaEmpty_id)
           val postEx2 = d.vipo_!(ex2_id)
           postEx2.meta must_== List(exMeta_ex2EmptyMeta)
-          postEx2.isArticleQuestion must_== false
+          postEx2.meta.isArticleQuestion must_== false
           true
         }
       }
@@ -498,10 +498,10 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
         case Full(d: Debate) => {
           d must havePostLike(exMeta_ex2ArtQst)
           val postEx2 = d.vipo_!(ex2_id)
-          postEx2.meta.length must_== 2
-          postEx2.meta.find(_.id == ex2MetaArtQst_id) must_==
+          postEx2.metaPosts.length must_== 2
+          postEx2.metaPosts.find(_.id == ex2MetaArtQst_id) must_==
                                                     Some(exMeta_ex2ArtQst)
-          postEx2.isArticleQuestion must_== true
+          postEx2.meta.isArticleQuestion must_== true
           true
         }
       }
