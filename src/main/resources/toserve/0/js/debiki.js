@@ -1348,13 +1348,11 @@ function $showInlineActionMenu(event) {
   // whether or not it's the user's post.
   var authorId = $post.dwAuthorId();
   var curUserId = Me.getUserId();
-  var editTitle = curUserId === authorId ?
-      'Edit' : '<i>Suggest</i> Edit';  // i18n
 
   // Open a menu, with Edit, Reply and Cancel buttons. CSS: '-i' means inline.
   $menu = $(  // TODO i18n
       '<ul class="dw-as-inline">' +
-        '<li><a class="dw-a-edit-i">'+ editTitle +'</a></li>' +
+        '<li><a class="dw-a-edit-i">Improve</a></li>' +
         '<li><a class="dw-a-reply-i">Reply inline</a></li>' +
         //'<li><a class="dw-a-mark-i">Mark</a></li>' + // COULD implement
       '</ul>');
