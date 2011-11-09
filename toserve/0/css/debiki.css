@@ -1279,9 +1279,17 @@ it works everywhere, even if it works fine for you. */
 }
 
 .dw-f-ed .dw-f-ed-sugg-info {
-  padding: 1em 0 1ex;
+  margin-top: 1ex;
+  padding: 6px;
   max-width: 32em;
+  float: left; /* or margin-top has no effect */
   clear: both;
+  background-color: #FFEFC6;
+}
+
+.dw-f-ed .dw-f-ed-sugg-info > strong {
+  color: green;
+  font-weight: bold;
 }
 
 /* === Edit history / suggestions === */  /* — old not in use? */
