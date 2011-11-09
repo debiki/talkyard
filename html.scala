@@ -1018,7 +1018,7 @@ class FormHtml(val config: HtmlConfig, val permsOnPage: PermsOnPage) {
        <input type='button' class='dw-fi-cancel' value='Cancel'/>
       </div>
       <div class='dw-f-ed-sugg-info'>You are submitting an edit
-        <i>suggestion</i> — I don't know if someone will review it
+        <strong>suggestion</strong> — hopefully someone will review it
         and accept it.</div>
     </form>
   }
