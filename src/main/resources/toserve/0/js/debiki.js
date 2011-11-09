@@ -1562,6 +1562,12 @@ function $foldInLeft() {
 }
 
 function $foldOutLeft() {
+  // IE 7 and 8 bug fix: $.fold leaves the elem folded up
+  // (the subsequent fold-left won't happen).
+  if ($.browser.msie && $.browser.version < '9') {
+    $(this).hide();
+    return;
+  }
   // COULD optimize: See $slideUp(…), but pointless right now.
   fold($(this), {
     firstProps: {height: 30},
