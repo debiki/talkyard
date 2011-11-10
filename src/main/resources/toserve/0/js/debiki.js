@@ -3279,7 +3279,7 @@ function makeSvgDrawer() {
         // for [the arrow to the Reply button of the root post].
         // Draw a special north-south curve, that starts just like the west-east
         // curve in the `else' block just below.
-        xe += $to.width() * 0.67;
+        xe += Math.min(32, $to.width() * 0.67);
         ye -= 13;
         var dx = 40 - 10;
         var dy = 28;
@@ -3513,6 +3513,13 @@ function makeFakeDrawer() {
     // TODO: Root post's inline threads:  .dw-t.dw-hor > .dw-i-ts > .dw-i-t
   }
 
+  // Points on the Reply button, and branches out to the replies to the
+  // right of the button.
+  var replyBtnBranchingArrow =
+      '<div class="dw-svg-fake-hcurve-start"/>' + // branches out
+      '<div class="dw-svg-fake-harrow"></div>' + // extends branch
+      '<div class="dw-svg-fake-harrow-hider-left"></div>';
+
   // Arrows to each child thread.
   function $initPostSvg() {
     var $p = $(this).filter('.dw-p').dwBugIfEmpty();
@@ -3521,10 +3528,14 @@ function makeFakeDrawer() {
     // If this is a horizontally laid out thread with an always visible
     // Reply button, draw an arrow to that button.
     $t.find('> .dw-hor-a > .dw-a-reply').each(function(){
-      var arrow = $t.find('> .dw-res > li').length ?
-          "dw-svg-fake-hcurve-start" :     // branches out towards replies
-          "dw-svg-fake-hcurve-start-solo"; // does not
-      $(this).before('<div class="'+ arrow +'"/>');
+      if ($t.find('> .dw-res > li').length) {
+        // There are some replies. Use an arrow that branches
+        // out towards them.
+        $(this).before(replyBtnBranchingArrow);
+      } else {
+        $(this).before(
+            '<div class="dw-svg-fake-hcurve-start-solo"/>');
+      }
     });
     if ($pt.is('.dw-hor')) {
       // horizontal arrow
@@ -3536,10 +3547,11 @@ function makeFakeDrawer() {
       $t.prepend('<div class="dw-svg-fake-hcurve"/>');
       if ($t.is(':first-child')) {
         // If there's a solo arrow to the Reply button, then replace
-        // it with an arrow that branches out to this and other replies.
+        // it with an arrow that branches out to the Reply button and
+        // the replies.
         $pt.find('.dw-hor-a > .dw-svg-fake-hcurve-start-solo')
-            .removeClass('dw-svg-fake-hcurve-start-solo')
-            .addClass('dw-svg-fake-hcurve-start');
+            .before(replyBtnBranchingArrow)
+            .remove();
       }
     } else {
       // vertical arrow, already handled above.
