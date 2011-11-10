@@ -900,8 +900,8 @@ class FormHtml(val config: HtmlConfig, val permsOnPage: PermsOnPage) {
     </div>
   }
 
-  def editsDialog(nipo: ViPo, page: Debate, userName: Option[String]
-                     ): NodeSeq = {
+  def editsDialog(nipo: ViPo, page: Debate, userName: Option[String],
+                  mayEdit: Boolean): NodeSeq = {
     def xmlFor(edit: Edit, eapp: Option[EditApp]): NodeSeq = {
       val applied = eapp isDefined
       val editor = page.authorOf_!(edit)
@@ -926,7 +926,12 @@ class FormHtml(val config: HtmlConfig, val permsOnPage: PermsOnPage) {
             // changes are to be made.
             // (Namely the order in which the user checks/unchecks the
             // checkboxes.)
-            if (!applied) {
+            if (!mayEdit) {
+              // For now, show no Apply/Undo button. COULD show *vote*
+              // buttons instead.
+              Nil
+            }
+            else if (!applied) {
               val aplVal = "0-apply-"+ edit.id
               val delVal = "0-delete-"+ edit.id
               val aplId = name +"-apply-"+ edit.id
@@ -955,8 +960,10 @@ class FormHtml(val config: HtmlConfig, val permsOnPage: PermsOnPage) {
           //.sortBy(e => -pageStats.likingFor(e).lowerBound)
     // Must be sorted by time, most recent first (debiki.js requires this).
     val applied = nipo.editsAppdDesc
+    val cssMayEdit = if (mayEdit) "dw-e-sgs-may-edit" else ""
 
-    <form id='dw-e-sgs' action='?applyedits' title='Improvement Suggestions'>
+    <form id='dw-e-sgs' action='?applyedits' class={cssMayEdit}
+          title='Improvement Suggestions'>
       { _xsrfToken }
       <div id='dw-e-sgss'>
         <div>Improvement suggestions:</div>
