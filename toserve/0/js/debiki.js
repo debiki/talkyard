@@ -2522,6 +2522,12 @@ function $showEditForm2() {
       }
     });
 
+    // It might not be obvious that you can scroll down and click a Save
+    // button. (Neither my mom nor dad found it! when it was off screen.)
+    // For now, simply write a tips if it perhaps is off screen.
+    if ($editForm.height() > 650)
+      $editForm.children('.dw-f-e-inf-save').show();
+
     // Show the preview tab on 'Preview and save ...' click.
     $previewBtn.click(function() {
       $editForm.tabs('select', 2);
