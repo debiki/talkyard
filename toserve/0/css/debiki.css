@@ -609,6 +609,14 @@ or it steals attention from the page title. */
   margin-right: 16px;
 }
 
+/* The reply button text can be customized, so it might be rather wide,
+so set max-width and line height. */
+.dw-hor-a > .dw-a-reply {
+  max-width: 8em;
+  display: inline-block; /* or max-width has no effect */
+  line-height: 120%;
+}
+
 .dw-a {
   cursor: crosshair !important; /* otherwise would show cursor:auto */
   text-decoration: none;
@@ -1533,6 +1541,13 @@ inside widgets, rather than buttons and tabs. */
 .dw-pri input.ui-button { padding: .4em 1em; }
 
 
+/* === User magic === */
+
+.debiki-0-reply-button-text {
+  display: none;
+}
+
+
 /* === SVG === */
 
 .dw-p-bdy.dw-svg-parent {
@@ -1582,11 +1597,24 @@ JavaScript. Then I can still place all CSS stuff in this file. */
   z-index: -10;
 }
 
+.dw-svg-fake-harrow-hider-left,
 .dw-svg-fake-harrow,
 .dw-svg-fake-harrow-end {
   height: 3px;
   width: 100%;
   top: -50px;
+}
+
+.dw-hor-a .dw-svg-fake-harrow {
+  z-index: -13;
+}
+
+/* Hides the -harrow to the left of the .dw-svg-fake-hcurve-start. */
+.dw-hor-a .dw-svg-fake-harrow-hider-left {
+  width: 50px;
+  background-color: white;
+  position: absolute;
+  z-index: -12;
 }
 
 .dw-svg-fake-harrow-end {
