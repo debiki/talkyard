@@ -11,7 +11,7 @@ import scala.collection.JavaConversions._
 import collection.{mutable => mut, immutable => imm}
 import _root_.net.liftweb.common.{Box, Full, Empty, EmptyBox, Failure}
 import _root_.net.liftweb.util.ControlHelpers.tryo
-import _root_.scala.xml.{NodeSeq, Elem, Text, XML, Attribute}
+import _root_.scala.xml.{NodeSeq, Node, Elem, Text, XML, Attribute}
 import FlagReason.FlagReason
 import Prelude._
 
@@ -224,6 +224,14 @@ object DebateHtml {
     }});
     </script>
   )
+
+  private def _attrEq(name: String, value: String)(node: Node) =
+    node.attribute(name).filter(_.text == value).isDefined
+
+  def findChildrenOfNode(withClass: String, in: NodeSeq): Option[NodeSeq] =
+    (in \\ "_").filter(_attrEq("class", withClass)).
+        headOption.map(_.child)
+
 }
 
 
@@ -395,6 +403,11 @@ class DebateHtml(val debate: Debate) {
       case x => unimplemented("Markup of "+ safed(x))
        */
     }
+    var replyBtnText: NodeSeq = xml.Text("Reply")
+    if (vipo.meta.isArticleQuestion) {
+       findChildrenOfNode(withClass = "debiki-0-reply-button-text",
+           in = xmlText) foreach { replyBtnText = _ }
+    }
     val long = numLines > 9
     val cutS = if (long && post.id != Debate.RootPostId) " dw-x-s" else ""
     val author = debate.authorOf_!(post)
@@ -518,7 +531,7 @@ class DebateHtml(val debate: Debate) {
         // Don't show the Rate and Flag buttons. An article-question cannot
         // be rated/flaged separately (instead, you flag the article).
         <div class='dw-hor-a'>
-          <a class='dw-a dw-a-reply'>Reply</a>{/*
+          <a class='dw-a dw-a-reply'>{replyBtnText}</a>{/*
           COULD remove More... and Edits, later when article questions
           are merged into the root post, so that there's only one Post
           to edit (but >= 1 posts are created when the page is rendered) */}
