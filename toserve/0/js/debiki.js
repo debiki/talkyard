@@ -403,6 +403,7 @@ function $findChildrenWidthHoriz() {
   // currently none of their child threads can have horizontal layout
   // (only replies to inline-article-replies, and article replies,
   // have horizontal layout).
+  // BUG? Doesn't this ignore '> .dw-hor-a > .dw-a-reply'?
   var width = 0;
   $(this).find('> .dw-res > li, > .dw-fs, > .dw-a').each(function(){
     width += $(this).outerWidth(true);  // need not recurse, see comment above
@@ -653,6 +654,13 @@ function updateDebate(newDebateHtml) {
       // and the *old* date wold be shown, causing confusion: the replies
       // would seemingly reply to the *old* version. For now though:
       var isPostReverted = !isNewThread && newDate < oldDate;
+      // BUG: If >= 2 edits were applied at the same time, newDate won't be
+      // affected if you revert just one of them, so isPostReverted will
+      // be false and the changes won't take effect until after page reload.
+      // (Don't fix that bug. I'll probably rewrite, so one can undo only
+      // the last edit applied, and not revert, but *reverse*, other edits,
+      // I mean, apply it again but "inverted" so it undoes itself. Then
+      // the modification date would always increase and the bug is no more.)
       var oldRatsModTime =
           $oldPost.find('> .dw-p-hdr > .dw-p-ra-all').attr('data-mtime');
       var newRatsModTime =
