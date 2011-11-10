@@ -230,6 +230,8 @@ case class Debate (
     // prefixed to the editApps list.
     editAppsByPostId.getOrElse(postId, Nil).sortBy(- _.date.getTime)
 
+  def editApp(withId: String): Option[EditApp] =
+    editApps.filter(_.id == withId).headOption
 
   // -------- Deletions
 
@@ -242,6 +244,8 @@ case class Debate (
     // That is, if the deletion was *undone*. Delete, undo, redo... a redo
     // would be a deleted deletion of a deletion?
 
+  def deletion(withId: String): Option[Delete] =
+    deletions.filter(_.id == withId).headOption
 
   // -------- Construction
 

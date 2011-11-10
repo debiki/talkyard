@@ -2609,6 +2609,17 @@ function $showEditsDialog() {
   $.get('?viewedits='+ postId, 'text').fail(showServerResponseDialog)
       .done(function(editsHtml) {
     var $editDlg = $(editsHtml).filter('form#dw-e-sgs'); // filter out text node
+    var buttons = {
+      Cancel: function() {
+        $(this).dialog('close');
+      }
+    };
+    if ($editDlg.is('.dw-e-sgs-may-edit')) buttons.Save = function() {
+      // COULD show "Saving..." dialog and close when done.
+      // Otherwise the new html might arrive when the user has started
+      // doing something else.
+      $(this).submit().dialog('close');
+    };
     $editDlg.dialog({
       autoOpen: false,
       width: 1000,
@@ -2616,17 +2627,7 @@ function $showEditsDialog() {
       modal: true,
       resizable: false,
       zIndex: 1190,  // the default, 1000, is lower than <form>s z-index
-      buttons: {
-        Cancel: function() {
-          $(this).dialog('close');
-        },
-        Save: function() {
-          // COULD show "Saving..." dialog and close when done.
-          // Otherwise the new html might arrive when the user has started
-          // doing something else.
-          $(this).submit().dialog('close');
-        }
-      },
+      buttons: buttons,
       close: function() {
         // Need to remove() this, so ids won't clash should a new form
         // be loaded later.
