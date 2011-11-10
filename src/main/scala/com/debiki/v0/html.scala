@@ -990,6 +990,7 @@ class FormHtml(val config: HtmlConfig, val permsOnPage: PermsOnPage) {
           method='post'>
       { _xsrfToken }
       {/* timeWaistWarning("edits", "are") */}
+      <div class='dw-f-e-inf-save'>Scroll down and click Save when done.</div>
       <div id='dw-ed-tabs'>
         <ul>
           <li><a href='#dw-ed-tab-edit'>Edit</a></li>

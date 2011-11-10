@@ -29,6 +29,7 @@
  *  -hor-         horizontal layout COULD rename to -hz- ? -vt- = vertical?
  *  -i-           inline
  *  -img-         image
+ *  -inf-         information
  *  -login-       COULD change to -lgi
  *  -logout-                      -lgo
  *  -m-           mark
@@ -1278,7 +1279,8 @@ it works everywhere, even if it works fine for you. */
   padding: 0;
 }
 
-.dw-f-ed .dw-f-ed-sugg-info {
+.dw-f-e-inf-save,
+.dw-f-ed .dw-f-ed-sugg-info { /* COULD rename to .dw-f-e-inf-sg? */
   margin-top: 1ex;
   padding: 6px;
   max-width: 32em;
@@ -1287,9 +1289,15 @@ it works everywhere, even if it works fine for you. */
   background-color: #FFEFC6;
 }
 
+.dw-f-e-inf-save,
 .dw-f-ed .dw-f-ed-sugg-info > strong {
   color: green;
   font-weight: bold;
+}
+
+.dw-f-e-inf-save {
+  display: none;
+  float: none; /* or it floats to the left of the edit tabs */
 }
 
 /* === Edit history / suggestions === */  /* — old not in use? */
