@@ -779,18 +779,21 @@ function $initPostsThread() {
 }
 
 function $initPostsThreadStep1() {
-  // COULD rewrite-rename to initThread, which handles whole subtrees at once.
-  // Then, $(".debiki .dw-p").each($initPost)
-  // would be changed to $('#dw-root').each($initThread).
-
   var $thread = $(this).closest('.dw-t');
 
-  // Add action buttons.
-  var $actions = $('#dw-action-menu')
+  // Find or add action buttons.
+  var $actions = $thread.children('.dw-res').children('.dw-p-as');
+  if ($actions.length) {
+    // This thread is laid out horizontally and the action links have
+    // already been placed somewhere in the child thread <ol>.
+  } else {
+    $actions = $('#dw-action-menu')
         .clone()
         .removeAttr('id')
         .css('visibility', 'hidden');
-  $thread.find('> .dw-as').replaceWith($actions);
+    $thread.find('> .dw-as').replaceWith($actions);
+  }
+
   // {{{ On delegating events for reply/rate/edit.
   // Placing a jQuery delegate on e.g. .debiki instead, entails that
   // these links are given excessively low precedence on Android:
@@ -801,23 +804,15 @@ function $initPostsThreadStep1() {
   $actions.children('.dw-a-reply').click($showReplyForm);
   $actions.children('.dw-a-rate').click($showRatingForm);
   $actions.children('.dw-a-more').click(function() {
-    $(this).remove();
-    $actions.children(
-        '.dw-a-link, .dw-a-edit, .dw-a-flag, .dw-a-delete').show();
+    $(this).closest('.dw-p-as').find('.dw-a')
+        .show()                       // :not(.dw-hor-a) > a is display:none
+        .css('visibility', 'visible') // .dw-hor-a > a is hidden display:block
+        .end().end().remove();
   });
   //$actions.children('.dw-a-link').click($showLinkForm); — not implemented
   $actions.children('.dw-a-edit').click($showEditsDialog);
   $actions.children('.dw-a-flag').click($showFlagForm);
   $actions.children('.dw-a-delete').click($showDeleteForm);
-
-  // For the root thread. (Could remove dupl code: merge w code just above)
-  $thread.children('.dw-hor-a')
-      .children('.dw-a-reply').click($showReplyForm).end()
-      .children('.dw-a-edit').click($showEditsDialog).end()
-      .children('.dw-a-more').click(function() {
-    $(this).closest('.dw-hor-a').find('.dw-a').css('visibility', 'visible');
-    $(this).remove();
-  });
 
   // Open/close threads if the thread-info div is clicked.
   $thread.children('.dw-z').click($threadClose);
@@ -1587,7 +1582,11 @@ function $foldOutLeft() {
 }
 
 function removeInstantly($form) {
+  var $thread = $form.closest('.dw-t');
   $form.remove();
+  // Refresh SVG threads. When the last animation step callback was
+  // invoked, the $form had not yet been remove()d.
+  $thread.each(SVG.$drawPost).each(SVG.$drawParents);
   resizeRootThread();
 }
 
@@ -2380,6 +2379,7 @@ function $showReplyForm(event, opt_where) {
       // color and font matching <input> buttons
       'dw-ui-state-default-color dw-ui-widget-font');
 
+    $replyFormParent.hide();
     if (opt_where) {
       // The user replies to a specific piece of text inside the post.
       // Place the reply inline, and fill in the `where' form field with
@@ -2387,14 +2387,20 @@ function $showReplyForm(event, opt_where) {
       $replyFormParent.prependTo(opt_where.elem);
       $replyForm.find('input[id^="dw-fi-reply-where"]')
           .val(opt_where.textStart);
-    } else {
-      // Place the form below the post, in the .dw-res list.
+    } else if ($thread.is('.dw-hor')) {
+      // Place the form in the child thread list, to the right
+      // of the Reply button.
+      var $actionsListItem = $thread.find('> ol.dw-res > li.dw-p-as');
+      $actionsListItem.after($replyFormParent);
+    }
+    else {
+      // Place the form below the post, in the .dw-res list
       var $res = $thread.children('.dw-res');
       if (!$res.length) {
-        // This is the first reply; create the reply list. // TODO: DUPL CODE
+        // This is the first reply; create the reply list.
         $res = $("<ol class='dw-res'/>").appendTo($thread);
       }
-      $res.prepend($replyFormParent.hide());
+      $res.prepend($replyFormParent);
     }
     $replyFormParent.each(SVG.$drawPost);
     slideInActionForm($replyFormParent);
@@ -3318,10 +3324,12 @@ function makeSvgDrawer() {
                  ' '+ xe +' '+ ye +           //                    \
                ' l -7 -4 m 8 4 l 5 -7'; // arrow end: _|             v
       }
-    } else if (cache.horizontalLayout && cache.index == -1) {
+    } else if (cache.horizontalLayout && cache.itemIndex == 0 &&
+        cache.itemCount == 1) {
       // This is an inline thread, which is layed out horizontally,
-      // and we're drawing an arrow to the .dw-hor-a buttons, and there
-      // are no replies. Draw a nice looking arrow for this special case.
+      // and we're drawing an arrow to the reply button (which is always
+      // present), and there are no replies. Draw a nice looking arrow
+      // for this special case.
       //
       //       [Here's the post body]
       //       [blah bla...         ]
@@ -3366,9 +3374,10 @@ function makeSvgDrawer() {
       var x2 = xe + 35;
       var y2 = ye - 13;
 
-      if (cache.index <= 1) {
-        // This is an arrow to the .dw-hor-a button (index <= 0)
-        // or the first reply (== 1).
+      if (cache.itemIndex == 0) {
+        // This is an arrow to the Reply button or a reply that's been
+        // nailed as child no. 0 (and the Reply button is somewhere
+        // to the right).
         strokes =
                 'M '+ (x0     ) +' '+ (y0     ) +  //   /
                ' C '+ (x0 -  4) +' '+ (y1 - 15) +  //   |
@@ -3376,7 +3385,7 @@ function makeSvgDrawer() {
                  ' '+ (x1     ) +' '+ (y1     );   //    `-
       } else {
         // The first Bezier curve to this reply was drawn when
-        // we drew the index <= 0 arrow. Start at x1,y1 instead.
+        // we drew the itemIndex == 0 arrow. Start at x1,y1 instead.
         strokes =
                 'M '+ (x1     ) +' '+ (y1     );
       }
@@ -3435,14 +3444,10 @@ function makeSvgDrawer() {
     });
     // Draw arrows to whole post replies, and, for horizontal layout,
     // to the Reply button.
-    var $replyBtn = $i.children('.dw-hor-a');
-    var $wholePostReplies = $i.find('> .dw-res > .dw-t');
-    var cache = {};
-    $replyBtn.add($wholePostReplies).each(function(index){
-      // The first reply is index 1; any reply button index 0.
-      cache.index = $replyBtn.length ? index : index + 1;
-      // However if there's no reply, pass magic value:
-      if (!$wholePostReplies.length) cache.index = -1;
+    var $childItems = $i.find('> .dw-res > li');
+    var cache = { itemCount: $childItems.length };
+    $childItems.each(function(index){
+      cache.itemIndex = index;
       arrowFromThreadToReply($i, $(this), cache);
     });
     // To inline replies.
