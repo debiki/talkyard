@@ -792,6 +792,10 @@ function $initPostsThreadStep1() {
         .removeAttr('id')
         .css('visibility', 'hidden');
     $thread.find('> .dw-as').replaceWith($actions);
+    // Touch devices cannot show-on-mouse-hover.
+    if (Modernizr.touch)
+      $actions.children('.dw-a-reply, .dw-a-rate')
+          .css('visibility', 'visible');
   }
 
   // {{{ On delegating events for reply/rate/edit.
