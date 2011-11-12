@@ -277,9 +277,13 @@ class DebateHtml(val debate: Debate) {
         // If there's no root post, use a dummy empty one, so an (empty)
         // <div .dw-p> is created. It's required
         // because JavaScript elsewhere finds .dw-t:s by finding .dw-p parents.
-        _showComment(rootPost.getOrElse(unimplemented), horizontal = true) ++
+        val (comment, replyBtnText) = _showComment(
+            rootPost.getOrElse(unimplemented), horizontal = true)
+        val replyBtn = _replyBtnListItem(replyBtnText)
+        comment ++
+        <div class='dw-t-vspace'/>
         <ol class='dw-res ui-helper-clearfix'>{
-          _layoutComments(1, rootPosts)
+          _layoutComments(1, replyBtn, rootPosts)
         }
         </ol>
       }
@@ -287,11 +291,30 @@ class DebateHtml(val debate: Debate) {
     </div>
   }
 
-  private def _layoutComments(depth: Int, posts: List[Post]): NodeSeq = {
+  private def _replyBtnListItem(replyBtnText: NodeSeq): NodeSeq = {
+    // Don't show the Rate and Flag buttons. An article-question
+    // cannot be rated/flaged separately (instead, you flag the
+    // article).
+    <li class='dw-hor-a dw-p-as dw-as'>{/* COULD remove! dw-hor-a */}
+      <a class='dw-a dw-a-reply'>{replyBtnText}</a>{/*
+      COULD remove More... and Edits, later when article questions
+      are merged into the root post, so that there's only one Post
+      to edit (but >= 1 posts are created when the page is
+      rendered) */}
+      <a class='dw-a dw-a-more'>More...</a>
+      <a class='dw-a dw-a-edit'>Edits</a>
+    </li>
+  }
+
+  private def _layoutComments(depth: Int, parentReplyBtn: NodeSeq,
+                              posts: List[Post]): NodeSeq = {
     // COULD let this function return Nil if posts.isEmpty, and otherwise
     // wrap any posts in <ol>:s, with .dw-ts or .dw-i-ts CSS classes
     // — this would reduce dupl wrapping code.
     val vipos = posts.map(p => debate.vipo_!(p.id))
+    var replyBtnPending = parentReplyBtn.nonEmpty
+
+    var comments: NodeSeq = Nil
     for {
       // Could skip sorting inline posts, since sorted by position later
       // anyway, in javascript. But if javascript disabled?
@@ -325,13 +348,19 @@ class DebateHtml(val debate: Debate) {
         {
           if (vipo.isTreeDeleted) _showDeletedTree(vipo)
           else {
-            (if (vipo.isDeleted) _showDeletedComment(vipo)
-            else _showComment(vipo, horizontal = horizontal)) ++
-            (if (debate.repliesTo(p.id).isEmpty) Nil
-            else
-              <ol class={"dw-res"+ cssClearfix}>
-                { _layoutComments(depth + 1, replies) }
-              </ol>)
+            val (comment, replyBtnText) =
+              if (vipo.isDeleted) (_showDeletedComment(vipo), xml.Text("Reply"))
+              else _showComment(vipo, horizontal = horizontal)
+
+            val myReplyBtn =
+              if (vipo.meta.isArticleQuestion) _replyBtnListItem(replyBtnText)
+              else Nil
+            comment ++ (
+              if (replies.isEmpty && myReplyBtn.isEmpty) Nil
+              else <ol class={"dw-res"+ cssClearfix}>
+                { _layoutComments(depth + 1, myReplyBtn, replies) }
+              </ol>
+            )
           }
         }
         </li>
@@ -339,8 +368,19 @@ class DebateHtml(val debate: Debate) {
       // COULD rename attr to data-where, that's search/replace:able enough.
       if (p.where isDefined) li = li % Attribute(
           None, "data-dw-i-t-where", Text(p.where.get), scala.xml.Null)
-      li
+
+      // Place the Reply button just after the last fixed-position comment.
+      // Then it'll be obvious (?) that if you click the Reply button,
+      // your comment will appear to the right of the fixed-pos comments.
+      if (replyBtnPending && p.meta.fixedPos.isEmpty) {
+        replyBtnPending = false
+        comments ++= parentReplyBtn
+      }
+      comments ++= li
     }
+
+    if (replyBtnPending) comments ++ parentReplyBtn
+    else comments
   }
 
   private def _showDeletedTree(vipo: ViPo): NodeSeq = {
@@ -366,7 +406,10 @@ class DebateHtml(val debate: Debate) {
     </div>
   }
 
-  private def _showComment(vipo: ViPo, horizontal: Boolean): NodeSeq = {
+  /** Returns the comment and the Reply button text.
+   */
+  private def _showComment(vipo: ViPo, horizontal: Boolean
+                              ): (NodeSeq, NodeSeq) = {
     def post = vipo.post
     val editsAppld: List[(Edit, EditApp)] = vipo.editsAppdDesc
     val lastEditApp = editsAppld.headOption.map(_._2)
@@ -510,7 +553,7 @@ class DebateHtml(val debate: Debate) {
     // COULD find a better name for the two data-p-by-...-sh attrs below.
     // Also, perhaps they should be part of the .dw-p-by <a>?
     // the – on the next line is an `en dash' not a minus
-    <a class='dw-z'>[–]</a>
+    (<a class='dw-z'>[–]</a>
     <div id={cssPostId} class={"dw-p" + cutS + clearfix}
          data-p-by-ip-sh={vipo.ipSaltHash_!}>
       <div class='dw-p-hdr'>
@@ -525,22 +568,10 @@ class DebateHtml(val debate: Debate) {
         }
       </div></div>
     </div> ++ (
-      if (vipo.meta.isArticleQuestion) {
-        (if (vipo.id == Debate.RootPostId) <div class='dw-t-vspace'/>
-         else Nil) ++
-        // Don't show the Rate and Flag buttons. An article-question cannot
-        // be rated/flaged separately (instead, you flag the article).
-        <div class='dw-hor-a'>
-          <a class='dw-a dw-a-reply'>{replyBtnText}</a>{/*
-          COULD remove More... and Edits, later when article questions
-          are merged into the root post, so that there's only one Post
-          to edit (but >= 1 posts are created when the page is rendered) */}
-          <a class='dw-a dw-a-more'>More...</a>
-          <a class='dw-a dw-a-edit'>Edits</a>
-        </div>
-      }
+      if (vipo.meta.isArticleQuestion) Nil
       else <a class='dw-as' href={config.reactUrl(debate.guid, post.id)}
-            >React</a> )
+            >React</a>),
+    replyBtnText)
   }
 
   def _linkTo(nilo: NiLo) = linkTo(nilo, config)
