@@ -2406,7 +2406,7 @@ function $showReplyForm(event, opt_where) {
       }
       $res.prepend($replyFormParent);
     }
-    $replyFormParent.each(SVG.$drawPost);
+    SVG.drawArrowsToReplyForm($replyFormParent);
     slideInActionForm($replyFormParent);
   });
 }
@@ -3500,6 +3500,7 @@ function makeSvgDrawer() {
     $drawParents: $drawParents,
     $drawParentsAndTree: $drawParentsAndTree,
     drawEverything: drawEverything,
+    drawArrowsToReplyForm: function() {},
     $highlightOn: $highlightOn,
     $highlightOff: $highlightOff
   };
@@ -3538,38 +3539,62 @@ function makeFakeDrawer() {
       '<div class="dw-svg-fake-harrow"></div>' + // extends branch
       '<div class="dw-svg-fake-harrow-hider-left"></div>';
 
+  var horizListItemEndArrow =
+      '<div class="dw-svg-fake-hcurve"/>';       // dw-png-arw-hz-curve-end?
+
+  var horizListItemContArrow =
+      '<div class="dw-svg-fake-harrow"/>' +      // dw-png-arw-hz-line-middle?
+      '<div class="dw-svg-fake-harrow-end"/>';   // dw-png-arw-hz-line-end?
+
   // Arrows to each child thread.
   function $initPostSvg() {
     var $p = $(this).filter('.dw-p').dwBugIfEmpty();
     var $t = $p.closest('.dw-t');
     var $pt = $t.parent().closest('.dw-t');  // parent thread
-    // If this is a horizontally laid out thread with an always visible
+    // If this is a horizontally laid out thread that has an always visible
     // Reply button, draw an arrow to that button.
-    $t.find('> .dw-hor-a > .dw-a-reply').each(function(){
-      if ($t.find('> .dw-res > li').length) {
-        // There are some replies. Use an arrow that branches
-        // out towards them.
-        $(this).before(replyBtnBranchingArrow);
+    $t.find('> .dw-res > .dw-p-as').each(function(){
+      var $i = $(this);
+      if (!$i.is(':first-child')) {
+        // There's a reply to the left. Don't use the hcurve-start arrow.
+        $i.prepend(horizListItemContArrow + horizListItemEndArrow);
+      }
+      else if ($t.find('> .dw-res > li').length > 1) {
+        // There are some replies to the right only. Use an arrow that
+        // branches out towards them.
+        $i.prepend(replyBtnBranchingArrow);
       } else {
-        $(this).before(
+        // There is nothing but this action button <li>.
+        $i.prepend(
             '<div class="dw-svg-fake-hcurve-start-solo"/>');
       }
     });
     if ($pt.is('.dw-hor')) {
-      // horizontal arrow
-      $t.filter(':not(:last-child)').each(function(){
-        $(this)
-            .prepend("<div class='dw-svg-fake-harrow'/>")
-            .prepend("<div class='dw-svg-fake-harrow-end'/>");
-      });
-      $t.prepend('<div class="dw-svg-fake-hcurve"/>');
+      // if ($t.is(':only-child')) {
+      //   prepend the -hcurve-start-solo arrow
+      // }
+      // else if…
       if ($t.is(':first-child')) {
-        // If there's a solo arrow to the Reply button, then replace
-        // it with an arrow that branches out to the Reply button and
-        // the replies.
-        $pt.find('.dw-hor-a > .dw-svg-fake-hcurve-start-solo')
-            .before(replyBtnBranchingArrow)
-            .remove();
+        // This must be a fixed-position reply, since there's no action <li>
+        // to the left. Use the start arrow that branches, since the reply
+        // button is somewhere to the right.
+        $t.prepend(replyBtnBranchingArrow);
+      }
+      else {
+        $t.prepend(horizListItemEndArrow);
+        $t.filter(':not(:last-child)').each(function(){
+          // There's something to the right. Connect to it with a line.
+          $(this).prepend(horizListItemContArrow);
+        });
+        if ($t.eq(1)) {
+          // Iff this is a dynamically loaded reply, and if it's the first
+          // and only reply, there's a solo arrow to the Reply button (which
+          // is located to the left, the :first-child).
+          // Replace it with an arrow that branches out to this new reply.
+          $pt.find('.dw-res > dw-hor-a > .dw-svg-fake-hcurve-start-solo')
+              .before(replyBtnBranchingArrow)
+              .remove();
+        }
       }
     } else {
       // vertical arrow, already handled above.
@@ -3587,9 +3612,17 @@ function makeFakeDrawer() {
   function $drawPost() {
     // TODO: If any SVG native support: draw arrows to inline threads?
     // Or implement via fake .png arrows?
+    // TODO draw arrows to new vertical replies
   }
 
   function drawEverything() {}
+
+  function drawArrowsToReplyForm($formParent) {
+    var arws = $formParent.closest('.dw-t').is('.dw-hor')
+        ? horizListItemContArrow + horizListItemEndArrow
+        : '<div class="dw-svg-fake-vcurve-short"/>'; // dw-png-arw-vt-curve-end?
+    $formParent.prepend(arws);
+  }
 
   function $highlightOn() {
     // TODO replace arrow image with a highlighted version
@@ -3607,6 +3640,7 @@ function makeFakeDrawer() {
     $drawParents: $drawParents,
     $drawParentsAndTree: $drawParentsAndTree,
     drawEverything: drawEverything,
+    drawArrowsToReplyForm: drawArrowsToReplyForm,
     $highlightOn: $highlightOn,
     $highlightOff: $highlightOff
   };
