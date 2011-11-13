@@ -201,7 +201,9 @@ Debiki.v0.makeDragscrollable = function(selectors) {
 // Shows all comments, which should have been hidden via the
 // DebateHtml$ hideCommentsStyle, in html.scala.
 Debiki.v0.showInteractionsOnClick = function() {
-  var interactions =  // sync with selectors in DebateHtml.hideCommentsTags
+  $('body').addClass('dw-hide-interactions');
+  // Sync this list with selectors in DebateHtml.tagsThatHideShowInteractions.
+  var interactions =
       '#dw-post-1 > .dw-p-hdr, '+
       '#dw-t-1 > .dw-res, ' +
       '#dw-post-1 > .dw-p-bdy > .dw-i-ts, '+
@@ -210,24 +212,22 @@ Debiki.v0.showInteractionsOnClick = function() {
       '#dw-post-1 > .dw-p-bdy > .dw-p-bdy-blk .dw-i-m-start';
   // $(interactions).hide(); // won't work, because .dw-i-ts
                             // are moved away from .dw-res, later.
-  var $replyBtn = $('#dw-t-1 > .dw-hor-a');
-  var $showBtn = $replyBtn.clone();
   var numComments = $('.dw-p').length - 1;  // don't count the article
   var text = numComments > 1 ?  'Visa '+ numComments +' kommentarer' : // i18n
      (numComments == 1 ?  'Visa 1 kommentar' : 'Lämna en kommentar');
-  $replyBtn.hide();
+  var $showBtn = $(
+      '<div class="dw-as dw-hor-a">' +
+      '<a class="dw-a dw-a-show-interactions"></a></div>');
   $showBtn.find('a')
-      .removeClass('dw-a-reply')
-      .addClass('dw-a-show-interactions')
-      .text(text)
+      .text(text)  // xss safe
       .css('font-size', '80%')
       .end()
-      .insertBefore($replyBtn)
+      .insertBefore('#dw-t-1 > .dw-res')
       .click(function() {
     $showBtn.remove();
-    $replyBtn.show();
-    $(interactions).show();
-    $(intersInlBlk).css('display', 'inline-block');
+    $('body').removeClass('dw-hide-interactions');
+    //$(interactions).show();
+    //$(intersInlBlk).css('display', 'inline-block');
     SVG.drawEverything(); // *sometimes* needed
   });
 };

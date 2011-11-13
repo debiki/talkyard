@@ -408,6 +408,24 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
                           end up immediately next to the border anyway */
 }
 
+/* --- Hide interactions --- */
+
+.dw-a-show-interactions {
+  color: #3872AB !important;
+  visibility: visible !important;
+  font-size: 10px;
+}
+
+/* Sync these selectors with showCommentsOnClick in debiki.js.
+COULD hide the "Log in" link too, unless logged in?  */
+.dw-hide-interactions #dw-post-1 > .dw-p-hdr,
+.dw-hide-interactions #dw-t-1 > .dw-res,
+.dw-hide-interactions #dw-post-1 > .dw-p-bdy > .dw-p-bdy-blk .dw-i-m-start,
+.dw-hide-interactions #dw-post-1 > .dw-p-bdy > .dw-i-ts,
+.dw-hide-interactions .dw-debate svg {
+  display: none;
+}
+
 /* --- Comments ---*/
 
 .dw-t {
