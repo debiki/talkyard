@@ -605,8 +605,7 @@ or it steals attention from the page title. */
   float: left;
   position: relative; /* curve image placed relative */
   padding-right: 20px;
-  margin-top: 10px;
-  margin-right: 16px;
+  margin: 10px 16px 0 12px;
 }
 
 /* The reply button text can be customized, so it might be rather wide,
@@ -945,7 +944,7 @@ until they've been moved into the .dw-bdy-blk > .dw-i-ts. */
 .dw-fs {
   float: left; /* or sometimes very wide */
   clear: left; /* or might appear to the right of the action links */
-  margin: 10px 0 20px 35px; /* left-indents somewhat more than reply indent */
+  margin: 10px 0 20px 5px; /* 5px, like .dw-t */
 }
 
 /* Reduce distance between a form and any parent jQuery UI dialog buttons. */
@@ -970,11 +969,12 @@ until they've been moved into the .dw-bdy-blk > .dw-i-ts. */
   background-color: #fbf7f2;
   border: 1px solid #f7f3ed; /* almost background color */
   padding: 1em;
+  margin-left: 10px; /* move away from any vertical arrow */
   /* My Firifox 3.6 draws outlines very incorrectly for the Rating form,
   (but correctly for Reply and Edit), use borders instead. */
   /* outline: #83c5df solid thick; */
 }
- 
+
 .dw-fs form label {
   margin-top: 0.8ex;
   display: inline-block; /* or margin has no effect */
@@ -1120,6 +1120,10 @@ it works everywhere, even if it works fine for you. */
 
 /* === Reply === */
 
+.dw-res > .dw-fs-re {
+  position: relative; /* vertical png arrow positioned relative this */
+}
+
 .dw-fs-re > form {
   min-width: 210px;
 }
@@ -1153,6 +1157,7 @@ it works everywhere, even if it works fine for you. */
 
 .dw-fs-rat {
   min-width: 16.5em; /* at least 2 rat-tag-set:s wide */
+  margin: 0 0 30px 29px;
 }
 
 .dw-fs-rat .dw-rat-tag-set {
@@ -1605,12 +1610,12 @@ JavaScript. Then I can still place all CSS stuff in this file. */
   top: -50px;
 }
 
-.dw-hor-a .dw-svg-fake-harrow {
-  z-index: -13;
+.dw-res > li:first-child > .dw-svg-fake-harrow {
+  z-index: -13; /* place below the .dw-svg-fake-hcurve-start */
 }
 
 /* Hides the -harrow to the left of the .dw-svg-fake-hcurve-start. */
-.dw-hor-a .dw-svg-fake-harrow-hider-left {
+.dw-res > li:first-child >  .dw-svg-fake-harrow-hider-left {
   width: 50px;
   background-color: white;
   position: absolute;
