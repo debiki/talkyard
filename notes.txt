@@ -304,6 +304,9 @@ dw-flg               –-> dw-fl  ?
 dw-p-hdr             --> dw-p-hd  ?  dw-p-h-  dw-ph-
 dw-p-bdy             --> dw-p-bd  ?  dw-p-b-  dw-pb- 
 
+dw-svg-fake-hcurve-start --> dw-png-arw-hz-start-branch/-solo/-end
+dw-svg-fake-varrow       --> dw-png-arw-vt
+
 
 dw-ed -–> dw-e
 dw-a-edit-new --> dw-a-e-new
