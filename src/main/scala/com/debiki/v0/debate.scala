@@ -635,9 +635,7 @@ case class Edit (
   date: ju.Date,
   loginId: String,
   newIp: Option[String],
-  text: String,
-  /** The author's description and motivation for this edit */
-  desc: String
+  text: String
 ) extends Action
 
 // Verify: No duplicate like/diss ids, no edit both liked and dissed
@@ -684,9 +682,7 @@ case class EditApp(   // COULD rename to Appl?
    *  So, only apply the diff algorithm once, to find the EddidApplied.result,
    *  and thereafter always use EditApplied.result.
    */
-  result: String,
-
-  debug: String = ""
+  result: String
 ) extends Action
 
 /** Deletes an action. When actionId (well, postId right now)
