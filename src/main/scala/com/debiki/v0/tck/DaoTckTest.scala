@@ -471,7 +471,7 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
         case Full(d: Debate) => {
           d must havePostLike(exMeta_ex2EmptyMeta, id = ex2MetaEmpty_id)
           val postEx2 = d.vipo_!(ex2_id)
-          postEx2.meta must_== List(exMeta_ex2EmptyMeta)
+          postEx2.metaPosts must_== List(exMeta_ex2EmptyMeta)
           postEx2.meta.isArticleQuestion must_== false
           true
         }
