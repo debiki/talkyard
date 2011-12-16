@@ -195,12 +195,13 @@ object DebateHtml {
   /** XML for the user name and login/out links.
    */
   def loginInfo(userName: Option[String]): NodeSeq = {
-    <div id='dw-login-info'>
-      <div class='dw-login-lgd-in-as'>Inloggad som</div>
-      <div class='dw-login-name'>{userName.getOrElse("")}</div>
-    </div>
+    // COULD remove the "&nbsp;&nbsp;|&nbsp;&nbsp;" (below) from the link,
+    // but then it'd always be visible, as of right now.
+    <span id='dw-login-info'>
+      <span class='dw-login-name'>{userName.getOrElse("")}</span>
+    </span>
     <a id='dw-a-login'>Logga in</a>
-    <a id='dw-a-logout'>Logga ut</a>
+    <a id='dw-a-logout'>&nbsp;&nbsp;|&nbsp;&nbsp;Logga ut</a>
   }
 
   /** A <style> that hides comments,
