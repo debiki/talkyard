@@ -1110,3 +1110,29 @@ class FormHtml(val config: HtmlConfig, val permsOnPage: PermsOnPage) {
       <a href={config.termsOfUseUrl} target="_blank">Terms of Use</a>.
     </div>
 }
+
+
+object UserHtml {
+  def renderInbox(requester: RequesterInfo, items: Seq[InboxItem]): NodeSeq = {
+    if (items.isEmpty)
+      return  <div class='dw-ibx'><div class='dw-ibx-ttl'/></div>;
+
+    <div class='dw-ibx'>
+      <div class='dw-ibx-ttl'>Your inbox:</div>
+      <ol> {
+        for (i <- items.take(20)) yield {
+          // COULD look up address in PATHS table when loading
+          // InboxItem from database -- to get rid of 1 unnecessary redirect.
+          val pageAddr = "/0/-"+ i.pageId
+          val postAddr = pageAddr +"#dw-post-"+ i.pageActionId
+          // The page title (i.e. `i.title') is currently unknown.
+          //<li>1 reply on <a class='dw-ibx-pg-ttl' href={pageAddr}>{
+          //  i.title}</a>:<br/>
+          <li>1 reply: <a class='dw-ibx-p-bd' href={postAddr}>{i.summary}</a>
+          </li>
+        }
+      }
+      </ol>
+    </div>
+  }
+}

@@ -238,6 +238,65 @@ case class IdentityOpenId(
   def displayName = firstName
 }
 
+/** E,g, a notification of a reply to a comment the user has made.
+ *
+ *  Sent by email and/or shown on the Web site.
+ */
+case class InboxItem(
+  tyype: Do,
+  title: String,
+  summary: String,
+  pageId: String,
+  pageActionId: String,
+  sourceActionId: String,
+  ctime: ju.Date)
+
+/** Used when saving an inbox item to database.
+ *
+ *  All InboxItem fields are not present, because they're stored
+ *  elsewhere in the database and available later when an
+ *  InboxItem is to be constructed anyway.
+ */
+case class InboxSeed(
+  roleId: String,
+  pageId: String,
+  pageActionId: String,
+  sourceActionId: String,
+  ctime: ju.Date)
+
+object Inbox {
+
+  def calcSeedsFrom(user: Option[User], adding: Seq[Action],
+                    to: Debate): Seq[InboxSeed] = {
+    val actions = adding
+    val page = to
+    val seeds: Seq[InboxSeed] = actions flatMap (_ match {
+      case post: Post =>
+        val postRepliedTo = page.vipo_!(post.parent)
+        val roleRepliedTo = postRepliedTo.user_!
+        if (user.map(_.id) == Some(roleRepliedTo.id)) {
+          // Don't notify the user of his/her own replies.
+          Nil
+        } else {
+          InboxSeed(roleId = roleRepliedTo.id, pageId = page.guid,
+                pageActionId = post.id, sourceActionId = post.id,
+                ctime = post.date) :: Nil
+        }
+      case e: Edit =>
+        Nil  // fix later
+      case app: EditApp =>
+        Nil  // fix later
+      case flag: Flag =>
+        Nil  // fix later
+      case _ =>
+        Nil  // skip for now
+    })
+
+    // val pageAuthorInboxSeed = ...
+    // val moderatorInboxSeed = ...
+    seeds  // ++ pageAuthorInboxSeed ++ moderatorInboxSeed
+  }
+}
 
 /* Could: ???
 NiUs (   // nice user

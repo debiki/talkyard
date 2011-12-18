@@ -31,6 +31,10 @@ abstract class DaoSpi {
 
   def loadPermsOnPage(reqInfo: RequestInfo): (RequesterInfo, PermsOnPage)
 
+  def saveInboxSeeds(tenantId: String, seeds: Seq[InboxSeed])
+
+  def loadInboxItems(tenantId: String, roleId: String): List[InboxItem]
+
   def createTenant(name: String): Tenant
 
   def addTenantHost(tenantId: String, host: TenantHost)
@@ -98,6 +102,10 @@ abstract class Dao {
   def checkPagePath(pathToCheck: PagePath): Box[PagePath]
 
   def loadPermsOnPage(reqInfo: RequestInfo): (RequesterInfo, PermsOnPage)
+
+  def saveInboxSeeds(tenantId: String, seeds: Seq[InboxSeed])
+
+  def loadInboxItems(tenantId: String, roleId: String): List[InboxItem]
 
   /** Creates a tenant, assigns it an id and and returns it. */
   def createTenant(name: String): Tenant
@@ -200,6 +208,12 @@ class CachingDao(impl: DaoSpi) extends Dao {
   def loadPermsOnPage(reqInfo: RequestInfo): (RequesterInfo, PermsOnPage) =
     _impl.loadPermsOnPage(reqInfo)
 
+  def saveInboxSeeds(tenantId: String, seeds: Seq[InboxSeed]) =
+    _impl.saveInboxSeeds(tenantId, seeds)
+
+  def loadInboxItems(tenantId: String, roleId: String): List[InboxItem] =
+    _impl.loadInboxItems(tenantId, roleId)
+
   def createTenant(name: String): Tenant =
     _impl.createTenant(name)
 
@@ -246,6 +260,12 @@ class NonCachingDao(impl: DaoSpi) extends Dao {
 
   def loadPermsOnPage(reqInfo: RequestInfo): (RequesterInfo, PermsOnPage) =
     impl.loadPermsOnPage(reqInfo)
+
+  def saveInboxSeeds(tenantId: String, seeds: Seq[InboxSeed]) =
+    impl.saveInboxSeeds(tenantId, seeds)
+
+  def loadInboxItems(tenantId: String, roleId: String): List[InboxItem] =
+    impl.loadInboxItems(tenantId, roleId)
 
   def createTenant(name: String): Tenant =
     impl.createTenant(name)
