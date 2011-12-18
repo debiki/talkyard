@@ -11,6 +11,7 @@
  *  dw-           prefix, avoids name clashes
  *  -a-           action
  *  -ap-          applied/application
+ *  -bd-          body
  *  -by           by whom post was written. COULD change -p-by -> -p-u (user)?
  *  -cr-          create
  *  -dl-          delete
@@ -26,8 +27,10 @@
  *  -f-           form
  *  -fs-          form group - COULD change to -dlg- or -dg-
  *  -flg-         flag
+ *  -hd-          head
  *  -hor-         horizontal layout COULD rename to -hz- ? -vt- = vertical?
  *  -i-           inline
+ *  -ibx-         inbox
  *  -img-         image
  *  -inf-         information
  *  -login-       COULD change to -lgi
@@ -39,6 +42,7 @@
  *  -ntf-shw      notification show more button/link
  *  -ntf-dtl      notification details
  *  -p-           post
+ *  -pg-          page
  *  -q-           ?? post-before (looks like p, but flipped — before, not after)
  *  -rat-         rating  (COULD rename to "r")
  *  -ra-          rating  (COULD rename to "r")
@@ -52,6 +56,7 @@
  *  -t-           thread
  *  -ts-          threads
  *  -ts-          timestamp? or use ds, datestamp? or use -dt-, "date"?
+ *  -ttl-         ?? title ? (time-to-live not of relevance in CSS?)
  *  -u-           user
  *  -vs-          votes
  *  -z-           fold (z looks like a folded paper from the side)
@@ -1494,6 +1499,32 @@ form .dw-ntf {
   font-style: italic;
   text-decoration: underline;
   cursor: crosshair;
+}
+
+/* === Inbox === */
+/* COULD get rid of #sidebar selector somehow — make selectors in
+debiki-lift.css less inclusive? */
+
+#sidebar .dw-ibx {
+  margin-top: 2.2em;
+  color: #777;
+  font-size: 13px;
+}
+
+#sidebar .dw-ibx li {
+  color: #777;
+  margin-left: 0;
+  font-size: 12px;
+}
+
+#sidebar a.dw-ibx-pg-ttl {
+  color: #444  !important;
+  --font-weight: bold;
+}
+
+#sidebar a.dw-ibx-p-bd {
+  font-size:90%;
+  color: #666;
 }
 
 /* === jQuery UI integration === */
