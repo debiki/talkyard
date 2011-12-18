@@ -510,6 +510,7 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
     // -------- OpenID login
 
     var exOpenId_loginReq: LoginGrant = null
+    def exOpenId_loginGrant: LoginGrant = exOpenId_loginReq  // correct name
     var exOpenId_userIds = mut.Set[String]()
     "save a new OpenID login and create a user" >> {
       val loginReq = LoginRequest(T.login, T.identityOpenId)
@@ -637,6 +638,39 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
               //                        email = "oid@email.hmm")
               true
           }
+          true
+      }
+    }
+
+    // -------- Inbox
+
+    "save an inbox seed, load an inbox item" >> {
+      // This test cheats somewhat: it specifies the OpenID user's inbox,
+      // although that user wasn't involved at all in any of the
+      // related actions. -- Let's pretend it's a moderator that's interested
+      // in all actions.
+      val seed = InboxSeed(
+          roleId = exOpenId_loginGrant.user.id,
+          pageId = ex1_debate.guid,
+          pageActionId = ex2_id,
+          sourceActionId = ex2_id,  // == pageActionId for a Reply
+          ctime = ex2_emptyPost.date)
+
+      dao.saveInboxSeeds(defaultTenantId, seed::Nil)
+
+      val items = dao.loadInboxItems(
+          defaultTenantId, exOpenId_loginGrant.user.id)
+
+      items must beLike {
+        case List(item: InboxItem) =>
+          item must_== InboxItem(
+              tyype = Do.Reply,
+              title = "?", // for now
+              summary = "",  // it's the ex2_emptyPost
+              pageId = ex1_debate.guid,
+              pageActionId = ex2_id,
+              sourceActionId = ex2_id,
+              ctime = ex2_emptyPost.date)
           true
       }
     }
