@@ -96,11 +96,8 @@ case object User {
     false
   }
 
-  /** Checks for weird ASCII chars in an email. Doesn't require that the
-    * address contain '@'. People can enter invalid email addresses
-    * anyway. Actually, I like to enter "no-email-please" when filling
-    * in an email form. (Javascript can notify people that they might
-    * have made a typo.)
+  /** Checks for weird ASCII chars in an email,
+    * and that it matches """.+@.+\..+""".
     */
   def emailIsWeird(email: String): Boolean = {
     // Differences from nameIsOk(): allow "@_", disallows "'".
@@ -111,7 +108,8 @@ case object User {
       if (c > 'Z' && c < 'a' && !"_".contains(c)) return true  // punctuation
       if (c > 'z' && c <= 127) return true  // punctuation
     }
-    false
+    if (email matches """.+@.+\..+""") return false
+    true
   }
 
   /** Allows all chars but control chars, space and < > */
