@@ -63,6 +63,7 @@ object Dao {
     require(identity.id == login.identityId)
   }
 
+  // COULD use RequesterInfo instead? (It includes role info too, is fine?)
   case class LoginGrant(login: Login, identity: Identity, user: User) {
     require(!login.id.contains('?'))
     require(!identity.id.contains('?'))

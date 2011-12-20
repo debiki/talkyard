@@ -11,6 +11,7 @@
  *  dw-           prefix, avoids name clashes
  *  -a-           action
  *  -ap-          applied/application
+ *  -adr-         address
  *  -bd-          body
  *  -by           by whom post was written. COULD change -p-by -> -p-u (user)?
  *  -cr-          create
@@ -22,6 +23,7 @@
  *                  and new (no good!, "new") sew etc. for northeastwards etc.
  *                  Or 'de', direction-east, dn/w/s/e dnw/sw/se/ne ?
  *  -ed-          edit (COULD change to "e")
+ *  -eml-         email
  *  -es-          edit suggestion (COULD change to -e-sg, and let -es = edits)
  *  -ess-         edit suggestions (COULD change to -e-sgs)
  *  -f-           form
@@ -33,6 +35,9 @@
  *  -ibx-         inbox
  *  -img-         image
  *  -inf-         information
+ *  -lbl-         label
+ *  -lgi-         login
+ *  -lgo-         logout
  *  -login-       COULD change to -lgi
  *  -logout-                      -lgo
  *  -m-           mark

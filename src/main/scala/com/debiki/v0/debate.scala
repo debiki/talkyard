@@ -562,7 +562,7 @@ sealed abstract class Action {
    *  the relevant Login.ip.
    */
   def newIp: Option[String]
-  def date: ju.Date
+  def date: ju.Date  // COULD rename to ctime
 }
 
 case class Rating (

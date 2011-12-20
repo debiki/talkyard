@@ -131,6 +131,8 @@ case object User {
 }
 
 case class User (
+  /** The user's id. Starts with "-" if not authenticated
+   *  (i.e. for IdentitySimple). */
   id: String,
   displayName: String,
   email: String,  // COULD rename to emailAddr
