@@ -12,6 +12,32 @@ import org.apache.commons.codec.{binary => acb}
 
 object Prelude {
 
+  // Logs an error in release mode, but throws an AssertionError in debug
+  // mode -- this makes errors obvious during development and recoverable
+  // in production mode. [Code Complete p. 206: Use Offensive Programming]
+  // The caller should fail gracefully (e.g. use a reasonable fallback
+  // instead of the corrupted database data).
+  // SHOULD move to some DebikiLogger class and check if we're in debug
+  // or release mode.
+  def warnDbgDie(warningMsg: String) {
+    if (true) {
+      // Fail hard in debug mode so this error will be fixed.
+      throw new AssertionError(warningMsg)
+    }
+    else {
+      // Only log a warning in release mode.
+    }
+  }
+
+  def errDbgDie(errorMsg: String) {
+    if (true) {
+      throw new AssertionError(errorMsg)
+    }
+    else {
+      // Log error
+    }
+  }
+
   /** Converts from a perhaps-{@code null} reference to an {@code Option}.
    */
   def ?[A <: AnyRef](x: A): Option[A] = if (x eq null) None else Some(x)
