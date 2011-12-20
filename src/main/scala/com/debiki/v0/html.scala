@@ -721,14 +721,20 @@ class FormHtml(val config: HtmlConfig, val permsOnPage: PermsOnPage) {
              <br/>
             </div>
             <div>
-             <label for='dw-fi-login-email'>Email (optional)</label><br/>
+             <label for='dw-fi-login-email'
+                >Email (optional, not shown)</label><br/>
              <input id='dw-fi-login-email' type='text' size='40'
                   maxlength='100' name='dw-fi-login-email' value=''/><br/>
-             <!-- <span class='edit-field-overlay'
-                >required, but never shown</span> -->
+             <input id='dw-fi-lgi-spl-email-ntf' type='checkbox'
+                   name='dw-fi-lgi-spl-email-ntf' value='yes'/>
+             <label for='dw-fi-lgi-spl-email-ntf'
+                  id='dw-fi-lgi-spl-email-ntf-lbl'
+                >Notify me via email if someone replies to my comments</label
+                ><br/>
             </div>
             <div>
-             <label for='dw-fi-login-url'>Website (optional)</label><br/>
+             <label for='dw-fi-login-url' id='dw-fi-login-url-lbl'
+                >Website (optional)</label><br/>
              <input id='dw-fi-login-url' type='text' size='40' maxlength='200'
                   name='dw-fi-login-url' value=''/><br/>
              <!-- COULD add tabindex='...' -->

@@ -7,6 +7,7 @@ import com.google.{common => guava}
 import java.{util => ju}
 import net.liftweb.common.{Logger, Box, Empty, Full, Failure}
 import Dao._
+import EmailNotfPrefs.EmailNotfPrefs
 
 /** Debiki's Data Access Object service provider interface.
  */
@@ -31,9 +32,14 @@ abstract class DaoSpi {
 
   def loadPermsOnPage(reqInfo: RequestInfo): (RequesterInfo, PermsOnPage)
 
+  def loadUser(withLoginId: String, tenantId: String): Option[(Identity, User)]
+
   def saveInboxSeeds(tenantId: String, seeds: Seq[InboxSeed])
 
   def loadInboxItems(tenantId: String, roleId: String): List[InboxItem]
+
+  def configIdtySimple(tenantId: String, loginId: String, ctime: ju.Date,
+                       emailAddr: String, emailNotfPrefs: EmailNotfPrefs)
 
   def createTenant(name: String): Tenant
 
@@ -103,9 +109,14 @@ abstract class Dao {
 
   def loadPermsOnPage(reqInfo: RequestInfo): (RequesterInfo, PermsOnPage)
 
+  def loadUser(withLoginId: String, tenantId: String): Option[(Identity, User)]
+
   def saveInboxSeeds(tenantId: String, seeds: Seq[InboxSeed])
 
   def loadInboxItems(tenantId: String, roleId: String): List[InboxItem]
+
+  def configIdtySimple(tenantId: String, loginId: String, ctime: ju.Date,
+                       emailAddr: String, emailNotfPrefs: EmailNotfPrefs)
 
   /** Creates a tenant, assigns it an id and and returns it. */
   def createTenant(name: String): Tenant
@@ -208,11 +219,21 @@ class CachingDao(impl: DaoSpi) extends Dao {
   def loadPermsOnPage(reqInfo: RequestInfo): (RequesterInfo, PermsOnPage) =
     _impl.loadPermsOnPage(reqInfo)
 
+  def loadUser(withLoginId: String, tenantId: String
+                  ): Option[(Identity, User)] =
+    _impl.loadUser(withLoginId, tenantId)
+
   def saveInboxSeeds(tenantId: String, seeds: Seq[InboxSeed]) =
     _impl.saveInboxSeeds(tenantId, seeds)
 
   def loadInboxItems(tenantId: String, roleId: String): List[InboxItem] =
     _impl.loadInboxItems(tenantId, roleId)
+
+  def configIdtySimple(tenantId: String, loginId: String, ctime: ju.Date,
+                       emailAddr: String, emailNotfPrefs: EmailNotfPrefs) =
+    _impl.configIdtySimple(tenantId, loginId = loginId, ctime = ctime,
+                          emailAddr = emailAddr,
+                          emailNotfPrefs = emailNotfPrefs)
 
   def createTenant(name: String): Tenant =
     _impl.createTenant(name)
@@ -261,11 +282,21 @@ class NonCachingDao(impl: DaoSpi) extends Dao {
   def loadPermsOnPage(reqInfo: RequestInfo): (RequesterInfo, PermsOnPage) =
     impl.loadPermsOnPage(reqInfo)
 
+  def loadUser(withLoginId: String, tenantId: String
+                  ): Option[(Identity, User)] =
+    impl.loadUser(withLoginId, tenantId)
+
   def saveInboxSeeds(tenantId: String, seeds: Seq[InboxSeed]) =
     impl.saveInboxSeeds(tenantId, seeds)
 
   def loadInboxItems(tenantId: String, roleId: String): List[InboxItem] =
     impl.loadInboxItems(tenantId, roleId)
+
+  def configIdtySimple(tenantId: String, loginId: String, ctime: ju.Date,
+                       emailAddr: String, emailNotfPrefs: EmailNotfPrefs) =
+    impl.configIdtySimple(tenantId, loginId = loginId, ctime = ctime,
+                          emailAddr = emailAddr,
+                          emailNotfPrefs = emailNotfPrefs)
 
   def createTenant(name: String): Tenant =
     impl.createTenant(name)

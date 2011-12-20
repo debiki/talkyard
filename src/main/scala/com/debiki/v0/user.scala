@@ -4,6 +4,7 @@ package com.debiki.v0
 
 //import java.{util => ju}
 //import collection.{immutable => imm, mutable => mut}
+import com.debiki.v0.EmailNotfPrefs.EmailNotfPrefs
 import _root_.net.liftweb.common.{Box, Full, Empty, EmptyBox, Failure}
 import _root_.net.liftweb.util.ControlHelpers.tryo
 import _root_.java.security.MessageDigest
@@ -132,13 +133,19 @@ case object User {
 case class User (
   id: String,
   displayName: String,
-  email: String,
+  email: String,  // COULD rename to emailAddr
+  emailNotfPrefs: EmailNotfPrefs,
   country: String,
   website: String,
   isSuperAdmin: Boolean
 ){
   checkId(id, "[debiki_error_02k125r]")
   def isAuthenticated = !id.startsWith("-") && !id.startsWith("?")
+}
+
+object EmailNotfPrefs extends Enumeration {
+  type EmailNotfPrefs = Value
+  val Receive, DontReceive, ForbiddenForever = Value
 }
 
 case class Login(

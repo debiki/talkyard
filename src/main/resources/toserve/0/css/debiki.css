@@ -1141,6 +1141,19 @@ it works everywhere, even if it works fine for you. */
   width: 200px;
 }
 
+#dw-fi-lgi-spl-email-ntf {
+  width: auto; /* not 200px */
+}
+
+#dw-fi-lgi-spl-email-ntf-lbl {
+  display: inline;
+  margin-right: 30px;
+}
+
+#dw-fi-login-url-lbl {
+  margin-top: 1.3ex;
+}
+
 /* === Reply === */
 
 .dw-res > .dw-fs-re {
