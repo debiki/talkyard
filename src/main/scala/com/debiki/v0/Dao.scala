@@ -38,6 +38,9 @@ abstract class DaoSpi {
 
   def loadInboxItems(tenantId: String, roleId: String): List[InboxItem]
 
+  def configRole(tenantId: String, loginId: String, ctime: ju.Date,
+                    roleId: String, emailNotfPrefs: EmailNotfPrefs)
+
   def configIdtySimple(tenantId: String, loginId: String, ctime: ju.Date,
                        emailAddr: String, emailNotfPrefs: EmailNotfPrefs)
 
@@ -115,6 +118,9 @@ abstract class Dao {
   def saveInboxSeeds(tenantId: String, seeds: Seq[InboxSeed])
 
   def loadInboxItems(tenantId: String, roleId: String): List[InboxItem]
+
+  def configRole(tenantId: String, loginId: String, ctime: ju.Date,
+                 roleId: String, emailNotfPrefs: EmailNotfPrefs)
 
   def configIdtySimple(tenantId: String, loginId: String, ctime: ju.Date,
                        emailAddr: String, emailNotfPrefs: EmailNotfPrefs)
@@ -230,6 +236,11 @@ class CachingDao(impl: DaoSpi) extends Dao {
   def loadInboxItems(tenantId: String, roleId: String): List[InboxItem] =
     _impl.loadInboxItems(tenantId, roleId)
 
+  def configRole(tenantId: String, loginId: String, ctime: ju.Date,
+                 roleId: String, emailNotfPrefs: EmailNotfPrefs) =
+    _impl.configRole(tenantId, loginId = loginId, ctime = ctime,
+                      roleId = roleId, emailNotfPrefs = emailNotfPrefs)
+
   def configIdtySimple(tenantId: String, loginId: String, ctime: ju.Date,
                        emailAddr: String, emailNotfPrefs: EmailNotfPrefs) =
     _impl.configIdtySimple(tenantId, loginId = loginId, ctime = ctime,
@@ -292,6 +303,11 @@ class NonCachingDao(impl: DaoSpi) extends Dao {
 
   def loadInboxItems(tenantId: String, roleId: String): List[InboxItem] =
     impl.loadInboxItems(tenantId, roleId)
+
+  def configRole(tenantId: String, loginId: String, ctime: ju.Date,
+                 roleId: String, emailNotfPrefs: EmailNotfPrefs) =
+    impl.configRole(tenantId, loginId = loginId, ctime = ctime,
+                    roleId = roleId, emailNotfPrefs = emailNotfPrefs)
 
   def configIdtySimple(tenantId: String, loginId: String, ctime: ju.Date,
                        emailAddr: String, emailNotfPrefs: EmailNotfPrefs) =

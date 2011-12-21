@@ -749,6 +749,12 @@ class FormHtml(val config: HtmlConfig, val permsOnPage: PermsOnPage) {
             title="Sign In or Create New Account">
         <form action={config.loginActionOpenId} method='post' id='openid_form'>
           { _xsrfToken }
+          <input id='dw-fi-lgi-oid-email-ntf' type='checkbox'
+              name='dw-fi-lgi-oid-email-ntf' value='yes'/>
+          <label for='dw-fi-lgi-oid-email-ntf'
+              id='dw-fi-lgi-oid-email-ntf-lbl'
+            >Notify me via email if someone replies to my comments</label
+            ><br/>
           <input type='hidden' name='action' value='verify' />
           <div id='openid_choice'>
             <p>Please click your account provider:</p>

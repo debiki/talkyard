@@ -135,6 +135,10 @@ case class User (
    *  (i.e. for IdentitySimple). */
   id: String,
   displayName: String,
+  // COULD be an Option -- Twitter identities have no email?
+  // Or introduce a Address class, with subclasses AddrEmail, AddrTwitter, etc?
+  // Or let it be an Option[String], and the format determine the address type?
+  // And rename emailNotfPrefs to notfPrefs?
   email: String,  // COULD rename to emailAddr
   emailNotfPrefs: EmailNotfPrefs,
   country: String,
@@ -194,6 +198,8 @@ sealed abstract class Identity {
   /** A user can have many identities, e.g. Twitter, Gmail and Facebook. */
   def userId: String
   def displayName: String
+  // COULD be an Option -- Twitter identities have no email?
+  // And remembering to check for "" everywhere is error prone.
   def email: String
 
   checkId(id, "[debiki_error_02krc3g]")
