@@ -1103,6 +1103,10 @@ it works everywhere, even if it works fine for you. */
   margin-bottom: 1em;
 }
 
+#dw-fi-lgi-oid-email-ntf-lbl {
+  margin-bottom: 20px;
+}
+
 .dw-a-login {
   font-size: 200%;
   margin-left: 10px;
