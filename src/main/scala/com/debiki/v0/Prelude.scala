@@ -85,12 +85,20 @@ object Prelude {
    *  so it can be included in an error message even if it is end user defined
    *  (i.e. possible destructive were it not made safe).
    */
-  def safe(text: String): String = text // for now.
+  def safe(obj: AnyRef): String = {
+    val str =
+      if (obj eq null) "(null)"
+      else if (obj.isInstanceOf[String]) obj.asInstanceOf[String]
+      else obj.toString
+    str // for now
+  }
 
   /** Like {@code safe}, but wraps the string between start and end
    * *d*elimiters "`" and "'", like so: <i>`the-dangerous-string'</i>
+   *  -- unless it's null, then returns "(null)".
    */
-  def safed(text: String): String = "`"+ text +"'"
+  def safed(obj: AnyRef): String =
+    if (obj eq null) "(null)" else "`"+ safe(obj) +"'"
 
   def classNameOf(x: Any): String = x match {
     case x: AnyRef => x.getClass.getSimpleName
