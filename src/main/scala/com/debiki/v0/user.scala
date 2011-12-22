@@ -130,9 +130,18 @@ case object User {
   }
 }
 
+/* Could use:
+sealed abstract class UserId
+case class UserUnauId(String) extends UserId
+case class UserRoleId(String) extends UserId
+-- instead of setting User.id to "-<some-id>" for IdentitySimple,
+  and "<some-id>" for Role:s.
+*/
+
 case class User (
   /** The user's id. Starts with "-" if not authenticated
-   *  (i.e. for IdentitySimple). */
+   *  (i.e. for IdentitySimple).
+   *  COULD replace with UserId (see above) */
   id: String,
   displayName: String,
   // COULD be an Option -- Twitter identities have no email?
@@ -147,6 +156,14 @@ case class User (
 ){
   checkId(id, "[debiki_error_02k125r]")
   def isAuthenticated = !id.startsWith("-") && !id.startsWith("?")
+
+  /* COULD add:
+    def roleId: Option[String] =
+    if (userId startsWith "-") None else Some(userId)
+
+  def idtySmplId: Option[String] =
+    if (userId startsWith "-") Some(userId drop 1) else None
+   */
 }
 
 object EmailNotfPrefs extends Enumeration {
