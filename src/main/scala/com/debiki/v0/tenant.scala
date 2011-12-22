@@ -14,7 +14,7 @@ case class Tenant(
   // Reqiure at most 1 canonical host.
   //require((0 /: hosts)(_ + (if (_.isCanonical) 1 else 0)) <= 1)
 
-  def chost_! : TenantHost = hosts.find(_.isCanonical).get
+  def chost_! : TenantHost = hosts.find(_.role == TenantHost.RoleCanonical).get
 }
 
 object TenantHost {
@@ -29,13 +29,19 @@ object TenantHost {
   case object HttpsAllowed extends HttpsInfo
 
   case object HttpsNone extends HttpsInfo
+
+  sealed abstract class Role
+  case object RoleCanonical extends Role
+  case object RoleRedirect extends Role
+  case object RoleLink extends Role
+  case object RoleDuplicate extends Role
 }
 
 
 case class TenantHost(
   address: String,
   https: TenantHost.HttpsInfo,
-  isCanonical: Boolean
+  role: TenantHost.Role
 )
 
 
@@ -47,15 +53,20 @@ sealed abstract class TenantLookup
  */
 case class FoundChost(tenantId: String) extends TenantLookup
 
-/** The host is an alias for the canonical host. If `shouldRedirect',
-  * the server should redirect permanently to the `canonicalHostUrl',
-  * which is e.g. `http://www.example.com'.
+/** The host is an alias for the canonical host.
   */
 case class FoundAlias(
   tenantId: String,
+
+  /** E.g. `http://www.example.com'. */
   canonicalHostUrl: String,
-  shouldRedirect: Boolean
+
+  /** What the server should do with this request. Should id redirect to
+   *  the canonical host, or include a <link rel=canonical>?
+   */
+  role: TenantHost.Role
 ) extends TenantLookup
+
 
 /** The server could e.g. reply 404 Not Found.
  */
