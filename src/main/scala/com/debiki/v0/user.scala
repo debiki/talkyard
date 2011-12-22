@@ -271,11 +271,20 @@ case class InboxItem(
  *  InboxItem is to be constructed anyway.
  */
 case class InboxSeed(
-  roleId: String,
+  // Either a role id or an unauthenticated user id (i.e. IdentitySimple).
+  // Starts with '-' for unauthenticated users.
+  userId: String,
   pageId: String,
   pageActionId: String,
   sourceActionId: String,
-  ctime: ju.Date)
+  ctime: ju.Date
+){
+  def roleId: Option[String] =
+    if (userId startsWith "-") None else Some(userId)
+
+  def idtySmplId: Option[String] =
+    if (userId startsWith "-") Some(userId drop 1) else None
+}
 
 object Inbox {
 
@@ -286,12 +295,12 @@ object Inbox {
     val seeds: Seq[InboxSeed] = actions flatMap (_ match {
       case post: Post =>
         val postRepliedTo = page.vipo_!(post.parent)
-        val roleRepliedTo = postRepliedTo.user_!
-        if (user.map(_.id) == Some(roleRepliedTo.id)) {
+        val userRepliedTo = postRepliedTo.user_!
+        if (user.map(_.id) == Some(userRepliedTo.id)) {
           // Don't notify the user of his/her own replies.
           Nil
         } else {
-          InboxSeed(roleId = roleRepliedTo.id, pageId = page.guid,
+          InboxSeed(userId = userRepliedTo.id, pageId = page.guid,
                 pageActionId = post.id, sourceActionId = post.id,
                 ctime = post.date) :: Nil
         }
