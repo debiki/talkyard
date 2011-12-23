@@ -60,12 +60,6 @@ object Debate {
 }
 
 
-/*
-class AddVoteResults private[debiki] (
-  val debate: Debate,
-  val newEditsApplied: List[EditApplied]
-) */
-
 // Could rename to Page.
 case class Debate (
   guid: String,
@@ -281,92 +275,6 @@ case class Debate (
     Debate(guid, logins2, identities2, users2, posts2, ratings2,
         edits2, editVotes2, editApps2, flags2, dels2)
   }
-
-  /* COULD remove
-  def addEdit(edit: Edit): AddVoteResults = {
-    // Apply edit directly, if editing own post with no replies.
-    val post = postsById(edit.postId)  // throw unless found
-    val replies = repliesTo(edit.postId)
-    val editsOwnPost = hasSameAuthor(edit, post)
-    var newEditsApplied = List[EditApplied]()
-    if (replies.isEmpty && editsOwnPost)
-      newEditsApplied ::= EditApplied(editId = edit.id, date = edit.date,
-          loginId = edit.loginId,
-          result = edit.text, // in the future perahps apply a diff?
-          debug = "Applying own edit directly, since no replies")
-    val d2 = copy(edits = edit :: edits,
-                  editsApplied = newEditsApplied ::: editsApplied)
-    new AddVoteResults(d2, newEditsApplied)
-  } */
-
-  /* COULD remove
-  def addVote(vote: EditVote, applyEdits: Boolean): AddVoteResults = {
-    var editsToApply = List[EditApplied]()
-    //var editsToRevert = List[EditReverted]()  ??
-
-    def findEditsToApply(editId: String, likes: Boolean) {
-      val edit = editsById(editId)  // throw unless found
-      val post = postsById(edit.postId)  // throw unless found
-      val ea = editsAppliedById.get(editId)
-      val lastEditApplied = editsAppliedTo(edit.postId).headOption
-      val isApplied = ea.isDefined
-      val isLastApplied = isApplied && ea == lastEditApplied.headOption
-      if (isApplied && !isLastApplied) {
-        // This vote doesn't matter; can revert only the last edit applied.
-        return
-      }
-      var shouldApply = false;
-      var shouldRevert = false;
-      var liking: Option[EditLiking] = None
-
-      // Apply or revert edit?
-      val replies = repliesTo(edit.postId)
-      val votesOnOwnPost = hasSameAuthor(edit, post)
-      if (replies.isEmpty && votesOnOwnPost) {
-        UNTESTED // Can't test this before edits can be reverted, since
-                // own edit applied instantly, if the post has no replies.
-        // No reply can lose its context; okay to apply/revert.
-        if (likes && !isApplied) shouldApply = true;
-        if (!likes && isApplied) shouldRevert = true;
-      }
-      else {
-        liking = Some(stats.likingFor(edit))  // rather expensive calcs?
-        if (!isApplied) {
-          if (likes && liking.get.lowerBound > 0.5) {  // 0.5 for now
-            // Most people seem to like this edit.
-            shouldApply = true;
-          }
-        }
-        else if (!likes && liking.get.upperBound < 0.5) {  // 0.5 for now
-          // Most people don't like this edit. And it's the last one applied.
-          shouldRevert = true;
-        }
-      }
-
-      if (shouldApply) {
-        val a = EditApplied(editId = editId, date = vote.date,
-            loginId = edit.loginId,
-            result = edit.text, // in the future perahps apply a diff?
-            debug = liking.map(_.toString).getOrElse(
-                      "Own edit, own vote, no replies"))
-        editsToApply ::= a
-      }
-      if (shouldRevert) {
-        // TODO: val r = EditReverted(...)
-        // d2 = d2.copy(...)
-      }
-    }
-
-    // TODO: Something better than applying all popular edits in random order?
-    for (editId <- vote.like) findEditsToApply(editId, likes = true)
-    for (editId <- vote.diss) findEditsToApply(editId, likes = false)
-    val d2 = copy(
-      editVotes = vote :: editVotes,
-      editsApplied = if (applyEdits) editsToApply ::: editsApplied
-                      else editsApplied
-    )
-    new AddVoteResults(d2, editsToApply)
-  } */
 
   // -------- Statistics
 
