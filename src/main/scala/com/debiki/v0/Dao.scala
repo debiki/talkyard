@@ -30,9 +30,10 @@ abstract class DaoSpi {
 
   def checkPagePath(pathToCheck: PagePath): Box[PagePath]
 
-  def loadPermsOnPage(reqInfo: RequestInfo): (RequesterInfo, PermsOnPage)
 
   def loadUser(withLoginId: String, tenantId: String): Option[(Identity, User)]
+
+  def loadPermsOnPage(reqInfo: RequestInfo): PermsOnPage
 
   def saveInboxSeeds(tenantId: String, seeds: Seq[InboxSeed])
 
@@ -120,12 +121,13 @@ abstract class Dao {
   def checkPagePath(pathToCheck: PagePath): Box[PagePath] =
     _spi.checkPagePath(pathToCheck)
 
-  def loadPermsOnPage(reqInfo: RequestInfo): (RequesterInfo, PermsOnPage) =
-    _spi.loadPermsOnPage(reqInfo)
 
   def loadUser(withLoginId: String, tenantId: String
                   ): Option[(Identity, User)] =
     _spi.loadUser(withLoginId, tenantId)
+
+  def loadPermsOnPage(reqInfo: RequestInfo): PermsOnPage =
+    _spi.loadPermsOnPage(reqInfo)
 
   def saveInboxSeeds(tenantId: String, seeds: Seq[InboxSeed]) =
     _spi.saveInboxSeeds(tenantId, seeds)

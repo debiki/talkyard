@@ -1125,7 +1125,7 @@ class FormHtml(val config: HtmlConfig, val permsOnPage: PermsOnPage) {
 
 
 object UserHtml {
-  def renderInbox(requester: RequesterInfo, items: Seq[InboxItem]): NodeSeq = {
+  def renderInbox(items: Seq[InboxItem]): NodeSeq = {
     if (items.isEmpty)
       return  <div class='dw-ibx'><div class='dw-ibx-ttl'/></div>;
 
