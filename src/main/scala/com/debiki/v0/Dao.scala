@@ -84,22 +84,29 @@ object Dao {
  */
 abstract class Dao {
 
-  def createPage(where: PagePath, debate: Debate): Box[Debate]
+  protected def _spi: DaoSpi
 
-  def close()
+  def createPage(where: PagePath, debate: Debate): Box[Debate] =
+    _spi.createPage(where, debate)
+
+  def close() = _spi.close
 
   /** Assigns ids to the login request, saves it, finds or creates a user
    * for the specified Identity, and returns everything with ids filled in.
    */
-  def saveLogin(tenantId: String, loginReq: LoginRequest): LoginGrant
+  def saveLogin(tenantId: String, loginReq: LoginRequest): LoginGrant =
+    _spi.saveLogin(tenantId, loginReq)
 
   /** Updates the specified login with logout IP and timestamp.*/
-  def saveLogout(loginId: String, logoutIp: String)
+  def saveLogout(loginId: String, logoutIp: String) =
+    _spi.saveLogout(loginId, logoutIp)
 
   def savePageActions[T](tenantId: String, debateId: String, xs: List[T]
-                            ): Box[List[T]]
+                            ): Box[List[T]] =
+    _spi.savePageActions(tenantId, debateId, xs)
 
-  def loadPage(tenantId: String, debateId: String): Box[Debate]
+  def loadPage(tenantId: String, debateId: String): Box[Debate] =
+    _spi.loadPage(tenantId, debateId)
 
   /** Looks up guids for each possible template.
    *
@@ -107,43 +114,59 @@ abstract class Dao {
    *  The guids found are returned, but PagePaths that point to
    *  non-existing templates are filtered out.
    */
-  def loadTemplates(perhapsTmpls: List[PagePath]): List[Debate]
+  def loadTemplates(perhapsTmpls: List[PagePath]): List[Debate] =
+    _spi.loadTemplates(perhapsTmpls)
 
-  def checkPagePath(pathToCheck: PagePath): Box[PagePath]
+  def checkPagePath(pathToCheck: PagePath): Box[PagePath] =
+    _spi.checkPagePath(pathToCheck)
 
-  def loadPermsOnPage(reqInfo: RequestInfo): (RequesterInfo, PermsOnPage)
+  def loadPermsOnPage(reqInfo: RequestInfo): (RequesterInfo, PermsOnPage) =
+    _spi.loadPermsOnPage(reqInfo)
 
-  def loadUser(withLoginId: String, tenantId: String): Option[(Identity, User)]
+  def loadUser(withLoginId: String, tenantId: String
+                  ): Option[(Identity, User)] =
+    _spi.loadUser(withLoginId, tenantId)
 
-  def saveInboxSeeds(tenantId: String, seeds: Seq[InboxSeed])
+  def saveInboxSeeds(tenantId: String, seeds: Seq[InboxSeed]) =
+    _spi.saveInboxSeeds(tenantId, seeds)
 
-  def loadInboxItems(tenantId: String, roleId: String): List[InboxItem]
+  def loadInboxItems(tenantId: String, roleId: String): List[InboxItem] =
+    _spi.loadInboxItems(tenantId, roleId)
 
   def configRole(tenantId: String, loginId: String, ctime: ju.Date,
-                 roleId: String, emailNotfPrefs: EmailNotfPrefs)
+                 roleId: String, emailNotfPrefs: EmailNotfPrefs) =
+    _spi.configRole(tenantId, loginId = loginId, ctime = ctime,
+                    roleId = roleId, emailNotfPrefs = emailNotfPrefs)
 
   def configIdtySimple(tenantId: String, loginId: String, ctime: ju.Date,
-                       emailAddr: String, emailNotfPrefs: EmailNotfPrefs)
+                       emailAddr: String, emailNotfPrefs: EmailNotfPrefs) =
+    _spi.configIdtySimple(tenantId, loginId = loginId, ctime = ctime,
+                          emailAddr = emailAddr,
+                          emailNotfPrefs = emailNotfPrefs)
 
   /** Creates a tenant, assigns it an id and and returns it. */
-  def createTenant(name: String): Tenant
+  def createTenant(name: String): Tenant =
+    _spi.createTenant(name)
 
-  def addTenantHost(tenantId: String, host: TenantHost)
+  def addTenantHost(tenantId: String, host: TenantHost) =
+    _spi.addTenantHost(tenantId, host)
 
-  def lookupTenant(scheme: String, host: String): TenantLookup
+  def lookupTenant(scheme: String, host: String): TenantLookup =
+    _spi.lookupTenant(scheme, host)
 
-  def checkRepoVersion(): Box[String]
+  def checkRepoVersion(): Box[String] = _spi.checkRepoVersion()
 
-  def secretSalt(): String
+  def secretSalt(): String = _spi.secretSalt()
 }
+
 
 /** Caches pages in a ConcurrentMap.
  *
  *  Thread safe, if `impl' is thread safe.
  */
-class CachingDao(impl: DaoSpi) extends Dao {
+class CachingDao(spi: DaoSpi) extends Dao {
 
-  private val _impl = impl
+  protected val _spi = spi
   private case class Key(tenantId: String, debateId: String)
 
   private val _cache: ju.concurrent.ConcurrentMap[Key, Debate] =
@@ -153,18 +176,18 @@ class CachingDao(impl: DaoSpi) extends Dao {
           //expireAfterWrite(10. TimeUnits.MINUTES).
           makeComputingMap(new guava.base.Function[Key, Debate] {
             def apply(k: Key): Debate = {
-              _impl.loadPage(k.tenantId, k.debateId) openOr null
+              _spi.loadPage(k.tenantId, k.debateId) openOr null
             }
           })
 
-  def createPage(where: PagePath, debate: Debate): Box[Debate] = {
-    for (debateWithIdsNoUsers <- _impl.createPage(where, debate)) yield {
+  override def createPage(where: PagePath, debate: Debate): Box[Debate] = {
+    for (debateWithIdsNoUsers <- _spi.createPage(where, debate)) yield {
       // ------------
       // Bug workaround: Load the page *inclusive Login:s and User:s*.
       // Otherwise only Actions will be included (in debateWithIdsNoUsers)
       // and then the page cannot be rendered (there'll be None.get errors).
       val debateWithIds =
-          _impl.loadPage(where.tenantId, debateWithIdsNoUsers.guid).open_!
+          _spi.loadPage(where.tenantId, debateWithIdsNoUsers.guid).open_!
       // ------------
       val key = Key(where.tenantId, debateWithIds.guid)
       val duplicate = _cache.putIfAbsent(key, debateWithIds)
@@ -174,17 +197,9 @@ class CachingDao(impl: DaoSpi) extends Dao {
     }
   }
 
-  def close() = _impl.close
-
-  def saveLogin(tenantId: String, loginReq: LoginRequest): LoginGrant =
-    _impl.saveLogin(tenantId, loginReq)
-
-  def saveLogout(loginId: String, logoutIp: String) =
-    _impl.saveLogout(loginId, logoutIp)
-
-  def savePageActions[T](tenantId: String, debateId: String, xs: List[T]
-                            ): Box[List[T]] = {
-    for (xsWithIds <- _impl.savePageActions(tenantId, debateId, xs)) yield {
+  override def savePageActions[T](tenantId: String, debateId: String,
+                                  xs: List[T]): Box[List[T]] = {
+    for (xsWithIds <- _spi.savePageActions(tenantId, debateId, xs)) yield {
       val key = Key(tenantId, debateId)
       var replaced = false
       while (!replaced) {
@@ -200,7 +215,7 @@ class CachingDao(impl: DaoSpi) extends Dao {
         // DebateHtml._layoutPosts.
         // -- So instead: ----------
         // This loads all Logins, Identity:s and Users referenced by the page:
-        val newPage = _impl.loadPage(tenantId, debateId).open_!
+        val newPage = _spi.loadPage(tenantId, debateId).open_!
         // -------- Unfortunately.--
         replaced = _cache.replace(key, oldPage, newPage)
       }
@@ -208,7 +223,7 @@ class CachingDao(impl: DaoSpi) extends Dao {
     }
   }
 
-  def loadPage(tenantId: String, debateId: String): Box[Debate] = {
+  override def loadPage(tenantId: String, debateId: String): Box[Debate] = {
     try {
       Full(_cache.get(Key(tenantId, debateId)))
     } catch {
@@ -217,115 +232,11 @@ class CachingDao(impl: DaoSpi) extends Dao {
     }
   }
 
-  def loadTemplates(perhapsTmpls: List[PagePath]): List[Debate] =
-    _impl.loadTemplates(perhapsTmpls)
-
-  def checkPagePath(pathToCheck: PagePath): Box[PagePath] =
-    _impl.checkPagePath(pathToCheck)
-
-  def loadPermsOnPage(reqInfo: RequestInfo): (RequesterInfo, PermsOnPage) =
-    _impl.loadPermsOnPage(reqInfo)
-
-  def loadUser(withLoginId: String, tenantId: String
-                  ): Option[(Identity, User)] =
-    _impl.loadUser(withLoginId, tenantId)
-
-  def saveInboxSeeds(tenantId: String, seeds: Seq[InboxSeed]) =
-    _impl.saveInboxSeeds(tenantId, seeds)
-
-  def loadInboxItems(tenantId: String, roleId: String): List[InboxItem] =
-    _impl.loadInboxItems(tenantId, roleId)
-
-  def configRole(tenantId: String, loginId: String, ctime: ju.Date,
-                 roleId: String, emailNotfPrefs: EmailNotfPrefs) =
-    _impl.configRole(tenantId, loginId = loginId, ctime = ctime,
-                      roleId = roleId, emailNotfPrefs = emailNotfPrefs)
-
-  def configIdtySimple(tenantId: String, loginId: String, ctime: ju.Date,
-                       emailAddr: String, emailNotfPrefs: EmailNotfPrefs) =
-    _impl.configIdtySimple(tenantId, loginId = loginId, ctime = ctime,
-                          emailAddr = emailAddr,
-                          emailNotfPrefs = emailNotfPrefs)
-
-  def createTenant(name: String): Tenant =
-    _impl.createTenant(name)
-
-  def addTenantHost(tenantId: String, host: TenantHost) =
-    _impl.addTenantHost(tenantId, host)
-
-  def lookupTenant(scheme: String, host: String): TenantLookup =
-    _impl.lookupTenant(scheme, host)
-
-  def checkRepoVersion(): Box[String] = _impl.checkRepoVersion()
-
-  def secretSalt(): String = _impl.secretSalt()
-
 }
 
 /** Always accesses the database, whenever you ask it do do something.
  *
  *  Useful when constructing test suites that should access the database.
  */
-class NonCachingDao(impl: DaoSpi) extends Dao {
-  def createPage(where: PagePath, debate: Debate): Box[Debate] =
-    impl.createPage(where, debate)
-
-  def close() = impl.close
-
-  def saveLogin(tenantId: String, loginReq: LoginRequest): LoginGrant =
-    impl.saveLogin(tenantId, loginReq)
-
-  def saveLogout(loginId: String, logoutIp: String) =
-    impl.saveLogout(loginId, logoutIp)
-
-  def savePageActions[T](tenantId: String, debateId: String, xs: List[T]
-                            ): Box[List[T]] =
-    impl.savePageActions(tenantId, debateId, xs)
-
-  def loadPage(tenantId: String, debateId: String): Box[Debate] =
-    impl.loadPage(tenantId, debateId)
-
-  def loadTemplates(perhapsTmpls: List[PagePath]): List[Debate] =
-    impl.loadTemplates(perhapsTmpls)
-
-  def checkPagePath(pathToCheck: PagePath): Box[PagePath] =
-    impl.checkPagePath(pathToCheck)
-
-  def loadPermsOnPage(reqInfo: RequestInfo): (RequesterInfo, PermsOnPage) =
-    impl.loadPermsOnPage(reqInfo)
-
-  def loadUser(withLoginId: String, tenantId: String
-                  ): Option[(Identity, User)] =
-    impl.loadUser(withLoginId, tenantId)
-
-  def saveInboxSeeds(tenantId: String, seeds: Seq[InboxSeed]) =
-    impl.saveInboxSeeds(tenantId, seeds)
-
-  def loadInboxItems(tenantId: String, roleId: String): List[InboxItem] =
-    impl.loadInboxItems(tenantId, roleId)
-
-  def configRole(tenantId: String, loginId: String, ctime: ju.Date,
-                 roleId: String, emailNotfPrefs: EmailNotfPrefs) =
-    impl.configRole(tenantId, loginId = loginId, ctime = ctime,
-                    roleId = roleId, emailNotfPrefs = emailNotfPrefs)
-
-  def configIdtySimple(tenantId: String, loginId: String, ctime: ju.Date,
-                       emailAddr: String, emailNotfPrefs: EmailNotfPrefs) =
-    impl.configIdtySimple(tenantId, loginId = loginId, ctime = ctime,
-                          emailAddr = emailAddr,
-                          emailNotfPrefs = emailNotfPrefs)
-
-  def createTenant(name: String): Tenant =
-    impl.createTenant(name)
-
-  def addTenantHost(tenantId: String, host: TenantHost) =
-    impl.addTenantHost(tenantId, host)
-
-  def lookupTenant(scheme: String, host: String): TenantLookup =
-    impl.lookupTenant(scheme, host)
-
-  def checkRepoVersion(): Box[String] = impl.checkRepoVersion()
-
-  def secretSalt(): String = impl.secretSalt()
-}
+class NonCachingDao(protected val _spi: DaoSpi) extends Dao
 
