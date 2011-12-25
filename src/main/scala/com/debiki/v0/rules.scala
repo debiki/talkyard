@@ -28,13 +28,16 @@ case class RequestInfo(
 
 /** Identifies a page, by guid or by path, and knows the path
  *  component in the URL to the page.
+ *
+ *  (Cannot split into separate case classes for pages and folders?
+ *  /some/path/  might refer to a folder *or* a page -- the index page.)
  */
-case class PagePath(  // COULD move to debate.scala
+case class PagePath(  // COULD move to debate.scala.  Rename to RequestPath?
   tenantId: String,  // COULD be a Dao(parameter) instead?
-  folder: String,
+  folder: String,       // COULD rename to parentFolder
   guid: Option[String], // COULD break out PageLookup, so would never be None
   guidInPath: Boolean,
-  name: String
+  name: String  // COULD rename to pageName
 ){
   require(tenantId.nonEmpty)
   require(guid != Some("?"))
@@ -61,12 +64,12 @@ case class PagePath(  // COULD move to debate.scala
   /** True iff path ends with a `/'. Then this is a path to a  folder or
    *  a folder's index page (which is a page with an empty name).
    */
-  def isFolderPath = path endsWith "/"
+  def isFolderPath = path endsWith "/"   // COULD rename to isFolderOrIndex
 }
 
 /** Things an end user can do.
  */
-sealed abstract class Do
+sealed abstract class Do  // COULD rename to RequestType
 
 object Do {
   /*
