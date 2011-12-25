@@ -1148,3 +1148,117 @@ object UserHtml {
     </div>
   }
 }
+
+
+// where should I place this?
+sealed abstract class PageSortOrder
+case object SortPageByPath extends PageSortOrder
+case object SortPageByCtime extends PageSortOrder
+
+object PageListHtml {
+  def renderPageList(pagePaths: Seq[PagePath]): NodeSeq = {
+    <ol>{
+      for (pagePath <- pagePaths) yield {
+        <li><a href={"/0/"+ pagePath.path}>{pagePath.path}</a></li>
+      }
+    }</ol>
+  }
+}
+
+
+object AtomFeedXml {
+
+  /**
+   * See http://www.atomenabled.org/developers/syndication/.
+   * Include in HTML e.g. like so:
+   *   <link href="path/to/atom.xml" type="application/atom+xml"
+   *        rel="alternate" title="Sitewide ATOM Feed" />
+   *
+   * feedId: Identifies the feed using a universally unique and
+   * permanent URI. If you have a long-term, renewable lease on your
+   * Internet domain name, then you can feel free to use your website's
+   * address.
+   * feedTitle: a human readable title for the feed. Often the same as
+   * the title of the associated website.
+   * feedMtime: Indicates the last time the feed was modified
+   * in a significant way.
+   */
+  def renderFeed(hostUrl: String, feedId: String, feedTitle: String,
+                 feedUpdated: ju.Date, pathsAndPages: Seq[(PagePath, Debate)]
+                    ): Node = {
+    // Based on:
+    //   http://exploring.liftweb.net/master/index-15.html#toc-Section-15.7
+
+    if (!hostUrl.startsWith("http"))
+      warnDbgDie("Bad host URL: "+ safed(hostUrl))
+
+    val baseUrl = hostUrl +"/0/"
+    def urlTo(pp: PagePath) = baseUrl + pp.path.dropWhile(_ == '/')
+
+    def pageToAtom(pathAndPage: (PagePath, Debate)): NodeSeq = {
+      val pagePath = pathAndPage._1
+      val page = pathAndPage._2
+      val rootPost = page.vipo(Debate.RootPostId).getOrElse {
+        warnDbgDie("Page "+ safed(page.guid) +
+              " lacks a root post [debiki_error_09k14p2]")
+        return Nil
+      }
+      val ctime = rootPost.date
+      val rootPostAuthorName =
+            rootPost.user.map(_.displayName) getOrElse "(Author name unknown)"
+      val hostAndPort = hostUrl.stripPrefix("https://").stripPrefix("http://")
+      val urlToPage =  urlTo(pagePath)
+
+      // This takes rather long and should be cached.
+      // Use the same cache for both plain HTML pages and Atom and RSS feeds?
+      val rootPostHtml = DebateHtml.markdownToHtml(rootPost.text, hostAndPort)
+
+      <entry>{
+        /* Identifies the entry using a universally unique and
+        permanent URI. */}
+        <id>{urlToPage}</id>{
+        /* Contains a human readable title for the entry. */}
+        <title>{pagePath.nameOrGuidOrQustnMark}</title>{
+        /* Indicates the last time the entry was modified in a
+        significant way. This value need not change after a typo is
+        fixed, only after a substantial modification.
+        COULD introduce a page's updatedTime?
+        */}
+        <updated>{toIso8601T(ctime)}</updated>{
+        /* Names one author of the entry. An entry may have multiple
+        authors. An entry must [sometimes] contain at least one author
+        element [...] More info here:
+          http://www.atomenabled.org/developers/syndication/
+                                                #recommendedEntryElements  */}
+        <author><name>{rootPostAuthorName}</name></author>{
+        /* The time of the initial creation or first availability
+        of the entry.  -- but that shouldn't be the ctime, the page
+        shouldn't be published at creation.
+        COULD indroduce a page's publishedTime? publishing time?
+        <published>{toIso8601T(ctime)}</published> */
+        /* Identifies a related Web page. */}
+        <link rel="alternate" href={urlToPage}/>{
+        /* Contains or links to the complete content of the entry. */}
+        <content type="xhtml">
+          <div xmlns="http://www.w3.org/1999/xhtml">
+            { rootPostHtml }
+          </div>
+        </content>
+      </entry>
+    }
+
+     // Could add:
+     // <link>: Identifies a related Web page
+     // <author>: Names one author of the feed. A feed may have multiple
+     // author elements. A feed must contain at least one author
+     // element unless all of the entry elements contain at least one
+     // author element.
+    <feed xmlns="http://www.w3.org/2005/Atom">
+      <title>{feedTitle}</title>
+      <id>{feedId}</id>
+      <updated>{toIso8601T(feedUpdated)}</updated>
+      { pathsAndPages.flatMap(pageToAtom) }
+    </feed>
+  }
+}
+

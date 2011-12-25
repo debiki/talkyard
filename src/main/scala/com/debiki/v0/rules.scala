@@ -55,6 +55,9 @@ case class PagePath(  // COULD move to debate.scala
       folder + name
     }
 
+  def nameOrGuidOrQustnMark =
+    if (name nonEmpty) name else guid.map("-"+ _) getOrElse "?"
+
   /** True iff path ends with a `/'. Then this is a path to a  folder or
    *  a folder's index page (which is a page with an empty name).
    */
@@ -94,6 +97,8 @@ object Do {
   case class Unsupported(whatUnsafe: String) extends Do {
     override def toString: String = "Unsupported("+ safe(whatUnsafe) +")"
   }
+  case object List extends Do
+  case object FeedAtom extends Do
 }
 
 // Could perhaps: -- but don't use numbers, use ordered case objects instead?

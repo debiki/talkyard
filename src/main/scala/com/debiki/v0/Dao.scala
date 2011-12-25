@@ -30,6 +30,8 @@ abstract class DaoSpi {
 
   def checkPagePath(pathToCheck: PagePath): Box[PagePath]
 
+  def listPagePaths(withFolderPrefix: String, tenantId: String,
+        sortBy: PageSortOrder, limit: Int, offset: Int): Seq[PagePath]
 
   def loadUser(withLoginId: String, tenantId: String): Option[(Identity, User)]
 
@@ -46,6 +48,8 @@ abstract class DaoSpi {
                        emailAddr: String, emailNotfPrefs: EmailNotfPrefs)
 
   def createTenant(name: String): Tenant
+
+  def loadTenants(tenantIds: Seq[String]): Seq[Tenant]
 
   def addTenantHost(tenantId: String, host: TenantHost)
 
@@ -121,6 +125,9 @@ abstract class Dao {
   def checkPagePath(pathToCheck: PagePath): Box[PagePath] =
     _spi.checkPagePath(pathToCheck)
 
+  def listPagePaths(withFolderPrefix: String, tenantId: String,
+        sortBy: PageSortOrder, limit: Int, offset: Int): Seq[PagePath] =
+    _spi.listPagePaths(withFolderPrefix, tenantId, sortBy, limit, offset)
 
   def loadUser(withLoginId: String, tenantId: String
                   ): Option[(Identity, User)] =
@@ -149,6 +156,9 @@ abstract class Dao {
   /** Creates a tenant, assigns it an id and and returns it. */
   def createTenant(name: String): Tenant =
     _spi.createTenant(name)
+
+  def loadTenants(tenantIds: Seq[String]): Seq[Tenant] =
+    _spi.loadTenants(tenantIds)
 
   def addTenantHost(tenantId: String, host: TenantHost) =
     _spi.addTenantHost(tenantId, host)
