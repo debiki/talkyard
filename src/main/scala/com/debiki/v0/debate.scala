@@ -77,25 +77,40 @@ case class Debate (
   private lazy val postsById =
       imm.Map[String, Post](posts.map(x => (x.id, x)): _*)
 
-  private lazy val (
+  lazy val (
+      // COULD rename postsByParentId to textByParentId.
       postsByParentId: imm.Map[String, List[Post]],
-      metaByParentId: imm.Map[String, List[Post]]) = {
+      titlesByParentId: imm.Map[String, List[Post]],
+      publsByParentId: imm.Map[String, List[Post]],
+      metaByParentId: imm.Map[String, List[Post]]
+        ) = {
     // Add post -> replies/meta mappings to mutable multimaps.
     var postMap = mut.Map[String, mut.Set[Post]]()
+    var titleMap = mut.Map[String, mut.Set[Post]]()
+    var publMap = mut.Map[String, mut.Set[Post]]()
     var metaMap = mut.Map[String, mut.Set[Post]]()
     for (p <- posts) {
-      val mmap = if (p isMeta) metaMap else postMap
+      val mmap = p.tyype match {
+        case PostType.Text => postMap  // COULD rename to comment/text/artclMap
+        case PostType.Title => titleMap
+        case PostType.Publ => publMap
+        case PostType.Meta => metaMap
+      }
       mmap.getOrElse(
         p.parent, { val s = mut.Set[Post](); mmap.put(p.parent, s); s }) += p
     }
     // Copy to immutable versions.
-    val immPostMap = imm.Map[String, List[Post]](
-        (for ((parentId, children) <- postMap)
-          yield (parentId, children.toList)).toList: _*)
-    val immMetaMap = imm.Map[String, List[Post]](
-        (for ((parentId, meta) <- metaMap)
-          yield (parentId, meta.toList)).toList: _*)
-    (immPostMap, immMetaMap)
+    def buildImmMap(mutMap: mut.Map[String, mut.Set[Post]]
+                       ): imm.Map[String, List[Post]] = {
+      imm.Map[String, List[Post]](
+        (for ((parentId, postsSet) <- mutMap)
+        yield (parentId, postsSet.toList)).toList: _*).withDefaultValue(Nil)
+    }
+    val immPostMap = buildImmMap(postMap)
+    val immTitleMap = buildImmMap(titleMap)
+    val immPublMap = buildImmMap(publMap)
+    val immMetaMap = buildImmMap(metaMap)
+    (immPostMap, immTitleMap, immPublMap, immMetaMap)
   }
 
   private class RatingCacheItem {
@@ -133,17 +148,29 @@ case class Debate (
    */
   def guidd = "-"+ guid
 
+
+  // ====== Older stuff below (everything in use though!) ======
+
+  // Instead of the stuff below, simply use
+  //   postsById  /  titlesById  /  etc.
+  // and place utility functions in NiPo.
+
+
   // -------- Posts
 
   def postCount = posts.length
 
   def post(id: String): Option[Post] = postsById.get(id)
 
-  def vipo_!(postId: String): ViPo =
+  def rootPost = vipo(RootPostId)
+  def rootPost_! = vipo_!(RootPostId)
+
+  def vipo_!(postId: String): ViPo =  // COULD rename to post_!(withId = ...)
     vipo(postId).getOrElse(error("[debiki_error_3krtEK]"))
 
-  def vipo(postId: String): Option[ViPo] =
+  def vipo(postId: String): Option[ViPo] = // COULD rename to post(withId =...)
     post(postId).map(new ViPo(this, _))
+
 
   // -------- Ratings
 
@@ -370,6 +397,7 @@ class ViPo(debate: Debate, val post: Post) extends ViAc(debate, post) {
   def textInitially: String = post.text
   def where: Option[String] = post.where
   def edits: List[Edit] = debate.editsFor(post.id)
+  // COULD rename editsAppdRevd to editsAppdRevtd (Revtd instead of Revd).
   lazy val (editsDeleted, editsPending, editsAppdDesc, editsAppdRevd) = {
     var deleted = List[(Edit, Delete)]()
     var pending = List[Edit]()
@@ -407,6 +435,36 @@ class ViPo(debate: Debate, val post: Post) extends ViAc(debate, post) {
   def editsAppdAsc = editsAppdDesc.reverse
 
   lazy val lastEditApp = editsAppdDesc.headOption.map(_._2)
+
+  /** The title of this Post, all edits of the original title
+   *  taken into account.
+   */
+  lazy val title: Option[String] = {
+    if (titles isEmpty) None
+    else {
+      // For now, don't consider deletions of titles.
+      Some(debate.vipo_!(titles.head.id).text)
+    }
+  }
+
+  /** All titles assigned to this post -- only the first (w.r.t. its ctime)
+   *  non-deleted title has any effect.
+   */
+  lazy val titles: List[Post] = debate.titlesByParentId(id)//debate.childrenOf(id, PostType.Title)
+
+  /** Whether or not this Post has been published.
+   *
+   *  If the root post is published, then the whole page is published.
+   *  If a comment is published, then it's been approved (it's not spam).
+   */
+  lazy val publd: Option[Boolean] = {
+    if (publs isEmpty) None
+    else Some(true)  // for now, don't consider deletions of publications
+  }
+
+  /** Only the first (w.r.t. its ctime) non-deleted publication has any effect.
+   */
+  lazy val publs: List[Post] = debate.publsByParentId(id)//debate.childrenOf(id, PostType.Publ)
 
   // COULD optimize this, do once for all flags.
   lazy val flags = debate.flags.filter(_.postId == post.id)
@@ -497,6 +555,39 @@ case class Flag(
   details: String
 ) extends Action
 
+sealed abstract class PostType  // rename to ActionType?
+object PostType {
+
+  /** A blog post, or forum questiom or comment. */
+  case object Text extends PostType
+
+  /** The title of something.
+   *
+   * Effects:
+   * PostType.Article: Becomes the page title
+   * PostType.Edit: Shown as the Edit description (brief one line,
+   *    further details would be placed in a Comment to the Edit).
+   */
+  case object Title extends PostType
+
+  /** Edits a Post.text. */
+  //case object Edit extends PostType
+
+  /** Makes an Article visible to everyone with access permissions,
+   *  and makes an Edit take effect.
+   */
+  case object Publ extends PostType
+
+  /** Meta information describes another Post. */
+  // COULD use dedicated PostType:s instead, then the computer/database
+  // would understand what is it (but it'd have to parse the Meta.text to
+  // understand what is it.
+  case object Meta extends PostType
+
+  //sealed abstract trait FlagReason
+  //case object FlagSpam extends PostType with FlagReason
+}
+
 case class Post(
   id: String,
   parent: String,
@@ -514,13 +605,7 @@ case class Post(
    */
   markup: String,
 
-  /** Whether this Post is meta info on something else,
-   *  e.g. the description/commit message for an Edit,
-   *  or HTML <head> data, for a root post (i.e. an article, html page).
-   *  By reusing Post also for meta info, versioning and editing
-   *  of meta info come for free.
-   */
-  isMeta: Boolean,
+  tyype: PostType,
 
   /** If defined, this is an inline comment and the value
    *  specifies where in the parent post it is to be placed.
@@ -528,6 +613,10 @@ case class Post(
   where: Option[String] = None   // COULD move to separate Meta post?
                                  // Benefits: Editing and versioning of
                                  // `where', without affecting this Post.text.
+                                // Benefit 2: There could be > 1 meta-Where
+                                // for each post, so you could make e.g. a
+                                // generic comment that results in ...
+                                // ...?? arrows to e.g. 3 other comments ??
 ) extends Action {
 }
 
@@ -537,6 +626,7 @@ case class PostMeta(
 )
 
 // Could rename to Patch? or Diff?
+// SHOULD merge into Post and PostType.Edit
 case class Edit (
   id: String,
   postId: String,
@@ -552,7 +642,7 @@ case class Edit (
 // (Then you cannot vote on > 1 edit at once, but perhaps that's a good thing?)
 // When there are X EditApp suggestions, automatically create one
 // with status = Published?
-// "status=Suggestion/Published"? or "weight=Suggestion/Publication"?
+// "status=Suggestion/Published"? or "weight=Sugstn/Publ"?
 // or "effect=Immediate/SuggestionOnly"?
 case class EditVote(  // should extend Action
   id: String,
@@ -574,6 +664,7 @@ case class EditVote(  // should extend Action
  *  And each Action could have a applied=true/false field?
  *  so they can be applied directly on creation?
  */
+// SHOULD merge into Post and use case class PostType.Appl?
 case class EditApp(   // COULD rename to Appl?
   id: String,
   editId: String,  // COULD rename to actionId?
@@ -605,6 +696,7 @@ case class EditApp(   // COULD rename to Appl?
  *  in the list of edits that can be applied.
  *  -----------------------------
  */
+// SHOULD merge into Post and use case class PostType.Deletion?
 case class Delete(
   id: String,
   postId: String,  // COULD rename to actionId

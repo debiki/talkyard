@@ -52,7 +52,7 @@ object Util {
 
   val post = Post(id = "Ca", parent = "0", date = new ju.Date,
                   loginId = "?", newIp = None, text = "test",
-                  markup = "", isMeta = false)
+                  markup = "", tyype = PostType.Text)
   val debate = Debate("test", posts = post::Nil)
   val rating_interesting =
         Rating(id = "?", postId = post.id, loginId = "?", date = new ju.Date,
