@@ -135,8 +135,8 @@ object Templates {
     oidOpLocalId = "provider.com/local/id",
     firstName = "Laban", email = "oid@email.hmm", country = "Sweden")
   val post = v0.Post(id = "?", parent = "1", date = new ju.Date,
-    loginId = "?", newIp = None, text = "", markup = "", isMeta = false,
-    where = None)
+    loginId = "?", newIp = None, text = "", markup = "",
+    tyype = v0.PostType.Text, where = None)
   val rating = v0.Rating(id = "?", postId = "1", loginId = "?",
     newIp = None, date = new ju.Date, tags = Nil)
 }
@@ -185,8 +185,8 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
     }
 
     "add and lookup host test.ex.com" >> {
-      dao.addTenantHost(defaultTenantId, TenantHost(
-          "test.ex.com", TenantHost.HttpsNone, isCanonical = true))
+      dao.addTenantHost(defaultTenantId, TenantHost("test.ex.com",
+            TenantHost.HttpsNone, role = TenantHost.RoleCanonical))
       val lookup = dao.lookupTenant("http", "test.ex.com")
       lookup must_== FoundChost(defaultTenantId)
     }
@@ -449,11 +449,62 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
       }
     }
 
+    // -------- Entitle a Page
+
+    "save a Title, load the article with the title" >> {
+      // Save a Title, for the root post.
+      var postId = ""
+      val postNoId = T.post.copy(tyype = PostType.Title, text = "Page-Title",
+                                  loginId = loginId)
+      dao.savePageActions(
+            defaultTenantId, ex1_debate.guid, List(postNoId)) must beLike {
+        case Full(List(post: Post)) =>
+          postId = post.id
+          post must_== postNoId.copy(id = postId)
+          true
+      }
+
+      // Load the root post, check its title.
+      dao.loadPage(defaultTenantId, ex1_debate.guid) must beLike {
+        case Full(d: Debate) => {
+          val rootPost = d.rootPost_!
+          rootPost.title must_== Some("Page-Title")
+          rootPost.titles.length must_== 1
+          true
+        }
+      }
+    }
+
+    // -------- Publish a Page
+
+    "save a Publ, load the article, and now it's published" >> {
+      // Save a Publ, for the root post.
+      var postId = ""
+      val postNoId = T.post.copy(tyype = PostType.Publ, loginId = loginId)
+      dao.savePageActions(
+        defaultTenantId, ex1_debate.guid, List(postNoId)) must beLike {
+        case Full(List(post: Post)) =>
+          postId = post.id
+          post must_== postNoId.copy(id = postId)
+          true
+      }
+
+      // Load the root post, verify that it is now published.
+      dao.loadPage(defaultTenantId, ex1_debate.guid) must beLike {
+        case Full(d: Debate) => {
+          val rootPost = d.rootPost_!
+          rootPost.publd must_== Some(true)
+          rootPost.publs.length must_== 1
+          true
+        }
+      }
+    }
+
     // -------- Meta info
 
     var ex2MetaEmpty_id = ""
     val exMeta_ex2EmptyMetaTmpl = T.post.copy(parent = ex2_id,
-        text = "", loginId = loginId, isMeta = true)
+        text = "", loginId = loginId, tyype = PostType.Meta)
     def exMeta_ex2EmptyMeta = exMeta_ex2EmptyMetaTmpl.copy(id = ex2MetaEmpty_id)
     "save an empty meta post" >> {
       dao.savePageActions(defaultTenantId, ex1_debate.guid,
@@ -480,7 +531,7 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
 
     var ex2MetaArtQst_id = ""
     val exMeta_ex2ArtQstTmpl = T.post.copy(parent = ex2_id,
-        text = "article-question", loginId = loginId, isMeta = true)
+        text = "article-question", loginId = loginId, tyype = PostType.Meta)
     def exMeta_ex2ArtQst = exMeta_ex2ArtQstTmpl.copy(id = ex2MetaArtQst_id)
     "save another meta post, wich reads 'article-question'" >> {
       dao.savePageActions(defaultTenantId, ex1_debate.guid,
@@ -642,15 +693,69 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
       }
     }
 
+    // -------- Email
+
+    var emailEx_loginGrant: LoginGrant = null
+
+    "by default send no email to a new IdentitySimple" >> {
+      val loginReq = LoginRequest(T.login.copy(date = new ju.Date),
+        T.identitySimple.copy(email = "Imail@ex.com", name = "Imail"))
+      val grant = dao.saveLogin(defaultTenantId, loginReq)
+      val Some((idty, user)) = dao.loadUser(withLoginId = grant.login.id,
+                                          tenantId = defaultTenantId)
+      user.emailNotfPrefs must_== EmailNotfPrefs.DontReceive
+      emailEx_loginGrant = grant
+    }
+
+    "configure email to IdentitySimple" >> {
+      def login = emailEx_loginGrant.login
+      dao.configIdtySimple(tenantId = defaultTenantId, loginId = login.id,
+            ctime = new ju.Date, emailAddr = "Imail@ex.com",
+            emailNotfPrefs = EmailNotfPrefs.Receive)
+      val Some((idty, user)) = dao.loadUser(
+          withLoginId = emailEx_loginGrant.login.id,
+          tenantId = defaultTenantId)
+      user.emailNotfPrefs must_== EmailNotfPrefs.Receive
+    }
+
     // -------- Inbox
 
-    "save an inbox seed, load an inbox item" >> {
+    "save inbox seed for unauthenticated user, load inbox item" >> {
+      // This actually notifies the user of something s/he did him/herself,
+      // so this test is a little bit silly.
+      val seed = InboxSeed(
+        userId = loginGrant.user.id,
+        pageId = ex1_debate.guid,
+        pageActionId = ex2_id,
+        sourceActionId = ex2_id,  // == pageActionId for a Reply
+        ctime = ex2_emptyPost.date)
+
+      dao.saveInboxSeeds(defaultTenantId, seed::Nil)
+
+      val items = dao.loadInboxItems(
+        defaultTenantId, loginGrant.user.id)
+
+      items must beLike {
+        case List(item: InboxItem) =>
+          item must_== InboxItem(
+            tyype = Do.Reply,
+            title = "?", // for now
+            summary = "",  // it's the ex2_emptyPost
+            pageId = ex1_debate.guid,
+            pageActionId = ex2_id,
+            sourceActionId = ex2_id,
+            ctime = ex2_emptyPost.date)
+          true
+      }
+    }
+
+    "save inbox seed for OpenID user, load inbox item" >> {
       // This test cheats somewhat: it specifies the OpenID user's inbox,
       // although that user wasn't involved at all in any of the
       // related actions. -- Let's pretend it's a moderator that's interested
       // in all actions.
       val seed = InboxSeed(
-          roleId = exOpenId_loginGrant.user.id,
+          userId = exOpenId_loginGrant.user.id,
           pageId = ex1_debate.guid,
           pageActionId = ex2_id,
           sourceActionId = ex2_id,  // == pageActionId for a Reply
