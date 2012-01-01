@@ -135,13 +135,6 @@ object Do {
   case object FeedAtom extends Do
 }
 
-// Could perhaps: -- but don't use numbers, use ordered case objects instead?
-//object Perms {
-//  val No = 0
-//  val Hidden = 1
-//  val ForReview = 2
-//  val Visible = 3
-//}
 
 /** A certain user's or group's permissions on something.
  */

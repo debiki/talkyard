@@ -509,7 +509,7 @@ class ViEd(debate: Debate, val edit: Edit) extends ViAc(debate, edit) {
 
 }
 
-sealed abstract class Action {
+sealed abstract class Action {  // COULD delete, replace with Post:s?
   /** A local id, unique only in the Debate that this action modifies.
     * "?" means unknown.
     */
@@ -580,11 +580,36 @@ object PostType {
   // understand what is it.
   case object Meta extends PostType
 
+  /** Deletes something, e.g. a post.
+   *
+   * Instead of the deleted thing information that the thing
+   * was deleted is shown, e.g. "3 comments deleted by <someone>".
+   */
+  // case object Deletion extends PostType
+
+  /** Undoes an action, as if had it never been done.
+   *
+   * This is different from Delete, because if you delete a post,
+   * information is shown on the page that here is a deleted post.
+   * However, if you Undo a post, there'll be not a trace of it
+   * on the generated page.
+   * Initially, though, only Undo:s of Deletion:s and Flag:s will be
+   * implemented (so you can undelete an unflag stuff).
+   */
+  // case object Undo extends PostType
+
   //sealed abstract trait FlagReason
   //case object FlagSpam extends PostType with FlagReason
 }
 
-case class Post(
+case class Post(  // COULD merge all actions into Post,
+                  // and use different PostType:s (which would include
+                  // the payload) for various different actions.
+                  // And rename to ... Action? PageAction?
+
+  // is "?" if unknown, or e.g. "?x" if it's unknown.
+  // COULD replace w case classes e.g. IdKnown(id)/IdPending(tmpId)/IdUnknown,
+  // then it would not be possible to forget to check for "?".
   id: String,
   parent: String,
   date: ju.Date,
@@ -676,6 +701,17 @@ case class EditApp(   // COULD rename to Appl?
    *  (e.g. because of bugs).
    *  So, only apply the diff algorithm once, to find the EddidApplied.result,
    *  and thereafter always use EditApplied.result.
+   *
+   *  Update: What! I really don't think the diff alg will change in the
+   *  future! Anyone changing the diff file format would be insane,
+   *  and would not have been able to write a diff alg at all.
+   *  So `result' is *not* needed, except for perhaps improving performance.
+   *
+   *  COULD change to an Option[String] and define it only one time out of ten?
+   *  Then the entire post would be duplicated only 1 time out of 10 times,
+   *  and that would hardly affect storage space requirements,
+   *  but at the same time improving performance reasonably much ??
+   *  Or store cached post texts in a dedicated db table.
    */
   result: String
 ) extends Action
