@@ -1214,7 +1214,7 @@ object AtomFeedXml {
         permanent URI. */}
         <id>{urlToPage}</id>{
         /* Contains a human readable title for the entry. */}
-        <title>{pagePath.nameOrGuidOrQustnMark}</title>{
+        <title>{pagePath.slugOrIdOrQustnMark}</title>{
         /* Indicates the last time the entry was modified in a
         significant way. This value need not change after a typo is
         fixed, only after a substantial modification.
