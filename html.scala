@@ -309,7 +309,7 @@ class DebateHtml(val debate: Debate) {
     for {
       // Could skip sorting inline posts, since sorted by position later
       // anyway, in javascript. But if javascript disabled?
-      p <- vipos.sortBy(p => p.date.getTime). // the oldest first
+      p <- vipos.sortBy(p => p.ctime.getTime). // the oldest first
                 sortBy(p => -pageStats.scoreFor(p.id).liking).
                 sortBy(p => p.meta.fixedPos.getOrElse(999999))
       cssThreadId = "dw-t-"+ p.id
@@ -450,7 +450,7 @@ class DebateHtml(val debate: Debate) {
       if (vipo.flags isEmpty) (Nil: NodeSeq, Nil: NodeSeq)
       else {
         import FormHtml.FlagForm.prettify
-        val mtime = toIso8601T(vipo.lastFlag.get.date)
+        val mtime = toIso8601T(vipo.lastFlag.get.ctime)
         val fbr = vipo.flagsByReasonSorted
         (<span class='dw-p-flgs-top'>, flagged <i>{
             prettify(fbr.head._1).toLowerCase}</i></span>,
@@ -518,7 +518,7 @@ class DebateHtml(val debate: Debate) {
       // If closed: <span class='dw-p-re-cnt'>{count} replies</span>
       if (editsAppld.isEmpty) Nil
       else {
-        val lastEditDate = editsAppld.head._2.date
+        val lastEditDate = editsAppld.head._2.ctime
         <div class='dw-p-hdr-ed'>Edited by {
             // This identityt test doesn't take into account that a user
             // can have many identities (e.g. Twitter, Facebook, Gmail), so
@@ -548,7 +548,7 @@ class DebateHtml(val debate: Debate) {
     <div id={cssPostId} class={"dw-p" + cutS + clearfix}
          data-p-by-ip-sh={vipo.ipSaltHash_!}>
       <div class='dw-p-hdr'>
-        By { _linkTo(author)}{ dateAbbr(post.date, "dw-p-at")
+        By { _linkTo(author)}{ dateAbbr(post.ctime, "dw-p-at")
         }{ flagsTop }{ ratsTop }{ editInfo }{ flagsDetails }{ ratsDetails }
       </div>
       <div class='dw-p-bdy'><div class='dw-p-bdy-blk'>
@@ -945,11 +945,11 @@ class FormHtml(val config: HtmlConfig, val permsOnPage: PermsOnPage) {
             <div>{
               (if (applied) "Suggested by " else "By ") ++
               linkTo(editor, config) ++
-              dateAbbr(edit.date, "dw-e-sg-dt")
+              dateAbbr(edit.ctime, "dw-e-sg-dt")
               }</div> ++
             (if (!applied) Nil
             else <div>Applied by { linkTo(applier_!, config) ++
-              dateAbbr(eapp.get.date, "dw-e-ap-dt") }</div>
+              dateAbbr(eapp.get.ctime, "dw-e-ap-dt") }</div>
             )
           }
           <div class='dw-as'>{
@@ -1199,7 +1199,7 @@ object AtomFeedXml {
               " lacks a root post [debiki_error_09k14p2]")
         return Nil
       }
-      val ctime = rootPost.date
+      val ctime = rootPost.ctime
       val rootPostAuthorName =
             rootPost.user.map(_.displayName) getOrElse "(Author name unknown)"
       val hostAndPort = hostUrl.stripPrefix("https://").stripPrefix("http://")
