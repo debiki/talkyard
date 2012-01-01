@@ -1150,15 +1150,11 @@ object UserHtml {
 }
 
 
-// where should I place this?
-sealed abstract class PageSortOrder
-case object SortPageByPath extends PageSortOrder
-case object SortPageByCtime extends PageSortOrder
-
 object PageListHtml {
-  def renderPageList(pagePaths: Seq[PagePath]): NodeSeq = {
+  def renderPageList(pagePathsDetails: Seq[(PagePath, PageDetails)]
+                        ): NodeSeq = {
     <ol>{
-      for (pagePath <- pagePaths) yield {
+      for ((pagePath, details) <- pagePathsDetails) yield {
         <li><a href={"/0/"+ pagePath.path}>{pagePath.path}</a></li>
       }
     }</ol>
