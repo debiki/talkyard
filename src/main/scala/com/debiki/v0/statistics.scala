@@ -161,8 +161,8 @@ private[debiki] class PageStats(val debate: Debate) {
       }
       maxLabelSum += weight
       ratingCount += 1
-      if (rat.date.getTime > _lastRatingDateMillis)
-        _lastRatingDateMillis = rat.date.getTime
+      if (rat.ctime.getTime > _lastRatingDateMillis)
+        _lastRatingDateMillis = rat.ctime.getTime
       this
     }
   }

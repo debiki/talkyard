@@ -262,7 +262,7 @@ case class Debate (
   def editAppsTo(postId: String): List[EditApp] =
     // The list is probably already sorted, since new EditApp:s are
     // prefixed to the editApps list.
-    editAppsByPostId.getOrElse(postId, Nil).sortBy(- _.date.getTime)
+    editAppsByPostId.getOrElse(postId, Nil).sortBy(- _.ctime.getTime)
 
   def editApp(withId: String): Option[EditApp] =
     editApps.filter(_.id == withId).headOption
@@ -328,8 +328,8 @@ case class Debate (
    */
   lazy val lastChangeDate: Option[ju.Date] = {
     def maxDate(a: ju.Date, b: ju.Date) = if (a.compareTo(b) > 0) a else b
-    val allDates: Iterator[ju.Date] = editApps.iterator.map(_.date) ++
-                                        posts.iterator.map(_.date)
+    val allDates: Iterator[ju.Date] = editApps.iterator.map(_.ctime) ++
+                                        posts.iterator.map(_.ctime)
     if (allDates isEmpty) None
     else Some(allDates reduceLeft (maxDate(_, _)))
   }
@@ -341,7 +341,7 @@ case class Debate (
  */
 class ViAc(val debate: Debate, val action: Action) {
   def id: String = action.id
-  def date = action.date
+  def ctime = action.ctime
   def login: Option[Login] = debate.login(action.loginId)
   def login_! : Login = login.get
   def identity: Option[Identity] = login.flatMap(l =>
@@ -372,7 +372,7 @@ class ViAc(val debate: Debate, val action: Action) {
   lazy val deletions = debate.deletions.filter(_.postId == action.id)
 
   /** Deletions, the most recent first. */
-  lazy val deletionsSorted = deletions.sortBy(- _.date.getTime)
+  lazy val deletionsSorted = deletions.sortBy(- _.ctime.getTime)
 
   lazy val lastDelete = deletionsSorted.headOption
   lazy val firstDelete = deletionsSorted.lastOption
@@ -382,7 +382,7 @@ class ViAc(val debate: Debate, val action: Action) {
  */
 class ViPo(debate: Debate, val post: Post) extends ViAc(debate, post) {
   def parent: String = post.parent
-  // def date = lastEditApp.map(ea => toIso8601(ea.date))
+  // def ctime = lastEditApp.map(ea => toIso8601(ea.ctime))
   lazy val text: String = textAsOf(Long.MaxValue)
 
   /** Applies all edits up to, but not including, the specified date.
@@ -393,7 +393,7 @@ class ViPo(debate: Debate, val post: Post) extends ViAc(debate, post) {
     var origText = post.text
     var curText = origText
     val dmp = new name.fraser.neil.plaintext.diff_match_patch
-    for ((edit, eapp) <- editsAppdAsc; if eapp.date.getTime < millis) {
+    for ((edit, eapp) <- editsAppdAsc; if eapp.ctime.getTime < millis) {
       val patchText = edit.text
       // COULD check [1, 2, 3, …] to find out if the patch applied
       // cleanaly. (The result is in [0].)
@@ -439,10 +439,10 @@ class ViPo(debate: Debate, val post: Post) extends ViAc(debate, post) {
 
     // Sort by 1) deletion, 2) application, 3) edit creation, most recent
     // first.
-    (deleted.sortBy(- _._2.date.getTime),
-      pending.sortBy(- _.date.getTime),
-      applied.sortBy(- _._2.date.getTime),
-      appdRevd.sortBy(- _._3.date.getTime))
+    (deleted.sortBy(- _._2.ctime.getTime),
+      pending.sortBy(- _.ctime.getTime),
+      applied.sortBy(- _._2.ctime.getTime),
+      appdRevd.sortBy(- _._3.ctime.getTime))
   }
 
   def editsAppdAsc = editsAppdDesc.reverse
@@ -467,7 +467,7 @@ class ViPo(debate: Debate, val post: Post) extends ViAc(debate, post) {
   // COULD optimize this, do once for all flags.
   lazy val flags = debate.flags.filter(_.postId == post.id)
 
-  lazy val lastFlag = flags.sortBy(- _.date.getTime).headOption
+  lazy val lastFlag = flags.sortBy(- _.ctime.getTime).headOption
 
   lazy val flagsByReason: imm.Map[FlagReason, List[Flag]] = {
     // Add reasons and flags to a mutable map.
@@ -526,7 +526,7 @@ sealed abstract class Action {  // COULD delete, replace with Post:s?
    *  the relevant Login.ip.
    */
   def newIp: Option[String]
-  def date: ju.Date  // COULD rename to ctime
+  def ctime: ju.Date
 }
 
 case class Rating (
@@ -534,7 +534,7 @@ case class Rating (
   postId: String,
   loginId: String,
   newIp: Option[String],
-  date: ju.Date,
+  ctime: ju.Date,
   tags: List[String]
 ) extends Action
 
@@ -548,7 +548,7 @@ case class Flag(
   postId: String,
   loginId: String,
   newIp: Option[String],
-  date: ju.Date,
+  ctime: ju.Date,
   reason: FlagReason,
   details: String
 ) extends Action
@@ -612,7 +612,7 @@ case class Post(  // COULD merge all actions into Post,
   // then it would not be possible to forget to check for "?".
   id: String,
   parent: String,
-  date: ju.Date,
+  ctime: ju.Date,
   loginId: String,
   newIp: Option[String],
   text: String,
@@ -651,7 +651,7 @@ case class PostMeta(
 case class Edit (
   id: String,
   postId: String,
-  date: ju.Date,
+  ctime: ju.Date,
   loginId: String,
   newIp: Option[String],
   text: String
@@ -669,7 +669,7 @@ case class EditVote(  // should extend Action
   id: String,
   loginId: String,
   ip: String,  // should change to newIp Option[String]
-  date: ju.Date,
+  ctime: ju.Date,
   /** Ids of edits liked */
   like: List[String],
   /** Ids of edits disliked */
@@ -691,7 +691,7 @@ case class EditApp(   // COULD rename to Appl?
   editId: String,  // COULD rename to actionId?
   loginId: String,
   newIp: Option[String],
-  date: ju.Date,
+  ctime: ju.Date,
 
   /** The text after the edit was applied. Needed, in case an `Edit'
    *  contains a diff, not the resulting text itself. Then we'd better not
@@ -721,10 +721,10 @@ case class EditApp(   // COULD rename to Appl?
  *  If actionId is an EditApp, that edit is undone.
  *  --- Not implemented: --------
  *  If `wholeTree', all edit applications from actionId and up to
- *  delete.date are undone.
+ *  delete.ctime are undone.
  *  If actionId is an Edit, the edit will no longer appear in the list of
  *  edits you can choose to apply.
- *  If `wholeTree', no Edit from actionId up to delete.date will appear
+ *  If `wholeTree', no Edit from actionId up to delete.ctime will appear
  *  in the list of edits that can be applied.
  *  -----------------------------
  */
@@ -734,7 +734,7 @@ case class Delete(
   postId: String,  // COULD rename to actionId
   loginId: String,
   newIp: Option[String],
-  date: ju.Date,
+  ctime: ju.Date,
   wholeTree: Boolean,  // COULD rename to `recursively'?
   reason: String  // COULD replace with a Post that is a reply to this Delete?
 ) extends Action

@@ -319,7 +319,7 @@ object Inbox {
         } else {
           InboxSeed(userId = userRepliedTo.id, pageId = page.guid,
                 pageActionId = post.id, sourceActionId = post.id,
-                ctime = post.date) :: Nil
+                ctime = post.ctime) :: Nil
         }
       case e: Edit =>
         Nil  // fix later
