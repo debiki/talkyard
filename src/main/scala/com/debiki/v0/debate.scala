@@ -12,7 +12,10 @@ import FlagReason.FlagReason
 
 object Debate {
 
-  val RootPostId = "1"
+  val RootPostId = "1"  // COULD rename to PageBodyId
+  val PageTitleId = "2"
+  //val PageSlugId // ?
+  //val PageTemplateId
 
   def empty(id: String) = Debate(id)
 
@@ -80,20 +83,20 @@ case class Debate (
   lazy val (
       // COULD rename postsByParentId to textByParentId.
       postsByParentId: imm.Map[String, List[Post]],
-      titlesByParentId: imm.Map[String, List[Post]],
-      publsByParentId: imm.Map[String, List[Post]],
+      //titlesByParentId: imm.Map[String, List[Post]],
+      //publsByParentId: imm.Map[String, List[Post]],
       metaByParentId: imm.Map[String, List[Post]]
         ) = {
     // Add post -> replies/meta mappings to mutable multimaps.
     var postMap = mut.Map[String, mut.Set[Post]]()
-    var titleMap = mut.Map[String, mut.Set[Post]]()
-    var publMap = mut.Map[String, mut.Set[Post]]()
+    //var titleMap = mut.Map[String, mut.Set[Post]]()
+    //var publMap = mut.Map[String, mut.Set[Post]]()
     var metaMap = mut.Map[String, mut.Set[Post]]()
     for (p <- posts) {
       val mmap = p.tyype match {
         case PostType.Text => postMap  // COULD rename to comment/text/artclMap
-        case PostType.Title => titleMap
-        case PostType.Publ => publMap
+        //case PostType.Title => titleMap
+        //case PostType.Publ => publMap
         case PostType.Meta => metaMap
       }
       mmap.getOrElse(
@@ -107,10 +110,11 @@ case class Debate (
         yield (parentId, postsSet.toList)).toList: _*).withDefaultValue(Nil)
     }
     val immPostMap = buildImmMap(postMap)
-    val immTitleMap = buildImmMap(titleMap)
-    val immPublMap = buildImmMap(publMap)
+    //val immTitleMap = buildImmMap(titleMap)
+    //val immPublMap = buildImmMap(publMap)
     val immMetaMap = buildImmMap(metaMap)
-    (immPostMap, immTitleMap, immPublMap, immMetaMap)
+    //(immPostMap, immTitleMap, immPublMap, immMetaMap)
+    (immPostMap, immMetaMap)
   }
 
   private class RatingCacheItem {
@@ -147,6 +151,15 @@ case class Debate (
    * or "/path/to/page/".
    */
   def guidd = "-"+ guid
+
+  /** The page title if any. */
+  def title: Option[Post] = postsById.get(PageTitleId)
+
+  /** The page title, as plain text. */
+  def titleText: Option[String] = title.map(_.text)
+
+  /** The page title, as XML. */
+  //def titleXml: Option[xml.Node] = titleText.map(xml.Text _)
 
 
   // ====== Older stuff below (everything in use though!) ======
@@ -436,35 +449,20 @@ class ViPo(debate: Debate, val post: Post) extends ViAc(debate, post) {
 
   lazy val lastEditApp = editsAppdDesc.headOption.map(_._2)
 
-  /** The title of this Post, all edits of the original title
-   *  taken into account.
-   */
-  lazy val title: Option[String] = {
-    if (titles isEmpty) None
-    else {
-      // For now, don't consider deletions of titles.
-      Some(debate.vipo_!(titles.head.id).text)
-    }
-  }
-
-  /** All titles assigned to this post -- only the first (w.r.t. its ctime)
-   *  non-deleted title has any effect.
-   */
-  lazy val titles: List[Post] = debate.titlesByParentId(id)//debate.childrenOf(id, PostType.Title)
-
   /** Whether or not this Post has been published.
    *
    *  If the root post is published, then the whole page is published.
    *  If a comment is published, then it's been approved (it's not spam).
-   */
+   *//*
   lazy val publd: Option[Boolean] = {
     if (publs isEmpty) None
     else Some(true)  // for now, don't consider deletions of publications
-  }
+  }*/
 
   /** Only the first (w.r.t. its ctime) non-deleted publication has any effect.
-   */
-  lazy val publs: List[Post] = debate.publsByParentId(id)//debate.childrenOf(id, PostType.Publ)
+   *//*
+  lazy val publs: List[Post] = debate.publsByParentId(id)
+  */
 
   // COULD optimize this, do once for all flags.
   lazy val flags = debate.flags.filter(_.postId == post.id)
@@ -561,22 +559,20 @@ object PostType {
   /** A blog post, or forum questiom or comment. */
   case object Text extends PostType
 
-  /** The title of something.
+  /** The description of something.
    *
    * Effects:
-   * PostType.Article: Becomes the page title
-   * PostType.Edit: Shown as the Edit description (brief one line,
-   *    further details would be placed in a Comment to the Edit).
+   * PostType.Edit: The commit message.
    */
-  case object Title extends PostType
+  //case object Desc extends PostType
 
   /** Edits a Post.text. */
   //case object Edit extends PostType
 
-  /** Makes an Article visible to everyone with access permissions,
-   *  and makes an Edit take effect.
+  /** Makes an Article visible to everyone with access permissions.
+   *  Makes an Edit take effect.
    */
-  case object Publ extends PostType
+  //case object Publ extends PostType
 
   /** Meta information describes another Post. */
   // COULD use dedicated PostType:s instead, then the computer/database
