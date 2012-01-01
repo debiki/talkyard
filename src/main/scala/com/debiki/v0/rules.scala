@@ -4,6 +4,7 @@
 
 package com.debiki.v0
 
+import _root_.java.{util => ju, io => jio}
 import Prelude._
 
 /** Info on the request and requester.
@@ -66,6 +67,34 @@ case class PagePath(  // COULD move to debate.scala.  Rename to RequestPath?
    */
   def isFolderPath = path endsWith "/"   // COULD rename to isFolderOrIndex
 }
+
+
+case class PageDetails(
+  status: PageStatus,
+  cachedTitle: Option[String],
+  cachedPublTime: Option[ju.Date],
+  cachedSgfntMtime: Option[ju.Date]
+)
+
+
+/** The page status, see debiki-for-developers.txt #9vG5I.
+ */
+sealed abstract class PageStatus
+object PageStatus {
+  case object Draft extends PageStatus
+  case object Published extends PageStatus
+  case object Deleted extends PageStatus
+  val All = List(Draft, Published, Deleted)
+}
+
+
+sealed abstract class PageSortOrder
+object PageSortOrder {
+  //case object ByTitle extends PageSortOrder
+  case object ByPath extends PageSortOrder
+  case object ByPublTime extends PageSortOrder
+}
+
 
 /** Things an end user can do.
  */

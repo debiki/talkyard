@@ -30,8 +30,14 @@ abstract class DaoSpi {
 
   def checkPagePath(pathToCheck: PagePath): Box[PagePath]
 
-  def listPagePaths(withFolderPrefix: String, tenantId: String,
-        sortBy: PageSortOrder, limit: Int, offset: Int): Seq[PagePath]
+  def listPagePaths(
+        withFolderPrefix: String,
+        tenantId: String,
+        include: List[PageStatus],
+        sortBy: PageSortOrder,
+        limit: Int,
+        offset: Int
+      ): Seq[(PagePath, PageDetails)]
 
   def loadUser(withLoginId: String, tenantId: String): Option[(Identity, User)]
 
@@ -125,9 +131,16 @@ abstract class Dao {
   def checkPagePath(pathToCheck: PagePath): Box[PagePath] =
     _spi.checkPagePath(pathToCheck)
 
-  def listPagePaths(withFolderPrefix: String, tenantId: String,
-        sortBy: PageSortOrder, limit: Int, offset: Int): Seq[PagePath] =
-    _spi.listPagePaths(withFolderPrefix, tenantId, sortBy, limit, offset)
+  def listPagePaths(
+        withFolderPrefix: String,
+        tenantId: String,
+        include: List[PageStatus],
+        sortBy: PageSortOrder,
+        limit: Int,
+        offset: Int
+      ): Seq[(PagePath, PageDetails)] =
+    _spi.listPagePaths(withFolderPrefix, tenantId, include,
+          sortBy, limit, offset)
 
   def loadUser(withLoginId: String, tenantId: String
                   ): Option[(Identity, User)] =
