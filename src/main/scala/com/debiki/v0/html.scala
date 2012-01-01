@@ -250,9 +250,9 @@ class DebateHtml(val debate: Debate) {
    *  and can thus be cached.
    */
   def layoutPage(): NodeSeq = {
-    val rootPosts = debate.repliesTo(Debate.RootPostId)
-    val rootPost = debate.vipo(Debate.RootPostId)
-    val cssThreadId = "dw-t-"+ Debate.RootPostId
+    val rootPosts = debate.repliesTo(Debate.PageBodyId)
+    val rootPost = debate.vipo(Debate.PageBodyId)
+    val cssThreadId = "dw-t-"+ Debate.PageBodyId
     <div id={debate.guid} class="debiki dw-debate">
       <div class="dw-debate-info">{
         if (lastChange isDefined) {
@@ -443,7 +443,7 @@ class DebateHtml(val debate: Debate) {
            in = xmlText) foreach { replyBtnText = _ }
     }
     val long = numLines > 9
-    val cutS = if (long && post.id != Debate.RootPostId) " dw-x-s" else ""
+    val cutS = if (long && post.id != Debate.PageBodyId) " dw-x-s" else ""
     val author = debate.authorOf_!(post)
 
     val (flagsTop: NodeSeq, flagsDetails: NodeSeq) = {
@@ -1194,7 +1194,7 @@ object AtomFeedXml {
     def pageToAtom(pathAndPage: (PagePath, Debate)): NodeSeq = {
       val pagePath = pathAndPage._1
       val page = pathAndPage._2
-      val rootPost = page.vipo(Debate.RootPostId).getOrElse {
+      val rootPost = page.vipo(Debate.PageBodyId).getOrElse {
         warnDbgDie("Page "+ safed(page.guid) +
               " lacks a root post [debiki_error_09k14p2]")
         return Nil

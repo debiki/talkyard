@@ -12,7 +12,7 @@ import FlagReason.FlagReason
 
 object Debate {
 
-  val RootPostId = "1"  // COULD rename to PageBodyId
+  val PageBodyId = "1"
   val PageTitleId = "2"
   //val PageSlugId // ?
   //val PageTemplateId
@@ -39,7 +39,7 @@ object Debate {
     }
     // Generate new ids, and check for foreign objects.
     xs foreach (_ match {
-      case p: Post => remaps(p.id) = if (p.id == RootPostId) p.id
+      case p: Post => remaps(p.id) = if (p.id == PageBodyId) p.id
                                      else nextRandomString()
       case a: Action => remap(a.id)
       case x => assErr(  // Can this check be done at compile time instead?
@@ -152,6 +152,10 @@ case class Debate (
    */
   def guidd = "-"+ guid
 
+  def body = vipo(PageBodyId)
+
+  def body_! = vipo_!(PageBodyId)
+
   /** The page title if any. */
   def title: Option[Post] = postsById.get(PageTitleId)
 
@@ -174,9 +178,6 @@ case class Debate (
   def postCount = posts.length
 
   def post(id: String): Option[Post] = postsById.get(id)
-
-  def rootPost = vipo(RootPostId)
-  def rootPost_! = vipo_!(RootPostId)
 
   def vipo_!(postId: String): ViPo =  // COULD rename to post_!(withId = ...)
     vipo(postId).getOrElse(error("[debiki_error_3krtEK]"))
@@ -495,7 +496,7 @@ class ViPo(debate: Debate, val post: Post) extends ViAc(debate, post) {
 
   lazy val meta: PostMeta = {
     var fixedPos: Option[Int] = None
-    var isArticleQuestion = id == RootPostId
+    var isArticleQuestion = id == PageBodyId
     for (m <- metaPosts ; line <- m.text.lines) line match {
       case "article-question" => isArticleQuestion = true
       case _FixPosRegex(pos) => fixedPos = Some(pos.toInt)
