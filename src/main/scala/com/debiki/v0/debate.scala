@@ -10,6 +10,13 @@ import Debate._
 import FlagReason.FlagReason
 
 
+// Preparing to rename Debate to Page:
+object Page {
+  val BodyId = "1"
+  type Page = Debate   // import Page.Page and type ": Page", not ": Debate"
+}
+
+
 object Debate {
 
   val PageBodyId = "1"
