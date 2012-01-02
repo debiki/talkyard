@@ -1194,39 +1194,39 @@ object AtomFeedXml {
     def pageToAtom(pathAndPage: (PagePath, Debate)): NodeSeq = {
       val pagePath = pathAndPage._1
       val page = pathAndPage._2
-      val rootPost = page.vipo(Debate.PageBodyId).getOrElse {
+      val pageBody = page.body.getOrElse {
         warnDbgDie("Page "+ safed(page.guid) +
               " lacks a root post [debiki_error_09k14p2]")
         return Nil
       }
-      val ctime = rootPost.ctime
-      val rootPostAuthorName =
-            rootPost.user.map(_.displayName) getOrElse "(Author name unknown)"
+      val pageTitle = page.titleText getOrElse pagePath.slugOrIdOrQustnMark
+      val pageBodyAuthor =
+            pageBody.user.map(_.displayName) getOrElse "(Author name unknown)"
       val hostAndPort = hostUrl.stripPrefix("https://").stripPrefix("http://")
       val urlToPage =  urlTo(pagePath)
 
       // This takes rather long and should be cached.
       // Use the same cache for both plain HTML pages and Atom and RSS feeds?
-      val rootPostHtml = DebateHtml.markdownToHtml(rootPost.text, hostAndPort)
+      val rootPostHtml = DebateHtml.markdownToHtml(pageBody.text, hostAndPort)
 
       <entry>{
         /* Identifies the entry using a universally unique and
         permanent URI. */}
         <id>{urlToPage}</id>{
         /* Contains a human readable title for the entry. */}
-        <title>{pagePath.slugOrIdOrQustnMark}</title>{
+        <title>{pageTitle}</title>{
         /* Indicates the last time the entry was modified in a
         significant way. This value need not change after a typo is
         fixed, only after a substantial modification.
         COULD introduce a page's updatedTime?
         */}
-        <updated>{toIso8601T(ctime)}</updated>{
+        <updated>{toIso8601T(pageBody.ctime)}</updated>{
         /* Names one author of the entry. An entry may have multiple
         authors. An entry must [sometimes] contain at least one author
         element [...] More info here:
           http://www.atomenabled.org/developers/syndication/
                                                 #recommendedEntryElements  */}
-        <author><name>{rootPostAuthorName}</name></author>{
+        <author><name>{pageBodyAuthor}</name></author>{
         /* The time of the initial creation or first availability
         of the entry.  -- but that shouldn't be the ctime, the page
         shouldn't be published at creation.
