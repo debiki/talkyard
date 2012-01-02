@@ -198,19 +198,42 @@ header.dw-p-ttl > h1 {
   font-size: 36px;
 }
 
+/* Other titles */
 .dw-depth-0 > .dw-p > .dw-f-ed .dw-ed-tab-preview > h1,
 .dw-depth-0 > .dw-p > .dw-p-bdy > div.dw-p-bdy-blk > h1 {
+  font-size: 28px;
   margin: 26px 0 15px !important;
   padding: 0;
   color: #42525E;
 }
-
 .dw-depth-0 > .dw-p > .dw-f-ed .dw-ed-tab-preview > h2,
 .dw-depth-0 > .dw-p > .dw-p-bdy > div.dw-p-bdy-blk > h2 {
   font-size: 24px;
   color: #28323B;
   margin: 26px 0 18px 0 !important;
 }
+.dw-depth-0 > .dw-p > .dw-f-ed .dw-ed-tab-preview > h3,
+.dw-depth-0 > .dw-p > .dw-p-bdy > div.dw-p-bdy-blk > h3 {
+  font-size: 18px;
+  font-weight: bold;
+}
+.dw-depth-0 > .dw-p > .dw-f-ed .dw-ed-tab-preview > h4,
+.dw-depth-0 > .dw-p > .dw-p-bdy > div.dw-p-bdy-blk > h4 {
+  font-size: 16px;
+  font-weight: bold;
+}
+.dw-depth-0 > .dw-p > .dw-f-ed .dw-ed-tab-preview > h5,
+.dw-depth-0 > .dw-p > .dw-p-bdy > div.dw-p-bdy-blk > h5 {
+  font-size: 12px;
+  font-weight: bold;
+}
+.dw-depth-0 > .dw-p > .dw-f-ed .dw-ed-tab-preview > h6,
+.dw-depth-0 > .dw-p > .dw-p-bdy > div.dw-p-bdy-blk > h6 {
+  font-size: 11px;
+  font-weight: normal;
+  text-decoration: underline;
+}
+
 
 .dw-p-bdy-blk {
   margin: 0;
