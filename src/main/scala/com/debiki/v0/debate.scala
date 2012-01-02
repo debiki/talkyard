@@ -13,9 +13,6 @@ import FlagReason.FlagReason
 object Debate {
 
   val PageBodyId = "1"
-  val PageTitleId = "2"
-  //val PageSlugId // ?
-  //val PageTemplateId
 
   def empty(id: String) = Debate(id)
 
@@ -83,20 +80,20 @@ case class Debate (
   lazy val (
       // COULD rename postsByParentId to textByParentId.
       postsByParentId: imm.Map[String, List[Post]],
-      //titlesByParentId: imm.Map[String, List[Post]],
-      //publsByParentId: imm.Map[String, List[Post]],
+      titlesByParentId: imm.Map[String, List[Post]],
+      publsByParentId: imm.Map[String, List[Post]],
       metaByParentId: imm.Map[String, List[Post]]
         ) = {
     // Add post -> replies/meta mappings to mutable multimaps.
     var postMap = mut.Map[String, mut.Set[Post]]()
-    //var titleMap = mut.Map[String, mut.Set[Post]]()
-    //var publMap = mut.Map[String, mut.Set[Post]]()
+    var titleMap = mut.Map[String, mut.Set[Post]]()
+    var publMap = mut.Map[String, mut.Set[Post]]()
     var metaMap = mut.Map[String, mut.Set[Post]]()
     for (p <- posts) {
       val mmap = p.tyype match {
         case PostType.Text => postMap  // COULD rename to comment/text/artclMap
-        //case PostType.Title => titleMap
-        //case PostType.Publ => publMap
+        case PostType.Title => titleMap
+        case PostType.Publish => publMap
         case PostType.Meta => metaMap
       }
       mmap.getOrElse(
@@ -110,11 +107,10 @@ case class Debate (
         yield (parentId, postsSet.toList)).toList: _*).withDefaultValue(Nil)
     }
     val immPostMap = buildImmMap(postMap)
-    //val immTitleMap = buildImmMap(titleMap)
-    //val immPublMap = buildImmMap(publMap)
+    val immTitleMap = buildImmMap(titleMap)
+    val immPublMap = buildImmMap(publMap)
     val immMetaMap = buildImmMap(metaMap)
-    //(immPostMap, immTitleMap, immPublMap, immMetaMap)
-    (immPostMap, immMetaMap)
+    (immPostMap, immTitleMap, immPublMap, immMetaMap)
   }
 
   private class RatingCacheItem {
@@ -152,18 +148,18 @@ case class Debate (
    */
   def guidd = "-"+ guid
 
-  def body = vipo(PageBodyId)
+  def body: Option[ViPo] = vipo(PageBodyId)
 
   def body_! = vipo_!(PageBodyId)
 
   /** The page title if any. */
-  def title: Option[Post] = postsById.get(PageTitleId)
+  def titlePost: Option[ViPo] = body.flatMap(_.titlePost)
 
   /** The page title, as plain text. */
-  def titleText: Option[String] = title.map(_.text)
+  def titleText: Option[String] = body.flatMap(_.titleText)
 
   /** The page title, as XML. */
-  //def titleXml: Option[xml.Node] = titleText.map(xml.Text _)
+  //def titleXml: Option[xml.Node] = body.flatMap(_.titleXml)
 
 
   // ====== Older stuff below (everything in use though!) ======
@@ -450,20 +446,38 @@ class ViPo(debate: Debate, val post: Post) extends ViAc(debate, post) {
 
   lazy val lastEditApp = editsAppdDesc.headOption.map(_._2)
 
+  /** The title of this Post, all edits of the original title
+   *  taken into account. If there are many titles, only the oldest matters.
+   */
+  lazy val titlePost: Option[ViPo] = {
+    if (titlePosts isEmpty) None
+    else {
+      // For now, don't consider deletions of titles, and assume all titles
+      // are published.
+      Some(new ViPo(debate, titlePosts.head))
+    }
+  }
+
+  def titleText: Option[String] = titlePost.map(_.text)
+
+  /** All titles assigned to this post -- only the first (w.r.t. its ctime)
+   *  non-deleted title has any effect.
+   */
+  lazy val titlePosts: List[Post] = debate.titlesByParentId(id)
+
   /** Whether or not this Post has been published.
    *
    *  If the root post is published, then the whole page is published.
    *  If a comment is published, then it's been approved (it's not spam).
-   *//*
+   */
   lazy val publd: Option[Boolean] = {
     if (publs isEmpty) None
     else Some(true)  // for now, don't consider deletions of publications
-  }*/
+  }
 
   /** Only the first (w.r.t. its ctime) non-deleted publication has any effect.
-   *//*
+   */
   lazy val publs: List[Post] = debate.publsByParentId(id)
-  */
 
   // COULD optimize this, do once for all flags.
   lazy val flags = debate.flags.filter(_.postId == post.id)
@@ -560,20 +574,19 @@ object PostType {
   /** A blog post, or forum questiom or comment. */
   case object Text extends PostType
 
-  /** The description of something.
+  /** The title of something.
    *
    * Effects:
-   * PostType.Edit: The commit message.
+   * On the Page.body post: Becomes the page title
    */
-  //case object Desc extends PostType
+  case object Title extends PostType
 
   /** Edits a Post.text. */
   //case object Edit extends PostType
 
-  /** Makes an Article visible to everyone with access permissions.
-   *  Makes an Edit take effect.
+  /** Makes an Action suggestion take effect.
    */
-  //case object Publ extends PostType
+  case object Publish extends PostType
 
   /** Meta information describes another Post. */
   // COULD use dedicated PostType:s instead, then the computer/database
