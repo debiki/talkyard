@@ -189,6 +189,15 @@ a:link {
                         has high line height */
 }
 
+/* The page title */
+header.dw-p-ttl {
+  margin-bottom: 12px; /* cancel header's default 48px */
+}
+header.dw-p-ttl > h1 {
+  color: #42525E;
+  font-size: 36px;
+}
+
 .dw-depth-0 > .dw-p > .dw-f-ed .dw-ed-tab-preview > h1,
 .dw-depth-0 > .dw-p > .dw-p-bdy > div.dw-p-bdy-blk > h1 {
   margin: 26px 0 15px !important;
@@ -514,6 +523,10 @@ so there's some space for the SVG arrows. */
   overflow: hidden;
   background-color: white;
 }
+.dw-p-ttl {
+  /* Titles are already indented since they're placed in a .dw-p … */
+  margin-left: 0; /* … so don't indent again */
+}
 
 /* If the thread has been deleted, there's no fold/unfold button to the left. */
 .dw-t-dl > .dw-p {
@@ -561,7 +574,11 @@ span.dw-p-ed-by {
 or it steals attention from the page title. */
 .dw-depth-0 > .dw-p > .dw-p-hdr {
   background-color: transparent;
-  opacity: 0.72;
+  opacity: 0.6;
+  font-size: 10px;
+}
+.dw-depth-0 > .dw-p > .dw-p-hdr:hover {
+  opacity: 1;
 }
 .dw-depth-0 > .dw-p > .dw-p-hdr > .dw-p-by {
   color: #396D99;
