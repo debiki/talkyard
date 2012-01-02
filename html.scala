@@ -537,6 +537,25 @@ class DebateHtml(val debate: Debate) {
         </div>
       }
 
+    // Make a title for this post.
+    val postTitleXml: NodeSeq = {
+      // Currently only the page body can have a title.
+      if (post.id != Page.BodyId) Nil
+      else vipo.titlePost map { titlePost =>
+        // The title is a post, itself.
+        // Therefore this XML is almost identical to the XML
+        // for the post that this title entitles.
+        // In the future, I could make a recursive call to
+        // _renderPost, to render the title. Then it would be
+        // possible to reply-inline to the title.
+        <div id={"dw-post-"+ titlePost.id} class='dw-p dw-p-ttl'>
+          <div class='dw-p-bdy'><div class='dw-p-bdy-blk'>
+            <header class='dw-p-ttl'><h1>{titlePost.text}</h1></header>
+          </div></div>
+        </div>
+      } getOrElse Nil
+    }
+
     // Make he root post wrap its (floating) children,
     // (Don't know if this is needed or other horizontal threads.)
     val clearfix = if (horizontal) " ui-helper-clearfix" else ""
@@ -547,6 +566,7 @@ class DebateHtml(val debate: Debate) {
     (<a class='dw-z'>[–]</a>
     <div id={cssPostId} class={"dw-p" + cutS + clearfix}
          data-p-by-ip-sh={vipo.ipSaltHash_!}>
+      { postTitleXml }
       <div class='dw-p-hdr'>
         By { _linkTo(author)}{ dateAbbr(post.ctime, "dw-p-at")
         }{ flagsTop }{ ratsTop }{ editInfo }{ flagsDetails }{ ratsDetails }
