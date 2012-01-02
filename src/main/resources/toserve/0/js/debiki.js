@@ -1391,7 +1391,7 @@ function $showInlineActionMenu(event) {
   // Bind actions.
   $menu.find('.dw-a-edit-i').click(function(){
     showInteractionsIfHidden();
-    $thread.each($showEditForm2);
+    $post.each($showEditForm2);
     $menu.remove();
   });
 
@@ -2415,8 +2415,7 @@ function $showReplyForm(event, opt_where) {
 
 // Shows the edit form.
 function $showEditForm2() {
-  var $thread = $(this).closest('.dw-t');
-  var $post = $thread.children('.dw-p');
+  var $post = $(this);
   var $postBody = $post.children('.dw-p-bdy');
   var postId = $post.attr('id').substr(8, 999); // drop initial "dw-post-"
 
@@ -3160,14 +3159,21 @@ function makeSvgDrawer() {
   }
 
   function $initPostSvg() {
+    var $i = $(this);
+    // Do not draw SVG for title posts. (In the future, could create
+    // a SVG elem for inline replies only, though.)
+    if ($i.is('.dw-p-ttl'))
+      return;
+
     // Create root for contextual replies.
     // An inline thread is drawn above its parent post's body,
     // so an SVG tag is needed in each .dw-p-bdy with any inline thread.
     // (For simplicity, create a <svg> root in all .dw-p-bdy:s.)
-    $(this).children('.dw-p-bdy').each($createSvgRoot);
+    $i.children('.dw-p-bdy').each($createSvgRoot);
 
     // Create root for whole post replies.
-    var $p = $(this).parent();
+    // (Never do this for title posts, they have no whole post replies.)
+    var $p = $i.parent();
     var $vspace = $p.children('.dw-t-vspace');
     if ($vspace.length) {
       // Place the root in the .dw-t-vspace before the reply list.
