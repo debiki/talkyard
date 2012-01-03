@@ -2439,7 +2439,7 @@ function $showEditForm2() {
 
   // If the edit form has already been opened, but hidden by a Cancel click,
   // reuse the old hidden form, so any edits aren't lost.
-  var $oldEditForm = $post.find('.dw-f-ed');
+  var $oldEditForm = $post.children('.dw-f-ed');
   if ($oldEditForm.length) {
     $oldEditForm.each($showPreviewBtnHideSave);
     $oldEditForm.tabs('select' , 0);  // selects the textarea tab
