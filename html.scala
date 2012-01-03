@@ -519,20 +519,32 @@ class DebateHtml(val debate: Debate) {
       if (editsAppld.isEmpty) Nil
       else {
         val lastEditDate = editsAppld.head._2.ctime
-        <div class='dw-p-hdr-ed'>Edited by {
-            // This identityt test doesn't take into account that a user
-            // can have many identities (e.g. Twitter, Facebook, Gmail), so
-            // even if many different identities have edited the post,
-            // perhaps only one single user has edited it. Cannot easily
-            // compare users though, because IdentitySimple maps to no user!
-            if (editsAppld.map(edAp => debate.vied_!(edAp._1.id).identity_!.id).
-                distinct.length > 1) {
-              <a>various people</a>
+        // ((This identity count doesn't take into account that a user
+        // can have many identities, e.g. Twitter, Facebook and Gmail. So
+        // even if many different *identities* have edited the post,
+        // perhaps only one single actual *user* has edited it. Cannot easily
+        // compare users though, because IdentitySimple maps to no user!))
+        val editorsCount =
+          editsAppld.map(edAp => debate.vied_!(edAp._1.id).identity_!.id).
+          distinct.length
+        lazy val editor =
+          debate.authorOf_!(debate.editsById(lastEditApp.get.editId))
+        <div class='dw-p-hdr-ed'>{
+            Text(if (post.id == Page.BodyId) {
+              // Via CSS, edit info is placed on the same line as author info.
+              ", edited "
             } else {
-              val editor = debate.authorOf_!(debate.editsById(
-                           lastEditApp.get.editId))
-              _linkTo(editor)
-            }
+              // Edit info will appear on a separate line.
+              "Edited "
+            }) ++
+            (if (editorsCount > 1) {
+              Text("by ") ++ <a>various people</a>
+            } else if (editor.identity_!.id != author.identity_!.id) {
+              Text("by ") ++ _linkTo(editor)
+            } else {
+              // Edited by the author. Don't repeat his/her name.
+              Nil
+            })
           }{dateAbbr(lastEditDate, "dw-p-at")}
         </div>
       }
