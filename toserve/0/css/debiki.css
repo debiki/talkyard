@@ -191,11 +191,13 @@ a:link {
 
 /* The page title */
 header.dw-p-ttl {
-  margin-bottom: 12px; /* cancel header's default 48px */
+  margin-bottom: 0; /* cancel header's default 48px */
 }
 header.dw-p-ttl > h1 {
   color: #42525E;
   font-size: 36px;
+  /* Make the page body .dw-p-hdr appear only 5px below the title, looks nice */
+  margin-bottom: 6px;
 }
 
 /* Other titles */
@@ -570,7 +572,10 @@ so there's some space for the SVG arrows. */
   background-color: transparent;
 }
 
-.dw-p-hdr-ed {
+#dw-post-1 > .dw-p-hdr > .dw-p-hdr-ed {
+  /* Place edit info on the same line as author info, for the page body.
+  Then everything appears on one line just below the page title. */
+  display: inline;
 }
 
 /* Users with links to more info, e.g. website or blog */
