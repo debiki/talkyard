@@ -78,6 +78,8 @@ abstract class DaoTckTest(builder: TestContextBuilder)
 abstract class DaoSpec(builder: TestContextBuilder, defSchemaVersion: String)
     extends SpecificationWithJUnit {
 
+  def now = new ju.Date
+
   // "SUS" means Systems under specification, which is a
   // "The system" should { ...examples... } block.
   // See: <http://code.google.com/p/specs/wiki/DeclareSpecifications
@@ -598,6 +600,71 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
                                                     Some(exMeta_ex2ArtQst)
           postEx2.meta.isArticleQuestion must_== true
           true
+        }
+      }
+    }
+
+    "create a post to edit" >> {
+      // Make post creation action
+      val postNoId = T.post.copy(parent = "1", text = "Initial text",
+        loginId = loginId, markup = "dmd0")
+
+      // Save post
+      val Full(List(post: Post)) =
+        dao.savePageActions(defaultTenantId, ex1_debate.guid, List(postNoId))
+
+      post.text must_== "Initial text"
+      post.markup must_== "dmd0"
+      val newText = "Edited text 054F2x"
+
+      "edit the post" >> {
+        // Make edit actions
+        val patchText = makePatch(from = post.text, to = newText)
+        val editNoId = Edit(
+          id = "?x", postId = post.id, ctime = now, loginId = loginId,
+          newIp = None, text = patchText, newMarkup = None)
+        val publNoId = EditApp(
+          id = "?", editId = "?x", ctime = now,
+          loginId = loginId, newIp = None, result = newText)
+
+        // Save
+        val Full(List(edit: Edit, publ: EditApp)) =
+          dao.savePageActions(defaultTenantId, ex1_debate.guid,
+            List(editNoId, publNoId))
+
+        // Verify text changed
+        dao.loadPage(defaultTenantId, ex1_debate.guid) must beLike {
+          case Full(d: Debate) => {
+            val editedPost = d.vipo_!(post.id)
+            editedPost.text must_== newText
+            editedPost.markup must_== "dmd0"
+            true
+          }
+        }
+      }
+
+      "change the markup type" >> {
+        // Make edit actions
+        val editNoId = Edit(
+          id = "?x", postId = post.id, ctime = now, loginId = loginId,
+          newIp = None, text = "", newMarkup = Some("html"))
+        val publNoId = EditApp(
+          id = "?", editId = "?x", ctime = now,
+          loginId = loginId, newIp = None, result = newText)
+
+        // Save
+        val Full(List(edit: Edit, publ: EditApp)) =
+          dao.savePageActions(defaultTenantId, ex1_debate.guid,
+            List(editNoId, publNoId))
+
+        // Verify markup type changed
+        dao.loadPage(defaultTenantId, ex1_debate.guid) must beLike {
+          case Full(d: Debate) => {
+            val editedPost = d.vipo_!(post.id)
+            editedPost.text must_== "Edited text 054F2x"
+            editedPost.markup must_== "html"
+            true
+          }
         }
       }
     }
