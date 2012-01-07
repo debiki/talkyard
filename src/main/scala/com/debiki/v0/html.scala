@@ -69,19 +69,26 @@ object DebateHtml {
   def apply(debate: Debate) = new DebateHtml(debate)
 
   /** Converts text to xml, returns (html, approx-line-count).
+   *
+   * Splits into <p>:s and <br>:s at newlines, does nothing else.
    */
   private[v0]
   def textToHtml(text: String, charsPerLine: Int = 80)
       : Tuple2[NodeSeq, Int] = {
-    var lines = 0
+    var lineCount = 0
     val xml =
-      // Two newlines ends a paragraph.
-      for (par <- text.split("\n\n").toList)
+      // Two newlines end a paragraph.
+      for (para <- text.split("\n\n").toList)
       yield {
-        lines += 1 + par.length / charsPerLine
-        <p>{par}</p>
+        // One newline results in a row break.
+        val lines = para.split("\n").zipWithIndex.flatMap(lineAndIndex => {
+          lineCount += 1 + lineAndIndex._1.length / charsPerLine
+          if (lineAndIndex._2 == 0) Text(lineAndIndex._1)
+          else <br/> ++ Text(lineAndIndex._1)
+        })
+        <p>{lines}</p>
       }
-    (xml, lines)
+    (xml, lineCount)
   }
 
   private[v0]
