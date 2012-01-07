@@ -284,6 +284,22 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
     // "create a new User for an IdentitySimple, for another tenant" >> {
     // }
 
+
+    // -------- List no pages
+
+    "list no pages, if there are none" >> {
+      val pagePathsDetails = dao.listPagePaths(
+        withFolderPrefix = "/",  // all pages
+        tenantId = defaultTenantId,
+        include = v0.PageStatus.All,
+        sortBy = v0.PageSortOrder.ByPath,
+        limit = Int.MaxValue,
+        offset = 0
+      )
+      pagePathsDetails.length must_== 0
+    }
+
+
     // -------- Page creation
 
     val ex1_rootPost = T.post.copy(
@@ -326,6 +342,33 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
         }
       }
     }
+
+
+    // -------- List one page
+
+    "list the recently created page" >> {
+      val pagePathsDetails = dao.listPagePaths(
+        withFolderPrefix = "/",
+        tenantId = defaultTenantId,
+        include = v0.PageStatus.All,
+        sortBy = v0.PageSortOrder.ByPath,
+        limit = Int.MaxValue,
+        offset = 0
+      )
+      pagePathsDetails match {
+        case List((pagePath, pageDetails)) =>
+          pagePath must_== defaultPagePath.copy(pageId = pagePath.pageId)
+          pageDetails.status must_== PageStatus.Draft
+          // There page currently has no title and it hasn't been published.
+          pageDetails.cachedTitle must_== None
+          pageDetails.cachedPublTime must_== None
+          // Shouldn't the page body post affect the
+          // significant-modification-time?
+          // pageDetails.cachedSgfntMtime must_== None  -- or Some(date)?
+          true
+      }
+    }
+
 
     // -------- Paths
 
