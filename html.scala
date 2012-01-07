@@ -1102,7 +1102,7 @@ class FormHtml(val config: HtmlConfig, val permsOnPage: PermsOnPage) {
   }
 
   def editForm(newText: String, oldText: String, curMarkup: String,
-               userName: Box[String]) = {
+               userName: Box[String], isForTitle: Boolean) = {
     import Edit.{InputNames => Inp}
     val submitBtnText = "Save as "+ userName.openOr("...")
     <form class='dw-f dw-f-ed'
@@ -1133,7 +1133,8 @@ class FormHtml(val config: HtmlConfig, val permsOnPage: PermsOnPage) {
           <li><a href='#dw-ed-tab-preview'>Preview</a></li>
         </ul>
         <div id='dw-ed-tab-edit' class='dw-ed-tab dw-ed-tab-edit'>
-          <textarea id='dw-fi-edit-text' name={Inp.Text} rows='7' cols='38'>{
+          <textarea id='dw-fi-edit-text' name={Inp.Text}
+                    rows={if (isForTitle) "2" else "7"} cols='38'>{
             newText
           }</textarea>
         </div>
