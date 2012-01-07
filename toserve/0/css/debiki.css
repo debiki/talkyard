@@ -202,6 +202,16 @@ header.dw-p-ttl > h1 {
   /* Make the page body .dw-p-hdr appear only 5px below the title, looks nice */
   margin-bottom: 6px;
 }
+/* The title when it's being previewed. */
+.dw-p-ttl > .dw-f-ed .dw-ed-tab-preview > h1 {
+  padding: 0;
+  margin: 0;
+}
+/* The title when it's being edited. */
+.dw-pri .dw-p-ttl > .dw-f-ed textarea {
+  font-size: 26px;
+}
+
 
 /* Other titles */
 .dw-depth-0 > .dw-p > .dw-f-ed .dw-ed-tab-preview > h1,
