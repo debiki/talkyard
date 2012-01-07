@@ -3880,7 +3880,7 @@ function initAndDrawSvg() {
 // step is done, the user should conceive the page as mostly loaded.)
 
 (function() {
-  var $posts = $(".debiki .dw-p");
+  var $posts = $('.debiki .dw-p:not(.dw-p-ttl)');
   function initPostsThreadStep1() { $posts.each($initPostsThreadStep1) }
   function initPostsThreadStep2() { $posts.each($initPostsThreadStep2) }
   function initPostsThreadStep3() { $posts.each($initPostsThreadStep3) }
