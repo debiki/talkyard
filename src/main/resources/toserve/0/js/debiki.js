@@ -2619,7 +2619,8 @@ function $updateEditFormDiff() {
 
 // Call on a .dw-f-ed, to update the preview tab.
 function $updateEditFormPreview() {
-  var $editForm = $(this).closest('.dw-f-ed');
+  var $i = $(this);
+  var $editForm = $i.closest('.dw-f-ed');
   var $editTab = $editForm.find('div.dw-ed-tab[id^="dw-ed-tab-edit"]');
   var $previewTab = $editForm.find('div.dw-ed-tab[id^="dw-ed-tab-preview"]');
   var $textarea = $editTab.find('textarea');
@@ -2628,21 +2629,25 @@ function $updateEditFormPreview() {
   var markupType = $selectedMarkup.val();
   var markupSrc = $textarea.val();
   var htmlSafe = '';
+  var isForTitle = $i.closest('.dw-p').is('.dw-p-ttl');
 
   switch (markupType) {
     case "para":
       // Convert to paragraphs, but for now simply show a <pre> instead.
       // The Scala implementation changes \n\n to <p>...</p> and \n to <br>.
-      htmlSafe = $('<pre></pre>').text(markupSrc);
+      htmlSafe = $(isForTitle ? '<h1></h1>' : '<pre></pre>').text(markupSrc);
       break;
     case "dmd0":
       // Debiki flavored Markdown version 0.
+      if (isForTitle) markupSrc = '<h1>'+ markupSrc +'</h1>';
       htmlSafe = markdownToSafeHtml(markupSrc);
       break;
     case "code":
+      // (No one should use this markup for titles, insert no <h1>.)
       htmlSafe = $('<pre class="prettyprint"></pre>').text(markupSrc);
       break;
     case "html":
+      if (isForTitle) markupSrc = '<h1>'+ markupSrc +'</h1>';
       htmlSafe = sanitizeHtml(markupSrc);
       break;
     default:
