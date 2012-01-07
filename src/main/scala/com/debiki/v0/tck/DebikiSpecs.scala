@@ -31,16 +31,16 @@ object DebikiSpecs {
         pagePath: PagePath = null,
         tenantId: String = null,
         folder: String = null,
-        guid: Option[String] = null,
+        pageId: Option[String] = null,
         //guidInPath: Option[Boolean] = None,  TODO
-        name: String = null) = new Matcher[PagePath] {
+        pageSlug: String = null) = new Matcher[PagePath] {
     def apply(left: => PagePath) = {
       val test = _test(left, pagePath) _
       var errs =
         test("tenantId", tenantId, _.tenantId) :::
         test("folder", folder, _.folder) :::
-        test("guid", guid, _.guid) :::
-        test("name", name, _.name) ::: Nil
+        test("pageId", pageId, _.pageId) :::
+        test("pageSlug", pageSlug, _.pageSlug) ::: Nil
       (errs isEmpty, "OK", errs.mkString(", and "))
     }
   }
@@ -49,7 +49,7 @@ object DebikiSpecs {
         post: Post = null,
         id: String = null,
         parent: String = null,
-        date: ju.Date = null,
+        ctime: ju.Date = null,
         loginId: String = null,
         newIp: String = null,
         text: String = null,
@@ -60,7 +60,7 @@ object DebikiSpecs {
       if (id eq null) id2 = post.id
       left.post(id2) match {
         case Some(p: Post) =>
-          matchPost(post, id = id, parent = parent, date = date,
+          matchPost(post, id = id, parent = parent, ctime = ctime,
               loginId = loginId, newIp = newIp, text = text, where = where).apply(p)
         case None =>
           (false, "", "Post missing, id: "+ id2)
@@ -72,7 +72,7 @@ object DebikiSpecs {
         post: Post = null,
         id: String = null,
         parent: String = null,
-        date: ju.Date = null,
+        ctime: ju.Date = null,
         loginId: String = null,
         newIp: String = null,
         text: String = null,
@@ -82,7 +82,7 @@ object DebikiSpecs {
       var errs =
           test("id", id, _.id) :::
           test("parent", parent, _.parent) :::
-          test("date", date, _.date) :::
+          test("ctime", ctime, _.ctime) :::
           test("loginId", loginId, _.loginId) :::
           test("newIp", newIp, _.newIp) :::
           test("text", text, _.text) :::
@@ -95,7 +95,7 @@ object DebikiSpecs {
         rating: Rating = null,
         id: String = null,
         postId: String = null,
-        date: ju.Date = null,
+        ctime: ju.Date = null,
         loginId: String = null,
         newIp: String = null,
         tags: List[String] = null) = new Matcher[Debate] {
@@ -105,7 +105,7 @@ object DebikiSpecs {
       if (id2 eq null) id2 = rating.id
       left.rating(id2) match {
         case Some(r: Rating) =>
-          matchRating(rating, id = id, postId = postId, date = date,
+          matchRating(rating, id = id, postId = postId, ctime = ctime,
               loginId = loginId, newIp = newIp, tags = tags).apply(r)
         case None =>
           (false, "", "Rating missing, id: "+ id2)
@@ -117,7 +117,7 @@ object DebikiSpecs {
         rating: Rating = null,
         id: String = null,
         postId: String = null,
-        date: ju.Date = null,
+        ctime: ju.Date = null,
         loginId: String = null,
         newIp: String = null,
         tags: List[String] = null) = new Matcher[Rating] {
@@ -126,7 +126,7 @@ object DebikiSpecs {
       val errs =
           test("id", id, _.id) :::
           test("postId", postId, _.postId) :::
-          test("date", date, _.date) :::
+          test("ctime", ctime, _.ctime) :::
           test("loginId", loginId, _.loginId) :::
           test("newIp", newIp, _.newIp) :::
           test("tags", if (tags ne null) tags.sorted else null,

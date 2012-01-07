@@ -134,11 +134,11 @@ object Templates {
     oidRealm = "example.com", oidClaimedId = "claimed-id.com",
     oidOpLocalId = "provider.com/local/id",
     firstName = "Laban", email = "oid@email.hmm", country = "Sweden")
-  val post = v0.Post(id = "?", parent = "1", date = new ju.Date,
+  val post = v0.Post(id = "?", parent = "1", ctime = new ju.Date,
     loginId = "?", newIp = None, text = "", markup = "",
     tyype = v0.PostType.Text, where = None)
   val rating = v0.Rating(id = "?", postId = "1", loginId = "?",
-    newIp = None, date = new ju.Date, tags = Nil)
+    newIp = None, ctime = new ju.Date, tags = Nil)
 }
 
 class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
@@ -331,7 +331,7 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
 
     // COULD: Find the Identity again, and the User.
 
-    val exPagePath = defaultPagePath.copy(guid = Some(ex1_debate.guid))
+    val exPagePath = defaultPagePath.copy(pageId = Some(ex1_debate.guid))
     "recognize its correct PagePath" >> {
       dao.checkPagePath(exPagePath) must beLike {
         case Full(correctPath: PagePath) =>
@@ -342,7 +342,7 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
     }
 
     "correct an incorrect PagePath name" >> {
-      dao.checkPagePath(exPagePath.copy(name = "incorrect")) must beLike {
+      dao.checkPagePath(exPagePath.copy(pageSlug = "incorrect")) must beLike {
         case Full(correctPath: PagePath) =>
           correctPath must matchPagePath(exPagePath)
           true
@@ -467,20 +467,21 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
       // Load the root post, check its title.
       dao.loadPage(defaultTenantId, ex1_debate.guid) must beLike {
         case Full(d: Debate) => {
-          val rootPost = d.rootPost_!
-          rootPost.title must_== Some("Page-Title")
-          rootPost.titles.length must_== 1
+          d.titleText must_== Some("Page-Title")
+          val body = d.body_!
+          body.titleText must_== Some("Page-Title")
+          body.titlePosts.length must_== 1
           true
         }
       }
     }
 
-    // -------- Publish a Page
+    // -------- Publish a Post
 
-    "save a Publ, load the article, and now it's published" >> {
+    "save a Publish, load the page body, and now it's published" >> {
       // Save a Publ, for the root post.
       var postId = ""
-      val postNoId = T.post.copy(tyype = PostType.Publ, loginId = loginId)
+      val postNoId = T.post.copy(tyype = PostType.Publish, loginId = loginId)
       dao.savePageActions(
         defaultTenantId, ex1_debate.guid, List(postNoId)) must beLike {
         case Full(List(post: Post)) =>
@@ -492,9 +493,9 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
       // Load the root post, verify that it is now published.
       dao.loadPage(defaultTenantId, ex1_debate.guid) must beLike {
         case Full(d: Debate) => {
-          val rootPost = d.rootPost_!
-          rootPost.publd must_== Some(true)
-          rootPost.publs.length must_== 1
+          val body = d.body_!
+          body.publd must_== Some(true)
+          body.publs.length must_== 1
           true
         }
       }
@@ -728,7 +729,7 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
         pageId = ex1_debate.guid,
         pageActionId = ex2_id,
         sourceActionId = ex2_id,  // == pageActionId for a Reply
-        ctime = ex2_emptyPost.date)
+        ctime = ex2_emptyPost.ctime)
 
       dao.saveInboxSeeds(defaultTenantId, seed::Nil)
 
@@ -744,7 +745,7 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
             pageId = ex1_debate.guid,
             pageActionId = ex2_id,
             sourceActionId = ex2_id,
-            ctime = ex2_emptyPost.date)
+            ctime = ex2_emptyPost.ctime)
           true
       }
     }
@@ -759,7 +760,7 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
           pageId = ex1_debate.guid,
           pageActionId = ex2_id,
           sourceActionId = ex2_id,  // == pageActionId for a Reply
-          ctime = ex2_emptyPost.date)
+          ctime = ex2_emptyPost.ctime)
 
       dao.saveInboxSeeds(defaultTenantId, seed::Nil)
 
@@ -775,7 +776,7 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
               pageId = ex1_debate.guid,
               pageActionId = ex2_id,
               sourceActionId = ex2_id,
-              ctime = ex2_emptyPost.date)
+              ctime = ex2_emptyPost.ctime)
           true
       }
     }
