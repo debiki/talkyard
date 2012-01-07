@@ -58,6 +58,18 @@ function isBlank(str) {
 
 // Converts markdown to sanitized html.
 function markdownToSafeHtml(markdownSrc, hostAndPort) {
+  var htmlTextUnsafe = markdownToUnsafeHtml(markdownSrc, hostAndPort);
+  var htmlTextSafe = sanitizeHtml(htmlTextUnsafe);
+  return htmlTextSafe;
+}
+
+function markdownToUnsafeHtml(markdownSrc, hostAndPort) {
+  var converter = new Showdown.converter();
+  var htmlTextUnsafe = converter.makeHtml(markdownSrc, hostAndPort);
+  return htmlTextUnsafe;
+}
+
+function sanitizeHtml(htmlTextUnsafe) {
   function urlX(url) {
     if (/^https?:\/\//.test(url)) { return url; }
   }
@@ -65,8 +77,6 @@ function markdownToSafeHtml(markdownSrc, hostAndPort) {
     return id;
   }
 
-  var converter = new Showdown.converter();
-  var htmlTextUnsafe = converter.makeHtml(markdownSrc, hostAndPort);
   var htmlTextSafe = html_sanitize(htmlTextUnsafe, urlX, idX);
   return htmlTextSafe;
 }
@@ -2496,6 +2506,11 @@ function $showEditForm2() {
     // This makes the edit form at least as high as the post.
     var lastPanelHeight = $postBody.height();
 
+    // Update the preview, if the markup type is changed.
+    $editForm.find('select[name="dw-fi-e-mup"]').change(function() {
+      $editForm.each($updateEditFormPreview);
+    });
+
     $editForm.tabs({
       selected: 0,
       show: function(event, ui) {
@@ -2608,10 +2623,33 @@ function $updateEditFormPreview() {
   var $editTab = $editForm.find('div.dw-ed-tab[id^="dw-ed-tab-edit"]');
   var $previewTab = $editForm.find('div.dw-ed-tab[id^="dw-ed-tab-preview"]');
   var $textarea = $editTab.find('textarea');
+  var $selectedMarkup =
+    $editForm.find('select[name="dw-fi-e-mup"] > option:selected');
+  var markupType = $selectedMarkup.val();
+  var markupSrc = $textarea.val();
+  var htmlSafe = '';
 
-  var markdownSrc = $textarea.val();
-  var html = markdownToSafeHtml(markdownSrc);
-  $previewTab.html(html);
+  switch (markupType) {
+    case "para":
+      // Convert to paragraphs, but for now simply show a <pre> instead.
+      // The Scala implementation changes \n\n to <p>...</p> and \n to <br>.
+      htmlSafe = $('<pre></pre>').text(markupSrc);
+      break;
+    case "dmd0":
+      // Debiki flavored Markdown version 0.
+      htmlSafe = markdownToSafeHtml(markupSrc);
+      break;
+    case "code":
+      htmlSafe = $('<pre class="prettyprint"></pre>').text(markupSrc);
+      break;
+    case "html":
+      htmlSafe = sanitizeHtml(markupSrc);
+      break;
+    default:
+      die("Unknown markup [debiki_error_0k3w25]");
+  }
+
+  $previewTab.html(htmlSafe);
 }
 
 
@@ -2701,6 +2739,8 @@ function $showEditsDialog() {
       $diff.children('.dw-x-diff').remove();
       $diff.append('<div class="dw-x-diff">'+ diffHtml +'</div>\n');
       // Update the preview.
+      // COULD make this work with other types of markdown than `dmd0'.
+      // See $updateEditFormPreview(), which handles other markup types.
       var html = markdownToSafeHtml(newSrc);
       $form.find('#dw-e-sgs-prvw-html').html(html);
     });
@@ -2708,6 +2748,8 @@ function $showEditsDialog() {
     // Applies all edits up to, but not including, the specified date.
     // Returns the resulting text.
     // Keep in sync with textAsOf in debate.scala (renamed to page.scala?).
+    // SHOULD find the markup type in use too. Would require that the
+    // markup type be sent by the server.
     // TODO also consider edit suggestions marked for application.
     // TODO consider skipping edit-apps marked for undo.
     // TODO when showing the changes *intended*, take into account
