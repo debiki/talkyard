@@ -88,6 +88,18 @@ object DebateHtml {
   def ifThen(condition: Boolean, html: NodeSeq): NodeSeq =
     if (condition) html else Nil
 
+  case class Markup(id: String, prettyName: String)
+
+  val Markups = List(
+    Markup("para", "None (plain text)"),
+    Markup("dmd0", "Debiki Markdown v.0"),
+    Markup("html", "HTML"),
+    Markup("code", "Code (e.g. CSS, Javascript)")
+  )
+
+  val DefaultMarkup = "dmd0"
+  val SafeMarkup = "para"  // use if someone seems evil
+
   // COULD compile javascripts, see:
   // http://www.java2s.com/Code/Java/JDK-6/WorkingwithCompilableScripts.htm
   // http://javasourcecode.org/html/open-source/jdk/jdk-6u23/
@@ -116,10 +128,14 @@ object DebateHtml {
 
   /** Converts markdown to xml.
    */
-  def markdownToHtml(source: String, hostAndPort: String): NodeSeq = {
+  def markdownToSafeHtml(source: String, hostAndPort: String): NodeSeq = {
     val htmlTextUnsafe = _jsShowdown.asInstanceOf[javax.script.Invocable]
           .invokeMethod(_jsShowdown.eval("new Showdown.converter()"),
           "makeHtml", source, hostAndPort).toString
+    sanitizeHtml(htmlTextUnsafe)
+  }
+
+  def sanitizeHtml(htmlTextUnsafe: String): NodeSeq = {
     var htmlTextSafe = _jsSanitizer.asInstanceOf[javax.script.Invocable]
           .invokeFunction("html_sanitize", htmlTextUnsafe, _jsUrlX, _jsIdX)
           .toString
@@ -406,37 +422,48 @@ class DebateHtml(val debate: Debate) {
     val lastEditApp = editsAppld.headOption.map(_._2)
     val cssPostId = "dw-post-"+ post.id
     val sourceText = vipo.text
-    // Concerning post.markup:
-    // `code' - wrap the text in <code class="prettyprint">...</code>
-    // `code-javascript' - wrap the text in:
-    //     <pre class="prettyprint"><code class="language-javascript">
-    //     This is a HTML5 convention:
-    //     <http://dev.w3.org/html5/spec-author-view/
-    //         the-code-element.html#the-code-element>
-    //     Works with: http://code.google.com/p/google-code-prettify/
-    // `plain' - change `http://...' to `<a rel=nofollow href=...>...</a>'
-    //             and change "\n\n" to <p>:s.
-    // `dfmd-0' - Debiki flavored markdown version 0
-    val (xmlText, numLines) = post.markup match {
-      //case "" => (xml.Text(sourceText), sourceText.count(_ == '\n'))
-      //case "plain" => textToHtml(sourceText)
-      //case "dfmd-0" => // Debiki flavored markdown
-      case _ => // for now
-        (markdownToHtml(sourceText, config.hostAndPort), -1)
-        // COULD convert only <img> & <pre> tags,
-        //… but nothing that makes text stand out, e.g. skip <h1>, <section>.
-        // For the root post, allow everything but javascript though.
+
+    val (xmlText, numLines) = vipo.markup match {
+      case "dmd0" =>
+        // Debiki flavored markdown.
+        (markdownToSafeHtml(sourceText, config.hostAndPort), -1)
+      case "para" =>
+        textToHtml(sourceText)
+      /*
+      case "link" =>
+        textToHtml(sourceText) and linkify-url:s, w/ rel=nofollow)
+      case "img" =>
+        // Like "link", but also accept <img> tags and <pre>.
+        // But nothing that makes text stand out, e.g. skip <h1>, <section>.
+        */
+      case "html" =>
+        (sanitizeHtml(sourceText), -1)
+      case "code" =>
+        (<pre class='prettyprint'>{sourceText}</pre>,
+          sourceText.count(_ == '\n'))
       /*
       case c if c startsWith "code" =>
+        // Wrap the text in:
+        //     <pre class="prettyprint"><code class="language-javascript">
+        //  That's an HTML5 convention actually:
+        // <http://dev.w3.org/html5/spec-author-view/
+        //     the-code-element.html#the-code-element>
+        // Works with: http://code.google.com/p/google-code-prettify/
         var lang = c.dropWhile(_ != '-')
         if (lang nonEmpty) lang = " lang"+lang  ; UNTESTED // if nonEmpty
         (<pre class={"prettyprint"+ lang}>{sourceText}</pre>,
           sourceText.count(_ == '\n'))
         // COULD include google-code-prettify js and css, and
         // onload="prettyPrint()".
-      case x => unimplemented("Markup of "+ safed(x))
-       */
+        */
+      case _ =>
+        // Default to Debiki flavored markdown, for now.
+        // (Later: update database, change null/'' to "dmd0" for the page body,
+        // change to "para" for everything else.
+        // Then warnDbgDie-default to "para" here not "dmd0".)
+        (markdownToSafeHtml(sourceText, config.hostAndPort), -1)
     }
+
     var replyBtnText: NodeSeq = xml.Text("Reply")
     if (vipo.meta.isArticleQuestion) {
        findChildrenOfNode(withClass = "debiki-0-reply-button-text",
@@ -635,6 +662,7 @@ object FormHtml {
 
   object Edit {
     object InputNames {
+      val Markup = "dw-fi-e-mup"
       val Text = "dw-fi-ed-txt"
       val Preview = "dw-fi-ed-preview"
     }
@@ -1066,7 +1094,7 @@ class FormHtml(val config: HtmlConfig, val permsOnPage: PermsOnPage) {
     </form>
   }
 
-  def editForm(newText: String = "", oldText: String = "",
+  def editForm(newText: String, oldText: String, curMarkup: String,
                userName: Box[String]) = {
     import Edit.{InputNames => Inp}
     val submitBtnText = "Save as "+ userName.openOr("...")
@@ -1077,6 +1105,20 @@ class FormHtml(val config: HtmlConfig, val permsOnPage: PermsOnPage) {
       { _xsrfToken }
       {/* timeWaistWarning("edits", "are") */}
       <div class='dw-f-e-inf-save'>Scroll down and click Save when done.</div>
+      <div class='dw-f-e-mup dw-adv'>
+        <label for={Inp.Markup}>Markup: </label>
+        <select id={Inp.Markup} name={Inp.Markup}>{
+          // Place the current markup first in a list of all markups.
+          val markupsSorted = Markups.sortWith((a, b) => a.id == curMarkup)
+          val current = markupsSorted.head
+          <option value={current.id} selected='selected'>{
+            current.prettyName +" – in use"}</option> ++
+          (markupsSorted.tail map { mup =>
+            <option value={mup.id} >{mup.prettyName}</option>
+          })
+        }
+        </select>
+      </div>
       <div id='dw-ed-tabs'>
         <ul>
           <li><a href='#dw-ed-tab-edit'>Edit</a></li>
@@ -1239,7 +1281,8 @@ object AtomFeedXml {
 
       // This takes rather long and should be cached.
       // Use the same cache for both plain HTML pages and Atom and RSS feeds?
-      val rootPostHtml = DebateHtml.markdownToHtml(pageBody.text, hostAndPort)
+      val rootPostHtml =
+        DebateHtml.markdownToSafeHtml(pageBody.text, hostAndPort)
 
       <entry>{
         /* Identifies the entry using a universally unique and

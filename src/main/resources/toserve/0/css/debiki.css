@@ -10,6 +10,7 @@
  *
  *  dw-           prefix, avoids name clashes
  *  -a-           action
+ *  -adv-         advanced, stuff hidden for most users
  *  -ap-          applied/application
  *  -adr-         address
  *  -bd-          body
@@ -28,6 +29,7 @@
  *  -ess-         edit suggestions (COULD change to -e-sgs)
  *  -f-           form
  *  -fs-          form group - COULD change to -dlg- or -dg-
+ *  -fi-          form <input>
  *  -flg-         flag
  *  -hd-          head
  *  -hor-         horizontal layout COULD rename to -hz- ? -vt- = vertical?
@@ -41,6 +43,7 @@
  *  -login-       COULD change to -lgi
  *  -logout-                      -lgo
  *  -m-           mark
+ *  -mup-         markup
  *  -ntf-         notification
  *  -ntf-sts      notification status code
  *  -ntf-msg      notification message
@@ -259,12 +262,25 @@ header.dw-p-ttl > h1 {
   margin-left: 2.5em;
 }
 
+.dw-ed-tab-preview > pre,
+.dw-p-bdy-blk > pre {
+  font-size: 12px; /* or unreadably small */
+}
+
 .dw-ed-tab-preview img,
 .dw-p-bdy-blk img {
   width: 100%;
   display: block; /* TODO inline those with no \n\n inbetween preceeding text */
   margin: 1.5em auto; /* TODO margin-bottom 0 if post ends there */
 }
+
+/* === Miscellaneous === */
+
+.dw-adv {
+  /* Hide advanced stuff. COULD let javascript show it if dwCoAdv cookie set. */
+  --display: none;
+}
+
 
 /* === Debate === */
 

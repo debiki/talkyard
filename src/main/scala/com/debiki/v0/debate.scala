@@ -387,28 +387,33 @@ class ViAc(val debate: Debate, val action: Action) {
 class ViPo(debate: Debate, val post: Post) extends ViAc(debate, post) {
   def parent: String = post.parent
   // def ctime = lastEditApp.map(ea => toIso8601(ea.ctime))
-  lazy val text: String = textAsOf(Long.MaxValue)
+  lazy val (text: String, markup: String) = textAndMarkupAsOf(Long.MaxValue)
 
   /** Applies all edits up to, but not including, the specified date.
-   *  Returns the resulting text.
+   *  Returns the resulting text and markup.
    *  Keep in sync with textAsOf in debiki.js.
+   *    COULD make textAsOf understand changes in markup type,
+   *    or the preview won't always work correctly.
    */
-  def textAsOf(millis: Long): String = {
-    var origText = post.text
-    var curText = origText
+  def textAndMarkupAsOf(millis: Long): (String, String) = {
+    var curText = post.text
+    var curMarkup = post.markup
     val dmp = new name.fraser.neil.plaintext.diff_match_patch
     for ((edit, eapp) <- editsAppdAsc; if eapp.ctime.getTime < millis) {
+      curMarkup = edit.newMarkup.getOrElse(curMarkup)
       val patchText = edit.text
-      // COULD check [1, 2, 3, …] to find out if the patch applied
-      // cleanaly. (The result is in [0].)
-      type P = name.fraser.neil.plaintext.diff_match_patch.Patch
-      val patches: ju.List[P] = dmp.patch_fromText(patchText) // silly API, ...
-      val p2 = patches.asInstanceOf[ju.LinkedList[P]] // returns List but needs...
-      val result = dmp.patch_apply(p2, curText) // ...a LinkedList
-      val newText = result(0).asInstanceOf[String]
-      curText = newText
+      if (patchText nonEmpty) {
+        // COULD check [1, 2, 3, …] to find out if the patch applied
+        // cleanaly. (The result is in [0].)
+        type P = name.fraser.neil.plaintext.diff_match_patch.Patch
+        val patches: ju.List[P] = dmp.patch_fromText(patchText) // silly API, ...
+        val p2 = patches.asInstanceOf[ju.LinkedList[P]] // returns List but needs...
+        val result = dmp.patch_apply(p2, curText) // ...a LinkedList
+        val newText = result(0).asInstanceOf[String]
+        curText = newText
+      }
     }
-    curText
+    (curText, curMarkup)
   }
 
   def textInitially: String = post.text
@@ -639,11 +644,6 @@ case class Post(  // COULD merge all actions into Post,
   text: String,
 
   /** The markup language to use when rendering this post.
-   *
-   *  `code' - render code
-   *  `code-javascript/whatever' - javascript/whatever highlighting
-   *  `plain' - split in <p>s, linkify urls.
-   *  `dfmd-0' - Debiki flavored markdown version 0
    */
   markup: String,
 
@@ -675,7 +675,13 @@ case class Edit (
   ctime: ju.Date,
   loginId: String,
   newIp: Option[String],
-  text: String
+  text: String,
+
+  /** Changes the markup henceforth applied to postId's text.
+   *
+   * None means reuse the current markup.
+   */
+  newMarkup: Option[String]
 ) extends Action
 
 // Verify: No duplicate like/diss ids, no edit both liked and dissed
