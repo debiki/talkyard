@@ -95,18 +95,7 @@ object DebateHtml {
   def ifThen(condition: Boolean, html: NodeSeq): NodeSeq =
     if (condition) html else Nil
 
-  case class Markup(id: String, prettyName: String)
-
-  val Markups = List(
-    Markup("para", "None (plain text)"),
-    Markup("dmd0", "Debiki Markdown v.0"),
-    Markup("html", "HTML"),
-    Markup("code", "Code (e.g. CSS, Javascript)")
-  )
-
-  val DefaultMarkup = "dmd0"
-  val SafeMarkup = "para"  // use if someone seems evil
-
+  // COULD move Showdown to markup.scala
   // COULD compile javascripts, see:
   // http://www.java2s.com/Code/Java/JDK-6/WorkingwithCompilableScripts.htm
   // http://javasourcecode.org/html/open-source/jdk/jdk-6u23/
@@ -1116,7 +1105,7 @@ class FormHtml(val config: HtmlConfig, val permsOnPage: PermsOnPage) {
         <label for={Inp.Markup}>Markup: </label>
         <select id={Inp.Markup} name={Inp.Markup}>{
           // Place the current markup first in a list of all markups.
-          val markupsSorted = Markups.sortWith((a, b) => a.id == curMarkup)
+          val markupsSorted = Markup.All.sortWith((a, b) => a.id == curMarkup)
           val current = markupsSorted.head
           <option value={current.id} selected='selected'>{
             current.prettyName +" – in use"}</option> ++
