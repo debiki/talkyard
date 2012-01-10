@@ -64,6 +64,15 @@ case class PagePath(  // COULD move to debate.scala.  Rename to RequestPath?
   def slugOrIdOrQustnMark =
     if (pageSlug nonEmpty) pageSlug else pageId.map("-"+ _) getOrElse "?"
 
+  /** True if the slug ends with e.g. `.template' or `.js' or `.css'.
+   */
+  def isCodePage =
+    isTemplatePage ||
+    (pageSlug endsWith ".js") ||
+    (pageSlug endsWith ".css")
+
+  def isTemplatePage = pageSlug endsWith ".template"
+
   /** True iff path ends with a `/'. Then this is a path to a  folder or
    *  a folder's index page (which is a page with an empty slug and !showId).
    */
