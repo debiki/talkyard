@@ -26,7 +26,7 @@ abstract class DaoSpi {
 
   def loadPage(tenantId: String, debateId: String): Box[Debate]
 
-  def loadTemplates(perhapsTmpls: List[PagePath]): List[Debate]
+  def loadTemplate(templPath: PagePath): Option[TemplateSrcHtml]
 
   def checkPagePath(pathToCheck: PagePath): Box[PagePath]
 
@@ -119,14 +119,10 @@ abstract class Dao {
   def loadPage(tenantId: String, debateId: String): Box[Debate] =
     _spi.loadPage(tenantId, debateId)
 
-  /** Looks up guids for each possible template.
-   *
-   *  Each perhaps-template is represented by a PagePath.
-   *  The guids found are returned, but PagePaths that point to
-   *  non-existing templates are filtered out.
+  /** Loads any template at templPath.
    */
-  def loadTemplates(perhapsTmpls: List[PagePath]): List[Debate] =
-    _spi.loadTemplates(perhapsTmpls)
+  def loadTemplate(templPath: PagePath): Option[TemplateSrcHtml] =
+    _spi.loadTemplate(templPath)
 
   def checkPagePath(pathToCheck: PagePath): Box[PagePath] =
     _spi.checkPagePath(pathToCheck)
