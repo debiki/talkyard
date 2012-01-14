@@ -488,10 +488,10 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
 
 /* Sync these selectors with showCommentsOnClick in debiki.js.
 COULD hide the "Log in" link too, unless logged in?  */
-.dw-hide-interactions #dw-post-1 > .dw-p-hdr,
-.dw-hide-interactions #dw-t-1 > .dw-res,
-.dw-hide-interactions #dw-post-1 > .dw-p-bdy > .dw-p-bdy-blk .dw-i-m-start,
-.dw-hide-interactions #dw-post-1 > .dw-p-bdy > .dw-i-ts,
+.dw-hide-interactions .dw-depth-0 > .dw-p > .dw-p-hdr,
+.dw-hide-interactions .dw-depth-0 > .dw-res,
+.dw-hide-interactions .dw-depth-0 > .dw-p > .dw-p-bdy > .dw-p-bdy-blk .dw-i-m-start,
+.dw-hide-interactions .dw-depth-0 > .dw-p > .dw-p-bdy > .dw-i-ts,
 .dw-hide-interactions .dw-debate svg {
   display: none;
 }
@@ -598,7 +598,7 @@ so there's some space for the SVG arrows. */
   background-color: transparent;
 }
 
-#dw-post-1 > .dw-p-hdr > .dw-p-hdr-ed {
+.dw-depth-0 > .dw-p > .dw-p-hdr > .dw-p-hdr-ed {
   /* Place edit info on the same line as author info, for the page body.
   Then everything appears on one line just below the page title. */
   display: inline;
@@ -1535,10 +1535,10 @@ it works everywhere, even if it works fine for you. */
 }
 /* But skip the root post; only mark its -blk:s, since the -p-bdy
  is very wide and it doesn't look nice with so very much bg color. */
-#dw-post-1.dw-m-p-mine > .dw-p-bdy {
+.dw-depth-0 > .dw-p.dw-m-p-mine > .dw-p-bdy {
   background-color: transparent;
 }
-#dw-post-1.dw-m-p-mine > .dw-p-bdy > .dw-p-bdy-blk {
+.dw-depth-0 > .dw-p.dw-m-p-mine > .dw-p-bdy > .dw-p-bdy-blk {
   background-color: #FBF7F2;
 }
 
