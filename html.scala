@@ -749,6 +749,15 @@ class FormHtml(val config: HtmlConfig, val permsOnPage: PermsOnPage) {
     <input type='hidden' class={XsrfInpName} name={XsrfInpName} value={tkn}/>
   }
 
+  def confirmationForm(question: String, answer: String) = {
+    // They can click the browser's Back button to cancel.
+    <form action='' method='POST'>
+      { _xsrfToken }
+      <div>{question}</div>
+      <input type='submit' value={answer}/>
+    </form>
+  }
+
   /**
    *  The login form below is based on this JavaScript OpenID Selector
    *  example file:
