@@ -41,7 +41,7 @@ import TemplateToExtend._
  *       ...
  *     </html>
  */
-case class TemplateSrcHtml(page: Page) {
+case class TemplateSrcHtml(post: ViPo) {
 
   // A regex that splits on the end-of-Yaml-document indicator, '---'.
   // More exactly, split on: (newline)---(newline)(whitespace)(<)
@@ -65,7 +65,7 @@ case class TemplateSrcHtml(page: Page) {
     /** The html source for this template. */
     html: NodeSeq
   ) = {
-    val templateSrcWithComments = page.vipo_!(Page.BodyId).text
+    val templateSrcWithComments = post.text
     val templateSrc = commentLineRegex.
           replaceAllIn(templateSrcWithComments, "")
 
