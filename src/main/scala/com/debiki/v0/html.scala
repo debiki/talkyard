@@ -255,16 +255,16 @@ class DebateHtml(val debate: Debate) {
   }
 
   def layoutPageAndTemplates(permsOnPage: PermsOnPage): NodeSeq = {
-    layoutPage() ++ FormHtml(config, permsOnPage).dialogTemplates
+    layoutPage(Page.BodyId) ++ FormHtml(config, permsOnPage).dialogTemplates
   }
 
   /** The results from layoutPosts doesn't depend on who the user is
    *  and can thus be cached.
    */
-  def layoutPage(): NodeSeq = {
-    val rootPosts = debate.repliesTo(Debate.PageBodyId)
-    val rootPost = debate.vipo(Debate.PageBodyId)
-    val cssThreadId = "dw-t-"+ Debate.PageBodyId
+  def layoutPage(rootPostId: String): NodeSeq = {
+    val rootPostsReplies = debate.repliesTo(rootPostId)
+    val rootPost = debate.vipo(rootPostId)
+    val cssThreadId = "dw-t-"+ rootPostId
     <div id={debate.guid} class="debiki dw-debate">
       <div class="dw-debate-info">{
         if (lastChange isDefined) {
@@ -281,12 +281,12 @@ class DebateHtml(val debate: Debate) {
         // <div .dw-p> is created. It's required
         // because JavaScript elsewhere finds .dw-t:s by finding .dw-p parents.
         val (comment, replyBtnText) = _showComment(
-            rootPost.getOrElse(unimplemented), horizontal = true)
+            rootPostId, rootPost.getOrElse(unimplemented), horizontal = true)
         val replyBtn = _replyBtnListItem(replyBtnText)
         comment ++
         <div class='dw-t-vspace'/>
         <ol class='dw-res ui-helper-clearfix'>{
-          _layoutComments(1, replyBtn, rootPosts)
+          _layoutComments(rootPostId, 1, replyBtn, rootPostsReplies)
         }
         </ol>
       }
@@ -309,7 +309,8 @@ class DebateHtml(val debate: Debate) {
     </li>
   }
 
-  private def _layoutComments(depth: Int, parentReplyBtn: NodeSeq,
+  private def _layoutComments(rootPostId: String, depth: Int,
+                              parentReplyBtn: NodeSeq,
                               posts: List[Post]): NodeSeq = {
     // COULD let this function return Nil if posts.isEmpty, and otherwise
     // wrap any posts in <ol>:s, with .dw-ts or .dw-i-ts CSS classes
@@ -329,20 +330,20 @@ class DebateHtml(val debate: Debate) {
       cssInlineThread = if (p.where isDefined) " dw-i-t" else ""
       replies = debate.repliesTo(p.id)
       vipo = p // debate.vipo_!(p.id)
+      isRootOrArtclQstn = vipo.id == rootPostId || vipo.meta.isArticleQuestion
       // Layout replies horizontally, if this is an inline reply to
       // the root post, i.e. depth is 1 -- because then there's unused space
       // to the right. However, the horizontal layout results in a higher
       // thread if there's only one reply. So only do this if there's more
       // than one reply.
       horizontal = (p.where.isDefined && depth == 1 && replies.length > 1) ||
-                    vipo.meta.isArticleQuestion
+                    isRootOrArtclQstn
       (cssHoriz, cssClearfix) =
           // Children will float, if horizontal. So clearafix .dw-res.
           if (horizontal) (" dw-hor", " ui-helper-clearfix")
           else ("", "")
       cssThreadDeleted = if (vipo.isTreeDeleted) " dw-t-dl" else ""
-      cssArticleQuestion = if (vipo.meta.isArticleQuestion) " dw-p-art-qst"
-                          else ""
+      cssArticleQuestion = if (isRootOrArtclQstn) " dw-p-art-qst" else ""
     }
     yield {
       var li =
@@ -353,15 +354,15 @@ class DebateHtml(val debate: Debate) {
           else {
             val (comment, replyBtnText) =
               if (vipo.isDeleted) (_showDeletedComment(vipo), xml.Text("Reply"))
-              else _showComment(vipo, horizontal = horizontal)
+              else _showComment(rootPostId, vipo, horizontal = horizontal)
 
             val myReplyBtn =
-              if (vipo.meta.isArticleQuestion) _replyBtnListItem(replyBtnText)
+              if (isRootOrArtclQstn) _replyBtnListItem(replyBtnText)
               else Nil
             comment ++ (
               if (replies.isEmpty && myReplyBtn.isEmpty) Nil
               else <ol class={"dw-res"+ cssClearfix}>
-                { _layoutComments(depth + 1, myReplyBtn, replies) }
+                { _layoutComments(rootPostId, depth + 1, myReplyBtn, replies) }
               </ol>
             )
           }
@@ -411,13 +412,15 @@ class DebateHtml(val debate: Debate) {
 
   /** Returns the comment and the Reply button text.
    */
-  private def _showComment(vipo: ViPo, horizontal: Boolean
+  private def _showComment(rootPostId: String, vipo: ViPo, horizontal: Boolean
                               ): (NodeSeq, NodeSeq) = {
     def post = vipo.post
     val editsAppld: List[(Edit, EditApp)] = vipo.editsAppdDesc
     val lastEditApp = editsAppld.headOption.map(_._2)
     val cssPostId = "dw-post-"+ post.id
     val sourceText = vipo.text
+    val isRootOrArtclQstn = vipo.id == rootPostId ||
+        vipo.meta.isArticleQuestion
 
     val (xmlText, numLines) = vipo.markup match {
       case "dmd0" =>
@@ -461,12 +464,12 @@ class DebateHtml(val debate: Debate) {
     }
 
     var replyBtnText: NodeSeq = xml.Text("Reply")
-    if (vipo.meta.isArticleQuestion) {
+    if (isRootOrArtclQstn) {
        findChildrenOfNode(withClass = "debiki-0-reply-button-text",
            in = xmlText) foreach { replyBtnText = _ }
     }
     val long = numLines > 9
-    val cutS = if (long && post.id != Debate.PageBodyId) " dw-x-s" else ""
+    val cutS = if (long && post.id != rootPostId) " dw-x-s" else ""
     val author = debate.authorOf_!(post)
 
     val (flagsTop: NodeSeq, flagsDetails: NodeSeq) = {
@@ -553,7 +556,7 @@ class DebateHtml(val debate: Debate) {
         lazy val editor =
           debate.authorOf_!(debate.editsById(lastEditApp.get.editId))
         <div class='dw-p-hdr-ed'>{
-            Text(if (post.id == Page.BodyId) {
+            Text(if (post.id == rootPostId) {
               // Via CSS, edit info is placed on the same line as author info.
               ", edited "
             } else {
@@ -614,7 +617,7 @@ class DebateHtml(val debate: Debate) {
         }
       </div></div>
     </div> ++ (
-      if (vipo.meta.isArticleQuestion) Nil
+      if (isRootOrArtclQstn) Nil
       else <a class='dw-as' href={config.reactUrl(debate.guid, post.id)}
             >React</a>),
     replyBtnText)

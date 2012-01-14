@@ -554,7 +554,7 @@ class ViPo(debate: Debate, val post: Post) extends ViAc(debate, post) {
 
   lazy val meta: PostMeta = {
     var fixedPos: Option[Int] = None
-    var isArticleQuestion = id == PageBodyId
+    var isArticleQuestion = false
     for (m <- metaPosts ; line <- m.text.lines) line match {
       case "article-question" => isArticleQuestion = true
       case _FixPosRegex(pos) => fixedPos = Some(pos.toInt)

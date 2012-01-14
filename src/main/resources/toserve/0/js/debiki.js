@@ -212,16 +212,6 @@ Debiki.v0.makeDragscrollable = function(selectors) {
 // DebateHtml$ hideCommentsStyle, in html.scala.
 Debiki.v0.showInteractionsOnClick = function() {
   $('body').addClass('dw-hide-interactions');
-  // Sync this list with selectors in DebateHtml.tagsThatHideShowInteractions.
-  var interactions =
-      '#dw-post-1 > .dw-p-hdr, '+
-      '#dw-t-1 > .dw-res, ' +
-      '#dw-post-1 > .dw-p-bdy > .dw-i-ts, '+
-      '.dw-debate svg';
-  var intersInlBlk =
-      '#dw-post-1 > .dw-p-bdy > .dw-p-bdy-blk .dw-i-m-start';
-  // $(interactions).hide(); // won't work, because .dw-i-ts
-                            // are moved away from .dw-res, later.
   var numComments = $('.dw-p').length - 1;  // don't count the article
   var text = numComments > 1 ?  'Visa '+ numComments +' kommentarer' : // i18n
      (numComments == 1 ?  'Visa 1 kommentar' : 'Lämna en kommentar');
@@ -232,12 +222,10 @@ Debiki.v0.showInteractionsOnClick = function() {
       .text(text)  // xss safe
       .css('font-size', '80%')
       .end()
-      .insertBefore('#dw-t-1 > .dw-res')
+      .insertBefore('.dw-depth-0 > .dw-res')
       .click(function() {
     $showBtn.remove();
     $('body').removeClass('dw-hide-interactions');
-    //$(interactions).show();
-    //$(intersInlBlk).css('display', 'inline-block');
     SVG.drawEverything(); // *sometimes* needed
   });
 };
