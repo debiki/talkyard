@@ -109,7 +109,7 @@ object PageSortOrder {
 
 /** Things an end user can do.
  */
-sealed abstract class Do  // COULD rename to RequestType
+sealed abstract class Do  // COULD rename to RequestType? UserRequest?
 
 object Do {
   /*
@@ -124,7 +124,9 @@ object Do {
   }*/
 
   case object Act extends Do
-  case object Create extends Do
+  case object CreatePage extends Do
+  case object CreatePageTemplate extends Do
+  case object ViewPageTemplate extends Do
   case object Reply extends Do
   case object Rate extends Do
   case object FlagPost extends Do
@@ -150,8 +152,17 @@ object Do {
 sealed abstract class Perms
 
 object PermsOnPage {
-  val All = PermsOnPage(true, true, true, true, true, true)
-  val Wiki = All.copy(deleteAnyReply = false)
+
+  val All = PermsOnPage(true, true, true, true, true, true, true)
+
+  val Wiki = PermsOnPage(
+    accessPage = true,
+    createPage = true,
+    editPage = true,
+    editAnyReply = true,
+    editNonAutReply = true
+  )
+
   val None = PermsOnPage()
 }
 
@@ -164,6 +175,10 @@ case class PermsOnPage(
   val accessPage: Boolean = false,
 
   val createPage: Boolean = false,
+
+  /** As of right now, templates are dangerous: they can include CSS
+   * and Javascript. */
+  val createPageTemplate: Boolean = false,
 
   //val replyVisible: Boolean = false
   //val replyHidden: Boolean = false  // will be reviewed later

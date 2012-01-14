@@ -89,18 +89,21 @@ case class Debate (
       postsByParentId: imm.Map[String, List[Post]],
       titlesByParentId: imm.Map[String, List[Post]],
       publsByParentId: imm.Map[String, List[Post]],
+      templatesByParentId: imm.Map[String, List[Post]],
       metaByParentId: imm.Map[String, List[Post]]
         ) = {
     // Add post -> replies/meta mappings to mutable multimaps.
     var postMap = mut.Map[String, mut.Set[Post]]()
     var titleMap = mut.Map[String, mut.Set[Post]]()
     var publMap = mut.Map[String, mut.Set[Post]]()
+    var templMap = mut.Map[String, mut.Set[Post]]()
     var metaMap = mut.Map[String, mut.Set[Post]]()
     for (p <- posts) {
       val mmap = p.tyype match {
         case PostType.Text => postMap  // COULD rename to comment/text/artclMap
         case PostType.Title => titleMap
         case PostType.Publish => publMap
+        case PostType.Template => templMap
         case PostType.Meta => metaMap
       }
       mmap.getOrElse(
@@ -109,15 +112,21 @@ case class Debate (
     // Copy to immutable versions.
     def buildImmMap(mutMap: mut.Map[String, mut.Set[Post]]
                        ): imm.Map[String, List[Post]] = {
+      // COULD sort the list in ascenting ctime order?
+      // Then list.head would be e.g. the oldest title -- other code
+      // assume posts ase sorted in this way?
+      // See ViPo.templatePost, titlePost and publd.
       imm.Map[String, List[Post]](
         (for ((parentId, postsSet) <- mutMap)
-        yield (parentId, postsSet.toList)).toList: _*).withDefaultValue(Nil)
+        yield (parentId, postsSet.toList // <-- sort this list by ctime asc?
+              )).toList: _*).withDefaultValue(Nil)
     }
     val immPostMap = buildImmMap(postMap)
     val immTitleMap = buildImmMap(titleMap)
     val immPublMap = buildImmMap(publMap)
+    val immTemplMap = buildImmMap(templMap)
     val immMetaMap = buildImmMap(metaMap)
-    (immPostMap, immTitleMap, immPublMap, immMetaMap)
+    (immPostMap, immTitleMap, immPublMap, immTemplMap, immMetaMap)
   }
 
   private class RatingCacheItem {
@@ -167,6 +176,17 @@ case class Debate (
 
   /** The page title, as XML. */
   //def titleXml: Option[xml.Node] = body.flatMap(_.titleXml)
+
+  /** A Post with template engine source code, for the whole page. */
+  def pageTemplatePost: Option[ViPo] = body.flatMap(_.templatePost)
+
+  /** The id of any page template post. */
+  def pageTemplateId: Option[String] = pageTemplatePost.map(_.id)
+
+  /** If there is a page template for this page,
+   * returns its template source. */
+  def pageTemplateSrc: Option[TemplateSrcHtml] =
+    pageTemplatePost.map(TemplateSrcHtml(_))
 
 
   // ====== Older stuff below (everything in use though!) ======
@@ -386,6 +406,7 @@ class ViAc(val debate: Debate, val action: Action) {
  */
 class ViPo(debate: Debate, val post: Post) extends ViAc(debate, post) {
   def parent: String = post.parent
+  def tyype = post.tyype
   // def ctime = lastEditApp.map(ea => toIso8601(ea.ctime))
   lazy val (text: String, markup: String) = textAndMarkupAsOf(Long.MaxValue)
 
@@ -462,6 +483,8 @@ class ViPo(debate: Debate, val post: Post) extends ViAc(debate, post) {
    *  taken into account. If there are many titles, only the oldest matters.
    */
   lazy val titlePost: Option[ViPo] = {
+    // Warning! duplicated code, see `templatePost' and `publd'
+    // COULD create one function for all these 3?
     if (titlePosts isEmpty) None
     else {
       // For now, don't consider deletions of titles, and assume all titles
@@ -483,6 +506,7 @@ class ViPo(debate: Debate, val post: Post) extends ViAc(debate, post) {
    *  If a comment is published, then it's been approved (it's not spam).
    */
   lazy val publd: Option[Boolean] = {
+    // Warning! duplicated code, see `titlePost' and `templatePost'
     if (publs isEmpty) None
     else Some(true)  // for now, don't consider deletions of publications
   }
@@ -490,6 +514,14 @@ class ViPo(debate: Debate, val post: Post) extends ViAc(debate, post) {
   /** Only the first (w.r.t. its ctime) non-deleted publication has any effect.
    */
   lazy val publs: List[Post] = debate.publsByParentId(id)
+
+  lazy val templatePosts: List[Post] = debate.templatesByParentId(id)
+  lazy val templatePost: Option[ViPo] = {
+    // Warning! duplicated code, see `titlePost' and `publd'
+    if (templatePosts isEmpty) None
+    else Some(new ViPo(debate, templatePosts.head))
+  }
+  lazy val templateText = templatePost.map(_.text)
 
   // COULD optimize this, do once for all flags.
   lazy val flags = debate.flags.filter(_.postId == post.id)
@@ -599,6 +631,10 @@ object PostType {
   /** Makes an Action suggestion take effect.
    */
   case object Publish extends PostType
+
+  /** A template source page, for usage by a template engine.
+   */
+  case object Template extends PostType
 
   /** Meta information describes another Post. */
   // COULD use dedicated PostType:s instead, then the computer/database
