@@ -316,10 +316,18 @@ object Inbox {
         if (user.map(_.id) == Some(userRepliedTo.id)) {
           // Don't notify the user of his/her own replies.
           Nil
-        } else {
+        }
+        else if (post.tyype == PostType.Text) {
           InboxSeed(userId = userRepliedTo.id, pageId = page.guid,
                 pageActionId = post.id, sourceActionId = post.id,
                 ctime = post.ctime) :: Nil
+        } else {
+          // Currently not supported.
+          // Need to make loadInboxItem understand DW1_PAGE_ACTIONS = 'Tmpl',
+          // and should render Template suggestions differently from
+          // normal replies? The link should open the suggestion
+          // on a new page, with the template as root post?
+          Nil
         }
       case e: Edit =>
         Nil  // fix later
