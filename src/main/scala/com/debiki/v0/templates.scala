@@ -29,6 +29,25 @@ object TemplateToExtend {
 import TemplateToExtend._
 
 
+case object TemplateSrcHtml {
+
+  val DefaultText =
+    """|#extend: no-template
+       |---
+       |<html>
+       |<head>
+       |# Elements you place here are appended to the page's <head>.
+       |</head>
+       |<body>
+       |# This <div> will be replaced by the page body and title, and comments.
+       |   <div id='debiki-page'></div>
+       |</body>
+       |</head>
+       |""" stripMargin
+
+}
+
+
 /** A HTML template source file; it's a HTML document with some Yaml
  * configuration at the top.
  *
@@ -55,9 +74,9 @@ case class TemplateSrcHtml(post: ViPo) {
   // )
   val docBoundaryRegex = "(?<=\n)---\r?\n\\s*(?=<)".r
 
-  // All lines that start with # (on the first column) are comments.
+  // All lines that start with # (as the first non-space/tab) are comments.
   // (( "(?m)" makes ^ match newlines, in addition to the start of the doc. ))
-  val commentLineRegex = """(?m)^#.*$""".r
+  val commentLineRegex = """(?m)^[ \t]*#.*$""".r
 
   lazy val (
     /** Which parent template this page should be included in. */
