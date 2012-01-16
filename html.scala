@@ -255,16 +255,24 @@ class DebateHtml(val debate: Debate) {
   }
 
   def layoutPageAndTemplates(permsOnPage: PermsOnPage): NodeSeq = {
-    layoutPage(Page.BodyId) ++ FormHtml(config, permsOnPage).dialogTemplates
+    layoutPage(PageRoot.TheBody) ++
+        FormHtml(config, PageRoot.TheBody, permsOnPage).dialogTemplates
   }
 
   /** The results from layoutPosts doesn't depend on who the user is
    *  and can thus be cached.
    */
-  def layoutPage(rootPostId: String): NodeSeq = {
-    val rootPostsReplies = debate.repliesTo(rootPostId)
-    val rootPost = debate.vipo(rootPostId)
-    val cssThreadId = "dw-t-"+ rootPostId
+  def layoutPage(pageRoot: PageRoot): NodeSeq = {
+
+    val rootPostsReplies = pageRoot.findChildrenIn(debate)
+    val rootPost: ViPo = pageRoot.findOrCreatePostIn(debate) getOrElse {
+      return (
+        <div id={debate.guid}>
+          <div>Not found: {pageRoot.id}.</div>
+        </div>)
+    }
+
+    val cssThreadId = "dw-t-"+ rootPost.id
     <div id={debate.guid} class="debiki dw-debate">
       <div class="dw-debate-info">{
         if (lastChange isDefined) {
@@ -277,16 +285,13 @@ class DebateHtml(val debate: Debate) {
       </div>
       <div id={cssThreadId} class='dw-t dw-depth-0 dw-hor'>
       {
-        // If there's no root post, use a dummy empty one, so an (empty)
-        // <div .dw-p> is created. It's required
-        // because JavaScript elsewhere finds .dw-t:s by finding .dw-p parents.
         val (comment, replyBtnText) = _showComment(
-            rootPostId, rootPost.getOrElse(unimplemented), horizontal = true)
+          rootPost.id, rootPost, horizontal = true)
         val replyBtn = _replyBtnListItem(replyBtnText)
         comment ++
         <div class='dw-t-vspace'/>
         <ol class='dw-res ui-helper-clearfix'>{
-          _layoutComments(rootPostId, 1, replyBtn, rootPostsReplies)
+          _layoutComments(rootPost.id, 1, replyBtn, rootPostsReplies)
         }
         </ol>
       }
@@ -618,8 +623,8 @@ class DebateHtml(val debate: Debate) {
       </div></div>
     </div> ++ (
       if (isRootOrArtclQstn) Nil
-      else <a class='dw-as' href={config.reactUrl(debate.guid, post.id)}
-            >React</a>),
+      else <a class='dw-as' href={config.reactUrl(debate.guid, post.id) +
+                  "&view="+ rootPostId}>React</a>),
     replyBtnText)
   }
 
@@ -629,8 +634,8 @@ class DebateHtml(val debate: Debate) {
 
 object FormHtml {
 
-  def apply(config: HtmlConfig, permsOnPage: PermsOnPage) =
-    new FormHtml(config, permsOnPage)
+  def apply(config: HtmlConfig, pageRoot: PageRoot, permsOnPage: PermsOnPage) =
+    new FormHtml(config, pageRoot, permsOnPage)
 
   val XsrfInpName = "dw-fi-xsrf"
 
@@ -699,7 +704,8 @@ object FormHtml {
 }
 
 
-class FormHtml(val config: HtmlConfig, val permsOnPage: PermsOnPage) {
+class FormHtml(val config: HtmlConfig, val pageRoot: PageRoot,
+               val permsOnPage: PermsOnPage) {
 
   import FormHtml._
   import DebateHtml._
@@ -743,6 +749,15 @@ class FormHtml(val config: HtmlConfig, val permsOnPage: PermsOnPage) {
       </div>
       // Could skip <a>Edit</a> for now, and teach people to
       // use the inline menu instead?
+
+  /** A query string param that remembers which part of a page we are
+   *  currently viewing.
+   */
+  private def _viewRoot = {
+    // The page body is the default, need not be specified.
+    if (pageRoot.id == Page.BodyId) "?"
+    else "?view="+ pageRoot.id +"&"
+  }
 
   private def _xsrfToken = {
     val tkn = config.xsrfToken
@@ -885,11 +900,11 @@ class FormHtml(val config: HtmlConfig, val permsOnPage: PermsOnPage) {
     val safePid = safe(pid)  // Prevent xss attacks.
     // COULD check permsOnPage.replyHidden/Visible etc.
     <ul>
-     <li><a href={"?reply="+ safePid}>Reply to post</a></li>
-     <li><a href={"?rate="+ safePid}>Rate it</a></li>
-     <li><a href={"?edit="+ safePid}>Suggest edit</a></li>
-     <li><a href={"?flag="+ safePid}>Report spam or abuse</a></li>
-     <li><a href={"?delete="+ safePid}>Delete</a></li>
+     <li><a href={_viewRoot +"reply="+ safePid}>Reply to post</a></li>
+     <li><a href={_viewRoot +"rate="+ safePid}>Rate it</a></li>
+     <li><a href={_viewRoot +"edit="+ safePid}>Suggest edit</a></li>
+     <li><a href={_viewRoot +"flag="+ safePid}>Report spam or abuse</a></li>
+     <li><a href={_viewRoot +"delete="+ safePid}>Delete</a></li>
     </ul>
   }
 
@@ -898,7 +913,7 @@ class FormHtml(val config: HtmlConfig, val permsOnPage: PermsOnPage) {
     val submitButtonText = "Post as ..." // COULD read user name from `config'
       <li class='dw-fs dw-fs-re'>
         <form
-            action={config.replyAction}
+            action={_viewRoot + config.replyAction}
             accept-charset='UTF-8'
             method='post'>
           { _xsrfToken }
@@ -924,7 +939,7 @@ class FormHtml(val config: HtmlConfig, val permsOnPage: PermsOnPage) {
   def ratingForm =
       <div class='dw-fs dw-fs-rat'>
         <form
-            action={config.rateAction}
+            action={_viewRoot + config.rateAction}
             accept-charset='UTF-8'
             method='post'>
           { _xsrfToken }
@@ -974,8 +989,8 @@ class FormHtml(val config: HtmlConfig, val permsOnPage: PermsOnPage) {
   def flagForm = {
     import FlagForm.{InputNames => Inp}
     <div class='dw-fs' title='Report Comment'>
-      <form id='dw-f-flg' action={config.flagAction} accept-charset='UTF-8'
-            method='post'>
+      <form id='dw-f-flg' action={_viewRoot + config.flagAction}
+            accept-charset='UTF-8' method='post'>
         { _xsrfToken }
         <div class='dw-f-flg-rsns'>{
           def input(idSuffix: String, r: FlagReason) = {
@@ -1064,8 +1079,8 @@ class FormHtml(val config: HtmlConfig, val permsOnPage: PermsOnPage) {
     val applied = nipo.editsAppdDesc
     val cssMayEdit = if (mayEdit) "dw-e-sgs-may-edit" else ""
 
-    <form id='dw-e-sgs' action='?applyedits' class={cssMayEdit}
-          title='Improvement Suggestions'>
+    <form id='dw-e-sgs' action={_viewRoot + "applyedits"}
+          class={cssMayEdit} title='Improvements'>
       { _xsrfToken }
       <div id='dw-e-sgss'>
         <div>Improvement suggestions:</div>
@@ -1107,7 +1122,7 @@ class FormHtml(val config: HtmlConfig, val permsOnPage: PermsOnPage) {
     import Edit.{InputNames => Inp}
     val submitBtnText = "Save as "+ userName.openOr("...")
     <form class='dw-f dw-f-ed'
-          action={config.editAction}
+          action={_viewRoot + config.editAction}
           accept-charset='UTF-8'
           method='post'>
       { _xsrfToken }
@@ -1163,7 +1178,7 @@ class FormHtml(val config: HtmlConfig, val permsOnPage: PermsOnPage) {
 
   def deleteForm =
     <div class='dw-fs' title='Delete Comment'>
-      <form id='dw-f-dl' action={config.deleteAction}
+      <form id='dw-f-dl' action={_viewRoot + config.deleteAction}
             accept-charset='UTF-8' method='post'>{
         import Delete.{InputNames => Inp}
         val deleteTreeLabel = "Delete replies too"
