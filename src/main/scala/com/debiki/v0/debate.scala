@@ -815,3 +815,48 @@ case class Delete(
 // And DelApp.wholeTree ... and FlagApp.reason + details.
 // Perhaps better have many small specialized classes.
 
+
+sealed abstract class PageRoot {
+  def id: String
+  def findOrCreatePostIn(page: Debate): Option[ViPo]
+  def findChildrenIn(page: Debate): List[Post]
+}
+
+
+object PageRoot {
+
+  val TheBody = Real(Page.BodyId)
+
+  /** A real post, e.g. the page body post. */
+  case class Real(id: String) extends PageRoot {
+    // Only virtual ids may contain hyphens, e.g. "page-template".
+    assErrIf(id contains "-", "Real id contains hyphen: "+ safed(id) +
+        " [debiki_error_093ku30]")
+
+    def findOrCreatePostIn(page: Debate): Option[ViPo] = page.vipo(id)
+
+    def findChildrenIn(page: Debate): List[Post] = page.repliesTo(id)
+  }
+
+  /** The page template in use, if any. */
+  case object PageTemplate extends PageRoot {
+    val id = "template"
+
+    def findOrCreatePostIn(page: Debate): Option[ViPo] =
+      page.pageTemplatePost
+
+    def findChildrenIn(page: Debate): List[Post] =
+      page.pageTemplatePost.map(p => page.repliesTo(p.id)).getOrElse(Nil)
+  }
+
+  def apply(id: String): PageRoot = {
+    id match {
+      case PageTemplate.id => PageTemplate
+      case null => assErr("Id is null [debiki_error_0392kr53]")
+      // COULD check if `id' is invalid, e.g.contains a hyphen,
+      // and if so show an error page root post.
+      case id => Real(id)
+    }
+  }
+}
+

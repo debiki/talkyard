@@ -115,32 +115,20 @@ jQuery.fn.dwAuthorId = function() {
 
 var Settings = {};
 
-Settings.makeEditUrl = function(debateId, postId) {
-  // Default:
-  alert('makeEditUrl missing. [debiki_error_053kr95]');
-};
-
-Settings.makeRatePostUrl = function(debateId, postId) {
+Settings.makeRatePostUrl = function(debateId, rootPostId, postId) {
   // Default:
   // (Firefox doesn't accept an Ajax post request "" (i.e. the same page);
   // nsIXMLHttpRequest.open fails with NS_ERROR_ILLEGAL_VALUE.)
   return '?';
 };
 
-Settings.makeReplyUrl = function(debateId, postId) {
-  return '?';
-};
-
-Settings.replyFormLoader = function(debateId, postId, complete) {
+Settings.replyFormLoader = function(debateId, rootPostId, postId, complete) {
   // Simply clone a hidden reply form template.
   var $replyForm = jQuery('#dw-hidden-templates .dw-fs-re').clone(true);
   complete($replyForm);
 };
 
-Settings.replyFormSubmitter = function(debateId, postId, complete) {
-  // This worked with JSPWiki:
-  // $.post(Settings.makeReplyUrl(debateId, postId),
-  //    $replyForm.children('form').serialize(), complete, 'html');
+Settings.replyFormSubmitter = function(debateId, rootPostId, postId) {
   // By default, post no reply.
   alert("Cannot post reply. [debiki_error_85ei23rnir]");
 };
@@ -149,10 +137,8 @@ Settings.editFormLoader = function(debateId, postId, complete) {
   alert('Edits not implemented. [debiki_error_239sx8]');
 };
 
-Settings.editFormSubmitter = function(debateId, postId, complete) {
-  // This worked with JSPWiki:
-  // $.post(Settings.makeReplyUrl(debateId, postId),
-  //    $replyForm.children('form').serialize(), complete, 'html');
+Settings.editFormSubmitter = function($form, debateId, rootPostId,
+    postId, complete) {
   // By default, post no reply.
   alert("Edits not implemented. [debiki_error_19x3g35]");
 };
@@ -167,18 +153,8 @@ Settings.draggableCustom = '';
 // Customizable functions: Export setters
 //----------------------------------------
 
-// A function that builds the GET line to download edit suggestions
-// for a certain post.
-Debiki.v0.setEditUrl = function(urlBuilder) {
-  Settings.makeEditUrl = urlBuilder;
-};
-
 Debiki.v0.setRatePostUrl = function(urlBuilder) {
   Settings.makeRatePostUrl = urlBuilder;
-};
-
-Debiki.v0.setReplyUrl = function(urlBuilder) {
-  Settings.makeReplyUrl = urlBuilder;
 };
 
 Debiki.v0.setReplyFormLoader = function(loader) {
@@ -247,6 +223,9 @@ var didResize = false;
 var didExpandTruncated = false;
 var rateFormTemplate = $("#dw-hidden-templates .dw-fs-rat");
 var debateId = $('.debiki').attr('id');
+
+var rootPostId = $('.dw-depth-0').attr('id').substr(5); // drop initial `dw-t-'
+
 // When forms are loaded from the server, they might have ID fields.
 // If the same form is loaded twice (e.g. to reply twice to the same comment),
 // their ids would clash. So their ids are made unique by appending a form no.
@@ -2179,7 +2158,7 @@ function $showRatingForm() {
       return $(this).val().toLowerCase();
     }).get();
 
-    $.post(Settings.makeRatePostUrl(debateId, postId),
+    $.post(Settings.makeRatePostUrl(debateId, rootPostId, postId),
           $rateForm.children('form').serialize(), function(recentChangesHtml) {
         updateDebate(recentChangesHtml);
         // Highligt the user's ratings.
@@ -2324,9 +2303,12 @@ function $showReplyForm(event, opt_where) {
   var $post = $thread.children('.dw-p');
   clearfix($thread); // ensures the reply appears nested inside the thread
   var postId = $post.attr('id').substr(8, 999); // drop initial "dw-post-"
+
   // Create a reply form, or Ajax-load it (depending on the Web framework
   // specifics).
-  Settings.replyFormLoader(debateId, postId, function($replyFormParent) {
+  Settings.replyFormLoader(debateId, rootPostId, postId,
+      function($replyFormParent) {
+
     var $replyForm = $replyFormParent.children('form');
     makeIdsUniqueUpdateLabels($replyForm);
     $replyForm.resizable({
@@ -2350,7 +2332,7 @@ function $showReplyForm(event, opt_where) {
 
     // Ajax-post reply on submit.
     $replyForm.submit(function() {
-      Settings.replyFormSubmitter($replyForm, debateId, postId)
+      Settings.replyFormSubmitter($replyForm, debateId, rootPostId, postId)
         .done(function(newDebateHtml) {
           // The server has replied. Merge in the data from the server
           // (i.e. the new post) in the debate.
@@ -2418,9 +2400,9 @@ function $showEditForm2() {
   var postId = $post.attr('id').substr(8, 999); // drop initial "dw-post-"
 
   // COULD move function to debiki-lift.js:
-  var editFormLoader = function(debateId, postId, complete) {
+  var editFormLoader = function(debateId, rootPostId, postId, complete) {
     // see comments in setReplyFormLoader above on using datatype text
-    $.get('?edit='+ postId, function(editFormText) {
+    $.get('?edit='+ postId +'&view='+ rootPostId, function(editFormText) {
       // Concerning filter(…): [0] and [2] are text nodes.
       var $editForm = $(editFormText).filter('form');
       makeIdsUniqueUpdateLabels($editForm, '#dw-ed-tab-');
@@ -2446,7 +2428,7 @@ function $showEditForm2() {
     return;
   }
 
-  editFormLoader(debateId, postId, function($editForm) {
+  editFormLoader(debateId, rootPostId, postId, function($editForm) {
     var $panels = $editForm.find('.dw-ed-tab');
     var $editPanel = $panels.filter('[id^="dw-ed-tab-edit"]');
     var $diffPanel = $panels.filter('[id^="dw-ed-tab-diff"]');
@@ -2566,7 +2548,7 @@ function $showEditForm2() {
 
     // Ajax-post edit on submit, and update the page with all recent changes.
     $editForm.submit(function() {
-      Settings.editFormSubmitter($editForm, debateId, postId,
+      Settings.editFormSubmitter($editForm, debateId, rootPostId, postId,
           function(newDebateHtml){
         slideAwayRemove($editForm);
         // If the edit was a *suggestion* only, the post body has not been
@@ -2654,7 +2636,8 @@ function $showEditsDialog() {
   var $postBody = $post.children('.dw-p-bdy');
   var postId = $post[0].id.substr(8, 999); // drop initial "dw-post-"
 
-  $.get('?viewedits='+ postId, 'text').fail(showServerResponseDialog)
+  $.get('?view='+ rootPostId +'&viewedits='+ postId, 'text')
+      .fail(showServerResponseDialog)
       .done(function(editsHtml) {
     var $editDlg = $(editsHtml).filter('form#dw-e-sgs'); // filter out text node
     var buttons = {
@@ -2900,7 +2883,9 @@ function $showEditForm() {
   $formWrap.hide(); // slide in later
   var postId = $post.attr('id').substr(8, 999); // drop initial "dw-post-"
 
-  Settings.editFormLoader(debateId, postId, function($editFormParent) {
+  Settings.editFormLoader(debateId, rootPostId, postId,
+      function($editFormParent) {
+
     var $editForm = $editFormParent.children('form');
     $formWrap.prepend($editFormParent);
 

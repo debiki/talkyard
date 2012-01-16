@@ -126,7 +126,6 @@ object Do {
   case object Act extends Do
   case object CreatePage extends Do
   case object CreatePageTemplate extends Do
-  case object ViewPageTemplate extends Do
   case object Reply extends Do
   case object Rate extends Do
   case object FlagPost extends Do
