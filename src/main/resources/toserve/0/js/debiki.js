@@ -797,9 +797,6 @@ function $initPostsThreadStep1() {
 
   // Open/close threads if the thread-info div is clicked.
   $thread.children('.dw-z').click($threadClose);
-
-  // Initially, hide edit suggestions.
-  $thread.children('.dw-ess, .dw-a-edit-new').hide();
 }
 
 // Things that can be done a while after page load.
@@ -2297,8 +2294,7 @@ function $showFlagForm() {
 // if the reply is an inline comment -- whichever is the case is determined
 // by event.target.
 function $showReplyForm(event, opt_where) {
-  // Warning: Some duplicated code, see .dw-rat-tag and
-  // dw-a-edit-new click() above.
+  // Warning: Some duplicated code, see .dw-rat-tag click() above.
   var $thread = $(this).closest('.dw-t');
   var $post = $thread.children('.dw-p');
   clearfix($thread); // ensures the reply appears nested inside the thread
@@ -2780,13 +2776,6 @@ function $showEditsDialog() {
 
 // ------- Editing
 
-// Shows edit suggestions and a new-suggestion button.
-function $showEditSuggestions() {
-  $(this).closest('.dw-t').children('.dw-ess, .dw-a-edit-new')
-      .stop(true,true)
-      .each($slideToggle);
-}
-
 // Invoke this function on a textarea or an edit suggestion.
 // It hides the closest post text and shows a diff of the-text-of-the-post
 // and $(this).val() or .text(). $removeEditDiff shows the post again.
@@ -2869,187 +2858,6 @@ function prettyHtmlFor(diffs) {
   }
   return html.join('');
 }
-
-// Shows a new edit suggestion form.
-function $showEditForm() {
-  var $thread = $(this).closest('.dw-t');
-  clearfix($thread); // makes edit area appear inside $thread
-  var $post = $thread.children('.dw-p');
-  // Create a div into which to load the edit <form>s -- the div class should
-  // match the edit form div's class, so the action-menu won't be displayed
-  // again until the request has completed and the edit form has been closed.
-  var $formWrap = $("<div class='dw-fs'></div>").insertAfter(
-      $thread.children('.dw-a:last'));//TODO: use $.get & update() instead
-  $formWrap.hide(); // slide in later
-  var postId = $post.attr('id').substr(8, 999); // drop initial "dw-post-"
-
-  Settings.editFormLoader(debateId, rootPostId, postId,
-      function($editFormParent) {
-
-    var $editForm = $editFormParent.children('form');
-    $formWrap.prepend($editFormParent);
-
-    // (Need not make ids unique; the post id was known when html generated.)
-
-    var $editDiv = $formWrap.find('.dw-fs-ed').hide(); // TODO? Remove `find'?
-    var $accordions = $editDiv.find('.dw-edits');
-
-    var $editsPendingForm = $editDiv.find('.dw-f-ed-others');
-    var $editsYoursForm = $editDiv.find('.dw-f-ed-new');
-    var $editsAppliedForm = $editDiv.find('.dw-f-ed-applied');
-
-    var $showEditsPendingBtn = $editDiv.find('.dw-f-ed-btn-show-pending');
-    var $showNewEditBtn = $editDiv.find('.dw-f-ed-btn-new-edit');
-    var $showEditsAppliedBtn = $editDiv.find('.dw-f-ed-btn-show-applied');
-
-    var $forms = $editsPendingForm.add($editsYoursForm).add($editsAppliedForm);
-    var $showBtns = $showEditsPendingBtn.add($showNewEditBtn).
-                                                    add($showEditsAppliedBtn);
-    var $editTextArea = $editsYoursForm.find('textarea');
-
-    $forms.addClass('ui-helper-clearfix');
-
-    // If there are any edits suggested, show them (or people will
-    // never understand they're supposed to vote them up/down).
-    // Otherwise, show the new-edit-suggestion form.
-    if ($editsPendingForm.length) $editsYoursForm.hide();
-    else $showNewEditBtn.hide();
-    $editsAppliedForm.hide();
-
-    // Unwrap, since the form must be a thread child (not grandchild)
-    // or the action menu will appear if hovering the post.
-    $editDiv.unwrap();
-
-    // Copy post text to edit-suggestion textarea.
-    var curText = '';
-    $post.find('.dw-p-bdy p').each(function(){
-          curText += $(this).text() + '\n\n'; });
-    $editTextArea.val(curText.trim() + '\n');
-
-    // Show and update a diff of the edits suggested.
-    // Remove the diff when the form loses focus.
-    var showDiff = function(){
-      $editTextArea.each($showEditDiff);
-    };
-    $editTextArea.bind('change keyup', showDiff); // updates diff
-    $editForm.mouseenter(showDiff);
-    // COULD: Hide diff when the form loses focus.
-    // But: mouseleave fires when focusing the textarea, although it's placed
-    // inside the form. So, right now, with the below line commented in,
-    // the diff will flicker visible/hidden annoyingly frequently.
-    //$editForm.mouseleave(function(){ $post.each($removeEditDiff); });
-
-    // On cancel, remove the diff.
-    $editForm.find('.dw-fi-cancel').click($removeEditDiff);
-
-    // Make forms and accordions resizable
-    $editsYoursForm.resizable({
-        alsoResize: $editTextArea,
-        resize: function(){
-          // (Need not resizeRootThread,
-          // since the $editDiv is not resized.)
-          $post.each(SVG.$drawParents);
-        }
-      });
-    $accordions.wrap("<div class='dw-resize-accordion' />");
-    $accordions.each(function(){
-      var $this = $(this);
-      var $accwrap = $this.parent();
-      $this.closest('form').resizable({
-          alsoResize: $accwrap,
-          resize: function(){ $this.accordion("resize"); },
-          // (Need not resizeRootThread,
-          // since the $editDiv is not resized.)
-          minHeight: 100
-        });
-    });
-
-    // Adjust dimensions.
-    var width = Math.min(400, $post.outerWidth()); // root post very wide
-    width = Math.max(250, width); // deeply nested posts too thin
-    $editDiv.css('width', '' + width + 'px');
-    $accordions.parent().css('height', '300px');
-
-    $showEditsPendingBtn.button().hide().click(function(){
-      $(this).slideUp();
-      $editsPendingForm.slideDown();
-      $accordions.accordion("resize"); // new element was made visible
-    });
-
-    $showNewEditBtn.button().click(function(){
-      $(this).slideUp();
-      $editsYoursForm.slideDown();
-    });
-
-    $showEditsAppliedBtn.button().click(function(){
-      $(this).slideUp();
-      $editsAppliedForm.slideDown();
-      $accordions.accordion("resize");
-    });
-
-    // Close forms, and show open-form buttons, on Cancel click.
-    // Remove the whole edit <div> if all forms are closed (not visible).
-    $forms.each(function(ix){
-      $(this).find('.dw-fi-cancel').click(function(){
-        $showBtns.slice(ix,ix+1).slideDown();
-        // results in weird bugs:
-        // $(this).closest('form').each($slideUp).queue(function(next){
-        $(this).closest('form').slideUp().queue(function(next){
-            if ($editsPendingForm.is(':visible') +
-                $editsYoursForm.is(':visible') +
-                $editsAppliedForm.is(':visible') === 0) {
-              slideAwayRemove($editDiv);
-            }
-            next();
-          });
-      });
-    });
-
-    // Fancy fancy
-    $editDiv.find(
-        "input[type='button'], input[type='submit'], input[type='radio']").
-        button();
-    $editDiv.find('label').addClass(
-      // color and font matching <input> buttons
-      'dw-ui-state-default-color dw-ui-widget-font');
-
-    // Reveal the form.
-    // Must be done before accordion() is invoked (below) otherwise
-    // jQuery UI (as of 1.8.2) will make it very small.
-    slideInActionForm($editDiv);
-
-    // Cannot use autoHeight, since other people's edit suggestions
-    // might be arbitrary long?
-    $accordions.each(function(){
-        var numElems = $(this).find('h4').length;
-        $(this).accordion(
-        { collapsible: true, active: (numElems === 1 ? 0 : false),
-          autoHeight: false, fillSpace: true, icons: false });
-      });
-  });
-}
-
-// ------- Edit anything, attempt 0
-
-// When clicking text, open a textarea, so the user can modify the text
-// and submit an edit suggestion.
-
-// TODO Fix font size, make edit area reasonably large.
-// TODO Add http://code.google.com/p/google-caja/wiki/JsHtmlSanitizer
-//   ?? via ttp://google-caja.googlecode.com/svn/maven/caja/caja/*/caja-*.jar
-// TODO Don't close textarea on click outside.
-// TODO Merge 2 textareas if they're next to each other.
-/*
-<script type="text/javascript" src="/classpath/0/js/jquery.jeditable.js" />
-
-$('.debiki p').editable('http://www.example.com/save.php', {
-  type      : 'textarea',
-  cancel    : 'Cancel',
-  submit    : 'Submit suggestion',
-  indicator : '<img src="img/indicator.gif">',
-  tooltip   : 'Click to edit...'
-});
-*/
 
 
 // ------- Delete comments
@@ -3820,8 +3628,6 @@ function registerEventHandlers() {
         $(this).find('.dw-ed-text').each($showEditDiff);
       })
       .delegate('.dw-ess', 'mouseleave', $removeEditDiff);
-
-  $('.debiki').delegate('.dw-a-edit-new', 'click', $showEditForm);
 
   initCreateForm();
 

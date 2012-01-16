@@ -73,7 +73,6 @@
  *  dw-a-reply    new reply
  *  dw-a-more     shows more actions: link/report/delete
  *  dw-a-edit     list edit suggestion
- *  dw-a-edit-new new edit suggestion
  *  dw-ess        edit suggestions --deprecated--
  *  dw-e-ap-dt    edit application date
  *  dw-e-sg-dt    edit suggestion date
@@ -1029,13 +1028,6 @@ until they've been moved into the .dw-bdy-blk > .dw-i-ts. */
 }
 
 .dw-es .dw-ed-at {
-}
-
-.dw-a-edit-new {
-  /* Move closer to the edit suggestions list
-  and push the below post further away, and indent 40px + 30px. */
-  margin: -13px 0 30px 70px;
-  display: block; /* or inlined */
 }
 
 /* === Forms === */
