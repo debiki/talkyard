@@ -584,7 +584,7 @@ class DebateHtml(val debate: Debate) {
     val postTitleXml: NodeSeq = {
       // Currently only the page body can have a title.
       if (post.id != Page.BodyId) Nil
-      else vipo.titlePost map { titlePost =>
+      else debate.titlePost map { titlePost =>
         // The title is a post, itself.
         // Therefore this XML is almost identical to the XML
         // for the post that this title entitles.

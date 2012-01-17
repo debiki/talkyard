@@ -2,7 +2,6 @@
 
 package com.debiki.v0
 
-import _root_.net.liftweb.common.{Box, Full, Empty, EmptyBox, Failure}
 import java.{util => ju}
 import collection.{immutable => imm, mutable => mut}
 import Prelude._
@@ -13,6 +12,8 @@ import FlagReason.FlagReason
 // Preparing to rename Debate to Page:
 object Page {
   val BodyId = "1"
+  val TitleId = "2"
+  val TemplateId = "3"
   type Page = Debate   // import Page.Page and type ": Page", not ": Debate"
 }
 
@@ -86,23 +87,17 @@ case class Debate (
   lazy val (
       // COULD rename postsByParentId to textByParentId.
       postsByParentId: imm.Map[String, List[Post]],
-      titlesByParentId: imm.Map[String, List[Post]],
       publsByParentId: imm.Map[String, List[Post]],
-      templatesByParentId: imm.Map[String, List[Post]],
       metaByParentId: imm.Map[String, List[Post]]
         ) = {
     // Add post -> replies/meta mappings to mutable multimaps.
     var postMap = mut.Map[String, mut.Set[Post]]()
-    var titleMap = mut.Map[String, mut.Set[Post]]()
     var publMap = mut.Map[String, mut.Set[Post]]()
-    var templMap = mut.Map[String, mut.Set[Post]]()
     var metaMap = mut.Map[String, mut.Set[Post]]()
     for (p <- posts) {
       val mmap = p.tyype match {
         case PostType.Text => postMap  // COULD rename to comment/text/artclMap
-        case PostType.Title => titleMap
         case PostType.Publish => publMap
-        case PostType.Template => templMap
         case PostType.Meta => metaMap
       }
       mmap.getOrElse(
@@ -121,11 +116,9 @@ case class Debate (
               )).toList: _*).withDefaultValue(Nil)
     }
     val immPostMap = buildImmMap(postMap)
-    val immTitleMap = buildImmMap(titleMap)
     val immPublMap = buildImmMap(publMap)
-    val immTemplMap = buildImmMap(templMap)
     val immMetaMap = buildImmMap(metaMap)
-    (immPostMap, immTitleMap, immPublMap, immTemplMap, immMetaMap)
+    (immPostMap, immPublMap, immMetaMap)
   }
 
   private class RatingCacheItem {
@@ -168,19 +161,16 @@ case class Debate (
   def body_! = vipo_!(PageBodyId)
 
   /** The page title if any. */
-  def titlePost: Option[ViPo] = body.flatMap(_.titlePost)
+  def titlePost: Option[ViPo] = vipo(Page.TitleId)
 
   /** The page title, as plain text. */
-  def titleText: Option[String] = body.flatMap(_.titleText)
+  def titleText: Option[String] = titlePost.map(_.text)
 
   /** The page title, as XML. */
   //def titleXml: Option[xml.Node] = body.flatMap(_.titleXml)
 
   /** A Post with template engine source code, for the whole page. */
-  def pageTemplatePost: Option[ViPo] = body.flatMap(_.templatePost)
-
-  /** The id of any page template post. */
-  def pageTemplateId: Option[String] = pageTemplatePost.map(_.id)
+  def pageTemplatePost: Option[ViPo] = vipo(Page.TemplateId)
 
   /** If there is a page template for this page,
    * returns its template source. */
@@ -191,7 +181,7 @@ case class Debate (
   // ====== Older stuff below (everything in use though!) ======
 
   // Instead of the stuff below, simply use
-  //   postsById  /  titlesById  /  etc.
+  //   postsById  /  publsById  /  etc.
   // and place utility functions in NiPo.
 
 
@@ -478,34 +468,12 @@ class ViPo(debate: Debate, val post: Post) extends ViAc(debate, post) {
 
   lazy val lastEditApp = editsAppdDesc.headOption.map(_._2)
 
-  /** The title of this Post, all edits of the original title
-   *  taken into account. If there are many titles, only the oldest matters.
-   */
-  lazy val titlePost: Option[ViPo] = {
-    // Warning! duplicated code, see `templatePost' and `publd'
-    // COULD create one function for all these 3?
-    if (titlePosts isEmpty) None
-    else {
-      // For now, don't consider deletions of titles, and assume all titles
-      // are published.
-      Some(new ViPo(debate, titlePosts.head))
-    }
-  }
-
-  def titleText: Option[String] = titlePost.map(_.text)
-
-  /** All titles assigned to this post -- only the first (w.r.t. its ctime)
-   *  non-deleted title has any effect.
-   */
-  lazy val titlePosts: List[Post] = debate.titlesByParentId(id)
-
   /** Whether or not this Post has been published.
    *
    *  If the root post is published, then the whole page is published.
    *  If a comment is published, then it's been approved (it's not spam).
    */
   lazy val publd: Option[Boolean] = {
-    // Warning! duplicated code, see `titlePost' and `templatePost'
     if (publs isEmpty) None
     else Some(true)  // for now, don't consider deletions of publications
   }
@@ -513,14 +481,6 @@ class ViPo(debate: Debate, val post: Post) extends ViAc(debate, post) {
   /** Only the first (w.r.t. its ctime) non-deleted publication has any effect.
    */
   lazy val publs: List[Post] = debate.publsByParentId(id)
-
-  lazy val templatePosts: List[Post] = debate.templatesByParentId(id)
-  lazy val templatePost: Option[ViPo] = {
-    // Warning! duplicated code, see `titlePost' and `publd'
-    if (templatePosts isEmpty) None
-    else Some(new ViPo(debate, templatePosts.head))
-  }
-  lazy val templateText = templatePost.map(_.text)
 
   // COULD optimize this, do once for all flags.
   lazy val flags = debate.flags.filter(_.postId == post.id)
@@ -617,23 +577,12 @@ object PostType {
   /** A blog post, or forum questiom or comment. */
   case object Text extends PostType
 
-  /** The title of something.
-   *
-   * Effects:
-   * On the Page.body post: Becomes the page title
-   */
-  case object Title extends PostType
-
   /** Edits a Post.text. */
   //case object Edit extends PostType
 
   /** Makes an Action suggestion take effect.
    */
   case object Publish extends PostType
-
-  /** A template source page, for usage by a template engine.
-   */
-  case object Template extends PostType
 
   /** Meta information describes another Post. */
   // COULD use dedicated PostType:s instead, then the computer/database
@@ -837,23 +786,20 @@ object PageRoot {
     def findChildrenIn(page: Debate): List[Post] = page.repliesTo(id)
   }
 
-  /** The page template in use, if any. */
-  case object PageTemplate extends PageRoot {
-    val id = "template"
-
-    def findOrCreatePostIn(page: Debate): Option[ViPo] =
-      page.pageTemplatePost
-
-    def findChildrenIn(page: Debate): List[Post] =
-      page.pageTemplatePost.map(p => page.repliesTo(p.id)).getOrElse(Nil)
-  }
+  // In the future, something like this:
+  // case class FlaggedPosts -- creates a virtual root post, with all
+  // posts-with-flags as its children.
+  // And lots of other virtual roots that provide whatever info on
+  // the page?
 
   def apply(id: String): PageRoot = {
     id match {
-      case PageTemplate.id => PageTemplate
       case null => assErr("Id is null [debiki_error_0392kr53]")
       // COULD check if `id' is invalid, e.g.contains a hyphen,
       // and if so show an error page root post.
+      case "" => Real(Page.BodyId)  // the default, if nothing specified
+      case "title" => Real(Page.TitleId)
+      case "template" => Real(Page.TemplateId)
       case id => Real(id)
     }
   }

@@ -125,7 +125,6 @@ object Do {
 
   case object Act extends Do
   case object CreatePage extends Do
-  case object CreatePageTemplate extends Do
   case object Reply extends Do
   case object Rate extends Do
   case object FlagPost extends Do
@@ -177,13 +176,13 @@ case class PermsOnPage(
 
   /** As of right now, templates are dangerous: they can include CSS
    * and Javascript. */
-  val createPageTemplate: Boolean = false,
+  val editPageTemplate: Boolean = false,
 
   //val replyVisible: Boolean = false
   //val replyHidden: Boolean = false  // will be reviewed later
   //val giveFeedback: Boolean = false  // only shown to article author & editors
 
-  /** Edit the root post, i.e. the blog article, if this is a blog post. */
+  /** Edit the page body and title. */
   val editPage: Boolean = false,
 
   /** Edit all users' replies. */
