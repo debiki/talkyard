@@ -21,8 +21,8 @@ abstract class DaoSpi {
 
   def saveLogout(loginId: String, logoutIp: String)
 
-  def savePageActions[T](tenantId: String, debateId: String, xs: List[T]
-                            ): Box[List[T]]
+  def savePageActions[T <: Action](
+    tenantId: String, debateId: String, xs: List[T]): Box[List[T]]
 
   def loadPage(tenantId: String, debateId: String): Box[Debate]
 
@@ -112,8 +112,8 @@ abstract class Dao {
   def saveLogout(loginId: String, logoutIp: String) =
     _spi.saveLogout(loginId, logoutIp)
 
-  def savePageActions[T](tenantId: String, debateId: String, xs: List[T]
-                            ): Box[List[T]] =
+  def savePageActions[T <: Action](
+        tenantId: String, debateId: String, xs: List[T]): Box[List[T]] =
     _spi.savePageActions(tenantId, debateId, xs)
 
   def loadPage(tenantId: String, debateId: String): Box[Debate] =
@@ -218,8 +218,8 @@ class CachingDao(spi: DaoSpi) extends Dao {
     }
   }
 
-  override def savePageActions[T](tenantId: String, debateId: String,
-                                  xs: List[T]): Box[List[T]] = {
+  override def savePageActions[T <: Action](
+      tenantId: String, debateId: String, xs: List[T]): Box[List[T]] = {
     for (xsWithIds <- _spi.savePageActions(tenantId, debateId, xs)) yield {
       val key = Key(tenantId, debateId)
       var replaced = false

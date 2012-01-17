@@ -31,29 +31,25 @@ object Debate {
     Debate(guid, logins, identities, users) ++ actions
   }
 
-  /** Assigns ids to actions and updates references from Edits to Posts.
-   *  Does not remap the id of post "1", i.e. the root post.
-   *  COULD remap only IDs starting with "?" or being empty ""?
+  /** Assigns ids to actions and updates references from e.g. Edits to Posts.
+   *  Only remaps IDs that start with "?".
    */
-  def assignIdsTo(xs: List[AnyRef]): List[AnyRef] = {
+  def assignIdsTo[T <: Action](actionsToRemap: List[T]): List[T] = {
     val remaps = mut.Map[String, String]()
-    def remap(id: String) {
-      require(!remaps.contains(id))
-      remaps(id) = nextRandomString()
+
+    // Generate new ids.
+    actionsToRemap foreach { a: T =>
+      require(!remaps.contains(a.id)) // each action must be remapped only once
+      remaps(a.id) =
+          if (a.id.first == '?') nextRandomString()
+          else a.id
     }
-    // Generate new ids, and check for foreign objects.
-    xs foreach (_ match {
-      case p: Post => remaps(p.id) = if (p.id == PageBodyId) p.id
-                                     else nextRandomString()
-      case a: Action => remap(a.id)
-      case x => assErr(  // Can this check be done at compile time instead?
-        // Yes if I let EditApp extend Action.
-        "Cannot remap ids for `"+ classNameOf(x) +"' [debiki_error_p8kKck3T]")
-    })
+
     // Remap ids, and update references to ids.
     // (Can this be done in a generic manner: once `case' for most Action:s?)
+    // Yes, if I introduce Action.parentId and targetId and destId.)
     def rmpd(id: String) = remaps.getOrElse(id, id)
-    val xs2: List[AnyRef] = xs map (_ match {
+    def updateIds(action: T): T = (action match {
       case p: Post => p.copy(id = remaps(p.id), parent = rmpd(p.parent))
       case r: Rating => r.copy(id = remaps(r.id), postId = rmpd(r.postId))
       case f: Flag => f.copy(id = remaps(f.id), postId = rmpd(f.postId))
@@ -61,9 +57,12 @@ object Debate {
       case a: EditApp => a.copy(id = remaps(a.id), editId = rmpd(a.editId))
       case d: Delete => d.copy(id = remaps(d.id), postId = rmpd(d.postId))
       case x => assErr("[debiki_error_3RSEKRS]")
-    })
-    xs2
+    }).asInstanceOf[T]
+    val actionsRemapped: List[T] = actionsToRemap map updateIds
+
+    actionsRemapped
   }
+
 }
 
 
