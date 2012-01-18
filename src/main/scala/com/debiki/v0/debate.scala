@@ -768,6 +768,7 @@ sealed abstract class PageRoot {
   def id: String
   def findOrCreatePostIn(page: Debate): Option[ViPo]
   def findChildrenIn(page: Debate): List[Post]
+  def isPageTemplate: Boolean = id == Page.TemplateId
 }
 
 
