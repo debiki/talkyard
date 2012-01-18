@@ -9,24 +9,17 @@ import _root_.scala.xml.{Node, NodeSeq, Text}
 import _root_.scala.util.matching.Regex
 import Page.Page
 import Prelude._
+import com.debiki.v0.TemplateToExtend.ExtendParentFolderTmpl
 
 
-// If I add more engines, then perhaps this'd be useful:
 /** A template source page for some Web template engine.
-sealed abstract class TemplateSource {
-}
  */
-
-
-sealed abstract class TemplateToExtend
-
-object TemplateToExtend {
-  case object ExtendParentFolderTmpl extends TemplateToExtend
-  case object ExtendNoTemplate extends TemplateToExtend
-  case class ExtendSpecificTmpl(path: String) extends TemplateToExtend
+trait TemplateSource {
+  /** Configuration values. */
+  def params: TemplateParams
+  /** The html source for this template. */
+  def html: NodeSeq
 }
-
-import TemplateToExtend._
 
 
 case object TemplateSrcHtml {
@@ -60,7 +53,7 @@ case object TemplateSrcHtml {
  *       ...
  *     </html>
  */
-case class TemplateSrcHtml(post: ViPo) {
+case class TemplateSrcHtml(post: ViPo) extends TemplateSource {
 
   // A regex that splits on the end-of-Yaml-document indicator, '---'.
   // More exactly, split on: (newline)---(newline)(whitespace)(<)
@@ -79,8 +72,7 @@ case class TemplateSrcHtml(post: ViPo) {
   val commentLineRegex = """(?m)^[ \t]*#.*$""".r
 
   lazy val (
-    /** Which parent template this page should be included in. */
-    templateToExtend: TemplateToExtend,
+    params: TemplateParams,
     /** The html source for this template. */
     html: NodeSeq
   ) = {
@@ -108,15 +100,21 @@ case class TemplateSrcHtml(post: ViPo) {
     // (( "(?m)" turns on multiline mode, so '^' matches not only the start
     // of the document, but also the start of a new line, Apparently, "(?m)"
     // doesn't count as a match group, so "(\w)" is the first group, 1. ))
-    val templToExtend = ("""(?m)^extend: *(\S+)$""".r findFirstMatchIn yamlSrc
-                        ).map(_.group(1)) match {
-      case Some("no-template") => ExtendNoTemplate
-      case Some(path) =>
-        // Could ensure any template contains some '/' or it's an error
-        // for sure?
-        // ExtendSpecificTmpl(path)
-        unimplemented("Extending specific template [debiki_error_6y8Cw35]")
-      case None => ExtendParentFolderTmpl
+    val params = new TemplateParamsMutable
+    ("""(?m)^(\w+): *(\S+)$""".r findAllIn yamlSrc
+        ).matchData foreach { matsh =>
+      val paramName = matsh.group(1)
+      val paramValue = matsh.group(2)
+      paramName match {
+        case CommentVisibility.ParamName =>
+          params.commentVisibility = Some(CommentVisibility.parse(paramValue))
+        case TemplateToExtend.ParamName =>
+          params.templateToExtend = Some(TemplateToExtend.parse(paramValue))
+        case badParam =>
+          // For now, die.
+          runtimeErr(
+            "Invalid template parameter: "+ safed(badParam),"DwE33UR5")
+      }
     }
 
     val html: NodeSeq = {
@@ -126,7 +124,7 @@ case class TemplateSrcHtml(post: ViPo) {
       else Nil
     }
 
-    (templToExtend, html)
+    (params.toImmutable, html)
   }
 }
 
