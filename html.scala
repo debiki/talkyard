@@ -25,8 +25,6 @@ abstract class HtmlConfig {
   def replyAction = ""
   def rateAction = ""
   def flagAction = ""
-  def editAction = ""
-  def deleteAction = ""
   def loginActionSimple = ""
   def loginActionOpenId = ""
   def loginOkAction = ""
@@ -722,7 +720,7 @@ class FormHtml(val config: HtmlConfig, val pageRoot: PageRoot,
       replyForm() ++
       ratingForm ++
       flagForm ++
-      deleteForm }
+      deleteForm(None) }
     </div>
 
   def loginForms =
@@ -1117,12 +1115,12 @@ class FormHtml(val config: HtmlConfig, val pageRoot: PageRoot,
     </form>
   }
 
-  def editForm(newText: String, oldText: String, curMarkup: String,
-               userName: Box[String], isForTitle: Boolean) = {
+  def editForm(postToEdit: ViPo, newText: String, userName: Box[String]) = {
     import Edit.{InputNames => Inp}
+    val isForTitle = postToEdit.id == Page.TitleId
     val submitBtnText = "Save as "+ userName.openOr("...")
     <form class='dw-f dw-f-ed'
-          action={_viewRoot + config.editAction}
+          action={_viewRoot +"edit="+ postToEdit.id}
           accept-charset='UTF-8'
           method='post'>
       { _xsrfToken }
@@ -1131,8 +1129,10 @@ class FormHtml(val config: HtmlConfig, val pageRoot: PageRoot,
       <div class='dw-f-e-mup dw-adv'>
         <label for={Inp.Markup}>Markup: </label>
         <select id={Inp.Markup} name={Inp.Markup}>{
-          // Place the current markup first in a list of all markups.
-          val markupsSorted = Markup.All.sortWith((a, b) => a.id == curMarkup)
+          // List supported markup languages.
+          // Place the current markup first in the list.
+          val markupsSorted =
+            Markup.All.sortWith((a, b) => a.id == postToEdit.markup)
           val current = markupsSorted.head
           <option value={current.id} selected='selected'>{
             current.prettyName +" – in use"}</option> ++
@@ -1160,8 +1160,8 @@ class FormHtml(val config: HtmlConfig, val pageRoot: PageRoot,
         </div>
         { // In debiki.js, updateEditFormDiff() uses textarea.val()
           // (i.e. newText) if there's no .dw-ed-src-old tag.
-          if (oldText == newText) Nil
-          else <pre class='dw-ed-src-old'>{oldText}</pre> }
+          if (postToEdit.text == newText) Nil
+          else <pre class='dw-ed-src-old'>{postToEdit.text}</pre> }
       </div>
       { termsAgreement("Save as ...") }
       <div class='dw-submit-set'>
@@ -1176,9 +1176,13 @@ class FormHtml(val config: HtmlConfig, val pageRoot: PageRoot,
     </form>
   }
 
-  def deleteForm =
+  def deleteForm(postToDelete: Option[ViPo]): NodeSeq = {
+    val deleteAction =
+      if (postToDelete.isDefined) "delete="+ postToDelete.get.id
+      else "" // Javascript will fill in post id, do nothing here
+
     <div class='dw-fs' title='Delete Comment'>
-      <form id='dw-f-dl' action={_viewRoot + config.deleteAction}
+      <form id='dw-f-dl' action={_viewRoot + deleteAction}
             accept-charset='UTF-8' method='post'>{
         import Delete.{InputNames => Inp}
         val deleteTreeLabel = "Delete replies too"
@@ -1200,6 +1204,7 @@ class FormHtml(val config: HtmlConfig, val pageRoot: PageRoot,
       }
       </form>
     </div>
+  }
 
   /*
   def timeWaistWarning(action: String, is: String): NodeSeq = {
