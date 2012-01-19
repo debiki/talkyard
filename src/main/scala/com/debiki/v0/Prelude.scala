@@ -44,10 +44,18 @@ object Prelude {
 
   import java.lang.{UnsupportedOperationException => UOE}
 
+  // Error codes should be formatted like so:
+  // "DwE<number><alnum x 3><number>", e.g. "DwE8kR32".
+  // But "debiki_error_<guid>" is deprecated (too verbose).
+
   def unsupported = throw new UOE
   def unsupported(what: String) = throw new UOE(what)
+  def unsupported(what: String, errorCode: String) =
+    throw new UOE(what +" [error code "+ errorCode +"]")
   def unimplemented = throw new UOE("Not implemented")
   def unimplemented(what: String) = throw new UOE("Not implemented: "+ what)
+  def unimplemented(what: String, errorCode: String) =
+    throw new UOE("Not implemented: "+ what +" [error code "+ errorCode +"]")
   def unimplementedIf(condition: Boolean, what: String) =
     if (condition) unimplemented(what)
 
@@ -63,8 +71,14 @@ object Prelude {
   def TODO = ()  // Do this, or people might notice and complain.
   def COULD = ()  // Could do this, but it's not that important.
 
+  def runtimeErr(problem: => String, errorCode: String) =
+    throw new RuntimeException(problem +" [error code "+ errorCode +"]")
+
   def errorIf(condition: Boolean, problem: String) =
     if (condition) throw new RuntimeException(problem)
+
+  def runtimeErrIf(condition: Boolean, problem: => String, errorCode: String) =
+    if (condition) runtimeErr(problem, errorCode)
 
   def assertionError(problem: String) =
     throw new AssertionError(problem)
@@ -72,14 +86,28 @@ object Prelude {
   def assErr(problem: String) =
     throw new AssertionError(problem)
 
+  def assrtErr(errorCode: String) =
+    throw new AssertionError("[error code "+ errorCode +"]")
+
+  // Deprecated -- remove
   def assErrIf(condition: Boolean, problem: String) =
     if (condition) throw new AssertionError(problem)
+
+  def assrtErrIf(condition: Boolean, errorCode: String) =
+    if (condition) assrtErr(errorCode)
 
   def illegalArg(problem: String) =
     throw new IllegalArgumentException(problem)
 
+  def illArgErr(problem: => String, errorCode: String) =
+    throw new IllegalArgumentException(problem +
+        " [error code "+ errorCode +"]")
+
   def illegalArgIf(condition: Boolean, problem: String) =
     if (condition) throw new IllegalArgumentException(problem)
+
+  def illArgErrIf(condition: Boolean, problem: => String, errorCode: String) =
+    if (condition) illArgErr(problem, errorCode)
 
   /** Converts {@code text} to a single line printable ASCII, not very long,
    *  so it can be included in an error message even if it is end user defined
