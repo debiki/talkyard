@@ -2469,7 +2469,7 @@ function $showEditForm2() {
       $previewBtn.hide();
     }
 
-    // This makes the edit form at least as high as the post.
+    // We'll make the tab panels at least as high as the post.
     var lastPanelHeight = $postBody.height();
 
     // Update the preview, if the markup type is changed.
@@ -2502,6 +2502,8 @@ function $showEditForm2() {
         // Don't reduce the form heigt, because if the form is at the
         // very bottom of the screen, everything would jump downwards
         // when the browser window shrinks.
+        // [[later: Jump downwards, and vanish outside the browser window?
+        // was that what happened?]]
         $panel.height('auto');
         if (lastPanelHeight > $panel.height()) {
           // jQuery UI shows the panels before the `show' event is triggered,
@@ -2514,8 +2516,15 @@ function $showEditForm2() {
           // (COULD make this work also if a panel is resized dynamically,
           // whilst open — right now the other panels won't be resized.)
           $panels.height(lastPanelHeight);
-        } else {
+        } else if (!$post.parent().is('.dw-depth-0')) {
+          // [Don't let the edit form become shorter — if it's at the bottom
+          // everyting might jump downwards a bit, and vanish a bit?
+          // Or what was the problem I don't remember.]
           lastPanelHeight = $panel.height();
+        } else {
+          // Don't upsize the root post's edit/diff/preview tab panels,
+          // they tend to become rather tall — and we know they aren't
+          // at the bottom of the screen.
         }
       }
     });
