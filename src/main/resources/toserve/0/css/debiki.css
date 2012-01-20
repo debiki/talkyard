@@ -213,36 +213,36 @@ header.dw-p-ttl > h1 {
 
 
 /* Other titles */
-.dw-depth-0 > .dw-p > .dw-f-ed .dw-ed-tab-preview > h1,
-.dw-depth-0 > .dw-p > .dw-p-bdy > div.dw-p-bdy-blk > h1 {
+.dw-depth-0 > .dw-p > .dw-f-ed .dw-p-bdy-blk > h1,
+.dw-depth-0 > .dw-p > .dw-p-bdy > .dw-p-bdy-blk > h1 {
   font-size: 28px;
   margin: 26px 0 15px !important;
   padding: 0;
   color: #42525E;
 }
-.dw-depth-0 > .dw-p > .dw-f-ed .dw-ed-tab-preview > h2,
-.dw-depth-0 > .dw-p > .dw-p-bdy > div.dw-p-bdy-blk > h2 {
+.dw-depth-0 > .dw-p > .dw-f-ed .dw-p-bdy-blk > h2,
+.dw-depth-0 > .dw-p > .dw-p-bdy > .dw-p-bdy-blk > h2 {
   font-size: 24px;
   color: #28323B;
   margin: 26px 0 18px 0 !important;
 }
-.dw-depth-0 > .dw-p > .dw-f-ed .dw-ed-tab-preview > h3,
-.dw-depth-0 > .dw-p > .dw-p-bdy > div.dw-p-bdy-blk > h3 {
+.dw-depth-0 > .dw-p > .dw-f-ed .dw-p-bdy-blk > h3,
+.dw-depth-0 > .dw-p > .dw-p-bdy > .dw-p-bdy-blk > h3 {
   font-size: 18px;
   font-weight: bold;
 }
-.dw-depth-0 > .dw-p > .dw-f-ed .dw-ed-tab-preview > h4,
-.dw-depth-0 > .dw-p > .dw-p-bdy > div.dw-p-bdy-blk > h4 {
+.dw-depth-0 > .dw-p > .dw-f-ed .dw-p-bdy-blk > h4,
+.dw-depth-0 > .dw-p > .dw-p-bdy > .dw-p-bdy-blk > h4 {
   font-size: 16px;
   font-weight: bold;
 }
-.dw-depth-0 > .dw-p > .dw-f-ed .dw-ed-tab-preview > h5,
-.dw-depth-0 > .dw-p > .dw-p-bdy > div.dw-p-bdy-blk > h5 {
+.dw-depth-0 > .dw-p > .dw-f-ed .dw-p-bdy-blk > h5,
+.dw-depth-0 > .dw-p > .dw-p-bdy > .dw-p-bdy-blk > h5 {
   font-size: 12px;
   font-weight: bold;
 }
-.dw-depth-0 > .dw-p > .dw-f-ed .dw-ed-tab-preview > h6,
-.dw-depth-0 > .dw-p > .dw-p-bdy > div.dw-p-bdy-blk > h6 {
+.dw-depth-0 > .dw-p > .dw-f-ed .dw-p-bdy-blk > h6,
+.dw-depth-0 > .dw-p > .dw-p-bdy > .dw-p-bdy-blk > h6 {
   font-size: 11px;
   font-weight: normal;
   text-decoration: underline;
@@ -253,6 +253,7 @@ header.dw-p-ttl > h1 {
   margin: 0;
 }
 
+.dw-t.dw-depth-0 > .dw-p > .dw-f-ed .dw-p-bdy-blk > p,
 .dw-t.dw-depth-0 > .dw-p > .dw-p-bdy > .dw-p-bdy-blk > p,
 .dw-t.dw-p-art-qst > .dw-p > .dw-p-bdy > .dw-p-bdy-blk > p {
   line-height: 20px;
@@ -260,23 +261,19 @@ header.dw-p-ttl > h1 {
 }
 
 /* Show list item marks, but not for nested threads. */
-.dw-ed-tab-preview ul li,
 .dw-p-bdy-blk ul li {
   list-style-type: disc;
   margin-left: 2.5em;
 }
-.dw-ed-tab-preview ol li,
 .dw-p-bdy-blk ol li {
   list-style-type: decimal;
   margin-left: 2.5em;
 }
 
-.dw-ed-tab-preview > pre,
 .dw-p-bdy-blk > pre {
   font-size: 12px; /* or unreadably small */
 }
 
-.dw-ed-tab-preview img,
 .dw-p-bdy-blk img {
   width: 100%;
   display: block; /* TODO inline those with no \n\n inbetween preceeding text */
@@ -334,7 +331,7 @@ jQuery UI's dialgos. Might that be incompatible with other libs? */
   padding-bottom: 0.8em; /* litte more airy? first post */
 }
 
-.dw-depth-0.dw-t > .dw-p > .dw-f-ed .dw-ed-tab-preview,
+.dw-depth-0.dw-t > .dw-p > .dw-f-ed .dw-p-bdy-blk,
 .dw-depth-0.dw-t > .dw-p > .dw-p-bdy > .dw-p-bdy-blk,
 .dw-t:not(.dw-depth-1) .dw-p-bdy-bkl {
   line-height: 165%; /* higher height makes the main post easier to read */
@@ -384,11 +381,22 @@ jQuery UI's dialgos. Might that be incompatible with other libs? */
   background-color: #fcfaf5; /* (see above) match form background */
 }
 
-.dw-ed-tab,
+/* Adjus post width. */
+/* ... Don't span whole screen even if .post.cropped-e is removed. */
 .dw-p-bdy-blk {
-  /* Don't span whole screen even if .post.cropped-e is removed. */
   max-width: 35em;
 }
+/* ... But the root post may be wide. */
+.dw-depth-0 > .dw-p > .dw-f-ed .dw-p-bdy-blk,
+.dw-depth-0 > .dw-p > .dw-p-bdy > .dw-p-bdy-blk {
+  max-width: none;
+}
+/* ... However now the edit form might get as wide as the root post, unless: */
+.dw-depth-0 > .dw-p > .dw-f-ed .dw-e-tabs {
+  float: left;
+}
+
+
 
 /* Make the s,n,e,w handles larger (else hard to drag) and place them
 1 layer below the .ui-resizable-se handle (see above),
@@ -1392,6 +1400,16 @@ it works everywhere, even if it works fine for you. */
 .dw-pri .dw-f-ed .dw-ed-tab {
   border: 1px solid #bbb;
   padding: 1.4em 0.3em 1em 1.2em;
+}
+/* ... undo padding for root post preview: */
+.dw-depth-0 > .dw-p > .dw-f-ed .dw-ed-tab-preview {
+  padding: 1em;
+}
+
+/* The root post has no width restriction on .dw-e-tabs */
+.dw-depth-0 > .dw-p > .dw-f-ed .dw-e-tabs > .dw-ed-tab-edit,
+.dw-depth-0 > .dw-p > .dw-f-ed .dw-e-tabs > .dw-ed-tab-diff {
+  width: 800px;
 }
 
 .dw-pri .dw-f-ed .dw-ed-tab-edit textarea {

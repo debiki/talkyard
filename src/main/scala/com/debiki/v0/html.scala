@@ -1142,7 +1142,7 @@ class FormHtml(val config: HtmlConfig, val pageRoot: PageRoot,
         }
         </select>
       </div>
-      <div id='dw-ed-tabs'>
+      <div id='dw-ed-tabs' class='dw-e-tabs'>
         <ul>
           <li><a href='#dw-ed-tab-edit'>Edit</a></li>
           <li><a href='#dw-ed-tab-diff'>Diff</a></li>
@@ -1155,6 +1155,7 @@ class FormHtml(val config: HtmlConfig, val pageRoot: PageRoot,
           }</textarea>
         </div>
         <div id='dw-ed-tab-preview' class='dw-ed-tab dw-ed-tab-preview'>
+          <div class='dw-p-bdy-blk'/>
         </div>
         <div id='dw-ed-tab-diff' class='dw-ed-tab dw-ed-tab-diff'>
         </div>
