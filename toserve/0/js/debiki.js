@@ -130,17 +130,17 @@ Settings.replyFormLoader = function(debateId, rootPostId, postId, complete) {
 
 Settings.replyFormSubmitter = function(debateId, rootPostId, postId) {
   // By default, post no reply.
-  alert("Cannot post reply. [debiki_error_85ei23rnir]");
+  alert("Cannot post reply. [error DwE85ei23rnir]");
 };
 
 Settings.editFormLoader = function(debateId, postId, complete) {
-  alert('Edits not implemented. [debiki_error_239sx8]');
+  alert('Edits not implemented. [error DwE239sx8]');
 };
 
 Settings.editFormSubmitter = function($form, debateId, rootPostId,
     postId, complete) {
   // By default, post no reply.
-  alert("Edits not implemented. [debiki_error_19x3g35]");
+  alert("Edits not implemented. [error DwE19x3g35]");
 };
 
 Settings.draggableInternal =
@@ -423,7 +423,7 @@ function $findMaxInlineWidthHoriz() {
       var width = Math.max(outerWidth, fluffWidth + maxChildWidth);
       accWidth += width;
     }
-    else die('[debiki_error_0kRK125]');
+    else die('[error DwE0kRK125]');
     if (accWidth > maxWidth) maxWidth = accWidth;
   });
   return maxWidth;
@@ -1005,7 +1005,7 @@ function $placeInlineMarks() {
     var $parentThread = $(this).parent().closest('.dw-t');
     var $bodyBlock = $parentThread.find(
         '> .dw-p > .dw-p-bdy > .dw-p-bdy-blk');
-    bugIf($bodyBlock.length !== 1, 'debiki_error_6kiJ08');
+    bugIf($bodyBlock.length !== 1, 'error DwE6kiJ08');
     var tagDogText = tagDog.sniffHtml($bodyBlock);
     var loc = 10; // TODO should be included in the data attr
     if (markStartText.length > tagDog.maxMatchLength) {
@@ -1275,9 +1275,9 @@ function $showInlineActionMenu(event) {
     // Find out where to place the relevant form.
     // This must be done when the -bdy has been split into -bdy-blks.
     var elem = $focusNonText.closest('.dw-p-bdy-blk')
-          .dwBugIfEmpty('debiki_error_6u5962rf3')
+          .dwBugIfEmpty('error DwE6u5962rf3')
           .next('.dw-i-ts')
-          .dwBugIfEmpty('debiki_error_17923xstq');
+          .dwBugIfEmpty('error DwE17923xstq');
 
     if (isTextNode) {
       // Insert a magic token where the mouse was clicked.
@@ -1330,7 +1330,7 @@ function $showInlineActionMenu(event) {
         elem: elem
       };
     } else {
-      die('[debiki_error_09k12rs52]'); // dead code
+      die('[error DwE09k12rs52]'); // dead code
     }
   };
 
@@ -2074,12 +2074,12 @@ function submitLoginInPopup($openidLoginForm) {
       // login dialog; when I click "No thanks", Google says:
       // "openid.mode=cancel&
       //  openid.ns=http%3A%2F%2Fspecs.openid.net%2Fauth%2F2.0"
-      errorMsg = 'You cancelled the login process? [debiki_error_89k5gwJm43]';
+      errorMsg = 'You cancelled the login process? [error DwE89GwJm43]';
     } else if (result.status === 'LoginFailed') {
       // User closed popup window?
-      errorMsg = 'You closed the login window? [debiki_error_5k33rs83k0]';
+      errorMsg = 'You closed the login window? [error DwE5k33rs83k0]';
     } else if (result.status !== 'LoginOk') {
-      errorMsg = 'Unknown login problem [debiki_error_3kirsrts12d]';
+      errorMsg = 'Unknown login problem [error DwE3kirsrts12d]';
     } else {
       // Login OK
       // {{{ The queryString is e.g. …
@@ -2504,7 +2504,7 @@ function $showEditForm2() {
             $fun = $updateEditFormPreview;
             showSaveBtnHidePreview();
             break;
-          default: die('[debiki_error_4krERS]');
+          default: die('[error DwE4krERS]');
         };
         $(this).each($fun);
 
@@ -2635,7 +2635,7 @@ function $updateEditFormPreview() {
       htmlSafe = sanitizeHtml(markupSrc);
       break;
     default:
-      die("Unknown markup [debiki_error_0k3w25]");
+      die("Unknown markup [error DwE0k3w25]");
   }
 
   $previewTab.html(htmlSafe);
@@ -3034,7 +3034,7 @@ function makeSvgDrawer() {
     var $root = $elem.closest('.dw-svg-parent').children('svg');
     if (!$root.length)
       $root = $elem.closest('.dw-svg-gparnt').find('> .dw-svg-parent > svg');
-    dieIf(!$root.length, 'No SVG root found [debiki_error_84362qwkghd]');
+    dieIf(!$root.length, 'No SVG root found [error DwE84362qwkghd]');
     return $root;
   }
 
@@ -3565,7 +3565,7 @@ function buildTagFind(html, selector) {
 // Builds HTML tags from `html' and returns the tag with the specified id.
 // Works also when $.find('#id') won't (because of corrupt XML?).
 function buildTagFindId(html, id) {
-  if (id.indexOf('#') !== -1) die('Include no # in id [debiki_error_985x2jh]');
+  if (id.indexOf('#') !== -1) die('Include no # in id [error DwE85x2jh]');
   var $tag = buildTagFind(html, '[id="'+ id +'"]');
   return $tag;
 }
