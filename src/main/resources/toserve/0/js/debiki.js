@@ -186,7 +186,16 @@ Debiki.v0.makeDragscrollable = function(selectors) {
 
 // Shows all comments, which should have been hidden via the
 // DebateHtml$ hideCommentsStyle, in html.scala.
+// Only do this if the article itself is shown though.
 Debiki.v0.showInteractionsOnClick = function() {
+  // Always show comments if the page body is not the root post.
+  // (That is, if the article isn't shown, but a plain comment.
+  // Otherwise people could create "fake" pages, by creating 
+  // a comment and linking it with ?view=<comment-id> and it would
+  // seem to be a page itself!)
+  if ($('.dw-ar-p').length === 0)  // article post not present?
+     return;
+
   $('body').addClass('dw-hide-interactions');
   var numComments = $('.dw-p').length - 1;  // don't count the article
   var text = numComments > 1 ?  'Visa '+ numComments +' kommentarer' : // i18n
@@ -198,7 +207,7 @@ Debiki.v0.showInteractionsOnClick = function() {
       .text(text)  // xss safe
       .css('font-size', '80%')
       .end()
-      .insertBefore('.dw-depth-0 > .dw-res')
+      .insertBefore('.dw-ar-t > .dw-res')
       .click(function() {
     $showBtn.remove();
     $('body').removeClass('dw-hide-interactions');
@@ -3687,7 +3696,7 @@ function initAndDrawSvg() {
   $('body').addClass('dw-pri');
   Me.refreshProps();
 
-  // The article might be too narrow and stuff might float drop,
+  // The root post might be too narrow and stuff might float drop,
   // rersulting in SVG arrows pointing incorrectly. Avoid this, by
   // making the root thread wide, whilst rendering the page. When done,
   // call resizeRootThread, to size it properly (see below).

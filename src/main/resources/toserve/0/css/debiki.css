@@ -13,6 +13,7 @@
  *  -adv-         advanced, stuff hidden for most users
  *  -ap-          applied/application
  *  -adr-         address
+ *  -ar-          article — the page body (and/or title?), post id 1 (and 2)
  *  -bd-          body
  *  -by           by whom post was written. COULD change -p-by -> -p-u (user)?
  *  -cr-          create
@@ -186,7 +187,7 @@ a:link {
 }
 
 /* The root post. */
-.dw-depth-0 > .dw-p > .dw-p-bdy > div.dw-p-bdy-blk > * {
+.dw-ar-p-bd > .dw-p-bdy-blk > * {
   margin-bottom: 1em; /* or e.g. <p>:s not visible, because the root post
                         has high line height */
 }
@@ -213,36 +214,30 @@ header.dw-p-ttl > h1 {
 
 
 /* Other titles */
-.dw-depth-0 > .dw-p > .dw-f-ed .dw-p-bdy-blk > h1,
-.dw-depth-0 > .dw-p > .dw-p-bdy > .dw-p-bdy-blk > h1 {
+.dw-ar-p-bd > .dw-p-bdy-blk > h1 {
   font-size: 28px;
   margin: 26px 0 15px !important;
   padding: 0;
   color: #42525E;
 }
-.dw-depth-0 > .dw-p > .dw-f-ed .dw-p-bdy-blk > h2,
-.dw-depth-0 > .dw-p > .dw-p-bdy > .dw-p-bdy-blk > h2 {
+.dw-ar-p-bd > .dw-p-bdy-blk > h2 {
   font-size: 24px;
   color: #28323B;
   margin: 26px 0 18px 0 !important;
 }
-.dw-depth-0 > .dw-p > .dw-f-ed .dw-p-bdy-blk > h3,
-.dw-depth-0 > .dw-p > .dw-p-bdy > .dw-p-bdy-blk > h3 {
+.dw-ar-p-bd > .dw-p-bdy-blk > h3 {
   font-size: 18px;
   font-weight: bold;
 }
-.dw-depth-0 > .dw-p > .dw-f-ed .dw-p-bdy-blk > h4,
-.dw-depth-0 > .dw-p > .dw-p-bdy > .dw-p-bdy-blk > h4 {
+.dw-ar-p-bd > .dw-p-bdy-blk > h4 {
   font-size: 16px;
   font-weight: bold;
 }
-.dw-depth-0 > .dw-p > .dw-f-ed .dw-p-bdy-blk > h5,
-.dw-depth-0 > .dw-p > .dw-p-bdy > .dw-p-bdy-blk > h5 {
+.dw-ar-p-bd > .dw-p-bdy-blk > h5 {
   font-size: 12px;
   font-weight: bold;
 }
-.dw-depth-0 > .dw-p > .dw-f-ed .dw-p-bdy-blk > h6,
-.dw-depth-0 > .dw-p > .dw-p-bdy > .dw-p-bdy-blk > h6 {
+.dw-ar-p-bd > .dw-p-bdy-blk > h6 {
   font-size: 11px;
   font-weight: normal;
   text-decoration: underline;
@@ -253,8 +248,7 @@ header.dw-p-ttl > h1 {
   margin: 0;
 }
 
-.dw-t.dw-depth-0 > .dw-p > .dw-f-ed .dw-p-bdy-blk > p,
-.dw-t.dw-depth-0 > .dw-p > .dw-p-bdy > .dw-p-bdy-blk > p,
+.dw-ar-p-bd > .dw-p-bdy-blk > p,
 .dw-t.dw-p-art-qst > .dw-p > .dw-p-bdy > .dw-p-bdy-blk > p {
   line-height: 20px;
   font-size: 13px;
@@ -331,9 +325,7 @@ jQuery UI's dialgos. Might that be incompatible with other libs? */
   padding-bottom: 0.8em; /* litte more airy? first post */
 }
 
-.dw-depth-0.dw-t > .dw-p > .dw-f-ed .dw-p-bdy-blk,
-.dw-depth-0.dw-t > .dw-p > .dw-p-bdy > .dw-p-bdy-blk,
-.dw-t:not(.dw-depth-1) .dw-p-bdy-bkl {
+.dw-ar-p-bd > .dw-p-bdy-blk {
   line-height: 165%; /* higher height makes the main post easier to read */
 }
 
@@ -384,14 +376,12 @@ jQuery UI's dialgos. Might that be incompatible with other libs? */
 /* Adjus post width. */
 /* ... Don't span whole screen even if .post.cropped-e is removed. */
 .dw-p-bdy-blk {
-  max-width: 35em;
+  max-width: 40em;
 }
-/* ... But the root post may be wide. */
-.dw-depth-0 > .dw-p > .dw-f-ed .dw-p-bdy-blk,
-.dw-depth-0 > .dw-p > .dw-p-bdy > .dw-p-bdy-blk {
-  max-width: none;
-}
-/* ... However now the edit form might get as wide as the root post, unless: */
+/* ... However, if you write custom CSS for a page (e.g. the home page),
+then you probably override the article max-width — but if you customize
+.dw-ar-p-bd > .dw-p-bdy-blk { max-width: none }, the edit form might
+get as wide as the page, unless: */
 .dw-depth-0 > .dw-p > .dw-f-ed .dw-e-tabs {
   float: left;
 }
@@ -493,12 +483,11 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
   font-size: 10px;
 }
 
-/* Sync these selectors with showCommentsOnClick in debiki.js.
-COULD hide the "Log in" link too, unless logged in?  */
-.dw-hide-interactions .dw-depth-0 > .dw-p > .dw-p-hdr,
-.dw-hide-interactions .dw-depth-0 > .dw-res,
-.dw-hide-interactions .dw-depth-0 > .dw-p > .dw-p-bdy > .dw-p-bdy-blk .dw-i-m-start,
-.dw-hide-interactions .dw-depth-0 > .dw-p > .dw-p-bdy > .dw-i-ts,
+/* Sync these selectors with showCommentsOnClick in debiki.js. */
+.dw-hide-interactions .dw-ar-t > .dw-p > .dw-p-hdr,
+.dw-hide-interactions .dw-ar-t > .dw-res,
+.dw-hide-interactions .dw-ar-t > .dw-p > .dw-p-bdy > .dw-p-bdy-blk .dw-i-m-start,
+.dw-hide-interactions .dw-ar-t > .dw-p > .dw-p-bdy > .dw-i-ts,
 .dw-hide-interactions .dw-debate svg {
   display: none;
 }
@@ -606,7 +595,7 @@ so there's some space for the SVG arrows. */
 }
 
 .dw-depth-0 > .dw-p > .dw-p-hdr > .dw-p-hdr-ed {
-  /* Place edit info on the same line as author info, for the page body.
+  /* Place edit info on the same line as author info, for the root post.
   Then everything appears on one line just below the page title. */
   display: inline;
 }
@@ -631,17 +620,18 @@ span.dw-p-ed-by {
   padding-right: 2px;
 }
 
-/* For the article itself, make author and post date info less conspicuous,
-or it steals attention from the page title. */
-.dw-depth-0 > .dw-p > .dw-p-hdr {
+/* For the *article* itself, make author and post date info less conspicuous,
+or it steals attention from the page title. (But don't do this for any root
+post, only for the article.) */
+.dw-ar-p > .dw-p-hdr {
   background-color: transparent;
   opacity: 0.6;
   font-size: 10px;
 }
-.dw-depth-0 > .dw-p > .dw-p-hdr:hover {
+.dw-ar-p > .dw-p-hdr:hover {
   opacity: 1;
 }
-.dw-depth-0 > .dw-p > .dw-p-hdr > .dw-p-by {
+.dw-ar-p > .dw-p-hdr > .dw-p-by {
   color: #396D99;
 }
 
@@ -658,7 +648,7 @@ or it steals attention from the page title. */
 }
 
 /* Un-indent any root post, by hiding the collapse button.
- (Why would one need to hide the original post?) */
+ (Why would one want to hide the root post?) */
 .dw-depth-0 > .dw-z {
   display: none;
 }

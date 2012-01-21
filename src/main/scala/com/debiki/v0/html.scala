@@ -262,6 +262,8 @@ class DebateHtml(val debate: Debate) {
    */
   def layoutPage(pageRoot: PageRoot): NodeSeq = {
 
+    val cssArtclThread =
+      if (pageRoot.id == Page.BodyId) " dw-ar-t" else ""
     val rootPostsReplies = pageRoot.findChildrenIn(debate)
     val rootPost: ViPo = pageRoot.findOrCreatePostIn(debate) getOrElse {
       return (
@@ -281,7 +283,8 @@ class DebateHtml(val debate: Debate) {
         }
       }
       </div>
-      <div id={cssThreadId} class='dw-t dw-depth-0 dw-hor'>
+      <div id={cssThreadId}
+           class={"dw-t"+ cssArtclThread +" dw-depth-0 dw-hor"}>
       {
         val (comment, replyBtnText) = _showComment(
           rootPost.id, rootPost, horizontal = true)
@@ -421,6 +424,9 @@ class DebateHtml(val debate: Debate) {
     val editsAppld: List[(Edit, EditApp)] = vipo.editsAppdDesc
     val lastEditApp = editsAppld.headOption.map(_._2)
     val cssPostId = "dw-post-"+ post.id
+    val (cssArtclPost, cssArtclBody) =
+      if (post.id != Page.BodyId) ("", "")
+      else (" dw-ar-p", " dw-ar-p-bd")
     val sourceText = vipo.text
     val isRootOrArtclQstn = vipo.id == rootPostId ||
         vipo.meta.isArticleQuestion
@@ -605,20 +611,22 @@ class DebateHtml(val debate: Debate) {
     // Also, perhaps they should be part of the .dw-p-by <a>?
     // the – on the next line is an `en dash' not a minus
     (<a class='dw-z'>[–]</a>
-    <div id={cssPostId} class={"dw-p" + cutS + clearfix}
+    <div id={cssPostId} class={"dw-p" + cssArtclPost + cutS + clearfix}
          data-p-by-ip-sh={vipo.ipSaltHash_!}>
       { postTitleXml }
       <div class='dw-p-hdr'>
         By { _linkTo(author)}{ dateAbbr(post.ctime, "dw-p-at")
         }{ flagsTop }{ ratsTop }{ editInfo }{ flagsDetails }{ ratsDetails }
       </div>
-      <div class='dw-p-bdy'><div class='dw-p-bdy-blk'>
+      <div class={"dw-p-bdy"+ cssArtclBody}>
+        <div class='dw-p-bdy-blk'>
         { xmlText
         // (Don't  place a .dw-i-ts here. Splitting the -bdy into
         // -bdy-blks and -i-ts is better done client side, where the
         // heights of stuff is known.)
         }
-      </div></div>
+        </div>
+      </div>
     </div> ++ (
       if (isRootOrArtclQstn) Nil
       else <a class='dw-as' href={config.reactUrl(debate.guid, post.id) +
@@ -1076,6 +1084,7 @@ class FormHtml(val config: HtmlConfig, val pageRoot: PageRoot,
     // Must be sorted by time, most recent first (debiki.js requires this).
     val applied = nipo.editsAppdDesc
     val cssMayEdit = if (mayEdit) "dw-e-sgs-may-edit" else ""
+    val cssArtclBody = if (nipo.id == Page.BodyId) " dw-ar-p-bd" else ""
 
     <form id='dw-e-sgs' action={_viewRoot + "applyedits"}
           class={cssMayEdit} title='Improvements'>
@@ -1109,7 +1118,8 @@ class FormHtml(val config: HtmlConfig, val pageRoot: PageRoot,
       </div>
       <div id='dw-e-sgs-prvw'>
         <div>Preview:</div>
-        <div id='dw-e-sgs-prvw-html'>
+        <div class={"dw-p-bdy"+ cssArtclBody}>
+          <div id='dw-e-sgs-prvw-html' class='dw-p-bdy-blk'/>
         </div>
       </div>
     </form>
@@ -1118,6 +1128,9 @@ class FormHtml(val config: HtmlConfig, val pageRoot: PageRoot,
   def editForm(postToEdit: ViPo, newText: String, userName: Box[String]) = {
     import Edit.{InputNames => Inp}
     val isForTitle = postToEdit.id == Page.TitleId
+    val cssArtclBody =
+      if (postToEdit.id == Page.BodyId) " dw-ar-p-bd-blk"
+      else ""
     val submitBtnText = "Save as "+ userName.openOr("...")
     <form class='dw-f dw-f-ed'
           action={_viewRoot +"edit="+ postToEdit.id}
@@ -1154,7 +1167,8 @@ class FormHtml(val config: HtmlConfig, val pageRoot: PageRoot,
             newText
           }</textarea>
         </div>
-        <div id='dw-ed-tab-preview' class='dw-ed-tab dw-ed-tab-preview'>
+        <div id='dw-ed-tab-preview'
+             class={"dw-ed-tab dw-ed-tab-preview dw-p-bdy"+ cssArtclBody}>
           <div class='dw-p-bdy-blk'/>
         </div>
         <div id='dw-ed-tab-diff' class='dw-ed-tab dw-ed-tab-diff'>
