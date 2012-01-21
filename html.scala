@@ -596,9 +596,11 @@ class DebateHtml(val debate: Debate) {
         // _renderPost, to render the title. Then it would be
         // possible to reply-inline to the title.
         <div id={"dw-post-"+ titlePost.id} class='dw-p dw-p-ttl'>
-          <div class='dw-p-bdy'><div class='dw-p-bdy-blk'>
-            <header class='dw-p-ttl'><h1>{titlePost.text}</h1></header>
-          </div></div>
+          <div class='dw-p-bdy'>
+            <div class='dw-p-bdy-blk'>
+              <header class='dw-p-ttl'><h1>{titlePost.text}</h1></header>
+            </div>
+          </div>
         </div>
       } getOrElse Nil
     }
