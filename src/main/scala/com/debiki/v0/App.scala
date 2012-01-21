@@ -155,10 +155,10 @@ private[debiki] object App {
       // (not mkdirs, that'd be somewhat unsafe in case of a typo when
       // the user specifies `dir' on the command line?)
       if (!root.mkdir())
-        illegalArg("Please create the parent directory of: "+ dir)
+        illArgErr3("DwE0kSE35", "Please create the parent directory of: "+ dir)
     }
     else if (!root.isDirectory)
-      illegalArg("Not a directory: "+ dir)
+      illArgErr3("DwE0k5es3", "Not a directory: "+ dir)
     new jio.File(dir +"0/js/").mkdirs()
     new jio.File(dir +"0/css/img/").mkdirs()
     new jio.File(dir +"0/css/debiki/images/").mkdirs()
@@ -175,7 +175,7 @@ private[debiki] object App {
     val loader = getClass.getClassLoader
     for (res <- resourceFiles ::: imageFiles) {
       val inputStream = loader.getResourceAsStream(res)
-      errorIf(inputStream eq null, "Not found: "+ res)
+      runErrIf3(inputStream eq null, "DwE0ke3E3", "Not found: "+ res)
       copy(fromStream = inputStream,
            toPath = dir +"/"+ res.stripPrefix(serveDir))
       inputStream.close()

@@ -35,18 +35,18 @@ abstract trait People {
   // COULD optimize.
   def login(id: String): Option[Login] = logins.find(_.id == id)
   def login_!(id: String): Login = login(id) getOrElse error(
-    "Login not found: "+ safed(id) +" [debiki_error_8K3520z23]")
+    "Login not found: "+ safed(id) +" [error DwE8K3520z23]")
 
   def identity(id: String): Option[Identity] = identities.find(_.id == id)
   def identity_!(id: String): Identity = identity(id) getOrElse error(
-    "Identity not found: "+ safed(id) +" [debiki_error_021kr3k09]")
+    "Identity not found: "+ safed(id) +" [error DwE021kr3k09]")
 
   // -------- Users
 
   // COULD optimize.
   def user(id: String): Option[User] = users.find(_.id == id)
   def user_!(id: String): User = user(id) getOrElse error(
-    "User not found: "+ safed(id) +" [debiki_error_730krq849]")
+    "User not found: "+ safed(id) +" [error DwE730krq849]")
 
   // COULD create Action parent class, use instead of Edit.
   //def authorOf(e: Edit): Option[User] =
@@ -124,8 +124,8 @@ case object User {
   }
 
   def checkId(id: String, errcode: String) {
-    if (id == "") assErr("Empty ID "+ errcode)
-    if (id == "0") assErr("ID is `0' "+ errcode)
+    if (id == "") assErr3(errcode, "Empty ID ")
+    if (id == "0") assErr3(errcode, "ID is `0' ")
     // "?" is okay, means unknown.
   }
 }
@@ -154,7 +154,7 @@ case class User (
   website: String,
   isSuperAdmin: Boolean
 ){
-  checkId(id, "[debiki_error_02k125r]")
+  checkId(id, "DwE02k125r")
   def isAuthenticated = !id.startsWith("-") && !id.startsWith("?")
 
   /* COULD add:
@@ -178,7 +178,7 @@ case class Login(
   date: ju.Date,
   identityId: String
 ){
-  checkId(id, "[debiki_error_093jxh12]")
+  checkId(id, "DwE093jxh12")
 }
 
 object Login {
@@ -219,15 +219,15 @@ sealed abstract class Identity {
   // And remembering to check for "" everywhere is error prone.
   def email: String
 
-  checkId(id, "[debiki_error_02krc3g]")
-  checkId(userId, "[debiki_error_864rsk215]")
+  checkId(id, "DwE02krc3g")
+  checkId(userId, "DwE864rsk215")
 }
 
 case object IdentityUnknown extends Identity {  // Try to get rid of?
   val id = "2"
   val displayName = "?"
   val email = ""
-  def userId = assErr("Identity unknown [debiki_error_3902kS1]")
+  def userId = assErr3("DwE3902kS1", "Identity unknown")
     // alternatively, return "?" -- then People.user("?") returns None, fine.
     // But a.userId == b.userId, if == "?" which might be bad!
 }

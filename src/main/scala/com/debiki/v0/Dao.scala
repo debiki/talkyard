@@ -212,8 +212,8 @@ class CachingDao(spi: DaoSpi) extends Dao {
       // ------------
       val key = Key(where.tenantId, debateWithIds.guid)
       val duplicate = _cache.putIfAbsent(key, debateWithIds)
-      errorIf(duplicate ne null, "Newly created page "+ safed(debate.guid) +
-          " already present in mem cache [debiki_error_38WcK905]")
+      runErrIf3(duplicate ne null, "DwE8WcK905", "Newly created page "+
+            safed(debate.guid) + " already present in mem cache")
       debateWithIds
     }
   }

@@ -66,7 +66,7 @@ object TemplateToExtend {
         // Could ensure any template contains some '/' or it's an error
         // for sure?
         // ExtendSpecificTmpl(path)
-        unimplemented("Extending specific template [debiki_error_6y8Cw35]")
+        unimplemented("Extending specific template [error DwE6y8Cw35]")
       //case "??what??" => ExtendParentFolderTmpl
     }
   }
@@ -92,8 +92,8 @@ object CommentVisibility {
       case Visible.ParamValue => Visible
       case ShowOnClick.ParamValue => ShowOnClick
       case "hidden" => unimplemented("comment_visibility: hidden", "DwE0Kn31")
-      case x => illArgErr(
-        "Bad comment_visibility value: "+ safed(x), "DwE03R24")
+      case x => illArgErr3(
+        "DwE03R24", "Bad comment_visibility value: "+ safed(x))
     }
   }
 }

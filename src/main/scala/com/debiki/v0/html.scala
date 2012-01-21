@@ -1316,7 +1316,7 @@ object AtomFeedXml {
       val page = pathAndPage._2
       val pageBody = page.body.getOrElse {
         warnDbgDie("Page "+ safed(page.guid) +
-              " lacks a root post [debiki_error_09k14p2]")
+              " lacks a root post [error DwE09k14p2]")
         return Nil
       }
       val pageTitle = page.titleText getOrElse pagePath.slugOrIdOrQustnMark

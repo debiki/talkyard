@@ -53,8 +53,8 @@ case class PagePath(  // COULD move to debate.scala.  Rename to RequestPath?
 
   def path: String =
     if (showId) {
-      val g = pageId.getOrElse(assErr( //Break out GuidLookup so cannot happen?
-                "ID unknown. [debiki_error_23r12]"))
+      val g = pageId.getOrElse(assErr3( //Break out GuidLookup so cannot happen?
+                "DwE23r124", "ID unknown."))
         if (pageSlug isEmpty) folder +"-"+ g
         else folder +"-"+ g +"-"+ pageSlug
     } else {

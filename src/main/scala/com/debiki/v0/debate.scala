@@ -57,7 +57,7 @@ object Debate {
       case e: Edit => e.copy(id = remaps(e.id), postId = rmpd(e.postId))
       case a: EditApp => a.copy(id = remaps(a.id), editId = rmpd(a.editId))
       case d: Delete => d.copy(id = remaps(d.id), postId = rmpd(d.postId))
-      case x => assErr("[debiki_error_3RSEKRS]")
+      case x => assErr3("DwE3RSEK9]")
     }).asInstanceOf[T]
     val actionsRemapped: List[T] = actionsToRemap map updateIds
 
@@ -192,7 +192,7 @@ case class Debate (
   def post(id: String): Option[Post] = postsById.get(id)
 
   def vipo_!(postId: String): ViPo =  // COULD rename to post_!(withId = ...)
-    vipo(postId).getOrElse(error("[debiki_error_3krtEK]"))
+    vipo(postId).getOrElse(error("[error DwE3krtEK]"))
 
   def vipo(postId: String): Option[ViPo] = // COULD rename to post(withId =...)
     post(postId).map(new ViPo(this, _))
@@ -234,7 +234,7 @@ case class Debate (
   // -------- Edits
 
   def vied_!(editId: String): ViEd =
-    vied(editId).getOrElse(error("[debiki_error_08k32w2]"))
+    vied(editId).getOrElse(assErr3("DwE03ke1"))
 
   def vied(editId: String): Option[ViEd] =
     editsById.get(editId).map(new ViEd(this, _))
@@ -242,8 +242,8 @@ case class Debate (
   lazy val editsById: imm.Map[String, Edit] = {
     val m = edits.groupBy(_.id)
     m.mapValues(list => {
-      errorIf(list.tail.nonEmpty,
-              "Two ore more Edit:s with this id: "+ list.head.id)
+      runErrIf3(list.tail.nonEmpty,
+        "DwE9ksE53", "Two ore more Edit:s with this id: "+ list.head.id)
       list.head
     })
   }
@@ -323,7 +323,7 @@ case class Debate (
       case f: Flag => flags2 ::= f
       case d: Delete => dels2 ::= d
       case x => error(
-          "Unknown action type: "+ classNameOf(x) +" [debiki_error_8k3EC]")
+          "Unknown action type: "+ classNameOf(x) +" [error DwE8k3EC]")
     }
     Debate(guid, logins2, identities2, users2, posts2, ratings2,
         edits2, editVotes2, editApps2, flags2, dels2)
@@ -779,8 +779,8 @@ object PageRoot {
   /** A real post, e.g. the page body post. */
   case class Real(id: String) extends PageRoot {
     // Only virtual ids may contain hyphens, e.g. "page-template".
-    assErrIf(id contains "-", "Real id contains hyphen: "+ safed(id) +
-        " [debiki_error_093ku30]")
+    assErrIf3(id contains "-", "DwE0ksEW3", "Real id contains hyphen: "+
+          safed(id))
 
     def findOrCreatePostIn(page: Debate): Option[ViPo] = page.vipo(id)
 
@@ -795,7 +795,7 @@ object PageRoot {
 
   def apply(id: String): PageRoot = {
     id match {
-      case null => assErr("Id is null [debiki_error_0392kr53]")
+      case null => assErr3("DwE0392kr53", "Id is null")
       // COULD check if `id' is invalid, e.g.contains a hyphen,
       // and if so show an error page root post.
       case "" => Real(Page.BodyId)  // the default, if nothing specified

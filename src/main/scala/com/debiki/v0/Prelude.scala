@@ -46,16 +46,15 @@ object Prelude {
 
   // Error codes should be formatted like so:
   // "DwE<number><alnum x 3><number>", e.g. "DwE8kR32".
-  // But "debiki_error_<guid>" is deprecated (too verbose).
 
   def unsupported = throw new UOE
   def unsupported(what: String) = throw new UOE(what)
   def unsupported(what: String, errorCode: String) =
-    throw new UOE(what +" [error code "+ errorCode +"]")
+    throw new UOE(what +" [error "+ errorCode +"]")
   def unimplemented = throw new UOE("Not implemented")
   def unimplemented(what: String) = throw new UOE("Not implemented: "+ what)
   def unimplemented(what: String, errorCode: String) =
-    throw new UOE("Not implemented: "+ what +" [error code "+ errorCode +"]")
+    throw new UOE("Not implemented: "+ what +" [error "+ errorCode +"]")
   def unimplementedIf(condition: Boolean, what: String) =
     if (condition) unimplemented(what)
 
@@ -71,43 +70,25 @@ object Prelude {
   def TODO = ()  // Do this, or people might notice and complain.
   def COULD = ()  // Could do this, but it's not that important.
 
-  def runtimeErr(problem: => String, errorCode: String) =
-    throw new RuntimeException(problem +" [error code "+ errorCode +"]")
+  def runErr3(errorCode: String, problem: => String) =
+    throw new RuntimeException(problem +" [error "+ errorCode +"]")
 
-  def errorIf(condition: Boolean, problem: String) =
-    if (condition) throw new RuntimeException(problem)
+  def runErrIf3(condition: Boolean, errorCode: String, problem: => String) =
+    if (condition) runErr3(problem, errorCode)
 
-  def runtimeErrIf(condition: Boolean, problem: => String, errorCode: String) =
-    if (condition) runtimeErr(problem, errorCode)
+  /** Assertion errors do not require a problem description. */
+  def assErr3(errorCode: String, problem: String = null) =
+    throw new AssertionError(
+      (if (problem eq null) "" else problem +" ") +"[error "+ errorCode +"]")
 
-  def assertionError(problem: String) =
-    throw new AssertionError(problem)
+  def assErrIf3(condition: Boolean, errorCode: String, problem: String = null) =
+    if (condition) assErr3(errorCode, problem)
 
-  def assErr(problem: String) =
-    throw new AssertionError(problem)
+  def illArgErr3(errorCode: String, problem: => String) =
+    throw new IllegalArgumentException(problem +" [error "+ errorCode +"]")
 
-  def assrtErr(errorCode: String) =
-    throw new AssertionError("[error code "+ errorCode +"]")
-
-  // Deprecated -- remove
-  def assErrIf(condition: Boolean, problem: String) =
-    if (condition) throw new AssertionError(problem)
-
-  def assrtErrIf(condition: Boolean, errorCode: String) =
-    if (condition) assrtErr(errorCode)
-
-  def illegalArg(problem: String) =
-    throw new IllegalArgumentException(problem)
-
-  def illArgErr(problem: => String, errorCode: String) =
-    throw new IllegalArgumentException(problem +
-        " [error code "+ errorCode +"]")
-
-  def illegalArgIf(condition: Boolean, problem: String) =
-    if (condition) throw new IllegalArgumentException(problem)
-
-  def illArgErrIf(condition: Boolean, problem: => String, errorCode: String) =
-    if (condition) illArgErr(problem, errorCode)
+  def illArgErrIf3(condition: Boolean, errorCode: String, problem: => String) =
+    if (condition) illArgErr3(problem, errorCode)
 
   /** Converts {@code text} to a single line printable ASCII, not very long,
    *  so it can be included in an error message even if it is end user defined

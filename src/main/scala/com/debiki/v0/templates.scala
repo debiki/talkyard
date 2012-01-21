@@ -112,8 +112,7 @@ case class TemplateSrcHtml(post: ViPo) extends TemplateSource {
           params.templateToExtend = Some(TemplateToExtend.parse(paramValue))
         case badParam =>
           // For now, die.
-          runtimeErr(
-            "Invalid template parameter: "+ safed(badParam),"DwE33UR5")
+          runErr3("DwE33UC7", "Invalid template parameter: "+ safed(badParam))
       }
     }
 
