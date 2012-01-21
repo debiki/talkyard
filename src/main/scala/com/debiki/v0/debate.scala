@@ -57,7 +57,7 @@ object Debate {
       case e: Edit => e.copy(id = remaps(e.id), postId = rmpd(e.postId))
       case a: EditApp => a.copy(id = remaps(a.id), editId = rmpd(a.editId))
       case d: Delete => d.copy(id = remaps(d.id), postId = rmpd(d.postId))
-      case x => assErr3("DwE3RSEK9]")
+      case x => assErr("DwE3RSEK9]")
     }).asInstanceOf[T]
     val actionsRemapped: List[T] = actionsToRemap map updateIds
 
@@ -234,7 +234,7 @@ case class Debate (
   // -------- Edits
 
   def vied_!(editId: String): ViEd =
-    vied(editId).getOrElse(assErr3("DwE03ke1"))
+    vied(editId).getOrElse(assErr("DwE03ke1"))
 
   def vied(editId: String): Option[ViEd] =
     editsById.get(editId).map(new ViEd(this, _))
@@ -795,7 +795,7 @@ object PageRoot {
 
   def apply(id: String): PageRoot = {
     id match {
-      case null => assErr3("DwE0392kr53", "Id is null")
+      case null => assErr("DwE0392kr53", "Id is null")
       // COULD check if `id' is invalid, e.g.contains a hyphen,
       // and if so show an error page root post.
       case "" => Real(Page.BodyId)  // the default, if nothing specified

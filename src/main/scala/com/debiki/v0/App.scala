@@ -155,10 +155,10 @@ private[debiki] object App {
       // (not mkdirs, that'd be somewhat unsafe in case of a typo when
       // the user specifies `dir' on the command line?)
       if (!root.mkdir())
-        illArgErr3("DwE0kSE35", "Please create the parent directory of: "+ dir)
+        illArgErr("DwE0kSE35", "Please create the parent directory of: "+ dir)
     }
     else if (!root.isDirectory)
-      illArgErr3("DwE0k5es3", "Not a directory: "+ dir)
+      illArgErr("DwE0k5es3", "Not a directory: "+ dir)
     new jio.File(dir +"0/js/").mkdirs()
     new jio.File(dir +"0/css/img/").mkdirs()
     new jio.File(dir +"0/css/debiki/images/").mkdirs()

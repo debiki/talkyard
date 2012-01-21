@@ -124,8 +124,8 @@ case object User {
   }
 
   def checkId(id: String, errcode: String) {
-    if (id == "") assErr3(errcode, "Empty ID ")
-    if (id == "0") assErr3(errcode, "ID is `0' ")
+    if (id == "") assErr(errcode, "Empty ID ")
+    if (id == "0") assErr(errcode, "ID is `0' ")
     // "?" is okay, means unknown.
   }
 }
@@ -227,7 +227,7 @@ case object IdentityUnknown extends Identity {  // Try to get rid of?
   val id = "2"
   val displayName = "?"
   val email = ""
-  def userId = assErr3("DwE3902kS1", "Identity unknown")
+  def userId = assErr("DwE3902kS1", "Identity unknown")
     // alternatively, return "?" -- then People.user("?") returns None, fine.
     // But a.userId == b.userId, if == "?" which might be bad!
 }

@@ -70,25 +70,25 @@ object Prelude {
   def TODO = ()  // Do this, or people might notice and complain.
   def COULD = ()  // Could do this, but it's not that important.
 
-  def runErr3(errorCode: String, problem: => String) =
+  def runErr(errorCode: String, problem: => String) =
     throw new RuntimeException(problem +" [error "+ errorCode +"]")
 
   def runErrIf3(condition: Boolean, errorCode: String, problem: => String) =
-    if (condition) runErr3(problem, errorCode)
+    if (condition) runErr(problem, errorCode)
 
   /** Assertion errors do not require a problem description. */
-  def assErr3(errorCode: String, problem: String = null) =
+  def assErr(errorCode: String, problem: String = null) =
     throw new AssertionError(
       (if (problem eq null) "" else problem +" ") +"[error "+ errorCode +"]")
 
   def assErrIf3(condition: Boolean, errorCode: String, problem: String = null) =
-    if (condition) assErr3(errorCode, problem)
+    if (condition) assErr(errorCode, problem)
 
-  def illArgErr3(errorCode: String, problem: => String) =
+  def illArgErr(errorCode: String, problem: => String) =
     throw new IllegalArgumentException(problem +" [error "+ errorCode +"]")
 
   def illArgErrIf3(condition: Boolean, errorCode: String, problem: => String) =
-    if (condition) illArgErr3(problem, errorCode)
+    if (condition) illArgErr(problem, errorCode)
 
   /** Converts {@code text} to a single line printable ASCII, not very long,
    *  so it can be included in an error message even if it is end user defined

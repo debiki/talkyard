@@ -92,7 +92,7 @@ object CommentVisibility {
       case Visible.ParamValue => Visible
       case ShowOnClick.ParamValue => ShowOnClick
       case "hidden" => unimplemented("comment_visibility: hidden", "DwE0Kn31")
-      case x => illArgErr3(
+      case x => illArgErr(
         "DwE03R24", "Bad comment_visibility value: "+ safed(x))
     }
   }
