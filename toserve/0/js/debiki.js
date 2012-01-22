@@ -2638,7 +2638,7 @@ function $updateEditFormPreview() {
       die("Unknown markup [error DwE0k3w25]");
   }
 
-  $previewTab.html(htmlSafe);
+  $previewTab.children('.dw-p-bdy-blk').html(htmlSafe);
 }
 
 
