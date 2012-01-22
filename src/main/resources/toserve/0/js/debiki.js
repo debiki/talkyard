@@ -230,7 +230,7 @@ diffMatchPatch.Match_Distance = 100*1000; // for now
 var didResize = false;
 // Set to true if a truncated post was clicked and expanded.
 var didExpandTruncated = false;
-var rateFormTemplate = $("#dw-hidden-templates .dw-fs-rat");
+var rateFormTemplate = $("#dw-hidden-templates .dw-fs-r");
 var debateId = $('.debiki').attr('id');
 
 var rootPostId = $('.dw-depth-0').attr('id').substr(5); // drop initial `dw-t-'
@@ -648,9 +648,9 @@ function updateDebate(newDebateHtml) {
       // I mean, apply it again but "inverted" so it undoes itself. Then
       // the modification date would always increase and the bug is no more.)
       var oldRatsModTime =
-          $oldPost.find('> .dw-p-hd > .dw-p-ra-all').attr('data-mtime');
+          $oldPost.find('> .dw-p-hd > .dw-p-r-all').attr('data-mtime');
       var newRatsModTime =
-          $newPost.find('> .dw-p-hd > .dw-p-ra-all').attr('data-mtime');
+          $newPost.find('> .dw-p-hd > .dw-p-r-all').attr('data-mtime');
       var hasNewRatings =
           (!oldRatsModTime ^ !newRatsModTime) ||
           (newRatsModTime > oldRatsModTime);
@@ -709,13 +709,13 @@ function updateDebate(newDebateHtml) {
         //   no ratings). So don't attempt to replace old elems with new
         //   ones; instead remove any old elems and append the new ones to
         //   the post creation timestamp, .dw-p-at, which exists for sure.
-        // - Show() the new .dw-p-ra-all, so the user notices his/her own
+        // - Show() the new .dw-p-r-all, so the user notices his/her own
         //   ratings, highlighted.
         var $newHdr = $newPost.children('.dw-p-hd');
         $oldPost.children('.dw-p-hd')
-            .children('.dw-p-ra-top, .dw-p-ra-all').remove().end()
+            .children('.dw-p-r-top, .dw-p-r-all').remove().end()
             .children('.dw-p-at').after(
-                $newHdr.children('.dw-p-ra-top, .dw-p-ra-all').show());
+                $newHdr.children('.dw-p-r-top, .dw-p-r-all').show());
       }
       else {
         // This post has not been changed, keep it as is.
@@ -927,7 +927,7 @@ function $initPostStep1() {
       return;  // don't expand header on link click
     $(this)
         .css('cursor', null)
-        .find('> .dw-p-at, > .dw-p-flgs-all, > .dw-p-ra-all, ' +
+        .find('> .dw-p-at, > .dw-p-flgs-all, > .dw-p-r-all, ' +
               '> .dw-p-hd-e > .dw-p-at').show()
         .end()
         // This might have expanded the post, so redraw arrows.
@@ -2169,8 +2169,8 @@ function $showRatingForm() {
         updateDebate(recentChangesHtml);
         // Highligt the user's ratings.
         var $newPost = $('#dw-post-' + postId);
-        $newPost.find('.dw-rats .dw-rat').each(function(){
-            // .dw-rat text is e.g. " interesting 80% ". Make lowercase,
+        $newPost.find('.dw-rs .dw-r').each(function(){
+            // .dw-r text is e.g. " interesting 80% ". Make lowercase,
             // and drop " 80% ", so tag-name comparison works.
             var $rating = $(this);
             var text = $rating.text().toLowerCase().replace(/ \d+% /, '');
@@ -2194,10 +2194,10 @@ function $showRatingForm() {
   // copied --- otherwise, if the Cancel button is clicked,
   // the rateFormTemplate itself has all its jQueryUI markup removed.
   // (Is that a jQuery bug? Only the *clone* ought to be affected?)
-  $rateForm.find('.dw-rat-tag-set input, .dw-submit-set input').button();
+  $rateForm.find('.dw-r-tag-set input, .dw-submit-set input').button();
   // Disable the submit button (until any checkbox clicked)
   $rateForm.find("input[type='submit']").button("option", "disabled", true);
-  $rateForm.find('.dw-show-more-rat-tags').
+  $rateForm.find('.dw-show-more-r-tags').
     button().addClass('dw-ui-state-default-linkified');
   // Reveal the form
   slideInActionForm($rateForm, thread);
@@ -2205,7 +2205,7 @@ function $showRatingForm() {
 
 function $showMoreRatingTags() {
   $(this).hide().
-      closest('form').find('.dw-more-rat-tags').show();
+      closest('form').find('.dw-more-r-tags').show();
 }
 
 
@@ -2303,7 +2303,7 @@ function $showFlagForm() {
 // if the reply is an inline comment -- whichever is the case is determined
 // by event.target.
 function $showReplyForm(event, opt_where) {
-  // Warning: Some duplicated code, see .dw-rat-tag click() above.
+  // Warning: Some duplicated code, see .dw-r-tag click() above.
   var $thread = $(this).closest('.dw-t');
   var $post = $thread.children('.dw-p');
   clearfix($thread); // ensures the reply appears nested inside the thread
@@ -3625,7 +3625,7 @@ function registerEventHandlers() {
   // the edit form has some own special logic.
   $('.debiki').delegate(
       '.dw-fs-re .dw-fi-cancel, ' +
-      '.dw-fs-rat .dw-fi-cancel',
+      '.dw-fs-r .dw-fi-cancel',
       'click', $removeClosestForms);
 
   window.onbeforeunload = confirmClosePage;
@@ -3634,7 +3634,7 @@ function registerEventHandlers() {
   $('#dw-hidden-templates .dw-fs').hide();
 
   // Show more rating tags when clicking the "More..." button.
-  rateFormTemplate.find('.dw-show-more-rat-tags').click($showMoreRatingTags);
+  rateFormTemplate.find('.dw-show-more-r-tags').click($showMoreRatingTags);
 
 
   // Show a change diff instead of the post text, when hovering an edit
