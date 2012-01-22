@@ -531,17 +531,17 @@ class DebateHtml(val debate: Debate) {
         // List popular rating tags. Then all tags and their usage percents,
         // but those details are shown only if one clicks the post header.
         ((if (topTags isEmpty) Nil
-        else <span class='dw-p-ra dw-p-ra-top'>, rated <i>{
+        else <span class='dw-p-r dw-p-r-top'>, rated <i>{
           topTags.take(3).map(showRating(_)).mkString(", ") }</i></span>
         ),
-        <div class='dw-p-ra-all'
+        <div class='dw-p-r-all'
              data-mtime={toIso8601T(score.lastRatingDate)}>{
           score.ratingCount} ratings:
-          <ol class='dw-p-ra dw-rats'>{
+          <ol class='dw-p-r dw-rs'>{
           // Don't change whitespace, or `editInfo' perhaps won't
           // be able to append a ',' with no whitespace in front.
           for ((tag: String, stats: LabelStats) <- rats) yield
-          <li class="dw-rat" data-stats={
+          <li class="dw-r" data-stats={
               ("lo: %.0f" format (100 * stats.fractionLowerBound)) +"%, "+
               "sum: "+ stats.sum}> {
             tag +" %.0f" format (100 * stats.fraction)}% </li>
@@ -656,7 +656,7 @@ object FormHtml {
 
   object Rating {
     object InputNames {
-      val Tag = "dw-fi-rat-tag"
+      val Tag = "dw-fi-r-tag"
     }
   }
 
@@ -945,7 +945,7 @@ class FormHtml(val config: HtmlConfig, val pageRoot: PageRoot,
   }
 
   def ratingForm =
-      <div class='dw-fs dw-fs-rat'>
+      <div class='dw-fs dw-fs-r'>
         <form
             action={_viewRoot + config.rateAction}
             accept-charset='UTF-8'
@@ -966,12 +966,12 @@ class FormHtml(val config: HtmlConfig, val pageRoot: PageRoot,
             although 3 - 5 items is probably much better than 7 - 9. */}
             <div>
               {/* temporary layout hack */}
-              <div class='dw-rat-tag-set'>{
+              <div class='dw-r-tag-set'>{
                 rateBox("interesting") ++
                 rateBox("funny") ++
                 rateBox("off-topic")
               }</div>
-              <div class='dw-rat-tag-set'>{
+              <div class='dw-r-tag-set'>{
                 rateBox("boring") ++
                 rateBox("stupid")
               }</div>
@@ -980,8 +980,8 @@ class FormHtml(val config: HtmlConfig, val pageRoot: PageRoot,
               really needed? "Stupid + Boring" would work instead?
               Or flag as Offensive (if I add such a flag option).
 
-              <a class='dw-show-more-rat-tags'>More...</a>
-              <div class='dw-rat-tag-set dw-more-rat-tags'>{
+              <a class='dw-show-more-r-tags'>More...</a>
+              <div class='dw-r-tag-set dw-more-r-tags'>{
                 rateBox("spam") ++
                 rateBox("troll")
               }</div>  */}
