@@ -135,7 +135,7 @@ $.fn.debiki_dragscrollable = function( options ){
 			// with this initialization:
 			//   jQuery(window).load(function(){
 			//     var selectors =
-			//       '.dw-thread, .dw-cmts, .dw-cmt, .dw-cmt-wrap, .dw-cmt-bdy, '+
+			//       '.dw-thread, .dw-cmts, .dw-cmt, .dw-cmt-wrap, .dw-cmt-bd, '+
 			//       '.dw-cmt-acts';
 			//     $('body').debiki_dragscrollable({ scrollable: selectors });
 			//   });

@@ -95,7 +95,7 @@ jQuery.fn.dwEnable = function() {
 
 jQuery.fn.dwLastChange = function() {
   var maxDate = '0';
-  this.children('.dw-p-hdr').find('.dw-date').each(function(){
+  this.children('.dw-p-hd').find('.dw-date').each(function(){
     var date = jQuery(this).attr('title'); // creation or last modification date
     if (date > maxDate)
       maxDate = date;
@@ -105,7 +105,7 @@ jQuery.fn.dwLastChange = function() {
 
 // The user id of the author of a post.
 jQuery.fn.dwAuthorId = function() {
-  var uid = this.find('> .dw-p-hdr > .dw-p-by').attr('data-dw-u-id');
+  var uid = this.find('> .dw-p-hd > .dw-p-by').attr('data-dw-u-id');
   return uid;
 };
 
@@ -145,7 +145,7 @@ Settings.editFormSubmitter = function($form, debateId, rootPostId,
 
 Settings.draggableInternal =
     '.dw-res, .dw-i-ts, .dw-t, .dw-t-vspace, '+
-    '.dw-p, .dw-p-bdy, .dw-hor-a, .dw-fs, '+
+    '.dw-p, .dw-p-bd, .dw-hor-a, .dw-fs, '+
     '.dw-debate, .dw-debate svg, path, '; // (draggableCustom appended)
 Settings.draggableCustom = '';
 
@@ -327,7 +327,7 @@ function $threadClose() {
   var myLastVersion = $.cookie('myLastPageVersion'); // cookie no longer exists
   if (!myLastVersion) return;
   var newPosts = posts.filter(function(index){ // BUG?…
-    //… relied on posts = $('.debiki .dw-p-bdy') but use '*.dw-p' instead?
+    //… relied on posts = $('.debiki .dw-p-bd') but use '*.dw-p' instead?
     return $(this).dwLastChange() > myLastVersion;
   })
   newPosts.closest('.dw-t').addClass('dw-m-t-new');
@@ -360,10 +360,10 @@ function resizeRootThreadImpl(extraWidth) {
   width += extraWidth;
 
   // Set the min width to something wider than the max width of a
-  // .dw-p-bdy <p>, so paragaphs won't expand when child threads or
+  // .dw-p-bd <p>, so paragaphs won't expand when child threads or
   // reply forms are added below the root post.
   // TODO: Use e.g. http://www.bramstein.com/projects/jsizes/ to find the
-  // max-width of a .dw-p-bdy p. Or specify the <p> max width in px:s not em:s.
+  // max-width of a .dw-p-bd p. Or specify the <p> max width in px:s not em:s.
   // Or use http://jquery.lukelutman.com/plugins/px/jquery.px.js, mentioned
   // here: http://www.mail-archive.com/jquery-en@googlegroups.com/msg13257.html.
   width = Math.max(width, 650); // today <p> max-width is 50 em and 650 fine
@@ -398,14 +398,14 @@ function $findChildrenWidthHoriz() {
 }
 
 // Finds the width of the widest [paragraph plus inline threads],
-// when the inline threads are placed to the right of the -bdy-blk:s
+// when the inline threads are placed to the right of the -bd-blk:s
 // (horizontal layout).
 function $findMaxInlineWidthHoriz() {
   var accWidth = 0;
   var maxWidth = 0;
-  $(this).find('> .dw-p > .dw-p-bdy').children(':not(svg)').each(function(){
+  $(this).find('> .dw-p > .dw-p-bd').children(':not(svg)').each(function(){
     var $i = $(this);
-    if ($i.is('.dw-p-bdy-blk')) {
+    if ($i.is('.dw-p-bd-blk')) {
       // New block, reset width
       accWidth = $i.outerWidth(true);
     }
@@ -648,9 +648,9 @@ function updateDebate(newDebateHtml) {
       // I mean, apply it again but "inverted" so it undoes itself. Then
       // the modification date would always increase and the bug is no more.)
       var oldRatsModTime =
-          $oldPost.find('> .dw-p-hdr > .dw-p-ra-all').attr('data-mtime');
+          $oldPost.find('> .dw-p-hd > .dw-p-ra-all').attr('data-mtime');
       var newRatsModTime =
-          $newPost.find('> .dw-p-hdr > .dw-p-ra-all').attr('data-mtime');
+          $newPost.find('> .dw-p-hd > .dw-p-ra-all').attr('data-mtime');
       var hasNewRatings =
           (!oldRatsModTime ^ !newRatsModTime) ||
           (newRatsModTime > oldRatsModTime);
@@ -711,8 +711,8 @@ function updateDebate(newDebateHtml) {
         //   the post creation timestamp, .dw-p-at, which exists for sure.
         // - Show() the new .dw-p-ra-all, so the user notices his/her own
         //   ratings, highlighted.
-        var $newHdr = $newPost.children('.dw-p-hdr');
-        $oldPost.children('.dw-p-hdr')
+        var $newHdr = $newPost.children('.dw-p-hd');
+        $oldPost.children('.dw-p-hd')
             .children('.dw-p-ra-top, .dw-p-ra-all').remove().end()
             .children('.dw-p-at').after(
                 $newHdr.children('.dw-p-ra-top, .dw-p-ra-all').show());
@@ -890,17 +890,17 @@ function $initPost() {
 
 function $initPostStep1() {
   var $i = $(this),
-      $hdr = $i.find('.dw-p-hdr'),
+      $hdr = $i.find('.dw-p-hd'),
       $postedAt = $hdr.children('.dw-p-at'),
       postedAtTitle = $postedAt.attr('title'),
       postedAt = Date.parse(postedAtTitle), // number, no Date, fine
-      $editedAt = $hdr.find('> .dw-p-hdr-e > .dw-p-at'),
+      $editedAt = $hdr.find('> .dw-p-hd-e > .dw-p-at'),
       editedAtTitle = $editedAt.attr('title'),
       editedAt = Date.parse(editedAtTitle),
       now = new Date();  // COULD cache? e.g. when initing all posts
 
   // If this post has any inline thread, place inline marks and split
-  // the single .dw-p-bdy-blk into many blocks with inline threads
+  // the single .dw-p-bd-blk into many blocks with inline threads
   // inbetween.
   // (This takes rather long (120 ms for 110 posts, of which 20 are inlined,
   // on my 6 core 2.8 GHz AMD) but should nevertheless be done quite early,
@@ -928,7 +928,7 @@ function $initPostStep1() {
     $(this)
         .css('cursor', null)
         .find('> .dw-p-at, > .dw-p-flgs-all, > .dw-p-ra-all, ' +
-              '> .dw-p-hdr-e > .dw-p-at').show()
+              '> .dw-p-hd-e > .dw-p-at').show()
         .end()
         // This might have expanded the post, so redraw arrows.
         .closest('.dw-p').each(SVG.$drawParents);
@@ -944,8 +944,8 @@ function $initPostStep1() {
   //  So one can follow the svg path to the inline thread.
   // When hovering an inline thread, highlight the mark.
   // COULD highlight arrows when hovering any post, not just inline posts?
-  $('> .dw-p-bdy', this)
-      .find('> .dw-p-bdy-blk .dw-i-m-start')
+  $('> .dw-p-bd', this)
+      .find('> .dw-p-bd-blk .dw-i-m-start')
         .hover($inlineMarkHighlightOn, $inlineMarkHighlightOff)
       .end()
       .find('> .dw-i-ts > .dw-i-t > .dw-p')
@@ -966,19 +966,19 @@ function $htmlToMarkup() {
 }
 
 // Moves inline child threads back to the thread's list of child threads,
-// and removes inline marks and undoes wrapping of -bdy contents into
-// -bdy-blk:s. That is, undoes $placeInlineMarks and $splitBodyPlaceInlines.
+// and removes inline marks and undoes wrapping of -bd contents into
+// -bd-blk:s. That is, undoes $placeInlineMarks and $splitBodyPlaceInlines.
 // Call on posts.
 function $undoInlineThreads() {
   // Remove inline marks and unwrap block contents.
   var $post = $(this);
-  var $body = $post.children('.dw-p-bdy');
-  // The post body contents is placed in various <div .dw-p-bdy-blk>
+  var $body = $post.children('.dw-p-bd');
+  // The post body contents is placed in various <div .dw-p-bd-blk>
   // with inline threads, <div .dw-i-ts>, inbetween.
-  // Move the contents back to a single <div .dw-p-bdy-blk>,
+  // Move the contents back to a single <div .dw-p-bd-blk>,
   // and also remove inline marks.
-  var $bodyBlock = $('<div class="dw-p-bdy-blk"></div>');
-  $body.children('.dw-p-bdy-blk').each(function() {
+  var $bodyBlock = $('<div class="dw-p-bd-blk"></div>');
+  $body.children('.dw-p-bd-blk').each(function() {
     var $block = $(this);
     $block.find('.dw-i-m-start').remove();
     $block.contents().appendTo($bodyBlock);
@@ -995,7 +995,7 @@ function $undoInlineThreads() {
 // Places marks where inline threads are to be placed.
 // This is a mark:  <a class='dw-i-m-start' href='#dw-t-(thread_id)' />
 // Better do this before splitBodyPlaceInlines, so as not to confuse the
-// TagDog unnecessarily much (it'd be confused by the -bdy-blk:s).
+// TagDog unnecessarily much (it'd be confused by the -bd-blk:s).
 // Call on posts.
 function $placeInlineMarks() {
   $(this).parent().find('> .dw-res > .dw-i-t', this).each(function(){
@@ -1004,7 +1004,7 @@ function $placeInlineMarks() {
     var markStartText = $(this).attr('data-dw-i-t-where');
     var $parentThread = $(this).parent().closest('.dw-t');
     var $bodyBlock = $parentThread.find(
-        '> .dw-p > .dw-p-bdy > .dw-p-bdy-blk');
+        '> .dw-p > .dw-p-bd > .dw-p-bd-blk');
     bugIf($bodyBlock.length !== 1, 'error DwE6kiJ08');
     var tagDogText = tagDog.sniffHtml($bodyBlock);
     var loc = 10; // TODO should be included in the data attr
@@ -1038,7 +1038,7 @@ function $placeInlineMarks() {
     var afterMatch = tagDogText.substring(match, 999999);
     var tagDogTextWithMark = [beforeMatch, mark, afterMatch].join('');
     var blockWithMarks =
-        ['<div class="dw-p-bdy-blk">',
+        ['<div class="dw-p-bd-blk">',
           tagDog.barkHtml(tagDogTextWithMark),
           '</div>'].join('');
     $bodyBlock.replaceWith(blockWithMarks);
@@ -1049,18 +1049,18 @@ function $placeInlineMarks() {
   });
 }
 
-// Splits the single .dw-p-bdy-blk into many -bdy-blk:s,
+// Splits the single .dw-p-bd-blk into many -bd-blk:s,
 // and places inline threads inbetween, in <ol .dw-i-ts> tags.
 // Call on posts.
 function $splitBodyPlaceInlines() {
-  // Groups .dw-p-bdy child elems in groups around/above 200px high, and
-  // wrap them in a .dw-p-bdy-blk. Gathers all inline threads for each
-  // .dw-p-bdy-blk, and places them in an <ol> to the right of the
-  // .dw-p-bdy-blk.
+  // Groups .dw-p-bd child elems in groups around/above 200px high, and
+  // wrap them in a .dw-p-bd-blk. Gathers all inline threads for each
+  // .dw-p-bd-blk, and places them in an <ol> to the right of the
+  // .dw-p-bd-blk.
   var $placeToTheRight = function() {
     // Height calculation issue:
-    //  After a .dw-p-bdy-blk and an <ol> have been added, there are
-    //  elems before [the current block to wrap in a .dw-p-bdy-blk] that
+    //  After a .dw-p-bd-blk and an <ol> have been added, there are
+    //  elems before [the current block to wrap in a .dw-p-bd-blk] that
     //  float left. The height of the block includes the height of these
     //  floating blocks. So the current block might be excessively high!
     //  Therefore, read the height of the *next* block, which has its
@@ -1076,9 +1076,9 @@ function $splitBodyPlaceInlines() {
       if (accHeight < 270 && nextHeight) // COULD make 270 configurable?
         return;
       // The total height of all accElemes is above the threshold;
-      // wrap them in a .dw-p-bdy-blk, and any inline replies to them will
+      // wrap them in a .dw-p-bd-blk, and any inline replies to them will
       // float to the right of that -body-block.
-      var $block = $('<div class="dw-p-bdy-blk"></div>').insertBefore(elems[0]);
+      var $block = $('<div class="dw-p-bd-blk"></div>').insertBefore(elems[0]);
       $block.prepend(elems);
       // Create an <ol> into which $block's inline threads will be placed.
       var $inlineThreads = $('<ol class="dw-i-ts"></ol>').insertAfter($block);
@@ -1091,9 +1091,9 @@ function $splitBodyPlaceInlines() {
         accHeightInlines += $inline.outerHeight(true);
         numInlines += 1;
       });
-      // If the inline replies <ol> is higher than the -bdy-blk, there'll
-      // be empty space between this -bdy-blk and the next one (because a
-      // -bdy-blk clears floats). Avoid this, by reducing the height of
+      // If the inline replies <ol> is higher than the -bd-blk, there'll
+      // be empty space between this -bd-blk and the next one (because a
+      // -bd-blk clears floats). Avoid this, by reducing the height of
       // each inline thread.
       if (accHeightInlines > accHeight) {
         // TODO // For now, simply set the height to accHeight / numInlines.
@@ -1104,11 +1104,11 @@ function $splitBodyPlaceInlines() {
   };
 
   var $placeInside = function() {
-    // There are some .dw-i-m-start that are direct children of this .dw-p-bdy.
+    // There are some .dw-i-m-start that are direct children of this .dw-p-bd.
     // They are inline marks for which no matching text was found, and are
-    // currently placed at the end of this .dw-p-bdy. Wrap them in a single
-    // .dw-p-bdy-blk, and their threads in an <ol>.
-    var $bdyBlkMatchless = $('<div class="dw-p-bdy-blk"></div>');
+    // currently placed at the end of this .dw-p-bd. Wrap them in a single
+    // .dw-p-bd-blk, and their threads in an <ol>.
+    var $bdyBlkMatchless = $('<div class="dw-p-bd-blk"></div>');
     var $inlineThreadsMatchless = $('<ol class="dw-i-ts"></ol>');
 
     $(this).children().each(function(){
@@ -1122,7 +1122,7 @@ function $splitBodyPlaceInlines() {
       }
       // Wrap the elem in a -blk and append an <ol> into which inline
       // threads will be placed.
-      var $bdyBlk = $(this).wrap('<div class="dw-p-bdy-blk"></div>').parent();
+      var $bdyBlk = $(this).wrap('<div class="dw-p-bd-blk"></div>').parent();
       var $inlineThreads = $('<ol class="dw-i-ts"></ol>').insertAfter($bdyBlk);
       $('.dw-i-m-start', this).each(function(){
         var $inline = $(this.hash); // TODO change from <li> to <div>
@@ -1142,13 +1142,13 @@ function $splitBodyPlaceInlines() {
   // Group body elems in body-block <div>s. In debiki.css, these divs are
   // placed to the left and inline threads in a <ol> to the right, or
   // below (between) the body blocks.
-  $(this).find('> .dw-p-bdy > .dw-p-bdy-blk').each(function(){
+  $(this).find('> .dw-p-bd > .dw-p-bd-blk').each(function(){
     var $placeFun = $(this).closest('.dw-t').filter('.dw-hor').length ?
         $placeToTheRight : $placeInside;
     $placeFun.apply(this);
-    // Now there should be one <div .dw-p-bdy-blk> with many
-    // <div .dw-p-bdy-blk> and <div .dw-i-ts> inside. Unwrap that single
-    // parent <div .dw-p-bdy-blk>.
+    // Now there should be one <div .dw-p-bd-blk> with many
+    // <div .dw-p-bd-blk> and <div .dw-i-ts> inside. Unwrap that single
+    // parent <div .dw-p-bd-blk>.
     $(this).replaceWith($(this).contents());
   });
 }
@@ -1244,14 +1244,14 @@ function $showInlineActionMenu(event) {
 
   // Remember the clicked node and, if it's a text node, its parent
   // non-text node.
-  // Later, when finding the closest .dw-p-bdy-blk, we must start searching
+  // Later, when finding the closest .dw-p-bd-blk, we must start searching
   // from a non-text node, because jQuery(text-node) results in TypeError:
   //  Object #<a Text> has no method 'getAttribute'.
   var isTextNode = sel.focusNode.nodeType === 3;  // 3 is text
   var focusText = isTextNode ? sel.focusNode : undefined;
   var $focusNonText = $(isTextNode ? sel.focusNode.parentNode : sel.focusNode);
   var $post = $target.closest('.dw-p');
-  var $postBody = $post.children('.dw-p-bdy');
+  var $postBody = $post.children('.dw-p-bd');
 
   if (!isTextNode) {
     // Finding the text clicked, when !isTextNode, is not implemented.
@@ -1273,8 +1273,8 @@ function $showInlineActionMenu(event) {
 
   var placeWhereFunc = function() {
     // Find out where to place the relevant form.
-    // This must be done when the -bdy has been split into -bdy-blks.
-    var elem = $focusNonText.closest('.dw-p-bdy-blk')
+    // This must be done when the -bd has been split into -bd-blks.
+    var elem = $focusNonText.closest('.dw-p-bd-blk')
           .dwBugIfEmpty('error DwE6u5962rf3')
           .next('.dw-i-ts')
           .dwBugIfEmpty('error DwE17923xstq');
@@ -1310,7 +1310,7 @@ function $showInlineActionMenu(event) {
       sel = null;
       // Copy the post body, with the magic token, but skip inline threads.
       var $clean = $('<div></div>');
-      $postBody.children('.dw-p-bdy-blk').each(function() {
+      $postBody.children('.dw-p-bd-blk').each(function() {
         $clean.append($(this).children().clone());  // .dw-i-ts skipped
       });
       // Undo the changes to the focused node.
@@ -1380,7 +1380,7 @@ function $showInlineActionMenu(event) {
 
   $menu.find('.dw-a-reply-i').click(function(){
     // To have somewhere to place the reply form, split the block into
-    // smaller .dw-p-bdy-blk:s, and add .dw-i-ts, if not already
+    // smaller .dw-p-bd-blk:s, and add .dw-i-ts, if not already
     // done (which is the case if this post has no inline replies).
     if (!$postBody.children('.dw-i-ts').length) {
       // This rearranging of elems destroys `sel', e.g. focusNode becomes null.
@@ -2401,7 +2401,7 @@ function $showReplyForm(event, opt_where) {
 // Shows the edit form.
 function $showEditForm2() {
   var $post = $(this);
-  var $postBody = $post.children('.dw-p-bdy');
+  var $postBody = $post.children('.dw-p-bd');
   var postId = $post.attr('id').substr(8, 999); // drop initial "dw-post-"
 
   // COULD move function to debiki-lift.js:
@@ -2638,7 +2638,7 @@ function $updateEditFormPreview() {
       die("Unknown markup [error DwE0k3w25]");
   }
 
-  $previewTab.children('.dw-p-bdy-blk').html(htmlSafe);
+  $previewTab.children('.dw-p-bd-blk').html(htmlSafe);
 }
 
 
@@ -2647,7 +2647,7 @@ function $updateEditFormPreview() {
 function $showEditsDialog() {
   var $thread = $(this).closest('.dw-t');
   var $post = $thread.children('.dw-p');
-  var $postBody = $post.children('.dw-p-bdy');
+  var $postBody = $post.children('.dw-p-bd');
   var postId = $post[0].id.substr(8, 999); // drop initial "dw-post-"
 
   $.get('?view='+ rootPostId +'&viewedits='+ postId, 'text')
@@ -2805,7 +2805,7 @@ function $showEditDiff() {
   var $oldDiff = $post.children('.dw-p-diff');
   $oldDiff.remove();
   // Extract the post's current text.
-  var $postBody = $post.children('.dw-p-bdy');
+  var $postBody = $post.children('.dw-p-bd');
   var oldText = $postBody.map($htmlToMarkup)[0]; // TODO exclude inline threads
   // Try both val() and text() -- `this' might be a textarea or
   // an elem with text inside.
@@ -2837,7 +2837,7 @@ function $showEditDiff() {
 function $removeEditDiff() {
   var $post = $(this).closest('.dw-t').children('.dw-p');
   $post.children('.dw-p-diff').remove();
-  $post.children('.dw-p-bdy').show();
+  $post.children('.dw-p-bd').show();
   $post.css('overflow-y', 'hidden');
 }
 
@@ -3013,9 +3013,9 @@ function makeSvgDrawer() {
 
     // Create root for contextual replies.
     // An inline thread is drawn above its parent post's body,
-    // so an SVG tag is needed in each .dw-p-bdy with any inline thread.
-    // (For simplicity, create a <svg> root in all .dw-p-bdy:s.)
-    $i.children('.dw-p-bdy').each($createSvgRoot);
+    // so an SVG tag is needed in each .dw-p-bd with any inline thread.
+    // (For simplicity, create a <svg> root in all .dw-p-bd:s.)
+    $i.children('.dw-p-bd').each($createSvgRoot);
 
     // Create root for whole post replies.
     // (Never do this for title posts, they have no whole post replies.)
@@ -3041,7 +3041,7 @@ function makeSvgDrawer() {
   // Draws an arrow from a mark to an inline thread.
   function arrowFromMarkToInline($mark, $inlineThread, cache) {
     // COULD make use of `cache'. See arrowFromThreadToReply(…).
-    var $bdyBlk = $mark.closest('.dw-p-bdy-blk');
+    var $bdyBlk = $mark.closest('.dw-p-bd-blk');
     var $thread = $bdyBlk.closest('.dw-t');
     var horizontalLayout = $thread.is('.dw-hor');
     var $svgRoot = findClosestRoot($mark);
@@ -3062,7 +3062,7 @@ function makeSvgDrawer() {
     var ye = to.top - svgOffs.top;
     var strokes;
     if (horizontalLayout) {
-      // Change x-start to the right edge of the .dw-p-bdy-blk in which
+      // Change x-start to the right edge of the .dw-p-bd-blk in which
       // the mark is placed, so the curve won't be drawn over the -blk itself.
       xs = $bdyBlk.offset().left - svgOffs.left + $bdyBlk.outerWidth(false);
       // Move the curve a bit downwards, so it starts and ends in the middle
@@ -3080,7 +3080,7 @@ function makeSvgDrawer() {
                  ' '+ (xe) +' '+ (ye) +     // curve,       `--
                ' l -6 -6 m 6 6 l -6 6';     // arrow end:  >
     } else {
-      // Move y-start to below the .dw-p-bdy-blk in which the mark is placed.
+      // Move y-start to below the .dw-p-bd-blk in which the mark is placed.
       ys = $bdyBlk.offset().top - svgOffs.top + $bdyBlk.outerHeight(false) + 3;
       // Always start the curve at the same x position, or arrows to
       // different inline threads might overlap (unless the inline threads are
@@ -3091,7 +3091,7 @@ function makeSvgDrawer() {
       xe -= 13;
       // Make arrow point at middle of [-] (close/open thread button).
       ye += 9;
-      // Arrow starting below the .dw-p-bdy-blk, pointing on the inline thread.
+      // Arrow starting below the .dw-p-bd-blk, pointing on the inline thread.
       strokes = 'M '+ xs +' '+ ys +
                ' C '+ (xs) +' '+ (ye) +     // draw        |
                  ' '+ (xs+1) +' '+ (ye) +   // Bezier      \
@@ -3296,7 +3296,7 @@ function makeSvgDrawer() {
     // - arrowFrom...() are SLOW! because they use $.offset.
     // }}}
     var $i = $(this);
-    var $bdy = $('> .dw-p > .dw-p-bdy', this);
+    var $bdy = $('> .dw-p > .dw-p-bd', this);
     // Remove old curves
     $i.add('> .dw-t-vspace', this).add($bdy).children('svg').each(function() {
       $(this).find('path').remove();
@@ -3310,7 +3310,7 @@ function makeSvgDrawer() {
       arrowFromThreadToReply($i, $(this), cache);
     });
     // To inline replies.
-    $bdy.children('.dw-p-bdy-blk').each(function() {
+    $bdy.children('.dw-p-bd-blk').each(function() {
       var cache = {};
       $(this).find('.dw-i-m-start').each(function() {
         var $mark = $(this);
@@ -3618,8 +3618,8 @@ function registerEventHandlers() {
   // click is completed. Otherwise the inline menu gets in the
   // way when you double click to select whole words. (Or triple click to
   // select paragraphs.)
-  $('.debiki').delegate('.dw-p-bdy-blk', 'mouseup', $showInlineActionMenu)
-      .delegate('.dw-p-bdy-blk', 'mousedown', $hideInlineActionMenu);
+  $('.debiki').delegate('.dw-p-bd-blk', 'mouseup', $showInlineActionMenu)
+      .delegate('.dw-p-bd-blk', 'mousedown', $hideInlineActionMenu);
 
   // Remove new-reply and rating forms on cancel, but 
   // the edit form has some own special logic.
