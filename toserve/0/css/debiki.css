@@ -51,8 +51,7 @@
  *  -pg-          page
  *  -prvw-        preview
  *  -q-           ?? post-before (looks like p, but flipped — before, not after)
- *  -rat-         rating  (COULD rename to "r")
- *  -ra-          rating  (COULD rename to "r")
+ *  -r-           rating
  *  -re-          reply   (COULD rename to "p", for "post")
  *  -res-         replies (COULD rename to "ts", "threads")
  *  -rez-         resized (COULD rename to "rzd" and let "rz" mean resize)
@@ -79,7 +78,7 @@
  *  dw-fs         form group      (COULD remove — there're no groups any more?)
  *  dw-fs-e       edit form group (COULD rename to -f-e/re/rat ?)
  *  dw-fs-re      reply form group
- *  dw-fs-rat     rating form group
+ *  dw-fs-r       rating form group
  *  dw-fs-flg     flag for spam/abuse/etc form
  *  dw-hor-a      action stuff, layed out horizontally
  *  dw-if-opera   shown only for Opera
@@ -779,56 +778,56 @@ so set max-width and line height. */
 }
 
 .dw-p-flgs-top,
-.dw-p-rats-top {
+.dw-p-rs-top {
 }
 
 .dw-p-flgs-all,
-.dw-p-ra-all {
+.dw-p-r-all {
   display: none; /* shown on .dw-p-hd click */
 }
 
 .dw-flgs,
 .dw-flgs li,
-.dw-rats,
-.dw-rats li {
+.dw-rs,
+.dw-rs li {
   display: inline;
 }
 
 .dw-flgs li,
-.dw-rats li {
+.dw-rs li {
   margin-left: 0.5ex;
 }
 
-.dw-p-hd .dw-rats .dw-rat.dw-you-rated {
+.dw-p-hd .dw-rs .dw-r.dw-you-rated {
   background-color: #f4c4f4;
 }
 
-.dw-p-hd .dw-rats .dw-rat-tag {
+.dw-p-hd .dw-rs .dw-r-tag {
   /*font-size: 85%;*/
 }
 
 .dw-p-hd .dw-post-liking,
-.dw-p-hd .dw-rat-count,
-.dw-p-hd .dw-rat-tag-frac-min,
-.dw-p-hd .dw-rat-tag-sum,
-.dw-p-hd .dw-rat-valsum-max {
+.dw-p-hd .dw-r-count,
+.dw-p-hd .dw-r-tag-frac-min,
+.dw-p-hd .dw-r-tag-sum,
+.dw-p-hd .dw-r-valsum-max {
   margin-left: 3px;
   font-weight: bold;
   display: none; /* it's for debugging mostly; makes non-developers confused */
 }
 
-.dw-p-hd .dw-rats .dw-rat-tag-frac {
+.dw-p-hd .dw-rs .dw-r-tag-frac {
   font-size: 90%;
   position: relative;
   left: -2px;
 }
-.xxx-dw-post-info .dw-rats .dw-rat-tag-frac:before {
+.xxx-dw-post-info .dw-rs .dw-r-tag-frac:before {
   content: "×"; /* The multiplication sign, U+00D7 */
   position: relative;
   left: -1px;
 }
 
-.dw-post-info .dw-rats-non-weighted {
+.dw-post-info .dw-rs-non-weighted {
   display: none; /* -non-weighted is only for debugging */
 }
 
@@ -1258,21 +1257,21 @@ it works everywhere, even if it works fine for you. */
 
 /* === Rate === */
 
-.dw-fs-rat {
+.dw-fs-r {
   min-width: 16.5em; /* at least 2 rat-tag-set:s wide */
   margin: 0 0 30px 29px;
 }
 
-.dw-fs-rat .dw-rat-tag-set {
+.dw-fs-r .dw-r-tag-set {
   float: left;
   max-width: 8em;
 }
 
-.dw-fs-rat .dw-rat-tag-set .ui-button {
+.dw-fs-r .dw-r-tag-set .ui-button {
   min-width: 7em;
 }
 
-.dw-fs-rat .dw-show-more-rat-tags {
+.dw-fs-r .dw-show-more-r-tags {
   margin-top: 1em;
   float: left; /* otherwise margin-top has no effect, why not? */
   clear: both;
@@ -1281,13 +1280,13 @@ it works everywhere, even if it works fine for you. */
 }
 
 /* Stack more-rating-tags horizontally. */
-.dw-fs-rat .dw-more-rat-tags {
-  display: none; /* shown on .dw-show-more-rat-tags click */
+.dw-fs-r .dw-more-r-tags {
+  display: none; /* shown on .dw-show-more-r-tags click */
   clear: both;
   margin-top: 1em;
   max-width: none;
 }
-.dw-fs-rat .dw-more-rat-tags label {
+.dw-fs-r .dw-more-r-tags label {
   float: left;
   min-width: 0 !important;
 }
