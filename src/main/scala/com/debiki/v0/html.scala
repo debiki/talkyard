@@ -564,7 +564,7 @@ class DebateHtml(val debate: Debate) {
           distinct.length
         lazy val editor =
           debate.authorOf_!(debate.editsById(lastEditApp.get.editId))
-        <div class='dw-p-hdr-ed'>{
+        <div class='dw-p-hdr-e'>{
             Text(if (post.id == rootPostId) {
               // Via CSS, edit info is placed on the same line as author info.
               ", edited "
@@ -675,8 +675,8 @@ object FormHtml {
   object Edit {
     object InputNames {
       val Markup = "dw-fi-e-mup"
-      val Text = "dw-fi-ed-txt"
-      val Preview = "dw-fi-ed-preview"
+      val Text = "dw-fi-e-txt"
+      val Preview = "dw-fi-e-prvw"
     }
   }
 
@@ -1031,8 +1031,8 @@ class FormHtml(val config: HtmlConfig, val pageRoot: PageRoot,
       val applied = eapp isDefined
       val editor = page.authorOf_!(edit)
       def applier_! = page.authorOf_!(eapp.get)
-      <li class='dw-es'>
-        <div class='dw-es-ed'>{
+      <li class='dw-e-sg'>
+        <div class='dw-e-sg-e'>{
             <div>{
               (if (applied) "Suggested by " else "By ") ++
               linkTo(editor, config) ++
@@ -1073,8 +1073,8 @@ class FormHtml(val config: HtmlConfig, val pageRoot: PageRoot,
               <input id={undoId} type='checkbox' name={name} value={delVal}/>
             }
           }</div>
-          <pre class='dw-ed-text'>{edit.text}</pre>
-          { eapp.map(ea => <pre class='dw-ed-rslt'>{ea.result}</pre>).toList }
+          <pre class='dw-e-text'>{edit.text}</pre>
+          { eapp.map(ea => <pre class='dw-e-rslt'>{ea.result}</pre>).toList }
         </div>
       </li>
     }
@@ -1094,13 +1094,13 @@ class FormHtml(val config: HtmlConfig, val pageRoot: PageRoot,
       <div id='dw-e-sgss'>
         <div>Improvement suggestions:</div>
         <div id='dw-e-sgs-pending'>
-          <ol class='dw-ess'>{
+          <ol class='dw-e-sgs'>{
             for (edit <- pending) yield xmlFor(edit, None)
           }</ol>
         </div>
         <div>Improvements already applied:</div>
         <div id='dw-e-sgs-applied'>
-          <ol class='dw-ess'>{
+          <ol class='dw-e-sgs'>{
             for ((edit, editApp) <- applied) yield xmlFor(edit, Some(editApp))
           }</ol>
         </div>
@@ -1134,7 +1134,7 @@ class FormHtml(val config: HtmlConfig, val pageRoot: PageRoot,
       if (postToEdit.id == Page.BodyId) " dw-ar-p-bd-blk"
       else ""
     val submitBtnText = "Save as "+ userName.openOr("...")
-    <form class='dw-f dw-f-ed'
+    <form class='dw-f dw-f-e'
           action={_viewRoot +"edit="+ postToEdit.id}
           accept-charset='UTF-8'
           method='post'>
@@ -1157,28 +1157,28 @@ class FormHtml(val config: HtmlConfig, val pageRoot: PageRoot,
         }
         </select>
       </div>
-      <div id='dw-ed-tabs' class='dw-e-tabs'>
+      <div id='dw-e-tabs' class='dw-e-tabs'>
         <ul>
-          <li><a href='#dw-ed-tab-edit'>Edit</a></li>
-          <li><a href='#dw-ed-tab-diff'>Diff</a></li>
-          <li><a href='#dw-ed-tab-preview'>Preview</a></li>
+          <li><a href='#dw-e-tab-edit'>Edit</a></li>
+          <li><a href='#dw-e-tab-diff'>Diff</a></li>
+          <li><a href='#dw-e-tab-prvw'>Preview</a></li>
         </ul>
-        <div id='dw-ed-tab-edit' class='dw-ed-tab dw-ed-tab-edit'>
+        <div id='dw-e-tab-edit' class='dw-e-tab dw-e-tab-edit'>
           <textarea id='dw-fi-edit-text' name={Inp.Text}
                     rows={if (isForTitle) "2" else "7"} cols='38'>{
             newText
           }</textarea>
         </div>
-        <div id='dw-ed-tab-preview'
-             class={"dw-ed-tab dw-ed-tab-preview dw-p-bdy"+ cssArtclBody}>
+        <div id='dw-e-tab-prvw'
+             class={"dw-e-tab dw-e-tab-prvw dw-p-bdy"+ cssArtclBody}>
           <div class='dw-p-bdy-blk'/>
         </div>
-        <div id='dw-ed-tab-diff' class='dw-ed-tab dw-ed-tab-diff'>
+        <div id='dw-e-tab-diff' class='dw-e-tab dw-e-tab-diff'>
         </div>
         { // In debiki.js, updateEditFormDiff() uses textarea.val()
-          // (i.e. newText) if there's no .dw-ed-src-old tag.
+          // (i.e. newText) if there's no .dw-e-src-old tag.
           if (postToEdit.text == newText) Nil
-          else <pre class='dw-ed-src-old'>{postToEdit.text}</pre> }
+          else <pre class='dw-e-src-old'>{postToEdit.text}</pre> }
       </div>
       { termsAgreement("Save as ...") }
       <div class='dw-submit-set'>
@@ -1187,7 +1187,7 @@ class FormHtml(val config: HtmlConfig, val pageRoot: PageRoot,
        <input type='submit' class='dw-fi-submit' value={submitBtnText}/>
        <input type='button' class='dw-fi-cancel' value='Cancel'/>
       </div>
-      <div class='dw-f-ed-sugg-info'>You are submitting an edit
+      <div class='dw-f-e-sugg-info'>You are submitting an edit
         <strong>suggestion</strong> — hopefully someone will review it
         and accept it.</div>
     </form>
