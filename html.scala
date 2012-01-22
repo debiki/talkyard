@@ -1131,7 +1131,7 @@ class FormHtml(val config: HtmlConfig, val pageRoot: PageRoot,
     import Edit.{InputNames => Inp}
     val isForTitle = postToEdit.id == Page.TitleId
     val cssArtclBody =
-      if (postToEdit.id == Page.BodyId) " dw-ar-p-bd-blk"
+      if (postToEdit.id == Page.BodyId) " dw-ar-p-bd"
       else ""
     val submitBtnText = "Save as "+ userName.openOr("...")
     <form class='dw-f dw-f-e'
