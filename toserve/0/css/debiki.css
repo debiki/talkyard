@@ -24,10 +24,7 @@
  *  -e            east (COULD change to "ew", eastwards, and use "e" for edit)
  *                  and new (no good!, "new") sew etc. for northeastwards etc.
  *                  Or 'de', direction-east, dn/w/s/e dnw/sw/se/ne ?
- *  -ed-          edit (COULD change to "e")
  *  -eml-         email
- *  -es-          edit suggestion (COULD change to -e-sg, and let -es = edits)
- *  -ess-         edit suggestions (COULD change to -e-sgs)
  *  -f-           form
  *  -fs-          form group - COULD change to -dlg- or -dg-
  *  -fi-          form <input>
@@ -52,6 +49,7 @@
  *  -ntf-dtl      notification details
  *  -p-           post
  *  -pg-          page
+ *  -prvw-        preview
  *  -q-           ?? post-before (looks like p, but flipped — before, not after)
  *  -rat-         rating  (COULD rename to "r")
  *  -ra-          rating  (COULD rename to "r")
@@ -74,13 +72,12 @@
  *  dw-a-reply    new reply
  *  dw-a-more     shows more actions: link/report/delete
  *  dw-a-edit     list edit suggestion
- *  dw-ess        edit suggestions --deprecated--
  *  dw-e-ap-dt    edit application date
  *  dw-e-sg-dt    edit suggestion date
- *  dw-es-vs      votes on a certain edit suggestion --deprecated--
- *  dw-fi-ed-preview  edit form input, preview
+ *  dw-e-sg-vs    votes on a certain edit suggestion --deprecated--
+ *  dw-fi-e-prvw  edit form input, preview
  *  dw-fs         form group      (COULD remove — there're no groups any more?)
- *  dw-fs-ed      edit form group (COULD rename to -f-ed/re/rat ?)
+ *  dw-fs-e       edit form group (COULD rename to -f-e/re/rat ?)
  *  dw-fs-re      reply form group
  *  dw-fs-rat     rating form group
  *  dw-fs-flg     flag for spam/abuse/etc form
@@ -203,12 +200,12 @@ header.dw-p-ttl > h1 {
   margin-bottom: 6px;
 }
 /* The title when it's being previewed. */
-.dw-p-ttl > .dw-f-ed .dw-ed-tab-preview > h1 {
+.dw-p-ttl > .dw-f-e .dw-e-tab-prvw > h1 {
   padding: 0;
   margin: 0;
 }
 /* The title when it's being edited. */
-.dw-pri .dw-p-ttl > .dw-f-ed textarea {
+.dw-pri .dw-p-ttl > .dw-f-e textarea {
   font-size: 26px;
 }
 
@@ -382,7 +379,7 @@ jQuery UI's dialgos. Might that be incompatible with other libs? */
 then you probably override the article max-width — but if you customize
 .dw-ar-p-bd > .dw-p-bdy-blk { max-width: none }, the edit form might
 get as wide as the page, unless: */
-.dw-depth-0 > .dw-p > .dw-f-ed .dw-e-tabs {
+.dw-depth-0 > .dw-p > .dw-f-e .dw-e-tabs {
   float: left;
 }
 
@@ -594,7 +591,7 @@ so there's some space for the SVG arrows. */
   background-color: transparent;
 }
 
-.dw-depth-0 > .dw-p > .dw-p-hdr > .dw-p-hdr-ed {
+.dw-depth-0 > .dw-p > .dw-p-hdr > .dw-p-hdr-e {
   /* Place edit info on the same line as author info, for the root post.
   Then everything appears on one line just below the page title. */
   display: inline;
@@ -602,14 +599,14 @@ so there's some space for the SVG arrows. */
 
 /* Users with links to more info, e.g. website or blog */
 .dw-pri a.dw-p-by,
-.dw-pri a.dw-p-ed-by {
+.dw-pri a.dw-p-e-by {
   color: #369; /* same as reddit */
   font-weight: bold;
 }
 
 /* Users with no links to more info */
 span.dw-p-by,
-span.dw-p-ed-by {
+span.dw-p-e-by {
   color: #555;
   font-weight: bold;
 }
@@ -984,7 +981,7 @@ until they've been moved into the .dw-bdy-blk > .dw-i-ts. */
 
 /* --- Edit suggestions ---*/  /* — old not in use? */
 
-.dw-ess {
+.dw-e-sgs {
   border-top: dotted 1px #aaa;
   clear: both; /* or action links push contents rightwards */
   font-size: 85%;
@@ -993,39 +990,39 @@ until they've been moved into the .dw-bdy-blk > .dw-i-ts. */
   margin: 0 0 25px 40px;
 }
 
-.dw-es {
+.dw-e-sg {
   border-bottom: dotted 1px #ccc;
   padding: 7px 0 2px 0;
   margin: 0 0 0 0;
 }
 
-.dw-es:hover {
+.dw-e-sg:hover {
   background-color: #e5e5e5;
 }
 
-.dw-es-vs {
+.dw-e-sg-vs {
   float: left;
   width: 30px;
 }
 
-.dw-es-ed {
+.dw-e-sg-e {
   position: relative;
   margin-left: 30px;
 }
 
-.dw-es .dw-ed-text,
-.dw-es .dw-ed-rslt {
+.dw-e-sg .dw-e-text,
+.dw-e-sg .dw-e-rslt {
   display: none; /* text used by javascript diff algorithm */
 }
 
-.dw-es .dw-ed-desc {
+.dw-e-sg .dw-e-desc {
 }
 
-.dw-es .dw-ed-by {
+.dw-e-sg .dw-e-by {
   color: #3872ab; /* same as action links */
 }
 
-.dw-es .dw-ed-at {
+.dw-e-sg .dw-e-at {
 }
 
 /* === Forms === */
@@ -1345,19 +1342,19 @@ it works everywhere, even if it works fine for you. */
   display: none;
 }
 
-#dw-e-sgs .dw-ess {
+#dw-e-sgs .dw-e-sgs {
   margin: 1ex 0 25px 0;
 }
 
-#dw-e-sgs .dw-es-ed {
+#dw-e-sgs .dw-e-sg-e {
   margin-left: 9px;
 }
 
-#dw-e-sgs .dw-ess .dw-as {
+#dw-e-sgs .dw-e-sgs .dw-as {
   margin: 7px 0px 3px 0px;
 }
 
-#dw-e-sgs .dw-es .dw-as .ui-button-text {
+#dw-e-sgs .dw-e-sg .dw-as .ui-button-text {
   padding: .15em 1ex; /* or a relatively huge button */
 }
 
@@ -1379,37 +1376,37 @@ it works everywhere, even if it works fine for you. */
 
 /* === Edit form === */
 
-/* (Some properties defined elsewhere, search for dw-ed-tab.) */
+/* (Some properties defined elsewhere, search for dw-e-tab.) */
 
-.dw-pri .dw-f-ed .ui-widget-header, /* not needed, done in jQuery UI integr. */
-.dw-pri .dw-f-ed.ui-widget-content {
+.dw-pri .dw-f-e .ui-widget-header, /* not needed, done in jQuery UI integr. */
+.dw-pri .dw-f-e.ui-widget-content {
   background: transparent;
   border: none;
 }
 
-.dw-pri .dw-f-ed .dw-ed-tab {
+.dw-pri .dw-f-e .dw-e-tab {
   border: 1px solid #bbb;
   padding: 1.4em 0.3em 1em 1.2em;
 }
 /* ... undo padding for root post preview: */
-.dw-depth-0 > .dw-p > .dw-f-ed .dw-ed-tab-preview {
+.dw-depth-0 > .dw-p > .dw-f-e .dw-e-tab-prvw {
   padding: 1em;
 }
 
 /* The root post has no width restriction on .dw-e-tabs */
-.dw-depth-0 > .dw-p > .dw-f-ed .dw-e-tabs > .dw-ed-tab-edit,
-.dw-depth-0 > .dw-p > .dw-f-ed .dw-e-tabs > .dw-ed-tab-diff {
+.dw-depth-0 > .dw-p > .dw-f-e .dw-e-tabs > .dw-e-tab-edit,
+.dw-depth-0 > .dw-p > .dw-f-e .dw-e-tabs > .dw-e-tab-diff {
   width: 800px;
 }
 
-.dw-pri .dw-f-ed .dw-ed-tab-edit textarea {
+.dw-pri .dw-f-e .dw-e-tab-edit textarea {
   border: none;
   margin: 0;
   padding: 0;
 }
 
 .dw-f-e-inf-save,
-.dw-f-ed .dw-f-ed-sugg-info { /* COULD rename to .dw-f-e-inf-sg? */
+.dw-f-e .dw-f-e-sugg-info { /* COULD rename to .dw-f-e-inf-sg? */
   margin-top: 1ex;
   padding: 6px;
   max-width: 32em;
@@ -1419,7 +1416,7 @@ it works everywhere, even if it works fine for you. */
 }
 
 .dw-f-e-inf-save,
-.dw-f-ed .dw-f-ed-sugg-info > strong {
+.dw-f-e .dw-f-e-sugg-info > strong {
   color: green;
   font-weight: bold;
 }
@@ -1431,59 +1428,59 @@ it works everywhere, even if it works fine for you. */
 
 /* === Edit history / suggestions === */  /* — old not in use? */
 
-.dw-fs-ed { /* currently almost identical to <form> */
+.dw-fs-e { /* currently almost identical to <form> */
   position: relative;
   z-index: 1100;
 }
 
-.dw-fs-ed form {
+.dw-fs-e form {
   margin: 1em 0;
   float: none; /* or won't be wide enough to fill up parent */
   clear: both; /* or show-form buttons appear to the left */
 }
 
-.dw-depth-0 .dw-fs-ed {
+.dw-depth-0 .dw-fs-e {
   clear: both; /* or placed to the right of the action links */
 }
 
-.dw-fs-ed > a {
+.dw-fs-e > a {
   margin: 0.8em 0;
   float: left; /* or 100% wide when sliding up/down, weird */
   clear: both; /* or stacked horiz. when forms sliding up/down */
 }
 
-.dw-fs-ed form:first-of-type,
-.dw-fs-ed > a:first-of-type {
+.dw-fs-e form:first-of-type,
+.dw-fs-e > a:first-of-type {
   margin-top: 0;
 }
 
-.dw-fs-ed .ui-accordion {
+.dw-fs-e .ui-accordion {
   margin-top: 0.75em;
 }
 
-.dw-fs-ed .ui-accordion-content {
+.dw-fs-e .ui-accordion-content {
   padding: 0.7em 0.2em 0 0.6em !important; /* otherwise too much padding */
   background: #f2f2f2; /* jQuery UI's default bg is somewhat obtrusive*/
   border: 1px solid #BBB;
 }
 
-.dw-fs-ed .ui-accordion-content p {
+.dw-fs-e .ui-accordion-content p {
   /* Use same font/size as .dw-debate */
   font-family: Verdana, sans-serif;
   font-size: 93%;
   line-height: 110%;
 }
 
-.dw-fs-ed .ui-accordion h4 {
+.dw-fs-e .ui-accordion h4 {
   font-weight: normal !important;
   font-size: 93%;
 }
 
-.dw-fs-ed h4.dw-your-edit {
+.dw-fs-e h4.dw-your-edit {
   font-weight: bold !important;
 }
 
-.dw-f-ed-btns-vote,
+.dw-f-e-btns-vote,
 .dw-edit-liking-stats {
   margin: 1em 0 0;
 }

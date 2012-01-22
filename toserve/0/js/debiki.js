@@ -894,7 +894,7 @@ function $initPostStep1() {
       $postedAt = $hdr.children('.dw-p-at'),
       postedAtTitle = $postedAt.attr('title'),
       postedAt = Date.parse(postedAtTitle), // number, no Date, fine
-      $editedAt = $hdr.find('> .dw-p-hdr-ed > .dw-p-at'),
+      $editedAt = $hdr.find('> .dw-p-hdr-e > .dw-p-at'),
       editedAtTitle = $editedAt.attr('title'),
       editedAt = Date.parse(editedAtTitle),
       now = new Date();  // COULD cache? e.g. when initing all posts
@@ -928,7 +928,7 @@ function $initPostStep1() {
     $(this)
         .css('cursor', null)
         .find('> .dw-p-at, > .dw-p-flgs-all, > .dw-p-ra-all, ' +
-              '> .dw-p-hdr-ed > .dw-p-at').show()
+              '> .dw-p-hdr-e > .dw-p-at').show()
         .end()
         // This might have expanded the post, so redraw arrows.
         .closest('.dw-p').each(SVG.$drawParents);
@@ -1433,7 +1433,7 @@ function confirmClosePage() {
   var replyCount = $('.dw-fs-re:visible').filter(function() {
     return $(this).find('textarea').val().length > 0;
   }).length;
-  var editCount = $('.dw-f-ed:visible').length;
+  var editCount = $('.dw-f-e:visible').length;
   var msg = replyCount + editCount > 0 ?
     'You have started writing. Really close page?' :  // i18n
     undefined;  // don't return null, or IE asks roughly `confirm null?'
@@ -2410,7 +2410,7 @@ function $showEditForm2() {
     $.get('?edit='+ postId +'&view='+ rootPostId, function(editFormText) {
       // Concerning filter(…): [0] and [2] are text nodes.
       var $editForm = $(editFormText).filter('form');
-      makeIdsUniqueUpdateLabels($editForm, '#dw-ed-tab-');
+      makeIdsUniqueUpdateLabels($editForm, '#dw-e-tab-');
       complete($editForm)
     }, 'text');
   };
@@ -2419,12 +2419,12 @@ function $showEditForm2() {
     // A submit button click doesn't submit, but shows the preview tab,
     // unless the preview tab is already visible — then it submits.
     $(this).find('input.dw-fi-submit').hide().end()
-      .find('input.dw-fi-ed-preview').show();
+      .find('input.dw-fi-e-prvw').show();
   }
 
   // If the edit form has already been opened, but hidden by a Cancel click,
   // reuse the old hidden form, so any edits aren't lost.
-  var $oldEditForm = $post.children('.dw-f-ed');
+  var $oldEditForm = $post.children('.dw-f-e');
   if ($oldEditForm.length) {
     $oldEditForm.each($showPreviewBtnHideSave);
     $oldEditForm.tabs('select' , 0);  // selects the textarea tab
@@ -2434,11 +2434,11 @@ function $showEditForm2() {
   }
 
   editFormLoader(debateId, rootPostId, postId, function($editForm) {
-    var $panels = $editForm.find('.dw-ed-tab');
-    var $editPanel = $panels.filter('[id^="dw-ed-tab-edit"]');
-    var $diffPanel = $panels.filter('[id^="dw-ed-tab-diff"]');
-    var $previewPanel = $panels.filter('[id^="dw-ed-tab-preview"]');
-    var $previewBtn = $editForm.find('input.dw-fi-ed-preview');
+    var $panels = $editForm.find('.dw-e-tab');
+    var $editPanel = $panels.filter('[id^="dw-e-tab-edit"]');
+    var $diffPanel = $panels.filter('[id^="dw-e-tab-diff"]');
+    var $previewPanel = $panels.filter('[id^="dw-e-tab-prvw"]');
+    var $previewBtn = $editForm.find('input.dw-fi-e-prvw');
     var $submitBtn = $editForm.find('input.dw-fi-submit');
     var $cancelBtn = $editForm.find('input.dw-fi-cancel');
 
@@ -2456,21 +2456,21 @@ function $showEditForm2() {
 
     // Notify the user if s/he is making an edit suggestion only.
     var hideOrShow = Me.mayEdit($post) ? 'hide' : 'show';
-    $editForm.find('.dw-f-ed-sugg-info')[hideOrShow]();
+    $editForm.find('.dw-f-e-sugg-info')[hideOrShow]();
 
     // Find the post's current (old) source text, and store in
-    // .dw-ed-src-old, so it's easily accessible to $updateEditFormDiff(…).
-    if (!$editForm.data('dw-ed-src-old')) {
-      var oldSrc = $editForm.find('.dw-ed-src-old');
+    // .dw-e-src-old, so it's easily accessible to $updateEditFormDiff(…).
+    if (!$editForm.data('dw-e-src-old')) {
+      var oldSrc = $editForm.find('.dw-e-src-old');
       if (oldSrc.length) {
         oldSrc = oldSrc.text();
       }
       else {
-        // html.scala excluded .dw-ed-src-old, if the textarea's text
+        // html.scala excluded .dw-e-src-old, if the textarea's text
         // is identical to the old src. (To save bandwidth.)
         oldSrc = $editPanel.find('textarea').val();
       }
-      $editForm.data('dw-ed-src-old', oldSrc);
+      $editForm.data('dw-e-src-old', oldSrc);
     }
 
     var showSaveBtnHidePreview = function() {
@@ -2579,17 +2579,17 @@ function $showEditForm2() {
   });
 }
 
-// Call on a .dw-f-ed, to update the diff tab.
+// Call on a .dw-f-e, to update the diff tab.
 function $updateEditFormDiff() {
   // Find the closest post
-  var $editForm = $(this).closest('.dw-f-ed');
-  var $editTab = $(this).find('div.dw-ed-tab[id^="dw-ed-tab-edit"]');
-  var $diffTab = $(this).find('div.dw-ed-tab[id^="dw-ed-tab-diff"]');
+  var $editForm = $(this).closest('.dw-f-e');
+  var $editTab = $(this).find('div.dw-e-tab[id^="dw-e-tab-edit"]');
+  var $diffTab = $(this).find('div.dw-e-tab[id^="dw-e-tab-diff"]');
   var $textarea = $editTab.find('textarea');
 
   // Find the current draft text, and the old post text.
   var newSrc = $textarea.val();
-  var oldSrc = $editForm.data('dw-ed-src-old');
+  var oldSrc = $editForm.data('dw-e-src-old');
 
   // Run new diff.
   var diff = diffMatchPatch.diff_main(oldSrc, newSrc);
@@ -2601,12 +2601,12 @@ function $updateEditFormDiff() {
   $diffTab.append('<div class="dw-p-diff">'+ htmlString +'</div>\n');
 }
 
-// Call on a .dw-f-ed, to update the preview tab.
+// Call on a .dw-f-e, to update the preview tab.
 function $updateEditFormPreview() {
   var $i = $(this);
-  var $editForm = $i.closest('.dw-f-ed');
-  var $editTab = $editForm.find('div.dw-ed-tab[id^="dw-ed-tab-edit"]');
-  var $previewTab = $editForm.find('div.dw-ed-tab[id^="dw-ed-tab-preview"]');
+  var $editForm = $i.closest('.dw-f-e');
+  var $editTab = $editForm.find('div.dw-e-tab[id^="dw-e-tab-edit"]');
+  var $previewTab = $editForm.find('div.dw-e-tab[id^="dw-e-tab-prvw"]');
   var $textarea = $editTab.find('textarea');
   var $selectedMarkup =
     $editForm.find('select[name="dw-fi-e-mup"] > option:selected');
@@ -2698,7 +2698,7 @@ function $showEditsDialog() {
 
   function initSuggestions($form) {
     // Update diff and preview, when hovering a suggestion.
-    $form.find('li.dw-es').mouseenter(function() {
+    $form.find('li.dw-e-sg').mouseenter(function() {
       // Compute the text of the post as of when this edit
       // was *suggested*. This shows the *intentions* of the one
       // who suggested the changes.
@@ -2711,7 +2711,7 @@ function $showEditsDialog() {
       //   to decide which diff to show.
       var suggestionDate = $(this).find('.dw-e-sg-dt').attr('title');
       var curSrc = textAsOf(suggestionDate);
-      var patchText = $(this).find('.dw-ed-text').text();
+      var patchText = $(this).find('.dw-e-text').text();
 
       // Make a nice html diff.
       // (I don't know how to convert patches to diffs, without
@@ -2758,7 +2758,7 @@ function $showEditsDialog() {
       var origText = $form.find('#dw-e-sgs-org-src').text();
       var curText = origText;
       eapps.each(function() {
-        var patchText = $(this).find('.dw-ed-text').text();
+        var patchText = $(this).find('.dw-e-text').text();
         var patches = diffMatchPatch.patch_fromText(patchText);
         // COULD check [1, 2, 3, …] to find out if the patch applied
         // cleanaly. (The result is in [0].)
@@ -3640,12 +3640,12 @@ function registerEventHandlers() {
   // Show a change diff instead of the post text, when hovering an edit
   // suggestion.
   $('.debiki')
-      .delegate('.dw-es', 'mouseenter', function(){
+      .delegate('.dw-e-sg', 'mouseenter', function(){
         // COULD move find(...) to inside $showEditDiff?
         // (Don't want such logic placed down here.)
-        $(this).find('.dw-ed-text').each($showEditDiff);
+        $(this).find('.dw-e-text').each($showEditDiff);
       })
-      .delegate('.dw-ess', 'mouseleave', $removeEditDiff);
+      .delegate('.dw-e-sgs', 'mouseleave', $removeEditDiff);
 
   initCreateForm();
 
