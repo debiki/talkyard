@@ -404,7 +404,7 @@ class DebateHtml(val debate: Debate) {
     val deleter = debate.authorOf_!(deletion)
     (if (wholeTree) Nil else <a class='dw-z'>[–]</a>) ++
     <div id={cssPostId} class='dw-p dw-p-dl'>
-      <div class='dw-p-hdr'>{
+      <div class='dw-p-hd'>{
         if (wholeTree) "Thread" else "1 comment"
         } deleted by { _linkTo(deleter)
         /* TODO show flagsTop, e.g. "flagged spam".
@@ -564,7 +564,7 @@ class DebateHtml(val debate: Debate) {
           distinct.length
         lazy val editor =
           debate.authorOf_!(debate.editsById(lastEditApp.get.editId))
-        <div class='dw-p-hdr-e'>{
+        <div class='dw-p-hd-e'>{
             Text(if (post.id == rootPostId) {
               // Via CSS, edit info is placed on the same line as author info.
               ", edited "
@@ -596,8 +596,8 @@ class DebateHtml(val debate: Debate) {
         // _renderPost, to render the title. Then it would be
         // possible to reply-inline to the title.
         <div id={"dw-post-"+ titlePost.id} class='dw-p dw-p-ttl'>
-          <div class='dw-p-bdy'>
-            <div class='dw-p-bdy-blk'>
+          <div class='dw-p-bd'>
+            <div class='dw-p-bd-blk'>
               <header class='dw-p-ttl'><h1>{titlePost.text}</h1></header>
             </div>
           </div>
@@ -616,15 +616,15 @@ class DebateHtml(val debate: Debate) {
     <div id={cssPostId} class={"dw-p" + cssArtclPost + cutS + clearfix}
          data-p-by-ip-sh={vipo.ipSaltHash_!}>
       { postTitleXml }
-      <div class='dw-p-hdr'>
+      <div class='dw-p-hd'>
         By { _linkTo(author)}{ dateAbbr(post.ctime, "dw-p-at")
         }{ flagsTop }{ ratsTop }{ editInfo }{ flagsDetails }{ ratsDetails }
       </div>
-      <div class={"dw-p-bdy"+ cssArtclBody}>
-        <div class='dw-p-bdy-blk'>
+      <div class={"dw-p-bd"+ cssArtclBody}>
+        <div class='dw-p-bd-blk'>
         { xmlText
-        // (Don't  place a .dw-i-ts here. Splitting the -bdy into
-        // -bdy-blks and -i-ts is better done client side, where the
+        // (Don't  place a .dw-i-ts here. Splitting the -bd into
+        // -bd-blks and -i-ts is better done client side, where the
         // heights of stuff is known.)
         }
         </div>
@@ -1120,8 +1120,8 @@ class FormHtml(val config: HtmlConfig, val pageRoot: PageRoot,
       </div>
       <div id='dw-e-sgs-prvw'>
         <div>Preview:</div>
-        <div class={"dw-p-bdy"+ cssArtclBody}>
-          <div id='dw-e-sgs-prvw-html' class='dw-p-bdy-blk'/>
+        <div class={"dw-p-bd"+ cssArtclBody}>
+          <div id='dw-e-sgs-prvw-html' class='dw-p-bd-blk'/>
         </div>
       </div>
     </form>
@@ -1170,8 +1170,8 @@ class FormHtml(val config: HtmlConfig, val pageRoot: PageRoot,
           }</textarea>
         </div>
         <div id='dw-e-tab-prvw'
-             class={"dw-e-tab dw-e-tab-prvw dw-p-bdy"+ cssArtclBody}>
-          <div class='dw-p-bdy-blk'/>
+             class={"dw-e-tab dw-e-tab-prvw dw-p-bd"+ cssArtclBody}>
+          <div class='dw-p-bd-blk'/>
         </div>
         <div id='dw-e-tab-diff' class='dw-e-tab dw-e-tab-diff'>
         </div>

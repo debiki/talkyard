@@ -91,10 +91,10 @@
  *  dw-m-p-edited the post was just edited (edits were axaj-fetched)
  *  dw-m-t-new    this thread was just fetched via ajax, the user hasn't seen it
  *  dw-p-art-qst  (placed on a thread) the related post is an article question
- *  dw-p-bdy      post body  COULD rename to -bd, already done for .dw-ntf-bd
- *  dw-p-bdy-blk  post body block, a <div> that wraps e.g. a <p>
+ *  dw-p-bd       post body
+ *  dw-p-bd-blk   post body block, a <div> that wraps e.g. a <p>
  *  dw-p-dl       a post, deleted
- *  dw-p-hdr      post header  COULD rename to -hd
+ *  dw-p-hd       post header
  *  dw-p-rez-e    post resized eastwards
  *  dw-pri        placed on the <body>, use it to boost CSS rule priorities
  *  dw-svg-c_<x>  SVG curve from <x>  COULD rename to -svg-p, for `path'
@@ -179,12 +179,12 @@ a:link {
 }
 
 /* Spacing between e.g. <p>:s. */
-.dw-p-bdy-blk > * {
+.dw-p-bd-blk > * {
   margin-bottom: 0.7em;
 }
 
 /* The root post. */
-.dw-ar-p-bd > .dw-p-bdy-blk > * {
+.dw-ar-p-bd > .dw-p-bd-blk > * {
   margin-bottom: 1em; /* or e.g. <p>:s not visible, because the root post
                         has high line height */
 }
@@ -196,7 +196,7 @@ header.dw-p-ttl {
 header.dw-p-ttl > h1 {
   color: #42525E;
   font-size: 36px;
-  /* Make the page body .dw-p-hdr appear only 5px below the title, looks nice */
+  /* Make the page body .dw-p-hd appear only 5px below the title, looks nice */
   margin-bottom: 6px;
 }
 /* The title when it's being previewed. */
@@ -211,61 +211,61 @@ header.dw-p-ttl > h1 {
 
 
 /* Other titles */
-.dw-ar-p-bd > .dw-p-bdy-blk > h1 {
+.dw-ar-p-bd > .dw-p-bd-blk > h1 {
   font-size: 28px;
   margin: 26px 0 15px !important;
   padding: 0;
   color: #42525E;
 }
-.dw-ar-p-bd > .dw-p-bdy-blk > h2 {
+.dw-ar-p-bd > .dw-p-bd-blk > h2 {
   font-size: 24px;
   color: #28323B;
   margin: 26px 0 18px 0 !important;
 }
-.dw-ar-p-bd > .dw-p-bdy-blk > h3 {
+.dw-ar-p-bd > .dw-p-bd-blk > h3 {
   font-size: 18px;
   font-weight: bold;
 }
-.dw-ar-p-bd > .dw-p-bdy-blk > h4 {
+.dw-ar-p-bd > .dw-p-bd-blk > h4 {
   font-size: 16px;
   font-weight: bold;
 }
-.dw-ar-p-bd > .dw-p-bdy-blk > h5 {
+.dw-ar-p-bd > .dw-p-bd-blk > h5 {
   font-size: 12px;
   font-weight: bold;
 }
-.dw-ar-p-bd > .dw-p-bdy-blk > h6 {
+.dw-ar-p-bd > .dw-p-bd-blk > h6 {
   font-size: 11px;
   font-weight: normal;
   text-decoration: underline;
 }
 
 
-.dw-p-bdy-blk {
+.dw-p-bd-blk {
   margin: 0;
 }
 
-.dw-ar-p-bd > .dw-p-bdy-blk > p,
-.dw-t.dw-p-art-qst > .dw-p > .dw-p-bdy > .dw-p-bdy-blk > p {
+.dw-ar-p-bd > .dw-p-bd-blk > p,
+.dw-t.dw-p-art-qst > .dw-p > .dw-p-bd > .dw-p-bd-blk > p {
   line-height: 20px;
   font-size: 13px;
 }
 
 /* Show list item marks, but not for nested threads. */
-.dw-p-bdy-blk ul li {
+.dw-p-bd-blk ul li {
   list-style-type: disc;
   margin-left: 2.5em;
 }
-.dw-p-bdy-blk ol li {
+.dw-p-bd-blk ol li {
   list-style-type: decimal;
   margin-left: 2.5em;
 }
 
-.dw-p-bdy-blk > pre {
+.dw-p-bd-blk > pre {
   font-size: 12px; /* or unreadably small */
 }
 
-.dw-p-bdy-blk img {
+.dw-p-bd-blk img {
   width: 100%;
   display: block; /* TODO inline those with no \n\n inbetween preceeding text */
   margin: 1.5em auto; /* TODO margin-bottom 0 if post ends there */
@@ -322,7 +322,7 @@ jQuery UI's dialgos. Might that be incompatible with other libs? */
   padding-bottom: 0.8em; /* litte more airy? first post */
 }
 
-.dw-ar-p-bd > .dw-p-bdy-blk {
+.dw-ar-p-bd > .dw-p-bd-blk {
   line-height: 165%; /* higher height makes the main post easier to read */
 }
 
@@ -372,12 +372,12 @@ jQuery UI's dialgos. Might that be incompatible with other libs? */
 
 /* Adjus post width. */
 /* ... Don't span whole screen even if .post.cropped-e is removed. */
-.dw-p-bdy-blk {
+.dw-p-bd-blk {
   max-width: 40em;
 }
 /* ... However, if you write custom CSS for a page (e.g. the home page),
 then you probably override the article max-width — but if you customize
-.dw-ar-p-bd > .dw-p-bdy-blk { max-width: none }, the edit form might
+.dw-ar-p-bd > .dw-p-bd-blk { max-width: none }, the edit form might
 get as wide as the page, unless: */
 .dw-depth-0 > .dw-p > .dw-f-e .dw-e-tabs {
   float: left;
@@ -413,16 +413,16 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
 
 /* === Cropped and resized posts === */
 
-.dw-p.dw-x-s > .dw-p-bdy,
-.dw-p.dw-x-s > .dw-p-hdr {
+.dw-p.dw-x-s > .dw-p-bd,
+.dw-p.dw-x-s > .dw-p-hd {
   max-height: 4em;
   cursor: help;
-  /* The max-height of a truncated .dw-p-bdy is 4em, but if floating
-  elements are present inside the -p-bdy (e.g. inline reply threads)
+  /* The max-height of a truncated .dw-p-bd is 4em, but if floating
+  elements are present inside the -p-bd (e.g. inline reply threads)
   its height might grow to e.g. 2000 px. Then at least Chrome places the
   truncation mark far away, so the parent .dw-p grows to e.g. 2000 px.
   By hiding overflow, the truncation mark won't be pushed down by other
-  tags inside the .dw-p-bdy, and the parent .dw-p won't be larger than
+  tags inside the .dw-p-bd, and the parent .dw-p won't be larger than
   what it's supposed to be (i.e. roughly 4em + 4em). */
   /*overflow: hidden;  -- no, doesn't work well: in some unfathomable
   weird way, the inline thread disappear upwards, but space is reserved for
@@ -430,7 +430,7 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
 }
 
 .dw-p.dw-x-s {
-  /* Since `overflow: hidden' on .dw-p-bdy doesn't work well (see the
+  /* Since `overflow: hidden' on .dw-p-bd doesn't work well (see the
   long comment above), restrict max-height of the .dw-p instead (again
   see the long comment above, for info on why this is done). */
   max-height: 8em;
@@ -481,10 +481,10 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
 }
 
 /* Sync these selectors with showCommentsOnClick in debiki.js. */
-.dw-hide-interactions .dw-ar-t > .dw-p > .dw-p-hdr,
+.dw-hide-interactions .dw-ar-t > .dw-p > .dw-p-hd,
 .dw-hide-interactions .dw-ar-t > .dw-res,
-.dw-hide-interactions .dw-ar-t > .dw-p > .dw-p-bdy > .dw-p-bdy-blk .dw-i-m-start,
-.dw-hide-interactions .dw-ar-t > .dw-p > .dw-p-bdy > .dw-i-ts,
+.dw-hide-interactions .dw-ar-t > .dw-p > .dw-p-bd > .dw-p-bd-blk .dw-i-m-start,
+.dw-hide-interactions .dw-ar-t > .dw-p > .dw-p-bd > .dw-i-ts,
 .dw-hide-interactions .dw-debate svg {
   display: none;
 }
@@ -577,21 +577,21 @@ so there's some space for the SVG arrows. */
   margin-left: 0;
 }
 
-.dw-p-hdr {
+.dw-p-hd {
   padding-left: 3px;
   font-size: smaller;
   color: #000;
   background-color: #eee;
 }
 
-.dw-p-dl > .dw-p-hdr {
+.dw-p-dl > .dw-p-hd {
   margin-bottom: 24px; /* for now — there're currently no spacy hidden
                           action links below deleted posts */
   font-style: italic;
   background-color: transparent;
 }
 
-.dw-depth-0 > .dw-p > .dw-p-hdr > .dw-p-hdr-e {
+.dw-depth-0 > .dw-p > .dw-p-hd > .dw-p-hd-e {
   /* Place edit info on the same line as author info, for the root post.
   Then everything appears on one line just below the page title. */
   display: inline;
@@ -620,15 +620,15 @@ span.dw-p-e-by {
 /* For the *article* itself, make author and post date info less conspicuous,
 or it steals attention from the page title. (But don't do this for any root
 post, only for the article.) */
-.dw-ar-p > .dw-p-hdr {
+.dw-ar-p > .dw-p-hd {
   background-color: transparent;
   opacity: 0.6;
   font-size: 10px;
 }
-.dw-ar-p > .dw-p-hdr:hover {
+.dw-ar-p > .dw-p-hd:hover {
   opacity: 1;
 }
-.dw-ar-p > .dw-p-hdr > .dw-p-by {
+.dw-ar-p > .dw-p-hd > .dw-p-by {
   color: #396D99;
 }
 
@@ -655,7 +655,7 @@ post, only for the article.) */
    /* fix the header instead? I need to fix it anayway */
 }
 
-.dw-p-bdy,
+.dw-p-bd,
 .dw-p-diff {
   padding: 6px 1px 0 3px;
   position: relative;
@@ -664,22 +664,22 @@ post, only for the article.) */
   line-height: normal; /* or becomes 120% so -diff lines lines overlap */
 }
 
-.dw-p-bdy {
-  float: left; /* wrap .dw-p-bdy-blk:s, which float left */
-  width: 100%; /* or sometimes smaller than -p-hdr, looks weird when
+.dw-p-bd {
+  float: left; /* wrap .dw-p-bd-blk:s, which float left */
+  width: 100%; /* or sometimes smaller than -p-hd, looks weird when
                 background color applied */
 }
 
 /* Make inline threads compact. */
-.dw-i-t > .dw-p > .dw-p-bdy,
+.dw-i-t > .dw-p > .dw-p-bd,
 .dw-i-t > .dw-p > .dw-p-diff {
   padding-top: 1px;
 }
-.dw-i-t > .dw-p > * /*.dw-p-bdy or -diff*/ > .dw-p-bdy-blk {
+.dw-i-t > .dw-p > * /*.dw-p-bd or -diff*/ > .dw-p-bd-blk {
   padding: 0;
   margin: 0;
 }
-.dw-i-t > .dw-p > * /*.dw-p-bdy or -diff*/ > .dw-p-bdy-blk ~ .dw-p-bdy-blk {
+.dw-i-t > .dw-p > * /*.dw-p-bd or -diff*/ > .dw-p-bd-blk ~ .dw-p-bd-blk {
   margin-top: 0.6em;
 }
 
@@ -771,7 +771,7 @@ so set max-width and line height. */
 
 /* --- Post info ---*/
 
-.dw-p-hdr .dw-p-at {
+.dw-p-hd .dw-p-at {
   /* javascript shows e.g. '7 days ago' instead of the .dw-p-at ISO dates.
   Hiding the dates with jQuery.hide() at page loat time takes long,
   so better hide here. COULD use another stylesheet if javascript disabled. */
@@ -784,7 +784,7 @@ so set max-width and line height. */
 
 .dw-p-flgs-all,
 .dw-p-ra-all {
-  display: none; /* shown on .dw-p-hdr click */
+  display: none; /* shown on .dw-p-hd click */
 }
 
 .dw-flgs,
@@ -799,25 +799,25 @@ so set max-width and line height. */
   margin-left: 0.5ex;
 }
 
-.dw-p-hdr .dw-rats .dw-rat.dw-you-rated {
+.dw-p-hd .dw-rats .dw-rat.dw-you-rated {
   background-color: #f4c4f4;
 }
 
-.dw-p-hdr .dw-rats .dw-rat-tag {
+.dw-p-hd .dw-rats .dw-rat-tag {
   /*font-size: 85%;*/
 }
 
-.dw-p-hdr .dw-post-liking,
-.dw-p-hdr .dw-rat-count,
-.dw-p-hdr .dw-rat-tag-frac-min,
-.dw-p-hdr .dw-rat-tag-sum,
-.dw-p-hdr .dw-rat-valsum-max {
+.dw-p-hd .dw-post-liking,
+.dw-p-hd .dw-rat-count,
+.dw-p-hd .dw-rat-tag-frac-min,
+.dw-p-hd .dw-rat-tag-sum,
+.dw-p-hd .dw-rat-valsum-max {
   margin-left: 3px;
   font-weight: bold;
   display: none; /* it's for debugging mostly; makes non-developers confused */
 }
 
-.dw-p-hdr .dw-rats .dw-rat-tag-frac {
+.dw-p-hd .dw-rats .dw-rat-tag-frac {
   font-size: 90%;
   position: relative;
   left: -2px;
@@ -854,7 +854,7 @@ so set max-width and line height. */
 */
 
 .dw-t.dw-p-art-qst > .dw-z,
-.dw-t.dw-p-art-qst > .dw-p > .dw-p-hdr {
+.dw-t.dw-p-art-qst > .dw-p > .dw-p-hd {
   display: none !important;
 }
 
@@ -901,29 +901,29 @@ so set max-width and line height. */
 /* --- Inline threads --- */
 
 /* Avoid a flash of incorrectly placed inline threads: don't show them
-until they've been moved into the .dw-bdy-blk > .dw-i-ts. */
+until they've been moved into the .dw-bd-blk > .dw-i-ts. */
 .dw-res > .dw-i-t {
   display: none;
 }
 
-.dw-hor > .dw-p > .dw-p-bdy > .dw-i-ts {
+.dw-hor > .dw-p > .dw-p-bd > .dw-i-ts {
   float: left;
   margin-left: 120px; /* arrows from inline-marks to -threads drawn here */
 }
 
 /* Stack inline posts vertically. */
-.dw-p-bdy .dw-i-t {
+.dw-p-bd .dw-i-t {
   float: left;
   clear: left;
 }
 
-/* For vertical layout, place inline threads below the .dw-p-bdy-blk, indented.
+/* For vertical layout, place inline threads below the .dw-p-bd-blk, indented.
 (With horizontal layout, they're placed to the right of the post.) */
-.dw-t:not(.dw-hor) > .dw-p > .dw-p-bdy > .dw-i-ts {
+.dw-t:not(.dw-hor) > .dw-p > .dw-p-bd > .dw-i-ts {
   float: left;
   clear: left;
 }
-.dw-t:not(.dw-hor) > .dw-p > .dw-p-bdy > .dw-i-ts > .dw-i-t {
+.dw-t:not(.dw-hor) > .dw-p > .dw-p-bd > .dw-i-ts > .dw-i-t {
   margin-left: 70px; /* indents, and leaves space for SVG/fake arrows */
 }
 
@@ -937,13 +937,13 @@ until they've been moved into the .dw-bdy-blk > .dw-i-ts. */
   margin-bottom: 0px; /* don't push next inline thread away */
 }
 
-.dw-p-bdy-blk {
+.dw-p-bd-blk {
   float: left;
   clear: left;
 }
 
 /* Adjust inline-replies to the root post. */
-.dw-hor > .dw-p > .dw-p-bdy > .dw-p-bdy-blk + .dw-i-t {
+.dw-hor > .dw-p > .dw-p-bd > .dw-p-bd-blk + .dw-i-t {
   margin-left: 4em; /* move away from the root post text */
 }
 
@@ -971,7 +971,7 @@ until they've been moved into the .dw-bdy-blk > .dw-i-ts. */
 }
 
 .dw-as-inline li {
-  margin: 0; /* or margin from `dw-p-bdy li' applied */
+  margin: 0; /* or margin from `dw-p-bd li' applied */
   float: left;
 }
 
@@ -1527,11 +1527,11 @@ it works everywhere, even if it works fine for you. */
 }
 
 /* Mark the user's own posts. */
-.dw-m-p-mine > .dw-p-bdy {
+.dw-m-p-mine > .dw-p-bd {
   background-color: #FBF7F2;
 }
 /* But skip the root post — it doesn't look nice colored. */
-.dw-depth-0 > .dw-p.dw-m-p-mine > .dw-p-bdy {
+.dw-depth-0 > .dw-p.dw-m-p-mine > .dw-p-bd {
   background-color: transparent;
 }
 
@@ -1690,7 +1690,7 @@ inside widgets, rather than buttons and tabs. */
 
 /* === SVG === */
 
-.dw-p-bdy.dw-svg-parent {
+.dw-p-bd.dw-svg-parent {
   z-index: 1; /* makes svg (with z-index -1, see below) visible (weird!) */
 }
 
