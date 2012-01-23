@@ -1097,8 +1097,11 @@ it works everywhere, even if it works fine for you. */
 }
 
 .dw-pri form textarea {
+  /* These two lines break CodeMirror 2.01 to 2.2, and master
+  (as of Jan 19, 2012), in Chrome: (but not FF or Opera).  I don't know why.
   width: 98%;
   height: 97%; /* or too small */
+
   resize: none; /* disable Chrome's default-resizable (and
                    make the accordion resizable instead) */
   padding-right: 0px;  /* else 97% (above) often too large, so... */
