@@ -2480,9 +2480,6 @@ function $showEditForm2() {
       $previewBtn.hide();
     }
 
-    // We'll make the tab panels at least as high as the post.
-    var lastPanelHeight = $postBody.height();
-
     // Update the preview, if the markup type is changed.
     $editForm.find('select[name="dw-fi-e-mup"]').change(function() {
       $editForm.each($updateEditFormPreview);
@@ -2503,6 +2500,10 @@ function $showEditForm2() {
         tabMode: "indent"
       });
     }
+
+    // Sometimes we'll make the panels at least as tall as
+    // the post itself (below).
+    var minPanelHeight = Math.max(140, $postBody.height() + 60);
 
     $editForm.tabs({
       selected: 0,
@@ -2528,34 +2529,36 @@ function $showEditForm2() {
             break;
           default: die('[error DwE4krERS]');
         };
+
         $(this).each($fun);
 
-        // Don't reduce the form heigt, because if the form is at the
-        // very bottom of the screen, everything would jump downwards
-        // when the browser window shrinks.
-        // [[later: Jump downwards, and vanish outside the browser window?
-        // was that what happened?]]
+        // Resize the root post dynamically, fix size of other posts.
+        // Then e.g. CodeMirror can make the root post editor taller
+        // dynamically, and the preview panel adjusts its size.
         $panel.height('auto');
-        if (lastPanelHeight > $panel.height()) {
-          // jQuery UI shows the panels before the `show' event is triggered,
-          // so unless the other panels are resized *before* one of them is
-          // shown, that other panel might be smaller than the current one,
-          // causing the window to shrink and everything to jump downwards
-          // (if you're viewing the bottom of the page).
-          // So change the height of all panels — then they won't shrink
-          // later, when shown.
-          // (COULD make this work also if a panel is resized dynamically,
-          // whilst open — right now the other panels won't be resized.)
-          $panels.height(lastPanelHeight);
-        } else if (!$post.parent().is('.dw-depth-0')) {
-          // [Don't let the edit form become shorter — if it's at the bottom
-          // everyting might jump downwards a bit, and vanish a bit?
-          // Or what was the problem I don't remember.]
-          lastPanelHeight = $panel.height();
-        } else {
-          // Don't upsize the root post's edit/diff/preview tab panels,
-          // they tend to become rather tall — and we know they aren't
-          // at the bottom of the screen.
+
+        // If CodeMirror isn't enabled and thus auto-resize the <textarea>,
+        // then resize it manually, so it's as tall as the other panels.
+        // {{{ Also don't shrink any panel
+        // because: (and old comment of mine follows)
+        //  "Don't reduce the form heigt, because if the form is at the
+        //  very bottom of the screen, everything would jump downwards
+        //  when the browser window shrinks."
+        //  [[later: Jump downwards, and vanish outside the browser window?
+        //  was that what happened?]]
+        // And: (another old hard to understand comment)
+        //  "jQuery UI shows the panels before the `show' event is triggered,
+        //  so unless the other panels are resized *before* one of them is
+        //  shown, that other panel might be smaller than the current one,
+        //  causing the window to shrink and everything to jump downwards
+        //  (if you're viewing the bottom of the page).
+        //  So change the height of all panels — then they won't shrink
+        //  later, when shown."  }}}
+        if (!codeMirrorEditor) {
+          if (minPanelHeight < $panel.height())
+            minPanelHeight = $panel.height();
+          else
+            $panels.height(minPanelHeight);
         }
       }
     });
