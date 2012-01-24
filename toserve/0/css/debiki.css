@@ -1392,14 +1392,23 @@ key presses).*/
 
 .dw-pri .dw-f-e .dw-e-tab {
   border: 1px solid #bbb;
-  padding: 1.4em 0.3em 1em 1.2em;
+  padding: 0; /* 1.4em 0.3em 1em 1.2em; */
+  overflow: auto;
 }
-/* ... undo padding for root post preview: */
+/* ... change padding for root post preview /* and fix a bug */
 .dw-depth-0 > .dw-p > .dw-f-e .dw-e-tab-prvw {
   padding: 1em;
 }
+/* ... for other previews, place some padding on the -bd-blk (!)
+not the -e-tab-prvw, because otherwise the panel becomes too wide
+and its right part is cut of by the parent thread (which has
+visibility:hidden) — some jQuery UI weird internal stuff? */
+.dw-e-tab-prvw > .dw-p-bd-blk {
+  padding: 1ex;  /* don't place directly on the .dw-e-tab-prvw */
+}
 
-/* The root post has no width restriction on .dw-e-tabs */
+/* The root post has no width restriction on .dw-e-tabs,
+ since it's not placed inside a thread (which has a certain width). */
 .dw-depth-0 > .dw-p > .dw-f-e .dw-e-tabs > .dw-e-tab-edit,
 .dw-depth-0 > .dw-p > .dw-f-e .dw-e-tabs > .dw-e-tab-diff {
   width: 800px;
