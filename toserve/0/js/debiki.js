@@ -2403,6 +2403,7 @@ function $showEditForm2() {
   var $post = $(this);
   var $postBody = $post.children('.dw-p-bd');
   var postId = $post.attr('id').substr(8, 999); // drop initial "dw-post-"
+  var isRootPost = $post.parent().is('.dw-depth-0');
 
   // COULD move function to debiki-lift.js:
   var editFormLoader = function(debateId, rootPostId, postId, complete) {
@@ -2441,6 +2442,7 @@ function $showEditForm2() {
     var $previewBtn = $editForm.find('input.dw-fi-e-prvw');
     var $submitBtn = $editForm.find('input.dw-fi-submit');
     var $cancelBtn = $editForm.find('input.dw-fi-cancel');
+    var codeMirrorEditor = null;
 
     $previewBtn.button();
     $submitBtn.button().hide();  // you need to preview before submit
@@ -2486,10 +2488,30 @@ function $showEditForm2() {
       $editForm.each($updateEditFormPreview);
     });
 
+    // If CodeMirror has been loaded, use it.
+    // SHOULD find out if it plays well with touch devices!
+    // For now, use CodeMirror on the root post only — because if
+    // the other posts are resized, CodeMirror's interal width
+    // gets out of sync and the first character you type appears on
+    // the wrong row. (But the root post is always full size.)
+    if (typeof CodeMirror !== 'undefined' && isRootPost) {
+      codeMirrorEditor = CodeMirror.fromTextArea(
+          $editPanel.children('textarea')[0], {
+        lineNumbers: true, //isRootPost,
+        lineWrapping: true,
+        mode: "text/html", // for now
+        tabMode: "indent"
+      });
+    }
+
     $editForm.tabs({
       selected: 0,
       show: function(event, ui) {
         $editForm.each($showPreviewBtnHideSave);
+
+        // Sync the edit panel <textarea> with any codeMirrorEditor,
+        // so the diff and preview tabs will work correctly.
+        if (codeMirrorEditor) codeMirrorEditor.save();
 
         // Update the tab to be shown.
         var $panel = $(ui.panel);
@@ -2562,6 +2584,9 @@ function $showEditForm2() {
 
     // Ajax-post edit on submit, and update the page with all recent changes.
     $editForm.submit(function() {
+      // Ensure any text edited with CodeMirror gets submitted.
+      if (codeMirrorEditor) codeMirrorEditor.save();
+
       Settings.editFormSubmitter($editForm, debateId, rootPostId, postId,
           function(newDebateHtml){
         slideAwayRemove($editForm);
