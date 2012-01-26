@@ -2657,6 +2657,11 @@ function $showEditForm2() {
       return false;
     });
 
+    // Provide an interface to internal stuff.
+    $editForm.data("dwEditFormInterface", {
+      focusEditor: focusEditor
+    });
+
     // Finally,
     focusEditor();
   });
@@ -3629,8 +3634,12 @@ function initKeybdShortcuts() {
     var onlyCtrlDown = !event.shiftKey && event.ctrlKey && !event.altKey;
     var $activeElem = $(document.activeElement);
     var $anyFocusedTab = $activeElem.closest('.dw-e-tab');
-    var $editTabLink = $editForm.find(
-        '.dw-e-tabs > ul > li > a[href^="#dw-e-tab-edit"]');
+    var $tabPanelLinks = $editForm.find('.dw-e-tabs > ul > li > a');
+    var $editTabLink = $tabPanelLinks.filter('[href^="#dw-e-tab-edit"]');
+    var $diffTabLink = $tabPanelLinks.filter('[href^="#dw-e-tab-diff"]');
+    var $previewTabLink = $tabPanelLinks.filter('[href^="#dw-e-tab-prvw"]');
+
+    var editFormIf = $editForm.data("dwEditFormInterface");
 
     // Let Ctrl+S show the Save button and the Preview tab.
     if (whichChar === 'S' && onlyCtrlDown) {
@@ -3643,8 +3652,19 @@ function initKeybdShortcuts() {
     // Let Ctrl+E activate the editor.
     if (whichChar === 'E' && onlyCtrlDown) {
       $editTabLink.focus().click();
-      // COULD focus CodeMirror or the <textarea>. But the CodeMirror
-      // editor object isn't accessible from here!
+      editFormIf.focusEditor();
+      return true;
+    }
+
+    // Let Ctrl+D show the diff tab panel.
+    if (whichChar === 'D' && onlyCtrlDown) {
+      $diffTabLink.focus().click();
+      return true;
+    }
+
+    // Let Ctrl+P show the preview tab panel.
+    if (whichChar === 'P' && onlyCtrlDown) {
+      $previewTabLink.focus().click();
       return true;
     }
 
