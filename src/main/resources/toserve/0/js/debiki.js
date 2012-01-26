@@ -198,6 +198,7 @@ Debiki.v0.showInteractionsOnClick = function() {
 
   $('body').addClass('dw-hide-interactions');
   var numComments = $('.dw-p').length - 1;  // don't count the article
+  if ($('.dw-p-ttl').length) numComments -= 1; // don't count article title
   var text = numComments > 1 ?  'Visa '+ numComments +' kommentarer' : // i18n
      (numComments == 1 ?  'Visa 1 kommentar' : 'Lämna en kommentar');
   var $showBtn = $(
