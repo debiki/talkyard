@@ -109,6 +109,22 @@ object Prelude {
   def safed(obj: AnyRef): String =
     if (obj eq null) "(null)" else "`"+ safe(obj) +"'"
 
+  /** Replaces any non-breaking space (i.e. \u00a0) with a real space.
+   *  Removes all carriage returns '\r'.
+   */
+  def convertBadChars(text: String): String = {
+    // !! Find any Unicode c2a0 (utf8, 00a0 in utf16) token, i.e. a
+    // real non-breaking-space (rather than a &nbsp;). If such a token
+    // is inside a template's <head>, the parser ends the <head> right there
+    // and starts the <body> instead! I've been troubleshooting this for
+    // some hours now.
+    // Here is a non-breaking space: ' '. (To verify, e.g. copy it to Vim,
+    // place the carret on it and type 'ga' or 'g8', and Vim shows its
+    // utf-16 or utf-8 representation (00a0 and c2a0).
+    // -- Also remove e.g. form feed? new page? and other weird Unicode tokens?
+    text  // for now, COULD implement it (convertBadChars) some day.
+  }
+
   def classNameOf(x: Any): String = x match {
     case x: AnyRef => x.getClass.getSimpleName
     case _: Int => "Int"

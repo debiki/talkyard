@@ -112,9 +112,13 @@ abstract class Dao {
   def saveLogout(loginId: String, logoutIp: String) =
     _spi.saveLogout(loginId, logoutIp)
 
+  /** You should only save text that has been filtered through
+   *  Prelude.convertBadChars().
+   */
   def savePageActions[T <: Action](
-        tenantId: String, debateId: String, xs: List[T]): Box[List[T]] =
-    _spi.savePageActions(tenantId, debateId, xs)
+        tenantId: String, debateId: String, actions: List[T]): Box[List[T]] = {
+    _spi.savePageActions(tenantId, debateId, actions)
+  }
 
   def loadPage(tenantId: String, debateId: String): Box[Debate] =
     _spi.loadPage(tenantId, debateId)
