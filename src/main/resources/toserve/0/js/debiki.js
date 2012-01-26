@@ -2398,6 +2398,12 @@ function $showReplyForm(event, opt_where) {
 
 // ------- Inline edits
 
+var EditTabIdEdit = 0;
+var EditTabIdDiff = 1;
+var EditTabIdPreview = 2;
+var EditTabIdLast = EditTabIdPreview;
+var EditTabCount = 3;
+
 // Shows the edit form.
 function $showEditForm2() {
   var $post = $(this);
@@ -2428,7 +2434,7 @@ function $showEditForm2() {
   var $oldEditForm = $post.children('.dw-f-e');
   if ($oldEditForm.length) {
     $oldEditForm.each($showPreviewBtnHideSave);
-    $oldEditForm.tabs('select' , 0);  // selects the textarea tab
+    $oldEditForm.tabs('select' , EditTabIdEdit);
     $oldEditForm.show();
     $postBody.hide();
     return;
@@ -2442,6 +2448,12 @@ function $showEditForm2() {
     var $previewBtn = $editForm.find('input.dw-fi-e-prvw');
     var $submitBtn = $editForm.find('input.dw-fi-submit');
     var $cancelBtn = $editForm.find('input.dw-fi-cancel');
+
+    var $tabPanelLinks = $editForm.find('.dw-e-tabs > ul > li > a');
+    var $editTabLink = $tabPanelLinks.filter('a[href^="#dw-e-tab-edit"]');
+    var $diffTabLink = $tabPanelLinks.filter('a[href^="#dw-e-tab-diff"]');
+    var $previewTabLink = $tabPanelLinks.filter('a[href^="#dw-e-tab-prvw"]');
+
     var codeMirrorEditor = null;
 
     $previewBtn.button();
@@ -2501,12 +2513,53 @@ function $showEditForm2() {
       });
     }
 
+    // Always activate the editor on mouse/touch clicks on the tab.
+    // — However if the user navigates using the keyboard, s/he might
+    // not want to start editing, but only view the source text.
+    // Then it's annoying if the editor grabs focus. So, if this is
+    // a keyboard click, we require another Enter click, before we
+    // focus the editor (see the next code paragraph.)
+    // — Oddly enough, keyboard Enter click generates a click event
+    // with event.which set to 1, i.e. mouse button 1. Weird.
+    // So use `mouseup' instead of `click.'
+    // — Don't use mousedown though — because then we'd focus the editor
+    // *before* jQuery UI gives focus to the tab link (which seems to
+    // happen on mouse*up* when the click is over).
+    // — I guess all this doesn't really matter for touch devices.
+    $editTabLink.mouseup(function(event, ui) {
+      focusEditor();
+    });
+
+    // Enter the editor, if the editor *panel* is shown and
+    // the user clicks Enter on the editor *tab link*.
+    $editTabLink.keydown(function(event) {
+      if (event.which !== $.ui.keyCode.ENTER) return;
+      if ($editForm.tabs('option', 'selected') !== EditTabIdEdit) {
+        // Only activate the editor if the user clicks when the panel is
+        // already  visible. Instead, let jQuery UI handle the click
+        // — it will show the edit panel.
+        return;
+      }
+      focusEditor();
+    });
+
+    function focusEditor() {
+      // jQuery UI shows the panel on Enter click — but right now,
+      // the edit panel *might* not yet be visible. If it is not,
+      // the editor cannot be given focus right now.
+      setTimeout(function() {
+        // Now (later) the editor panel should be visible.
+        if (codeMirrorEditor) codeMirrorEditor.focus();
+        else $editPanel.find('textarea').focus();
+      }, 0);
+    }
+
     // Sometimes we'll make the panels at least as tall as
     // the post itself (below).
     var minPanelHeight = Math.max(140, $postBody.height() + 60);
 
     $editForm.tabs({
-      selected: 0,
+      selected: EditTabIdEdit,
       show: function(event, ui) {
         $editForm.each($showPreviewBtnHideSave);
 
@@ -2516,21 +2569,21 @@ function $showEditForm2() {
 
         // Update the tab to be shown.
         var $panel = $(ui.panel);
-        var $fun = $.noop;
         switch (ui.panel.id) {
           case $editPanel.attr('id'):
+            $editTabLink.focus();
             break;
           case $diffPanel.attr('id'):
-            $fun = $updateEditFormDiff;
+            $diffTabLink.focus();
+            $(this).each($updateEditFormDiff);
             break;
           case $previewPanel.attr('id'):
-            $fun = $updateEditFormPreview;
+            $previewTabLink.focus();
+            $(this).each($updateEditFormPreview);
             showSaveBtnHidePreview();
             break;
           default: die('[error DwE4krERS]');
         };
-
-        $(this).each($fun);
 
         // Resize the root post dynamically, fix size of other posts.
         // Then e.g. CodeMirror can make the root post editor taller
@@ -2571,7 +2624,7 @@ function $showEditForm2() {
 
     // Show the preview tab on 'Preview and save ...' click.
     $previewBtn.click(function() {
-      $editForm.tabs('select', 2);
+      $editForm.tabs('select', EditTabIdPreview);
       showSaveBtnHidePreview();
       return false;
     });
@@ -2604,6 +2657,8 @@ function $showEditForm2() {
       return false;
     });
 
+    // Finally,
+    focusEditor();
   });
 }
 
@@ -3529,6 +3584,98 @@ function makeFakeDrawer() {
   };
 }
 
+// ------- Keyboard shortcuts
+
+// Alternatively, could define shortcuts next to the components that
+// they control. But I think it's nice to have all shortcuts here
+// in one place, or I'll easily forget what shortcuts I've defined.
+
+// Misc notes: Cannot intercept Ctrl+Tab — Chrome has reserved that
+// combination, and probably e.g. Ctrl+W and Ctrl+PageDown too. (So buggy
+// Web apps never prevent users from closing/switching browser tab).
+
+// SHOULD !!! use this scheme everywhere: A single Ctrl click opens a
+// context sensitive shortcut menu (a modal dialog that lists all
+// available shortcuts) — with lots of 1 char buttons :-)
+// E.g.  first Ctrl then 'E' would focus the editor, Ctrl then S
+// would focus the Save button and the preview. Ctrl then Tab
+// tabs to the right, Shift+Tab to the left.
+// (The modal dialog: Click '?' in Gmail, and you'll find an example.)
+// — However, don't place the `enter tab' logic here, instead
+// place it close to where the tab is constructed.
+
+// Overall strategy:
+// 1) When you navigate with the tab key, clicking enter on a
+// jQuery UI Tab first opens the tab panel. If you click Enter
+// again, only then will you actually enter the panel.
+// (That is, the first elem inside the panel gains focus.)
+// So, you can tab to a tab, and click Enter to view its contents,
+// and then you can either a) click tab again to navigate to the next tab,
+// or b) you can click enter, to enter the tab.
+// 2) See the [Ctrl *click*, **followed by** another single key click]
+// shortcut discussion just above.
+
+function initKeybdShortcuts() {
+  function handleEditFormKeys(event, $editForm) {
+
+    // Return quickly if there's nothing to do.
+    if (event.which !== $.ui.keyCode.ESCAPE &&
+        event.which !== $.ui.keyCode.TAB &&
+        !event.ctrlKey)
+      return false;
+
+    var whichChar = String.fromCharCode(event.which);
+    var anyModifierDown = event.shiftKey || event.ctrlKey || event.altKey;
+    var onlyCtrlDown = !event.shiftKey && event.ctrlKey && !event.altKey;
+    var $activeElem = $(document.activeElement);
+    var $anyFocusedTab = $activeElem.closest('.dw-e-tab');
+    var $editTabLink = $editForm.find(
+        '.dw-e-tabs > ul > li > a[href^="#dw-e-tab-edit"]');
+
+    // Let Ctrl+S show the Save button and the Preview tab.
+    if (whichChar === 'S' && onlyCtrlDown) {
+      $editForm.tabs('select', EditTabIdPreview);
+      var $submitBtn = $editForm.find('input.dw-fi-submit');
+      $submitBtn.focus(); // don't click, user should review changes
+      return true;
+    }
+
+    // Let Ctrl+E activate the editor.
+    if (whichChar === 'E' && onlyCtrlDown) {
+      $editTabLink.focus().click();
+      // COULD focus CodeMirror or the <textarea>. But the CodeMirror
+      // editor object isn't accessible from here!
+      return true;
+    }
+
+    // Let Escape exit the editor and focus the tab nav.
+    if (event.which === $.ui.keyCode.ESCAPE && !anyModifierDown &&
+        $anyFocusedTab.is('.dw-e-tab-edit')) {
+      $editTabLink.focus();
+      // (Now, the next time you click Tab, you'll focus the next *tab*,
+      // which shows its releated *panel* on focus, see $showEditForm2().)
+      return true;
+    }
+
+    return false;
+  }
+
+  $(document).keydown(function(event) {
+    var $editForm = $(event.target).closest('form.dw-f-e');
+    var consumeEvent = false;
+    if ($editForm.length) {
+      consumeEvent = handleEditFormKeys(event, $editForm);
+    } else {
+      // (in the future, check other possible event targets)
+    }
+
+    if (consumeEvent) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+  });
+}
+
 
 // ------- Miscellaneous
 
@@ -3741,6 +3888,7 @@ function initAndDrawSvg() {
   // Resize the article after the page has been rendered, so all inline
   // threads have been placed and can be taken into account.
   steps.push(resizeRootThread);
+  steps.push(initKeybdShortcuts);
 
   function runNextStep() {
     steps[0]();
