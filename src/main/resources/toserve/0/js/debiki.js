@@ -1687,6 +1687,23 @@ function notifErrorBox$(error, message, details) {
   return $box;
 }
 
+// Builds a function that shows an error notification and enables
+// inputs again (e.g. the submit-form button again, so the user can
+// fix the error, after having considered the error message,
+// and attempt to submit again).
+function showErrorEnableInputs($form) {
+  return function(jqXHR, errorType, httpStatusText) {
+    var $submitBtns = $form.find('.dw-submit-set');
+    var $thread = $form.closest('.dw-t');
+    var err = jqXHR.status ? (jqXHR.status +' '+ httpStatusText) : 'Error'
+    var msg = (jqXHR.responseText || errorType || 'Unknown error');
+    $submitBtns.after(notifErrorBox$(err, msg))
+    $thread.each(SVG.$drawParentsAndTree); // because of the notification
+    // For now, simply enable all inputs always.
+    $form.find('input, button').prop('disabled', false);
+  };
+}
+
 // Constructs and shows a dialog, from a servers html response,
 // which should contain certain html elems and classes — if not,
 // a HTTP status code dialog with the response as plain text is shown.
@@ -2339,6 +2356,7 @@ function $showReplyForm(event, opt_where) {
     // Ajax-post reply on submit.
     $replyForm.submit(function() {
       Settings.replyFormSubmitter($replyForm, debateId, rootPostId, postId)
+        .fail(showErrorEnableInputs($replyForm))
         .done(function(newDebateHtml) {
           // The server has replied. Merge in the data from the server
           // (i.e. the new post) in the debate.
@@ -2348,16 +2366,8 @@ function $showReplyForm(event, opt_where) {
           // dw-svg-fake-harrow.
           removeInstantly($replyFormParent);
           updateDebate(newDebateHtml);
-        })
-        .fail(function(jqXHR, errorType, httpStatusText) {
-          // Show error info and enable submit/cancel buttons again.
-          var $submitBtns = $replyForm.find('.dw-submit-set');
-          var err = jqXHR.status ? (jqXHR.status +' '+ httpStatusText) : 'Error'
-          var msg = (jqXHR.responseText || errorType || 'Unknown error');
-          $submitBtns.after(notifErrorBox$(err, msg))
-          $thread.each(SVG.$drawParentsAndTree); // because of the notification
-          $replyForm.find('input, button').prop('disabled', false);
         });
+
       // Disable the form; it's been submitted.
       $replyForm.find('input').dwDisable();
       return false;
@@ -2644,8 +2654,9 @@ function $showEditForm2() {
       // Ensure any text edited with CodeMirror gets submitted.
       if (codeMirrorEditor) codeMirrorEditor.save();
 
-      Settings.editFormSubmitter($editForm, debateId, rootPostId, postId,
-          function(newDebateHtml){
+      Settings.editFormSubmitter($editForm, debateId, rootPostId, postId)
+          .fail(showErrorEnableInputs($editForm))
+          .done(function(newDebateHtml) {
         slideAwayRemove($editForm);
         // If the edit was a *suggestion* only, the post body has not been
         // changed. Unless we make it visible again, it'll remain hidden
@@ -2653,6 +2664,7 @@ function $showEditForm2() {
         $postBody.show();
         updateDebate(newDebateHtml);
       });
+
       // Disable the form; it's been submitted.
       $editForm.find('input').dwDisable();
       return false;
