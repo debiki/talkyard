@@ -1134,7 +1134,7 @@ class FormHtml(val config: HtmlConfig, val pageRoot: PageRoot,
       if (postToEdit.id == Page.BodyId) " dw-ar-p-bd"
       else ""
     val submitBtnText = "Save as "+ userName.openOr("...")
-    <form class='dw-f dw-f-e'
+    <form class='dw-f dw-f-e ui-helper-clearfix'
           action={_viewRoot +"edit="+ postToEdit.id}
           accept-charset='UTF-8'
           method='post'>
