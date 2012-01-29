@@ -2676,6 +2676,7 @@ function $showEditForm2() {
     });
 
     // Finally,
+    activateShortcutReceiver($editForm);
     focusEditor();
   });
 }
@@ -3633,7 +3634,17 @@ function makeFakeDrawer() {
 // 2) See the [Ctrl *click*, **followed by** another single key click]
 // shortcut discussion just above.
 
+// Call e.g. activateShortcutReceiver(<some-form>) to outline and
+// activate a shortcut receiver (e.g. the edit form).
+var activateShortcutReceiver;
+
 function initKeybdShortcuts() {
+
+  // No shortcuts for touch devices. They don't have no keyboard?
+  // I'd guess all shortcut code would cause nothing but troubles.
+  if (Modernizr.touch)
+    return;
+
   function handleEditFormKeys(event, $editForm) {
 
     // Return quickly if there's nothing to do.
@@ -3693,11 +3704,96 @@ function initKeybdShortcuts() {
     return false;
   }
 
+  // Remembers which <form> should handle key presses (shortcuts),
+  // even when focus is lost (e.g. when you select text in the
+  // edit diff tab, then focus will be lost — the document body will
+  // be focused. But the edit <form> should still handle keyboard
+  // shortcuts.)
+  var $currentRecvr = $();
+  var possibleRecvrs = '.dw-f-e';
+  var $lastFocus = $();
+
+  function switchRecvr($newRecvr) {
+    $currentRecvr.removeClass('dw-keyrecvr');
+    $currentRecvr = $newRecvr;
+    $currentRecvr.addClass('dw-keyrecvr');
+  }
+
+  // Export a shortcut receiver activation function.
+  activateShortcutReceiver = switchRecvr;
+
+  // When a new <form> appears, indicate it is the keyboard shortcut receiver.
+  $(document).delegate(possibleRecvrs, 'focusin', function(event) {
+    switchRecvr($(this));
+  });
+
+  // Remember the last focused elem — we'll use that instead,
+  // if the browser tries to focus the booring document.body.
+  $(document).focusout(function(event) {
+    if (event.target !== document.body)
+      $lastFocus = $(event.target);
+  });
+
+  // Override focus on Tab click, if the browser focuses the boring
+  // document.body.
   $(document).keydown(function(event) {
-    var $editForm = $(event.target).closest('form.dw-f-e');
+    // (Need not check Alt and Ctrl — the browser eats Alt-Tab and
+    // Ctrl-Tab anyway?)
+    if (event.which !== $.ui.keyCode.TAB)
+      return;
+    if (document.activeElement === document.body)
+      $lastFocus.focus();
+  });
+
+  // Clear or change receiver if you tab away from the current one.
+  // But not on the blur event — it happens too easily, e.g. if
+  // you scrolldrag or select text inside the current recevier.
+  $(document).keyup(function(event) {
+    // (Need not check Alt and Ctrl — the browser eats Alt-Tab and
+    // Ctrl-Tab anyway?)
+    if (event.which !== $.ui.keyCode.TAB)
+      return;
+    var $newRecvr = $(document.activeElement).closest(possibleRecvrs);
+    if (!$newRecvr.length || $newRecvr[0] !== $currentRecvr[0]) {
+      switchRecvr($newRecvr);
+    }
+  });
+
+  // Clear or change the receiver on click.
+  // If the click doesn't change focus, then don't change receiver though.
+  // If the click is inside a possible receiver, activate it.
+  // (But only on *click*, not on *drag* — ignore e.g. scrolldrag and text
+  // selections — otherwise the reciver would be lost e.g. if you select
+  // text *inside* the current receiver <form>!)
+  $('.debiki').click(function(event) {
+    var $perhapsFocusedRecvr =
+      $(document.activeElement).closest(possibleRecvrs);
+    var $perhapsClickedRecvr =
+      $(event.target).closest(possibleRecvrs)
+          .filter(':visible');  // perhaps Cancel button hid the form
+
+    var $newRecvr = $perhapsFocusedRecvr;
+    if (!$newRecvr.length) {
+      // A new receiver was clicked. Activate it and focus some input or
+      // tab link inside.
+      // (This looses CodeMirrors caret position though!
+      // Should do codeMirrorEditor.focus() instead.)
+      $newRecvr = $perhapsClickedRecvr;
+      $perhapsClickedRecvr.find(
+          'input:visible, button:visible, a:visible').first().focus();
+    }
+
+    switchRecvr($newRecvr);
+  });
+
+  // Handle keyboard shortcuts.
+  $(document).keydown(function(event) {
+    if (!$currentRecvr.length)
+      return;
+
     var consumeEvent = false;
-    if ($editForm.length) {
-      consumeEvent = handleEditFormKeys(event, $editForm);
+    if ($currentRecvr.is('.dw-f-e')) {
+      consumeEvent = handleEditFormKeys(event, $currentRecvr);
     } else {
       // (in the future, check other possible event targets)
     }
