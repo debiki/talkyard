@@ -99,6 +99,7 @@
  *  dw-svg-c_<x>  SVG curve from <x>  COULD rename to -svg-p, for `path'
  *  dw-svg-gparnt Has a <svg> child or grandchild (but no grand-grand-child)
  *  dw-svg-parent Has a <svg> child
+ *  dw-keyrecvr   keyboard shortcut receiver
  *  dw-t-dl       a thread, deleted
  *  dw-lg-t-spl   Login type simple
  *  dw-u-id-<x>   user id <x>
@@ -275,6 +276,23 @@ header.dw-p-ttl > h1 {
 .dw-adv {
   /* Hide advanced stuff. COULD let javascript show it if dwCoAdv cookie set. */
   --display: none;
+}
+
+
+/* --- Keyboard shortcuts ---*/
+
+/* Outline the keyboard shortcut target. */
+.dw-pri.dw-pri.dw-pri .dw-keyrecvr {
+  outline: solid thin #91cdff; /* or #ccc? */
+  /* No background for now — distorts preview tab colors */
+  /* background: #fafdff; /* brighter: #fcfeff; */
+}
+
+/* These elems are shortcut targets. For the above [active shortcut target
+outline] to be visible, they need a margin. Some padding looks nice too.  */
+.dw-pri .dw-f-e {
+  margin: 1px;
+  padding: 1ex 1ex 0.6ex 1ex;
 }
 
 
