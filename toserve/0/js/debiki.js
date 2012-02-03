@@ -32,8 +32,8 @@ attr() prepends 'http://server/.../page' to the href.  Related:
 
 }}}*/
 
-Debiki = {};  // TODO: Error handling?
-Debiki.v0 = {};
+if (!window.Debiki)
+  window.Debiki = { v0: {} };
 
 //========================================
    (function(){
