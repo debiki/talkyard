@@ -3808,8 +3808,15 @@ function initKeybdShortcuts() {
 
 // ------- Miscellaneous
 
+// Don't use. Use die2 instead. Could rewrite all calls to die() to use
+// die2 instead, and then rename die2 to die and remove the original die().
 function die(message) {
   throw new Error(message);
+}
+
+function die2(errorCode, message) {
+  var mess2 = message ? message +' ' : '';
+  throw new Error(mess2 + '[error '+ errorCode +']');
 }
 
 function dieIf(test, message) {
