@@ -282,7 +282,7 @@ var zoomListeners = [];
       zoomListeners[i]();
     }
   }
-  setInterval(pollZoomFireEvent, 100);
+  var handle = setInterval(pollZoomFireEvent, 100);
 }());
 
 
