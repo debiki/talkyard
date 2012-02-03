@@ -114,7 +114,9 @@ object DebateHtml {
         .getResourceAsStream("0/js/html-sanitizer-minified.js")
   _jsSanitizer.eval(new jio.InputStreamReader(_cajaSanitizer))
   _jsSanitizer.eval("""
-      |function urlX(url) { if(/^https?:\/\//.test(url)) { return url }}
+      |function urlX(url) {
+      |  if (/^https?:\/\//.test(url) || /^#/.test(url)) return url;
+      |}
       |function idX(id) { return id }
       |""".stripMargin)
   private val _jsUrlX = _jsSanitizer.get("urlX")
