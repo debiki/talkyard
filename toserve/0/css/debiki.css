@@ -313,16 +313,6 @@ outline] to be visible, they need a margin. Some padding looks nice too.  */
   margin-bottom: 1em;
 }
 
-.dw-dragscrollable,
-.dw-debate .dw-svg-parent svg { /* many specifiers gives higher precedence
-                                  than the cursor:auto rule just below */
-  cursor: move; /* or people won't realize they can scroll? */
-}
-
-.dw-dragscrollable > *:not(.dw-dragscrollable) {
-  cursor: auto; /* don't inherit `move' cursor */
-}
-
 /* The above "don't inherit move" rule destroys these three jQuery-UI rules,
 so they're repeadet here (*after* the above rule).
 COULD prefix jQuery-UI with #dw-pri not .dw-pri, so jQuery-UI's rules have
