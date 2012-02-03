@@ -23,8 +23,8 @@
  *      Debiki.v0.utterscroll({ scrollstoppers: '.CodeMirror' });
  *
  *
- * As of today (2012-02-03), tested with jQuery 1.6.4 and Google Chrome
- * and a recent version of Firefox.
+ * As of today (2012-02-04), tested with jQuery 1.6.4 and recent versions
+ * of Google Chrome, Firefox and Opera. Never tested with IE.
  * Never tested with IE 6.
  *
  *
@@ -45,6 +45,8 @@
 // with creates a function $.fn.disableTextSelect,
 // but it's not able to cancel a selection that has already
 // started (it doesn't specify -webkit-user-select).
+// — Regrettably, in Opera, dwDisableSelection won't cancel any
+// current selection.
 //----------------------------------------
   (function($) {
 //----------------------------------------
@@ -120,7 +122,7 @@ Debiki.v0.utterscroll = function(options) {
   };
 
   var settings = $.extend({}, defaults, options);
-  allScrollstoppers = settings.defaultScrollstoppers;
+  var allScrollstoppers = settings.defaultScrollstoppers;
   if (settings.scrollstoppers.length > 0)
     allScrollstoppers += ', '+ options.scrollstoppers;
 
@@ -142,16 +144,29 @@ Debiki.v0.utterscroll = function(options) {
       return false;
 
     // Never scroll, when mouse down on certain elems.
-    var $noScrollElem = $(event.target).closest(allScrollstoppers);
+    var $target = $(event.target);
+    var $noScrollElem = $target.closest(allScrollstoppers);
     if ($noScrollElem.length > 0)
       return true;
+
+    // Ignore scrollbar clicks.
+    // — In Google Chrome, but not FF nor Opera, when you mousedown on
+    // a scrollbar, a mousedown event happens. — What about IE??
+    // — The target of a scrollbar click event is the 'html' elem.
+    // (In Chrome at least.)
+    // — Improvement: calculate the scrollbar width instead, and use it
+    // to find out if a window scrollbars is clicked. Because an
+    // event with target 'html' might also happen, if you click on the
+    // actual document, somewhere where there's no element.
+    if ($.browser.webkit && $target.is('html'))
+      return;
 
     // Scroll, unless the mouse down is a text selection attempt:
     // -----
 
     // If there's no text in the event.target, then start scrolling.
     // Disregard whitespace "text" though.
-    var textElems = $(event.target).contents().filter(function(ix, elem, ar) {
+    var textElems = $target.contents().filter(function(ix, elem, ar) {
       if (elem.nodeType !== 3)  // is it a text node?
         return false;
       if (elem.data.match(/^[ \t\r\n]*$/))  // is it whitespace?
@@ -162,8 +177,8 @@ Debiki.v0.utterscroll = function(options) {
       startScroll(event);
       event.preventDefault();
       /*
-      console.log('$(event.target).contents(): ---------------');
-      console.log($(event.target).contents());
+      console.log('$target.contents(): ---------------');
+      console.log($target.contents());
       console.log('-------------------------------------------');
       */
       return false;
@@ -180,10 +195,16 @@ Debiki.v0.utterscroll = function(options) {
     // Test with window.getSelection — but right now, in this *mousedown*
     // handler, window.getSelection returns no selection. After
     // a while though, the browser seems to always return a selection
-    // if the cursor is on text.
-    setTimeout(function() {
-      startScrollUnlessMightSelectText(event);
-    }, 0);
+    // if the cursor is on text — well, at leat Chrome and Firefox:
+    // they create a selection object for the empty string.
+    // Opera however does not, so skip Opera here (result: Opera will
+    // select text, instead of scrolldragging, sometimes when you click
+    // close to text).
+    if (!$.browser.opera) {
+      setTimeout(function() {
+        startScrollUnlessMightSelectText(event);
+      }, 0);
+    }
 
     // If the user selects no text, but just holds down the mouse
     // button, then start scrolling. — This enable scrolldrag
@@ -317,6 +338,12 @@ Debiki.v0.utterscroll = function(options) {
       x: event.clientX,
       y: event.clientY
     };
+
+    // In Opera, dwDisableSelection doesn't clear any existing selection.
+    // So clear the selection each scroll step instead. (It's very
+    // annoying if you select text when you scrolldrag.)
+    if ($.browser.opera)
+      emptyWindowSelection();
 
     event.preventDefault();
     return false;
