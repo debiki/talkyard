@@ -3903,15 +3903,6 @@ function prettyTimeBetween(then, now) {  // i18n
 
 // ------- Initialization functions
 
-function enableDragScroll() {
-  // This takes perhaps 70 ms (on my 2.8 GHz 6 core AMD)
-  // and should thus not be done on page load. (jQuery takes long
-  // when finding all elements that match the selectors.)
-  var selectors = Settings.draggableInternal + Settings.draggableCustom;
-  $('body').debiki_dragscrollable({
-            dragSelector: selectors, scrollable: selectors });
-}
-
 function registerEventHandlers() {
   $('#dw-a-login').click(showLoginSimple);
   $('#dw-a-logout').click(showLogout);
@@ -4000,6 +3991,9 @@ function initAndDrawSvg() {
   $('body').addClass('dw-pri');
   Me.refreshProps();
 
+  if (!Modernizr.touch)
+    Debiki.v0.utterscroll({ scrollstoppers: '.CodeMirror' });
+
   // The root post might be too narrow and stuff might float drop,
   // rersulting in SVG arrows pointing incorrectly. Avoid this, by
   // making the root thread wide, whilst rendering the page. When done,
@@ -4008,7 +4002,6 @@ function initAndDrawSvg() {
 
   var steps = [];
   steps.push(initPostsThreadStep1);
-  if (!Modernizr.touch) steps.push(enableDragScroll);
   steps.push(initPostsThreadStep2);
   steps.push(initPostsThreadStep3);
   steps.push(registerEventHandlers);
