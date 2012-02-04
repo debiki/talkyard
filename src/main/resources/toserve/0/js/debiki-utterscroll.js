@@ -24,8 +24,7 @@
  *
  *
  * As of today (2012-02-04), tested with jQuery 1.6.4 and recent versions
- * of Google Chrome, Firefox and Opera. Never tested with IE.
- * Never tested with IE 6.
+ * of Google Chrome, Firefox and Opera, and IE 6, 7, 8 and 9.
  *
  *
  * Find in the rest of this file:
@@ -141,24 +140,23 @@ Debiki.v0.utterscroll = function(options) {
   function startScrollPerhaps(event) {
     // Only left button drag-scrolls.
     if (event.which !== 1 )
-      return false;
+      return;
 
     // Never scroll, when mouse down on certain elems.
     var $target = $(event.target);
     var $noScrollElem = $target.closest(allScrollstoppers);
     if ($noScrollElem.length > 0)
-      return true;
+      return;
 
     // Ignore scrollbar clicks.
-    // — In Google Chrome, but not FF nor Opera, when you mousedown on
-    // a scrollbar, a mousedown event happens. — What about IE??
-    // — The target of a scrollbar click event is the 'html' elem.
-    // (In Chrome at least.)
-    // — Improvement: calculate the scrollbar width instead, and use it
-    // to find out if a window scrollbars is clicked. Because an
-    // event with target 'html' might also happen, if you click on the
-    // actual document, somewhere where there's no element.
-    if ($.browser.webkit && $target.is('html'))
+    // In Chrome and IE, but not FF nor Opera, when you mousedown on
+    // a scrollbar, a mousedown event happens. The target of a scrollbar
+    // mousedown event is the 'html' elem.
+    // Unfortunately, an event with target 'html' might also happen,
+    // if you click on the actual document, somewhere where there's
+    // no element. So, a possible improvement: calculate the scrollbar
+    // width, and use it to find out if a window scrollbar is clicked.
+    if (($.browser.webkit || $.browser.msie) && $target.is('html'))
       return;
 
     // Scroll, unless the mouse down is a text selection attempt:
@@ -175,7 +173,6 @@ Debiki.v0.utterscroll = function(options) {
     });
     if (textElems.length === 0) {
       startScroll(event);
-      event.preventDefault();
       /*
       console.log('$target.contents(): ---------------');
       console.log($target.contents());
@@ -184,45 +181,45 @@ Debiki.v0.utterscroll = function(options) {
       return false;
     }
 
-    // window.getSelection is missing in IE 7 and 8 — so we don't know
-    // if the user clicked text. Don't scroll then, for now.
-    // COULD check some MS specific selection functions instead.
-    // document.selection?
-    if (!window.getSelection)
-      return true;
-
-    // Also start scrolling unless the user clicks text:
-    // Test with window.getSelection — but right now, in this *mousedown*
-    // handler, window.getSelection returns no selection. After
-    // a while though, the browser seems to always return a selection
-    // if the cursor is on text — well, at leat Chrome and Firefox:
-    // they create a selection object for the empty string.
-    // Opera however does not, so skip Opera here (result: Opera will
-    // select text, instead of scrolldragging, sometimes when you click
-    // close to text).
-    if (!$.browser.opera) {
-      setTimeout(function() {
-        startScrollUnlessMightSelectText(event);
-      }, 0);
-    }
+    // After a moment, the browser (Chrome and FF and IE 9) has created
+    // a selection object that we can examine to find out if the
+    // mousesdown happened where there is no text. If so, we'll scroll.
+    setTimeout(function() {
+      startScrollUnlessMightSelectText(event);
+    }, 0);
 
     // If the user selects no text, but just holds down the mouse
     // button, then start scrolling. — This enable scrolldrag
     // also on pages almost covered with text.
     tryLaterHandle = setTimeout(function() {
-      // (Would be better to use the mouse pos as of the timeout,
-      // not the original mousedown? To avoid that the screen jumps
-      // if you've moved the mose.)
       startScrollUnlessHasSelectedText(event);
     }, 300);
 
     // Don't event.preventDefault(). — The user should be able
     // to e.g. click buttons and select text.
-    return true;
   }
 
-  // Starts scrolling unless the user is selecting text.
+  // Starts scrolling unless the mousedown happened on text — then let
+  // the user select text instead.
   function startScrollUnlessMightSelectText(event) {
+    // A moment after mousedown, the browser seems to always return
+    // a selection if the cursor is on text — well, at least Chrome and
+    // FF and IE 9 they create a selection object for the empty string.
+
+    // Opera however does not, so skip Opera here (result: Opera will
+    // select text, instead of scrolldragging, sometimes when you click
+    // close to text).
+    if ($.browser.opera)
+      return;
+
+    // IE 7 and 8.
+    // It seems  document.selection.createRange().text  is always an
+    // empty string here — don't know if the user mousedown:ed on text.
+    // So don't scroll (result: IE 7 and 8 will sometimes select text,
+    // instead of scrolling).
+    if (!window.getSelection)
+      return;
+
     // This happens a tiny while after the mousedown event, and now
     // the browser knows if any text is selected/mouse-down:ed.
     var sel = window.getSelection();
@@ -247,8 +244,7 @@ Debiki.v0.utterscroll = function(options) {
       clearTimeout(tryLaterHandle);
     } else {
       // The user might be selecting text to copy to the clipboard.
-      // Don't scroll.
-      return; //breakpoint
+      return;  // breakpoint here
     }
   }
 
@@ -256,10 +252,19 @@ Debiki.v0.utterscroll = function(options) {
   // has selected text.
   function startScrollUnlessHasSelectedText(event) {
     if (startPos) return; // already scrolling
-    var selectedText = window.getSelection().toString();
-    if (selectedText.length > 0)
-      return;
-    startScroll(event);
+    var selectedText;
+
+    if (window.getSelection) {
+      selectedText = window.getSelection().toString();
+    } else if (document.selection) {  // IE 7 and 8
+      selectedText = document.selection.createRange().text;
+    } else {
+      // Don't scroll.
+      selectedText = '';
+    }
+
+    if (selectedText.length === 0)
+      startScroll(event);
   }
 
   function startScroll(event) {
@@ -345,7 +350,6 @@ Debiki.v0.utterscroll = function(options) {
     if ($.browser.opera)
       emptyWindowSelection();
 
-    event.preventDefault();
     return false;
   }
 
@@ -357,7 +361,6 @@ Debiki.v0.utterscroll = function(options) {
     $(document.body).css('cursor', '');  // cancel 'move' cursor
     $.event.remove(document, 'mousemove', doScroll);
     $.event.remove(document, 'mouseup', stopScroll);
-    event.preventDefault();
     return false;
   }
 
