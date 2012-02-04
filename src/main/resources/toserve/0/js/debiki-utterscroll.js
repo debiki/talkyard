@@ -3,8 +3,9 @@
  *
  * Utterscroll enables dragscroll everywhere, on the whole page.
  * Then you can press-and-dragscroll anywhere, instead of
- * using the awkward scrollbars.
- * But you won't scroll when you click buttons, inputs and links
+ * using the scrollbars (or scroll wheel — but you usually cannot
+ * scroll horizontally with the scroll wheel?).
+ * You won't scroll when you click buttons, inputs and links
  * etcetera. And not when you select text.
  *
  *
@@ -349,8 +350,6 @@ Debiki.v0.utterscroll = function(options) {
     // annoying if you select text when you scrolldrag.)
     if ($.browser.opera)
       emptyWindowSelection();
-
-    return false;
   }
 
   function stopScroll(event) {
@@ -361,7 +360,13 @@ Debiki.v0.utterscroll = function(options) {
     $(document.body).css('cursor', '');  // cancel 'move' cursor
     $.event.remove(document, 'mousemove', doScroll);
     $.event.remove(document, 'mouseup', stopScroll);
-    return false;
+
+    // On mousedown, `false' was perhaps not returned, so we should probably
+    // *not* return false here? Anyway, if we `return false', Opera sometimes
+    // won't clear an existing selection. Result: Many disjoint sections
+    // coexisting at the same time. Only Opera — an Opera bug? That
+    // bug happens now too, without `return false', hmm.
+    // But the bug happens infrequently, it's a fairly harmless issue I think.
   }
 
   function emptyWindowSelection() {
