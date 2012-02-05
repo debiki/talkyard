@@ -5053,14 +5053,12 @@ extend(_Node, {
     }
 
     // remove from our list of event listeners
-    if (this._listeners[type]) {
-      pos = this._findListener(this._listeners[type], type, listener, useCapture);
-      if (pos !== null) {
-        // FIXME: Ensure that if identical listeners are added twice that they collapse to
-        // just one entry or else this will fail to delete more than the first one.
-        this._listeners[type].splice(pos,1);
-        delete this._listeners[type]['_' + listener.toString() + ':' + useCapture];
-      }
+    pos = this._findListener(this._listeners[type], type, listener, useCapture);
+    if (pos !== null) {
+      // FIXME: Ensure that if identical listeners are added twice that they collapse to
+      // just one entry or else this will fail to delete more than the first one.
+      this._listeners[type].splice(pos,1);
+      delete this._listeners[type]['_' + listener.toString() + ':' + useCapture];
     }
     
     if (type.substring(0,3) == 'key') {
