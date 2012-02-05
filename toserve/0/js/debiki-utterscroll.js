@@ -224,21 +224,41 @@ Debiki.v0.utterscroll = function(options) {
     // This happens a tiny while after the mousedown event, and now
     // the browser knows if any text is selected/mouse-down:ed.
     var sel = window.getSelection();
-    /*
-    console.log('startScrollUnlessMightSelectText:\n sel: ');
-    console.log(sel);
-    console.log('sel.anchorNode: ');
-    console.log(sel.anchorNode);
-    */
+
+    // If there is no text after [the mousedown position in the anchor
+    // node], the mousedown didn't happen on the text, but somewhere
+    // where text has already ended. Then scroll.
+    // {{{ If statement explanation: Consider this text:
+    // "Abcd!" — if you mousedown just before the '!',
+    // `substr().length' will be 1, because the '!' is to the right
+    // of the mousedown. If however you mousedown to the right of the '!'
+    // then anchorOffset is set to the position after the '!' and
+    // substr(...).length is 0.  }}}
+    // {{{ Fixable BUG: Cannot mousedown on and select the very last character
+    // in an elem (e.g. <p> or <h2>), because when you mousedown on the
+    // right part of that char, anchorOffset will be *after* it,
+    // and there's no difference from this anchorOffset and the anchorOffset
+    // when you click a bit outside of the last character (on whitespace).
+    // Perhaps an insane workaround: Add a &nbsp after the mousedown:ed
+    // elem — then the &nbsp will be the very last char. But this might
+    // cause a line wrap?? — Use a narrow non-breaking space instead,
+    // &#x202F; ? I tested to append one to a <h2>, worked fine :-)
+    // Here are lots of invisible spaces:
+    //  http://www.cs.tut.fi/~jkorpela/chars/spaces.html
+    // Or?? Create a selection for all text in the mousedown:ed elem,
+    // and perhaps then I can check dist from [all 4 corners of the selection]
+    // to [the mousedown position], if small, don't scrolldrag.
+    // Best approach? Append an empty <span> to the end of the mousedown:ed
+    // elem, and measure the dist from that <span> to the mousedown pos.
+    // If close, don't scrolldrag. Then remove the span.
+    // People who do this:
+    //  <http://stackoverflow.com/questions/1589721/
+    //      how-can-i-position-an-element-next-to-user-text-selection>
+    //  <http://stackoverflow.com/questions/2031518/
+    //      javascript-selection-range-coordinates>
+    // }}}
     if (!sel.anchorNode || !sel.anchorNode.data ||
         sel.anchorNode.data.substr(sel.anchorOffset, 1).length === 0) {
-      /*
-      if (sel.anchorNode) {
-        console.log('sel.anchorNode.data:');
-        console.log(sel.anchorNode.data);
-      }
-      console.log('No text under cursor');
-      */
       // No text under mouse cursor. The user probably doesn't try to
       // select text, and no other elem has captured the event.
       startScroll(event);
