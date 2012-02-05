@@ -232,18 +232,6 @@ var didResize = false;
 // Set to true if a truncated post was clicked and expanded.
 var didExpandTruncated = false;
 
-// IE9 and svgweb bug workaround.
-// E.g. $('#non-existing-elem') calls
-//  doc.setProperty('SelectionLanguage', 'XPath');  (in svg.js)
-// which fails: "Object doesn't support property or method 'setProperty'"
-// (line 1 column 319 in the minified svg.js) *if* the ID searched
-// for does *not* exist. Workaround: $('body').find('#...').
-// So use $bugfix.find('#id'), when looking up by id an elem that
-// might not exist. (On some pages, the site admin might have customized
-// the HTML so that elems that are usually present, are absent.
-// E.g. login links.)
-var $bugfix = $('body');
-
 var rateFormTemplate = $("#dw-hidden-templates .dw-fs-r");
 var debateId = $('.debiki').attr('id');
 
@@ -1457,7 +1445,7 @@ function confirmClosePage() {
 // Shows actions for the current post, or the last post hovered.
 function $showActions() {
   // Hide any action links already shown; show actions for one post only.
-  $bugfix.find('#dw-p-as-shown')
+  $('#dw-p-as-shown')
       .css('visibility', 'hidden')
       .removeAttr('id');
   // Show links for the the current post.
@@ -1758,9 +1746,9 @@ function showServerResponseDialog(jqXhrOrHtml, opt_errorType,
 //  sanitize: unless `false', {name, email, website} will be sanitized.
 function fireLogout() {
   Me.refreshProps();
-  $bugfix.find('#dw-login-info').hide();
-  $bugfix.find('#dw-a-logout').hide();
-  $bugfix.find('#dw-a-login').show();
+  $('#dw-login-info').hide();
+  $('#dw-a-logout').hide();
+  $('#dw-a-login').show();
 
   // Clear all xsrf tokens. They are invalid now after logout, because
   // the server instructed the browser to delete the session id cookie.
@@ -1777,10 +1765,10 @@ function fireLogout() {
 
 function fireLogin() {
   Me.refreshProps();
-  $bugfix.find('#dw-login-info').show()
+  $('#dw-login-info').show()
       .find('.dw-login-name').text(Me.getName());
-  $bugfix.find('#dw-a-logout').show();
-  $bugfix.find('#dw-a-login').hide();
+  $('#dw-a-logout').show();
+  $('#dw-a-login').hide();
 
   // Update all xsrf tokens in any already open forms (perhaps with
   // draft texts, we shuldn't close them). Their xsrf prevention tokens
@@ -3920,8 +3908,8 @@ function prettyTimeBetween(then, now) {  // i18n
 // ------- Initialization functions
 
 function registerEventHandlers() {
-  $bugfix.find('#dw-a-login').click(showLoginSimple);
-  $bugfix.find('#dw-a-logout').click(showLogout);
+  $('#dw-a-login').click(showLoginSimple);
+  $('#dw-a-logout').click(showLogout);
 
   // On post text click, open the inline action menu.
   // But hide it on mousedown, so the inline action menu disappears when you
