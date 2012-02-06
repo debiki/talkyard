@@ -337,15 +337,18 @@ jQuery UI's dialgos. Might that be incompatible with other libs? */
 .dw-depth-1 .dw-t {
   padding-left: 0;
   border-top: none;
-  }
+}
 
 /* --- Horizontal layout ---*/
 /* (This could be simplified?) */
 
-.dw-t {
+/* Root post child threads and other stuff: */
+.dw-hor > .dw-res > li {
   float: left;
-  position: relative; /* #action-menu is absolute positioned relative cmt */
+  /* #action-menu and graphics is absolute positioned relative thread */
+  position: relative;
 }
+
 .dw-depth-0.dw-t {
   float: none; /* else won't expand eastwards, even if zoomed out much */
 }
@@ -503,27 +506,20 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
   margin: 8px 0 0 5px;
 }
 
-.dw-hor > .dw-res > .dw-t:not(.dw-i-t):hover {
-  border-right: 2px dashed lightgray; /* column separator and resizor */
-}
+/* Show column separator and resizor on hower. */
+.dw-hor > .dw-res > .ui-resizable:hover { border-right: 2px dashed lightgray; }
+.dw-hor > .dw-res > .ui-resizable { border-right: 2px dashed transparent; }
 
-.dw-hor > .dw-res > .dw-fs,
-.dw-hor > .dw-res > .dw-t:not(.dw-i-t),
-.dw-hor-a {
+.dw-hor > .dw-res > li {
   padding: 0 20px 10px 0;
   margin: 10px 16px 0 0;
-  border-right: 2px dashed transparent; /* shown on hover (see above)*/
 }
 
 /* Make the column separator at least this high. But don't do this for
 .dw-fs because forms are folded/slided out, i.e. shrinked to zero height */
 .dw-hor-a,
 .dw-depth-1:not(.dw-i-t) {
-  min-height: 100px; 
-}
-
-.dw-hor > .dw-res > li {
-  position: relative; /* gfx placed relative */
+  min-height: 100px;
 }
 
 /* Empty space between a post and its child threads, when laid
