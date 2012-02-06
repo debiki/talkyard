@@ -292,31 +292,30 @@ var zoomListeners = [];
 function $threadOpen() {
   // In case the thread will be wider than the summary, prevent float drop.
   resizeRootThreadExtraWide();
-  // Replace the summary line with the thread, and slide it in.
-  var $summary = $(this);
-  var $thread = $summary.data('dw_$thread');
-  $summary.removeData('dw_$thread').each($slideUp).queue(function() {
-    // Need to dequeue() the thread. Why? Perhaps jQuery suspends
-    // animations when an elem is detach()ed?
-    $thread.replaceAll($summary).each($slideDown).dequeue();
-  });
+  // Remove the summary; show the thread.
+  // (The thread is always placed just after the summary.)
+  var $summary = $(this).parent();
+  var $thread = $summary.next();
+  $summary.remove();
+  $thread.each($slideDown);
+  return false; // don't follow any <a> link
 }
 
 function $threadClose() {
-  // Slide the thread away and replace it with a summary line. This summary
-  // line is a copy of the thread's <li>, emptied. Then the summary
-  // line will keep the position and ID and css classes of the actual thread.
+  // Slide the thread away and replace it with a summary line.
   var $thread = $(this).closest('.dw-t');
   var postCount = $thread.find('.dw-p').length;
-  var $summary = $thread.clone().empty()
-      .append($('<span class="dw-z-open">[+] Click to show '+  // COULD add i18n
-          postCount +' posts</span>'))
+  var $clickToShow =
+      $('<a class="dw-z-open">[+] Click to show '+  // COULD add i18n
+      postCount +' posts</a>')  // include href to ?view=the-thread  ?
       .click($threadOpen);
-  $thread.each($slideUp).queue(function() {
-    $thread.before($summary).detach();
-    $summary.data('dw_$thread', $thread)
-        .each($makeEastResizable)
-        .each($slideDown);
+  var $summary = $('<li></li>')
+      .append($clickToShow)
+      .each($makeEastResizable);
+  $thread.each($slideUp).queue(function(next) {
+    $thread.before($summary);
+    $thread.each(SVG.$drawParents);
+    next();
   });
 }
 
@@ -3392,6 +3391,8 @@ function makeSvgDrawer() {
     // - The :has filter is slow, so I rewrote to find(...).parent() instead.
     // - The :hidden filter is slow, so I removed it — don't think it's
     //   needed now when arrows are placed in a per thread/post <svg>.
+    //   [2012-02: Hmm, now I just added a :visible filter, will that be
+    //   slow too? And in which statement was the :hidden filter included?]
     // - arrowFrom...() are SLOW! because they use $.offset.
     // }}}
     var $i = $(this);
@@ -3400,15 +3401,16 @@ function makeSvgDrawer() {
     $i.add('> .dw-t-vspace', this).add($bdy).children('svg').each(function() {
       $(this).find('path').remove();
     });
-    // Draw arrows to whole post replies, and, for horizontal layout,
-    // to the Reply button.
-    var $childItems = $i.find('> .dw-res > li');
+    // Draw arrows to whole post replies, and to thread summaries but
+    // skip the not :visible summazrized threads. For horizontal layout,
+    // draw an arrow to the Reply button (it's an <li>).
+    var $childItems = $i.find('> .dw-res > li:visible');
     var cache = { itemCount: $childItems.length };
     $childItems.each(function(index){
       cache.itemIndex = index;
       arrowFromThreadToReply($i, $(this), cache);
     });
-    // To inline replies.
+    // Draw arrows to inline replies.
     $bdy.children('.dw-p-bd-blk').each(function() {
       var cache = {};
       $(this).find('.dw-i-m-start').each(function() {
@@ -3995,8 +3997,9 @@ function initAndDrawSvg() {
   $('body').addClass('dw-pri');
   Me.refreshProps();
 
-  if (!Modernizr.touch)
-    Debiki.v0.utterscroll({ scrollstoppers: '.CodeMirror' });
+  if (!Modernizr.touch) Debiki.v0.utterscroll({
+    scrollstoppers: '.CodeMirror, .ui-resizable-handle'
+  });
 
   // The root post might be too narrow and stuff might float drop,
   // rersulting in SVG arrows pointing incorrectly. Avoid this, by
