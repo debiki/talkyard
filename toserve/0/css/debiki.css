@@ -16,8 +16,8 @@
  *  -ar-          article — the page body (and/or title?), post id 1 (and 2)
  *  -bd-          body
  *  -by           by whom post was written. COULD change -p-by -> -p-u (user)?
- *  -cr-          create
- *  -dl-          delete
+ *  -cr-          create  — rename to -crt-?
+ *  -dl-          delete  — rename to 'del'?
  *  -dt           date?  currently, '-at' used instead
  *  -dg-          dialog?
  *  -e-           edit
@@ -101,7 +101,7 @@
  *  dw-svg-parent Has a <svg> child
  *  dw-keyrecvr   keyboard shortcut receiver
  *  dw-t-dl       a thread, deleted
- *  dw-lg-t-spl   Login type simple
+ *  dw-lg-t-spl   Login type simple — COULD rename to -lgi-t-spl  (with 'i')
  *  dw-u-id-<x>   user id <x>
  *  dw-x-         miscellaneous classes, perhaps to be renamed later
  *
@@ -532,16 +532,6 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
   width: 25em; /* avoids > 1 column for this depth */
 }
 
-.dw-depth-1.dw-zd-fx {
-  max-width: 8.5em;
-  overflow: hidden;
-}
-
-.xx.dw-t.dw-depth-1:first-of-type,
-.xx.dw-t.dw-depth-1:last-of-type {
-  border-right: 0;
-}
-
 .dw-res {
   margin: 0;
 }
@@ -549,7 +539,6 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
 .dw-depth-1 .dw-res {
   margin: 0 0 0 35px;
   padding-top: 3px;
-  /* border-left: 1px dotted #ddf; -- now using bezier curves instead */
 }
 
 .dw-depth-2 .dw-res {
