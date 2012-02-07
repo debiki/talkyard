@@ -1,4 +1,5 @@
 // vim: ts=2 sw=2 et
+/*
 package com.debiki.v0
 
 import org.junit._
@@ -15,7 +16,7 @@ class AppTest {
 
   }
 
-  /*
+
 //  @Test
   def testYamlObj() {
     val path =
@@ -54,5 +55,6 @@ class AppTest {
     assertEquals("a: 1\nb:\n  c: 3\n  d: 4\n", yaml.dump(yaml.load(document)))
     println(yaml.dump(yaml.load(document)))
   }
-  */
 }
+*/
+

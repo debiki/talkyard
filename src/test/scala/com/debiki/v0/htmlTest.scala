@@ -4,6 +4,7 @@
  * and open the template in the editor.
  */
 
+/*
 package com.debiki.v0
 
 import org.specs._
@@ -23,3 +24,4 @@ object SimpleDebateHtmlSpec extends Specification {
     }
   }
 }
+*/
