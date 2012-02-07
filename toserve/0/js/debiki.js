@@ -30,6 +30,20 @@ attr() prepends 'http://server/.../page' to the href.  Related:
 
  So you can do: grep dwCo, grep dwEv
 
+ HTML5 data attributes names:  ??
+ Like the CSS class names, but underscore not hyphen, so as to aovid
+ uppercase/hyphen conversion. (E.g. 'data-variable-name' is converted to
+ variableName (no hyphen, uppercase 'N'), and back, according to the html5
+ spec: <http://www.w3.org/TR/html5/elements.html#
+          embedding-custom-non-visible-data-with-the-data-attributes>
+ Using underscoer ensures the data names in the html doc matches
+ the names in the Javascript source code which avoids confusion.
+ Example:  zd_t_id  means:  folded (zd, 'z' is fold)  thread (t)  id (id).
+ But don't use:  zd-t-id, that'd be converted to 'zdTId' I think.
+ If the data is only set and read via Javascript (never serialized to html),
+ then please use 'dwDataName' (then you know you need only consider the
+ javascript files (this file) should you want to rename it).)
+
 }}}*/
 
 if (!window.Debiki)
@@ -143,11 +157,6 @@ Settings.editFormSubmitter = function($form, debateId, rootPostId,
   alert("Edits not implemented. [error DwE19x3g35]");
 };
 
-Settings.draggableInternal =
-    '.dw-res, .dw-i-ts, .dw-t, .dw-t-vspace, '+
-    '.dw-p, .dw-p-bd, .dw-hor-a, .dw-fs, '+
-    '.dw-debate, .dw-debate svg, path, '; // (draggableCustom appended)
-Settings.draggableCustom = '';
 
 //----------------------------------------
 // Customizable functions: Export setters
@@ -171,10 +180,6 @@ Debiki.v0.setEditFormLoader = function(loader) {
 
 Debiki.v0.setEditFormSubmitter = function(submitter) {
   Settings.editFormSubmitter = submitter;
-};
-
-Debiki.v0.makeDragscrollable = function(selectors) {
-  Settings.draggableCustom = selectors;
 };
 
 // Onload
