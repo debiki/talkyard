@@ -14,6 +14,7 @@
  *  -ap-          applied/application
  *  -adr-         address
  *  -ar-          article — the page body (and/or title?), post id 1 (and 2)
+ *  -arw-         arrow (points from a post to its replies)
  *  -bd-          body
  *  -by           by whom post was written. COULD change -p-by -> -p-u (user)?
  *  -cr-          create  — rename to -crt-?
@@ -58,7 +59,7 @@
  *  -s            south (COULD change to "sw", southwards)
  *                        COULD then use 's' for `summary'?
  *  -sg-          suggestion
- *  -svg-         SVG graphics
+ *  -svg-         SVG graphics COULD rename most -svg- to -arw- (arrow)
  *  -t-           thread
  *  -ts-          threads
  *  -ts-          timestamp? or use ds, datestamp? or use -dt-, "date"?
@@ -98,6 +99,7 @@
  *  dw-p-rez-e    post resized eastwards
  *  dw-pri        placed on the <body>, use it to boost CSS rule priorities
  *  dw-svg-c_<x>  SVG curve from <x>  COULD rename to -svg-p, for `path'
+ *                  better: rename to -arw-from_<x>
  *  dw-svg-gparnt Has a <svg> child or grandchild (but no grand-grand-child)
  *  dw-svg-parent Has a <svg> child
  *  dw-keyrecvr   keyboard shortcut receiver
@@ -635,9 +637,10 @@ post, only for the article.) */
 }
 
 /* For a folded thread, only the open link (.dw-z) is visible. */
-.dw-zd > *:not(.dw-z) {
-  display: none;
-}
+/* This verbose code works also in IE 7: */
+.dw-zd > * { display: none; }
+.dw-zd > .dw-z, .dw-zd > .dw-arw { display: block; }
+.dw-zd > .dw-svg-fake-varrow { display: none; }
 
 /* Un-indent any root post, by hiding the collapse button.
  (Why would one want to hide the root post?) */

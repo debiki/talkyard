@@ -293,19 +293,25 @@ function $threadToggleFolded() {
   // In case the thread will be wider than the summary, prevent float drop.
   resizeRootThreadExtraWide();
   var $thread = $(this).closest('.dw-t');
-  var $childrenExclFoldLink = $thread.children(':not(.dw-z)');
+  // Don't hide the toggle-folded-link and arrows pointing *to* this thread.
+  var $childrenToFold = $thread.children(':not(.dw-z, .dw-arw)');
   var $foldLink = $thread.children('.dw-z');
+  // {{{ COULD make the animation somewhat smoother, by sliting up the
+  // thread only until it's as high as the <a> and then hide it and add
+  // .dw-zd, because otherwie when the <a>'s position changes from absolute
+  // to static, the thread height suddenly changes from 0 to the highht
+  // of the <a>). }}}
   if ($thread.is('.dw-zd')) {
     // Thread is folded, open it.
-    $childrenExclFoldLink.each($slideDown);
+    $childrenToFold.each($slideDown);
     $thread.removeClass('dw-zd');
     $foldLink.text('[—]');
   } else {
     // Fold thread.
     var postCount = $thread.find('.dw-p').length;
-    $childrenExclFoldLink.each($slideUp).queue(function(next) {
+    $childrenToFold.each($slideUp).queue(function(next) {
       $foldLink.text('[+] Click to show '+  // COULD add i18n
-          postCount +' posts');  // COULD include href to ?view=the-thread  ?
+          postCount +' posts');
       $thread.addClass('dw-zd');
       next();
     });
@@ -3465,17 +3471,18 @@ function makeFakeDrawer() {
   function initialize() {
     // North-south arrows: (for vertical layout)
     $('.dw-depth-0 .dw-t:has(.dw-t)').each(function(){
-      $(this).prepend("<div class='dw-svg-fake-varrow'/>");
-      $(this).prepend("<div class='dw-svg-fake-varrow-hider-hi'/>");
-      $(this).prepend("<div class='dw-svg-fake-varrow-hider-lo'/>");
+      $(this).prepend("<div class='dw-arw dw-svg-fake-varrow'/>");
+      $(this).prepend("<div class='dw-arw dw-svg-fake-varrow-hider-hi'/>");
+      $(this).prepend("<div class='dw-arw dw-svg-fake-varrow-hider-lo'/>");
     });
     $('.dw-depth-1 .dw-t:not(.dw-i-t)').each(function(){
       var hider = $(this).filter(':last-child').length ?
                     ' dw-svg-fake-arrow-hider' : '';
-      $(this).prepend('<div class="dw-svg-fake-vcurve-short'+ hider +'"/>');
+      $(this).prepend(
+          '<div class="dw-arw dw-svg-fake-vcurve-short'+ hider +'"/>');
     });
     $('.dw-depth-1 .dw-t:not(.dw-i-t):last-child').each(function(){
-      $(this).prepend("<div class='dw-svg-fake-varrow-hider-left'/>");
+      $(this).prepend("<div class='dw-arw dw-svg-fake-varrow-hider-left'/>");
     });
     // TODO: Inline threads:  .dw-t:not(.dw-hor) > .dw-i-ts > .dw-i-t
     // TODO: First one:  .dw-t:not(.dw-hor) > .dw-i-ts > .dw-i-t:first-child
@@ -3485,16 +3492,16 @@ function makeFakeDrawer() {
   // Points on the Reply button, and branches out to the replies to the
   // right of the button.
   var replyBtnBranchingArrow =
-      '<div class="dw-svg-fake-hcurve-start"/>' + // branches out
-      '<div class="dw-svg-fake-harrow"></div>' + // extends branch
-      '<div class="dw-svg-fake-harrow-hider-left"></div>';
+      '<div class="dw-arw dw-svg-fake-hcurve-start"/>' + // branches out
+      '<div class="dw-arw dw-svg-fake-harrow"></div>' + // extends branch
+      '<div class="dw-arw dw-svg-fake-harrow-hider-left"></div>';
 
   var horizListItemEndArrow =
-      '<div class="dw-svg-fake-hcurve"/>';       // dw-png-arw-hz-curve-end?
+      '<div class="dw-arw dw-svg-fake-hcurve"/>';     // dw-arw-hz-curve-end?
 
   var horizListItemContArrow =
-      '<div class="dw-svg-fake-harrow"/>' +      // dw-png-arw-hz-line-middle?
-      '<div class="dw-svg-fake-harrow-end"/>';   // dw-png-arw-hz-line-end?
+      '<div class="dw-arw dw-svg-fake-harrow"/>' +    // dw-arw-hz-line-middle?
+      '<div class="dw-arw dw-svg-fake-harrow-end"/>'; // dw-arw-hz-line-end?
 
   // Arrows to each child thread.
   function $initPostSvg() {
@@ -3516,7 +3523,7 @@ function makeFakeDrawer() {
       } else {
         // There is nothing but this action button <li>.
         $i.prepend(
-            '<div class="dw-svg-fake-hcurve-start-solo"/>');
+            '<div class="dw-arw dw-svg-fake-hcurve-start-solo"/>');
       }
     });
     if ($pt.is('.dw-hor')) {
