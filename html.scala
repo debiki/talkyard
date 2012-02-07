@@ -331,7 +331,7 @@ class DebateHtml(val debate: Debate) {
       // Could skip sorting inline posts, since sorted by position later
       // anyway, in javascript. But if javascript disabled?
       p <- vipos.sortBy(p => p.ctime.getTime). // the oldest first
-                sortBy(p => -pageStats.scoreFor(p.id).liking).
+                sortBy(p => -pageStats.ratingStatsFor(p.id).liking).
                 sortBy(p => p.meta.fixedPos.getOrElse(999999))
       cssThreadId = "dw-t-"+ p.id
       cssDepth = "dw-depth-"+ depth
@@ -509,8 +509,8 @@ class DebateHtml(val debate: Debate) {
       }
     }
 
-    val score = pageStats.scoreFor(post.id)
-    val ratStatsSorted = score.labelStatsSorted
+    val ratingStats = pageStats.ratingStatsFor(post.id)
+    val ratStatsSorted = ratingStats.tagStatsSorted
     val topTags = if (ratStatsSorted isEmpty) Nil else {
       // If there're any really popular tags (lower liking bound > 0.4),
       // show all those. Otherwise, show only the most popular tag(s).
@@ -521,7 +521,7 @@ class DebateHtml(val debate: Debate) {
       val rats = ratStatsSorted
       if (rats.isEmpty) (Nil: NodeSeq, Nil: NodeSeq)
       else {
-        def showRating(tagAndStats: Pair[String, LabelStats]): String = {
+        def showRating(tagAndStats: Pair[String, TagStats]): String = {
           val tag = tagAndStats._1
           val likingLowerBound = tagAndStats._2.fractionLowerBound
           // A rating tag like "important!!" means "really important", many
@@ -543,12 +543,12 @@ class DebateHtml(val debate: Debate) {
           topTags.take(3).map(showRating(_)).mkString(", ") }</i></span>
         ),
         <div class='dw-p-r-all'
-             data-mtime={toIso8601T(score.lastRatingDate)}>{
-          score.ratingCount} ratings:
+             data-mtime={toIso8601T(ratingStats.lastRatingDate)}>{
+          ratingStats.ratingCount} ratings:
           <ol class='dw-p-r dw-rs'>{
           // Don't change whitespace, or `editInfo' perhaps won't
           // be able to append a ',' with no whitespace in front.
-          for ((tag: String, stats: LabelStats) <- rats) yield
+          for ((tag: String, stats: TagStats) <- rats) yield
           <li class="dw-r" data-stats={
               ("lo: %.0f" format (100 * stats.fractionLowerBound)) +"%, "+
               "sum: "+ stats.sum}> {
