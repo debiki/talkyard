@@ -289,34 +289,28 @@ var zoomListeners = [];
 
 // ------- Open/close
 
-function $threadOpen() {
+function $threadToggleFolded() {
   // In case the thread will be wider than the summary, prevent float drop.
   resizeRootThreadExtraWide();
-  // Remove the summary; show the thread.
-  // (The thread is always placed just after the summary.)
-  var $summary = $(this).parent();
-  var $thread = $summary.next();
-  $summary.remove();
-  $thread.each($slideDown);
-  return false; // don't follow any <a> link
-}
-
-function $threadClose() {
-  // Slide the thread away and replace it with a summary line.
   var $thread = $(this).closest('.dw-t');
-  var postCount = $thread.find('.dw-p').length;
-  var $clickToShow =
-      $('<a class="dw-z-open">[+] Click to show '+  // COULD add i18n
-      postCount +' posts</a>')  // include href to ?view=the-thread  ?
-      .click($threadOpen);
-  var $summary = $('<li></li>')
-      .append($clickToShow)
-      .each($makeEastResizable);
-  $thread.each($slideUp).queue(function(next) {
-    $thread.before($summary);
-    $thread.each(SVG.$drawParents);
-    next();
-  });
+  var $childrenExclFoldLink = $thread.children(':not(.dw-z)');
+  var $foldLink = $thread.children('.dw-z');
+  if ($thread.is('.dw-zd')) {
+    // Thread is folded, open it.
+    $childrenExclFoldLink.each($slideDown);
+    $thread.removeClass('dw-zd');
+    $foldLink.text('[—]');
+  } else {
+    // Fold thread.
+    var postCount = $thread.find('.dw-p').length;
+    $childrenExclFoldLink.each($slideUp).queue(function(next) {
+      $foldLink.text('[+] Click to show '+  // COULD add i18n
+          postCount +' posts');  // COULD include href to ?view=the-thread  ?
+      $thread.addClass('dw-zd');
+      next();
+    });
+  }
+  return false; // don't follow any <a> link
 }
 
 
@@ -805,8 +799,8 @@ function $initPostsThreadStep1() {
   $actions.children('.dw-a-flag').click($showFlagForm);
   $actions.children('.dw-a-delete').click($showDeleteForm);
 
-  // Open/close threads if the thread-info div is clicked.
-  $thread.children('.dw-z').click($threadClose);
+  // Open/close threads if the fold link is clicked.
+  $thread.children('.dw-z').click($threadToggleFolded);
 }
 
 // Things that can be done a while after page load.
