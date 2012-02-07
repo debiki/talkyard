@@ -348,7 +348,10 @@ jQuery UI's dialgos. Might that be incompatible with other libs? */
 /* Root post child threads and other stuff: */
 .dw-hor > .dw-res > li {
   float: left;
-  /* #action-menu and graphics is absolute positioned relative thread */
+}
+
+.dw-t {
+  /* SVG graphics is absolute positioned relative thread */
   position: relative;
 }
 
@@ -634,6 +637,12 @@ post, only for the article.) */
   cursor: crosshair !important;
   font-size: 85%;
   text-decoration:none;
+}
+
+/* When a thread is folded, there's nothing in it that occupies any space,
+and two folded threads would overlap, unless: */
+.dw-zd > .dw-z {
+  position: static; /* cancel position: absolute */
 }
 
 /* For a folded thread, only the open link (.dw-z) is visible. */
