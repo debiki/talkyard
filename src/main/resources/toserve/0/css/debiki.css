@@ -66,6 +66,7 @@
  *  -u-           user
  *  -vs-          votes
  *  -z-           fold (z looks like a folded paper from the side)
+ *  -zd-          folded, e.g. a collapsed thread
  *
  *  dw-a-rate     rate reply
  *  dw-a-reply    new reply
@@ -627,14 +628,15 @@ post, only for the article.) */
 
 .dw-z {
   position: absolute;
-}
-
-.dw-z,
-.dw-z-open {
   color: #369;
   cursor: crosshair !important;
   font-size: 85%;
   text-decoration:none;
+}
+
+/* For a folded thread, only the open link (.dw-z) is visible. */
+.dw-zd > *:not(.dw-z) {
+  display: none;
 }
 
 /* Un-indent any root post, by hiding the collapse button.
