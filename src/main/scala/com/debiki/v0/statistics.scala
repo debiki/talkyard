@@ -6,20 +6,23 @@ import collection.{immutable => imm, mutable => mut}
 import java.{util => ju}
 import Prelude._
 
-case class LabelStats (
 
-  /** Label sums.
+/** Post rating tag statistics. Should be placed in PostRatingStats.
+ */
+case class TagStats (
+
+  /** Tag sums.
    *
-   *  The importance of each [label assigned to the relevant post in
-   *  a rating] is divided with [the number of labels the rater submitted].
-   *  For example, if s/he selected three labels [funny, interesting,
-   *  insightful], then e.g. {@code labelStats("funny").sum} was
+   *  The importance of each [tag assigned to the relevant post in
+   *  a rating] is divided with [the number of tags the rater submitted].
+   *  For example, if s/he selected three tags [funny, interesting,
+   *  insightful], then e.g. {@code tagStats("funny").sum} was
    *  incremented with 1/3.
    */
   sum: Float,
 
-  /** The fraction ratings that include this label, i.e.
-   *  {@code this.sum / PostRating.maxLabelSum}.
+  /** The fraction ratings that include this tag, i.e.
+   *  {@code this.sum / PostRatingStats.maxTagSum}.
    */
   fraction: Float,
 
@@ -43,12 +46,12 @@ case class LabelStats (
    *
    *  How do we calculate confidence bounds on `fraction'?
    *
-   *  Either a rating includes a certain label, or it does not include it.
+   *  Either a rating includes a certain tag, or it does not include it.
    *  So we have a binomial distribution --- except for the fact that
-   *  the successes (i.e. when a rating *includes* the label) are
-   *  weighted by 1/the_number_of_other_labels_also_included_in_the_rating,
+   *  the successes (i.e. when a rating *includes* the tag) are
+   *  weighted by 1/the_number_of_other_tags_also_included_in_the_rating,
    *  i.e. weighted by values 1, 1/2, 1/3, ... 1/n, where `n' is the
-   *  number of labels available.
+   *  number of tags available.
    *
    *  I think we can consider the distribution a binomial distribution
    *  anyway. Therefore, I've used [a formula for calculating
@@ -59,9 +62,10 @@ case class LabelStats (
   fractionLowerBound: Float
 )
 
+
 /** Immutable.
  */
-private[debiki] abstract class PostRating {
+private[debiki] abstract class PostRatingStats {
 
   /** How many times the related post has been rated.
    */
@@ -73,39 +77,39 @@ private[debiki] abstract class PostRating {
    */
   def lastRatingDate: ju.Date
 
-  def labelStats: imm.Map[String, LabelStats]
+  def tagStats: imm.Map[String, TagStats]
 
-  /** Sorted by LabelStats.fraction, descending.
+  /** Sorted by TagStats.fraction, descending.
    *  (No point in sorting by fractionLowerBound, because single votes
    *  cannot give a rating-tag a high fraction, if there are already many votes
    *  on other tags.)
    */
-  def labelStatsSorted: List[(String, LabelStats)] = {
-    labelStats.toList.sortWith((a, b) => a._2.fraction > b._2.fraction)
+  def tagStatsSorted: List[(String, TagStats)] = {
+    tagStats.toList.sortWith((a, b) => a._2.fraction > b._2.fraction)
   }
 
-  /** The highest possible label sum.
+  /** The highest possible tag sum.
    *
-   *  Each rating increments {@code maxLabelSum} with 1/number-of-tags.
+   *  Each rating increments {@code maxTagSum} with 1/number-of-tags.
    *  Example: If there are 2 ratings, on tags [interesting] and
-   *  [interesting, funny], then maxLabelSum will be 1/1 + 1/2 = 1.5,
-   *  and labelStats("interesting") is 1.5 (the maximum value sum
+   *  [interesting, funny], then maxTagSum will be 1/1 + 1/2 = 1.5,
+   *  and tagStats("interesting") is 1.5 (the maximum value sum
    *  -- reasonable, since everyone rated the post interesting).
-   *  However, labelStats("funny") is only 0.5, which is 1/3 of the
-   *  maxLabelSum. Dividing labelStats with maxLabelSum results in
+   *  However, tagStats("funny") is only 0.5, which is 1/3 of the
+   *  maxTagSum. Dividing tagStats with maxTagSum results in
    *  the relevant post being 100% interesting and 33% funny. This is
    *  reasonable, I think, since both raters (100%) thought it was
-   *  "interesting". One label out of 3 labels specified "funny", so
+   *  "interesting". One tag out of 3 tags specified "funny", so
    *  the post being 33% "funny" might also be reasonable.
    */
-  def maxLabelSum: Float
+  def maxTagSum: Float
 
-  /** Depends on the ratings made, and which labels the reader likes.
+  /** Depends on the ratings made, and which tags the reader likes.
    *  For example, someone might like [interestin, insightful] posts,
    *  but dislike [boring, faulty, spam] posts.
    *  Another reader might be looking for [funny] posts.
    *
-   *  Currently, however, it's assumed that all humans like the labels
+   *  Currently, however, it's assumed that all humans like the tags
    *  listed in {@code PageStats.good} and dislike those in
    *  {@code PageStats.bad}.
    *
@@ -114,6 +118,7 @@ private[debiki] abstract class PostRating {
   def liking: Float
 
 }
+
 
 /** Immutable.
  */
@@ -124,6 +129,7 @@ abstract class EditLiking {
   def frac: Float
 }
 
+
 private[debiki] class PageStats(val debate: Debate) {
 
   import PageStats._
@@ -132,37 +138,38 @@ private[debiki] class PageStats(val debate: Debate) {
   private val bad = imm.Set("boring", "faulty", "off-topic", "spam", "troll",
                             "stupid")
 
-  private class PostRatingImpl extends PostRating {
+  private class PostRatingImpl extends PostRatingStats {
     var ratingCount = 0
-    var maxLabelSum = 0f
-    var labelStats = imm.Map[String, LabelStats]() // updated later
-    var labelSums = mut.HashMap[String, Float]()  // thrown away later
+    var maxTagSum = 0f
+    var tagStats = imm.Map[String, TagStats]() // updated later
+    var tagSums = mut.HashMap[String, Float]()  // thrown away later
 
     def lastRatingDate = new ju.Date(_lastRatingDateMillis)
     var _lastRatingDateMillis: Long = 0
 
     override lazy val liking: Float = {
       def sumMatching(set: imm.Set[String]): Float =
-        (0f /: set) (_ + labelStats.get(_).map(_.fraction).getOrElse(0f))
+        (0f /: set) (_ + tagStats.get(_).map(_.fraction).getOrElse(0f))
       val goodScore = sumMatching(good)
       val badScore = sumMatching(bad)
       goodScore - badScore
     }
 
-    def += (rat: Rating): PostRatingImpl = {
-      if (rat.tags.isEmpty)
-        return this
-      val weight = 1f / rat.tags.length
-      for (value <- rat.tags) {
-        val curSum = labelSums.getOrElse(value, 0f)
-        labelSums(value) = curSum + 1f * weight
+    def addRating(rating: Rating) {
+      if (rating.tags.isEmpty) return
+      val weight = 1f / rating.tags.length
+      for (value <- rating.tags) {
+        val curSum = tagSums.getOrElse(value, 0f)
+        tagSums(value) = curSum + 1f * weight
         // results in: "illegal cyclic reference involving trait Iterable"
         // Only in NetBeans, not when compiling, in real life???
       }
-      maxLabelSum += weight
+      // For each liked tag, likedTagsSum += weight
+      // For each dissed tag, dissedTagsSum += weight
+      maxTagSum += weight
       ratingCount += 1
-      if (rat.ctime.getTime > _lastRatingDateMillis)
-        _lastRatingDateMillis = rat.ctime.getTime
+      if (rating.ctime.getTime > _lastRatingDateMillis)
+        _lastRatingDateMillis = rating.ctime.getTime
       this
     }
   }
@@ -188,10 +195,7 @@ private[debiki] class PageStats(val debate: Debate) {
   private val editLikings = mut.Map[String, EditLikingImpl]()
   private val editLikingNoVotes = new EditLikingImpl
 
-  // Calculate temporary label sums, in PostRatingImpl.labelSums,
-  // and edit vote sums:
-  for (r <- debate.ratings) postRatings.getOrElseUpdate(
-                              r.postId, new PostRatingImpl) += r
+  // Calculate edit vote sums.
   for (editVote <- debate.editVotes) {
     def addLiking(id: String, value: Int) =
       editLikings.getOrElseUpdate(id, new EditLikingImpl).addLiking(value)
@@ -199,23 +203,29 @@ private[debiki] class PageStats(val debate: Debate) {
     for (editId <- editVote.diss) addLiking(editId, 0)
   }
 
-  // Convert temporary sums to immutable LabelStats
+  // Calculate temporary tag sums, in PostRatingImpl.tagSums.
+  for (r <- debate.ratings) {
+    postRatings.getOrElseUpdate(r.postId, new PostRatingImpl).addRating(r)
+  }
+
+  // Convert temporary tag sums to immutable post-rating-TagStats.
   for ((postId, rating) <- postRatings) {
-    rating.labelStats =
-      imm.Map[String, LabelStats](
-        rating.labelSums.mapValues(sum => {
-          val fraction = sum / rating.maxLabelSum
+    // Also calculate liked tag % lower bound on confidence interval?
+    rating.tagStats =
+      imm.Map[String, TagStats](
+        rating.tagSums.mapValues(sum => {
+          val fraction = sum / rating.maxTagSum
           // With a probability of 90%, the *real* fraction is above
           // this value:
           val fractionLowerConfidenceBound =
             binPropConfIntAC(sampleSize = rating.ratingCount,
                 proportionOfSuccesses = fraction, percent = 80.0f)._1
-          LabelStats(sum = sum, fraction = fraction,
+          TagStats(sum = sum, fraction = fraction,
               fractionLowerBound = fractionLowerConfidenceBound)
         }).
         toSeq : _*)
-    // Don't need labelSums no more:
-    rating.labelSums = null
+    // Don't need tagSums no more:
+    rating.tagSums = null
   }
 
   // Calculate edit likings from edit votes.
@@ -226,7 +236,7 @@ private[debiki] class PageStats(val debate: Debate) {
     liking.upperBound = bounds._2
   }
 
-  def scoreFor(postId: String): PostRating =
+  def ratingStatsFor(postId: String): PostRatingStats =
     postRatings.getOrElse(postId, postRatingEmpty)
 
 
@@ -238,6 +248,7 @@ private[debiki] class PageStats(val debate: Debate) {
   def likingFor(editId: String): EditLiking =
     editLikings.getOrElse(editId, editLikingNoVotes)
 }
+
 
 private[debiki] object PageStats {
 
@@ -339,7 +350,7 @@ Correct / korrekt
 Wrong / fel
 
 Funny / roligt
-Off topic / byter amne
+Off topic / byter ämne / urspårat
 Advertisement / reklam
 
 Other:
