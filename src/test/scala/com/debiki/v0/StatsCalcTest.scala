@@ -68,58 +68,59 @@ class PostRatingTest extends SpecificationWithJUnit {
 
   "For an unrated post, PageStats" should {
     "find no statistics" in {
-      val calcer = new PageStats(debate)
-      val rating = calcer.scoreFor(post.id)
-      rating.ratingCount must_== 0
-      rating.maxLabelSum must_== 0
-      rating.labelStats.size must_== 0
-      rating.labelStats.get("interesting") must beNone
-      rating.labelStats.get("stupid") must beNone
-      rating.labelStats.get("funny") must beNone
+      val pageStats = new PageStats(debate)
+      val ratingStats = pageStats.ratingStatsFor(post.id)
+      ratingStats.ratingCount must_== 0
+      ratingStats.tagCountMaxWeighted must_== 0
+      ratingStats.tagStats.size must_== 0
+      ratingStats.tagStats.get("interesting") must beNone
+      ratingStats.tagStats.get("stupid") must beNone
+      ratingStats.tagStats.get("funny") must beNone
     }
   }
 
   "For a post with one rating, PageStats" should {
     "find one rating" in {
       val debate2 = debate + rating_interesting
-      val calcer = new PageStats(debate2)
-      val rating = calcer.scoreFor(post.id)
-      rating.ratingCount must_== 1
-      rating.maxLabelSum must_== 1.0f
-      rating.labelStats.size must_== 1
-      val intresting = rating.labelStats("interesting")
-      intresting.sum must_== 1.0f
-      intresting.fraction must_== 1.0f
-      intresting.fractionLowerBound must beCloseTo(
+      val pageStats = new PageStats(debate2)
+      val ratingStats = pageStats.ratingStatsFor(post.id)
+      ratingStats.ratingCount must_== 1
+      ratingStats.tagCountMaxWeighted must_== 1.0f
+      ratingStats.tagStats.size must_== 1
+      val intrTagStats = ratingStats.tagStats("interesting")
+      intrTagStats.countWeighted must_== 1.0f
+      intrTagStats.probabilityMeasured must_== 1.0f
+      intrTagStats.lowerConfLimitOnProb must beCloseTo(
           binProp80ConfIntAC(trials = 1, prop = 1f)._1, 0.01f)
-      rating.labelStats.get("stupid") must beNone
-      rating.labelStats.get("funny") must beNone
+      ratingStats.tagStats.get("stupid") must beNone
+      ratingStats.tagStats.get("funny") must beNone
     }
   }
 
   "For a post with two different rating tags, PageStats" should {
     "do something sensible" in {
       val debate2 = debate + rating_interesting + rating_stupid
-      val calcer = new PageStats(debate2)
-      val rating = calcer.scoreFor(post.id)
-      rating.ratingCount must_== 2
-      rating.maxLabelSum must_== 2.0f
-      rating.labelStats.size must_== 2
-      val intresting = rating.labelStats("interesting")
-      intresting.sum must_== 1.0f
-      intresting.fraction must_== 0.5f
-      intresting.fractionLowerBound must beCloseTo(
+      val pageStats = new PageStats(debate2)
+      val ratingStats = pageStats.ratingStatsFor(post.id)
+      ratingStats.ratingCount must_== 2
+      ratingStats.tagCountMaxWeighted must_== 2.0f
+      ratingStats.tagStats.size must_== 2
+      val intrTagStats = ratingStats.tagStats("interesting")
+      intrTagStats.countWeighted must_== 1.0f
+      intrTagStats.probabilityMeasured must_== 0.5f
+      intrTagStats.lowerConfLimitOnProb must beCloseTo(
           binProp80ConfIntAC(trials = 2, prop = 0.5f)._1, 0.01f)
-      val stupid = rating.labelStats("stupid")
-      stupid.sum must_== 1.0f
-      stupid.fraction must_== 0.5f
-      stupid.fractionLowerBound must beCloseTo(
+      val stupidTagStats = ratingStats.tagStats("stupid")
+      stupidTagStats.countWeighted must_== 1.0f
+      stupidTagStats.probabilityMeasured must_== 0.5f
+      stupidTagStats.lowerConfLimitOnProb must beCloseTo(
           binProp80ConfIntAC(trials = 2, prop = 0.5f)._1, 0.01f)
-      rating.labelStats.get("funny") must beNone
+      ratingStats.tagStats.get("funny") must beNone
     }
   }
 }
 
+/*
 class EditLikingTest extends SpecificationWithJUnit {
 
   val edit = Edit(post.id +"Ea", postId = post.id, ctime = new ju.Date,
@@ -129,7 +130,7 @@ class EditLikingTest extends SpecificationWithJUnit {
   val upVote2 = EditVote("?", "?", "1.2.3.4", new ju.Date, List(edit.id), Nil)
   val downVote = EditVote("?", "?", "1.2.3.4", new ju.Date, Nil, List(edit.id))
 
-  /* Won't compile, + no longer exists.
+  // Won't compile, + no longer exists.
   "An Edit with no votes should have a certain liking" in {
     val liking = new PageStats(debate + edit).likingFor(edit)
     val bounds = binProp80ConfIntAC(trials = 0, prop = 0f)
@@ -170,6 +171,6 @@ class EditLikingTest extends SpecificationWithJUnit {
     liking.upperBound must beCloseTo(bounds._2, 0.01f)
     liking.voteCount must_== 3
   }
-  */
 
 }
+*/

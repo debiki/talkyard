@@ -509,31 +509,39 @@ class DebateHtml(val debate: Debate) {
       }
     }
 
-    val ratingStats = pageStats.ratingStatsFor(post.id)
-    val ratStatsSorted = ratingStats.tagStatsSorted
-    val topTags = if (ratStatsSorted isEmpty) Nil else {
-      // If there're any really popular tags (lower liking bound > 0.4),
+    val postRatingStats = pageStats.ratingStatsFor(post.id)
+    // Sort the rating tags by the measured tagging probability, descending
+    // (the most popular tags first).
+    val tagStatsSorted = postRatingStats.tagStats.toList.sortBy(
+        -_._2.probabilityMeasured)
+    val topTags = if (tagStatsSorted isEmpty) Nil else {
+      // If there're any really popular tags ([the lower confidence limit on
+      // the probability that they're used] is > 0.4),
       // show all those. Otherwise, show only the most popular tag(s).
-      val minLower = Math.min(0.4, ratStatsSorted.head._2.fractionLowerBound)
-      ratStatsSorted.takeWhile(_._2.fractionLowerBound >= minLower)
+      // (Oops, need not be `max' -- they're sorted by the *measured* prob,
+      // not the lower conf limit -- well, hardly matters.)
+      val maxLowerConfLimit = tagStatsSorted.head._2.lowerConfLimitOnProb
+      val minLower = Math.min(0.4, maxLowerConfLimit)
+      tagStatsSorted.takeWhile(_._2.lowerConfLimitOnProb >= minLower)
     }
-    val (ratsTop: NodeSeq, ratsDetails: NodeSeq) = {
-      val rats = ratStatsSorted
+    val (ratingTagsTop: NodeSeq, ratingTagsDetails: NodeSeq) = {
+      val rats = tagStatsSorted
       if (rats.isEmpty) (Nil: NodeSeq, Nil: NodeSeq)
       else {
         def showRating(tagAndStats: Pair[String, TagStats]): String = {
-          val tag = tagAndStats._1
-          val likingLowerBound = tagAndStats._2.fractionLowerBound
+          val tagName = tagAndStats._1
+          val tagStats = tagAndStats._2
+          val probLowerBound = tagStats.lowerConfLimitOnProb
           // A rating tag like "important!!" means "really important", many
           // people agree. And "important?" means "perhaps somewhat important",
           // some people agree.
           // COULD reduce font-size of ? to 85%, it's too conspicuous.
           val mark =
-            if (likingLowerBound > 0.9) "!!"
-            else if (likingLowerBound > 0.7) "!"
-            else if (likingLowerBound > 0.3) ""
+            if (probLowerBound > 0.9) "!!"
+            else if (probLowerBound > 0.7) "!"
+            else if (probLowerBound > 0.3) ""
             else "?"
-          tag + mark
+          tagName + mark
           // COULD reduce font size of mark to 85%, or it clutters the ratings.
         }
         // List popular rating tags. Then all tags and their usage percents,
@@ -543,16 +551,16 @@ class DebateHtml(val debate: Debate) {
           topTags.take(3).map(showRating(_)).mkString(", ") }</i></span>
         ),
         <div class='dw-p-r-all'
-             data-mtime={toIso8601T(ratingStats.lastRatingDate)}>{
-          ratingStats.ratingCount} ratings:
+             data-mtime={toIso8601T(postRatingStats.lastRatingDate)}>{
+          postRatingStats.ratingCount} ratings:
           <ol class='dw-p-r dw-rs'>{
           // Don't change whitespace, or `editInfo' perhaps won't
           // be able to append a ',' with no whitespace in front.
-          for ((tag: String, stats: TagStats) <- rats) yield
+          for ((tagName: String, tagStats: TagStats) <- rats) yield
           <li class="dw-r" data-stats={
-              ("lo: %.0f" format (100 * stats.fractionLowerBound)) +"%, "+
-              "sum: "+ stats.sum}> {
-            tag +" %.0f" format (100 * stats.fraction)}% </li>
+              ("lo: %.0f" format (100 * tagStats.lowerConfLimitOnProb)) +"%, "+
+              "sum: "+ tagStats.countWeighted}> {
+            tagName +" %.0f" format (100 * tagStats.probabilityMeasured)}% </li>
         }</ol></div>)
       }
     }
@@ -626,7 +634,8 @@ class DebateHtml(val debate: Debate) {
       { postTitleXml }
       <div class='dw-p-hd'>
         By { _linkTo(author)}{ dateAbbr(post.ctime, "dw-p-at")
-        }{ flagsTop }{ ratsTop }{ editInfo }{ flagsDetails }{ ratsDetails }
+        }{ flagsTop }{ ratingTagsTop }{ editInfo }{ flagsDetails
+        }{ ratingTagsDetails }
       </div>
       <div class={"dw-p-bd"+ cssArtclBody}>
         <div class='dw-p-bd-blk'>

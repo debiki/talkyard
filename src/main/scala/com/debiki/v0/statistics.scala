@@ -11,26 +11,30 @@ import Prelude._
  */
 case class TagStats (
 
-  /** Tag sums.
+  /** The number of times this tag has been tagged to the related post,
+   *  weighted by the total number of tags.
    *
-   *  The importance of each [tag assigned to the relevant post in
-   *  a rating] is divided with [the number of tags the rater submitted].
-   *  For example, if s/he selected three tags [funny, interesting,
-   *  insightful], then e.g. {@code tagStats("funny").sum} was
-   *  incremented with 1/3.
+   *  The importance of each tag is divided with [the number of tags
+   *  the rater submitted].
+   *  For example, if s/he selects three tags [funny, interesting,
+   *  insightful], then e.g. {@code tagStats("funny").countWeighted}
+   *  increases with 1/3.
    */
-  sum: Float,
+  countWeighted: Float,
 
   /** The fraction ratings that include this tag, i.e.
-   *  {@code this.sum / PostRatingStats.maxTagSum}.
+   *  {@code countWeighted / PostRatingStats.tagCountMaxWeighted}.
    */
-  fraction: Float,
+  probabilityMeasured: Float,
 
-  /** A lower confidence bound on `fraction', used to sort posts and
-   *  threads by popularity.
+  /** A lower confidence limit on the probability that a user
+   *  tags the related post with this tag.
    *
-   *  We cannot use `fraction' directly, when sorting posts (or threads)
-   *  by popularity.
+   *  (This comment is not really correct, since this is a lower bound for one
+   *  single rating tag only, not for how-much-people-like-the-actual-*post*.)
+   *
+   *  We cannot use the `probabilityMeasured' directly, when sorting posts
+   *  (or threads) by popularity.
    *  For example, assume a post has 1 rating, with the value "interesting".
    *  Then {@code fractioin} would be 1.0 (i.e. it'd be rated 100%
    *  "interesting")."
@@ -40,11 +44,12 @@ case class TagStats (
    *  -- although the 100-ratings post is probably more interesting
    *  than the 1-ratings.post.
    *
-   *  To solve this, we can calculat confidence interval bounds on
-   *  `fraction' (i.e. the values 100% and 90% above), and sort posts
-   *  by the the lower bounds on `fraction' (instead of `fraction' itself).
+   *  To solve this, we can calculate confidence interval bounds on
+   *  the probability that someone uses this tag, and sort posts
+   *  by the the lower confidence limit on that probability
+   *  (instead of sorting by the probabilityMeasured).
    *
-   *  How do we calculate confidence bounds on `fraction'?
+   *  How do we calculate confidence bounds?
    *
    *  Either a rating includes a certain tag, or it does not include it.
    *  So we have a binomial distribution --- except for the fact that
@@ -56,10 +61,10 @@ case class TagStats (
    *  I think we can consider the distribution a binomial distribution
    *  anyway. Therefore, I've used [a formula for calculating
    *  binomial proportion confidence intervals] to calculate
-   *  a lower bound on `fraction'. Find details in the description of the
+   *  a lower confidence bound. Find details in the description of the
    *  function {@code binPropConfIntAC}.
    */
-  fractionLowerBound: Float
+  lowerConfLimitOnProb: Float
 )
 
 
@@ -77,32 +82,26 @@ private[debiki] abstract class PostRatingStats {
    */
   def lastRatingDate: ju.Date
 
+  /** Tag statistics by tag name.
+   */
   def tagStats: imm.Map[String, TagStats]
 
-  /** Sorted by TagStats.fraction, descending.
-   *  (No point in sorting by fractionLowerBound, because single votes
-   *  cannot give a rating-tag a high fraction, if there are already many votes
-   *  on other tags.)
-   */
-  def tagStatsSorted: List[(String, TagStats)] = {
-    tagStats.toList.sortWith((a, b) => a._2.fraction > b._2.fraction)
-  }
-
-  /** The highest possible tag sum.
+  /** The highest possible occurrence count, for a tag.
    *
-   *  Each rating increments {@code maxTagSum} with 1/number-of-tags.
+   *  Each rating increments {@code tagCountMaxWeighted} with 1/number-of-tags.
    *  Example: If there are 2 ratings, on tags [interesting] and
-   *  [interesting, funny], then maxTagSum will be 1/1 + 1/2 = 1.5,
-   *  and tagStats("interesting") is 1.5 (the maximum value sum
+   *  [interesting, funny], then tagCountMaxWeighted will be 1/1 + 1/2 = 1.5,
+   *  and tagStats("interesting") is 1.5 (the maximum count,
    *  -- reasonable, since everyone rated the post interesting).
-   *  However, tagStats("funny") is only 0.5, which is 1/3 of the
-   *  maxTagSum. Dividing tagStats with maxTagSum results in
+   *  However, tagStats("funny").countWeighted is only 0.5, which is 1/3 of
+   *  tagCountMaxWeighted. Dividing tagStats.countWeighted with
+   *  maxTagCountWeighted results in
    *  the relevant post being 100% interesting and 33% funny. This is
    *  reasonable, I think, since both raters (100%) thought it was
    *  "interesting". One tag out of 3 tags specified "funny", so
    *  the post being 33% "funny" might also be reasonable.
    */
-  def maxTagSum: Float
+  def tagCountMaxWeighted: Float
 
   /** Depends on the ratings made, and which tags the reader likes.
    *  For example, someone might like [interestin, insightful] posts,
@@ -140,16 +139,17 @@ private[debiki] class PageStats(val debate: Debate) {
 
   private class PostRatingImpl extends PostRatingStats {
     var ratingCount = 0
-    var maxTagSum = 0f
     var tagStats = imm.Map[String, TagStats]() // updated later
-    var tagSums = mut.HashMap[String, Float]()  // thrown away later
+    var tagCountMaxWeighted = 0f
+    var tagCountsWeighted = mut.HashMap[String, Float]()  // thrown away later
 
     def lastRatingDate = new ju.Date(_lastRatingDateMillis)
     var _lastRatingDateMillis: Long = 0
 
     override lazy val liking: Float = {
       def sumMatching(set: imm.Set[String]): Float =
-        (0f /: set) (_ + tagStats.get(_).map(_.fraction).getOrElse(0f))
+        (0f /: set) (
+          _ + tagStats.get(_).map(_.probabilityMeasured).getOrElse(0f))
       val goodScore = sumMatching(good)
       val badScore = sumMatching(bad)
       goodScore - badScore
@@ -158,15 +158,15 @@ private[debiki] class PageStats(val debate: Debate) {
     def addRating(rating: Rating) {
       if (rating.tags.isEmpty) return
       val weight = 1f / rating.tags.length
-      for (value <- rating.tags) {
-        val curSum = tagSums.getOrElse(value, 0f)
-        tagSums(value) = curSum + 1f * weight
+      tagCountMaxWeighted += weight
+      for (tagName <- rating.tags) {
+        val curTagCount = tagCountsWeighted.getOrElse(tagName, 0f)
+        tagCountsWeighted(tagName) = curTagCount + 1f * weight
         // results in: "illegal cyclic reference involving trait Iterable"
         // Only in NetBeans, not when compiling, in real life???
       }
       // For each liked tag, likedTagsSum += weight
       // For each dissed tag, dissedTagsSum += weight
-      maxTagSum += weight
       ratingCount += 1
       if (rating.ctime.getTime > _lastRatingDateMillis)
         _lastRatingDateMillis = rating.ctime.getTime
@@ -203,29 +203,29 @@ private[debiki] class PageStats(val debate: Debate) {
     for (editId <- editVote.diss) addLiking(editId, 0)
   }
 
-  // Calculate temporary tag sums, in PostRatingImpl.tagSums.
+  // Calculate tag counts, store in mutable map.
   for (r <- debate.ratings) {
     postRatings.getOrElseUpdate(r.postId, new PostRatingImpl).addRating(r)
   }
 
-  // Convert temporary tag sums to immutable post-rating-TagStats.
+  // Convert tag counts to immutable post-rating-TagStats.
   for ((postId, rating) <- postRatings) {
     // Also calculate liked tag % lower bound on confidence interval?
     rating.tagStats =
       imm.Map[String, TagStats](
-        rating.tagSums.mapValues(sum => {
-          val fraction = sum / rating.maxTagSum
-          // With a probability of 90%, the *real* fraction is above
-          // this value:
-          val fractionLowerConfidenceBound =
+        rating.tagCountsWeighted.mapValues(countWeighted => {
+          val probabilityMeasured = countWeighted / rating.tagCountMaxWeighted
+          // With a probability of 90% (not 80%), the probability that a user
+          // uses the related tag is above this value:
+          val lowerConfLimitOnProb =
             binPropConfIntAC(sampleSize = rating.ratingCount,
-                proportionOfSuccesses = fraction, percent = 80.0f)._1
-          TagStats(sum = sum, fraction = fraction,
-              fractionLowerBound = fractionLowerConfidenceBound)
+                proportionOfSuccesses = probabilityMeasured, percent = 80.0f)._1
+          TagStats(countWeighted = countWeighted,
+              probabilityMeasured = probabilityMeasured,
+              lowerConfLimitOnProb = lowerConfLimitOnProb)
         }).
         toSeq : _*)
-    // Don't need tagSums no more:
-    rating.tagSums = null
+    rating.tagCountsWeighted = null  // don't retain memory
   }
 
   // Calculate edit likings from edit votes.
