@@ -335,7 +335,8 @@ class DebateHtml(val debate: Debate) {
                 sortBy(p => p.meta.fixedPos.getOrElse(999999))
       cssThreadId = "dw-t-"+ p.id
       cssDepth = "dw-depth-"+ depth
-      cssInlineThread = if (p.where isDefined) " dw-i-t" else ""
+      isInlineThread = p.where.isDefined
+      cssInlineThread = if (isInlineThread) " dw-i-t" else ""
       replies = debate.repliesTo(p.id)
       vipo = p // debate.vipo_!(p.id)
       isRootOrArtclQstn = vipo.id == rootPostId || vipo.meta.isArticleQuestion
@@ -352,13 +353,19 @@ class DebateHtml(val debate: Debate) {
           else ("", "")
       cssThreadDeleted = if (vipo.isTreeDeleted) " dw-t-dl" else ""
       cssArticleQuestion = if (isRootOrArtclQstn) " dw-p-art-qst" else ""
+      (cssFolded, foldLinkText) =
+        // if (pageStats.ratingStatsFor(p.id).liking < 0.3)
+        if (!isInlineThread)
+          (" dw-zd", "[+] Click to show more replies")
+        else
+          ("", "[–]") // the – is an `em dash' not a minus
     }
     yield {
       var li =
         <li id={cssThreadId} class={"dw-t "+ cssDepth + cssInlineThread +
-            cssHoriz + cssThreadDeleted + cssArticleQuestion}>
-        {
-          if (vipo.isTreeDeleted) _showDeletedTree(vipo)
+            cssFolded + cssHoriz + cssThreadDeleted + cssArticleQuestion}>
+          <a class='dw-z'>{foldLinkText}</a>
+          {if (vipo.isTreeDeleted) _showDeletedTree(vipo)
           else {
             val (comment, replyBtnText) =
               if (vipo.isDeleted) (_showDeletedComment(vipo), xml.Text("Reply"))
@@ -373,8 +380,7 @@ class DebateHtml(val debate: Debate) {
                 { _layoutComments(rootPostId, depth + 1, myReplyBtn, replies) }
               </ol>
             )
-          }
-        }
+          }}
         </li>
       // For inline comments, add info on where to place them.
       // COULD rename attr to data-where, that's search/replace:able enough.
@@ -614,7 +620,7 @@ class DebateHtml(val debate: Debate) {
     // COULD find a better name for the two data-p-by-...-sh attrs below.
     // Also, perhaps they should be part of the .dw-p-by <a>?
     // the – on the next line is an `en dash' not a minus
-    (<a class='dw-z'>[–]</a>
+    (
     <div id={cssPostId} class={"dw-p" + cssArtclPost + cutS + clearfix}
          data-p-by-ip-sh={vipo.ipSaltHash_!}>
       { postTitleXml }
