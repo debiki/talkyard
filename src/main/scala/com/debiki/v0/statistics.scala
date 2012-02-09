@@ -177,7 +177,7 @@ private[debiki] abstract class PostRatingStats {
        percent = 80.0f)
   }
 
-  lazy val defaultFitness: ConfidenceInterval =
+  lazy val fitnessDefaultTags: ConfidenceInterval =
     fitness(DefaultLikedTags)
 }
 
