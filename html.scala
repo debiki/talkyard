@@ -331,7 +331,8 @@ class DebateHtml(val debate: Debate) {
       // Could skip sorting inline posts, since sorted by position later
       // anyway, in javascript. But if javascript disabled?
       p <- vipos.sortBy(p => p.ctime.getTime). // the oldest first
-                sortBy(p => -pageStats.ratingStatsFor(p.id).liking).
+                sortBy(p => -pageStats.ratingStatsFor(p.id).
+                                defaultFitness.lowerLimit).
                 sortBy(p => p.meta.fixedPos.getOrElse(999999))
       cssThreadId = "dw-t-"+ p.id
       cssDepth = "dw-depth-"+ depth
@@ -510,19 +511,19 @@ class DebateHtml(val debate: Debate) {
     }
 
     val postRatingStats = pageStats.ratingStatsFor(post.id)
-    // Sort the rating tags by the measured tagging probability, descending
+    // Sort the rating tags by their observed fittingness, descending
     // (the most popular tags first).
     val tagStatsSorted = postRatingStats.tagStats.toList.sortBy(
-        -_._2.probabilityMeasured)
+        -_._2.fitness.observedMean)
     val topTags = if (tagStatsSorted isEmpty) Nil else {
       // If there're any really popular tags ([the lower confidence limit on
       // the probability that they're used] is > 0.4),
       // show all those. Otherwise, show only the most popular tag(s).
       // (Oops, need not be `max' -- they're sorted by the *measured* prob,
       // not the lower conf limit -- well, hardly matters.)
-      val maxLowerConfLimit = tagStatsSorted.head._2.lowerConfLimitOnProb
+      val maxLowerConfLimit = tagStatsSorted.head._2.fitness.lowerLimit
       val minLower = Math.min(0.4, maxLowerConfLimit)
-      tagStatsSorted.takeWhile(_._2.lowerConfLimitOnProb >= minLower)
+      tagStatsSorted.takeWhile(_._2.fitness.lowerLimit >= minLower)
     }
     val (ratingTagsTop: NodeSeq, ratingTagsDetails: NodeSeq) = {
       val rats = tagStatsSorted
@@ -530,16 +531,15 @@ class DebateHtml(val debate: Debate) {
       else {
         def showRating(tagAndStats: Pair[String, TagStats]): String = {
           val tagName = tagAndStats._1
-          val tagStats = tagAndStats._2
-          val probLowerBound = tagStats.lowerConfLimitOnProb
+          val tagFitness = tagAndStats._2.fitness
           // A rating tag like "important!!" means "really important", many
           // people agree. And "important?" means "perhaps somewhat important",
           // some people agree.
           // COULD reduce font-size of ? to 85%, it's too conspicuous.
           val mark =
-            if (probLowerBound > 0.9) "!!"
-            else if (probLowerBound > 0.7) "!"
-            else if (probLowerBound > 0.3) ""
+            if (tagFitness.lowerLimit > 0.9) "!!"
+            else if (tagFitness.lowerLimit > 0.7) "!"
+            else if (tagFitness.lowerLimit > 0.3) ""
             else "?"
           tagName + mark
           // COULD reduce font size of mark to 85%, or it clutters the ratings.
@@ -558,9 +558,10 @@ class DebateHtml(val debate: Debate) {
           // be able to append a ',' with no whitespace in front.
           for ((tagName: String, tagStats: TagStats) <- rats) yield
           <li class="dw-r" data-stats={
-              ("lo: %.0f" format (100 * tagStats.lowerConfLimitOnProb)) +"%, "+
+              ("lo: %.0f" format (100 * tagStats.fitness.lowerLimit)) +"%, "+
               "sum: "+ tagStats.countWeighted}> {
-            tagName +" %.0f" format (100 * tagStats.probabilityMeasured)}% </li>
+            tagName +" %.0f" format (
+               100 * tagStats.fitness.observedMean)}% </li>
         }</ol></div>)
       }
     }
