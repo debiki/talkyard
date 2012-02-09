@@ -500,8 +500,8 @@ class DebateHtml(val debate: Debate) {
         import FormHtml.FlagForm.prettify
         val mtime = toIso8601T(vipo.lastFlag.get.ctime)
         val fbr = vipo.flagsByReasonSorted
-        (<span class='dw-p-flgs-top'>, flagged <i>{
-            prettify(fbr.head._1).toLowerCase}</i></span>,
+        (<span class='dw-p-flgs-top'>, flagged <em>{
+            prettify(fbr.head._1).toLowerCase}</em></span>,
         <div class='dw-p-flgs-all' data-mtime={mtime}>{
           vipo.flags.length} flags: <ol class='dw-flgs'>{
             for ((r: FlagReason, fs: List[Flag]) <- fbr) yield
@@ -551,8 +551,8 @@ class DebateHtml(val debate: Debate) {
         // List popular rating tags. Then all tags and their usage percents,
         // but those details are shown only if one clicks the post header.
         ((if (topTags isEmpty) Nil
-        else <span class='dw-p-r dw-p-r-top'>, rated <i>{
-          topTags.take(3).map(showRating(_)).mkString(", ") }</i></span>
+        else <span class='dw-p-r dw-p-r-top'>, rated <em>{
+          topTags.take(3).map(showRating(_)).mkString(", ") }</em></span>
         ),
         <div class='dw-p-r-all'
              data-mtime={toIso8601T(postRatingStats.lastRatingDate)}>{
@@ -1251,14 +1251,16 @@ class FormHtml(val config: HtmlConfig, val pageRoot: PageRoot,
     intrsAllowed match {
       case VisibleTalk => Nil
       case HiddenTalk =>  // COULD fix nice CSS and show details on hover only
-        <div><i>Time waist warning: On this page, your {action} {is} shown
-        only to people who explicitly choose to view user comments.
-        </i></div>
+        <div>
+        <em>Time waist warning: On this page, your {action} {is} shown
+         only to people who explicitly choose to view user comments.
+        </em>
+        </div>
     }
   }*/
 
   def termsAgreement(submitBtnText: String) =
-    <div class='dw-user-contrib-license'>By clicking <i>{submitBtnText}</i>,
+    <div class='dw-user-contrib-license'>By clicking <em>{submitBtnText}</em>,
       you agree to release your contributions under the {ccWikiLicense}
       license, and you agree to the
       <a href={config.termsOfUseUrl} target="_blank">Terms of Use</a>.
