@@ -332,7 +332,7 @@ class DebateHtml(val debate: Debate) {
       // anyway, in javascript. But if javascript disabled?
       p <- vipos.sortBy(p => p.ctime.getTime). // the oldest first
                 sortBy(p => -pageStats.ratingStatsFor(p.id).
-                                defaultFitness.lowerLimit).
+                                fitnessDefaultTags.lowerLimit).
                 sortBy(p => p.meta.fixedPos.getOrElse(999999))
       cssThreadId = "dw-t-"+ p.id
       cssDepth = "dw-depth-"+ depth
@@ -354,12 +354,16 @@ class DebateHtml(val debate: Debate) {
           else ("", "")
       cssThreadDeleted = if (vipo.isTreeDeleted) " dw-t-dl" else ""
       cssArticleQuestion = if (isRootOrArtclQstn) " dw-p-art-qst" else ""
-      (cssFolded, foldLinkText) =
-        // if (pageStats.ratingStatsFor(p.id).liking < 0.3)
-        if (!isInlineThread)
+      (cssFolded, foldLinkText) = {
+        // For now: If with a probability of 90%, most people find this post
+        // boring/faulty/off-topic, and if, on average,
+        // more than two out of three people think so too, then fold it.
+        val postFitness = pageStats.ratingStatsFor(p.id).fitnessDefaultTags
+        if (postFitness.upperLimit < 0.5f && postFitness.observedMean < 0.333f)
           (" dw-zd", "[+] Click to show more replies")
         else
           ("", "[–]") // the – is an `em dash' not a minus
+      }
     }
     yield {
       var li =
