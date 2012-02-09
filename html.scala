@@ -288,10 +288,10 @@ class DebateHtml(val debate: Debate) {
       <div id={cssThreadId}
            class={"dw-t"+ cssArtclThread +" dw-depth-0 dw-hor"}>
       {
-        val (comment, replyBtnText) = _showComment(
+        val renderedComment = _showComment(
           rootPost.id, rootPost, horizontal = true)
-        val replyBtn = _replyBtnListItem(replyBtnText)
-        comment ++
+        val replyBtn = _replyBtnListItem(renderedComment.replyBtnText)
+        renderedComment.html ++
         <div class='dw-t-vspace'/>
         <ol class='dw-res ui-helper-clearfix'>{
           _layoutComments(rootPost.id, 1, replyBtn, rootPostsReplies)
@@ -354,43 +354,52 @@ class DebateHtml(val debate: Debate) {
           else ("", "")
       cssThreadDeleted = if (vipo.isTreeDeleted) " dw-t-dl" else ""
       cssArticleQuestion = if (isRootOrArtclQstn) " dw-p-art-qst" else ""
-      (cssFolded, foldLinkText) = {
-        // For now: If with a probability of 90%, most people find this post
-        // boring/faulty/off-topic, and if, on average,
-        // more than two out of three people think so too, then fold it.
-        val postFitness = pageStats.ratingStatsFor(p.id).fitnessDefaultTags
-        if (postFitness.upperLimit < 0.5f && postFitness.observedMean < 0.333f)
-          (" dw-zd", "[+] Click to show more replies")
-        else
-          ("", "[–]") // the – is an `em dash' not a minus
-      }
+      postFitness = pageStats.ratingStatsFor(p.id).fitnessDefaultTags
+      // For now: If with a probability of 90%, most people find this post
+      // boring/faulty/off-topic, and if, on average,
+      // more than two out of three people think so too, then fold it.
+      shallFoldPost = postFitness.upperLimit < 0.5f &&
+         postFitness.observedMean < 0.333f
     }
     yield {
-      var li =
-        <li id={cssThreadId} class={"dw-t "+ cssDepth + cssInlineThread +
-            cssFolded + cssHoriz + cssThreadDeleted + cssArticleQuestion}>
-          <a class='dw-z'>{foldLinkText}</a>
-          {if (vipo.isTreeDeleted) _showDeletedTree(vipo)
-          else {
-            val (comment, replyBtnText) =
-              if (vipo.isDeleted) (_showDeletedComment(vipo), xml.Text("Reply"))
-              else _showComment(rootPostId, vipo, horizontal = horizontal)
+      val renderedComment: RenderedComment =
+        if (vipo.isTreeDeleted) _showDeletedTree(vipo)
+        else if (vipo.isDeleted) _showDeletedComment(vipo)
+        else _showComment(rootPostId, vipo, horizontal = horizontal)
 
-            val myReplyBtn =
-              if (isRootOrArtclQstn) _replyBtnListItem(replyBtnText)
-              else Nil
-            comment ++ (
-              if (replies.isEmpty && myReplyBtn.isEmpty) Nil
-              else <ol class={"dw-res"+ cssClearfix}>
-                { _layoutComments(rootPostId, depth + 1, myReplyBtn, replies) }
-              </ol>
-            )
-          }}
-        </li>
+      val myReplyBtn =
+        if (!isRootOrArtclQstn) Nil
+        else _replyBtnListItem(renderedComment.replyBtnText)
+
+      val (cssFolded, foldLinkText) =
+        if (shallFoldPost)
+          (" dw-zd", "[+] Click to show more replies" +
+             renderedComment.topRatingsText.map(", rated "+ _).getOrElse(""))
+        else
+          ("", "[–]") // the – is an `em dash' not a minus
+
+      val foldLink =
+        if (isRootOrArtclQstn || vipo.isTreeDeleted) Nil
+        else <a class='dw-z'>{foldLinkText}</a>
+
+      val repliesHtml =
+        if (replies.isEmpty && myReplyBtn.isEmpty) Nil
+        else <ol class={"dw-res"+ cssClearfix}>
+          { _layoutComments(rootPostId, depth + 1, myReplyBtn, replies) }
+        </ol>
+
+      var thread =
+        <li id={cssThreadId} class={"dw-t "+ cssDepth + cssInlineThread +
+               cssFolded + cssHoriz + cssThreadDeleted + cssArticleQuestion}>{
+          foldLink ++
+          renderedComment.html ++
+          repliesHtml
+        }</li>
+
       // For inline comments, add info on where to place them.
       // COULD rename attr to data-where, that's search/replace:able enough.
-      if (p.where isDefined) li = li % Attribute(
-          None, "data-dw-i-t-where", Text(p.where.get), scala.xml.Null)
+      if (p.where isDefined) thread = thread % Attribute(
+        None, "data-dw-i-t-where", Text(p.where.get), scala.xml.Null)
 
       // Place the Reply button just after the last fixed-position comment.
       // Then it'll be obvious (?) that if you click the Reply button,
@@ -399,23 +408,23 @@ class DebateHtml(val debate: Debate) {
         replyBtnPending = false
         comments ++= parentReplyBtn
       }
-      comments ++= li
+      comments ++= thread
     }
 
     if (replyBtnPending) comments ++ parentReplyBtn
     else comments
   }
 
-  private def _showDeletedTree(vipo: ViPo): NodeSeq = {
+  private def _showDeletedTree(vipo: ViPo): RenderedComment = {
     _showDeletedComment(vipo, wholeTree = true)
   }
 
   private def _showDeletedComment(vipo: ViPo, wholeTree: Boolean = false
-                                     ): NodeSeq = {
+                                     ): RenderedComment = {
     val cssPostId = "dw-post-"+ vipo.id
     val deletion = vipo.firstDelete.get
     val deleter = debate.authorOf_!(deletion)
-    (if (wholeTree) Nil else <a class='dw-z'>[–]</a>) ++
+    val html =
     <div id={cssPostId} class='dw-p dw-p-dl'>
       <div class='dw-p-hd'>{
         if (wholeTree) "Thread" else "1 comment"
@@ -427,12 +436,19 @@ class DebateHtml(val debate: Debate) {
         that opens the deleted post, incl. details, in a new browser tab?  */}
       </div>
     </div>
+    RenderedComment(html, replyBtnText = Nil, topRatingsText = None)
   }
 
-  /** Returns the comment and the Reply button text.
-   */
+
+  case class RenderedComment(
+    html: NodeSeq,
+    replyBtnText: NodeSeq,
+    topRatingsText: Option[String]
+  )
+
+
   private def _showComment(rootPostId: String, vipo: ViPo, horizontal: Boolean
-                              ): (NodeSeq, NodeSeq) = {
+                              ): RenderedComment = {
     def post = vipo.post
     val editsAppld: List[(Edit, EditApp)] = vipo.editsAppdDesc
     val lastEditApp = editsAppld.headOption.map(_._2)
@@ -529,32 +545,39 @@ class DebateHtml(val debate: Debate) {
       val minLower = Math.min(0.4, maxLowerConfLimit)
       tagStatsSorted.takeWhile(_._2.fitness.lowerLimit >= minLower)
     }
+
+    val topTagsAsText: Option[String] = {
+      def showRating(tagAndStats: Pair[String, TagStats]): String = {
+        val tagName = tagAndStats._1
+        val tagFitness = tagAndStats._2.fitness
+        // A rating tag like "important!!" means "really important", many
+        // people agree. And "important?" means "perhaps somewhat important",
+        // some people agree.
+        // COULD reduce font-size of ? to 85%, it's too conspicuous.
+        val mark =
+          if (tagFitness.lowerLimit > 0.9) "!!"
+          else if (tagFitness.lowerLimit > 0.7) "!"
+          else if (tagFitness.lowerLimit > 0.3) ""
+          else "?"
+        tagName + mark
+        // COULD reduce font size of mark to 85%, or it clutters the ratings.
+      }
+      if (topTags isEmpty) None
+      else Some(topTags.take(3).map(showRating(_)).mkString(", "))
+    }
+
     val (ratingTagsTop: NodeSeq, ratingTagsDetails: NodeSeq) = {
       val rats = tagStatsSorted
       if (rats.isEmpty) (Nil: NodeSeq, Nil: NodeSeq)
       else {
-        def showRating(tagAndStats: Pair[String, TagStats]): String = {
-          val tagName = tagAndStats._1
-          val tagFitness = tagAndStats._2.fitness
-          // A rating tag like "important!!" means "really important", many
-          // people agree. And "important?" means "perhaps somewhat important",
-          // some people agree.
-          // COULD reduce font-size of ? to 85%, it's too conspicuous.
-          val mark =
-            if (tagFitness.lowerLimit > 0.9) "!!"
-            else if (tagFitness.lowerLimit > 0.7) "!"
-            else if (tagFitness.lowerLimit > 0.3) ""
-            else "?"
-          tagName + mark
-          // COULD reduce font size of mark to 85%, or it clutters the ratings.
-        }
         // List popular rating tags. Then all tags and their usage percents,
         // but those details are shown only if one clicks the post header.
-        ((if (topTags isEmpty) Nil
-        else <span class='dw-p-r dw-p-r-top'>, rated <em>{
-          topTags.take(3).map(showRating(_)).mkString(", ") }</em></span>
-        ),
-        <div class='dw-p-r-all'
+        val topTagsAsHtml =
+          if (topTagsAsText isEmpty) Nil
+          else <span class='dw-p-r dw-p-r-top'>, rated <em>{
+            topTagsAsText.get}</em></span>
+
+        val tagDetails = <div class='dw-p-r-all'
              data-mtime={toIso8601T(postRatingStats.lastRatingDate)}>{
           postRatingStats.ratingCount} ratings:
           <ol class='dw-p-r dw-rs'>{
@@ -566,7 +589,9 @@ class DebateHtml(val debate: Debate) {
               "sum: "+ tagStats.countWeighted}> {
             tagName +" %.0f" format (
                100 * tagStats.fitness.observedMean)}% </li>
-        }</ol></div>)
+        }</ol></div>
+
+        (topTagsAsHtml, tagDetails)
       }
     }
 
@@ -633,7 +658,7 @@ class DebateHtml(val debate: Debate) {
     // COULD find a better name for the two data-p-by-...-sh attrs below.
     // Also, perhaps they should be part of the .dw-p-by <a>?
     // the – on the next line is an `en dash' not a minus
-    (
+    val commentHtml =
     <div id={cssPostId} class={"dw-p" + cssArtclPost + cutS + clearfix}
          data-p-by-ip-sh={vipo.ipSaltHash_!}>
       { postTitleXml }
@@ -654,8 +679,10 @@ class DebateHtml(val debate: Debate) {
     </div> ++ (
       if (isRootOrArtclQstn) Nil
       else <a class='dw-as' href={config.reactUrl(debate.guid, post.id) +
-                  "&view="+ rootPostId}>React</a>),
-    replyBtnText)
+                  "&view="+ rootPostId}>React</a>)
+
+    RenderedComment(html = commentHtml, replyBtnText = replyBtnText,
+       topRatingsText = topTagsAsText)
   }
 
   def _linkTo(nilo: NiLo) = linkTo(nilo, config)
