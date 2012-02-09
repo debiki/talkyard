@@ -383,9 +383,9 @@ jQuery UI's dialgos. Might that be incompatible with other libs? */
   background-color: white; /* hides text beneath, else grip hard to notice */
 }
 
-.dw-pri form .ui-resizable-se {
-  background-color: #fcfaf5; /* (see above) match form background */
-}
+/* Hide the reply form resize handle unless hovering the form. */
+.dw-fs-re .ui-resizable-se { visibility: hidden; }
+.dw-fs-re:hover .ui-resizable-se { visibility: visible; }
 
 /* Adjus post width. */
 /* ... Don't span whole screen even if .post.cropped-e is removed. */
@@ -682,6 +682,16 @@ and two folded threads would overlap, unless: */
   float: left; /* wrap .dw-p-bd-blk:s, which float left */
   width: 100%; /* or sometimes smaller than -p-hd, looks weird when
                 background color applied */
+}
+
+/* Don't place the body too close to the title. But cannot add margin to the
+title — that'd push away the .dw-p-hd away. So add to the -bd instead.
+<h2>, <h3> etcetera however already has a margin-top, so add to <p> only
+for now.  — The reason all this is needed is that the elems
+float:left, which makes margins add to each other, instead of overlapping
+each other. I should rewrite, and try to avoid float:left?  (skip old IE) */
+.dw-p-ttl + .dw-p-hd + .dw-p-bd > .dw-p-bd-blk > p:first-child {
+  margin-top: 18px;
 }
 
 /* Make inline threads compact. */
@@ -1060,19 +1070,17 @@ until they've been moved into the .dw-bd-blk > .dw-i-ts. */
   float: left; /* or won't wrap all children, some children float */
   position: relative;
   z-index: 1100;
-  /* A distinct border retults in confusingly many vertical lines
-  (there're vertical lines between columns, and for thread
-  indentation). So, don't have a border -- but yes, have a border
-  that's not noticeable, only slightly slightly darker than the form
-  background, increasing contrast, making it easier to see where the
-  form ends. */
-  background-color: #fbf7f2;
-  border: 1px solid #f7f3ed; /* almost background color */
   padding: 1em;
   margin-left: 10px; /* move away from any vertical arrow */
   /* My Firifox 3.6 draws outlines very incorrectly for the Rating form,
   (but correctly for Reply and Edit), use borders instead. */
   /* outline: #83c5df solid thick; */
+}
+
+/* Paint the background for forms in jQuery UI dialogs. */
+.ui-dialog .dw-fs form {
+  background-color: #fbf7f2;
+  border: 1px solid #f7f3ed; /* almost background color */
 }
 
 .dw-fs form label {
@@ -1137,7 +1145,7 @@ key presses).*/
 .dw-submit-set {
   float: left;
   clear: both;
-  margin-top: 1em;
+  margin-top: 1.3em;
 }
 
 .dw-pri .ui-button {
@@ -1437,7 +1445,7 @@ visibility:hidden) — some jQuery UI weird internal stuff? */
 
 .dw-f-e-inf-save,
 .dw-f-e .dw-f-e-sugg-info { /* COULD rename to .dw-f-e-inf-sg? */
-  margin-top: 1ex;
+  margin-top: 1em;
   padding: 6px;
   max-width: 32em;
   float: left; /* or margin-top has no effect */

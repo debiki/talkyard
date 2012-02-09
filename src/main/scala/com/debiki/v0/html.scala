@@ -1230,15 +1230,15 @@ class FormHtml(val config: HtmlConfig, val pageRoot: PageRoot,
           else <pre class='dw-e-src-old'>{postToEdit.text}</pre> }
       </div>
       { termsAgreement("Save as ...") }
+      <div class='dw-f-e-sugg-info'>You are submitting an edit
+        <strong>suggestion</strong> — hopefully someone will review it
+        and accept it.</div>
       <div class='dw-submit-set'>
        <input type='button' class={Inp.Preview} name={Inp.Preview}
               value='Preview and save ...'/>
        <input type='submit' class='dw-fi-submit' value={submitBtnText}/>
        <input type='button' class='dw-fi-cancel' value='Cancel'/>
       </div>
-      <div class='dw-f-e-sugg-info'>You are submitting an edit
-        <strong>suggestion</strong> — hopefully someone will review it
-        and accept it.</div>
     </form>
   }
 
@@ -1286,12 +1286,18 @@ class FormHtml(val config: HtmlConfig, val pageRoot: PageRoot,
     }
   }*/
 
-  def termsAgreement(submitBtnText: String) =
+  /** Does a terms agreement in each Reply and Edit form give a litigious
+   *  impression? That the website cares only about legal stuff and so on?
+   *  Anyway, any terms agreement must be customizable,
+   *  since it would be unique for each tenant. No time to fix that now,
+   *  so disable this, for now.
+  */
+  def termsAgreement(submitBtnText: String) = Nil  /*
     <div class='dw-user-contrib-license'>By clicking <em>{submitBtnText}</em>,
       you agree to release your contributions under the {ccWikiLicense}
       license, and you agree to the
       <a href={config.termsOfUseUrl} target="_blank">Terms of Use</a>.
-    </div>
+    </div> */
 }
 
 
