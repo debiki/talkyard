@@ -566,6 +566,10 @@ so there's some space for the SVG arrows. */
   overflow: hidden;
   background-color: white;
 }
+/* Deleted posts appear as just a single text line,
+looks better if they appear close to the fold link. */
+.dw-p-dl { margin-left: 23px; }
+
 .dw-p-ttl {
   /* Titles are already indented since they're placed in a .dw-p … */
   margin-left: 0; /* … so don't indent again */
@@ -638,6 +642,9 @@ post, only for the article.) */
   font-size: 85%;
   text-decoration:none;
 }
+
+/* Don't underline the fold link, [-]. (Ignore old borken browsers.) */
+.dw-t:not(.dw-zd) > .dw-z { text-decoration: none; }
 
 /* When a thread is folded, there's nothing in it that occupies any space,
 and two folded threads would overlap, unless: */
