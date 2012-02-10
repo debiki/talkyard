@@ -283,23 +283,6 @@ header.dw-p-ttl > h1 {
 }
 
 
-/* --- Keyboard shortcuts ---*/
-
-/* Outline the keyboard shortcut target. */
-.dw-pri.dw-pri.dw-pri .dw-keyrecvr {
-  outline: solid thin #91cdff; /* or #ccc? */
-  /* No background for now — distorts preview tab colors */
-  /* background: #fafdff; /* brighter: #fcfeff; */
-}
-
-/* These elems are shortcut targets. For the above [active shortcut target
-outline] to be visible, they need a margin. Some padding looks nice too.  */
-.dw-pri .dw-f-e {
-  margin: 1px;
-  padding: 1ex 1ex 0.6ex 1ex;
-}
-
-
 /* === Debate === */
 
 .dw-debate {
@@ -1273,6 +1256,12 @@ key presses).*/
                   isn't resized when the textarea is resized */
 }
 
+.dw-fs-re textarea:focus {
+  border: 1px solid #91cdff; /* the .dw-keyrecvr color */
+  outline: 1px solid #91cdff;
+}
+
+
 .dw-user-contrib-license {
   float: left; /* TODO? Stop floating everything in the <form>s */
   clear: both;
@@ -1415,8 +1404,14 @@ key presses).*/
 
 .dw-pri .dw-f-e .dw-e-tab {
   border: 1px solid #bbb;
-  padding: 0; /* 1.4em 0.3em 1em 1.2em; */
   overflow: auto;
+  padding: 0;
+}
+/* ... the textarea is outlined on :focus — add 1px paddding so the
+outline is visible. But not at the top, or the outline would underline
+the jQuery UI tab. */
+.dw-depth-0 > .dw-p > .dw-f-e .dw-e-tab-edit {
+  padding: 0 1px 1px;
 }
 /* ... change padding for root post preview /* and fix a bug */
 .dw-depth-0 > .dw-p > .dw-f-e .dw-e-tab-prvw {
@@ -1438,10 +1433,26 @@ visibility:hidden) — some jQuery UI weird internal stuff? */
 }
 
 .dw-pri .dw-f-e .dw-e-tab-edit textarea {
-  border: none;
   margin: 0;
   padding: 0;
+  border: none; /* would cause overflow, scrollbars would appear in tab panel */
+  outline-offset: 0px; /* Chrome defualts to -2px */
+  /* Cancel a few pixel's descender space below the textarea,
+  which would otherwise cause overflow — a terrible
+  vertical scrollbar would appear in the tab panel. */
+  display: block; 
 }
+
+/* Indicate focus. */
+.dw-pri .dw-f-e .dw-e-tab-edit textarea:focus {
+  outline: 1px solid #91cdff; /* the .dw-keyrecvr color */
+}
+
+/* Indicate keyboard shortcut target. */
+.dw-pri.dw-pri .dw-keyrecvr .dw-e-tab {
+  border: 1px solid #91cdff;
+}
+
 
 .dw-f-e-inf-save,
 .dw-f-e .dw-f-e-sugg-info { /* COULD rename to .dw-f-e-inf-sg? */
