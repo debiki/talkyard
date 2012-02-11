@@ -213,7 +213,7 @@ object DebateHtml {
       <span class='dw-login-name'>{userName.getOrElse("")}</span>
     </span>
     <a id='dw-a-login'>Logga in</a>
-    <a id='dw-a-logout'>&nbsp;&nbsp;|&nbsp;&nbsp;Logga ut</a>
+    <a id='dw-a-logout'>Logga ut</a>
   }
 
   /** A <style> that hides comments,
