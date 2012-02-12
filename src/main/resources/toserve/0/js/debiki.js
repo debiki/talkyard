@@ -345,26 +345,49 @@ function $threadToggleFolded() {
 // ------- Resizing
 
 // Makes the root thread wide enough to contain all its child posts.
-// Is this not done e.g. when child posts are resized or stacked eastwards,
+// Unless this is done e.g. when child posts are resized or stacked eastwards,
 // or a reply/rate/edit form is shown/resized, the east-most threads
 // will float-drop below the other threads.
 function resizeRootThreadImpl(extraWidth) {
-  if (extraWidth === true) extraWidth = 1000; // 3 x reply/edit form width
-  else {
-    // If a user drag-resizes a form quicker than this amount of pixels
-    // per browser refresh, div-drop might happen anyway, because
-    // this function isn't invoked until after the
-    // browser has decided to float-drop the divs?
-    // Also, zooming in/out might cause float drop (it seems all elems
-    // aren't scaled exactly in the same way), if too small.
-    // Hence it's a rather wide value. (Otherwise = 50 would do.)
-    extraWidth = 200;
-  }
-  var $root = $('.dw-depth-0');
-  if (!$root.length) $root = $('.dw-debate'); // there's no root reply
-  var width = $root.map($findThreadWidthHoriz)[0];
-  width += extraWidth;
+  // Undo any <svg> width & height problem workaround (see the end of
+  // this function). Otherwise the $rootThread will always be as wide as
+  // its parent (because the $rootThread would have children > 100% wide).
+  var svgZoomBug = $.browser.webkit || $.browser.opera;
+  if (svgZoomBug)
+    $('svg').css('width', '').css('height', '');
 
+  // Let the root thead, which floats: left, expand eastwards as much as
+  // it needs to — by making its parent very very wide.
+  var $rootThread = $('.dw-depth-0');
+  var $parent = $rootThread.parent();
+  $parent.width(200200);
+
+  // Now check how wide the parent actually needs to be, to prevent the
+  // eastmost root post child threads from float dropping.
+  // Also add 200px, because when you zoom in and out the width of
+  // the root post might change a few pixels (this caused float
+  // drop in Opera, at least before I started calling resizeRootThread
+  // on zoom in/out).
+  // {{{ Old comment
+  // If a user drag-resizes a form quicker than this amount of pixels
+  // per browser refresh, div-drop might happen anyway, because
+  // this function isn't invoked until after the
+  // browser has decided to float-drop the divs?
+  // Also, zooming in/out might cause float drop (it seems all elems
+  // aren't scaled exactly in the same way), if too small.
+  // Hence it's a rather wide value. (Otherwise = 50 would do.)
+  // }}}
+  var requiredWidth = $rootThread.width();
+  $parent.width(requiredWidth + (extraWidth ? 2200 : 200));
+
+  // Chrome and Opera (not IE or FF) clips away half of the <svg>
+  // elems if zoom is 50%, compensate this weird behaviour by roughly
+  // doubling the <svg> elem size.
+  // (Don't do this until after the width tests have been done above.)
+  if (svgZoomBug)
+    $('svg').css('width', '210%').css('height', '210%');
+
+  /* [Is this still needed?]
   // Set the min width to something wider than the max width of a
   // .dw-p-bd <p>, so paragaphs won't expand when child threads or
   // reply forms are added below the root post.
@@ -374,65 +397,7 @@ function resizeRootThreadImpl(extraWidth) {
   // here: http://www.mail-archive.com/jquery-en@googlegroups.com/msg13257.html.
   width = Math.max(width, 650); // today <p> max-width is 50 em and 650 fine
   $root.css('min-width', width +'px');
-
-  // COULD resize $('.dw-t svg') too, so they're not 99999px wide & tall?
-  // (see debiki.css) But then ensure SVG isn't cropped! on very
-  // tall/wide pages.
-}
-
-// Finds the width of a thread that is laid out horizontally.
-// Only tested on the root thread.
-function $findThreadWidthHoriz() {
-  var $i = $(this),
-      myWidth = $i.outerWidth(true),
-      childrenWidth = $i.map($findChildrenWidthHoriz)[0],
-      maxInlineWidth = $i.map($findMaxInlineWidthHoriz)[0];
-  return Math.max(myWidth, childrenWidth, maxInlineWidth);
-}
-
-function $findChildrenWidthHoriz() {
-  // This works for both the article and comments — because
-  // currently none of their child threads can have horizontal layout
-  // (only replies to inline-article-replies, and article replies,
-  // have horizontal layout).
-  // BUG? Doesn't this ignore '> .dw-hor-a > .dw-a-reply'?
-  var width = 0;
-  $(this).find('> .dw-res > li, > .dw-fs, > .dw-a').each(function(){
-    width += $(this).outerWidth(true);  // need not recurse, see comment above
-  });
-  return width;
-}
-
-// Finds the width of the widest [paragraph plus inline threads],
-// when the inline threads are placed to the right of the -bd-blk:s
-// (horizontal layout).
-function $findMaxInlineWidthHoriz() {
-  var accWidth = 0;
-  var maxWidth = 0;
-  $(this).find('> .dw-p > .dw-p-bd').children(':not(svg)').each(function(){
-    var $i = $(this);
-    if ($i.is('.dw-p-bd-blk')) {
-      // New block, reset width
-      accWidth = $i.outerWidth(true);
-    }
-    else if ($i.is('.dw-i-ts')) {
-      // This inline thread group floats-left to the right of the previous
-      // bdy-blk. Find its width, and the width of the widest inline thread
-      // (they might be laid out horizontally).
-      var outerWidth = $i.outerWidth(true);
-      var fluffWidth = outerWidth - $i.width();
-      var maxChildWidth = 0;
-      $i.children().each(function() { // for each inline thread
-        var myWidth = $(this).map($findThreadWidthHoriz)[0];
-        if (myWidth > maxChildWidth) maxChildWidth = myWidth;
-      });
-      var width = Math.max(outerWidth, fluffWidth + maxChildWidth);
-      accWidth += width;
-    }
-    else die('[error DwE0kRK125]');
-    if (accWidth > maxWidth) maxWidth = accWidth;
-  });
-  return maxWidth;
+  */
 }
 
 // Makes the root thread wide enough to contain all its child posts.
@@ -4011,7 +3976,12 @@ function initAndDrawSvg() {
   // rersulting in SVG arrows pointing incorrectly. Avoid this, by
   // making the root thread wide, whilst rendering the page. When done,
   // call resizeRootThread, to size it properly (see below).
-  $('.dw-depth-0').width(99999);
+  $('.dw-depth-0').parent().width(200200);
+
+  // When you zoom in or out, the width of the root thread might change
+  // a few pixels — then its parent should be resized so the root
+  // thread fits inside with no float drop.
+  zoomListeners.push(resizeRootThread);
 
   var steps = [];
   steps.push(initPostsThreadStep1);

@@ -338,9 +338,19 @@ jQuery UI's dialgos. Might that be incompatible with other libs? */
   position: relative;
 }
 
+/* The root thread's parent elem is resized to be as wide as the root thread,
+to avoid float drop. See resizeRootThreadImpl() in debiki.js.
+For that to work, this is needed: */
 .dw-depth-0.dw-t {
-  float: none; /* else won't expand eastwards, even if zoomed out much */
+  /* Make the root thread not [expand eastwards to fill up its
+  parent's width]. */
+  float: left;
+  /* Ensure the root thread fits inside its parent, if the parent
+  width is set to the root thread's width. */
+  margin: 0;
+  padding: 0;
 }
+
 .dw-depth-1:not(.dw-hor) .dw-t {
   float: none;
   clear: both; /* else the rating form might float to the left */
@@ -1754,11 +1764,6 @@ inside widgets, rather than buttons and tabs. */
   top: 0;
   left: 0;
   z-index: -1; /* or overlays posts; they would not be clickable */
-  /* $.height(…) and width(…) are very expensive, so ensure we never
-  need to resize any <svg> — which we'd otherwise have to do in animation
-  step callbacks (e.g. on resize, fold, slide), i.e. very frequently. */
-  width: 99999px;
-  height: 99999px;
 }
 
 #dw-t-root {

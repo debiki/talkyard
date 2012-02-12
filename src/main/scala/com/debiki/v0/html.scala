@@ -274,8 +274,10 @@ class DebateHtml(val debate: Debate) {
         </div>)
     }
 
+    // (The root thread, .dw-depth-0, floats left, so clearfix its parent
+    // <div>, otherwise any <footer> margin-top will have no effect.)
     val cssThreadId = "dw-t-"+ rootPost.id
-    <div id={debate.guid} class="debiki dw-debate">
+    <div id={debate.guid} class="debiki dw-debate ui-helper-clearfix">
       <div class="dw-debate-info">{
         if (lastChange isDefined) {
           <p class="dw-last-changed">Last changed on
