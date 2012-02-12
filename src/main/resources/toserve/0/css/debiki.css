@@ -1764,6 +1764,8 @@ inside widgets, rather than buttons and tabs. */
   top: 0;
   left: 0;
   z-index: -1; /* or overlays posts; they would not be clickable */
+  height: 100%; /* or Opera, only Opera, sets 150px, no idea why */
+  width: 100%; /* perhaps some future version of Opera will break otherwise */
 }
 
 #dw-t-root {
