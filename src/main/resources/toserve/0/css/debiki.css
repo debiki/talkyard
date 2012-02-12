@@ -8,7 +8,9 @@
  *
  * Form names decrypted:
  *
- *  dw-           prefix, avoids name clashes
+ *  debiki-       public API
+ *  debiki-0-     public API version 0
+ *  dw-           prefix for internal classes and ids, avoids name clashes
  *  -a-           action
  *  -adv-         advanced, stuff hidden for most users
  *  -ap-          applied/application
@@ -106,6 +108,8 @@
  *  dw-t-dl       a thread, deleted
  *  dw-lg-t-spl   Login type simple — COULD rename to -lgi-t-spl  (with 'i')
  *  dw-u-id-<x>   user id <x>
+ *  dw-u-may-edit User may edit page (placed on the <body>)
+ *  dw-u-is-admin User is admin (placed on the <body>)
  *  dw-x-         miscellaneous classes, perhaps to be renamed later
  *
  *  ... and so on, hmm.
@@ -1900,4 +1904,13 @@ JavaScript. Then I can still place all CSS stuff in this file. */
   left: -55px;
 }
 
+
+/* Public API
+--------------------------*/
+
+img.debiki-0-inline {
+  display: inline;
+  margin: 0;
+  width: auto;
+}
 
