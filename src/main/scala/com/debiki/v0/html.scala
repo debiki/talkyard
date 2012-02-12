@@ -655,12 +655,8 @@ class DebateHtml(val debate: Debate) {
     // (Don't know if this is needed or other horizontal threads.)
     val clearfix = if (horizontal) " ui-helper-clearfix" else ""
 
-    // COULD find a better name for the two data-p-by-...-sh attrs below.
-    // Also, perhaps they should be part of the .dw-p-by <a>?
-    // the – on the next line is an `en dash' not a minus
     val commentHtml =
-    <div id={cssPostId} class={"dw-p" + cssArtclPost + cutS + clearfix}
-         data-p-by-ip-sh={vipo.ipSaltHash_!}>
+    <div id={cssPostId} class={"dw-p" + cssArtclPost + cutS + clearfix}>
       { postTitleXml }
       <div class='dw-p-hd'>
         By { _linkTo(author)}{ dateAbbr(post.ctime, "dw-p-at")
