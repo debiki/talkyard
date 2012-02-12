@@ -763,6 +763,8 @@ so set max-width and line height. */
   visibility: hidden; /* shown on .dw-a-more click */
   font-size: 80%;
 }
+/* IE 7 and 8 bugfix */
+.dw-hor-a > .dw-a-more { visibility: hidden; }
 
 /* The `More...' link under the Reply button confuses test users.
 Show a cogwheel next to the title instead. For now, hide `More...'. */
@@ -1113,6 +1115,8 @@ it works everywhere, even if it works fine for you. */
   padding-bottom: 0px; /* ...scrollbars appear */
   border-color: #aaa; /* default black is too sharp */
 }
+/* IE 7 bugfix, root thread reply textarea otherwise 2000 or 20000px wide. */
+.dw-hor > .dw-res > .dw-fs-re textarea { max-width: 440px; }
 
 /* CodeMirror problem fix — don't change the height of CodeMirror's
 internal <textarea>, or CodeMirror won't work (it'll ignore most
