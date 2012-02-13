@@ -783,8 +783,7 @@ function $initPostsThreadStep1() {
   $actions.children('.dw-a-rate').click($showRatingForm);
   $actions.children('.dw-a-more').click(function() {
     $(this).closest('.dw-p-as').find('.dw-a')
-        .show()                       // :not(.dw-hor-a) > a is display:none
-        .css('visibility', 'visible') // .dw-hor-a > a is hidden display:block
+        .show()
         .end().end().remove();
   });
   //$actions.children('.dw-a-link').click($showLinkForm); — not implemented
