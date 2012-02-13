@@ -1188,7 +1188,7 @@ class FormHtml(val config: HtmlConfig, val pageRoot: PageRoot,
       { _xsrfToken }
       {/* timeWaistWarning("edits", "are") */}
       <div class='dw-f-e-inf-save'>Scroll down and click Save when done.</div>
-      <div class='dw-f-e-mup dw-adv'>
+      <div class='dw-f-e-mup'>
         <label for={Inp.Markup}>Markup: </label>
         <select id={Inp.Markup} name={Inp.Markup}>{
           // List supported markup languages.
