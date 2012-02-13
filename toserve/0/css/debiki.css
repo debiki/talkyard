@@ -68,6 +68,7 @@
  *  -ttl-         ?? title ? (time-to-live not of relevance in CSS?)
  *  -u-           user
  *  -ua-          user agent (i.e. the browser)
+ *  -ui-          user interface
  *  -vs-          votes
  *  -z-           fold (z looks like a folded paper from the side)
  *  -zd-          folded, e.g. a collapsed thread
@@ -112,6 +113,9 @@
  *  dw-u-may-edit User may edit page (placed on the <body>)
  *  dw-u-is-admin User is admin (placed on the <body>)
  *  dw-ua-lte-ieX user agent is Internet Explorer X or below
+ *  dw-ui-simple  show simple user interface
+ *  (dw-ui-adv    show advanced user interface)
+ *  (dw-ui-compl  show complicated user interface)
  *  dw-x-         miscellaneous classes, perhaps to be renamed later
  *
  *  ... and so on, hmm.
@@ -296,13 +300,6 @@ header.dw-p-ttl > h1 {
   width: 100%;
   display: block; /* TODO inline those with no \n\n inbetween preceeding text */
   margin: 1.5em auto; /* TODO margin-bottom 0 if post ends there */
-}
-
-/* === Miscellaneous === */
-
-.dw-adv {
-  /* Hide advanced stuff. COULD let javascript show it if dwCoAdv cookie set. */
-  --display: none;
 }
 
 
@@ -818,6 +815,9 @@ Show a cogwheel next to the title instead. For now, hide `More...'. */
 .dw-a-delete {
   display: none; /* shown on .dw-a-more click */
 }
+
+body.dw-u-ui-simple .dw-a-edit { display: none !important; }
+
 
 /* --- Post info ---*/
 
@@ -1446,6 +1446,8 @@ key presses).*/
   background: transparent;
   border: none;
 }
+
+body.dw-u-ui-simple .dw-f-e-mup { display: none; }
 
 .dw-pri .dw-f-e .dw-e-tab {
   border: 1px solid #bbb;
