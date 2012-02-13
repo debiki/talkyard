@@ -95,6 +95,18 @@ function sanitizeHtml(htmlTextUnsafe) {
   return htmlTextSafe;
 }
 
+// Converts an ISO 8601 date string to a milliseconds date since 1970,
+// and handles MSIE 7 and 8 issues (they don't understand ISO strings).
+function isoDateToMillis(dateStr) {
+  if (!dateStr) return NaN;
+  // For IE 7 and 8, change from e.g. '2011-12-15T11:34:56Z' to
+  // '2011/12/15 11:34:56Z'.
+  if (jQuery.browser.msie && jQuery.browser.version < '9') {
+    dateStr = dateStr.replace('-', '/').replace('T', ' ');
+  }
+  return Date.parse(dateStr);
+}
+
 //----------------------------------------
 // jQuery object extensions
 //----------------------------------------
@@ -869,10 +881,10 @@ function $initPostStep1() {
       $hdr = $i.find('.dw-p-hd'),
       $postedAt = $hdr.children('.dw-p-at'),
       postedAtTitle = $postedAt.attr('title'),
-      postedAt = Date.parse(postedAtTitle), // number, no Date, fine
+      postedAt = isoDateToMillis(postedAtTitle),
       $editedAt = $hdr.find('> .dw-p-hd-e > .dw-p-at'),
       editedAtTitle = $editedAt.attr('title'),
-      editedAt = Date.parse(editedAtTitle),
+      editedAt = isoDateToMillis(editedAtTitle),
       now = new Date();  // COULD cache? e.g. when initing all posts
 
   // If this post has any inline thread, place inline marks and split
