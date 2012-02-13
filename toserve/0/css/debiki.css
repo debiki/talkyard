@@ -309,7 +309,6 @@ header.dw-p-ttl > h1 {
 /* === Debate === */
 
 .dw-debate {
-  margin-left: 0.3em;
   font-family: Verdana, sans-serif;
   /* In the future: Georgia for titles? */
   font-size: 80%;
@@ -601,6 +600,13 @@ looks better if they appear close to the fold link. */
   font-size: smaller;
   color: #000;
   background-color: #eee;
+}
+
+/* Don't pad the root post */
+.dw-depth-0 > .dw-p > .dw-p-hd,
+.dw-depth-0 > .dw-p > .dw-p-bd,
+.dw-depth-0 > .dw-p-ttl > .dw-p-bd{
+  padding-left: 0px;
 }
 
 .dw-p-dl > .dw-p-hd {
