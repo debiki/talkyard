@@ -67,6 +67,7 @@
  *  -ts-          timestamp? or use ds, datestamp? or use -dt-, "date"?
  *  -ttl-         ?? title ? (time-to-live not of relevance in CSS?)
  *  -u-           user
+ *  -ua-          user agent (i.e. the browser)
  *  -vs-          votes
  *  -z-           fold (z looks like a folded paper from the side)
  *  -zd-          folded, e.g. a collapsed thread
@@ -110,11 +111,21 @@
  *  dw-u-id-<x>   user id <x>
  *  dw-u-may-edit User may edit page (placed on the <body>)
  *  dw-u-is-admin User is admin (placed on the <body>)
+ *  dw-ua-lte-ieX user agent is Internet Explorer X or below
  *  dw-x-         miscellaneous classes, perhaps to be renamed later
  *
  *  ... and so on, hmm.
  *  COULD rename dw-e-tab  to  dw-e-f-pnls  or  dw-e-f-tab-pnls  (panels)
  */
+
+/* Public CSS API
+
+.debiki-show-if-lte-ie7
+.debiki-show-if-lte-ie8
+.debiki-show-unless-lte-ie7
+.debiki-show-unless-lte-ie8
+
+*/
 
 /* === Standard tags === */
 
@@ -165,10 +176,18 @@ table {
 	border-spacing: 0;
 }
 
-.dw-if-opera,
-.dw-if-lte-ie7 {
-  display: none;
-}
+
+/* --- IE 6, 7 and 8 non-comopatibility --- */
+
+.debiki-show-if-lte-ie7,
+.debiki-show-if-lte-ie8 { display: none; }
+body.dw-ua-lte-ie7 .debiki-show-if-lte-ie7 { display: inline; }
+body.dw-ua-lte-ie7 div.debiki-show-if-lte-ie7 { display: block; }
+body.dw-ua-lte-ie8 .debiki-show-if-lte-ie8 { display: inline; }
+body.dw-ua-lte-ie8 div.debiki-show-if-lte-ie8 { display: block; }
+body.dw-ua-lte-ie7 .debiki-show-unless-lte-ie7,
+body.dw-ua-lte-ie8 .debiki-show-unless-lte-ie8 { display: none; }
+
 
 /* --- Standard elems ---*/
 

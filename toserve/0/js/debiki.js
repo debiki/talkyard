@@ -3976,12 +3976,17 @@ function initAndDrawSvg() {
   function initPostsThreadStep3() { $posts.each($initPostsThreadStep3) }
   function initPostsThreadStep4() { $posts.each($initPostsThreadStep4) }
 
-  if ($.browser.msie && $.browser.version < '8')
-    $('.dw-if-lte-ie7').show();
-  else if ($.browser.opera)
-    $('.dw-if-opera').show();
+  // IE 6, 7 and 8 specific elems (e.g. upgrade-to-newer-browser info)
+  // (Could do this on the server instead, that'd work also with Javascript
+  // disabled. But people who know what javascript is and disable it,
+  // probably don't use IE 6 and 7? So this'll be fine for now.)
+  var $body =  $('body');
+  if ($.browser.msie) {
+    if ($.browser.version < '8') $body.addClass('dw-ua-lte-ie7');
+    if ($.browser.version < '9') $body.addClass('dw-ua-lte-ie8');
+  }
 
-  $('body').addClass('dw-pri');
+  $body.addClass('dw-pri');
   Me.refreshProps();
 
   if (!Modernizr.touch) Debiki.v0.utterscroll({
