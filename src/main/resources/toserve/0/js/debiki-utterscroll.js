@@ -11,9 +11,9 @@
  *
  * Copyright (c) 2012 Kaj Magnus Lindberg
  *
- * From 2013-06-01 and onwards, dual licensed under the MIT and GPL licenses:
- *   http://www.opensource.org/licenses/mit-license.php
- *   http://www.gnu.org/licenses/gpl.html
+ * From 2013-06-01 and onwards, licensed under the GNU Lesser General Public
+ * License version 3 or any later version:
+ *   http://www.gnu.org/licenses/lgpl.txt
  *
  *
  * Use like so: (for example)
@@ -21,7 +21,8 @@
  *    <script type='text/javascript' src='debiki-utterscroll.js'></script>
  *
  *    if (!Modernizr.touch)  // if not a smartphone
- *      Debiki.v0.utterscroll({ scrollstoppers: '.CodeMirror' });
+ *      Debiki.v0.utterscroll({
+ *          scrollstoppers: '.CodeMirror, .ui-resizable-handle' });
  *
  *
  * As of today (2012-02-04), tested with jQuery 1.6.4 and recent versions
