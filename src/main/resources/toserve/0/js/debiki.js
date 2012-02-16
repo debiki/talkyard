@@ -924,17 +924,29 @@ function $initPostStep1() {
   $postedAt.before(timeAgoAbbr(postedAtTitle, postedAt, now));
   $editedAt.before(timeAgoAbbr(editedAtTitle, editedAt, now));
 
-  // If one clicks the header, show detailed timestamps and rating info.
-  $hdr.css('cursor', 'crosshair').click(function(event) {
+  // If you clicks the header, show detailed rating and flags info.
+  // If you click again, show exact creation date and edit date.
+  // On a third click, hide everything again.
+  if ($hdr.dwPostHeaderFindStats().length
+      ) $hdr.css('cursor', 'crosshair').click(function(event) {
     if ($(event.target).is('a'))
       return;  // don't expand header on link click
-    $(this)
-        .css('cursor', null)
-        .find('> .dw-p-at, > .dw-p-flgs-all, > .dw-p-r-all, ' +
-              '> .dw-p-hd-e > .dw-p-at').show()
-        .end()
-        // This might have expanded the post, so redraw arrows.
-        .closest('.dw-p').each(SVG.$drawParents);
+    var $i = $(this);
+    var $stats = $i.dwPostHeaderFindStats();
+    var $times = $i.dwPostHeaderFindExactTimes();
+    if ($stats.is(':hidden')) {
+      $stats.show();
+    }
+    /// Skip this for now, rewrite so dates are appended, don't
+    /// insert in the middle.
+    // else if ($times.is(':hidden')) {
+    //  $times.show();
+    else {
+      $times.hide();
+      $stats.hide();
+    }
+    // This might have expanded the post, so redraw arrows.
+    $i.closest('.dw-p').each(SVG.$drawParents);
   });
 
   // Mark the user's own posts. COULD mark her edits too? (of others' posts)
@@ -4054,7 +4066,7 @@ function initAndDrawSvg() {
   Me.refreshProps();
 
   if (!Modernizr.touch) Debiki.v0.utterscroll({
-    scrollstoppers: '.CodeMirror, .ui-resizable-handle'
+    scrollstoppers: '.CodeMirror, .ui-resizable-handle, .dw-p-hd'
   });
 
   // The root post might be too narrow and stuff might float drop,
