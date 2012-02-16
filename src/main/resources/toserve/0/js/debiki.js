@@ -304,6 +304,22 @@ var zoomListeners = [];
 }());
 
 
+// ------- Traversing
+
+jQuery.fn.dwPostFindHeader = function() {
+  return this.dwCheckIs('.dw-p').children('.dw-p-hd');
+};
+
+jQuery.fn.dwPostHeaderFindStats = function() {
+  return this.dwCheckIs('.dw-p-hd').children('.dw-p-flgs-all, .dw-p-r-all');
+};
+
+jQuery.fn.dwPostHeaderFindExactTimes = function() {
+  return this.dwCheckIs('.dw-p-hd')
+      .find('> .dw-p-at, > .dw-p-hd-e > .dw-p-at');
+};
+
+
 // ------- Open/close
 
 function $threadToggleFolded() {
@@ -3846,9 +3862,20 @@ function dieIf(test, message) {
   if (test) throw new Error(message);
 }
 
+function die2If(test, errorCode, message) {
+  if (test) die2(errorCode, message);
+}
+
 function bugIf(test, errorGuid) {
   if (test) throw new Error('Internal error ['+ errorGuid +']');
 }
+
+jQuery.fn.dwCheckIs = function(selector, errorCode) {
+  var $ok = this.filter(selector);
+  die2If(this.length !== $ok.length, errorCode || 'DwE093k2', $ok.length +
+      ' of '+ this.length +' elems is: '+ selector);
+  return this;
+};
 
 jQuery.fn.dwBugIfEmpty = function(errorGuid) {
   bugIf(!this.length, errorGuid);
