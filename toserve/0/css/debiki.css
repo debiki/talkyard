@@ -582,11 +582,6 @@ so there's some space for the SVG arrows. */
 looks better if they appear close to the fold link. */
 .dw-p-dl { margin-left: 23px; }
 
-.dw-p-ttl {
-  /* Titles are already indented since they're placed in a .dw-p … */
-  margin-left: 0; /* … so don't indent again */
-}
-
 /* If the thread has been deleted, there's no fold/unfold button to the left. */
 .dw-t-dl > .dw-p {
   margin-left: 0;
@@ -599,11 +594,14 @@ looks better if they appear close to the fold link. */
   background-color: #eee;
 }
 
-/* Don't pad the root post */
+/* Don't pad the root post and titles (titles are already indented since
+they're placed inside another post already). */
 .dw-depth-0 > .dw-p > .dw-p-hd,
 .dw-depth-0 > .dw-p > .dw-p-bd,
-.dw-depth-0 > .dw-p-ttl > .dw-p-bd{
-  padding-left: 0px;
+.dw-p-ttl,
+.dw-p-ttl > .dw-p-bd {
+  margin-left: 0;
+  padding-left: 0;
 }
 
 .dw-p-dl > .dw-p-hd {
