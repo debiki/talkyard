@@ -209,11 +209,13 @@ object DebateHtml {
   def loginInfo(userName: Option[String]): NodeSeq = {
     // COULD remove the "&nbsp;&nbsp;|&nbsp;&nbsp;" (below) from the link,
     // but then it'd always be visible, as of right now.
-    <span id='dw-login-info'>
-      <span class='dw-login-name'>{userName.getOrElse("")}</span>
+    <span id='dw-u-info'>
+      <span class='dw-u-name'>{userName.getOrElse("")}</span>
     </span>
-    <a id='dw-a-login'>Logga in</a>
-    <a id='dw-a-logout'>Logga ut</a>
+    <span class='dw-u-lgi-lgo'>
+      <a id='dw-a-login'>Logga in</a>
+      <a id='dw-a-logout'>Logga ut</a>
+    </span>
   }
 
   /** A <style> that hides comments,
