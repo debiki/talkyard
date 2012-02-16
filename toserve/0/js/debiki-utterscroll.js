@@ -117,7 +117,7 @@ if (!window.Debiki)
 Debiki.v0.utterscroll = function(options) {
 
   var defaults = {
-    defaultScrollstoppers: 'a, area, button, command, input, keygen,'+
+    defaultScrollstoppers: 'a, area, button, command, input, keygen, label,'+
         ' option, select, textarea, video',  // ?? canvas, embed, object
     scrollstoppers: ''
   };
