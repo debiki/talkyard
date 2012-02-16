@@ -2299,9 +2299,14 @@ function initFlagForm() {
 
   $form.submit(function() {
     $.post($form.attr("action"), $form.serialize(), 'html')
-        .done(function() {
+        .done(function(responseHtml) {
           $parent.dialog('close');
-          // TODO updateDebate, in some manner
+          // Don't show already submitted text if reopening form,
+          // and leave the reason radio buttons unchecked.
+          $form.find('textarea').val('').end()
+              .find('input:checked')
+                .prop('checked', false).button('refresh');
+          showServerResponseDialog(responseHtml);
         })
         .fail(showServerResponseDialog);
     return false;
@@ -3029,9 +3034,15 @@ function initDeleteForm() {
 
   $form.submit(function() {
     $.post($form.attr("action"), $form.serialize(), 'html')
-        .done(function() {
+        .done(function(responseHtml) {
           $parent.dialog('close');
-          // TODO updateDebate, in some manner
+          // Don't show already submitted deletion reason,
+          // if reopening form, and clear the delete-all-replies
+          // checkbox.
+          $form.find('textarea').val('').end()
+              .find('input:checked')
+                .prop('checked', false).button('refresh');
+          showServerResponseDialog(responseHtml);
         })
         .fail(showServerResponseDialog);
     return false;
