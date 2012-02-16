@@ -1685,16 +1685,37 @@ function showErrorEnableInputs($form) {
   };
 }
 
-// Constructs and shows a dialog, from a servers html response,
-// which should contain certain html elems and classes — if not,
-// a HTTP status code dialog with the response as plain text is shown.
+// Constructs and shows a dialog, from either 1) a servers html response,
+// which should contain certain html elems and classes, or 2)
+// a jQuery jqXhr object.
 function showServerResponseDialog(jqXhrOrHtml, opt_errorType,
                                   opt_httpStatusText) {
-  var $html = $(jqXhrOrHtml.responseText || jqXhrOrHtml).filter('.dw-dlg-rsp');
-  var title = $html.children('.dw-dlg-rsp-ttl').text();
-  var width = 400;
-  if (!$html.length) {
-    // No html elems found. This is probably a plain text error response.
+  var $html, title, width;
+  var html, plainText;
+
+  // Find html or plain text.
+  if (!jqXhrOrHtml.getResponseHeader) {
+    html = jqXhrOrHtml;
+  } else {
+    var contentType = jqXhrOrHtml.getResponseHeader('Content-Type');
+    if (contentType.indexOf('text/html') !== -1) {
+      html = jqXhrOrHtml.responseText;
+    }
+    else if (contentType.indexOf('text/plain') !== -1) {
+      plainText = jqXhrOrHtml.responseText;
+    }
+    else {
+      die2('DwE94ki3');
+    }
+  }
+
+  // Format dialog contents.
+  if (html) {
+    $html = $(html).filter('.dw-dlg-rsp');
+    title = $html.children('.dw-dlg-rsp-ttl').text();
+    width = 400;
+  }
+  else if (plainText) {
     // Set title to something like "403 Forbidden", and show the
     // text message inside the dialog.
     title = jqXhrOrHtml.status ?
@@ -1702,8 +1723,13 @@ function showServerResponseDialog(jqXhrOrHtml, opt_errorType,
     $html = $('<pre class="dw-dlg-rsp"></pre>');
     width = 'auto'; // avoids scrollbars in case of any long <pre> line
     // Use text(), not plus (don't: `... + text + ...'), to prevent xss issues.
-    $html.text(jqXhrOrHtml.responseText || opt_errorType || 'Unknown error');
+    $html.text(plainText || opt_errorType || 'Unknown error');
   }
+  else {
+    die2('DwE05GR5');
+  }
+
+  // Show dialog.
   $html.children('.dw-dlg-rsp-ttl').remove();
   $html.dialog({
     title: title,
