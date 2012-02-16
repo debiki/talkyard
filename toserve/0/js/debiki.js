@@ -2221,8 +2221,10 @@ function $showRatingForm() {
     $.post(Settings.makeRatePostUrl(debateId, rootPostId, postId),
           $rateForm.children('form').serialize(), function(recentChangesHtml) {
         updateDebate(recentChangesHtml);
-        // Highligt the user's ratings.
+
+        // Show flag and rating details, and highligt the user's ratings.
         var $newPost = $('#dw-post-' + postId);
+        $newPost.dwPostFindHeader().dwPostHeaderFindStats().show();
         $newPost.find('.dw-rs .dw-r').each(function(){
             // .dw-r text is e.g. " interesting 80% ". Make lowercase,
             // and drop " 80% ", so tag-name comparison works.
@@ -2236,6 +2238,7 @@ function $showRatingForm() {
               }
             });
           });
+
         slideAwayRemove($rateForm);
       }, 'html');
 
