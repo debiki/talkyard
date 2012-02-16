@@ -1185,7 +1185,7 @@ key presses).*/
 /* --- Login dialog --- */
 
 /* Assume user logged out */
-#dw-login-info,
+#dw-u-info,
 #dw-a-logout {
   display: none;
 }

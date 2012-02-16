@@ -1731,7 +1731,7 @@ function showServerResponseDialog(jqXhrOrHtml, opt_errorType,
 //  sanitize: unless `false', {name, email, website} will be sanitized.
 function fireLogout() {
   Me.refreshProps();
-  $('#dw-login-info').hide();
+  $('#dw-u-info').hide();
   $('#dw-a-logout').hide();
   $('#dw-a-login').show();
 
@@ -1750,8 +1750,8 @@ function fireLogout() {
 
 function fireLogin() {
   Me.refreshProps();
-  $('#dw-login-info').show()
-      .find('.dw-login-name').text(Me.getName());
+  $('#dw-u-info').show()
+      .find('.dw-u-name').text(Me.getName());
   $('#dw-a-logout').show();
   $('#dw-a-login').hide();
 
