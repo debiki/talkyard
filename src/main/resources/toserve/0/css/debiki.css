@@ -1107,11 +1107,6 @@ until they've been moved into the .dw-bd-blk > .dw-i-ts. */
   border: 1px solid #f7f3ed; /* almost background color */
 }
 
-.dw-fs form label {
-  margin-top: 0.8ex;
-  display: inline-block; /* or margin has no effect */
-}
-
 /* jQuery UI dialogs have forms inside. Set the dialog bg color
 to the forms bg color. */
 .dw-pri .ui-dialog-buttonpane {
@@ -1135,6 +1130,27 @@ it works everywhere, even if it works fine for you. */
   /* Cancel z-index:1100 rule, otherwise the <form> would be placed
   lower than the jQuery UI dialog itself, and jQuery would stop clicks. */
   z-index: auto; /* cancel rule */
+}
+
+.dw-fs small {
+  font-size: 70%;
+}
+
+.dw-fs form label {
+  margin-top: 1ex;
+  display: inline-block; /* or margin has no effect */
+}
+
+.dw-f input, .dw-f select, .dw-f textarea,
+.dw-fs input, .dw-fs select, .dw-fs textarea { /* COULD use only dw-f not -fs */
+  display: block; /* This also ditches any descender space...
+  ...The descender space below the textarea would otherwise cause
+  overflow — a terrible vertical scrollbar would appear, in those
+  cases where I've attempted to fit it exactly inside its parent. */
+}
+
+.dw-fs input[type='checkbox'] {
+  display: inline;
 }
 
 .dw-pri form input[type='text'],
@@ -1199,21 +1215,25 @@ key presses).*/
 #dw-fs-login-simple {
   /* Use whole parent jQuery UI dialog, else scrollbars tend to appear.
    jQuery UI seems to change the width to `auto'. */
-  width: 100% !important;
+/*  width: 100% !important;
   overflow: visible; /* or north-south scrollbar appears in Chrome */
 }
 
 .dw-login-openid {
-  padding: 50px 35px 0 0;
+  padding: 0 30px 0 0;
   margin-right: 45px;
   height: 105px;
-  width: 140px;
+  width: 145px;
   position: absolute;
   left: 0; /* or IE 7 places it far to the right */
 }
 
 .dw-login-openid-info {
-  margin-bottom: 1em;
+  margin: 1em 0;
+}
+
+.dw-login-openid-why {
+  margin-top: 1em;
 }
 
 #dw-fi-lgi-oid-email-ntf-lbl {
@@ -1244,6 +1264,7 @@ key presses).*/
   position: absolute;
   background-color: #FBF7F2;
   padding: 4px 0 4px;
+  font-weight: bold;
 }
 
 .dw-login-simple {
@@ -1251,7 +1272,7 @@ key presses).*/
 }
 
 .dw-login-simple-info {
-  margin-bottom: 1.1ex;
+  padding: 1em 0 0.7em;
 }
 
 .dw-login-simple label {
@@ -1482,10 +1503,6 @@ visibility:hidden) — some jQuery UI weird internal stuff? */
   padding: 0;
   border: none; /* would cause overflow, scrollbars would appear in tab panel */
   outline-offset: 0px; /* Chrome defualts to -2px */
-  /* Cancel a few pixel's descender space below the textarea,
-  which would otherwise cause overflow — a terrible
-  vertical scrollbar would appear in the tab panel. */
-  display: block; 
 }
 
 /* Indicate focus. */
