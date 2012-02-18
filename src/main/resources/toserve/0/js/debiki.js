@@ -2604,7 +2604,10 @@ function $showEditForm2() {
       // the editor cannot be given focus right now.
       setTimeout(function() {
         // Now (later) the editor panel should be visible.
-        if (codeMirrorEditor) codeMirrorEditor.focus();
+        if (codeMirrorEditor) {
+          codeMirrorEditor.refresh();
+          codeMirrorEditor.focus();
+        }
         else $editPanel.find('textarea').focus();
       }, 0);
     }
