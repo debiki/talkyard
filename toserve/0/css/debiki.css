@@ -578,6 +578,9 @@ so there's some space for the SVG arrows. */
   overflow: hidden;
   background-color: white;
 }
+/* But show the whole article (or <pre>s with very long lines
+might be cropped). */
+.dw-ar-p { overflow: visible; }
 /* Deleted posts appear as just a single text line,
 looks better if they appear close to the fold link. */
 .dw-p-dl { margin-left: 23px; }
@@ -1466,7 +1469,7 @@ key presses).*/
   border: none;
 }
 
-body.dw-u-ui-simple .dw-f-e-mup { display: none; }
+body.dw-ui-simple .dw-f-e-mup { display: none; }
 
 .dw-pri .dw-f-e .dw-e-tab {
   border: 1px solid #bbb;
@@ -1476,7 +1479,7 @@ body.dw-u-ui-simple .dw-f-e-mup { display: none; }
 /* ... the textarea is outlined on :focus — add 1px paddding so the
 outline is visible. But not at the top, or the outline would underline
 the jQuery UI tab. */
-.dw-depth-0 > .dw-p > .dw-f-e .dw-e-tab-edit {
+.dw-pri .dw-f-e .dw-e-tab-edit {
   padding: 0 1px 1px;
 }
 /* ... change padding for root post preview /* and fix a bug */
