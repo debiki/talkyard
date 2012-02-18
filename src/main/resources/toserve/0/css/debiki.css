@@ -1180,6 +1180,10 @@ key presses).*/
 .CodeMirror textarea {
   height: auto !important;
 }
+/* The default seems to be 10px wich is almost unreadable. */
+.CodeMirror {
+  font-size: 13px;
+}
 
 .dw-name-or-alias {
   float: left; /* TODO: need not float everything? */
