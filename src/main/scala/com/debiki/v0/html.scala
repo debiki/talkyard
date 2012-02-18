@@ -1306,6 +1306,10 @@ class FormHtml(val config: HtmlConfig, val pageRoot: PageRoot,
       license, and you agree to the
       <a href={config.termsOfUseUrl} target="_blank">Terms of Use</a>.
     </div> */
+    /* This short version might be better?
+    <div id='tos' style='padding-top: 1ex; font-size: 80%; color: #555;'>
+    Please read the <span style='text-decoration: underline;'>
+      Terms of Use</span>.</div> */
 }
 
 
