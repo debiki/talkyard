@@ -4072,7 +4072,8 @@ function initAndDrawSvg() {
   Me.refreshProps();
 
   if (!Modernizr.touch) Debiki.v0.utterscroll({
-    scrollstoppers: '.CodeMirror, .ui-resizable-handle, .dw-p-hd'
+    scrollstoppers: '.CodeMirror,'+
+        ' .ui-draggable, .ui-resizable-handle, .dw-p-hd'
   });
 
   // The root post might be too narrow and stuff might float drop,
