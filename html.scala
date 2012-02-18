@@ -842,41 +842,48 @@ class FormHtml(val config: HtmlConfig, val pageRoot: PageRoot,
           <div id='dw-login'>
            <div class='dw-login-openid'>
              <div class='dw-login-openid-info'>
-               Login with e.g. Gmail, OpenID, Yahoo:
+               Login with Gmail, OpenID, Yahoo, etcetera:
              </div>
              <a class='dw-a dw-a-login-openid'>Log in</a>
+             <div class='dw-login-openid-why'>
+               <small>
+               In the future, logging in will enable functionality
+               not available to unauthenticated users.
+               </small>
+             </div>
            </div>
-           <div class='dw-login-or-wrap'>
-             <div class='dw-login-or-word'>or</div>
-           </div>
+           {/*<div class='dw-login-or-wrap'>
+             <div class='dw-login-or-word'>Or</div>
+           </div>*/}
            <div class='dw-login-simple'>
             <div class='dw-login-simple-info'>
-              Login with username and<br/>
-              email (no password):
+              Alternatively,
             </div>
             <div>
-             <label for='dw-fi-login-name'>Name</label><br/>
+             <label for='dw-fi-login-name'>Enter your name:</label>
              <input id='dw-fi-login-name' type='text' size='40' maxlength='100'
                   name='dw-fi-login-name' value='Anonymous'/>
-             <br/>
+             <small><b>'?'</b> will be appended to your name,
+               to indicate that you were not authenticated.
+             </small>
             </div>
             <div>
              <label for='dw-fi-login-email'
-                >Email (optional, not shown)</label><br/>
+                >Email: (optional, not shown)</label>
              <input id='dw-fi-login-email' type='text' size='40'
-                  maxlength='100' name='dw-fi-login-email' value=''/><br/>
+                  maxlength='100' name='dw-fi-login-email' value=''/>
              <input id='dw-fi-lgi-spl-email-ntf' type='checkbox'
                    name='dw-fi-lgi-spl-email-ntf' value='yes'/>
              <label for='dw-fi-lgi-spl-email-ntf'
-                  id='dw-fi-lgi-spl-email-ntf-lbl'
-                >Notify me via email if someone replies to my comments</label
-                ><br/>
+                  id='dw-fi-lgi-spl-email-ntf-lbl'>
+                <b>Be notified</b> via email on replies to your comments.
+             </label>
             </div>
             <div>
              <label for='dw-fi-login-url' id='dw-fi-login-url-lbl'
-                >Website (optional)</label><br/>
+                >Website: (optional)</label>
              <input id='dw-fi-login-url' type='text' size='40' maxlength='200'
-                  name='dw-fi-login-url' value=''/><br/>
+                  name='dw-fi-login-url' value=''/>
              <!-- COULD add tabindex='...' -->
             </div>
            </div>
@@ -893,8 +900,9 @@ class FormHtml(val config: HtmlConfig, val pageRoot: PageRoot,
               name='dw-fi-lgi-oid-email-ntf' value='yes'/>
           <label for='dw-fi-lgi-oid-email-ntf'
               id='dw-fi-lgi-oid-email-ntf-lbl'
-            >Notify me via email if someone replies to my comments</label
-            ><br/>
+            ><strong>Be notified</strong>
+            via email on replies to your comments
+          </label><br/>
           <input type='hidden' name='action' value='verify' />
           <div id='openid_choice'>
             <p>Please click your account provider:</p>
