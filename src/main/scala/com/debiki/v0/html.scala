@@ -584,7 +584,7 @@ class DebateHtml(val debate: Debate, val pageTrust: PageTrust) {
 
         val tagDetails = <div class='dw-p-r-all'
              data-mtime={toIso8601T(postRatingStats.lastRatingDate)}>{
-          postRatingStats.ratingCount} ratings:
+          postRatingStats.ratingCountUntrusty} ratings:
           <ol class='dw-p-r dw-rs'>{
           // Don't change whitespace, or `editInfo' perhaps won't
           // be able to append a ',' with no whitespace in front.

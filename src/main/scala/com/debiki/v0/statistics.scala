@@ -95,13 +95,20 @@ object PostRatingStats {
  */
 private[debiki] abstract class PostRatingStats {
 
-  /** How many times the related post has been rated.
+  /** How many times the related post has been rated, counting each rating,
+   *  even if it is untrustworthy -- however completely untrustworthy
+   *  ratings are ignored.
    */
-  def ratingCount: Int
+  def ratingCountUntrusty: Int
+
+  /** Each rating only increments this count with the rating's trustiness.
+   */
+  def ratingCountTrusty: Float
 
   /** When the last rating was posted.
    *
-   *  A new Date instance is returned, since Date is mutable.
+   *  Completely untrustworthy ratings are ignored (they don't affect
+   *  this date). A new Date instance is returned, since Date is mutable.
    */
   def lastRatingDate: ju.Date
 
@@ -112,7 +119,7 @@ private[debiki] abstract class PostRatingStats {
   /** The highest possible occurrence count, for a tag.
    *
    *  Each rating increments {@code tagCountMaxWeighted} with
-   *  1/number-of-tags-included-in-that-rating.
+   *  1/number-of-tags-included-in-that-rating * the-trustiness-of-the-rating.
    *  Example: If there are 2 ratings, on tags [interesting] and
    *  [interesting, funny], then tagCountMaxWeighted will be 1/1 + 1/2 = 1.5.
    *  Note that:
@@ -133,16 +140,17 @@ private[debiki] abstract class PostRatingStats {
   /** The weighted number of [tags applied to the related post] that
    *  the user likes.
    *
-   *  For example, if there are two ratings for the related
+   *  For example, if there are two trustworthy ratings for the related
    *  post, with tags [interesting] and [funny, stupid], respectively,
    *  and likedTags is [interesting, funny], then the
    *  weighted count is 1/1 + 1/2 = 1.5,
    *  since, for the first rating, 1 of 1 tags are liked,
    *  and, for the second rating, 1 of 2 tags are liked.
    *
-   *  The maximum possible value is ratingCount.
-   *  If likedTagCountWeighted == ratingCount, then the related post has been
-   *  tagged only with tags the reader likes (i.e. only with tags in likedTags).
+   *  The maximum possible value is ratingCountTrusty.
+   *  If likedTagCountWeighted == ratingCountTrusty, then the related post
+   *  has been tagged only with tags the reader likes (i.e. only with tags
+   *  in likedTags).
    */
   def likedTagCountWeighted(likedTags: List[String]): Float = {
     // These two approaches should yield the same result:
@@ -166,13 +174,13 @@ private[debiki] abstract class PostRatingStats {
    *  in likedTags.
    */
   def fitness(likedTags: List[String]): ConfidenceInterval = {
-    if (ratingCount == 0)
+    if (ratingCountTrusty == 0f)
       return binProp80ConfIntACNoSamples
 
     val countWeighted = likedTagCountWeighted(likedTags)
-    val observedMean = countWeighted / ratingCount
+    val observedMean = countWeighted / ratingCountTrusty
     binPropConfIntAC(
-       sampleSize = ratingCount,
+       sampleSize = ratingCountTrusty,
        proportionOfSuccesses = observedMean,
        percent = 80.0f)
   }
@@ -186,7 +194,8 @@ private[debiki] abstract class PostRatingStats {
 private[debiki] class PageStats(val debate: Debate, val pageTrust: PageTrust) {
 
   private class PostRatingStatsImpl extends PostRatingStats {
-    var ratingCount = 0
+    var ratingCountUntrusty = 0
+    var ratingCountTrusty = 0f
     var tagStats = imm.Map[String, TagStats]() // updated later
     var tagCountMaxWeighted = 0f
     var tagCountsWeighted = mut.HashMap[String, Float]()  // thrown away later
@@ -216,10 +225,12 @@ private[debiki] class PageStats(val debate: Debate, val pageTrust: PageTrust) {
         // results in: "illegal cyclic reference involving trait Iterable"
         // Only in NetBeans, not when compiling, in real life???
       }
-      ratingCount += 1
+      // These stats ignore completely untrustworthy ratings.
+      // (We returned early above.)
+      ratingCountUntrusty += 1
+      ratingCountTrusty += trustiness
       if (rating.ctime.getTime > _lastRatingDateMillis)
         _lastRatingDateMillis = rating.ctime.getTime
-      this
     }
   }
 
@@ -242,7 +253,7 @@ private[debiki] class PageStats(val debate: Debate, val pageTrust: PageTrust) {
           // With a probability of 90% (not 80%), the probability that a user
           // uses the related tag is above fitness.lowerLimit.
           val fitness =
-            binPropConfIntAC(sampleSize = ratingStats.ratingCount,
+            binPropConfIntAC(sampleSize = ratingStats.ratingCountTrusty,
                 proportionOfSuccesses = tagProbMeasured, percent = 80.0f)
           TagStats(tagCountWeighted, fitness)
         }).
@@ -309,20 +320,20 @@ private[debiki] object Distributions {
    *  relatively many people, instead of falling into oblivion, unread.
    */
   def binPropConfIntAC(
-      sampleSize: Int, proportionOfSuccesses: Float, percent: Float)
+      sampleSize: Float, proportionOfSuccesses: Float, percent: Float)
       : ConfidenceInterval = {
     require(percent == 80.0f)
-    require(sampleSize >= 0)
+    require(sampleSize >= 0f)
     require(proportionOfSuccesses >= 0f)
     require(proportionOfSuccesses <= 1f)
     val adjustment = 4f
     val n_ = sampleSize + adjustment
-    val p_ = (proportionOfSuccesses * sampleSize + adjustment * 0.5) / n_
+    val p_ = (proportionOfSuccesses * sampleSize + adjustment * 0.5f) / n_
     require(p_ >= 0f)
     require(p_ <= 1f)
     // With a probability of 90%, a random value from a
     // standard normal distribution (usually denoted Z) is > 1.28.
-    val z_90 = 1.28
+    val z_90 = 1.28f
     val square = z_90 * math.sqrt(p_ * (1 - p_) / n_)
     // With a probability of 80%, the real value of the binomial
     // proportion is between lowerBound and upperBound.
@@ -339,7 +350,7 @@ private[debiki] object Distributions {
    *  calculated using the Agresti-Coull (AC) method.
    */
   val binProp80ConfIntACNoSamples: ConfidenceInterval = binPropConfIntAC(
-                sampleSize = 0, proportionOfSuccesses = 0, percent = 80.0f)
+                sampleSize = 0f, proportionOfSuccesses = 0f, percent = 80.0f)
 }
 
 /*
