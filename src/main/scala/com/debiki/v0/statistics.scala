@@ -182,15 +182,6 @@ private[debiki] abstract class PostRatingStats {
 }
 
 
-/** Immutable.
- */
-abstract class EditLiking {
-  def voteCount: Int
-  def upperBound: Float
-  def lowerBound: Float
-  def frac: Float
-}
-
 
 private[debiki] class PageStats(val debate: Debate, val pageTrust: PageTrust) {
 
@@ -232,34 +223,8 @@ private[debiki] class PageStats(val debate: Debate, val pageTrust: PageTrust) {
     }
   }
 
-  private class EditLikingImpl extends EditLiking {
-    var voteCount = 0
-    var sum = 0f
-    def frac = sum / voteCount
-    var lowerBound = binProp80ConfIntACNoSamples.lowerLimit
-    var upperBound = binProp80ConfIntACNoSamples.upperLimit
-    def addLiking(value: Int) {
-      require(value == 0 || value == 1)
-      sum += value
-      voteCount += 1
-    }
-    override def toString = "EditLiking[votes: "+ voteCount + ", frac: "+
-        frac + ", lower: "+ lowerBound +", upper: "+ upperBound +"]"
-  }
-
   private val postRatingStats = mut.Map[String, PostRatingStatsImpl]()
   private val postRatingStatsEmpty = new PostRatingStatsImpl
-
-  private val editLikings = mut.Map[String, EditLikingImpl]()
-  private val editLikingNoVotes = new EditLikingImpl
-
-  // Calculate edit vote sums.
-  for (editVote <- debate.editVotes) {
-    def addLiking(id: String, value: Int) =
-      editLikings.getOrElseUpdate(id, new EditLikingImpl).addLiking(value)
-    for (editId <- editVote.like) addLiking(editId, 1)
-    for (editId <- editVote.diss) addLiking(editId, 0)
-  }
 
   // Calculate tag counts, store in mutable map.
   for (r <- debate.ratings) {
@@ -285,25 +250,10 @@ private[debiki] class PageStats(val debate: Debate, val pageTrust: PageTrust) {
     ratingStats.tagCountsWeighted = null  // don't retain memory
   }
 
-  // Calculate edit likings from edit votes.
-  for ((editId, liking) <- editLikings) {
-    val bounds = binPropConfIntAC(sampleSize = liking.voteCount,
-          proportionOfSuccesses = liking.frac, percent = 80.0f)
-    liking.lowerBound = bounds.lowerLimit
-    liking.upperBound = bounds.upperLimit
-  }
 
   def ratingStatsFor(postId: String): PostRatingStats =
     postRatingStats.getOrElse(postId, postRatingStatsEmpty)
 
-
-  /** The lower bound of a 90% confidence interval of the proportion
-   *  of voters that like the edit (a value between 0 and 1).
-   */
-  def likingFor(e: Edit): EditLiking = likingFor(e.id)
-
-  def likingFor(editId: String): EditLiking =
-    editLikings.getOrElse(editId, editLikingNoVotes)
 }
 
 

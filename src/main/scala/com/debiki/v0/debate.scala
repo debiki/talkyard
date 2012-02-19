@@ -76,7 +76,6 @@ case class Debate (
   private[debiki] val posts: List[Post] = Nil,
   private[debiki] val ratings: List[Rating] = Nil,
   private[debiki] val edits: List[Edit] = Nil,
-  private[debiki] val editVotes: List[EditVote] = Nil,
   private[debiki] val editApps: List[EditApp] = Nil,
   private[debiki] val flags: List[Flag] = Nil,
   private[debiki] val deletions: List[Delete] = Nil
@@ -307,7 +306,6 @@ case class Debate (
     var posts2 = posts
     var ratings2 = ratings
     var edits2 = edits
-    var editVotes2 = editVotes
     var editApps2 = editApps
     var flags2 = flags
     var dels2 = deletions
@@ -318,7 +316,6 @@ case class Debate (
       case p: Post => posts2 ::= p
       case r: Rating => ratings2 ::= r
       case e: Edit => edits2 ::= e
-      case v: EditVote => editVotes2 ::= v
       case a: EditApp => editApps2 ::= a
       case f: Flag => flags2 ::= f
       case d: Delete => dels2 ::= d
@@ -326,7 +323,7 @@ case class Debate (
           "Unknown action type: "+ classNameOf(x) +" [error DwE8k3EC]")
     }
     Debate(guid, logins2, identities2, users2, posts2, ratings2,
-        edits2, editVotes2, editApps2, flags2, dels2)
+        edits2, editApps2, flags2, dels2)
   }
 
 
@@ -664,24 +661,6 @@ case class Edit (
   newMarkup: Option[String]
 ) extends Action
 
-// Verify: No duplicate like/diss ids, no edit both liked and dissed
-// COULD remove! Instead, introduce Action.Status = Suggestion/Published,
-// and instead of EditVote, use EditApp.status = Suggestion.
-// (Then you cannot vote on > 1 edit at once, but perhaps that's a good thing?)
-// When there are X EditApp suggestions, automatically create one
-// with status = Published?
-// "status=Suggestion/Published"? or "weight=Sugstn/Publ"?
-// or "effect=Immediate/SuggestionOnly"?
-case class EditVote(  // should extend Action
-  id: String,
-  loginId: String,
-  ip: String,  // should change to newIp Option[String]
-  ctime: ju.Date,
-  /** Ids of edits liked */
-  like: List[String],
-  /** Ids of edits disliked */
-  diss: List[String]
-)
 
 /** Edit applications (i.e. when edits are applied).
  *
