@@ -192,7 +192,7 @@ abstract class EditLiking {
 }
 
 
-private[debiki] class PageStats(val debate: Debate) {
+private[debiki] class PageStats(val debate: Debate, val pageTrust: PageTrust) {
 
   private class PostRatingStatsImpl extends PostRatingStats {
     var ratingCount = 0
@@ -215,7 +215,9 @@ private[debiki] class PageStats(val debate: Debate) {
 
     def addRating(rating: Rating) {
       if (rating.tags.isEmpty) return
-      val weight = 1f / rating.tags.length
+      val trustiness = pageTrust.trustinessOf(rating)
+      if (trustiness == 0f) return
+      val weight = trustiness / rating.tags.length
       tagCountMaxWeighted += weight
       for (tagName <- rating.tags) {
         val curTagCount = tagCountsWeighted.getOrElse(tagName, 0f)

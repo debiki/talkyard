@@ -41,8 +41,9 @@ private[debiki] object App {
     }
 
     val debate: Debate = unimplemented
+    val pageTrust: PageTrust = unimplemented
                     // DebikiYaml().loadDebateFromPath(dir).open_!
-    val debateHtml = new DebateHtml(debate)
+    val debateHtml = new DebateHtml(debate, pageTrust)
 
     createDirTree(out, debate)
     copyResources(out)

@@ -329,10 +329,6 @@ case class Debate (
         edits2, editVotes2, editApps2, flags2, dels2)
   }
 
-  // -------- Statistics
-
-  lazy val stats = new PageStats(this)
-
 
   // -------- Misc
 
