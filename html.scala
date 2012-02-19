@@ -64,7 +64,8 @@ abstract class HtmlConfig {
 
 object DebateHtml {
 
-  def apply(debate: Debate) = new DebateHtml(debate)
+  def apply(debate: Debate, pageTrust: PageTrust) =
+    new DebateHtml(debate, pageTrust)
 
   /** Converts text to xml, returns (html, approx-line-count).
    *
@@ -240,13 +241,13 @@ object DebateHtml {
 }
 
 
-class DebateHtml(val debate: Debate) {
+class DebateHtml(val debate: Debate, val pageTrust: PageTrust) {
 
   import DebateHtml._
 
   private var config: HtmlConfig = _  // COULD let be a ctor param
 
-  private lazy val pageStats = new PageStats(debate)
+  private lazy val pageStats = new PageStats(debate, pageTrust)
 
   private def lastChange: Option[String] =
     debate.lastChangeDate.map(toIso8601(_))
