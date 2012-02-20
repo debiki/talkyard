@@ -2050,7 +2050,7 @@ function initLoginOpenId() {
   if ($openid.is('.ui-dialog-content'))
     return; // already inited
 
-  openid.img_path = '/classpath/0/lib/openid-selector/images/';
+  openid.img_path = '/classpath/lib/openid-selector/images/';
   openid.submitInPopup = submitLoginInPopup;
   // Keep default openid.cookie_expires, 1000 days
   // — COULD remove cookie on logout?
