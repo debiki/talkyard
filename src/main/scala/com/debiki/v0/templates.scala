@@ -47,7 +47,7 @@ case object TemplateSrcHtml {
  * Template source example:  (the text above '---' is the Yaml config options.
  * (Yaml documents are terminated by '---'.)
  *
- *     extend: /0/parent/template
+ *     extend: /parent/template
  *     ---
  *     <html>
  *       ...
