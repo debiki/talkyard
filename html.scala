@@ -105,14 +105,14 @@ object DebateHtml {
   private val _jsShowdown = new javax.script.ScriptEngineManager()
         .getEngineByName("js")
   private def _showdown = toserve.DebikiCoreResourceBase.getClass
-        .getResourceAsStream("0/js/wmd/showdown.js")
+        .getResourceAsStream("js/wmd/showdown.js")
   _jsShowdown.eval(new jio.InputStreamReader(_showdown))
 
   // A html sanitizer, in JavaScript, from google-caja.
   private val _jsSanitizer = new javax.script.ScriptEngineManager()
         .getEngineByName("js")
   private def _cajaSanitizer = toserve.DebikiCoreResourceBase.getClass
-        .getResourceAsStream("0/js/html-sanitizer-minified.js")
+        .getResourceAsStream("js/html-sanitizer-minified.js")
   _jsSanitizer.eval(new jio.InputStreamReader(_cajaSanitizer))
   _jsSanitizer.eval("""
       |function urlX(url) {
@@ -834,7 +834,7 @@ class FormHtml(val config: HtmlConfig, val pageRoot: PageRoot,
   /**
    *  The login form below is based on this JavaScript OpenID Selector
    *  example file:
-   *    debiki-core/src/main/resources/toserve/0/lib/openid-selector/demo.html
+   *    debiki-core/src/main/resources/toserve/lib/openid-selector/demo.html
    */
   def loginFormSimple =
       <div class='dw-fs' id='dw-fs-login-simple' title='Who are you?'>
@@ -1325,7 +1325,7 @@ object UserHtml {
         for (i <- items.take(20)) yield {
           // COULD look up address in PATHS table when loading
           // InboxItem from database -- to get rid of 1 unnecessary redirect.
-          val pageAddr = "/0/-"+ i.pageId
+          val pageAddr = "/-"+ i.pageId
           val postAddr = pageAddr +"#dw-post-"+ i.pageActionId
           // The page title (i.e. `i.title') is currently unknown.
           //<li>1 reply on <a class='dw-ibx-pg-ttl' href={pageAddr}>{
@@ -1345,7 +1345,7 @@ object PageListHtml {
                         ): NodeSeq = {
     <ol>{
       for ((pagePath, details) <- pagePathsDetails) yield {
-        <li><a href={"/0/"+ pagePath.path}>{pagePath.path}</a></li>
+        <li><a href={"/"+ pagePath.path}>{pagePath.path}</a></li>
       }
     }</ol>
   }
@@ -1378,7 +1378,7 @@ object AtomFeedXml {
     if (!hostUrl.startsWith("http"))
       warnDbgDie("Bad host URL: "+ safed(hostUrl))
 
-    val baseUrl = hostUrl +"/0/"
+    val baseUrl = hostUrl +"/"
     def urlTo(pp: PagePath) = baseUrl + pp.path.dropWhile(_ == '/')
 
     def pageToAtom(pathAndPage: (PagePath, Debate)): NodeSeq = {
