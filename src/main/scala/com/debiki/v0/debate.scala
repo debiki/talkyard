@@ -83,6 +83,8 @@ case class Debate (
   private lazy val postsById =
       imm.Map[String, Post](posts.map(x => (x.id, x)): _*)
 
+  def smart(action: Action) = new ViAc(this, action)
+
   lazy val (
       // COULD rename postsByParentId to textByParentId.
       postsByParentId: imm.Map[String, List[Post]],
@@ -120,33 +122,79 @@ case class Debate (
     (immPostMap, immPublMap, immMetaMap)
   }
 
-  private class RatingCacheItem {
-    var ratings: List[Rating] = Nil
-    var valueSums: imm.Map[String, Int] = null
+
+  private class _SingleActionRatings extends SingleActionRatings {
+    val _mostRecentByUserId = mut.Map[String, Rating]()
+    val _mostRecentByNonAuLoginId = mut.Map[String, Rating]()
+    val _allRecentByNonAuIp =
+      mut.Map[String, List[Rating]]().withDefaultValue(Nil)
+
+    override def mostRecentByUserId: collection.Map[String, Rating] =
+      _mostRecentByUserId
+
+    override lazy val mostRecentByNonAuLoginId: collection.Map[String, Rating] =
+      _mostRecentByNonAuLoginId
+
+    override lazy val allRecentByNonAuIp: collection.Map[String, List[Rating]] =
+      _allRecentByNonAuIp
+
+    override def curVersionOf(rating: Rating): Rating = {
+      val user = smart(rating).user_!
+      val curVer = user.isAuthenticated match {
+        case true => _mostRecentByUserId(user.id)
+        case false => _mostRecentByNonAuLoginId(rating.loginId)
+      }
+      assert(rating.ctime.getTime <= curVer.ctime.getTime)
+      assert(rating.postId == curVer.postId)
+      curVer
+    }
   }
 
-  private lazy val ratingCache: mut.Map[String, RatingCacheItem] = {
-    val cache = mut.Map[String, RatingCacheItem]()
-    // Gather ratings
-    for (r <- ratings) {
-      var ci = cache.get(r.postId)
-      if (ci.isEmpty) {
-        cache(r.postId) = new RatingCacheItem
-        ci = cache.get(r.postId)
+  // Analyze ratings, per action.
+  // (Never change this mut.Map once it's been constructed.)
+  private lazy val _ratingsByActionId: mut.Map[String, _SingleActionRatings] = {
+    val mutRatsByPostId =
+      mut.Map[String, _SingleActionRatings]()
+
+    // Remember the most recent ratings per user and non-authenticated login id.
+    for (rating <- ratings) {
+      var singlePostRats = mutRatsByPostId.getOrElseUpdate(
+        rating.postId, new _SingleActionRatings)
+      val user = smart(rating).user_!
+      val (recentRatsMap, key) = user.isAuthenticated match {
+        case true => (singlePostRats._mostRecentByUserId, user.id)
+        case false => (singlePostRats._mostRecentByNonAuLoginId, rating.loginId)
       }
-      ci.get.ratings = r :: ci.get.ratings
-    }
-    // Sum rating tags
-    for ((postId, cacheItem) <- cache) cacheItem.valueSums = {
-      val mutmap = mut.Map[String, Int]()
-      for (r <- cacheItem.ratings; value <- r.tags) {
-        val sum = mutmap.getOrElse(value, 0)
-        mutmap(value) = sum + 1
+
+      val perhapsOtherRating = recentRatsMap.getOrElseUpdate(key, rating)
+      if (perhapsOtherRating.ctime.getTime < rating.ctime.getTime) {
+        // Different ctime, must be different ratings
+        assert(perhapsOtherRating.id != rating.id)
+        // But by the same login, or user
+        assert(perhapsOtherRating.loginId == rating.loginId ||
+           smart(perhapsOtherRating).user.map(_.id) ==
+              smart(rating).user.map(_.id))
+        // Keep the most recent rating only.
+        recentRatsMap(key) = rating
       }
-      imm.Map[String, Int](mutmap.toSeq: _*)
     }
-    cache
+
+    // Remember all unauthenticated ratings, per IP.
+    // This cannot be done until the most recent ratings by each non-authn
+    // user has been found (in the for loop just above).
+    for {
+      singleActionRats <- mutRatsByPostId.values
+      nonAuRating <- singleActionRats._mostRecentByNonAuLoginId.values
+    } {
+      val byIp = singleActionRats._allRecentByNonAuIp
+      val ip = smart(nonAuRating).ip_!
+      val otherRatsSameIp = byIp(ip)
+      byIp(ip) = nonAuRating :: otherRatsSameIp
+    }
+
+    mutRatsByPostId
   }
+
 
   /** The guid prefixed with a dash.
    *
@@ -177,6 +225,15 @@ case class Debate (
     pageTemplatePost.map(TemplateSrcHtml(_))
 
 
+  // -------- Ratings
+
+  // Currently using only by the DAO TCK, need not be fast.
+  def rating(id: String): Option[Rating] = ratings.find(_.id == id)
+
+  def ratingsByActionId(actionId: String): Option[SingleActionRatings] =
+    _ratingsByActionId.get(actionId)
+
+
   // ====== Older stuff below (everything in use though!) ======
 
   // Instead of the stuff below, simply use
@@ -196,21 +253,6 @@ case class Debate (
   def vipo(postId: String): Option[ViPo] = // COULD rename to post(withId =...)
     post(postId).map(new ViPo(this, _))
 
-
-  // -------- Ratings
-
-  // Currently using only by the DAO TCK, need not be fast.
-  def rating(id: String): Option[Rating] = ratings.find(_.id == id)
-
-  def ratingsOn(postId: String): List[Rating] = {
-    val ci = ratingCache.get(postId)
-    if (ci.isDefined) ci.get.ratings else Nil
-  }
-
-  def ratingSumsFor(postId: String): imm.Map[String, Int] = {
-    val ci = ratingCache.get(postId)
-    if (ci.isDefined) ci.get.valueSums else imm.Map.empty
-  }
 
   // -------- Replies
 
@@ -540,6 +582,16 @@ sealed abstract class Action {  // COULD delete, replace with Post:s?
   def ctime: ju.Date
 }
 
+/** Classifies an action, e.g. tags a Post as being "interesting" and "funny".
+ *
+ *  If you rate an action many times, only the last rating counts.
+ *  - For an authenticated user, his/her most recent rating counts.
+ *  - For other users, the most recent rating for the login id / session id
+ *    counts.
+ *  - Could let different non-authenticated sessions with the same
+ *    user name, ip and email overwrite each other's ratings.
+ *    But I might as well ask them to login instead? Saves my time, and CPU.
+ */
 case class Rating (
   id: String,
   postId: String,
@@ -548,6 +600,31 @@ case class Rating (
   ctime: ju.Date,
   tags: List[String]
 ) extends Action
+
+
+/** Info on all ratings on a certain action, grouped and sorted in
+ *  various manners.
+ */
+abstract class SingleActionRatings {
+
+  /** The most recent rating, by authenticated users. */
+  def mostRecentByUserId: collection.Map[String, Rating]
+
+  /** The most recent rating, by non authenticated users. */
+  def mostRecentByNonAuLoginId: collection.Map[String, Rating]
+
+  /** The most recent ratings, for all non authenticated users,
+   *  grouped by IP address.
+   */
+  def allRecentByNonAuIp: collection.Map[String, List[Rating]]
+
+  /** The most recent version of the specified rating.
+   *  When you rate an action a second time, the most recent rating
+   *  overwrites the older one.
+   */
+  def curVersionOf(rating: Rating): Rating
+}
+
 
 object FlagReason extends Enumeration {
   type FlagReason = Value
