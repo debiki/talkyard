@@ -2,8 +2,15 @@
 # This file defines all application routes (Higher priority routes first)
 # ~~~~
 
-# Home page
-GET     /                           controllers.Application.index
+# In Global.scala, routing is intercepted, and editPost/createPage/etc
+# are called, based on the query string (e.g. ?edit=... or ?create-page).
 
-# Map static resources from the /public folder to the /assets URL path
-GET     /assets/*file               controllers.Assets.at(path="/public", file)
+# Static resources
+GET   /-/assets/*file         controllers.Assets.at(path="/public", file)
+
+# API calls
+GET   /-/api/*apiPath         controllers.Application.callApi(apiPath)
+
+# Home page
+GET   /                       controllers.Application.index
+
