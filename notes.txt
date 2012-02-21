@@ -1,5 +1,64 @@
 vim: fdm=marker et sw=2 ts=2
 
+{{{1 Test html - IE 6, 7, 8, and dw- classes/ids, and XSS
+
+(this page in my pgsql vm:  http://localhost:8080/test/-1g3u6nd5j3  )
+
+
+IE 6 7 8 test
+===========
+
+div
+------
+
+<div class='debiki-show-if-lte-ie7'>div .debiki-show-if-lte-ie7</div>
+<div class='debiki-show-if-lte-ie8'>div .debiki-show-if-lte-ie8</div>
+<div class='debiki-show-unless-lte-ie7'>div .debiki-show-unless-lte-ie7</div>
+<div class='debiki-show-unless-lte-ie8'>div .debiki-show-unless-lte-ie8</div>
+
+span
+------
+
+<span class='debiki-show-if-lte-ie7'>span .debiki-show-if-lte-ie7</span>
+<span class='debiki-show-if-lte-ie8'>span .debiki-show-if-lte-ie8</span>
+<span class='debiki-show-unless-lte-ie7'>span .debiki-show-unless-lte-ie7</span>
+<span class='debiki-show-unless-lte-ie8'>span .debiki-show-unless-lte-ie8</span>
+
+
+dw- classes and ids test
+===========
+<div class='dw-ar-t'>div class='dw-ar-t'</div>
+<div id='dw-t-1'>div id='dw-t-1'</div>
+<div moo='dw-muu'>div moo='dw-muu'</div>
+<div class='-dw-ar-t'>div class='-dw-ar-t'</div>
+<div id='-dw-t-1'>div id='-dw-t-1'</div>
+<div moo='-dw-muu'>div moo='-dw-muu'</div>
+
+
+XSS test
+===========
+
+<a href="javascript:alert('XSS');">a href="javascript:alert('XSS');"</a>
+<a href="weirdscheme:/huu/buu">a href="weirdscheme:/huu/buu"</a>
+<a href="https://is-okay">a href="https://is-okay"</a>
+<a href="http://is-okay">a href="http://is-okay"</a>
+<a href="http://server/path/page?query#hash">a href="http://server/path/page?query#hash"</a>
+<a href="https://server/path/page?query#hash">a href="https://server/path/page?query#hash"</a>
+<a href="rel-links-are-okay">a href="rel-links-are-okay"</a>
+<a href="/server-not-needed">a href="/server-not-needed"</a>
+<a href="server/scheme-not-needed">a href="server/scheme-not-needed"</a>
+<a href="?-cryptic-questions-fine">a href="?-cryptic-questions-fine"</a>
+<a href="#-hash-is-fancy">a href="#-hash-is-fancy"</a>
+
+See `http://ha.ckers.org/xss.html`.
+<SCRIPT SRC=http://ha.ckers.org/xss.js></SCRIPT>
+<IMG SRC="javascript:alert('XSS');">
+<img src=&#106;&#97;&#118;&#97;&#115;&#99;&#114;&#105;&#112;&#116;&#58;&#97;&#108;&#101;&#114;&#116;&#40;&#39;&#88;&#83;&#83;&#39;&#41;>
+<img src="jav	ascript:alert('XSS');">
+
+';alert(String.fromCharCode(88,83,83))//\';alert(String.fromCharCode(88,83,83))//";alert(String.fromCharCode(88,83,83))//\";alert(String.fromCharCode(88,83,83))//--></SCRIPT>">'><SCRIPT>alert(String.fromCharCode(88,83,83))</SCRIPT>
+
+}}}1
 {{{ debiki.js performance improvements (done, 2011-10-01)
 
 (Profiling was done on my 6 core AMD, 2.8 GHz.)
@@ -670,7 +729,7 @@ TODO: Rename class dw-owner, split into:? dw-user dw-author dw-editor
 
 }}}
 
-{{{ New layout:
+{{{ (old, deprecated!) New layout:
 
 <ol class='dw-cmts'>
   <li class='dw-cmt' id='dw-Ca'>
@@ -708,38 +767,6 @@ TODO: Rename class dw-owner, split into:? dw-user dw-author dw-editor
 </ol>
 }}}
 
-
-{{{ Cookies?
-  debiki_unread_posts
-  debiki_my_ratings
-  debiki_my_posts
-  debiki_my_edits
-
-  dw-unread-posts
-  dw-my-ratings
-  dw-my-posts
-  dw-my-edits
-
-  DebikiUnreadPosts
-  DebikiMyRatings
-  DebikiMyPosts
-  DebikiMyEdits
-
-  debikiUnreadPosts
-  debikiMyRatings
-  debikiMyPosts
-  debikiMyEdits
-
-  dwUnreadEditsApplied
-  dwUnreadEditsSuggested
-  dwUnreadPosts
-  dwMyRatings
-  dwMyPosts
-  dwMyEditsApplied
-  dwMyEditsSuggested
-  dwPageCurrentVersion
-  dwPageLastVersion
-}}}
 
 {{{ Coding style, commit messages
 
