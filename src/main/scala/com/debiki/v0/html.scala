@@ -479,6 +479,7 @@ class DebateHtml(val debate: Debate, val pageTrust: PageTrust) {
     val isRootOrArtclQstn = vipo.id == rootPostId ||
         vipo.meta.isArticleQuestion
 
+    // COULD move to class Markup?
     val (xmlText, numLines) = vipo.markup match {
       case "dmd0" =>
         // Debiki flavored markdown.

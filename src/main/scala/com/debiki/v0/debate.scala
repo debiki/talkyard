@@ -384,6 +384,10 @@ case class Debate (
 
 }
 
+
+// COULD rename all these ViAc/NiPo/whatever to SmartAction/Post/Whatever.
+// COULD take an Action subclass type param, so it'd be possible to use e.g. a
+// SmartPageAction[Rating].
 /** A virtual Action, that is, an Action plus some utility methods that
  *  look up other stuff in the relevant Debate.
  */
