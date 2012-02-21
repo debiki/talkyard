@@ -109,19 +109,33 @@ object DebateHtml {
   _jsShowdown.eval(new jio.InputStreamReader(_showdown))
 
   // A html sanitizer, in JavaScript, from google-caja.
+  // Should move it to a separate module.
+  // -----
   private val _jsSanitizer = new javax.script.ScriptEngineManager()
         .getEngineByName("js")
   private def _cajaSanitizer = toserve.DebikiCoreResourceBase.getClass
         .getResourceAsStream("js/html-sanitizer-minified.js")
   _jsSanitizer.eval(new jio.InputStreamReader(_cajaSanitizer))
+
+  // Configure the sanitizer.
+  // 1. html-sanitizer.js's function sanitizeAttribs by default allows
+  // only the http/https/mailto URI schemes, and relative URLs
+  // (but not e.g. `javascript:'). This is reasonably safe?
+  // Could prevent URLS with any '?' though.
+  // 2. sanitizeAttribs by default allows all id and class attributes.
+  // We don't want anyone to be able to use the .dw-* classes/ids though,
+  // so filter them out. Allow `debiki-' though, that's the public CSS API.
   _jsSanitizer.eval("""
-      |function urlX(url) {
-      |  if (/^https?:\/\//.test(url) || /^#/.test(url)) return url;
+      |function uriPolicy(url) {
+      |  return url;
       |}
-      |function idX(id) { return id }
+      |function classAndIdPolicy(token) {
+      |  return /^dw-/.test(token) ? '' : token;
+      |}
       |""".stripMargin)
-  private val _jsUrlX = _jsSanitizer.get("urlX")
-  private val _jsIdX = _jsSanitizer.get("idX")
+  private val _jsUrlX = _jsSanitizer.get("uriPolicy")
+  private val _jsIdX = _jsSanitizer.get("classAndIdPolicy")
+  // -----
 
   /** Converts markdown to xml.
    */
