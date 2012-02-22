@@ -4,15 +4,29 @@ import PlayProject._
 
 object ApplicationBuild extends Build {
 
-    val appName         = "debiki-app-play"
-    val appVersion      = "1.0-SNAPSHOT"
+  val appName         = "debiki-app-play"
+  val appVersion      = "1.0-SNAPSHOT"
 
-    val appDependencies = Seq(
-      // Add your project dependencies here,
-    )
+  lazy val debikiCore =
+    Project("debiki-core", file("modules/debiki-core"))
 
-    val main = PlayProject(appName, appVersion, appDependencies, mainLang = SCALA).settings(
-      // Add your own project settings here      
+  lazy val debikiTckDao =
+    (Project("debiki-tck-dao", file("modules/debiki-tck-dao"))
+    dependsOn(debikiCore ))
+
+  lazy val debikiDaoPgsql =
+    (Project("debiki-dao-pgsql", file("modules/debiki-dao-pgsql"))
+    dependsOn(debikiCore, debikiTckDao % "test"))
+
+  val appDependencies = Seq(
+    // Add your project dependencies here,
+  )
+
+  val main = PlayProject(appName, appVersion, appDependencies, mainLang = SCALA
+    ).settings(
+      // Add your own project settings here
+    ).dependsOn(
+      debikiCore, debikiDaoPgsql
     )
 
 }
