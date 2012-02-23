@@ -1255,6 +1255,8 @@ class FormHtml(val config: HtmlConfig, val pageRoot: PageRoot,
           else <pre class='dw-e-src-old'>{postToEdit.text}</pre> }
       </div>
       { termsAgreement("Submit as ...") }
+      <div class='dw-f-e-prvw-info'>Click <em>Preview</em> then <em>Submit</em>.
+      </div>
       <div class='dw-f-e-sugg-info'>You are submitting an edit
         <strong>suggestion</strong> — hopefully the author will review it
         and accept it.</div>
