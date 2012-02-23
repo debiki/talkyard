@@ -892,7 +892,8 @@ class FormHtml(val config: HtmlConfig, val pageRoot: PageRoot,
                    name='dw-fi-lgi-spl-email-ntf' value='yes'/>
              <label for='dw-fi-lgi-spl-email-ntf'
                   id='dw-fi-lgi-spl-email-ntf-lbl'>
-                <b>Be notified</b> via email on replies to your comments.
+               <b>Be notified</b> via email on replies to your comments.
+               <small>Not yet implemented.</small>
              </label>
             </div>
             <div>
@@ -1206,14 +1207,14 @@ class FormHtml(val config: HtmlConfig, val pageRoot: PageRoot,
     val cssArtclBody =
       if (postToEdit.id == Page.BodyId) " dw-ar-p-bd"
       else ""
-    val submitBtnText = "Save as "+ userName.openOr("...")
+    val submitBtnText = "Submit as "+ userName.openOr("...")
     <form class='dw-f dw-f-e ui-helper-clearfix'
           action={_viewRoot +"edit="+ postToEdit.id}
           accept-charset='UTF-8'
           method='post'>
       { _xsrfToken }
       {/* timeWaistWarning("edits", "are") */}
-      <div class='dw-f-e-inf-save'>Scroll down and click Save when done.</div>
+      <div class='dw-f-e-inf-save'>Scroll down and click Submit when done.</div>
       <div class='dw-f-e-mup'>
         <label for={Inp.Markup}>Markup: </label>
         <select id={Inp.Markup} name={Inp.Markup}>{
@@ -1253,13 +1254,13 @@ class FormHtml(val config: HtmlConfig, val pageRoot: PageRoot,
           if (postToEdit.text == newText) Nil
           else <pre class='dw-e-src-old'>{postToEdit.text}</pre> }
       </div>
-      { termsAgreement("Save as ...") }
+      { termsAgreement("Submit as ...") }
       <div class='dw-f-e-sugg-info'>You are submitting an edit
-        <strong>suggestion</strong> — hopefully someone will review it
+        <strong>suggestion</strong> — hopefully the author will review it
         and accept it.</div>
       <div class='dw-submit-set'>
        <input type='button' class={Inp.Preview} name={Inp.Preview}
-              value='Preview and save ...'/>
+              value='Preview ...'/>
        <input type='submit' class='dw-fi-submit' value={submitBtnText}/>
        <input type='button' class='dw-fi-cancel' value='Cancel'/>
       </div>
