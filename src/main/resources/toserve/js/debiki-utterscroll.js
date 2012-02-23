@@ -161,6 +161,45 @@ Debiki.v0.utterscroll = function(options) {
     if (($.browser.webkit || $.browser.msie) && $target.is('html'))
       return;
 
+    // Workaround a Chrome scrollbar event issue/bug.
+    // - In Chrome, "Scrollbar triggers onmousedown, but fails to trigger
+    // onmouseup" — that's the title of Issue 14204, here:
+    // http://code.google.com/p/chromium/issues/detail?id=14204,
+    // (Also mousemove won't happen!) It's therefore rather complicated
+    // to detect that the user is actually attemepting to drag the
+    // scrollbar, rather than dragscrolling.
+    // - The above target-is-<html> workaround doesn't work:
+    // when you mousedown on a scrollbar *inside* the page,
+    // an event whose target is *not* the <html> happens. The target
+    // is instead the eleme with the scrollbars.
+    // - I think this workaround (see below) cannot replace the above
+    // target-is-<html> workaround, because the <html> is a rather small
+    // elem with overflow: visible, it's width & height wouldn't usually
+    // extend to the mousedown position even if no scrollbar clicked.
+    // - The workaround: Place a wigth & height 100% elem, $ghost,
+    // inside $target, and if the mousedown position is not iside $ghost,
+    // then the scrollbars were clicked.
+    // (What about overflow === 'inherit'? Would anyone ever use that?)
+    if ($.browser.webkit && (
+        $target.css('overflow') === 'auto' ||
+        $target.css('overflow') === 'scroll')) {
+      // Okay, scrollbars might have been clicked, in Chrome.
+      var $ghost = $(
+          '<div style="width: 100%; height: 100%; position: absolute;"></div>');
+      $target.prepend($ghost)
+      // Now $ghost fills up $target, up to the scrollbars.
+      // Check if the click happened outside $ghost.
+      var isScrollbar = false;
+      if (event.pageX > $ghost.offset().left + $ghost.width())
+        isScrollbar = true; // vertical scrollbar clicked, don't dragscroll
+      if (event.pageY > $ghost.offset().top + $ghost.height())
+        isScrollbar = true; // horizontal scrollbar clicked
+      $ghost.remove();
+      if (isScrollbar)
+        return;
+    }
+
+
     // Scroll, unless the mouse down is a text selection attempt:
     // -----
 
