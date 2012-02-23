@@ -2504,7 +2504,11 @@ function $showEditForm2() {
     var $submitBtn = $editForm.find('input.dw-fi-submit');
     var $cancelBtn = $editForm.find('input.dw-fi-cancel');
 
-    var $tabPanelLinks = $editForm.find('.dw-e-tabs > ul > li > a');
+    var $clickPreviewHelp = $editForm.find('.dw-f-e-prvw-info');
+    var $suggestOnlyHelp = $editForm.find('.dw-f-e-sugg-info');
+
+    var $editTabs = $editForm.children('.dw-e-tabs');
+    var $tabPanelLinks = $editTabs.find('> ul > li > a');
     var $editTabLink = $tabPanelLinks.filter('a[href^="#dw-e-tab-edit"]');
     var $diffTabLink = $tabPanelLinks.filter('a[href^="#dw-e-tab-diff"]');
     var $previewTabLink = $tabPanelLinks.filter('a[href^="#dw-e-tab-prvw"]');
@@ -2523,10 +2527,6 @@ function $showEditForm2() {
       $post.each(SVG.$drawParents);
     });
 
-    // Notify the user if s/he is making an edit suggestion only.
-    var hideOrShow = Me.mayEdit($post) ? 'hide' : 'show';
-    $editForm.find('.dw-f-e-sugg-info')[hideOrShow]();
-
     // Find the post's current (old) source text, and store in
     // .dw-e-src-old, so it's easily accessible to $updateEditFormDiff(…).
     if (!$editForm.data('dw-e-src-old')) {
@@ -2542,9 +2542,18 @@ function $showEditForm2() {
       $editForm.data('dw-e-src-old', oldSrc);
     }
 
+    // Don't show until Submit button visible. (Would be too much to read,
+    // because the 'Click Preview then Save' help text is alo visible.)
+    $suggestOnlyHelp.hide();
+
     var showSaveBtnHidePreview = function() {
       $submitBtn.show();
       $previewBtn.hide();
+      // Already clicked Preview, so:
+      $clickPreviewHelp.hide();
+      // Notify the user if s/he is making an edit suggestion only.
+      var hideOrShow = Me.mayEdit($post) ? 'hide' : 'show';
+      $suggestOnlyHelp[hideOrShow]();
     }
 
     // Update the preview, if the markup type is changed.
@@ -2589,7 +2598,7 @@ function $showEditForm2() {
     // the user clicks Enter on the editor *tab link*.
     $editTabLink.keydown(function(event) {
       if (event.which !== $.ui.keyCode.ENTER) return;
-      if ($editForm.tabs('option', 'selected') !== EditTabIdEdit) {
+      if ($editTabs.tabs('option', 'selected') !== EditTabIdEdit) {
         // Only activate the editor if the user clicks when the panel is
         // already  visible. Instead, let jQuery UI handle the click
         // — it will show the edit panel.
@@ -2616,7 +2625,12 @@ function $showEditForm2() {
     // the post itself (below).
     var minPanelHeight = Math.max(140, $postBody.height() + 60);
 
-    $editForm.tabs({
+    // Place the edit/diff/preview tabs below the content, close to the Submit
+    // button. Otherwise people (my father) tend not to notice the tabs,
+    // if the edit form is tall (then there'd be lots of space & text
+    // between the tabs and the submit & cancel button).
+    // Clearfix the tabs, because .dw-p-bd makes the preview tab float left.
+    $editTabs.addClass('dw-ui-tabs-bottom ui-helper-clearfix').tabs({
       selected: EditTabIdEdit,
       show: function(event, ui) {
         $editForm.each($showPreviewBtnHideSave);
@@ -2674,6 +2688,22 @@ function $showEditForm2() {
       }
     });
 
+    // Prevent tab float drop.
+    // If the $editForm is narrow, the tabs will float drop. Since they're
+    // placed below the form, they'll actually float drop *upwards*, and
+    // be hidden below the form. One way to avoid this, is making
+    // the .tabs-nav very wide. (This is a stupid fix — it'll break
+    // should you add perhaps two more tabs.)
+    var $tabsNav = $editTabs.children('.ui-tabs-nav');
+    $tabsNav.css('min-width', '300px');
+
+    // Flip rounded corner placement — because tabs placed below contents.
+    // (See jqueryui.com/demos/tabs/#bottom)
+    $tabsNav.children().andSelf()
+        .removeClass('ui-corner-all ui-corner-top')
+        .addClass('ui-corner-bottom');
+
+    // Show help info.
     // It might not be obvious that you can scroll down and click a Save
     // button. (Neither my mom nor dad found it! when it was off screen.)
     // For now, simply write a tips if it perhaps is off screen.
@@ -2682,7 +2712,7 @@ function $showEditForm2() {
 
     // Show the preview tab on 'Preview and save ...' click.
     $previewBtn.click(function() {
-      $editForm.tabs('select', EditTabIdPreview);
+      $editTabs.tabs('select', EditTabIdPreview);
       showSaveBtnHidePreview();
       return false;
     });
