@@ -1449,8 +1449,8 @@ function confirmClosePage() {
     return $(this).find('textarea').val().length > 0;
   }).length;
   var editCount = $('.dw-f-e:visible').length;
-  var msg = replyCount + editCount > 0 ?
-    'You have started writing. Really close page?' :  // i18n
+  var msg = replyCount + editCount > 0 ?  // i18n
+    'You have started writing but not saved your work. Really close page?' :
     undefined;  // don't return null, or IE asks roughly `confirm null?'
   return msg;
 }
@@ -1976,11 +1976,11 @@ function initLoginSimple() {
     resizable: false,
     zIndex: 1190,  // the default, 1000, is lower than <form>s z-index
     buttons: {
+      Submit: function() {
+        $loginForm.submit();
+      },
       Cancel: function() {
         $(this).dialog('close');
-      },
-      OK: function() {
-        $loginForm.submit();
       }
     },
     close: function() {
