@@ -1467,6 +1467,7 @@ key presses).*/
 
 /* (Some properties defined elsewhere, search for dw-e-tab.) */
 
+.dw-pri .dw-f-e .dw-e-tabs,
 .dw-pri .dw-f-e .ui-widget-header, /* not needed, done in jQuery UI integr. */
 .dw-pri .dw-f-e.ui-widget-content {
   background: transparent;
@@ -1480,11 +1481,9 @@ body.dw-ui-simple .dw-f-e-mup { display: none; }
   overflow: auto;
   padding: 0;
 }
-/* ... the textarea is outlined on :focus — add 1px paddding so the
-outline is visible. But not at the top, or the outline would underline
-the jQuery UI tab. */
+/* ... the textarea is outlined on :focus — add paddding so outline visible. */
 .dw-pri .dw-f-e .dw-e-tab-edit {
-  padding: 0 1px 1px;
+  padding: 1px;
 }
 /* ... change padding for root post preview /* and fix a bug */
 .dw-depth-0 > .dw-p > .dw-f-e .dw-e-tab-prvw {
@@ -1524,6 +1523,7 @@ visibility:hidden) — some jQuery UI weird internal stuff? */
 
 
 .dw-f-e-inf-save,
+.dw-f-e .dw-f-e-prvw-info,
 .dw-f-e .dw-f-e-sugg-info { /* COULD rename to .dw-f-e-inf-sg? */
   margin-top: 1em;
   padding: 6px;
@@ -1756,6 +1756,67 @@ debiki-lift.css less inclusive? */
 .dw-pri .ui-tabs .ui-tabs-panel {
   border: 1px solid #BBB;
 }
+
+
+/* Tabs placed below their content, see: jqueryui.com/demos/tabs/#bottom */
+.dw-ui-tabs-bottom {
+  position: relative;
+}
+.dw-ui-tabs-bottom > .ui-tabs-panel {
+  height: 140px;
+  overflow: auto;
+} 
+.dw-pri .dw-ui-tabs-bottom > .ui-tabs-nav {
+  position: absolute !important;
+  left: 0;
+  bottom: 0;
+  right:0;
+  padding: 2px 2px 0;
+} 
+.dw-ui-tabs-bottom > .ui-tabs-nav li {
+  margin-top: -2px !important;
+  margin-bottom: 3px !important;  /* [debiki] changed from 1px to 3px */
+  border-bottom-width: 1px;
+  border-top: 2px transparent;
+}
+.dw-ui-tabs-bottom > .ui-tabs-nav > .ui-tabs-selected {
+  margin-top: -2px !important;
+}
+/* ... My additional fixes */
+.dw-ui-tabs-bottom > .ui-tabs-panel {
+  margin-bottom: 29px; /* push the tab naw downwards */
+  z-index: 1; /* place above, and hide, tab nav button upper borders */
+  position: relative; /* or z-index ignored */
+  background: white !important; /* or won't hide tab nav button upper borders */
+}
+/* ... Make the selected tab nav button's upper border hide the tab panels
+lower border, so there's effectively no border (since background is white)
+between the active tab and the tab panel */
+/* Skip this, the white border overlaps the scrollbar.
+And on focus, the tab <li> is outlined (which is fairly nice actualy),
+so there's a border regardless. */
+/* .dw-ui-tabs-bottom > .ui-tabs-nav > li.ui-tabs-selected { */
+  /* border-top: 2px white; /* same as background color */
+  /* z-index: 2; /* place above panel (hides the panel border) */
+/*}*/
+.dw-pri .dw-ui-tabs-bottom .ui-tabs-nav li {
+  border-bottom: 1px solid !important; /* cancel hiding of bottom border */
+}
+/* ... Don't let other CSS override font size etcetera, that'd affect the
+tap height — they might overlap with the tab panel, or there might be a glap.
+Alternatively, COULD config jQuery UI with #dw-pri (instead of .dw-pri),
+then other CSS wouldn't override jQuery UI so easily. */
+.dw-pri.dw-pri .ui-tabs-nav li a {
+  font-family: Trebuchet MS, Tahoma, Verdana, Arial, sans-serif;
+  font-size: 13px;
+  line-height: 17px;
+}
+/* ... Remove "outline border" between active tab and panel
+ — no keep it, it's nice to have * /
+.dw-pri.dw-pri .ui-tabs-nav li.ui-tabs-selected a {
+  outline: none; /* or .ui-state-focus on parent <li> —> outline * /
+}*/
+
 
 /* Undo settings to .dw-pri .ui-widget, when they affect contents
 inside widgets, rather than buttons and tabs. */
