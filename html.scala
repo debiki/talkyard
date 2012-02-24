@@ -356,6 +356,7 @@ class DebateHtml(val debate: Debate, val pageTrust: PageTrust) {
       cssThreadId = "dw-t-"+ p.id
       cssDepth = "dw-depth-"+ depth
       isInlineThread = p.where.isDefined
+      isInlineNonRootChild = isInlineThread && depth >= 2
       cssInlineThread = if (isInlineThread) " dw-i-t" else ""
       replies = debate.repliesTo(p.id)
       vipo = p // debate.vipo_!(p.id)
@@ -377,8 +378,10 @@ class DebateHtml(val debate: Debate, val pageTrust: PageTrust) {
       // For now: If with a probability of 90%, most people find this post
       // boring/faulty/off-topic, and if, on average,
       // more than two out of three people think so too, then fold it.
-      shallFoldPost = postFitness.upperLimit < 0.5f &&
-         postFitness.observedMean < 0.333f
+      // Also fold inline threads (except for root post inline replies)
+      // -- they confuse people (my father), in their current shape.
+      shallFoldPost = (postFitness.upperLimit < 0.5f &&
+         postFitness.observedMean < 0.333f) || isInlineNonRootChild
     }
     yield {
       val renderedComment: RenderedComment =
