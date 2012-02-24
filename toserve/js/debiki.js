@@ -1695,11 +1695,13 @@ function slideInActionForm($form, $where) {
     $form.each($slideDown);
   }
 
-  // Cancel extra width. Or add even more width, to prevent float drops
-  // -- needs to be done also when sliding downwards, since that sometimes 
+  // Scroll form into view, and cancel extra width.
+  // Or add even more width, to prevent float drops
+  // -- needs to be done also when sliding downwards, since that sometimes
   // makes the root thread child threads wider.
   $form.queue(function(next){
       resizeRootThreadNowAndLater();
+      $form.dwScrollIntoView();
       next();
     });
 }
