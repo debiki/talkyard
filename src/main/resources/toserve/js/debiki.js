@@ -2543,6 +2543,10 @@ function $showEditForm2() {
       .find('input.dw-fi-e-prvw').show();
   }
 
+  function scrollPostIntoView() {
+    $post.dwScrollIntoView({ marginLeft: 40, marginTop: -35 });
+  }
+
   // If the edit form has already been opened, but hidden by a Cancel click,
   // reuse the old hidden form, so any edits aren't lost.
   var $oldEditForm = $post.children('.dw-f-e');
@@ -2551,6 +2555,7 @@ function $showEditForm2() {
     $oldEditForm.tabs('select' , EditTabIdEdit);
     $oldEditForm.show();
     $postBody.hide();
+    scrollPostIntoView();
     return;
   }
 
@@ -2613,6 +2618,7 @@ function $showEditForm2() {
       // Notify the user if s/he is making an edit suggestion only.
       var hideOrShow = Me.mayEdit($post) ? 'hide' : 'show';
       $suggestOnlyHelp[hideOrShow]();
+      $editForm.children('.dw-submit-set').dwScrollIntoView();
     }
 
     // Update the preview, if the markup type is changed.
@@ -2681,8 +2687,14 @@ function $showEditForm2() {
     }
 
     // Sometimes we'll make the panels at least as tall as
-    // the post itself (below).
+    // the post itself (below). But not large enough to push the
+    // Submit/Cancel buttons of screen, if editing the root post
+    // and the page title is visible (at the top of the page).
+    var approxTitleAndBtnsHeight = 260; // page title + tabs + submit buttons
+    var maxPanelHeight = Math.max(
+        140, $(window).height() - approxTitleAndBtnsHeight);
     var minPanelHeight = Math.max(140, $postBody.height() + 60);
+    if (minPanelHeight > maxPanelHeight) minPanelHeight = maxPanelHeight;
 
     // Place the edit/diff/preview tabs below the content, close to the Submit
     // button. Otherwise people (my father) tend not to notice the tabs,
@@ -2720,6 +2732,9 @@ function $showEditForm2() {
         // Then e.g. CodeMirror can make the root post editor taller
         // dynamically, and the preview panel adjusts its size.
         $panel.height('auto');
+
+        // But don't push the Submit/Cancel buttons of screen.
+        $panel.css('max-height', maxPanelHeight +'px');
 
         // If CodeMirror isn't enabled and thus auto-resize the <textarea>,
         // then resize it manually, so it's as tall as the other panels.
@@ -2814,6 +2829,7 @@ function $showEditForm2() {
     // Finally,
     activateShortcutReceiver($editForm);
     focusEditor();
+    scrollPostIntoView();
   });
 }
 
