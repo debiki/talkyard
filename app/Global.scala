@@ -84,7 +84,11 @@ object Global extends GlobalSettings {
       case "view" => App.viewPost(pagePath, postId = mainFunVal)
       case "feed" => App.feedNews(pagePath)
       // If no main function specified:
-      case "" =>  App.viewPost(pagePath, postId = Page.BodyId)
+      case "" =>
+        pagePath.suffix match {
+          case "css" => App.rawBody(pagePath)
+          case _ => App.viewPost(pagePath, postId = Page.BodyId)
+        }
       // If invalid function specified:
       case x => return badRequest(
         "DwEQ435", "Bad query string main function: ?"+ x)

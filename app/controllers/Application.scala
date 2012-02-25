@@ -14,8 +14,8 @@ object Application extends Controller {
     Ok("editPost("+ pathIn +", "+ pageRoot +", "+ postId +")")
   }
 
-  def viewPost(pathIn: PagePath, postId: String) =
-        RedirectBadPath(pathIn) { (pathOk, request) =>
+  def viewPost(pathIn: PagePath, postId: String) = RedirBadPath(pathIn) {
+        (pathOk, request) =>
     val requestInfo = RequestInfo(  // COULD rename to DebikiRequest?
       tenantId = pathIn.tenantId,
       ip = "?.?.?.?",
@@ -27,6 +27,20 @@ object Application extends Controller {
     val pageRoot = PageRoot.Real(postId)
     val pageHtml = Debiki.TemplateEngine.renderPage(requestInfo, pageRoot)
     Ok(pageHtml).as(HTML)
+  }
+
+  def rawBody(pathIn: PagePath) = RedirBadPath(pathIn) {
+        (pathOk, request) =>
+    Debiki.Dao.loadPage(pathOk.tenantId, pathOk.pageId.get) match {
+      case Full(page) =>
+        Ok(page.body_!.text) as (pathOk.suffix match {
+          case "css" => CSS
+          case _ => unimplemented
+        })
+      // The page might have been deleted, just after the access control step:
+      case Empty => NotFound("Hmm")
+      case f: Failure => unimplemented // COULD stop using boxes
+    }
   }
 
   def feedNews(pathIn: PagePath) = Action {
@@ -41,7 +55,7 @@ object Application extends Controller {
     Ok(views.html.index("index = Action"))
   }
 
-  def RedirectBadPath(
+  def RedirBadPath(
         pathIn: PagePath)(f: (PagePath, Request[AnyContent]) => Result)
         : Action[_] = Action { request =>
     Debiki.Dao.checkPagePath(pathIn) match {
