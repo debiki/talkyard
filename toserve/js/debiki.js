@@ -436,13 +436,6 @@ function $threadToggleFolded() {
 // or a reply/rate/edit form is shown/resized, the east-most threads
 // will float-drop below the other threads.
 function resizeRootThreadImpl(extraWidth) {
-  // Undo any <svg> width & height problem workaround (see the end of
-  // this function). Otherwise the $rootThread will always be as wide as
-  // its parent (because the $rootThread would have children > 100% wide).
-  var svgZoomBug = $.browser.webkit;
-  if (svgZoomBug)
-    $('svg').css('width', '').css('height', '');
-
   // Let the root thead, which floats: left, expand eastwards as much as
   // it needs to — by making its parent very very wide.
   var $rootThread = $('.dw-depth-0');
@@ -466,18 +459,6 @@ function resizeRootThreadImpl(extraWidth) {
   // }}}
   var requiredWidth = $rootThread.width();
   $parent.width(requiredWidth + (extraWidth ? 2200 : 200));
-
-  // Chrome (not IE, FF, Opera) truncates half the <svg>
-  // elems if zoom is 50%. Compensate this weird behaviour by roughly
-  // doubling the <svg> elem size — however to avoid a very large <svg>s,
-  // we can calculate the zoom factor and scale up the <svg> by that factor.
-  // (Don't do this until after the width tests have been done above.)
-  if (svgZoomBug) {
-    // outerWidth is measured in screen pixels, innerWidth in CSS pixels.
-    // So outerWidth / innerWidth is the zoom %.
-    var invZoom = (window.innerWidth / window.outerWidth * 100) +'%';
-    $('svg').css('width', invZoom).css('height', invZoom);
-  }
 
   /* [Is this still needed?]
   // Set the min width to something wider than the max width of a
