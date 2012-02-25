@@ -5,11 +5,13 @@
 # In Global.scala, routing is intercepted, and editPost/createPage/etc
 # are called, based on the query string (e.g. ?edit=... or ?create-page).
 
-# Static resources
-GET   /-/assets/*file         controllers.Assets.at(path="/public", file)
-
 # API calls
 GET   /-/api/*apiPath         controllers.Application.callApi(apiPath)
+
+# Static resources
+GET   /classpath/js/debiki-lift.js  controllers.Assets.at(path="/public/debiki-app-lift-resources/", file="debiki-lift.js")
+GET   /classpath/*file        controllers.Assets.at(path="/public/debiki-core-resources", file)
+GET   /-/*file                controllers.Assets.at(path="/public/site-debiki.se-resources", file)
 
 # Home page
 GET   /                       controllers.Application.index

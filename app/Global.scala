@@ -20,7 +20,9 @@ object Global extends GlobalSettings {
     import DebikiHttp.{notFound, badRequest, redirect}
 
     // Ignore the internal API and Javascript and CSS etcetera, in /-/.
-    if (request.path startsWith "/-/")
+    // Right now, when porting from Lift-Web, /classpath/ is also magic.
+    if (request.path.startsWith("/-/") ||
+        request.path.startsWith("/classpath/"))
       return super.onRouteRequest(request)
 
     // Lookup tenant id in database. (Should cache it.)
@@ -59,7 +61,7 @@ object Global extends GlobalSettings {
     val version = 0
     val versionPrefix = ""
     val mainFun = versionAndMainFun
-    
+
     // Find parameters common to almost all requests.
     val pageRoot: PageRoot =
       request.queryString.get("view").map(rootPosts => rootPosts.size match {
