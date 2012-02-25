@@ -19,7 +19,8 @@ object ApplicationBuild extends Build {
     dependsOn(debikiCore, debikiTckDao % "test"))
 
   val appDependencies = Seq(
-    // Add your project dependencies here,
+    "net.liftweb" %% "lift-common" % "2.4-M5",
+    "net.liftweb" %% "lift-util" % "2.4-M5"
   )
 
   val main = PlayProject(appName, appVersion, appDependencies, mainLang = SCALA
