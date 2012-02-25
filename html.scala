@@ -790,7 +790,6 @@ class FormHtml(val config: HtmlConfig, val pageRoot: PageRoot,
     <a rel="license" href="http://creativecommons.org/licenses/by/3.0/"
        target="_blank">CC BY-SA 3.0</a>
 
-  private[v0]
   def dialogTemplates =
     <div id="dw-hidden-templates">
     { actionMenu ++
