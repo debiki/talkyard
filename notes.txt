@@ -1,0 +1,6 @@
+
+Tip: The default content size can be defined in application.conf:
+parsers.text.maxLength=128K
+https://github.com/playframework/Play20/wiki/ScalaBodyParsers
+
+
