@@ -42,6 +42,11 @@ case class PagePath(  // COULD move to debate.scala.  Rename to RequestPath?
       folder + pageSlug
     }
 
+  def suffix: String = (pageSlug lastIndexOf '.') match {
+    case -1 => ""
+    case lastDot => pageSlug.substring(lastDot + 1)
+  }
+
   def slugOrIdOrQustnMark =
     if (pageSlug nonEmpty) pageSlug else pageId.map("-"+ _) getOrElse "?"
 
