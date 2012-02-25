@@ -1227,6 +1227,30 @@ function $splitBodyPlaceInlines() {
   });
 }
 
+function $showInlineReply() {
+  /*
+  Could design a Page Object API that allows me to write:
+    var thread = Thread.fromHash(this.hash);
+    if (thread.isFolded()) thread.unfold()
+    thread.getPost().scrollIntoView().highlight();
+  Or simply:
+    Post.fromThreadHash(this.hash).showAndHighlight();
+  — Later, when I've ported to Play 2 and can use Coffeescript :-)
+  */
+  var $thread = $(this.hash);
+  var postHash = '#dw-post-'+ this.hash.substr(6, 999); // drops '#dw-t-'
+  var $post = $(postHash);
+  // Ensure inline thread not folded.
+  if ($thread.is('.dw-zd')) {
+    $thread.children('.dw-z').click();
+  }
+  $post.dwScrollIntoView();
+  $post.children('.dw-p-bd, .dw-p-hd').effect(
+      'highlight', { easing: 'easeInExpo', color: 'yellow' }, 1500);
+  // Would be nice if also:  outline: solid medium #f0a005;
+  return false;
+}
+
 function $inlineMarkHighlightOn() {
   var threadId = this.hash.substr(1, 999); // drops '#'
   toggleInlineHighlight(threadId, true);
@@ -4104,6 +4128,9 @@ function registerEventHandlers() {
       '.dw-fs-re .dw-fi-cancel, ' +
       '.dw-fs-r .dw-fi-cancel',
       'click', $removeClosestForms);
+
+  // Show the related inline reply, on inline mark click.
+  $('.debiki').delegate('a.dw-i-m-start', 'click', $showInlineReply);
 
   window.onbeforeunload = confirmClosePage;
 
