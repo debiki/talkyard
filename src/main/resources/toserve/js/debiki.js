@@ -2643,7 +2643,12 @@ function $showEditForm2() {
       codeMirrorEditor = CodeMirror.fromTextArea(
           $editPanel.children('textarea')[0], {
         lineNumbers: true, //isRootPost,
-        lineWrapping: true,
+        // There's a line wrap bug that causes the cursor to get stuck
+        // when you press the Down arrow. Email thread:
+        // groups.google.com/group/codemirror/browse_frm/thread/78f64f760e9e09ae
+        // JsBin example: http://jsbin.com/otogik/2/edit#javascript,html,live
+        // So disable line wrapping, for now. (CodeMirror v2.22)
+        // lineWrapping: true,
         mode: "text/html", // for now
         tabMode: "indent"
       });
