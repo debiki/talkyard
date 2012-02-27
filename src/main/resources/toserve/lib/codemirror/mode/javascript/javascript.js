@@ -69,7 +69,7 @@ CodeMirror.defineMode("javascript", function(config, parserConfig) {
       else if (state.reAllowed) {
         nextUntilUnescaped(stream, "/");
         stream.eatWhile(/[gimy]/); // 'y' is "sticky" option in Mozilla
-        return ret("regexp", "string");
+        return ret("regexp", "string-2");
       }
       else {
         stream.eatWhile(isOperatorChar);
@@ -334,7 +334,7 @@ CodeMirror.defineMode("javascript", function(config, parserConfig) {
       if (stream.eatSpace()) return null;
       var style = state.tokenize(stream, state);
       if (type == "comment") return style;
-      state.reAllowed = type == "operator" || type == "keyword c" || type.match(/^[\[{}\(,;:]$/);
+      state.reAllowed = !!(type == "operator" || type == "keyword c" || type.match(/^[\[{}\(,;:]$/));
       state.kwAllowed = type != '.';
       return parseJS(state, style, type, content, stream);
     },

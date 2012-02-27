@@ -8,12 +8,12 @@ CodeMirror's author: Marijn Haverbeke
 CodeMirror's license: MIT-style (see LICENSE file in this directory)
 
 From Git repo: http://marijnhaverbeke.nl/git/codemirror2
-Commit: 1db061a118fa79243e2f4e0416087f35582c8780
-Date: Thu Jan 19 10:55:57 2012 +0100
+Commit: 04ba2db925f29594bddea1b907ad15b4e3496aee  (one commit after v2.22)
+Date: Mon Feb 27 15:18:15 2012 +0400
 
-Here are the files included:  (as of 2012-01-19)
+Here are the files included:  (as of 2012-02-27)
 
-$ tree -f 
+$ tree -f
 .
 ├── ./debiki-readme.txt
 ├── ./keymap
