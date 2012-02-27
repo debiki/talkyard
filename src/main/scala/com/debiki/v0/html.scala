@@ -774,7 +774,7 @@ object FormHtml {
       (if (details nonEmpty)
         <span class='dw-dlg-rsp-dtl'>{details} </span> else Nil) ++
       (if (debikiErrorCode nonEmpty)
-        <span class='dw-dlg-rsp-err'>{debikiErrorCode}</span> else Nil)
+        <span class='dw-dlg-rsp-err'>[error {debikiErrorCode}]</span> else Nil)
     }</div>
   }
 }
