@@ -6,7 +6,13 @@
 # are called, based on the query string (e.g. ?edit=... or ?create-page).
 
 # API calls
-GET   /-/api/*apiPath         controllers.Application.callApi(apiPath)
+# Would be nice to change to <path>?login-simple / ?logout / etcetera,
+# so the actual page will be included in the request. Then one would know
+# on which page did the user start/end the session. But for now:
+POST  /-/api/login-simple     controllers.AppAuth.loginSimple
+GET   /-/api/login-simple     controllers.AppAuth.loginSimple
+POST  /-/api/logout           controllers.AppAuth.logout
+GET   /-/api/logout           controllers.AppAuth.logout
 
 # Static resources
 GET   /classpath/js/debiki-lift.js  controllers.Assets.at(path="/public/debiki-app-lift-resources/", file="debiki-lift.js")

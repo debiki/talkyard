@@ -17,7 +17,12 @@ object Global extends GlobalSettings {
    */
   override def onRouteRequest(request: RequestHeader): Option[Handler] = {
 
-    import DebikiHttp.{notFound, badRequest, redirect}
+    def notFound(errCode: String, message: String): Option[Handler] =
+      Some(Action { DebikiHttp.NotFoundResult(errCode, message) })
+    def badRequest(errCode: String, message: String): Option[Handler] =
+      Some(Action { DebikiHttp.BadReqResult(errCode, "Bad URL: "+ message) })
+    def redirect(newPath: String): Option[Handler] =
+      Some(Action { Results.Redirect(newPath) })
 
     // Ignore the internal API and Javascript and CSS etcetera, in /-/.
     // Right now, when porting from Lift-Web, /classpath/ is also magic.
@@ -74,13 +79,16 @@ object Global extends GlobalSettings {
     // Query string param value lookup.
     def firstValueOf(param: String): Option[String] =
       request.queryString.get(param).map(_.headOption).getOrElse(None)
-    def mainFunVal: String =
+    def mainFunVal: String =  // COULD be Option instead, change "" to None
       firstValueOf(versionAndMainFun) getOrElse ""
+    lazy val mainFunVal_! : String = firstValueOf(versionAndMainFun).getOrElse(
+      return badRequest("DwE0k32", "No post to edit specified"))
 
     // Route based on the query string.
-    val App = controllers.Application
+    import controllers._
+    val App = Application
     val action = mainFun match {
-      case "edit" => App.editPost(pagePath, pageRoot, postId = mainFunVal)
+      case "edit" => AppEdit.editPost(pagePath, pageRoot, postId = mainFunVal_!)
       case "view" => App.viewPost(pagePath, postId = mainFunVal)
       case "feed" => App.feedNews(pagePath)
       // If no main function specified:
@@ -95,12 +103,6 @@ object Global extends GlobalSettings {
     }
     Some(action)
   }
-
-
-  // Could:
-  // override def onError(request: RequestHeader, ex: Throwable)
-  // override def onBadRequest
-  // override def onActionNotFound
 
 }
 

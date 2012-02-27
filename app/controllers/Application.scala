@@ -1,20 +1,20 @@
+/**
+ * Copyright (c) 2012 Kaj Magnus Lindberg (born 1979)
+ */
+
 package controllers
 
-import com.debiki.v0
-import com.debiki.v0.{PagePath, PageRoot, RequestInfo}
+import com.debiki.v0._
 import com.debiki.v0.Prelude._
 import debiki._
 import net.liftweb.common.{Box, Full, Empty, Failure}
 import play.api._
-import play.api.mvc._
+import play.api.mvc.{Action => _, _}
+import Actions._
 
-object Application extends Controller {
+object Application extends mvc.Controller {
 
-  def editPost(pathIn: PagePath, pageRoot: PageRoot, postId: String) = Action {
-    Ok("editPost("+ pathIn +", "+ pageRoot +", "+ postId +")")
-  }
-
-  def viewPost(pathIn: PagePath, postId: String) = RedirBadPath(pathIn) {
+  def viewPost(pathIn: PagePath, postId: String) = RedirBadPathAction(pathIn) {
         (pathOk, request) =>
     val requestInfo = RequestInfo(  // COULD rename to DebikiRequest?
       tenantId = pathIn.tenantId,
@@ -29,7 +29,7 @@ object Application extends Controller {
     Ok(pageHtml).as(HTML)
   }
 
-  def rawBody(pathIn: PagePath) = RedirBadPath(pathIn) {
+  def rawBody(pathIn: PagePath) = RedirBadPathAction(pathIn) {
         (pathOk, request) =>
     Debiki.Dao.loadPage(pathOk.tenantId, pathOk.pageId.get) match {
       case Full(page) =>
@@ -43,28 +43,12 @@ object Application extends Controller {
     }
   }
 
-  def feedNews(pathIn: PagePath) = Action {
+  def feedNews(pathIn: PagePath) = mvc.Action {
     Ok("feedNews("+ pathIn +")")
   }
 
-  def callApi(apiPath: String) = Action {
-    Ok("callApi("+ apiPath +")")
-  }
-
-  def index = Action {
+  def index = mvc.Action {
     Ok(views.html.index("index = Action"))
-  }
-
-  def RedirBadPath(
-        pathIn: PagePath)(f: (PagePath, Request[AnyContent]) => Result)
-        : Action[_] = Action { request =>
-    Debiki.Dao.checkPagePath(pathIn) match {
-      case Full(correct: PagePath) =>
-        if (correct.path == pathIn.path) f(correct, request)
-        else Results.MovedPermanently(correct.path)
-      case Empty => Results.NotFound("404 Page not found: "+ pathIn.path)
-      case f: Failure => runErr("DwE03ki2", "Internal error"+ f.toString)
-    }
   }
 
 }
