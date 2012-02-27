@@ -36,6 +36,7 @@ CodeMirror.defineMode("less", function(config) {
       	return tokenSComment(stream, state);
       }else{
 	stream.eatWhile(/[\a-zA-Z0-9\-_.]/);
+	if(stream.peek() == ")" || stream.peek() == "/")return ret("string", "string");//let url(/images/logo.png) without quotes return as string
         return ret("number", "unit");
       }
     }
@@ -53,7 +54,7 @@ CodeMirror.defineMode("less", function(config) {
     else if (/[;{}:\[\]()]/.test(ch)) { //added () char for lesscss original was [;{}:\[\]]
       if(ch == ":"){
 	stream.eatWhile(/[active|hover|link|visited]/);
-	if( stream.current().match(/[active|hover|link|visited]/)){
+	if( stream.current().match(/active|hover|link|visited/)){
 	  return ret("tag", "tag");
 	}else{
 	  return ret(null, ch);	
@@ -85,13 +86,15 @@ CodeMirror.defineMode("less", function(config) {
       return ret(null, ch);
     }
     else {
-      stream.eatWhile(/[\w\\\-_.%{]/);
+      stream.eatWhile(/[\w\\\-_.%]/);
       if( stream.eat("(") ){ // lesscss
 	return ret(null, ch);
       }else if( stream.current().match(/\-\d|\-.\d/) ){ // lesscss match e.g.: -5px -0.4 etc...
 	return ret("number", "unit");
       }else if( inTagsArray(stream.current()) ){ // lesscss match html tags
 	return ret("tag", "tag");
+      }else if( (stream.peek() == ")" || stream.peek() == "/") && stream.current().indexOf('.') !== -1){
+	return ret("string", "string");//let url(logo.png) without quotes and froward slash return as string
       }else{
       	return ret("variable", "variable");
       }
