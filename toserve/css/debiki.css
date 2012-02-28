@@ -1544,6 +1544,15 @@ visibility:hidden) — some jQuery UI weird internal stuff? */
   float: none; /* or it floats to the left of the edit tabs */
 }
 
+/* Place the stubmit buttons close to the edit form, away from
+replies/arrows below, so it's easy to see what they are
+related to. */
+.dw-f-e .dw-submit-set {
+  margin-top: 0.5em;
+  margin-bottom: 1em;
+}
+
+
 /* === Edit history / suggestions === */  /* — old not in use? */
 
 .dw-fs-e { /* currently almost identical to <form> */

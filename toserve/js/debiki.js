@@ -854,19 +854,29 @@ function $initPostsThreadStep1() {
 // Things that can be done a while after page load.
 function $initPostsThreadStep2() {
   var $thread = $(this).closest('.dw-t');
-  var $paras = $thread.filter(':not(.dw-depth-0)').children('.dw-p');
+  var $post = $thread.filter(':not(.dw-depth-0)').children('.dw-p');
 
   // When hovering a post, show actions, and make it resizable.
   // But always show the leftmost Reply, at depth-0, that creates a new column.
   // (Better avoid delegates for frequent events such as mouseenter.)
-  $paras.mouseenter(function() {
+  $post.mouseenter(function() {
     var $i = $(this);
+
     // If actions are already shown for an inline child post, ignore event.
     // (Sometimes the mouseenter event is fired first for an inline child
     // post, then for its parent — and then actions should be shown for the
     // child post; the parent should ignore the event.)
-    if (!$i.find('#dw-p-as-shown').length)
+    var inlineChildActionsShown = $i.find('#dw-p-as-shown').length;
+
+    // If the post is being edited, show no actions.
+    // (It's rather confusing to be able to Reply to the edit <form>.)
+    var isBeingEdited = $i.children('.dw-f-e:visible').length;
+
+    if (isBeingEdited)
+      hideActions();
+    else if (!inlineChildActionsShown)
       $i.each($showActions);
+    // else leave actions visible, below the inline child post.
 
     // {{{ Resizing of posts — disabled
     // This takes really long (700 ms on my 6 core 2.8 GHz AMD) if done
@@ -1522,13 +1532,17 @@ function confirmClosePage() {
 // Shows actions for the current post, or the last post hovered.
 function $showActions() {
   // Hide any action links already shown; show actions for one post only.
-  $('#dw-p-as-shown')
-      .css('visibility', 'hidden')
-      .removeAttr('id');
+  hideActions();
   // Show links for the the current post.
   $(this).closest('.dw-t').children('.dw-as')
     .css('visibility', 'visible')
     .attr('id', 'dw-p-as-shown');
+}
+
+function hideActions() {
+  $('#dw-p-as-shown')
+      .css('visibility', 'hidden')
+      .removeAttr('id');
 }
 
 function $slideUp() {
@@ -2532,6 +2546,9 @@ function $showEditForm2() {
   var postId = $post.attr('id').substr(8, 999); // drop initial "dw-post-"
   var isRootPost = $post.parent().is('.dw-depth-0');
 
+  // It's confusing with Reply/Rate/etc below the edit form.
+  hideActions();
+
   // COULD move function to debiki-lift.js:
   var editFormLoader = function(debateId, rootPostId, postId, complete) {
     // see comments in setReplyFormLoader above on using datatype text
@@ -2543,11 +2560,9 @@ function $showEditForm2() {
     }, 'text');
   };
 
-  function $showPreviewBtnHideSave() {
-    // A submit button click doesn't submit, but shows the preview tab,
-    // unless the preview tab is already visible — then it submits.
-    $(this).find('input.dw-fi-submit').hide().end()
-      .find('input.dw-fi-e-prvw').show();
+  function $disableSubmitBtn() {
+    $(this).find('input.dw-fi-submit').button({ disabled: true }).end()
+        .find('.dw-f-e-prvw-info').show();
   }
 
   function scrollPostIntoView() {
@@ -2558,8 +2573,8 @@ function $showEditForm2() {
   // reuse the old hidden form, so any edits aren't lost.
   var $oldEditForm = $post.children('.dw-f-e');
   if ($oldEditForm.length) {
-    $oldEditForm.each($showPreviewBtnHideSave);
-    $oldEditForm.tabs('select' , EditTabIdEdit);
+    $oldEditForm.each($disableSubmitBtn);
+    $oldEditForm.find('.dw-e-tabs').tabs('select' , EditTabIdEdit);
     $oldEditForm.show();
     $postBody.hide();
     scrollPostIntoView();
@@ -2571,7 +2586,6 @@ function $showEditForm2() {
     var $editPanel = $panels.filter('[id^="dw-e-tab-edit"]');
     var $diffPanel = $panels.filter('[id^="dw-e-tab-diff"]');
     var $previewPanel = $panels.filter('[id^="dw-e-tab-prvw"]');
-    var $previewBtn = $editForm.find('input.dw-fi-e-prvw');
     var $submitBtn = $editForm.find('input.dw-fi-submit');
     var $cancelBtn = $editForm.find('input.dw-fi-cancel');
 
@@ -2586,8 +2600,7 @@ function $showEditForm2() {
 
     var codeMirrorEditor = null;
 
-    $previewBtn.button();
-    $submitBtn.button().hide();  // you need to preview before submit
+    $submitBtn.button({ disabled: true }); // you need to preview before submit
     $cancelBtn.button();
 
     $editForm.insertBefore($postBody);
@@ -2617,10 +2630,8 @@ function $showEditForm2() {
     // because the 'Click Preview then Save' help text is alo visible.)
     $suggestOnlyHelp.hide();
 
-    var showSaveBtnHidePreview = function() {
-      $submitBtn.show();
-      $previewBtn.hide();
-      // Already clicked Preview, so:
+    var enableSubmitBtn = function() {
+      $submitBtn.button({ disabled: false });
       $clickPreviewHelp.hide();
       // Notify the user if s/he is making an edit suggestion only.
       var hideOrShow = Me.mayEdit($post) ? 'hide' : 'show';
@@ -2716,8 +2727,6 @@ function $showEditForm2() {
     $editTabs.addClass('dw-ui-tabs-bottom ui-helper-clearfix').tabs({
       selected: EditTabIdEdit,
       show: function(event, ui) {
-        $editForm.each($showPreviewBtnHideSave);
-
         // Sync the edit panel <textarea> with any codeMirrorEditor,
         // so the diff and preview tabs will work correctly.
         if (codeMirrorEditor) codeMirrorEditor.save();
@@ -2735,7 +2744,7 @@ function $showEditForm2() {
           case $previewPanel.attr('id'):
             $previewTabLink.focus();
             $(this).each($updateEditFormPreview);
-            showSaveBtnHidePreview();
+            enableSubmitBtn();
             break;
           default: die('[error DwE4krERS]');
         };
@@ -2795,13 +2804,6 @@ function $showEditForm2() {
     // For now, simply write a tips if it perhaps is off screen.
     if ($editForm.height() > 650)
       $editForm.children('.dw-f-e-inf-save').show();
-
-    // Show the preview tab on 'Preview and save ...' click.
-    $previewBtn.click(function() {
-      $editTabs.tabs('select', EditTabIdPreview);
-      showSaveBtnHidePreview();
-      return false;
-    });
 
     // When clicking the Save button, open a login dialog, unless logged in.
     $submitBtn.each($loginOnClick(function(event, userName) {
