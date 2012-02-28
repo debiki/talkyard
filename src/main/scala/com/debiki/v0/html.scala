@@ -744,7 +744,6 @@ object FormHtml {
     object InputNames {
       val Markup = "dw-fi-e-mup"
       val Text = "dw-fi-e-txt"
-      val Preview = "dw-fi-e-prvw"
     }
   }
 
@@ -1257,14 +1256,12 @@ class FormHtml(val config: HtmlConfig, val pageRoot: PageRoot,
           else <pre class='dw-e-src-old'>{postToEdit.text}</pre> }
       </div>
       { termsAgreement("Submit as ...") }
-      <div class='dw-f-e-prvw-info'>Click <em>Preview</em> then <em>Submit</em>.
+      <div class='dw-f-e-prvw-info'>To submit, first click <em>Preview</em>
+        (just above).
       </div>
-      <div class='dw-f-e-sugg-info'>You are submitting an edit
-        <strong>suggestion</strong> — hopefully the author will review it
-        and accept it.</div>
+      <div class='dw-f-e-sugg-info'>You are submitting a
+        <strong>suggestion</strong>.</div>
       <div class='dw-submit-set'>
-       <input type='button' class={Inp.Preview} name={Inp.Preview}
-              value='Preview ...'/>
        <input type='submit' class='dw-fi-submit' value={submitBtnText}/>
        <input type='button' class='dw-fi-cancel' value='Cancel'/>
       </div>
