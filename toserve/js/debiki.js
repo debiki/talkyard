@@ -737,14 +737,29 @@ function updateDebate(newDebateHtml) {
         // thread of a new thread. So below code is sometimes (depending on
         // which thread is first found) incorrectly run
         // on sub threads.
-        var $res = $oldParent.children('.dw-res');
-        if (!$res.length) {
-          // This is the first reply; create the reply list.
-          $res = $("<ol class='dw-res'/>").appendTo($oldParent);
-        }
+
+        // Indicate that this is a new thread.
         $i.addClass('dw-m-t-new') // outlines all posts in thread
-              // COULD highlight arrows too? To new replies / one's own reply.
-          .prependTo($res);
+
+        // Place the new thread, $i, next to the thread to the left.
+        // But we need to look it up, so we get the one in the document
+        // (rather than the one in the html from the server).
+        var prevId = $i.prev().attr('id');
+        if (prevId) {
+          var $prevThread = $('#'+ prevId);
+          $prevThread.after($i)
+        }
+        else {
+          // There's no thread to the left of $i, so append $i
+          // to the parent thread's .dw-res.
+          var $res = $oldParent.children('.dw-res');
+          if (!$res.length) {
+            // This is the first reply; create the reply list.
+            $res = $("<ol class='dw-res'/>").appendTo($oldParent);
+          }
+          $i.appendTo($res);
+        }
+
         if (isInline) {
           // Place this inline thread inside its parent, by
           // undoing the parent's inline thread placement and doing
