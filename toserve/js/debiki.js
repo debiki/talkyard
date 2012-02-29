@@ -1432,7 +1432,8 @@ function $showInlineActionMenu(event) {
   $menu = $(  // TODO i18n
       '<ul class="dw-as-inline">' +
         '<li><a class="dw-a-edit-i">Improve</a></li>' +
-        '<li><a class="dw-a-reply-i">Reply inline</a></li>' +
+        // Disable inline replies for now, until I've made them work better,
+        //'<li><a class="dw-a-reply-i">Reply inline</a></li>' +
         //'<li><a class="dw-a-mark-i">Mark</a></li>' + // COULD implement
       '</ul>');
   $menu.find('a').button();//"option", "disabled", true);
