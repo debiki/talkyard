@@ -25,8 +25,20 @@
  *          scrollstoppers: '.CodeMirror, .ui-resizable-handle' });
  *
  *
- * As of today (2012-02-04), tested with jQuery 1.6.4 and recent versions
+ * Utterscroll scrolls the closest scrollable element, or the window.
+ * However, scrolling anything but the window, depends on a jQuery selector,
+ * ':scrollable', being available. (Otherwise, the window is always scrolled.)
+ * There should be a file jquery.scrollable.js included in this
+ * distribution (which defines the ':scrollable' selector).
+ * That file is actually an excerpt from:
+ *   https://github.com/litera/jquery-scrollintoview/blob/master/
+ *      jquery.scrollintoview.js
+ *
+ *
+ * As of today (2012-02-29), tested with jQuery 1.6.4 and recent versions
  * of Google Chrome, Firefox and Opera, and IE 6, 7, 8 and 9.
+ * (Scrolling the window has been tested; scrolling other elems has not
+ * been thoroughly tested.)
  *
  *
  * Find in the rest of this file:
@@ -127,16 +139,18 @@ Debiki.v0.utterscroll = function(options) {
   if (settings.scrollstoppers.length > 0)
     allScrollstoppers += ', '+ options.scrollstoppers;
 
-  var startPos = null;
-  var lastPos = null;
-  var tryLaterHandle = null;
+  var $elemToScroll;
+  var startPos;
+  var lastPos;
+  var tryLaterHandle;
+
   $(document).mousedown(startScrollPerhaps);
   $(document).mouseup(clearTryLaterCallback)
 
   function clearTryLaterCallback() {
     if (!tryLaterHandle) return;
     clearTimeout(tryLaterHandle);
-    tryLaterHandle = null;
+    tryLaterHandle = undefined;
   }
 
   function startScrollPerhaps(event) {
@@ -198,6 +212,14 @@ Debiki.v0.utterscroll = function(options) {
       if (isScrollbar)
         return;
     }
+
+    // Find the closest elem with scrollbars.
+    // If the ':scrollable' selector isn't available, scroll the window.
+    // Also don't scroll `html' and `body' — scroll `window' instead, that
+    // works better across all browsers.
+    $elemToScroll = $.expr[':'].scrollable ?
+        $target.closest(':scrollable:not(html, body)').add($(window)).first() :
+        $(window);
 
 
     // Scroll, unless the mouse down is a text selection attempt:
@@ -396,9 +418,8 @@ Debiki.v0.utterscroll = function(options) {
       ' rslt: '+ distNow.x +', '+ distNow.y);
     */
 
-    window.scrollTo(
-        $(window).scrollLeft() - distNow.x,
-        $(window).scrollTop() - distNow.y);
+    $elemToScroll.scrollLeft($elemToScroll.scrollLeft() - distNow.x);
+    $elemToScroll.scrollTop($elemToScroll.scrollTop() - distNow.y);
 
     lastPos = {
       x: event.clientX,
@@ -413,8 +434,9 @@ Debiki.v0.utterscroll = function(options) {
   }
 
   function stopScroll(event) {
-    startPos = null;
-    lastPos = null;
+    $elemToScroll = undefined;
+    startPos = undefined;
+    lastPos = undefined;
     clearTryLaterCallback();
     $(document.body).dwEnableSelection();
     $(document.body).css('cursor', '');  // cancel 'move' cursor
