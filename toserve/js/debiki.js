@@ -428,6 +428,27 @@ function $threadToggleFolded() {
 })()
 */
 
+function showAndHighlightPost($post, options) {
+  var duration = 1700;
+  $post.dwScrollIntoView(options).queue(function(next) {
+    $post.children('.dw-p-bd, .dw-p-hd').effect(
+        'highlight', { easing: 'easeInExpo', color: 'yellow' }, duration);
+
+    $post.css('outline', 'solid thick #f0a005');
+    // Remove the outline quickly (during 500 ms). Otherwise it looks
+    // jerky: removing 1px at a time, slowly, is very noticeable!
+    setTimeout(function() {
+      $post.animate({ outlineWidth: '0px' }, 350);
+    }, Math.max(duration - 500, 0));
+    /// This won't work, jQuery plugin doesn't support rgba animation:
+    //$post.animate(
+    //    { outlineColor: 'rgba(255, 0, 0, .5)' }, duration, 'easeInExpo');
+    /// There's a rgba color support plugin though:
+    /// http://pioupioum.fr/sandbox/jquery-color/
+
+    next();
+  });
+}
 
 // ------- Resizing
 
@@ -631,6 +652,7 @@ function $makePostResizable() {
 // Does not reorder elems currently shown (even if their likeability have
 // changed significantly), to avoid surprising the user (by
 // shuffling everything around).
+// Returns the user's own new post, if any (otherwise, returns undefined).
 // {{{ COULD include SHA1:s of each thread, and avoid reloading threads whose
 // SHA1 is the same in the server's reply. The server need not upload
 // those threads at all — that would require the server to generate
@@ -660,6 +682,7 @@ function updateDebate(newDebateHtml) {
   // 5. Mark edits, mark own ratings.
   var $curDebate = $('.dw-debate');
   var $newDebate = buildTagFind(newDebateHtml, '.dw-debate');
+  var $myNewPost;
   $newDebate.find('.dw-t').each(function(){
       var $i = $(this);
       var parentId = $i.parents('.dw-t').attr('id');
@@ -746,6 +769,9 @@ function updateDebate(newDebateHtml) {
         // changes somewhat when it's inited. If some parent is an inline
         // post, *its* parent might need to be redrawn. So redraw all parents.
         $newPost.each(SVG.$drawParents);
+        if (Me.getUserId() === $newPost.dwAuthorId()) {
+          $myNewPost = $newPost;
+        }
       } else if (hasNewRatings) {
         // Update rating info for this post.
         // - All branches above automatically update ratings.
@@ -769,6 +795,8 @@ function updateDebate(newDebateHtml) {
       // So e.g. the <a ... class="dw-as">React</a> link isn't replaced.
       // BUG <new-post>.click($showReplyForm) won't happen
     });
+
+  return $myNewPost;
 }
 
 // ------- Tag Dog
@@ -1235,10 +1263,7 @@ function $showInlineReply() {
   if ($thread.is('.dw-zd')) {
     $thread.children('.dw-z').click();
   }
-  $post.dwScrollIntoView();
-  $post.children('.dw-p-bd, .dw-p-hd').effect(
-      'highlight', { easing: 'easeInExpo', color: 'yellow' }, 1500);
-  // Would be nice if also:  outline: solid medium #f0a005;
+  showAndHighlightPost($post);
   return false;
 }
 
@@ -2490,7 +2515,9 @@ function $showReplyForm(event, opt_where) {
           // would be the last child, resulting in a superfluous
           // dw-svg-fake-harrow.
           removeInstantly($replyFormParent);
-          updateDebate(newDebateHtml);
+          var $myNewPost = updateDebate(newDebateHtml);
+          showAndHighlightPost($myNewPost,
+              { marginRight: 300, marginBottom: 300 });
         });
 
       // Disable the form; it's been submitted.
