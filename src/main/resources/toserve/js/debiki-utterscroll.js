@@ -40,6 +40,12 @@
  * (Scrolling the window has been tested; scrolling other elems has not
  * been thoroughly tested.)
  *
+ * Known issues:
+ * - If you start selecting text at the very the end of an element,
+ *   then Utterscroll thinks you intend to scroll. So you'll scroll,
+ *   rather than selecting text. For more details, search for
+ *   "Fixable BUG" in this document.
+ *
  *
  * Find in the rest of this file:
  * - jQuery extensions: jQuery.dwEnableSelection and dwDisableSelection
