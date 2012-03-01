@@ -124,10 +124,28 @@
 
 /* Public CSS API
 
+Sometimes including a version number (i.e. '0'), if the behavior
+might change in the future.
+
 .debiki-show-if-lte-ie7
 .debiki-show-if-lte-ie8
 .debiki-show-unless-lte-ie7
 .debiki-show-unless-lte-ie8
+
+.debiki-0-mark-current-site-section
+  If you place this class on the site main <nav>, then Debiki adds
+  the class 'debiki-0-current-site-section' to [the nav link
+  to the site section the user is currently visiting].
+
+.debiki-0-current-site-section
+  Indicates which <nav> link points to the section the user
+  is currently visiting. Placed by Debiki.
+  You could style it, so people knows where they are, e.g. like so:
+    nav a.debiki-0-current-site-section {
+      font-weight: bold;
+      font-size: 105%;
+    }
+
 
 */
 

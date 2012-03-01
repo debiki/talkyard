@@ -450,6 +450,52 @@ function showAndHighlightPost($post, options) {
   });
 }
 
+
+// Adds class 'debiki-current-site-section' to the navigation
+// menu link that matches the current window.location.
+// However, unless you are on the home page, links to the home page
+// (which is assumed to be '/') are ignored, because *everything* is below
+// the homepage, so homepage links would otherwise always be marked.
+function showCurLocationInSiteNav() {
+  function $isCurSectionLink() {
+    var link = $(this).attr('href');
+    var linkPathStart =
+      link.search('https?://') === 0 ? link.indexOf('/', 8) : 0;
+    // Same protocol, host and port, a.k.a. origin?
+    var linkOrigin = link.substr(0, linkPathStart);
+    if (linkOrigin.length !== 0 && linkOrigin !== location.origin)
+      return false;
+    // Exact path match? (include home page links)
+    var linkPath = link.substr(linkPathStart);
+    if (linkPath === location.pathname)
+      return true;
+    // Ignore links to the home page.
+    if (linkPath === '/')
+      return false;
+    // Ignore links with query string or hash parts.
+    // {{{ Then I can include in the site <nav> links to a certain
+    // Subscribe part of my homepage ,without that link being
+    // considered a separate site section. }}}
+    if (linkPath.search(/[?#]/) !== -1)
+      return false;
+    // Does `location' start with `linkPath'?
+    // But ingore any page name part of `linkPath'. Only folder paths
+    // constitute site sections, I've decided.
+    // {{{ So you can have <nav> links like this one: site/folder/path/-<guid>,
+    // that is, reference the section "index" page via guid,
+    // so redirects will work, should you redesign your site and
+    // move sections elsewhere (to site/another/path/-<but-same-guid>). }}}
+    var linkFolderPath = linkPath.substr(0, linkPath.lastIndexOf('/') + 1);
+    var locStartsWithLink = location.pathname.search(linkFolderPath) === 0;
+    return locStartsWithLink;
+  }
+
+  $('.debiki-0-mark-current-site-section a[href]')
+      .filter($isCurSectionLink)
+      .addClass('debiki-0-current-site-section');
+}
+
+
 // ------- Resizing
 
 // Makes the root thread wide enough to contain all its child posts.
@@ -976,6 +1022,8 @@ function $initPostsThreadStep4() {
       var $i = $(this);
       return !$i.is('.dw-i-t') && $i.parent().closest('.dw-t').is('.dw-hor');
     }).each($makeEastResizable);
+
+  showCurLocationInSiteNav();
 }
 
 // Inits a post, not its parent thread.
