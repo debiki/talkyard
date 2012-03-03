@@ -113,18 +113,7 @@ object AppAuth extends mvc.Controller {
     val prevSidValOpt = urlDecodeCookie("dwCoSid", request)
     val prevSid = prevSidValOpt.map(Sid.check _) getOrElse SidAbsent
     val addr = "?.?.?.?"  // TODO
-
-    // ----- For now, duplicate here the tenant lookup code from Globa.
-    // In the future, ?login will be the login function, and
-    // then the tenant lookup code in Global will be used.
-    val scheme = "http" // for now
-    val tenantId = Debiki.Dao.lookupTenant(scheme, request.host) match {
-      case found: FoundChost => found.tenantId
-      case found: FoundAlias => throwForbidden("DwE03h103", "Not impl")
-      case FoundNothing =>
-        throwNotFound("DwE2k5I9", "The specified host name maps to no tenant.")
-    }
-    // -----
+    val tenantId = lookupTenantByHost(request.host)
 
     val loginReq = Dao.LoginRequest(
       login = Login(id = "?", prevLoginId = prevSid.loginId,
@@ -194,13 +183,25 @@ object AppAuth extends mvc.Controller {
             // Continue logging out anyway.
           }
         }
-        LoginOpenId.logUserOut()
         */
         (Ok(<p>You have been logged out. Return to last page?
             <a href=''>Okay</a>
           </p>) as HTML)
           .discardingCookies("dwCoSid")  // keep the xsrf cookie,
                                          // so login dialog works?
+    }
+  }
+
+  def lookupTenantByHost(host: String): String = {
+    // For now, duplicate here the tenant lookup code from Globa.
+    // In the future, ?login-openid will be the login function (??), and
+    // then the tenant lookup code in Global will be used.
+    val scheme = "http" // for now
+    Debiki.Dao.lookupTenant(scheme, host) match {
+      case found: FoundChost => found.tenantId
+      case found: FoundAlias => throwForbidden("DwE03h103", "Not impl")
+      case FoundNothing =>
+        throwNotFound("DwE2k5I9", "The specified host name maps to no tenant.")
     }
   }
 

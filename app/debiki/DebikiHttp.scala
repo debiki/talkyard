@@ -157,7 +157,7 @@ object DebikiHttp {
 
   def newUrlConfig(_hostAndPort: String) = new HtmlConfig {
     override val loginActionSimple = "/-/api/login-simple"
-    override val loginActionOpenId = "/openid/login"  // COULD preifx w "/-/"
+    override val loginActionOpenId = "/-/api/login-openid"
     override val logoutAction = "/-/api/logout"
     override val hostAndPort = _hostAndPort
     // COULD avoid recalculating the xsrf token here, already done

@@ -1,0 +1,23 @@
+@(status: String, message: String)
+
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Logged in</title>
+  <script type='text/javascript'>
+  function returnToOpener() {
+    window.opener.Debiki.handleLoginResponse({
+      queryString: (window.location+'').split('?')[1],
+      status: '@status'
+    });
+    window.close();
+  }
+  </script>
+</head>
+<body onload='returnToOpener();'>
+  @* If javascript disabled, show a message, and (todo) an OK link that
+  redirects to the last page? *@
+  @message
+</body>
+</html>
+
