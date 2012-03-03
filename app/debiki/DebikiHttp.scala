@@ -122,8 +122,11 @@ object DebikiHttp {
     Cookie(
       name = name,
       value = urlEncode(convertEvil(value)),  // see comment above
+      maxAge = maxAgeSecs,
       path = "/",
-      maxAge = maxAgeSecs)
+      domain = None,
+      secure = false,
+      httpOnly = false)
 
   def urlDecodeCookie(name: String, request: Request[_]): Option[String] =
     request.cookies.get(name).map(cookie => urlDecode(cookie.value))
