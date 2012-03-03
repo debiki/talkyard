@@ -49,9 +49,10 @@ object AppAuthOpenid extends mvc.Controller {
         BadRequest(error.toString)
       }, {
         case (openid) =>
+          val realm = _wildcardRealmFor(request.host)
           AsyncResult(oid.OpenID.redirectURL(openid,
             routes.AppAuthOpenid.loginCallback.absoluteURL(),
-            RequiredAttrs)
+            RequiredAttrs, realm = Some(realm))
              .extend(_.value match {
             case Redeemed(url) =>
               Logger.trace("OpenID redirect URL found: " + url)
@@ -62,6 +63,39 @@ object AppAuthOpenid extends mvc.Controller {
               Redirect(routes.AppAuthOpenid.loginGet)
           }))
       })
+  }
+
+
+  /**
+   * Attempts to construct a *.domain.com realm, given a host name.
+   *
+   * The OpenID realm is the domain/subdomains the end user will be
+   * asked to trust. Google uses directed identities, which means the
+   * end user's ID varies by realm. So if *.another-domain.com is specified
+   * instead of *.debiki.se, all Gmail OpenID:s will change. (This gives
+   * better anonymity: it prevents collusion.) We want the ids to change
+   * as infrequently as possible thugh, so there are fewer identities
+   * to store in the database, and possible to rename a host without
+   * all Gmail ids being "invalidated". Therefore, use generic realms,
+   * e.g. *.debiki.se rather than host.subdomain.debiki.se.
+   * See http://openid.net/specs/openid-authentication-2_0.html#realms
+   * And read even more here (search for 'realm'):
+   *   http://code.google.com/googleapps/marketplace/sso.html
+   *   http://code.google.com/intl/es-ES/apis/accounts/docs/OpenID.html
+   */
+  private def _wildcardRealmFor(host: String): String = {
+    val realm = "http://"+ (if (host.count(_ == '-') >= 2) {
+      // The host is like "hostname.example.com". Replace "hostname" with "*"
+      // to get a realm like "*.example.com".
+      val dotAndDomain = host.dropWhile(_ != '.')
+      "*"+ dotAndDomain
+    } else {
+      // The host is like "some-domain.com". We cannot construct a
+      // wildcard realm. ("*.some-domain.com" is not considered
+      // the same realm as "some-domain.com".)
+      host
+    })
+    realm
   }
 
 
@@ -106,6 +140,12 @@ object AppAuthOpenid extends mvc.Controller {
     val oidEndpoint = getQueryParam("openid.op_endpoint").get
     // Play supports version 2 only?
     val oidVersion = "http://specs.openid.net/auth/2.0/server"
+    // In the request to the OpenID Provider (OP), the openid.realm must be
+    // consistent with the domain defined in openid.return_to.
+    // (See https://developers.google.com/accounts/docs/OpenID#Parameters )
+    // So we can reconstruct the realm that was specified
+    // in the request to the OP, like so:
+    val oidRealm = _wildcardRealmFor(request.host)
 
     // ----- Save login in database
 
@@ -117,7 +157,7 @@ object AppAuthOpenid extends mvc.Controller {
         userId = "?",
         oidEndpoint = oidEndpoint,
         oidVersion = oidVersion,
-        oidRealm = "http://localhost:8080", // for now TODO MUST [Play-port]
+        oidRealm = oidRealm,
         // The claimedId might be null, if identifier selection is handled
         // at the OpenID provider (which is the case with Gmail).
         // Is the openid.claimedId query string param, if present,
