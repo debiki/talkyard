@@ -34,6 +34,10 @@ object DebikiHttp {
   def NotFoundResult(errCode: String, message: String): PlainResult =
     R.NotFound("404 Not Found\n"+ message +" [error "+ errCode +"]")
 
+  def InternalErrorResult(errCode: String, message: String): PlainResult =
+    R.InternalServerError(
+      "500 Internal Server Error\n"+ message +" [error "+ errCode +"]")
+
   /**
    * Thrown on error, caught in Global.onError, which returns the wrapped
    * result to the browser.
@@ -57,6 +61,9 @@ object DebikiHttp {
 
   def throwNotFound(errCode: String, message: String = "") =
     throw ResultException(NotFoundResult(errCode, message))
+
+  def throwInternalError(errCode: String, message: String = "") =
+    throw ResultException(InternalErrorResult(errCode, message))
 
   def throwBadReqDialog(
         errCode: String, title: String, summary: String, details: String) =
