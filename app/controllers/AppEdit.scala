@@ -14,8 +14,10 @@ import Prelude._
 
 object AppEdit extends mvc.Controller {
 
-  def editPost(pathIn: PagePath, pageRoot: PageRoot, postId: String) =
-        PageReqAction(pathIn) { pageRequest =>
+  def editPost(pathIn: PagePath, pageRoot: PageRoot, postId: String)
+        = PageReqAction(maxUrlEncFormBytes = 10 * 1000)(pathIn) {
+      pageRequest =>
+
     /*
      if may-not-access-page Forbidden.
      if is-GET

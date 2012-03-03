@@ -6,6 +6,7 @@ package controllers
 
 import com.debiki.v0._
 import debiki._
+import debiki.DebikiHttp._
 import net.liftweb.common.{Box, Full, Empty, Failure}
 import play.api._
 import play.api.mvc.{Action => _, _}
@@ -21,7 +22,7 @@ object Actions {
    */
   // COULD rename RequestInfo to PermsOnPageRequest,
   // and use PageRequest instead.
-  case class PageRequest(
+  case class PageRequest[A](
     tenantId: String,
     ip: String,
     loginId: Option[String],
@@ -31,15 +32,77 @@ object Actions {
     // userMemships: List[String],
     pagePath: PagePath,
     permsOnPage: PermsOnPage,
-    request: Request[AnyContent]
+    request: Request[A]
   ){
     require(pagePath.tenantId == tenantId) //COULD remove tenantId from pagePath
   }
 
-  def PageReqAction(pathIn: PagePath)(f: PageRequest => PlainResult) =
-        CheckSidAndPathAction(pathIn) { (sidOk, xsrfOk, pathOk, request) =>
-     f(unimplemented)
+
+  def PageReqAction(pathIn: PagePath)(
+        f: PageRequest[Option[Any]] => PlainResult)
+        : mvc.Action[Option[Any]] =
+      PageReqAction(BodyParsers.parse.empty)(pathIn)(f)
+
+
+  def PageReqAction(maxUrlEncFormBytes: Int)(pathIn: PagePath)(
+        f: PageRequest[Map[String, Seq[String]]] => PlainResult)
+        : mvc.Action[Map[String, Seq[String]]] =
+    PageReqAction(
+      BodyParsers.parse.urlFormEncoded(maxLength = maxUrlEncFormBytes))(
+      pathIn)(f)
+
+
+  def PageReqAction[A](parser: BodyParser[A])(pathIn: PagePath)(
+        f: PageRequest[A] => PlainResult)
+        = CheckSidAndPathAction[A](parser)(pathIn) {
+      (sidOk, xsrfOk, pathOk, request) =>
+
+    val tenantId = pathOk.tenantId
+    val ip = "?.?.?.?"
+
+    // Load identity and user.
+    val (identity, user) = sidOk.loginId match {
+      case None => (None, None)
+      case Some(lid) =>
+        Debiki.Dao.loadUser(withLoginId = lid, tenantId = tenantId) match {
+          case Some((identity, user)) => (Some(identity), Some(user))
+          case None =>
+            // Currently, RelDbDao throws an exception rather than
+            // returning None.
+            warnDbgDie("RelDbDao did not load user [error DwE01521ku35]")
+            (None, None)
+        }
+    }
+
+    // Load permissions.
+    val permsReq = RequestInfo(  // COULD RENAME! to PermsOnPageRequest
+      tenantId = tenantId,
+      ip = ip,
+      loginId = sidOk.loginId,
+      identity = identity,
+      user = user,
+      pagePath = pathOk,
+      doo = null) // should be removed
+
+    val permsOnPage = Debiki.Dao.loadPermsOnPage(permsReq)
+    if (!permsOnPage.accessPage)
+      throwForbidden("DwE403DNI0", "You are not allowed to access that page.")
+
+    // Construct the actual request.
+    val pageReq = PageRequest[A](
+      tenantId = tenantId,
+      ip = ip,
+      loginId = sidOk.loginId,
+      identity = identity,
+      user = user,
+      pagePath = pathOk,
+      permsOnPage = permsOnPage,
+      request = request)
+
+    val result = f(pageReq)
+    result
   }
+
 
   /**
    * Checks the session id and, for POST request, the xsrf token.
