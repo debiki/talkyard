@@ -23,9 +23,8 @@ object AppReply extends mvc.Controller {
       pageReq: PageGetRequest =>
 
     val replyForm: xml.NodeSeq =
-      FormHtml(newUrlConfig(pageReq), pageReq.xsrfToken.token,
-          pageRoot, pageReq.permsOnPage)
-        .replyForm(replyToPostId = postId, text = "")
+      Utils.formHtml(pageReq, pageRoot).replyForm(
+        replyToPostId = postId, text = "")
 
     Ok(replyForm) as HTML
   }

@@ -25,10 +25,9 @@ object AppEdit extends mvc.Controller {
 
     val (vipo, lazyCreateOpt) = _getOrCreatePostToEdit(pageReq.page_!, postId)
     val draftText = vipo.text  // in the future, load user's draft from db.
-    val editForm = FormHtml(newUrlConfig(pageReq), pageReq.xsrfToken.token,
-      pageRoot, pageReq.permsOnPage).editForm(
-        vipo, newText = draftText,
-        userName = pageReq.sid.displayName)
+    val editForm = Utils.formHtml(pageReq, pageRoot).editForm(
+      vipo, newText = draftText,
+      userName = pageReq.sid.displayName)
     Ok(editForm) as HTML
   }
 

@@ -32,5 +32,11 @@ object Utils extends Results with http.ContentTypes {
     }
   }
 
+
+  def formHtml(pageReq: PageRequest[_], pageRoot: PageRoot) =
+    FormHtml(
+      newUrlConfig(pageReq), pageReq.xsrfToken.token,
+      pageRoot, pageReq.permsOnPage)
+
 }
 
