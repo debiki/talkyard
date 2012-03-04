@@ -66,7 +66,7 @@ object AppAuth extends mvc.Controller {
     sidXsrfNewCookies
   }
 
-  def loginSimple = ErrorAction(parse.urlFormEncoded(maxLength = 200)) {
+  def loginSimple = ExceptionAction(parse.urlFormEncoded(maxLength = 200)) {
         request =>
 
     XSRF // check a token, so cannot fake logins via xsrf

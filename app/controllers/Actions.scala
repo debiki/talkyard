@@ -166,7 +166,7 @@ object Actions {
    */
   def RedirBadPathAction[A](parser: BodyParser[A])(pathIn: PagePath)(
         f: (PagePath, Request[A]) => PlainResult)
-        : mvc.Action[A] = ErrorAction[A](parser) { request =>
+        : mvc.Action[A] = ExceptionAction[A](parser) { request =>
     Debiki.Dao.checkPagePath(pathIn) match {
       case Full(correct: PagePath) =>
         if (correct.path == pathIn.path) f(correct, request)
@@ -185,7 +185,7 @@ object Actions {
   /**
    * Converts DebikiHttp.ResultException to nice replies.
    */
-  def ErrorAction[A](parser: BodyParser[A])(f: Request[A] => PlainResult) =
+  def ExceptionAction[A](parser: BodyParser[A])(f: Request[A] => PlainResult) =
         mvc.Action[A](parser) { request =>
     try {
       f(request)
@@ -193,9 +193,5 @@ object Actions {
       case DebikiHttp.ResultException(result) => result
     }
   }
-
-  def ErrorAction(f: Request[AnyContent] => PlainResult)
-        : mvc.Action[AnyContent] =
-    ErrorAction(BodyParsers.parse.anyContent)(f)
 
 }
