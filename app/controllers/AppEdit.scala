@@ -50,7 +50,7 @@ object AppEdit extends mvc.Controller {
           _saveEdits(pageReq, pageReq.page_!, postId, text, newMarkupOpt)
       })
 
-    _renderOrRedirect(pageReq, pageRoot)
+    Utils.renderOrRedirect(pageReq, pageRoot)
   }
 
 
@@ -163,19 +163,6 @@ object AppEdit extends mvc.Controller {
       })
 
     (vipo, lazyCreateOpt)
-  }
-
-  private def _renderOrRedirect(pageReq: PageRequest[_], rootPost: PageRoot)
-        : PlainResult = {
-    if (isAjax(pageReq.request)) {
-      val pageHtml = Debiki.TemplateEngine.renderPage(pageReq, rootPost)
-      Ok(pageHtml) as HTML
-    } else {
-      val viewRoot =
-        if (rootPost.isDefault) ""
-        else "?view="+ rootPost.id
-      Redirect(pageReq.pagePath.path + viewRoot)
-    }
   }
 
 }
