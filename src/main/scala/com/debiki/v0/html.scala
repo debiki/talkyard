@@ -58,7 +58,6 @@ abstract class HtmlConfig {
   def showEdits_? = false  // doesn't work at all right now
   def hostAndPort = "localhost"
 
-  def xsrfToken: String
 }
 
 
@@ -271,10 +270,6 @@ class DebateHtml(val debate: Debate, val pageTrust: PageTrust) {
     this
   }
 
-  def layoutPageAndTemplates(permsOnPage: PermsOnPage): NodeSeq = {
-    layoutPage(PageRoot.TheBody) ++
-        FormHtml(config, PageRoot.TheBody, permsOnPage).dialogTemplates
-  }
 
   /** The results from layoutPosts doesn't depend on who the user is
    *  and can thus be cached.
@@ -710,8 +705,9 @@ class DebateHtml(val debate: Debate, val pageTrust: PageTrust) {
 
 object FormHtml {
 
-  def apply(config: HtmlConfig, pageRoot: PageRoot, permsOnPage: PermsOnPage) =
-    new FormHtml(config, pageRoot, permsOnPage)
+  def apply(config: HtmlConfig, xsrfToken: String,
+        pageRoot: PageRoot, permsOnPage: PermsOnPage) =
+    new FormHtml(config, xsrfToken, pageRoot, permsOnPage)
 
   val XsrfInpName = "dw-fi-xsrf"
 
@@ -779,8 +775,8 @@ object FormHtml {
 }
 
 
-class FormHtml(val config: HtmlConfig, val pageRoot: PageRoot,
-               val permsOnPage: PermsOnPage) {
+class FormHtml(val config: HtmlConfig, xsrfToken: String,
+    val pageRoot: PageRoot, val permsOnPage: PermsOnPage) {
 
   import FormHtml._
   import DebateHtml._
@@ -833,10 +829,12 @@ class FormHtml(val config: HtmlConfig, val pageRoot: PageRoot,
     else "?view="+ pageRoot.id +"&"
   }
 
+
   private def _xsrfToken = {
-    val tkn = config.xsrfToken
-    <input type='hidden' class={XsrfInpName} name={XsrfInpName} value={tkn}/>
+    <input type='hidden' class={XsrfInpName}
+           name={XsrfInpName} value={xsrfToken}/>
   }
+
 
   def confirmationForm(question: String, answer: String) = {
     // They can click the browser's Back button to cancel.
