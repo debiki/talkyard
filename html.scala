@@ -22,7 +22,7 @@ abstract class HtmlConfig {
   // If a form action is the empty string, the browser POSTS to the current
   // page, says the URI spec: http://www.apps.ietf.org/rfc/rfc3986.html#sec-5.4
   // COULD rename replyAction -> replyUrl (or reactUrl -> reactAction).
-  def replyAction = ""
+  def replyAction = "reply"
   def rateAction = ""
   def flagAction = ""
   def loginActionSimple = ""
@@ -789,7 +789,7 @@ class FormHtml(val config: HtmlConfig, xsrfToken: String,
     <div id="dw-hidden-templates">
     { actionMenu ++
       loginForms ++
-      replyForm() ++
+      replyForm("", "") ++
       ratingForm ++
       flagForm ++
       deleteForm(None) }
@@ -989,12 +989,12 @@ class FormHtml(val config: HtmlConfig, xsrfToken: String,
     </ul>
   }
 
-  def replyForm(text: String = "") = {
+  def replyForm(replyToPostId: String, text: String) = {
       import Reply.{InputNames => Inp}
     val submitButtonText = "Post as ..." // COULD read user name from `config'
       <li class='dw-fs dw-fs-re'>
         <form
-            action={_viewRoot + config.replyAction}
+            action={_viewRoot + config.replyAction +"="+ replyToPostId}
             accept-charset='UTF-8'
             method='post'>
           { _xsrfToken }
