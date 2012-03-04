@@ -17,12 +17,15 @@ object Global extends GlobalSettings {
    */
   override def onRouteRequest(request: RequestHeader): Option[Handler] = {
 
+    def SomeAction(result: => Result) =
+      Some(Action(BodyParsers.parse.empty){ _ => result })
+
     def notFound(errCode: String, message: String): Option[Handler] =
-      Some(Action { DebikiHttp.NotFoundResult(errCode, message) })
+      SomeAction { DebikiHttp.NotFoundResult(errCode, message) }
     def badRequest(errCode: String, message: String): Option[Handler] =
-      Some(Action { DebikiHttp.BadReqResult(errCode, "Bad URL: "+ message) })
+      SomeAction { DebikiHttp.BadReqResult(errCode, "Bad URL: "+ message) }
     def redirect(newPath: String): Option[Handler] =
-      Some(Action { Results.Redirect(newPath) })
+      SomeAction { Results.Redirect(newPath) }
 
     // Ignore the internal API and Javascript and CSS etcetera, in /-/.
     // Right now, when porting from Lift-Web, /classpath/ is also magic.
