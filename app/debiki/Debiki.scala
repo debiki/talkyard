@@ -6,9 +6,8 @@ package debiki
 
 import com.debiki.v0._
 import com.debiki.v0.Prelude._
-import debiki._
-import play.api._
-import play.api.mvc._
+import controllers.Actions.PageRequest
+import net.liftweb.common.{Box, Full, Empty, Failure}
 
 
 object Debiki {
@@ -33,6 +32,33 @@ object Debiki {
     user = System.getProperty("debiki.pgsql.user", "debiki_dev_0_0_2"),
     password = System.getProperty("debiki.pgsql.password", "apabanan454"))))
     //*/
+
+
+  /**
+   * Saves page actions and refreshes caches and places messages in
+   * users' inboxes, as needed.
+   */
+  def savePageActions(pageReq: PageRequest[_], actions: List[Action]) {
+    if (actions isEmpty)
+      return
+
+    import pageReq.{tenantId, pageId, page_!, user}
+    val Full(actionsWithId) = Dao.savePageActions(tenantId, pageId, actions)
+
+    // Possible optimization: Examine all actions, and refresh cache only
+    // if there are e.g. EditApp:s or Replie:s (but ignore Edit:s -- if
+    // not applied).
+    PageCache.refreshLater(pageReq)
+
+    // In the future, also refresh page index cache, and cached page titles?
+    // (I.e. a cache for DW1_PAGE_PATHS.)
+
+    // Notify users whose actions were affected.
+    // BUG: notification lost if server restarted here.
+    // COULD rewrite Dao so the seeds can be saved in the same transaction:
+    val seeds = Inbox.calcSeedsFrom(user, adding = actionsWithId, to = page_!)
+    Dao.saveInboxSeeds(tenantId, seeds)
+  }
 
 }
 

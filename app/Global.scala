@@ -86,7 +86,7 @@ object Global extends GlobalSettings {
     def mainFunVal: String =  // COULD be Option instead, change "" to None
       firstValueOf(versionAndMainFun) getOrElse ""
     lazy val mainFunVal_! : String = firstValueOf(versionAndMainFun).getOrElse(
-      return badRequest("DwE0k32", "No post to edit specified"))
+      return badRequest("DwE0k32", "No post specified"))
 
     // Route based on the query string.
     import controllers._
@@ -102,6 +102,10 @@ object Global extends GlobalSettings {
         App.viewPost(pagePath, postId = mainFunVal)
       case ("feed", GET)
         => App.feedNews(pagePath)
+      case ("reply", GET) =>
+        AppReply.showForm(pagePath, pageRoot, postId = mainFunVal_!)
+      case ("reply", POST) =>
+        AppReply.handleForm(pagePath, pageRoot, postId = mainFunVal_!)
       // If no main function specified:
       case ("", GET) =>
         pagePath.suffix match {
@@ -110,7 +114,7 @@ object Global extends GlobalSettings {
         }
       // If invalid function specified:
       case (fun, met) => return badRequest(
-        "DwEQ435", "Bad method or query string main function: "+
+        "DwEQ435", "Bad method or query string: "+
            met +" ?"+ fun)
     }
     Some(action)
