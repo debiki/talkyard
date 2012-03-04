@@ -57,6 +57,13 @@ object Global extends GlobalSettings {
       case PagePath.Parsed.Corrected(newPath) => return redirect(newPath)
     }
 
+    // BUG: debiki-core html.scala places view=<root> just after '?',
+    // so `view' will always be the main funcion.
+    // Possible solution: Require that the main function start with
+    // version number? v0-reply-to=... but don't require it to be the
+    // first one. Also rename `view' to `root' when it identifies the
+    // root post.
+
     // Find API version and main function in query string.
     // Example: page?v0-reply-to=123 means version 0 and function `reply-to'.
     val versionAndMainFun = request.rawQueryString.takeWhile(_ != '=')
@@ -106,6 +113,8 @@ object Global extends GlobalSettings {
         AppReply.showForm(pagePath, pageRoot, postId = mainFunVal_!)
       case ("reply", POST) =>
         AppReply.handleForm(pagePath, pageRoot, postId = mainFunVal_!)
+      case ("act", GET) =>
+        Application.showActionLinks(pagePath, pageRoot, postId = mainFunVal_!)
       // If no main function specified:
       case ("", GET) =>
         pagePath.suffix match {

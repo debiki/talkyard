@@ -15,6 +15,13 @@ import Actions._
 object Application extends mvc.Controller {
 
 
+  def showActionLinks(pathIn: PagePath, pageRoot: PageRoot, postId: String) =
+    PageGetAction(pathIn) { pageReq =>
+      val links = Utils.formHtml(pageReq, pageRoot).actLinks(postId)
+      Ok(links) as HTML
+    }
+
+
   def viewPost(pathIn: PagePath, postId: String) = PageGetAction(pathIn) {
         pageReq =>
     val pageHtml =
