@@ -23,13 +23,7 @@ object AppEdit extends mvc.Controller {
         = PageGetAction(pathIn) {
       pageReq: PageGetRequest =>
 
-    val page: Debate = Debiki.Dao.loadPage(
-      pageReq.tenantId, pageReq.pagePath.pageId.get) openOr {
-      throwNotFound("DwE43XWY", "Page not found")
-    }
-
-    val (vipo, lazyCreateOpt) = _getOrCreatePostToEdit(page, postId)
-
+    val (vipo, lazyCreateOpt) = _getOrCreatePostToEdit(pageReq.page_!, postId)
     val draftText = vipo.text  // in the future, load user's draft from db.
     val editForm = FormHtml(newUrlConfig(pageReq), pageReq.xsrfToken.token,
       pageRoot, pageReq.permsOnPage).editForm(
@@ -43,9 +37,6 @@ object AppEdit extends mvc.Controller {
         = PagePostAction(maxUrlEncFormBytes = 10 * 1000)(pathIn) {
       pageReq: PagePostRequest =>
 
-    val page: Debate = Debiki.Dao.loadPage(
-      pageReq.tenantId, pageReq.pagePath.pageId.get) openOr throwNotFound(
-        "DwE43XWY", "Page not found")
     val editForm = Form(tuple(
       FormHtml.Edit.InputNames.Text -> nonEmptyText,
       FormHtml.Edit.InputNames.Markup -> optional(text)))
@@ -56,7 +47,7 @@ object AppEdit extends mvc.Controller {
         DebikiHttp.BadReqResult("DwE03k4", error.toString)
       }, {
         case (text, newMarkupOpt) =>
-          _saveEdits(pageReq, page, postId, text, newMarkupOpt)
+          _saveEdits(pageReq, pageReq.page_!, postId, text, newMarkupOpt)
       })
 
     _renderOrRedirect(pageReq, pageRoot)
@@ -80,8 +71,7 @@ object AppEdit extends mvc.Controller {
     val now = new ju.Date
     val newIp = None // for now
     val patchText = makePatch(from = post.text, to = newText)
-    val loginId = pageReq.loginId getOrElse
-      throwForbidden("DwE03kRG4", "Not logged in")
+    val loginId = pageReq.loginId_!
     var actions = List[Action](Edit(
       id = "?x", postId = post.id, ctime = now,
       loginId = loginId, newIp = newIp,

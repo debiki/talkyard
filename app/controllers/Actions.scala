@@ -37,6 +37,26 @@ object Actions {
     request: Request[A]
   ){
     require(pagePath.tenantId == tenantId) //COULD remove tenantId from pagePath
+
+    /**
+     * The login id of the user making the request. Throws 403 Forbidden
+     * if not logged in (shouldn't happen normally).
+     */
+    def loginId_! : String =
+      loginId getOrElse throwForbidden("DwE03kRG4", "Not logged in")
+
+    def pageId: String = pagePath.pageId getOrElse
+      assErr("DwE93kD4", "Page id unknown")
+
+    /**
+     * The page this PageRequest concerns. Throws 404 Not Found if not found.
+     *
+     * (The page might have been deleted, just after the access control step.)
+     */
+    lazy val page_! : Debate =
+      Debiki.Dao.loadPage(tenantId, pageId) openOr throwNotFound(
+        "DwE43XWY", "Page not found")
+
   }
 
 

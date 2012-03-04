@@ -23,19 +23,15 @@ object Application extends mvc.Controller {
   }
 
 
-  def rawBody(pathIn: PagePath) = PageGetAction(pathIn) {
-        pageReq =>
-    Debiki.Dao.loadPage(pageReq.tenantId, pageReq.pagePath.pageId.get) match {
-      case Full(page) =>
-        Ok(page.body_!.text) as (pageReq.pagePath.suffix match {
-          case "css" => CSS
-          case _ => unimplemented
-        })
-      // The page might have been deleted, just after the access control step:
-      case Empty => NotFound("Hmm")
-      case f: Failure => unimplemented // COULD stop using boxes
-    }
+  def rawBody(pathIn: PagePath) = PageGetAction(pathIn) { pageReq =>
+    val pageBody = pageReq.page_!.body_!
+    val contentType = (pageReq.pagePath.suffix match {
+      case "css" => CSS
+      case _ => unimplemented
+    })
+    Ok(pageBody.text) as contentType
   }
+
 
   def feedNews(pathIn: PagePath) = mvc.Action {
     Ok("feedNews("+ pathIn +")")
