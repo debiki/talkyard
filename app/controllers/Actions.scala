@@ -25,6 +25,8 @@ object Actions {
   case class PageRequest[A](
     tenantId: String,
     ip: String,
+    sid: SidOk,
+    xsrfToken: XsrfOk,
     loginId: Option[String],
     identity: Option[Identity],
     user: Option[User],
@@ -38,18 +40,54 @@ object Actions {
   }
 
 
-  def PageReqAction(pathIn: PagePath)(
-        f: PageRequest[Option[Any]] => PlainResult)
+  /**
+   * A PageRequest with no post data.
+   */
+  type PageGetRequest = PageRequest[Option[Any]]
+
+
+  /**
+   * Same as PageRequest, but the user is always known and logged in.
+   */
+  case class PagePostRequest(
+    tenantId: String,
+    ip: String,
+    sid: SidOk,
+    xsrfToken: XsrfOk,
+    loginId: String,
+    identity: Identity,
+    user: User,
+    pagePath: PagePath,
+    permsOnPage: PermsOnPage,
+    request: Request[Map[String, Seq[String]]])
+
+
+  def PageGetAction(pathIn: PagePath)(
+        f: PageGetRequest => PlainResult)
         : mvc.Action[Option[Any]] =
       PageReqAction(BodyParsers.parse.empty)(pathIn)(f)
 
 
-  def PageReqAction(maxUrlEncFormBytes: Int)(pathIn: PagePath)(
-        f: PageRequest[Map[String, Seq[String]]] => PlainResult)
+  def PagePostAction(maxUrlEncFormBytes: Int)(pathIn: PagePath)(
+        f: PagePostRequest => PlainResult)
         : mvc.Action[Map[String, Seq[String]]] =
     PageReqAction(
       BodyParsers.parse.urlFormEncoded(maxLength = maxUrlEncFormBytes))(
-      pathIn)(f)
+      pathIn)(pageRequest => {
+        def die[A]: A = { throwBadReq("DwE390fC2", "Not logged in?") }
+        val r = pageRequest
+        f(PagePostRequest(
+          tenantId = r.tenantId,
+          ip = r.ip,
+          sid = r.sid,
+          xsrfToken = r.xsrfToken,
+          loginId = r.loginId getOrElse die,
+          identity = r.identity getOrElse die,
+          user = r.user getOrElse die,
+          pagePath = r.pagePath,
+          permsOnPage = r.permsOnPage,
+          request = r.request))
+      })
 
 
   def PageReqAction[A](parser: BodyParser[A])(pathIn: PagePath)(
@@ -92,6 +130,8 @@ object Actions {
     val pageReq = PageRequest[A](
       tenantId = tenantId,
       ip = ip,
+      sid = sidOk,
+      xsrfToken = xsrfOk,
       loginId = sidOk.loginId,
       identity = identity,
       user = user,
