@@ -36,7 +36,7 @@ object AppAuth extends mvc.Controller {
     val xsrfValOpt = urlDecodeCookie("dwCoXsrf", request)
     var xsrfStatus: XsrfStatus = xsrfValOpt.map(XsrfOk(_)) getOrElse XsrfAbsent
     // However, we might catch some bug if we verify it matches the sid:
-    if (xsrfValOpt.isDefined) {
+    if (xsrfValOpt.isDefined && sidValOpt.isDefined) {
       assert(Xsrf.check(xsrfValOpt.get, sidValOpt).isInstanceOf[XsrfOk])
     }
 
