@@ -81,19 +81,21 @@ object AppEdit extends mvc.Controller {
     val now = new ju.Date
     val newIp = None // for now
     val patchText = makePatch(from = post.text, to = newText)
+    val loginId = pageReq.loginId getOrElse
+      throwForbidden("DwE03kRG4", "Not logged in")
     var actions = List[Action](Edit(
       id = "?x", postId = post.id, ctime = now,
-      loginId = pageReq.loginId, newIp = newIp,
+      loginId = loginId, newIp = newIp,
       text = patchText, newMarkup = newMarkupOpt))
 
     var (mayEdit, mayEditReason) =
-      _mayEdit(Some(pageReq.user), post, pageReq.permsOnPage)
+      _mayEdit(pageReq.user, post, pageReq.permsOnPage)
     if (mayEdit) {
       // For now, auto-apply the edit. Voting of which edits to apply
       // or disregard not yet implemented (or rather implemented but
       // disabled for now).
       actions ::= EditApp(id = "?", editId = "?x", ctime = now,
-        loginId = pageReq.loginId, newIp = newIp, result = newText)
+        loginId = loginId, newIp = newIp, result = newText)
     } else {
       // Store the edit suggestion in the database, unapplied.
       // (Together with any automatically created empty title or template.)

@@ -47,19 +47,9 @@ object Actions {
 
 
   /**
-   * Same as PageRequest, but the user is always known and logged in.
+   * A PageRequest with post data.
    */
-  case class PagePostRequest(
-    tenantId: String,
-    ip: String,
-    sid: SidOk,
-    xsrfToken: XsrfOk,
-    loginId: String,
-    identity: Identity,
-    user: User,
-    pagePath: PagePath,
-    permsOnPage: PermsOnPage,
-    request: Request[Map[String, Seq[String]]])
+  type PagePostRequest = PageRequest[Map[String, Seq[String]]]
 
 
   def PageGetAction(pathIn: PagePath)(
@@ -73,21 +63,7 @@ object Actions {
         : mvc.Action[Map[String, Seq[String]]] =
     PageReqAction(
       BodyParsers.parse.urlFormEncoded(maxLength = maxUrlEncFormBytes))(
-      pathIn)(pageRequest => {
-        def die[A]: A = { throwBadReq("DwE390fC2", "Not logged in?") }
-        val r = pageRequest
-        f(PagePostRequest(
-          tenantId = r.tenantId,
-          ip = r.ip,
-          sid = r.sid,
-          xsrfToken = r.xsrfToken,
-          loginId = r.loginId getOrElse die,
-          identity = r.identity getOrElse die,
-          user = r.user getOrElse die,
-          pagePath = r.pagePath,
-          permsOnPage = r.permsOnPage,
-          request = r.request))
-      })
+      pathIn)(f)
 
 
   def PageReqAction[A](parser: BodyParser[A])(pathIn: PagePath)(
