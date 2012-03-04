@@ -820,10 +820,16 @@ case class Delete(
 // Perhaps better have many small specialized classes.
 
 
+/**
+ * Which post to use as the root post, e.g. when viewing a page, or when
+ * sending updates of a page back to the browser (only posts below the
+ * root post would be sent).
+ */
 sealed abstract class PageRoot {
   def id: String
   def findOrCreatePostIn(page: Debate): Option[ViPo]
   def findChildrenIn(page: Debate): List[Post]
+  def isDefault: Boolean = id == Page.BodyId
   def isPageTemplate: Boolean = id == Page.TemplateId
 }
 
