@@ -52,15 +52,14 @@ object AppEdit extends mvc.Controller {
 
     editForm.bindFromRequest()(pageReq.request).fold(
       error => {
-        Logger.debug("Bad request: " + error.toString)
+        Logger.debug("Bad request: " + error.toString)//COULD: debugThrowBadReq
         DebikiHttp.BadReqResult("DwE03k4", error.toString)
       }, {
         case (text, newMarkupOpt) =>
           _saveEdits(pageReq, page, postId, text, newMarkupOpt)
       })
 
-    // makeChangeListOrRedirect()
-    Ok(<i>Hmm</i>) as HTML
+    _renderOrRedirect(pageReq, pageRoot)
   }
 
 
@@ -175,4 +174,18 @@ object AppEdit extends mvc.Controller {
     (vipo, lazyCreateOpt)
   }
 
+  private def _renderOrRedirect(pageReq: PageRequest[_], rootPost: PageRoot)
+        : PlainResult = {
+    if (isAjax(pageReq.request)) {
+      val pageHtml = Debiki.TemplateEngine.renderPage(pageReq, rootPost)
+      Ok(pageHtml) as HTML
+    } else {
+      val viewRoot =
+        if (rootPost.isDefault) ""
+        else "?view="+ rootPost.id
+      Redirect(pageReq.pagePath.path + viewRoot)
+    }
+  }
+
 }
+

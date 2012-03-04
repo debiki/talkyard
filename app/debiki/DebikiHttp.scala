@@ -162,6 +162,12 @@ object DebikiHttp {
   // so email addresses are okay.
 
 
+  // ----- Miscellaneous
+
+  def isAjax(request: Request[_]) =
+    request.headers.get("X-Requested-With") == Some("XMLHttpRequest")
+
+
   // ----- Old stuff
 
   // Could get rid of, completely? Or clean up, delete members.
