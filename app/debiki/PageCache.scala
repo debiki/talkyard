@@ -96,14 +96,15 @@ class PageCache(val dao: Dao) {
   }
 
 
-  def refreshLater(tenantId: String, pageGuid: String) {
+  def refreshLater(pageReq: PageRequest[_]) {
     // For now, simply drop the cache entry.
     // COULD send a message to an actor that refreshes the page later.
     // Then the caller won't have to wait.
     // COULD fix BUG: only clears the cache for the current host and port
     // (problems e.g. if you use localhost:8080 and <ip>:8080).
-    _pageCache.remove(Key(tenantId, pageGuid,
-      "hostAndPort_read-from-session-in-some-manner"))
+    _pageCache.remove(Key(pageReq.tenantId, pageReq.pagePath.pageId.get,
+      pageReq.request.host))
   }
 
 }
+
