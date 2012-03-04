@@ -5,6 +5,7 @@
 package debiki
 
 import com.debiki.v0._
+import controllers.Actions.PageRequest
 import _root_.net.liftweb.common._
 //import _root_.net.liftweb.http._
 import _root_.net.liftweb.util._
@@ -15,18 +16,16 @@ import TemplateEngine._
 
 class TemplateEngine(val pageCache: PageCache, val dao: Dao) {
 
-  def renderPage(requestInfo: RequestInfo, pageRoot: PageRoot): NodeSeq = {
+  def renderPage(pageReq: PageRequest[_], pageRoot: PageRoot): NodeSeq = {
 
     // Fetch or render page and comments.
-    val textAndComments = pageCache.get(
-      requestInfo.tenantId, requestInfo.pagePath.pageId.get,
-      hostAndPort = "testhostport", pageRoot = pageRoot)
+    val textAndComments = pageCache.get(pageReq, pageRoot)
 
     // if (the page says it extends any non default template)
     //   templates-to-load = that-template :: Nil
     // else
     val templates: List[TemplateSource] =
-      _findTemplatesFor(requestInfo.pagePath, pageRoot)
+      _findTemplatesFor(pageReq.pagePath, pageRoot)
     // later:
     // /some/very-nice/page would try to use these templates:
     //   /some/very-nice/page.template,
@@ -88,7 +87,7 @@ class TemplateEngine(val pageCache: PageCache, val dao: Dao) {
     // Replace magic body tags.
     bodyTags = (
        "#debiki-login" #> DH.loginInfo(userName = None) // &
-          // "#debiki-inbox" #> _renderInbox(requestInfo)
+          // "#debiki-inbox" #> _renderInbox(pageReq)
        )(bodyTags)
 
     // Prepend scripts, stylesheets and a charset=utf-8 meta tag.

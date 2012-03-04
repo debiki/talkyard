@@ -6,6 +6,7 @@ package debiki
 
 import com.debiki.v0._
 import com.debiki.v0.Prelude._
+import controllers.Actions.PageRequest
 import java.{net => jn}
 import play.api._
 import play.api.http.ContentTypes._
@@ -165,15 +166,14 @@ object DebikiHttp {
 
   // Could get rid of, completely? Or clean up, delete members.
 
+  def newUrlConfig(pageReq: PageRequest[_]): HtmlConfig =
+    newUrlConfig(pageReq.request.host)
+
   def newUrlConfig(_hostAndPort: String) = new HtmlConfig {
     override val loginActionSimple = "/-/api/login-simple"
     override val loginActionOpenId = "/-/api/login-openid"
     override val logoutAction = "/-/api/logout"
     override val hostAndPort = _hostAndPort
-    // COULD avoid recalculating the xsrf token here, already done
-    // at the top of _serveActionRequest in Boot.scala.
-    override def xsrfToken: String =
-      "dummy-xsrf-token"  // TODO //  Xsrf.newToken(ReqVar.sid.get)
     override def termsOfUseUrl = "/terms-of-use"
   }
 

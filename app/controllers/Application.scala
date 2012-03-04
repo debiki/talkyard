@@ -14,26 +14,20 @@ import Actions._
 
 object Application extends mvc.Controller {
 
-  def viewPost(pathIn: PagePath, postId: String) = RedirBadPathAction(pathIn) {
-        (pathOk, request) =>
-    val requestInfo = RequestInfo(  // COULD rename to DebikiRequest?
-      tenantId = pathIn.tenantId,
-      ip = "?.?.?.?",
-      loginId = None, // Option[String],
-      identity = None, // Option[Identity],
-      user = None, // Option[User],
-      pagePath = pathOk,
-      doo = null)
-    val pageRoot = PageRoot.Real(postId)
-    val pageHtml = Debiki.TemplateEngine.renderPage(requestInfo, pageRoot)
+
+  def viewPost(pathIn: PagePath, postId: String) = PageGetAction(pathIn) {
+        pageReq =>
+    val pageHtml =
+      Debiki.TemplateEngine.renderPage(pageReq, PageRoot.Real(postId))
     Ok(pageHtml).as(HTML)
   }
 
-  def rawBody(pathIn: PagePath) = RedirBadPathAction(pathIn) {
-        (pathOk, request) =>
-    Debiki.Dao.loadPage(pathOk.tenantId, pathOk.pageId.get) match {
+
+  def rawBody(pathIn: PagePath) = PageGetAction(pathIn) {
+        pageReq =>
+    Debiki.Dao.loadPage(pageReq.tenantId, pageReq.pagePath.pageId.get) match {
       case Full(page) =>
-        Ok(page.body_!.text) as (pathOk.suffix match {
+        Ok(page.body_!.text) as (pageReq.pagePath.suffix match {
           case "css" => CSS
           case _ => unimplemented
         })

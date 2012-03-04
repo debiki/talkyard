@@ -6,8 +6,11 @@ package debiki
 
 import com.debiki.v0.Prelude._
 import com.google.{common => guava}
+import controllers.Actions.PageRequest
+import debiki.DebikiHttp.throwNotFound
 import java.{util => ju}
 import net.liftweb.{util => lu}
+import play.api.Logger
 import scala.xml.NodeSeq
 import net.liftweb.common._
 import PageCache._
@@ -62,39 +65,42 @@ class PageCache(val dao: Dao) {
     }
   }
 
-  def get(tenantId: String, pageGuid: String, hostAndPort: String,
-          pageRoot: PageRoot): NodeSeq = {
+
+  def get(pageReq: PageRequest[_], pageRoot: PageRoot): NodeSeq = {
     try {
-      val config = DebikiHttp.newUrlConfig(hostAndPort)
+      val config = DebikiHttp.newUrlConfig(pageReq)
       // The dialog templates includes the user name and cannot currently
       // be cached.
-      val templates =
-        FormHtml(config, pageRoot,
-          PermsOnPage.None // for now TODO
-          ).dialogTemplates
+      val templates = FormHtml(config, pageReq.xsrfToken.token,
+        pageRoot, pageReq.permsOnPage).dialogTemplates
+      val key = Key(
+        pageReq.tenantId, pageReq.pagePath.pageId.get, pageReq.request.host)
       pageRoot match {
         case PageRoot.Real(Page.BodyId) =>
           // The page (with the article and all comments) includes nothing user
           // specific and can thus be cached.
-          val page = _pageCache.get(Key(tenantId, pageGuid, hostAndPort))
+          val page = _pageCache.get(key)
           page ++ templates
 
         case x =>
           // The cache currently works only for the page body as page root.
-          _loadAndRender(Key(tenantId, pageGuid, hostAndPort), x) ++
-             templates
+          _loadAndRender(key, x) ++ templates
       }
     } catch {
       case e: NullPointerException =>
-        assErr("DwE091k5J83", "Page "+ safed(pageGuid) +" not found")
+        // Another user and thread might remove the page at any time?
+        // COULD create a DebikiLogger.warnThrowNotFound(...)
+        Logger.warn("Page "+ safed(pageReq.pagePath) +" not found")
+        throwNotFound("DwE091k5J83", "Page "+ safed(pageReq.pagePath) +" not found")
     }
   }
+
 
   def refreshLater(tenantId: String, pageGuid: String) {
     // For now, simply drop the cache entry.
     // COULD send a message to an actor that refreshes the page later.
     // Then the caller won't have to wait.
-    // BUG only clears the cache for the current host and port
+    // COULD fix BUG: only clears the cache for the current host and port
     // (problems e.g. if you use localhost:8080 and <ip>:8080).
     _pageCache.remove(Key(tenantId, pageGuid,
       "hostAndPort_read-from-session-in-some-manner"))
