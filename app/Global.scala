@@ -87,19 +87,27 @@ object Global extends GlobalSettings {
     // Route based on the query string.
     import controllers._
     val App = Application
-    val action = mainFun match {
-      case "edit" => AppEdit.editPost(pagePath, pageRoot, postId = mainFunVal_!)
-      case "view" => App.viewPost(pagePath, postId = mainFunVal)
-      case "feed" => App.feedNews(pagePath)
+    val GET = "GET"
+    val POST = "POST"
+    val action = (mainFun, request.method) match {
+      case ("edit", GET) =>
+        AppEdit.showEditForm(pagePath, pageRoot, postId = mainFunVal_!)
+      case ("edit", POST) =>
+        AppEdit.handleEditForm(pagePath, pageRoot, postId = mainFunVal_!)
+      case ("view", GET) =>
+        App.viewPost(pagePath, postId = mainFunVal)
+      case ("feed", GET)
+        => App.feedNews(pagePath)
       // If no main function specified:
-      case "" =>
+      case ("", GET) =>
         pagePath.suffix match {
           case "css" => App.rawBody(pagePath)
           case _ => App.viewPost(pagePath, postId = Page.BodyId)
         }
       // If invalid function specified:
-      case x => return badRequest(
-        "DwEQ435", "Bad query string main function: ?"+ x)
+      case (fun, met) => return badRequest(
+        "DwEQ435", "Bad method or query string main function: "+
+           met +" ?"+ fun)
     }
     Some(action)
   }
