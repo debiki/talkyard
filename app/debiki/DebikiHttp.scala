@@ -26,6 +26,8 @@ object DebikiHttp {
   def BadReqResult(errCode: String, message: String): PlainResult =
     R.BadRequest("400 Bad Request\n"+ message +" [error "+ errCode +"]")
 
+  // There's currently no WWW-Authenticate header
+  // field in the response though!
   def UnauthorizedResult(errCode: String, message: String): PlainResult =
     R.Unauthorized("401 Unauthorized\n"+ message +" [error "+ errCode +"]")
 
@@ -54,6 +56,8 @@ object DebikiHttp {
   def throwBadReq(errCode: String, message: String = "") =
     throw ResultException(BadReqResult(errCode, message))
 
+  // There's currently no WWW-Authenticate header
+  // field in the response though!
   def throwUnauthorized(errCode: String, message: String = "") =
     throw ResultException(UnauthorizedResult(errCode, message))
 

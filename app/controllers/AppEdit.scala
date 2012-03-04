@@ -94,11 +94,13 @@ object AppEdit extends mvc.Controller {
     actions = actions.reverse
     actions :::= lazyCreateOpt.toList
 
+    // ------- COULD use Debiki.savePageActions(...) instead
     val actionsWithIds = Debiki.Dao.savePageActions(
       pageReq.tenantId, page.guid, actions)
 
     if (mayEdit)
       Debiki.PageCache.refreshLater(pageReq)
+    // -------
   }
 
 

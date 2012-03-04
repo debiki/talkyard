@@ -71,6 +71,7 @@ object Global extends GlobalSettings {
     val mainFun = versionAndMainFun
 
     // Find parameters common to almost all requests.
+    // COULD move pageRoot to Actions.PageRequest member, better.
     val pageRoot: PageRoot =
       request.queryString.get("view").map(rootPosts => rootPosts.size match {
         case 1 => PageRoot(rootPosts.head)
