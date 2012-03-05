@@ -62,7 +62,8 @@ object Global extends GlobalSettings {
     // Possible solution: Require that the main function start with
     // version number? v0-reply-to=... but don't require it to be the
     // first one. Also rename `view' to `root' when it identifies the
-    // root post.
+    // root post -- no, don't rename it, root=title doesn't look nice,
+    // but view=title looks nice.
 
     // Find API version and main function in query string.
     // Example: page?v0-reply-to=123 means version 0 and function `reply-to'.
@@ -117,6 +118,10 @@ object Global extends GlobalSettings {
         App.handleFlagForm(pagePath, pageRoot, postId = mainFunVal_!)
       case ("delete", POST) =>
         App.handleDeleteForm(pagePath, pageRoot, postId = mainFunVal_!)
+      case ("viewedits", GET) =>
+        AppEditHistory.showForm(pagePath, pageRoot, postId = mainFunVal_!)
+      case ("applyedits", POST) =>
+        AppEditHistory.handleForm(pagePath, pageRoot, postId = mainFunVal_!)
       case ("create-page", GET) =>
         AppCreatePage.showForm(pagePath)
       case ("create-page", POST) =>

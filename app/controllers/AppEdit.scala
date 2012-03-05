@@ -69,7 +69,7 @@ object AppEdit extends mvc.Controller {
       text = patchText, newMarkup = newMarkupOpt))
 
     var (mayEdit, mayEditReason) =
-      _mayEdit(pageReq.user, post, pageReq.permsOnPage)
+      AppEdit.mayEdit(pageReq.user, post, pageReq.permsOnPage)
     if (mayEdit) {
       // For now, auto-apply the edit. Voting of which edits to apply
       // or disregard not yet implemented (or rather implemented but
@@ -98,8 +98,8 @@ object AppEdit extends mvc.Controller {
   /**
    * Returns (true/false, reason) if the user may/not edit `vipo'.
    */
-  private def _mayEdit(user: Option[User], post: ViPo,
-        perms: PermsOnPage): (Boolean, String) = {
+  def mayEdit(user: Option[User], post: ViPo, perms: PermsOnPage)
+        : (Boolean, String) = {
 
     def isOwnPost = user.map(_.id) == Some(post.identity_!.userId)
     def isPage = post.id == Page.BodyId || post.id == Page.TitleId
