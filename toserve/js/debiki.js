@@ -846,7 +846,9 @@ function updateDebate(newDebateHtml) {
         $oldPost.children('.dw-p-hd')
             .children('.dw-p-r-top, .dw-p-r-all').remove().end()
             .children('.dw-p-at').after(
-                $newHdr.children('.dw-p-r-top, .dw-p-r-all').show());
+                $newHdr.children('.dw-p-r-top').show()).end()
+            .append(
+                $newHdr.children('.dw-p-r-all').show());
       }
       else {
         // This post has not been changed, keep it as is.
