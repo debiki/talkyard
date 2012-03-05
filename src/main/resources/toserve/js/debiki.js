@@ -3011,7 +3011,7 @@ function $showEditsDialog() {
   var $postBody = $post.children('.dw-p-bd');
   var postId = $post[0].id.substr(8, 999); // drop initial "dw-post-"
 
-  $.get('?view='+ rootPostId +'&viewedits='+ postId, 'text')
+  $.get('?viewedits='+ postId +'&view='+ rootPostId, 'text')
       .fail(showServerResponseDialog)
       .done(function(editsHtml) {
     var $editDlg = $(editsHtml).filter('form#dw-e-sgs'); // filter out text node

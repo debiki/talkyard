@@ -22,9 +22,9 @@ abstract class HtmlConfig {
   // If a form action is the empty string, the browser POSTS to the current
   // page, says the URI spec: http://www.apps.ietf.org/rfc/rfc3986.html#sec-5.4
   // COULD rename replyAction -> replyUrl (or reactUrl -> reactAction).
-  def replyAction = "reply"
-  def rateAction = ""
-  def flagAction = ""
+  def replyAction = "?reply"
+  def rateAction = "?rate"
+  def flagAction = "?flag"
   def loginActionSimple = ""
   def loginActionOpenId = ""
   def loginOkAction = ""
@@ -827,8 +827,8 @@ class FormHtml(val config: HtmlConfig, xsrfToken: String,
    */
   private def _viewRoot = {
     // The page body is the default, need not be specified.
-    if (pageRoot.id == Page.BodyId) "?"
-    else "?view="+ pageRoot.id +"&"
+    if (pageRoot.id == Page.BodyId) ""
+    else "&view="+ pageRoot.id
   }
 
 
@@ -983,11 +983,11 @@ class FormHtml(val config: HtmlConfig, xsrfToken: String,
     val safePid = safe(pid)  // Prevent xss attacks.
     // COULD check permsOnPage.replyHidden/Visible etc.
     <ul>
-     <li><a href={_viewRoot +"reply="+ safePid}>Reply to post</a></li>
-     <li><a href={_viewRoot +"rate="+ safePid}>Rate it</a></li>
-     <li><a href={_viewRoot +"edit="+ safePid}>Suggest edit</a></li>
-     <li><a href={_viewRoot +"flag="+ safePid}>Report spam or abuse</a></li>
-     <li><a href={_viewRoot +"delete="+ safePid}>Delete</a></li>
+     <li><a href={"?reply=" + safePid + _viewRoot}>Reply to post</a></li>
+     <li><a href={"?rate="  + safePid + _viewRoot}>Rate it</a></li>
+     <li><a href={"?edit="  + safePid + _viewRoot}>Suggest edit</a></li>
+     <li><a href={"?flag="  + safePid + _viewRoot}>Report spam or abuse</a></li>
+     <li><a href={"?delete="+ safePid + _viewRoot}>Delete</a></li>
     </ul>
   }
 
@@ -996,7 +996,7 @@ class FormHtml(val config: HtmlConfig, xsrfToken: String,
     val submitButtonText = "Post as ..." // COULD read user name from `config'
       <li class='dw-fs dw-fs-re'>
         <form
-            action={_viewRoot + config.replyAction +"="+ replyToPostId}
+            action={config.replyAction +"="+ replyToPostId + _viewRoot}
             accept-charset='UTF-8'
             method='post'>
           { _xsrfToken }
@@ -1022,7 +1022,7 @@ class FormHtml(val config: HtmlConfig, xsrfToken: String,
   def ratingForm =
       <div class='dw-fs dw-fs-r'>
         <form
-            action={_viewRoot + config.rateAction}
+            action={config.rateAction + _viewRoot}
             accept-charset='UTF-8'
             method='post'>
           { _xsrfToken }
@@ -1072,7 +1072,7 @@ class FormHtml(val config: HtmlConfig, xsrfToken: String,
   def flagForm = {
     import FlagForm.{InputNames => Inp}
     <div class='dw-fs' title='Report Comment'>
-      <form id='dw-f-flg' action={_viewRoot + config.flagAction}
+      <form id='dw-f-flg' action={config.flagAction + _viewRoot}
             accept-charset='UTF-8' method='post'>
         { _xsrfToken }
         <div class='dw-f-flg-rsns'>{
@@ -1163,7 +1163,7 @@ class FormHtml(val config: HtmlConfig, xsrfToken: String,
     val cssMayEdit = if (mayEdit) "dw-e-sgs-may-edit" else ""
     val cssArtclBody = if (nipo.id == Page.BodyId) " dw-ar-p-bd" else ""
 
-    <form id='dw-e-sgs' action={_viewRoot + "applyedits"}
+    <form id='dw-e-sgs' action={"?applyedits"+ _viewRoot}
           class={cssMayEdit} title='Improvements'>
       { _xsrfToken }
       <div id='dw-e-sgss'>
@@ -1210,7 +1210,7 @@ class FormHtml(val config: HtmlConfig, xsrfToken: String,
       else ""
     val submitBtnText = "Submit as "+ userName.openOr("...")
     <form class='dw-f dw-f-e ui-helper-clearfix'
-          action={_viewRoot +"edit="+ postToEdit.id}
+          action={"?edit="+ postToEdit.id + _viewRoot}
           accept-charset='UTF-8'
           method='post'>
       { _xsrfToken }
@@ -1270,11 +1270,11 @@ class FormHtml(val config: HtmlConfig, xsrfToken: String,
 
   def deleteForm(postToDelete: Option[ViPo]): NodeSeq = {
     val deleteAction =
-      if (postToDelete.isDefined) "delete="+ postToDelete.get.id
+      if (postToDelete.isDefined) "?delete="+ postToDelete.get.id
       else "" // Javascript will fill in post id, do nothing here
 
     <div class='dw-fs' title='Delete Comment'>
-      <form id='dw-f-dl' action={_viewRoot + deleteAction}
+      <form id='dw-f-dl' action={deleteAction + _viewRoot}
             accept-charset='UTF-8' method='post'>{
         import Delete.{InputNames => Inp}
         val deleteTreeLabel = "Delete replies too"
