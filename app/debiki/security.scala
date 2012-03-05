@@ -15,8 +15,9 @@ sealed abstract class XsrfStatus { def isOk = false }
 case object XsrfAbsent extends XsrfStatus
 case object XsrfNoSid extends XsrfStatus
 case object XsrfBad extends XsrfStatus
-case class XsrfOk(token: String) extends XsrfStatus {
+case class XsrfOk(value: String) extends XsrfStatus {
   override def isOk = true
+  def token = value // backw compat, could remove some day ...
 }
 
 

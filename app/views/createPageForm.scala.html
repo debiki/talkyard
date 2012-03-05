@@ -1,0 +1,25 @@
+@(userName: String, xsrfToken: String)
+
+<div>
+  <form class='dw-f dw-f-cr'
+        action=''
+        accept-charset='UTF-8'
+        method='post'>
+    <p>Click <tt class='dw-submit-btn-txt'>Create as ...</tt>
+      below to create a page.
+    </p>
+    <ul>
+      <li>The page will be accessible to anyone with a link.
+      <li>You can return later and edit the page, if you log in as the
+        user who created it.
+      <li>You need to license your text under the Creative Commons'
+        <a href='http://en.wikipedia.org/wiki/Wikipedia:Text_of_Creative_Commons_Attribution-ShareAlike_3.0_Unported_License'
+           target='_blank'>CC-BY-SA 3.0 License</a> (also used by Wikipedia).
+    </ul>
+    <input name='dw-fi-xsrf' type='hidden' class='dw-fi-xsrf' value='@xsrfToken'>
+    <div class='dw-submit-set'>
+      <input type='submit' class='dw-fi-submit' value='Create as @userName'>
+    </div>
+  </form>
+</div>
+

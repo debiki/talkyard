@@ -7,7 +7,6 @@ package controllers
 import com.debiki.v0._
 import debiki._
 import debiki.DebikiHttp._
-import java.{util => ju}
 import play.api._
 import play.api.data._
 import play.api.data.Forms._
@@ -34,7 +33,7 @@ object AppReply extends mvc.Controller {
         = PagePostAction(MaxCommentSize)(pathIn) {
       pageReq: PagePostRequest =>
 
-    import Utils.pageReqToFormInpReader
+    import Utils.ValidationImplicits._
     import FormHtml.Reply.{InputNames => Inp}
 
     if (pageReq.page_!.post(postId) isEmpty)
@@ -44,10 +43,9 @@ object AppReply extends mvc.Controller {
     val text = pageReq.getEmptyAsNone(Inp.Text) getOrElse
       throwBadReq("DwE93k21", "Empty reply")
     val whereOpt = pageReq.getEmptyAsNone(Inp.Where)
-    val newIp = None // for now
 
-    val post = Post(id = "?", parent = postId, ctime = new ju.Date,
-      loginId = pageReq.loginId_!, newIp = newIp, text = text,
+    val post = Post(id = "?", parent = postId, ctime = pageReq.ctime,
+      loginId = pageReq.loginId_!, newIp = pageReq.newIp, text = text,
       markup = Markup.DefaultForComments.id, tyype = PostType.Text,
       where = whereOpt)
 

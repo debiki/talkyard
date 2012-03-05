@@ -107,12 +107,24 @@ object Global extends GlobalSettings {
         AppEdit.handleEditForm(pagePath, pageRoot, postId = mainFunVal_!)
       case ("view", GET) =>
         App.viewPost(pagePath, postId = mainFunVal)
-      case ("feed", GET)
-        => App.feedNews(pagePath)
       case ("reply", GET) =>
         AppReply.showForm(pagePath, pageRoot, postId = mainFunVal_!)
       case ("reply", POST) =>
         AppReply.handleForm(pagePath, pageRoot, postId = mainFunVal_!)
+      case ("rate", POST) =>
+        App.handleRateForm(pagePath, pageRoot, postId = mainFunVal_!)
+      case ("flag", POST) =>
+        App.handleFlagForm(pagePath, pageRoot, postId = mainFunVal_!)
+      case ("delete", POST) =>
+        App.handleDeleteForm(pagePath, pageRoot, postId = mainFunVal_!)
+      case ("create-page", GET) =>
+        AppCreatePage.showForm(pagePath)
+      case ("create-page", POST) =>
+        AppCreatePage.handleForm(pagePath)
+      case ("list-pages", GET) =>
+        App.listPages(pagePath)
+      case ("feed", GET) =>
+        App.feed(pagePath)
       case ("act", GET) =>
         Application.showActionLinks(pagePath, pageRoot, postId = mainFunVal_!)
       // If no main function specified:

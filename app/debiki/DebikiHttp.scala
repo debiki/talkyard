@@ -18,6 +18,10 @@ import xml.{NodeSeq}
  */
 object DebikiHttp {
 
+  // ----- Limits
+
+  val MaxCommentSize = 20 * 1000
+
 
   // ----- Error handling
 

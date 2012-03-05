@@ -7,6 +7,7 @@ package controllers
 import com.debiki.v0._
 import debiki._
 import debiki.DebikiHttp._
+import java.{util => ju}
 import net.liftweb.common.{Box, Full, Empty, Failure}
 import play.api._
 import play.api.mvc.{Action => _, _}
@@ -45,8 +46,26 @@ object Actions {
     def loginId_! : String =
       loginId getOrElse throwForbidden("DwE03kRG4", "Not logged in")
 
+    /**
+     * The display name of the user making the request. Throws 403 Forbidden
+     * if not available, i.e. if not logged in (shouldn't happen normally).
+     */
+    def displayName_! : String =
+      sid.displayName getOrElse throwForbidden("DwE97Ik3", "Not logged in")
+
+    /**
+     * The end user's IP address, *iff* it differs from the login address.
+     */
+    def newIp: Option[String] = None  // None always, for now
+
     def pageId: String = pagePath.pageId getOrElse
       assErr("DwE93kD4", "Page id unknown")
+
+    /**
+     * The page this PageRequest concerns, or None if not found.
+     */
+    lazy val page_? : Option[Debate] =
+      Debiki.Dao.loadPage(tenantId, pageId).toOption
 
     /**
      * The page this PageRequest concerns. Throws 404 Not Found if not found.
@@ -57,6 +76,17 @@ object Actions {
       Debiki.Dao.loadPage(tenantId, pageId) openOr throwNotFound(
         "DwE43XWY", "Page not found")
 
+    /**
+     * Approximately when the server started serving this request.
+     */
+    lazy val ctime: ju.Date = new ju.Date
+
+    /**
+     * The scheme, host and port specified in the request.
+     *
+     * For now, the scheme is hardcoded to http.
+     */
+    def origin: String = "http://"+ request.host
   }
 
 
@@ -171,7 +201,7 @@ object Actions {
       case Full(correct: PagePath) =>
         if (correct.path == pathIn.path) f(correct, request)
         else Results.MovedPermanently(correct.path)
-      case Empty => Results.NotFound("404 Page not found: "+ pathIn.path)
+      case Empty => NotFoundResult("DwE03681", "")
       case f: Failure => runErr("DwE03ki2", "Internal error"+ f.toString)
     }
   }

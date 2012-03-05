@@ -33,29 +33,72 @@ object Utils extends Results with http.ContentTypes {
   }
 
 
-  implicit def pageReqToFormInpReader(pageReq: PagePostRequest) =
-    new FormInpReader(pageReq.request.body)
-
-
-  /**
-   * Adds rich methods like `getEmptyAsNone` to a PagePostRequest.
-   */
-  class FormInpReader(body: Map[String, Seq[String]]) {
-
-    def getEmptyAsNone(param: String): Option[String] =
-      body.get(param).map(_.head) match {
-        case None => None
-        case Some("") => None
-        case s: Some[_] => s
-    }
-
-  }
-
-
   def formHtml(pageReq: PageRequest[_], pageRoot: PageRoot) =
     FormHtml(
       newUrlConfig(pageReq), pageReq.xsrfToken.token,
       pageRoot, pageReq.permsOnPage)
+
+
+  object ValidationImplicits {
+
+    implicit def pageReqToFormInpReader(pageReq: PagePostRequest) =
+      new FormInpReader(pageReq.request.body)
+
+    implicit def seqToSeqChecker[A](seq: Seq[A]) =
+      new SeqChecker[A](seq)
+
+    implicit def textToTextChecker(text: String) =
+      new TextChecker(text)
+
+    /**
+     * Adds rich methods like `getEmptyAsNone` to a PagePostRequest.
+     */
+    class FormInpReader(val body: Map[String, Seq[String]]) {
+
+      def get(param: String): Option[String] =
+        body.get(param).map(_.head)
+
+      def getEmptyAsNone(param: String): Option[String] =
+        body.get(param).map(_.head) match {
+          case None => None
+          case Some("") => None
+          case s: Some[_] => s
+        }
+
+      def getNoneAsEmpty(param: String): String =
+        body.get(param).map(_.head) match {
+          case None => ""
+          case Some(s) => s
+        }
+
+      def listSkipEmpty(param: String): Seq[String] = {
+        body.get(param) match {
+          case None => Nil
+          case Some(values) => values.filterNot(_ isEmpty)
+        }
+      }
+    }
+
+    /**
+     * Pimps class Seq with som form input validation helpers.
+     */
+    class SeqChecker[A](val seq: Seq[A]) {
+      def ifEmpty(block: => Unit): Seq[A] = {
+        if (seq isEmpty) block
+        seq
+      }
+    }
+
+    /**
+     * Pimps class String with som form input validation helpers.
+     */
+    class TextChecker(val text: String) {
+      def ifNotOneOf(chars: String, block: => Unit): String = {
+        if (!(chars contains text)) block
+        text
+      }
+    }
+  }
 
 }
 

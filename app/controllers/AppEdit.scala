@@ -7,7 +7,6 @@ package controllers
 import com.debiki.v0._
 import debiki._
 import debiki.DebikiHttp._
-import java.{util => ju}
 import net.liftweb.common.{Box, Full, Empty, Failure}
 import play.api._
 import play.api.data._
@@ -23,7 +22,7 @@ object AppEdit extends mvc.Controller {
         = PageGetAction(pathIn) {
       pageReq: PageGetRequest =>
 
-    val (vipo, lazyCreateOpt) = _getOrCreatePostToEdit(pageReq.page_!, postId)
+    val (vipo, lazyCreateOpt) = _getOrCreatePostToEdit(pageReq, postId)
     val draftText = vipo.text  // in the future, load user's draft from db.
     val editForm = Utils.formHtml(pageReq, pageRoot).editForm(
       vipo, newText = draftText,
@@ -36,7 +35,7 @@ object AppEdit extends mvc.Controller {
         = PagePostAction(MaxCommentSize)(pathIn) {
       pageReq: PagePostRequest =>
 
-    import Utils.pageReqToFormInpReader
+    import Utils.ValidationImplicits._
     import FormHtml.Edit.{InputNames => Inp}
 
     val text = pageReq.getEmptyAsNone(Inp.Text) getOrElse
@@ -51,7 +50,7 @@ object AppEdit extends mvc.Controller {
   private def _saveEdits(pageReq: PagePostRequest,
         postId: String, newText: String, newMarkupOpt: Option[String]) {
 
-    val (post, lazyCreateOpt) = _getOrCreatePostToEdit(pageReq.page_!, postId)
+    val (post, lazyCreateOpt) = _getOrCreatePostToEdit(pageReq, postId)
     val markupChanged =
       newMarkupOpt.isDefined && newMarkupOpt != Some(post.markup)
     if (newText == post.text && !markupChanged)
@@ -62,13 +61,11 @@ object AppEdit extends mvc.Controller {
     // reply forbidden
     // (and also when *creating* a post)
 
-    val now = new ju.Date
-    val newIp = None // for now
     val patchText = makePatch(from = post.text, to = newText)
     val loginId = pageReq.loginId_!
     var actions = List[Action](Edit(
-      id = "?x", postId = post.id, ctime = now,
-      loginId = loginId, newIp = newIp,
+      id = "?x", postId = post.id, ctime = pageReq.ctime,
+      loginId = loginId, newIp = pageReq.newIp,
       text = patchText, newMarkup = newMarkupOpt))
 
     var (mayEdit, mayEditReason) =
@@ -77,8 +74,8 @@ object AppEdit extends mvc.Controller {
       // For now, auto-apply the edit. Voting of which edits to apply
       // or disregard not yet implemented (or rather implemented but
       // disabled for now).
-      actions ::= EditApp(id = "?", editId = "?x", ctime = now,
-        loginId = loginId, newIp = newIp, result = newText)
+      actions ::= EditApp(id = "?", editId = "?x", ctime = pageReq.ctime,
+        loginId = loginId, newIp = pageReq.newIp, result = newText)
     } else {
       // Store the edit suggestion in the database, unapplied.
       // (Together with any automatically created empty title or template.)
@@ -120,9 +117,10 @@ object AppEdit extends mvc.Controller {
   }
 
 
-  private def _getOrCreatePostToEdit(page: Debate, postId: String)
+  private def _getOrCreatePostToEdit(pageReq: PageRequest[_], postId: String)
         : (ViPo, Option[Post]) = {
 
+    val page = pageReq.page_!
     val vipoOpt: Option[ViPo] = page.vipo(postId)
 
     // The page title and template are created automatically
@@ -139,11 +137,10 @@ object AppEdit extends mvc.Controller {
         val markup =
           if (postId == Page.TemplateId) Markup.Code
           else Markup.Html
-        val newIp = None // for now
 
         // (A page title and template (and body) is its own parent.)
-        Some(Post(id = postId, parent = postId, ctime = new ju.Date,
-          loginId = pageAuthorLoginId, newIp = newIp, text = "",
+        Some(Post(id = postId, parent = postId, ctime = pageReq.ctime,
+          loginId = pageAuthorLoginId, newIp = pageReq.newIp, text = "",
           markup = markup.id, tyype = PostType.Text,
           where = None))
       }
