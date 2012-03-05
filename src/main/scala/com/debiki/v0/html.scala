@@ -401,6 +401,8 @@ class DebateHtml(val debate: Debate, val pageTrust: PageTrust) {
 
       val repliesHtml =
         if (replies.isEmpty && myReplyBtn.isEmpty) Nil
+        // COULD delete only stuff *older* than the tree deletion.
+        else if (vipo.isTreeDeleted) Nil
         else <ol class={"dw-res"+ cssClearfix}>
           { _layoutComments(rootPostId, depth + 1, myReplyBtn, replies) }
         </ol>
