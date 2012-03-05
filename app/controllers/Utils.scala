@@ -33,6 +33,25 @@ object Utils extends Results with http.ContentTypes {
   }
 
 
+  implicit def pageReqToFormInpReader(pageReq: PagePostRequest) =
+    new FormInpReader(pageReq.request.body)
+
+
+  /**
+   * Adds rich methods like `getEmptyAsNone` to a PagePostRequest.
+   */
+  class FormInpReader(body: Map[String, Seq[String]]) {
+
+    def getEmptyAsNone(param: String): Option[String] =
+      body.get(param).map(_.head) match {
+        case None => None
+        case Some("") => None
+        case s: Some[_] => s
+    }
+
+  }
+
+
   def formHtml(pageReq: PageRequest[_], pageRoot: PageRoot) =
     FormHtml(
       newUrlConfig(pageReq), pageReq.xsrfToken.token,

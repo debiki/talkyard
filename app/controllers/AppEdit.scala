@@ -33,30 +33,25 @@ object AppEdit extends mvc.Controller {
 
 
   def handleEditForm(pathIn: PagePath, pageRoot: PageRoot, postId: String)
-        = PagePostAction(maxUrlEncFormBytes = 10 * 1000)(pathIn) {
+        = PagePostAction(MaxCommentSize)(pathIn) {
       pageReq: PagePostRequest =>
 
-    val editForm = Form(tuple(
-      FormHtml.Edit.InputNames.Text -> nonEmptyText,
-      FormHtml.Edit.InputNames.Markup -> optional(text)))
+    import Utils.pageReqToFormInpReader
+    import FormHtml.Edit.{InputNames => Inp}
 
-    editForm.bindFromRequest()(pageReq.request).fold(
-      error => {
-        Logger.debug("Bad request: " + error.toString)//COULD: debugThrowBadReq
-        DebikiHttp.BadReqResult("DwE03k4", error.toString)
-      }, {
-        case (text, newMarkupOpt) =>
-          _saveEdits(pageReq, pageReq.page_!, postId, text, newMarkupOpt)
-      })
+    val text = pageReq.getEmptyAsNone(Inp.Text) getOrElse
+       throwBadReq("DwE8bJX2", "Empty edit")
+    val markupOpt = pageReq.getEmptyAsNone(Inp.Markup)
 
+    _saveEdits(pageReq, postId, text, markupOpt)
     Utils.renderOrRedirect(pageReq, pageRoot)
   }
 
 
-  private def _saveEdits(pageReq: PagePostRequest, page: Debate,
+  private def _saveEdits(pageReq: PagePostRequest,
         postId: String, newText: String, newMarkupOpt: Option[String]) {
 
-    val (post, lazyCreateOpt) = _getOrCreatePostToEdit(page, postId)
+    val (post, lazyCreateOpt) = _getOrCreatePostToEdit(pageReq.page_!, postId)
     val markupChanged =
       newMarkupOpt.isDefined && newMarkupOpt != Some(post.markup)
     if (newText == post.text && !markupChanged)
@@ -95,7 +90,7 @@ object AppEdit extends mvc.Controller {
 
     // ------- COULD use Debiki.savePageActions(...) instead
     val actionsWithIds = Debiki.Dao.savePageActions(
-      pageReq.tenantId, page.guid, actions)
+      pageReq.tenantId, pageReq.page_!.guid, actions)
 
     if (mayEdit)
       Debiki.PageCache.refreshLater(pageReq)

@@ -31,32 +31,27 @@ object AppReply extends mvc.Controller {
 
 
   def handleForm(pathIn: PagePath, pageRoot: PageRoot, postId: String)
-        = PagePostAction(maxUrlEncFormBytes = 10 * 1000)(pathIn) {
+        = PagePostAction(MaxCommentSize)(pathIn) {
       pageReq: PagePostRequest =>
 
-    val replyForm = Form(tuple(
-      FormHtml.Reply.InputNames.Text -> nonEmptyText,
-      FormHtml.Reply.InputNames.Where -> optional(text)))
-    replyForm.bindFromRequest()(pageReq.request).fold(
-      error => {
-        Logger.debug("Bad request: " + error.toString)//COULD: debugThrowBadReq
-        DebikiHttp.BadReqResult("DwE94k39", error.toString)
-      }, {
-        case (text, whereOpt) =>
-          val newIp = None // for now
+    import Utils.pageReqToFormInpReader
+    import FormHtml.Reply.{InputNames => Inp}
 
-          var posts = Post(id = "?", parent = postId, ctime = new ju.Date,
-            loginId = pageReq.loginId_!, newIp = newIp, text = text,
-            markup = Markup.DefaultForComments.id, tyype = PostType.Text,
-            where = whereOpt) :: Nil
+    if (pageReq.page_!.post(postId) isEmpty)
+      throwBadReq("DwEe8HD36", "Cannot reply to post "+ safed(postId) +
+         "; it does not exist")
 
-          //_ TODO check that post.parent does exist!
-          // COULD check for e.g. an identical post (same *text*
-          // (and whereOpt) ?)
+    val text = pageReq.getEmptyAsNone(Inp.Text) getOrElse
+      throwBadReq("DwE93k21", "Empty reply")
+    val whereOpt = pageReq.getEmptyAsNone(Inp.Where)
+    val newIp = None // for now
 
-          Debiki.savePageActions(pageReq, posts)
-    })
+    val post = Post(id = "?", parent = postId, ctime = new ju.Date,
+      loginId = pageReq.loginId_!, newIp = newIp, text = text,
+      markup = Markup.DefaultForComments.id, tyype = PostType.Text,
+      where = whereOpt)
 
+    Debiki.savePageActions(pageReq, post::Nil)
     Utils.renderOrRedirect(pageReq, pageRoot)
   }
 
