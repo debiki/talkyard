@@ -18,3 +18,6 @@ libraryDependencies ++= Seq(
   "junit" % "junit" % "4.7" % "test",
   "org.scala-tools.testing" %% "specs" % "1.6.9" % "test"
 )
+
+scalacOptions += "-deprecation"
+
