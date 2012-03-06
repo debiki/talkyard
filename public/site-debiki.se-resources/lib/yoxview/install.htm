@@ -1,0 +1,116 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" >
+<head>
+    <title>YoxView Installation Instructions</title>
+    <style type="text/css">
+        body{ margin-bottom: 1em; font-family: Arial, Sans-Serif; }
+        #main{ width: 800px; margin: 0 auto;}
+        pre{ 
+            font-family: Courier New;
+	        font-size: 10pt;
+	        background: #c7d2d8;
+	        background: rgba(102, 133, 150, 0.34);
+	        border: solid 1px #768ea5;
+	        padding: 10px 15px;
+	        margin-top: 0.5em;
+	        margin-bottom: 2em;
+	        color: Black;
+	        overflow: auto;
+	        -moz-border-radius: 10px;
+	        -moz-border-radius-topright: 0;
+	        -moz-border-radius-topleft: 0;
+	        -webkit-border-radius: 10px;
+	        -webkit-border-top-left-radius: 0;
+	        -webkit-border-top-right-radius: 0;
+	    }
+	    a{ color: #0084e0; text-decoration: none;}
+        a:hover{ text-decoration: underline; }
+        p#lastUpdate{ font-size: smaller; margin-top: 2em; color: #666; }
+    </style>
+</head>
+<body>
+<div id="main">
+    <h1>YoxView Installation Instructions</h1>
+    <p>For full usage instruction, demos and information, please refer to the <a href="http://yoxigen.com/yoxview/usage.aspx">
+        YoxView usage page</a>.</p>
+    <a href="#thumbnails">
+    1. Prepare your thumbnails<br />
+    </a><a href="#load">2. Load YoxView</a><br />
+    <a href="#options">
+    3. Options<br />
+    </a><a href="#plugins">
+    4. Plugins (Picasa/Flickr)</a><br /><br />
+    
+    <h2 id="installation">Installation</h2>
+<ol>
+    <li>
+        <h3>Create your thumbnails</h3>
+        Your thumbnails should be placed inside a container and link to their respective full-size images, like this:
+<pre>&lt;div class="yoxview"&gt;
+    &lt;a href="img/01.jpg"&gt;&lt;img src="img/thumbnails/01.jpg" alt="First" title="First image" /&gt;&lt;/a&gt;
+    &lt;a href="img/02.jpg"&gt;&lt;img src="img/thumbnails/02.jpg" alt="Second" title="Second image" /&gt;&lt;/a&gt;
+&lt;/div&gt;
+</pre>
+<p>The viewer displays the TITLE attribute of the image tag as the image's title inside the viewer, so it's recommended to use it.</p>
+<p>Note - If you use YoxView's <a href="#plugins">plugins</a> to get your images from Flickr/Picasa, it creates the thumbnails for you, so you can bypass this step.</p>
+    </li>
+    <li>
+        <h3>Include the YoxView script in your page</h3>
+        Put the following line in the HEAD section of your page (just make sure that the
+        SRC points to the correct folder):<br />
+        <pre class="script">&lt;script type="text/javascript" src="yoxview/yoxview-init.js"&gt;&lt;/script&gt;</pre>
+    </li>
+    <li>
+        <h3>Apply YoxView to &nbsp;the element that contains your thumbnails</h3>
+        <ul>
+            <li><h4>Simple use (use if you don't know jQuery or as a shortcut):</h4>
+                First make sure that the element containing your thumbnails has the class "yoxview",
+                like shown above (&lt;div <strong>class="yoxview"</strong>&gt;). Then, 
+                open the file yoxview-init.js and uncomment the last line:<br />
+                <pre class="script">LoadScript(yoxviewPath + "yoxview-nojquery.js");</pre>
+            </li>
+            <li>
+                <h4>Regular jQuery plugin use:</h4>
+                (Don't forget to call it from within $(document).ready!)
+                <pre>$("#thumbnails").yoxview([options]);</pre>
+            </li>
+        </ul>
+    </li>
+</ol>
+<span class="demo"><strong>Demo</strong>: <a href="http://www.yoxigen.com/yoxview/demo/demo - basic usage.html">Basic installation and usage</a></span>
+<h2 id="options">3. Options</h2>
+   You can specify options when calling YoxView, either from your script or, if you're using the yoxview-nojquery.js file, from there.
+<pre>$("#thumbnails").yoxview({
+    backgroundColor: 'Blue',
+    playDelay: 5000
+});</pre>
+<span class="demo"><strong>Demo</strong>: <a href="http://www.yoxigen.com/yoxview/demo/demo - customizing with options.html">Using options</a></span><br />
+    For a full list of available options <a href="http://yoxigen.com/yoxview/usage.aspx#options">
+        click here</a>.
+        <h2 id="plugins">4. Plugins</h2>
+        <span class="demo"><strong>Demo</strong>: <a href="http://www.yoxigen.com/yoxview/demo/demo - using plugins.html">Using the YoxView plugins</a></span><br />
+        For complete information and usage instructions for YoxView plugins, <a href="http://yoxigen.com/yoxview/plugins.aspx">
+        click here</a>.
+        <p> YoxView is capable of displaying images from external sources, such as Picasa or Flickr. Images and information about them are retrieved using AJAX (or JSONP) and thumbnails are then created in the page.</p>
+        <p>Images from outside sources can be retrieved using the <em>dataUrl</em> option,
+        by copying a URL from one of the supported data sources.
+    Here's an example of adding an album from picasa to your web page (the scripts can
+    be either in the HEAD or BODY of your page):</p>
+    <pre>&lt;script type="text/javascript" src="yoxview/yoxview-init.js"&gt;&lt;/script&gt;
+&lt;script type="text/javascript"&gt;
+    $(document).ready(function(){
+        $("#yoxview_picasa").yoxview({ 
+            dataUrl: 'http://picasaweb.google.com/yoxigen/Trips'
+        });
+    });
+&lt;/script&gt;
+
+&lt;div id="yoxview_picasa"&gt;&lt;/div&gt;</pre>
+    <a href="http://yoxigen.com/yoxview/plugins.aspx#urlsTable">
+Click here</a> for a full list of supported data URL's.
+    <p id="lastUpdate">
+        Last update to this file: May 20th, 2010
+    </p>
+    </div>
+</body>
+</html>

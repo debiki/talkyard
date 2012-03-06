@@ -1,0 +1,49 @@
+﻿.yoxview_top_menu{ font-family: Arial, Sans-Serif; font-size: 10pt;}
+/*
+.yoxview_top_menu img.yoxview_fadeImg{ cursor: -moz-zoom-in }
+.yoxview_top_menu img.yoxview_zoom{ cursor: -moz-zoom-out }
+*/
+.yoxview_top_menu #yoxview_infoPanel
+{
+	top: 0;
+	bottom: auto;
+}
+.yoxview_top_menu #yoxview_infoPanel a.yoxviewInfoLink
+{
+	padding: 6px 10px;
+	margin: 0;
+	opacity: 1;
+	outline: none;
+}
+.yoxview_top_menu #yoxview_infoPanel a.yoxviewInfoLink:hover
+{
+	background: #999;
+	-moz-box-shadow: 0 15px 20px 0 rgba(0,0,0,0.6) inset;
+	-webkit-box-shadow: 0 15px 20px 0 rgba(0,0,0,0.6) inset;
+	box-shadow: 0 15px 20px 0 rgba(0,0,0,0.6) inset;
+}
+.yoxview_top_menu a.yoxview_ctlButton
+{
+	display: block;
+	width: 58px;
+	height: 42px;
+	position: fixed;
+	opacity: 0.5;
+	background-image: url(sprites.png);
+	background-repeat: no-repeat;
+	top: 50%;
+	margin-top: -22px;
+	outline: none;
+	z-index: 3;
+}
+.yoxview_top_menu a.yoxview_ctlButton:hover{ opacity: 0.8; }
+.yoxview_top_menu a.yoxview_nextBtn
+{
+	background-position: right top;
+	right : 0;
+}
+.yoxview_top_menu a.yoxview_prevBtn
+{
+	background-position: left top;
+	left : 0;
+}
