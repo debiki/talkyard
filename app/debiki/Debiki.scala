@@ -8,6 +8,8 @@ import com.debiki.v0._
 import com.debiki.v0.Prelude._
 import controllers.Actions.PageRequest
 import net.liftweb.common.{Box, Full, Empty, Failure}
+import play.api.Play
+import play.api.Play.current
 
 
 object Debiki {
@@ -16,22 +18,17 @@ object Debiki {
 
   lazy val PageCache = new PageCache(Dao)
 
-  val Dao = new CachingDao(new RelDbDaoSpi(new RelDb(
-    /*
-    // ssh tunnel to www.debiki.se prod db
-    server = System.getProperty("debiki.pgsql.servername", "127.0.0.1"),
-    port = System.getProperty("debiki.pgsql.port", "55432"),
-    database = System.getProperty("debiki.pgsql.database", "debiki_prod"),
-    user = System.getProperty("debiki.pgsql.user", "debiki_prod"),
-    password = System.getProperty("debiki.pgsql.password", "..."))))
-    */
-    // local db
-    server = System.getProperty("debiki.pgsql.servername", "192.168.0.123"),
-    port = System.getProperty("debiki.pgsql.port", "5432"),
-    database = System.getProperty("debiki.pgsql.database", "debiki"),
-    user = System.getProperty("debiki.pgsql.user", "debiki_dev_0_0_2"),
-    password = System.getProperty("debiki.pgsql.password", "apabanan454"))))
-    //*/
+  val Dao = new CachingDao(new RelDbDaoSpi( {
+    def configStr(path: String) =
+      Play.configuration.getString(path) getOrElse
+         runErr("DwE93KI2", "Config value missing: "+ path)
+    new RelDb(
+      server = configStr("debiki.pgsql.server"),
+      port = configStr("debiki.pgsql.port"),
+      database = configStr("debiki.pgsql.database"),
+      user = configStr("debiki.pgsql.user"),
+      password = configStr("debiki.pgsql.password"))
+  }))
 
 
   /**
