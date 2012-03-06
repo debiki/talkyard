@@ -1182,7 +1182,6 @@ it works everywhere, even if it works fine for you. */
 
 .dw-pri form textarea {
   width: 100%;
-  height: 100%; /* or too small */
   resize: none; /* disable Chrome's default-resizable (and
                    make the accordion resizable instead) */
   padding-right: 0px;  /* else 97% (above) often too large, so... */
@@ -1338,8 +1337,6 @@ key presses).*/
 }
 
 .dw-fs-re textarea {
-  width: 97%;
-  height: 97%;
   resize: none; /* need to disable Chrome's default-resizing-of-textarea,
                   because the parent <form> (which is also resizable)
                   isn't resized when the textarea is resized */
@@ -1523,6 +1520,7 @@ visibility:hidden) — some jQuery UI weird internal stuff? */
 }
 
 .dw-pri .dw-f-e .dw-e-tab-edit textarea {
+  height: 100%;
   margin: 0;
   padding: 0;
   border: none; /* would cause overflow, scrollbars would appear in tab panel */
