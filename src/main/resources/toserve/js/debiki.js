@@ -3312,9 +3312,9 @@ function $showDeleteForm() {
 
 // ------- Create page
 
-// This is for the ?create page (e.g. GET /some/folder/page?create).
+// This is for the ?create-page (e.g. GET /some/folder/page?create-page).
 // COULD REFACTOR: Export $loginOnClick, and place initCreateForm() in
-// debiki-lift.js, so no ?create page code is in here.
+// debiki-lift.js, so no ?create-page code is in here.
 function initCreateForm() {
   var $submitBtn = $('form.dw-f-cr .dw-fi-submit');
   $submitBtn.button().each($loginOnClick(function(event, userName) {

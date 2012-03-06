@@ -785,7 +785,18 @@ case class EditApp(   // COULD rename to Appl?
 
 /** Deletes an action. When actionId (well, postId right now)
  *  is a post, it won't be rendered. If `wholeTree', no reply is shown either.
- *  If actionId is an EditApp, that edit is undone.
+ *  If actionId is an EditApp, that edit is undone. BAD??! Too complicated??
+ *    What does it mean to Delete an EditApp Delete:ion?
+ *    Of course it would mean that the Deletion was undone,
+ *    that is, Undo, that is, the EditApp would be in effect again,
+ *    that is, the Edit would be in effect again.
+ *    However I think this is too complicated.
+ *    Perhaps it's easier to introduce a Revert class.
+ *    And if there are many Apply:s and Revert:s for an Edit,
+ *    then the most recent Apply or Revert is in effect.
+ *    Benefit: You'd never need to walk along a chain of Delete:s,
+ *    to find out which EditApp or Post was actually deleted.
+ *    ????
  *  --- Not implemented: --------
  *  If `wholeTree', all edit applications from actionId and up to
  *  delete.ctime are undone.

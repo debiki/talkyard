@@ -1100,6 +1100,17 @@ class FormHtml(val config: HtmlConfig, xsrfToken: String,
     </div>
   }
 
+  /**
+   * Lists improvement suggestions and improvements already applied.
+   *
+   * When submitted, posts a list of values like:
+   * 0-delete-093k25, 1-apply-0932kx3, ...
+   * "delete" means that an EditApp is to be deleted, that is, that
+   * the-edit-that-was-applied should be reverted. The id is an edit app id.
+   * "apply" means that an edit should be applied. The id is an edit id.
+   * The initial sequence number ("0-", "1-", ...) is the order in
+   * which the changes should be made.
+   */
   def editsDialog(nipo: ViPo, page: Debate, userName: Option[String],
                   mayEdit: Boolean): NodeSeq = {
     def xmlFor(edit: Edit, eapp: Option[EditApp]): NodeSeq = {
