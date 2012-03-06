@@ -207,7 +207,6 @@ object TemplateEngine {
     <script type="text/javascript" src="/classpath/js/modernizr-2.0.6.js"></script>
     <script type="text/javascript" src="/classpath/js/jquery-1.6.4.js"></script>
     <script type="text/javascript" src="/classpath/js/jquery.cookie.js"></script>
-    <script type="text/javascript" src="/classpath/js/jquery.scrollTo-1.4.2.js"></script>
     <script type="text/javascript" src="/classpath/js/wmd/showdown.js"></script>
     <script type="text/javascript" src="/classpath/js/jquery-ui-1.8.16.custom.min.js"></script>
     <script type="text/javascript" src="/classpath/js/debiki.js"></script>
