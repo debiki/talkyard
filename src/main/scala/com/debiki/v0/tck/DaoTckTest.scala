@@ -137,7 +137,7 @@ object Templates {
     oidOpLocalId = "provider.com/local/id",
     firstName = "Laban", email = "oid@email.hmm", country = "Sweden")
   val post = v0.Post(id = "?", parent = "1", ctime = new ju.Date,
-    loginId = "?", newIp = None, text = "", markup = "",
+    loginId = "?", newIp = None, text = "", markup = "para",
     tyype = v0.PostType.Text, where = None)
   val rating = v0.Rating(id = "?", postId = "1", loginId = "?",
     newIp = None, ctime = new ju.Date, tags = Nil)
@@ -496,6 +496,7 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
 
     // -------- Entitle a Page
 
+    /*
     "save a Title, load the article with the title" >> {
       // Save a Title, for the root post.
       var postId = ""
@@ -519,7 +520,7 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
           true
         }
       }
-    }
+    } */
 
     // -------- Publish a Post
 
