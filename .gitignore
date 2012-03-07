@@ -1,7 +1,12 @@
+scratch.txt
+scratch/
 logs
 project/project
 project/target
+dist
 target
 tmp
 .history
 debiki-app-play.iml
+RUNNING_PID
+
