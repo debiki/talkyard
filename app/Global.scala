@@ -146,6 +146,15 @@ object Global extends GlobalSettings {
     Some(action)
   }
 
+
+  /**
+   * Tells anyone reading the application log files that this server instance
+   * did not crash.
+   */
+  override def onStop(app: Application) {
+    Logger.info("Shutting down, gracefully.")
+  }
+
 }
 
 
