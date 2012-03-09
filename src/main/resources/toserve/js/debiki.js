@@ -1888,7 +1888,7 @@ function showErrorEnableInputs($form) {
 // which should contain certain html elems and classes, or 2)
 // a jQuery jqXhr object.
 function showServerResponseDialog(jqXhrOrHtml, opt_errorType,
-                                  opt_httpStatusText) {
+                                  opt_httpStatusText, opt_continue) {
   var $html, title, width;
   var html, plainText;
 
@@ -1940,6 +1940,7 @@ function showServerResponseDialog(jqXhrOrHtml, opt_errorType,
     buttons: {
       OK: function() {
         $(this).dialog('close');
+        if (opt_continue) opt_continue();
       }
     }
   });
@@ -2169,8 +2170,18 @@ function initLoginSimple() {
           // User info is now available in cookies.
           $login.dialog('close');
           fireLogin();
-          showServerResponseDialog(data);
-          continueAfterLoginOnClick();
+          // Show response dialog, and continue with whatever caused
+          // the login to happen.
+          // {{{ If the login happens because the user submits a reply,
+          // then, if the reply is submitted (from within
+          // continueAfterLoginOnClick) before the dialog is closed, then,
+          // when the browser moves the viewport to focus the new reply,
+          // the welcome dialog might no longer be visible in the viewport.
+          // But the viewport will still be dimmed, because the welcome
+          // dialog is modal. So don't continueAfterLoginOnClick until
+          // the user has closed the response dialog. }}}
+          showServerResponseDialog(data, null, null,
+              continueAfterLoginOnClick);
         })
         .fail(showServerResponseDialog)
         .always(function() {
