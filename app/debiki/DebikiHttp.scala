@@ -20,7 +20,11 @@ object DebikiHttp {
 
   // ----- Limits
 
-  val MaxCommentSize = 20 * 1000
+  // (The www.debiki.se homepage is 20 kb, and homepage.css 80 kb,
+  // but it includes Twitter Bootstrap.)
+
+  val MaxCommentSize = 100 * 1000
+  val MaxDetailsSize =  20 * 1000
 
 
   // ----- Error handling

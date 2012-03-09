@@ -68,7 +68,7 @@ object Application extends mvc.Controller {
 
 
   def handleFlagForm(pathIn: PagePath, pageRoot: PageRoot, postId: String)
-        = PagePostAction(MaxCommentSize)(pathIn) { pageReq =>
+        = PagePostAction(MaxDetailsSize)(pathIn) { pageReq =>
 
     import FormHtml.FlagForm.{InputNames => Inp}
 
@@ -95,7 +95,7 @@ object Application extends mvc.Controller {
 
 
   def handleDeleteForm(pathIn: PagePath, pageRoot: PageRoot, postId: String)
-        = PagePostAction(MaxCommentSize)(pathIn) { pageReq =>
+        = PagePostAction(MaxDetailsSize)(pathIn) { pageReq =>
 
     import FormHtml.Delete.{InputNames => Inp}
     val wholeTree = "t" == pageReq.getNoneAsEmpty(Inp.DeleteTree).
