@@ -78,7 +78,8 @@ object AppAuth extends mvc.Controller {
 
     val name = getOrDie("dw-fi-login-name", "DwE0k31c5")
     val email = getOrDie("dw-fi-login-email", "DwE8k3i30")
-    val emailNotfInp = request.body.getOrElse("dw-fi-lgi-spl-email-ntf", "no")
+    val emailNotfInp =
+      request.body.getOrElse("dw-fi-lgi-spl-email-ntf", List("no"))
     val url = getOrDie("dw-fi-login-url", "DwE64kC21")
 
     def failLogin(errCode: String, summary: String, details: String) =
@@ -95,13 +96,13 @@ object AppAuth extends mvc.Controller {
         "Please specify an email address with no weird characters.")
 
     val emailNotfPrefs: EmailNotfPrefs = emailNotfInp match {
-      case "yes" =>
+      case List("yes") =>
         if (email isEmpty)
           failLogin("DwE9UW5", "No email address.",
             "Please specify an email address, so you can receive"+
             " email notifications.")
         EmailNotfPrefs.Receive
-      case "no" => EmailNotfPrefs.DontReceive
+      case List("no") => EmailNotfPrefs.DontReceive
       case _ =>
         // Someone has hand crafted this request?
         throwBadReq("DwE03k1r35009", "Weird checkbox value.")
