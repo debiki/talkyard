@@ -1073,7 +1073,7 @@ function $initPostStep1() {
   // If you click again, show exact creation date and edit date.
   // On a third click, hide everything again.
   if ($hdr.dwPostHeaderFindStats().length
-      ) $hdr.css('cursor', 'crosshair').click(function(event) {
+      ) $hdr.css('cursor', 'help').click(function(event) {
     if ($(event.target).is('a'))
       return;  // don't expand header on link click
     var $i = $(this);
