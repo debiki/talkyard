@@ -525,7 +525,9 @@ function resizeRootThreadImpl(extraWidth) {
   // Hence it's a rather wide value. (Otherwise = 50 would do.)
   // }}}
   var requiredWidth = $rootThread.width();
-  $parent.width(requiredWidth + (extraWidth ? 2200 : 200));
+  // Change from 2200:200 to 2700:700. 200 causes float drop, if
+  // browser window is narrow, and you add a root post reply (why!?).
+  $parent.width(requiredWidth + (extraWidth ? 2700 : 700));
 
   /* [Is this still needed?]
   // Set the min width to something wider than the max width of a
