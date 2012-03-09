@@ -100,7 +100,8 @@ object PagePath {
     folder match {
       case _BadTrailingSlashRegex() =>
         // Drop the trailing slash, to find the correct path.
-        assert(pageIdSlug isEmpty)
+        assErrIf3(pageIdSlug.nonEmpty,
+          "DwE9020R3", "Page slug not empty: "+ pageIdSlug)
         val folderAndPageIdName = path.dropRight(1)
         return Parsed.Corrected(folderAndPageIdName)
       case _BadHyphenRegex() =>
