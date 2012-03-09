@@ -1373,7 +1373,7 @@ object PageListHtml {
                         ): NodeSeq = {
     <ol>{
       for ((pagePath, details) <- pagePathsDetails) yield {
-        <li><a href={"/"+ pagePath.path}>{pagePath.path}</a></li>
+        <li><a href={pagePath.path}>{pagePath.path}</a></li>
       }
     }</ol>
   }
