@@ -217,6 +217,10 @@ a:link {
   color: #00c;
 }
 
+a {
+  cursor: pointer;
+}
+
 .dw-pri ins {
   text-decoration: none;
   background: #9f9;
@@ -336,16 +340,6 @@ header.dw-p-ttl > h1 {
   margin-bottom: 1em;
 }
 
-/* The above "don't inherit move" rule destroys these three jQuery-UI rules,
-so they're repeadet here (*after* the above rule).
-COULD prefix jQuery-UI with #dw-pri not .dw-pri, so jQuery-UI's rules have
-higher precedence (then these three duplicated rules could be removed).
-— But #dw-pri needs to be placed on the <body>, so it applies also to
-jQuery UI's dialgos. Might that be incompatible with other libs? */
-.dw-pri .ui-resizable-s  { cursor: s-resize;  }
-.dw-pri .ui-resizable-e  { cursor: e-resize;  }
-.dw-pri .ui-resizable-se { cursor: se-resize; }
-
 
 /* === Threads === */
 
@@ -463,7 +457,6 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
 .dw-p.dw-x-s > .dw-p-bd,
 .dw-p.dw-x-s > .dw-p-hd {
   max-height: 4em;
-  cursor: help;
   /* The max-height of a truncated .dw-p-bd is 4em, but if floating
   elements are present inside the -p-bd (e.g. inline reply threads)
   its height might grow to e.g. 2000 px. Then at least Chrome places the
@@ -676,7 +669,6 @@ post, only for the article.) */
 .dw-z {
   position: absolute;
   color: #369;
-  cursor: crosshair !important;
   font-size: 85%;
   text-decoration:none;
 }
@@ -772,7 +764,6 @@ so set max-width and line height. */
 }
 
 .dw-a {
-  cursor: crosshair !important; /* otherwise would show cursor:auto */
   text-decoration: none;
   color: #3872ab;
   font-size: 13px;
@@ -943,10 +934,6 @@ body.dw-u-ui-simple .dw-a-edit { display: none !important; }
   position: relative;
   margin-left: 5px; /* move away from the word to the left,
                        hmm, this assumes a left-to-right language. LTR RTL */
-}
-
-.dw-i-m-start:hover {
-  cursor: crosshair;
 }
 
 /* Remove white space around the inline marks. */
@@ -1214,13 +1201,6 @@ key presses).*/
   margin-top: 1.3em;
 }
 
-.dw-pri .ui-button {
-  cursor: crosshair !important; /* has only client side side effects */
-}
-
-.dw-pri .ui-button.dw-fi-submit {
-  cursor: pointer !important; /* has servede side effects, might reload page */
-}
 
 /* --- Login dialog --- */
 
@@ -1380,7 +1360,6 @@ key presses).*/
   margin-top: 1em;
   float: left; /* otherwise margin-top has no effect, why not? */
   clear: both;
-  cursor: crosshair;
   font-size: 85%;
 }
 
@@ -1460,10 +1439,6 @@ key presses).*/
 
 #dw-e-sgs .dw-e-sg .dw-as .ui-button-text {
   padding: .15em 1ex; /* or a relatively huge button */
-}
-
-#dw-e-sgs .dw-a {
-  cursor: crosshair;
 }
 
 #dw-e-sgs-diff-text {
@@ -1703,7 +1678,6 @@ form .dw-ntf {
 
 .dw-ntf .ui-dialog-titlebar-close {
   float: right;
-  cursor: crosshair;
   height:20px; /* easier to click, if 20px instead of default 16px */
   width: 20px;
 }
@@ -1727,7 +1701,6 @@ form .dw-ntf {
 .dw-ntf-shw {
   font-style: italic;
   text-decoration: underline;
-  cursor: crosshair;
 }
 
 /* === Inbox === */
@@ -1865,14 +1838,6 @@ inside widgets, rather than buttons and tabs. */
 .dw-ui-state-default-linkified {
   border: none !important;
   background: none !important;
-}
-
-/* Use the crosshair cursor for only client side side effects */
-.ui-state-default,
-.ui-state-default a,
-.ui-accordion-header,
-.ui-accordion-header a {
-  cursor: crosshair !important;
 }
 
 /* Make accordions smaller; jQuery UI padds a little bit too much? */
