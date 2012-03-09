@@ -148,6 +148,15 @@ object Global extends GlobalSettings {
 
 
   /**
+   * Ensures lazy values are initialized early, so everything
+   * fails fast.
+   */
+  override def onStart(app: Application) {
+    Debiki.Dao
+  }
+
+
+  /**
    * Tells anyone reading the application log files that this server instance
    * did not crash.
    */
