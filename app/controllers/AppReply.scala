@@ -13,6 +13,8 @@ import play.api.data.Forms._
 import play.api.mvc.{Action => _, _}
 import Actions._
 import Prelude._
+import Utils.{OkHtml}
+
 
 object AppReply extends mvc.Controller {
 
@@ -25,7 +27,7 @@ object AppReply extends mvc.Controller {
       Utils.formHtml(pageReq, pageRoot).replyForm(
         replyToPostId = postId, text = "")
 
-    Ok(replyForm) as HTML
+    OkHtml(replyForm)
   }
 
 

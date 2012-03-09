@@ -12,6 +12,8 @@ import play.api._
 import play.api.mvc.{Action => _}
 import Actions._
 import Prelude._
+import Utils.{OkHtml}
+
 
 object AppEditHistory extends mvc.Controller {
 
@@ -22,14 +24,14 @@ object AppEditHistory extends mvc.Controller {
     val page = pageReq.page_!
     val post = page.vipo(postId) getOrElse
       throwForbidden("DwE9kIJ4", "Post "+ safed(postId) +" not found")
-    
+
     val (mayEdit, mayEditReason) =
       AppEdit.mayEdit(pageReq.user, post, pageReq.permsOnPage)
-    
+
     val form = Utils.formHtml(pageReq, pageRoot).editsDialog(
       post, page, pageReq.sid.displayName, mayEdit = mayEdit)
-    
-    Ok(form) as HTML
+
+    OkHtml(form)
   }
 
 

@@ -19,6 +19,21 @@ import Prelude._
 object Utils extends Results with http.ContentTypes {
 
 
+  /**
+   * Prefixes `<!DOCTYPE html>` to the reply, otherwise Internet Explorer
+   * enters the terrible Quirks mode. Also sets the Content-Type header.
+   */
+  def OkHtml(htmlNode: xml.NodeSeq) =
+    Ok("<!DOCTYPE html>\n"+ htmlNode).as(HTML)
+
+
+  /**
+   * Prefixes `<?xml version=...>` to the post data.
+   */
+  def OkXml(xmlNode: xml.NodeSeq, contentType: String = "text/xml") =
+    Ok("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"+ xmlNode) as contentType
+
+
   def renderOrRedirect(pageReq: PageRequest[_], rootPost: PageRoot)
         : PlainResult = {
     if (isAjax(pageReq.request)) {

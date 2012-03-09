@@ -14,6 +14,8 @@ import play.api.data.Forms._
 import play.api.mvc.{Action => _, _}
 import Actions._
 import Prelude._
+import Utils.{OkHtml}
+
 
 object AppEdit extends mvc.Controller {
 
@@ -27,7 +29,7 @@ object AppEdit extends mvc.Controller {
     val editForm = Utils.formHtml(pageReq, pageRoot).editForm(
       vipo, newText = draftText,
       userName = pageReq.sid.displayName)
-    Ok(editForm) as HTML
+    OkHtml(editForm)
   }
 
 

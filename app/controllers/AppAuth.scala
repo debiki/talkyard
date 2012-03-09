@@ -13,6 +13,7 @@ import java.{util => ju}
 import play.api._
 import play.api.mvc.{Action => _, _}
 import Actions._
+import Utils.{OkHtml}
 
 
 object AppAuth extends mvc.Controller {
@@ -165,10 +166,10 @@ object AppAuth extends mvc.Controller {
   def logout = mvc.Action(parse.urlFormEncoded(maxLength = 100)) { request =>
     request.method match {
       case "GET" =>
-        Ok(<form action='' method='POST'>
+        OkHtml(<form action='' method='POST'>
           Really log out?
           <input type='submit' value='Yes'/>
-        </form>) as HTML
+        </form>)
       case "POST" =>
         /*
         val sidCookieVal = LiftUtil.decodeCookie("dwCoSid")
@@ -184,9 +185,9 @@ object AppAuth extends mvc.Controller {
           }
         }
         */
-        (Ok(<p>You have been logged out. Return to last page?
+        OkHtml(<p>You have been logged out. Return to last page?
             <a href=''>Okay</a>
-          </p>) as HTML)
+          </p>)
           .discardingCookies("dwCoSid")  // keep the xsrf cookie,
                                          // so login dialog works?
     }

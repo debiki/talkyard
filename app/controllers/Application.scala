@@ -18,6 +18,7 @@ import Actions._
 import DebikiHttp._
 import Prelude._
 import Utils.ValidationImplicits._
+import Utils.{OkHtml, OkXml}
 
 
 object Application extends mvc.Controller {
@@ -26,7 +27,7 @@ object Application extends mvc.Controller {
   def showActionLinks(pathIn: PagePath, pageRoot: PageRoot, postId: String) =
     PageGetAction(pathIn) { pageReq =>
       val links = Utils.formHtml(pageReq, pageRoot).actLinks(postId)
-      Ok(links) as HTML
+      OkHtml(links)
     }
 
 
@@ -34,7 +35,7 @@ object Application extends mvc.Controller {
         pageReq =>
     val pageHtml =
       Debiki.TemplateEngine.renderPage(pageReq, PageRoot.Real(postId))
-    Ok(pageHtml).as(HTML)
+    OkHtml(pageHtml)
   }
 
 
@@ -126,7 +127,8 @@ object Application extends mvc.Controller {
       sortBy = PageSortOrder.ByPath,
       limit = Int.MaxValue,
       offset = 0)
-    Ok(PageListHtml.renderPageList(pagePaths)) as HTML
+    val pageNode = PageListHtml.renderPageList(pagePaths)
+    OkHtml(<html><body>{pageNode}</body></html>)
   }
 
 
@@ -172,9 +174,9 @@ object Application extends mvc.Controller {
       feedId = feedUrl,
       feedTitle = tenant.name +", "+ pagePath.path,
       feedUpdated = mostRecentPageCtime,
-      pathsAndPages) 
+      pathsAndPages)
 
-    Ok(feedXml) as "application/atom+xml"
+    OkXml(feedXml, "application/atom+xml")
   }
 
 }
