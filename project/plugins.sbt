@@ -9,3 +9,12 @@ resolvers += "Typesafe repository" at "http://repo.typesafe.com/typesafe/release
 
 // But use -SNAPSHOT, because there's no -RC2 in the Typesafe or local repo: (right now, buggy build)
 addSbtPlugin("play" % "sbt-plugin" % "2.0-SNAPSHOT")
+
+
+// The SBT-Idea plugin, https://github.com/mpeltonen/sbt-idea
+// ---------------------------------------------------------------
+resolvers += "sbt-idea-repo" at "http://mpeltonen.github.com/maven/"
+
+// libraryDependencies += "com.github.mpeltonen" %% "sbt-idea" % "0.10.0"
+addSbtPlugin("com.github.mpeltonen" % "sbt-idea" % "1.0.0")
+
