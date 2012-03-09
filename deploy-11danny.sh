@@ -1,16 +1,10 @@
 #!/bin/bash
-set -x
+
 play=/mnt/data/dev/play/kajmagnus79/play
 
 set -u  # exit on unset variable
 set -e  # exit on non-zero command exit code
 set -o pipefail  # exit on false | true
-set -x
-
-function die {
-  echo "$1" >&2
-  exit 1
-}
 
 # Don't deploy unless everything has been committed.
 if [ ! -z "`git status --porcelain`" ]; then

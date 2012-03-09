@@ -4,7 +4,6 @@
 
 set -eu
 
-set -x
 debikijs=modules/debiki-core/src/main/resources/toserve/js/debiki.js
 debikifull=modules/debiki-core/src/debiki.full.js
 
