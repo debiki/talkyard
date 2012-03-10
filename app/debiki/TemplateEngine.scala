@@ -6,9 +6,8 @@ package debiki
 
 import com.debiki.v0._
 import controllers.Actions.PageRequest
-import _root_.net.liftweb.common._
-//import _root_.net.liftweb.http._
-import _root_.net.liftweb.util._
+import play.api.Play
+import play.api.Play.current
 import xml.{Node, NodeSeq, Text}
 import Prelude._
 import TemplateEngine._
@@ -183,6 +182,8 @@ class TemplateEngine(val pageCache: PageCache, val dao: Dao) {
 
 object TemplateEngine {
 
+  val minMaxJs = if (Play.isProd) ".min.js" else ".js"
+
   val HeadHtml: NodeSeq =
     <div>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
@@ -195,20 +196,21 @@ object TemplateEngine {
     <!--[if gte IE 9]>
     <script data-path="/classpath/js" type="text/javascript" src="/classpath/js/svg.js"></script>
     <![endif]-->
+    <script type="text/javascript" src="/classpath/js/modernizr-2.0.6.js"></script>
+    <script src={"https://ajax.googleapis.com/ajax/libs/jquery/1.6.4/jquery"+ minMaxJs}></script>{/*
     <!-- Could:
-    <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.X.Y/jquery.min.js"></script>
     <script type="text/javascript">
     if (!window.jQuery) document.write(unescape("%3Cscript src='/path/to/your/jquery' type='text/javascript'%3E%3C/script%3E"));
     </script>
     See:
     http://stackoverflow.com/questions/1014203/best-way-to-use-googles-hosted-jquery-but-fall-back-to-my-hosted-library-on-goo
     COULD: Rename /classpath/js/... to /lib/, since contains CSS & imgs too.
-    -->
-    <script type="text/javascript" src="/classpath/js/modernizr-2.0.6.js"></script>
-    <script type="text/javascript" src="/classpath/js/jquery-1.6.4.js"></script>
+    */}
     <script type="text/javascript" src="/classpath/js/jquery.cookie.js"></script>
     <script type="text/javascript" src="/classpath/js/wmd/showdown.js"></script>
-    <script type="text/javascript" src="/classpath/js/jquery-ui-1.8.16.custom.min.js"></script>
+    <script src={"http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.16/jquery-ui"+ minMaxJs}></script>
+    <script type="text/javascript" src="/classpath/js/jquery.scrollable.js"></script>
+    <script type="text/javascript" src="/classpath/js/jquery.slidingmessage.js"></script>
     <script type="text/javascript" src="/classpath/js/debiki.js"></script>
     <script type="text/javascript" src="/classpath/js/debiki-utterscroll.js"></script>
     <script type="text/javascript" src="/classpath/js/debiki-lift.js"></script>
