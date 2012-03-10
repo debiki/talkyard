@@ -7,7 +7,7 @@
  */
 (function($) {
     jQuery.showMessage = function(message, options){
-        // defaults
+
         settings = jQuery.extend({
              id: 'sliding_message_box',
              position: 'bottom',
@@ -17,15 +17,19 @@
              delay: 5000,
              speed: 500,
              fontSize: '24px'
-        }, options);        
-        
+        }, options);
+
         var elem = $('#' + settings.id);
         var delayed;
-        
+
+        // Don't restart slide in animation, if message already visible.
+        if (elem.is(':visible'))
+          return;
+
         // generate message div if it doesn't exist
         if(elem.length == 0){
             elem = $('<div></div>').attr('id', settings.id);
-            
+
             elem.css({'z-index': '999',
                       'color': settings.color,
                       'background-color': settings.backgroundColor,
@@ -37,12 +41,13 @@
                       'line-height': settings.lineHeight,
                       'font-size': settings.fontSize
                       });
-            
+
             $('body').append(elem);
         }
-        
+
         elem.html(message);
-        
+        elem.show();
+
         // Animate in.
         if(settings.position == 'bottom'){
             elem.css('bottom', '-' + elem.height() + 'px');
@@ -58,6 +63,7 @@
         animOutSettings[settings.position] = -elem.height();
         var animOut = function() {
             elem.animate(animOutSettings, settings.speed);
+            elem.hide();
         };
         setTimeout(animOut, settings.delay);
     }
