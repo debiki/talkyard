@@ -4300,13 +4300,15 @@ function initAndDrawSvg() {
   Me.refreshProps();
 
   // Activate Utterscroll, and show tips if people use window scrollbars.
+  var utterscrollHinted = false;
   if (!Modernizr.touch) Debiki.v0.utterscroll({
     scrollstoppers: '.CodeMirror,'+
         ' .ui-draggable, .ui-resizable-handle, .dw-p-hd',
     mousedownOnWinHztlScrollbar: function() {
-      $.showMessage(
+      if (!utterscrollHinted) $.showMessage(
         '<p>Click <b>and hold</b> left mouse button, on the background.<br>'+
-        'Move the mouse leftwards.</p>');
+        'Move the mouse leftwards.</p>', { delay: 16000 });
+      utterscrollHinted = true;
     }
   });
 
