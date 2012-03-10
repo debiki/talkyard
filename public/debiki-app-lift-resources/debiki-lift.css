@@ -140,10 +140,6 @@ a:visited {
   color: #4C5B6B !important;
 }
 
-#sidebar > nav a {
-  cursor: pointer !important;
-}
-
 .container {
   width: 940px;
   margin: 0 auto;
@@ -153,11 +149,6 @@ a:visited {
 
 #dw-u-lgi-lgo {
   margin-right: 4.5em;
-}
-
-#dw-a-login,
-#dw-a-logout {
-  cursor: crosshair !important;
 }
 
 #dw-a-logout {
