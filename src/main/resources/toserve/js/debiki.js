@@ -4299,9 +4299,15 @@ function initAndDrawSvg() {
   $body.addClass('dw-pri');
   Me.refreshProps();
 
+  // Activate Utterscroll, and show tips if people use window scrollbars.
   if (!Modernizr.touch) Debiki.v0.utterscroll({
     scrollstoppers: '.CodeMirror,'+
-        ' .ui-draggable, .ui-resizable-handle, .dw-p-hd'
+        ' .ui-draggable, .ui-resizable-handle, .dw-p-hd',
+    mousedownOnWinHztlScrollbar: function() {
+      $.showMessage(
+        '<p>Click <b>and hold</b> left mouse button, on the background.<br>'+
+        'Move the mouse leftwards.</p>');
+    }
   });
 
   // The root post might be too narrow and stuff might float drop,
