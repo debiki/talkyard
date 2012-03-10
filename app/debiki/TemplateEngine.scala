@@ -213,7 +213,6 @@ object TemplateEngine {
     <script type="text/javascript" src="/classpath/js/jquery.slidingmessage.js"></script>
     <script type="text/javascript" src="/classpath/js/debiki.js"></script>
     <script type="text/javascript" src="/classpath/js/debiki-utterscroll.js"></script>
-    <script type="text/javascript" src="/classpath/js/debiki-lift.js"></script>
     <script type="text/javascript" src="/classpath/js/diff_match_patch.js"></script>
     <script type="text/javascript" src="/classpath/js/html-sanitizer-minified.js"></script>
     <script type="text/javascript" src="/classpath/js/tagdog.js"></script>
