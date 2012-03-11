@@ -1,0 +1,568 @@
+/*
+ * jQuery UI CSS Framework 1.8.16
+ *
+ * Copyright 2011, AUTHORS.txt (http://jqueryui.com/about)
+ * Dual licensed under the MIT or GPL Version 2 licenses.
+ * http://jquery.org/license
+ *
+ * http://docs.jquery.com/UI/Theming/API
+ */
+
+/* Layout helpers
+----------------------------------*/
+.dw-pri .ui-helper-hidden { display: none; }
+.dw-pri .ui-helper-hidden-accessible { position: absolute !important; clip: rect(1px 1px 1px 1px); clip: rect(1px,1px,1px,1px); }
+.dw-pri .ui-helper-reset { margin: 0; padding: 0; border: 0; outline: 0; line-height: 1.3; text-decoration: none; font-size: 100%; list-style: none; }
+.dw-pri .ui-helper-clearfix:after { content: "."; display: block; height: 0; clear: both; visibility: hidden; }
+.dw-pri .ui-helper-clearfix { display: inline-block; }
+/* required comment for clearfix to work in Opera \*/
+* html .ui-helper-clearfix { height:1%; }
+.dw-pri .ui-helper-clearfix { display:block; }
+/* end clearfix */
+.dw-pri .ui-helper-zfix { width: 100%; height: 100%; top: 0; left: 0; position: absolute; opacity: 0; filter:Alpha(Opacity=0); }
+
+
+/* Interaction Cues
+----------------------------------*/
+.dw-pri .ui-state-disabled { cursor: default !important; }
+
+
+/* Icons
+----------------------------------*/
+
+/* states and images */
+.dw-pri .ui-icon { display: block; text-indent: -99999px; overflow: hidden; background-repeat: no-repeat; }
+
+
+/* Misc visuals
+----------------------------------*/
+
+/* Overlays */
+.dw-pri .ui-widget-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+
+
+/*
+ * jQuery UI CSS Framework 1.8.16
+ *
+ * Copyright 2011, AUTHORS.txt (http://jqueryui.com/about)
+ * Dual licensed under the MIT or GPL Version 2 licenses.
+ * http://jquery.org/license
+ *
+ * http://docs.jquery.com/UI/Theming/API
+ *
+ * To view and modify this theme, visit http://jqueryui.com/themeroller/?ctl=themeroller&ffDefault=Trebuchet%20MS,%20Tahoma,%20Verdana,%20Arial,%20sans-serif&fwDefault=bold&fsDefault=1.1em&cornerRadius=4px&bgColorHeader=ededed&bgTextureHeader=03_highlight_soft.png&bgImgOpacityHeader=35&borderColorHeader=a3a3a3&fcHeader=000000&iconColorHeader=238ed7&bgColorContent=fbf7f2&bgTextureContent=01_flat.png&bgImgOpacityContent=100&borderColorContent=fbf7f2&fcContent=333333&iconColorContent=0c93ca&bgColorDefault=fefefe&bgTextureDefault=02_glass.png&bgImgOpacityDefault=100&borderColorDefault=cccccc&fcDefault=1c80c4&iconColorDefault=e9911c&bgColorHover=fdf5ce&bgTextureHover=02_glass.png&bgImgOpacityHover=100&borderColorHover=fbcb09&fcHover=c77405&iconColorHover=ef8c08&bgColorActive=ffffff&bgTextureActive=02_glass.png&bgImgOpacityActive=65&borderColorActive=fbd850&fcActive=de8800&iconColorActive=ef8c08&bgColorHighlight=ffe45c&bgTextureHighlight=03_highlight_soft.png&bgImgOpacityHighlight=75&borderColorHighlight=fed22f&fcHighlight=363636&iconColorHighlight=228ef1&bgColorError=b81900&bgTextureError=08_diagonals_thick.png&bgImgOpacityError=18&borderColorError=cd0a0a&fcError=ffffff&iconColorError=ffd27a&bgColorOverlay=666666&bgTextureOverlay=08_diagonals_thick.png&bgImgOpacityOverlay=20&opacityOverlay=50&bgColorShadow=000000&bgTextureShadow=01_flat.png&bgImgOpacityShadow=10&opacityShadow=20&thicknessShadow=5px&offsetTopShadow=-5px&offsetLeftShadow=-5px&cornerRadiusShadow=5px
+ */
+
+
+/* Component containers
+----------------------------------*/
+.dw-pri .ui-widget { font-family: Trebuchet MS, Tahoma, Verdana, Arial, sans-serif; font-size: 1.1em; }
+.dw-pri .ui-widget .ui-widget { font-size: 1em; }
+.dw-pri .ui-widget input, .dw-pri .ui-widget select, .dw-pri .ui-widget textarea, .dw-pri .ui-widget button { font-family: Trebuchet MS, Tahoma, Verdana, Arial, sans-serif; font-size: 1em; }
+.dw-pri .ui-widget-content { border: 1px solid #fbf7f2; background: #fbf7f2 url(images/ui-bg_flat_100_fbf7f2_40x100.png) 50% 50% repeat-x; color: #333333; }
+.dw-pri .ui-widget-content a { color: #333333; }
+.dw-pri .ui-widget-header { border: 1px solid #a3a3a3; background: #ededed url(images/ui-bg_highlight-soft_35_ededed_1x100.png) 50% 50% repeat-x; color: #000000; font-weight: bold; }
+.dw-pri .ui-widget-header a { color: #000000; }
+
+/* Interaction states
+----------------------------------*/
+.dw-pri .ui-state-default, .dw-pri .ui-widget-content .ui-state-default, .dw-pri .ui-widget-header .ui-state-default { border: 1px solid #cccccc; background: #fefefe url(images/ui-bg_glass_100_fefefe_1x400.png) 50% 50% repeat-x; font-weight: bold; color: #1c80c4; }
+.dw-pri .ui-state-default a, .dw-pri .ui-state-default a:link, .dw-pri .ui-state-default a:visited { color: #1c80c4; text-decoration: none; }
+.dw-pri .ui-state-hover, .dw-pri .ui-widget-content .ui-state-hover, .dw-pri .ui-widget-header .ui-state-hover, .dw-pri .ui-state-focus, .dw-pri .ui-widget-content .ui-state-focus, .dw-pri .ui-widget-header .ui-state-focus { border: 1px solid #fbcb09; background: #fdf5ce url(images/ui-bg_glass_100_fdf5ce_1x400.png) 50% 50% repeat-x; font-weight: bold; color: #c77405; }
+.dw-pri .ui-state-hover a, .dw-pri .ui-state-hover a:hover { color: #c77405; text-decoration: none; }
+.dw-pri .ui-state-active, .dw-pri .ui-widget-content .ui-state-active, .dw-pri .ui-widget-header .ui-state-active { border: 1px solid #fbd850; background: #ffffff url(images/ui-bg_glass_65_ffffff_1x400.png) 50% 50% repeat-x; font-weight: bold; color: #de8800; }
+.dw-pri .ui-state-active a, .dw-pri .ui-state-active a:link, .dw-pri .ui-state-active a:visited { color: #de8800; text-decoration: none; }
+.dw-pri .ui-widget :active { outline: none; }
+
+/* Interaction Cues
+----------------------------------*/
+.dw-pri .ui-state-highlight, .dw-pri .ui-widget-content .ui-state-highlight, .dw-pri .ui-widget-header .ui-state-highlight  {border: 1px solid #fed22f; background: #ffe45c url(images/ui-bg_highlight-soft_75_ffe45c_1x100.png) 50% top repeat-x; color: #363636; }
+.dw-pri .ui-state-highlight a, .dw-pri .ui-widget-content .ui-state-highlight a,.ui-widget-header .ui-state-highlight a { color: #363636; }
+.dw-pri .ui-state-error, .dw-pri .ui-widget-content .ui-state-error, .dw-pri .ui-widget-header .ui-state-error {border: 1px solid #cd0a0a; background: #b81900 url(images/ui-bg_diagonals-thick_18_b81900_40x40.png) 50% 50% repeat; color: #ffffff; }
+.dw-pri .ui-state-error a, .dw-pri .ui-widget-content .ui-state-error a, .dw-pri .ui-widget-header .ui-state-error a { color: #ffffff; }
+.dw-pri .ui-state-error-text, .dw-pri .ui-widget-content .ui-state-error-text, .dw-pri .ui-widget-header .ui-state-error-text { color: #ffffff; }
+.dw-pri .ui-priority-primary, .dw-pri .ui-widget-content .ui-priority-primary, .dw-pri .ui-widget-header .ui-priority-primary { font-weight: bold; }
+.dw-pri .ui-priority-secondary, .dw-pri .ui-widget-content .ui-priority-secondary,  .ui-widget-header .ui-priority-secondary { opacity: .7; filter:Alpha(Opacity=70); font-weight: normal; }
+.dw-pri .ui-state-disabled, .dw-pri .ui-widget-content .ui-state-disabled, .dw-pri .ui-widget-header .ui-state-disabled { opacity: .35; filter:Alpha(Opacity=35); background-image: none; }
+
+/* Icons
+----------------------------------*/
+
+/* states and images */
+.dw-pri .ui-icon { width: 16px; height: 16px; background-image: url(images/ui-icons_0c93ca_256x240.png); }
+.dw-pri .ui-widget-content .ui-icon {background-image: url(images/ui-icons_0c93ca_256x240.png); }
+.dw-pri .ui-widget-header .ui-icon {background-image: url(images/ui-icons_238ed7_256x240.png); }
+.dw-pri .ui-state-default .ui-icon { background-image: url(images/ui-icons_e9911c_256x240.png); }
+.dw-pri .ui-state-hover .ui-icon, .dw-pri .ui-state-focus .ui-icon {background-image: url(images/ui-icons_ef8c08_256x240.png); }
+.dw-pri .ui-state-active .ui-icon {background-image: url(images/ui-icons_ef8c08_256x240.png); }
+.dw-pri .ui-state-highlight .ui-icon {background-image: url(images/ui-icons_228ef1_256x240.png); }
+.dw-pri .ui-state-error .ui-icon, .dw-pri .ui-state-error-text .ui-icon {background-image: url(images/ui-icons_ffd27a_256x240.png); }
+
+/* positioning */
+.dw-pri .ui-icon-carat-1-n { background-position: 0 0; }
+.dw-pri .ui-icon-carat-1-ne { background-position: -16px 0; }
+.dw-pri .ui-icon-carat-1-e { background-position: -32px 0; }
+.dw-pri .ui-icon-carat-1-se { background-position: -48px 0; }
+.dw-pri .ui-icon-carat-1-s { background-position: -64px 0; }
+.dw-pri .ui-icon-carat-1-sw { background-position: -80px 0; }
+.dw-pri .ui-icon-carat-1-w { background-position: -96px 0; }
+.dw-pri .ui-icon-carat-1-nw { background-position: -112px 0; }
+.dw-pri .ui-icon-carat-2-n-s { background-position: -128px 0; }
+.dw-pri .ui-icon-carat-2-e-w { background-position: -144px 0; }
+.dw-pri .ui-icon-triangle-1-n { background-position: 0 -16px; }
+.dw-pri .ui-icon-triangle-1-ne { background-position: -16px -16px; }
+.dw-pri .ui-icon-triangle-1-e { background-position: -32px -16px; }
+.dw-pri .ui-icon-triangle-1-se { background-position: -48px -16px; }
+.dw-pri .ui-icon-triangle-1-s { background-position: -64px -16px; }
+.dw-pri .ui-icon-triangle-1-sw { background-position: -80px -16px; }
+.dw-pri .ui-icon-triangle-1-w { background-position: -96px -16px; }
+.dw-pri .ui-icon-triangle-1-nw { background-position: -112px -16px; }
+.dw-pri .ui-icon-triangle-2-n-s { background-position: -128px -16px; }
+.dw-pri .ui-icon-triangle-2-e-w { background-position: -144px -16px; }
+.dw-pri .ui-icon-arrow-1-n { background-position: 0 -32px; }
+.dw-pri .ui-icon-arrow-1-ne { background-position: -16px -32px; }
+.dw-pri .ui-icon-arrow-1-e { background-position: -32px -32px; }
+.dw-pri .ui-icon-arrow-1-se { background-position: -48px -32px; }
+.dw-pri .ui-icon-arrow-1-s { background-position: -64px -32px; }
+.dw-pri .ui-icon-arrow-1-sw { background-position: -80px -32px; }
+.dw-pri .ui-icon-arrow-1-w { background-position: -96px -32px; }
+.dw-pri .ui-icon-arrow-1-nw { background-position: -112px -32px; }
+.dw-pri .ui-icon-arrow-2-n-s { background-position: -128px -32px; }
+.dw-pri .ui-icon-arrow-2-ne-sw { background-position: -144px -32px; }
+.dw-pri .ui-icon-arrow-2-e-w { background-position: -160px -32px; }
+.dw-pri .ui-icon-arrow-2-se-nw { background-position: -176px -32px; }
+.dw-pri .ui-icon-arrowstop-1-n { background-position: -192px -32px; }
+.dw-pri .ui-icon-arrowstop-1-e { background-position: -208px -32px; }
+.dw-pri .ui-icon-arrowstop-1-s { background-position: -224px -32px; }
+.dw-pri .ui-icon-arrowstop-1-w { background-position: -240px -32px; }
+.dw-pri .ui-icon-arrowthick-1-n { background-position: 0 -48px; }
+.dw-pri .ui-icon-arrowthick-1-ne { background-position: -16px -48px; }
+.dw-pri .ui-icon-arrowthick-1-e { background-position: -32px -48px; }
+.dw-pri .ui-icon-arrowthick-1-se { background-position: -48px -48px; }
+.dw-pri .ui-icon-arrowthick-1-s { background-position: -64px -48px; }
+.dw-pri .ui-icon-arrowthick-1-sw { background-position: -80px -48px; }
+.dw-pri .ui-icon-arrowthick-1-w { background-position: -96px -48px; }
+.dw-pri .ui-icon-arrowthick-1-nw { background-position: -112px -48px; }
+.dw-pri .ui-icon-arrowthick-2-n-s { background-position: -128px -48px; }
+.dw-pri .ui-icon-arrowthick-2-ne-sw { background-position: -144px -48px; }
+.dw-pri .ui-icon-arrowthick-2-e-w { background-position: -160px -48px; }
+.dw-pri .ui-icon-arrowthick-2-se-nw { background-position: -176px -48px; }
+.dw-pri .ui-icon-arrowthickstop-1-n { background-position: -192px -48px; }
+.dw-pri .ui-icon-arrowthickstop-1-e { background-position: -208px -48px; }
+.dw-pri .ui-icon-arrowthickstop-1-s { background-position: -224px -48px; }
+.dw-pri .ui-icon-arrowthickstop-1-w { background-position: -240px -48px; }
+.dw-pri .ui-icon-arrowreturnthick-1-w { background-position: 0 -64px; }
+.dw-pri .ui-icon-arrowreturnthick-1-n { background-position: -16px -64px; }
+.dw-pri .ui-icon-arrowreturnthick-1-e { background-position: -32px -64px; }
+.dw-pri .ui-icon-arrowreturnthick-1-s { background-position: -48px -64px; }
+.dw-pri .ui-icon-arrowreturn-1-w { background-position: -64px -64px; }
+.dw-pri .ui-icon-arrowreturn-1-n { background-position: -80px -64px; }
+.dw-pri .ui-icon-arrowreturn-1-e { background-position: -96px -64px; }
+.dw-pri .ui-icon-arrowreturn-1-s { background-position: -112px -64px; }
+.dw-pri .ui-icon-arrowrefresh-1-w { background-position: -128px -64px; }
+.dw-pri .ui-icon-arrowrefresh-1-n { background-position: -144px -64px; }
+.dw-pri .ui-icon-arrowrefresh-1-e { background-position: -160px -64px; }
+.dw-pri .ui-icon-arrowrefresh-1-s { background-position: -176px -64px; }
+.dw-pri .ui-icon-arrow-4 { background-position: 0 -80px; }
+.dw-pri .ui-icon-arrow-4-diag { background-position: -16px -80px; }
+.dw-pri .ui-icon-extlink { background-position: -32px -80px; }
+.dw-pri .ui-icon-newwin { background-position: -48px -80px; }
+.dw-pri .ui-icon-refresh { background-position: -64px -80px; }
+.dw-pri .ui-icon-shuffle { background-position: -80px -80px; }
+.dw-pri .ui-icon-transfer-e-w { background-position: -96px -80px; }
+.dw-pri .ui-icon-transferthick-e-w { background-position: -112px -80px; }
+.dw-pri .ui-icon-folder-collapsed { background-position: 0 -96px; }
+.dw-pri .ui-icon-folder-open { background-position: -16px -96px; }
+.dw-pri .ui-icon-document { background-position: -32px -96px; }
+.dw-pri .ui-icon-document-b { background-position: -48px -96px; }
+.dw-pri .ui-icon-note { background-position: -64px -96px; }
+.dw-pri .ui-icon-mail-closed { background-position: -80px -96px; }
+.dw-pri .ui-icon-mail-open { background-position: -96px -96px; }
+.dw-pri .ui-icon-suitcase { background-position: -112px -96px; }
+.dw-pri .ui-icon-comment { background-position: -128px -96px; }
+.dw-pri .ui-icon-person { background-position: -144px -96px; }
+.dw-pri .ui-icon-print { background-position: -160px -96px; }
+.dw-pri .ui-icon-trash { background-position: -176px -96px; }
+.dw-pri .ui-icon-locked { background-position: -192px -96px; }
+.dw-pri .ui-icon-unlocked { background-position: -208px -96px; }
+.dw-pri .ui-icon-bookmark { background-position: -224px -96px; }
+.dw-pri .ui-icon-tag { background-position: -240px -96px; }
+.dw-pri .ui-icon-home { background-position: 0 -112px; }
+.dw-pri .ui-icon-flag { background-position: -16px -112px; }
+.dw-pri .ui-icon-calendar { background-position: -32px -112px; }
+.dw-pri .ui-icon-cart { background-position: -48px -112px; }
+.dw-pri .ui-icon-pencil { background-position: -64px -112px; }
+.dw-pri .ui-icon-clock { background-position: -80px -112px; }
+.dw-pri .ui-icon-disk { background-position: -96px -112px; }
+.dw-pri .ui-icon-calculator { background-position: -112px -112px; }
+.dw-pri .ui-icon-zoomin { background-position: -128px -112px; }
+.dw-pri .ui-icon-zoomout { background-position: -144px -112px; }
+.dw-pri .ui-icon-search { background-position: -160px -112px; }
+.dw-pri .ui-icon-wrench { background-position: -176px -112px; }
+.dw-pri .ui-icon-gear { background-position: -192px -112px; }
+.dw-pri .ui-icon-heart { background-position: -208px -112px; }
+.dw-pri .ui-icon-star { background-position: -224px -112px; }
+.dw-pri .ui-icon-link { background-position: -240px -112px; }
+.dw-pri .ui-icon-cancel { background-position: 0 -128px; }
+.dw-pri .ui-icon-plus { background-position: -16px -128px; }
+.dw-pri .ui-icon-plusthick { background-position: -32px -128px; }
+.dw-pri .ui-icon-minus { background-position: -48px -128px; }
+.dw-pri .ui-icon-minusthick { background-position: -64px -128px; }
+.dw-pri .ui-icon-close { background-position: -80px -128px; }
+.dw-pri .ui-icon-closethick { background-position: -96px -128px; }
+.dw-pri .ui-icon-key { background-position: -112px -128px; }
+.dw-pri .ui-icon-lightbulb { background-position: -128px -128px; }
+.dw-pri .ui-icon-scissors { background-position: -144px -128px; }
+.dw-pri .ui-icon-clipboard { background-position: -160px -128px; }
+.dw-pri .ui-icon-copy { background-position: -176px -128px; }
+.dw-pri .ui-icon-contact { background-position: -192px -128px; }
+.dw-pri .ui-icon-image { background-position: -208px -128px; }
+.dw-pri .ui-icon-video { background-position: -224px -128px; }
+.dw-pri .ui-icon-script { background-position: -240px -128px; }
+.dw-pri .ui-icon-alert { background-position: 0 -144px; }
+.dw-pri .ui-icon-info { background-position: -16px -144px; }
+.dw-pri .ui-icon-notice { background-position: -32px -144px; }
+.dw-pri .ui-icon-help { background-position: -48px -144px; }
+.dw-pri .ui-icon-check { background-position: -64px -144px; }
+.dw-pri .ui-icon-bullet { background-position: -80px -144px; }
+.dw-pri .ui-icon-radio-off { background-position: -96px -144px; }
+.dw-pri .ui-icon-radio-on { background-position: -112px -144px; }
+.dw-pri .ui-icon-pin-w { background-position: -128px -144px; }
+.dw-pri .ui-icon-pin-s { background-position: -144px -144px; }
+.dw-pri .ui-icon-play { background-position: 0 -160px; }
+.dw-pri .ui-icon-pause { background-position: -16px -160px; }
+.dw-pri .ui-icon-seek-next { background-position: -32px -160px; }
+.dw-pri .ui-icon-seek-prev { background-position: -48px -160px; }
+.dw-pri .ui-icon-seek-end { background-position: -64px -160px; }
+.dw-pri .ui-icon-seek-start { background-position: -80px -160px; }
+/* ui-icon-seek-first is deprecated, use ui-icon-seek-start instead */
+.dw-pri .ui-icon-seek-first { background-position: -80px -160px; }
+.dw-pri .ui-icon-stop { background-position: -96px -160px; }
+.dw-pri .ui-icon-eject { background-position: -112px -160px; }
+.dw-pri .ui-icon-volume-off { background-position: -128px -160px; }
+.dw-pri .ui-icon-volume-on { background-position: -144px -160px; }
+.dw-pri .ui-icon-power { background-position: 0 -176px; }
+.dw-pri .ui-icon-signal-diag { background-position: -16px -176px; }
+.dw-pri .ui-icon-signal { background-position: -32px -176px; }
+.dw-pri .ui-icon-battery-0 { background-position: -48px -176px; }
+.dw-pri .ui-icon-battery-1 { background-position: -64px -176px; }
+.dw-pri .ui-icon-battery-2 { background-position: -80px -176px; }
+.dw-pri .ui-icon-battery-3 { background-position: -96px -176px; }
+.dw-pri .ui-icon-circle-plus { background-position: 0 -192px; }
+.dw-pri .ui-icon-circle-minus { background-position: -16px -192px; }
+.dw-pri .ui-icon-circle-close { background-position: -32px -192px; }
+.dw-pri .ui-icon-circle-triangle-e { background-position: -48px -192px; }
+.dw-pri .ui-icon-circle-triangle-s { background-position: -64px -192px; }
+.dw-pri .ui-icon-circle-triangle-w { background-position: -80px -192px; }
+.dw-pri .ui-icon-circle-triangle-n { background-position: -96px -192px; }
+.dw-pri .ui-icon-circle-arrow-e { background-position: -112px -192px; }
+.dw-pri .ui-icon-circle-arrow-s { background-position: -128px -192px; }
+.dw-pri .ui-icon-circle-arrow-w { background-position: -144px -192px; }
+.dw-pri .ui-icon-circle-arrow-n { background-position: -160px -192px; }
+.dw-pri .ui-icon-circle-zoomin { background-position: -176px -192px; }
+.dw-pri .ui-icon-circle-zoomout { background-position: -192px -192px; }
+.dw-pri .ui-icon-circle-check { background-position: -208px -192px; }
+.dw-pri .ui-icon-circlesmall-plus { background-position: 0 -208px; }
+.dw-pri .ui-icon-circlesmall-minus { background-position: -16px -208px; }
+.dw-pri .ui-icon-circlesmall-close { background-position: -32px -208px; }
+.dw-pri .ui-icon-squaresmall-plus { background-position: -48px -208px; }
+.dw-pri .ui-icon-squaresmall-minus { background-position: -64px -208px; }
+.dw-pri .ui-icon-squaresmall-close { background-position: -80px -208px; }
+.dw-pri .ui-icon-grip-dotted-vertical { background-position: 0 -224px; }
+.dw-pri .ui-icon-grip-dotted-horizontal { background-position: -16px -224px; }
+.dw-pri .ui-icon-grip-solid-vertical { background-position: -32px -224px; }
+.dw-pri .ui-icon-grip-solid-horizontal { background-position: -48px -224px; }
+.dw-pri .ui-icon-gripsmall-diagonal-se { background-position: -64px -224px; }
+.dw-pri .ui-icon-grip-diagonal-se { background-position: -80px -224px; }
+
+
+/* Misc visuals
+----------------------------------*/
+
+/* Corner radius */
+.dw-pri .ui-corner-all, .dw-pri .ui-corner-top, .dw-pri .ui-corner-left, .dw-pri .ui-corner-tl { -moz-border-radius-topleft: 4px; -webkit-border-top-left-radius: 4px; -khtml-border-top-left-radius: 4px; border-top-left-radius: 4px; }
+.dw-pri .ui-corner-all, .dw-pri .ui-corner-top, .dw-pri .ui-corner-right, .dw-pri .ui-corner-tr { -moz-border-radius-topright: 4px; -webkit-border-top-right-radius: 4px; -khtml-border-top-right-radius: 4px; border-top-right-radius: 4px; }
+.dw-pri .ui-corner-all, .dw-pri .ui-corner-bottom, .dw-pri .ui-corner-left, .dw-pri .ui-corner-bl { -moz-border-radius-bottomleft: 4px; -webkit-border-bottom-left-radius: 4px; -khtml-border-bottom-left-radius: 4px; border-bottom-left-radius: 4px; }
+.dw-pri .ui-corner-all, .dw-pri .ui-corner-bottom, .dw-pri .ui-corner-right, .dw-pri .ui-corner-br { -moz-border-radius-bottomright: 4px; -webkit-border-bottom-right-radius: 4px; -khtml-border-bottom-right-radius: 4px; border-bottom-right-radius: 4px; }
+
+/* Overlays */
+.dw-pri .ui-widget-overlay { background: #666666 url(images/ui-bg_diagonals-thick_20_666666_40x40.png) 50% 50% repeat; opacity: .50;filter:Alpha(Opacity=50); }
+.dw-pri .ui-widget-shadow { margin: -5px 0 0 -5px; padding: 5px; background: #000000 url(images/ui-bg_flat_10_000000_40x100.png) 50% 50% repeat-x; opacity: .20;filter:Alpha(Opacity=20); -moz-border-radius: 5px; -khtml-border-radius: 5px; -webkit-border-radius: 5px; border-radius: 5px; }/*
+ * jQuery UI Resizable 1.8.16
+ *
+ * Copyright 2011, AUTHORS.txt (http://jqueryui.com/about)
+ * Dual licensed under the MIT or GPL Version 2 licenses.
+ * http://jquery.org/license
+ *
+ * http://docs.jquery.com/UI/Resizable#theming
+ */
+.dw-pri .ui-resizable { position: relative;}
+.dw-pri .ui-resizable-handle { position: absolute;font-size: 0.1px;z-index: 99999; display: block; }
+.dw-pri .ui-resizable-disabled .ui-resizable-handle, .dw-pri .ui-resizable-autohide .ui-resizable-handle { display: none; }
+.dw-pri .ui-resizable-n { cursor: n-resize; height: 7px; width: 100%; top: -5px; left: 0; }
+.dw-pri .ui-resizable-s { cursor: s-resize; height: 7px; width: 100%; bottom: -5px; left: 0; }
+.dw-pri .ui-resizable-e { cursor: e-resize; width: 7px; right: -5px; top: 0; height: 100%; }
+.dw-pri .ui-resizable-w { cursor: w-resize; width: 7px; left: -5px; top: 0; height: 100%; }
+.dw-pri .ui-resizable-se { cursor: se-resize; width: 12px; height: 12px; right: 1px; bottom: 1px; }
+.dw-pri .ui-resizable-sw { cursor: sw-resize; width: 9px; height: 9px; left: -5px; bottom: -5px; }
+.dw-pri .ui-resizable-nw { cursor: nw-resize; width: 9px; height: 9px; left: -5px; top: -5px; }
+.dw-pri .ui-resizable-ne { cursor: ne-resize; width: 9px; height: 9px; right: -5px; top: -5px;}/*
+ * jQuery UI Selectable 1.8.16
+ *
+ * Copyright 2011, AUTHORS.txt (http://jqueryui.com/about)
+ * Dual licensed under the MIT or GPL Version 2 licenses.
+ * http://jquery.org/license
+ *
+ * http://docs.jquery.com/UI/Selectable#theming
+ */
+.dw-pri .ui-selectable-helper { position: absolute; z-index: 100; border:1px dotted black; }
+/*
+ * jQuery UI Accordion 1.8.16
+ *
+ * Copyright 2011, AUTHORS.txt (http://jqueryui.com/about)
+ * Dual licensed under the MIT or GPL Version 2 licenses.
+ * http://jquery.org/license
+ *
+ * http://docs.jquery.com/UI/Accordion#theming
+ */
+/* IE/Win - Fix animation bug - #4615 */
+.dw-pri .ui-accordion { width: 100%; }
+.dw-pri .ui-accordion .ui-accordion-header { cursor: pointer; position: relative; margin-top: 1px; zoom: 1; }
+.dw-pri .ui-accordion .ui-accordion-li-fix { display: inline; }
+.dw-pri .ui-accordion .ui-accordion-header-active { border-bottom: 0 !important; }
+.dw-pri .ui-accordion .ui-accordion-header a { display: block; font-size: 1em; padding: .5em .5em .5em .7em; }
+.dw-pri .ui-accordion-icons .ui-accordion-header a { padding-left: 2.2em; }
+.dw-pri .ui-accordion .ui-accordion-header .ui-icon { position: absolute; left: .5em; top: 50%; margin-top: -8px; }
+.dw-pri .ui-accordion .ui-accordion-content { padding: 1em 2.2em; border-top: 0; margin-top: -2px; position: relative; top: 1px; margin-bottom: 2px; overflow: auto; display: none; zoom: 1; }
+.dw-pri .ui-accordion .ui-accordion-content-active { display: block; }
+/*
+ * jQuery UI Autocomplete 1.8.16
+ *
+ * Copyright 2011, AUTHORS.txt (http://jqueryui.com/about)
+ * Dual licensed under the MIT or GPL Version 2 licenses.
+ * http://jquery.org/license
+ *
+ * http://docs.jquery.com/UI/Autocomplete#theming
+ */
+.dw-pri .ui-autocomplete { position: absolute; cursor: default; }	
+
+/* workarounds */
+* html .ui-autocomplete { width:1px; } /* without this, the menu expands to 100% in IE6 */
+
+/*
+ * jQuery UI Menu 1.8.16
+ *
+ * Copyright 2010, AUTHORS.txt (http://jqueryui.com/about)
+ * Dual licensed under the MIT or GPL Version 2 licenses.
+ * http://jquery.org/license
+ *
+ * http://docs.jquery.com/UI/Menu#theming
+ */
+.dw-pri .ui-menu {
+	list-style:none;
+	padding: 2px;
+	margin: 0;
+	display:block;
+	float: left;
+}
+.dw-pri .ui-menu .ui-menu {
+	margin-top: -3px;
+}
+.dw-pri .ui-menu .ui-menu-item {
+	margin:0;
+	padding: 0;
+	zoom: 1;
+	float: left;
+	clear: left;
+	width: 100%;
+}
+.dw-pri .ui-menu .ui-menu-item a {
+	text-decoration:none;
+	display:block;
+	padding:.2em .4em;
+	line-height:1.5;
+	zoom:1;
+}
+.dw-pri .ui-menu .ui-menu-item a.ui-state-hover,
+.dw-pri .ui-menu .ui-menu-item a.ui-state-active {
+	font-weight: normal;
+	margin: -1px;
+}
+/*
+ * jQuery UI Button 1.8.16
+ *
+ * Copyright 2011, AUTHORS.txt (http://jqueryui.com/about)
+ * Dual licensed under the MIT or GPL Version 2 licenses.
+ * http://jquery.org/license
+ *
+ * http://docs.jquery.com/UI/Button#theming
+ */
+.dw-pri .ui-button { display: inline-block; position: relative; padding: 0; margin-right: .1em; text-decoration: none !important; cursor: pointer; text-align: center; zoom: 1; overflow: visible; } /* the overflow property removes extra width in IE */
+.dw-pri .ui-button-icon-only { width: 2.2em; } /* to make room for the icon, a width needs to be set here */
+button.ui-button-icon-only { width: 2.4em; } /* button elements seem to need a little more width */
+.dw-pri .ui-button-icons-only { width: 3.4em; } 
+button.ui-button-icons-only { width: 3.7em; } 
+
+/*button text element */
+.dw-pri .ui-button .ui-button-text { display: block; line-height: 1.4;  }
+.dw-pri .ui-button-text-only .ui-button-text { padding: .4em 1em; }
+.dw-pri .ui-button-icon-only .ui-button-text, .dw-pri .ui-button-icons-only .ui-button-text { padding: .4em; text-indent: -9999999px; }
+.dw-pri .ui-button-text-icon-primary .ui-button-text, .dw-pri .ui-button-text-icons .ui-button-text { padding: .4em 1em .4em 2.1em; }
+.dw-pri .ui-button-text-icon-secondary .ui-button-text, .dw-pri .ui-button-text-icons .ui-button-text { padding: .4em 2.1em .4em 1em; }
+.dw-pri .ui-button-text-icons .ui-button-text { padding-left: 2.1em; padding-right: 2.1em; }
+/* no icon support for input elements, provide padding by default */
+input.ui-button { padding: .4em 1em; }
+
+/*button icon element(s) */
+.dw-pri .ui-button-icon-only .ui-icon, .dw-pri .ui-button-text-icon-primary .ui-icon, .dw-pri .ui-button-text-icon-secondary .ui-icon, .dw-pri .ui-button-text-icons .ui-icon, .dw-pri .ui-button-icons-only .ui-icon { position: absolute; top: 50%; margin-top: -8px; }
+.dw-pri .ui-button-icon-only .ui-icon { left: 50%; margin-left: -8px; }
+.dw-pri .ui-button-text-icon-primary .ui-button-icon-primary, .dw-pri .ui-button-text-icons .ui-button-icon-primary, .dw-pri .ui-button-icons-only .ui-button-icon-primary { left: .5em; }
+.dw-pri .ui-button-text-icon-secondary .ui-button-icon-secondary, .dw-pri .ui-button-text-icons .ui-button-icon-secondary, .dw-pri .ui-button-icons-only .ui-button-icon-secondary { right: .5em; }
+.dw-pri .ui-button-text-icons .ui-button-icon-secondary, .dw-pri .ui-button-icons-only .ui-button-icon-secondary { right: .5em; }
+
+/*button sets*/
+.dw-pri .ui-buttonset { margin-right: 7px; }
+.dw-pri .ui-buttonset .ui-button { margin-left: 0; margin-right: -.3em; }
+
+/* workarounds */
+button.ui-button::-moz-focus-inner { border: 0; padding: 0; } /* reset extra padding in Firefox */
+/*
+ * jQuery UI Dialog 1.8.16
+ *
+ * Copyright 2011, AUTHORS.txt (http://jqueryui.com/about)
+ * Dual licensed under the MIT or GPL Version 2 licenses.
+ * http://jquery.org/license
+ *
+ * http://docs.jquery.com/UI/Dialog#theming
+ */
+.dw-pri .ui-dialog { position: absolute; padding: .2em; width: 300px; overflow: hidden; }
+.dw-pri .ui-dialog .ui-dialog-titlebar { padding: .4em 1em; position: relative;  }
+.dw-pri .ui-dialog .ui-dialog-title { float: left; margin: .1em 16px .1em 0; } 
+.dw-pri .ui-dialog .ui-dialog-titlebar-close { position: absolute; right: .3em; top: 50%; width: 19px; margin: -10px 0 0 0; padding: 1px; height: 18px; }
+.dw-pri .ui-dialog .ui-dialog-titlebar-close span { display: block; margin: 1px; }
+.dw-pri .ui-dialog .ui-dialog-titlebar-close:hover, .dw-pri .ui-dialog .ui-dialog-titlebar-close:focus { padding: 0; }
+.dw-pri .ui-dialog .ui-dialog-content { position: relative; border: 0; padding: .5em 1em; background: none; overflow: auto; zoom: 1; }
+.dw-pri .ui-dialog .ui-dialog-buttonpane { text-align: left; border-width: 1px 0 0 0; background-image: none; margin: .5em 0 0 0; padding: .3em 1em .5em .4em; }
+.dw-pri .ui-dialog .ui-dialog-buttonpane .ui-dialog-buttonset { float: right; }
+.dw-pri .ui-dialog .ui-dialog-buttonpane button { margin: .5em .4em .5em 0; cursor: pointer; }
+.dw-pri .ui-dialog .ui-resizable-se { width: 14px; height: 14px; right: 3px; bottom: 3px; }
+.dw-pri .ui-draggable .ui-dialog-titlebar { cursor: move; }
+/*
+ * jQuery UI Slider 1.8.16
+ *
+ * Copyright 2011, AUTHORS.txt (http://jqueryui.com/about)
+ * Dual licensed under the MIT or GPL Version 2 licenses.
+ * http://jquery.org/license
+ *
+ * http://docs.jquery.com/UI/Slider#theming
+ */
+.dw-pri .ui-slider { position: relative; text-align: left; }
+.dw-pri .ui-slider .ui-slider-handle { position: absolute; z-index: 2; width: 1.2em; height: 1.2em; cursor: default; }
+.dw-pri .ui-slider .ui-slider-range { position: absolute; z-index: 1; font-size: .7em; display: block; border: 0; background-position: 0 0; }
+
+.dw-pri .ui-slider-horizontal { height: .8em; }
+.dw-pri .ui-slider-horizontal .ui-slider-handle { top: -.3em; margin-left: -.6em; }
+.dw-pri .ui-slider-horizontal .ui-slider-range { top: 0; height: 100%; }
+.dw-pri .ui-slider-horizontal .ui-slider-range-min { left: 0; }
+.dw-pri .ui-slider-horizontal .ui-slider-range-max { right: 0; }
+
+.dw-pri .ui-slider-vertical { width: .8em; height: 100px; }
+.dw-pri .ui-slider-vertical .ui-slider-handle { left: -.3em; margin-left: 0; margin-bottom: -.6em; }
+.dw-pri .ui-slider-vertical .ui-slider-range { left: 0; width: 100%; }
+.dw-pri .ui-slider-vertical .ui-slider-range-min { bottom: 0; }
+.dw-pri .ui-slider-vertical .ui-slider-range-max { top: 0; }/*
+ * jQuery UI Tabs 1.8.16
+ *
+ * Copyright 2011, AUTHORS.txt (http://jqueryui.com/about)
+ * Dual licensed under the MIT or GPL Version 2 licenses.
+ * http://jquery.org/license
+ *
+ * http://docs.jquery.com/UI/Tabs#theming
+ */
+.dw-pri .ui-tabs { position: relative; padding: .2em; zoom: 1; } /* position: relative prevents IE scroll bug (element with position: relative inside container with overflow: auto appear as "fixed") */
+.dw-pri .ui-tabs .ui-tabs-nav { margin: 0; padding: .2em .2em 0; }
+.dw-pri .ui-tabs .ui-tabs-nav li { list-style: none; float: left; position: relative; top: 1px; margin: 0 .2em 1px 0; border-bottom: 0 !important; padding: 0; white-space: nowrap; }
+.dw-pri .ui-tabs .ui-tabs-nav li a { float: left; padding: .5em 1em; text-decoration: none; }
+.dw-pri .ui-tabs .ui-tabs-nav li.ui-tabs-selected { margin-bottom: 0; padding-bottom: 1px; }
+.dw-pri .ui-tabs .ui-tabs-nav li.ui-tabs-selected a, .dw-pri .ui-tabs .ui-tabs-nav li.ui-state-disabled a, .dw-pri .ui-tabs .ui-tabs-nav li.ui-state-processing a { cursor: text; }
+.dw-pri .ui-tabs .ui-tabs-nav li a, .dw-pri .ui-tabs.ui-tabs-collapsible .ui-tabs-nav li.ui-tabs-selected a { cursor: pointer; } /* first selector in group seems obsolete, but required to overcome bug in Opera applying cursor: text overall if defined elsewhere... */
+.dw-pri .ui-tabs .ui-tabs-panel { display: block; border-width: 0; padding: 1em 1.4em; background: none; }
+.dw-pri .ui-tabs .ui-tabs-hide { display: none !important; }
+/*
+ * jQuery UI Datepicker 1.8.16
+ *
+ * Copyright 2011, AUTHORS.txt (http://jqueryui.com/about)
+ * Dual licensed under the MIT or GPL Version 2 licenses.
+ * http://jquery.org/license
+ *
+ * http://docs.jquery.com/UI/Datepicker#theming
+ */
+.dw-pri .ui-datepicker { width: 17em; padding: .2em .2em 0; display: none; }
+.dw-pri .ui-datepicker .ui-datepicker-header { position:relative; padding:.2em 0; }
+.dw-pri .ui-datepicker .ui-datepicker-prev, .dw-pri .ui-datepicker .ui-datepicker-next { position:absolute; top: 2px; width: 1.8em; height: 1.8em; }
+.dw-pri .ui-datepicker .ui-datepicker-prev-hover, .dw-pri .ui-datepicker .ui-datepicker-next-hover { top: 1px; }
+.dw-pri .ui-datepicker .ui-datepicker-prev { left:2px; }
+.dw-pri .ui-datepicker .ui-datepicker-next { right:2px; }
+.dw-pri .ui-datepicker .ui-datepicker-prev-hover { left:1px; }
+.dw-pri .ui-datepicker .ui-datepicker-next-hover { right:1px; }
+.dw-pri .ui-datepicker .ui-datepicker-prev span, .dw-pri .ui-datepicker .ui-datepicker-next span { display: block; position: absolute; left: 50%; margin-left: -8px; top: 50%; margin-top: -8px;  }
+.dw-pri .ui-datepicker .ui-datepicker-title { margin: 0 2.3em; line-height: 1.8em; text-align: center; }
+.dw-pri .ui-datepicker .ui-datepicker-title select { font-size:1em; margin:1px 0; }
+.dw-pri .ui-datepicker select.ui-datepicker-month-year {width: 100%;}
+.dw-pri .ui-datepicker select.ui-datepicker-month, 
+.dw-pri .ui-datepicker select.ui-datepicker-year { width: 49%;}
+.dw-pri .ui-datepicker table {width: 100%; font-size: .9em; border-collapse: collapse; margin:0 0 .4em; }
+.dw-pri .ui-datepicker th { padding: .7em .3em; text-align: center; font-weight: bold; border: 0;  }
+.dw-pri .ui-datepicker td { border: 0; padding: 1px; }
+.dw-pri .ui-datepicker td span, .dw-pri .ui-datepicker td a { display: block; padding: .2em; text-align: right; text-decoration: none; }
+.dw-pri .ui-datepicker .ui-datepicker-buttonpane { background-image: none; margin: .7em 0 0 0; padding:0 .2em; border-left: 0; border-right: 0; border-bottom: 0; }
+.dw-pri .ui-datepicker .ui-datepicker-buttonpane button { float: right; margin: .5em .2em .4em; cursor: pointer; padding: .2em .6em .3em .6em; width:auto; overflow:visible; }
+.dw-pri .ui-datepicker .ui-datepicker-buttonpane button.ui-datepicker-current { float:left; }
+
+/* with multiple calendars */
+.dw-pri .ui-datepicker.ui-datepicker-multi { width:auto; }
+.dw-pri .ui-datepicker-multi .ui-datepicker-group { float:left; }
+.dw-pri .ui-datepicker-multi .ui-datepicker-group table { width:95%; margin:0 auto .4em; }
+.dw-pri .ui-datepicker-multi-2 .ui-datepicker-group { width:50%; }
+.dw-pri .ui-datepicker-multi-3 .ui-datepicker-group { width:33.3%; }
+.dw-pri .ui-datepicker-multi-4 .ui-datepicker-group { width:25%; }
+.dw-pri .ui-datepicker-multi .ui-datepicker-group-last .ui-datepicker-header { border-left-width:0; }
+.dw-pri .ui-datepicker-multi .ui-datepicker-group-middle .ui-datepicker-header { border-left-width:0; }
+.dw-pri .ui-datepicker-multi .ui-datepicker-buttonpane { clear:left; }
+.dw-pri .ui-datepicker-row-break { clear:both; width:100%; font-size:0em; }
+
+/* RTL support */
+.dw-pri .ui-datepicker-rtl { direction: rtl; }
+.dw-pri .ui-datepicker-rtl .ui-datepicker-prev { right: 2px; left: auto; }
+.dw-pri .ui-datepicker-rtl .ui-datepicker-next { left: 2px; right: auto; }
+.dw-pri .ui-datepicker-rtl .ui-datepicker-prev:hover { right: 1px; left: auto; }
+.dw-pri .ui-datepicker-rtl .ui-datepicker-next:hover { left: 1px; right: auto; }
+.dw-pri .ui-datepicker-rtl .ui-datepicker-buttonpane { clear:right; }
+.dw-pri .ui-datepicker-rtl .ui-datepicker-buttonpane button { float: left; }
+.dw-pri .ui-datepicker-rtl .ui-datepicker-buttonpane button.ui-datepicker-current { float:right; }
+.dw-pri .ui-datepicker-rtl .ui-datepicker-group { float:right; }
+.dw-pri .ui-datepicker-rtl .ui-datepicker-group-last .ui-datepicker-header { border-right-width:0; border-left-width:1px; }
+.dw-pri .ui-datepicker-rtl .ui-datepicker-group-middle .ui-datepicker-header { border-right-width:0; border-left-width:1px; }
+
+/* IE6 IFRAME FIX (taken from datepicker 1.5.3 */
+.dw-pri .ui-datepicker-cover {
+    display: none; /*sorry for IE5*/
+    display/**/: block; /*sorry for IE5*/
+    position: absolute; /*must have*/
+    z-index: -1; /*must have*/
+    filter: mask(); /*must have*/
+    top: -4px; /*must have*/
+    left: -4px; /*must have*/
+    width: 200px; /*must have*/
+    height: 200px; /*must have*/
+}/*
+ * jQuery UI Progressbar 1.8.16
+ *
+ * Copyright 2011, AUTHORS.txt (http://jqueryui.com/about)
+ * Dual licensed under the MIT or GPL Version 2 licenses.
+ * http://jquery.org/license
+ *
+ * http://docs.jquery.com/UI/Progressbar#theming
+ */
+.dw-pri .ui-progressbar { height:2em; text-align: left; }
+.dw-pri .ui-progressbar .ui-progressbar-value {margin: -1px; height:100%; }
