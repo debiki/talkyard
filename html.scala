@@ -562,7 +562,7 @@ class DebateHtml(val debate: Debate, val pageTrust: PageTrust) {
       // (Oops, need not be `max' -- they're sorted by the *measured* prob,
       // not the lower conf limit -- well, hardly matters.)
       val maxLowerConfLimit = tagStatsSorted.head._2.fitness.lowerLimit
-      val minLower = Math.min(0.4, maxLowerConfLimit)
+      val minLower = math.min(0.4, maxLowerConfLimit)
       tagStatsSorted.takeWhile(_._2.fitness.lowerLimit >= minLower)
     }
 
