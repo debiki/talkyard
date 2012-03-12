@@ -32,19 +32,20 @@ abstract trait People {
 
   // COULD optimize.
   def login(id: String): Option[Login] = logins.find(_.id == id)
-  def login_!(id: String): Login = login(id) getOrElse error(
-    "Login not found: "+ safed(id) +" [error DwE8K3520z23]")
+  def login_!(id: String): Login = login(id) getOrElse runErr(
+    "DwE8K3520z23", "Login not found: "+ safed(id))
 
   def identity(id: String): Option[Identity] = identities.find(_.id == id)
-  def identity_!(id: String): Identity = identity(id) getOrElse error(
-    "Identity not found: "+ safed(id) +" [error DwE021kr3k09]")
+  def identity_!(id: String): Identity = identity(id) getOrElse runErr(
+    "DwE021kr3k09", "Identity not found: "+ safed(id))
+
 
   // -------- Users
 
   // COULD optimize.
   def user(id: String): Option[User] = users.find(_.id == id)
-  def user_!(id: String): User = user(id) getOrElse error(
-    "User not found: "+ safed(id) +" [error DwE730krq849]")
+  def user_!(id: String): User = user(id) getOrElse runErr(
+    "DwE730krq849", "User not found: "+ safed(id))
 
   // COULD create Action parent class, use instead of Edit.
   //def authorOf(e: Edit): Option[User] =

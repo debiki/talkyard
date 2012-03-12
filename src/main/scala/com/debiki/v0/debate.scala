@@ -42,7 +42,7 @@ object Debate {
     actionsToRemap foreach { a: T =>
       require(!remaps.contains(a.id)) // each action must be remapped only once
       remaps(a.id) =
-          if (a.id.first == '?') nextRandomString()
+          if (a.id.head == '?') nextRandomString()
           else a.id
     }
 
@@ -248,7 +248,8 @@ case class Debate (
   def post(id: String): Option[Post] = postsById.get(id)
 
   def vipo_!(postId: String): ViPo =  // COULD rename to post_!(withId = ...)
-    vipo(postId).getOrElse(error("[error DwE3krtEK]"))
+    vipo(postId).getOrElse(runErr(
+      "DwE3kR49", "Post not found: "+ safed(postId)))
 
   def vipo(postId: String): Option[ViPo] = // COULD rename to post(withId =...)
     post(postId).map(new ViPo(this, _))
@@ -361,8 +362,8 @@ case class Debate (
       case a: EditApp => editApps2 ::= a
       case f: Flag => flags2 ::= f
       case d: Delete => dels2 ::= d
-      case x => error(
-          "Unknown action type: "+ classNameOf(x) +" [error DwE8k3EC]")
+      case x => runErr(
+        "DwE8k3EC", "Unknown action type: "+ classNameOf(x))
     }
     Debate(guid, logins2, identities2, users2, posts2, ratings2,
         edits2, editApps2, flags2, dels2)
