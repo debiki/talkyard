@@ -195,35 +195,35 @@ object TemplateEngine {
     otherwise an error "'undefined' is null or not an object" happens
     in svg.js on line 56 (the minified version). */}
     { xml.Unparsed("<![if !IE]>") }
-    <script data-path="/classpath/js" type="text/javascript" src="/classpath/js/svg.js"/>
+    <script data-path="/classpath/js" src="/classpath/js/svg.js"/>
     { xml.Unparsed("<![endif]>") }
     <!--[if gte IE 9]>
-    <script data-path="/classpath/js" type="text/javascript" src="/classpath/js/svg.js"></script>
+    <script data-path="/classpath/js" src="/classpath/js/svg.js"></script>
     <![endif]-->{/*
     Concerning when/how to use a CDN for Modernizr, see:
       http://www.modernizr.com/news/modernizr-and-cdns  */}
-    <script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/modernizr/2.5.3/modernizr.min.js"></script>
+    <script src="http://cdnjs.cloudflare.com/ajax/libs/modernizr/2.5.3/modernizr.min.js"></script>
     <script src={"https://ajax.googleapis.com/ajax/libs/jquery/1.6.4/jquery"+ minMaxJs}></script>{/*
     <!-- Could:
-    <script type="text/javascript">
-    if (!window.jQuery) document.write(unescape("%3Cscript src='/path/to/your/jquery' type='text/javascript'%3E%3C/script%3E"));
+    <script>
+    if (!window.jQuery) document.write(unescape("%3Cscript src='/path/to/your/jquery' %3E%3C/script%3E"));
     </script>
     See:
     http://stackoverflow.com/questions/1014203/best-way-to-use-googles-hosted-jquery-but-fall-back-to-my-hosted-library-on-goo
     COULD: Rename /classpath/js/... to /lib/, since contains CSS & imgs too.
     */}
     <script src={"/classpath/js/jquery-cookie"+ minMaxJs}></script>
-    <script type="text/javascript" src="/classpath/js/wmd/showdown.js"></script>
+    <script src="/classpath/js/wmd/showdown.js"></script>
     <script src={"http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.16/jquery-ui"+ minMaxJs}></script>
     <script src={"/classpath/js/jquery-scrollable"+ minMaxJs}></script>
     <script src={"/classpath/js/jquery-slidingmessage"+ minMaxJs}></script>
     <script src={"/classpath/js/debiki"+ minMaxJs}></script>
     <script src={"/classpath/js/debiki-utterscroll"+ minMaxJs}></script>
-    <script type="text/javascript" src="/classpath/js/diff_match_patch.js"></script>
-    <script type="text/javascript" src="/classpath/js/html-sanitizer-minified.js"></script>
+    <script src="/classpath/js/diff_match_patch.js"></script>
+    <script src="/classpath/js/html-sanitizer-minified.js"></script>
     <script src={"/classpath/js/tagdog"+ minMaxJs}></script>
     <script src="/classpath/lib/openid-selector/js/openid-jquery.js"></script>
-    <script type="text/javascript" src="/classpath/lib/openid-selector/js/openid-en.js"></script>
+    <script src="/classpath/lib/openid-selector/js/openid-en.js"></script>
     <script src={"/classpath/js/popuplib"+ minMaxJs}></script>
     <!--[if lt IE 9]>
     <script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script>
@@ -256,7 +256,7 @@ object TemplateEngine {
           <meta name="description" content=""/>
           <meta name="keywords" content=""/>
           <link type="text/css" rel="stylesheet" href="/classpath/css/debiki-lift.css"/>
-        <style type="text/css">
+        <style>
           #template-info {{
           font-style: italic;
           margin: 1ex 0 2em;
@@ -265,12 +265,12 @@ object TemplateEngine {
         </style>
         <!-- CodeMirror editor -->
           <link rel="stylesheet" href="/classpath/lib/codemirror/lib/codemirror.css"/>
-        <script type="text/javascript" src="/classpath/lib/codemirror/lib/codemirror.js"></script>
-        <script type="text/javascript" src="/classpath/lib/codemirror/mode/css/css.js"></script>
-        <script type="text/javascript" src="/classpath/lib/codemirror/mode/javascript/javascript.js"></script>
-        <script type="text/javascript" src="/classpath/lib/codemirror/mode/xml/xml.js"></script>
-        <script type="text/javascript" src="/classpath/lib/codemirror/mode/htmlmixed/htmlmixed.js"></script>
-        <style type="text/css">
+        <script src="/classpath/lib/codemirror/lib/codemirror.js"></script>
+        <script src="/classpath/lib/codemirror/mode/css/css.js"></script>
+        <script src="/classpath/lib/codemirror/mode/javascript/javascript.js"></script>
+        <script src="/classpath/lib/codemirror/mode/xml/xml.js"></script>
+        <script src="/classpath/lib/codemirror/mode/htmlmixed/htmlmixed.js"></script>
+        <style>
           .CodeMirror {{
           border: 1px solid #eee;
           font-size: 11px;
