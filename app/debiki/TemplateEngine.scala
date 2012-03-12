@@ -182,7 +182,11 @@ class TemplateEngine(val pageCache: PageCache, val dao: Dao) {
 
 object TemplateEngine {
 
-  val minMaxJs = if (Play.isProd) ".min.js" else ".js"
+  // Play Framework RCX is very very tricky to use right now, I think,
+  // w.r.t. the Google Closure Compiler and CommonJS and "require" and
+  // "export". I'd better wait with minifying stuff, until the Play
+  // people have fixed all the open tickets etcetera.
+  val minMaxJs = ".js" // later: if (Play.isProd) ".min.js" else ".js"
 
   val HeadHtml: NodeSeq =
     <div>
@@ -195,8 +199,10 @@ object TemplateEngine {
     { xml.Unparsed("<![endif]>") }
     <!--[if gte IE 9]>
     <script data-path="/classpath/js" type="text/javascript" src="/classpath/js/svg.js"></script>
-    <![endif]-->
-    <script type="text/javascript" src="/classpath/js/modernizr-2.0.6.js"></script>
+    <![endif]-->{/*
+    Concerning when/how to use a CDN for Modernizr, see:
+      http://www.modernizr.com/news/modernizr-and-cdns  */}
+    <script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/modernizr/2.5.3/modernizr.min.js"></script>
     <script src={"https://ajax.googleapis.com/ajax/libs/jquery/1.6.4/jquery"+ minMaxJs}></script>{/*
     <!-- Could:
     <script type="text/javascript">
@@ -206,19 +212,19 @@ object TemplateEngine {
     http://stackoverflow.com/questions/1014203/best-way-to-use-googles-hosted-jquery-but-fall-back-to-my-hosted-library-on-goo
     COULD: Rename /classpath/js/... to /lib/, since contains CSS & imgs too.
     */}
-    <script type="text/javascript" src="/classpath/js/jquery.cookie.js"></script>
+    <script src={"/classpath/js/jquery-cookie"+ minMaxJs}></script>
     <script type="text/javascript" src="/classpath/js/wmd/showdown.js"></script>
     <script src={"http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.16/jquery-ui"+ minMaxJs}></script>
-    <script type="text/javascript" src="/classpath/js/jquery.scrollable.js"></script>
-    <script type="text/javascript" src="/classpath/js/jquery.slidingmessage.js"></script>
-    <script type="text/javascript" src="/classpath/js/debiki.js"></script>
-    <script type="text/javascript" src="/classpath/js/debiki-utterscroll.js"></script>
+    <script src={"/classpath/js/jquery-scrollable"+ minMaxJs}></script>
+    <script src={"/classpath/js/jquery-slidingmessage"+ minMaxJs}></script>
+    <script src={"/classpath/js/debiki"+ minMaxJs}></script>
+    <script src={"/classpath/js/debiki-utterscroll"+ minMaxJs}></script>
     <script type="text/javascript" src="/classpath/js/diff_match_patch.js"></script>
     <script type="text/javascript" src="/classpath/js/html-sanitizer-minified.js"></script>
-    <script type="text/javascript" src="/classpath/js/tagdog.js"></script>
-    <script type="text/javascript" src="/classpath/lib/openid-selector/js/openid-jquery.js"></script>
+    <script src={"/classpath/js/tagdog"+ minMaxJs}></script>
+    <script src="/classpath/lib/openid-selector/js/openid-jquery.js"></script>
     <script type="text/javascript" src="/classpath/lib/openid-selector/js/openid-en.js"></script>
-    <script type="text/javascript" src="/classpath/js/popuplib.js"></script>
+    <script src={"/classpath/js/popuplib"+ minMaxJs}></script>
     <!--[if lt IE 9]>
     <script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script>
     <![endif]-->
