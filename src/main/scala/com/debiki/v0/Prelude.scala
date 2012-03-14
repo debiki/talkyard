@@ -81,7 +81,11 @@ object Prelude {
     throw new AssertionError(
       (if (problem eq null) "" else problem +" ") +"[error "+ errorCode +"]")
 
+  // delete
   def assErrIf3(condition: Boolean, errorCode: String, problem: String = null) =
+    assErrIf(condition, errorCode, problem)
+
+  def assErrIf(condition: Boolean, errorCode: String, problem: String = null) =
     if (condition) assErr(errorCode, problem)
 
   def illArgErr(errorCode: String, problem: => String) =

@@ -203,6 +203,10 @@ case class Debate (
    */
   def guidd = "-"+ guid
 
+  // Use these instead.
+  def id = guid
+  def idd = guidd
+
   def body: Option[ViPo] = vipo(PageBodyId)
 
   def body_! = vipo_!(PageBodyId)
