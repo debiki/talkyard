@@ -46,6 +46,9 @@ object Actions {
     def loginId_! : String =
       loginId getOrElse throwForbidden("DwE03kRG4", "Not logged in")
 
+    def user_! : User =
+      user getOrElse throwForbidden("DwE86Wb7", "Not logged in")
+
     /**
      * The display name of the user making the request. Throws 403 Forbidden
      * if not available, i.e. if not logged in (shouldn't happen normally).

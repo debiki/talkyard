@@ -30,6 +30,8 @@ object Debiki {
       password = configStr("debiki.pgsql.password"))
   }))
 
+  val MailerActorRef = Mailer.startNewActor(Dao)
+
 
   /**
    * Saves page actions and refreshes caches and places messages in
@@ -39,7 +41,7 @@ object Debiki {
     if (actions isEmpty)
       return
 
-    import pageReq.{tenantId, pageId, page_!, user}
+    import pageReq.{tenantId, pageId, page_!, user_!}
     val Full(actionsWithId) = Dao.savePageActions(tenantId, pageId, actions)
 
     // Possible optimization: Examine all actions, and refresh cache only
@@ -47,14 +49,20 @@ object Debiki {
     // not applied).
     PageCache.refreshLater(pageReq)
 
+    // Would it be okay to simply overwrite the in mem cache with this
+    // updated page?
+    //val pageWithNewActions =
+    // page_! ++ actionsWithId ++ pageReq.login_! ++ pageReq.user_!
+
     // In the future, also refresh page index cache, and cached page titles?
     // (I.e. a cache for DW1_PAGE_PATHS.)
 
     // Notify users whose actions were affected.
     // BUG: notification lost if server restarted here.
     // COULD rewrite Dao so the seeds can be saved in the same transaction:
-    val seeds = Inbox.calcSeedsFrom(user, adding = actionsWithId, to = page_!)
-    Dao.saveInboxSeeds(tenantId, seeds)
+    val seeds = Notification.calcFrom(user_!, adding = actionsWithId,
+       to = page_!)
+    Dao.saveNotfs(tenantId, seeds)
   }
 
 }

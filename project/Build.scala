@@ -20,7 +20,8 @@ object ApplicationBuild extends Build {
 
   val appDependencies = Seq(
     "net.liftweb" %% "lift-common" % "2.4-M5",
-    "net.liftweb" %% "lift-util" % "2.4-M5"
+    "net.liftweb" %% "lift-util" % "2.4-M5",
+    "com.amazonaws" % "aws-java-sdk" % "1.3.4"
   )
 
   val main = PlayProject(appName, appVersion, appDependencies, mainLang = SCALA
