@@ -8,61 +8,89 @@ import java.{util => ju}
 import Prelude._
 
 
-/** E,g, a notification of a reply to a comment the user has made.
+/**
+ * A notification of a page action.
  *
- *  Sent by email and/or shown on the Web site.
+ * @param ctime When the notification was created
+ * @param recipientUserId To whom the notification should be sent
+ * @param pageTitle The titel of the page where the event happened
+ * @param pageId
+ * @param eventType The type of the event
+ * @param eventActionId The id of the event
+ * @param targetActionId An action that the event-action acted upon
+ * @param recipientActionId The action the recipient made, that is the reason
+ *  s/he is to be notified.
  */
-case class InboxItem(
-  tyype: Do,
-  title: String,
-  summary: String,
+case class NotfOfPageAction(
+  ctime: ju.Date,
+  recipientUserId: String,
+  pageTitle: String,
   pageId: String,
-  pageActionId: String,
-  sourceActionId: String,
-  ctime: ju.Date)
+  eventType: NotfOfPageAction.Type,
+  eventActionId: String,
+  targetActionId: Option[String],
+  recipientActionId: String,
+  recipientUserDispName: String,
+  eventUserDispName: String,
+  targetUserDispName: Option[String]) {
 
+  assErrIf(targetActionId.isDefined != targetUserDispName.isDefined, "DwE8Xd2")
+  assErrIf(eventType == NotfOfPageAction.Type.PersonalReply && (
+    targetActionId.isDefined || targetUserDispName.isDefined), "DwE09Kb35")
 
-/** Used when saving an inbox item to database.
- *
- *  All InboxItem fields are not present, because they're stored
- *  elsewhere in the database and available later when an
- *  InboxItem is to be constructed anyway.
- */
-case class InboxSeed(
-  // Either a role id or an unauthenticated user id (i.e. IdentitySimple).
-  // Starts with '-' for unauthenticated users.
-  userId: String,
-  pageId: String,
-  pageActionId: String,
-  sourceActionId: String,
-  ctime: ju.Date
-){
-  def roleId: Option[String] =
-    if (userId startsWith "-") None else Some(userId)
+  def recipientRoleId: Option[String] =
+    if (recipientUserId startsWith "-") None else Some(recipientUserId)
 
-  def idtySmplId: Option[String] =
-    if (userId startsWith "-") Some(userId drop 1) else None
+  def recipientIdtySmplId: Option[String] =
+    if (recipientUserId startsWith "-") Some(recipientUserId drop 1) else None
 }
 
 
-object Inbox {
+object NotfOfPageAction {
+  sealed abstract class Type
+  object Type {
+    case object PersonalReply extends Type
+  }
+}
 
-  def calcSeedsFrom(user: Option[User], adding: Seq[Action],
-                    to: Debate): Seq[InboxSeed] = {
+
+/**
+ * Notifications and email addresses, needed to mail out the notfs.
+ */
+case class NotfsToMail(
+  notfsByTenant: Map[String, Seq[NotfOfPageAction]],
+  usersByTenantAndId: Map[(String, String), User])
+
+
+object Notification {
+
+
+  def calcFrom(user: User, adding: Seq[Action], to: Debate)
+        : Seq[NotfOfPageAction] = {
+
     val actions = adding
     val page = to
-    val seeds: Seq[InboxSeed] = actions flatMap (_ match {
+    val seeds: Seq[NotfOfPageAction] = actions flatMap (_ match {
       case post: Post =>
         val postRepliedTo = page.vipo_!(post.parent)
         val userRepliedTo = postRepliedTo.user_!
-        if (user.map(_.id) == Some(userRepliedTo.id)) {
+        if (user.id == Some(userRepliedTo.id)) {
           // Don't notify the user of his/her own replies.
           Nil
         }
         else if (post.tyype == PostType.Text) {
-          InboxSeed(userId = userRepliedTo.id, pageId = page.guid,
-                pageActionId = post.id, sourceActionId = post.id,
-                ctime = post.ctime) :: Nil
+          NotfOfPageAction(
+            ctime = post.ctime,
+            recipientUserId = userRepliedTo.id,
+            pageTitle = page.titleText.getOrElse("Unnamed page"),
+            pageId = page.id, 
+            eventType = NotfOfPageAction.Type.PersonalReply,
+            eventActionId = post.id,
+            targetActionId = None,
+            recipientActionId = postRepliedTo.id,
+            recipientUserDispName = postRepliedTo.user_!.displayName,
+            eventUserDispName = user.displayName,
+            targetUserDispName = None) :: Nil
         } else {
           // Currently not supported.
           // Need to make loadInboxItem understand DW1_PAGE_ACTIONS = 'Tmpl',
@@ -86,6 +114,15 @@ object Inbox {
     seeds  // ++ pageAuthorInboxSeed ++ moderatorInboxSeed
   }
 }
+
+
+case class EmailSent(
+  id: String, 
+  sentTo: String,
+  sentOn: ju.Date,
+  subject: String,
+  bodyHtmlText: String,
+  providerEmailId: String)
 
 
 // vim: fdm=marker et ts=2 sw=2 tw=80 fo=tcqwn list

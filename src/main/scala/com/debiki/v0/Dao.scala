@@ -43,9 +43,16 @@ abstract class DaoSpi {
 
   def loadPermsOnPage(reqInfo: RequestInfo): PermsOnPage
 
-  def saveInboxSeeds(tenantId: String, seeds: Seq[InboxSeed])
+  def saveNotfs(tenantId: String, notfs: Seq[NotfOfPageAction])
 
-  def loadInboxItems(tenantId: String, roleId: String): List[InboxItem]
+  def loadNotfsForRole(tenantId: String, roleId: String)
+        : Seq[NotfOfPageAction]
+
+  def loadNotfsToMailOut(delayInMinutes: Int, numToLoad: Int): NotfsToMail
+
+  def markNotfsAsMailed(
+        notfEmailsByTenant: Map[String, Seq[(NotfOfPageAction, EmailSent)]])
+        : Unit
 
   def configRole(tenantId: String, loginId: String, ctime: ju.Date,
                     roleId: String, emailNotfPrefs: EmailNotfPrefs)
@@ -149,11 +156,26 @@ abstract class Dao {
   def loadPermsOnPage(reqInfo: RequestInfo): PermsOnPage =
     _spi.loadPermsOnPage(reqInfo)
 
-  def saveInboxSeeds(tenantId: String, seeds: Seq[InboxSeed]) =
-    _spi.saveInboxSeeds(tenantId, seeds)
 
-  def loadInboxItems(tenantId: String, roleId: String): List[InboxItem] =
-    _spi.loadInboxItems(tenantId, roleId)
+  // ----- Notifications
+
+  def saveNotfs(tenantId: String, notfs: Seq[NotfOfPageAction]) =
+    _spi.saveNotfs(tenantId, notfs)
+
+  def loadNotfsForRole(tenantId: String, roleId: String)
+        : Seq[NotfOfPageAction] =
+    _spi.loadNotfsForRole(tenantId, roleId)
+
+  def loadNotfsToMailOut(delayInMinutes: Int, numToLoad: Int): NotfsToMail =
+    _spi.loadNotfsToMailOut(delayInMinutes, numToLoad)
+
+  def markNotfsAsMailed(
+        notfEmailsByTenant: Map[String, Seq[(NotfOfPageAction, EmailSent)]])
+        : Unit =
+    _spi.markNotfsAsMailed(notfEmailsByTenant)
+
+
+  // ----- User configuration
 
   def configRole(tenantId: String, loginId: String, ctime: ju.Date,
                  roleId: String, emailNotfPrefs: EmailNotfPrefs) =
@@ -165,6 +187,8 @@ abstract class Dao {
     _spi.configIdtySimple(tenantId, loginId = loginId, ctime = ctime,
                           emailAddr = emailAddr,
                           emailNotfPrefs = emailNotfPrefs)
+
+  // ----- Tenants
 
   /** Creates a tenant, assigns it an id and and returns it. */
   def createTenant(name: String): Tenant =
