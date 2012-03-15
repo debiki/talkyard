@@ -1343,23 +1343,32 @@ class FormHtml(val config: HtmlConfig, xsrfToken: String,
 
 
 object UserHtml {
-  def renderInbox(items: Seq[InboxItem]): NodeSeq = {
-    if (items.isEmpty)
+
+  def renderInbox(notfs: Seq[NotfOfPageAction]): NodeSeq = {
+    if (notfs.isEmpty)
       return  <div class='dw-ibx'><div class='dw-ibx-ttl'/></div>;
 
     <div class='dw-ibx'>
       <div class='dw-ibx-ttl'>Your inbox:</div>
       <ol> {
-        for (i <- items.take(20)) yield {
-          // COULD look up address in PATHS table when loading
-          // InboxItem from database -- to get rid of 1 unnecessary redirect.
-          val pageAddr = "/-"+ i.pageId
-          val postAddr = pageAddr +"#dw-post-"+ i.pageActionId
-          // The page title (i.e. `i.title') is currently unknown.
-          //<li>1 reply on <a class='dw-ibx-pg-ttl' href={pageAddr}>{
-          //  i.title}</a>:<br/>
-          <li>1 reply: <a class='dw-ibx-p-bd' href={postAddr}>{i.summary}</a>
-          </li>
+        for (notf <- notfs.take(20)) yield {
+          val pageAddr = "/-"+ notf.pageId
+          val postAddr = pageAddr +"#dw-post-"+ notf.recipientActionId
+
+          notf.eventType match {
+            case NotfOfPageAction.Type.PersonalReply =>
+              // COULD look up address in PATHS table when loading
+              // InboxItem from database -- to get rid of 1 unnecessary redirect.
+              <li><a href={postAddr}>1 reply on {notf.pageTitle}</a>,
+                by <em>{notf.eventUserDispName}</em>
+              </li>
+
+            case _ =>
+              // I won't forget to fix this later, when I add more notf types.
+              <li><a href={postAddr}>1 something on {notf.pageTitle}</a>,
+                by <em>{notf.eventUserDispName}</em>
+              </li>
+          }
         }
       }
       </ol>
@@ -1369,6 +1378,7 @@ object UserHtml {
 
 
 object PageListHtml {
+
   def renderPageList(pagePathsDetails: Seq[(PagePath, PageDetails)]
                         ): NodeSeq = {
     <ol>{
