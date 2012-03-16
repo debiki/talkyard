@@ -65,6 +65,7 @@
  *  -t-           thread
  *  -ts-          threads
  *  -ts-          timestamp? or use ds, datestamp? or use -dt-, "date"?
+ *  -tps-         tips
  *  -ttl-         ?? title ? (time-to-live not of relevance in CSS?)
  *  -u-           user
  *  -ua-          user agent (i.e. the browser)
@@ -1703,6 +1704,27 @@ form .dw-ntf {
   text-decoration: underline;
 }
 
+/* A tips on how replies are sorted, in the horizontal layout */
+.dw-tps-sort-order {
+  position: absolute;
+  top: -130px;
+  background-color: #ffefc6;
+  white-space: nowrap;
+  padding: 0 2ex 1ex;
+  left: -70px;
+  z-index: 999;
+}
+.dw-tps-sort-order-arw {
+  position: relative;
+  height: 20px;
+  top: 8px;
+  width: 55px;
+  display: inline-block;
+  margin: 0 10px;
+  background: url(img/dw-arw-hz-right-gray.png) no-repeat;
+}
+
+
 /* === Inbox === */
 /* COULD get rid of #sidebar selector somehow — make selectors in
 debiki-lift.css less inclusive? */
@@ -1894,6 +1916,19 @@ JavaScript. Then I can still place all CSS stuff in this file. */
   stroke-width: 4;
   stroke: #f0a005;
 } */
+
+.dw-flip-hz {
+  -moz-transform: scaleX(-1);
+  -o-transform: scaleX(-1);
+  -webkit-transform: scaleX(-1);
+  transform: scaleX(-1);
+  filter: FlipH;
+  -ms-filter: "FlipH";
+}
+
+.dw-arw-hz-right {
+  background-image: url(img/dw-arw-hz-right.png);
+}
 
 .dw-svg-fake-varrow,
 .dw-svg-fake-harrow,

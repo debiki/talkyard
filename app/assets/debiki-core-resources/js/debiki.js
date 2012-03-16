@@ -2546,6 +2546,7 @@ function $showFlagForm() {
 
 // ------- Replying
 
+
 // Shows a reply form, either below the relevant post, or inside it,
 // if the reply is an inline comment -- whichever is the case is determined
 // by event.target.
@@ -2556,6 +2557,15 @@ function $showReplyForm(event, opt_where) {
   clearfix($thread); // ensures the reply appears nested inside the thread
   var postId = $post.attr('id').substr(8, 999); // drop initial "dw-post-"
   var horizLayout = $thread.is('.dw-hor');
+
+  function showSortOrderTips($newPost) {
+    var $tips = $('.dw-tps-sort-order');
+    $newPost.append($tips);
+    // Center the tips above the new post. (33 roughly cancels margin-left.)
+    var left = ($tips.width() - $newPost.width()) / 2;
+    $tips.css('left', 33 - left +'px');
+    setTimeout(function() { $tips.fadeOut(2000); }, 12000);
+  }
 
   // Create a reply form, or Ajax-load it (depending on the Web framework
   // specifics).
@@ -2601,6 +2611,7 @@ function $showReplyForm(event, opt_where) {
           $anyHorizReplyBtn.show();
           showAndHighlightPost($myNewPost,
               { marginRight: 300, marginBottom: 300 });
+          if (horizLayout) showSortOrderTips($myNewPost);
         });
 
       // Disable the form; it's been submitted.
