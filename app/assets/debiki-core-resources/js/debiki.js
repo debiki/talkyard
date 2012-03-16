@@ -1759,10 +1759,11 @@ function removeInstantly($form) {
 }
 
 // Action <form> cancel button -- won't work for the Edit form...?
-function slideAwayRemove($form) {
+function slideAwayRemove($form, opt_complete) {
   // Slide away <form> and remove it.
   var $thread = $form.closest('.dw-t');
   function rm(next) {
+    if (opt_complete) opt_complete();
     removeInstantly($form);
     next();
   }
@@ -2554,6 +2555,7 @@ function $showReplyForm(event, opt_where) {
   var $post = $thread.children('.dw-p');
   clearfix($thread); // ensures the reply appears nested inside the thread
   var postId = $post.attr('id').substr(8, 999); // drop initial "dw-post-"
+  var horizLayout = $thread.is('.dw-hor');
 
   // Create a reply form, or Ajax-load it (depending on the Web framework
   // specifics).
@@ -2573,6 +2575,7 @@ function $showReplyForm(event, opt_where) {
         minWidth: 210  // or Cancel button might float drop
       });
 
+    var $anyHorizReplyBtn = $();
     var $submitBtn = $replyForm.find('.dw-fi-submit');
     var setSubmitBtnTitle = function(event, userName) {
       var text = userName ?  'Post as '+ userName : 'Post as ...';  // i18n
@@ -2594,6 +2597,8 @@ function $showReplyForm(event, opt_where) {
           // dw-svg-fake-harrow.
           removeInstantly($replyFormParent);
           var $myNewPost = updateDebate(newDebateHtml);
+          // Any horizontal reply button has been hidden.
+          $anyHorizReplyBtn.show();
           showAndHighlightPost($myNewPost,
               { marginRight: 300, marginBottom: 300 });
         });
@@ -2609,7 +2614,6 @@ function $showReplyForm(event, opt_where) {
       // color and font matching <input> buttons
       'dw-ui-state-default-color dw-ui-widget-font');
 
-    $replyFormParent.hide();
     if (opt_where) {
       // The user replies to a specific piece of text inside the post.
       // Place the reply inline, and fill in the `where' form field with
@@ -2632,7 +2636,26 @@ function $showReplyForm(event, opt_where) {
       }
       $res.prepend($replyFormParent);
     }
-    SVG.drawArrowsToReplyForm($replyFormParent);
+
+    // For horizontal threads, hide the reply button, to give the impression
+    // that the reply form replaces the reply button. Adjust the reply
+    // form min-width so it starts with a width equal to the reply
+    // button width — then the stuff to the right won't jump leftwards when
+    // $anyHorizReplyBtn is hidden/shown and the $replyForm is shown/removed.
+    if (horizLayout) {
+      $anyHorizReplyBtn =
+          $replyFormParent.prev().filter('.dw-hor-a').dwBugIfEmpty().hide();
+      $replyForm.find('.dw-submit-set .dw-fi-cancel').click(function() {
+        slideAwayRemove($replyFormParent, function() {
+          $anyHorizReplyBtn.show();
+        });
+        // Cancel delegate, which also calls slideAwayRemove().
+        return false;
+      });
+      $replyFormParent.css('min-width', $anyHorizReplyBtn.outerWidth(true));
+    }
+
+    SVG.drawArrowsToReplyForm($replyFormParent); // is this needed?
     slideInActionForm($replyFormParent);
   });
 }
@@ -3858,7 +3881,7 @@ function makeFakeDrawer() {
 
   function drawArrowsToReplyForm($formParent) {
     var arws = $formParent.closest('.dw-t').is('.dw-hor')
-        ? horizListItemContArrow + horizListItemEndArrow
+        ? replyBtnBranchingArrow
         : '<div class="dw-svg-fake-vcurve-short"/>'; // dw-png-arw-vt-curve-end?
     $formParent.prepend(arws);
   }

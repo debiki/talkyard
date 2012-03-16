@@ -1911,12 +1911,14 @@ JavaScript. Then I can still place all CSS stuff in this file. */
   top: -50px;
 }
 
-.dw-res > li:first-child > .dw-svg-fake-harrow {
+/* For the horizontal reply button and reply form. */
+.dw-res > li.dw-hor-a > .dw-svg-fake-harrow,
+.dw-res > li.dw-fs > .dw-svg-fake-harrow {
   z-index: -13; /* place below the .dw-svg-fake-hcurve-start */
 }
-
 /* Hides the -harrow to the left of the .dw-svg-fake-hcurve-start. */
-.dw-res > li:first-child >  .dw-svg-fake-harrow-hider-left {
+.dw-res > li.dw-hor-a >  .dw-svg-fake-harrow-hider-left,
+.dw-res > li.dw-fs >  .dw-svg-fake-harrow-hider-left {
   width: 50px;
   background-color: white;
   position: absolute;
