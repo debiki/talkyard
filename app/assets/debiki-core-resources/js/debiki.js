@@ -4306,8 +4306,9 @@ function initAndDrawSvg() {
         ' .ui-draggable, .ui-resizable-handle, .dw-p-hd',
     mousedownOnWinHztlScrollbar: function() {
       if (!utterscrollHinted) $.showMessage(
-        '<p>Click <b>and hold</b> left mouse button, on the background.<br>'+
-        'Move the mouse leftwards.</p>', { delay: 16000 });
+        '<p>Click <b>and hold</b> left mouse button, on the white '+
+        ' background,<br>and move the mouse leftwards and rightwards.</p>',
+        { delay: 23000 });
       utterscrollHinted = true;
     }
   });
