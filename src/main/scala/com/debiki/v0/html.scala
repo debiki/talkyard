@@ -794,7 +794,8 @@ class FormHtml(val config: HtmlConfig, xsrfToken: String,
       replyForm("", "") ++
       ratingForm ++
       flagForm ++
-      deleteForm(None) }
+      deleteForm(None) ++
+      sortOrterTipsDiv }
     </div>
 
   def loginForms =
@@ -1308,6 +1309,19 @@ class FormHtml(val config: HtmlConfig, xsrfToken: String,
       </form>
     </div>
   }
+
+  /**
+   *  A tips on how replies are sorted, in the horizontal layout.
+   */
+  val sortOrterTipsDiv: NodeSeq = {
+    <div class='dw-tps-sort-order'>
+      interesting, funny
+      <span class='dw-tps-sort-order-arw dw-flip-hz'></span>
+      <span class='dw-tps-sort-order-arw'></span>
+      boring, stupid
+    </div>
+  }
+
 
   /*
   def timeWaistWarning(action: String, is: String): NodeSeq = {
