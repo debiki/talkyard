@@ -330,13 +330,13 @@ $.event.add(document, "mousedown", function() {
   //didResize = false; -- currently handled in another mousedown
 });
 
-// SVG Web's Flash renderer won't do; we need native browser support,
-// or we'll use images instead of SVG graphics.
-var nativeSvgSupport =
-    window.svgweb && window.svgweb.getHandlerType() === 'native';
+// If there's no SVG support, we'll use images instead.
+var nativeSvgSupport = Modernizr.inlinesvg;
 
 var SVG = nativeSvgSupport && document.URL.indexOf('svg=false') === -1 ?
     makeSvgDrawer() : makeFakeDrawer();
+
+var svgns = "http://www.w3.org/2000/svg";
 
 var Me = makeCurUser();
 
@@ -3395,16 +3395,10 @@ c   x1,y1 x2,y2 x,y curveto   Relative coordinates.
 // to illustrate their relationships. The arrows are drawn in whitespace
 // between threads, e.g. on the visibility:hidden .dw-t-vspace elems.
 function makeSvgDrawer() {
+
   function $createSvgRoot() {
-    // See:
-    // http://svgweb.googlecode.com/svn/trunk/docs/UserManual.html#dynamic_root
-    var svg = document.createElementNS(svgns, 'svg');  // need not pass 'true'
-    // {{{ appendChild takes long
-    // 199ms (100 posts, 2.8 GHz 6 core AMD), in svg.js,
-    // because it invokes _processSVGScript, in svg.js:45, which takes 130ms
-    // (for a page wit h100 posts and my 2.8 GHz 6 core AMD).
-    // Using <empty-svg-node>.cloneNode() has no effect. }}}
-    svgweb.appendChild(svg, $(this).get(0));
+    var svg = document.createElementNS(svgns, 'svg');
+    this.appendChild(svg);
     $(this).addClass('dw-svg-parent');
   }
 
@@ -3779,9 +3773,9 @@ function makeSvgDrawer() {
 }
 
 function makeFakeDrawer() {
-  // No SVG support. The svgweb Flash renderer seems far too slow
-  // when resizing the Flash screen to e.g. 2000x2000 pixels.
-  // And scrolldrag stops working (no idea why). Seems easier
+  // No SVG support. There's a certain SVG Web library, with a Flash renderer
+  // but it seems far too slow when resizing the Flash screen to e.g.
+  // 2000x2000 pixels. And scrolldrag stops working (no idea why). Seems easier
   // to add these images of arrows instead.
 
   function initialize() {

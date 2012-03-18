@@ -190,16 +190,7 @@ object TemplateEngine {
 
   val HeadHtml: NodeSeq =
     <div>
-    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
-    {/* svg.js must the first script on the page. Skip for IE 8 (and 7),
-    otherwise an error "'undefined' is null or not an object" happens
-    in svg.js on line 56 (the minified version). */}
-    { xml.Unparsed("<![if !IE]>") }
-    <script data-path="/classpath/js" src="/classpath/js/svg.js"/>
-    { xml.Unparsed("<![endif]>") }
-    <!--[if gte IE 9]>
-    <script data-path="/classpath/js" src="/classpath/js/svg.js"></script>
-    <![endif]-->{/*
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>{/*
     Concerning when/how to use a CDN for Modernizr, see:
       http://www.modernizr.com/news/modernizr-and-cdns  */}
     <script src="http://cdnjs.cloudflare.com/ajax/libs/modernizr/2.5.3/modernizr.min.js"></script>
