@@ -31,4 +31,8 @@ object ApplicationBuild extends Build {
       debikiCore, debikiDaoPgsql
     )
 
+  // Show unchecked and deprecated warnings, in this project and all
+  // its modules.
+  // scalacOptions in ThisBuild ++= Seq("-deprecation")
+
 }
