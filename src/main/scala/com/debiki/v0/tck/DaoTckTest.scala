@@ -808,10 +808,15 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
     // -------- Email
 
     var emailEx_loginGrant: LoginGrant = null
+    var emailEx_email = "Imail@ex.com"
+
+    // Test users, *after* they've been configured to receive email.
+    var emailEx_UnauUser: User = null
+    var emailEx_OpenIdUser: User = null
 
     "by default send no email to a new IdentitySimple" >> {
       val loginReq = LoginRequest(T.login.copy(date = new ju.Date),
-        T.identitySimple.copy(email = "Imail@ex.com", name = "Imail"))
+        T.identitySimple.copy(email = emailEx_email, name = "Imail"))
       val grant = dao.saveLogin(defaultTenantId, loginReq)
       val Some((idty, user)) = dao.loadUser(withLoginId = grant.login.id,
                                           tenantId = defaultTenantId)
@@ -822,74 +827,134 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
     "configure email to IdentitySimple" >> {
       def login = emailEx_loginGrant.login
       dao.configIdtySimple(tenantId = defaultTenantId, loginId = login.id,
-            ctime = new ju.Date, emailAddr = "Imail@ex.com",
+            ctime = new ju.Date, emailAddr = emailEx_email,
             emailNotfPrefs = EmailNotfPrefs.Receive)
       val Some((idty, user)) = dao.loadUser(
           withLoginId = emailEx_loginGrant.login.id,
           tenantId = defaultTenantId)
       user.emailNotfPrefs must_== EmailNotfPrefs.Receive
+      emailEx_UnauUser = user  // save, to other test cases
     }
 
-    // -------- Inbox
+    "by default send no email to a new Role" >> {
+      val login = exOpenId_loginGrant.login
+      val Some((idty, user)) =
+         dao.loadUser(withLoginId = login.id, tenantId = defaultTenantId)
+      user.emailNotfPrefs must_== EmailNotfPrefs.DontReceive
+    }
 
-    "save inbox seed for unauthenticated user, load inbox item" >> {
-      // This actually notifies the user of something s/he did him/herself,
-      // so this test is a little bit silly.
-      val seed = InboxSeed(
-        userId = loginGrant.user.id,
+    "configure email to a Role" >> {
+      val userToConfig = exOpenId_loginGrant.user
+      val login = exOpenId_loginGrant.login
+      dao.configRole(tenantId = defaultTenantId, loginId = login.id,
+         ctime = new ju.Date, roleId = userToConfig.id,
+         emailNotfPrefs = EmailNotfPrefs.Receive)
+      val Some((idty, userConfigured)) =
+         dao.loadUser(withLoginId = login.id, tenantId = defaultTenantId)
+      userConfigured.emailNotfPrefs must_== EmailNotfPrefs.Receive
+      emailEx_OpenIdUser = userConfigured  // remember, to other test casese
+    }
+
+
+    // -------- Notifications
+
+    "support notifications" >> {
+
+      // An unauthenticated user and an authenticated user.
+      // They have already been inserted in the db, and want email notfs.
+      val unauUser = emailEx_UnauUser
+      val auUser = emailEx_OpenIdUser
+
+      // A notification to the unauthenticated user.
+      val unauUserNotfSaved = NotfOfPageAction(
+        ctime = new ju.Date,
+        recipientUserId = unauUser.id,
+        pageTitle = "EventPageForUnauUser",
         pageId = ex1_debate.guid,
-        pageActionId = ex2_id,
-        sourceActionId = ex2_id,  // == pageActionId for a Reply
-        ctime = ex2_emptyPost.ctime)
+        eventType = NotfOfPageAction.Type.PersonalReply,
+        eventActionId = ex2_id,
+        targetActionId = None,
+        recipientActionId = ex2_emptyPost.parent,
+        recipientUserDispName = "RecipientUser",
+        eventUserDispName = "EventUser",
+        targetUserDispName = None)
 
-      dao.saveInboxSeeds(defaultTenantId, seed::Nil)
+      // A notification to the authenticated user.
+      val auUserNotfSaved = unauUserNotfSaved.copy(
+        recipientUserId = auUser.id, pageTitle = "EventPageForAuUser")
 
-      val items = dao.loadInboxItems(
-        defaultTenantId, loginGrant.user.id)
-
-      items must beLike {
-        case List(item: InboxItem) =>
-          item must_== InboxItem(
-            tyype = Do.Reply,
-            title = "?", // for now
-            summary = "",  // it's the ex2_emptyPost
-            pageId = ex1_debate.guid,
-            pageActionId = ex2_id,
-            sourceActionId = ex2_id,
-            ctime = ex2_emptyPost.ctime)
-          true
+      "find none, when there are none" >> {
+        dao.loadNotfsForRole(defaultTenantId, unauUser.id) must_== Nil
+        val notfsLoaded = dao.loadNotfsToMailOut(
+                                          delayInMinutes = 0, numToLoad = 10)
+        notfsLoaded.usersByTenantAndId must_== Map.empty
+        notfsLoaded.notfsByTenant must_== Map.empty
       }
-    }
 
-    "save inbox seed for OpenID user, load inbox item" >> {
-      // This test cheats somewhat: it specifies the OpenID user's inbox,
-      // although that user wasn't involved at all in any of the
-      // related actions. -- Let's pretend it's a moderator that's interested
-      // in all actions.
-      val seed = InboxSeed(
-          userId = exOpenId_loginGrant.user.id,
-          pageId = ex1_debate.guid,
-          pageActionId = ex2_id,
-          sourceActionId = ex2_id,  // == pageActionId for a Reply
-          ctime = ex2_emptyPost.ctime)
+      "save one, to an unauthenticated user" >> {
+        dao.saveNotfs(defaultTenantId, unauUserNotfSaved::Nil)
 
-      dao.saveInboxSeeds(defaultTenantId, seed::Nil)
+        "load it, by user id" >> {
+          val notfsLoaded = dao.loadNotfsForRole(defaultTenantId, unauUser.id)
+          notfsLoaded must beLike {
+            case List(notfLoaded: NotfOfPageAction) =>
+              notfLoaded must_== unauUserNotfSaved
+              true
+          }
+        }
 
-      val items = dao.loadInboxItems(
-          defaultTenantId, exOpenId_loginGrant.user.id)
-
-      items must beLike {
-        case List(item: InboxItem) =>
-          item must_== InboxItem(
-              tyype = Do.Reply,
-              title = "?", // for now
-              summary = "",  // it's the ex2_emptyPost
-              pageId = ex1_debate.guid,
-              pageActionId = ex2_id,
-              sourceActionId = ex2_id,
-              ctime = ex2_emptyPost.ctime)
-          true
+        "load it, by time, to mail out" >> {
+          val notfsToMail = dao.loadNotfsToMailOut(
+             delayInMinutes = 0, numToLoad = 10)
+          notfsToMail.usersByTenantAndId.get((defaultTenantId, unauUser.id)
+             ) must_== Some(unauUser)
+          notfsToMail.notfsByTenant(defaultTenantId) match {
+            case List(notfLoaded: NotfOfPageAction) =>
+              notfLoaded must_== unauUserNotfSaved
+              true
+            case _ => false
+          }
+        }
       }
+
+      "save one, to an authenticated user" >> {
+        dao.saveNotfs(defaultTenantId, auUserNotfSaved::Nil)
+
+        "load it, by user id" >> {
+          val notfsLoaded = dao.loadNotfsForRole(defaultTenantId, auUser.id)
+          notfsLoaded must beLike {
+            case List(notfLoaded: NotfOfPageAction) =>
+              notfLoaded must_== auUserNotfSaved
+              true
+          }
+        }
+
+        "load it, by time, to mail out" >> {
+          val notfsToMail = dao.loadNotfsToMailOut(
+             delayInMinutes = 0, numToLoad = 10)
+          notfsToMail.usersByTenantAndId.get((defaultTenantId, auUser.id)
+             ) must_== Some(auUser)
+          notfsToMail.notfsByTenant(defaultTenantId) match {
+            case List(notfLoaded: NotfOfPageAction) =>
+              notfLoaded must_== auUserNotfSaved
+              true
+            case _ => false
+          }
+        }
+      }
+
+      "not load any notf, when specifying another user's id " >> {
+        val notfsLoaded = dao.loadNotfsForRole(defaultTenantId, "WrongUserId")
+        notfsLoaded must_== Nil
+      }
+
+      "not load any notf, because they are too recent" >> {
+        val notfsLoaded =
+          dao.loadNotfsToMailOut(delayInMinutes = 15, numToLoad = 10)
+        notfsLoaded.usersByTenantAndId must_== Map.empty
+        notfsLoaded.notfsByTenant must_== Map.empty
+      }
+
     }
 
     // -------------
