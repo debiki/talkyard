@@ -4,8 +4,8 @@
 
 set -eu
 
-debikijs=modules/debiki-core/src/main/resources/toserve/js/debiki.js
-debikifull=modules/debiki-core/src/debiki.full.js
+debikijs=app/assets/debiki-core-resources/js/debiki.js
+debikifull=target/debiki.full.js
 
 function usageExit {
   echo "Usage: $0 {compress|undo}"
