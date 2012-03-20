@@ -135,6 +135,7 @@ jQuery.fn.dwAuthorId = function() {
   return uid;
 };
 
+// Option `alsoTryToShow' is not yet implemented.
 jQuery.fn.dwScrollIntoView = function(options) {
   var $ = jQuery;
   if (!options) options = {};
@@ -2559,12 +2560,48 @@ function $showReplyForm(event, opt_where) {
   var horizLayout = $thread.is('.dw-hor');
 
   function showSortOrderTips($newPost) {
-    var $tips = $('.dw-tps-sort-order');
-    $newPost.append($tips);
-    // Center the tips above the new post. (33 roughly cancels margin-left.)
-    var left = ($tips.width() - $newPost.width()) / 2;
-    $tips.css('left', 33 - left +'px');
-    setTimeout(function() { $tips.fadeOut(2000); }, 12000);
+    var $tips = $('#dw-tps-sort-order');
+    $tips.appendTo($newPost).click(function() {
+      $tips.hide();
+      showRateOwnCommentTipsLater($newPost, 400);
+    });
+    return $tips;
+  }
+
+  // (Could use http://www.lullabot.com/files/bt/bt-latest/DEMO/index.html
+  // to draw arrow from tips to Rate button.)
+  function showRateOwnCommentTipsLater($newPost, delayMillis) {
+    var rateOwnPostClass = 'dw-tps-rate-own-post';
+    var withTipsClass = 'dw-p-as-with-tips';
+    var $tips = $('#dw-tps-rate-own-comment');
+    var $newThread = $newPost.closest('.dw-t');
+    var $actions = $newThread.children('.dw-p-as');
+    var $rateAction = $actions.children('.dw-a-rate');
+    var timeoutHandler;
+
+    function removeOrCancelTips(opt_event) {
+      $rateAction.unbind('click', removeOrCancelTips);
+      $tips.unbind('click');
+      if (timeoutHandler) cancelTimeout(timeoutHandler);
+      else $tips.fadeOut(function() {
+        $tips.removeClass(rateOwnPostClass);
+        $actions.removeClass(withTipsClass);
+        // Show the action buttons for $newPost, or people will be
+        // very confused when they're hidden now when the tips is
+        // dismissed (since `withTipsClass' was just removed).
+        $newPost.each($showActions);
+      });
+    }
+
+    $rateAction.click(removeOrCancelTips);
+    timeoutHandler = setTimeout(function() {
+      timeoutHandler = null;
+      $actions.addClass(withTipsClass);
+      $tips.addClass(rateOwnPostClass).show().insertAfter($rateAction)
+          .click(removeOrCancelTips);
+    }, delayMillis);
+
+    return $tips;
   }
 
   // Create a reply form, or Ajax-load it (depending on the Web framework
@@ -2609,9 +2646,19 @@ function $showReplyForm(event, opt_where) {
           var $myNewPost = updateDebate(newDebateHtml);
           // Any horizontal reply button has been hidden.
           $anyHorizReplyBtn.show();
+
+          // Don't show the rate-own-comment-tips instantly, because if
+          // the new comment and the tips appear at the same time,
+          // the user will be confused? S/he won't know where to look?
+          // So wait a few seconds.
+          var delayMillis = 3500;
+          var $tips = horizLayout
+              ? showSortOrderTips($myNewPost)
+              : showRateOwnCommentTipsLater($myNewPost, delayMillis);
+
           showAndHighlightPost($myNewPost,
-              { marginRight: 300, marginBottom: 300 });
-          if (horizLayout) showSortOrderTips($myNewPost);
+              { marginRight: 300, marginBottom: 300, alsoTryToShow: $tips });
+          $showActions($myNewPost);
         });
 
       // Disable the form; it's been submitted.

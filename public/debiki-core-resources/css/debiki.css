@@ -776,6 +776,10 @@ so set max-width and line height. */
   margin-right: 12px;
 }
 
+.dw-a-color-primary {
+  color: #ff4836 !important; /* the color for the most common actions */
+}
+
 .dw-t > .dw-as > .dw-a-more,
 .dw-t > .dw-as > .dw-a-link,
 .dw-t > .dw-as > .dw-a-edit,
@@ -1704,15 +1708,38 @@ form .dw-ntf {
   text-decoration: underline;
 }
 
-/* A tips on how replies are sorted, in the horizontal layout */
-.dw-tps-sort-order {
-  position: absolute;
-  top: -130px;
-  background-color: #ffefc6;
-  white-space: nowrap;
-  padding: 0 2ex 1ex;
-  left: -70px;
+/* Tips */
+.dw-tps {
+  margin: 1.3em 0 1.5em;
+  background-color: #ffe6a5; /* somewhat darker than #ffefc6; */
+  padding: 1ex 2ex;
   z-index: 999;
+  cursor: pointer;
+  box-shadow: 3px 3px 5px #888;
+}
+.dw-tps strong {
+  color: green;
+  font-weight: bold;
+}
+.dw-tps small {
+  color: #555;
+  font-size: 80%;
+}
+.dw-tps p:not(:first-of-type) {
+  margin-top: 1ex;
+}
+.dw-tps-close {
+  color: #555;
+  text-align: right;
+  font-size: 85%
+}
+
+/* A tips on how replies are sorted, in the horizontal layout */
+#dw-tps-sort-order {
+  position: absolute;
+  top: -210px;
+  left: -250px;
+  white-space: nowrap;
 }
 .dw-tps-sort-order-arw {
   position: relative;
@@ -1720,8 +1747,38 @@ form .dw-ntf {
   top: 8px;
   width: 55px;
   display: inline-block;
-  margin: 0 10px;
+  margin: 0 10px 0 0;
   background: url(img/dw-arw-hz-right-gray.png) no-repeat;
+}
+.dw-tps-sort-order-arw.dw-flip-hz {
+  margin: 0 0 0 10px;
+}
+.dw-tps-sort-order-your-post {
+  white-space: normal;
+  display: inline-block;
+  max-width: 133px;
+  text-align: center;
+  vertical-align: middle;
+}
+
+/* Tips to rate one's own reply. */
+.dw-pri .dw-tps-rate-own-post {
+  position: absolute;
+  width: 210px;
+  top: -40px;
+  left: 115px;
+}
+.dw-tps-arw-left {
+  background: url(img/dw-tps-arw-left-26x38.png) no-repeat;
+  position: absolute;
+  left: -20px;
+  top: 13px;
+  width: 26px;
+  height: 38px;
+}
+.dw-p-as-with-tips {
+  visibility: visible !important;
+  position: relative;
 }
 
 
