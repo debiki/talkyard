@@ -795,7 +795,8 @@ class FormHtml(val config: HtmlConfig, xsrfToken: String,
       ratingForm ++
       flagForm ++
       deleteForm(None) ++
-      sortOrterTipsDiv }
+      sortOrterTipsDiv ++
+      rateOwnCommentTipsDiv }
     </div>
 
   def loginForms =
@@ -1314,11 +1315,28 @@ class FormHtml(val config: HtmlConfig, xsrfToken: String,
    *  A tips on how replies are sorted, in the horizontal layout.
    */
   val sortOrterTipsDiv: NodeSeq = {
-    <div class='dw-tps-sort-order'>
-      interesting, funny
-      <span class='dw-tps-sort-order-arw dw-flip-hz'></span>
-      <span class='dw-tps-sort-order-arw'></span>
-      boring, stupid
+    <div class='dw-tps' id='dw-tps-sort-order'>
+      Comments rated <i>interesting, funny</i>
+      <span class="dw-tps-sort-order-arw dw-flip-hz"></span>
+      <div class='dw-tps-sort-order-your-post'>
+        Your post has no ratings, and was therefore placed below.
+      </div>
+      <span class="dw-tps-sort-order-arw"></span>
+      Comments rated <i>boring, stupid</i>
+      <div class='dw-tps-close'>(Click this box to dismiss)</div>
+    </div>
+  }
+
+  /**
+   *  A tips to rate one's own comments.
+   */
+  val rateOwnCommentTipsDiv: NodeSeq = {
+    <div class='dw-tps' id='dw-tps-rate-own-comment'>
+      <div class='dw-tps-arw-left'/>
+      <p><strong>Rate your own comment:</strong>
+        Click the <strong class='dw-a-color-primary'>Rate</strong> button.
+      </p>
+      <p class='dw-tps-close'>(click this box to dismiss)</p>
     </div>
   }
 
