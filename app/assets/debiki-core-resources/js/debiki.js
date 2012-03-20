@@ -4173,7 +4173,8 @@ function die(message) {
 
 function die2(errorCode, message) {
   var mess2 = message ? message +' ' : '';
-  throw new Error(mess2 + '[error '+ errorCode +']');
+  var err2 = errorCode ? ' '+ errorCode : '';
+  throw new Error(mess2 + '[error'+ err2 +']');
 }
 
 function dieIf(test, message) {
@@ -4380,6 +4381,10 @@ function initAndDrawSvg() {
     scrollstoppers: '.CodeMirror,'+
         ' .ui-draggable, .ui-resizable-handle, .dw-p-hd',
     mousedownOnWinHztlScrollbar: function() {
+      // Could use e.g. http://stackoverflow.com/questions/770038/
+      //    best-ways-to-display-notifications-with-jquery
+      // instead of showMessage.
+      // Or some StackOverflow reminiscent tips.
       if (!utterscrollHinted) $.showMessage(
         '<p>Click <b>and hold</b> left mouse button, on the white '+
         ' background,<br>and move the mouse leftwards and rightwards.</p>',
