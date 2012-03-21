@@ -747,6 +747,7 @@ each other. I should rewrite, and try to avoid float:left?  (skip old IE) */
 
 .dw-as {
   margin: 4px 0px 9px 37px;
+  position: relative; /* for position: absolute 'Click this...' tips, inside */
 }
 
 .dw-hor-a {
@@ -1204,6 +1205,57 @@ key presses).*/
   float: left;
   clear: both;
   margin-top: 1.3em;
+}
+
+
+/* --- Hoversubmit form --- */
+
+/* A modal dialog, with huge Enter and Cancel buttons that submit/cancel
+on mouseenter.  */
+
+form.dw-hoversubmit {
+  float: none;
+  position: absolute;
+  /* top/left/width currently adjusted for the rating form only. */
+  top: -60px;
+  left: -20px;
+  width: 220px;
+  z-index: 1110; /* place above e.g. the reply form */
+  padding: 1.3em;
+  background-color: white;
+}
+
+.dw-hoversubmit .dw-fi-submit {
+  position: absolute;
+  top: 0px;
+  left: -89px;
+  height: 100%;
+  width: 90px;
+}
+
+.dw-hoversubmit .dw-fi-cancel {
+  position: absolute;
+  bottom: -53px;
+  left: 0px;
+  height: 55px;
+  width: 100%;
+}
+
+/* Javascript adds .ui-widget-overlay too. */
+.dw-pri .dw-hoversubmit-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 9999px;
+  height: 9999px;
+  z-index: 1109; /* just below dw-hoversubmit */
+  opacity: 0.7;
+}
+
+.dw-inf-submitting-form {
+  position: absolute;
+  left: 15px;
+  top: -29px;
 }
 
 
@@ -1778,7 +1830,6 @@ form .dw-ntf {
 }
 .dw-p-as-with-tips {
   visibility: visible !important;
-  position: relative;
 }
 
 

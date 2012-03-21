@@ -60,6 +60,9 @@ var UNTESTED; // Indicates that a piece of code has not been tested.
 //  Helpers
 //----------------------------------------
 
+var KEYCODE_ENTER = 13;
+var KEYCODE_ESC = 27;
+
 function trunc(number) {
   return number << 0;  // bitwise operations convert to integer
 }
@@ -1822,6 +1825,49 @@ function slideInActionForm($form, $where) {
 }
 
 
+function makeHoverSubmitForm($formParent) {
+  // For touch devices, change nothing; use the Cancel and Submit buttons.
+  if (Modernizr.touch)
+    return;
+
+  var $overlay =
+      $('<div class="dw-hoversubmit-overlay ui-widget-overlay"></div>')
+      .appendTo($formParent);  // now removed when form removed
+
+  var $form = $formParent.children('form');
+
+  $form.addClass('dw-hoversubmit')
+      .find('.dw-fi-submit').mouseenter(function() {
+        $form.submit();
+      }).end()
+      .find('.dw-fi-cancel').mouseenter(function() {
+        $formParent.remove();
+      });
+
+  // Enter and Esc shortcuts. (Since this form is the only thing visible,
+  // everyone should understand what happens should they click Enter or Esc.)
+  $form.keyup(function(event) {
+    if (event.keyCode === KEYCODE_ENTER) $form.submit();
+    else if (event.keyCode === KEYCODE_ESC) $formParent.remove();
+    else return;
+    return false;
+  });
+
+  // Weird focus behavior workaround.
+  // For some reason, whenever you toggle a checkbox in the $form,
+  // focus moves to [something unknown and invisible, outside the form].
+  // This breaks the above keyboard Enter and Esc shortcuts.
+  // For now, work around that, by moving focus back to the form.
+  $form.mouseup(function() {
+    $form.find('.dw-fi-submit:enabled, .dw-fi-cancel').first().focus();
+  });
+
+  die2If(!$formParent.is(':visible')); // or focus() would have no effect
+  $form.find('input.dw-fi-cancel').focus();
+}
+
+
+
 // ------- Templates and notifications
 
 // Returns $(an-error-message-in-a-<div>), which you can .insertAfter
@@ -2372,25 +2418,32 @@ function submitLoginInPopup($openidLoginForm) {
 // ------- Rating
 
 function $showRatingForm() {
-  var thread = $(this).closest('.dw-t');
-  clearfix(thread); // ensures the rating appears nested inside the thread
-  var $post = thread.children('.dw-p');
-  var $rateForm = rateFormTemplate.clone(true); // TODO: Rename to $formWrap?
+  var $thread = $(this).closest('.dw-t');
+  clearfix($thread); // ensures the rating appears nested inside the thread
+  var $post = $thread.children('.dw-p');
+  var $formParent = rateFormTemplate.clone(true);
+  var $rateForm = $formParent.children('form');
   var postId = $post.attr('id').substr(8, 999); // drop initial 'dw-post-'
 
   // The rating-value inputs are labeled checkboxes. Hence they
   // have ids --- which right now remain the same as the ids
   // in the rateFormTemplate. Make the cloned ids unique:
-  makeIdsUniqueUpdateLabels($rateForm);
+  makeIdsUniqueUpdateLabels($formParent);
 
-  // Enable submit button when ratings specified
-  $rateForm.find("input[type='checkbox']").click(function(){
-    $rateForm.find("input[type='submit']").button("option", "disabled", false);
+  // Don't submit on *mouseout*, unless some checkbox actually clicked.
+  var anyCheckboxClicked = false;
+
+  // Enable submit *button* when ratings specified
+  $formParent.find("input[type='checkbox']").click(function(){
+    $formParent.find("input[type='submit']")
+        .button("option", "disabled", false);
+    if (!anyCheckboxClicked) $rateForm.find('input.dw-fi-submit').focus();
+    anyCheckboxClicked = true;
   });
 
   // Need to be logged in when submitting ratings, or there might
   // be no xsrf token — the server would say Forbidden.
-  $rateForm.find('input[type="submit"]').each(
+  $formParent.find('input[type="submit"]').each(
       $loginOnClick(function(event, userName) {
     // Could change the submit button title to `Submit as <username>',
     // but that'd make this not-so-very-important button rather large?
@@ -2399,14 +2452,25 @@ function $showRatingForm() {
   // Ajax-post ratings on submit.
   //  - Disable form until request completed.
   //  - When completed, highlight the user's own ratings.
-  $rateForm.submit(function(){
+  $formParent.submit(function(){
+    if (!anyCheckboxClicked) {
+      // This is a hoversubmit form (that is, it auto submits
+      // on mouseenter). But no changes have been made; don't submit.
+      $formParent.remove();
+      return false;
+    }
+
     // Find selected rating tags, so they can be highlighted later.
-    var ratedTags = $rateForm.find("input:checked").map(function(){
+    var ratedTags = $formParent.find("input:checked").map(function(){
       return $(this).val().toLowerCase();
     }).get();
 
+    var $info = $('#dw-hidden-templates .dw-inf-submitting-form').clone();
+    $formParent.replaceWith($info);
+
     $.post(Settings.makeRatePostUrl(debateId, rootPostId, postId),
-          $rateForm.children('form').serialize(), function(recentChangesHtml) {
+          $rateForm.serialize(), function(recentChangesHtml) {
+        $info.remove();
         updateDebate(recentChangesHtml);
 
         // Show flag and rating details, and highligt the user's ratings.
@@ -2426,10 +2490,8 @@ function $showRatingForm() {
             });
           });
 
-        slideAwayRemove($rateForm);
       }, 'html');
 
-    $rateForm.find('input').dwDisable();
     return false;
   });
 
@@ -2438,14 +2500,18 @@ function $showRatingForm() {
   // copied --- otherwise, if the Cancel button is clicked,
   // the rateFormTemplate itself has all its jQueryUI markup removed.
   // (Is that a jQuery bug? Only the *clone* ought to be affected?)
-  $rateForm.find('.dw-r-tag-set input, .dw-submit-set input').button();
+  $formParent.find('.dw-r-tag-set input, .dw-submit-set input').button();
   // Disable the submit button (until any checkbox clicked)
-  $rateForm.find("input[type='submit']").button("option", "disabled", true);
-  $rateForm.find('.dw-show-more-r-tags').
+  $formParent.find("input[type='submit']").button("option", "disabled", true);
+  $formParent.find('.dw-show-more-r-tags').
     button().addClass('dw-ui-state-default-linkified');
-  // Reveal the form
-  slideInActionForm($rateForm, thread);
+
+  var $actionBtns = $thread.children('.dw-p-as');
+  $formParent.appendTo($actionBtns).show();
+  makeHoverSubmitForm($formParent);
+  $rateForm.dwScrollIntoView();
 }
+
 
 function $showMoreRatingTags() {
   $(this).hide().
