@@ -1929,14 +1929,94 @@ inside widgets, rather than buttons and tabs. */
 .dw-pri input.ui-button { padding: .4em 1em; }
 
 
-/* === User magic === */
+/* Twitter Bootstrap
+==========================*/
 
-.debiki-0-reply-button-text {
-  display: none;
+/* From http://twitter.github.com/bootstrap/assets/css/bootstrap.css,
+2012-03-21, v.2.0.2. */
+.tooltip {
+  position: absolute;
+  z-index: 1020;
+  display: block;
+  visibility: visible;
+  padding: 5px;
+  font-size: 11px;
+  opacity: 0;
+  filter: alpha(opacity=0);
+}
+.tooltip.in {
+  opacity: 0.8;
+  filter: alpha(opacity=80);
+}
+.tooltip.top {
+  margin-top: -2px;
+}
+.tooltip.right {
+  margin-left: 2px;
+}
+.tooltip.bottom {
+  margin-top: 2px;
+}
+.tooltip.left {
+  margin-left: -2px;
+}
+.tooltip.top .tooltip-arrow {
+  bottom: 0;
+  left: 50%;
+  margin-left: -5px;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-top: 5px solid #000000;
+}
+.tooltip.left .tooltip-arrow {
+  top: 50%;
+  right: 0;
+  margin-top: -5px;
+  border-top: 5px solid transparent;
+  border-bottom: 5px solid transparent;
+  border-left: 5px solid #000000;
+}
+.tooltip.bottom .tooltip-arrow {
+  top: 0;
+  left: 50%;
+  margin-left: -5px;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-bottom: 5px solid #000000;
+}
+.tooltip.right .tooltip-arrow {
+  top: 50%;
+  left: 0;
+  margin-top: -5px;
+  border-top: 5px solid transparent;
+  border-bottom: 5px solid transparent;
+  border-right: 5px solid #000000;
+}
+.tooltip-inner {
+  max-width: 200px;
+  padding: 3px 8px;
+  color: #ffffff;
+  text-align: center;
+  text-decoration: none;
+  background-color: #000000;
+  -webkit-border-radius: 4px;
+  -moz-border-radius: 4px;
+  border-radius: 4px;
+}
+.tooltip-arrow {
+  position: absolute;
+  width: 0;
+  height: 0;
+}
+/* [kajmagnus@debiki] Workarounds. */
+.tooltip {
+  width: 500px; /* or Chrome makes it very thin, when outside browser window,
+                  so the tip arrow gets offset incorrectly. */
 }
 
 
-/* === SVG === */
+/* SVG
+==========================*/
 
 .dw-p-bd.dw-svg-parent {
   z-index: 1; /* makes svg (with z-index -1, see below) visible (weird!) */
@@ -2101,6 +2181,10 @@ JavaScript. Then I can still place all CSS stuff in this file. */
 
 /* Public API
 --------------------------*/
+
+.debiki-0-reply-button-text {
+  display: none;
+}
 
 img.debiki-0-inline {
   display: inline;

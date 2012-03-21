@@ -216,6 +216,7 @@ object TemplateEngine {
     <script src="/classpath/lib/openid-selector/js/openid-jquery.js"></script>
     <script src="/classpath/lib/openid-selector/js/openid-en.js"></script>
     <script src={"/classpath/js/popuplib"+ minMaxJs}></script>
+    <script src={"/classpath/js/bootstrap-tooltip"+ minMaxJs}></script>
     <!--[if lt IE 9]>
     <script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script>
     <![endif]-->

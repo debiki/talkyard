@@ -3960,6 +3960,40 @@ function makeFakeDrawer() {
   };
 }
 
+
+// ------- Tooltips
+
+
+function $makePostHeadTooltips() {  // i18n
+  var $postHead = $(this);
+  if ($postHead.find('[data-original-title]').length)
+    return; // tooltips already added
+
+  // Tooltips explaining '?' and '??' login type indicators.
+  $postHead.find('.dw-lg-t-spl').each(function() {
+    var tip;
+    var $i = $(this);
+    if ($i.text() == '??') {
+      tip = '<b>??</b> means that the user has not logged in,'+
+          ' so <i>anyone</i> can pretend to be this user&nbsp;(!),'+
+          ' and not specified any email address.'
+      // better?: does not receive email notifications.'
+    }
+    else if ($i.text() == '?') {
+      tip = '<b>?</b> means that the user has not logged in,'+
+          ' so <i>anyone</i> can pretend to be this user&nbsp;(!),'+
+          ' but has specified an email address.'
+        // and receives email notifications.'
+    }
+    else die();
+    $i.tooltip({
+      title: tip,
+      placement: 'right' // or '?' cursor hides tooltip arrow
+    });
+  });
+}
+
+
 // ------- Keyboard shortcuts
 
 // Alternatively, could define shortcuts next to the components that
@@ -4301,6 +4335,10 @@ function registerEventHandlers() {
 
   // Show the related inline reply, on inline mark click.
   $('.debiki').delegate('a.dw-i-m-start', 'click', $showInlineReply);
+
+  // Add tooltips lazily.
+  $('.debiki').delegate('.dw-p-hd', 'mouseenter', $makePostHeadTooltips);
+
 
   window.onbeforeunload = confirmClosePage;
 
