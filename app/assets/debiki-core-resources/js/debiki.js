@@ -345,6 +345,7 @@ var Me = makeCurUser();
 // ------- Zoom event
 
 var zoomListeners = [];
+var zoomListenerHandle_dbg;
 
 (function(){
   // Poll the pixel width of the window; invoke zoom listeners
@@ -360,7 +361,7 @@ var zoomListeners = [];
       zoomListeners[i]();
     }
   }
-  var handle = setInterval(pollZoomFireEvent, 100);
+  zoomListenerHandle_dbg = setInterval(pollZoomFireEvent, 100);
 }());
 
 
