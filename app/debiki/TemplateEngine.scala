@@ -194,7 +194,7 @@ object TemplateEngine {
     Concerning when/how to use a CDN for Modernizr, see:
       http://www.modernizr.com/news/modernizr-and-cdns  */}
     <script src="http://cdnjs.cloudflare.com/ajax/libs/modernizr/2.5.3/modernizr.min.js"></script>
-    <script src={"https://ajax.googleapis.com/ajax/libs/jquery/1.6.4/jquery"+ minMaxJs}></script>{/*
+    <script src={"https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery"+ minMaxJs}></script>{/*
     <!-- Could:
     <script>
     if (!window.jQuery) document.write(unescape("%3Cscript src='/path/to/your/jquery' %3E%3C/script%3E"));
@@ -205,7 +205,7 @@ object TemplateEngine {
     */}
     <script src={"/classpath/js/jquery-cookie"+ minMaxJs}></script>
     <script src="/classpath/js/wmd/showdown.js"></script>
-    <script src={"http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.16/jquery-ui"+ minMaxJs}></script>
+    <script src={"http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.18/jquery-ui"+ minMaxJs}></script>
     <script src={"/classpath/js/jquery-scrollable"+ minMaxJs}></script>
     <script src={"/classpath/js/jquery-slidingmessage"+ minMaxJs}></script>
     <script src={"/classpath/js/debiki"+ minMaxJs}></script>
