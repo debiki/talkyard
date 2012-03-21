@@ -795,6 +795,7 @@ class FormHtml(val config: HtmlConfig, xsrfToken: String,
       ratingForm ++
       flagForm ++
       deleteForm(None) ++
+      submittingFormInfoDiv ++
       sortOrterTipsDiv ++
       rateOwnCommentTipsDiv }
     </div>
@@ -1308,6 +1309,12 @@ class FormHtml(val config: HtmlConfig, xsrfToken: String,
         </div>
       }
       </form>
+    </div>
+  }
+
+  val submittingFormInfoDiv: NodeSeq = {
+    <div class='dw-tps dw-inf-submitting-form'>
+      <p>Submitting ...</p>
     </div>
   }
 
