@@ -233,4 +233,13 @@ object Prelude {
     patchText
   }
 
+
+  // ------ Utilities
+
+  // The ternary operator: `if (p) a else b'  <-->  `p ? a | b'
+  class IfTrue[A](b: => Boolean, t: => A) { def |(f: => A) = if (b) t else f }
+  class MakeIfTrue(b: => Boolean) { def ?[A](t: => A) = new IfTrue[A](b,t) }
+  implicit def autoMakeIfTrue(b: => Boolean) = new MakeIfTrue(b)
+
+
 }
