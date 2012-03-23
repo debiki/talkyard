@@ -39,7 +39,8 @@ abstract class DaoSpi {
         offset: Int
       ): Seq[(PagePath, PageDetails)]
 
-  def loadUser(withLoginId: String, tenantId: String): Option[(Identity, User)]
+  def loadIdtyAndUser(forLoginId: String, tenantId: String)
+        : Option[(Identity, User)]
 
   def loadPermsOnPage(reqInfo: RequestInfo): PermsOnPage
 
@@ -50,9 +51,15 @@ abstract class DaoSpi {
 
   def loadNotfsToMailOut(delayInMinutes: Int, numToLoad: Int): NotfsToMail
 
-  def markNotfsAsMailed(
-        notfEmailsByTenant: Map[String, Seq[(NotfOfPageAction, EmailSent)]])
-        : Unit
+  def loadNotfByEmailId(tenantId: String, emailId: String)
+        : Option[NotfOfPageAction]
+
+  def saveUnsentEmailConnectToNotfs(tenantId: String, email: EmailSent,
+        notfs: Seq[NotfOfPageAction]): Unit
+
+  def updateSentEmail(tenantId: String, email: EmailSent): Unit
+
+  def loadEmailById(tenantId: String, emailId: String): Option[EmailSent]
 
   def configRole(tenantId: String, loginId: String, ctime: ju.Date,
                     roleId: String, emailNotfPrefs: EmailNotfPrefs)
@@ -149,9 +156,9 @@ abstract class Dao {
     _spi.listPagePaths(withFolderPrefix, tenantId, include,
           sortBy, limit, offset)
 
-  def loadUser(withLoginId: String, tenantId: String
-                  ): Option[(Identity, User)] =
-    _spi.loadUser(withLoginId, tenantId)
+  def loadIdtyAndUser(forLoginId: String, tenantId: String)
+        : Option[(Identity, User)] =
+    _spi.loadIdtyAndUser(forLoginId, tenantId)
 
   def loadPermsOnPage(reqInfo: RequestInfo): PermsOnPage =
     _spi.loadPermsOnPage(reqInfo)
@@ -169,10 +176,22 @@ abstract class Dao {
   def loadNotfsToMailOut(delayInMinutes: Int, numToLoad: Int): NotfsToMail =
     _spi.loadNotfsToMailOut(delayInMinutes, numToLoad)
 
-  def markNotfsAsMailed(
-        notfEmailsByTenant: Map[String, Seq[(NotfOfPageAction, EmailSent)]])
-        : Unit =
-    _spi.markNotfsAsMailed(notfEmailsByTenant)
+  def loadNotfByEmailId(tenantId: String, emailId: String)
+        : Option[NotfOfPageAction] =
+    _spi.loadNotfByEmailId(tenantId, emailId)
+
+
+  // ----- Emails
+
+  def saveUnsentEmailConnectToNotfs(tenantId: String, email: EmailSent,
+        notfs: Seq[NotfOfPageAction]): Unit =
+    _spi.saveUnsentEmailConnectToNotfs(tenantId, email, notfs)
+
+  def updateSentEmail(tenantId: String, email: EmailSent): Unit =
+    _spi.updateSentEmail(tenantId, email)
+
+  def loadEmailById(tenantId: String, emailId: String): Option[EmailSent] =
+    _spi.loadEmailById(tenantId, emailId)
 
 
   // ----- User configuration

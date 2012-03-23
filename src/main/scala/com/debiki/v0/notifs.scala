@@ -32,7 +32,8 @@ case class NotfOfPageAction(
   recipientActionId: String,
   recipientUserDispName: String,
   eventUserDispName: String,
-  targetUserDispName: Option[String]) {
+  targetUserDispName: Option[String],
+  emailId: Option[String] = None) {
 
   assErrIf(targetActionId.isDefined != targetUserDispName.isDefined, "DwE8Xd2")
   assErrIf(eventType == NotfOfPageAction.Type.PersonalReply && (
@@ -83,7 +84,7 @@ object Notification {
             ctime = post.ctime,
             recipientUserId = userRepliedTo.id,
             pageTitle = page.titleText.getOrElse("Unnamed page"),
-            pageId = page.id, 
+            pageId = page.id,
             eventType = NotfOfPageAction.Type.PersonalReply,
             eventActionId = post.id,
             targetActionId = None,
@@ -116,13 +117,15 @@ object Notification {
 }
 
 
+// COULD rename to "Email"?
 case class EmailSent(
-  id: String, 
+  id: String,
   sentTo: String,
-  sentOn: ju.Date,
+  sentOn: Option[ju.Date],
   subject: String,
   bodyHtmlText: String,
-  providerEmailId: String)
+  providerEmailId: Option[String],
+  failureText: Option[String] = None)
 
 
 // vim: fdm=marker et ts=2 sw=2 tw=80 fo=tcqwn list

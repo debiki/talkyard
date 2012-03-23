@@ -214,9 +214,8 @@ sealed abstract class Identity {
   /** A user can have many identities, e.g. Twitter, Gmail and Facebook. */
   def userId: String
   def displayName: String
-  // COULD be an Option -- Twitter identities have no email?
-  // And remembering to check for "" everywhere is error prone.
-  def email: String
+  /** E.g. Twitter identities have no email? */
+  def email: String  // COULD change to Option[String]!
 
   checkId(id, "DwE02krc3g")
   checkId(userId, "DwE864rsk215")
@@ -230,6 +229,32 @@ case object IdentityUnknown extends Identity {  // Try to get rid of?
     // alternatively, return "?" -- then People.user("?") returns None, fine.
     // But a.userId == b.userId, if == "?" which might be bad!
 }
+
+
+/**
+ * By specifying an id of an email that has been sent to you,
+ * you can login. This login type is insecure (email transmission is
+ * not secure) and only used for unsubscriptions.
+ * @param id The email id
+ * @param userId The user that received the email. Not known before
+ *  login (is "?").
+ * @param emailSent Not known before login (is `None`)
+ * @param notf Not known before login (is `None`)
+ */
+case class IdentityEmailId(
+  id: String,
+  userId: String = "?",
+  emailSent: Option[EmailSent] = None,
+  notf: Option[NotfOfPageAction] = None
+) extends Identity {
+  // Either only email id known, or all info known.
+  require((userId startsWith "?") == emailSent.isEmpty)
+  require(emailSent.isDefined == notf.isDefined)
+
+  def displayName = notf.map(_.recipientUserDispName) getOrElse "?"
+  def email = emailSent.map(_.sentTo) getOrElse "?"
+}
+
 
 case class IdentitySimple(
   id: String,
