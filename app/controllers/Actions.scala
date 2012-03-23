@@ -227,4 +227,9 @@ object Actions {
     }
   }
 
+  def ExceptionAction(f: Request[Option[Any]] => PlainResult)
+        : mvc.Action[Option[Any]] =
+    ExceptionAction(BodyParsers.parse.empty)(f)
+
 }
+

@@ -64,6 +64,9 @@ object DebikiHttp {
   def throwBadReq(errCode: String, message: String = "") =
     throw ResultException(BadReqResult(errCode, message))
 
+  def throwBadParamValue(errCode: String, paramName: String) =
+    throw throwBadReq(errCode, "Bad "+ paramName +" value")
+
   // There's currently no WWW-Authenticate header
   // field in the response though!
   def throwUnauthorized(errCode: String, message: String = "") =
