@@ -12,6 +12,7 @@ import com.amazonaws.auth.BasicAWSCredentials
 import com.amazonaws.services.simpleemail._
 import com.amazonaws.services.simpleemail.model._
 import com.debiki.v0._
+import java.{util => ju}
 import play.api._
 import play.api.libs.iteratee._
 import play.api.libs.concurrent._
@@ -46,8 +47,7 @@ class Mailer(val dao: Dao) extends Actor {
     case "SendMail" =>
       val notfsToMail =
         dao.loadNotfsToMailOut(delayInMinutes = 0, numToLoad = 11)
-      val notfEmailsSent = _sendEmailNotfs(notfsToMail)
-      dao.markNotfsAsMailed(notfEmailsSent)
+      _sendEmailNotfs(notfsToMail)
 
     /*
     case Bounce/Rejection/Complaint/Other =>
@@ -61,9 +61,7 @@ class Mailer(val dao: Dao) extends Actor {
    * Perhaps good reading:
    * http://colinmackay.co.uk/blog/2011/11/18/handling-bounces-on-amazon-ses/
    */
-  def _sendEmailNotfs(notfsToMail: NotfsToMail)
-        : Map[String, Seq[(NotfOfPageAction, EmailSent)]] = {
-    var emailsSent = Map[String, Seq[(NotfOfPageAction, EmailSent)]]()
+  def _sendEmailNotfs(notfsToMail: NotfsToMail) {
 
     for {
       (tenantId, tenantNotfs) <- notfsToMail.notfsByTenant
@@ -74,25 +72,48 @@ class Mailer(val dao: Dao) extends Actor {
       user <- userOpt
       if user.emailNotfPrefs == EmailNotfPrefs.Receive
     }{
-      _sendEmailNotf(user, userNotfs)
-      // TODO add to emailsSent
-    }
+      // Save the email in the db, before sending it, so even if the server
+      // crashes it'll always be found, should the receiver attempt to
+      // unsubscribe. (But if you first send it, then save it, the server
+      // might crash inbetween and it wouldn't be possible to unsubscribe.)
+      val (awsSendReq, emailToSend) = _constructEmail(user, userNotfs)
+      dao.saveUnsentEmailConnectToNotfs(tenantId, emailToSend, userNotfs)
+      val emailSentOrFailed = _sendEmail(awsSendReq, emailToSend)
+      dao.updateSentEmail(tenantId, emailSentOrFailed)
 
-    emailsSent   // TODO also mark as old those that should *not* be sent.
+      //val emailSendAttempt = _mailSingleUser
+      //dao.saveEmailUpdateNotfs(tenantId, emailSendAttempt, userNotfs)
+      /*
+      mailResult match {
+        case Right(email: EmailSent) =>
+          // Log something?
+        case Left(failure: EmailFailureImmediate) =>
+          // Should *sometmies* not try again!!? with these notfs.
+          // Something like:
+          //   notfsFailed = userNotfs.map(_.copy(... = ???))
+          //   dao.markNotfsAsMailed(
+          //      tenantId, emailSent = None, notfs = notfsFailed)
+          // Should *sometimes* abort processing completely!
+      }
+      */
+    }
   }
 
-  class IfTrue[A](b: => Boolean, t: => A) { def |(f: => A) = if (b) t else f }
-  class MakeIfTrue(b: => Boolean) { def ?[A](t: => A) = new IfTrue[A](b,t) }
-  implicit def autoMakeIfTrue(b: => Boolean) = new MakeIfTrue(b)
 
-
-  def _sendEmailNotf(user: User, notfs: Seq[NotfOfPageAction])
-        : Either[Throwable, EmailSent] = {
+  def _constructEmail(user: User, notfs: Seq[NotfOfPageAction])
+        : (SendEmailRequest, EmailSent) = {
 
     // ----- Construct email
 
-    val toAddresses = new java.util.ArrayList[String]
-    toAddresses.add("kajmagnus@debiki.se")  // user.email
+    // SHOULD handle send failures before specifying other people's addrs.
+    val rcptEmailAddr = "kajmagnus@debiki.se"  // user.email
+
+    // The email id should be a random value, so it cannot be guessed,
+    // because it's a key in unsubscribe URLs.
+    val emailId = nextRandomString() take 8
+
+    val toAddresses = new ju.ArrayList[String]
+    toAddresses.add(rcptEmailAddr)
     val dest = (new Destination).withToAddresses(toAddresses)
 
     val notfCount = notfs.size
@@ -125,24 +146,37 @@ class Mailer(val dao: Dao) extends Actor {
         <br/>
         <br/>
         <small>
-          <a href='http://www.debiki.se/?unsubscribe'>Unsubscribe</a>
+          <a href={"http://www.debiki.se/?unsubscribe&email-id="+
+             emailId}>Unsubscribe</a>
         </small>
       </div>.toString
     })
 
-    val textContent = (new Content)
-       .withData("Hello - I hope you're having a good day.")
 
-    val body = (new Body).withHtml(htmlContent).withText(textContent)
+    val body = (new Body).withHtml(htmlContent)
     val mess = (new Message).withSubject(subjContent).withBody(body)
 
-    val request = (new SendEmailRequest)
+    val awsSendReq = (new SendEmailRequest)
        .withSource("support@debiki.se")
        .withDestination(dest)
        .withMessage(mess)
 
+    val emailToSend = EmailSent(  // shouldn't be named Email*Sent* though
+      id = emailId,
+      sentTo = rcptEmailAddr,
+      sentOn = None,
+      subject = subjContent.getData,
+      bodyHtmlText = htmlContent.getData,
+      providerEmailId = None)
 
-    // ----- Sen email Call Amazon SES to send the message.
+    (awsSendReq, emailToSend)
+  }
+
+  /**
+   * Calls Amazon SES to send the message.
+   */
+  def _sendEmail(awsSendReq: SendEmailRequest, emailToSend: EmailSent)
+        : EmailSent = {
 
     // Amazon SES automatically intercepts all bounces and complaints,
     // and then forwards them to you.
@@ -153,23 +187,37 @@ class Mailer(val dao: Dao) extends Actor {
     // feedback is sent to the email address in the Source parameter.
     //  http://aws.amazon.com/ses/faqs/#39
 
+    val timestamp = new ju.Date
+
     try {
-      // This blocks until the AWS request has been completed.
-      val result: SendEmailResult = _awsClient.sendEmail(request)
+      // The AWS request blocks until completed.
+      val result: SendEmailResult = _awsClient.sendEmail(awsSendReq)
       val messageId: String = result.getMessageId
       println("Got message id: "+ messageId)
-    } catch  {
+      emailToSend.copy(sentOn = Some(timestamp),
+         providerEmailId = Some(messageId))
+    }
+    catch  {
       //case ex: ThrottlingException =>
       // We're sending too much email, or sending at too fast a rate.
       //case ex: MessageRejectedException
       //case ex: AmazonClientException =>
       //case ex: AmazonServiceException
+      // Unexpected errors:
       case ex: Exception =>
         Logger.warn(classNameOf(ex) +": "+ ex.toString +"\n"+ ex)
         Logger.debug("Uninteresting stack trace: "+ ex.printStackTrace);
+        emailToSend.copy(
+           sentOn = Some(timestamp),
+           // Could shorten the subject and body, the exact text doesn't
+           // matter?? only the text length could possibly be related
+           // to the failure?? (Well unless AWS censors "ugly" or spam
+           // like words?)
+           //subject = "("+ subjContent.getData.length +" chars)",
+           //bodyHtmlText = "("+ htmlContent.getData.length +" chars)",
+           providerEmailId = None,
+           failureText = Some(ex.toString))  // for now
     }
-
-    unimplemented
   }
 
 }

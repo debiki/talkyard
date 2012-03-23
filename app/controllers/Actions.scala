@@ -131,14 +131,15 @@ object Actions {
     val (identity, user) = sidOk.loginId match {
       case None => (None, None)
       case Some(lid) =>
-        Debiki.Dao.loadUser(withLoginId = lid, tenantId = tenantId) match {
-          case Some((identity, user)) => (Some(identity), Some(user))
-          case None =>
-            // Currently, RelDbDao throws an exception rather than
-            // returning None.
-            warnDbgDie("RelDbDao did not load user [error DwE01521ku35]")
-            (None, None)
-        }
+        Debiki.Dao.loadIdtyAndUser(forLoginId = lid, tenantId = tenantId)
+          match {
+            case Some((identity, user)) => (Some(identity), Some(user))
+            case None =>
+              // Currently, RelDbDao throws an exception rather than
+              // returning None.
+              warnDbgDie("RelDbDao did not load user [error DwE01521ku35]")
+              (None, None)
+          }
     }
 
     // Load permissions.
