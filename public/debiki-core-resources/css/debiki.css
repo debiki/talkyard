@@ -1235,6 +1235,11 @@ form.dw-hoversubmit {
   width: 90px;
 }
 
+.dw-hoversubmit .dw-fi-submit.ui-button-disabled {
+  opacity: 0.55; /* my sister thought it was placed below the overlay,
+     perhaps making it more opaque (jQuery UI default is 0.35) helps? */
+}
+
 .dw-hoversubmit .dw-fi-cancel {
   position: absolute;
   bottom: -53px;
@@ -1251,7 +1256,7 @@ form.dw-hoversubmit {
   width: 9999px;
   height: 9999px;
   z-index: 1109; /* just below dw-hoversubmit */
-  opacity: 0.7;
+  opacity: 0.8;
 }
 
 .dw-inf-submitting-form {
