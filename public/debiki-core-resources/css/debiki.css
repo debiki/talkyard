@@ -93,6 +93,8 @@
  *  dw-i-t        inline thread (COULD use dw-i instead, already has dw-t class)
  *  dw-i-m        inline mark (COULD rename to dw-m — *all* marks are inline?)
  *  dw-i-m_<#id>  mark for thread #id (e.g. dw-i-m_dw-t-<thread-id>)
+ *  dw-login-on-click COULD rename to dw-loginsubmit-on-click
+ *  dw-login-on-mouseenter COULD rename to dw-loginsubmit-on-mouseenter
  *  dw-m-p-mine   the user's own post
  *  dw-m-p-edited the post was just edited (edits were axaj-fetched)
  *  dw-m-t-new    this thread was just fetched via ajax, the user hasn't seen it

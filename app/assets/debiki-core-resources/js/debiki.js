@@ -1825,10 +1825,21 @@ function slideInActionForm($form, $where) {
 }
 
 
-function makeHoverSubmitForm($formParent) {
+/**
+ * If there's a mouse, changes this form to a HoverSubmit form.
+ * Always adds a login-on-click handler to the submit form.
+ *
+ * options.onLoginOut(username/undefined) — Called on login/logout.
+ */
+function makeHoverSubmitForm($formParent, options) {
+  var settings = $.extend({}, options);
+
   // For touch devices, change nothing; use the Cancel and Submit buttons.
-  if (Modernizr.touch)
+  if (Modernizr.touch) { UNTESTED;
+    $formParent.find('input[type="submit"]').each(
+        $loginSubmitOnClick(settings.onLoginOut));
     return;
+  }
 
   var $overlay =
       $('<div class="dw-hoversubmit-overlay ui-widget-overlay"></div>')
@@ -1836,10 +1847,15 @@ function makeHoverSubmitForm($formParent) {
 
   var $form = $formParent.children('form');
 
+  // On mouseenter: Cancel button: Cancel.
+  // Submit button: Optionally, login and call
+  // settings.onLoginOut. Then submit form.
   $form.addClass('dw-hoversubmit')
-      .find('.dw-fi-submit').mouseenter(function() {
-        $form.submit();
-      }).end()
+      .find('.dw-fi-submit').click(function() {
+        // Don't submit on click. (Instead, submit on mouseenter.)
+        return false;
+      })
+      .each($loginSubmitOnMouseenter(settings.onLoginOut)).end()
       .find('.dw-fi-cancel').mouseenter(function() {
         $formParent.remove();
       });
@@ -2021,8 +2037,13 @@ function fireLogout() {
   // handler that shows the login form.
   var oldUserProps = undefined; // for now
   $('.dw-login-on-click')
-      .click($showLoginSimple)
+      .click($loginThenSubmit)
       .trigger('dwEvLoggedInOut', [undefined]);
+
+  /// (Need not fix this right now; the rating form works anyway)
+  // $('.dw-login-on-mouseenter')
+  //    .mouseenter($loginThenSubmit)
+  //    .trigger('dwEvLoggedInOut', [undefined]);
 }
 
 function fireLogin() {
@@ -2048,8 +2069,11 @@ function fireLogin() {
   // they'll unregister an on click handler that shows the login form,
   // and they'll replace '...' with the user name.
   $('.dw-login-on-click')
-      .unbind('click', $showLoginSimple)
+      .unbind('click', $loginThenSubmit)
       .trigger('dwEvLoggedInOut', [Me.getName()]);
+
+  /// (Need not fix this right now, the rating form works anyway)
+  // $('.dw-login-on-mouseenter').unbind(…).trigger(…)
 }
 
 // Returns a user object, with functions refreshProps, getName,
@@ -2225,14 +2249,13 @@ function initLoginSimple() {
           // the login to happen.
           // {{{ If the login happens because the user submits a reply,
           // then, if the reply is submitted (from within
-          // continueAfterLoginOnClick) before the dialog is closed, then,
+          // continueAnySubmission) before the dialog is closed, then,
           // when the browser moves the viewport to focus the new reply,
           // the welcome dialog might no longer be visible in the viewport.
           // But the viewport will still be dimmed, because the welcome
-          // dialog is modal. So don't continueAfterLoginOnClick until
+          // dialog is modal. So don't continueAnySubmission until
           // the user has closed the response dialog. }}}
-          showServerResponseDialog(data, null, null,
-              continueAfterLoginOnClick);
+          showServerResponseDialog(data, null, null, continueAnySubmission);
         })
         .fail(showServerResponseDialog)
         .always(function() {
@@ -2245,24 +2268,55 @@ function initLoginSimple() {
       .button().click($showLoginOpenId);
 }
 
-function $loginOnClick(loginEventHandler) {
+
+function $loginSubmitOnClick(loginEventHandler) {
+  return _$loginSubmitOn_old('click', loginEventHandler);
+}
+
+
+// Avoid.
+function _$loginSubmitOn_old(eventType, loginEventHandler) {
   return function() {
     var $i = $(this);
-    $i.addClass('dw-login-on-click').bind('dwEvLoggedInOut', loginEventHandler);
-    if (!Me.isLoggedIn()) $i.click($showLoginSimple)
+    $i.addClass('dw-login-on-'+ eventType);
+    !loginEventHandler || $i.bind('dwEvLoggedInOut', loginEventHandler);
+    // Isn't it simpler to check isLoggedIn from within $loginThenSubmit?
+    if (!Me.isLoggedIn()) $i.on(eventType, $loginThenSubmit)
   };
 }
 
-// Invoke on a .login-on-click submit <input>. After the login
-// has been completed, the button will be submitted, see
-// continueAfterLoginOnClick().
-function $showLoginSimple() {
-  loginOnClickBtnClicked = this;
-  showLoginSimple();
-  return false;  // skip default action
+
+function $loginSubmitOnMouseenter(loginEventHandler) {
+  return _$loginSubmitOn('mouseenter', loginEventHandler);
 }
 
-function continueAfterLoginOnClick() {
+
+function _$loginSubmitOn(eventType, loginEventHandler) {
+  return function() {
+    var $i = $(this);
+    $i.addClass('dw-login-on-'+ eventType);
+    !loginEventHandler || $i.bind('dwEvLoggedInOut', loginEventHandler);
+    $i.on(eventType, $loginThenSubmit)
+  };
+}
+
+
+// Invoke on a .login-on-click submit <input>. After the login
+// has been completed, the button will be submitted, see
+// continueAnySubmission(). If already logged in, submits immediately.
+function $loginThenSubmit() {
+  if (Me.isLoggedIn()) {
+    $(this).closest('form').submit();
+    return false;
+  }
+  loginOnClickBtnClicked = this;
+  showLoginSimple();  // calls continueAnySubmission(), after login
+          // (Hmm, could add a `continue' callback to showLogin() instead!?)
+  return false;  // skip default action; don't submit until after login
+}
+
+
+function continueAnySubmission() {
   // The user has logged in, and if the login was initiated via
   // a click on a .dw-login-on-click button, continue the submit
   // process that button is supposed to start.
@@ -2398,7 +2452,7 @@ function submitLoginInPopup($openidLoginForm) {
       $('#dw-fs-login-simple').dialog('close');
       fireLogin();
       showLoginOkay();
-      continueAfterLoginOnClick();
+      continueAnySubmission();
       return;
     }
 
@@ -2440,14 +2494,6 @@ function $showRatingForm() {
     if (!anyCheckboxClicked) $rateForm.find('input.dw-fi-submit').focus();
     anyCheckboxClicked = true;
   });
-
-  // Need to be logged in when submitting ratings, or there might
-  // be no xsrf token — the server would say Forbidden.
-  $formParent.find('input[type="submit"]').each(
-      $loginOnClick(function(event, userName) {
-    // Could change the submit button title to `Submit as <username>',
-    // but that'd make this not-so-very-important button rather large?
-  }));
 
   // Ajax-post ratings on submit.
   //  - Disable form until request completed.
@@ -2508,6 +2554,8 @@ function $showRatingForm() {
 
   var $actionBtns = $thread.children('.dw-p-as');
   $formParent.appendTo($actionBtns).show();
+  // (makeHoverSubmitForm ensures you've logged in before the form
+  // is submitted.)
   makeHoverSubmitForm($formParent);
   $rateForm.dwScrollIntoView();
 }
@@ -2546,7 +2594,7 @@ function initFlagForm() {
         // COULD ensure details specified if "Others" reason selected.
         // COULD show a "Submitting..." message.
         if (!Me.isLoggedIn())
-          $form.each($showLoginSimple) // ask who are you
+          $form.each($loginThenSubmit)
         else
           $form.submit();
       }
@@ -2560,7 +2608,7 @@ function initFlagForm() {
         // COULD ensure details specified if "Others" reason selected.
         // COULD show a "Submitting..." message.
         if (!Me.isLoggedIn())
-          $form.each($showLoginSimple) // ask who are you
+          $form.each($loginThenSubmit)
         else
           $form.submit();
       }}],   }}} */
@@ -2696,7 +2744,7 @@ function $showReplyForm(event, opt_where) {
       $submitBtn.val(text);
     }
     setSubmitBtnTitle(null, Me.getName());
-    $submitBtn.each($loginOnClick(setSubmitBtnTitle));
+    $submitBtn.each($loginSubmitOnClick(setSubmitBtnTitle));
 
     // Ajax-post reply on submit.
     $replyForm.submit(function() {
@@ -3060,7 +3108,7 @@ function $showEditForm2() {
       $editForm.children('.dw-f-e-inf-save').show();
 
     // When clicking the Save button, open a login dialog, unless logged in.
-    $submitBtn.each($loginOnClick(function(event, userName) {
+    $submitBtn.each($loginSubmitOnClick(function(event, userName) {
       var text = userName ?  'Save as '+ userName : 'Save as ...';  // i18n
       $(this).val(text);
     }));
@@ -3428,7 +3476,7 @@ function initDeleteForm() {
         // COULD ensure details specified if "Others" reason selected.
         // COULD show a "Submitting..." message.
         if (!Me.isLoggedIn())
-          $form.each($showLoginSimple) // ask who are you
+          $form.each($loginThenSubmit)
         else
           $form.submit();
       }
@@ -3474,11 +3522,11 @@ function $showDeleteForm() {
 // ------- Create page
 
 // This is for the ?create-page (e.g. GET /some/folder/page?create-page).
-// COULD REFACTOR: Export $loginOnClick, and place initCreateForm() in
+// COULD REFACTOR: Export $loginSubmitOnClick, and place initCreateForm() in
 // debiki-lift.js, so no ?create-page code is in here.
 function initCreateForm() {
   var $submitBtn = $('form.dw-f-cr .dw-fi-submit');
-  $submitBtn.button().each($loginOnClick(function(event, userName) {
+  $submitBtn.button().each($loginSubmitOnClick(function(event, userName) {
     var text = userName ? 'Create as '+ userName : 'Create as ...';  // i18n
     $(this).val(text);
   }));
