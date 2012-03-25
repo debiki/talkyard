@@ -2033,18 +2033,11 @@ function fireLogout() {
   $('input.dw-fi-xsrf').attr('value', '');
 
   // Let `Post as <username>' etc buttons update themselves:
-  // they'll replace <username> with `...', and register an on click
-  // handler that shows the login form.
-  var oldUserProps = undefined; // for now
-  $('.dw-login-on-click')
-      .click($loginThenSubmit)
+  // they'll replace <username> with `...'.
+  $('.dw-login-on-click, .dw-login-on-mouseenter')
       .trigger('dwEvLoggedInOut', [undefined]);
-
-  /// (Need not fix this right now; the rating form works anyway)
-  // $('.dw-login-on-mouseenter')
-  //    .mouseenter($loginThenSubmit)
-  //    .trigger('dwEvLoggedInOut', [undefined]);
 }
+
 
 function fireLogin() {
   Me.refreshProps();
@@ -2066,15 +2059,11 @@ function fireLogin() {
   $('input.dw-fi-xsrf').attr('value', token);
 
   // Let Post as ... and Save as ... buttons update themselves:
-  // they'll unregister an on click handler that shows the login form,
-  // and they'll replace '...' with the user name.
-  $('.dw-login-on-click')
-      .unbind('click', $loginThenSubmit)
+  // they'll replace '...' with the user name.
+  $('.dw-login-on-click, .dw-login-on-mouseenter')
       .trigger('dwEvLoggedInOut', [Me.getName()]);
-
-  /// (Need not fix this right now, the rating form works anyway)
-  // $('.dw-login-on-mouseenter').unbind(…).trigger(…)
 }
+
 
 // Returns a user object, with functions refreshProps, getName,
 // isLoggedIn, getLoginId and getUserId.
@@ -2270,19 +2259,7 @@ function initLoginSimple() {
 
 
 function $loginSubmitOnClick(loginEventHandler) {
-  return _$loginSubmitOn_old('click', loginEventHandler);
-}
-
-
-// Avoid.
-function _$loginSubmitOn_old(eventType, loginEventHandler) {
-  return function() {
-    var $i = $(this);
-    $i.addClass('dw-login-on-'+ eventType);
-    !loginEventHandler || $i.bind('dwEvLoggedInOut', loginEventHandler);
-    // Isn't it simpler to check isLoggedIn from within $loginThenSubmit?
-    if (!Me.isLoggedIn()) $i.on(eventType, $loginThenSubmit)
-  };
+  return _$loginSubmitOn('click', loginEventHandler);
 }
 
 
@@ -4428,7 +4405,7 @@ function prettyTimeBetween(then, now) {  // i18n
 
 // ------- Initialization functions
 
-function registerEventHandlers() {
+function registerEventHandlersFireLoginOut() {
   $('#dw-a-login').click(showLoginSimple);
   $('#dw-a-logout').click(showLogout);
 
@@ -4489,6 +4466,9 @@ function registerEventHandlers() {
   // (since the user logged in/out).
   // Do this when everything has been inited, so all dwEvLoggedInOut event
   // listeners have been registered. }}}
+
+  $('.dw-login-on-click').click($loginThenSubmit);
+  $('.dw-login-on-mouseenter').mouseenter($loginThenSubmit);
   if (Me.isLoggedIn()) fireLogin();
   else fireLogout();
 }
@@ -4561,7 +4541,7 @@ function initAndDrawSvg() {
   steps.push(initPostsThreadStep1);
   steps.push(initPostsThreadStep2);
   steps.push(initPostsThreadStep3);
-  steps.push(registerEventHandlers);
+  steps.push(registerEventHandlersFireLoginOut);
   steps.push(initAndDrawSvg);
   steps.push(initPostsThreadStep4);
   // Resize the article after the page has been rendered, so all inline
