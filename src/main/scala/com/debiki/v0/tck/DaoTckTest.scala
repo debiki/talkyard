@@ -605,6 +605,10 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
       }
     }
 
+
+    var exEdit_postId: String = null
+    var exEdit_editId: String = null
+
     "create a post to edit" >> {
       // Make post creation action
       val postNoId = T.post.copy(parent = "1", text = "Initial text",
@@ -617,6 +621,8 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
       post.text must_== "Initial text"
       post.markup must_== "dmd0"
       val newText = "Edited text 054F2x"
+
+      exEdit_postId = post.id
 
       "edit the post" >> {
         // Make edit actions
@@ -632,6 +638,8 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
         val Full(List(edit: Edit, publ: EditApp)) =
           dao.savePageActions(defaultTenantId, ex1_debate.guid,
             List(editNoId, publNoId))
+
+        exEdit_editId = edit.id
 
         // Verify text changed
         dao.loadPage(defaultTenantId, ex1_debate.guid) must beLike {
@@ -818,7 +826,7 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
       val loginReq = LoginRequest(T.login.copy(date = new ju.Date),
         T.identitySimple.copy(email = emailEx_email, name = "Imail"))
       val grant = dao.saveLogin(defaultTenantId, loginReq)
-      val Some((idty, user)) = dao.loadUser(withLoginId = grant.login.id,
+      val Some((idty, user)) = dao.loadIdtyAndUser(forLoginId = grant.login.id,
                                           tenantId = defaultTenantId)
       user.emailNotfPrefs must_== EmailNotfPrefs.DontReceive
       emailEx_loginGrant = grant
@@ -829,8 +837,8 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
       dao.configIdtySimple(tenantId = defaultTenantId, loginId = login.id,
             ctime = new ju.Date, emailAddr = emailEx_email,
             emailNotfPrefs = EmailNotfPrefs.Receive)
-      val Some((idty, user)) = dao.loadUser(
-          withLoginId = emailEx_loginGrant.login.id,
+      val Some((idty, user)) = dao.loadIdtyAndUser(
+          forLoginId = emailEx_loginGrant.login.id,
           tenantId = defaultTenantId)
       user.emailNotfPrefs must_== EmailNotfPrefs.Receive
       emailEx_UnauUser = user  // save, to other test cases
@@ -839,7 +847,7 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
     "by default send no email to a new Role" >> {
       val login = exOpenId_loginGrant.login
       val Some((idty, user)) =
-         dao.loadUser(withLoginId = login.id, tenantId = defaultTenantId)
+         dao.loadIdtyAndUser(forLoginId = login.id, tenantId = defaultTenantId)
       user.emailNotfPrefs must_== EmailNotfPrefs.DontReceive
     }
 
@@ -850,40 +858,51 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
          ctime = new ju.Date, roleId = userToConfig.id,
          emailNotfPrefs = EmailNotfPrefs.Receive)
       val Some((idty, userConfigured)) =
-         dao.loadUser(withLoginId = login.id, tenantId = defaultTenantId)
+         dao.loadIdtyAndUser(forLoginId = login.id, tenantId = defaultTenantId)
       userConfigured.emailNotfPrefs must_== EmailNotfPrefs.Receive
       emailEx_OpenIdUser = userConfigured  // remember, to other test casese
     }
 
 
-    // -------- Notifications
+    // -------- Notifications and emails
 
-    "support notifications" >> {
+    // An unauthenticated user and an authenticated user.
+    // They have already been inserted in the db, and want email notfs.
+    val unauUser = emailEx_UnauUser
+    val auUser = emailEx_OpenIdUser
 
-      // An unauthenticated user and an authenticated user.
-      // They have already been inserted in the db, and want email notfs.
-      val unauUser = emailEx_UnauUser
-      val auUser = emailEx_OpenIdUser
+    // A notification to the unauthenticated user.
+    val unauUserNotfSaved = NotfOfPageAction(
+      ctime = new ju.Date,
+      recipientUserId = unauUser.id,
+      pageTitle = "EventPageForUnauUser",
+      pageId = ex1_debate.guid,
+      eventType = NotfOfPageAction.Type.PersonalReply,
+      eventActionId = ex2_id,
+      targetActionId = None,
+      recipientActionId = ex2_emptyPost.parent,
+      recipientUserDispName = "RecipientUser",
+      eventUserDispName = "EventUser",
+      targetUserDispName = None,
+      emailPending = true)
 
-      // A notification to the unauthenticated user.
-      val unauUserNotfSaved = NotfOfPageAction(
-        ctime = new ju.Date,
-        recipientUserId = unauUser.id,
-        pageTitle = "EventPageForUnauUser",
-        pageId = ex1_debate.guid,
-        eventType = NotfOfPageAction.Type.PersonalReply,
-        eventActionId = ex2_id,
-        targetActionId = None,
-        recipientActionId = ex2_emptyPost.parent,
-        recipientUserDispName = "RecipientUser",
-        eventUserDispName = "EventUser",
-        targetUserDispName = None)
+    // A notification to the authenticated user.
+    // (Shouldn't really be possible, because now one event+recipientActionId
+    // maps to 2 notfs! But after I've added a PK to DW1_NOTFS_PAGE_ACTIONS,
+    // that PK will allow only one. Then I'll have to fix/improve this test
+    // case.)
+    val auUserNotfSaved = unauUserNotfSaved.copy(
+      eventActionId = exEdit_editId,
+      recipientActionId = exEdit_postId,
+      // eventType = should-change-from-reply-to-edit
+      recipientUserId = auUser.id,  // not correct but works for this test
+      pageTitle = "EventPageForAuUser")
 
-      // A notification to the authenticated user.
-      val auUserNotfSaved = unauUserNotfSaved.copy(
-        recipientUserId = auUser.id, pageTitle = "EventPageForAuUser")
+    "load and save notifications" >> {
 
       "find none, when there are none" >> {
+        dao.loadNotfByEmailId(defaultTenantId, "BadEmailId") must_== None
+        dao.loadNotfsForRole(defaultTenantId, unauUser.id) must_== Nil
         dao.loadNotfsForRole(defaultTenantId, unauUser.id) must_== Nil
         val notfsLoaded = dao.loadNotfsToMailOut(
                                           delayInMinutes = 0, numToLoad = 10)
@@ -957,8 +976,177 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
 
     }
 
-    // -------------
 
+    def testLoginViaEmail(emailId: String, emailSentOk: EmailSent)
+          : LoginGrant  = {
+      val loginNoId = Login(id = "?", prevLoginId = None, ip = "?.?.?.?",
+         date = now, identityId = emailId)
+      val loginReq = LoginRequest(loginNoId, IdentityEmailId(emailId))
+      val loginGrant = dao.saveLogin(defaultTenantId, loginReq)
+      val emailIdty = loginGrant.identity.asInstanceOf[IdentityEmailId]
+      emailIdty.email must_== emailSentOk.sentTo
+      emailIdty.notf.flatMap(_.emailId) must_== Some(emailSentOk.id)
+      emailIdty.notf.map(_.recipientUserId) must_== Some(loginGrant.user.id)
+      loginGrant
+    }
+
+
+    "support emails, to unauthenticated users" >> {
+
+      val emailId = "10"
+
+      val emailToSend = EmailSent(
+        id = emailId,
+        sentTo = "test@example.com",
+        sentOn = None,
+        subject = "Test Subject",
+        bodyHtmlText = "<i>Test content.</i>",
+        providerEmailId = None)
+
+      val emailSentOk = emailToSend.copy(
+        sentOn = Some(now),
+        providerEmailId = Some("test-provider-id"))
+
+      val emailSentFailed = emailSentOk.copy(
+        providerEmailId = None,
+        failureText = Some("Test failure"))
+
+      def loadNotfToMailOut(userId: String): Seq[NotfOfPageAction] = {
+        val notfsToMail = dao.loadNotfsToMailOut(
+          delayInMinutes = 0, numToLoad = 10)
+        val notfs = notfsToMail.notfsByTenant(defaultTenantId)
+        val usersNotfs = notfs.filter(_.recipientUserId == userId)
+        // All notfs loaded to mail out must have emails pending.
+        usersNotfs.filterNot(_.emailPending).size must_== 0
+        usersNotfs
+      }
+
+      "find the notification to mail out, to the unauth. user" >> {
+        val notfs: Seq[NotfOfPageAction] = loadNotfToMailOut(unauUser.id)
+        notfs.size must_!= 0
+        notfs must_== List(unauUserNotfSaved)
+      }
+
+      "save an email, connect it to the notification, to the unauth. user" >> {
+        dao.saveUnsentEmailConnectToNotfs(
+           defaultTenantId, emailToSend, unauUserNotfSaved::Nil)
+          // must throwNothing (how to test that?)
+      }
+
+      "skip notf, when loading notfs to mail out; email already created" >> {
+        val notfs: Seq[NotfOfPageAction] = loadNotfToMailOut(unauUser.id)
+        notfs.size must_== 0
+      }
+
+      "load the saved email" >> {
+        val emailLoaded = dao.loadEmailById(defaultTenantId, emailToSend.id)
+        emailLoaded must_== Some(emailToSend)
+      }
+
+      "load the notification, find it connected to the email" >> {
+        // BROKEN many notfs might map to 1 email!
+        dao.loadNotfByEmailId(defaultTenantId, emailToSend.id) must beLike {
+          case Some(notf) =>
+            notf.emailId must_== Some(emailToSend.id)
+            true
+          case None => false
+        }
+      }
+
+      "update the email, to sent status" >> {
+        dao.updateSentEmail(defaultTenantId, emailSentOk)
+        // must throwNothing (how to test that?)
+      }
+
+      "load the email again, find it in okay status" >> {
+        val emailLoaded = dao.loadEmailById(defaultTenantId, emailToSend.id)
+        emailLoaded must_== Some(emailSentOk)
+      }
+
+      "update the email, to failed status" >> {
+        dao.updateSentEmail(defaultTenantId, emailSentFailed)
+        // must throwNothing (how to test that?)
+      }
+
+      "load the email again, find it in failed status" >> {
+        val emailLoaded = dao.loadEmailById(defaultTenantId, emailToSend.id)
+        emailLoaded must_== Some(emailSentFailed)
+      }
+
+      "update the failed email to sent status (simulates a re-send)" >> {
+        dao.updateSentEmail(defaultTenantId, emailSentOk)
+        // must throwNothing (how to test that?)
+      }
+
+      "load the email yet again, find it in sent status" >> {
+        val emailLoaded = dao.loadEmailById(defaultTenantId, emailToSend.id)
+        emailLoaded must_== Some(emailSentOk)
+      }
+
+      "login and unsubscribe, via email" >> {
+        val loginGrant = testLoginViaEmail(emailId, emailSentOk)
+        loginGrant.user.isAuthenticated must_== false
+        dao.configIdtySimple(defaultTenantId, loginId = loginGrant.login.id,
+          ctime = loginGrant.login.date, emailAddr = emailSentOk.sentTo,
+          emailNotfPrefs = EmailNotfPrefs.DontReceive)
+        // must throwNothing (how to test that?)
+      }
+    }
+
+
+    "support emails, to authenticated users" >> {
+
+      val emailId = "11"
+
+      val emailToSend = EmailSent(
+        id = emailId,
+        sentTo = "test@example.com",
+        sentOn = None,
+        subject = "Test Subject",
+        bodyHtmlText = "<i>Test content.</i>",
+        providerEmailId = None)
+
+      val emailSentOk = emailToSend.copy(
+        sentOn = Some(now),
+        providerEmailId = Some("test-provider-id"))
+
+      "save an email, connect it to a notification, to an auth. user" >> {
+        dao.saveUnsentEmailConnectToNotfs(
+          defaultTenantId, emailToSend, auUserNotfSaved::Nil)
+        // must throwNothing (how to test that?)
+      }
+
+      "load the notification, find it connected to the email" >> {
+        dao.loadNotfByEmailId(defaultTenantId, emailToSend.id) must beLike {
+          case Some(notf) =>
+            notf.emailId must_== Some(emailToSend.id)
+            true
+          case None => false
+        }
+      }
+
+      "update the email, to sent status" >> {
+        dao.updateSentEmail(defaultTenantId, emailSentOk)
+        // must throwNothing (how to test that?)
+      }
+
+      "load the email, find it in sent status" >> {
+        val emailLoaded = dao.loadEmailById(defaultTenantId, emailToSend.id)
+        emailLoaded must_== Some(emailSentOk)
+      }
+
+      "login and unsubscribe, via email" >> {
+        val loginGrant = testLoginViaEmail(emailId, emailSentOk)
+        loginGrant.user.isAuthenticated must_== true
+        dao.configRole(defaultTenantId, loginId = loginGrant.login.id,
+          ctime = loginGrant.login.date, roleId = loginGrant.user.id,
+          emailNotfPrefs = EmailNotfPrefs.DontReceive)
+        // must throwNothing (how to test that?)
+      }
+    }
+
+
+    // -------------
     //val ex3_emptyPost = T.post.copy(parent = "1", text = "Lemmings!")
     //"create many many random posts" >> {
     //  for (i <- 1 to 10000) {
