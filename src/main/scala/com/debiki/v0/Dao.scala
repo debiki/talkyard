@@ -54,6 +54,9 @@ abstract class DaoSpi {
   def loadNotfByEmailId(tenantId: String, emailId: String)
         : Option[NotfOfPageAction]
 
+  def skipEmailForNotfs(tenantId: String, notfs: Seq[NotfOfPageAction],
+        debug: String): Unit
+
   def saveUnsentEmailConnectToNotfs(tenantId: String, email: EmailSent,
         notfs: Seq[NotfOfPageAction]): Unit
 
@@ -179,6 +182,10 @@ abstract class Dao {
   def loadNotfByEmailId(tenantId: String, emailId: String)
         : Option[NotfOfPageAction] =
     _spi.loadNotfByEmailId(tenantId, emailId)
+
+  def skipEmailForNotfs(tenantId: String, notfs: Seq[NotfOfPageAction],
+        debug: String): Unit =
+    _spi.skipEmailForNotfs(tenantId, notfs, debug)
 
 
   // ----- Emails
