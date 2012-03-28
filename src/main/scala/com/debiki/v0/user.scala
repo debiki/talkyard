@@ -166,7 +166,7 @@ case class User (
 
 object EmailNotfPrefs extends Enumeration {
   type EmailNotfPrefs = Value
-  val Receive, DontReceive, ForbiddenForever = Value
+  val Receive, DontReceive, ForbiddenForever, Unspecified = Value
 }
 
 case class Login(
