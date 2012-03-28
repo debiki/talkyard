@@ -35,6 +35,9 @@ object Mailer {
 class Mailer(val dao: Dao) extends Actor {
 
 
+  val logger = play.api.Logger("app.mailer")
+
+
   private val _awsClient = {
     val accessKeyId = "AKIAJ4OCRAEOPEWEYTNQ"
     val secretKey = "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"
@@ -47,6 +50,8 @@ class Mailer(val dao: Dao) extends Actor {
     case "SendMail" =>
       val notfsToMail =
         dao.loadNotfsToMailOut(delayInMinutes = 0, numToLoad = 11)
+      logger.debug("Loaded "+ notfsToMail.notfsByTenant.size +
+         " notfs, to "+ notfsToMail.usersByTenantAndId.size +" users.")
       _sendEmailNotfs(notfsToMail)
 
     /*
@@ -68,18 +73,29 @@ class Mailer(val dao: Dao) extends Actor {
       notfsByUserId: Map[String, Seq[NotfOfPageAction]] =
          tenantNotfs.groupBy(_.recipientUserId)
       (userId, userNotfs) <- notfsByUserId
-      userOpt = notfsToMail.usersByTenantAndId.get(tenantId -> userId)
-      user <- userOpt
-      if user.emailNotfPrefs == EmailNotfPrefs.Receive
     }{
-      // Save the email in the db, before sending it, so even if the server
-      // crashes it'll always be found, should the receiver attempt to
-      // unsubscribe. (But if you first send it, then save it, the server
-      // might crash inbetween and it wouldn't be possible to unsubscribe.)
-      val (awsSendReq, emailToSend) = _constructEmail(user, userNotfs)
-      dao.saveUnsentEmailConnectToNotfs(tenantId, emailToSend, userNotfs)
-      val emailSentOrFailed = _sendEmail(awsSendReq, emailToSend)
-      dao.updateSentEmail(tenantId, emailSentOrFailed)
+      logger.debug("Considering "+ userNotfs.size +" notfs to user "+ userId)
+
+      val userOpt = notfsToMail.usersByTenantAndId.get(tenantId -> userId)
+      if (userOpt.map(_.emailNotfPrefs) == Some(EmailNotfPrefs.Receive)) {
+        // Save the email in the db, before sending it, so even if the server
+        // crashes it'll always be found, should the receiver attempt to
+        // unsubscribe. (But if you first send it, then save it, the server
+        // might crash inbetween and it wouldn't be possible to unsubscribe.)
+        val (awsSendReq, emailToSend) = _constructEmail(userOpt.get, userNotfs)
+        dao.saveUnsentEmailConnectToNotfs(tenantId, emailToSend, userNotfs)
+        logger.debug("Sending email to "+ emailToSend.sentTo)
+        val emailSentOrFailed = _sendEmail(awsSendReq, emailToSend)
+        logger.trace("Email sent or failed: "+ emailSentOrFailed)
+        dao.updateSentEmail(tenantId, emailSentOrFailed)
+      }
+      else {
+        val debug = (userOpt.isEmpty
+          ? "Email skipped: User not found."
+          | "Email skipped: User declines emails.")
+        logger.debug("Skipping email to "+ userOpt +": "+ debug)
+        dao.skipEmailForNotfs(tenantId, userNotfs, debug = debug)
+      }
 
       //val emailSendAttempt = _mailSingleUser
       //dao.saveEmailUpdateNotfs(tenantId, emailSendAttempt, userNotfs)
@@ -193,7 +209,7 @@ class Mailer(val dao: Dao) extends Actor {
       // The AWS request blocks until completed.
       val result: SendEmailResult = _awsClient.sendEmail(awsSendReq)
       val messageId: String = result.getMessageId
-      println("Got message id: "+ messageId)
+      logger.debug("Email sent, AWS SES message id: "+ messageId)
       emailToSend.copy(sentOn = Some(timestamp),
          providerEmailId = Some(messageId))
     }
@@ -205,8 +221,9 @@ class Mailer(val dao: Dao) extends Actor {
       //case ex: AmazonServiceException
       // Unexpected errors:
       case ex: Exception =>
-        Logger.warn(classNameOf(ex) +": "+ ex.toString +"\n"+ ex)
-        Logger.debug("Uninteresting stack trace: "+ ex.printStackTrace);
+        logger.warn("AWS SES sendEmail() failure: "+
+           classNameOf(ex) +": "+ ex.toString)
+        logger.trace("Uninteresting stack trace: "+ ex.printStackTrace);
         emailToSend.copy(
            sentOn = Some(timestamp),
            // Could shorten the subject and body, the exact text doesn't
