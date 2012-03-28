@@ -805,7 +805,8 @@ class FormHtml(val config: HtmlConfig, xsrfToken: String,
     loginFormOpenId ++
     loginOkForm() ++
     loginFailedForm() ++
-    logoutForm
+    logoutForm ++
+    emailNotfPrefsForm
 
   def actionMenu =
       <div id='dw-action-menu' class='dw-as dw-p-as'>
@@ -981,6 +982,41 @@ class FormHtml(val config: HtmlConfig, xsrfToken: String,
           </div>
         </form>
       </div>
+
+
+  /**
+   * Shown when the user has posted a reply, if she has not
+   * specified whether or not to receive email notifications on replies
+   * to her.
+   *
+   * If the user says Yes, but her email address is unknown,
+   * then she is asked for it.
+   */
+  def emailNotfPrefsForm =
+    <form id='dw-f-eml-prf' class='dw-f'
+          action='?config-user=me'
+          accept-charset='UTF-8'
+          method='post'
+          title='Email Notifications'>
+      { _xsrfToken }
+      <p>Be notified via email of replies to your comments?</p>
+      <div class='dw-submit-set'>
+        <input type='radio' id='dw-fi-eml-prf-rcv-no' name='dw-fi-eml-prf-rcv'
+               value='no'/>
+        <label for='dw-fi-eml-prf-rcv-no'>No</label>
+        <input type='radio' id='dw-fi-eml-prf-rcv-yes' name='dw-fi-eml-prf-rcv'
+               value='yes'/>
+        <label for='dw-fi-eml-prf-rcv-yes'>Yes</label>
+      </div>
+      <div class='dw-submit-set dw-f-eml-prf-adr'>
+        <label for='dw-fi-eml-prf-adr'>Your email address:</label>
+        <input id='dw-fi-eml-prf-adr' name='dw-fi-eml-prf-adr'
+               type='text' value=''/>
+        <input type='submit' name='dw-fi-eml-prf-done'
+               class='dw-fi-submit' value='Done'/>
+      </div>
+    </form>
+
 
   def actLinks(pid: String) = {
     val safePid = safe(pid)  // Prevent xss attacks.
