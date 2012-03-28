@@ -61,8 +61,7 @@ class NiLo(people: People, val login: Login) {
   def user_! : User = people.user_!(identity_!.userId)
   def identity_! : Identity = people.identity_!(login.identityId)
   def displayName: String = {
-    // Duplicated code! This also done in LogInOut.loginSimple,
-    // when setting the nanme part of the SID cookie, in debiki-app-lift.
+    // (Somewhat dupl code: this also done in LoginGrant.displayName.)
     var n = user_!.displayName
     if (n nonEmpty) n else identity_!.displayName
   }
