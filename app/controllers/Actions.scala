@@ -49,6 +49,9 @@ object Actions {
     def user_! : User =
       user getOrElse throwForbidden("DwE86Wb7", "Not logged in")
 
+    def identity_! : Identity =
+      identity getOrElse throwForbidden("DwE7PGJ2", "Not logged in")
+
     /**
      * The display name of the user making the request. Throws 403 Forbidden
      * if not available, i.e. if not logged in (shouldn't happen normally).

@@ -1306,10 +1306,6 @@ form.dw-hoversubmit {
   margin-top: 1em;
 }
 
-#dw-fi-lgi-oid-email-ntf-lbl {
-  margin-bottom: 20px;
-}
-
 .dw-a-login {
   font-size: 200%;
   margin-left: 10px;
@@ -1352,15 +1348,6 @@ form.dw-hoversubmit {
 .dw-login-simple input {
   margin-top: 3px !important; /* COULD remove my own conflicting rule */
   width: 200px;
-}
-
-#dw-fi-lgi-spl-email-ntf {
-  width: auto; /* not 200px */
-}
-
-#dw-fi-lgi-spl-email-ntf-lbl {
-  display: inline;
-  margin-right: 30px;
 }
 
 #dw-fi-login-url-lbl {

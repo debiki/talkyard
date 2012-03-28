@@ -47,10 +47,22 @@ object Xsrf {
   def create(sid: String): XsrfOk =
     XsrfOk(hashSha1Base64UrlSafe(_secretSalt + sid) take _hashLength)
 
+
+  def newSidAndXsrf(loginGrant: Option[Dao.LoginGrant])
+        : (SidOk, XsrfOk, List[Cookie]) =
+    newSidAndXsrf(
+      loginId = loginGrant.map(_.login.id),
+      userId = loginGrant.map(_.user.id),
+      displayName = loginGrant.map(_.displayName))
+
+
   def newSidAndXsrf(
-        loginId: Option[String], userId: Option[String],
-        displayName: Option[String]): (SidOk, XsrfOk, List[Cookie]) = {
-    // Note that the xsrf token is created using the unencoded cookie value.
+        loginId: Option[String],
+        userId: Option[String],
+        displayName: Option[String])
+        : (SidOk, XsrfOk, List[Cookie]) = {
+    // Note that the xsrf token is created using the non-base64 encoded
+    // cookie value.
     val sidOk = Sid.create(loginId, userId, displayName)
     val xsrfOk = create(sidOk.value)
     val sidCookie = urlEncodeCookie("dwCoSid", sidOk.value)

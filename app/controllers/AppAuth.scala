@@ -6,7 +6,7 @@ package controllers
 
 import com.debiki.v0._
 import com.debiki.v0.Prelude._
-import com.debiki.v0.EmailNotfPrefs.EmailNotfPrefs
+import com.debiki.v0.Dao.{LoginRequest, LoginGrant}
 import debiki._
 import debiki.DebikiHttp._
 import java.{util => ju}
@@ -46,8 +46,7 @@ object AppAuth extends mvc.Controller {
         // Reuse SID and xsrf token, or create new ones.
         (sidStatus, xsrfStatus) match {
           case (sidOk: SidOk, xsrfOk: XsrfOk) => (sidOk, xsrfOk, Nil)
-          case (_, _) => Xsrf.newSidAndXsrf(
-            loginId = None, userId = None, displayName = None)
+          case (_, _) => Xsrf.newSidAndXsrf(None)
         }
       } else {
         // There must be an xsrf token in the POST:ed form data.
@@ -73,6 +72,7 @@ object AppAuth extends mvc.Controller {
     sidXsrfNewCookies
   }
 
+
   def loginSimple = ExceptionAction(parse.urlFormEncoded(maxLength = 200)) {
         request =>
 
@@ -84,8 +84,6 @@ object AppAuth extends mvc.Controller {
 
     val name = getOrDie("dw-fi-login-name", "DwE0k31c5")
     val email = getOrDie("dw-fi-login-email", "DwE8k3i30")
-    val emailNotfInp =
-      request.body.getOrElse("dw-fi-lgi-spl-email-ntf", List("no"))
     val url = getOrDie("dw-fi-login-url", "DwE64kC21")
 
     def failLogin(errCode: String, summary: String, details: String) =
@@ -101,19 +99,6 @@ object AppAuth extends mvc.Controller {
       failLogin("DwE0432hrsk23", "Weird email.",
         "Please specify an email address with no weird characters.")
 
-    val emailNotfPrefs: EmailNotfPrefs = emailNotfInp match {
-      case List("yes") =>
-        if (email isEmpty)
-          failLogin("DwE9UW5", "No email address.",
-            "Please specify an email address, so you can receive"+
-            " email notifications.")
-        EmailNotfPrefs.Receive
-      case List("no") => EmailNotfPrefs.DontReceive
-      case _ =>
-        // Someone has hand crafted this request?
-        throwBadReq("DwE03k1r35009", "Weird checkbox value.")
-    }
-
     if (User urlIsWeird url)
       failLogin("DwE734krsn215", "Weird URL.",
         "Please specify a website address with no weird characters.")
@@ -123,7 +108,7 @@ object AppAuth extends mvc.Controller {
     val addr = "?.?.?.?"  // TODO
     val tenantId = lookupTenantByHost(request.host)
 
-    val loginReq = Dao.LoginRequest(
+    val loginReq = LoginRequest(
       login = Login(id = "?", prevLoginId = prevSid.loginId,
         ip = addr, date = new ju.Date, identityId = "?i"),
       identity = IdentitySimple(id = "?i", userId = "?", name = name,
@@ -131,34 +116,41 @@ object AppAuth extends mvc.Controller {
 
     val loginGrant = Debiki.Dao.saveLogin(tenantId, loginReq)
 
-    if (loginGrant.user.emailNotfPrefs != emailNotfPrefs) {
-      // The user changed the "Email me if someone replies to me"
-      // setting. Update the database.
-      Debiki.Dao.configIdtySimple(
-        tenantId, loginId = loginGrant.login.id,
-        ctime = loginGrant.login.date,
-        emailAddr = email, emailNotfPrefs = emailNotfPrefs)
-    }
-
-    // -----
-    // Duplicated code! Display name also constructed in NiLo,
-    // in user.scala in debiki-core. COULD write another ctor for NiLo so
-    // a NiLo can be used here too? NiLo(loginGrant.login, identity, user).
-    var displayName = loginGrant.user.displayName
-    if (displayName isEmpty) displayName = loginGrant.identity.displayName
-    // -----
-    val (_, _, sidAndXsrfCookies) = Xsrf.newSidAndXsrf(
-      Some(loginGrant.login.id),
-      Some(loginGrant.user.id),
-      Some(displayName))
+    val (_, _, sidAndXsrfCookies) = Xsrf.newSidAndXsrf(Some(loginGrant))
+    val userConfigCookie = AppConfigUser.userConfigCookie(loginGrant)
 
     // Could include a <a href=last-page>Okay</a> link, see the
     // Logout dialog below. Only needed if javascript disabled though,
     // otherwise a javascript welcome dialog is shown instead.
-    OkDialogResult("Welcome", "", // (empty summary)
-      "You have been logged in, welcome "+ name +"!").  // i18n
-      withCookies(sidAndXsrfCookies: _*)
+    OkDialogResult("Welcome", "", // (empty summary)   // i18n
+      "You have been logged in, welcome "+ loginGrant.displayName +"!").
+       withCookies(userConfigCookie::sidAndXsrfCookies: _*)
   }
+
+
+  def loginSimpleAgainWithNewEmail(pageReq: PageRequest[_],
+        newEmailAddr: String): (LoginGrant, Seq[Cookie]) = {
+    import pageReq._
+
+    if (User.emailIsWeird(newEmailAddr))
+      throwForbiddenDialog("DwE83ZJ1", "Weird Email", "",
+        "Please specify a real email address.")
+    if (newEmailAddr.isEmpty)
+      throwForbiddenDialog("DwE7PUX2", "No Email", "",
+        "No email address specified")
+
+    val loginReq = LoginRequest(
+       login = Login(id = "?", prevLoginId = loginId,
+          ip = "?.?.?.?", date = pageReq.ctime, identityId = "?i"),
+       identity = identity_!.asInstanceOf[IdentitySimple].copy(
+          id = "?i", userId = "?", email = newEmailAddr))
+
+    val loginGrant = Debiki.Dao.saveLogin(tenantId, loginReq)
+    val (_, _, sidAndXsrfCookies) = Xsrf.newSidAndXsrf(Some(loginGrant))
+
+    (loginGrant, sidAndXsrfCookies)
+  }
+
 
   /**
    * Clears login related cookies and OpenID and OpenAuth stuff.
@@ -195,8 +187,8 @@ object AppAuth extends mvc.Controller {
         OkHtml(<p>You have been logged out. Return to last page?
             <a href=''>Okay</a>
           </p>)
-          .discardingCookies("dwCoSid")  // keep the xsrf cookie,
-                                         // so login dialog works?
+          // keep the xsrf cookie, so login dialog works?
+          .discardingCookies("dwCoSid", AppConfigUser.ConfigCookie)
     }
   }
 

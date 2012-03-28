@@ -168,38 +168,16 @@ object AppAuthOpenid extends mvc.Controller {
         email = emailOpt getOrElse "",
         country = countryOpt getOrElse ""))
 
-    val granted = Debiki.Dao.saveLogin(tenantId, loginReq)
-
-    // ----- Check and update email settings
-
-    // Use the email in the USERS table, if specified.
-    val emailToUse =
-      if (granted.user.email.nonEmpty) granted.user.email
-      else granted.identity.email
-    // Should remember related checbox value in the OpenID login form.
-    val emailNotfPrefInp = EmailNotfPrefs.DontReceive // for now
-
-    // Update database if user changed the "Be notified via email" setting.
-    if (emailToUse.nonEmpty &&
-       granted.user.emailNotfPrefs != emailNotfPrefInp) {
-      Debiki.Dao.configRole(
-        tenantId,
-        loginId = granted.login.id,
-        ctime = granted.login.date,
-        roleId = granted.user.id,
-        emailNotfPrefs = emailNotfPrefInp)
-    }
+    val loginGrant = Debiki.Dao.saveLogin(tenantId, loginReq)
 
     // ----- Reply OK, with cookies
 
-    val (_, _, sidAndXsrfCookies) = Xsrf.newSidAndXsrf(
-      loginId = Some(granted.login.id),
-      userId = Some(granted.user.id),
-      displayName = firstNameOpt)
+    val (_, _, sidAndXsrfCookies) = Xsrf.newSidAndXsrf(Some(loginGrant))
+    val userConfigCookie = AppConfigUser.userConfigCookie(loginGrant)
 
     Ok(views.html.loginOpenidCallback("LoginOk",
-      "You have been logged in, welcome " + firstNameOpt.getOrElse("") +"!"))
-       .withCookies(sidAndXsrfCookies: _*)
+      "You have been logged in, welcome " + loginGrant.displayName +"!"))
+       .withCookies(userConfigCookie::sidAndXsrfCookies: _*)
   }
 
 
