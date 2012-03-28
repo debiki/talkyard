@@ -25,7 +25,7 @@ object Mailer {
   def startNewActor(dao: Dao): ActorRef = {
     val actorRef = Akka.system.actorOf(Props(
        new Mailer(dao)), name = "EmailActor")
-    //Akka.system.scheduler.schedule(0 seconds, 1 minutes, actorRef, "SendMail")
+    Akka.system.scheduler.schedule(0 seconds, 20 seconds, actorRef, "SendMail")
     actorRef
   }
 
@@ -119,10 +119,18 @@ class Mailer(val dao: Dao) extends Actor {
   def _constructEmail(user: User, notfs: Seq[NotfOfPageAction])
         : (SendEmailRequest, EmailSent) = {
 
-    // ----- Construct email
-
-    // SHOULD handle send failures before specifying other people's addrs.
-    val rcptEmailAddr = "kajmagnus@debiki.se"  // user.email
+    val rcptEmailAddr =
+      if (user.email == "kajmagnus@debiki.se"
+       || user.email == "support@debiki.se"
+       || user.email == "non-existing-address@debiki.se"
+       || user.email == "kajmagnus79@gmail.com"
+       || user.email == "kajmagnus79d@gmail.com") {
+      // These addresses are AWS SES verified addresses.
+      user.email
+    } else {
+      // Direct all email to this verified address, for now.
+      "kajmagnus@debiki.se"
+    }
 
     // The email id should be a random value, so it cannot be guessed,
     // because it's a key in unsubscribe URLs.
