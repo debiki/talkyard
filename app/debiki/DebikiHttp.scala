@@ -7,6 +7,7 @@ package debiki
 import com.debiki.v0._
 import com.debiki.v0.Prelude._
 import controllers.Actions.PageRequest
+import controllers.Utils.{OkHtml, ForbiddenHtml, BadReqHtml}
 import java.{net => jn}
 import play.api._
 import play.api.http.ContentTypes._
@@ -67,6 +68,9 @@ object DebikiHttp {
   def throwBadParamValue(errCode: String, paramName: String) =
     throw throwBadReq(errCode, "Bad "+ paramName +" value")
 
+  def throwParamMissing(errCode: String, paramName: String) =
+    throw throwBadReq(errCode, "Parameter missing: "+ paramName)
+
   // There's currently no WWW-Authenticate header
   // field in the response though!
   def throwUnauthorized(errCode: String, message: String = "") =
@@ -83,13 +87,13 @@ object DebikiHttp {
 
   def throwBadReqDialog(
         errCode: String, title: String, summary: String, details: String) =
-    throw ResultException(Results.BadRequest(
-        errorDialogPage(errCode, title, summary, details)) as HTML)
+    throw ResultException(BadReqHtml(
+        errorDialogXml(errCode, title, summary, details)))
 
   def throwForbiddenDialog(
         errCode: String, title: String, summary: String, details: String) =
-    throw ResultException(Results.Forbidden(
-      errorDialogPage(errCode, title, summary, details)) as HTML)
+    throw ResultException(ForbiddenHtml(
+      errorDialogXml(errCode, title, summary, details)))
 
 
   // ----- HTML dialog responses
@@ -98,11 +102,11 @@ object DebikiHttp {
 
   def OkDialogResult(title: String, summary: String, details: String)
         : PlainResult =
-    Results.Ok(<html><body>{
+    OkHtml(<html><body>{
       FormHtml.respDlgOk(title, summary, details)
-    }</body></html>) as HTML
+    }</body></html>)
 
-  def errorDialogPage(
+  def errorDialogXml(
         errCode: String, title: String, summary: String, details: String) =
     <html><body>{
       FormHtml.respDlgError(debikiErrorCode = errCode, title = title,
@@ -112,7 +116,7 @@ object DebikiHttp {
   def ForbiddenDialogResult(
         errCode: String,  title: String, summary: String, details: String)
         : PlainResult =
-    Results.Forbidden(errorDialogPage(errCode, title, summary, details)) as HTML
+    ForbiddenHtml(errorDialogXml(errCode, title, summary, details))
 
 
   // ----- Cookies
