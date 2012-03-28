@@ -33,11 +33,18 @@ case class NotfOfPageAction(
   recipientUserDispName: String,
   eventUserDispName: String,
   targetUserDispName: Option[String],
-  emailId: Option[String] = None) {
+  /** True iff an email should be created and sent. */
+  emailPending: Boolean,
+  /** An email that informs the recipient about this event.
+  Might not yet have been sent. */
+  emailId: Option[String] = None,
+  debug: Option[String] = None) {
 
   assErrIf(targetActionId.isDefined != targetUserDispName.isDefined, "DwE8Xd2")
   assErrIf(eventType == NotfOfPageAction.Type.PersonalReply && (
     targetActionId.isDefined || targetUserDispName.isDefined), "DwE09Kb35")
+  // If the email is to be created and sent, then it must not already exist.
+  require(!emailPending || emailId.isEmpty)
 
   def recipientRoleId: Option[String] =
     if (recipientUserId startsWith "-") None else Some(recipientUserId)
@@ -80,7 +87,7 @@ object Notification {
           Nil
         }
         else if (post.tyype == PostType.Text) {
-          NotfOfPageAction(
+          List(NotfOfPageAction(
             ctime = post.ctime,
             recipientUserId = userRepliedTo.id,
             pageTitle = page.titleText.getOrElse("Unnamed page"),
@@ -89,9 +96,11 @@ object Notification {
             eventActionId = post.id,
             targetActionId = None,
             recipientActionId = postRepliedTo.id,
-            recipientUserDispName = postRepliedTo.user_!.displayName,
+            recipientUserDispName = userRepliedTo.displayName,
             eventUserDispName = user.displayName,
-            targetUserDispName = None) :: Nil
+            targetUserDispName = None,
+            emailPending =
+               userRepliedTo.emailNotfPrefs == EmailNotfPrefs.Receive))
         } else {
           // Currently not supported.
           // Need to make loadInboxItem understand DW1_PAGE_ACTIONS = 'Tmpl',
