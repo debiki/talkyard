@@ -52,6 +52,7 @@
  *  -ntf-dtl      notification details
  *  -p-           post
  *  -pg-          page
+ *  -prf-         preference(s)
  *  -prvw-        preview
  *  -q-           ?? post-before (looks like p, but flipped — before, not after)
  *  -r-           rating
@@ -81,6 +82,7 @@
  *  dw-e-ap-dt    edit application date
  *  dw-e-sg-dt    edit suggestion date
  *  dw-e-sg-vs    votes on a certain edit suggestion --deprecated--
+ *  dw-f-eml-prf  email notification preferences
  *  dw-fi-e-prvw  edit form input, preview
  *  dw-fs         form group      (COULD remove — there're no groups any more?)
  *  dw-fs-e       edit form group (COULD rename to -f-e/re/rat ?)
@@ -1364,6 +1366,26 @@ form.dw-hoversubmit {
 #dw-fi-login-url-lbl {
   margin-top: 1.3ex;
 }
+
+
+/* === Email notification preferences === */
+
+#dw-f-eml-prf .dw-submit-set {
+  float: none;
+}
+
+#dw-f-eml-prf .ui-button {
+  float: right;
+}
+
+#dw-fi-eml-prf-adr {
+  width: 18em;
+}
+
+#dw-f-eml-prf input[type='submit'] { /* the Done button */
+  margin-top: 1.3em;
+}
+
 
 /* === Reply === */
 

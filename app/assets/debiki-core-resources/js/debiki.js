@@ -328,6 +328,10 @@ var $lastInlineMenu = $();
 // was clicked when a login dialog is shown.
 var loginOnClickBtnClicked = null;
 
+// True iff the user is to be asked whether or not s/he wants to be
+// notified via email e.g. of replies.
+var continueLoginAskAboutEmail = false;
+
 // Reset all per click state variables when a new click starts.
 $.event.add(document, "mousedown", function() {
   didExpandTruncated = false;
@@ -2292,22 +2296,22 @@ function initLoginSimple() {
 }
 
 
-function $loginSubmitOnClick(loginEventHandler) {
-  return _$loginSubmitOn('click', loginEventHandler);
+function $loginSubmitOnClick(loginEventHandler, data) {
+  return _$loginSubmitOn('click', loginEventHandler, data);
 }
 
 
-function $loginSubmitOnMouseenter(loginEventHandler) {
-  return _$loginSubmitOn('mouseenter', loginEventHandler);
+function $loginSubmitOnMouseenter(loginEventHandler, data) {
+  return _$loginSubmitOn('mouseenter', loginEventHandler, data);
 }
 
 
-function _$loginSubmitOn(eventType, loginEventHandler) {
+function _$loginSubmitOn(eventType, loginEventHandler, data) {
   return function() {
     var $i = $(this);
     $i.addClass('dw-login-on-'+ eventType);
     !loginEventHandler || $i.bind('dwEvLoggedInOut', loginEventHandler);
-    $i.on(eventType, $loginThenSubmit)
+    $i.on(eventType, null, data, $loginThenSubmit)
   };
 }
 
@@ -2315,25 +2319,137 @@ function _$loginSubmitOn(eventType, loginEventHandler) {
 // Invoke on a .login-on-click submit <input>. After the login
 // has been completed, the button will be submitted, see
 // continueAnySubmission(). If already logged in, submits immediately.
-function $loginThenSubmit() {
-  if (Me.isLoggedIn()) {
-    $(this).closest('form').submit();
-    return false;
-  }
+function $loginThenSubmit(event) {
   loginOnClickBtnClicked = this;
-  showLoginSimple();  // calls continueAnySubmission(), after login
-          // (Hmm, could add a `continue' callback to showLogin() instead!?)
+  continueLoginAskAboutEmail = event.data && event.data.askAboutEmailNotfs;
+  if (!Me.isLoggedIn()) {
+    // Will call continueAnySubmission(), after login.
+    // {{{ Hmm, could add a `continue' callback to showLogin() instead!?
+    // But initLoginSimple/OpenId runs once only, so the very first
+    // anonymous function is the only one considered, so a somewhat
+    // global callback-to-invoke-state is needed anyway.
+    // Better move login stuff to a separate module (with a module
+    // local "global" callback state).}}}
+    showLoginSimple();
+  } else {
+    continueAnySubmission();
+  }
   return false;  // skip default action; don't submit until after login
 }
 
 
+/**
+ * Continues any form submission that was interrupted by the
+ * user having to log in.
+ */
 function continueAnySubmission() {
-  // The user has logged in, and if the login was initiated via
-  // a click on a .dw-login-on-click button, continue the submit
+  // Configure email notification prefs, unless already done.
+  // (This is useful e.g. if the user submits a reply but hasn't
+  // specified her email prefs. We want her to subscribe to
+  // email notfs, and right now her motivation is at its peak?)
+  var emailQuestion = $.Deferred().resolve();
+  if (continueLoginAskAboutEmail) {
+    continueLoginAskAboutEmail = false;
+    if (!Me.getEmailNotfPrefs()) {
+      emailQuestion = configEmailPerhapsRelogin();
+    }
+  }
+
+  // If the login was initiated via a click on a
+  // .dw-login-on-click button, continue the submission
   // process that button is supposed to start.
-  $(loginOnClickBtnClicked).closest('form').submit();
-  loginOnClickBtnClicked = null;
+  emailQuestion.done(function() {
+    $(loginOnClickBtnClicked).closest('form').submit();
+  }).always(function() {
+    loginOnClickBtnClicked = null;
+  });
 }
+
+
+var configEmailPerhapsRelogin = (function() {
+  var dialogStatus;
+
+  return function() {
+    dialogStatus = $.Deferred();
+
+    var $form = $('#dw-f-eml-prf');
+    var $emailAddrDiv = $form.find('.dw-f-eml-prf-adr');
+    var $dontRecvBtn = $form.find('#dw-fi-eml-prf-rcv-no');
+    var $yesRecvBtn = $form.find('#dw-fi-eml-prf-rcv-yes');
+
+    // Init dialog, do once only.
+    if (!$form.parent().is('.ui-dialog')) {
+      $form.dialog({
+        autoOpen: false,
+        width: 400,
+        modal: true,
+        resizable: false,
+        zIndex: 1190,  // the default, 1000, is lower than <form>s z-index
+        close: function() {
+          dialogStatus.reject();
+        }
+      });
+      $('#dw-f-eml-prf').find('input[type="radio"], input[type="submit"]')
+          .button();
+      // todo: hide email input.
+      // On Yes click, show it if email unknown, and show Done button.
+
+      $dontRecvBtn.click(submitForm); // always
+      $form.submit(function() {
+        $yesRecvBtn.button('enable'); // or value not posted
+
+        // When you change your email address, this triggers a re-login,
+        // if you use an unauthenticated identity — because the email is
+        // part of that identity. We need to know if a login happens.
+        var loginIdBefore = Me.getLoginId();
+
+        $.post($form.attr('action'), $form.serialize(), 'html')
+            .done(function(responseHtml) {
+              // Fire login event, to update xsrf tokens, if the server
+              // created a new login session (because we changed email addr).
+              Me.refreshProps();
+              var loginIdAfter = Me.getLoginId();
+              if (loginIdAfter !== loginIdBefore)
+                fireLogin();
+
+              dialogStatus.resolve();
+              $form.dialog('close');
+              // (Ignore responseHtml; it's empty, or a Welcome message.)
+            })
+            .fail(showServerResponseDialog);
+        return false;
+      });
+    }
+
+    // Clear any old email addr.
+    $form.find('input[type="text"]').val('');
+
+    // Hide email input, if email addr already specified,
+    // and submit directly on Yes/No click.
+    function submitForm() {
+      $form.submit();
+    }
+    function showEmailAddrInp() {
+      $emailAddrDiv.show();
+      $yesRecvBtn.button('disable');
+    }
+    $emailAddrDiv.hide();
+    $yesRecvBtn.button('enable');
+    if (Me.isEmailKnown()) {
+      // Submit directly; need not ask for email addr.
+      $yesRecvBtn.click(submitForm);
+      $yesRecvBtn.off('click', showEmailAddrInp);
+    } else {
+      // Ask for email addr; submit via Done button.
+      $yesRecvBtn.click(showEmailAddrInp);
+      $yesRecvBtn.off('click', submitForm);
+    }
+
+    $form.dialog('open');
+    return dialogStatus;
+  }
+})();
+
 
 function showLoginSimple() {
   initLoginSimple();
@@ -2755,7 +2871,8 @@ function $showReplyForm(event, opt_where) {
       $submitBtn.val(text);
     }
     setSubmitBtnTitle(null, Me.getName());
-    $submitBtn.each($loginSubmitOnClick(setSubmitBtnTitle));
+    $submitBtn.each($loginSubmitOnClick(setSubmitBtnTitle,
+          { askAboutEmailNotfs: true }));
 
     // Ajax-post reply on submit.
     $replyForm.submit(function() {
