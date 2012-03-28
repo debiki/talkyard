@@ -1962,9 +1962,16 @@ function showServerResponseDialog(jqXhrOrHtml, opt_errorType,
   // Find html or plain text.
   if (!jqXhrOrHtml.getResponseHeader) {
     html = jqXhrOrHtml;
-  } else {
+  }
+  else {
     var contentType = jqXhrOrHtml.getResponseHeader('Content-Type');
-    if (contentType.indexOf('text/html') !== -1) {
+    if (!contentType) {
+      plainText = '(no Content-Type header)';
+      if (jqXhrOrHtml.state && jqXhrOrHtml.state() == 'rejected') {
+        plainText = plainText + '\n($.Deferred was rejected)';
+      }
+    }
+    else if (contentType.indexOf('text/html') !== -1) {
       html = jqXhrOrHtml.responseText;
     }
     else if (contentType.indexOf('text/plain') !== -1) {
@@ -1977,11 +1984,18 @@ function showServerResponseDialog(jqXhrOrHtml, opt_errorType,
 
   // Format dialog contents.
   if (html) {
-    $html = $(html).filter('.dw-dlg-rsp');
-    title = $html.children('.dw-dlg-rsp-ttl').text();
-    width = 400;
+    var $allHtml = $(html);
+    $html = $allHtml.filter('.dw-dlg-rsp');
+    if (!$html.length) $html = $allHtml.find('.dw-dlg-rsp');
+    if ($html.length) {
+      title = $html.children('.dw-dlg-rsp-ttl').text();
+      width = 400;
+    } else {
+      plainText = 'Internal server error.';
+    }
   }
-  else if (plainText) {
+
+  if (plainText) {
     // Set title to something like "403 Forbidden", and show the
     // text message inside the dialog.
     title = jqXhrOrHtml.status ?
@@ -1991,7 +2005,7 @@ function showServerResponseDialog(jqXhrOrHtml, opt_errorType,
     // Use text(), not plus (don't: `... + text + ...'), to prevent xss issues.
     $html.text(plainText || opt_errorType || 'Unknown error');
   }
-  else {
+  else if (!html) {
     die2('DwE05GR5');
   }
 
