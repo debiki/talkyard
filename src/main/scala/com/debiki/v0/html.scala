@@ -893,13 +893,6 @@ class FormHtml(val config: HtmlConfig, xsrfToken: String,
                 >Email: (optional, not shown)</label>
              <input id='dw-fi-login-email' type='text' size='40'
                   maxlength='100' name='dw-fi-login-email' value=''/>
-             <input id='dw-fi-lgi-spl-email-ntf' type='checkbox'
-                   name='dw-fi-lgi-spl-email-ntf' value='yes'/>
-             <label for='dw-fi-lgi-spl-email-ntf'
-                  id='dw-fi-lgi-spl-email-ntf-lbl'>
-               <b>Be notified</b> via email on replies to your comments.
-               <small>Not yet implemented.</small>
-             </label>
             </div>
             <div>
              <label for='dw-fi-login-url' id='dw-fi-login-url-lbl'
@@ -918,13 +911,6 @@ class FormHtml(val config: HtmlConfig, xsrfToken: String,
             title="Sign In or Create New Account">
         <form action={config.loginActionOpenId} method='post' id='openid_form'>
           { _xsrfToken }
-          <input id='dw-fi-lgi-oid-email-ntf' type='checkbox'
-              name='dw-fi-lgi-oid-email-ntf' value='yes'/>
-          <label for='dw-fi-lgi-oid-email-ntf'
-              id='dw-fi-lgi-oid-email-ntf-lbl'
-            ><strong>Be notified</strong>
-            via email on replies to your comments
-          </label><br/>
           <input type='hidden' name='action' value='verify' />
           <div id='openid_choice'>
             <p>Please click your account provider:</p>
