@@ -828,7 +828,7 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
       val grant = dao.saveLogin(defaultTenantId, loginReq)
       val Some((idty, user)) = dao.loadIdtyAndUser(forLoginId = grant.login.id,
                                           tenantId = defaultTenantId)
-      user.emailNotfPrefs must_== EmailNotfPrefs.DontReceive
+      user.emailNotfPrefs must_== EmailNotfPrefs.Unspecified
       emailEx_loginGrant = grant
     }
 
@@ -848,7 +848,7 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
       val login = exOpenId_loginGrant.login
       val Some((idty, user)) =
          dao.loadIdtyAndUser(forLoginId = login.id, tenantId = defaultTenantId)
-      user.emailNotfPrefs must_== EmailNotfPrefs.DontReceive
+      user.emailNotfPrefs must_== EmailNotfPrefs.Unspecified
     }
 
     "configure email to a Role" >> {
@@ -1091,6 +1091,8 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
           emailNotfPrefs = EmailNotfPrefs.DontReceive)
         // must throwNothing (how to test that?)
       }
+
+      // COULD verify email prefs changed to DontReceive?
     }
 
 
@@ -1143,6 +1145,8 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
           emailNotfPrefs = EmailNotfPrefs.DontReceive)
         // must throwNothing (how to test that?)
       }
+
+      // COULD verify email prefs changed to DontReceive?
     }
 
 
