@@ -169,6 +169,7 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
     var ex1_debate: Debate = null
     var loginGrant: LoginGrant = null
 
+
     // -------- Create tenant
 
     var defaultTenantId = ""
@@ -176,6 +177,10 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
     "find no tenant for non-existing host test.ex.com" >> {
       val lookup = dao.lookupTenant("http", "test.ex.com")
       lookup must_== FoundNothing
+    }
+
+    "find no tenant for non-existing tenant id" >> {
+      dao.loadTenants("non_existing_id"::Nil) must_== Nil
     }
 
     "create a Test tenant" >> {
@@ -187,13 +192,27 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
 
     "add and lookup host test.ex.com" >> {
       dao.addTenantHost(defaultTenantId, TenantHost("test.ex.com",
-            TenantHost.HttpsNone, role = TenantHost.RoleCanonical))
+         TenantHost.RoleCanonical, TenantHost.HttpsNone))
       val lookup = dao.lookupTenant("http", "test.ex.com")
       lookup must_== FoundChost(defaultTenantId)
     }
 
+    "lookup tenant by id, and find all hosts" >> {
+      val tenants = dao.loadTenants(defaultTenantId::Nil)
+      tenants must beLike {
+        case List(tenant) =>
+          tenant.id must_== defaultTenantId
+          tenant.name must_== "Test"
+          tenant.hosts must_== List(TenantHost(
+             "test.ex.com", TenantHost.RoleCanonical, TenantHost.HttpsNone))
+          true
+        case _ => false
+      }
+    }
+
     val defaultPagePath = v0.PagePath(defaultTenantId, "/folder/",
                                     None, false, "page-title")
+
 
     // -------- Simple logins
 
