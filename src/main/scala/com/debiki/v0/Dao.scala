@@ -88,40 +88,6 @@ abstract class DaoSpi {
 
 
 object Dao {
-  case class LoginRequest(login: Login, identity: Identity) {
-    require(login.id startsWith "?")
-    require(login.identityId == identity.id)
-
-    // Only when you login via email, the identity id is already known
-    // (and is the email id).
-    if (identity.isInstanceOf[IdentityEmailId])
-      require(!identity.id.startsWith("?"))
-    else require(identity.id startsWith "?")
-
-    // The user id is not known before you have logged in.
-    require(identity.userId startsWith "?")
-  }
-
-  // COULD use RequesterInfo instead? (It includes role info too, is fine?)
-  case class LoginGrant(login: Login, identity: Identity, user: User) {
-    require(!login.id.contains('?'))
-    require(!identity.id.contains('?'))
-    require(!user.id.contains('?'))
-    require(login.identityId == identity.id)
-    require(identity.userId == user.id)
-
-    def displayName: String = {
-      // (Somewhat dupl code: this also done in NiLo.displayName.)
-      if (user.displayName nonEmpty) user.displayName
-      else identity.displayName
-    }
-
-    def email: String = {
-      if (user.email nonEmpty) user.email
-      else identity.email
-    }
-  }
-
 }
 
 
