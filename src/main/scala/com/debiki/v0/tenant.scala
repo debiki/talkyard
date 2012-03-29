@@ -40,8 +40,8 @@ object TenantHost {
 
 case class TenantHost(
   address: String,
-  https: TenantHost.HttpsInfo,
-  role: TenantHost.Role
+  role: TenantHost.Role,
+  https: TenantHost.HttpsInfo
 )
 
 
