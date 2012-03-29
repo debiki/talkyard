@@ -1,0 +1,82 @@
+@(emailId: String, doWhat: String, nextPage: String)
+
+
+@unsubForm = {
+  <form accept-charset='UTF-8' method='post'>
+  <p>Unsubscribe from email notifications of replies to your commenets?</p>
+  <div>
+  <input type='submit' value='Yes, unsubscribe'>
+  <input type='button' value='No, and close page' onclick='closeWindow()'>
+  </div>
+  </form>
+}
+
+
+@unsubDoneInfo = {
+  <p>You have been unsubscribed.
+  </p>
+  <button onclick='closeWindow()'>Thanks, and close page</button>
+  <br>
+  <br>
+  <p>If you want to prevent resubscriptions, you can do that,
+    <a href='@nextPage'>here.</a> That is, you'd prevent yourself and other people from subscribing
+    to email notifications again, using your email address.
+  </p>
+}
+
+
+@preventResubForm = {
+  <form accept-charset='UTF-8' method='post'>
+  <p>Prevent resubscriptions?</p>
+  <p>Do you want to prevent yourself and everyone else from
+    subscribing to email notifications, using your email address?
+    Currently this cannot be undone.@* but you can still subscribe again, with
+    the current email address, if youy login via e.g. Gmail
+    or Facebook (but not via guest login). *@
+  </p>
+  <div>
+  <input type='submit' value='Prevent resubscriptions'>
+  <input type='button' value='Close page' onclick='closeWindow()'>
+  </div>
+  </form>
+}
+
+
+@resubsPreventedInfo = {
+  <p>Resubscriptions are now prevented.</p>
+  <p><small>You can actually still resubscribe to email notifications, but then
+    you need to authenticate yourself. You do that by loging in
+    to <a href='/'>the relevant website</a> via OpenID (Gmail, Yahoo etcetera)
+    or Facebook or Google+, for example.</small>
+  </p>
+  <p>Kind regards</p>
+}
+
+
+<!DOCTYPE html>
+<head>
+<style>
+p { max-width: 30em; }
+input { min-width: 11em; }
+</style>
+<script>
+@* http://stackoverflow.com/questions/2032640/
+      problem-with-window-close-and-chrome  *@
+function closeWindow() {
+  window.open('', '_self', ''); @* otherwise won't work in Chrome *@
+  window.close();
+}
+</script>
+</head>
+<body>
+  @doWhat match {
+    case "" => { @unsubForm }
+    case "unsub-done" => { @unsubDoneInfo }
+    case "prevent-resub" => { @preventResubForm }
+    case "resub-prevented" => { @resubsPreventedInfo }
+    case _ => {
+      play.api.Logger.error("Bad doWhat: "+ doWhat)
+      <p>Internal server error</p>
+    }
+  }
+</body>
