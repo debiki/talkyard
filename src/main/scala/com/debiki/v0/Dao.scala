@@ -88,6 +88,10 @@ abstract class DaoSpi {
 
 
 object Dao {
+
+  case class EmailNotFoundException(emailId: String)
+     extends Exception("No email with id: "+ emailId)
+
 }
 
 
