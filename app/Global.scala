@@ -67,7 +67,8 @@ object Global extends GlobalSettings {
 
     // Find API version and main function in query string.
     // Example: page?v0-reply-to=123 means version 0 and function `reply-to'.
-    val versionAndMainFun = request.rawQueryString.takeWhile(_ != '=')
+    val versionAndMainFun =
+      request.rawQueryString.takeWhile(x => x != '=' && x != '&')
     // Later:
     //val versionSeparator = versionAndMainFun.indexOf('-')
     //val (versionPrefix, mainFun) =
