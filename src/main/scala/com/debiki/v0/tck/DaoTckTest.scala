@@ -147,7 +147,6 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
   val tablesAreEmpty = setup(EmptyTables)
 
   import com.debiki.v0._
-  import com.debiki.v0.Dao.{LoginRequest, LoginGrant}
   import com.debiki.v0.PagePath._  // Guid case classes
   val T = Templates
 
