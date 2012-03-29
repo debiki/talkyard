@@ -48,7 +48,7 @@ object Xsrf {
     XsrfOk(hashSha1Base64UrlSafe(_secretSalt + sid) take _hashLength)
 
 
-  def newSidAndXsrf(loginGrant: Option[Dao.LoginGrant])
+  def newSidAndXsrf(loginGrant: Option[LoginGrant])
         : (SidOk, XsrfOk, List[Cookie]) =
     newSidAndXsrf(
       loginId = loginGrant.map(_.login.id),

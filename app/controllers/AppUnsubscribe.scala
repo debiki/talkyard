@@ -5,7 +5,6 @@ package controllers
  */
 
 import com.debiki.v0._
-import com.debiki.v0.Dao.LoginRequest
 import debiki._
 import debiki.DebikiHttp._
 import java.{util => ju}

@@ -149,7 +149,7 @@ object AppAuthOpenid extends mvc.Controller {
 
     // ----- Save login in database
 
-    val loginReq = Dao.LoginRequest(
+    val loginReq = LoginRequest(
       Login(id = "?", prevLoginId = prevSid.loginId,
         ip = addr, date = new ju.Date,
         identityId = "?i"),
