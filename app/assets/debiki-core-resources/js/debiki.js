@@ -1843,8 +1843,19 @@ function slideInActionForm($form, $where) {
 
 
 /**
- * If there's a mouse, changes this form to a HoverSubmit form.
- * Always adds a login-on-click handler to the submit form.
+ * Changes this form to a HoverSubmit form, if there's a mouse.
+ * Always adds a login-and-submit-on-click handler to the form.
+ *
+ * A hoversubmit form is a "Don't click just point" interface,
+ * that is, if you point with the mouse on something, that triggers
+ * a click. — This confuses new users, but is much faster, once
+ * you've figured out how it works. (Since you don't need to stop and
+ * click on any button, instead just do a quick mouse gesture and
+ * you're done.)
+ *
+ * Currently used by the Rate form only (because you're supposed
+ * to rate very many posts, and then that'd better be something
+ * you do very quickly?).
  *
  * options.onLoginOut(username/undefined) — Called on login/logout.
  */
@@ -1863,6 +1874,23 @@ function makeHoverSubmitForm($formParent, event, options) {
       .appendTo($formParent);  // now removed when form removed
 
   var $form = $formParent.children('form');
+
+  // On mouseenter, non-submit inputs: Simulate a click :-)
+  // For now, implement this for checkboxes only (that's the only
+  // non-submit/cancel input in the Rate form).
+  $form.find('input[type="checkbox"]').each(function() {
+    // Click the input when the mouse enters its graphical representation
+    // (which is the input's label, not the input itself, for jQuery UI
+    // checkboxes).
+    var $btn = $(this);
+    $btn.button('widget').mouseenter(function() {
+      $btn.click();
+      // Since the click has already happened, the hover state means
+      // nothing — the hover colors however obscure the fact that the
+      // input has already changed state.
+      $(this).removeClass('ui-state-hover');
+    });
+  });
 
   // On mouseenter: Cancel button: Cancel.
   // Submit button: Optionally, login and call
@@ -1898,7 +1926,8 @@ function makeHoverSubmitForm($formParent, event, options) {
   // Place the form where the mouse click happened, and inside the viewport.
   // 'fit fit' has no effect if outside the left and top viewport
   // borders though (but works for the bottom and right borders).
-  $form.position({ of: event, collision: 'fit fit' });
+  var offsetY = 20;
+  $form.position({ of: event, collision: 'fit fit', offset: '0 -'+ offsetY });
 
   // Place the cancel button above the form (instead of below it),
   // if the mouse is below the form midpoint — so you don't need to move
@@ -1906,7 +1935,7 @@ function makeHoverSubmitForm($formParent, event, options) {
   // This happens if the button you clicked is close to the lower edge
   // of the window — then $.position moves the form upwards so it fits
   // in the viewport.
-  var okDistFromMidpoint = 10;
+  var okDistFromMidpoint = offsetY + 1;
   var formMidpOffsY = $form.offset().top + $form.outerHeight()/2;
   if (formMidpOffsY + okDistFromMidpoint < event.pageY) {
     // Mouse cursor below form midpoint.
