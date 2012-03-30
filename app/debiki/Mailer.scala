@@ -178,7 +178,12 @@ class Mailer(val dao: Dao) extends Actor {
       // For now, don't bother about the
       // redirect from "/-pageId" to the actual page path.
       val pageUrl = origin +"/-"+ notf.pageId
-      val eventUrl = pageUrl +"#"+ notf.eventActionId
+      // Currently eventActionId is always a post (because
+      // Notification.calcFrom currently only generates notfs for replies).
+      if (notf.eventType != NotfOfPageAction.Type.PersonalReply) {
+        logger.warn("Unsupported notification type: "+ notf.eventType)
+      }
+      val eventUrl = pageUrl +"#dw-post-"+ notf.eventActionId
       <div>
         You have a reply, <a href={eventUrl}>here</a>,<br/>
         on page <a href={pageUrl}>{notf.pageTitle}</a>,<br/>

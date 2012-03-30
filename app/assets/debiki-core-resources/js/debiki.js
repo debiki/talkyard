@@ -460,6 +460,14 @@ function showAndHighlightPost($post, options) {
 }
 
 
+function scrollToUrlAnchorPost() {
+  var $anchorPost = $(location.hash).filter('.dw-p');
+  if (!$anchorPost.length) return;
+  showAndHighlightPost($anchorPost, { marginRight: 200, marginBottom: 300 });
+  $anchorPost.parent().addClass('dw-m-t-new');  // outlines it
+}
+
+
 // Adds class 'debiki-current-site-section' to the navigation
 // menu link that matches the current window.location.
 // However, unless you are on the home page, links to the home page
@@ -4696,6 +4704,7 @@ function initAndDrawSvg() {
   steps.push(registerEventHandlersFireLoginOut);
   steps.push(initAndDrawSvg);
   steps.push(initPostsThreadStep4);
+  steps.push(scrollToUrlAnchorPost);
   // Resize the article after the page has been rendered, so all inline
   // threads have been placed and can be taken into account.
   steps.push(resizeRootThread);
