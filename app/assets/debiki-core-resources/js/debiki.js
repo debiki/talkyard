@@ -2428,6 +2428,7 @@ var configEmailPerhapsRelogin = (function() {
     // and submit directly on Yes/No click.
     function submitForm() {
       $form.submit();
+      return false;
     }
     function showEmailAddrInp() {
       $emailAddrDiv.show();
