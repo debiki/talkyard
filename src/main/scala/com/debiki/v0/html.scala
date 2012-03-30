@@ -1049,7 +1049,8 @@ class FormHtml(val config: HtmlConfig, xsrfToken: String,
         <form
             action={config.rateAction + _viewRoot}
             accept-charset='UTF-8'
-            method='post'>
+            method='post'
+            class='dw-f dw-f-r'>
           { _xsrfToken }
           {
             var boxCount = 1
@@ -1064,14 +1065,14 @@ class FormHtml(val config: HtmlConfig, xsrfToken: String,
             be too many values, people can't keep them all in mind. Read this:
             en.wikipedia.org/wiki/The_Magical_Number_Seven,_Plus_or_Minus_Two
             although 3 - 5 items is probably much better than 7 - 9. */}
-            <div>
+            <div class='dw-f-r-tag-pane'>
               {/* temporary layout hack */}
-              <div class='dw-r-tag-set'>{
+              <div class='dw-r-tag-set dw-r-tag-set-1'>{
                 rateBox("interesting") ++
                 rateBox("funny") ++
                 rateBox("off-topic")
               }</div>
-              <div class='dw-r-tag-set'>{
+              <div class='dw-r-tag-set dw-r-tag-set-2'>{
                 rateBox("boring") ++
                 rateBox("stupid")
               }</div>
@@ -1085,12 +1086,14 @@ class FormHtml(val config: HtmlConfig, xsrfToken: String,
                 rateBox("spam") ++
                 rateBox("troll")
               }</div>  */}
+              <div class='dw-submit-set'>
+                <input class='dw-fi-submit' type='submit' value='Submit'/>
+                <input class='dw-fi-submit dw-hoversubmit-2' type='submit'
+                       value='Submit'/>
+                <input class='dw-fi-cancel' type='button' value='Cancel'/>
+              </div>
             </div>
           }
-          <div class='dw-submit-set'>
-            <input class='dw-fi-submit' type='submit' value='Submit'/>
-            <input class='dw-fi-cancel' type='button' value='Cancel'/>
-          </div>
         </form>
       </div>
 
