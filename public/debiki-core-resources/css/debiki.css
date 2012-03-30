@@ -543,8 +543,8 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
 .dw-hor > .dw-res > .ui-resizable { border-right: 2px dashed transparent; }
 
 .dw-hor > .dw-res > li {
-  padding: 0 20px 10px 0;
-  margin: 10px 16px 0 0;
+  padding: 0 27px 10px 0;
+  margin: 10px 23px 0 0;
 }
 
 /* Make the column separator at least this high. But don't do this for
