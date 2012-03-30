@@ -440,7 +440,7 @@ class DebateHtml(val debate: Debate, val pageTrust: PageTrust) {
 
   private def _showDeletedComment(vipo: ViPo, wholeTree: Boolean = false
                                      ): RenderedComment = {
-    val cssPostId = "dw-post-"+ vipo.id
+    val cssPostId = "post-"+ vipo.id
     val deletion = vipo.firstDelete.get
     val deleter = debate.authorOf_!(deletion)
     val html =
@@ -471,7 +471,7 @@ class DebateHtml(val debate: Debate, val pageTrust: PageTrust) {
     def post = vipo.post
     val editsAppld: List[(Edit, EditApp)] = vipo.editsAppdDesc
     val lastEditApp = editsAppld.headOption.map(_._2)
-    val cssPostId = "dw-post-"+ post.id
+    val cssPostId = "post-"+ post.id
     val (cssArtclPost, cssArtclBody) =
       if (post.id != Page.BodyId) ("", "")
       else (" dw-ar-p", " dw-ar-p-bd")
@@ -661,7 +661,7 @@ class DebateHtml(val debate: Debate, val pageTrust: PageTrust) {
         // In the future, I could make a recursive call to
         // _renderPost, to render the title. Then it would be
         // possible to reply-inline to the title.
-        <div id={"dw-post-"+ titlePost.id} class='dw-p dw-p-ttl'>
+        <div id={"post-"+ titlePost.id} class='dw-p dw-p-ttl'>
           <div class='dw-p-bd'>
             <div class='dw-p-bd-blk'>
               <header class='dw-p-ttl'><h1>{titlePost.text}</h1></header>
@@ -857,48 +857,48 @@ class FormHtml(val config: HtmlConfig, xsrfToken: String,
    *    debiki-core/src/main/resources/toserve/lib/openid-selector/demo.html
    */
   def loginFormSimple =
-      <div class='dw-fs' id='dw-fs-login-simple' title='Who are you?'>
+      <div class='dw-fs' id='dw-fs-lgi-simple' title='Who are you?'>
         <form action={config.loginActionSimple} method='post'>
           { _xsrfToken }
-          <div id='dw-login'>
-           <div class='dw-login-openid'>
-             <div class='dw-login-openid-info'>
+          <div id='dw-lgi'>
+           <div class='dw-lgi-openid'>
+             <div class='dw-lgi-openid-info'>
                Login with Gmail, OpenID, Yahoo, etcetera:
              </div>
              <a class='dw-a dw-a-login-openid'>Log in</a>
-             <div class='dw-login-openid-why'>
+             <div class='dw-lgi-openid-why'>
                <small>
                In the future, logging in will enable functionality
                not available to unauthenticated users.
                </small>
              </div>
            </div>
-           {/*<div class='dw-login-or-wrap'>
-             <div class='dw-login-or-word'>Or</div>
+           {/*<div class='dw-lgi-or-wrap'>
+             <div class='dw-lgi-or-word'>Or</div>
            </div>*/}
-           <div class='dw-login-simple'>
-            <div class='dw-login-simple-info'>
+           <div class='dw-lgi-simple'>
+            <div class='dw-lgi-simple-info'>
               Alternatively,
             </div>
             <div>
-             <label for='dw-fi-login-name'>Enter your name:</label>
-             <input id='dw-fi-login-name' type='text' size='40' maxlength='100'
-                  name='dw-fi-login-name' value='Anonymous'/>
+             <label for='dw-fi-lgi-name'>Enter your name:</label>
+             <input id='dw-fi-lgi-name' type='text' size='40' maxlength='100'
+                  name='dw-fi-lgi-name' value='Anonymous'/>
              <small><b>'?'</b> will be appended to your name,
                to indicate that you were not authenticated.
              </small>
             </div>
             <div>
-             <label for='dw-fi-login-email'
+             <label for='dw-fi-lgi-email'
                 >Email: (optional, not shown)</label>
-             <input id='dw-fi-login-email' type='text' size='40'
-                  maxlength='100' name='dw-fi-login-email' value=''/>
+             <input id='dw-fi-lgi-email' type='text' size='40'
+                  maxlength='100' name='dw-fi-lgi-email' value=''/>
             </div>
             <div>
-             <label for='dw-fi-login-url' id='dw-fi-login-url-lbl'
+             <label for='dw-fi-lgi-url' id='dw-fi-lgi-url-lbl'
                 >Website: (optional)</label>
-             <input id='dw-fi-login-url' type='text' size='40' maxlength='200'
-                  name='dw-fi-login-url' value=''/>
+             <input id='dw-fi-lgi-url' type='text' size='40' maxlength='200'
+                  name='dw-fi-lgi-url' value=''/>
              <!-- COULD add tabindex='...' -->
             </div>
            </div>
@@ -932,11 +932,11 @@ class FormHtml(val config: HtmlConfig, xsrfToken: String,
       </div>
 
   def loginOkForm(name: String = "Anonymous") =
-      <div class='dw-fs' id='dw-fs-login-ok' title='Welcome'>
+      <div class='dw-fs' id='dw-fs-lgi-ok' title='Welcome'>
         <form action={config.loginOkAction} method='post'>
           { _xsrfToken }
           <p>You have been logged in, welcome
-            <span id='dw-fs-login-ok-name'>{name}</span>!
+            <span id='dw-fs-lgi-ok-name'>{name}</span>!
           </p>
           <div class='dw-submit-set'>
             <input class='dw-fi-submit' type='submit' value='OK'/>
@@ -945,11 +945,11 @@ class FormHtml(val config: HtmlConfig, xsrfToken: String,
       </div>
 
   def loginFailedForm(error: String = "unknown error") =
-      <div class='dw-fs' id='dw-fs-login-failed' title='Login Error'>
+      <div class='dw-fs' id='dw-fs-lgi-failed' title='Login Error'>
         <form action={config.loginFailedAction} method='post'>
           { _xsrfToken }
           <p>Login failed:
-            <span id='dw-fs-login-failed-errmsg'>{error}</span>
+            <span id='dw-fs-lgi-failed-errmsg'>{error}</span>
           </p>
           <div class='dw-submit-set'>
             <input class='dw-fi-submit' type='submit' value='OK'/>
@@ -958,7 +958,7 @@ class FormHtml(val config: HtmlConfig, xsrfToken: String,
       </div>
 
   def logoutForm =
-      <div class='dw-fs' id='dw-fs-logout' title='Log out'>
+      <div class='dw-fs' id='dw-fs-lgo' title='Log out'>
         <form action={config.logoutAction} method='post'>
           { _xsrfToken }
           <p>Are you sure?</p>
@@ -1414,7 +1414,7 @@ object UserHtml {
       <ol> {
         for (notf <- notfs.take(20)) yield {
           val pageAddr = "/-"+ notf.pageId
-          val postAddr = pageAddr +"#dw-post-"+ notf.recipientActionId
+          val postAddr = pageAddr +"#post-"+ notf.recipientActionId
 
           notf.eventType match {
             case NotfOfPageAction.Type.PersonalReply =>

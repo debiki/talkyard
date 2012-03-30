@@ -113,7 +113,7 @@ object Notification {
       // then, in debiki-app-play, update Mailer._constructEmail.notfToHtml
       // so it generates correct URL anchor links to that stuff.
       // Currently notfToHtml assumes all notfs are for replies and
-      // writes #dw-post- anchors only.
+      // writes #post-<id> anchors only.
       case e: Edit =>
         Nil  // fix later, see note above
       case app: EditApp =>
