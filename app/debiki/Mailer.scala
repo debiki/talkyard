@@ -183,7 +183,7 @@ class Mailer(val dao: Dao) extends Actor {
       if (notf.eventType != NotfOfPageAction.Type.PersonalReply) {
         logger.warn("Unsupported notification type: "+ notf.eventType)
       }
-      val eventUrl = pageUrl +"#dw-post-"+ notf.eventActionId
+      val eventUrl = pageUrl +"#post-"+ notf.eventActionId
       <div>
         You have a reply, <a href={eventUrl}>here</a>,<br/>
         on page <a href={pageUrl}>{notf.pageTitle}</a>,<br/>

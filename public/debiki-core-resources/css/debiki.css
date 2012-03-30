@@ -95,8 +95,6 @@
  *  dw-i-t        inline thread (COULD use dw-i instead, already has dw-t class)
  *  dw-i-m        inline mark (COULD rename to dw-m — *all* marks are inline?)
  *  dw-i-m_<#id>  mark for thread #id (e.g. dw-i-m_dw-t-<thread-id>)
- *  dw-login-on-click COULD rename to dw-loginsubmit-on-click
- *  dw-login-on-mouseenter COULD rename to dw-loginsubmit-on-mouseenter
  *  dw-m-p-mine   the user's own post
  *  dw-m-p-edited the post was just edited (edits were axaj-fetched)
  *  dw-m-t-new    this thread was just fetched via ajax, the user hasn't seen it
@@ -877,7 +875,6 @@ body.dw-u-ui-simple .dw-a-edit { display: none !important; }
   /*font-size: 85%;*/
 }
 
-.dw-p-hd .dw-post-liking,
 .dw-p-hd .dw-r-count,
 .dw-p-hd .dw-r-tag-frac-min,
 .dw-p-hd .dw-r-tag-sum,
@@ -892,27 +889,7 @@ body.dw-u-ui-simple .dw-a-edit { display: none !important; }
   position: relative;
   left: -2px;
 }
-.xxx-dw-post-info .dw-rs .dw-r-tag-frac:before {
-  content: "×"; /* The multiplication sign, U+00D7 */
-  position: relative;
-  left: -1px;
-}
 
-.dw-post-info .dw-rs-non-weighted {
-  display: none; /* -non-weighted is only for debugging */
-}
-
-.dw-post-info .dw-last-changed,
-.dw-post-info .dw-edits {
-  float: right;
-  clear: right;
-  padding: 1px 3px 3px 1ex;
-  margin-left: 1ex;
-  position: relative;
-  font-size: 85%;
-  background-color: #e7e7e7; /* parent elem, .dw-post-info, has same bg-color,
-                                but its height is restricted */
-}
 
 /* --- Posts that are part of the article --- +/
 
@@ -1131,7 +1108,7 @@ to the forms bg color. */
   background-color: #fbf7f2;
 }
 
-/* Float drop fix. Was needed by #dw-fs-openid-login or #dw-fs-login-simple.
+/* Float drop fix. Was needed by #dw-fs-openid-login or #dw-fs-lgi-simple.
 Now *sometimeis* needed by #dw-fs-flg, or some radio button float
 drops and scrollbars appear. Sometimes? Yes, in Chrome `14.0.835.186'
 on my KDE computer — but not in Chrome `14.0.835.186 beta' on my
@@ -1276,20 +1253,20 @@ form.dw-hoversubmit {
   display: none;
 }
 
-.dw-login {
+.dw-lgi {
   float: left;
   clear: both;
   margin: 10px 0;
 }
 
-#dw-fs-login-simple {
+#dw-fs-lgi-simple {
   /* Use whole parent jQuery UI dialog, else scrollbars tend to appear.
    jQuery UI seems to change the width to `auto'. */
 /*  width: 100% !important;
   overflow: visible; /* or north-south scrollbar appears in Chrome */
 }
 
-.dw-login-openid {
+.dw-lgi-openid {
   padding: 0 30px 0 0;
   margin-right: 45px;
   height: 105px;
@@ -1298,11 +1275,11 @@ form.dw-hoversubmit {
   left: 0; /* or IE 7 places it far to the right */
 }
 
-.dw-login-openid-info {
+.dw-lgi-openid-info {
   margin: 1em 0;
 }
 
-.dw-login-openid-why {
+.dw-lgi-openid-why {
   margin-top: 1em;
 }
 
@@ -1316,15 +1293,15 @@ form.dw-hoversubmit {
   display: block;
 }
 
-.dw-login-or-wrap {
+.dw-lgi-or-wrap {
   position: absolute;
   height: 100%;
-  left: 190px; /* 50px + 140px, see .dw-login-openid */
+  left: 190px; /* 50px + 140px, see .dw-lgi-openid */
   background-color: #FBF7F2;
   border-right: 1px solid #ccc;
 }
 
-.dw-login-or-word {
+.dw-lgi-or-word {
   top: 96px;
   right: -9px;
   position: absolute;
@@ -1333,24 +1310,24 @@ form.dw-hoversubmit {
   font-weight: bold;
 }
 
-.dw-login-simple {
+.dw-lgi-simple {
   margin-left: 240px;
 }
 
-.dw-login-simple-info {
+.dw-lgi-simple-info {
   padding: 1em 0 0.7em;
 }
 
-.dw-login-simple label {
+.dw-lgi-simple label {
   margin-top: 0.7em;
 }
 
-.dw-login-simple input {
+.dw-lgi-simple input {
   margin-top: 3px !important; /* COULD remove my own conflicting rule */
   width: 200px;
 }
 
-#dw-fi-login-url-lbl {
+#dw-fi-lgi-url-lbl {
   margin-top: 1.3ex;
 }
 

@@ -324,7 +324,7 @@ var idSuffixSequence = 0;
 
 var $lastInlineMenu = $();
 
-// Remembers which .dw-login-on-click button (e.g. "Post as...")
+// Remembers which .dw-loginsubmit-on-click button (e.g. "Post as...")
 // was clicked when a login dialog is shown.
 var loginOnClickBtnClicked = null;
 
@@ -372,7 +372,12 @@ var zoomListenerHandle_dbg;
 }());
 
 
-// ------- Traversing
+// ------- Traversing etcetera
+
+jQuery.fn.dwPostId = function() {
+  // Drop initial "post-".
+  return this.dwCheckIs('.dw-p').attr('id').substr(5, 999);
+};
 
 jQuery.fn.dwPostFindHeader = function() {
   return this.dwCheckIs('.dw-p').children('.dw-p-hd');
@@ -1341,7 +1346,7 @@ function $showInlineReply() {
   — Later, when I've ported to Play 2 and can use Coffeescript :-)
   */
   var $thread = $(this.hash);
-  var postHash = '#dw-post-'+ this.hash.substr(6, 999); // drops '#dw-t-'
+  var postHash = '#post-'+ this.hash.substr(6, 999); // drops '#dw-t-'
   var $post = $(postHash);
   // Ensure inline thread not folded.
   if ($thread.is('.dw-zd')) {
@@ -2044,7 +2049,7 @@ function showServerResponseDialog(jqXhrOrHtml, opt_errorType,
 
 // Updates cookies and elements to show the user name, email etc.
 // as appropriate. Unless !propsUnsafe, throws if name or email missing.
-// Fires the dwEvLoggedInOut event on all .dw-login-on-click elems.
+// Fires the dwEvLoggedInOut event on all .dw-loginsubmit-on-click elems.
 // Parameters:
 //  props: {name, email, website}, will be sanitized unless
 //  sanitize: unless `false', {name, email, website} will be sanitized.
@@ -2060,7 +2065,7 @@ function fireLogout() {
 
   // Let `Post as <username>' etc buttons update themselves:
   // they'll replace <username> with `...'.
-  $('.dw-login-on-click, .dw-login-on-mouseenter')
+  $('.dw-loginsubmit-on-click, .dw-loginsubmit-on-mouseenter')
       .trigger('dwEvLoggedInOut', [undefined]);
 }
 
@@ -2086,7 +2091,7 @@ function fireLogin() {
 
   // Let Post as ... and Save as ... buttons update themselves:
   // they'll replace '...' with the user name.
-  $('.dw-login-on-click, .dw-login-on-mouseenter')
+  $('.dw-loginsubmit-on-click, .dw-loginsubmit-on-mouseenter')
       .trigger('dwEvLoggedInOut', [Me.getName()]);
 }
 
@@ -2167,11 +2172,11 @@ function makeCurUser() {
 
 function showLogout() {
   initLogout();
-  $('#dw-fs-logout').dialog('open');
+  $('#dw-fs-lgo').dialog('open');
 }
 
 function initLogout() {
-  var $logout = $('#dw-fs-logout');
+  var $logout = $('#dw-fs-lgo');
   if ($logout.is('.ui-dialog-content'))
     return; // already inited
 
@@ -2210,21 +2215,21 @@ function initLogout() {
 
 function showLoginOkay() {
   initLoginResultForms();
-  $('#dw-fs-login-ok-name').text(Me.getName());
-  $('#dw-fs-login-ok').dialog('open');
+  $('#dw-fs-lgi-ok-name').text(Me.getName());
+  $('#dw-fs-lgi-ok').dialog('open');
 }
 
 function showLoginFailed(errorMessage) {
   initLoginResultForms();
-  $('#dw-fs-login-failed-errmsg').text(errorMessage);
-  $('#dw-fs-login-failed').dialog('open');
+  $('#dw-fs-lgi-failed-errmsg').text(errorMessage);
+  $('#dw-fs-lgi-failed').dialog('open');
 }
 
 function initLoginResultForms() {
-  if ($('#dw-fs-login-ok.ui-dialog-content').length)
+  if ($('#dw-fs-lgi-ok.ui-dialog-content').length)
     return; // login-ok and -failed already inited
 
-  var $loginResult = $('#dw-fs-login-ok, #dw-fs-login-failed');
+  var $loginResult = $('#dw-fs-lgi-ok, #dw-fs-lgi-failed');
   var $loginResultForm = $loginResult.find('form');
   $loginResult.find('input').hide(); // Use jQuery UI's dialog buttons instead
   $loginResult.dialog({
@@ -2245,7 +2250,7 @@ function initLoginResultForms() {
 // ------- Login, simple
 
 function initLoginSimple() {
-  var $login = $('#dw-fs-login-simple');
+  var $login = $('#dw-fs-lgi-simple');
   if ($login.is('.ui-dialog-content'))
     return; // already inited
 
@@ -2317,7 +2322,7 @@ function $loginSubmitOnMouseenter(loginEventHandler, data) {
 function _$loginSubmitOn(eventType, loginEventHandler, data) {
   return function() {
     var $i = $(this);
-    $i.addClass('dw-login-on-'+ eventType);
+    $i.addClass('dw-loginsubmit-on-'+ eventType);
     !loginEventHandler || $i.bind('dwEvLoggedInOut', loginEventHandler);
     $i.on(eventType, null, data, $loginThenSubmit)
   };
@@ -2364,7 +2369,7 @@ function continueAnySubmission() {
   }
 
   // If the login was initiated via a click on a
-  // .dw-login-on-click button, continue the submission
+  // .dw-loginsubmit-on-click button, continue the submission
   // process that button is supposed to start.
   emailQuestion.done(function() {
     $(loginOnClickBtnClicked).closest('form').submit();
@@ -2462,7 +2467,7 @@ var configEmailPerhapsRelogin = (function() {
 
 function showLoginSimple() {
   initLoginSimple();
-  $('#dw-fs-login-simple').dialog('open');  // BUG Tag absent unless…
+  $('#dw-fs-lgi-simple').dialog('open');  // BUG Tag absent unless…
           //… a debate is shown, so the dw-hidden-templates included.
 }
 
@@ -2585,7 +2590,7 @@ function submitLoginInPopup($openidLoginForm) {
 
       // Warning: Somewhat dupl code, compare w initLoginSimple.
       $('#dw-fs-openid-login').dialog('close');
-      $('#dw-fs-login-simple').dialog('close');
+      $('#dw-fs-lgi-simple').dialog('close');
       fireLogin();
       showLoginOkay();
       continueAnySubmission();
@@ -2613,7 +2618,7 @@ function $showRatingForm() {
   var $post = $thread.children('.dw-p');
   var $formParent = rateFormTemplate.clone(true);
   var $rateForm = $formParent.children('form');
-  var postId = $post.attr('id').substr(8, 999); // drop initial 'dw-post-'
+  var postId = $post.dwPostId();
 
   // The rating-value inputs are labeled checkboxes. Hence they
   // have ids --- which right now remain the same as the ids
@@ -2656,7 +2661,7 @@ function $showRatingForm() {
         updateDebate(recentChangesHtml);
 
         // Show flag and rating details, and highligt the user's ratings.
-        var $newPost = $('#dw-post-' + postId);
+        var $newPost = $('#post-' + postId);
         $newPost.dwPostFindHeader().dwPostHeaderFindStats().show();
         $newPost.find('.dw-rs .dw-r').each(function(){
             // .dw-r text is e.g. " interesting 80% ". Make lowercase,
@@ -2787,7 +2792,7 @@ function $showFlagForm() {
   var $i = $(this);
   var $t = $i.closest('.dw-t');
   var $post = $t.children('.dw-p');
-  var postId = $post.attr('id').substr(8, 999); // drop initial "dw-post-"
+  var postId = $post.dwPostId();
   var $flagForm = $('#dw-f-flg');
   $flagForm
       .attr('action', '?flag='+ postId)
@@ -2807,7 +2812,7 @@ function $showReplyForm(event, opt_where) {
   var $thread = $(this).closest('.dw-t');
   var $post = $thread.children('.dw-p');
   clearfix($thread); // ensures the reply appears nested inside the thread
-  var postId = $post.attr('id').substr(8, 999); // drop initial "dw-post-"
+  var postId = $post.dwPostId();
   var horizLayout = $thread.is('.dw-hor');
 
   function showSortOrderTips($newPost) {
@@ -2982,7 +2987,7 @@ var EditTabCount = 3;
 function $showEditForm2() {
   var $post = $(this);
   var $postBody = $post.children('.dw-p-bd');
-  var postId = $post.attr('id').substr(8, 999); // drop initial "dw-post-"
+  var postId = $post.dwPostId();
   var isRootPost = $post.parent().is('.dw-depth-0');
 
   // It's confusing with Reply/Rate/etc below the edit form.
@@ -3355,7 +3360,7 @@ function $showEditsDialog() {
   var $thread = $(this).closest('.dw-t');
   var $post = $thread.children('.dw-p');
   var $postBody = $post.children('.dw-p-bd');
-  var postId = $post[0].id.substr(8, 999); // drop initial "dw-post-"
+  var postId = $post.dwPostId();
 
   $.get('?viewedits='+ postId +'&view='+ rootPostId, 'text')
       .fail(showServerResponseDialog)
@@ -3647,7 +3652,7 @@ function $showDeleteForm() {
   var $i = $(this);
   var $t = $i.closest('.dw-t');
   var $post = $t.children('.dw-p');
-  var postId = $post.attr('id').substr(8, 999); // drop initial "dw-post-"
+  var postId = $post.dwPostId();
   var $deleteForm = $('#dw-f-dl');
   $deleteForm
       .attr('action', '?delete='+ postId)
@@ -4627,8 +4632,8 @@ function registerEventHandlersFireLoginOut() {
   // Do this when everything has been inited, so all dwEvLoggedInOut event
   // listeners have been registered. }}}
 
-  $('.dw-login-on-click').click($loginThenSubmit);
-  $('.dw-login-on-mouseenter').mouseenter($loginThenSubmit);
+  $('.dw-loginsubmit-on-click').click($loginThenSubmit);
+  $('.dw-loginsubmit-on-mouseenter').mouseenter($loginThenSubmit);
   if (Me.isLoggedIn()) fireLogin();
   else fireLogout();
 }

@@ -81,9 +81,9 @@ object AppAuth extends mvc.Controller {
     def getOrDie(paramName: String, errCode: String): String =
       request.body.getOrElse(paramName, DebikiHttp.throwBadReq(errCode)).head
 
-    val name = getOrDie("dw-fi-login-name", "DwE0k31c5")
-    val email = getOrDie("dw-fi-login-email", "DwE8k3i30")
-    val url = getOrDie("dw-fi-login-url", "DwE64kC21")
+    val name = getOrDie("dw-fi-lgi-name", "DwE0k31c5")
+    val email = getOrDie("dw-fi-lgi-email", "DwE8k3i30")
+    val url = getOrDie("dw-fi-lgi-url", "DwE64kC21")
 
     def failLogin(errCode: String, summary: String, details: String) =
       throwForbiddenDialog(errCode, "Login Failed", summary, details)
