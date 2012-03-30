@@ -20,6 +20,12 @@ import play.api.Play.current
 import Prelude._
 
 
+/**
+ * Starts a single email sending actor.
+ *
+ * BUG: SHOULD terminate it before shutdown, in a manner that
+ * doesn't accidentally forget forever to send some emails.
+ */
 object Mailer {
 
   def startNewActor(dao: Dao): ActorRef = {
@@ -32,6 +38,20 @@ object Mailer {
 }
 
 
+/**
+ * Loads notifications with emails pending from the database,
+ * constructs and sends those emails.
+ *
+ * Updates the notfs so no one else also attempts to construct and send
+ * the same emails. Saves the sent emails in the database, together with
+ * Amazon Web Service's (AWS) Simple Email Service (SES) message id.
+ * The message id identifies the email in bounce/rejection/complaint emails
+ * from e.g. the recipient's email system.
+ *
+ * As of right now, only sends emails. Does not handle incoming mail (there is
+ * no incoming mail, instead such mail ends up in a certain Google Domains
+ * account instead, namely support at debiki dot se (as of today 2012-03-30).
+ */
 class Mailer(val dao: Dao) extends Actor {
 
 
@@ -52,7 +72,7 @@ class Mailer(val dao: Dao) extends Actor {
         dao.loadNotfsToMailOut(delayInMinutes = 0, numToLoad = 11)
       logger.debug("Loaded "+ notfsToMail.notfsByTenant.size +
          " notfs, to "+ notfsToMail.usersByTenantAndId.size +" users.")
-      _sendEmailNotfs(notfsToMail)
+      _trySendEmailNotfs(notfsToMail)
 
     /*
     case Bounce/Rejection/Complaint/Other =>
@@ -66,7 +86,7 @@ class Mailer(val dao: Dao) extends Actor {
    * Perhaps good reading:
    * http://colinmackay.co.uk/blog/2011/11/18/handling-bounces-on-amazon-ses/
    */
-  def _sendEmailNotfs(notfsToMail: NotfsToMail) {
+  def _trySendEmailNotfs(notfsToMail: NotfsToMail) {
 
     for {
       (tenantId, tenantNotfs) <- notfsToMail.notfsByTenant
@@ -75,49 +95,56 @@ class Mailer(val dao: Dao) extends Actor {
       (userId, userNotfs) <- notfsByUserId
     }{
       logger.debug("Considering "+ userNotfs.size +" notfs to user "+ userId)
-
+      
+      val tenantOpt = Debiki.Dao.loadTenants(tenantId::Nil).headOption
+      val chostOpt = tenantOpt.flatMap(_.chost)
       val userOpt = notfsToMail.usersByTenantAndId.get(tenantId -> userId)
-      if (userOpt.map(_.emailNotfPrefs) == Some(EmailNotfPrefs.Receive)) {
-        // Save the email in the db, before sending it, so even if the server
-        // crashes it'll always be found, should the receiver attempt to
-        // unsubscribe. (But if you first send it, then save it, the server
-        // might crash inbetween and it wouldn't be possible to unsubscribe.)
-        val (awsSendReq, emailToSend) = _constructEmail(userOpt.get, userNotfs)
-        dao.saveUnsentEmailConnectToNotfs(tenantId, emailToSend, userNotfs)
-        logger.debug("Sending email to "+ emailToSend.sentTo)
-        val emailSentOrFailed = _sendEmail(awsSendReq, emailToSend)
-        logger.trace("Email sent or failed: "+ emailSentOrFailed)
-        dao.updateSentEmail(tenantId, emailSentOrFailed)
-      }
-      else {
-        val debug = (userOpt.isEmpty
-          ? "Email skipped: User not found."
-          | "Email skipped: User declines emails.")
-        logger.debug("Skipping email to "+ userOpt +": "+ debug)
-        dao.skipEmailForNotfs(tenantId, userNotfs, debug = debug)
+
+      // Send email, or remember why we didn't.
+      val problemOpt = (chostOpt, userOpt.map(_.emailNotfPrefs)) match {
+        case (Some(chost), Some(EmailNotfPrefs.Receive)) =>
+          _constructAndSendEmail(tenantId, chost, userOpt.get, userNotfs)
+          None
+        case (None, _) =>
+          val problem = "No chost for tenant id: "+ tenantId
+          logger.warn("Skipping email to user id "+ userId +": "+ problem)
+          Some(problem)
+        case (_, None) =>
+          val problem = "User not found"
+          logger.warn("Skipping email to user id "+ userId +": "+ problem)
+          Some(problem)
+        case (_, Some(_)) =>
+          Some("User declines emails")
       }
 
-      //val emailSendAttempt = _mailSingleUser
-      //dao.saveEmailUpdateNotfs(tenantId, emailSendAttempt, userNotfs)
-      /*
-      mailResult match {
-        case Right(email: EmailSent) =>
-          // Log something?
-        case Left(failure: EmailFailureImmediate) =>
-          // Should *sometmies* not try again!!? with these notfs.
-          // Something like:
-          //   notfsFailed = userNotfs.map(_.copy(... = ???))
-          //   dao.markNotfsAsMailed(
-          //      tenantId, emailSent = None, notfs = notfsFailed)
-          // Should *sometimes* abort processing completely!
+      // If we decided not to send the email, remember not to try again.
+      problemOpt foreach { problem =>
+        dao.skipEmailForNotfs(tenantId, userNotfs,
+           debug = "Email skipped: "+ problem)
       }
-      */
     }
   }
 
 
-  def _constructEmail(user: User, notfs: Seq[NotfOfPageAction])
-        : (SendEmailRequest, EmailSent) = {
+  def _constructAndSendEmail(tenantId: String, chost: TenantHost,
+        user: User, userNotfs: Seq[NotfOfPageAction]) {
+    // Save the email in the db, before sending it, so even if the server
+    // crashes it'll always be found, should the receiver attempt to
+    // unsubscribe. (But if you first send it, then save it, the server
+    // might crash inbetween and it wouldn't be possible to unsubscribe.)
+    val origin =
+      (chost.https.required ? "https://" | "http://") + chost.address
+    val (awsSendReq, emailToSend) = _constructEmail(origin, user, userNotfs)
+    dao.saveUnsentEmailConnectToNotfs(tenantId, emailToSend, userNotfs)
+    logger.debug("Sending email to "+ emailToSend.sentTo)
+    val emailSentOrFailed = _sendEmail(awsSendReq, emailToSend)
+    logger.trace("Email sent or failed: "+ emailSentOrFailed)
+    dao.updateSentEmail(tenantId, emailSentOrFailed)
+  }
+
+
+  def _constructEmail(origin: String, user: User,
+        notfs: Seq[NotfOfPageAction]): (SendEmailRequest, EmailSent) = {
 
     val rcptEmailAddr =
       if (user.email == "kajmagnus@debiki.se"
@@ -148,34 +175,30 @@ class Mailer(val dao: Dao) extends Actor {
         | "You have replies, to comments of yours" )
 
     def notfToHtml(notf: NotfOfPageAction): xml.Node = {
-      // For now, hardcode server addr, and don't bother about the
+      // For now, don't bother about the
       // redirect from "/-pageId" to the actual page path.
-      val pageUrl = "http://www.debiki.se/-"+ notf.pageId
+      val pageUrl = origin +"/-"+ notf.pageId
       val eventUrl = pageUrl +"#"+ notf.eventActionId
       <div>
-        On page <a href={pageUrl}>{notf.pageTitle}</a>,<br/>
-        <a href={eventUrl}>{notf.eventUserDispName} has replied to you.</a>
+        You have a reply, <a href={eventUrl}>here</a>,<br/>
+        on page <a href={pageUrl}>{notf.pageTitle}</a>,<br/>
+        written by {notf.eventUserDispName}.
       </div>
     }
 
     val htmlContent = (new Content).withData({
       <div>
-        Dear {user.displayName},<br/>
-        <br/>
+        <p>Dear {user.displayName},</p>
         { notfs.map(notfToHtml _): xml.NodeSeq }
-        <br/>
-        <br/>
-        Kind regards,<br/>
-        Debiki<br/>
-        <br/>
-        <br/>
-        <small>
-          <a href={"http://www.debiki.se/?unsubscribe&email-id="+
-             emailId}>Unsubscribe</a>
-        </small>
+        <p>
+          Kind regards,<br/>
+          Debiki
+        </p>
+        <p style='font-size: 80%; opacity: 0.65; margin-top: 2em;'>
+          <a href={origin +"/?unsubscribe&email-id="+ emailId}>Unsubscribe</a>
+        </p>
       </div>.toString
     })
-
 
     val body = (new Body).withHtml(htmlContent)
     val mess = (new Message).withSubject(subjContent).withBody(body)
