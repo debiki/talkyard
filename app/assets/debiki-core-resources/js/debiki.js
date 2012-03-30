@@ -1951,6 +1951,15 @@ function notifErrorBox$(error, message, details) {
   return $box;
 }
 
+
+function disableSubmittedForm($form) {
+  $form.children().css('opacity', '0.4').find('input').dwDisable();
+  // Show a 'Submitting ...' tips. CSS places it in the middle of the form.
+  var $info = $('#dw-hidden-templates .dw-inf-submitting-form').clone();
+  $form.append($info);
+}
+
+
 // Builds a function that shows an error notification and enables
 // inputs again (e.g. the submit-form button again, so the user can
 // fix the error, after having considered the error message,
@@ -1964,9 +1973,12 @@ function showErrorEnableInputs($form) {
     $submitBtns.after(notifErrorBox$(err, msg))
     $thread.each(SVG.$drawParentsAndTree); // because of the notification
     // For now, simply enable all inputs always.
+    $form.children().css('opacity', '');
     $form.find('input, button').prop('disabled', false);
+    $form.children('.dw-inf-submitting-form').remove();
   };
 }
+
 
 // Constructs and shows a dialog, from either 1) a servers html response,
 // which should contain certain html elems and classes, or 2)
@@ -2918,8 +2930,7 @@ function $showReplyForm(event, opt_where) {
           $showActions($myNewPost);
         });
 
-      // Disable the form; it's been submitted.
-      $replyForm.find('input').dwDisable();
+      disableSubmittedForm($replyForm);
       return false;
     });
 
@@ -3274,8 +3285,7 @@ function $showEditForm2() {
         updateDebate(newDebateHtml);
       });
 
-      // Disable the form; it's been submitted.
-      $editForm.find('input').dwDisable();
+      disableSubmittedForm($editForm);
       return false;
     });
 

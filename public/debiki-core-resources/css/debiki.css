@@ -1074,7 +1074,9 @@ until they've been moved into the .dw-bd-blk > .dw-i-ts. */
   float: left; /* or sometimes very wide */
   clear: left; /* or might appear to the right of the action links */
   margin: 10px 0 20px 5px; /* 5px, like .dw-t */
+  position: relative; /* e.g. 'Submitting ...' w/ position: absolute inside */
 }
+.dw-f { position: relative; } /* shouldn't use both .dw-fs and .dw-f though! */
 
 /* Reduce distance between a form and any parent jQuery UI dialog buttons. */
 .ui-dialog > .dw-fs {
@@ -1390,6 +1392,13 @@ form.dw-hoversubmit {
   color: #99a;
 }
 
+.dw-fs-re .dw-inf-submitting-form {
+  top: auto;
+  bottom: 95px;
+  left: 40px;
+}
+
+
 /* === Rate === */
 
 .dw-fs-r {
@@ -1591,6 +1600,12 @@ related to. */
 .dw-f-e .dw-submit-set {
   margin-top: 0.5em;
   margin-bottom: 1em;
+}
+
+.dw-f-e .dw-inf-submitting-form {
+  top: auto;
+  bottom: 80px;
+  left: 60px;
 }
 
 
