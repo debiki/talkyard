@@ -1848,7 +1848,7 @@ function slideInActionForm($form, $where) {
  *
  * options.onLoginOut(username/undefined) — Called on login/logout.
  */
-function makeHoverSubmitForm($formParent, options) {
+function makeHoverSubmitForm($formParent, event, options) {
   var settings = $.extend({}, options);
 
   // For touch devices, change nothing; use the Cancel and Submit buttons.
@@ -1894,6 +1894,24 @@ function makeHoverSubmitForm($formParent, options) {
   $form.mouseup(function() {
     $form.find('.dw-fi-submit:enabled, .dw-fi-cancel').first().focus();
   });
+
+  // Place the form where the mouse click happened, and inside the viewport.
+  // 'fit fit' has no effect if outside the left and top viewport
+  // borders though (but works for the bottom and right borders).
+  $form.position({ of: event, collision: 'fit fit' });
+
+  // Place the cancel button above the form (instead of below it),
+  // if the mouse is below the form midpoint — so you don't need to move
+  // the mouse over the Cancel button (which submits on mouseenter).
+  // This happens if the button you clicked is close to the lower edge
+  // of the window — then $.position moves the form upwards so it fits
+  // in the viewport.
+  var okDistFromMidpoint = 10;
+  var formMidpOffsY = $form.offset().top + $form.outerHeight()/2;
+  if (formMidpOffsY + okDistFromMidpoint < event.pageY) {
+    // Mouse cursor below form midpoint.
+    $form.find('.dw-fi-cancel').addClass('dw-flip');
+  }
 
   die2If(!$formParent.is(':visible')); // or focus() would have no effect
   $form.find('input.dw-fi-cancel').focus();
@@ -2624,7 +2642,7 @@ function submitLoginInPopup($openidLoginForm) {
 
 // ------- Rating
 
-function $showRatingForm() {
+function $showRatingForm(event) {
   var $thread = $(this).closest('.dw-t');
   clearfix($thread); // ensures the rating appears nested inside the thread
   var $post = $thread.children('.dw-p');
@@ -2709,7 +2727,7 @@ function $showRatingForm() {
   $formParent.appendTo($actionBtns).show();
   // (makeHoverSubmitForm ensures you've logged in before the form
   // is submitted.)
-  makeHoverSubmitForm($formParent);
+  makeHoverSubmitForm($formParent, event);
   $rateForm.dwScrollIntoView();
 }
 
