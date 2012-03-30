@@ -14,14 +14,16 @@ case class Tenant(
   // Reqiure at most 1 canonical host.
   //require((0 /: hosts)(_ + (if (_.isCanonical) 1 else 0)) <= 1)
 
-  def chost_! : TenantHost = hosts.find(_.role == TenantHost.RoleCanonical).get
+  def chost: Option[TenantHost] = hosts.find(_.role == TenantHost.RoleCanonical)
+  def chost_! = chost.get
 }
 
+
 object TenantHost {
-  sealed abstract class HttpsInfo
+  sealed abstract class HttpsInfo { def required = false }
 
   /** A client that connects over HTTP should be redirected to HTTPS. */
-  case object HttpsRequired extends HttpsInfo
+  case object HttpsRequired extends HttpsInfo { override def required = true }
 
   /** When showing a page over HTTPS, <link rel=canonical> should point
    * to the canonical version, which is the HTTP version.
