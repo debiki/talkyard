@@ -109,12 +109,17 @@ object Notification {
           // on a new page, with the template as root post?
           Nil
         }
+      // Note: If you add notfs (below) for other things than replies,
+      // then, in debiki-app-play, update Mailer._constructEmail.notfToHtml
+      // so it generates correct URL anchor links to that stuff.
+      // Currently notfToHtml assumes all notfs are for replies and
+      // writes #dw-post- anchors only.
       case e: Edit =>
-        Nil  // fix later
+        Nil  // fix later, see note above
       case app: EditApp =>
-        Nil  // fix later
+        Nil  // fix later, see note above
       case flag: Flag =>
-        Nil  // fix later
+        Nil  // fix later, see note above
       case _ =>
         Nil  // skip for now
     })
