@@ -1902,17 +1902,46 @@ function makeHoverSubmitForm($formParent, event, options) {
       })
       .each($loginSubmitOnMouseenter(settings.onLoginOut)).end()
       .find('.dw-fi-cancel').mouseenter(function() {
-        $formParent.remove();
+        cancelForm();
       });
 
   // Enter and Esc shortcuts. (Since this form is the only thing visible,
   // everyone should understand what happens should they click Enter or Esc.)
   $form.keyup(function(event) {
     if (event.keyCode === KEYCODE_ENTER) $form.submit();
-    else if (event.keyCode === KEYCODE_ESC) $formParent.remove();
+    else if (event.keyCode === KEYCODE_ESC) cancelForm();
     else return;
     return false;
   });
+
+  // Removes the form, and shows 'Cancelled.' for a short while, because
+  // new users might not realize that the Cancel click happens on hover.
+  function cancelForm() {
+    var $info = $('#dw-hidden-templates .dw-inf-cancelled-form').clone();
+    $formParent.replaceWith($info);
+
+    // Any parent .dw-p-as is visible on hover only. Make it visible always,
+    // until the $info has been removed.
+    var $parentActionList = $info.parent('.dw-p-as');
+    var withTipsClass = 'dw-p-as-with-tips';
+    $parentActionList.addClass(withTipsClass);
+
+    // Remove info after a while.
+    setTimeout(removeInfo, 2000);
+    $info.click(function() {
+      removeInfo();
+      // If the Reply etc buttons suddenly becomes invisible,
+      // because withTipsClass is removed, the user would be confused?
+      $parentActionList.each($showActions);
+    });
+
+    function removeInfo() {
+      $info.fadeOut(function() {
+        $info.remove();
+        $parentActionList.removeClass(withTipsClass);
+      });
+    }
+  }
 
   // Weird focus behavior workaround.
   // For some reason, whenever you toggle a checkbox in the $form,

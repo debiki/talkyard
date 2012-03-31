@@ -1244,8 +1244,16 @@ form.dw-hoversubmit {
   opacity: 0.8;
 }
 
-.dw-inf-submitting-form {
+.dw-pri .dw-inf-submitting-form {
   position: absolute;
+  padding: 1em 2em;
+  left: 15px;
+  top: -29px;
+}
+
+.dw-pri .dw-inf-cancelled-form {
+  position: absolute;
+  padding: 1.5em 3em;
   left: 15px;
   top: -29px;
 }
