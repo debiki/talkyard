@@ -796,6 +796,7 @@ class FormHtml(val config: HtmlConfig, xsrfToken: String,
       flagForm ++
       deleteForm(None) ++
       submittingFormInfoDiv ++
+      cancelledFormInfoDiv ++
       sortOrterTipsDiv ++
       rateOwnCommentTipsDiv }
     </div>
@@ -1340,6 +1341,12 @@ class FormHtml(val config: HtmlConfig, xsrfToken: String,
   val submittingFormInfoDiv: NodeSeq = {
     <div class='dw-tps dw-inf-submitting-form'>
       <p>Submitting ...</p>
+    </div>
+  }
+
+  val cancelledFormInfoDiv: NodeSeq = {
+    <div class='dw-tps dw-inf-cancelled-form'>
+      <p>Cancelled.</p>
     </div>
   }
 
