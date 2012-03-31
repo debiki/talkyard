@@ -4764,8 +4764,8 @@ function initAndDrawSvg() {
   steps.push(initPostsThreadStep2);
   steps.push(initPostsThreadStep3);
   steps.push(registerEventHandlersFireLoginOut);
-  steps.push(initAndDrawSvg);
   steps.push(initPostsThreadStep4);
+  steps.push(initAndDrawSvg);
   steps.push(scrollToUrlAnchorPost);
   // Resize the article after the page has been rendered, so all inline
   // threads have been placed and can be taken into account.
