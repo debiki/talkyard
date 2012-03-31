@@ -138,8 +138,9 @@ Debiki.v0.utterscroll = function(options) {
     defaultScrollstoppers: 'a, area, button, command, input, keygen, label,'+
         ' option, select, textarea, video',  // ?? canvas, embed, object
     scrollstoppers: '',
-    mousedownOnWinVtclScrollbar: function() {},
-    mousedownOnWinHztlScrollbar: function() {}
+    onMousedownOnWinVtclScrollbar: function() {},
+    onMousedownOnWinHztlScrollbar: function() {},
+    onHasUtterscrolled: function() {}
   };
 
   var settings = $.extend({}, defaults, options);
@@ -151,6 +152,11 @@ Debiki.v0.utterscroll = function(options) {
   var startPos;
   var lastPos;
   var tryLaterHandle;
+
+  // Avoids firing onHasUtterscrolled twice.
+  var hasFiredHasUtterscrolled = false;
+  // We fire onHasUtterscrolled, when the user has scrolled more than this.
+  var fireHasUtterscrolledMinDist = 15;  // pixels
 
   // Helps detect usage of the browser window scrollbars.
   var $viewportGhost =
@@ -188,12 +194,12 @@ Debiki.v0.utterscroll = function(options) {
     // $viewportGhost, which always covers the whole viewport.
     if (event.pageX > $viewportGhost.offset().left + $viewportGhost.width()) {
       // Vertical scrollbar mousedown:ed.
-      settings.mousedownOnWinVtclScrollbar();
+      settings.onMousedownOnWinVtclScrollbar();
       return;
     }
     if (event.pageY > $viewportGhost.offset().top + $viewportGhost.height()) {
       // Horizontal scrollbar mousedown:ed.
-      settings.mousedownOnWinHztlScrollbar();
+      settings.onMousedownOnWinHztlScrollbar();
       return;
     }
 
@@ -395,6 +401,14 @@ Debiki.v0.utterscroll = function(options) {
       x: event.clientX - lastPos.x,
       y: event.clientY - lastPos.y
     };
+
+    // Trigger onHasUtterscrolled(), if scrolled > min distance.
+    if (!hasFiredHasUtterscrolled &&
+        (distTotal.x * distTotal.x + distTotal.y * distTotal.y >
+        fireHasUtterscrolledMinDist * fireHasUtterscrolledMinDist)) {
+      hasFiredHasUtterscrolled = true;
+      settings.onHasUtterscrolled();
+    }
 
     // var origDebug = ' orig: '+ distNow.x +', '+ distNow.y;
 
