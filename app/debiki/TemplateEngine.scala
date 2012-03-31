@@ -207,7 +207,6 @@ object TemplateEngine {
     <script src="/classpath/js/wmd/showdown.js"></script>
     <script src={"http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.18/jquery-ui"+ minMaxJs}></script>
     <script src={"/classpath/js/jquery-scrollable"+ minMaxJs}></script>
-    <script src={"/classpath/js/jquery-slidingmessage"+ minMaxJs}></script>
     <script src={"/classpath/js/debiki"+ minMaxJs}></script>
     <script src={"/classpath/js/debiki-utterscroll"+ minMaxJs}></script>
     <script src="/classpath/js/diff_match_patch.js"></script>
