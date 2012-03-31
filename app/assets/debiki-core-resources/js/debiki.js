@@ -4759,21 +4759,28 @@ function initAndDrawSvg() {
   $body.addClass('dw-pri');
   Me.refreshProps();
 
-  // Activate Utterscroll, and show tips if people use window scrollbars.
-  var utterscrollHinted = false;
+  // Activate Utterscroll, and show tips if people use the window scrollbars,
+  // hide it on utterscroll.
+  var hasUtterscrolled = false;
+  var $utterscrollTips;
   if (!Modernizr.touch) Debiki.v0.utterscroll({
     scrollstoppers: '.CodeMirror,'+
         ' .ui-draggable, .ui-resizable-handle, .dw-p-hd',
-    mousedownOnWinHztlScrollbar: function() {
-      // Could use e.g. http://stackoverflow.com/questions/770038/
-      //    best-ways-to-display-notifications-with-jquery
-      // instead of showMessage.
-      // Or some StackOverflow reminiscent tips.
-      if (!utterscrollHinted) $.showMessage(
-        '<p>Click <b>and hold</b> left mouse button, on the white '+
-        ' background,<br>and move the mouse leftwards and rightwards.</p>',
-        { delay: 23000 });
-      utterscrollHinted = true;
+    onMousedownOnWinHztlScrollbar: function() {
+      if (hasUtterscrolled || $utterscrollTips)
+        return;
+      var $tips = $('#dw-tps-utterscroll');
+      $tips.show()
+          // Place tips in the middle of the viewport.
+          // (The tips has position: fixed.)
+          .css('top', ($(window).height() - $tips.height()) / 2)
+          .css('left', ($(window).width() - $tips.width()) / 2)
+          .click(function() { $tips.hide(); });
+      $utterscrollTips = $tips;
+    },
+    onHasUtterscrolled: function() {
+      hasUtterscrolled = true;
+      if ($utterscrollTips) $utterscrollTips.hide();
     }
   });
 
