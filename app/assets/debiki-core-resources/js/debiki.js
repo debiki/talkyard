@@ -2786,10 +2786,19 @@ function $showRatingForm(event) {
     button().addClass('dw-ui-state-default-linkified');
 
   var $actionBtns = $thread.children('.dw-p-as');
-  $formParent.appendTo($actionBtns).show();
+
+  // {{{ Don't use hoversubmit right now
+  // it's to complicated (my parents
+  // found it very hard to use).
   // (makeHoverSubmitForm ensures you've logged in before the form
   // is submitted.)
-  makeHoverSubmitForm($formParent, event);
+  //$formParent.appendTo($actionBtns).show();
+  //makeHoverSubmitForm($formParent, event);
+  // }}}
+  $formParent.insertAfter($actionBtns).show()
+      .find('input[type="submit"]').each($loginSubmitOnClick());
+  $post.each(SVG.$drawParentsAndTree);
+
   $rateForm.dwScrollIntoView();
 }
 
