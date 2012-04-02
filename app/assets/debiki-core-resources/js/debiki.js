@@ -1799,10 +1799,14 @@ function slideAwayRemove($form, opt_complete) {
   }
 }
 
-function $removeClosestForms() {  // COULD rewrite and remove .dw-fs everywhere
-  var fs = $(this).closest('.dw-fs, .dw-f');
-  slideAwayRemove(fs);
+
+function $removeClosestForms() {
+  // Sometimes the form is of class .dw-f, sometimes threre's a form parent
+  // with class .dw-fs. Remove that parent if possible.
+  var $formSetOrForm = $(this).closest('.dw-fs').add($(this).closest('.dw-f'));
+  slideAwayRemove($formSetOrForm.first());
 }
+
 
 // Slide in reply, edit and rate forms -- I think it's
 // easier to understand how they are related to other elems
