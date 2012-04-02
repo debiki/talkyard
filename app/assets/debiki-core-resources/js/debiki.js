@@ -2926,7 +2926,7 @@ function $showReplyForm(event, opt_where) {
     function removeOrCancelTips(opt_event) {
       $rateAction.unbind('click', removeOrCancelTips);
       $tips.unbind('click');
-      if (timeoutHandler) cancelTimeout(timeoutHandler);
+      if (timeoutHandler) clearTimeout(timeoutHandler);
       else $tips.fadeOut(function() {
         $tips.removeClass(rateOwnPostClass);
         $actions.removeClass(withTipsClass);
