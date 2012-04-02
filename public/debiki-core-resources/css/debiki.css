@@ -1414,8 +1414,11 @@ form.dw-hoversubmit {
 /* === Rate === */
 
 .dw-fs-r {
-  min-width: 16.5em; /* at least 2 rat-tag-set:s wide */
-  margin: 0 0 30px 29px;
+  margin: 0 0 30px 20px;
+}
+
+.dw-f-r {
+  min-width: 250px; /* at least 2 rat-tag-set:s wide */
 }
 
 .dw-fs-r .dw-r-tag-set {
