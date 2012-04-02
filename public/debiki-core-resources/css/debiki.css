@@ -1474,7 +1474,7 @@ form.dw-hoversubmit {
 
 /* Show a second submit button to the right, so one won't have to
 move the mouse so very far (a few hundered pixels) to hoversubmit. */
-.dw-f-r .dw-hoversubmit-2 {
+.dw-hoversubmit .dw-f-r .dw-hoversubmit-2 {
   display: block;
   right: -89px;
   left: auto;
@@ -1489,17 +1489,17 @@ move the mouse so very far (a few hundered pixels) to hoversubmit. */
   right: 35px;
 }
 
-.dw-r-tag-set-1 .ui-button:first-of-type {
+.dw-hoversubmit .dw-r-tag-set-1 .ui-button:first-of-type {
   position: relative;
   left: 30px;
 }
 
-.dw-r-tag-set-1 .ui-button:last-of-type {
+.dw-hoversubmit .dw-r-tag-set-1 .ui-button:last-of-type {
   position: relative;
   left: -10px;
 }
 
-.dw-r-tag-set-2 .ui-button:first-of-type {
+.dw-hoversubmit .dw-r-tag-set-2 .ui-button:first-of-type {
   position: relative;
   left: -30px;
 }
