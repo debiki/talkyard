@@ -96,7 +96,7 @@ sealed abstract class Perms
 
 object PermsOnPage {
 
-  val All = PermsOnPage(true, true, true, true, true, true, true)
+  val All = PermsOnPage(true, true, true, true, true, true, true, true, true)
 
   val Wiki = PermsOnPage(
     accessPage = true,
@@ -118,6 +118,10 @@ case class PermsOnPage(
   val accessPage: Boolean = false,
 
   val createPage: Boolean = false,
+
+  val moveRenamePage: Boolean = false,
+
+  val hidePageIdInUrl: Boolean = false,
 
   /** As of right now, templates are dangerous: they can include CSS
    * and Javascript. */

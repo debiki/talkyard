@@ -13,13 +13,17 @@ import EmailNotfPrefs.EmailNotfPrefs
  */
 abstract class DaoSpi {
 
-  def createPage(where: PagePath, debate: Debate): Box[Debate]
-
   def close()
 
   def saveLogin(tenantId: String, loginReq: LoginRequest): LoginGrant
 
   def saveLogout(loginId: String, logoutIp: String)
+
+  def createPage(where: PagePath, debate: Debate): Box[Debate]
+
+  def moveRenamePage(tenantId: String, pageId: String,
+        newFolder: Option[String], showId: Option[Boolean],
+        newSlug: Option[String]): PagePath
 
   def savePageActions[T <: Action](
     tenantId: String, debateId: String, xs: List[T]): Box[List[T]]
@@ -29,6 +33,8 @@ abstract class DaoSpi {
   def loadTemplate(templPath: PagePath): Option[TemplateSrcHtml]
 
   def checkPagePath(pathToCheck: PagePath): Box[PagePath]
+
+  def lookupPagePathByPageId(tenantId: String, pageId: String): Option[PagePath]
 
   def listPagePaths(
         withFolderPrefix: String,
@@ -87,14 +93,6 @@ abstract class DaoSpi {
 }
 
 
-object Dao {
-
-  case class EmailNotFoundException(emailId: String)
-     extends Exception("No email with id: "+ emailId)
-
-}
-
-
 /** Debiki's Data Access Object.
  *
  *  Delegates database requests to a DaoSpi implementation.
@@ -103,10 +101,10 @@ abstract class Dao {
 
   protected def _spi: DaoSpi
 
-  def createPage(where: PagePath, debate: Debate): Box[Debate] =
-    _spi.createPage(where, debate)
-
   def close() = _spi.close
+
+
+  // ----- Login, logout
 
   /** Assigns ids to the login request, saves it, finds or creates a user
    * for the specified Identity, and returns everything with ids filled in.
@@ -117,6 +115,21 @@ abstract class Dao {
   /** Updates the specified login with logout IP and timestamp.*/
   def saveLogout(loginId: String, logoutIp: String) =
     _spi.saveLogout(loginId, logoutIp)
+
+
+  // ----- Pages
+
+  def createPage(where: PagePath, debate: Debate): Box[Debate] =
+    _spi.createPage(where, debate)
+
+  def moveRenamePage(tenantId: String, pageId: String,
+        newFolder: Option[String] = None, showId: Option[Boolean] = None,
+        newSlug: Option[String] = None): PagePath =
+    _spi.moveRenamePage(tenantId, pageId = pageId, newFolder = newFolder,
+      showId = showId, newSlug = newSlug)
+
+ 
+  // ----- Actions
 
   /** You should only save text that has been filtered through
    *  Prelude.convertBadChars().
@@ -136,6 +149,10 @@ abstract class Dao {
 
   def checkPagePath(pathToCheck: PagePath): Box[PagePath] =
     _spi.checkPagePath(pathToCheck)
+
+  def lookupPagePathByPageId(tenantId: String, pageId: String)
+        : Option[PagePath] =
+    _spi.lookupPagePathByPageId(tenantId, pageId = pageId)
 
   def listPagePaths(
         withFolderPrefix: String,
@@ -303,4 +320,16 @@ class CachingDao(spi: DaoSpi) extends Dao {
  *  Useful when constructing test suites that should access the database.
  */
 class NonCachingDao(protected val _spi: DaoSpi) extends Dao
+
+
+object Dao {
+
+  case class EmailNotFoundException(emailId: String)
+    extends Exception("No email with id: "+ emailId)
+
+  case class PageNotFoundException(tenantId: String, pageId: String)
+    extends IllegalArgumentException("Page not found, id: "+ pageId +
+       ", tenant id: "+ tenantId)
+
+}
 
