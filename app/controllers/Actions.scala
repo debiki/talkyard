@@ -93,6 +93,10 @@ object Actions {
      * For now, the scheme is hardcoded to http.
      */
     def origin: String = "http://"+ request.host
+
+    def queryString = request.queryString
+
+    def body = request.body
   }
 
 

@@ -64,6 +64,10 @@ object Utils extends Results with http.ContentTypes {
 
   object ValidationImplicits {
 
+    implicit def queryStringToValueGetter(
+        queryString: Map[String, Seq[String]]) =
+      new FormInpReader(queryString)
+
     implicit def pageReqToFormInpReader(pageReq: PagePostRequest) =
       new FormInpReader(pageReq.request.body)
 
@@ -78,8 +82,12 @@ object Utils extends Results with http.ContentTypes {
      */
     class FormInpReader(val body: Map[String, Seq[String]]) {
 
-      def get(param: String): Option[String] =
+      def getFirst(param: String): Option[String] =
         body.get(param).map(_.head)
+
+      def getOrThrowBadReq(param: String): String =
+        body.get(param).map(_.head) getOrElse throwBadReq(
+          "DwE03Jk5", "Parameter missing: "+ param)
 
       def getEmptyAsNone(param: String): Option[String] =
         body.get(param).map(_.head) match {
