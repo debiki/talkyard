@@ -185,9 +185,14 @@ class Mailer(val dao: Dao) extends Actor {
         logger.warn("Unsupported notification type: "+ notf.eventType)
       }
       val eventUrl = pageUrl +"#post-"+ notf.eventActionId
+      // Include only one link per notification, or people will (I guess)
+      // not click the link to the actual reply (that link also highlights
+      // the reply :-)). I'd guess they instead would click the
+      // visually *largest* link, e.g. to the page, and then not find the new
+      // reply, and feel annoyed.
       <div>
         You have a reply, <a href={eventUrl}>here</a>,<br/>
-        on page <a href={pageUrl}>{notf.pageTitle}</a>,<br/>
+        on page {notf.pageTitle},<br/>
         written by {notf.eventUserDispName}.
       </div>
     }
