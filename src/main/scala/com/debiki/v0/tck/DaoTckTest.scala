@@ -1168,6 +1168,75 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
     }
 
 
+    // -------- Move a page
+
+    "move and rename pages" >> {
+
+      val pagePath = dao.lookupPagePathByPageId(defaultTenantId,
+         ex1_debate.guid).get
+      var finalPath: PagePath = null
+
+      "leave a page as is" >> {
+        // No move/rename options specified:
+        dao.moveRenamePage(
+          defaultTenantId, pageId = ex1_debate.guid) must_== pagePath
+      }
+
+      "won't move a non-existing page" >> {
+        dao.moveRenamePage(
+          defaultTenantId, pageId = "non_existing_page",
+          newFolder = Some("/folder/"), showId = Some(false),
+          newSlug = Some("new-slug")) must throwAn[Exception]
+      }
+
+      "move a page to another folder" >> {
+        val newPath = dao.moveRenamePage(
+          defaultTenantId, pageId = ex1_debate.guid,
+          newFolder = Some("/new-folder/"))
+        newPath.folder must_== "/new-folder/"
+        newPath.pageSlug must_== pagePath.pageSlug
+        newPath.showId must_== pagePath.showId
+      }
+
+      "rename a page" >> {
+        val newPath = dao.moveRenamePage(
+          defaultTenantId, pageId = ex1_debate.guid,
+          showId = Some(!pagePath.showId), // flip
+          newSlug = Some("new-slug"))
+        newPath.folder must_== "/new-folder/"
+        newPath.pageSlug must_== "new-slug"
+        newPath.showId must_== !pagePath.showId
+      }
+
+      "move and rename a page at the same time" >> {
+        val newPath = dao.moveRenamePage(
+          defaultTenantId, pageId = ex1_debate.guid,
+          newFolder = Some("/new-folder-2/"),
+          showId = Some(true), newSlug = Some("new-slug-2"))
+        newPath.folder must_== "/new-folder-2/"
+        newPath.pageSlug must_== "new-slug-2"
+        newPath.showId must_== true
+
+        finalPath = newPath
+      }
+
+      "list the page at the correct location" >> {
+        val pagePathsDetails = dao.listPagePaths(
+          withFolderPrefix = "/",
+          tenantId = defaultTenantId,
+          include = v0.PageStatus.All,
+          sortBy = v0.PageSortOrder.ByPath,
+          limit = Int.MaxValue,
+          offset = 0
+        )
+        pagePathsDetails match {
+          case List((pagePath, pageDetails)) =>
+            pagePath must_== finalPath
+            true
+        }
+      }
+    }
+
     // -------------
     //val ex3_emptyPost = T.post.copy(parent = "1", text = "Lemmings!")
     //"create many many random posts" >> {
