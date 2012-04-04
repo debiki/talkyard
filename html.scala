@@ -787,7 +787,8 @@ class FormHtml(val config: HtmlConfig, xsrfToken: String,
     <a rel="license" href="http://creativecommons.org/licenses/by/3.0/"
        target="_blank">CC BY-SA 3.0</a>
 
-  def dialogTemplates =
+
+  def dialogTemplates = {
     <div id="dw-hidden-templates">
     { actionMenu ++
       loginForms ++
@@ -800,6 +801,14 @@ class FormHtml(val config: HtmlConfig, xsrfToken: String,
       sortOrterTipsDiv ++
       rateOwnCommentTipsDiv }
     </div>
+    <div>{
+      // Unique dialogs (with #ids) that should appear on $.show().
+      // (Above #dw-hidden-templates, however, are hidden even after
+      // $.show(), unless moved/copied elsewhere.)
+      utterscrollTipsDiv
+    }</div>
+  }
+
 
   def loginForms =
     loginFormSimple ++
@@ -1347,6 +1356,15 @@ class FormHtml(val config: HtmlConfig, xsrfToken: String,
   val cancelledFormInfoDiv: NodeSeq = {
     <div class='dw-tps dw-inf-cancelled-form'>
       <p>Cancelled.</p>
+    </div>
+  }
+
+  val utterscrollTipsDiv: NodeSeq = {
+    <div class='dw-tps' id='dw-tps-utterscroll'>
+      <p>Click <b>and hold</b> left mouse button, on the white
+      background,</p>
+      <p>and move the mouse leftwards and rightwards.</p>
+      <p class='dw-tps-close'>(Do that, please, to dismiss this box)</p>
     </div>
   }
 
