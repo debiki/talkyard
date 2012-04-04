@@ -151,7 +151,8 @@ class Mailer(val dao: Dao) extends Actor {
        || user.email == "support@debiki.se"
        || user.email == "non-existing-address@debiki.se"
        || user.email == "kajmagnus79@gmail.com"
-       || user.email == "kajmagnus79d@gmail.com") {
+       || user.email == "kajmagnus79d@gmail.com"
+       || user.email == "kaj.lindberg@telia.com") {
       // These addresses are AWS SES verified addresses.
       user.email
     } else {
