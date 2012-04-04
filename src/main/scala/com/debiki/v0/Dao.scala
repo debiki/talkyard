@@ -9,6 +9,19 @@ import net.liftweb.common.{Logger, Box, Empty, Full, Failure}
 import Dao._
 import EmailNotfPrefs.EmailNotfPrefs
 
+
+// SECURITY Todo: Only pass data to Dao via model class instances! (?)
+// Never directly e.g. in a String.
+// Let each model class validate itself, e.g. check that each String
+// conforms to the required format (e.g. [a-z0-9_]+ for page ids).
+// Search for "String" in this file -- no match must be found!
+// Could actually add a build pipe step that searches this file for String
+// and fails the build shoud any String be found?
+// (Unless you use model classes, and only model classes, when passing
+// data to/from the Dao, then eventually you will forget to validate
+// and sanitaze input. That'd be an eventually inconsistent solution :-/ .)
+
+
 /** Debiki's Data Access Object service provider interface.
  */
 abstract class DaoSpi {
