@@ -127,6 +127,14 @@ object Global extends GlobalSettings {
         AppCreatePage.showForm(pagePath)
       case ("create-page", POST) =>
         AppCreatePage.handleForm(pagePath)
+      case ("move-page", GET) =>
+        AppMoveRenamePage.showMovePageForm(pagePath)
+      case ("move-page", POST) =>
+        AppMoveRenamePage.handleMovePageForm(pagePath)
+      case ("rename-page", GET) =>
+        AppMoveRenamePage.showRenamePageForm(pagePath)
+      case ("rename-page", POST) =>
+        AppMoveRenamePage.handleRenamePageForm(pagePath)
       case ("list-pages", GET) =>
         App.listPages(pagePath)
       case ("feed", GET) =>

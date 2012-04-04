@@ -1,0 +1,36 @@
+@(xsrfToken: String, moveToFolder: Option[String] = None,
+  newSlug: Option[String] = None, changeShowId: Option[Boolean] = None)
+
+<!DOCTYPE html>
+<html>
+<body>
+<form class='dw-f dw-f-move-rename-page' accept-charset='UTF-8' method='post'>
+  <input name='dw-fi-xsrf' type='hidden' class='dw-fi-xsrf' value='@xsrfToken'>
+
+  @if(moveToFolder.isDefined) {
+    <p><label>Move page to folder:
+    <input name='to-folder' value='@moveToFolder.get'>
+    </label></p>
+  }
+
+  @if(newSlug.isDefined) {
+    <p><label>Rename page (change slug) to:
+    <input name='new-slug' value='@newSlug.get'>
+    </label></p>
+  }
+
+  @if(changeShowId.isDefined) {
+    <p><label>Show page ID in URL:
+    <input type='checkbox' name='show-id' value='t'
+      @(if(changeShowId.get) { "checked='checked'" } else { "" }) >
+    </label></p>
+  }
+
+  <div class='dw-submit-set'>
+    <input type='submit' class='dw-fi-submit' value='OK'>
+  </div>
+
+</form>
+</body>
+</html>
+
