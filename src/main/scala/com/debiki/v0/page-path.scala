@@ -71,7 +71,32 @@ case class PagePath(  // COULD move to debate.scala.  Rename to RequestPath?
 }
 
 
+case class PagePathException(errorCode: String,  message: String)
+  extends IllegalArgumentException(message +" [error "+ errorCode +"]")
+
+
 object PagePath {
+
+  private def _throw(errCode: String,  message: String) =
+    throw new PagePathException(errCode, message)
+
+
+  /**
+   * Throws IllegalArgumentException if the path is not okay, or
+   * if it needs to be corrected.
+   */
+  def checkPath(tenantId: String = "x", folder: String = "/",
+        pageId: Option[String] = None, pageSlug: String = "") {
+    // Construct a PagePath, serialize it
+    // and verify that the string can be parsed.
+    val path = PagePath(tenantId, folder, pageId, false, pageSlug)
+    fromUrlPath(path.tenantId, path.path) match {
+      case Parsed.Good(_) => ()
+      case Parsed.Corrected(_) => _throw("DwE091IJ5", "Bad page path")
+      case Parsed.Bad(error) => _throw("DwE56Ih5", "Bad page path: "+ error)
+    }
+  }
+
 
   sealed abstract class Parsed
   object Parsed {
