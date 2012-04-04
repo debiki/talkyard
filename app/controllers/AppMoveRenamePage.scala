@@ -43,13 +43,10 @@ object AppMoveRenamePage extends mvc.Controller {
   private def _moveRenameGetImpl(pageReq: PageGetRequest, movePage: Boolean)
         : mvc.PlainResult = {
 
-    if (pageReq.queryString contains "done-path") {
-      _showDone(pageReq)
-    }
-    else if (!pageReq.permsOnPage.moveRenamePage) {
+    if (!pageReq.permsOnPage.moveRenamePage)
       throwForbidden("DwE35Rk15", "You may not move or rename this page.")
-    }
-    else if (movePage == true) {
+
+    if (movePage == true) {
       val newFolder: String =
         pageReq.queryString.getEmptyAsNone("to-folder").getOrElse("/")
 
@@ -83,16 +80,6 @@ object AppMoveRenamePage extends mvc.Controller {
       Ok(views.html.moveRenamePage(pageReq.xsrfToken.value,
         newSlug = newSlug, changeShowId = changeShowId))
     }
-  }
-
-
-  def _showDone(pageReq: PageGetRequest): mvc.PlainResult = {
-    val newPath = pageReq.queryString.getOrThrowBadReq("done-path")
-    OkHtml(  // i18n
-      <html><body>
-        <p>Done. {/* Bad! this next line is an xss exploit!:
-        Now find the page <a href={newPath}>here</a>.  */}</p>
-      </body></html>)
   }
 
 
@@ -131,18 +118,6 @@ object AppMoveRenamePage extends mvc.Controller {
     val newPagePath = Debiki.Dao.moveRenamePage(
       pageReq.tenantId, pageReq.pageId, newFolder = newFolder,
       showId = showId, newSlug = newSlug)
-
-    /**{{{ show Done dialog -- no, xss exploit!
-    // The page is now located elsewhere, so we'll show the Done dialog
-    // at / instead of /old/path/to/page. Add a &done-path query string
-    // param, so e.g. GET /?move-page  serves the Done page.
-    val donePage =
-      "/?"+ pageReq.request.rawQueryString + "&done-path="+ newPagePath.path
-    // COULD add function mainFuncName, use like so:
-    //   dnePage = pageReq.mainFuncName + "&done-path="...
-    // No, this opens for an xss exploit, like so:
-    // /?rename-page&done-path=javascript:alert('moo')
-    }}}*/
 
     SeeOther(newPagePath.path)
   }
