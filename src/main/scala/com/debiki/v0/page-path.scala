@@ -6,6 +6,8 @@ package com.debiki.v0
 
 import _root_.java.{util => ju, io => jio}
 import Prelude._
+import PagePath._
+
 
 /**
  * Identifies a page, by id or by path, and knows the path
@@ -26,11 +28,28 @@ case class PagePath(  // COULD move to debate.scala.  Rename to RequestPath?
   require(tenantId.nonEmpty)
   require(pageId != Some("?"))
   require(pageId != Some(""))
-  require(folder.startsWith("/"))
-  require(folder.endsWith("/"))
-  // In Oracle RDBMS, "-" is stored instead of "", since Oracle
-  // converts "" to null.
-  require(pageSlug != "-")
+
+  if (!folder.startsWith("/"))
+    throw PagePathException(
+      "DwE83RIK2", "Folder does not start with '/': "+ folder)
+
+  if (!folder.endsWith("/"))
+    throw PagePathException(
+      "DwE6IIJQ2", "Folder does not end with '/': "+ folder)
+
+  if (folder.contains("/-"))
+    throw PagePathException("DwE7Ib3", "Folder name starts with '-': "+ folder)
+
+  if ((folder intersect _BadPunctFolder).nonEmpty)
+    throw PagePathException(
+      "DwE38IQ2", "Bad punctuation chars in this folder: "+ folder)
+
+  if (pageSlug startsWith "-")
+    throw PagePathException("DwE2Yb35", "Page slug starts with '-': "+ pageSlug)
+
+  if ((pageSlug intersect _BadPunctSlug).nonEmpty)
+    throw PagePathException(
+      "DwE093KG12", "Bad punctuation chars in this page slug: "+ pageSlug)
 
   def path: String =
     if (showId) {
@@ -152,6 +171,10 @@ object PagePath {
     Parsed.Good(pagePath)
   }
 
+  // All punctuation chars:     """!"#$%&'()*+,-./:;<=>?@[\]^_`{|}~"""
+  private val _BadPunctSlug =   """!"#$%&'()*+,/:;<=>?@[\]^_`{|}~""" // -. ok
+  private val _BadPunctFolder = """!"#$%&'()*+,:;<=>?@[\]^_`{|}~""" // -./ ok
+
   // If a folder ends with .../-something/, then `something' is in fact
   // a page guid and slug. The trailing slash should be removed.
   private val _BadTrailingSlashRegex = """.*/-[^/]+/""".r
@@ -176,6 +199,7 @@ object PagePath {
   private val _PageGuidRegex = _PageGuidPtrn.r
   private val _PageSlugRegex = _PageSlugPtrn.r
   // Catches corrupt page names iff used *after* PageGuidAndSlugRegex.
+  // (Broken and effectively not in use??)
   private val _PageGuidCorruptSlug = (_PageGuidPtrn +"[^a-z0-9_].*").r
 
 }
