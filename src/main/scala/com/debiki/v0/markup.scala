@@ -14,6 +14,11 @@ object Markup {
 
   val DefaultForComments = Dmd0
   val DefaultForPageBody = Dmd0
+
+  // Currently only plain text (para) is possible, because
+  // postTitleXml in _showComment in html.scala inlines post.text as is.
+  val DefaultForPageTitle = Para
+
   val Safe = "para"  // use if someone seems evil
 }
 
