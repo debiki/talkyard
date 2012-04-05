@@ -183,9 +183,22 @@ object Prelude {
     // Keep vowels "uy" though, so there are 32 chars in total.
     // "uy" are the least common vowels.
     s = s filterNot ("aoei" contains _)
-    s = s take 10 // this'll do for now, the database will ensure
+
+    // 10 chars doesn't look nice! ...
+    //s = s take 10 // this'll do for now, the database will ensure
                   // uniqueness? If I use a nosql database, then perhaps
                   // use 15 instead?  (32^10 is huge: 1 million billions!)
+
+    // ... instead take 2 chars only and start and end with a digit, always.
+    // Then people'll understand it's an ID? Since it ends with a digit?
+    val randomDigit = (java.lang.Math.random() * 10).toInt
+    val anotherDigit = (java.lang.Math.random() * 10).toInt
+    s = randomDigit.toString + s.take(2) + anotherDigit
+
+    // It's the responsibility of database not to overwrite anything,
+    // but rather fail, and the caller could retry with a new id.
+    // 10 * 30 * 30 * 10 = 100 000.
+
     s
     /*
     // Or use Apache Commons, org.apache.commons.lang.RandomStringUtils:
