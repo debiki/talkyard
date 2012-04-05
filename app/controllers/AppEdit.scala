@@ -140,7 +140,8 @@ object AppEdit extends mvc.Controller {
           if (postId == Page.TemplateId) Markup.Code
           else Markup.Html
 
-        // (A page title and template (and body) is its own parent.)
+        // (A page title and template (and body) is its own parent.
+        // Dupl knowledge! see AppCreatePage.handleForm.)
         Some(Post(id = postId, parent = postId, ctime = pageReq.ctime,
           loginId = pageAuthorLoginId, newIp = pageReq.newIp, text = "",
           markup = markup.id, tyype = PostType.Text,

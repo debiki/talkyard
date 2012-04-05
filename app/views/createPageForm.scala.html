@@ -1,7 +1,10 @@
-@(userName: String, xsrfToken: String)
+@(userName: String, xsrfToken: String, changeShowId: Option[Boolean])
 
 <!DOCTYPE html>
 <html>
+<head>
+  <title>Create Page</title>
+</head>
 <body>
 <div>
   <form class='dw-f dw-f-cr'
@@ -20,6 +23,30 @@
            target='_blank'>CC-BY-SA 3.0 License</a> (also used by Wikipedia).
     </ul>
     <input name='dw-fi-xsrf' type='hidden' class='dw-fi-xsrf' value='@xsrfToken'>
+
+    <p><label>Page title:
+      <input name='page-title'>
+    </label></p>
+
+    <p><label>Page slug:
+      <input name='page-slug'>
+    </label></p>
+    <p>
+      (The page slug appears in the browser address bar,<br>
+      like so:
+      <tt>http://server-address/path/-page_id-<b>the-page-slug</b></tt>.)
+    </p>
+
+    @* dupl code, see moveRenamePage.scala.html.
+    Could extract common function that shows this id-in-url checkbox only
+    if the user may create page with no id in url.  *@
+    @if(changeShowId.isDefined) {
+    <p><label>Include page ID in URL:
+      <input type='checkbox' name='show-id' value='t'
+      @(if(changeShowId.get) { "checked='checked'" } else { "" }) >
+    </label></p>
+    }
+
     <div class='dw-submit-set'>
       <input type='submit' class='dw-fi-submit' value='Create as @userName'>
     </div>

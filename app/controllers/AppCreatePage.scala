@@ -12,6 +12,8 @@ import play.api._
 import play.api.mvc.{Action => _}
 import Actions._
 import Prelude._
+import Utils.ValidationImplicits._
+
 
 object AppCreatePage extends mvc.Controller {
 
@@ -19,19 +21,35 @@ object AppCreatePage extends mvc.Controller {
   def showForm(pathIn: PagePath) = PageGetAction(pathIn) {
         pageReq: PageGetRequest =>
     _throwIfMayNotCreate(pathIn, pageReq)
+
+    val changeShowId =
+      // If the user may not hide the page id:
+      if (!pageReq.permsOnPage.hidePageIdInUrl) None
+      // If the user has specified a slug but no id, default to no id:
+      else if (pathIn.pageSlug.nonEmpty) Some(false)
+      // If the url path is a folder/index page:
+      else Some(true)
+
     Ok(views.html.createPageForm(
       userName = pageReq.displayName_!,
-      xsrfToken = pageReq.xsrfToken.value))
+      xsrfToken = pageReq.xsrfToken.value,
+      changeShowId = changeShowId))
   }
 
 
   def handleForm(pathIn: PagePath) = PagePostAction(MaxCommentSize)(pathIn) {
         pageReq: PagePostRequest =>
-    import pageReq.{pagePath}
     _throwIfMayNotCreate(pathIn, pageReq)
 
+    val pageTitle = pageReq.body.getOrThrowBadReq("page-title")
+    val pageSlug = pageReq.body.getOrThrowBadReq("page-slug")
+    val showId = pageReq.body.getFirst("show-id") == Some("t")
+
+    val newPagePath = pageReq.pagePath.copy(
+      pageSlug = pageSlug, showId = showId)
+
     val (pageMarkup: Markup, pageText: String) =
-      if (pagePath.isCodePage) (Markup.Code, "")
+      if (newPagePath.isCodePage) (Markup.Code, "")
       else (Markup.DefaultForPageBody, DefaultPageText)
 
     val rootPost = Post(id = Page.BodyId,
@@ -40,15 +58,21 @@ object AppCreatePage extends mvc.Controller {
       text = pageText, markup = pageMarkup.id,
       tyype = PostType.Text, where = None)
 
-    val debateNoId = Debate(guid = "?", posts = rootPost::Nil)
+    // (A page title and template (and body) is its own parent.
+    // Dupl knowledge! see AppEdit._getOrCreatePostToEdit.)
+    val titlePost = rootPost.copy(id = Page.TitleId,
+      parent = Page.TitleId, text = pageTitle,
+      markup = Markup.DefaultForPageTitle.id)
+
+    val debateNoId = Debate(guid = "?", posts = rootPost::titlePost::Nil)
     val newPage: Debate =
-      Debiki.Dao.createPage(where = pagePath, debate = debateNoId) match {
+      Debiki.Dao.createPage(where = newPagePath, debate = debateNoId) match {
         case Full(page) => page
         case x => throwInternalError("DwE039k3", "Could not create page," +
           " error:\n"+ x)
       }
 
-    Redirect(pagePath.folder + newPage.guidd)
+    Redirect(newPagePath.folder + newPage.guidd)
   }
 
 
@@ -78,14 +102,14 @@ object AppCreatePage extends mvc.Controller {
 
 
   val DefaultPageText: String =
-    """|Title
-       |============
+    """|**To edit this page:**
        |
-       |Subtitle
-       |-------------
+       |  - Click this text, anywhere.
+       |  - Then select *Improve* in the menu that appears.
        |
-       |To edit this page, click this text, then select Edit in the
-       |menu that appears.
+       |## Example Subtitle
+       |
+       |### Example Sub Subtitle
        |
        |[Example link, to nowhere](http://example.com/does/not/exist)
        |
