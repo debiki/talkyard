@@ -9,8 +9,11 @@ package com.debiki.v0
 import java.{util => ju}
 import java.{security => js}
 import org.apache.commons.codec.{binary => acb}
+import scala.util.matching.Regex
+
 
 object Prelude {
+
 
   // Logs an error in release mode, but throws an AssertionError in debug
   // mode -- this makes errors obvious during development and recoverable
@@ -241,5 +244,23 @@ object Prelude {
   class MakeIfTrue(b: => Boolean) { def ?[A](t: => A) = new IfTrue[A](b,t) }
   implicit def autoMakeIfTrue(b: => Boolean) = new MakeIfTrue(b)
 
+
+  /**
+   * Pimps `Regex` with `matches(text): Boolean` and `misses(text): Boolean`.
+   */
+  implicit def regexToRichRegex(r: Regex) = new RichRegex(r)
+  class RichRegex(underlying: Regex) {
+    def matches(s: String) = underlying.pattern.matcher(s).matches
+    def misses(s: String) = !matches(s)
+  }
+
+  /**
+   * Pimps `String` with `matches(regex): Boolean` and `misses(regex)`.
+   */
+  implicit def stringToRichString(s: String) = new RichString(s)
+  class RichString(underlying: String) {
+    def matches(regex: Regex) = regex.pattern.matcher(underlying).matches
+    def misses(regex: Regex) = !matches(regex)
+  }
 
 }
