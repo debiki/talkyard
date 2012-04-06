@@ -18,8 +18,7 @@ case class RequestInfo(
   user: Option[User],
   /** Ids of groups to which the requester belongs. */
   // userMemships: List[String],
-  pagePath: PagePath,
-  doo: Do
+  pagePath: PagePath
 ){
   require(pagePath.tenantId == tenantId) // COULD remove tenantId from pagePath
 }
@@ -49,44 +48,6 @@ object PageSortOrder {
   //case object ByTitle extends PageSortOrder
   case object ByPath extends PageSortOrder
   case object ByPublTime extends PageSortOrder
-}
-
-
-/** Things an end user can do.
- */
-sealed abstract class Do  // COULD rename to RequestType? UserRequest?
-
-object Do {
-  /*
-  def fromText(text: String): Action = text match {
-    // COULD find out how to do this automatically in Scala?
-    //case "create" => Create  // was renamed to "newpage" in
-                               // debiki-app-lift, Boot.scala
-    case "reply" => Reply
-    case "edit" => Edit
-    case "view" => View
-    case x => Unsupported(x)
-  }*/
-
-  case object Act extends Do
-  case object CreatePage extends Do
-  case object Reply extends Do
-  case object Rate extends Do
-  case object FlagPost extends Do
-  case object Edit extends Do
-  case object ViewEdits extends Do
-  case object ApplyEdits extends Do
-  case object Apply extends Do
-  case object DeletePost extends Do  // TODO rename to Delete
-  case object View extends Do
-  /** When you Do.Use e.g. CSS or a PNG image, it's returned to the
-   *  browser as text/css, or image/png, not wrapped in html. */
-  case object Use extends Do
-  case class Unsupported(whatUnsafe: String) extends Do {
-    override def toString: String = "Unsupported("+ safe(whatUnsafe) +")"
-  }
-  case object List extends Do
-  case object FeedAtom extends Do
 }
 
 
