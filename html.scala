@@ -879,7 +879,7 @@ class FormHtml(val config: HtmlConfig, xsrfToken: String,
              <div class='dw-lgi-openid-why'>
                <small>
                In the future, logging in will enable functionality
-               not available to unauthenticated users.
+               not available for guest login.
                </small>
              </div>
            </div>
@@ -888,14 +888,14 @@ class FormHtml(val config: HtmlConfig, xsrfToken: String,
            </div>*/}
            <div class='dw-lgi-simple'>
             <div class='dw-lgi-simple-info'>
-              Alternatively,
+              Alternatively, login as guest:
             </div>
             <div>
              <label for='dw-fi-lgi-name'>Enter your name:</label>
              <input id='dw-fi-lgi-name' type='text' size='40' maxlength='100'
                   name='dw-fi-lgi-name' value='Anonymous'/>
              <small><b>'?'</b> will be appended to your name,
-               to indicate that you were not authenticated.
+               to indicate that you logged in as a guest.
              </small>
             </div>
             <div>
