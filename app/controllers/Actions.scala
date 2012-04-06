@@ -31,13 +31,16 @@ object Actions {
     loginId: Option[String],
     identity: Option[Identity],
     user: Option[User],
+    pageExists: Boolean,
     /** Ids of groups to which the requester belongs. */
     // userMemships: List[String],
+    /** If the requested page does not exist, pagePath.pageId is empty. */
     pagePath: PagePath,
     permsOnPage: PermsOnPage,
     request: Request[A]
   ){
     require(pagePath.tenantId == tenantId) //COULD remove tenantId from pagePath
+    require(!pageExists || pagePath.pageId.isDefined)
 
     /**
      * The login id of the user making the request. Throws 403 Forbidden
@@ -64,14 +67,25 @@ object Actions {
      */
     def newIp: Option[String] = None  // None always, for now
 
-    def pageId: String = pagePath.pageId getOrElse
-      assErr("DwE93kD4", "Page id unknown")
+    def pageId: Option[String] = pagePath.pageId
 
     /**
-     * The page this PageRequest concerns, or None if not found.
+     * Throws 404 Not Found if id unknown. The page id is known if it
+     * was specified in the request, *or* if the page exists.
+     */
+    def pageId_! : String = pagePath.pageId getOrElse
+      throwNotFound("DwE93kD4", "Page does not exist: "+ pagePath.path)
+
+    /**
+     * The page this PageRequest concerns, or None if not found
+     * (e.g. if !pageExists, or if it was deleted just moments ago).
      */
     lazy val page_? : Option[Debate] =
-      Debiki.Dao.loadPage(tenantId, pageId).toOption
+      if (pageExists)
+        pageId.flatMap(id => Debiki.Dao.loadPage(tenantId, id).toOption)
+      // Don't load the page even if it was *created* moments ago.
+      // having !pageExists and page_? = Some(..) feels risky.
+      else None
 
     /**
      * The page this PageRequest concerns. Throws 404 Not Found if not found.
@@ -79,8 +93,7 @@ object Actions {
      * (The page might have been deleted, just after the access control step.)
      */
     lazy val page_! : Debate =
-      Debiki.Dao.loadPage(tenantId, pageId) openOr throwNotFound(
-        "DwE43XWY", "Page not found")
+      page_? getOrElse throwNotFound("DwE43XWY", "Page not found")
 
     /**
      * Approximately when the server started serving this request.
@@ -112,27 +125,34 @@ object Actions {
   type PagePostRequest = PageRequest[Map[String, Seq[String]]]
 
 
-  def PageGetAction(pathIn: PagePath)(
-        f: PageGetRequest => PlainResult)
-        : mvc.Action[Option[Any]] =
-      PageReqAction(BodyParsers.parse.empty)(pathIn)(f)
+  def PageGetAction
+        (pathIn: PagePath, pageMustExist: Boolean = true)
+        (f: PageGetRequest => PlainResult) =
+    PageReqAction(BodyParsers.parse.empty)(pathIn, pageMustExist)(f)
 
 
-  def PagePostAction(maxUrlEncFormBytes: Int)(pathIn: PagePath)(
-        f: PagePostRequest => PlainResult)
-        : mvc.Action[Map[String, Seq[String]]] =
+  def PagePostAction
+        (maxUrlEncFormBytes: Int)
+        (pathIn: PagePath, pageMustExist: Boolean = true)
+        (f: PagePostRequest => PlainResult) =
     PageReqAction(
       BodyParsers.parse.urlFormEncoded(maxLength = maxUrlEncFormBytes))(
-      pathIn)(f)
+      pathIn, pageMustExist)(f)
 
 
-  def PageReqAction[A](parser: BodyParser[A])(pathIn: PagePath)(
-        f: PageRequest[A] => PlainResult)
+  def PageReqAction[A]
+        (parser: BodyParser[A])
+        (pathIn: PagePath, pageMustExist: Boolean)
+        (f: PageRequest[A] => PlainResult)
         = CheckPathAction[A](parser)(pathIn) {
-      (sidOk, xsrfOk, pathOk, request) =>
+      (sidOk, xsrfOk, pathOkOpt, request) =>
 
-    val tenantId = pathOk.tenantId
+    if (pathOkOpt.isEmpty && pageMustExist)
+      throwNotFound("DwE0404", "Page not found")
+
+    val tenantId = pathIn.tenantId
     val ip = "?.?.?.?"
+    val pagePath = pathOkOpt.getOrElse(pathIn)
 
     // Load identity and user.
     val (identity, user) = sidOk.loginId match {
@@ -156,8 +176,7 @@ object Actions {
       loginId = sidOk.loginId,
       identity = identity,
       user = user,
-      pagePath = pathOk,
-      doo = null) // should be removed
+      pagePath = pagePath)
 
     val permsOnPage = Debiki.Dao.loadPermsOnPage(permsReq)
     if (!permsOnPage.accessPage)
@@ -172,7 +191,8 @@ object Actions {
       loginId = sidOk.loginId,
       identity = identity,
       user = user,
-      pagePath = pathOk,
+      pageExists = pathOkOpt.isDefined,
+      pagePath = pagePath,
       permsOnPage = permsOnPage,
       request = request)
 
@@ -182,27 +202,31 @@ object Actions {
 
 
   /**
-   * If redirBadPath is true (default), attempts to redirect requests
-   * to the correct path, e.g. adds/removes an absent or superfluous
-   * trailing slash or looks up a page id and finds out that the page
+   * Attempts to redirect almost correct requests to the correct path,
+   * e.g. adds/removes an absent or superfluous trailing slash
+   * or looks up a page id and finds out that the page
    * has been moved.
    */
   def CheckPathActionNoBody
-        (pathIn: PagePath, redirBadPath: Boolean = true)
-        (f: (SidOk, XsrfOk, PagePath, Request[Option[Any]]) => PlainResult) =
+        (pathIn: PagePath)
+        (f: (SidOk, XsrfOk, Option[PagePath], Request[Option[Any]]
+           ) => PlainResult) =
     CheckPathAction(BodyParsers.parse.empty)(pathIn)(f)
 
 
   def CheckPathAction[A]
         (parser: BodyParser[A])
-        (pathIn: PagePath, redirBadPath: Boolean = true)
-        (f: (SidOk, XsrfOk, PagePath, Request[A]) => PlainResult) =
+        (pathIn: PagePath)
+        (f: (SidOk, XsrfOk, Option[PagePath], Request[A]) => PlainResult) =
     CheckSidAction[A](parser) { (sidOk, xsrfOk, request) =>
       Debiki.Dao.checkPagePath(pathIn) match {
         case Full(correct: PagePath) =>
-          if (correct.path == pathIn.path) f(sidOk, xsrfOk, correct, request)
-          else Results.MovedPermanently(correct.path)
-        case Empty => NotFoundResult("DwE03681", "")
+          if (correct.path == pathIn.path) {
+            f(sidOk, xsrfOk, Some(correct), request)
+          } else {
+            Results.MovedPermanently(correct.path)
+          }
+        case Empty => f(sidOk, xsrfOk, None, request)
         case f: Failure => runErr("DwE03ki2", "Internal error"+ f.toString)
       }
     }

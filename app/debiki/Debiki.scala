@@ -41,8 +41,8 @@ object Debiki {
     if (actions isEmpty)
       return
 
-    import pageReq.{tenantId, pageId, page_!, user_!}
-    val Full(actionsWithId) = Dao.savePageActions(tenantId, pageId, actions)
+    import pageReq.{tenantId, pageId_!, page_!, user_!}
+    val Full(actionsWithId) = Dao.savePageActions(tenantId, pageId_!, actions)
 
     // Possible optimization: Examine all actions, and refresh cache only
     // if there are e.g. EditApp:s or Replie:s (but ignore Edit:s -- if
