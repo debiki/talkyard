@@ -128,7 +128,7 @@ object Actions {
 
   def PageReqAction[A](parser: BodyParser[A])(pathIn: PagePath)(
         f: PageRequest[A] => PlainResult)
-        = CheckSidAndPathAction[A](parser)(pathIn) {
+        = CheckPathAction[A](parser)(pathIn) {
       (sidOk, xsrfOk, pathOk, request) =>
 
     val tenantId = pathOk.tenantId
@@ -182,49 +182,58 @@ object Actions {
 
 
   /**
-   * Checks the session id and, for POST request, the xsrf token.
+   * If redirBadPath is true (default), attempts to redirect requests
+   * to the correct path, e.g. adds/removes an absent or superfluous
+   * trailing slash or looks up a page id and finds out that the page
+   * has been moved.
    */
-  def CheckSidAndPathAction[A](parser: BodyParser[A])(pathIn: PagePath)(
-        f: (SidOk, XsrfOk, PagePath, Request[A]) => PlainResult) =
-        RedirBadPathAction[A](parser)(pathIn) { (pathOk, request) =>
-    val (sidOk, xsrfOk, newCookies) = AppAuth.checkSidAndXsrfToken(request)
-    val resultOldCookies = f(sidOk, xsrfOk, pathOk, request)
-    val resultOkSid =
-      if (newCookies isEmpty) resultOldCookies
-      else resultOldCookies.withCookies(newCookies: _*)
-    resultOkSid
-  }
+  def CheckPathActionNoBody
+        (pathIn: PagePath, redirBadPath: Boolean = true)
+        (f: (SidOk, XsrfOk, PagePath, Request[Option[Any]]) => PlainResult) =
+    CheckPathAction(BodyParsers.parse.empty)(pathIn)(f)
 
-  def CheckSidAndPathAction(pathIn: PagePath)(
-        f: (SidOk, XsrfOk, PagePath, Request[Option[Any]]) => PlainResult)
-        : mvc.Action[Option[Any]] =
-    CheckSidAndPathAction(BodyParsers.parse.empty)(pathIn)(f)
 
-  /**
-   * Redirects requests to the correct path,
-   * e.g. adds/removes an absent or superflous trailing slash
-   * or looks up a page id and finds out that the page has been moved.
-   */
-  def RedirBadPathAction[A](parser: BodyParser[A])(pathIn: PagePath)(
-        f: (PagePath, Request[A]) => PlainResult)
-        : mvc.Action[A] = ExceptionAction[A](parser) { request =>
-    Debiki.Dao.checkPagePath(pathIn) match {
-      case Full(correct: PagePath) =>
-        if (correct.path == pathIn.path) f(correct, request)
-        else Results.MovedPermanently(correct.path)
-      case Empty => NotFoundResult("DwE03681", "")
-      case f: Failure => runErr("DwE03ki2", "Internal error"+ f.toString)
+  def CheckPathAction[A]
+        (parser: BodyParser[A])
+        (pathIn: PagePath, redirBadPath: Boolean = true)
+        (f: (SidOk, XsrfOk, PagePath, Request[A]) => PlainResult) =
+    CheckSidAction[A](parser) { (sidOk, xsrfOk, request) =>
+      Debiki.Dao.checkPagePath(pathIn) match {
+        case Full(correct: PagePath) =>
+          if (correct.path == pathIn.path) f(sidOk, xsrfOk, correct, request)
+          else Results.MovedPermanently(correct.path)
+        case Empty => NotFoundResult("DwE03681", "")
+        case f: Failure => runErr("DwE03ki2", "Internal error"+ f.toString)
+      }
     }
-  }
-
-  def RedirBadPathAction(pathIn: PagePath)(
-       f: (PagePath, Request[Option[Any]]) => PlainResult)
-       : mvc.Action[Option[Any]] =
-    RedirBadPathAction(BodyParsers.parse.empty)(pathIn)(f)
 
 
   /**
-   * Converts DebikiHttp.ResultException to nice replies.
+   * Throws 403 Forbidden if the xsrf token (for POST requests)
+   * or the session id is invalid.
+   */
+  def CheckSidActionNoBody
+        (f: (SidOk, XsrfOk, Request[Option[Any]]) => PlainResult) =
+    CheckSidAction(BodyParsers.parse.empty)(f)
+
+
+  def CheckSidAction[A]
+        (parser: BodyParser[A])
+        (f: (SidOk, XsrfOk, Request[A]) => PlainResult) =
+    ExceptionAction[A](parser) { request =>
+      val (sidOk, xsrfOk, newCookies) = AppAuth.checkSidAndXsrfToken(request)
+      val resultOldCookies = f(sidOk, xsrfOk, request)
+      val resultOkSid =
+        if (newCookies isEmpty) resultOldCookies
+        else resultOldCookies.withCookies(newCookies: _*)
+      resultOkSid
+    }
+
+
+  /**
+   * Converts DebikiHttp.ResultException to nice replies,
+   * e.g. 403 Forbidden and a user friendly message,
+   * instead of 500 Internal Server Error and a stack trace or Ooops message.
    */
   def ExceptionAction[A](parser: BodyParser[A])(f: Request[A] => PlainResult) =
         mvc.Action[A](parser) { request =>
@@ -235,8 +244,8 @@ object Actions {
     }
   }
 
-  def ExceptionAction(f: Request[Option[Any]] => PlainResult)
-        : mvc.Action[Option[Any]] =
+
+  def ExceptionActionNoBody(f: Request[Option[Any]] => PlainResult) =
     ExceptionAction(BodyParsers.parse.empty)(f)
 
 }

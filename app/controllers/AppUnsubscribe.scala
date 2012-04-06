@@ -57,7 +57,7 @@ object AppUnsubscribe extends mvc.Controller {
     })
 
 
-  def showForm(tenantId: String) = ExceptionAction { implicit request =>
+  def showForm(tenantId: String) = ExceptionActionNoBody { implicit request =>
     Ok(views.html.unsubscribePage(emailId, doWhat, nextPage))
   }
 
