@@ -18,8 +18,10 @@ import Utils.ValidationImplicits._
 object AppCreatePage extends mvc.Controller {
 
 
-  def showForm(pathIn: PagePath) = PageGetAction(pathIn) {
-        pageReq: PageGetRequest =>
+  def showForm(pathIn: PagePath) =
+        PageGetAction(pathIn, pageMustExist = false) {
+          pageReq: PageGetRequest =>
+
     _throwIfMayNotCreate(pathIn, pageReq)
 
     val changeShowId =
@@ -37,8 +39,9 @@ object AppCreatePage extends mvc.Controller {
   }
 
 
-  def handleForm(pathIn: PagePath) = PagePostAction(MaxCommentSize)(pathIn) {
-        pageReq: PagePostRequest =>
+  def handleForm(pathIn: PagePath) =
+        PagePostAction(MaxCommentSize)(pathIn, pageMustExist = false) {
+          pageReq: PagePostRequest =>
     _throwIfMayNotCreate(pathIn, pageReq)
 
     val pageTitle = pageReq.body.getOrThrowBadReq("page-title")
@@ -72,7 +75,7 @@ object AppCreatePage extends mvc.Controller {
           " error:\n"+ x)
       }
 
-    Redirect(newPagePath.folder + newPage.guidd)
+    Redirect(newPagePath.path)
   }
 
 
@@ -87,7 +90,7 @@ object AppCreatePage extends mvc.Controller {
     // hmm. If page exists, guid non-empty and page_? defined
     // Not this, but something like??:
     // assert(pageReq.page_?.isDefined == pageReq.pagePath.isFolderPath ...
-    
+
     if (!pageReq.permsOnPage.createPage)
       throwForbidden("DwE01rsk351", "You may not create that page")
 
@@ -96,8 +99,8 @@ object AppCreatePage extends mvc.Controller {
     // created. If however such a page already exists, the access
     // controller shouldn't have granted createPage permissions (see above).
     if (!pageReq.pagePath.isFolderPath && // then page slug was specified
-        pageReq.page_?.isDefined)
-      assErr("DwE87Pr2", "Page already exists")
+        pageReq.pageExists)
+      throwForbidden("DwE87Pr2", "Page already exists")
   }
 
 

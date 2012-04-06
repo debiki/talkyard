@@ -132,8 +132,10 @@ object Application extends mvc.Controller {
   }
 
 
-  def feed(pathIn: PagePath) = PageGetAction(pathIn) { pageReq =>
-     import pageReq.{pagePath}
+  def feed(pathIn: PagePath) = PageGetAction(pathIn, pageMustExist = false) {
+        pageReq =>
+
+    import pageReq.{pagePath}
 
     // The tenant's name will be included in the feed.
     val tenant: Tenant = Debiki.Dao.loadTenants(List(pageReq.tenantId)).head
