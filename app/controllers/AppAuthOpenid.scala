@@ -84,7 +84,9 @@ object AppAuthOpenid extends mvc.Controller {
    *   http://code.google.com/intl/es-ES/apis/accounts/docs/OpenID.html
    */
   private def _wildcardRealmFor(host: String): String = {
-    val realm = "http://"+ (if (host.count(_ == '-') >= 2) {
+    val isIpNo = _IpRegex matches host
+    val hostNameSpecified = !isIpNo && host.count(_ == '.') >= 2
+    val realm = "http://"+ (if (hostNameSpecified) {
       // The host is like "hostname.example.com". Replace "hostname" with "*"
       // to get a realm like "*.example.com".
       val dotAndDomain = host.dropWhile(_ != '.')
@@ -97,6 +99,10 @@ object AppAuthOpenid extends mvc.Controller {
     })
     realm
   }
+
+
+  // For now, IPv4 only [IPv6 todo]
+  private val _IpRegex = """\d+\.\d+\.\d+\.\d+(:\d+)?""".r
 
 
   def loginCallback = mvc.Action { request =>
