@@ -4812,6 +4812,8 @@ function initAndDrawSvg() {
   steps.push(initPostsThreadStep1);
   steps.push(initPostsThreadStep2);
   steps.push(initPostsThreadStep3);
+  // COULD fire login earlier; it's confusing that the 'Login' link
+  // is visible for rather long, when you load a *huge* page.
   steps.push(registerEventHandlersFireLoginOut);
   steps.push(initPostsThreadStep4);
   steps.push(initAndDrawSvg);
