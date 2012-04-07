@@ -119,7 +119,8 @@ object Application extends mvc.Controller {
   }
 
 
-  def listPages(pathIn: PagePath) = PageGetAction(pathIn) { pageReq =>
+  def listPages(pathIn: PagePath) =
+        PageGetAction(pathIn, pageMustExist = false) { pageReq =>
     val pagePaths = Debiki.Dao.listPagePaths(
       withFolderPrefix = pageReq.pagePath.folder,
       tenantId = pageReq.tenantId,
