@@ -150,10 +150,11 @@ class TemplateEngine(val pageCache: PageCache, val dao: Dao) {
     assert(next == ExtendParentFolderTmpl || next == ExtendNoTemplate)
 
     if (templates isEmpty)
-      unimplemented // was: return LiftUtil.defaultTemplate_tmpTest::Nil
+      templates ::= DefaultTemplate
 
     templates.reverse
   }
+
 
   /**
    * Returns paths to parent folder and tree templates for `pagePath',
@@ -238,12 +239,34 @@ object TemplateEngine {
     </div>.child
 
 
+  object DefaultTemplate extends TemplateSource {
+    val params = TemplateParams.Default.copy(
+       templateToExtend = Some(TemplateToExtend.ExtendNoTemplate))
+
+    val html: Node = _makeTemplateNode(title = "Your New Website",
+      prependToContent = Nil)
+  }
+
+
   object TemplateForTemplates extends TemplateSource {
     val params = TemplateParams.Default
-    val html: Node =
+
+    val html: Node = _makeTemplateNode(title = "Debiki",
+      prependToContent = <div id='template-info'>This is a template page.</div>)
+    /* (Old info text.)
+    When you view or edit a template, all your other templates,
+    stylesheets and javascripts are disabled. Otherwise,
+    if you accidentally break the template (e.g. malformed HTML),
+    you could end up in a situation where you could neither view
+    any page, nor view or edit the template again.</div>  */
+  }
+
+
+  private def _makeTemplateNode(
+        title: String, prependToContent: NodeSeq): Node = {
       <html>
       <head>
-        <title>Debiki</title>
+        <title>{title}</title>
           <meta name="description" content=""/>
           <meta name="keywords" content=""/>
           <link type="text/css" rel="stylesheet" href="/classpath/css/debiki-lift.css"/>
@@ -301,14 +324,7 @@ object TemplateEngine {
             </a>
           </div>
           <div id='content'>
-            <div id='template-info'>This is a template page.</div>
-            {/*
-          When you view or edit a template, all your other templates,
-          stylesheets and javascripts are disabled. Otherwise,
-          if you accidentally break the template (e.g. malformed HTML),
-          you could end up in a situation where you could neither view
-          any page, nor view or edit the template again.</div>
-          */}
+            { prependToContent }
             <article>
               <div id='debiki-page'></div>
             </article>
