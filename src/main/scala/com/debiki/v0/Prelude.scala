@@ -189,15 +189,14 @@ object Prelude {
                   // uniqueness? If I use a nosql database, then perhaps
                   // use 15 instead?  (32^10 is huge: 1 million billions!)
 
-    // ... instead take 2 chars only and start and end with a digit, always.
+    // ... instead take 3 chars only and start and end with a digit, always.
     // Then people'll understand it's an ID? Since it ends with a digit?
-    val randomDigit = (java.lang.Math.random() * 10).toInt
-    val anotherDigit = (java.lang.Math.random() * 10).toInt
-    s = randomDigit.toString + s.take(2) + anotherDigit
+    def randomDigit = (java.lang.Math.random() * 10).toInt.toString
+    s = randomDigit + s.take(3) + randomDigit
 
     // It's the responsibility of database not to overwrite anything,
     // but rather fail, and the caller could retry with a new id.
-    // 10 * 30 * 30 * 10 = 100 000.
+    // 10 * 32 * 32 * 32 * 10 = 3 000 000.
 
     s
     /*
