@@ -2932,10 +2932,13 @@ function $showFlagForm() {
 function $showReplyForm(event, opt_where) {
   // Warning: Some duplicated code, see .dw-r-tag click() above.
   var $thread = $(this).closest('.dw-t');
+  var $replyAction = $thread.find('> .dw-p-as > .dw-a-reply');
   var $post = $thread.children('.dw-p');
   clearfix($thread); // ensures the reply appears nested inside the thread
   var postId = $post.dwPostId();
   var horizLayout = $thread.is('.dw-hor');
+
+  setActionLinkEnabled($replyAction, false);
 
   function showSortOrderTips($newPost) {
     var $tips = $('#dw-tps-sort-order');
@@ -3002,6 +3005,12 @@ function $showReplyForm(event, opt_where) {
 
     var $anyHorizReplyBtn = $();
     var $submitBtn = $replyForm.find('.dw-fi-submit');
+    var $cancelBtn = $replyForm.find('.dw-fi-cancel');
+
+    $cancelBtn.click(function() {
+      setActionLinkEnabled($replyAction, true);
+    });
+
     var setSubmitBtnTitle = function(event, userName) {
       var text = userName ?  'Post as '+ userName : 'Post as ...';  // i18n
       $submitBtn.val(text);
@@ -3022,6 +3031,7 @@ function $showReplyForm(event, opt_where) {
           // would be the last child, resulting in a superfluous
           // dw-svg-fake-harrow.
           removeInstantly($replyFormParent);
+          setActionLinkEnabled($replyAction, true);
           var $myNewPost = updateDebate(newDebateHtml);
           // Any horizontal reply button has been hidden.
           $anyHorizReplyBtn.show();
