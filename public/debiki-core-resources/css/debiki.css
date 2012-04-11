@@ -773,6 +773,8 @@ so set max-width and line height. */
   font-size: 13px;
 }
 
+.dw-a-disabled { color: #d2d2d2 !important; cursor: default; }
+.dw-a-disabled:hover { text-decoration: none !important; }
 
 .dw-t > .dw-as > .dw-a {
   color: #ff4836; /* make action links stand out (but skip root post link) */
@@ -1447,6 +1449,21 @@ form.dw-hoversubmit {
 .dw-fs-r .dw-more-r-tags label {
   float: left;
   min-width: 0 !important;
+}
+
+.dw-f-r .dw-inf {
+  padding: 1ex;
+  background-color: white;
+}
+
+.dw-f-r-inf-changing {
+  display: none;
+}
+
+.dw-f-r .dw-inf-submitting-form {
+  top: auto;
+  bottom: 23px;
+  left: 40px;
 }
 
 .dw-f-r .dw-hoversubmit-2 {

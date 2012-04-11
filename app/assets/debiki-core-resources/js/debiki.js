@@ -2032,6 +2032,24 @@ function notifErrorBox$(error, message, details) {
 }
 
 
+function setActionLinkEnabled($actionLink, enabed) {
+  bugIf(!$actionLink.is('.dw-a'));
+  if (!enabed) {
+    // (Copy the event list; off('click') destroys the original.)
+    var handlers = $actionLink.data('events')['click'].slice();
+    $actionLink.data('DisabledHandlers', handlers);
+    $actionLink.addClass('dw-a-disabled').off('click');
+  } else {
+    var handlers = $actionLink.data('DisabledHandlers');
+    $actionLink.removeData('DisabledHandlers');
+    $.each(handlers, function(index, handler) { 
+      $actionLink.click(handler);
+    });
+    $actionLink.removeClass('dw-a-disabled');
+  }
+}
+
+
 function disableSubmittedForm($form) {
   $form.children().css('opacity', '0.4').find('input').dwDisable();
   // Show a 'Submitting ...' tips. CSS places it in the middle of the form.
@@ -2710,6 +2728,9 @@ function $showRatingForm(event) {
   var $post = $thread.children('.dw-p');
   var $formParent = rateFormTemplate.clone(true);
   var $rateForm = $formParent.children('form');
+  var $rateAction = $thread.find(' > .dw-p-as > .dw-a-rate');
+  var $submitBtn = $rateForm.find('input[type="submit"]');
+  var $cancelBtn = $rateForm.find('input.dw-fi-cancel');
   var postId = $post.dwPostId();
 
   // The rating-value inputs are labeled checkboxes. Hence they
@@ -2717,39 +2738,30 @@ function $showRatingForm(event) {
   // in the rateFormTemplate. Make the cloned ids unique:
   makeIdsUniqueUpdateLabels($formParent);
 
-  // Don't submit on *mouseout*, unless some checkbox actually clicked.
-  var anyCheckboxClicked = false;
+  // People sometimes unintentionally open many rating forms, unless:
+  setActionLinkEnabled($rateAction, false);
+  $cancelBtn.click(function() { setActionLinkEnabled($rateAction, true); });
 
   // Enable submit *button* when ratings specified
   $formParent.find("input[type='checkbox']").click(function(){
-    $formParent.find("input[type='submit']")
-        .button("option", "disabled", false);
-    if (!anyCheckboxClicked) $rateForm.find('input.dw-fi-submit').focus();
-    anyCheckboxClicked = true;
+    var numChecked = $rateForm.find('.ui-button.ui-state-active').length;
+    $submitBtn.button('option', 'disabled', numChecked == 0)
+    if (numChecked > 0) $rateForm.find('input.dw-fi-submit').focus();
   });
 
   // Ajax-post ratings on submit.
   //  - Disable form until request completed.
   //  - When completed, highlight the user's own ratings.
   $formParent.submit(function(){
-    if (!anyCheckboxClicked) {
-      // This is a hoversubmit form (that is, it auto submits
-      // on mouseenter). But no changes have been made; don't submit.
-      $formParent.remove();
-      return false;
-    }
-
     // Find selected rating tags, so they can be highlighted later.
     var ratedTags = $formParent.find("input:checked").map(function(){
       return $(this).val().toLowerCase();
     }).get();
 
-    var $info = $('#dw-hidden-templates .dw-inf-submitting-form').clone();
-    $formParent.replaceWith($info);
-
     $.post(Settings.makeRatePostUrl(debateId, rootPostId, postId),
           $rateForm.serialize(), function(recentChangesHtml) {
-        $info.remove();
+        $formParent.remove();
+        setActionLinkEnabled($rateAction, true);
         updateDebate(recentChangesHtml);
 
         // Show flag and rating details, and highligt the user's ratings.
@@ -2769,8 +2781,10 @@ function $showRatingForm(event) {
             });
           });
 
+        $post.each(SVG.$drawParentsAndTree);
       }, 'html');
 
+    disableSubmittedForm($rateForm);
     return false;
   });
 
@@ -2787,14 +2801,6 @@ function $showRatingForm(event) {
 
   var $actionBtns = $thread.children('.dw-p-as');
 
-  // {{{ Don't use hoversubmit right now
-  // it's to complicated (my parents
-  // found it very hard to use).
-  // (makeHoverSubmitForm ensures you've logged in before the form
-  // is submitted.)
-  //$formParent.appendTo($actionBtns).show();
-  //makeHoverSubmitForm($formParent, event);
-  // }}}
   $formParent.insertAfter($actionBtns).show()
       .find('input[type="submit"]').each($loginSubmitOnClick());
   $post.each(SVG.$drawParentsAndTree);
