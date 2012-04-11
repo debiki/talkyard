@@ -2047,7 +2047,20 @@ function notifErrorBox$(error, message, details) {
 }
 
 
+$.fn.dwActionLinkEnable = function() {
+  setActionLinkEnabled(this, true);
+  return this;
+}
+
+
+$.fn.dwActionLinkDisable = function() {
+  setActionLinkEnabled(this, false);
+  return this;
+}
+
+
 function setActionLinkEnabled($actionLink, enabed) {
+  if (!$actionLink.length) return;
   bugIf(!$actionLink.is('.dw-a'));
   if (!enabed) {
     // (Copy the event list; off('click') destroys the original.)
@@ -2754,8 +2767,8 @@ function $showRatingForm(event) {
   makeIdsUniqueUpdateLabels($formParent);
 
   // People sometimes unintentionally open many rating forms, unless:
-  setActionLinkEnabled($rateAction, false);
-  $cancelBtn.click(function() { setActionLinkEnabled($rateAction, true); });
+  $rateAction.dwActionLinkDisable();
+  $cancelBtn.click(function() { $rateAction.dwActionLinkEnable(); });
 
   // Enable submit *button* when ratings specified
   $formParent.find("input[type='checkbox']").click(function(){
@@ -2776,7 +2789,7 @@ function $showRatingForm(event) {
     $.post(Settings.makeRatePostUrl(debateId, rootPostId, postId),
           $rateForm.serialize(), function(recentChangesHtml) {
         $formParent.remove();
-        setActionLinkEnabled($rateAction, true);
+        $rateAction.dwActionLinkEnable();
         updateDebate(recentChangesHtml);
 
         // Show flag and rating details, and highligt the user's ratings.
@@ -2938,7 +2951,7 @@ function $showReplyForm(event, opt_where) {
   var postId = $post.dwPostId();
   var horizLayout = $thread.is('.dw-hor');
 
-  setActionLinkEnabled($replyAction, false);
+  $replyAction.dwActionLinkDisable();
 
   function showSortOrderTips($newPost) {
     var $tips = $('#dw-tps-sort-order');
@@ -3008,7 +3021,7 @@ function $showReplyForm(event, opt_where) {
     var $cancelBtn = $replyForm.find('.dw-fi-cancel');
 
     $cancelBtn.click(function() {
-      setActionLinkEnabled($replyAction, true);
+      $replyAction.dwActionLinkEnable();
     });
 
     var setSubmitBtnTitle = function(event, userName) {
@@ -3031,7 +3044,7 @@ function $showReplyForm(event, opt_where) {
           // would be the last child, resulting in a superfluous
           // dw-svg-fake-harrow.
           removeInstantly($replyFormParent);
-          setActionLinkEnabled($replyAction, true);
+          $replyAction.dwActionLinkEnable();
           var $myNewPost = updateDebate(newDebateHtml);
           // Any horizontal reply button has been hidden.
           $anyHorizReplyBtn.show();
