@@ -1062,6 +1062,12 @@ class FormHtml(val config: HtmlConfig, xsrfToken: String,
             method='post'
             class='dw-f dw-f-r'>
           { _xsrfToken }
+          <p class='dw-inf dw-f-r-inf-many'>
+            You can select many rating tags.
+          </p>
+          <p class='dw-inf dw-f-r-inf-changing'>
+            You are <strong>changing</strong> your rating.
+          </p>
           {
             var boxCount = 1
             def rateBox(value: String) = {
