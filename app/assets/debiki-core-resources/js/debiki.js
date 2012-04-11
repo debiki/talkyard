@@ -114,13 +114,28 @@ function isoDateToMillis(dateStr) {
 // jQuery object extensions
 //----------------------------------------
 
-jQuery.fn.dwDisable = function() {
-  return this.each(function(){ jQuery(this).prop('disabled', true); });
-};
 
-jQuery.fn.dwEnable = function() {
-  return this.each(function(){ jQuery(this).prop('disabled', false); });
-};
+(function() {
+  jQuery.fn.dwDisable = function() {
+    return _dwEnableDisableImpl(this, true);
+  };
+
+  jQuery.fn.dwEnable = function() {
+    return _dwEnableDisableImpl(this, false);
+  };
+
+  function _dwEnableDisableImpl(self, disabled) {
+    // (Radio buttons and checkboxes have the
+    // .ui-helper-hidden-accessible class – jQuery UI places
+    // .ui-button on the related <label>, not the <input>.)
+    if (self.filter('input, button')
+        .is('.ui-button, .ui-helper-hidden-accessible'))
+      self.button('option', 'disabled', disabled);
+    else self.prop('disabled', disabled);
+    return self;
+  }
+})();
+
 
 jQuery.fn.dwLastChange = function() {
   var maxDate = '0';
@@ -2051,7 +2066,7 @@ function setActionLinkEnabled($actionLink, enabed) {
 
 
 function disableSubmittedForm($form) {
-  $form.children().css('opacity', '0.4').find('input').dwDisable();
+  $form.children().css('opacity', '0.7').find('input').dwDisable();
   // Show a 'Submitting ...' tips. CSS places it in the middle of the form.
   var $info = $('#dw-hidden-templates .dw-inf-submitting-form').clone();
   $form.append($info);
@@ -2072,7 +2087,7 @@ function showErrorEnableInputs($form) {
     $thread.each(SVG.$drawParentsAndTree); // because of the notification
     // For now, simply enable all inputs always.
     $form.children().css('opacity', '');
-    $form.find('input, button').prop('disabled', false);
+    $form.find('input, button').dwEnable();
     $form.children('.dw-inf-submitting-form').remove();
   };
 }
