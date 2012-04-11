@@ -153,7 +153,7 @@ jQuery.fn.dwAuthorId = function() {
   return uid;
 };
 
-// Option `alsoTryToShow' is not yet implemented.
+
 jQuery.fn.dwScrollIntoView = function(options) {
   var $ = jQuery;
   if (!options) options = {};
@@ -2953,13 +2953,16 @@ function $showReplyForm(event, opt_where) {
 
   $replyAction.dwActionLinkDisable();
 
-  function showSortOrderTips($newPost) {
-    var $tips = $('#dw-tps-sort-order');
-    $tips.appendTo($newPost).click(function() {
-      $tips.hide();
-      showRateOwnCommentTipsLater($newPost, 400);
-    });
-    return $tips;
+  function showSortOrderTipsLater($newPost, delay) {
+    setTimeout(function() {
+      var $tips = $('#dw-tps-sort-order');
+      $tips.appendTo($newPost)
+          .dwScrollIntoView()
+          .click(function() {
+        $tips.hide();
+        showRateOwnCommentTipsLater($newPost, 400);
+      });
+    }, delay);
   }
 
   // (Could use http://www.lullabot.com/files/bt/bt-latest/DEMO/index.html
@@ -2992,10 +2995,9 @@ function $showReplyForm(event, opt_where) {
       timeoutHandler = null;
       $actions.addClass(withTipsClass);
       $tips.addClass(rateOwnPostClass).show().insertAfter($rateAction)
+          .dwScrollIntoView()
           .click(removeOrCancelTips);
     }, delayMillis);
-
-    return $tips;
   }
 
   // Create a reply form, or Ajax-load it (depending on the Web framework
@@ -3049,17 +3051,16 @@ function $showReplyForm(event, opt_where) {
           // Any horizontal reply button has been hidden.
           $anyHorizReplyBtn.show();
 
-          // Don't show the rate-own-comment-tips instantly, because if
+          // Don't show any tips instantly, because if
           // the new comment and the tips appear at the same time,
           // the user will be confused? S/he won't know where to look?
           // So wait a few seconds.
           var delayMillis = 3500;
-          var $tips = horizLayout
-              ? showSortOrderTips($myNewPost)
-              : showRateOwnCommentTipsLater($myNewPost, delayMillis);
+          if (horizLayout) showSortOrderTipsLater($myNewPost, 2050);
+          else showRateOwnCommentTipsLater($myNewPost, delayMillis);
 
           showAndHighlightPost($myNewPost,
-              { marginRight: 300, marginBottom: 300, alsoTryToShow: $tips });
+              { marginRight: 300, marginBottom: 300 });
           $showActions($myNewPost);
         });
 
