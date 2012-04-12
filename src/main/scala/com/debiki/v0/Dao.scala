@@ -58,6 +58,13 @@ abstract class DaoSpi {
         offset: Int
       ): Seq[(PagePath, PageDetails)]
 
+  def listActions(
+        tenantId: String,
+        folderPrefix: String,
+        includePages: List[PageStatus],
+        limit: Int,
+        offset: Int): Seq[ActionLocator]
+
   def loadIdtyAndUser(forLoginId: String, tenantId: String)
         : Option[(Identity, User)]
 
@@ -167,6 +174,9 @@ abstract class Dao {
         : Option[PagePath] =
     _spi.lookupPagePathByPageId(tenantId, pageId = pageId)
 
+
+  // ----- List stuff
+
   def listPagePaths(
         withFolderPrefix: String,
         tenantId: String,
@@ -177,6 +187,16 @@ abstract class Dao {
       ): Seq[(PagePath, PageDetails)] =
     _spi.listPagePaths(withFolderPrefix, tenantId, include,
           sortBy, limit, offset)
+
+  def listActions(
+        tenantId: String,
+        folderPrefix: String,
+        includePages: List[PageStatus],
+        limit: Int,
+        offset: Int): Seq[ActionLocator] =
+    _spi.listActions(
+      tenantId, folderPrefix, includePages, limit, offset)
+
 
   def loadIdtyAndUser(forLoginId: String, tenantId: String)
         : Option[(Identity, User)] =

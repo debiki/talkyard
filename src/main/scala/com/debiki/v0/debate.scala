@@ -886,3 +886,12 @@ object PageRoot {
   }
 }
 
+
+case class ActionLocator(
+  pagePath: PagePath,
+  actionId: String,
+  actionCtime: ju.Date,
+  actionType: String  // for now. later: PostType? renamed to ActionType?
+){
+}
+
