@@ -133,6 +133,17 @@ object Application extends mvc.Controller {
   }
 
 
+  def listActions(pathIn: PagePath) =
+        PageGetAction(pathIn, pageMustExist = false) { pageReq =>
+    val actionLocators = Debiki.Dao.listActions(
+       folderPrefix = pageReq.pagePath.path,
+       tenantId = pageReq.tenantId,
+       includePages = PageStatus.All,
+       limit = 700, offset = 0)
+    Ok(views.html.listActions(actionLocators))
+  }
+
+
   def feed(pathIn: PagePath) = PageGetAction(pathIn, pageMustExist = false) {
         pageReq =>
 

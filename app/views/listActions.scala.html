@@ -1,0 +1,27 @@
+@(actionLocators: Seq[com.debiki.v0.ActionLocator])
+
+@import com.debiki.v0._
+
+
+<!DOCTYPE html>
+<html>
+<head>
+
+<title>Recent Actions</title>
+
+</head>
+<body>
+
+<ol>
+@for(actnLctr <- actionLocators;
+    actionLink = actnLctr.pagePath.path +"#post-"+ actnLctr.actionId) {
+  <li>
+    @actnLctr.actionCtime: @actnLctr.actionType:
+    <a href='@actionLink'>@actionLink</a>
+  </li>
+}
+</ol>
+
+</body>
+</html>
+

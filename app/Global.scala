@@ -137,6 +137,8 @@ object Global extends GlobalSettings {
         AppMoveRenamePage.handleRenamePageForm(pagePath)
       case ("list-pages", GET) =>
         App.listPages(pagePath)
+      case ("list-actions", GET) =>
+        App.listActions(pagePath)
       case ("feed", GET) =>
         App.feed(pagePath)
       case ("act", GET) =>
