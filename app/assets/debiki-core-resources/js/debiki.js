@@ -2283,9 +2283,23 @@ function makeCurUser() {
     if (val.indexOf('EmSp') !== -1) emailSpecified = true;
   }
 
+  function fireLoginIfNewSession(opt_loginIdBefore) {
+    // Sometimes an event object is passed instead of a login id.
+    var loginIdBefore = typeof opt_loginIdBefore == 'string' ?
+        opt_loginIdBefore : userProps.loginId;
+    Me.refreshProps();
+    if (loginIdBefore !== userProps.loginId) {
+      if (Me.isLoggedIn()) fireLogin();
+      else fireLogout();
+    }
+  }
+
   return {
     // Call whenever the SID changes: on page load, on login and logout.
     refreshProps: refreshProps,
+    // Call when a re-login might have happened, e.g. if focusing
+    // another browser tab and then returning to this tab.
+    fireLoginIfNewSession: fireLoginIfNewSession,
 
     // Warning: Never ever use this name as html, that'd open for
     // xss attacks. E.g. never do: $(...).html(Me.getName()), but the
@@ -2302,6 +2316,7 @@ function makeCurUser() {
     isEmailKnown: function() { return emailSpecified; }
   };
 }
+
 
 // ------- Logout
 
@@ -2558,10 +2573,7 @@ var configEmailPerhapsRelogin = (function() {
             .done(function(responseHtml) {
               // Fire login event, to update xsrf tokens, if the server
               // created a new login session (because we changed email addr).
-              Me.refreshProps();
-              var loginIdAfter = Me.getLoginId();
-              if (loginIdAfter !== loginIdBefore)
-                fireLogin();
+              Me.fireLoginIfNewSession(loginIdBefore);
 
               dialogStatus.resolve();
               $form.dialog('close');
@@ -4780,7 +4792,40 @@ function registerEventHandlersFireLoginOut() {
   $('.dw-loginsubmit-on-mouseenter').mouseenter($loginThenSubmit);
   if (Me.isLoggedIn()) fireLogin();
   else fireLogout();
+
+  // If the user switches browser tab, s/he might logout and login
+  // in another tab. That'd invalidate all xsrf tokens on this page,
+  // and user specific permissions and ratings info (for this tab).
+  // Therefore, when the user switches back to this tab, check
+  // if a new session has been started.
+  $(window).on('focus', Me.fireLoginIfNewSession);
+  //{{{ What will work w/ IE?
+  // See http://stackoverflow.com/a/5556858/694469
+  // But: "This script breaks down in IE(8) when you have a textarea on the
+  // page.  When you click on the textarea, the document and window both
+  // lose focus"
+  //// IE EVENTS
+  //$(document).bind('focusin', function(){
+  //    alert('document focusin');
+  //});
+  //if (/*@cc_on!@*/false) { // check for Internet Explorer
+  //  document.onfocusin = onFocus;
+  //  document.onfocusout = onBlur;
+  //} else {
+  //  window.onfocus = onFocus;
+  //  window.onblur = onBlur;
+  //}
+  //
+  // http://stackoverflow.com/a/6184276/694469
+  //window.addEventListener('focus', function() {
+  //  document.title = 'focused';
+  //});
+  //window.addEventListener('blur', function() {
+  //    document.title = 'not focused';
+  //});
+  //}}}
 }
+
 
 function initAndDrawSvg() {
   // Don't draw SVG until all html tags has been placed, or the SVG
