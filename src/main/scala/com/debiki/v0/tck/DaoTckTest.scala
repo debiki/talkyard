@@ -1168,6 +1168,24 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
     }
 
 
+    // -------- List actions
+
+    "list actions" >> {
+
+      "list replies, edits, ratings etcetera" >> {
+        val actionLocators = dao.listActions(
+           tenantId = defaultTenantId,
+           folderPrefix = "/",
+           includePages = PageStatus.All,
+           limit = 700, offset = 0)
+        // For now:
+        actionLocators.size must be_>=(0)
+        // In the future, create dedicated pages, and search?
+      }
+
+    }
+
+
     // -------- Move a page
 
     "move and rename pages" >> {
