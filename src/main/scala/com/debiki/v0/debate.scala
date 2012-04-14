@@ -237,6 +237,9 @@ case class Debate (
   def ratingsByActionId(actionId: String): Option[SingleActionRatings] =
     _ratingsByActionId.get(actionId)
 
+  def ratingsByUser(withId: String): Seq[Rating] =
+    ratings.filter(smart(_).identity.map(_.userId) == Some(withId))
+
 
   // ====== Older stuff below (everything in use though!) ======
 
@@ -257,6 +260,9 @@ case class Debate (
 
   def vipo(postId: String): Option[ViPo] = // COULD rename to post(withId =...)
     post(postId).map(new ViPo(this, _))
+
+  def postsByUser(withId: String): Seq[Post] =
+    posts.filter(smart(_).identity.map(_.userId) == Some(withId))
 
 
   // -------- Replies
