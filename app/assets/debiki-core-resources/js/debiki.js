@@ -44,6 +44,14 @@ attr() prepends 'http://server/.../page' to the href.  Related:
  then please use 'dwDataName' (then you know you need only consider the
  javascript files (this file) should you want to rename it).)
 
+ Let names of functions that return a jQuery object end with $.
+ Let names of functions that should be passed to jQuery.each start with $.
+ Let jQuery objects start with $.
+ Currently jQuery extensions are prefixed by 'dw', e.g. $post.dwAuthorId().
+ Example:
+   var $header = getPostHeader$(postId);
+   $header.each($doSomething);
+
 }}}*/
 
 if (!window.Debiki)
