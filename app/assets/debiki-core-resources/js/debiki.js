@@ -372,6 +372,10 @@ var zoomListenerHandle_dbg;
 
 // ------- Traversing etcetera
 
+function getPostHeader$(postId) {
+  return $('#post-'+ postId +' > .dw-p-hd');
+}
+
 jQuery.fn.dwPostId = function() {
   // Drop initial "post-".
   return this.dwCheckIs('.dw-p').attr('id').substr(5, 999);
@@ -408,8 +412,22 @@ jQuery.fn.dwAuthorId = function() {
   return uid;
 };
 
+$.fn.dwIsReply = function() {
+  // 1 char IDs are reserved (1 is page body, 2 title, 3 template).
+  var id = this.dwPostId();
+  return id.length > 1;
+}
+
+$.fn.dwIsUnauReply = function() {
+  var isReply = this.dwIsReply();
+  // Unauthenticated users have '-' in their user ids.
+  var unauAuthor = this.dwAuthorId().indexOf('-') !== -1;
+  return isReply && unauAuthor;
+}
+
 
 // ------- Open/close
+
 
 function $threadToggleFolded() {
   // In case the thread will be wider than the summary, prevent float drop.
@@ -2206,6 +2224,8 @@ function fireLogout() {
   // they'll replace <username> with `...'.
   $('.dw-loginsubmit-on-click, .dw-loginsubmit-on-mouseenter')
       .trigger('dwEvLoggedInOut', [undefined]);
+
+  Me.clearMyPageInfo();
 }
 
 
@@ -2232,6 +2252,9 @@ function fireLogin() {
   // they'll replace '...' with the user name.
   $('.dw-loginsubmit-on-click, .dw-loginsubmit-on-mouseenter')
       .trigger('dwEvLoggedInOut', [Me.getName()]);
+
+  Me.clearMyPageInfo();
+  Me.loadAndMarkMyPageInfo();
 }
 
 
@@ -2246,6 +2269,7 @@ function makeCurUser() {
   var userProps;
   var emailPrefs = undefined;
   var emailSpecified = false;
+  var permsOnPage = undefined;
 
   function refreshProps() {
     parseSidCookie();
@@ -2292,12 +2316,64 @@ function makeCurUser() {
     if (loginIdBefore !== userProps.loginId) {
       if (Me.isLoggedIn()) fireLogin();
       else fireLogout();
+      // If the login/logout happened in another browser tab:
+      // COULD pop up a modal dialog informing the user that s/he has
+      // been logged in/out, because of something s/he did in *another* tab.
+      // And that any posts s/he submits will be submitted as the new user.
+    }
+  }
+
+  /**
+   * Clears e.g. highlightings of the user's own posts and ratings.
+   */
+  function clearMyPageInfo() {
+    $('.dw-p-by-me').removeClass('dw-p-by-me');
+    $('.dw-p-r-by-me').remove();
+    permsOnPage = undefined;
+  }
+
+  /**
+   * Highlights e.g. the user's own posts and ratings.
+   * First loads user specific info from the server, e.g. info on
+   * and which posts the current user has authored or rated,
+   * and the user's permissions on this page.
+   */
+  function loadAndMarkMyPageInfo() {
+
+    // On failure, do what? Post error to non existing server error
+    // reporting interface?
+    $.get('?page-info&user=me', 'text')
+        .fail(showServerResponseDialog)  // for now
+        .done(function(yamlData) {
+      var pageInfo = YAML.eval(yamlData);
+      permsOnPage = pageInfo.permsOnPage;
+      markMyActions(pageInfo);
+    });
+
+    function markMyActions(actions) {
+      if (actions.ratings) $.each(actions.ratings,
+          function(postId, ratings) {
+        // TODO do this when serving the page in HTML too?
+        // And stop highlighting the all-ratings rating?
+        var $header = getPostHeader$(postId);
+        var $myRatings = $(  // i18n
+            '<span class="dw-p-r-by-me"><br>You rated it <em></em></span>');
+        $myRatings.children('em').text(ratings.join(', '));
+        $header.children('.dw-p-flgs-all, .dw-p-r-all').first()
+            .before($myRatings);
+      });
+      if (actions.authorOf) $.each(actions.authorOf, function(index, postId) {
+        var $header = getPostHeader$(postId);
+        $header.children('.dw-p-by').addClass('dw-p-by-me');
+      });
     }
   }
 
   return {
     // Call whenever the SID changes: on page load, on login and logout.
     refreshProps: refreshProps,
+    clearMyPageInfo: clearMyPageInfo,
+    loadAndMarkMyPageInfo: loadAndMarkMyPageInfo,
     // Call when a re-login might have happened, e.g. if focusing
     // another browser tab and then returning to this tab.
     fireLoginIfNewSession: fireLoginIfNewSession,
@@ -2310,8 +2386,10 @@ function makeCurUser() {
     getLoginId: function() { return userProps.loginId; },
     getUserId: function() { return userProps.userId; },
     mayEdit: function($post) {
-      return userProps.userId === $post.dwAuthorId(); // for now
-      // COULD check page permissions, e.g. edit-all-posts.
+      return userProps.userId === $post.dwAuthorId() ||
+          permsOnPage.editPage ||
+          (permsOnPage.editAnyReply && $post.dwIsReply()) ||
+          (permsOnPage.editUnauReply && $post.dwIsUnauReply());
     },
     getEmailNotfPrefs: function() { return emailPrefs; },
     isEmailKnown: function() { return emailSpecified; }

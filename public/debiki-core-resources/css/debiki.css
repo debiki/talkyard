@@ -852,6 +852,11 @@ body.dw-u-ui-simple .dw-a-edit { display: none !important; }
 .dw-p-rs-top {
 }
 
+.dw-p-hd .dw-p-by-me,
+.dw-p-hd .dw-p-r-by-me {
+  background-color: #f4c4f4;
+}
+
 .dw-p-flgs-all,
 .dw-p-r-all {
   display: none; /* shown on .dw-p-hd click */
