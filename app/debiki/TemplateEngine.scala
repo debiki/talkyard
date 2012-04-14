@@ -15,7 +15,8 @@ import TemplateEngine._
 
 class TemplateEngine(val pageCache: PageCache, val dao: Dao) {
 
-  def renderPage(pageReq: PageRequest[_], pageRoot: PageRoot): NodeSeq = {
+  def renderPage(pageReq: PageRequest[_], pageRoot: PageRoot,
+        appendToBody: NodeSeq = Nil): NodeSeq = {
 
     // Fetch or render page and comments.
     val textAndComments = pageCache.get(pageReq, pageRoot)
@@ -94,7 +95,7 @@ class TemplateEngine(val pageCache: PageCache, val dao: Dao) {
     val page =
       <html>
         <head>{headTags}</head>
-        <body class='dw-ui-simple'>{bodyTags}</body>
+        <body class='dw-ui-simple'>{bodyTags ++ appendToBody}</body>
       </html>
 
     page

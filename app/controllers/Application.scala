@@ -33,8 +33,11 @@ object Application extends mvc.Controller {
 
   def viewPost(pathIn: PagePath, postId: String) = PageGetAction(pathIn) {
         pageReq =>
+    val pageInfoYaml = buildPageInfoYaml(pageReq)
+    val infoNode = <pre class='dw-data-yaml'>{pageInfoYaml}</pre>
     val pageHtml =
-      Debiki.TemplateEngine.renderPage(pageReq, PageRoot.Real(postId))
+      Debiki.TemplateEngine.renderPage(pageReq, PageRoot.Real(postId),
+         appendToBody = infoNode)
     OkHtml(pageHtml)
   }
 
@@ -202,13 +205,17 @@ object Application extends mvc.Controller {
    * However, the user might logout and login, without refreshing the page,
    * so we need a way for the browser to fetch authorship info
    * dynamically.
-   *
-   * COULD move to separate file? What should it be named?
    */
   def showPageInfo(pathIn: PagePath) = PageGetAction(pathIn) { pageReq =>
     if (!pageReq.request.rawQueryString.contains("&user=me"))
       throwBadReq("DwE0GdZ22", "Right now you need to specify ``&user=me''.")
+    val yaml = buildPageInfoYaml(pageReq)
+    Ok(yaml)
+  }
 
+
+  // COULD move to separate file? What file? DebikiYaml.scala?
+  def buildPageInfoYaml(pageReq: PageRequest[_]): String = {
     import pageReq.{permsOnPage => perms}
     val page = pageReq.page_!
     val my = pageReq.user_!
@@ -225,8 +232,7 @@ object Application extends mvc.Controller {
        "\n editPage: " ++= perms.editPage.toString ++=
        "\n editAnyReply: " ++= perms.editAnyReply.toString ++=
        "\n editUnauReply: " ++= perms.editNonAutReply.toString ++=
-       "\n deleteAnyReply: " ++= perms.deleteAnyReply.toString ++=
-       "\n"
+       "\n deleteAnyReply: " ++= perms.deleteAnyReply.toString
 
     // List posts by this user, so they can be highlighted.
     reply ++= "\nauthorOf:"
@@ -236,6 +242,8 @@ object Application extends mvc.Controller {
 
     // List the user's ratings so they can be highlighted so the user
     // won't rate the same post again and again and again each day.
+    // COULD list only the very last rating per post (currently all old
+    // overwritten ratings are included).
     reply ++= "\nratings:"
     for (rating <- page.ratingsByUser(withId = my.id)) {
       reply ++= "\n " ++= rating.postId ++= ": [" ++=
@@ -246,7 +254,7 @@ object Application extends mvc.Controller {
     // Not really related to the current page only though.)
     // reply ++= "\nnotfs: ..."
 
-    Ok(reply.toString)
+    reply.toString
   }
 
 }

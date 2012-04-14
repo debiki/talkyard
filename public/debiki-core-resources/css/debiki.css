@@ -1972,6 +1972,15 @@ debiki-lift.css less inclusive? */
   color: #666;
 }
 
+
+
+/* === Miscellaneous === */
+
+.dw-data-yaml {
+  display: none;
+}
+
+
 /* === jQuery UI integration === */
 
 /* Here's a color blender: http://websitetips.com/colortools/colorblender/
