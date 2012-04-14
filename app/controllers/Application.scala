@@ -193,4 +193,60 @@ object Application extends mvc.Controller {
     OkXml(feedXml, "application/atom+xml")
   }
 
+
+  /**
+   * Lists e.g. all posts and ratings by a certain user, on a page.
+   *
+   * Initially, on page load, all (?) this info is already implicitly included
+   * in the html sent by the server, e.g. the user's own posts are highlighted.
+   * However, the user might logout and login, without refreshing the page,
+   * so we need a way for the browser to fetch authorship info
+   * dynamically.
+   *
+   * COULD move to separate file? What should it be named?
+   */
+  def showPageInfo(pathIn: PagePath) = PageGetAction(pathIn) { pageReq =>
+    if (!pageReq.request.rawQueryString.contains("&user=me"))
+      throwBadReq("DwE0GdZ22", "Right now you need to specify ``&user=me''.")
+
+    import pageReq.{permsOnPage => perms}
+    val page = pageReq.page_!
+    val my = pageReq.user_!
+    val reply = new StringBuilder
+
+    // List permissions.
+    reply ++=
+       "\npermsOnPage:" ++=
+       "\n accessPage: " ++= perms.accessPage.toString ++=
+       "\n createPage: " ++= perms.createPage.toString ++=
+       "\n moveRenamePage: " ++= perms.moveRenamePage.toString ++=
+       "\n hidePageIdInUrl: " ++= perms.hidePageIdInUrl.toString ++=
+       "\n editPageTemplate: " ++= perms.editPageTemplate.toString ++=
+       "\n editPage: " ++= perms.editPage.toString ++=
+       "\n editAnyReply: " ++= perms.editAnyReply.toString ++=
+       "\n editUnauReply: " ++= perms.editNonAutReply.toString ++=
+       "\n deleteAnyReply: " ++= perms.deleteAnyReply.toString ++=
+       "\n"
+
+    // List posts by this user, so they can be highlighted.
+    reply ++= "\nauthorOf:"
+    for (post <- page.postsByUser(withId = my.id)) {
+      reply ++= "\n - " ++= post.id
+    }
+
+    // List the user's ratings so they can be highlighted so the user
+    // won't rate the same post again and again and again each day.
+    reply ++= "\nratings:"
+    for (rating <- page.ratingsByUser(withId = my.id)) {
+      reply ++= "\n " ++= rating.postId ++= ": [" ++=
+         rating.tags.mkString(",") ++= "]"
+    }
+
+    // (COULD include HTML for any notifications to the user.
+    // Not really related to the current page only though.)
+    // reply ++= "\nnotfs: ..."
+
+    Ok(reply.toString)
+  }
+
 }

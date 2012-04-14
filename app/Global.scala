@@ -143,6 +143,8 @@ object Global extends GlobalSettings {
         App.feed(pagePath)
       case ("act", GET) =>
         Application.showActionLinks(pagePath, pageRoot, postId = mainFunVal_!)
+      case ("page-info", GET) =>
+        Application.showPageInfo(pagePath)
       case ("config-user", GET) =>
         AppConfigUser.showForm(pagePath, pageRoot, userId = mainFunVal_!)
       case ("config-user", POST) =>
