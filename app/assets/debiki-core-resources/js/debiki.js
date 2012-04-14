@@ -2887,6 +2887,14 @@ function $showRatingForm(event) {
   // in the rateFormTemplate. Make the cloned ids unique:
   makeIdsUniqueUpdateLabels($formParent);
 
+  // If the user has already rated the $post, show a
+  // you're-changing-your-ratings tips, instead of
+  // the you-can-select-many-tags tips.
+  if ($post.find('.dw-p-hd > .dw-p-r-by-me').length) {
+    $rateForm.find('.dw-f-r-inf-many').hide();
+    $rateForm.find('.dw-f-r-inf-changing').css('display', 'block');
+  }
+
   // People sometimes unintentionally open many rating forms, unless:
   $rateAction.dwActionLinkDisable();
   $cancelBtn.click(function() { $rateAction.dwActionLinkEnable(); });
