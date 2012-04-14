@@ -95,7 +95,7 @@
  *  dw-i-t        inline thread (COULD use dw-i instead, already has dw-t class)
  *  dw-i-m        inline mark (COULD rename to dw-m — *all* marks are inline?)
  *  dw-i-m_<#id>  mark for thread #id (e.g. dw-i-m_dw-t-<thread-id>)
- *  dw-m-p-mine   the user's own post
+ *  dw-m-p-by-me  the user's own post
  *  dw-m-p-edited the post was just edited (edits were axaj-fetched)
  *  dw-m-t-new    this thread was just fetched via ajax, the user hasn't seen it
  *  dw-p-art-qst  (placed on a thread) the related post is an article question
@@ -853,8 +853,16 @@ body.dw-u-ui-simple .dw-a-edit { display: none !important; }
 }
 
 .dw-p-hd .dw-p-by-me,
-.dw-p-hd .dw-p-r-by-me {
+.dw-p-hd .dw-p-r-by-me > em {
   background-color: #f4c4f4;
+  /* background-color: #fbf7f2; */
+  padding: 0 1px 0 2px;
+  margin-left: -1px;
+}
+
+.dw-p-hd .dw-p-by-me {
+  color: #444; /* make darker, since the background is darker (see above) */
+  margin-left: -2px; /* -1px (from above) results in too much glap */
 }
 
 .dw-p-flgs-all,
@@ -1803,15 +1811,6 @@ related to. */
 
 .dw-m-p-edited {
   border: 7px solid #f4c4f4; /*#ffebe8;*/
-}
-
-/* Mark the user's own posts. */
-.dw-m-p-mine > .dw-p-bd {
-  background-color: #FBF7F2;
-}
-/* But skip the root post — it doesn't look nice colored. */
-.dw-depth-0 > .dw-p.dw-m-p-mine > .dw-p-bd {
-  background-color: transparent;
 }
 
 

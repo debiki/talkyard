@@ -1158,10 +1158,6 @@ function $initPostStep1() {
     $i.closest('.dw-p').each(SVG.$drawParents);
   });
 
-  // Mark the user's own posts. COULD mark her edits too? (of others' posts)
-  if (Me.getUserId() === $i.dwAuthorId())
-    $i.addClass('dw-m-p-mine');
-
   // When hovering an inline mark or thread, highlight the corresponding
   // thread or mark.
   // TODO don't remove the highlighting until hovering something else?
@@ -2379,20 +2375,9 @@ function makeCurUser() {
     }
 
     function markMyActions(actions) {
-      if (actions.ratings) $.each(actions.ratings,
-          function(postId, ratings) {
-        // TODO do this when serving the page in HTML too?
-        // And stop highlighting the all-ratings rating?
-        var $header = getPostHeader$(postId);
-        var $myRatings = $(  // i18n
-            '<span class="dw-p-r-by-me"><br>You rated it <em></em></span>');
-        $myRatings.children('em').text(ratings.join(', '));
-        $header.children('.dw-p-flgs-all, .dw-p-r-all').first()
-            .before($myRatings);
-      });
-      if (actions.authorOf) $.each(actions.authorOf, function(index, postId) {
-        var $header = getPostHeader$(postId);
-        $header.children('.dw-p-by').addClass('dw-p-by-me');
+      if (actions.ratings) $.each(actions.ratings, showMyRatings);
+      if (actions.authorOf) $.each(actions.authorOf, function(ix, postId) {
+        markMyPost(postId);
       });
     }
   }
@@ -2422,6 +2407,23 @@ function makeCurUser() {
     getEmailNotfPrefs: function() { return emailPrefs; },
     isEmailKnown: function() { return emailSpecified; }
   };
+}
+
+
+function showMyRatings(postId, ratings) {
+  var $header = getPostHeader$(postId);
+  var $myRatings = $(  // i18n
+      '<div class="dw-p-r-by-me">You rated it <em></em></div>');
+  $myRatings.children('em').text(ratings.join(', '));
+  $header.children('.dw-p-r-by-me').remove(); // remove any old
+  $header.children('.dw-p-flgs-all, .dw-p-r-all').first()
+      .before($myRatings);
+}
+
+
+function markMyPost(postId) {
+  var $header = getPostHeader$(postId);
+  $header.children('.dw-p-by').addClass('dw-p-by-me');
 }
 
 
@@ -2906,30 +2908,15 @@ function $showRatingForm(event) {
     }).get();
 
     $.post(Settings.makeRatePostUrl(debateId, rootPostId, postId),
-          $rateForm.serialize(), function(recentChangesHtml) {
-        $formParent.remove();
-        $rateAction.dwActionLinkEnable();
-        updateDebate(recentChangesHtml);
+          $rateForm.serialize(), 'html')
+        .done(function(recentChangesHtml) {
+      $formParent.remove();
+      $rateAction.dwActionLinkEnable();
+      updateDebate(recentChangesHtml);
+      showMyRatings(postId, ratedTags);
+      $post.each(SVG.$drawParentsAndTree);
 
-        // Show flag and rating details, and highligt the user's ratings.
-        var $newPost = $('#post-' + postId);
-        $newPost.dwPostFindHeader().dwPostHeaderFindStats().show();
-        $newPost.find('.dw-rs .dw-r').each(function(){
-            // .dw-r text is e.g. " interesting 80% ". Make lowercase,
-            // and drop " 80% ", so tag-name comparison works.
-            var $rating = $(this);
-            var text = $rating.text().toLowerCase().replace(/ \d+% /, '');
-            $.each(ratedTags, function(ix, val) {
-              UNTESTED; // rewrote from for-in
-              if ($.trim(text) === val) {
-                $rating.addClass('dw-you-rated');
-                return false;
-              }
-            });
-          });
-
-        $post.each(SVG.$drawParentsAndTree);
-      }, 'html');
+    });
 
     disableSubmittedForm($rateForm);
     return false;
@@ -3167,6 +3154,7 @@ function $showReplyForm(event, opt_where) {
           removeInstantly($replyFormParent);
           $replyAction.dwActionLinkEnable();
           var $myNewPost = updateDebate(newDebateHtml);
+          markMyPost($myNewPost.dwPostId());
           // Any horizontal reply button has been hidden.
           $anyHorizReplyBtn.show();
 
