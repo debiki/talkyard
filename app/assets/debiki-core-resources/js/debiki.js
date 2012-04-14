@@ -137,23 +137,6 @@ function isoDateToMillis(dateStr) {
 })();
 
 
-jQuery.fn.dwLastChange = function() {
-  var maxDate = '0';
-  this.children('.dw-p-hd').find('.dw-date').each(function(){
-    var date = jQuery(this).attr('title'); // creation or last modification date
-    if (date > maxDate)
-      maxDate = date;
-  });
-  return maxDate;
-};
-
-// The user id of the author of a post.
-jQuery.fn.dwAuthorId = function() {
-  var uid = this.find('> .dw-p-hd > .dw-p-by').attr('data-dw-u-id');
-  return uid;
-};
-
-
 jQuery.fn.dwScrollIntoView = function(options) {
   var $ = jQuery;
   if (!options) options = {};
@@ -405,6 +388,24 @@ jQuery.fn.dwPostHeaderFindStats = function() {
 jQuery.fn.dwPostHeaderFindExactTimes = function() {
   return this.dwCheckIs('.dw-p-hd')
       .find('> .dw-p-at, > .dw-p-hd-e > .dw-p-at');
+};
+
+jQuery.fn.dwLastChange = function() {
+  var maxDate = '0';
+  this.dwCheckIs('.dw-p')
+      .children('.dw-p-hd').find('.dw-date').each(function(){
+    var date = jQuery(this).attr('title'); // creation or last modification date
+    if (date > maxDate)
+      maxDate = date;
+  });
+  return maxDate;
+};
+
+// The user id of the author of a post.
+jQuery.fn.dwAuthorId = function() {
+  var uid = this.dwCheckIs('.dw-p')
+      .find('> .dw-p-hd > .dw-p-by').attr('data-dw-u-id');
+  return uid;
 };
 
 
