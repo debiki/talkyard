@@ -679,7 +679,7 @@ class DebateHtml(val debate: Debate, val pageTrust: PageTrust) {
     <div id={cssPostId} class={"dw-p" + cssArtclPost + cutS + clearfix}>
       { postTitleXml }
       <div class='dw-p-hd'>
-        By { _linkTo(author)}{ dateAbbr(post.ctime, "dw-p-at")
+        { _linkTo(author)}{ dateAbbr(post.ctime, "dw-p-at")
         }{ flagsTop }{ ratingTagsTop }{ editInfo }{ flagsDetails
         }{ ratingTagsDetails }
       </div>
