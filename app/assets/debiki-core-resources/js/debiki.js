@@ -2933,12 +2933,12 @@ function $showRatingForm(event) {
     $.post(Settings.makeRatePostUrl(debateId, rootPostId, postId),
           $rateForm.serialize(), 'html')
         .done(function(recentChangesHtml) {
-      $formParent.remove();
+      slideAwayRemove($formParent);
       $rateAction.dwActionLinkEnable();
       updateDebate(recentChangesHtml);
-      showMyRatings(postId, ratedTags);
+      var $ratings = showMyRatings(postId, ratedTags);
+      highlightBriefly($ratings);
       $post.each(SVG.$drawParentsAndTree);
-
     });
 
     disableSubmittedForm($rateForm);
