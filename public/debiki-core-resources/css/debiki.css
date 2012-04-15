@@ -606,8 +606,8 @@ looks better if they appear close to the fold link. */
 
 .dw-p-hd {
   padding-left: 3px;
-  font-size: smaller;
-  color: #000;
+  font-size: 9px;
+  color: #222;
   background-color: #eee;
 }
 
@@ -646,6 +646,12 @@ span.dw-p-by,
 span.dw-p-e-by {
   color: #555;
   font-weight: bold;
+}
+
+/* Make authorship info easy to read */
+:not(.dw-p-hd-e) > .dw-p-by {
+  font-size: 11px;
+  margin-right: 0.9ex;
 }
 
 .dw-lg-t-spl {
@@ -853,16 +859,13 @@ body.dw-u-ui-simple .dw-a-edit { display: none !important; }
 }
 
 .dw-p-hd .dw-p-by-me,
-.dw-p-hd .dw-p-r-by-me > em {
-  background-color: #f4c4f4;
-  /* background-color: #fbf7f2; */
-  padding: 0 1px 0 2px;
-  margin-left: -1px;
+.dw-p-hd .dw-p-r-by-me {
+  font-weight: bold;
+  color: #111;
 }
-
-.dw-p-hd .dw-p-by-me {
-  color: #444; /* make darker, since the background is darker (see above) */
-  margin-left: -2px; /* -1px (from above) results in too much glap */
+.dw-p-hd .dw-p-r-by-me > em {
+  font-weight: normal;
+  color: #111;
 }
 
 .dw-p-flgs-all,
@@ -880,10 +883,6 @@ body.dw-u-ui-simple .dw-a-edit { display: none !important; }
 .dw-flgs li,
 .dw-rs li {
   margin-left: 0.5ex;
-}
-
-.dw-p-hd .dw-rs .dw-r.dw-you-rated {
-  background-color: #f4c4f4;
 }
 
 .dw-p-hd .dw-rs .dw-r-tag {
@@ -1806,11 +1805,11 @@ related to. */
 
 /* Outline all posts in a new thread. */
 .dw-m-t-new .dw-p {
-  border: 7px solid #f4c4f4; /* #f1ded5; */
+  border: 3px solid #f1cdbc; /*f0d38a; #f1ded5; */
 }
 
 .dw-m-p-edited {
-  border: 7px solid #f4c4f4; /*#ffebe8;*/
+  border: 3px solid #f1cdbc;
 }
 
 

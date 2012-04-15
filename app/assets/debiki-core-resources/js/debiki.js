@@ -1125,7 +1125,7 @@ function $initPostStep1() {
   }
 
   function timeAgoAbbr(title, then, now) {
-    return $('<abbr title="'+ title +'"> '+ prettyTimeBetween(then, now) +
+    return $('<abbr title="'+ title +'">'+ prettyTimeBetween(then, now) +
         '</abbr>');
   };
 
@@ -2413,11 +2413,15 @@ function makeCurUser() {
 function showMyRatings(postId, ratings) {
   var $header = getPostHeader$(postId);
   var $myRatings = $(  // i18n
-      '<div class="dw-p-r-by-me">You rated it <em></em></div>');
-  $myRatings.children('em').text(ratings.join(', '));
+    '<span>. <span class="dw-p-r-by-me">You rated it <em></em></span></span>');
+  $myRatings.find('em').text(ratings.join(', '));
   $header.children('.dw-p-r-by-me').remove(); // remove any old
-  $header.children('.dw-p-flgs-all, .dw-p-r-all').first()
-      .before($myRatings);
+  // Insert after authorship, flags and ratings info.
+  $header.children('.dw-p-r-top, .dw-p-flgs-top, .dw-p-at')
+      .last().after($myRatings);
+  // Remove outer <span>.
+  $myRatings = $myRatings.children().unwrap();
+  return $myRatings;
 }
 
 
