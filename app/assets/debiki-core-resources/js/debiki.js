@@ -484,24 +484,35 @@ function $threadToggleFolded() {
 })()
 */
 
+
+/**
+ * Highlights and outlines $tag, for a little while. If there're opaque
+ * elems inside, you can list them in the `opt_backgroundSelector`
+ * and then background highlighting is placed on them instead of on $tag.
+ */
+function highlightBriefly($tag, opt_backgroundSelector) {
+  var duration = 2000;
+  var $background = opt_backgroundSelector ?
+      $tag.find(opt_backgroundSelector) : $tag;
+  $background.effect('highlight',
+      { easing: 'easeInExpo', color: 'yellow' }, duration);
+  $tag.css('outline', 'solid thick #f0a005');
+  // Remove the outline quickly (during 500 ms). Otherwise it looks
+  // jerky: removing 1px at a time, slowly, is very noticeable!
+  setTimeout(function() {
+    $tag.animate({ outlineWidth: '0px' }, 400);
+  }, Math.max(duration - 550, 0));
+  /// This won't work, jQuery plugin doesn't support rgba animation:
+  //$post.animate(
+  //    { outlineColor: 'rgba(255, 0, 0, .5)' }, duration, 'easeInExpo');
+  /// There's a rgba color support plugin though:
+  /// http://pioupioum.fr/sandbox/jquery-color/
+}
+
+
 function showAndHighlightPost($post, options) {
-  var duration = 1700;
   $post.dwScrollIntoView(options).queue(function(next) {
-    $post.children('.dw-p-bd, .dw-p-hd').effect(
-        'highlight', { easing: 'easeInExpo', color: 'yellow' }, duration);
-
-    $post.css('outline', 'solid thick #f0a005');
-    // Remove the outline quickly (during 500 ms). Otherwise it looks
-    // jerky: removing 1px at a time, slowly, is very noticeable!
-    setTimeout(function() {
-      $post.animate({ outlineWidth: '0px' }, 350);
-    }, Math.max(duration - 500, 0));
-    /// This won't work, jQuery plugin doesn't support rgba animation:
-    //$post.animate(
-    //    { outlineColor: 'rgba(255, 0, 0, .5)' }, duration, 'easeInExpo');
-    /// There's a rgba color support plugin though:
-    /// http://pioupioum.fr/sandbox/jquery-color/
-
+    highlightBriefly($post, '.dw-p-bd, .dw-p-hd');
     next();
   });
 }
