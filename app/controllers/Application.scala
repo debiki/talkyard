@@ -33,7 +33,9 @@ object Application extends mvc.Controller {
 
   def viewPost(pathIn: PagePath, postId: String) = PageGetAction(pathIn) {
         pageReq =>
-    val pageInfoYaml = buildPageInfoYaml(pageReq)
+    val pageInfoYaml = pageReq.user.isEmpty ? "" | buildPageInfoYaml(pageReq)
+    // If not logged in, then include an empty Yaml tag, so the browser
+    // notices that it got that elem, and won't call GET ?page-info.
     val infoNode = <pre class='dw-data-yaml'>{pageInfoYaml}</pre>
     val pageHtml =
       Debiki.TemplateEngine.renderPage(pageReq, PageRoot.Real(postId),
