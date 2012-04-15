@@ -606,10 +606,17 @@ looks better if they appear close to the fold link. */
 
 .dw-p-hd {
   padding-left: 3px;
-  font-size: 9px;
-  color: #222;
-  background-color: #eee;
+  font-size: 10px;
+  color: #141414;
+  background-color: #f4f4f4;
+  border: 1px solid #ededed;
+  border-left: none;
+  border-right: none;
 }
+.dw-ar-p > .dw-p-hd {
+  border: none;
+}
+
 
 /* Don't pad the root post and titles (titles are already indented since
 they're placed inside another post already). */
