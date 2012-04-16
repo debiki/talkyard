@@ -25,13 +25,27 @@ class PreludeTest extends SpecificationWithJUnit {
   }
 
   "nextRandomString" should {
-    "be 10 chars and contain no vowels but `uy'" >> {
+    "be at least 5 chars and contain no vowels but `uy'" >> {
       for (i <- 1 to 50) {
         val s = nextRandomString
         // Vowels aoei forbidden, and only lowercase chars (+ numbers) allowed.
         ("aoeiABCDEFGHIJKLMNOPQRSTUVWXYZ" intersect s) must_== ""
-        s.length must_== 10
+        s.length must be_>=(5)
       }
+    }
+  }
+
+  "drowRightWhile" should {
+    "work" >> {
+      "".dropRightWhile((_) => true) must_== ""
+      "ab".dropRightWhile((_) => true) must_== ""
+      "abc".dropRightWhile((_) => false) must_== "abc"
+      "abcde".dropRightWhile(_ != 'x') must_== ""
+      "abcde".dropRightWhile(_ != 'a') must_== "a"
+      "abcde".dropRightWhile(_ != 'b') must_== "ab"
+      "abcde".dropRightWhile(_ != 'c') must_== "abc"
+      "abcde".dropRightWhile(_ != 'd') must_== "abcd"
+      "abcde".dropRightWhile(_ != 'e') must_== "abcde"
     }
   }
 }

@@ -267,12 +267,19 @@ object Prelude {
   }
 
   /**
-   * Pimps `String` with `matches(regex): Boolean` and `misses(regex)`.
+   * Pimps `String` with `matches(regex): Boolean` and `misses(regex)`
+   * and `dropRightUntil(Char => Boolean)`
    */
   implicit def stringToRichString(s: String) = new RichString(s)
   class RichString(underlying: String) {
     def matches(regex: Regex) = regex.pattern.matcher(underlying).matches
     def misses(regex: Regex) = !matches(regex)
+    def dropRightWhile(f: Char => Boolean): String = {
+      val keepIx = underlying.lastIndexWhere(!f(_))
+      if (keepIx == -1) return ""
+      val kept = underlying.dropRight(underlying.length - 1 - keepIx)
+      kept
+    }
   }
 
 }
