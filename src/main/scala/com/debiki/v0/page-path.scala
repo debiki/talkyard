@@ -94,7 +94,24 @@ case class PagePath(  // COULD move to debate.scala.  Rename to RequestPath?
   /** True iff path ends with a `/'. Then this is a path to a  folder or
    *  a folder's index page (which is a page with an empty slug and !showId).
    */
-  def isFolderPath = path endsWith "/"   // COULD rename to isFolderOrIndex
+  def isFolderOrIndexPage = pageSlug.isEmpty && !showId
+
+  // Bad name: When asking for an index page, pageId is unknown and therefore
+  // set to None, but this doesn't mean the PagePath is to a folder.
+  // Solution?: Split PagePath in 2 classes: PathLookup and Path?
+  // Whether or not Path is to a folder or a page would always be known.
+  def isFolder = isFolderOrIndexPage && pageId.isEmpty
+
+  def parentFolder: Option[PagePath] = {
+    if (!isFolder)
+      return Some(copy(pageSlug = "", showId = false, pageId = None))
+    if (folder == "/")
+      return None
+    // Drop "last-folder/" from "/some/path/last-folder/".
+    val grandparent = folder.dropRight(1).dropRightWhile(_ != '/')
+    Some(copy(
+      folder = grandparent, pageSlug = "", showId = false, pageId = None))
+  }
 }
 
 
