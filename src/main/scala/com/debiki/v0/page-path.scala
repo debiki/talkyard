@@ -15,6 +15,18 @@ import PagePath._
  *
  * (Cannot split into separate case classes for pages and folders?
  * /some/path/  might refer to a folder *or* a page -- the index page.)
+ *
+ * COULD split PagePath into PathLookup (which allows relative paths)
+ * and PathResolved (which does not allow relative paths)?
+ * Perhaps Path could have subclasses PagePath and FolderPath?
+ * PathLookup would have an idOpt: Option[String],
+ * but ResolvedPagePath (?) would have an id: String  and showId: Boolean.
+ * (And PagePath could be an alias for ResolvedPagePath?)
+ * ResolvedPath would be a class, PagePath and FolderPath case classes.
+ * ((PathLookup could have a scheme and host name included?
+ * But the ResolvedPath would have a tenant-id instead.
+ * Or perhaps tenantId should not be part of the PagePath?
+ * "Path" implies host name & tenant-id does not belong here?))
  */
 case class PagePath(  // COULD move to debate.scala.  Rename to RequestPath?
   tenantId: String,  // COULD be a Dao(parameter) instead?
