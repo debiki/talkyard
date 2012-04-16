@@ -44,12 +44,20 @@ case class PagePath(  // COULD move to debate.scala.  Rename to RequestPath?
     throw PagePathException(
       "DwE38IQ2", "Bad punctuation chars in this folder: "+ folder)
 
+  if (_AnyWhitespaceRegex matches folder)
+    throw PagePathException(
+      "DwE9IJb2", "Folder contains whitespace: "+ folder)
+
   if (pageSlug startsWith "-")
     throw PagePathException("DwE2Yb35", "Page slug starts with '-': "+ pageSlug)
 
   if ((pageSlug intersect _BadPunctSlug).nonEmpty)
     throw PagePathException(
       "DwE093KG12", "Bad punctuation chars in this page slug: "+ pageSlug)
+
+  if (_AnyWhitespaceRegex matches pageSlug)
+    throw PagePathException(
+      "DwE37ZQU2", "Page slug contains whitespace: "+ pageSlug)
 
   def path: String =
     if (showId) {
@@ -182,6 +190,8 @@ object PagePath {
   // Hyphens are not allowed in the folder path, because a hyphen means
   // that a page guid follows. For example: /-folder/page  (invalid path)
   private val _BadHyphenRegex = """.*/-.*""".r
+
+  private val _AnyWhitespaceRegex = """.*\s.*""".r
 
   // Note: PageGuidPtrn:
   //  - The initial "-" is not part of the guid
