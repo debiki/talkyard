@@ -5,12 +5,12 @@
 package com.debiki.v0
 
 import Prelude._
-import TemplateToExtend.ExtendParentFolderTmpl
+import TemplateToExtend.ExtendClosestTemplate
 
 
 object TemplateParams {
   val Default = TemplateParams(
-    templateToExtend = Some(ExtendParentFolderTmpl),
+    templateToExtend = Some(ExtendClosestTemplate),
     commentVisibility = Some(CommentVisibility.Visible)
   )
 }
@@ -49,25 +49,22 @@ sealed abstract class TemplateToExtend
 object TemplateToExtend {
   val ParamName = "extend_template"
 
-  case object ExtendParentFolderTmpl extends TemplateToExtend {
-    val ParamValue = "parent"
+  case object ExtendClosestTemplate extends TemplateToExtend {
+    val ParamValue = "closest"
   }
 
   case object ExtendNoTemplate extends TemplateToExtend {
     val ParamValue = "none"
   }
 
-  case class ExtendSpecificTmpl(path: String) extends TemplateToExtend
+  case class ExtendSpecificTmpl(url: String) extends TemplateToExtend
 
   def parse(paramValue: String): TemplateToExtend = {
     paramValue match {
       case "none" => ExtendNoTemplate
-      case path =>
-        // Could ensure any template contains some '/' or it's an error
-        // for sure?
-        // ExtendSpecificTmpl(path)
-        unimplemented("Extending specific template [error DwE6y8Cw35]")
-      //case "??what??" => ExtendParentFolderTmpl
+      case "closest" => ExtendClosestTemplate
+      case url if url endsWith ".template" => ExtendSpecificTmpl(url)
+      case bad => illArgErr("DwE09Rf7", "Bad "+ ParamName +" value: "+ bad)
     }
   }
 }
@@ -106,7 +103,7 @@ case class Custom[T](value: T) extends ParamValue[T](value)
 
 case class TemplateParams(
   templateToExtend: ParamValue[TemplateToExtend] =
-    Default(ExtendParentFolderTmpl),
+    Default(ExtendClosestTemplate),
   commentVisibility: ParamValue[CommentVisibility] =
     Default(CommentVisibility.Visible)
 ){

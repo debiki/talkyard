@@ -7,9 +7,7 @@ package com.debiki.v0
 import _root_.net.{liftweb => lw}
 import _root_.scala.xml.{Node, NodeSeq, Text}
 import _root_.scala.util.matching.Regex
-import Page.Page
 import Prelude._
-import com.debiki.v0.TemplateToExtend.ExtendParentFolderTmpl
 
 
 /** A template source page for some Web template engine.
