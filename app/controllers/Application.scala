@@ -158,7 +158,7 @@ object Application extends mvc.Controller {
     val tenant: Tenant = Debiki.Dao.loadTenants(List(pageReq.tenantId)).head
 
     val feedPagePaths =
-      if (!pagePath.isFolderPath) List(pagePath)
+      if (!pagePath.isFolderOrIndexPage) List(pagePath)
       else Debiki.Dao.listPagePaths(
         withFolderPrefix = pagePath.folder,
         tenantId = pageReq.tenantId,

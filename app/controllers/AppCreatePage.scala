@@ -89,7 +89,8 @@ object AppCreatePage extends mvc.Controller {
 
     // hmm. If page exists, guid non-empty and page_? defined
     // Not this, but something like??:
-    // assert(pageReq.page_?.isDefined == pageReq.pagePath.isFolderPath ...
+    // assert(pageReq.page_?.isDefined ==
+    //    pageReq.pagePath.isFolderOrIndexPage ...
 
     if (!pageReq.permsOnPage.createPage)
       throwForbidden("DwE01rsk351", "You may not create that page")
@@ -98,7 +99,7 @@ object AppCreatePage extends mvc.Controller {
     // means that a page with that slug, and no visible id, should be
     // created. If however such a page already exists, the access
     // controller shouldn't have granted createPage permissions (see above).
-    if (!pageReq.pagePath.isFolderPath && // then page slug was specified
+    if (!pageReq.pagePath.isFolderOrIndexPage && // then page slug was specified
         pageReq.pageExists)
       throwForbidden("DwE87Pr2", "Page already exists")
   }

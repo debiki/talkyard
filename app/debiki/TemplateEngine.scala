@@ -21,31 +21,15 @@ class TemplateEngine(val pageCache: PageCache, val dao: Dao) {
     // Fetch or render page and comments.
     val textAndComments = pageCache.get(pageReq, pageRoot)
 
-    // if (the page says it extends any non default template)
-    //   templates-to-load = that-template :: Nil
-    // else
-    val templates: List[TemplateSource] =
-      _findTemplatesFor(pageReq.pagePath, pageRoot)
-    // later:
-    // /some/very-nice/page would try to use these templates:
-    //   /some/very-nice/page.template,
-    //   /some/very-nice/.folder.template,
-    //   /some/very-nice/.tree.template,
-    //   /some/.tree.template,
-    //   /.tree.template
-    // /some/-38638945-nice-page would use:
-    //   /some/-38638945-nice-page.template,
-    //   /some/-.template,  ?? -- no, too complicated.. ??
-    //   /some/.folder.template,
-    //   /some/.tree.template,
-    //   /.tree.template
-    // So you can edit /about-.template to layout all these pages:
-    // /about-tech  /about-people  /about-mission
-    // Or?? /prefix-.tree.template  -- applied to  /prefix-tail/every/thing
-    // and: /prefix-.folder.template -- applied to /prefix-this-folder-only
-    // (I don't think templates should depend on tags and categories?
-    // Because users see the url folders in the nav bar, but no trees/
-    // categories. So better make the template depend on the path only?)
+    val templates: List[TemplateSource] = {
+      // Don't use custom templates, when editing a template. Otherwise, if
+      // the user writes a html / template bug, it might no longer be
+      // possible to view or edit the template, or any page that uses it.
+      if (pageReq.pagePath.isTemplatePage || pageRoot.isPageTemplate)
+        TemplateForTemplates::Nil
+      else
+        _loadTemplatesFor(pageReq.page_!, at = pageReq.pagePath)
+    }
 
     // Import CSS Selector Tranforms classes and implicit conversions.
     import net.liftweb.util._
@@ -101,54 +85,50 @@ class TemplateEngine(val pageCache: PageCache, val dao: Dao) {
     page
   }
 
-  private def _findTemplatesFor(pagePath: PagePath, pageRoot: PageRoot)
+
+  /**
+   * Which template will be loaded? Consider this:
+   * /some/very-nice/page would use the first one available of:
+   *   /some/very-nice/page?view=template
+   *   /some/very-nice/.folder.template,
+   *   /some/very-nice/.tree.template,
+   *   /some/.tree.template,
+   *   /.tree.template
+   *
+   * (Crazy...?: What about /some/very-.tree.template ?
+   * Then you could edit /about-.template to layout all these pages:
+   * /about-tech  /about-people  /about-mission
+   * Or?? /prefix-.tree.template  -- applied to  /prefix-tail/every/thing
+   * and: /prefix-.folder.template -- applied to /prefix-this-folder-only
+   * (I don't think templates should depend on tags and categories?
+   * Because users see the url folders in the nav bar, but no trees/
+   * categories. So better make the template depend on the path only?)
+   */
+  private def _loadTemplatesFor(page: Debate, at: PagePath)
         : List[TemplateSource] = {
-
-    if (pagePath.isTemplatePage || pageRoot.isPageTemplate) {
-      // Don't use templates, when editing a template. Otherwise, if the
-      // user writes a html / template bug, it might no longer be possible to
-      // view or edit the template, or any page that uses it.
-      return TemplateForTemplates::Nil
-    }
-
-    val page = dao.loadPage(pagePath.tenantId, pagePath.pageId.get).get
-
-    // Load parent folder templates, for pagePath.
-    var templPaths: List[PagePath] = _parentTemplPathsFor(pagePath)
-
-    // Add the page's own template, if any.
-    if (pageRoot.id != Page.TemplateId) {
-      templPaths ::= pagePath
-    } else {
-      // We're viewing the page's template itself --
-      // then don't apply that template. (In case it's buggy,
-      // it would otherwise never be possible to fix the bug.)
-    }
-
+    val pagePath = at
     import TemplateToExtend._
 
     var templates = List[TemplateSource]()
-    var next: TemplateToExtend = ExtendParentFolderTmpl
-    templPaths takeWhile { templPath =>
-      val templOpt = {
-        if (templPath == pagePath) page.pageTemplateSrc
-        else dao.loadTemplate(templPath)
+    var nextTemplAndPath = _loadOwnOrClosestTemplateFor(page, pagePath)
+    while (nextTemplAndPath isDefined) {
+      val curPath = nextTemplAndPath.get._2
+      val curTempl = nextTemplAndPath.get._1 
+      
+      // Check for cycles. (Only check recursion depth right now; cannot
+      // compare two TemplateSrc:s with each other, and paths forgotten.)
+      if (10 < templates.size)
+        runErr("DwE091KQ3", "Too long template extension chain, a cycle?")
+
+      templates ::= curTempl
+      nextTemplAndPath = (curTempl.params.templateToExtend getOrElse
+         TemplateToExtend.ExtendClosestTemplate) match {
+        case ExtendClosestTemplate => _loadClosestTemplateFor(curPath)
+        case ExtendNoTemplate => None
+        case ExtendSpecificTmpl(url) =>
+          _loadTemplateAt(url, basePage = pagePath)
       }
-      templOpt match {
-        case Some(templ: TemplateSource) =>
-          templates ::= templ
-          next = templ.params.templateToExtend getOrElse ExtendParentFolderTmpl
-        case None =>  // skip non existing templates
-      }
-      // Continue takeWhile loop if we need another parent folder template.
-      next == ExtendParentFolderTmpl
     }
-
-    // Continue handling any specifically requested templates.
-    if (next.isInstanceOf[ExtendSpecificTmpl])
-      unimplemented("Extending specific template [error DwE9012k35]")
-
-    assert(next == ExtendParentFolderTmpl || next == ExtendNoTemplate)
 
     if (templates isEmpty)
       templates ::= DefaultTemplate
@@ -158,26 +138,169 @@ class TemplateEngine(val pageCache: PageCache, val dao: Dao) {
 
 
   /**
-   * Returns paths to parent folder and tree templates for `pagePath',
+   * Returns the page's own template, if any. Otherwise
+   * returns the closest template, or None, if none found.
    */
-  private def _parentTemplPathsFor(pagePath: PagePath): List[PagePath] = {
-    // For now, add only 3 -- no 2, see below --
-    // locations: 1) the root template, "/.tree.template",
-    // which is applied to all pages, and 2) a folder specific template,
-    // "folder/.folder.template", which is applied to all pages in that
-    // folder (but not child folders).
-    val folderTmpl = pagePath.copy(pageId = None, showId = false,
-      pageSlug = ".folder.template")
-    // For now, add this "tree" template, for testing. It works for 1
-    // folder only!
-    val folderTreeTmpl =
-      if (folderTmpl.folder == "/") Nil
-      else List(folderTmpl.copy(pageSlug = ".tree.template"))
-    val rootTmpl = PagePath(tenantId = pagePath.tenantId, folder = "/",
-      pageId = None, showId = false,
-      pageSlug = ".tree.template")
-    folderTmpl::folderTreeTmpl:::rootTmpl::Nil
+  def _loadOwnOrClosestTemplateFor(page: Debate, pagePath: PagePath)
+        : Option[(TemplateSource, PagePath)] = {
+    require(!pagePath.isTemplatePage)
+    page.pageTemplateSrc foreach { templ =>
+      return Some((templ, pagePath))
+    }
+    _loadClosestTemplateFor(pagePath)
   }
+
+
+  /**
+   * The closest template is the first one of any .folder.template or
+   * .tree.template in the closest folder.
+   *
+   * (If pagePath is itself a template, its parent folder is ignored though,
+   * so pagePath itself won't be found again.)
+   * 
+   * (The closest folder of
+   * /some/folder/subfolder/ is /some/folder/, and for
+   * /some/folder/page it is /some/folder/. )
+   */
+  private def _loadClosestTemplateFor(pagePath: PagePath)
+        : Option[(TemplateSource, PagePath)] = {
+
+    // If pagePath is /folder/subfolder/.tree.template or .folder.template,
+    // don't check /folder/subfolder/*.template again.
+    // Instead only search for .tree.template:s in the parent parent folder,
+    // i.e. /folder/.tree.template and /.tree.template. // Write TEST case?
+    var (parentFolderOpt, checkFolderTempl) = {
+      if (pagePath isTemplatePage)
+        (pagePath.parentFolder.get.parentFolder, false)
+      else
+        (pagePath.parentFolder, true)
+    }
+
+    while (parentFolderOpt isDefined) {
+      val parentFolder = parentFolderOpt.get
+      val folderTemplPath = parentFolder.copy(pageSlug = ".folder.template")
+      val treeTemplPath = parentFolder.copy(pageSlug = ".tree.template")
+
+      if (checkFolderTempl) dao.loadTemplate(folderTemplPath) foreach { templ =>
+        return Some((templ, folderTemplPath))
+      }
+
+      dao.loadTemplate(treeTemplPath) foreach { templ =>
+        return Some((templ, treeTemplPath))
+      }
+
+      // Continue checking ancestor folders.
+      checkFolderTempl = false
+      parentFolderOpt = parentFolder.parentFolder
+    }
+    None
+  }
+
+
+  /**
+   * Loads the template located at `url`, which might point to another tenant,
+   * e.g. `http://other-tenant.com/templates/nice.template`.
+   */
+  private def _loadTemplateAt(url: String, basePage: PagePath)
+        : Option[(TemplateSource, PagePath)] = {
+
+    // Parse URL, resolve host name to tenant id.
+    val parsedUrl = _parseUrl(url)
+    val tenantId = parsedUrl.schemeHostOpt match {
+      case None => basePage.tenantId
+      case Some((scheme, host)) =>
+        dao.lookupTenant(scheme, host) match {
+          case found: FoundChost => found.tenantId
+          case found: FoundAlias => found.tenantId
+          case FoundNothing =>
+            // COULD throw some exception that can be converted
+            // to a 400 Bad Request?
+            illArgErr("DwE0qx3", "Template not found: `"+ url +
+               "', bad host name?")
+        }
+    }
+
+    // Handle relative folder paths.
+    var folder =
+      if (parsedUrl.folder startsWith "/") parsedUrl.folder
+      else basePage.parentFolder + parsedUrl.folder
+
+    val templPath =  PagePath(tenantId = tenantId, folder = folder,
+       pageId = None, showId = false, pageSlug = parsedUrl.page)
+
+    dao.loadTemplate(templPath) match {
+      case Some(templ) => Some((templ, templPath))
+      case None => None
+    }
+  }
+
+
+  private case class ParsedUrl(
+    schemeHostOpt: Option[(String, String)],
+    folder: String,
+    page: String)
+
+
+  /**
+   * Extracts any scheme and host from an url, and parses the path component
+   * into a PagePath. Verifies that any host name contains only valid chars.
+   *
+   * Examples:
+   * _parseUrl("http://server/folder/page")
+   * gives: ParsedUrl(Some((http,server)),/folder/,page)
+   *
+   * _parseUrl("http://server/folder/")
+   * gives: ParsedUrl(Some((http,server)),/folder/,)
+   *
+   * _parseUrl("http://server/page")
+   * gives: ParsedUrl(Some((http,server)),/,page)
+   *
+   * _parseUrl("http://server/")
+   * gives: ParsedUrl(Some((http,server)),/,)
+   *
+   * _parseUrl("http://server")  throws error.
+   *
+   * _parseUrl("folder/")  gives: ParsedUrl(None,folder/,)
+   *
+   * _parseUrl("/page")  gives: ParsedUrl(None,/,page)
+   *
+   * _parseUrl("page")  gives: ParsedUrl(None,,page)
+   *
+   */
+  private def _parseUrl(url: String): ParsedUrl = {
+    // Reject urls with query string or hash.
+    require(!url.contains("#") && !url.contains("?"))
+    val parsedUrl = url match {
+      case _OriginFoldrPageRegex(scheme, host, relFolder_?, page) =>
+        val folder = (relFolder_? eq null) ? "/" | "/"+ relFolder_?
+        if (!isValidHostAndPort(host))
+          illArgErr("DwE7IJz5", "Invalid host name: "+ host)
+        ParsedUrl(Some((scheme, host)), folder, page)
+      case _AbsFolderPageRegex(folder, _, page) =>
+        assert(page ne null)
+        ParsedUrl(None, folder, page)
+      case _RelFolderPageRegex(folder_?, page) =>
+        val folder = (folder_? eq null) ? "" | folder_?
+        assert(page ne null)
+        ParsedUrl(None, folder, page)
+      case _ =>
+        // COULD throw some exception that can be converted
+        // to a 400 Bad Request?
+        illArgErr("DwE3KQg3", "Bad template URL: "+ url)
+    }
+
+    // "http://server" is parsed incorrectly, reject it.
+    if (parsedUrl.folder contains "://")
+      illArgErr("DwE0KGf4", "Bad template URL: "+ url)
+    if (parsedUrl.page contains "://")
+      illArgErr("DwE4GZk2", "Bad template URL: "+ url)
+
+    parsedUrl
+  }
+
+  private val _OriginFoldrPageRegex = """^(https?)://([^/]+)/(.*/)?([^/]*)$""".r
+  private val _AbsFolderPageRegex = """^(/(.*/)?)([^/]*)$""".r
+  private val _RelFolderPageRegex = """([^/].*/)?([^/]*)""".r
 
 }
 
