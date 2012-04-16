@@ -109,6 +109,15 @@ object Prelude {
     str // for now
   }
 
+  // Copied from: http://stackoverflow.com/a/106223/694469
+  // Supposedly adheres to http://tools.ietf.org/html/rfc952.
+  // I appended "(:\d+)?" for the port number, so e.g. localhost:9000 works.
+  private val _ValidHostAndPortRegex = """^(([a-zA-Z]|[a-zA-Z][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z]|[A-Za-z][A-Za-z0-9\-]*[A-Za-z0-9])(:\d+)?$""".r
+
+  def isValidHostAndPort(hostAndPort: String) =
+    _ValidHostAndPortRegex.pattern.matcher(hostAndPort).matches
+
+
   /** Like {@code safe}, but wraps the string between start and end
    * *d*elimiters "`" and "'", like so: <i>`the-dangerous-string'</i>
    *  -- unless it's null, then returns "(null)".
