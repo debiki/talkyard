@@ -1,0 +1,9 @@
+#!/bin/bash
+
+ssh  -f -N -L 55432:127.0.0.1:5432  \
+  -i /home/kajmagnus/debiki/hosting/amazon/debiki-az-ec2-keypair-1.pem \
+  ec2-user@dw0azirdbpv11danny
+
+# Then:
+# psql --host 127.0.0.1 --port 55432 --username debiki_prod
+
