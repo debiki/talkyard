@@ -4,10 +4,16 @@ scratch/
 logs
 project/project
 project/target
+project/boot
 dist
 target
 tmp
 .history
+.idea/
+.idea_modules/
 debiki-app-play.iml
 RUNNING_PID
+
+# Ignore core dump file.
+core
 
