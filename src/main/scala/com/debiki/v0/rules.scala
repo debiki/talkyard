@@ -64,7 +64,7 @@ object PermsOnPage {
     createPage = true,
     editPage = true,
     editAnyReply = true,
-    editNonAutReply = true
+    editUnauReply = true
   )
 
   val None = PermsOnPage()
@@ -98,8 +98,8 @@ case class PermsOnPage(
   /** Edit all users' replies. */
   val editAnyReply: Boolean = false,
 
-  /** Edit non-authenticated users' replies. */
-  val editNonAutReply: Boolean = false,
+  /** Edit unauthenticated users' replies. */
+  val editUnauReply: Boolean = false,
 
   /** Should be granted to admins, managers, moderators only.
    *
