@@ -14,61 +14,39 @@ class TemplateEngineSpec extends Specification {
 
   val N = Nil: NodeSeq
 
-  /*
-  // Calling this function, e.g.:
-  //   replace(<title/>, <title/>) must ==/ ((<title/>, N))
-  // from an example doesn't result in any test being run. No idea why.
-  def testReplace(a: NodeSeq, b: NodeSeq, aAfter: NodeSeq, bAfter: NodeSeq)
-        : org.specs2.specification.Example = {
-    val (a2: NodeSeq,  b2: NodeSeq) = replace(a, b)
-
-    <div>{a2}</div> must ==/(<div>{aAfter}</div>)
-    <div>{b2}</div> must ==/(<div>{bAfter}</div>)
-
-    // This:
-    // a2 must_== aAfter
-    // b2 must_== bAfter
-    // Results in:
-    // [error] Could not create an instance of debiki.TemplateEngineSpec
-    // [error]   caused by org.specs2.execute.FailureException
-    // [error]   org.specs2.matcher.ThrownExpectations$class
-    //            .checkResultFailure(ThrownExpectations.scala:32)
-  }
-  */
-
   "TemplateEngine tag replacement functions" can {
     import TemplateEngine.{replaceMatchingHeadTags => replHead}
-    import TemplateEngine.{replaceTagsWithSameId => replId}
+    import TemplateEngine.{replaceTagsWithMatchingId => replId}
 
     "handle empty lists and replace titles:" >> {
       "Nil, Nil -> unchanged" >> {
         var (r, l) = replHead(Nil, Nil)
-        <x>{r}</x> must ==/(<x></x>)
-        <x>{l}</x> must ==/(<x></x>)
+        r must beEmpty
+        l must beEmpty
       }
 
       "<title/>, Nil -> unchanged" >> {
         val (r, l) = replHead(<title/>, Nil)
-        <x>{r}</x> must ==/(<x><title/></x>)
-        <x>{l}</x> must ==/(<x></x>)
+        r must ==/(<title/>)
+        l must beEmpty
       }
 
       "Nil, <title/> -> unchanged" >> {
         val (r, l) = replHead(Nil, <title/>)
-        <x>{r}</x> must ==/(<x></x>)
-        <x>{l}</x> must ==/(<x><title/></x>)
+        r must beEmpty
+        l must ==/(<title/>)
       }
 
       "<title/>, <title/> -> <title/>, Nil" >> {
         val (r, l) = replHead(<title/>, <title/>)
-        <x>{r}</x> must ==/(<x><title/></x>)
-        <x>{l}</x> must ==/(<x></x>)
+        r must ==/(<title/>)
+        l must beEmpty
       }
 
       "<title>Aaa</title>, <title>Bbb</title> -> replaced" >> {
         val (r, l) = replHead(<title>Aaa</title>, <title>Bbb</title>)
-        <x>{r}</x> must ==/(<x><title>Bbb</title></x>)
-        <x>{l}</x> must ==/(<x></x>)
+        r must ==/(<title>Bbb</title>)
+        l must beEmpty
       }
     }
 
@@ -76,87 +54,90 @@ class TemplateEngineSpec extends Specification {
       "<meta name='Y'>Aaa</meta>, <meta name='Z'>Bbb</meta> -> unchanged" >> {
         val (r, l) = replHead(<meta name='Y'>Aaa</meta>,
           <meta name='Z'>Bbb</meta>)
-        <x>{r}</x> must ==/(<x><meta name='Y'>Aaa</meta></x>)
-        <x>{l}</x> must ==/(<x><meta name='Z'>Bbb</meta></x>)
+        r must ==/(<meta name='Y'>Aaa</meta>)
+        l must ==/(<meta name='Z'>Bbb</meta>)
       }
       "<meta name='Y'>Aaa</meta>, <link name='Y'>Bbb</link> -> unchanged" >> {
         val (r, l) = replHead(<meta name='Y'>Aaa</meta>,
           <link name='Y'>Bbb</link>)
-        <x>{r}</x> must ==/(<x><meta name='Y'>Aaa</meta></x>)
-        <x>{l}</x> must ==/(<x><link name='Y'>Bbb</link></x>)
+        r must ==/(<meta name='Y'>Aaa</meta>)
+        l must ==/(<link name='Y'>Bbb</link>)
       }
       "<meta name='Y'>Aaa</meta>, <meta name='Y'>Bbb</meta> -> replaced" >> {
         val (r, l) = replHead(<meta name='Y'>Aaa</meta>,
           <meta name='Y'>Bbb</meta>)
-        <x>{r}</x> must ==/(<x><meta name='Y'>Bbb</meta></x>)
-        <x>{l}</x> must ==/(<x></x>)
+        r must ==/(<meta name='Y'>Bbb</meta>)
+        l must beEmpty
       }
     }
 
     "replace if same id:" >> {
       "Nil, Nil -> unchanged" >> {
         var (r, l) = replId(Nil, Nil)
-        <x>{r}</x> must ==/(<x></x>)
-        <x>{l}</x> must ==/(<x></x>)
+        r must beEmpty
+        l must beEmpty
       }
 
       "Nil, <div/> -> unchanged" >> {
         val (r, l) = replId(Nil, <div/>)
-        <x>{r}</x> must ==/(<x></x>)
-        <x>{l}</x> must ==/(<x><div/></x>)
+        r must beEmpty
+        l must ==/(<div/>)
       }
 
       "<div/>, Nil -> unchanged" >> {
         val (r, l) = replId(<div/>, Nil)
-        <x>{r}</x> must ==/(<x><div/></x>)
-        <x>{l}</x> must ==/(<x></x>)
+        r must ==/(<div/>)
+        l must beEmpty
       }
 
       "<div/>, <div/> -> unchanged" >> {
         val (r, l) = replId(<div/>, <div/>)
-        <x>{r}</x> must ==/(<x><div/></x>)
-        <x>{l}</x> must ==/(<x><div/></x>)
+        r must ==/(<div/>)
+        l must ==/(<div/>)
       }
 
-      "<id='Y'>Aaa</>, <id='Y'>Bbb</> -> replaced" >> {
-        val (r, l) = replId(<div id='Y'>Aaa</div>, <div id='Y'>Bbb</div>)
-        <x>{r}</x> must ==/(<x><div id='Y'>Bbb</div></x>)
-        <x>{l}</x> must ==/(<x></x>)
+      "<id='Y'/>, <r#Y/> -> replaced" >> {
+        val p = <div id='Y'>Aaa</div>
+        val c = <div data-replace='#Y'>Bbb</div>
+        val (r, l) = replId(p, c)
+        r must ==/(c)
+        l must beEmpty
       }
 
-      "<id='Y'>Aaa</>, <id='Z'>Bbb</> -> unchanged" >> {
-        val (r, l) = replId(<div id='Y'>Aaa</div>, <div id='Z'>Bbb</div>)
-        <x>{r}</x> must ==/(<x><div id='Y'>Aaa</div></x>)
-        <x>{l}</x> must ==/(<x><div id='Z'>Bbb</div></x>)
+      "<#Y/>, <r#Z/> -> unchanged" >> {
+        val p = <div id='Y'>Aaa</div>
+        val c = <div data-replace='#Z'>Bbb</div>
+        val (r, l) = replId(p, c)
+        r must ==/(p)
+        l must ==/(c)
       }
     }
 
     "replace if same id, many tags:" >> {
-      "<div/><div#Y/><div.lastP/>, <div/><div#Y><div.lastC/> -> replaced" >> {
+      "</><#Y/><.lastP/>, </><r#Y><.lastC/> -> #Y replaced" >> {
         val (r,  l) = replId(
            <div/><div id='Y'>Aaa</div><div class='lastP'/>,
-           <div/><div id='Y'>Bbb</div><div class='lastC'/>)
-
-        <x>{r}</x> must ==/(
-           <x><div/><div id='Y'>Bbb</div><div class='lastP'/></x>)
-        <x>{l}</x> must ==/(
-           <x><div/><div class='lastC'/></x>)
+           <div/><div data-replace='#Y'>Bbb</div><div class='lastC'/>)
+        r must ==/(<div/><div data-replace='#Y'>Bbb</div><div class='lastP'/>)
+        l must ==/(<div/><div class='lastC'/>)
       }
     }
 
     "replace if same id, nested tags:" >> {
-      "<div><div id='Y' ../></div>, <div id='Y'> -> inner replaced" >> {
-        val (r,  l) = replId(<div><div id='Y'>Aaa</div></div>,
-                             <div id='Y'>Bbb</div>)
-        <x>{r}</x> must ==/(<x><div><div id='Y'>Bbb</div></div></x>)
-        <x>{l}</x> must ==/(<x></x>)
+      "<><#Y/></>, <r#Y> -> inner replaced" >> {
+        val p = <div><div id='Y'>Aaa</div></div>
+        val c = <div data-replace='#Y'>Bbb</div>
+        val (r,  l) = replId(p, c)
+        r must ==/(<div>{c}</div>)
+        l must beEmpty
       }
 
-      "<div><span><div id='Y'../></span></div>, <div id='Y'> -> replaced" >> {
-        val (r, l) = replId(<div><span><div id='Y'>Aa</div></span></div>,
-                            <div id='Y'>Bb</div>)
-        <x>{r}</x> must ==/(<x><div><span><div id='Y'>Bb</div></span></div></x>)
-        <x>{l}</x> must ==/(<x></x>)
+      "<><span><#Y/></span></>, <r#Y> -> #Y replaced" >> {
+        val p = <div><span><div id='Y'>Aa</div></span></div>
+        val c = <div data-replace='#Y'>Bb</div>
+        val (r, l) = replId(p, c)
+        r must ==/(<div><span>{c}</span></div>)
+        l must beEmpty
       }
     }
 

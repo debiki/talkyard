@@ -415,67 +415,62 @@ object TemplateEngine {
   def replaceTagsWithMatchingId(in: NodeSeq, vith: NodeSeq)
         : (NodeSeq,  NodeSeq) = {
 
-    // Returns None if there are many id attributes.
-    //def idToReplaceWith(node: Node): Option[String] =
-    //  node.attribute("data-replace") match {
-    //    case None => None
-    //    case Some(Text(attrVal)) =>
-    //      if (attrVal startsWith "#") Some(attrVal.tail)
-    //      else None
-    //    case Some(Text(firstIdAttr)::Text(second)::_) =>
-    //      // Ok, many attributes; ignore them all.
-    //      None
-    //    case bad => assErr("DwE091IJK5", "Unexpected: "+ bad)
-    //  }
-
-    def uniqueIdAttrValOf(node: Node): Option[String] =
-      node.attribute("id") match {
-        case None => None
-        case Some(Text(attrVal)) => Some(attrVal)
-        case Some(Text(firstIdAttr)::Text(second)::_) =>
-          // Ok, many attributes; ignore them all.
-          None
-        case bad => assErr("DwE091IJK5", "Unexpected: "+ bad)
+    def idToReplaceWith(node: Node): Option[String] =
+      node.attribute("data-replace") match {
+        case Some(Text(attrVal)) =>
+          // In the future, could allow people to specify many ids,
+          // by splitting them via ',':  data-replace='#a, #b, #c'.
+          if (attrVal startsWith "#") Some(attrVal.tail)
+          else None
+        case _ => None
       }
 
-    // Find ids of elems to replace.
-    // Deep search replace in `in`, but replace only with direct
-    // children of `vith`.
-    val idsCouldBeReplaced: Seq[String] = (in \\ "@id").map(_.text)
-    // `vith` \ "@id" always returns Nil -- I think \ searches children
-    // of `vith'. Anyway \ requires that `vith.length` is 1 and thus cannot
-    // possibly work.
-    val idsCouldReplace: Seq[String] = vith.flatMap(uniqueIdAttrValOf(_))
-    val idsToReplace = idsCouldBeReplaced intersect idsCouldReplace
+    // Find ids of elems that could be replaced.
+    val idsCouldBeReplaced: Set[String] = (in \\ "@id").map(_.text).toSet
 
-    // Remove elems to replace with from `vith`.
+    // Find matching replacers.
     val (actualReplacers, replacersLeft) =
-      //vith partition {  replacer => idToReplaceWith(replacer) match {
-      //  case None => false
-      //  case Some(id) => true
-      //}
-      vith partition { replacer =>
-        replacer.attribute("id") match {
-          case Some(Text(idAttrVal)) =>
-            idsToReplace.contains(idAttrVal)
-          case _ => false  // None, or more than one attribute?
+      vith partition {  replacer =>
+        idToReplaceWith(replacer) match {
+          case None => false
+          case Some(replacerId) => idsCouldBeReplaced.contains(replacerId)
         }
       }
 
-    // Replace elems in `in`.
-    // Use Lift Web's CSS Selector Tranforms classes.
-    import net.liftweb.util.Helpers._
-    // For now:  (perhaps it'd be more efficient to construct a
-    // single replacement list ((#id1 #> node1) & (#id2 #> node2) & ...)
-    // and apply it one single time to `in`? Don't know how Lift Web functions
-    // internally.
-    var replaced = in
-    for (replacer <- actualReplacers) {
-      val replacerId: String = uniqueIdAttrValOf(replacer).get
-      replaced = (("#"+ replacerId) #> replacer)(replaced)
-    }
+    // Transform `in`.
+    val replacementMap: Map[String, Node] =
+      actualReplacers.map(node => idToReplaceWith(node).get -> node).toMap
+    val replaced = transform(in, replacements = replacementMap)
 
     (replaced, replacersLeft)
+  }
+
+
+  /**
+   * Transforms `nodeSeq` according to the specified transformations.
+   */
+  def transform(nodeSeq: NodeSeq, replacements: Map[String, Node])
+        : NodeSeq = {
+    // Deep-traverse all nodes and apply transformations.
+    // (Based on Lift Web's deepEnsureUniqueId, in
+    // lift-util_2.9.1-2.4-M5-sources.jar!/net/liftweb/util/BindHelpers.scala.)
+    def transformNode(node: Node): Node = node match {
+      case xml.Group(ns) => xml.Group(ns.map(transformNode))
+      case elem: xml.Elem =>
+        def copyAndTransformChildren = elem.copy(
+           child = elem.child.map(transformNode))
+        elem.attribute("id") match {
+          case None => copyAndTransformChildren
+          case Some(id) => {
+            replacements.get(id.text) match {
+              case None => copyAndTransformChildren
+              case Some(replacementNode) => replacementNode
+            }
+          }
+        }
+      case x => x
+    }
+    nodeSeq.map(transformNode)
   }
 
 
