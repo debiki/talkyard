@@ -51,7 +51,7 @@ case object TemplateSrcHtml {
  *       ...
  *     </html>
  */
-case class TemplateSrcHtml(post: ViPo) extends TemplateSource {
+case class TemplateSrcHtml(post: ViPo, path: String) extends TemplateSource {
 
   // A regex that splits on the end-of-Yaml-document indicator, '---'.
   // More exactly, split on: (newline)---(newline)(whitespace)(<)

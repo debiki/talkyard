@@ -226,7 +226,7 @@ case class Debate (
   /** If there is a page template for this page,
    * returns its template source. */
   def pageTemplateSrc: Option[TemplateSource] =
-    pageTemplatePost.map(TemplateSrcHtml(_))
+    pageTemplatePost.map(TemplateSrcHtml(_, "/"+ idd +"?view=template"))
 
 
   // -------- Ratings
