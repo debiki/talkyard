@@ -13,13 +13,36 @@ import Prelude._
 import TemplateEngine._
 
 
+/**
+ * Here's how the template system works:
+ *
+ * Elems inside <head> are appended to the parent template's <head>.
+ * Elems inside <body> are appended to the parent template's <body>.
+ *
+ * However, sometimes elems inside <head> and <body> instead *replace*
+ * parent template elems:
+ * - If an elem has an id, then, if there's an elem in the parent template
+ * with the same id, the child elem replaces that parent elem.
+ * - If there are any <title> or <meta name='description'>
+ * or <meta name='keywords'> elems in the <head>, they replace
+ * the corresponding elems in the parent template.
+ */
 class TemplateEngine(val pageCache: PageCache, val dao: Dao) {
 
   def renderPage(pageReq: PageRequest[_], pageRoot: PageRoot,
         appendToBody: NodeSeq = Nil): NodeSeq = {
 
     // Fetch or render page and comments.
-    val textAndComments = pageCache.get(pageReq, pageRoot)
+    // Wrap it in a div#debiki-page, so it'll be insert-replaced
+    // at the #debiki-page elem of the parent template.
+    // (Any id=debiki-page inside the cached `textAndComments` would be
+    // ignored! because pageCache.get might return an xml.Unpared(raw-data)
+    // node and Scala has no idea what ids are present in the raw-data.)
+    val textAndComments =
+      <div id='debiki-page'>{
+        // This might return an xml.Unparsed node.
+        pageCache.get(pageReq, pageRoot)
+      }</div>
 
     val templates: List[TemplateSource] = {
       // Don't use custom templates, when editing a template. Otherwise, if
@@ -31,32 +54,64 @@ class TemplateEngine(val pageCache: PageCache, val dao: Dao) {
         _loadTemplatesFor(pageReq.page_!, at = pageReq.pagePath)
     }
 
-    // Import CSS Selector Tranforms classes and implicit conversions.
-    import net.liftweb.util._
-    import Helpers._
-    // Apply templates. Merge all <head> stuff from all templates together
-    // into one single list, inserted into the final <head>.
-    // Recursively wrap page <body> stuff inside the parent template's
-    // <div id='debiki-page'/>.
-    var headTags: NodeSeq = Nil
-    var bodyTags: NodeSeq = textAndComments
+    // Apply templates. Concatenate all <head> child tags from all templates,
+    // and all <body> child tags. However, when doing this, if a child
+    // template redefines a parent templat tag (e.g. specifies the same
+    // id, or specifies the <head><title> again) then don't append,
+    // instead replace the parent template elem with the child elem.
+    var curHeadTags: NodeSeq = Nil
+    var curBodyTags: NodeSeq = textAndComments
     var templParams = TemplateParams.Default
 
+    // COULD rewrite, loop from outer to most specific template instead.
+    // Then the more specific templs would see all ids of all outer
+    // templates, even if I add a insert-child-<body>-here
+    // tag. If however you loop from the most specific to the outmost
+    // template, then once you've insted the child-<body> inside
+    // a nested elem in a parent template, all ids-that-were-intended-to
+    // -replace-something-in-an-ancestor-template are now hidden deply
+    // nested in the page and aren't considered for replacement.
+    // Perhaps do this:
+    // Loop from outmost to most specific template.
+    // Insert child template <body> at <div data-insert='child-body'/>.
+    // Insert the specified templ into <t1 data-insert='/page-footer.template'>.
+    // Replace a <t1 id='X'> w/ child templ tag like: <t2 data-replace='#X'>
+    // Insert into <t1 id='X'> child tag like: <t2 data-insert-into='#X'>
     templates foreach { templ: TemplateSource =>
     //this.logger.debug("About to apply template:\n"+ t)
     //this.logger.debug("To head:\n"+ headTags)
     //this.logger.debug("To body:\n"+ bodyTags)
     // It seems the html5 parser adds empty <head> and <body> tags,
     // if they're missing.
-      val t = templ.html
-      val tmplHeadTags = (t \ "head").headOption.map(_.child).getOrElse(Nil)
-      var tmplBodyTags = (t \ "body").headOption.map(_.child).getOrElse(Nil)
-      headTags = tmplHeadTags ++ headTags
-      // In case someone specifies a <head> tag only, the <body> will be
-      // empty. Allow this -- simply pass on the current body, unchanged
-      // (rather than discarding it to serve an empty page).
-      if (tmplBodyTags isEmpty) tmplBodyTags = <div id='debiki-page'/>
-      bodyTags = ("#debiki-page" #> bodyTags)(tmplBodyTags)
+      val prntHeadTagsBeforeRepl =
+         (templ.html \ "head").headOption.map(_.child).getOrElse(Nil)
+      val prntBodyTagsBeforeRepl =
+         (templ.html \ "body").headOption.map(_.child).getOrElse(Nil)
+
+      // Replace parent template head tags with any corresponding tags found
+      // in the more specific child and successor templates.
+      val (prntHeadTagsTemp, curHeadTagsTemp) =
+         replaceMatchingHeadTags(
+           in = prntHeadTagsBeforeRepl, vith = curHeadTags)
+
+      // Also replace head tags by id.
+      // This makes it possible for the parent template to [assign ids
+      // to <script> and <link> tags], to make it possible for the
+      //child template to replace such tags?
+      val (prntHeadTagsAfterRepl, curHeadTagsAfterRepl) =
+         replaceTagsWithMatchingId(
+           in = prntHeadTagsTemp, vith = curHeadTagsTemp)
+
+      // Replace body tags by id only.
+      val (prntBodyTagsAfterRepl, curBodyTagsAfterRepl) =
+         replaceTagsWithMatchingId(
+           in = prntBodyTagsBeforeRepl, vith = curBodyTags)
+
+      // Prepend parent template tags and replaced tags to remaining
+      // child template tags.
+      curHeadTags = prntHeadTagsAfterRepl ++ curHeadTagsAfterRepl
+      curBodyTags = prntBodyTagsAfterRepl ++ curBodyTagsAfterRepl
+
       templParams = templ.params.mergeOverride(templParams)
     }
 
@@ -65,21 +120,23 @@ class TemplateEngine(val pageCache: PageCache, val dao: Dao) {
     templParams.commentVisibility.getOrElse(assErr("DwE0kDf9")) match {
       case CommentVisibility.Visible => // fine, already visible
       case CommentVisibility.ShowOnClick =>
-        headTags = headTags ++ DH.tagsThatHideShowInteractions
+        curHeadTags = curHeadTags ++ DH.tagsThatHideShowInteractions
     }
 
     // Replace magic body tags.
-    bodyTags = (
+    // (Use Lift Web's CSS Selector Tranforms classes.)
+    import net.liftweb.util.Helpers._
+    curBodyTags = (
        "#debiki-login" #> DH.loginInfo(userName = None) // &
           // "#debiki-inbox" #> _renderInbox(pageReq)
-       )(bodyTags)
+       )(curBodyTags)
 
     // Prepend scripts, stylesheets and a charset=utf-8 meta tag.
-    headTags = HeadHtml ++ headTags
+    curHeadTags = HeadHtml ++ curHeadTags
     val page =
       <html>
-        <head>{headTags}</head>
-        <body class='dw-ui-simple'>{bodyTags ++ appendToBody}</body>
+        <head>{curHeadTags}</head>
+        <body class='dw-ui-simple'>{curBodyTags ++ appendToBody}</body>
       </html>
 
     page
@@ -87,6 +144,8 @@ class TemplateEngine(val pageCache: PageCache, val dao: Dao) {
 
 
   /**
+   * Returns the most specific template first (the page's own template if any).
+   *
    * Which template will be loaded? Consider this:
    * /some/very-nice/page would use the first one available of:
    *   /some/very-nice/page?view=template
@@ -306,6 +365,119 @@ class TemplateEngine(val pageCache: PageCache, val dao: Dao) {
 
 
 object TemplateEngine {
+
+
+  /**
+   * Replaces tags in `in` with any corresponding tags in
+   * `vith`. Returns `in` but with tags replaced, and `vith`,
+   * but with all tags-that-replaced-other-tags-in-`in` removed.
+   */
+  def replaceMatchingHeadTags(in: NodeSeq, vith: NodeSeq)
+        : (NodeSeq, NodeSeq) = {
+
+    var replacersLeft = vith
+    val replaced = in map { parentTag =>
+      // Check if a corresponding tag is present in any successor template.
+      // If so, let the successor template tag overwrite the parent tag,
+      // and remove the successor tag from curHeadTags.
+      var replacementTag: Option[Node] = None
+      replacersLeft = replacersLeft filter { testTag =>
+        def sameAttrVal(attrName: String) =
+          testTag.attribute(attrName).isDefined &&
+             testTag.attribute(attrName) ==  parentTag.attribute(attrName)
+        //def sameIdAttr = sameAttrVal("id")
+        def sameNameAttr = sameAttrVal("name")
+        def sameLabel = testTag.label == parentTag.label
+        def bothAreMeta = parentTag.label == "meta" && sameLabel
+        def bothAreTitle = parentTag.label == "title" && sameLabel
+        // This works for all of <meta name="description" ...> and
+        // <div id="..." ...> and <title>.
+        if (//sameIdAttr ||
+            (bothAreMeta && sameNameAttr) || bothAreTitle) {
+          // Replace the parent tag with the child tag.
+          replacementTag = Some(testTag)
+          // Remove this child tag from the child tag list.
+          // (If there are many matching tags, they're all removed
+          // and only the last one replaces the tag in `in`.)
+          false
+        } else {
+          // Keep child tag.
+          true
+        }
+      }
+      replacementTag getOrElse parentTag
+    }
+
+    (replaced, replacersLeft)
+  }
+
+
+  def replaceTagsWithMatchingId(in: NodeSeq, vith: NodeSeq)
+        : (NodeSeq,  NodeSeq) = {
+
+    // Returns None if there are many id attributes.
+    //def idToReplaceWith(node: Node): Option[String] =
+    //  node.attribute("data-replace") match {
+    //    case None => None
+    //    case Some(Text(attrVal)) =>
+    //      if (attrVal startsWith "#") Some(attrVal.tail)
+    //      else None
+    //    case Some(Text(firstIdAttr)::Text(second)::_) =>
+    //      // Ok, many attributes; ignore them all.
+    //      None
+    //    case bad => assErr("DwE091IJK5", "Unexpected: "+ bad)
+    //  }
+
+    def uniqueIdAttrValOf(node: Node): Option[String] =
+      node.attribute("id") match {
+        case None => None
+        case Some(Text(attrVal)) => Some(attrVal)
+        case Some(Text(firstIdAttr)::Text(second)::_) =>
+          // Ok, many attributes; ignore them all.
+          None
+        case bad => assErr("DwE091IJK5", "Unexpected: "+ bad)
+      }
+
+    // Find ids of elems to replace.
+    // Deep search replace in `in`, but replace only with direct
+    // children of `vith`.
+    val idsCouldBeReplaced: Seq[String] = (in \\ "@id").map(_.text)
+    // `vith` \ "@id" always returns Nil -- I think \ searches children
+    // of `vith'. Anyway \ requires that `vith.length` is 1 and thus cannot
+    // possibly work.
+    val idsCouldReplace: Seq[String] = vith.flatMap(uniqueIdAttrValOf(_))
+    val idsToReplace = idsCouldBeReplaced intersect idsCouldReplace
+
+    // Remove elems to replace with from `vith`.
+    val (actualReplacers, replacersLeft) =
+      //vith partition {  replacer => idToReplaceWith(replacer) match {
+      //  case None => false
+      //  case Some(id) => true
+      //}
+      vith partition { replacer =>
+        replacer.attribute("id") match {
+          case Some(Text(idAttrVal)) =>
+            idsToReplace.contains(idAttrVal)
+          case _ => false  // None, or more than one attribute?
+        }
+      }
+
+    // Replace elems in `in`.
+    // Use Lift Web's CSS Selector Tranforms classes.
+    import net.liftweb.util.Helpers._
+    // For now:  (perhaps it'd be more efficient to construct a
+    // single replacement list ((#id1 #> node1) & (#id2 #> node2) & ...)
+    // and apply it one single time to `in`? Don't know how Lift Web functions
+    // internally.
+    var replaced = in
+    for (replacer <- actualReplacers) {
+      val replacerId: String = uniqueIdAttrValOf(replacer).get
+      replaced = (("#"+ replacerId) #> replacer)(replaced)
+    }
+
+    (replaced, replacersLeft)
+  }
+
 
   // Play Framework RCX is very very tricky to use right now, I think,
   // w.r.t. the Google Closure Compiler and CommonJS and "require" and
