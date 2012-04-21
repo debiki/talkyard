@@ -48,11 +48,11 @@ object AppCreatePage extends mvc.Controller {
     val pageSlug = pageReq.body.getOrThrowBadReq("page-slug")
     val showId = pageReq.body.getFirst("show-id") == Some("t")
 
-    val newPagePath = pageReq.pagePath.copy(
-      pageSlug = pageSlug, showId = showId)
+    val newPagePathNoId = pageReq.pagePath.copy(
+      pageSlug = pageSlug, pageId = None, showId = showId)
 
     val (pageMarkup: Markup, pageText: String) =
-      if (newPagePath.isCodePage) (Markup.Code, "")
+      if (newPagePathNoId.isCodePage) (Markup.Code, "")
       else (Markup.DefaultForPageBody, DefaultPageText)
 
     val rootPost = Post(id = Page.BodyId,
@@ -68,13 +68,14 @@ object AppCreatePage extends mvc.Controller {
       markup = Markup.DefaultForPageTitle.id)
 
     val debateNoId = Debate(guid = "?", posts = rootPost::titlePost::Nil)
-    val newPage: Debate =
-      Debiki.Dao.createPage(where = newPagePath, debate = debateNoId) match {
+    val newPage: Debate = Debiki.Dao.createPage(
+      where = newPagePathNoId, debate = debateNoId) match {
         case Full(page) => page
         case x => throwInternalError("DwE039k3", "Could not create page," +
           " error:\n"+ x)
       }
 
+    val newPagePath = newPagePathNoId.copy(pageId = Some(newPage.id))
     Redirect(newPagePath.path)
   }
 

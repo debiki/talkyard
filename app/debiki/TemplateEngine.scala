@@ -128,8 +128,8 @@ class TemplateEngine(val pageCache: PageCache, val dao: Dao) {
 
     // Replace magic body tags.
     // currently doesn't work because loginInfo is a NodeSeq:
-    transform(curBodyTags,
-       replacements = Map("#debiki-login" -> DH.loginInfo(userName = None)))
+    curBodyTags = transform(curBodyTags,
+       replacements = Map("debiki-login" -> DH.loginInfo(userName = None)))
 
     // Prepend scripts, stylesheets and a charset=utf-8 meta tag.
     curHeadTags = HeadHtml ++ curHeadTags
@@ -459,12 +459,11 @@ object TemplateEngine {
            child = elem.child.flatMap(transformNode))
         elem.attribute("id") match {
           case None => copyAndTransformChildren
-          case Some(id) => {
+          case Some(id) =>
             replacements.get(id.text) match {
               case None => copyAndTransformChildren
               case Some(replacementNodes) => replacementNodes
             }
-          }
         }
       case x => x
     }
