@@ -8,17 +8,52 @@ import org.specs2.mutable._
 import play.api.test._
 import play.api.test.Helpers._
 import xml._
+import TemplateEngine.{replaceMatchingHeadTags => replHead}
+import TemplateEngine.{replaceTagsWithMatchingId => replId}
+import TemplateEngine.transform
 
 
 class TemplateEngineSpec extends Specification {
 
   val N = Nil: NodeSeq
 
+
   "TemplateEngine tag replacement functions" can {
-    import TemplateEngine.{replaceMatchingHeadTags => replHead}
-    import TemplateEngine.{replaceTagsWithMatchingId => replId}
+
+    "transform tags" >> {
+
+      "Nil to Nil" >> {
+        transform(Nil, replacements = Map()) must beEmpty
+        transform(Nil, replacements = Map("X" -> Nil)) must beEmpty
+      }
+
+      "a tag to Nil" >> {
+        transform(<div id='X'/>, replacements = Map("X" -> Nil)) must beEmpty
+      }
+
+      "a tag to many tags" >> {
+        val t: NodeSeq = <div>a</div> ++ <div>b</div>
+        transform(<div id='X'/>, replacements = Map("X" -> t)) must be_==/(t)
+      }
+
+      "a nested tag to many" >> {
+        val t: NodeSeq = (<div>a</div><div>b</div>)
+        transform(<span><div id='X'/></span>, replacements = Map("X" -> t)
+        ) must be_==/(<span>{t}</span>)
+      }
+
+      "two at once: <#X><#Y><#Z> to <>a</><>b</><#Z>" >> {
+        val a = <div>a</div>
+        val b = <div>b</div>
+        val z = <div id='Z'>z</div>
+        transform(<div id='X'/><div id='Y'/> ++ z,
+          replacements = Map("X" -> a, "Y" -> b)) must be_==/(a ++ b ++ z)
+      }
+    }
+
 
     "handle empty lists and replace titles:" >> {
+
       "Nil, Nil -> unchanged" >> {
         var (r, l) = replHead(Nil, Nil)
         r must beEmpty
@@ -50,6 +85,7 @@ class TemplateEngineSpec extends Specification {
       }
     }
 
+
     "replace meta with same name:" >> {
       "<meta name='Y'>Aaa</meta>, <meta name='Z'>Bbb</meta> -> unchanged" >> {
         val (r, l) = replHead(<meta name='Y'>Aaa</meta>,
@@ -71,7 +107,9 @@ class TemplateEngineSpec extends Specification {
       }
     }
 
+
     "replace if same id:" >> {
+
       "Nil, Nil -> unchanged" >> {
         var (r, l) = replId(Nil, Nil)
         r must beEmpty
@@ -113,6 +151,7 @@ class TemplateEngineSpec extends Specification {
       }
     }
 
+
     "replace if same id, many tags:" >> {
       "</><#Y/><.lastP/>, </><r#Y><.lastC/> -> #Y replaced" >> {
         val (r,  l) = replId(
@@ -122,6 +161,7 @@ class TemplateEngineSpec extends Specification {
         l must ==/(<div/><div class='lastC'/>)
       }
     }
+
 
     "replace if same id, nested tags:" >> {
       "<><#Y/></>, <r#Y> -> inner replaced" >> {
@@ -141,6 +181,7 @@ class TemplateEngineSpec extends Specification {
       }
     }
 
+
     "replace and keep many head tags at once" >> {
       val (r, l) = replHead(
          <title>Replaced</title> ++
@@ -155,6 +196,7 @@ class TemplateEngineSpec extends Specification {
       <x>{r}</x> must ==/(<x/>)
       <x>{l}</x> must ==/(<x/>)
     }
+
 
     "replace and keep many body tags, some nested, at once" >> {
       val (r, l) = replHead(
