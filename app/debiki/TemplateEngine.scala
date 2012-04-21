@@ -32,18 +32,8 @@ class TemplateEngine(val pageCache: PageCache, val dao: Dao) {
   def renderPage(pageReq: PageRequest[_], pageRoot: PageRoot,
         appendToBody: NodeSeq = Nil): NodeSeq = {
 
-    // Fetch or render page and comments.
-    // Wrap it in a div#debiki-page, so it'll be insert-replaced
-    // at the #debiki-page elem of the parent template.
-    // (Any id=debiki-page inside the cached `textAndComments` would be
-    // ignored! because pageCache.get might return an xml.Unpared(raw-data)
-    // node and Scala has no idea what ids are present in the raw-data.)
-    val textAndComments =
-      <div id='debiki-page'>{
-        // This might return an xml.Unparsed node.
-        pageCache.get(pageReq, pageRoot)
-      }</div>
-
+    // Load page and all templates needed.
+    val textAndComments = pageCache.get(pageReq, pageRoot)
     val templates: List[TemplateSource] = {
       // Don't use custom templates, when editing a template. Otherwise, if
       // the user writes a html / template bug, it might no longer be
@@ -54,13 +44,10 @@ class TemplateEngine(val pageCache: PageCache, val dao: Dao) {
         _loadTemplatesFor(pageReq.page_!, at = pageReq.pagePath)
     }
 
-    // Apply templates. Concatenate all <head> child tags from all templates,
-    // and all <body> child tags. However, when doing this, if a child
-    // template redefines a parent templat tag (e.g. specifies the same
-    // id, or specifies the <head><title> again) then don't append,
-    // instead replace the parent template elem with the child elem.
+    // Create initial template data.
     var curHeadTags: NodeSeq = Nil
-    var curBodyTags: NodeSeq = textAndComments
+    var curBodyTags: NodeSeq =
+      <div data-replace='#debiki-page'>{textAndComments}</div>
     var templParams = TemplateParams.Default
 
     // COULD rewrite, loop from outer to most specific template instead.
@@ -124,12 +111,9 @@ class TemplateEngine(val pageCache: PageCache, val dao: Dao) {
     }
 
     // Replace magic body tags.
-    // (Use Lift Web's CSS Selector Tranforms classes.)
-    import net.liftweb.util.Helpers._
-    curBodyTags = (
-       "#debiki-login" #> DH.loginInfo(userName = None) // &
-          // "#debiki-inbox" #> _renderInbox(pageReq)
-       )(curBodyTags)
+    // currently doesn't work because loginInfo is a NodeSeq:
+    transform(curBodyTags,
+       replacements = Map("#debiki-login" -> DH.loginInfo(userName = None)))
 
     // Prepend scripts, stylesheets and a charset=utf-8 meta tag.
     curHeadTags = HeadHtml ++ curHeadTags
@@ -438,8 +422,8 @@ object TemplateEngine {
       }
 
     // Transform `in`.
-    val replacementMap: Map[String, Node] =
-      actualReplacers.map(node => idToReplaceWith(node).get -> node).toMap
+    val replacementMap: Map[String, NodeSeq] =
+      actualReplacers.groupBy(node => idToReplaceWith(node).get)
     val replaced = transform(in, replacements = replacementMap)
 
     (replaced, replacersLeft)
@@ -449,28 +433,26 @@ object TemplateEngine {
   /**
    * Transforms `nodeSeq` according to the specified transformations.
    */
-  def transform(nodeSeq: NodeSeq, replacements: Map[String, Node])
+  def transform(nodeSeq: NodeSeq, replacements: Map[String, NodeSeq])
         : NodeSeq = {
     // Deep-traverse all nodes and apply transformations.
-    // (Based on Lift Web's deepEnsureUniqueId, in
-    // lift-util_2.9.1-2.4-M5-sources.jar!/net/liftweb/util/BindHelpers.scala.)
-    def transformNode(node: Node): Node = node match {
-      case xml.Group(ns) => xml.Group(ns.map(transformNode))
+    def transformNode(node: Node): NodeSeq = node match {
+      case xml.Group(ns) => xml.Group(ns.flatMap(transformNode))
       case elem: xml.Elem =>
         def copyAndTransformChildren = elem.copy(
-           child = elem.child.map(transformNode))
+           child = elem.child.flatMap(transformNode))
         elem.attribute("id") match {
           case None => copyAndTransformChildren
           case Some(id) => {
             replacements.get(id.text) match {
               case None => copyAndTransformChildren
-              case Some(replacementNode) => replacementNode
+              case Some(replacementNodes) => replacementNodes
             }
           }
         }
       case x => x
     }
-    nodeSeq.map(transformNode)
+    nodeSeq.flatMap(transformNode)
   }
 
 
