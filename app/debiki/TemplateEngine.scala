@@ -14,18 +14,34 @@ import TemplateEngine._
 
 
 /**
- * Here's how the template system works:
+ * The template engine adds stuff around a page, that is,
+ * around a blog article / forum question / whatever-page and subsequent
+ * comments. The added stuff could be e.g. a navigation bar
+ * or a page footer and header.
  *
- * Elems inside <head> are appended to the parent template's <head>.
- * Elems inside <body> are appended to the parent template's <body>.
+ * The template engine starts with the page itself, then finds all its
+ * parent templates, and applies them one at a time. The very first
+ * template is the child-page?view=template post, if it exists.
+ * Otherwise it's the .template file closest to the page.
+ * A template specifies which template is its parent template
+ * via its extend-template config value.
  *
- * However, sometimes elems inside <head> and <body> instead *replace*
- * parent template elems:
- * - If an elem has an id, then, if there's an elem in the parent template
- * with the same id, the child elem replaces that parent elem.
- * - If there are any <title> or <meta name='description'>
- * or <meta name='keywords'> elems in the <head>, they replace
- * the corresponding elems in the parent template.
+ * Here's how the template engine works, when merging a child template
+ * with its parent template:
+ *
+ * 1. Any child template <head> <title> or <meta name='description'> or
+ * <meta name='keywords'> elems replace corresponding elems in the parent
+ * template. Other elems inside the child's <head> are appended to
+ * the parent template's <head>.
+ *
+ * 2. If a direct child of the <head> or <body> in the child template
+ * has an attribute `data-replace='#X'`, then it replaces any elem
+ * in the parent template with id 'X'.
+ *
+ * 3. Elems inside <body> replace the first elem in the parent template
+ * that has an attribute `data-replace-with='child-body'` (not implemented
+ * though!), or, if there is no such parent elem, the child body contents
+ * is appended to the parent template's <body>.
  */
 class TemplateEngine(val pageCache: PageCache, val dao: Dao) {
 
