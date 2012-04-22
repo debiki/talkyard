@@ -4330,7 +4330,7 @@ function makeSvgDrawer() {
     // Remove highlighting from the SVG path.
     // WARNING dupl code: the stroke color & width below is also in debiki.css.
     // See $highlightOn() for more info.
-    this.style.stroke = '#dde';
+    this.style.stroke = '#dbdbdb';
     this.style.strokeWidth = 3;
   }
 

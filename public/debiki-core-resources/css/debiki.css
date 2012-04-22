@@ -246,11 +246,12 @@ a {
 }
 
 /* The page title */
+/* bold 32px verdana !important,  small: font-size: 20px,  color #555 ?? */
 header.dw-p-ttl {
   margin-bottom: 0; /* cancel header's default 48px */
 }
 header.dw-p-ttl > h1 {
-  color: #42525E;
+  color: #444;
   font-size: 36px;
   /* Make the page body .dw-p-hd appear only 5px below the title, looks nice */
   margin-bottom: 6px;
@@ -271,11 +272,11 @@ header.dw-p-ttl > h1 {
   font-size: 28px;
   margin: 26px 0 15px !important;
   padding: 0;
-  color: #42525E;
+  color: #444;
 }
 .dw-ar-p-bd > .dw-p-bd-blk > h2 {
   font-size: 24px;
-  color: #28323B;
+  color: #303030;
   margin: 26px 0 18px 0 !important;
 }
 .dw-ar-p-bd > .dw-p-bd-blk > h3 {
@@ -684,9 +685,15 @@ post, only for the article.) */
 
 .dw-z {
   position: absolute;
-  color: #369;
+  /* Could use blue (#369) to indicate they're clickable, but don't — I guess
+  it's more important that they don't grab any attention, than that
+  people notice that they can close threads. */
+  color: #666;
   font-size: 85%;
   text-decoration:none;
+}
+.dw-z:hover {
+  color: #c77405;
 }
 
 /* Don't underline the fold link, [-]. (Ignore old borken browsers.) */
@@ -2219,7 +2226,8 @@ inside widgets, rather than buttons and tabs. */
 
 .dw-t svg path {
   fill: none;
-  stroke: #dde;
+  /* Warning: stroke color also specified in debiki.js, $highlightOff(). */
+  stroke: #dbdbdb;
   stroke-width: 3;
 }
 
@@ -2245,6 +2253,10 @@ JavaScript. Then I can still place all CSS stuff in this file. */
   background-image: url(img/dw-arw-hz-right.png);
 }
 
+/* I recently changed SVG arrow color to from #dde (blue-gray) to
+#dbdbdb (gray), but I have not updated the color of the fake arrows
+png images, so leave the background and border colors below as is,
+i.e. #dde, the same as the color of the png arrows. */
 .dw-svg-fake-varrow,
 .dw-svg-fake-harrow,
 .dw-svg-fake-harrow-end {
