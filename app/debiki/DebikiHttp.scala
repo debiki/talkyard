@@ -24,7 +24,9 @@ object DebikiHttp {
   // (The www.debiki.se homepage is 20 kb, and homepage.css 80 kb,
   // but it includes Twitter Bootstrap.)
 
-  val MaxCommentSize = 100 * 1000
+  val MaxPostSize = 400 * 1000
+  val MaxPostSizeForAuUsers = 40 * 1000
+  val MaxPostSizeForUnauUsers = 10 * 1000
   val MaxDetailsSize =  20 * 1000
 
 
@@ -45,6 +47,10 @@ object DebikiHttp {
 
   def NotFoundResult(errCode: String, message: String): PlainResult =
     R.NotFound("404 Not Found\n"+ message +" [error "+ errCode +"]")
+
+  def EntityTooLargeResult(errCode: String, message: String): PlainResult =
+    R.EntityTooLarge("413 Request Entity Too Large\n"+
+       message +" [error "+ errCode +"]")
 
   def InternalErrorResult(errCode: String, message: String): PlainResult =
     R.InternalServerError(
@@ -81,6 +87,9 @@ object DebikiHttp {
 
   def throwNotFound(errCode: String, message: String = "") =
     throw ResultException(NotFoundResult(errCode, message))
+
+  def throwEntityTooLarge(errCode: String, message: String) =
+    throw ResultException(EntityTooLargeResult(errCode, message))
 
   def throwInternalError(errCode: String, message: String = "") =
     throw ResultException(InternalErrorResult(errCode, message))

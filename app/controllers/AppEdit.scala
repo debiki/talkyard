@@ -34,7 +34,7 @@ object AppEdit extends mvc.Controller {
 
 
   def handleEditForm(pathIn: PagePath, pageRoot: PageRoot, postId: String)
-        = PagePostAction(MaxCommentSize)(pathIn) {
+        = PagePostAction(MaxPostSize)(pathIn) {
       pageReq: PagePostRequest =>
 
     import Utils.ValidationImplicits._
@@ -43,6 +43,21 @@ object AppEdit extends mvc.Controller {
     val text = pageReq.getEmptyAsNone(Inp.Text) getOrElse
        throwBadReq("DwE8bJX2", "Empty edit")
     val markupOpt = pageReq.getEmptyAsNone(Inp.Markup)
+
+    // Too must data?
+    val postSize = text.size
+    val user = pageReq.user_!
+    if (user.isSuperAdmin) { // || !.isAdmin
+      // Allow up to MaxPostSize chars (see above).
+    }
+    else if (user.isAuthenticated) {
+      if (postSize > MaxPostSizeForAuUsers)
+        throwEntityTooLarge("DwE413kX5", "Please do not upload that much text")
+    }
+    else {
+      if (postSize > MaxPostSizeForUnauUsers)
+        throwEntityTooLarge("DwE413IJ1", "Please do not upload that much text")
+    }
 
     _saveEdits(pageReq, postId, text, markupOpt)
     Utils.renderOrRedirect(pageReq, pageRoot)

@@ -40,7 +40,7 @@ object AppCreatePage extends mvc.Controller {
 
 
   def handleForm(pathIn: PagePath) =
-        PagePostAction(MaxCommentSize)(pathIn, pageMustExist = false) {
+        PagePostAction(MaxPostSize)(pathIn, pageMustExist = false) {
           pageReq: PagePostRequest =>
     _throwIfMayNotCreate(pathIn, pageReq)
 

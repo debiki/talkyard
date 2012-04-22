@@ -32,7 +32,7 @@ object AppReply extends mvc.Controller {
 
 
   def handleForm(pathIn: PagePath, pageRoot: PageRoot, postId: String)
-        = PagePostAction(MaxCommentSize)(pathIn) {
+        = PagePostAction(MaxPostSize)(pathIn) {
       pageReq: PagePostRequest =>
 
     import Utils.ValidationImplicits._
