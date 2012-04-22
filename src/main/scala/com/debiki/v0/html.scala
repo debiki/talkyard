@@ -138,14 +138,16 @@ object DebateHtml {
 
   /** Converts markdown to xml.
    */
-  def markdownToSafeHtml(source: String, hostAndPort: String): NodeSeq = {
+  def markdownToSafeHtml(source: String, hostAndPort: String,
+        makeLinksNofollow: Boolean): NodeSeq = {
     val htmlTextUnsafe = _jsShowdown.asInstanceOf[javax.script.Invocable]
           .invokeMethod(_jsShowdown.eval("new Showdown.converter()"),
           "makeHtml", source, hostAndPort).toString
-    sanitizeHtml(htmlTextUnsafe)
+    sanitizeHtml(htmlTextUnsafe, makeLinksNofollow)
   }
 
-  def sanitizeHtml(htmlTextUnsafe: String): NodeSeq = {
+  def sanitizeHtml(htmlTextUnsafe: String,
+        makeLinksNofollow: Boolean): NodeSeq = {
     var htmlTextSafe = _jsSanitizer.asInstanceOf[javax.script.Invocable]
           .invokeFunction("html_sanitize", htmlTextUnsafe, _jsUrlX, _jsIdX)
           .toString
@@ -154,10 +156,12 @@ object DebateHtml {
     // (Seems to be a bug:
     // `Issue 1296: target="_blank" is allowed, but cleared by html_sanitize()'
     // http://code.google.com/p/google-caja/issues/detail?id=1296  )
-    // Add target _blank here, and also make the links nofollow,
-    // so Google won't wipe out my site in case someone posts spam.
-    htmlTextSafe = htmlTextSafe.replace("<a ",
-          "<a target='_blank' rel='nofollow' ")
+    // Add target _blank here - not needed any more, I ask "do you really
+    // want to close the page?" if people have started writing.
+    //   htmlTextSafe = htmlTextSafe.replace("<a ", "<a target='_blank' ")
+
+    if (makeLinksNofollow)
+      htmlTextSafe = htmlTextSafe.replace("<a ", "<a rel='nofollow' ")
 
     // Use a HTML5 parser; html_sanitize outputs HTML5, which Scala's XML
     // parser don't understand (e.g. an <img src=…> tag with no </img>).
@@ -455,15 +459,16 @@ class DebateHtml(val debate: Debate, val pageTrust: PageTrust) {
         that opens the deleted post, incl. details, in a new browser tab?  */}
       </div>
     </div>
-    RenderedComment(html, replyBtnText = Nil, topRatingsText = None)
+    RenderedComment(html, replyBtnText = Nil, topRatingsText = None,
+       templCmdNodes = Nil)
   }
 
 
   case class RenderedComment(
     html: NodeSeq,
     replyBtnText: NodeSeq,
-    topRatingsText: Option[String]
-  )
+    topRatingsText: Option[String],
+    templCmdNodes: NodeSeq)
 
 
   private def _showComment(rootPostId: String, vipo: ViPo, horizontal: Boolean
@@ -480,10 +485,16 @@ class DebateHtml(val debate: Debate, val pageTrust: PageTrust) {
         vipo.meta.isArticleQuestion
 
     // COULD move to class Markup?
-    val (xmlText, numLines) = vipo.markup match {
+    // Use nofollow links in people's comments, so Google won't punish
+    // the website if someone posts spam.
+    val makeNofollowLinks = !isRootOrArtclQstn
+
+    val (xmlTextInclTemplCmds, numLines) = vipo.markup match {
       case "dmd0" =>
         // Debiki flavored markdown.
-        (markdownToSafeHtml(sourceText, config.hostAndPort), -1)
+        val html = markdownToSafeHtml(
+           sourceText, config.hostAndPort, makeNofollowLinks)
+        (html, -1)
       case "para" =>
         textToHtml(sourceText)
       /*
@@ -494,7 +505,7 @@ class DebateHtml(val debate: Debate, val pageTrust: PageTrust) {
         // But nothing that makes text stand out, e.g. skip <h1>, <section>.
         */
       case "html" =>
-        (sanitizeHtml(sourceText), -1)
+        (sanitizeHtml(sourceText, makeNofollowLinks), -1)
       case "code" =>
         (<pre class='prettyprint'>{sourceText}</pre>,
           sourceText.count(_ == '\n'))
@@ -518,14 +529,23 @@ class DebateHtml(val debate: Debate, val pageTrust: PageTrust) {
         // (Later: update database, change null/'' to "dmd0" for the page body,
         // change to "para" for everything else.
         // Then warnDbgDie-default to "para" here not "dmd0".)
-        (markdownToSafeHtml(sourceText, config.hostAndPort), -1)
+        (markdownToSafeHtml(sourceText, config.hostAndPort,
+           makeNofollowLinks), -1)
     }
 
+    // Find any customized reply button text.
     var replyBtnText: NodeSeq = xml.Text("Reply")
     if (isRootOrArtclQstn) {
-       findChildrenOfNode(withClass = "debiki-0-reply-button-text",
-           in = xmlText) foreach { replyBtnText = _ }
+      findChildrenOfNode(withClass = "debiki-0-reply-button-text",
+         in = xmlTextInclTemplCmds) foreach { replyBtnText = _ }
     }
+
+    // Find any template comands.
+    val (templCmdNodes: NodeSeq, xmlText: NodeSeq) =
+      (Nil: NodeSeq, xmlTextInclTemplCmds)  // for now, ignore all
+      //if (!isRootOrArtclQstn) (Nil, xmlTextInclTemplCmds)
+      //else partitionChildsWithDataAttrs(in = xmlTextInclTemplCmds)
+
     val long = numLines > 9
     val cutS = if (long && post.id != rootPostId) " dw-x-s" else ""
     val author = debate.authorOf_!(post)
@@ -698,7 +718,7 @@ class DebateHtml(val debate: Debate, val pageTrust: PageTrust) {
                   "&view="+ rootPostId}>React</a>)
 
     RenderedComment(html = commentHtml, replyBtnText = replyBtnText,
-       topRatingsText = topTagsAsText)
+       topRatingsText = topTagsAsText, templCmdNodes = templCmdNodes)
   }
 
   def _linkTo(nilo: NiLo) = linkTo(nilo, config)
@@ -1531,7 +1551,8 @@ object AtomFeedXml {
       // This takes rather long and should be cached.
       // Use the same cache for both plain HTML pages and Atom and RSS feeds?
       val rootPostHtml =
-        DebateHtml.markdownToSafeHtml(pageBody.text, hostAndPort)
+        DebateHtml.markdownToSafeHtml(pageBody.text, hostAndPort,
+           makeLinksNofollow = true) // for now
 
       <entry>{
         /* Identifies the entry using a universally unique and
