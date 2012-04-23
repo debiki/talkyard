@@ -415,15 +415,12 @@ For that to work, this is needed: */
 .dw-fs-re .ui-resizable-se { visibility: hidden; }
 .dw-fs-re:hover .ui-resizable-se { visibility: visible; }
 
-/* Adjus post width. */
-/* ... Don't span whole screen even if .post.cropped-e is removed. */
-.dw-p-bd-blk {
+/* Adjus max comment width: don't span whole screen even if
+.post.cropped-e is removed. */
+:not(.dw-ar-p-bd) > .dw-p-bd-blk {
   max-width: 40em;
 }
-/* ... However, if you write custom CSS for a page (e.g. the home page),
-then you probably override the article max-width — but if you customize
-.dw-ar-p-bd > .dw-p-bd-blk { max-width: none }, the edit form might
-get as wide as the page, unless: */
+/* Prevent the edit form from getting as wide as the page. */
 .dw-depth-0 > .dw-p > .dw-f-e .dw-e-tabs {
   float: left;
 }
