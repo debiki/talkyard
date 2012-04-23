@@ -633,12 +633,6 @@ they're placed inside another post already). */
   background-color: transparent;
 }
 
-.dw-depth-0 > .dw-p > .dw-p-hd > .dw-p-hd-e {
-  /* Place edit info on the same line as author info, for the root post.
-  Then everything appears on one line just below the page title. */
-  display: inline;
-}
-
 /* Users with links to more info, e.g. website or blog */
 .dw-pri a.dw-p-by,
 .dw-pri a.dw-p-e-by {
