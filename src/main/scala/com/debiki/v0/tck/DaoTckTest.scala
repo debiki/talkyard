@@ -719,9 +719,10 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
       exOpenId_loginReq.identity.id must_==  exOpenId_loginReq.login.identityId
       exOpenId_loginReq.user.id must_== exOpenId_loginReq.identity.userId
       exOpenId_loginReq.user must matchUser(
-          // Identity data no longer copied to User.
-          displayName = "", // T.identityOpenId.firstName,
-          email = "", // T.identityOpenId.email,
+          displayName = T.identityOpenId.firstName,
+          email = T.identityOpenId.email,
+          // Country info not available for all identity types and currently
+          // not copied from a new Identity to the related new User.
           country = "", // T.identityOpenId.country,
           website = "",
           isSuperAdmin = Boolean.box(false))
