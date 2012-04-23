@@ -650,14 +650,8 @@ class DebateHtml(val debate: Debate, val pageTrust: PageTrust) {
           distinct.length
         lazy val editor =
           debate.authorOf_!(debate.editsById(lastEditApp.get.editId))
-        <div class='dw-p-hd-e'>{
-            Text(if (post.id == rootPostId) {
-              // Via CSS, edit info is placed on the same line as author info.
-              ", edited "
-            } else {
-              // Edit info will appear on a separate line.
-              "Edited "
-            }) ++
+        <span class='dw-p-hd-e'>{
+            Text(", edited ") ++
             (if (editorsCount > 1) {
               Text("by ") ++ <a>various people</a>
             } else if (editor.identity_!.id != author.identity_!.id) {
@@ -667,7 +661,7 @@ class DebateHtml(val debate: Debate, val pageTrust: PageTrust) {
               Nil
             })
           }{dateAbbr(lastEditDate, "dw-p-at")}
-        </div>
+        </span>
       }
 
     // Make a title for this post.
@@ -699,7 +693,7 @@ class DebateHtml(val debate: Debate, val pageTrust: PageTrust) {
     <div id={cssPostId} class={"dw-p" + cssArtclPost + cutS + clearfix}>
       { postTitleXml }
       <div class='dw-p-hd'>
-        { _linkTo(author)}{ dateAbbr(post.ctime, "dw-p-at")
+        By { _linkTo(author)}{ dateAbbr(post.ctime, "dw-p-at")
         }{ flagsTop }{ ratingTagsTop }{ editInfo }{ flagsDetails
         }{ ratingTagsDetails }
       </div>
