@@ -303,49 +303,90 @@ Debiki.v0.utterscroll = function(options) {
     // the browser knows if any text is selected/mouse-down:ed.
     var sel = window.getSelection();
 
-    // If there is no text after [the mousedown position in the anchor
-    // node], the mousedown didn't happen on the text, but somewhere
-    // where text has already ended. Then scroll.
-    // {{{ If statement explanation: Consider this text:
-    // "Abcd!" — if you mousedown just before the '!',
-    // `substr().length' will be 1, because the '!' is to the right
-    // of the mousedown. If however you mousedown to the right of the '!'
-    // then anchorOffset is set to the position after the '!' and
-    // substr(...).length is 0.  }}}
-    // {{{ Fixable BUG: Cannot mousedown on and select the very last character
-    // in an elem (e.g. <p> or <h2>), because when you mousedown on the
-    // right part of that char, anchorOffset will be *after* it,
-    // and there's no difference from this anchorOffset and the anchorOffset
-    // when you click a bit outside of the last character (on whitespace).
-    // Perhaps an insane workaround: Add a &nbsp after the mousedown:ed
-    // elem — then the &nbsp will be the very last char. But this might
-    // cause a line wrap?? — Use a narrow non-breaking space instead,
-    // &#x202F; ? I tested to append one to a <h2>, worked fine :-)
-    // Here are lots of invisible spaces:
-    //  http://www.cs.tut.fi/~jkorpela/chars/spaces.html
-    // Or?? Create a selection for all text in the mousedown:ed elem,
-    // and perhaps then I can check dist from [all 4 corners of the selection]
-    // to [the mousedown position], if small, don't scrolldrag.
-    // Best approach? Append an empty <span> to the end of the mousedown:ed
-    // elem, and measure the dist from that <span> to the mousedown pos.
-    // If close, don't scrolldrag. Then remove the span.
-    // People who do this:
+    // Start scrolling if there's no text reasonably close to the
+    // mousedown event.
+    var dist = distFromSelectionToEvent(sel, event);
+    console.log('Approx dist from selection to mouse: '+ dist);
+    if (dist === -1 || dist > 55) {
+      startScroll(event);
+      clearTimeout(tryLaterHandle);
+    }
+  }
+
+
+  /**
+   * Finds the approximate distance from a text selecion to
+   * the mousedown event offset of [the mousedown event that
+   * initiated the text selection]. Returns -1 if there is
+   * no selection anchor node that contains text.
+   */
+  function distFromSelectionToEvent(sel, event) {
+    // I don't think there's any built in browser support that helps
+    // us to find the distance.
+    // Therefore, place magic marks inbetween words, and check the
+    // distance from each mark to the mousedown evenet. Then return
+    // the shortest distance.
+    // We have no idea where the text line wraps, so we cannot be
+    // clever about where we insert the marks.
+
+    // {{{ Two vaguely related StackOverflow questions.
     //  <http://stackoverflow.com/questions/1589721/
     //      how-can-i-position-an-element-next-to-user-text-selection>
     //  <http://stackoverflow.com/questions/2031518/
-    //      javascript-selection-range-coordinates>
-    // }}}
-    if (!sel.anchorNode || !sel.anchorNode.data ||
-        sel.anchorNode.data.substr(sel.anchorOffset, 1).length === 0) {
-      // No text under mouse cursor. The user probably doesn't try to
-      // select text, and no other elem has captured the event.
-      startScroll(event);
-      clearTimeout(tryLaterHandle);
-    } else {
-      // The user might be selecting text to copy to the clipboard.
-      return;  // breakpoint here
+    //      javascript-selection-range-coordinates> }}}
+
+    // BUG RISK: What happens if you click the html elem on HUGE page?
+
+    // Is there an anchor node with text?
+    if (!sel.anchorNode || !sel.anchorNode.data)
+      return -1;
+
+    var $parent = $(sel.anchorNode.parentElement);
+    var innerHtmlBefore = $parent.html();
+
+    // Insert an invisible magic <a/> after each word, but not inside <tags>.
+    var mark = '<a class="utrscrlhlpr"/>';
+    var htmlWithMarks =
+      innerHtmlBefore.replace(/(<[^>]*>)?(\S*)(\s)/g, '$1$2'+mark+'$3');
+    var htmlWithMarks = mark + htmlWithMarks + mark;
+    $parent.html(htmlWithMarks);  // BUG RISK: can this destroy Javascript
+                                    // events attached to nested elems?
+
+    // Find mousedown position relative document.
+    // (This is supposedly cross browser compatible, see e.g.
+    // http://stackoverflow.com/a/4430498/694469.)
+    var mouseOffs;
+    if (event.pageX || event.pageY) {
+      mouseOffs = { x: event.pageX, y: event.pageY };
     }
+    else {
+      var d = document;
+      mouseOffs = {
+        x: event.clientX + d.body.scrollLeft + d.documentElement.scrollLeft,
+        y: event.clientY + d.body.scrollTop + d.documentElement.scrollTop
+      };
+    }
+
+    // Find min mark-to-event distance.
+    var minDist2 = 999999999;
+    $parent.children('.utrscrlhlpr').each(function() {
+      var myOffs = $(this).offset();
+      var distX = mouseOffs.x - myOffs.left;
+      var distY = mouseOffs.y - myOffs.top;
+      var dist2 = distX * distX + distY * distY;
+      if (dist2 < minDist2) {
+        minDist2 = dist2;
+        // console.log('New max dist from: '+ myOffs.left +','+ myOffs.top +
+        //  ' to: '+ mouseOffs.x +','+ mouseOffs.y +' is: '+ dist2);
+      }
+    });
+
+    // Remove crazy marks.
+    $parent.html(innerHtmlBefore);
+
+    return Math.sqrt(minDist2);
   }
+
 
   // Starts scrolling, unless already scrolling, and unless the user
   // has selected text.
