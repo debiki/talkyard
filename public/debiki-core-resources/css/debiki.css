@@ -227,144 +227,50 @@ body.dw-ua-lte-ie8 .debiki-show-unless-lte-ie8 { display: none; }
 
 /* --- Standard elems ---*/
 
-a:link {
-  color: #00c;
-}
-
 a {
   cursor: pointer;
 }
 
-.dw-pri ins {
+ins {
   text-decoration: none;
   background: #9f9;
 }
 
-.dw-pri del {
+del {
   text-decoration: line-through;
   background: #ffd0d0;
 }
 
-/* Spacing between e.g. <p>:s. */
-.dw-p-bd-blk > * {
-  margin-bottom: 0.7em;
-}
-
-/* The root post. */
-.dw-ar-p-bd > .dw-p-bd-blk > * {
-  margin-bottom: 1em; /* or e.g. <p>:s not visible, because the root post
-                        has high line height */
-}
-
-/* The page title */
-/* bold 32px verdana !important,  small: font-size: 20px,  color #555 ?? */
-header.dw-p-ttl {
-  margin-bottom: 0; /* cancel header's default 48px */
-}
-header.dw-p-ttl > h1 {
-  color: #444;
-  font-size: 36px;
-  /* Make the page body .dw-p-hd appear only 5px below the title, looks nice */
-  margin-bottom: 6px;
-}
-/* The title when it's being previewed. */
-.dw-p-ttl > .dw-f-e .dw-e-tab-prvw > h1 {
-  padding: 0;
-  margin: 0;
-}
-/* The title when it's being edited. */
+/* Use larger font when editing page title. */
 .dw-pri .dw-p-ttl > .dw-f-e textarea {
   font-size: 26px;
 }
-
-
-/* Other titles */
-.dw-ar-p-bd > .dw-p-bd-blk > h1 {
-  font-size: 28px;
-  margin: 26px 0 15px !important;
-  padding: 0;
-  color: #444;
-}
-.dw-ar-p-bd > .dw-p-bd-blk > h2 {
-  font-size: 24px;
-  color: #303030;
-  margin: 26px 0 18px 0 !important;
-}
-.dw-ar-p-bd > .dw-p-bd-blk > h3 {
-  font-size: 18px;
-  font-weight: bold;
-}
-.dw-ar-p-bd > .dw-p-bd-blk > h4 {
-  font-size: 16px;
-  font-weight: bold;
-}
-.dw-ar-p-bd > .dw-p-bd-blk > h5 {
-  font-size: 12px;
-  font-weight: bold;
-}
-.dw-ar-p-bd > .dw-p-bd-blk > h6 {
-  font-size: 11px;
-  font-weight: normal;
-  text-decoration: underline;
-}
-
 
 .dw-p-bd-blk {
   margin: 0;
 }
 
-.dw-ar-p-bd > .dw-p-bd-blk > p,
-.dw-t.dw-p-art-qst > .dw-p > .dw-p-bd > .dw-p-bd-blk > p {
-  line-height: 20px;
-  font-size: 13px;
+.dw-ar-p {
+  padding-bottom: 0.8em;
 }
 
-/* Show list item marks, but not for nested threads. */
-.dw-p-bd-blk ul li {
-  list-style-type: disc;
-  margin-left: 2.5em;
-}
-.dw-p-bd-blk ol li {
-  list-style-type: decimal;
-  margin-left: 2.5em;
-}
 
-.dw-p-bd-blk > pre {
-  font-size: 12px; /* or unreadably small */
-}
-
-.dw-p-bd-blk img {
-  width: 100%;
-  display: block; /* TODO inline those with no \n\n inbetween preceeding text */
-  margin: 1.5em auto; /* TODO margin-bottom 0 if post ends there */
-}
+/* ----- END Move to theme ----- */
 
 
 /* === Debate === */
 
 .dw-debate {
-  font-family: Verdana, sans-serif;
-  /* In the future: Georgia for titles? */
-  font-size: 80%;
-  line-height: 120%;
   position: relative;
 }
 
 .dw-debate-info {
   display: none; /* need to place somewhere where it won't confuse newbies */
-  margin-bottom: 1em;
 }
 
 
 /* === Threads === */
 
-.dw-depth-0.dw-t > .dw-p {
-  padding-bottom: 0.8em; /* litte more airy? first post */
-}
-
-.dw-ar-p-bd > .dw-p-bd-blk {
-  line-height: 165%; /* higher height makes the main post easier to read */
-}
 
 .dw-depth-1 .dw-t {
   padding-left: 0;
@@ -373,11 +279,6 @@ header.dw-p-ttl > h1 {
 
 /* --- Horizontal layout ---*/
 /* (This could be simplified?) */
-
-/* Root post child threads and other stuff: */
-.dw-hor > .dw-res > li {
-  float: left;
-}
 
 .dw-t {
   /* SVG graphics is absolute positioned relative thread */
@@ -426,11 +327,6 @@ For that to work, this is needed: */
 .dw-fs-re .ui-resizable-se { visibility: hidden; }
 .dw-fs-re:hover .ui-resizable-se { visibility: visible; }
 
-/* Adjus max comment width: don't span whole screen even if
-.post.cropped-e is removed. */
-:not(.dw-ar-p-bd) > .dw-p-bd-blk {
-  max-width: 40em;
-}
 /* Prevent the edit form from getting as wide as the page. */
 .dw-depth-0 > .dw-p > .dw-f-e .dw-e-tabs {
   float: left;
@@ -552,8 +448,13 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
 .dw-hor > .dw-res > .ui-resizable { border-right: 2px dashed transparent; }
 
 .dw-hor > .dw-res > li {
+  float: left;
   padding: 0 27px 10px 0;
   margin: 10px 23px 0 0;
+}
+
+.dw-res > li {
+  list-style-type: none;
 }
 
 /* Make the column separator at least this high. But don't do this for
@@ -621,6 +522,7 @@ looks better if they appear close to the fold link. */
   border: 1px solid #ededed;
   border-left: none;
   border-right: none;
+  line-height: 15px; /* or test w 120% */
 }
 .dw-ar-p > .dw-p-hd {
   border: none;
@@ -726,10 +628,24 @@ and two folded threads would overlap, unless: */
 
 .dw-p-bd,
 .dw-p-diff {
-  padding: 6px 1px 0 3px;
+  padding: 6px 1px 0 3px; /* 3px aligns w .dw-p-hd (also padded left 3px) */
   position: relative;
   background-color: white;
   min-width: 5em;
+}
+
+:not(.dw-ar-p-bd) > .dw-p-bd-blk {
+  /* Cancel .dw-p-bd 3px padding-left:, because the .dw-p-bd-blk is
+  100% wide though, and without padding-right, text might be cropped. */
+  padding-right: 3px;
+  /* Adjus max comment width: don't span whole screen even if
+  .post.cropped-e is removed. */
+  max-width: 40em;
+}
+
+
+
+.dw-p-diff {
   line-height: normal; /* or becomes 120% so -diff lines lines overlap */
 }
 
@@ -1046,6 +962,7 @@ until they've been moved into the .dw-bd-blk > .dw-i-ts. */
 .dw-as-inline li {
   margin: 0; /* or margin from `dw-p-bd li' applied */
   float: left;
+  list-style-type: none;
 }
 
 .dw-as-inline .ui-button {
