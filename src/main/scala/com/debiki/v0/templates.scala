@@ -23,7 +23,7 @@ trait TemplateSource {
 case object TemplateSrcHtml {
 
   val DefaultText =
-    """|#extend: no-template
+    """|extend-template: closest
        |---
        |<html>
        |<head>
@@ -99,7 +99,7 @@ case class TemplateSrcHtml(post: ViPo, path: String) extends TemplateSource {
     // of the document, but also the start of a new line, Apparently, "(?m)"
     // doesn't count as a match group, so "(\w)" is the first group, 1. ))
     val params = new TemplateParamsMutable
-    ("""(?m)^(\w+): *(\S+)$""".r findAllIn yamlSrc
+    ("""(?m)^(\S+): *(\S+)$""".r findAllIn yamlSrc
         ).matchData foreach { matsh =>
       val paramName = matsh.group(1)
       val paramValue = matsh.group(2)

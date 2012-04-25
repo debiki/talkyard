@@ -47,7 +47,7 @@ sealed abstract class TemplateToExtend
 
 
 object TemplateToExtend {
-  val ParamName = "extend_template"
+  val ParamName = "extend-template"
 
   case object ExtendClosestTemplate extends TemplateToExtend {
     val ParamValue = "closest"
@@ -74,23 +74,23 @@ sealed abstract class CommentVisibility
 
 
 object CommentVisibility {
-  val ParamName = "comment_visibility"
+  val ParamName = "comment-visibility"
 
   case object Visible extends CommentVisibility {
     val ParamValue = "visible"
   }
 
   case object ShowOnClick extends CommentVisibility {
-    val ParamValue = "show_on_click"
+    val ParamValue = "show-on-click"
   }
 
   def parse(paramValue: String): CommentVisibility = {
     paramValue match {
       case Visible.ParamValue => Visible
       case ShowOnClick.ParamValue => ShowOnClick
-      case "hidden" => unimplemented("comment_visibility: hidden", "DwE0Kn31")
+      case "hidden" => unimplemented("comment-visibility: hidden", "DwE0Kn31")
       case x => illArgErr(
-        "DwE03R24", "Bad comment_visibility value: "+ safed(x))
+        "DwE03R24", "Bad comment-visibility value: "+ safed(x))
     }
   }
 }
