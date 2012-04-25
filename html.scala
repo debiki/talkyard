@@ -675,10 +675,12 @@ class DebateHtml(val debate: Debate, val pageTrust: PageTrust) {
         // In the future, I could make a recursive call to
         // _renderPost, to render the title. Then it would be
         // possible to reply-inline to the title.
+        // (Don't wrap the <h1> in a <header>; there's no need to wrap single
+        // tags in a <header>.)
         <div id={"post-"+ titlePost.id} class='dw-p dw-p-ttl'>
           <div class='dw-p-bd'>
             <div class='dw-p-bd-blk'>
-              <header class='dw-p-ttl'><h1>{titlePost.text}</h1></header>
+              <h1 class='dw-p-ttl'>{titlePost.text}</h1>
             </div>
           </div>
         </div>
