@@ -1523,6 +1523,14 @@ function $showInlineActionMenu(event) {
     anchorOffset: sel.anchorOffset
   };
 
+  // Finds the text just after the click. For example, if you click
+  // somewhere on 'cows' in a post with this text:
+  //    'All <strong>crazy cows</strong> eagerly eat running rabbits'
+  // I think it finds ' eagerly eat running rabbits'.
+  // (It does this without being so very confused by html tags,
+  // because it converts tags to single characters and then uses
+  // google-diff-match-patch to do a fussy search for the start
+  // of the clicked text.)
   var placeWhereFunc = function() {
     // Find out where to place the relevant form.
     // This must be done when the -bd has been split into -bd-blks.
