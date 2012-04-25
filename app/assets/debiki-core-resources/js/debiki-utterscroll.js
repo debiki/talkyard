@@ -305,7 +305,7 @@ Debiki.v0.utterscroll = function(options) {
 
     // Start scrolling if there's no text reasonably close to the
     // mousedown event.
-    var dist = distFromSelectionToEvent(sel, event);
+    var dist = distFromSelectionTextToEvent(sel, event);
     console.log('Approx dist from selection to mouse: '+ dist);
     if (dist === -1 || dist > 55) {
       startScroll(event);
@@ -315,12 +315,12 @@ Debiki.v0.utterscroll = function(options) {
 
 
   /**
-   * Finds the approximate distance from a text selecion to
-   * the mousedown event offset of [the mousedown event that
+   * Finds the approximate distance from [the text block close to a
+   * selection object] to [the position of the mousedown event that
    * initiated the text selection]. Returns -1 if there is
    * no selection anchor node that contains text.
    */
-  function distFromSelectionToEvent(sel, event) {
+  function distFromSelectionTextToEvent(sel, event) {
     // I don't think there's any built in browser support that helps
     // us to find the distance.
     // Therefore, place magic marks inbetween words, and check the
@@ -344,13 +344,75 @@ Debiki.v0.utterscroll = function(options) {
     var $parent = $(sel.anchorNode.parentElement);
     var innerHtmlBefore = $parent.html();
 
-    // Insert an invisible magic <a/> after each word, but not inside <tags>.
+    // Clone $parent, and insert into the clone an invisible magic <a/>
+    // after each word, but not inside <tags>.
+    // We won't modify $parent itself — doing that would 1) destroy
+    // the selection object (but other Javascript code might need it),
+    // and perhaps 2) break other related Javascript code and event
+    // bindings in other ways.
     var mark = '<a class="utrscrlhlpr"/>';
     var htmlWithMarks =
       innerHtmlBefore.replace(/(<[^>]*>)?(\S*)(\s)/g, '$1$2'+mark+'$3');
     var htmlWithMarks = mark + htmlWithMarks + mark;
-    $parent.html(htmlWithMarks);  // BUG RISK: can this destroy Javascript
-                                    // events attached to nested elems?
+    var $parentClone = $parent.clone();
+    $parentClone.html(htmlWithMarks);
+
+    // Replace the parent with the clone, so we can use the clone in
+    // distance measurements. But don't remove the parent — that would
+    // destroy the selection.
+    // Two minor (?) issues/bugs:
+    // o If the $parent is positioned via CSS like :last-child or
+    //  :only-child, that CSS wouldn't be applied to the clone and distance
+    //  measurement might become inaccurate.
+    //  Is this unavoidable? We cannot remove the real $parent, or we'd
+    //  destroy the selection.
+    // o If $parent is like the <small> in this example:
+    //     |text text text text text text text text text text text|
+    //     |text text text text text text text<small>parent parent|
+    //     |parent parent</small>  .                              |
+    //  and you click here --------′  then the mouse position
+    //  is far away from all words inside the <small>, but it's
+    //  nevertheless very close to the text in <small>'s *parent*
+    //  elem. And we're actually interested in this very small
+    //  distance.
+    //  - Possible solution: If $parent's own parent contains text,
+    //  clone and add marks to $parent's parent instead of only to $parent.
+    //  What if the $parent's parent's parent contains text?
+    //  Perhaps the best approach is to clone the $.closest() elem
+    //  with display: block.
+    //  - Another more efficient solution?  If first mark xpos > xpos
+    //  of last mark, and mouse is between first and last mark, return
+    //  min [y-dist from first mark to mouse] and [last mark to mouse].
+    $parentClone.insertBefore($parent);
+
+    // {{{ Alternative approach
+    // Place with 'position: absolute' the clone on the parent.
+    //
+    // However, if the start of the parent isn't at the parent's upper
+    // left corner, word wrapping in the parent and the clone won't be
+    // identical. Example:
+    //     |text text text text text text text text text text text|
+    //     |text text text text text text text<small>parent parent|
+    //     |parent parent</small>                                 |
+    // If you clone <small> and 'position: absolute' the clone on
+    // the original <small>, the clone will have no line wraps,
+    // but look like so:
+    //     |text text text text text text text text text text text|
+    //  —> |<small>parent parent parent parent</small>xt text text|
+    //     |parent parent</small>                                 |
+    // Possible solution: Find the closest elem with display: block,
+    // and clone it. Then word wraps should become identical?
+    //
+    //$parentClone
+    //    .css({
+    //      width: $parent.width(),
+    //      height: $parent.height(),
+    //      position: 'absolute'
+    //    })
+    //    .insertBefore($parent)
+    //    .position({ my: 'left top', at: 'left top', of: $parent });
+    //
+    // }}}
 
     // Find mousedown position relative document.
     // (This is supposedly cross browser compatible, see e.g.
@@ -367,9 +429,9 @@ Debiki.v0.utterscroll = function(options) {
       };
     }
 
-    // Find min mark-to-event distance.
+    // Find min distance from [the marks inside the clone] to the mouse pos.
     var minDist2 = 999999999;
-    $parent.children('.utrscrlhlpr').each(function() {
+    $parentClone.find('.utrscrlhlpr').each(function() {
       var myOffs = $(this).offset();
       var distX = mouseOffs.x - myOffs.left;
       var distY = mouseOffs.y - myOffs.top;
@@ -381,8 +443,7 @@ Debiki.v0.utterscroll = function(options) {
       }
     });
 
-    // Remove crazy marks.
-    $parent.html(innerHtmlBefore);
+    $parentClone.remove();
 
     return Math.sqrt(minDist2);
   }
