@@ -2284,7 +2284,7 @@ function makeCurUser() {
   var userProps;
   var emailPrefs = undefined;
   var emailSpecified = false;
-  var permsOnPage = undefined;
+  var permsOnPage = {};
 
   function refreshProps() {
     parseSidCookie();
@@ -2344,7 +2344,7 @@ function makeCurUser() {
   function clearMyPageInfo() {
     $('.dw-p-by-me').removeClass('dw-p-by-me');
     $('.dw-p-r-by-me').remove();
-    permsOnPage = undefined;
+    permsOnPage = {};
   }
 
   /**
