@@ -243,6 +243,14 @@ Debiki.v0.utterscroll = function(options) {
 
     // If there's no text in the event.target, then start scrolling.
     // Disregard whitespace "text" though.
+    // Minor bug: If you have this paragraph:
+    //     |<p><small>text text text text text text|
+    //     |text text</small></p>          .       |
+    //  and you click here --′ then it seems the <p> is selected,
+    //  but it's empty. So Utterscroll aborts early! Although
+    //  distFromSelectionTextToEvent would have found that the 
+    //  click happened very close to text — so we shouldn't start
+    //  scrolling!
     var textElems = $target.contents().filter(function(ix, elem, ar) {
       if (elem.nodeType !== 3)  // is it a text node?
         return false;
