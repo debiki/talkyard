@@ -151,7 +151,6 @@ Debiki.v0.utterscroll = function(options) {
   var $elemToScroll;
   var startPos;
   var lastPos;
-  var tryLaterHandle;
 
   // Avoids firing onHasUtterscrolled twice.
   var hasFiredHasUtterscrolled = false;
@@ -165,13 +164,7 @@ Debiki.v0.utterscroll = function(options) {
       .appendTo(document.body);
 
   $(document).mousedown(startScrollPerhaps);
-  $(document).mouseup(clearTryLaterCallback)
 
-  function clearTryLaterCallback() {
-    if (!tryLaterHandle) return;
-    clearTimeout(tryLaterHandle);
-    tryLaterHandle = undefined;
-  }
 
   function startScrollPerhaps(event) {
     // Only left button drag-scrolls.
@@ -281,13 +274,6 @@ Debiki.v0.utterscroll = function(options) {
       startScrollUnlessMightSelectText(event);
     }, 0);
 
-    // If the user selects no text, but just holds down the mouse
-    // button, then start scrolling. — This enable scrolldrag
-    // also on pages almost covered with text.
-    tryLaterHandle = setTimeout(function() {
-      startScrollUnlessHasSelectedText(event);
-    }, 300);
-
     // Don't event.preventDefault(). — The user should be able
     // to e.g. click buttons and select text.
   }
@@ -323,7 +309,6 @@ Debiki.v0.utterscroll = function(options) {
     console.log('Approx dist from selection to mouse: '+ dist);
     if (dist === -1 || dist > 55) {
       startScroll(event);
-      clearTimeout(tryLaterHandle);
     }
   }
 
@@ -463,25 +448,6 @@ Debiki.v0.utterscroll = function(options) {
   }
 
 
-  // Starts scrolling, unless already scrolling, and unless the user
-  // has selected text.
-  function startScrollUnlessHasSelectedText(event) {
-    if (startPos) return; // already scrolling
-    var selectedText;
-
-    if (window.getSelection) {
-      selectedText = window.getSelection().toString();
-    } else if (document.selection) {  // IE 7 and 8
-      selectedText = document.selection.createRange().text;
-    } else {
-      // Don't scroll.
-      selectedText = '';
-    }
-
-    if (selectedText.length === 0)
-      startScroll(event);
-  }
-
   function startScroll(event) {
     $(document).mousemove(doScroll);
     $(document).mouseup(stopScroll);
@@ -577,7 +543,6 @@ Debiki.v0.utterscroll = function(options) {
     $elemToScroll = undefined;
     startPos = undefined;
     lastPos = undefined;
-    clearTryLaterCallback();
     $(document.body).dwEnableSelection();
     $(document.body).css('cursor', '');  // cancel 'move' cursor
     $.event.remove(document, 'mousemove', doScroll);
