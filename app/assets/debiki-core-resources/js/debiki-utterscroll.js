@@ -242,30 +242,36 @@ Debiki.v0.utterscroll = function(options) {
     // -----
 
     // If there's no text in the event.target, then start scrolling.
-    // Disregard whitespace "text" though.
-    // Minor bug: If you have this paragraph:
-    //     |<p><small>text text text text text text|
-    //     |text text</small></p>          .       |
-    //  and you click here --′ then it seems the <p> is selected,
-    //  but it's empty. So Utterscroll aborts early! Although
-    //  distFromSelectionTextToEvent would have found that the 
-    //  click happened very close to text — so we shouldn't start
-    //  scrolling!
-    var textElems = $target.contents().filter(function(ix, elem, ar) {
-      if (elem.nodeType !== 3)  // is it a text node?
-        return false;
-      if (elem.data.match(/^[ \t\r\n]*$/))  // is it whitespace?
-        return false;
-      return true;  // it is real text
-    });
-    if (textElems.length === 0) {
+    var containsText = searchForTextIn($target);
+    console.log(event.target.nodeName +' containsText: '+ containsText);
+    if (!containsText) {
       startScroll(event);
-      /*
-      console.log('$target.contents(): ---------------');
-      console.log($target.contents());
-      console.log('-------------------------------------------');
-      */
       return false;
+    }
+
+    function searchForTextIn($elem, recursionDepth) {
+      if (recursionDepth > 3)
+        return false;
+      var $textElems = $elem.contents().filter(function(ix, child, ar) {
+        // Is it a true text node with text?
+        if (child.nodeType === 3) {  // 3 is text
+          var onlyWhitespace = child.data.match(/^[ \t\r\n]*$/);
+          return !onlyWhitespace;
+        }
+        // Recurse into inline elems — I think they often contain
+        // text? E.g. <li><a>...</a></li> or <p><small>...</small></p>.
+        var $child = $(child);
+        if ($child.css('display') === 'inline') {
+          var foundText = searchForTextIn($child, recursionDepth + 1);
+          return foundText;
+        }
+        // Skip block level children. If text in them is to be selected,
+        // the user needs to click on those blocks. (Recursing into
+        // block level elems could search the whole page, should you
+        // click the <html> elem!)
+        return false;
+      });
+      return $textElems.length > 0;
     }
 
     // After a moment, the browser (Chrome and FF and IE 9) has created
