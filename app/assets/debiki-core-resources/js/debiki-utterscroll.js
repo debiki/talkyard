@@ -255,7 +255,7 @@ Debiki.v0.utterscroll = function(options) {
       var $textElems = $elem.contents().filter(function(ix, child, ar) {
         // Is it a true text node with text?
         if (child.nodeType === 3) {  // 3 is text
-          var onlyWhitespace = child.data.match(/^[ \t\r\n]*$/);
+          var onlyWhitespace = child.data.match(/^\s*$/);
           return !onlyWhitespace;
         }
         // Recurse into inline elems — I think they often contain
