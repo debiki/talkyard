@@ -286,11 +286,11 @@ Debiki.v0.utterscroll = function(options) {
   function distFromTextToEvent($elem, event) {
     // I don't think there's any built in browser support that helps
     // us to find the distance.
-    // Therefore, place magic marks inbetween words, and check the
+    // Therefore, place many magic marks inside $elem, and check the
     // distance from each mark to the mousedown evenet. Then return
     // the shortest distance.
-    // We have no idea where the text line wraps, so we cannot be
-    // clever about where we insert the marks.
+    // We have no idea where the text line-wraps, so we cannot be
+    // clever about where to insert the marks.
 
     // {{{ Two vaguely related StackOverflow questions.
     //  <http://stackoverflow.com/questions/1589721/
@@ -298,13 +298,36 @@ Debiki.v0.utterscroll = function(options) {
     //  <http://stackoverflow.com/questions/2031518/
     //      javascript-selection-range-coordinates> }}}
 
+    // Add marks to a copy of $elem's inner html.
     var $parent = $elem;
     var innerHtmlBefore = $parent.html();
+    var mark = '<span class="utrscrlhlpr"/>';
+    // First replace all html tags with a placeholder.
+    // (When we add marks, we don't want to add them inside tags.)
+    // (It seems any '<' in attribute values have been escaped to '&lt;')
+    var savedTags = [];
+    var innerHtmlNoTags =
+        innerHtmlBefore.replace(/<[^>]*>/g, function($0) {
+      savedTags.push($0);
+      return '·'; // TODO find a rarer utf-8 char? (Also update TagDog)
+    });
+    // For now, insert a mark between every two chars. We need frequent
+    // marks if the font size is huge. Could check font size of
+    // all elems in $target, and reduce num chars between marks.
+    // (For one single elem: parseInt($elem.css('font-size')); )
+    // But not needed? Performance is fine, on my computer :-)
+    var htmlWithMarksNoTags = mark + innerHtmlNoTags.replace(
+        /(\s*.{0,2})/g, '$1'+ mark);
+    // Put back all html tags.
+    var savedTagsIx = 0;
+    var htmlWithMarks = htmlWithMarksNoTags.replace(/·/g, function() {
+      savedTagsIx += 1;
+      return savedTags[savedTagsIx - 1];
+    });
 
-    // Clone $parent, and insert into the clone an invisible magic <a/>
-    // after each word, but not inside <tags>.
-    // We won't modify $parent itself — doing that would 1) destroy
-    // the selection object (but other Javascript code might need it),
+    // Clone $parent, and insert the marks into the clone.
+    // We won't modify $parent itself — doing that would 1) destroy any
+    // text selection object (but other Javascript code might need it),
     // and perhaps 2) break other related Javascript code and event
     // bindings in other ways.
     // {{{ You might wonder what happens if $parent is the <html> and the page
@@ -312,28 +335,6 @@ Debiki.v0.utterscroll = function(options) {
     // this code for elems that contains text or inline elems with text,
     // and such blocks are usually small. Well written text contains
     // reasonably small paragraphs, no excessively huge blocks of text. }}}
-    var mark = '<a class="utrscrlhlpr"/>';
-
-    // Explanation of below regex:
-    //   ((<[^>]+>)*)    Match consecutive tags
-    //     ([^<]*?)(\s)  Match one word (*? is non-greedy) and a whitespace.
-    //                     But fail if new tag starts.
-    // Explanation of the space appended to innerHtmlBefore:
-    //   Without it, if innerHtmlBefore ends with e.g. the text
-    //   '<a attr>', that text won't match the regex. So the engine
-    //   drops '<' and tests with 'a attr>' instead and finds a match,
-    //   and inserts a mark inside the tag (bad!).
-    //   Fix this, by appending a space that changes '<a attr>'
-    //   to  '<a attr> ' which matches directly.
-    // BUG: If there's any  <a attr>nospace</a>, then the same situation
-    // arises (as with no end ' ' and the regex inserts a tag in the <a attr>.
-    // However this is somewhat :-) because we're *inside* the tag with lots
-    // of text nearby, so we'll find some text anyway close to the mouse.
-    // REAL SOLUTION?: Replace all tags with placeholders. Then add marks.
-    // Then put back tags. That is, apply 3 regexs not just 1.
-    var htmlWithMarks = (innerHtmlBefore + ' ').replace(
-        /((<[^>]+>)*)([^<]*?)(\s)/g, '$1$3'+ mark + '$4');
-    var htmlWithMarks = mark + htmlWithMarks;
     var $parentClone = $parent.clone();
     $parentClone.html(htmlWithMarks);
 
@@ -345,7 +346,7 @@ Debiki.v0.utterscroll = function(options) {
     //  :only-child, that CSS wouldn't be applied to the clone, so distance
     //  measurement might become inaccurate.
     //  Is this unavoidable? We cannot remove the real $parent, or we'd
-    //  destroy the selection.
+    //  destroy the text selection (if there is one).
     $parentClone.insertBefore($parent);
 
     // {{{ Alternative approach
