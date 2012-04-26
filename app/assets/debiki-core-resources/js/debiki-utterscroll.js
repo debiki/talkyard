@@ -239,7 +239,7 @@ Debiki.v0.utterscroll = function(options) {
     console.log(event.target.nodeName +' containsText: '+ containsText);
     if (!containsText) {
       startScroll(event);
-      return false;
+      return true;
     }
 
     function searchForTextIn($elem, recursionDepth) {
@@ -267,59 +267,23 @@ Debiki.v0.utterscroll = function(options) {
       return $textElems.length > 0;
     }
 
-    // After a moment, the browser (Chrome and FF and IE 9) has created
-    // a selection object that we can examine to find out if the
-    // mousesdown happened where there is no text. If so, we'll scroll.
-    setTimeout(function() {
-      startScrollUnlessMightSelectText(event);
-    }, 0);
+    // Start scrolling if mouse press happened not very close to text.
+    var dist = distFromTextToEvent($target, event);
+    console.log('Approx dist from $target text to mouse: '+ dist);
+    if (dist === -1 || dist > 55) {
+      startScroll(event);
+      return true;
+    }
 
     // Don't event.preventDefault(). — The user should be able
     // to e.g. click buttons and select text.
   }
 
-  // Starts scrolling unless the mousedown happened on text — then let
-  // the user select text instead.
-  function startScrollUnlessMightSelectText(event) {
-    // A moment after mousedown, the browser seems to always return
-    // a selection if the cursor is on text — well, at least Chrome and
-    // FF and IE 9 they create a selection object for the empty string.
-
-    // Opera however does not, so skip Opera here (result: Opera will
-    // select text, instead of scrolldragging, sometimes when you click
-    // close to text).
-    if ($.browser.opera)
-      return;
-
-    // IE 7 and 8.
-    // It seems  document.selection.createRange().text  is always an
-    // empty string here — don't know if the user mousedown:ed on text.
-    // So don't scroll (result: IE 7 and 8 will sometimes select text,
-    // instead of scrolling).
-    if (!window.getSelection)
-      return;
-
-    // This happens a tiny while after the mousedown event, and now
-    // the browser knows if any text is selected/mouse-down:ed.
-    var sel = window.getSelection();
-
-    // Start scrolling if there's no text reasonably close to the
-    // mousedown event.
-    var dist = distFromSelectionTextToEvent(sel, event);
-    console.log('Approx dist from selection to mouse: '+ dist);
-    if (dist === -1 || dist > 55) {
-      startScroll(event);
-    }
-  }
-
 
   /**
-   * Finds the approximate distance from [the text block close to a
-   * selection object] to [the position of the mousedown event that
-   * initiated the text selection]. Returns -1 if there is
-   * no selection anchor node that contains text.
+   * Finds the approximate closest distance from text in $elem to event.
    */
-  function distFromSelectionTextToEvent(sel, event) {
+  function distFromTextToEvent($elem, event) {
     // I don't think there's any built in browser support that helps
     // us to find the distance.
     // Therefore, place magic marks inbetween words, and check the
@@ -334,13 +298,7 @@ Debiki.v0.utterscroll = function(options) {
     //  <http://stackoverflow.com/questions/2031518/
     //      javascript-selection-range-coordinates> }}}
 
-    // BUG RISK: What happens if you click the html elem on HUGE page?
-
-    // Is there an anchor node with text?
-    if (!sel.anchorNode || !sel.anchorNode.data)
-      return -1;
-
-    var $parent = $(sel.anchorNode.parentElement);
+    var $parent = $elem;
     var innerHtmlBefore = $parent.html();
 
     // Clone $parent, and insert into the clone an invisible magic <a/>
@@ -349,39 +307,45 @@ Debiki.v0.utterscroll = function(options) {
     // the selection object (but other Javascript code might need it),
     // and perhaps 2) break other related Javascript code and event
     // bindings in other ways.
+    // {{{ You might wonder what happens if $parent is the <html> and the page
+    // is huge. This isn't likely to happen though, because we only run
+    // this code for elems that contains text or inline elems with text,
+    // and such blocks are usually small. Well written text contains
+    // reasonably small paragraphs, no excessively huge blocks of text. }}}
     var mark = '<a class="utrscrlhlpr"/>';
-    var htmlWithMarks =
-      innerHtmlBefore.replace(/(<[^>]*>)?(\S*)(\s)/g, '$1$2'+mark+'$3');
-    var htmlWithMarks = mark + htmlWithMarks + mark;
+
+    // Explanation of below regex:
+    //   ((<[^>]+>)*)    Match consecutive tags
+    //     ([^<]*?)(\s)  Match one word (*? is non-greedy) and a whitespace.
+    //                     But fail if new tag starts.
+    // Explanation of the space appended to innerHtmlBefore:
+    //   Without it, if innerHtmlBefore ends with e.g. the text
+    //   '<a attr>', that text won't match the regex. So the engine
+    //   drops '<' and tests with 'a attr>' instead and finds a match,
+    //   and inserts a mark inside the tag (bad!).
+    //   Fix this, by appending a space that changes '<a attr>'
+    //   to  '<a attr> ' which matches directly.
+    // BUG: If there's any  <a attr>nospace</a>, then the same situation
+    // arises (as with no end ' ' and the regex inserts a tag in the <a attr>.
+    // However this is somewhat :-) because we're *inside* the tag with lots
+    // of text nearby, so we'll find some text anyway close to the mouse.
+    // REAL SOLUTION?: Replace all tags with placeholders. Then add marks.
+    // Then put back tags. That is, apply 3 regexs not just 1.
+    var htmlWithMarks = (innerHtmlBefore + ' ').replace(
+        /((<[^>]+>)*)([^<]*?)(\s)/g, '$1$3'+ mark + '$4');
+    var htmlWithMarks = mark + htmlWithMarks;
     var $parentClone = $parent.clone();
     $parentClone.html(htmlWithMarks);
 
     // Replace the parent with the clone, so we can use the clone in
     // distance measurements. But don't remove the parent — that would
-    // destroy the selection.
-    // Two minor (?) issues/bugs:
-    // o If the $parent is positioned via CSS like :last-child or
-    //  :only-child, that CSS wouldn't be applied to the clone and distance
+    // destroy any text selection.
+    // One minor (?) issues/bug:
+    //  If the $parent is positioned via CSS like :last-child or
+    //  :only-child, that CSS wouldn't be applied to the clone, so distance
     //  measurement might become inaccurate.
     //  Is this unavoidable? We cannot remove the real $parent, or we'd
     //  destroy the selection.
-    // o If $parent is like the <small> in this example:
-    //     |text text text text text text text text text text text|
-    //     |text text text text text text text<small>parent parent|
-    //     |parent parent</small>  .                              |
-    //  and you click here --------′  then the mouse position
-    //  is far away from all words inside the <small>, but it's
-    //  nevertheless very close to the text in <small>'s *parent*
-    //  elem. And we're actually interested in this very small
-    //  distance.
-    //  - Possible solution: If $parent's own parent contains text,
-    //  clone and add marks to $parent's parent instead of only to $parent.
-    //  What if the $parent's parent's parent contains text?
-    //  Perhaps the best approach is to clone the $.closest() elem
-    //  with display: block.
-    //  - Another more efficient solution?  If first mark xpos > xpos
-    //  of last mark, and mouse is between first and last mark, return
-    //  min [y-dist from first mark to mouse] and [last mark to mouse].
     $parentClone.insertBefore($parent);
 
     // {{{ Alternative approach
