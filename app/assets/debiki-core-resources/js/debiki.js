@@ -3087,6 +3087,7 @@ function $showReplyForm(event, opt_where) {
   clearfix($thread); // ensures the reply appears nested inside the thread
   var postId = $post.dwPostId();
   var horizLayout = $thread.is('.dw-hor');
+  var replyCountBefore = $thread.find('> .dw-res > .dw-t').length;
 
   $replyAction.dwActionLinkDisable();
 
@@ -3193,8 +3194,11 @@ function $showReplyForm(event, opt_where) {
           // the new comment and the tips appear at the same time,
           // the user will be confused? S/he won't know where to look?
           // So wait a few seconds.
+          // Don't show sort order tips if there are few replies,
+          // then nothing is really being sorted anyway.
           var delayMillis = 3500;
-          if (horizLayout) showSortOrderTipsLater($myNewPost, 2050);
+          var showSortTips = horizLayout && replyCountBefore >= 2;
+          if (showSortTips) showSortOrderTipsLater($myNewPost, 2050);
           else showRateOwnCommentTipsLater($myNewPost, delayMillis);
 
           showAndHighlightPost($myNewPost,
