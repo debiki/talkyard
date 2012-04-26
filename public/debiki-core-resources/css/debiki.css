@@ -1049,6 +1049,7 @@ until they've been moved into the .dw-bd-blk > .dw-i-ts. */
 .ui-dialog .dw-fs form {
   background-color: #fbf7f2;
   border: 1px solid #f7f3ed; /* almost background color */
+  margin: 0 25px 0 10px;
 }
 
 /* jQuery UI dialogs have forms inside. Set the dialog bg color
