@@ -170,6 +170,7 @@ var htmlSniffer = (function() {
 return {
   sniffHtml: function(htmlText, opt_placeholder) {
     var placeholder = opt_placeholder || '·'; // TODO find a rarer utf-8 char?
+                                              // (Also update Utterscroll)
 
     var escaped = htmlText; // TODO Escape any placeholder chars.
     var sniffAndMem = {
