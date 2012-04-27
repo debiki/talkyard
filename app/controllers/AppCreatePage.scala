@@ -7,7 +7,6 @@ package controllers
 import com.debiki.v0._
 import debiki._
 import debiki.DebikiHttp._
-import net.liftweb.common.{Box, Full, Empty, Failure}
 import play.api._
 import play.api.mvc.{Action => _}
 import Actions._
@@ -69,11 +68,7 @@ object AppCreatePage extends mvc.Controller {
 
     val debateNoId = Debate(guid = "?", posts = rootPost::titlePost::Nil)
     val newPage: Debate = Debiki.Dao.createPage(
-      where = newPagePathNoId, debate = debateNoId) match {
-        case Full(page) => page
-        case x => throwInternalError("DwE039k3", "Could not create page," +
-          " error:\n"+ x)
-      }
+      where = newPagePathNoId, debate = debateNoId)
 
     val newPagePath = newPagePathNoId.copy(pageId = Some(newPage.id))
     Redirect(newPagePath.path)

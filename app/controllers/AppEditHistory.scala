@@ -7,7 +7,6 @@ package controllers
 import com.debiki.v0._
 import debiki._
 import debiki.DebikiHttp._
-import net.liftweb.common.{Box, Full, Empty, Failure}
 import play.api._
 import play.api.mvc.{Action => _}
 import Actions._

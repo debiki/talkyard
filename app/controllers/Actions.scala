@@ -8,7 +8,6 @@ import com.debiki.v0._
 import debiki._
 import debiki.DebikiHttp._
 import java.{util => ju}
-import net.liftweb.common.{Box, Full, Empty, Failure}
 import play.api._
 import play.api.mvc.{Action => _, _}
 import Prelude._
@@ -82,7 +81,7 @@ object Actions {
      */
     lazy val page_? : Option[Debate] =
       if (pageExists)
-        pageId.flatMap(id => Debiki.Dao.loadPage(tenantId, id).toOption)
+        pageId.flatMap(id => Debiki.Dao.loadPage(tenantId, id))
       // Don't load the page even if it was *created* moments ago.
       // having !pageExists and page_? = Some(..) feels risky.
       else None
@@ -220,14 +219,13 @@ object Actions {
         (f: (SidOk, XsrfOk, Option[PagePath], Request[A]) => PlainResult) =
     CheckSidAction[A](parser) { (sidOk, xsrfOk, request) =>
       Debiki.Dao.checkPagePath(pathIn) match {
-        case Full(correct: PagePath) =>
+        case Some(correct: PagePath) =>
           if (correct.path == pathIn.path) {
             f(sidOk, xsrfOk, Some(correct), request)
           } else {
             Results.MovedPermanently(correct.path)
           }
-        case Empty => f(sidOk, xsrfOk, None, request)
-        case f: Failure => runErr("DwE03ki2", "Internal error"+ f.toString)
+        case None => f(sidOk, xsrfOk, None, request)
       }
     }
 

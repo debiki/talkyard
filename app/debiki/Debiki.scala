@@ -7,7 +7,6 @@ package debiki
 import com.debiki.v0._
 import com.debiki.v0.Prelude._
 import controllers.Actions.PageRequest
-import net.liftweb.common.{Box, Full, Empty, Failure}
 import play.api.Play
 import play.api.Play.current
 
@@ -42,7 +41,7 @@ object Debiki {
       return
 
     import pageReq.{tenantId, pageId_!, page_!, user_!}
-    val Full(actionsWithId) = Dao.savePageActions(tenantId, pageId_!, actions)
+    val actionsWithId = Dao.savePageActions(tenantId, pageId_!, actions)
 
     // Possible optimization: Examine all actions, and refresh cache only
     // if there are e.g. EditApp:s or Replie:s (but ignore Edit:s -- if

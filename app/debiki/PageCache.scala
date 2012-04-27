@@ -42,7 +42,7 @@ class PageCache(val dao: Dao) {
 
   private def _loadAndRender(k: Key, pageRoot: PageRoot): NodeSeq = {
     dao.loadPage(k.tenantId, k.pageGuid) match {
-      case Full(debate) =>
+      case Some(debate) =>
         val config = DebikiHttp.newUrlConfig(k.hostAndPort)
         // Hmm, DebateHtml and pageTrust should perhaps be wrapped in
         // some PageRendererInput class, that is handled to PageCache,
@@ -57,11 +57,9 @@ class PageCache(val dao: Dao) {
         // page cache (if pageRoot is the Page.body -- see get() below).
           xml.Unparsed(lu.Html5.toString(html))
         }
-      case Empty =>
+      case None =>
         // Page missing. Should have been noticed during access control.
         assErr("DwE35eQ20", "Page "+ safed(k.pageGuid) +" not found")
-      case f: Failure =>
-        runErr("DwE8kN3", "Error loading page "+ safed(k.pageGuid) +":\n"+ f)
     }
   }
 
