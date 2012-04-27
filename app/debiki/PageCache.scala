@@ -5,14 +5,13 @@
 package debiki
 
 import com.debiki.v0.Prelude._
+import com.debiki.v0.{liftweb => lw}
 import com.google.{common => guava}
 import controllers.Actions.PageRequest
 import debiki.DebikiHttp.throwNotFound
 import java.{util => ju}
-import net.liftweb.{util => lu}
 import play.api.Logger
 import scala.xml.NodeSeq
-import net.liftweb.common._
 import PageCache._
 import com.debiki.v0._
 
@@ -55,7 +54,7 @@ class PageCache(val dao: Dao) {
         nodes map { html =>
         // The html is serialized here only once, then it's added to the
         // page cache (if pageRoot is the Page.body -- see get() below).
-          xml.Unparsed(lu.Html5.toString(html))
+          xml.Unparsed(lw.Html5.toString(html))
         }
       case None =>
         // Page missing. Should have been noticed during access control.
