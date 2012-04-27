@@ -593,7 +593,8 @@ post, only for the article.) */
   it's more important that they don't grab any attention, than that
   people notice that they can close threads. */
   color: #666;
-  font-size: 85%;
+  font-size: 13px;
+  font-family: Verdana;
   text-decoration:none;
 }
 .dw-z:hover {
