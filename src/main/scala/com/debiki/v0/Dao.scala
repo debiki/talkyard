@@ -5,7 +5,6 @@ package com.debiki.v0
 import com.debiki.v0.Prelude._
 import com.google.{common => guava}
 import java.{util => ju}
-import net.liftweb.common.{Logger, Box, Empty, Full, Failure}
 import Dao._
 import EmailNotfPrefs.EmailNotfPrefs
 
@@ -32,20 +31,20 @@ abstract class DaoSpi {
 
   def saveLogout(loginId: String, logoutIp: String)
 
-  def createPage(where: PagePath, debate: Debate): Box[Debate]
+  def createPage(where: PagePath, debate: Debate): Debate
 
   def moveRenamePage(tenantId: String, pageId: String,
         newFolder: Option[String], showId: Option[Boolean],
         newSlug: Option[String]): PagePath
 
   def savePageActions[T <: Action](
-    tenantId: String, debateId: String, xs: List[T]): Box[List[T]]
+    tenantId: String, debateId: String, xs: List[T]): List[T]
 
-  def loadPage(tenantId: String, debateId: String): Box[Debate]
+  def loadPage(tenantId: String, debateId: String): Option[Debate]
 
   def loadTemplate(templPath: PagePath): Option[TemplateSrcHtml]
 
-  def checkPagePath(pathToCheck: PagePath): Box[PagePath]
+  def checkPagePath(pathToCheck: PagePath): Option[PagePath]
 
   def lookupPagePathByPageId(tenantId: String, pageId: String): Option[PagePath]
 
@@ -104,7 +103,7 @@ abstract class DaoSpi {
 
   def lookupTenant(scheme: String, host: String): TenantLookup
 
-  def checkRepoVersion(): Box[String]
+  def checkRepoVersion(): Option[String]
 
   /** Used as salt when hashing e.g. email and IP, before the hash
    *  is included in HTML. */
@@ -139,7 +138,7 @@ abstract class Dao {
 
   // ----- Pages
 
-  def createPage(where: PagePath, debate: Debate): Box[Debate] =
+  def createPage(where: PagePath, debate: Debate): Debate =
     _spi.createPage(where, debate)
 
   def moveRenamePage(tenantId: String, pageId: String,
@@ -155,11 +154,10 @@ abstract class Dao {
    *  Prelude.convertBadChars().
    */
   def savePageActions[T <: Action](
-        tenantId: String, debateId: String, actions: List[T]): Box[List[T]] = {
+        tenantId: String, debateId: String, actions: List[T]): List[T] =
     _spi.savePageActions(tenantId, debateId, actions)
-  }
 
-  def loadPage(tenantId: String, debateId: String): Box[Debate] =
+  def loadPage(tenantId: String, debateId: String): Option[Debate] =
     _spi.loadPage(tenantId, debateId)
 
   /** Loads any template at templPath.
@@ -167,7 +165,7 @@ abstract class Dao {
   def loadTemplate(templPath: PagePath): Option[TemplateSrcHtml] =
     _spi.loadTemplate(templPath)
 
-  def checkPagePath(pathToCheck: PagePath): Box[PagePath] =
+  def checkPagePath(pathToCheck: PagePath): Option[PagePath] =
     _spi.checkPagePath(pathToCheck)
 
   def lookupPagePathByPageId(tenantId: String, pageId: String)
@@ -268,7 +266,7 @@ abstract class Dao {
   def lookupTenant(scheme: String, host: String): TenantLookup =
     _spi.lookupTenant(scheme, host)
 
-  def checkRepoVersion(): Box[String] = _spi.checkRepoVersion()
+  def checkRepoVersion(): Option[String] = _spi.checkRepoVersion()
 
   def secretSalt(): String = _spi.secretSalt()
 }
@@ -290,29 +288,30 @@ class CachingDao(spi: DaoSpi) extends Dao {
           //expireAfterWrite(10. TimeUnits.MINUTES).
           makeComputingMap(new guava.base.Function[Key, Debate] {
             def apply(k: Key): Debate = {
-              _spi.loadPage(k.tenantId, k.debateId) openOr null
+              _spi.loadPage(k.tenantId, k.debateId) getOrElse null
             }
           })
 
-  override def createPage(where: PagePath, debate: Debate): Box[Debate] = {
-    for (debateWithIdsNoUsers <- _spi.createPage(where, debate)) yield {
-      // ------------
-      // Bug workaround: Load the page *inclusive Login:s and User:s*.
-      // Otherwise only Actions will be included (in debateWithIdsNoUsers)
-      // and then the page cannot be rendered (there'll be None.get errors).
-      val debateWithIds =
-          _spi.loadPage(where.tenantId, debateWithIdsNoUsers.guid).open_!
-      // ------------
-      val key = Key(where.tenantId, debateWithIds.guid)
-      val duplicate = _cache.putIfAbsent(key, debateWithIds)
-      runErrIf3(duplicate ne null, "DwE8WcK905", "Newly created page "+
-            safed(debate.guid) + " already present in mem cache")
-      debateWithIds
-    }
+
+  override def createPage(where: PagePath, debate: Debate): Debate = {
+    val debateWithIdsNoUsers = _spi.createPage(where, debate)
+    // ------------
+    // Bug workaround: Load the page *inclusive Login:s and User:s*.
+    // Otherwise only Actions will be included (in debateWithIdsNoUsers)
+    // and then the page cannot be rendered (there'll be None.get errors).
+    val debateWithIds =
+        _spi.loadPage(where.tenantId, debateWithIdsNoUsers.guid).get
+    // ------------
+    val key = Key(where.tenantId, debateWithIds.guid)
+    val duplicate = _cache.putIfAbsent(key, debateWithIds)
+    runErrIf3(duplicate ne null, "DwE8WcK905", "Newly created page "+
+          safed(debate.guid) + " already present in mem cache")
+    debateWithIds
   }
 
+
   override def savePageActions[T <: Action](
-      tenantId: String, debateId: String, xs: List[T]): Box[List[T]] = {
+      tenantId: String, debateId: String, xs: List[T]): List[T] = {
     for (xsWithIds <- _spi.savePageActions(tenantId, debateId, xs)) yield {
       val key = Key(tenantId, debateId)
       var replaced = false
@@ -329,7 +328,7 @@ class CachingDao(spi: DaoSpi) extends Dao {
         // DebateHtml._layoutPosts.
         // -- So instead: ----------
         // This loads all Logins, Identity:s and Users referenced by the page:
-        val newPage = _spi.loadPage(tenantId, debateId).open_!
+        val newPage = _spi.loadPage(tenantId, debateId).get
         // -------- Unfortunately.--
         replaced = _cache.replace(key, oldPage, newPage)
       }
@@ -337,12 +336,13 @@ class CachingDao(spi: DaoSpi) extends Dao {
     }
   }
 
-  override def loadPage(tenantId: String, debateId: String): Box[Debate] = {
+
+  override def loadPage(tenantId: String, debateId: String): Option[Debate] = {
     try {
-      Full(_cache.get(Key(tenantId, debateId)))
+      Some(_cache.get(Key(tenantId, debateId)))
     } catch {
       case e: NullPointerException =>
-        Empty
+        None
     }
   }
 
