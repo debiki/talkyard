@@ -168,7 +168,7 @@ object DebateHtml {
     // So html_sanitize probably generates html that Lift-Web's version
     // of the nu.validator parser understands.)
     // Wrap the html text in a dummy tag to avoid a SAXParseException.
-    Html5.parse("<div>"+ htmlTextSafe +"</div>").get.child
+    liftweb.Html5.parse("<div>"+ htmlTextSafe +"</div>").get.child
   }
 
   /** Replaces spaces with the Unicode representation of non-breaking space,
