@@ -658,12 +658,12 @@ and two folded threads would overlap, unless: */
 
 /* Don't place the body too close to the title. But cannot add margin to the
 title — that'd push away the .dw-p-hd away. So add to the -bd instead.
-<h2>, <h3> etcetera however already has a margin-top, so add to <p> only
-for now.  — The reason all this is needed is that the elems
+<h2> should have a fairly large margin-top (because it's a h2), so skip it.
+— The reason all this is needed is that the elems
 float:left, which makes margins add to each other, instead of overlapping
 each other. I should rewrite, and try to avoid float:left?  (skip old IE) */
-.dw-p-ttl + .dw-p-hd + .dw-p-bd > .dw-p-bd-blk > p:first-child {
-  margin-top: 18px;
+.dw-p-ttl + .dw-p-hd + .dw-p-bd > .dw-p-bd-blk > :first-child:not(h2) {
+  margin-top: 26px;
 }
 
 /* Make inline threads compact. */
