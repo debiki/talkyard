@@ -4,7 +4,6 @@
 
 package com.debiki.v0
 
-import _root_.net.{liftweb => lw}
 import _root_.scala.xml.{Node, NodeSeq, Text}
 import _root_.scala.util.matching.Regex
 import Prelude._
@@ -117,7 +116,7 @@ case class TemplateSrcHtml(post: ViPo, path: String) extends TemplateSource {
     val html: NodeSeq = {
       // (Is this needed if no <html> around <head> and <body>?:
       //   <div>"+ htmlText +"</div>").open_!.child  )
-      if (htmlSrc nonEmpty) lw.util.Html5.parse(htmlSrc).open_!
+      if (htmlSrc nonEmpty) Html5.parse(htmlSrc).open_!
       else Nil
     }
 

@@ -20,11 +20,11 @@
  * limitations under the License.
  */
 
-package net.liftweb
-package util
+package com.debiki.v0
+import net.liftweb.util._
 
 import net.liftweb.common._
-import scala.xml._
+import scala.xml.{PCData => _, _}
 import parsing._
 import java.io._
 
