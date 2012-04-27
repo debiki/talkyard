@@ -20,10 +20,12 @@
  * limitations under the License.
  */
 
-package net.liftweb
-package util
+//package net.liftweb
+//package util
+package com.debiki.v0.liftweb
+//import net.liftweb.util._
 
-import common._
+//import common._
 
 import scala.xml.parsing.{ MarkupParser, MarkupHandler, FatalError, ConstructingHandler, ExternalSources }
 import scala.xml.dtd._
@@ -75,6 +77,7 @@ object HtmlEntities {
   def apply() = entities
 }
 
+/*
 /**
  * Extends the Markup Parser to do the right thing (tm) with PCData blocks
  */
@@ -229,6 +232,7 @@ object PCDataXmlParser {
     apply(Source.fromString(in.substring(pos)))
   }
 }
+*/
 
 case class PCData(_data: String) extends Atom[String](_data) {
   /* The following code is a derivative work of scala.xml.Text */
@@ -254,6 +258,7 @@ case class PCData(_data: String) extends Atom[String](_data) {
   }
 }
 
+/*
 object AltXML {
   val ieBadTags: Set[String] = Set("br", "hr")
 
@@ -466,3 +471,4 @@ object AltXML {
 
 }
 
+*/
