@@ -115,8 +115,8 @@ case class TemplateSrcHtml(post: ViPo, path: String) extends TemplateSource {
 
     val html: NodeSeq = {
       // (Is this needed if no <html> around <head> and <body>?:
-      //   <div>"+ htmlText +"</div>").open_!.child  )
-      if (htmlSrc nonEmpty) Html5.parse(htmlSrc).open_!
+      //   <div>"+ htmlText +"</div>").get.child  )
+      if (htmlSrc nonEmpty) Html5.parse(htmlSrc).get
       else Nil
     }
 

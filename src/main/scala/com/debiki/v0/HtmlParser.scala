@@ -23,7 +23,6 @@
 package com.debiki.v0
 import net.liftweb.util._
 
-import net.liftweb.common._
 import scala.xml.{PCData => _, _}
 import parsing._
 import java.io._
@@ -31,7 +30,6 @@ import java.io._
 import nu.validator.htmlparser._
 import sax.HtmlParser
 
-import org.xml.sax.InputSource
 
 object Html5 extends Html5Parser with Html5Writer
 
@@ -339,8 +337,7 @@ trait Html5Parser {
    * will be returned on successful parsing, otherwise
    * a Failure.
    */
-  def parse(in: InputStream): Box[Elem] = {
-    Helpers.tryo {
+  def parse(in: InputStream): Option[Elem] = {
       val hp = new HtmlParser(common.XmlViolationPolicy.ALLOW)
       hp.setCommentPolicy(common.XmlViolationPolicy.ALLOW)
       hp.setContentNonXmlCharPolicy(common.XmlViolationPolicy.ALLOW)
@@ -377,15 +374,14 @@ trait Html5Parser {
       
       in.close()
       saxer.rootElem match {
-        case null => Empty
+        case null => None
         case e: Elem => 
           AutoInsertedBody.unapply(e) match {
-            case Some(x) => Full(x)
-            case _ => Full(e)
+            case Some(x) => Some(x)
+            case _ => Some(e)
           }
-        case _ => Empty
+        case _ => None
       }
-    }.flatMap(a => a)
   }
 
   private object AutoInsertedBody {
@@ -432,7 +428,7 @@ trait Html5Parser {
    * will be returned on successful parsing, otherwise
    * a Failure.
    */
-  def parse(str: String): Box[Elem] = 
+  def parse(str: String): Option[Elem] =
     parse(new ByteArrayInputStream(str.getBytes("UTF-8")))
 }
 
