@@ -9,8 +9,6 @@ package com.debiki.v0
 import java.{util => ju, io => jio}
 import scala.collection.JavaConversions._
 import collection.{mutable => mut, immutable => imm}
-import _root_.net.liftweb.common.{Box, Full, Empty, EmptyBox, Failure}
-import _root_.net.liftweb.util.ControlHelpers.tryo
 import _root_.scala.xml.{NodeSeq, Node, Elem, Text, XML, Attribute}
 import FlagReason.FlagReason
 import Prelude._
@@ -1273,13 +1271,13 @@ class FormHtml(val config: HtmlConfig, xsrfToken: String,
     </form>
   }
 
-  def editForm(postToEdit: ViPo, newText: String, userName: Box[String]) = {
+  def editForm(postToEdit: ViPo, newText: String, userName: Option[String]) = {
     import Edit.{InputNames => Inp}
     val isForTitle = postToEdit.id == Page.TitleId
     val cssArtclBody =
       if (postToEdit.id == Page.BodyId) " dw-ar-p-bd"
       else ""
-    val submitBtnText = "Submit as "+ userName.openOr("...")
+    val submitBtnText = "Submit as "+ userName.getOrElse("...")
     <form class='dw-f dw-f-e ui-helper-clearfix'
           action={"?edit="+ postToEdit.id + _viewRoot}
           accept-charset='UTF-8'
