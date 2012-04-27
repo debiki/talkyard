@@ -2498,8 +2498,8 @@ function initLogout() {
 
 // ------- Login result
 
-function showLoginOkay() {
-  initLoginResultForms();
+function showLoginOkay(opt_continue) {
+  initLoginResultForms(opt_continue);
   $('#dw-fs-lgi-ok-name').text(Me.getName());
   $('#dw-fs-lgi-ok').dialog('open');
 }
@@ -2510,26 +2510,31 @@ function showLoginFailed(errorMessage) {
   $('#dw-fs-lgi-failed').dialog('open');
 }
 
-function initLoginResultForms() {
-  if ($('#dw-fs-lgi-ok.ui-dialog-content').length)
-    return; // login-ok and -failed already inited
+var initLoginResultForms = (function() {
+  var continueClbk;
+  return function(opt_continue) {
+    continueClbk = opt_continue;
+    if ($('#dw-fs-lgi-ok.ui-dialog-content').length)
+      return; // login-ok and -failed already inited
 
-  var $loginResult = $('#dw-fs-lgi-ok, #dw-fs-lgi-failed');
-  var $loginResultForm = $loginResult.find('form');
-  $loginResult.find('input').hide(); // Use jQuery UI's dialog buttons instead
-  $loginResult.dialog({
-    autoOpen: false,
-    autoResize: true,
-    modal: true,
-    resizable: false,
-    zIndex: 1190,
-    buttons: {
-      'OK': function() {
-        $(this).dialog('close');
+    var $loginResult = $('#dw-fs-lgi-ok, #dw-fs-lgi-failed');
+    var $loginResultForm = $loginResult.find('form');
+    $loginResult.find('input').hide(); // Use jQuery UI's dialog buttons instead
+    $loginResult.dialog({  // BUG remove close btn, or OK might never be called
+      autoOpen: false,
+      autoResize: true,
+      modal: true,
+      resizable: false,
+      zIndex: 1190,
+      buttons: {
+        'OK': function() {
+          $(this).dialog('close');
+          !continueClbk || continueClbk();
+        }
       }
-    }
-  });
-}
+    });
+  }
+})();
 
 
 // ------- Login, simple
@@ -2874,8 +2879,7 @@ function submitLoginInPopup($openidLoginForm) {
       $('#dw-fs-openid-login').dialog('close');
       $('#dw-fs-lgi-simple').dialog('close');
       fireLogin();
-      showLoginOkay();
-      continueAnySubmission();
+      showLoginOkay(continueAnySubmission);
       return;
     }
 
