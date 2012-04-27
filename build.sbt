@@ -13,7 +13,7 @@ libraryDependencies ++= Seq(
   "org.yaml" % "snakeyaml" % "1.6",
   "com.google.guava" % "guava" % "r09",
   "commons-codec" % "commons-codec" % "1.5",
-  "net.liftweb" %% "lift-util" % "2.4-M5",
+  "nu.validator.htmlparser" % "htmlparser" % "1.2.1",
   "junit" % "junit" % "4.7" % "test",
   "org.scala-tools.testing" %% "specs" % "1.6.9" % "test"
 )
