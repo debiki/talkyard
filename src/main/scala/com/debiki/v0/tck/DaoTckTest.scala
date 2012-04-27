@@ -1,9 +1,9 @@
-package com.debiki.v0.tck
-
 /**
  * Copyright (c) 2011 Kaj Magnus Lindberg (born 1979)
  * Created on 2011-05-29.
  */
+
+package com.debiki.v0.tck
 
 import scala.collection.{mutable => mut}
 import com.debiki.v0
@@ -12,7 +12,7 @@ import org.specs._
 import org.specs.specification.PendingUntilFixed
 import org.specs.specification.Context
 import java.{util => ju}
-import net.liftweb.common._
+
 
 /*
 ======================================
@@ -116,11 +116,11 @@ class DaoSpecEmptySchema(b: TestContextBuilder) extends DaoSpec(b, "0") {
 
   "A v0.DAO in a completely empty repo" when schemaIsEmpty should {
     "consider the version being 0" >> {
-      dao.checkRepoVersion() must_== Full("0")
+      dao.checkRepoVersion() must_== Some("0")
     }
     "be able to upgrade to 0.0.2" >> {
       // dao.upgrade()  currently done automatically, but ought not to.
-      dao.checkRepoVersion() must_== Full("0.0.2")
+      dao.checkRepoVersion() must_== Some("0.0.2")
     }
   }
 }
@@ -152,7 +152,7 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
 
   "A v0.DAO in an empty 0.0.2 repo" when tablesAreEmpty should {
     "find version 0.0.2" >> {
-      dao.checkRepoVersion() must_== Full("0.0.2")
+      dao.checkRepoVersion() must_== Some("0.0.2")
     }
   }
 
@@ -327,19 +327,16 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
 
     "create a debate with a root post" >> {
       val debateNoId = Debate(guid = "?", posts = ex1_rootPost::Nil)
-      dao.createPage(defaultPagePath, debateNoId) must beLike {
-        case Full(d: Debate) =>
-          ex1_debate = d
-          d.postCount must_== 1
-          d.guid.length must be_>(1)  // not = '?'
-          d must havePostLike(ex1_rootPost)
-          true
-      }
+      val d: Debate = dao.createPage(defaultPagePath, debateNoId)
+      ex1_debate = d
+      d.postCount must_== 1
+      d.guid.length must be_>(1)  // not = '?'
+      d must havePostLike(ex1_rootPost)
     }
 
     "find the debate and the post again" >> {
       dao.loadPage(defaultTenantId, ex1_debate.guid) must beLike {
-        case Full(d: Debate) => {
+        case Some(d: Debate) => {
           d must havePostLike(ex1_rootPost)
           true
         }
@@ -348,7 +345,7 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
 
     "find the debate and the login and user again" >> {
       dao.loadPage(defaultTenantId, ex1_debate.guid) must beLike {
-        case Full(d: Debate) => {
+        case Some(d: Debate) => {
           d.nilo(ex1_rootPost.loginId) must beLike {
             case Some(n: NiLo) =>  // COULD make separate NiLo test?
               n.login.id must_== ex1_rootPost.loginId
@@ -397,7 +394,7 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
     val exPagePath = defaultPagePath.copy(pageId = Some(ex1_debate.guid))
     "recognize its correct PagePath" >> {
       dao.checkPagePath(exPagePath) must beLike {
-        case Full(correctPath: PagePath) =>
+        case Some(correctPath: PagePath) =>
           correctPath must matchPagePath(exPagePath)
           true
         case _ => false
@@ -406,7 +403,7 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
 
     "correct an incorrect PagePath name" >> {
       dao.checkPagePath(exPagePath.copy(pageSlug = "incorrect")) must beLike {
-        case Full(correctPath: PagePath) =>
+        case Some(correctPath: PagePath) =>
           correctPath must matchPagePath(exPagePath)
           true
         case _ => false
@@ -415,7 +412,7 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
 
     "correct an incorrect PagePath folder" >> {
       dao.checkPagePath(exPagePath.copy(folder = "/incorrect/")) must beLike {
-        case Full(correctPath: PagePath) =>
+        case Some(correctPath: PagePath) =>
           correctPath must matchPagePath(exPagePath)
           true
         case _ => false
@@ -436,7 +433,7 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
     "save an empty root post child post" >> {
       dao.savePageActions(defaultTenantId, ex1_debate.guid, List(ex2_emptyPost)
                           ) must beLike {
-        case Full(List(p: Post)) =>
+        case List(p: Post) =>
           ex2_id = p.id
           p must matchPost(ex2_emptyPost, id = ex2_id)
           true
@@ -445,7 +442,7 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
 
     "find the empty post again" >> {
       dao.loadPage(defaultTenantId, ex1_debate.guid) must beLike {
-        case Full(d: Debate) => {
+        case Some(d: Debate) => {
           d must havePostLike(ex2_emptyPost, id = ex2_id)
           true
         }
@@ -458,7 +455,7 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
     "save a post rating, with 2 tags" >> {
       dao.savePageActions(defaultTenantId, ex1_debate.guid, List(ex3_rating)
                           ) must beLike {
-        case Full(List(r: Rating)) =>
+        case List(r: Rating) =>
           ex3_ratingId = r.id
           r must matchRating(ex3_rating, id = ex3_ratingId, loginId = loginId)
           true
@@ -467,7 +464,7 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
 
     "find the rating again" >> {
       dao.loadPage(defaultTenantId, ex1_debate.guid) must beLike {
-        case Full(d: Debate) => {
+        case Some(d: Debate) => {
           d must haveRatingLike(ex3_rating, id = ex3_ratingId)
           true
         }
@@ -490,7 +487,7 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
       dao.savePageActions(defaultTenantId, ex1_debate.guid,
                 List(ex4_rating1, ex4_rating2, ex4_rating3)
       ) must beLike {
-        case Full(List(r1: Rating, r2: Rating, r3: Rating)) =>
+        case List(r1: Rating, r2: Rating, r3: Rating) =>
           ex4_rating1Id = r1.id
           r1 must matchRating(ex4_rating1, id = ex4_rating1Id)
           ex4_rating2Id = r2.id
@@ -503,7 +500,7 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
 
     "find the 3 ratings again" >> {
       dao.loadPage(defaultTenantId, ex1_debate.guid) must beLike {
-        case Full(d: Debate) => {
+        case Some(d: Debate) => {
           d must haveRatingLike(ex4_rating1, id = ex4_rating1Id)
           d must haveRatingLike(ex4_rating2, id = ex4_rating2Id)
           d must haveRatingLike(ex4_rating3, id = ex4_rating3Id)
@@ -522,7 +519,7 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
                                   loginId = loginId)
       dao.savePageActions(
             defaultTenantId, ex1_debate.guid, List(postNoId)) must beLike {
-        case Full(List(post: Post)) =>
+        case List(post: Post) =>
           postId = post.id
           post must_== postNoId.copy(id = postId)
           true
@@ -530,7 +527,7 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
 
       // Load the root post, check its title.
       dao.loadPage(defaultTenantId, ex1_debate.guid) must beLike {
-        case Full(d: Debate) => {
+        case Some(d: Debate) => {
           d.titleText must_== Some("Page-Title")
           val body = d.body_!
           body.titleText must_== Some("Page-Title")
@@ -548,7 +545,7 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
       val postNoId = T.post.copy(tyype = PostType.Publish, loginId = loginId)
       dao.savePageActions(
         defaultTenantId, ex1_debate.guid, List(postNoId)) must beLike {
-        case Full(List(post: Post)) =>
+        case List(post: Post) =>
           postId = post.id
           post must_== postNoId.copy(id = postId)
           true
@@ -556,7 +553,7 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
 
       // Load the root post, verify that it is now published.
       dao.loadPage(defaultTenantId, ex1_debate.guid) must beLike {
-        case Full(d: Debate) => {
+        case Some(d: Debate) => {
           val body = d.body_!
           body.publd must_== Some(true)
           body.publs.length must_== 1
@@ -575,7 +572,7 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
       dao.savePageActions(defaultTenantId, ex1_debate.guid,
         List(exMeta_ex2EmptyMetaTmpl)
       ) must beLike {
-        case Full(List(p: Post)) =>
+        case List(p: Post) =>
           ex2MetaEmpty_id = p.id
           p must matchPost(exMeta_ex2EmptyMeta)
           true
@@ -584,7 +581,7 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
 
     "find the empty meta again, understand it's for post ex2" >> {
       dao.loadPage(defaultTenantId, ex1_debate.guid) must beLike {
-        case Full(d: Debate) => {
+        case Some(d: Debate) => {
           d must havePostLike(exMeta_ex2EmptyMeta, id = ex2MetaEmpty_id)
           val postEx2 = d.vipo_!(ex2_id)
           postEx2.metaPosts must_== List(exMeta_ex2EmptyMeta)
@@ -602,7 +599,7 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
       dao.savePageActions(defaultTenantId, ex1_debate.guid,
         List(exMeta_ex2ArtQstTmpl)
       ) must beLike {
-        case Full(List(p: Post)) =>
+        case List(p: Post) =>
           ex2MetaArtQst_id = p.id
           p must matchPost(exMeta_ex2ArtQst)
           true
@@ -611,7 +608,7 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
 
     "find the article-question meta again, understand what it means" >> {
       dao.loadPage(defaultTenantId, ex1_debate.guid) must beLike {
-        case Full(d: Debate) => {
+        case Some(d: Debate) => {
           d must havePostLike(exMeta_ex2ArtQst)
           val postEx2 = d.vipo_!(ex2_id)
           postEx2.metaPosts.length must_== 2
@@ -633,7 +630,7 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
         loginId = loginId, markup = "dmd0")
 
       // Save post
-      val Full(List(post: Post)) =
+      val List(post: Post) =
         dao.savePageActions(defaultTenantId, ex1_debate.guid, List(postNoId))
 
       post.text must_== "Initial text"
@@ -653,7 +650,7 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
           loginId = loginId, newIp = None, result = newText)
 
         // Save
-        val Full(List(edit: Edit, publ: EditApp)) =
+        val List(edit: Edit, publ: EditApp) =
           dao.savePageActions(defaultTenantId, ex1_debate.guid,
             List(editNoId, publNoId))
 
@@ -661,7 +658,7 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
 
         // Verify text changed
         dao.loadPage(defaultTenantId, ex1_debate.guid) must beLike {
-          case Full(d: Debate) => {
+          case Some(d: Debate) => {
             val editedPost = d.vipo_!(post.id)
             editedPost.text must_== newText
             editedPost.markup must_== "dmd0"
@@ -680,13 +677,13 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
           loginId = loginId, newIp = None, result = newText)
 
         // Save
-        val Full(List(edit: Edit, publ: EditApp)) =
+        val List(edit: Edit, publ: EditApp) =
           dao.savePageActions(defaultTenantId, ex1_debate.guid,
             List(editNoId, publNoId))
 
         // Verify markup type changed
         dao.loadPage(defaultTenantId, ex1_debate.guid) must beLike {
-          case Full(d: Debate) => {
+          case Some(d: Debate) => {
             val editedPost = d.vipo_!(post.id)
             editedPost.text must_== "Edited text 054F2x"
             editedPost.markup must_== "html"
@@ -799,14 +796,14 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
       var postId = "?"
       dao.savePageActions(defaultTenantId, ex1_debate.guid, List(newPost)
                           ) must beLike {
-        case Full(List(savedPost: Post)) =>
+        case List(savedPost: Post) =>
           postId = savedPost.id
           savedPost must matchPost(newPost, id = postId)
           true
       }
 
       dao.loadPage(defaultTenantId, ex1_debate.guid) must beLike {
-        case Full(d: Debate) =>
+        case Some(d: Debate) =>
           d must havePostLike(newPost, id = postId)
           d.nilo(exOpenId_loginReq.login.id) must beLike {
             case Some(n: NiLo) =>  // COULD make separate NiLo test?
@@ -1262,7 +1259,7 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
     //  for (i <- 1 to 10000) {
     //    dao.savePageActions(defaultTenantId,
     //          "-"+ ex1_debate.id, List(ex3_emptyPost)) must beLike {
-    //      case Full(List(p: Post)) => true
+    //      case List(p: Post) => true
     //    }
     //  }
     //}

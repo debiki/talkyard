@@ -7,8 +7,6 @@ version := "0.0.2-SNAPSHOT"
 scalaVersion := "2.9.1"
 
 libraryDependencies ++= Seq(
-  "net.liftweb" %% "lift-common" % "2.4-M5",
-  "net.liftweb" %% "lift-util" % "2.4-M5",
   "junit" % "junit" % "4.7",
   "org.scala-tools.testing" %% "specs" % "1.6.9"
 )
