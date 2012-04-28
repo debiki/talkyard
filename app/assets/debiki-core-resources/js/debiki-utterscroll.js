@@ -208,7 +208,10 @@ Debiki.v0.utterscroll = function(options) {
         $target.css('overflow') === 'scroll') {
       // Okay, scrollbars might have been clicked, in Chrome.
       var $ghost = $('<div style="width: 100%; height: 100%; ' +
-          'position: absolute; top: 0; left: 0;"></div>');
+          'position: absolute;"></div>');
+      // Specify top and left, so $ghost fills up the visible part of
+      // $target, even if $target contains scrollbars that have been scrolled.
+      $ghost.css({ top: $target.scrollTop(), left: $target.scrollLeft() });
       $target.prepend($ghost)
       // Now $ghost fills up $target, up to the scrollbars.
       // Check if the click happened outside $ghost.
