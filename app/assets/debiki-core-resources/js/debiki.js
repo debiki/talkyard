@@ -378,6 +378,45 @@ var zoomListenerHandle_dbg;
 }());
 
 
+// ------- jQuery dialogs
+
+/**
+ * Debiki's default jQuery UI dialog settings.
+ */
+var jQueryDialogDefault = {
+  autoOpen: false,
+  autoResize: true,
+  modal: true,
+  resizable: false,
+  zIndex: 1190  // the default, 1000, is lower than <form>s z-index
+};
+
+
+/**
+ * Resets input fields on close.
+ */
+var jQueryDialogReset = $.extend({}, jQueryDialogDefault, {
+  close: function() {
+    $(this).find('input[type="text"], textarea')
+        .val('').removeClass('ui-state-error');
+  }
+});
+
+
+/**
+ * Has no close button and doesn't close on Esc key.
+ * Use if the user must click e.g. an OK button to close the dealog,
+ * perhaps because of some event handler attached to that button.
+ * E.g. a "You have been logged in. [OK]" dialog.
+ */
+var jQueryDialogNoClose = $.extend({}, jQueryDialogDefault, {
+  closeOnEscape: false,
+  open: function(event, ui) {
+    $(this).parent().find('.ui-dialog-titlebar-close').hide();
+  }
+});
+
+
 // ------- Traversing etcetera
 
 function getPostHeader$(postId) {
@@ -2208,20 +2247,17 @@ function showServerResponseDialog(jqXhrOrHtml, opt_errorType,
 
   // Show dialog.
   $html.children('.dw-dlg-rsp-ttl').remove();
-  $html.dialog({
+  $html.dialog($.extend({}, jQueryDialogNoClose, {
     title: title,
     autoOpen: true,
     width: width,
-    modal: true,
-    resizable: false,
-    zIndex: 1190,
     buttons: {
       OK: function() {
         $(this).dialog('close');
         if (opt_continue) opt_continue();
       }
     }
-  });
+  }));
 }
 
 
@@ -2467,13 +2503,9 @@ function initLogout() {
 
   var $logoutForm = $logout.find('form');
   $logout.find('input').hide(); // Use jQuery UI's dialog buttons instead
-  $logout.dialog({
-    autoOpen: false,
+  $logout.dialog($.extend({}, jQueryDialogDefault, {
     height: 260,
     width: 350,
-    modal: true,
-    resizable: false,
-    zIndex: 1190,  // the default, 1000, is lower than <form>s z-index
     buttons: {
       Cancel: function() {
         $(this).dialog('close');
@@ -2483,7 +2515,7 @@ function initLogout() {
         $logoutForm.submit();
       }
     }
-  });
+  }));
   $logoutForm.submit(function() {
     // Don't clear the user name and email cookies until the server has
     // indeed logged out the user.
@@ -2520,19 +2552,14 @@ var initLoginResultForms = (function() {
     var $loginResult = $('#dw-fs-lgi-ok, #dw-fs-lgi-failed');
     var $loginResultForm = $loginResult.find('form');
     $loginResult.find('input').hide(); // Use jQuery UI's dialog buttons instead
-    $loginResult.dialog({  // BUG remove close btn, or OK might never be called
-      autoOpen: false,
-      autoResize: true,
-      modal: true,
-      resizable: false,
-      zIndex: 1190,
+    $loginResult.dialog($.extend({}, jQueryDialogNoClose, {
       buttons: {
         'OK': function() {
           $(this).dialog('close');
           !continueClbk || continueClbk();
         }
       }
-    });
+    }));
   }
 })();
 
@@ -2546,12 +2573,12 @@ function initLoginSimple() {
 
   var $loginForm = $login.find('form');
   $login.find('.dw-fi-submit').hide();  // don't show before name known
-  $login.dialog({
-    autoOpen: false,
+  // Use jQueryDialogReset so email is not remembered, in case
+  // this is a public computer, e.g. in a public library.
+  // Usually (?) the browser itself helps you fill in form fields, e.g.
+  // suggests your email address?
+  $login.dialog($.extend({}, jQueryDialogReset, {
     width: 580,
-    modal: true,
-    resizable: false,
-    zIndex: 1190,  // the default, 1000, is lower than <form>s z-index
     buttons: {
       Submit: function() {
         $loginForm.submit();
@@ -2559,12 +2586,8 @@ function initLoginSimple() {
       Cancel: function() {
         $(this).dialog('close');
       }
-    },
-    close: function() {
-      // Perhaps reset form? Something like this:
-      // allFields.val('').removeClass('ui-state-error');
     }
-  });
+  }));
 
   $loginForm.submit(function() {
     // COULD show a "Logging in..." message — the roundtrip
@@ -2682,20 +2705,17 @@ var configEmailPerhapsRelogin = (function() {
 
     // Init dialog, do once only.
     if (!$form.parent().is('.ui-dialog')) {
-      $form.dialog({
-        autoOpen: false,
+      $form.dialog($.extend({}, jQueryDialogDefault, {
         width: 400,
-        modal: true,
-        resizable: false,
-        zIndex: 1190,  // the default, 1000, is lower than <form>s z-index
         close: function() {
           dialogStatus.reject();
+          // Better not remember email addr. Perhaps this is a public
+          // computer, e.g. in a public library.
+          jQueryDialogReset.close.apply(this);
         }
-      });
+      }));
       $('#dw-f-eml-prf').find('input[type="radio"], input[type="submit"]')
           .button();
-      // todo: hide email input.
-      // On Yes click, show it if email unknown, and show Done button.
 
       $dontRecvBtn.click(submitForm); // always
       $form.submit(function() {
@@ -2720,9 +2740,6 @@ var configEmailPerhapsRelogin = (function() {
         return false;
       });
     }
-
-    // Clear any old email addr.
-    $form.find('input[type="text"]').val('');
 
     // Hide email input, if email addr already specified,
     // and submit directly on Yes/No click.
@@ -2771,23 +2788,19 @@ function initLoginOpenId() {
   // — COULD remove cookie on logout?
   openid.init('openid_identifier');
 
-  $openid.dialog({
-    autoOpen: false,
+  // Use jQueryDialogReset, so OpenID cleared on close,
+  // in case this is a public computer?
+  $openid.dialog($.extend({}, jQueryDialogReset, {
     height: 410,
     width: 720,
-    modal: true,
-    resizable: false,
-    zIndex: 1200,  // the default, 1000, is lower than <form>s z-index
+    // Place above guest login dialog.
+    zIndex: jQueryDialogDefault.zIndex + 10,
     buttons: {
       Cancel: function() {
         $(this).dialog('close');
       }
-    },
-    close: function() {
-      // Perhaps reset form? Something like this:
-      // allFields.val('').removeClass('ui-state-error');
     }
-  });
+  }));
 }
 
 function $showLoginOpenId() {
@@ -2997,12 +3010,8 @@ function initFlagForm() {
 
   $form.find('.dw-submit-set input').hide(); // use jQuery UI's buttons instead
   $form.find('.dw-f-flg-rsns').buttonset();
-  $parent.dialog({
-    autoOpen: false,
+  $parent.dialog($.extend({}, jQueryDialogReset, {
     width: 580,
-    modal: true,
-    resizable: false,
-    zIndex: 1190,  // the default, 1000, is lower than <form>s z-index
     buttons: {
       'Cancel': function() {
         $(this).dialog('close');
@@ -3015,7 +3024,7 @@ function initFlagForm() {
         else
           $form.submit();
       }
-    },
+    }
     /* buttons: [ // {{{ weird, this results in button titles '0' and '1'
       { text: 'Cancel', click: function() {
         $(this).dialog('close');
@@ -3029,11 +3038,7 @@ function initFlagForm() {
         else
           $form.submit();
       }}],   }}} */
-    close: function() {
-      // TODO reset form.
-      // allFields.val('').removeClass('ui-state-error');
-    }
-  });
+  }));
 
   // {{{ How to enable the submit button on radio button click?
   // Below button(option ...) stuff results in:
@@ -3667,20 +3672,16 @@ function $showEditsDialog() {
       // doing something else.
       $(this).submit().dialog('close');
     };
-    $editDlg.dialog({
-      autoOpen: false,
+    $editDlg.dialog($.extend({}, jQueryDialogDefault, {
       width: 1000,
       height: 600,
-      modal: true,
-      resizable: false,
-      zIndex: 1190,  // the default, 1000, is lower than <form>s z-index
       buttons: buttons,
       close: function() {
         // Need to remove() this, so ids won't clash should a new form
         // be loaded later.
         $(this).remove();
       }
-    });
+    }));
 
     initSuggestions($editDlg); // later:? .find('#dw-e-tb-sgs'));
     // For now, open directly, discard on close and
@@ -3894,12 +3895,8 @@ function initDeleteForm() {
   // harder to realize wethere it's checked or not, and this is a
   // rather important button.
   // Skip: $form.find('#dw-fi-dl-tree').button();
-  $parent.dialog({
-    autoOpen: false,
+  $parent.dialog($.extend({}, jQueryDialogReset, {
     width: 580,
-    modal: true,
-    resizable: false,
-    zIndex: 1190,  // the default, 1000, is lower than <form>s z-index
     buttons: {
       Cancel: function() {
         $(this).dialog('close');
@@ -3912,12 +3909,8 @@ function initDeleteForm() {
         else
           $form.submit();
       }
-    },
-    close: function() {
-      // TODO reset form.
-      // allFields.val('').removeClass('ui-state-error');
     }
-  });
+  }));
 
   $form.submit(function() {
     $.post($form.attr("action"), $form.serialize(), 'html')
