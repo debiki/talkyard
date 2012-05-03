@@ -23,10 +23,8 @@ object Actions {
   // COULD rename RequestInfo to PermsOnPageRequest,
   // and use PageRequest instead.
   case class PageRequest[A](
-    tenantId: String,
     sid: SidOk,
     xsrfToken: XsrfOk,
-    loginId: Option[String],
     identity: Option[Identity],
     user: Option[User],
     pageExists: Boolean,
@@ -40,11 +38,14 @@ object Actions {
   ){
     require(pagePath.tenantId == tenantId) //COULD remove tenantId from pagePath
     require(!pageExists || pagePath.pageId.isDefined)
-    require(dao.tenantId == tenantId)
     require(dao.quotaConsumers.tenantId == Some(tenantId))
     require(dao.quotaConsumers.ip == Some(ip))
     require(dao.quotaConsumers.roleId ==
        user.filter(_.isAuthenticated).map(_.id))
+
+    def tenantId = dao.tenantId
+
+    def loginId: Option[String] = sid.loginId
 
     /**
      * The login id of the user making the request. Throws 403 Forbidden
@@ -88,7 +89,7 @@ object Actions {
      */
     lazy val page_? : Option[Debate] =
       if (pageExists)
-        pageId.flatMap(id => dao.loadPage(tenantId, id))
+        pageId.flatMap(id => dao.loadPage(id))
       // Don't load the page even if it was *created* moments ago.
       // having !pageExists and page_? = Some(..) feels risky.
       else None
@@ -166,7 +167,7 @@ object Actions {
     val (identity, user) = sidOk.loginId match {
       case None => (None, None)
       case Some(lid) =>
-        dao.loadIdtyAndUser(forLoginId = lid, tenantId = tenantId)
+        dao.loadIdtyAndUser(forLoginId = lid)
           match {
             case Some((identity, user)) => (Some(identity), Some(user))
             case None =>
@@ -192,10 +193,8 @@ object Actions {
 
     // Construct the actual request.
     val pageReq = PageRequest[A](
-      tenantId = tenantId,
       sid = sidOk,
       xsrfToken = xsrfOk,
-      loginId = sidOk.loginId,
       identity = identity,
       user = user,
       pageExists = pathOkOpt.isDefined,

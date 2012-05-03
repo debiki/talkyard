@@ -59,7 +59,7 @@ class PageCache {
   private def _loadAndRender(k: Key, pageRoot: PageRoot, tenantDao: TenantDao)
         : NodeSeq = {
     assert(k.tenantId == tenantDao.tenantId)
-    tenantDao.loadPage(k.tenantId, k.pageGuid) match {
+    tenantDao.loadPage(k.pageGuid) match {
       case Some(debate) =>
         val config = DebikiHttp.newUrlConfig(k.hostAndPort)
         // Hmm, DebateHtml and pageTrust should perhaps be wrapped in

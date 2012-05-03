@@ -103,7 +103,7 @@ object AppEdit extends mvc.Controller {
 
     // ------- COULD use Debiki.savePageActions(...) instead
     val actionsWithIds = pageReq.dao.savePageActions(
-      pageReq.tenantId, pageReq.page_!.guid, actions)
+       pageReq.page_!.guid, actions)
 
     if (mayEdit)
       Debiki.PageCache.refreshLater(pageReq)

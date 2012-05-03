@@ -114,7 +114,7 @@ object AppAuth extends mvc.Controller {
         email = email, location = "", website = url))
 
     val loginGrant =
-       Debiki.tenantDao(tenantId, ip = addr).saveLogin(tenantId, loginReq)
+       Debiki.tenantDao(tenantId, ip = addr).saveLogin(loginReq)
 
     val (_, _, sidAndXsrfCookies) = Xsrf.newSidAndXsrf(Some(loginGrant))
     val userConfigCookie = AppConfigUser.userConfigCookie(loginGrant)
@@ -145,7 +145,7 @@ object AppAuth extends mvc.Controller {
        identity = identity_!.asInstanceOf[IdentitySimple].copy(
           id = "?i", userId = "?", email = newEmailAddr))
 
-    val loginGrant = pageReq.dao.saveLogin(tenantId, loginReq)
+    val loginGrant = pageReq.dao.saveLogin(loginReq)
     val (_, _, sidAndXsrfCookies) = Xsrf.newSidAndXsrf(Some(loginGrant))
 
     (loginGrant, sidAndXsrfCookies)

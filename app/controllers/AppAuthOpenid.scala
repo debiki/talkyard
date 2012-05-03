@@ -175,7 +175,7 @@ object AppAuthOpenid extends mvc.Controller {
         country = countryOpt getOrElse ""))
 
     val loginGrant =
-       Debiki.tenantDao(tenantId, ip = addr).saveLogin(tenantId, loginReq)
+       Debiki.tenantDao(tenantId, ip = addr).saveLogin(loginReq)
 
     // ----- Reply OK, with cookies
 

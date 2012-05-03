@@ -123,7 +123,7 @@ class Mailer(val daoFactory: DaoFactory) extends Actor {
 
       // If we decided not to send the email, remember not to try again.
       problemOpt foreach { problem =>
-        tenantDao.skipEmailForNotfs(tenantId, userNotfs,
+        tenantDao.skipEmailForNotfs(userNotfs,
            debug = "Email skipped: "+ problem)
       }
     }
@@ -139,11 +139,11 @@ class Mailer(val daoFactory: DaoFactory) extends Actor {
     val origin =
       (chost.https.required ? "https://" | "http://") + chost.address
     val (awsSendReq, emailToSend) = _constructEmail(origin, user, userNotfs)
-    tenantDao.saveUnsentEmailConnectToNotfs(tenantDao.tenantId, emailToSend, userNotfs)
+    tenantDao.saveUnsentEmailConnectToNotfs(emailToSend, userNotfs)
     logger.debug("Sending email to "+ emailToSend.sentTo)
     val emailSentOrFailed = _sendEmail(awsSendReq, emailToSend)
     logger.trace("Email sent or failed: "+ emailSentOrFailed)
-    tenantDao.updateSentEmail(tenantDao.tenantId, emailSentOrFailed)
+    tenantDao.updateSentEmail(emailSentOrFailed)
   }
 
 

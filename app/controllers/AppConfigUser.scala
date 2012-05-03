@@ -93,7 +93,7 @@ object AppConfigUser extends mvc.Controller {
             "Please specify an email address.")
 
         if (emailNotfPrefs != user.emailNotfPrefs) {
-          pageReq.dao.configRole(pageReq.tenantId, loginId, pageReq.ctime,
+          pageReq.dao.configRole(loginId, pageReq.ctime,
              user.id, emailNotfPrefs)
         }
       case Some(addr) =>
@@ -137,7 +137,7 @@ object AppConfigUser extends mvc.Controller {
           "Please specify an email address.")
     }
     else if (emailNotfPrefs != user.emailNotfPrefs) {
-      pageReq.dao.configIdtySimple(pageReq.tenantId, loginId, pageReq.ctime,
+      pageReq.dao.configIdtySimple(loginId, pageReq.ctime,
         user.email, emailNotfPrefs)
     }
 

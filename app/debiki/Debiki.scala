@@ -48,8 +48,8 @@ object Debiki {
     if (actions isEmpty)
       return
 
-    import pageReq.{tenantId, pageId_!, page_!, user_!}
-    val actionsWithId = pageReq.dao.savePageActions(tenantId, pageId_!, actions)
+    import pageReq.{pageId_!, page_!, user_!}
+    val actionsWithId = pageReq.dao.savePageActions(pageId_!, actions)
 
     // Possible optimization: Examine all actions, and refresh cache only
     // if there are e.g. EditApp:s or Replie:s (but ignore Edit:s -- if
@@ -69,7 +69,7 @@ object Debiki {
     // COULD rewrite Dao so the seeds can be saved in the same transaction:
     val seeds = Notification.calcFrom(user_!, adding = actionsWithId,
        to = page_!)
-    pageReq.dao.saveNotfs(tenantId, seeds)
+    pageReq.dao.saveNotfs(seeds)
   }
 
 }

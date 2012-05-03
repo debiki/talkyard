@@ -127,7 +127,6 @@ object Application extends mvc.Controller {
         PageGetAction(pathIn, pageMustExist = false) { pageReq =>
     val pagePaths = pageReq.dao.listPagePaths(
       withFolderPrefix = pageReq.pagePath.folder,
-      tenantId = pageReq.tenantId,
       include = PageStatus.All,
       sortBy = PageSortOrder.ByPath,
       limit = Int.MaxValue,
@@ -141,7 +140,6 @@ object Application extends mvc.Controller {
         PageGetAction(pathIn, pageMustExist = false) { pageReq =>
     val actionLocators = pageReq.dao.listActions(
        folderPrefix = pageReq.pagePath.path,
-       tenantId = pageReq.tenantId,
        includePages = PageStatus.All,
        limit = 700, offset = 0)
     Ok(views.html.listActions(actionLocators))
@@ -160,7 +158,6 @@ object Application extends mvc.Controller {
       if (!pagePath.isFolderOrIndexPage) List(pagePath)
       else pageReq.dao.listPagePaths(
         withFolderPrefix = pagePath.folder,
-        tenantId = pageReq.tenantId,
         include = List(PageStatus.Published),
         sortBy = PageSortOrder.ByPublTime,
         limit = Int.MaxValue,
@@ -173,8 +170,7 @@ object Application extends mvc.Controller {
           errDbgDie("[error DwE012210u9]")
           "GotNoGuid"
         }
-        val page: Option[Debate] =
-           pageReq.dao.loadPage(pagePath.tenantId, pageId)
+        val page = pageReq.dao.loadPage(pageId)
         page.map(p => List(feedPagePath -> p)).getOrElse(Nil)
     }
 
