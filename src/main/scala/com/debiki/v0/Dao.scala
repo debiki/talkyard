@@ -23,11 +23,11 @@ import EmailNotfPrefs.EmailNotfPrefs
 
 class DaoFactory(protected val _daoSpiFactory: DaoSpiFactory) {
 
-  def systemDao = new NonCachingSystemDao(_daoSpiFactory.systemDaoSpi)
+  def systemDao = new SystemDao(_daoSpiFactory.systemDaoSpi)
 
   def buildTenantDao(quotaConsumers: QuotaConsumers): TenantDao = {
     val daoSpi = _daoSpiFactory.buildTenantDaoSpi(quotaConsumers)
-    new NonCachingTenantDao(daoSpi)
+    new TenantDao(daoSpi)
   }
 
 }
@@ -143,13 +143,11 @@ abstract class SystemDaoSpi {
 }
 
 
-/** Debiki's Data Access Object.
+/** Debiki's Data Access Object, for tenant specific data.
  *
- *  Delegates database requests to a DaoSpi implementation.
+ *  Delegates database requests to a TenantDaoSpi implementation.
  */
-abstract class TenantDao {
-
-  protected def _spi: TenantDaoSpi
+class TenantDao(protected val _spi: TenantDaoSpi) {
 
   def quotaConsumers: QuotaConsumers = _spi.quotaConsumers
 
@@ -297,9 +295,7 @@ abstract class TenantDao {
 }
 
 
-abstract class SystemDao {
-
-  protected def _spi: SystemDaoSpi
+class SystemDao(protected val _spi: SystemDaoSpi) {
 
   def close() = _spi.close()
 
@@ -378,7 +374,7 @@ object CachingDao {
 
 
 class CachingDao(private val _cache: CachingDao.Cache, spi: TenantDaoSpi)
-  extends NonCachingTenantDao(spi) {
+  extends TenantDao(spi) {
 
   import CachingDao.Key
 
@@ -441,16 +437,6 @@ class CachingDao(private val _cache: CachingDao.Cache, spi: TenantDaoSpi)
   }
 
 }
-
-
-/** Always accesses the database, whenever you ask it do do something.
- *
- *  Useful when constructing test suites that should access the database.
- */
-class NonCachingTenantDao(protected val _spi: TenantDaoSpi) extends TenantDao
-
-
-class NonCachingSystemDao(protected val _spi: SystemDaoSpi) extends SystemDao
 
 
 object Dao {
