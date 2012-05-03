@@ -49,34 +49,32 @@ abstract class TenantDaoSpi {
 
   def loadTenant(): Tenant
 
-  def addTenantHost(tenantId: String, host: TenantHost)
+  def addTenantHost(host: TenantHost)
 
   def lookupOtherTenant(scheme: String, host: String): TenantLookup
 
-  def saveLogin(tenantId: String, loginReq: LoginRequest): LoginGrant
+  def saveLogin(loginReq: LoginRequest): LoginGrant
 
   def saveLogout(loginId: String, logoutIp: String)
 
   def createPage(where: PagePath, debate: Debate): Debate
 
-  def moveRenamePage(tenantId: String, pageId: String,
+  def moveRenamePage(pageId: String,
         newFolder: Option[String], showId: Option[Boolean],
         newSlug: Option[String]): PagePath
 
-  def savePageActions[T <: Action](
-    tenantId: String, debateId: String, xs: List[T]): List[T]
+  def savePageActions[T <: Action](debateId: String, xs: List[T]): List[T]
 
-  def loadPage(tenantId: String, debateId: String): Option[Debate]
+  def loadPage(debateId: String): Option[Debate]
 
   def loadTemplate(templPath: PagePath): Option[TemplateSrcHtml]
 
   def checkPagePath(pathToCheck: PagePath): Option[PagePath]
 
-  def lookupPagePathByPageId(tenantId: String, pageId: String): Option[PagePath]
+  def lookupPagePathByPageId(pageId: String): Option[PagePath]
 
   def listPagePaths(
         withFolderPrefix: String,
-        tenantId: String,
         include: List[PageStatus],
         sortBy: PageSortOrder,
         limit: Int,
@@ -84,39 +82,34 @@ abstract class TenantDaoSpi {
       ): Seq[(PagePath, PageDetails)]
 
   def listActions(
-        tenantId: String,
         folderPrefix: String,
         includePages: List[PageStatus],
         limit: Int,
         offset: Int): Seq[ActionLocator]
 
-  def loadIdtyAndUser(forLoginId: String, tenantId: String)
-        : Option[(Identity, User)]
+  def loadIdtyAndUser(forLoginId: String): Option[(Identity, User)]
 
   def loadPermsOnPage(reqInfo: RequestInfo): PermsOnPage
 
-  def saveNotfs(tenantId: String, notfs: Seq[NotfOfPageAction])
+  def saveNotfs(notfs: Seq[NotfOfPageAction])
 
-  def loadNotfsForRole(tenantId: String, roleId: String)
-        : Seq[NotfOfPageAction]
+  def loadNotfsForRole(roleId: String): Seq[NotfOfPageAction]
 
-  def loadNotfByEmailId(tenantId: String, emailId: String)
-        : Option[NotfOfPageAction]
+  def loadNotfByEmailId(emailId: String): Option[NotfOfPageAction]
 
-  def skipEmailForNotfs(tenantId: String, notfs: Seq[NotfOfPageAction],
-        debug: String): Unit
+  def skipEmailForNotfs(notfs: Seq[NotfOfPageAction], debug: String): Unit
 
-  def saveUnsentEmailConnectToNotfs(tenantId: String, email: EmailSent,
+  def saveUnsentEmailConnectToNotfs(email: EmailSent,
         notfs: Seq[NotfOfPageAction]): Unit
 
-  def updateSentEmail(tenantId: String, email: EmailSent): Unit
+  def updateSentEmail(email: EmailSent): Unit
 
-  def loadEmailById(tenantId: String, emailId: String): Option[EmailSent]
+  def loadEmailById(emailId: String): Option[EmailSent]
 
-  def configRole(tenantId: String, loginId: String, ctime: ju.Date,
+  def configRole(loginId: String, ctime: ju.Date,
                     roleId: String, emailNotfPrefs: EmailNotfPrefs)
 
-  def configIdtySimple(tenantId: String, loginId: String, ctime: ju.Date,
+  def configIdtySimple(loginId: String, ctime: ju.Date,
                        emailAddr: String, emailNotfPrefs: EmailNotfPrefs)
 
 }
@@ -160,8 +153,7 @@ class TenantDao(protected val _spi: TenantDaoSpi) {
    */
   def loadTenant(): Tenant = _spi.loadTenant()
 
-  def addTenantHost(tenantId: String, host: TenantHost) =
-    _spi.addTenantHost(tenantId, host)
+  def addTenantHost(host: TenantHost) = _spi.addTenantHost(host)
 
   def lookupOtherTenant(scheme: String, host: String): TenantLookup =
     _spi.lookupOtherTenant(scheme, host)
@@ -172,8 +164,8 @@ class TenantDao(protected val _spi: TenantDaoSpi) {
   /** Assigns ids to the login request, saves it, finds or creates a user
    * for the specified Identity, and returns everything with ids filled in.
    */
-  def saveLogin(tenantId: String, loginReq: LoginRequest): LoginGrant =
-    _spi.saveLogin(tenantId, loginReq)
+  def saveLogin(loginReq: LoginRequest): LoginGrant =
+    _spi.saveLogin(loginReq)
 
   /** Updates the specified login with logout IP and timestamp.*/
   def saveLogout(loginId: String, logoutIp: String) =
@@ -185,10 +177,10 @@ class TenantDao(protected val _spi: TenantDaoSpi) {
   def createPage(where: PagePath, debate: Debate): Debate =
     _spi.createPage(where, debate)
 
-  def moveRenamePage(tenantId: String, pageId: String,
+  def moveRenamePage(pageId: String,
         newFolder: Option[String] = None, showId: Option[Boolean] = None,
         newSlug: Option[String] = None): PagePath =
-    _spi.moveRenamePage(tenantId, pageId = pageId, newFolder = newFolder,
+    _spi.moveRenamePage(pageId = pageId, newFolder = newFolder,
       showId = showId, newSlug = newSlug)
 
  
@@ -198,11 +190,11 @@ class TenantDao(protected val _spi: TenantDaoSpi) {
    *  Prelude.convertBadChars().
    */
   def savePageActions[T <: Action](
-        tenantId: String, debateId: String, actions: List[T]): List[T] =
-    _spi.savePageActions(tenantId, debateId, actions)
+        debateId: String, actions: List[T]): List[T] =
+    _spi.savePageActions(debateId, actions)
 
-  def loadPage(tenantId: String, debateId: String): Option[Debate] =
-    _spi.loadPage(tenantId, debateId)
+  def loadPage(debateId: String): Option[Debate] =
+    _spi.loadPage(debateId)
 
   /** Loads any template at templPath.
    */
@@ -212,37 +204,30 @@ class TenantDao(protected val _spi: TenantDaoSpi) {
   def checkPagePath(pathToCheck: PagePath): Option[PagePath] =
     _spi.checkPagePath(pathToCheck)
 
-  def lookupPagePathByPageId(tenantId: String, pageId: String)
-        : Option[PagePath] =
-    _spi.lookupPagePathByPageId(tenantId, pageId = pageId)
+  def lookupPagePathByPageId(pageId: String): Option[PagePath] =
+    _spi.lookupPagePathByPageId(pageId = pageId)
 
 
   // ----- List stuff
 
   def listPagePaths(
         withFolderPrefix: String,
-        tenantId: String,
         include: List[PageStatus],
         sortBy: PageSortOrder,
         limit: Int,
-        offset: Int
-      ): Seq[(PagePath, PageDetails)] =
-    _spi.listPagePaths(withFolderPrefix, tenantId, include,
-          sortBy, limit, offset)
+        offset: Int): Seq[(PagePath, PageDetails)] =
+    _spi.listPagePaths(withFolderPrefix, include, sortBy, limit, offset)
 
   def listActions(
-        tenantId: String,
         folderPrefix: String,
         includePages: List[PageStatus],
         limit: Int,
         offset: Int): Seq[ActionLocator] =
-    _spi.listActions(
-      tenantId, folderPrefix, includePages, limit, offset)
+    _spi.listActions(folderPrefix, includePages, limit, offset)
 
 
-  def loadIdtyAndUser(forLoginId: String, tenantId: String)
-        : Option[(Identity, User)] =
-    _spi.loadIdtyAndUser(forLoginId, tenantId)
+  def loadIdtyAndUser(forLoginId: String): Option[(Identity, User)] =
+    _spi.loadIdtyAndUser(forLoginId)
 
   def loadPermsOnPage(reqInfo: RequestInfo): PermsOnPage =
     _spi.loadPermsOnPage(reqInfo)
@@ -250,45 +235,42 @@ class TenantDao(protected val _spi: TenantDaoSpi) {
 
   // ----- Notifications
 
-  def saveNotfs(tenantId: String, notfs: Seq[NotfOfPageAction]) =
-    _spi.saveNotfs(tenantId, notfs)
+  def saveNotfs(notfs: Seq[NotfOfPageAction]) =
+    _spi.saveNotfs(notfs)
 
-  def loadNotfsForRole(tenantId: String, roleId: String)
-        : Seq[NotfOfPageAction] =
-    _spi.loadNotfsForRole(tenantId, roleId)
+  def loadNotfsForRole(roleId: String): Seq[NotfOfPageAction] =
+    _spi.loadNotfsForRole(roleId)
 
-  def loadNotfByEmailId(tenantId: String, emailId: String)
-        : Option[NotfOfPageAction] =
-    _spi.loadNotfByEmailId(tenantId, emailId)
+  def loadNotfByEmailId(emailId: String): Option[NotfOfPageAction] =
+    _spi.loadNotfByEmailId(emailId)
 
-  def skipEmailForNotfs(tenantId: String, notfs: Seq[NotfOfPageAction],
-        debug: String): Unit =
-    _spi.skipEmailForNotfs(tenantId, notfs, debug)
+  def skipEmailForNotfs(notfs: Seq[NotfOfPageAction], debug: String): Unit =
+    _spi.skipEmailForNotfs(notfs, debug)
 
 
   // ----- Emails
 
-  def saveUnsentEmailConnectToNotfs(tenantId: String, email: EmailSent,
+  def saveUnsentEmailConnectToNotfs(email: EmailSent,
         notfs: Seq[NotfOfPageAction]): Unit =
-    _spi.saveUnsentEmailConnectToNotfs(tenantId, email, notfs)
+    _spi.saveUnsentEmailConnectToNotfs(email, notfs)
 
-  def updateSentEmail(tenantId: String, email: EmailSent): Unit =
-    _spi.updateSentEmail(tenantId, email)
+  def updateSentEmail(email: EmailSent): Unit =
+    _spi.updateSentEmail(email)
 
-  def loadEmailById(tenantId: String, emailId: String): Option[EmailSent] =
-    _spi.loadEmailById(tenantId, emailId)
+  def loadEmailById(emailId: String): Option[EmailSent] =
+    _spi.loadEmailById(emailId)
 
 
   // ----- User configuration
 
-  def configRole(tenantId: String, loginId: String, ctime: ju.Date,
+  def configRole(loginId: String, ctime: ju.Date,
                  roleId: String, emailNotfPrefs: EmailNotfPrefs) =
-    _spi.configRole(tenantId, loginId = loginId, ctime = ctime,
+    _spi.configRole(loginId = loginId, ctime = ctime,
                     roleId = roleId, emailNotfPrefs = emailNotfPrefs)
 
-  def configIdtySimple(tenantId: String, loginId: String, ctime: ju.Date,
+  def configIdtySimple(loginId: String, ctime: ju.Date,
                        emailAddr: String, emailNotfPrefs: EmailNotfPrefs) =
-    _spi.configIdtySimple(tenantId, loginId = loginId, ctime = ctime,
+    _spi.configIdtySimple(loginId = loginId, ctime = ctime,
                           emailAddr = emailAddr,
                           emailNotfPrefs = emailNotfPrefs)
 
@@ -366,7 +348,8 @@ object CachingDao {
         def apply(k: Key): Debate = {
           val spi = tenantDaoSpiDynVar.value
           assert(spi ne null)
-          spi.loadPage(k.tenantId, k.debateId) getOrElse null
+          assert(spi.tenantId == k.tenantId)
+          spi.loadPage(k.debateId) getOrElse null
         }
       })
   }
@@ -384,8 +367,8 @@ class CachingDao(private val _cache: CachingDao.Cache, spi: TenantDaoSpi)
     // Bug workaround: Load the page *inclusive Login:s and User:s*.
     // Otherwise only Actions will be included (in debateWithIdsNoUsers)
     // and then the page cannot be rendered (there'll be None.get errors).
-    val debateWithIds =
-        _spi.loadPage(where.tenantId, debateWithIdsNoUsers.guid).get
+    assert(_spi.tenantId == where.tenantId)
+    val debateWithIds = _spi.loadPage(debateWithIdsNoUsers.guid).get
     // ------------
     val key = Key(where.tenantId, debateWithIds.guid)
     val duplicate = _cache.cache.putIfAbsent(key, debateWithIds)
@@ -396,8 +379,8 @@ class CachingDao(private val _cache: CachingDao.Cache, spi: TenantDaoSpi)
 
 
   override def savePageActions[T <: Action](
-      tenantId: String, debateId: String, xs: List[T]): List[T] = {
-    for (xsWithIds <- _spi.savePageActions(tenantId, debateId, xs)) yield {
+      debateId: String, xs: List[T]): List[T] = {
+    for (xsWithIds <- _spi.savePageActions(debateId, xs)) yield {
       val key = Key(tenantId, debateId)
       var replaced = false
       while (!replaced) {
@@ -416,7 +399,7 @@ class CachingDao(private val _cache: CachingDao.Cache, spi: TenantDaoSpi)
         // DebateHtml._layoutPosts.
         // -- So instead: ----------
         // This loads all Logins, Identity:s and Users referenced by the page:
-        val newPage = _spi.loadPage(tenantId, debateId).get
+        val newPage = _spi.loadPage(debateId).get
         // -------- Unfortunately.--
         replaced = _cache.cache.replace(key, oldPage, newPage)
       }
@@ -425,9 +408,10 @@ class CachingDao(private val _cache: CachingDao.Cache, spi: TenantDaoSpi)
   }
 
 
-  override def loadPage(tenantId: String, debateId: String): Option[Debate] = {
+  override def loadPage(debateId: String): Option[Debate] = {
     try {
       _cache.tenantDaoSpiDynVar.withValue(_spi) {
+        assert(_spi.tenantId == tenantId)
         Some(_cache.cache.get(Key(tenantId, debateId)))
       }
     } catch {
