@@ -21,11 +21,37 @@ import EmailNotfPrefs.EmailNotfPrefs
 // and sanitaze input. That'd be an eventually inconsistent solution :-/ .)
 
 
+class DaoFactory(protected val _daoSpiFactory: DaoSpiFactory) {
+
+  def systemDao = new NonCachingSystemDao(_daoSpiFactory.systemDaoSpi)
+
+  def buildTenantDao(quotaConsumers: QuotaConsumers): TenantDao = {
+    val daoSpi = _daoSpiFactory.buildTenantDaoSpi(quotaConsumers)
+    new NonCachingTenantDao(daoSpi)
+  }
+
+}
+
+
+abstract class DaoSpiFactory {
+  def systemDaoSpi: SystemDaoSpi
+  def buildTenantDaoSpi(quotaConsumers: QuotaConsumers): TenantDaoSpi
+}
+
+
 /** Debiki's Data Access Object service provider interface.
  */
-abstract class DaoSpi {
+abstract class TenantDaoSpi {
 
-  def close()
+  def quotaConsumers: QuotaConsumers
+
+  def tenantId: String
+
+  def loadTenant(): Tenant
+
+  def addTenantHost(tenantId: String, host: TenantHost)
+
+  def lookupOtherTenant(scheme: String, host: String): TenantLookup
 
   def saveLogin(tenantId: String, loginReq: LoginRequest): LoginGrant
 
@@ -74,8 +100,6 @@ abstract class DaoSpi {
   def loadNotfsForRole(tenantId: String, roleId: String)
         : Seq[NotfOfPageAction]
 
-  def loadNotfsToMailOut(delayInMinutes: Int, numToLoad: Int): NotfsToMail
-
   def loadNotfByEmailId(tenantId: String, emailId: String)
         : Option[NotfOfPageAction]
 
@@ -95,13 +119,20 @@ abstract class DaoSpi {
   def configIdtySimple(tenantId: String, loginId: String, ctime: ju.Date,
                        emailAddr: String, emailNotfPrefs: EmailNotfPrefs)
 
+}
+
+
+abstract class SystemDaoSpi {
+
+  def close()  // remove? move to DaoSpiFactory in some manner?
+
   def createTenant(name: String): Tenant
 
   def loadTenants(tenantIds: Seq[String]): Seq[Tenant]
 
-  def addTenantHost(tenantId: String, host: TenantHost)
-
   def lookupTenant(scheme: String, host: String): TenantLookup
+
+  def loadNotfsToMailOut(delayInMinutes: Int, numToLoad: Int): NotfsToMail
 
   def checkRepoVersion(): Option[String]
 
@@ -116,11 +147,26 @@ abstract class DaoSpi {
  *
  *  Delegates database requests to a DaoSpi implementation.
  */
-abstract class Dao {
+abstract class TenantDao {
 
-  protected def _spi: DaoSpi
+  protected def _spi: TenantDaoSpi
 
-  def close() = _spi.close
+  def quotaConsumers: QuotaConsumers = _spi.quotaConsumers
+
+
+  // ----- Tenant
+
+  def tenantId: String = _spi.tenantId
+
+  /** Loads the tenant for this dao.
+   */
+  def loadTenant(): Tenant = _spi.loadTenant()
+
+  def addTenantHost(tenantId: String, host: TenantHost) =
+    _spi.addTenantHost(tenantId, host)
+
+  def lookupOtherTenant(scheme: String, host: String): TenantLookup =
+    _spi.lookupOtherTenant(scheme, host)
 
 
   // ----- Login, logout
@@ -213,9 +259,6 @@ abstract class Dao {
         : Seq[NotfOfPageAction] =
     _spi.loadNotfsForRole(tenantId, roleId)
 
-  def loadNotfsToMailOut(delayInMinutes: Int, numToLoad: Int): NotfsToMail =
-    _spi.loadNotfsToMailOut(delayInMinutes, numToLoad)
-
   def loadNotfByEmailId(tenantId: String, emailId: String)
         : Option[NotfOfPageAction] =
     _spi.loadNotfByEmailId(tenantId, emailId)
@@ -251,6 +294,22 @@ abstract class Dao {
                           emailAddr = emailAddr,
                           emailNotfPrefs = emailNotfPrefs)
 
+}
+
+
+abstract class SystemDao {
+
+  protected def _spi: SystemDaoSpi
+
+  def close() = _spi.close()
+
+
+  // ----- Emails
+
+  def loadNotfsToMailOut(delayInMinutes: Int, numToLoad: Int): NotfsToMail =
+    _spi.loadNotfsToMailOut(delayInMinutes, numToLoad)
+
+
   // ----- Tenants
 
   /** Creates a tenant, assigns it an id and and returns it. */
@@ -260,15 +319,16 @@ abstract class Dao {
   def loadTenants(tenantIds: Seq[String]): Seq[Tenant] =
     _spi.loadTenants(tenantIds)
 
-  def addTenantHost(tenantId: String, host: TenantHost) =
-    _spi.addTenantHost(tenantId, host)
-
   def lookupTenant(scheme: String, host: String): TenantLookup =
     _spi.lookupTenant(scheme, host)
+
+
+  // ----- Misc
 
   def checkRepoVersion(): Option[String] = _spi.checkRepoVersion()
 
   def secretSalt(): String = _spi.secretSalt()
+
 }
 
 
@@ -276,22 +336,51 @@ abstract class Dao {
  *
  *  Thread safe, if `impl' is thread safe.
  */
-class CachingDao(spi: DaoSpi) extends Dao {
+class CachingDaoFactory(daoSpiFactory: DaoSpiFactory)
+   extends DaoFactory(daoSpiFactory) {
 
-  protected val _spi = spi
-  private case class Key(tenantId: String, debateId: String)
+  val cache = new CachingDao.Cache
 
-  private val _cache: ju.concurrent.ConcurrentMap[Key, Debate] =
+  override def buildTenantDao(quotaConsumers: QuotaConsumers): TenantDao = {
+    val spi = _daoSpiFactory.buildTenantDaoSpi(quotaConsumers)
+    new CachingDao(cache, spi)
+  }
+
+}
+
+
+object CachingDao {
+
+  case class Key(tenantId: String, debateId: String)
+
+  class Cache {
+
+    // Passes the current DaoSpi (which knows which quota consumer to tax)
+    // to the cache load function. Needed because Google Guava's
+    // cache lookup method takes a cache map key only.
+    val tenantDaoSpiDynVar =
+      new util.DynamicVariable[TenantDaoSpi](null)
+
+    val cache: ju.concurrent.ConcurrentMap[Key, Debate] =
       new guava.collect.MapMaker().
-          softValues().
-          maximumSize(100*1000).
-          //expireAfterWrite(10. TimeUnits.MINUTES).
-          makeComputingMap(new guava.base.Function[Key, Debate] {
-            def apply(k: Key): Debate = {
-              _spi.loadPage(k.tenantId, k.debateId) getOrElse null
-            }
-          })
+         softValues().
+         maximumSize(100*1000).
+         //expireAfterWrite(10. TimeUnits.MINUTES).
+         makeComputingMap(new guava.base.Function[Key, Debate] {
+        def apply(k: Key): Debate = {
+          val spi = tenantDaoSpiDynVar.value
+          assert(spi ne null)
+          spi.loadPage(k.tenantId, k.debateId) getOrElse null
+        }
+      })
+  }
+}
 
+
+class CachingDao(private val _cache: CachingDao.Cache, spi: TenantDaoSpi)
+  extends NonCachingTenantDao(spi) {
+
+  import CachingDao.Key
 
   override def createPage(where: PagePath, debate: Debate): Debate = {
     val debateWithIdsNoUsers = _spi.createPage(where, debate)
@@ -303,7 +392,7 @@ class CachingDao(spi: DaoSpi) extends Dao {
         _spi.loadPage(where.tenantId, debateWithIdsNoUsers.guid).get
     // ------------
     val key = Key(where.tenantId, debateWithIds.guid)
-    val duplicate = _cache.putIfAbsent(key, debateWithIds)
+    val duplicate = _cache.cache.putIfAbsent(key, debateWithIds)
     runErrIf3(duplicate ne null, "DwE8WcK905", "Newly created page "+
           safed(debate.guid) + " already present in mem cache")
     debateWithIds
@@ -316,7 +405,10 @@ class CachingDao(spi: DaoSpi) extends Dao {
       val key = Key(tenantId, debateId)
       var replaced = false
       while (!replaced) {
-        val oldPage = _cache.get(key)
+        val oldPage =
+           _cache.tenantDaoSpiDynVar.withValue(_spi) {
+             _cache.cache.get(key)
+           }
         // -- Should to: -----------
         // val newPage = oldPage ++ xsWithIds
         // newPage might == oldPage, if another thread just refreshed
@@ -330,7 +422,7 @@ class CachingDao(spi: DaoSpi) extends Dao {
         // This loads all Logins, Identity:s and Users referenced by the page:
         val newPage = _spi.loadPage(tenantId, debateId).get
         // -------- Unfortunately.--
-        replaced = _cache.replace(key, oldPage, newPage)
+        replaced = _cache.cache.replace(key, oldPage, newPage)
       }
       xsWithIds  // TODO return newPage instead? Or possibly a pair.
     }
@@ -339,7 +431,9 @@ class CachingDao(spi: DaoSpi) extends Dao {
 
   override def loadPage(tenantId: String, debateId: String): Option[Debate] = {
     try {
-      Some(_cache.get(Key(tenantId, debateId)))
+      _cache.tenantDaoSpiDynVar.withValue(_spi) {
+        Some(_cache.cache.get(Key(tenantId, debateId)))
+      }
     } catch {
       case e: NullPointerException =>
         None
@@ -348,11 +442,15 @@ class CachingDao(spi: DaoSpi) extends Dao {
 
 }
 
+
 /** Always accesses the database, whenever you ask it do do something.
  *
  *  Useful when constructing test suites that should access the database.
  */
-class NonCachingDao(protected val _spi: DaoSpi) extends Dao
+class NonCachingTenantDao(protected val _spi: TenantDaoSpi) extends TenantDao
+
+
+class NonCachingSystemDao(protected val _spi: SystemDaoSpi) extends SystemDao
 
 
 object Dao {
