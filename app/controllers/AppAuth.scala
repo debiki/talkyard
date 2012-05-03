@@ -104,7 +104,7 @@ object AppAuth extends mvc.Controller {
 
     val prevSidValOpt = urlDecodeCookie("dwCoSid", request)
     val prevSid = prevSidValOpt.map(Sid.check _) getOrElse SidAbsent
-    val addr = "?.?.?.?"  // TODO
+    val addr = request.remoteAddress
     val tenantId = lookupTenantByHost(request.host)
 
     val loginReq = LoginRequest(
@@ -113,7 +113,8 @@ object AppAuth extends mvc.Controller {
       identity = IdentitySimple(id = "?i", userId = "?", name = name,
         email = email, location = "", website = url))
 
-    val loginGrant = Debiki.Dao.saveLogin(tenantId, loginReq)
+    val loginGrant =
+       Debiki.tenantDao(tenantId, ip = addr).saveLogin(tenantId, loginReq)
 
     val (_, _, sidAndXsrfCookies) = Xsrf.newSidAndXsrf(Some(loginGrant))
     val userConfigCookie = AppConfigUser.userConfigCookie(loginGrant)
@@ -144,7 +145,7 @@ object AppAuth extends mvc.Controller {
        identity = identity_!.asInstanceOf[IdentitySimple].copy(
           id = "?i", userId = "?", email = newEmailAddr))
 
-    val loginGrant = Debiki.Dao.saveLogin(tenantId, loginReq)
+    val loginGrant = pageReq.dao.saveLogin(tenantId, loginReq)
     val (_, _, sidAndXsrfCookies) = Xsrf.newSidAndXsrf(Some(loginGrant))
 
     (loginGrant, sidAndXsrfCookies)
@@ -192,11 +193,11 @@ object AppAuth extends mvc.Controller {
   }
 
   def lookupTenantByHost(host: String): String = {
-    // For now, duplicate here the tenant lookup code from Globa.
+    // For now, duplicate here the tenant lookup code from Global.
     // In the future, ?login-openid will be the login function (??), and
     // then the tenant lookup code in Global will be used.
     val scheme = "http" // for now
-    Debiki.Dao.lookupTenant(scheme, host) match {
+    Debiki.SystemDao.lookupTenant(scheme, host) match {
       case found: FoundChost => found.tenantId
       case found: FoundAlias => throwForbidden("DwE03h103", "Not impl")
       case FoundNothing =>

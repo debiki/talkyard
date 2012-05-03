@@ -115,7 +115,7 @@ object AppMoveRenamePage extends mvc.Controller {
     // SECURITY Could pass params to Dao via PagePath instead,
     // that'd implicitly validate all inputs. But then first make
     // PagePath validate all inputs (it should, but not yet implemented).
-    val newPagePath = Debiki.Dao.moveRenamePage(
+    val newPagePath = pageReq.dao.moveRenamePage(
       pageReq.tenantId, pageReq.pageId_!, newFolder = newFolder,
       showId = showId, newSlug = newSlug)
 

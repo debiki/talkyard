@@ -125,7 +125,7 @@ object Application extends mvc.Controller {
 
   def listPages(pathIn: PagePath) =
         PageGetAction(pathIn, pageMustExist = false) { pageReq =>
-    val pagePaths = Debiki.Dao.listPagePaths(
+    val pagePaths = pageReq.dao.listPagePaths(
       withFolderPrefix = pageReq.pagePath.folder,
       tenantId = pageReq.tenantId,
       include = PageStatus.All,
@@ -139,7 +139,7 @@ object Application extends mvc.Controller {
 
   def listActions(pathIn: PagePath) =
         PageGetAction(pathIn, pageMustExist = false) { pageReq =>
-    val actionLocators = Debiki.Dao.listActions(
+    val actionLocators = pageReq.dao.listActions(
        folderPrefix = pageReq.pagePath.path,
        tenantId = pageReq.tenantId,
        includePages = PageStatus.All,
@@ -154,11 +154,11 @@ object Application extends mvc.Controller {
     import pageReq.{pagePath}
 
     // The tenant's name will be included in the feed.
-    val tenant: Tenant = Debiki.Dao.loadTenants(List(pageReq.tenantId)).head
+    val tenant: Tenant = pageReq.dao.loadTenant()
 
     val feedPagePaths =
       if (!pagePath.isFolderOrIndexPage) List(pagePath)
-      else Debiki.Dao.listPagePaths(
+      else pageReq.dao.listPagePaths(
         withFolderPrefix = pagePath.folder,
         tenantId = pageReq.tenantId,
         include = List(PageStatus.Published),
@@ -174,7 +174,7 @@ object Application extends mvc.Controller {
           "GotNoGuid"
         }
         val page: Option[Debate] =
-          Debiki.Dao.loadPage(pagePath.tenantId, pageId)
+           pageReq.dao.loadPage(pagePath.tenantId, pageId)
         page.map(p => List(feedPagePath -> p)).getOrElse(Nil)
     }
 

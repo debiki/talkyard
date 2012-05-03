@@ -13,11 +13,11 @@ import play.api.Play.current
 
 object Debiki {
 
-  lazy val TemplateEngine = new TemplateEngine(PageCache, Dao)
+  lazy val TemplateEngine = new TemplateEngine(PageCache)
 
-  lazy val PageCache = new PageCache(Dao)
+  lazy val PageCache = new PageCache(DaoFactory)
 
-  val Dao = new CachingDao(new RelDbDaoSpi( {
+  val DaoFactory = new CachingDaoFactory(new RelDbDaoSpiFactory( {
     def configStr(path: String) =
       Play.configuration.getString(path) getOrElse
          runErr("DwE93KI2", "Config value missing: "+ path)
@@ -29,7 +29,15 @@ object Debiki {
       password = configStr("debiki.pgsql.password"))
   }))
 
-  val MailerActorRef = Mailer.startNewActor(Dao)
+  val MailerActorRef = Mailer.startNewActor(DaoFactory)
+
+  def SystemDao = DaoFactory.systemDao
+
+
+  def tenantDao(tenantId: String, ip: String, roleId: Option[String] = None)
+        : TenantDao =
+    DaoFactory.buildTenantDao(QuotaConsumers(ip = Some(ip),
+       tenantId = Some(tenantId), roleId = roleId))
 
 
   /**
@@ -41,7 +49,7 @@ object Debiki {
       return
 
     import pageReq.{tenantId, pageId_!, page_!, user_!}
-    val actionsWithId = Dao.savePageActions(tenantId, pageId_!, actions)
+    val actionsWithId = pageReq.dao.savePageActions(tenantId, pageId_!, actions)
 
     // Possible optimization: Examine all actions, and refresh cache only
     // if there are e.g. EditApp:s or Replie:s (but ignore Edit:s -- if
@@ -61,7 +69,7 @@ object Debiki {
     // COULD rewrite Dao so the seeds can be saved in the same transaction:
     val seeds = Notification.calcFrom(user_!, adding = actionsWithId,
        to = page_!)
-    Dao.saveNotfs(tenantId, seeds)
+    pageReq.dao.saveNotfs(tenantId, seeds)
   }
 
 }

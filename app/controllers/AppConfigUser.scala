@@ -93,8 +93,8 @@ object AppConfigUser extends mvc.Controller {
             "Please specify an email address.")
 
         if (emailNotfPrefs != user.emailNotfPrefs) {
-          Debiki.Dao.configRole(pageReq.tenantId, loginId, pageReq.ctime,
-            user.id, emailNotfPrefs)
+          pageReq.dao.configRole(pageReq.tenantId, loginId, pageReq.ctime,
+             user.id, emailNotfPrefs)
         }
       case Some(addr) =>
         // Update DW1_USERS: add new email? and cofig notf prefs.
@@ -137,7 +137,7 @@ object AppConfigUser extends mvc.Controller {
           "Please specify an email address.")
     }
     else if (emailNotfPrefs != user.emailNotfPrefs) {
-      Debiki.Dao.configIdtySimple(pageReq.tenantId, loginId, pageReq.ctime,
+      pageReq.dao.configIdtySimple(pageReq.tenantId, loginId, pageReq.ctime,
         user.email, emailNotfPrefs)
     }
 

@@ -35,7 +35,7 @@ object Global extends GlobalSettings {
 
     // Lookup tenant id in database. (Should cache it.)
     val scheme = "http" // for now
-    val tenantId = Debiki.Dao.lookupTenant(scheme, request.host) match {
+    val tenantId = Debiki.SystemDao.lookupTenant(scheme, request.host) match {
       case found: FoundChost => found.tenantId
       case found: FoundAlias => found.role match {
         case TenantHost.RoleRedirect =>
@@ -173,7 +173,7 @@ object Global extends GlobalSettings {
    * fails fast.
    */
   override def onStart(app: Application) {
-    Debiki.Dao
+    Debiki.SystemDao
   }
 
 

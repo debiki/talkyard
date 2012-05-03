@@ -28,9 +28,9 @@ import Prelude._
  */
 object Mailer {
 
-  def startNewActor(dao: Dao): ActorRef = {
+  def startNewActor(daoFactory: DaoFactory): ActorRef = {
     val actorRef = Akka.system.actorOf(Props(
-       new Mailer(dao)), name = "EmailActor")
+       new Mailer(daoFactory)), name = "EmailActor")
     Akka.system.scheduler.schedule(0 seconds, 20 seconds, actorRef, "SendMail")
     actorRef
   }
@@ -51,8 +51,10 @@ object Mailer {
  * As of right now, only sends emails. Does not handle incoming mail (there is
  * no incoming mail, instead such mail ends up in a certain Google Domains
  * account instead, namely support at debiki dot se (as of today 2012-03-30).
+ *
+ * Thread safe.
  */
-class Mailer(val dao: Dao) extends Actor {
+class Mailer(val daoFactory: DaoFactory) extends Actor {
 
 
   val logger = play.api.Logger("app.mailer")
@@ -69,7 +71,8 @@ class Mailer(val dao: Dao) extends Actor {
   def receive = {
     case "SendMail" =>
       val notfsToMail =
-        dao.loadNotfsToMailOut(delayInMinutes = 0, numToLoad = 11)
+        daoFactory.systemDao.loadNotfsToMailOut(
+           delayInMinutes = 0, numToLoad = 11)
       logger.debug("Loaded "+ notfsToMail.notfsByTenant.size +
          " notfs, to "+ notfsToMail.usersByTenantAndId.size +" users.")
       _trySendEmailNotfs(notfsToMail)
@@ -95,15 +98,16 @@ class Mailer(val dao: Dao) extends Actor {
       (userId, userNotfs) <- notfsByUserId
     }{
       logger.debug("Considering "+ userNotfs.size +" notfs to user "+ userId)
-      
-      val tenantOpt = Debiki.Dao.loadTenants(tenantId::Nil).headOption
-      val chostOpt = tenantOpt.flatMap(_.chost)
+
+      val tenantDao = daoFactory.buildTenantDao(
+         QuotaConsumers(tenantId = Some(tenantId)))
+      val tenant = tenantDao.loadTenant()
       val userOpt = notfsToMail.usersByTenantAndId.get(tenantId -> userId)
 
       // Send email, or remember why we didn't.
-      val problemOpt = (chostOpt, userOpt.map(_.emailNotfPrefs)) match {
+      val problemOpt = (tenant.chost, userOpt.map(_.emailNotfPrefs)) match {
         case (Some(chost), Some(EmailNotfPrefs.Receive)) =>
-          _constructAndSendEmail(tenantId, chost, userOpt.get, userNotfs)
+          _constructAndSendEmail(tenantDao, chost, userOpt.get, userNotfs)
           None
         case (None, _) =>
           val problem = "No chost for tenant id: "+ tenantId
@@ -119,14 +123,14 @@ class Mailer(val dao: Dao) extends Actor {
 
       // If we decided not to send the email, remember not to try again.
       problemOpt foreach { problem =>
-        dao.skipEmailForNotfs(tenantId, userNotfs,
+        tenantDao.skipEmailForNotfs(tenantId, userNotfs,
            debug = "Email skipped: "+ problem)
       }
     }
   }
 
 
-  def _constructAndSendEmail(tenantId: String, chost: TenantHost,
+  def _constructAndSendEmail(tenantDao: TenantDao, chost: TenantHost,
         user: User, userNotfs: Seq[NotfOfPageAction]) {
     // Save the email in the db, before sending it, so even if the server
     // crashes it'll always be found, should the receiver attempt to
@@ -135,11 +139,11 @@ class Mailer(val dao: Dao) extends Actor {
     val origin =
       (chost.https.required ? "https://" | "http://") + chost.address
     val (awsSendReq, emailToSend) = _constructEmail(origin, user, userNotfs)
-    dao.saveUnsentEmailConnectToNotfs(tenantId, emailToSend, userNotfs)
+    tenantDao.saveUnsentEmailConnectToNotfs(tenantDao.tenantId, emailToSend, userNotfs)
     logger.debug("Sending email to "+ emailToSend.sentTo)
     val emailSentOrFailed = _sendEmail(awsSendReq, emailToSend)
     logger.trace("Email sent or failed: "+ emailSentOrFailed)
-    dao.updateSentEmail(tenantId, emailSentOrFailed)
+    tenantDao.updateSentEmail(tenantDao.tenantId, emailSentOrFailed)
   }
 
 

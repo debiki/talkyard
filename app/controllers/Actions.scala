@@ -24,7 +24,6 @@ object Actions {
   // and use PageRequest instead.
   case class PageRequest[A](
     tenantId: String,
-    ip: String,
     sid: SidOk,
     xsrfToken: XsrfOk,
     loginId: Option[String],
@@ -36,10 +35,16 @@ object Actions {
     /** If the requested page does not exist, pagePath.pageId is empty. */
     pagePath: PagePath,
     permsOnPage: PermsOnPage,
+    dao: TenantDao,
     request: Request[A]
   ){
     require(pagePath.tenantId == tenantId) //COULD remove tenantId from pagePath
     require(!pageExists || pagePath.pageId.isDefined)
+    require(dao.tenantId == tenantId)
+    require(dao.quotaConsumers.tenantId == Some(tenantId))
+    require(dao.quotaConsumers.ip == Some(ip))
+    require(dao.quotaConsumers.roleId ==
+       user.filter(_.isAuthenticated).map(_.id))
 
     /**
      * The login id of the user making the request. Throws 403 Forbidden
@@ -61,6 +66,8 @@ object Actions {
     def displayName_! : String =
       sid.displayName getOrElse throwForbidden("DwE97Ik3", "Not logged in")
 
+    def ip = request.remoteAddress
+
     /**
      * The end user's IP address, *iff* it differs from the login address.
      */
@@ -81,7 +88,7 @@ object Actions {
      */
     lazy val page_? : Option[Debate] =
       if (pageExists)
-        pageId.flatMap(id => Debiki.Dao.loadPage(tenantId, id))
+        pageId.flatMap(id => dao.loadPage(tenantId, id))
       // Don't load the page even if it was *created* moments ago.
       // having !pageExists and page_? = Some(..) feels risky.
       else None
@@ -109,6 +116,9 @@ object Actions {
     def queryString = request.queryString
 
     def body = request.body
+
+    def quotaConsumers = dao.quotaConsumers
+
   }
 
 
@@ -144,20 +154,19 @@ object Actions {
         (pathIn: PagePath, pageMustExist: Boolean)
         (f: PageRequest[A] => PlainResult)
         = CheckPathAction[A](parser)(pathIn) {
-      (sidOk, xsrfOk, pathOkOpt, request) =>
+      (sidOk, xsrfOk, pathOkOpt, dao, request) =>
 
     if (pathOkOpt.isEmpty && pageMustExist)
       throwNotFound("DwE0404", "Page not found")
 
     val tenantId = pathIn.tenantId
-    val ip = "?.?.?.?"
     val pagePath = pathOkOpt.getOrElse(pathIn)
 
     // Load identity and user.
     val (identity, user) = sidOk.loginId match {
       case None => (None, None)
       case Some(lid) =>
-        Debiki.Dao.loadIdtyAndUser(forLoginId = lid, tenantId = tenantId)
+        dao.loadIdtyAndUser(forLoginId = lid, tenantId = tenantId)
           match {
             case Some((identity, user)) => (Some(identity), Some(user))
             case None =>
@@ -171,20 +180,19 @@ object Actions {
     // Load permissions.
     val permsReq = RequestInfo(  // COULD RENAME! to PermsOnPageRequest
       tenantId = tenantId,
-      ip = ip,
+      ip = request.remoteAddress,
       loginId = sidOk.loginId,
       identity = identity,
       user = user,
       pagePath = pagePath)
 
-    val permsOnPage = Debiki.Dao.loadPermsOnPage(permsReq)
+    val permsOnPage = dao.loadPermsOnPage(permsReq)
     if (!permsOnPage.accessPage)
       throwForbidden("DwE403DNI0", "You are not allowed to access that page.")
 
     // Construct the actual request.
     val pageReq = PageRequest[A](
       tenantId = tenantId,
-      ip = ip,
       sid = sidOk,
       xsrfToken = xsrfOk,
       loginId = sidOk.loginId,
@@ -193,6 +201,7 @@ object Actions {
       pageExists = pathOkOpt.isDefined,
       pagePath = pagePath,
       permsOnPage = permsOnPage,
+      dao = dao,
       request = request)
 
     val result = f(pageReq)
@@ -208,7 +217,7 @@ object Actions {
    */
   def CheckPathActionNoBody
         (pathIn: PagePath)
-        (f: (SidOk, XsrfOk, Option[PagePath], Request[Option[Any]]
+        (f: (SidOk, XsrfOk, Option[PagePath], TenantDao, Request[Option[Any]]
            ) => PlainResult) =
     CheckPathAction(BodyParsers.parse.empty)(pathIn)(f)
 
@@ -216,16 +225,19 @@ object Actions {
   def CheckPathAction[A]
         (parser: BodyParser[A])
         (pathIn: PagePath)
-        (f: (SidOk, XsrfOk, Option[PagePath], Request[A]) => PlainResult) =
+        (f: (SidOk, XsrfOk, Option[PagePath], TenantDao, Request[A]) =>
+           PlainResult) =
     CheckSidAction[A](parser) { (sidOk, xsrfOk, request) =>
-      Debiki.Dao.checkPagePath(pathIn) match {
+      val dao = Debiki.tenantDao(tenantId = pathIn.tenantId,
+         ip = request.remoteAddress, sidOk.roleId)
+      dao.checkPagePath(pathIn) match {
         case Some(correct: PagePath) =>
           if (correct.path == pathIn.path) {
-            f(sidOk, xsrfOk, Some(correct), request)
+            f(sidOk, xsrfOk, Some(correct), dao, request)
           } else {
             Results.MovedPermanently(correct.path)
           }
-        case None => f(sidOk, xsrfOk, None, request)
+        case None => f(sidOk, xsrfOk, None, dao, request)
       }
     }
 

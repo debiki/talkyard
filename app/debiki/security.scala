@@ -100,7 +100,11 @@ case class SidOk(
    */
   override val displayName: Option[String])
   extends SidStatus {
+
   override def isOk = true
+
+  // Unauthenticated users' ids start with '-'.
+  def roleId: Option[String] = userId.filter(!_.startsWith("-"))
 }
 
 

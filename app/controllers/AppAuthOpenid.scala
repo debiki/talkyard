@@ -137,7 +137,7 @@ object AppAuthOpenid extends mvc.Controller {
 
     val prevSidValOpt = urlDecodeCookie("dwCoSid", request)
     val prevSid = prevSidValOpt.map(Sid.check _) getOrElse SidAbsent
-    val addr = "?.?.?.?" // TODO
+    val addr = request.remoteAddress
     val tenantId = AppAuth.lookupTenantByHost(request.host)
 
     def getQueryParam(paramName: String): Option[String] =
@@ -174,7 +174,8 @@ object AppAuthOpenid extends mvc.Controller {
         email = emailOpt getOrElse "",
         country = countryOpt getOrElse ""))
 
-    val loginGrant = Debiki.Dao.saveLogin(tenantId, loginReq)
+    val loginGrant =
+       Debiki.tenantDao(tenantId, ip = addr).saveLogin(tenantId, loginReq)
 
     // ----- Reply OK, with cookies
 

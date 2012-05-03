@@ -66,12 +66,13 @@ object AppUnsubscribe extends mvc.Controller {
         implicit request =>
 
     // Login.
-    val loginNoId = Login(id = "?", prevLoginId = None, ip = "?.?.?.?",
-       date = new ju.Date, identityId = emailId)
-
+    val loginNoId = Login(id = "?", prevLoginId = None,
+       ip = request.remoteAddress, date = new ju.Date, identityId = emailId)
     val loginReq = LoginRequest(loginNoId, IdentityEmailId(emailId))
+    val dao = Debiki.tenantDao(tenantId, ip = request.remoteAddress)
+
     val loginGrant =
-      try Debiki.Dao.saveLogin(tenantId, loginReq)
+      try dao.saveLogin(tenantId, loginReq)
       catch {
         case ex: Dao.EmailNotFoundException =>
           throwForbidden("DwE530KI37", "Email not found")
@@ -89,12 +90,12 @@ object AppUnsubscribe extends mvc.Controller {
 
     // Do it.
     if (user.isAuthenticated) {
-      Debiki.Dao.configRole(tenantId, loginId = login.id, ctime = login.date,
+      dao.configRole(tenantId, loginId = login.id, ctime = login.date,
          roleId = user.id, emailNotfPrefs = emailNotfPrefs)
     }
     else {
       val emailAddr = idtyEmailId.emailSent.get.sentTo
-      Debiki.Dao.configIdtySimple(tenantId, loginId = login.id,
+      dao.configIdtySimple(tenantId, loginId = login.id,
          ctime = login.date, emailAddr = emailAddr,
          emailNotfPrefs = emailNotfPrefs)
     }

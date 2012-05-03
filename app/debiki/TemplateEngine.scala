@@ -42,11 +42,16 @@ import TemplateEngine._
  * that has an attribute `data-replace-with='child-body'` (not implemented
  * though!), or, if there is no such parent elem, the child body contents
  * is appended to the parent template's <body>.
+ *
+ * Thread safe.
  */
-class TemplateEngine(val pageCache: PageCache, val dao: Dao) {
+class TemplateEngine(val pageCache: PageCache) {
+
 
   def renderPage(pageReq: PageRequest[_], pageRoot: PageRoot,
         appendToBody: NodeSeq = Nil): NodeSeq = {
+
+    val dao = pageCache.daoFactory.buildTenantDao(pageReq.quotaConsumers)
 
     // Load page and all templates needed.
     val textAndComments = pageCache.get(pageReq, pageRoot)
@@ -57,7 +62,7 @@ class TemplateEngine(val pageCache: PageCache, val dao: Dao) {
       if (pageReq.pagePath.isTemplatePage || pageRoot.isPageTemplate)
         TemplateForTemplates::Nil
       else
-        _loadTemplatesFor(pageReq.page_!, at = pageReq.pagePath)
+        _loadTemplatesFor(pageReq.page_!, at = pageReq.pagePath, use = dao)
     }
 
     // Create initial template data.
@@ -163,13 +168,15 @@ class TemplateEngine(val pageCache: PageCache, val dao: Dao) {
    * Because users see the url folders in the nav bar, but no trees/
    * categories. So better make the template depend on the path only?)
    */
-  private def _loadTemplatesFor(page: Debate, at: PagePath)
+  private def _loadTemplatesFor(page: Debate, at: PagePath, use: TenantDao)
         : List[TemplateSource] = {
     val pagePath = at
+    val dao = use
     import TemplateToExtend._
 
     var templates = List[TemplateSource]()
-    var nextTemplAndPath = _loadOwnOrClosestTemplateFor(page, pagePath)
+    var nextTemplAndPath =
+       _loadOwnOrClosestTemplateFor(page, pagePath, dao)
     while (nextTemplAndPath isDefined) {
       val curPath = nextTemplAndPath.get._2
       val curTempl = nextTemplAndPath.get._1 
@@ -182,10 +189,10 @@ class TemplateEngine(val pageCache: PageCache, val dao: Dao) {
       templates ::= curTempl
       nextTemplAndPath = (curTempl.params.templateToExtend getOrElse
          TemplateToExtend.ExtendClosestTemplate) match {
-        case ExtendClosestTemplate => _loadClosestTemplateFor(curPath)
+        case ExtendClosestTemplate => _loadClosestTemplateFor(curPath, dao)
         case ExtendNoTemplate => None
         case ExtendSpecificTmpl(url) =>
-          _loadTemplateAt(url, basePage = pagePath)
+          _loadTemplateAt(url, basePage = pagePath, dao)
       }
     }
 
@@ -200,13 +207,13 @@ class TemplateEngine(val pageCache: PageCache, val dao: Dao) {
    * Returns the page's own template, if any. Otherwise
    * returns the closest template, or None, if none found.
    */
-  def _loadOwnOrClosestTemplateFor(page: Debate, pagePath: PagePath)
-        : Option[(TemplateSource, PagePath)] = {
+  def _loadOwnOrClosestTemplateFor(page: Debate, pagePath: PagePath,
+        dao: TenantDao): Option[(TemplateSource, PagePath)] = {
     require(!pagePath.isTemplatePage)
     page.pageTemplateSrc foreach { templ =>
       return Some((templ, pagePath))
     }
-    _loadClosestTemplateFor(pagePath)
+    _loadClosestTemplateFor(pagePath, dao)
   }
 
 
@@ -221,7 +228,7 @@ class TemplateEngine(val pageCache: PageCache, val dao: Dao) {
    * /some/folder/subfolder/ is /some/folder/, and for
    * /some/folder/page it is /some/folder/. )
    */
-  private def _loadClosestTemplateFor(pagePath: PagePath)
+  private def _loadClosestTemplateFor(pagePath: PagePath, dao: TenantDao)
         : Option[(TemplateSource, PagePath)] = {
 
     // If pagePath is /folder/subfolder/.tree.template or .folder.template,
@@ -260,7 +267,7 @@ class TemplateEngine(val pageCache: PageCache, val dao: Dao) {
    * Loads the template located at `url`, which might point to another tenant,
    * e.g. `http://other-tenant.com/templates/nice.template`.
    */
-  private def _loadTemplateAt(url: String, basePage: PagePath)
+  private def _loadTemplateAt(url: String, basePage: PagePath, dao: TenantDao)
         : Option[(TemplateSource, PagePath)] = {
 
     // Parse URL, resolve host name to tenant id.
@@ -268,7 +275,7 @@ class TemplateEngine(val pageCache: PageCache, val dao: Dao) {
     val tenantId = parsedUrl.schemeHostOpt match {
       case None => basePage.tenantId
       case Some((scheme, host)) =>
-        dao.lookupTenant(scheme, host) match {
+        dao.lookupOtherTenant(scheme, host) match {
           case found: FoundChost => found.tenantId
           case found: FoundAlias => found.tenantId
           case FoundNothing =>

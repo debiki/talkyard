@@ -67,7 +67,7 @@ object AppCreatePage extends mvc.Controller {
       markup = Markup.DefaultForPageTitle.id)
 
     val debateNoId = Debate(guid = "?", posts = rootPost::titlePost::Nil)
-    val newPage: Debate = Debiki.Dao.createPage(
+    val newPage: Debate = pageReq.dao.createPage(
       where = newPagePathNoId, debate = debateNoId)
 
     val newPagePath = newPagePathNoId.copy(pageId = Some(newPage.id))
