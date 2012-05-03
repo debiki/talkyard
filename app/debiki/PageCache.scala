@@ -20,19 +20,27 @@ object PageCache {
   case class Key(tenantId: String, pageGuid: String, hostAndPort: String)
 }
 
+
 /**
  * Caches serialized pages, if the root post is the page body.
  *
  * Each page should always be accessed via the same hostAndPort,
  * otherwise `refreshLater` fails to refresh all cached versions of
  * the page.
+ *
+ * Uses `PageRequest.dao` to load pages from the database.
  */
-class PageCache(val daoFactory: DaoFactory) {
+class PageCache {
 
-  // Passes the current quota consumer to _loadAndRender. Needed because
-  // Google Guava's cache lookup method takes an unchangeable key only.
-  private val _quotaConsumersDynVar =
-    new util.DynamicVariable[QuotaConsumers](null)
+  /**
+   * Passes the current quota consumer to _loadAndRender. Needed because
+   * Google Guava's cache lookup method takes an unchangeable key only,
+   * but we need to use different TenantDao:s when loading pages,
+   * so the correct tenant's quota is consumed.
+   */
+  private val _tenantDaoDynVar =
+    new util.DynamicVariable[TenantDao](null)
+
 
   private val _pageCache: ju.concurrent.ConcurrentMap[Key, NodeSeq] =
     new guava.collect.MapMaker().
@@ -41,16 +49,17 @@ class PageCache(val daoFactory: DaoFactory) {
        //expireAfterWrite(10. TimeUnits.MINUTES).
        makeComputingMap(new guava.base.Function[Key, NodeSeq] {
       def apply(k: Key): NodeSeq = {
-        val quotaConsumers = _quotaConsumersDynVar.value
-        assert(quotaConsumers ne null)
-        val dao = daoFactory.buildTenantDao(quotaConsumers)
-        _loadAndRender(k, PageRoot.TheBody, dao)
+        val tenantDao = _tenantDaoDynVar.value
+        assert(tenantDao ne null)
+        _loadAndRender(k, PageRoot.TheBody, tenantDao)
       }
     })
 
-  private def _loadAndRender(k: Key, pageRoot: PageRoot, dao: TenantDao)
+
+  private def _loadAndRender(k: Key, pageRoot: PageRoot, tenantDao: TenantDao)
         : NodeSeq = {
-    dao.loadPage(k.tenantId, k.pageGuid) match {
+    assert(k.tenantId == tenantDao.tenantId)
+    tenantDao.loadPage(k.tenantId, k.pageGuid) match {
       case Some(debate) =>
         val config = DebikiHttp.newUrlConfig(k.hostAndPort)
         // Hmm, DebateHtml and pageTrust should perhaps be wrapped in
@@ -84,7 +93,7 @@ class PageCache(val daoFactory: DaoFactory) {
         pageReq.tenantId, pageReq.pagePath.pageId.get, pageReq.request.host)
       pageRoot match {
         case PageRoot.Real(Page.BodyId) =>
-          _quotaConsumersDynVar.withValue(pageReq.quotaConsumers) {
+          _tenantDaoDynVar.withValue(pageReq.dao) {
             // The page (with the article and all comments) includes
             // nothing user specific and can thus be cached.
             val page = _pageCache.get(key)
@@ -93,8 +102,7 @@ class PageCache(val daoFactory: DaoFactory) {
 
         case otherRoot =>
           // The cache currently works only for the page body as page root.
-          val dao = daoFactory.buildTenantDao(pageReq.quotaConsumers)
-          _loadAndRender(key, otherRoot, dao) ++ templates
+          _loadAndRender(key, otherRoot, pageReq.dao) ++ templates
       }
     } catch {
       case e: NullPointerException =>

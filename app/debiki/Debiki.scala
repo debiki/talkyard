@@ -15,7 +15,7 @@ object Debiki {
 
   lazy val TemplateEngine = new TemplateEngine(PageCache)
 
-  lazy val PageCache = new PageCache(DaoFactory)
+  lazy val PageCache = new PageCache
 
   val DaoFactory = new CachingDaoFactory(new RelDbDaoSpiFactory( {
     def configStr(path: String) =

@@ -51,8 +51,6 @@ class TemplateEngine(val pageCache: PageCache) {
   def renderPage(pageReq: PageRequest[_], pageRoot: PageRoot,
         appendToBody: NodeSeq = Nil): NodeSeq = {
 
-    val dao = pageCache.daoFactory.buildTenantDao(pageReq.quotaConsumers)
-
     // Load page and all templates needed.
     val textAndComments = pageCache.get(pageReq, pageRoot)
     val templates: List[TemplateSource] = {
@@ -62,7 +60,8 @@ class TemplateEngine(val pageCache: PageCache) {
       if (pageReq.pagePath.isTemplatePage || pageRoot.isPageTemplate)
         TemplateForTemplates::Nil
       else
-        _loadTemplatesFor(pageReq.page_!, at = pageReq.pagePath, use = dao)
+        _loadTemplatesFor(pageReq.page_!, at = pageReq.pagePath,
+           use = pageReq.dao)
     }
 
     // Create initial template data.
