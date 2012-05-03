@@ -41,8 +41,8 @@ Could test:
 import DebikiSpecs._
 
 trait TestContext {
-  def daoImpl: v0.DaoSpi
-  def close() = dao.close()
+  def daoFactory: v0.DaoFactory
+  def close() = daoFactory.systemDao.close()
   def createRestorePoint(): Unit
   def revertToRestorePoint(): Unit
 
@@ -50,7 +50,6 @@ trait TestContext {
    *  (Most likely an RDBMS.)
    */
   def hasRefConstraints: Boolean
-  lazy val dao = new v0.NonCachingDao(daoImpl)
 }
 
 object DaoTckTest {
@@ -78,6 +77,12 @@ abstract class DaoTckTest(builder: TestContextBuilder)
 abstract class DaoSpec(builder: TestContextBuilder, defSchemaVersion: String)
     extends SpecificationWithJUnit {
 
+  // Inited in setup() below and closed in SpecContext below, after each test.
+  var ctx: TestContext = _
+
+  def daoFactory = ctx.daoFactory
+  def systemDao = daoFactory.systemDao
+
   def now = new ju.Date
 
   // "SUS" means Systems under specification, which is a
@@ -89,9 +94,6 @@ abstract class DaoSpec(builder: TestContextBuilder, defSchemaVersion: String)
       ctx = builder(what, version)
     })
   }
-
-  var ctx: TestContext = _  // the speccontext below closes it after each test
-  def dao = ctx.dao
 
   // close the dao and any db connections after each tests.
   // see: <http://code.google.com/p/specs/wiki/declarespecifications
@@ -116,11 +118,11 @@ class DaoSpecEmptySchema(b: TestContextBuilder) extends DaoSpec(b, "0") {
 
   "A v0.DAO in a completely empty repo" when schemaIsEmpty should {
     "consider the version being 0" >> {
-      dao.checkRepoVersion() must_== Some("0")
+      systemDao.checkRepoVersion() must_== Some("0")
     }
     "be able to upgrade to 0.0.2" >> {
       // dao.upgrade()  currently done automatically, but ought not to.
-      dao.checkRepoVersion() must_== Some("0.0.2")
+      systemDao.checkRepoVersion() must_== Some("0.0.2")
     }
   }
 }
@@ -152,7 +154,7 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
 
   "A v0.DAO in an empty 0.0.2 repo" when tablesAreEmpty should {
     "find version 0.0.2" >> {
-      dao.checkRepoVersion() must_== Some("0.0.2")
+      systemDao.checkRepoVersion() must_== Some("0.0.2")
     }
   }
 
@@ -175,30 +177,35 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
     var defaultTenantId = ""
 
     "find no tenant for non-existing host test.ex.com" >> {
-      val lookup = dao.lookupTenant("http", "test.ex.com")
+      val lookup = systemDao.lookupTenant("http", "test.ex.com")
       lookup must_== FoundNothing
     }
 
     "find no tenant for non-existing tenant id" >> {
-      dao.loadTenants("non_existing_id"::Nil) must_== Nil
+      systemDao.loadTenants("non_existing_id"::Nil) must_== Nil
     }
 
     "create a Test tenant" >> {
-      val tenant = dao.createTenant("Test")
+      val tenant = systemDao.createTenant("Test")
       tenant.name must_== "Test"
       tenant.id must notBeEmpty
       defaultTenantId = tenant.id
     }
 
+    lazy val dao = daoFactory.buildTenantDao(
+       v0.QuotaConsumers(tenantId = Some(defaultTenantId)))
+
     "add and lookup host test.ex.com" >> {
       dao.addTenantHost(defaultTenantId, TenantHost("test.ex.com",
          TenantHost.RoleCanonical, TenantHost.HttpsNone))
-      val lookup = dao.lookupTenant("http", "test.ex.com")
+      val lookup = systemDao.lookupTenant("http", "test.ex.com")
       lookup must_== FoundChost(defaultTenantId)
+      val lookup2 = dao.lookupOtherTenant("http", "test.ex.com")
+      lookup2 must_== FoundChost(defaultTenantId)
     }
 
     "lookup tenant by id, and find all hosts" >> {
-      val tenants = dao.loadTenants(defaultTenantId::Nil)
+      val tenants = systemDao.loadTenants(defaultTenantId::Nil)
       tenants must beLike {
         case List(tenant) =>
           tenant.id must_== defaultTenantId
@@ -920,7 +927,7 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
         dao.loadNotfByEmailId(defaultTenantId, "BadEmailId") must_== None
         dao.loadNotfsForRole(defaultTenantId, unauUser.id) must_== Nil
         dao.loadNotfsForRole(defaultTenantId, unauUser.id) must_== Nil
-        val notfsLoaded = dao.loadNotfsToMailOut(
+        val notfsLoaded = systemDao.loadNotfsToMailOut(
                                           delayInMinutes = 0, numToLoad = 10)
         notfsLoaded.usersByTenantAndId must_== Map.empty
         notfsLoaded.notfsByTenant must_== Map.empty
@@ -939,7 +946,7 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
         }
 
         "load it, by time, to mail out" >> {
-          val notfsToMail = dao.loadNotfsToMailOut(
+          val notfsToMail = systemDao.loadNotfsToMailOut(
              delayInMinutes = 0, numToLoad = 10)
           notfsToMail.usersByTenantAndId.get((defaultTenantId, unauUser.id)
              ) must_== Some(unauUser)
@@ -965,7 +972,7 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
         }
 
         "load it, by time, to mail out" >> {
-          val notfsToMail = dao.loadNotfsToMailOut(
+          val notfsToMail = systemDao.loadNotfsToMailOut(
              delayInMinutes = 0, numToLoad = 10)
           notfsToMail.usersByTenantAndId.get((defaultTenantId, auUser.id)
              ) must_== Some(auUser)
@@ -985,7 +992,7 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
 
       "not load any notf, because they are too recent" >> {
         val notfsLoaded =
-          dao.loadNotfsToMailOut(delayInMinutes = 15, numToLoad = 10)
+          systemDao.loadNotfsToMailOut(delayInMinutes = 15, numToLoad = 10)
         notfsLoaded.usersByTenantAndId must_== Map.empty
         notfsLoaded.notfsByTenant must_== Map.empty
       }
@@ -1028,7 +1035,7 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
         failureText = Some("Test failure"))
 
       def loadNotfToMailOut(userId: String): Seq[NotfOfPageAction] = {
-        val notfsToMail = dao.loadNotfsToMailOut(
+        val notfsToMail = systemDao.loadNotfsToMailOut(
           delayInMinutes = 0, numToLoad = 10)
         val notfs = notfsToMail.notfsByTenant(defaultTenantId)
         val usersNotfs = notfs.filter(_.recipientUserId == userId)
