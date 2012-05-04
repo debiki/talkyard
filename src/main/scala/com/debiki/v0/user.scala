@@ -220,15 +220,6 @@ sealed abstract class Identity {
   checkId(userId, "DwE864rsk215")
 }
 
-case object IdentityUnknown extends Identity {  // Try to get rid of?
-  val id = "2"
-  val displayName = "?"
-  val email = ""
-  def userId = assErr("DwE3902kS1", "Identity unknown")
-    // alternatively, return "?" -- then People.user("?") returns None, fine.
-    // But a.userId == b.userId, if == "?" which might be bad!
-}
-
 
 /**
  * By specifying an id of an email that has been sent to you,
