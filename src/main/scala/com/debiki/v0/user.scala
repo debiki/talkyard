@@ -16,7 +16,8 @@ abstract trait People {
   def identities: List[Identity]
   def users: List[User]
 
-  /** Returns a NiLo with info on the author of the post.
+  /**
+   * Returns a NiLo with info on the author of the post.
    */
   def authorOf_!(action: Action): NiLo = {  // COULD rename to loginFor?
                                          // or return a User?
@@ -54,31 +55,38 @@ abstract trait People {
   //def authorOf_!(e: Edit): User = user_!(login_!(e.loginId).userId)
 }
 
-/** A Nice Login: a Login, Identity an User tuple, and utility methods.
+
+/**
+ * A Nice Login: a Login, Identity an User tuple, and utility methods.
  */
 class NiLo(people: People, val login: Login) {
+
   def user: Option[User] = people.user(identity_!.userId)
   def user_! : User = people.user_!(identity_!.userId)
   def identity_! : Identity = people.identity_!(login.identityId)
+
   def displayName: String = {
     // (Somewhat dupl code: this also done in LoginGrant.displayName.)
     var n = user_!.displayName
     if (n nonEmpty) n else identity_!.displayName
   }
+
   def email: String = {
     var e = user_!.email
     if (e nonEmpty) e else identity_!.email
   }
 }
 
+
 case object User {
 
-  /** Checks for weird ASCII chars in an user name.
-    *
-    * Cannot be used with names from identity providers, e.g. OpenID
-    * or Twitter: the providers do their own user name sanity checks,
-    * and we should handle anything they accept?
-    */
+  /**
+   * Checks for weird ASCII chars in an user name.
+   *
+   * Cannot be used with names from identity providers, e.g. OpenID
+   * or Twitter: the providers do their own user name sanity checks,
+   * and we should handle anything they accept?
+   */
   def nameIsWeird(name: String): Boolean = {
     // Could check for weird Unicode whitespace too, but that will
     // probably be implicitly solved, when handling spam? ASCII,
@@ -95,9 +103,11 @@ case object User {
     false
   }
 
-  /** Checks for weird ASCII chars in an email,
-    * and that it matches """.+@.+\..+""".
-    */
+
+  /**
+   * Checks for weird ASCII chars in an email,
+   * and that it matches """.+@.+\..+""".
+   */
   def emailIsWeird(email: String): Boolean = {
     // Differences from nameIsOk(): allow "@_", disallows "'".
     for (c <- email if c < 0x80) {
@@ -111,7 +121,10 @@ case object User {
     true
   }
 
-  /** Allows all chars but control chars, space and < > */
+
+  /**
+   * Allows all chars but control chars, space and < >
+   */
   def urlIsWeird(url: String): Boolean = {
     for (c <- url if c < 0x80) {
       if (c <= ' ') return true  // forbid control chars and space
@@ -121,12 +134,15 @@ case object User {
     false
   }
 
+
   def checkId(id: String, errcode: String) {
     if (id == "") assErr(errcode, "Empty ID ")
     if (id == "0") assErr(errcode, "ID is `0' ")
     // "?" is okay, means unknown.
   }
+
 }
+
 
 /* Could use:
 sealed abstract class UserId
@@ -135,6 +151,7 @@ case class UserRoleId(String) extends UserId
 -- instead of setting User.id to "-<some-id>" for IdentitySimple,
   and "<some-id>" for Role:s.
 */
+
 
 case class User (
   /** The user's id. Starts with "-" if not authenticated
@@ -164,10 +181,12 @@ case class User (
    */
 }
 
+
 object EmailNotfPrefs extends Enumeration {
   type EmailNotfPrefs = Value
   val Receive, DontReceive, ForbiddenForever, Unspecified = Value
 }
+
 
 case class Login(
   id: String,
@@ -178,6 +197,7 @@ case class Login(
 ){
   checkId(id, "DwE093jxh12")
 }
+
 
 object Login {
 
@@ -193,9 +213,13 @@ object Login {
   }
 }
 
-/** Login identity, e.g. an OpenID identity or a Twitter identity.
+
+/**
+ * A user might have many identities, e.g. an OpenID Gmail identity and
+ * a Twitter identity.
  */
 sealed abstract class Identity {
+
   /** A local id, not a guid. -- hmm, no, it'll be a database *unique* id?!
    *
    *  For example, if a user is loaded for inclusion on page X,
@@ -210,7 +234,6 @@ sealed abstract class Identity {
    *  are used.
    */
   def id: String
-  /** A user can have many identities, e.g. Twitter, Gmail and Facebook. */
   def userId: String
   def displayName: String
   /** E.g. Twitter identities have no email? */
@@ -261,6 +284,7 @@ case class IdentitySimple(
   // Don't:  require(! (User nameIsWeird name))
 }
 
+
 case class IdentityOpenId(
   id: String,
   override val userId: String,
@@ -281,30 +305,6 @@ case class IdentityOpenId(
 ) extends Identity {
   def displayName = firstName
 }
-
-
-/* Could: ???
-NiUs (   // nice user
-  id: String,
-  actions: List[Action]
-){
-  lazy val name: String = actions.filter(<find the most recent DeedRename>)
-  lazy val website: String
-  lazy val email: String
-  ...
-}
-
-UserLoggedIn extends User (
-  val openId: String  ??
-)
-
-class Deed
-
-case class DeedRename
-case class DeedChangeWebsite
-case class DeedChangeEmail
-
-*/
 
 
 case class LoginRequest(login: Login, identity: Identity) {
