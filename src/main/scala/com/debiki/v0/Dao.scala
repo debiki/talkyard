@@ -140,7 +140,7 @@ abstract class SystemDaoSpi {
  *
  *  Delegates database requests to a TenantDaoSpi implementation.
  */
-class TenantDao(protected val _spi: TenantDaoSpi) {
+class TenantDao(private val _spi: TenantDaoSpi) {
 
   def quotaConsumers: QuotaConsumers = _spi.quotaConsumers
 
@@ -277,7 +277,7 @@ class TenantDao(protected val _spi: TenantDaoSpi) {
 }
 
 
-class SystemDao(protected val _spi: SystemDaoSpi) {
+class SystemDao(private val _spi: SystemDaoSpi) {
 
   def close() = _spi.close()
 
@@ -317,17 +317,17 @@ class SystemDao(protected val _spi: SystemDaoSpi) {
 class CachingDaoFactory(daoSpiFactory: DaoSpiFactory)
    extends DaoFactory(daoSpiFactory) {
 
-  val cache = new CachingDao.Cache
+  val cache = new CachingTenantDao.Cache
 
   override def buildTenantDao(quotaConsumers: QuotaConsumers): TenantDao = {
     val spi = _daoSpiFactory.buildTenantDaoSpi(quotaConsumers)
-    new CachingDao(cache, spi)
+    new CachingTenantDao(cache, spi)
   }
 
 }
 
 
-object CachingDao {
+object CachingTenantDao {
 
   case class Key(tenantId: String, debateId: String)
 
@@ -336,8 +336,8 @@ object CachingDao {
     // Passes the current DaoSpi (which knows which quota consumer to tax)
     // to the cache load function. Needed because Google Guava's
     // cache lookup method takes a cache map key only.
-    val tenantDaoSpiDynVar =
-      new util.DynamicVariable[TenantDaoSpi](null)
+    val tenantDaoDynVar =
+      new util.DynamicVariable[CachingTenantDao](null)
 
     val cache: ju.concurrent.ConcurrentMap[Key, Debate] =
       new guava.collect.MapMaker().
@@ -346,29 +346,33 @@ object CachingDao {
          //expireAfterWrite(10. TimeUnits.MINUTES).
          makeComputingMap(new guava.base.Function[Key, Debate] {
         def apply(k: Key): Debate = {
-          val spi = tenantDaoSpiDynVar.value
-          assert(spi ne null)
-          assert(spi.tenantId == k.tenantId)
-          spi.loadPage(k.debateId) getOrElse null
+          val tenantDao = tenantDaoDynVar.value
+          assert(tenantDao ne null)
+          assert(tenantDao.tenantId == k.tenantId)
+          // Don't call loadPage(), that'd cause eternal recursion.
+          tenantDao._superLoadPage(k.debateId) getOrElse null
         }
       })
   }
 }
 
 
-class CachingDao(private val _cache: CachingDao.Cache, spi: TenantDaoSpi)
+class CachingTenantDao(
+   private val _cache: CachingTenantDao.Cache,
+   spi: TenantDaoSpi)
   extends TenantDao(spi) {
 
-  import CachingDao.Key
+  import CachingTenantDao.Key
+
 
   override def createPage(where: PagePath, debate: Debate): Debate = {
-    val debateWithIdsNoUsers = _spi.createPage(where, debate)
+    val debateWithIdsNoUsers = super.createPage(where, debate)
     // ------------
     // Bug workaround: Load the page *inclusive Login:s and User:s*.
     // Otherwise only Actions will be included (in debateWithIdsNoUsers)
     // and then the page cannot be rendered (there'll be None.get errors).
-    assert(_spi.tenantId == where.tenantId)
-    val debateWithIds = _spi.loadPage(debateWithIdsNoUsers.guid).get
+    assert(super.tenantId == where.tenantId)
+    val debateWithIds = super.loadPage(debateWithIdsNoUsers.guid).get
     // ------------
     val key = Key(where.tenantId, debateWithIds.guid)
     val duplicate = _cache.cache.putIfAbsent(key, debateWithIds)
@@ -380,12 +384,12 @@ class CachingDao(private val _cache: CachingDao.Cache, spi: TenantDaoSpi)
 
   override def savePageActions[T <: Action](
       debateId: String, xs: List[T]): List[T] = {
-    for (xsWithIds <- _spi.savePageActions(debateId, xs)) yield {
+    for (xsWithIds <- super.savePageActions(debateId, xs)) yield {
       val key = Key(tenantId, debateId)
       var replaced = false
       while (!replaced) {
         val oldPage =
-           _cache.tenantDaoSpiDynVar.withValue(_spi) {
+           _cache.tenantDaoDynVar.withValue(this) {
              _cache.cache.get(key)
            }
         // -- Should to: -----------
@@ -399,7 +403,7 @@ class CachingDao(private val _cache: CachingDao.Cache, spi: TenantDaoSpi)
         // DebateHtml._layoutPosts.
         // -- So instead: ----------
         // This loads all Logins, Identity:s and Users referenced by the page:
-        val newPage = _spi.loadPage(debateId).get
+        val newPage = super.loadPage(debateId).get
         // -------- Unfortunately.--
         replaced = _cache.cache.replace(key, oldPage, newPage)
       }
@@ -410,8 +414,7 @@ class CachingDao(private val _cache: CachingDao.Cache, spi: TenantDaoSpi)
 
   override def loadPage(debateId: String): Option[Debate] = {
     try {
-      _cache.tenantDaoSpiDynVar.withValue(_spi) {
-        assert(_spi.tenantId == tenantId)
+      _cache.tenantDaoDynVar.withValue(this) {
         Some(_cache.cache.get(Key(tenantId, debateId)))
       }
     } catch {
@@ -419,6 +422,11 @@ class CachingDao(private val _cache: CachingDao.Cache, spi: TenantDaoSpi)
         None
     }
   }
+
+
+  // private[this package]
+  def _superLoadPage(pageId: String): Option[Debate] =
+    super.loadPage(pageId)
 
 }
 
