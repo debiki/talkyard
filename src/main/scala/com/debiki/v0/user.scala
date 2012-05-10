@@ -322,12 +322,19 @@ case class LoginRequest(login: Login, identity: Identity) {
 }
 
 
-case class LoginGrant(login: Login, identity: Identity, user: User) {
+case class LoginGrant(
+   login: Login,
+   identity: Identity,
+   user: User,
+   isNewIdentity: Boolean,
+   isNewRole: Boolean) {
+
   require(!login.id.contains('?'))
   require(!identity.id.contains('?'))
   require(!user.id.contains('?'))
   require(login.identityId == identity.id)
   require(identity.userId == user.id)
+  require(!isNewRole || isNewIdentity)
 
   def displayName: String = {
     // (Somewhat dupl code: this also done in NiLo.displayName.)
