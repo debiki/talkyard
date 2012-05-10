@@ -83,6 +83,13 @@ case class Debate (
   private lazy val postsById =
       imm.Map[String, Post](posts.map(x => (x.id, x)): _*)
 
+  def actionCount: Int =
+     posts.size + ratings.size + edits.size + editApps.size +
+     flags.size + deletions.size
+
+  def allActions: Seq[Action] =
+     deletions:::flags:::editApps:::edits:::ratings:::posts
+
   def smart(action: Action) = new ViAc(this, action)
 
   lazy val (
@@ -597,6 +604,8 @@ sealed abstract class Action {  // COULD delete, replace with Post:s?
    */
   def newIp: Option[String]
   def ctime: ju.Date
+
+  def textLengthUtf8: Int = 0
 }
 
 /** Classifies an action, e.g. tags a Post as being "interesting" and "funny".
@@ -656,7 +665,9 @@ case class Flag(
   ctime: ju.Date,
   reason: FlagReason,
   details: String
-) extends Action
+) extends Action {
+  override def textLengthUtf8: Int = details.getBytes("UTF-8").length
+}
 
 sealed abstract class PostType  // rename to ActionType?
 object PostType {
@@ -731,6 +742,7 @@ case class Post(  // COULD merge all actions into Post,
                                 // generic comment that results in ...
                                 // ...?? arrows to e.g. 3 other comments ??
 ) extends Action {
+  override def textLengthUtf8: Int = text.getBytes("UTF-8").length
 }
 
 case class PostMeta(
@@ -753,7 +765,9 @@ case class Edit (
    * None means reuse the current markup.
    */
   newMarkup: Option[String]
-) extends Action
+) extends Action {
+  override def textLengthUtf8: Int = text.getBytes("UTF-8").length
+}
 
 
 /** Edit applications (i.e. when edits are applied).
@@ -828,7 +842,9 @@ case class Delete(
   ctime: ju.Date,
   wholeTree: Boolean,  // COULD rename to `recursively'?
   reason: String  // COULD replace with a Post that is a reply to this Delete?
-) extends Action
+) extends Action {
+  override def textLengthUtf8: Int = reason.getBytes("UTF-8").length
+}
 
 
 // COULD make a Deletion class, and a DelApp (deletion application) class.
