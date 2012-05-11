@@ -193,7 +193,7 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
     }
 
     lazy val dao = daoFactory.buildTenantDao(
-       v0.QuotaConsumers(tenantId = Some(defaultTenantId)))
+       v0.QuotaConsumers(tenantId = defaultTenantId))
 
     "add and lookup host test.ex.com" >> {
       dao.addTenantHost(TenantHost("test.ex.com",
@@ -1240,6 +1240,240 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
         }
       }
     }
+
+
+
+    // -------- Qutoa
+
+    "manage quota" >> {
+
+      val role = exOpenId_loginGrant.user
+      val ip = "1.2.3.4"
+
+      val tenantConsumer = QuotaConsumer.Tenant(defaultTenantId)
+      val tenantIpConsumer = QuotaConsumer.PerTenantIp(defaultTenantId, ip)
+      val globalIpConsumer = QuotaConsumer.GlobalIp(ip)
+      val roleConsumer = QuotaConsumer.Role(defaultTenantId, roleId = role.id)
+
+      val consumers = List[QuotaConsumer](
+         tenantConsumer, tenantIpConsumer, globalIpConsumer, roleConsumer)
+
+      "find none, if there is none" >> {
+        val quotaStateByConsumer = systemDao.loadQuotaState(consumers)
+        quotaStateByConsumer must beEmpty
+      }
+
+      "do nothin, if nothing to do" >> {
+        systemDao.useMoreQuotaUpdateLimits(Map[QuotaConsumer, QuotaDelta]())
+          // ... should throw nothing
+      }
+
+      val initialQuotaUse = QuotaUse(paid = 0, free = 200, freeload = 300)
+
+      val firstLimits = QuotaUse(0, 1002, 1003)
+
+      val initialResUse = ResourceUse(
+         numLogins = 1,
+         numIdsUnau = 2,
+         numIdsAu = 3,
+         numRoles = 4,
+         numPages = 5,
+         numActions = 6,
+         numActionTextBytes = 7,
+         numNotfs = 8,
+         numEmailsOut = 9,
+         numDbReqsRead = 10,
+         numDbReqsWrite = 11)
+
+      val initialDeltaTenant = QuotaDelta(
+         mtime = new ju.Date,
+         deltaQuota = initialQuotaUse,
+         deltaResources = initialResUse,
+         newFreeLimit = firstLimits.free,
+         newFreeloadLimit = firstLimits.freeload,
+         initialDailyFree = 50,
+         initialDailyFreeload = 60,
+         foundInDb = false)
+
+      val initialDeltaTenantIp = initialDeltaTenant.copy(
+         initialDailyFreeload = 61)
+
+      val initialDeltaGlobalIp = initialDeltaTenant.copy(
+         initialDailyFreeload = 62)
+
+      val initialDeltaRole = initialDeltaTenant.copy(
+         initialDailyFreeload = 63)
+
+      val initialDeltas = Map[QuotaConsumer, QuotaDelta](
+         tenantConsumer -> initialDeltaTenant,
+         tenantIpConsumer -> initialDeltaTenantIp,
+         globalIpConsumer -> initialDeltaGlobalIp,
+         roleConsumer -> initialDeltaRole)
+
+      val initialQuotaStateTenant = QuotaState(
+         ctime = initialDeltaTenant.mtime,
+         mtime = initialDeltaTenant.mtime,
+         quotaUse = initialQuotaUse,
+         quotaLimits = firstLimits,
+         quotaDailyFree = 50,
+         quotaDailyFreeload = 60,
+         resourceUse = initialResUse)
+
+      val initialQuotaStateTenantIp = initialQuotaStateTenant.copy(
+         quotaDailyFreeload = 61)
+
+      val initialQuotaStateGlobalIp = initialQuotaStateTenant.copy(
+         quotaDailyFreeload = 62)
+
+      val initialQuotaStateRole = initialQuotaStateTenant.copy(
+         quotaDailyFreeload = 63)
+
+      "create new quota entries, when adding quota" >> {
+        systemDao.useMoreQuotaUpdateLimits(initialDeltas)
+        val quotaStateByConsumer = systemDao.loadQuotaState(consumers)
+
+        quotaStateByConsumer.get(tenantConsumer) must_==
+           Some(initialQuotaStateTenant)
+
+        quotaStateByConsumer.get(tenantIpConsumer) must_==
+           Some(initialQuotaStateTenantIp)
+
+        quotaStateByConsumer.get(globalIpConsumer) must_==
+           Some(initialQuotaStateGlobalIp)
+
+        quotaStateByConsumer.get(roleConsumer) must_==
+           Some(initialQuotaStateRole)
+      }
+
+      var laterQuotaStateTenant: QuotaState = null
+      var laterQuotaStateGlobalIp: QuotaState = null
+
+      "add quota and resource deltas, set new limits" >> {
+        // Add the same deltas again, but with new limits and mtime.
+
+        val laterTime = new ju.Date
+        val newLimits = initialQuotaStateTenant.quotaLimits.copy(
+           free = 2002, freeload = 2003)
+
+        val laterDeltas = initialDeltas.mapValues(_.copy(
+          mtime = laterTime,
+          newFreeLimit = newLimits.free,
+          newFreeloadLimit = newLimits.freeload,
+          foundInDb = true))
+
+        laterQuotaStateTenant = initialQuotaStateTenant.copy(
+          mtime = laterTime,
+          quotaUse = initialQuotaUse + initialQuotaUse,
+          quotaLimits = newLimits,
+          resourceUse = initialResUse + initialResUse)
+
+        val laterQuotaStateTenantIp = laterQuotaStateTenant.copy(
+          quotaDailyFreeload = 61)
+
+        laterQuotaStateGlobalIp = laterQuotaStateTenant.copy(
+          quotaDailyFreeload = 62)
+
+        val laterQuotaStateRole = laterQuotaStateTenant.copy(
+          quotaDailyFreeload = 63)
+
+        systemDao.useMoreQuotaUpdateLimits(laterDeltas)
+        val quotaStateByConsumer = systemDao.loadQuotaState(consumers)
+
+        quotaStateByConsumer.get(tenantConsumer) must_==
+           Some(laterQuotaStateTenant)
+
+        quotaStateByConsumer.get(tenantIpConsumer) must_==
+           Some(laterQuotaStateTenantIp)
+
+        quotaStateByConsumer.get(globalIpConsumer) must_==
+           Some(laterQuotaStateGlobalIp)
+
+        quotaStateByConsumer.get(roleConsumer) must_==
+           Some(laterQuotaStateRole)
+      }
+
+      "not lower limits or time" >> {
+        val lowerLimits = initialQuotaStateTenant.quotaLimits.copy(
+          free = 502, freeload = 503)
+        // Set time to 10 ms before current mtime.
+        val earlierTime = new ju.Date(
+           laterQuotaStateTenant.mtime.getTime - 10)
+
+        val lowerLimitsDelta = QuotaDelta(
+          // This mtime should be ignored, because it's older than db mtime.
+          mtime = earlierTime,
+          deltaQuota = QuotaUse(),
+          deltaResources = ResourceUse(),
+          // These 2 limits should be ignored: the Dao won't
+          // lower the limits.
+          newFreeLimit = lowerLimits.free,
+          newFreeloadLimit = lowerLimits.freeload,
+          // These 2 limits should not overwrite db values.
+          initialDailyFree = 1,
+          initialDailyFreeload = 2,
+          foundInDb = true)
+
+        // Keep mtime and limits unchanged.
+        val unchangedQuotaState = laterQuotaStateTenant
+
+        systemDao.useMoreQuotaUpdateLimits(
+          Map(tenantConsumer -> lowerLimitsDelta))
+
+        val quotaStateByConsumer =
+           systemDao.loadQuotaState(tenantConsumer::Nil)
+
+        quotaStateByConsumer.get(tenantConsumer) must_==
+           Some(unchangedQuotaState)
+      }
+
+      "not complain if other server just created quota state entry" >> {
+        // Set foundInDb = false, for an entry that already exists.
+        // The server will attempt to insert it, which causes a unique key
+        // error. But the server should swallow it, and continue
+        // creating entries for other consumers, and then add deltas.
+
+        val timeNow = new ju.Date
+        assert(!initialDeltaGlobalIp.foundInDb)
+        val delta = initialDeltaGlobalIp.copy(mtime = timeNow)
+
+        // First and Last are new consumers. Middle already exists.
+        val globalIpConsumerFirst = QuotaConsumer.GlobalIp("0.0.0.0")
+        val globalIpConsumerMiddle = globalIpConsumer
+        val globalIpConsumerLast = QuotaConsumer.GlobalIp("255.255.255.255")
+        val ipConsumers = List(
+          globalIpConsumerFirst, globalIpConsumerMiddle, globalIpConsumerLast)
+
+        val deltas = Map[QuotaConsumer, QuotaDelta](
+           globalIpConsumerFirst -> delta,
+           globalIpConsumerMiddle -> delta,  // causes unique key error
+           globalIpConsumerLast -> delta)
+
+        val resultingStateFirstLast = initialQuotaStateGlobalIp.copy(
+           ctime = timeNow,
+           mtime = timeNow)
+
+        val resultingStateMiddle = laterQuotaStateGlobalIp.copy(
+           mtime = timeNow,
+           quotaUse = laterQuotaStateGlobalIp.quotaUse + initialQuotaUse,
+           resourceUse = laterQuotaStateGlobalIp.resourceUse + initialResUse)
+
+        // New entries sould be created for First and Last,
+        // although new-entry-creation fails for Middle (already exists).
+        systemDao.useMoreQuotaUpdateLimits(deltas)
+        val quotaStateByConsumer = systemDao.loadQuotaState(ipConsumers)
+
+        quotaStateByConsumer.get(globalIpConsumerFirst) must_==
+           Some(resultingStateFirstLast)
+
+        quotaStateByConsumer.get(globalIpConsumerMiddle) must_==
+           Some(resultingStateMiddle)
+
+        quotaStateByConsumer.get(globalIpConsumerLast) must_==
+           Some(resultingStateFirstLast)
+      }
+
+    }
+
 
     // -------------
     //val ex3_emptyPost = T.post.copy(parent = "1", text = "Lemmings!")
