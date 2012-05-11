@@ -38,7 +38,7 @@ object Actions {
   ){
     require(pagePath.tenantId == tenantId) //COULD remove tenantId from pagePath
     require(!pageExists || pagePath.pageId.isDefined)
-    require(dao.quotaConsumers.tenantId == Some(tenantId))
+    require(dao.quotaConsumers.tenantId == tenantId)
     require(dao.quotaConsumers.ip == Some(ip))
     require(dao.quotaConsumers.roleId ==
        user.filter(_.isAuthenticated).map(_.id))

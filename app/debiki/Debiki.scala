@@ -17,6 +17,8 @@ object Debiki {
 
   lazy val PageCache = new PageCache
 
+  val QuotaManager = new QuotaManager
+
   val DaoFactory = new CachingDaoFactory(new RelDbDaoSpiFactory( {
     def configStr(path: String) =
       Play.configuration.getString(path) getOrElse
@@ -27,7 +29,10 @@ object Debiki {
       database = configStr("debiki.pgsql.database"),
       user = configStr("debiki.pgsql.user"),
       password = configStr("debiki.pgsql.password"))
-  }))
+  }), QuotaManager.QuotaChargerImpl)
+
+  QuotaManager.setDao(DaoFactory.systemDao)
+  QuotaManager.scheduleCleanups()
 
   val MailerActorRef = Mailer.startNewActor(DaoFactory)
 
@@ -37,7 +42,7 @@ object Debiki {
   def tenantDao(tenantId: String, ip: String, roleId: Option[String] = None)
         : TenantDao =
     DaoFactory.buildTenantDao(QuotaConsumers(ip = Some(ip),
-       tenantId = Some(tenantId), roleId = roleId))
+       tenantId = tenantId, roleId = roleId))
 
 
   /**
