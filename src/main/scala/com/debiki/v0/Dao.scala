@@ -21,21 +21,30 @@ import EmailNotfPrefs.EmailNotfPrefs
 // and sanitaze input. That'd be an eventually inconsistent solution :-/ .)
 
 
-class DaoFactory(protected val _daoSpiFactory: DaoSpiFactory) {
-
-  def systemDao = new SystemDao(_daoSpiFactory.systemDaoSpi)
-
-  def buildTenantDao(quotaConsumers: QuotaConsumers): TenantDao = {
-    val daoSpi = _daoSpiFactory.buildTenantDaoSpi(quotaConsumers)
-    new TenantDao(daoSpi)
-  }
-
+abstract class DaoFactory {
+  def systemDao: SystemDao
+  def buildTenantDao(quotaConsumers: QuotaConsumers): TenantDao
 }
 
 
 abstract class DaoSpiFactory {
   def systemDaoSpi: SystemDaoSpi
   def buildTenantDaoSpi(quotaConsumers: QuotaConsumers): TenantDaoSpi
+}
+
+
+class NonCachingDaoFactory(
+   private val _daoSpiFactory: DaoSpiFactory,
+   private val _quotaManager: QuotaCharger)
+  extends DaoFactory {
+
+  override val systemDao = new SystemDao(_daoSpiFactory.systemDaoSpi)
+
+  override def buildTenantDao(quotaConsumers: QuotaConsumers): TenantDao = {
+    val daoSpi = _daoSpiFactory.buildTenantDaoSpi(quotaConsumers)
+    new TenantDao(daoSpi, _quotaManager)
+  }
+
 }
 
 
@@ -127,6 +136,11 @@ abstract class SystemDaoSpi {
 
   def loadNotfsToMailOut(delayInMinutes: Int, numToLoad: Int): NotfsToMail
 
+  def loadQuotaState(consumers: Seq[QuotaConsumer])
+        : Map[QuotaConsumer, QuotaState]
+
+  def useMoreQuotaUpdateLimits(deltas: Map[QuotaConsumer, QuotaDelta])
+
   def checkRepoVersion(): Option[String]
 
   /** Used as salt when hashing e.g. email and IP, before the hash
@@ -136,76 +150,149 @@ abstract class SystemDaoSpi {
 }
 
 
-/** Debiki's Data Access Object, for tenant specific data.
- *
- *  Delegates database requests to a TenantDaoSpi implementation.
- */
-class TenantDao(private val _spi: TenantDaoSpi) {
 
+/**
+ * Debiki's Data Access Object, for tenant specific data.
+ *
+ * Delegates database requests to a TenantDaoSpi implementation.
+ */
+class TenantDao(
+   private val _spi: TenantDaoSpi,
+   protected val _quotaCharger: QuotaCharger) {
+
+  import com.debiki.v0.{ResourceUse => ResUsg}
+
+
+  // ----- Quota
+
+  // Verify quota is OK *before* writing anything to db. Otherwise
+  // it'd be possible to start and rollback (when over quota) transactions,
+  // which could be a DoS attack.
+  // With NoSQL databases, there's no transaction to roll back, so
+  // one must verify quota ok before writing anything.
   def quotaConsumers: QuotaConsumers = _spi.quotaConsumers
+
+  private def _chargeForOneReadReq() = _chargeFor(ResUsg(numDbReqsRead = 1))
+  private def _chargeForOneWriteReq() = _chargeFor(ResUsg(numDbReqsWrite = 1))
+
+  private def _chargeFor(resourceUsage: ResourceUse,
+        mayPilfer: Boolean = false): Unit = {
+    _quotaCharger.chargeOrThrow(quotaConsumers, resourceUsage,
+       mayPilfer = mayPilfer)
+  }
+
+  private def _ensureHasQuotaFor(resourceUsage: ResourceUse,
+        mayPilfer: Boolean): Unit =
+    _quotaCharger.throwUnlessEnoughQuota(quotaConsumers, resourceUsage,
+        mayPilfer = mayPilfer)
 
 
   // ----- Tenant
 
   def tenantId: String = _spi.tenantId
 
-  /** Loads the tenant for this dao.
+  /**
+   * Loads the tenant for this dao.
    */
-  def loadTenant(): Tenant = _spi.loadTenant()
+  def loadTenant(): Tenant = {
+    _chargeForOneReadReq()
+    _spi.loadTenant()
+  }
 
-  def addTenantHost(host: TenantHost) = _spi.addTenantHost(host)
+  def addTenantHost(host: TenantHost) = {
+    // SHOULD hard code max num hosts, e.g. 10.
+    _chargeForOneWriteReq()
+    _spi.addTenantHost(host)
+  }
 
-  def lookupOtherTenant(scheme: String, host: String): TenantLookup =
+  def lookupOtherTenant(scheme: String, host: String): TenantLookup = {
+    _chargeForOneReadReq()
     _spi.lookupOtherTenant(scheme, host)
+  }
 
 
   // ----- Login, logout
 
-  /** Assigns ids to the login request, saves it, finds or creates a user
+  /**
+   * Assigns ids to the login request, saves it, finds or creates a user
    * for the specified Identity, and returns everything with ids filled in.
+   * Also, if the Identity does not already exist in the db, assigns it an ID
+   * and saves it.
    */
-  def saveLogin(loginReq: LoginRequest): LoginGrant =
-    _spi.saveLogin(loginReq)
+  def saveLogin(loginReq: LoginRequest): LoginGrant = {
+    // Allow people to login via email and unsubscribe, even if over quota.
+    val mayPilfer = loginReq.identity.isInstanceOf[IdentityEmailId]
 
-  /** Updates the specified login with logout IP and timestamp.*/
-  def saveLogout(loginId: String, logoutIp: String) =
+    // If we don't ensure there's enough quota for the db transaction,
+    // Mallory could call saveLogin, when almost out of quota, and
+    // saveLogin would write to the db and then rollback, when over quota
+    // -- a DoS attack would be possible.
+    _ensureHasQuotaFor(ResUsg.forStoring(login = loginReq.login,
+       identity = loginReq.identity), mayPilfer = mayPilfer)
+
+    val loginGrant = _spi.saveLogin(loginReq)
+
+    val resUsg = ResUsg.forStoring(login = loginReq.login,
+       identity = loginGrant.isNewIdentity ? loginReq.identity | null,
+       user = loginGrant.isNewRole ? loginGrant.user | null)
+
+    _chargeFor(resUsg, mayPilfer = mayPilfer)
+
+    loginGrant
+  }
+
+  /**
+   * Updates the specified login with logout IP and timestamp.
+   */
+  def saveLogout(loginId: String, logoutIp: String) = {
+    _chargeForOneWriteReq()
     _spi.saveLogout(loginId, logoutIp)
+  }
 
 
   // ----- Pages
 
-  def createPage(where: PagePath, debate: Debate): Debate =
+  def createPage(where: PagePath, debate: Debate): Debate = {
+    _chargeFor(ResUsg.forStoring(page = debate))
     _spi.createPage(where, debate)
+  }
 
   def moveRenamePage(pageId: String,
         newFolder: Option[String] = None, showId: Option[Boolean] = None,
-        newSlug: Option[String] = None): PagePath =
+        newSlug: Option[String] = None): PagePath = {
+    _chargeForOneWriteReq()
     _spi.moveRenamePage(pageId = pageId, newFolder = newFolder,
       showId = showId, newSlug = newSlug)
+  }
 
- 
+
   // ----- Actions
 
-  /** You should only save text that has been filtered through
-   *  Prelude.convertBadChars().
-   */
   def savePageActions[T <: Action](
-        debateId: String, actions: List[T]): List[T] =
+        debateId: String, actions: List[T]): List[T] = {
+    _chargeFor(ResUsg.forStoring(actions = actions))
     _spi.savePageActions(debateId, actions)
+  }
 
-  def loadPage(debateId: String): Option[Debate] =
+  def loadPage(debateId: String): Option[Debate] = {
+    _chargeForOneReadReq()
     _spi.loadPage(debateId)
+  }
 
-  /** Loads any template at templPath.
-   */
-  def loadTemplate(templPath: PagePath): Option[TemplateSrcHtml] =
+  def loadTemplate(templPath: PagePath): Option[TemplateSrcHtml] = {
+    _chargeForOneReadReq()
     _spi.loadTemplate(templPath)
+  }
 
-  def checkPagePath(pathToCheck: PagePath): Option[PagePath] =
+  def checkPagePath(pathToCheck: PagePath): Option[PagePath] = {
+    _chargeForOneReadReq()
     _spi.checkPagePath(pathToCheck)
+  }
 
-  def lookupPagePathByPageId(pageId: String): Option[PagePath] =
+  def lookupPagePathByPageId(pageId: String): Option[PagePath] = {
+    _chargeForOneReadReq()
     _spi.lookupPagePathByPageId(pageId = pageId)
+  }
 
 
   // ----- List stuff
@@ -215,66 +302,97 @@ class TenantDao(private val _spi: TenantDaoSpi) {
         include: List[PageStatus],
         sortBy: PageSortOrder,
         limit: Int,
-        offset: Int): Seq[(PagePath, PageDetails)] =
+        offset: Int): Seq[(PagePath, PageDetails)] = {
+    _chargeForOneReadReq()
     _spi.listPagePaths(withFolderPrefix, include, sortBy, limit, offset)
+  }
 
   def listActions(
         folderPrefix: String,
         includePages: List[PageStatus],
         limit: Int,
-        offset: Int): Seq[ActionLocator] =
+        offset: Int): Seq[ActionLocator] = {
+    _chargeForOneReadReq()
     _spi.listActions(folderPrefix, includePages, limit, offset)
+  }
 
-
-  def loadIdtyAndUser(forLoginId: String): Option[(Identity, User)] =
+  def loadIdtyAndUser(forLoginId: String): Option[(Identity, User)] = {
+    _chargeForOneReadReq()
     _spi.loadIdtyAndUser(forLoginId)
+  }
 
-  def loadPermsOnPage(reqInfo: RequestInfo): PermsOnPage =
+  def loadPermsOnPage(reqInfo: RequestInfo): PermsOnPage = {
+    _chargeForOneReadReq()
     _spi.loadPermsOnPage(reqInfo)
+  }
 
 
   // ----- Notifications
 
-  def saveNotfs(notfs: Seq[NotfOfPageAction]) =
+  def saveNotfs(notfs: Seq[NotfOfPageAction]) = {
+    _chargeFor(ResUsg.forStoring(notfs = notfs))
     _spi.saveNotfs(notfs)
+  }
 
-  def loadNotfsForRole(roleId: String): Seq[NotfOfPageAction] =
+  def loadNotfsForRole(roleId: String): Seq[NotfOfPageAction] = {
+    _chargeForOneReadReq()
     _spi.loadNotfsForRole(roleId)
+  }
 
-  def loadNotfByEmailId(emailId: String): Option[NotfOfPageAction] =
+  def loadNotfByEmailId(emailId: String): Option[NotfOfPageAction] = {
+    _chargeForOneReadReq()
     _spi.loadNotfByEmailId(emailId)
+  }
 
-  def skipEmailForNotfs(notfs: Seq[NotfOfPageAction], debug: String): Unit =
+  def skipEmailForNotfs(notfs: Seq[NotfOfPageAction], debug: String): Unit = {
+    _chargeForOneWriteReq()
     _spi.skipEmailForNotfs(notfs, debug)
+  }
 
 
   // ----- Emails
 
   def saveUnsentEmailConnectToNotfs(email: EmailSent,
-        notfs: Seq[NotfOfPageAction]): Unit =
+        notfs: Seq[NotfOfPageAction]): Unit = {
+    _chargeFor(ResUsg.forStoring(email = email))
     _spi.saveUnsentEmailConnectToNotfs(email, notfs)
+  }
 
-  def updateSentEmail(email: EmailSent): Unit =
+  def updateSentEmail(email: EmailSent): Unit = {
+    _chargeForOneWriteReq()
     _spi.updateSentEmail(email)
+  }
 
-  def loadEmailById(emailId: String): Option[EmailSent] =
+  def loadEmailById(emailId: String): Option[EmailSent] = {
+    _chargeForOneReadReq()
     _spi.loadEmailById(emailId)
+  }
 
 
   // ----- User configuration
 
   def configRole(loginId: String, ctime: ju.Date,
-                 roleId: String, emailNotfPrefs: EmailNotfPrefs) =
+        roleId: String, emailNotfPrefs: EmailNotfPrefs) =  {
+    // When auditing of changes to roles has been implemented,
+    // `configRole` will create new rows, and we should:
+    // _chargeFor(ResUsg.forStoring(quotaConsumers.role.get))
+    // And don't care about whether or not quotaConsumers.role.id == roleId. ?
+    // But for now:
+    _chargeForOneWriteReq()
     _spi.configRole(loginId = loginId, ctime = ctime,
                     roleId = roleId, emailNotfPrefs = emailNotfPrefs)
+  }
 
   def configIdtySimple(loginId: String, ctime: ju.Date,
-                       emailAddr: String, emailNotfPrefs: EmailNotfPrefs) =
+        emailAddr: String, emailNotfPrefs: EmailNotfPrefs) = {
+    _chargeForOneWriteReq()
     _spi.configIdtySimple(loginId = loginId, ctime = ctime,
                           emailAddr = emailAddr,
                           emailNotfPrefs = emailNotfPrefs)
+  }
 
 }
+
 
 
 class SystemDao(private val _spi: SystemDaoSpi) {
@@ -290,7 +408,10 @@ class SystemDao(private val _spi: SystemDaoSpi) {
 
   // ----- Tenants
 
-  /** Creates a tenant, assigns it an id and and returns it. */
+  /**
+   * Creates a tenant, assigns it an id and and returns it.
+   * SHOULD restrict # tenants you can create per ip and/or email address?
+   */
   def createTenant(name: String): Tenant =
     _spi.createTenant(name)
 
@@ -299,6 +420,22 @@ class SystemDao(private val _spi: SystemDaoSpi) {
 
   def lookupTenant(scheme: String, host: String): TenantLookup =
     _spi.lookupTenant(scheme, host)
+
+
+  // ----- Quota
+
+  def loadQuotaState(consumers: Seq[QuotaConsumer])
+        : Map[QuotaConsumer, QuotaState] =
+    _spi.loadQuotaState(consumers)
+
+  /**
+   * Adds `delta.deltaQuota` and `.deltaResources` to the amount of quota
+   * and resources used, for the specified consumers.
+   * Also updates limits and timestamp.
+   * Creates new consumer quota entries if needed.
+   */
+  def useMoreQuotaUpdateLimits(deltas: Map[QuotaConsumer, QuotaDelta]) =
+    _spi.useMoreQuotaUpdateLimits(deltas)
 
 
   // ----- Misc
@@ -310,18 +447,23 @@ class SystemDao(private val _spi: SystemDaoSpi) {
 }
 
 
+
 /** Caches pages in a ConcurrentMap.
  *
  *  Thread safe, if `impl' is thread safe.
  */
-class CachingDaoFactory(daoSpiFactory: DaoSpiFactory)
-   extends DaoFactory(daoSpiFactory) {
+class CachingDaoFactory(
+   private val _daoSpiFactory: DaoSpiFactory,
+   private val _quotaManager: QuotaCharger)
+  extends DaoFactory {
+
+  override val systemDao = new SystemDao(_daoSpiFactory.systemDaoSpi)
 
   val cache = new CachingTenantDao.Cache
 
   override def buildTenantDao(quotaConsumers: QuotaConsumers): TenantDao = {
     val spi = _daoSpiFactory.buildTenantDaoSpi(quotaConsumers)
-    new CachingTenantDao(cache, spi)
+    new CachingTenantDao(cache, spi, _quotaManager)
   }
 
 }
@@ -359,8 +501,9 @@ object CachingTenantDao {
 
 class CachingTenantDao(
    private val _cache: CachingTenantDao.Cache,
-   spi: TenantDaoSpi)
-  extends TenantDao(spi) {
+   spi: TenantDaoSpi,
+   _quotaManager: QuotaCharger)
+  extends TenantDao(spi, _quotaManager) {
 
   import CachingTenantDao.Key
 
