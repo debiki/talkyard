@@ -109,23 +109,31 @@ class QuotaManager(val unitTestTicker: Option[ggb.Ticker] = None) {
      * Could/should move to QuotaState?
      */
     def quotaStateAt(time: ju.Date): QuotaState = {
+      val orig = quotaStateOrig
+      // (Don't divide by oneDayInMs too early, or the quotient might become 0.)
       val oneDayInMs = 1000 * 3600 * 24
-      var timeDiffInMs = time.getTime - quotaStateOrig.mtime.getTime
       // If the QuotaState was loaded from db after _charge was called,
-      // `timeDiffInMs` might be negative.
-      if (timeDiffInMs < 0) timeDiffInMs = 0
+      // `time - orig.mtime` might be < 0.
+      var timeDiffInMs = math.max(0, time.getTime - orig.mtime.getTime)
+      val plannedNewFree = orig.quotaDailyFree * timeDiffInMs / oneDayInMs
+      val plannedNewFreeload =
+         orig.quotaDailyFreeload * timeDiffInMs / oneDayInMs
 
-      // Do not add excessively much free quota.
-      val timeDiffCap = oneDayInMs * NewFreeQuotaCapInDays
-      if (timeDiffInMs > timeDiffCap) timeDiffInMs = timeDiffCap
+      // Do not add excessively much free quota: there shouldn't be more than
+      // NewFreeQuotaCapInDays' worth of free and freeload quota.
+      val freeCap = orig.quotaDailyFree * NewFreeQuotaCapInDays
+      val freeloadCap = orig.quotaDailyFreeload * NewFreeQuotaCapInDays
+      val maxNewFree = math.max(0,
+         freeCap - (orig.quotaLeftFree - accumQuotaUse.free))
+      val maxNewFreeload = math.max(0,
+         freeloadCap - (orig.quotaLeftFreeload - accumQuotaUse.freeload))
 
-      // Don't divide with oneDayInMs too early, or the quotient might become 0.
       val limitsDiff = QuotaUse(
         paid = 0,
-        free = quotaStateOrig.quotaDailyFree * timeDiffInMs / oneDayInMs,
-        freeload = quotaStateOrig.quotaDailyFreeload * timeDiffInMs / oneDayInMs)
+        free = math.min(plannedNewFree, maxNewFree),
+        freeload = math.min(plannedNewFreeload, maxNewFreeload))
 
-      quotaStateOrig.copy(mtime = time)
+      orig.copy(mtime = time)
         .useMoreQuota(accumQuotaUse)
         .pushLimits(limitsDiff)
         .useMoreResources(accumResUse)
