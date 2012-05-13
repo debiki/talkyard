@@ -28,10 +28,12 @@ class QuotaManager(val unitTestTicker: Option[ggb.Ticker] = None) {
     _dao = dao
   }
 
+  val log = play.api.Logger("app.quota")
 
   def MaxCacheItemAgeSeconds = 20  // for now
 
   case class CacheKeyAddition(consumer: QuotaConsumer, when: ju.Date)
+
 
   /**
    * Remembers when items were inserted into the quota usage cache,
@@ -51,6 +53,7 @@ class QuotaManager(val unitTestTicker: Option[ggb.Ticker] = None) {
      * Removes old items from the in memory quota cache, saves them in the db.
      */
     private def _removeAndSaveOldCacheValues() {
+      log.trace("Saving to database any old cached states...")
       val longAgo = (new ju.Date).getTime - MaxCacheItemAgeSeconds*1000
       while (_cacheKeyAdditions.nonEmpty &&
          _cacheKeyAdditions.front.when.getTime < longAgo) {
@@ -60,8 +63,10 @@ class QuotaManager(val unitTestTicker: Option[ggb.Ticker] = None) {
     }
   }
 
+
   val CacheFlusherRef = Akka.system.actorOf(akka.actor.Props(CacheFlusher),
      name = "CacheFlusher")
+
 
   /**
    * Schedules removal of old cache items.
@@ -172,8 +177,10 @@ class QuotaManager(val unitTestTicker: Option[ggb.Ticker] = None) {
     val quotaState = quotaStateInDb.getOrElse(
        newQuotaStateWithLimits(timeNow, key))
     CacheFlusherRef ! CacheKeyAddition(key, timeNow)
-    _CachedQuotaState(mtime = timeNow, quotaStateOrig = quotaState,
+    val state = _CachedQuotaState(mtime = timeNow, quotaStateOrig = quotaState,
        foundInDb = quotaStateInDb.nonEmpty)
+    log.debug("Loaded: "+ key +" —> "+ state)
+    state
   }
 
 
@@ -194,6 +201,7 @@ class QuotaManager(val unitTestTicker: Option[ggb.Ticker] = None) {
        initialDailyFreeload = cached.quotaStateOrig.quotaDailyFreeload,
        foundInDb = cached.foundInDb)
 
+    log.debug("Saving: "+ consumer +" —> "+ quotaDelta)
     _dao.useMoreQuotaUpdateLimits(Map(consumer -> quotaDelta))
   }
 
@@ -209,22 +217,25 @@ class QuotaManager(val unitTestTicker: Option[ggb.Ticker] = None) {
         deltaResources: ResourceUse,
         timeNow: ju.Date) {
 
-    var cachedState = lastKnownCachedValue
+    var oldState = lastKnownCachedValue
     val concurrentMap = _quotaStateCache.asMap
 
     while (true) {
-      val newState = cachedState.copy(mtime = timeNow,
-         accumQuotaUse = cachedState.accumQuotaUse + deltaQuota,
-         accumResUse = cachedState.accumResUse + deltaResources)
+      val newState = oldState.copy(mtime = timeNow,
+         accumQuotaUse = oldState.accumQuotaUse + deltaQuota,
+         accumResUse = oldState.accumResUse + deltaResources)
 
-      val replaced = concurrentMap.replace(consumer, cachedState, newState)
-      if (replaced)
+      val replaced = concurrentMap.replace(consumer, oldState, newState)
+      if (replaced) {
+        log.trace("Updated: "+ consumer +" —> "+ newState)
         return
+      }
 
       // Another thread replaced the cached value before us, or
       // the CacheFlusher has removed the entry. Read new value from
-      // cache or db, and add accum quotas and resources to it.
-      cachedState = _quotaStateCache.get(consumer)
+      // cache or db (use _quotaStateCache.get, not concurrentMap.get),
+      // and add accum quotas and resources to it.
+      oldState = _quotaStateCache.get(consumer)
     }
   }
 
