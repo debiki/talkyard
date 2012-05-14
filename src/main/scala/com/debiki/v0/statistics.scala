@@ -93,7 +93,7 @@ object PostRatingStats {
 
 /** Immutable.
  */
-private[debiki] abstract class PostRatingStats {
+abstract class PostRatingStats {
 
   /** How many times the related post has been rated, counting each rating,
    *  even if it is untrustworthy -- however completely untrustworthy
@@ -191,7 +191,7 @@ private[debiki] abstract class PostRatingStats {
 
 
 
-private[debiki] class PageStats(val debate: Debate, val pageTrust: PageTrust) {
+class PageStats(val debate: Debate, val pageTrust: PageTrust) {
 
   private class PostRatingStatsImpl extends PostRatingStats {
     var ratingCountUntrusty = 0
@@ -268,7 +268,7 @@ private[debiki] class PageStats(val debate: Debate, val pageTrust: PageTrust) {
 }
 
 
-private[debiki] object Distributions {
+object Distributions {
 
   /** Uses the Agresti-Coull method to calculate upper and lower bounds
    *  of a binomial proportion 80% confidence interval.
