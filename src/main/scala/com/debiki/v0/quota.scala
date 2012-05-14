@@ -117,13 +117,16 @@ object ResourceUse {
      email: EmailSent = null)
       : ResourceUse = {
 
-    val isUnauIdty = (identity ne null) && identity.isInstanceOf[IdentitySimple]
+    val idty = identity
+    val isUnauIdty = (idty ne null) && idty.isInstanceOf[IdentitySimple]
+    val isEmailIdty = (idty ne null) && idty.isInstanceOf[IdentityEmailId]
     val allActions = (page eq null) ? actions | actions ++ page.allActions
 
     ResourceUse(
        numLogins = (login ne null) ? 1 | 0,
        numIdsUnau = isUnauIdty ? 1 | 0,
-       numIdsAu = ((identity ne null) && !isUnauIdty) ? 1 | 0,
+       // Don't count email id identities; they occupy no storage space.
+       numIdsAu = ((idty ne null) && !isUnauIdty && !isEmailIdty) ? 1 | 0,
        numRoles = ((user ne null) && user.isAuthenticated) ? 1 | 0,
        numPages = (page ne null) ? 1 | 0,
        numActions = allActions.length,
