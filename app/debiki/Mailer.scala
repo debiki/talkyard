@@ -73,7 +73,7 @@ class Mailer(val daoFactory: DaoFactory) extends Actor {
       val notfsToMail =
         daoFactory.systemDao.loadNotfsToMailOut(
            delayInMinutes = 0, numToLoad = 11)
-      logger.debug("Loaded "+ notfsToMail.notfsByTenant.size +
+      logger.trace("Loaded "+ notfsToMail.notfsByTenant.size +
          " notfs, to "+ notfsToMail.usersByTenantAndId.size +" users.")
       _trySendEmailNotfs(notfsToMail)
 
