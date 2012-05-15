@@ -34,3 +34,21 @@ makeTagPolicy(opt_uriPolicy,opt_nmTokenPolicy){return function(tagName,attribs){
 sanitizeWithPolicy(inputHtml,tagPolicy){var outputArray=[];return makeHtmlSanitizer(tagPolicy)(inputHtml,outputArray),outputArray.join('')}function
 sanitize(inputHtml,opt_uriPolicy,opt_nmTokenPolicy){var tagPolicy=makeTagPolicy(opt_uriPolicy,opt_nmTokenPolicy);return sanitizeWithPolicy(inputHtml,tagPolicy)}return{'escapeAttrib':escapeAttrib,'makeHtmlSanitizer':makeHtmlSanitizer,'makeSaxParser':makeSaxParser,'makeTagPolicy':makeTagPolicy,'normalizeRCData':normalizeRCData,'sanitize':sanitize,'sanitizeAttribs':sanitizeAttribs,'sanitizeWithPolicy':sanitizeWithPolicy,'unescapeEntities':unescapeEntities}})(html4),html_sanitize=html.sanitize,typeof
 window!=='undefined'&&(window.html=html,window.html_sanitize=html_sanitize)}
+
+// Implement Java interface compiledjs.HtmlSanitizerJS:
+function sanitizeHtml(htmlTextUnsafe) {
+  // Configure the sanitizer.
+  // 1. html-sanitizer.js's function sanitizeAttribs by default allows
+  // only the http/https/mailto URI schemes, and relative URLs
+  // (but not e.g. `javascript:'). This is reasonably safe?
+  // COULD prevent URLs with any '?' though.
+  // COULD prevent URLs starting with an IP number? (so cannot connect to
+  // local gateway)
+  // 2. sanitizeAttribs by default allows all id and class attributes.
+  // We don't want anyone to be able to use the .dw-* classes/ids though,
+  // so filter them out. Allow `debiki-' though, that's the public CSS API.
+  function uriPolicy(url) { return url; }
+  function classAndIdPolicy(token) { return /^dw-/.test(token) ? '' : token; }
+  return html_sanitize(htmlTextUnsafe, uriPolicy, classAndIdPolicy);
+}
+
