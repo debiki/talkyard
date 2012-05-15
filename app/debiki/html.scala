@@ -1,14 +1,12 @@
-// vim: fdm=marker et ts=2 sw=2 tw=80 fo=tcqwn list
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
+/**
+ * Copyright (c) 2012 Kaj Magnus Lindberg (born 1979)
  */
 
-package com.debiki.v0
+package debiki
 
+import com.debiki.v0._
 import java.{util => ju, io => jio}
 import scala.collection.JavaConversions._
-import collection.{mutable => mut, immutable => imm}
 import _root_.scala.xml.{NodeSeq, Node, Elem, Text, XML, Attribute}
 import FlagReason.FlagReason
 import Prelude._
@@ -68,7 +66,6 @@ object DebateHtml {
    *
    * Splits into <p>:s and <br>:s at newlines, does nothing else.
    */
-  private[v0]
   def textToHtml(text: String, charsPerLine: Int = 80)
       : Tuple2[NodeSeq, Int] = {
     var lineCount = 0
@@ -87,7 +84,6 @@ object DebateHtml {
     (xml, lineCount)
   }
 
-  private[v0]
   def ifThen(condition: Boolean, html: NodeSeq): NodeSeq =
     if (condition) html else Nil
 
@@ -171,13 +167,12 @@ object DebateHtml {
     liftweb.Html5.parse("<div>"+ htmlTextSafe +"</div>").get.child
   }
 
+
   /** Replaces spaces with the Unicode representation of non-breaking space,
    *  which is interpreted as {@code &nbsp;} by Web browsers.
    */
-  private[v0]
   def spaceToNbsp(text: String): String = text.replace(' ', '\u00a0')
 
-  private[v0]
   def dateAbbr(date: ju.Date, cssClass: String): NodeSeq = {
     val dateStr = toIso8601(date)
     <abbr class={"dw-date "+ cssClass} title={toIso8601T(dateStr)}>, {
@@ -1596,4 +1591,6 @@ object AtomFeedXml {
     </feed>
   }
 }
+
+// vim: fdm=marker et ts=2 sw=2 tw=80 fo=tcqwn list
 
