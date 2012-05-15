@@ -38,7 +38,10 @@ class PreludeTest extends SpecificationWithJUnit {
   "drowRightWhile" should {
     "work" >> {
       "".dropRightWhile((_) => true) must_== ""
-      "ab".dropRightWhile((_) => true) must_== ""
+      "".dropRightWhile((_) => false) must_== ""
+      "a".dropRightWhile((_) => true) must_== ""
+      "a".dropRightWhile((_) => false) must_== "a"
+      "abc".dropRightWhile((_) => true) must_== ""
       "abc".dropRightWhile((_) => false) must_== "abc"
       "abcde".dropRightWhile(_ != 'x') must_== ""
       "abcde".dropRightWhile(_ != 'a') must_== "a"
@@ -46,6 +49,28 @@ class PreludeTest extends SpecificationWithJUnit {
       "abcde".dropRightWhile(_ != 'c') must_== "abc"
       "abcde".dropRightWhile(_ != 'd') must_== "abcd"
       "abcde".dropRightWhile(_ != 'e') must_== "abcde"
+      // Many matching characters: (two '.')
+      "some.package.ClassName".dropRightWhile(_ != '.') must_== "some.package."
+    }
+  }
+
+  "takeRightWhile" should {
+    "work even better" >> {
+      "".takeRightWhile((_) => true) must_== ""
+      "".takeRightWhile((_) => false) must_== ""
+      "a".takeRightWhile((_) => true) must_== "a"
+      "a".takeRightWhile((_) => false) must_== ""
+      "abc".takeRightWhile((_) => true) must_== "abc"
+      "abc".takeRightWhile((_) => false) must_== ""
+      "abcde".takeRightWhile(_ != 'x') must_== "abcde"
+      "abcde".takeRightWhile(_ != 'a') must_== "bcde"
+      "abcde".takeRightWhile(_ != 'b') must_== "cde"
+      "abcde".takeRightWhile(_ != 'c') must_== "de"
+      "abcde".takeRightWhile(_ != 'd') must_== "e"
+      "abcde".takeRightWhile(_ != 'e') must_== ""
+      // Many matching characters: (two '.')
+      "some.package.ClassName".takeRightWhile(_ != '.') must_== "ClassName"
     }
   }
 }
+
