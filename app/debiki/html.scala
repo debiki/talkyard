@@ -87,67 +87,26 @@ object DebateHtml {
   def ifThen(condition: Boolean, html: NodeSeq): NodeSeq =
     if (condition) html else Nil
 
-  // COULD move Showdown to markup.scala
-  // COULD compile javascripts, see:
-  // http://www.java2s.com/Code/Java/JDK-6/WorkingwithCompilableScripts.htm
-  // http://javasourcecode.org/html/open-source/jdk/jdk-6u23/
-  //                  com/sun/script/javascript/RhinoCompiledScript.html
-  // http://www.javalobby.org/java/forums/t87870.html
 
-  // A markdown parser, in JavaScript, namely Showdown.
-  private val _jsShowdown = new javax.script.ScriptEngineManager()
-        .getEngineByName("js")
-  private def _showdown = toserve.DebikiCoreResourceBase.getClass
-        .getResourceAsStream("js/wmd/showdown.js")
-  _jsShowdown.eval(new jio.InputStreamReader(_showdown))
-
-  // A html sanitizer, in JavaScript, from google-caja.
-  // Should move it to a separate module.
-  // -----
-  private val _jsSanitizer = new javax.script.ScriptEngineManager()
-        .getEngineByName("js")
-  private def _cajaSanitizer = toserve.DebikiCoreResourceBase.getClass
-        .getResourceAsStream("js/html-sanitizer-minified.js")
-  _jsSanitizer.eval(new jio.InputStreamReader(_cajaSanitizer))
-
-  // Configure the sanitizer.
-  // 1. html-sanitizer.js's function sanitizeAttribs by default allows
-  // only the http/https/mailto URI schemes, and relative URLs
-  // (but not e.g. `javascript:'). This is reasonably safe?
-  // Could prevent URLS with any '?' though.
-  // 2. sanitizeAttribs by default allows all id and class attributes.
-  // We don't want anyone to be able to use the .dw-* classes/ids though,
-  // so filter them out. Allow `debiki-' though, that's the public CSS API.
-  _jsSanitizer.eval("""
-      |function uriPolicy(url) {
-      |  return url;
-      |}
-      |function classAndIdPolicy(token) {
-      |  return /^dw-/.test(token) ? '' : token;
-      |}
-      |""".stripMargin)
-  private val _jsUrlX = _jsSanitizer.get("uriPolicy")
-  private val _jsIdX = _jsSanitizer.get("classAndIdPolicy")
-  // -----
-
-  /** Converts markdown to xml.
+  /**
+   * Converts markdown to xml.
    */
   def markdownToSafeHtml(source: String, hostAndPort: String,
         makeLinksNofollow: Boolean): NodeSeq = {
-    val htmlTextUnsafe = _jsShowdown.asInstanceOf[javax.script.Invocable]
-          .invokeMethod(_jsShowdown.eval("new Showdown.converter()"),
-          "makeHtml", source, hostAndPort).toString
+    val htmlTextUnsafe =
+       (new compiledjs.ShowdownJsImpl()).makeHtml(source, hostAndPort)
     sanitizeHtml(htmlTextUnsafe, makeLinksNofollow)
   }
 
+
   def sanitizeHtml(htmlTextUnsafe: String,
         makeLinksNofollow: Boolean): NodeSeq = {
-    var htmlTextSafe = _jsSanitizer.asInstanceOf[javax.script.Invocable]
-          .invokeFunction("html_sanitize", htmlTextUnsafe, _jsUrlX, _jsIdX)
-          .toString
 
-    // As of 2011-08-18 the sanitizer strips target='_blank',
-    // (Seems to be a bug:
+    var htmlTextSafe: String =
+      (new compiledjs.HtmlSanitizerJsImpl()).sanitizeHtml(htmlTextUnsafe)
+
+    // As of 2011-08-18 the Google Caja js html sanitizer strips
+    // target='_blank', (Seems to be a bug:
     // `Issue 1296: target="_blank" is allowed, but cleared by html_sanitize()'
     // http://code.google.com/p/google-caja/issues/detail?id=1296  )
     // Add target _blank here - not needed any more, I ask "do you really
