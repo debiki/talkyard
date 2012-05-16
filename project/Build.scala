@@ -83,6 +83,7 @@ object ApplicationBuild extends Build {
       // into the Bash shell, it works just fine. Weird.
       "java -cp lib/rhino1_7R3-js.jar:"+ rhinoClassDir +
       " org.mozilla.javascript.tools.jsc.Main"+
+      " -opt 9"+
       " -implements "+ javaInterface +
       " -package compiledjs"+
       " -d "+ rhinoClassDir +
@@ -90,13 +91,21 @@ object ApplicationBuild extends Build {
       " "+ jsSourceDir + jsFileName
     }
 
+    "echo Compiling HtmlSanitizerJs.java..."!
+
     compileJavaInterfaceCmd("HtmlSanitizerJs.java")!
+
+    "echo Compiling html-sanitizer-minified.js..."!
 
     compileJsCmd("html-sanitizer-minified.js",
        javaInterface = "compiledjs.HtmlSanitizerJs",
        generatedClassName = "HtmlSanitizerJsImpl")!
 
+    "echo Compiling ShowdownJs.java..."!
+
     compileJavaInterfaceCmd("ShowdownJs.java")!
+
+    "echo Compiling showdown.js..."!
 
     compileJsCmd("wmd/showdown.js",
       javaInterface = "compiledjs.ShowdownJs",
