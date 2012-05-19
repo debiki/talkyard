@@ -5,6 +5,7 @@
 package debiki
 
 import com.debiki.v0._
+import com.twitter.ostrich.stats.Stats
 import java.{util => ju, io => jio}
 import scala.collection.JavaConversions._
 import _root_.scala.xml.{NodeSeq, Node, Elem, Text, XML, Attribute}
@@ -92,7 +93,8 @@ object DebateHtml {
    * Converts markdown to xml.
    */
   def markdownToSafeHtml(source: String, hostAndPort: String,
-        makeLinksNofollow: Boolean): NodeSeq = {
+        makeLinksNofollow: Boolean): NodeSeq
+        = Stats.time("markdownToSafeHtml") {
     val htmlTextUnsafe =
        (new compiledjs.ShowdownJsImpl()).makeHtml(source, hostAndPort)
     sanitizeHtml(htmlTextUnsafe, makeLinksNofollow)
@@ -230,7 +232,7 @@ class DebateHtml(val debate: Debate, val pageTrust: PageTrust) {
   /** The results from layoutPosts doesn't depend on who the user is
    *  and can thus be cached.
    */
-  def layoutPage(pageRoot: PageRoot): NodeSeq = {
+  def layoutPage(pageRoot: PageRoot): NodeSeq = Stats.time("layoutPage") {
 
     val cssArtclThread =
       if (pageRoot.id == Page.BodyId) " dw-ar-t" else ""

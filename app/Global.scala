@@ -5,6 +5,8 @@
 
 import com.debiki.v0._
 import com.debiki.v0.Prelude._
+import com.twitter.ostrich.stats.Stats
+import com.twitter.ostrich.{admin => toa}
 import debiki._
 import play.api._
 import play.api.mvc._
@@ -170,10 +172,16 @@ object Global extends GlobalSettings {
 
   /**
    * Ensures lazy values are initialized early, so everything
-   * fails fast.
+   * fails fast.  And starts Twitter Ostrich.
    */
   override def onStart(app: Application) {
     Debiki.SystemDao
+
+    // Start Twitter Ostrich on port 9100.
+    val service = new toa.AdminHttpService(9100, 20, Stats,
+       new toa.RuntimeEnvironment(getClass))
+    service.start()
+    Logger.info("Twitter Ostrich listening on port "+ service.address.getPort)
   }
 
 
