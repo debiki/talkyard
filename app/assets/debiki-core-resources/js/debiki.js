@@ -4993,7 +4993,7 @@ function initAndDrawSvg() {
   // hide it on utterscroll.
   var hasUtterscrolled = false;
   var $utterscrollTips;
-  if (!Modernizr.touch) Debiki.v0.utterscroll({
+  if (!Modernizr.touch) debiki.Utterscroll.enable({
     scrollstoppers: '.CodeMirror,'+
         ' .ui-draggable, .ui-resizable-handle, .dw-p-hd',
     onMousedownOnWinHztlScrollbar: function() {

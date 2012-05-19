@@ -1,12 +1,12 @@
 /**
  * jQuery ':scrollable' selector that finds scrollable elements.
  *
- * Put together by me, KajMagnus, but:
- *
  * Copyright (c) 2011 Robert Koritnik
  *
  * Licensed under the terms of the MIT license
  * http://www.opensource.org/licenses/mit-license.php
+ *
+ * Put together by me, KajMagnus:
  *
  * This file is an excerpt from a certain 'scrollintoview'
  * jQuery plugin by Robert Koritnik. I've extracted this ':scrollable'

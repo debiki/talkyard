@@ -11,26 +11,27 @@
  *
  * Copyright (c) 2012 Kaj Magnus Lindberg
  *
- * From 2013-06-01 and onwards, licensed under the GNU Lesser General Public
- * License version 3 or any later version:
+ * Licensed under the GNU Lesser General Public License version 3,
+ * or any later version:
  *   http://www.gnu.org/licenses/lgpl.txt
  *
  *
  * Use like so: (for example)
  *
- *    <script type='text/javascript' src='debiki-utterscroll.js'></script>
+ *    <script src='jquery-scrollable.js'></script>
+ *    <script src='debiki-utterscroll.js'></script>
  *
  *    if (!Modernizr.touch)  // if not a smartphone
- *      Debiki.v0.utterscroll({
+ *      debiki.Utterscroll.enable({
  *          scrollstoppers: '.CodeMirror, .ui-resizable-handle' });
  *
  *
  * Utterscroll scrolls the closest scrollable element, or the window.
  * However, scrolling anything but the window, depends on a jQuery selector,
- * ':scrollable', being available. (Otherwise, the window is always scrolled.)
+ * ':scrollable', being available. Otherwise, the window is always scrolled.
  * There should be a file jquery.scrollable.js included in this
- * distribution (which defines the ':scrollable' selector).
- * That file is actually an excerpt from:
+ * distribution, which defines the ':scrollable' selector.
+ * That file is an excerpt from:
  *   https://github.com/litera/jquery-scrollintoview/blob/master/
  *      jquery.scrollintoview.js
  *
@@ -39,12 +40,6 @@
  * of Google Chrome, Firefox and Opera, and IE 6, 7, 8 and 9.
  * (Scrolling the window has been tested; scrolling other elems has not
  * been thoroughly tested.)
- *
- * Known issues:
- * - If you start selecting text at the very the end of an element,
- *   then Utterscroll thinks you intend to scroll. So you'll scroll,
- *   rather than selecting text. For more details, search for
- *   "Fixable BUG" in this document.
  *
  *
  * Find in the rest of this file:
@@ -118,21 +113,24 @@ $.fn.dwDisableSelection = function() {
 
 
 
-// Debiki-Utterscroll
+// Debiki Utterscroll
 // =======================================
 //----------------------------------------
   (function($){
 //----------------------------------------
 
-// (v0 is a namespace version number.)
-if (!window.Debiki)
-  window.Debiki = { v0: {} };
+if (!window.debiki) window.debiki = {};
+if (!debiki.Utterscroll) debiki.Utterscroll = {};
 
-// Options:
-//  scrollstoppers:
-//    jQuery selectors, e.g. '.CodeMirror, div.your-class'.
-//    Dragging the mouse inside a scrollstopper never results in scrolling.
-Debiki.v0.utterscroll = function(options) {
+/**
+ * Enables Utterscroll.
+ *
+ * Options:
+ *  scrollstoppers:
+ *    jQuery selectors, e.g. '.CodeMirror, div.your-class'.
+ *    Dragging the mouse inside a scrollstopper never results in scrolling.
+ */
+debiki.Utterscroll.enable = function(options) {
 
   var defaults = {
     defaultScrollstoppers: 'a, area, button, command, input, keygen, label,'+
