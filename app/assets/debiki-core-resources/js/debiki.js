@@ -558,6 +558,26 @@ function highlightBriefly($tag, opt_backgroundSelector) {
 }
 
 
+/**
+ * Scrolls to `this`, then highlights `$tag`.
+ */
+jQuery.fn.dwScrollToThenHighlight = function($tag, options) {
+  this.dwScrollIntoView(options).queue(function(next) {
+    highlightBriefly($tag);
+    next();
+  });
+  return this;
+};
+
+
+/**
+ * Scrolls to and highlights `this`.
+ */
+jQuery.fn.dwScrollToHighlighted = function(options) {
+  return this.dwScrollToThenHighlight(this);
+};
+
+
 function showAndHighlightPost($post, options) {
   $post.dwScrollIntoView(options).queue(function(next) {
     highlightBriefly($post, '.dw-p-bd, .dw-p-hd');
@@ -2186,7 +2206,7 @@ function showErrorEnableInputs($form) {
     var $thread = $form.closest('.dw-t');
     var err = jqXHR.status ? (jqXHR.status +' '+ httpStatusText) : 'Error'
     var msg = (jqXHR.responseText || errorType || 'Unknown error');
-    $submitBtns.after(notifErrorBox$(err, msg))
+    notifErrorBox$(err, msg).insertAfter($submitBtns).dwScrollToHighlighted();
     $thread.each(SVG.$drawParentsAndTree); // because of the notification
     // For now, simply enable all inputs always.
     $form.children().css('opacity', '');
@@ -2970,7 +2990,12 @@ function $showRatingForm(event) {
       $rateAction.dwActionLinkEnable();
       updateDebate(recentChangesHtml);
       var $ratings = showMyRatings(postId, ratedTags);
-      highlightBriefly($ratings);
+      // Minor bug: On my Android phone, when I rate a post at the very
+      // bottom of the page, then, since the `slideAwayRemove` animation
+      // plays at the same time as the below `dwScrollToThenHighlight`
+      // animation, the dwScrollIntoView animation is distorted, and
+      // the ratings won't be properly scrolled into view.
+      $post.dwPostFindHeader().dwScrollToThenHighlight($ratings);
       $post.each(SVG.$drawParentsAndTree);
     });
 
