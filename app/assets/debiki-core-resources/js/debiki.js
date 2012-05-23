@@ -70,6 +70,7 @@ var UNTESTED; // Indicates that a piece of code has not been tested.
 
 var KEYCODE_ENTER = 13;
 var KEYCODE_ESC = 27;
+var VIEWPORT_MIN_WIDTH = 320; // okay with Modern Android and iPhone mobiles
 
 function trunc(number) {
   return number << 0;  // bitwise operations convert to integer
@@ -388,6 +389,8 @@ var jQueryDialogDefault = {
   autoResize: true,
   modal: true,
   resizable: false,
+  // Should use CSS instead of this, but for now:
+  width: VIEWPORT_MIN_WIDTH - 20, // ok with modern mobiles
   zIndex: 1190  // the default, 1000, is lower than <form>s z-index
 };
 
@@ -415,6 +418,12 @@ var jQueryDialogNoClose = $.extend({}, jQueryDialogDefault, {
     $(this).parent().find('.ui-dialog-titlebar-close').hide();
   }
 });
+
+
+function mobileWidthOr(desktopWidth) {
+  return Modernizr.touch ? jQueryDialogDefault.width : desktopWidth;
+}
+
 
 
 // ------- Traversing etcetera
@@ -2225,7 +2234,7 @@ function showServerResponseDialog(jqXhrOrHtml, opt_errorType,
     if (!$html.length) $html = $allHtml.find('.dw-dlg-rsp');
     if ($html.length) {
       title = $html.children('.dw-dlg-rsp-ttl').text();
-      width = 400;
+      width = jQueryDialogDefault.width;
     } else {
       plainText = 'Internal server error.';
     }
@@ -2504,8 +2513,8 @@ function initLogout() {
   var $logoutForm = $logout.find('form');
   $logout.find('input').hide(); // Use jQuery UI's dialog buttons instead
   $logout.dialog($.extend({}, jQueryDialogDefault, {
-    height: 260,
-    width: 350,
+    height: 180,
+    width: 280,
     buttons: {
       Cancel: function() {
         $(this).dialog('close');
@@ -2578,7 +2587,7 @@ function initLoginSimple() {
   // Usually (?) the browser itself helps you fill in form fields, e.g.
   // suggests your email address?
   $login.dialog($.extend({}, jQueryDialogReset, {
-    width: 580,
+    width: 452,
     buttons: {
       Submit: function() {
         $loginForm.submit();
@@ -2706,7 +2715,6 @@ var configEmailPerhapsRelogin = (function() {
     // Init dialog, do once only.
     if (!$form.parent().is('.ui-dialog')) {
       $form.dialog($.extend({}, jQueryDialogDefault, {
-        width: 400,
         close: function() {
           dialogStatus.reject();
           // Better not remember email addr. Perhaps this is a public
@@ -2791,8 +2799,8 @@ function initLoginOpenId() {
   // Use jQueryDialogReset, so OpenID cleared on close,
   // in case this is a public computer?
   $openid.dialog($.extend({}, jQueryDialogReset, {
-    height: 410,
-    width: 720,
+    width: 670,
+    height: 410, // (incl. extra space for 'Enter your OpenID' input field)
     // Place above guest login dialog.
     zIndex: jQueryDialogDefault.zIndex + 10,
     buttons: {
@@ -3011,7 +3019,7 @@ function initFlagForm() {
   $form.find('.dw-submit-set input').hide(); // use jQuery UI's buttons instead
   $form.find('.dw-f-flg-rsns').buttonset();
   $parent.dialog($.extend({}, jQueryDialogReset, {
-    width: 580,
+    width: mobileWidthOr(430),
     buttons: {
       'Cancel': function() {
         $(this).dialog('close');
@@ -3896,7 +3904,7 @@ function initDeleteForm() {
   // rather important button.
   // Skip: $form.find('#dw-fi-dl-tree').button();
   $parent.dialog($.extend({}, jQueryDialogReset, {
-    width: 580,
+    width: mobileWidthOr(360),
     buttons: {
       Cancel: function() {
         $(this).dialog('close');

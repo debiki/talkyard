@@ -1046,11 +1046,11 @@ until they've been moved into the .dw-bd-blk > .dw-i-ts. */
   /* outline: #83c5df solid thick; */
 }
 
-/* Paint the background for forms in jQuery UI dialogs. */
 .ui-dialog .dw-fs form {
   background-color: #fbf7f2;
   border: 1px solid #f7f3ed; /* almost background color */
-  margin: 0 25px 0 10px;
+  margin: 0 25px 0 8px;
+  padding-top: 0.4em; /* smaller than 1em from above `.dw-fs form` */
 }
 
 /* jQuery UI dialogs have forms inside. Set the dialog bg color
@@ -1233,7 +1233,7 @@ form.dw-hoversubmit {
   padding: 0 30px 0 0;
   margin-right: 45px;
   height: 105px;
-  width: 145px;
+  width: 125px;
   position: absolute;
   left: 0; /* or IE 7 places it far to the right */
 }
@@ -1274,7 +1274,7 @@ form.dw-hoversubmit {
 }
 
 .dw-lgi-simple {
-  margin-left: 240px;
+  margin-left: 170px;
 }
 
 .dw-lgi-simple-info {
