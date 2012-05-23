@@ -539,7 +539,7 @@ function $threadToggleFolded() {
  * and then background highlighting is placed on them instead of on $tag.
  */
 function highlightBriefly($tag, opt_backgroundSelector) {
-  var duration = 2000;
+  var duration = 2500;
   var $background = opt_backgroundSelector ?
       $tag.find(opt_backgroundSelector) : $tag;
   $background.effect('highlight',
@@ -2573,7 +2573,8 @@ function showLoginFailed(errorMessage) {
 
 var initLoginResultForms = (function() {
   var continueClbk;
-  return function(opt_continue) {
+  return function(opt_continue) {  // COULD remove this function?...
+          // ...No longer called on login OK? Is it called on failure?
     continueClbk = opt_continue;
     if ($('#dw-fs-lgi-ok.ui-dialog-content').length)
       return; // login-ok and -failed already inited
