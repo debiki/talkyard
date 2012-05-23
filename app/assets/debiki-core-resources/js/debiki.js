@@ -149,6 +149,7 @@ function isoDateToMillis(dateStr) {
 jQuery.fn.dwScrollIntoView = function(options) {
   var $ = jQuery;
   if (!options) options = {};
+  var duration = options.duration || 'slow';
   var marginTop = options.marginTop || 15;
   var marginBottom = options.marginBottom || 15;
   var marginLeft = options.marginLeft || 15;
@@ -198,16 +199,16 @@ jQuery.fn.dwScrollIntoView = function(options) {
     $('html, body').animate({
       'scrollTop': desiredWinTop,
       'scrollLeft': desiredWinLeft
-    }, 'slow', 'swing').queue(function(next) {
+    }, duration, 'swing').queue(function(next) {
       // On my Android phone, `animate` sometimes won't scroll
       // all the way to the desired offset, therefore:
       if (Modernizr.touch)
-        reallyScrollTo(desiredWinLeft, desiredWinTop);
+        helpMobileScroll(desiredWinLeft, desiredWinTop);
       next();
     });
   }
 
-  function reallyScrollTo(left, top) {
+  function helpMobileScroll(left, top) {
     // On my Android phone, calling scrollTop and scrollLeft at the
     // same time *sometimes* does not work (scrollLeft has no effect).
     // So call them again after a while — and call scrollLeft first.
