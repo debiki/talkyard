@@ -675,6 +675,14 @@ class DebateHtml(val debate: Debate, val pageTrust: PageTrust) {
 }
 
 
+/**
+ * HTML forms.
+ *
+ * A Debiki convention: If a modal dialog has stuff with tabindexes,
+ * the tabindexes start on 101 and end on 109 (so any OK and Cancel buttons
+ * should have tabindex 109). Some Javascript code relies on this.
+ * (See Debiki for Developers #7bZG31.)
+ */
 object FormHtml {
 
   def apply(config: HtmlConfig, xsrfToken: String,

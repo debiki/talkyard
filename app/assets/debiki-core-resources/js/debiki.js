@@ -327,6 +327,10 @@ function showInteractionsIfHidden() {
 
 // ------- Variables
 
+// Debiki convention: Dialog elem tabindexes should vary from 101 to 109.
+// HTML generation code assumes this, too. See Debiki for Developers, #7bZG31.
+var DEBIKI_TABINDEX_DIALOG_MAX = 109;
+
 var diffMatchPatch = new diff_match_patch();
 diffMatchPatch.Diff_Timeout = 1; // seconds
 diffMatchPatch.Match_Distance = 100*1000; // for now
@@ -501,7 +505,10 @@ var jQueryDialogDefault = {
   zIndex: 1190,  // the default, 1000, is lower than <form>s z-index
 
   /**
-   * Fixes two issues I (KajMagnus) am encountering on my Android phone:
+   * Adds tabindex to any jQuery buttons, if needed (if any elem
+   * in the dialog already has tabindex).
+   *
+   * And fixes two issues I (KajMagnus) am encountering on my Android phone:
    * 1) The dialog appears outside the <html> elem. — If so, move it to
    * inside the <html> elem (or parts of it will never be visible).
    * 2) Sometimes the dialog does not appear inside the viewport, or
@@ -515,6 +522,13 @@ var jQueryDialogDefault = {
     console.debug('jQueryDialogDefault dialog was opened.');
     var $dialog = $(event.target);
     var $dialogFrame = $dialog.parent();
+    if ($dialog.find('[tabindex]:enabled:visible')) {
+      // Stuff in this dialog is tabbable. Add tabindex to any OK and Cancel
+      // buttons, or they won't be tabbable.
+      $dialog.find('.ui-dialog-buttonpane .ui-button')
+          .attr('tabindex', DEBIKI_TABINDEX_DIALOG_MAX);
+    }
+
     Debiki.$dialogFrame = $dialogFrame; // debug
     if (!$dialog.dialog('isOpen')) return;
     var offs = $dialogFrame.offset();
