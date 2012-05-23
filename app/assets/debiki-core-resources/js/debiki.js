@@ -539,75 +539,27 @@ var jQueryDialogDefault = {
    * debugging, if nothing else.)
    */
   open: function(event, ui) {
-    console.debug('jQueryDialogDefault dialog was opened.');
     var $dialog = $(event.target);
     var $dialogFrame = $dialog.parent();
+
+    // If stuff in this dialog is tabbable, add tabindex to any OK and
+    // Cancel buttons, or they won't be tabbable.
     if ($dialog.find('[tabindex]:enabled:visible')) {
-      // Stuff in this dialog is tabbable. Add tabindex to any OK and Cancel
-      // buttons, or they won't be tabbable.
       $dialog.find('.ui-dialog-buttonpane .ui-button')
           .attr('tabindex', DEBIKI_TABINDEX_DIALOG_MAX);
     }
 
-    Debiki.$dialogFrame = $dialogFrame; // debug
-    if (!$dialog.dialog('isOpen')) return;
+    // Move dialog into the <html> elem.
     var offs = $dialogFrame.offset();
-    console.debug('$dialogFrame.offset(): '+ offs.left +', '+ offs.top);
-    var zoomDelayMs = 0;
     if (offs.left < 0 || offs.top < 0) {
-      console.debug('Moving dialog into <html> elem...');
       $dialogFrame.offset({
         left: Math.max(offs.left, 0),
         top: Math.max(offs.top, 0)
       });
-      zoomDelayMs = 300;
     }
-    setTimeout(function() {
-      // Sometimes the user has zoomed out. Then Android zooms in,
-      // but it seems that the values that dwScrollIntoView relies on
-      // aren't updated — they continue reporting viewport dimensions
-      // as if the zoom in had never happened. More precisely, all these
-      // values are wrong: (as if still zoomed out)
-      // ['dwScrollIntoView: screen:', screen.width, screen.height, 'win.inner:', window.innerWidth, window.innerHeight, 'docEl:',  document.documentElement.clientWidth,  document.documentElement.clientHeight, 'window.pageX/YOffset:', window.pageXOffset, window.pageYOffset];
-      // And they remain wrong, forever! Fix this by explicitly
-      // resetting the zoom scale to 1.0:
-      // (This seems to have no effect on desktop browsers.)
-      console.debug(['Before zoom: screen:', screen.width, screen.height,
-          'win.inner:', window.innerWidth, window.innerHeight, 'docEl:',
-          document.documentElement.clientWidth,
-          document.documentElement.clientHeight, 'window.pageX/YOffset:',
-          window.pageXOffset, window.pageYOffset]);
-      console.log('Scrolling dialog into view...');
-      $dialogFrame.dwScrollIntoView({ marginTop: 0, marginLeft: 0, duration: 0 });
-      /*
-      console.log('Zooming to initial-scale=1.0...');
-      $('meta[name=viewport]').attr('content',
-         'initial-scale=1.0, maximum-scale=0.05');
-      // Oddly enough (as always, with my Android), it takes a while for the
-      // zoom-reset to take effect — so don't call dwScrollIntoView directly,
-      // or it'll use the old corrupt zoom scale values, or it will use the
-      // correct values, but nevertheless have no effect at all.
-      setTimeout(function() {
-        console.log('Calling dwScrollIntoView ...');
-        $dialogFrame.dwScrollIntoView({ marginTop: 0, marginLeft: 0 });
-      }, 500);  // 500 not enough! Sometimes bad linger longer; the zoom reset
-          // happens after 500 ms: then dwScrollIntoView scrolls incorrectly,
-          // and also the zoom happens later and moves the viewport to 0,0.
-          // Double errors! Is there no way to prevent Android from
-          // automatically zooming and destroying everything via
-          // broken screen.width etc values  ??
-          // "the [Android] browser insists on zooming in on text fields"
-          // complains someone on the Internet.  http://androidforums.com/evo-4g-support-troubleshooting/268095-browser-text-field-auto-zoom.html
-          //  Here I found info on an Android bug:
-          // "http://code.google.com/p/android/issues/detail?id=10775#c26
-          //  by stephen....@carisenda.com, Jun 27, 2011
-          //  innerWidth is reported incorrectly after a page zoom on some but not all devices
-          //  running Android, it seems to be device rather than android version dependent.
-          //  For example the bug appears in Samsung Galaxy S and Tab but not on HTC Evo or
-          //  Hero (this is after adding in a viewport meta tag (see comment 20))."
-          //
-      */
-    }, zoomDelayMs);
+
+    $dialogFrame.dwScrollIntoView(
+        { marginTop: 5, marginLeft: 5, marginRight: 5, duration: 0 });
   }
 };
 
