@@ -485,9 +485,17 @@ object TemplateEngine {
 
   val HeadHtml: NodeSeq =
     <div>
+    {/* Some other viewport values, and the absence of a value,
+    trigger Android bugs that report the wrong screen.width,
+    window.innerWidth, document.documentElement.clientWidth and heights,
+    breaking dwScrollIntoView (and other stuff?) in debiki.js.
+    See: http://code.google.com/p/android/issues/detail?id=10775#c20   */}
+    <meta name="viewport" content="initial-scale=1.0, minimum-scale=0.01"/>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>{/*
     Concerning when/how to use a CDN for Modernizr, see:
-      http://www.modernizr.com/news/modernizr-and-cdns  */}
+      http://www.modernizr.com/news/modernizr-and-cdns
+    And: "For best performance, you should have them follow after your
+    stylesheet references", http://modernizr.com/docs/#installing  */}
     <script src="http://cdnjs.cloudflare.com/ajax/libs/modernizr/2.5.3/modernizr.min.js"></script>
     <script src={"https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery"+ minMaxJs}></script>{/*
     <!-- Could:
