@@ -198,9 +198,24 @@ jQuery.fn.dwScrollIntoView = function(options) {
     $('html, body').animate({
       'scrollTop': desiredWinTop,
       'scrollLeft': desiredWinLeft
-    }, 'slow', 'swing');
+    }, 'slow', 'swing').queue(function(next) {
+      // On my Android phone, `animate` sometimes won't scroll
+      // all the way to the desired offset, therefore:
+      if (Modernizr.touch)
+        reallyScrollTo(desiredWinLeft, desiredWinTop);
+      next();
+    });
   }
 
+  function reallyScrollTo(left, top) {
+    // On my Android phone, calling scrollTop and scrollLeft at the
+    // same time *sometimes* does not work (scrollLeft has no effect).
+    // So call them again after a while — and call scrollLeft first.
+    $('html, body').scrollTop(top).scrollLeft(left);
+    setTimeout(function() {
+      $('html, body').scrollLeft(left).scrollTop(top);
+    }, 250);
+  }
   return this;
 };
 
