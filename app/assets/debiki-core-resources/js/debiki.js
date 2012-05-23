@@ -371,6 +371,85 @@ var svgns = "http://www.w3.org/2000/svg";
 var Me = makeCurUser();
 
 
+
+// ------- Android zoom bug workaround
+
+// The workaround does not always work though, because it's not possible
+// to detect all cases when a text input is focused (and Androdi auto zooms
+// and triggers the bug).
+
+// Remember window dimensions, initially when the viewport's initial-scale
+// is 1.0. Then we can work around certain Android bugs later.
+var windowInnerWidthUnscaled = window.innerWidth;
+var windowInnerHeightUnscaled = window.innerHeight;
+
+Debiki.windowInnerWidthUnscaled = windowInnerWidthUnscaled;// debug
+Debiki.windowInnerHeightUnscaled = windowInnerHeightUnscaled;// debug
+
+/**
+ * Returns a $.Deferred, and resolves it when zoom has been reset
+ * (or somewhat later). However if zoom hasn't been reset after
+ * a while, rejects the $.Deferred.
+ *
+ * COULD do this on certain Android versions only? Only then does
+ * Android auto-zoom into focused text inputs, *and* has bugs that
+ * cause window.innerWidth etcetera to return zoomed-out values
+ * (*after* zoom in), forever (until page reload, or zoom reset).
+ */
+function resetMobileZoom() {
+  var resetStatus = $.Deferred();
+
+  if (!Modernizr.touch || isZoomReset())
+    return resetStatus.resolve();
+
+  function isZoomReset() {
+    // Have width or height been reset?
+    // If portrait orientation initially, and portrait now, or if
+    // landscape initially, landscape now, then, when zoom reset:
+    //   window.innerWidth === windowInnerWidthUnscaled
+    //   window.innerHeight === windowInnerHeightUnscaled
+    //   — however, don't require that heights match,
+    //   because sometimes the width isn't scaled, but only the
+    //   height — and then it's better not to reset zoom, because
+    //   resetting zoom causes the viewport to move to 0,0 and
+    //   when dwScrollIntoView scrolls back again, everything looks
+    //   jerky.
+    // If portrait initially, but landscape now, or
+    // landscape initially, but portrait now:
+    //   window.innerWidth === windowInnerHeightUnscaled
+    //   window.innerHeight === windowInnerWidthUnscaled
+    return (window.innerWidth === windowInnerWidthUnscaled) ||
+      (window.innerWidth === windowInnerHeightUnscaled &&
+        window.innerHeight === windowInnerWidthUnscaled);
+  }
+
+  console.debug('Resetting zoom to initial-scale=1.0...');
+  $('meta[name=viewport]').attr('content',
+     'initial-scale=1.0, maximum-scale=0.05');
+
+  var pollHandle = setInterval(pollZoomResolveStatus, 100);
+  pollZoomResolveStatus();
+
+  // If zoom not reset within fractions of a second, something is amiss.
+  var failHandle = setTimeout(function() {
+    resetStatus.reject();
+    clearInterval(pollHandle);
+    console.debug('Cancelled zoom reset polling.');
+  }, 2000);
+
+  function pollZoomResolveStatus() {
+    if (!isZoomReset()) return;
+    console.debug('Zoom has been reset.');
+    resetStatus.resolve();
+    clearInterval(pollHandle);
+    clearTimeout(failHandle);
+  }
+
+  return resetStatus;
+}
+
+
+
 // ------- Zoom event
 
 var zoomListeners = [];
@@ -406,7 +485,85 @@ var jQueryDialogDefault = {
   resizable: false,
   // Should use CSS instead of this, but for now:
   width: VIEWPORT_MIN_WIDTH - 20, // ok with modern mobiles
-  zIndex: 1190  // the default, 1000, is lower than <form>s z-index
+  zIndex: 1190,  // the default, 1000, is lower than <form>s z-index
+
+  /**
+   * Fixes two issues I (KajMagnus) am encountering on my Android phone:
+   * 1) The dialog appears outside the <html> elem. — If so, move it to
+   * inside the <html> elem (or parts of it will never be visible).
+   * 2) Sometimes the dialog does not appear inside the viewport, or
+   * only parts of the dialog appear inside the viewport. — If so,
+   * scroll the dialog's upper left corner into view.
+   *
+   * (Might as well run this code on desktop browsers too — simplifies
+   * debugging, if nothing else.)
+   */
+  open: function(event, ui) {
+    console.debug('jQueryDialogDefault dialog was opened.');
+    var $dialog = $(event.target);
+    var $dialogFrame = $dialog.parent();
+    Debiki.$dialogFrame = $dialogFrame; // debug
+    if (!$dialog.dialog('isOpen')) return;
+    var offs = $dialogFrame.offset();
+    console.debug('$dialogFrame.offset(): '+ offs.left +', '+ offs.top);
+    var zoomDelayMs = 0;
+    if (offs.left < 0 || offs.top < 0) {
+      console.debug('Moving dialog into <html> elem...');
+      $dialogFrame.offset({
+        left: Math.max(offs.left, 0),
+        top: Math.max(offs.top, 0)
+      });
+      zoomDelayMs = 300;
+    }
+    setTimeout(function() {
+      // Sometimes the user has zoomed out. Then Android zooms in,
+      // but it seems that the values that dwScrollIntoView relies on
+      // aren't updated — they continue reporting viewport dimensions
+      // as if the zoom in had never happened. More precisely, all these
+      // values are wrong: (as if still zoomed out)
+      // ['dwScrollIntoView: screen:', screen.width, screen.height, 'win.inner:', window.innerWidth, window.innerHeight, 'docEl:',  document.documentElement.clientWidth,  document.documentElement.clientHeight, 'window.pageX/YOffset:', window.pageXOffset, window.pageYOffset];
+      // And they remain wrong, forever! Fix this by explicitly
+      // resetting the zoom scale to 1.0:
+      // (This seems to have no effect on desktop browsers.)
+      console.debug(['Before zoom: screen:', screen.width, screen.height,
+          'win.inner:', window.innerWidth, window.innerHeight, 'docEl:',
+          document.documentElement.clientWidth,
+          document.documentElement.clientHeight, 'window.pageX/YOffset:',
+          window.pageXOffset, window.pageYOffset]);
+      resetMobileZoom().done(function() {
+        console.log('Scrolling dialog into view...');
+        $dialogFrame.dwScrollIntoView({ marginTop: 0, marginLeft: 0 });
+      });
+      /*
+      console.log('Zooming to initial-scale=1.0...');
+      $('meta[name=viewport]').attr('content',
+         'initial-scale=1.0, maximum-scale=0.05');
+      // Oddly enough (as always, with my Android), it takes a while for the
+      // zoom-reset to take effect — so don't call dwScrollIntoView directly,
+      // or it'll use the old corrupt zoom scale values, or it will use the
+      // correct values, but nevertheless have no effect at all.
+      setTimeout(function() {
+        console.log('Calling dwScrollIntoView ...');
+        $dialogFrame.dwScrollIntoView({ marginTop: 0, marginLeft: 0 });
+      }, 500);  // 500 not enough! Sometimes bad linger longer; the zoom reset
+          // happens after 500 ms: then dwScrollIntoView scrolls incorrectly,
+          // and also the zoom happens later and moves the viewport to 0,0.
+          // Double errors! Is there no way to prevent Android from
+          // automatically zooming and destroying everything via
+          // broken screen.width etc values  ??
+          // "the [Android] browser insists on zooming in on text fields"
+          // complains someone on the Internet.  http://androidforums.com/evo-4g-support-troubleshooting/268095-browser-text-field-auto-zoom.html
+          //  Here I found info on an Android bug:
+          // "http://code.google.com/p/android/issues/detail?id=10775#c26
+          //  by stephen....@carisenda.com, Jun 27, 2011
+          //  innerWidth is reported incorrectly after a page zoom on some but not all devices
+          //  running Android, it seems to be device rather than android version dependent.
+          //  For example the bug appears in Samsung Galaxy S and Tab but not on HTC Evo or
+          //  Hero (this is after adding in a viewport meta tag (see comment 20))."
+          //
+      */
+    }, zoomDelayMs);
+  }
 };
 
 
@@ -430,6 +587,7 @@ var jQueryDialogReset = $.extend({}, jQueryDialogDefault, {
 var jQueryDialogNoClose = $.extend({}, jQueryDialogDefault, {
   closeOnEscape: false,
   open: function(event, ui) {
+    jQueryDialogDefault.open.call(this, event, ui);
     $(this).parent().find('.ui-dialog-titlebar-close').hide();
   }
 });
