@@ -836,7 +836,12 @@ class FormHtml(val config: HtmlConfig, xsrfToken: String,
    *  example file:
    *    debiki-core/src/main/resources/toserve/lib/openid-selector/demo.html
    */
-  def loginFormSimple =
+  def loginFormSimple = {
+    // Don't initially focus a text input -- that'd cause Android to auto zoom
+    // that input, which triggers certain Android bugs and my workarounds,
+    // but the workarounds results in the dialog title appearing off screen,
+    // so better not trigger the-bug-and-the-workarounds on dialog open.
+    // See debiki.js: resetMobileZoom() and jQueryDialogDefault.open.
       <div class='dw-fs' id='dw-fs-lgi-simple' title='Who are you?'>
         <form action={config.loginActionSimple} method='post'>
           { _xsrfToken }
@@ -845,7 +850,7 @@ class FormHtml(val config: HtmlConfig, xsrfToken: String,
              <div class='dw-lgi-openid-info'>
                Login with Gmail, OpenID, Yahoo, etcetera:
              </div>
-             <a class='dw-a dw-a-login-openid'>Log in</a>
+             <a class='dw-a dw-a-login-openid' tabindex='101'>Log in</a>
              <div class='dw-lgi-openid-why'>
                <small>
                In the future, logging in will enable functionality
@@ -863,7 +868,7 @@ class FormHtml(val config: HtmlConfig, xsrfToken: String,
             <div>
              <label for='dw-fi-lgi-name'>Enter your name:</label>
              <input id='dw-fi-lgi-name' type='text' size='40' maxlength='100'
-                  name='dw-fi-lgi-name' value='Anonymous'/>
+                  name='dw-fi-lgi-name' value='Anonymous' tabindex='102'/>
              <small><b>'?'</b> will be appended to your name,
                to indicate that you logged in as a guest.
              </small>
@@ -872,19 +877,21 @@ class FormHtml(val config: HtmlConfig, xsrfToken: String,
              <label for='dw-fi-lgi-email'
                 >Email: (optional, not shown)</label>
              <input id='dw-fi-lgi-email' type='text' size='40'
-                  maxlength='100' name='dw-fi-lgi-email' value=''/>
+                  maxlength='100' name='dw-fi-lgi-email' value=''
+                  tabindex='103'/>
             </div>
             <div>
              <label for='dw-fi-lgi-url' id='dw-fi-lgi-url-lbl'
                 >Website: (optional)</label>
              <input id='dw-fi-lgi-url' type='text' size='40' maxlength='200'
-                  name='dw-fi-lgi-url' value=''/>
-             <!-- COULD add tabindex='...' -->
+                  name='dw-fi-lgi-url' value=''
+                  tabindex='104'/>
             </div>
            </div>
           </div>
         </form>
       </div>
+  }
 
   def loginFormOpenId =
       <div class='dw-fs' id='dw-fs-openid-login'
