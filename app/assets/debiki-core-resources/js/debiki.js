@@ -403,27 +403,6 @@ function resetMobileZoom() {
   if (!Modernizr.touch || isZoomReset())
     return resetStatus.resolve();
 
-  function isZoomReset() {
-    // Have width or height been reset?
-    // If portrait orientation initially, and portrait now, or if
-    // landscape initially, landscape now, then, when zoom reset:
-    //   window.innerWidth === windowInnerWidthUnscaled
-    //   window.innerHeight === windowInnerHeightUnscaled
-    //   — however, don't require that heights match,
-    //   because sometimes the width isn't scaled, but only the
-    //   height — and then it's better not to reset zoom, because
-    //   resetting zoom causes the viewport to move to 0,0 and
-    //   when dwScrollIntoView scrolls back again, everything looks
-    //   jerky.
-    // If portrait initially, but landscape now, or
-    // landscape initially, but portrait now:
-    //   window.innerWidth === windowInnerHeightUnscaled
-    //   window.innerHeight === windowInnerWidthUnscaled
-    return (window.innerWidth === windowInnerWidthUnscaled) ||
-      (window.innerWidth === windowInnerHeightUnscaled &&
-        window.innerHeight === windowInnerWidthUnscaled);
-  }
-
   console.debug('Resetting zoom to initial-scale=1.0...');
   $('meta[name=viewport]').attr('content',
      'initial-scale=1.0, maximum-scale=0.05');
@@ -448,6 +427,39 @@ function resetMobileZoom() {
 
   return resetStatus;
 }
+
+
+function isZoomReset() {
+  // Have width or height been reset?
+  // If portrait orientation initially, and portrait now, or if
+  // landscape initially, landscape now, then, when zoom reset:
+  //   window.innerWidth === windowInnerWidthUnscaled
+  //   window.innerHeight === windowInnerHeightUnscaled
+  //   — however, don't require that heights match,
+  //   because sometimes the width isn't scaled, but only the
+  //   height — and then it's better not to reset zoom, because
+  //   resetting zoom causes the viewport to move to 0,0 and
+  //   when dwScrollIntoView scrolls back again, everything looks
+  //   jerky.
+  // If portrait initially, but landscape now, or
+  // landscape initially, but portrait now:
+  //   window.innerWidth === windowInnerHeightUnscaled
+  //   window.innerHeight === windowInnerWidthUnscaled
+  return (window.innerWidth === windowInnerWidthUnscaled) ||
+    (window.innerWidth === windowInnerHeightUnscaled &&
+      window.innerHeight === windowInnerWidthUnscaled);
+}
+
+
+$(document).on('focus', 'textarea, input[type=text]', function() {
+  console.log('');
+  var $input = $(this);
+  if (!isZoomReset()) resetMobileZoom().done(function() {
+    // .blur().focus() won't scroll $input into view on my Android.
+    $input.dwScrollIntoView(
+        { marginRight: 20, marginBottom: 100, duration: 0 });
+  });
+});
 
 
 
@@ -531,10 +543,8 @@ var jQueryDialogDefault = {
           document.documentElement.clientWidth,
           document.documentElement.clientHeight, 'window.pageX/YOffset:',
           window.pageXOffset, window.pageYOffset]);
-      resetMobileZoom().done(function() {
-        console.log('Scrolling dialog into view...');
-        $dialogFrame.dwScrollIntoView({ marginTop: 0, marginLeft: 0 });
-      });
+      console.log('Scrolling dialog into view...');
+      $dialogFrame.dwScrollIntoView({ marginTop: 0, marginLeft: 0, duration: 0 });
       /*
       console.log('Zooming to initial-scale=1.0...');
       $('meta[name=viewport]').attr('content',
