@@ -171,26 +171,31 @@ object Global extends GlobalSettings {
 
 
   /**
+   * The Twitter Ostrich admin service, listens on port 9100.
+   */
+  private val _ostrichAdminService = new toa.AdminHttpService(9100, 20, Stats,
+    new toa.RuntimeEnvironment(getClass))
+
+  /**
    * Ensures lazy values are initialized early, so everything
    * fails fast.  And starts Twitter Ostrich.
    */
   override def onStart(app: Application) {
     Debiki.SystemDao
 
-    // Start Twitter Ostrich on port 9100.
-    val service = new toa.AdminHttpService(9100, 20, Stats,
-       new toa.RuntimeEnvironment(getClass))
-    service.start()
-    Logger.info("Twitter Ostrich listening on port "+ service.address.getPort)
+    _ostrichAdminService.start()
+    Logger.info("Twitter Ostrich listening on port "+
+       _ostrichAdminService.address.getPort)
   }
 
 
   /**
-   * Tells anyone reading the application log files that this server instance
-   * did not crash.
+   * Stops Twitter Ostrich admin service, and
+   * SHOULD stop the Mailer and QuotaManager without losing in memory data.
    */
   override def onStop(app: Application) {
-    Logger.info("Shutting down, gracefully.")
+    Logger.info("Shutting down, gracefully...")
+    _ostrichAdminService.shutdown()
   }
 
 }
