@@ -1,13 +1,5 @@
-/*
+/**
  * Debiki Utterscroll — dragscroll everywhere
- *
- * Utterscroll enables dragscroll everywhere, on the whole page.
- * Then you can press-and-dragscroll anywhere, instead of
- * using the scrollbars (or scroll wheel — but you usually cannot
- * scroll horizontally with the scroll wheel?).
- * You won't scroll when you click buttons, inputs and links
- * etcetera. And not when you select text.
- *
  *
  * Copyright (c) 2012 Kaj Magnus Lindberg
  *
@@ -15,39 +7,13 @@
  * or any later version:
  *   http://www.gnu.org/licenses/lgpl.txt
  *
- *
- * Use like so: (for example)
- *
- *    <script src='jquery-scrollable.js'></script>
- *    <script src='debiki-utterscroll.js'></script>
- *
- *    if (!Modernizr.touch)  // if not a smartphone
- *      debiki.Utterscroll.enable({
- *          scrollstoppers: '.CodeMirror, .ui-resizable-handle' });
- *
- *
- * Utterscroll scrolls the closest scrollable element, or the window.
- * However, scrolling anything but the window, depends on a jQuery selector,
- * ':scrollable', being available. Otherwise, the window is always scrolled.
- * There should be a file jquery.scrollable.js included in this
- * distribution, which defines the ':scrollable' selector.
- * That file is an excerpt from:
- *   https://github.com/litera/jquery-scrollintoview/blob/master/
- *      jquery.scrollintoview.js
- *
- *
- * As of today (2012-02-29), tested with jQuery 1.6.4 and recent versions
- * of Google Chrome, Firefox and Opera, and IE 6, 7, 8 and 9.
- * (Scrolling the window has been tested; scrolling other elems has not
- * been thoroughly tested.)
- *
- *
  * Find in the rest of this file:
  * - jQuery extensions: jQuery.dwEnableSelection and dwDisableSelection
+ *     (Hmm perhaps they can be removed now, when I stop event propagation
+ *     early, so no text is ever selected, if you start scrolling.
+ *     Everything should work anyway, but I'd get rid of some code.)
  * - Debiki Utterscroll
- *
  */
-
 
 
 // dwEnableSelection and jQuery.dwDisableSelection
@@ -334,7 +300,7 @@ debiki.Utterscroll.enable = function(options) {
     // is huge. This isn't likely to happen though, because we only run
     // this code for elems that contains text or inline elems with text,
     // and such blocks are usually small. Well written text contains
-    // reasonably small paragraphs, no excessively huge blocks of text. }}}
+    // reasonably small paragraphs, no excessively huge blocks of text? }}}
     var $parentClone = $parent.clone();
     $parentClone.html(htmlWithMarks);
 
