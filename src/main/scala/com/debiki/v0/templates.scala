@@ -23,14 +23,18 @@ case object TemplateSrcHtml {
 
   val DefaultText =
     """|extend-template: closest
+       |# This is a comment.
+       |# 1. Elements you place in <head> below are appended to the
+       |#    page's <head>.
+       |# 2. Elements you place in <body> are appended to the page's <body>,
+       |#    however:
+       |# 3. If they have an attribute: `data-replace='#x'`, then they instead
+       |#    replace the elem with id `x` in the parent template.
        |---
        |<html>
        |<head>
-       |# Elements you place here are appended to the page's <head>.
        |</head>
        |<body>
-       |# This <div> will be replaced by the page body and title, and comments.
-       |   <div id='debiki-page'></div>
        |</body>
        |</head>
        |""" stripMargin
@@ -64,18 +68,12 @@ case class TemplateSrcHtml(post: ViPo, path: String) extends TemplateSource {
   // )
   val docBoundaryRegex = "(?<=\n)---\r?\n\\s*(?=<)".r
 
-  // All lines that start with # (as the first non-space/tab) are comments.
-  // (( "(?m)" makes ^ match newlines, in addition to the start of the doc. ))
-  val commentLineRegex = """(?m)^[ \t]*#.*$""".r
-
   lazy val (
     params: TemplateParams,
     /** The html source for this template. */
     html: NodeSeq
   ) = {
-    val templateSrcWithComments = post.text
-    val templateSrc = commentLineRegex.
-          replaceAllIn(templateSrcWithComments, "")
+    val templateSrc = post.text
 
     // Extract the Yaml and html documents
     val (yamlSrc: String, htmlSrc: String) =
@@ -103,6 +101,7 @@ case class TemplateSrcHtml(post: ViPo, path: String) extends TemplateSource {
       val paramName = matsh.group(1)
       val paramValue = matsh.group(2)
       paramName match {
+        case comment if comment.startsWith("#") => // skip comments
         case CommentVisibility.ParamName =>
           params.commentVisibility = Some(CommentVisibility.parse(paramValue))
         case TemplateToExtend.ParamName =>
