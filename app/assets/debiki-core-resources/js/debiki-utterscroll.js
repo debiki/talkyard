@@ -210,6 +210,8 @@ debiki.Utterscroll.enable = function(options) {
       // Specify top and left, so $ghost fills up the visible part of
       // $target, even if $target contains scrollbars that have been scrolled.
       $ghost.css({ top: $target.scrollTop(), left: $target.scrollLeft() });
+      var targetPosOrig = $target.css('position');
+      $target.css('position', 'relative');
       $target.prepend($ghost)
       // Now $ghost fills up $target, up to the scrollbars.
       // Check if the click happened outside $ghost.
@@ -219,6 +221,7 @@ debiki.Utterscroll.enable = function(options) {
       if (event.pageY > $ghost.offset().top + $ghost.height())
         isScrollbar = true; // horizontal scrollbar clicked
       $ghost.remove();
+      $target.css('position', targetPosOrig);
       if (isScrollbar)
         return;
     }
