@@ -1,5 +1,11 @@
 vim: fdm=marker et sw=2 ts=2
 
+Truly anonymous:
+Hosting:  Pay anonymously via Bitcoin.
+Surfing:  Use e.g. the Tor Network or mullvad.net, or combine them both.
+
+
+
 {{{1 Test html - IE 6, 7, 8, and dw- classes/ids, and XSS
 
 (this page in my pgsql vm:  http://localhost:8080/test/-1g3u6nd5j3  )
