@@ -497,7 +497,7 @@ object TemplateEngine {
     And: "For best performance, you should have them follow after your
     stylesheet references", http://modernizr.com/docs/#installing  */}
     <script src="http://cdnjs.cloudflare.com/ajax/libs/modernizr/2.5.3/modernizr.min.js"></script>
-    <script src={"https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery"+ minMaxJs}></script>{/*
+    <script src={"https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery"+ minMaxJs}></script>{/*
     <!-- Could:
     <script>
     if (!window.jQuery) document.write(unescape("%3Cscript src='/path/to/your/jquery' %3E%3C/script%3E"));
@@ -508,7 +508,7 @@ object TemplateEngine {
     */}
     <script src={"/classpath/js/jquery-cookie"+ minMaxJs}></script>
     <script src="/classpath/js/wmd/showdown.js"></script>
-    <script src={"http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.18/jquery-ui"+ minMaxJs}></script>
+    <script src={"http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.19/jquery-ui"+ minMaxJs}></script>
     <script src={"/classpath/js/jquery-scrollable"+ minMaxJs}></script>
     <script src={"/classpath/js/debiki"+ minMaxJs}></script>
     <script src={"/classpath/js/debiki-utterscroll"+ minMaxJs}></script>
