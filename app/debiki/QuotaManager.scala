@@ -383,20 +383,23 @@ object QuotaManager {
   /**
    * For now, grant 10 quota, i.e. roughly roughly $1, to a new tenant.
    * That should be enough for a popular blog for 1 month.
-   * And allow each other consumer to consume at most one tenth of the
-   * tenant's quota (to prevent Mallory from DoS:ing the tenant).
+   * Allow each other consumer to freeload 1/100 of the tenant's quota each
+   * day -- but the freeload quota accumulates over NewFreeQuotaCapInDays days
+   * which is currently 7 days. Then it is capped,
+   * so each consumer will be able to consume 7% of the tenant's quota
+   * (and Mallory alone cannot DoS the tenant).
    *
    * COULD read values from database, perhaps id = 'default' rows? Fix later...
    */
   def newQuotaStateWithLimits(time: ju.Date, consumer: QuotaConsumer)
         : QuotaState = {
     val oneDollar = MicroQuotaPerDollar
-    val oneTenth = oneDollar / 10
+    val oneHundredth = oneDollar / 100
     val (freeQuota, freeloadPerDay) = consumer match {
       case _: QuotaConsumer.Tenant => (oneDollar, 0)
-      case _: QuotaConsumer.PerTenantIp => (0, oneTenth)
-      case _: QuotaConsumer.GlobalIp => (0, oneTenth)
-      case _: QuotaConsumer.Role => (0, oneTenth)
+      case _: QuotaConsumer.PerTenantIp => (0, oneHundredth)
+      case _: QuotaConsumer.GlobalIp => (0, oneHundredth)
+      case _: QuotaConsumer.Role => (0, oneHundredth)
     }
 
     QuotaState(
