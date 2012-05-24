@@ -241,10 +241,8 @@ debiki.Utterscroll.enable = function(options) {
     // If there's no text in the event.target, then start scrolling.
     var containsText = searchForTextIn($target);
     console.log(event.target.nodeName +' containsText: '+ containsText);
-    if (!containsText) {
-      startScroll(event);
-      return true;
-    }
+    if (!containsText)
+      return startScroll(event);
 
     function searchForTextIn($elem, recursionDepth) {
       if (recursionDepth > 3)
@@ -274,12 +272,10 @@ debiki.Utterscroll.enable = function(options) {
     // Start scrolling if mouse press happened not very close to text.
     var dist = distFromTextToEvent($target, event);
     console.log('Approx dist from $target text to mouse: '+ dist);
-    if (dist === -1 || dist > 55) {
-      startScroll(event);
-      return true;
-    }
+    if (dist === -1 || dist > 55)
+      return startScroll(event);
 
-    // Don't event.preventDefault(). — The user should be able
+    // Don't scroll and don't event.preventDefault(). — The user should be able
     // to e.g. click buttons and select text.
   }
 
@@ -440,6 +436,7 @@ debiki.Utterscroll.enable = function(options) {
     // (If doesn't work, could try:  $(document.body).focus()?
     // see: http://stackoverflow.com/questions/113750/ )
     emptyWindowSelection();
+    return false;
   }
 
   function doScroll(event) {
@@ -506,6 +503,8 @@ debiki.Utterscroll.enable = function(options) {
     // annoying if you select text when you scrolldrag.)
     if ($.browser.opera)
       emptyWindowSelection();
+
+    return false;
   }
 
   function stopScroll(event) {
@@ -516,13 +515,7 @@ debiki.Utterscroll.enable = function(options) {
     $(document.body).css('cursor', '');  // cancel 'move' cursor
     $.event.remove(document, 'mousemove', doScroll);
     $.event.remove(document, 'mouseup', stopScroll);
-
-    // On mousedown, `false' was perhaps not returned, so we should probably
-    // *not* return false here? Anyway, if we `return false', Opera sometimes
-    // won't clear an existing selection. Result: Many disjoint sections
-    // coexisting at the same time. Only Opera — an Opera bug? That
-    // bug happens now too, without `return false', hmm.
-    // But the bug happens infrequently, it's a fairly harmless issue I think.
+    return false;
   }
 
   function emptyWindowSelection() {
