@@ -27,6 +27,7 @@ basedir=/opt/debiki/debiki.se
 
 rsync -avz \
   -e "$ssh_ec2_user"  \
+  --exclude logs/ \
   --delete \
   ./dist/debiki-app-play-1.0-SNAPSHOT/* \
   ec2-user@$host:$basedir/app1/
