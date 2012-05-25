@@ -638,6 +638,11 @@ jQuery.fn.dwAuthorId = function() {
   return uid;
 };
 
+// The root post need not be the article (if ?view=something-else specified).
+$.fn.dwIsRootPost = function() {
+  return this.dwCheckIs('.dw-p').parent().is('.dw-depth-0');
+}
+
 $.fn.dwIsReply = function() {
   // 1 char IDs are reserved (1 is page body, 2 title, 3 template).
   var id = this.dwPostId();
@@ -1870,10 +1875,13 @@ function $showInlineActionMenu(event) {
   // works also with IE (6)/7/8.
   // BUG: Next line: Uncaught TypeError: Cannot read property 'data' of null
 
+  // Preload dependencies, in case user opens editor:
+  $post.each($loadEditorDependencies);
+
   // Bind actions.
   $menu.find('.dw-a-edit-i').click(function(){
     showInteractionsIfHidden();
-    $post.each($showEditForm2);
+    $post.each($showEditForm);
     $menu.remove();
   });
 
@@ -2818,7 +2826,10 @@ function initLoginSimple() {
   });
 
   $login.find('.dw-a-login-openid')
-      .button().click($showLoginOpenId);
+      .button().click(function() {
+        showLoginOpenId();
+        return false;
+      });
 }
 
 
@@ -2972,9 +2983,43 @@ function showLoginSimple() {
   initLoginSimple();
   $('#dw-fs-lgi-simple').dialog('open');  // BUG Tag absent unless…
           //… a debate is shown, so the dw-hidden-templates included.
+  // Preload OpenID resources, in case user clicks OpenID login button.
+  loadOpenIdResources();
 }
 
+
+
 // ------- Login, OpenID
+
+
+function showLoginOpenId() {
+  loadOpenIdResources().done(function() {
+    initLoginOpenId();
+    $('#dw-fs-openid-login').dialog('open');
+  });
+}
+
+
+var loadOpenIdResources = (function() {
+  var loadStatus;
+  return function() {
+    if (loadStatus)
+      return loadStatus;
+    loadStatus = $.Deferred();
+    Modernizr.load({
+      load: [
+        '/classpath/lib/openid-selector/css/openid.css',
+        '/classpath/lib/openid-selector/js/openid-jquery.js',
+        '/classpath/lib/openid-selector/js/openid-en.js',
+        '/classpath/js/popuplib.min.js'],
+      complete: function() {
+        loadStatus.resolve();
+      }
+    });
+    return loadStatus;
+  }
+})();
+
 
 function initLoginOpenId() {
   var $openid = $('#dw-fs-openid-login');
@@ -3002,11 +3047,6 @@ function initLoginOpenId() {
   }));
 }
 
-function $showLoginOpenId() {
-  initLoginOpenId();
-  $('#dw-fs-openid-login').dialog('open');
-  return false;  // skip default action
-}
 
 // Submits an OpenID login <form> in a popup. Dims the window and
 // listens for the popup to close.
@@ -3483,8 +3523,48 @@ var EditTabIdPreview = 2;
 var EditTabIdLast = EditTabIdPreview;
 var EditTabCount = 3;
 
-// Shows the edit form.
-function $showEditForm2() {
+
+var $loadEditorDependencies = (function() {
+  // COULD use 2 loadStatus, and load Code Mirror only iff `this`
+  // is the root post.
+  var loadStatus;
+  return function() {
+    if (loadStatus)
+      return loadStatus;
+    loadStatus = $.Deferred();
+    var loadCodeMirror = !Modernizr.touch;
+    Modernizr.load({
+      test: loadCodeMirror,
+      yep: [
+        '/classpath/lib/codemirror/lib/codemirror.css',
+        '/classpath/lib/codemirror/lib/codemirror.js',
+        '/classpath/lib/codemirror/mode/css/css.js',
+        '/classpath/lib/codemirror/mode/javascript/javascript.js',
+        '/classpath/lib/codemirror/mode/xml/xml.js',
+        '/classpath/lib/codemirror/mode/htmlmixed/htmlmixed.js'],
+      both: [
+        '/classpath/js/wmd/showdown.js'],
+      complete: function() {
+        loadStatus.resolve();
+      }
+    })
+    return loadStatus;
+  }
+})();
+
+
+/**
+ * Loads editor resources and opens the edit form.
+ */
+function $showEditForm() {
+  var i = this;
+  $loadEditorDependencies.call(i).done(function() {
+    _$showEditFormImpl.call(i);
+  });
+}
+
+
+function _$showEditFormImpl() {
   var $post = $(this);
   var $postBody = $post.children('.dw-p-bd');
   var postId = $post.dwPostId();
@@ -4705,10 +4785,55 @@ function makeFakeDrawer() {
 }
 
 
-// ------- Tooltips
+
+// ------- Utterscroll and Tooltips
+
+
+function loadUtterscrollAndTooltips() {
+  if (Modernizr.touch) return;
+  Modernizr.load({
+    load: [
+      '/classpath/js/jquery-scrollable.js',
+      '/classpath/js/debiki-utterscroll.js',
+      '/classpath/js/bootstrap-tooltip.js'],
+    complete: function() {
+      initUtterscroll();
+    }
+  });
+}
+
+
+function initUtterscroll() {
+  bugIf(Modernizr.touch);
+  // Activate Utterscroll, and show tips if people use the window scrollbars,
+  // hide it on utterscroll.
+  var hasUtterscrolled = false;
+  var $utterscrollTips;
+  debiki.Utterscroll.enable({
+    scrollstoppers: '.CodeMirror,'+
+        ' .ui-draggable, .ui-resizable-handle, .dw-p-hd',
+    onMousedownOnWinHztlScrollbar: function() {
+      if (hasUtterscrolled || $utterscrollTips)
+        return;
+      var $tips = $('#dw-tps-utterscroll');
+      $tips.show()
+          // Place tips in the middle of the viewport.
+          // (The tips has position: fixed.)
+          .css('top', ($(window).height() - $tips.height()) / 2)
+          .css('left', ($(window).width() - $tips.width()) / 2)
+          .click(function() { $tips.hide(); });
+      $utterscrollTips = $tips;
+    },
+    onHasUtterscrolled: function() {
+      hasUtterscrolled = true;
+      if ($utterscrollTips) $utterscrollTips.hide();
+    }
+  });
+}
 
 
 function $makePostHeadTooltips() {  // i18n
+  if (!$.fn.tooltip) return; // tooltips not loaded
   var $postHead = $(this);
   if ($postHead.find('[data-original-title]').length)
     return; // tooltips already added
@@ -4832,7 +4957,7 @@ function initKeybdShortcuts() {
         $anyFocusedTab.is('.dw-e-tab-edit')) {
       $editTabLink.focus();
       // (Now, the next time you click Tab, you'll focus the next *tab*,
-      // which shows its releated *panel* on focus, see $showEditForm2().)
+      // which shows its releated *panel* on focus, see $showEditForm().)
       return true;
     }
 
@@ -5195,31 +5320,6 @@ function initAndDrawSvg() {
   $body.addClass('dw-pri');
   Me.refreshProps();
 
-  // Activate Utterscroll, and show tips if people use the window scrollbars,
-  // hide it on utterscroll.
-  var hasUtterscrolled = false;
-  var $utterscrollTips;
-  if (!Modernizr.touch) debiki.Utterscroll.enable({
-    scrollstoppers: '.CodeMirror,'+
-        ' .ui-draggable, .ui-resizable-handle, .dw-p-hd',
-    onMousedownOnWinHztlScrollbar: function() {
-      if (hasUtterscrolled || $utterscrollTips)
-        return;
-      var $tips = $('#dw-tps-utterscroll');
-      $tips.show()
-          // Place tips in the middle of the viewport.
-          // (The tips has position: fixed.)
-          .css('top', ($(window).height() - $tips.height()) / 2)
-          .css('left', ($(window).width() - $tips.width()) / 2)
-          .click(function() { $tips.hide(); });
-      $utterscrollTips = $tips;
-    },
-    onHasUtterscrolled: function() {
-      hasUtterscrolled = true;
-      if ($utterscrollTips) $utterscrollTips.hide();
-    }
-  });
-
   // The root post might be too narrow and stuff might float drop,
   // rersulting in SVG arrows pointing incorrectly. Avoid this, by
   // making the root thread wide, whilst rendering the page. When done,
@@ -5245,6 +5345,7 @@ function initAndDrawSvg() {
   // threads have been placed and can be taken into account.
   steps.push(resizeRootThread);
   steps.push(initKeybdShortcuts);
+  steps.push(loadUtterscrollAndTooltips);
 
   function runNextStep() {
     steps[0]();
