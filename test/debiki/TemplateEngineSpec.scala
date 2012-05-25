@@ -193,29 +193,45 @@ class TemplateEngineSpec extends Specification {
          <title>Replaces</title> ++  // overwrites both TitleA and TitleB
          <meta name='Y'>Replaces</meta>)
 
-      <x>{r}</x> must ==/(<x/>)
-      <x>{l}</x> must ==/(<x/>)
+      r must ==/(
+         <title>Replaces</title> ++
+         <meta name='Y'>Replaces</meta> ++
+         <meta name='Y2'>LeftAsIs name-y2</meta>)
+      l must ==/(
+        <meta name='Y3'>LefAsIs name-y3</meta>)
     }
 
 
     "replace and keep many body tags, some nested, at once" >> {
-      val (r, l) = replHead(
+      val (r, l) = replId(
         <div>LeftAsIs no-id</div> ++
-        <div id='a'>LeftAsIs id-a</div> ++
-        <div><div id='Q'>Nested and replaced</div></div> ++
+        <div id='a'><i>LeftAsIs id-a</i></div> ++
+        <div><div id='Q'>Nested and replaced</div><i>Kept</i></div> ++
         <div id='Y'>Replaced</div> ++
         <div id='Z'>Replaced by a span</div> ++
         <div>NoId_P2</div>
         ,
-        <div id='Y'>Removed</div> ++
-        <span id='Z'>Replaces a div</span> ++
-        <div id='Q'>Replaces nested div</div> ++
-        <div id='Y'>Replaces</div> ++
+        // <div data-replace='#Y'>Removed</div> ++  ?? what would happen
+        <span data-replace='#Z'>Replaces a div</span> ++
+        <div>LeftAsIs indeed</div> ++
+        <div data-replace='#Q'>Replaces nested</div> ++
+        <div data-replace='#Y'>ReplaceS</div> ++
         <div id='b'>LeftAsIs id-b</div> ++
+        <div data-replace='#missing'>Nothing to replace</div> ++
         <div>LeftAsIs no-id</div>)
 
-      <x>{r}</x> must ==/(<x/>)
-      <x>{l}</x> must ==/(<x/>)
+      r must ==/(
+        <div>LeftAsIs no-id</div> ++
+        <div id='a'><i>LeftAsIs id-a</i></div> ++
+        <div><div data-replace='#Q'>Replaces nested</div><i>Kept</i></div> ++
+        <div data-replace='#Y'>ReplaceS</div> ++
+        <span data-replace='#Z'>Replaces a div</span> ++
+        <div>NoId_P2</div>)
+      l must ==/(
+        <div>LeftAsIs indeed</div> ++
+        <div id='b'>LeftAsIs id-b</div> ++
+        <div data-replace='#missing'>Nothing to replace</div> ++
+        <div>LeftAsIs no-id</div>)
     }
   }
 
