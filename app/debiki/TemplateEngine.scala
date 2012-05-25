@@ -513,9 +513,6 @@ object TemplateEngine {
     <script src="/classpath/js/html-sanitizer-minified.js"></script>
     <script src={"/classpath/js/tagdog"+ minMaxJs}></script>
     <script src={"/classpath/js/javascript-yaml-parser"+ minMaxJs}></script>
-    <!--[if lt IE 9]>
-    <script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script>
-    <![endif]-->
       <link type="text/css" rel="stylesheet" href="/classpath/css/debiki/jquery-ui-1.8.16.custom.css"/>
       <link type="text/css" rel="stylesheet" href="/classpath/css/debiki.css"/>
     <!--[if IE 7]>
