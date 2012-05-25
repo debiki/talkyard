@@ -13,5 +13,5 @@ addSbtPlugin("play" % "sbt-plugin" % "2.1-SNAPSHOT")
 resolvers += "sbt-idea-repo" at "http://mpeltonen.github.com/maven/"
 
 // libraryDependencies += "com.github.mpeltonen" %% "sbt-idea" % "0.10.0"
-addSbtPlugin("com.github.mpeltonen" % "sbt-idea" % "1.0.0")
+addSbtPlugin("com.github.mpeltonen" % "sbt-idea" % "1.1.0-M2-TYPESAFE")
 

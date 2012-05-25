@@ -3011,7 +3011,7 @@ var loadOpenIdResources = (function() {
         '/classpath/lib/openid-selector/css/openid.css',
         '/classpath/lib/openid-selector/js/openid-jquery.js',
         '/classpath/lib/openid-selector/js/openid-en.js',
-        '/classpath/js/popuplib.min.js'],
+        '/classpath/js/popuplib.js'],
       complete: function() {
         loadStatus.resolve();
       }
