@@ -477,11 +477,8 @@ object TemplateEngine {
   }
 
 
-  // Play Framework RCX is very very tricky to use right now, I think,
-  // w.r.t. the Google Closure Compiler and CommonJS and "require" and
-  // "export". I'd better wait with minifying stuff, until the Play
-  // people have fixed all the open tickets etcetera.
-  val minMaxJs = ".js" // later: if (Play.isProd) ".min.js" else ".js"
+  val minMaxJs = if (Play.isProd) ".min.js" else ".js"
+
 
   val HeadHtml: NodeSeq =
     <div>
@@ -491,13 +488,14 @@ object TemplateEngine {
     breaking dwScrollIntoView (and other stuff?) in debiki.js.
     See: http://code.google.com/p/android/issues/detail?id=10775#c20   */}
     <meta name="viewport" content="initial-scale=1.0, minimum-scale=0.01"/>
-    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>{/*
-    Concerning when/how to use a CDN for Modernizr, see:
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    {/* Concerning when/how to use a CDN for Modernizr, see:
       http://www.modernizr.com/news/modernizr-and-cdns
     And: "For best performance, you should have them follow after your
     stylesheet references", http://modernizr.com/docs/#installing  */}
     <script src="http://cdnjs.cloudflare.com/ajax/libs/modernizr/2.5.3/modernizr.min.js"></script>
-    <script src={"https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery"+ minMaxJs}></script>{/*
+    <script src={"https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery"+ minMaxJs}></script>
+    <script src={"http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.19/jquery-ui"+ minMaxJs}></script>{/*
     <!-- Could:
     <script>
     if (!window.jQuery) document.write(unescape("%3Cscript src='/path/to/your/jquery' %3E%3C/script%3E"));
@@ -506,13 +504,35 @@ object TemplateEngine {
     http://stackoverflow.com/questions/1014203/best-way-to-use-googles-hosted-jquery-but-fall-back-to-my-hosted-library-on-goo
     COULD: Rename /classpath/js/... to /lib/, since contains CSS & imgs too.
     */}
-    <script src={"/classpath/js/jquery-cookie"+ minMaxJs}></script>
-    <script src={"http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.19/jquery-ui"+ minMaxJs}></script>
-    <script src={"/classpath/js/debiki"+ minMaxJs}></script>
-    <script src="/classpath/js/diff_match_patch.js"></script>
-    <script src="/classpath/js/html-sanitizer-minified.js"></script>
-    <script src={"/classpath/js/tagdog"+ minMaxJs}></script>
-    <script src={"/classpath/js/javascript-yaml-parser"+ minMaxJs}></script>
+    {
+      if (Play.isProd) {
+        // Play should automatically serve a gzipped version of the
+        // combined-*-min.js files; the Makefile script gzips them.
+        <script>
+        Modernizr.load({{
+          test: Modernizr.touch,
+          yep: '/classpath/js/combined-debiki-touch.min.js',
+          nope: '/classpath/js/combined-debiki-desktop.min.js'
+        }});
+        </script>
+      } else {
+         <script src='/classpath/js/diff_match_patch.js'></script> ++
+         <script src='/classpath/js/html-sanitizer-minified.js'></script> ++
+         <script src='/classpath/js/jquery-cookie.js'></script> ++
+         <script src='/classpath/js/tagdog.js'></script> ++
+         <script src='/classpath/js/javascript-yaml-parser.js'></script> ++
+         <script>
+         Modernizr.load({{
+           test: Modernizr.touch,
+           nope: [
+             '/classpath/js/jquery-scrollable.js',
+             '/classpath/js/debiki-utterscroll.js',
+             '/classpath/js/bootstrap-tooltip.js']
+           }});
+         </script> ++
+         <script src='/classpath/js/debiki.js'></script>
+      }
+    }
       <link type="text/css" rel="stylesheet" href="/classpath/css/debiki/jquery-ui-1.8.16.custom.css"/>
       <link type="text/css" rel="stylesheet" href="/classpath/css/debiki.css"/>
     <!--[if IE 7]>
@@ -522,12 +542,6 @@ object TemplateEngine {
          http://pmuellr.github.com/weinre/Running.html
          (The ip addr is my desktop, where the Weinre debug server runs.) -->
     <!-- <script src="http://192.168.0.100:8081/target/target-script-min.js"></script> -->
-    <!-- <link rel="canonical" - if diffing revisions, point to latest,
-              and if using /a35..r3n4+rsn3+...3rs/ syntax.
-             see http://searchengineland.com/canonical-tag-16537 -->
-    {/* Tenant specific stylesheets might want to include:
-    <link type="text/css" rel="stylesheet" href="/classpath/css/debiki-lift.css"/>
-     */}
     </div>.child
 
 

@@ -35,11 +35,17 @@ object ApplicationBuild extends Build {
 
   def mainSettings = List(
     compileRhinoTask := { "make compile_javascript"! },
-    // SBT ignores this:
+    combineAndGzipJs := {
+      "make combine_and_gzip_javascript"!
+    },
+    combineAndGzipJs <<= combineAndGzipJs.dependsOn(compile in Compile),
+    // SBT ignores this line:
     fullClasspath in Compile +=
        Attributed.blank(file(rhinoClassDir)),
     Keys.compile in Compile <<=
-       (Keys.compile in Compile).dependsOn(compileRhinoTask))
+       (Keys.compile in Compile).dependsOn(compileRhinoTask),
+    playPackageEverything <<=
+       (playPackageEverything).dependsOn(combineAndGzipJs))
 
   // Cannot use, because SBT ignores above classpath elem addition:
   //val rhinoClassDir = "target/scala-2.9.1/compiledjs/classes/"
@@ -49,6 +55,8 @@ object ApplicationBuild extends Build {
   def compileRhinoTask = TaskKey[Unit]("compile-js",
     "Invokes Rhino to compile Javascript to Java bytecode")
 
+  def combineAndGzipJs = TaskKey[Unit]("combine-and-gzip-js",
+    "Appengs and gzips much Javascript to one single file")
 
   // Show unchecked and deprecated warnings, in this project and all
   // its modules.

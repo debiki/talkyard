@@ -3006,6 +3006,9 @@ var loadOpenIdResources = (function() {
     if (loadStatus)
       return loadStatus;
     loadStatus = $.Deferred();
+    // (COULD load these files directly in the <head>, on desktops,
+    // and load a single .min.js.gz on mobiles. And load one at a time
+    // in Dev builds. But that'd be 3 different cases! Postpone...)
     Modernizr.load({
       load: [
         '/classpath/lib/openid-selector/css/openid.css',
@@ -4789,20 +4792,6 @@ function makeFakeDrawer() {
 // ------- Utterscroll and Tooltips
 
 
-function loadUtterscrollAndTooltips() {
-  if (Modernizr.touch) return;
-  Modernizr.load({
-    load: [
-      '/classpath/js/jquery-scrollable.js',
-      '/classpath/js/debiki-utterscroll.js',
-      '/classpath/js/bootstrap-tooltip.js'],
-    complete: function() {
-      initUtterscroll();
-    }
-  });
-}
-
-
 function initUtterscroll() {
   bugIf(Modernizr.touch);
   // Activate Utterscroll, and show tips if people use the window scrollbars,
@@ -5344,8 +5333,10 @@ function initAndDrawSvg() {
   // Resize the article after the page has been rendered, so all inline
   // threads have been placed and can be taken into account.
   steps.push(resizeRootThread);
-  steps.push(initKeybdShortcuts);
-  steps.push(loadUtterscrollAndTooltips);
+  if (!Modernizr.touch) steps.push(function() {
+    initKeybdShortcuts();
+    initUtterscroll();
+  });
 
   function runNextStep() {
     steps[0]();
