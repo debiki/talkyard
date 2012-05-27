@@ -506,15 +506,21 @@ object TemplateEngine {
     */}
     {
       if (Play.isProd) {
+        // Load Debiki Javascript synchronously, since currently a certain
+        // `Debiki.v0.showInteractionsOnClick()` snipped requires this.
+        // Regrettably, this delays the loading of debiki.js, and page
+        // rendering, with 70ms to 500ms. Perhaps better load
+        // asynchronously anyway?
         // Play should automatically serve a gzipped version of the
         // combined-*-min.js files; the Makefile script gzips them.
+        xml.Unparsed("""
         <script>
-        Modernizr.load({{
-          test: Modernizr.touch,
-          yep: '/classpath/js/combined-debiki-touch.min.js',
-          nope: '/classpath/js/combined-debiki-desktop.min.js'
-        }});
+        if (Modernizr.touch)
+          document.write('<script src="/classpath/js/combined-debiki-touch.min.js"><\/script>');
+        else
+          document.write('<script src="/classpath/js/combined-debiki-desktop.min.js"><\/script>');
         </script>
+        """)
       } else {
          <script src='/classpath/js/diff_match_patch.js'></script> ++
          <script src='/classpath/js/html-sanitizer-minified.js'></script> ++
