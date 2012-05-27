@@ -510,14 +510,14 @@ object TemplateEngine {
     COULD: Rename /classpath/js/... to /lib/, since contains CSS & imgs too.
     */}
     {
+      // The debiki.scriptLoad $.Deferred is resolved later by debiki.js.
       if (Play.isProd) {
         <script>
         var debiki = {{ scriptLoad: $.Deferred() }};
         Modernizr.load({{
           test: Modernizr.touch,
           yep: '/classpath/js/combined-debiki-touch.min.js',
-          nope: '/classpath/js/combined-debiki-desktop.min.js',
-          complete: function() {{ debiki.scriptLoad.resolve(); }}
+          nope: '/classpath/js/combined-debiki-desktop.min.js'
         }});
         </script>
       } else {
@@ -535,8 +535,7 @@ object TemplateEngine {
             '/classpath/js/jquery-cookie.js',
             '/classpath/js/tagdog.js',
             '/classpath/js/javascript-yaml-parser.js',
-            '/classpath/js/debiki.js'],
-          complete: function() {{ debiki.scriptLoad.resolve(); }}
+            '/classpath/js/debiki.js']
         }});
         </script>
       }

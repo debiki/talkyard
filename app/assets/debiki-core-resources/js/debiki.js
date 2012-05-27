@@ -5322,6 +5322,7 @@ function initAndDrawSvg() {
   steps.push(function() {
     resizeRootThread();
     $('html').removeClass('dw-render-layout-pending');
+    debiki.scriptLoad.resolve();
   });
   if (!Modernizr.touch) steps.push(function() {
     initKeybdShortcuts();
