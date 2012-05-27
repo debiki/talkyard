@@ -5332,10 +5332,10 @@ function initAndDrawSvg() {
     steps[0]();
     steps.shift();
     if (steps.length > 0)
-      setTimeout(runNextStep, 100);
+      setTimeout(runNextStep, 70);
   }
 
-  setTimeout(runNextStep, 100);
+  setTimeout(runNextStep, 60);
 })();
 
 
