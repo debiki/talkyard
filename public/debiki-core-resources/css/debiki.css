@@ -1126,6 +1126,12 @@ key presses).*/
 .CodeMirror {
   font-size: 13px;
 }
+/* Make CodeMirror auto-resize its height.
+(Works also without .dw-prio -- although CodeMirror specifies 300px
+*later*. Weird.) */
+.dw-pri .CodeMirror-scroll {
+  height: auto;
+}
 
 .dw-name-or-alias {
   float: left; /* TODO: need not float everything? */

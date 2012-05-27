@@ -3669,7 +3669,6 @@ function _$showEditFormImpl() {
     });
 
     // If CodeMirror has been loaded, use it.
-    // SHOULD find out if it plays well with touch devices!
     // For now, use CodeMirror on the root post only — because if
     // the other posts are resized, CodeMirror's interal width
     // gets out of sync and the first character you type appears on
@@ -3678,12 +3677,7 @@ function _$showEditFormImpl() {
       codeMirrorEditor = CodeMirror.fromTextArea(
           $editPanel.children('textarea')[0], {
         lineNumbers: true, //isRootPost,
-        // There's a line wrap bug that causes the cursor to get stuck
-        // when you press the Down arrow. Email thread:
-        // groups.google.com/group/codemirror/browse_frm/thread/78f64f760e9e09ae
-        // JsBin example: http://jsbin.com/otogik/2/edit#javascript,html,live
-        // So disable line wrapping, for now. (CodeMirror v2.22)
-        // lineWrapping: true,
+        lineWrapping: true,
         mode: "text/html", // for now
         tabMode: "indent"
       });
