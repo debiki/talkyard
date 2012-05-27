@@ -196,6 +196,15 @@ object Global extends GlobalSettings {
   override def onStop(app: Application) {
     Logger.info("Shutting down, gracefully...")
     _ostrichAdminService.shutdown()
+
+    // COULD stop Twitter Ostrich on reload too -- currently there's a
+    // port conflict on reload.
+    // See: <https://groups.google.com/
+    //    forum/?fromgroups#!topic/play-framework/g6uixxX2BVw>
+    // "There is an Actor system reserved for the application code that is
+    // automatically shutdown when the application restart. You can access it
+    // in:  play.api.libs.Akka.system"
+
   }
 
 }
