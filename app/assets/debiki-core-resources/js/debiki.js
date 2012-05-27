@@ -296,10 +296,11 @@ Debiki.v0.showInteractionsOnClick = function() {
   // Otherwise people could create "fake" pages, by creating 
   // a comment and linking it with ?view=<comment-id> and it would
   // seem to be a page itself!)
-  if ($('.dw-ar-p').length === 0)  // article post not present?
-     return;
+  if ($('.dw-ar-p').length === 0) {  // article post not present?
+    $('html').removeClass('dw-hide-interactions');
+    return;
+  }
 
-  $('body').addClass('dw-hide-interactions');
   var numComments = $('.dw-p').length - 1;  // don't count the article
   if ($('.dw-p-ttl').length) numComments -= 1; // don't count article title
   var text = numComments > 1 ?  'Visa '+ numComments +' kommentarer' : // i18n
@@ -314,7 +315,7 @@ Debiki.v0.showInteractionsOnClick = function() {
       .insertBefore('.dw-ar-t > .dw-res')
       .click(function() {
     $showBtn.remove();
-    $('body').removeClass('dw-hide-interactions');
+    $('html').removeClass('dw-hide-interactions');
     SVG.drawEverything(); // *sometimes* needed
   });
 };

@@ -190,12 +190,12 @@ object DebateHtml {
     </span>
   }
 
-  /** A <style> that hides comments,
-   *  and a <script> that shows them on click.
-   *  COULD change this to a CSS class one adds to the <body>?
+  /**
+   * A script tag that hides comments and shows them on click.
    */
   val tagsThatHideShowInteractions = (
     <script type="text/javascript">
+    jQuery('html').addClass('dw-hide-interactions');
     debiki.scriptLoad.done(function() {{
       Debiki.v0.showInteractionsOnClick();
     }});
