@@ -3540,11 +3540,8 @@ var $loadEditorDependencies = (function() {
       test: loadCodeMirror,
       yep: [
         '/classpath/lib/codemirror/lib/codemirror.css',
-        '/classpath/lib/codemirror/lib/codemirror.js',
-        '/classpath/lib/codemirror/mode/css/css.js',
-        '/classpath/lib/codemirror/mode/javascript/javascript.js',
-        '/classpath/lib/codemirror/mode/xml/xml.js',
-        '/classpath/lib/codemirror/mode/htmlmixed/htmlmixed.js'],
+        '/classpath/lib/codemirror/lib/util/dialog.css', // search dialogs
+        '/classpath/lib/codemirror-2.25-custom.min.js'],
       both: [
         '/classpath/js/wmd/showdown.js'],
       complete: function() {
