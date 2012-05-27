@@ -196,7 +196,7 @@ object DebateHtml {
    */
   val tagsThatHideShowInteractions = (
     <script type="text/javascript">
-    jQuery(document).ready(function($) {{
+    debiki.scriptLoad.done(function() {{
       Debiki.v0.showInteractionsOnClick();
     }});
     </script>

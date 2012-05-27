@@ -105,6 +105,7 @@
  *  dw-p-hd       post header
  *  dw-p-rez-e    post resized eastwards
  *  dw-pri        placed on the <body>, use it to boost CSS rule priorities
+ *  dw-render-*-pending — a page rendering step that has not yet been completed
  *  dw-svg-c_<x>  SVG curve from <x>  COULD rename to -svg-p, for `path'
  *                  better: rename to -arw-from_<x>
  *  dw-svg-gparnt Has a <svg> child or grandchild (but no grand-grand-child)
@@ -255,7 +256,30 @@ del {
 }
 
 
-/* ----- END Move to theme ----- */
+
+/* === Page rendering === */
+
+/* Avoid float dropping of root post replies, early when the page width
+has not been calculated.
+1. Details: The root post might be too narrow and stuff might float drop,
+which is ugly, and could rersult in SVG arrows being drawn incorrectly.
+Avoid this, by making the root thread wide, whilst rendering the page.
+When done, resizeRootThread, in debiki.js (which is loaded asynchronously),
+will size the root thread properly.
+2. It's a bad idea to completely hide comments until the layout is completed:
+any <footer> would flash in the middle of the page (just below the article)
+and then moments later be pushed downwards off screen, by all comments,
+when they appear.
+*/
+html.dw-render-layout-pending .debiki.dw-debate {
+  width: 200200px;
+}
+
+/* Hide ugly React action links until they've been converted to
+beautiful Reply, Rate etcetera links. */
+html.js.dw-render-actions-pending .dw-as {
+  visibility: hidden;
+}
 
 
 /* === Debate === */
@@ -1567,7 +1591,7 @@ move the mouse so very far (a few hundered pixels) to hoversubmit. */
   border: none;
 }
 
-body.dw-ui-simple .dw-f-e-mup { display: none; }
+.dw-ui-simple .dw-f-e-mup { display: none; }
 
 .dw-pri .dw-f-e .dw-e-tab {
   border: 1px solid #bbb;

@@ -137,10 +137,15 @@ class TemplateEngine(val pageCache: PageCache) {
 
     // Prepend scripts, stylesheets and a charset=utf-8 meta tag.
     curHeadTags = HeadHtml ++ curHeadTags
+    val classes =
+       "dw-pri "+
+       "dw-ui-simple "+
+       "dw-render-actions-pending "+
+       "dw-render-layout-pending "
     val page =
-      <html>
+      <html class={classes}>
         <head>{curHeadTags}</head>
-        <body class='dw-ui-simple'>{curBodyTags ++ appendToBody}</body>
+        <body>{curBodyTags ++ appendToBody}</body>
       </html>
 
     page
@@ -506,37 +511,34 @@ object TemplateEngine {
     */}
     {
       if (Play.isProd) {
-        // Load Debiki Javascript synchronously, since currently a certain
-        // `Debiki.v0.showInteractionsOnClick()` snipped requires this.
-        // Regrettably, this delays the loading of debiki.js, and page
-        // rendering, with 70ms to 500ms. Perhaps better load
-        // asynchronously anyway?
-        // Play should automatically serve a gzipped version of the
-        // combined-*-min.js files; the Makefile script gzips them.
-        xml.Unparsed("""
         <script>
-        if (Modernizr.touch)
-          document.write('<script src="/classpath/js/combined-debiki-touch.min.js"><\/script>');
-        else
-          document.write('<script src="/classpath/js/combined-debiki-desktop.min.js"><\/script>');
+        var debiki = {{ scriptLoad: $.Deferred() }};
+        Modernizr.load({{
+          test: Modernizr.touch,
+          yep: '/classpath/js/combined-debiki-touch.min.js',
+          nope: '/classpath/js/combined-debiki-desktop.min.js',
+          complete: function() {{ debiki.scriptLoad.resolve(); }}
+        }});
         </script>
-        """)
       } else {
-         <script src='/classpath/js/diff_match_patch.js'></script> ++
-         <script src='/classpath/js/html-sanitizer-minified.js'></script> ++
-         <script src='/classpath/js/jquery-cookie.js'></script> ++
-         <script src='/classpath/js/tagdog.js'></script> ++
-         <script src='/classpath/js/javascript-yaml-parser.js'></script> ++
-         <script>
-         Modernizr.load({{
-           test: Modernizr.touch,
-           nope: [
-             '/classpath/js/jquery-scrollable.js',
-             '/classpath/js/debiki-utterscroll.js',
-             '/classpath/js/bootstrap-tooltip.js']
-           }});
-         </script> ++
-         <script src='/classpath/js/debiki.js'></script>
+        <script>
+        var debiki = {{ scriptLoad: $.Deferred() }};
+        Modernizr.load({{
+          test: Modernizr.touch,
+          nope: [
+            '/classpath/js/jquery-scrollable.js',
+            '/classpath/js/debiki-utterscroll.js',
+            '/classpath/js/bootstrap-tooltip.js'],
+          both: [
+            '/classpath/js/diff_match_patch.js',
+            '/classpath/js/html-sanitizer-minified.js',
+            '/classpath/js/jquery-cookie.js',
+            '/classpath/js/tagdog.js',
+            '/classpath/js/javascript-yaml-parser.js',
+            '/classpath/js/debiki.js'],
+          complete: function() {{ debiki.scriptLoad.resolve(); }}
+        }});
+        </script>
       }
     }
       <link type="text/css" rel="stylesheet" href="/classpath/css/debiki/jquery-ui-1.8.16.custom.css"/>

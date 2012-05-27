@@ -5280,7 +5280,10 @@ function initAndDrawSvg() {
 
 (function() {
   var $posts = $('.debiki .dw-p:not(.dw-p-ttl)');
-  function initPostsThreadStep1() { $posts.each($initPostsThreadStep1) }
+  function initPostsThreadStep1() {
+    $posts.each($initPostsThreadStep1);
+    $('html').removeClass('dw-render-actions-pending');
+  }
   function initPostsThreadStep2() { $posts.each($initPostsThreadStep2) }
   function initPostsThreadStep3() { $posts.each($initPostsThreadStep3) }
   function initPostsThreadStep4() { $posts.each($initPostsThreadStep4) }
@@ -5297,14 +5300,7 @@ function initAndDrawSvg() {
     if ($.browser.version < '9') $body.addClass('dw-ua-lte-ie8');
   }
 
-  $body.addClass('dw-pri');
   Me.refreshProps();
-
-  // The root post might be too narrow and stuff might float drop,
-  // rersulting in SVG arrows pointing incorrectly. Avoid this, by
-  // making the root thread wide, whilst rendering the page. When done,
-  // call resizeRootThread, to size it properly (see below).
-  $('.dw-depth-0').parent().width(200200);
 
   // When you zoom in or out, the width of the root thread might change
   // a few pixels — then its parent should be resized so the root
@@ -5321,9 +5317,12 @@ function initAndDrawSvg() {
   steps.push(initPostsThreadStep4);
   steps.push(initAndDrawSvg);
   steps.push(scrollToUrlAnchorPost);
-  // Resize the article after the page has been rendered, so all inline
+  // Resize the article, now when the page has been rendered, and all inline
   // threads have been placed and can be taken into account.
-  steps.push(resizeRootThread);
+  steps.push(function() {
+    resizeRootThread();
+    $('html').removeClass('dw-render-layout-pending');
+  });
   if (!Modernizr.touch) steps.push(function() {
     initKeybdShortcuts();
     initUtterscroll();
