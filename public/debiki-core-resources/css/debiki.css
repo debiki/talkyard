@@ -1155,6 +1155,9 @@ key presses).*/
 *later*. Weird.) */
 .dw-pri .CodeMirror-scroll {
   height: auto;
+  overflow-y: hidden;
+  overflow-x: auto;
+  width: 100%;
 }
 
 .dw-name-or-alias {
