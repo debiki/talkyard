@@ -622,23 +622,25 @@ class DebateHtml(val debate: Debate, val pageTrust: PageTrust) {
     val postTitleXml: NodeSeq = {
       // Currently only the page body can have a title.
       if (post.id != Page.BodyId) Nil
-      else debate.titlePost map { titlePost =>
-        // The title is a post, itself.
-        // Therefore this XML is almost identical to the XML
-        // for the post that this title entitles.
-        // In the future, I could make a recursive call to
-        // _renderPost, to render the title. Then it would be
-        // possible to reply-inline to the title.
-        // (Don't wrap the <h1> in a <header>; there's no need to wrap single
-        // tags in a <header>.)
-        <div id={"post-"+ titlePost.id} class='dw-p dw-p-ttl'>
-          <div class='dw-p-bd'>
-            <div class='dw-p-bd-blk'>
-              <h1 class='dw-p-ttl'>{titlePost.text}</h1>
+      else debate.titlePost match {
+        case Some(titlePost) if titlePost.text.nonEmpty =>
+          // The title is a post, itself.
+          // Therefore this XML is almost identical to the XML
+          // for the post that this title entitles.
+          // In the future, I could make a recursive call to
+          // _renderPost, to render the title. Then it would be
+          // possible to reply-inline to the title.
+          // (Don't wrap the <h1> in a <header>; there's no need to wrap single
+          // tags in a <header>.)
+          <div id={"post-"+ titlePost.id} class='dw-p dw-p-ttl'>
+            <div class='dw-p-bd'>
+              <div class='dw-p-bd-blk'>
+                <h1 class='dw-p-ttl'>{titlePost.text}</h1>
+              </div>
             </div>
           </div>
-        </div>
-      } getOrElse Nil
+        case _ => Nil
+      }
     }
 
     // Make he root post wrap its (floating) children,
