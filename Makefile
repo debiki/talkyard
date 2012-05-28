@@ -45,10 +45,12 @@ ${RHINOJAR}:
 
 HtmlSanitizerJs: ${CLASSDIR}HtmlSanitizerJs.class
 ${CLASSDIR}HtmlSanitizerJs.class: app/compiledjs/HtmlSanitizerJs.java
+	mkdir -p ${DESTDIR}
 	javac $< -d ${DESTDIR}
 
 ShowdownJs: ${CLASSDIR}ShowdownJs.class
 ${CLASSDIR}ShowdownJs.class: app/compiledjs/ShowdownJs.java
+	mkdir -p ${DESTDIR}
 	javac $< -d ${DESTDIR}
 
 
