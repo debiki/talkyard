@@ -66,13 +66,20 @@ cleanjs:
 PUBLIC_JS_DIR=target/scala-2.9.1/classes/public/debiki-core-resources/js/
 PUBLIC_JS_LIB_DIR=target/scala-2.9.1/classes/public/debiki-core-resources/lib/
 
-JS_DESKTOP_MIN_JS = ${PUBLIC_JS_DIR}combined-debiki-desktop.min.js
-JS_TOUCH_MIN_JS = ${PUBLIC_JS_DIR}combined-debiki-touch.min.js
-JS_LOGIN_MIN_JS = ${PUBLIC_JS_DIR}combined-debiki-login.min.js
+JS_DESKTOP_MIN_JS=${PUBLIC_JS_DIR}combined-debiki-desktop.min.js
+JS_TOUCH_MIN_JS=${PUBLIC_JS_DIR}combined-debiki-touch.min.js
+JS_LOGIN_MIN_JS=${PUBLIC_JS_DIR}combined-debiki-login.min.js
 
-JS_DESKTOP_MIN_JS_GZ = ${JS_DESKTOP_MIN_JS}.gz
-JS_TOUCH_MIN_JS_GZ = ${JS_TOUCH_MIN_JS}.gz
-JS_LOGIN_MIN_JS_GZ = ${JS_LOGIN_MIN_JS}.gz
+JS_DESKTOP_MIN_JS_GZ=${JS_DESKTOP_MIN_JS}.gz
+JS_TOUCH_MIN_JS_GZ=${JS_TOUCH_MIN_JS}.gz
+JS_LOGIN_MIN_JS_GZ=${JS_LOGIN_MIN_JS}.gz
+
+DEBIKI_JS=${PUBLIC_JS_DIR}debiki.js
+DEBIKI_MIN_JS=${PUBLIC_JS_DIR}debiki.min.js
+
+${DEBIKI_MIN_JS}: ${DEBIKI_JS}
+	# no: uglifyjs $^ > $@    because results in corrupt Javascript
+	java -jar scratch/yuicompressor-2.4.6.jar --line-break 280 --charset utf8 -o $@ $^
 
 JS_COMMON_SRC = \
   ${PUBLIC_JS_DIR}diff_match_patch.js \
@@ -93,14 +100,14 @@ JS_LOGIN_SRC = \
 
 JS_TOUCH_SRC = \
   ${JS_COMMON_SRC} \
-  ${PUBLIC_JS_DIR}debiki.js
+  ${DEBIKI_MIN_JS}
 
 # For now, don't include JS_LOGIN_SRC. I'll load those files one at a time,
 # so I don't have to rewrite that much Javascript right now.
 JS_DESKTOP_SRC = \
   ${JS_COMMON_SRC} \
   ${JS_DESKTOP_ONLY_SRC} \
-  ${PUBLIC_JS_DIR}debiki.js
+  ${DEBIKI_MIN_JS}
 
 combine_and_gzip_javascript: ${JS_DESKTOP_MIN_JS_GZ} ${JS_TOUCH_MIN_JS_GZ} ${JS_LOGIN_MIN_JS_GZ}
 
