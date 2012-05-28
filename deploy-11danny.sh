@@ -13,11 +13,7 @@ if [ ! -z "`git status --porcelain`" ]; then
 fi
 
 # Build distribution.
-# First, obfuscate debiki.js:
-./yui.sh compress
 $play dist
-# Restore original debiki.js
-./yui.sh undo
 unzip -d dist/ dist/debiki-app-play-1.0-SNAPSHOT.zip
 
 ssh_ec2_user="ssh -i /home/kajmagnus/debiki/hosting/amazon/debiki-az-ec2-keypair-1.pem"
