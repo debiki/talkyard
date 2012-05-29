@@ -1183,7 +1183,8 @@ var html = (function(html4) {
    *     names and values, where a null value means to omit the attribute.
    */
   function sanitizeAttribs(
-      tagName, attribs, opt_naiveUriRewriter, opt_nmTokenPolicy) {
+      tagName, attribs, opt_naiveUriRewriter, opt_nmTokenPolicy,
+      opt_dataPolicy) {
     for (var i = 0; i < attribs.length; i += 2) {
       var attribName = attribs[i];
       var value = attribs[i + 1];
@@ -1194,7 +1195,10 @@ var html = (function(html4) {
            html4.ATTRIBS.hasOwnProperty(attribKey))) {
         atype = html4.ATTRIBS[attribKey];
       }
-      if (atype !== null) {
+      if (attribName === 'data') {
+        // [KajMagnus@Debiki] (For now, ignore `atype`. Simpler, for now.)
+        value = opt_dataPolicy ? opt_dataPolicy(value) : null;
+      } else if (atype !== null) {
         switch (atype) {
           case html4.atype['NONE']: break;
           case html4.atype['SCRIPT']:
@@ -1269,11 +1273,13 @@ var html = (function(html4) {
    * @return {function(string, Array.<?string>)} A tagPolicy suitable for
    *     passing to html.sanitize.
    */
-  function makeTagPolicy(opt_naiveUriRewriter, opt_nmTokenPolicy) {
+  function makeTagPolicy(opt_naiveUriRewriter, opt_nmTokenPolicy,
+      opt_dataPolicy) {
     return function(tagName, attribs) {
       if (!(html4.ELEMENTS[tagName] & html4.eflags['UNSAFE'])) {
         return sanitizeAttribs(
-            tagName, attribs, opt_naiveUriRewriter, opt_nmTokenPolicy);
+            tagName, attribs, opt_naiveUriRewriter, opt_nmTokenPolicy,
+            opt_dataPolicy);
       }
     };
   }
@@ -1300,9 +1306,13 @@ var html = (function(html4) {
    * @param {function(?string): ?string} opt_nmTokenPolicy A transform to apply
    *     to attributes containing HTML names, element IDs, and space-separated
    *     lists of classes.  If not given, such attributes are left unchanged.
+   * @param opt_dataPolicy Transforms data attribute values. If not specified,
+   *     then no data attrs are allowed.
    */
-  function sanitize(inputHtml, opt_naiveUriRewriter, opt_nmTokenPolicy) {
-    var tagPolicy = makeTagPolicy(opt_naiveUriRewriter, opt_nmTokenPolicy);
+  function sanitize( inputHtml, opt_naiveUriRewriter, opt_nmTokenPolicy,
+      opt_dataPolicy) {
+    var tagPolicy = makeTagPolicy(opt_naiveUriRewriter, opt_nmTokenPolicy,
+        opt_dataPolicy);
     return sanitizeWithPolicy(inputHtml, tagPolicy);
   }
 
