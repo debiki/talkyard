@@ -93,19 +93,24 @@ object DebateHtml {
    * Converts markdown to xml.
    */
   def markdownToSafeHtml(source: String, hostAndPort: String,
-        makeLinksNofollow: Boolean): NodeSeq
+        makeLinksNofollow: Boolean, allowClassIdDataAttrs: Boolean): NodeSeq
         = Stats.time("markdownToSafeHtml") {
     val htmlTextUnsafe =
        (new compiledjs.ShowdownJsImpl()).makeHtml(source, hostAndPort)
-    sanitizeHtml(htmlTextUnsafe, makeLinksNofollow)
+    sanitizeHtml(htmlTextUnsafe, makeLinksNofollow, allowClassIdDataAttrs)
   }
 
 
   def sanitizeHtml(htmlTextUnsafe: String,
-        makeLinksNofollow: Boolean): NodeSeq = {
+        makeLinksNofollow: Boolean, allowClassIdDataAttrs: Boolean): NodeSeq = {
 
     var htmlTextSafe: String =
-      (new compiledjs.HtmlSanitizerJsImpl()).sanitizeHtml(htmlTextUnsafe)
+      (new compiledjs.HtmlSanitizerJsImpl()).googleCajaSanitizeHtml(
+        htmlTextUnsafe,
+        // Cannot specify param names, regrettably, since we're calling
+        // Java / compiled Javascript code.
+        allowClassIdDataAttrs, // allowClassAndIdAttr
+        allowClassIdDataAttrs) // allowDataAttr
 
     // As of 2011-08-18 the Google Caja js html sanitizer strips
     // target='_blank', (Seems to be a bug:
@@ -437,6 +442,7 @@ class DebateHtml(val debate: Debate, val pageTrust: PageTrust) {
     val sourceText = vipo.text
     val isRootOrArtclQstn = vipo.id == rootPostId ||
         vipo.meta.isArticleQuestion
+    val isArticle = vipo.id == Page.BodyId
 
     // COULD move to class Markup?
     // Use nofollow links in people's comments, so Google won't punish
@@ -447,7 +453,8 @@ class DebateHtml(val debate: Debate, val pageTrust: PageTrust) {
       case "dmd0" =>
         // Debiki flavored markdown.
         val html = markdownToSafeHtml(
-           sourceText, config.hostAndPort, makeNofollowLinks)
+           sourceText, config.hostAndPort, makeNofollowLinks,
+          allowClassIdDataAttrs = isArticle)
         (html, -1)
       case "para" =>
         textToHtml(sourceText)
@@ -459,7 +466,8 @@ class DebateHtml(val debate: Debate, val pageTrust: PageTrust) {
         // But nothing that makes text stand out, e.g. skip <h1>, <section>.
         */
       case "html" =>
-        (sanitizeHtml(sourceText, makeNofollowLinks), -1)
+        (sanitizeHtml(sourceText, makeNofollowLinks,
+           allowClassIdDataAttrs = isArticle), -1)
       case "code" =>
         (<pre class='prettyprint'>{sourceText}</pre>,
           sourceText.count(_ == '\n'))
@@ -484,7 +492,7 @@ class DebateHtml(val debate: Debate, val pageTrust: PageTrust) {
         // change to "para" for everything else.
         // Then warnDbgDie-default to "para" here not "dmd0".)
         (markdownToSafeHtml(sourceText, config.hostAndPort,
-           makeNofollowLinks), -1)
+           makeNofollowLinks, allowClassIdDataAttrs = isArticle), -1)
     }
 
     // Find any customized reply button text.
@@ -1519,7 +1527,10 @@ object AtomFeedXml {
       // Use the same cache for both plain HTML pages and Atom and RSS feeds?
       val rootPostHtml =
         DebateHtml.markdownToSafeHtml(pageBody.text, hostAndPort,
-           makeLinksNofollow = true) // for now
+           makeLinksNofollow = true, // for now
+           // No point in including id and class attrs in an atom html feed?
+           // No stylesheet or Javascript included that cares about them anyway?
+           allowClassIdDataAttrs = false)
 
       <entry>{
         /* Identifies the entry using a universally unique and

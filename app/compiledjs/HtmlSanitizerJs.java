@@ -7,6 +7,7 @@ package compiledjs;
 
 public interface HtmlSanitizerJs {
 
-  String sanitizeHtml(String html);
+  String googleCajaSanitizeHtml(String html, boolean allowClassAndIdAttr,
+        boolean allowDataAttr);
 
 }

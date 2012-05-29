@@ -1337,3 +1337,45 @@ if (typeof window !== 'undefined') {
   window['html'] = html;
   window['html_sanitize'] = html_sanitize;
 }
+
+
+
+/**
+ * Called from both Java and Javascript:
+ * Implements Java interface compiledjs.HtmlSanitizerJS,
+ * and is called by debiki.js.
+ *
+ * Placed in this file because this simplifies the compilation of all
+ * this stuff to Java bytecode.
+ *
+ *  / KajMagnus@Debiki
+ */
+function googleCajaSanitizeHtml(htmlTextUnsafe, allowClassAndIdAttr,
+    allowDataAttr) {
+  // Configure the sanitizer.
+  // 1. html-sanitizer.js's function sanitizeAttribs by default allows
+  // only the http/https/mailto URI schemes, and relative URLs
+  // (but not e.g. `javascript:'). This is reasonably safe?
+  // SECURITY COULD prevent URLs with any '?' though.
+  // SECURITY COULD prevent URLs starting with an IP number? (so cannot
+  // connect to local gateway)
+  // 2. sanitizeAttribs by default allows all id and class attributes.
+  // We don't want anyone to be able to use the .dw-* classes/ids though,
+  // so filter them out. Allow `debiki-' though, that's the public CSS API.
+  function uriPolicy(url) {
+    return url;
+  }
+  function classAndIdPolicy(token) {
+    if (!allowClassAndIdAttr) return '';
+    return /^dw-/.test(token) ? '' : token;
+  }
+  function dataIdPolicy(value) {
+    return allowDataAttr ? value : '';
+  }
+
+  return html_sanitize(htmlTextUnsafe, uriPolicy, classAndIdPolicy,
+      dataIdPolicy);
+}
+
+
+// vim: et ts=2 sw=2

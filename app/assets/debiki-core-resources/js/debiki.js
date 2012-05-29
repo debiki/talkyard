@@ -83,9 +83,9 @@ function isBlank(str) {
 }
 
 // Converts markdown to sanitized html.
-function markdownToSafeHtml(markdownSrc, hostAndPort) {
+function markdownToSafeHtml(markdownSrc, hostAndPort, sanitizerOptions) {
   var htmlTextUnsafe = markdownToUnsafeHtml(markdownSrc, hostAndPort);
-  var htmlTextSafe = sanitizeHtml(htmlTextUnsafe);
+  var htmlTextSafe = sanitizeHtml(htmlTextUnsafe, sanitizerOptions);
   return htmlTextSafe;
 }
 
@@ -95,15 +95,15 @@ function markdownToUnsafeHtml(markdownSrc, hostAndPort) {
   return htmlTextUnsafe;
 }
 
-function sanitizeHtml(htmlTextUnsafe) {
-  function urlX(url) {
-    if (/^https?:\/\//.test(url)) { return url; }
-  }
-  function idX(id) {
-    return id;
-  }
-
-  var htmlTextSafe = html_sanitize(htmlTextUnsafe, urlX, idX);
+/**
+ * Calls Google Caja JsHtmlSanitizer to sanitize the html.
+ *
+ * options.allowClassAndIdAttr = true/false
+ * options.allowDataAttribs = true/false
+ */
+function sanitizeHtml(htmlTextUnsafe, options) {
+  var htmlTextSafe = googleCajaSanitizeHtml(htmlTextUnsafe,
+      options.allowClassAndIdAttr, options.allowDataAttr);
   return htmlTextSafe;
 }
 
@@ -642,6 +642,10 @@ jQuery.fn.dwAuthorId = function() {
 // The root post need not be the article (if ?view=something-else specified).
 $.fn.dwIsRootPost = function() {
   return this.dwCheckIs('.dw-p').parent().is('.dw-depth-0');
+}
+
+$.fn.dwIsArticlePost = function() {
+  return this.dwCheckIs('.dw-p').is('.dw-ar-p');
 }
 
 $.fn.dwIsReply = function() {
@@ -3899,7 +3903,12 @@ function $updateEditFormPreview() {
   var markupType = $selectedMarkup.val();
   var markupSrc = $textarea.val();
   var htmlSafe = '';
-  var isForTitle = $i.closest('.dw-p').is('.dw-p-ttl');
+  var $post = $i.closest('.dw-p');
+  var isForTitle = $post.is('.dw-p-ttl');
+  var sanitizerOptions = {
+    allowClassAndIdAttr: $post.dwIsArticlePost(),
+    allowDataAttr: $post.dwIsArticlePost()
+  };
 
   switch (markupType) {
     case "para":
@@ -3910,7 +3919,8 @@ function $updateEditFormPreview() {
     case "dmd0":
       // Debiki flavored Markdown version 0.
       if (isForTitle) markupSrc = '<h1>'+ markupSrc +'</h1>';
-      htmlSafe = markdownToSafeHtml(markupSrc);
+      var hostAndPort = location.origin.replace(/https?:\/\//, '');
+      htmlSafe = markdownToSafeHtml(markupSrc, hostAndPort, sanitizerOptions);
       break;
     case "code":
       // (No one should use this markup for titles, insert no <h1>.)
@@ -3918,7 +3928,7 @@ function $updateEditFormPreview() {
       break;
     case "html":
       if (isForTitle) markupSrc = '<h1>'+ markupSrc +'</h1>';
-      htmlSafe = sanitizeHtml(markupSrc);
+      htmlSafe = sanitizeHtml(markupSrc, sanitizerOptions);
       break;
     default:
       die("Unknown markup [error DwE0k3w25]");
