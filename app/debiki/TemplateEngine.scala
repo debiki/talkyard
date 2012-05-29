@@ -531,7 +531,7 @@ object TemplateEngine {
             '/classpath/js/bootstrap-tooltip.js'],
           both: [
             '/classpath/js/diff_match_patch.js',
-            '/classpath/js/html-sanitizer-minified.js',
+            '/classpath/js/html-sanitizer-bundle.js',
             '/classpath/js/jquery-cookie.js',
             '/classpath/js/tagdog.js',
             '/classpath/js/javascript-yaml-parser.js',

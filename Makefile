@@ -4,7 +4,8 @@
 
 DESTDIR=target/scala-2.9.1/classes/
 CLASSDIR=${DESTDIR}compiledjs/
-JSDIR=modules/debiki-core/src/main/resources/toserve/js/
+HTML_SANITIZER_JS=app/assets/debiki-core-resources/js/html-sanitizer-bundle.js
+SHOWDOWN_JS=public/debiki-core-resources/js/wmd/showdown.js
 RHINOJAR=/mnt/data/dev/play/github/repository/local/rhino/js/1.7R2/jars/js.jar
 
 help:
@@ -17,8 +18,7 @@ compile_javascript: \
 		${CLASSDIR}HtmlSanitizerJsImpl.class \
 		${CLASSDIR}ShowdownJsImpl.class
 
-HtmlSanitizerJsImpl: ${CLASSDIR}HtmlSanitizerJsImpl.class
-${CLASSDIR}HtmlSanitizerJsImpl.class: ${CLASSDIR}HtmlSanitizerJs.class ${RHINOJAR} ${JSDIR}html-sanitizer-minified.js
+${CLASSDIR}HtmlSanitizerJsImpl.class: ${CLASSDIR}HtmlSanitizerJs.class ${RHINOJAR} ${HTML_SANITIZER_JS}
 	java -cp ${RHINOJAR}:${DESTDIR} \
 	  org.mozilla.javascript.tools.jsc.Main \
 	  -opt 9 \
@@ -26,10 +26,9 @@ ${CLASSDIR}HtmlSanitizerJsImpl.class: ${CLASSDIR}HtmlSanitizerJs.class ${RHINOJA
 	  -package compiledjs \
 	  -d ${DESTDIR} \
 	  -o HtmlSanitizerJsImpl \
-          ${JSDIR}html-sanitizer-minified.js
+	  ${HTML_SANITIZER_JS}
 
-ShowdownJsImpl: ${CLASSDIR}ShowdownJsImpl.class
-${CLASSDIR}ShowdownJsImpl.class: ${CLASSDIR}ShowdownJs.class ${RHINOJAR} ${JSDIR}wmd/showdown.js
+${CLASSDIR}ShowdownJsImpl.class: ${CLASSDIR}ShowdownJs.class ${RHINOJAR} ${SHOWDOWN_JS}
 	java -cp ${RHINOJAR}:${DESTDIR} \
 	  org.mozilla.javascript.tools.jsc.Main \
 	  -opt 9 \
@@ -37,7 +36,7 @@ ${CLASSDIR}ShowdownJsImpl.class: ${CLASSDIR}ShowdownJs.class ${RHINOJAR} ${JSDIR
 	  -package compiledjs \
 	  -d ${DESTDIR} \
 	  -o ShowdownJsImpl \
-          ${JSDIR}wmd/showdown.js
+	  ${SHOWDOWN_JS}
 
 ${RHINOJAR}:
 	echo 'No Rhino jar, please run `play update`.'
@@ -83,7 +82,7 @@ ${DEBIKI_MIN_JS}: ${DEBIKI_JS}
 
 JS_COMMON_SRC = \
   ${PUBLIC_JS_DIR}diff_match_patch.js \
-  ${PUBLIC_JS_DIR}html-sanitizer-minified.js \
+  ${PUBLIC_JS_DIR}html-sanitizer-bundle.min.js \
   ${PUBLIC_JS_DIR}jquery-cookie.js \
   ${PUBLIC_JS_DIR}tagdog.js \
   ${PUBLIC_JS_DIR}javascript-yaml-parser.js
