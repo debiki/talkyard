@@ -1195,9 +1195,9 @@ var html = (function(html4) {
            html4.ATTRIBS.hasOwnProperty(attribKey))) {
         atype = html4.ATTRIBS[attribKey];
       }
-      if (attribName === 'data') {
+      if (attribName.match(/^data-/)) {
         // [KajMagnus@Debiki] (For now, ignore `atype`. Simpler, for now.)
-        value = opt_dataPolicy ? opt_dataPolicy(value) : null;
+        value = opt_dataPolicy ? opt_dataPolicy(attribName, value) : null;
       } else if (atype !== null) {
         switch (atype) {
           case html4.atype['NONE']: break;
@@ -1359,6 +1359,7 @@ function googleCajaSanitizeHtml(htmlTextUnsafe, allowClassAndIdAttr,
   // SECURITY COULD prevent URLs with any '?' though.
   // SECURITY COULD prevent URLs starting with an IP number? (so cannot
   // connect to local gateway)
+  // SECURITY write tests for HTML sanitization, for both article and comments.
   // 2. sanitizeAttribs by default allows all id and class attributes.
   // We don't want anyone to be able to use the .dw-* classes/ids though,
   // so filter them out. Allow `debiki-' though, that's the public CSS API.
@@ -1369,12 +1370,11 @@ function googleCajaSanitizeHtml(htmlTextUnsafe, allowClassAndIdAttr,
     if (!allowClassAndIdAttr) return '';
     return /^dw-/.test(token) ? '' : token;
   }
-  function dataIdPolicy(value) {
-    return allowDataAttr ? value : '';
+  function dataPolicy(attrName, value) {
+    return allowDataAttr ? value : null;
   }
 
-  return html_sanitize(htmlTextUnsafe, uriPolicy, classAndIdPolicy,
-      dataIdPolicy);
+  return html_sanitize(htmlTextUnsafe, uriPolicy, classAndIdPolicy, dataPolicy);
 }
 
 
