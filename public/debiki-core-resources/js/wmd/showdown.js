@@ -1372,3 +1372,15 @@ var Showdown = Attacklab.showdown;
 if (Attacklab.fileLoaded) {
 	Attacklab.fileLoaded("showdown.js");
 }
+
+// Implement Java interface compiledjs.ShowdownJs:
+function makeHtml(source, hostAndPort) {
+  // Avoid error: org.mozilla.javascript.EvaluatorException: "The choice of
+  //   Java constructor replace matching JavaScript argument types
+  //   (function,string) is ambiguous"
+  // by calling `new String()` to convert from java.lang.String to
+  // Javascript strings.
+  var converter = new Showdown.converter();
+  return converter.makeHtml(new String(source), new String(hostAndPort));
+}
+
