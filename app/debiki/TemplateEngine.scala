@@ -522,6 +522,10 @@ object TemplateEngine {
         </script>
       } else {
         <script>
+        // Play doesn't make `require` and `exports` available in dev builds.
+        window.require = function() {{}};
+        window.exports = {{}};
+
         var debiki = {{ scriptLoad: $.Deferred() }};
         Modernizr.load({{
           test: Modernizr.touch,

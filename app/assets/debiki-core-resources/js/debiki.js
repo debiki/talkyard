@@ -54,6 +54,10 @@ attr() prepends 'http://server/.../page' to the href.  Related:
 
 }}}*/
 
+var html_sanitizer_bundle =
+    require('html_sanitizer_bundle') ||  // prod builds
+    { googleCajaSanitizeHtml: googleCajaSanitizeHtml };  // dev builds
+
 if (!window.Debiki)
   window.Debiki = { v0: {} };
 
@@ -102,8 +106,8 @@ function markdownToUnsafeHtml(markdownSrc, hostAndPort) {
  * options.allowDataAttribs = true/false
  */
 function sanitizeHtml(htmlTextUnsafe, options) {
-  var htmlTextSafe = googleCajaSanitizeHtml(htmlTextUnsafe,
-      options.allowClassAndIdAttr, options.allowDataAttr);
+  var htmlTextSafe = html_sanitizer_bundle.googleCajaSanitizeHtml(
+      htmlTextUnsafe, options.allowClassAndIdAttr, options.allowDataAttr);
   return htmlTextSafe;
 }
 

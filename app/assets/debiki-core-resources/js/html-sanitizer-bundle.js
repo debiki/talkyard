@@ -1378,4 +1378,9 @@ function googleCajaSanitizeHtml(htmlTextUnsafe, allowClassAndIdAttr,
 }
 
 
+// Without this, compilation to Java bytecode fails.
+if (typeof exports === 'undefined') exports = {};
+
+exports.googleCajaSanitizeHtml = googleCajaSanitizeHtml;
+
 // vim: et ts=2 sw=2

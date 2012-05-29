@@ -80,12 +80,17 @@ ${DEBIKI_MIN_JS}: ${DEBIKI_JS}
 	# no: uglifyjs $^ > $@    because results in corrupt Javascript
 	java -jar scratch/yuicompressor-2.4.6.jar --line-break 280 --charset utf8 -o $@ $^
 
+# This file: ${PUBLIC_JS_DIR}html-sanitizer-bundle.min.js is included in debiki.min.js
+# by Play or Google Closure Compiler or something.
+
 JS_COMMON_SRC = \
   ${PUBLIC_JS_DIR}diff_match_patch.js \
-  ${PUBLIC_JS_DIR}html-sanitizer-bundle.min.js \
   ${PUBLIC_JS_DIR}jquery-cookie.js \
-  ${PUBLIC_JS_DIR}tagdog.js \
   ${PUBLIC_JS_DIR}javascript-yaml-parser.js
+
+# Depends on stuff in ${DEBIKI_MIN_JS}. (tagdog.js depends on html-sanitizer-bundle.js.)
+JS_COMMON_SRC_2 = \
+  ${PUBLIC_JS_DIR}tagdog.js
 
 JS_DESKTOP_ONLY_SRC = \
   ${PUBLIC_JS_DIR}jquery-scrollable.js \
@@ -99,14 +104,16 @@ JS_LOGIN_SRC = \
 
 JS_TOUCH_SRC = \
   ${JS_COMMON_SRC} \
-  ${DEBIKI_MIN_JS}
+  ${DEBIKI_MIN_JS} \
+  ${JS_COMMON_SRC_2}
 
 # For now, don't include JS_LOGIN_SRC. I'll load those files one at a time,
 # so I don't have to rewrite that much Javascript right now.
 JS_DESKTOP_SRC = \
   ${JS_COMMON_SRC} \
   ${JS_DESKTOP_ONLY_SRC} \
-  ${DEBIKI_MIN_JS}
+  ${DEBIKI_MIN_JS} \
+  ${JS_COMMON_SRC_2}
 
 combine_and_gzip_javascript: ${JS_DESKTOP_MIN_JS_GZ} ${JS_TOUCH_MIN_JS_GZ} ${JS_LOGIN_MIN_JS_GZ}
 
