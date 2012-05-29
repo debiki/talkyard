@@ -137,8 +137,18 @@ ${JS_TOUCH_MIN_JS_GZ}: ${JS_TOUCH_MIN_JS}
 ${JS_LOGIN_MIN_JS_GZ}: ${JS_LOGIN_MIN_JS}
 	gzip -c $^ > $@
 
+clean_combined_js:
+	rm ${JS_DESKTOP_MIN_JS}
+	rm ${JS_TOUCH_MIN_JS}
+	rm ${JS_LOGIN_MIN_JS}
+	rm ${JS_DESKTOP_MIN_JS_GZ}
+	rm ${JS_TOUCH_MIN_JS_GZ}
+	rm ${JS_LOGIN_MIN_JS_GZ}
 
 
-.PHONY: cleanjs
+
+clean: cleanjs clean_combined_js
+
+.PHONY: cleanjs clean_combined_js clean
 
 # vim: list
