@@ -98,6 +98,12 @@ if (!debiki.Utterscroll) debiki.Utterscroll = {};
  */
 debiki.Utterscroll.enable = function(options) {
 
+  // Don't call console.debug in IE 9 (and 7 & 8); it's not available unless
+  // the dev tools window is open. Use this safe wrapper instead of
+  // console.log. (COULD make separate Prod and Dev builds, filter out logging)
+  var debug = (typeof console === 'undefined' || !console.debug) ?
+      function() {} : function() { console.debug.apply(console, arguments); }
+
   var defaults = {
     defaultScrollstoppers: 'a, area, button, command, input, keygen, label,'+
         ' option, select, textarea, video',  // ?? canvas, embed, object
@@ -206,7 +212,7 @@ debiki.Utterscroll.enable = function(options) {
 
     // If there's no text in the event.target, then start scrolling.
     var containsText = searchForTextIn($target);
-    console.log(event.target.nodeName +' containsText: '+ containsText);
+    debug(event.target.nodeName +' containsText: '+ containsText);
     if (!containsText)
       return startScroll(event);
 
@@ -237,7 +243,7 @@ debiki.Utterscroll.enable = function(options) {
 
     // Start scrolling if mouse press happened not very close to text.
     var dist = distFromTextToEvent($target, event);
-    console.log('Approx dist from $target text to mouse: '+ dist);
+    debug('Approx dist from $target text to mouse: '+ dist);
     if (dist === -1 || dist > 55)
       return startScroll(event);
 
@@ -368,7 +374,7 @@ debiki.Utterscroll.enable = function(options) {
       var dist2 = distX * distX + distY * distY;
       if (dist2 < minDist2) {
         minDist2 = dist2;
-        // console.log('New max dist from: '+ myOffs.left +','+ myOffs.top +
+        // debug('New max dist from: '+ myOffs.left +','+ myOffs.top +
         //  ' to: '+ mouseOffs.x +','+ mouseOffs.y +' is: '+ dist2);
       }
     });
@@ -448,7 +454,7 @@ debiki.Utterscroll.enable = function(options) {
     }
 
     /*
-    console.log(
+    debug(
       ' clnt: '+ event.clientX +', '+ event.clientY +
       ' strt: '+ startPos.x +', '+ startPos.y +
       origDebug +
