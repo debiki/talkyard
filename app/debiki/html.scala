@@ -406,6 +406,7 @@ class DebateHtml(val debate: Debate, val pageTrust: PageTrust) {
     val cssPostId = "post-"+ vipo.id
     val deletion = vipo.firstDelete.get
     val deleter = debate.authorOf_!(deletion)
+    // COULD add itemscope and itemtype attrs, http://schema.org/Comment
     val html =
     <div id={cssPostId} class='dw-p dw-p-dl'>
       <div class='dw-p-hd'>{
