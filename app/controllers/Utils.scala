@@ -7,6 +7,7 @@ package controllers
 import com.debiki.v0._
 import debiki._
 import debiki.DebikiHttp._
+import com.debiki.v0.{liftweb => lw}
 import java.{util => ju}
 import play.api._
 import play.api.data._
@@ -23,16 +24,25 @@ object Utils extends Results with http.ContentTypes {
    * enters the terrible Quirks mode. Also sets the Content-Type header.
    */
   def OkHtml(htmlNode: xml.NodeSeq) =
-    Ok(_addDoctype(htmlNode)) as HTML
+    Ok(_serializeHtml(htmlNode)) as HTML
 
   def ForbiddenHtml(htmlNode: xml.NodeSeq) =
-    Forbidden(_addDoctype(htmlNode)) as HTML
+    Forbidden(_serializeHtml(htmlNode)) as HTML
 
   def BadReqHtml(htmlNode: xml.NodeSeq) =
-    BadRequest(_addDoctype(htmlNode)) as HTML
+    BadRequest(_serializeHtml(htmlNode)) as HTML
 
-  private def _addDoctype(htmlNode: xml.NodeSeq): String =
-    "<!DOCTYPE html>\n"+ htmlNode.toString
+  /**
+   * Adds doctype and serializes to html using a real HTML5 writer.
+   *
+   * Some pros with using a real HTML5 writer: it won't escape '"' when found
+   * inside script tags (which is very annoying when you e.g. copy-paste
+   * Twitter's Follow Button <script> elem).
+   */
+  private def _serializeHtml(htmlNode: xml.NodeSeq): String = {
+    require(htmlNode.size == 1)
+    "<!DOCTYPE html>\n"+ lw.Html5.toString(htmlNode.head)
+  }
 
   /**
    * Prefixes `<?xml version=...>` to the post data.
@@ -45,7 +55,7 @@ object Utils extends Results with http.ContentTypes {
         : PlainResult = {
     if (isAjax(pageReq.request)) {
       val pageHtml = Debiki.TemplateEngine.renderPage(pageReq, rootPost)
-      Ok(pageHtml) as HTML
+      OkHtml(pageHtml)
     } else {
       val viewRoot =
         if (rootPost.isDefault) ""
