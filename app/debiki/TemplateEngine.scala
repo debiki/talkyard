@@ -8,9 +8,9 @@ import com.debiki.v0._
 import controllers.Actions.PageRequest
 import play.api.Play
 import play.api.Play.current
-import xml.{Node, NodeSeq, Text}
 import Prelude._
 import TemplateEngine._
+import xml.{MetaData, Node, NodeSeq, Text}
 
 
 /**
@@ -65,6 +65,8 @@ class TemplateEngine(val pageCache: PageCache) {
     }
 
     // Create initial template data.
+    var curHtmlAttrs: MetaData = xml.Null
+    var curBodyAttrs: MetaData = xml.Null
     var curHeadTags: NodeSeq = Nil
     var curBodyTags: NodeSeq =
       <div data-replace='#debiki-page'>{textAndComments}</div>
@@ -90,10 +92,21 @@ class TemplateEngine(val pageCache: PageCache) {
     //this.logger.debug("To body:\n"+ bodyTags)
     // It seems the html5 parser adds empty <head> and <body> tags,
     // if they're missing.
+      val prntHtmlTagOpt = templ.html.headOption.filter(_.label == "html")
+      val prntBodyTagOpt = templ.html \ "body"
+
       val prntHeadTagsBeforeRepl =
          (templ.html \ "head").headOption.map(_.child).getOrElse(Nil)
       val prntBodyTagsBeforeRepl =
-         (templ.html \ "body").headOption.map(_.child).getOrElse(Nil)
+         prntBodyTagOpt.headOption.map(_.child).getOrElse(Nil)
+
+      // Merge parent head and body attributes.
+      prntHtmlTagOpt foreach { prntHtmlTag =>
+        curHtmlAttrs = curHtmlAttrs append prntHtmlTag.attributes
+      }
+      prntBodyTagOpt foreach { prntBodyTag =>
+        curBodyAttrs = curBodyAttrs append prntBodyTag.attributes
+      }
 
       // Replace parent template head tags with any corresponding tags found
       // in the more specific child and successor templates.
@@ -142,12 +155,12 @@ class TemplateEngine(val pageCache: PageCache) {
        "dw-ui-simple "+
        "dw-render-actions-pending "+
        "dw-render-layout-pending "
+    // COULD merge class attributes from all templates?
     val page =
       <html class={classes}>
         <head>{curHeadTags}</head>
-        <body>{curBodyTags ++ appendToBody}</body>
-      </html>
-
+        {<body>{curBodyTags ++ appendToBody}</body> % curBodyAttrs}
+      </html> % curHtmlAttrs
     page
   }
 
