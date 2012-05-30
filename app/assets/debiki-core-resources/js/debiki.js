@@ -123,6 +123,25 @@ function isoDateToMillis(dateStr) {
   return Date.parse(dateStr);
 }
 
+/**
+ * Creates dummy console.log etcetera functions, if console.log doesn't
+ * exist. Otherwise scripts break in IE (IE9 at least), where there is
+ * no console.log unless the dev tools window has been opened (click F12).
+ * Some scripts (e.g. jQuery UI) actually make calls to console.log
+ * in release builds, so I cannot simply remove all calls to console.log.
+ */
+if (typeof console === 'undefined' || !console.log) {
+  window.console = {
+    debug: function() {},
+    trace: function() {},
+    log: function() {},
+    info: function() {},
+    warn: function() {},
+    error: function() {}
+  };
+}
+
+
 //----------------------------------------
 // jQuery object extensions
 //----------------------------------------
