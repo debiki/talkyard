@@ -506,7 +506,7 @@ object TemplateEngine {
     breaking dwScrollIntoView (and other stuff?) in debiki.js.
     See: http://code.google.com/p/android/issues/detail?id=10775#c20   */}
     <meta name="viewport" content="initial-scale=1.0, minimum-scale=0.01"/>
-    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <meta charset="utf-8"/>
     {/* Concerning when/how to use a CDN for Modernizr, see:
       http://www.modernizr.com/news/modernizr-and-cdns
     And: "For best performance, you should have them follow after your
@@ -556,11 +556,10 @@ object TemplateEngine {
         </script>
       }
     }
-      {/* COULD remove type='text/css' */}
-      <link type="text/css" rel="stylesheet" href="/-/res/jquery-ui/jquery-ui-1.8.16.custom.css"/>
-      <link type="text/css" rel="stylesheet" href="/-/res/debiki.css"/>
+      <link rel="stylesheet" href="/-/res/jquery-ui/jquery-ui-1.8.16.custom.css"/>
+      <link rel="stylesheet" href="/-/res/debiki.css"/>
     <!--[if IE 7]>
-    <link type="text/css" rel="stylesheet" href="/-/res/debiki-lift-ie7.css"/>
+    <link rel="stylesheet" href="/-/res/debiki-lift-ie7.css"/>
     <![endif]-->
     <!-- Make this webapp a Weinre debug target, see:
          http://pmuellr.github.com/weinre/Running.html
@@ -599,7 +598,7 @@ object TemplateEngine {
         <title>{title}</title>
           <meta name="description" content=""/>
           <meta name="keywords" content=""/>
-          <link type="text/css" rel="stylesheet" href="/-/res/debiki-lift.css"/>
+          <link rel="stylesheet" href="/-/res/debiki-lift.css"/>
         <style>
           #template-info {{
           font-style: italic;
