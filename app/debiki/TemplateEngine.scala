@@ -520,7 +520,6 @@ object TemplateEngine {
     </script>
     See:
     http://stackoverflow.com/questions/1014203/best-way-to-use-googles-hosted-jquery-but-fall-back-to-my-hosted-library-on-goo
-    COULD: Rename /classpath/js/... to /lib/, since contains CSS & imgs too.
     */}
     {
       // The debiki.scriptLoad $.Deferred is resolved later by debiki.js.
@@ -529,8 +528,8 @@ object TemplateEngine {
         var debiki = {{ scriptLoad: $.Deferred() }};
         Modernizr.load({{
           test: Modernizr.touch,
-          yep: '/classpath/js/combined-debiki-touch.min.js',
-          nope: '/classpath/js/combined-debiki-desktop.min.js'
+          yep: '/-/res/combined-debiki-touch.min.js',
+          nope: '/-/res/combined-debiki-desktop.min.js'
         }});
         </script>
       } else {
@@ -543,24 +542,25 @@ object TemplateEngine {
         Modernizr.load({{
           test: Modernizr.touch,
           nope: [
-            '/classpath/js/jquery-scrollable.js',
-            '/classpath/js/debiki-utterscroll.js',
-            '/classpath/js/bootstrap-tooltip.js'],
+            '/-/res/jquery-scrollable.js',
+            '/-/res/debiki-utterscroll.js',
+            '/-/res/bootstrap-tooltip.js'],
           both: [
-            '/classpath/js/diff_match_patch.js',
-            '/classpath/js/html-sanitizer-bundle.js',
-            '/classpath/js/jquery-cookie.js',
-            '/classpath/js/tagdog.js',
-            '/classpath/js/javascript-yaml-parser.js',
-            '/classpath/js/debiki.js']
+            '/-/res/diff_match_patch.js',
+            '/-/res/html-sanitizer-bundle.js',
+            '/-/res/jquery-cookie.js',
+            '/-/res/tagdog.js',
+            '/-/res/javascript-yaml-parser.js',
+            '/-/res/debiki.js']
         }});
         </script>
       }
     }
-      <link type="text/css" rel="stylesheet" href="/classpath/css/debiki/jquery-ui-1.8.16.custom.css"/>
-      <link type="text/css" rel="stylesheet" href="/classpath/css/debiki.css"/>
+      {/* COULD remove type='text/css' */}
+      <link type="text/css" rel="stylesheet" href="/-/res/jquery-ui/jquery-ui-1.8.16.custom.css"/>
+      <link type="text/css" rel="stylesheet" href="/-/res/debiki.css"/>
     <!--[if IE 7]>
-    <link type="text/css" rel="stylesheet" href="/classpath/css/debiki-lift-ie7.css"/>
+    <link type="text/css" rel="stylesheet" href="/-/res/debiki-lift-ie7.css"/>
     <![endif]-->
     <!-- Make this webapp a Weinre debug target, see:
          http://pmuellr.github.com/weinre/Running.html
@@ -599,7 +599,7 @@ object TemplateEngine {
         <title>{title}</title>
           <meta name="description" content=""/>
           <meta name="keywords" content=""/>
-          <link type="text/css" rel="stylesheet" href="/classpath/css/debiki-lift.css"/>
+          <link type="text/css" rel="stylesheet" href="/-/res/debiki-lift.css"/>
         <style>
           #template-info {{
           font-style: italic;
@@ -608,12 +608,12 @@ object TemplateEngine {
           }}
         </style>
         <!-- CodeMirror editor -->
-          <link rel="stylesheet" href="/classpath/lib/codemirror/lib/codemirror.css"/>
-        <script src="/classpath/lib/codemirror/lib/codemirror.js"></script>
-        <script src="/classpath/lib/codemirror/mode/css/css.js"></script>
-        <script src="/classpath/lib/codemirror/mode/javascript/javascript.js"></script>
-        <script src="/classpath/lib/codemirror/mode/xml/xml.js"></script>
-        <script src="/classpath/lib/codemirror/mode/htmlmixed/htmlmixed.js"></script>
+        <link rel="stylesheet" href="/-/res/codemirror/lib/codemirror.css"/>
+        <script src="/-/res/codemirror/lib/codemirror.js"></script>
+        <script src="/-/res/codemirror/mode/css/css.js"></script>
+        <script src="/-/res/codemirror/mode/javascript/javascript.js"></script>
+        <script src="/-/res/codemirror/mode/xml/xml.js"></script>
+        <script src="/-/res/codemirror/mode/htmlmixed/htmlmixed.js"></script>
         <style>
           .CodeMirror {{
           border: 1px solid #eee;

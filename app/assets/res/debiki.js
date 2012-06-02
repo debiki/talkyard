@@ -3039,10 +3039,10 @@ var loadOpenIdResources = (function() {
     // in Dev builds. But that'd be 3 different cases! Postpone...)
     Modernizr.load({
       load: [
-        '/classpath/lib/openid-selector/css/openid.css',
-        '/classpath/lib/openid-selector/js/openid-jquery.js',
-        '/classpath/lib/openid-selector/js/openid-en.js',
-        '/classpath/js/popuplib.js'],
+        '/-/res/openid-selector/css/openid.css',
+        '/-/res/openid-selector/js/openid-jquery.js',
+        '/-/res/openid-selector/js/openid-en.js',
+        '/-/res/popuplib.js'],
       complete: function() {
         loadStatus.resolve();
       }
@@ -3057,7 +3057,7 @@ function initLoginOpenId() {
   if ($openid.is('.ui-dialog-content'))
     return; // already inited
 
-  openid.img_path = '/classpath/lib/openid-selector/images/';
+  openid.img_path = '/-/res/openid-selector/images/';
   openid.submitInPopup = submitLoginInPopup;
   // Keep default openid.cookie_expires, 1000 days
   // — COULD remove cookie on logout?
@@ -3567,11 +3567,11 @@ var $loadEditorDependencies = (function() {
     Modernizr.load({
       test: loadCodeMirror,
       yep: [
-        '/classpath/lib/codemirror/lib/codemirror.css',
-        '/classpath/lib/codemirror/lib/util/dialog.css', // search dialogs
-        '/classpath/lib/codemirror-2.25-custom.min.js'],
+        '/-/res/codemirror/lib/codemirror.css',
+        '/-/res/codemirror/lib/util/dialog.css', // search dialogs
+        '/-/res/codemirror-2.25-custom.min.js'],
       both: [
-        '/classpath/js/wmd/showdown.js'],
+        '/-/res/wmd/showdown.js'],
       complete: function() {
         loadStatus.resolve();
       }

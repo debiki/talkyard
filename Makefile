@@ -4,8 +4,8 @@
 
 DESTDIR=target/scala-2.9.1/classes/
 CLASSDIR=${DESTDIR}compiledjs/
-HTML_SANITIZER_JS=app/assets/debiki-core-resources/js/html-sanitizer-bundle.js
-SHOWDOWN_JS=public/debiki-core-resources/js/wmd/showdown.js
+HTML_SANITIZER_JS=app/assets/res/html-sanitizer-bundle.js
+SHOWDOWN_JS=public/res/wmd/showdown.js
 RHINOJAR=/mnt/data/dev/play/github/repository/local/rhino/js/1.7R2/jars/js.jar
 
 help:
@@ -62,8 +62,7 @@ cleanjs:
 # Combine some Javascript files, and gzip the resulting files, so Play will serve them
 # gzip compressed.
 
-PUBLIC_JS_DIR=target/scala-2.9.1/classes/public/debiki-core-resources/js/
-PUBLIC_JS_LIB_DIR=target/scala-2.9.1/classes/public/debiki-core-resources/lib/
+PUBLIC_JS_DIR=target/scala-2.9.1/classes/public/res/
 
 JS_DESKTOP_MIN_JS=${PUBLIC_JS_DIR}combined-debiki-desktop.min.js
 JS_TOUCH_MIN_JS=${PUBLIC_JS_DIR}combined-debiki-touch.min.js
@@ -99,8 +98,8 @@ JS_DESKTOP_ONLY_SRC = \
 
 JS_LOGIN_SRC = \
   ${PUBLIC_JS_DIR}popuplib.js \
-  ${PUBLIC_JS_LIB_DIR}openid-selector/js/openid-jquery.js \
-  ${PUBLIC_JS_LIB_DIR}openid-selector/js/openid-en.js
+  ${PUBLIC_JS_DIR}openid-selector/js/openid-jquery.js \
+  ${PUBLIC_JS_DIR}openid-selector/js/openid-en.js
 
 JS_TOUCH_SRC = \
   ${JS_COMMON_SRC} \

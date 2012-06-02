@@ -1,6 +1,6 @@
 /* vim: fdm=marker et ts=2 sw=2 tw=80 fo=tcqwn list
  *
- * Tips: List all CSS classes like so:
+ * Tips: List all CSS classes like so: (old `find`, finds nothing nowadays?)
  *   find debiki-core-basedir/src -type f -print0 | \
  *     xargs -0 egrep -ho "dw-[[:alnum:]-]+" | sort | uniq -c
  * Narrower:

@@ -17,8 +17,6 @@ GET   /-/api/login-openid-clbk  controllers.AppAuthOpenid.loginCallback
 GET   /-/api/logout             controllers.AppAuth.logout
 POST  /-/api/logout             controllers.AppAuth.logout
 
-# Static resources (weird folder paths because I'm migrating from Lift-Web to Play)
-GET   /classpath/css/debiki-lift.css  controllers.Assets.at(path="/public/debiki-app-lift-resources/", file="debiki-lift.css")
-GET   /classpath/*file        controllers.Assets.at(path="/public/debiki-core-resources", file)
-GET   /-/*file                controllers.Assets.at(path="/public/site-debiki.se-resources", file)
+GET   /-/*file                  controllers.Assets.at(path = "/public", file)
+
 
