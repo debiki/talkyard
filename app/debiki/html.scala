@@ -249,10 +249,8 @@ class DebateHtml(val debate: Debate, val pageTrust: PageTrust) {
         </div>)
     }
 
-    // (The root thread, .dw-depth-0, floats left, so clearfix its parent
-    // <div>, otherwise any <footer> margin-top will have no effect.)
     val cssThreadId = "dw-t-"+ rootPost.id
-    <div id={"page-"+ debate.id} class='debiki dw-debate ui-helper-clearfix'>
+    <div id={"page-"+ debate.id} class='debiki dw-debate'>
       <div class="dw-debate-info">{
         if (lastChange isDefined) {
           <p class="dw-last-changed">Last changed on
@@ -265,12 +263,12 @@ class DebateHtml(val debate: Debate, val pageTrust: PageTrust) {
       <div id={cssThreadId}
            class={"dw-t"+ cssArtclThread +" dw-depth-0 dw-hor"}>
       {
-        val renderedComment = _showComment(
-          rootPost.id, rootPost, horizontal = true)
+        val renderedComment = _showComment(rootPost.id, rootPost)
         val replyBtn = _replyBtnListItem(renderedComment.replyBtnText)
+
         renderedComment.html ++
         <div class='dw-t-vspace'/>
-        <ol class='dw-res ui-helper-clearfix'>{
+        <ol class='dw-res'>{
           _layoutComments(rootPost.id, 1, replyBtn, rootPostsReplies)
         }
         </ol>
@@ -278,6 +276,7 @@ class DebateHtml(val debate: Debate, val pageTrust: PageTrust) {
       </div>
     </div>
   }
+
 
   private def _replyBtnListItem(replyBtnText: NodeSeq): NodeSeq = {
     // Don't show the Rate and Flag buttons. An article-question
@@ -293,6 +292,7 @@ class DebateHtml(val debate: Debate, val pageTrust: PageTrust) {
       <a class='dw-a dw-a-edit'>Edits</a>
     </li>
   }
+
 
   private def _layoutComments(rootPostId: String, depth: Int,
                               parentReplyBtn: NodeSeq,
@@ -326,10 +326,6 @@ class DebateHtml(val debate: Debate, val pageTrust: PageTrust) {
       // than one reply.
       horizontal = (p.where.isDefined && depth == 1 && replies.length > 1) ||
                     isRootOrArtclQstn
-      (cssHoriz, cssClearfix) =
-          // Children will float, if horizontal. So clearafix .dw-res.
-          if (horizontal) (" dw-hor", " ui-helper-clearfix")
-          else ("", "")
       cssThreadDeleted = if (vipo.isTreeDeleted) " dw-t-dl" else ""
       cssArticleQuestion = if (isRootOrArtclQstn) " dw-p-art-qst" else ""
       postFitness = pageStats.ratingStatsFor(p.id).fitnessDefaultTags
@@ -345,7 +341,7 @@ class DebateHtml(val debate: Debate, val pageTrust: PageTrust) {
       val renderedComment: RenderedComment =
         if (vipo.isTreeDeleted) _showDeletedTree(vipo)
         else if (vipo.isDeleted) _showDeletedComment(vipo)
-        else _showComment(rootPostId, vipo, horizontal = horizontal)
+        else _showComment(rootPostId, vipo)
 
       val myReplyBtn =
         if (!isRootOrArtclQstn) Nil
@@ -366,17 +362,19 @@ class DebateHtml(val debate: Debate, val pageTrust: PageTrust) {
         if (replies.isEmpty && myReplyBtn.isEmpty) Nil
         // COULD delete only stuff *older* than the tree deletion.
         else if (vipo.isTreeDeleted) Nil
-        else <ol class={"dw-res"+ cssClearfix}>
+        else <ol class='dw-res'>
           { _layoutComments(rootPostId, depth + 1, myReplyBtn, replies) }
         </ol>
 
-      var thread =
+      var thread = {
+        val cssHoriz = if (horizontal) " dw-hor" else ""
         <li id={cssThreadId} class={"dw-t "+ cssDepth + cssInlineThread +
                cssFolded + cssHoriz + cssThreadDeleted + cssArticleQuestion}>{
           foldLink ++
           renderedComment.html ++
           repliesHtml
         }</li>
+      }
 
       // For inline comments, add info on where to place them.
       // COULD rename attr to data-where, that's search/replace:able enough.
@@ -431,8 +429,7 @@ class DebateHtml(val debate: Debate, val pageTrust: PageTrust) {
     templCmdNodes: NodeSeq)
 
 
-  private def _showComment(rootPostId: String, vipo: ViPo, horizontal: Boolean
-                              ): RenderedComment = {
+  private def _showComment(rootPostId: String, vipo: ViPo): RenderedComment = {
     def post = vipo.post
     val editsAppld: List[(Edit, EditApp)] = vipo.editsAppdDesc
     val lastEditApp = editsAppld.headOption.map(_._2)
@@ -652,12 +649,8 @@ class DebateHtml(val debate: Debate, val pageTrust: PageTrust) {
       }
     }
 
-    // Make he root post wrap its (floating) children,
-    // (Don't know if this is needed or other horizontal threads.)
-    val clearfix = if (horizontal) " ui-helper-clearfix" else ""
-
     val commentHtml =
-    <div id={cssPostId} class={"dw-p" + cssArtclPost + cutS + clearfix}>
+    <div id={cssPostId} class={"dw-p" + cssArtclPost + cutS}>
       { postTitleXml }
       <div class='dw-p-hd'>
         By { _linkTo(author)}{ dateAbbr(post.ctime, "dw-p-at")
@@ -1260,7 +1253,7 @@ class FormHtml(val config: HtmlConfig, xsrfToken: String,
       if (postToEdit.id == Page.BodyId) " dw-ar-p-bd"
       else ""
     val submitBtnText = "Submit as "+ userName.getOrElse("...")
-    <form class='dw-f dw-f-e ui-helper-clearfix'
+    <form class='dw-f dw-f-e'
           action={"?edit="+ postToEdit.id + _viewRoot}
           accept-charset='UTF-8'
           method='post'>

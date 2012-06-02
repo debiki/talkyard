@@ -674,12 +674,6 @@ and two folded threads would overlap, unless: */
   line-height: normal; /* or becomes 120% so -diff lines lines overlap */
 }
 
-.dw-p-bd {
-  float: left; /* wrap .dw-p-bd-blk:s, which float left */
-  width: 100%; /* or sometimes smaller than -p-hd, looks weird when
-                background color applied */
-}
-
 /* Don't place the body too close to the title. But cannot add margin to the
 title — that'd push away the .dw-p-hd away. So add to the -bd instead.
 <h2> should have a fairly large margin-top (because it's a h2), so skip it.
@@ -1944,6 +1938,22 @@ debiki-lift.css less inclusive? */
 
 .dw-data-yaml {
   display: none;
+}
+
+/* --- Clearfix  --- */
+
+/* A child, the root thread .dw-depth-0, floats left. */
+.debiki.dw-debate:after,
+.dw-t.dw-hor > .dw-res:after, /* children, .dw-t:s floats left */
+/* Makes the root post wrap its (floating) children,
+don't know if needed for other horizontal threads. */
+.dw-t.dw-hor > .dw-p:after,
+/* Its children, .dw-p-bd-blk:s, float left. */
+.dw-p-bd:after,
+/* I suppose some edit form child floats left? */
+.dw-f.dw-f-e:after {
+  /* Copied from jquery-ui-1.8.16.custom.css. */
+  content: "."; display: block; height: 0; clear: both; visibility: hidden;
 }
 
 
