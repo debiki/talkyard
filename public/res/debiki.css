@@ -1349,11 +1349,16 @@ form.dw-hoversubmit {
 
 .dw-fs-re > form {
   min-width: 210px;
+  padding-top: 0;
+  margin-top: 0;
 }
 
 .dw-fs-re label {
   display: inline-block;
   margin-right: 0.4em;
+  margin-top: 0;
+  float: none; /* cancel Twitter Bootstrap's float: left */
+  width: auto; /* cancel Twitter Bootstrap's width: NNNpx */
 }
 
 .dw-fs-re textarea {
