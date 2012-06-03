@@ -705,7 +705,12 @@ each other. I should rewrite, and try to avoid float:left?  (skip old IE) */
 }
 
 .dw-as {
-  margin: 4px 0px 9px 37px;
+  margin: 0 0 9px 37px;
+  /* Use padding-top not margin-top here, or there'll be a tiny space between
+  the post and the .dw-as, which triggers a certain $thread.mouseleave() in
+  debiki.js which, for inline actions, hides the action menu — just before
+  you're able to click any action. */
+  padding-top: 4px;
   position: relative; /* for position: absolute 'Click this...' tips, inside */
 }
 
