@@ -1153,6 +1153,18 @@ key presses).*/
   overflow-x: auto;
   width: 100%;
 }
+/* Show tabs. */
+.cm-tab:after {
+  content: "\21e5";
+  display: -moz-inline-block;
+  display: -webkit-inline-block;
+  display: inline-block;
+  width: 0px;
+  position: relative;
+  overflow: visible;
+  left: -1.4em;
+  color: #aaa;
+}
 
 .dw-name-or-alias {
   float: left; /* TODO: need not float everything? */

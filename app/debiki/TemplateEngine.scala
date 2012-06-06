@@ -606,36 +606,6 @@ object TemplateEngine {
           max-width: 40em;
           }}
         </style>
-        <!-- CodeMirror editor -->
-        <link rel="stylesheet" href="/-/res/codemirror/lib/codemirror.css"/>
-        <script src="/-/res/codemirror/lib/codemirror.js"></script>
-        <script src="/-/res/codemirror/mode/css/css.js"></script>
-        <script src="/-/res/codemirror/mode/javascript/javascript.js"></script>
-        <script src="/-/res/codemirror/mode/xml/xml.js"></script>
-        <script src="/-/res/codemirror/mode/htmlmixed/htmlmixed.js"></script>
-        <style>
-          .CodeMirror {{
-          border: 1px solid #eee;
-          font-size: 11px;
-          }}
-          .CodeMirror-scroll {{
-          height: auto;
-          overflow-y: hidden;
-          overflow-x: auto;
-          width: 100%;
-          }}
-          .cm-tab:after {{
-          content: "\21e5";
-          display: -moz-inline-block;
-          display: -webkit-inline-block;
-          display: inline-block;
-          width: 0px;
-          position: relative;
-          overflow: visible;
-          left: -1.4em;
-          color: #aaa;
-          }}
-        </style>
       </head>
       <body>
         <nav id="site-nav">
@@ -644,14 +614,6 @@ object TemplateEngine {
           </span>
         </nav>
         <div id='page' class='ui-helper-clearfix'>
-          <div id="sidebar">
-            <a href='/'>
-              <header id="header">
-                <h1>Debiki</h1>
-                <p id="slogan">— för de givande samtalen</p>
-              </header>
-            </a>
-          </div>
           <div id='content'>
             { prependToContent }
             <article>

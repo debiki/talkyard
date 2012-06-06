@@ -208,10 +208,13 @@ ol.dw-ui-list-item-marks li {
 
 #content {
   min-height: 70ex;
-  /* border-left: 2px solid #CCD; */
-  margin: 1em 0;
-  margin-left: 20.5ex; /* #sidebar-padding-left + width + 1 = 1.5 + 18 + 1 */
-  padding-left: 4em;
+  padding-left: 2em;
+}
+
+/* Draw a line to the left of the template source code. */
+#post-3 > .dw-p-bd > .dw-p-bd-blk > pre {
+  border-left: 2px solid #DDD;
+  padding-left: 2px;
 }
 
 footer, .footer {
