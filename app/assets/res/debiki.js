@@ -58,8 +58,10 @@ var html_sanitizer_bundle =
     require('html_sanitizer_bundle') ||  // prod builds
     { googleCajaSanitizeHtml: googleCajaSanitizeHtml };  // dev builds
 
-if (!window.Debiki)
-  window.Debiki = { v0: {} };
+if (!window.debiki) window.debiki = {};
+if (!debiki.v0) debiki.v0 = {};
+if (!debiki.internal) debiki.internal = {};
+
 
 //========================================
    (function(){
@@ -283,25 +285,26 @@ Settings.editFormSubmitter = function($form, debateId, rootPostId,
 // Customizable functions: Export setters
 //----------------------------------------
 
-Debiki.v0.setRatePostUrl = function(urlBuilder) {
+debiki.v0.setRatePostUrl = function(urlBuilder) {
   Settings.makeRatePostUrl = urlBuilder;
 };
 
-Debiki.v0.setReplyFormLoader = function(loader) {
+debiki.v0.setReplyFormLoader = function(loader) {
   Settings.replyFormLoader = loader;
 };
 
-Debiki.v0.setReplyFormSubmitter = function(submitter) {
+debiki.v0.setReplyFormSubmitter = function(submitter) {
   Settings.replyFormSubmitter = submitter;
 };
 
-Debiki.v0.setEditFormLoader = function(loader) {
+debiki.v0.setEditFormLoader = function(loader) {
   Settings.editFormLoader = loader;
 };
 
-Debiki.v0.setEditFormSubmitter = function(submitter) {
+debiki.v0.setEditFormSubmitter = function(submitter) {
   Settings.editFormSubmitter = submitter;
 };
+
 
 // Onload
 //----------------------------------------
@@ -313,7 +316,7 @@ Debiki.v0.setEditFormSubmitter = function(submitter) {
 // Shows all comments, which should have been hidden via the
 // DebateHtml$ hideCommentsStyle, in html.scala.
 // Only do this if the article itself is shown though.
-Debiki.v0.showInteractionsOnClick = function() {
+debiki.v0.showInteractionsOnClick = function() {
   // Always show comments if the page body is not the root post.
   // (That is, if the article isn't shown, but a plain comment.
   // Otherwise people could create "fake" pages, by creating 
@@ -350,6 +353,8 @@ function showInteractionsIfHidden() {
 
 
 // ------- Variables
+
+var internal = debiki.internal;
 
 // Debiki convention: Dialog elem tabindexes should vary from 101 to 109.
 // HTML generation code assumes this, too. See Debiki for Developers, #7bZG31.
@@ -2830,7 +2835,7 @@ function initLoginSimple() {
     // might take a second if the user is far away?
     $.post($loginForm.attr("action"), $loginForm.serialize(), 'html')
         .done(function(data) {
-          // Warning: Somewhat dupl code, see Debiki.handleLoginResponse.
+          // Warning: Somewhat dupl code, see internal.handleLoginResponse.
           // User info is now available in cookies.
           $login.dialog('close');
           fireLogin();
@@ -3108,8 +3113,8 @@ function submitLoginInPopup($openidLoginForm) {
     if (darkCover) {
       darkCover.style.visibility = 'hidden';
     }
-    if (Debiki.handleLoginResponse !== null) {
-      Debiki.handleLoginResponse({status: 'LoginFailed'});
+    if (internal.handleLoginResponse !== null) {
+      internal.handleLoginResponse({status: 'LoginFailed'});
     }
     if (waitCallback !== null) {
       window.clearInterval(waitCallback);
@@ -3118,8 +3123,8 @@ function submitLoginInPopup($openidLoginForm) {
   }
 
   // This callback is called from the return_to page:
-  Debiki.handleLoginResponse = function(result) {
-    Debiki.handleLoginResponse = null;
+  internal.handleLoginResponse = function(result) {
+    internal.handleLoginResponse = null;
     var errorMsg;
     if (/openid\.mode=cancel/.test(result.queryString)) {
       // This seems to happen if the user clicked No Thanks in some
@@ -5394,7 +5399,7 @@ function initAndDrawSvg() {
 
 // Don't remove the doctype comment below!
 /*
-Debiki.v0.setReplyFormLoader(function(debateId, postId, complete) {
+debiki.v0.setReplyFormLoader(function(debateId, postId, complete) {
 
   // Use datatype "text", because, in at least Chrome 9.0.597.19 beta:
   // 1. If data type "xml" is specified, the error
@@ -5419,7 +5424,7 @@ Debiki.v0.setReplyFormLoader(function(debateId, postId, complete) {
   }, 'text');
 });
 
-Debiki.v0.setEditFormLoader(function(debateId, rootPostId, postId, complete) {
+debiki.v0.setEditFormLoader(function(debateId, rootPostId, postId, complete) {
   // see comments in setReplyFormLoader above on using datatype text
   $.get('?edit='+ postId +'&view='+ rootPostId, function(editFormText) {
     var $editForm = $(editFormText).find('.dw-fs-ed');
@@ -5428,17 +5433,17 @@ Debiki.v0.setEditFormLoader(function(debateId, rootPostId, postId, complete) {
 });
 */
 
-Debiki.v0.setReplyFormSubmitter(function($form, debateId, rootPostId, postId) {
+debiki.v0.setReplyFormSubmitter(function($form, debateId, rootPostId, postId) {
   return $.post('?reply='+ postId +'&view='+ rootPostId,
       $form.serialize(), 'html');
 });
 
-Debiki.v0.setEditFormSubmitter(function($form, debateId, rootPostId, postId) {
+debiki.v0.setEditFormSubmitter(function($form, debateId, rootPostId, postId) {
   return $.post('?edit='+ postId +'&view='+ rootPostId, $form.serialize(),
       'html');
 });
 
-Debiki.v0.setRatePostUrl(function(debateId, rootPostId, postId) {
+debiki.v0.setRatePostUrl(function(debateId, rootPostId, postId) {
   return '?rate='+ postId +'&view='+ rootPostId;
 });
 

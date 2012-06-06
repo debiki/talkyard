@@ -6,7 +6,7 @@
   <title>Logged in</title>
   <script type='text/javascript'>
   function returnToOpener() {
-    window.opener.Debiki.handleLoginResponse({
+    window.opener.debiki.internal.handleLoginResponse({
       queryString: (window.location+'').split('?')[1],
       status: '@status'
     });
