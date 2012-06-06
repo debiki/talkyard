@@ -47,7 +47,7 @@ object Application extends mvc.Controller {
     val pageBody = pageReq.page_!.body_!
     val contentType = (pageReq.pagePath.suffix match {
       case "css" => CSS
-      case _ => unimplemented
+      case "js" => JAVASCRIPT
     })
     Ok(pageBody.text) as contentType
   }

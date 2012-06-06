@@ -159,6 +159,7 @@ object Global extends GlobalSettings {
       case ("", GET) =>
         pagePath.suffix match {
           case "css" => App.rawBody(pagePath)
+          case "js" => App.rawBody(pagePath)
           case _ => App.viewPost(pagePath, pageRoot)
         }
       // If invalid function specified:
