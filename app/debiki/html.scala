@@ -11,6 +11,7 @@ import scala.collection.JavaConversions._
 import _root_.scala.xml.{NodeSeq, Node, Elem, Text, XML, Attribute}
 import FlagReason.FlagReason
 import Prelude._
+import DebikiHttp._
 
 
 abstract class HtmlConfig {
@@ -242,12 +243,8 @@ class DebateHtml(val debate: Debate, val pageTrust: PageTrust) {
     val cssArtclThread =
       if (pageRoot.id == Page.BodyId) " dw-ar-t" else ""
     val rootPostsReplies = pageRoot.findChildrenIn(debate)
-    val rootPost: ViPo = pageRoot.findOrCreatePostIn(debate) getOrElse {
-      return (
-        <div id={debate.guid}>
-          <div>Not found: {pageRoot.id}.</div>
-        </div>)
-    }
+    val rootPost: ViPo = pageRoot.findOrCreatePostIn(debate) getOrElse
+       throwNotFound("DwE0PJ404", "Post not found: "+ pageRoot.id)
 
     val cssThreadId = "dw-t-"+ rootPost.id
     <div id={"page-"+ debate.id} class='debiki dw-debate'>
