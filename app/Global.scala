@@ -110,7 +110,7 @@ object Global extends GlobalSettings {
       case ("edit", POST) =>
         AppEdit.handleEditForm(pagePath, pageRoot, postId = mainFunVal_!)
       case ("view", GET) =>
-        App.viewPost(pagePath, postId = mainFunVal)
+        App.viewPost(pagePath, pageRoot)
       case ("reply", GET) =>
         AppReply.showForm(pagePath, pageRoot, postId = mainFunVal_!)
       case ("reply", POST) =>
@@ -159,7 +159,7 @@ object Global extends GlobalSettings {
       case ("", GET) =>
         pagePath.suffix match {
           case "css" => App.rawBody(pagePath)
-          case _ => App.viewPost(pagePath, postId = Page.BodyId)
+          case _ => App.viewPost(pagePath, pageRoot)
         }
       // If invalid function specified:
       case (fun, met) => return badRequest(
