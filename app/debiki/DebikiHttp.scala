@@ -30,6 +30,17 @@ object DebikiHttp {
   val MaxDetailsSize =  20 * 1000
 
 
+  // ----- Content type matchers
+
+  // (Cannot use Play's, they depend on the codec.)
+
+  abstract sealed class ContentType
+  object ContentType {
+    case object Json extends ContentType
+    case object Html extends ContentType
+  }
+
+
   // ----- Error handling
 
   private def R = Results
@@ -72,7 +83,7 @@ object DebikiHttp {
     throw ResultException(BadReqResult(errCode, message))
 
   def throwBadParamValue(errCode: String, paramName: String) =
-    throw throwBadReq(errCode, "Bad "+ paramName +" value")
+    throw throwBadReq(errCode, "Bad `"+ paramName +"` value")
 
   def throwParamMissing(errCode: String, paramName: String) =
     throw throwBadReq(errCode, "Parameter missing: "+ paramName)

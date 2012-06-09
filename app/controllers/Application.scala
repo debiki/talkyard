@@ -123,26 +123,50 @@ object Application extends mvc.Controller {
   }
 
 
-  def listPages(pathIn: PagePath) =
+  def parsePathScope(value: Option[String]) = value match {
+    case Some("folder") => PathScope.Folder
+    case Some("tree") => PathScope.Tree
+    case Some("page") => PathScope.Page
+    case Some(x) => throwBadParamValue("DwE093ki6", "in")
+    case None => throwParamMissing("DwE86IG1", "in")
+  }
+
+  def listPages(pathIn: PagePath,
+        contentType: DebikiHttp.ContentType) =
         PageGetAction(pathIn, pageMustExist = false) { pageReq =>
+    val pathScope = parsePathScope(pageReq.queryString.getFirst("in"))
     val pagePaths = pageReq.dao.listPagePaths(
       withFolderPrefix = pageReq.pagePath.folder,
+      pathScope = pathScope,
       include = PageStatus.All,
       sortBy = PageSortOrder.ByPath,
       limit = Int.MaxValue,
       offset = 0)
-    val pageNode = PageListHtml.renderPageList(pagePaths)
-    OkHtml(<html><body>{pageNode}</body></html>)
+    contentType match {
+      case DebikiHttp.ContentType.Html =>
+        val pageNode = PageListHtml.renderPageList(pagePaths)
+        OkHtml(<html><body>{pageNode}</body></html>)
+      case DebikiHttp.ContentType.Json =>
+        unimplemented
+    }
   }
 
 
-  def listActions(pathIn: PagePath) =
+  def listActions(pathIn: PagePath,
+        contentType: DebikiHttp.ContentType) =
         PageGetAction(pathIn, pageMustExist = false) { pageReq =>
+    val pathScope = parsePathScope(pageReq.queryString.getFirst("in"))
     val actionLocators = pageReq.dao.listActions(
        folderPrefix = pageReq.pagePath.path,
+       pathScope = pathScope,
        includePages = PageStatus.All,
        limit = 700, offset = 0)
-    Ok(views.html.listActions(actionLocators))
+    contentType match {
+      case DebikiHttp.ContentType.Html =>
+        Ok(views.html.listActions(actionLocators))
+      case DebikiHttp.ContentType.Json =>
+        unimplemented
+    }
   }
 
 
@@ -150,6 +174,7 @@ object Application extends mvc.Controller {
         pageReq =>
 
     import pageReq.{pagePath}
+    val pathScope = parsePathScope(pageReq.queryString.getFirst("for"))
 
     // The tenant's name will be included in the feed.
     val tenant: Tenant = pageReq.dao.loadTenant()
@@ -158,6 +183,7 @@ object Application extends mvc.Controller {
       if (!pagePath.isFolderOrIndexPage) List(pagePath)
       else pageReq.dao.listPagePaths(
         withFolderPrefix = pagePath.folder,
+        pathScope = pathScope,
         include = List(PageStatus.Published),
         sortBy = PageSortOrder.ByPublTime,
         limit = Int.MaxValue,

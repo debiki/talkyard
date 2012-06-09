@@ -138,9 +138,13 @@ object Global extends GlobalSettings {
       case ("rename-page", POST) =>
         AppMoveRenamePage.handleRenamePageForm(pagePath)
       case ("list-pages", GET) =>
-        App.listPages(pagePath)
+        App.listPages(pagePath, DebikiHttp.ContentType.Html)
+      case ("list-pages.json", GET) =>
+        App.listPages(pagePath, DebikiHttp.ContentType.Json)
       case ("list-actions", GET) =>
-        App.listActions(pagePath)
+        App.listActions(pagePath, DebikiHttp.ContentType.Html)
+      case ("list-actions.json", GET) =>
+        App.listActions(pagePath, DebikiHttp.ContentType.Json)
       case ("feed", GET) =>
         App.feed(pagePath)
       case ("act", GET) =>
