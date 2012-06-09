@@ -242,3 +242,18 @@ object PagePath {
   private val _PageGuidCorruptSlug = (_PageGuidPtrn +"[^a-z0-9_].*").r
 
 }
+
+
+/**
+ * Clarifies whether a PagePath that isFolderOrIndexPage
+ * concerns a single page, a folder or a subtree.
+ */
+sealed abstract class PathScope
+object PathScope {
+  case object Page extends PathScope
+  case object Folder extends PathScope
+  case object Tree extends PathScope
+}
+
+
+
