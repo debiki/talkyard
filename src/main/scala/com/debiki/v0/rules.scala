@@ -28,8 +28,13 @@ case class PageDetails(
   status: PageStatus,
   cachedTitle: Option[String],
   cachedPublTime: Option[ju.Date],
-  cachedSgfntMtime: Option[ju.Date]
-)
+  cachedSgfntMtime: Option[ju.Date],
+  cachedAuthors: List[PageDetails.AuthorInfo],
+  cachedCommentCount: Int)
+
+object PageDetails {
+  case class AuthorInfo(roleId: String, displayName: String)
+}
 
 
 /** The page status, see debiki-for-developers.txt #9vG5I.
