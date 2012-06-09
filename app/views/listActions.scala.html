@@ -14,7 +14,7 @@
 
 <ol>
 @for(actnLctr <- actionLocators;
-    actionLink = actnLctr.pagePath.path +"#post-"+ actnLctr.actionId) {
+    actionLink = actnLctr.path) {
   <li>
     @actnLctr.actionCtime: @actnLctr.actionType:
     <a href='@actionLink'>@actionLink</a>
