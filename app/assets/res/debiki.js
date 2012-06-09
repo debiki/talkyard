@@ -371,7 +371,9 @@ var didExpandTruncated = false;
 var rateFormTemplate = $("#dw-hidden-templates .dw-fs-r");
 var debateId = $('.debiki').attr('id');
 
-var rootPostId = $('.dw-depth-0').attr('id').substr(5); // drop initial `dw-t-'
+var rootPostId = $('.dw-depth-0');
+rootPostId = rootPostId.length ?
+    rootPostId.attr('id').substr(5) : undefined; // drops initial `dw-t-'
 
 // When forms are loaded from the server, they might have ID fields.
 // If the same form is loaded twice (e.g. to reply twice to the same comment),
@@ -5317,7 +5319,7 @@ function initAndDrawSvg() {
 // Render the page step by step, to reduce page loading time. (When the first
 // step is done, the user should conceive the page as mostly loaded.)
 
-(function() {
+function renderPageEtc() {
   var $posts = $('.debiki .dw-p:not(.dw-p-ttl)');
   function initPostsThreadStep1() {
     $posts.each($initPostsThreadStep1);
@@ -5376,7 +5378,12 @@ function initAndDrawSvg() {
   }
 
   setTimeout(runNextStep, 60);
-})();
+}
+
+
+// Dont render page, if there is no root post, or some error happens,
+// which kills other Javascript that runs on page load.
+if (rootPostId) renderPageEtc();
 
 
 //----------------------------------------
