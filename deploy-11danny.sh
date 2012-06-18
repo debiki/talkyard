@@ -21,6 +21,8 @@ ssh_play_user="ssh -i /home/kajmagnus/debiki/hosting/amazon/debiki-play-user.pem
 host=dw0azirdbpv11danny
 basedir=/opt/debiki/debiki.se
 
+echo "`date '+%F %H:%M'` `git log --oneline -n1`" >> deploy.log
+
 rsync -avz \
   -e "$ssh_ec2_user"  \
   --exclude logs/ \
