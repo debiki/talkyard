@@ -2,6 +2,7 @@
 // Commit: 43988c70b7ff3611a58ad736f0d60b42d5feb268
 // Date: Wed Sep 14 15:50:47 2011 +0000
 // But I've removed fromURL, to save bandwidth. /KajMagnus
+// And fixed three bugs. Perhaps I've introduced other bugs instead?
 
 /*
 YAML parser for Javascript
@@ -52,12 +53,18 @@ var YAML =
             "map" : new RegExp("\\{\\s*(.*)\\s*\\}"),
             "key_value" : new RegExp("([a-z0-9_-][ a-z0-9_-]*):( .+)", "i"),
             "single_key_value" : new RegExp("^([a-z0-9_-][ a-z0-9_-]*):( .+?)$", "i"),
-            "key" : new RegExp("([a-z0-9_-][ a-z0-9_-]+):( .+)?", "i"),
+            // KajMagnus@Debiki: To allow 1 char keys, I changed first `+` to `*` on next line.
+            "key" : new RegExp("([a-z0-9_-][ a-z0-9_-]*):( .+)?", "i"),
             "item" : new RegExp("^-\\s+"),
-            "trim" : new RegExp("^\\s+|\\s+$"),
             "comment" : new RegExp("([^\\\'\\\"#]+([\\\'\\\"][^\\\'\\\"]*[\\\'\\\"])*)*(#.*)?")
         };
  
+    // KajMagnus@Debiki: The `trim` regex was broken.
+    function trim(text) {
+      if (String.prototype.trim) return text.trim(); // >= IE9?
+      return text.replace(/^\s*|\s*$/g, '');
+    }
+
      /**
       * @class A block of lines of a given level.
       * @param {int} lvl The block's level.
@@ -95,6 +102,7 @@ var YAML =
         
         var result = new Block(-1);
         var currentBlock = new Block(0);
+        var startBlock = currentBlock;
         result.addChild(currentBlock);
         var levels = [];
         var line = "";
@@ -111,6 +119,22 @@ var YAML =
         
             if(m = regLevel.exec(line)) {
                 level = m[1].length;
+
+                // Bug workaround.
+                // If the document is a list, i.e. '- x\n- y\n- z\n ...',
+                // the very first level is probably 2, but never 0.
+                // To workaround some bug, change the startBlock.level
+                // from 0 to `level`. Otherwise `processBlock` below
+                // apparently never consider the block in which the list
+                // would be placed -- no result will be returned.
+                // (Perhaps this is a ugly hack.) / KajMagnus@Debiki
+                var justStarted = currentBlock.lines.length === 0 &&
+                    currentBlock === startBlock;
+                if (justStarted) {
+                  startBlock.level = level;
+                  levels[levels.length - 1] = level;
+                  curLevel = level;
+                }
             } else
                 level = 0;
             
@@ -142,7 +166,7 @@ var YAML =
                 }
             }
             
-            currentBlock.lines.push(line.replace(regex["trim"], ""));
+            currentBlock.lines.push(trim(line));
             curLevel = level;
         }
         
@@ -150,7 +174,7 @@ var YAML =
     }
     
     function processValue(val) {
-        val = val.replace(regex["trim"], "");
+        val = trim(val);
         var m = null;
 
         if(val == 'true') {
@@ -323,7 +347,7 @@ var YAML =
                     }
                     
                     if(typeof m[2] != "undefined") {
-                        var value = m[2].replace(regex["trim"], "");
+                        var value = trim(m[2]);
                         if(value[0] == '&') {
                             var nb = processBlock(children);
                             if(currentObj != null) currentObj[key] = nb;
@@ -467,3 +491,4 @@ var YAML =
         getProcessingTime : function() { return processing_time; }
     }
 })();
+
