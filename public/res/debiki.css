@@ -2142,8 +2142,7 @@ inside widgets, rather than buttons and tabs. */
   width: 100%; /* perhaps some future version of Opera will break otherwise */
 }
 
-.dw-p-bd-blk,
-.dw-t > :not(svg) { /* [31Ik53] */
+.dw-svg-parent > :not(svg) { /* [31Ik53] */
   z-index: 2; /* or would not be clickable; <svg> would be above */
   position: relative; /* or z-index has no effect */
 }
