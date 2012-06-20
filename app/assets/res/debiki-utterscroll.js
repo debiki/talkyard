@@ -211,13 +211,13 @@ debiki.Utterscroll.enable = function(options) {
     // -----
 
     // If there's no text in the event.target, then start scrolling.
-    var containsText = searchForTextIn($target);
+    var containsText = searchForTextIn($target, 0);
     debug(event.target.nodeName +' containsText: '+ containsText);
     if (!containsText)
       return startScroll(event);
 
     function searchForTextIn($elem, recursionDepth) {
-      if (recursionDepth > 3)
+      if (recursionDepth > 6)
         return false;
       var $textElems = $elem.contents().filter(function(ix, child, ar) {
         // Is it a true text node with text?
