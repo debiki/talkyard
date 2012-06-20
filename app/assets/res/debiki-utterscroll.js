@@ -221,10 +221,17 @@ debiki.Utterscroll.enable = function(options) {
         return false;
       var $textElems = $elem.contents().filter(function(ix, child, ar) {
         // Is it a true text node with text?
+        // BUG? What about CDATA? Isn't that text? (node type 4)
         if (child.nodeType === 3) {  // 3 is text
           var onlyWhitespace = child.data.match(/^\s*$/);
           return !onlyWhitespace;
         }
+        // Skip comments (or script dies in FF)
+        if (child.nodeType === 8)  // 8 is comment
+          return false;
+        // COULD skip some more node types? Which?
+        // And should also test and verify afterwards.
+
         // Recurse into inline elems — I think they often contain
         // text? E.g. <li><a>...</a></li> or <p><small>...</small></p>.
         var $child = $(child);
