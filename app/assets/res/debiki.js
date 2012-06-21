@@ -711,7 +711,7 @@ function $threadToggleFolded() {
     // Thread is folded, open it.
     $childrenToFold.each($slideDown);
     $thread.removeClass('dw-zd');
-    $foldLink.text('[—]');
+    $foldLink.text('[–]'); // not a '-', but an en dash, \u2013,
   } else {
     // Fold thread.
     var postCount = $thread.find('.dw-p').length;
