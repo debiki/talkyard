@@ -563,6 +563,7 @@ post, only for the article.) */
   font-size: 13px;
   font-family: Verdana;
   text-decoration:none;
+  z-index: 2; /* place above PNG arrow hiders */
 }
 .dw-z:hover {
   color: #c77405;
@@ -2194,7 +2195,7 @@ i.e. #dde, the same as the color of the png arrows. */
 .dw-svg-fake-harrow-end {
   background-color: #dde;
   position: absolute;
-  z-index: -10;
+  z-index: 1;
 }
 
 .dw-svg-fake-harrow-hider-left,
@@ -2240,7 +2241,6 @@ i.e. #dde, the same as the color of the png arrows. */
   left: -44px;
   height: 59px;
   width: 39px;
-  z-index: -11;
 }
 
 .dw-svg-fake-hcurve,
@@ -2254,7 +2254,6 @@ i.e. #dde, the same as the color of the png arrows. */
   left: -24px;
   height: 39px;
   width: 59px;
-  z-index: -11;
 }
 
 .dw-svg-fake-hcurve-start,
@@ -2266,7 +2265,6 @@ i.e. #dde, the same as the color of the png arrows. */
   left: 3px;
   height: 80px;
   width: 105px;
-  z-index: -11;
 }
 
 .dw-svg-fake-hcurve-start-solo {
@@ -2276,7 +2274,7 @@ i.e. #dde, the same as the color of the png arrows. */
 }
 
 .dw-svg-fake-arrow-hider {
-  z-index: -9; /* hides the varrow or harrow */
+  z-index: 2; /* hides the varrow or harrow */
 }
 
 .dw-svg-fake-varrow-hider-hi,
@@ -2286,7 +2284,7 @@ i.e. #dde, the same as the color of the png arrows. */
   position: absolute;
   height: 35px;
   width: 30px; /* the curve images are fairly wide */
-  z-index: -9;
+  z-index: 2;
 }
 
 .dw-svg-fake-varrow-hider-lo {
