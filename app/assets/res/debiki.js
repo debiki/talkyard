@@ -4459,9 +4459,9 @@ function makeSvgDrawer() {
                 ' '+ (xs+dx) +' '+ (ys+dy);    //                `
       };
 
-      if (cache.itemIndex === 0) {
-        // $to is placed to the left of the arrow start. This happens e.g.
-        // for [the arrow to the Reply button of the root post].
+      if (xe < xs) {
+        // $to is to the left of the arrow start. This happens e.g.
+        // for [the arrow to the root post's Reply button].
         // Draw a special north-south curve, that starts just like the west-east
         // curve in the `else' block just below.
         // There might be stuff to the right of $to though,
