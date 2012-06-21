@@ -203,7 +203,7 @@ object DebateHtml {
     <script type="text/javascript">
     jQuery('html').addClass('dw-hide-interactions');
     debiki.scriptLoad.done(function() {{
-      Debiki.v0.showInteractionsOnClick();
+      debiki.v0.showInteractionsOnClick();
     }});
     </script>
   )
