@@ -574,7 +574,7 @@ post, only for the article.) */
 /* When a thread is folded, there's nothing in it that occupies any space,
 and two folded threads would overlap, unless: */
 .dw-zd > .dw-z {
-  position: static; /* cancel position: absolute */
+  position: relative !important; /* cancel position: absolute */
 }
 
 /* For a folded thread, only the open link (.dw-z) is visible. */
