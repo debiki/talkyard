@@ -442,6 +442,7 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
 
 .dw-res {
   margin: 0;
+  padding-left: 0; /* if no CSS reset included */
 }
 
 .dw-depth-1 .dw-res {
