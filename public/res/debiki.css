@@ -2153,10 +2153,6 @@ inside widgets, rather than buttons and tabs. */
   overflow: hidden; /* hides the excessively wide <svg> elems, see above */
 }
 
-.dw-t-vspace svg {
-  position: static; /* or won't stay inside the -vspace */
-}
-
 .dw-t svg path {
   fill: none;
   /* Warning: stroke color also specified in debiki.js, $highlightOff(). */
@@ -2182,6 +2178,10 @@ JavaScript. Then I can still place all CSS stuff in this file. */
   -ms-filter: "FlipH";
 }
 
+.dw-t-vspace {
+  position: relative;
+}
+
 .dw-arw-hz-right {
   background-image: url(img/dw-arw-hz-right.png);
 }
@@ -2198,31 +2198,29 @@ i.e. #dde, the same as the color of the png arrows. */
   z-index: 1;
 }
 
-.dw-svg-fake-harrow-hider-left,
 .dw-svg-fake-harrow,
 .dw-svg-fake-harrow-end {
   height: 3px;
   width: 100%;
-  top: -50px;
+  top: 44px;
 }
 
-/* For the horizontal reply button and reply form. */
-.dw-res > li.dw-hor-a > .dw-svg-fake-harrow,
-.dw-res > li.dw-fs > .dw-svg-fake-harrow {
-  z-index: -13; /* place below the .dw-svg-fake-hcurve-start */
-}
-/* Hides the -harrow to the left of the .dw-svg-fake-hcurve-start. */
-.dw-res > li.dw-hor-a >  .dw-svg-fake-harrow-hider-left,
-.dw-res > li.dw-fs >  .dw-svg-fake-harrow-hider-left {
-  width: 50px;
+.dw-t > .dw-svg-fake-harrow {
+  top: -54px;
   background-color: white;
-  position: absolute;
-  z-index: -12;
+  display: block;
+  height: 10px;
 }
 
-.dw-svg-fake-harrow-end {
+.dw-t > .dw-svg-fake-harrow-end {
+  display: block;
+  top: -54px;
+  background-color: white;
+  display: block;
+  height: 10px;
+  position: absolute;
+  right: -30px;
   width: 30px;
-  left: -30px;
 }
 
 .dw-svg-fake-varrow {
@@ -2243,6 +2241,10 @@ i.e. #dde, the same as the color of the png arrows. */
   width: 39px;
 }
 
+.dw-t:last-child > .dw-svg-fake-hcurve {
+  z-index: 2; /* hide the horizontal arrow below */
+}
+
 .dw-svg-fake-hcurve,
 .dw-svg-fake-hcurve-start {
   background-color: transparent;
@@ -2261,10 +2263,11 @@ i.e. #dde, the same as the color of the png arrows. */
   background-image: url(img/dw-svg-fake-hcurve-start-w-reply-arrow.png);
   background-repeat: no-repeat;
   position: absolute;
-  top: -87px;
-  left: 3px;
+  top: 7px;
+  left: 0px;
   height: 80px;
   width: 105px;
+  z-index: 2;
 }
 
 .dw-svg-fake-hcurve-start-solo {
@@ -2297,6 +2300,7 @@ i.e. #dde, the same as the color of the png arrows. */
   height: 100%;
   left: -55px;
 }
+
 
 
 /* Public API

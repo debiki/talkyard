@@ -4709,65 +4709,36 @@ function makeFakeDrawer() {
   // right of the button.
   var replyBtnBranchingArrow =
       '<div class="dw-arw dw-svg-fake-hcurve-start"/>' + // branches out
-      '<div class="dw-arw dw-svg-fake-harrow"></div>' + // extends branch
-      '<div class="dw-arw dw-svg-fake-harrow-hider-left"></div>';
+      '<div class="dw-arw dw-svg-fake-harrow"></div>';  // extends branch
 
   var horizListItemEndArrow =
-      '<div class="dw-arw dw-svg-fake-hcurve"/>';     // dw-arw-hz-curve-end?
-
-  var horizListItemContArrow =
-      '<div class="dw-arw dw-svg-fake-harrow"/>' +    // dw-arw-hz-line-middle?
-      '<div class="dw-arw dw-svg-fake-harrow-end"/>'; // dw-arw-hz-line-end?
+      '<div class="dw-arw dw-svg-fake-hcurve"/>';
 
   // Arrows to each child thread.
   function $initPostSvg() {
-    var $p = $(this).filter('.dw-p').dwBugIfEmpty();
-    var $t = $p.closest('.dw-t');
-    var $pt = $t.parent().closest('.dw-t');  // parent thread
+    var $post = $(this).filter('.dw-p').dwBugIfEmpty();
+    var $thread = $post.closest('.dw-t');
+    var $parentThread = $thread.parent().closest('.dw-t');
     // If this is a horizontally laid out thread that has an always visible
     // Reply button, draw an arrow to that button.
-    $t.find('> .dw-res > .dw-p-as').each(function(){
-      var $i = $(this);
-      if (!$i.is(':first-child')) {
-        // There's a reply to the left. Don't use the hcurve-start arrow.
-        $i.prepend(horizListItemContArrow + horizListItemEndArrow);
-      }
-      else if ($t.find('> .dw-res > li').length > 1) {
-        // There are some replies to the right only. Use an arrow that
-        // branches out towards them.
-        $i.prepend(replyBtnBranchingArrow);
-      } else {
-        // There is nothing but this action button <li>.
-        $i.prepend(
-            '<div class="dw-arw dw-svg-fake-hcurve-start-solo"/>');
-      }
-    });
-    if ($pt.is('.dw-hor')) {
-      // if ($t.is(':only-child')) {
-      //   prepend the -hcurve-start-solo arrow
-      // }
-      // else if…
-      if ($t.is(':first-child')) {
-        // This must be a fixed-position reply, since there's no action <li>
-        // to the left. Use the start arrow that branches, since the reply
-        // button is somewhere to the right.
-        $t.prepend(replyBtnBranchingArrow);
-      }
-      else {
-        $t.prepend(horizListItemEndArrow);
-        $t.filter(':not(:last-child)').each(function(){
-          // There's something to the right. Connect to it with a line.
-          $(this).prepend(horizListItemContArrow);
-        });
-        if ($t.eq(1)) {
-          // Iff this is a dynamically loaded reply, and if it's the first
-          // and only reply, there's a solo arrow to the Reply button (which
-          // is located to the left, the :first-child).
-          // Replace it with an arrow that branches out to this new reply.
-          $pt.find('.dw-res > dw-hor-a > .dw-svg-fake-hcurve-start-solo')
-              .before(replyBtnBranchingArrow)
-              .remove();
-        }
+    if ($thread.is('.dw-hor')) {
+      var childCount = $thread.find('.dw-res > li').length;
+      var arrowsHtml = childCount === 1 ?
+          '<div class="dw-arw dw-svg-fake-hcurve-start-solo"/>' :
+          replyBtnBranchingArrow;
+      $thread.children('.dw-t-vspace').append(arrowsHtml);
+    }
+
+    if ($parentThread.is('.dw-hor')) {
+      // There's a horizontal line above; make it branch out to this thread.
+      $thread.prepend(horizListItemEndArrow);
+      if ($thread.is(':last-child')) {
+        // The line above continues above this thread although there is
+        // no threads to the right. So hide the end of that horizontal line.
+        // (CSS makes these three <div>s actually hide it).
+        $thread.prepend(
+            '<div class="dw-svg-fake-harrow"></div>' +
+            '<div class="dw-svg-fake-harrow-end"></div>');
       }
     } else {
       // vertical arrow, already handled above.
