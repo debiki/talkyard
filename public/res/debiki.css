@@ -1834,7 +1834,7 @@ form .dw-ntf {
   width: 55px;
   display: inline-block;
   margin: 0 10px 0 0;
-  background: url(img/arrows-etcetera.png) no-repeat 0 -327px;
+  background: url(img/arrows-etcetera-gray.png) no-repeat 0 -327px;
 }
 .dw-tps-sort-order-arw.dw-flip-hz {
   margin: 0 0 0 10px;
@@ -1855,7 +1855,7 @@ form .dw-ntf {
   left: 115px;
 }
 .dw-tps-arw-left {
-  background: url(img/arrows-etcetera.png) no-repeat 0 -287px;
+  background: url(img/arrows-etcetera-gray.png) no-repeat 0 -287px;
   position: absolute;
   left: -20px;
   top: 13px;
@@ -2188,14 +2188,10 @@ JavaScript. Then I can still place all CSS stuff in this file. */
   position: relative;
 }
 
-/* I recently changed SVG arrow color to from #dde (blue-gray) to
-#dbdbdb (gray), but I have not updated the color of the fake arrows
-png images, so leave the background and border colors below as is,
-i.e. #dde, the same as the color of the png arrows. */
 .dw-svg-fake-varrow,
 .dw-svg-fake-harrow,
 .dw-svg-fake-harrow-end {
-  background-color: #dde;
+  background-color: #ddd;
   position: absolute;
   z-index: 1;
 }
@@ -2233,7 +2229,7 @@ i.e. #dde, the same as the color of the png arrows. */
 
 .dw-svg-fake-vcurve-short {
   background-color: transparent;
-  background: url(img/arrows-etcetera.png) no-repeat 0 -225px;
+  background: url(img/arrows-etcetera-gray.png) no-repeat 0 -225px;
   position: absolute;
   top: -52px;
   left: -44px;
@@ -2247,7 +2243,7 @@ i.e. #dde, the same as the color of the png arrows. */
 
 .dw-svg-fake-hcurve,
 .dw-svg-fake-hcurve-start {
-  background: transparent url(img/arrows-etcetera.png) no-repeat 0 0;
+  background: transparent url(img/arrows-etcetera-gray.png) no-repeat 0 0;
   position: absolute;
   top: -52px;
   left: -24px;
@@ -2257,7 +2253,7 @@ i.e. #dde, the same as the color of the png arrows. */
 
 .dw-svg-fake-hcurve-start,
 .dw-svg-fake-hcurve-start-solo {
-  background: url(img/arrows-etcetera.png) no-repeat 0 -79px;
+  background: url(img/arrows-etcetera-gray.png) no-repeat 0 -79px;
   position: absolute;
   top: 7px;
   left: 0px;
@@ -2267,7 +2263,7 @@ i.e. #dde, the same as the color of the png arrows. */
 }
 
 .dw-svg-fake-hcurve-start-solo {
-  background: url(img/arrows-etcetera.png) no-repeat 0 -152px;
+  background: url(img/arrows-etcetera-gray.png) no-repeat 0 -152px;
   height: 72px;
   width: 38px;
 }
