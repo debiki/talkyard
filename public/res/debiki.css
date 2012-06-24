@@ -466,7 +466,7 @@ so there's some space for the SVG arrows. */
 
 .dw-p {
   margin-left: 35px;
-  overflow: hidden;
+  /* overflow: hidden; No, or sort order and reply btn tips won't appear */
   background-color: white;
 }
 /* But show the whole article (or <pre>s with very long lines
