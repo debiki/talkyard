@@ -1909,6 +1909,12 @@ debiki-lift.css less inclusive? */
 /* Makes the root post wrap its (floating) children,
 don't know if needed for other horizontal threads. */
 .dw-t.dw-hor > .dw-p:after,
+/* Sometimes when I write plugins for other frameworks (e.g. WordPress),
+ some floating thing (WordPress '#respond' form) is inserted into
+ a .dw-t, and unless the .dw-t wraps it, the PNG arrow hiders won't
+ hide PNG arrows correctly (because the .dw-t and thus the arrow
+ hiders wouldn't be tall enough, if it didn't wrap floating children). */
+.dw-t:after,
 /* Its children, .dw-p-bd-blk:s, float left. */
 .dw-p-bd:after,
 /* Contents might float */
