@@ -849,12 +849,15 @@ function showCurLocationInSiteNav() {
 }
 
 
+
 // ------- Resizing
+
 
 // Makes the root thread wide enough to contain all its child posts.
 // Unless this is done e.g. when child posts are resized or stacked eastwards,
 // or a reply/rate/edit form is shown/resized, the east-most threads
 // will float-drop below the other threads.
+// Had IE7 supported display: table-cell, none of this would have been needed?
 function resizeRootThreadImpl(extraWidth) {
   // Let the root thead, which floats: left, expand eastwards as much as
   // it needs to — by making its parent very very wide.
@@ -877,23 +880,25 @@ function resizeRootThreadImpl(extraWidth) {
   // aren't scaled exactly in the same way), if too small.
   // Hence it's a rather wide value. (Otherwise = 50 would do.)
   // }}}
+  $rootThread.width('auto'); // cancel below bug workaround
   var requiredWidth = $rootThread.width();
   // Change from 2200:200 to 2700:700. 200 causes float drop, if
   // browser window is narrow, and you add a root post reply (why!?).
   $parent.width(requiredWidth + (extraWidth ? 2700 : 700));
 
-  /* [Is this still needed?]
-  // Set the min width to something wider than the max width of a
-  // .dw-p-bd <p>, so paragaphs won't expand when child threads or
-  // reply forms are added below the root post.
-  // TODO: Use e.g. http://www.bramstein.com/projects/jsizes/ to find the
-  // max-width of a .dw-p-bd p. Or specify the <p> max width in px:s not em:s.
-  // Or use http://jquery.lukelutman.com/plugins/px/jquery.px.js, mentioned
-  // here: http://www.mail-archive.com/jquery-en@googlegroups.com/msg13257.html.
-  width = Math.max(width, 650); // today <p> max-width is 50 em and 650 fine
-  $root.css('min-width', width +'px');
-  */
+  // Browser (?) bug workaround:
+  // Oddly enough, in very very few situations, the browser (Chrome v19)
+  // resizes $rootThread so the last <li> actually float drops! However
+  // if I add just 10px to that $rootThread.width(), then there is no
+  // more float drop (so it seems to me that the browser does a 10px error
+  // — if the browser didn't attempt to avoid float drop at all,
+  // adding 10px wouldn't suffice? A thread <li> is perhaps 200px wide.)
+  // However, after adding 100px here, I've never observed any more
+  // float drop.
+  // This also requires us to add 100px in debiki.css, see [3krdi2].
+  $rootThread.width(requiredWidth + 100);
 }
+
 
 // Makes the root thread wide enough to contain all its child posts.
 // Is this not done e.g. when child posts are resized or stacked eastwards,

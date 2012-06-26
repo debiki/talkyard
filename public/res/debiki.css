@@ -2217,8 +2217,10 @@ JavaScript. Then I can still place all CSS stuff in this file. */
   display: block;
   height: 10px;
   position: absolute;
-  right: -30px;
-  width: 30px;
+  /* 30px is enough, but because of a 100px bug workaround in
+  `resizeRootThreadImpl()` in debiki.js, it's 130px. [3krdi2]*/
+  right: -130px;
+  width: 130px;
 }
 
 .dw-svg-fake-varrow {
