@@ -212,14 +212,19 @@ will size the root thread properly.
 any <footer> would flash in the middle of the page (just below the article)
 and then moments later be pushed downwards off screen, by all comments,
 when they appear.
+3. Sometimes <html> elem classes cannot be edited (namely in certain WordPress
+themes) so make all this work also when Debiki's classes are placed on the
+<body>.
 */
-html.dw-render-layout-pending .debiki.dw-debate {
+html.dw-render-layout-pending .debiki.dw-debate,
+body.dw-render-layout-pending .debiki.dw-debate {
   width: 200200px;
 }
 
 /* Hide ugly React action links until they've been converted to
 beautiful Reply, Rate etcetera links. */
-html.js.dw-render-actions-pending .dw-as {
+html.js.dw-render-actions-pending .dw-as,
+html.js body.dw-render-actions-pending .dw-as {
   visibility: hidden;
 }
 
