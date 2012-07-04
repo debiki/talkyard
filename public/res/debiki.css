@@ -415,8 +415,13 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
 }
 
 /* Show column separator and resizor on hower. */
-.dw-hor > .dw-res > .ui-resizable:hover { border-right: 2px dashed lightgray; }
-.dw-hor > .dw-res > .ui-resizable { border-right: 2px dashed transparent; }
+.DW.DW .dw-hor > .dw-res > * > .ui-resizable-handle.ui-resizable-e {
+  border-right: 2px dashed transparent;
+}
+.DW.DW .dw-hor > .dw-res > :hover > .ui-resizable-handle.ui-resizable-e {
+  border-right-color: lightgray;
+}
+
 
 .dw-hor > .dw-res > li {
   float: left;
@@ -424,7 +429,7 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
   margin: 10px 23px 0 0;
 }
 
-.dw-res > li {
+.DW.DW .dw-res > li {
   list-style-type: none;
 }
 
@@ -445,23 +450,19 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
   width: 25em; /* avoids > 1 column for this depth */
 }
 
-.dw-res {
+.DW.DW .dw-res {
   margin: 0;
-  padding-left: 0; /* if no CSS reset included */
+  padding: 0; /* if no CSS reset included */
 }
 
-.dw-depth-1 .dw-res {
+.DW.DW .dw-depth-1 .dw-res {
   margin: 0 0 0 35px;
   padding-top: 3px;
 }
 
-.dw-depth-2 .dw-res {
-  margin: 0 0 0 35px;
-}
-
 /* Add some whitespace above replies, when laid out horizontally,
 so there's some space for the SVG arrows. */
-.dw-hor:not(.dw-depth-0) > .dw-res {
+.DW.DW .dw-hor:not(.dw-depth-0) > .dw-res {
   margin-top: 35px;
 }
 .dw-hor:not(.dw-depth-0) > .dw-hor-a {
