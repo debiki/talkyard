@@ -4866,6 +4866,9 @@ function $makePostHeadTooltips() {  // i18n
 // they control. But I think it's nice to have all shortcuts here
 // in one place, or I'll easily forget what shortcuts I've defined.
 
+// COULD add WordPress style comment moderation shortcuts, see:
+// http://codex.wordpress.org/Keyboard_Shortcuts
+
 // Misc notes: Cannot intercept Ctrl+Tab — Chrome has reserved that
 // combination, and probably e.g. Ctrl+W and Ctrl+PageDown too. (So buggy
 // Web apps never prevent users from closing/switching browser tab).

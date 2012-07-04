@@ -229,6 +229,7 @@ object Application extends mvc.Controller {
    * so we need a way for the browser to fetch authorship info
    * dynamically.
    */
+  // COULD rename to listUserPageData?
   def showPageInfo(pathIn: PagePath) = PageGetAction(pathIn) { pageReq =>
     if (!pageReq.request.rawQueryString.contains("&user=me"))
       throwBadReq("DwE0GdZ22", "Right now you need to specify ``&user=me''.")
