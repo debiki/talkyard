@@ -151,6 +151,7 @@ class TemplateEngine(val pageCache: PageCache) {
     // Prepend scripts, stylesheets and a charset=utf-8 meta tag.
     curHeadTags = HeadHtml ++ curHeadTags
     val classes =
+       "DW "+
        "dw-pri "+
        "dw-ui-simple "+
        "dw-render-actions-pending "+
