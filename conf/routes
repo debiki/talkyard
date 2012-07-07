@@ -17,6 +17,13 @@ GET   /-/api/login-openid-clbk  controllers.AppAuthOpenid.loginCallback(returnTo
 GET   /-/api/logout             controllers.AppAuth.logout
 POST  /-/api/logout             controllers.AppAuth.logout
 
+GET   /-/create-website         controllers.AppCreateTenant.showWebsiteNameForm
+POST  /-/create-website         controllers.AppCreateTenant.handleWebsiteNameForm
+GET   /-/new-website-login      controllers.AppCreateTenant.showOwnerLoginForm(password)
+POST  /-/new-website-login      controllers.AppCreateTenant.handleOwnerLoginForm
+GET   /-/website-created        controllers.AppCreateTenant.welcomeOwner
+GET   /-/manage-website         controllers.AppManageTenant.showMainPage
+
 GET   /-/*file                  controllers.Assets.at(path = "/public", file)
 
 

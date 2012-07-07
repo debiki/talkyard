@@ -1,0 +1,86 @@
+@(doWhat: String, loginFormPassword: String = "?",
+    newTenantId: String = "?", parentDomainName: String = "?")
+
+
+@showWebsiteNameForm = {
+  <p>Click the button to create a new website.
+  </p>
+  <form accept-charset='UTF-8' method='post'>
+  @*<label>
+    An optional name for the website you are about to create.
+    It must be a subdomain of <tt>.@{parentDomainName}</tt>.
+    <ul>
+    <li>It's possible to change the name later.
+    <li>In case you have a domain name that you intend to map to
+        the new website, you don't need to choose a name here.
+    </ul>
+    <input type='text' name='website-name'><tt>.@{parentDomainName}</tt>
+  </label>
+    *@
+  <input type='submit' value="Create website">
+  </form>
+}
+
+
+@showOwnerLoginForm = {
+  <p>Please click your email provider, or your Twitter or Facebook account,
+     and login. The account you choose will become the owner of the
+     new website that you are creating.
+     <small>(Technical detail: The login happens over OpenID or OpenAuth.)
+     </small>
+  </p>
+  <form accept-charset='UTF-8' method='post'
+        action='/-/api/login-openid?continue='>
+  <label for='oid-input'>Your OpenID:</label>
+  <input type='text' name='openid_identifier'>
+  <input type='hidden' name='login-password' value='@{loginFormPassword}'>
+  <input type='submit'>
+  </form>
+}
+
+
+@welcomeOwner = {
+  <p>Website created, congratulations!
+  <p><a href="/-/manage-website">Manage this website</a>
+
+  @* -- Hmm perhaps people will be confused. --
+  @websiteAddr = newTenantId +"."+ parentDomainName
+  <p>You do *not* need to remember this, but I better tell you right away,
+     so you' won't be surprised later: This address:
+  <p><tt>@websiteAddr</tt>,
+  <p>is where you login, if you want to transfer ownership to someone else,
+     or if you want to ban all admins at once.
+     You usually don't want to any of this though.
+     Even if you map another domain to this address (i.e. to @websiteAddr),
+     you would still login to @websiteAddr, to transfer ownership.
+
+  <p>If you own a domain, you could point it to this address:
+      <tt>@websiteAddr</tt>
+
+  <p>Now, perhaps you'd like to
+     <a href="/?create-page">create a home page</a>.
+  *@
+}
+
+
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Create Website</title>
+</head>
+<body>
+<div>
+  @doWhat match {
+    case "showWebsiteNameForm" => { @showWebsiteNameForm }
+    case "showOwnerLoginForm" => { @showOwnerLoginForm }
+    case "welcomeOwner" => { @welcomeOwner }
+    case _ => {
+      // COULD throw instead?
+      play.api.Logger.error("Bad doWhat: "+ doWhat)
+      <p>Internal server error</p>
+    }
+  }
+</div>
+</body>
+</html>
+
