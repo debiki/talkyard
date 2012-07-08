@@ -1,11 +1,7 @@
 /**
  * Debiki Utterscroll — dragscroll everywhere
  *
- * Copyright (c) 2012 Kaj Magnus Lindberg
- *
- * Licensed under the GNU Lesser General Public License version 3,
- * or any later version:
- *   http://www.gnu.org/licenses/lgpl.txt
+ * Copyright (c) 2012 Kaj Magnus Lindberg. All rights reserved.
  *
  * Find in the rest of this file:
  * - jQuery extensions: jQuery.dwEnableSelection and dwDisableSelection

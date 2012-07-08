@@ -1,4 +1,4 @@
-// vim: fdm=marker et ts=2 sw=2 tw=80 fo=tcqwn list
+/* Copyright (c) 2010 - 2012 Kaj Magnus Lindberg. All rights reserved. */
 
 // In this file:
 // - jQuery extension functions, prefixed with "dw" to avoid name clashes
@@ -5437,3 +5437,4 @@ debiki.v0.setRatePostUrl(function(debateId, rootPostId, postId) {
    })
 //----------------------------------------
 
+// vim: fdm=marker et ts=2 sw=2 tw=80 fo=tcqwn list

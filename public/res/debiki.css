@@ -1,4 +1,5 @@
-/* vim: fdm=marker et ts=2 sw=2 tw=80 fo=tcqwn list
+/* Copyright (c) 2010 - 2012 Kaj Magnus Lindberg. All rights reserved.
+ *
  *
  * Tips: List all CSS classes like so: (old `find`, finds nothing nowadays?)
  *   find debiki-core-basedir/src -type f -print0 | \
@@ -2316,3 +2317,5 @@ img.debiki-0-inline {
   width: auto;
 }
 
+/* vim: fdm=marker et ts=2 sw=2 tw=80 fo=tcqwn list
+ */
