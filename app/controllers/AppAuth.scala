@@ -59,11 +59,15 @@ object AppAuth extends mvc.Controller {
           case (sidOk: SidOk, xsrfOk: XsrfOk) => (sidOk, xsrfOk, Nil)
           case (_: SidOk, _) => throwForbiddenDialog(
             "DwE35k3wkU9", "Bad XSRF token", "",
+            // If Javascript is disabled, the reason for the invalid token
+            // could be as described in the end user message bellow. If,
+            // however, Javascript is enabled, debiki.js should detect logins
+            // in other browser tabs, and then check the new SID cookie and
+            // refresh XSRF tokens in any <form>s.
             "Did you just log in as another user in another browser tab?\n"+
             "Try reloading this page.\n"+
             "And copy-paste [any text you've written but not saved] "+
-            "to a text editor, or it'll be lost on reload.\n\n"+
-            "I'm sorry for this inconvenience.")
+            "to a text editor, or it'll be lost on reload.")
           case (_, _) => throwForbidden("DwE530Rstx90", "Bad SID")
         }
       }
