@@ -17,6 +17,7 @@ import play.api.data.Forms._
 import play.api.libs.concurrent._
 import play.api.libs.{openid => oid}
 import Actions._
+import Utils.ValidationImplicits._
 
 
 object AppAuthOpenid extends mvc.Controller {
@@ -38,31 +39,41 @@ object AppAuthOpenid extends mvc.Controller {
 
   // COULD change to an ErrorAction, and use throwBadReq instead of BadRequest.
   def loginPost = mvc.Action(parse.urlFormEncoded(maxLength = 200)) {
-        implicit request =>
+        request =>
+    asyncLogin(returnToUrl = "")(request)
+  }
+
+
+  def asyncLogin(returnToUrl: String)(
+        implicit request: Request[Map[String, Seq[String]]]): AsyncResult = {
     // (From the spec: The form field's "name" attribute should have the value
     // "openid_identifier", so that User-Agents can automatically
     // determine that this is an OpenID form.
     //    http://openid.net/specs/openid-authentication-2_0.html#discovery )
-      Form(single("openid_identifier" -> nonEmptyText)).bindFromRequest.fold(
-      error => {
-        Logger.debug("Bad request: " + error.toString)
-        BadRequest(error.toString)
-      }, {
-        case (openid) =>
-          val realm = _wildcardRealmFor(request.host)
-          AsyncResult(oid.OpenID.redirectURL(openid,
-            routes.AppAuthOpenid.loginCallback.absoluteURL(),
-            RequiredAttrs, realm = Some(realm))
-             .extend(_.value match {
-            case Redeemed(url) =>
-              Logger.trace("OpenID redirect URL found: " + url)
-              Redirect(url)
-            case Thrown(t) =>
-              Logger.debug("OpenID redirect URL error, id: " + openid +
-                 ", error: " + t)
-              Redirect(routes.AppAuthOpenid.loginGet)
-          }))
-      })
+    val openIdIdentifier = request.body.getOrThrowBadReq("openid_identifier")
+    val realm = _wildcardRealmFor(request.host)
+
+    // Find out to which OpenID provider the user should be redirected to,
+    // and subsequently login.
+    var promise: Promise[String] =
+      oid.OpenID.redirectURL(  // issues a HTTP request
+        openIdIdentifier,
+        routes.AppAuthOpenid.loginCallback(returnToUrl).absoluteURL(),
+        RequiredAttrs,
+        realm = Some(realm))
+
+    // On success, redirect the browser to that provider.
+    val result = promise.extend(_.value match {
+      case Redeemed(url: String) =>
+        Logger.trace("OpenID provider redirection URL discovered: " + url)
+        Redirect(url)
+      case Thrown(t) =>
+        Logger.debug("OpenID provider redirection URL error, OpenId: " +
+           openIdIdentifier +", error: "+ t)
+        Redirect(routes.AppAuthOpenid.loginGet)
+    })
+
+    AsyncResult(result)
   }
 
 
@@ -105,7 +116,7 @@ object AppAuthOpenid extends mvc.Controller {
   private val _IpRegex = """\d+\.\d+\.\d+\.\d+(:\d+)?""".r
 
 
-  def loginCallback = mvc.Action { request =>
+  def loginCallback(returnToUrl: String) = mvc.Action { request =>
     val qs = request.queryString
     lazy val id =
       qs.get("openid.claimedId").flatMap(_.headOption).orElse(
@@ -113,14 +124,15 @@ object AppAuthOpenid extends mvc.Controller {
     Logger.trace("Verifying OpenID: "+ id +" ...")
 
     AsyncResult(oid.OpenID.verifiedId(request).extend(_.value match {
-      case Redeemed(userInfo) => _handleLoginOk(request, userInfo)
+      case Redeemed(userInfo) => _handleLoginOk(request, userInfo, returnToUrl)
       case Thrown(t) => _handleLoginFailure(request, t)
     }))
   }
 
 
   private def _handleLoginOk(
-        request: Request[AnyContent], info: oid.UserInfo): Result = {
+        request: Request[AnyContent], info: oid.UserInfo, returnToUrl: String)
+        : Result = {
 
     Logger.trace("OpenID verified okay: " + info.id +
        ", attributes: " + info.attributes)
@@ -177,14 +189,20 @@ object AppAuthOpenid extends mvc.Controller {
     val loginGrant =
        Debiki.tenantDao(tenantId, ip = addr).saveLogin(loginReq)
 
-    // ----- Reply OK, with cookies
+    // ----- Reply, with session cookies
 
     val (_, _, sidAndXsrfCookies) = Xsrf.newSidAndXsrf(Some(loginGrant))
     val userConfigCookie = AppConfigUser.userConfigCookie(loginGrant)
 
-    Ok(views.html.loginOpenidCallback("LoginOk",
-      "You have been logged in, welcome " + loginGrant.displayName +"!"))
-       .withCookies(userConfigCookie::sidAndXsrfCookies: _*)
+    val result = returnToUrl match {
+      case "" =>
+        Ok(views.html.loginOpenidCallback("LoginOk",
+          "You have been logged in, welcome " + loginGrant.displayName +"!"))
+      case url =>
+        Redirect(url)
+    }
+
+    result.withCookies(userConfigCookie::sidAndXsrfCookies: _*)
   }
 
 

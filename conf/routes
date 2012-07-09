@@ -13,7 +13,7 @@ GET   /-/api/login-simple       controllers.AppAuth.loginSimple
 POST  /-/api/login-simple       controllers.AppAuth.loginSimple
 GET   /-/api/login-openid       controllers.AppAuthOpenid.loginGet
 POST  /-/api/login-openid       controllers.AppAuthOpenid.loginPost
-GET   /-/api/login-openid-clbk  controllers.AppAuthOpenid.loginCallback
+GET   /-/api/login-openid-clbk  controllers.AppAuthOpenid.loginCallback(returnToUrl)
 GET   /-/api/logout             controllers.AppAuth.logout
 POST  /-/api/logout             controllers.AppAuth.logout
 
