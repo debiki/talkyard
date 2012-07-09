@@ -268,7 +268,7 @@ object Actions {
    * e.g. 403 Forbidden and a user friendly message,
    * instead of 500 Internal Server Error and a stack trace or Ooops message.
    */
-  def ExceptionAction[A](parser: BodyParser[A])(f: Request[A] => PlainResult) =
+  def ExceptionAction[A](parser: BodyParser[A])(f: Request[A] => Result) =
         mvc.Action[A](parser) { request =>
     try {
       f(request)
