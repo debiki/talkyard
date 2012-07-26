@@ -9,6 +9,9 @@ var KEYCODE_ESC = 27;
 var VIEWPORT_MIN_WIDTH = 320; // okay with Modern Android and iPhone mobiles
 
 
+// ------- String utils
+
+
 function trunc(number) {
   return number << 0;  // bitwise operations convert to integer
 }
@@ -21,6 +24,9 @@ function isBlank(str) {
 }
 
 
+// ------- Time utils
+
+
 // Converts an ISO 8601 date string to a milliseconds date since 1970,
 // and handles MSIE 7 and 8 issues (they don't understand ISO strings).
 function isoDateToMillis(dateStr) {
@@ -31,6 +37,33 @@ function isoDateToMillis(dateStr) {
     dateStr = dateStr.replace('-', '/').replace('T', ' ');
   }
   return Date.parse(dateStr);
+}
+
+
+// `then' and `now' can be Date:s or milliseconds.
+// Consider using: https://github.com/rmm5t/jquery-timeago.git, supports i18n.
+function prettyTimeBetween(then, now) {  // i18n
+  var thenMillis = then.getTime ? then.getTime() : then;
+  var nowMillis = now.getTime ? now.getTime() : now;
+  var diff = nowMillis - thenMillis;
+  var second = 1000;
+  var minute = second * 60;
+  var hour = second * 3600;
+  var day = hour * 24;
+  var week = day * 7;
+  var month = day * 31 * 30 / 2;  // integer
+  var year = day * 365;
+  // I prefer `30 hours ago' to `1 day ago', but `2 days ago' to `50 hours ago'.
+  if (diff > 2 * year) return trunc(diff / year) +" years ago";
+  if (diff > 2 * month) return trunc(diff / month) +" months ago";
+  if (diff > 2 * week) return trunc(diff / week) +" weeks ago";
+  if (diff > 2 * day) return trunc(diff / day) +" days ago";
+  if (diff > 2 * hour) return trunc(diff / hour) +" hours ago";
+  if (diff > 2 * minute) return trunc(diff / minute) +" minutes ago";
+  if (diff > 1 * minute) return "1 minute ago";
+  if (diff > 2 * second) return trunc(diff / second) +" seconds ago";
+  if (diff > 1 * second) return "1 second ago";
+  return "0 seconds ago";
 }
 
 
@@ -57,6 +90,7 @@ if (typeof console === 'undefined' || !console.log) {
 
 // ------- Zoom event
 
+
 var zoomListeners = [];
 var zoomListenerHandle_dbg;
 
@@ -79,6 +113,7 @@ var zoomListenerHandle_dbg;
 
 
 // ------- Bug functions
+
 
 // Don't use. Use die2 instead. Could rewrite all calls to die() to use
 // die2 instead, and then rename die2 to die and remove the original die().
@@ -121,6 +156,54 @@ jQuery.fn.dwBugIfEmpty = function(errorGuid) {
   bugIf(!this.length, errorGuid);
   return this;
 };
+
+
+// ------- HTML helpers
+
+
+// Finds all tags with an id attribute, and (hopefully) makes
+// the ids unique by appending a unique (within this Web page) number to
+// the ids. Updates any <label> `for' attributes to match the new ids.
+// If hrefStart specified, appends the unique number to hrefs that starts
+// with hrefStart.  (This is useful e.g. if many instances of a jQuery UI
+// widget is to be instantiated, and widget internal stuff reference other
+// widget internal stuff via ids.)
+function makeIdsUniqueUpdateLabels(jqueryObj, hrefStart) {
+  var seqNo = '_sno-'+ (++idSuffixSequence);
+  jqueryObj.find("*[id]").each(function(ix) {
+      $(this).attr('id', $(this).attr('id') + seqNo);
+    });
+  jqueryObj.find('label').each(function(ix) {
+      $(this).attr('for', $(this).attr('for') + seqNo);
+    });
+  jqueryObj.find('*[href^='+ hrefStart + ']').each(function(ix) {
+    $(this).attr('href', this.hash + seqNo);
+  });
+}
+
+
+function buildTagFind(html, selector) {
+  if (selector.indexOf('#') !== -1) die('Cannot lookup by ID: '+
+      'getElementById might return false, so use buildTagFindId instead');
+  // From jQuery 1.4.2, jQuery.fn.load():
+  var $wrap =
+      // Create a dummy div to hold the results
+      jQuery('<div />')
+      // inject the contents of the document in, removing the scripts
+      // to avoid any 'Permission Denied' errors in IE
+      .append(html.replace(/<script(.|\s)*?\/script>/gi, ''));
+  var $tag = $wrap.find(selector);
+  return $tag;
+}
+
+
+// Builds HTML tags from `html' and returns the tag with the specified id.
+// Works also when $.find('#id') won't (because of corrupt XML?).
+function buildTagFindId(html, id) {
+  if (id.indexOf('#') !== -1) die('Include no # in id [error DwE85x2jh]');
+  var $tag = buildTagFind(html, '[id="'+ id +'"]');
+  return $tag;
+}
 
 
 // vim: fdm=marker et ts=2 sw=2 tw=80 fo=tcqwn list
