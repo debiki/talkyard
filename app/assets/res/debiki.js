@@ -126,66 +126,6 @@ function sanitizeHtml(htmlTextUnsafe, options) {
 
 
 
-//----------------------------------------
-// Customizable functions: Default implementations
-//----------------------------------------
-
-var Settings = {};
-
-Settings.makeRatePostUrl = function(debateId, rootPostId, postId) {
-  // Default:
-  // (Firefox doesn't accept an Ajax post request "" (i.e. the same page);
-  // nsIXMLHttpRequest.open fails with NS_ERROR_ILLEGAL_VALUE.)
-  return '?';
-};
-
-Settings.replyFormLoader = function(debateId, rootPostId, postId, complete) {
-  // Simply clone a hidden reply form template.
-  var $replyForm = jQuery('#dw-hidden-templates .dw-fs-re').clone(true);
-  complete($replyForm);
-};
-
-Settings.replyFormSubmitter = function(debateId, rootPostId, postId) {
-  // By default, post no reply.
-  alert("Cannot post reply. [error DwE85ei23rnir]");
-};
-
-Settings.editFormLoader = function(debateId, postId, complete) {
-  alert('Edits not implemented. [error DwE239sx8]');
-};
-
-Settings.editFormSubmitter = function($form, debateId, rootPostId,
-    postId, complete) {
-  // By default, post no reply.
-  alert("Edits not implemented. [error DwE19x3g35]");
-};
-
-
-//----------------------------------------
-// Customizable functions: Export setters
-//----------------------------------------
-
-debiki.v0.setRatePostUrl = function(urlBuilder) {
-  Settings.makeRatePostUrl = urlBuilder;
-};
-
-debiki.v0.setReplyFormLoader = function(loader) {
-  Settings.replyFormLoader = loader;
-};
-
-debiki.v0.setReplyFormSubmitter = function(submitter) {
-  Settings.replyFormSubmitter = submitter;
-};
-
-debiki.v0.setEditFormLoader = function(loader) {
-  Settings.editFormLoader = loader;
-};
-
-debiki.v0.setEditFormSubmitter = function(submitter) {
-  Settings.editFormSubmitter = submitter;
-};
-
-
 // Onload
 //----------------------------------------
    jQuery.noConflict()(function($){
@@ -2848,7 +2788,11 @@ function $showRatingForm(event) {
       return $(this).val().toLowerCase();
     }).get();
 
-    $.post(Settings.makeRatePostUrl(debateId, rootPostId, postId),
+    function makeRatePostUrl(debateId, rootPostId, postId) {
+      return '?rate='+ postId +'&view='+ rootPostId;
+    }
+
+    $.post(makeRatePostUrl(debateId, rootPostId, postId),
           $rateForm.serialize(), 'html')
         .done(function(recentChangesHtml) {
       slideAwayRemove($formParent);
@@ -3047,7 +2991,13 @@ function $showReplyForm(event, opt_where) {
 
   // Create a reply form, or Ajax-load it (depending on the Web framework
   // specifics).
-  Settings.replyFormLoader(debateId, rootPostId, postId,
+  function replyFormLoader(debateId, rootPostId, postId, complete) {
+    // Simply clone a hidden reply form template.
+    var $replyForm = jQuery('#dw-hidden-templates .dw-fs-re').clone(true);
+    complete($replyForm);
+  }
+
+  replyFormLoader(debateId, rootPostId, postId,
       function($replyFormParent) {
 
     var $replyForm = $replyFormParent.children('form');
@@ -3079,9 +3029,14 @@ function $showReplyForm(event, opt_where) {
     $submitBtn.each($loginSubmitOnClick(setSubmitBtnTitle,
           { askAboutEmailNotfs: true }));
 
+    function replyFormSubmitter($form, debateId, rootPostId, postId) {
+      return $.post('?reply='+ postId +'&view='+ rootPostId,
+          $form.serialize(), 'html');
+    }
+
     // Ajax-post reply on submit.
     $replyForm.submit(function() {
-      Settings.replyFormSubmitter($replyForm, debateId, rootPostId, postId)
+      replyFormSubmitter($replyForm, debateId, rootPostId, postId)
         .fail(showErrorEnableInputs($replyForm))
         .done(function(newDebateHtml) {
           // The server has replied. Merge in the data from the server
@@ -3224,9 +3179,7 @@ function _$showEditFormImpl() {
   // It's confusing with Reply/Rate/etc below the edit form.
   hideActions();
 
-  // COULD move function to debiki-lift.js:
   var editFormLoader = function(debateId, rootPostId, postId, complete) {
-    // see comments in setReplyFormLoader above on using datatype text
     $.get('?edit='+ postId +'&view='+ rootPostId, function(editFormText) {
       // Concerning filter(…): [0] and [2] are text nodes.
       var $editForm = $(editFormText).filter('form');
@@ -3488,7 +3441,12 @@ function _$showEditFormImpl() {
       // Ensure any text edited with CodeMirror gets submitted.
       if (codeMirrorEditor) codeMirrorEditor.save();
 
-      Settings.editFormSubmitter($editForm, debateId, rootPostId, postId)
+      function editFormSubmitter($form, debateId, rootPostId, postId) {
+        return $.post('?edit='+ postId +'&view='+ rootPostId,
+            $form.serialize(), 'html');
+      }
+
+      editFormSubmitter($editForm, debateId, rootPostId, postId)
           .fail(showErrorEnableInputs($editForm))
           .done(function(newDebateHtml) {
         slideAwayRemove($editForm);
@@ -4223,73 +4181,9 @@ if (rootPostId) renderPageEtc();
 //----------------------------------------
    }); // end jQuery onload
 //----------------------------------------
-
 //========================================
    }()); // end Debiki module
 //========================================
 
-
-// For now, inline former debiki-lift.js here.
-// For unknown reasons, I could never get Play Framework RC3 to route
-// to that file.
-//----------------------------------------
-   jQuery.noConflict()(function($){
-//----------------------------------------
-
-"use strict;"
-
-// Don't remove the doctype comment below!
-/*
-debiki.v0.setReplyFormLoader(function(debateId, postId, complete) {
-
-  // Use datatype "text", because, in at least Chrome 9.0.597.19 beta:
-  // 1. If data type "xml" is specified, the error
-  // "WRONG_DOCUMENT_ERR: DOM Exception 4" occurs.
-  // 2. If data typ "text" is specified, and an XML header <?xml version...?>
-  // is included in replyData, the error "WRONG_DOCUMENT_ERR: DOM Exception 4"
-  // happens.
-  // 3. If no data type is specified, an error happens in jquery-1.4.2.js line
-  // 4187: "Uncaught TypeError: Cannot call method 'replace' of undefined".
-  // Here: (innerHTML is undefined, no idea why)
-  //  html: function( value ) {
-  //      if ( value === undefined ) {
-  //          return this[0] && this[0].nodeType === 1 ?
-  //  --->        this[0].innerHTML.replace(rinlinejQuery, "") :
-  //              null;
-  // Therefore: data type "text" is specified below. (And the server uploads
-  // no XML header.)
-
-  $.get('/-'+ debateId +'/'+ postId +'.xml?reply', function(replyText) {
-    var $replyForm = $(replyText).find('.dw-fs-re');
-    complete($replyForm)
-  }, 'text');
-});
-
-debiki.v0.setEditFormLoader(function(debateId, rootPostId, postId, complete) {
-  // see comments in setReplyFormLoader above on using datatype text
-  $.get('?edit='+ postId +'&view='+ rootPostId, function(editFormText) {
-    var $editForm = $(editFormText).find('.dw-fs-ed');
-    complete($editForm)
-  }, 'text');
-});
-*/
-
-debiki.v0.setReplyFormSubmitter(function($form, debateId, rootPostId, postId) {
-  return $.post('?reply='+ postId +'&view='+ rootPostId,
-      $form.serialize(), 'html');
-});
-
-debiki.v0.setEditFormSubmitter(function($form, debateId, rootPostId, postId) {
-  return $.post('?edit='+ postId +'&view='+ rootPostId, $form.serialize(),
-      'html');
-});
-
-debiki.v0.setRatePostUrl(function(debateId, rootPostId, postId) {
-  return '?rate='+ postId +'&view='+ rootPostId;
-});
-
-//----------------------------------------
-   })
-//----------------------------------------
 
 // vim: fdm=marker et ts=2 sw=2 tw=80 fo=tcqwn list
