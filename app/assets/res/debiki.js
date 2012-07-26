@@ -196,11 +196,6 @@ var rootPostId = $('.dw-depth-0');
 rootPostId = rootPostId.length ?
     rootPostId.attr('id').substr(5) : undefined; // drops initial `dw-t-'
 
-// When forms are loaded from the server, they might have ID fields.
-// If the same form is loaded twice (e.g. to reply twice to the same comment),
-// their ids would clash. So their ids are made unique by appending a form no.
-var idSuffixSequence = 0;
-
 var $lastInlineMenu = $();
 
 // Remembers which .dw-loginsubmit-on-click button (e.g. "Post as...")
@@ -228,6 +223,10 @@ var Me = makeCurUser();
 
 
 // ------- jQuery dialogs
+
+
+var VIEWPORT_MIN_WIDTH = 320; // okay with Modern Android and iPhone mobiles
+
 
 /**
  * Debiki's default jQuery UI dialog settings.
@@ -3871,7 +3870,7 @@ function renderPageEtc() {
   // When you zoom in or out, the width of the root thread might change
   // a few pixels — then its parent should be resized so the root
   // thread fits inside with no float drop.
-  zoomListeners.push(resizeRootThread);
+  d.u.zoomListeners.push(resizeRootThread);
 
   var steps = [];
   steps.push(initPostsThreadStep1);
@@ -3907,7 +3906,6 @@ function renderPageEtc() {
 
 
 // Export stuff.
-d.i.$ = $;
 d.i.SVG = SVG;
 d.i.Me = Me;
 d.i.$initPostsThread = $initPostsThread;

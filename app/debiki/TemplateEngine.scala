@@ -500,7 +500,7 @@ object TemplateEngine {
 
 
   private val debikiNamespaceAndScriptLoad = """
-    |var debiki = { v0: { util: {} }, internal: {} };
+    |var debiki = { v0: { util: {} }, internal: { $: jQuery } };
     |debiki.scriptLoad = $.Deferred();
     |""".stripMargin
 

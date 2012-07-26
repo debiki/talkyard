@@ -23,6 +23,7 @@ c   x1,y1 x2,y2 x,y curveto   Relative coordinates.
 // between threads, e.g. on the visibility:hidden .dw-t-vspace elems.
 debiki.internal.makeSvgDrawer = function($) {
 
+  var d = { i: debiki.internal, u: debiki.v0.util };
   var svgns = "http://www.w3.org/2000/svg";
 
   function $createSvgRoot() {
@@ -35,7 +36,7 @@ debiki.internal.makeSvgDrawer = function($) {
     // Poll for zoom in/out events, and redraw arrows if zoomed,
     // because svg and html are not resized in the same manner: Unless
     // arrows redrawn, their ends are incorrectly offsett.
-    zoomListeners.push(drawEverything);
+    d.u.zoomListeners.push(drawEverything);
 
     // (In the future, here will probably be created a global full window SVG
     // that can draw arrows between any elems.)

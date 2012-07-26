@@ -1,23 +1,23 @@
 /* Copyright (c) 2010 - 2012 Kaj Magnus Lindberg. All rights reserved. */
 
-// TODO move to namespace debiki.v0.util?
+// TODO move to namespace debiki.v0.util? (not `window.*`!)
 // (I just broke out this file, that's why I haven't fixed that yet.)
 
+(function() {
 
-var KEYCODE_ENTER = 13;
-var KEYCODE_ESC = 27;
-var VIEWPORT_MIN_WIDTH = 320; // okay with Modern Android and iPhone mobiles
+var d = { i: debiki.internal, u: debiki.v0.util };
+var $ = d.i.$;
 
 
 // ------- String utils
 
 
-function trunc(number) {
+window.trunc = function(number) {
   return number << 0;  // bitwise operations convert to integer
 }
 
 
-function isBlank(str) {
+window.isBlank = function(str) {
   return !str || !/\S/.test(str);
   // (!/\S/ is supposedly much faster than /^\s*$/,
   // see http://zipalong.com/blog/?p=287)
@@ -29,7 +29,7 @@ function isBlank(str) {
 
 // Converts an ISO 8601 date string to a milliseconds date since 1970,
 // and handles MSIE 7 and 8 issues (they don't understand ISO strings).
-function isoDateToMillis(dateStr) {
+window.isoDateToMillis = function(dateStr) {
   if (!dateStr) return NaN;
   // For IE 7 and 8, change from e.g. '2011-12-15T11:34:56Z' to
   // '2011/12/15 11:34:56Z'.
@@ -42,7 +42,7 @@ function isoDateToMillis(dateStr) {
 
 // `then' and `now' can be Date:s or milliseconds.
 // Consider using: https://github.com/rmm5t/jquery-timeago.git, supports i18n.
-function prettyTimeBetween(then, now) {  // i18n
+window.prettyTimeBetween = function(then, now) {  // i18n
   var thenMillis = then.getTime ? then.getTime() : then;
   var nowMillis = now.getTime ? now.getTime() : now;
   var diff = nowMillis - thenMillis;
@@ -91,8 +91,7 @@ if (typeof console === 'undefined' || !console.log) {
 // ------- Zoom event
 
 
-var zoomListeners = [];
-var zoomListenerHandle_dbg;
+d.u.zoomListeners = [];
 
 (function(){
   // Poll the pixel width of the window; invoke zoom listeners
@@ -104,11 +103,11 @@ var zoomListenerHandle_dbg;
     if (lastWidth === widthNow) return;
     lastWidth = widthNow;
     // Length changed, user must have zoomed, invoke listeners.
-    for (i = zoomListeners.length - 1; i >= 0; --i) {
-      zoomListeners[i]();
+    for (i = d.u.zoomListeners.length - 1; i >= 0; --i) {
+      d.u.zoomListeners[i]();
     }
   }
-  zoomListenerHandle_dbg = setInterval(pollZoomFireEvent, 100);
+  d.u.zoomListenerHandle_dbg = setInterval(pollZoomFireEvent, 100);
 }());
 
 
@@ -117,29 +116,29 @@ var zoomListenerHandle_dbg;
 
 // Don't use. Use die2 instead. Could rewrite all calls to die() to use
 // die2 instead, and then rename die2 to die and remove the original die().
-function die(message) {
+window.die = function(message) {
   throw new Error(message);
 }
 
 
-function die2(errorCode, message) {
+window.die2 = function(errorCode, message) {
   var mess2 = message ? message +' ' : '';
   var err2 = errorCode ? ' '+ errorCode : '';
   throw new Error(mess2 + '[error'+ err2 +']');
 }
 
 
-function dieIf(test, message) {
+window.dieIf = function(test, message) {
   if (test) throw new Error(message);
 }
 
 
-function die2If(test, errorCode, message) {
+window.die2If = function(test, errorCode, message) {
   if (test) die2(errorCode, message);
 }
 
 
-function bugIf(test, errorGuid) {
+window.bugIf = function(test, errorGuid) {
   if (test) throw new Error('Internal error ['+ errorGuid +']');
 }
 
@@ -168,7 +167,7 @@ jQuery.fn.dwBugIfEmpty = function(errorGuid) {
 // with hrefStart.  (This is useful e.g. if many instances of a jQuery UI
 // widget is to be instantiated, and widget internal stuff reference other
 // widget internal stuff via ids.)
-function makeIdsUniqueUpdateLabels(jqueryObj, hrefStart) {
+window.makeIdsUniqueUpdateLabels = function(jqueryObj, hrefStart) {
   var seqNo = '_sno-'+ (++idSuffixSequence);
   jqueryObj.find("*[id]").each(function(ix) {
       $(this).attr('id', $(this).attr('id') + seqNo);
@@ -181,8 +180,13 @@ function makeIdsUniqueUpdateLabels(jqueryObj, hrefStart) {
   });
 }
 
+// When forms are loaded from the server, they might have ID fields.
+// If the same form is loaded twice (e.g. to reply twice to the same comment),
+// their ids would clash. So their ids are made unique by appending a form no.
+var idSuffixSequence = 0;
 
-function buildTagFind(html, selector) {
+
+window.buildTagFind = function(html, selector) {
   if (selector.indexOf('#') !== -1) die('Cannot lookup by ID: '+
       'getElementById might return false, so use buildTagFindId instead');
   // From jQuery 1.4.2, jQuery.fn.load():
@@ -199,11 +203,14 @@ function buildTagFind(html, selector) {
 
 // Builds HTML tags from `html' and returns the tag with the specified id.
 // Works also when $.find('#id') won't (because of corrupt XML?).
-function buildTagFindId(html, id) {
+window.buildTagFindId = function(html, id) {
   if (id.indexOf('#') !== -1) die('Include no # in id [error DwE85x2jh]');
   var $tag = buildTagFind(html, '[id="'+ id +'"]');
   return $tag;
 }
+
+
+})();
 
 
 // vim: fdm=marker et ts=2 sw=2 tw=80 fo=tcqwn list
