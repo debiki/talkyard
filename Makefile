@@ -91,6 +91,9 @@ JS_COMMON_SRC = \
 JS_COMMON_SRC_2 = \
   ${PUBLIC_JS_DIR}tagdog.js
 
+JS_TOUCH_ONLY_SRC = \
+  ${PUBLIC_JS_DIR}android-zoom-bug-workaround.min.js
+
 JS_DESKTOP_ONLY_SRC = \
   ${PUBLIC_JS_DIR}jquery-scrollable.js \
   ${PUBLIC_JS_DIR}debiki-utterscroll.js \
@@ -103,6 +106,7 @@ JS_LOGIN_SRC = \
 
 JS_TOUCH_SRC = \
   ${JS_COMMON_SRC} \
+  ${JS_TOUCH_ONLY_SRC} \
   ${DEBIKI_MIN_JS} \
   ${JS_COMMON_SRC_2}
 

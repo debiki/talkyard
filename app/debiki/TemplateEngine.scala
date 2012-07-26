@@ -499,6 +499,11 @@ object TemplateEngine {
   val minMaxJs = if (Play.isProd) ".min.js" else ".js"
 
 
+  private val debikiNamespaceAndScriptLoad = """
+    |var debiki = { v0: { util: {} }, internal: {} };
+    |debiki.scriptLoad = $.Deferred();
+    |""".stripMargin
+
   val HeadHtml: NodeSeq =
     <div>
     {/* Some other viewport values, and the absence of a value,
@@ -526,7 +531,7 @@ object TemplateEngine {
       // The debiki.scriptLoad $.Deferred is resolved later by debiki.js.
       if (Play.isProd) {
         <script>
-        var debiki = {{ scriptLoad: $.Deferred() }};
+        { debikiNamespaceAndScriptLoad }
         Modernizr.load({{
           test: Modernizr.touch,
           yep: '/-/res/combined-debiki-touch.min.js',
@@ -535,13 +540,15 @@ object TemplateEngine {
         </script>
       } else {
         <script>
+        { debikiNamespaceAndScriptLoad }
         // Play doesn't make `require` and `exports` available in dev builds.
         window.require = function() {{}};
         window.exports = {{}};
 
-        var debiki = {{ scriptLoad: $.Deferred() }};
         Modernizr.load({{
           test: Modernizr.touch,
+          yep: [
+            '/-/res/android-zoom-bug-workaround.js'],
           nope: [
             '/-/res/jquery-scrollable.js',
             '/-/res/debiki-utterscroll.js',
