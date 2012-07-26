@@ -1129,72 +1129,11 @@ key presses).*/
   margin-top: 1.3em;
 }
 
-
-/* --- Hoversubmit form --- */
-
-/* A modal dialog, with huge Enter and Cancel buttons that submit/cancel
-on mouseenter.  */
-
-form.dw-hoversubmit {
-  float: none;
-  position: absolute;
-  /* No top & left. Instead, we center the form on the mouse cursor,
-  via jQuery. */
-  width: 220px;
-  z-index: 1110; /* place above e.g. the reply form */
-  padding: 1.3em;
-  background-color: white;
-}
-
-.dw-hoversubmit .dw-fi-submit {
-  position: absolute;
-  top: 0px;
-  left: -89px;
-  height: 100%;
-  width: 90px;
-}
-
-.dw-hoversubmit .dw-fi-submit.ui-button-disabled {
-  opacity: 0.55; /* my sister thought it was placed below the overlay,
-     perhaps making it more opaque (jQuery UI default is 0.35) helps? */
-}
-
-.dw-hoversubmit .dw-fi-cancel {
-  position: absolute;
-  bottom: -53px;
-  left: 0px;
-  height: 55px;
-  width: 100%;
-}
-/* Places the cancel buttom above the form (instead of below it). */
-.dw-hoversubmit .dw-fi-cancel.dw-flip {
-  top: -53px;
-  bottom: auto;
-}
-
-/* Javascript adds .ui-widget-overlay too. */
-.dw-pri .dw-hoversubmit-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 9999px;
-  height: 9999px;
-  z-index: 1109; /* just below dw-hoversubmit */
-  opacity: 0.8;
-}
-
 .dw-pri .dw-inf-submitting-form {
   position: absolute;
   padding: 1em 2em;
-  left: 15px;
-  top: -29px;
-}
-
-.dw-pri .dw-inf-cancelled-form {
-  position: absolute;
-  padding: 1.5em 3em;
-  left: 15px;
-  top: -29px;
+  /*left: 15px; /* disabled on 2012-07-26, remove after some months */
+  /*top: -29px; /* disabled on 2012-07-26 */
 }
 
 
