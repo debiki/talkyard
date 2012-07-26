@@ -2788,12 +2788,8 @@ function $showRatingForm(event) {
       return $(this).val().toLowerCase();
     }).get();
 
-    function makeRatePostUrl(debateId, rootPostId, postId) {
-      return '?rate='+ postId +'&view='+ rootPostId;
-    }
-
-    $.post(makeRatePostUrl(debateId, rootPostId, postId),
-          $rateForm.serialize(), 'html')
+    $.post('?rate='+ postId +'&view='+ rootPostId, $rateForm.serialize(),
+        'html')
         .done(function(recentChangesHtml) {
       slideAwayRemove($formParent);
       $rateAction.dwActionLinkEnable();
@@ -2989,17 +2985,9 @@ function $showReplyForm(event, opt_where) {
     }, delayMillis);
   }
 
-  // Create a reply form, or Ajax-load it (depending on the Web framework
-  // specifics).
-  function replyFormLoader(debateId, rootPostId, postId, complete) {
-    // Simply clone a hidden reply form template.
-    var $replyForm = jQuery('#dw-hidden-templates .dw-fs-re').clone(true);
-    complete($replyForm);
-  }
+  (function() { // in the past, loaded reply form here
 
-  replyFormLoader(debateId, rootPostId, postId,
-      function($replyFormParent) {
-
+    var $replyFormParent = jQuery('#dw-hidden-templates .dw-fs-re').clone(true);
     var $replyForm = $replyFormParent.children('form');
     makeIdsUniqueUpdateLabels($replyForm);
     $replyForm.resizable({
@@ -3029,14 +3017,10 @@ function $showReplyForm(event, opt_where) {
     $submitBtn.each($loginSubmitOnClick(setSubmitBtnTitle,
           { askAboutEmailNotfs: true }));
 
-    function replyFormSubmitter($form, debateId, rootPostId, postId) {
-      return $.post('?reply='+ postId +'&view='+ rootPostId,
-          $form.serialize(), 'html');
-    }
-
     // Ajax-post reply on submit.
     $replyForm.submit(function() {
-      replyFormSubmitter($replyForm, debateId, rootPostId, postId)
+      $.post('?reply='+ postId +'&view='+ rootPostId, $replyForm.serialize(),
+        'html')
         .fail(showErrorEnableInputs($replyForm))
         .done(function(newDebateHtml) {
           // The server has replied. Merge in the data from the server
@@ -3121,7 +3105,7 @@ function $showReplyForm(event, opt_where) {
 
     SVG.drawArrowsToReplyForm($replyFormParent); // is this needed?
     slideInActionForm($replyFormParent);
-  });
+  })();
 }
 
 // ------- Inline edits
@@ -3441,12 +3425,8 @@ function _$showEditFormImpl() {
       // Ensure any text edited with CodeMirror gets submitted.
       if (codeMirrorEditor) codeMirrorEditor.save();
 
-      function editFormSubmitter($form, debateId, rootPostId, postId) {
-        return $.post('?edit='+ postId +'&view='+ rootPostId,
-            $form.serialize(), 'html');
-      }
-
-      editFormSubmitter($editForm, debateId, rootPostId, postId)
+      $.post('?edit='+ postId +'&view='+ rootPostId, $editForm.serialize(),
+          'html')
           .fail(showErrorEnableInputs($editForm))
           .done(function(newDebateHtml) {
         slideAwayRemove($editForm);
