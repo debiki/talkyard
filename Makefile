@@ -86,11 +86,11 @@ JS_COMMON_SRC = \
   ${PUBLIC_JS_DIR}diff_match_patch.js \
   ${PUBLIC_JS_DIR}jquery-cookie.js \
   ${PUBLIC_JS_DIR}javascript-yaml-parser.js \
-  ${PUBLIC_JS_DIR}debiki-util.js \
-  ${PUBLIC_JS_DIR}debiki-scroll-into-view.js \
+  ${PUBLIC_JS_DIR}debiki-util.min.js \
+  ${PUBLIC_JS_DIR}debiki-scroll-into-view.min.js \
   ${PUBLIC_JS_DIR}debiki-merge-changes.min.js \
-  ${PUBLIC_JS_DIR}debiki-arrows-png.js \
-  ${PUBLIC_JS_DIR}debiki-arrows-svg.js
+  ${PUBLIC_JS_DIR}debiki-arrows-png.min.js \
+  ${PUBLIC_JS_DIR}debiki-arrows-svg.min.js
 
 # Depends on stuff in ${DEBIKI_MIN_JS}. (tagdog.js depends on html-sanitizer-bundle.js.)
 JS_COMMON_SRC_2 = \
@@ -101,8 +101,8 @@ JS_TOUCH_ONLY_SRC = \
 
 JS_DESKTOP_ONLY_SRC = \
   ${PUBLIC_JS_DIR}jquery-scrollable.js \
-  ${PUBLIC_JS_DIR}debiki-utterscroll.js \
-  ${PUBLIC_JS_DIR}debiki-keyboard-shortcuts.js \
+  ${PUBLIC_JS_DIR}debiki-utterscroll.min.js \
+  ${PUBLIC_JS_DIR}debiki-keyboard-shortcuts.min.js \
   ${PUBLIC_JS_DIR}bootstrap-tooltip.js
 
 JS_LOGIN_SRC = \
