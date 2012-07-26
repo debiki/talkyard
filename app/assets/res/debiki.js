@@ -2746,7 +2746,6 @@ function submitLoginInPopup($openidLoginForm) {
 
 function $showRatingForm(event) {
   var $thread = $(this).closest('.dw-t');
-  clearfix($thread); // ensures the rating appears nested inside the thread
   var $post = $thread.children('.dw-p');
   var $formParent = rateFormTemplate.clone(true);
   var $rateForm = $formParent.children('form');
@@ -2931,7 +2930,6 @@ function $showReplyForm(event, opt_where) {
   var $thread = $(this).closest('.dw-t');
   var $replyAction = $thread.find('> .dw-p-as > .dw-a-reply');
   var $post = $thread.children('.dw-p');
-  clearfix($thread); // ensures the reply appears nested inside the thread
   var postId = $post.dwPostId();
   var horizLayout = $thread.is('.dw-hor');
   var replyCountBefore = $thread.find('> .dw-res > .dw-t').length;
@@ -3894,15 +3892,9 @@ function $makePostHeadTooltips() {  // i18n
 }
 
 
+
 // ------- Miscellaneous
 
-
-// Applies the clearfix fix to `thread' iff it has no child threads.
-function clearfix(thread) {
-  if (!thread.find(':has(.dw-t)').length) {
-    thread.addClass('ui-helper-clearfix');
-  }
-}
 
 // Finds all tags with an id attribute, and (hopefully) makes
 // the ids unique by appending a unique (within this Web page) number to
