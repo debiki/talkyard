@@ -559,6 +559,7 @@ object TemplateEngine {
             '/-/res/jquery-cookie.js',
             '/-/res/tagdog.js',
             '/-/res/javascript-yaml-parser.js',
+            '/-/res/debiki-scroll-into-view.js',
             '/-/res/debiki.js']
         }});
         </script>

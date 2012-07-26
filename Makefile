@@ -85,7 +85,8 @@ ${DEBIKI_MIN_JS}: ${DEBIKI_JS}
 JS_COMMON_SRC = \
   ${PUBLIC_JS_DIR}diff_match_patch.js \
   ${PUBLIC_JS_DIR}jquery-cookie.js \
-  ${PUBLIC_JS_DIR}javascript-yaml-parser.js
+  ${PUBLIC_JS_DIR}javascript-yaml-parser.js \
+  ${PUBLIC_JS_DIR}debiki-scroll-into-view.js
 
 # Depends on stuff in ${DEBIKI_MIN_JS}. (tagdog.js depends on html-sanitizer-bundle.js.)
 JS_COMMON_SRC_2 = \
