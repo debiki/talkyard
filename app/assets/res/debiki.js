@@ -174,7 +174,8 @@ function showInteractionsIfHidden() {
 
 // ------- Variables
 
-var internal = debiki.internal;
+// Import namespaces as `d.i` and `d.u`.
+var d = { i: debiki.internal, u: debiki.v0.util };
 
 // Debiki convention: Dialog elem tabindexes should vary from 101 to 109.
 // HTML generation code assumes this, too. See Debiki for Developers, #7bZG31.
@@ -220,7 +221,7 @@ $.event.add(document, "mousedown", function() {
 var nativeSvgSupport = Modernizr.inlinesvg;
 
 var SVG = nativeSvgSupport && document.URL.indexOf('svg=false') === -1 ?
-    debiki.internal.makeSvgDrawer($) : debiki.internal.makeFakeDrawer($);
+    d.i.makeSvgDrawer($) : d.i.makeFakeDrawer($);
 
 var Me = makeCurUser();
 
@@ -2393,7 +2394,7 @@ function initLoginSimple() {
     // might take a second if the user is far away?
     $.post($loginForm.attr("action"), $loginForm.serialize(), 'html')
         .done(function(data) {
-          // Warning: Somewhat dupl code, see internal.handleLoginResponse.
+          // Warning: Somewhat dupl code, see d.i.handleLoginResponse.
           // User info is now available in cookies.
           $login.dialog('close');
           fireLogin();
@@ -2671,8 +2672,8 @@ function submitLoginInPopup($openidLoginForm) {
     if (darkCover) {
       darkCover.style.visibility = 'hidden';
     }
-    if (internal.handleLoginResponse !== null) {
-      internal.handleLoginResponse({status: 'LoginFailed'});
+    if (d.i.handleLoginResponse !== null) {
+      d.i.handleLoginResponse({status: 'LoginFailed'});
     }
     if (waitCallback !== null) {
       window.clearInterval(waitCallback);
@@ -2681,8 +2682,8 @@ function submitLoginInPopup($openidLoginForm) {
   }
 
   // This callback is called from the return_to page:
-  internal.handleLoginResponse = function(result) {
-    internal.handleLoginResponse = null;
+  d.i.handleLoginResponse = function(result) {
+    d.i.handleLoginResponse = null;
     var errorMsg;
     if (/openid\.mode=cancel/.test(result.queryString)) {
       // This seems to happen if the user clicked No Thanks in some
@@ -3108,11 +3109,11 @@ function $showReplyForm(event, opt_where) {
 
 // ------- Inline edits
 
-internal.EditTabIdEdit = 0;
-internal.EditTabIdDiff = 1;
-internal.EditTabIdPreview = 2;
-internal.EditTabIdLast = internal.EditTabIdPreview;
-internal.EditTabCount = 3;
+d.i.EditTabIdEdit = 0;
+d.i.EditTabIdDiff = 1;
+d.i.EditTabIdPreview = 2;
+d.i.EditTabIdLast = d.i.EditTabIdPreview;
+d.i.EditTabCount = 3;
 
 
 var $loadEditorDependencies = (function() {
@@ -3184,7 +3185,7 @@ function _$showEditFormImpl() {
   var $oldEditForm = $post.children('.dw-f-e');
   if ($oldEditForm.length) {
     $oldEditForm.each($disableSubmitBtn);
-    $oldEditForm.find('.dw-e-tabs').tabs('select' , internal.EditTabIdEdit);
+    $oldEditForm.find('.dw-e-tabs').tabs('select' , d.i.EditTabIdEdit);
     $oldEditForm.show();
     $postBody.hide();
     scrollPostIntoView();
@@ -3290,7 +3291,7 @@ function _$showEditFormImpl() {
     // the user clicks Enter on the editor *tab link*.
     $editTabLink.keydown(function(event) {
       if (event.which !== $.ui.keyCode.ENTER) return;
-      if ($editTabs.tabs('option', 'selected') !== internal.EditTabIdEdit) {
+      if ($editTabs.tabs('option', 'selected') !== d.i.EditTabIdEdit) {
         // Only activate the editor if the user clicks when the panel is
         // already  visible. Instead, let jQuery UI handle the click
         // — it will show the edit panel.
@@ -3329,7 +3330,7 @@ function _$showEditFormImpl() {
     // between the tabs and the submit & cancel button).
     // Clearfix the tabs, because .dw-p-bd makes the preview tab float left.
     $editTabs.addClass('dw-ui-tabs-bottom ui-helper-clearfix').tabs({
-      selected: internal.EditTabIdEdit,
+      selected: d.i.EditTabIdEdit,
       show: function(event, ui) {
         // Sync the edit panel <textarea> with any codeMirrorEditor,
         // so the diff and preview tabs will work correctly.
@@ -3445,7 +3446,7 @@ function _$showEditFormImpl() {
     });
 
     // Finally,
-    debiki.internal.activateShortcutReceiver($editForm);
+    d.i.activateShortcutReceiver($editForm);
     focusEditor();
     scrollPostIntoView();
   });
@@ -4022,7 +4023,7 @@ function renderPageEtc() {
   function initPostsThreadStep3() { $posts.each($initPostsThreadStep3) }
   function initPostsThreadStep4() { $posts.each($initPostsThreadStep4) }
 
-  (debiki.v0.util.workAroundAndroidZoomBug || function() {})($);
+  (d.u.workAroundAndroidZoomBug || function() {})($);
 
   // IE 6, 7 and 8 specific elems (e.g. upgrade-to-newer-browser info)
   // (Could do this on the server instead, that'd work also with Javascript
@@ -4059,7 +4060,7 @@ function renderPageEtc() {
     debiki.scriptLoad.resolve();
   });
   if (!Modernizr.touch) steps.push(function() {
-    debiki.internal.initKeybdShortcuts($);
+    d.i.initKeybdShortcuts($);
     initUtterscroll();
   });
 
