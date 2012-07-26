@@ -88,6 +88,7 @@ JS_COMMON_SRC = \
   ${PUBLIC_JS_DIR}javascript-yaml-parser.js \
   ${PUBLIC_JS_DIR}debiki-util.js \
   ${PUBLIC_JS_DIR}debiki-scroll-into-view.js \
+  ${PUBLIC_JS_DIR}debiki-merge-changes.min.js \
   ${PUBLIC_JS_DIR}debiki-arrows-png.js \
   ${PUBLIC_JS_DIR}debiki-arrows-svg.js
 

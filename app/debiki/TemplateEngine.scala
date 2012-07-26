@@ -562,6 +562,7 @@ object TemplateEngine {
             '/-/res/javascript-yaml-parser.js',
             '/-/res/debiki-util.js',
             '/-/res/debiki-scroll-into-view.js',
+            '/-/res/debiki-merge-changes.js',
             '/-/res/debiki-arrows-png.js',
             '/-/res/debiki-arrows-svg.js',
             '/-/res/debiki.js']
