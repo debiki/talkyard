@@ -9,18 +9,8 @@ var d = { i: debiki.internal, u: debiki.v0.util };
 var $ = d.i.$;
 
 
-// ------- String utils
-
-
-window.trunc = function(number) {
+function trunc(number) {
   return number << 0;  // bitwise operations convert to integer
-}
-
-
-window.isBlank = function(str) {
-  return !str || !/\S/.test(str);
-  // (!/\S/ is supposedly much faster than /^\s*$/,
-  // see http://zipalong.com/blog/?p=287)
 }
 
 
@@ -29,7 +19,7 @@ window.isBlank = function(str) {
 
 // Converts an ISO 8601 date string to a milliseconds date since 1970,
 // and handles MSIE 7 and 8 issues (they don't understand ISO strings).
-window.isoDateToMillis = function(dateStr) {
+d.u.isoDateToMillis = function(dateStr) {
   if (!dateStr) return NaN;
   // For IE 7 and 8, change from e.g. '2011-12-15T11:34:56Z' to
   // '2011/12/15 11:34:56Z'.
@@ -42,7 +32,7 @@ window.isoDateToMillis = function(dateStr) {
 
 // `then' and `now' can be Date:s or milliseconds.
 // Consider using: https://github.com/rmm5t/jquery-timeago.git, supports i18n.
-window.prettyTimeBetween = function(then, now) {  // i18n
+d.u.prettyTimeBetween = function(then, now) {  // i18n
   var thenMillis = then.getTime ? then.getTime() : then;
   var nowMillis = now.getTime ? now.getTime() : now;
   var diff = nowMillis - thenMillis;
@@ -116,43 +106,43 @@ d.u.zoomListeners = [];
 
 // Don't use. Use die2 instead. Could rewrite all calls to die() to use
 // die2 instead, and then rename die2 to die and remove the original die().
-window.die = function(message) {
+d.u.die = function(message) {
   throw new Error(message);
 }
 
 
-window.die2 = function(errorCode, message) {
+d.u.die2 = function(errorCode, message) {
   var mess2 = message ? message +' ' : '';
   var err2 = errorCode ? ' '+ errorCode : '';
   throw new Error(mess2 + '[error'+ err2 +']');
 }
 
 
-window.dieIf = function(test, message) {
+d.u.dieIf = function(test, message) {
   if (test) throw new Error(message);
 }
 
 
-window.die2If = function(test, errorCode, message) {
-  if (test) die2(errorCode, message);
+d.u.die2If = function(test, errorCode, message) {
+  if (test) d.u.die2(errorCode, message);
 }
 
 
-window.bugIf = function(test, errorGuid) {
+d.u.bugIf = function(test, errorGuid) {
   if (test) throw new Error('Internal error ['+ errorGuid +']');
 }
 
 
 jQuery.fn.dwCheckIs = function(selector, errorCode) {
   var $ok = this.filter(selector);
-  die2If(this.length !== $ok.length, errorCode || 'DwE093k2', $ok.length +
+  d.u.die2If(this.length !== $ok.length, errorCode || 'DwE093k2', $ok.length +
       ' of '+ this.length +' elems is: '+ selector);
   return this;
 };
 
 
 jQuery.fn.dwBugIfEmpty = function(errorGuid) {
-  bugIf(!this.length, errorGuid);
+  d.u.bugIf(!this.length, errorGuid);
   return this;
 };
 
@@ -167,7 +157,7 @@ jQuery.fn.dwBugIfEmpty = function(errorGuid) {
 // with hrefStart.  (This is useful e.g. if many instances of a jQuery UI
 // widget is to be instantiated, and widget internal stuff reference other
 // widget internal stuff via ids.)
-window.makeIdsUniqueUpdateLabels = function(jqueryObj, hrefStart) {
+d.u.makeIdsUniqueUpdateLabels = function(jqueryObj, hrefStart) {
   var seqNo = '_sno-'+ (++idSuffixSequence);
   jqueryObj.find("*[id]").each(function(ix) {
       $(this).attr('id', $(this).attr('id') + seqNo);
@@ -186,8 +176,8 @@ window.makeIdsUniqueUpdateLabels = function(jqueryObj, hrefStart) {
 var idSuffixSequence = 0;
 
 
-window.buildTagFind = function(html, selector) {
-  if (selector.indexOf('#') !== -1) die('Cannot lookup by ID: '+
+d.u.buildTagFind = function(html, selector) {
+  if (selector.indexOf('#') !== -1) d.u.die('Cannot lookup by ID: '+
       'getElementById might return false, so use buildTagFindId instead');
   // From jQuery 1.4.2, jQuery.fn.load():
   var $wrap =
@@ -203,9 +193,9 @@ window.buildTagFind = function(html, selector) {
 
 // Builds HTML tags from `html' and returns the tag with the specified id.
 // Works also when $.find('#id') won't (because of corrupt XML?).
-window.buildTagFindId = function(html, id) {
-  if (id.indexOf('#') !== -1) die('Include no # in id [error DwE85x2jh]');
-  var $tag = buildTagFind(html, '[id="'+ id +'"]');
+d.u.buildTagFindId = function(html, id) {
+  if (id.indexOf('#') !== -1) d.u.die('Include no # in id [error DwE85x2jh]');
+  var $tag = d.u.buildTagFind(html, '[id="'+ id +'"]');
   return $tag;
 }
 

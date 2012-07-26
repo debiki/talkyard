@@ -39,7 +39,7 @@ debiki.internal.mergeChangesIntoPage = function(newDebateHtml) {
   //    on complete reload.)
   // 5. Mark edits, mark own ratings.
   var $curDebate = $('.dw-debate');
-  var $newDebate = buildTagFind(newDebateHtml, '.dw-debate');
+  var $newDebate = d.u.buildTagFind(newDebateHtml, '.dw-debate');
   var $myNewPost;
   $newDebate.find('.dw-t').each(function(){
       var $i = $(this);

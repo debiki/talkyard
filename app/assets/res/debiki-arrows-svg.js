@@ -72,7 +72,7 @@ debiki.internal.makeSvgDrawer = function($) {
     var $root = $elem.closest('.dw-svg-parent').children('svg');
     if (!$root.length)
       $root = $elem.closest('.dw-svg-gparnt').find('> .dw-svg-parent > svg');
-    dieIf(!$root.length, 'No SVG root found [error DwE84362qwkghd]');
+    d.u.dieIf(!$root.length, 'No SVG root found [error DwE84362qwkghd]');
     return $root;
   }
 

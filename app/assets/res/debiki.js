@@ -177,6 +177,14 @@ function showInteractionsIfHidden() {
 // Import namespaces as `d.i` and `d.u`.
 var d = { i: debiki.internal, u: debiki.v0.util };
 
+// Import terribly frequently used functions.
+var die = d.u.die;
+var die2 = d.u.die2;
+var dieIf = d.u.dieIf;
+var die2If = d.u.die2If;
+var bugIf = d.u.bugIf;
+
+
 // Debiki convention: Dialog elem tabindexes should vary from 101 to 109.
 // HTML generation code assumes this, too. See Debiki for Developers, #7bZG31.
 var DEBIKI_TABINDEX_DIALOG_MAX = 109;
@@ -915,10 +923,10 @@ function $initPostStep1() {
       $hdr = $i.find('.dw-p-hd'),
       $postedAt = $hdr.children('.dw-p-at'),
       postedAtTitle = $postedAt.attr('title'),
-      postedAt = isoDateToMillis(postedAtTitle),
+      postedAt = d.u.isoDateToMillis(postedAtTitle),
       $editedAt = $hdr.find('> .dw-p-hd-e > .dw-p-at'),
       editedAtTitle = $editedAt.attr('title'),
-      editedAt = isoDateToMillis(editedAtTitle),
+      editedAt = d.u.isoDateToMillis(editedAtTitle),
       now = new Date();  // COULD cache? e.g. when initing all posts
 
   // If this post has any inline thread, place inline marks and split
@@ -935,7 +943,7 @@ function $initPostStep1() {
   }
 
   function timeAgoAbbr(title, then, now) {
-    return $('<abbr title="'+ title +'">'+ prettyTimeBetween(then, now) +
+    return $('<abbr title="'+ title +'">'+ d.u.prettyTimeBetween(then, now) +
         '</abbr>');
   };
 
@@ -1718,6 +1726,7 @@ function slideInActionForm($form, $where) {
 // handled server side.
 function notifErrorBox$(error, message, details) {
   var when = '' // (Does toISOString exist in all browsers?)
+                // No, not IE 8 says http://kangax.github.com/es5-compat-table/
   try { when = (new Date).toISOString(); } catch (e) {}
   var $box = $(
       '<div class="ui-widget dw-ntf">' +
@@ -2588,7 +2597,7 @@ function $showRatingForm(event) {
   // The rating-value inputs are labeled checkboxes. Hence they
   // have ids --- which right now remain the same as the ids
   // in the rateFormTemplate. Make the cloned ids unique:
-  makeIdsUniqueUpdateLabels($formParent);
+  d.u.makeIdsUniqueUpdateLabels($formParent);
 
   // If the user has already rated the $post, show a
   // you're-changing-your-ratings tips, instead of
@@ -2818,7 +2827,7 @@ function $showReplyForm(event, opt_where) {
 
     var $replyFormParent = jQuery('#dw-hidden-templates .dw-fs-re').clone(true);
     var $replyForm = $replyFormParent.children('form');
-    makeIdsUniqueUpdateLabels($replyForm);
+    d.u.makeIdsUniqueUpdateLabels($replyForm);
     $replyForm.resizable({
         alsoResize: $replyForm.find('textarea'),
         resize: function() {
@@ -2996,7 +3005,7 @@ function _$showEditFormImpl() {
     $.get('?edit='+ postId +'&view='+ rootPostId, function(editFormText) {
       // Concerning filter(…): [0] and [2] are text nodes.
       var $editForm = $(editFormText).filter('form');
-      makeIdsUniqueUpdateLabels($editForm, '#dw-e-tab-');
+      d.u.makeIdsUniqueUpdateLabels($editForm, '#dw-e-tab-');
       complete($editForm)
     }, 'text');
   };
