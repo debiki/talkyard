@@ -7,15 +7,15 @@ var d = { i: debiki.internal, u: debiki.v0.util };
 var $ = d.i.$;
 
 
-function showLoginOpenId() {
-  loadOpenIdResources().done(function() {
+d.i.showLoginOpenId = function() {
+  d.i.loadOpenIdResources().done(function() {
     initLoginOpenId();
     $('#dw-fs-openid-login').dialog('open');
   });
 }
 
 
-var loadOpenIdResources = (function() {
+d.i.loadOpenIdResources = (function() {
   var loadStatus;
   return function() {
     if (loadStatus)
@@ -69,8 +69,7 @@ function initLoginOpenId() {
 // Submits an OpenID login <form> in a popup. Dims the window and
 // listens for the popup to close.
 function submitLoginInPopup($openidLoginForm) {
-  // Based on popupManager.createPopupOpener, from popuplib.js,
-  // in this folder.
+  // Based on popupManager.createPopupOpener, from popuplib.js.
 
   var width = 450;
   var height = 500;
@@ -148,12 +147,12 @@ function submitLoginInPopup($openidLoginForm) {
       // Warning: Somewhat dupl code, compare w initLoginSimple.
       $('#dw-fs-openid-login').dialog('close');
       $('#dw-fs-lgi-simple').dialog('close');
-      fireLogin();
-      showLoginOkay(continueAnySubmission);
+      d.i.Me.fireLogin();
+      d.i.showLoginOkay(d.i.continueAnySubmission);
       return;
     }
 
-    showLoginFailed(errorMsg);
+    d.i.showLoginFailed(errorMsg);
   }
 
   // TODO dim the main win, open a modal dialog: "Waiting for you to log in",

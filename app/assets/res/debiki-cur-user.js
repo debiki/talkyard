@@ -63,8 +63,8 @@ d.i.makeCurUser = function() {
         opt_loginIdBefore : userProps.loginId;
     refreshProps();
     if (loginIdBefore !== userProps.loginId) {
-      if (api.isLoggedIn()) d.i.fireLogin();
-      else d.i.fireLogout();
+      if (api.isLoggedIn()) api.fireLogin();
+      else api.fireLogout();
       // If the login/logout happened in another browser tab:
       // COULD pop up a modal dialog informing the user that s/he has
       // been logged in/out, because of something s/he did in *another* tab.
@@ -132,6 +132,8 @@ d.i.makeCurUser = function() {
     refreshProps: refreshProps,
     clearMyPageInfo: clearMyPageInfo,
     loadAndMarkMyPageInfo: loadAndMarkMyPageInfo,
+    fireLogin: function() { fireLoginImpl(api); },
+    fireLogout: function() { fireLogoutImpl(api); },
     // Call when a re-login might have happened, e.g. if focusing
     // another browser tab and then returning to this tab.
     fireLoginIfNewSession: fireLoginIfNewSession,
@@ -154,6 +156,59 @@ d.i.makeCurUser = function() {
   };
 
   return api;
+}
+
+
+function fireLoginImpl(Me) {
+  Me.refreshProps();
+  $('#dw-u-info').show()
+      .find('.dw-u-name').text(Me.getName());
+  $('#dw-a-logout').show();
+  $('#dw-a-login').hide();
+
+  // Update all xsrf tokens in any already open forms (perhaps with
+  // draft texts, we shuldn't close them). Their xsrf prevention tokens
+  // need to be updated to match the new session id cookie issued by
+  // the server on login.
+  var token = $.cookie('dwCoXsrf');
+  //$.cookie('dwCoXsrf', null, { path: '/' }); // don't send back to server
+  // ^ For now, don't clear the dwCoXsrf cookie, because then if the user
+  // navigates back to the last page, after having logged out and in,
+  // the xsrf-inputs would need to be refreshed from the cookie, because
+  // any token sent from the server is now obsolete (after logout/in).
+  $('input.dw-fi-xsrf').attr('value', token);
+
+  // Let Post as ... and Save as ... buttons update themselves:
+  // they'll replace '...' with the user name.
+  $('.dw-loginsubmit-on-click')
+      .trigger('dwEvLoggedInOut', [Me.getName()]);
+
+  Me.clearMyPageInfo();
+  Me.loadAndMarkMyPageInfo();
+}
+
+
+// Updates cookies and elements to show the user name, email etc.
+// as appropriate. Unless !propsUnsafe, throws if name or email missing.
+// Fires the dwEvLoggedInOut event on all .dw-loginsubmit-on-click elems.
+// Parameters:
+//  props: {name, email, website}, will be sanitized unless
+//  sanitize: unless `false', {name, email, website} will be sanitized.
+function fireLogoutImpl(Me) {
+  Me.refreshProps();
+  $('#dw-u-info').hide();
+  $('#dw-a-logout').hide();
+  $('#dw-a-login').show();
+
+  // Clear all xsrf tokens. They are invalid now after logout, because
+  // the server instructed the browser to delete the session id cookie.
+  $('input.dw-fi-xsrf').attr('value', '');
+
+  // Let `Post as <username>' etc buttons update themselves:
+  // they'll replace <username> with `...'.
+  $('.dw-loginsubmit-on-click').trigger('dwEvLoggedInOut', [undefined]);
+
+  Me.clearMyPageInfo();
 }
 
 

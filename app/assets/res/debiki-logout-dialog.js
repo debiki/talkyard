@@ -7,7 +7,7 @@ var d = { i: debiki.internal, u: debiki.v0.util };
 var $ = d.i.$;
 
 
-function showLogout() {
+d.i.showLogout = function() {
   initLogout();
   $('#dw-fs-lgo').dialog('open');
 }
@@ -39,7 +39,7 @@ function initLogout() {
     var postData = $logoutForm.serialize();
     $.post($logoutForm.attr("action"), postData, function() {
       // The server has now logged out the user.
-      fireLogout();
+      d.i.Me.fireLogout();
     }, 'html');
     return false;
   });

@@ -7,12 +7,12 @@ var d = { i: debiki.internal, u: debiki.v0.util };
 var $ = d.i.$;
 
 
-function showLoginSimple() {
+d.i.showLoginSimple = function() {
   initLoginSimple();
   $('#dw-fs-lgi-simple').dialog('open');  // BUG Tag absent unless…
           //… a debate is shown, so the dw-hidden-templates included.
   // Preload OpenID resources, in case user clicks OpenID login button.
-  loadOpenIdResources();
+  d.i.loadOpenIdResources();
 }
 
 
@@ -47,7 +47,7 @@ function initLoginSimple() {
           // Warning: Somewhat dupl code, see d.i.handleLoginResponse.
           // User info is now available in cookies.
           $login.dialog('close');
-          fireLogin();
+          d.i.Me.fireLogin();
           // Show response dialog, and continue with whatever caused
           // the login to happen.
           // {{{ If the login happens because the user submits a reply,
@@ -58,9 +58,10 @@ function initLoginSimple() {
           // But the viewport will still be dimmed, because the welcome
           // dialog is modal. So don't continueAnySubmission until
           // the user has closed the response dialog. }}}
-          showServerResponseDialog(data, null, null, continueAnySubmission);
+          d.i.showServerResponseDialog(
+              data, null, null, d.i.continueAnySubmission);
         })
-        .fail(showServerResponseDialog)
+        .fail(d.i.showServerResponseDialog)
         .always(function() {
           // COULD hide any "Logging in ..." dialog.
         });
@@ -69,7 +70,7 @@ function initLoginSimple() {
 
   $login.find('.dw-a-login-openid')
       .button().click(function() {
-        showLoginOpenId();
+        d.i.showLoginOpenId();
         return false;
       });
 }

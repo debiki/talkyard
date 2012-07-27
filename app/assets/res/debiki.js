@@ -215,14 +215,6 @@ rootPostId = rootPostId.length ?
 
 var $lastInlineMenu = $();
 
-// Remembers which .dw-loginsubmit-on-click button (e.g. "Post as...")
-// was clicked when a login dialog is shown.
-var loginOnClickBtnClicked = null;
-
-// True iff the user is to be asked whether or not s/he wants to be
-// notified via email e.g. of replies.
-var continueLoginAskAboutEmail = false;
-
 // Reset all per click state variables when a new click starts.
 $.event.add(document, "mousedown", function() {
   didExpandTruncated = false;
@@ -235,7 +227,7 @@ var nativeSvgSupport = Modernizr.inlinesvg;
 var SVG = nativeSvgSupport && document.URL.indexOf('svg=false') === -1 ?
     d.i.makeSvgDrawer($) : d.i.makeFakeDrawer($);
 
-var Me = makeCurUser();
+var Me = d.i.makeCurUser();
 
 
 
@@ -2002,7 +1994,7 @@ function _$showEditFormImpl() {
       $editForm.children('.dw-f-e-inf-save').show();
 
     // When clicking the Save button, open a login dialog, unless logged in.
-    $submitBtn.each($loginSubmitOnClick(function(event, userName) {
+    $submitBtn.each(d.i.$loginSubmitOnClick(function(event, userName) {
       var text = userName ?  'Save as '+ userName : 'Save as ...';  // i18n
       $(this).val(text);
     }));
@@ -2264,8 +2256,10 @@ function $makePostHeadTooltips() {  // i18n
 
 
 function registerEventHandlersFireLoginOut() {
-  $('#dw-a-login').click(showLoginSimple);
-  $('#dw-a-logout').click(showLogout);
+
+  // COULD move to debiki-login.js
+  $('#dw-a-login').click(d.i.showLoginSimple);
+  $('#dw-a-logout').click(d.i.showLogout);
 
   // On post text click, open the inline action menu.
   // But hide it on mousedown, so the inline action menu disappears when you
@@ -2297,6 +2291,7 @@ function registerEventHandlersFireLoginOut() {
 
   // Show a change diff instead of the post text, when hovering an edit
   // suggestion.
+  // SHOULD move this init code to debiki-edit-history.js
   $('.debiki')
       .delegate('.dw-e-sg', 'mouseenter', function(){
         // COULD move find(...) to inside $showEditDiff?
@@ -2319,17 +2314,18 @@ function registerEventHandlersFireLoginOut() {
   // Do this when everything has been inited, so all dwEvLoggedInOut event
   // listeners have been registered. }}}
 
-  $('.dw-loginsubmit-on-click').click($loginThenSubmit);
-  $('.dw-loginsubmit-on-mouseenter').mouseenter($loginThenSubmit);
-  if (Me.isLoggedIn()) fireLogin();
-  else fireLogout();
+  // COULD move this to debiki-login.js
+  $('.dw-loginsubmit-on-click').click(d.i.$loginThenSubmit);
+
+  if (d.i.Me.isLoggedIn()) d.i.Me.fireLogin();
+  else d.i.Me.fireLogout();
 
   // If the user switches browser tab, s/he might logout and login
   // in another tab. That'd invalidate all xsrf tokens on this page,
   // and user specific permissions and ratings info (for this tab).
   // Therefore, when the user switches back to this tab, check
   // if a new session has been started.
-  $(window).on('focus', Me.fireLoginIfNewSession);
+  $(window).on('focus', d.i.Me.fireLoginIfNewSession);
   //{{{ What will work w/ IE?
   // See http://stackoverflow.com/a/5556858/694469
   // But: "This script breaks down in IE(8) when you have a textarea on the
@@ -2438,17 +2434,15 @@ function renderPageEtc() {
 // Export stuff.
 d.i.$initPostsThread = $initPostsThread;
 d.i.$initPost = $initPost;
-d.i.$loginThenSubmit = $loginThenSubmit;
-d.i.$loginSubmitOnClick = $loginSubmitOnClick;
 d.i.$showActions = $showActions;
 d.i.$undoInlineThreads = $undoInlineThreads;
 d.i.DEBIKI_TABINDEX_DIALOG_MAX = DEBIKI_TABINDEX_DIALOG_MAX;
 d.i.diffMatchPatch = diffMatchPatch;
 d.i.disableSubmittedForm = disableSubmittedForm;
+d.i.findPostHeader$ = findPostHeader$;
 d.i.hostAndPort = hostAndPort;
 d.i.$loadEditorDependencies = $loadEditorDependencies;
 d.i.markdownToSafeHtml = markdownToSafeHtml;
-d.i.markMyPost = markMyPost;
 d.i.Me = Me;
 d.i.prettyHtmlFor = prettyHtmlFor;
 d.i.resizeRootThreadExtraWide = resizeRootThreadExtraWide;
@@ -2459,7 +2453,6 @@ d.i.rootPostId = rootPostId;
 d.i.sanitizerOptsForPost = sanitizerOptsForPost;
 d.i.showAndHighlightPost = showAndHighlightPost;
 d.i.showErrorEnableInputs = showErrorEnableInputs;
-d.i.showMyRatings = showMyRatings;
 d.i.showServerResponseDialog = showServerResponseDialog;
 d.i.slideInActionForm = slideInActionForm;
 d.i.slideAwayRemove = slideAwayRemove;
