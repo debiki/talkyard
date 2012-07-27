@@ -1,7 +1,7 @@
 /* Copyright (c) 2010 - 2012 Kaj Magnus Lindberg. All rights reserved. */
 
 
- --- Not in use ---
+// --- Not in use ---
 
 
     // From $initPostsThreadStep2,
