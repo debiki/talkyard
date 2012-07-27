@@ -97,6 +97,14 @@ function sanitizeHtml(htmlTextUnsafe, options) {
 }
 
 
+function sanitizerOptsForPost($post) {
+  return {
+    allowClassAndIdAttr: $post.dwIsArticlePost(),
+    allowDataAttr: $post.dwIsArticlePost()
+  };
+}
+
+
 
 //----------------------------------------
 // jQuery object extensions
@@ -196,6 +204,8 @@ diffMatchPatch.Match_Distance = 100*1000; // for now
 var didResize = false;
 // Set to true if a truncated post was clicked and expanded.
 var didExpandTruncated = false;
+
+var hostAndPort = location.origin.replace(/https?:\/\//, '');
 
 var debateId = $('.debiki').attr('id');
 
@@ -2751,10 +2761,7 @@ function $updateEditFormPreview() {
   var htmlSafe = '';
   var $post = $i.closest('.dw-p');
   var isForTitle = $post.is('.dw-p-ttl');
-  var sanitizerOptions = {
-    allowClassAndIdAttr: $post.dwIsArticlePost(),
-    allowDataAttr: $post.dwIsArticlePost()
-  };
+  var sanitizerOptions = sanitizerOptsForPost($post);
 
   switch (markupType) {
     case "para":
@@ -2765,7 +2772,6 @@ function $updateEditFormPreview() {
     case "dmd0":
       // Debiki flavored Markdown version 0.
       if (isForTitle) markupSrc = '<h1>'+ markupSrc +'</h1>';
-      var hostAndPort = location.origin.replace(/https?:\/\//, '');
       htmlSafe = markdownToSafeHtml(markupSrc, hostAndPort, sanitizerOptions);
       break;
     case "code":
@@ -2878,7 +2884,8 @@ function _showEditsDialogImpl($post) {
       // Update the preview.
       // COULD make this work with other types of markdown than `dmd0'.
       // See $updateEditFormPreview(), which handles other markup types.
-      var html = markdownToSafeHtml(newSrc);
+      var sanitizerOptions = sanitizerOptsForPost($post);
+      var html = markdownToSafeHtml(newSrc, hostAndPort, sanitizerOptions);
       $form.find('#dw-e-sgs-prvw-html').html(html);
     });
 
