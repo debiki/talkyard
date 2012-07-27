@@ -2877,19 +2877,6 @@ function prettyHtmlFor(diffs) {
 }
 
 
-// ------- Create page
-
-// This is for the ?create-page (e.g. GET /some/folder/page?create-page).
-// COULD REFACTOR: Export $loginSubmitOnClick, and place initCreateForm() in
-// debiki-lift.js, so no ?create-page code is in here.
-function initCreateForm() {
-  var $submitBtn = $('form.dw-f-cr .dw-fi-submit');
-  $submitBtn.button().each($loginSubmitOnClick(function(event, userName) {
-    var text = userName ? 'Create as '+ userName : 'Create as ...';  // i18n
-    $(this).val(text);
-  }));
-}
-
 
 // ------- Utterscroll and Tooltips
 
@@ -2999,8 +2986,6 @@ function registerEventHandlersFireLoginOut() {
         $(this).find('.dw-e-text').each($showEditDiff);
       })
       .delegate('.dw-e-sgs', 'mouseleave', $removeEditDiff);
-
-  initCreateForm();
 
   // Fire the dwEvLoggedInOut event, so all buttons etc will update
   // their text with the correct user name.

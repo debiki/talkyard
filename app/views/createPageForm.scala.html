@@ -3,7 +3,18 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Create Page</title>
+<title>Create Page</title>
+@* <script>
+// COULD include debiki.js (debiki-login.js?) and call this function on
+// debiki.scriptLoad.done():
+function initCreateForm() {{
+  var $submitBtn = $('form.dw-f-cr .dw-fi-submit');
+  $submitBtn.button().each($loginSubmitOnClick(function(event, userName) {{
+    var text = userName ? 'Create as '+ userName : 'Create as ...';  // i18n
+    $(this).val(text);
+  }}));
+}}
+</script> *@
 </head>
 <body>
 <div>
