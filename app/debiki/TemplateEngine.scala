@@ -566,6 +566,8 @@ object TemplateEngine {
             '/-/res/debiki-arrows-png.js',
             '/-/res/debiki-arrows-svg.js',
             '/-/res/debiki-jquery-dialogs.js',
+            '/-/res/debiki-form-anims.js',
+            '/-/res/debiki-http-dialogs.js',
             '/-/res/debiki-cur-user.js',
             '/-/res/debiki-login.js',
             '/-/res/debiki-login-guest.js',

@@ -314,13 +314,13 @@ function $threadToggleFolded() {
   // of the <a>). }}}
   if ($thread.is('.dw-zd')) {
     // Thread is folded, open it.
-    $childrenToFold.each($slideDown);
+    $childrenToFold.each(d.i.$slideDown);
     $thread.removeClass('dw-zd');
     $foldLink.text('[–]'); // not a '-', but an en dash, \u2013,
   } else {
     // Fold thread.
     var postCount = $thread.find('.dw-p').length;
-    $childrenToFold.each($slideUp).queue(function(next) {
+    $childrenToFold.each(d.i.$slideUp).queue(function(next) {
       $foldLink.text('[+] Click to show '+  // COULD add i18n
           postCount +' posts');
       $thread.addClass('dw-zd');
@@ -1280,7 +1280,9 @@ function $showInlineActionMenu(event) {
 }
 
 
-// ------- Forms and actions
+
+// -------
+
 
 function confirmClosePage() {
   // If there're any reply forms with non-empty replies (textareas),
@@ -1316,243 +1318,9 @@ function hideActions() {
       .removeAttr('id');
 }
 
-function $slideUp() {
-  // COULD optimize: Be a $ extension that loops many elems then lastNow
-  // would apply to all those (fewer calls to $drawParentsAndTree).
-  var $i = $(this);
-  var $post = $(this).closest('.dw-t').children('.dw-p');
-  var lastNow = -1;
-  var props = {
-    height: 0,
-    paddingTop: 0,
-    paddingBottom: 0,
-    marginTop: 0,
-    marginBottom: 0
-  };
-  $i.animate(props, {
-    duration: 530,
-    step: function(now, fx) {
-      // This callback is called once per animated property, but
-      // we only need to redraw arrows once.
-      if (lastNow === now) return;
-      lastNow = now;
-      $post.each(SVG.$drawParentsAndTree);
-    }
-  }).queue(function(next) {
-    $i.hide();
-    // Clear height etc, so $slideDown works properly.
-    $.each(props, function(prop, val) {
-      $i.css(prop, '');
-    });
-    next();
-  });
-}
-
-function $slideDown() {
-  // COULD optimize: See $slideUp(…).
-  var $i = $(this);
-  var $post = $i.closest('.dw-t').children('.dw-p');
-  var realHeight = $i.height();
-  $i.height(0).show().animate({height: realHeight}, {
-    duration: 530,
-    step: function(now, fx) {
-      $post.each(SVG.$drawParentsAndTree);
-    }
-  });
-  // Clear height and width, so $i adjusts its size after its child elems.
-  $i.queue(function(next) {
-    $(this).css('height', '').css('width', '');
-    next();
-  });
-}
-
-function $slideToggle() {
-  if ($(this).is(':visible')) {
-    $(this).each($slideUp);
-  } else {
-    $(this).each($slideDown);
-  }
-}
-
-function fold($elem, how) {
-  var $post = $elem.closest('.dw-t').children('.dw-p');
-  $elem.animate(how.firstProps, {
-    duration: how.firstDuration,
-    step: function(now, fx) {
-      $post.each(SVG.$drawParentsAndTree);
-    }
-  }).animate(how.lastProps, {
-    duration: how.lastDuration,
-    step: function(now, fx) {
-      $post.each(SVG.$drawParentsAndTree);
-    }
-  });
-}
-
-function $foldInLeft() {
-  // COULD optimize: See $slideUp(…), but pointless right now.
-  var $i = $(this);
-  var realHeight = $i.height();
-  var realWidth = $i.width();
-  $i.height(30).width(0).show();
-  fold($i, {
-    firstProps: {width: realWidth},
-    firstDuration: 400,
-    lastProps: {height: realHeight},
-    lastDuration: 400
-  });
-  // Clear height and width, so $i adjusts its size after its child elems.
-  $i.queue(function(next) {
-    $(this).css('height', '').css('width', '');
-    next();
-  });
-}
-
-function $foldOutLeft() {
-  // IE 7 and 8 bug fix: $.fold leaves the elem folded up
-  // (the subsequent fold-left won't happen).
-  if ($.browser.msie && $.browser.version < '9') {
-    $(this).hide();
-    return;
-  }
-  // COULD optimize: See $slideUp(…), but pointless right now.
-  fold($(this), {
-    firstProps: {height: 30},
-    firstDuration: 400,
-    lastProps: {width: 0, margin: 0, padding: 0},
-    lastDuration: 400
-  });
-  // COULD clear CSS, so the elem gets its proper size should it be folded out
-  // again later. Currently all elems that are folded out are also
-  // $.remove()d though.
-}
-
-function removeInstantly($form) {
-  var $thread = $form.closest('.dw-t');
-  $form.remove();
-  // Refresh SVG threads. When the last animation step callback was
-  // invoked, the $form had not yet been remove()d.
-  $thread.each(SVG.$drawPost).each(SVG.$drawParents);
-  resizeRootThread();
-}
-
-// Action <form> cancel button -- won't work for the Edit form...?
-function slideAwayRemove($form, opt_complete) {
-  // Slide away <form> and remove it.
-  var $thread = $form.closest('.dw-t');
-  function rm(next) {
-    if (opt_complete) opt_complete();
-    removeInstantly($form);
-    next();
-  }
-  // COULD elliminate dupl code that determines whether to fold or slide.
-  if ($thread.filter('.dw-hor, .dw-debate').length &&  // COULD rm .dw-debate?
-      !$form.closest('ol').filter('.dw-i-ts').length) {
-    $form.each($foldOutLeft).queue(rm);
-  }
-  else {
-    $form.each($slideUp).queue(rm);
-  }
-}
 
 
-function $removeClosestForms() {
-  // Sometimes the form is of class .dw-f, sometimes threre's a form parent
-  // with class .dw-fs. Remove that parent if possible.
-  var $formSetOrForm = $(this).closest('.dw-fs').add($(this).closest('.dw-f'));
-  slideAwayRemove($formSetOrForm.first());
-}
-
-
-// Slide in reply, edit and rate forms -- I think it's
-// easier to understand how they are related to other elems
-// if they slide in, instead of just appearing abruptly.
-// If $where is specified, $form is appended to the thread 
-// $where.closest('.dw-t'), otherwise it is assumed that it has
-// alread been inserted appropriately.
-function slideInActionForm($form, $where) {
-  if ($where) {
-    // Insert before the first .dw-fs, or the .dw-res, or append.
-    var $thread = $where.closest('.dw-t');
-    var $oldFormOrCmts = $thread.children('.dw-fs, .dw-res').filter(':eq(0)');
-    if ($oldFormOrCmts.length) $oldFormOrCmts.before($form);
-    else $thread.append($form);
-  }
-  else $where = $form.closest('.dw-t');
-  // Extra width prevents float drop.
-  resizeRootThreadExtraWide();
-  // Slide in from left, if <form> siblings ordered horizontally.
-  // Otherwise slide down (siblings ordered vertically).
-  if ($where.filter('.dw-hor, .dw-debate').length && // COULD rm .dw-debate?
-      !$form.closest('ol').filter('.dw-i-ts').length) {
-    $form.each($foldInLeft);
-  } else {
-    $form.each($slideDown);
-  }
-
-  // Scroll form into view, and cancel extra width.
-  // Or add even more width, to prevent float drops
-  // -- needs to be done also when sliding downwards, since that sometimes
-  // makes the root thread child threads wider.
-  $form.queue(function(next){
-      resizeRootThreadNowAndLater();
-      $form.dwScrollIntoView();
-      next();
-    });
-}
-
-
-
-// ------- Templates and notifications
-
-// Returns $(an-error-message-in-a-<div>), which you can .insertAfter
-// something, to indicate e.g. the server refused to accept the
-// suggested edits.
-// COULD remove this function! And let the server reply via
-// FormHtml._responseDialog, and use (a modified version of?)
-// showServerResponseDialog() (below) to construct an error info box.
-// Then this would work with javascript disabled, and i18n would be
-// handled server side.
-function notifErrorBox$(error, message, details) {
-  var when = '' // (Does toISOString exist in all browsers?)
-                // No, not IE 8 says http://kangax.github.com/es5-compat-table/
-  try { when = (new Date).toISOString(); } catch (e) {}
-  var $box = $(
-      '<div class="ui-widget dw-ntf">' +
-        '<div class="ui-state-error ui-corner-all">' +
-          '<a class="ui-dialog-titlebar-close ui-corner-all" role="button">' +
-            '<span class="ui-icon ui-icon-closethick">close</span>' +
-          '</a>' +
-          '<span class="ui-icon ui-icon-alert" ' +
-                'style="float: left; margin-right: .3em;"></span>' +
-          '<div class="dw-ntf-bd">' +
-            '<div class="dw-ntf-sts"></div> ' +
-            '<div class="dw-ntf-msg"></div>' +
-            '<div class="dw-ntf-at">'+ when +'</div>' +
-            (details ?
-               '<br><a class="dw-ntf-shw">Show details</a>' +
-               '<pre class="dw-ntf-dtl"></pre>' : '') +
-          '</div>' +
-        '</div>' +
-      '</div>');
-  var $showDetails = $box.find('a.dw-ntf-shw');
-  var $details = $box.find('.dw-ntf-dtl');
-  error = error ? error +':' : ''
-  // I don't use jQuery's .tmpl: .text(...) is xss safe, .tmpl(...) is not?
-  $box.find('.dw-ntf-sts').text(error).end()
-      .find('.dw-ntf-msg').text(message).end()
-      .find('.dw-ntf-dtl').text(details || '').hide().end()
-      .find('.dw-ntf-shw').click(function() {
-        $details.toggle();
-        $showDetails.text(
-            $details.filter(':visible').length ?
-               'Hide details' : 'Show details');
-      }).end()
-      .find('a.ui-dialog-titlebar-close').click(function() {
-        $box.remove();
-      });
-  return $box;
-}
+// -------
 
 
 $.fn.dwActionLinkEnable = function() {
@@ -1583,108 +1351,6 @@ function setActionLinkEnabled($actionLink, enabed) {
     });
     $actionLink.removeClass('dw-a-disabled');
   }
-}
-
-
-function disableSubmittedForm($form) {
-  $form.children().css('opacity', '0.7').find('input').dwDisable();
-  // Show a 'Submitting ...' tips. CSS places it in the middle of the form.
-  var $info = $('#dw-hidden-templates .dw-inf-submitting-form').clone();
-  $form.append($info);
-}
-
-
-// Builds a function that shows an error notification and enables
-// inputs again (e.g. the submit-form button again, so the user can
-// fix the error, after having considered the error message,
-// and attempt to submit again).
-function showErrorEnableInputs($form) {
-  return function(jqXHR, errorType, httpStatusText) {
-    var $submitBtns = $form.find('.dw-submit-set');
-    var $thread = $form.closest('.dw-t');
-    var err = jqXHR.status ? (jqXHR.status +' '+ httpStatusText) : 'Error'
-    var msg = (jqXHR.responseText || errorType || 'Unknown error');
-    notifErrorBox$(err, msg).insertAfter($submitBtns).dwScrollToHighlighted();
-    $thread.each(SVG.$drawParentsAndTree); // because of the notification
-    // For now, simply enable all inputs always.
-    $form.children().css('opacity', '');
-    $form.find('input, button').dwEnable();
-    $form.children('.dw-inf-submitting-form').remove();
-  };
-}
-
-
-// Constructs and shows a dialog, from either 1) a servers html response,
-// which should contain certain html elems and classes, or 2)
-// a jQuery jqXhr object.
-function showServerResponseDialog(jqXhrOrHtml, opt_errorType,
-                                  opt_httpStatusText, opt_continue) {
-  var $html, title, width;
-  var html, plainText;
-
-  // Find html or plain text.
-  if (!jqXhrOrHtml.getResponseHeader) {
-    html = jqXhrOrHtml;
-  }
-  else {
-    var contentType = jqXhrOrHtml.getResponseHeader('Content-Type');
-    if (!contentType) {
-      plainText = '(no Content-Type header)';
-      if (jqXhrOrHtml.state && jqXhrOrHtml.state() == 'rejected') {
-        plainText = plainText + '\n($.Deferred was rejected)';
-      }
-    }
-    else if (contentType.indexOf('text/html') !== -1) {
-      html = jqXhrOrHtml.responseText;
-    }
-    else if (contentType.indexOf('text/plain') !== -1) {
-      plainText = jqXhrOrHtml.responseText;
-    }
-    else {
-      die2('DwE94ki3');
-    }
-  }
-
-  // Format dialog contents.
-  if (html) {
-    var $allHtml = $(html);
-    $html = $allHtml.filter('.dw-dlg-rsp');
-    if (!$html.length) $html = $allHtml.find('.dw-dlg-rsp');
-    if ($html.length) {
-      title = $html.children('.dw-dlg-rsp-ttl').text();
-      width = d.i.jQueryDialogDefault.width;
-    } else {
-      plainText = 'Internal server error.';
-    }
-  }
-
-  if (plainText) {
-    // Set title to something like "403 Forbidden", and show the
-    // text message inside the dialog.
-    title = jqXhrOrHtml.status ?
-              (jqXhrOrHtml.status +' '+ opt_httpStatusText) : 'Error'
-    $html = $('<pre class="dw-dlg-rsp"></pre>');
-    width = 'auto'; // avoids scrollbars in case of any long <pre> line
-    // Use text(), not plus (don't: `... + text + ...'), to prevent xss issues.
-    $html.text(plainText || opt_errorType || 'Unknown error');
-  }
-  else if (!html) {
-    die2('DwE05GR5');
-  }
-
-  // Show dialog.
-  $html.children('.dw-dlg-rsp-ttl').remove();
-  $html.dialog($.extend({}, d.i.jQueryDialogNoClose, {
-    title: title,
-    autoOpen: true,
-    width: width,
-    buttons: {
-      OK: function() {
-        $(this).dialog('close');
-        if (opt_continue) opt_continue();
-      }
-    }
-  }));
 }
 
 
@@ -2009,9 +1675,9 @@ function _$showEditFormImpl() {
 
       $.post('?edit='+ postId +'&view='+ rootPostId, $editForm.serialize(),
           'html')
-          .fail(showErrorEnableInputs($editForm))
+          .fail(d.i.showErrorEnableInputs($editForm))
           .done(function(newDebateHtml) {
-        slideAwayRemove($editForm);
+        d.i.slideAwayRemove($editForm);
         // If the edit was a *suggestion* only, the post body has not been
         // changed. Unless we make it visible again, it'll remain hidden
         // because mergeChangesIntoPage() ignores it (since it hasn't changed).
@@ -2019,7 +1685,7 @@ function _$showEditFormImpl() {
         d.i.mergeChangesIntoPage(newDebateHtml);
       });
 
-      disableSubmittedForm($editForm);
+      d.i.disableSubmittedForm($editForm);
       return false;
     });
 
@@ -2275,7 +1941,7 @@ function registerEventHandlersFireLoginOut() {
   $('.debiki').delegate(
       '.dw-fs-re .dw-fi-cancel, ' +
       '.dw-fs-r .dw-fi-cancel',
-      'click', $removeClosestForms);
+      'click', d.i.$removeClosestForms);
 
   // Show the related inline reply, on inline mark click.
   $('.debiki').delegate('a.dw-i-m-start', 'click', $showInlineReply);
@@ -2438,24 +2104,19 @@ d.i.$showActions = $showActions;
 d.i.$undoInlineThreads = $undoInlineThreads;
 d.i.DEBIKI_TABINDEX_DIALOG_MAX = DEBIKI_TABINDEX_DIALOG_MAX;
 d.i.diffMatchPatch = diffMatchPatch;
-d.i.disableSubmittedForm = disableSubmittedForm;
 d.i.findPostHeader$ = findPostHeader$;
 d.i.hostAndPort = hostAndPort;
 d.i.$loadEditorDependencies = $loadEditorDependencies;
 d.i.markdownToSafeHtml = markdownToSafeHtml;
 d.i.Me = Me;
 d.i.prettyHtmlFor = prettyHtmlFor;
+d.i.resizeRootThread = resizeRootThread;
 d.i.resizeRootThreadExtraWide = resizeRootThreadExtraWide;
 d.i.resizeRootThreadNowAndLater = resizeRootThreadNowAndLater;
 d.i.SVG = SVG;
-d.i.removeInstantly = removeInstantly;
 d.i.rootPostId = rootPostId;
 d.i.sanitizerOptsForPost = sanitizerOptsForPost;
 d.i.showAndHighlightPost = showAndHighlightPost;
-d.i.showErrorEnableInputs = showErrorEnableInputs;
-d.i.showServerResponseDialog = showServerResponseDialog;
-d.i.slideInActionForm = slideInActionForm;
-d.i.slideAwayRemove = slideAwayRemove;
 
 
 // Dont render page, if there is no root post, or some error happens,

@@ -92,6 +92,8 @@ JS_COMMON_SRC = \
   ${PUBLIC_JS_DIR}debiki-arrows-png.min.js \
   ${PUBLIC_JS_DIR}debiki-arrows-svg.min.js \
   ${PUBLIC_JS_DIR}debiki-jquery-dialogs.min.js \
+  ${PUBLIC_JS_DIR}debiki-form-anims.min.js \
+  ${PUBLIC_JS_DIR}debiki-http-dialogs.min.js \
   ${PUBLIC_JS_DIR}debiki-cur-user.min.js \
   ${PUBLIC_JS_DIR}debiki-login.min.js \
   ${PUBLIC_JS_DIR}debiki-login-guest.min.js \
