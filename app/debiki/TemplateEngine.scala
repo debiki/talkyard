@@ -565,6 +565,11 @@ object TemplateEngine {
             '/-/res/debiki-merge-changes.js',
             '/-/res/debiki-arrows-png.js',
             '/-/res/debiki-arrows-svg.js',
+            '/-/res/debiki-jquery-dialogs.js',
+            '/-/res/debiki-action-reply.js',
+            '/-/res/debiki-action-rate.js',
+            '/-/res/debiki-action-flag.js',
+            '/-/res/debiki-action-delete.js',
             '/-/res/debiki.js']
         }});
         </script>

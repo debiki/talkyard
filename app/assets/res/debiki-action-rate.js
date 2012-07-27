@@ -7,10 +7,15 @@ var d = { i: debiki.internal, u: debiki.v0.util };
 var $ = d.i.$;
 
 
-function $showRatingForm(event) {
+d.i.$showRatingForm = function(event) {
+  if (lazyInit) {
+    lazyInit();
+    lazyInit = null;
+  }
+
   var $thread = $(this).closest('.dw-t');
   var $post = $thread.children('.dw-p');
-  var $formParent = rateFormTemplate.clone(true);
+  var $formParent = findRateFormTemplate().clone(true);
   var $rateForm = $formParent.children('form');
   var $rateAction = $thread.find(' > .dw-p-as > .dw-a-rate');
   var $submitBtn = $rateForm.find('input[type="submit"]');
@@ -19,7 +24,7 @@ function $showRatingForm(event) {
 
   // The rating-value inputs are labeled checkboxes. Hence they
   // have ids --- which right now remain the same as the ids
-  // in the rateFormTemplate. Make the cloned ids unique:
+  // in the rate form template. Make the cloned ids unique:
   d.u.makeIdsUniqueUpdateLabels($formParent);
 
   // If the user has already rated the $post, show a
@@ -50,30 +55,30 @@ function $showRatingForm(event) {
       return $(this).val().toLowerCase();
     }).get();
 
-    $.post('?rate='+ postId +'&view='+ rootPostId, $rateForm.serialize(),
+    $.post('?rate='+ postId +'&view='+ d.i.rootPostId, $rateForm.serialize(),
         'html')
         .done(function(recentChangesHtml) {
-      slideAwayRemove($formParent);
+      d.i.slideAwayRemove($formParent);
       $rateAction.dwActionLinkEnable();
       d.i.mergeChangesIntoPage(recentChangesHtml);
-      var $ratings = showMyRatings(postId, ratedTags);
+      var $ratings = d.i.showMyRatings(postId, ratedTags);
       // Minor bug: On my Android phone, when I rate a post at the very
       // bottom of the page, then, since the `slideAwayRemove` animation
       // plays at the same time as the below `dwScrollToThenHighlight`
       // animation, the dwScrollIntoView animation is distorted, and
       // the ratings won't be properly scrolled into view.
       $post.dwPostFindHeader().dwScrollToThenHighlight($ratings);
-      $post.each(SVG.$drawParentsAndTree);
+      $post.each(d.i.SVG.$drawParentsAndTree);
     });
 
-    disableSubmittedForm($rateForm);
+    d.i.disableSubmittedForm($rateForm);
     return false;
   });
 
   // Fancy fancy
-  // Seems this must be done *after* the rateFormTemplate has been
+  // Seems this must be done *after* the rate form template has been
   // copied --- otherwise, if the Cancel button is clicked,
-  // the rateFormTemplate itself has all its jQueryUI markup removed.
+  // the rate form template itself has all its jQueryUI markup removed.
   // (Is that a jQuery bug? Only the *clone* ought to be affected?)
   $formParent.find('.dw-r-tag-set input, .dw-submit-set input').button();
   // Disable the submit button (until any checkbox clicked)
@@ -84,16 +89,23 @@ function $showRatingForm(event) {
   var $actionBtns = $thread.children('.dw-p-as');
 
   $formParent.insertAfter($actionBtns).show()
-      .find('input[type="submit"]').each($loginSubmitOnClick());
-  $post.each(SVG.$drawParentsAndTree);
+      .find('input[type="submit"]').each(d.i.$loginSubmitOnClick());
+  $post.each(d.i.SVG.$drawParentsAndTree);
 
   $rateForm.dwScrollIntoView();
 }
 
 
-function $showMoreRatingTags() {
-  $(this).hide().
-      closest('form').find('.dw-more-r-tags').show();
+function lazyInit() {
+  // Show more rating tags on "More..." click.
+  findRateFormTemplate().find('.dw-show-more-r-tags').click(function () {
+    $(this).hide().closest('form').find('.dw-more-r-tags').show();
+  });
+}
+
+
+function findRateFormTemplate() {
+  return $("#dw-hidden-templates .dw-fs-r");
 }
 
 

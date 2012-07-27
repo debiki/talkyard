@@ -22,7 +22,7 @@
 // a new SHA1 and it'll be reloaded automatically.
 // }}}
 debiki.internal.mergeChangesIntoPage = function(newDebateHtml) {
-  var d = { i: debiki.internal };
+  var d = { i: debiki.internal, u: debiki.v0.util };
   var $ = d.i.$;
 
   // Need to rewrite:

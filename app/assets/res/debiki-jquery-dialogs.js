@@ -12,7 +12,7 @@ var VIEWPORT_MIN_WIDTH = 320; // okay with Modern Android and iPhone mobiles
 /**
  * Debiki's default jQuery UI dialog settings.
  */
-var jQueryDialogDefault = {
+d.i.jQueryDialogDefault = {
   autoOpen: false,
   autoResize: true,
   modal: true,
@@ -43,7 +43,7 @@ var jQueryDialogDefault = {
     // Cancel buttons, or they won't be tabbable.
     if ($dialog.find('[tabindex]:enabled:visible')) {
       $dialog.find('.ui-dialog-buttonpane .ui-button')
-          .attr('tabindex', DEBIKI_TABINDEX_DIALOG_MAX);
+          .attr('tabindex', d.i.DEBIKI_TABINDEX_DIALOG_MAX);
     }
 
     // Move dialog into the <html> elem.
@@ -64,7 +64,7 @@ var jQueryDialogDefault = {
 /**
  * Resets input fields on close.
  */
-var jQueryDialogReset = $.extend({}, jQueryDialogDefault, {
+d.i.jQueryDialogReset = $.extend({}, d.i.jQueryDialogDefault, {
   close: function() {
     $(this).find('input[type="text"], textarea')
         .val('').removeClass('ui-state-error');
@@ -78,17 +78,17 @@ var jQueryDialogReset = $.extend({}, jQueryDialogDefault, {
  * perhaps because of some event handler attached to that button.
  * E.g. a "You have been logged in. [OK]" dialog.
  */
-var jQueryDialogNoClose = $.extend({}, jQueryDialogDefault, {
+d.i.jQueryDialogNoClose = $.extend({}, d.i.jQueryDialogDefault, {
   closeOnEscape: false,
   open: function(event, ui) {
-    jQueryDialogDefault.open.call(this, event, ui);
+    d.i.jQueryDialogDefault.open.call(this, event, ui);
     $(this).parent().find('.ui-dialog-titlebar-close').hide();
   }
 });
 
 
-function mobileWidthOr(desktopWidth) {
-  return Modernizr.touch ? jQueryDialogDefault.width : desktopWidth;
+d.i.mobileWidthOr = function(desktopWidth) {
+  return Modernizr.touch ? d.i.jQueryDialogDefault.width : desktopWidth;
 }
 
 

@@ -17,8 +17,8 @@ function initFlagForm() {
 
   $form.find('.dw-submit-set input').hide(); // use jQuery UI's buttons instead
   $form.find('.dw-f-flg-rsns').buttonset();
-  $parent.dialog($.extend({}, jQueryDialogReset, {
-    width: mobileWidthOr(430),
+  $parent.dialog($.extend({}, d.i.jQueryDialogReset, {
+    width: d.i.mobileWidthOr(430),
     buttons: {
       'Cancel': function() {
         $(this).dialog('close');
@@ -26,8 +26,8 @@ function initFlagForm() {
       'Submit': function() {
         // COULD ensure details specified if "Others" reason selected.
         // COULD show a "Submitting..." message.
-        if (!Me.isLoggedIn())
-          $form.each($loginThenSubmit)
+        if (!d.i.Me.isLoggedIn())
+          $form.each(d.i.$loginThenSubmit)
         else
           $form.submit();
       }
@@ -40,8 +40,8 @@ function initFlagForm() {
           click: function() {
         // COULD ensure details specified if "Others" reason selected.
         // COULD show a "Submitting..." message.
-        if (!Me.isLoggedIn())
-          $form.each($loginThenSubmit)
+        if (!d.i.Me.isLoggedIn())
+          $form.each(d.i.$loginThenSubmit)
         else
           $form.submit();
       }}],   }}} */
@@ -67,16 +67,16 @@ function initFlagForm() {
           $form.find('textarea').val('').end()
               .find('input:checked')
                 .prop('checked', false).button('refresh');
-          showServerResponseDialog(responseHtml);
+          d.i.showServerResponseDialog(responseHtml);
         })
-        .fail(showServerResponseDialog);
+        .fail(d.i.showServerResponseDialog);
     return false;
   });
 }
 
 
 // warning, dupl code, see $showDeleteCommentForm.
-function $showFlagForm() {
+d.i.$showFlagForm = function() {
   initFlagForm();
   var $i = $(this);
   var $t = $i.closest('.dw-t');

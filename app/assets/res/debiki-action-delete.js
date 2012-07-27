@@ -19,8 +19,8 @@ function initDeleteForm() {
   // harder to realize wethere it's checked or not, and this is a
   // rather important button.
   // Skip: $form.find('#dw-fi-dl-tree').button();
-  $parent.dialog($.extend({}, jQueryDialogReset, {
-    width: mobileWidthOr(360),
+  $parent.dialog($.extend({}, d.i.jQueryDialogReset, {
+    width: d.i.mobileWidthOr(360),
     buttons: {
       Cancel: function() {
         $(this).dialog('close');
@@ -28,8 +28,8 @@ function initDeleteForm() {
       Delete: function() {
         // COULD ensure details specified if "Others" reason selected.
         // COULD show a "Submitting..." message.
-        if (!Me.isLoggedIn())
-          $form.each($loginThenSubmit)
+        if (!d.i.Me.isLoggedIn())
+          $form.each(d.i.$loginThenSubmit)
         else
           $form.submit();
       }
@@ -46,15 +46,15 @@ function initDeleteForm() {
           $form.find('textarea').val('').end()
               .find('input:checked')
                 .prop('checked', false).button('refresh');
-          showServerResponseDialog(responseHtml);
+          d.i.showServerResponseDialog(responseHtml);
         })
-        .fail(showServerResponseDialog);
+        .fail(d.i.showServerResponseDialog);
     return false;
   });
 }
 
 // warning: dupl code, see $showFlagForm.
-function $showDeleteForm() {
+d.i.$showDeleteForm = function() {
   initDeleteForm();
   var $i = $(this);
   var $t = $i.closest('.dw-t');

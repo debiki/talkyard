@@ -10,7 +10,7 @@ var $ = d.i.$;
 // Shows a reply form, either below the relevant post, or inside it,
 // if the reply is an inline comment -- whichever is the case is determined
 // by event.target.
-function $showReplyForm(event, opt_where) {
+d.i.$showReplyForm = function(event, opt_where) {
   // Warning: Some duplicated code, see .dw-r-tag click() above.
   var $thread = $(this).closest('.dw-t');
   var $replyAction = $thread.find('> .dw-p-as > .dw-a-reply');
@@ -54,7 +54,7 @@ function $showReplyForm(event, opt_where) {
         // Show the action buttons for $newPost, or people will be
         // very confused when they're hidden now when the tips is
         // dismissed (since `withTipsClass' was just removed).
-        $newPost.each($showActions);
+        $newPost.each(d.i.$showActions);
       });
     }
 
@@ -76,10 +76,10 @@ function $showReplyForm(event, opt_where) {
     $replyForm.resizable({
         alsoResize: $replyForm.find('textarea'),
         resize: function() {
-          resizeRootThreadExtraWide(); // TODO rm textarea width?
-          $post.each(SVG.$drawParents);
+          d.i.resizeRootThreadExtraWide(); // TODO rm textarea width?
+          $post.each(d.i.SVG.$drawParents);
         },
-        stop: resizeRootThreadNowAndLater,
+        stop: d.i.resizeRootThreadNowAndLater,
         minHeight: 180,  // or lower parts of form might overflow
         minWidth: 210  // or Cancel button might float drop
       });
@@ -96,15 +96,15 @@ function $showReplyForm(event, opt_where) {
       var text = userName ?  'Post as '+ userName : 'Post as ...';  // i18n
       $submitBtn.val(text);
     }
-    setSubmitBtnTitle(null, Me.getName());
-    $submitBtn.each($loginSubmitOnClick(setSubmitBtnTitle,
+    setSubmitBtnTitle(null, d.i.Me.getName());
+    $submitBtn.each(d.i.$loginSubmitOnClick(setSubmitBtnTitle,
           { askAboutEmailNotfs: true }));
 
     // Ajax-post reply on submit.
     $replyForm.submit(function() {
-      $.post('?reply='+ postId +'&view='+ rootPostId, $replyForm.serialize(),
-        'html')
-        .fail(showErrorEnableInputs($replyForm))
+      $.post('?reply='+ postId +'&view='+ d.i.rootPostId,
+          $replyForm.serialize(), 'html')
+        .fail(d.i.showErrorEnableInputs($replyForm))
         .done(function(newDebateHtml) {
           // The server has replied. Merge in the data from the server
           // (i.e. the new post) in the debate.
@@ -112,10 +112,10 @@ function $showReplyForm(event, opt_where) {
           // a .dw-t:last-child might fail (be false), because the form
           // would be the last child, resulting in a superfluous
           // dw-svg-fake-harrow.
-          removeInstantly($replyFormParent);
+          d.i.removeInstantly($replyFormParent);
           $replyAction.dwActionLinkEnable();
           var $myNewPost = d.i.mergeChangesIntoPage(newDebateHtml);
-          markMyPost($myNewPost.dwPostId());
+          d.i.markMyPost($myNewPost.dwPostId());
           // Any horizontal reply button has been hidden.
           $anyHorizReplyBtn.show();
 
@@ -130,12 +130,12 @@ function $showReplyForm(event, opt_where) {
           if (showSortTips) showSortOrderTipsLater($myNewPost, 2050);
           else showRateOwnCommentTipsLater($myNewPost, delayMillis);
 
-          showAndHighlightPost($myNewPost,
+          d.i.showAndHighlightPost($myNewPost,
               { marginRight: 300, marginBottom: 300 });
-          $showActions($myNewPost);
+          d.i.$showActions($myNewPost);
         });
 
-      disableSubmittedForm($replyForm);
+      d.i.disableSubmittedForm($replyForm);
       return false;
     });
 
@@ -177,7 +177,7 @@ function $showReplyForm(event, opt_where) {
       $anyHorizReplyBtn =
           $replyFormParent.prev().filter('.dw-hor-a').dwBugIfEmpty().hide();
       $replyForm.find('.dw-submit-set .dw-fi-cancel').click(function() {
-        slideAwayRemove($replyFormParent, function() {
+        d.i.slideAwayRemove($replyFormParent, function() {
           $anyHorizReplyBtn.show();
         });
         // Cancel delegate, which also calls slideAwayRemove().
@@ -186,8 +186,8 @@ function $showReplyForm(event, opt_where) {
       $replyFormParent.css('min-width', $anyHorizReplyBtn.outerWidth(true));
     }
 
-    SVG.drawArrowsToReplyForm($replyFormParent); // is this needed?
-    slideInActionForm($replyFormParent);
+    d.i.SVG.drawArrowsToReplyForm($replyFormParent); // is this needed?
+    d.i.slideInActionForm($replyFormParent);
   })();
 }
 

@@ -197,7 +197,6 @@ var didResize = false;
 // Set to true if a truncated post was clicked and expanded.
 var didExpandTruncated = false;
 
-var rateFormTemplate = $("#dw-hidden-templates .dw-fs-r");
 var debateId = $('.debiki').attr('id');
 
 var rootPostId = $('.dw-depth-0');
@@ -620,8 +619,8 @@ function $initPostsThreadStep1() {
   // is clicked instead of the <a> with a delegate event. The reply/
   // reply/rate/edit links becomes virtually unclickable (if event
   // delegation is used instead). }}}
-  $actions.children('.dw-a-reply').click($showReplyForm);
-  $actions.children('.dw-a-rate').click($showRatingForm);
+  $actions.children('.dw-a-reply').click(d.i.$showReplyForm);
+  $actions.children('.dw-a-rate').click(d.i.$showRatingForm);
   $actions.children('.dw-a-more').click(function() {
     $(this).closest('.dw-p-as').find('.dw-a')
         .show()
@@ -629,8 +628,8 @@ function $initPostsThreadStep1() {
   });
   //$actions.children('.dw-a-link').click($showLinkForm); — not implemented
   $actions.children('.dw-a-edit').click($showEditsDialog);
-  $actions.children('.dw-a-flag').click($showFlagForm);
-  $actions.children('.dw-a-delete').click($showDeleteForm);
+  $actions.children('.dw-a-flag').click(d.i.$showFlagForm);
+  $actions.children('.dw-a-delete').click(d.i.$showDeleteForm);
 
   // Open/close threads if the fold link is clicked.
   $thread.children('.dw-z').click($threadToggleFolded);
@@ -1256,7 +1255,7 @@ function $showInlineActionMenu(event) {
     // are inserted. This'll be fixed later, when inline threads are
     // shrinked, so the root post won't be affected by them being shown.
     showInteractionsIfHidden(); // might move `placeWhere' to elsewhere
-    $showReplyForm.apply(this, [event, placeWhere]);
+    d.i.$showReplyForm.call(this, event, placeWhere);
     $menu.remove();
   });
 
@@ -1651,7 +1650,7 @@ function showServerResponseDialog(jqXhrOrHtml, opt_errorType,
     if (!$html.length) $html = $allHtml.find('.dw-dlg-rsp');
     if ($html.length) {
       title = $html.children('.dw-dlg-rsp-ttl').text();
-      width = jQueryDialogDefault.width;
+      width = d.i.jQueryDialogDefault.width;
     } else {
       plainText = 'Internal server error.';
     }
@@ -1673,7 +1672,7 @@ function showServerResponseDialog(jqXhrOrHtml, opt_errorType,
 
   // Show dialog.
   $html.children('.dw-dlg-rsp-ttl').remove();
-  $html.dialog($.extend({}, jQueryDialogNoClose, {
+  $html.dialog($.extend({}, d.i.jQueryDialogNoClose, {
     title: title,
     autoOpen: true,
     width: width,
@@ -1929,7 +1928,7 @@ function initLogout() {
 
   var $logoutForm = $logout.find('form');
   $logout.find('input').hide(); // Use jQuery UI's dialog buttons instead
-  $logout.dialog($.extend({}, jQueryDialogDefault, {
+  $logout.dialog($.extend({}, d.i.jQueryDialogDefault, {
     height: 180,
     width: 280,
     buttons: {
@@ -1979,7 +1978,7 @@ var initLoginResultForms = (function() {
     var $loginResult = $('#dw-fs-lgi-ok, #dw-fs-lgi-failed');
     var $loginResultForm = $loginResult.find('form');
     $loginResult.find('input').hide(); // Use jQuery UI's dialog buttons instead
-    $loginResult.dialog($.extend({}, jQueryDialogNoClose, {
+    $loginResult.dialog($.extend({}, d.i.jQueryDialogNoClose, {
       buttons: {
         'OK': function() {
           $(this).dialog('close');
@@ -2004,7 +2003,7 @@ function initLoginSimple() {
   // this is a public computer, e.g. in a public library.
   // Usually (?) the browser itself helps you fill in form fields, e.g.
   // suggests your email address?
-  $login.dialog($.extend({}, jQueryDialogReset, {
+  $login.dialog($.extend({}, d.i.jQueryDialogReset, {
     width: 452,
     buttons: {
       Submit: function() {
@@ -2135,12 +2134,12 @@ var configEmailPerhapsRelogin = (function() {
 
     // Init dialog, do once only.
     if (!$form.parent().is('.ui-dialog')) {
-      $form.dialog($.extend({}, jQueryDialogDefault, {
+      $form.dialog($.extend({}, d.i.jQueryDialogDefault, {
         close: function() {
           dialogStatus.reject();
           // Better not remember email addr. Perhaps this is a public
           // computer, e.g. in a public library.
-          jQueryDialogReset.close.apply(this);
+          d.i.jQueryDialogReset.close.apply(this);
         }
       }));
       $('#dw-f-eml-prf').find('input[type="radio"], input[type="submit"]')
@@ -2256,11 +2255,11 @@ function initLoginOpenId() {
 
   // Use jQueryDialogReset, so OpenID cleared on close,
   // in case this is a public computer?
-  $openid.dialog($.extend({}, jQueryDialogReset, {
+  $openid.dialog($.extend({}, d.i.jQueryDialogReset, {
     width: 670,
     height: 410, // (incl. extra space for 'Enter your OpenID' input field)
     // Place above guest login dialog.
-    zIndex: jQueryDialogDefault.zIndex + 10,
+    zIndex: d.i.jQueryDialogDefault.zIndex + 10,
     buttons: {
       Cancel: function() {
         $(this).dialog('close');
@@ -2808,7 +2807,7 @@ function $showEditsDialog() {
       // doing something else.
       $(this).submit().dialog('close');
     };
-    $editDlg.dialog($.extend({}, jQueryDialogDefault, {
+    $editDlg.dialog($.extend({}, d.i.jQueryDialogDefault, {
       width: 1000,
       height: 600,
       buttons: buttons,
@@ -3130,10 +3129,6 @@ function registerEventHandlersFireLoginOut() {
   // Hide all action forms, since they will be slided in.
   $('#dw-hidden-templates .dw-fs').hide();
 
-  // Show more rating tags when clicking the "More..." button.
-  rateFormTemplate.find('.dw-show-more-r-tags').click($showMoreRatingTags);
-
-
   // Show a change diff instead of the post text, when hovering an edit
   // suggestion.
   $('.debiki')
@@ -3277,11 +3272,27 @@ function renderPageEtc() {
 
 
 // Export stuff.
-d.i.SVG = SVG;
-d.i.Me = Me;
 d.i.$initPostsThread = $initPostsThread;
 d.i.$initPost = $initPost;
+d.i.$loginThenSubmit = $loginThenSubmit;
+d.i.$loginSubmitOnClick = $loginSubmitOnClick;
+d.i.$showActions = $showActions;
 d.i.$undoInlineThreads = $undoInlineThreads;
+d.i.DEBIKI_TABINDEX_DIALOG_MAX = DEBIKI_TABINDEX_DIALOG_MAX;
+d.i.disableSubmittedForm = disableSubmittedForm;
+d.i.markMyPost = markMyPost;
+d.i.Me = Me;
+d.i.resizeRootThreadExtraWide = resizeRootThreadExtraWide;
+d.i.resizeRootThreadNowAndLater = resizeRootThreadNowAndLater;
+d.i.SVG = SVG;
+d.i.removeInstantly = removeInstantly;
+d.i.rootPostId = rootPostId;
+d.i.showAndHighlightPost = showAndHighlightPost;
+d.i.showErrorEnableInputs = showErrorEnableInputs;
+d.i.showMyRatings = showMyRatings;
+d.i.showServerResponseDialog = showServerResponseDialog;
+d.i.slideInActionForm = slideInActionForm;
+d.i.slideAwayRemove = slideAwayRemove;
 
 
 // Dont render page, if there is no root post, or some error happens,
