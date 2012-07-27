@@ -573,6 +573,8 @@ object TemplateEngine {
             '/-/res/debiki-login-guest.js',
             '/-/res/debiki-login-openid.js',
             '/-/res/debiki-logout-dialog.js',
+            '/-/res/debiki-markup.js',
+            '/-/res/debiki-action-links.js',
             '/-/res/debiki-action-reply.js',
             '/-/res/debiki-action-rate.js',
             '/-/res/debiki-action-flag.js',

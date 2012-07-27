@@ -54,10 +54,6 @@ attr() prepends 'http://server/.../page' to the href.  Related:
 
 }}}*/
 
-var html_sanitizer_bundle =
-    require('html_sanitizer_bundle') ||  // prod builds
-    { googleCajaSanitizeHtml: googleCajaSanitizeHtml };  // dev builds
-
 
 //========================================
    (function(){
@@ -65,45 +61,6 @@ var html_sanitizer_bundle =
 "use strict";
 
 var UNTESTED; // Indicates that a piece of code has not been tested.
-
-//----------------------------------------
-//  Helpers
-//----------------------------------------
-
-
-// Converts markdown to sanitized html.
-function markdownToSafeHtml(markdownSrc, hostAndPort, sanitizerOptions) {
-  var htmlTextUnsafe = markdownToUnsafeHtml(markdownSrc, hostAndPort);
-  var htmlTextSafe = sanitizeHtml(htmlTextUnsafe, sanitizerOptions);
-  return htmlTextSafe;
-}
-
-function markdownToUnsafeHtml(markdownSrc, hostAndPort) {
-  var converter = new Showdown.converter();
-  var htmlTextUnsafe = converter.makeHtml(markdownSrc, hostAndPort);
-  return htmlTextUnsafe;
-}
-
-/**
- * Calls Google Caja JsHtmlSanitizer to sanitize the html.
- *
- * options.allowClassAndIdAttr = true/false
- * options.allowDataAttribs = true/false
- */
-function sanitizeHtml(htmlTextUnsafe, options) {
-  var htmlTextSafe = html_sanitizer_bundle.googleCajaSanitizeHtml(
-      htmlTextUnsafe, options.allowClassAndIdAttr, options.allowDataAttr);
-  return htmlTextSafe;
-}
-
-
-function sanitizerOptsForPost($post) {
-  return {
-    allowClassAndIdAttr: $post.dwIsArticlePost(),
-    allowDataAttr: $post.dwIsArticlePost()
-  };
-}
-
 
 
 //----------------------------------------
@@ -659,16 +616,16 @@ function $initPostsThreadStep2() {
     var isBeingEdited = $i.children('.dw-f-e:visible').length;
 
     if (isBeingEdited)
-      hideActions();
+      d.i.hideActions();
     else if (!inlineChildActionsShown)
-      $i.each($showActions);
+      $i.each(d.i.$showActions);
     // else leave actions visible, below the inline child post.
   });
 
   $thread.mouseleave(function() {
     // If this is an inline post, show the action menu for the parent post
     // since we're hovering that post now.
-    $(this).closest('.dw-p').each($showActions);
+    $(this).closest('.dw-p').each(d.i.$showActions);
   });
 
   $initPostStep1.apply(this);
@@ -1302,57 +1259,6 @@ function confirmClosePage() {
   return msg;
 }
 
-// Shows actions for the current post, or the last post hovered.
-function $showActions() {
-  // Hide any action links already shown; show actions for one post only.
-  hideActions();
-  // Show links for the the current post.
-  $(this).closest('.dw-t').children('.dw-as')
-    .css('visibility', 'visible')
-    .attr('id', 'dw-p-as-shown');
-}
-
-function hideActions() {
-  $('#dw-p-as-shown')
-      .css('visibility', 'hidden')
-      .removeAttr('id');
-}
-
-
-
-// -------
-
-
-$.fn.dwActionLinkEnable = function() {
-  setActionLinkEnabled(this, true);
-  return this;
-}
-
-
-$.fn.dwActionLinkDisable = function() {
-  setActionLinkEnabled(this, false);
-  return this;
-}
-
-
-function setActionLinkEnabled($actionLink, enabed) {
-  if (!$actionLink.length) return;
-  bugIf(!$actionLink.is('.dw-a'));
-  if (!enabed) {
-    // (Copy the event list; off('click') destroys the original.)
-    var handlers = $actionLink.data('events')['click'].slice();
-    $actionLink.data('DisabledHandlers', handlers);
-    $actionLink.addClass('dw-a-disabled').off('click');
-  } else {
-    var handlers = $actionLink.data('DisabledHandlers');
-    $actionLink.removeData('DisabledHandlers');
-    $.each(handlers, function(index, handler) { 
-      $actionLink.click(handler);
-    });
-    $actionLink.removeClass('dw-a-disabled');
-  }
-}
-
 
 
 // ------- Inline edits
@@ -1409,7 +1315,7 @@ function _$showEditFormImpl() {
   var isRootPost = $post.parent().is('.dw-depth-0');
 
   // It's confusing with Reply/Rate/etc below the edit form.
-  hideActions();
+  d.i.hideActions();
 
   var editFormLoader = function(debateId, rootPostId, postId, complete) {
     $.get('?edit='+ postId +'&view='+ rootPostId, function(editFormText) {
@@ -1737,7 +1643,7 @@ function $updateEditFormPreview() {
   var htmlSafe = '';
   var $post = $i.closest('.dw-p');
   var isForTitle = $post.is('.dw-p-ttl');
-  var sanitizerOptions = sanitizerOptsForPost($post);
+  var sanitizerOptions = d.i.sanitizerOptsForPost($post);
 
   switch (markupType) {
     case "para":
@@ -1748,7 +1654,8 @@ function $updateEditFormPreview() {
     case "dmd0":
       // Debiki flavored Markdown version 0.
       if (isForTitle) markupSrc = '<h1>'+ markupSrc +'</h1>';
-      htmlSafe = markdownToSafeHtml(markupSrc, hostAndPort, sanitizerOptions);
+      htmlSafe = d.i.markdownToSafeHtml(
+          markupSrc, hostAndPort, sanitizerOptions);
       break;
     case "code":
       // (No one should use this markup for titles, insert no <h1>.)
@@ -1756,7 +1663,7 @@ function $updateEditFormPreview() {
       break;
     case "html":
       if (isForTitle) markupSrc = '<h1>'+ markupSrc +'</h1>';
-      htmlSafe = sanitizeHtml(markupSrc, sanitizerOptions);
+      htmlSafe = d.i.sanitizeHtml(markupSrc, sanitizerOptions);
       break;
     default:
       die("Unknown markup [error DwE0k3w25]");
@@ -2100,14 +2007,12 @@ function renderPageEtc() {
 // Export stuff.
 d.i.$initPostsThread = $initPostsThread;
 d.i.$initPost = $initPost;
-d.i.$showActions = $showActions;
 d.i.$undoInlineThreads = $undoInlineThreads;
 d.i.DEBIKI_TABINDEX_DIALOG_MAX = DEBIKI_TABINDEX_DIALOG_MAX;
 d.i.diffMatchPatch = diffMatchPatch;
 d.i.findPostHeader$ = findPostHeader$;
 d.i.hostAndPort = hostAndPort;
 d.i.$loadEditorDependencies = $loadEditorDependencies;
-d.i.markdownToSafeHtml = markdownToSafeHtml;
 d.i.Me = Me;
 d.i.prettyHtmlFor = prettyHtmlFor;
 d.i.resizeRootThread = resizeRootThread;
@@ -2115,7 +2020,6 @@ d.i.resizeRootThreadExtraWide = resizeRootThreadExtraWide;
 d.i.resizeRootThreadNowAndLater = resizeRootThreadNowAndLater;
 d.i.SVG = SVG;
 d.i.rootPostId = rootPostId;
-d.i.sanitizerOptsForPost = sanitizerOptsForPost;
 d.i.showAndHighlightPost = showAndHighlightPost;
 
 
