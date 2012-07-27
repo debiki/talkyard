@@ -30,6 +30,22 @@ d.u.isoDateToMillis = function(dateStr) {
 }
 
 
+// IE 6, 7, 8 has no toISOString.
+if (!Date.prototype.toISOString) {
+  Date.prototype.toISOString = function () {
+    function pad(n) {
+      return n < 10 ? '0' + n : n;
+    }
+    return '"' + this.getUTCFullYear() + '-' +
+        pad(this.getUTCMonth() + 1) + '-' +
+        pad(this.getUTCDate())      + 'T' +
+        pad(this.getUTCHours())     + ':' +
+        pad(this.getUTCMinutes())   + ':' +
+        pad(this.getUTCSeconds())   + 'Z"';
+  };
+}
+
+
 // `then' and `now' can be Date:s or milliseconds.
 // Consider using: https://github.com/rmm5t/jquery-timeago.git, supports i18n.
 d.u.prettyTimeBetween = function(then, now) {  // i18n
