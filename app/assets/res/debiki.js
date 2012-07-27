@@ -2784,11 +2784,20 @@ function $updateEditFormPreview() {
 }
 
 
+
 // ------- Edit suggestions and history
 
+
 function $showEditsDialog() {
-  var $thread = $(this).closest('.dw-t');
-  var $post = $thread.children('.dw-p');
+  var $post = $(this).closest('.dw-t').children('.dw-p');
+  $loadEditorDependencies.call($post).done(function() {
+    _showEditsDialogImpl($post);
+  });
+}
+
+
+function _showEditsDialogImpl($post) {
+  var $thread = $post.closest('.dw-t');
   var $postBody = $post.children('.dw-p-bd');
   var postId = $post.dwPostId();
 
