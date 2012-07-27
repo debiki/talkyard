@@ -570,6 +570,7 @@ object TemplateEngine {
             '/-/res/debiki-action-rate.js',
             '/-/res/debiki-action-flag.js',
             '/-/res/debiki-action-delete.js',
+            '/-/res/debiki-edit-history.js',
             '/-/res/debiki.js']
         }});
         </script>

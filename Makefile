@@ -95,7 +95,8 @@ JS_COMMON_SRC = \
   ${PUBLIC_JS_DIR}debiki-action-reply.min.js \
   ${PUBLIC_JS_DIR}debiki-action-rate.min.js \
   ${PUBLIC_JS_DIR}debiki-action-flag.min.js \
-  ${PUBLIC_JS_DIR}debiki-action-delete.min.js
+  ${PUBLIC_JS_DIR}debiki-action-delete.min.js \
+  ${PUBLIC_JS_DIR}debiki-edit-history.min.js
 
 # Depends on stuff in ${DEBIKI_MIN_JS}. (tagdog.js depends on html-sanitizer-bundle.js.)
 JS_COMMON_SRC_2 = \
