@@ -99,7 +99,7 @@ debiki.internal.initKeybdShortcuts = function($) {
         $anyFocusedTab.is('.dw-e-tab-edit')) {
       $editTabLink.focus();
       // (Now, the next time you click Tab, you'll focus the next *tab*,
-      // which shows its releated *panel* on focus, see $showEditForm().)
+      // which shows its releated *panel* on focus, see d.i.$showEditForm().)
       return true;
     }
 
