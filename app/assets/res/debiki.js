@@ -207,51 +207,8 @@ function $initPost() {
 
 
 function $initPostStep1() {
-  var $i = $(this),
-      $hdr = $i.find('.dw-p-hd'),
-      $postedAt = $hdr.children('.dw-p-at'),
-      postedAtTitle = $postedAt.attr('title'),
-      postedAt = d.u.isoDateToMillis(postedAtTitle),
-      $editedAt = $hdr.find('> .dw-p-hd-e > .dw-p-at'),
-      editedAtTitle = $editedAt.attr('title'),
-      editedAt = d.u.isoDateToMillis(editedAtTitle),
-      now = new Date();  // COULD cache? e.g. when initing all posts
-
-  function timeAgoAbbr(title, then, now) {
-    return $('<abbr title="'+ title +'">'+ d.u.prettyTimeBetween(then, now) +
-        '</abbr>');
-  };
-
-  // Show pretty how-long-ago info. (The $posted/editedAt are already hidden.)
-  $postedAt.before(timeAgoAbbr(postedAtTitle, postedAt, now));
-  $editedAt.before(timeAgoAbbr(editedAtTitle, editedAt, now));
-
-  // If you clicks the header, show detailed rating and flags info.
-  // If you click again, show exact creation date and edit date.
-  // On a third click, hide everything again.
-  if ($hdr.dwPostHeaderFindStats().length
-      ) $hdr.css('cursor', 'help').click(function(event) {
-    if ($(event.target).is('a'))
-      return;  // don't expand header on link click
-    var $i = $(this);
-    var $stats = $i.dwPostHeaderFindStats();
-    var $times = $i.dwPostHeaderFindExactTimes();
-    if ($stats.is(':hidden')) {
-      $stats.show();
-    }
-    /// Skip this for now, rewrite so dates are appended, don't
-    /// insert in the middle.
-    // else if ($times.is(':hidden')) {
-    //  $times.show();
-    else {
-      $times.hide();
-      $stats.hide();
-    }
-    // This might have expanded the post, so redraw arrows.
-    $i.closest('.dw-p').each(SVG.$drawParents);
-  });
-
   d.i.placeInlineThreadsForPost(this);
+  d.i.makeHeaderPrettyForPost(this);
 };
 
 
