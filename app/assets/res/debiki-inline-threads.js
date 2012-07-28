@@ -40,7 +40,7 @@ d.i.$undoInlineThreads = function() {
 // Better do this before splitBodyPlaceInlines, so as not to confuse the
 // TagDog unnecessarily much (it'd be confused by the -bd-blk:s).
 // Call on posts.
-d.i.$placeInlineMarks = function() {
+function $placeInlineMarks() {
   $(this).parent().find('> .dw-res > .dw-i-t', this).each(function(){
     // Search the parent post for the text where this mark starts.
     // Insert a mark (i.e. an <a/> tag) and render the parent post again.
@@ -241,14 +241,28 @@ function $showInlineReply() {
 };
 
 
-d.i.$highlightInlinesOnHover = function() {
+d.i.placeInlineThreadsForPost = function(post) {
+  // If this post has any inline thread, place inline marks and split
+  // the single .dw-p-bd-blk into many blocks with inline threads
+  // inbetween.
+  // (This takes rather long (120 ms for 110 posts, of which 20 are inlined,
+  // on my 6 core 2.8 GHz AMD) but should nevertheless be done quite early,
+  // because it rearranges threads and posts, and that'd better not happen
+  // after a while when the user thinks the page has already finished
+  // loading.)
+  var $post = $(post);
+  if ($post.parent().children('.dw-res').children('.dw-i-t').length) {
+    $placeInlineMarks.call(post);
+    d.i.$splitBodyPlaceInlines.call(post);
+  }
+
   // When hovering an inline mark or thread, highlight the corresponding
   // thread or mark.
   // TODO don't remove the highlighting until hovering something else?
   //  So one can follow the svg path to the inline thread.
   // When hovering an inline thread, highlight the mark.
   // COULD highlight arrows when hovering any post, not just inline posts?
-  $('> .dw-p-bd', this)
+  $post.find('> .dw-p-bd')
       .find('> .dw-p-bd-blk .dw-i-m-start')
         .hover($inlineMarkHighlightOn, $inlineMarkHighlightOff)
       .end()

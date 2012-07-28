@@ -217,19 +217,6 @@ function $initPostStep1() {
       editedAt = d.u.isoDateToMillis(editedAtTitle),
       now = new Date();  // COULD cache? e.g. when initing all posts
 
-  // If this post has any inline thread, place inline marks and split
-  // the single .dw-p-bd-blk into many blocks with inline threads
-  // inbetween.
-  // (This takes rather long (120 ms for 110 posts, of which 20 are inlined,
-  // on my 6 core 2.8 GHz AMD) but should nevertheless be done quite early,
-  // because it rearranges threads and posts, and that'd better not happen
-  // after a while when the user thinks the page has already finished
-  // loading.)
-  if ($i.parent().children('.dw-res').children('.dw-i-t').length) {
-    $i.each(d.i.$placeInlineMarks)
-      .each(d.i.$splitBodyPlaceInlines);
-  }
-
   function timeAgoAbbr(title, then, now) {
     return $('<abbr title="'+ title +'">'+ d.u.prettyTimeBetween(then, now) +
         '</abbr>');
@@ -264,7 +251,7 @@ function $initPostStep1() {
     $i.closest('.dw-p').each(SVG.$drawParents);
   });
 
-  d.i.$highlightInlinesOnHover.call(this);
+  d.i.placeInlineThreadsForPost(this);
 };
 
 
