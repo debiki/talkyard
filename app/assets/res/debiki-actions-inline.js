@@ -9,14 +9,14 @@ var $ = d.i.$;
 var $lastInlineMenu = $();
 
 
-d.i.$hideInlineActionMenu = function(event) {
+function $hideInlineActionMenu(event) {
   $lastInlineMenu.remove();
 }
 
 
 // Opens a menu with Inline Reply and Edit endries.
 // Does currently not work (does nothing) in IE 7 and 8.
-d.i.$showInlineActionMenu = function(event) {
+function $showInlineActionMenu(event) {
   var $menu;
   var $target = $(event.target);
   if ($target.closest('.dw-fs').length) {
@@ -245,6 +245,17 @@ d.i.$showInlineActionMenu = function(event) {
 
   $lastInlineMenu = $menu;
 }
+
+
+// On post text click, open the inline action menu.
+// But hide it on mousedown, so the inline action menu disappears when you
+// start the 2nd click of a double click, and appears first when the 2nd
+// click is completed. Otherwise the inline menu gets in the
+// way when you double click to select whole words. (Or triple click to
+// select paragraphs.)
+$('.debiki')
+    .delegate('.dw-p-bd-blk', 'mouseup', $showInlineActionMenu)
+    .delegate('.dw-p-bd-blk', 'mousedown', $hideInlineActionMenu);
 
 
 })();

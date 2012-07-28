@@ -756,31 +756,6 @@ function $makePostHeadTooltips() {  // i18n
 
 function registerEventHandlersFireLoginOut() {
 
-  // COULD move to debiki-login.js
-  $('#dw-a-login').click(d.i.showLoginSimple);
-  $('#dw-a-logout').click(d.i.showLogout);
-
-  // On post text click, open the inline action menu.
-  // But hide it on mousedown, so the inline action menu disappears when you
-  // start the 2nd click of a double click, and appears first when the 2nd
-  // click is completed. Otherwise the inline menu gets in the
-  // way when you double click to select whole words. (Or triple click to
-  // select paragraphs.)
-  // COULD move to debiki-actions-inline.js
-  $('.debiki').delegate('.dw-p-bd-blk', 'mouseup', d.i.$showInlineActionMenu)
-      .delegate('.dw-p-bd-blk', 'mousedown', d.i.$hideInlineActionMenu);
-
-  // Remove new-reply and rating forms on cancel, but 
-  // the edit form has some own special logic.
-  $('.debiki').delegate(
-      '.dw-fs-re .dw-fi-cancel, ' +
-      '.dw-fs-r .dw-fi-cancel',
-      'click', d.i.$removeClosestForms);
-
-  // Show the related inline reply, on inline mark click.
-  // COULD move to debiki-inline-threds.js
-  $('.debiki').delegate('a.dw-i-m-start', 'click', d.i.$showInlineReply);
-
   // Add tooltips lazily.
   $('.debiki').delegate('.dw-p-hd', 'mouseenter', $makePostHeadTooltips);
 
@@ -789,18 +764,6 @@ function registerEventHandlersFireLoginOut() {
 
   // Hide all action forms, since they will be slided in.
   $('#dw-hidden-templates .dw-fs').hide();
-
-  // Show a change diff instead of the post text, when hovering an edit
-  // suggestion.
-  // SHOULD move this init code to debiki-edit-history.js
-  $('.debiki')
-      .delegate('.dw-e-sg', 'mouseenter', function(){
-        // COULD move find(...) to inside $showEditDiff?
-        // (Don't want such logic placed down here.)
-        // SHOULD move this to debiki-action-edit.js?
-        $(this).find('.dw-e-text').each(d.i.$showEditDiff);
-      })
-      .delegate('.dw-e-sgs', 'mouseleave', d.i.$removeEditDiff);
 
   // Fire the dwEvLoggedInOut event, so all buttons etc will update
   // their text with the correct user name.

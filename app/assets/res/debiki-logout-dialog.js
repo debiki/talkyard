@@ -7,7 +7,7 @@ var d = { i: debiki.internal, u: debiki.v0.util };
 var $ = d.i.$;
 
 
-d.i.showLogout = function() {
+function showLogout() {
   initLogout();
   $('#dw-fs-lgo').dialog('open');
 }
@@ -45,6 +45,8 @@ function initLogout() {
   });
 }
 
+
+$('#dw-a-logout').click(showLogout);
 
 })();
 

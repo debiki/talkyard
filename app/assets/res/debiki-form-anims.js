@@ -145,7 +145,7 @@ d.i.slideAwayRemove = function($form, opt_complete) {
 }
 
 
-d.i.$removeClosestForms = function() {
+function $removeClosestForms() {
   // Sometimes the form is of class .dw-f, sometimes threre's a form parent
   // with class .dw-fs. Remove that parent if possible.
   var $formSetOrForm = $(this).closest('.dw-fs').add($(this).closest('.dw-f'));
@@ -189,6 +189,14 @@ d.i.slideInActionForm = function($form, $where) {
       next();
     });
 }
+
+
+// Remove new-reply and rating forms on cancel, but 
+// the edit form has some own special logic.
+$('.debiki').delegate(
+    '.dw-fs-re .dw-fi-cancel, ' +
+    '.dw-fs-r .dw-fi-cancel',
+    'click', $removeClosestForms);
 
 
 })();

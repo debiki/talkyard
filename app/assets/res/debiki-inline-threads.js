@@ -219,7 +219,7 @@ d.i.$splitBodyPlaceInlines = function() {
 }
 
 
-d.i.$showInlineReply = function() {
+function $showInlineReply() {
   /*
   Could design a Page Object API that allows me to write:
     var thread = Thread.fromHash(this.hash);
@@ -295,6 +295,9 @@ function toggleInlineHighlight(threadId, on) {
   }
 }
 
+
+// Show the related inline reply, on inline mark click.
+$('.debiki').delegate('a.dw-i-m-start', 'click', $showInlineReply);
 
 })();
 

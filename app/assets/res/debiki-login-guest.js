@@ -76,6 +76,8 @@ function initLoginSimple() {
 }
 
 
+$('#dw-a-login').click(d.i.showLoginSimple);
+
 })();
 
 // vim: fdm=marker et ts=2 sw=2 tw=80 fo=tcqwn list
