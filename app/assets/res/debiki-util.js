@@ -11,7 +11,7 @@ var $ = d.i.$;
 
 function trunc(number) {
   return number << 0;  // bitwise operations convert to integer
-}
+};
 
 
 // ------- Time utils
@@ -27,7 +27,7 @@ d.u.isoDateToMillis = function(dateStr) {
     dateStr = dateStr.replace('-', '/').replace('T', ' ');
   }
   return Date.parse(dateStr);
-}
+};
 
 
 // IE 6, 7, 8 has no toISOString.
@@ -70,7 +70,7 @@ d.u.prettyTimeBetween = function(then, now) {  // i18n
   if (diff > 2 * second) return trunc(diff / second) +" seconds ago";
   if (diff > 1 * second) return "1 second ago";
   return "0 seconds ago";
-}
+};
 
 
 // ------- Dummy log functions
@@ -112,7 +112,7 @@ d.u.zoomListeners = [];
     for (i = d.u.zoomListeners.length - 1; i >= 0; --i) {
       d.u.zoomListeners[i]();
     }
-  }
+  };
   d.u.zoomListenerHandle_dbg = setInterval(pollZoomFireEvent, 100);
 }());
 
@@ -124,29 +124,29 @@ d.u.zoomListeners = [];
 // die2 instead, and then rename die2 to die and remove the original die().
 d.u.die = function(message) {
   throw new Error(message);
-}
+};
 
 
 d.u.die2 = function(errorCode, message) {
   var mess2 = message ? message +' ' : '';
   var err2 = errorCode ? ' '+ errorCode : '';
   throw new Error(mess2 + '[error'+ err2 +']');
-}
+};
 
 
 d.u.dieIf = function(test, message) {
   if (test) throw new Error(message);
-}
+};
 
 
 d.u.die2If = function(test, errorCode, message) {
   if (test) d.u.die2(errorCode, message);
-}
+};
 
 
 d.u.bugIf = function(test, errorGuid) {
   if (test) throw new Error('Internal error ['+ errorGuid +']');
-}
+};
 
 
 $.fn.dwCheckIs = function(selector, errorCode) {
@@ -184,7 +184,8 @@ d.u.makeIdsUniqueUpdateLabels = function(jqueryObj, hrefStart) {
   jqueryObj.find('*[href^='+ hrefStart + ']').each(function(ix) {
     $(this).attr('href', this.hash + seqNo);
   });
-}
+};
+
 
 // When forms are loaded from the server, they might have ID fields.
 // If the same form is loaded twice (e.g. to reply twice to the same comment),
@@ -204,7 +205,7 @@ d.u.buildTagFind = function(html, selector) {
       .append(html.replace(/<script(.|\s)*?\/script>/gi, ''));
   var $tag = $wrap.find(selector);
   return $tag;
-}
+};
 
 
 // Builds HTML tags from `html' and returns the tag with the specified id.
@@ -237,7 +238,7 @@ d.u.buildTagFindId = function(html, id) {
       self.button('option', 'disabled', disabled);
     else self.prop('disabled', disabled);
     return self;
-  }
+  };
 })();
 
 

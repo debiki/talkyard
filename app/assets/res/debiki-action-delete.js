@@ -51,7 +51,8 @@ function initDeleteForm() {
         .fail(d.i.showServerResponseDialog);
     return false;
   });
-}
+};
+
 
 // warning: dupl code, see $showFlagForm.
 d.i.$showDeleteForm = function() {
@@ -65,7 +66,7 @@ d.i.$showDeleteForm = function() {
       .attr('action', '?delete='+ postId)
       .parent().dialog('open');  //.parent().position({
       //my: 'center top', at: 'center bottom', of: $post, offset: '0 40'});
-}
+};
 
 
 })();

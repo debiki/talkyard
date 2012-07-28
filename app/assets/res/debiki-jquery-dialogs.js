@@ -89,7 +89,7 @@ d.i.jQueryDialogNoClose = $.extend({}, d.i.jQueryDialogDefault, {
 
 d.i.mobileWidthOr = function(desktopWidth) {
   return Modernizr.touch ? d.i.jQueryDialogDefault.width : desktopWidth;
-}
+};
 
 
 })();

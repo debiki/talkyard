@@ -12,7 +12,7 @@ d.i.showLoginOpenId = function() {
     initLoginOpenId();
     $('#dw-fs-openid-login').dialog('open');
   });
-}
+};
 
 
 d.i.loadOpenIdResources = (function() {
@@ -63,7 +63,7 @@ function initLoginOpenId() {
       }
     }
   }));
-}
+};
 
 
 // Submits an OpenID login <form> in a popup. Dims the window and
@@ -162,7 +162,7 @@ function submitLoginInPopup($openidLoginForm) {
 
   // Make the default submit action submit the login form in the popup window.
   $openidLoginForm.attr('target', 'LoginPopup');
-}
+};
 
 
 })();

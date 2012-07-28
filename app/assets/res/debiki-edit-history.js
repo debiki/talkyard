@@ -12,7 +12,7 @@ d.i.$showEditsDialog = function() {
   d.i.$loadEditorDependencies.call($post).done(function() {
     showEditsDialogImpl($post);
   });
-}
+};
 
 
 function showEditsDialogImpl($post) {
@@ -157,7 +157,7 @@ function showEditsDialogImpl($post) {
       return false;
     });
   }
-}
+};
 
 
 // Show a change diff instead of the post text, when hovering an edit

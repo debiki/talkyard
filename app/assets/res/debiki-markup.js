@@ -17,14 +17,14 @@ d.i.markdownToSafeHtml = function(markdownSrc, hostAndPort, sanitizerOptions) {
   var htmlTextUnsafe = markdownToUnsafeHtml(markdownSrc, hostAndPort);
   var htmlTextSafe = d.i.sanitizeHtml(htmlTextUnsafe, sanitizerOptions);
   return htmlTextSafe;
-}
+};
 
 
 function markdownToUnsafeHtml(markdownSrc, hostAndPort) {
   var converter = new Showdown.converter();
   var htmlTextUnsafe = converter.makeHtml(markdownSrc, hostAndPort);
   return htmlTextUnsafe;
-}
+};
 
 
 /**
@@ -37,7 +37,7 @@ d.i.sanitizeHtml = function(htmlTextUnsafe, options) {
   var htmlTextSafe = html_sanitizer_bundle.googleCajaSanitizeHtml(
       htmlTextUnsafe, options.allowClassAndIdAttr, options.allowDataAttr);
   return htmlTextSafe;
-}
+};
 
 
 d.i.sanitizerOptsForPost = function($post) {
@@ -45,7 +45,7 @@ d.i.sanitizerOptsForPost = function($post) {
     allowClassAndIdAttr: $post.dwIsArticlePost(),
     allowDataAttr: $post.dwIsArticlePost()
   };
-}
+};
 
 
 })();

@@ -53,7 +53,7 @@ function notifErrorBox$(error, message, details) {
         $box.remove();
       });
   return $box;
-}
+};
 
 
 d.i.disableSubmittedForm = function($form) {
@@ -61,7 +61,7 @@ d.i.disableSubmittedForm = function($form) {
   // Show a 'Submitting ...' tips. CSS places it in the middle of the form.
   var $info = $('#dw-hidden-templates .dw-inf-submitting-form').clone();
   $form.append($info);
-}
+};
 
 
 // Builds a function that shows an error notification and enables
@@ -81,7 +81,7 @@ d.i.showErrorEnableInputs = function($form) {
     $form.find('input, button').dwEnable();
     $form.children('.dw-inf-submitting-form').remove();
   };
-}
+};
 
 
 // Constructs and shows a dialog, from either 1) a servers html response,
@@ -155,7 +155,7 @@ d.i.showServerResponseDialog = function(jqXhrOrHtml, opt_errorType,
       }
     }
   }));
-}
+};
 
 
 })();

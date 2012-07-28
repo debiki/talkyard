@@ -104,7 +104,7 @@ debiki.internal.initKeybdShortcuts = function($) {
     }
 
     return false;
-  }
+  };
 
   // Remembers which <form> should handle key presses (shortcuts),
   // even when focus is lost (e.g. when you select text in the
@@ -119,7 +119,7 @@ debiki.internal.initKeybdShortcuts = function($) {
     $currentRecvr.removeClass('dw-keyrecvr');
     $currentRecvr = $newRecvr;
     $currentRecvr.addClass('dw-keyrecvr');
-  }
+  };
 
   debiki.internal.activateShortcutReceiver = switchRecvr;
 

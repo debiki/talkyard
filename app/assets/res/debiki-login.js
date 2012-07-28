@@ -28,7 +28,7 @@ d.i.$loginSubmitOnClick = function(loginEventHandler, data) {
     !loginEventHandler || $i.bind('dwEvLoggedInOut', loginEventHandler);
     $i.on('click', null, data, d.i.$loginThenSubmit)
   };
-}
+};
 
 
 // Invoke on a .login-on-click submit <input>. After the login
@@ -50,7 +50,7 @@ d.i.$loginThenSubmit = function(event) {
     d.i.continueAnySubmission();
   }
   return false;  // skip default action; don't submit until after login
-}
+};
 
 
 /**
@@ -78,7 +78,7 @@ d.i.continueAnySubmission = function() {
   }).always(function() {
     loginOnClickBtnClicked = null;
   });
-}
+};
 
 
 var configEmailPerhapsRelogin = (function() {
@@ -134,11 +134,13 @@ var configEmailPerhapsRelogin = (function() {
     function submitForm() {
       $form.submit();
       return false;
-    }
+    };
+
     function showEmailAddrInp() {
       $emailAddrDiv.show();
       $yesRecvBtn.button('disable');
-    }
+    };
+
     $emailAddrDiv.hide();
     $yesRecvBtn.button('enable');
     if (d.i.Me.isEmailKnown()) {
@@ -153,7 +155,7 @@ var configEmailPerhapsRelogin = (function() {
 
     $form.dialog('open');
     return dialogStatus;
-  }
+  };
 })();
 
 
@@ -161,14 +163,14 @@ d.i.showLoginOkay = function(opt_continue) {
   initLoginResultForms(opt_continue);
   $('#dw-fs-lgi-ok-name').text(d.i.Me.getName());
   $('#dw-fs-lgi-ok').dialog('open');
-}
+};
 
 
 d.i.showLoginFailed = function(errorMessage) {
   initLoginResultForms();
   $('#dw-fs-lgi-failed-errmsg').text(errorMessage);
   $('#dw-fs-lgi-failed').dialog('open');
-}
+};
 
 
 var initLoginResultForms = (function() {

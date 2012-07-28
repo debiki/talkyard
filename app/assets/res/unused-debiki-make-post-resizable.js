@@ -53,7 +53,7 @@ function $makePostResizable() {
     if (arrowsRedrawn) return;
     SVG.$drawParentsAndTree.apply(where);
     arrowsRedrawn = true;
-  }
+  };
   var $expandSouth = function() {
     // Expand post southwards on resize handle click. But not if
     // the resize handle was dragged and the post thus manually resized.
@@ -165,7 +165,7 @@ function $makePostResizable() {
         'post resizable. Ignoring error (this is a smartphone?)');
     else throw e;
   }
-}
+};
 
 
 // vim: fdm=marker et ts=2 sw=2 tw=80 fo=tcqwn list

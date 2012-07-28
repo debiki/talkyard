@@ -13,7 +13,7 @@ d.i.showLoginSimple = function() {
           //… a debate is shown, so the dw-hidden-templates included.
   // Preload OpenID resources, in case user clicks OpenID login button.
   d.i.loadOpenIdResources();
-}
+};
 
 
 function initLoginSimple() {
@@ -73,7 +73,7 @@ function initLoginSimple() {
         d.i.showLoginOpenId();
         return false;
       });
-}
+};
 
 
 $('#dw-a-login').click(d.i.showLoginSimple);

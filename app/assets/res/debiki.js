@@ -113,7 +113,7 @@ debiki.v0.showInteractionsOnClick = function() {
 d.i.showInteractionsIfHidden = function() {
   // If they're hidden, there's a button that shows them.
   $('.dw-a-show-interactions').click();
-}
+};
 
 
 // ------- Variables
@@ -145,7 +145,7 @@ var Me = d.i.makeCurUser();
 
 function findPostHeader$(postId) {
   return $('#post-'+ postId +' > .dw-p-hd');
-}
+};
 
 $.fn.dwPostId = function() {
   // Drop initial "post-".
@@ -186,24 +186,24 @@ $.fn.dwAuthorId = function() {
 // The root post need not be the article (if ?view=something-else specified).
 $.fn.dwIsRootPost = function() {
   return this.dwCheckIs('.dw-p').parent().is('.dw-depth-0');
-}
+};
 
 $.fn.dwIsArticlePost = function() {
   return this.dwCheckIs('.dw-p').is('.dw-ar-p');
-}
+};
 
 $.fn.dwIsReply = function() {
   // 1 char IDs are reserved (1 is page body, 2 title, 3 template).
   var id = this.dwPostId();
   return id.length > 1;
-}
+};
 
 $.fn.dwIsUnauReply = function() {
   var isReply = this.dwIsReply();
   // Unauthenticated users have '-' in their user ids.
   var unauAuthor = this.dwAuthorId().indexOf('-') !== -1;
   return isReply && unauAuthor;
-}
+};
 
 
 // ------- Open/close
@@ -237,7 +237,7 @@ function $threadToggleFolded() {
     });
   }
   return false; // don't follow any <a> link
-}
+};
 
 
 // ------- Outlining
@@ -279,7 +279,7 @@ function highlightBriefly($tag, opt_backgroundSelector) {
   //    { outlineColor: 'rgba(255, 0, 0, .5)' }, duration, 'easeInExpo');
   /// There's a rgba color support plugin though:
   /// http://pioupioum.fr/sandbox/jquery-color/
-}
+};
 
 
 /**
@@ -307,7 +307,7 @@ function showAndHighlightPost($post, options) {
     highlightBriefly($post, '.dw-p-bd, .dw-p-hd');
     next();
   });
-}
+};
 
 
 function scrollToUrlAnchorPost() {
@@ -315,7 +315,7 @@ function scrollToUrlAnchorPost() {
   if (!$anchorPost.length) return;
   showAndHighlightPost($anchorPost, { marginRight: 200, marginBottom: 300 });
   $anchorPost.parent().addClass('dw-m-t-new');  // outlines it
-}
+};
 
 
 // Adds class 'debiki-current-site-section' to the navigation
@@ -355,12 +355,12 @@ function showCurLocationInSiteNav() {
     var linkFolderPath = linkPath.substr(0, linkPath.lastIndexOf('/') + 1);
     var locStartsWithLink = location.pathname.search(linkFolderPath) === 0;
     return locStartsWithLink;
-  }
+  };
 
   $('.debiki-0-mark-current-site-section a[href]')
       .filter($isCurSectionLink)
       .addClass('debiki-0-current-site-section');
-}
+};
 
 
 
@@ -411,7 +411,7 @@ function resizeRootThreadImpl(extraWidth) {
   // float drop.
   // This also requires us to add 100px in debiki.css, see [3krdi2].
   $rootThread.width(requiredWidth + 100);
-}
+};
 
 
 // Makes the root thread wide enough to contain all its child posts.
@@ -420,14 +420,14 @@ function resizeRootThreadImpl(extraWidth) {
 // will float-drop below the other threads.
 function resizeRootThread() {
   resizeRootThreadImpl();
-}
+};
 
 // Resizes the root thread so it becomes extra wide.
 // This almost avoids all float drops, when quickly resizing an element
 // (making it larger).
 function resizeRootThreadExtraWide() {
   resizeRootThreadImpl(true);
-}
+};
 
 // After an elem has been resized, the root thread is resized by
 // a call to resizeRootThread(). However, it seems the browser
@@ -462,7 +462,7 @@ function $makeEastResizable() {
       resizeRootThreadNowAndLater();
     }
   });
-}
+};
 
 
 // ------- Posts
@@ -480,7 +480,8 @@ function $initPostsThread() {
   $initPostsThreadStep2.apply(this);
   $initPostsThreadStep3.apply(this);
   $initPostsThreadStep4.apply(this);
-}
+};
+
 
 function $initPostsThreadStep1() {
   var $thread = $(this).closest('.dw-t');
@@ -523,7 +524,8 @@ function $initPostsThreadStep1() {
 
   // Open/close threads if the fold link is clicked.
   $thread.children('.dw-z').click($threadToggleFolded);
-}
+};
+
 
 // Things that can be done a while after page load.
 function $initPostsThreadStep2() {
@@ -560,11 +562,13 @@ function $initPostsThreadStep2() {
   });
 
   $initPostStep1.apply(this);
-}
+};
+
 
 function $initPostsThreadStep3() {
   $initPostStep2.apply(this);
-}
+};
+
 
 function $initPostsThreadStep4() {
   var $thread = $(this).closest('.dw-t');
@@ -587,13 +591,15 @@ function $initPostsThreadStep4() {
     }).each($makeEastResizable);
 
   showCurLocationInSiteNav();
-}
+};
+
 
 // Inits a post, not its parent thread.
 function $initPost() {
   $initPostStep1.apply(this);
   $initPostStep2.apply(this);
-}
+};
+
 
 function $initPostStep1() {
   var $i = $(this),
@@ -654,13 +660,14 @@ function $initPostStep1() {
   });
 
   d.i.$highlightInlinesOnHover.call(this);
-}
+};
+
 
 function $initPostStep2() {
   // $initPostSvg takes rather long (190 ms on my 6 core 2.8 GHz AMD, for
   // 100 posts), and  need not be done until just before SVG is drawn.
   SVG.$initPostSvg.apply(this);
-}
+};
 
 
 
@@ -683,7 +690,7 @@ function confirmClosePage() {
     'You have started writing but not saved your work. Really close page?' :
     undefined;  // don't return null, or IE asks roughly `confirm null?'
   return msg;
-}
+};
 
 
 
@@ -716,7 +723,7 @@ function initUtterscroll() {
       if ($utterscrollTips) $utterscrollTips.hide();
     }
   });
-}
+};
 
 
 function $makePostHeadTooltips() {  // i18n
@@ -747,7 +754,7 @@ function $makePostHeadTooltips() {  // i18n
       placement: 'right' // or '?' cursor hides tooltip arrow
     });
   });
-}
+};
 
 
 
@@ -816,7 +823,7 @@ function registerEventHandlersFireLoginOut() {
   //    document.title = 'not focused';
   //});
   //}}}
-}
+};
 
 
 function initAndDrawSvg() {
@@ -826,7 +833,7 @@ function initAndDrawSvg() {
   // don't do it on page load.
   SVG.initRootSvg();
   SVG.drawEverything();
-}
+};
 
 
 // ------- Actually render the page
@@ -893,7 +900,7 @@ function renderPageEtc() {
   }
 
   setTimeout(runNextStep, 60);
-}
+};
 
 
 // Export stuff.

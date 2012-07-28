@@ -10,7 +10,7 @@ var $ = d.i.$;
 function showLogout() {
   initLogout();
   $('#dw-fs-lgo').dialog('open');
-}
+};
 
 
 function initLogout() {
@@ -43,7 +43,7 @@ function initLogout() {
     }, 'html');
     return false;
   });
-}
+};
 
 
 $('#dw-a-logout').click(showLogout);

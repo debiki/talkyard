@@ -189,7 +189,7 @@ d.i.$showReplyForm = function(event, opt_where) {
     d.i.SVG.drawArrowsToReplyForm($replyFormParent); // is this needed?
     d.i.slideInActionForm($replyFormParent);
   })();
-}
+};
 
 
 })();

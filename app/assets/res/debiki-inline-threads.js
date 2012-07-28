@@ -32,7 +32,7 @@ d.i.$undoInlineThreads = function() {
   $inlineThreads.detach();
   $body.children('.dw-i-ts').remove();
   $post.parent().children(".dw-res").prepend($inlineThreads);
-}
+};
 
 
 // Places marks where inline threads are to be placed.
@@ -91,7 +91,7 @@ d.i.$placeInlineMarks = function() {
     // var htmlWithMark = tagDogsniffAndMark(markStartText, $bodyBlock);
     // $bodyBlock.replace($(htmlWithMark));
   });
-}
+};
 
 
 // The tag dog searches text inside html tags, without being so very
@@ -216,7 +216,7 @@ d.i.$splitBodyPlaceInlines = function() {
     // parent <div .dw-p-bd-blk>.
     $(this).replaceWith($(this).contents());
   });
-}
+};
 
 
 function $showInlineReply() {
@@ -238,7 +238,7 @@ function $showInlineReply() {
   }
   d.i.showAndHighlightPost($post);
   return false;
-}
+};
 
 
 d.i.$highlightInlinesOnHover = function() {
@@ -254,31 +254,31 @@ d.i.$highlightInlinesOnHover = function() {
       .end()
       .find('> .dw-i-ts > .dw-i-t > .dw-p')
         .hover($inlineThreadHighlightOn, $inlineThreadHighlightOff);
-}
+};
 
 
 function $inlineMarkHighlightOn() {
   var threadId = this.hash.substr(1, 999); // drops '#'
   toggleInlineHighlight(threadId, true);
-}
+};
 
 
 function $inlineMarkHighlightOff() {
   var threadId = this.hash.substr(1, 999); // drops '#'
   toggleInlineHighlight(threadId, false);
-}
+};
 
 
 function $inlineThreadHighlightOn() {
   var threadId = $(this).closest('.dw-t').attr('id');
   toggleInlineHighlight(threadId, true);
-}
+};
 
 
 function $inlineThreadHighlightOff() {
   var threadId = $(this).closest('.dw-t').attr('id');
   toggleInlineHighlight(threadId, false);
-}
+};
 
 
 function toggleInlineHighlight(threadId, on) {
@@ -293,7 +293,7 @@ function toggleInlineHighlight(threadId, on) {
     $markAndPost.removeClass('dw-highlight');
     $arrow.each(d.i.SVG.$highlightOff);
   }
-}
+};
 
 
 // Show the related inline reply, on inline mark click.

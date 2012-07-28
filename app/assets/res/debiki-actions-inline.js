@@ -11,7 +11,7 @@ var $lastInlineMenu = $();
 
 function $hideInlineActionMenu(event) {
   $lastInlineMenu.remove();
-}
+};
 
 
 // Opens a menu with Inline Reply and Edit endries.
@@ -244,7 +244,7 @@ function $showInlineActionMenu(event) {
   });
 
   $lastInlineMenu = $menu;
-}
+};
 
 
 // On post text click, open the inline action menu.

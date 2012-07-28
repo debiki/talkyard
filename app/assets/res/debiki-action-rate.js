@@ -93,7 +93,7 @@ d.i.$showRatingForm = function(event) {
   $post.each(d.i.SVG.$drawParentsAndTree);
 
   $rateForm.dwScrollIntoView();
-}
+};
 
 
 function lazyInit() {
@@ -101,12 +101,12 @@ function lazyInit() {
   findRateFormTemplate().find('.dw-show-more-r-tags').click(function () {
     $(this).hide().closest('form').find('.dw-more-r-tags').show();
   });
-}
+};
 
 
 function findRateFormTemplate() {
   return $("#dw-hidden-templates .dw-fs-r");
-}
+};
 
 
 })();

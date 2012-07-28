@@ -37,7 +37,7 @@ d.i.$slideUp = function() {
     });
     next();
   });
-}
+};
 
 
 d.i.$slideDown = function() {
@@ -56,7 +56,7 @@ d.i.$slideDown = function() {
     $(this).css('height', '').css('width', '');
     next();
   });
-}
+};
 
 
 function fold($elem, how) {
@@ -72,7 +72,7 @@ function fold($elem, how) {
       $post.each(d.i.SVG.$drawParentsAndTree);
     }
   });
-}
+};
 
 
 function $foldInLeft() {
@@ -92,7 +92,7 @@ function $foldInLeft() {
     $(this).css('height', '').css('width', '');
     next();
   });
-}
+};
 
 
 function $foldOutLeft() {
@@ -112,7 +112,7 @@ function $foldOutLeft() {
   // COULD clear CSS, so the elem gets its proper size should it be folded out
   // again later. Currently all elems that are folded out are also
   // $.remove()d though.
-}
+};
 
 
 d.i.removeInstantly = function($form) {
@@ -122,7 +122,7 @@ d.i.removeInstantly = function($form) {
   // invoked, the $form had not yet been remove()d.
   $thread.each(d.i.SVG.$drawPost).each(d.i.SVG.$drawParents);
   d.i.resizeRootThread();
-}
+};
 
 
 // Action <form> cancel button -- won't work for the Edit form...?
@@ -142,7 +142,7 @@ d.i.slideAwayRemove = function($form, opt_complete) {
   else {
     $form.each(d.i.$slideUp).queue(rm);
   }
-}
+};
 
 
 function $removeClosestForms() {
@@ -150,7 +150,7 @@ function $removeClosestForms() {
   // with class .dw-fs. Remove that parent if possible.
   var $formSetOrForm = $(this).closest('.dw-fs').add($(this).closest('.dw-f'));
   d.i.slideAwayRemove($formSetOrForm.first());
-}
+};
 
 
 // Slide in reply, edit and rate forms -- I think it's
@@ -188,7 +188,7 @@ d.i.slideInActionForm = function($form, $where) {
       $form.dwScrollIntoView();
       next();
     });
-}
+};
 
 
 // Remove new-reply and rating forms on cancel, but 

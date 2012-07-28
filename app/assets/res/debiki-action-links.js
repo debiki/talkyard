@@ -15,26 +15,26 @@ d.i.$showActions = function() {
   $(this).closest('.dw-t').children('.dw-as')
     .css('visibility', 'visible')
     .attr('id', 'dw-p-as-shown');
-}
+};
 
 
 d.i.hideActions = function() {
   $('#dw-p-as-shown')
       .css('visibility', 'hidden')
       .removeAttr('id');
-}
+};
 
 
 $.fn.dwActionLinkEnable = function() {
   setActionLinkEnabled(this, true);
   return this;
-}
+};
 
 
 $.fn.dwActionLinkDisable = function() {
   setActionLinkEnabled(this, false);
   return this;
-}
+};
 
 
 function setActionLinkEnabled($actionLink, enabed) {
@@ -53,7 +53,7 @@ function setActionLinkEnabled($actionLink, enabed) {
     });
     $actionLink.removeClass('dw-a-disabled');
   }
-}
+};
 
 
 })();

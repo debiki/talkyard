@@ -156,7 +156,7 @@ d.i.makeCurUser = function() {
   };
 
   return api;
-}
+};
 
 
 function fireLoginImpl(Me) {
@@ -185,7 +185,7 @@ function fireLoginImpl(Me) {
 
   Me.clearMyPageInfo();
   Me.loadAndMarkMyPageInfo();
-}
+};
 
 
 // Updates cookies and elements to show the user name, email etc.
@@ -209,7 +209,7 @@ function fireLogoutImpl(Me) {
   $('.dw-loginsubmit-on-click').trigger('dwEvLoggedInOut', [undefined]);
 
   Me.clearMyPageInfo();
-}
+};
 
 
 d.i.showMyRatings = function(postId, ratings) {
@@ -224,13 +224,13 @@ d.i.showMyRatings = function(postId, ratings) {
   // Remove outer <span>.
   $myRatings = $myRatings.children().unwrap();
   return $myRatings;
-}
+};
 
 
 d.i.markMyPost = function(postId) {
   var $header = d.i.findPostHeader$(postId);
   $header.children('.dw-p-by').addClass('dw-p-by-me');
-}
+};
 
 
 })();

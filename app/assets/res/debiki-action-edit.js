@@ -54,7 +54,7 @@ d.i.$showEditForm = function() {
   d.i.$loadEditorDependencies.call(i).done(function() {
     _$showEditFormImpl.call(i);
   });
-}
+};
 
 
 function _$showEditFormImpl() {
@@ -354,7 +354,7 @@ function _$showEditFormImpl() {
     focusEditor();
     scrollPostIntoView();
   });
-}
+};
 
 
 // Call on a .dw-f-e, to update the diff tab.
@@ -377,7 +377,7 @@ function $updateEditFormDiff() {
   $diffTab.children('.dw-p-diff').remove();
   // Show the new diff.
   $diffTab.append('<div class="dw-p-diff">'+ htmlString +'</div>\n');
-}
+};
 
 
 // Call on a .dw-f-e, to update the preview tab.
@@ -421,7 +421,7 @@ function $updateEditFormPreview() {
   }
 
   $previewTab.children('.dw-p-bd-blk').html(htmlSafe);
-}
+};
 
 
 // Invoke this function on a textarea or an edit suggestion.
@@ -462,7 +462,7 @@ d.i.$showEditDiff = function() {
   $post.css('overflow-y', 'auto');
 
   // COULD make inline comments point to marks in the diff.
-}
+};
 
 
 // Removes any diff of the closest post; shows the post text instead.
@@ -471,14 +471,14 @@ d.i.$removeEditDiff = function() {
   $post.children('.dw-p-diff').remove();
   $post.children('.dw-p-bd').show();
   $post.css('overflow-y', 'hidden');
-}
+};
 
 
 function $extractMarkupSrcFromHtml() {
   var mup = '';
   $(this).find('p').each(function(){ mup += $(this).text() +'\n\n'; });
   return mup.trim() +'\n';
-}
+};
 
 
 // Converts a google-diff-match-patch diff array into a pretty HTML report.
@@ -515,7 +515,7 @@ d.i.prettyHtmlFor = function(diffs) {
     }
   }
   return html.join('');
-}
+};
 
 
 })();

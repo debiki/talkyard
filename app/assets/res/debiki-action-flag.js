@@ -72,7 +72,7 @@ function initFlagForm() {
         .fail(d.i.showServerResponseDialog);
     return false;
   });
-}
+};
 
 
 // warning, dupl code, see $showDeleteCommentForm.
@@ -87,7 +87,7 @@ d.i.$showFlagForm = function() {
       .attr('action', '?flag='+ postId)
       .parent().dialog('open');  //parent().position({
       //my: 'center top', at: 'center bottom', of: $post, offset: '0 40'});
-}
+};
 
 
 })();
