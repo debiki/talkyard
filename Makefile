@@ -112,6 +112,7 @@ JS_COMMON_SRC = \
   ${PUBLIC_JS_DIR}debiki-action-flag.min.js \
   ${PUBLIC_JS_DIR}debiki-action-delete.min.js \
   ${PUBLIC_JS_DIR}debiki-edit-history.min.js \
+  ${PUBLIC_JS_DIR}debiki-show-interactions.min.js \
   ${PUBLIC_JS_DIR}debiki-show-location-in-nav.min.js \
   ${PUBLIC_JS_DIR}debiki-post-header.min.js
 

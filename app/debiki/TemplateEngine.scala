@@ -587,6 +587,7 @@ object TemplateEngine {
             '/-/res/debiki-action-flag.js',
             '/-/res/debiki-action-delete.js',
             '/-/res/debiki-edit-history.js',
+            '/-/res/debiki-show-interactions.js',
             '/-/res/debiki-show-location-in-nav.js',
             '/-/res/debiki-post-header.js',
             '/-/res/debiki.js']
