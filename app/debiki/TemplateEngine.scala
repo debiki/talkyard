@@ -562,6 +562,7 @@ object TemplateEngine {
             '/-/res/tagdog.js',
             '/-/res/javascript-yaml-parser.js',
             '/-/res/debiki-util.js',
+            '/-/res/debiki-util-play.js',
             '/-/res/debiki-jquery-find.js',
             '/-/res/debiki-resize.js',
             '/-/res/debiki-scroll-into-view.js',

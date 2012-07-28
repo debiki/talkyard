@@ -87,6 +87,7 @@ JS_COMMON_SRC = \
   ${PUBLIC_JS_DIR}jquery-cookie.js \
   ${PUBLIC_JS_DIR}javascript-yaml-parser.js \
   ${PUBLIC_JS_DIR}debiki-util.min.js \
+  ${PUBLIC_JS_DIR}debiki-util-play.min.js \
   ${PUBLIC_JS_DIR}debiki-jquery-find.min.js \
   ${PUBLIC_JS_DIR}debiki-resize.min.js \
   ${PUBLIC_JS_DIR}debiki-scroll-into-view.min.js \
