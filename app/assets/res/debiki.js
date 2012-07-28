@@ -30,7 +30,6 @@ d.i.SVG = Modernizr.inlinesvg && document.URL.indexOf('svg=false') === -1 ?
 d.i.Me = d.i.makeCurUser();
 
 
-
 // Inits a post and its parent thread.
 // Makes posts resizable, activates mouseenter/leave functionality,
 // draws arrows to child threads, etc.
@@ -150,8 +149,6 @@ function registerEventHandlersFireLoginOut() {
 };
 
 
-// ------- Actually render the page
-
 // Render the page step by step, to reduce page loading time. (When the first
 // step is done, the user should conceive the page as mostly loaded.)
 
@@ -225,7 +222,10 @@ function renderPageEtc() {
 
 // Dont render page, if there is no root post, or some error happens,
 // which kills other Javascript that runs on page load.
-if (d.i.rootPostId) renderPageEtc();
+if (!d.i.rootPostId)
+  return;
+
+renderPageEtc();
 
 
 //----------------------------------------
