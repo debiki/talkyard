@@ -23,7 +23,7 @@
     // If you comment in this code, please note:
     // $makeEastResizable must be called before $makePostResizable,
     // or $makeEastResizable has no effect. Search for
-    // "each($makeEastResizable)" to find more info.
+    // "each(d.i.$makeEastResizable)" to find more info.
     //
     // if (!Modernizr.touch && !$i.children('.ui-resizable-handle').length)
     //   $i.each($makePostResizable);

@@ -206,40 +206,6 @@ $.fn.dwIsUnauReply = function() {
 };
 
 
-// ------- Open/close
-
-
-function $threadToggleFolded() {
-  // In case the thread will be wider than the summary, prevent float drop.
-  resizeRootThreadExtraWide();
-  var $thread = $(this).closest('.dw-t');
-  // Don't hide the toggle-folded-link and arrows pointing *to* this thread.
-  var $childrenToFold = $thread.children(':not(.dw-z, .dw-arw)');
-  var $foldLink = $thread.children('.dw-z');
-  // {{{ COULD make the animation somewhat smoother, by sliting up the
-  // thread only until it's as high as the <a> and then hide it and add
-  // .dw-zd, because otherwie when the <a>'s position changes from absolute
-  // to static, the thread height suddenly changes from 0 to the highht
-  // of the <a>). }}}
-  if ($thread.is('.dw-zd')) {
-    // Thread is folded, open it.
-    $childrenToFold.each(d.i.$slideDown);
-    $thread.removeClass('dw-zd');
-    $foldLink.text('[–]'); // not a '-', but an en dash, \u2013,
-  } else {
-    // Fold thread.
-    var postCount = $thread.find('.dw-p').length;
-    $childrenToFold.each(d.i.$slideUp).queue(function(next) {
-      $foldLink.text('[+] Click to show '+  // COULD add i18n
-          postCount +' posts');
-      $thread.addClass('dw-zd');
-      next();
-    });
-  }
-  return false; // don't follow any <a> link
-};
-
-
 // ------- Outlining
 
 // Outline new posts
@@ -364,106 +330,6 @@ function showCurLocationInSiteNav() {
 
 
 
-// ------- Resizing
-
-
-// Makes the root thread wide enough to contain all its child posts.
-// Unless this is done e.g. when child posts are resized or stacked eastwards,
-// or a reply/rate/edit form is shown/resized, the east-most threads
-// will float-drop below the other threads.
-// Had IE7 supported display: table-cell, none of this would have been needed?
-function resizeRootThreadImpl(extraWidth) {
-  // Let the root thead, which floats: left, expand eastwards as much as
-  // it needs to — by making its parent very very wide.
-  var $rootThread = $('.dw-depth-0');
-  var $parent = $rootThread.parent();
-  $parent.width(200200);
-
-  // Now check how wide the parent actually needs to be, to prevent the
-  // eastmost root post child threads from float dropping.
-  // Also add 200px, because when you zoom in and out the width of
-  // the root post might change a few pixels (this caused float
-  // drop in Opera, at least before I started calling resizeRootThread
-  // on zoom in/out).
-  // {{{ Old comment
-  // If a user drag-resizes a form quicker than this amount of pixels
-  // per browser refresh, div-drop might happen anyway, because
-  // this function isn't invoked until after the
-  // browser has decided to float-drop the divs?
-  // Also, zooming in/out might cause float drop (it seems all elems
-  // aren't scaled exactly in the same way), if too small.
-  // Hence it's a rather wide value. (Otherwise = 50 would do.)
-  // }}}
-  $rootThread.width('auto'); // cancel below bug workaround
-  var requiredWidth = $rootThread.width();
-  // Change from 2200:200 to 2700:700. 200 causes float drop, if
-  // browser window is narrow, and you add a root post reply (why!?).
-  $parent.width(requiredWidth + (extraWidth ? 2700 : 700));
-
-  // Browser (?) bug workaround:
-  // Oddly enough, in very very few situations, the browser (Chrome v19)
-  // resizes $rootThread so the last <li> actually float drops! However
-  // if I add just 10px to that $rootThread.width(), then there is no
-  // more float drop (so it seems to me that the browser does a 10px error
-  // — if the browser didn't attempt to avoid float drop at all,
-  // adding 10px wouldn't suffice? A thread <li> is perhaps 200px wide.)
-  // However, after adding 100px here, I've never observed any more
-  // float drop.
-  // This also requires us to add 100px in debiki.css, see [3krdi2].
-  $rootThread.width(requiredWidth + 100);
-};
-
-
-// Makes the root thread wide enough to contain all its child posts.
-// Is this not done e.g. when child posts are resized or stacked eastwards,
-// or a reply/rate/edit form is shown/resized, the east-most threads
-// will float-drop below the other threads.
-function resizeRootThread() {
-  resizeRootThreadImpl();
-};
-
-// Resizes the root thread so it becomes extra wide.
-// This almost avoids all float drops, when quickly resizing an element
-// (making it larger).
-function resizeRootThreadExtraWide() {
-  resizeRootThreadImpl(true);
-};
-
-// After an elem has been resized, the root thread is resized by
-// a call to resizeRootThread(). However, it seems the browser
-// (Google Chrome) calls that function before all elements
-// are in their final position, in some weird manner, causing
-// floats to drop, as if resizeRootThread() had not been called.
-// This can be fixed by calling resizeRootThread() again,
-// after a while when the browser is (probably) done
-// doing its layout stuff.
-var resizeRootThreadNowAndLater = (function(){
-  var handle;
-  return function() {
-    resizeRootThread();
-    if (handle) clearTimeout(handle);
-    handle = setTimeout(resizeRootThread, 1500);
-  };
-}());
-
-// Makes [threads layed out vertically] horizontally resizable.
-function $makeEastResizable() {
-  $(this).resizable({
-    resize: function() {
-      resizeRootThreadExtraWide();
-      SVG.$drawParentsAndTree.apply(this);
-    },
-    handles: 'e',
-    stop: function(event, ui) {
-      // jQuery has added `height: ...' to the thread's style attribute.
-      // Unless removed, the therad won't resize itself when child
-      // threads are opened/closed.
-      $(this).css('height', '');
-      resizeRootThreadNowAndLater();
-    }
-  });
-};
-
 
 // ------- Posts
 
@@ -523,7 +389,7 @@ function $initPostsThreadStep1() {
   $actions.children('.dw-a-delete').click(d.i.$showDeleteForm);
 
   // Open/close threads if the fold link is clicked.
-  $thread.children('.dw-z').click($threadToggleFolded);
+  $thread.children('.dw-z').click(d.i.$threadToggleFolded);
 };
 
 
@@ -588,7 +454,7 @@ function $initPostsThreadStep4() {
     $thread.filter(function() {
       var $i = $(this);
       return !$i.is('.dw-i-t') && $i.parent().closest('.dw-t').is('.dw-hor');
-    }).each($makeEastResizable);
+    }).each(d.i.$makeEastResizable);
 
   showCurLocationInSiteNav();
 };
@@ -726,46 +592,11 @@ function initUtterscroll() {
 };
 
 
-function $makePostHeadTooltips() {  // i18n
-  if (!$.fn.tooltip) return; // tooltips not loaded
-  var $postHead = $(this);
-  if ($postHead.find('[data-original-title]').length)
-    return; // tooltips already added
-
-  // Tooltips explaining '?' and '??' login type indicators.
-  $postHead.find('.dw-lg-t-spl').each(function() {
-    var tip;
-    var $i = $(this);
-    if ($i.text() == '??') {
-      tip = '<b>??</b> means that the user has not logged in,'+
-          ' so <i>anyone</i> can pretend to be this user&nbsp;(!),'+
-          ' and not specified any email address.'
-      // better?: does not receive email notifications.'
-    }
-    else if ($i.text() == '?') {
-      tip = '<b>?</b> means that the user has not logged in,'+
-          ' so <i>anyone</i> can pretend to be this user&nbsp;(!),'+
-          ' but has specified an email address.'
-        // and receives email notifications.'
-    }
-    else die();
-    $i.tooltip({
-      title: tip,
-      placement: 'right' // or '?' cursor hides tooltip arrow
-    });
-  });
-};
-
-
 
 // ------- Initialization functions
 
 
 function registerEventHandlersFireLoginOut() {
-
-  // Add tooltips lazily.
-  $('.debiki').delegate('.dw-p-hd', 'mouseenter', $makePostHeadTooltips);
-
 
   window.onbeforeunload = confirmClosePage;
 
@@ -868,7 +699,7 @@ function renderPageEtc() {
   // When you zoom in or out, the width of the root thread might change
   // a few pixels — then its parent should be resized so the root
   // thread fits inside with no float drop.
-  d.u.zoomListeners.push(resizeRootThread);
+  d.u.zoomListeners.push(d.i.resizeRootThread);
 
   var steps = [];
   steps.push(initPostsThreadStep1);
@@ -883,7 +714,7 @@ function renderPageEtc() {
   // Resize the article, now when the page has been rendered, and all inline
   // threads have been placed and can be taken into account.
   steps.push(function() {
-    resizeRootThread();
+    d.i.resizeRootThread();
     $('html').removeClass('dw-render-layout-pending');
     debiki.scriptLoad.resolve();
   });
@@ -910,9 +741,6 @@ d.i.DEBIKI_TABINDEX_DIALOG_MAX = DEBIKI_TABINDEX_DIALOG_MAX;
 d.i.findPostHeader$ = findPostHeader$;
 d.i.hostAndPort = hostAndPort;
 d.i.Me = Me;
-d.i.resizeRootThread = resizeRootThread;
-d.i.resizeRootThreadExtraWide = resizeRootThreadExtraWide;
-d.i.resizeRootThreadNowAndLater = resizeRootThreadNowAndLater;
 d.i.SVG = SVG;
 d.i.rootPostId = rootPostId;
 d.i.showAndHighlightPost = showAndHighlightPost;

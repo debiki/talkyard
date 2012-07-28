@@ -561,6 +561,7 @@ object TemplateEngine {
             '/-/res/tagdog.js',
             '/-/res/javascript-yaml-parser.js',
             '/-/res/debiki-util.js',
+            '/-/res/debiki-resize.js',
             '/-/res/debiki-scroll-into-view.js',
             '/-/res/debiki-merge-changes.js',
             '/-/res/debiki-arrows-png.js',
@@ -583,6 +584,7 @@ object TemplateEngine {
             '/-/res/debiki-action-flag.js',
             '/-/res/debiki-action-delete.js',
             '/-/res/debiki-edit-history.js',
+            '/-/res/debiki-tooltips.min.js',
             '/-/res/debiki.js']
         }});
         </script>

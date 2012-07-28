@@ -87,6 +87,7 @@ JS_COMMON_SRC = \
   ${PUBLIC_JS_DIR}jquery-cookie.js \
   ${PUBLIC_JS_DIR}javascript-yaml-parser.js \
   ${PUBLIC_JS_DIR}debiki-util.min.js \
+  ${PUBLIC_JS_DIR}debiki-resize.min.js \
   ${PUBLIC_JS_DIR}debiki-scroll-into-view.min.js \
   ${PUBLIC_JS_DIR}debiki-merge-changes.min.js \
   ${PUBLIC_JS_DIR}debiki-arrows-png.min.js \
@@ -108,7 +109,9 @@ JS_COMMON_SRC = \
   ${PUBLIC_JS_DIR}debiki-action-edit.min.js \
   ${PUBLIC_JS_DIR}debiki-action-flag.min.js \
   ${PUBLIC_JS_DIR}debiki-action-delete.min.js \
-  ${PUBLIC_JS_DIR}debiki-edit-history.min.js
+  ${PUBLIC_JS_DIR}debiki-edit-history.min.js \
+  ${PUBLIC_JS_DIR}debiki-tooltips.min.js
+
 
 # Depends on stuff in ${DEBIKI_MIN_JS}. (tagdog.js depends on html-sanitizer-bundle.js.)
 JS_COMMON_SRC_2 = \
