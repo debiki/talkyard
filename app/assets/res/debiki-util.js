@@ -23,7 +23,7 @@ d.u.isoDateToMillis = function(dateStr) {
   if (!dateStr) return NaN;
   // For IE 7 and 8, change from e.g. '2011-12-15T11:34:56Z' to
   // '2011/12/15 11:34:56Z'.
-  if (jQuery.browser.msie && jQuery.browser.version < '9') {
+  if ($.browser.msie && $.browser.version < '9') {
     dateStr = dateStr.replace('-', '/').replace('T', ' ');
   }
   return Date.parse(dateStr);
@@ -105,7 +105,7 @@ d.u.zoomListeners = [];
   var lastWidth = 0;
   function pollZoomFireEvent() {
     var i;
-    var widthNow = jQuery(window).width();
+    var widthNow = $(window).width();
     if (lastWidth === widthNow) return;
     lastWidth = widthNow;
     // Length changed, user must have zoomed, invoke listeners.
@@ -149,7 +149,7 @@ d.u.bugIf = function(test, errorGuid) {
 }
 
 
-jQuery.fn.dwCheckIs = function(selector, errorCode) {
+$.fn.dwCheckIs = function(selector, errorCode) {
   var $ok = this.filter(selector);
   d.u.die2If(this.length !== $ok.length, errorCode || 'DwE093k2', $ok.length +
       ' of '+ this.length +' elems is: '+ selector);
@@ -157,7 +157,7 @@ jQuery.fn.dwCheckIs = function(selector, errorCode) {
 };
 
 
-jQuery.fn.dwBugIfEmpty = function(errorGuid) {
+$.fn.dwBugIfEmpty = function(errorGuid) {
   d.u.bugIf(!this.length, errorGuid);
   return this;
 };
@@ -198,7 +198,7 @@ d.u.buildTagFind = function(html, selector) {
   // From jQuery 1.4.2, jQuery.fn.load():
   var $wrap =
       // Create a dummy div to hold the results
-      jQuery('<div />')
+      $('<div />')
       // inject the contents of the document in, removing the scripts
       // to avoid any 'Permission Denied' errors in IE
       .append(html.replace(/<script(.|\s)*?\/script>/gi, ''));
@@ -220,11 +220,11 @@ d.u.buildTagFindId = function(html, id) {
 
 
 (function() {
-  jQuery.fn.dwDisable = function() {
+  $.fn.dwDisable = function() {
     return _dwEnableDisableImpl(this, true);
   };
 
-  jQuery.fn.dwEnable = function() {
+  $.fn.dwEnable = function() {
     return _dwEnableDisableImpl(this, false);
   };
 

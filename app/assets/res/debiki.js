@@ -147,29 +147,29 @@ function findPostHeader$(postId) {
   return $('#post-'+ postId +' > .dw-p-hd');
 }
 
-jQuery.fn.dwPostId = function() {
+$.fn.dwPostId = function() {
   // Drop initial "post-".
   return this.dwCheckIs('.dw-p').attr('id').substr(5, 999);
 };
 
-jQuery.fn.dwPostFindHeader = function() {
+$.fn.dwPostFindHeader = function() {
   return this.dwCheckIs('.dw-p').children('.dw-p-hd');
 };
 
-jQuery.fn.dwPostHeaderFindStats = function() {
+$.fn.dwPostHeaderFindStats = function() {
   return this.dwCheckIs('.dw-p-hd').children('.dw-p-flgs-all, .dw-p-r-all');
 };
 
-jQuery.fn.dwPostHeaderFindExactTimes = function() {
+$.fn.dwPostHeaderFindExactTimes = function() {
   return this.dwCheckIs('.dw-p-hd')
       .find('> .dw-p-at, > .dw-p-hd-e > .dw-p-at');
 };
 
-jQuery.fn.dwLastChange = function() {
+$.fn.dwLastChange = function() {
   var maxDate = '0';
   this.dwCheckIs('.dw-p')
       .children('.dw-p-hd').find('.dw-date').each(function(){
-    var date = jQuery(this).attr('title'); // creation or last modification date
+    var date = $(this).attr('title'); // creation or last modification date
     if (date > maxDate)
       maxDate = date;
   });
@@ -177,7 +177,7 @@ jQuery.fn.dwLastChange = function() {
 };
 
 // The user id of the author of a post.
-jQuery.fn.dwAuthorId = function() {
+$.fn.dwAuthorId = function() {
   var uid = this.dwCheckIs('.dw-p')
       .find('> .dw-p-hd > .dw-p-by').attr('data-dw-u-id');
   return uid;
@@ -285,7 +285,7 @@ function highlightBriefly($tag, opt_backgroundSelector) {
 /**
  * Scrolls to `this`, then highlights `$tag`.
  */
-jQuery.fn.dwScrollToThenHighlight = function($tag, options) {
+$.fn.dwScrollToThenHighlight = function($tag, options) {
   this.dwScrollIntoView(options).queue(function(next) {
     highlightBriefly($tag);
     next();
@@ -297,7 +297,7 @@ jQuery.fn.dwScrollToThenHighlight = function($tag, options) {
 /**
  * Scrolls to and highlights `this`.
  */
-jQuery.fn.dwScrollToHighlighted = function(options) {
+$.fn.dwScrollToHighlighted = function(options) {
   return this.dwScrollToThenHighlight(this);
 };
 

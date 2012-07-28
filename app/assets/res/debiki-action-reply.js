@@ -70,7 +70,7 @@ d.i.$showReplyForm = function(event, opt_where) {
 
   (function() { // in the past, loaded reply form here
 
-    var $replyFormParent = jQuery('#dw-hidden-templates .dw-fs-re').clone(true);
+    var $replyFormParent = $('#dw-hidden-templates .dw-fs-re').clone(true);
     var $replyForm = $replyFormParent.children('form');
     d.u.makeIdsUniqueUpdateLabels($replyForm);
     $replyForm.resizable({
