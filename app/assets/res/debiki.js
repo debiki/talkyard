@@ -49,7 +49,7 @@ attr() prepends 'http://server/.../page' to the href.  Related:
  Let jQuery objects start with $.
  Currently jQuery extensions are prefixed by 'dw', e.g. $post.dwAuthorId().
  Example:
-   var $header = findPostHeader$(postId);
+   var $header = d.i.findPostHeader$(postId);
    $header.each($doSomething);
 
 }}}*/
@@ -137,149 +137,7 @@ var SVG = nativeSvgSupport && document.URL.indexOf('svg=false') === -1 ?
 var Me = d.i.makeCurUser();
 
 
-
-
-// ------- Traversing etcetera
-
-function findPostHeader$(postId) {
-  return $('#post-'+ postId +' > .dw-p-hd');
-};
-
-$.fn.dwPostId = function() {
-  // Drop initial "post-".
-  return this.dwCheckIs('.dw-p').attr('id').substr(5, 999);
-};
-
-$.fn.dwPostFindHeader = function() {
-  return this.dwCheckIs('.dw-p').children('.dw-p-hd');
-};
-
-$.fn.dwPostHeaderFindStats = function() {
-  return this.dwCheckIs('.dw-p-hd').children('.dw-p-flgs-all, .dw-p-r-all');
-};
-
-$.fn.dwPostHeaderFindExactTimes = function() {
-  return this.dwCheckIs('.dw-p-hd')
-      .find('> .dw-p-at, > .dw-p-hd-e > .dw-p-at');
-};
-
-$.fn.dwLastChange = function() {
-  var maxDate = '0';
-  this.dwCheckIs('.dw-p')
-      .children('.dw-p-hd').find('.dw-date').each(function(){
-    var date = $(this).attr('title'); // creation or last modification date
-    if (date > maxDate)
-      maxDate = date;
-  });
-  return maxDate;
-};
-
-// The user id of the author of a post.
-$.fn.dwAuthorId = function() {
-  var uid = this.dwCheckIs('.dw-p')
-      .find('> .dw-p-hd > .dw-p-by').attr('data-dw-u-id');
-  return uid;
-};
-
-// The root post need not be the article (if ?view=something-else specified).
-$.fn.dwIsRootPost = function() {
-  return this.dwCheckIs('.dw-p').parent().is('.dw-depth-0');
-};
-
-$.fn.dwIsArticlePost = function() {
-  return this.dwCheckIs('.dw-p').is('.dw-ar-p');
-};
-
-$.fn.dwIsReply = function() {
-  // 1 char IDs are reserved (1 is page body, 2 title, 3 template).
-  var id = this.dwPostId();
-  return id.length > 1;
-};
-
-$.fn.dwIsUnauReply = function() {
-  var isReply = this.dwIsReply();
-  // Unauthenticated users have '-' in their user ids.
-  var unauAuthor = this.dwAuthorId().indexOf('-') !== -1;
-  return isReply && unauAuthor;
-};
-
-
-// ------- Outlining
-
-// Outline new posts
-/*
-(function(){
-  var myLastVersion = $.cookie('myLastPageVersion'); // cookie no longer exists
-  if (!myLastVersion) return;
-  var newPosts = posts.filter(function(index){ // BUG?…
-    //… relied on posts = $('.debiki .dw-p-bd') but use '*.dw-p' instead?
-    return $(this).dwLastChange() > myLastVersion;
-  })
-  newPosts.closest('.dw-t').addClass('dw-m-t-new');
-  // TODO: sometimes .dw-m-p-edited instead of -new
-})()
-*/
-
-
-/**
- * Highlights and outlines $tag, for a little while. If there're opaque
- * elems inside, you can list them in the `opt_backgroundSelector`
- * and then background highlighting is placed on them instead of on $tag.
- */
-function highlightBriefly($tag, opt_backgroundSelector) {
-  var duration = 2500;
-  var $background = opt_backgroundSelector ?
-      $tag.find(opt_backgroundSelector) : $tag;
-  $background.effect('highlight',
-      { easing: 'easeInExpo', color: 'yellow' }, duration);
-  $tag.css('outline', 'solid thick #f0a005');
-  // Remove the outline quickly (during 500 ms). Otherwise it looks
-  // jerky: removing 1px at a time, slowly, is very noticeable!
-  setTimeout(function() {
-    $tag.animate({ outlineWidth: '0px' }, 400);
-  }, Math.max(duration - 550, 0));
-  /// This won't work, jQuery plugin doesn't support rgba animation:
-  //$post.animate(
-  //    { outlineColor: 'rgba(255, 0, 0, .5)' }, duration, 'easeInExpo');
-  /// There's a rgba color support plugin though:
-  /// http://pioupioum.fr/sandbox/jquery-color/
-};
-
-
-/**
- * Scrolls to `this`, then highlights `$tag`.
- */
-$.fn.dwScrollToThenHighlight = function($tag, options) {
-  this.dwScrollIntoView(options).queue(function(next) {
-    highlightBriefly($tag);
-    next();
-  });
-  return this;
-};
-
-
-/**
- * Scrolls to and highlights `this`.
- */
-$.fn.dwScrollToHighlighted = function(options) {
-  return this.dwScrollToThenHighlight(this);
-};
-
-
-function showAndHighlightPost($post, options) {
-  $post.dwScrollIntoView(options).queue(function(next) {
-    highlightBriefly($post, '.dw-p-bd, .dw-p-hd');
-    next();
-  });
-};
-
-
-function scrollToUrlAnchorPost() {
-  var $anchorPost = $(location.hash).filter('.dw-p');
-  if (!$anchorPost.length) return;
-  showAndHighlightPost($anchorPost, { marginRight: 200, marginBottom: 300 });
-  $anchorPost.parent().addClass('dw-m-t-new');  // outlines it
-};
+// -------
 
 
 // Adds class 'debiki-current-site-section' to the navigation
@@ -704,7 +562,7 @@ function renderPageEtc() {
   // don't do it on page load.
   steps.push(SVG.initRootDrawArrows);
 
-  steps.push(scrollToUrlAnchorPost);
+  steps.push(d.i.scrollToUrlAnchorPost);
   // Resize the article, now when the page has been rendered, and all inline
   // threads have been placed and can be taken into account.
   steps.push(function() {
@@ -732,12 +590,10 @@ function renderPageEtc() {
 d.i.$initPostsThread = $initPostsThread;
 d.i.$initPost = $initPost;
 d.i.DEBIKI_TABINDEX_DIALOG_MAX = DEBIKI_TABINDEX_DIALOG_MAX;
-d.i.findPostHeader$ = findPostHeader$;
 d.i.hostAndPort = hostAndPort;
 d.i.Me = Me;
 d.i.SVG = SVG;
 d.i.rootPostId = rootPostId;
-d.i.showAndHighlightPost = showAndHighlightPost;
 
 
 // Dont render page, if there is no root post, or some error happens,
