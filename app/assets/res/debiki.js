@@ -15,21 +15,19 @@ var d = { i: debiki.internal, u: debiki.v0.util };
 
 // Debiki convention: Dialog elem tabindexes should vary from 101 to 109.
 // HTML generation code assumes this, too. See Debiki for Developers, #7bZG31.
-var DEBIKI_TABINDEX_DIALOG_MAX = 109;
+d.i.DEBIKI_TABINDEX_DIALOG_MAX = 109;
 
-var hostAndPort = location.origin.replace(/https?:\/\//, '');
+d.i.hostAndPort = location.origin.replace(/https?:\/\//, '');
 
-var rootPostId = $('.dw-depth-0');
-rootPostId = rootPostId.length ?
-    rootPostId.attr('id').substr(5) : undefined; // drops initial `dw-t-'
+d.i.rootPostId = $('.dw-depth-0');
+d.i.rootPostId = d.i.rootPostId.length ?
+    d.i.rootPostId.attr('id').substr(5) : undefined; // drops initial `dw-t-'
 
-// If there's no SVG support, we'll use images instead.
-var nativeSvgSupport = Modernizr.inlinesvg;
-
-var SVG = nativeSvgSupport && document.URL.indexOf('svg=false') === -1 ?
+// If there's no SVG support, use PNG arrow images instead.
+d.i.SVG = Modernizr.inlinesvg && document.URL.indexOf('svg=false') === -1 ?
     d.i.makeSvgDrawer($) : d.i.makeFakeDrawer($);
 
-var Me = d.i.makeCurUser();
+d.i.Me = d.i.makeCurUser();
 
 
 
@@ -40,7 +38,7 @@ var Me = d.i.makeCurUser();
 // (The initialization is split into steps, so everything need not be done
 // at once on page load.)
 // Call on posts.
-function $initPostsThread() {
+d.i.$initPostsThread = function() {
   $initPostsThreadStep1.apply(this);
   $initPostsThreadStep2.apply(this);
   $initPostsThreadStep3.apply(this);
@@ -74,7 +72,7 @@ function $initPostsThreadStep4() {
 
 
 // Inits a post, not its parent thread.
-function $initPost() {
+d.i.$initPost = function() {
   $initPostStep1.apply(this);
   $initPostStep2.apply(this);
 };
@@ -89,7 +87,7 @@ function $initPostStep1() {
 function $initPostStep2() {
   // $initPostSvg takes rather long (190 ms on my 6 core 2.8 GHz AMD, for
   // 100 posts), and  need not be done until just before SVG is drawn.
-  SVG.$initPostSvg.apply(this);
+  d.i.SVG.$initPostSvg.apply(this);
 };
 
 
@@ -204,7 +202,7 @@ function renderPageEtc() {
     if ($.browser.version < '9') $body.addClass('dw-ua-lte-ie8');
   }
 
-  Me.refreshProps();
+  d.i.Me.refreshProps();
 
   // When you zoom in or out, the width of the root thread might change
   // a few pixels — then its parent should be resized so the root
@@ -224,7 +222,7 @@ function renderPageEtc() {
   // arrows might be offset incorrectly.
   // Actually, drawing SVG takes long, so wait for a while,
   // don't do it on page load.
-  steps.push(SVG.initRootDrawArrows);
+  steps.push(d.i.SVG.initRootDrawArrows);
 
   steps.push(d.i.scrollToUrlAnchorPost);
   // Resize the article, now when the page has been rendered, and all inline
@@ -250,19 +248,9 @@ function renderPageEtc() {
 };
 
 
-// Export stuff.
-d.i.$initPostsThread = $initPostsThread;
-d.i.$initPost = $initPost;
-d.i.DEBIKI_TABINDEX_DIALOG_MAX = DEBIKI_TABINDEX_DIALOG_MAX;
-d.i.hostAndPort = hostAndPort;
-d.i.Me = Me;
-d.i.SVG = SVG;
-d.i.rootPostId = rootPostId;
-
-
 // Dont render page, if there is no root post, or some error happens,
 // which kills other Javascript that runs on page load.
-if (rootPostId) renderPageEtc();
+if (d.i.rootPostId) renderPageEtc();
 
 
 //----------------------------------------
