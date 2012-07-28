@@ -386,10 +386,15 @@ debiki.internal.makeSvgDrawer = function($) {
     this.style.strokeWidth = 3;
   }
 
+  function initRootDrawArrows() {
+    initRootSvg();
+    drawEverything();
+  };
+
   return {
     // DO NOT FORGET to update the fake SVG drawer too!
     // And test both with and without SVG enabled.
-    initRootSvg: initRootSvg,
+    initRootDrawArrows: initRootDrawArrows,
     $initPostSvg: $initPostSvg,
     $drawPost: $drawPost,
     $drawTree: $drawTree,

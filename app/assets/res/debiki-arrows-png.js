@@ -82,8 +82,6 @@ debiki.internal.makeFakeDrawer = function($) {
     // TODO draw arrows to new vertical replies
   }
 
-  function drawEverything() {}
-
   function drawArrowsToReplyForm($formParent) {
     var arws = $formParent.closest('.dw-t').is('.dw-hor')
         ? replyBtnBranchingArrow
@@ -100,13 +98,13 @@ debiki.internal.makeFakeDrawer = function($) {
   }
 
   return {
-    initRootSvg: initialize,
+    initRootDrawArrows: initialize,
     $initPostSvg: $initPostSvg,
     $drawPost: $drawPost,
     $drawTree: $drawTree,
     $drawParents: $drawParents,
     $drawParentsAndTree: $drawParentsAndTree,
-    drawEverything: drawEverything,
+    drawEverything: function() {},
     drawArrowsToReplyForm: drawArrowsToReplyForm,
     $highlightOn: $highlightOn,
     $highlightOff: $highlightOff

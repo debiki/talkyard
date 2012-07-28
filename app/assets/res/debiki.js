@@ -657,16 +657,6 @@ function registerEventHandlersFireLoginOut() {
 };
 
 
-function initAndDrawSvg() {
-  // Don't draw SVG until all html tags has been placed, or the SVG
-  // arrows might be offset incorrectly.
-  // Actually, drawing SVG takes long, so wait for a while,
-  // don't do it on page load.
-  SVG.initRootSvg();
-  SVG.drawEverything();
-};
-
-
 // ------- Actually render the page
 
 // Render the page step by step, to reduce page loading time. (When the first
@@ -709,7 +699,13 @@ function renderPageEtc() {
   // is visible for rather long, when you load a *huge* page.
   steps.push(registerEventHandlersFireLoginOut);
   steps.push(initPostsThreadStep4);
-  steps.push(initAndDrawSvg);
+
+  // Don't draw SVG until all html tags has been placed, or the SVG
+  // arrows might be offset incorrectly.
+  // Actually, drawing SVG takes long, so wait for a while,
+  // don't do it on page load.
+  steps.push(SVG.initRootDrawArrows);
+
   steps.push(scrollToUrlAnchorPost);
   // Resize the article, now when the page has been rendered, and all inline
   // threads have been placed and can be taken into account.
