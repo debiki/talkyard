@@ -176,25 +176,7 @@ function $initPostsThreadStep3() {
 
 
 function $initPostsThreadStep4() {
-  var $thread = $(this).closest('.dw-t');
-
-  // Make replies to the root thread resizable horizontally. (Takes
-  // perhaps 100 ms on my 6 core 2.8 GHz AMD, 24 depth-1 reply columns.)
-  // (But skip inline replies; they expand eastwards regardless.)
-  // $makeEastResizable must be called before $makePostResizable (not in
-  // use though!), or $makeEastResizable has no effect. No idea
-  // why -- my guess is some jQuery code does something similar to
-  // `$.find(..)', and finds the wrong resizable stuff,
-  // if the *inner* tag is made resizable before the *outer* tag.
-  //
-  // However for touch devises, don't enable resizing of posts: it doesn't
-  // work, and the resize handles steal touch events from buttons nearby.
-  if (!Modernizr.touch)
-    $thread.filter(function() {
-      var $i = $(this);
-      return !$i.is('.dw-i-t') && $i.parent().closest('.dw-t').is('.dw-hor');
-    }).each(d.i.$makeEastResizable);
-
+  d.i.makeThreadResizableForPost(this);
   d.i.showCurLocationInSiteNav();
 };
 
