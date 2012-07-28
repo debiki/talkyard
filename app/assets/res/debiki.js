@@ -122,8 +122,6 @@ d.i.showInteractionsIfHidden = function() {
 // HTML generation code assumes this, too. See Debiki for Developers, #7bZG31.
 var DEBIKI_TABINDEX_DIALOG_MAX = 109;
 
-var didResize = false;
-
 var hostAndPort = location.origin.replace(/https?:\/\//, '');
 
 var rootPostId = $('.dw-depth-0');

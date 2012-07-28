@@ -34,6 +34,8 @@
 // Set to true if a truncated post was clicked and expanded.
 var didExpandTruncated = false;
 
+var didResize = false;
+
 
 // Reset all per click state variables when a new click starts.
 $.event.add(document, "mousedown", function() {
