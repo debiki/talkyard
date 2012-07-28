@@ -58,44 +58,11 @@ attr() prepends 'http://server/.../page' to the href.  Related:
 //========================================
    (function(){
 //========================================
-"use strict";
-
-var UNTESTED; // Indicates that a piece of code has not been tested.
-
-
-//----------------------------------------
-// jQuery object extensions
-//----------------------------------------
-
-
-(function() {
-  jQuery.fn.dwDisable = function() {
-    return _dwEnableDisableImpl(this, true);
-  };
-
-  jQuery.fn.dwEnable = function() {
-    return _dwEnableDisableImpl(this, false);
-  };
-
-  function _dwEnableDisableImpl(self, disabled) {
-    // (Radio buttons and checkboxes have the
-    // .ui-helper-hidden-accessible class – jQuery UI places
-    // .ui-button on the related <label>, not the <input>.)
-    if (self.filter('input, button')
-        .is('.ui-button, .ui-helper-hidden-accessible'))
-      self.button('option', 'disabled', disabled);
-    else self.prop('disabled', disabled);
-    return self;
-  }
-})();
-
-
-
-// Onload
 //----------------------------------------
    jQuery.noConflict()(function($){
 //----------------------------------------
 
+"use strict";
 
 // Import namespaces as `d.i` and `d.u`.
 var d = { i: debiki.internal, u: debiki.v0.util };
