@@ -225,39 +225,6 @@ function confirmClosePage() {
 
 
 
-// ------- Utterscroll and Tooltips
-
-
-function initUtterscroll() {
-  bugIf(Modernizr.touch);
-  // Activate Utterscroll, and show tips if people use the window scrollbars,
-  // hide it on utterscroll.
-  var hasUtterscrolled = false;
-  var $utterscrollTips;
-  debiki.Utterscroll.enable({
-    scrollstoppers: '.CodeMirror,'+
-        ' .ui-draggable, .ui-resizable-handle, .dw-p-hd',
-    onMousedownOnWinHztlScrollbar: function() {
-      if (hasUtterscrolled || $utterscrollTips)
-        return;
-      var $tips = $('#dw-tps-utterscroll');
-      $tips.show()
-          // Place tips in the middle of the viewport.
-          // (The tips has position: fixed.)
-          .css('top', ($(window).height() - $tips.height()) / 2)
-          .css('left', ($(window).width() - $tips.width()) / 2)
-          .click(function() { $tips.hide(); });
-      $utterscrollTips = $tips;
-    },
-    onHasUtterscrolled: function() {
-      hasUtterscrolled = true;
-      if ($utterscrollTips) $utterscrollTips.hide();
-    }
-  });
-};
-
-
-
 // ------- Initialization functions
 
 
@@ -381,7 +348,7 @@ function renderPageEtc() {
   });
   if (!Modernizr.touch) steps.push(function() {
     d.i.initKeybdShortcuts($);
-    initUtterscroll();
+    d.i.initUtterscrollAndTips();
   });
 
   function runNextStep() {

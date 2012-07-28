@@ -552,6 +552,7 @@ object TemplateEngine {
           nope: [
             '/-/res/jquery-scrollable.js',
             '/-/res/debiki-utterscroll.js',
+            '/-/res/debiki-utterscroll-init-tips.js',
             '/-/res/debiki-keyboard-shortcuts.js',
             '/-/res/bootstrap-tooltip.js'],
           both: [

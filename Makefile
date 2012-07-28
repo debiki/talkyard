@@ -127,6 +127,7 @@ JS_TOUCH_ONLY_SRC = \
 JS_DESKTOP_ONLY_SRC = \
   ${PUBLIC_JS_DIR}jquery-scrollable.js \
   ${PUBLIC_JS_DIR}debiki-utterscroll.min.js \
+  ${PUBLIC_JS_DIR}debiki-utterscroll-init-tips.min.js \
   ${PUBLIC_JS_DIR}debiki-keyboard-shortcuts.min.js \
   ${PUBLIC_JS_DIR}bootstrap-tooltip.js
 
