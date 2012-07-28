@@ -213,7 +213,7 @@ d.u.buildTagFindId = function(html, id) {
   if (id.indexOf('#') !== -1) d.u.die('Include no # in id [error DwE85x2jh]');
   var $tag = d.u.buildTagFind(html, '[id="'+ id +'"]');
   return $tag;
-}
+};
 
 
 // ------- jQuery extensions
