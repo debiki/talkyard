@@ -67,14 +67,6 @@ attr() prepends 'http://server/.../page' to the href.  Related:
 // Import namespaces as `d.i` and `d.u`.
 var d = { i: debiki.internal, u: debiki.v0.util };
 
-// Import terribly frequently used functions.
-var die = d.u.die;
-var die2 = d.u.die2;
-var dieIf = d.u.dieIf;
-var die2If = d.u.die2If;
-var bugIf = d.u.bugIf;
-
-
 
 // ------- Variables
 
