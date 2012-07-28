@@ -98,7 +98,7 @@ debiki.Utterscroll.enable = function(options) {
   // the dev tools window is open. Use this safe wrapper instead of
   // console.log. (COULD make separate Prod and Dev builds, filter out logging)
   var debug = (typeof console === 'undefined' || !console.debug) ?
-      function() {} : function() { console.debug.apply(console, arguments); }
+      function() {} : function() { console.debug.apply(console, arguments); };
 
   var defaults = {
     defaultScrollstoppers: 'a, area, button, command, input, keygen, label,'+
@@ -242,7 +242,7 @@ debiki.Utterscroll.enable = function(options) {
         return false;
       });
       return $textElems.length > 0;
-    }
+    };
 
     // Start scrolling if mouse press happened not very close to text.
     var dist = distFromTextToEvent($target, event);
@@ -252,7 +252,7 @@ debiki.Utterscroll.enable = function(options) {
 
     // Don't scroll and don't event.preventDefault(). — The user should be able
     // to e.g. click buttons and select text.
-  }
+  };
 
 
   /**
@@ -385,7 +385,7 @@ debiki.Utterscroll.enable = function(options) {
     $parentClone.remove();
 
     return Math.sqrt(minDist2);
-  }
+  };
 
 
   function startScroll(event) {
@@ -412,7 +412,7 @@ debiki.Utterscroll.enable = function(options) {
     // see: http://stackoverflow.com/questions/113750/ )
     emptyWindowSelection();
     return false;
-  }
+  };
 
   function doScroll(event) {
     // Find movement since mousedown, and since last scroll step.
@@ -480,7 +480,7 @@ debiki.Utterscroll.enable = function(options) {
       emptyWindowSelection();
 
     return false;
-  }
+  };
 
   function stopScroll(event) {
     $elemToScroll = undefined;
@@ -491,7 +491,7 @@ debiki.Utterscroll.enable = function(options) {
     $.event.remove(document, 'mousemove', doScroll);
     $.event.remove(document, 'mouseup', stopScroll);
     return false;
-  }
+  };
 
   function emptyWindowSelection() {
     // Based on <http://groups.google.com/group/jquery-ui-layout/
@@ -508,7 +508,7 @@ debiki.Utterscroll.enable = function(options) {
       // IE
       document.selection.empty();
     }
-  }
+  };
 
 };
 
