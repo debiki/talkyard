@@ -176,6 +176,11 @@ function renderPageEtc() {
   d.i.Me.refreshProps();
   d.i.showCurLocationInSiteNav();
 
+  if (!Modernizr.touch) {
+    d.i.initKeybdShortcuts($);
+    d.i.initUtterscrollAndTips();
+  }
+
   // When you zoom in or out, the width of the root thread might change
   // a few pixels — then its parent should be resized so the root
   // thread fits inside with no float drop.
@@ -203,10 +208,6 @@ function renderPageEtc() {
     d.i.resizeRootThread();
     $('html').removeClass('dw-render-layout-pending');
     debiki.scriptLoad.resolve();
-  });
-  if (!Modernizr.touch) steps.push(function() {
-    d.i.initKeybdShortcuts($);
-    d.i.initUtterscrollAndTips();
   });
 
   function runNextStep() {
