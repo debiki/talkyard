@@ -66,7 +66,6 @@ function $initPostsThreadStep3() {
 
 function $initPostsThreadStep4() {
   d.i.makeThreadResizableForPost(this);
-  d.i.showCurLocationInSiteNav();
 };
 
 
@@ -175,6 +174,7 @@ function renderPageEtc() {
   }
 
   d.i.Me.refreshProps();
+  d.i.showCurLocationInSiteNav();
 
   // When you zoom in or out, the width of the root thread might change
   // a few pixels — then its parent should be resized so the root
