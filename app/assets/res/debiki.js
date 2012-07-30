@@ -46,7 +46,11 @@ d.i.$initPostsThread = function() {
 
 
 function $initPostsThreadStep1() {
-  d.i.createActionLinksForPost(this);
+  // Binding click events to action links takes rather long (100 ms on my
+  // 6 core 2.8 GHz AMD for 200 posts) and could be split out to a separate
+  // step, done as late as possible.
+  d.i.createAndBindActionLinksForPost(this);
+
   // Open/close threads if the fold link is clicked.
   var $thread = $(this).closest('.dw-t');
   $thread.children('.dw-z').click(d.i.$threadToggleFolded);
@@ -74,8 +78,8 @@ function $initPostsThreadStep4() {
 
 // Inits a post, not its parent thread.
 d.i.$initPost = function() {
-  // ? Should I call createActionLinksForPost and shohwActionLinksOnHoverPost
-  // from here, sometimes ?
+  // ? Should I call createAndBindActionLinksForPost and
+  // shohwActionLinksOnHoverPost from here, sometimes ?
   d.i.placeInlineThreadsForPost(this);
   d.i.makeHeaderPrettyForPost(this);
   d.i.SVG.$initPostSvg.apply(this);

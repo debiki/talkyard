@@ -7,7 +7,7 @@ var d = { i: debiki.internal, u: debiki.v0.util };
 var $ = d.i.$;
 
 
-d.i.createActionLinksForPost = function(post) {
+d.i.createAndBindActionLinksForPost = function(post) {
   var $post = $(post).dwCheckIs('.dw-p');
   var $thread = $post.closest('.dw-t');
 
