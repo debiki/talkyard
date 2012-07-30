@@ -55,12 +55,15 @@ function $initPostsThreadStep1() {
 
 function $initPostsThreadStep2() {
   d.i.shohwActionLinksOnHoverPost(this);
-  $initPostStep1.apply(this);
+  d.i.placeInlineThreadsForPost(this);
+  d.i.makeHeaderPrettyForPost(this);
 };
 
 
 function $initPostsThreadStep3() {
-  $initPostStep2.apply(this);
+  // $initPostSvg takes rather long (190 ms on my 6 core 2.8 GHz AMD, for
+  // 100 posts), and  need not be done until just before SVG is drawn.
+  d.i.SVG.$initPostSvg.apply(this);
 };
 
 
@@ -71,20 +74,10 @@ function $initPostsThreadStep4() {
 
 // Inits a post, not its parent thread.
 d.i.$initPost = function() {
-  $initPostStep1.apply(this);
-  $initPostStep2.apply(this);
-};
-
-
-function $initPostStep1() {
+  // ? Should I call createActionLinksForPost and shohwActionLinksOnHoverPost
+  // from here, sometimes ?
   d.i.placeInlineThreadsForPost(this);
   d.i.makeHeaderPrettyForPost(this);
-};
-
-
-function $initPostStep2() {
-  // $initPostSvg takes rather long (190 ms on my 6 core 2.8 GHz AMD, for
-  // 100 posts), and  need not be done until just before SVG is drawn.
   d.i.SVG.$initPostSvg.apply(this);
 };
 
