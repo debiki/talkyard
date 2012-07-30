@@ -150,13 +150,6 @@ function registerEventHandlersFireLoginOut() {
 
 function renderPageEtc() {
   var $posts = $('.debiki .dw-p:not(.dw-p-ttl)');
-  function initPostsThreadStep1() {
-    $posts.each($initPostsThreadStep1);
-    $('html').removeClass('dw-render-actions-pending');
-  }
-  function initPostsThreadStep2() { $posts.each($initPostsThreadStep2) }
-  function initPostsThreadStep3() { $posts.each($initPostsThreadStep3) }
-  function initPostsThreadStep4() { $posts.each($initPostsThreadStep4) }
 
   (d.u.workAroundAndroidZoomBug || function() {})($);
 
@@ -184,13 +177,26 @@ function renderPageEtc() {
   d.u.zoomListeners.push(d.i.resizeRootThread);
 
   var steps = [];
-  steps.push(initPostsThreadStep1);
-  steps.push(initPostsThreadStep2);
-  steps.push(initPostsThreadStep3);
+
+  steps.push(function() {
+    $posts.each($initPostsThreadStep1);
+    $('html').removeClass('dw-render-actions-pending');
+  });
+
+  steps.push(function() {
+    $posts.each($initPostsThreadStep2)
+  });
+
+  steps.push(function() {
+    $posts.each($initPostsThreadStep3);
+    registerEventHandlersFireLoginOut();
+  });
+
   // COULD fire login earlier; it's confusing that the 'Login' link
   // is visible for rather long, when you load a *huge* page.
-  steps.push(registerEventHandlersFireLoginOut);
-  steps.push(initPostsThreadStep4);
+  steps.push(function() {
+    $posts.each($initPostsThreadStep4)
+  });
 
   // Don't draw SVG until all html tags has been placed, or the SVG
   // arrows might be offset incorrectly.
@@ -199,6 +205,7 @@ function renderPageEtc() {
   steps.push(d.i.SVG.initRootDrawArrows);
 
   steps.push(d.i.scrollToUrlAnchorPost);
+
   // Resize the article, now when the page has been rendered, and all inline
   // threads have been placed and can be taken into account.
   steps.push(function() {
