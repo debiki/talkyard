@@ -1,39 +1,39 @@
-@(doWhat: String, loginFormPassword: String = "?",
-    newTenantId: String = "?", parentDomainName: String = "?")
+@(doWhat: String, xsrfToken: String = "?", parentDomainName: String = "?")
 
 
 @showWebsiteNameForm = {
-  <p>Click the button to create a new website.
+  <h1>Choose Website Name</h1>
+  <p>Please enter a name for the website you are about to create.<br>
+    (If you want to, you can map a domain name of yours to the website,
+    later on.)
   </p>
   <form accept-charset='UTF-8' method='post'>
-  @*<label>
-    An optional name for the website you are about to create.
-    It must be a subdomain of <tt>.@{parentDomainName}</tt>.
-    <ul>
-    <li>It's possible to change the name later.
-    <li>In case you have a domain name that you intend to map to
-        the new website, you don't need to choose a name here.
-    </ul>
-    <input type='text' name='website-name'><tt>.@{parentDomainName}</tt>
-  </label>
-    *@
-  <input type='submit' value="Create website">
+    <label>Website name:
+      <input type='text' name='website-name'><tt>.@{parentDomainName}</tt>
+    </label>
+    <input name='dw-fi-xsrf' type='hidden' value='@xsrfToken'>
+    <input type='submit' value="Next">
   </form>
 }
 
 
-@showOwnerLoginForm = {
-  <p>Please click your email provider, or your Twitter or Facebook account,
-     and login. The account you choose will become the owner of the
-     new website that you are creating.
-     <small>(Technical detail: The login happens over OpenID or OpenAuth.)
-     </small>
+@showClaimWebsiteLoginForm = {
+  <h1>Login as Website Owner?</h1>
+  <p>Please click your email provider, and login.
+    The account you choose will become the owner of the
+    new website that you are creating.
+    <small>(Technical detail: The login happens over OpenID.)
+    </small>
   </p>
-  <form accept-charset='UTF-8' method='post'
-        action='/-/api/login-openid?continue='>
+  <p>If you don't have an email address at any of the below
+  providers, or some other OpenID address, then regrettably right now
+  you cannot create a website. If you really want to do that anyway,
+  I suggest that you create a new Gmail account.
+  </p>
+  <form accept-charset='UTF-8' method='post'>
   <label for='oid-input'>Your OpenID:</label>
   <input type='text' name='openid_identifier'>
-  <input type='hidden' name='login-password' value='@{loginFormPassword}'>
+  <input name='dw-fi-xsrf' type='hidden' value='@xsrfToken'>
   <input type='submit'>
   </form>
 }
@@ -72,7 +72,7 @@
 <div>
   @doWhat match {
     case "showWebsiteNameForm" => { @showWebsiteNameForm }
-    case "showOwnerLoginForm" => { @showOwnerLoginForm }
+    case "showClaimWebsiteLoginForm" => { @showClaimWebsiteLoginForm }
     case "welcomeOwner" => { @welcomeOwner }
     case _ => {
       // COULD throw instead?
