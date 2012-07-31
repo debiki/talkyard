@@ -98,7 +98,7 @@ function showEditsDialogImpl($post) {
       // COULD make this work with other types of markdown than `dmd0'.
       // See $updateEditFormPreview(), which handles other markup types.
       var sanitizerOptions = d.i.sanitizerOptsForPost($post);
-      var html = d.i.markdownToSafeHtml(newSrc, d.i.hostAndPort,
+      var html = d.i.markdownToSafeHtml(newSrc, window.location.host,
           sanitizerOptions);
       $form.find('#dw-e-sgs-prvw-html').html(html);
     });

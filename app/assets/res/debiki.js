@@ -17,8 +17,6 @@ var d = { i: debiki.internal, u: debiki.v0.util };
 // HTML generation code assumes this, too. See Debiki for Developers, #7bZG31.
 d.i.DEBIKI_TABINDEX_DIALOG_MAX = 109;
 
-d.i.hostAndPort = location.origin.replace(/https?:\/\//, '');
-
 d.i.rootPostId = $('.dw-depth-0');
 d.i.rootPostId = d.i.rootPostId.length ?
     d.i.rootPostId.attr('id').substr(5) : undefined; // drops initial `dw-t-'

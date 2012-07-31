@@ -406,7 +406,7 @@ function $updateEditFormPreview() {
       // Debiki flavored Markdown version 0.
       if (isForTitle) markupSrc = '<h1>'+ markupSrc +'</h1>';
       htmlSafe = d.i.markdownToSafeHtml(
-          markupSrc, d.i.hostAndPort, sanitizerOptions);
+          markupSrc, window.location.host, sanitizerOptions);
       break;
     case "code":
       // (No one should use this markup for titles, insert no <h1>.)

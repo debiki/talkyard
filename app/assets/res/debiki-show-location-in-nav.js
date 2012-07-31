@@ -19,7 +19,7 @@ d.i.showCurLocationInSiteNav = function() {
       link.search('https?://') === 0 ? link.indexOf('/', 8) : 0;
     // Same protocol, host and port, a.k.a. origin?
     var linkOrigin = link.substr(0, linkPathStart);
-    if (linkOrigin.length !== 0 && linkOrigin !== location.origin)
+    if (linkOrigin.length !== 0 && linkOrigin !==  locationOrigin())
       return false;
     // Exact path match? (include home page links)
     var linkPath = link.substr(linkPathStart);
@@ -50,6 +50,12 @@ d.i.showCurLocationInSiteNav = function() {
       .filter($isCurSectionLink)
       .addClass('debiki-0-current-site-section');
 };
+
+
+function locationOrigin() {
+  // Only Chrome has location.origin.
+  return location.protocol +"//"+ location.host +"/";
+}
 
 
 })();
