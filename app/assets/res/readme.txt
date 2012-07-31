@@ -1,4 +1,15 @@
 
+COULD use http://brunch.io/
+and LiveScript enventually.
+
+And CSSO http://css.github.com/csso/csso.html
+http://stackoverflow.com/a/11624173/694469
+and CSSTidy
+  http://cdburnerxp.se/cssparse/css_optimiser.php
+
+
+
+
 // Google Closure Linter: Run like so:
 //  gjslint src/main/resources/toserve/js/debiki.js | egrep -v 'E:0002:'
 
