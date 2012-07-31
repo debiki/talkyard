@@ -1,0 +1,166 @@
+Copyright (c) 2010 - 2012 Kaj Magnus Lindberg
+
+(Copied from former debiki.css, now renamed to debiki-play.css.)
+
+
+
+Tips: List all CSS classes
+---------------------
+
+Like so: (old `find`, finds nothing nowadays?)
+ find debiki-core-basedir/src -type f -print0 | \
+   xargs -0 egrep -ho "dw-[[:alnum:]-]+" | sort | uniq -c
+
+Narrower:
+ find src/main/scala/com/debiki/v0/html.scala src/main/scala/com/debiki/v0/App.scala src/main/resources/js/debiki.js src/main/resources/css/debiki.css ../../debiki-jspwiki-forum/src/main -type f -print0 | xargs -0 egrep -ho "dw-[[:alnum:]-]+" | sort | uniq -c
+
+
+
+Form names decrypted
+---------------------
+
+debiki-       public API
+debiki-0-     public API version 0
+dw-           prefix for internal classes and ids, avoids name clashes
+-a-           action
+-adv-         advanced, stuff hidden for most users
+-ap-          applied/application
+-adr-         address
+-ar-          article — the page body (and/or title?), post id 1 (and 2)
+-arw-         arrow (points from a post to its replies)
+-bd-          body
+-by           by whom post was written. COULD change -p-by -> -p-u (user)?
+-cr-          create  — rename to -crt-?
+-dl-          delete  — rename to 'del'?
+-dt           date?  currently, '-at' used instead
+-dg-          dialog?
+-e-           edit
+-e            east (COULD change to "ew", eastwards, and use "e" for edit)
+                and new (no good!, "new") sew etc. for northeastwards etc.
+                Or 'de', direction-east, dn/w/s/e dnw/sw/se/ne ?
+-eml-         email
+-f-           form
+-fs-          form group - COULD change to -dlg- or -dg-
+-fi-          form <input>
+-flg-         flag
+-hd-          head
+-hor-         horizontal layout COULD rename to -hz- ? -vt- = vertical?
+-i-           inline
+-ibx-         inbox
+-img-         image
+-inf-         information
+-lbl-         label
+-lgi-         login
+-lgo-         logout
+-login-       COULD change to -lgi
+-logout-                      -lgo
+-m-           mark
+-mup-         markup
+-ntf-         notification
+-ntf-sts      notification status code
+-ntf-msg      notification message
+-ntf-shw      notification show more button/link
+-ntf-dtl      notification details
+-p-           post
+-pg-          page
+-prf-         preference(s)
+-prvw-        preview
+-q-           ?? post-before (looks like p, but flipped — before, not after)
+-r-           rating
+-re-          reply   (COULD rename to "p", for "post")
+-res-         replies (COULD rename to "ts", "threads")
+-rez-         resized (COULD rename to "rzd" and let "rz" mean resize)
+-s            south (COULD change to "sw", southwards)
+                      COULD then use 's' for `summary'?
+-sg-          suggestion
+-svg-         SVG graphics COULD rename most -svg- to -arw- (arrow)
+-t-           thread
+-ts-          threads
+-ts-          timestamp? or use ds, datestamp? or use -dt-, "date"?
+-tps-         tips
+-ttl-         ?? title ? (time-to-live not of relevance in CSS?)
+-u-           user
+-ua-          user agent (i.e. the browser)
+-ui-          user interface
+-vs-          votes
+-z-           fold (z looks like a folded paper from the side)
+-zd-          folded, e.g. a collapsed thread
+
+dw-a-rate     rate reply
+dw-a-reply    new reply
+dw-a-more     shows more actions: link/report/delete
+dw-a-edit     list edit suggestion
+dw-e-ap-dt    edit application date
+dw-e-sg-dt    edit suggestion date
+dw-e-sg-vs    votes on a certain edit suggestion --deprecated--
+dw-f-eml-prf  email notification preferences
+dw-fi-e-prvw  edit form input, preview
+dw-fs         form group      (COULD remove — there're no groups any more?)
+dw-fs-e       edit form group (COULD rename to -f-e/re/rat ?)
+dw-fs-re      reply form group
+dw-fs-r       rating form group
+dw-fs-flg     flag for spam/abuse/etc form
+dw-hor-a      action stuff, layed out horizontally
+dw-if-opera   shown only for Opera
+dw-if-lte-ie7 shown only for Internet Explorer <= version 7
+dw-i-t        inline thread (COULD use dw-i instead, already has dw-t class)
+dw-i-m        inline mark (COULD rename to dw-m — *all* marks are inline?)
+dw-i-m_<#id>  mark for thread #id (e.g. dw-i-m_dw-t-<thread-id>)
+dw-m-p-by-me  the user's own post
+dw-m-p-edited the post was just edited (edits were axaj-fetched)
+dw-m-t-new    this thread was just fetched via ajax, the user hasn't seen it
+dw-p-art-qst  (placed on a thread) the related post is an article question
+dw-p-bd       post body
+dw-p-bd-blk   post body block, a <div> that wraps e.g. a <p>
+dw-p-dl       a post, deleted
+dw-p-hd       post header
+dw-p-rez-e    post resized eastwards
+dw-pri        placed on the <body>, use it to boost CSS rule priorities
+dw-render-*-pending — a page rendering step that has not yet been completed
+dw-svg-c_<x>  SVG curve from <x>  COULD rename to -svg-p, for `path'
+                better: rename to -arw-from_<x>
+dw-svg-gparnt Has a <svg> child or grandchild (but no grand-grand-child)
+dw-svg-parent Has a <svg> child
+dw-keyrecvr   keyboard shortcut receiver
+dw-t-dl       a thread, deleted
+dw-lg-t-spl   Login type simple — COULD rename to -lgi-t-spl  (with 'i')
+dw-u-id-<x>   user id <x>
+dw-u-may-edit User may edit page (placed on the <body>)
+dw-u-is-admin User is admin (placed on the <body>)
+dw-ua-lte-ieX user agent is Internet Explorer X or below
+dw-ui-simple  show simple user interface
+(dw-ui-adv    show advanced user interface)
+(dw-ui-compl  show complicated user interface)
+dw-x-         miscellaneous classes, perhaps to be renamed later
+
+... and so on, hmm.
+COULD rename dw-e-tab  to  dw-e-f-pnls  or  dw-e-f-tab-pnls  (panels)
+
+
+/* Public CSS API  -- DEPRECATED  I think e.g. simply .lt-ie7 is better
+
+Sometimes including a version number (i.e. '0'), if the behavior
+might change in the future.
+
+.debiki-show-if-lte-ie7
+.debiki-show-if-lte-ie8
+.debiki-show-unless-lte-ie7
+.debiki-show-unless-lte-ie8
+
+.debiki-0-mark-current-site-section
+  If you place this class on the site main <nav>, then Debiki adds
+  the class 'debiki-0-current-site-section' to [the nav link
+  to the site section the user is currently visiting].
+
+.debiki-0-current-site-section
+  Indicates which <nav> link points to the section the user
+  is currently visiting. Placed by Debiki.
+  You could style it, so people knows where they are, e.g. like so:
+    nav a.debiki-0-current-site-section {
+      font-weight: bold;
+      font-size: 105%;
+    }
+
+
+*/
+
