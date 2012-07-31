@@ -1,0 +1,396 @@
+/* Copyright (c) 2010 - 2012 Kaj Magnus Lindberg. All rights reserved. */
+
+
+/* ===== Page and threads ===== */
+
+
+/* Avoid float dropping of root post replies, early when the page width
+has not been calculated.
+1. Details: The root post might be too narrow and stuff might float drop,
+which is ugly, and could rersult in SVG arrows being drawn incorrectly.
+Avoid this, by making the root thread wide, whilst rendering the page.
+When done, resizeRootThread, in debiki.js (which is loaded asynchronously),
+will size the root thread properly.
+2. It's a bad idea to completely hide comments until the layout is completed:
+any <footer> would flash in the middle of the page (just below the article)
+and then moments later be pushed downwards off screen, by all comments,
+when they appear.
+3. Sometimes <html> elem classes cannot be edited (namely in certain WordPress
+themes) so make all this work also when Debiki's classes are placed on the
+<body>.
+*/
+html.dw-render-layout-pending .debiki.dw-debate,
+body.dw-render-layout-pending .debiki.dw-debate {
+  width: 200200px;
+}
+
+.dw-debate {
+  position: relative;
+}
+
+.dw-page a {
+  cursor: pointer;
+}
+
+.dw-depth-1 .dw-t {
+  padding-left: 0;
+  border-top: none;
+}
+
+.DW.DW .dw-res > li {
+  list-style-type: none;
+}
+
+.DW.DW .dw-res {
+  margin: 0;
+  padding: 0; /* if no CSS reset included */
+}
+
+
+/* --- Folded threads --- */
+
+.dw-z {
+  position: absolute !important; /* or set to relative by :not(svg) [31Ik53] */
+  /* Could use blue (#369) to indicate they're clickable, but don't — I guess
+  it's more important that they don't grab any attention, than that
+  people notice that they can close threads. */
+  color: #666;
+  font-size: 13px;
+  font-family: Verdana;
+  text-decoration:none;
+  z-index: 2; /* place above PNG arrow hiders */
+}
+.dw-z:hover {
+  color: #c77405;
+}
+
+/* Don't underline the fold link, [-]. (Ignore old borken browsers.) */
+.dw-t:not(.dw-zd) > .dw-z { text-decoration: none; }
+
+/* When a thread is folded, there's nothing in it that occupies any space,
+and two folded threads would overlap, unless: */
+.dw-zd > .dw-z {
+  position: relative !important; /* cancel position: absolute */
+}
+
+/* For a folded thread, only the open link (.dw-z) is visible. */
+/* This verbose code works also in IE 7: */
+.dw-zd > * { display: none; }
+.dw-zd > .dw-z, .dw-zd > .dw-arw { display: block; }
+.dw-zd > .dw-svg-fake-varrow { display: none; }
+
+
+/* --- Horizontal layout --- */
+
+.dw-t {
+  /* SVG graphics is absolute positioned relative thread */
+  position: relative;
+  margin: 8px 0 0 5px;
+}
+
+/* The root thread's parent elem is resized to be as wide as the root thread,
+to avoid float drop. See resizeRootThreadImpl() in debiki.js.
+For that to work, this is needed: */
+.dw-depth-0.dw-t {
+  /* Make the root thread not [expand eastwards to fill up its
+  parent's width]. */
+  float: left;
+  /* Ensure the root thread fits inside its parent, if the parent
+  width is set to the root thread's width. */
+  margin: 0;
+  padding: 0;
+}
+
+.dw-depth-1 {
+  width: 25em; /* avoids > 1 column for this depth */
+}
+
+.dw-depth-1.dw-hor > .dw-res {
+  width: 9999px; /* for now. COULD calculate in JavaScript instead
+                    — the hardcoded width is almost always too large, but
+                    sometimes too small and then causes float drop.
+                Or use display: table-cell, although breaks old IE versions ? */
+}
+
+
+/* Show column separator and resizor on hower. */
+.DW.DW .dw-hor > .dw-res > * > .ui-resizable-handle.ui-resizable-e {
+  border-right: 2px dashed transparent;
+}
+.DW.DW .dw-hor > .dw-res > :hover > .ui-resizable-handle.ui-resizable-e {
+  border-right-color: lightgray;
+}
+
+.dw-hor > .dw-res > li {
+  float: left;
+  padding: 0 27px 10px 0;
+  margin: 10px 23px 0 0;
+}
+
+/* Empty space between a post and its child threads, when laid
+ out horizontally. SVG relationship arrows drawn here. */
+.dw-t-vspace {
+  height: 84px;
+  position: relative;
+}
+
+
+/* --- Vertical layout --- */
+
+.dw-depth-1:not(.dw-hor) .dw-t {
+  float: none;
+  clear: both; /* else the rating form might float to the left */
+}
+
+.DW.DW .dw-depth-1 .dw-res {
+  margin: 0 0 0 35px;
+  padding-top: 3px;
+}
+
+
+
+/* ===== Posts ===== */
+
+
+.dw-p {
+  margin-left: 35px;
+  /* overflow: hidden; No, or sort order and reply btn tips won't appear */
+  background-color: white;
+}
+
+.dw-p-hd {
+  padding-left: 3px;
+  font-size: 10px;
+  color: #141414;
+  background-color: #f4f4f4;
+  border: 1px solid #ededed;
+  border-left: none;
+  border-right: none;
+  line-height: 15px; /* or test w 120% */
+}
+
+.dw-p-bd,
+.dw-p-diff { /* COULD place -bd on -diff too, remove this -diff row? */
+  padding: 6px 1px 0 3px; /* 3px aligns w .dw-p-hd (also padded left 3px) */
+  position: relative;
+  background-color: white;
+  min-width: 5em;
+}
+
+
+/* ===== Miscellaneous ===== */
+
+
+/* --- Clearfix --- */
+
+/* A child, the root thread .dw-depth-0, floats left. */
+.debiki.dw-debate:after,
+.dw-t.dw-hor > .dw-res:after, /* children, .dw-t:s floats left */
+/* Makes the root post wrap its (floating) children,
+don't know if needed for other horizontal threads. */
+.dw-t.dw-hor > .dw-p:after,
+/* Wraps any floating reply or rate form (Debiki's or some other framework's,
+ e.g. WordPress' reply form). Unless the .dw-t wraps it, PNG arrow hiders
+ won't hide PNG arrows correctly (because the .dw-t and thus the arrow
+ hiders wouldn't be tall enough, if it didn't wrap floating children). */
+.dw-t:after,
+/* Its children, .dw-p-bd-blk:s, float left. */
+.dw-p-bd:after {
+  /* Copied from jquery-ui-1.8.16.custom.css. */
+  content: "."; display: block; height: 0; clear: both; visibility: hidden;
+}
+
+
+
+/* ===== jQuery UI integration ===== */
+
+
+.dw-pri .ui-resizable-se {
+  /* The small grip has been replaced with the normal grip
+  (search for "ui-icon-grip" in debiki.js), so we make the
+  tag a few pixels wider. */
+  height: 17px;
+  width: 17px;
+  background-position: -80px -222px;
+  background-color: white; /* hides text beneath, else grip hard to notice */
+}
+
+/* Make the s,n,e,w handles larger (else hard to drag) and place them
+1 layer below the .ui-resizable-se handle (see above),
+so as not to hide that handle (which is assigned z-index 1001 by
+some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
+.dw-pri .ui-resizable-n,
+.dw-pri .ui-resizable-s {
+  height: 10px;
+  z-index: 1000;
+}
+.dw-pri .ui-resizable-s {
+  bottom: 0; /* jquery-ui says -5 which overflows */
+}
+.dw-pri .ui-resizable-e,
+.dw-pri .ui-resizable-w {
+  width: 13px;
+  z-index: 1000;
+}
+.dw-pri .ui-resizable-e {
+  right: 0; /* jquery-ui says -5 which overflows */
+}
+/* But don't raise the vertical lines between depth-1 threads
+ above ?? .dw-p:hover, with z-index: 10 ?? (rewrote old comment) */
+.dw-depth-1 > .ui-resizable-handle {
+  z-index: 1; /* [0QKxg2] */
+}
+
+
+
+/* ===== Arrows ===== */
+
+
+/* --- SVG arrows --- */
+
+.dw-p-bd.dw-svg-parent {
+  --z-index: 1; /* makes svg (with z-index -1, see below) visible (weird!) */
+  /* above z-rule commented out on 2012-06-03, remove after some months? */
+}
+
+.dw-t svg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%; /* or Opera, only Opera, sets 150px, no idea why */
+  width: 100%; /* perhaps some future version of Opera will break otherwise */
+}
+
+.dw-svg-parent > :not(svg) { /* [31Ik53] */
+  z-index: 2; /* or would not be clickable; <svg> would be above */
+  position: relative; /* or z-index has no effect */
+}
+
+.dw-t svg path {
+  fill: none;
+  /* Warning: stroke color also specified in debiki.js, $highlightOff(). */
+  stroke: #dbdbdb;
+  stroke-width: 3;
+}
+
+/* This doesn't work; cannot add class dw-highlight to a <path> at runtime.
+TODO style an invisible elem in this manner, and read the props via
+JavaScript. Then I can still place all CSS stuff in this file. */
+/*
+.dw-t svg path.dw-highlight {
+  stroke-width: 4;
+  stroke: #f0a005;
+} */
+
+
+/* --- PNG arrows --- */
+
+.dw-svg-fake-varrow,
+.dw-svg-fake-harrow,
+.dw-svg-fake-harrow-end {
+  background-color: #ddd;
+  position: absolute;
+  z-index: 1;
+}
+
+.dw-svg-fake-harrow,
+.dw-svg-fake-harrow-end {
+  height: 3px;
+  width: 100%;
+  top: 44px;
+}
+
+.dw-t > .dw-svg-fake-harrow {
+  top: -54px;
+  background-color: white;
+  display: block;
+  height: 10px;
+}
+
+.dw-t > .dw-svg-fake-harrow-end {
+  display: block;
+  top: -54px;
+  background-color: white;
+  display: block;
+  height: 10px;
+  position: absolute;
+  /* 30px is enough, but because of a 100px bug workaround in
+  `resizeRootThreadImpl()` in debiki.js, it's 130px. [3krdi2]*/
+  right: -130px;
+  width: 130px;
+}
+
+.dw-svg-fake-varrow {
+  height: 100%;
+  width: 3px;
+  left: 3px;
+}
+
+.dw-svg-fake-vcurve-short {
+  background-color: transparent;
+  background: url(img/arrows-etcetera-gray.png) no-repeat 0 -225px;
+  position: absolute;
+  top: -52px;
+  left: -44px;
+  height: 59px;
+  width: 39px;
+}
+
+.dw-t:last-child > .dw-svg-fake-hcurve {
+  z-index: 2; /* hide the horizontal arrow below */
+}
+
+.dw-svg-fake-hcurve,
+.dw-svg-fake-hcurve-start {
+  background: transparent url(img/arrows-etcetera-gray.png) no-repeat 0 0;
+  position: absolute;
+  top: -52px;
+  left: -24px;
+  height: 34px;
+  width: 61px;
+}
+
+.dw-svg-fake-hcurve-start,
+.dw-svg-fake-hcurve-start-solo {
+  background: url(img/arrows-etcetera-gray.png) no-repeat 0 -79px;
+  position: absolute;
+  top: 7px;
+  left: 0px;
+  height: 72px;
+  width: 57px;
+  z-index: 2;
+}
+
+.dw-svg-fake-hcurve-start-solo {
+  background: url(img/arrows-etcetera-gray.png) no-repeat 0 -152px;
+  height: 72px;
+  width: 38px;
+}
+
+.dw-svg-fake-arrow-hider {
+  z-index: 2; /* hides the varrow or harrow */
+}
+
+.dw-svg-fake-varrow-hider-hi,
+.dw-svg-fake-varrow-hider-lo,
+.dw-svg-fake-varrow-hider-left {
+  background-color: white;
+  position: absolute;
+  height: 35px;
+  width: 30px; /* the curve images are fairly wide */
+  z-index: 2;
+}
+
+.dw-svg-fake-varrow-hider-lo {
+  bottom: 0px;
+  height: 40px;
+}
+
+.dw-svg-fake-varrow-hider-left {
+  bottom: 0px;
+  height: 100%;
+  left: -55px;
+}
+
+
+/* vim: set fdm=marker et ts=2 sw=2 tw=80 fo=tcqwn list: */
