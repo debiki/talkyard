@@ -71,6 +71,18 @@ object Utils extends Results with http.ContentTypes {
       pageRoot, pageReq.permsOnPage)
 
 
+  /**
+   * Or better to 'list-pages-in-tree', instead of '&in=tree'?
+   */
+  def parsePathScope(value: Option[String]) = value match {
+    case Some("folder") => PathScope.Folder
+    case Some("tree") => PathScope.Tree
+    case Some("page") => PathScope.Page
+    case Some(x) => throwBadParamValue("DwE093ki6", "in")
+    case None => throwParamMissing("DwE86IG1", "in")
+  }
+
+
   object ValidationImplicits {
 
     implicit def queryStringToValueGetter(
