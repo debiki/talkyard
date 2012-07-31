@@ -20,6 +20,9 @@ object AppCreateWebsite extends mvc.Controller {
 
   val log = play.api.Logger("app.create-website")
 
+  // Add to dev config file?
+  // debiki.create-website.only-from-host="localhost:9000"
+  // debiki.create-website.new-domain="debiki.localhost:9000"
 
   /**
    * The one and only host from which it's allowed to create new websites,
