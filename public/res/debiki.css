@@ -190,10 +190,6 @@ del {
   font-size: 26px;
 }
 
-.dw-p-bd-blk {
-  margin: 0;
-}
-
 .dw-ar-p {
   padding-bottom: 0.8em;
 }
@@ -255,6 +251,7 @@ html.js body.dw-render-actions-pending .dw-as {
 .dw-t {
   /* SVG graphics is absolute positioned relative thread */
   position: relative;
+  margin: 8px 0 0 5px;
 }
 
 /* The root thread's parent elem is resized to be as wide as the root thread,
@@ -278,7 +275,8 @@ For that to work, this is needed: */
 .dw-depth-1.dw-hor > .dw-res {
   width: 9999px; /* for now. COULD calculate in JavaScript instead
                     — the hardcoded width is almost always too large, but
-                    sometimes too small and then causes float drop. */
+                    sometimes too small and then causes float drop.
+                Or use display: table-cell, although breaks old IE versions ? */
 }
 
 
@@ -410,10 +408,6 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
 }
 
 /* --- Comments ---*/
-
-.dw-t {
-  margin: 8px 0 0 5px;
-}
 
 /* Show column separator and resizor on hower. */
 .DW.DW .dw-hor > .dw-res > * > .ui-resizable-handle.ui-resizable-e {
@@ -902,6 +896,7 @@ until they've been moved into the .dw-bd-blk > .dw-i-ts. */
 }
 
 .dw-p-bd-blk {
+  margin: 0;
   float: left;
   clear: left;
 }
