@@ -17,3 +17,9 @@ RUNNING_PID
 # Ignore core dump file.
 core
 
+# NPM packages folder.
+node_modules/
+
+# Brunch folder for temporary files.
+tmp/
+
