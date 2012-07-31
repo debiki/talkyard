@@ -992,64 +992,6 @@ key presses).*/
   left: 40px;
 }
 
-.dw-f-r .dw-hoversubmit-2 {
-  display: none;
-}
-
-
-/* === Rate form, with hoversubmit === */
-
-.dw-f-r.dw-hoversubmit {
-  background-color: transparent;
-  /* Make jQuery position the form away from the window borders. */
-  padding: 75px 100px;
-  margin: 0;
-}
-
-.dw-f-r.dw-hoversubmit,
-.dw-f-r.dw-hoversubmit .dw-f-r-tag-pane {
-  width: 380px;
-}
-
-.dw-f-r.dw-hoversubmit .dw-f-r-tag-pane {
-  float: left; /* wrap children; they float */
-  padding: 15px 0 8px;
-  background-color: white;
-  position: relative; /* or cancel btn won't stretch to fill width */
-}
-
-/* Show a second submit button to the right, so one won't have to
-move the mouse so very far (a few hundered pixels) to hoversubmit. */
-.dw-hoversubmit .dw-f-r .dw-hoversubmit-2 {
-  display: block;
-  right: -89px;
-  left: auto;
-}
-
-.dw-f-r.dw-hoversubmit .dw-r-tag-set-1 {
-  margin-left: 45px;
-}
-
-.dw-f-r.dw-hoversubmit .dw-r-tag-set-2 {
-  position: absolute;
-  right: 35px;
-}
-
-.dw-hoversubmit .dw-r-tag-set-1 .ui-button:first-of-type {
-  position: relative;
-  left: 30px;
-}
-
-.dw-hoversubmit .dw-r-tag-set-1 .ui-button:last-of-type {
-  position: relative;
-  left: -10px;
-}
-
-.dw-hoversubmit .dw-r-tag-set-2 .ui-button:first-of-type {
-  position: relative;
-  left: -30px;
-}
-
 
 /* === Flag === */
 

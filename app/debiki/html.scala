@@ -1089,8 +1089,6 @@ class FormHtml(val config: HtmlConfig, xsrfToken: String,
               }</div>  */}
               <div class='dw-submit-set'>
                 <input class='dw-fi-submit' type='submit' value='Submit'/>
-                <input class='dw-fi-submit dw-hoversubmit-2' type='submit'
-                       value='Submit'/>
                 <input class='dw-fi-cancel' type='button' value='Cancel'/>
               </div>
             </div>
