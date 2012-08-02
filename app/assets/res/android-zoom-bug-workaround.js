@@ -110,5 +110,5 @@ debiki.v0.util.workAroundAndroidZoomBug = function($) {
           { marginRight: 20, marginBottom: 100, duration: 0 });
     });
   });
-}
+};
 
