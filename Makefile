@@ -4,7 +4,7 @@
 
 DESTDIR=target/scala-2.9.1/classes/
 CLASSDIR=${DESTDIR}compiledjs/
-HTML_SANITIZER_JS=app/assets/res/html-sanitizer-bundle.js
+HTML_SANITIZER_JS=client/vendor/html-sanitizer-bundle.js
 SHOWDOWN_JS=public/res/wmd/showdown.js
 RHINOJAR=/mnt/data/dev/play/github/repository/local/rhino/js/1.7R2/jars/js.jar
 
