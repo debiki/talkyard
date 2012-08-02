@@ -579,7 +579,7 @@ object TemplateEngine {
         <title>{title}</title>
           <meta name="description" content=""/>
           <meta name="keywords" content=""/>
-          <link rel="stylesheet" href="/-/res/debiki-lift.css"/>
+          <link rel="stylesheet" href="/-/res/debiki-default-scaffold.css"/>
         <style>
           #template-info {{
           font-style: italic;
