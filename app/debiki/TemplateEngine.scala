@@ -499,11 +499,6 @@ object TemplateEngine {
   val minMaxJs = if (Play.isProd) ".min.js" else ".js"
 
 
-  private val debikiNamespaceAndScriptLoad = """
-    |var debiki = { v0: { util: {} }, internal: { $: jQuery } };
-    |debiki.scriptLoad = $.Deferred();
-    |""".stripMargin
-
   val HeadHtml: NodeSeq =
     <div>
     {/* Some other viewport values, and the absence of a value,
@@ -529,75 +524,21 @@ object TemplateEngine {
     */}
     {
       // The debiki.scriptLoad $.Deferred is resolved later by debiki.js.
-      if (Play.isProd) {
-        <script>
-        { debikiNamespaceAndScriptLoad }
+      <script>
+        var debiki = {{ v0: {{ util: {{}} }}, internal: {{ $: jQuery }} }};
+        debiki.scriptLoad = $.Deferred();
         Modernizr.load({{
+          /*
           test: Modernizr.touch,
           yep: '/-/res/combined-debiki-touch.min.js',
           nope: '/-/res/combined-debiki-desktop.min.js'
+          */
+          both: '/-/res/debiki-app-play{minMaxJs}'
         }});
-        </script>
-      } else {
-        <script>
-        { debikiNamespaceAndScriptLoad }
-        // Play doesn't make `require` and `exports` available in dev builds.
-        window.require = function() {{}};
-        window.exports = {{}};
-
-        Modernizr.load({{
-          test: Modernizr.touch,
-          yep: [
-            '/-/res/android-zoom-bug-workaround.js'],
-          nope: [
-            '/-/res/jquery-scrollable.js',
-            '/-/res/debiki-utterscroll.js',
-            '/-/res/debiki-utterscroll-init-tips.js',
-            '/-/res/debiki-keyboard-shortcuts.js',
-            '/-/res/bootstrap-tooltip.js'],
-          both: [
-            '/-/res/diff_match_patch.js',
-            '/-/res/html-sanitizer-bundle.js',
-            '/-/res/jquery-cookie.js',
-            '/-/res/tagdog.js',
-            '/-/res/javascript-yaml-parser.js',
-            '/-/res/debiki-util.js',
-            '/-/res/debiki-util-play.js',
-            '/-/res/debiki-jquery-find.js',
-            '/-/res/debiki-resize.js',
-            '/-/res/debiki-scroll-into-view.js',
-            '/-/res/debiki-show-and-highlight.js',
-            '/-/res/debiki-merge-changes.js',
-            '/-/res/debiki-arrows-png.js',
-            '/-/res/debiki-arrows-svg.js',
-            '/-/res/debiki-jquery-dialogs.js',
-            '/-/res/debiki-form-anims.js',
-            '/-/res/debiki-http-dialogs.js',
-            '/-/res/debiki-cur-user.js',
-            '/-/res/debiki-login.js',
-            '/-/res/debiki-login-guest.js',
-            '/-/res/debiki-login-openid.js',
-            '/-/res/debiki-logout-dialog.js',
-            '/-/res/debiki-markup.js',
-            '/-/res/debiki-inline-threads.js',
-            '/-/res/debiki-actions-inline.js',
-            '/-/res/debiki-action-links.js',
-            '/-/res/debiki-action-reply.js',
-            '/-/res/debiki-action-rate.js',
-            '/-/res/debiki-action-edit.js',
-            '/-/res/debiki-action-flag.js',
-            '/-/res/debiki-action-delete.js',
-            '/-/res/debiki-edit-history.js',
-            '/-/res/debiki-show-interactions.js',
-            '/-/res/debiki-show-location-in-nav.js',
-            '/-/res/debiki-post-header.js',
-            '/-/res/debiki.js']
-        }});
-        </script>
-      }
+      </script>
     }
       <link rel="stylesheet" href="/-/res/jquery-ui/jquery-ui-1.8.16.custom.css"/>
-      <link rel="stylesheet" href="/-/res/debiki.css"/>
+      <link rel="stylesheet" href="/-/res/debiki-app-play.css"/>
     <!--[if IE 7]>
     <link rel="stylesheet" href="/-/res/debiki-lift-ie7.css"/>
     <![endif]-->

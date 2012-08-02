@@ -1,12 +1,13 @@
 exports.config =
   # See http://brunch.readthedocs.org/en/latest/config.html for documentation.
+  minify: true
   paths:
     public: 'public'
   files:
     javascripts:
       defaultExtension: 'ls'
       joinTo:
-        'res/debiki-app-play.js': /^app/
+        'res/debiki-app-play.min.js': /^app/
         'javascripts/vendor.js': /^_nowhere_\/vendor/
         'test/javascripts/test.js': /^_nowhere_\/test(\/|\\)(?!vendor)/
         'test/javascripts/test-vendor.js': /^_nowhere_\/test(\/|\\)(?=vendor)/
@@ -22,7 +23,7 @@ exports.config =
     stylesheets:
       defaultExtension: 'styl'
       joinTo:
-        'res/debiki-app-play.css': /^(app\/assets|vendor)/
+        'res/debiki-app-play.min.css': /^(app\/assets|vendor)/
         'test/stylesheets/test.css': /^_nowhere_\/test/
       order:
         before: ['app/assets/debiki.css']
