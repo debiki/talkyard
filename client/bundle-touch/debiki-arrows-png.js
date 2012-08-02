@@ -1,1 +1,0 @@
-../debiki/debiki-arrows-png.js

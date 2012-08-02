@@ -1,1 +1,0 @@
-../debiki/tagdog.js

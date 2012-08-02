@@ -1,1 +1,0 @@
-../vendor/javascript-yaml-parser.js

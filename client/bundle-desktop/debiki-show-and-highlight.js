@@ -1,1 +1,0 @@
-../debiki/debiki-show-and-highlight.js

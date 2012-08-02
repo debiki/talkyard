@@ -1,1 +1,0 @@
-../debiki/debiki-show-location-in-nav.js

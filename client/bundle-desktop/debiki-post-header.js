@@ -1,1 +1,0 @@
-../debiki/debiki-post-header.js

@@ -1,1 +1,0 @@
-../vendor/bootstrap-tooltip.js

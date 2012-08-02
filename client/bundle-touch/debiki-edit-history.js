@@ -1,1 +1,0 @@
-../debiki/debiki-edit-history.js
