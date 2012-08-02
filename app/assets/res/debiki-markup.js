@@ -8,8 +8,8 @@ var $ = d.i.$;
 
 
 var html_sanitizer_bundle =
-    require('html_sanitizer_bundle') ||  // prod builds
-    { googleCajaSanitizeHtml: googleCajaSanitizeHtml };  // dev builds
+    //require('html_sanitizer_bundle') ||  // prod builds
+    { googleCajaSanitizeHtml: window.googleCajaSanitizeHtml };  // dev builds
 
 
 // Converts markdown to sanitized html.
