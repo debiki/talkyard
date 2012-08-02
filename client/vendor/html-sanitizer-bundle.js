@@ -1378,7 +1378,9 @@ function googleCajaSanitizeHtml(htmlTextUnsafe, allowClassAndIdAttr,
 }
 
 
-if (typeof window === 'undefined') window = {}; // for server side JS
-window.googleCajaSanitizeHtml = googleCajaSanitizeHtml;
+// If this is a browser (but not server side JS), export googleCajaSanitizeHtml.
+if (typeof debiki !== 'undefined')
+  debiki.internal.googleCajaSanitizeHtml = googleCajaSanitizeHtml;
+
 
 // vim: et ts=2 sw=2

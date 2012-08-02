@@ -6,8 +6,6 @@
 var d = { i: debiki.internal, u: debiki.v0.util };
 var $ = d.i.$;
 
-var html_sanitizer_bundle = window.googleCajaSanitizeHtml;
-
 
 // Converts markdown to sanitized html.
 d.i.markdownToSafeHtml = function(markdownSrc, hostAndPort, sanitizerOptions) {
@@ -31,7 +29,7 @@ function markdownToUnsafeHtml(markdownSrc, hostAndPort) {
  * options.allowDataAttribs = true/false
  */
 d.i.sanitizeHtml = function(htmlTextUnsafe, options) {
-  var htmlTextSafe = html_sanitizer_bundle.googleCajaSanitizeHtml(
+  var htmlTextSafe = d.i.googleCajaSanitizeHtml(
       htmlTextUnsafe, options.allowClassAndIdAttr, options.allowDataAttr);
   return htmlTextSafe;
 };
