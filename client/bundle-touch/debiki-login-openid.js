@@ -1,0 +1,1 @@
+../debiki/debiki-login-openid.js

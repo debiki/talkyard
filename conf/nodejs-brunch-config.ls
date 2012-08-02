@@ -8,13 +8,14 @@ exports.config =
     javascripts:
       defaultExtension: 'ls'
       joinTo:
-        'res/debiki-app-play.js': /^client/
+        'res/combined-debiki-desktop.js': /^client\/(vendor|bundle-desktop)/
+        'res/combined-debiki-touch.js': /^client\/(vendor|bundle-touch)/
     stylesheets:
       defaultExtension: 'styl'
       joinTo:
-        'res/debiki-app-play.css': /^client/
+        'res/combined-debiki.css': /^client\/debiki/
       order:
-        before: ['app/assets/debiki.css']
+        before: ['client/debiki/debiki.css']
 
   conventions:
     # By default, Brunch copies everything in app/assets/ as is
@@ -24,3 +25,4 @@ exports.config =
   modules:
     definition: false
     wrapper: false
+

@@ -497,6 +497,7 @@ object TemplateEngine {
 
 
   val minMaxJs = if (Play.isProd) ".min.js" else ".js"
+  val minMaxCss = if (Play.isProd) ".min.css" else ".css"
 
 
   val HeadHtml: NodeSeq =
@@ -513,7 +514,7 @@ object TemplateEngine {
     And: "For best performance, you should have them follow after your
     stylesheet references", http://modernizr.com/docs/#installing  */}
     <link rel="stylesheet" href="/-/res/jquery-ui/jquery-ui-1.8.16.custom.css"/>
-    <link rel="stylesheet" href="/-/res/debiki-app-play.css"/>
+    <link rel="stylesheet" href={"/-/res/combined-debiki"+ minMaxCss}/>
     <!--[if IE 7]>
     <link rel="stylesheet" href="/-/res/debiki-lift-ie7.css"/>
     <![endif]-->
@@ -533,12 +534,9 @@ object TemplateEngine {
         var debiki = {{ v0: {{ util: {{}} }}, internal: {{ $: jQuery }} }};
         debiki.scriptLoad = $.Deferred();
         Modernizr.load({{
-          /*
           test: Modernizr.touch,
-          yep: '/-/res/combined-debiki-touch.min.js',
-          nope: '/-/res/combined-debiki-desktop.min.js'
-          */
-          both: '/-/res/debiki-app-play{minMaxJs}'
+          yep: '/-/res/combined-debiki-touch{minMaxJs}',
+          nope: '/-/res/combined-debiki-desktop{minMaxJs}',
         }});
       </script>
     }
