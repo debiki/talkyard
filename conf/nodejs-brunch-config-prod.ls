@@ -11,8 +11,25 @@ exports.config =
     javascripts:
       defaultExtension: 'ls'
       joinTo:
-        'res/combined-debiki-desktop.min.js': /^client\/(vendor|bundle-desktop)/
-        'res/combined-debiki-touch.min.js': /^client\/(vendor|bundle-touch)/
+        'res/combined-debiki-desktop.min.js':
+          // ^client\/bundle-desktop
+           | ^client\/vendor\/bootstrap-tooltip.js
+           | ^client\/vendor\/diff_match_patch.js
+           | ^client\/vendor\/html-sanitizer-bundle.js
+           | ^client\/vendor\/javascript-yaml-parser.js
+           | ^client\/vendor\/jquery-cookie.js
+           | ^client\/vendor\/jquery-scrollable.js
+           | ^client\/vendor\/popuplib.js
+          //
+        'res/combined-debiki-touch.min.js':
+          // ^client\/bundle-touch
+           | ^client\/vendor\/diff_match_patch.js
+           | ^client\/vendor\/html-sanitizer-bundle.js
+           | ^client\/vendor\/javascript-yaml-parser.js
+           | ^client\/vendor\/jquery-cookie.js
+           | ^client\/vendor\/popuplib.js
+          //
+
     stylesheets:
       defaultExtension: 'styl'
       joinTo:
