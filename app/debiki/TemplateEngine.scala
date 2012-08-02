@@ -512,6 +512,11 @@ object TemplateEngine {
       http://www.modernizr.com/news/modernizr-and-cdns
     And: "For best performance, you should have them follow after your
     stylesheet references", http://modernizr.com/docs/#installing  */}
+    <link rel="stylesheet" href="/-/res/jquery-ui/jquery-ui-1.8.16.custom.css"/>
+    <link rel="stylesheet" href="/-/res/debiki-app-play.css"/>
+    <!--[if IE 7]>
+    <link rel="stylesheet" href="/-/res/debiki-lift-ie7.css"/>
+    <![endif]-->
     <script src="http://cdnjs.cloudflare.com/ajax/libs/modernizr/2.5.3/modernizr.min.js"></script>
     <script src={"https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery"+ minMaxJs}></script>
     <script src={"http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.19/jquery-ui"+ minMaxJs}></script>{/*
@@ -537,11 +542,6 @@ object TemplateEngine {
         }});
       </script>
     }
-      <link rel="stylesheet" href="/-/res/jquery-ui/jquery-ui-1.8.16.custom.css"/>
-      <link rel="stylesheet" href="/-/res/debiki-app-play.css"/>
-    <!--[if IE 7]>
-    <link rel="stylesheet" href="/-/res/debiki-lift-ie7.css"/>
-    <![endif]-->
     <!-- Make this webapp a Weinre debug target, see:
          http://pmuellr.github.com/weinre/Running.html
          (The ip addr is my desktop, where the Weinre debug server runs.) -->
