@@ -6,10 +6,7 @@
 var d = { i: debiki.internal, u: debiki.v0.util };
 var $ = d.i.$;
 
-
-var html_sanitizer_bundle =
-    //require('html_sanitizer_bundle') ||  // prod builds
-    { googleCajaSanitizeHtml: window.googleCajaSanitizeHtml };  // dev builds
+var html_sanitizer_bundle = window.googleCajaSanitizeHtml;
 
 
 // Converts markdown to sanitized html.

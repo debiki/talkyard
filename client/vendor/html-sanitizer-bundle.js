@@ -1378,18 +1378,6 @@ function googleCajaSanitizeHtml(htmlTextUnsafe, allowClassAndIdAttr,
 }
 
 
-// Without this, compilation to Java bytecode fails.
-if (typeof exports === 'undefined') exports = {};
-
-exports.googleCajaSanitizeHtml = googleCajaSanitizeHtml;
-
-// Currently, if I require('assets/res/html-sanitizer-bundle'), then
-// Closure Compiler (CC) fails with a NPE, because Brunch and CC
-// disagrees on how packages should be looked up -- CC thinks the
-// proper call is: require('html_sanitizer_bundle').
-// So use this hack instead.
-// Better workaround:  don't place Brunch compiled files in assets/,
-// then CC will ignore them.
 if (typeof window === 'undefined') window = {}; // for server side JS
 window.googleCajaSanitizeHtml = googleCajaSanitizeHtml;
 
