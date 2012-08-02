@@ -34,12 +34,8 @@ exports.config =
       order:
         before: ['client/debiki/debiki.css']
 
-  conventions:
-    # By default, Brunch copies everything in app/assets/ as is
-    # to public/, without compiling it.
-    assets: /disable-because-play-framework-stores-assets-in-public/
-
   modules:
     definition: false
     wrapper: false
 
+# vim: et ts=2 sw=2 list
