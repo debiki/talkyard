@@ -178,6 +178,50 @@ For that to work, this is needed: */
 }
 
 
+
+/* ===== Tips ===== */
+
+
+.dw-tps {
+  margin: 1.3em 0 1.5em;
+  background-color: #ffe6a5; /* somewhat darker than #ffefc6; */
+  padding: 1ex 2ex;
+  z-index: 999;
+  cursor: pointer;
+  box-shadow: 3px 3px 5px #888;
+}
+
+.dw-tps strong {
+  color: green;
+  font-weight: bold;
+}
+
+.dw-tps small {
+  color: #555;
+  font-size: 80%;
+}
+
+.dw-tps p:not(:first-of-type) {
+  margin-top: 1ex;
+}
+
+.dw-tps-close {
+  color: #555;
+  text-align: right;
+  font-size: 85%
+}
+
+/* Tips to use Utterscroll. */
+#dw-tps-utterscroll {
+  display: none; /* Javascript shows tips, if you use the horiz scrollbar */
+  position: fixed;
+  /* Top & left set by javascript. */
+  z-index: 999;
+  padding: 3.7ex 2.7ex 1.2ex;
+}
+
+
+
 /* ===== Miscellaneous ===== */
 
 
