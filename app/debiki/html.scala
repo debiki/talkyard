@@ -247,7 +247,7 @@ class DebateHtml(val debate: Debate, val pageTrust: PageTrust) {
        throwNotFound("DwE0PJ404", "Post not found: "+ pageRoot.id)
 
     val cssThreadId = "dw-t-"+ rootPost.id
-    <div id={"page-"+ debate.id} class='debiki dw-debate'>
+    <div id={"page-"+ debate.id} class='debiki dw-debate dw-page'>
       <div class="dw-debate-info">{
         if (lastChange isDefined) {
           <p class="dw-last-changed">Last changed on
