@@ -779,12 +779,6 @@ class FormHtml(val config: HtmlConfig, xsrfToken: String,
       sortOrterTipsDiv ++
       rateOwnCommentTipsDiv }
     </div>
-    <div>{
-      // Unique dialogs (with #ids) that should appear on $.show().
-      // (Above #dw-hidden-templates, however, are hidden even after
-      // $.show(), unless moved/copied elsewhere.)
-      utterscrollTipsDiv
-    }</div>
   }
 
 
@@ -1339,15 +1333,6 @@ class FormHtml(val config: HtmlConfig, xsrfToken: String,
   val submittingFormInfoDiv: NodeSeq = {
     <div class='dw-tps dw-inf-submitting-form'>
       <p>Submitting ...</p>
-    </div>
-  }
-
-  val utterscrollTipsDiv: NodeSeq = {
-    <div class='dw-tps' id='dw-tps-utterscroll'>
-      <p>Click <b>and hold</b> left mouse button, on the white
-      background,</p>
-      <p>and move the mouse leftwards and rightwards.</p>
-      <p class='dw-tps-close'>(Do that, please, to dismiss this box)</p>
     </div>
   }
 
