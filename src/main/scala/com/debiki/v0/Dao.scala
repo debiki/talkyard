@@ -62,6 +62,8 @@ abstract class TenantDaoSpi {
 
   def lookupOtherTenant(scheme: String, host: String): TenantLookup
 
+  def claimWebsite(): Boolean
+
   def saveLogin(loginReq: LoginRequest): LoginGrant
 
   def saveLogout(loginId: String, logoutIp: String)
@@ -210,6 +212,21 @@ class TenantDao(
   def lookupOtherTenant(scheme: String, host: String): TenantLookup = {
     _chargeForOneReadReq()
     _spi.lookupOtherTenant(scheme, host)
+  }
+
+  /**
+   * Tries to claim the website on behalf of the quota consumer role.
+   *
+   * When you create a new website, the first time you login to that website,
+   * this function is called, and then you become the website owner.
+   * (Only the very first one to login becomes the owner.)
+   * Returns true on success — that is, unless someone else attempts
+   * to creat the very same website, simultaneously with you, and
+   * that other person logs in before you and becomes the owner.
+   */
+  def claimWebsite(): Boolean = {
+    _chargeForOneWriteReq()
+    _spi.claimWebsite()
   }
 
 
