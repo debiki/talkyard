@@ -19,9 +19,9 @@ POST  /-/api/logout             controllers.AppAuth.logout
 
 GET   /-/choose-website-name    controllers.AppCreateWebsite.showWebsiteNameForm
 POST  /-/choose-website-name    controllers.AppCreateWebsite.handleWebsiteNameForm
-GET   /-/create-website         controllers.AppCreateWebsite.showClaimWebsiteLoginForm
-POST  /-/create-website         controllers.AppCreateWebsite.handleClaimWebsiteLoginForm
-GET   /-/website-created        controllers.AppCreateWebsite.claimWebsiteWelcomeOwner
+GET   /-/login-to-claim-website controllers.AppCreateWebsite.showClaimWebsiteLoginForm
+POST  /-/login-to-claim-website controllers.AppCreateWebsite.handleClaimWebsiteLoginForm
+GET   /-/try-claim-website      controllers.AppCreateWebsite.tryClaimWebsite
 
 #GET   /-/admin                  controllers.AppAdmin.showMainPage
 

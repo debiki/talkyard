@@ -3,9 +3,8 @@
 
 @showWebsiteNameForm = {
   <h1>Choose Website Name</h1>
-  <p>Please enter a name for the website you are about to create.<br>
-    (If you want to, you can map a domain name of yours to the website,
-    later on.)
+  <p>Please enter a name for the new website.<br>
+    (You can map a domain name of yours to the website, later.)
   </p>
   <form accept-charset='UTF-8' method='post'>
     <label>Website name:
@@ -18,7 +17,7 @@
 
 
 @showClaimWebsiteLoginForm = {
-  <h1>Login as Website Owner?</h1>
+  <h1>Login as Website Owner</h1>
   <p>Please click your email provider, and login.
     The account you choose will become the owner of the
     new website that you are creating.
@@ -43,23 +42,23 @@
   <p>Website created, congratulations!
   <p><a href="/-/manage-website">Manage this website</a>
 
-  @* -- Hmm perhaps people will be confused. --
-  @websiteAddr = newTenantId +"."+ parentDomainName
-  <p>You do *not* need to remember this, but I better tell you right away,
-     so you' won't be surprised later: This address:
-  <p><tt>@websiteAddr</tt>,
-  <p>is where you login, if you want to transfer ownership to someone else,
-     or if you want to ban all admins at once.
-     You usually don't want to any of this though.
-     Even if you map another domain to this address (i.e. to @websiteAddr),
-     you would still login to @websiteAddr, to transfer ownership.
-
-  <p>If you own a domain, you could point it to this address:
+  @*
+  <p>If you want to, you can now map a domain name of yours to this address:
       <tt>@websiteAddr</tt>
-
-  <p>Now, perhaps you'd like to
-     <a href="/?create-page">create a home page</a>.
+  No, not that easy. S/he has to add an entry in DW1_TENANT_HOSTS too,
+  and prove that s/he owns it.
   *@
+
+  <p>Next: <a href="/?create-page">create a home page</a>.
+}
+
+
+@failSomeoneElseWasFirst = {
+  <p>Sorry but someone else creaed this websit moments ago. You could try
+    again to create a website, and you need to choose another name.
+  @* SHOULD fix this broken URL, redirect to the original host,
+    www.debiki.com? *@
+  <p><a href="/-/choose-website-name">Okay, I'll try again</a>
 }
 
 
@@ -74,6 +73,7 @@
     case "showWebsiteNameForm" => { @showWebsiteNameForm }
     case "showClaimWebsiteLoginForm" => { @showClaimWebsiteLoginForm }
     case "welcomeOwner" => { @welcomeOwner }
+    case "failSomeoneElseWasFirst" => { @failSomeoneElseWasFirst }
     case _ => {
       // COULD throw instead?
       play.api.Logger.error("Bad doWhat: "+ doWhat)

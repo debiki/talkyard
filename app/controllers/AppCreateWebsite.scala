@@ -21,7 +21,7 @@ object AppCreateWebsite extends mvc.Controller {
   val log = play.api.Logger("app.create-website")
 
   // Add to dev config file?
-  // debiki.create-website.only-from-host="localhost:9000"
+  // debiki.create-website.only-from-address="localhost:9000"
   // debiki.create-website.new-domain="debiki.localhost:9000"
 
   /**
@@ -30,9 +30,9 @@ object AppCreateWebsite extends mvc.Controller {
    */
   val websiteCreationHost: Option[String] = {
     val host = Play.configuration.getString(
-      "debiki.create-website.only-from-host")
+      "debiki.create-website.only-from-address")
     assErrIf(Play.isProd && host.isEmpty,
-      "DwE01kr55", "No debiki.create-website.only-from-host specified")
+      "DwE01kr55", "No debiki.create-website.only-from-address specified")
     host
   }
 
@@ -41,21 +41,15 @@ object AppCreateWebsite extends mvc.Controller {
     "debiki.create-website.new-domain")
 
 
-  /* val _secretNewTenantSalt = "a0kr3Qi8BgwIWF"  // hardcoded, for now
-
-  val _newTenantPasswordHashLength = 12  */
-
-
   def showWebsiteNameForm() = CheckSidActionNoBody {
         (sidOk, xsrfOk, request) =>
 
     if (websiteCreationHost.nonEmpty &&
         websiteCreationHost != Some(request.host))
-      throwForbidden("DwE32kJ5", "You may not create a website from this host")
+      throwForbidden(
+        "DwE3kJ5", "You may not create a website from this address")
 
-    val dao = _tenantDao(request, sidOk.roleId)
-    _throwIfMayNotCreateWebsite(dao, newWebsiteAddr = None,
-       creatorIpAddr = request.remoteAddress)
+    _throwIfMayNotCreateWebsite(creatorIpAddr = request.remoteAddress)
 
     Ok(views.html.createWebsite(doWhat = "showWebsiteNameForm",
       xsrfToken = xsrfOk.value))
@@ -66,10 +60,6 @@ object AppCreateWebsite extends mvc.Controller {
         BodyParsers.parse.urlFormEncoded(maxLength = 100)) {
       (sidOk, xsrfOk, request) =>
 
-    // SHOULD consume IP quota — but not tenant quota!? — when generating
-    // new tenant ID. Don't consume tenant quota because the tenant
-    // would be www.debiki.com?
-
     val newWebsiteName =
        request.body.getEmptyAsNone("website-name") getOrElse
         throwBadReq("DwE01kI72", "Please specify a name for your new website")
@@ -78,27 +68,16 @@ object AppCreateWebsite extends mvc.Controller {
        newWebsiteName +"."+ newWebsiteDomain.getOrElse(request.host)
 
     // Preliminary test of if it's possible & allowed to create the website.
-    val dao = _tenantDao(request, sidOk.roleId)
-    _throwIfMayNotCreateWebsite(dao, newWebsiteAddr = Some(newWebsiteAddr),
-       creatorIpAddr = request.remoteAddress)
-
-    // Sign the next request, so no one but the current user can
-    // login to the new tenant and become its owner.
-    // (The browser won't include the session id cookie when it is
-    // redirected, because the redirect is to another host. So we need
-    // something in the URL I think.)
-    //val passwordUnsigned = _generatePassword(newTenantId, request.remoteAddress)
-    //val passwordSigned = _signPassword(passwordUnsigned)
+    _throwIfMayNotCreateWebsite(creatorIpAddr = request.remoteAddress,
+       newWebsiteAddr = Some(newWebsiteAddr))
 
     // We cannot (?) use Play's reverse routing here, because we're routing
     // to another host.
     var newWebsiteOrigin = "http://"+ newWebsiteAddr
-    log.debug("About to create website, name: "+ newWebsiteName +
+    log.info("About to create website, name: "+ newWebsiteName +
        ", origin: "+ newWebsiteOrigin)
 
-    // COULD remember & prevent reusage of recent passwords.
-    // Doesn't matter much though: # tenants per IP is limited.
-    Redirect(newWebsiteOrigin +"/-/create-website")//?password="+ passwordSigned)
+    Redirect(newWebsiteOrigin +"/-/login-to-claim-website")
   }
 
 
@@ -116,8 +95,8 @@ object AppCreateWebsite extends mvc.Controller {
     // Check the xsrf token.
     val (sidOk, xsrfOk, newCookies) = AppAuth.checkSidAndXsrfToken(request)
 
-    // But we cannot possibly have logged in yet — that's what we're just
-    // about to do *next*.
+    // But we cannot possibly have logged in to the new website — that's what
+    // we're about to do *next*.
     assErrIf(sidOk.loginId.nonEmpty, "DwE076TZ13")
     assErrIf(sidOk.roleId.nonEmpty, "DwE019BG78")
 
@@ -127,24 +106,30 @@ object AppCreateWebsite extends mvc.Controller {
     // The first one to login with an OpenID
     // [SECURITY] from a whitelisted (not imlpemented) OpenID provider
     // will become the website owner.
-    _throwIfMayNotCreateWebsite(unimplemented, //Debiki.SystemDao,
-       newWebsiteAddr = Some(request.host),
-       creatorIpAddr = request.remoteAddress)
+    // (So if Alice and Bob both attempts to create a website with name x,
+    // at the very same time, one of them will fail, but rather late: not
+    // until after they've attempted to log in.)
+    _throwIfMayNotCreateWebsite(creatorIpAddr = request.remoteAddress,
+       newWebsiteAddr = Some(request.host))
 
     val (newWebsiteName, newWebsiteAddr) =
       _extractNameAndAddressFromHost(request.host)
 
     log.debug("Creating website, name: "+ newWebsiteName +
        ", address: "+ newWebsiteAddr)
-    // Debiki.SystemDao.createWebsite(newWebsiteName, address = newWebsiteAddr)
 
+    _createWebsiteUnlessExists(creatorIpAddr = request.remoteAddress,
+        newWebsiteName = newWebsiteName, newWebsiteAddr = newWebsiteAddr)
+
+    // BAD: Leaves login entry in DW1_USERS even if fails to claim website.
+    // Should rewrite: Claim directly on website creation, and login
+    // before, to the "original" website.
     AppAuthOpenid.asyncLogin(returnToUrl =
-       routes.AppCreateWebsite.claimWebsiteWelcomeOwner.absoluteURL())
+       routes.AppCreateWebsite.tryClaimWebsite.absoluteURL())
   }
 
 
-  def claimWebsiteWelcomeOwner() = CheckSidActionNoBody {
-        (sidOk, xsrfOk, request) =>
+  def tryClaimWebsite() = CheckSidActionNoBody { (sidOk, xsrfOk, request) =>
 
     if (sidOk.roleId isEmpty)
       throwForbidden("DwE013k586", "Cannot create website: Not logged in")
@@ -161,13 +146,22 @@ object AppCreateWebsite extends mvc.Controller {
       }
     }
 
-    if (!user.isAuthenticated) _throwRedirectToLoginPage(
+    if (!user.isAuthenticated) _showLoginPageAgain(
       "DwE01B7", "Cannot create website: User not authenticated. "+
          "Please login again, but not as guest")
 
-    if (user.email isEmpty) _throwRedirectToLoginPage(
+    if (user.email isEmpty) _showLoginPageAgain(
       "DwE56Yr5", "Cannot create website: User's email address unknown. " +
          "Please use an account that has an email address")
+
+    def _showLoginPageAgain(errorCode: String, errorMessage: String)
+          : PlainResult = {
+      // For now:
+      throwForbidden(errorCode, errorMessage)
+      // Could instead show this page, + helpful info on why failed:
+      //Ok(views.html.createWebsite(doWhat = "showClaimWebsiteLoginForm",
+      //  xsrfToken = xsrfOk.value))
+    }
 
     val (newWebsiteName, newWebsiteAddr) =
       _extractNameAndAddressFromHost(request.host)
@@ -176,9 +170,10 @@ object AppCreateWebsite extends mvc.Controller {
        sidOk.roleId.get + ", website name: "+ newWebsiteName +
        ", address: "+ newWebsiteAddr)
 
-    // request.dao.tryAddFirstWebsiteOwner(sidOk.roleId.get) // hmm
-
-    Ok(views.html.createWebsite(doWhat = "welcomeOwner"))
+    if (!dao.claimWebsite())
+      Ok(views.html.createWebsite(doWhat = "failSomeoneElseWasFirst"))
+    else
+      Ok(views.html.createWebsite(doWhat = "welcomeOwner"))
   }
 
 
@@ -189,6 +184,7 @@ object AppCreateWebsite extends mvc.Controller {
     Debiki.tenantDao(curTenantId, ipAddr, roleId)
   }
 
+
   private def _extractNameAndAddressFromHost(host: String): (String, String) = {
     val newWebsiteName = host.takeWhile(_ != '.')
     val newWebsiteAddr = host
@@ -196,39 +192,8 @@ object AppCreateWebsite extends mvc.Controller {
   }
 
 
-
-  private def _throwRedirectToLoginPage(errorCode: String,
-        errorMessage: String) {
-    throwForbidden(errorCode, errorMessage) // for now
-  }
-
-  /*
-  private def _generatePassword(websiteName: String, ipAddr: String): String = {
-    (new ju.Date).getTime +"."+
-       (math.random * Int.MaxValue).toInt +"."+
-       websiteName +"."+
-       ipAddr
-  }
-
-
-  private def _signPassword(password: String): String = {
-    val saltedHash = hashSha1Base64UrlSafe(password +"."+ _secretNewTenantSalt)
-       .take(_newTenantPasswordHashLength)
-    password +"."+ saltedHash
-  }
-
-
-  private def _throwIfBadPassword(password: String, tenantId: String,
-        ip: String) {
-    val passwordUnsigned = password.dropRightWhile(_ != '.').dropRight(1)
-    val passwordCorrectlySigned = _signPassword(passwordUnsigned)
-    if (password != passwordCorrectlySigned)
-      throwForbidden("DwE021kR5", "Bad one-time-password")
-  }
-  */
-
-  private def _throwIfMayNotCreateWebsite(dao: TenantDao,
-        newWebsiteAddr: Option[String], creatorIpAddr: String) {
+  private def _throwIfMayNotCreateWebsite(creatorIpAddr: String,
+        newWebsiteAddr: Option[String] = None) {
     // Perhaps like so:
     // Unless logged in:
     //   If > 10 tenants already created from ipAddr, deny.
@@ -238,10 +203,22 @@ object AppCreateWebsite extends mvc.Controller {
   }
 
 
-  /*
-  private def _throwIfMayNotLogin(oneTimePassword: String) {
-    // Unless magic token signed correctly by server, deny.
+  private def _createWebsiteUnlessExists(creatorIpAddr: String,
+        newWebsiteName: String, newWebsiteAddr: String) {
+    // SHOULD consume IP quota — but not tenant quota!? — when generating
+    // new tenant ID. Don't consume tenant quota because the tenant
+    // would be www.debiki.com?
+    // Do this by splitting QuotaManager._charge into two functions: one that
+    // loops over quota consumers, and another that charges one single
+    // consumer. Then call the latter function, charge the IP only.
+
+    // SHOULD not fail if already exists, but continue anyway.
+    // Instead, `dao.claimWebsite` above will fail.
+    val newTenant = Debiki.SystemDao.createTenant(newWebsiteName: String)
+    val newHost = TenantHost(newWebsiteAddr, TenantHost.RoleCanonical,
+       TenantHost.HttpsNone)
+    val tenantDao = Debiki.tenantDao(newTenant.id, ip = creatorIpAddr)
+    tenantDao.addTenantHost(newHost)
   }
-  */
 
 }
