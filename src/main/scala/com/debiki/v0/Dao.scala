@@ -480,7 +480,7 @@ class SystemDao(private val _spi: SystemDaoSpi) {
  */
 class CachingDaoFactory(
    private val _daoSpiFactory: DaoSpiFactory,
-   private val _quotaManager: QuotaCharger)
+   private val _quotaCharger: QuotaCharger)
   extends DaoFactory {
 
   override val systemDao = new SystemDao(_daoSpiFactory.systemDaoSpi)
@@ -489,7 +489,7 @@ class CachingDaoFactory(
 
   override def buildTenantDao(quotaConsumers: QuotaConsumers): TenantDao = {
     val spi = _daoSpiFactory.buildTenantDaoSpi(quotaConsumers)
-    new CachingTenantDao(cache, spi, _quotaManager)
+    new CachingTenantDao(cache, spi, _quotaCharger)
   }
 
 }
