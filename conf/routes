@@ -17,11 +17,12 @@ GET   /-/api/login-openid-clbk  controllers.AppAuthOpenid.loginCallback(returnTo
 GET   /-/api/logout             controllers.AppAuth.logout
 POST  /-/api/logout             controllers.AppAuth.logout
 
-GET   /-/choose-website-name    controllers.AppCreateWebsite.showWebsiteNameForm
-POST  /-/choose-website-name    controllers.AppCreateWebsite.handleWebsiteNameForm
-GET   /-/login-to-claim-website controllers.AppCreateWebsite.showClaimWebsiteLoginForm
-POST  /-/login-to-claim-website controllers.AppCreateWebsite.handleClaimWebsiteLoginForm
-GET   /-/try-claim-website      controllers.AppCreateWebsite.tryClaimWebsite
+GET   /-/new-website/choose-name   controllers.AppCreateWebsite.showWebsiteNameForm
+POST  /-/new-website/choose-name   controllers.AppCreateWebsite.handleWebsiteNameForm
+GET   /-/new-website/choose-owner  controllers.AppCreateWebsite.showWebsiteOwnerForm
+POST  /-/new-website/choose-owner  controllers.AppCreateWebsite.handleWebsiteOwnerForm
+GET   /-/new-website/create        controllers.AppCreateWebsite.tryCreateWebsite
+GET   /-/new-website/welcome-owner controllers.AppCreateWebsite.welcomeOwner
 
 #GET   /-/admin                  controllers.AppAdmin.showMainPage
 

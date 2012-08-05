@@ -41,6 +41,9 @@ object AppCreateWebsite extends mvc.Controller {
     "debiki.create-website.new-domain")
 
 
+  def newWebsiteAddr(websiteName: String, request: Request[_]) =
+    websiteName +"."+ newWebsiteDomain.getOrElse(request.host)
+
   def showWebsiteNameForm() = CheckSidActionNoBody {
         (sidOk, xsrfOk, request) =>
 
@@ -64,72 +67,32 @@ object AppCreateWebsite extends mvc.Controller {
        request.body.getEmptyAsNone("website-name") getOrElse
         throwBadReq("DwE01kI72", "Please specify a name for your new website")
 
-    val newWebsiteAddr =
-       newWebsiteName +"."+ newWebsiteDomain.getOrElse(request.host)
-
     // Preliminary test of if it's possible & allowed to create the website.
     _throwIfMayNotCreateWebsite(creatorIpAddr = request.remoteAddress,
-       newWebsiteAddr = Some(newWebsiteAddr))
+       newWebsiteAddr = Some(newWebsiteAddr(newWebsiteName, request)))
 
-    // We cannot (?) use Play's reverse routing here, because we're routing
-    // to another host.
-    var newWebsiteOrigin = "http://"+ newWebsiteAddr
-    log.info("About to create website, name: "+ newWebsiteName +
-       ", origin: "+ newWebsiteOrigin)
-
-    Redirect(newWebsiteOrigin +"/-/login-to-claim-website")
+    Redirect(routes.AppCreateWebsite.showWebsiteOwnerForm.url)
+       .withSession(
+          request.session + ("website-name" -> newWebsiteName))
   }
 
 
-  def showClaimWebsiteLoginForm() = CheckSidActionNoBody {
+  def showWebsiteOwnerForm() = CheckSidActionNoBody {
         (sidOk, xsrfOk, request) =>
-      Ok(views.html.createWebsite(doWhat = "showClaimWebsiteLoginForm",
-         xsrfToken = xsrfOk.value))
+    Ok(views.html.createWebsite(doWhat = "showWebsiteOwnerForm",
+       xsrfToken = xsrfOk.value))
   }
 
 
-  def handleClaimWebsiteLoginForm() = ExceptionAction(
+  def handleWebsiteOwnerForm() = ExceptionAction(
         BodyParsers.parse.urlFormEncoded(maxLength = 1000)) {
       implicit request =>
-
-    // Check the xsrf token.
-    val (sidOk, xsrfOk, newCookies) = AppAuth.checkSidAndXsrfToken(request)
-
-    // But we cannot possibly have logged in to the new website — that's what
-    // we're about to do *next*.
-    assErrIf(sidOk.loginId.nonEmpty, "DwE076TZ13")
-    assErrIf(sidOk.roleId.nonEmpty, "DwE019BG78")
-
-    // Create the website, so the login succeeds (the login will be
-    // saved in the database, and a website id is needed).
-    // For a while, the website will have no owner.
-    // The first one to login with an OpenID
-    // [SECURITY] from a whitelisted (not imlpemented) OpenID provider
-    // will become the website owner.
-    // (So if Alice and Bob both attempts to create a website with name x,
-    // at the very same time, one of them will fail, but rather late: not
-    // until after they've attempted to log in.)
-    _throwIfMayNotCreateWebsite(creatorIpAddr = request.remoteAddress,
-       newWebsiteAddr = Some(request.host))
-
-    val (newWebsiteName, newWebsiteAddr) =
-      _extractNameAndAddressFromHost(request.host)
-
-    log.debug("Creating website, name: "+ newWebsiteName +
-       ", address: "+ newWebsiteAddr)
-
-    _createWebsiteUnlessExists(creatorIpAddr = request.remoteAddress,
-        newWebsiteName = newWebsiteName, newWebsiteAddr = newWebsiteAddr)
-
-    // BAD: Leaves login entry in DW1_USERS even if fails to claim website.
-    // Should rewrite: Claim directly on website creation, and login
-    // before, to the "original" website.
     AppAuthOpenid.asyncLogin(returnToUrl =
-       routes.AppCreateWebsite.tryClaimWebsite.absoluteURL())
+       routes.AppCreateWebsite.tryCreateWebsite.absoluteURL())
   }
 
 
-  def tryClaimWebsite() = CheckSidActionNoBody { (sidOk, xsrfOk, request) =>
+  def tryCreateWebsite() = CheckSidActionNoBody { (sidOk, xsrfOk, request) =>
 
     if (sidOk.roleId isEmpty)
       throwForbidden("DwE013k586", "Cannot create website: Not logged in")
@@ -139,7 +102,7 @@ object AppCreateWebsite extends mvc.Controller {
     // Check permissions
     val (identity, user) = {
       val loginId = sidOk.loginId.getOrElse(assErr("DwE01955"))
-      dao.loadIdtyAndUser(loginId) match {
+      dao.loadIdtyAndUserDetailed(loginId) match {
         case Some((identity, user)) => (identity, user)
         case None =>
           runErr("DwE01j920", "Cannot create website: Bad login ID: "+ loginId)
@@ -162,18 +125,42 @@ object AppCreateWebsite extends mvc.Controller {
       //Ok(views.html.createWebsite(doWhat = "showClaimWebsiteLoginForm",
       //  xsrfToken = xsrfOk.value))
     }
+// BUG! newWebsiteName incl domain
+    val newWebsiteName = request.session.get("website-name") getOrElse {
+      throwForbidden("DwE091EQ7", "No website-name cookie")
+    }
 
-    val (newWebsiteName, newWebsiteAddr) =
-      _extractNameAndAddressFromHost(request.host)
+    val websiteAddr = newWebsiteAddr(newWebsiteName, request)
 
-    log.debug("Granting ownership of new website to role id "+
-       sidOk.roleId.get + ", website name: "+ newWebsiteName +
-       ", address: "+ newWebsiteAddr)
+    //_throwIfMayNotCreateWebsite(creatorIpAddr = request.remoteAddress,
+    //  websiteAddr = Some(request.host))
 
-    if (!dao.claimWebsite())
-      Ok(views.html.createWebsite(doWhat = "failSomeoneElseWasFirst"))
-    else
-      Ok(views.html.createWebsite(doWhat = "welcomeOwner"))
+    log.debug("Creating website, name: "+ newWebsiteName +
+       ", address: "+ websiteAddr)
+
+    // SECURITY should whitelist allowed OpenID and OAuth providers.
+
+    // Require OpenID or OAuth (todo) or password (todo) login.
+    val idtyOpenId = identity.asInstanceOf[IdentityOpenId]
+
+    val wasCreated = dao.createWebsite(
+       name = newWebsiteName, address = websiteAddr,
+       creatorIpAddr = request.remoteAddress, ownerIdentity = idtyOpenId,
+       ownerRole = user)
+
+    val result =
+      if (wasCreated)
+        Redirect("http://"+ websiteAddr +
+           routes.AppCreateWebsite.welcomeOwner.url)
+      else
+        Ok(views.html.createWebsite(doWhat = "failSomeoneElseWasFirst"))
+
+    result.withSession(request.session - "website-name")
+  }
+
+
+  def welcomeOwner() = CheckSidActionNoBody { (sidOk, xsrfOk, request) =>
+    Ok(views.html.createWebsite(doWhat = "welcomeOwner"))
   }
 
 
@@ -185,13 +172,6 @@ object AppCreateWebsite extends mvc.Controller {
   }
 
 
-  private def _extractNameAndAddressFromHost(host: String): (String, String) = {
-    val newWebsiteName = host.takeWhile(_ != '.')
-    val newWebsiteAddr = host
-    (newWebsiteName, newWebsiteAddr)
-  }
-
-
   private def _throwIfMayNotCreateWebsite(creatorIpAddr: String,
         newWebsiteAddr: Option[String] = None) {
     // Perhaps like so:
@@ -200,25 +180,6 @@ object AppCreateWebsite extends mvc.Controller {
     // If logged in:
     //   If > 100 tenants already created from ipAddr, deny.
     //   If > 10 tenants already created by the current role, deny.
-  }
-
-
-  private def _createWebsiteUnlessExists(creatorIpAddr: String,
-        newWebsiteName: String, newWebsiteAddr: String) {
-    // SHOULD consume IP quota — but not tenant quota!? — when generating
-    // new tenant ID. Don't consume tenant quota because the tenant
-    // would be www.debiki.com?
-    // Do this by splitting QuotaManager._charge into two functions: one that
-    // loops over quota consumers, and another that charges one single
-    // consumer. Then call the latter function, charge the IP only.
-
-    // SHOULD not fail if already exists, but continue anyway.
-    // Instead, `dao.claimWebsite` above will fail.
-    val newTenant = Debiki.SystemDao.createTenant(newWebsiteName: String)
-    val newHost = TenantHost(newWebsiteAddr, TenantHost.RoleCanonical,
-       TenantHost.HttpsNone)
-    val tenantDao = Debiki.tenantDao(newTenant.id, ip = creatorIpAddr)
-    tenantDao.addTenantHost(newHost)
   }
 
 }

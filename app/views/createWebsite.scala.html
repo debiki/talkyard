@@ -16,7 +16,7 @@
 }
 
 
-@showClaimWebsiteLoginForm = {
+@showWebsiteOwnerForm = {
   <h1>Login as Website Owner</h1>
   <p>Please click your email provider, and login.
     The account you choose will become the owner of the
@@ -54,11 +54,10 @@
 
 
 @failSomeoneElseWasFirst = {
-  <p>Sorry but someone else creaed this websit moments ago. You could try
+  <p>Sorry but someone else created this websit moments ago. You could try
     again to create a website, and you need to choose another name.
-  @* SHOULD fix this broken URL, redirect to the original host,
-    www.debiki.com? *@
-  <p><a href="/-/choose-website-name">Okay, I'll try again</a>
+  <p><a href="@routes.AppCreateWebsite.showWebsiteNameForm.url">
+      Okay, I'll try again</a>
 }
 
 
@@ -71,7 +70,7 @@
 <div>
   @doWhat match {
     case "showWebsiteNameForm" => { @showWebsiteNameForm }
-    case "showClaimWebsiteLoginForm" => { @showClaimWebsiteLoginForm }
+    case "showWebsiteOwnerForm" => { @showWebsiteOwnerForm }
     case "welcomeOwner" => { @welcomeOwner }
     case "failSomeoneElseWasFirst" => { @failSomeoneElseWasFirst }
     case _ => {
