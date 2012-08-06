@@ -753,6 +753,8 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
     //"have exactly one user" >> {  // or, 3? there're 2 IdentitySimple users?
     //}
 
+    var exOpenId_loginGrant_2: LoginGrant = null
+
     // COULD test w/ new tenant but same claimed_ID, should also result in
     // a new User. So you can customize your user, per tenant.
     "create new IdentityOpenId and User for a new claimed_id" >> {
@@ -765,6 +767,58 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
       grant.user must matchUser(exOpenId_loginReq.user, id = grant.user.id)
       exOpenId_userIds.contains(grant.user.id) must_== false
       exOpenId_userIds += grant.user.id
+      exOpenId_loginGrant_2 = grant
+    }
+
+    var exGmailLoginGrant: LoginGrant = null
+
+    "create new IdentityOpenId and User for a new claimed_id, Gmail addr" >> {
+      val loginReq = LoginRequest(T.login.copy(date = new ju.Date),
+        T.identityOpenId.copy(
+          oidEndpoint = IdentityOpenId.GoogleEndpoint,
+          oidRealm = "some.realm.com",
+          oidClaimedId = "google.claimed.id",
+          email = "example@gmail.com"))
+      exGmailLoginGrant = dao.saveLogin(loginReq)
+      val grant = exGmailLoginGrant
+      exOpenId_userIds.contains(grant.user.id) must_== false
+      exOpenId_userIds += grant.user.id
+    }
+
+    "lookup OpenID identity, by login id" >> {
+      dao.loadIdtyDetailsAndUser(
+          forLoginId = exGmailLoginGrant.login.id) must beLike {
+        case Some((identity, user)) =>
+          identity must_== exGmailLoginGrant.identity
+          user must_== exGmailLoginGrant.user
+          true
+      }
+    }
+
+    "lookup OpenID identity, by claimed id" >> {
+      // (Use _2 because the first one has had its country modified)
+      val oidSaved = exOpenId_loginGrant_2.identity.asInstanceOf[IdentityOpenId]
+      val partialIdentity = oidSaved.copy(id = "?", userId = "?")
+      dao.loadIdtyDetailsAndUser(forIdentity = partialIdentity) must beLike {
+        case Some((identity, user)) =>
+          identity must_== exOpenId_loginGrant_2.identity
+          user must_== exOpenId_loginGrant_2.user
+          true
+      }
+    }
+
+    "lookup OpenID identity, by email, for Gmail" >> {
+      val partialIdentity = IdentityOpenId(
+         id = "?", userId = "?", oidEndpoint = IdentityOpenId.GoogleEndpoint,
+         oidVersion = "?", oidRealm = "?", oidClaimedId = "?",
+         oidOpLocalId = "?", firstName = "?", email = "example@gmail.com",
+         country = "?")
+      dao.loadIdtyDetailsAndUser(forIdentity = partialIdentity) must beLike {
+        case Some((identity, user)) =>
+          identity must_== exGmailLoginGrant.identity
+          user must_== exGmailLoginGrant.user
+          true
+      }
     }
 
     //"have exactly two users" >> {  // no, 4? 2 + 2 = 4
