@@ -58,11 +58,12 @@ abstract class TenantDaoSpi {
 
   def loadTenant(): Tenant
 
+  def createWebsite(name: String, address: String, creatorIpAddr: String,
+        ownerIdentity: IdentityOpenId, ownerRole: User): Boolean
+
   def addTenantHost(host: TenantHost)
 
   def lookupOtherTenant(scheme: String, host: String): TenantLookup
-
-  def claimWebsite(): Boolean
 
   def saveLogin(loginReq: LoginRequest): LoginGrant
 
@@ -203,6 +204,26 @@ class TenantDao(
     _spi.loadTenant()
   }
 
+  /**
+   * Returns true on success — that is, unless someone else created
+   * the very same website, just before you.
+   */
+  def createWebsite(name: String, address: String, creatorIpAddr: String,
+        ownerIdentity: IdentityOpenId, ownerRole: User): Boolean = {
+
+    // SHOULD consume IP quota — but not tenant quota!? — when generating
+    // new tenant ID. Don't consume tenant quota because the tenant
+    // would be www.debiki.com?
+    // Do this by splitting QuotaManager._charge into two functions: one that
+    // loops over quota consumers, and another that charges one single
+    // consumer. Then call the latter function, charge the IP only.
+    _chargeForOneWriteReq()
+
+    _spi.createWebsite(name = name, address = address,
+       creatorIpAddr = creatorIpAddr, ownerIdentity = ownerIdentity,
+       ownerRole = ownerRole)
+  }
+
   def addTenantHost(host: TenantHost) = {
     // SHOULD hard code max num hosts, e.g. 10.
     _chargeForOneWriteReq()
@@ -212,21 +233,6 @@ class TenantDao(
   def lookupOtherTenant(scheme: String, host: String): TenantLookup = {
     _chargeForOneReadReq()
     _spi.lookupOtherTenant(scheme, host)
-  }
-
-  /**
-   * Tries to claim the website on behalf of the quota consumer role.
-   *
-   * When you create a new website, the first time you login to that website,
-   * this function is called, and then you become the website owner.
-   * (Only the very first one to login becomes the owner.)
-   * Returns true on success — that is, unless someone else attempts
-   * to creat the very same website, simultaneously with you, and
-   * that other person logs in before you and becomes the owner.
-   */
-  def claimWebsite(): Boolean = {
-    _chargeForOneWriteReq()
-    _spi.claimWebsite()
   }
 
 
@@ -436,7 +442,6 @@ class SystemDao(private val _spi: SystemDaoSpi) {
 
   /**
    * Creates a tenant, assigns it an id and and returns it.
-   * SHOULD restrict # tenants you can create per ip and/or email address?
    */
   def createTenant(name: String): Tenant =
     _spi.createTenant(name)
