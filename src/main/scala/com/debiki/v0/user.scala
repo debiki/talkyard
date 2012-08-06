@@ -193,7 +193,8 @@ case class Login(
   prevLoginId: Option[String],
   ip: String,
   date: ju.Date,
-  identityId: String
+  identityId: String // COULD rename to `identity`, which would be an instance
+                     // of one of IdentityId, GuestId, EmailId.
 ){
   checkId(id, "DwE093jxh12")
 }
@@ -217,6 +218,11 @@ object Login {
 /**
  * A user might have many identities, e.g. an OpenID Gmail identity and
  * a Twitter identity.
+ * COULD tease apart inheritance:
+ *  Split into three unrelated classes 1) EmailLinkLogin, 2) Guest and
+ *  3) Identity, with:
+ *      authn: AuthnOpenId(...), AuthnOAuth1(...) & 2, AuthnPassword(...)
+ *      identityProvider: Gmail, Facebook, Twitter, Local, ...)
  */
 sealed abstract class Identity {
 
