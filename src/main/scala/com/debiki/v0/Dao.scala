@@ -103,6 +103,9 @@ abstract class TenantDaoSpi {
 
   def loadIdtyAndUser(forLoginId: String): Option[(Identity, User)]
 
+  def loadIdtyDetailsAndUser(forLoginId: String = null,
+        forIdentity: Identity = null): Option[(Identity, User)]
+
   def loadPermsOnPage(reqInfo: RequestInfo): PermsOnPage
 
   def saveNotfs(notfs: Seq[NotfOfPageAction])
@@ -351,6 +354,16 @@ class TenantDao(
   def loadIdtyAndUser(forLoginId: String): Option[(Identity, User)] = {
     _chargeForOneReadReq()
     _spi.loadIdtyAndUser(forLoginId)
+  }
+
+  /**
+   * Also loads details like OpenID local identifier, endpoint and version info.
+   */
+  def loadIdtyDetailsAndUser(forLoginId: String = null,
+        forIdentity: Identity = null): Option[(Identity, User)] = {
+    _chargeForOneReadReq()
+    _spi.loadIdtyDetailsAndUser(forLoginId = forLoginId,
+        forIdentity = forIdentity)
   }
 
   def loadPermsOnPage(reqInfo: RequestInfo): PermsOnPage = {
