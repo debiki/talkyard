@@ -305,6 +305,14 @@ case class IdentityOpenId(
   country: String
 ) extends Identity {
   def displayName = firstName
+  def isGoogleLogin = oidEndpoint == IdentityOpenId.GoogleEndpoint
+}
+
+
+object IdentityOpenId {
+
+  val GoogleEndpoint = "https://www.google.com/accounts/o8/ud"
+
 }
 
 
