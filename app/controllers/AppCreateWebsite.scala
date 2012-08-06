@@ -99,10 +99,11 @@ object AppCreateWebsite extends mvc.Controller {
 
     val dao = _tenantDao(request, sidOk.roleId)
 
-    // Check permissions
+    // Check permissions — and load authentication details, so OpenID/OAuth
+    // info can be replicated to a new identity + user in the new website.
     val (identity, user) = {
       val loginId = sidOk.loginId.getOrElse(assErr("DwE01955"))
-      dao.loadIdtyAndUserDetailed(loginId) match {
+      dao.loadIdtyDetailsAndUser(forLoginId = loginId) match {
         case Some((identity, user)) => (identity, user)
         case None =>
           runErr("DwE01j920", "Cannot create website: Bad login ID: "+ loginId)
@@ -125,7 +126,7 @@ object AppCreateWebsite extends mvc.Controller {
       //Ok(views.html.createWebsite(doWhat = "showClaimWebsiteLoginForm",
       //  xsrfToken = xsrfOk.value))
     }
-// BUG! newWebsiteName incl domain
+
     val newWebsiteName = request.session.get("website-name") getOrElse {
       throwForbidden("DwE091EQ7", "No website-name cookie")
     }
