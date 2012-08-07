@@ -186,7 +186,7 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
     }
 
     "create a Test tenant" >> {
-      val tenant = systemDao.createTenant("Test")
+      val tenant = systemDao.createTenant(name = "Test")
       tenant.name must_== "Test"
       tenant.id must notBeEmpty
       defaultTenantId = tenant.id
@@ -1293,6 +1293,55 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
             true
         }
       }
+    }
+
+
+
+    // -------- Create more websites
+
+    "create new websites" >> {
+
+      val creatorLogin = exOpenId_loginGrant.login
+      val creatorIdentity =
+         exOpenId_loginGrant.identity.asInstanceOf[IdentityOpenId]
+      val creatorRole = exOpenId_loginGrant.user
+
+      var newWebsiteOpt: Option[Tenant] = null
+      var newHost = TenantHost("website-2.ex.com", TenantHost.RoleCanonical,
+         TenantHost.HttpsNone)
+
+      def createWebsiteNo2(): Option[Tenant] = {
+        dao.createWebsite(
+          name = "website-2", address = "website-2.ex.com",
+          ownerIp = creatorLogin.ip, ownerLoginId = creatorLogin.id,
+          ownerIdentity = creatorIdentity, ownerRole = creatorRole)
+      }
+
+      "create a new website, from existing tenant" >> {
+        newWebsiteOpt = createWebsiteNo2()
+        newWebsiteOpt must beLike {
+          case Some(tenant) =>
+            true
+        }
+      }
+
+      "not create the same website again" >> {
+        createWebsiteNo2() must_== None
+      }
+
+      "lookup the new website, from existing tenant" >> {
+        systemDao.loadTenants(newWebsiteOpt.get.id::Nil) must beLike {
+          case List(websiteInDb) =>
+            websiteInDb must_== newWebsiteOpt.get.copy(hosts = List(newHost))
+        }
+      }
+
+      "not create too many websites from same IP, when not logged in" >> {
+      }
+
+      "create some more websites from same IP, if logged in" >> {
+      }
+
     }
 
 
