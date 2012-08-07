@@ -9,6 +9,10 @@ package com.debiki.v0
 case class Tenant(
   id: String,
   name: String,
+  creatorIp: String,
+  creatorTenantId: String,
+  creatorLoginId: String,
+  creatorRoleId: String,
   hosts: List[TenantHost]
 ){
   // Reqiure at most 1 canonical host.
