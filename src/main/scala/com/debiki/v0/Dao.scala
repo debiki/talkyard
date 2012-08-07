@@ -58,8 +58,9 @@ abstract class TenantDaoSpi {
 
   def loadTenant(): Tenant
 
-  def createWebsite(name: String, address: String, creatorIpAddr: String,
-        ownerIdentity: IdentityOpenId, ownerRole: User): Boolean
+  def createWebsite(name: String, address: String, ownerIp: String,
+        ownerLoginId: String, ownerIdentity: IdentityOpenId, ownerRole: User)
+        : Option[Tenant]
 
   def addTenantHost(host: TenantHost)
 
@@ -136,6 +137,10 @@ abstract class SystemDaoSpi {
 
   def close()  // remove? move to DaoSpiFactory in some manner?
 
+  /**
+   * Creates the very first tenant. Then there cannot be any creator,
+   * because there are no users or roles (since there are on other tenants).
+   */
   def createTenant(name: String): Tenant
 
   def loadTenants(tenantIds: Seq[String]): Seq[Tenant]
@@ -211,8 +216,9 @@ class TenantDao(
    * Returns true on success — that is, unless someone else created
    * the very same website, just before you.
    */
-  def createWebsite(name: String, address: String, creatorIpAddr: String,
-        ownerIdentity: IdentityOpenId, ownerRole: User): Boolean = {
+  def createWebsite(name: String, address: String, ownerIp: String,
+        ownerLoginId: String, ownerIdentity: IdentityOpenId, ownerRole: User)
+        : Option[Tenant] = {
 
     // SHOULD consume IP quota — but not tenant quota!? — when generating
     // new tenant ID. Don't consume tenant quota because the tenant
@@ -222,8 +228,8 @@ class TenantDao(
     // consumer. Then call the latter function, charge the IP only.
     _chargeForOneWriteReq()
 
-    _spi.createWebsite(name = name, address = address,
-       creatorIpAddr = creatorIpAddr, ownerIdentity = ownerIdentity,
+    _spi.createWebsite(name = name, address = address, ownerIp = ownerIp,
+       ownerLoginId = ownerLoginId, ownerIdentity = ownerIdentity,
        ownerRole = ownerRole)
   }
 
