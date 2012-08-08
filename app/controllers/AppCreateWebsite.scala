@@ -144,13 +144,13 @@ object AppCreateWebsite extends mvc.Controller {
     // Require OpenID or OAuth (todo) or password (todo) login.
     val idtyOpenId = identity.asInstanceOf[IdentityOpenId]
 
-    val wasCreated = dao.createWebsite(
+    val newWebsite = dao.createWebsite(
        name = newWebsiteName, address = websiteAddr,
-       creatorIpAddr = request.remoteAddress, ownerIdentity = idtyOpenId,
-       ownerRole = user)
+       ownerIp = request.remoteAddress, ownerLoginId = sidOk.loginId.get,
+       ownerIdentity = idtyOpenId, ownerRole = user)
 
     val result =
-      if (wasCreated)
+      if (newWebsite.isDefined)
         Redirect("http://"+ websiteAddr +
            routes.AppCreateWebsite.welcomeOwner.url)
       else
