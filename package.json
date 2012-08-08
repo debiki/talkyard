@@ -1,9 +1,9 @@
 {
-  "author": "Your Name",
-  "name": "package-name",
-  "description": "Package description",
+  "author": "Kaj Magnus Lindberg",
+  "name": "debiki-app-play-client",
+  "description": "Javascripts and styles for Debiki's hosting service",
   "version": "0.0.1",
-  "homepage": "",
+  "homepage": "www.debiki.com",
   "repository": {
     "type": "git",
     "url": ""
