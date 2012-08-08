@@ -161,6 +161,12 @@ object AppCreateWebsite extends mvc.Controller {
 
 
   def welcomeOwner() = CheckSidActionNoBody { (sidOk, xsrfOk, request) =>
+    // SHOULD log in user, so s/he can create pages or choose a template.
+    // Like so? Pass a magic token in the URL, which is valid for 1 minute,
+    // and then, here, check if DW1_LOGINS has *no logins* for the new websitew
+    // Then, if the URL token is valid, auto-login the user
+    // because s/he is the owner and this'll work *once* only. (Assuming
+    // we're using HTTPS (which we aren't), i.e. no man in the middle attack.)
     Ok(views.html.createWebsite(doWhat = "welcomeOwner"))
   }
 

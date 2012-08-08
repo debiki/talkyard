@@ -168,6 +168,8 @@ object AppAuth extends mvc.Controller {
   // -----------------------------------
   def logout = mvc.Action(parse.urlFormEncoded(maxLength = 100)) { request =>
     request.method match {
+      // BUG: causes error: "For request 'GET /-/api/logout' [Expecting
+      // application/x-www-form-urlencoded body]"
       case "GET" =>
         OkHtml(<form action='' method='POST'>
           Really log out?
