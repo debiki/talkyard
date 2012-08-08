@@ -247,6 +247,8 @@ object PagePath {
 /**
  * Clarifies whether a PagePath that isFolderOrIndexPage
  * concerns a single page, a folder or a subtree.
+ * Or COULD remove? Use /some/folder/.index to indicate if the index page is
+ * intended, and a simple includeSubtree: Boolean, that replaces PathScope.
  */
 sealed abstract class PathScope
 object PathScope {
