@@ -278,7 +278,7 @@ object Actions {
   }
 
 
-  def ExceptionActionNoBody(f: Request[Option[Any]] => PlainResult) =
+  def ExceptionActionNoBody(f: Request[Option[Any]] => Result) =
     ExceptionAction(BodyParsers.parse.empty)(f)
 
 }
