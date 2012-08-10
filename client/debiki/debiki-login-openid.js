@@ -83,7 +83,7 @@ function submitLoginInPopup($openidLoginForm) {
       ',status=1,location=1,resizable=yes'+
       ',left='+ coordinates[0] +',top='+ coordinates[1]);
 
-  // Check to perform at each execution of the timed loop. It also triggers
+  // A check to perform at each execution of the timed loop. It also triggers
   // the action that follows the closing of the popup
   var waitCallback = window.setInterval(waitForPopupClose, 80);
   function waitForPopupClose() {
@@ -119,30 +119,8 @@ function submitLoginInPopup($openidLoginForm) {
     } else if (result.status !== 'LoginOk') {
       errorMsg = 'Unknown login problem [error DwE3kirsrts12d]';
     } else {
-      // Login OK
-      // {{{ The queryString is e.g. …
-      // openid.ns=http://specs.openid.net/auth/2.0
-      // openid.mode=id_res
-      // openid.op_endpoint=https://www.google.com/accounts/o8/ud
-      // openid.response_nonce=2011-04-10T20:14:19Zwq0i9rEOAN0QsA
-      // openid.return_to=http://10.42.43.10:8080/openid/response
-      // openid.assoc_handle=AOQobUdh75yilxlGb-KbwvcLIocAG...
-      // openid.signed=op_endpoint,claimed_id,identity,return_to,
-      //    response_nonce,assoc_handle,ns.ext1,ext1.mode,ext1.type.first,
-      //    ext1.value.first,ext1.type.email,ext1.value.email,
-      //    ext1.type.country,ext1.value.country
-      // openid.sig=jlCF7WrP99%2Be1Ee8eq1s03JUE0h4wILx37FHZkv/KlA=
-      // openid.identity=https://www.google.com/accounts/o8/id?id=AItOaw...
-      // openid.claimed_id=https://www.google.com/accounts/o8/id?id=AItO...
-      // openid.ns.ext1=http://openid.net/srv/ax/1.0
-      // openid.ext1.mode=fetch_response
-      // openid.ext1.type.first=http://axschema.org/namePerson/first
-      // openid.ext1.value.first=Kaj+Magnus
-      // openid.ext1.type.email=http://axschema.org/contact/email
-      // openid.ext1.value.email=someone@example.com
-      // openid.ext1.type.country=http://axschema.org/contact/country/home
-      // openid.ext1.value.country=SE
-      // }}}
+      // Login OK.
+      // (Find queryString example at the end of this file.)
 
       // Warning: Somewhat dupl code, compare w initLoginSimple.
       $('#dw-fs-openid-login').dialog('close');
@@ -166,5 +144,30 @@ function submitLoginInPopup($openidLoginForm) {
 
 
 })();
+
+
+// {{{ The result.queryString in handleLoginResponse() is e.g. …
+// openid.ns=http://specs.openid.net/auth/2.0
+// openid.mode=id_res
+// openid.op_endpoint=https://www.google.com/accounts/o8/ud
+// openid.response_nonce=2011-04-10T20:14:19Zwq0i9rEOAN0QsA
+// openid.return_to=http://10.42.43.10:8080/openid/response
+// openid.assoc_handle=AOQobUdh75yilxlGb-KbwvcLIocAG...
+// openid.signed=op_endpoint,claimed_id,identity,return_to,
+//    response_nonce,assoc_handle,ns.ext1,ext1.mode,ext1.type.first,
+//    ext1.value.first,ext1.type.email,ext1.value.email,
+//    ext1.type.country,ext1.value.country
+// openid.sig=jlCF7WrP99%2Be1Ee8eq1s03JUE0h4wILx37FHZkv/KlA=
+// openid.identity=https://www.google.com/accounts/o8/id?id=AItOaw...
+// openid.claimed_id=https://www.google.com/accounts/o8/id?id=AItO...
+// openid.ns.ext1=http://openid.net/srv/ax/1.0
+// openid.ext1.mode=fetch_response
+// openid.ext1.type.first=http://axschema.org/namePerson/first
+// openid.ext1.value.first=Kaj+Magnus
+// openid.ext1.type.email=http://axschema.org/contact/email
+// openid.ext1.value.email=someone@example.com
+// openid.ext1.type.country=http://axschema.org/contact/country/home
+// openid.ext1.value.country=SE
+// }}}
 
 // vim: fdm=marker et ts=2 sw=2 tw=80 fo=tcqwn list
