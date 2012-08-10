@@ -178,8 +178,10 @@ object Global extends GlobalSettings {
   /**
    * The Twitter Ostrich admin service, listens on port 9100.
    */
+  /*
   private val _ostrichAdminService = new toa.AdminHttpService(9100, 20, Stats,
     new toa.RuntimeEnvironment(getClass))
+   */
 
   /**
    * Ensures lazy values are initialized early, so everything
@@ -188,9 +190,13 @@ object Global extends GlobalSettings {
   override def onStart(app: Application) {
     Debiki.SystemDao
 
+    // For now, disable in dev mode — because of the port conflict that
+    // causes an error on reload and restart, see below (search for "conflict").
+    /*
     _ostrichAdminService.start()
     Logger.info("Twitter Ostrich listening on port "+
        _ostrichAdminService.address.getPort)
+     */
   }
 
 
@@ -200,7 +206,7 @@ object Global extends GlobalSettings {
    */
   override def onStop(app: Application) {
     Logger.info("Shutting down, gracefully...")
-    _ostrichAdminService.shutdown()
+    //_ostrichAdminService.shutdown()
 
     // COULD stop Twitter Ostrich on reload too -- currently there's a
     // port conflict on reload.
