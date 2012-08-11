@@ -100,8 +100,20 @@ exports.config =
            | ^client/vendor/popuplib.js
           //
 
+        'res/debiki-spa-common.min.js':
+          // ^client/vendor/bootstrap-.*.js
+           | ^client/debiki/debiki-util.js
+           | ^client/angular-spas/js/angular-util.ls
+          //
+
+        'res/debiki-spa-new-website-choose-owner.min.js':
+          // ^client/spas/js/new-website-choose-owner.ls
+          //
+
       order:
         after: ['client/debiki/debiki.js']
+        # bootstrap-popup.js extends -tooltip.js.
+        before: ['client/vendor/bootstrap-tooltip.js']
 
     stylesheets:
       defaultExtension: 'styl'
