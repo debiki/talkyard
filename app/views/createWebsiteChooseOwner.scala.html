@@ -1,0 +1,129 @@
+@(xsrfToken: String = "?")
+
+
+@createWebsiteMain(Messages("securesocial.login.title")) {
+  <div ng-controller="ChooseOwnerCtrl" class='new-website-choose-owner'>
+
+  <h1>Choose Website Owner</h1>
+  <div class='row'>
+
+  <div class='span5'>
+
+    <h2>Either:</h2>
+    <p>Login with an existing account (click below) — it will become the owner
+      of the new website.
+      <!-- <small>I think this is very secure, if you use Gmail's 2-step
+      verification, or Facebook's Login Approvals. Concerning Yahoo, you
+      could make use of their login seals. -->
+    </p>
+
+    <ul class='login-links'>
+      <li>
+        <a class="btn login-link-google"
+           href="@routes.AppCreateWebsite.login("google").url">
+          <i class="icon-google-plus"></i>Google</a>
+      </li>
+      <!--
+      <li>
+        <a class="btn login-link-twitter"
+           href="@routes.AppCreateWebsite.login("twitter").url">
+          <i class="icon-twitter"></i>Twitter</a>
+      </li>
+      <li>
+        <a class="btn login-link-facebook"
+           href="@routes.AppCreateWebsite.login("facebook").url">
+          <i class="icon-facebook"></i>Facebook</a>
+      </li>
+      -->
+      <li>
+        <a class="btn login-link-yahoo"
+           href="@routes.AppCreateWebsite.login("yahoo").url">
+        <i class="icon-yahoo"></i>Yahoo</a>
+      </li>
+      <!--
+      <li ng-hide="isOpenIdFormVisible">
+        <a class="btn login-link-openid" ng-click="showOpenIdForm()">
+        <i class="icon-openid"></i>OpenID</a>
+      </li>
+      <li ng-show="isOpenIdFormVisible" class='openid-login'>
+        <form accept-charset='UTF-8' method='post'>
+          <label for='oid-input'>Your OpenID:</label>
+          <input type='text' name='openid_identifier'>
+          <input name='dw-fi-xsrf' type='hidden' value='@xsrfToken'>
+          <input type='submit'>
+        </form>
+      </li>
+      -->
+    </ul>
+  </div>
+
+  <div class='span5'>
+    <h2>Or:</h2>
+    <p>Login with email and password. Not yet implemented though.
+    </p>
+    <!--
+    <p>Do not reuse any of your existing passwords — instead, make up a new one.
+      <small>In the future, this page will be served over HTTPS.</small>
+    </p>
+
+    <ul class="nav nav-tabs" id="myTab">
+      <li class="active">
+        <a href="#log-in-at-debiki" data-toggle="tab">Log in</a>
+      </li>
+      <li>
+        <a href="#create-debiki-account" data-toggle="tab">Create account</a>
+      </li>
+    </ul>
+
+    <div class="tab-content">
+      <div class="tab-pane active" id="log-in-at-debiki">
+        <form accept-charset='UTF-8' method='post'>
+          <label for='username'>Email:</label>
+          <input class='disabled' type='text' name='username' id='username'
+                 disabled>
+
+          <label for='password'>Password:</label>
+          <input class='disabled' type='password' id='password' name='password'
+                 disabled>
+
+          <input name='dw-fi-xsrf' type='hidden' value='@xsrfToken'>
+          <div>
+            <input type='submit' value='Login'>
+          </div>
+        </form>
+
+      </div>
+      <div class="tab-pane" id="create-debiki-account">
+
+        <form accept-charset='UTF-8' method='post'>
+          <label for='username'>Email:</label>
+          <input class='disabled' type='text' name='email' id='email'
+                 disabled>
+
+          <label for='username'>Verify email:</label>
+          <input class='disabled' type='text' name='email-verify' id='email-verify'
+                 disabled>
+
+          <label for='password'>Password:</label>
+          <input class='disabled' type='password' id='password' name='password'
+                 disabled>
+
+          <label for='password'>Verify password:</label>
+          <input class='disabled' type='password' id='password-verify' name='password-verify'
+                 disabled>
+
+          <input name='dw-fi-xsrf' type='hidden' value='@xsrfToken'>
+          <div>
+            <input type='submit' value='Create new owner account'>
+          </div>
+        </form>
+
+      </div>
+      -->
+    </div>
+
+  </div>
+  </div>
+  </div>
+}
+

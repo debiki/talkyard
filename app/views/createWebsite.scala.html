@@ -16,28 +16,6 @@
 }
 
 
-@showWebsiteOwnerForm = {
-  <h1>Login as Website Owner</h1>
-  <p>Please click your email provider, and login.
-    The account you choose will become the owner of the
-    new website that you are creating.
-    <small>(Technical detail: The login happens over OpenID.)
-    </small>
-  </p>
-  <p>If you don't have an email address at any of the below
-  providers, or some other OpenID address, then regrettably right now
-  you cannot create a website. If you really want to do that anyway,
-  I suggest that you create a new Gmail account.
-  </p>
-  <form accept-charset='UTF-8' method='post'>
-  <label for='oid-input'>Your OpenID:</label>
-  <input type='text' name='openid_identifier'>
-  <input name='dw-fi-xsrf' type='hidden' value='@xsrfToken'>
-  <input type='submit'>
-  </form>
-}
-
-
 @welcomeOwner = {
   <p>Website created, congratulations!
   <p><a href="/-/manage-website">Manage this website</a>
@@ -70,7 +48,6 @@
 <div>
   @doWhat match {
     case "showWebsiteNameForm" => { @showWebsiteNameForm }
-    case "showWebsiteOwnerForm" => { @showWebsiteOwnerForm }
     case "welcomeOwner" => { @welcomeOwner }
     case "failSomeoneElseWasFirst" => { @failSomeoneElseWasFirst }
     case _ => {

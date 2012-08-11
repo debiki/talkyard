@@ -1,0 +1,41 @@
+@(title: String)(content: Html)
+
+@import play.api.Play.current
+
+@minMaxJs = @{ if (play.api.Play.isProd) "min.js" else "js" }
+
+
+<!doctype html>
+<html ng-app>
+<head>
+<title>Create Website</title>
+<link href="http://fonts.googleapis.com/css?family=Bree+Serif" rel="stylesheet">
+<link href="http://www.debiki.com/themes/assets/twitter-bootstrap-2.0.3-wip.css" rel="stylesheet">
+<link href="http://www.debiki.com/www-debiki-com.css" rel="stylesheet">
+<link href="/-/res/font-awesome/css/font-awesome.css" rel="stylesheet">
+<link href="/-/res/special-pages.css" rel="stylesheet">
+<script src="http://cdnjs.cloudflare.com/ajax/libs/modernizr/2.5.3/modernizr.min.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.@minMaxJs"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.0.1/angular.@minMaxJs"></script>
+<script>
+  var debiki = { v0: { util: {} }, internal: { $: jQuery } };
+</script>
+<script src="/-/res/debiki-spa-common.@minMaxJs"></script>
+<script src="/-/res/debiki-spa-new-website-choose-owner.@minMaxJs"></script>
+</head>
+<body>
+<div class="container" style="padding-top:30px">
+@content
+</div>
+</body>
+</html>
+
+@* From SecureSocial:
+<div class="navbar navbar-fixed-top">
+  <div class="navbar-inner">
+    <div class="container">
+      <span class="brand" >@Messages("securesocial.appName")</span>
+    </div>
+  </div>
+</div>
+*@

@@ -40,17 +40,24 @@ object AppAuthOpenid extends mvc.Controller {
   // COULD change to an ErrorAction, and use throwBadReq instead of BadRequest.
   def loginPost = mvc.Action(parse.urlFormEncoded(maxLength = 200)) {
         request =>
-    asyncLogin(returnToUrl = "")(request)
+    asyncLoginWithPostData(returnToUrl = "")(request)
   }
 
 
-  def asyncLogin(returnToUrl: String)(
+  def asyncLoginWithPostData(returnToUrl: String)(
         implicit request: Request[Map[String, Seq[String]]]): AsyncResult = {
     // (From the spec: The form field's "name" attribute should have the value
     // "openid_identifier", so that User-Agents can automatically
     // determine that this is an OpenID form.
     //    http://openid.net/specs/openid-authentication-2_0.html#discovery )
     val openIdIdentifier = request.body.getOrThrowBadReq("openid_identifier")
+    asyncLogin(returnToUrl, openIdIdentifier = openIdIdentifier)
+  }
+
+
+  def asyncLogin(returnToUrl: String, openIdIdentifier: String)
+       (implicit request: Request[_]): AsyncResult = {
+
     val realm = _wildcardRealmFor(request.host)
 
     // Find out to which OpenID provider the user should be redirected to,

@@ -29,11 +29,12 @@ GET   /-/new-website/choose-name   controllers.AppCreateWebsite.showWebsiteNameF
 POST  /-/new-website/choose-name   controllers.AppCreateWebsite.handleWebsiteNameForm
 GET   /-/new-website/choose-owner  controllers.AppCreateWebsite.showWebsiteOwnerForm
 POST  /-/new-website/choose-owner  controllers.AppCreateWebsite.handleWebsiteOwnerForm
+GET   /-/new-website/login/:provider controllers.AppCreateWebsite.login(provider: String)
 GET   /-/new-website/create        controllers.AppCreateWebsite.tryCreateWebsite
 GET   /-/new-website/welcome-owner controllers.AppCreateWebsite.welcomeOwner
 
 #GET   /-/admin                  controllers.AppAdmin.showMainPage
 
 GET   /-/*file                  controllers.Assets.at(path = "/public", file)
-
+GET   /robots.txt               controllers.Assets.at(path = "/public", file = "robots.txt")
 
