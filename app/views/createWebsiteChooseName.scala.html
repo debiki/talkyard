@@ -1,0 +1,53 @@
+@(parentDomainName: String, xsrfToken: String)
+
+
+@css = @{("""
+
+  h1 { margin-bottom: 1em; }
+
+  label { margin-bottom: 1em; }
+
+  input[name='website-name'] {
+    display: inline !important;
+  }
+
+  p small {
+    max-width: 40em;
+    display: block;
+    margin-top: 1.1em;
+  }
+
+  input[type='submit'] {
+    margin-top: 1.5em;
+    min-width: 5em;
+  }
+
+""")}
+
+
+@createWebsiteMain(Messages("securesocial.login.title"), css = css) {
+  <div class='new-website-choose-name'>
+
+    <h1>Choose Website Name</h1>
+
+    <form accept-charset='UTF-8' method='post' action="">
+      <input name='dw-fi-xsrf' type='hidden' value='@xsrfToken'>
+
+      <label for='website-name'>Enter a name for the new website:</label>
+      <input type='text' id='website-name' name='website-name'
+          ><tt>.@{parentDomainName}</tt>
+
+      <p>
+        <small>You can map a domain name to the website, later,
+        so it would be reachable via e.g. <tt>your-domain.com</tt>.
+        I've not yet implemented this though.</small>
+      </p>
+
+      <div>
+        <input type='submit' value="Next">
+      </div>
+    </form>
+
+  </div>
+}
+

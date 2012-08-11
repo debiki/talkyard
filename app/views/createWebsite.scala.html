@@ -1,21 +1,6 @@
 @(doWhat: String, xsrfToken: String = "?", parentDomainName: String = "?")
 
 
-@showWebsiteNameForm = {
-  <h1>Choose Website Name</h1>
-  <p>Please enter a name for the new website.<br>
-    (You can map a domain name of yours to the website, later.)
-  </p>
-  <form accept-charset='UTF-8' method='post'>
-    <label>Website name:
-      <input type='text' name='website-name'><tt>.@{parentDomainName}</tt>
-    </label>
-    <input name='dw-fi-xsrf' type='hidden' value='@xsrfToken'>
-    <input type='submit' value="Next">
-  </form>
-}
-
-
 @welcomeOwner = {
   <p>Website created, congratulations!
   <p><a href="/-/manage-website">Manage this website</a>
@@ -47,7 +32,6 @@
 <body>
 <div>
   @doWhat match {
-    case "showWebsiteNameForm" => { @showWebsiteNameForm }
     case "welcomeOwner" => { @welcomeOwner }
     case "failSomeoneElseWasFirst" => { @failSomeoneElseWasFirst }
     case _ => {

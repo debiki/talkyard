@@ -37,12 +37,20 @@ object AppCreateWebsite extends mvc.Controller {
   }
 
 
-  val newWebsiteDomain = Play.configuration.getString(
+  val newWebsiteDomainConfVal = Play.configuration.getString(
     "debiki.create-website.new-domain")
 
 
+  def newWebsiteDomain(request: Request[_]) =
+       newWebsiteDomainConfVal getOrElse {
+    assErrIf(!Play.isDev, "DwE269I2", "Missing parent domain config value")
+    request.host
+  }
+
+
   def newWebsiteAddr(websiteName: String, request: Request[_]) =
-    websiteName +"."+ newWebsiteDomain.getOrElse(request.host)
+    websiteName +"."+ newWebsiteDomain(request)
+
 
   def showWebsiteNameForm() = CheckSidActionNoBody {
         (sidOk, xsrfOk, request) =>
@@ -54,8 +62,8 @@ object AppCreateWebsite extends mvc.Controller {
 
     _throwIfMayNotCreateWebsite(creatorIpAddr = request.remoteAddress)
 
-    Ok(views.html.createWebsite(doWhat = "showWebsiteNameForm",
-      xsrfToken = xsrfOk.value))
+    Ok(views.html.createWebsiteChooseName(xsrfToken = xsrfOk.value,
+      parentDomainName = newWebsiteDomain(request)))
   }
 
 

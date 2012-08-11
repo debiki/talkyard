@@ -1,12 +1,30 @@
-@(title: String)(content: Html)
+@(title: String, css: String = "", jsFile: String = null,
+    ngAppName: String = null)(content: Html)
 
 @import play.api.Play.current
 
 @minMaxJs = @{ if (play.api.Play.isProd) "min.js" else "js" }
 
+@ngAppAttr = @{ if (ngAppName ne null) "ng-app='"+ ngAppName +"'" else ""}
+
+@ngScriptTags = @{
+  if (ngAppName ne null) {
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.0.1/angular.@minMaxJs"></script>
+    <script src="/-/res/debiki-spa-common.@minMaxJs"></script>
+  }
+  else Nil
+}
+
+@optScriptTag = @{
+  if (jsFile ne null)
+    <script src="/-/res/debiki-spa-new-website-choose-owner.@minMaxJs"></script>
+  else
+    Nil
+}
+
 
 <!doctype html>
-<html ng-app>
+<html @ngAppAttr>
 <head>
 <title>Create Website</title>
 <link href="http://fonts.googleapis.com/css?family=Bree+Serif" rel="stylesheet">
@@ -14,14 +32,14 @@
 <link href="http://www.debiki.com/www-debiki-com.css" rel="stylesheet">
 <link href="/-/res/font-awesome/css/font-awesome.css" rel="stylesheet">
 <link href="/-/res/special-pages.css" rel="stylesheet">
+<style>@css</style>
 <script src="http://cdnjs.cloudflare.com/ajax/libs/modernizr/2.5.3/modernizr.min.js"></script>
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.@minMaxJs"></script>
-<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.0.1/angular.@minMaxJs"></script>
 <script>
   var debiki = { v0: { util: {} }, internal: { $: jQuery } };
 </script>
-<script src="/-/res/debiki-spa-common.@minMaxJs"></script>
-<script src="/-/res/debiki-spa-new-website-choose-owner.@minMaxJs"></script>
+@ngScriptTags
+@optScriptTag
 </head>
 <body>
 <div class="container" style="padding-top:30px">
