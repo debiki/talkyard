@@ -1,0 +1,30 @@
+@css = @{("""
+
+  h1 {
+    margin-bottom: 1em;
+  }
+
+""")}
+
+
+@createWebsiteMain(Messages("securesocial.login.title"), css = css) {
+  <div class='new-website-welcome-owner'>
+
+    <p>
+      You've created your website, congratulations.
+    </p>
+
+    <p>
+      Next, go to the <a href="/-/admin/">admin page</a>.
+    </p>
+
+      @*
+    <p>If you want to, you can now map a domain name of yours to this address:
+      <tt>@websiteAddr</tt>
+      No, not that easy. S/he has to add an entry in DW1_TENANT_HOSTS too,
+      and prove that s/he owns it.
+      *@
+
+  </div>
+}
+

@@ -213,7 +213,7 @@ object AppCreateWebsite extends mvc.Controller {
         Redirect("http://"+ websiteAddr +
            routes.AppCreateWebsite.welcomeOwner.url)
       else
-        Ok(views.html.createWebsite(doWhat = "failSomeoneElseWasFirst"))
+        Ok(views.html.createWebsiteFailNotFirst())
 
     result.withSession(request.session - "website-name")
   }
@@ -226,7 +226,7 @@ object AppCreateWebsite extends mvc.Controller {
     // Then, if the URL token is valid, auto-login the user
     // because s/he is the owner and this'll work *once* only. (Assuming
     // we're using HTTPS (which we aren't), i.e. no man in the middle attack.)
-    Ok(views.html.createWebsite(doWhat = "welcomeOwner"))
+    Ok(views.html.createWebsiteWelcomeOwner())
   }
 
 
