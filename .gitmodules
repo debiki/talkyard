@@ -7,3 +7,6 @@
 [submodule "modules/debiki-tck-dao"]
 	path = modules/debiki-tck-dao
 	url = ../debiki-tck-dao.git
+[submodule "modules/securesocial-git"]
+	path = modules/securesocial-git
+	url = https://github.com/jaliss/securesocial.git

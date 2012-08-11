@@ -17,6 +17,14 @@ GET   /-/api/login-openid-clbk  controllers.AppAuthOpenid.loginCallback(returnTo
 GET   /-/api/logout             controllers.AppAuth.logout
 POST  /-/api/logout             controllers.AppAuth.logout
 
+# SecureSocial, temporary links (I'll integrate with OpenID/Guest login later)
+GET     /-/ss-test-login                   securesocial.controllers.LoginPage.login
+GET     /-/ss-test-logout                  securesocial.controllers.LoginPage.logout
+GET     /-/ss-test-signup                  securesocial.controllers.Registration.signUp
+POST    /-/ss-test-signup                  securesocial.controllers.Registration.handleSignUp
+GET     /-/ss-test-authenticate/:provider  securesocial.controllers.LoginPage.authenticate(provider)
+POST    /-/ss-test-authenticate/:provider  securesocial.controllers.LoginPage.authenticateByPost(provider)
+
 GET   /-/new-website/choose-name   controllers.AppCreateWebsite.showWebsiteNameForm
 POST  /-/new-website/choose-name   controllers.AppCreateWebsite.handleWebsiteNameForm
 GET   /-/new-website/choose-owner  controllers.AppCreateWebsite.showWebsiteOwnerForm

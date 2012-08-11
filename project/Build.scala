@@ -18,6 +18,19 @@ object ApplicationBuild extends Build {
     (Project("debiki-dao-pgsql", file("modules/debiki-dao-pgsql"))
     dependsOn(debikiCore, debikiTckDao % "test"))
 
+  lazy val secureSocialDeps = Seq(
+    "com.typesafe" %% "play-plugins-util" % "2.0.1",
+    "org.mindrot" % "jbcrypt" % "0.3m")
+
+  lazy val secureSocial =
+    PlayProject("securesocial", appVersion, secureSocialDeps, mainLang = SCALA,
+        path = file("modules/securesocial")
+    ).settings(
+      resolvers ++= Seq(
+        "jBCrypt Repository" at "http://repo1.maven.org/maven2/org/",
+        "Typesafe Repository" at "http://repo.typesafe.com/typesafe/releases/")
+    )
+
   val appDependencies = Seq(
     "com.amazonaws" % "aws-java-sdk" % "1.3.4",
     "com.google.guava" % "guava" % "10.0.1",
@@ -29,7 +42,9 @@ object ApplicationBuild extends Build {
     ).settings(
       mainSettings: _*
     ).dependsOn(
-      debikiCore, debikiDaoPgsql
+      debikiCore, debikiDaoPgsql, secureSocial
+    ).aggregate(
+      secureSocial
     )
 
 
