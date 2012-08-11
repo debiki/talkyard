@@ -38,6 +38,10 @@ object ApplicationBuild extends Build {
     "rhino" % "js" % "1.7R2"
   )
 
+  // Make `idea with-sources` work in subprojects.
+  override def settings =
+    super.settings ++ org.sbtidea.SbtIdeaPlugin.ideaSettings
+
   val main = PlayProject(appName, appVersion, appDependencies, mainLang = SCALA
     ).settings(
       mainSettings: _*
@@ -79,3 +83,4 @@ object ApplicationBuild extends Build {
 
 }
 
+// vim: fdm=marker et ts=2 sw=2 tw=80 fo=tcqwn list

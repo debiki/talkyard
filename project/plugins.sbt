@@ -4,6 +4,9 @@ logLevel := Level.Warn
 // The Typesafe repository
 resolvers += "Typesafe repository" at "http://repo.typesafe.com/typesafe/releases/"
 
+// Not needed when using Play — but needed when using SBT.
+resolvers += Resolver.file("Local Repository", file("/mnt/data/dev/play/github/repository/local"))(Resolver.ivyStylePatterns)
+
 // Use the Play sbt plugin for Play projects
 addSbtPlugin("play" % "sbt-plugin" % "2.1-SNAPSHOT")
 
