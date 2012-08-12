@@ -1,0 +1,224 @@
+<html ng-app="AdminModule">
+<head>
+    <meta name="viewport" content="initial-scale=1.0, minimum-scale=0.01">
+    <meta charset="utf-8">
+    <script src="http://cdnjs.cloudflare.com/ajax/libs/modernizr/2.5.3/modernizr.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.js"></script>
+    <script src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.19/jquery-ui.js"></script>
+    <script src="http://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.3.3/underscore-min.js"></script>
+    <script>
+        // Play doesn't make `require` and `exports` available in dev builds.
+        window.require = function() {};
+        window.exports = {};
+
+        var debiki = { scriptLoad: $.Deferred() };
+        Modernizr.load({
+          test: Modernizr.touch,
+          nope: [
+            'http://localhost:9000/-/res/jquery-scrollable.js',
+            'http://localhost:9000/-/res/debiki-utterscroll.js',
+            'http://localhost:9000/-/res/bootstrap-tooltip.js'],
+          both: [
+            'http://localhost:9000/-/res/diff_match_patch.js',
+            'http://localhost:9000/-/res/html-sanitizer-bundle.js',
+            'http://localhost:9000/-/res/jquery-cookie.js',
+            'http://localhost:9000/-/res/tagdog.js',
+            'http://localhost:9000/-/res/javascript-yaml-parser.js',
+            'http://localhost:9000/-/res/debiki.js']
+        });
+        </script>
+      <link rel="stylesheet" href="http://localhost:9000/-/res/jquery-ui/jquery-ui-1.8.16.custom.css">
+      <link rel="stylesheet" href="http://localhost:9000/-/res/debiki.css">
+    <!--[if IE 7]>
+    <link rel="stylesheet" href="https://localhost:9000/-/res/debiki-lift-ie7.css"/>
+    <![endif]-->
+    <!-- Make this webapp a Weinre debug target, see:
+         http://pmuellr.github.com/weinre/Running.html
+         (The ip addr is my desktop, where the Weinre debug server runs.) -->
+    <!-- <script src="http://192.168.0.100:8081/target/target-script-min.js"></script> -->
+
+<title>Debiki — for the fruitful conversations</title>
+<meta content="" name="description">
+<meta content="" name="keywords">
+<link href="http://www.debiki.com/themes/assets/twitter-bootstrap-2.0.3-wip.css" rel="stylesheet">
+<link href="http://www.debiki.com/www-debiki-com.css" rel="stylesheet">
+<link href='css/admin-app.css' rel='stylesheet'>
+
+<script src='js/bootstrap-tabs.js'></script>
+<script src="http://code.angularjs.org/angular-1.0.0rc10.min.js"></script>
+<script src='lib/debiki-utils.js'></script>
+<script src='lib/debiki-v0-server-mock.js'></script>
+<script src='js/admin-page.js'></script>
+</head>
+<body>
+<div data-replace='#content'>
+  <h1>Admin Page</h1>
+  <div id='admin-container'>
+    <div class='row'>
+      <div id='page-tree-container' class='span5' ng-controller='PathsCtrl'>
+        <label>Filter paths: <input ng-model="pathFilterText"/></label>
+        <ol id='page-tree' class='{{"full-paths-"+ showFullPaths}}'>
+          <li ng-repeat="path in paths | filterProp:'value':pathFilterText"
+              class='{{isFolderOrPageClass(path) + " open-" + path.open + " hide-count-" + path.hideCount + " path-depth-" + path.depth + " included-" + path.included}}'>
+            <label class="checkbox">
+              <input type="checkbox"
+                 ng-model="path.included"
+                 ng-change="updateSelectedPaths()" />
+            </label>
+            <a ng-click='openClose(path)' class='open-close-path' href='#'>{{path.displayPath}}</a>
+            <div ng-switch='isPage(path)' class='path-info'>
+              <div ng-switch-when='true' class='page-info'>
+                Title: <a href='{{path.value}}' target='_blank'>{{path.title}}</a><br>
+                Author: <a href="#">{{path.authors}}</a><br>
+                Published: <span>2012-05-03 22:40</span>
+                <!-- <div class='actions'>
+                  <a href='{{path.value + "?move-page"}}'>Move</a>
+                  <a href='{{path.value + "?rename-page"}}'>Rename</a>
+                </div> -->
+              </div>
+              <!-- <div ng-switch-default class='folder-info'>
+                <div class='actions'>
+                  <a>Create page</a>
+                  <a>Move folder</a>
+                </div>
+              </div> -->
+            </div>
+          </li>
+        </ol>
+      </div>
+
+      <div class='span7' id='details'>
+        <ul class="nav nav-tabs">
+          <!-- <li><a href="#page-details-tab" data-toggle="tab">Pages</a></li> 
+          -->
+          <li class='active'><a href="#events-tab" data-toggle="tab">Events</a></li>
+          <li><a href="#users-tab" data-toggle="tab">Users</a></li>
+        </ul>
+
+        <div class="tab-content">
+          <!-- <div class="tab-pane" id="page-details-tab"
+              ng-controller="PageInfoCtrl">
+            <div>
+              <a class="btn">Move</a>
+              <a class="btn">Change slug</a>
+              Hide as Draft / Publish / Delete / Subscribe / Sort [v]
+            </div>
+            <table class='table -table-bordered -table-striped'>
+              <thead>
+                <tr>
+                  <th>Title</th>
+                  <th>Created</th>
+                  <th>Author</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr ng-repeat="page in pageInfos">
+                  <td><a href='{{page.path}}' target='_blank'>{{page.title}}</a></td>
+                  <td>{{page.pubTime}}</td>
+                  <td>{{page.authorDispName}}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div> -->
+          <div ng-controller='ActionListCtrl' class='tab-pane active'
+                id='events-tab'>
+            <div>
+              <a class='btn'>View</a>
+              <a class='btn'>Edit</a>
+              <a class='btn'>Subscribe</a>
+              <a class='btn'>!Spam</a>
+              <a class='btn'>#Delete</a>
+              <a class='btn'>Sort</a>
+            </div>
+            <table class='table -table-bordered -table-striped'>
+              <thead>
+                <tr>
+                  <th class='row-selector'>
+                    <label>
+                      <input type='checkbox' ng-change='toggleAll()'
+                      ng-model='allSelected'>
+                    </label>
+                  </th>
+                  <th>Type</th>
+                  <th>Author</th>
+                  <th>Links</th>
+                  <th>Date</th>
+                  <th>Text</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr ng-repeat='action in actionList'>
+                  <td class='row-selector'>
+                    <label>
+                      <input type='checkbox' ng-model='action.selected'
+                          ng-click='updateToggleAllCheckbox()'>
+                    </label>
+                  </td>
+                  <td><a target='_blank'>{{action.type}}</a></td>
+                  <td><a target='_blank'>{{action.authorId}}</a></td>
+                  <td>
+                    <a target='_blank' href='#{{action.loginId}}'>session</a>
+                    <a target='_blank' href='#'>page</a>
+                  </td>
+                  <td><a target='_blank'>{{action.ctime.replace('T', ' ')}}</a></td>
+                  <td>(todo ...)</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div ng-controller='UserListCtrl' class='tab-pane' id='users-tab'>
+            <div>
+              <a class='btn'>Contact</a>
+              <a class='btn'>Subscribe</a>
+              <a class='btn'>Rename</a>
+              <a class='btn'>Block</a>
+              <a class='btn'>Sort</a>
+            </div>
+            <table class='table'>
+              <thead>
+                <tr>
+                  <th class='row-selector'>
+                    <label>
+                      <input type='checkbox' ng-change='toggleAll()'
+                      ng-model='allSelected'>
+                    </label>
+                  </th>
+                  <th>Name</th>
+                  <th>Roles</th>
+                  <th>Action Count</th>
+                  <th>Email</th>
+                  <th>Location</th>
+                  <th>IPs</th>
+                  <th>First Login</th>
+                  <th>Last Login</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr ng-repeat='user in userList'>
+                  <td class='row-selector'>
+                    <label>
+                      <input type='checkbox' ng-model='user.selected'
+                          ng-click='updateToggleAllCheckbox()'>
+                    </label>
+                  </td>
+                  <td><a target='_blank'>{{user.name}}</a></td>
+                  <td><a target='_blank'>[todo]</a></td>
+                  <td><a target='_blank'>[todo]</a></td>
+                  <td><a target='_blank'>{{user.email || ''}}</a></td>
+                  <td><a target='_blank'>{{user.country || user.location}}</a></td>
+                  <td><a target='_blank'>[todo]</a></td>
+                  <td><a target='_blank'>{{user.ctime.replace('T', ' ')}}</a></td>
+                  <td><a target='_blank'>{{user.lastLoginTime.replace('T', ' ')}}</a></td>
+                </tr>
+              </tbody>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div id='debiki-page'></div>
+</div>
+</body>
+</html>
+<!-- vim: fdm=marker et ts=2 sw=2 fo=tcqwn list
+-->
