@@ -11,9 +11,9 @@
 # on which page did the user start/end the session. But for now:
 GET   /-/api/login-simple       controllers.AppLoginGuest.loginGuest
 POST  /-/api/login-simple       controllers.AppLoginGuest.loginGuest
-GET   /-/api/login-openid       controllers.AppAuthOpenid.loginGet
-POST  /-/api/login-openid       controllers.AppAuthOpenid.loginPost
-GET   /-/api/login-openid-clbk  controllers.AppAuthOpenid.loginCallback(returnToUrl)
+GET   /-/api/login-openid       controllers.AppLoginOpenId.loginGet
+POST  /-/api/login-openid       controllers.AppLoginOpenId.loginPost
+GET   /-/api/login-openid-clbk  controllers.AppLoginOpenId.loginCallback(returnToUrl)
 GET   /-/api/logout             controllers.AppLogin.logout
 POST  /-/api/logout             controllers.AppLogin.logout
 

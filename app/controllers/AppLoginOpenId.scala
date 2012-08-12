@@ -20,7 +20,7 @@ import Actions._
 import Utils.ValidationImplicits._
 
 
-object AppAuthOpenid extends mvc.Controller {
+object AppLoginOpenId extends mvc.Controller {
 
 
   val Logger = play.api.Logger("app.openid")
@@ -65,7 +65,7 @@ object AppAuthOpenid extends mvc.Controller {
     var promise: Promise[String] =
       oid.OpenID.redirectURL(  // issues a HTTP request
         openIdIdentifier,
-        routes.AppAuthOpenid.loginCallback(returnToUrl).absoluteURL(),
+        routes.AppLoginOpenId.loginCallback(returnToUrl).absoluteURL(),
         RequiredAttrs,
         realm = Some(realm))
 
@@ -77,7 +77,7 @@ object AppAuthOpenid extends mvc.Controller {
       case Thrown(t) =>
         Logger.debug("OpenID provider redirection URL error, OpenId: " +
            openIdIdentifier +", error: "+ t)
-        Redirect(routes.AppAuthOpenid.loginGet)
+        Redirect(routes.AppLoginOpenId.loginGet)
     })
 
     AsyncResult(result)

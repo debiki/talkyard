@@ -102,7 +102,7 @@ object AppCreateWebsite extends mvc.Controller {
         (implicit request: Request[_]): Result = {
 
     def _loginWithOpenId(identifier: String): AsyncResult = {
-      AppAuthOpenid.asyncLogin(openIdIdentifier = identifier,
+      AppLoginOpenId.asyncLogin(openIdIdentifier = identifier,
         returnToUrl = returnToUrl)
     }
 
@@ -146,7 +146,7 @@ object AppCreateWebsite extends mvc.Controller {
   def handleWebsiteOwnerForm() = ExceptionAction(
         BodyParsers.parse.urlFormEncoded(maxLength = 1000)) {
       implicit request =>
-    AppAuthOpenid.asyncLoginWithPostData(returnToUrl =
+    AppLoginOpenId.asyncLoginWithPostData(returnToUrl =
        routes.AppCreateWebsite.tryCreateWebsite.absoluteURL())
   }
 
