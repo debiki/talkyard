@@ -1,42 +1,38 @@
 <html ng-app="AdminModule">
 <head>
-    <meta name="viewport" content="initial-scale=1.0, minimum-scale=0.01">
-    <meta charset="utf-8">
-<link href="http://fonts.googleapis.com/css?family=Bree+Serif" rel="stylesheet">
-    <script src="http://cdnjs.cloudflare.com/ajax/libs/modernizr/2.5.3/modernizr.min.js"></script>
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.js"></script>
-    <!--<script src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.19/jquery-ui.js"></script>-->
-    <script src="http://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.3.3/underscore-min.js"></script>
-    <script>
-      var debiki = { v0: { util: {} }, internal: { $: jQuery } };
-      debiki.scriptLoad = $.Deferred();
-      Modernizr.load({
-        test: Modernizr.touch,
-        yep: '/-/res/combined-debiki-touch.js',
-        nope: '/-/res/combined-debiki-desktop.js',
-      });
-    </script>
-    <link rel="stylesheet" href="/-/res/jquery-ui/jquery-ui-1.8.16.custom.css">
-    <link rel="stylesheet" href="/-/res/combined-debiki.css">
-    <!--[if IE 7]>
-    <link rel="stylesheet" href="https://localhost:9000/-/res/debiki-lift-ie7.css"/>
-    <![endif]-->
-    <!-- Make this webapp a Weinre debug target, see:
-         http://pmuellr.github.com/weinre/Running.html
-         (The ip addr is my desktop, where the Weinre debug server runs.) -->
-    <!-- <script src="http://192.168.0.100:8081/target/target-script-min.js"></script> -->
 
 <title>Debiki — for the fruitful conversations</title>
 <meta content="" name="description">
 <meta content="" name="keywords">
-<link href="http://www.debiki.com/themes/assets/twitter-bootstrap-2.0.3-wip.css" rel="stylesheet">
-<link href="http://www.debiki.com/www-debiki-com.css" rel="stylesheet">
-<link href='/-/res/debiki-spa-admin.css' rel='stylesheet'>
+<meta name="viewport" content="initial-scale=1.0, minimum-scale=0.01">
+<meta charset="utf-8">
 
+<link rel="stylesheet" href="http://fonts.googleapis.com/css?family=Bree+Serif">
+<link rel="stylesheet" href="http://www.debiki.com/themes/assets/twitter-bootstrap-2.0.3-wip.css">
+<link rel="stylesheet" href="/-/res/jquery-ui/jquery-ui-1.8.16.custom.css">
+<link rel="stylesheet" href="/-/res/combined-debiki.css">
+<link rel="stylesheet" href="http://www.debiki.com/www-debiki-com.css">
+<link rel="stylesheet" href="/-/res/debiki-spa-admin.css">
+<!--[if IE 7]>
+<link rel="stylesheet" href="https://localhost:9000/-/res/debiki-lift-ie7.css"/>
+<![endif]-->
+
+<script src="http://cdnjs.cloudflare.com/ajax/libs/modernizr/2.5.3/modernizr.min.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.js"></script>
+<script src="http://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.3.3/underscore-min.js"></script>
 <script src="http://code.angularjs.org/angular-1.0.0rc10.min.js"></script>
-<script src='/-/res/debiki-spa-common.js'></script>
-<script src='/-/res/debiki-spa-admin-server-mock.js'></script>
-<script src='/-/res/debiki-spa-admin.js'></script>
+<script>
+  var debiki = { v0: { util: {} }, internal: { $: jQuery } };
+  debiki.scriptLoad = $.Deferred();
+  Modernizr.load({
+    test: Modernizr.touch,
+    yep: '/-/res/combined-debiki-touch.js',
+    nope: '/-/res/combined-debiki-desktop.js',
+  });
+</script>
+<script src="/-/res/debiki-spa-common.js"></script>
+<script src="/-/res/debiki-spa-admin-server-mock.js"></script>
+<script src="/-/res/debiki-spa-admin.js"></script>
 
 </head>
 <body>
