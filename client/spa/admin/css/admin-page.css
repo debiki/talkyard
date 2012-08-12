@@ -4,6 +4,15 @@ body {
 h1 {
   margin-bottom: 35px;
 }
+
+.instruction-list {
+  padding: 0 0 1.5em 25px;
+}
+
+.path-actions {
+  margin: 0 0 5em;
+}
+
 #page-tree-container ol {
   margin-top: 1.5em;
 }
@@ -99,6 +108,7 @@ li {
 }
 .is-folder.open-false .open-close-path {
   text-decoration: underline;
+  font-weight: bold;
 }
 
 

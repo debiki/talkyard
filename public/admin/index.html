@@ -39,6 +39,22 @@
 <div data-replace='#content'>
   <h1>Admin Page</h1>
   <div id='admin-container'>
+
+    <p>This page is very unfinished. For now:</p>
+
+    <ul class="instruction-list">
+      <li><b>Create a page</b> by clicking <i>Create page</i> below.</li>
+      <li><b>Move a page</b> by appending <code>?move-page</code> to the page URL in the browser address bar.</li>
+      <li><b>List all pages</b> in a folder by appending this to its URL: <code>?list-pages&amp;in=tree</code></li>
+    </ul>
+
+    <div class='path-actions'>
+      <a href='/?create-page' target='_blank' class='btn'>Create page</a>
+    </div>
+
+    <p>Everything below is just mockups (i.e. <i>non functional</i> test stuff).
+    </p>
+
     <div class='row'>
       <div id='page-tree-container' class='span5' ng-controller='PathsCtrl'>
         <label>Filter paths: <input ng-model="pathFilterText"/></label>
