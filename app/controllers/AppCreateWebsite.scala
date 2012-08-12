@@ -232,9 +232,9 @@ object AppCreateWebsite extends mvc.Controller {
 
   private def _tenantDao(request: mvc.Request[_], roleId: Option[String])
         : TenantDao = {
-    val curTenantId = AppAuth.lookupTenantByHost(request.host)
+    val tenantId = DebikiHttp.lookupTenantIdOrThrow(request, Debiki.SystemDao)
     val ipAddr = request.remoteAddress
-    Debiki.tenantDao(curTenantId, ipAddr, roleId)
+    Debiki.tenantDao(tenantId, ipAddr, roleId)
   }
 
 

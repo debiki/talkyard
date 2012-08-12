@@ -157,7 +157,7 @@ object AppAuthOpenid extends mvc.Controller {
     val prevSidValOpt = urlDecodeCookie("dwCoSid", request)
     val prevSid = prevSidValOpt.map(Sid.check _) getOrElse SidAbsent
     val addr = request.remoteAddress
-    val tenantId = AppAuth.lookupTenantByHost(request.host)
+    val tenantId = DebikiHttp.lookupTenantIdOrThrow(request, Debiki.SystemDao)
 
     def getQueryParam(paramName: String): Option[String] =
       request.queryString.get(paramName).flatMap(_.headOption)

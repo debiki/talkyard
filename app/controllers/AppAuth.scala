@@ -109,7 +109,7 @@ object AppAuth extends mvc.Controller {
     val prevSidValOpt = urlDecodeCookie("dwCoSid", request)
     val prevSid = prevSidValOpt.map(Sid.check _) getOrElse SidAbsent
     val addr = request.remoteAddress
-    val tenantId = lookupTenantByHost(request.host)
+    val tenantId = DebikiHttp.lookupTenantIdOrThrow(request, Debiki.SystemDao)
 
     val loginReq = LoginRequest(
       login = Login(id = "?", prevLoginId = prevSid.loginId,
@@ -195,19 +195,6 @@ object AppAuth extends mvc.Controller {
           </p>)
           // keep the xsrf cookie, so login dialog works?
           .discardingCookies("dwCoSid", AppConfigUser.ConfigCookie)
-    }
-  }
-
-  def lookupTenantByHost(host: String): String = {
-    // For now, duplicate here the tenant lookup code from Global.
-    // In the future, ?login-openid will be the login function (??), and
-    // then the tenant lookup code in Global will be used.
-    val scheme = "http" // for now
-    Debiki.SystemDao.lookupTenant(scheme, host) match {
-      case found: FoundChost => found.tenantId
-      case found: FoundAlias => throwForbidden("DwE03h103", "Not impl")
-      case FoundNothing =>
-        throwNotFound("DwE2k5I9", "The specified host name maps to no tenant.")
     }
   }
 
