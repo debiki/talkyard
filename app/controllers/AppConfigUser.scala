@@ -120,7 +120,7 @@ object AppConfigUser extends mvc.Controller {
         (pageReq.user_!, pageReq.loginId_!, Nil)
       case Some(newAddr) =>
         val (loginGrant, newSessCookies) =
-          AppAuth.loginSimpleAgainWithNewEmail(pageReq, newAddr)
+          AppLoginGuest.loginGuestAgainWithNewEmail(pageReq, newAddr)
         (loginGrant.user, loginGrant.login.id, newSessCookies)
     }
 

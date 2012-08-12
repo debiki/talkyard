@@ -14,10 +14,10 @@ import play.api.mvc.{Action => _, _}
 import Actions._
 
 
-object AppAuth extends mvc.Controller {
+object AppLoginGuest extends mvc.Controller {
 
 
-  def loginSimple = ExceptionAction(parse.urlFormEncoded(maxLength = 200)) {
+  def loginGuest = ExceptionAction(parse.urlFormEncoded(maxLength = 200)) {
         request =>
 
     XSRF // check a token, so cannot fake logins via xsrf
@@ -73,7 +73,7 @@ object AppAuth extends mvc.Controller {
   }
 
 
-  def loginSimpleAgainWithNewEmail(pageReq: PageRequest[_],
+  def loginGuestAgainWithNewEmail(pageReq: PageRequest[_],
         newEmailAddr: String): (LoginGrant, Seq[Cookie]) = {
     import pageReq._
 
