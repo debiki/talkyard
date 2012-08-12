@@ -42,6 +42,7 @@ exports.config =
            | ^client/debiki/debiki-show-interactions.js
            | ^client/debiki/debiki-show-location-in-nav.js
            | ^client/debiki/debiki-util.js
+           | ^client/debiki/debiki-util-browser.js
            | ^client/debiki/debiki-util-play.js
            | ^client/debiki/debiki-utterscroll-init-tips.js
            | ^client/debiki/debiki-utterscroll.js
@@ -89,6 +90,7 @@ exports.config =
            | ^client/debiki/debiki-show-interactions.js
            | ^client/debiki/debiki-show-location-in-nav.js
            | ^client/debiki/debiki-util.js
+           | ^client/debiki/debiki-util-browser.js
            | ^client/debiki/debiki-util-play.js
            | ^client/debiki/tagdog.js
            | ^client/vendor/html-sanitizer-bundle.js
