@@ -3,12 +3,13 @@ exports.config =
 
   paths:
     app: 'client'
+    public: './'
 
   files:
     javascripts:
       defaultExtension: 'ls'
       joinTo:
-        'res/combined-debiki-desktop.js':
+        'public/res/combined-debiki-desktop.js':
           // ^client/debiki/debiki-action-delete.js
            | ^client/debiki/debiki-action-edit.js
            | ^client/debiki/debiki-action-flag.js
@@ -56,7 +57,7 @@ exports.config =
            | ^client/vendor/popuplib.js
           //
 
-        'res/combined-debiki-touch.js':
+        'public/res/combined-debiki-touch.js':
           // ^client/debiki/android-zoom-bug-workaround.js
            | ^client/debiki/debiki-action-delete.js
            | ^client/debiki/debiki-action-edit.js
@@ -99,13 +100,13 @@ exports.config =
            | ^client/vendor/popuplib.js
           //
 
-        'res/debiki-spa-common.js':
+        'public/res/debiki-spa-common.js':
           // ^client/vendor/bootstrap-.*.js
            | ^client/debiki/debiki-util.js
            | ^client/spa/js/angular-util.ls
           //
 
-        'res/debiki-spa-new-website-choose-owner.js':
+        'public/res/debiki-spa-new-website-choose-owner.js':
           // ^client/spa/js/new-website-choose-owner.ls
           //
 
@@ -117,7 +118,7 @@ exports.config =
     stylesheets:
       defaultExtension: 'styl'
       joinTo:
-        'res/combined-debiki.css': /^client\/debiki/
+        'public/res/combined-debiki.css': /^client\/debiki/
       order:
         before: ['client/debiki/debiki.css']
 
