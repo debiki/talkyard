@@ -79,6 +79,9 @@ object DebikiHttp {
     override def fillInStackTrace(): Throwable = this
   }
 
+  def throwRedirect(url: String) =
+    throw ResultException(R.Redirect(url))
+
   def throwBadReq(errCode: String, message: String = "") =
     throw ResultException(BadReqResult(errCode, message))
 
@@ -114,6 +117,34 @@ object DebikiHttp {
         errCode: String, title: String, summary: String, details: String) =
     throw ResultException(ForbiddenHtml(
       errorDialogXml(errCode, title, summary, details)))
+
+
+  // ----- Tenant ID lookup
+
+  def lookupTenantIdOrThrow(request: RequestHeader, systemDao: SystemDao)
+        : String = {
+
+    val tenantId = systemDao.lookupTenant(scheme = "http", // for now
+         host = request.host) match {
+      case found: FoundChost =>
+        found.tenantId
+      case found: FoundAlias =>
+        found.role match {
+          case TenantHost.RoleRedirect =>
+            throwRedirect(found.canonicalHostUrl + request.path)
+          case TenantHost.RoleLink =>
+            unimplemented("<link rel='canonical'>")
+          case _ =>
+            // lookupTenant should have returned FoundChost instead
+            // of FoundAlias with RoleCanonical/Duplicate.
+            assErr("DwE01k5Bk08")
+      }
+      case FoundNothing =>
+        throwNotFound("DwEI5F2", "The specified host name maps to no tenant.")
+    }
+
+    tenantId
+  }
 
 
   // ----- HTML dialog responses

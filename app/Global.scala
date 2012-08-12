@@ -10,24 +10,26 @@ import com.twitter.ostrich.{admin => toa}
 import debiki._
 import play.api._
 import play.api.mvc._
+import DebikiHttp._
 
 
 object Global extends GlobalSettings {
+
 
   /**
    * Query string based routing and tenant ID lookup.
    */
   override def onRouteRequest(request: RequestHeader): Option[Handler] = {
+    try {
+      _routeRequestOrThrow(request)
+    } catch {
+      case DebikiHttp.ResultException(result) =>
+        Some(Action(BodyParsers.parse.empty){ _ => result })
+    }
+  }
 
-    def SomeAction(result: => Result) =
-      Some(Action(BodyParsers.parse.empty){ _ => result })
 
-    def notFound(errCode: String, message: String): Option[Handler] =
-      SomeAction { DebikiHttp.NotFoundResult(errCode, message) }
-    def badRequest(errCode: String, message: String): Option[Handler] =
-      SomeAction { DebikiHttp.BadReqResult(errCode, "Bad URL: "+ message) }
-    def redirect(newPath: String): Option[Handler] =
-      SomeAction { Results.Redirect(newPath) }
+  private def _routeRequestOrThrow(request: RequestHeader): Option[Handler] = {
 
     // Ignore the internal API and Javascript and CSS etcetera, in /-/.
     // Right now, when porting from Lift-Web, /classpath/ is also magic.
@@ -35,28 +37,13 @@ object Global extends GlobalSettings {
         request.path.startsWith("/classpath/"))
       return super.onRouteRequest(request)
 
-    // Lookup tenant id in database. (Should cache it.)
-    val scheme = "http" // for now
-    val tenantId = Debiki.SystemDao.lookupTenant(scheme, request.host) match {
-      case found: FoundChost => found.tenantId
-      case found: FoundAlias => found.role match {
-        case TenantHost.RoleRedirect =>
-          return redirect(found.canonicalHostUrl + request.path)
-        case TenantHost.RoleLink => unimplemented("<link rel='canonical'>")
-        case _ =>
-          // lookupTenant should have returned FoundChost instead
-          // of FoundAlias with RoleCanonical/Duplicate.
-          assErr("DwE01k5Bk08")
-      }
-      case FoundNothing =>
-        return notFound("DwEI5F2", "The specified host name maps to no tenant.")
-    }
+    val tenantId = DebikiHttp.lookupTenantIdOrThrow(request, Debiki.SystemDao)
 
     // Parse URL path: find folder, page id and slug.
     val pagePath = PagePath.fromUrlPath(tenantId, request.path) match {
       case PagePath.Parsed.Good(pagePath) => pagePath
-      case PagePath.Parsed.Bad(error) => return badRequest("DwE0kI3E4", error)
-      case PagePath.Parsed.Corrected(newPath) => return redirect(newPath)
+      case PagePath.Parsed.Bad(error) => throwBadReq("DwE0kI3E4", error)
+      case PagePath.Parsed.Corrected(newPath) => throwRedirect(newPath)
     }
 
     // BUG: debiki-core html.scala places view=<root> just after '?',
@@ -88,7 +75,7 @@ object Global extends GlobalSettings {
         case 1 => PageRoot(rootPosts.head)
         // It seems this cannot hapen with Play Framework:
         case 0 => assErr("DwE03kI8", "Query string param with no value")
-        case _ => return badRequest("DwE0k35", "Too many `view' values")
+        case _ => throwBadReq("DwE0k35", "Too many `view' values")
       }) getOrElse PageRoot.TheBody
 
     // Query string param value lookup.
@@ -97,7 +84,7 @@ object Global extends GlobalSettings {
     def mainFunVal: String =  // COULD be Option instead, change "" to None
       firstValueOf(versionAndMainFun) getOrElse ""
     lazy val mainFunVal_! : String = firstValueOf(versionAndMainFun).getOrElse(
-      return badRequest("DwE0k32", "No post specified"))
+      throwBadReq("DwE0k32", "No post specified"))
 
     // Route based on the query string.
     import controllers._
@@ -167,7 +154,7 @@ object Global extends GlobalSettings {
           case _ => App.viewPost(pagePath, pageRoot)
         }
       // If invalid function specified:
-      case (fun, met) => return badRequest(
+      case (fun, met) => throwBadReq(
         "DwEQ435", "Bad method or query string: "+
            met +" ?"+ fun)
     }
