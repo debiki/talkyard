@@ -83,6 +83,25 @@ object Utils extends Results with http.ContentTypes {
   }
 
 
+  def loadIdentityAndUserOrThrow(sidOk: SidOk, dao: TenantDao)
+        : (Option[Identity], Option[User]) = {
+    val identityAndUser = sidOk.loginId match {
+      case None => (None, None)
+      case Some(lid) =>
+        dao.loadIdtyAndUser(forLoginId = lid)
+        match {
+          case Some((identity, user)) => (Some(identity), Some(user))
+          case None =>
+            // Currently, RelDbDao throws an exception rather than
+            // returning None.
+            warnDbgDie("RelDbDao did not load user [error DwE01521ku35]")
+            (None, None)
+        }
+    }
+    identityAndUser
+  }
+
+
   object ValidationImplicits {
 
     implicit def queryStringToValueGetter(

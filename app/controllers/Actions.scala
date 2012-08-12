@@ -162,21 +162,7 @@ object Actions {
 
     val tenantId = pathIn.tenantId
     val pagePath = pathOkOpt.getOrElse(pathIn)
-
-    // Load identity and user.
-    val (identity, user) = sidOk.loginId match {
-      case None => (None, None)
-      case Some(lid) =>
-        dao.loadIdtyAndUser(forLoginId = lid)
-          match {
-            case Some((identity, user)) => (Some(identity), Some(user))
-            case None =>
-              // Currently, RelDbDao throws an exception rather than
-              // returning None.
-              warnDbgDie("RelDbDao did not load user [error DwE01521ku35]")
-              (None, None)
-          }
-    }
+    val (identity, user) = Utils.loadIdentityAndUserOrThrow(sidOk, dao)
 
     // Load permissions.
     val permsReq = RequestInfo(  // COULD RENAME! to PermsOnPageRequest
