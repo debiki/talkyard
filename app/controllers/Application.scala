@@ -7,7 +7,7 @@ package controllers
 import com.debiki.v0._
 import com.debiki.v0.Prelude._
 import debiki._
-import java.{util => ju}
+import java.{util => ju, io => jio}
 import play.api._
 import play.api.data._
 import play.api.data.Forms._
@@ -279,6 +279,24 @@ object Application extends mvc.Controller {
     // reply ++= "\nnotfs: ..."
 
     reply.toString
+  }
+
+
+  def viewAdminPage() = CheckSidActionNoBody { (sidOk, xsrfOk, request) =>
+
+    val tenantId = DebikiHttp.lookupTenantIdOrThrow(request, Debiki.SystemDao)
+
+    val dao = Debiki.tenantDao(tenantId = tenantId,
+      ip = request.remoteAddress, sidOk.roleId)
+
+    val (identity, user) = Utils.loadIdentityAndUserOrThrow(sidOk, dao)
+
+    /*
+    if (!user.isSuperAdmin)
+      Redirect(routes.AppLogin.showLoginPage(returnTo = request.uri))
+        .flashing("Login as admin to access that page")
+    else */
+      Ok.sendFile(new jio.File("/-/admin/"), inline = true)
   }
 
 }
