@@ -240,7 +240,8 @@ object Actions {
         (parser: BodyParser[A])
         (f: (SidOk, XsrfOk, Request[A]) => PlainResult) =
     ExceptionAction[A](parser) { request =>
-      val (sidOk, xsrfOk, newCookies) = AppAuth.checkSidAndXsrfToken(request)
+      val (sidOk, xsrfOk, newCookies) =
+         DebikiSecurity.checkSidAndXsrfToken(request)
       val resultOldCookies = f(sidOk, xsrfOk, request)
       val resultOkSid =
         if (newCookies isEmpty) resultOldCookies

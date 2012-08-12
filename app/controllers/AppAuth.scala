@@ -17,64 +17,6 @@ import Utils.{OkHtml}
 
 object AppAuth extends mvc.Controller {
 
-  /**
-   * Finds the session id and any xsrf token in the specified request;
-   * throws an error if this is not a GET request and the xsrf token is bad.
-   * @return The current SID and xsrf token. Or new ones if needed (with no
-   * login id, no user, no display name), and a new SID and xsrf cookie.
-   * @throws DebikiHttp.ResultException, for non-GET requests,
-   * if the SID or the XSRF token is bad.
-   */
-  def checkSidAndXsrfToken(request: Request[_])
-        : (SidOk, XsrfOk, List[Cookie]) = {
-
-    val sidValOpt = urlDecodeCookie("dwCoSid", request)
-    val sidStatus: SidStatus = sidValOpt.map(Sid.check(_)) getOrElse SidAbsent
-
-    // On GET requests, simply accept the value of the xsrf cookie.
-    // (On POST requests, however, we check the xsrf form input value)
-    val xsrfValOpt = urlDecodeCookie("dwCoXsrf", request)
-    var xsrfStatus: XsrfStatus = xsrfValOpt.map(XsrfOk(_)) getOrElse XsrfAbsent
-    // However, we might catch some bug if we verify it matches the sid:
-    if (xsrfValOpt.isDefined && sidValOpt.isDefined) {
-      assert(Xsrf.check(xsrfValOpt.get, sidValOpt).isInstanceOf[XsrfOk])
-    }
-
-    val sidXsrfNewCookies: Tuple3[SidOk, XsrfOk, List[Cookie]] =
-      if (request.method == "GET") {
-        // Reuse SID and xsrf token, or create new ones.
-        (sidStatus, xsrfStatus) match {
-          case (sidOk: SidOk, xsrfOk: XsrfOk) => (sidOk, xsrfOk, Nil)
-          case (_, _) => Xsrf.newSidAndXsrf(None)
-        }
-      } else {
-        // There must be an xsrf token in the POST:ed form data.
-        assert(request.method == "POST") // for now
-        val params = request.body.asInstanceOf[Map[String, Seq[String]]]
-        val xsrfToken: String =
-          params.get(FormHtml.XsrfInpName).map(_.head).getOrElse(
-            throwForbidden("DwE0y321", "No XSRF token"))
-        xsrfStatus = Xsrf.check(xsrfToken, sidValOpt)
-        (sidStatus, xsrfStatus) match {
-          case (sidOk: SidOk, xsrfOk: XsrfOk) => (sidOk, xsrfOk, Nil)
-          case (_: SidOk, _) => throwForbiddenDialog(
-            "DwE35k3wkU9", "Bad XSRF token", "",
-            // If Javascript is disabled, the reason for the invalid token
-            // could be as described in the end user message bellow. If,
-            // however, Javascript is enabled, debiki.js should detect logins
-            // in other browser tabs, and then check the new SID cookie and
-            // refresh XSRF tokens in any <form>s.
-            "Did you just log in as another user in another browser tab?\n"+
-            "Try reloading this page.\n"+
-            "And copy-paste [any text you've written but not saved] "+
-            "to a text editor, or it'll be lost on reload.")
-          case (_, _) => throwForbidden("DwE530Rstx90", "Bad SID")
-        }
-      }
-
-    sidXsrfNewCookies
-  }
-
 
   def loginSimple = ExceptionAction(parse.urlFormEncoded(maxLength = 200)) {
         request =>
