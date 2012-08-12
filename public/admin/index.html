@@ -2,33 +2,22 @@
 <head>
     <meta name="viewport" content="initial-scale=1.0, minimum-scale=0.01">
     <meta charset="utf-8">
+<link href="http://fonts.googleapis.com/css?family=Bree+Serif" rel="stylesheet">
     <script src="http://cdnjs.cloudflare.com/ajax/libs/modernizr/2.5.3/modernizr.min.js"></script>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.js"></script>
-    <script src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.19/jquery-ui.js"></script>
+    <!--<script src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.19/jquery-ui.js"></script>-->
     <script src="http://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.3.3/underscore-min.js"></script>
     <script>
-        // Play doesn't make `require` and `exports` available in dev builds.
-        window.require = function() {};
-        window.exports = {};
-
-        var debiki = { scriptLoad: $.Deferred() };
-        Modernizr.load({
-          test: Modernizr.touch,
-          nope: [
-            'http://localhost:9000/-/res/jquery-scrollable.js',
-            'http://localhost:9000/-/res/debiki-utterscroll.js',
-            'http://localhost:9000/-/res/bootstrap-tooltip.js'],
-          both: [
-            'http://localhost:9000/-/res/diff_match_patch.js',
-            'http://localhost:9000/-/res/html-sanitizer-bundle.js',
-            'http://localhost:9000/-/res/jquery-cookie.js',
-            'http://localhost:9000/-/res/tagdog.js',
-            'http://localhost:9000/-/res/javascript-yaml-parser.js',
-            'http://localhost:9000/-/res/debiki.js']
-        });
-        </script>
-      <link rel="stylesheet" href="http://localhost:9000/-/res/jquery-ui/jquery-ui-1.8.16.custom.css">
-      <link rel="stylesheet" href="http://localhost:9000/-/res/debiki.css">
+      var debiki = { v0: { util: {} }, internal: { $: jQuery } };
+      debiki.scriptLoad = $.Deferred();
+      Modernizr.load({
+        test: Modernizr.touch,
+        yep: '/-/res/combined-debiki-touch.js',
+        nope: '/-/res/combined-debiki-desktop.js',
+      });
+    </script>
+    <link rel="stylesheet" href="/-/res/jquery-ui/jquery-ui-1.8.16.custom.css">
+    <link rel="stylesheet" href="/-/res/combined-debiki.css">
     <!--[if IE 7]>
     <link rel="stylesheet" href="https://localhost:9000/-/res/debiki-lift-ie7.css"/>
     <![endif]-->
@@ -42,13 +31,13 @@
 <meta content="" name="keywords">
 <link href="http://www.debiki.com/themes/assets/twitter-bootstrap-2.0.3-wip.css" rel="stylesheet">
 <link href="http://www.debiki.com/www-debiki-com.css" rel="stylesheet">
-<link href='css/admin-app.css' rel='stylesheet'>
+<link href='/-/res/debiki-spa-admin.css' rel='stylesheet'>
 
-<script src='js/bootstrap-tabs.js'></script>
 <script src="http://code.angularjs.org/angular-1.0.0rc10.min.js"></script>
-<script src='lib/debiki-utils.js'></script>
-<script src='lib/debiki-v0-server-mock.js'></script>
-<script src='js/admin-page.js'></script>
+<script src='/-/res/debiki-spa-common.js'></script>
+<script src='/-/res/debiki-spa-admin-server-mock.js'></script>
+<script src='/-/res/debiki-spa-admin.js'></script>
+
 </head>
 <body>
 <div data-replace='#content'>

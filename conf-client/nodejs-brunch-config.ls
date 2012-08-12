@@ -106,6 +106,16 @@ exports.config =
            | ^client/spa/js/angular-util.ls
           //
 
+        'public/res/debiki-spa-admin.js':
+          // ^client/spa/admin/js/admin-page-animations.coffee
+           | ^client/spa/admin/js/admin-page.coffee
+           | ^client/spa/admin/js/debiki-utils.coffee
+          //
+
+        'public/res/debiki-spa-admin-server-mock.js':
+          // ^client/spa/admin/js/debiki-v0-server-mock.coffee
+          //
+
         'public/res/debiki-spa-new-website-choose-owner.js':
           // ^client/spa/js/new-website-choose-owner.ls
           //
@@ -119,6 +129,7 @@ exports.config =
       defaultExtension: 'styl'
       joinTo:
         'public/res/combined-debiki.css': /^client\/debiki/
+        'public/res/debiki-spa-admin.css': //^client/spa/admin/css//
       order:
         before: ['client/debiki/debiki.css']
 
