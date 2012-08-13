@@ -15,6 +15,7 @@ import play.api.mvc.{Action => _, _}
 import xml.{Node, NodeSeq}
 import Actions._
 import DebikiHttp._
+import Play.current
 import Prelude._
 import Utils.ValidationImplicits._
 import Utils.{OkHtml, OkXml}
@@ -282,6 +283,9 @@ object Application extends mvc.Controller {
   }
 
 
+  private val _adminPageFile = Play.getFile("/public/admin/index.html")
+
+
   def viewAdminPage() = CheckSidActionNoBody { (sidOk, xsrfOk, request) =>
 
     val tenantId = DebikiHttp.lookupTenantIdOrThrow(request, Debiki.SystemDao)
@@ -291,12 +295,12 @@ object Application extends mvc.Controller {
 
     val (identity, user) = Utils.loadIdentityAndUserOrThrow(sidOk, dao)
 
-    /*
-    if (!user.isSuperAdmin)
-      Redirect(routes.AppLogin.showLoginPage(returnTo = request.uri))
-        .flashing("Login as admin to access that page")
-    else */
-      Ok.sendFile(new jio.File("/-/admin/"), inline = true)
+    if (user.map(_.isSuperAdmin) != Some(true))
+      Ok(views.html.login(xsrfToken = xsrfOk.value,
+        returnToUrl = request.uri, title = "Login", message = Some(
+          "Login with an administrator account to access this page.")))
+    else
+      Ok.sendFile(_adminPageFile, inline = true)
   }
 
 }

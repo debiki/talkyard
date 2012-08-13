@@ -38,7 +38,7 @@ GET   /-/new-website/choose-owner  controllers.AppCreateWebsite.showWebsiteOwner
 GET   /-/new-website/create        controllers.AppCreateWebsite.tryCreateWebsite
 GET   /-/new-website/welcome-owner controllers.AppCreateWebsite.welcomeOwner
 
-GET   /-/admin/                 controllers.Assets.at(path = "/public/admin", file = "index.html")
+GET   /-/admin/                 controllers.Application.viewAdminPage
 
 GET   /-/*file                  controllers.Assets.at(path = "/public", file)
 GET   /robots.txt               controllers.Assets.at(path = "/public", file = "robots.txt")
