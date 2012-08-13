@@ -17,6 +17,27 @@ import Utils.{OkHtml}
 
 object AppLogin extends mvc.Controller {
 
+
+  def showLoginForm(returnToUrl: String) = ExceptionActionNoBody {
+        implicit request =>
+    // For now
+    Ok(views.html.loginOpenid())
+  }
+
+
+  def loginWith(provider: String, returnToUrl: String) = ExceptionActionNoBody {
+        implicit reqest =>
+    OkHtml(<i>todo</i>)
+  }
+
+
+  def loginWithPostData(returnToUrl: String) = ExceptionAction(
+        parse.urlFormEncoded(maxLength = 200)) { implicit request =>
+    // For now. Should handle guest login forms too.
+    AppLoginOpenId.asyncLoginWithPostData(returnToUrl = "")
+  }
+
+
   def showLogoutForm = ExceptionActionNoBody { implicit request =>
     OkHtml(
       <form action='' method='POST'>
