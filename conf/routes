@@ -9,6 +9,9 @@
 # Would be nice to change to <path>?login-simple / ?logout / etcetera,
 # so the actual page will be included in the request. Then one would know
 # on which page did the user start/end the session. But for now:
+GET   /-/logout                 controllers.AppLogin.showLogoutForm
+POST  /-/logout                 controllers.AppLogin.logout
+
 GET   /-/api/login-simple       controllers.AppLoginGuest.loginGuest
 POST  /-/api/login-simple       controllers.AppLoginGuest.loginGuest
 GET   /-/api/login-openid       controllers.AppLoginOpenId.loginGet
