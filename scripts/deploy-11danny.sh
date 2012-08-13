@@ -9,7 +9,7 @@ set -o pipefail  # exit on false | true
 # Don't deploy unless everything has been committed.
 if [ ! -z "`git status --porcelain`" ]; then
   echo 'There are dirty files. Please run git status, and add and commit.'
-  # exit 1
+  exit 1
 fi
 
 # Build distribution.
