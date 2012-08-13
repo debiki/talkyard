@@ -87,67 +87,10 @@ object AppCreateWebsite extends mvc.Controller {
 
   def showWebsiteOwnerForm() = CheckSidActionNoBody {
         (sidOk, xsrfOk, request) =>
-    Ok(views.html.createWebsiteChooseOwner(xsrfToken = xsrfOk.value))
-  }
-
-
-  def login(provider: String) = ExceptionActionNoBody { implicit request =>
-    _asyncLogin(provider = provider, returnToUrl =
-        routes.AppCreateWebsite.tryCreateWebsite.absoluteURL())
-  }
-
-
-  // Should move to some other class, perhaps a new class AppLogin?
-  def _asyncLogin(provider: String, returnToUrl: String)
-        (implicit request: Request[_]): Result = {
-
-    def _loginWithOpenId(identifier: String): AsyncResult = {
-      AppLoginOpenId.asyncLogin(openIdIdentifier = identifier,
-        returnToUrl = returnToUrl)
-    }
-
-    // Not async? Will this block a thread??
-    def _loginWithOAuth(provider: String): Result = {
-      securesocial.core.ProviderRegistry.get(provider) match {
-        case Some(p) =>
-          try {
-            p.authenticate().fold(
-            result => result,
-            user => {
-              Logger.debug("User logged in: [" + user + "]")
-              Redirect(returnToUrl) /* .withSession {
-                session +
-                 (SecureSocial.UserKey -> user.id.id) +
-                 (SecureSocial.ProviderKey -> user.id.providerId) -
-                 SecureSocial.OriginalUrlKey
-              }*/
-            })
-          } catch {
-            case ex: securesocial.core.AccessDeniedException =>
-              Logger.warn("User declined access using provider " + provider)
-              throwForbidden("DwE93Z4", "You declined access?")
-          }
-        case None =>
-          throwForbidden("DwE09PJ3", "Unsupported provider: "+ provider)
-      }
-    }
-
-    provider match {
-      case "google" =>
-        _loginWithOpenId(IdentityOpenId.ProviderIdentifier.Google)
-      case "yahoo" =>
-        _loginWithOpenId(IdentityOpenId.ProviderIdentifier.Yahoo)
-      case x =>
-        _loginWithOAuth(provider = x)
-    }
-  }
-
-
-  def handleWebsiteOwnerForm() = ExceptionAction(
-        BodyParsers.parse.urlFormEncoded(maxLength = 1000)) {
-      implicit request =>
-    AppLoginOpenId.asyncLoginWithPostData(returnToUrl =
-       routes.AppCreateWebsite.tryCreateWebsite.absoluteURL())
+    Ok(views.html.login(xsrfToken = xsrfOk.value,
+      returnToUrl = routes.AppCreateWebsite.tryCreateWebsite.url,
+      title = "Choose Website Owner",
+      providerLoginMessage = "It will become the owner of the new website."))
   }
 
 

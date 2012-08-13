@@ -9,8 +9,9 @@
 # Would be nice to change to <path>?login-simple / ?logout / etcetera,
 # so the actual page will be included in the request. Then one would know
 # on which page did the user start/end the session. But for now:
-GET   /-/login                  controllers.AppLogin.showLoginForm(returnToUrl = "")
-GET   /-/login/:provider        controllers.AppLogin.loginWith(provider, returnToUrl = "")
+GET   /-/login                  controllers.AppLogin.showLoginForm
+GET   /-/login                  controllers.AppLogin.showLoginFormReturnTo(returnToUrl)
+GET   /-/login/:provider        controllers.AppLogin.loginWith(provider, returnToUrl)
 POST  /-/login                  controllers.AppLogin.loginWithPostData(returnToUrl = "")
 GET   /-/logout                 controllers.AppLogin.showLogoutForm
 POST  /-/logout                 controllers.AppLogin.logout
@@ -34,8 +35,6 @@ POST    /-/ss-test-authenticate/:provider  securesocial.controllers.LoginPage.au
 GET   /-/new-website/choose-name   controllers.AppCreateWebsite.showWebsiteNameForm
 POST  /-/new-website/choose-name   controllers.AppCreateWebsite.handleWebsiteNameForm
 GET   /-/new-website/choose-owner  controllers.AppCreateWebsite.showWebsiteOwnerForm
-POST  /-/new-website/choose-owner  controllers.AppCreateWebsite.handleWebsiteOwnerForm
-GET   /-/new-website/login/:provider controllers.AppCreateWebsite.login(provider: String)
 GET   /-/new-website/create        controllers.AppCreateWebsite.tryCreateWebsite
 GET   /-/new-website/welcome-owner controllers.AppCreateWebsite.welcomeOwner
 

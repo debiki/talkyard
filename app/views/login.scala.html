@@ -1,17 +1,34 @@
-@(xsrfToken: String = "?")
+@(xsrfToken: String, returnToUrl: String, title: String,
+  message: Option[String] = None, providerLoginMessage: String = "")
 
 
-@createWebsiteMain(Messages("securesocial.login.title")) {
+@css = @{("""
+
+h1 {
+  margin-bottom: 0.8em;
+}
+
+""")}
+
+@messageTag = @{
+  if (message nonEmpty) <p class="why-login">{message.get}</p>
+  else Nil
+}
+
+
+@createWebsiteMain(Messages("securesocial.login.title"), css = css) {
   <div ng-controller="ChooseOwnerCtrl" class='new-website-choose-owner'>
 
-  <h1>Choose Website Owner</h1>
+  <h1>@title</h1>
+
+  @messageTag
+
   <div class='row'>
 
   <div class='span5'>
 
     <h2>Either:</h2>
-    <p>Login with an existing account (click below) — it will become the owner
-      of the new website.
+    <p>Login with an existing account (click below). @providerLoginMessage
       <!-- <small>I think this is very secure, if you use Gmail's 2-step
       verification, or Facebook's Login Approvals. Concerning Yahoo, you
       could make use of their login seals. -->
@@ -20,24 +37,24 @@
     <ul class='login-links'>
       <li>
         <a class="btn login-link-google"
-           href="@routes.AppCreateWebsite.login("google").url">
+           href="@routes.AppLogin.loginWith("google", returnToUrl = returnToUrl).url">
           <i class="icon-google-plus"></i>Google</a>
       </li>
       <!--
       <li>
         <a class="btn login-link-twitter"
-           href="@routes.AppCreateWebsite.login("twitter").url">
+           href="@routes.AppLogin.loginWith("twitter", returnToUrl = returnToUrl)).url">
           <i class="icon-twitter"></i>Twitter</a>
       </li>
       <li>
         <a class="btn login-link-facebook"
-           href="@routes.AppCreateWebsite.login("facebook").url">
+           href="@routes.AppLogin.loginWith("facebook", returnToUrl = returnToUrl)).url">
           <i class="icon-facebook"></i>Facebook</a>
       </li>
       -->
       <li>
         <a class="btn login-link-yahoo"
-           href="@routes.AppCreateWebsite.login("yahoo").url">
+           href="@routes.AppLogin.loginWith("yahoo", returnToUrl = returnToUrl).url">
         <i class="icon-yahoo"></i>Yahoo</a>
       </li>
       <!--
