@@ -283,7 +283,13 @@ object Application extends mvc.Controller {
   }
 
 
-  private val _adminPageFile = Play.getFile("/public/admin/index.html")
+  /**
+   * The file is not secret, but mostly unusable, unless you've logged in.
+   */
+  private val _adminPageFile = {
+    val adminPageUrl = this.getClass().getResource("/public/admin/index.html")
+    new jio.File(adminPageUrl.toURI())
+  }
 
 
   def viewAdminPage() = CheckSidActionNoBody { (sidOk, xsrfOk, request) =>
