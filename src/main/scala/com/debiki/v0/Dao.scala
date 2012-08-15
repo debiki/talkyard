@@ -76,15 +76,15 @@ abstract class TenantDaoSpi {
         newFolder: Option[String], showId: Option[Boolean],
         newSlug: Option[String]): PagePath
 
-  def savePageActions[T <: Action](debateId: String, xs: List[T]): List[T]
-
-  def loadPage(debateId: String): Option[Debate]
-
   def loadTemplate(templPath: PagePath): Option[TemplateSrcHtml]
 
   def checkPagePath(pathToCheck: PagePath): Option[PagePath]
 
   def lookupPagePathByPageId(pageId: String): Option[PagePath]
+
+  def savePageActions[T <: Action](debateId: String, xs: List[T]): List[T]
+
+  def loadPage(debateId: String): Option[Debate]
 
   def listPagePaths(
         withFolderPrefix: String,
@@ -299,20 +299,6 @@ class TenantDao(
       showId = showId, newSlug = newSlug)
   }
 
-
-  // ----- Actions
-
-  def savePageActions[T <: Action](
-        debateId: String, actions: List[T]): List[T] = {
-    _chargeFor(ResUsg.forStoring(actions = actions))
-    _spi.savePageActions(debateId, actions)
-  }
-
-  def loadPage(debateId: String): Option[Debate] = {
-    _chargeForOneReadReq()
-    _spi.loadPage(debateId)
-  }
-
   def loadTemplate(templPath: PagePath): Option[TemplateSrcHtml] = {
     _chargeForOneReadReq()
     _spi.loadTemplate(templPath)
@@ -326,6 +312,20 @@ class TenantDao(
   def lookupPagePathByPageId(pageId: String): Option[PagePath] = {
     _chargeForOneReadReq()
     _spi.lookupPagePathByPageId(pageId = pageId)
+  }
+
+
+  // ----- Actions
+
+  def savePageActions[T <: Action](
+        debateId: String, actions: List[T]): List[T] = {
+    _chargeFor(ResUsg.forStoring(actions = actions))
+    _spi.savePageActions(debateId, actions)
+  }
+
+  def loadPage(debateId: String): Option[Debate] = {
+    _chargeForOneReadReq()
+    _spi.loadPage(debateId)
   }
 
 
