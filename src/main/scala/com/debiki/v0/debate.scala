@@ -631,17 +631,20 @@ case class Rating (
 /** Info on all ratings on a certain action, grouped and sorted in
  *  various manners.
  */
+// COULD rename to RatingsOnAction?
 abstract class SingleActionRatings {
 
   /** The most recent rating, by authenticated users. */
   def mostRecentByUserId: collection.Map[String, Rating]
 
   /** The most recent rating, by non authenticated users. */
+  // COULD rename to ...ByGuestId
   def mostRecentByNonAuLoginId: collection.Map[String, Rating]
 
   /** The most recent ratings, for all non authenticated users,
    *  grouped by IP address.
    */
+  // COULD rename to ...ByIdtyId
   def allRecentByNonAuIp: collection.Map[String, List[Rating]]
 
   /** The most recent version of the specified rating.
