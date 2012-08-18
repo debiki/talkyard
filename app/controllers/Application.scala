@@ -133,53 +133,6 @@ object Application extends mvc.Controller {
   }
 
 
-  def listPages(pathIn: PagePath,
-        contentType: DebikiHttp.ContentType) =
-        PageGetAction(pathIn, pageMustExist = false) { pageReq =>
-    val pathScope = parsePathScope(pageReq.queryString.getFirst("in"))
-    val pagePaths = pageReq.dao.listPagePaths(
-      withFolderPrefix = pageReq.pagePath.folder,
-      pathScope = pathScope,
-      include = PageStatus.All,
-      sortBy = PageSortOrder.ByPath,
-      limit = Int.MaxValue,
-      offset = 0)
-
-    def renderPageListHtml(pagePathsDetails: Seq[(PagePath, PageDetails)]) =
-      <ol>{
-        for ((pagePath, details) <- pagePathsDetails) yield {
-          <li><a href={pagePath.path}>{pagePath.path}</a></li>
-        }
-      }</ol>
-
-    contentType match {
-      case DebikiHttp.ContentType.Html =>
-        val pageNode = renderPageListHtml(pagePaths)
-        OkHtml(<html><body>{pageNode}</body></html>)
-      case DebikiHttp.ContentType.Json =>
-        unimplemented
-    }
-  }
-
-
-  def listActions(pathIn: PagePath,
-        contentType: DebikiHttp.ContentType) =
-        PageGetAction(pathIn, pageMustExist = false) { pageReq =>
-    val pathScope = parsePathScope(pageReq.queryString.getFirst("in"))
-    val actionLocators = pageReq.dao.listActions(
-       folderPrefix = pageReq.pagePath.path,
-       pathScope = pathScope,
-       includePages = PageStatus.All,
-       limit = 700, offset = 0)
-    contentType match {
-      case DebikiHttp.ContentType.Html =>
-        Ok(views.html.listActions(actionLocators))
-      case DebikiHttp.ContentType.Json =>
-        unimplemented
-    }
-  }
-
-
   def feed(pathIn: PagePath) = PageGetAction(pathIn, pageMustExist = false) {
         pageReq =>
 
