@@ -124,20 +124,11 @@ object Application extends mvc.Controller {
   }
 
 
-  def parsePathScope(value: Option[String]) = value match {
-    case Some("folder") => PathScope.Folder
-    case Some("tree") => PathScope.Tree
-    case Some("page") => PathScope.Page
-    case Some(x) => throwBadParamValue("DwE093ki6", "in")
-    case None => throwParamMissing("DwE86IG1", "in")
-  }
-
-
   def feed(pathIn: PagePath) = PageGetAction(pathIn, pageMustExist = false) {
         pageReq =>
 
     import pageReq.{pagePath}
-    val pathScope = parsePathScope(pageReq.queryString.getFirst("for"))
+    val pathScope = Utils.parsePathScope(pageReq.queryString.getFirst("for"))
 
     // The tenant's name will be included in the feed.
     val tenant: Tenant = pageReq.dao.loadTenant()
