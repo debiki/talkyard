@@ -145,5 +145,17 @@ object AppList extends mvc.Controller {
     }
   }
 
+
+  def listUsers(pathIn: PagePath, contentType: DebikiHttp.ContentType) =
+        PageGetAction(pathIn, pageMustExist = false) { pageReq =>
+    Ok
+  }
+
+
+  def listIps(pathIn: PagePath, contentType: DebikiHttp.ContentType) =
+        PageGetAction(pathIn, pageMustExist = false) { pageReq =>
+    Ok
+  }
+
 }
 
