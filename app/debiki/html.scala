@@ -1434,18 +1434,6 @@ object UserHtml {
 }
 
 
-object PageListHtml {
-
-  def renderPageList(pagePathsDetails: Seq[(PagePath, PageDetails)]
-                        ): NodeSeq = {
-    <ol>{
-      for ((pagePath, details) <- pagePathsDetails) yield {
-        <li><a href={pagePath.path}>{pagePath.path}</a></li>
-      }
-    }</ol>
-  }
-}
-
 
 object AtomFeedXml {
 

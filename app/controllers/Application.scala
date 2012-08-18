@@ -132,6 +132,7 @@ object Application extends mvc.Controller {
     case None => throwParamMissing("DwE86IG1", "in")
   }
 
+
   def listPages(pathIn: PagePath,
         contentType: DebikiHttp.ContentType) =
         PageGetAction(pathIn, pageMustExist = false) { pageReq =>
@@ -143,9 +144,17 @@ object Application extends mvc.Controller {
       sortBy = PageSortOrder.ByPath,
       limit = Int.MaxValue,
       offset = 0)
+
+    def renderPageListHtml(pagePathsDetails: Seq[(PagePath, PageDetails)]) =
+      <ol>{
+        for ((pagePath, details) <- pagePathsDetails) yield {
+          <li><a href={pagePath.path}>{pagePath.path}</a></li>
+        }
+      }</ol>
+
     contentType match {
       case DebikiHttp.ContentType.Html =>
-        val pageNode = PageListHtml.renderPageList(pagePaths)
+        val pageNode = renderPageListHtml(pagePaths)
         OkHtml(<html><body>{pageNode}</body></html>)
       case DebikiHttp.ContentType.Json =>
         unimplemented
