@@ -128,7 +128,6 @@ object Application extends mvc.Controller {
         pageReq =>
 
     import pageReq.{pagePath}
-    val pathScope = Utils.parsePathScope(pageReq.queryString.getFirst("for"))
 
     // The tenant's name will be included in the feed.
     val tenant: Tenant = pageReq.dao.loadTenant()
@@ -136,8 +135,8 @@ object Application extends mvc.Controller {
     val feedPagePaths =
       if (!pagePath.isFolderOrIndexPage) List(pagePath)
       else pageReq.dao.listPagePaths(
-        withFolderPrefix = pagePath.folder,
-        pathScope = pathScope,
+        Utils.parsePathRanges(pageReq.pagePath, pageReq.request.queryString,
+           urlParamPrefix = "for"),
         include = List(PageStatus.Published),
         sortBy = PageSortOrder.ByPublTime,
         limit = Int.MaxValue,

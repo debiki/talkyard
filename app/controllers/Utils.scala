@@ -71,17 +71,6 @@ object Utils extends Results with http.ContentTypes {
       pageRoot, pageReq.permsOnPage)
 
 
-  /**
-   * Or better to 'list-pages-in-tree', instead of '&in=tree'?
-   */
-  def parsePathScope(value: Option[String]) = value match {
-    case Some("folder") => PathScope.Folder
-    case Some("tree") => PathScope.Tree
-    case Some("page") => PathScope.Page
-    case Some(x) => throwBadParamValue("DwE093ki6", "in")
-    case None => throwParamMissing("DwE86IG1", "in")
-  }
-
 
   def loadIdentityAndUserOrThrow(sidOk: SidOk, dao: TenantDao)
         : (Option[Identity], Option[User]) = {
@@ -169,6 +158,49 @@ object Utils extends Results with http.ContentTypes {
         text
       }
     }
+  }
+
+
+
+  def parsePathRanges(basePath: PagePath, queryString: Map[String, Seq[String]],
+        urlParamPrefix: String = "in"): PathRanges = {
+
+    import Utils.ValidationImplicits._
+
+    def makeListOfParamValues(paramName: String): List[String] = {
+      val pathsString = queryString.getEmptyAsNone(paramName) getOrElse {
+        return Nil
+      }
+      val pathsListNoPrefix = pathsString.split(",").toList
+      pathsListNoPrefix map { path =>
+        val isAbsolute = path.startsWith("/")
+        if (isAbsolute) path else basePath.folder + path
+      }
+    }
+
+    var folderPathsList = List[String]()
+    var treePathsList = List[String]()
+    val forWholeTree = queryString.getFirst(urlParamPrefix +"-tree")
+    val forCurFolder = queryString.getFirst(urlParamPrefix +"-folder")
+
+    if (forWholeTree isDefined) {
+      // Include everything in the tree designated by basePath.
+      // Need consider no other parameters (parent paths like "/../" are not
+      // supported).
+      treePathsList = List(basePath.folder)
+    } else {
+      treePathsList = makeListOfParamValues(urlParamPrefix +"-trees")
+      folderPathsList = makeListOfParamValues(urlParamPrefix +"-folders")
+      if (forCurFolder isDefined) {
+        folderPathsList ::= basePath.folder
+      }
+    }
+
+    // List folder contents, by default.
+    if (folderPathsList.isEmpty && treePathsList.isEmpty)
+      folderPathsList ::= basePath.folder
+
+    PathRanges(folders = folderPathsList, trees = treePathsList)
   }
 
 }

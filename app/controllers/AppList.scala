@@ -103,10 +103,8 @@ object AppList extends mvc.Controller {
 
   def listPages(pathIn: PagePath, contentType: DebikiHttp.ContentType) =
         PageGetAction(pathIn, pageMustExist = false) { pageReq =>
-    val pathScope = Utils.parsePathScope(pageReq.queryString.getFirst("in"))
     val pagePaths = pageReq.dao.listPagePaths(
-      withFolderPrefix = pageReq.pagePath.folder,
-      pathScope = pathScope,
+      Utils.parsePathRanges(pathIn, pageReq.queryString),
       include = PageStatus.All,
       sortBy = PageSortOrder.ByPath,
       limit = Int.MaxValue,
@@ -131,10 +129,8 @@ object AppList extends mvc.Controller {
 
   def listActions(pathIn: PagePath, contentType: DebikiHttp.ContentType) =
         PageGetAction(pathIn, pageMustExist = false) { pageReq =>
-    val pathScope = Utils.parsePathScope(pageReq.queryString.getFirst("in"))
     val actionLocators = pageReq.dao.listActions(
-      folderPrefix = pageReq.pagePath.path,
-      pathScope = pathScope,
+      Utils.parsePathRanges(pathIn, pageReq.queryString),
       includePages = PageStatus.All,
       limit = 700, offset = 0)
     contentType match {
