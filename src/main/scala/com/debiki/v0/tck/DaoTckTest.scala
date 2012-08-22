@@ -316,8 +316,7 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
 
     "list no pages, if there are none" >> {
       val pagePathsDetails = dao.listPagePaths(
-        withFolderPrefix = "/",  // all pages
-        pathScope = PathScope.Tree,
+        PathRanges(trees = Seq("/")),  // all pages
         include = v0.PageStatus.All,
         sortBy = v0.PageSortOrder.ByPath,
         limit = Int.MaxValue,
@@ -372,8 +371,7 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
 
     "list the recently created page" >> {
       val pagePathsDetails = dao.listPagePaths(
-        withFolderPrefix = "/",
-        pathScope = PathScope.Tree,
+        PathRanges(trees = Seq("/")),
         include = v0.PageStatus.All,
         sortBy = v0.PageSortOrder.ByPath,
         limit = Int.MaxValue,
@@ -1221,8 +1219,7 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
 
       "list replies, edits, ratings etcetera" >> {
         val actionLocators = dao.listActions(
-           folderPrefix = "/",
-           pathScope = PathScope.Tree,
+           PathRanges(trees = Seq("/"), folders = Seq("/does/not/exist/")),
            includePages = PageStatus.All,
            limit = 700, offset = 0)
         // For now:
@@ -1284,8 +1281,7 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
 
       "list the page at the correct location" >> {
         val pagePathsDetails = dao.listPagePaths(
-          withFolderPrefix = "/",
-          pathScope = PathScope.Tree,
+          PathRanges(trees = Seq("/")),
           include = v0.PageStatus.All,
           sortBy = v0.PageSortOrder.ByPath,
           limit = Int.MaxValue,
