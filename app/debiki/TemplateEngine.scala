@@ -6,8 +6,7 @@ package debiki
 
 import com.debiki.v0._
 import controllers.Actions.PageRequest
-import play.api.Play
-import play.api.Play.current
+import play.{api => p}
 import Prelude._
 import TemplateEngine._
 import xml.{MetaData, Node, NodeSeq, Text}
@@ -496,8 +495,12 @@ object TemplateEngine {
   }
 
 
-  val minMaxJs = if (Play.isProd) ".min.js" else ".js"
-  val minMaxCss = if (Play.isProd) ".min.css" else ".css"
+  val (minMaxJs, minMaxCss) = {
+    // Using Play.isDev causes Could not initialize class
+    // debiki.TemplateEngine$ error, when running unit tests. Instead:
+    val isDev = p.Play.maybeApplication.map(_.mode) == Some(p.Mode.Dev)
+    if (isDev) (".js", ".css") else (".min.js", ".min.css")
+  }
 
 
   val HeadHtml: NodeSeq =
