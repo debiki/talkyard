@@ -87,8 +87,7 @@ abstract class TenantDaoSpi {
   def loadPage(debateId: String): Option[Debate]
 
   def listPagePaths(
-        withFolderPrefix: String,
-        pathScope: PathScope,
+        pageRanges: PathRanges,
         include: List[PageStatus],
         sortBy: PageSortOrder,
         limit: Int,
@@ -96,8 +95,7 @@ abstract class TenantDaoSpi {
       ): Seq[(PagePath, PageDetails)]
 
   def listActions(
-        folderPrefix: String,
-        pathScope: PathScope,
+        pageRanges: PathRanges,
         includePages: List[PageStatus],
         limit: Int,
         offset: Int): Seq[ActionLocator]
@@ -332,26 +330,22 @@ class TenantDao(
   // ----- List stuff
 
   def listPagePaths(
-        withFolderPrefix: String,
-        pathScope: PathScope,
+        pageRanges: PathRanges,
         include: List[PageStatus],
         sortBy: PageSortOrder,
         limit: Int,
         offset: Int): Seq[(PagePath, PageDetails)] = {
     _chargeForOneReadReq()
-    _spi.listPagePaths(withFolderPrefix, pathScope, include,
-       sortBy, limit, offset)
+    _spi.listPagePaths(pageRanges, include, sortBy, limit, offset)
   }
 
   def listActions(
-        folderPrefix: String,
-        pathScope: PathScope,
+        pageRanges: PathRanges,
         includePages: List[PageStatus],
         limit: Int,
         offset: Int): Seq[ActionLocator] = {
     _chargeForOneReadReq()
-    _spi.listActions(folderPrefix, pathScope, includePages,
-       limit, offset)
+    _spi.listActions(pageRanges, includePages, limit, offset)
   }
 
 

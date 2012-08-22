@@ -244,18 +244,17 @@ object PagePath {
 }
 
 
-/**
- * Clarifies whether a PagePath that isFolderOrIndexPage
- * concerns a single page, a folder or a subtree.
- * Or COULD remove? Use /some/folder/.index to indicate if the index page is
- * intended, and a simple includeSubtree: Boolean, that replaces PathScope.
- */
-sealed abstract class PathScope
-object PathScope {
-  case object Page extends PathScope
-  case object Folder extends PathScope
-  case object Tree extends PathScope
+case class PathRanges(
+  folders: Seq[String] = Nil,
+  trees: Seq[String] = Nil) {
+
+ folders map (_checkIsFolder _)
+ trees map (_checkIsFolder _)
+
+ private def _checkIsFolder(path: String) {
+   assErrIf(!path.startsWith("/"), "DwE83JGF7")
+   assErrIf(!path.endsWith("/"), "DwE90kX2")
+ }
+
 }
-
-
 
