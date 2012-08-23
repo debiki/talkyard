@@ -241,10 +241,10 @@ class DebateHtml(val debate: Debate, val pageTrust: PageTrust) {
   def layoutPage(pageRoot: PageRoot): NodeSeq = Stats.time("layoutPage") {
 
     val cssArtclThread =
-      if (pageRoot.id == Page.BodyId) " dw-ar-t" else ""
+      if (pageRoot.subId == Page.BodyId) " dw-ar-t" else ""
     val rootPostsReplies = pageRoot.findChildrenIn(debate)
     val rootPost: ViPo = pageRoot.findOrCreatePostIn(debate) getOrElse
-       throwNotFound("DwE0PJ404", "Post not found: "+ pageRoot.id)
+       throwNotFound("DwE0PJ404", "Post not found: "+ pageRoot.subId)
 
     val cssThreadId = "dw-t-"+ rootPost.id
     <div id={"page-"+ debate.id} class='debiki dw-debate dw-page'>
@@ -813,8 +813,8 @@ class FormHtml(val config: HtmlConfig, xsrfToken: String,
    */
   private def _viewRoot = {
     // The page body is the default, need not be specified.
-    if (pageRoot.id == Page.BodyId) ""
-    else "&view="+ pageRoot.id
+    if (pageRoot.subId == Page.BodyId) ""
+    else "&view="+ pageRoot.subId
   }
 
 

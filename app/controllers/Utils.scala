@@ -59,7 +59,7 @@ object Utils extends Results with http.ContentTypes {
     } else {
       val viewRoot =
         if (rootPost.isDefault) ""
-        else "?view=" + rootPost.id
+        else "?view=" + rootPost.subId
       Redirect(pageReq.pagePath.path + viewRoot)
     }
   }
