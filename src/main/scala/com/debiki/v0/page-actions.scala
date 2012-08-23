@@ -95,7 +95,10 @@ case class Flag(
   override def textLengthUtf8: Int = details.getBytes("UTF-8").length
 }
 
-sealed abstract class PostType  // rename to ActionType?
+
+// ?? Replace with ActionBody, which is a case object or case class +
+// text: String (for an article/comment) / tags: List[String] (for ratings).
+sealed abstract class PostType
 object PostType {
 
   /** A blog post, or forum questiom or comment. */

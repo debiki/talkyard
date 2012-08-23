@@ -41,8 +41,13 @@ object PageDetails {
  */
 sealed abstract class PageStatus
 object PageStatus {
+  // COULD rename to PrivateDraft, becaus ... other pages with limited
+  // visibility might be considered Drafts (e.g. pages submitted for review).
   case object Draft extends PageStatus
+  //COULD rename to Normal, because access control rules might result in
+  // it effectively being non-pulbished.
   case object Published extends PageStatus
+
   case object Deleted extends PageStatus
   val All = List(Draft, Published, Deleted)
 }
