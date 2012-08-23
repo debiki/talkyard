@@ -409,11 +409,11 @@ case class Debate (
  * root post would be sent).
  */
 sealed abstract class PageRoot {
-  def id: String
+  def subId: String
   def findOrCreatePostIn(page: Debate): Option[ViPo]
   def findChildrenIn(page: Debate): List[Post]
-  def isDefault: Boolean = id == Page.BodyId
-  def isPageTemplate: Boolean = id == Page.TemplateId
+  def isDefault: Boolean = subId == Page.BodyId
+  def isPageTemplate: Boolean = subId == Page.TemplateId
 }
 
 
@@ -422,14 +422,14 @@ object PageRoot {
   val TheBody = Real(Page.BodyId)
 
   /** A real post, e.g. the page body post. */
-  case class Real(id: String) extends PageRoot {
+  case class Real(subId: String) extends PageRoot {
     // Only virtual ids may contain hyphens, e.g. "page-template".
-    assErrIf3(id contains "-", "DwE0ksEW3", "Real id contains hyphen: "+
-          safed(id))
+    assErrIf3(subId contains "-", "DwE0ksEW3", "Real id contains hyphen: "+
+          safed(subId))
 
-    def findOrCreatePostIn(page: Debate): Option[ViPo] = page.vipo(id)
+    def findOrCreatePostIn(page: Debate): Option[ViPo] = page.vipo(subId)
 
-    def findChildrenIn(page: Debate): List[Post] = page.repliesTo(id)
+    def findChildrenIn(page: Debate): List[Post] = page.repliesTo(subId)
   }
 
   // In the future, something like this:
