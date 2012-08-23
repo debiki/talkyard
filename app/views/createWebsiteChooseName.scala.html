@@ -17,8 +17,17 @@
     margin-top: 1.1em;
   }
 
+  #accept-terms-inp-group {
+    margin-top: 1em;
+  }
+
+  input[name='accepts-terms'],
+  label[for='accepts-terms'] {
+    display: inline;
+  }
+
   input[type='submit'] {
-    margin-top: 1.5em;
+    margin-top: 2.5em;
     min-width: 5em;
   }
 
@@ -42,6 +51,14 @@
         so it would be reachable via e.g. <tt>your-domain.com</tt>.
         I've not yet implemented this though.</small>
       </p>
+
+      <div id='accept-terms-inp-group'>
+      <input type='checkbox' id='accepts-terms' name='accepts-terms' value='yes'>
+      <label for='accepts-terms'>
+        I accept the <a href="/about/terms-of-use">Terms of Use</a>
+        and the <a href="/about/privacy-policy">Privacy Policy</a>.
+      </label>
+      </div>
 
       <div>
         <input type='submit' value="Next">
