@@ -698,8 +698,8 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
 
     "load recent actions" >> {
 
-      val badIp = "99.99.99.99"
-      val ip = "1.1.1.1"
+      val badIp = Some("99.99.99.99")
+      val ip = Some("1.1.1.1")
 
       "from IP, find nothing" >> {
         val actions = dao.loadRecentActionExcerpts(fromIp = badIp, limit = 5)
@@ -735,7 +735,7 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
 
       "by identity id, find nothing" >> {
         val actions = dao.loadRecentActionExcerpts(
-           byIdentity = T.identityOpenId.copy(id = "9999999"), limit = 99)
+           byIdentity = Some("9999999"), limit = 99)
         actions must beEmpty
       }
 
