@@ -745,22 +745,22 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
 
       "by path, find nothing, in non existing tree and folder" >> {
         val actions = dao.loadRecentActionExcerpts(
-          pathRanges = Some(PathRanges(
+          pathRanges = PathRanges(
             trees = Seq("/does/not/exist/"),
-            folders = Seq("/neither/do/i/"))),
+            folders = Seq("/neither/do/i/")),
           limit = 99)
         actions.length must_== 0
       }
 
       "by path, find something, in root tree" >> {
         val actions = dao.loadRecentActionExcerpts(
-          pathRanges = Some(PathRanges(trees = Seq("/"))), limit = 99)
+          pathRanges = PathRanges(trees = Seq("/")), limit = 99)
         actions.length must be_>(0)
       }
 
       "by path, find something, in /folder/" >> {
         val actions = dao.loadRecentActionExcerpts(
-          pathRanges = Some(PathRanges(folders = Seq(defaultPagePath.folder))),
+          pathRanges = PathRanges(folders = Seq(defaultPagePath.folder)),
           limit = 99)
         actions.length must be_>(0)
       }
