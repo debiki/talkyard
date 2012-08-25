@@ -86,6 +86,10 @@ abstract class TenantDaoSpi {
 
   def loadPage(debateId: String): Option[Debate]
 
+  def loadRecentActionExcerpts(fromIp: Option[String],
+        byIdentity: Option[String],
+        pathRanges: PathRanges, limit: Int): Seq[ViAc]
+
   def listPagePaths(
         pageRanges: PathRanges,
         include: List[PageStatus],
@@ -324,6 +328,24 @@ class TenantDao(
   def loadPage(debateId: String): Option[Debate] = {
     _chargeForOneReadReq()
     _spi.loadPage(debateId)
+  }
+
+  /**
+   * Loads at most `limit` recent actions, conducted e.g. at `fromIp`.
+   *
+   * Loads "excerpts" only:
+   * - For Rating:s, loads no rating tags.
+   * - For Post:s and Edit:s with very much text, loads only the first
+   *   200 chars or something like that (not implemented though).
+   */
+  def loadRecentActionExcerpts(
+        fromIp: Option[String] = None,
+        byIdentity: Option[String] = None,
+        pathRanges: PathRanges = PathRanges.Anywhere,
+        limit: Int): Seq[ViAc] = {
+    _chargeForOneReadReq()
+    _spi.loadRecentActionExcerpts(fromIp = fromIp, byIdentity = byIdentity,
+        pathRanges = pathRanges, limit = limit)
   }
 
 
