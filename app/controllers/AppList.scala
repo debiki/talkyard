@@ -49,7 +49,14 @@ object AppList extends mvc.Controller {
         val pageNode = renderPageListHtml(pagePaths)
         OkHtml(<html><body>{pageNode}</body></html>)
       case DebikiHttp.ContentType.Json =>
-        unimplemented
+        Ok(toJson(Map("pages" -> (
+           pagePaths map { case (pagePath, pageDetails) =>
+             toJson(Map(
+               "id" -> pagePath.pageId.get,
+               "folder" -> pagePath.folder,
+               "path" -> pagePath.path
+             ))
+           }))))
     }
   }
 
