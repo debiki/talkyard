@@ -248,13 +248,17 @@ case class PathRanges(
   folders: Seq[String] = Nil,
   trees: Seq[String] = Nil) {
 
- folders map (_checkIsFolder _)
- trees map (_checkIsFolder _)
+  folders map (_checkIsFolder _)
+  trees map (_checkIsFolder _)
 
- private def _checkIsFolder(path: String) {
-   assErrIf(!path.startsWith("/"), "DwE83JGF7")
-   assErrIf(!path.endsWith("/"), "DwE90kX2")
- }
+  private def _checkIsFolder(path: String) {
+    assErrIf(!path.startsWith("/"), "DwE83JGF7")
+    assErrIf(!path.endsWith("/"), "DwE90kX2")
+  }
+}
 
+
+object PathRanges {
+  val Anywhere = PathRanges(trees = Seq("/"))
 }
 
