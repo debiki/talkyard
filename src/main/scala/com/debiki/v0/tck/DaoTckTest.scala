@@ -129,7 +129,7 @@ class DaoSpecEmptySchema(b: TestContextBuilder) extends DaoSpec(b, "0") {
 
 
 object Templates {
-  val login = v0.Login(id = "?", prevLoginId = None, ip = "?.?.?.?",
+  val login = v0.Login(id = "?", prevLoginId = None, ip = "1.1.1.1",
     date = new ju.Date, identityId = "?i")
   val identitySimple = v0.IdentitySimple(id = "?i", userId = "?",
     name = "Målligan", email = "no@email.no", location = "", website = "")
@@ -691,6 +691,60 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
         }
       }
     }
+
+
+
+    // -------- Load recent actions
+
+    "load recent actions" >> {
+
+      val badIp = "99.99.99.99"
+      val ip = "1.1.1.1"
+
+      "from IP, find nothing" >> {
+        val actions = dao.loadRecentActionExcerpts(fromIp = badIp, limit = 5)
+        actions must beEmpty
+      }
+
+      "from IP, find a post, and edits of that post" >> {
+        val actions = dao.loadRecentActionExcerpts(fromIp = ip, limit = 99)
+
+        /* Not yet possible: logins etc not loaded.
+        actions.length must be_>(0)
+        actions foreach { action =>
+          val ipMatches = action.login_!.ip == ip
+          // val targetActionIpMatches = action.target.map(_.ip) == Some(ip)
+          val targetActionIpMatches = true // not implemented :-(
+          (ipMatches || targetActionIpMatches) must_== true
+        }
+        */
+      }
+
+      "from IP, find `limit`" >> {
+        val actions = dao.loadRecentActionExcerpts(fromIp = ip, limit = 2)
+        //actions.length must be_>=(?)
+        /*
+        If `loadRecentActionExcerpts` loaded only own Post:s, and actions
+        on them, e.g. this would be possible:
+        val ownActions = actions filter { action =>
+          action.login_!.ip == ip && action.action.isInstanceOf[Post]
+        }
+        ownActions.length must_== 2
+        */
+      }
+
+      "by identity id, find nothing" >> {
+        val actions = dao.loadRecentActionExcerpts(
+           byIdentity = T.identityOpenId.copy(id = "9999999"), limit = 99)
+        actions must beEmpty
+      }
+
+      "by identity id, find ..." >> {
+        // Not implemented, because no OpenID identity currently does anything.
+      }
+    }
+
+
 
     // -------- OpenID login
 
