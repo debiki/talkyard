@@ -9,6 +9,16 @@ import Debate._
 import FlagReason.FlagReason
 
 
+object SmartAction {
+
+  def apply(page: Debate, action: Action): ViAc = action match {
+    case p: Post => new ViPo(page, p)
+    case a: Action => new ViAc(page, a)
+  }
+
+}
+
+
 // COULD rename all these ViAc/NiPo/whatever to SmartAction/Post/Whatever.
 // COULD take an Action subclass type param, so it'd be possible to use e.g. a
 // SmartPageAction[Rating].
@@ -16,6 +26,7 @@ import FlagReason.FlagReason
  *  look up other stuff in the relevant Debate.
  */
 class ViAc(val debate: Debate, val action: Action) {
+  def page = debate // should rename `debate` to `page`
   def id: String = action.id
   def ctime = action.ctime
   def login: Option[Login] = debate.login(action.loginId)
