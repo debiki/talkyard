@@ -71,6 +71,24 @@ object Utils extends Results with http.ContentTypes {
       pageRoot, pageReq.permsOnPage)
 
 
+  def localUrlTo(action: ViAc): String = {
+    // - Add `?view=3` for templates, since they're on their own virtual page
+    // not connected to the root post.
+    // - Add `?view` to paths that end with .js or .css or Debiki will
+    // render the page as text, not html. Currently done for all non-template
+    // pages.
+    val fragment = "/-"+ action.page.id
+    val query =
+      if (action.id == Page.TemplateId) "?view="+ Page.TemplateId
+      else "?view"
+    val hash = action match {
+      case post: ViPo => "#post-"+ action.id
+      case other: ViAc =>
+        "" // SHOULD be: "#post-"+ action.target.id  -- but not implemented
+    }
+    fragment + query + hash
+  }
+
 
   def loadIdentityAndUserOrThrow(sidOk: SidOk, dao: TenantDao)
         : (Option[Identity], Option[User]) = {

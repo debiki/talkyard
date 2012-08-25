@@ -56,15 +56,38 @@ object AppList extends mvc.Controller {
 
   def listActions(pathIn: PagePath, contentType: DebikiHttp.ContentType) =
         PageGetAction(pathIn, pageMustExist = false) { pageReq =>
-    val actionLocators = pageReq.dao.listActions(
-      Utils.parsePathRanges(pathIn, pageReq.queryString),
-      includePages = PageStatus.All,
-      limit = 700, offset = 0)
+
+    val fromIpOpt = pageReq.queryString.getEmptyAsNone("from-ip")
+    val byIdtyOpt = pageReq.queryString.getEmptyAsNone("by-identity")
+    val pathRanges = {
+      import pageReq.pagePath
+      if (pagePath.isFolderOrIndexPage)
+        Utils.parsePathRanges(pagePath, pageReq.queryString)
+      else throwBadReq(
+        "DwE92GK31", "Currently you cannot list actions on single pages. "+
+        "Try with http://server-address/?list-actions")
+    }
+
+    val actions = pageReq.dao.loadRecentActionExcerpts(
+      fromIp = fromIpOpt, byIdentity = byIdtyOpt, pathRanges = pathRanges,
+      limit = 500)
+
     contentType match {
       case DebikiHttp.ContentType.Html =>
-        Ok(views.html.listActions(actionLocators))
+        Ok(views.html.listActions(actions))
       case DebikiHttp.ContentType.Json =>
-        unimplemented
+        Ok(toJson(Map("actions" -> (
+          actions map { action =>
+            toJson(Map(
+              "id" -> action.id,
+              "pageId" -> action.page.id,
+              "type" -> "Moo", //DebikiHttp.typeNameOf(action),
+              "userId" -> "Mää", // action.user_!.id
+              "idtyId" -> "Möö", // action.identity_!.id
+              "loginId" -> action.action.loginId,
+              "cdati" -> toIso8601T(action.ctime)
+            ))
+          }))))
     }
   }
 

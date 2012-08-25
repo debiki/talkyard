@@ -1,6 +1,8 @@
-@(actionLocators: Seq[com.debiki.v0.ActionLocator])
+@(actions: Seq[com.debiki.v0.ViAc])
 
 @import com.debiki.v0._
+@import com.debiki.v0.Prelude._
+@import controllers.Utils
 
 
 <!DOCTYPE html>
@@ -13,10 +15,9 @@
 <body>
 
 <ol>
-@for(actnLctr <- actionLocators;
-    actionLink = actnLctr.path) {
+@for(action <- actions; actionLink = Utils.localUrlTo(action)) {
   <li>
-    @actnLctr.actionCtime: @actnLctr.actionType:
+    @action.ctime: @classNameOf(action.action)
     <a href='@actionLink'>@actionLink</a>
   </li>
 }
