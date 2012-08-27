@@ -143,10 +143,20 @@ describe 'PathsCtrl', ->
         ]
       expect(applyUpdateHitCounts key).toEqual key
 
-    it 'can hide a deeper folder', ->
+    it 'can hide one deeper folder', ->
       key = [
         { hideCount: 0, depth: 1, value: '/aa/', open: false },
         { hideCount: 1, depth: 2, value: '/aa/bb/', open: false },
+        ]
+      expect(applyUpdateHitCounts key).toEqual key
+
+    it 'can hide many deeper folders', ->
+      # /aa/ shouldn't be pop()ed to many times.
+      key = [
+        { hideCount: 0, depth: 1, value: '/aa/', open: false },
+        { hideCount: 1, depth: 2, value: '/aa/bb/', open: false },
+        { hideCount: 1, depth: 2, value: '/aa/cc/', open: false },
+        { hideCount: 1, depth: 2, value: '/aa/dd/', open: false },
         ]
       expect(applyUpdateHitCounts key).toEqual key
 

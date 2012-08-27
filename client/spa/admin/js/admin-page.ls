@@ -137,28 +137,29 @@ AdminModule.factory 'AdminService', ['$http', ($http) ->
    * and updates all hide counts accordingly.
    */
   updateHideCounts = (paths) ->
-    curDepth = 0
     curHideCount = 0
-    parentsOpen = []
+    folderStack = []
     for path in paths
-      # Leave folder?
-      # BUG: If last folder was: /folder/
-      #      and this folder is: /very/other/folder/
-      #      then path.depth is > curDepth - 1, so we won't leave last
-      #      folder and enter a new folder, but we should!
-      if isFolder(path) and path.depth == curDepth - 1
-        curDepth -= 1
-        wasOpen = parentsOpen.pop()
-        curHideCount -= 1 unless wasOpen
+      # Leave folder, continue from some previously stacked parent?
+      if isFolder path
+        curHideCount = 0
+        parentFolder = null
+        while !parentFolder && folderStack.length > 0
+          { childHideCount, folderPath } = last folderStack
+          if path.value.search(folderPath) == 0
+            parentFolder = folderPath
+            curHideCount = childHideCount
+          else
+            folderStack.pop()
       # Set hit count for folders, both open and closed, and pages.
-      #bugUnless path.depth == curDepth
       #bugUnless 0 <= curHideCount
       path.hideCount = curHideCount
       # Enter folder?
-      if isFolder(path)
-        curDepth += 1
+      if isFolder path
         curHideCount += 1 unless path.open
-        parentsOpen.push path.open
+        folderStack.push (
+            folderPath: path.value
+            childHideCount: curHideCount )
     undefined
 
   $scope.openClose = (path) ->
