@@ -15,35 +15,31 @@ AdminModule.filter 'filterProp', ->
 
 AdminModule.factory 'AdminService', ['$http', ($http) ->
 
+  api = {}
   selectedPathsListeners = []
 
-  selectPaths = (foldersAndPageIds) ->
+  api.selectPaths = (treesFoldersPageIds) ->
     for listener in selectedPathsListeners
-      listener(foldersAndPageIds)
+      listener(treesFoldersPageIds)
 
-  {
+  api.onPathSelectionChange = (listener) ->
+    selectedPathsListeners.push listener
 
-    listAllPages: (onSuccess) ->
-      $http.get('/?list-pages.json&in-tree').success (data) ->
-        # Angular has already parsed the JSON.
-        onSuccess(data)
+  api.listAllPages = (onSuccess) ->
+    $http.get('/?list-pages.json&in-tree').success (data) ->
+      # Angular has already parsed the JSON.
+      onSuccess(data)
 
-    listAllPagesFake: ->
-        [{
-          id: 'p1'
-          path: '/-p1-slug'
-          title: 'Page p1'
-          authors: []
-        },{
-          id: 'p2',
-          path: '/-p2-slug'
-          title: 'Page p2'
-          authors: []
-        }]
+  api.listActions = (treesFoldersPageIds, onSuccess) ->
+    treesStr = join ',' treesFoldersPageIds.trees
+    foldersStr = join ',' treesFoldersPageIds.folders
+    pageIdsStr = join ',' treesFoldersPageIds.pageIds
+    $http.get("/?list-actions.json&in-trees=#treesStr").success (data) ->
+      onSuccess data
 
-    selectPaths: selectPaths
+  api
 
-  }]
+  ]
 
 
 
@@ -124,13 +120,17 @@ AdminModule.factory 'AdminService', ['$http', ($http) ->
         return 1 if partB < partA
       return 0
 
-  updateSelectedPaths = ->
-    foldersAndIds = []
+  $scope.updateSelectedPaths = ->
+    trees = []
+    folders = []
+    pageIds = []
     for path in $scope.paths when path.included
-      foldersAndIds.push (path.pageId or path.value)
+      if path.pageId => pageIds.push path.pageId
+      else trees.push path.value
     # If nothing seleced, treat that as if everything was selected.
-    if foldersAndIds.length is 0 then foldersAndIds = ['/']
-    AdminService.selectPaths foldersAndIds
+    trees = ['/'] if 0 == trees.length + folders.length + pageIds.length
+    adminService.selectPaths {
+        trees: trees, folders: folders, pageIds: pageIds }
 
   /**
    * Traverses the $scope.paths list once, checks each path.closed,
@@ -178,7 +178,9 @@ AdminModule.factory 'AdminService', ['$http', ($http) ->
 
 @ActionListCtrl = ['$scope', 'AdminService', ($scope, adminService) ->
 
-  'boo buuu'
+  adminService.onPathSelectionChange (treesFoldersPageIds) ->
+    adminService.listActions treesFoldersPageIds, (actions) ->
+      'hmm'
 
   ]
 
