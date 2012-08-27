@@ -4,6 +4,7 @@
 describe 'AdminService', ->
   beforeEach module('AdminModule')
 
+  ###
   describe 'loadNonEmptyFolders', ->
     it 'should list test folders', inject (AdminService) ->
       expect(AdminService.loadNonEmptyFolders()).toEqual
@@ -30,6 +31,8 @@ describe 'AdminService', ->
               showId: true
               authorsById:
                 r215: { dispName: 'Bo Ek' }
+  ###
+
 
 ###
 describe 'AdminService2', ->

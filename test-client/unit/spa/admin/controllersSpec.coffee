@@ -8,7 +8,9 @@ describe 'PathsCtrl', ->
 
   beforeEach ->
     module 'AdminModule'
-    inject ($rootScope, $controller) ->
+    inject ($rootScope, $controller, _$httpBackend_) ->
+      _$httpBackend_.expectGET('/?list-pages.json&in-tree').
+          respond { pages: [] }
       scope = $rootScope.$new()
       $controller PathsCtrl, $scope: scope
       test = scope.test
@@ -23,14 +25,14 @@ describe 'PathsCtrl', ->
 
   it 'can sort an empty list', ->
     expect(test.sortPathsInPlace []).toEqual []
-    expect(true).toEqual(false)
+    #expect(true).toEqual(false)
 
   it 'can sort a single page and a single folder', ->
     page = -> [{ value: '/a',  pageId: 'ab12cd' }]
     folder = -> [{ value: '/a/' }]
     expect(test.sortPathsInPlace page()).toEqual page()
     expect(test.sortPathsInPlace folder()).toEqual folder()
-    expect(true).toEqual(false)
+    #expect(true).toEqual(false)
 
   it 'can sort pages in the same folder', ->
     key = -> [
@@ -39,7 +41,7 @@ describe 'PathsCtrl', ->
         { value: '/z', pageId: 'ab12cd' }]
     expect(test.sortPathsInPlace key().reverse()).toEqual key()
     expect(test.sortPathsInPlace key()).toEqual key()
-    expect(true).toEqual(false)
+    #expect(true).toEqual(false)
 
   it 'can sort a page and a folder', ->
     key = -> [
@@ -47,7 +49,7 @@ describe 'PathsCtrl', ->
         { value: '/a/', pageId: 'ab12cd' }]
     expect(test.sortPathsInPlace key().reverse()).toEqual key()
     expect(test.sortPathsInPlace key()).toEqual key()
-    expect(true).toEqual(false)
+    #expect(true).toEqual(false)
 
   it 'can sort folders', ->
     key = -> [
@@ -55,7 +57,7 @@ describe 'PathsCtrl', ->
         { value: '/b/' }]
     expect(test.sortPathsInPlace key().reverse()).toEqual key()
     expect(test.sortPathsInPlace key()).toEqual key()
-    expect(true).toEqual(false)
+    #expect(true).toEqual(false)
 
   it 'can sort deep folders', ->
     key = -> [
@@ -64,7 +66,7 @@ describe 'PathsCtrl', ->
         { value: '/c/' }]
     expect(test.sortPathsInPlace key().reverse()).toEqual key()
     expect(test.sortPathsInPlace key()).toEqual key()
-    expect(true).toEqual(false)
+    #expect(true).toEqual(false)
 
   it 'can sort a folder and its index page', ->
     key = -> [
@@ -72,7 +74,7 @@ describe 'PathsCtrl', ->
         { value: '/a/', pageId: 'ab12cd' }]
     expect(test.sortPathsInPlace key().reverse()).toEqual key()
     expect(test.sortPathsInPlace key()).toEqual key()
-    expect(true).toEqual(false)
+    #expect(true).toEqual(false)
 
   it 'can sort a few pages and folders, pages first', ->
     key = -> [
@@ -84,7 +86,7 @@ describe 'PathsCtrl', ->
         { value: '/a/', pageId: 'ab12cd' }]
     expect(test.sortPathsInPlace key().reverse()).toEqual key()
     expect(test.sortPathsInPlace _(key()).shuffle()).toEqual key()
-    expect(true).toEqual(false)
+    #expect(true).toEqual(false)
 
   it 'can sort many pages and folders', ->
     key = -> [
@@ -110,7 +112,7 @@ describe 'PathsCtrl', ->
     expect(test.sortPathsInPlace key().reverse()).toEqual key()
     expect(test.sortPathsInPlace _(key()).shuffle()).toEqual key()
     expect(test.sortPathsInPlace key()).toEqual key()
-    expect(true).toEqual(false)
+    #expect(true).toEqual(false)
 
 
 # vim: fdm=marker et ts=2 sw=2 tw=80 fo=tcqwn list
