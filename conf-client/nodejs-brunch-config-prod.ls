@@ -107,16 +107,16 @@ exports.config =
           // ^client/vendor/bootstrap-.*.js
            | ^client/debiki/debiki-util.js
            | ^client/spa/js/angular-util.ls
+           | ^client/vendor/livescript/prelude-browser-min.js
           //
 
         'public/res/debiki-spa-admin.min.js':
-          // ^client/spa/admin/js/admin-page-animations.coffee
-           | ^client/spa/admin/js/admin-page.coffee
-           | ^client/spa/admin/js/debiki-utils.coffee
+          // ^client/spa/admin/js/admin-page.ls
+           | ^client/spa/admin/js/debiki-utils.ls
           //
 
         'public/res/debiki-spa-admin-server-mock.min.js':
-          // ^client/spa/admin/js/debiki-v0-server-mock.coffee
+          // ^client/spa/admin/js/debiki-v0-server-mock.ls
           //
 
         'public/res/debiki-spa-new-website-choose-owner.min.js':

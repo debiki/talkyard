@@ -19,8 +19,7 @@
 
 <script src="http://cdnjs.cloudflare.com/ajax/libs/modernizr/2.5.3/modernizr.min.js"></script>
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.js"></script>
-<script src="http://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.3.3/underscore-min.js"></script>
-<script src="http://code.angularjs.org/angular-1.0.0rc10.min.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.0.1/angular.js"></script>
 <script>
   var debiki = { v0: { util: {} }, internal: { $: jQuery } };
   debiki.scriptLoad = $.Deferred();
@@ -31,7 +30,7 @@
   });
 </script>
 <script src="/-/res/debiki-spa-common.js"></script>
-<script src="/-/res/debiki-spa-admin-server-mock.js"></script>
+<!--<script src="/-/res/debiki-spa-admin-server-mock.js"></script>-->
 <script src="/-/res/debiki-spa-admin.js"></script>
 
 </head>
@@ -60,7 +59,7 @@
         <label>Filter paths: <input ng-model="pathFilterText"/></label>
         <ol id='page-tree' class='{{"full-paths-"+ showFullPaths}}'>
           <li ng-repeat="path in paths | filterProp:'value':pathFilterText"
-              class='{{isFolderOrPageClass(path) + " open-" + path.open + " hide-count-" + path.hideCount + " path-depth-" + path.depth + " included-" + path.included}}'>
+              class='{{isFolderOrPageClass(path) + " open-" + path.open + " hide-count-" + path.hideCount + " Xpath-depth-" + path.depth + " included-" + path.included}}'>
             <label class="checkbox">
               <input type="checkbox"
                  ng-model="path.included"
