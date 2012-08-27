@@ -136,11 +136,11 @@ AdminModule.factory 'AdminService', ['$http', ($http) ->
    * Traverses the $scope.paths list once, checks each path.closed,
    * and updates all hide counts accordingly.
    */
-  updateHideCounts = ->
+  updateHideCounts = (paths) ->
     curDepth = 0
     curHideCount = 0
     parentsOpen = []
-    for path in $scope.paths
+    for path in paths
       # Leave folder?
       # BUG: If last folder was: /folder/
       #      and this folder is: /very/other/folder/
@@ -163,10 +163,11 @@ AdminModule.factory 'AdminService', ['$http', ($http) ->
 
   $scope.openClose = (path) ->
     path.open = !path.open
-    updateHideCounts()
+    updateHideCounts $scope.paths
 
   $scope.test =
     sortPathsInPlace: sortPathsInPlace
+    updateHideCounts: updateHideCounts
 
   updatePathsView()
 

@@ -114,5 +114,57 @@ describe 'PathsCtrl', ->
     expect(test.sortPathsInPlace key()).toEqual key()
     #expect(true).toEqual(false)
 
+  describe 'updateHideCounts', ->
+
+    applyUpdateHitCounts = (paths) ->
+      result = map ((path) -> _(path).kick('hideCount')), paths
+      test.updateHideCounts result
+      result
+
+    it 'can handle empty lists', ->
+      key = []
+      expect(applyUpdateHitCounts key).toEqual key
+
+    it 'can show a single homepage', ->
+      key = [{ hideCount: 0, depth: 0, value: '/', open: false, pageId: 'p0' }]
+      expect(applyUpdateHitCounts key).toEqual key
+
+    it 'can hide a page in a closed folder', ->
+      key = [
+        { hideCount: 0, depth: 1, value: '/aa/', open: false },
+        { hideCount: 1, depth: 2, value: '/aa/bb', open: false, pageId: 'pbb' },
+        ]
+      expect(applyUpdateHitCounts key).toEqual key
+
+    it 'can show a page in an open folder', ->
+      key = [
+        { hideCount: 0, depth: 1, value: '/aa/', open: true },
+        { hideCount: 0, depth: 2, value: '/aa/bb', open: false, pageId: 'pbb' },
+        ]
+      expect(applyUpdateHitCounts key).toEqual key
+
+    it 'can hide a deeper folder', ->
+      key = [
+        { hideCount: 0, depth: 1, value: '/aa/', open: false },
+        { hideCount: 1, depth: 2, value: '/aa/bb/', open: false },
+        ]
+      expect(applyUpdateHitCounts key).toEqual key
+
+    it 'can show a deeper folder that is no child of any prev closed folder', ->
+      key = [
+        { hideCount: 0, depth: 1, value: '/aa/', open: false },
+        { hideCount: 0, depth: 2, value: '/bb/cc/', open: false }, # not in /aa/
+        ]
+      expect(applyUpdateHitCounts key).toEqual key
+
+    it 'can handle a folder that is a child of the last but one prev folder', ->
+      key = [
+        { hideCount: 0, depth: 1, value: '/a/', open: false },
+        { hideCount: 1, depth: 2, value: '/a/b/', open: false },
+        { hideCount: 2, depth: 3, value: '/a/b/c', open: false },  # in /a/b/
+        { hideCount: 1, depth: 3, value: '/a/x/y/', open: false }, # in /a/
+        ]
+      expect(applyUpdateHitCounts key).toEqual key
+
 
 # vim: fdm=marker et ts=2 sw=2 tw=80 fo=tcqwn list
