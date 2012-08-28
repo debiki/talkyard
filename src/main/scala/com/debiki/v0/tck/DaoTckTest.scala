@@ -352,7 +352,7 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
     "find the debate and the login and user again" >> {
       dao.loadPage(ex1_debate.guid) must beLike {
         case Some(d: Debate) => {
-          d.nilo(ex1_rootPost.loginId) must beLike {
+          d.people.nilo(ex1_rootPost.loginId) must beLike {
             case Some(n: NiLo) =>  // COULD make separate NiLo test?
               n.login.id must_== ex1_rootPost.loginId
               n.login.identityId must_== n.identity_!.id
@@ -957,7 +957,7 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
       dao.loadPage(ex1_debate.guid) must beLike {
         case Some(d: Debate) =>
           d must havePostLike(newPost, id = postId)
-          d.nilo(exOpenId_loginReq.login.id) must beLike {
+          d.people.nilo(exOpenId_loginReq.login.id) must beLike {
             case Some(n: NiLo) =>  // COULD make separate NiLo test?
               n.login.id must_== exOpenId_loginReq.login.id
               n.login.identityId must_== n.identity_!.id
