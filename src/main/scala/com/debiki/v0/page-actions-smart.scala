@@ -29,6 +29,7 @@ class ViAc(val debate: Debate, val action: Action) {
   def page = debate // should rename `debate` to `page`
   def id: String = action.id
   def ctime = action.ctime
+  def loginId = action.loginId
   def login: Option[Login] = debate.people.login(action.loginId)
   def login_! : Login = login.getOrElse(runErr(
      "DwE6gG32", "No login with id "+ safed(action.loginId) +
