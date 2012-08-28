@@ -37,7 +37,7 @@ AdminModule.factory 'AdminService', ['$http', ($http) ->
     $http.get("/?list-actions.json" +
         "&in-trees=#treesStr" +
         "&in-folders=#foldersStr" +
-        "&on-pages=#pageIdsStr").success (data) ->
+        "&for-pages=#pageIdsStr").success (data) ->
       onSuccess data
 
   api

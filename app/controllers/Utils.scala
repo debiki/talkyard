@@ -198,6 +198,7 @@ object Utils extends Results with http.ContentTypes {
 
     var folderPathsList = List[String]()
     var treePathsList = List[String]()
+    var pageIdsList = List[String]()
     val forWholeTree = queryString.getFirst(urlParamPrefix +"-tree")
     val forCurFolder = queryString.getFirst(urlParamPrefix +"-folder")
 
@@ -209,16 +210,19 @@ object Utils extends Results with http.ContentTypes {
     } else {
       treePathsList = makeListOfParamValues(urlParamPrefix +"-trees")
       folderPathsList = makeListOfParamValues(urlParamPrefix +"-folders")
+      pageIdsList = queryString.getEmptyAsNone("for-pages")
+         .map(_.split(",").toList) getOrElse Nil
       if (forCurFolder isDefined) {
         folderPathsList ::= basePath.folder
       }
     }
 
     // List folder contents, by default.
-    if (folderPathsList.isEmpty && treePathsList.isEmpty)
+    if (folderPathsList.isEmpty && treePathsList.isEmpty && pageIdsList.isEmpty)
       folderPathsList ::= basePath.folder
 
-    PathRanges(folders = folderPathsList, trees = treePathsList)
+    PathRanges(folders = folderPathsList, trees = treePathsList,
+        pageIds = pageIdsList)
   }
 
 }

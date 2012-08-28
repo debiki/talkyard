@@ -59,6 +59,11 @@ class UtilsSpec extends Specification {
         "in-folders" -> Seq("/f/"), "in-trees" -> Seq("/t/")))
       ranges must be_==(PathRanges(folders = Seq("/f/"), trees = Seq("/t/")))
     }
+
+    "understand &for-pages=aa,bb" >> {
+      val ranges = parsePathRanges(pagePath, Map("for-pages" -> Seq("aa,bb")))
+      ranges must be_==(PathRanges(pageIds = Seq("aa", "bb")))
+    }
   }
 
 }
