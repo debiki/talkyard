@@ -701,13 +701,20 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
       val badIp = Some("99.99.99.99")
       val ip = Some("1.1.1.1")
 
+      def hasLoginsIdtysAndUsers(people: People) =
+        people.logins.nonEmpty && people.identities.nonEmpty &&
+        people.users.nonEmpty
+
       "from IP, find nothing" >> {
-        val actions = dao.loadRecentActionExcerpts(fromIp = badIp, limit = 5)
+        val (actions, people) =
+            dao.loadRecentActionExcerpts(fromIp = badIp, limit = 5)
         actions must beEmpty
+        people must_== People.None
       }
 
       "from IP, find a post, and edits of that post" >> {
-        val actions = dao.loadRecentActionExcerpts(fromIp = ip, limit = 99)
+        val (actions, people) =
+           dao.loadRecentActionExcerpts(fromIp = ip, limit = 99)
 
         /* Not yet possible: logins etc not loaded.
         actions.length must be_>(0)
@@ -721,7 +728,8 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
       }
 
       "from IP, find `limit`" >> {
-        val actions = dao.loadRecentActionExcerpts(fromIp = ip, limit = 2)
+        val (actions, people) =
+           dao.loadRecentActionExcerpts(fromIp = ip, limit = 2)
         //actions.length must be_>=(?)
         /*
         If `loadRecentActionExcerpts` loaded only own Post:s, and actions
@@ -734,9 +742,10 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
       }
 
       "by identity id, find nothing" >> {
-        val actions = dao.loadRecentActionExcerpts(
+        val (actions, people) = dao.loadRecentActionExcerpts(
            byIdentity = Some("9999999"), limit = 99)
         actions must beEmpty
+        people must_== People.None
       }
 
       "by identity id, find ..." >> {
@@ -744,49 +753,55 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
       }
 
       "by path, find nothing, in non existing tree and folder" >> {
-        val actions = dao.loadRecentActionExcerpts(
+        val (actions, people) = dao.loadRecentActionExcerpts(
           pathRanges = PathRanges(
             trees = Seq("/does/not/exist/"),
             folders = Seq("/neither/do/i/")),
           limit = 99)
         actions.length must_== 0
+        people must_== People.None
       }
 
       "by path, find something, in root tree" >> {
-        val actions = dao.loadRecentActionExcerpts(
+        val (actions, people) = dao.loadRecentActionExcerpts(
           pathRanges = PathRanges(trees = Seq("/")), limit = 99)
         actions.length must be_>(0)
+        hasLoginsIdtysAndUsers(people) must beTrue
       }
 
       "by path, find something, in /folder/" >> {
-        val actions = dao.loadRecentActionExcerpts(
+        val (actions, people) = dao.loadRecentActionExcerpts(
           pathRanges = PathRanges(folders = Seq(defaultPagePath.folder)),
           limit = 99)
         actions.length must be_>(0)
+        hasLoginsIdtysAndUsers(people) must beTrue
       }
 
       "by page id, find nothing, non existing page" >> {
-        val actions = dao.loadRecentActionExcerpts(
+        val (actions, people) = dao.loadRecentActionExcerpts(
           pathRanges = PathRanges(pageIds = Seq("nonexistingpage")),
           limit = 99)
         actions.length must_== 0
+        people must_== People.None
       }
 
       "by page id, find something, when page exists" >> {
-        val actions = dao.loadRecentActionExcerpts(
+        val (actions, people) = dao.loadRecentActionExcerpts(
           pathRanges = PathRanges(pageIds = Seq(ex1_debate.id)),
           limit = 99)
         actions.length must be_>(0)
+        hasLoginsIdtysAndUsers(people) must beTrue
       }
 
       "by page id, folder and tree, find something" >> {
-        val actions = dao.loadRecentActionExcerpts(
+        val (actions, people) = dao.loadRecentActionExcerpts(
           pathRanges = PathRanges(
             pageIds = Seq(ex1_debate.id),  // exists
             folders = Seq("/folder/"),  // there's a page in this folder
             trees = Seq("/")),  // everything
           limit = 99)
         actions.length must be_>(0)
+        hasLoginsIdtysAndUsers(people) must beTrue
       }
     }
 
