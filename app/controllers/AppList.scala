@@ -11,7 +11,7 @@ import java.{util => ju}
 import play.api._
 import play.api.data._
 import play.api.data.Forms._
-import play.api.libs.json.Json
+import play.api.libs.json.{Json, JsValue}
 import play.api.libs.json.Json.toJson
 import play.api.mvc.{Action => _, _}
 import xml.{Node, NodeSeq}
@@ -75,7 +75,7 @@ object AppList extends mvc.Controller {
         "Try with http://server-address/?list-actions")
     }
 
-    val actions = pageReq.dao.loadRecentActionExcerpts(
+    val (actions, people: People) = pageReq.dao.loadRecentActionExcerpts(
       fromIp = fromIpOpt, byIdentity = byIdtyOpt, pathRanges = pathRanges,
       limit = 500)
 
@@ -83,18 +83,19 @@ object AppList extends mvc.Controller {
       case DebikiHttp.ContentType.Html =>
         Ok(views.html.listActions(actions))
       case DebikiHttp.ContentType.Json =>
-        Ok(toJson(Map("actions" -> (
-          actions map { action =>
+        Ok(toJson(Map(
+          "actions" -> (actions map { action =>
             toJson(Map(
               "id" -> action.id,
               "pageId" -> action.page.id,
-              "type" -> "Moo", //DebikiHttp.typeNameOf(action),
-              "userId" -> "Mää", // action.user_!.id
-              "idtyId" -> "Möö", // action.identity_!.id
-              "loginId" -> action.action.loginId,
+              "type" -> classNameOf(action), //DebikiHttp.typeNameOf(action),
+              "userId" -> action.user_!.id,
+              "idtyId" -> action.identity_!.id,
+              "loginId" -> action.loginId,
               "cdati" -> toIso8601T(action.ctime)
             ))
-          }))))
+          }),
+          "users" -> people.users.map(jsonFor _))))
     }
   }
 
@@ -108,6 +109,19 @@ object AppList extends mvc.Controller {
   def listIps(pathIn: PagePath, contentType: DebikiHttp.ContentType) =
         PageGetAction(pathIn, pageMustExist = false) { pageReq =>
     Ok
+  }
+
+
+  def jsonFor(user: User): JsValue = {
+    val jsTrue = play.api.libs.json.JsBoolean(true)
+    var info = Map[String, JsValue](
+      "id" -> toJson(user.id),
+      "displayName" -> toJson(user.displayName),
+      "country" -> toJson(user.country))
+    if (user.isSuperAdmin) info += "isAdmin" -> jsTrue
+    if (user.isOwner) info += "isOwner" -> jsTrue
+    // Skip email for now, currently no particular access control.
+    toJson(info)
   }
 
 }

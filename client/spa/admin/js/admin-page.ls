@@ -184,13 +184,18 @@ AdminModule.factory 'AdminService', ['$http', ($http) ->
   mixinInfoListCommon $scope, 'actionList'
 
   updateActionList = (treesFoldersPageIds) ->
-    adminService.listActions treesFoldersPageIds, (actions) ->
-      $scope.actionList = actions.actions
-      # The reply looks like so:
-      # actions: [{
-      #   loginId: "290", idtyId: "Moo", pageId: "2b1t8",
-      #   id: "3smk1", cdati: "2012-04-26T10:16:16Z", userId: "Mää", type: "Böö"
-      #   },{ ... }]
+    adminService.listActions treesFoldersPageIds, (data) ->
+      # Add author name info to the action list, and update $scope.
+      usersById = {}
+      for user in data.users => usersById[user.id] = user
+      $scope.actionList = []
+      for action in data.actions
+        user = usersById[action.userId]
+        actionWithAuthor = {} <<< action
+        actionWithAuthor <<<
+            authorId: user.id
+            authorDisplayName: user.displayName
+        $scope.actionList.push actionWithAuthor
 
   adminService.onPathSelectionChange updateActionList
 
