@@ -246,7 +246,8 @@ object PagePath {
 
 case class PathRanges(
   folders: Seq[String] = Nil,
-  trees: Seq[String] = Nil) {
+  trees: Seq[String] = Nil,
+  pageIds: Seq[String] = Nil) {
 
   folders map (_checkIsFolder _)
   trees map (_checkIsFolder _)
