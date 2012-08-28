@@ -11,7 +11,7 @@ import java.{util => ju}
 import play.api._
 import play.api.data._
 import play.api.data.Forms._
-import play.api.libs.json.{Json, JsValue}
+import play.api.libs.json._
 import play.api.libs.json.Json.toJson
 import play.api.mvc.{Action => _, _}
 import xml.{Node, NodeSeq}
@@ -26,6 +26,10 @@ import Utils.{OkHtml, OkXml}
  * Lists folders, pages and actions.
  */
 object AppList extends mvc.Controller {
+
+
+  val ActionCountLimit = 250
+  val PostTextLengthLimit = 500
 
 
   def listPages(pathIn: PagePath, contentType: DebikiHttp.ContentType) =
@@ -77,25 +81,21 @@ object AppList extends mvc.Controller {
 
     val (actions, people: People) = pageReq.dao.loadRecentActionExcerpts(
       fromIp = fromIpOpt, byIdentity = byIdtyOpt, pathRanges = pathRanges,
-      limit = 500)
+      limit = ActionCountLimit)
 
     contentType match {
       case DebikiHttp.ContentType.Html =>
         Ok(views.html.listActions(actions))
       case DebikiHttp.ContentType.Json =>
         Ok(toJson(Map(
-          "actions" -> (actions map { action =>
-            toJson(Map(
-              "id" -> action.id,
-              "pageId" -> action.page.id,
-              "type" -> classNameOf(action), //DebikiHttp.typeNameOf(action),
-              "userId" -> action.user_!.id,
-              "idtyId" -> action.identity_!.id,
-              "loginId" -> action.loginId,
-              "cdati" -> toIso8601T(action.ctime)
-            ))
-          }),
-          "users" -> people.users.map(jsonFor _))))
+          "actions" -> JsArray(actions.map(_jsonFor _)),
+          "users" -> JsArray(people.users.map(_jsonFor _)),
+          "postTextLengthLimit" -> JsNumber(PostTextLengthLimit),
+          // This limit is only approximate, if you list pages both
+          // by folder path and by page id. see
+          //   RelDbTenantDao.loadRecentActionExcerpts(),
+          // which does a `(select ... limit ...) union (select ... limit ...)`.
+          "actionCountApproxLimit" -> JsNumber(ActionCountLimit))))
     }
   }
 
@@ -112,15 +112,40 @@ object AppList extends mvc.Controller {
   }
 
 
-  def jsonFor(user: User): JsValue = {
-    val jsTrue = play.api.libs.json.JsBoolean(true)
+  private def _jsonFor(action: ViAc): JsValue = {
+    var data = Map[String, JsValue](
+      "id" -> JsString(action.id),
+      "pageId" -> JsString(action.page.id),
+      "type" -> JsString(classNameOf(action.action)),
+      "userId" -> JsString(action.user_!.id),
+      "idtyId" -> JsString(action.identity_!.id),
+      "loginId" -> JsString(action.loginId),
+      "cdati" -> JsString(toIso8601T(action.ctime)))
+
+    action match {
+      case post: ViPo =>
+        data += "text" -> JsString(post.text take PostTextLengthLimit)
+        if (post.editsAppdDesc.nonEmpty)
+          data += "editsAppliedCount" -> JsNumber(post.editsAppdDesc.length)
+        if (post.editsPending.nonEmpty)
+          data += "editsPendingCount" -> JsNumber(post.editsPending.length)
+      case _ =>
+    }
+
+    toJson(data)
+  }
+
+
+  private def _jsonFor(user: User): JsValue = {
     var info = Map[String, JsValue](
-      "id" -> toJson(user.id),
-      "displayName" -> toJson(user.displayName),
-      "country" -> toJson(user.country))
-    if (user.isSuperAdmin) info += "isAdmin" -> jsTrue
-    if (user.isOwner) info += "isOwner" -> jsTrue
+      "id" -> JsString(user.id),
+      "displayName" -> JsString(user.displayName),
+      "country" -> JsString(user.country))
+
+    if (user.isSuperAdmin) info += "isAdmin" -> JsBoolean(true)
+    if (user.isOwner) info += "isOwner" -> JsBoolean(true)
     // Skip email for now, currently no particular access control.
+
     toJson(info)
   }
 
