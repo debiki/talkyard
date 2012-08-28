@@ -31,10 +31,13 @@ AdminModule.factory 'AdminService', ['$http', ($http) ->
       onSuccess(data)
 
   api.listActions = (treesFoldersPageIds, onSuccess) ->
-    treesStr = join ',' treesFoldersPageIds.trees
-    foldersStr = join ',' treesFoldersPageIds.folders
-    pageIdsStr = join ',' treesFoldersPageIds.pageIds
-    $http.get("/?list-actions.json&in-trees=#treesStr").success (data) ->
+    treesStr   = treesFoldersPageIds.trees?.join(',') || ''
+    foldersStr = treesFoldersPageIds.folders?.join(',') || ''
+    pageIdsStr = treesFoldersPageIds.pageIds?.join(',') || ''
+    $http.get("/?list-actions.json" +
+        "&in-trees=#treesStr" +
+        "&in-folders=#foldersStr" +
+        "&on-pages=#pageIdsStr").success (data) ->
       onSuccess data
 
   api
@@ -178,9 +181,21 @@ AdminModule.factory 'AdminService', ['$http', ($http) ->
 
 @ActionListCtrl = ['$scope', 'AdminService', ($scope, adminService) ->
 
-  adminService.onPathSelectionChange (treesFoldersPageIds) ->
+  mixinInfoListCommon $scope, 'actionList'
+
+  updateActionList = (treesFoldersPageIds) ->
     adminService.listActions treesFoldersPageIds, (actions) ->
-      'hmm'
+      $scope.actionList = actions.actions
+      # The reply looks like so:
+      # actions: [{
+      #   loginId: "290", idtyId: "Moo", pageId: "2b1t8",
+      #   id: "3smk1", cdati: "2012-04-26T10:16:16Z", userId: "Mää", type: "Böö"
+      #   },{ ... }]
+
+  adminService.onPathSelectionChange updateActionList
+
+  # On page load, list the most recent actions, for all pages.
+  updateActionList { trees: ['/'] }
 
   ]
 
@@ -191,6 +206,24 @@ AdminModule.factory 'AdminService', ['$http', ($http) ->
   'boo bä'
 
   ]
+
+
+
+/**
+ * Common functionality for ActionListCtrl, UserListCtrl and (in the future)
+ * PageListCtrl.
+ */
+function mixinInfoListCommon($scope, infoListName)
+
+  $scope.toggleAll = ->
+    for info in $scope[infoListName]
+      info.selected = $scope.allSelected
+
+  $scope.updateToggleAllCheckbox = ->
+    $scope.allSelected = true
+    for info in $scope[infoListName]
+      $scope.allSelected and= info.selected
+
 
 #
 # vim: fdm=marker et ts=2 sw=2 tw=80 fo=tcqwn list
