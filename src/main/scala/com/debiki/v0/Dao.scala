@@ -88,7 +88,7 @@ abstract class TenantDaoSpi {
 
   def loadRecentActionExcerpts(fromIp: Option[String],
         byIdentity: Option[String],
-        pathRanges: PathRanges, limit: Int): Seq[ViAc]
+        pathRanges: PathRanges, limit: Int): (Seq[ViAc], People)
 
   def listPagePaths(
         pageRanges: PathRanges,
@@ -336,7 +336,7 @@ class TenantDao(
         fromIp: Option[String] = None,
         byIdentity: Option[String] = None,
         pathRanges: PathRanges = PathRanges.Anywhere,
-        limit: Int): Seq[ViAc] = {
+        limit: Int): (Seq[ViAc], People) = {
     _chargeForOneReadReq()
     _spi.loadRecentActionExcerpts(fromIp = fromIp, byIdentity = byIdentity,
         pathRanges = pathRanges, limit = limit)
