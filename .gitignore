@@ -27,3 +27,7 @@ tmp/
 public/res/combined-debiki*
 public/res/debiki-spa-*
 
+# Ignore generated test JS files.
+test-client/debiki-utils.js
+test-client/unit/spa/admin/*.js
+
