@@ -98,12 +98,6 @@ abstract class TenantDaoSpi {
         offset: Int
       ): Seq[(PagePath, PageDetails)]
 
-  def listActions(
-        pageRanges: PathRanges,
-        includePages: List[PageStatus],
-        limit: Int,
-        offset: Int): Seq[ActionLocator]
-
   def loadIdtyAndUser(forLoginId: String): Option[(Identity, User)]
 
   def loadIdtyDetailsAndUser(forLoginId: String = null,
@@ -359,15 +353,6 @@ class TenantDao(
         offset: Int): Seq[(PagePath, PageDetails)] = {
     _chargeForOneReadReq()
     _spi.listPagePaths(pageRanges, include, sortBy, limit, offset)
-  }
-
-  def listActions(
-        pageRanges: PathRanges,
-        includePages: List[PageStatus],
-        limit: Int,
-        offset: Int): Seq[ActionLocator] = {
-    _chargeForOneReadReq()
-    _spi.listActions(pageRanges, includePages, limit, offset)
   }
 
 

@@ -289,28 +289,4 @@ case class Delete(
 // Perhaps better have many small specialized classes.
 
 
-
-// Should probably move to debiki-app-play (since knows exactly where
-// debiki-app-play places it, in the URL).
-case class ActionLocator(
-  pagePath: PagePath,
-  actionId: String,
-  actionCtime: ju.Date,
-  actionType: String  // for now. later: PostType? renamed to ActionType?
-){
-
-  def path: String = {
-    // - Add `?view=3` for templates, since they're on their own virtual page
-    // not connected to the root post.
-    // - Add `?view` to paths that end with .js or .css or Debiki will
-    // render the page as text, not html.
-    val fragAndQuery =
-      if (actionId == Page.TemplateId) pagePath.path +"?view="+ Page.TemplateId
-      else if (pagePath.isCodePage) pagePath.path + "?view"
-      else pagePath.path
-    fragAndQuery +"#post-"+ actionId
-  }
-}
-
-
 // vim: fdm=marker et ts=2 sw=2 tw=80 fo=tcqwn list
