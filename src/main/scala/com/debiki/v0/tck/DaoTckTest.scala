@@ -764,6 +764,30 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
           limit = 99)
         actions.length must be_>(0)
       }
+
+      "by page id, find nothing, non existing page" >> {
+        val actions = dao.loadRecentActionExcerpts(
+          pathRanges = PathRanges(pageIds = Seq("nonexistingpage")),
+          limit = 99)
+        actions.length must_== 0
+      }
+
+      "by page id, find something, when page exists" >> {
+        val actions = dao.loadRecentActionExcerpts(
+          pathRanges = PathRanges(pageIds = Seq(ex1_debate.id)),
+          limit = 99)
+        actions.length must be_>(0)
+      }
+
+      "by page id, folder and tree, find something" >> {
+        val actions = dao.loadRecentActionExcerpts(
+          pathRanges = PathRanges(
+            pageIds = Seq(ex1_debate.id),  // exists
+            folders = Seq("/folder/"),  // there's a page in this folder
+            trees = Seq("/")),  // everything
+          limit = 99)
+        actions.length must be_>(0)
+      }
     }
 
 
