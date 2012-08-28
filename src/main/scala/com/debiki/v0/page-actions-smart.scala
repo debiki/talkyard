@@ -29,15 +29,15 @@ class ViAc(val debate: Debate, val action: Action) {
   def page = debate // should rename `debate` to `page`
   def id: String = action.id
   def ctime = action.ctime
-  def login: Option[Login] = debate.login(action.loginId)
+  def login: Option[Login] = debate.people.login(action.loginId)
   def login_! : Login = login.getOrElse(runErr(
      "DwE6gG32", "No login with id "+ safed(action.loginId) +
      " for action "+ safed(id)))
   def identity: Option[Identity] = login.flatMap(l =>
-                                    debate.identity(l.identityId))
-  def identity_! : Identity = debate.identity_!(login_!.identityId)
-  def user : Option[User] = identity.flatMap(i => debate.user(i.userId))
-  def user_! : User = debate.user_!(identity_!.userId)
+                                    debate.people.identity(l.identityId))
+  def identity_! : Identity = debate.people.identity_!(login_!.identityId)
+  def user : Option[User] = identity.flatMap(i => debate.people.user(i.userId))
+  def user_! : User = debate.people.user_!(identity_!.userId)
   def ip: Option[String] = action.newIp.orElse(login.map(_.ip))
   def ip_! : String = action.newIp.getOrElse(login_!.ip)
   def ipSaltHash: Option[String] = ip.map(saltAndHashIp(_))

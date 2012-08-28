@@ -10,11 +10,15 @@ import Prelude._
 import User.checkId
 
 
-abstract trait People {
+object People {
+  val None = People(Nil, Nil, Nil)
+}
 
-  def logins: List[Login]
-  def identities: List[Identity]
-  def users: List[User]
+
+case class People(
+  logins: List[Login] = Nil,
+  identities: List[Identity] = Nil,
+  users: List[User] = Nil) {
 
   /**
    * Returns a NiLo with info on the author of the post.

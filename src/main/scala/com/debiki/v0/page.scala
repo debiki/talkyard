@@ -24,13 +24,8 @@ object Debate {
 
   def empty(id: String) = Debate(id)
 
-  def fromActions(guid: String,
-                  logins: List[Login],
-                  identities: List[Identity],
-                  users: List[User],
-                  actions: List[AnyRef]): Debate = {
-    Debate(guid, logins, identities, users) ++ actions
-  }
+  def fromActions(guid: String, people: People, actions: List[AnyRef]): Debate =
+    Debate(guid, people) ++ actions
 
   /** Assigns ids to actions and updates references from e.g. Edits to Posts.
    *  Only remaps IDs that start with "?".
@@ -70,16 +65,14 @@ object Debate {
 // Could rename to Page.
 case class Debate (
   guid: String,
-  logins: List[Login] = Nil,
-  identities: List[Identity] = Nil,
-  users: List[User] = Nil,
+  people: People = People.None,
   private[debiki] val posts: List[Post] = Nil,
   private[debiki] val ratings: List[Rating] = Nil,
   private[debiki] val edits: List[Edit] = Nil,
   private[debiki] val editApps: List[EditApp] = Nil,
   private[debiki] val flags: List[Flag] = Nil,
-  private[debiki] val deletions: List[Delete] = Nil
-) extends People {
+  private[debiki] val deletions: List[Delete] = Nil) {
+
   private lazy val postsById =
       imm.Map[String, Post](posts.map(x => (x.id, x)): _*)
 
@@ -359,10 +352,8 @@ case class Debate (
 
   def + (rating: Rating): Debate = copy(ratings = rating :: ratings)
 
+  // COULD [T <: Action] instead of >: AnyRef?
   def ++[T >: AnyRef] (actions: List[T]): Debate = {
-    var logins2 = logins
-    var identities2 = identities
-    var users2 = users
     var posts2 = posts
     var ratings2 = ratings
     var edits2 = edits
@@ -370,9 +361,6 @@ case class Debate (
     var flags2 = flags
     var dels2 = deletions
     for (a <- actions) a match {
-      case l: Login => logins2 ::= l
-      case i: Identity => identities2 ::= i
-      case u: User => users2 ::= u
       case p: Post => posts2 ::= p
       case r: Rating => ratings2 ::= r
       case e: Edit => edits2 ::= e
@@ -382,7 +370,7 @@ case class Debate (
       case x => runErr(
         "DwE8k3EC", "Unknown action type: "+ classNameOf(x))
     }
-    Debate(guid, logins2, identities2, users2, posts2, ratings2,
+    Debate(id, people, posts2, ratings2,
         edits2, editApps2, flags2, dels2)
   }
 
