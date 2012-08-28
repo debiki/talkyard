@@ -400,7 +400,7 @@ class DebateHtml(val debate: Debate, val pageTrust: PageTrust) {
                                      ): RenderedComment = {
     val cssPostId = "post-"+ vipo.id
     val deletion = vipo.firstDelete.get
-    val deleter = debate.authorOf_!(deletion)
+    val deleter = debate.people.authorOf_!(deletion)
     // COULD add itemscope and itemtype attrs, http://schema.org/Comment
     val html =
     <div id={cssPostId} class='dw-p dw-p-dl'>
@@ -505,7 +505,7 @@ class DebateHtml(val debate: Debate, val pageTrust: PageTrust) {
 
     val long = numLines > 9
     val cutS = if (long && post.id != rootPostId) " dw-x-s" else ""
-    val author = debate.authorOf_!(post)
+    val author = debate.people.authorOf_!(post)
 
     val (flagsTop: NodeSeq, flagsDetails: NodeSeq) = {
       if (vipo.flags isEmpty) (Nil: NodeSeq, Nil: NodeSeq)
@@ -606,7 +606,7 @@ class DebateHtml(val debate: Debate, val pageTrust: PageTrust) {
           editsAppld.map(edAp => debate.vied_!(edAp._1.id).identity_!.id).
           distinct.length
         lazy val editor =
-          debate.authorOf_!(debate.editsById(lastEditApp.get.editId))
+          debate.people.authorOf_!(debate.editsById(lastEditApp.get.editId))
         <span class='dw-p-hd-e'>{
             Text(", edited ") ++
             (if (editorsCount > 1) {
@@ -1136,8 +1136,8 @@ class FormHtml(val config: HtmlConfig, xsrfToken: String,
                   mayEdit: Boolean): NodeSeq = {
     def xmlFor(edit: Edit, eapp: Option[EditApp]): NodeSeq = {
       val applied = eapp isDefined
-      val editor = page.authorOf_!(edit)
-      def applier_! = page.authorOf_!(eapp.get)
+      val editor = page.people.authorOf_!(edit)
+      def applier_! = page.people.authorOf_!(eapp.get)
       <li class='dw-e-sg'>
         <div class='dw-e-sg-e'>{
             <div>{
