@@ -83,12 +83,16 @@ object AppList extends mvc.Controller {
       fromIp = fromIpOpt, byIdentity = byIdtyOpt, pathRanges = pathRanges,
       limit = ActionCountLimit)
 
+    // COULD rename this function to listPosts?
+    // Or:  ?list-actions&type=posts&...
+    def posts = actions filter (_.action.isInstanceOf[Post])
+
     contentType match {
       case DebikiHttp.ContentType.Html =>
         Ok(views.html.listActions(actions))
       case DebikiHttp.ContentType.Json =>
         Ok(toJson(Map(
-          "actions" -> JsArray(actions.map(_jsonFor _)),
+          "actions" -> JsArray(posts.map(_jsonFor _)),
           "users" -> JsArray(people.users.map(_jsonFor _)),
           "postTextLengthLimit" -> JsNumber(PostTextLengthLimit),
           // This limit is only approximate, if you list pages both
