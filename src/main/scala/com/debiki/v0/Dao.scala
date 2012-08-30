@@ -325,7 +325,16 @@ class TenantDao(
   }
 
   /**
-   * Loads at most `limit` recent actions, conducted e.g. at `fromIp`.
+   * Loads at most `limit` recent posts, conducted e.g. at `fromIp`.
+   * Also loads actions that affected those posts (e.g. flags, edits,
+   * approvals). Also loads the people who did the actions.
+   *
+   * When listing actions by IP, loads the most recent actions of any type.
+   * When listing by /path/, however, loads `limit` *posts*, and then loads
+   * actions that affected them. Rationale: When selecting by /path/, we
+   * probably want to list e.g. all comments on a page. But when listing
+   * by IP / user-id, we're also interested in e.g. which ratings the
+   * user has cast, to find out if s/he is astroturfing.
    *
    * Loads "excerpts" only:
    * - For Rating:s, loads no rating tags.
