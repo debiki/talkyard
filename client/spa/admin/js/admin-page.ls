@@ -15,6 +15,7 @@ AdminModule.filter 'filterProp', ->
 
 AdminModule.factory 'AdminService', ['$http', ($http) ->
 
+  pagesById = {}
   api = {}
   selectedPathsListeners = []
 
@@ -25,9 +26,15 @@ AdminModule.factory 'AdminService', ['$http', ($http) ->
   api.onPathSelectionChange = (listener) ->
     selectedPathsListeners.push listener
 
+  api.getPageById = (pageId) ->
+    if pagesById == {} then api.listAllPages -> 'noop'
+    pagesById[pageId]
+
   api.listAllPages = (onSuccess) ->
     $http.get('/?list-pages.json&in-tree').success (data) ->
       # Angular has already parsed the JSON.
+      for page in data.pages
+        pagesById[page.id] = page
       onSuccess(data)
 
   api.listActions = (treesFoldersPageIds, onSuccess) ->
@@ -190,12 +197,16 @@ AdminModule.factory 'AdminService', ['$http', ($http) ->
       for user in data.users => usersById[user.id] = user
       $scope.actionList = []
       for action in data.actions
+        pagePath = adminService.getPageById(action.pageId)?.path || '(new page)'
         user = usersById[action.userId]
-        actionWithAuthor = {} <<< action
-        actionWithAuthor <<<
+        actionWithDetails = {} <<< action
+        actionWithDetails <<<
             authorId: user.id
             authorDisplayName: user.displayName
-        $scope.actionList.push actionWithAuthor
+            pagePath: pagePath
+        if action.type is 'Post'
+          actionWithDetails.url = urlToPost(action)
+        $scope.actionList.push actionWithDetails
 
   adminService.onPathSelectionChange updateActionList
 
@@ -220,14 +231,30 @@ AdminModule.factory 'AdminService', ['$http', ($http) ->
  */
 function mixinInfoListCommon($scope, infoListName)
 
-  $scope.toggleAll = ->
+  $scope.toggleAllChecked = ->
     for info in $scope[infoListName]
       info.selected = $scope.allSelected
 
-  $scope.updateToggleAllCheckbox = ->
+  $scope.onRowCheckedChange = ->
+    updateToggleAllCheckbox!
+    updateCheckedRowsCounts!
+
+  updateToggleAllCheckbox = ->
     $scope.allSelected = true
     for info in $scope[infoListName]
       $scope.allSelected and= info.selected
+
+  updateCheckedRowsCounts = ->
+    checkedRowsCount = filter (.selected), $scope[infoListName] |> (.length)
+    $scope.oneRowChecked = checkedRowsCount == 1
+    $scope.manyRowsChecked = checkedRowsCount >= 1
+
+
+
+function urlToPost(action)
+  queryStr = if action.id == 2 then '?view=template' else ''
+  actionPath = '/-' + action.pageId + queryStr + '#post-' + action.id
+
 
 
 #

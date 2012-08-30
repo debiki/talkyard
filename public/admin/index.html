@@ -54,8 +54,8 @@
     <p>Everything below is just mockups (i.e. <i>non functional</i> test stuff).
     </p>
 
-    <div class='row'>
-      <div id='page-tree-container' class='span5' ng-controller='PathsCtrl'>
+    <div>
+      <div id='page-tree-container' ng-controller='PathsCtrl'>
         <label>Filter paths: <input ng-model="pathFilterText"/></label>
         <ol id='page-tree' class='{{"full-paths-"+ showFullPaths}}'>
           <li ng-repeat="path in paths | filterProp:'value':pathFilterText"
@@ -87,11 +87,11 @@
         </ol>
       </div>
 
-      <div class='span7' id='details'>
+      <div id='details'>
         <ul class="nav nav-tabs">
           <!-- <li><a href="#page-details-tab" data-toggle="tab">Pages</a></li> 
           -->
-          <li class='active'><a href="#events-tab" data-toggle="tab">Events</a></li>
+          <li class='active'><a href="#events-tab" data-toggle="tab">Pages and Comments</a></li>
           <li><a href="#users-tab" data-toggle="tab">Users</a></li>
         </ul>
 
@@ -122,26 +122,27 @@
           </div> -->
           <div ng-controller='ActionListCtrl' class='tab-pane active'
                 id='events-tab'>
-            <div>
-              <a class='btn'>View</a>
-              <a class='btn'>Edit</a>
+            <div class='details-list-buttons'>
+              <a id='btn-view-post' class='btn' ng-show='oneRowChecked'>View</a>
+              <a id='btn-approve-post' class='btn' ng-show='manyRowsChecked'>Approve</a>
+              <a id='btn-reject-post' class='btn' ng-show='manyRowsChecked'>Reject</a>
+              <!-- <a class='btn'>Edit</a>
               <a class='btn'>Subscribe</a>
               <a class='btn'>!Spam</a>
               <a class='btn'>#Delete</a>
-              <a class='btn'>Sort</a>
+              <a class='btn'>Sort</a> -->
             </div>
             <table class='table -table-bordered -table-striped'>
               <thead>
                 <tr>
                   <th class='row-selector'>
                     <label>
-                      <input type='checkbox' ng-change='toggleAll()'
+                      <input type='checkbox' ng-change='toggleAllChecked()'
                       ng-model='allSelected'>
                     </label>
                   </th>
-                  <th>Type</th>
+                  <th>What</th>
                   <th>Author</th>
-                  <th>Links</th>
                   <th>Date</th>
                   <th>Text</th>
                 </tr>
@@ -151,17 +152,16 @@
                   <td class='row-selector'>
                     <label>
                       <input type='checkbox' ng-model='action.selected'
-                          ng-click='updateToggleAllCheckbox()'>
+                          ng-click='onRowCheckedChange()'>
                     </label>
                   </td>
-                  <td><a target='_blank'>{{action.type}}</a></td>
-                  <td><a target='_blank' href='#!/user/{{action.authorId}}'>{{action.authorDisplayName}}</a></td>
-                  <td>
-                    <a target='_blank' href='#{{action.loginId}}'>session</a>
-                    <a target='_blank' href='/-{{action.pageId}}'>page</a>
+                  <td class='action-what'>
+                    <a target='_blank' class='action-status' href='{{action.url}}'>{{action.type}}</a><br>
+                    <a target='_blank' class='action-path' href='{{action.url}}'>{{action.pagePath}}</a>
                   </td>
+                  <td><a target='_blank' href='#!/user/{{action.authorId}}'>{{action.authorDisplayName}}</a></td>
                   <td><a target='_blank'>{{action.cdati.replace('T', ' ')}}</a></td>
-                  <td>{{action.text}}</td>
+                  <td class='post-text'>{{action.text}}</td>
                 </tr>
               </tbody>
             </table>
@@ -179,7 +179,7 @@
                 <tr>
                   <th class='row-selector'>
                     <label>
-                      <input type='checkbox' ng-change='toggleAll()'
+                      <input type='checkbox' ng-change='toggleAllChecked()'
                       ng-model='allSelected'>
                     </label>
                   </th>
@@ -198,7 +198,7 @@
                   <td class='row-selector'>
                     <label>
                       <input type='checkbox' ng-model='user.selected'
-                          ng-click='updateToggleAllCheckbox()'>
+                          ng-click='onRowCheckedChange()'>
                     </label>
                   </td>
                   <td><a target='_blank'>{{user.name}}</a></td>

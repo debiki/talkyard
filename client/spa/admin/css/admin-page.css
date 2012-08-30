@@ -13,6 +13,15 @@ h1 {
   margin: 0 0 5em;
 }
 
+#page-tree-container,
+#details{
+  display: table-cell;
+}
+
+#page-tree-container {
+  padding-right: 25px;
+}
+
 #page-tree-container ol {
   margin-top: 1.5em;
 }
@@ -90,6 +99,7 @@ li {
   display: block;
   font-family: monospace;
   color: hsl(211, 35%, 30%) !important;
+  white-space: nowrap; /* no line breaks in page paths */
 }
 .open-close-path:hover {
   background-color: #eaeaea;
@@ -106,8 +116,11 @@ li {
 .included-true .open-close-path:hover {
   background-color: #dfdfdf;
 }
-.is-folder.open-false .open-close-path {
+
+.is-folder .open-close-path {
   text-decoration: underline;
+}
+.is-folder.open-false .open-close-path {
   font-weight: bold;
 }
 
@@ -124,6 +137,11 @@ li {
 #page-tree:not(.full-paths-true) .path-depth-7 > :not(.checkbox) { padding-left: 140px }
 #page-tree:not(.full-paths-true) .path-depth-8 > :not(.checkbox) { padding-left: 160px }
 #page-tree:not(.full-paths-true) .path-depth-9 > :not(.checkbox) { padding-left: 180px }
+
+#details .details-list-buttons {
+  min-height: 30px; /* if no buttons shown */
+  margin: 5px 0;
+}
 
 #details table {
   margin-top: 8px;
@@ -148,6 +166,24 @@ li {
   cursor: pointer;
   background-color: #E5E5E5;
 }
+
+#details table td:not(.post-text) {
+  white-space: nowrap; /* no line breaks in page paths */
+}
+
+#details table td.post-text {
+}
+
+#details td.action-what {
+  max-width: 23em;
+}
+
+#details .action-path {
+  font-size: 11px;
+  font-family: monospace;
+  white-space: normal !important; /* sometimes very long */
+}
+
 
 
 /* vim: fdm=marker et ts=2 sw=2 tw=80 fo=tcqwn list
