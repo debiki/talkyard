@@ -16,7 +16,7 @@ import play.api.data._
 import play.api.data.Forms._
 import play.api.libs.concurrent._
 import play.api.libs.{openid => oid}
-import Actions._
+import PageActions._
 import Utils.ValidationImplicits._
 
 

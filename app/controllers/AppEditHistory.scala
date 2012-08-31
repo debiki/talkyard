@@ -9,7 +9,7 @@ import debiki._
 import debiki.DebikiHttp._
 import play.api._
 import play.api.mvc.{Action => _}
-import Actions._
+import PageActions._
 import Prelude._
 import Utils.{OkHtml}
 

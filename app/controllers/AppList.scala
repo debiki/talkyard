@@ -15,7 +15,7 @@ import play.api.libs.json._
 import play.api.libs.json.Json.toJson
 import play.api.mvc.{Action => _, _}
 import xml.{Node, NodeSeq}
-import Actions._
+import PageActions._
 import DebikiHttp._
 import Prelude._
 import Utils.ValidationImplicits._

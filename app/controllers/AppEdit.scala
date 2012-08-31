@@ -11,7 +11,7 @@ import play.api._
 import play.api.data._
 import play.api.data.Forms._
 import play.api.mvc.{Action => _, _}
-import Actions._
+import PageActions._
 import Prelude._
 import Utils.{OkHtml}
 

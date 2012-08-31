@@ -7,7 +7,7 @@ package debiki
 import com.debiki.v0.Prelude._
 import com.debiki.v0.{liftweb => lw}
 import com.google.{common => guava}
-import controllers.Actions.PageRequest
+import controllers.PageRequest
 import debiki.DebikiHttp.throwNotFound
 import java.{util => ju}
 import play.api.Logger

@@ -6,7 +6,7 @@ package debiki
 
 import com.debiki.v0._
 import com.debiki.v0.Prelude._
-import controllers.Actions.PageRequest
+import controllers.PageRequest
 import controllers.Utils.{OkHtml, ForbiddenHtml, BadReqHtml}
 import java.{net => jn}
 import play.api._

@@ -5,7 +5,7 @@
 package debiki
 
 import com.debiki.v0._
-import controllers.Actions.PageRequest
+import controllers.PageRequest
 import play.{api => p}
 import Prelude._
 import TemplateEngine._
