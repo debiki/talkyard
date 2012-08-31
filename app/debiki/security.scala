@@ -44,12 +44,20 @@ object DebikiSecurity {
           case (_, _) => Xsrf.newSidAndXsrf(None)
         }
       } else {
-        // There must be an xsrf token in the POST:ed form data.
         assert(request.method == "POST") // for now
-        val params = request.body.asInstanceOf[Map[String, Seq[String]]]
-        val xsrfToken: String =
-          params.get(debiki.FormHtml.XsrfInpName).map(_.head).getOrElse(
-            throwForbidden("DwE0y321", "No XSRF token"))
+        // There must be an xsrf token in a certain header, or in a certain
+        // input in any POST:ed form data. Check the header first, in case
+        // this is a JSON request (then there is no form data).
+        var xsrfToken = request.headers.get(XsrfHeaderName) orElse {
+          if (!request.body.isInstanceOf[Map[String, Seq[String]]]) {
+            None
+          } else {
+            val params = request.body.asInstanceOf[Map[String, Seq[String]]]
+            params.get(debiki.FormHtml.XsrfInpName).map(_.head)
+          }
+        } getOrElse
+          throwForbidden("DwE0y321", "No XSRF token")
+
         xsrfStatus = Xsrf.check(xsrfToken, sidValOpt)
         (sidStatus, xsrfStatus) match {
           case (sidOk: SidOk, xsrfOk: XsrfOk) => (sidOk, xsrfOk, Nil)
@@ -70,6 +78,13 @@ object DebikiSecurity {
 
     sidXsrfNewCookies
   }
+
+
+  /**
+   * A HTTP header in which AngularJS sends any xsrf token, when AngularJS
+   * posts JSON. (So you cannot rename this header.)
+   */
+  val XsrfHeaderName = "X-XSRF-TOKEN"
 
 }
 
