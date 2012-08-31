@@ -133,6 +133,19 @@ object AppList extends mvc.Controller {
           data += "editsAppliedCount" -> JsNumber(post.editsAppdDesc.length)
         if (post.editsPending.nonEmpty)
           data += "editsPendingCount" -> JsNumber(post.editsPending.length)
+
+        val status =
+          if (post.currentVersionHasBeenApproved) "Approved"
+          else if (post.currentVersionHasBeenRejected) "Rejected"
+          else if (post.someVersionHasBeenApproved) "NewEdits"
+          else "New"
+        data += "status" -> JsString(status)
+
+        if (post.flagsPendingReview nonEmpty)
+          data += "newFlags" -> _jsonFor(post.flagsPendingReview)
+        if (post.flagsReviewed nonEmpty)
+          data += "oldFlags" -> _jsonFor(post.flagsReviewed)
+
       case _ =>
     }
 
@@ -151,6 +164,19 @@ object AppList extends mvc.Controller {
     // Skip email for now, currently no particular access control.
 
     toJson(info)
+  }
+
+
+  private def _jsonFor(flags: List[Flag]): JsValue = {
+    def jsonForFlag(flag: Flag): JsValue = {
+      var data = Map[String, JsValue](
+        "cdati" -> JsString(toIso8601T(flag.ctime)),
+        "reason" -> JsString(flag.reason.toString))
+        // COULD: "userId" -> JsString(flag.user_!.id)
+      if (flag.details nonEmpty) data += "details" -> JsString(flag.details)
+      toJson(data)
+    }
+    JsArray(flags map (jsonForFlag _))
   }
 
 }
