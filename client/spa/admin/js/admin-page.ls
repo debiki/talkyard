@@ -47,6 +47,16 @@ AdminModule.factory 'AdminService', ['$http', ($http) ->
         "&for-pages=#pageIdsStr").success (data) ->
       onSuccess data
 
+
+  api.approve = (actions, onSuccess) ->
+    onSuccess! # for now
+
+  api.reject = (actions, onSuccess) ->
+    onSuccess! # for now
+
+  api.delete = (actions, onSuccess) ->
+    onSuccess! # for now
+
   api
 
   ]
@@ -190,6 +200,23 @@ AdminModule.factory 'AdminService', ['$http', ($http) ->
 
   mixinInfoListCommon $scope, 'actionList'
 
+  doInlineAction = (adminServiceFn, actionRows, doneMessage) ->
+    for row in actionRows
+      row <<< inlineBtnToggledAllOff!
+      row.inlineMessage = 'Wait...'
+    adminServiceFn actionRows, ->
+      for row in actionRows
+        row.inlineMessage = doneMessage
+
+  $scope.approve = (actionRow) ->
+    doInlineAction adminService.approve, [actionRow], 'Approved.'
+
+  $scope.reject = (actionRow) ->
+    doInlineAction adminService.reject, [actionRow], 'Rejected.'
+
+  $scope.delete = (actionRow) ->
+    doInlineAction adminService.delete, [actionRow], 'Deleted.'
+
   updateActionList = (treesFoldersPageIds) ->
     adminService.listActions treesFoldersPageIds, (data) ->
       # Add author name info to the action list, and update $scope.
@@ -206,7 +233,10 @@ AdminModule.factory 'AdminService', ['$http', ($http) ->
             pagePath: pagePath
         if action.type is 'Post'
           actionWithDetails.url = urlToPost(action)
+          actionWithDetails.description = describePost(action)
+          actionWithDetails <<< inlineBtnTogglersForPost(action)
         $scope.actionList.push actionWithDetails
+      return
 
   adminService.onPathSelectionChange updateActionList
 
@@ -251,11 +281,35 @@ function mixinInfoListCommon($scope, infoListName)
 
 
 
-function urlToPost(action)
-  queryStr = if action.id == 2 then '?view=template' else ''
-  actionPath = '/-' + action.pageId + queryStr + '#post-' + action.id
+function urlToPost(post)
+  queryStr = if post.id == 2 then '?view=template' else ''
+  actionPath = '/-' + post.pageId + queryStr + '#post-' + post.id
 
 
 
-#
+function describePost(post)
+  what = switch post.id
+    | '1' => 'Page'
+    | '2' => 'Page title'
+    | '3' => 'Page config'
+    | _   => 'Comment'
+
+  switch post.status
+  | 'New' => "New #{what.toLowerCase!}"
+  | 'Approved' => what
+  | 'Rejected' => "#what, rejected"
+  | 'NewEdits' => "#what, new edits, approve?"
+  | _ => "#what, #{post.status}"
+
+
+
+function inlineBtnToggledAllOff
+  { showApproveBtn: false, showRejectBtn: false }
+
+function inlineBtnTogglersForPost(post)
+  switch post.status
+  | 'New' => { showApproveBtn: true, showRejectBtn: true }
+  | 'NewEdits' => { showApproveBtn: true, showRejectBtn: true }
+  | _ => {}
+
 # vim: fdm=marker et ts=2 sw=2 tw=80 fo=tcqwn list

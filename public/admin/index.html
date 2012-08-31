@@ -123,7 +123,7 @@
           <div ng-controller='ActionListCtrl' class='tab-pane active'
                 id='events-tab'>
             <div class='details-list-buttons'>
-              <a id='btn-view-post' class='btn' ng-show='oneRowChecked'>View</a>
+              <!--<a id='btn-view-post' class='btn' ng-show='oneRowChecked'>View</a>-->
               <a id='btn-approve-post' class='btn' ng-show='manyRowsChecked'>Approve</a>
               <a id='btn-reject-post' class='btn' ng-show='manyRowsChecked'>Reject</a>
               <!-- <a class='btn'>Edit</a>
@@ -156,7 +156,13 @@
                     </label>
                   </td>
                   <td class='action-what'>
-                    <a target='_blank' class='action-status' href='{{action.url}}'>{{action.type}}</a><br>
+                    <div>
+                      <a target='_blank' class='action-description' href='{{action.url}}'>{{action.description}}</a>
+                      <a class='inline-action approve-action' ng-click='approve(action)' ng-show='action.showApproveBtn'>Approve</a>
+                      <a class='inline-action reject-action' ng-click='reject(action)' ng-show='action.showRejectBtn'>Reject</a>
+                      <a class='inline-action delete-action' ng-click='delete(action)' ng-show='action.showDeleteBtn'>Delete</a>
+                      <span class='inline-message'>{{action.inlineMessage}}</span>
+                    </div>
                     <a target='_blank' class='action-path' href='{{action.url}}'>{{action.pagePath}}</a>
                   </td>
                   <td><a target='_blank' href='#!/user/{{action.authorId}}'>{{action.authorDisplayName}}</a></td>

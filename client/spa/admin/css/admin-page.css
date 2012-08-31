@@ -184,7 +184,14 @@ li {
   white-space: normal !important; /* sometimes very long */
 }
 
+#details .inline-action {
+  color: red !important;
+}
 
+#details .inline-action,
+#details .inline-message {
+  margin-left: 1em;
+}
 
 /* vim: fdm=marker et ts=2 sw=2 tw=80 fo=tcqwn list
  */
