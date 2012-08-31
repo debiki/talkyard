@@ -52,6 +52,7 @@ object Debate {
       case e: Edit => e.copy(id = remaps(e.id), postId = rmpd(e.postId))
       case a: EditApp => a.copy(id = remaps(a.id), editId = rmpd(a.editId))
       case d: Delete => d.copy(id = remaps(d.id), postId = rmpd(d.postId))
+      case r: Review => r.copy(id = remaps(r.id), targetId = rmpd(r.targetId))
       case x => assErr("DwE3RSEK9]")
     }).asInstanceOf[T]
     val actionsRemapped: List[T] = actionsToRemap map updateIds
@@ -71,7 +72,8 @@ case class Debate (
   private[debiki] val edits: List[Edit] = Nil,
   private[debiki] val editApps: List[EditApp] = Nil,
   private[debiki] val flags: List[Flag] = Nil,
-  private[debiki] val deletions: List[Delete] = Nil) {
+  private[debiki] val deletions: List[Delete] = Nil,
+  private[debiki] val reviews: List[Review] = Nil) {
 
   private lazy val postsById =
       imm.Map[String, Post](posts.map(x => (x.id, x)): _*)
@@ -346,6 +348,16 @@ case class Debate (
   def deletion(withId: String): Option[Delete] =
     deletions.filter(_.id == withId).headOption
 
+
+  // -------- Reviews (i.e. approvals and rejections)
+
+  private lazy val reviewsByPostId: imm.Map[String, List[Review]] =
+    reviews.groupBy(_.targetId)
+
+  def reviewsFor(postId: String): List[Review] =
+    reviewsByPostId.getOrElse(postId, Nil)
+
+
   // -------- Construction
 
   def + (post: Post): Debate = copy(posts = post :: posts)
@@ -360,6 +372,7 @@ case class Debate (
     var editApps2 = editApps
     var flags2 = flags
     var dels2 = deletions
+    var reviews2 = reviews
     for (a <- actions) a match {
       case p: Post => posts2 ::= p
       case r: Rating => ratings2 ::= r
@@ -367,11 +380,12 @@ case class Debate (
       case a: EditApp => editApps2 ::= a
       case f: Flag => flags2 ::= f
       case d: Delete => dels2 ::= d
+      case r: Review => reviews2 ::= r
       case x => runErr(
         "DwE8k3EC", "Unknown action type: "+ classNameOf(x))
     }
     Debate(id, people, posts2, ratings2,
-        edits2, editApps2, flags2, dels2)
+        edits2, editApps2, flags2, dels2, reviews2)
   }
 
 

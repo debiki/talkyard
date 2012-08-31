@@ -289,4 +289,17 @@ case class Delete(
 // Perhaps better have many small specialized classes.
 
 
+/**
+ * Approves or rejects e.g. comments and edits to `targetId`.
+ */
+case class Review(
+  id: String,
+  targetId: String,
+  loginId: String,
+  newIp: Option[String],
+  ctime: ju.Date,
+  isApproved: Boolean) extends Action {
+}
+
+
 // vim: fdm=marker et ts=2 sw=2 tw=80 fo=tcqwn list

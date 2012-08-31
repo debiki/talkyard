@@ -28,7 +28,8 @@ object SmartAction {
 class ViAc(val debate: Debate, val action: Action) {
   def page = debate // should rename `debate` to `page`
   def id: String = action.id
-  def ctime = action.ctime
+  def ctime = action.ctime  // COULD rename to cdati
+  def cdati = action.ctime
   def loginId = action.loginId
   def login: Option[Login] = debate.people.login(action.loginId)
   def login_! : Login = login.getOrElse(runErr(
@@ -66,7 +67,21 @@ class ViAc(val debate: Debate, val action: Action) {
 
   lazy val lastDelete = deletionsSorted.headOption
   lazy val firstDelete = deletionsSorted.lastOption
+
+  /**
+   * Currently mostly ignored, but in the future all actions *should* either
+   * be approved automatically (e.g. well behaved users'  actions), or
+   * manually (by moderators/admins).
+   *
+   * I think that right now / soon, approvals are needed only for
+   * new posts by perhaps malicious users.
+   */
+  lazy val reviewsDescTime = page.reviewsFor(id).sortBy(-_.ctime.getTime)
+
+  def lastReview = reviewsDescTime.headOption
+
 }
+
 
 /** A Virtual Post into account all edits applied to the actual post.
  */
@@ -144,6 +159,36 @@ class ViPo(debate: Debate, val post: Post) extends ViAc(debate, post) {
   def editsAppdAsc = editsAppdDesc.reverse
 
   lazy val lastEditApp = editsAppdDesc.headOption.map(_._2)
+  lazy val lastEditRevertion = editsAppdRevd.headOption.map(_._3)
+
+
+  /**
+   * Modification date time: When the text of this Post was last changed
+   * (that is, an edit was applied, or a previously applied edit was reverted).
+   */
+  def mdati: ju.Date = {
+    val maxTime = math.max(
+       lastEditApp.map(_.ctime.getTime).getOrElse(0: Long),
+       lastEditRevertion.map(_.ctime.getTime).getOrElse(0: Long))
+    if (maxTime == 0) cdati else new ju.Date(maxTime)
+  }
+
+
+  def currentVersionHasBeenReviewed: Boolean = {
+    // Use >= not > because a comment might be auto approved, and then
+    // the approval dati equals the comment cdati.
+    lastReview.isDefined && lastReview.get.ctime.getTime >= mdati.getTime
+  }
+
+  def currentVersionHasBeenApproved: Boolean =
+    currentVersionHasBeenReviewed && lastReview.get.isApproved
+
+  def currentVersionHasBeenRejected: Boolean =
+    currentVersionHasBeenReviewed && !lastReview.get.isApproved
+
+  def someVersionHasBeenApproved: Boolean =
+    reviewsDescTime.filter(_.isApproved).nonEmpty
+
 
   /** Whether or not this Post has been published.
    *
@@ -162,7 +207,17 @@ class ViPo(debate: Debate, val post: Post) extends ViAc(debate, post) {
   // COULD optimize this, do once for all flags.
   lazy val flags = debate.flags.filter(_.postId == post.id)
 
-  lazy val lastFlag = flags.sortBy(- _.ctime.getTime).headOption
+  def flagsDescTime: List[Flag] = flags.sortBy(- _.ctime.getTime)
+
+  lazy val (
+      flagsPendingReview: List[Flag],
+      flagsReviewed: List[Flag]) =
+    flagsDescTime span { flag =>
+      if (lastReview isEmpty) true
+      else lastReview.get.ctime.getTime <= flag.ctime.getTime
+    }
+
+  lazy val lastFlag = flagsDescTime.headOption
 
   lazy val flagsByReason: imm.Map[FlagReason, List[Flag]] = {
     // Add reasons and flags to a mutable map.
