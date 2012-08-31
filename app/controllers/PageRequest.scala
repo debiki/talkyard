@@ -14,27 +14,16 @@ import Prelude._
 
 
 /**
- * A page related request.
- *
- * Sometimes only the browser ip is known (then there'd be no
- * Login/Identity/User).
  */
-case class PageRequest[A](
-  sid: SidOk,
-  xsrfToken: XsrfOk,
-  identity: Option[Identity],
-  user: Option[User],
-  pageExists: Boolean,
-  /** Ids of groups to which the requester belongs. */
-  // userMemships: List[String],
-  /** If the requested page does not exist, pagePath.pageId is empty. */
-  pagePath: PagePath,
-  permsOnPage: PermsOnPage,
-  dao: TenantDao,
-  request: Request[A]) {
+abstract class DebikiRequest[A] {
 
-  require(pagePath.tenantId == tenantId) //COULD remove tenantId from pagePath
-  require(!pageExists || pagePath.pageId.isDefined)
+  def sid: SidOk
+  def xsrfToken: XsrfOk
+  def identity: Option[Identity]
+  def user: Option[User]
+  def dao: TenantDao
+  def request: Request[A]
+
   require(dao.quotaConsumers.tenantId == tenantId)
   require(dao.quotaConsumers.ip == Some(ip))
   require(dao.quotaConsumers.roleId ==
@@ -71,6 +60,48 @@ case class PageRequest[A](
    */
   def newIp: Option[String] = None  // None always, for now
 
+  /**
+   * Approximately when the server started serving this request.
+   */
+  lazy val ctime: ju.Date = new ju.Date
+
+  /**
+   * The scheme, host and port specified in the request.
+   *
+   * For now, the scheme is hardcoded to http.
+   */
+  def origin: String = "http://"+ request.host
+
+  def queryString = request.queryString
+
+  def body = request.body
+
+  def quotaConsumers = dao.quotaConsumers
+
+}
+/**
+ * A page related request.
+ *
+ * Sometimes only the browser ip is known (then there'd be no
+ * Login/Identity/User).
+ */
+case class PageRequest[A](
+  sid: SidOk,
+  xsrfToken: XsrfOk,
+  identity: Option[Identity],
+  user: Option[User],
+  pageExists: Boolean,
+  /** Ids of groups to which the requester belongs. */
+  // userMemships: List[String],
+  /** If the requested page does not exist, pagePath.pageId is empty. */
+  pagePath: PagePath,
+  permsOnPage: PermsOnPage,
+  dao: TenantDao,
+  request: Request[A]) extends DebikiRequest[A] {
+
+  require(pagePath.tenantId == tenantId) //COULD remove tenantId from pagePath
+  require(!pageExists || pagePath.pageId.isDefined)
+
   def pageId: Option[String] = pagePath.pageId
 
   /**
@@ -98,24 +129,6 @@ case class PageRequest[A](
    */
   lazy val page_! : Debate =
     page_? getOrElse throwNotFound("DwE43XWY", "Page not found")
-
-  /**
-   * Approximately when the server started serving this request.
-   */
-  lazy val ctime: ju.Date = new ju.Date
-
-  /**
-   * The scheme, host and port specified in the request.
-   *
-   * For now, the scheme is hardcoded to http.
-   */
-  def origin: String = "http://"+ request.host
-
-  def queryString = request.queryString
-
-  def body = request.body
-
-  def quotaConsumers = dao.quotaConsumers
 
 }
 
