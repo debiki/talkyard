@@ -11,7 +11,7 @@ import debiki.DebikiHttp._
 import java.{util => ju}
 import play.api._
 import play.api.mvc.{Action => _, _}
-import Actions._
+import SafeActions._
 import Utils.{OkHtml}
 
 

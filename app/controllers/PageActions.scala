@@ -212,7 +212,7 @@ object Actions {
         (pathIn: PagePath)
         (f: (SidOk, XsrfOk, Option[PagePath], TenantDao, Request[A]) =>
            PlainResult) =
-    CheckSidAction[A](parser) { (sidOk, xsrfOk, request) =>
+    SafeActions.CheckSidAction[A](parser) { (sidOk, xsrfOk, request) =>
       val dao = Debiki.tenantDao(tenantId = pathIn.tenantId,
          ip = request.remoteAddress, sidOk.roleId)
       dao.checkPagePath(pathIn) match {
@@ -225,48 +225,6 @@ object Actions {
         case None => f(sidOk, xsrfOk, None, dao, request)
       }
     }
-
-
-  /**
-   * Throws 403 Forbidden if the xsrf token (for POST requests)
-   * or the session id is invalid.
-   */
-  def CheckSidActionNoBody
-        (f: (SidOk, XsrfOk, Request[Option[Any]]) => PlainResult) =
-    CheckSidAction(BodyParsers.parse.empty)(f)
-
-
-  def CheckSidAction[A]
-        (parser: BodyParser[A])
-        (f: (SidOk, XsrfOk, Request[A]) => PlainResult) =
-    ExceptionAction[A](parser) { request =>
-      val (sidOk, xsrfOk, newCookies) =
-         DebikiSecurity.checkSidAndXsrfToken(request)
-      val resultOldCookies = f(sidOk, xsrfOk, request)
-      val resultOkSid =
-        if (newCookies isEmpty) resultOldCookies
-        else resultOldCookies.withCookies(newCookies: _*)
-      resultOkSid
-    }
-
-
-  /**
-   * Converts DebikiHttp.ResultException to nice replies,
-   * e.g. 403 Forbidden and a user friendly message,
-   * instead of 500 Internal Server Error and a stack trace or Ooops message.
-   */
-  def ExceptionAction[A](parser: BodyParser[A])(f: Request[A] => Result) =
-        mvc.Action[A](parser) { request =>
-    try {
-      f(request)
-    } catch {
-      case DebikiHttp.ResultException(result) => result
-    }
-  }
-
-
-  def ExceptionActionNoBody(f: Request[Option[Any]] => Result) =
-    ExceptionAction(BodyParsers.parse.empty)(f)
 
 }
 

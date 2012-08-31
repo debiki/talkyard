@@ -13,7 +13,7 @@ import play.api.data._
 import play.api.mvc.BodyParsers.parse
 import play.api.data.Forms._
 import play.api.mvc.{Action => _, _}
-import Actions._
+import SafeActions._
 import Prelude._
 import Utils.{OkHtml}
 

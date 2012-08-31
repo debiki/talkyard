@@ -11,7 +11,7 @@ import java.{util => ju}
 import play.api._
 import play.api.mvc.{Action => _, _}
 import play.api.Play.current
-import Actions._
+import SafeActions._
 import Prelude._
 import Utils.ValidationImplicits._
 
