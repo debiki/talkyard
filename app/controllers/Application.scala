@@ -258,7 +258,9 @@ object Application extends mvc.Controller {
         returnToUrl = request.uri, title = "Login", message = Some(
           "Login with an administrator account to access this page.")))
     else
-      Ok.sendFile(_adminPageFile, inline = true)
+      Ok.sendFile(_adminPageFile, inline = true).withCookies(
+          mvc.Cookie(
+            DebikiSecurity.AngularJsXsrfCookieName, xsrfOk.value))
   }
 
 }

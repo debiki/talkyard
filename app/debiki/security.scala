@@ -48,7 +48,7 @@ object DebikiSecurity {
         // There must be an xsrf token in a certain header, or in a certain
         // input in any POST:ed form data. Check the header first, in case
         // this is a JSON request (then there is no form data).
-        var xsrfToken = request.headers.get(XsrfHeaderName) orElse {
+        var xsrfToken = request.headers.get(AngularJsXsrfHeaderName) orElse {
           if (!request.body.isInstanceOf[Map[String, Seq[String]]]) {
             None
           } else {
@@ -84,8 +84,12 @@ object DebikiSecurity {
    * A HTTP header in which AngularJS sends any xsrf token, when AngularJS
    * posts JSON. (So you cannot rename this header.)
    */
-  val XsrfHeaderName = "X-XSRF-TOKEN"
+  val AngularJsXsrfHeaderName = "X-XSRF-TOKEN"
 
+  /**
+   * AngularJS copies the value of this cookie to the HTTP header just above.
+   */
+  val AngularJsXsrfCookieName = "XSRF-TOKEN"
 }
 
 
