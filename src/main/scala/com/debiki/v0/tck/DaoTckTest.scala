@@ -540,6 +540,39 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
       }
     } */
 
+
+    // -------- Save approvals and rejections
+
+    "Save and load an approval" >> {
+      testSaveLoadReview(isApproved = true)
+    }
+
+    "Save and load a rejection" >> {
+      testSaveLoadReview(isApproved = false)
+    }
+
+    def testSaveLoadReview(isApproved: Boolean) {
+      var reviewSaved: Review = null
+      val targetId = ex1_rootPost.id
+      val reviewNoId = Review("?", targetId = targetId, loginId = loginId,
+         newIp = None, ctime = now, isApproved = isApproved)
+      dao.savePageActions(ex1_debate.guid, List(reviewNoId)) must beLike {
+        case List(review: Review) =>
+          review must_== reviewNoId.copy(id = review.id)
+          reviewSaved = review
+          true
+      }
+
+      dao.loadPage(ex1_debate.guid) must beLike {
+        case Some(page: Debate) => {
+          val postReviewed = page.vipo_!(reviewSaved.targetId)
+          postReviewed.lastReview must_== Some(reviewSaved)
+          true
+        }
+      }
+    }
+
+
     // -------- Publish a Post
 
     "save a Publish, load the page body, and now it's published" >> {
