@@ -261,7 +261,8 @@ object Application extends mvc.Controller {
     else
       Ok.sendFile(_adminPageFile, inline = true).withCookies(
           mvc.Cookie(
-            DebikiSecurity.AngularJsXsrfCookieName, xsrfOk.value))
+            DebikiSecurity.AngularJsXsrfCookieName, xsrfOk.value,
+            httpOnly = false))
   }
 
 }
