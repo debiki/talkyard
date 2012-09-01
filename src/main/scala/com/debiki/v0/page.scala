@@ -218,6 +218,7 @@ case class Debate (
 
   /** The page title, as plain text. */
   def titleText: Option[String] = titlePost.map(_.text)
+  def titleTextApproved: Option[String] = titlePost.map(_.textApproved)
 
   /** The page title, as XML. */
   //def titleXml: Option[xml.Node] = body.flatMap(_.titleXml)

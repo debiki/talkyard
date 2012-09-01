@@ -79,6 +79,7 @@ class ViAc(val debate: Debate, val action: Action) {
   lazy val reviewsDescTime = page.reviewsFor(id).sortBy(-_.ctime.getTime)
 
   def lastReview = reviewsDescTime.headOption
+  def lastApprovalDate = lastReview.filter(_.isApproved).map(_.ctime)
 
 }
 
@@ -90,6 +91,12 @@ class ViPo(debate: Debate, val post: Post) extends ViAc(debate, post) {
   def tyype = post.tyype
   // def ctime = lastEditApp.map(ea => toIso8601(ea.ctime))
   lazy val (text: String, markup: String) = textAndMarkupAsOf(Long.MaxValue)
+
+  lazy val (textApproved: String, markupApproved: String) =
+    lastApprovalDate match {
+      case None => ("", "")
+      case Some(dati) => textAndMarkupAsOf(dati.getTime)
+    }
 
   /** Applies all edits up to, but not including, the specified date.
    *  Returns the resulting text and markup.
