@@ -60,6 +60,11 @@ class PageCache {
         : NodeSeq = {
     assert(k.tenantId == tenantDao.tenantId)
     tenantDao.loadPage(k.pageGuid) match {
+      case Some(page) if page.body.map(_.someVersionApproved) != Some(true) =>
+        // Regrettably, currently the page is hidden also for admins (!).
+        // But right now only admins can create new pages and they are
+        // auto approved (well, will be, in the future.)
+        <p>This page is pending approval.</p>
       case Some(debate) =>
         val config = DebikiHttp.newUrlConfig(k.hostAndPort)
         // Hmm, DebateHtml and pageTrust should perhaps be wrapped in

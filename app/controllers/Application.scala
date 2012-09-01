@@ -51,7 +51,8 @@ object Application extends mvc.Controller {
       case "css" => CSS
       case "js" => JAVASCRIPT
     })
-    Ok(pageBody.text) as contentType
+    if (!pageBody.someVersionApproved) Ok("Page pending approval.")
+    else Ok(pageBody.textApproved) as contentType
   }
 
 
