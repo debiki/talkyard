@@ -40,6 +40,9 @@ GET   /-/new-website/welcome-owner controllers.AppCreateWebsite.welcomeOwner
 
 GET   /-/admin/                 controllers.Application.viewAdminPage
 
+POST  /-/approve                controllers.AppReview.approve
+POST  /-/reject                 controllers.AppReview.reject
+
 GET   /-/*file                  controllers.Assets.at(path = "/public", file)
 GET   /robots.txt               controllers.Assets.at(path = "/public", file = "robots.txt")
 
