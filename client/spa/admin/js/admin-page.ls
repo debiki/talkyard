@@ -47,12 +47,17 @@ AdminModule.factory 'AdminService', ['$http', ($http) ->
         "&for-pages=#pageIdsStr").success (data) ->
       onSuccess data
 
+  actionsToJsonObjs = (actions) ->
+    toJsonObj = (action) -> { pageId: action.pageId, actionId: action.id }
+    map toJsonObj, actions
 
   api.approve = (actions, onSuccess) ->
-    onSuccess! # for now
+    $http.post '/-/approve', actionsToJsonObjs(actions)
+        .success -> onSuccess!
 
   api.reject = (actions, onSuccess) ->
-    onSuccess! # for now
+    $http.post '/-/reject', actionsToJsonObjs(actions)
+        .success -> onSuccess!
 
   api.delete = (actions, onSuccess) ->
     onSuccess! # for now
