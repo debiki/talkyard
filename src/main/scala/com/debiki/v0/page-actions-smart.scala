@@ -187,20 +187,25 @@ class ViPo(debate: Debate, val post: Post) extends ViAc(debate, post) {
   }
 
 
-  def currentVersionHasBeenReviewed: Boolean = {
+  def currentVersionReviewed: Boolean = {
     // Use >= not > because a comment might be auto approved, and then
     // the approval dati equals the comment cdati.
     lastReview.isDefined && lastReview.get.ctime.getTime >= mdati.getTime
   }
 
-  def currentVersionHasBeenApproved: Boolean =
-    currentVersionHasBeenReviewed && lastReview.get.isApproved
+  def currentVersionApproved: Boolean =
+    currentVersionReviewed && lastReview.get.isApproved
 
-  def currentVersionHasBeenRejected: Boolean =
-    currentVersionHasBeenReviewed && !lastReview.get.isApproved
+  def currentVersionRejected: Boolean =
+    currentVersionReviewed && !lastReview.get.isApproved
 
-  def someVersionHasBeenApproved: Boolean =
+  def someVersionApproved: Boolean = {
+    // A rejection cancels all edits since the previous approval,
+    // or effectively deletes the post, if it has never been approved.
+    // To completely "unapprove" a post that has previously been approved,
+    // delete it instead.
     reviewsDescTime.filter(_.isApproved).nonEmpty
+  }
 
 
   /** Whether or not this Post has been published.
