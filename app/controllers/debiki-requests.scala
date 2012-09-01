@@ -72,6 +72,8 @@ abstract class DebikiRequest[A] {
    */
   def origin: String = "http://"+ request.host
 
+  def host = request.host
+
   def queryString = request.queryString
 
   def body = request.body
@@ -79,6 +81,21 @@ abstract class DebikiRequest[A] {
   def quotaConsumers = dao.quotaConsumers
 
 }
+
+
+/**
+ * A request that's not related to any particular page.
+ */
+case class ApiRequest[A](
+  sid: SidOk,
+  xsrfToken: XsrfOk,
+  identity: Option[Identity],
+  user: Option[User],
+  dao: TenantDao,
+  request: Request[A]) extends DebikiRequest[A] {
+}
+
+
 /**
  * A page related request.
  *

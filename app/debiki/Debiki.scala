@@ -6,7 +6,7 @@ package debiki
 
 import com.debiki.v0._
 import com.debiki.v0.Prelude._
-import controllers.PageRequest
+import controllers.{DebikiRequest, PageRequest}
 import play.api.Play
 import play.api.Play.current
 
@@ -50,16 +50,24 @@ object Debiki {
    * users' inboxes, as needed.
    */
   def savePageActions(pageReq: PageRequest[_], actions: List[Action]) {
+    savePageActions(pageReq, pageReq.page_!, actions)
+  }
+
+
+  def savePageActions(request: DebikiRequest[_], page: Debate,
+        actions: List[Action]) {
+
     if (actions isEmpty)
       return
 
-    import pageReq.{pageId_!, page_!, user_!}
-    val actionsWithId = pageReq.dao.savePageActions(pageId_!, actions)
+    import request.{dao, user_!}
+    val actionsWithId = dao.savePageActions(page.id, actions)
 
     // Possible optimization: Examine all actions, and refresh cache only
     // if there are e.g. EditApp:s or Replie:s (but ignore Edit:s -- if
     // not applied).
-    PageCache.refreshLater(pageReq)
+    PageCache.refreshLater(tenantId = request.tenantId, pageId = page.id,
+       host = request.host)
 
     // Would it be okay to simply overwrite the in mem cache with this
     // updated page?
@@ -72,9 +80,8 @@ object Debiki {
     // Notify users whose actions were affected.
     // BUG: notification lost if server restarted here.
     // COULD rewrite Dao so the seeds can be saved in the same transaction:
-    val seeds = Notification.calcFrom(user_!, adding = actionsWithId,
-       to = page_!)
-    pageReq.dao.saveNotfs(seeds)
+    val seeds = Notification.calcFrom(user_!, adding = actionsWithId, to = page)
+    dao.saveNotfs(seeds)
   }
 
 }

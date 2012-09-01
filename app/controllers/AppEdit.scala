@@ -106,7 +106,9 @@ object AppEdit extends mvc.Controller {
        pageReq.page_!.guid, actions)
 
     if (mayEdit)
-      Debiki.PageCache.refreshLater(pageReq)
+      Debiki.PageCache.refreshLater(tenantId = pageReq.tenantId,
+          pageId = pageReq.pagePath.pageId.get,
+          host = pageReq.host)
     // -------
   }
 
