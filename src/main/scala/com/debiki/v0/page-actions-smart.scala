@@ -121,8 +121,14 @@ class ViPo(debate: Debate, val post: Post) extends ViAc(debate, post) {
   def textInitially: String = post.text
   def where: Option[String] = post.where
   def edits: List[Edit] = debate.editsFor(post.id)
+
   // COULD rename editsAppdRevd to editsAppdRevtd (Revtd instead of Revd).
-  lazy val (editsDeleted, editsPending, editsAppdDesc, editsAppdRevd) = {
+  lazy val (
+      editsDeleted: List[(Edit, Delete)],
+      editsPending: List[Edit],
+      editsAppdDesc: List[(Edit, EditApp)],
+      editsAppdRevd: List[(Edit, EditApp, Delete)]) = {
+
     var deleted = List[(Edit, Delete)]()
     var pending = List[Edit]()
     var applied = List[(Edit, EditApp)]()
