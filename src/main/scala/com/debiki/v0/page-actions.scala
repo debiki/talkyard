@@ -158,6 +158,11 @@ case class Post(  // COULD merge all actions into Post,
    */
   markup: String,
 
+  /**
+   * Defined iff this post was approved on creation, and clarifies why it was.
+   */
+  autoApproval: Option[AutoApproval],
+
   tyype: PostType,
 
   /** If defined, this is an inline comment and the value
@@ -193,9 +198,32 @@ case class Edit (
    *
    * None means reuse the current markup.
    */
-  newMarkup: Option[String]
+  newMarkup: Option[String],
+
+  autoApproval: Option[AutoApproval],
+
+  /**
+   * If this edit was applied automatically on creation, e.g. because
+   * someone edited his/her own comment.
+   *
+   * Currently not in use. And I'd have to refactor page-actions-smart.scala
+   * fairly much for `autoApplied`to work, since currently all appl info
+   * is instead handled via EditApp:s.
+   *   - Perhaps easier to remove this field, and construct
+   * an additional EditApp action when reading an Edit from database,
+   * if the db says it was auto approved? But I might need this field
+   * anyway, when *saving* an edit, so the db knows it should mark it as
+   * auto applied.
+   */
+  autoApplied: Boolean
 ) extends Action {
   override def textLengthUtf8: Int = text.getBytes("UTF-8").length
+
+  // An edit that hasn't been applied cannot have been approved.
+  // (It might have been applied, but not approved, however, if a
+  // user edits his/her own comment, and the changes are then pending
+  // moderator review.)
+  require(autoApproval.isEmpty || autoApplied)
 }
 
 
@@ -215,6 +243,7 @@ case class EditApp(   // COULD rename to Appl?
   loginId: String,
   newIp: Option[String],
   ctime: ju.Date,
+  autoApproval: Option[AutoApproval],
 
   /** The text after the edit was applied. Needed, in case an `Edit'
    *  contains a diff, not the resulting text itself. Then we'd better not
@@ -253,6 +282,8 @@ case class EditApp(   // COULD rename to Appl?
  *    Benefit: You'd never need to walk along a chain of Delete:s,
  *    to find out which EditApp or Post was actually deleted.
  *    ????
+ *    Perhaps introduce a class ToggleExistence, and the very last
+ *    instance determines if a Post is deleted or restored.
  *  --- Not implemented: --------
  *  If `wholeTree', all edit applications from actionId and up to
  *  delete.ctime are undone.
@@ -300,6 +331,33 @@ case class Review(
   ctime: ju.Date,
   isApproved: Boolean) extends Action {
 }
+
+
+/**
+ * The computer reviews some posts directly on creation and approves them
+ * automatically.
+ */
+sealed abstract class AutoApproval
+object AutoApproval {
+
+  /**
+   * The first few posts of a new user are approved preliminarily.
+   * (An admin is notified though and might decide to delete the posts.)
+   */
+  case object Preliminary extends AutoApproval
+
+  /**
+   * A user that has posted many useful comments will have a few of
+   * his/her next comments approved automatically, and no admin is nodified.
+   */
+  case object WellBehavedUser extends AutoApproval
+
+  /**
+   * Posts by admins and moderators are always automatically approved.
+   */
+  case object AuthoritativeUser extends AutoApproval
+}
+
 
 
 // vim: fdm=marker et ts=2 sw=2 tw=80 fo=tcqwn list
