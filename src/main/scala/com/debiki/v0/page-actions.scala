@@ -200,7 +200,12 @@ case class Edit (
    */
   newMarkup: Option[String],
 
-  autoApproval: Option[AutoApproval],
+  /**
+   * If the related post is to be automatically approved, when this
+   * edit is auto applied. (Example: an *admin* edits a comment. The edit
+   * would then be auto applied, and the related post would be auto approved.)
+   */
+  relatedPostAutoApproval: Option[AutoApproval],
 
   /**
    * If this edit was applied automatically on creation, e.g. because
@@ -223,7 +228,7 @@ case class Edit (
   // (It might have been applied, but not approved, however, if a
   // user edits his/her own comment, and the changes are then pending
   // moderator review.)
-  require(autoApproval.isEmpty || autoApplied)
+  require(relatedPostAutoApproval.isEmpty || autoApplied)
 }
 
 
@@ -243,7 +248,7 @@ case class EditApp(   // COULD rename to Appl?
   loginId: String,
   newIp: Option[String],
   ctime: ju.Date,
-  autoApproval: Option[AutoApproval],
+  relatedPostAutoApproval: Option[AutoApproval],
 
   /** The text after the edit was applied. Needed, in case an `Edit'
    *  contains a diff, not the resulting text itself. Then we'd better not

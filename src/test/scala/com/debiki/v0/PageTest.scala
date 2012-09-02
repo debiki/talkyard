@@ -17,7 +17,7 @@ class PageTest extends SpecificationWithJUnit {
   val textAfterFirstEdit = "body-text-after-first-edit"
 
   val bodySkeleton =
-    Post(id = "1", parent = "1", ctime = new ju.Date(1000),
+    Post(id = "1", parent = "1", ctime = new ju.Date(1001),
         loginId = "100", newIp = None, text = textInitially,
         markup = "", autoApproval = None, tyype = PostType.Text,
         where = None)
@@ -25,35 +25,52 @@ class PageTest extends SpecificationWithJUnit {
   val bodySkeletonAutoApproved = bodySkeleton.copy(
         autoApproval = Some(AutoApproval.WellBehavedUser))
 
-  val manualBodyApprovalDate = new ju.Date(1010)
-
   val bodyApprovalSkeleton =
     Review("11", targetId = bodySkeleton.id, loginId = "101", newIp = None,
-        ctime = manualBodyApprovalDate, isApproved = true)
+        ctime = new ju.Date(1011), isApproved = true)
 
   val bodyRejectionSkeleton = bodyApprovalSkeleton.copy(isApproved = false)
 
   val editSkeleton =
-    Edit(id = "12", postId = bodySkeleton.id, ctime = new ju.Date,
+    Edit(id = "12", postId = bodySkeleton.id, ctime = new ju.Date(1012),
         loginId = "102", newIp = None,
         text = makePatch(from = textInitially, to = textAfterFirstEdit),
-        newMarkup = None, autoApproval = None, autoApplied = false)
+        newMarkup = None, relatedPostAutoApproval = None, autoApplied = false)
 
   def deletionOfEdit =
     Delete(id = "13", postId = editSkeleton.id,
-      loginId = "103", newIp = None, ctime = new ju.Date, wholeTree = false,
-      reason = "")
+      loginId = "103", newIp = None, ctime = new ju.Date(1013),
+      wholeTree = false, reason = "")
 
   val editAppSkeleton =
     EditApp(id = "14", editId = editSkeleton.id, loginId = "104",
-        newIp = None, ctime = new ju.Date, autoApproval = None,
-        result = "ignored")
+        newIp = None, ctime = new ju.Date(1014),
+        relatedPostAutoApproval = None, result = "ignored")
 
-  val approvalOfEditApp = Review(id = "15", targetId = editAppSkeleton.id,
-        loginId = "105", newIp = None, ctime = new ju.Date,
+  val deletionOfEditApp =
+    Delete(id = "15", postId = editAppSkeleton.id,
+        loginId = "105", newIp = None, ctime = new ju.Date(1015),
+        wholeTree = false, reason = "")
+
+  val approvalOfEditApp = Review(id = "16", targetId = editAppSkeleton.id,
+        loginId = "106", newIp = None, ctime = new ju.Date(1016),
         isApproved = true)
 
   val rejectionOfEditApp = approvalOfEditApp.copy(isApproved = false)
+
+
+  case class PageWithEditApplied(page: Debate, edit: Edit, applDate: ju.Date)
+
+  def makePageWithEditApplied(autoApplied: Boolean): PageWithEditApplied = {
+    val (edit, editApplDati) =
+      if (autoApplied)
+        (editSkeleton.copy(autoApplied = true), editSkeleton.ctime)
+      else
+        (editSkeleton, editAppSkeleton.ctime)
+    var page = Debate.empty("a") + bodySkeletonAutoApproved + edit
+    if (!autoApplied) page = page + editAppSkeleton
+    PageWithEditApplied(page, edit, editApplDati)
+  }
 
 
   "A page" can {
@@ -88,7 +105,7 @@ class PageTest extends SpecificationWithJUnit {
         page.body_!.currentVersionRejected must_== false
         page.body_!.currentVersionApproved must_== true
         page.body_!.initiallyAutoApproved must_== false
-        page.body_!.lastApprovalDati must_== Some(manualBodyApprovalDate)
+        page.body_!.lastApprovalDati must_== Some(bodyApprovalSkeleton.ctime)
         page.body_!.text must_== textInitially
         page.body_!.textApproved must_== textInitially
       }
@@ -114,12 +131,20 @@ class PageTest extends SpecificationWithJUnit {
       page.body_!.text must_== textInitially
       page.body_!.modfDatiPerhapsReviewed must_== page.body_!.creationDati
 
-      page.body_!.editsDeleted must beEmpty
-      page.body_!.editsAppdDesc must beEmpty
-      page.body_!.editsAppdRevd must beEmpty
-      page.body_!.editsPending must beLike {
+      page.body_!.editsDeletedDescTime must beEmpty
+      page.body_!.editsAppliedDescTime must beEmpty
+      page.body_!.editsRevertedDescTime must beEmpty
+      page.body_!.editsPendingDescTime must beLike {
         case List(edit) =>
           edit.id must_== editSkeleton.id
+          edit.creationDati must_== editSkeleton.ctime
+          edit.applicationDati must_== None
+          edit.revertionDati must_== None
+          edit.deletionDati must_== None
+          edit.isPending must_== true
+          edit.isApplied must_== false
+          edit.isReverted must_== false
+          edit.isDeleted must_== false
           true
         case _ => false
       }
@@ -132,17 +157,150 @@ class PageTest extends SpecificationWithJUnit {
       page.body_!.text must_== textInitially
       page.body_!.modfDatiPerhapsReviewed must_== page.body_!.creationDati
 
-      page.body_!.editsPending must beEmpty
-      page.body_!.editsAppdDesc must beEmpty
-      page.body_!.editsAppdRevd must beEmpty
-      page.body_!.editsDeleted must beLike {
-        case List((edit, deletion)) =>
+      page.body_!.editsPendingDescTime must beEmpty
+      page.body_!.editsAppliedDescTime must beEmpty
+      page.body_!.editsRevertedDescTime must beEmpty
+      page.body_!.editsDeletedDescTime must beLike {
+        case List(edit) =>
           edit.id must_== editSkeleton.id
-          deletion.id must_== deletionOfEdit.id
+          edit.applicationDati must_== None
+          edit.revertionDati must_== None
+          edit.deletionDati must_== Some(deletionOfEdit.ctime)
+          edit.isPending must_== false
+          edit.isApplied must_== false
+          edit.isReverted must_== false
+          edit.isDeleted must_== true
           true
         case _ => false
       }
     }
+
+
+    "have a body, with an edit, applied" >> {
+
+      "automatically" >> {
+        _testImpl(autoApplied = true)
+      }
+
+      "manually" >> {
+        _testImpl(autoApplied = false)
+      }
+
+      def _testImpl(autoApplied: Boolean) {
+        val PageWithEditApplied(page, edit, editApplDati) =
+           makePageWithEditApplied(autoApplied)
+
+        page.body_!.text must_== textAfterFirstEdit
+        page.body_!.textApproved must_== textInitially
+        page.body_!.modfDatiPerhapsReviewed must_== editApplDati
+
+        page.body_!.editsPendingDescTime must beEmpty
+        page.body_!.editsDeletedDescTime must beEmpty
+        page.body_!.editsRevertedDescTime must beEmpty
+        page.body_!.editsAppliedDescTime must beLike {
+          case List(edit) =>
+            edit.id must_== editSkeleton.id
+            edit.applicationDati must_== Some(editApplDati)
+            edit.revertionDati must_== None
+            edit.deletionDati must_== None
+            edit.isPending must_== false
+            edit.isApplied must_== true
+            edit.isReverted must_== false
+            edit.isDeleted must_== false
+            true
+          case _ => false
+        }
+      }
+    }
+
+    "have a body, with an edit, applied" >> {
+
+      "automatically, then reverted & deleted (cannot revert only)" >> {
+        _testImpl(autoApplied = true)
+      }
+
+      "manually, then reverted" >> {
+        _testImpl(autoApplied = false)
+      }
+
+      def _testImpl(autoApplied: Boolean) {
+        val PageWithEditApplied(pageNotReverted, edit, editApplDati) =
+          makePageWithEditApplied(autoApplied)
+
+        // To revert an auto applied Edit, we have to delete the Edit itself.
+        // To revert a manually applied Edit, we instead delete the EditApp.
+        val (page, revertionDati) =
+           if (autoApplied)
+             (pageNotReverted + deletionOfEdit, deletionOfEdit.ctime)
+           else
+             (pageNotReverted + deletionOfEditApp, deletionOfEditApp.ctime)
+
+        val body = page.body_!
+        body.text must_== textInitially
+        body.textApproved must_== textInitially
+        body.modfDatiPerhapsReviewed must_== revertionDati
+
+        // If `autoApplied` the Edit is deleted, otherwise it's pending again.
+        if (autoApplied) body.editsPendingDescTime must beEmpty
+        else findEditInList(body.editsPendingDescTime)
+
+        if (autoApplied) findEditInList(body.editsDeletedDescTime)
+        else body.editsDeletedDescTime must beEmpty
+
+        body.editsAppliedDescTime must beEmpty
+        findEditInList(body.editsRevertedDescTime)
+
+        def findEditInList(list: List[ViEd]) = list must beLike {
+          case List(edit) =>
+            edit.id must_== editSkeleton.id
+            edit.applicationDati must_== None
+            edit.revertionDati must_== Some(revertionDati)
+            edit.deletionDati must_==
+               (if (autoApplied) Some(revertionDati) else None)
+            edit.isPending must_== !autoApplied
+            edit.isApplied must_== false
+            edit.isReverted must_== true
+            edit.isDeleted must_== autoApplied
+            true
+          case _ => false
+        }
+      }
+
+      "manually, then reverted and then deleted" >> {
+        val PageWithEditApplied(pageNotReverted, _, _) =
+              makePageWithEditApplied(autoApplied = false)
+        val deletionAfterRevertion = deletionOfEdit.copy(
+              ctime = new ju.Date(deletionOfEditApp.ctime.getTime + 1))
+        val page = pageNotReverted + deletionOfEditApp + deletionAfterRevertion
+
+        val body = page.body_!
+        body.text must_== textInitially
+        body.textApproved must_== textInitially
+        // When the edit itself was deleted doesn't matter, only when it
+        // was reverted.
+        body.modfDatiPerhapsReviewed must_== deletionOfEditApp.ctime
+
+        body.editsPendingDescTime must beEmpty
+        body.editsAppliedDescTime must beEmpty
+        findEditIn(body.editsRevertedDescTime)
+        findEditIn(body.editsDeletedDescTime)
+
+        def findEditIn(list: List[ViEd]) = list must beLike {
+          case List(edit) =>
+            edit.id must_== editSkeleton.id
+            edit.applicationDati must_== None
+            edit.revertionDati must_== Some(deletionOfEditApp.ctime)
+            edit.deletionDati must_== Some(deletionAfterRevertion.ctime)
+            edit.isPending must_== false
+            edit.isApplied must_== false
+            edit.isReverted must_== true
+            edit.isDeleted must_== true
+            true
+          case _ => false
+        }
+      }
+    }
+
 
 
     "have a body, with an edit, applied, and" >> {
@@ -166,7 +324,7 @@ class PageTest extends SpecificationWithJUnit {
       "approved, automatically" >> {
         val page = Debate.empty("a") + bodySkeletonAutoApproved +
            editSkeleton + editAppSkeleton.copy(
-              autoApproval = Some(AutoApproval.WellBehavedUser))
+              relatedPostAutoApproval = Some(AutoApproval.WellBehavedUser))
         testApprovedPost(page.body_!)
       }
 
@@ -193,13 +351,17 @@ class PageTest extends SpecificationWithJUnit {
       }
 
       def testEditLists(post: ViPo) {
-        post.editsPending must beEmpty
-        post.editsDeleted must beEmpty
-        post.editsAppdRevd must beEmpty
-        post.editsAppdDesc must beLike {
-          case List((edit, editApp)) =>
-            edit.id must_== edit.id
-            editApp.id must_== editAppSkeleton.id
+        post.editsPendingDescTime must beEmpty
+        post.editsDeletedDescTime must beEmpty
+        post.editsRevertedDescTime must beEmpty
+        post.editsAppliedDescTime must beLike {
+          case List(edit) =>
+            edit.id must_== editSkeleton.id
+            edit.applicationDati must_== Some(editAppSkeleton.ctime)
+            edit.isPending must_== false
+            edit.isApplied must_== true
+            edit.isReverted must_== false
+            edit.isDeleted must_== false
             true
           case _ => false
         }
@@ -220,40 +382,58 @@ class PageTest extends SpecificationWithJUnit {
     }
 
 
-    "have a body, with one approved edit, and another edits that is" >> {
-      "unapproved" >> {
-        // text = textAfterFirstEdit
+    "have a body, with one edit, pending, and a more recent edit that is" >> {
+      "pending" >> {
+        // text = textApproved = textInitially
       }
 
-      "approved, automatically" >> {
-        // text = textInitially
+      "applied, not approved" >> {
+        // text = textAfterSecondEditSkipFirst
+        // textApproved = textInitially
       }
 
-      "approved, manually" >> {
-        // text = textInitially
+      "applied, and approved" >> {
+        // Do this 2 times:
+        // for the second edit being 1) manually and 2) auto approved.
+
+        // text = textApproved = textAfterSecondEditSkipFirst
       }
 
-      "rejected" >> {
-        // text = textAfterFirstEdit
+      "applied and rejected" >> {
+        // text = textAfterSecondEditSkipFirst
+        // textApproved = textInitially
       }
     }
 
 
-    "have a body, with one rejected edit, and another edits that is" >> {
-      "unapproved" >> {
-        // text = textInitially
+    "have a body, with one approved edit, and another that is" >> {
+
+      "pending" >> {
+        // text = textApproved = textAfterFirstEdit
       }
 
-      "approved, automatically" >> {
+      // Do this 2 times:
+      // for the first edit being 1) manually and 2) auto approved.
+
+      "unapproved" >> {
         // text = textAfterSecondEdit
+        // textApproved = textAfterFirstEdit
+      }
+
+      "approved" >> {
+        // Do this 2 times:
+        // for the second edit being 1) manually and 2) auto approved.
+
+        // text = textApproved = textAfterSecondEdit
       }
 
       "approved, manually" >> {
-        // text = textAfterSecondEdit
+        // text = textApproved = textAfterSecondEdit
       }
 
       "rejected" >> {
-        // text = textInitially
+        // text = textAfterFirstEdit
+        // textApproved = textAfterFirstEdit
       }
     }
 

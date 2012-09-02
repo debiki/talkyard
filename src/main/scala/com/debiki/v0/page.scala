@@ -322,8 +322,8 @@ case class Debate (
   private lazy val editAppsByPostId: imm.Map[String, List[EditApp]] =
     editApps.groupBy(ea => editsById(ea.editId).postId)
 
-  def editsFor(postId: String): List[Edit] =
-    editsByPostId.getOrElse(postId, Nil)
+  def editsFor(postId: String): List[ViEd] =
+    editsByPostId.getOrElse(postId, Nil) map (new ViEd(this, _))
 
   /** Edits applied to the specified post, sorted by most-recent first.
    */

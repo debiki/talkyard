@@ -22,6 +22,7 @@ object SmartAction {
 // COULD rename all these ViAc/NiPo/whatever to SmartAction/Post/Whatever.
 // COULD take an Action subclass type param, so it'd be possible to use e.g. a
 // SmartPageAction[Rating].
+// COULD rename Action to RawAction or PlainAction, and ViAc to Action.
 /** A virtual Action, that is, an Action plus some utility methods that
  *  look up other stuff in the relevant Debate.
  */
@@ -67,6 +68,7 @@ class ViAc(val debate: Debate, val action: Action) {
   lazy val lastDelete = deletionsDescTime.headOption
   lazy val firstDelete = deletionsDescTime.lastOption
 
+  def deletionDati: Option[ju.Date] = firstDelete.map(_.ctime)
 }
 
 
@@ -141,7 +143,12 @@ class ViPo(debate: Debate, val post: Post)
     var curText = post.text
     var curMarkup = post.markup
     val dmp = new name.fraser.neil.plaintext.diff_match_patch
-    for ((edit, eapp) <- editsAppdAsc; if eapp.ctime.getTime < millis) {
+    // Loop through with all edits that has been applied early enough,
+    // and patch curText.
+    for {
+      edit <- editsAppliedAscTime
+      if edit.applicationDati.get.getTime < millis
+    } {
       curMarkup = edit.newMarkup.getOrElse(curMarkup)
       val patchText = edit.text
       if (patchText nonEmpty) {
@@ -160,52 +167,50 @@ class ViPo(debate: Debate, val post: Post)
 
   def textInitially: String = post.text
   def where: Option[String] = post.where
-  def edits: List[Edit] = debate.editsFor(post.id)
+  def edits: List[ViEd] = page.editsFor(post.id)
 
-  // COULD rename editsAppdRevd to editsAppdRevtd (Revtd instead of Revd).
   lazy val (
-      editsDeleted: List[(Edit, Delete)],
-      editsPending: List[Edit],
-      editsAppdDesc: List[(Edit, EditApp)],
-      editsAppdRevd: List[(Edit, EditApp, Delete)]) = {
+      editsDeletedDescTime: List[ViEd],
+      editsPendingDescTime: List[ViEd],
+      editsAppliedDescTime: List[ViEd],
+      editsRevertedDescTime: List[ViEd]) = {
 
-    var deleted = List[(Edit, Delete)]()
-    var pending = List[Edit]()
-    var applied = List[(Edit, EditApp)]()
-    var appdRevd = List[(Edit, EditApp, Delete)]()
-    edits foreach { e =>
-      val del = debate.deletionFor(e.id)
-      if (del isDefined) {
-        deleted ::= e -> del.get
-      } else {
-        var eappsLive = List[(Edit, EditApp)]()
-        var eappsDeleted = List[(Edit, EditApp, Delete)]()
-        val eapps = debate.editAppsByEdit(e.id)
-        eapps foreach { ea =>
-          val del = debate.deletionFor(ea.id)
-          if (del isEmpty) eappsLive ::= e -> ea
-          else eappsDeleted ::= ((e, ea, del.get))
-        }
-        if (eappsLive isEmpty) pending ::= e
-        else applied ::= eappsLive.head
-        if (eappsDeleted nonEmpty) {
-          appdRevd :::= eappsDeleted
-        }
-      }
+    var deleted = List[ViEd]()
+    var pending = List[ViEd]()
+    var applied = List[ViEd]()
+    var reverted = List[ViEd]()
+
+    edits foreach { edit =>
+      // (Cannot easily move the below `assert`s to Edit, because
+      // the values they test are computed lazily.)
+
+      // An edit cannot be both applied and reverted at the same time.
+      assErrIf(edit.isApplied && edit.isReverted, "DwE4FW21")
+      if (edit.isReverted) reverted ::= edit
+      if (edit.isApplied) applied ::= edit
+
+      // An edit can have been reverted and then deleted,
+      // but an edit that is currently in effect cannot also be deleted.
+      assErrIf(edit.isApplied && edit.isDeleted, "DwE09IJ3")
+      if (edit.isDeleted) deleted ::= edit
+
+      // An edit that has been applied and then reverted, is pending again.
+      // But an edit that is in effect, or has been deleted, cannot be pending.
+      assErrIf(edit.isApplied && edit.isPending, "DwE337Z2")
+      assErrIf(edit.isDeleted && edit.isPending, "DwE8Z3B2")
+      if (edit.isPending) pending ::= edit
     }
 
-    // Sort by 1) deletion, 2) application, 3) edit creation, most recent
-    // first.
-    (deleted.sortBy(- _._2.ctime.getTime),
-      pending.sortBy(- _.ctime.getTime),
-      applied.sortBy(- _._2.ctime.getTime),
-      appdRevd.sortBy(- _._3.ctime.getTime))
+    (deleted.sortBy(- _.deletionDati.get.getTime),
+       pending.sortBy(- _.creationDati.getTime),
+       applied.sortBy(- _.applicationDati.get.getTime),
+       reverted.sortBy(- _.revertionDati.get.getTime))
   }
 
-  def editsAppdAsc = editsAppdDesc.reverse
+  def editsAppliedAscTime = editsAppliedDescTime.reverse
 
-  lazy val lastEditApp = editsAppdDesc.headOption.map(_._2)
-  lazy val lastEditRevertion = editsAppdRevd.headOption.map(_._3)
+  lazy val lastEditApplied = editsAppliedDescTime.headOption
+  lazy val lastEditReverted = editsRevertedDescTime.headOption
 
 
   /**
@@ -214,8 +219,8 @@ class ViPo(debate: Debate, val post: Post)
    */
   def modfDatiPerhapsReviewed: ju.Date = {
     val maxTime = math.max(
-       lastEditApp.map(_.ctime.getTime).getOrElse(0: Long),
-       lastEditRevertion.map(_.ctime.getTime).getOrElse(0: Long))
+       lastEditApplied.map(_.applicationDati.get.getTime).getOrElse(0: Long),
+       lastEditReverted.map(_.revertionDati.get.getTime).getOrElse(0: Long))
     if (maxTime == 0) creationDati else new ju.Date(maxTime)
   }
 
@@ -312,10 +317,44 @@ class ViPo(debate: Debate, val post: Post)
 
 
 
-class ViEd(debate: Debate, val edit: Edit)
-  extends ViAc(debate, edit) with ActionReviews {
+class ViEd(debate: Debate, val edit: Edit) extends ViAc(debate, edit) {
 
-  def autoApproval = edit.autoApproval
+  def text = edit.text
+  def newMarkup = edit.newMarkup
+  def relatedPostAutoApproval = edit.relatedPostAutoApproval
+
+  def isPending = !isApplied && !isDeleted
+
+  private def _initiallyAutoApplied = edit.autoApplied
+
+  val (isApplied, applicationDati, isReverted, revertionDati)
+        : (Boolean, Option[ju.Date], Boolean, Option[ju.Date]) = {
+    val allEditApps = page.editAppsByEdit(id)
+    if (allEditApps isEmpty) {
+      // This edit might have been auto applied, and deleted & reverted later.
+      (_initiallyAutoApplied, isDeleted) match {
+        case (false, _) => (false, None, false, None)
+        case (true, false) =>
+          // Auto applied at creation.
+          (true, Some(creationDati), false, None)
+        case (true, true) =>
+          // Auto applied, but later deleted and implicitly reverted.
+          (false, None, true, deletionDati)
+      }
+    } else {
+      // Consider the most recent EditApp only. If it hasn't been deleted,
+      // this Edit is in effect. However, if the EditApp has been deleted,
+      // there should be no other EditApp that has not also been deleted,
+      // because you cannot apply an edit that's already been applied.
+      val lastEditApp = allEditApps.maxBy(_.ctime.getTime)
+      val revertionDati =
+        page.deletionFor(lastEditApp.id).map(_.ctime) orElse deletionDati
+      if (revertionDati isEmpty)
+        (true, Some(lastEditApp.ctime), false, None)
+      else
+        (false, None, true, Some(revertionDati.get))
+    }
+  }
 
 }
 
