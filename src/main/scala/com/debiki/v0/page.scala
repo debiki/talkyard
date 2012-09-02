@@ -362,8 +362,12 @@ case class Debate (
   // -------- Construction
 
   def + (post: Post): Debate = copy(posts = post :: posts)
-
   def + (rating: Rating): Debate = copy(ratings = rating :: ratings)
+  def + (edit: Edit): Debate = copy(edits = edit :: edits)
+  def + (editApp: EditApp): Debate = copy(editApps = editApp :: editApps)
+  def + (flag: Flag): Debate = copy(flags = flag :: flags)
+  def + (deletion: Delete): Debate = copy(deletions = deletion :: deletions)
+  def + (review: Review): Debate = copy(reviews = review :: reviews)
 
   // COULD [T <: Action] instead of >: AnyRef?
   def ++[T >: AnyRef] (actions: List[T]): Debate = {
