@@ -65,7 +65,7 @@ class PageTest extends SpecificationWithJUnit {
         page.body_!.currentVersionRejected must_== false
         page.body_!.currentVersionApproved must_== false
         page.body_!.initiallyAutoApproved must_== false
-        page.body_!.lastApprovalDate must_== None
+        page.body_!.lastApprovalDati must_== None
         page.body_!.text must_== textInitially
         page.body_!.textApproved must_== ""
       }
@@ -76,7 +76,7 @@ class PageTest extends SpecificationWithJUnit {
         page.body_!.currentVersionRejected must_== false
         page.body_!.currentVersionApproved must_== true
         page.body_!.initiallyAutoApproved must_== true
-        page.body_!.lastApprovalDate must_== Some(bodySkeleton.ctime)
+        page.body_!.lastApprovalDati must_== Some(bodySkeleton.ctime)
         page.body_!.text must_== textInitially
         page.body_!.textApproved must_== textInitially
       }
@@ -88,7 +88,7 @@ class PageTest extends SpecificationWithJUnit {
         page.body_!.currentVersionRejected must_== false
         page.body_!.currentVersionApproved must_== true
         page.body_!.initiallyAutoApproved must_== false
-        page.body_!.lastApprovalDate must_== Some(manualBodyApprovalDate)
+        page.body_!.lastApprovalDati must_== Some(manualBodyApprovalDate)
         page.body_!.text must_== textInitially
         page.body_!.textApproved must_== textInitially
       }
@@ -100,7 +100,7 @@ class PageTest extends SpecificationWithJUnit {
         page.body_!.currentVersionRejected must_== true
         page.body_!.currentVersionApproved must_== false
         page.body_!.initiallyAutoApproved must_== false
-        page.body_!.lastApprovalDate must_== None
+        page.body_!.lastApprovalDati must_== None
         page.body_!.text must_== textInitially
         page.body_!.textApproved must_== ""
       }
@@ -112,7 +112,7 @@ class PageTest extends SpecificationWithJUnit {
         bodySkeleton.copy(autoApproval = Some(AutoApproval.WellBehavedUser))
       val page = Debate.empty("a") + body + editSkeleton
       page.body_!.text must_== textInitially
-      page.body_!.mdatiPerhapsReviewed must_== page.body_!.cdati
+      page.body_!.modfDatiPerhapsReviewed must_== page.body_!.creationDati
 
       page.body_!.editsDeleted must beEmpty
       page.body_!.editsAppdDesc must beEmpty
@@ -130,7 +130,7 @@ class PageTest extends SpecificationWithJUnit {
       val page = Debate.empty("a") + bodySkeletonAutoApproved +
          editSkeleton + deletionOfEdit
       page.body_!.text must_== textInitially
-      page.body_!.mdatiPerhapsReviewed must_== page.body_!.cdati
+      page.body_!.modfDatiPerhapsReviewed must_== page.body_!.creationDati
 
       page.body_!.editsPending must beEmpty
       page.body_!.editsAppdDesc must beEmpty
@@ -156,8 +156,8 @@ class PageTest extends SpecificationWithJUnit {
         page.body_!.currentVersionApproved must_== false
         page.body_!.someVersionApproved must_== true
         page.body_!.initiallyAutoApproved must_== true
-        page.body_!.lastReviewDate must_== Some(page.body_!.cdati)
-        page.body_!.lastApprovalDate must_== Some(page.body_!.cdati)
+        page.body_!.lastReviewDati must_== Some(page.body_!.creationDati)
+        page.body_!.lastApprovalDati must_== Some(page.body_!.creationDati)
         page.body_!.text must_== textAfterFirstEdit
         page.body_!.textApproved must_== textInitially
         testEditLists(page.body_!)
@@ -185,8 +185,8 @@ class PageTest extends SpecificationWithJUnit {
         page.body_!.currentVersionApproved must_== false
         page.body_!.someVersionApproved must_== true
         page.body_!.initiallyAutoApproved must_== true
-        page.body_!.lastReviewDate must_== Some(rejectionOfEditApp.ctime)
-        page.body_!.lastApprovalDate must_== Some(page.body_!.cdati)
+        page.body_!.lastReviewDati must_== Some(rejectionOfEditApp.ctime)
+        page.body_!.lastApprovalDati must_== Some(page.body_!.creationDati)
         page.body_!.text must_== textAfterFirstEdit
         page.body_!.textApproved must_== textInitially
         testEditLists(page.body_!)
@@ -211,8 +211,8 @@ class PageTest extends SpecificationWithJUnit {
         post.currentVersionApproved must_== true
         post.someVersionApproved must_== true
         post.initiallyAutoApproved must_== true
-        post.lastReviewDate must_== Some(editAppSkeleton.ctime)
-        post.lastApprovalDate must_== Some(editAppSkeleton.ctime)
+        post.lastReviewDati must_== Some(editAppSkeleton.ctime)
+        post.lastApprovalDati must_== Some(editAppSkeleton.ctime)
         post.text must_== textAfterFirstEdit
         post.textApproved must_== textAfterFirstEdit
         testEditLists(post)

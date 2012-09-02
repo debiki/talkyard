@@ -28,8 +28,7 @@ object SmartAction {
 class ViAc(val debate: Debate, val action: Action) {
   def page = debate // should rename `debate` to `page`
   def id: String = action.id
-  def ctime = action.ctime  // COULD rename to cdati
-  def cdati = action.ctime
+  def creationDati = action.ctime
   def loginId = action.loginId
   def login: Option[Login] = debate.people.login(action.loginId)
   def login_! : Login = login.getOrElse(runErr(
@@ -63,10 +62,10 @@ class ViAc(val debate: Debate, val action: Action) {
   lazy val deletions = debate.deletions.filter(_.postId == action.id)
 
   /** Deletions, the most recent first. */
-  lazy val deletionsSorted = deletions.sortBy(- _.ctime.getTime)
+  lazy val deletionsDescTime = deletions.sortBy(- _.ctime.getTime)
 
-  lazy val lastDelete = deletionsSorted.headOption
-  lazy val firstDelete = deletionsSorted.lastOption
+  lazy val lastDelete = deletionsDescTime.headOption
+  lazy val firstDelete = deletionsDescTime.lastOption
 
 }
 
@@ -91,24 +90,24 @@ trait ActionReviews {
   private lazy val _manualReviewsDescTime =
     page.reviewsFor(id).sortBy(-_.ctime.getTime)
 
-  def lastReviewDate: Option[ju.Date] = {
+  def lastReviewDati: Option[ju.Date] = {
     val _lastManualReview = _manualReviewsDescTime.headOption
     _lastManualReview.map(_.ctime) orElse {
-      if (initiallyAutoApproved) Some(ctime) else None
+      if (initiallyAutoApproved) Some(creationDati) else None
     }
   }
 
-  def lastApprovalDate: Option[ju.Date] = {
+  def lastApprovalDati: Option[ju.Date] = {
     val lastManualApproval =
        _manualReviewsDescTime.filter(_.isApproved).headOption
     lastManualApproval.map(_.ctime) orElse {
-      if (initiallyAutoApproved) Some(ctime) else None
+      if (initiallyAutoApproved) Some(creationDati) else None
     }
   }
 
   def lastReviewWasApproval: Option[Boolean] =
-    if (lastReviewDate.isEmpty) None
-    else Some(lastReviewDate == lastApprovalDate)
+    if (lastReviewDati.isEmpty) None
+    else Some(lastReviewDati == lastApprovalDati)
 
 }
 
@@ -121,16 +120,15 @@ class ViPo(debate: Debate, val post: Post)
 
   def parent: String = post.parent
   def tyype = post.tyype
-  // def ctime = lastEditApp.map(ea => toIso8601(ea.ctime))
 
   def autoApproval = post.autoApproval
 
-  lazy val (text: String, markup: String) = textAndMarkupAsOf(Long.MaxValue)
+  lazy val (text: String, markup: String) = _textAndMarkupAsOf(Long.MaxValue)
 
   lazy val (textApproved: String, markupApproved: String) =
-    lastApprovalDate match {
+    lastApprovalDati match {
       case None => ("", "")
-      case Some(dati) => textAndMarkupAsOf(dati.getTime)
+      case Some(dati) => _textAndMarkupAsOf(dati.getTime)
     }
 
   /** Applies all edits up to, but not including, the specified date.
@@ -139,7 +137,7 @@ class ViPo(debate: Debate, val post: Post)
    *    COULD make textAsOf understand changes in markup type,
    *    or the preview won't always work correctly.
    */
-  def textAndMarkupAsOf(millis: Long): (String, String) = {
+  private def _textAndMarkupAsOf(millis: Long): (String, String) = {
     var curText = post.text
     var curMarkup = post.markup
     val dmp = new name.fraser.neil.plaintext.diff_match_patch
@@ -214,19 +212,19 @@ class ViPo(debate: Debate, val post: Post)
    * Modification date time: When the text of this Post was last changed
    * (that is, an edit was applied, or a previously applied edit was reverted).
    */
-  def mdatiPerhapsReviewed: ju.Date = {
+  def modfDatiPerhapsReviewed: ju.Date = {
     val maxTime = math.max(
        lastEditApp.map(_.ctime.getTime).getOrElse(0: Long),
        lastEditRevertion.map(_.ctime.getTime).getOrElse(0: Long))
-    if (maxTime == 0) cdati else new ju.Date(maxTime)
+    if (maxTime == 0) creationDati else new ju.Date(maxTime)
   }
 
 
   def currentVersionReviewed: Boolean = {
     // Use >= not > because a comment might be auto approved, and then
-    // the approval dati equals the comment cdati.
-    lastReviewDate.isDefined && lastReviewDate.get.getTime >=
-       mdatiPerhapsReviewed.getTime
+    // the approval dati equals the comment creationDati.
+    lastReviewDati.isDefined && lastReviewDati.get.getTime >=
+       modfDatiPerhapsReviewed.getTime
   }
 
 
@@ -243,7 +241,7 @@ class ViPo(debate: Debate, val post: Post)
     // or effectively deletes the post, if it has never been approved.
     // To completely "unapprove" a post that has previously been approved,
     // delete it instead.
-    lastApprovalDate.nonEmpty
+    lastApprovalDati.nonEmpty
   }
 
 
@@ -270,8 +268,8 @@ class ViPo(debate: Debate, val post: Post)
       flagsPendingReview: List[Flag],
       flagsReviewed: List[Flag]) =
     flagsDescTime span { flag =>
-      if (lastReviewDate isEmpty) true
-      else lastReviewDate.get.getTime <= flag.ctime.getTime
+      if (lastReviewDati isEmpty) true
+      else lastReviewDati.get.getTime <= flag.ctime.getTime
     }
 
   lazy val lastFlag = flagsDescTime.headOption
