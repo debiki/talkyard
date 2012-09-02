@@ -68,6 +68,18 @@ class ViAc(val debate: Debate, val action: Action) {
   lazy val lastDelete = deletionsSorted.headOption
   lazy val firstDelete = deletionsSorted.lastOption
 
+}
+
+
+
+trait ActionReviews {
+  this: ViAc =>
+
+  def autoApproval: Option[AutoApproval]
+
+  def initiallyAutoApproved: Boolean = autoApproval.isDefined
+
+
   /**
    * Currently mostly ignored, but in the future all actions *should* either
    * be approved automatically (e.g. well behaved users'  actions), or
@@ -76,20 +88,43 @@ class ViAc(val debate: Debate, val action: Action) {
    * I think that right now / soon, approvals are needed only for
    * new posts by perhaps malicious users.
    */
-  lazy val reviewsDescTime = page.reviewsFor(id).sortBy(-_.ctime.getTime)
+  private lazy val _manualReviewsDescTime =
+    page.reviewsFor(id).sortBy(-_.ctime.getTime)
 
-  def lastReview = reviewsDescTime.headOption
-  def lastApprovalDate = lastReview.filter(_.isApproved).map(_.ctime)
+  def lastReviewDate: Option[ju.Date] = {
+    val _lastManualReview = _manualReviewsDescTime.headOption
+    _lastManualReview.map(_.ctime) orElse {
+      if (initiallyAutoApproved) Some(ctime) else None
+    }
+  }
+
+  def lastApprovalDate: Option[ju.Date] = {
+    val lastManualApproval =
+       _manualReviewsDescTime.filter(_.isApproved).headOption
+    lastManualApproval.map(_.ctime) orElse {
+      if (initiallyAutoApproved) Some(ctime) else None
+    }
+  }
+
+  def lastReviewWasApproval: Option[Boolean] =
+    if (lastReviewDate.isEmpty) None
+    else Some(lastReviewDate == lastApprovalDate)
 
 }
 
 
+
 /** A Virtual Post into account all edits applied to the actual post.
  */
-class ViPo(debate: Debate, val post: Post) extends ViAc(debate, post) {
+class ViPo(debate: Debate, val post: Post)
+  extends ViAc(debate, post) with ActionReviews {
+
   def parent: String = post.parent
   def tyype = post.tyype
   // def ctime = lastEditApp.map(ea => toIso8601(ea.ctime))
+
+  def autoApproval = post.autoApproval
+
   lazy val (text: String, markup: String) = textAndMarkupAsOf(Long.MaxValue)
 
   lazy val (textApproved: String, markupApproved: String) =
@@ -179,7 +214,7 @@ class ViPo(debate: Debate, val post: Post) extends ViAc(debate, post) {
    * Modification date time: When the text of this Post was last changed
    * (that is, an edit was applied, or a previously applied edit was reverted).
    */
-  def mdati: ju.Date = {
+  def mdatiPerhapsReviewed: ju.Date = {
     val maxTime = math.max(
        lastEditApp.map(_.ctime.getTime).getOrElse(0: Long),
        lastEditRevertion.map(_.ctime.getTime).getOrElse(0: Long))
@@ -190,21 +225,25 @@ class ViPo(debate: Debate, val post: Post) extends ViAc(debate, post) {
   def currentVersionReviewed: Boolean = {
     // Use >= not > because a comment might be auto approved, and then
     // the approval dati equals the comment cdati.
-    lastReview.isDefined && lastReview.get.ctime.getTime >= mdati.getTime
+    lastReviewDate.isDefined && lastReviewDate.get.getTime >=
+       mdatiPerhapsReviewed.getTime
   }
 
+
   def currentVersionApproved: Boolean =
-    currentVersionReviewed && lastReview.get.isApproved
+    currentVersionReviewed && lastReviewWasApproval.get
+
 
   def currentVersionRejected: Boolean =
-    currentVersionReviewed && !lastReview.get.isApproved
+    currentVersionReviewed && !lastReviewWasApproval.get
+
 
   def someVersionApproved: Boolean = {
     // A rejection cancels all edits since the previous approval,
     // or effectively deletes the post, if it has never been approved.
     // To completely "unapprove" a post that has previously been approved,
     // delete it instead.
-    reviewsDescTime.filter(_.isApproved).nonEmpty
+    lastApprovalDate.nonEmpty
   }
 
 
@@ -231,8 +270,8 @@ class ViPo(debate: Debate, val post: Post) extends ViAc(debate, post) {
       flagsPendingReview: List[Flag],
       flagsReviewed: List[Flag]) =
     flagsDescTime span { flag =>
-      if (lastReview isEmpty) true
-      else lastReview.get.ctime.getTime <= flag.ctime.getTime
+      if (lastReviewDate isEmpty) true
+      else lastReviewDate.get.getTime <= flag.ctime.getTime
     }
 
   lazy val lastFlag = flagsDescTime.headOption
@@ -273,7 +312,12 @@ class ViPo(debate: Debate, val post: Post) extends ViAc(debate, post) {
   }
 }
 
-class ViEd(debate: Debate, val edit: Edit) extends ViAc(debate, edit) {
+
+
+class ViEd(debate: Debate, val edit: Edit)
+  extends ViAc(debate, edit) with ActionReviews {
+
+  def autoApproval = edit.autoApproval
 
 }
 
