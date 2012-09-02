@@ -73,57 +73,15 @@ class ViAc(val debate: Debate, val action: Action) {
 
 
 
-trait ActionReviews {
-  this: ViAc =>
-
-  def autoApproval: Option[AutoApproval]
-
-  def initiallyAutoApproved: Boolean = autoApproval.isDefined
-
-
-  /**
-   * Currently mostly ignored, but in the future all actions *should* either
-   * be approved automatically (e.g. well behaved users'  actions), or
-   * manually (by moderators/admins).
-   *
-   * I think that right now / soon, approvals are needed only for
-   * new posts by perhaps malicious users.
-   */
-  private lazy val _manualReviewsDescTime =
-    page.reviewsFor(id).sortBy(-_.ctime.getTime)
-
-  def lastReviewDati: Option[ju.Date] = {
-    val _lastManualReview = _manualReviewsDescTime.headOption
-    _lastManualReview.map(_.ctime) orElse {
-      if (initiallyAutoApproved) Some(creationDati) else None
-    }
-  }
-
-  def lastApprovalDati: Option[ju.Date] = {
-    val lastManualApproval =
-       _manualReviewsDescTime.filter(_.isApproved).headOption
-    lastManualApproval.map(_.ctime) orElse {
-      if (initiallyAutoApproved) Some(creationDati) else None
-    }
-  }
-
-  def lastReviewWasApproval: Option[Boolean] =
-    if (lastReviewDati.isEmpty) None
-    else Some(lastReviewDati == lastApprovalDati)
-
-}
-
-
-
 /** A Virtual Post into account all edits applied to the actual post.
  */
-class ViPo(debate: Debate, val post: Post)
-  extends ViAc(debate, post) with ActionReviews {
+class ViPo(debate: Debate, val post: Post) extends ViAc(debate, post) {
 
   def parent: String = post.parent
   def tyype = post.tyype
 
   def autoApproval = post.autoApproval
+  def initiallyAutoApproved: Boolean = autoApproval.isDefined
 
   lazy val (text: String, markup: String) = _textAndMarkupAsOf(Long.MaxValue)
 
@@ -223,6 +181,36 @@ class ViPo(debate: Debate, val post: Post)
        lastEditReverted.map(_.revertionDati.get.getTime).getOrElse(0: Long))
     if (maxTime == 0) creationDati else new ju.Date(maxTime)
   }
+
+
+  /**
+   * Only actions that happened before the last approval should be
+   * considered when rendering this Post.
+   */
+  private lazy val _manualReviewsDescTime =
+    page.reviewsFor(id).sortBy(-_.ctime.getTime)
+
+
+  def lastReviewDati: Option[ju.Date] = {
+    val _lastManualReview = _manualReviewsDescTime.headOption
+    _lastManualReview.map(_.ctime) orElse {
+      if (initiallyAutoApproved) Some(creationDati) else None
+    }
+  }
+
+
+  def lastApprovalDati: Option[ju.Date] = {
+    val lastManualApproval =
+      _manualReviewsDescTime.filter(_.isApproved).headOption
+    lastManualApproval.map(_.ctime) orElse {
+      if (initiallyAutoApproved) Some(creationDati) else None
+    }
+  }
+
+
+  def lastReviewWasApproval: Option[Boolean] =
+    if (lastReviewDati.isEmpty) None
+    else Some(lastReviewDati == lastApprovalDati)
 
 
   def currentVersionReviewed: Boolean = {
