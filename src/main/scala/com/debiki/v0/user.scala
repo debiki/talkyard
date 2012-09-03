@@ -20,6 +20,7 @@ case class People(
   identities: List[Identity] = Nil,
   users: List[User] = Nil) {
 
+
   /**
    * Returns a NiLo with info on the author of the post.
    */
@@ -27,6 +28,9 @@ case class People(
                                          // or return a User?
     new NiLo(this, login_!(action.loginId))
   }
+
+  def loginFor_!(action: ViAc): NiLo =
+    new NiLo(this, login_!(action.loginId))
 
   def nilo(loginId: String): Option[NiLo] =
     login(loginId).map(new NiLo(this, _))
