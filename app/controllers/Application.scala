@@ -157,7 +157,7 @@ object Application extends mvc.Controller {
 
     val mostRecentPageCtime: ju.Date =
       pathsAndPages.headOption.map(pathAndPage =>
-        pathAndPage._2.vipo_!(Debate.PageBodyId).ctime
+        pathAndPage._2.vipo_!(Debate.PageBodyId).creationDati
       ).getOrElse(new ju.Date)
 
     // The feed concerns all pages below pagePath.path, so the URL to

@@ -124,15 +124,15 @@ object AppList extends mvc.Controller {
       "userId" -> JsString(action.user_!.id),
       "idtyId" -> JsString(action.identity_!.id),
       "loginId" -> JsString(action.loginId),
-      "cdati" -> JsString(toIso8601T(action.ctime)))
+      "cdati" -> JsString(toIso8601T(action.creationDati)))
 
     action match {
       case post: ViPo =>
         data += "text" -> JsString(post.text take PostTextLengthLimit)
-        if (post.editsAppdDesc.nonEmpty)
-          data += "editsAppliedCount" -> JsNumber(post.editsAppdDesc.length)
-        if (post.editsPending.nonEmpty)
-          data += "editsPendingCount" -> JsNumber(post.editsPending.length)
+        if (post.editsAppliedDescTime.nonEmpty)
+          data += "editsAppliedCount" -> JsNumber(post.editsAppliedDescTime.length)
+        if (post.editsPendingDescTime.nonEmpty)
+          data += "editsPendingCount" -> JsNumber(post.editsPendingDescTime.length)
 
         val status =
           if (post.currentVersionApproved) "Approved"

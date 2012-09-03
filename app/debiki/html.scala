@@ -311,7 +311,7 @@ class DebateHtml(val debate: Debate, val pageTrust: PageTrust) {
     for {
       // Could skip sorting inline posts, since sorted by position later
       // anyway, in javascript. But if javascript disabled?
-      p <- vipos.sortBy(p => p.ctime.getTime). // the oldest first
+      p <- vipos.sortBy(p => p.creationDati.getTime). // the oldest first
                 sortBy(p => -pageStats.ratingStatsFor(p.id).
                                 fitnessDefaultTags.lowerLimit).
                 sortBy(p => p.meta.fixedPos.getOrElse(999999))
@@ -436,8 +436,8 @@ class DebateHtml(val debate: Debate, val pageTrust: PageTrust) {
 
   private def _showComment(rootPostId: String, vipo: ViPo): RenderedComment = {
     def post = vipo.post
-    val editsAppld: List[(Edit, EditApp)] = vipo.editsAppdDesc
-    val lastEditApp = editsAppld.headOption.map(_._2)
+    val editsApplied: List[ViEd] = vipo.editsAppliedDescTime
+    val lastEditApplied = editsApplied.headOption
     val cssPostId = "post-"+ post.id
     val (cssArtclPost, cssArtclBody) =
       if (post.id != Page.BodyId) ("", "")
@@ -602,19 +602,19 @@ class DebateHtml(val debate: Debate, val pageTrust: PageTrust) {
 
     val editInfo =
       // If closed: <span class='dw-p-re-cnt'>{count} replies</span>
-      if (editsAppld.isEmpty) Nil
+      if (editsApplied.isEmpty) Nil
       else {
-        val lastEditDate = editsAppld.head._2.ctime
+        val lastEditDate = vipo.modfDatiPerhapsReviewed
         // ((This identity count doesn't take into account that a user
         // can have many identities, e.g. Twitter, Facebook and Gmail. So
         // even if many different *identities* have edited the post,
         // perhaps only one single actual *user* has edited it. Cannot easily
         // compare users though, because IdentitySimple maps to no user!))
         val editorsCount =
-          editsAppld.map(edAp => debate.vied_!(edAp._1.id).identity_!.id).
+          editsApplied.map(edAp => debate.vied_!(edAp.id).identity_!.id).
           distinct.length
         lazy val editor =
-          debate.people.authorOf_!(debate.editsById(lastEditApp.get.editId))
+          debate.people.authorOf_!(debate.editsById(lastEditApplied.get.id))
         <span class='dw-p-hd-e'>{
             Text(", edited ") ++
             (if (editorsCount > 1) {
@@ -1139,24 +1139,24 @@ class FormHtml(val config: HtmlConfig, xsrfToken: String,
    * "apply" means that an edit should be applied. The id is an edit id.
    * The initial sequence number ("0-", "1-", ...) is the order in
    * which the changes should be made.
+   * (One year later: Why didn't I simply use Json??)
    */
   def editsDialog(nipo: ViPo, page: Debate, userName: Option[String],
                   mayEdit: Boolean): NodeSeq = {
-    def xmlFor(edit: Edit, eapp: Option[EditApp]): NodeSeq = {
-      val applied = eapp isDefined
-      val editor = page.people.authorOf_!(edit)
-      def applier_! = page.people.authorOf_!(eapp.get)
+    def xmlFor(edit: ViEd): NodeSeq = {
+      val applied = edit.isApplied
+      val editorLogin = page.people.loginFor_!(edit)
+      def applier_! = page.people.nilo_!(edit.applierLoginId.get)
       <li class='dw-e-sg'>
         <div class='dw-e-sg-e'>{
             <div>{
               (if (applied) "Suggested by " else "By ") ++
-              linkTo(editor, config) ++
-              dateAbbr(edit.ctime, "dw-e-sg-dt")
+              linkTo(editorLogin, config) ++
+              dateAbbr(edit.creationDati, "dw-e-sg-dt")
               }</div> ++
             (if (!applied) Nil
             else <div>Applied by { linkTo(applier_!, config) ++
-              dateAbbr(eapp.get.ctime, "dw-e-ap-dt") }</div>
-            )
+              dateAbbr(edit.applicationDati.get, "dw-e-ap-dt") }</div>)
           }
           <div class='dw-as'>{
             val name = "dw-fi-appdel"
@@ -1182,24 +1182,25 @@ class FormHtml(val config: HtmlConfig, xsrfToken: String,
               //<input id={delId} type='checkbox' name={name} value={delVal}/>
             }
             else {
-              val delVal = "0-delete-"+ eapp.get.id
+              val delVal = "0-delete-"+ edit.applicationActionId
               val undoId = name +"-delete-"+ edit.id
               <label for={undoId}>Undo</label>
               <input id={undoId} type='checkbox' name={name} value={delVal}/>
             }
           }</div>
-          <pre class='dw-e-text'>{edit.text}</pre>
-          { eapp.map(ea => <pre class='dw-e-rslt'>{ea.result}</pre>).toList }
+          <pre class='dw-e-text'>{edit.patchText}</pre>
+          { edit.actualResult.map(result =>
+              <pre class='dw-e-rslt'>{result}</pre>).toList }
         </div>
       </li>
     }
 
-    val pending = nipo.editsPending
+    val pending = nipo.editsPendingDescTime
           // Better keep sorted by time? and if people don't like them,
           // they'll be deleted (faster)?
           //.sortBy(e => -pageStats.likingFor(e).lowerBound)
     // Must be sorted by time, most recent first (debiki.js requires this).
-    val applied = nipo.editsAppdDesc
+    val applied = nipo.editsAppliedDescTime
     val cssMayEdit = if (mayEdit) "dw-e-sgs-may-edit" else ""
     val cssArtclBody = if (nipo.id == Page.BodyId) " dw-ar-p-bd" else ""
 
@@ -1210,13 +1211,13 @@ class FormHtml(val config: HtmlConfig, xsrfToken: String,
         <div>Improvement suggestions:</div>
         <div id='dw-e-sgs-pending'>
           <ol class='dw-e-sgs'>{
-            for (edit <- pending) yield xmlFor(edit, None)
+            for (edit <- pending) yield xmlFor(edit)
           }</ol>
         </div>
         <div>Improvements already applied:</div>
         <div id='dw-e-sgs-applied'>
           <ol class='dw-e-sgs'>{
-            for ((edit, editApp) <- applied) yield xmlFor(edit, Some(editApp))
+            for (editApplied <- applied) yield xmlFor(editApplied)
           }</ol>
         </div>
         {/* cold show original text on hover.
@@ -1506,7 +1507,7 @@ object AtomFeedXml {
         fixed, only after a substantial modification.
         COULD introduce a page's updatedTime?
         */}
-        <updated>{toIso8601T(pageBody.ctime)}</updated>{
+        <updated>{toIso8601T(pageBody.creationDati)}</updated>{
         /* Names one author of the entry. An entry may have multiple
         authors. An entry must [sometimes] contain at least one author
         element [...] More info here:
