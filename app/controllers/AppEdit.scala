@@ -46,7 +46,7 @@ object AppEdit extends mvc.Controller {
     // Too must data?
     val postSize = text.size
     val user = pageReq.user_!
-    if (user.isSuperAdmin) { // || !.isAdmin
+    if (user.isAdmin) {
       // Allow up to MaxPostSize chars (see above).
     }
     else if (user.isAuthenticated) {

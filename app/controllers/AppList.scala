@@ -159,7 +159,7 @@ object AppList extends mvc.Controller {
       "displayName" -> JsString(user.displayName),
       "country" -> JsString(user.country))
 
-    if (user.isSuperAdmin) info += "isAdmin" -> JsBoolean(true)
+    if (user.isAdmin) info += "isAdmin" -> JsBoolean(true)
     if (user.isOwner) info += "isOwner" -> JsBoolean(true)
     // Skip email for now, currently no particular access control.
 

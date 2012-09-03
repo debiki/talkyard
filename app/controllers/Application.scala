@@ -254,7 +254,7 @@ object Application extends mvc.Controller {
 
     val (identity, user) = Utils.loadIdentityAndUserOrThrow(sidOk, dao)
 
-    if (user.map(_.isSuperAdmin) != Some(true))
+    if (user.map(_.isAdmin) != Some(true))
       Ok(views.html.login(xsrfToken = xsrfOk.value,
         returnToUrl = request.uri, title = "Login", message = Some(
           "Login with an administrator account to access this page.")))
