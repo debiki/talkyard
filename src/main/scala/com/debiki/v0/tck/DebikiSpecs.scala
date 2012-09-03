@@ -152,7 +152,7 @@ object DebikiSpecs {
           test("country", country, _.country) :::
           test("website", website, _.website) :::
           test("isSuperAdmin", isSuperAdmin,
-              u => Boolean.box(u.isSuperAdmin)) ::: Nil
+              u => Boolean.box(u.isAdmin)) ::: Nil
       (errs isEmpty, "OK", errs.mkString(", and "))
     }
   }
