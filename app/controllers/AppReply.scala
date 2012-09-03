@@ -19,19 +19,17 @@ import Utils.{OkHtml}
 object AppReply extends mvc.Controller {
 
 
-  def showForm(pathIn: PagePath, pageRoot: PageRoot, postId: String)
-        = PageGetAction(pathIn) {
+  def showForm(pathIn: PagePath, postId: String) = PageGetAction(pathIn) {
       pageReq: PageGetRequest =>
 
     val replyForm: xml.NodeSeq =
-      Utils.formHtml(pageReq, pageRoot).replyForm(
-        replyToPostId = postId, text = "")
+      Utils.formHtml(pageReq).replyForm(replyToPostId = postId, text = "")
 
     OkHtml(replyForm)
   }
 
 
-  def handleForm(pathIn: PagePath, pageRoot: PageRoot, postId: String)
+  def handleForm(pathIn: PagePath, postId: String)
         = PagePostAction(MaxPostSize)(pathIn) {
       pageReq: PagePostRequest =>
 
@@ -52,7 +50,7 @@ object AppReply extends mvc.Controller {
       where = whereOpt)
 
     Debiki.savePageActions(pageReq, post::Nil)
-    Utils.renderOrRedirect(pageReq, pageRoot)
+    Utils.renderOrRedirect(pageReq)
   }
 
 }

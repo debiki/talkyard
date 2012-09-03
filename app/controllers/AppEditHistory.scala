@@ -17,7 +17,7 @@ import Utils.{OkHtml}
 object AppEditHistory extends mvc.Controller {
 
 
-  def showForm(pathIn: PagePath, pageRoot: PageRoot, postId: String)
+  def showForm(pathIn: PagePath, postId: String)
         = PageGetAction(pathIn) { pageReq: PageGetRequest =>
 
     val page = pageReq.page_!
@@ -27,14 +27,14 @@ object AppEditHistory extends mvc.Controller {
     val (mayEdit, mayEditReason) =
       AppEdit.mayEdit(pageReq.user, post, pageReq.permsOnPage)
 
-    val form = Utils.formHtml(pageReq, pageRoot).editsDialog(
+    val form = Utils.formHtml(pageReq).editsDialog(
       post, page, pageReq.sid.displayName, mayEdit = mayEdit)
 
     OkHtml(form)
   }
 
 
-  def handleForm(pathIn: PagePath, pageRoot: PageRoot, postId: String)
+  def handleForm(pathIn: PagePath, postId: String)
         = PagePostAction(MaxPostSize)(pathIn) {
       pageReq: PagePostRequest =>
 
@@ -60,7 +60,7 @@ object AppEditHistory extends mvc.Controller {
     }
     actions = actions.reverse
     _applyAndUndoEdits(actions, pageReq)
-    Utils.renderOrRedirect(pageReq, pageRoot)
+    Utils.renderOrRedirect(pageReq)
   }
 
 

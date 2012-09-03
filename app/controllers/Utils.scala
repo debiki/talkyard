@@ -51,24 +51,23 @@ object Utils extends Results with http.ContentTypes {
     Ok("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"+ xmlNode) as contentType
 
 
-  def renderOrRedirect(pageReq: PageRequest[_], rootPost: PageRoot)
-        : PlainResult = {
+  def renderOrRedirect(pageReq: PageRequest[_]): PlainResult = {
     if (isAjax(pageReq.request)) {
-      val pageHtml = Debiki.TemplateEngine.renderPage(pageReq, rootPost)
+      val pageHtml = Debiki.TemplateEngine.renderPage(pageReq)
       OkHtml(pageHtml)
     } else {
       val viewRoot =
-        if (rootPost.isDefault) ""
-        else "?view=" + rootPost.subId
+        if (pageReq.rootPost.isDefault) ""
+        else "?view=" + pageReq.rootPost.subId
       Redirect(pageReq.pagePath.path + viewRoot)
     }
   }
 
 
-  def formHtml(pageReq: PageRequest[_], pageRoot: PageRoot) =
+  def formHtml(pageReq: PageRequest[_]) =
     FormHtml(
       newUrlConfig(pageReq), pageReq.xsrfToken.token,
-      pageRoot, pageReq.permsOnPage)
+      pageReq.pageRoot, pageReq.permsOnPage)
 
 
   def localUrlTo(action: ViAc): String = {

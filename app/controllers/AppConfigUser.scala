@@ -27,13 +27,13 @@ object AppConfigUser extends mvc.Controller {
   val FormPramEmailAddr = "dw-fi-eml-prf-adr"
 
 
-  def showForm(pathIn: PagePath, pageRoot: PageRoot, userId: String)
+  def showForm(pathIn: PagePath, userId: String)
         = PageGetAction(pathIn) { pageReq: PageGetRequest =>
     unimplemented
   }
 
 
-  def handleForm(pathIn: PagePath, pageRoot: PageRoot, userId: String)
+  def handleForm(pathIn: PagePath, userId: String)
         = PagePostAction(500)(pathIn) { pageReq: PagePostRequest =>
     val user = pageReq.user_!
     val identity = pageReq.identity_!

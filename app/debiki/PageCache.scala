@@ -22,9 +22,9 @@ object PageCache {
 
 
 /**
- * Caches serialized pages, if the root post is the page body.
+ * Caches serialized pages, the most recent approved version only.
  *
- * Each page should always be accessed via the same hostAndPort,
+ * BUG: Each page should always be accessed via the same hostAndPort,
  * otherwise `refreshLater` fails to refresh all cached versions of
  * the page.
  *
@@ -51,13 +51,14 @@ class PageCache {
       def apply(k: Key): NodeSeq = {
         val tenantDao = _tenantDaoDynVar.value
         assert(tenantDao ne null)
-        _loadAndRender(k, PageRoot.TheBody, tenantDao)
+        _loadAndRender(k, PageRoot.TheBody, PageVersion.LatestApproved,
+            tenantDao)
       }
     })
 
 
-  private def _loadAndRender(k: Key, pageRoot: PageRoot, tenantDao: TenantDao)
-        : NodeSeq = {
+  private def _loadAndRender(k: Key, pageRoot: PageRoot,
+        pageVersion: PageVersion, tenantDao: TenantDao): NodeSeq = {
     assert(k.tenantId == tenantDao.tenantId)
     tenantDao.loadPage(k.pageGuid) match {
       case Some(page) if page.body.map(_.someVersionApproved) != Some(true) =>
@@ -87,17 +88,17 @@ class PageCache {
   }
 
 
-  def get(pageReq: PageRequest[_], pageRoot: PageRoot): NodeSeq = {
+  def get(pageReq: PageRequest[_]): NodeSeq = {
     try {
       val config = DebikiHttp.newUrlConfig(pageReq)
       // The dialog templates includes the user name and cannot currently
       // be cached.
       val templates = FormHtml(config, pageReq.xsrfToken.token,
-        pageRoot, pageReq.permsOnPage).dialogTemplates
+        pageReq.pageRoot, pageReq.permsOnPage).dialogTemplates
       val key = Key(
         pageReq.tenantId, pageReq.pagePath.pageId.get, pageReq.request.host)
-      pageRoot match {
-        case PageRoot.Real(Page.BodyId) =>
+      (pageReq.pageRoot, pageReq.pageVersion) match {
+        case (PageRoot.Real(Page.BodyId), PageVersion.LatestApproved) =>
           _tenantDaoDynVar.withValue(pageReq.dao) {
             // The page (with the article and all comments) includes
             // nothing user specific and can thus be cached.
@@ -105,9 +106,9 @@ class PageCache {
             page ++ templates
           }
 
-        case otherRoot =>
+        case (otherRoot, version) =>
           // The cache currently works only for the page body as page root.
-          _loadAndRender(key, otherRoot, pageReq.dao) ++ templates
+          _loadAndRender(key, otherRoot, version, pageReq.dao) ++ templates
       }
     } catch {
       case e: NullPointerException =>

@@ -19,20 +19,20 @@ import Utils.{OkHtml}
 object AppEdit extends mvc.Controller {
 
 
-  def showEditForm(pathIn: PagePath, pageRoot: PageRoot, postId: String)
+  def showEditForm(pathIn: PagePath, postId: String)
         = PageGetAction(pathIn) {
       pageReq: PageGetRequest =>
 
     val (vipo, lazyCreateOpt) = _getOrCreatePostToEdit(pageReq, postId)
     val draftText = vipo.text  // in the future, load user's draft from db.
-    val editForm = Utils.formHtml(pageReq, pageRoot).editForm(
+    val editForm = Utils.formHtml(pageReq).editForm(
       vipo, newText = draftText,
       userName = pageReq.sid.displayName)
     OkHtml(editForm)
   }
 
 
-  def handleEditForm(pathIn: PagePath, pageRoot: PageRoot, postId: String)
+  def handleEditForm(pathIn: PagePath, postId: String)
         = PagePostAction(MaxPostSize)(pathIn) {
       pageReq: PagePostRequest =>
 
@@ -59,7 +59,7 @@ object AppEdit extends mvc.Controller {
     }
 
     _saveEdits(pageReq, postId, text, markupOpt)
-    Utils.renderOrRedirect(pageReq, pageRoot)
+    Utils.renderOrRedirect(pageReq)
   }
 
 

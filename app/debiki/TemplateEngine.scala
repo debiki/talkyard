@@ -47,16 +47,16 @@ import xml.{MetaData, Node, NodeSeq, Text}
 class TemplateEngine(val pageCache: PageCache) {
 
 
-  def renderPage(pageReq: PageRequest[_], pageRoot: PageRoot,
+  def renderPage(pageReq: PageRequest[_],
         appendToBody: NodeSeq = Nil): NodeSeq = {
 
     // Load page and all templates needed.
-    val textAndComments = pageCache.get(pageReq, pageRoot)
+    val textAndComments = pageCache.get(pageReq)
     val templates: List[TemplateSource] = {
       // Don't use custom templates, when editing a template. Otherwise, if
       // the user writes a html / template bug, it might no longer be
       // possible to view or edit the template, or any page that uses it.
-      if (pageReq.pagePath.isTemplatePage || pageRoot.isPageTemplate)
+      if (pageReq.pagePath.isTemplatePage || pageReq.pageRoot.isPageTemplate)
         TemplateForTemplates::Nil
       else
         _loadTemplatesFor(pageReq.page_!, at = pageReq.pagePath,

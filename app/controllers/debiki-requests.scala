@@ -11,6 +11,7 @@ import java.{util => ju}
 import play.api._
 import play.api.mvc.{Action => _, _}
 import Prelude._
+import Utils.ValidationImplicits._
 
 
 /**
@@ -146,6 +147,36 @@ case class PageRequest[A](
    */
   lazy val page_! : Debate =
     page_? getOrElse throwNotFound("DwE43XWY", "Page not found")
+
+
+  /**
+   * The page version is specified in the query string, e.g.:
+   * ?view&version=2012-08-20T23:59:59Z&unapproved
+   *
+   * The default version is the most recent approved version.
+   */
+  lazy val pageVersion: PageVersion = {
+    val approved = request.queryString.getFirst("unapproved").isEmpty
+    request.queryString.getEmptyAsNone("version") match {
+       case None => PageVersion.latest(approved)
+      case Some(datiString) =>
+        val dati = parseIso8601DateTime(datiString)
+        PageVersion(dati, approved)
+    }
+  }
+
+  /**
+   * The page root tells which post to start with when rendering a page.
+   * By default, the page body is used. The root is specified in the
+   * query string, like so: ?view=rootPostId  or ?edit=....&view=rootPostId
+   */
+  lazy val pageRoot: PageRoot =
+    request.queryString.get("view").map(rootPosts => rootPosts.size match {
+      case 1 => PageRoot(rootPosts.head)
+      // It seems this cannot hapen with Play Framework:
+      case 0 => assErr("DwE03kI8", "Query string param with no value")
+      case _ => throwBadReq("DwE0k35", "Too many `view' query params")
+    }) getOrElse PageRoot.TheBody
 
 }
 

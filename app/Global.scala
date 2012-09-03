@@ -68,16 +68,6 @@ object Global extends GlobalSettings {
     val versionPrefix = ""
     val mainFun = versionAndMainFun
 
-    // Find parameters common to almost all requests.
-    // COULD move pageRoot to Actions.PageRequest member, better.
-    val pageRoot: PageRoot =
-      request.queryString.get("view").map(rootPosts => rootPosts.size match {
-        case 1 => PageRoot(rootPosts.head)
-        // It seems this cannot hapen with Play Framework:
-        case 0 => assErr("DwE03kI8", "Query string param with no value")
-        case _ => throwBadReq("DwE0k35", "Too many `view' values")
-      }) getOrElse PageRoot.TheBody
-
     // Query string param value lookup.
     def firstValueOf(param: String): Option[String] =
       request.queryString.get(param).map(_.headOption).getOrElse(None)
@@ -93,25 +83,25 @@ object Global extends GlobalSettings {
     val POST = "POST"
     val action = (mainFun, request.method) match {
       case ("edit", GET) =>
-        AppEdit.showEditForm(pagePath, pageRoot, postId = mainFunVal_!)
+        AppEdit.showEditForm(pagePath, postId = mainFunVal_!)
       case ("edit", POST) =>
-        AppEdit.handleEditForm(pagePath, pageRoot, postId = mainFunVal_!)
+        AppEdit.handleEditForm(pagePath, postId = mainFunVal_!)
       case ("view", GET) =>
-        App.viewPost(pagePath, pageRoot)
+        App.viewPost(pagePath)
       case ("reply", GET) =>
-        AppReply.showForm(pagePath, pageRoot, postId = mainFunVal_!)
+        AppReply.showForm(pagePath, postId = mainFunVal_!)
       case ("reply", POST) =>
-        AppReply.handleForm(pagePath, pageRoot, postId = mainFunVal_!)
+        AppReply.handleForm(pagePath, postId = mainFunVal_!)
       case ("rate", POST) =>
-        App.handleRateForm(pagePath, pageRoot, postId = mainFunVal_!)
+        App.handleRateForm(pagePath, postId = mainFunVal_!)
       case ("flag", POST) =>
-        App.handleFlagForm(pagePath, pageRoot, postId = mainFunVal_!)
+        App.handleFlagForm(pagePath, postId = mainFunVal_!)
       case ("delete", POST) =>
-        App.handleDeleteForm(pagePath, pageRoot, postId = mainFunVal_!)
+        App.handleDeleteForm(pagePath, postId = mainFunVal_!)
       case ("viewedits", GET) =>
-        AppEditHistory.showForm(pagePath, pageRoot, postId = mainFunVal_!)
+        AppEditHistory.showForm(pagePath, postId = mainFunVal_!)
       case ("applyedits", POST) =>
-        AppEditHistory.handleForm(pagePath, pageRoot, postId = mainFunVal_!)
+        AppEditHistory.handleForm(pagePath, postId = mainFunVal_!)
       case ("create-page", GET) =>
         AppCreatePage.showForm(pagePath)
       case ("create-page", POST) =>
@@ -143,13 +133,13 @@ object Global extends GlobalSettings {
       case ("feed", GET) =>
         App.feed(pagePath)
       case ("act", GET) =>
-        Application.showActionLinks(pagePath, pageRoot, postId = mainFunVal_!)
+        Application.showActionLinks(pagePath, postId = mainFunVal_!)
       case ("page-info", GET) =>
         Application.showPageInfo(pagePath)
       case ("config-user", GET) =>
-        AppConfigUser.showForm(pagePath, pageRoot, userId = mainFunVal_!)
+        AppConfigUser.showForm(pagePath, userId = mainFunVal_!)
       case ("config-user", POST) =>
-        AppConfigUser.handleForm(pagePath, pageRoot, userId = mainFunVal_!)
+        AppConfigUser.handleForm(pagePath, userId = mainFunVal_!)
       case ("unsubscribe", GET) =>
         AppUnsubscribe.showForm(tenantId)
       case ("unsubscribe", POST) =>
@@ -159,7 +149,7 @@ object Global extends GlobalSettings {
         pagePath.suffix match {
           case "css" => App.rawBody(pagePath)
           case "js" => App.rawBody(pagePath)
-          case _ => App.viewPost(pagePath, pageRoot)
+          case _ => App.viewPost(pagePath)
         }
       // If invalid function specified:
       case (fun, met) => throwBadReq(

@@ -25,22 +25,21 @@ import Utils.{OkHtml, OkXml}
 object Application extends mvc.Controller {
 
 
-  def showActionLinks(pathIn: PagePath, pageRoot: PageRoot, postId: String) =
+  def showActionLinks(pathIn: PagePath, postId: String) =
     PageGetAction(pathIn) { pageReq =>
-      val links = Utils.formHtml(pageReq, pageRoot).actLinks(postId)
+      val links = Utils.formHtml(pageReq).actLinks(postId)
       OkHtml(links)
     }
 
 
-  def viewPost(pathIn: PagePath, pageRoot: PageRoot) = PageGetAction(pathIn) {
+  def viewPost(pathIn: PagePath) = PageGetAction(pathIn) {
         pageReq =>
     val pageInfoYaml = pageReq.user.isEmpty ? "" | buildPageInfoYaml(pageReq)
     // If not logged in, then include an empty Yaml tag, so the browser
     // notices that it got that elem, and won't call GET ?page-info.
     val infoNode = <pre class='dw-data-yaml'>{pageInfoYaml}</pre>
     val pageHtml =
-      Debiki.TemplateEngine.renderPage(pageReq, pageRoot,
-         appendToBody = infoNode)
+      Debiki.TemplateEngine.renderPage(pageReq, appendToBody = infoNode)
     OkHtml(pageHtml)
   }
 
@@ -56,7 +55,7 @@ object Application extends mvc.Controller {
   }
 
 
-  def handleRateForm(pathIn: PagePath, pageRoot: PageRoot, postId: String)
+  def handleRateForm(pathIn: PagePath, postId: String)
         = PagePostAction(maxUrlEncFormBytes = 1000)(pathIn) { pageReq =>
 
     val ratingTags =
@@ -70,11 +69,11 @@ object Application extends mvc.Controller {
       tags = ratingTags.toList)
 
     Debiki.savePageActions(pageReq, rating::Nil)
-    Utils.renderOrRedirect(pageReq, pageRoot)
+    Utils.renderOrRedirect(pageReq)
   }
 
 
-  def handleFlagForm(pathIn: PagePath, pageRoot: PageRoot, postId: String)
+  def handleFlagForm(pathIn: PagePath, postId: String)
         = PagePostAction(MaxDetailsSize)(pathIn) { pageReq =>
 
     import FormHtml.FlagForm.{InputNames => Inp}
@@ -101,7 +100,7 @@ object Application extends mvc.Controller {
   }
 
 
-  def handleDeleteForm(pathIn: PagePath, pageRoot: PageRoot, postId: String)
+  def handleDeleteForm(pathIn: PagePath, postId: String)
         = PagePostAction(MaxDetailsSize)(pathIn) { pageReq =>
 
     import FormHtml.Delete.{InputNames => Inp}
