@@ -175,7 +175,7 @@ case class User (
   emailNotfPrefs: EmailNotfPrefs,
   country: String,
   website: String,
-  isSuperAdmin: Boolean,
+  isAdmin: Boolean,
   isOwner: Boolean
 ){
   checkId(id, "DwE02k125r")
