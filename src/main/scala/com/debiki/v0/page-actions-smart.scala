@@ -328,19 +328,44 @@ class ViEd(debate: Debate, val edit: Edit) extends ViAc(debate, edit) {
 
   private def _initiallyAutoApplied = edit.autoApplied
 
-  val (isApplied, applicationDati, isReverted, revertionDati)
-        : (Boolean, Option[ju.Date], Boolean, Option[ju.Date]) = {
+  /**
+   * The result of applying patchText to the related Post, as it was
+   * when this Edit was submitted (with other later edits ignored, even
+   * if they were actually applied before this edit).
+   */
+  def intendedResult: String =
+    // Apply edits to the related post up to this.creationDati,
+    // then apply this edit, and return the resulting text.
+    "(not implemented)"
+
+  /**
+   * The result of applying patchText to the related Post,
+   * taking into account other Edits that were applied before this edit,
+   * and they made it impossible to correctly
+   * apply the patchText of this Edit.
+   */
+  def actualResult: Option[String] =
+    // Apply edits to the related post up to this.applicationDati,
+    // then apply this edit, and return the resulting text.
+    if (isApplied) Some("(not implemented)") else None
+
+
+  val (isApplied, applicationDati,
+      applierLoginId, applicationActionId,
+      isReverted, revertionDati)
+        : (Boolean, Option[ju.Date], Option[String], Option[String],
+          Boolean, Option[ju.Date]) = {
     val allEditApps = page.editAppsByEdit(id)
     if (allEditApps isEmpty) {
       // This edit might have been auto applied, and deleted & reverted later.
       (_initiallyAutoApplied, isDeleted) match {
-        case (false, _) => (false, None, false, None)
+        case (false, _) => (false, None, None, None, false, None)
         case (true, false) =>
-          // Auto applied at creation.
-          (true, Some(creationDati), false, None)
+          // Auto applied at creation. This edit itself is its own application.
+          (true, Some(creationDati), Some(loginId), Some(id), false, None)
         case (true, true) =>
           // Auto applied, but later deleted and implicitly reverted.
-          (false, None, true, deletionDati)
+          (false, None, None, None, true, deletionDati)
       }
     } else {
       // Consider the most recent EditApp only. If it hasn't been deleted,
@@ -351,9 +376,10 @@ class ViEd(debate: Debate, val edit: Edit) extends ViAc(debate, edit) {
       val revertionDati =
         page.deletionFor(lastEditApp.id).map(_.ctime) orElse deletionDati
       if (revertionDati isEmpty)
-        (true, Some(lastEditApp.ctime), false, None)
+        (true, Some(lastEditApp.ctime),
+           Some(lastEditApp.loginId), Some(lastEditApp.id), false, None)
       else
-        (false, None, true, Some(revertionDati.get))
+        (false, None, None, None, true, Some(revertionDati.get))
     }
   }
 
