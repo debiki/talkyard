@@ -105,10 +105,15 @@ class ViPo(debate: Debate, val post: Post) extends ViAc(debate, post) {
     // and patch curText.
     for {
       edit <- editsAppliedAscTime
+      // BUG if the edit has been reverted after `millis`,
+      // that revertion should be ignored, nevertheless it causes
+      // applicationDati to be None and the `edit` wouldn't even be
+      // considered here. So: editsNnnDescTime are actually
+      // functions of the approval date ?? Not constant `val`s.
       if edit.applicationDati.get.getTime < millis
     } {
       curMarkup = edit.newMarkup.getOrElse(curMarkup)
-      val patchText = edit.text
+      val patchText = edit.patchText
       if (patchText nonEmpty) {
         // COULD check [1, 2, 3, …] to find out if the patch applied
         // cleanaly. (The result is in [0].)
@@ -191,6 +196,10 @@ class ViPo(debate: Debate, val post: Post) extends ViAc(debate, post) {
     page.reviewsFor(id).sortBy(-_.ctime.getTime)
 
 
+  /**
+   * Moderators need only be informed about things that happened after
+   * this dati.
+   */
   def lastReviewDati: Option[ju.Date] = {
     val _lastManualReview = _manualReviewsDescTime.headOption
     _lastManualReview.map(_.ctime) orElse {
@@ -199,6 +208,10 @@ class ViPo(debate: Debate, val post: Post) extends ViAc(debate, post) {
   }
 
 
+  /**
+   * All actions that affected this Post and didn't happen after
+   * this dati should be considered when rendering this Post.
+   */
   def lastApprovalDati: Option[ju.Date] = {
     val lastManualApproval =
       _manualReviewsDescTime.filter(_.isApproved).headOption
@@ -307,7 +320,7 @@ class ViPo(debate: Debate, val post: Post) extends ViAc(debate, post) {
 
 class ViEd(debate: Debate, val edit: Edit) extends ViAc(debate, edit) {
 
-  def text = edit.text
+  def patchText = edit.text
   def newMarkup = edit.newMarkup
   def relatedPostAutoApproval = edit.relatedPostAutoApproval
 

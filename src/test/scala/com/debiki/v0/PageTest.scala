@@ -334,6 +334,10 @@ class PageTest extends SpecificationWithJUnit {
         testApprovedPost(page.body_!)
       }
 
+      "approved, and then reverted, but the revertion is not yet approved" >> {
+
+      }
+
       "rejected" >> {
         val page = Debate.empty("a") + bodySkeletonAutoApproved +
            editSkeleton + editAppSkeleton + rejectionOfEditApp
