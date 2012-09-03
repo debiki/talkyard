@@ -56,10 +56,17 @@ object Utils extends Results with http.ContentTypes {
       val pageHtml = Debiki.TemplateEngine.renderPage(pageReq)
       OkHtml(pageHtml)
     } else {
-      val viewRoot =
-        if (pageReq.rootPost.isDefault) ""
-        else "?view=" + pageReq.rootPost.subId
-      Redirect(pageReq.pagePath.path + viewRoot)
+      val queryString = {
+        var params = List[String]()
+        val version = pageReq.pageVersion
+        val root = pageReq.pageRoot
+        if (!version.approved) params ::= "unapproved"
+        if (!version.isLatest) params ::= "version="+ version.datiIsoStr
+        if (root.isDefault && params.nonEmpty) params ::= "?view"
+        else if (!root.isDefault) params ::= "?view=" + root.subId
+        params.mkString("&")
+      }
+      Redirect(pageReq.pagePath.path + queryString)
     }
   }
 
