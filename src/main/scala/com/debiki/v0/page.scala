@@ -410,6 +410,27 @@ case class Debate (
 }
 
 
+
+case class PageVersion(dati: ju.Date, approved: Boolean) {
+
+  def isLatest: Boolean = dati.getTime == Long.MaxValue
+  def datiIsoStr: String = toIso8601T(dati)
+
+}
+
+
+object PageVersion {
+
+  def latest(approved: Boolean) =
+    PageVersion(new ju.Date(Long.MaxValue), approved)
+
+  val LatestApproved = latest(approved = true)
+  val LatestUnapproved = latest(approved = false)
+
+}
+
+
+
 /**
  * Which post to use as the root post, e.g. when viewing a page, or when
  * sending updates of a page back to the browser (only posts below the
