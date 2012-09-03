@@ -167,12 +167,14 @@ object Prelude {
   def toIso8601(date: ju.Date): String = {
     // SimpleDateFormat is not thread safe.
     val sdf = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss'Z'")
+    sdf.setTimeZone(_timezoneUtc)
     sdf.format(date).toString
   }
 
   def toIso8601T(date: ju.Date): String = {
     // SimpleDateFormat is not thread safe.
     val sdf = new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'")
+    sdf.setTimeZone(_timezoneUtc)
     sdf.format(date).toString
   }
 
@@ -181,6 +183,30 @@ object Prelude {
    *  It seems javascript's Date.parse requires a 'T' between date and time.
    */
   def toIso8601T(iso8601Date: String) = iso8601Date.replace(' ', 'T')
+
+  def parseIso8601DateTime(dateTime: String): ju.Date = {
+    val calendar: ju.Calendar =
+       javax.xml.bind.DatatypeConverter.parseDateTime(dateTime)
+    val calendarUtc = _convertToUtc(calendar)
+    calendarUtc.getTime
+  }
+
+  private val _timezoneUtc = ju.TimeZone.getTimeZone("UTC")
+
+  private def _convertToUtc(calendar: ju.Calendar): ju.Calendar = {
+    // Create another Calendar, calendarUtc, with time zone UTC (GMT) and
+    // add [the time zone offset in milliseconds between `calendarUtc` and
+    // `calendar`] to `calendarUtc`.
+    val dati: ju.Date = calendar.getTime
+    val millis: Long = dati.getTime
+    // The offset depends on the date (daylight saving time).
+    val timeZone: ju.TimeZone = calendar.getTimeZone
+    val offsetFromUtc: Int = timeZone.getOffset(millis)
+    val calendarUtc = ju.Calendar.getInstance(ju.TimeZone.getTimeZone("UTC"))
+    calendarUtc.setTime(dati)
+    calendarUtc.add(ju.Calendar.MILLISECOND, offsetFromUtc)
+    calendarUtc
+  }
 
   // Is thread safe.
   private val _random = new java.security.SecureRandom();
