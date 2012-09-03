@@ -64,8 +64,8 @@ object Debiki {
     val actionsWithId = dao.savePageActions(page.id, actions)
 
     // Possible optimization: Examine all actions, and refresh cache only
-    // if there are e.g. EditApp:s or Replie:s (but ignore Edit:s -- if
-    // not applied).
+    // if there are e.g. EditApp:s or approved Post:s (but ignore Edit:s --
+    // unless applied & approved)
     PageCache.refreshLater(tenantId = request.tenantId, pageId = page.id,
        host = request.host)
 

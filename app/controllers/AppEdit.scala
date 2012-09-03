@@ -79,37 +79,25 @@ object AppEdit extends mvc.Controller {
 
     val patchText = makePatch(from = post.text, to = newText)
     val loginId = pageReq.loginId_!
-    var actions = List[Action](Edit(
+
+    val (mayEdit, mayEditReason) =
+      AppEdit.mayEdit(pageReq.user, post, pageReq.permsOnPage)
+
+    // For now:
+    val autoApproval =
+      if (mayEdit && pageReq.user_!.isAdmin)
+        Some(AutoApproval.AuthoritativeUser)
+      else None
+
+    var edit = Edit(
       id = "?x", postId = post.id, ctime = pageReq.ctime,
       loginId = loginId, newIp = pageReq.newIp,
-      text = patchText, newMarkup = newMarkupOpt))
+      text = patchText, newMarkup = newMarkupOpt,
+      relatedPostAutoApproval = autoApproval, autoApplied = mayEdit)
 
-    var (mayEdit, mayEditReason) =
-      AppEdit.mayEdit(pageReq.user, post, pageReq.permsOnPage)
-    if (mayEdit) {
-      // For now, auto-apply the edit. Voting of which edits to apply
-      // or disregard not yet implemented (or rather implemented but
-      // disabled for now).
-      actions ::= EditApp(id = "?", editId = "?x", ctime = pageReq.ctime,
-        loginId = loginId, newIp = pageReq.newIp, result = newText)
-    } else {
-      // Store the edit suggestion in the database, unapplied.
-      // (Together with any automatically created empty title or template.)
-    }
+    var actions = lazyCreateOpt.toList ::: edit :: Nil
 
-    // Reverse, or foreign keys might be violated.
-    actions = actions.reverse
-    actions :::= lazyCreateOpt.toList
-
-    // ------- COULD use Debiki.savePageActions(...) instead
-    val actionsWithIds = pageReq.dao.savePageActions(
-       pageReq.page_!.guid, actions)
-
-    if (mayEdit)
-      Debiki.PageCache.refreshLater(tenantId = pageReq.tenantId,
-          pageId = pageReq.pagePath.pageId.get,
-          host = pageReq.host)
-    // -------
+    Debiki.savePageActions(pageReq, actions)
   }
 
 
@@ -156,12 +144,14 @@ object AppEdit extends mvc.Controller {
           if (postId == Page.TemplateId) Markup.Code
           else Markup.Html
 
-        // (A page title and template (and body) is its own parent.
+        // 1. (A page title and template (and body) is its own parent.
         // Dupl knowledge! see AppCreatePage.handleForm.)
+        // 2. The post will be auto approved implicitly, if the Edit is
+        // auto approved.
         Some(Post(id = postId, parent = postId, ctime = pageReq.ctime,
           loginId = pageAuthorLoginId, newIp = pageReq.newIp, text = "",
           markup = markup.id, tyype = PostType.Text,
-          where = None))
+          where = None, autoApproval = None))
       }
       // Most post are not created automatically (instead error is returned).
       else {
