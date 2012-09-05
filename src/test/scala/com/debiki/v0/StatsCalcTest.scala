@@ -53,7 +53,7 @@ object Util {
   val post = Post(id = "Ca", parent = "0", ctime = new ju.Date,
                   loginId = "?", newIp = None, text = "test",
                   markup = "", tyype = PostType.Text,
-                  autoApproval = Some(AutoApproval.WellBehavedUser))
+                  approval = Some(Approval.WellBehavedUser))
   val debate = Debate("test", posts = post::Nil)
   val rating_interesting =
         Rating(id = "?", postId = post.id, loginId = "?", ctime = new ju.Date,

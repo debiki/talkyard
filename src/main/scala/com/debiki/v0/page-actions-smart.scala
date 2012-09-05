@@ -80,38 +80,33 @@ class ViPo(debate: Debate, val post: Post) extends ViAc(debate, post) {
   def parent: String = post.parent
   def tyype = post.tyype
 
-  def autoApproval = post.autoApproval
-  def initiallyAutoApproved: Boolean = autoApproval.isDefined
+  def approval = post.approval
+  def initiallyApproved: Boolean = approval.isDefined
 
-  lazy val (text: String, markup: String) = _textAndMarkupAsOf(Long.MaxValue)
+  lazy val (text: String, markup: String) = _applyEdits
 
-  lazy val (textApproved: String, markupApproved: String) =
-    lastApprovalDati match {
-      case None => ("", "")
-      case Some(dati) => _textAndMarkupAsOf(dati.getTime)
-    }
 
-  /** Applies all edits up to, but not including, the specified date.
-   *  Returns the resulting text and markup.
-   *  Keep in sync with textAsOf in debiki.js.
+  /**
+   * Applies all edits and returns the resulting text and markup.
+   *
+   * Keep in sync with textAsOf in debiki.js.
    *    COULD make textAsOf understand changes in markup type,
    *    or the preview won't always work correctly.
+   *
+   * (It's not feasible to apply only edits that have been approved,
+   * or only edits up to a certain dati. Because
+   * then the state of all edits at that dati would have to be computed.
+   * But at a given dati, an edit might or might not have been applied and
+   * approved, and taking that into account results in terribly messy code.
+   * Instead, use Page.partitionByVersion(), to get a version of the page
+   * at a certain point in time.)
    */
-  private def _textAndMarkupAsOf(millis: Long): (String, String) = {
+  private def _applyEdits: (String, String) = {
     var curText = post.text
     var curMarkup = post.markup
     val dmp = new name.fraser.neil.plaintext.diff_match_patch
-    // Loop through with all edits that has been applied early enough,
-    // and patch curText.
-    for {
-      edit <- editsAppliedAscTime
-      // BUG if the edit has been reverted after `millis`,
-      // that revertion should be ignored, nevertheless it causes
-      // applicationDati to be None and the `edit` wouldn't even be
-      // considered here. So: editsNnnDescTime are actually
-      // functions of the approval date ?? Not constant `val`s.
-      if edit.applicationDati.get.getTime < millis
-    } {
+    // Loop through all edits and patch curText.
+    for (edit <- editsAppliedAscTime) {
       curMarkup = edit.newMarkup.getOrElse(curMarkup)
       val patchText = edit.patchText
       if (patchText nonEmpty) {
@@ -180,7 +175,7 @@ class ViPo(debate: Debate, val post: Post) extends ViAc(debate, post) {
    * Modification date time: When the text of this Post was last changed
    * (that is, an edit was applied, or a previously applied edit was reverted).
    */
-  def modfDatiPerhapsReviewed: ju.Date = {
+  def modificationDati: ju.Date = {
     val maxTime = math.max(
        lastEditApplied.map(_.applicationDati.get.getTime).getOrElse(0: Long),
        lastEditReverted.map(_.revertionDati.get.getTime).getOrElse(0: Long))
@@ -188,37 +183,64 @@ class ViPo(debate: Debate, val post: Post) extends ViAc(debate, post) {
   }
 
 
-  /**
-   * Only actions that happened before the last approval should be
-   * considered when rendering this Post.
-   */
-  private lazy val _manualReviewsDescTime =
-    page.reviewsFor(id).sortBy(-_.ctime.getTime)
+  private lazy val _reviewsDescTime: List[MaybeApproval] = {
+    // (If a Review.approval.isEmpty, this Post was rejected.
+    // An Edit.approval or EditApp.approval being empty, however,
+    // means only that this Post has not yet been reviewed — so the Edit
+    // or EditApp is simply ignored.)
+    var explicitReviews = page.explicitReviewsOf(id).sortBy(-_.ctime.getTime)
+    var implicitApprovals = List[MaybeApproval]()
+    if (post.approval.isDefined)
+      implicitApprovals ::= post
+    for (edit <- edits) {
+      if (edit.edit.approval.isDefined)
+        implicitApprovals ::= edit.edit
+      for (editApp <- page.editAppsByEdit(edit.id)) {
+        if (editApp.approval.isDefined)
+          implicitApprovals ::= editApp
+        for (editAppReview <- page.explicitReviewsOf(editApp)) {
+          explicitReviews ::= editAppReview
+        }
+
+        // In the future, deletions (and any other actions?) should also
+        // be considered:
+        //for (deletion <- page.deletionsFor(editApp)) {
+        //  if (deletion.approval.isDefined)
+        //    implicitApprovals ::= deletion
+        //  ... check explicit reviews of `deletion`.
+        //}
+      }
+
+      // In the future, also consider deletions?
+      //for (deletion <- page.deletionsFor(edit)) {
+      //  if (deletion.approval.isDefined)
+      //    implicitApprovals ::= deletion
+      //  ... check explicit reviews of `deletion`.
+      //}
+    }
+
+    // In the future, consider deletions of `this.action`?
+    // for (deletion <- page.deletionsFor(action)) ...
+
+    val allReviews = explicitReviews ::: implicitApprovals
+    allReviews.sortBy(- _.ctime.getTime)
+  }
 
 
   /**
    * Moderators need only be informed about things that happened after
    * this dati.
    */
-  def lastReviewDati: Option[ju.Date] = {
-    val _lastManualReview = _manualReviewsDescTime.headOption
-    _lastManualReview.map(_.ctime) orElse {
-      if (initiallyAutoApproved) Some(creationDati) else None
-    }
-  }
+  def lastReviewDati: Option[ju.Date] =
+    _reviewsDescTime.headOption.map(_.ctime)
 
 
   /**
    * All actions that affected this Post and didn't happen after
    * this dati should be considered when rendering this Post.
    */
-  def lastApprovalDati: Option[ju.Date] = {
-    val lastManualApproval =
-      _manualReviewsDescTime.filter(_.isApproved).headOption
-    lastManualApproval.map(_.ctime) orElse {
-      if (initiallyAutoApproved) Some(creationDati) else None
-    }
-  }
+  def lastApprovalDati: Option[ju.Date] =
+    _reviewsDescTime.filter(_.approval.isDefined).headOption.map(_.ctime)
 
 
   def lastReviewWasApproval: Option[Boolean] =
@@ -230,7 +252,7 @@ class ViPo(debate: Debate, val post: Post) extends ViAc(debate, post) {
     // Use >= not > because a comment might be auto approved, and then
     // the approval dati equals the comment creationDati.
     lastReviewDati.isDefined && lastReviewDati.get.getTime >=
-       modfDatiPerhapsReviewed.getTime
+       modificationDati.getTime
   }
 
 
@@ -322,7 +344,6 @@ class ViEd(debate: Debate, val edit: Edit) extends ViAc(debate, edit) {
 
   def patchText = edit.text
   def newMarkup = edit.newMarkup
-  def relatedPostAutoApproval = edit.relatedPostAutoApproval
 
   def isPending = !isApplied && !isDeleted
 

@@ -31,6 +31,24 @@ sealed abstract class Action {  // COULD delete, replace with Post:s?
   def textLengthUtf8: Int = 0
 }
 
+
+
+abstract class MaybeApproval extends Action {
+
+  /**
+   * If defined, this action implicitly approves the related post.
+   *
+   * For example, if an admin edits a post, then `edit.approval`
+   * might be set to Approval.AuthoritativeUser, and `edit.isApplied`
+   * would be set to true, and then the new version of the edited post
+   * has "automatically" been approved.
+   */
+  def approval: Option[Approval]
+
+}
+
+
+
 /** Classifies an action, e.g. tags a Post as being "interesting" and "funny".
  *
  *  If you rate an action many times, only the last rating counts.
@@ -161,7 +179,7 @@ case class Post(  // COULD merge all actions into Post,
   /**
    * Defined iff this post was approved on creation, and clarifies why it was.
    */
-  autoApproval: Option[AutoApproval],
+  approval: Option[Approval],
 
   tyype: PostType,
 
@@ -175,7 +193,7 @@ case class Post(  // COULD merge all actions into Post,
                                 // for each post, so you could make e.g. a
                                 // generic comment that results in ...
                                 // ...?? arrows to e.g. 3 other comments ??
-) extends Action {
+) extends MaybeApproval {
   override def textLengthUtf8: Int = text.getBytes("UTF-8").length
 }
 
@@ -202,10 +220,12 @@ case class Edit (
 
   /**
    * If the related post is to be automatically approved, when this
-   * edit is auto applied. (Example: an *admin* edits a comment. The edit
-   * would then be auto applied, and the related post would be auto approved.)
+   * edit is auto applied. (Example: a moderator edits a comment
+   * that is already approved, then the edit would be
+   * auto applied, and the related post would be approved implicitly,
+   * (since it was already approved, and a *moderator* did the edit.))
    */
-  relatedPostAutoApproval: Option[AutoApproval],
+  approval: Option[Approval],
 
   /**
    * If this edit was applied automatically on creation, e.g. because
@@ -221,14 +241,14 @@ case class Edit (
    * auto applied.
    */
   autoApplied: Boolean
-) extends Action {
+) extends MaybeApproval {
   override def textLengthUtf8: Int = text.getBytes("UTF-8").length
 
   // An edit that hasn't been applied cannot have been approved.
   // (It might have been applied, but not approved, however, if a
   // user edits his/her own comment, and the changes are then pending
   // moderator review.)
-  require(relatedPostAutoApproval.isEmpty || autoApplied)
+  require(approval.isEmpty || autoApplied)
 }
 
 
@@ -248,7 +268,7 @@ case class EditApp(   // COULD rename to Appl?
   loginId: String,
   newIp: Option[String],
   ctime: ju.Date,
-  relatedPostAutoApproval: Option[AutoApproval],
+  approval: Option[Approval],
 
   /** The text after the edit was applied. Needed, in case an `Edit'
    *  contains a diff, not the resulting text itself. Then we'd better not
@@ -271,7 +291,7 @@ case class EditApp(   // COULD rename to Appl?
    *  Or store cached post texts in a dedicated db table.
    */
   result: String
-) extends Action
+) extends MaybeApproval
 
 /** Deletes an action. When actionId (well, postId right now)
  *  is a post, it won't be rendered. If `wholeTree', no reply is shown either.
@@ -334,33 +354,41 @@ case class Review(
   loginId: String,
   newIp: Option[String],
   ctime: ju.Date,
-  isApproved: Boolean) extends Action {
+  approval: Option[Approval]) extends MaybeApproval {
 }
 
 
 /**
- * The computer reviews some posts directly on creation and approves them
- * automatically.
+ * Moderators and the computer review posts and might approve them
+ * Only the `Manual` approval is done manually by a human,
+ * all others happen automatically, done by the computer.
+ * (Should I prefix them with 'Auto'?)
  */
-sealed abstract class AutoApproval
-object AutoApproval {
+sealed abstract class Approval
+object Approval {
 
   /**
    * The first few posts of a new user are approved preliminarily.
    * (An admin is notified though and might decide to delete the posts.)
    */
-  case object Preliminary extends AutoApproval
+  case object Preliminary extends Approval
 
   /**
    * A user that has posted many useful comments will have a few of
    * his/her next comments approved automatically, and no admin is nodified.
    */
-  case object WellBehavedUser extends AutoApproval
+  case object WellBehavedUser extends Approval
 
   /**
    * Posts by admins and moderators are always automatically approved.
    */
-  case object AuthoritativeUser extends AutoApproval
+  case object AuthoritativeUser extends Approval
+
+  /**
+   * When an authoritative user manually approved something.
+   */
+  case object Manual extends Approval
+
 }
 
 

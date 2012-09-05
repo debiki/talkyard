@@ -73,7 +73,7 @@ case class TemplateSrcHtml(post: ViPo, path: String) extends TemplateSource {
     /** The html source for this template. */
     html: NodeSeq
   ) = {
-    val templateSrc = post.textApproved
+    val templateSrc = post.text
 
     // Extract the Yaml and html documents
     val (yamlSrc: String, htmlSrc: String) =

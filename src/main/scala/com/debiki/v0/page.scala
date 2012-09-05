@@ -218,7 +218,6 @@ case class Debate (
 
   /** The page title, as plain text. */
   def titleText: Option[String] = titlePost.map(_.text)
-  def titleTextApproved: Option[String] = titlePost.map(_.textApproved)
 
   /** The page title, as XML. */
   //def titleXml: Option[xml.Node] = body.flatMap(_.titleXml)
@@ -352,11 +351,14 @@ case class Debate (
 
   // -------- Reviews (i.e. approvals and rejections)
 
-  private lazy val reviewsByPostId: imm.Map[String, List[Review]] =
+  private lazy val reviewsByTargetId: imm.Map[String, List[Review]] =
     reviews.groupBy(_.targetId)
 
-  def reviewsFor(postId: String): List[Review] =
-    reviewsByPostId.getOrElse(postId, Nil)
+  def explicitReviewsOf(actionId: String): List[Review] =
+    reviewsByTargetId.getOrElse(actionId, Nil)
+
+  def explicitReviewsOf(action: Action): List[Review] =
+    explicitReviewsOf(action.id)
 
 
   // -------- Construction
@@ -369,8 +371,10 @@ case class Debate (
   def + (deletion: Delete): Debate = copy(deletions = deletion :: deletions)
   def + (review: Review): Debate = copy(reviews = review :: reviews)
 
+  def ++(page: Debate): Debate = this ++ page.allActions
+
   // COULD [T <: Action] instead of >: AnyRef?
-  def ++[T >: AnyRef] (actions: List[T]): Debate = {
+  def ++[T >: AnyRef] (actions: Seq[T]): Debate = {
     var posts2 = posts
     var ratings2 = ratings
     var edits2 = edits
