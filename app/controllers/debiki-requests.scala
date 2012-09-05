@@ -158,9 +158,14 @@ case class PageRequest[A](
   lazy val pageVersion: PageVersion = {
     val approved = request.queryString.getFirst("unapproved").isEmpty
     request.queryString.getEmptyAsNone("version") match {
-       case None => PageVersion.latest(approved)
+      case None => PageVersion.latest(approved)
       case Some(datiString) =>
-        val dati = parseIso8601DateTime(datiString)
+        val dati = try {
+          parseIso8601DateTime(datiString)
+        } catch {
+          case ex: IllegalArgumentException =>
+            throwBadReq("DwE3DW27", "Bad version query param")
+        }
         PageVersion(dati, approved)
     }
   }
