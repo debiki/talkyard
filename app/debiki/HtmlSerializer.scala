@@ -59,10 +59,10 @@ abstract class HtmlConfig {
 }
 
 
-object DebateHtml {
+object HtmlSerializer {
 
   def apply(debate: Debate, pageTrust: PageTrust) =
-    new DebateHtml(debate, pageTrust)
+    new HtmlSerializer(debate, pageTrust)
 
   /** Converts text to xml, returns (html, approx-line-count).
    *
@@ -218,9 +218,9 @@ object DebateHtml {
 }
 
 
-class DebateHtml(val debate: Debate, val pageTrust: PageTrust) {
+class HtmlSerializer(val debate: Debate, val pageTrust: PageTrust) {
 
-  import DebateHtml._
+  import HtmlSerializer._
 
   private var config: HtmlConfig = _  // COULD let be a ctor param
 
@@ -229,7 +229,7 @@ class DebateHtml(val debate: Debate, val pageTrust: PageTrust) {
   private def lastChange: Option[String] =
     debate.lastChangeDate.map(toIso8601(_))
 
-  def configure(conf: HtmlConfig): DebateHtml = {
+  def configure(conf: HtmlConfig): HtmlSerializer = {
     this.config = conf
     this
   }
@@ -764,7 +764,7 @@ class FormHtml(val config: HtmlConfig, xsrfToken: String,
     val pageRoot: PageRoot, val permsOnPage: PermsOnPage) {
 
   import FormHtml._
-  import DebateHtml._
+  import HtmlSerializer._
 
   val ccWikiLicense =
     <a rel="license" href="http://creativecommons.org/licenses/by/3.0/"
@@ -1486,7 +1486,7 @@ object AtomFeedXml {
       // This takes rather long and should be cached.
       // Use the same cache for both plain HTML pages and Atom and RSS feeds?
       val rootPostHtml =
-        DebateHtml.markdownToSafeHtml(pageBody.text, hostAndPort,
+        HtmlSerializer.markdownToSafeHtml(pageBody.text, hostAndPort,
            makeLinksNofollow = true, // for now
            // No point in including id and class attrs in an atom html feed?
            // No stylesheet or Javascript included that cares about them anyway?

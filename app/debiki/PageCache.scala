@@ -70,13 +70,13 @@ class PageCache {
         val (pageDesiredVersion, tooRecentActions) =
            pageLatestVersion.partitionByVersion(pageVersion)
         val config = DebikiHttp.newUrlConfig(k.hostAndPort)
-        // Hmm, DebateHtml and pageTrust should perhaps be wrapped in
+        // Hmm, HtmlSerializer and pageTrust should perhaps be wrapped in
         // some PageRendererInput class, that is handled to PageCache,
         // so PageCache don't need to know anything about how to render
         // a page. But for now:
         val pageTrust = PageTrust(pageDesiredVersion)
         // layoutPage() takes long, because markup source is converted to html.
-        val nodes = DebateHtml(pageDesiredVersion, pageTrust)
+        val nodes = HtmlSerializer(pageDesiredVersion, pageTrust)
            .configure(config).layoutPage(pageRoot)
         nodes map { html =>
         // The html is serialized here only once, then it's added to the

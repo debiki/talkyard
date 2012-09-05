@@ -135,17 +135,17 @@ class TemplateEngine(val pageCache: PageCache) {
     }
 
     // Handle template param values.
-    val DH = DebateHtml
+    val HS = HtmlSerializer
     templParams.commentVisibility.getOrElse(assErr("DwE0kDf9")) match {
       case CommentVisibility.Visible => // fine, already visible
       case CommentVisibility.ShowOnClick =>
-        curHeadTags = curHeadTags ++ DH.tagsThatHideShowInteractions
+        curHeadTags = curHeadTags ++ HS.tagsThatHideShowInteractions
     }
 
     // Replace magic body tags.
     // currently doesn't work because loginInfo is a NodeSeq:
     curBodyTags = transform(curBodyTags,
-       replacements = Map("debiki-login" -> DH.loginInfo(userName = None)))
+       replacements = Map("debiki-login" -> HS.loginInfo(userName = None)))
 
     // Prepend scripts, stylesheets and a charset=utf-8 meta tag.
     curHeadTags = HeadHtml ++ curHeadTags
