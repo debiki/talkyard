@@ -49,16 +49,17 @@ object Debiki {
    * Saves page actions and refreshes caches and places messages in
    * users' inboxes, as needed.
    */
-  def savePageActions(pageReq: PageRequest[_], actions: List[Action]) {
+  def savePageActions(pageReq: PageRequest[_], actions: List[Action])
+        : Seq[Action] = {
     savePageActions(pageReq, pageReq.page_!, actions)
   }
 
 
   def savePageActions(request: DebikiRequest[_], page: Debate,
-        actions: List[Action]) {
+        actions: List[Action]): Seq[Action] = {
 
     if (actions isEmpty)
-      return
+      return Nil
 
     import request.{dao, user_!}
     val actionsWithId = dao.savePageActions(page.id, actions)
@@ -82,6 +83,8 @@ object Debiki {
     // COULD rewrite Dao so the seeds can be saved in the same transaction:
     val seeds = Notification.calcFrom(user_!, adding = actionsWithId, to = page)
     dao.saveNotfs(seeds)
+
+    actionsWithId
   }
 
 }
