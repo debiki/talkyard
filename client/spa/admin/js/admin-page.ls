@@ -303,7 +303,8 @@ function describePost(post)
   | 'New' => "New #{what.toLowerCase!}"
   | 'Approved' => what
   | 'Rejected' => "#what, rejected"
-  | 'NewEdits' => "#what, new edits, approve?"
+  | 'EditsRejected' => "#what, edits rejected"
+  | 'NewEdits' => "#what, edited"
   | _ => "#what, #{post.status}"
 
 

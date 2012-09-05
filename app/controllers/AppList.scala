@@ -136,7 +136,10 @@ object AppList extends mvc.Controller {
 
         val status =
           if (post.currentVersionApproved) "Approved"
-          else if (post.currentVersionRejected) "Rejected"
+          else if (post.currentVersionRejected) {
+            if (post.someVersionApproved) "EditsRejected"
+            else "Rejected"
+          }
           else if (post.someVersionApproved) "NewEdits"
           else "New"
         data += "status" -> JsString(status)
