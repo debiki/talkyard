@@ -59,7 +59,7 @@ object Application extends mvc.Controller {
         = PagePostAction(maxUrlEncFormBytes = 1000)(pathIn) { pageReq =>
 
     val ratingTags =
-      pageReq.listSkipEmpty(FormHtml.Rating.InputNames.Tag)
+      pageReq.listSkipEmpty(HtmlForms.Rating.InputNames.Tag)
       .ifEmpty(throwBadReq("DwE84Ef6", "No rating tags"))
 
     var rating = Rating(
@@ -76,7 +76,7 @@ object Application extends mvc.Controller {
   def handleFlagForm(pathIn: PagePath, postId: String)
         = PagePostAction(MaxDetailsSize)(pathIn) { pageReq =>
 
-    import FormHtml.FlagForm.{InputNames => Inp}
+    import HtmlForms.FlagForm.{InputNames => Inp}
 
     val reasonStr = pageReq.getEmptyAsNone(Inp.Reason) getOrElse
       throwBadReq("DwE1203hk10", "Please select a reason")
@@ -103,7 +103,7 @@ object Application extends mvc.Controller {
   def handleDeleteForm(pathIn: PagePath, postId: String)
         = PagePostAction(MaxDetailsSize)(pathIn) { pageReq =>
 
-    import FormHtml.Delete.{InputNames => Inp}
+    import HtmlForms.Delete.{InputNames => Inp}
     val wholeTree = "t" == pageReq.getNoneAsEmpty(Inp.DeleteTree).
        ifNotOneOf("tf", throwBadReq("DwE93kK3", "Bad whole tree value"))
     val reason = pageReq.getNoneAsEmpty(Inp.Reason)

@@ -154,13 +154,13 @@ object DebikiHttp {
   def OkDialogResult(title: String, summary: String, details: String)
         : PlainResult =
     OkHtml(<html><body>{
-      FormHtml.respDlgOk(title, summary, details)
+      HtmlForms.respDlgOk(title, summary, details)
     }</body></html>)
 
   def errorDialogXml(
         errCode: String, title: String, summary: String, details: String) =
     <html><body>{
-      FormHtml.respDlgError(debikiErrorCode = errCode, title = title,
+      HtmlForms.respDlgError(debikiErrorCode = errCode, title = title,
         summary = summary, details = details)
     }</body></html>
 

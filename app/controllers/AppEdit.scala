@@ -37,7 +37,7 @@ object AppEdit extends mvc.Controller {
       pageReq: PagePostRequest =>
 
     import Utils.ValidationImplicits._
-    import FormHtml.Edit.{InputNames => Inp}
+    import HtmlForms.Edit.{InputNames => Inp}
 
     val text = pageReq.getEmptyAsNone(Inp.Text) getOrElse
        throwBadReq("DwE8bJX2", "Empty edit")

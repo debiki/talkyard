@@ -53,7 +53,7 @@ object DebikiSecurity {
             None
           } else {
             val params = request.body.asInstanceOf[Map[String, Seq[String]]]
-            params.get(debiki.FormHtml.XsrfInpName).map(_.head)
+            params.get(debiki.HtmlForms.XsrfInpName).map(_.head)
           }
         } getOrElse
           throwForbidden("DwE0y321", "No XSRF token")

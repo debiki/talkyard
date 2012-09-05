@@ -34,7 +34,7 @@ object AppReply extends mvc.Controller {
       pageReq: PagePostRequest =>
 
     import Utils.ValidationImplicits._
-    import FormHtml.Reply.{InputNames => Inp}
+    import HtmlForms.Reply.{InputNames => Inp}
 
     if (!pageReq.pageVersion.isLatest)
       throwBadReq("DwE72XS8", "Can only reply to latest page version")

@@ -95,7 +95,7 @@ class PageCache {
       val config = DebikiHttp.newUrlConfig(pageReq)
       // The dialog templates includes the user name and cannot currently
       // be cached.
-      val templates = FormHtml(config, pageReq.xsrfToken.token,
+      val templates = HtmlForms(config, pageReq.xsrfToken.token,
         pageReq.pageRoot, pageReq.permsOnPage).dialogTemplates
       val key = Key(
         pageReq.tenantId, pageReq.pagePath.pageId.get, pageReq.request.host)
