@@ -26,6 +26,9 @@ object Utils extends Results with http.ContentTypes {
   def OkHtml(htmlNode: xml.NodeSeq) =
     Ok(_serializeHtml(htmlNode)) as HTML
 
+  def OkHtmlBody(bodyNodes: xml.NodeSeq) =
+    OkHtml(<body>{bodyNodes}</body>)
+
   def ForbiddenHtml(htmlNode: xml.NodeSeq) =
     Forbidden(_serializeHtml(htmlNode)) as HTML
 
@@ -56,16 +59,8 @@ object Utils extends Results with http.ContentTypes {
       val pageHtml = Debiki.TemplateEngine.renderPage(pageReq)
       OkHtml(pageHtml)
     } else {
-      val queryString = {
-        var params = List[String]()
-        val version = pageReq.pageVersion
-        val root = pageReq.pageRoot
-        if (!version.approved) params ::= "unapproved"
-        if (!version.isLatest) params ::= "version="+ version.datiIsoStr
-        if (root.isDefault && params.nonEmpty) params ::= "?view"
-        else if (!root.isDefault) params ::= "?view=" + root.subId
-        params.mkString("&")
-      }
+      val queryString =
+         queryStringAndHashToView(pageReq.pageRoot, pageReq.pageVersion)
       Redirect(pageReq.pagePath.path + queryString)
     }
   }
@@ -75,6 +70,21 @@ object Utils extends Results with http.ContentTypes {
     FormHtml(
       newUrlConfig(pageReq), pageReq.xsrfToken.token,
       pageReq.pageRoot, pageReq.permsOnPage)
+
+
+  def queryStringAndHashToView(pageRoot: PageRoot, pageVersion: PageVersion,
+        actionId: Option[String] = None, forceQuery: Boolean = false)
+        : String = {
+    var params = List[String]()
+    if (!pageVersion.approved) params ::= "unapproved"
+    if (!pageVersion.isLatest) params ::= "version="+ pageVersion.datiIsoStr
+    if (pageRoot.isDefault && params.nonEmpty) params ::= "?view"
+    else if (!pageRoot.isDefault) params ::= "?view=" + pageRoot.subId
+    var queryString = params.mkString("&")
+    if (queryString.isEmpty && forceQuery) queryString = "?"
+    val hash = actionId.map("#post-"+ _) getOrElse ""
+    queryString + hash
+  }
 
 
   def localUrlTo(action: ViAc): String = {
