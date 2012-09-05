@@ -50,7 +50,8 @@ object AppReview extends mvc.Controller {
       val actionId = actionObj("actionId")
       pageId -> Review(
           id = "?", targetId = actionId, loginId = apiReq.loginId_!,
-          newIp = None, ctime = apiReq.ctime, isApproved = shallApprove)
+          newIp = None, ctime = apiReq.ctime,
+          approval = (if (shallApprove) Some(Approval.Manual) else None))
     }
 
     val reviewsByPageId: Map[String, List[Review]] =

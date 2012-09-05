@@ -44,14 +44,14 @@ object AppReply extends mvc.Controller {
       throwBadReq("DwE93k21", "Empty reply")
     val whereOpt = pageReq.getEmptyAsNone(Inp.Where)
 
-    val autoApproval =  // for now
+    val approval =  // for now
       if (!pageReq.user_!.isAdmin) None
-      else Some(AutoApproval.AuthoritativeUser)
+      else Some(Approval.AuthoritativeUser)
 
     val post = Post(id = "?", parent = postId, ctime = pageReq.ctime,
       loginId = pageReq.loginId_!, newIp = pageReq.newIp, text = text,
       markup = Markup.DefaultForComments.id, tyype = PostType.Text,
-      where = whereOpt, autoApproval = autoApproval)
+      where = whereOpt, approval = approval)
 
     Debiki.savePageActions(pageReq, post::Nil)
     Utils.renderOrRedirect(pageReq)

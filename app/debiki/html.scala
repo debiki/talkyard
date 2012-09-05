@@ -250,9 +250,6 @@ class DebateHtml(val debate: Debate, val pageTrust: PageTrust) {
     val rootPost: ViPo = pageRoot.findOrCreatePostIn(debate) getOrElse
        throwNotFound("DwE0PJ404", "Post not found: "+ pageRoot.subId)
 
-    assErrIf(!rootPost.someVersionApproved,
-        "DwE38XF2", "Root post not approved")
-
     val cssThreadId = "dw-t-"+ rootPost.id
     <div id={"page-"+ debate.id} class='debiki dw-debate dw-page'>
       <div class="dw-debate-info">{
@@ -315,7 +312,6 @@ class DebateHtml(val debate: Debate, val pageTrust: PageTrust) {
                 sortBy(p => -pageStats.ratingStatsFor(p.id).
                                 fitnessDefaultTags.lowerLimit).
                 sortBy(p => p.meta.fixedPos.getOrElse(999999))
-      if p.someVersionApproved
       cssThreadId = "dw-t-"+ p.id
       cssDepth = "dw-depth-"+ depth
       isInlineThread = p.where.isDefined
@@ -442,7 +438,7 @@ class DebateHtml(val debate: Debate, val pageTrust: PageTrust) {
     val (cssArtclPost, cssArtclBody) =
       if (post.id != Page.BodyId) ("", "")
       else (" dw-ar-p", " dw-ar-p-bd")
-    val sourceText = vipo.textApproved
+    val sourceText = vipo.text
     val isRootOrArtclQstn = vipo.id == rootPostId ||
         vipo.meta.isArticleQuestion
     val isArticle = vipo.id == Page.BodyId
@@ -452,7 +448,7 @@ class DebateHtml(val debate: Debate, val pageTrust: PageTrust) {
     // the website if someone posts spam.
     val makeNofollowLinks = !isRootOrArtclQstn
 
-    val (xmlTextInclTemplCmds, numLines) = vipo.markupApproved match {
+    val (xmlTextInclTemplCmds, numLines) = vipo.markup match {
       case "dmd0" =>
         // Debiki flavored markdown.
         val html = markdownToSafeHtml(
@@ -604,7 +600,7 @@ class DebateHtml(val debate: Debate, val pageTrust: PageTrust) {
       // If closed: <span class='dw-p-re-cnt'>{count} replies</span>
       if (editsApplied.isEmpty) Nil
       else {
-        val lastEditDate = vipo.modfDatiPerhapsReviewed
+        val lastEditDate = vipo.modificationDati
         // ((This identity count doesn't take into account that a user
         // can have many identities, e.g. Twitter, Facebook and Gmail. So
         // even if many different *identities* have edited the post,
@@ -634,7 +630,7 @@ class DebateHtml(val debate: Debate, val pageTrust: PageTrust) {
       // Currently only the page body can have a title.
       if (post.id != Page.BodyId) Nil
       else debate.titlePost match {
-        case Some(titlePost) if titlePost.textApproved.nonEmpty =>
+        case Some(titlePost) if titlePost.text.nonEmpty =>
           // The title is a post, itself.
           // Therefore this XML is almost identical to the XML
           // for the post that this title entitles.
@@ -646,7 +642,7 @@ class DebateHtml(val debate: Debate, val pageTrust: PageTrust) {
           <div id={"post-"+ titlePost.id} class='dw-p dw-p-ttl'>
             <div class='dw-p-bd'>
               <div class='dw-p-bd-blk'>
-                <h1 class='dw-p-ttl'>{titlePost.textApproved}</h1>
+                <h1 class='dw-p-ttl'>{titlePost.text}</h1>
               </div>
             </div>
           </div>
@@ -1490,7 +1486,7 @@ object AtomFeedXml {
       // This takes rather long and should be cached.
       // Use the same cache for both plain HTML pages and Atom and RSS feeds?
       val rootPostHtml =
-        DebateHtml.markdownToSafeHtml(pageBody.textApproved, hostAndPort,
+        DebateHtml.markdownToSafeHtml(pageBody.text, hostAndPort,
            makeLinksNofollow = true, // for now
            // No point in including id and class attrs in an atom html feed?
            // No stylesheet or Javascript included that cares about them anyway?

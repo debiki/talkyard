@@ -84,16 +84,16 @@ object AppEdit extends mvc.Controller {
       AppEdit.mayEdit(pageReq.user, post, pageReq.permsOnPage)
 
     // For now:
-    val autoApproval =
+    val approval =
       if (mayEdit && pageReq.user_!.isAdmin)
-        Some(AutoApproval.AuthoritativeUser)
+        Some(Approval.AuthoritativeUser)
       else None
 
     var edit = Edit(
       id = "?x", postId = post.id, ctime = pageReq.ctime,
       loginId = loginId, newIp = pageReq.newIp,
       text = patchText, newMarkup = newMarkupOpt,
-      relatedPostAutoApproval = autoApproval, autoApplied = mayEdit)
+      approval = approval, autoApplied = mayEdit)
 
     var actions = lazyCreateOpt.toList ::: edit :: Nil
 
@@ -151,7 +151,7 @@ object AppEdit extends mvc.Controller {
         Some(Post(id = postId, parent = postId, ctime = pageReq.ctime,
           loginId = pageAuthorLoginId, newIp = pageReq.newIp, text = "",
           markup = markup.id, tyype = PostType.Text,
-          where = None, autoApproval = None))
+          where = None, approval = None))
       }
       // Most post are not created automatically (instead error is returned).
       else {

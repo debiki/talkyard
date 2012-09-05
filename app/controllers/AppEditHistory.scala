@@ -74,9 +74,9 @@ object AppEditHistory extends mvc.Controller {
   private def _applyAndUndoEdits(changes: List[(HistoryEdit, String)],
         pageReq: PageRequest[_]) {
 
-    val autoApproval =  // for now
+    val approval =  // for now
       if (!pageReq.user_!.isAdmin) None
-      else Some(AutoApproval.AuthoritativeUser)
+      else Some(Approval.AuthoritativeUser)
 
     val page = pageReq.page_!
     var sno = 0
@@ -119,12 +119,12 @@ object AppEditHistory extends mvc.Controller {
             id = "?"+ sno, editId = actionId,
             loginId = pageReq.loginId_!, newIp = pageReq.newIp,
             ctime = pageReq.ctime, result = "(TODO apply diff)",
-            relatedPostAutoApproval = autoApproval)
+            approval = approval)
         case HistoryEdit.DeleteEditApp =>
           // Should probably replace `Delete`:s of `EditApp`:s
           // with a `Restore` or `Undelete` class whose target is
           // the actual edit, not the `EditApp`.
-          // Right now, however, ignore any `autoApproval` — therefore,
+          // Right now, however, ignore any `approval` — therefore,
           // for now, deletions are always auto approved.
           Delete(
             id = "?"+ sno, postId = actionId,

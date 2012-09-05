@@ -55,8 +55,8 @@ object AppCreatePage extends mvc.Controller {
       else (Markup.DefaultForPageBody, DefaultPageText)
 
     // For now:
-    val autoApproval =
-      if (pageReq.user_!.isAdmin) Some(AutoApproval.AuthoritativeUser)
+    val approval =
+      if (pageReq.user_!.isAdmin) Some(Approval.AuthoritativeUser)
       else None
 
     val rootPost = Post(id = Page.BodyId,
@@ -64,7 +64,7 @@ object AppCreatePage extends mvc.Controller {
       loginId = pageReq.loginId_!, newIp = pageReq.newIp,
       text = pageText, markup = pageMarkup.id,
       tyype = PostType.Text, where = None,
-      autoApproval = autoApproval)
+      approval = approval)
 
     // (A page title and template (and body) is its own parent.
     // Dupl knowledge! see AppEdit._getOrCreatePostToEdit.)
