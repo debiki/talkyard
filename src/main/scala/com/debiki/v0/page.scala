@@ -398,6 +398,106 @@ case class Debate (
   }
 
 
+  // -------- Partition by version
+
+  /**
+   * Partitions this page into two parts: the first contains everything
+   * that happened up to and including `pageVersion`, and the second
+   * contains things that happened afterwards.
+   *
+   * However when partitioning on Post approval date, only
+   * Posts, Edits and EditApps are partitioned; everything else is
+   * included in _1 of the returned pair.
+   */
+  def partitionByVersion(pageVersion: PageVersion): (Debate, Debate) = {
+    val (pageUpToAndInclDati, pageAfterDati) =
+      _partitionByTime(pageVersion.dati)
+
+    if (!pageVersion.approved)
+      return (pageUpToAndInclDati, pageAfterDati)
+
+    val (pageApproved, pageUnapproved) =
+      pageUpToAndInclDati._partitionByApproval
+
+    (pageApproved, pageUnapproved ++ pageAfterDati)
+  }
+
+
+  private def _partitionByTime(dati: ju.Date): (Debate, Debate) = {
+    def happenedInTime(action: Action) =
+      action.ctime.getTime <= dati.getTime
+
+    val (postsBefore, postsAfter) = posts partition happenedInTime
+    val (ratingsBefore, ratingsAfter) = ratings partition happenedInTime
+    val (editsBefore, editsAfter) = edits partition happenedInTime
+    val (editAppsBefore, editAppsAfter) = editApps partition happenedInTime
+    val (flagsBefore, flagsAfter) = flags partition happenedInTime
+    val (deletionsBefore, deletionsAfter) = deletions partition happenedInTime
+    val (reviewsBefore, reviewsAfter) = reviews partition happenedInTime
+
+    val pageUpToAndInclDati = copy(
+      posts = postsBefore,
+      ratings = ratingsBefore,
+      edits = editsBefore,
+      editApps = editAppsBefore,
+      flags = flagsBefore,
+      deletions = deletionsBefore,
+      reviews = reviewsBefore)
+
+    val pageAfterDati = copy(
+      posts = postsAfter,
+      ratings = ratingsAfter,
+      edits = editsAfter,
+      editApps = editAppsAfter,
+      flags = flagsAfter,
+      deletions = deletionsAfter,
+      reviews = reviewsAfter)
+
+    (pageUpToAndInclDati, pageAfterDati)
+  }
+
+
+  private def _partitionByApproval: (Debate, Debate) = {
+
+      val (postsApproved, postsUnapproved) = posts partition { rawPost =>
+        val post = vipo_!(rawPost.id)
+        post.lastApprovalDati.isDefined
+      }
+
+      val (editsApproved, editsUnapproved) = edits partition { edit =>
+        val post = vipo_!(edit.postId)
+        post.lastApprovalDati match {
+          case None => false
+          case Some(approvalDati) => edit.ctime.getTime <= approvalDati.getTime
+        }
+      }
+
+      val (editAppsApproved, editAppsUnapproved) = editApps partition { edApp =>
+        val edit = editsById(edApp.editId)
+        val post = vipo_!(edit.postId)
+        post.lastApprovalDati match {
+          case None => false
+          case Some(approvalDati) => edApp.ctime.getTime <= approvalDati.getTime
+        }
+      }
+
+      // As mentioned in the docs of partitionByVersion, only Posts,
+      // Edits and EditApps are partitioned.
+      // BUG Should also partition deletions? In the future, when/if
+      // they can be approved/rejected.
+      val approvedVersionOfPage = copy(
+        posts = postsApproved,
+        edits = editsApproved,
+        editApps = editAppsApproved)
+
+      val remainingUnapprovedStuff = Debate(id, people, postsUnapproved,
+        ratings = Nil, edits = editsUnapproved, editApps = editAppsUnapproved,
+        flags = Nil, deletions = Nil, reviews = Nil)
+
+    (approvedVersionOfPage, remainingUnapprovedStuff)
+  }
+
+
   // -------- Misc
 
   /** When the most recent post was made,
