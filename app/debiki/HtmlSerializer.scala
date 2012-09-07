@@ -213,6 +213,10 @@ object HtmlSerializer {
     (in \\ "_").filter(_attrEq("class", withClass)).
         headOption.map(_.child)
 
+  case class SerializedSingleThread(
+    prevSiblingId: Option[String],
+    htmlNodes: NodeSeq)
+
 }
 
 
@@ -223,12 +227,27 @@ case class HtmlSerializer(
 
   import HtmlSerializer._
 
+  def page = debate
 
   private lazy val pageStats = new PageStats(debate, pageTrust)
 
   private def lastChange: Option[String] =
     debate.lastChangeDate.map(toIso8601(_))
 
+
+  def serializeSingleThread(postId: String, pageRoot: PageRoot)
+        : Option[SerializedSingleThread] = {
+    page.vipo(postId) map { post =>
+      val html = _layoutComments(pageRoot.subId, depth = post.depth,
+         parentReplyBtn = Nil,
+         posts = post::Nil)
+      val siblingsSorted = _sortPostsDescFitness(post.siblingsAndMe)
+      var prevSibling: Option[ViPo] = None
+      siblingsSorted.takeWhile(_.id != postId).foreach { sibling =>
+        prevSibling = Some(sibling)
+      }
+      SerializedSingleThread(prevSibling.map(_.id), html)
+    }
   }
 
 
@@ -292,29 +311,34 @@ case class HtmlSerializer(
   }
 
 
+  private def _sortPostsDescFitness(posts: List[ViPo]): List[ViPo] = {
+    // Sort by: 1) Fixed position, 2) fitness, descending, 3) time, ascending.
+    // Could skip sorting inline posts, since sorted by position later
+    // anyway, in javascript. But if javascript disabled?
+    posts.sortBy(p => p.creationDati.getTime). // the oldest first
+       sortBy(p => -pageStats.ratingStatsFor(p.id).
+       fitnessDefaultTags.lowerLimit).
+       sortBy(p => p.meta.fixedPos.getOrElse(999999))
+  }
+
+
   private def _layoutComments(rootPostId: String, depth: Int,
                               parentReplyBtn: NodeSeq,
-                              posts: List[Post]): NodeSeq = {
+                              posts: List[ViPo]): NodeSeq = {
     // COULD let this function return Nil if posts.isEmpty, and otherwise
     // wrap any posts in <ol>:s, with .dw-ts or .dw-i-ts CSS classes
     // — this would reduce dupl wrapping code.
-    val vipos = posts.map(p => debate.vipo_!(p.id))
     var replyBtnPending = parentReplyBtn.nonEmpty
 
     var comments: NodeSeq = Nil
     for {
-      // Could skip sorting inline posts, since sorted by position later
-      // anyway, in javascript. But if javascript disabled?
-      p <- vipos.sortBy(p => p.creationDati.getTime). // the oldest first
-                sortBy(p => -pageStats.ratingStatsFor(p.id).
-                                fitnessDefaultTags.lowerLimit).
-                sortBy(p => p.meta.fixedPos.getOrElse(999999))
+      p <- _sortPostsDescFitness(posts)
       cssThreadId = "dw-t-"+ p.id
       cssDepth = "dw-depth-"+ depth
       isInlineThread = p.where.isDefined
       isInlineNonRootChild = isInlineThread && depth >= 2
       cssInlineThread = if (isInlineThread) " dw-i-t" else ""
-      replies = debate.repliesTo(p.id)
+      replies = p.replies
       vipo = p // debate.vipo_!(p.id)
       isRootOrArtclQstn = vipo.id == rootPostId || vipo.meta.isArticleQuestion
       // Layout replies horizontally, if this is an inline reply to
@@ -334,8 +358,7 @@ case class HtmlSerializer(
       // -- they confuse people (my father), in their current shape.
       shallFoldPost = (postFitness.upperLimit < 0.5f &&
          postFitness.observedMean < 0.333f) || isInlineNonRootChild
-    }
-    yield {
+    } {
       val renderedComment: RenderedComment =
         if (vipo.isTreeDeleted) _showDeletedTree(vipo)
         else if (vipo.isDeleted) _showDeletedComment(vipo)
