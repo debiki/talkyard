@@ -543,7 +543,7 @@ object PageVersion {
 sealed abstract class PageRoot {
   def subId: String
   def findOrCreatePostIn(page: Debate): Option[ViPo]
-  def findChildrenIn(page: Debate): List[Post]
+  def findChildrenIn(page: Debate): List[ViPo]
   def isDefault: Boolean = subId == Page.BodyId
   def isPageTemplate: Boolean = subId == Page.TemplateId
 }
@@ -561,7 +561,8 @@ object PageRoot {
 
     def findOrCreatePostIn(page: Debate): Option[ViPo] = page.vipo(subId)
 
-    def findChildrenIn(page: Debate): List[Post] = page.repliesTo(subId)
+    def findChildrenIn(page: Debate): List[ViPo] =
+      page.repliesTo(subId) map (new ViPo(page, _))
   }
 
   // In the future, something like this:

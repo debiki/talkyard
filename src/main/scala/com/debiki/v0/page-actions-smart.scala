@@ -273,6 +273,27 @@ class ViPo(debate: Debate, val post: Post) extends ViAc(debate, post) {
   }
 
 
+  lazy val depth: Int = {
+    var depth = 0
+    var curId = id
+    var nextParent = page.vipo(parent)
+    while (nextParent.nonEmpty && nextParent.get.id != curId) {
+      depth += 1
+      curId = nextParent.get.id
+      nextParent = page.vipo(nextParent.get.parent) //nextParent.parent
+    }
+    depth
+  }
+
+
+  def replies: List[ViPo] =
+    debate.repliesTo(id) map (new ViPo(page, _))
+
+
+  def siblingsAndMe: List[ViPo] =
+    debate.repliesTo(parent) map (new ViPo(page, _))
+
+
   /** Whether or not this Post has been published.
    *
    *  If the root post is published, then the whole page is published.
