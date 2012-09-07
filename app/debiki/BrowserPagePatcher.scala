@@ -22,6 +22,9 @@ import HtmlSerializer.SerializedSingleThread
  */
 object BrowserPagePatcher {
 
+  implicit private val logger = play.api.Logger(this.getClass)
+
+
   def jsonForMyNewPosts(pageReq: PageRequest[_], myNewPosts: List[Post])
         : pm.PlainResult = {
 
@@ -32,7 +35,7 @@ object BrowserPagePatcher {
     val postsAndHtml: List[(Post, SerializedSingleThread)] =
           myNewPosts map { post =>
       val serializedThread = serializer.serializeSingleThread(
-         post.id, pageReq.pageRoot) getOrElse throwInternalError(
+         post.id, pageReq.pageRoot) getOrElse logAndThrowInternalError(
             "DwE3EH48", "Post not found, id: "+ post.id +", page: "+ page.id)
       (post, serializedThread)
     }

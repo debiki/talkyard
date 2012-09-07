@@ -105,6 +105,12 @@ object DebikiHttp {
   def throwEntityTooLarge(errCode: String, message: String) =
     throw ResultException(EntityTooLargeResult(errCode, message))
 
+  def logAndThrowInternalError(errCode: String, message: String = "")
+        (implicit logger: play.api.Logger) = {
+    logger.error("Internal error: "+ message +" ["+ errCode +"]")
+    throwInternalError(errCode, message)
+  }
+
   def throwInternalError(errCode: String, message: String = "") =
     throw ResultException(InternalErrorResult(errCode, message))
 
