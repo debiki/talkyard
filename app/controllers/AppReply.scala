@@ -59,8 +59,7 @@ object AppReply extends mvc.Controller {
     val List(postWithId: Post) = Debiki.savePageActions(pageReq, postNoId::Nil)
 
     if (pageReq.isAjax)
-      //BrowserPagePatcher.jsonFor(pageReq.page_!, newPosts = post::Nil)
-      Utils.renderOrRedirect(pageReq)
+      BrowserPagePatcher.jsonForMyNewPosts(pageReq, postWithId::Nil)
     else
       _showHtmlResultPage(pageReq, postWithId)
   }

@@ -35,6 +35,7 @@ exports.config =
            | ^client/debiki/debiki-logout-dialog.js
            | ^client/debiki/debiki-markup.js
            | ^client/debiki/debiki-merge-changes.js
+           | ^client/debiki/debiki-patch-page.ls
            | ^client/debiki/debiki-play.css
            | ^client/debiki/debiki-post-header.js
            | ^client/debiki/debiki-resize.js
@@ -83,6 +84,7 @@ exports.config =
            | ^client/debiki/debiki-logout-dialog.js
            | ^client/debiki/debiki-markup.js
            | ^client/debiki/debiki-merge-changes.js
+           | ^client/debiki/debiki-patch-page.ls
            | ^client/debiki/debiki-play.css
            | ^client/debiki/debiki-post-header.js
            | ^client/debiki/debiki-resize.js

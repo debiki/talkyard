@@ -103,7 +103,7 @@ d.i.$showReplyForm = function(event, opt_where) {
     // Ajax-post reply on submit.
     $replyForm.submit(function() {
       $.post('?reply='+ postId +'&view='+ d.i.rootPostId,
-          $replyForm.serialize(), 'html')
+          $replyForm.serialize(), 'json')
         .fail(d.i.showErrorEnableInputs($replyForm))
         .done(function(newDebateHtml) {
           // The server has replied. Merge in the data from the server
@@ -114,7 +114,9 @@ d.i.$showReplyForm = function(event, opt_where) {
           // dw-svg-fake-harrow.
           d.i.removeInstantly($replyFormParent);
           $replyAction.dwActionLinkEnable();
-          var $myNewPost = d.i.mergeChangesIntoPage(newDebateHtml);
+          var $result = d.i.patchPage(newDebateHtml);
+          var $myNewPost = $result.newThreads[0].children('.dw-p');
+          d.u.bugIf($myNewPost.length !== 1, 'DwE3TW39');
           d.i.markMyPost($myNewPost.dwPostId());
           // Any horizontal reply button has been hidden.
           $anyHorizReplyBtn.show();

@@ -7,6 +7,11 @@ var d = { i: debiki.internal, u: debiki.v0.util };
 var $ = d.i.$;
 
 
+d.i.findThread$ = function(threadId) {
+  return $('#dw-t-'+ threadId);
+}
+
+
 d.i.findPostHeader$ = function(postId) {
   return $('#post-'+ postId +' > .dw-p-hd');
 };
@@ -16,6 +21,11 @@ $.fn.dwPostId = function() {
   // Drop initial "post-".
   return this.dwCheckIs('.dw-p').attr('id').substr(5, 999);
 };
+
+
+$.fn.dwFindPosts = function() {
+  return this.find('.dw-p');
+}
 
 
 $.fn.dwPostFindHeader = function() {
