@@ -140,7 +140,7 @@ object Templates {
     firstName = "Laban", email = "oid@email.hmm", country = "Sweden")
   val post = v0.Post(id = "?", parent = "1", ctime = new ju.Date,
     loginId = "?", newIp = None, text = "", markup = "para",
-    tyype = v0.PostType.Text, where = None, autoApproval = None)
+    tyype = v0.PostType.Text, where = None, approval = None)
   val rating = v0.Rating(id = "?", postId = "1", loginId = "?",
     newIp = None, ctime = new ju.Date, tags = Nil)
 }
@@ -554,8 +554,9 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
     def testSaveLoadReview(isApproved: Boolean) {
       var reviewSaved: Review = null
       val targetId = ex1_rootPost.id
+      val approval = if (isApproved) Some(Approval.Manual) else None
       val reviewNoId = Review("?", targetId = targetId, loginId = loginId,
-         newIp = None, ctime = now, isApproved = isApproved)
+         newIp = None, ctime = now, approval = approval)
       dao.savePageActions(ex1_debate.guid, List(reviewNoId)) must beLike {
         case List(review: Review) =>
           review must_== reviewNoId.copy(id = review.id)
@@ -680,11 +681,11 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
         val editNoId = Edit(
           id = "?x", postId = post.id, ctime = now, loginId = loginId,
           newIp = None, text = patchText, newMarkup = None,
-          relatedPostAutoApproval = None, autoApplied = false)
+          approval = None, autoApplied = false)
         val publNoId = EditApp(
           id = "?", editId = "?x", ctime = now,
           loginId = loginId, newIp = None, result = newText,
-          relatedPostAutoApproval = None)
+          approval = None)
 
         // Save
         val List(edit: Edit, publ: EditApp) =
@@ -708,11 +709,11 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
         val editNoId = Edit(
           id = "?x", postId = post.id, ctime = now, loginId = loginId,
           newIp = None, text = "", newMarkup = Some("html"),
-          relatedPostAutoApproval = None, autoApplied = false)
+          approval = None, autoApplied = false)
         val publNoId = EditApp(
           id = "?", editId = "?x", ctime = now,
           loginId = loginId, newIp = None, result = newText,
-          relatedPostAutoApproval = None)
+          approval = None)
 
         // Save
         val List(edit: Edit, publ: EditApp) =
