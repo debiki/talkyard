@@ -9,6 +9,10 @@ d.i.patchPage = (patches) ->
 
   for newThreadPatch in patches.newThreads
     $newThread = $ newThreadPatch.html
+
+    if !newThreadPatch.approved
+      addPendingModerationMessageTo $newThread.dwChildPost!
+
     $prevThread = d.i.findThread$ newThreadPatch.prevThreadId
     $parentThread = d.i.findThread$ newThreadPatch.parentThreadId
     if $prevThread.length
@@ -39,6 +43,10 @@ d.i.patchPage = (patches) ->
 
   result
 
+
+addPendingModerationMessageTo = ($post) ->
+  $post.prepend $(
+      '<div class="dw-p-pending-mod">Comment pending moderation.</div>')
 
 insertThread = ($thread, { after }) ->
   $pervSibling = after

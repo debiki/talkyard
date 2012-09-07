@@ -114,6 +114,7 @@ dw-p-bd       post body
 dw-p-bd-blk   post body block, a <div> that wraps e.g. a <p>
 dw-p-dl       a post, deleted
 dw-p-hd       post header
+dw-p-pending-mod  post/comment is pending moderation
 dw-p-rez-e    post resized eastwards
 dw-pri        placed on the <body>, use it to boost CSS rule priorities
 dw-render-*-pending — a page rendering step that has not yet been completed

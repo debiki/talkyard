@@ -23,6 +23,11 @@ $.fn.dwPostId = function() {
 };
 
 
+$.fn.dwChildPost = function() {
+  return this.children('.dw-p');
+}
+
+
 $.fn.dwFindPosts = function() {
   return this.find('.dw-p');
 }
