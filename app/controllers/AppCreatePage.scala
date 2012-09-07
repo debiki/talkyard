@@ -54,10 +54,7 @@ object AppCreatePage extends mvc.Controller {
       if (newPagePathNoId.isCodePage) (Markup.Code, "")
       else (Markup.DefaultForPageBody, DefaultPageText)
 
-    // For now:
-    val approval =
-      if (pageReq.user_!.isAdmin) Some(Approval.AuthoritativeUser)
-      else None
+    val approval = AutoApprover.perhapsApprove(pageReq)
 
     val rootPost = Post(id = Page.BodyId,
       parent = Page.BodyId, ctime = pageReq.ctime,

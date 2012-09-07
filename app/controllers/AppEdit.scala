@@ -83,10 +83,8 @@ object AppEdit extends mvc.Controller {
     val (mayEdit, mayEditReason) =
       AppEdit.mayEdit(pageReq.user, post, pageReq.permsOnPage)
 
-    // For now:
     val approval =
-      if (mayEdit && pageReq.user_!.isAdmin)
-        Some(Approval.AuthoritativeUser)
+      if (mayEdit) AutoApprover.perhapsApprove(pageReq)
       else None
 
     var edit = Edit(

@@ -74,9 +74,7 @@ object AppEditHistory extends mvc.Controller {
   private def _applyAndUndoEdits(changes: List[(HistoryEdit, String)],
         pageReq: PageRequest[_]) {
 
-    val approval =  // for now
-      if (!pageReq.user_!.isAdmin) None
-      else Some(Approval.AuthoritativeUser)
+    val approval = AutoApprover.perhapsApprove(pageReq)
 
     val page = pageReq.page_!
     var sno = 0

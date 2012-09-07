@@ -47,9 +47,7 @@ object AppReply extends mvc.Controller {
       throwBadReq("DwE93k21", "Empty reply")
     val whereOpt = pageReq.getEmptyAsNone(Inp.Where)
 
-    val approval =  // for now
-      if (!pageReq.user_!.isAdmin) None
-      else Some(Approval.AuthoritativeUser)
+    val approval = AutoApprover.perhapsApprove(pageReq)
 
     val postNoId = Post(id = "?", parent = postId, ctime = pageReq.ctime,
       loginId = pageReq.loginId_!, newIp = pageReq.newIp, text = text,
