@@ -61,8 +61,6 @@ abstract class HtmlConfig {
 
 object HtmlSerializer {
 
-  def apply(debate: Debate, pageTrust: PageTrust) =
-    new HtmlSerializer(debate, pageTrust)
 
   /** Converts text to xml, returns (html, approx-line-count).
    *
@@ -218,20 +216,19 @@ object HtmlSerializer {
 }
 
 
-class HtmlSerializer(val debate: Debate, val pageTrust: PageTrust) {
+case class HtmlSerializer(
+  val debate: Debate,
+  val pageTrust: PageTrust,
+  val config: HtmlConfig) {
 
   import HtmlSerializer._
 
-  private var config: HtmlConfig = _  // COULD let be a ctor param
 
   private lazy val pageStats = new PageStats(debate, pageTrust)
 
   private def lastChange: Option[String] =
     debate.lastChangeDate.map(toIso8601(_))
 
-  def configure(conf: HtmlConfig): HtmlSerializer = {
-    this.config = conf
-    this
   }
 
 

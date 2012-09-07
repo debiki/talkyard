@@ -76,8 +76,8 @@ class PageCache {
         // a page. But for now:
         val pageTrust = PageTrust(pageDesiredVersion)
         // layoutPage() takes long, because markup source is converted to html.
-        val nodes = HtmlSerializer(pageDesiredVersion, pageTrust)
-           .configure(config).layoutPage(pageRoot)
+        val nodes = HtmlSerializer(pageDesiredVersion, pageTrust, config)
+           .layoutPage(pageRoot)
         nodes map { html =>
         // The html is serialized here only once, then it's added to the
         // page cache (if pageRoot is the Page.body -- see get() below).
