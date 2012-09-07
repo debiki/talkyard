@@ -147,6 +147,23 @@ function registerEventHandlersFireLoginOut() {
 // step is done, the user should conceive the page as mostly loaded.)
 
 function renderPageEtc() {
+
+  // JSON vulnerability protection.
+  // ((Details: Strip a certain reply prefix. This prevents the JSON
+  // from being parsed as Javascript from a <script> tag. This'd otherwise
+  // allow third party websites to turn your JSON resource URL into JSONP
+  // request under some conditions, see:
+  //   http://docs.angularjs.org/api/ng.$http, the "JSON Vulnerability
+  // Protection" section.))
+  $.ajaxSetup({
+    dataFilter: function (response, type) {
+      /// Don't know why, but `type` is alwyas undefined, so won't work:
+      // if (type !== 'json') return response;
+      response = response.replace(/^\)\]}',\n/, '');
+      return response;
+    }
+  });
+
   var $posts = $('.debiki .dw-p:not(.dw-p-ttl)');
 
   (d.u.workAroundAndroidZoomBug || function() {})($);

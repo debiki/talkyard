@@ -12,6 +12,7 @@ import java.{util => ju}
 import play.api._
 import play.api.data._
 import play.api.data.Forms._
+import play.api.libs.json.JsValue
 import play.api.mvc.{Action => _, _}
 import PageActions._
 import Prelude._
@@ -46,6 +47,25 @@ object Utils extends Results with http.ContentTypes {
     require(htmlNode.size == 1)
     "<!DOCTYPE html>\n"+ lw.Html5.toString(htmlNode.head)
   }
+
+
+  /**
+   * Prefixes the JSON string with characters that prevents the JSON
+   * from being parsed as Javascript from a <script> tag.
+   * This supposedly thwarts a JSON vulnerability that allows third
+   * party websites to turn your JSON resource URL into JSONP
+   * request under some conditions, see:
+   *   "JSON Vulnerability Protection", here:
+   *      http://docs.angularjs.org/api/ng.$http
+   *   and:
+   *     http://haacked.com/archive/2008/11/20/
+   *        anatomy-of-a-subtle-json-vulnerability.aspx
+   * Debiki's Javascript, and AngularJS, strips the ")]}'," prefix before
+   * parsing the JSON.
+   */
+  def OkSafeJson(json: JsValue) =
+    Ok(")]}',\n" + json.toString) as JSON
+
 
   /**
    * Prefixes `<?xml version=...>` to the post data.
