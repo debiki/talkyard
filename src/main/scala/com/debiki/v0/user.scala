@@ -20,6 +20,9 @@ case class People(
   identities: List[Identity] = Nil,
   users: List[User] = Nil) {
 
+  def + (login: Login) = copy(logins = login :: logins)
+  def + (identity: Identity) = copy(identities = identity :: identities)
+  def + (user: User) = copy(users = user :: users)
 
   /**
    * Returns a NiLo with info on the author of the post.
