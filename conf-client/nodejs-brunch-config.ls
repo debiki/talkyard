@@ -135,6 +135,10 @@ exports.config =
 
   modules:
     definition: false
-    wrapper: false
+    wrapper: (path, data) -> """
+      (function() {
+        #{data}
+      })();\n\n
+      """
 
 # vim: et ts=2 sw=2 list
