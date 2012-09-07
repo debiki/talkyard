@@ -150,6 +150,24 @@ case class PageRequest[A](
   lazy val page_! : Debate =
     page_? getOrElse throwNotFound("DwE43XWY", "Page not found")
 
+  /**
+   * Adds the current login, identity and user to page_!.people.
+   * This is useful, if the current user does his/her very first
+   * interaction with the page. Then page_!.people has no info
+   * on that user, and an error would happen if you did something
+   * with the page that required info on the current user.
+   * (For example, adding [a reply written by the user] to the page,
+   * and then rendering the page.)
+   */
+  lazy val pageWithMe_! : Debate = {
+    // Could try not to add stuff that's already been added to page_!.people.
+    // But anything we add should be fairly identical to anything that's
+    // already there, so not very important?
+    val fakeLogin = Login(id = loginId_!, prevLoginId = None,
+       ip = request.remoteAddress, date = ctime, identityId =
+       identity_!.id)
+    page_!.copy(people = page_!.people + fakeLogin + identity_! + user_!)
+  }
 
   /**
    * The page version is specified in the query string, e.g.:
