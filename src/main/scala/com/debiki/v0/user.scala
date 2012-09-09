@@ -212,21 +212,6 @@ case class Login(
 }
 
 
-object Login {
-
-  abstract class Comparison { def isSameForSure = false }  // COULD Remove!??
-  case object IsSame extends Comparison { override def isSameForSure = true }
-  case object SeemsSame extends Comparison
-  case object NotSame extends Comparison
-
-  def compare(loginA: Login, nA: Login, userB: User, loginB: Login
-                 ): Comparison = {
-    NotSame // for now
-    // For UserSimple, consider IP and login date, name and email.
-  }
-}
-
-
 /**
  * A user might have many identities, e.g. an OpenID Gmail identity and
  * a Twitter identity.
