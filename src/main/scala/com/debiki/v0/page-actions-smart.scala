@@ -242,6 +242,9 @@ class ViPo(debate: Debate, val post: Post) extends ViAc(debate, post) {
   def lastApprovalDati: Option[ju.Date] =
     _reviewsDescTime.filter(_.approval.isDefined).headOption.map(_.ctime)
 
+  def lastManualApprovalDati: Option[ju.Date] =
+    _reviewsDescTime.filter(_.approval == Some(Approval.Manual))
+       .headOption.map(_.ctime)
 
   def lastReviewWasApproval: Option[Boolean] =
     if (lastReviewDati.isEmpty) None
@@ -271,6 +274,10 @@ class ViPo(debate: Debate, val post: Post) extends ViAc(debate, post) {
     // delete it instead.
     lastApprovalDati.nonEmpty
   }
+
+
+  def someVersionManuallyApproved: Boolean =
+    lastManualApprovalDati.isDefined
 
 
   lazy val depth: Int = {

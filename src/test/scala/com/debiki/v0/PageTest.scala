@@ -126,6 +126,7 @@ class PageTest extends SpecificationWithJUnit with PageTestValues {
         page.body_!.currentVersionApproved must_== false
         page.body_!.initiallyApproved must_== false
         page.body_!.lastApprovalDati must_== None
+        page.body_!.lastManualApprovalDati must_== None
         page.body_!.text must_== textInitially
       }
 
@@ -136,6 +137,7 @@ class PageTest extends SpecificationWithJUnit with PageTestValues {
         page.body_!.currentVersionApproved must_== true
         page.body_!.initiallyApproved must_== true
         page.body_!.lastApprovalDati must_== Some(bodySkeleton.ctime)
+        page.body_!.lastManualApprovalDati must_== None
         page.body_!.text must_== textInitially
       }
 
@@ -147,6 +149,8 @@ class PageTest extends SpecificationWithJUnit with PageTestValues {
         page.body_!.currentVersionApproved must_== true
         page.body_!.initiallyApproved must_== false
         page.body_!.lastApprovalDati must_== Some(bodyApprovalSkeleton.ctime)
+        page.body_!.lastManualApprovalDati must_==
+           Some(bodyApprovalSkeleton.ctime)
         page.body_!.text must_== textInitially
       }
 
@@ -158,6 +162,7 @@ class PageTest extends SpecificationWithJUnit with PageTestValues {
         page.body_!.currentVersionApproved must_== false
         page.body_!.initiallyApproved must_== false
         page.body_!.lastApprovalDati must_== None
+        page.body_!.lastManualApprovalDati must_== None
         page.body_!.text must_== textInitially
       }
     }
@@ -352,6 +357,7 @@ class PageTest extends SpecificationWithJUnit with PageTestValues {
         page.body_!.initiallyApproved must_== true
         page.body_!.lastReviewDati must_== Some(page.body_!.creationDati)
         page.body_!.lastApprovalDati must_== Some(page.body_!.creationDati)
+        page.body_!.lastManualApprovalDati must_== None
         page.body_!.text must_== textAfterFirstEdit
         testEditLists(page.body_!)
       }
@@ -361,14 +367,16 @@ class PageTest extends SpecificationWithJUnit with PageTestValues {
         //val page = EmptyPage + bodySkeletonAutoApproved +
         //   editSkeleton + editAppSkeleton.copy(
         //      approval = Some(Approval.WellBehavedUser))
-        testApprovedPost(page.body_!, editAppSkeleton.ctime)
+        testApprovedPost(page.body_!, editAppSkeleton.ctime,
+            manualApprovalDati = None)
       }
 
       "approved, manually" >> {
         val page = PageWithEditManuallyAppliedAndExplApproved
         //val page = EmptyPage + bodySkeletonAutoApproved +
         ///   editSkeleton + editAppSkeleton + approvalOfEditApp
-        testApprovedPost(page.body_!, approvalOfEditApp.ctime)
+        testApprovedPost(page.body_!, approvalOfEditApp.ctime,
+            manualApprovalDati = Some(approvalOfEditApp.ctime))
       }
 
       "approved, and then reverted, but the revertion is not yet approved" >> {
@@ -388,6 +396,7 @@ class PageTest extends SpecificationWithJUnit with PageTestValues {
         body.initiallyApproved must_== true
         body.lastReviewDati must_== Some(rejectionOfEditApp.ctime)
         body.lastApprovalDati must_== Some(page.body_!.creationDati)
+        body.lastManualApprovalDati must_== None
         body.text must_== textAfterFirstEdit
         testEditLists(body)
       }
@@ -409,7 +418,8 @@ class PageTest extends SpecificationWithJUnit with PageTestValues {
         }
       }
 
-      def testApprovedPost(post: ViPo, approvalDati: ju.Date) {
+      def testApprovedPost(post: ViPo, approvalDati: ju.Date,
+            manualApprovalDati: Option[ju.Date]) {
         post.currentVersionReviewed must_== true //
         post.currentVersionRejected must_== false
         post.currentVersionApproved must_== true
@@ -417,6 +427,7 @@ class PageTest extends SpecificationWithJUnit with PageTestValues {
         post.initiallyApproved must_== true
         post.lastReviewDati must_== Some(approvalDati)
         post.lastApprovalDati must_== Some(approvalDati)
+        post.lastManualApprovalDati must_== manualApprovalDati
         post.text must_== textAfterFirstEdit
         testEditLists(post)
       }
