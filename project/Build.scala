@@ -35,8 +35,10 @@ object ApplicationBuild extends Build {
     "com.amazonaws" % "aws-java-sdk" % "1.3.4",
     "com.google.guava" % "guava" % "10.0.1",
     "com.twitter" %% "ostrich" % "4.10.6",
-    "rhino" % "js" % "1.7R2"
+    "rhino" % "js" % "1.7R2",
+    "org.mockito" % "mockito-all" % "1.9.0" % "test"
   )
+
 
   // Make `idea with-sources` work in subprojects.
   override def settings =
