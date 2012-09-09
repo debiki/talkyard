@@ -22,7 +22,11 @@ object Prelude {
   // instead of the corrupted database data).
   // SHOULD move to some DebikiLogger class and check if we're in debug
   // or release mode.
-  def warnDbgDie(warningMsg: String) {
+
+  // Should get rid of this version:
+  def warnDbgDie(errorMsg: String) { warnDbgDie("", errorMsg) }
+
+  def warnDbgDie(errorCode: String, warningMsg: String) {
     if (true) {
       // Fail hard in debug mode so this error will be fixed.
       throw new AssertionError(warningMsg)
@@ -32,7 +36,10 @@ object Prelude {
     }
   }
 
-  def errDbgDie(errorMsg: String) {
+  // Should get rid of this version:
+  def errDbgDie(errorMsg: String) { errDbgDie("", errorMsg) }
+
+  def errDbgDie(errorCode: String, errorMsg: String) {
     if (true) {
       throw new AssertionError(errorMsg)
     }
