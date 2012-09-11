@@ -213,7 +213,13 @@ case class Debate (
 
   def body_! = vipo_!(PageBodyId)
 
+  def bodyText: Option[String] = vipo(Page.BodyId).map(_.text)
+
+
+  def title_! = vipo_!(Page.TitleId)
+
   /** The page title if any. */
+  def title = titlePost // COULD remove `titlePost`
   def titlePost: Option[ViPo] = vipo(Page.TitleId)
 
   /** The page title, as plain text. */
@@ -399,6 +405,12 @@ case class Debate (
 
 
   // -------- Partition by version
+
+  /**
+   * Returns a Page with all non-approved stuff removed.
+   */
+  def approvedVersion: Debate =
+    partitionByVersion(PageVersion.LatestApproved)._1
 
   /**
    * Partitions this page into two parts: the first contains everything
