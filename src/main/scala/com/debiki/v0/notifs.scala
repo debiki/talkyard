@@ -78,37 +78,46 @@ object Notification {
 
     val actions = adding
     val page = to
+
+    def _makeNotfForUserRepliedTo(post: Post): List[NotfOfPageAction] = {
+      val postRepliedTo = page.vipo(post.parent) getOrElse {
+        // This might be a page config/template Post, and, if so,
+        // it has no parent.
+        return Nil
+      }
+      val userRepliedTo = postRepliedTo.user_!
+      if (user.id == Some(userRepliedTo.id)) {
+        // Don't notify the user of his/her own replies.
+        Nil
+      }
+      else if (post.tyype == PostType.Text) {
+        List(NotfOfPageAction(
+          ctime = post.ctime,
+          recipientUserId = userRepliedTo.id,
+          pageTitle = page.titleText.getOrElse("Unnamed page"),
+          pageId = page.id,
+          eventType = NotfOfPageAction.Type.PersonalReply,
+          eventActionId = post.id,
+          targetActionId = None,
+          recipientActionId = postRepliedTo.id,
+          recipientUserDispName = userRepliedTo.displayName,
+          eventUserDispName = user.displayName,
+          targetUserDispName = None,
+          emailPending =
+             userRepliedTo.emailNotfPrefs == EmailNotfPrefs.Receive))
+      } else {
+        // Currently not supported.
+        // Need to make loadInboxItem understand DW1_PAGE_ACTIONS = 'Tmpl',
+        // and should render Template suggestions differently from
+        // normal replies? The link should open the suggestion
+        // on a new page, with the template as root post?
+        Nil
+      }
+    }
+
     val seeds: Seq[NotfOfPageAction] = actions flatMap (_ match {
       case post: Post =>
-        val postRepliedTo = page.vipo_!(post.parent)
-        val userRepliedTo = postRepliedTo.user_!
-        if (user.id == Some(userRepliedTo.id)) {
-          // Don't notify the user of his/her own replies.
-          Nil
-        }
-        else if (post.tyype == PostType.Text) {
-          List(NotfOfPageAction(
-            ctime = post.ctime,
-            recipientUserId = userRepliedTo.id,
-            pageTitle = page.titleText.getOrElse("Unnamed page"),
-            pageId = page.id,
-            eventType = NotfOfPageAction.Type.PersonalReply,
-            eventActionId = post.id,
-            targetActionId = None,
-            recipientActionId = postRepliedTo.id,
-            recipientUserDispName = userRepliedTo.displayName,
-            eventUserDispName = user.displayName,
-            targetUserDispName = None,
-            emailPending =
-               userRepliedTo.emailNotfPrefs == EmailNotfPrefs.Receive))
-        } else {
-          // Currently not supported.
-          // Need to make loadInboxItem understand DW1_PAGE_ACTIONS = 'Tmpl',
-          // and should render Template suggestions differently from
-          // normal replies? The link should open the suggestion
-          // on a new page, with the template as root post?
-          Nil
-        }
+        _makeNotfForUserRepliedTo(post)
       // Note: If you add notfs (below) for other things than replies,
       // then, in debiki-app-play, update Mailer._constructEmail.notfToHtml
       // so it generates correct URL anchor links to that stuff.
@@ -128,6 +137,7 @@ object Notification {
     // val moderatorInboxSeed = ...
     seeds  // ++ pageAuthorInboxSeed ++ moderatorInboxSeed
   }
+
 }
 
 
