@@ -86,6 +86,9 @@ abstract class TenantDaoSpi {
 
   def loadPage(debateId: String): Option[Debate]
 
+  def loadPageBodiesTitles(pagePaths: Seq[PagePath])
+        : Seq[(PagePath, Option[Debate])]
+
   def loadRecentActionExcerpts(fromIp: Option[String],
         byIdentity: Option[String],
         pathRanges: PathRanges, limit: Int): (Seq[ViAc], People)
@@ -325,6 +328,16 @@ class TenantDao(
   }
 
   /**
+   * For each PagePath, loads a Page (well, Debate) with actions loaded
+   * only for Page.BodyId and Page.TitleId. Also loads the authors.
+   */
+  def loadPageBodiesTitles(pagePaths: Seq[PagePath])
+        : Seq[(PagePath, Option[Debate])] = {
+    _chargeForOneReadReq()
+    _spi.loadPageBodiesTitles(pagePaths)
+  }
+
+    /**
    * Loads at most `limit` recent posts, conducted e.g. at `fromIp`.
    * Also loads actions that affected those posts (e.g. flags, edits,
    * approvals). Also loads the people who did the actions.
