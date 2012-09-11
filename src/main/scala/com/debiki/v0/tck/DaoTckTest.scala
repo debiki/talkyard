@@ -391,6 +391,55 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
       }
     }
 
+    "list nothing for an empty list" >> {
+      val pathsAndPages = dao.loadPageBodiesTitles(Nil)
+      pathsAndPages must beEmpty
+    }
+
+    "list no body and title, for a non-existing page" >> {
+      val badPath = PagePath(
+        tenantId = defaultTenantId,
+        folder = "/",
+        pageId = Some("nonexistingpage"),
+        showId = true,
+        pageSlug = "page-slug")
+      val pathsAndPages = dao.loadPageBodiesTitles(List(badPath))
+      pathsAndPages must beLike { case List(pathAndPage) =>
+        pathAndPage._1 must_== badPath
+        pathAndPage._2 must beEmpty
+        true
+      }
+    }
+
+    "list body and title, for a page that exists" >> {
+      val pathAndDetails = dao.listPagePaths(
+        PathRanges(trees = Seq("/")),
+        include = v0.PageStatus.All,
+        sortBy = v0.PageSortOrder.ByPath,
+        limit = Int.MaxValue,
+        offset = 0)
+      val path: PagePath = pathAndDetails.headOption.getOrElse(fail)._1
+
+      val pathsAndPages = dao.loadPageBodiesTitles(path::Nil)
+      pathsAndPages must beLike { case List(pathAndPage) =>
+        pathAndPage._1 must_== path
+        pathAndPage._2 must beLike { case Some(page) =>
+          page.bodyText must beSomething
+          page.bodyText.get.length must be_>(0)
+          page.body_!.user must beSomething
+
+          /* Currently there is no title for the test page.
+          page.title must beSomething
+          page.titleText.get.length must be_>(0)
+          page.title_!.user must beSomething
+          */
+
+          true
+        }
+        true
+      }
+    }
+
 
     // -------- Paths
 
