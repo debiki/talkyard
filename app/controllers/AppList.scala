@@ -6,11 +6,10 @@ package controllers
 
 import com.debiki.v0._
 import com.debiki.v0.Prelude._
+import controllers.Utils._
 import debiki._
 import java.{util => ju}
 import play.api._
-import play.api.data._
-import play.api.data.Forms._
 import play.api.libs.json._
 import play.api.libs.json.Json.toJson
 import play.api.mvc.{Action => _, _}
@@ -19,7 +18,6 @@ import PageActions._
 import DebikiHttp._
 import Prelude._
 import Utils.ValidationImplicits._
-import Utils.{OkHtml, OkXml}
 
 
 /**
@@ -61,6 +59,57 @@ object AppList extends mvc.Controller {
                "path" -> pagePath.path
              ))
            }))))
+    }
+  }
+
+
+  def listNewestPages(pathIn: PagePath, contentType: DebikiHttp.ContentType) =
+        PageGetAction(pathIn, pageMustExist = false) { pageReq =>
+
+    val pathsAndDetails = pageReq.dao.listPagePaths(
+      Utils.parsePathRanges(pathIn, pageReq.queryString),
+      include = PageStatus.All,
+      sortBy = PageSortOrder.ByPublTime,
+      limit = 10,
+      offset = 0)
+
+    val pathsAndPages: Seq[(PagePath, Option[Debate])] =
+      pageReq.dao.loadPageBodiesTitles(pathsAndDetails map (_._1))
+
+    def pageTitlesAndBodiesHtml =
+      <ol>{
+        pathsAndPages map { case (path, pageOpt) =>
+          val pageAprvd = pageOpt map (_.approvedVersion)
+          <li>
+            <h1>{pageAprvd.flatMap(_.titleText) getOrElse "(No title)"}</h1>
+            <p><a href={path.path}>{path.path}</a></p>
+            <div>{pageAprvd.flatMap(_.bodyText) getOrElse ""}</div>
+          </li>
+        }
+      }</ol>
+
+    def pageTitlesAndBodiesJson =
+      toJson(Map("pages" -> (
+         pathsAndPages map { case (pagePath, pageOpt: Option[Debate]) =>
+           val pageAprvd = pageOpt map (_.approvedVersion)
+           toJson(Map(
+             "id" -> pagePath.pageId.get,
+             "folder" -> pagePath.folder,
+             "path" -> pagePath.path,
+             "title" ->
+                pageAprvd.flatMap(_.titleText).getOrElse("(No title)"),
+             "body" -> pageAprvd.flatMap(_.bodyText).getOrElse("")))
+         })))
+
+    // XSS: MUST markup and escape title and body above.
+
+    contentType match {
+      case DebikiHttp.ContentType.Html =>
+        // For debugging mostly.
+        OkHtmlBody(pageTitlesAndBodiesHtml)
+      case DebikiHttp.ContentType.Json =>
+        // For rendering e.g. newest blog articles list via Javascrpit.
+        OkSafeJson(pageTitlesAndBodiesJson)
     }
   }
 
