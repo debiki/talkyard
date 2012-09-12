@@ -47,14 +47,14 @@ object BrowserPagePatcher {
     OkSafeJson(toJson(Map(
       "newThreads" -> JsArray(postsAndHtml map {
             case (post, serializedThread) =>
-              jsonForNewPost(post, serializedThread)
+              _jsonForNewPost(post, serializedThread)
       })
    )))
   }
 
 
-  def jsonForNewPost(post: Post, serializedThread: SerializedSingleThread)
-        : JsValue = {
+  private def _jsonForNewPost(post: Post,
+        serializedThread: SerializedSingleThread): JsValue = {
     var data = Map[String, JsValue](
       "id" -> JsString(post.id),
       "cdati" -> JsString(toIso8601T(post.ctime)),
