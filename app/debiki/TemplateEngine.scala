@@ -50,8 +50,7 @@ class TemplateEngine(val pageCache: PageCache) {
   def renderPage(pageReq: PageRequest[_],
         appendToBody: NodeSeq = Nil): NodeSeq = {
 
-    // Load page and all templates needed.
-    val textAndComments = pageCache.get(pageReq)
+    // Load all templates needed.
     val templates: List[TemplateSource] = {
       // Don't use custom templates, when editing a template. Otherwise, if
       // the user writes a html / template bug, it might no longer be
@@ -63,13 +62,25 @@ class TemplateEngine(val pageCache: PageCache) {
            use = pageReq.dao)
     }
 
+    // Derive config values. Let more specific templates (closer to the
+    // page) override parent template config values.
+    var templParams = TemplateParams.Default
+    templates.reverse foreach { templ: TemplateSource =>
+      templParams = templ.params.mergeOverride(templParams)
+    }
+
+    val commentVisibility =
+      templParams.commentVisibility.getOrElse(assErr("DwE0kDf9"))
+
+    // Load page and comments.
+    val textAndComments = pageCache.get(pageReq, commentVisibility)
+
     // Create initial template data.
     var curHtmlAttrs: MetaData = xml.Null
     var curBodyAttrs: MetaData = xml.Null
     var curHeadTags: NodeSeq = Nil
     var curBodyTags: NodeSeq =
       <div data-replace='#debiki-page'>{textAndComments}</div>
-    var templParams = TemplateParams.Default
 
     // COULD rewrite, loop from outer to most specific template instead.
     // Then the more specific templs would see all ids of all outer
@@ -130,15 +141,11 @@ class TemplateEngine(val pageCache: PageCache) {
       // child template tags.
       curHeadTags = prntHeadTagsAfterRepl ++ curHeadTagsAfterRepl
       curBodyTags = prntBodyTagsAfterRepl ++ curBodyTagsAfterRepl
-
-      templParams = templ.params.mergeOverride(templParams)
     }
 
-    // Handle template param values.
+    // Handle page config values.
     val HS = HtmlSerializer
-    templParams.commentVisibility.getOrElse(assErr("DwE0kDf9")) match {
-      case CommentVisibility.Visible => // fine, already visible
-      case CommentVisibility.ShowOnClick =>
+    if (commentVisibility == CommentVisibility.ShowOnClick) {
         curHeadTags = curHeadTags ++ HS.tagsThatHideShowInteractions
     }
 

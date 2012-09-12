@@ -220,10 +220,12 @@ object HtmlSerializer {
 }
 
 
+
 case class HtmlSerializer(
-  val debate: Debate,
-  val pageTrust: PageTrust,
-  val config: HtmlConfig) {
+  debate: Debate,
+  pageTrust: PageTrust,
+  config: HtmlConfig,
+  showComments: Boolean) {
 
   import HtmlSerializer._
 
@@ -280,15 +282,16 @@ case class HtmlSerializer(
       <div id={cssThreadId}
            class={"dw-t"+ cssArtclThread +" dw-depth-0 dw-hor"}>
       {
-        val renderedComment = _showComment(rootPost.id, rootPost)
-        val replyBtn = _replyBtnListItem(renderedComment.replyBtnText)
-
-        renderedComment.html ++
-        <div class='dw-t-vspace'/>
-        <ol class='dw-res'>{
-          _layoutComments(rootPost.id, 1, replyBtn, rootPostsReplies)
-        }
-        </ol>
+        val renderedRoot = _showComment(rootPost.id, rootPost)
+        renderedRoot.html ++
+        ifThen(showComments, {
+          val replyBtn = _replyBtnListItem(renderedRoot.replyBtnText)
+          <div class='dw-t-vspace'/>
+          <ol class='dw-res'>{
+            _layoutComments(rootPost.id, 1, replyBtn, rootPostsReplies)
+          }
+          </ol>
+        })
       }
       </div>
     </div>

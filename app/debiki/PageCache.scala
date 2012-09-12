@@ -17,7 +17,11 @@ import com.debiki.v0._
 
 
 object PageCache {
-  case class Key(tenantId: String, pageGuid: String, hostAndPort: String)
+  case class Key(
+    tenantId: String,
+    pageGuid: String,
+    hostAndPort: String,
+    showComments: Boolean)
 }
 
 
@@ -60,6 +64,7 @@ class PageCache {
   private def _loadAndRender(k: Key, pageRoot: PageRoot,
         pageVersion: PageVersion, tenantDao: TenantDao): NodeSeq = {
     assert(k.tenantId == tenantDao.tenantId)
+    // COULD load only Page.BodyId, Page.TitleId if !showComments.
     tenantDao.loadPage(k.pageGuid) match {
       case Some(page) if page.body.map(_.someVersionApproved) != Some(true) =>
         // Regrettably, currently the page is hidden also for admins (!).
@@ -76,8 +81,8 @@ class PageCache {
         // a page. But for now:
         val pageTrust = PageTrust(pageDesiredVersion)
         // layoutPage() takes long, because markup source is converted to html.
-        val nodes = HtmlSerializer(pageDesiredVersion, pageTrust, config)
-           .layoutPage(pageRoot)
+        val nodes = HtmlSerializer(pageDesiredVersion, pageTrust, config,
+          showComments = k.showComments).layoutPage(pageRoot)
         nodes map { html =>
         // The html is serialized here only once, then it's added to the
         // page cache (if pageRoot is the Page.body -- see get() below).
@@ -90,7 +95,8 @@ class PageCache {
   }
 
 
-  def get(pageReq: PageRequest[_]): NodeSeq = {
+  def get(pageReq: PageRequest[_], commentVisibility: CommentVisibility)
+        : NodeSeq = {
     try {
       val config = DebikiHttp.newUrlConfig(pageReq)
       // The dialog templates includes the user name and cannot currently
@@ -98,7 +104,8 @@ class PageCache {
       val templates = HtmlForms(config, pageReq.xsrfToken.token,
         pageReq.pageRoot, pageReq.permsOnPage).dialogTemplates
       val key = Key(
-        pageReq.tenantId, pageReq.pagePath.pageId.get, pageReq.request.host)
+        pageReq.tenantId, pageReq.pagePath.pageId.get, pageReq.request.host,
+        showComments = commentVisibility != CommentVisibility.Hidden)
       (pageReq.pageRoot, pageReq.pageVersion) match {
         case (PageRoot.Real(Page.BodyId), PageVersion.LatestApproved) =>
           _tenantDaoDynVar.withValue(pageReq.dao) {
@@ -128,7 +135,8 @@ class PageCache {
     // Then the caller won't have to wait.
     // COULD fix BUG: only clears the cache for the current host and port
     // (problems e.g. if you use localhost:8080 and <ip>:8080).
-    _pageCache.remove(Key(tenantId, pageId, host))
+    _pageCache.remove(Key(tenantId, pageId, host, showComments = true))
+    _pageCache.remove(Key(tenantId, pageId, host, showComments = false))
   }
 
 }
