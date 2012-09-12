@@ -32,7 +32,7 @@ object AppList extends mvc.Controller {
 
   def listPages(pathIn: PagePath, contentType: DebikiHttp.ContentType) =
         PageGetAction(pathIn, pageMustExist = false) { pageReq =>
-    val pagePaths = pageReq.dao.listPagePaths(
+    val pathsAndDetails = pageReq.dao.listPagePaths(
       Utils.parsePathRanges(pathIn, pageReq.queryString),
       include = PageStatus.All,
       sortBy = PageSortOrder.ByPath,
@@ -48,11 +48,11 @@ object AppList extends mvc.Controller {
 
     contentType match {
       case DebikiHttp.ContentType.Html =>
-        val pageNode = renderPageListHtml(pagePaths)
+        val pageNode = renderPageListHtml(pathsAndDetails)
         OkHtml(<html><body>{pageNode}</body></html>)
       case DebikiHttp.ContentType.Json =>
-        Ok(toJson(Map("pages" -> (
-           pagePaths map { case (pagePath, pageDetails) =>
+        OkSafeJson(toJson(Map("pages" -> (
+           pathsAndDetails map { case (pagePath, pageDetails) =>
              toJson(Map(
                "id" -> pagePath.pageId.get,
                "folder" -> pagePath.folder,
@@ -140,7 +140,7 @@ object AppList extends mvc.Controller {
       case DebikiHttp.ContentType.Html =>
         Ok(views.html.listActions(actions))
       case DebikiHttp.ContentType.Json =>
-        Ok(toJson(Map(
+        OkSafeJson(toJson(Map(
           "actions" -> JsArray(posts.map(_jsonFor _)),
           "users" -> JsArray(people.users.map(_jsonFor _)),
           "postTextLengthLimit" -> JsNumber(PostTextLengthLimit),
