@@ -84,11 +84,15 @@ object CommentVisibility {
     val ParamValue = "show-on-click"
   }
 
+  case object Hidden extends CommentVisibility {
+    val ParamValue = "hidden"
+  }
+
   def parse(paramValue: String): CommentVisibility = {
     paramValue match {
       case Visible.ParamValue => Visible
       case ShowOnClick.ParamValue => ShowOnClick
-      case "hidden" => unimplemented("comment-visibility: hidden", "DwE0Kn31")
+      case Hidden.ParamValue => Hidden
       case x => illArgErr(
         "DwE03R24", "Bad comment-visibility value: "+ safed(x))
     }
