@@ -62,6 +62,67 @@ abstract class HtmlConfig {
 object HtmlSerializer {
 
 
+  def markupTextOf(post: ViPo, hostAndPort: String): String =
+    _markupTextOf(post, hostAndPort)._1.toString
+
+
+  private def _markupTextOf(post: ViPo, hostAndPort: String): (NodeSeq, Int) = {
+
+    val isArticle = post.id == Page.BodyId
+
+    // Use nofollow links in people's comments, so Google won't punish
+    // the website if someone posts spam.
+    def isArticeOrArticleQuestion = isArticle || post.meta.isArticleQuestion
+    val makeNofollowLinks = !isArticeOrArticleQuestion
+
+    post.markup match {
+      case "dmd0" =>
+        // Debiki flavored markdown.
+        val html = markdownToSafeHtml(
+          post.text, hostAndPort, makeNofollowLinks,
+          allowClassIdDataAttrs = isArticle)
+        (html, -1)
+      case "para" =>
+        textToHtml(post.text)
+      /*
+    case "link" =>
+      textToHtml(post.text) and linkify-url:s, w/ rel=nofollow)
+    case "img" =>
+      // Like "link", but also accept <img> tags and <pre>.
+      // But nothing that makes text stand out, e.g. skip <h1>, <section>.
+      */
+      case "html" =>
+        (sanitizeHtml(post.text, makeNofollowLinks,
+          allowClassIdDataAttrs = isArticle), -1)
+      case "code" =>
+        (<pre class='prettyprint'>{post.text}</pre>,
+           post.text.count(_ == '\n'))
+      /*
+    case c if c startsWith "code" =>
+      // Wrap the text in:
+      //     <pre class="prettyprint"><code class="language-javascript">
+      //  That's an HTML5 convention actually:
+      // <http://dev.w3.org/html5/spec-author-view/
+      //     the-code-element.html#the-code-element>
+      // Works with: http://code.google.com/p/google-code-prettify/
+      var lang = c.dropWhile(_ != '-')
+      if (lang nonEmpty) lang = " lang"+lang  ; UNTESTED // if nonEmpty
+      (<pre class={"prettyprint"+ lang}>{post.text}</pre>,
+        post.text.count(_ == '\n'))
+      // COULD include google-code-prettify js and css, and
+      // onload="prettyPrint()".
+      */
+      case _ =>
+        // Default to Debiki flavored markdown, for now.
+        // (Later: update database, change null/'' to "dmd0" for the page body,
+        // change to "para" for everything else.
+        // Then warnDbgDie-default to "para" here not "dmd0".)
+        (markdownToSafeHtml(post.text, hostAndPort,
+          makeNofollowLinks, allowClassIdDataAttrs = isArticle), -1)
+    }
+  }
+
+
   /** Converts text to xml, returns (html, approx-line-count).
    *
    * Splits into <p>:s and <br>:s at newlines, does nothing else.
@@ -461,61 +522,11 @@ case class HtmlSerializer(
     val (cssArtclPost, cssArtclBody) =
       if (post.id != Page.BodyId) ("", "")
       else (" dw-ar-p", " dw-ar-p-bd")
-    val sourceText = vipo.text
     val isRootOrArtclQstn = vipo.id == rootPostId ||
         vipo.meta.isArticleQuestion
-    val isArticle = vipo.id == Page.BodyId
 
-    // COULD move to class Markup?
-    // Use nofollow links in people's comments, so Google won't punish
-    // the website if someone posts spam.
-    val makeNofollowLinks = !isRootOrArtclQstn
-
-    val (xmlTextInclTemplCmds, numLines) = vipo.markup match {
-      case "dmd0" =>
-        // Debiki flavored markdown.
-        val html = markdownToSafeHtml(
-           sourceText, config.hostAndPort, makeNofollowLinks,
-          allowClassIdDataAttrs = isArticle)
-        (html, -1)
-      case "para" =>
-        textToHtml(sourceText)
-      /*
-      case "link" =>
-        textToHtml(sourceText) and linkify-url:s, w/ rel=nofollow)
-      case "img" =>
-        // Like "link", but also accept <img> tags and <pre>.
-        // But nothing that makes text stand out, e.g. skip <h1>, <section>.
-        */
-      case "html" =>
-        (sanitizeHtml(sourceText, makeNofollowLinks,
-           allowClassIdDataAttrs = isArticle), -1)
-      case "code" =>
-        (<pre class='prettyprint'>{sourceText}</pre>,
-          sourceText.count(_ == '\n'))
-      /*
-      case c if c startsWith "code" =>
-        // Wrap the text in:
-        //     <pre class="prettyprint"><code class="language-javascript">
-        //  That's an HTML5 convention actually:
-        // <http://dev.w3.org/html5/spec-author-view/
-        //     the-code-element.html#the-code-element>
-        // Works with: http://code.google.com/p/google-code-prettify/
-        var lang = c.dropWhile(_ != '-')
-        if (lang nonEmpty) lang = " lang"+lang  ; UNTESTED // if nonEmpty
-        (<pre class={"prettyprint"+ lang}>{sourceText}</pre>,
-          sourceText.count(_ == '\n'))
-        // COULD include google-code-prettify js and css, and
-        // onload="prettyPrint()".
-        */
-      case _ =>
-        // Default to Debiki flavored markdown, for now.
-        // (Later: update database, change null/'' to "dmd0" for the page body,
-        // change to "para" for everything else.
-        // Then warnDbgDie-default to "para" here not "dmd0".)
-        (markdownToSafeHtml(sourceText, config.hostAndPort,
-           makeNofollowLinks, allowClassIdDataAttrs = isArticle), -1)
-    }
+    val (xmlTextInclTemplCmds, numLines) =
+      _markupTextOf(vipo, config.hostAndPort)
 
     // Find any customized reply button text.
     var replyBtnText: NodeSeq = xml.Text("Reply")

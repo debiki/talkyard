@@ -76,14 +76,22 @@ object AppList extends mvc.Controller {
     val pathsAndPages: Seq[(PagePath, Option[Debate])] =
       pageReq.dao.loadPageBodiesTitles(pathsAndDetails map (_._1))
 
+    def titleOf(page: Option[Debate]): String =
+      page.flatMap(_.title).map(
+        HtmlSerializer.markupTextOf(_, pageReq.host)).getOrElse("(No title)")
+
+    def bodyOf(page: Option[Debate]): String =
+      page.flatMap(_.body).map(
+        HtmlSerializer.markupTextOf(_, pageReq.host)).getOrElse("")
+
     def pageTitlesAndBodiesHtml =
       <ol>{
         pathsAndPages map { case (path, pageOpt) =>
-          val pageAprvd = pageOpt map (_.approvedVersion)
+          val pageApproved = pageOpt map (_.approvedVersion)
           <li>
-            <h1>{pageAprvd.flatMap(_.titleText) getOrElse "(No title)"}</h1>
+            <h1>{xml.Unparsed(titleOf(pageApproved))}</h1>
             <p><a href={path.path}>{path.path}</a></p>
-            <div>{pageAprvd.flatMap(_.bodyText) getOrElse ""}</div>
+            <div>{xml.Unparsed(bodyOf(pageApproved))}</div>
           </li>
         }
       }</ol>
@@ -91,17 +99,14 @@ object AppList extends mvc.Controller {
     def pageTitlesAndBodiesJson =
       toJson(Map("pages" -> (
          pathsAndPages map { case (pagePath, pageOpt: Option[Debate]) =>
-           val pageAprvd = pageOpt map (_.approvedVersion)
+           val pageApproved = pageOpt map (_.approvedVersion)
            toJson(Map(
              "id" -> pagePath.pageId.get,
              "folder" -> pagePath.folder,
              "path" -> pagePath.path,
-             "title" ->
-                pageAprvd.flatMap(_.titleText).getOrElse("(No title)"),
-             "body" -> pageAprvd.flatMap(_.bodyText).getOrElse("")))
+             "title" -> titleOf(pageApproved),
+             "body" -> bodyOf(pageApproved)))
          })))
-
-    // XSS: MUST markup and escape title and body above.
 
     contentType match {
       case DebikiHttp.ContentType.Html =>
