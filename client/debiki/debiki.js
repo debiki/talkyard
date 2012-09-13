@@ -157,9 +157,13 @@ function renderPageEtc() {
   // Protection" section.))
   $.ajaxSetup({
     dataFilter: function (response, type) {
-      /// Don't know why, but `type` is alwyas undefined, so won't work:
+      // Don't know why, but `type` is alwyas undefined, so won't work:
       // if (type !== 'json') return response;
-      response = response.replace(/^\)\]}',\n/, '');
+      // Sometimes, in FF (at least) and when the server replies 200 OK
+      // with no body it seems, `response` is the `document` itself,
+      // oddly enough, not a string.
+      if (typeof response === 'string')
+        response = response.replace(/^\)\]}',\n/, '');
       return response;
     }
   });
