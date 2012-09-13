@@ -399,6 +399,8 @@ class ViEd(debate: Debate, val edit: Edit) extends ViAc(debate, edit) {
     if (isApplied) Some("(not implemented)") else None
 
 
+  // COULD let isApplied, applicationDati, applierLoginId, applicationActionId
+  // be functions, and remember only Some(applicationAction)?
   val (isApplied, applicationDati,
       applierLoginId, applicationActionId,
       isReverted, revertionDati)
