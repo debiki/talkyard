@@ -336,4 +336,16 @@ object Prelude {
     }
   }
 
+  /**
+   * It's impossible to place breakpoints in Specs test suites, so
+   * instead I place a breakpoint in this function, and call it from
+   * the test suite, on the line where I'd like to have a "breakpoint".
+   */
+  def debugBreakpointA {
+    println("debugBreakpointA")
+  }
+
+  def debugBreakpointB {
+    println("debugBreakpointA")
+  }
 }
