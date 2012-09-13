@@ -28,8 +28,8 @@ d.i.loadOpenIdResources = (function() {
       load: [
         '/-/res/openid-selector/css/openid.css',
         '/-/res/openid-selector/js/openid-jquery.js',
-        '/-/res/openid-selector/js/openid-en.js',
-        '/-/res/popuplib.js'],
+        '/-/res/openid-selector/js/openid-en.js'],
+        // /-/res/popuplib.js is included in combined-debiki-*.js.
       complete: function() {
         loadStatus.resolve();
       }
