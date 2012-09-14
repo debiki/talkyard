@@ -1,1 +1,3 @@
 2012-08-13 16:14 ea04556 Don't deploy if anything not committed.
+2012-09-13 14:37 78a29ba Commit old deploy.log.
+2012-09-13 16:46 5451de7 Don't lazy-load popuplib.js, it doesn't exist
