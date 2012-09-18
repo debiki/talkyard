@@ -68,17 +68,28 @@ object AppList extends mvc.Controller {
 
     val pathsAndDetails = pageReq.dao.listPagePaths(
       Utils.parsePathRanges(pathIn, pageReq.queryString),
-      include = PageStatus.All,
+      include = PageStatus.Published::Nil,
       sortBy = PageSortOrder.ByPublTime,
       limit = 10,
       offset = 0)
 
+    // For now:
+    // As of now, this function is used to build blog article list pages.
+    // So exclude JS and CSS and template pages and hidden pages and
+    // folder/or/index/pages/.
+    // In the future: Pass info via URL to `listPagePaths` on which
+    // pages to include. Some PageType param? PageType.Article/Css/Js/etc.
+    val articlePaths = pathsAndDetails map (_._1) filterNot { pagePath =>
+      pagePath.isCodePage || pagePath.isTemplatePage ||
+         pagePath.isHiddenPage || pagePath.isFolderOrIndexPage
+    }
+
     val pathsAndPages: Seq[(PagePath, Option[Debate])] =
-      pageReq.dao.loadPageBodiesTitles(pathsAndDetails map (_._1))
+      pageReq.dao.loadPageBodiesTitles(articlePaths)
 
     def titleOf(page: Option[Debate]): String =
-      page.flatMap(_.title).map(
-        HtmlSerializer.markupTextOf(_, pageReq.host)).getOrElse("(No title)")
+      // Currenply HtmlSerializer ignores the `.markup` for a title Post.
+      page.flatMap(_.title).map(_.text).getOrElse("(No title)")
 
     def bodyOf(page: Option[Debate]): String =
       page.flatMap(_.body).map(
