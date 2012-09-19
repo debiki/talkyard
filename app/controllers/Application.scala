@@ -125,6 +125,17 @@ object Application extends mvc.Controller {
   }
 
 
+  /**
+   * Usage example:
+   *   /some/site/section/?feed=atom&for-tree&limit=X&partial
+   * — this would feed atom for pages below /some/site/section/,
+   * the 10 most recent pages only, and only parts of each page
+   * would be included (e.g. the first 50 words).
+   *
+   * However: &limit and &partial | &full haven't been implemented.
+   *
+   * `limit` may be at most 10.
+   */
   def feed(pathIn: PagePath) = PageGetAction(pathIn, pageMustExist = false) {
         pageReq =>
 
@@ -140,7 +151,7 @@ object Application extends mvc.Controller {
            urlParamPrefix = "for"),
         include = List(PageStatus.Published),
         sortBy = PageSortOrder.ByPublTime,
-        limit = Int.MaxValue,
+        limit = 10,
         offset = 0
       ). map(_._1)  // discards PageDetails, ._2
 
@@ -159,9 +170,7 @@ object Application extends mvc.Controller {
         pathAndPage._2.vipo_!(Debate.PageBodyId).creationDati
       ).getOrElse(new ju.Date)
 
-    // The feed concerns all pages below pagePath.path, so the URL to
-    // that location should be a reasonable ID.
-    val feedUrl = "http://"+ pageReq.request.host + pagePath.path
+    val feedUrl = "http://"+ pageReq.request.host + pageReq.request.uri
 
     val feedXml = AtomFeedXml.renderFeed(
       hostUrl = "http://"+ pageReq.request.host,
