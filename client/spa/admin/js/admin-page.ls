@@ -108,11 +108,12 @@ AdminModule.factory 'AdminService', ['$http', ($http) ->
 
       folderPaths = unique folderPathsDupl
       for path in folderPaths
+        depth = depthOf path
         folderPath =
             value: path
             displayPath: path # folderDisplayPath folderPath
             included: false
-            depth: depthOf path
+            depth: depth
             open: depth == 0
             # Path hidden, if > 0.
             hideCount: depth - 1
