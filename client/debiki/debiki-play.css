@@ -1266,7 +1266,7 @@ related to. */
 
 /* Outline all posts in a new thread. */
 .dw-m-t-new .dw-p {
-  border: 3px solid #f1cdbc; /*f0d38a; #f1ded5; */
+  border: 3px solid #bbb;
 }
 
 .dw-m-p-edited {
