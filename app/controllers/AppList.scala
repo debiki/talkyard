@@ -26,7 +26,7 @@ import Utils.ValidationImplicits._
 object AppList extends mvc.Controller {
 
 
-  val ActionCountLimit = 250
+  val ActionCountLimit = 100
   val PostTextLengthLimit = 500
 
 

@@ -155,8 +155,9 @@ AdminModule.factory 'AdminService', ['$http', ($http) ->
       else trees.push path.value
     # If nothing seleced, treat that as if everything was selected.
     trees = ['/'] if 0 == trees.length + folders.length + pageIds.length
-    adminService.selectPaths {
-        trees: trees, folders: folders, pageIds: pageIds }
+    # In the future, show stats on the selected pages, in a <div> to the
+    # right. Or show a preview, if only one single page selected.
+    return
 
   /**
    * Traverses the $scope.paths list once, checks each path.closed,
