@@ -38,88 +38,15 @@
 <div data-replace='#content'>
   <h1>Admin Page</h1>
   <div id='admin-container'>
-
-    <p>This page is very unfinished. For now:</p>
-
-    <ul class="instruction-list">
-      <li><b>Create a page</b> by clicking <i>Create page</i> below.</li>
-      <li><b>Move a page</b> by appending <code>?move-page</code> to the page URL in the browser address bar.</li>
-      <li><b>List all pages</b> in a folder by appending this to its URL: <code>?list-pages&amp;in=tree</code></li>
-    </ul>
-
-    <div class='path-actions'>
-      <a href='/?create-page' target='_blank' class='btn'>Create page</a>
-    </div>
-
-    <p>Everything below is just mockups (i.e. <i>non functional</i> test stuff).
-    </p>
-
     <div>
-      <div id='page-tree-container' ng-controller='PathsCtrl'>
-        <label>Filter paths: <input ng-model="pathFilterText"/></label>
-        <ol id='page-tree' class='{{"full-paths-"+ showFullPaths}}'>
-          <li ng-repeat="path in paths | filterProp:'value':pathFilterText"
-              class='{{isFolderOrPageClass(path) + " open-" + path.open + " hide-count-" + path.hideCount + " Xpath-depth-" + path.depth + " included-" + path.included}}'>
-            <label class="checkbox">
-              <input type="checkbox"
-                 ng-model="path.included"
-                 ng-change="updateSelectedPaths()" />
-            </label>
-            <a ng-click='openClose(path)' class='open-close-path' href='#'>{{path.displayPath}}</a>
-            <div ng-switch='isPage(path)' class='path-info'>
-              <div ng-switch-when='true' class='page-info'>
-                Title: <a href='{{path.value}}' target='_blank'>{{path.title}}</a><br>
-                Author: <a href="#">{{path.authors}}</a><br>
-                Published: <span>2012-05-03 22:40</span>
-                <!-- <div class='actions'>
-                  <a href='{{path.value + "?move-page"}}'>Move</a>
-                  <a href='{{path.value + "?rename-page"}}'>Rename</a>
-                </div> -->
-              </div>
-              <!-- <div ng-switch-default class='folder-info'>
-                <div class='actions'>
-                  <a>Create page</a>
-                  <a>Move folder</a>
-                </div>
-              </div> -->
-            </div>
-          </li>
-        </ol>
-      </div>
-
       <div id='details'>
         <ul class="nav nav-tabs">
-          <!-- <li><a href="#page-details-tab" data-toggle="tab">Pages</a></li> 
-          -->
-          <li class='active'><a href="#events-tab" data-toggle="tab">Pages and Comments</a></li>
+          <li class='active'><a href="#events-tab" data-toggle="tab">Events</a></li>
+          <li><a href="#pages-tab" data-toggle="tab">Pages</a></li>
           <li><a href="#users-tab" data-toggle="tab">Users</a></li>
         </ul>
 
         <div class="tab-content">
-          <!-- <div class="tab-pane" id="page-details-tab"
-              ng-controller="PageInfoCtrl">
-            <div>
-              <a class="btn">Move</a>
-              <a class="btn">Change slug</a>
-              Hide as Draft / Publish / Delete / Subscribe / Sort [v]
-            </div>
-            <table class='table -table-bordered -table-striped'>
-              <thead>
-                <tr>
-                  <th>Title</th>
-                  <th>Created</th>
-                  <th>Author</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr ng-repeat="page in pageInfos">
-                  <td><a href='{{page.path}}' target='_blank'>{{page.title}}</a></td>
-                  <td>{{page.pubTime}}</td>
-                  <td>{{page.authorDispName}}</td>
-                </tr>
-              </tbody>
-            </table>
-          </div> -->
           <div ng-controller='ActionListCtrl' class='tab-pane active'
                 id='events-tab'>
             <div class='details-list-buttons'>
@@ -172,6 +99,46 @@
               </tbody>
             </table>
           </div>
+
+          <div ng-controller='PathsCtrl' class='tab-pane' id='pages-tab'>
+
+            <div>
+              <a id='btn-??' class='btn' href='/?create-page' target='_blank'>Create page</a>
+            </div>
+
+            <div id='page-tree-container'>
+              <label>Filter paths: <input ng-model="pathFilterText"/></label>
+              <ol id='page-tree' class='{{"full-paths-"+ showFullPaths}}'>
+                <li ng-repeat="path in paths | filterProp:'value':pathFilterText"
+                    class='{{isFolderOrPageClass(path) + " open-" + path.open + " hide-count-" + path.hideCount + " Xpath-depth-" + path.depth + " included-" + path.included}}'>
+                  <label class="checkbox">
+                    <input type="checkbox"
+                       ng-model="path.included"
+                       ng-change="updateSelectedPaths()" />
+                  </label>
+                  <a ng-click='openClose(path)' class='open-close-path' href='#'>{{path.displayPath}}</a>
+                  <div ng-switch='isPage(path)' class='path-info'>
+                    <div ng-switch-when='true' class='page-info'>
+                      Title: <a href='{{path.value}}' target='_blank'>{{path.title}}</a><br>
+                      Author: <a href="#">{{path.authors}}</a><br>
+                      Published: <span>2012-05-03 22:40</span>
+                      <!-- <div class='actions'>
+                        <a href='{{path.value + "?move-page"}}'>Move</a>
+                        <a href='{{path.value + "?rename-page"}}'>Rename</a>
+                      </div> -->
+                    </div>
+                    <!-- <div ng-switch-default class='folder-info'>
+                      <div class='actions'>
+                        <a>Create page</a>
+                        <a>Move folder</a>
+                      </div>
+                    </div> -->
+                  </div>
+                </li>
+              </ol>
+            </div>
+          </div>
+
           <div ng-controller='UserListCtrl' class='tab-pane' id='users-tab'>
             <div>
               <a class='btn'>Contact</a>
