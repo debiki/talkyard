@@ -73,7 +73,7 @@ AdminModule.factory 'AdminService', ['$http', ($http) ->
   isPage = (path) -> path.pageId?
   isFolder = (path) -> !isPage(path)
   depthOf = (path) ->
-    matches = path.match(//(/[^/]+)//g)
+    matches = path.match(//(/[^/]*)//g)
     matches?.length || 0
 
   $scope.paths = []
@@ -107,6 +107,8 @@ AdminModule.factory 'AdminService', ['$http', ($http) ->
         folderPathsDupl.push page.folder
 
       folderPaths = unique folderPathsDupl
+      folderPaths = reject (== '/'), folderPaths
+
       for path in folderPaths
         depth = depthOf path
         folderPath =
