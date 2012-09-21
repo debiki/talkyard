@@ -77,8 +77,6 @@ AdminModule.factory 'AdminService', ['$http', ($http) ->
 
 @PathsCtrl = ['$scope', 'AdminService', ($scope, adminService) ->
 
-  allPages = []
-
   /**
    * Creates a new page and opens it in a new browser tab.
    */
@@ -94,8 +92,7 @@ AdminModule.factory 'AdminService', ['$http', ($http) ->
     adminService.createPage folder, (newPage) ->
       newBrowserPage.location = newPage.path
       newPage.mark = 'New'
-      allPages.push newPage
-      listAllPages!
+      listOneMorePage newPage
 
   isPage = (path) -> path.pageId?
   isFolder = (path) -> !isPage(path)
@@ -111,32 +108,21 @@ AdminModule.factory 'AdminService', ['$http', ($http) ->
 
   loadAndListPages = ->
     adminService.listAllPages (data) ->
-      allPages := data.pages
-      listAllPages!
+      listMorePagesDeriveFolders data.pages
 
-  listAllPages = ->
+  listMorePagesDeriveFolders = (morePages) ->
       folderPathsDupl = []
       paths = []
 
-      for page in allPages
-        depth = depthOf page.path
-        pagePath =
-            pageId: page.id
-            value: page.path # makePagePath folderPath, pageId, pageInfo
-            displayPath: page.path # makePageDispPath folderPath, pageId, pageInfo
-            title: page.title # pageInfo.title
-            authors: page.authors
-            included: false
-            depth: depth
-            open: false
-            mark: page.mark
-        paths.push pagePath
+      for page in morePages
+        $scope.paths.push makePageListItem(page)
         folderPathsDupl.push page.folder
 
       folderPaths = unique folderPathsDupl
       folderPaths = reject (== '/'), folderPaths
 
       for path in folderPaths
+        # COULD skip `path` if $scope.paths already contains that folder.
         depth = depthOf path
         folderPath =
             value: path
@@ -144,11 +130,29 @@ AdminModule.factory 'AdminService', ['$http', ($http) ->
             included: false
             depth: depth
             open: false
-        paths.push folderPath
+        $scope.paths.push folderPath
 
-      sortPathsInPlace paths
-      updateHideCounts paths
-      $scope.paths = paths
+      sortPathsInPlace $scope.paths
+      updateHideCounts $scope.paths
+
+
+  listOneMorePage = (page) ->
+    $scope.paths.push makePageListItem(page)
+    sortPathsInPlace $scope.paths
+    updateHideCounts $scope.paths
+
+  makePageListItem = (page) ->
+    depth = depthOf page.path
+    return
+        pageId: page.id
+        value: page.path
+        displayPath: page.path
+        title: page.title
+        authors: page.authors
+        included: false
+        depth: depth
+        open: false
+        mark: page.mark
 
   # Places deep paths at the end. Sorts alphabetically, at each depth.
   sortPathsInPlace = (paths) ->
