@@ -9,6 +9,10 @@ h1 {
   padding: 0 0 1.5em 25px;
 }
 
+#create-page-dropdown ul > li > a[disabled] {
+  color: #aaa;
+}
+
 .path-actions {
   margin: 0 0 5em;
 }
@@ -33,6 +37,13 @@ h1 {
 }
 #page-tree-container ol > li > label > span {
   margin-left: 5px;
+}
+#marked-path {
+  display: block !important;
+}
+.marked-path a {
+  color: red !important;
+  font-weight: bold;
 }
 .page-info {
   padding-left: 7px;

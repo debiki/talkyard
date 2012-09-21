@@ -62,6 +62,13 @@ AdminModule.factory 'AdminService', ['$http', ($http) ->
   api.delete = (actions, onSuccess) ->
     onSuccess! # for now
 
+  api.createPage = (folder, callback) ->
+    $http.post(folder + '?create-page',
+        'page-title': 'Title'
+        'page-slug': 'title'
+        'show-id': true).success (data) ->
+          callback data.newPage
+
   api
 
   ]
@@ -71,6 +78,24 @@ AdminModule.factory 'AdminService', ['$http', ($http) ->
 @PathsCtrl = ['$scope', 'AdminService', ($scope, adminService) ->
 
   allPages = []
+
+  /**
+   * Creates a new page and opens it in a new browser tab.
+   */
+  $scope.createPage = ->
+    # Open new tab directly, in direct response to the user-initiated event,
+    # or the browser's pop-up blocker tends to blocks it.
+    newBrowserPage = window.open 'about:blank', '_blank'
+    now = new Date!
+    folder = '/' +
+        padNumberToLength2(now.getFullYear!) + '/' +
+        padNumberToLength2(now.getMonth!) + '/' +
+        padNumberToLength2(now.getDate!) + '/'
+    adminService.createPage folder, (newPage) ->
+      newBrowserPage.location = newPage.path
+      newPage.mark = 'New'
+      allPages.push newPage
+      listAllPages!
 
   isPage = (path) -> path.pageId?
   isFolder = (path) -> !isPage(path)
@@ -104,6 +129,7 @@ AdminModule.factory 'AdminService', ['$http', ($http) ->
             included: false
             depth: depth
             open: false
+            mark: page.mark
         paths.push pagePath
         folderPathsDupl.push page.folder
 
@@ -181,8 +207,11 @@ AdminModule.factory 'AdminService', ['$http', ($http) ->
           else
             folderStack.pop()
       # Set hit count for folders, both open and closed, and pages.
+      # But always show stuff with a mark (could a new page the user
+      # just created).
       #bugUnless 0 <= curHideCount
-      path.hideCount = curHideCount
+      path.hideCount =
+          if path.mark then 0 else curHideCount
       # Enter folder?
       if isFolder path
         curHideCount += 1 unless path.open
@@ -194,6 +223,9 @@ AdminModule.factory 'AdminService', ['$http', ($http) ->
   $scope.openClose = (path) ->
     path.open = !path.open
     updateHideCounts $scope.paths
+
+  $scope.cssClassForMark = (mark) ->
+    if mark then ' marked-path' else ''
 
   $scope.test =
     sortPathsInPlace: sortPathsInPlace
@@ -321,5 +353,12 @@ function inlineBtnTogglersForPost(post)
   | 'New' => { showApproveBtn: true, showRejectBtn: true }
   | 'NewEdits' => { showApproveBtn: true, showRejectBtn: true }
   | _ => {}
+
+
+
+padNumberToLength2 = (number) ->
+  if (''+ number).length == 1 then '0' + number
+  else ''+ number
+
 
 # vim: fdm=marker et ts=2 sw=2 tw=80 fo=tcqwn list

@@ -76,7 +76,10 @@ object AppCreatePage extends mvc.Controller {
       where = newPagePathNoId, debate = debateNoId)
 
     val newPagePath = newPagePathNoId.copy(pageId = Some(newPage.id))
-    Redirect(newPagePath.path)
+    if (pageReq.isAjax)
+      OkSafeJson(toJson(Map("newPage" -> AppList.jsonFor(newPagePath))))
+    else
+      Redirect(newPagePath.path)
   }
 
 

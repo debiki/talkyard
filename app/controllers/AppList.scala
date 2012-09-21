@@ -53,11 +53,7 @@ object AppList extends mvc.Controller {
       case DebikiHttp.ContentType.Json =>
         OkSafeJson(toJson(Map("pages" -> (
            pathsAndDetails map { case (pagePath, pageDetails) =>
-             toJson(Map(
-               "id" -> pagePath.pageId.get,
-               "folder" -> pagePath.folder,
-               "path" -> pagePath.path
-             ))
+             jsonFor(pagePath)
            }))))
     }
   }
@@ -218,6 +214,15 @@ object AppList extends mvc.Controller {
     }
 
     toJson(data)
+  }
+
+
+  // COULD move to other file, e.g. DebikiJson.scala?
+  def jsonFor(pagePath: PagePath): JsValue = {
+    toJson(Map(
+      "id" -> pagePath.pageId.get,
+      "folder" -> pagePath.folder,
+      "path" -> pagePath.path))
   }
 
 
