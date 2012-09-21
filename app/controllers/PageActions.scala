@@ -37,6 +37,8 @@ object PageActions {
    */
   type PagePostRequest = PageRequest[Map[String, Seq[String]]]
 
+  type PagePostRequest2 = PageRequest[JsonOrFormDataBody]
+
 
   def PageGetAction
         (pathIn: PagePath, pageMustExist: Boolean = true)
@@ -44,12 +46,31 @@ object PageActions {
     PageReqAction(BodyParsers.parse.empty)(pathIn, pageMustExist)(f)
 
 
+  /**
+   * Supports form data only.
+   * @deprecated
+   */
   def PagePostAction
         (maxUrlEncFormBytes: Int)
         (pathIn: PagePath, pageMustExist: Boolean = true)
         (f: PagePostRequest => PlainResult) =
     PageReqAction(
       BodyParsers.parse.urlFormEncoded(maxLength = maxUrlEncFormBytes))(
+      pathIn, pageMustExist)(f)
+
+
+  /**
+   * Works with both form data, and JSON (if the JSON is a map,
+   * optionally with array values).
+   * COULD replace all PagePostAction with PagePostAction2 and then rename
+   * PagePostAction2 to PagePostAction.
+   */
+  def PagePostAction2
+        (maxBytes: Int)
+        (pathIn: PagePath, pageMustExist: Boolean = true)
+        (f: PagePostRequest2 => PlainResult) =
+    PageReqAction(
+      JsonOrFormDataBody.parser(maxBytes = maxBytes))(
       pathIn, pageMustExist)(f)
 
 

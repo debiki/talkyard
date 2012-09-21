@@ -1,0 +1,121 @@
+/**
+ * Copyright (c) 2012 Kaj Magnus Lindberg (born 1979)
+ */
+
+package controllers
+
+import com.debiki.v0._
+import debiki._
+import debiki.DebikiHttp._
+import java.{util => ju}
+import play.api._
+import play.api.mvc.{Action => _, _}
+import play.api.libs.json._
+import Prelude._
+
+
+/**
+ * HTTP post data, either posted as form-data or as JSON.
+ *
+ * Debiki's Javascripts usually post JSON, but plain old HTML <form>s send
+ * form-data. This class unifies access to form-data and simple JSON
+ * objects.
+ */
+case class JsonOrFormDataBody(
+  formDataBody: Option[Map[String, Seq[String]]],
+  jsonBody: Option[JsObject]) {
+
+  require(formDataBody.isDefined ^ jsonBody.isDefined)
+
+
+  def parseFormDataOrJson[A](
+        parseFormData: (Map[String, Seq[String]]) => A,
+        parseJson: (JsObject) => A): A = {
+    if (formDataBody isDefined)
+      parseFormData(formDataBody.get)
+    else
+      parseJson(jsonBody.get)
+  }
+
+
+  def getFirst(param: String): Option[String] =
+    parseFormDataOrJson(
+      _.get(param).map(_.head),
+      _.value.get(param).map(_.as[String]))
+
+
+  def getBool(param: String): Option[Boolean] =
+    parseFormDataOrJson(
+      _.get(param).map(_.head == "t"),
+      _.value.get(param).map(_.as[Boolean]))
+
+
+  def getOrThrowBadReq(param: String): String =
+    parseFormDataOrJson(
+      _.get(param).map(_.head),
+      _.value.get(param).map(_.as[String])) getOrElse throwBadReq(
+      "DwE03Jk5", "Parameter missing: "+ param)
+
+
+  def getBoolOrThrowBadReq(param: String): Boolean =
+    getBool(param) getOrElse throwBadReq(
+      "DwE40IZQ3", "Boolaen parameter missing: "+ param)
+
+
+  def getEmptyAsNone(param: String): Option[String] =
+    getFirst(param) match {
+      case None => None
+      case Some("") => None
+      case s @ Some(_: String) => s
+    }
+
+
+  def getNoneAsEmpty(param: String): String =
+    getFirst(param) match {
+      case None => ""
+      case Some(s) => s
+    }
+
+
+  def listSkipEmpty(param: String): Seq[String] = {
+    parseFormDataOrJson(
+      _.get(param),
+      _.value.get(param).map(_.as[List[String]]))
+      match {
+        case None => Nil
+        case Some(values) => values.filterNot(_ isEmpty)
+      }
+  }
+}
+
+
+object JsonOrFormDataBody {
+
+  import BodyParsers.parse
+
+  def parser(maxBytes: Int) = parse.using { requestHeader =>
+    requestHeader.contentType match {
+      case Some("application/x-www-form-urlencoded") =>
+        parse.urlFormEncoded(maxLength = maxBytes) map {
+          formDataBody: Map[String, Seq[String]] =>
+            JsonOrFormDataBody(Some(formDataBody), jsonBody = None)
+        }
+      case Some("application/json") =>
+        parse.json(maxLength = maxBytes) map { jsValue: JsValue =>
+          jsValue match {
+            case jsObject: JsObject =>
+              JsonOrFormDataBody(formDataBody = None, jsonBody = Some(jsObject))
+            case _ =>
+              throwBadReq("DwE40bW72", "JSON data is not an object but a " +
+                  classNameOf(jsValue))
+          }
+        }
+      case Some(x) =>
+        throwBadReq("DwE40IZ35", "Unsupported content type: "+ x)
+      case None =>
+        throwBadReq("DwE40UX93", "No content type specified")
+    }
+  }
+
+}
+
