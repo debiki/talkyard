@@ -70,6 +70,8 @@ AdminModule.factory 'AdminService', ['$http', ($http) ->
 
 @PathsCtrl = ['$scope', 'AdminService', ($scope, adminService) ->
 
+  allPages = []
+
   isPage = (path) -> path.pageId?
   isFolder = (path) -> !isPage(path)
   depthOf = (path) ->
@@ -82,16 +84,16 @@ AdminModule.factory 'AdminService', ['$http', ($http) ->
   $scope.isFolderOrPageClass = (path) ->
     if isPage(path) then 'is-page' else 'is-folder'
 
-  updatePathsView = ->
+  loadAndListPages = ->
     adminService.listAllPages (data) ->
+      allPages := data.pages
+      listAllPages!
 
-      # Leave all folders but the root folder, '/', closed.
-
-      pages = data.pages
+  listAllPages = ->
       folderPathsDupl = []
       paths = []
 
-      for page in pages
+      for page in allPages
         depth = depthOf page.path
         pagePath =
             pageId: page.id
@@ -102,7 +104,6 @@ AdminModule.factory 'AdminService', ['$http', ($http) ->
             included: false
             depth: depth
             open: false
-            hideCount: depth - 1
         paths.push pagePath
         folderPathsDupl.push page.folder
 
@@ -116,12 +117,11 @@ AdminModule.factory 'AdminService', ['$http', ($http) ->
             displayPath: path # folderDisplayPath folderPath
             included: false
             depth: depth
-            open: depth == 0
-            # Path hidden, if > 0.
-            hideCount: depth - 1
+            open: false
         paths.push folderPath
 
       sortPathsInPlace paths
+      updateHideCounts paths
       $scope.paths = paths
 
   # Places deep paths at the end. Sorts alphabetically, at each depth.
@@ -199,7 +199,7 @@ AdminModule.factory 'AdminService', ['$http', ($http) ->
     sortPathsInPlace: sortPathsInPlace
     updateHideCounts: updateHideCounts
 
-  updatePathsView()
+  loadAndListPages!
 
   ]
 
