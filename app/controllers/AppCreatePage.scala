@@ -9,8 +9,10 @@ import debiki._
 import debiki.DebikiHttp._
 import play.api._
 import play.api.mvc.{Action => _}
+import play.api.libs.json.Json.toJson
 import PageActions._
 import Prelude._
+import Utils._
 import Utils.ValidationImplicits._
 
 
@@ -39,13 +41,13 @@ object AppCreatePage extends mvc.Controller {
 
 
   def handleForm(pathIn: PagePath) =
-        PagePostAction(MaxPostSize)(pathIn, pageMustExist = false) {
-          pageReq: PagePostRequest =>
+        PagePostAction2(MaxPostSize)(pathIn, pageMustExist = false) {
+          pageReq: PagePostRequest2 =>
     _throwIfMayNotCreate(pathIn, pageReq)
 
-    val pageTitle = pageReq.body.getOrThrowBadReq("page-title")
-    val pageSlug = pageReq.body.getOrThrowBadReq("page-slug")
-    val showId = pageReq.body.getFirst("show-id") == Some("t")
+    val pageTitle: String = pageReq.body.getOrThrowBadReq("page-title")
+    val pageSlug: String = pageReq.body.getOrThrowBadReq("page-slug")
+    val showId: Boolean = pageReq.body.getBoolOrThrowBadReq("show-id")
 
     val newPagePathNoId = pageReq.pagePath.copy(
       pageSlug = pageSlug, pageId = None, showId = showId)
