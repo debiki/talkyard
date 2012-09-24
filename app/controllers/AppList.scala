@@ -32,6 +32,13 @@ object AppList extends mvc.Controller {
 
   def listPages(pathIn: PagePath, contentType: DebikiHttp.ContentType) =
         PageGetAction(pathIn, pageMustExist = false) { pageReq =>
+
+    if (!pageReq.user_!.isAdmin) {
+      // If ever allowing non-admins to list any pages, fitler out
+      // folders that start with a dot, e.g. /some/.folder/.
+      throwForbidden("DwE84Zi31", "Insufficient permissions to list pages")
+    }
+
     val pathsAndDetails = pageReq.dao.listPagePaths(
       Utils.parsePathRanges(pathIn, pageReq.queryString),
       include = PageStatus.All,
@@ -62,6 +69,8 @@ object AppList extends mvc.Controller {
   def listNewestPages(pathIn: PagePath, contentType: DebikiHttp.ContentType) =
         PageGetAction(pathIn, pageMustExist = false) { pageReq =>
 
+    // (Access control happens in `filterNot` a bit below.
+
     val pathsAndDetails = pageReq.dao.listPagePaths(
       Utils.parsePathRanges(pathIn, pageReq.queryString),
       include = PageStatus.Published::Nil,
@@ -72,7 +81,7 @@ object AppList extends mvc.Controller {
     // For now:
     // As of now, this function is used to build blog article list pages.
     // So exclude JS and CSS and template pages and hidden pages and
-    // folder/or/index/pages/.
+    // folder/or/index/pages/, and hidden pages (even for admins).
     // In the future: Pass info via URL to `listPagePaths` on which
     // pages to include. Some PageType param? PageType.Article/Css/Js/etc.
     val articlePaths = pathsAndDetails map (_._1) filterNot { pagePath =>
@@ -128,6 +137,12 @@ object AppList extends mvc.Controller {
 
   def listActions(pathIn: PagePath, contentType: DebikiHttp.ContentType) =
         PageGetAction(pathIn, pageMustExist = false) { pageReq =>
+
+    if (!pageReq.user_!.isAdmin) {
+      // If ever allowing non-admins to list actions, by default,
+      // show only the user's own actions, and replies to them.  ?
+      throwForbidden("DwE401zG7", "Insufficient permissions to list actions")
+    }
 
     val fromIpOpt = pageReq.queryString.getEmptyAsNone("from-ip")
     val byIdtyOpt = pageReq.queryString.getEmptyAsNone("by-identity")
