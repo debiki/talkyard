@@ -13,8 +13,9 @@ h1 {
   color: #aaa;
 }
 
-.path-actions {
-  margin: 0 0 5em;
+.selection-related-btns {
+  min-height: 50px; /* if no buttons shown */
+  margin: 5px 0;
 }
 
 #page-tree-container ol {
@@ -30,7 +31,7 @@ h1 {
   background-color: #E5E5E5;
 }
 #page-tree-container ol > li > label > input {
-  opacity: 0.67; /* or they're too conspicuous */
+  opacity: 0.77; /* or they're too conspicuous */
 }
 #page-tree-container ol > li > label:hover {
   -background-color: #ececec;
@@ -48,9 +49,9 @@ h1 {
 .page-info {
   padding-left: 7px;
   margin-bottom: 5px;
-  background-color: #f7f7f7;
-  border-bottom: 1px solid #e6e6e6;
-  border-top: 1px solid #e9e9e9;
+  background-color: #fbfbfb;
+  border-bottom: 1px solid #eaeaea;
+  border-top: 1px solid #eaeaea;
   font-size: 11px;
   letter-spacing: 1px;
 }
@@ -97,11 +98,18 @@ li {
   margin-left: 0; /* cancel Bootstrap */
 }
 
-.open-close-path {
-  display: block;
+.open-close-path, .path-message {
   font-family: monospace;
-  color: hsl(211, 35%, 30%) !important;
   white-space: nowrap; /* no line breaks in page paths */
+}
+.path-message {
+  color: #777 !important;
+  font-style: italic;
+  padding-left: 1ex;
+}
+
+.open-close-path, .path-message {
+  color: hsl(211, 35%, 30%) !important;
 }
 .open-close-path:hover {
   background-color: #eaeaea;
@@ -139,15 +147,6 @@ li {
 #page-tree:not(.full-paths-true) .path-depth-7 > :not(.checkbox) { padding-left: 140px }
 #page-tree:not(.full-paths-true) .path-depth-8 > :not(.checkbox) { padding-left: 160px }
 #page-tree:not(.full-paths-true) .path-depth-9 > :not(.checkbox) { padding-left: 180px }
-
-#details .details-list-buttons {
-  min-height: 30px; /* if no buttons shown */
-  margin: 5px 0;
-}
-
-#details table {
-  margin-top: 8px;
-}
 
 #details thead,
 #details tbody {

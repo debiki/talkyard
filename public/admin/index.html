@@ -41,7 +41,7 @@
     <div>
       <div id='details'>
         <ul class="nav nav-tabs">
-          <li class='active'><a href="#events-tab" data-toggle="tab">Events</a></li>
+          <li class='active'><a href="#events-tab" data-toggle="tab">Activity</a></li>
           <li><a href="#pages-tab" data-toggle="tab">Pages</a></li>
           <li><a href="#users-tab" data-toggle="tab">Users</a></li>
         </ul>
@@ -49,7 +49,7 @@
         <div class="tab-content">
           <div ng-controller='ActionListCtrl' class='tab-pane active'
                 id='events-tab'>
-            <div class='details-list-buttons'>
+            <div class='selection-related-btns'>
               <!--<a id='btn-view-post' class='btn' ng-show='oneRowChecked'>View</a>-->
               <a id='btn-approve-post' class='btn' ng-show='manyRowsChecked'>Approve</a>
               <a id='btn-reject-post' class='btn' ng-show='manyRowsChecked'>Reject</a>
@@ -102,18 +102,26 @@
 
           <div ng-controller='PathsCtrl' class='tab-pane' id='pages-tab'>
 
-            <div id='create-page-dropdown' class='dropdown'>
-              <a class='btn dropdown-toggle' data-toggle='dropdown' href='#'>Create page</a>
-              <ul class='dropdown-menu' role='menu' data-todo-aria-labelledby='drop5'>
-                <li><a tabindex='-1' ng-click='createPage()' href='#'>Blog post</a></li>
-                <li><a tabindex='-1' disabled>Forum post</a></li>
-                <li><a tabindex='-1' disabled>Wiki page</a></li>
-                <li><a tabindex='-1' href='/?create-page' target='_blank'>Other page</a></li>
-                <li class='divider'></li>
-                <li><a tabindex='-1' disabled>Script</a></li>
-                <li><a tabindex='-1' disabled>Style</a></li>
-                <li><a tabindex='-1' disabled>Template</a></li>
-              </ul>
+            <div class='selection-related-btns'>
+              <a id='create-page-in-folder-btn' class='btn' ng-show='oneFolderSelected' disabled>Create page in folder</a>
+
+              <div id='create-page-dropdown' class='dropdown' ng-show='nothingSelected'>
+                <a class='btn dropdown-toggle' data-toggle='dropdown' href='#'>Create page</a>
+                <ul class='dropdown-menu' role='menu' data-todo-aria-labelledby='drop5'>
+                  <li><a tabindex='-1' ng-click='createPage()' href='#'>Blog post</a></li>
+                  <li><a tabindex='-1' disabled>Forum post</a></li>
+                  <li><a tabindex='-1' disabled>Wiki page</a></li>
+                  <li><a tabindex='-1' href='/?create-page' target='_blank'>Other page</a></li>
+                  <li class='divider'></li>
+                  <li><a tabindex='-1' disabled>Script</a></li>
+                  <li><a tabindex='-1' disabled>Style</a></li>
+                  <li><a tabindex='-1' disabled>Template</a></li>
+                </ul>
+              </div>
+
+              <a id='move-page-btn' class='btn' ng-click='moveSelectedPage()' ng-show='onePageSelected'>Move page</a>
+              <a id='publish-page-btn' class='btn' ng-click='publishSelectedPages()' ng-show='onlyDraftsSelected'>Publish page(s)</a>
+              <a id='publish-page-btn' class='btn' ng-click='unpublishSelectedPages()' ng-show='onlyPublishedSelected'>Unpublish page(s)</a>
             </div>
 
             <div id='page-tree-container'>

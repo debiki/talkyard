@@ -1,6 +1,7 @@
 # Copyright (c) 2012 Kaj Magnus Lindberg. All rights reserved
 
 import prelude
+bug = debiki.v0.util.die2
 
 
 AdminModule = angular.module('AdminModule', [])
@@ -69,6 +70,16 @@ AdminModule.factory 'AdminService', ['$http', ($http) ->
         'show-id': true).success (data) ->
           callback data.newPage
 
+  api.movePages = (pageIds, {fromFolder, toFolder, callback}) ->
+    /*
+    $http.post '?move-pages',
+        { pageIds: [pageId], fromFolder: fromFolder, toFolder: toFolder ] },
+        success ->
+          callback!
+       */
+    # for now:
+    callback!
+
   api
 
   ]
@@ -76,6 +87,8 @@ AdminModule.factory 'AdminService', ['$http', ($http) ->
 
 
 @PathsCtrl = ['$scope', 'AdminService', ($scope, adminService) ->
+
+  const DRAFTS_FOLDER = '/.drafts/'
 
   /**
    * Creates a new page and opens it in a new browser tab.
@@ -93,6 +106,32 @@ AdminModule.factory 'AdminService', ['$http', ($http) ->
       newBrowserPage.location = newPage.path
       newPage.mark = 'New'
       listOneMorePage newPage
+
+
+  $scope.moveSelectedPage = ->
+    bug('DwE90K2') if selectedPageListItems.length != 1
+    pageListItem = selectedPageListItems[0]
+    # COULD rename `value` to `path`
+    window.open <| pageListItem.value + '?move-page'
+
+
+  $scope.publishSelectedPages = ->
+    refreshPageList = ->
+      for pageListItem in selectedPageListItems
+        pageListItem.value .= replace DRAFTS_FOLDER, '/'
+        pageListItem.displayPath .= replace DRAFTS_FOLDER, '/'
+      redrawPageList!
+
+    for pageListItem in selectedPageListItems
+      adminService.movePages [pageListItem.pageId],
+          fromFolder: DRAFTS_FOLDER
+          toFolder: '/'
+          callback: refreshPageList
+
+
+  $scope.unpublishSelectedPages = ->
+    undefined
+
 
   isPage = (path) -> path.pageId?
   isFolder = (path) -> !isPage(path)
@@ -132,14 +171,12 @@ AdminModule.factory 'AdminService', ['$http', ($http) ->
             open: false
         $scope.paths.push folderPath
 
-      sortPathsInPlace $scope.paths
-      updateHideCounts $scope.paths
+      redrawPageList!
 
 
   listOneMorePage = (page) ->
     $scope.paths.push makePageListItem(page)
-    sortPathsInPlace $scope.paths
-    updateHideCounts $scope.paths
+    redrawPageList!
 
   makePageListItem = (page) ->
     depth = depthOf page.path
@@ -153,6 +190,10 @@ AdminModule.factory 'AdminService', ['$http', ($http) ->
         depth: depth
         open: false
         mark: page.mark
+
+  redrawPageList = ->
+    sortPathsInPlace $scope.paths
+    updateHideCounts $scope.paths
 
   # Places deep paths at the end. Sorts alphabetically, at each depth.
   sortPathsInPlace = (paths) ->
@@ -178,15 +219,42 @@ AdminModule.factory 'AdminService', ['$http', ($http) ->
         return 1 if partB < partA
       return 0
 
+  $scope.nothingSelected = true
+
+  selectedPageListItems = []
+  selectedFolderListItems = []
+
+  /**
+   * Scans $scope.paths and updates page and folder selection count
+   * variables.
+   */
   $scope.updateSelectedPaths = ->
-    trees = []
     folders = []
     pageIds = []
+    numDrafts = 0
+    numNonDrafts = 0
     for path in $scope.paths when path.included
-      if path.pageId => pageIds.push path.pageId
-      else trees.push path.value
-    # If nothing seleced, treat that as if everything was selected.
-    trees = ['/'] if 0 == trees.length + folders.length + pageIds.length
+      if path.pageId
+        selectedPageListItems.push path
+        pageIds.push path.pageId
+        if path.value.search(DRAFTS_FOLDER) == 0 => numDrafts += 1
+        else numNonDrafts += 1
+      else
+        selectedFolderListItems.push path
+        folders.push path.value
+
+    numPages = pageIds.length
+    numFolders = folders.length
+
+    $scope.nothingSelected = numPages == 0 && numFolders == 0
+    $scope.onePageSelected = numPages == 1 && numFolders == 0
+    $scope.oneFolderSelected = numFolders == 1 && numPages == 0
+
+    $scope.onlyDraftsSelected =
+        numDrafts > 0 && numNonDrafts == 0 && numFolders == 0
+    $scope.onlyPublishedSelected =
+        numDrafts == 0 && numNonDrafts > 0 && numFolders == 0
+
     # In the future, show stats on the selected pages, in a <div> to the
     # right. Or show a preview, if only one single page selected.
     return
