@@ -1,3 +1,3 @@
 
-var debiki = { v0: { util: {} }, internal: {} };
+var debiki = { v0: { util: {} }, internal: {}, test: {} };
 

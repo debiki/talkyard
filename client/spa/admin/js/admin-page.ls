@@ -428,9 +428,23 @@ function inlineBtnTogglersForPost(post)
 
 
 
-padNumberToLength2 = (number) ->
+function parentFolderOf(path)
+  # Works for pages only, right now.
+  matches = path.match //^(/.*/)[^/]+$//
+  bug('DwE03Al8') if matches.length != 2
+  matches[1]
+
+
+
+function padNumberToLength2(number)
   if (''+ number).length == 1 then '0' + number
   else ''+ number
+
+
+# For now, for the test suite:
+test = debiki.test || {}
+test.parentFolderOf = parentFolderOf
+test.padNumberToLength2 = padNumberToLength2
 
 
 # vim: fdm=marker et ts=2 sw=2 tw=80 fo=tcqwn list
