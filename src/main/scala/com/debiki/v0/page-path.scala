@@ -98,11 +98,16 @@ case class PagePath(  // COULD move to debate.scala.  Rename to RequestPath?
 
   def isTemplatePage = pageSlug endsWith ".template"
 
-  /** Config pages, e.g. ".folder.template", and future
-   *  security related config pages, are visible to admins only.
+  /**
+   * Pages and folders that start with '.' are visible to admins only.
+   *
+   * For example, config pages, e.g. '.site.config', and
+   * the '/.drafts/' folder (in my current primitive draft/published
+   * implementation).
    */
-  def isHiddenPage = pageSlug startsWith "."
+  def isHiddenPage = pageSlug.startsWith(".") || folder.contains("/.")
 
+  // COULD rename to isIndexPageOrFolder (it's never a "FolderPage")
   /** True iff path ends with a `/'. Then this is a path to a  folder or
    *  a folder's index page (which is a page with an empty slug and !showId).
    */
