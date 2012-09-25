@@ -72,6 +72,8 @@ abstract class TenantDaoSpi {
 
   def createPage(where: PagePath, debate: Debate): Debate
 
+  def movePages(pageIds: Seq[String], fromFolder: String, toFolder: String)
+
   def moveRenamePage(pageId: String,
         newFolder: Option[String], showId: Option[Boolean],
         newSlug: Option[String]): PagePath
@@ -288,6 +290,11 @@ class TenantDao(
   def createPage(where: PagePath, debate: Debate): Debate = {
     _chargeFor(ResUsg.forStoring(page = debate))
     _spi.createPage(where, debate)
+  }
+
+  def movePages(pageIds: Seq[String], fromFolder: String, toFolder: String) {
+    _chargeForOneWriteReq()
+    _spi.movePages(pageIds, fromFolder = fromFolder, toFolder = toFolder)
   }
 
   def moveRenamePage(pageId: String,
