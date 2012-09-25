@@ -81,8 +81,8 @@ li {
 #page-tree > li > label {
   position: absolute;
   top: -2px;
-  left: -12px; /* cancel padding below */
-  padding: 3px 11px 5px 12px;
+  left: -14px; /* cancel padding below */
+  padding: 0px 11px 0px 14px;
   cursor: pointer;
   opacity: 0.7;
   color: hsl(211, 50%, 40%) !important;
