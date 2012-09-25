@@ -46,6 +46,9 @@ h1 {
   color: red !important;
   font-weight: bold;
 }
+.page-clarification {
+  color: #888;
+}
 .page-info {
   padding-left: 7px;
   margin-bottom: 5px;

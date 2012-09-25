@@ -174,9 +174,10 @@ AdminModule.factory 'AdminService', ['$http', ($http) ->
     $scope.paths.push makePageListItem(page)
     redrawPageList!
 
+
   makePageListItem = (page) ->
     depth = depthOf page.path
-    return
+    item =
         pageId: page.id
         value: page.path
         displayPath: page.path
@@ -186,6 +187,14 @@ AdminModule.factory 'AdminService', ['$http', ($http) ->
         depth: depth
         open: false
         mark: page.mark
+
+    isHomePage = (page) -> page.path == '/' || page.path == DRAFTS_FOLDER
+    isIndexPage = (page) -> last(page.path) == '/'
+
+    if isHomePage page => item.clarification = '(homepage)'
+    else if isIndexPage page => item.clarification = '(index page)'
+    item
+
 
   redrawPageList = ->
     sortPathsInPlace $scope.paths

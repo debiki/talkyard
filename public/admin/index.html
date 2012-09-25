@@ -135,7 +135,7 @@
                        ng-model="path.included"
                        ng-change="updateSelectedPaths()" />
                   </label>
-                  <a ng-click='openClose(path)' class='open-close-path' href='#'>{{path.displayPath}}</a>
+                  <a ng-click='openClose(path)' class='open-close-path' href='#'>{{path.displayPath}}<span class='page-clarification'>{{path.clarification}}</span></a>
                   <div ng-switch='isPage(path)' class='path-info'>
                     <div ng-switch-when='true' class='page-info'>
                       Title: <a href='{{path.value}}' target='_blank'>{{path.title}}</a><br>
