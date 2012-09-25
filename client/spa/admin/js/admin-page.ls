@@ -71,14 +71,8 @@ AdminModule.factory 'AdminService', ['$http', ($http) ->
           callback data.newPage
 
   api.movePages = (pageIds, {fromFolder, toFolder, callback}) ->
-    /*
-    $http.post '?move-pages',
-        { pageIds: [pageId], fromFolder: fromFolder, toFolder: toFolder ] },
-        success ->
-          callback!
-       */
-    # for now:
-    callback!
+    $http.post '/-/move-pages', { pageIds: pageIds, fromFolder, toFolder }
+        .success -> callback!
 
   api
 
@@ -115,22 +109,24 @@ AdminModule.factory 'AdminService', ['$http', ($http) ->
     window.open <| pageListItem.value + '?move-page'
 
 
-  $scope.publishSelectedPages = ->
+  moveSelectedPages = ({ fromFolder, toFolder }) ->
     refreshPageList = ->
       for pageListItem in selectedPageListItems
-        pageListItem.value .= replace DRAFTS_FOLDER, '/'
-        pageListItem.displayPath .= replace DRAFTS_FOLDER, '/'
+        pageListItem.value .= replace fromFolder, toFolder
+        pageListItem.displayPath .= replace fromFolder, toFolder
       redrawPageList!
 
     for pageListItem in selectedPageListItems
       adminService.movePages [pageListItem.pageId],
-          fromFolder: DRAFTS_FOLDER
-          toFolder: '/'
-          callback: refreshPageList
+          { fromFolder, toFolder, callback: refreshPageList }
+
+
+  $scope.publishSelectedPages = ->
+    moveSelectedPages fromFolder: DRAFTS_FOLDER, toFolder: '/'
 
 
   $scope.unpublishSelectedPages = ->
-    undefined
+    moveSelectedPages fromFolder: '/', toFolder: DRAFTS_FOLDER
 
 
   isPage = (path) -> path.pageId?
@@ -194,6 +190,7 @@ AdminModule.factory 'AdminService', ['$http', ($http) ->
   redrawPageList = ->
     sortPathsInPlace $scope.paths
     updateHideCounts $scope.paths
+    $scope.updateSelectedPaths!
 
   # Places deep paths at the end. Sorts alphabetically, at each depth.
   sortPathsInPlace = (paths) ->
@@ -229,22 +226,20 @@ AdminModule.factory 'AdminService', ['$http', ($http) ->
    * variables.
    */
   $scope.updateSelectedPaths = ->
-    folders = []
-    pageIds = []
+    selectedPageListItems := []
+    selectedFolderListItems := []
     numDrafts = 0
     numNonDrafts = 0
     for path in $scope.paths when path.included
       if path.pageId
         selectedPageListItems.push path
-        pageIds.push path.pageId
         if path.value.search(DRAFTS_FOLDER) == 0 => numDrafts += 1
         else numNonDrafts += 1
       else
         selectedFolderListItems.push path
-        folders.push path.value
 
-    numPages = pageIds.length
-    numFolders = folders.length
+    numPages = selectedPageListItems.length
+    numFolders = selectedFolderListItems.length
 
     $scope.nothingSelected = numPages == 0 && numFolders == 0
     $scope.onePageSelected = numPages == 1 && numFolders == 0
