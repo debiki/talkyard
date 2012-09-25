@@ -44,9 +44,17 @@ describe '_.mapValsKickUndef', ->
 
 
 describe 'parentFolderOf', ->
-  it "can find a pages' parent folder", ->
+  it "can find a deep page's parent folder", ->
     folderFOund = debiki.test.parentFolderOf '/parent/folder/the-page'
     expect(folderFOund).toEqual '/parent/folder/'
+
+  it "can find a /top-level page's parent folder", ->
+    folderFOund = debiki.test.parentFolderOf '/the-page'
+    expect(folderFOund).toEqual '/'
+
+  it "can find the homepage's parent folder", ->
+    folderFOund = debiki.test.parentFolderOf '/'
+    expect(folderFOund).toEqual '/'
 
 
 describe 'padNumberToLength2', ->

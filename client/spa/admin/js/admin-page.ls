@@ -426,6 +426,7 @@ function inlineBtnTogglersForPost(post)
 function parentFolderOf(path)
   # Works for pages only, right now.
   matches = path.match //^(/.*/)[^/]+$//
+  if !matches => return '/'
   bug('DwE03Al8') if matches.length != 2
   matches[1]
 
