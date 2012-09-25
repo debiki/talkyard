@@ -71,10 +71,6 @@ li {
   margin-left: 0; /* or space between Twitter Bootstrap tabs */
 }
 
-#page-tree > li:not(.hide-count-0) {
-  display: none;
-}
-
 #page-tree > li.open-false > .path-info {
   display: none;
 }
