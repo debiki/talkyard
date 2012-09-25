@@ -10,6 +10,7 @@ import debiki.DebikiHttp._
 import play.api._
 import play.api.mvc.{Action => _}
 import PageActions._
+import ApiActions._
 import Prelude._
 import Utils.OkHtml
 import Utils.ValidationImplicits._
@@ -28,6 +29,33 @@ import Utils.ValidationImplicits._
 object AppMoveRenamePage extends mvc.Controller {
 
 
+  /**
+   * This is the only function in this class that's actually needed
+   * (it's used by the Admin SPA). All other functions are invoked manually
+   * from a browser's URL, for debugging mostly (should I remove them?).
+   *
+   * However, ?rename-page via the URL is still useful.
+   */
+  def movePages = JsonOrFormDataPostAction(maxBytes = 2000) { pageReq =>
+
+    if (!pageReq.user_!.isAdmin) {
+      // Could allow non-admins to move pages, but be sure to return
+      // 403 Forbidden if attempting to move a page that ... one may not move.
+      throwForbidden("DwE84Zi31", "Insufficient permissions to list pages")
+    }
+
+    val pageIds: Seq[String] = pageReq.body.listSkipEmpty("pageIds")
+    val fromFolder: String = pageReq.body.getOrThrowBadReq("fromFolder")
+    val toFolder: String = pageReq.body.getOrThrowBadReq("toFolder")
+
+    pageReq.dao.movePages(pageIds, fromFolder = fromFolder, toFolder = toFolder)
+    Ok
+  }
+
+
+  /**
+   * @deprecated
+   */
   def showMovePageForm(pathIn: PagePath) = PageGetAction(pathIn) {
         pageReq: PageGetRequest =>
     _moveRenameGetImpl(pageReq, movePage = true)
@@ -83,6 +111,9 @@ object AppMoveRenamePage extends mvc.Controller {
   }
 
 
+  /**
+   * @deprecated
+   */
   def handleMovePageForm(pathIn: PagePath) =
         PagePostAction(maxUrlEncFormBytes = 200)(pathIn) {
         pageReq: PagePostRequest =>
