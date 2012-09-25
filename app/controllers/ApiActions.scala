@@ -27,17 +27,27 @@ object ApiActions {
 
   /**
    * A request with form data.
+   * @deprecated Use ApiRequest[JsonOrFormDataBody] instead.
    */
   type FormDataPostRequest = ApiRequest[Map[String, Seq[String]]]
 
 
   type JsonPostRequest = ApiRequest[JsValue]
 
-
   def GetAction(f: GetRequest => PlainResult) =
     _PlainApiAction(BodyParsers.parse.empty)(f)
 
 
+  def JsonOrFormDataPostAction
+        (maxBytes: Int)
+        (f: ApiRequest[JsonOrFormDataBody] => PlainResult) =
+    _PlainApiAction[JsonOrFormDataBody](
+      JsonOrFormDataBody.parser(maxBytes = maxBytes))(f)
+
+
+  /**
+   * @deprecated Use ApiRequest[JsonOrFormDataBody] instead
+   */
   def PostFormDataAction
         (maxUrlEncFormBytes: Int)
         (f: FormDataPostRequest => PlainResult) =
@@ -45,6 +55,11 @@ object ApiActions {
       BodyParsers.parse.urlFormEncoded(maxLength = maxUrlEncFormBytes))(f)
 
 
+  /**
+   * If the JSON data is rather complex and cannot be represented as form-data,
+   * then you cannot use JsonOrFormDataPostAction, and that's when you should
+   * use this function.
+   */
   def PostJsonAction
         (maxLength: Int)
         (f: JsonPostRequest => PlainResult) =
