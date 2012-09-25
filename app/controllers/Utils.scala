@@ -126,6 +126,14 @@ object Utils extends Results with http.ContentTypes {
   }
 
 
+  def isPublicArticlePage(pagePath: PagePath): Boolean =
+    !isPrivatePage(pagePath) && !pagePath.isFolderOrIndexPage
+
+
+  def isPrivatePage(pagePath: PagePath): Boolean =
+    pagePath.isCodePage || pagePath.isTemplatePage || pagePath.isHiddenPage
+
+
   def loadIdentityAndUserOrThrow(sidOk: SidOk, dao: TenantDao)
         : (Option[Identity], Option[User]) = {
     val identityAndUser = sidOk.loginId match {

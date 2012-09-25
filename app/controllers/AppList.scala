@@ -69,8 +69,6 @@ object AppList extends mvc.Controller {
   def listNewestPages(pathIn: PagePath, contentType: DebikiHttp.ContentType) =
         PageGetAction(pathIn, pageMustExist = false) { pageReq =>
 
-    // (Access control happens in `filterNot` a bit below.
-
     val pathsAndDetails = pageReq.dao.listPagePaths(
       Utils.parsePathRanges(pathIn, pageReq.queryString),
       include = PageStatus.Published::Nil,
@@ -78,16 +76,15 @@ object AppList extends mvc.Controller {
       limit = 10,
       offset = 0)
 
-    // For now:
-    // As of now, this function is used to build blog article list pages.
+    // Access control.
+    // Somewhat dupl code, see Application.feed.
+    // ((As of now, this function is used to build blog article list pages.
     // So exclude JS and CSS and template pages and hidden pages and
     // folder/or/index/pages/, and hidden pages (even for admins).
     // In the future: Pass info via URL to `listPagePaths` on which
-    // pages to include. Some PageType param? PageType.Article/Css/Js/etc.
-    val articlePaths = pathsAndDetails map (_._1) filterNot { pagePath =>
-      pagePath.isCodePage || pagePath.isTemplatePage ||
-         pagePath.isHiddenPage || pagePath.isFolderOrIndexPage
-    }
+    // pages to include. Some PageType param? PageType.Article/Css/Js/etc.))
+    val articlePaths = pathsAndDetails map (_._1) filter (
+       Utils.isPublicArticlePage _)
 
     val pathsAndPages: Seq[(PagePath, Option[Debate])] =
       pageReq.dao.loadPageBodiesTitles(articlePaths)

@@ -155,7 +155,11 @@ object Application extends mvc.Controller {
         offset = 0
       ). map(_._1)  // discards PageDetails, ._2
 
-    val pathsAndPages: Seq[(PagePath, Debate)] = feedPagePaths flatMap {
+    // Access control.
+    // Somewhat dupl code, see AppList.listNewestPages.
+    val feedPathsPublic = feedPagePaths filter (Utils.isPublicArticlePage _)
+
+    val pathsAndPages: Seq[(PagePath, Debate)] = feedPathsPublic flatMap {
       feedPagePath =>
         val pageId: String = feedPagePath.pageId.getOrElse {
           errDbgDie("[error DwE012210u9]")
