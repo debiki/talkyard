@@ -1484,6 +1484,68 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
 
 
 
+    // -------- Move many pages
+
+    "move many pages" >> {
+
+      "move Nil pages" >> {
+        dao.movePages(Nil, fromFolder = "/a/", toFolder = "/b/") must_== ()
+      }
+
+      "won't move non-existing pages" >> {
+        dao.movePages(List("nonexistingpage"), fromFolder = "/a/",
+            toFolder = "/b/") must_== ()
+      }
+
+      "can move page to /move-pages/folder1/" >> {
+        val pagePath = dao.lookupPagePathByPageId(ex1_debate.guid).get
+        testMovePages(pagePath.folder, "/move-pages/folder1/")
+      }
+
+      "can move page from /move-pages/folder1/ to /move-pages/f2/" >> {
+        testMovePages("/move-pages/folder1/", "/move-pages/f2/")
+      }
+
+      "can move page from /move-pages/f2/ to /.drafts/move-pages/f2/" >> {
+        testMovePages("/", "/.drafts/", "/.drafts/move-pages/f2/")
+      }
+
+      "can move page from /.drafts/move-pages/f2/ back to /move-pages/f2/" >> {
+        testMovePages("/.drafts/", "/", "/move-pages/f2/")
+      }
+
+      "won't move pages that shouldn't be moved" >> {
+        // If moving pages specified by id:
+        // Check 1 page, same tenant but wrong id.
+        // And 1 page, other tenant id but same id.
+        // If moving all pages in a certain folder:
+        // And 1 page, same tenand, wrong folder.
+        // And 1 page, other tenand, correct folder.
+      }
+
+      "can move two pages, specified by id, at once" >> {
+      }
+
+      "can move all pages in a folder at once" >> {
+      }
+
+      "throws, if illegal folder names specified" >> {
+        testMovePages("no-slash", "/") must throwA[RuntimeException]
+        testMovePages("/", "no-slash") must throwA[RuntimeException]
+        testMovePages("/regex-*?[]-chars/", "/") must throwA[RuntimeException]
+      }
+
+      def testMovePages(fromFolder: String, toFolder: String,
+            resultingFolder: String = null) {
+        dao.movePages(pageIds = List(ex1_debate.guid),
+          fromFolder = fromFolder, toFolder = toFolder)
+        val pagePathAfter = dao.lookupPagePathByPageId(ex1_debate.guid).get
+        pagePathAfter.folder must_== Option(resultingFolder).getOrElse(toFolder)
+        pagePathAfter.pageId must_== Some(ex1_debate.guid)
+      }
+    }
+
+
     // -------- Create more websites
 
     "create new websites" >> {
