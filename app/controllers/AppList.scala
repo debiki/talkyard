@@ -208,13 +208,18 @@ object AppList extends mvc.Controller {
           data += "editsPendingCount" -> JsNumber(post.editsPendingDescTime.length)
 
         val status =
-          if (post.currentVersionApproved) "Approved"
+          if (post.currentVersionPrelApproved) {
+            if (post.someVersionPermanentlyApproved) "EditsPrelApproved"
+            else "NewPrelApproved"
+          }
+          else if (post.currentVersionApproved) "Approved"
           else if (post.currentVersionRejected) {
-            if (post.someVersionApproved) "EditsRejected"
+            if (post.someVersionPermanentlyApproved) "EditsRejected"
             else "Rejected"
           }
-          else if (post.someVersionApproved) "NewEdits"
+          else if (post.someVersionPermanentlyApproved) "NewEdits"
           else "New"
+
         data += "status" -> JsString(status)
 
         if (post.flagsPendingReview nonEmpty)

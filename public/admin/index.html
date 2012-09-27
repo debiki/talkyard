@@ -85,7 +85,7 @@
                   <td class='action-what'>
                     <div>
                       <a target='_blank' class='action-description' href='{{action.url}}'>{{action.description}}</a>
-                      <a class='inline-action approve-action' ng-click='approve(action)' ng-show='action.showApproveBtn'>Approve</a>
+                      <a class='inline-action approve-action' ng-click='approve(action)' ng-show='action.approveBtnText'>{{action.approveBtnText}}</a>
                       <a class='inline-action reject-action' ng-click='reject(action)' ng-show='action.showRejectBtn'>Reject</a>
                       <a class='inline-action delete-action' ng-click='delete(action)' ng-show='action.showDeleteBtn'>Delete</a>
                       <span class='inline-message'>{{action.inlineMessage}}</span>

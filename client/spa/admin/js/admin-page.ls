@@ -413,21 +413,25 @@ function describePost(post)
 
   switch post.status
   | 'New' => "New #{what.toLowerCase!}"
+  | 'NewPrelApproved' => "New #{what.toLowerCase!}, prel. approved"
   | 'Approved' => what
   | 'Rejected' => "#what, rejected"
   | 'EditsRejected' => "#what, edits rejected"
   | 'NewEdits' => "#what, edited"
+  | 'EditsPrelApproved' => "#what, edits prel. approved"
   | _ => "#what, #{post.status}"
 
 
 
 function inlineBtnToggledAllOff
-  { showApproveBtn: false, showRejectBtn: false }
+  { approveBtnText: null, showRejectBtn: false }
 
 function inlineBtnTogglersForPost(post)
   switch post.status
-  | 'New' => { showApproveBtn: true, showRejectBtn: true }
-  | 'NewEdits' => { showApproveBtn: true, showRejectBtn: true }
+  | 'NewPrelApproved' \
+    'EditsPrelApproved' => { approveBtnText: 'Okay', showRejectBtn: true }
+  | 'New' \
+    'NewEdits' => { approveBtnText: 'Approve', showRejectBtn: true }
   | _ => {}
 
 

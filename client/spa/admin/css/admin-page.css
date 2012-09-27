@@ -174,14 +174,11 @@ li {
 #details table td.post-text {
 }
 
-#details td.action-what {
-  max-width: 23em;
-}
-
 #details .action-path {
   font-size: 11px;
   font-family: monospace;
   white-space: normal !important; /* sometimes very long */
+  max-width: 355px;
 }
 
 #details .inline-action {
