@@ -285,8 +285,8 @@ class ViPo(debate: Debate, val post: Post) extends ViAc(debate, post) {
 
 
   def lastManualApprovalDati: Option[ju.Date] =
-    _reviewsDescTime.filter(_.approval == Some(Approval.Manual))
-       .headOption.map(_.ctime)
+    _reviewsDescTime.find(_.approval == Some(Approval.Manual)).map(_.ctime)
+
 
   def lastReviewWasApproval: Option[Boolean] =
     if (lastReviewDati.isEmpty) None
