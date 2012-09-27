@@ -237,8 +237,8 @@ class ViPo(debate: Debate, val post: Post) extends ViAc(debate, post) {
    * Moderators need only be informed about things that happened after
    * this dati.
    */
-  def lastPermanentReviewDati: Option[ju.Date] =
-    lastPermanentReview.map(_.ctime)
+  def lastAuthoritativeReviewDati: Option[ju.Date] =
+    lastAuthoritativeReview.map(_.ctime)
 
 
   def lastReviewDati: Option[ju.Date] =
@@ -267,8 +267,15 @@ class ViPo(debate: Debate, val post: Post) extends ViAc(debate, post) {
   }
 
 
-  def lastPermanentReview: Option[MaybeApproval] =
-    _reviewsDescTime.find(_.approval != Some(Approval.Preliminary))
+  /**
+   * The most recent review of this post by an admin or moderator.
+   * (But not by any well behaved user, which the computer might have decided
+   * to trust.)
+   */
+  def lastAuthoritativeReview: Option[MaybeApproval] =
+    _reviewsDescTime.find(review =>
+       review.approval != Some(Approval.Preliminary) &&
+       review.approval != Some(Approval.WellBehavedUser))
 
 
   def lastPermanentApproval: Option[MaybeApproval] =
@@ -371,13 +378,19 @@ class ViPo(debate: Debate, val post: Post) extends ViAc(debate, post) {
 
   def flagsDescTime: List[Flag] = flags.sortBy(- _.ctime.getTime)
 
+
+  /**
+   * Flags that were raised before the last review by a moderator have
+   * already been reviewed.
+   */
   lazy val (
       flagsPendingReview: List[Flag],
       flagsReviewed: List[Flag]) =
     flagsDescTime span { flag =>
-      if (lastReviewDati isEmpty) true
-      else lastReviewDati.get.getTime <= flag.ctime.getTime
+      if (lastAuthoritativeReviewDati isEmpty) true
+      else lastAuthoritativeReviewDati.get.getTime <= flag.ctime.getTime
     }
+
 
   lazy val lastFlag = flagsDescTime.headOption
 
