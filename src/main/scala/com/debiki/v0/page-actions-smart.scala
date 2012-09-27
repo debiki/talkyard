@@ -80,8 +80,14 @@ class ViPo(debate: Debate, val post: Post) extends ViAc(debate, post) {
   def parent: String = post.parent
   def tyype = post.tyype
 
-  def approval = post.approval
-  def initiallyApproved: Boolean = approval.isDefined
+
+  def initiallyApproved: Boolean = {
+    // If initially preliminarily auto approved, that approval is cancelled by
+    // any contiguous and subsequent rejection. (And `lastApproval` takes
+    // that cancellation into account.)
+    lastApproval.isDefined && post.approval.isDefined
+  }
+
 
   lazy val (text: String, markup: String) = _applyEdits
 
@@ -231,16 +237,52 @@ class ViPo(debate: Debate, val post: Post) extends ViAc(debate, post) {
    * Moderators need only be informed about things that happened after
    * this dati.
    */
+  def lastPermanentReviewDati: Option[ju.Date] =
+    lastPermanentReview.map(_.ctime)
+
+
   def lastReviewDati: Option[ju.Date] =
     _reviewsDescTime.headOption.map(_.ctime)
+
+
+  lazy val lastApproval: Option[MaybeApproval] = {
+    // A rejection cancels all earlier and contiguous preliminary auto
+    // approvals, so loop through the reviews:
+    var rejectionFound = false
+    var reviewsLeft = _reviewsDescTime
+    var lastApproval: Option[MaybeApproval] = None
+    while (reviewsLeft nonEmpty) {
+      val review = reviewsLeft.head
+      reviewsLeft = reviewsLeft.tail
+      if (review.approval == Some(Approval.Preliminary) && rejectionFound) {
+        // Ignore this approval — the rejection cancels it.
+      } else if (review.approval.isEmpty) {
+        rejectionFound = true
+      } else {
+        lastApproval = Some(review)
+        reviewsLeft = Nil
+      }
+    }
+    lastApproval
+  }
+
+
+  def lastPermanentReview: Option[MaybeApproval] =
+    _reviewsDescTime.find(_.approval != Some(Approval.Preliminary))
+
+
+  def lastPermanentApproval: Option[MaybeApproval] =
+    _reviewsDescTime.find(review =>
+        review.approval.isDefined &&
+        review.approval != Some(Approval.Preliminary))
 
 
   /**
    * All actions that affected this Post and didn't happen after
    * this dati should be considered when rendering this Post.
    */
-  def lastApprovalDati: Option[ju.Date] =
-    _reviewsDescTime.filter(_.approval.isDefined).headOption.map(_.ctime)
+  def lastApprovalDati: Option[ju.Date] = lastApproval.map(_.ctime)
+
 
   def lastManualApprovalDati: Option[ju.Date] =
     _reviewsDescTime.filter(_.approval == Some(Approval.Manual))
@@ -259,6 +301,11 @@ class ViPo(debate: Debate, val post: Post) extends ViAc(debate, post) {
   }
 
 
+  def currentVersionPrelApproved: Boolean =
+    currentVersionReviewed &&
+       lastApproval.flatMap(_.approval) == Some(Approval.Preliminary)
+
+
   def currentVersionApproved: Boolean =
     currentVersionReviewed && lastReviewWasApproval.get
 
@@ -274,6 +321,10 @@ class ViPo(debate: Debate, val post: Post) extends ViAc(debate, post) {
     // delete it instead.
     lastApprovalDati.nonEmpty
   }
+
+
+  def someVersionPermanentlyApproved: Boolean =
+    lastPermanentApproval.nonEmpty
 
 
   def someVersionManuallyApproved: Boolean =

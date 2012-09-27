@@ -35,6 +35,9 @@ trait PageTestValues {
   val bodySkeletonAutoApproved = bodySkeleton.copy(
         approval = Some(Approval.WellBehavedUser))
 
+  val bodySkeletonPrelApproved = bodySkeleton.copy(
+    approval = Some(Approval.Preliminary))
+
   val bodyApprovalSkeleton =
     Review("11", targetId = bodySkeleton.id, loginId = "111", newIp = None,
         ctime = new ju.Date(11000), approval = Some(Approval.Manual))
@@ -102,6 +105,13 @@ trait PageTestValues {
     EmptyPage + bodySkeletonAutoApproved + editSkeleton +
        editAppSkeleton.copy(approval = Some(Approval.WellBehavedUser))
 
+  lazy val PageWithEditManuallyAppliedAndPrelApproved =
+    EmptyPage + bodySkeletonAutoApproved + editSkeleton +
+       editAppSkeleton.copy(approval = Some(Approval.Preliminary))
+
+  lazy val PageWithEditManuallyAppliedAndPrelApprovedThenRejected =
+    PageWithEditManuallyAppliedAndPrelApproved + rejectionOfEditApp
+
   lazy val PageWithEditManuallyAppliedAndRejected =
     EmptyPage + bodySkeletonAutoApproved + editSkeleton +
      editAppSkeleton + rejectionOfEditApp
@@ -130,15 +140,51 @@ class PageTest extends SpecificationWithJUnit with PageTestValues {
         page.body_!.text must_== textInitially
       }
 
-      "approved, automatically" >> {
+      "approved, automatically, permanently" >> {
         val page = EmptyPage + bodySkeletonAutoApproved
         page.body_!.currentVersionReviewed must_== true
         page.body_!.currentVersionRejected must_== false
         page.body_!.currentVersionApproved must_== true
+        page.body_!.currentVersionPrelApproved must_== false
+        page.body_!.someVersionPermanentlyApproved must_== true
         page.body_!.initiallyApproved must_== true
         page.body_!.lastApprovalDati must_== Some(bodySkeleton.ctime)
         page.body_!.lastManualApprovalDati must_== None
         page.body_!.text must_== textInitially
+      }
+
+      "approved, automatically, preliminarily" >> {
+        val page = EmptyPage + bodySkeletonPrelApproved
+        page.body_!.currentVersionReviewed must_== true // by the computer
+        page.body_!.currentVersionRejected must_== false
+        page.body_!.currentVersionApproved must_== true
+        page.body_!.currentVersionPrelApproved must_== true
+        page.body_!.someVersionPermanentlyApproved must_== false
+        page.body_!.initiallyApproved must_== true
+        page.body_!.lastPermanentApproval must_== None
+        page.body_!.lastApproval must_== Some(bodySkeletonPrelApproved)
+        page.body_!.lastApprovalDati must_== Some(bodySkeleton.ctime)
+        page.body_!.lastManualApprovalDati must_== None
+        page.body_!.text must_== textInitially
+      }
+
+      "approved, automatically, permanently, then rejected" >> {
+        // This shouldn't happen — the computer shouldn't allow
+        // you to reject a permanently approved comment.
+        // Instead, first you'd need to delete the approval.
+        // Anyway, if this *does* happen (perhaps two people approve
+        // and reject a comment at the very same time), then this rejection
+        // doesn't cancel the approval, since it's a permanent approval
+        // and happened before the rejection. (But had the approval been
+        // preliminary, it'd been cancelled). What this rejection does,
+        // is it cancels all edits that happened after the permanent approval.
+        // But there are no such edits, so the rejection has no effect.
+      }
+
+      "approved, automatically, preliminarily, then rejected" >> {
+        // The rejection cancels all effects of the preliminary approval.
+        val page = EmptyPage + bodySkeletonPrelApproved + bodyRejectionSkeleton
+        _verifyBodyCorrectlyRejected(page)
       }
 
       "approved, manually" >> {
@@ -147,6 +193,8 @@ class PageTest extends SpecificationWithJUnit with PageTestValues {
         page.body_!.currentVersionReviewed must_== true
         page.body_!.currentVersionRejected must_== false
         page.body_!.currentVersionApproved must_== true
+        page.body_!.currentVersionPrelApproved must_== false
+        page.body_!.someVersionPermanentlyApproved must_== true
         page.body_!.initiallyApproved must_== false
         page.body_!.lastApprovalDati must_== Some(bodyApprovalSkeleton.ctime)
         page.body_!.lastManualApprovalDati must_==
@@ -155,15 +203,23 @@ class PageTest extends SpecificationWithJUnit with PageTestValues {
       }
 
       "rejected" >> {
-        val page = EmptyPage + bodySkeleton +
-           bodyRejectionSkeleton
-        page.body_!.currentVersionReviewed must_== true
-        page.body_!.currentVersionRejected must_== true
-        page.body_!.currentVersionApproved must_== false
-        page.body_!.initiallyApproved must_== false
-        page.body_!.lastApprovalDati must_== None
-        page.body_!.lastManualApprovalDati must_== None
-        page.body_!.text must_== textInitially
+        val page = EmptyPage + bodySkeleton + bodyRejectionSkeleton
+        _verifyBodyCorrectlyRejected(page)
+      }
+
+      def _verifyBodyCorrectlyRejected(page: Debate) {
+        val body = page.body_!
+        body.currentVersionReviewed must_== true
+        body.currentVersionRejected must_== true
+        body.currentVersionApproved must_== false
+        body.currentVersionPrelApproved must_== false
+        body.someVersionPermanentlyApproved must_== false
+        body.initiallyApproved must_== false
+        body.lastPermanentApproval must_== None
+        body.lastApproval must_== None
+        body.lastApprovalDati must_== None
+        body.lastManualApprovalDati must_== None
+        body.text must_== textInitially
       }
     }
 
@@ -362,21 +418,39 @@ class PageTest extends SpecificationWithJUnit with PageTestValues {
         testEditLists(page.body_!)
       }
 
-      "approved, automatically" >> {
+      "approved, automatically, permanently" >> {
         val page = PageWithEditManuallyAppliedAndAutoApproved
         //val page = EmptyPage + bodySkeletonAutoApproved +
         //   editSkeleton + editAppSkeleton.copy(
         //      approval = Some(Approval.WellBehavedUser))
-        testApprovedPost(page.body_!, editAppSkeleton.ctime,
-            manualApprovalDati = None)
+        _testApprovedEdit(page.body_!, editAppSkeleton.ctime,
+            manualApprovalDati = None, preliminarily = false)
+      }
+
+      "approved, automatically, preliminarily" >> {
+        val page = PageWithEditManuallyAppliedAndPrelApproved
+        _testApprovedEdit(page.body_!, editAppSkeleton.ctime,
+          manualApprovalDati = None, preliminarily = true)
+      }
+
+      "approved, automatically, permanently, then rejected" >> {
+        // The rejection should have no effect. See the comment in
+        // another "permanently, then rejected" test, somewhere above.
+      }
+
+      "approved, automatically, preliminarily, then rejected" >> {
+        // The rejection cancels the auto prel approval.
+        val page = PageWithEditManuallyAppliedAndPrelApprovedThenRejected
+        _testRejectedEdit(page)
       }
 
       "approved, manually" >> {
         val page = PageWithEditManuallyAppliedAndExplApproved
         //val page = EmptyPage + bodySkeletonAutoApproved +
         ///   editSkeleton + editAppSkeleton + approvalOfEditApp
-        testApprovedPost(page.body_!, approvalOfEditApp.ctime,
-            manualApprovalDati = Some(approvalOfEditApp.ctime))
+        _testApprovedEdit(page.body_!, approvalOfEditApp.ctime,
+            manualApprovalDati = Some(approvalOfEditApp.ctime),
+            preliminarily = false)
       }
 
       "approved, and then reverted, but the revertion is not yet approved" >> {
@@ -388,10 +462,16 @@ class PageTest extends SpecificationWithJUnit with PageTestValues {
         val page = PageWithEditManuallyAppliedAndRejected
         //val page = EmptyPage + bodySkeletonAutoApproved +
         //   editSkeleton + editAppSkeleton + rejectionOfEditApp
+        _testRejectedEdit(page)
+      }
+
+      def _testRejectedEdit(page: Debate) {
         val body = page.body_!
         body.currentVersionReviewed must_== true
         body.currentVersionRejected must_== true
         body.currentVersionApproved must_== false
+        body.currentVersionPrelApproved must_== false
+        body.someVersionPermanentlyApproved must_== true
         body.someVersionApproved must_== true
         body.initiallyApproved must_== true
         body.lastReviewDati must_== Some(rejectionOfEditApp.ctime)
@@ -418,12 +498,24 @@ class PageTest extends SpecificationWithJUnit with PageTestValues {
         }
       }
 
-      def testApprovedPost(post: ViPo, approvalDati: ju.Date,
-            manualApprovalDati: Option[ju.Date]) {
+      def _testApprovedEdit(post: ViPo, approvalDati: ju.Date,
+            manualApprovalDati: Option[ju.Date], preliminarily: Boolean) {
         post.currentVersionReviewed must_== true //
         post.currentVersionRejected must_== false
         post.currentVersionApproved must_== true
+        post.currentVersionPrelApproved must_== preliminarily
+        post.someVersionPermanentlyApproved must_== true // orig version aprvd
         post.someVersionApproved must_== true
+
+        if (preliminarily)
+          post.lastPermanentApproval must_== Some(post.action)
+        // Could test other cases:
+        // post.lastPermanentApproval must_== (
+        //  if (preliminarily) post.action
+        //  else if (manualApproval) manualApproval // missing
+        //  else the-edit)
+        // post.lastApproval must_== ....)
+
         post.initiallyApproved must_== true
         post.lastReviewDati must_== Some(approvalDati)
         post.lastApprovalDati must_== Some(approvalDati)
