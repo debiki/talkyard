@@ -51,11 +51,11 @@ function $showInlineActionMenu(event) {
   // the wrong occurrance.
   // jQuery(window.getSelection().anchorNode).parent().parent().contents()
 
-  // TODO: Find out where to show the menu. And show menu.
-  // TODO: Show a mark where the click was? See insertNodeAtCursor here:
+  // {{{ Old comment? Show a mark where the click was? See insertNodeAtCursor here:
   //  http://stackoverflow.com/questions/2213376/
   //    how-to-find-cursor-position-in-a-contenteditable-div/2213514#2213514
   // Use event.clientX, event.clientY.
+  // }}}
 
   // Remember the clicked node and, if it's a text node, its parent
   // non-text node.
@@ -163,7 +163,7 @@ function $showInlineActionMenu(event) {
   var curUserId = d.i.Me.getUserId();
 
   // Open a menu, with Edit, Reply and Cancel buttons. CSS: '-i' means inline.
-  $menu = $(  // TODO i18n
+  $menu = $(  // COULD add i18n
       '<ul class="dw-as-inline">' +
         '<li><a class="dw-a-edit-i">Improve</a></li>' +
         // Disable inline replies for now, until I've made them work better,
@@ -191,8 +191,10 @@ function $showInlineActionMenu(event) {
   // (All selected text:
   //    sel.getRangeAt(0).toString().substr(0,32);
   // but we're interested in the start and end of the selection/click.)
-  // TODO Consider using http://code.google.com/p/ierange/, so this stuff
+  // COULD consider using http://code.google.com/p/ierange/, so this stuff
   // works also with IE (6)/7/8.
+
+  // Old comment? (2012-09-30 today)
   // BUG: Next line: Uncaught TypeError: Cannot read property 'data' of null
 
   // Preload dependencies, in case user opens editor:

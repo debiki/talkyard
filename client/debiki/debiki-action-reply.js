@@ -76,7 +76,7 @@ d.i.$showReplyForm = function(event, opt_where) {
     $replyForm.resizable({
         alsoResize: $replyForm.find('textarea'),
         resize: function() {
-          d.i.resizeRootThreadExtraWide(); // TODO rm textarea width?
+          d.i.resizeRootThreadExtraWide(); // COULD rm textarea width?
           $post.each(d.i.SVG.$drawParents);
         },
         stop: d.i.resizeRootThreadNowAndLater,

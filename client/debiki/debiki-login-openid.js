@@ -133,7 +133,7 @@ function submitLoginInPopup($openidLoginForm) {
     d.i.showLoginFailed(errorMsg);
   }
 
-  // TODO dim the main win, open a modal dialog: "Waiting for you to log in",
+  // COULD dim the main win, open a modal dialog: "Waiting for you to log in",
   // and a Cancel button, which closes the popup window.
   // — Then the user can continue also if the popup gets lost (perhaps
   // lots of windows open).

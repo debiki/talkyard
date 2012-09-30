@@ -192,8 +192,7 @@ object DebikiHttp {
   //    Set-Cookie: dwCoUserName="Kaj Magnus";Path=/
   // So it seems a % encoded string is surrounded with double quotes, by
   // javax.servlet.http.Cookie? Why? Not needed!, '%' is safe.
-  // So the client needs to remove any double quotes.
-  // TODO Modify the jQuery cookie plugin to remove double quotes when
+  // So I've modified jquery-cookie.js to remove double quotes when
   // reading cookie values.
   def urlEncodeCookie(name: String, value: String, maxAgeSecs: Int = -1) =
     Cookie(

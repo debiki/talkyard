@@ -1,6 +1,6 @@
 /* Copyright (c) 2010 - 2012 Kaj Magnus Lindberg. All rights reserved. */
 
-// TODO move to namespace debiki.v0.util? (not `window.*`!)
+// COULD move to namespace debiki.v0.util? (not `window.*`!)
 // (I just broke out this file, that's why I haven't fixed that yet.)
 
 (function() {

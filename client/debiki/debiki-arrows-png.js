@@ -23,9 +23,9 @@ debiki.internal.makeFakeDrawer = function($) {
     $('.dw-depth-1 .dw-t:not(.dw-i-t):last-child').each(function(){
       $(this).prepend("<div class='dw-arw dw-svg-fake-varrow-hider-left'/>");
     });
-    // TODO: Inline threads:  .dw-t:not(.dw-hor) > .dw-i-ts > .dw-i-t
-    // TODO: First one:  .dw-t:not(.dw-hor) > .dw-i-ts > .dw-i-t:first-child
-    // TODO: Root post's inline threads:  .dw-t.dw-hor > .dw-i-ts > .dw-i-t
+    // COULD fix: Inline threads:  .dw-t:not(.dw-hor) > .dw-i-ts > .dw-i-t
+    // COULD fix: First one: .dw-t:not(.dw-hor) > .dw-i-ts > .dw-i-t:first-child
+    // COULD fix: Root post's inline threads:  .dw-t.dw-hor > .dw-i-ts > .dw-i-t
   }
 
   // Points on the Reply button, and branches out to the replies to the
@@ -65,7 +65,7 @@ debiki.internal.makeFakeDrawer = function($) {
       }
     } else {
       // vertical arrow, already handled above.
-      // TODO not handled above, for *new* threads, no arrows to them :(
+      // COULD fix: Not handled above, for *new* threads, no arrows to them :(
       // BUG arrows should be drawn here, for replies to inline threads.
     }
   }
@@ -74,12 +74,12 @@ debiki.internal.makeFakeDrawer = function($) {
 
   function $drawParents() {}  // ?? do I need to do something?
 
-  function $drawTree() {} // TODO
+  function $drawTree() {} // COULD implement?
 
   function $drawPost() {
-    // TODO: If any SVG native support: draw arrows to inline threads?
+    // COULD fix: If any SVG native support: draw arrows to inline threads?
     // Or implement via fake .png arrows?
-    // TODO draw arrows to new vertical replies
+    // COULD draw arrows to new vertical replies
   }
 
   function drawArrowsToReplyForm($formParent) {
@@ -90,11 +90,11 @@ debiki.internal.makeFakeDrawer = function($) {
   }
 
   function $highlightOn() {
-    // TODO replace arrow image with a highlighted version
+    // COULD replace arrow image with a highlighted version
   }
 
   function $highlightOff() {
-    // TODO replace arrow image with a highlighted version
+    // COULD replace arrow image with a highlighted version
   }
 
   return {

@@ -116,7 +116,7 @@ object AppEditHistory extends mvc.Controller {
           EditApp(  // COULD rename to Appl
             id = "?"+ sno, editId = actionId,
             loginId = pageReq.loginId_!, newIp = pageReq.newIp,
-            ctime = pageReq.ctime, result = "(TODO apply diff)",
+            ctime = pageReq.ctime, result = "(Could apply diff)",
             approval = approval)
         case HistoryEdit.DeleteEditApp =>
           // Should probably replace `Delete`:s of `EditApp`:s

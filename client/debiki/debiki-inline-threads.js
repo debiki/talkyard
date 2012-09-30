@@ -50,7 +50,7 @@ function $placeInlineMarks() {
         '> .dw-p > .dw-p-bd > .dw-p-bd-blk');
     d.u.bugIf($bodyBlock.length !== 1, 'error DwE6kiJ08');
     var tagDogText = tagDog.sniffHtml($bodyBlock);
-    var loc = 10; // TODO should be included in the data attr
+    var loc = 10; // COULD be included in the data attr
     if (markStartText.length > d.i.diffMatchPatch.maxMatchLength) {
       // Avoid a `Pattern too long for this browser' error (in case
       // corrupt/too-long matches were sent by the server, the whole
@@ -61,7 +61,7 @@ function $placeInlineMarks() {
     var match = d.i.diffMatchPatch.match_main(tagDogText, markStartText, loc);
     var arrow = $parentThread.filter('.dw-hor').length ?
         'ui-icon-arrow-1-e' : 'ui-icon-arrow-1-s';
-    // TODO When possible to mark a text range: Underline matched text?
+    // COULD: When possible to mark a text range: Underline matched text?
     // COULD add i18n, here and in $(mark) below.
     var mark =
         '<a id="dw-i-m_'+ this.id +'" class="dw-i-m-start ui-icon '+
@@ -150,7 +150,7 @@ d.i.$splitBodyPlaceInlines = function() {
       var accHeightInlines = 0;
       var numInlines = 0;
       $block.find('.dw-i-m-start').each(function(){
-        // TODO change from <li> to <div>
+        // COULD change from <li> to <div>
         var $inline = $(this.hash); // this.hash is '#dw-t-<id>'
         $inline.appendTo($inlineThreads);
         accHeightInlines += $inline.outerHeight(true);
@@ -161,7 +161,7 @@ d.i.$splitBodyPlaceInlines = function() {
       // -bd-blk clears floats). Avoid this, by reducing the height of
       // each inline thread.
       if (accHeightInlines > accHeight) {
-        // TODO // For now, simply set the height to accHeight / numInlines.
+        // COULD fix // For now, simply set the height to accHeight / numInlines.
       }
       accHeight = 0;
       elems = [];
@@ -190,7 +190,7 @@ d.i.$splitBodyPlaceInlines = function() {
       var $bdyBlk = $(this).wrap('<div class="dw-p-bd-blk"></div>').parent();
       var $inlineThreads = $('<ol class="dw-i-ts"></ol>').insertAfter($bdyBlk);
       $('.dw-i-m-start', this).each(function(){
-        var $inline = $(this.hash); // TODO change from <li> to <div>
+        var $inline = $(this.hash); // COULD change from <li> to <div>
         $inline.appendTo($inlineThreads);
       });
     });
@@ -258,7 +258,7 @@ d.i.placeInlineThreadsForPost = function(post) {
 
   // When hovering an inline mark or thread, highlight the corresponding
   // thread or mark.
-  // TODO don't remove the highlighting until hovering something else?
+  // COULD avoid removing highlighting, until hovering something else?
   //  So one can follow the svg path to the inline thread.
   // When hovering an inline thread, highlight the mark.
   // COULD highlight arrows when hovering any post, not just inline posts?

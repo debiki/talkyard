@@ -502,8 +502,7 @@ body.dw-u-ui-simple .dw-a-edit { display: none !important; }
 }
 .dw-i-m-start.ui-icon-arrow-1-s {
   width: 8px;
-  height: 13px; /* don't push next text line away; the smallest font-size seems
-                to be 13px. TODO: always specify font-size in px not %? */
+  height: 13px; /* don't push next line away; smallest font-size 13px? */
   top: -1px;
   background-position: -70px -36px;
 }
@@ -768,7 +767,7 @@ key presses).*/
 }
 
 .dw-name-or-alias {
-  float: left; /* TODO: need not float everything? */
+  float: left; /* COULD avoid floating everything? */
   clear: both;
   margin-top: 1.8em;
 }
@@ -926,7 +925,7 @@ key presses).*/
 
 
 .dw-user-contrib-license {
-  float: left; /* TODO? Stop floating everything in the <form>s */
+  float: left; /* COULD? stop floating everything in the <form>s */
   clear: both;
   color: #666;
   font-size: 75%;

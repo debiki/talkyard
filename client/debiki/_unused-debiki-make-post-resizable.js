@@ -127,7 +127,7 @@ function $makePostResizable() {
       }
     })
   .end()
-  .resizable({  // TODO don't make non-root-thread inline posts resizable-e.
+  .resizable({  // COULD avoid making non-root-thread inline posts resizable-e.
       autoHide: true,
       start: function(event, ui) {
         // Remember that this post is being resized, so heigh and width

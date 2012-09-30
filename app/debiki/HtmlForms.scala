@@ -364,9 +364,6 @@ class HtmlForms(val config: HtmlConfig, xsrfToken: String,
             <input class='dw-fi-cancel' type='button' value='Cancel'/>
             <input class='dw-fi-submit' type='submit' value={submitButtonText}/>
           </div>
-         <!-- TODO on click, save draft, map to '#dw-a-login' in some way?
-          e.g.: href='/users/login?returnurl=%2fquestions%2f10314%2fiphone-...'
-          -->
         </form>
       </li>
   }

@@ -53,7 +53,7 @@ function showEditsDialogImpl($post) {
 
     // Don't focus the first checkbox input — jQuery UI's focus color makes
     // it impossible to tell whether it has focus only, or if it's actually
-    // selected. TODO change jQuery UI's focus colors — the Theme Roller,
+    // selected. COULD change jQuery UI's focus colors — the Theme Roller,
     // change the Clickable: hover state.
     // (By default, jQuery UI focuses the :first:tabbable element in the
     // .ui-dialog-content, rather than the .ui-dialog-buttonpane.)
@@ -108,9 +108,9 @@ function showEditsDialogImpl($post) {
     // Keep in sync with textAsOf in debate.scala (renamed to page.scala?).
     // SHOULD find the markup type in use too. Would require that the
     // markup type be sent by the server.
-    // TODO also consider edit suggestions marked for application.
-    // TODO consider skipping edit-apps marked for undo.
-    // TODO when showing the changes *intended*, take into account
+    // COULD also consider edit suggestions marked for application.
+    // COULD consider skipping edit-apps marked for undo.
+    // COULD fix: when showing the changes *intended*, take into account
     // edit appls that were not deleted at the point in time when the
     // suggestion was made (but perhaps were deleted later)
     // (Otherwise, if [some patch that was in effect when the suggestion
@@ -143,7 +143,7 @@ function showEditsDialogImpl($post) {
       appdelSeqNo += 1;
       var v2 = v.replace(/^\d*-/, appdelSeqNo +'-');
       $(this).val(v2);
-      // TODO update save-diff and preview.
+      // COULD update save-diff and preview.
     });
 
     $form.submit(function() {

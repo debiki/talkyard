@@ -284,7 +284,7 @@ debiki.Utterscroll.enable = function(options) {
     var innerHtmlNoTags =
         innerHtmlBefore.replace(/<[^>]*>/g, function($0) {
       savedTags.push($0);
-      return '·'; // TODO find a rarer utf-8 char? (Also update TagDog)
+      return '·'; // COULD find a rarer utf-8 char? (Also update TagDog)
     });
     // For now, insert a mark between every two chars. We need frequent
     // marks if the font size is huge. Could check font size of

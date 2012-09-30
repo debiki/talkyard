@@ -106,7 +106,7 @@ object HtmlSerializer {
       //     the-code-element.html#the-code-element>
       // Works with: http://code.google.com/p/google-code-prettify/
       var lang = c.dropWhile(_ != '-')
-      if (lang nonEmpty) lang = " lang"+lang  ; UNTESTED // if nonEmpty
+      if (lang nonEmpty) lang = " lang"+lang  ; UN TESTED // if nonEmpty
       (<pre class={"prettyprint"+ lang}>{post.text}</pre>,
         post.text.count(_ == '\n'))
       // COULD include google-code-prettify js and css, and
@@ -209,7 +209,7 @@ object HtmlSerializer {
    */
   def linkTo(nilo: NiLo, config: HtmlConfig): NodeSeq = {
     var url = config.userUrl(nilo)
-    // TODO: investigate: `url' is sometimes the email address!!
+    // COULD investigate: `url' is sometimes the email address!!
     // When signed in @gmail.com, it seems.
     // For now: (this is actually a good test anyway, in case someone
     // accidentally enters his email in the website field?)
@@ -495,7 +495,7 @@ case class HtmlSerializer(
       <div class='dw-p-hd'>{
         if (wholeTree) "Thread" else "1 comment"
         } deleted by { _linkTo(deleter)
-        /* TODO show flagsTop, e.g. "flagged spam".
+        /* COULD show flagsTop, e.g. "flagged spam".
         COULD include details, shown on click:
         Posted on ...,, rated ... deleted on ..., reasons for deletion: ...
         X flags: ... -- but perhaps better / easier with a View link,

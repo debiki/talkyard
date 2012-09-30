@@ -318,7 +318,7 @@ some jQuery code somewhere; I cannot find 1001 in any CSS class).*/
 }
 
 /* This doesn't work; cannot add class dw-highlight to a <path> at runtime.
-TODO style an invisible elem in this manner, and read the props via
+COULD style an invisible elem in this manner, and read the props via
 JavaScript. Then I can still place all CSS stuff in this file. */
 /*
 .dw-t svg path.dw-highlight {

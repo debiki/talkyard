@@ -24,10 +24,10 @@
 // a search string was found, and the sniffedHtml can be converted
 // back to HTML like so: barkHtml(sniffAndMem).
 
-// TODO Instructions / utility functions that handle the case when
+// COULD write instructions / utility functions that handle the case when
 // [the search text hit] crosses tag boundaries.
 
-// TODO A function that inserts text into sniffedHtml, but first 
+// COULD add a function that inserts text into sniffedHtml, but first 
 // escapes the text.
 
 //========================================
@@ -156,10 +156,10 @@ var htmlSniffer = (function() {
 
 return {
   sniffHtml: function(htmlText, opt_placeholder) {
-    var placeholder = opt_placeholder || '·'; // TODO find a rarer utf-8 char?
+    var placeholder = opt_placeholder || '·'; // COULD find a rarer utf-8 char?
                                               // (Also update Utterscroll)
 
-    var escaped = htmlText; // TODO Escape any placeholder chars.
+    var escaped = htmlText; // COULD escape any placeholder chars.
     var sniffAndMem = {
       sniffedHtml: [],
       tagMemory: [],
@@ -170,15 +170,15 @@ return {
     return sniffAndMem;
   },
   barkHtml: function(sniffAndMem) {
-    // TODO Unescape escaped placeholder chars.
+    // COULD unescape escaped placeholder chars.
     var splits = sniffAndMem.sniffedHtml.split(sniffAndMem.placeholder);
     var result = [];
     for (var i = 0; i < splits.length; ++i) {
       result.push(splits[i]);
       if (i < splits.length - 1) result.push(sniffAndMem.tagMemory[i]);
     };
-    // TODO: Make google-caja's html-sanitizer.js close tags that were closed.
-    // See the exact same TODO in debiki/v0/html.scala.
+    // COULD make google-caja's html-sanitizer.js close tags that were closed.
+    // See the exact same COULD in debiki/v0/html.scala.  (What??)
     result = result.join('');
     result = result.replace(/<br>/gi, '<br />') // HTML5 now, need not do this?
     result = result.replace(/<hr>/gi, '<hr />')

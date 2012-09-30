@@ -437,7 +437,7 @@ d.i.$showEditDiff = function() {
   // Extract the post's current text.
   var $postBody = $post.children('.dw-p-bd');
   var oldText =
-      $postBody.map($extractMarkupSrcFromHtml)[0]; // TODO excl inline threads
+      $postBody.map($extractMarkupSrcFromHtml)[0]; // SHOULD excl inline threads
   // Try both val() and text() -- `this' might be a textarea or
   // an elem with text inside.
   var newText = $(this).val();
