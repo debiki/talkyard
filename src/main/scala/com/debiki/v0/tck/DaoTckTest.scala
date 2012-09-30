@@ -1559,15 +1559,15 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
       var newHost = TenantHost("website-2.ex.com", TenantHost.RoleCanonical,
          TenantHost.HttpsNone)
 
-      def createWebsiteNo2(): Option[Tenant] = {
+      def createWebsite(suffix: String): Option[Tenant] = {
         dao.createWebsite(
-          name = "website-2", address = "website-2.ex.com",
+          name = "website-"+ suffix, address = "website-"+ suffix +".ex.com",
           ownerIp = creatorLogin.ip, ownerLoginId = creatorLogin.id,
           ownerIdentity = creatorIdentity, ownerRole = creatorRole)
       }
 
       "create a new website, from existing tenant" >> {
-        newWebsiteOpt = createWebsiteNo2()
+        newWebsiteOpt = createWebsite("2")
         newWebsiteOpt must beLike {
           case Some(tenant) =>
             true
@@ -1575,7 +1575,7 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
       }
 
       "not create the same website again" >> {
-        createWebsiteNo2() must_== None
+        createWebsite("2") must_== None
       }
 
       "lookup the new website, from existing tenant" >> {
@@ -1585,10 +1585,12 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
         }
       }
 
-      "not create too many websites from same IP, when not logged in" >> {
-      }
-
-      "create some more websites from same IP, if logged in" >> {
+      "not create too many websites from the same IP" >> {
+        def create100Websites() {
+          for (i <- 3 to 100)
+            createWebsite(i.toString)
+        }
+        create100Websites() must throwAn[OverQuotaException]
       }
 
     }
