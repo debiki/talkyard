@@ -18,11 +18,8 @@ import SafeActions._
 object AppLoginGuest extends mvc.Controller {
 
 
-  def loginGuest = ExceptionAction(parse.urlFormEncoded(maxLength = 200)) {
-        request =>
-
-    XSRF // check a token, so cannot fake logins via xsrf
-    // (rather harmless though)
+  def loginGuest = CheckSidAction(parse.urlFormEncoded(maxLength = 200)) {
+        (sidOk, xsrfOk, request) =>
 
     def getOrDie(paramName: String, errCode: String): String =
       request.body.getOrElse(paramName, DebikiHttp.throwBadReq(errCode)).head
