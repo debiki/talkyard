@@ -1,8 +1,6 @@
 /* Copyright (c) 2010 - 2012 Kaj Magnus Lindberg. All rights reserved. */
 
 
-(function() {
-
 var d = { i: debiki.internal, u: debiki.v0.util };
 var $ = d.i.$;
 
@@ -255,11 +253,11 @@ function $showInlineActionMenu(event) {
 // click is completed. Otherwise the inline menu gets in the
 // way when you double click to select whole words. (Or triple click to
 // select paragraphs.)
-$('.debiki')
-    .delegate('.dw-p-bd-blk', 'mouseup', $showInlineActionMenu)
-    .delegate('.dw-p-bd-blk', 'mousedown', $hideInlineActionMenu);
+$(function() {
+  $('.debiki')
+      .delegate('.dw-p-bd-blk', 'mouseup', $showInlineActionMenu)
+      .delegate('.dw-p-bd-blk', 'mousedown', $hideInlineActionMenu);
+});
 
-
-})();
 
 // vim: fdm=marker et ts=2 sw=2 tw=80 fo=tcqwn list

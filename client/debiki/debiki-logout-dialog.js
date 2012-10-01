@@ -1,8 +1,6 @@
 /* Copyright (c) 2010 - 2012 Kaj Magnus Lindberg. All rights reserved. */
 
 
-(function() {
-
 var d = { i: debiki.internal, u: debiki.v0.util };
 var $ = d.i.$;
 
@@ -46,8 +44,10 @@ function initLogout() {
 };
 
 
-$('#dw-a-logout').click(showLogout);
 
-})();
+$(function() {
+  $('#dw-a-logout').click(showLogout);
+});
+
 
 // vim: fdm=marker et ts=2 sw=2 tw=80 fo=tcqwn list

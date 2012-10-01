@@ -1,8 +1,6 @@
 /* Copyright (c) 2010 - 2012 Kaj Magnus Lindberg. All rights reserved. */
 
 
-(function() {
-
 var d = { i: debiki.internal, u: debiki.v0.util };
 var $ = d.i.$;
 
@@ -311,8 +309,9 @@ function toggleInlineHighlight(threadId, on) {
 
 
 // Show the related inline reply, on inline mark click.
-$('.debiki').delegate('a.dw-i-m-start', 'click', $showInlineReply);
+$(function() {
+  $('.debiki').delegate('a.dw-i-m-start', 'click', $showInlineReply);
+});
 
-})();
 
 // vim: fdm=marker et ts=2 sw=2 tw=80 fo=tcqwn list

@@ -1,8 +1,6 @@
 /* Copyright (c) 2010 - 2012 Kaj Magnus Lindberg. All rights reserved. */
 
 
-(function() {
-
 var d = { i: debiki.internal, u: debiki.v0.util };
 var $ = d.i.$;
 
@@ -88,9 +86,9 @@ function $makePostHeadTooltips() {  // i18n
 
 
 // Create tooltips lazily.
-$('.debiki').delegate('.dw-p-hd', 'mouseenter', $makePostHeadTooltips);
+$(function() {
+  $('.debiki').delegate('.dw-p-hd', 'mouseenter', $makePostHeadTooltips);
+});
 
-
-})();
 
 // vim: fdm=marker et ts=2 sw=2 tw=80 fo=tcqwn list
