@@ -22,7 +22,9 @@ d.i.rootPostId = d.i.rootPostId.length ?
     d.i.rootPostId.attr('id').substr(5) : undefined; // drops initial `dw-t-'
 
 // If there's no SVG support, use PNG arrow images instead.
-d.i.SVG = Modernizr.inlinesvg && document.URL.indexOf('svg=false') === -1 ?
+// Also use PNG arrows on mobiles; rendering SVG arrows takes rather long.
+d.i.SVG = !Modernizr.touch && Modernizr.inlinesvg &&
+      document.URL.indexOf('svg=false') === -1 ?
     d.i.makeSvgDrawer($) : d.i.makeFakeDrawer($);
 
 d.i.Me = d.i.makeCurUser();
