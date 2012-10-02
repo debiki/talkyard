@@ -99,6 +99,7 @@ exports.config =
            | ^client/debiki/debiki-util-browser.js
            | ^client/debiki/debiki-util-play.js
            | ^client/debiki/tagdog.js
+           | ^client/vendor/diff_match_patch.js
            | ^client/vendor/html-sanitizer-bundle.js
            | ^client/vendor/javascript-yaml-parser.js
            | ^client/vendor/jquery-cookie.js
