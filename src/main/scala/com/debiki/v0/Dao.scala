@@ -217,8 +217,10 @@ class TenantDao(
   }
 
   /**
-   * Returns true on success — that is, unless someone else created
-   * the very same website, just before you.
+   * Returns Some(new-website) on success — that is, unless someone else
+   * created the very same website, just before you.
+   * Throws OverQuotaException if you've created too many websites already
+   * (e.g. from the same IP).
    */
   def createWebsite(name: String, address: String, ownerIp: String,
         ownerLoginId: String, ownerIdentity: IdentityOpenId, ownerRole: User)
