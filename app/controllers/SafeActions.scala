@@ -26,17 +26,26 @@ object SafeActions {
    * or the session id is invalid.
    */
   def CheckSidActionNoBody
-        (f: (SidOk, XsrfOk, Request[Option[Any]]) => PlainResult) =
+        (f: (SidStatus, XsrfOk, Request[Option[Any]]) => PlainResult) =
     CheckSidAction(BodyParsers.parse.empty)(f)
 
 
+  /**
+   * Checks the SID and XSRF token.
+   *
+   * Throws Forbidden if this is a POST request with no valid XSRF token.
+   * Creates a new XSRF token cookie, if there is none, or if it's invalid.
+   *
+   * @param f The SidStatus passed to `f` is either SidAbsent or a SidOk.
+   */
+  // COULD rename to CheckSidAndXsrfAction?
   def CheckSidAction[A]
         (parser: BodyParser[A])
-        (f: (SidOk, XsrfOk, Request[A]) => PlainResult) =
+        (f: (SidStatus, XsrfOk, Request[A]) => PlainResult) =
     ExceptionAction[A](parser) { request =>
-      val (sidOk, xsrfOk, newCookies) =
+      val (sidStatus, xsrfOk, newCookies) =
          DebikiSecurity.checkSidAndXsrfToken(request)
-      val resultOldCookies = f(sidOk, xsrfOk, request)
+      val resultOldCookies = f(sidStatus, xsrfOk, request)
       val resultOkSid =
         if (newCookies isEmpty) resultOldCookies
         else resultOldCookies.withCookies(newCookies: _*)

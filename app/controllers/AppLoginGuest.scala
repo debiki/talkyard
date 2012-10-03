@@ -19,7 +19,7 @@ object AppLoginGuest extends mvc.Controller {
 
 
   def loginGuest = CheckSidAction(parse.urlFormEncoded(maxLength = 200)) {
-        (sidOk, xsrfOk, request) =>
+        (sidStatus, xsrfOk, request) =>
 
     def getOrDie(paramName: String, errCode: String): String =
       request.body.getOrElse(paramName, DebikiHttp.throwBadReq(errCode)).head
@@ -45,13 +45,11 @@ object AppLoginGuest extends mvc.Controller {
       failLogin("DwE734krsn215", "Weird URL.",
         "Please specify a website address with no weird characters.")
 
-    val prevSidValOpt = urlDecodeCookie("dwCoSid", request)
-    val prevSid = prevSidValOpt.map(Sid.check _) getOrElse SidAbsent
     val addr = request.remoteAddress
     val tenantId = DebikiHttp.lookupTenantIdOrThrow(request, Debiki.SystemDao)
 
     val loginReq = LoginRequest(
-      login = Login(id = "?", prevLoginId = prevSid.loginId,
+      login = Login(id = "?", prevLoginId = sidStatus.loginId,
         ip = addr, date = new ju.Date, identityId = "?i"),
       identity = IdentitySimple(id = "?i", userId = "?", name = name,
         email = email, location = "", website = url))

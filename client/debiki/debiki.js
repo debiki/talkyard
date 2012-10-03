@@ -150,7 +150,8 @@ function registerEventHandlersFireLoginOut() {
 
 function renderPageEtc() {
 
-  // JSON vulnerability protection.
+  // XSRF token refresh, and
+  // JSON vulnerability protection
   // ((Details: Strip a certain reply prefix. This prevents the JSON
   // from being parsed as Javascript from a <script> tag. This'd otherwise
   // allow third party websites to turn your JSON resource URL into JSONP
@@ -167,6 +168,14 @@ function renderPageEtc() {
       if (typeof response === 'string')
         response = response.replace(/^\)\]}',\n/, '');
       return response;
+    },
+    complete: function() {
+      // Refresh <form> xsrf tokens, in case the server set a new cookie
+      // (that happens e.g. if I change certain server side XSRF code, or
+      // perhaps I'll some day decide that XSRF tokens will be valid for
+      // one month only).
+      var token = $.cookie('dwCoXsrf');
+      $('input.dw-fi-xsrf').attr('value', token);
     }
   });
 

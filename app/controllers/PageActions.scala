@@ -79,20 +79,20 @@ object PageActions {
         (pathIn: PagePath, pageMustExist: Boolean)
         (f: PageRequest[A] => PlainResult)
         = CheckPathAction[A](parser)(pathIn) {
-      (sidOk, xsrfOk, pathOkOpt, dao, request) =>
+      (sidStatus, xsrfOk, pathOkOpt, dao, request) =>
 
     if (pathOkOpt.isEmpty && pageMustExist)
       throwNotFound("DwE0404", "Page not found")
 
     val tenantId = pathIn.tenantId
     val pagePath = pathOkOpt.getOrElse(pathIn)
-    val (identity, user) = Utils.loadIdentityAndUserOrThrow(sidOk, dao)
+    val (identity, user) = Utils.loadIdentityAndUserOrThrow(sidStatus, dao)
 
     // Load permissions.
     val permsReq = RequestInfo(  // COULD RENAME! to PermsOnPageRequest
       tenantId = tenantId,
       ip = request.remoteAddress,
-      loginId = sidOk.loginId,
+      loginId = sidStatus.loginId,
       identity = identity,
       user = user,
       pagePath = pagePath)
@@ -103,7 +103,7 @@ object PageActions {
 
     // Construct the actual request.
     val pageReq = PageRequest[A](
-      sid = sidOk,
+      sid = sidStatus,
       xsrfToken = xsrfOk,
       identity = identity,
       user = user,
@@ -126,27 +126,27 @@ object PageActions {
    */
   def CheckPathActionNoBody
         (pathIn: PagePath)
-        (f: (SidOk, XsrfOk, Option[PagePath], TenantDao, Request[Option[Any]]
-           ) => PlainResult) =
+        (f: (SidStatus, XsrfOk, Option[PagePath], TenantDao,
+           Request[Option[Any]]) => PlainResult) =
     CheckPathAction(BodyParsers.parse.empty)(pathIn)(f)
 
 
   def CheckPathAction[A]
         (parser: BodyParser[A])
         (pathIn: PagePath)
-        (f: (SidOk, XsrfOk, Option[PagePath], TenantDao, Request[A]) =>
+        (f: (SidStatus, XsrfOk, Option[PagePath], TenantDao, Request[A]) =>
            PlainResult) =
-    SafeActions.CheckSidAction[A](parser) { (sidOk, xsrfOk, request) =>
+    SafeActions.CheckSidAction[A](parser) { (sidStatus, xsrfOk, request) =>
       val dao = Debiki.tenantDao(tenantId = pathIn.tenantId,
-         ip = request.remoteAddress, sidOk.roleId)
+         ip = request.remoteAddress, sidStatus.roleId)
       dao.checkPagePath(pathIn) match {
         case Some(correct: PagePath) =>
           if (correct.path == pathIn.path) {
-            f(sidOk, xsrfOk, Some(correct), dao, request)
+            f(sidStatus, xsrfOk, Some(correct), dao, request)
           } else {
             Results.MovedPermanently(correct.path)
           }
-        case None => f(sidOk, xsrfOk, None, dao, request)
+        case None => f(sidStatus, xsrfOk, None, dao, request)
       }
     }
 

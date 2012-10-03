@@ -120,9 +120,14 @@ object DebikiHttp {
         errorDialogXml(errCode, title, summary, details)))
 
   def throwForbiddenDialog(
-        errCode: String, title: String, summary: String, details: String) =
-    throw ResultException(ForbiddenHtml(
-      errorDialogXml(errCode, title, summary, details)))
+        errCode: String, title: String, summary: String, details: String,
+        withCookie: Option[Cookie] = None) = {
+    var result = ForbiddenHtml(errorDialogXml(errCode, title, summary, details))
+    if (withCookie.isDefined)
+      result = result withCookies withCookie.get
+
+    throw ResultException(result)
+  }
 
 
   // ----- Tenant ID lookup

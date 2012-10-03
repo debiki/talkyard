@@ -166,18 +166,6 @@ function fireLoginImpl(Me) {
   $('#dw-a-logout').show();
   $('#dw-a-login').hide();
 
-  // Update all xsrf tokens in any already open forms (perhaps with
-  // draft texts, we shuldn't close them). Their xsrf prevention tokens
-  // need to be updated to match the new session id cookie issued by
-  // the server on login.
-  var token = $.cookie('dwCoXsrf');
-  //$.cookie('dwCoXsrf', null, { path: '/' }); // don't send back to server
-  // ^ For now, don't clear the dwCoXsrf cookie, because then if the user
-  // navigates back to the last page, after having logged out and in,
-  // the xsrf-inputs would need to be refreshed from the cookie, because
-  // any token sent from the server is now obsolete (after logout/in).
-  $('input.dw-fi-xsrf').attr('value', token);
-
   // Let Post as ... and Save as ... buttons update themselves:
   // they'll replace '...' with the user name.
   $('.dw-loginsubmit-on-click')
@@ -199,10 +187,6 @@ function fireLogoutImpl(Me) {
   $('#dw-u-info').hide();
   $('#dw-a-logout').hide();
   $('#dw-a-login').show();
-
-  // Clear all xsrf tokens. They are invalid now after logout, because
-  // the server instructed the browser to delete the session id cookie.
-  $('input.dw-fi-xsrf').attr('value', '');
 
   // Let `Post as <username>' etc buttons update themselves:
   // they'll replace <username> with `...'.

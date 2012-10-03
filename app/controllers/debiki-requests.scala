@@ -18,7 +18,7 @@ import Utils.ValidationImplicits._
  */
 abstract class DebikiRequest[A] {
 
-  def sid: SidOk
+  def sid: SidStatus
   def xsrfToken: XsrfOk
   def identity: Option[Identity]
   def user: Option[User]
@@ -90,7 +90,7 @@ abstract class DebikiRequest[A] {
  * A request that's not related to any particular page.
  */
 case class ApiRequest[A](
-  sid: SidOk,
+  sid: SidStatus,
   xsrfToken: XsrfOk,
   identity: Option[Identity],
   user: Option[User],
@@ -106,7 +106,7 @@ case class ApiRequest[A](
  * Login/Identity/User).
  */
 case class PageRequest[A](
-  sid: SidOk,
+  sid: SidStatus,
   xsrfToken: XsrfOk,
   identity: Option[Identity],
   user: Option[User],

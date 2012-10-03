@@ -88,7 +88,7 @@ object Utils extends Results with http.ContentTypes {
 
   def formHtml(pageReq: PageRequest[_]) =
     HtmlForms(
-      newUrlConfig(pageReq), pageReq.xsrfToken.token,
+      newUrlConfig(pageReq), pageReq.xsrfToken.value,
       pageReq.pageRoot, pageReq.permsOnPage)
 
 
@@ -134,9 +134,9 @@ object Utils extends Results with http.ContentTypes {
     pagePath.isCodePage || pagePath.isTemplatePage || pagePath.isHiddenPage
 
 
-  def loadIdentityAndUserOrThrow(sidOk: SidOk, dao: TenantDao)
+  def loadIdentityAndUserOrThrow(sidStatus: SidStatus, dao: TenantDao)
         : (Option[Identity], Option[User]) = {
-    val identityAndUser = sidOk.loginId match {
+    val identityAndUser = sidStatus.loginId match {
       case None => (None, None)
       case Some(lid) =>
         dao.loadIdtyAndUser(forLoginId = lid)

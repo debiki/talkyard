@@ -8,6 +8,7 @@ import com.debiki.v0.Prelude._
 import debiki.DebikiHttp._
 import java.{util => ju, io => jio}
 import play.api.mvc.Cookie
+import play.api.Logger
 import scala.xml.{Text, Node, NodeSeq}
 
 
@@ -22,29 +23,41 @@ object DebikiSecurity {
    * if the SID or the XSRF token is bad.
    */
   def checkSidAndXsrfToken(request: play.api.mvc.Request[_])
-        : (SidOk, XsrfOk, List[Cookie]) = {
+        : (SidStatus, XsrfOk, List[Cookie]) = {
 
-    val sidValOpt = urlDecodeCookie("dwCoSid", request)
-    val sidStatus: SidStatus = sidValOpt.map(Sid.check(_)) getOrElse SidAbsent
+    val sidCookieValOpt = urlDecodeCookie("dwCoSid", request)
+    val sidStatus: SidStatus =
+      sidCookieValOpt.map(Sid.check(_)) getOrElse SidAbsent
 
     // On GET requests, simply accept the value of the xsrf cookie.
     // (On POST requests, however, we check the xsrf form input value)
-    val xsrfValOpt = urlDecodeCookie("dwCoXsrf", request)
-    var xsrfStatus: XsrfStatus = xsrfValOpt.map(XsrfOk(_)) getOrElse XsrfAbsent
-    // However, we might catch some bug if we verify it matches the sid:
-    if (xsrfValOpt.isDefined && sidValOpt.isDefined) {
-      assert(Xsrf.check(xsrfValOpt.get, sidValOpt).isInstanceOf[XsrfOk])
-    }
+    val xsrfCookieValOpt = urlDecodeCookie("dwCoXsrf", request)
 
-    val sidXsrfNewCookies: Tuple3[SidOk, XsrfOk, List[Cookie]] =
+    val sidXsrfNewCookies: (SidStatus, XsrfOk, List[Cookie]) =
       if (request.method == "GET") {
-        // Reuse SID and xsrf token, or create new ones.
-        (sidStatus, xsrfStatus) match {
-          case (sidOk: SidOk, xsrfOk: XsrfOk) => (sidOk, xsrfOk, Nil)
-          case (_, _) => Xsrf.newSidAndXsrf(None)
-        }
-      } else {
-        assert(request.method == "POST") // for now
+        // Accept this request, and create new XSRF token if needed.
+
+        if (!sidStatus.isOk && sidStatus != SidAbsent)
+          Logger.warn("Bad SID: "+ sidStatus +", from IP: "+
+             request.remoteAddress)
+
+        val (xsrfOk: XsrfOk, anyNewXsrfCookie: List[Cookie]) =
+          if (xsrfCookieValOpt.isDefined) {
+            (XsrfOk(xsrfCookieValOpt.get), Nil)
+          }
+          else {
+            val newXsrfOk = Xsrf.create()
+            val cookie = urlEncodeCookie("dwCoXsrf", newXsrfOk.value)
+            (newXsrfOk, List(cookie))
+          }
+
+        (sidStatus, xsrfOk, anyNewXsrfCookie)
+      }
+      else {
+        // Reject this request if the XSRF token is invalid,
+        // or if the SID is corrupt (but not if simply absent).
+        assert(request.method == "POST")
+
         // There must be an xsrf token in a certain header, or in a certain
         // input in any POST:ed form data. Check the header first, in case
         // this is a JSON request (then there is no form data).
@@ -56,23 +69,48 @@ object DebikiSecurity {
             params.get(debiki.HtmlForms.XsrfInpName).map(_.head)
           }
         } getOrElse
-          throwForbidden("DwE0y321", "No XSRF token")
+            throwForbidden("DwE0y321", "No XSRF token")
 
-        xsrfStatus = Xsrf.check(xsrfToken, sidValOpt)
-        (sidStatus, xsrfStatus) match {
-          case (sidOk: SidOk, xsrfOk: XsrfOk) => (sidOk, xsrfOk, Nil)
-          case (_: SidOk, _) => throwForbiddenDialog(
-            "DwE35k3wkU9", "Bad XSRF token", "",
-            // If Javascript is disabled, the reason for the invalid token
-            // could be as described in the end user message bellow. If,
-            // however, Javascript is enabled, debiki.js should detect logins
+        val xsrfOk = {
+          val xsrfStatus = Xsrf.check(xsrfToken, xsrfCookieValOpt)
+          if (!xsrfStatus.isOk) {
+            // Create a new XSRF cookie so whatever-the-user-attempted
+            // will work, should s/he try again.
+            // (If Javascript is enabled, debiki.js should detect logins
             // in other browser tabs, and then check the new SID cookie and
-            // refresh XSRF tokens in any <form>s.
-            "Did you just log in as another user in another browser tab?\n"+
-               "Try reloading this page.\n"+
-               "And copy-paste [any text you've written but not saved] "+
-               "to a text editor, or it'll be lost on reload.")
-          case (_, _) => throwForbidden("DwE530Rstx90", "Bad SID")
+            // refresh XSRF tokens in any <form>s.)
+            val newXsrfCookie = urlEncodeCookie("dwCoXsrf", Xsrf.create().value)
+
+            // If this request is indeed part of one of Mallory's XSRF attacks,
+            // the cookie still won't be sent to Mallory's web page, so creating
+            // a new token should be safe. However, it makes it possible for
+            // Mallory to conduct a DoS attack against [the user that makes
+            // this request], if the user has Javascript disabled (since
+            // Malory can change the user's XSRF token by attempting an XSRF
+            // attack, but the web page cannot update the XSRF form <input>s
+            // with the new value). This feels rather harmless though, and I
+            // think it's more likely that I change the server side code in
+            // some manner (e.g. I'm thinking about rejecting XSRF tokens that
+            // are very old) and then it's a good thing that a new valid
+            // token be created here. (?)
+
+            throwForbiddenDialog(
+              "DwE35k3wkU9", "Security issue (bad XSRF token)", "",
+              "Please try again.\n"+
+              "(You now have a new XSRF token).\n"+
+              "\n"+
+              "If that doesn't work, please reload this page.\n"+
+              "(And copy-paste any unsaved text to a text editor,\n"+
+              "or it'll be lost on reload).",
+              withCookie = Some(newXsrfCookie))
+          }
+          xsrfStatus.asInstanceOf[XsrfOk]
+        }
+
+        (sidStatus) match {
+          case sidOk: SidOk => (sidOk, xsrfOk, Nil)
+          case SidAbsent => (SidAbsent, xsrfOk, Nil)
+          case _ => throwForbidden("DwE530Rstx90", "Bad SID")
         }
       }
 
@@ -99,7 +137,6 @@ case object XsrfNoSid extends XsrfStatus
 case object XsrfBad extends XsrfStatus
 case class XsrfOk(value: String) extends XsrfStatus {
   override def isOk = true
-  def token = value // backw compat, could remove some day ...
 }
 
 
@@ -107,27 +144,27 @@ object Xsrf {
   private val _secretSalt = "w4k2i2ErK84o938"  // hardcoded, for now
   private val _hashLength = 14
 
-  def check(xsrfToken: String, sidValue: Option[String]): XsrfStatus = {
-    if (sidValue.isEmpty) return XsrfNoSid
-    val xsrfFromSid: XsrfOk = create(sidValue.get)
-    if (xsrfFromSid.token != xsrfToken) return XsrfBad
-    xsrfFromSid
+
+  def check(xsrfToken: String, xsrfCookieValue: Option[String]): XsrfStatus = {
+    // COULD check date, and hash, to find out if the token is too old.
+    // (Perhaps shouldn't accept e.g. 1 year old tokens?)
+    // However, if we don't care about the date, this is enough:
+    if (Some(xsrfToken) != xsrfCookieValue) XsrfBad
+    else XsrfOk(xsrfToken)
   }
 
+
   /**
-   * Generates a new xsrf token, based on the SID,
+   * Generates a new XSRF token, based on the current dati and a random number.
    *
-   * The sid itself isn't used directly, because if it's included
-   * in the HTML (in the form xsrf hidden input), it'd be saved to
-   * disk should you download the web page, and someone might find
-   * it (perhaps you email the web page to someone).
+   * If the hash is correct, and the dati not too old, the token is okay.
    *
-   * Alternatively, the browser could calculate the token since it has
-   * the SID. But then I'd need to duplicate the implementation and
-   * cannot add any salt.
+   * (The token is not based on the SID, because when a user loads his/her
+   * very first page and logins for the first time, no SID is available.)
    */
-  def create(sid: String): XsrfOk =
-    XsrfOk(hashSha1Base64UrlSafe(_secretSalt + sid) take _hashLength)
+  def create(): XsrfOk =
+    XsrfOk(
+      (new ju.Date).getTime +"."+ nextRandomString().take(10))
 
 
   def newSidAndXsrf(loginGrant: Option[LoginGrant])
@@ -146,9 +183,9 @@ object Xsrf {
     // Note that the xsrf token is created using the non-base64 encoded
     // cookie value.
     val sidOk = Sid.create(loginId, userId, displayName)
-    val xsrfOk = create(sidOk.value)
+    val xsrfOk = create()
     val sidCookie = urlEncodeCookie("dwCoSid", sidOk.value)
-    val xsrfCookie = urlEncodeCookie("dwCoXsrf", xsrfOk.token)
+    val xsrfCookie = urlEncodeCookie("dwCoXsrf", xsrfOk.value)
     (sidOk, xsrfOk, sidCookie::xsrfCookie::Nil)
   }
 }
@@ -158,6 +195,7 @@ sealed abstract class SidStatus {
   def isOk = false
   def loginId: Option[String] = None
   def userId: Option[String] = None
+  def roleId: Option[String] = None
   def displayName: Option[String] = None
 }
 
@@ -186,7 +224,7 @@ case class SidOk(
   override def isOk = true
 
   // Unauthenticated users' ids start with '-'.
-  def roleId: Option[String] = userId.filter(!_.startsWith("-"))
+  override def roleId: Option[String] = userId.filter(!_.startsWith("-"))
 }
 
 
