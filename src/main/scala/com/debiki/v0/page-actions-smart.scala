@@ -351,6 +351,10 @@ class ViPo(debate: Debate, val post: Post) extends ViAc(debate, post) {
   }
 
 
+  def replyCount: Int =
+    debate.repliesTo(id).length
+
+
   def replies: List[ViPo] =
     debate.repliesTo(id) map (new ViPo(page, _))
 
