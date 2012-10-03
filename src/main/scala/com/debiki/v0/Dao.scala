@@ -142,10 +142,13 @@ abstract class SystemDaoSpi {
    * Creates the very first tenant. Then there cannot be any creator,
    * because there are no users or roles (since there are on other tenants).
    */
+  // COULD rename to createFirstWebsite
   def createTenant(name: String): Tenant
 
+  // COULD rename to loadWebsitesByIds
   def loadTenants(tenantIds: Seq[String]): Seq[Tenant]
 
+  // COULD rename to findWebsitesCanonicalHost
   def lookupTenant(scheme: String, host: String): TenantLookup
 
   def loadNotfsToMailOut(delayInMinutes: Int, numToLoad: Int): NotfsToMail
@@ -630,7 +633,7 @@ class CachingTenantDao(
         // -------- Unfortunately.--
         replaced = _cache.cache.replace(key, oldPage, newPage)
       }
-      xsWithIds  // TODO return newPage instead? Or possibly a pair.
+      xsWithIds  // COULD return newPage instead? Or possibly a pair.
     }
   }
 

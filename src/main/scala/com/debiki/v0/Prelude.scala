@@ -68,16 +68,19 @@ object Prelude {
   def unimplementedIf(condition: Boolean, what: String) =
     if (condition) unimplemented(what)
 
-  /** Write UNTESTED anywhere, not in a comment, and the compiler
-   *  ensures you don't do a typo, so you'll find all UNTESTED should
-   *  you search for UNTESTED before a release (intending to write unit tests).
+  /**
+   * If you're short of time, add an UNTESTED statement. The compiler
+   * ensures you don't do a typo. Then, before a release:
+   *   egrep -Ir 'UNTESTED|XSS_?!|XSRF_?!|TODO' app/ client/ modules/ * /src/
+   * (remove spaces around *) and add test cases and fix security issues.
    */
   def UNTESTED = ()  // If the code might not work, e.g. has never been run.
   def SECURITY = ()  // General security issue, should be fixed before release.
-  def XSRF = ()  // Cross site request forgery.
-  def XSS = ()  // Cross site scripting.
+  def XSRF_! = ()  // Cross site request forgery issue (or bug risk).
+  def XSS_! = ()  // Cross site scripting.
   def BUG = ()  // Need not be a terribly important bug.
-  def TODO = ()  // Do this, or people might notice and complain.
+  def MUST = ()  // Fix before next release.
+  def SHOULD = ()  // Fix before release, unless short of time, or too boring.
   def COULD = ()  // Could do this, but it's not that important.
 
   def runErr(errorCode: String, problem: => String) =

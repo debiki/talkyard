@@ -75,7 +75,7 @@ class PagePartitionVersionTest extends SpecificationWithJUnit
       pageAfter must_== pageWithEditsOnly
     }
 
-    "TODO add flag & rating to EmptyPage, rename to ExamplePage" >> {
+    "Add flag & rating to EmptyPage, rename to ExamplePage" >> {
     }
   }
 

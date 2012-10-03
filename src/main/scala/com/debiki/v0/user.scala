@@ -276,7 +276,8 @@ case class IdentityEmailId(
 case class IdentitySimple(
   id: String,
   override val userId: String,
-  name: String,  // TODO don't allow weird chars, e.g. '?' or '|'
+  name: String,  // COULD reject weird chars, e.g. '?' or '|'
+                 // Or fix later (and replace any weird chars already in db)
   email: String,
   location: String,
   website: String

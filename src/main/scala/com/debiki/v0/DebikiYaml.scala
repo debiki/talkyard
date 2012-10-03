@@ -17,18 +17,18 @@ import scala.collection.{mutable => mut}
 import java.{io => jio, util => ju, lang => jl}
 import net.liftweb.common.{Box, Empty, Full, Failure}
 
-// TODO Ensure post.parent etc not empty. Currently one can answer to parent="".
+SHOU LD Ensure post.parent etc not empty. Currently one can answer to parent="".
 
 object DebikiYaml {
 
   def apply() = new DebikiYaml
 
   def escape(text: String) = {
-    var t = text.replace("\n", "\\n"); // For now. DoS or XSS attack possible.
+    var t = text.replace("\n", "\\n"); XSS _! // For now. DoS or XSS attack possible.
     t
   }
 
-  /** Notice: DoS or XSS attack: Bad input gives corrupt Yaml.
+  XSS _! /** Notice: DoS or XSS attack: Bad input gives corrupt Yaml.
    */
   def toYaml(x: AnyRef): String = x match {
     case debate: Debate =>
@@ -42,7 +42,7 @@ object DebikiYaml {
       debate.edits.foreach { sb ++= toYaml(_) }
       sb.toString
 
-    case post: Post =>  // XSS-attack possible
+    case post: Post =>  XSS _! // -attack possible
       val sb = new mut.StringBuilder
       sb ++= "\n--- !Post"
       sb ++= "\nparent: " ++= post.parent
@@ -55,7 +55,7 @@ object DebikiYaml {
       sb ++= "\ntext: |1\n" ++= stripIndent(post.text)
       sb.toString
 
-    case rating: Rating =>  // XSS-attack possible
+    case rating: Rating =>  XSS _! // -attack possible
       val sb = new mut.StringBuilder
       sb ++= "\n--- !Rating"
       sb ++= "\nby: \"" ++= rating.by += '"'
@@ -65,7 +65,7 @@ object DebikiYaml {
       sb ++= "\ntags: " ++= rating.tags.mkString("[\"", "\", \"", "\"]")
       sb.toString
 
-    case edit: Edit =>  // XSS-attack possible
+    case edit: Edit =>  XSS _! // -attack possible
       val sb = new mut.StringBuilder
       sb ++= "\n--- !Edit"
       sb ++= "\nid: \"" ++= edit.id += '"'
@@ -77,7 +77,7 @@ object DebikiYaml {
       sb ++= "\ndesc: |1\n" ++= stripIndent(edit.desc)
       sb.toString
 
-    case editVote: EditVote =>  // XSS-attack possible
+    case editVote: EditVote =>  XSS _! // -attack possible
       val sb = new mut.StringBuilder
       sb ++= "\n--- !EditVote"
       sb ++= "\nid: \"" ++= editVote.id += '"'
@@ -88,7 +88,7 @@ object DebikiYaml {
       sb ++= "\ndiss: " ++= editVote.diss.mkString("[\"", "\", \"", "\"]")
       sb.toString
 
-    case ea: EditApplied =>  // XSS-attack possible
+    case ea: EditApplied =>  XSS _! // -attack possible
       val sb = new mut.StringBuilder
       sb ++= "\n--- !EditApplied"
       sb ++= "\nedit: \"" ++= ea.editId += '"'
@@ -420,8 +420,8 @@ class DebikiYaml {
      *  org.yaml.snakeyaml.nodes.MappingNode's toString to include some
      *  more info.
      *  DoS attacks possible? Flooding appservers with long log messages?
-     *  XSS attack? User provided data included in exception, shown in browser?
      */
+    XSS _! // attack? User provided data included in exception, shown in browser?
     private def debugReprOf(node: yn.Node): String = node match {
       case m: yn.MappingNode =>
         val sb = new StringBuilder
