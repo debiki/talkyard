@@ -24,14 +24,14 @@ describe 'PathsCtrl', ->
     expect(scope.isFolder {}).toBe true
 
   it 'can sort an empty list', ->
-    expect(test.sortPathsInPlace []).toEqual []
+    expect(test.sortItemsInPlace []).toEqual []
     #expect(true).toEqual(false)
 
   it 'can sort a single page and a single folder', ->
     page = -> [{ value: '/a',  pageId: 'ab12cd' }]
     folder = -> [{ value: '/a/' }]
-    expect(test.sortPathsInPlace page()).toEqual page()
-    expect(test.sortPathsInPlace folder()).toEqual folder()
+    expect(test.sortItemsInPlace page()).toEqual page()
+    expect(test.sortItemsInPlace folder()).toEqual folder()
     #expect(true).toEqual(false)
 
   it 'can sort pages in the same folder', ->
@@ -39,24 +39,24 @@ describe 'PathsCtrl', ->
         { value: '/',  pageId: 'ab12cd' },
         { value: '/a', pageId: 'ab12cd' },
         { value: '/z', pageId: 'ab12cd' }]
-    expect(test.sortPathsInPlace key().reverse()).toEqual key()
-    expect(test.sortPathsInPlace key()).toEqual key()
+    expect(test.sortItemsInPlace key().reverse()).toEqual key()
+    expect(test.sortItemsInPlace key()).toEqual key()
     #expect(true).toEqual(false)
 
   it 'can sort a page and a folder', ->
     key = -> [
         { value: '/a',  pageId: 'ab12cd' },
         { value: '/a/', pageId: 'ab12cd' }]
-    expect(test.sortPathsInPlace key().reverse()).toEqual key()
-    expect(test.sortPathsInPlace key()).toEqual key()
+    expect(test.sortItemsInPlace key().reverse()).toEqual key()
+    expect(test.sortItemsInPlace key()).toEqual key()
     #expect(true).toEqual(false)
 
   it 'can sort folders', ->
     key = -> [
         { value: '/a/' },
         { value: '/b/' }]
-    expect(test.sortPathsInPlace key().reverse()).toEqual key()
-    expect(test.sortPathsInPlace key()).toEqual key()
+    expect(test.sortItemsInPlace key().reverse()).toEqual key()
+    expect(test.sortItemsInPlace key()).toEqual key()
     #expect(true).toEqual(false)
 
   it 'can sort deep folders', ->
@@ -64,16 +64,16 @@ describe 'PathsCtrl', ->
         { value: '/a/a/a/' },
         { value: '/a/b/' },
         { value: '/c/' }]
-    expect(test.sortPathsInPlace key().reverse()).toEqual key()
-    expect(test.sortPathsInPlace key()).toEqual key()
+    expect(test.sortItemsInPlace key().reverse()).toEqual key()
+    expect(test.sortItemsInPlace key()).toEqual key()
     #expect(true).toEqual(false)
 
   it 'can sort a folder and its index page', ->
     key = -> [
         { value: '/a/' },
         { value: '/a/', pageId: 'ab12cd' }]
-    expect(test.sortPathsInPlace key().reverse()).toEqual key()
-    expect(test.sortPathsInPlace key()).toEqual key()
+    expect(test.sortItemsInPlace key().reverse()).toEqual key()
+    expect(test.sortItemsInPlace key()).toEqual key()
     #expect(true).toEqual(false)
 
   it 'can sort a few pages and folders, pages first', ->
@@ -84,8 +84,8 @@ describe 'PathsCtrl', ->
         { value: '/z', pageId: 'ab12cd' },
         { value: '/a/' },
         { value: '/a/', pageId: 'ab12cd' }]
-    expect(test.sortPathsInPlace key().reverse()).toEqual key()
-    expect(test.sortPathsInPlace _(key()).shuffle()).toEqual key()
+    expect(test.sortItemsInPlace key().reverse()).toEqual key()
+    expect(test.sortItemsInPlace _(key()).shuffle()).toEqual key()
     #expect(true).toEqual(false)
 
   it 'can sort many pages and folders', ->
@@ -109,9 +109,9 @@ describe 'PathsCtrl', ->
         { value: '/zz/a', pageId: 'ab12cd'  },
         { value: '/zz/z', pageId: 'ab12cd'  },
         { value: '/zz/b/' }]
-    expect(test.sortPathsInPlace key().reverse()).toEqual key()
-    expect(test.sortPathsInPlace _(key()).shuffle()).toEqual key()
-    expect(test.sortPathsInPlace key()).toEqual key()
+    expect(test.sortItemsInPlace key().reverse()).toEqual key()
+    expect(test.sortItemsInPlace _(key()).shuffle()).toEqual key()
+    expect(test.sortItemsInPlace key()).toEqual key()
     #expect(true).toEqual(false)
 
   describe 'updateListItemFields', ->

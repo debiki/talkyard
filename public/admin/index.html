@@ -127,23 +127,23 @@
             <div id='page-tree-container'>
               <label>Filter paths: <input ng-model="pathFilterText"/></label>
               <ol id='page-tree' class='{{"full-paths-"+ showFullPaths}}'>
-                <li ng-show="path.hideCount == 0 || path.included"
-                    ng-repeat="path in listItems | filterProp:'path':pathFilterText"
-                    class='{{isFolderOrPageClass(path) + " open-" + path.open + " path-depth-" + path.depth + " included-" + path.included + cssClassForMark(path.mark)}}'>
+                <li ng-show="item.hideCount == 0 || item.included"
+                    ng-repeat="item in listItems | filterProp:'path':pathFilterText"
+                    class='{{isFolderOrPageClass(item) + " open-" + item.open + " path-depth-" + item.depth + " included-" + item.included + cssClassForMark(item.mark)}}'>
                   <label class="checkbox">
                     <input type="checkbox"
-                       ng-model="path.included"
+                       ng-model="item.included"
                        ng-change="updateSelections()" />
                   </label>
-                  <a ng-click='openClose(path)' class='open-close-path' href='#'>{{path.displayPath}}<span class='page-clarification'>{{path.clarification}}</span></a>
-                  <div ng-switch='isPage(path)' class='path-info'>
+                  <a ng-click='openClose(item)' class='open-close-path' href='#'>{{item.displayPath}}<span class='page-clarification'>{{item.clarification}}</span></a>
+                  <div ng-switch='isPage(item)' class='path-info'>
                     <div ng-switch-when='true' class='page-info'>
-                      Title: <a href='{{path.path}}' target='_blank'>{{path.title}}</a><br>
-                      Author: <a href="#">{{path.authors}}</a><br>
+                      Title: <a href='{{item.path}}' target='_blank'>{{item.title}}</a><br>
+                      Author: <a href="#">{{item.authors}}</a><br>
                       Published: <span>2012-05-03 22:40</span>
                       <!-- <div class='actions'>
-                        <a href='{{path.path + "?move-page"}}'>Move</a>
-                        <a href='{{path.path + "?rename-page"}}'>Rename</a>
+                        <a href='{{item.path + "?move-page"}}'>Move</a>
+                        <a href='{{item.path + "?rename-page"}}'>Rename</a>
                       </div> -->
                     </div>
                     <!-- <div ng-switch-default class='folder-info'>

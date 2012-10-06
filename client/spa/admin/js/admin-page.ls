@@ -127,14 +127,14 @@ AdminModule.factory 'AdminService', ['$http', ($http) ->
     moveSelectedPages fromFolder: '/', toFolder: DRAFTS_FOLDER
 
 
-  isPage = (path) -> path.pageId?
-  isFolder = (path) -> !isPage(path)
+  isPage = (item) -> item.pageId?
+  isFolder = (item) -> !isPage(item)
 
   $scope.listItems = []
   $scope.isPage = isPage
   $scope.isFolder = isFolder
-  $scope.isFolderOrPageClass = (path) ->
-    if isPage(path) then 'is-page' else 'is-folder'
+  $scope.isFolderOrPageClass = (item) ->
+    if isPage(item) then 'is-page' else 'is-folder'
 
   loadAndListPages = ->
     adminService.listAllPages (data) ->
@@ -142,7 +142,6 @@ AdminModule.factory 'AdminService', ['$http', ($http) ->
 
   listMorePagesDeriveFolders = (morePages) ->
       folderPathsDupl = []
-      paths = []
 
       for page in morePages
         $scope.listItems.push makePageListItem(page)
@@ -153,11 +152,11 @@ AdminModule.factory 'AdminService', ['$http', ($http) ->
 
       for path in folderPaths
         # COULD skip `path` if $scope.listItems already contains that folder.
-        folderPath =
+        folderItem =
             path: path
             included: false
             open: false
-        $scope.listItems.push folderPath
+        $scope.listItems.push folderItem
 
       redrawPageList!
 
@@ -186,13 +185,14 @@ AdminModule.factory 'AdminService', ['$http', ($http) ->
 
 
   redrawPageList = ->
-    sortPathsInPlace $scope.listItems
+    sortItemsInPlace $scope.listItems
     updateListItemFields $scope.listItems
     $scope.updateSelections!
 
+
   # Places deep paths at the end. Sorts alphabetically, at each depth.
-  sortPathsInPlace = (paths) ->
-    paths.sort (a, b) ->
+  sortItemsInPlace = (items) ->
+    items.sort (a, b) ->
       partsA = a.path.split '/'
       partsB = b.path.split '/'
       lenA = partsA.length
@@ -228,13 +228,13 @@ AdminModule.factory 'AdminService', ['$http', ($http) ->
     selectedFolderListItems := []
     numDrafts = 0
     numNonDrafts = 0
-    for path in $scope.listItems when path.included
-      if path.pageId
-        selectedPageListItems.push path
-        if path.path.search(DRAFTS_FOLDER) == 0 => numDrafts += 1
+    for item in $scope.listItems when item.included
+      if item.pageId
+        selectedPageListItems.push item
+        if item.path.search(DRAFTS_FOLDER) == 0 => numDrafts += 1
         else numNonDrafts += 1
       else
-        selectedFolderListItems.push path
+        selectedFolderListItems.push item
 
     numPages = selectedPageListItems.length
     numFolders = selectedFolderListItems.length
@@ -253,22 +253,22 @@ AdminModule.factory 'AdminService', ['$http', ($http) ->
     return
 
   /**
-   * Traverses the $scope.listItems list once, checks each path.closed,
+   * Traverses the $scope.listItems list once, checks each item.closed,
    * and updates all hide counts accordingly.
    */
-  updateListItemFields = (paths) ->
+  updateListItemFields = (items) ->
     curHideCount = 0
     curParentFolderPath = '/'
     folderStack = []
-    for path in paths
+    for item in items
 
       # Leave folder and continue from some previously stacked parent?
-      if isFolder path
+      if isFolder item
         curHideCount = 0
         curParentFolderPath = '/'
         while curParentFolderPath == '/' && folderStack.length > 0
           { childHideCount, folderPath } = last folderStack
-          if path.path.search(folderPath) == 0
+          if item.path.search(folderPath) == 0
             curHideCount = childHideCount
             curParentFolderPath = folderPath
           else
@@ -278,29 +278,29 @@ AdminModule.factory 'AdminService', ['$http', ($http) ->
       # But always show stuff with a mark (could a new page the user
       # just created).
       #bugUnless 0 <= curHideCount
-      path.hideCount = if path.mark then 0 else curHideCount
-      path.depth = folderStack.length
-      path.displayPath = path.path.replace curParentFolderPath, ''
+      item.hideCount = if item.mark then 0 else curHideCount
+      item.depth = folderStack.length
+      item.displayPath = item.path.replace curParentFolderPath, ''
 
       # Enter folder?
-      if isFolder path
-        curHideCount += 1 unless path.open
-        curParentFolderPath = path.path
+      if isFolder item
+        curHideCount += 1 unless item.open
+        curParentFolderPath = item.path
         folderStack.push (
-            folderPath: path.path
+            folderPath: item.path
             childHideCount: curHideCount )
     return
 
 
-  $scope.openClose = (path) ->
-    path.open = !path.open
+  $scope.openClose = (item) ->
+    item.open = !item.open
     updateListItemFields $scope.listItems
 
   $scope.cssClassForMark = (mark) ->
     if mark then ' marked-path' else ''
 
   $scope.test =
-    sortPathsInPlace: sortPathsInPlace
+    sortItemsInPlace: sortItemsInPlace
     updateListItemFields: updateListItemFields
 
   loadAndListPages!
