@@ -128,7 +128,7 @@
               <label>Filter paths: <input ng-model="pathFilterText"/></label>
               <ol id='page-tree' class='{{"full-paths-"+ showFullPaths}}'>
                 <li ng-show="path.hideCount == 0 || path.included"
-                    ng-repeat="path in paths | filterProp:'value':pathFilterText"
+                    ng-repeat="path in paths | filterProp:'path':pathFilterText"
                     class='{{isFolderOrPageClass(path) + " open-" + path.open + " path-depth-" + path.depth + " included-" + path.included + cssClassForMark(path.mark)}}'>
                   <label class="checkbox">
                     <input type="checkbox"
@@ -138,12 +138,12 @@
                   <a ng-click='openClose(path)' class='open-close-path' href='#'>{{path.displayPath}}<span class='page-clarification'>{{path.clarification}}</span></a>
                   <div ng-switch='isPage(path)' class='path-info'>
                     <div ng-switch-when='true' class='page-info'>
-                      Title: <a href='{{path.value}}' target='_blank'>{{path.title}}</a><br>
+                      Title: <a href='{{path.path}}' target='_blank'>{{path.title}}</a><br>
                       Author: <a href="#">{{path.authors}}</a><br>
                       Published: <span>2012-05-03 22:40</span>
                       <!-- <div class='actions'>
-                        <a href='{{path.value + "?move-page"}}'>Move</a>
-                        <a href='{{path.value + "?rename-page"}}'>Rename</a>
+                        <a href='{{path.path + "?move-page"}}'>Move</a>
+                        <a href='{{path.path + "?rename-page"}}'>Rename</a>
                       </div> -->
                     </div>
                     <!-- <div ng-switch-default class='folder-info'>

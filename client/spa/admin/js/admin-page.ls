@@ -105,14 +105,13 @@ AdminModule.factory 'AdminService', ['$http', ($http) ->
   $scope.moveSelectedPage = ->
     bug('DwE90K2') if selectedPageListItems.length != 1
     pageListItem = selectedPageListItems[0]
-    # COULD rename `value` to `path`
-    window.open <| pageListItem.value + '?move-page'
+    window.open <| pageListItem.path + '?move-page'
 
 
   moveSelectedPages = ({ fromFolder, toFolder }) ->
     refreshPageList = ->
       for pageListItem in selectedPageListItems
-        pageListItem.value .= replace fromFolder, toFolder
+        pageListItem.path .= replace fromFolder, toFolder
       redrawPageList!
 
     for pageListItem in selectedPageListItems
@@ -155,7 +154,7 @@ AdminModule.factory 'AdminService', ['$http', ($http) ->
       for path in folderPaths
         # COULD skip `path` if $scope.paths already contains that folder.
         folderPath =
-            value: path
+            path: path
             included: false
             open: false
         $scope.paths.push folderPath
@@ -171,7 +170,7 @@ AdminModule.factory 'AdminService', ['$http', ($http) ->
   makePageListItem = (page) ->
     item =
         pageId: page.id
-        value: page.path
+        path: page.path
         title: page.title
         authors: page.authors
         included: false
@@ -194,8 +193,8 @@ AdminModule.factory 'AdminService', ['$http', ($http) ->
   # Places deep paths at the end. Sorts alphabetically, at each depth.
   sortPathsInPlace = (paths) ->
     paths.sort (a, b) ->
-      partsA = a.value.split '/'
-      partsB = b.value.split '/'
+      partsA = a.path.split '/'
+      partsB = b.path.split '/'
       lenA = partsA.length
       lenB = partsB.length
       minLen = Math.min(lenA, lenB)
@@ -203,7 +202,7 @@ AdminModule.factory 'AdminService', ['$http', ($http) ->
         partA = partsA[ix]
         partB = partsB[ix]
         # Sort a folder before the pages in it.
-        # (A folder and its index page has identical `value`s, e.g. `/folder/`.)
+        # (A folder and its index page has identical `path`s, e.g. `/folder/`.)
         if ix + 1 == lenA and lenA == lenB
           return -1 if isFolder(a) and isPage(b)
           return 1 if isFolder(b) and isPage(a)
@@ -232,7 +231,7 @@ AdminModule.factory 'AdminService', ['$http', ($http) ->
     for path in $scope.paths when path.included
       if path.pageId
         selectedPageListItems.push path
-        if path.value.search(DRAFTS_FOLDER) == 0 => numDrafts += 1
+        if path.path.search(DRAFTS_FOLDER) == 0 => numDrafts += 1
         else numNonDrafts += 1
       else
         selectedFolderListItems.push path
@@ -269,7 +268,7 @@ AdminModule.factory 'AdminService', ['$http', ($http) ->
         curParentFolderPath = '/'
         while curParentFolderPath == '/' && folderStack.length > 0
           { childHideCount, folderPath } = last folderStack
-          if path.value.search(folderPath) == 0
+          if path.path.search(folderPath) == 0
             curHideCount = childHideCount
             curParentFolderPath = folderPath
           else
@@ -281,14 +280,14 @@ AdminModule.factory 'AdminService', ['$http', ($http) ->
       #bugUnless 0 <= curHideCount
       path.hideCount = if path.mark then 0 else curHideCount
       path.depth = folderStack.length
-      path.displayPath = path.value.replace curParentFolderPath, ''
+      path.displayPath = path.path.replace curParentFolderPath, ''
 
       # Enter folder?
       if isFolder path
         curHideCount += 1 unless path.open
-        curParentFolderPath = path.value
+        curParentFolderPath = path.path
         folderStack.push (
-            folderPath: path.value
+            folderPath: path.path
             childHideCount: curHideCount )
     return
 
