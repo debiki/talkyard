@@ -147,6 +147,10 @@ li {
 #page-tree:not(.full-paths-true) .path-depth-8 > :not(.checkbox) { padding-left: 160px }
 #page-tree:not(.full-paths-true) .path-depth-9 > :not(.checkbox) { padding-left: 180px }
 
+#details > .tab-content {
+  overflow: visible;
+}
+
 #details thead,
 #details tbody {
   font-size: 13px;
