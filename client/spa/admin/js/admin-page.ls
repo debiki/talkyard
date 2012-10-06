@@ -85,21 +85,41 @@ AdminModule.factory 'AdminService', ['$http', ($http) ->
   const DRAFTS_FOLDER = '/.drafts/'
 
   /**
-   * Creates a new page and opens it in a new browser tab.
+   * Creates a new page list item, which, from the user's point of view,
+   * is similar to creating a new unsaved page.
    */
   $scope.createPage = ->
-    # Open new tab directly, in direct response to the user-initiated event,
-    # or the browser's pop-up blocker tends to blocks it.
-    newBrowserPage = window.open 'about:blank', '_blank'
-    now = new Date!
-    folder = '/' +
-        padNumberToLength2(now.getFullYear!) + '/' +
-        padNumberToLength2(now.getMonth!) + '/' +
-        padNumberToLength2(now.getDate!) + '/'
-    adminService.createPage folder, (newPage) ->
-      newBrowserPage.location = newPage.path
-      newPage.mark = 'New'
-      listOneMorePage newPage
+    relFolder = curYearMonthDayRelFolder!
+    pageId = generatePageId!
+    pageListItem = makePageListItem(
+        id: pageId
+        path: '/.drafts/' + relFolder + '-' + pageId + '-new-page'
+        title: undefined
+        authors: undefined    # COULD set to current user
+        mark: 'New, unsaved') # change to `status: NewUnsaved`?
+
+    # Select the new page, and nothing else, so the 'View/edit' button
+    # appears and the user hopefully understands what to do next.
+    pageListItem.included = true
+    for item in $scope.listItems
+      item.included = false
+
+    listMorePagesDeriveFolders [pageListItem]
+
+
+  /**
+   * Generates an id like '5kbq9'. The id starts and ends with a digit, so
+   * as not to look like some word. And the vowels 'aoei' are excluded
+   * (but not 'u' and 'y'), to hopefully avoid generating any ugly word.
+   */
+  generatePageId = ->
+    id = ''
+    charset = '0123456789bcdfghjklmnpqrstuvwxyz'
+    for i from 1 to 5
+      charsetLength =
+          if i == 1 or i == 5 then 10 else charset.length
+      id += charset.charAt Math.floor(Math.random! * charsetLength)
+    id
 
 
   $scope.moveSelectedPage = ->
@@ -136,33 +156,33 @@ AdminModule.factory 'AdminService', ['$http', ($http) ->
   $scope.isFolderOrPageClass = (item) ->
     if isPage(item) then 'is-page' else 'is-folder'
 
+
   loadAndListPages = ->
     adminService.listAllPages (data) ->
-      listMorePagesDeriveFolders data.pages
-
-  listMorePagesDeriveFolders = (morePages) ->
-      folderPathsDupl = []
-
-      for page in morePages
-        $scope.listItems.push makePageListItem(page)
-        folderPathsDupl.push page.folder
-
-      folderPaths = unique folderPathsDupl
-      folderPaths = reject (== '/'), folderPaths
-
-      for path in folderPaths
-        # COULD skip `path` if $scope.listItems already contains that folder.
-        folderItem =
-            path: path
-            included: false
-            open: false
-        $scope.listItems.push folderItem
-
-      redrawPageList!
+      listMorePagesDeriveFolders <|
+          [makePageListItem(page) for page in data.pages]
 
 
-  listOneMorePage = (page) ->
-    $scope.listItems.push makePageListItem(page)
+  listMorePagesDeriveFolders = (morePageItems) ->
+    newFolderPaths = []
+
+    for pageItem in morePageItems
+      $scope.listItems.push pageItem
+      newFolderPaths.push parentFolderOf(pageItem.path)
+
+    newFolderPaths = unique newFolderPaths
+    newFolderPaths = reject (== '/'), newFolderPaths
+
+    oldFolderPaths =
+        [item.path for item in $scope.listItems when isFolder(item)]
+
+    for newPath in newFolderPaths when not find (== newPath), oldFolderPaths
+      folderItem =
+          path: newPath
+          included: false
+          open: false
+      $scope.listItems.push folderItem
+
     redrawPageList!
 
 
@@ -438,6 +458,17 @@ function parentFolderOf(path)
   if !matches => return '/'
   bug('DwE03Al8') if matches.length != 2
   matches[1]
+
+
+/**
+ * A relative folder path, e.g. `2012/09/23/` (no leading slash).
+ */
+function curYearMonthDayRelFolder
+  now = new Date!
+  return
+      padNumberToLength2(now.getFullYear!) + '/' +
+      padNumberToLength2(now.getMonth!) + '/' +
+      padNumberToLength2(now.getDate!) + '/'
 
 
 
