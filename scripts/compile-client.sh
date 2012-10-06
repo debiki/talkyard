@@ -2,7 +2,7 @@
 
 # I've not yet translated all files from CoffeeScript to LiveScript.
 # Compile CoffeeScript.
-coffee -cw test &
+coffee -cw test-client &
 
 # Have Brunch (a NodeJS project) compile and bundle scripts and styles
 # from client/ to Play's public/ dir.
