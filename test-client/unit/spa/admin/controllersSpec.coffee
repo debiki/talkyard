@@ -114,11 +114,11 @@ describe 'PathsCtrl', ->
     expect(test.sortPathsInPlace key()).toEqual key()
     #expect(true).toEqual(false)
 
-  describe 'updateHideCounts', ->
+  describe 'updateListItemFields', ->
 
     applyUpdateHitCounts = (paths) ->
       result = map ((path) -> _(path).kick('hideCount')), paths
-      test.updateHideCounts result
+      test.updateListItemFields result
       result
 
     it 'can handle empty lists', ->
@@ -126,53 +126,62 @@ describe 'PathsCtrl', ->
       expect(applyUpdateHitCounts key).toEqual key
 
     it 'can show a single homepage', ->
-      key = [{ hideCount: 0, depth: 0, value: '/', open: false, pageId: 'p0' }]
+      key = [{ hideCount: 0, depth: 0, value: '/', displayPath: '', open: false, pageId: 'p0' }]
       expect(applyUpdateHitCounts key).toEqual key
 
     it 'can hide a page in a closed folder', ->
       key = [
-        { hideCount: 0, depth: 1, value: '/aa/', open: false },
-        { hideCount: 1, depth: 2, value: '/aa/bb', open: false, pageId: 'pbb' },
+        { hideCount: 0, depth: 0, value: '/aa/', displayPath: 'aa/', open: false },
+        { hideCount: 1, depth: 1, value: '/aa/bb', displayPath: 'bb', open: false, pageId: 'pbb' },
         ]
       expect(applyUpdateHitCounts key).toEqual key
 
     it 'can show a page in an open folder', ->
       key = [
-        { hideCount: 0, depth: 1, value: '/aa/', open: true },
-        { hideCount: 0, depth: 2, value: '/aa/bb', open: false, pageId: 'pbb' },
+        { hideCount: 0, depth: 0, value: '/aa/', displayPath: 'aa/', open: true },
+        { hideCount: 0, depth: 1, value: '/aa/bb', displayPath: 'bb', open: false, pageId: 'pbb' },
         ]
       expect(applyUpdateHitCounts key).toEqual key
 
     it 'can hide one deeper folder', ->
       key = [
-        { hideCount: 0, depth: 1, value: '/aa/', open: false },
-        { hideCount: 1, depth: 2, value: '/aa/bb/', open: false },
+        { hideCount: 0, depth: 0, value: '/aa/', displayPath: 'aa/', open: false },
+        { hideCount: 1, depth: 1, value: '/aa/bb/', displayPath: 'bb/', open: false },
         ]
       expect(applyUpdateHitCounts key).toEqual key
 
     it 'can hide many deeper folders', ->
       # /aa/ shouldn't be pop()ed to many times.
       key = [
-        { hideCount: 0, depth: 1, value: '/aa/', open: false },
-        { hideCount: 1, depth: 2, value: '/aa/bb/', open: false },
-        { hideCount: 1, depth: 2, value: '/aa/cc/', open: false },
-        { hideCount: 1, depth: 2, value: '/aa/dd/', open: false },
+        { hideCount: 0, depth: 0, value: '/aa/', displayPath: 'aa/', open: false },
+        { hideCount: 1, depth: 1, value: '/aa/bb/', displayPath: 'bb/', open: false },
+        { hideCount: 1, depth: 1, value: '/aa/cc/', displayPath: 'cc/', open: false },
+        { hideCount: 1, depth: 1, value: '/aa/dd/', displayPath: 'dd/', open: false },
         ]
       expect(applyUpdateHitCounts key).toEqual key
 
     it 'can show a deeper folder that is no child of any prev closed folder', ->
       key = [
-        { hideCount: 0, depth: 1, value: '/aa/', open: false },
-        { hideCount: 0, depth: 2, value: '/bb/cc/', open: false }, # not in /aa/
+        { hideCount: 0, depth: 0, value: '/aa/', displayPath: 'aa/', open: false },
+        { hideCount: 0, depth: 0, value: '/bb/cc/', displayPath: 'bb/cc/', open: false }, # not in /aa/
         ]
       expect(applyUpdateHitCounts key).toEqual key
 
     it 'can handle a folder that is a child of the last but one prev folder', ->
       key = [
-        { hideCount: 0, depth: 1, value: '/a/', open: false },
-        { hideCount: 1, depth: 2, value: '/a/b/', open: false },
-        { hideCount: 2, depth: 3, value: '/a/b/c', open: false },  # in /a/b/
-        { hideCount: 1, depth: 3, value: '/a/x/y/', open: false }, # in /a/
+        { hideCount: 0, depth: 0, value: '/a/', displayPath: 'a/', open: false },
+        { hideCount: 1, depth: 1, value: '/a/b/', displayPath: 'b/', open: false },
+        { hideCount: 2, depth: 2, value: '/a/b/c', displayPath: 'c', open: false },  # in /a/b/
+        { hideCount: 1, depth: 1, value: '/a/x/y/', displayPath: 'x/y/', open: false }, # in /a/
+        ]
+      expect(applyUpdateHitCounts key).toEqual key
+
+    it 'same as above, but folders open', ->
+      key = [
+        { hideCount: 0, depth: 0, value: '/a/', displayPath: 'a/', open: true },
+        { hideCount: 0, depth: 1, value: '/a/b/', displayPath: 'b/', open: true },
+        { hideCount: 0, depth: 2, value: '/a/b/c', displayPath: 'c', open: true },  # in /a/b/
+        { hideCount: 0, depth: 1, value: '/a/x/y/', displayPath: 'x/y/', open: true}, # in /a/
         ]
       expect(applyUpdateHitCounts key).toEqual key
 

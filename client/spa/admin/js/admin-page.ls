@@ -113,7 +113,6 @@ AdminModule.factory 'AdminService', ['$http', ($http) ->
     refreshPageList = ->
       for pageListItem in selectedPageListItems
         pageListItem.value .= replace fromFolder, toFolder
-        pageListItem.displayPath .= replace fromFolder, toFolder
       redrawPageList!
 
     for pageListItem in selectedPageListItems
@@ -131,9 +130,6 @@ AdminModule.factory 'AdminService', ['$http', ($http) ->
 
   isPage = (path) -> path.pageId?
   isFolder = (path) -> !isPage(path)
-  depthOf = (path) ->
-    matches = path.match(//(/[^/]*)//g)
-    matches?.length || 0
 
   $scope.paths = []
   $scope.isPage = isPage
@@ -158,12 +154,9 @@ AdminModule.factory 'AdminService', ['$http', ($http) ->
 
       for path in folderPaths
         # COULD skip `path` if $scope.paths already contains that folder.
-        depth = depthOf path
         folderPath =
             value: path
-            displayPath: path # folderDisplayPath folderPath
             included: false
-            depth: depth
             open: false
         $scope.paths.push folderPath
 
@@ -176,15 +169,12 @@ AdminModule.factory 'AdminService', ['$http', ($http) ->
 
 
   makePageListItem = (page) ->
-    depth = depthOf page.path
     item =
         pageId: page.id
         value: page.path
-        displayPath: page.path
         title: page.title
         authors: page.authors
         included: false
-        depth: depth
         open: false
         mark: page.mark
 
@@ -198,8 +188,8 @@ AdminModule.factory 'AdminService', ['$http', ($http) ->
 
   redrawPageList = ->
     sortPathsInPlace $scope.paths
-    updateHideCounts $scope.paths
-    $scope.updateSelectedPaths!
+    updateListItemFields $scope.paths
+    $scope.updateSelections!
 
   # Places deep paths at the end. Sorts alphabetically, at each depth.
   sortPathsInPlace = (paths) ->
@@ -234,7 +224,7 @@ AdminModule.factory 'AdminService', ['$http', ($http) ->
    * Scans $scope.paths and updates page and folder selection count
    * variables.
    */
-  $scope.updateSelectedPaths = ->
+  $scope.updateSelections = ->
     selectedPageListItems := []
     selectedFolderListItems := []
     numDrafts = 0
@@ -267,45 +257,52 @@ AdminModule.factory 'AdminService', ['$http', ($http) ->
    * Traverses the $scope.paths list once, checks each path.closed,
    * and updates all hide counts accordingly.
    */
-  updateHideCounts = (paths) ->
+  updateListItemFields = (paths) ->
     curHideCount = 0
+    curParentFolderPath = '/'
     folderStack = []
     for path in paths
-      # Leave folder, continue from some previously stacked parent?
+
+      # Leave folder and continue from some previously stacked parent?
       if isFolder path
         curHideCount = 0
-        parentFolder = null
-        while !parentFolder && folderStack.length > 0
+        curParentFolderPath = '/'
+        while curParentFolderPath == '/' && folderStack.length > 0
           { childHideCount, folderPath } = last folderStack
           if path.value.search(folderPath) == 0
-            parentFolder = folderPath
             curHideCount = childHideCount
+            curParentFolderPath = folderPath
           else
             folderStack.pop()
+
       # Set hit count for folders, both open and closed, and pages.
       # But always show stuff with a mark (could a new page the user
       # just created).
       #bugUnless 0 <= curHideCount
-      path.hideCount =
-          if path.mark then 0 else curHideCount
+      path.hideCount = if path.mark then 0 else curHideCount
+      path.depth = folderStack.length
+      path.displayPath = path.value.replace curParentFolderPath, ''
+
       # Enter folder?
       if isFolder path
         curHideCount += 1 unless path.open
+        curParentFolderPath = path.value
         folderStack.push (
             folderPath: path.value
             childHideCount: curHideCount )
-    undefined
+    return
+
 
   $scope.openClose = (path) ->
     path.open = !path.open
-    updateHideCounts $scope.paths
+    updateListItemFields $scope.paths
 
   $scope.cssClassForMark = (mark) ->
     if mark then ' marked-path' else ''
 
   $scope.test =
     sortPathsInPlace: sortPathsInPlace
-    updateHideCounts: updateHideCounts
+    updateListItemFields: updateListItemFields
 
   loadAndListPages!
 

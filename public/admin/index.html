@@ -129,11 +129,11 @@
               <ol id='page-tree' class='{{"full-paths-"+ showFullPaths}}'>
                 <li ng-show="path.hideCount == 0 || path.included"
                     ng-repeat="path in paths | filterProp:'value':pathFilterText"
-                    class='{{isFolderOrPageClass(path) + " open-" + path.open + " Xpath-depth-" + path.depth + " included-" + path.included + cssClassForMark(path.mark)}}'>
+                    class='{{isFolderOrPageClass(path) + " open-" + path.open + " path-depth-" + path.depth + " included-" + path.included + cssClassForMark(path.mark)}}'>
                   <label class="checkbox">
                     <input type="checkbox"
                        ng-model="path.included"
-                       ng-change="updateSelectedPaths()" />
+                       ng-change="updateSelections()" />
                   </label>
                   <a ng-click='openClose(path)' class='open-close-path' href='#'>{{path.displayPath}}<span class='page-clarification'>{{path.clarification}}</span></a>
                   <div ng-switch='isPage(path)' class='path-info'>
