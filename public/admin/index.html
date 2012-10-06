@@ -128,7 +128,7 @@
               <label>Filter paths: <input ng-model="pathFilterText"/></label>
               <ol id='page-tree' class='{{"full-paths-"+ showFullPaths}}'>
                 <li ng-show="path.hideCount == 0 || path.included"
-                    ng-repeat="path in paths | filterProp:'path':pathFilterText"
+                    ng-repeat="path in listItems | filterProp:'path':pathFilterText"
                     class='{{isFolderOrPageClass(path) + " open-" + path.open + " path-depth-" + path.depth + " included-" + path.included + cssClassForMark(path.mark)}}'>
                   <label class="checkbox">
                     <input type="checkbox"

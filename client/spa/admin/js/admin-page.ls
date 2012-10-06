@@ -130,7 +130,7 @@ AdminModule.factory 'AdminService', ['$http', ($http) ->
   isPage = (path) -> path.pageId?
   isFolder = (path) -> !isPage(path)
 
-  $scope.paths = []
+  $scope.listItems = []
   $scope.isPage = isPage
   $scope.isFolder = isFolder
   $scope.isFolderOrPageClass = (path) ->
@@ -145,25 +145,25 @@ AdminModule.factory 'AdminService', ['$http', ($http) ->
       paths = []
 
       for page in morePages
-        $scope.paths.push makePageListItem(page)
+        $scope.listItems.push makePageListItem(page)
         folderPathsDupl.push page.folder
 
       folderPaths = unique folderPathsDupl
       folderPaths = reject (== '/'), folderPaths
 
       for path in folderPaths
-        # COULD skip `path` if $scope.paths already contains that folder.
+        # COULD skip `path` if $scope.listItems already contains that folder.
         folderPath =
             path: path
             included: false
             open: false
-        $scope.paths.push folderPath
+        $scope.listItems.push folderPath
 
       redrawPageList!
 
 
   listOneMorePage = (page) ->
-    $scope.paths.push makePageListItem(page)
+    $scope.listItems.push makePageListItem(page)
     redrawPageList!
 
 
@@ -186,8 +186,8 @@ AdminModule.factory 'AdminService', ['$http', ($http) ->
 
 
   redrawPageList = ->
-    sortPathsInPlace $scope.paths
-    updateListItemFields $scope.paths
+    sortPathsInPlace $scope.listItems
+    updateListItemFields $scope.listItems
     $scope.updateSelections!
 
   # Places deep paths at the end. Sorts alphabetically, at each depth.
@@ -220,7 +220,7 @@ AdminModule.factory 'AdminService', ['$http', ($http) ->
   selectedFolderListItems = []
 
   /**
-   * Scans $scope.paths and updates page and folder selection count
+   * Scans $scope.listItems and updates page and folder selection count
    * variables.
    */
   $scope.updateSelections = ->
@@ -228,7 +228,7 @@ AdminModule.factory 'AdminService', ['$http', ($http) ->
     selectedFolderListItems := []
     numDrafts = 0
     numNonDrafts = 0
-    for path in $scope.paths when path.included
+    for path in $scope.listItems when path.included
       if path.pageId
         selectedPageListItems.push path
         if path.path.search(DRAFTS_FOLDER) == 0 => numDrafts += 1
@@ -253,7 +253,7 @@ AdminModule.factory 'AdminService', ['$http', ($http) ->
     return
 
   /**
-   * Traverses the $scope.paths list once, checks each path.closed,
+   * Traverses the $scope.listItems list once, checks each path.closed,
    * and updates all hide counts accordingly.
    */
   updateListItemFields = (paths) ->
@@ -294,7 +294,7 @@ AdminModule.factory 'AdminService', ['$http', ($http) ->
 
   $scope.openClose = (path) ->
     path.open = !path.open
-    updateListItemFields $scope.paths
+    updateListItemFields $scope.listItems
 
   $scope.cssClassForMark = (mark) ->
     if mark then ' marked-path' else ''
