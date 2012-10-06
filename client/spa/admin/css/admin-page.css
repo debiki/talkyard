@@ -126,9 +126,6 @@ li {
   background-color: #dfdfdf;
 }
 
-.is-folder .open-close-path {
-  text-decoration: underline;
-}
 .is-folder.open-false .open-close-path {
   font-weight: bold;
 }
