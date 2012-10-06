@@ -84,16 +84,34 @@ AdminModule.factory 'AdminService', ['$http', ($http) ->
 
   const DRAFTS_FOLDER = '/.drafts/'
 
+
+  getSelectedFolderOrDie = ->
+    bug('DwE031Z3') if selectedFolderListItems.length != 1
+    selectedFolderListItems[0]
+
+
+  getSelectedPageOrDie = ->
+    bug('DwE83Iw2') if selectedPageListItems.length != 1
+    selectedPageListItems[0]
+
+
+  $scope.createPage = ->
+    createPageInFolder <| '/.drafts/' + curYearMonthDayRelFolder!
+
+
+  $scope.createPageInFolder = ->
+    createPageInFolder getSelectedFolderOrDie!path
+
+
   /**
    * Creates a new page list item, which, from the user's point of view,
    * is similar to creating a new unsaved page.
    */
-  $scope.createPage = ->
-    relFolder = curYearMonthDayRelFolder!
+  createPageInFolder = (parentFolder) ->
     pageId = generatePageId!
     pageListItem = makePageListItem(
         id: pageId
-        path: '/.drafts/' + relFolder + '-' + pageId + '-new-page'
+        path: parentFolder + '-' + pageId + '-new-page'
         title: undefined
         authors: undefined    # COULD set to current user
         mark: 'New, unsaved') # change to `status: NewUnsaved`?
@@ -122,9 +140,16 @@ AdminModule.factory 'AdminService', ['$http', ($http) ->
     id
 
 
+  $scope.viewSelectedPage = ->
+    pageItem = getSelectedPageOrDie!
+    queryString =
+        if pageItem.isNewUnsavedPage => '?create-page'
+        else ''
+    window.open <| pageItem.path + queryString
+
+
   $scope.moveSelectedPage = ->
-    bug('DwE90K2') if selectedPageListItems.length != 1
-    pageListItem = selectedPageListItems[0]
+    pageListItem = getSelectedPageOrDie!
     window.open <| pageListItem.path + '?move-page'
 
 

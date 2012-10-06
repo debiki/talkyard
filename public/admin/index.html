@@ -103,7 +103,7 @@
           <div ng-controller='PathsCtrl' class='tab-pane' id='pages-tab'>
 
             <div class='selection-related-btns'>
-              <a id='create-page-in-folder-btn' class='btn' ng-show='oneFolderSelected' disabled>Create page in folder</a>
+              <a id='create-page-in-folder-btn' class='btn' ng-click='createPageInFolder()' ng-show='oneFolderSelected'>Create page in folder</a>
 
               <div id='create-page-dropdown' class='dropdown' ng-show='nothingSelected'>
                 <a class='btn dropdown-toggle' data-toggle='dropdown' href='#'>Create page</a>
@@ -119,9 +119,10 @@
                 </ul>
               </div>
 
-              <a id='move-page-btn' class='btn' ng-click='moveSelectedPage()' ng-show='onePageSelected'>Move page</a>
-              <a id='publish-page-btn' class='btn' ng-click='publishSelectedPages()' ng-show='onlyDraftsSelected'>Publish page(s)</a>
-              <a id='publish-page-btn' class='btn' ng-click='unpublishSelectedPages()' ng-show='onlyPublishedSelected'>Unpublish page(s)</a>
+              <a id='view-page-btn' class='btn' ng-click='viewSelectedPage()' ng-show='onePageSelected'>View / Edit</a>
+              <a id='move-page-btn' class='btn' ng-click='moveSelectedPage()' ng-show='onePageSelected'>Move</a>
+              <a id='publish-page-btn' class='btn' ng-click='publishSelectedPages()' ng-show='onlyDraftsSelected'>Publish</a>
+              <a id='publish-page-btn' class='btn' ng-click='unpublishSelectedPages()' ng-show='onlyPublishedSelected'>Unpublish</a>
             </div>
 
             <div id='page-tree-container'>
