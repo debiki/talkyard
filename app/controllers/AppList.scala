@@ -115,7 +115,6 @@ object AppList extends mvc.Controller {
            val pageApproved = pageOpt map (_.approvedVersion)
            toJson(Map(
              "id" -> pagePath.pageId.get,
-             "folder" -> pagePath.folder,
              "path" -> pagePath.path,
              "title" -> titleOf(pageApproved),
              "body" -> bodyOf(pageApproved)))
