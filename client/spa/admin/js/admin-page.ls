@@ -113,8 +113,9 @@ AdminModule.factory 'AdminService', ['$http', ($http) ->
         id: pageId
         path: parentFolder + '-' + pageId + '-new-page'
         title: undefined
-        authors: undefined    # COULD set to current user
-        mark: 'New, unsaved') # change to `status: NewUnsaved`?
+        authors: undefined)  # COULD set to current user
+
+    pageListItem.marks = ['NewUnsaved']
 
     # Select the new page, and nothing else, so the 'View/edit' button
     # appears and the user hopefully understands what to do next.
@@ -143,7 +144,7 @@ AdminModule.factory 'AdminService', ['$http', ($http) ->
   $scope.viewSelectedPage = ->
     pageItem = getSelectedPageOrDie!
     queryString =
-        if pageItem.isNewUnsavedPage => '?create-page'
+        if find (== 'NewUnsaved'), pageItem.marks || [] => '?create-page'
         else ''
     window.open <| pageItem.path + queryString
 
@@ -219,7 +220,6 @@ AdminModule.factory 'AdminService', ['$http', ($http) ->
         authors: page.authors
         included: false
         open: false
-        mark: page.mark
 
     isHomePage = (page) -> page.path == '/' || page.path == DRAFTS_FOLDER
     isIndexPage = (page) -> last(page.path) == '/'
@@ -319,13 +319,14 @@ AdminModule.factory 'AdminService', ['$http', ($http) ->
           else
             folderStack.pop()
 
-      # Set hit count for folders, both open and closed, and pages.
-      # But always show stuff with a mark (could a new page the user
-      # just created).
-      #bugUnless 0 <= curHideCount
-      item.hideCount = if item.mark then 0 else curHideCount
       item.depth = folderStack.length
       item.displayPath = item.path.replace curParentFolderPath, ''
+      item.hideCount = curHideCount
+
+      # Always show stuff with any marks (could be a page the user
+      # just created), and show its ancestor folders too.
+      if item.marks
+        item.hideCount = 0
 
       # Enter folder?
       if isFolder item
@@ -343,6 +344,15 @@ AdminModule.factory 'AdminService', ['$http', ($http) ->
 
   $scope.cssClassForMark = (mark) ->
     if mark then ' marked-path' else ''
+
+  $scope.stringifyMarksFor = (item) ->
+    text = ''
+    for mark in item.marks || []
+      switch mark
+      | 'NewUnsaved' => text += ' (new, unsaved)'
+      | _ => bug('DwE903Z')
+    text
+
 
   $scope.test =
     sortItemsInPlace: sortItemsInPlace

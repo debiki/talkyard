@@ -47,7 +47,10 @@ h1 {
   font-weight: bold;
 }
 .page-clarification {
-  color: #888;
+  font-style: italic;
+}
+.page-marks {
+  color: red;
 }
 .page-info {
   padding-left: 7px;
