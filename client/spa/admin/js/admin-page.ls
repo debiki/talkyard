@@ -171,7 +171,7 @@ AdminModule.factory 'AdminService', ['$http', ($http) ->
     refreshPageList = ->
       for pageListItem in selectedPageListItems
         pageListItem.path .= replace fromFolder, toFolder
-      redrawPageList!
+      redrawPageItems selectedPageListItems
 
     for pageListItem in selectedPageListItems
       adminService.movePages [pageListItem.pageId],
@@ -208,10 +208,17 @@ AdminModule.factory 'AdminService', ['$http', ($http) ->
     pageItem <<< makePageListItem(withNewPageData)
     pageItem.open = wasOpen
     pageItem.included = wasIncluded
+    redrawPageItems [pageItem]
+
+
+  redrawPageItems = (pageItems) ->
     # Remove pageItem and add it again, so any missing parent folder
     # is created, in case pageItem has been moved.
-    $scope.listItems = reject (== pageItem), $scope.listItems
-    listMorePagesDeriveFolders [pageItem]
+    # For now, call listMorePagesDeriveFolders once per pageItem
+    # (a tiny bit inefficient).
+    for pageItem in pageItems
+      $scope.listItems = reject (== pageItem), $scope.listItems
+      listMorePagesDeriveFolders [pageItem]
 
 
   listMorePagesDeriveFolders = (morePageItems) ->
@@ -325,22 +332,29 @@ AdminModule.factory 'AdminService', ['$http', ($http) ->
   /**
    * Traverses the $scope.listItems list once, checks each item.closed,
    * and updates all hide counts accordingly.
+   *
+   * COULD remove folders without children.
+   * COULD set `open = true` if all children of a folder is shown,
+   * even if folder was actually closed. (If a page is marked,
+   * e.g. with 'NewUnsaved', it's shown even if parent folder closed.)
    */
   updateListItemFields = (items) ->
     curHideCount = 0
     curParentFolderPath = '/'
     folderStack = []
+    # Could, instead?: folderStack = [{ hideCount: 0, path: '/' }]
     for item in items
 
-      # Leave folder and continue from some previously stacked parent?
+      # Leave any folder and continue from previously stacked parent.
       if isFolder item
         curHideCount = 0
         curParentFolderPath = '/'
         while curParentFolderPath == '/' && folderStack.length > 0
-          { childHideCount, folderPath } = last folderStack
-          if item.path.search(folderPath) == 0
-            curHideCount = childHideCount
-            curParentFolderPath = folderPath
+          lastFolder = last folderStack
+          if item.path.search(lastFolder.path) == 0
+            curHideCount = lastFolder.hideCount
+            curHideCount += 1 unless lastFolder.open
+            curParentFolderPath = lastFolder.path
           else
             folderStack.pop()
 
@@ -352,14 +366,16 @@ AdminModule.factory 'AdminService', ['$http', ($http) ->
       # just created), and show its ancestor folders too.
       if item.marks
         item.hideCount = 0
+        for ancestorFolder in folderStack
+          # BUG SHOULD recursively update hide counts of any folder children.
+          # (So they're 1 if folder closed, or 0 if open).
+          ancestorFolder.hideCount = 0
 
       # Enter folder?
       if isFolder item
         curHideCount += 1 unless item.open
         curParentFolderPath = item.path
-        folderStack.push (
-            folderPath: item.path
-            childHideCount: curHideCount )
+        folderStack.push item
     return
 
 
