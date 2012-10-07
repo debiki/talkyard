@@ -126,7 +126,11 @@
             </div>
 
             <div id='page-tree-container'>
+              <!-- This might be rather confusing, since currnetly
+                  full page paths are shown nowhere.
               <label>Filter paths: <input ng-model="pathFilterText"/></label>
+                -->
+
               <ol id='page-tree' class='{{"full-paths-"+ showFullPaths}}'>
                 <li ng-show="item.hideCount == 0 || item.included"
                     ng-repeat="item in listItems | filterProp:'path':pathFilterText"
