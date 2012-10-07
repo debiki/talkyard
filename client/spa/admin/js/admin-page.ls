@@ -141,12 +141,25 @@ AdminModule.factory 'AdminService', ['$http', ($http) ->
     id
 
 
+  /**
+   * Opens a page in a new browser tab.
+   *
+   * If the page was just created, but has not been saved server side,
+   * saves the page before opening it. (Requires a server roundtrip.)
+   */
   $scope.viewSelectedPage = ->
     pageItem = getSelectedPageOrDie!
-    queryString =
-        if find (== 'NewUnsaved'), pageItem.marks || [] => '?create-page'
-        else ''
-    window.open <| pageItem.path + queryString
+    if find (== 'NewUnsaved'), pageItem.marks || []
+      # Open new tab directly, in direct response to the user-initiated event,
+      # or the browser's pop-up blocker tends to block it.
+      newBrowserPage = window.open 'about:blank', '_blank'
+      adminService.createPage parentFolderOf(pageItem.path), (newPage) ->
+        newBrowserPage.location = newPage.path
+        pageItem.marks = reject (== 'NewUnsaved'), pageItem.marks
+        pageItem.marks.push 'NewSaved'
+        updatePageItem pageItem, withNewPageData: newPage
+    else
+      window.open pageItem.path, '_blank'
 
 
   $scope.moveSelectedPage = ->
@@ -187,6 +200,18 @@ AdminModule.factory 'AdminService', ['$http', ($http) ->
     adminService.listAllPages (data) ->
       listMorePagesDeriveFolders <|
           [makePageListItem(page) for page in data.pages]
+
+
+  updatePageItem = (pageItem, { withNewPageData }) ->
+    wasOpen = pageItem.open
+    wasIncluded = pageItem.included
+    pageItem <<< makePageListItem(withNewPageData)
+    pageItem.open = wasOpen
+    pageItem.included = wasIncluded
+    # Remove pageItem and add it again, so any missing parent folder
+    # is created, in case pageItem has been moved.
+    $scope.listItems = reject (== pageItem), $scope.listItems
+    listMorePagesDeriveFolders [pageItem]
 
 
   listMorePagesDeriveFolders = (morePageItems) ->
@@ -345,12 +370,20 @@ AdminModule.factory 'AdminService', ['$http', ($http) ->
   $scope.cssClassForMark = (mark) ->
     if mark then ' marked-path' else ''
 
-  $scope.stringifyMarksFor = (item) ->
+
+  $scope.stringifyImportantMarksFor = (item) ->
     text = ''
     for mark in item.marks || []
       switch mark
       | 'NewUnsaved' => text += ' (new, unsaved)'
-      | _ => bug('DwE903Z')
+    text
+
+
+  $scope.stringifyOtherMarksFor = (item) ->
+    text = ''
+    for mark in item.marks || []
+      switch mark
+      | 'NewSaved' => text += ' (new, saved)'
     text
 
 

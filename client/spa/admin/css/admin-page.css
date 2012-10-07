@@ -49,7 +49,11 @@ h1 {
 .page-clarification {
   font-style: italic;
 }
-.page-marks {
+.page-notfs {
+  color: black;
+  font-style: italic;
+}
+.page-notfs.important {
   color: red;
 }
 .page-info {

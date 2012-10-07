@@ -138,7 +138,8 @@
                   </label>
                   <a ng-click='openClose(item)' class='open-close-path' href='#'>{{item.displayPath}}
                     <span class='page-clarification'>{{item.clarification}}</span>
-                    <span class='page-marks'>{{stringifyMarksFor(item)}}</span>
+                    <span class='page-notfs important'>{{stringifyImportantMarksFor(item)}}</span>
+                    <span class='page-notfs'>{{stringifyOtherMarksFor(item)}}</span>
                   </a>
 
                   <div ng-switch='isPage(item)' class='path-info'>
