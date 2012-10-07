@@ -539,9 +539,14 @@ object TemplateEngine {
     http://stackoverflow.com/questions/1014203/best-way-to-use-googles-hosted-jquery-but-fall-back-to-my-hosted-library-on-goo
     */}
     {
-      // The debiki.scriptLoad $.Deferred is resolved later by debiki.js.
+      // All Debiki's stuff is placed somewhere inside `debiki`.
+      // - The debiki.scriptLoad $.Deferred is resolved later by debiki.js.
+      // - Use $.extend in case any window.opener has already specified some
+      //   debiki.v0 callbacks. (Example: an admin page specifies an
+      //   on-save callback, to be notified when a newly created page is saved.)
       <script>
-        var debiki = {{ v0: {{ util: {{}} }}, internal: {{ $: jQuery }} }};
+        var debiki = $.extend(true,
+            {{ v0: {{ util: {{}} }}, internal: {{ $: jQuery }} }}, debiki);
         debiki.scriptLoad = $.Deferred();
         Modernizr.load({{
           test: Modernizr.touch,
