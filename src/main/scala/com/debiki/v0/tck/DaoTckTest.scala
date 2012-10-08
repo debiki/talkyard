@@ -1245,7 +1245,7 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
     }
 
 
-    def testLoginViaEmail(emailId: String, emailSentOk: EmailSent)
+    def testLoginViaEmail(emailId: String, emailSentOk: Email)
           : LoginGrant  = {
       val loginNoId = Login(id = "?", prevLoginId = None, ip = "?.?.?.?",
          date = now, identityId = emailId)
@@ -1263,7 +1263,7 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
 
       val emailId = "10"
 
-      val emailToSend = EmailSent(
+      val emailToSend = Email(
         id = emailId,
         sentTo = "test@example.com",
         sentOn = None,
@@ -1367,7 +1367,7 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
 
       val emailId = "11"
 
-      val emailToSend = EmailSent(
+      val emailToSend = Email(
         id = emailId,
         sentTo = "test@example.com",
         sentOn = None,
