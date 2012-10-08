@@ -141,8 +141,7 @@ object Notification {
 }
 
 
-// COULD rename to "Email"?
-case class EmailSent(
+case class Email(
   id: String,
   sentTo: String,
   sentOn: Option[ju.Date],

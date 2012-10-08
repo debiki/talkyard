@@ -261,7 +261,7 @@ sealed abstract class Identity {
 case class IdentityEmailId(
   id: String,
   userId: String = "?",
-  emailSent: Option[EmailSent] = None,
+  emailSent: Option[Email] = None,
   notf: Option[NotfOfPageAction] = None
 ) extends Identity {
   // Either only email id known, or all info known.

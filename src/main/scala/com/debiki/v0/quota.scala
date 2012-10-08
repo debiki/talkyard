@@ -114,7 +114,7 @@ object ResourceUse {
      actions: Seq[Action] = Nil,
      page: Debate = null,
      notfs: Seq[NotfOfPageAction] = Nil,
-     email: EmailSent = null)
+     email: Email = null)
       : ResourceUse = {
 
     val idty = identity

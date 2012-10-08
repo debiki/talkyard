@@ -118,12 +118,12 @@ abstract class TenantDaoSpi {
 
   def skipEmailForNotfs(notfs: Seq[NotfOfPageAction], debug: String): Unit
 
-  def saveUnsentEmailConnectToNotfs(email: EmailSent,
+  def saveUnsentEmailConnectToNotfs(email: Email,
         notfs: Seq[NotfOfPageAction]): Unit
 
-  def updateSentEmail(email: EmailSent): Unit
+  def updateSentEmail(email: Email): Unit
 
-  def loadEmailById(emailId: String): Option[EmailSent]
+  def loadEmailById(emailId: String): Option[Email]
 
   def configRole(loginId: String, ctime: ju.Date,
                     roleId: String, emailNotfPrefs: EmailNotfPrefs)
@@ -438,18 +438,18 @@ class TenantDao(
 
   // ----- Emails
 
-  def saveUnsentEmailConnectToNotfs(email: EmailSent,
+  def saveUnsentEmailConnectToNotfs(email: Email,
         notfs: Seq[NotfOfPageAction]): Unit = {
     _chargeFor(ResUsg.forStoring(email = email))
     _spi.saveUnsentEmailConnectToNotfs(email, notfs)
   }
 
-  def updateSentEmail(email: EmailSent): Unit = {
+  def updateSentEmail(email: Email): Unit = {
     _chargeForOneWriteReq()
     _spi.updateSentEmail(email)
   }
 
-  def loadEmailById(emailId: String): Option[EmailSent] = {
+  def loadEmailById(emailId: String): Option[Email] = {
     _chargeForOneReadReq()
     _spi.loadEmailById(emailId)
   }
