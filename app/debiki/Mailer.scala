@@ -148,7 +148,7 @@ class Mailer(val daoFactory: DaoFactory) extends Actor {
 
 
   def _constructEmail(origin: String, user: User,
-        notfs: Seq[NotfOfPageAction]): (SendEmailRequest, EmailSent) = {
+        notfs: Seq[NotfOfPageAction]): (SendEmailRequest, Email) = {
 
     val rcptEmailAddr =
       if (user.email == "kajmagnus@debiki.se"
@@ -223,7 +223,7 @@ class Mailer(val daoFactory: DaoFactory) extends Actor {
        .withDestination(dest)
        .withMessage(mess)
 
-    val emailToSend = EmailSent(  // shouldn't be named Email*Sent* though
+    val emailToSend = Email(
       id = emailId,
       sentTo = rcptEmailAddr,
       sentOn = None,
@@ -237,8 +237,7 @@ class Mailer(val daoFactory: DaoFactory) extends Actor {
   /**
    * Calls Amazon SES to send the message.
    */
-  def _sendEmail(awsSendReq: SendEmailRequest, emailToSend: EmailSent)
-        : EmailSent = {
+  def _sendEmail(awsSendReq: SendEmailRequest, emailToSend: Email): Email = {
 
     // Amazon SES automatically intercepts all bounces and complaints,
     // and then forwards them to you.
