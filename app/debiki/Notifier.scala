@@ -165,11 +165,11 @@ class Notifier(val daoFactory: DaoFactory) extends Actor {
       // the reply :-)). I'd guess they instead would click the
       // visually *largest* link, e.g. to the page, and then not find the new
       // reply, and feel annoyed.
-      <div>
+      <p>
         You have a reply, <a href={eventUrl}>here</a>,<br/>
-        on page {notf.pageTitle},<br/>
-        written by {notf.eventUserDispName}.
-      </div>
+        on page <i>{notf.pageTitle}</i>,<br/>
+        written by <i>{notf.eventUserDispName}</i>.
+      </p>
     }
 
     val htmlContent =
@@ -178,7 +178,7 @@ class Notifier(val daoFactory: DaoFactory) extends Actor {
         { notfs.map(notfToHtml _): xml.NodeSeq }
         <p>
           Kind regards,<br/>
-          Debiki
+          <a href="http://www.debiki.com">Debiki</a>
         </p>
         <p style='font-size: 80%; opacity: 0.65; margin-top: 2em;'>
           <a href={origin +"/?unsubscribe&email-id="+ email.id}>Unsubscribe</a>
