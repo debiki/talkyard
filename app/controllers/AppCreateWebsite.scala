@@ -151,12 +151,19 @@ object AppCreateWebsite extends mvc.Controller {
        ownerIp = request.remoteAddress, ownerLoginId = sidOk.loginId.get,
        ownerIdentity = idtyOpenId, ownerRole = user)
 
-    val result =
-      if (newWebsite.isDefined)
+    val result = newWebsite match {
+      case Some(website) =>
+        // COULD do this in the same transaction as `createWebsite`?
+        val email = _makeNewWebsiteEmail(website, user)
+        dao.saveUnsentEmail(email)
+
+        Debiki.sendEmail(email, website.id)
+
         Redirect("http://"+ websiteAddr +
            routes.AppCreateWebsite.welcomeOwner.url)
-      else
+      case None =>
         Ok(views.html.createWebsiteFailNotFirst())
+    }
 
     result.withSession(request.session - "website-name")
   }
@@ -170,6 +177,14 @@ object AppCreateWebsite extends mvc.Controller {
     // because s/he is the owner and this'll work *once* only. (Assuming
     // we're using HTTPS (which we aren't), i.e. no man in the middle attack.)
     Ok(views.html.createWebsiteWelcomeOwner())
+  }
+
+
+  private def _makeNewWebsiteEmail(website: Tenant, owner: User): Email = {
+    val message =
+      views.html.createWebsiteWelcomeEmail(website.chost_!.address).body
+    Email(sendTo = owner.email, subject = "New Debiki website created",
+      bodyHtmlText = message)
   }
 
 

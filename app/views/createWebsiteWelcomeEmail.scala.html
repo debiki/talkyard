@@ -1,0 +1,27 @@
+@(websiteAddress: String)
+
+@import debiki.HtmlUtils.link
+@import play.api.Play.current
+
+
+<p>Your new Debiki site has been set up at:</p>
+
+<p>@link("http://" + websiteAddress)</p>
+
+
+<p>You can log in as administrator here:</p>
+
+<p>@link("http://" + websiteAddress + routes.Application.viewAdminPage.url)</p>
+
+
+<p>You can report problems here:</p>
+
+<p>@link("http://www.debiki.com/forums/hosting/issues/?create-page")</p>
+
+
+<p>I hope you will enjoy your new site!</p>
+
+<p>Kind regards, Debiki<br>
+http://debiki.com/
+</p>
+
