@@ -118,6 +118,8 @@ abstract class TenantDaoSpi {
 
   def skipEmailForNotfs(notfs: Seq[NotfOfPageAction], debug: String): Unit
 
+  def saveUnsentEmail(email: Email): Unit
+
   def saveUnsentEmailConnectToNotfs(email: Email,
         notfs: Seq[NotfOfPageAction]): Unit
 
@@ -437,6 +439,11 @@ class TenantDao(
 
 
   // ----- Emails
+
+  def saveUnsentEmail(email: Email): Unit = {
+    _chargeFor(ResUsg.forStoring(email = email))
+    _spi.saveUnsentEmail(email)
+  }
 
   def saveUnsentEmailConnectToNotfs(email: Email,
         notfs: Seq[NotfOfPageAction]): Unit = {
