@@ -34,7 +34,8 @@ object Debiki {
   QuotaManager.setDao(DaoFactory.systemDao)
   QuotaManager.scheduleCleanups()
 
-  val MailerActorRef = Mailer.startNewActor(DaoFactory)
+  private val _MailerActorRef = Mailer.startNewActor(DaoFactory)
+  private val _NotifierActorRef = Notifier.startNewActor(DaoFactory)
 
   def SystemDao = DaoFactory.systemDao
 
@@ -85,6 +86,11 @@ object Debiki {
     dao.saveNotfs(seeds)
 
     actionsWithId
+  }
+
+
+  def sendEmail(email: Email, websiteId: String) {
+    _MailerActorRef ! (email, websiteId)
   }
 
 }
