@@ -141,6 +141,27 @@ object Notification {
 }
 
 
+
+object Email {
+
+  def apply(sendTo: String, subject: String, bodyHtmlText: String): Email =
+    Email(
+      id = _generateId(),
+      sentTo = sendTo,
+      sentOn = None,
+      subject = subject,
+      bodyHtmlText = bodyHtmlText,
+      providerEmailId = None,
+      failureText = None)
+
+  /**
+   * The email id should be a random value, so it cannot be guessed,
+   * because it's a key in unsubscribe URLs.
+   */
+  private def _generateId(): String = nextRandomString() take 8
+}
+
+
 case class Email(
   id: String,
   sentTo: String,
