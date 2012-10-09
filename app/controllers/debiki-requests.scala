@@ -75,6 +75,8 @@ abstract class DebikiRequest[A] {
 
   def host = request.host
 
+  def uri = request.uri
+
   def queryString = request.queryString
 
   def body = request.body

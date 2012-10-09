@@ -9,14 +9,10 @@ import com.debiki.v0.Prelude._
 import debiki._
 import java.{util => ju, io => jio}
 import play.api._
-import play.api.data._
-import play.api.data.Forms._
 import play.api.mvc.{Action => _, _}
-import xml.{Node, NodeSeq}
+import ApiActions._
 import PageActions._
-import SafeActions._
 import DebikiHttp._
-import Play.current
 import Prelude._
 import Utils.ValidationImplicits._
 import Utils.{OkHtml, OkXml}
@@ -262,23 +258,15 @@ object Application extends mvc.Controller {
   }
 
 
-  def viewAdminPage() = CheckSidActionNoBody { (sidOk, xsrfOk, request) =>
-
-    val tenantId = DebikiHttp.lookupTenantIdOrThrow(request, Debiki.SystemDao)
-
-    val dao = Debiki.tenantDao(tenantId = tenantId,
-      ip = request.remoteAddress, sidOk.roleId)
-
-    val (identity, user) = Utils.loadIdentityAndUserOrThrow(sidOk, dao)
-
-    if (user.map(_.isAdmin) != Some(true))
-      Ok(views.html.login(xsrfToken = xsrfOk.value,
-        returnToUrl = request.uri, title = "Login", message = Some(
+  def viewAdminPage() = GetAction { apiReq =>
+    if (apiReq.user.map(_.isAdmin) != Some(true))
+      Ok(views.html.login(xsrfToken = apiReq.xsrfToken.value,
+        returnToUrl = apiReq.uri, title = "Login", message = Some(
           "Login with an administrator account to access this page.")))
     else
       Ok(_adminPageFileString) as HTML withCookies (
           mvc.Cookie(
-            DebikiSecurity.AngularJsXsrfCookieName, xsrfOk.value,
+            DebikiSecurity.AngularJsXsrfCookieName, apiReq.xsrfToken.value,
             httpOnly = false))
   }
 
