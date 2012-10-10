@@ -36,7 +36,7 @@ object Application extends mvc.Controller {
     val infoNode = <pre class='dw-data-yaml'>{pageInfoYaml}</pre>
     val pageHtml =
       Debiki.renderPage(pageReq, appendToBody = infoNode)
-    OkHtml(pageHtml)
+    Ok(pageHtml) as HTML
   }
 
 

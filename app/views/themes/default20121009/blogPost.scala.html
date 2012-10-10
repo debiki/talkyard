@@ -1,4 +1,8 @@
 @(tpi: debiki.TemplateProgrammingInterface)
 
-<p>Blog post</p>
+
+@wrapper(tpi) {
+  <!-- blogPost.scala.html -->
+  @tpi.pageTitleAndBodyAndComments
+}
 

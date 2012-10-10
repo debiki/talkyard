@@ -69,56 +69,31 @@ object AppList extends mvc.Controller {
   def listNewestPages(pathIn: PagePath, contentType: DebikiHttp.ContentType) =
         PageGetAction(pathIn, pageMustExist = false) { pageReq =>
 
-    val pathsAndDetails = pageReq.dao.listPagePaths(
-      Utils.parsePathRanges(pathIn, pageReq.queryString),
-      include = PageStatus.Published::Nil,
-      sortBy = PageSortOrder.ByPublTime,
-      limit = 10,
-      offset = 0)
+    val tpi = TemplateProgrammingInterface(pageReq)
 
-    // Access control.
-    // Somewhat dupl code, see Application.feed.
-    // ((As of now, this function is used to build blog article list pages.
-    // So exclude JS and CSS and template pages and hidden pages and
-    // folder/or/index/pages/, and hidden pages (even for admins).
-    // In the future: Pass info via URL to `listPagePaths` on which
-    // pages to include. Some PageType param? PageType.Article/Css/Js/etc.))
-    val articlePaths = pathsAndDetails map (_._1) filter (
-       Utils.isPublicArticlePage _)
-
-    val pathsAndPages: Seq[(PagePath, Option[Debate])] =
-      pageReq.dao.loadPageBodiesTitles(articlePaths)
-
-    def titleOf(page: Option[Debate]): String =
-      // Currenply HtmlSerializer ignores the `.markup` for a title Post.
-      page.flatMap(_.title).map(_.text).getOrElse("(No title)")
-
-    def bodyOf(page: Option[Debate]): String =
-      page.flatMap(_.body).map(
-        HtmlSerializer.markupTextOf(_, pageReq.host)).getOrElse("")
+    val pages = tpi.listNewestPages(
+      Utils.parsePathRanges(pathIn, pageReq.queryString))
 
     def pageTitlesAndBodiesHtml =
       <ol>{
-        pathsAndPages map { case (path, pageOpt) =>
-          val pageApproved = pageOpt map (_.approvedVersion)
+        pages map { page =>
           <li>
-            <h1>{xml.Unparsed(titleOf(pageApproved))}</h1>
-            <p><a href={path.path}>{path.path}</a></p>
-            <div>{xml.Unparsed(bodyOf(pageApproved))}</div>
+            <h1>{xml.Unparsed(page.title)}</h1>
+            <p><a href={page.path}>{page.path}</a></p>
+            <div>{xml.Unparsed(page.safeBodyHtml)}</div>
           </li>
         }
       }</ol>
 
     def pageTitlesAndBodiesJson =
       toJson(Map("pages" -> (
-         pathsAndPages map { case (pagePath, pageOpt: Option[Debate]) =>
-           val pageApproved = pageOpt map (_.approvedVersion)
-           toJson(Map(
-             "id" -> pagePath.pageId.get,
-             "path" -> pagePath.path,
-             "title" -> titleOf(pageApproved),
-             "body" -> bodyOf(pageApproved)))
-         })))
+        pages map { page =>
+          toJson(Map(
+            "id" -> page.id,
+            "path" -> page.path,
+            "title" -> page.title,
+            "body" -> page.safeBodyHtml))
+        })))
 
     contentType match {
       case DebikiHttp.ContentType.Html =>

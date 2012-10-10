@@ -1,0 +1,58 @@
+@(minMaxJs: String, minMaxCss: String)
+
+@* Some other viewport values, and the absence of a value,
+trigger Android bugs that report the wrong screen.width,
+window.innerWidth, document.documentElement.clientWidth and heights,
+breaking dwScrollIntoView (and other stuff?) in debiki.js.
+See: http://code.google.com/p/android/issues/detail?id=10775#c20
+*@
+<meta name="viewport" content="initial-scale=1.0, minimum-scale=0.01"/>
+<meta charset="utf-8"/>
+
+
+<link rel="stylesheet" href="/-/res/jquery-ui/jquery-ui-1.8.16.custom.css"/>
+<link rel="stylesheet" href="/-/res/combined-debiki@minMaxCss"/>
+<!--[if IE 7]>
+<link rel="stylesheet" href="/-/res/debiki-lift-ie7.css"/>
+<![endif]-->
+
+@* Concerning when/how to use a CDN for Modernizr, see:
+http://www.modernizr.com/news/modernizr-and-cdns
+And: "For best performance, you should have them follow after your
+stylesheet references", http://modernizr.com/docs/#installing
+*@
+<script src="http://cdnjs.cloudflare.com/ajax/libs/modernizr/2.5.3/modernizr.min.js"></script>
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery@minMaxJs"></script>
+<script src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.19/jquery-ui@minMaxJs"></script>
+
+@* Could:
+<script>
+if (!window.jQuery) document.write(unescape("%3Cscript src='/path/to/your/jquery' %3E%3C/script%3E"));
+</script>
+See: http://stackoverflow.com/questions/1014203/best-way-to-use-googles-hosted-jquery-but-fall-back-to-my-hosted-library-on-goo
+*@
+
+@* All Debiki's stuff is placed somewhere inside `debiki`.
+ - The debiki.scriptLoad $.Deferred is resolved later by debiki.js.
+ - Use $.extend in case any window.opener has already specified some
+   debiki.v0 callbacks. (Example: an admin page specifies an
+   on-save callback, to be notified when a newly created page is saved.)
+*@
+<script>
+  var debiki = $.extend(true,
+      { v0: { util: {} }, internal: { $: jQuery } }, debiki);
+  debiki.scriptLoad = $.Deferred();
+  Modernizr.load({
+    test: Modernizr.touch,
+    yep: '/-/res/combined-debiki-touch@minMaxJs',
+    nope: '/-/res/combined-debiki-desktop@minMaxJs',
+  });
+</script>
+
+@* Make this webapp a Weinre debug target, see:
+http://pmuellr.github.com/weinre/Running.html
+(The ip addr is my desktop, where the Weinre debug server runs.)
+<script src="http://192.168.0.100:8081/target/target-script-min.js"></script>
+*@
+

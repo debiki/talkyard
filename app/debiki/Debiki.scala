@@ -10,6 +10,9 @@ import controllers.{DebikiRequest, PageRequest}
 import play.api.Play
 import play.api.Play.current
 import xml.NodeSeq
+import debiki.PageRenderer
+import controllers.PageRequest
+import com.debiki.v0.QuotaConsumers
 
 
 object Debiki {
@@ -46,8 +49,15 @@ object Debiki {
 
 
   def renderPage(pageReq: PageRequest[_], appendToBody: NodeSeq = Nil)
-        : NodeSeq = {
-    (new DeprecatedTemplateEngine(PageCache)).renderPage(pageReq, appendToBody)
+        : String = {
+    if (DeprecatedTemplateEngine.isOldStyleTemplateSite(pageReq.tenantId)) {
+      val engine = new DeprecatedTemplateEngine(PageCache)
+      val htmlNode: NodeSeq = engine.renderPage(pageReq, appendToBody)
+      controllers.Utils.serializeHtml(htmlNode.head)
+    }
+    else {
+      PageRenderer(pageReq, PageCache, appendToBody).renderPage()
+    }
   }
 
 

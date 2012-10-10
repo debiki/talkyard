@@ -1,5 +1,6 @@
 @(tpi: debiki.TemplateProgrammingInterface)
 
+@*
 <html>
 <head>
   <script>
@@ -12,6 +13,11 @@
 
   <!-- Make the title appear before the <ol> -->
   <div id='debiki-page'></div>
+*@
+
+
+@wrapper(tpi) {
+  @*  @tpi.pageTitle  *@
 
   @for(page <- tpi.listNewestPages(tpi.currentTree)) {
     <li>
@@ -25,8 +31,5 @@
     </li>
   }
 
-</div>
-
-</body>
-</html>
+}
 

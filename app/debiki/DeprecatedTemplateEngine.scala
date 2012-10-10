@@ -44,6 +44,7 @@ import xml.{MetaData, Node, NodeSeq, Text}
  *
  * Thread safe.
  */
+@deprecated
 class DeprecatedTemplateEngine(val pageCache: PageCache) {
 
 
@@ -61,7 +62,7 @@ class DeprecatedTemplateEngine(val pageCache: PageCache) {
         _loadTemplatesFor(pageReq.page_!, at = pageReq.pagePath,
            use = pageReq.dao)
       else
-        _loadTemplates(pageReq)
+        assErr("DwE930rkI3")
     }
 
     // Derive config values. Let more specific templates (closer to the
@@ -172,58 +173,6 @@ class DeprecatedTemplateEngine(val pageCache: PageCache) {
       </html> % curHtmlAttrs
     page
   }
-
-
-  private def _loadTemplates(pageReq: PageRequest[_])
-        : List[TemplateSource] = {
-    // For now, use the same template for all websites.
-    // In the future: Create more templates, and check which one to use
-    // in a `/.site.conf` file.
-    // In the distant future, implement my ideas in play-thoughts.txt.
-
-    val tpi = TemplateProgrammingInterface(pageReq)
-
-    import pageReq.pagePath
-    val pageTemplateSrc: String =
-      if (_isBlogArticle(pagePath))
-        views.html.themes.default20121009.blogPost(tpi).body
-      else if (_isBlogArticleListPage(pagePath))
-        views.html.themes.default20121009.blogPostList(tpi).body
-      else if (_isHomepage(pagePath))
-        views.html.themes.default20121009.homepage(tpi).body
-      else
-        // For now, fallback to the blog post template.
-        views.html.themes.default20121009.blogPost(tpi).body
-
-    val wrapperTemplateSrc =
-      views.html.themes.default20121009.wrapper(tpi).body
-
-    val pageTemplate = TemplateSrcHtml(pageTemplateSrc, pagePath.path)
-    val wrapperTemplate = TemplateSrcHtml(wrapperTemplateSrc, pagePath.path)
-
-    List(pageTemplate, wrapperTemplate)
-  }
-
-
-  private def _isBlogArticle(pagePath: PagePath) = {
-    // A blog article has a page slug; index pages cannot be blog articles.
-    _IsBlogRegex.matches(pagePath.folder) && !pagePath.isFolderOrIndexPage
-  }
-
-
-  private def _isBlogArticleListPage(pagePath: PagePath) = {
-    // A blog article list is an index page.
-    _IsBlogRegex.matches(pagePath.folder) && pagePath.isFolderOrIndexPage
-  }
-
-
-  private def _isHomepage(pagePath: PagePath) = {
-    _IsHomepageRegex.matches(pagePath.folder) && pagePath.isFolderOrIndexPage
-  }
-
-
-  private val _IsBlogRegex = """.*/blog/|.*/[0-9]{4}/[0-9]{2}/[0-9]{2}/""".r
-  private val _IsHomepageRegex = """/|\./drafts/""".r
 
 
   /**

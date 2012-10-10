@@ -25,16 +25,16 @@ object Utils extends Results with http.ContentTypes {
    * enters the terrible Quirks mode. Also sets the Content-Type header.
    */
   def OkHtml(htmlNode: xml.NodeSeq) =
-    Ok(_serializeHtml(htmlNode)) as HTML
+    Ok(serializeHtml(htmlNode)) as HTML
 
   def OkHtmlBody(bodyNodes: xml.NodeSeq) =
     OkHtml(<body>{bodyNodes}</body>)
 
   def ForbiddenHtml(htmlNode: xml.NodeSeq) =
-    Forbidden(_serializeHtml(htmlNode)) as HTML
+    Forbidden(serializeHtml(htmlNode)) as HTML
 
   def BadReqHtml(htmlNode: xml.NodeSeq) =
-    BadRequest(_serializeHtml(htmlNode)) as HTML
+    BadRequest(serializeHtml(htmlNode)) as HTML
 
   /**
    * Adds doctype and serializes to html using a real HTML5 writer.
@@ -43,7 +43,7 @@ object Utils extends Results with http.ContentTypes {
    * inside script tags (which is very annoying when you e.g. copy-paste
    * Twitter's Follow Button <script> elem).
    */
-  private def _serializeHtml(htmlNode: xml.NodeSeq): String = {
+  def serializeHtml(htmlNode: xml.NodeSeq): String = {
     require(htmlNode.size == 1)
     "<!DOCTYPE html>\n"+ lw.Html5.toString(htmlNode.head)
   }
@@ -77,7 +77,7 @@ object Utils extends Results with http.ContentTypes {
   def renderOrRedirect(pageReq: PageRequest[_]): PlainResult = {
     if (isAjax(pageReq.request)) {
       val pageHtml = Debiki.renderPage(pageReq)
-      OkHtml(pageHtml)
+      Ok(pageHtml) as HTML
     } else {
       val queryString =
          queryStringAndHashToView(pageReq.pageRoot, pageReq.pageVersion)
@@ -126,6 +126,7 @@ object Utils extends Results with http.ContentTypes {
   }
 
 
+  // COULD move to new object debiki.Utils?
   def isPublicArticlePage(pagePath: PagePath): Boolean =
     !isPrivatePage(pagePath) && !pagePath.isFolderOrIndexPage
 

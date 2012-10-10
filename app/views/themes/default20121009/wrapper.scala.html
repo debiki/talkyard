@@ -1,7 +1,10 @@
-@(tpi: debiki.TemplateProgrammingInterface)
+@(tpi: debiki.TemplateProgrammingInterface)(body: Html)
 
-<html>
+<!DOCTYPE html>
+
+<html class="@tpi.debikiHtmlTagClasses">
 <head>
+  @Html(tpi.debikiHeadTags)
   <title>Website Title</title>
   <meta name="description" content="">
   <meta name="keywords" content="">
@@ -31,9 +34,7 @@
       <div class='logo'>Logo</div>
       <div class='slogan'>— slogan</div>
     </a>
-    <span id='dw-loginout'>
-      <span id='debiki-login'></span>
-    </span>
+    <span id='dw-loginout'>@tpi.loginLinkAndUserName</span>
   </div>
 </div>
 
@@ -51,7 +52,7 @@
   <div id="content">
     <!-- <div id='sidebar' class='debiki-part-of-article'></div> -->
     <article>
-      <div id='debiki-page'></div>
+      @body
     </article>
   </div>
 </div>
@@ -70,6 +71,8 @@
     </p>
   </div>
 </footer>
+
+@tpi.debikiAppendToBodyTags
 
 </body>
 </html>
