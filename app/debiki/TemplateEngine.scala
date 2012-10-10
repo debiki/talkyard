@@ -61,7 +61,7 @@ class TemplateEngine(val pageCache: PageCache) {
         _loadTemplatesFor(pageReq.page_!, at = pageReq.pagePath,
            use = pageReq.dao)
       else
-        _loadTemplates(pageReq.pagePath, pageReq.dao)
+        _loadTemplates(pageReq)
     }
 
     // Derive config values. Let more specific templates (closer to the
@@ -174,26 +174,29 @@ class TemplateEngine(val pageCache: PageCache) {
   }
 
 
-  private def _loadTemplates(pagePath: PagePath, dao: TenantDao)
+  private def _loadTemplates(pageReq: PageRequest[_])
         : List[TemplateSource] = {
     // For now, use the same template for all websites.
     // In the future: Create more templates, and check which one to use
     // in a `/.site.conf` file.
     // In the distant future, implement my ideas in play-thoughts.txt.
 
+    val tpi = TemplateProgrammingInterface(pageReq)
+
+    import pageReq.pagePath
     val pageTemplateSrc: String =
       if (_isBlogArticle(pagePath))
-        views.html.themes.default20121009.blogPost().body
+        views.html.themes.default20121009.blogPost(tpi).body
       else if (_isBlogArticleListPage(pagePath))
-        views.html.themes.default20121009.blogPostList().body
+        views.html.themes.default20121009.blogPostList(tpi).body
       else if (_isHomepage(pagePath))
-        views.html.themes.default20121009.homepage().body
+        views.html.themes.default20121009.homepage(tpi).body
       else
         // For now, fallback to the blog post template.
-        views.html.themes.default20121009.blogPost().body
+        views.html.themes.default20121009.blogPost(tpi).body
 
     val wrapperTemplateSrc =
-      views.html.themes.default20121009.wrapper().body
+      views.html.themes.default20121009.wrapper(tpi).body
 
     val pageTemplate = TemplateSrcHtml(pageTemplateSrc, pagePath.path)
     val wrapperTemplate = TemplateSrcHtml(wrapperTemplateSrc, pagePath.path)

@@ -1,4 +1,4 @@
-@* (api: debiki.TemplateApi)  *@
+@(tpi: debiki.TemplateProgrammingInterface)
 
 <html>
 <head>
@@ -13,19 +13,17 @@
   <!-- Make the title appear before the <ol> -->
   <div id='debiki-page'></div>
 
-  @*
-  @for(page <- api.newestPagesInFolder("/$yyyy/$mm/$dd/") {
+  @for(page <- tpi.listNewestPages(tpi.currentTree)) {
     <li>
       <a href='@{page.path}'>
         <h1>@{page.title}</h1>
       </a>
-      <div>@{page.body}</div>
+      <div>@Html(page.safeBodyHtml)</div>
       <p>
         <a href='@{page.path}'>Kommentera</a>
       </p>
     </li>
   }
-  *@
 
 </div>
 
