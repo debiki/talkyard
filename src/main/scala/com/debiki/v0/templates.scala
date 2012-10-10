@@ -54,7 +54,8 @@ case object TemplateSrcHtml {
  *       ...
  *     </html>
  */
-case class TemplateSrcHtml(post: ViPo, path: String) extends TemplateSource {
+case class TemplateSrcHtml(templateSrc: String, path: String)
+   extends TemplateSource {
 
   // A regex that splits on the end-of-Yaml-document indicator, '---'.
   // More exactly, split on: (newline)---(newline)(whitespace)(<)
@@ -73,8 +74,6 @@ case class TemplateSrcHtml(post: ViPo, path: String) extends TemplateSource {
     /** The html source for this template. */
     html: NodeSeq
   ) = {
-    val templateSrc = post.text
-
     // Extract the Yaml and html documents
     val (yamlSrc: String, htmlSrc: String) =
         (docBoundaryRegex findFirstMatchIn templateSrc) match {
