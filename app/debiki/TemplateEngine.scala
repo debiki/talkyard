@@ -57,9 +57,11 @@ class TemplateEngine(val pageCache: PageCache) {
       // possible to view or edit the template, or any page that uses it.
       if (pageReq.pagePath.isTemplatePage || pageReq.pageRoot.isPageTemplate)
         TemplateForTemplates::Nil
-      else
+      else if (_isOldStyleTemplateSite(pageReq.tenantId))
         _loadTemplatesFor(pageReq.page_!, at = pageReq.pagePath,
            use = pageReq.dao)
+      else
+        _loadTemplates(pageReq.pagePath, pageReq.dao)
     }
 
     // Derive config values. Let more specific templates (closer to the
@@ -170,6 +172,77 @@ class TemplateEngine(val pageCache: PageCache) {
       </html> % curHtmlAttrs
     page
   }
+
+
+  private def _loadTemplates(pagePath: PagePath, dao: TenantDao)
+        : List[TemplateSource] = {
+    // For now, use the same template for all websites.
+    // In the future: Create more templates, and check which one to use
+    // in a `/.site.conf` file.
+    // In the distant future, implement my ideas in play-thoughts.txt.
+
+    val pageTemplateSrc: String =
+      if (_isBlogArticle(pagePath))
+        views.html.themes.default20121009.blogPost().body
+      else if (_isBlogArticleListPage(pagePath))
+        views.html.themes.default20121009.blogPostList().body
+      else if (_isHomepage(pagePath))
+        views.html.themes.default20121009.homepage().body
+      else
+        // For now, fallback to the blog post template.
+        views.html.themes.default20121009.blogPost().body
+
+    val wrapperTemplateSrc =
+      views.html.themes.default20121009.wrapper().body
+
+    val pageTemplate = TemplateSrcHtml(pageTemplateSrc, pagePath.path)
+    val wrapperTemplate = TemplateSrcHtml(wrapperTemplateSrc, pagePath.path)
+
+    List(pageTemplate, wrapperTemplate)
+  }
+
+
+  private def _isBlogArticle(pagePath: PagePath) = {
+    // A blog article has a page slug; index pages cannot be blog articles.
+    _IsBlogRegex.matches(pagePath.folder) && !pagePath.isFolderOrIndexPage
+  }
+
+
+  private def _isBlogArticleListPage(pagePath: PagePath) = {
+    // A blog article list is an index page.
+    _IsBlogRegex.matches(pagePath.folder) && pagePath.isFolderOrIndexPage
+  }
+
+
+  private def _isHomepage(pagePath: PagePath) = {
+    _IsHomepageRegex.matches(pagePath.folder) && pagePath.isFolderOrIndexPage
+  }
+
+
+  private val _IsBlogRegex = """.*/blog/|.*/[0-9]{4}/[0-9]{2}/[0-9]{2}/""".r
+  private val _IsHomepageRegex = """/|\./drafts/""".r
+
+
+  /**
+   * As of 2012-10-09, there are 5 sites that use my old template
+   * selection algorithm, but I'll create no more such sites.
+   *
+   * Those 5 are:
+   * debiki_prod=> select * from dw1_tenants;
+   *
+   *  id |        name         |           ctime
+   * ----+---------------------+----------------------------
+   *  1  | Local               | 2011-09-18 20:31:20.650848
+   *  2  | Debiki.se           | 2011-09-18 20:32:48.635834
+   *  12 | Kaj Magnus Lindberg | 2012-04-04 17:54:23.624729
+   *  3  | Debiki.com          | 2012-04-17 03:35:56.234517
+   *  11 | madmind             | 2012-08-13 14:36:50.990702
+   */
+  private def _isOldStyleTemplateSite(tenantId: String): Boolean =
+    _OldStyleTenantIds contains tenantId
+
+
+  private val _OldStyleTenantIds = List("1", "2", "12", "3", "11")
 
 
   /**
