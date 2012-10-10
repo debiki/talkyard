@@ -57,7 +57,7 @@ class TemplateEngine(val pageCache: PageCache) {
       // possible to view or edit the template, or any page that uses it.
       if (pageReq.pagePath.isTemplatePage || pageReq.pageRoot.isPageTemplate)
         TemplateForTemplates::Nil
-      else if (_isOldStyleTemplateSite(pageReq.tenantId))
+      else if (isOldStyleTemplateSite(pageReq.tenantId))
         _loadTemplatesFor(pageReq.page_!, at = pageReq.pagePath,
            use = pageReq.dao)
       else
@@ -224,28 +224,6 @@ class TemplateEngine(val pageCache: PageCache) {
 
   private val _IsBlogRegex = """.*/blog/|.*/[0-9]{4}/[0-9]{2}/[0-9]{2}/""".r
   private val _IsHomepageRegex = """/|\./drafts/""".r
-
-
-  /**
-   * As of 2012-10-09, there are 5 sites that use my old template
-   * selection algorithm, but I'll create no more such sites.
-   *
-   * Those 5 are:
-   * debiki_prod=> select * from dw1_tenants;
-   *
-   *  id |        name         |           ctime
-   * ----+---------------------+----------------------------
-   *  1  | Local               | 2011-09-18 20:31:20.650848
-   *  2  | Debiki.se           | 2011-09-18 20:32:48.635834
-   *  12 | Kaj Magnus Lindberg | 2012-04-04 17:54:23.624729
-   *  3  | Debiki.com          | 2012-04-17 03:35:56.234517
-   *  11 | madmind             | 2012-08-13 14:36:50.990702
-   */
-  private def _isOldStyleTemplateSite(tenantId: String): Boolean =
-    _OldStyleTenantIds contains tenantId
-
-
-  private val _OldStyleTenantIds = List("1", "2", "12", "3", "11")
 
 
   /**
@@ -472,6 +450,26 @@ class TemplateEngine(val pageCache: PageCache) {
 
 
 object TemplateEngine {
+
+  /**
+   * As of 2012-10-09, there are 5 sites that use my old template
+   * selection algorithm, but I'll create no more such sites.
+   *
+   * Those 5 are:
+   * debiki_prod=> select * from dw1_tenants;
+   *
+   *  id |        name         |           ctime
+   * ----+---------------------+----------------------------
+   *  1  | Local               | 2011-09-18 20:31:20.650848
+   *  2  | Debiki.se           | 2011-09-18 20:32:48.635834
+   *  12 | Kaj Magnus Lindberg | 2012-04-04 17:54:23.624729
+   *  3  | Debiki.com          | 2012-04-17 03:35:56.234517
+   *  11 | madmind             | 2012-08-13 14:36:50.990702
+   */
+  def isOldStyleTemplateSite(tenantId: String): Boolean =
+    _OldStyleTenantIds contains tenantId
+
+  private val _OldStyleTenantIds = List("1", "2", "12", "3", "11")
 
 
   /**
