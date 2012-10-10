@@ -69,7 +69,7 @@ object AppList extends mvc.Controller {
   def listNewestPages(pathIn: PagePath, contentType: DebikiHttp.ContentType) =
         PageGetAction(pathIn, pageMustExist = false) { pageReq =>
 
-    val tpi = TemplateProgrammingInterface(pageReq)
+    val tpi = TinyTemplateProgrammingInterface(pageReq)
 
     val pages = tpi.listNewestPages(
       Utils.parsePathRanges(pathIn, pageReq.queryString))

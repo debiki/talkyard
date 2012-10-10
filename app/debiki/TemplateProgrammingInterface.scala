@@ -9,17 +9,21 @@ import controllers.PageRequest
 import play.{api => p}
 
 
+
+object TinyTemplateProgrammingInterface {
+
+  def apply(pageReq: PageRequest[_]): TinyTemplateProgrammingInterface =
+    new TinyTemplateProgrammingInterface(pageReq)
+
+  case class Page(id: String, path: String, title: String, safeBodyHtml: String)
+}
+
+
+
 object TemplateProgrammingInterface {
 
   def apply(pageRenderer: PageRenderer): TemplateProgrammingInterface =
-    new TemplateProgrammingInterface(pageRenderer.pageReq, pageRenderer)
-
-  def apply(pageReq: PageRequest[_]): TemplateProgrammingInterface =
-    // For now:
-    new TemplateProgrammingInterface(pageReq, null)
-
-
-  case class Page(id: String, path: String, title: String, safeBodyHtml: String)
+    new TemplateProgrammingInterface(pageRenderer)
 
   val (minMax, minMaxJs, minMaxCss) = {
     // Using Play.isDev causes Could not initialize class
@@ -34,34 +38,20 @@ object TemplateProgrammingInterface {
 
 
 /**
- * Passed to Scala templates.
+ * Used by both Scala templates (via TemplateProgrammingInterface
+ * which inherits it) and HTTP interface controllers.
+ *
+ * Does not provide any functionality for rendering a whole page.
+ * Such stuff is placed in TemplateProgrammingInterface instead
+ * (because that stuff has some more dependencies).
  */
-class TemplateProgrammingInterface private (
-  private val _pageReq: PageRequest[_],
-  private val _pageRenderer: PageRenderer) {
+class TinyTemplateProgrammingInterface protected (
+  protected val _pageReq: PageRequest[_]) {
 
-  import TemplateProgrammingInterface._
-
-  def debikiHeadTags = TemplateProgrammingInterface.debikiHeadTags
-
-  def debikiAppendToBodyTags = _pageRenderer.appendToBody
-
-  val debikiHtmlTagClasses =
-    "DW "+
-    "dw-pri "+
-    "dw-ui-simple "+
-    "dw-render-actions-pending "+
-    "dw-render-layout-pending "
+  import TinyTemplateProgrammingInterface._
 
   def currentFolder = PathRanges(folders = Seq(_pageReq.pagePath.folder))
   def currentTree = PathRanges(trees = Seq(_pageReq.pagePath.folder))
-
-  def loginLinkAndUserName =
-    HtmlSerializer.loginInfo(_pageReq.user.map(_.displayName))
-
-
-  def pageTitleAndBodyAndComments =
-    _pageRenderer.renderPageTitleAndBodyAndComments()
 
 
   def listNewestPages(pathRanges: PathRanges): Seq[Page] = {
@@ -86,7 +76,7 @@ class TemplateProgrammingInterface private (
       _pageReq.dao.loadPageBodiesTitles(articlePaths)
 
     def titleOf(page: Option[Debate]): String =
-    // Currenply HtmlSerializer ignores the `.markup` for a title Post.
+      // Currenply HtmlSerializer ignores the `.markup` for a title Post.
       page.flatMap(_.title).map(_.text).getOrElse("(No title)")
 
     def bodyOf(page: Option[Debate]): String =
@@ -99,6 +89,37 @@ class TemplateProgrammingInterface private (
         title = titleOf(pageApproved), safeBodyHtml = bodyOf(pageApproved))
     }
   }
+}
+
+
+/**
+ * Passed to Scala templates.
+ */
+class TemplateProgrammingInterface private (
+  private val _pageRenderer: PageRenderer)
+  extends TinyTemplateProgrammingInterface(_pageRenderer.pageReq) {
+
+  import TinyTemplateProgrammingInterface._
+  import TemplateProgrammingInterface._
+
+  def debikiHeadTags = TemplateProgrammingInterface.debikiHeadTags
+
+  def debikiAppendToBodyTags = _pageRenderer.appendToBody
+
+  val debikiHtmlTagClasses =
+    "DW "+
+    "dw-pri "+
+    "dw-ui-simple "+
+    "dw-render-actions-pending "+
+    "dw-render-layout-pending "
+
+
+  def loginLinkAndUserName =
+    HtmlSerializer.loginInfo(_pageReq.user.map(_.displayName))
+
+
+  def pageTitleAndBodyAndComments =
+    _pageRenderer.renderPageTitleAndBodyAndComments()
 
 }
 
