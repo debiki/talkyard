@@ -11,7 +11,7 @@ See: http://code.google.com/p/android/issues/detail?id=10775#c20
 
 
 <link rel="stylesheet" href="/-/res/jquery-ui/jquery-ui-1.8.16.custom.css"/>
-<link rel="stylesheet" href="/-/res/combined-debiki@minMaxCss"/>
+<link rel="stylesheet" href="/-/res/combined-debiki.@minMaxCss"/>
 <!--[if IE 7]>
 <link rel="stylesheet" href="/-/res/debiki-lift-ie7.css"/>
 <![endif]-->
@@ -23,8 +23,8 @@ stylesheet references", http://modernizr.com/docs/#installing
 *@
 <script src="http://cdnjs.cloudflare.com/ajax/libs/modernizr/2.5.3/modernizr.min.js"></script>
 
-<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery@minMaxJs"></script>
-<script src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.19/jquery-ui@minMaxJs"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.@minMaxJs"></script>
+<script src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.19/jquery-ui.@minMaxJs"></script>
 
 @* Could:
 <script>
@@ -45,8 +45,8 @@ See: http://stackoverflow.com/questions/1014203/best-way-to-use-googles-hosted-j
   debiki.scriptLoad = $.Deferred();
   Modernizr.load({
     test: Modernizr.touch,
-    yep: '/-/res/combined-debiki-touch@minMaxJs',
-    nope: '/-/res/combined-debiki-desktop@minMaxJs',
+    yep: '/-/res/combined-debiki-touch.@minMaxJs',
+    nope: '/-/res/combined-debiki-desktop.@minMaxJs',
   });
 </script>
 
