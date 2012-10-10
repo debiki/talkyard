@@ -76,7 +76,7 @@ object Utils extends Results with http.ContentTypes {
 
   def renderOrRedirect(pageReq: PageRequest[_]): PlainResult = {
     if (isAjax(pageReq.request)) {
-      val pageHtml = Debiki.TemplateEngine.renderPage(pageReq)
+      val pageHtml = Debiki.renderPage(pageReq)
       OkHtml(pageHtml)
     } else {
       val queryString =

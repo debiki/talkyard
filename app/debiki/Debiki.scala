@@ -9,11 +9,10 @@ import com.debiki.v0.Prelude._
 import controllers.{DebikiRequest, PageRequest}
 import play.api.Play
 import play.api.Play.current
+import xml.NodeSeq
 
 
 object Debiki {
-
-  lazy val TemplateEngine = new TemplateEngine(PageCache)
 
   lazy val PageCache = new PageCache
 
@@ -44,6 +43,12 @@ object Debiki {
         : TenantDao =
     DaoFactory.buildTenantDao(QuotaConsumers(ip = Some(ip),
        tenantId = tenantId, roleId = roleId))
+
+
+  def renderPage(pageReq: PageRequest[_], appendToBody: NodeSeq = Nil)
+        : NodeSeq = {
+    (new TemplateEngine(PageCache)).renderPage(pageReq, appendToBody)
+  }
 
 
   /**

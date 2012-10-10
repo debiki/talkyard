@@ -35,7 +35,7 @@ object Application extends mvc.Controller {
     // notices that it got that elem, and won't call GET ?page-info.
     val infoNode = <pre class='dw-data-yaml'>{pageInfoYaml}</pre>
     val pageHtml =
-      Debiki.TemplateEngine.renderPage(pageReq, appendToBody = infoNode)
+      Debiki.renderPage(pageReq, appendToBody = infoNode)
     OkHtml(pageHtml)
   }
 
