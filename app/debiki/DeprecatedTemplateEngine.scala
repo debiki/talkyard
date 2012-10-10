@@ -8,7 +8,7 @@ import com.debiki.v0._
 import controllers.PageRequest
 import play.{api => p}
 import Prelude._
-import TemplateEngine._
+import DeprecatedTemplateEngine._
 import xml.{MetaData, Node, NodeSeq, Text}
 
 
@@ -44,7 +44,7 @@ import xml.{MetaData, Node, NodeSeq, Text}
  *
  * Thread safe.
  */
-class TemplateEngine(val pageCache: PageCache) {
+class DeprecatedTemplateEngine(val pageCache: PageCache) {
 
 
   def renderPage(pageReq: PageRequest[_],
@@ -449,7 +449,7 @@ class TemplateEngine(val pageCache: PageCache) {
 }
 
 
-object TemplateEngine {
+object DeprecatedTemplateEngine {
 
   /**
    * As of 2012-10-09, there are 5 sites that use my old template
@@ -578,7 +578,7 @@ object TemplateEngine {
 
   val (minMaxJs, minMaxCss) = {
     // Using Play.isDev causes Could not initialize class
-    // debiki.TemplateEngine$ error, when running unit tests. Instead:
+    // debiki.DeprecatedTemplateEngine$ error, when running unit tests. Instead:
     val isDev = p.Play.maybeApplication.map(_.mode) == Some(p.Mode.Dev)
     if (isDev) (".js", ".css") else (".min.js", ".min.css")
   }

@@ -8,17 +8,17 @@ import org.specs2.mutable._
 import play.api.test._
 import play.api.test.Helpers._
 import xml._
-import TemplateEngine.{replaceMatchingHeadTags => replHead}
-import TemplateEngine.{replaceTagsWithMatchingId => replId}
-import TemplateEngine.transform
+import DeprecatedTemplateEngine.{replaceMatchingHeadTags => replHead}
+import DeprecatedTemplateEngine.{replaceTagsWithMatchingId => replId}
+import DeprecatedTemplateEngine.transform
 
 
-class TemplateEngineSpec extends Specification {
+class DeprecatedTemplateEngineSpec extends Specification {
 
   val N = Nil: NodeSeq
 
 
-  "TemplateEngine tag replacement functions" can {
+  "DeprecatedTemplateEngine tag replacement functions" can {
 
     "transform tags" >> {
 

@@ -47,7 +47,7 @@ object Debiki {
 
   def renderPage(pageReq: PageRequest[_], appendToBody: NodeSeq = Nil)
         : NodeSeq = {
-    (new TemplateEngine(PageCache)).renderPage(pageReq, appendToBody)
+    (new DeprecatedTemplateEngine(PageCache)).renderPage(pageReq, appendToBody)
   }
 
 
