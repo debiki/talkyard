@@ -135,23 +135,32 @@ object Utils extends Results with http.ContentTypes {
     pagePath.isCodePage || pagePath.isTemplatePage || pagePath.isHiddenPage
 
 
-  def loadIdentityAndUserOrThrow(sidStatus: SidStatus, dao: TenantDao)
+  /**
+   * Might throw a LoginNotFoundException.
+   */
+  def loadIdentityAndUserOrThrow(sid: SidStatus, dao: TenantDao)
         : (Option[Identity], Option[User]) = {
-    val identityAndUser = sidStatus.loginId match {
+    val identityAndUser = sid.loginId match {
       case None => (None, None)
-      case Some(lid) =>
-        dao.loadIdtyAndUser(forLoginId = lid)
+      case Some(loginId) =>
+        dao.loadIdtyAndUser(forLoginId = loginId)
         match {
           case Some((identity, user)) => (Some(identity), Some(user))
           case None =>
-            // Currently, RelDbDao throws an exception rather than
-            // returning None.
-            warnDbgDie("RelDbDao did not load user [error DwE01521ku35]")
-            (None, None)
+            // This might happen 1) if the server connected to a new database
+            // (e.g. a standby where the login entry hasn't yet been
+            // created), or 2) during testing, when I sometimes manually
+            // delete stuff from the database (including login entries).
+            Logger.warn("RelDbDao did not load user [error DwE01521ku35]")
+            throw LoginNotFoundException(dao.tenantId, loginId)
         }
     }
     identityAndUser
   }
+
+
+  case class LoginNotFoundException(tenantId: String, loginId: String)
+     extends Exception("No login with id: "+ loginId +", tenantId: "+ tenantId)
 
 
   object ValidationImplicits {

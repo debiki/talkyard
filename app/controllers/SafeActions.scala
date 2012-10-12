@@ -36,6 +36,9 @@ object SafeActions {
    * Throws Forbidden if this is a POST request with no valid XSRF token.
    * Creates a new XSRF token cookie, if there is none, or if it's invalid.
    *
+   * Throws Forbidden, and deletes the SID cookie, if any SID login id
+   * doesn't map to any login entry.
+   *
    * @param f The SidStatus passed to `f` is either SidAbsent or a SidOk.
    */
   // COULD rename to CheckSidAndXsrfAction?
@@ -45,7 +48,19 @@ object SafeActions {
     ExceptionAction[A](parser) { request =>
       val (sidStatus, xsrfOk, newCookies) =
          DebikiSecurity.checkSidAndXsrfToken(request)
-      val resultOldCookies = f(sidStatus, xsrfOk, request)
+      val resultOldCookies = try {
+        f(sidStatus, xsrfOk, request)
+      } catch {
+        case e: Utils.LoginNotFoundException =>
+          // This might happen if I manually deleted stuff from the
+          // database during development, or if the server has fallbacked
+          // to a standby database.
+          throw ResultException(ForbiddenResult(
+            "DwE034ZQ3", "Internal error, please try again, sorry. "+
+               "(A certain login id has become invalid. You'll get a new id, "+
+               "and you'll probably need to login again.)")
+             .discardingCookies("dwCoSid"))
+      }
       val resultOkSid =
         if (newCookies isEmpty) resultOldCookies
         else resultOldCookies.withCookies(newCookies: _*)
