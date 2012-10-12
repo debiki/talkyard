@@ -7,7 +7,16 @@ package debiki
 import com.debiki.v0._
 import controllers.PageRequest
 import play.{api => p}
+import Prelude._
+import scala.Some
+import controllers.PageRequest
 
+
+object InternalTemplateProgrammingInterface {
+
+  def apply(dao: TenantDao) = new InternalTemplateProgrammingInterface(dao)
+
+}
 
 
 object TinyTemplateProgrammingInterface {
@@ -38,6 +47,69 @@ object TemplateProgrammingInterface {
 
 
 /**
+ * Used by internal templates, e.g. /-/create-website/choose-name.
+ */
+class InternalTemplateProgrammingInterface protected (
+  protected val _dao: TenantDao) {
+
+
+  /**
+   * Loads page /site.conf as YAML data into a Map.
+   *
+   * SHOULD cache the result, otherwise each page view will require 2 page
+   * lookups!
+   */
+  def websiteConfigValue(confValName: String, or: String = ""): String = {
+    _websiteConfigValueOpt(confValName) getOrElse or
+  }
+
+
+  /**
+   * A PagePath to /site.conf, but the page id is unknown and needs to be
+   * looked up (via Dao.checkPagePath).
+   *
+   * COULD move to other module, but what module?
+   */
+  def websiteConfigPagePath = PagePath(
+    tenantId = _dao.tenantId, folder = "/", pageId = None,
+    showId = false, pageSlug = "site.conf")
+
+
+  protected def _websiteConfigValueOpt(confValName: String): Option[String] = {
+    val pagePathIdKnown = _dao.checkPagePath(websiteConfigPagePath)
+    pagePathIdKnown match {
+      case None => None
+      case Some(pagePath) =>
+        _loadConfigVal(pagePath.pageId.get, configPostId = Page.BodyId,
+          confValName = confValName)
+    }
+  }
+
+
+  protected def _loadConfigVal(pageId: String, configPostId: String,
+        confValName: String): Option[String] = {
+    val confMap: Map[String, Any] = _loadPageConfigMap(pageId, configPostId)
+    confMap.get(confValName).map(_.toString)
+  }
+
+
+  protected def _loadPageConfigMap(pageId: String, configPostId: String)
+      : Map[String, Any] = {
+    // Load the page as YAML into a map.
+    _dao.loadPage(pageId) match {
+      case None => return Map.empty
+      case Some(page) =>
+        val configText = page.vipo(configPostId) match {
+          case None => return Map.empty
+          case Some(post) => post.text
+        }
+        DebikiYaml.parseYamlToMap(configText)
+    }
+  }
+}
+
+
+/**
  * Used by both Scala templates (via TemplateProgrammingInterface
  * which inherits it) and HTTP interface controllers.
  *
@@ -46,15 +118,45 @@ object TemplateProgrammingInterface {
  * (because that stuff has some more dependencies).
  */
 class TinyTemplateProgrammingInterface protected (
-  protected val _pageReq: PageRequest[_]) {
+  protected val _pageReq: PageRequest[_])
+  extends InternalTemplateProgrammingInterface(_pageReq.dao) {
 
-  import TinyTemplateProgrammingInterface._
+  import debiki.{TinyTemplateProgrammingInterface => tpi}
 
   def currentFolder = PathRanges(folders = Seq(_pageReq.pagePath.folder))
   def currentTree = PathRanges(trees = Seq(_pageReq.pagePath.folder))
 
 
-  def listNewestPages(pathRanges: PathRanges): Seq[Page] = {
+  /**
+   * A website or page config value, and page specific values take precedence.
+   */
+  def configValue(confValName: String, or: String = ""): String = {
+    _pageConfigValueOpt(confValName) orElse
+       _websiteConfigValueOpt(confValName) getOrElse or
+  }
+
+
+  /**
+   * Loads page specific data, e.g. which template to use (if we're not
+   * supposed to use the default template for the folder in which the page
+   * is placed) and perhaps page html keywords/title/description.
+   *
+   * SHOULD cache the result, otherwise we'll have to parse YAML
+   * each time a page is viewed.
+   */
+  def pageConfigValue(confValName: String, or: String = ""): String = {
+    _pageConfigValueOpt(confValName) getOrElse or
+  }
+
+
+  private def _pageConfigValueOpt(confValName: String): Option[String] = {
+    val pageId = _pageReq.pageId.getOrElse(assErr("DwE83ZI78"))
+    _loadConfigVal(pageId = pageId, configPostId = Page.TemplateId,
+      confValName = confValName)
+  }
+
+
+  def listNewestPages(pathRanges: PathRanges): Seq[tpi.Page] = {
     val pathsAndDetails = _pageReq.dao.listPagePaths(
       pathRanges,
       include = PageStatus.Published::Nil,
@@ -85,7 +187,7 @@ class TinyTemplateProgrammingInterface protected (
 
     pathsAndPages map { case (pagePath, pageOpt: Option[Debate]) =>
       val pageApproved = pageOpt map (_.approvedVersion)
-      Page(id = pagePath.pageId.get, path = pagePath.path,
+      tpi.Page(id = pagePath.pageId.get, path = pagePath.path,
         title = titleOf(pageApproved), safeBodyHtml = bodyOf(pageApproved))
     }
   }
@@ -99,7 +201,8 @@ class TemplateProgrammingInterface private (
   private val _pageRenderer: PageRenderer)
   extends TinyTemplateProgrammingInterface(_pageRenderer.pageReq) {
 
-  import TinyTemplateProgrammingInterface._
+  import debiki.{TinyTemplateProgrammingInterface => tpi}
+  import TinyTemplateProgrammingInterface.{Page => _, _}
   import TemplateProgrammingInterface._
 
   def debikiHeadTags = TemplateProgrammingInterface.debikiHeadTags
