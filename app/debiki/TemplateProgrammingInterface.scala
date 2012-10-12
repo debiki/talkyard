@@ -54,7 +54,7 @@ class InternalTemplateProgrammingInterface protected (
 
 
   /**
-   * Loads page /site.conf as YAML data into a Map.
+   * Loads page /.site.conf as YAML data into a Map.
    *
    * SHOULD cache the result, otherwise each page view will require 2 page
    * lookups!
@@ -65,14 +65,16 @@ class InternalTemplateProgrammingInterface protected (
 
 
   /**
-   * A PagePath to /site.conf, but the page id is unknown and needs to be
+   * A PagePath to /.site.conf, but the page id is unknown and needs to be
    * looked up (via Dao.checkPagePath).
+   *
+   * The file starts with `.` because it should be accessible to admins only.
    *
    * COULD move to other module, but what module?
    */
   def websiteConfigPagePath = PagePath(
     tenantId = _dao.tenantId, folder = "/", pageId = None,
-    showId = false, pageSlug = "site.conf")
+    showId = false, pageSlug = ".site.conf")
 
 
   protected def _websiteConfigValueOpt(confValName: String): Option[String] = {
