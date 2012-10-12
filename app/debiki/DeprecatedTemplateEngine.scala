@@ -398,6 +398,7 @@ class DeprecatedTemplateEngine(val pageCache: PageCache) {
 }
 
 
+@deprecated
 object DeprecatedTemplateEngine {
 
   /**

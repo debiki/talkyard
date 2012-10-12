@@ -208,7 +208,7 @@ class AutoApproverSpec extends Specification with Mockito {
         pending
       }
 
-      "if a well user has terribly many comments pending moderation" >> {
+      "if a well behaved user has terribly many comments pending" >> {
         pending
       }
     }
