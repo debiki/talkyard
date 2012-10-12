@@ -59,7 +59,7 @@ class InternalTemplateProgrammingInterface protected (
    * SHOULD cache the result, otherwise each page view will require 2 page
    * lookups!
    */
-  def websiteConfigValue(confValName: String, or: String = ""): String = {
+  def websiteConfigValue(confValName: String, or: => String = ""): String = {
     _websiteConfigValueOpt(confValName) getOrElse or
   }
 

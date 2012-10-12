@@ -1,4 +1,4 @@
-@(parentDomainName: String, xsrfToken: String)
+@(tpi: debiki.InternalTemplateProgrammingInterface, xsrfToken: String)
 
 
 @css = @{("""
@@ -44,19 +44,18 @@
 
       <label for='website-name'>Enter a name for the new website:</label>
       <input type='text' id='website-name' name='website-name'
-          ><tt>.@{parentDomainName}</tt>
+          ><tt>.@tpi.websiteConfigValue("new-website-domain")</tt>
 
       <p>
-        <small>You can map a domain name to the website, later,
-        so it would be reachable via e.g. <tt>your-domain.com</tt>.
-        I've not yet implemented this though.</small>
+        <small>You can map a domain name to the website, later (so it would be
+        reachable via e.g. <tt>www.your-domain.com</tt>).</small>
       </p>
 
       <div id='accept-terms-inp-group'>
-      <input type='checkbox' id='accepts-terms' name='accepts-terms' value='yes'>
+      <input type='checkbox' id='accepts-terms' name='accept-terms' value='yes'>
       <label for='accepts-terms'>
-        I accept the <a href="/about/terms-of-use">Terms of Use</a>
-        and the <a href="/about/privacy-policy">Privacy Policy</a>.
+        I accept the <a href="@tpi.websiteConfigValue("new-website-terms-of-use")">Terms of Use</a>
+        and the <a href="@tpi.websiteConfigValue("new-website-privacy-policy")">Privacy Policy</a>.
       </label>
       </div>
 

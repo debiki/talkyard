@@ -11,6 +11,7 @@ import java.{util => ju}
 import play.api._
 import play.api.mvc.{Action => _, _}
 import play.api.Play.current
+import ApiActions._
 import SafeActions._
 import Prelude._
 import Utils.ValidationImplicits._
@@ -20,64 +21,39 @@ object AppCreateWebsite extends mvc.Controller {
 
   val log = play.api.Logger("app.create-website")
 
-  // Add to dev config file?
-  // debiki.create-website.only-from-address="localhost:9000"
-  // debiki.create-website.new-domain="debiki.localhost:9000"
-
-  /**
-   * The one and only host from which it's allowed to create new websites,
-   * probably www.debiki.com.
-   */
-  val websiteCreationHost: Option[String] = {
-    val host = Play.configuration.getString(
-      "debiki.create-website.only-from-address")
-    assErrIf(Play.isProd && host.isEmpty,
-      "DwE01kr55", "No debiki.create-website.only-from-address specified")
-    host
+  def newWebsiteAddr(websiteName: String,
+        tpi: InternalTemplateProgrammingInterface): String = {
+    websiteName +"."+ tpi.websiteConfigValue("new-website-domain",
+      or = throwForbidden(
+        "DwE903IKW3", "You may not create a new website from this website"))
   }
 
 
-  val newWebsiteDomainConfVal = Play.configuration.getString(
-    "debiki.create-website.new-domain")
+  def showWebsiteNameForm() = GetAction { request =>
+    _throwIfMayNotCreateWebsite(creatorIpAddr = request.ip)
 
-
-  def newWebsiteDomain(request: Request[_]) =
-       newWebsiteDomainConfVal getOrElse {
-    assErrIf(!Play.isDev, "DwE269I2", "Missing parent domain config value")
-    request.host
+    val tpi = InternalTemplateProgrammingInterface(request.dao)
+    Ok(views.html.createWebsiteChooseName(tpi,
+      xsrfToken = request.xsrfToken.value))
   }
 
 
-  def newWebsiteAddr(websiteName: String, request: Request[_]) =
-    websiteName +"."+ newWebsiteDomain(request)
-
-
-  def showWebsiteNameForm() = CheckSidActionNoBody {
-        (sidOk, xsrfOk, request) =>
-
-    if (websiteCreationHost.nonEmpty &&
-        websiteCreationHost != Some(request.host))
-      throwForbidden(
-        "DwE3kJ5", "You may not create a website from this address")
-
-    _throwIfMayNotCreateWebsite(creatorIpAddr = request.remoteAddress)
-
-    Ok(views.html.createWebsiteChooseName(xsrfToken = xsrfOk.value,
-      parentDomainName = newWebsiteDomain(request)))
-  }
-
-
-  def handleWebsiteNameForm() = CheckSidAction(
-        BodyParsers.parse.urlFormEncoded(maxLength = 100)) {
-      (sidOk, xsrfOk, request) =>
+  def handleWebsiteNameForm() = JsonOrFormDataPostAction(maxBytes = 100) {
+      request =>
 
     val newWebsiteName =
-       request.body.getEmptyAsNone("website-name") getOrElse
+      request.body.getEmptyAsNone("website-name") getOrElse
         throwBadReq("DwE01kI72", "Please specify a name for your new website")
 
+    if (request.body.getFirst("accept-terms") != Some("yes"))
+      throwForbidden(
+        "DwE9fZ31", "To create a new website, you need to accept the "+
+         "Terms of Use and the Privacy Policy.")
+
     // Preliminary test of if it's possible & allowed to create the website.
-    _throwIfMayNotCreateWebsite(creatorIpAddr = request.remoteAddress,
-       newWebsiteAddr = Some(newWebsiteAddr(newWebsiteName, request)))
+    val tpi = InternalTemplateProgrammingInterface(request.dao)
+    _throwIfMayNotCreateWebsite(creatorIpAddr = request.ip,
+       newWebsiteAddr = Some(newWebsiteAddr(newWebsiteName, tpi)))
 
     Redirect(routes.AppCreateWebsite.showWebsiteOwnerForm.url)
        .withSession(
@@ -94,18 +70,13 @@ object AppCreateWebsite extends mvc.Controller {
   }
 
 
-  def tryCreateWebsite() = CheckSidActionNoBody { (sidOk, xsrfOk, request) =>
-
-    if (sidOk.roleId isEmpty)
-      throwForbidden("DwE013k586", "Cannot create website: Not logged in")
-
-    val dao = _tenantDao(request, sidOk.roleId)
+  def tryCreateWebsite() = GetAction { request =>
 
     // Check permissions — and load authentication details, so OpenID/OAuth
     // info can be replicated to a new identity + user in the new website.
+    val loginId = request.loginId_!
     val (identity, user) = {
-      val loginId = sidOk.loginId.getOrElse(assErr("DwE01955"))
-      dao.loadIdtyDetailsAndUser(forLoginId = loginId) match {
+      request.dao.loadIdtyDetailsAndUser(forLoginId = loginId) match {
         case Some((identity, user)) => (identity, user)
         case None =>
           runErr("DwE01j920", "Cannot create website: Bad login ID: "+ loginId)
@@ -133,7 +104,8 @@ object AppCreateWebsite extends mvc.Controller {
       throwForbidden("DwE091EQ7", "No website-name cookie")
     }
 
-    val websiteAddr = newWebsiteAddr(newWebsiteName, request)
+    val tpi = InternalTemplateProgrammingInterface(request.dao)
+    val websiteAddr = newWebsiteAddr(newWebsiteName, tpi)
 
     //_throwIfMayNotCreateWebsite(creatorIpAddr = request.remoteAddress,
     //  websiteAddr = Some(request.host))
@@ -146,16 +118,16 @@ object AppCreateWebsite extends mvc.Controller {
     // Require OpenID or OAuth (todo) or password (todo) login.
     val idtyOpenId = identity.asInstanceOf[IdentityOpenId]
 
-    val newWebsite = dao.createWebsite(
+    val newWebsite = request.dao.createWebsite(
        name = newWebsiteName, address = websiteAddr,
-       ownerIp = request.remoteAddress, ownerLoginId = sidOk.loginId.get,
+       ownerIp = request.ip, ownerLoginId = loginId,
        ownerIdentity = idtyOpenId, ownerRole = user)
 
     val result = newWebsite match {
       case Some(website) =>
         // COULD do this in the same transaction as `createWebsite`?
         val email = _makeNewWebsiteEmail(website, user)
-        dao.saveUnsentEmail(email)
+        request.dao.saveUnsentEmail(email)
 
         Debiki.sendEmail(email, website.id)
 
@@ -198,7 +170,9 @@ object AppCreateWebsite extends mvc.Controller {
 
   private def _throwIfMayNotCreateWebsite(creatorIpAddr: String,
         newWebsiteAddr: Option[String] = None) {
+    // SECURITY
     // Perhaps like so:
+    // Check request made from allowed hostname (probably www.debiki.com)
     // Unless logged in:
     //   If > 10 tenants already created from ipAddr, deny.
     // If logged in:

@@ -54,6 +54,8 @@ abstract class DebikiRequest[A] {
   def displayName_! : String =
     sid.displayName getOrElse throwForbidden("DwE97Ik3", "Not logged in")
 
+  def session: mvc.Session = request.session
+
   def ip = request.remoteAddress
 
   /**
