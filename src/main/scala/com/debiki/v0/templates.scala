@@ -11,6 +11,7 @@ import Prelude._
 
 /** A template source page for some Web template engine.
  */
+@deprecated
 trait TemplateSource {
   /** Configuration values. */
   def params: TemplateParams
@@ -19,6 +20,7 @@ trait TemplateSource {
 }
 
 
+@deprecated
 case object TemplateSrcHtml {
 
   val DefaultText =
@@ -54,6 +56,7 @@ case object TemplateSrcHtml {
  *       ...
  *     </html>
  */
+@deprecated
 case class TemplateSrcHtml(templateSrc: String, path: String)
    extends TemplateSource {
 

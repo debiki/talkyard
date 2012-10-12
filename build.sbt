@@ -10,7 +10,6 @@ resolvers += "Scala-Tools Maven2 Repository" at "http://scala-tools.org/repo-rel
 
 libraryDependencies ++= Seq(
   "org.scala-lang" % "scala-library" % "2.9.1",
-  "org.yaml" % "snakeyaml" % "1.6",
   "com.google.guava" % "guava" % "10.0.1",
   "commons-codec" % "commons-codec" % "1.5",
   "nu.validator.htmlparser" % "htmlparser" % "1.2.1",
