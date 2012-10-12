@@ -5,6 +5,7 @@
 package com.debiki.v0
 
 import com.debiki.v0.Prelude._
+import controllers.JsonOrFormDataBody
 import debiki.DebikiHttp._
 import java.{util => ju, io => jio}
 import play.api.mvc.Cookie
@@ -62,11 +63,16 @@ object DebikiSecurity {
         // input in any POST:ed form data. Check the header first, in case
         // this is a JSON request (then there is no form data).
         var xsrfToken = request.headers.get(AngularJsXsrfHeaderName) orElse {
-          if (!request.body.isInstanceOf[Map[String, Seq[String]]]) {
-            None
-          } else {
+          if (request.body.isInstanceOf[Map[String, Seq[String]]]) {
             val params = request.body.asInstanceOf[Map[String, Seq[String]]]
             params.get(debiki.HtmlForms.XsrfInpName).map(_.head)
+          }
+          else if (request.body.isInstanceOf[JsonOrFormDataBody]) {
+            val body = request.body.asInstanceOf[JsonOrFormDataBody]
+            body.getFirst(debiki.HtmlForms.XsrfInpName)
+          }
+          else {
+            None
           }
         } getOrElse
             throwForbidden("DwE0y321", "No XSRF token")
