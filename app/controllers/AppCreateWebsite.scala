@@ -30,7 +30,7 @@ object AppCreateWebsite extends mvc.Controller {
 
 
   def showWebsiteNameForm() = GetAction { request =>
-    _throwIfMayNotCreateWebsite(creatorIpAddr = request.ip)
+    _throwIfMayNotCreateWebsite(request)
 
     val tpi = InternalTemplateProgrammingInterface(request.dao)
     Ok(views.html.createWebsiteChooseName(tpi,
@@ -50,10 +50,11 @@ object AppCreateWebsite extends mvc.Controller {
         "DwE9fZ31", "To create a new website, you need to accept the "+
          "Terms of Use and the Privacy Policy.")
 
-    // Preliminary test of if it's possible & allowed to create the website.
-    val tpi = InternalTemplateProgrammingInterface(request.dao)
-    _throwIfMayNotCreateWebsite(creatorIpAddr = request.ip,
-       newWebsiteAddr = Some(newWebsiteAddr(newWebsiteName, tpi)))
+    val websiteAddr = newWebsiteAddr(newWebsiteName,
+       InternalTemplateProgrammingInterface(request.dao))
+
+    // *Preliminarily* test if it's possible & allowed to create the website.
+    _throwIfMayNotCreateWebsite(request, newWebsiteAddr = Some(websiteAddr))
 
     Redirect(routes.AppCreateWebsite.showWebsiteOwnerForm.url)
        .withSession(
@@ -107,17 +108,18 @@ object AppCreateWebsite extends mvc.Controller {
     val tpi = InternalTemplateProgrammingInterface(request.dao)
     val websiteAddr = newWebsiteAddr(newWebsiteName, tpi)
 
-    //_throwIfMayNotCreateWebsite(creatorIpAddr = request.remoteAddress,
-    //  websiteAddr = Some(request.host))
+    _throwIfMayNotCreateWebsite(request, newWebsiteAddr = Some(websiteAddr))
 
-    log.debug("Creating website, name: "+ newWebsiteName +
-       ", address: "+ websiteAddr)
+    log.info("Creating website, name: "+ newWebsiteName +
+       ", address: "+ websiteAddr +", on behalf of: "+ user)
 
     // SECURITY should whitelist allowed OpenID and OAuth providers.
 
     // Require OpenID or OAuth (todo) or password (todo) login.
     val idtyOpenId = identity.asInstanceOf[IdentityOpenId]
 
+    // CreateWebsite throws error if one creates too many websites
+    // from the same IP.
     val newWebsite = request.dao.createWebsite(
        name = newWebsiteName, address = websiteAddr,
        ownerIp = request.ip, ownerLoginId = loginId,
@@ -160,24 +162,17 @@ object AppCreateWebsite extends mvc.Controller {
   }
 
 
-  private def _tenantDao(request: mvc.Request[_], roleId: Option[String])
-        : TenantDao = {
-    val tenantId = DebikiHttp.lookupTenantIdOrThrow(request, Debiki.SystemDao)
-    val ipAddr = request.remoteAddress
-    Debiki.tenantDao(tenantId, ipAddr, roleId)
-  }
-
-
-  private def _throwIfMayNotCreateWebsite(creatorIpAddr: String,
+  private def _throwIfMayNotCreateWebsite(request: ApiRequest[_],
         newWebsiteAddr: Option[String] = None) {
-    // SECURITY
-    // Perhaps like so:
-    // Check request made from allowed hostname (probably www.debiki.com)
-    // Unless logged in:
-    //   If > 10 tenants already created from ipAddr, deny.
-    // If logged in:
-    //   If > 100 tenants already created from ipAddr, deny.
-    //   If > 10 tenants already created by the current role, deny.
+    if (request.host != "www.debiki.com" &&
+        !request.host.contains("localhost:"))
+      throwForbidden(
+        "DwE093AQ2", "You cannot create a new website via that website")
+
+    COULD // check if website already exists, then deny
+
+    // Tenantdao.createWebsite already throws error if too many websites
+    // created from the same IP.
   }
 
 }
