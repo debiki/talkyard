@@ -57,8 +57,8 @@ object SafeActions {
           // to a standby database.
           throw ResultException(ForbiddenResult(
             "DwE034ZQ3", "Internal error, please try again, sorry. "+
-               "(A certain login id has become invalid. You'll get a new id, "+
-               "and you'll probably need to login again.)")
+               "(A certain login id has become invalid. You now have "+
+               "a new id, but you will probably need to login again.)")
              .discardingCookies("dwCoSid"))
       }
       val resultOkSid =
