@@ -47,7 +47,7 @@ object AppCreatePage extends mvc.Controller {
 
     val pageTitle: String = pageReq.body.getOrThrowBadReq("page-title")
     val pageSlug: String = pageReq.body.getOrThrowBadReq("page-slug")
-    val showId: Boolean = pageReq.body.getBoolOrThrowBadReq("show-id")
+    val showId: Boolean = pageReq.body.getBoolOrFalse("show-id")
 
     val newPagePathNoId = pageReq.pagePath.copy(
       pageSlug = pageSlug, pageId = None, showId = showId)

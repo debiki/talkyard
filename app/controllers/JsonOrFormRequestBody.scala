@@ -49,6 +49,8 @@ case class JsonOrFormDataBody(
       _.get(param).map(_.head == "t"),
       _.value.get(param).map(_.as[Boolean]))
 
+  def getBoolOrFalse(param: String): Boolean =
+    getBool(param) getOrElse false
 
   def getOrThrowBadReq(param: String): String =
     parseFormDataOrJson(
