@@ -3,3 +3,4 @@
 2012-09-13 16:46 5451de7 Don't lazy-load popuplib.js, it doesn't exist
 2012-09-19 07:49 6626dac Outline new comments with gray border.
 2012-10-03 12:43 a001240 Upgrade submodules debiki-core, -dao-pgsql, -tck-dao.
+2012-10-13 08:42 9b0334e Upgrade submodules debiki-core, -dao-pgsql, -tck-dao.
