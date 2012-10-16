@@ -262,7 +262,7 @@ object Application extends mvc.Controller {
     if (apiReq.user.map(_.isAdmin) != Some(true))
       Ok(views.html.login(xsrfToken = apiReq.xsrfToken.value,
         returnToUrl = apiReq.uri, title = "Login", message = Some(
-          "Login with an administrator account to access this page.")))
+          "Login as administrator to access this page.")))
     else
       Ok(_adminPageFileString) as HTML withCookies (
           mvc.Cookie(
