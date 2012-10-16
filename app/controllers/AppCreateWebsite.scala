@@ -45,6 +45,11 @@ object AppCreateWebsite extends mvc.Controller {
       request.body.getEmptyAsNone("website-name") getOrElse
         throwBadReq("DwE01kI72", "Please specify a name for your new website")
 
+    if (!isOkayWebsiteName(newWebsiteName))
+      throwForbidden("DwE390IR3", "Bad website name. (The name must be "+
+        "at least 6 characters long, not be too long, contain only "+
+        "lowercase a-z, 0-9 and hyphens ('-').)")
+
     if (request.body.getFirst("accept-terms") != Some("yes"))
       throwForbidden(
         "DwE9fZ31", "To create a new website, you need to accept the "+
@@ -66,7 +71,7 @@ object AppCreateWebsite extends mvc.Controller {
         (sidOk, xsrfOk, request) =>
     Ok(views.html.login(xsrfToken = xsrfOk.value,
       returnToUrl = routes.AppCreateWebsite.tryCreateWebsite.url,
-      title = "Choose Website Owner",
+      title = "Choose Website Owner Account",
       providerLoginMessage = "It will become the owner of the new website."))
   }
 
@@ -152,6 +157,19 @@ object AppCreateWebsite extends mvc.Controller {
     // we're using HTTPS (which we aren't), i.e. no man in the middle attack.)
     Ok(views.html.createWebsiteWelcomeOwner())
   }
+
+
+  /**
+   * Must be a valid host namme, not too long or too short (less than 6 chars),
+   * no '.' and no leading or trailing '-'. See test suite in
+   * AppCreateWebsiteSpec.
+   */
+  def isOkayWebsiteName(name: String): Boolean = {
+    _OkWebsiteNameRegex matches name
+  }
+
+
+  private val _OkWebsiteNameRegex = """[a-z][a-z0-9\-]{4,38}[a-z0-9]""".r
 
 
   private def _makeNewWebsiteEmail(website: Tenant, owner: User): Email = {

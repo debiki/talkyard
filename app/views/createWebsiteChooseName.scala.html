@@ -9,6 +9,14 @@
 
   input[name='website-name'] {
     display: inline !important;
+    text-align: right;
+    font-family: monospace;
+  }
+
+  .website-domain {
+    /* Height align domain name with the host name <input> above */
+    top: -3px;
+    position: relative;
   }
 
   p small {
@@ -34,6 +42,18 @@
 """)}
 
 
+@newWebsiteDomain = @{ tpi.websiteConfigValue("new-website-domain") }
+
+
+@* Usability note:
+My father entered as his website name "Kaj-Debiki.se".
+However, `.debiki.net` is appended automatically, so what he should have
+written is simply "kaj". Now I've 1) right justified the website name text,
+so `.debiki.net` appears directly to the right, and 2) I convert
+the name to lowercase.
+*@
+
+
 @createWebsiteMain(Messages("securesocial.login.title"), css = css) {
   <div class='new-website-choose-name'>
 
@@ -42,13 +62,14 @@
     <form accept-charset='UTF-8' method='post' action="">
       <input name='dw-fi-xsrf' type='hidden' value='@xsrfToken'>
 
-      <label for='website-name'>Enter a name for the new website:</label>
+      <label for='website-name'>Enter a name for your new website
+        at <kbd>@newWebsiteDomain</kbd>:</label>
       <input type='text' id='website-name' name='website-name'
-          ><tt>.@tpi.websiteConfigValue("new-website-domain")</tt>
-
+          onChange="javascript:this.value=this.value.toLowerCase();"
+          ><kbd class='website-domain'>.@newWebsiteDomain</kbd>
       <p>
         <small>You can map a domain name to the website, later (so it would be
-        reachable via e.g. <tt>www.your-domain.com</tt>).</small>
+        reachable via e.g. <kbd>www.your-domain.com</kbd>).</small>
       </p>
 
       <div id='accept-terms-inp-group'>
