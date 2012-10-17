@@ -7,6 +7,7 @@ package com.debiki.v0.tck
 
 import scala.collection.{mutable => mut}
 import com.debiki.v0
+import com.debiki.v0._
 import com.debiki.v0.Prelude._
 import org.specs._
 import org.specs.specification.PendingUntilFixed
@@ -437,6 +438,63 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
           true
         }
         true
+      }
+    }
+
+
+    // -------- Page meta info
+
+    "load and save meta info" >> {
+
+      var blogMainPageId = "?"
+      var blogArticleId = "?"
+
+      "create a BlogMainPage" >> {
+        val pageNoId = PageStuff(
+          PageMeta(pageId = "?", pageRole = PageRole.BlogMainPage,
+            parentPageId = None),
+          defaultPagePath.copy(
+            showId = true, pageSlug = "role-test-blog-main"),
+          Debate(guid = "?"))
+        val actions = dao.createPage(pageNoId)
+        blogMainPageId = actions.pageId
+        actions.postCount must_== 0
+        actions.pageId.length must be_>(1)  // not = '?'
+      }
+
+      "look up meta info for the BlogMainPage" >> {
+        dao.loadPageMeta(blogMainPageId) must beLike {
+          case Some(pageMeta: PageMeta) => {
+            pageMeta.pageRole must_== PageRole.BlogMainPage
+            pageMeta.parentPageId must_== None
+            pageMeta.pageId must_== blogMainPageId
+            true
+          }
+        }
+      }
+
+      "create a child BlogArticle" >> {
+        val pageNoId = PageStuff(
+          PageMeta(pageId = "?", pageRole = PageRole.BlogArticle,
+            parentPageId = Some(blogMainPageId)),
+          defaultPagePath.copy(
+            showId = true, pageSlug = "role-test-blog-article"),
+          Debate(guid = "?"))
+        val actions = dao.createPage(pageNoId)
+        blogArticleId = actions.pageId
+        actions.postCount must_== 0
+        actions.pageId.length must be_>(1)  // not = '?'
+      }
+
+      "look up meta info for the BlogArticle" >> {
+        dao.loadPageMeta(blogArticleId) must beLike {
+          case Some(pageMeta: PageMeta) => {
+            pageMeta.pageRole must_== PageRole.BlogArticle
+            pageMeta.parentPageId must_== Some(blogMainPageId)
+            pageMeta.pageId must_== blogArticleId
+            true
+          }
+        }
       }
     }
 
@@ -1475,8 +1533,8 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
           offset = 0
         )
         pagePathsDetails match {
-          case List((pagePath, pageDetails)) =>
-            pagePath must_== finalPath
+          case list: List[(PagePath, PageDetails)] =>
+            list.find(_._1 == finalPath) must beSomething
             true
         }
       }
