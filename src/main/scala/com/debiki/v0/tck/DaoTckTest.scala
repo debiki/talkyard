@@ -227,7 +227,7 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
       val debateBadLogin = Debate(guid = "?", posts =
           T.post.copy(id = "1", loginId = "9999999")::Nil) // bad login id
       SLog.info("Expecting ORA-02291: integrity constraint log message ------")
-      dao.createPage(defaultPagePath, debateBadLogin
+      dao.createPage(PageStuff(defaultPagePath, debateBadLogin)
                     ) must throwAn[Exception]
       SLog.info("------------------------------------------------------------")
     }
@@ -333,7 +333,7 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
 
     "create a debate with a root post" >> {
       val debateNoId = Debate(guid = "?", posts = ex1_rootPost::Nil)
-      val d: Debate = dao.createPage(defaultPagePath, debateNoId)
+      val d: Debate = dao.createPage(PageStuff(defaultPagePath, debateNoId))
       ex1_debate = d
       d.postCount must_== 1
       d.guid.length must be_>(1)  // not = '?'
