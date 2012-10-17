@@ -63,9 +63,9 @@ object Debate {
 }
 
 
-// Could rename to Page.
+// Could rename to PageActions.
 case class Debate (
-  guid: String,
+  guid: String,  // COULD rename to pageId?
   people: People = People.None,
   private[debiki] val posts: List[Post] = Nil,
   private[debiki] val ratings: List[Rating] = Nil,
@@ -208,6 +208,7 @@ case class Debate (
   // Use these instead.
   def id = guid
   def idd = guidd
+  def pageId = id  // when/if I rename Debate to PageActions.
 
   def body: Option[ViPo] = vipo(PageBodyId)
 
