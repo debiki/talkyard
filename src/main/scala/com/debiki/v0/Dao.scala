@@ -72,6 +72,8 @@ abstract class TenantDaoSpi {
 
   def createPage(page: PageStuff): Debate
 
+  def loadPageMeta(pageId: String): Option[PageMeta]
+
   def movePages(pageIds: Seq[String], fromFolder: String, toFolder: String)
 
   def moveRenamePage(pageId: String,
@@ -298,6 +300,10 @@ class TenantDao(
     _chargeFor(ResUsg.forStoring(page = page.actions))
     _spi.createPage(page)
   }
+
+  def loadPageMeta(pageId: String): Option[PageMeta] = {
+    _chargeForOneReadReq()
+    _spi.loadPageMeta(pageId)
   }
 
   def movePages(pageIds: Seq[String], fromFolder: String, toFolder: String) {
