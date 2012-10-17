@@ -70,7 +70,7 @@ abstract class TenantDaoSpi {
 
   def saveLogout(loginId: String, logoutIp: String)
 
-  def createPage(where: PagePath, debate: Debate): Debate
+  def createPage(page: PageStuff): Debate
 
   def movePages(pageIds: Seq[String], fromFolder: String, toFolder: String)
 
@@ -294,9 +294,10 @@ class TenantDao(
 
   // ----- Pages
 
-  def createPage(where: PagePath, debate: Debate): Debate = {
-    _chargeFor(ResUsg.forStoring(page = debate))
-    _spi.createPage(where, debate)
+  def createPage(page: PageStuff): Debate = {
+    _chargeFor(ResUsg.forStoring(page = page.actions))
+    _spi.createPage(page)
+  }
   }
 
   def movePages(pageIds: Seq[String], fromFolder: String, toFolder: String) {
@@ -600,19 +601,19 @@ class CachingTenantDao(
   import CachingTenantDao.Key
 
 
-  override def createPage(where: PagePath, debate: Debate): Debate = {
-    val debateWithIdsNoUsers = super.createPage(where, debate)
+  override def createPage(page: PageStuff): Debate = {
+    val debateWithIdsNoUsers = super.createPage(page)
     // ------------
     // Bug workaround: Load the page *inclusive Login:s and User:s*.
     // Otherwise only Actions will be included (in debateWithIdsNoUsers)
     // and then the page cannot be rendered (there'll be None.get errors).
-    assert(super.tenantId == where.tenantId)
+    assert(super.tenantId == page.tenantId)
     val debateWithIds = super.loadPage(debateWithIdsNoUsers.guid).get
     // ------------
-    val key = Key(where.tenantId, debateWithIds.guid)
+    val key = Key(page.tenantId, debateWithIds.guid)
     val duplicate = _cache.cache.putIfAbsent(key, debateWithIds)
-    runErrIf3(duplicate ne null, "DwE8WcK905", "Newly created page "+
-          safed(debate.guid) + " already present in mem cache")
+    runErrIf3(duplicate ne null,
+      "DwE8WcK905", "Newly created page already in mem cache, cache key: "+ key)
     debateWithIds
   }
 
