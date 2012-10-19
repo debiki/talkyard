@@ -207,6 +207,14 @@ case class PageRequest[A](
       case _ => throwBadReq("DwE0k35", "Too many `view' query params")
     }) getOrElse PageRoot.TheBody
 
+
+  def pageRole: Option[PageRole] = pageMeta.map(_.pageRole)
+
+  def parentPageId: Option[String] = pageMeta.flatMap(_.parentPageId)
+
+  // COULD cache!
+  lazy val pageMeta: Option[PageMeta] = pageId.flatMap(dao.loadPageMeta _)
+
 }
 
 

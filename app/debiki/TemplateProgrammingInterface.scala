@@ -125,6 +125,16 @@ class TinyTemplateProgrammingInterface protected (
 
   import debiki.{TinyTemplateProgrammingInterface => tpi}
 
+  def pageId = _pageReq.pageId_!
+  def pageRole = _pageReq.pageRole getOrElse PageRole.Any
+  def childPageRole = pageRole.childRole
+
+  def isLoggedIn = _pageReq.loginId isDefined
+  def isOwner = _pageReq.user.map(_.isOwner) == Some(true)
+  def isAdmin = _pageReq.user.map(_.isAdmin) == Some(true)
+  def isAuthenticated = _pageReq.user.map(_.isAuthenticated) == Some(true)
+  def userDisplayName = _pageReq.user.map(_.displayName) getOrElse ""
+
   def currentFolder = PathRanges(folders = Seq(_pageReq.pagePath.folder))
   def currentTree = PathRanges(trees = Seq(_pageReq.pagePath.folder))
 
@@ -217,6 +227,9 @@ class TemplateProgrammingInterface private (
     "dw-ui-simple "+
     "dw-render-actions-pending "+
     "dw-render-layout-pending "
+
+
+  def debikiDashbar: String = views.html.dashbar(this).body
 
 
   def loginLinkAndUserName =

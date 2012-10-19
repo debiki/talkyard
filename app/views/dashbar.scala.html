@@ -1,0 +1,16 @@
+@(tpi: debiki.TemplateProgrammingInterface)
+
+@if(tpi.isAuthenticated) {
+  <div id='debiki-dashbar'>
+    <a class='debiki-dashbar-logo' href='@routes.Application.viewAdminPage.url'>
+      (D)
+    </a>
+    <a href=@{
+       val childPageRole = tpi.childPageRole.toString
+        "-$id-unnamed-page?create-page&role="+ childPageRole +
+          "&parentPageId="+ tpi.pageId }>
+      New Blog Post
+    </a>
+  </div>
+}
+

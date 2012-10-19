@@ -39,6 +39,29 @@ del {
 
 
 
+/* === Dashbar === */
+
+#debiki-dashbar {
+  background: #555;
+}
+
+#debiki-dashbar .debiki-dashbar-logo {
+}
+
+#debiki-dashbar a {
+  display: inline-block;
+  padding: 6px 10px;
+  color: #ddd;
+  font-family: Verdana, sans-serif;
+  text-decoration: none;
+}
+
+#debiki-dashbar a:hover {
+  background: #888;
+  color: #fff;
+}
+
+
 /* === Page rendering === */
 
 /* Hide ugly React action links until they've been converted to
