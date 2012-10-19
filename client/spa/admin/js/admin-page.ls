@@ -536,12 +536,38 @@ function inlineBtnTogglersForPost(post)
 
 
 
-function parentFolderOf(path)
-  # Works for pages only, right now.
+function analyzePagePath(path)
+  return
+    folder: parentFolderOfPage path
+    pageSlug: findPageSlugIn path
+    showId: isPageIdShownIn path
+
+
+function parentFolderOfPage(path)
+  # Index page? If so, folder path equals index page path.
+  if path.match //^.*/$//
+    return path
+  # Other pages (with id shown, or non-empty slug).
   matches = path.match //^(/.*/)[^/]+$//
   if !matches => return '/'
   bug('DwE03Al8') if matches.length != 2
   matches[1]
+
+
+
+function findPageSlugIn(path)
+  matches = path.match //^.*/(-[^/^-]+-)?([^/^-][^/]*)$//
+  if !matches => return ''
+  bug('DwE83KX1') if matches.length != 3
+  matches[2]
+
+
+
+function isPageIdShownIn(path)
+  matches = path.match //^.*/-[a-z0-9]+(-[^/]*)?$//
+  if matches => true
+  else false
+
 
 
 /**
@@ -563,7 +589,7 @@ function padNumberToLength2(number)
 
 # For now, for the test suite:
 test = debiki.test || {}
-test.parentFolderOf = parentFolderOf
+test.analyzePagePath = analyzePagePath
 test.padNumberToLength2 = padNumberToLength2
 
 

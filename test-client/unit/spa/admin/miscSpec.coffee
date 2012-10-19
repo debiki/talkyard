@@ -43,18 +43,69 @@ describe '_.mapValsKickUndef', ->
     expect(onlyA).toEqual a2()
 
 
-describe 'parentFolderOf', ->
-  it "can find a deep page's parent folder", ->
-    folderFOund = debiki.test.parentFolderOf '/parent/folder/the-page'
-    expect(folderFOund).toEqual '/parent/folder/'
+describe 'analyzePagePath', ->
 
-  it "can find a /top-level page's parent folder", ->
-    folderFOund = debiki.test.parentFolderOf '/the-page'
-    expect(folderFOund).toEqual '/'
+  analyzePagePath = debiki.test.analyzePagePath
 
-  it "can find the homepage's parent folder", ->
-    folderFOund = debiki.test.parentFolderOf '/'
-    expect(folderFOund).toEqual '/'
+  it "analyze the homepage", ->
+    expect(analyzePagePath '/').toEqual(
+        folder: '/'
+        pageSlug: ''
+        showId: false)
+
+  it "analyze a page, id hidden", ->
+    expect(analyzePagePath '/slug').toEqual(
+        folder: '/'
+        pageSlug: 'slug'
+        showId: false)
+
+  it "analyze a page with id shown, no slug", ->
+    expect(analyzePagePath '/-pageid').toEqual(
+        folder: '/'
+        pageSlug: ''
+        showId: true)
+
+  it "analyze a page with id shown, with slug", ->
+    expect(analyzePagePath '/-pageid-pageslug').toEqual(
+        folder: '/'
+        pageSlug: 'pageslug'
+        showId: true)
+
+  it "analyze a page with id shown, trailing `-`", ->
+    expect(analyzePagePath '/-pageid-').toEqual(
+        folder: '/'
+        pageSlug: ''
+        showId: true)
+
+  it "analyze a page with id hidden, trailing `-`", ->
+    expect(analyzePagePath '/slug-').toEqual(
+        folder: '/'
+        pageSlug: 'slug-'
+        showId: false)
+
+  it "analyze a deep page, id hidden", ->
+    expect(analyzePagePath '/parent/folder/the-page').toEqual(
+        folder: '/parent/folder/'
+        pageSlug: 'the-page'
+        showId: false)
+
+  it "analyze a deep page, id shown", ->
+    expect(analyzePagePath '/parent/folder/-id-the-page').toEqual(
+        folder: '/parent/folder/'
+        pageSlug: 'the-page'
+        showId: true)
+
+  it "analyze a deep page, id shown, no slug", ->
+    expect(analyzePagePath '/parent/folder/-pageid').toEqual(
+        folder: '/parent/folder/'
+        pageSlug: ''
+        showId: true)
+
+  it "analyze a deep index page", ->
+    expect(analyzePagePath '/parent/folder/').toEqual(
+        folder: '/parent/folder/'
+        pageSlug: ''
+        showId: false)
 
 
 describe 'padNumberToLength2', ->
