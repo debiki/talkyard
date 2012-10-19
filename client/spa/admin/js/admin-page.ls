@@ -63,11 +63,15 @@ AdminModule.factory 'AdminService', ['$http', ($http) ->
   api.delete = (actions, onSuccess) ->
     onSuccess! # for now
 
-  api.createPage = (folder, callback) ->
+  api.createPage = ({ path, id, role, parentPageId }, callback) ->
+    { folder, pageSlug, showId } = analyzePagePath path
     $http.post(folder + '?create-page',
-        'page-title': 'Title'
-        'page-slug': 'title'
-        'show-id': true).success (data) ->
+        'page-title': 'Unnamed Page'
+        'page-slug': pageSlug
+        'show-id': showId
+        'page-role': role
+        'parent-page-id': parentPageId
+        ).success (data) ->
           callback data.newPage
 
   api.movePages = (pageIds, {fromFolder, toFolder, callback}) ->
@@ -95,7 +99,13 @@ AdminModule.factory 'AdminService', ['$http', ($http) ->
     selectedPageListItems[0]
 
 
-  $scope.createPage = ->
+  $scope.createBlog = (location) ->
+    createPage(
+        path: location,
+        role: 'BlogMainPage')
+
+
+  $scope.createDraftPage = ->
     createPageInFolder <| '/.drafts/' + curYearMonthDayRelFolder!
 
 
@@ -103,18 +113,23 @@ AdminModule.factory 'AdminService', ['$http', ($http) ->
     createPageInFolder getSelectedFolderOrDie!path
 
 
+  createPageInFolder = (parentFolder) ->
+    pageId = generatePageId!
+    createPage(
+        id: pageId
+        path: parentFolder + '-' + pageId + '-new-page')
+
+
   /**
    * Creates a new page list item, which, from the user's point of view,
    * is similar to creating a new unsaved page.
+   *
+   * `page` should be a: { path, (id, role, parentPageId) }
+   * where (...) is optional.
    */
-  createPageInFolder = (parentFolder) ->
-    pageId = generatePageId!
-    pageListItem = makePageListItem(
-        id: pageId
-        path: parentFolder + '-' + pageId + '-new-page'
-        title: undefined
-        authors: undefined)  # COULD set to current user
-
+  createPage = (page) ->
+    page.id ||= generatePageId!
+    pageListItem = makePageListItem(page)
     pageListItem.marks = ['NewUnsaved']
 
     # Select the new page, and nothing else, so the 'View/edit' button
@@ -153,7 +168,12 @@ AdminModule.factory 'AdminService', ['$http', ($http) ->
       # Open new tab directly, in direct response to the user-initiated event,
       # or the browser's pop-up blocker tends to block it.
       newBrowserPage = window.open 'about:blank', '_blank'
-      adminService.createPage parentFolderOf(pageItem.path), (newPage) ->
+      adminService.createPage {
+          path: pageItem.path
+          id: pageItem.pageId # ??
+          role: pageItem.role
+          parentPageId: pageItem.parentPageId
+          }, (newPage) ->
         newBrowserPage.location = newPage.path
         pageItem.marks = reject (== 'NewUnsaved'), pageItem.marks
         pageItem.marks.push 'NewSaved'
@@ -226,7 +246,7 @@ AdminModule.factory 'AdminService', ['$http', ($http) ->
 
     for pageItem in morePageItems
       $scope.listItems.push pageItem
-      newFolderPaths.push parentFolderOf(pageItem.path)
+      newFolderPaths.push parentFolderOfPage(pageItem.path)
 
     newFolderPaths = unique newFolderPaths
     newFolderPaths = reject (== '/'), newFolderPaths
@@ -252,6 +272,8 @@ AdminModule.factory 'AdminService', ['$http', ($http) ->
         authors: page.authors
         included: false
         open: false
+        role: page.role
+        parentPageId: page.parentPageId
 
     isHomePage = (page) -> page.path == '/' || page.path == DRAFTS_FOLDER
     isIndexPage = (page) -> last(page.path) == '/'

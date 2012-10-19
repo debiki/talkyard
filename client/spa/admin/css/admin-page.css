@@ -18,6 +18,27 @@ h1 {
   margin: 5px 0;
 }
 
+.selection-related-btns > * {
+  display: inline-block;
+}
+
+.selection-related-btns .dropdown form {
+  padding: 15px 20px 20px;
+}
+
+
+/* Copied from Twitter's `.dropdown-menu a`. */
+.dropdown-menu li span {
+  display: block;
+  padding: 3px 15px;
+  clear: both;
+  font-weight: normal;
+  line-height: 18px;
+  color: #666;
+  white-space: nowrap;
+  font-style: italic;
+}
+
 #page-tree-container ol {
   margin-top: 1.5em;
 }
