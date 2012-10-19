@@ -48,6 +48,11 @@ object AppCreatePage extends mvc.Controller {
     val pageTitle: String = pageReq.body.getOrThrowBadReq("page-title")
     val pageSlug: String = pageReq.body.getOrThrowBadReq("page-slug")
     val showId: Boolean = pageReq.body.getBoolOrFalse("show-id")
+    val pageRole: PageRole =
+      pageReq.body.getEmptyAsNone("page-role").map(_stringToPageRole _)
+      .getOrElse(PageRole.Any)
+    val parentPageId: Option[String] =
+      pageReq.body.getEmptyAsNone("parent-page-id")
 
     val newPagePathNoId = pageReq.pagePath.copy(
       pageSlug = pageSlug, pageId = None, showId = showId)
@@ -71,9 +76,12 @@ object AppCreatePage extends mvc.Controller {
       parent = Page.TitleId, text = pageTitle,
       markup = Markup.DefaultForPageTitle.id)
 
-    val debateNoId = Debate(guid = "?", posts = rootPost::titlePost::Nil)
-    val newPage: Debate = pageReq.dao.createPage(
-      where = newPagePathNoId, debate = debateNoId)
+    val pageStuffNoId = PageStuff(
+      PageMeta(pageId = "?", pageRole = pageRole, parentPageId = parentPageId),
+      newPagePathNoId,
+      Debate(guid = "?", posts = rootPost::titlePost::Nil))
+
+    val newPage: Debate = pageReq.dao.createPage(pageStuffNoId )
 
     val newPagePath = newPagePathNoId.copy(pageId = Some(newPage.id))
     if (pageReq.isAjax)
@@ -107,6 +115,25 @@ object AppCreatePage extends mvc.Controller {
         pageReq.pageExists)
       throwForbidden("DwE87Pr2", "Page already exists")
   }
+
+
+  /**
+   * Hmm, regrettably this breaks should I rename any case object.
+   * Perhaps use a match ... case list instead?
+   */
+  private val _PageRoleLookup = Vector(
+    PageRole.Any, PageRole.Homepage, PageRole.BlogMainPage,
+    PageRole.BlogArticle, PageRole.ForumMainPage, PageRole.ForumThread,
+    PageRole.WikiMainPage, PageRole.WikiPage)
+    .map(x => (x, x.toString))
+
+
+  private def _stringToPageRole(pageRoleString: String): PageRole =
+    _PageRoleLookup.find(_._2 == pageRoleString).map(_._1).getOrElse(
+      throwBadReq("DwE930rR3", "Bad page role string: "+ pageRoleString))
+
+
+  private def _pageRoleToString(pageRole: PageRole): String = pageRole.toString
 
 
   val DefaultPageText: String =
