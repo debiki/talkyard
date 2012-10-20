@@ -55,17 +55,32 @@ case class PageMeta(
 
 
 
-sealed abstract class PageRole
+sealed abstract class PageRole private(
+  // Defaulting to `null`, since Any(Any, Any) causes a "constructor cannot
+  // be passed a self reference" error.
+  private val _parentRole: PageRole = null,
+  private val _childRole: PageRole = null) {
+
+  def parentRole: PageRole =
+    if (_parentRole eq null) PageRole.Any else _parentRole
+
+  def childRole: PageRole =
+    if (_childRole eq null) PageRole.Any else _childRole
+}
+
 
 object PageRole {
   case object Any extends PageRole
   case object Homepage extends PageRole
-  case object BlogMainPage extends PageRole
-  case object BlogArticle extends PageRole
-  case object ForumMainPage extends PageRole
-  case object ForumThread extends PageRole
-  case object WikiMainPage extends PageRole
-  case object WikiPage extends PageRole
+
+  case object BlogMainPage extends PageRole(_childRole = BlogArticle)
+  case object BlogArticle extends PageRole(_parentRole = BlogMainPage)
+
+  case object ForumMainPage extends PageRole(_childRole = ForumThread)
+  case object ForumThread extends PageRole(_parentRole = ForumMainPage)
+
+  case object WikiMainPage extends PageRole(_childRole = WikiPage)
+  case object WikiPage extends PageRole(_parentRole = WikiMainPage)
 }
 
 
