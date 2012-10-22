@@ -59,34 +59,8 @@ object AppCreatePage extends mvc.Controller {
   }
 
 
-  /**
-   * Throws something, if the page may not be created.
-   *
-   * - The page must not already exist.
-   * - If page id specified, it must be "$id", which is a dummy placeholder
-   *   that indicates that the actual ID assigned by the server should be
-   *   shown in the URL. Example:
-   *    http://server/path/-$id-page-slug?create-page gives e.g. this page:
-   *    http://server/path/-39kb2-page-slug
-   * - You must be allowed to create the page
-   */
-  def throwIfMayNotCreatePage(request: PageRequest[_]) {
-    if (request.pageExists)
-      throwForbidden("DwE390R3", "Cannot create that page; it already exists")
-
-    if (request.pagePath.pageSlug nonEmpty)
-      throwBadReq(
-        "DwE0IJ39", "Include no page slug in URL path, use `&slug=` instead")
-
-    if (request.pagePath.pageId isDefined)
-      throwBadReq("DwE40Ju3", "Page id specified")
-
-    if (!request.permsOnPage.createPage)
-      throwForbidden("DwE01rsk351", "You may not create that page")
-  }
-
-
-  def newPageDataFromUrl(pageReq: PageRequest[_]): (PageMeta, PagePath) = {
+  def newPageDataFromUrl(pageReq: PageRequest[_], pageIdOpt: Option[String])
+        : (PageMeta, PagePath) = {
     import pageReq.queryString
 
     val pageSlug =
@@ -95,7 +69,7 @@ object AppCreatePage extends mvc.Controller {
     val pageRole = queryString.getEmptyAsNone("page-role").map(
       stringToPageRole _) getOrElse PageRole.Any
 
-    val pageId = nextRandomString
+    val pageId = pageIdOpt getOrElse nextRandomString
 
     val parentPageId: Option[String] =
       queryString.getEmptyAsNone("parent-page-id")

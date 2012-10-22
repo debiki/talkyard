@@ -40,7 +40,7 @@ GET   /-/new-website/welcome-owner controllers.AppCreateWebsite.welcomeOwner
 
 GET   /-/admin/                 controllers.Application.viewAdminPage
 
-GET   /-/edit                   controllers.AppEdit.showEditFormAnyPage(pageId, postId)
+GET   /-/edit                   controllers.AppEdit.showEditFormAnyPage(pageId, pagePath, postId)
 POST  /-/edit                   controllers.AppEdit.edit
 POST  /-/move-pages             controllers.AppMoveRenamePage.movePages
 POST  /-/approve                controllers.AppReview.approve

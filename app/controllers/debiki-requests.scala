@@ -157,11 +157,16 @@ object PageRequest {
       request = apiRequest.request)()
   }
 
-  def apply[A](apiRequest: ApiRequest[A], pageId: String)
+  def apply[A](apiRequest: ApiRequest[A], pagePathStr: String, pageId: String)
         : PageRequest[A] = {
-    val pagePath = apiRequest.dao.lookupPagePathByPageId(pageId).getOrElse(
-      throwNotFound("DwE930ID4", "No path found to page "+ pageId))
-    PageRequest(apiRequest, pagePath)
+    val pagePathPerhapsId =
+      PagePath.fromUrlPath(apiRequest.tenantId, pagePathStr) match {
+        case PagePath.Parsed.Good(path) => path
+        case x => throwBadReq(
+          "DwE390SD3", "Bad page path for page id "+ pageId +": "+ x)
+      }
+    val pagePathWithId = pagePathPerhapsId.copy(pageId = Some(pageId))
+    PageRequest(apiRequest, pagePathWithId)
   }
 }
 
@@ -197,6 +202,14 @@ case class PageRequest[A](
         : PageRequest[A] = {
     copy(pageExists = pageExists, pagePath = page.path)(
       Some(page.meta), Some(page.actions))
+  }
+
+
+  def copyWithPreloadedPage(pageMeta: PageMeta, pageActions: Debate,
+        pageExists: Boolean): PageRequest[A] = {
+    require(pageMeta.pageId == pageActions.pageId)
+    require(Some(pageMeta.pageId) == pagePath.pageId)
+    copy(pageExists = pageExists)(Some(pageMeta), Some(pageActions))
   }
 
 

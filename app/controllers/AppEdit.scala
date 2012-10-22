@@ -29,10 +29,25 @@ object AppEdit extends mvc.Controller {
   }
 
 
-  def showEditFormAnyPage(pageId: String, postId: String)
+  def showEditFormAnyPage(pageId: String, pagePath: String, postId: String)
         = GetAction { request =>
 
-    val pageReq = PageRequest(request, pageId = pageId)
+    val pageReqPerhapsNoPage =
+      PageRequest(request, pagePathStr = pagePath, pageId = pageId)
+
+    val pageReq =
+      if (pageReqPerhapsNoPage.pageExists) pageReqPerhapsNoPage
+      else {
+        // Since the page doesn't exist, this request probably concerns
+        // a newly created but unsaved page. Construct a dummy page with
+        // an empty dummy post in place of the one that doesn't
+        // yet exist, but is to be edited.
+        val postToEdit = _createPostToEdit(pageReqPerhapsNoPage, postId)
+        pageReqPerhapsNoPage.copyWithPreloadedPage(
+          PageMeta(pageId = pageId), Debate(pageId) + postToEdit,
+          pageExists = false)
+      }
+
     _showEditFormImpl(pageReq, postId)
   }
 
@@ -90,23 +105,16 @@ object AppEdit extends mvc.Controller {
     for ((pageId, editMaps) <- editMapsByPageId) {
 
       val pagePathValue = (editMaps.head)("pagePath")
-      val pagePathPerhapsId =
-        PagePath.fromUrlPath(request.tenantId, pagePathValue) match {
-          case PagePath.Parsed.Good(path) => path
-          case x => throwBadReq(
-            "DwE390SD3", "Bad page path for page id "+ pageId +": "+ x)
-        }
 
       // Ensure all entries for `pageId` have the same page path.
       val badPath = editMaps.find(
         map => map.get("pagePath") != Some(pagePathValue))
       if (badPath nonEmpty) throwBadReq(
           "DwE390XR23", "Different page paths for page id "+ pageId +": "+
-          pagePathPerhapsId +", and: "+ badPath.get)
+          pagePathValue +", and: "+ badPath.get)
 
-      val pagePathWithId = pagePathPerhapsId.copy(pageId = Some(pageId))
-      val pageReqPerhapsNoPage = PageRequest(request, pagePathWithId)
 
+      val pageReqPerhapsNoPage = PageRequest(request, pagePathValue, pageId)
       val pageRequest = _createPageIfNeeded(pageReqPerhapsNoPage)
 
       for (editMap <- editMaps) {
@@ -151,13 +159,24 @@ object AppEdit extends mvc.Controller {
    */
   private def _createPageIfNeeded[A](pageReq: PageRequest[A])
         : PageRequest[A] = {
-    if (pageReq.pageExists) return pageReq
+    if (pageReq.pageExists)
+      return pageReq
 
-    AppCreatePage.throwIfMayNotCreatePage(pageReq)
-    val (pageMeta, pagePath) = AppCreatePage.newPageDataFromUrl(pageReq)
+    if (pageReq.pageExists)
+      throwForbidden("DwE390R3", "Cannot create that page; it already exists")
 
-    val newPage = pageReq.dao.createPage(
-        PageStuff(pageMeta, pagePath, Debate.empty("?")))
+    if (!pageReq.permsOnPage.createPage)
+      throwForbidden("DwE01rsk351", "You may not create that page")
+
+    val pageId = pageReq.pageId.getOrElse(throwBadReq(
+      "DwE39KR8", "No page id, cannot lazy-create page at "+ pageReq.pagePath))
+
+    val (pageMeta, pagePath) =
+      AppCreatePage.newPageDataFromUrl(pageReq, pageIdOpt = Some(pageId))
+
+    val actions = Debate(pageId, people = pageReq.userAsPeople)
+
+    val newPage = pageReq.dao.createPage(PageStuff(pageMeta, pagePath, actions))
 
     pageReq.copyWithPreloadedPage(newPage, pageExists = true)
   }
@@ -224,32 +243,22 @@ object AppEdit extends mvc.Controller {
   private def _getOrCreatePostToEdit(pageReq: PageRequest[_], postId: String)
         : (ViPo, Option[Post]) = {
 
-    val page = pageReq.page_!
+    // Include the current user in page.people, because `postId` might be
+    // a new post, and the user might not yet be present in page.people.
+    val page = pageReq.pageWithMe_!
     val vipoOpt: Option[ViPo] = page.vipo(postId)
 
     // The page title and template are created automatically
     // if they don't exist, when they are to be edited.
-    // Their author is considered to be the author of the page body.
     val lazyCreateOpt: Option[Post] = {
       // Usually, the post-to-be-edited already exists.
       if (vipoOpt isDefined) {
         None
       }
-      // Create a title or template, automatically.
-      else if (postId == Page.TitleId || postId == Page.TemplateId) {
-        val pageAuthorLoginId = page.body_!.post.loginId
-        val markup =
-          if (postId == Page.TemplateId) Markup.Code
-          else Markup.Html
-
-        // 1. (A page title and template (and body) is its own parent.
-        // Dupl knowledge! see AppCreatePage.handleForm.)
-        // 2. The post will be auto approved implicitly, if the Edit is
-        // auto approved.
-        Some(Post(id = postId, parent = postId, ctime = pageReq.ctime,
-          loginId = pageAuthorLoginId, newIp = pageReq.newIp, text = "",
-          markup = markup.id, tyype = PostType.Text,
-          where = None, approval = None))
+      // But create a title or template, lazily, if needed.
+      else if (postId == Page.TitleId || postId == Page.TemplateId ||
+          postId == Page.BodyId) {
+        Some(_createPostToEdit(pageReq, postId = postId))
       }
       // Most post are not created automatically (instead error is returned).
       else {
@@ -263,6 +272,25 @@ object AppEdit extends mvc.Controller {
       })
 
     (vipo, lazyCreateOpt)
+  }
+
+
+  private def _createPostToEdit(pageReq: PageRequest[_], postId: String)
+        : Post = {
+    val markup =
+      if (postId == Page.TemplateId) Markup.Code
+      else if (postId == Page.TitleId) Markup.DefaultForPageTitle
+      else if (postId == Page.BodyId) Markup.DefaultForPageBody
+      else Markup.DefaultForComments
+
+    // 1. (A page body, title or template is its own parent.
+    // Dupl knowledge! see AppCreatePage.handleForm.)
+    // 2. The post will be auto approved implicitly, if the Edit is
+    // auto approved.
+    Post(id = postId, parent = postId, ctime = pageReq.ctime,
+      loginId = pageReq.loginId_!, newIp = pageReq.newIp, text = "",
+      markup = markup.id, tyype = PostType.Text,
+      where = None, approval = None)
   }
 
 }

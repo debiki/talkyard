@@ -695,11 +695,13 @@ case class HtmlSerializer(
     val commentHtml =
     <div id={cssPostId} class={"dw-p" + cssArtclPost + cutS}>
       { postTitleXml }
+      { ifThen(post.loginId != PageRenderer.DummyAuthorLogin.id,
       <div class='dw-p-hd'>
         By { _linkTo(author)}{ dateAbbr(post.ctime, "dw-p-at")
         }{ flagsTop }{ ratingTagsTop }{ editInfo }{ flagsDetails
         }{ ratingTagsDetails }
       </div>
+      )}
       <div class={"dw-p-bd"+ cssArtclBody}>
         <div class='dw-p-bd-blk'>
         { xmlText
