@@ -38,6 +38,8 @@ object AppReview extends mvc.Controller {
   private def _review(apiReq: JsonPostRequest, shallApprove: Boolean)
         : mvc.PlainResult = {
 
+    SECURITY; BUG // I've forgotten user permisson control?
+
     // Play throws java.util.NoSuchElementException: key not found: pageId
     // and e.g. new RuntimeException("String expected")
     // on invalid JSON structure. COULD in some way convert to 400 Bad Request

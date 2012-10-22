@@ -19,6 +19,14 @@ import Prelude._
 import Utils.{OkHtml}
 
 
+/**
+ * SECURITY BUG I think it's possible to use edit GET/POST requests
+ * to access and *read* hidden pages. I don't think I do any access control
+ * when sending the current markup source back to the browser? Only when
+ * actually saving something ...?
+ *  -- I'm doing it *sometimes* when loading PermsOnPage via
+ *  PageActions.PageReqAction?
+ */
 object AppEdit extends mvc.Controller {
 
 
