@@ -93,7 +93,14 @@ class PageCache {
           _pageRequestDynVar.withValue(pageReq) {
             // The page (with the article and all comments) includes
             // nothing user specific and can thus be cached.
-            val page = _pageCache.get(key)
+            val page = try {
+              _pageCache.get(key)
+            } catch {
+              case ex: com.google.common.collect.ComputationException =>
+                if (ex.getCause.isInstanceOf[debiki.DebikiHttp$ResultException])
+                  throw ex.getCause
+                throw ex
+            }
             page ++ templates
           }
 
