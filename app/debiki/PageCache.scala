@@ -5,7 +5,6 @@
 package debiki
 
 import com.debiki.v0.Prelude._
-import com.debiki.v0.{liftweb => lw}
 import com.google.{common => guava}
 import controllers.PageRequest
 import debiki.DebikiHttp.throwNotFound
@@ -66,30 +65,13 @@ class PageCache {
     assert(k.tenantId == tenantDao.tenantId)
     // COULD load only Page.BodyId, Page.TitleId if !showComments.
     tenantDao.loadPage(k.pageGuid) match {
-      case Some(page) if page.body.map(_.someVersionApproved) != Some(true) =>
-        // Regrettably, currently the page is hidden also for admins (!).
-        // But right now only admins can create new pages and they are
-        // auto approved (well, will be, in the future.)
-        <p>This page is pending approval.</p>
-      case Some(pageLatestVersion) =>
-        val (pageDesiredVersion, tooRecentActions) =
-           pageLatestVersion.partitionByVersion(pageVersion)
-        val config = DebikiHttp.newUrlConfig(k.hostAndPort)
-        // Hmm, HtmlSerializer and pageTrust should perhaps be wrapped in
-        // some PageRendererInput class, that is handled to PageCache,
-        // so PageCache don't need to know anything about how to render
-        // a page. But for now:
-        val pageTrust = PageTrust(pageDesiredVersion)
-        // layoutPage() takes long, because markup source is converted to html.
-        val nodes = HtmlSerializer(pageDesiredVersion, pageTrust, config,
-          showComments = k.showComments).layoutPage(pageRoot)
-        nodes map { html =>
-        // The html is serialized here only once, then it's added to the
-        // page cache (if pageRoot is the Page.body -- see get() below).
-          xml.Unparsed(lw.Html5.toString(html))
-        }
+      case Some(page) =>
+        PageRenderer.renderArticleAndComments(page, pageVersion, pagePath,
+          pageRoot, hostAndPort = k.hostAndPort, showComments = k.showComments)
       case None =>
         // Page missing. Should have been noticed during access control.
+        // (Or perhaps it was deleted moments ago and this is actually no
+        // error?)
         assErr("DwE35eQ20", "Page "+ safed(k.pageGuid) +" not found")
     }
   }

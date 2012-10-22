@@ -126,7 +126,7 @@ class TinyTemplateProgrammingInterface protected (
   import debiki.{TinyTemplateProgrammingInterface => tpi}
 
   def pageId = _pageReq.pageId_!
-  def pageRole = _pageReq.pageRole getOrElse PageRole.Any
+  def pageRole = _pageReq.pageRole
   def childPageRole = pageRole.childRole
 
   def isLoggedIn = _pageReq.loginId isDefined

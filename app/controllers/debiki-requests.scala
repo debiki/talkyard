@@ -47,6 +47,12 @@ abstract class DebikiRequest[A] {
   def identity_! : Identity =
     identity getOrElse throwForbidden("DwE7PGJ2", "Not logged in")
 
+  def userAsPeople: People = People() + _fakeLogin + identity_! + user_!
+
+  protected def _fakeLogin = Login(
+    id = loginId_!, prevLoginId = None, ip = request.remoteAddress,
+    date = ctime, identityId = identity_!.id)
+
   /**
    * The display name of the user making the request. Throws 403 Forbidden
    * if not available, i.e. if not logged in (shouldn't happen normally).
@@ -121,10 +127,21 @@ case class PageRequest[A](
   pagePath: PagePath,
   permsOnPage: PermsOnPage,
   dao: TenantDao,
-  request: Request[A]) extends DebikiRequest[A] {
+  request: Request[A])
+  (private val _preloadedPageMeta: Option[PageMeta] = None,
+  private val _preloadedActions: Option[Debate] = None)
+  extends DebikiRequest[A] {
 
   require(pagePath.tenantId == tenantId) //COULD remove tenantId from pagePath
   require(!pageExists || pagePath.pageId.isDefined)
+
+
+  def copyWithPreloadedPage(page: PageStuff, pageExists: Boolean)
+        : PageRequest[A] = {
+    copy(pageExists = pageExists, pagePath = page.path)(
+      Some(page.meta), Some(page.actions))
+  }
+
 
   def pageId: Option[String] = pagePath.pageId
 
@@ -140,17 +157,22 @@ case class PageRequest[A](
    * (e.g. if !pageExists, or if it was deleted just moments ago).
    */
   lazy val page_? : Option[Debate] =
-    if (pageExists)
-      pageId.flatMap(id => dao.loadPage(id))
-    // Don't load the page even if it was *created* moments ago.
-    // having !pageExists and page_? = Some(..) feels risky.
-    else None
+    _preloadedActions orElse {
+      if (pageExists) {
+        pageId.flatMap(id => dao.loadPage(id))
+      } else {
+        // Don't load the page even if it was *created* moments ago.
+        // having !pageExists and page_? = Some(..) feels risky.
+        None
+      }
+    }
 
   /**
    * The page this PageRequest concerns. Throws 404 Not Found if not found.
    *
    * (The page might have been deleted, just after the access control step.)
    */
+  // COULD rename to actions_!.
   lazy val page_! : Debate =
     page_? getOrElse throwNotFound("DwE43XWY", "Page not found")
 
@@ -167,10 +189,7 @@ case class PageRequest[A](
     // Could try not to add stuff that's already been added to page_!.people.
     // But anything we add should be fairly identical to anything that's
     // already there, so not very important?
-    val fakeLogin = Login(id = loginId_!, prevLoginId = None,
-       ip = request.remoteAddress, date = ctime, identityId =
-       identity_!.id)
-    page_!.copy(people = page_!.people + fakeLogin + identity_! + user_!)
+    page_!.copy(people = page_!.people + _fakeLogin + identity_! + user_!)
   }
 
   /**
@@ -208,12 +227,24 @@ case class PageRequest[A](
     }) getOrElse PageRoot.TheBody
 
 
-  def pageRole: Option[PageRole] = pageMeta.map(_.pageRole)
+  def pageRole: PageRole = pageMeta.pageRole
 
-  def parentPageId: Option[String] = pageMeta.flatMap(_.parentPageId)
+  def parentPageId: Option[String] = pageMeta.parentPageId
 
+
+  /**
+   * Gets/loads page meta data from cache/database, or, if not found,
+   * returns PageMeta.forUnknownPage.
+   */
   // COULD cache!
-  lazy val pageMeta: Option[PageMeta] = pageId.flatMap(dao.loadPageMeta _)
+  lazy val pageMeta: PageMeta = {
+    _preloadedPageMeta getOrElse {
+      if (pageExists) {
+        pageId.flatMap(dao.loadPageMeta _) getOrElse PageMeta.forUnknownPage
+      }
+      else PageMeta.forUnknownPage
+    }
+  }
 
 }
 

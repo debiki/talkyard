@@ -45,7 +45,7 @@ import xml.{MetaData, Node, NodeSeq, Text}
  * Thread safe.
  */
 @deprecated
-class DeprecatedTemplateEngine(val pageCache: PageCache) {
+class DeprecatedTemplateEngine(val pageCache: Option[PageCache]) {
 
 
   def renderPage(pageReq: PageRequest[_],
@@ -76,7 +76,15 @@ class DeprecatedTemplateEngine(val pageCache: PageCache) {
       templParams.commentVisibility.getOrElse(assErr("DwE0kDf9"))
 
     // Load page and comments.
-    val textAndComments = pageCache.get(pageReq, commentVisibility)
+    val textAndComments = pageCache match {
+      case Some(cache) =>
+        cache.get(pageReq, commentVisibility)
+      case None =>
+        PageRenderer.renderArticleAndComments(
+          pageReq.page_!, pageReq.pageVersion, pageReq.pagePath,
+          pageReq.pageRoot, hostAndPort = pageReq.host,
+          showComments = commentVisibility == CommentVisibility.Visible)
+    }
 
     // Create initial template data.
     var curHtmlAttrs: MetaData = xml.Null

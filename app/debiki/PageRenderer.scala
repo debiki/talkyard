@@ -11,15 +11,24 @@ import PageRenderer._
 import Prelude._
 
 
-case class PageRenderer(pageReq: PageRequest[_], pageCache: PageCache,
+// COULD rename to TemplateRenderer?
+case class PageRenderer(pageReq: PageRequest[_], pageCache: Option[PageCache],
         appendToBody: xml.NodeSeq = Nil) {
 
 
   val commentVisibility = CommentVisibility.Visible // for now
 
 
-  def renderPageTitleAndBodyAndComments() =
-    pageCache.get(pageReq, commentVisibility)
+  // COULD break out to class ArticleRenderer?
+  // (Also see *object* PageRenderer's renderArticleAndComments().)
+  def renderPageTitleAndBodyAndComments() = pageCache match {
+    case Some(cache) =>
+      cache.get(pageReq, commentVisibility)
+    case None =>
+      PageRenderer.renderArticleAndComments(
+        pageReq.page_!, pageReq.pageVersion, pageReq.pagePath,
+        pageReq.pageRoot, hostAndPort = pageReq.host, showComments = true)
+  }
 
 
   def renderPage(): String = {
@@ -63,6 +72,40 @@ case class PageRenderer(pageReq: PageRequest[_], pageCache: PageCache,
 
 
 object PageRenderer {
+
+  // COULD break out to class ArticleRenderer?
+  def renderArticleAndComments(page: Debate, pageVersion: PageVersion,
+        pagePath: PagePath, pageRoot: PageRoot, hostAndPort: String,
+        showComments: Boolean): xml.NodeSeq = {
+
+    if (page.body.map(_.someVersionApproved) != Some(true)) {
+      // Regrettably, currently the page is hidden also for admins (!).
+      // But right now only admins can create new pages and they are
+      // auto approved (well, will be, in the future.)
+      return <p>This page is pending approval.</p>
+    }
+
+    val (pageDesiredVersion, tooRecentActions) =
+        page.partitionByVersion(pageVersion)
+    val config = DebikiHttp.newUrlConfig(hostAndPort)
+
+    // Hmm, HtmlSerializer and pageTrust should perhaps be wrapped in
+    // some PageRendererInput class, that is handled to PageCache,
+    // so PageCache don't need to know anything about how to render
+    // a page. But for now:
+    val pageTrust = PageTrust(pageDesiredVersion)
+
+    // layoutPage() takes long, because markup source is converted to html.
+    val nodes = HtmlSerializer(pageDesiredVersion, pageTrust, pagePath, config,
+      showComments = showComments).layoutPage(pageRoot)
+
+    nodes map { html =>
+    // The html is serialized here only once, then it's added to the
+    // page cache (if pageRoot is the Page.body -- see get() below).
+      xml.Unparsed(liftweb.Html5.toString(html))
+    }
+  }
+
 
   private def _isBlogArticle(pagePath: PagePath) = {
     // A blog article has a page slug; index pages cannot be blog articles.

@@ -103,9 +103,7 @@ object Global extends GlobalSettings {
       case ("applyedits", POST) =>
         AppEditHistory.handleForm(pagePath, postId = mainFunVal_!)
       case ("create-page", GET) =>
-        AppCreatePage.showForm(pagePath)
-      case ("create-page", POST) =>
-        AppCreatePage.handleForm(pagePath)
+        AppCreatePage.viewNewUnsavedPage(pagePath)
       case ("move-page", GET) =>
         AppMoveRenamePage.showMovePageForm(pagePath)
       case ("move-page", POST) =>

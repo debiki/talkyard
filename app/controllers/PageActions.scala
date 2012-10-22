@@ -111,7 +111,7 @@ object PageActions {
       pagePath = pagePath,
       permsOnPage = permsOnPage,
       dao = dao,
-      request = request)
+      request = request)()
 
     val result = f(pageReq)
     result
