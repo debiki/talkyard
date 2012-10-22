@@ -33,10 +33,10 @@ object AppCreatePage extends mvc.Controller {
   def viewNewUnsavedPage(pathIn: PagePath) =
         PageGetAction(pathIn, pageMustExist = false) { pageReqOrig =>
 
-    val (newPageMeta, newPagePath) = newPageDataFromUrl(pageReqOrig)
-    val dummyActions = Debate(newPageMeta.pageId,
-      posts = List(dummyTitle(pageReqOrig), dummyBody(pageReqOrig)),
-      people = pageReqOrig.userAsPeople)
+    val (newPageMeta, newPagePath) =
+      newPageDataFromUrl(pageReqOrig, pageIdOpt = None)
+
+    val dummyActions = Debate(newPageMeta.pageId)
 
     val pageReq = pageReqOrig.copyWithPreloadedPage(
       PageStuff(newPageMeta, newPagePath, dummyActions),

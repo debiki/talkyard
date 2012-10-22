@@ -5,8 +5,8 @@
 package debiki
 
 import com.debiki.v0._
-import controllers.PageRequest
-import play.{api => p}
+import controllers.{AppCreatePage, PageRequest}
+import java.{util => ju}
 import PageRenderer._
 import Prelude._
 
@@ -78,15 +78,20 @@ object PageRenderer {
         pagePath: PagePath, pageRoot: PageRoot, hostAndPort: String,
         showComments: Boolean): xml.NodeSeq = {
 
-    if (page.body.map(_.someVersionApproved) != Some(true)) {
+    if (page.body.map(_.someVersionApproved) == Some(false) ||
+        page.title.map(_.someVersionApproved) == Some(false)) {
       // Regrettably, currently the page is hidden also for admins (!).
       // But right now only admins can create new pages and they are
       // auto approved (well, will be, in the future.)
       return <p>This page is pending approval.</p>
     }
 
-    val (pageDesiredVersion, tooRecentActions) =
+    val (pageDesiredVersionStuffMissing, tooRecentActions) =
         page.partitionByVersion(pageVersion)
+
+    val pageDesiredVersion =
+      _addMissingTitleBodyConfigTo(pageDesiredVersionStuffMissing)
+
     val config = DebikiHttp.newUrlConfig(hostAndPort)
 
     // Hmm, HtmlSerializer and pageTrust should perhaps be wrapped in
@@ -105,6 +110,70 @@ object PageRenderer {
       xml.Unparsed(liftweb.Html5.toString(html))
     }
   }
+
+
+  /**
+   * Adds an empty title, an empty page body, and a config text, if they
+   * don't yet exist, so there is something to edit.
+   */
+  private def _addMissingTitleBodyConfigTo(pageNoDummies: Debate): Debate = {
+    val addDummyTitle = pageNoDummies.title.isEmpty
+    val addDummyBody = pageNoDummies.body.isEmpty
+    val addDummyConfig = pageNoDummies.pageTemplatePost.isEmpty
+
+    var pageWithDummies = pageNoDummies
+
+    if (addDummyTitle || addDummyBody || addDummyConfig)
+      pageWithDummies = pageWithDummies + DummyAuthor
+
+    if (addDummyTitle) pageWithDummies = pageWithDummies + DummyTitle
+    if (addDummyBody) pageWithDummies = pageWithDummies + DummyBody
+    if (addDummyConfig) pageWithDummies = pageWithDummies + DummyConfig
+
+    pageWithDummies
+  }
+
+
+  // COULD move dummy stuff below to ArticleRenderer too
+  // COULD have Dao require that user/idty/login id never be "1".
+
+  val DummyAuthorUser = User(id = "1", displayName = "(dummy author)",
+    email = "", emailNotfPrefs = EmailNotfPrefs.DontReceive, country = "",
+    website = "", isAdmin = false, isOwner = false)
+
+
+  val DummyAuthorIdty = IdentitySimple(id = "1", userId = DummyAuthorUser.id,
+    name = "(dummy author)", email = "", location = "", website = "")
+
+
+  val DummyAuthorLogin = Login(id = "1", prevLoginId = None, ip = "?.?.?.?",
+    date = new ju.Date, identityId = DummyAuthorIdty.id)
+
+
+  val DummyAuthor = People(
+    List(DummyAuthorLogin), List(DummyAuthorIdty), List(DummyAuthorUser))
+
+
+  val DummyTitle = Post(
+    id = Page.TitleId,
+    parent = Page.TitleId,
+    ctime = new ju.Date,
+    loginId = DummyAuthorLogin.id,
+    newIp = None,
+    text = AppCreatePage.DummyTitleText,
+    markup = Markup.DefaultForPageTitle.id,
+    approval = Some(Approval.Preliminary),
+    tyype = PostType.Text)
+
+
+  val DummyBody = DummyTitle.copy(
+    id = Page.BodyId, parent = Page.BodyId, text = AppCreatePage.DummyPageText,
+    markup = Markup.DefaultForPageBody.id)
+
+
+  val DummyConfig = DummyBody.copy(
+    id = Page.TemplateId, parent = Page.TemplateId, text = "Click to edit",
+    markup = Markup.Code.id)
 
 
   private def _isBlogArticle(pagePath: PagePath) = {
