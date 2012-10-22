@@ -285,6 +285,7 @@ object HtmlSerializer {
 case class HtmlSerializer(
   debate: Debate,
   pageTrust: PageTrust,
+  pagePath: PagePath,
   config: HtmlConfig,
   showComments: Boolean) {
 
@@ -330,7 +331,8 @@ case class HtmlSerializer(
        throwNotFound("DwE0PJ404", "Post not found: "+ pageRoot.subId)
 
     val cssThreadId = "dw-t-"+ rootPost.id
-    <div id={"page-"+ debate.id} class='debiki dw-debate dw-page'>
+    <div id={"page-"+ debate.id} class='debiki dw-debate dw-page'
+        data-page_path={pagePath.path}>
       <div class="dw-debate-info">{
         if (lastChange isDefined) {
           <p class="dw-last-changed">Last changed on

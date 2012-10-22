@@ -109,6 +109,63 @@ case class ApiRequest[A](
 }
 
 
+object PageRequest {
+
+  /**
+   * Builds a PageRequest based on an ApiRequest and a URL path to some page.
+   *
+   * No attempt to correct the path is made. Instead, if the page exists,
+   * but `pagePath` is incorrect, an error 404 Not Found exception is thrown.
+   * (PageActions.CheckPathAction however redirects the browser to the correct
+   * path, if you specify an almost correct path (e.g. superfluous
+   * trailing '/').
+   */
+  def apply[A](apiRequest: ApiRequest[A], pagePath: PagePath)
+        : PageRequest[A] = {
+
+    val pageExists = apiRequest.dao.checkPagePath(pagePath) match {
+      case Some(correct: PagePath) =>
+        if (correct.path != pagePath.path)
+          throwNotFound("DwE305RI2", "Mismatching page path: "+ pagePath +
+             ", should be: "+ correct)
+        true
+      case None =>
+        false
+    }
+
+    val permsReq = RequestInfo(  // COULD RENAME! to PermsOnPageRequest
+      tenantId = apiRequest.tenantId,
+      ip = apiRequest.ip,
+      loginId = apiRequest.sid.loginId,
+      identity = apiRequest.identity,
+      user = apiRequest.user,
+      pagePath = pagePath)
+
+    val permsOnPage = apiRequest.dao.loadPermsOnPage(permsReq)
+    if (!permsOnPage.accessPage)
+      throwForbidden("DwE72XIKW2", "You are not allowed to access that page.")
+
+    PageRequest[A](
+      sid = apiRequest.sid,
+      xsrfToken = apiRequest.xsrfToken,
+      identity = apiRequest.identity,
+      user = apiRequest.user,
+      pageExists = pageExists,
+      pagePath = pagePath,
+      permsOnPage = permsOnPage,
+      dao = apiRequest.dao,
+      request = apiRequest.request)()
+  }
+
+  def apply[A](apiRequest: ApiRequest[A], pageId: String)
+        : PageRequest[A] = {
+    val pagePath = apiRequest.dao.lookupPagePathByPageId(pageId).getOrElse(
+      throwNotFound("DwE930ID4", "No path found to page "+ pageId))
+    PageRequest(apiRequest, pagePath)
+  }
+}
+
+
 /**
  * A page related request.
  *

@@ -31,7 +31,7 @@ object BrowserPagePatcher {
     val page = pageReq.pageWithMe_! ++ myNewPosts
     val pageTrust = PageTrust(page)
     val config = DebikiHttp.newUrlConfig(pageReq.host)
-    val serializer = HtmlSerializer(page, pageTrust, config,
+    val serializer = HtmlSerializer(page, pageTrust, pageReq.pagePath, config,
       // If replying with a comment, comments should be shown of course.
       // If editing, replies aren't (well, won't be) included in the patch
       // anyway, so the value of `showComments` wouldn't matter.

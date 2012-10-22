@@ -8,10 +8,13 @@ import com.debiki.v0._
 import debiki._
 import debiki.DebikiHttp._
 import play.api._
+import libs.json.JsValue
 import play.api.data._
 import play.api.data.Forms._
 import play.api.mvc.{Action => _, _}
+import scala.collection.{mutable => mut}
 import PageActions._
+import ApiActions._
 import Prelude._
 import Utils.{OkHtml}
 
@@ -22,30 +25,112 @@ object AppEdit extends mvc.Controller {
   def showEditForm(pathIn: PagePath, postId: String)
         = PageGetAction(pathIn) {
       pageReq: PageGetRequest =>
+    _showEditFormImpl(pageReq, postId)
+  }
 
-    val (vipo, lazyCreateOpt) = _getOrCreatePostToEdit(pageReq, postId)
+
+  def showEditFormAnyPage(pageId: String, postId: String)
+        = GetAction { request =>
+
+    val pageReq = PageRequest(request, pageId = pageId)
+    _showEditFormImpl(pageReq, postId)
+  }
+
+
+  def _showEditFormImpl(request: PageRequest[_], postId: String) = {
+    val (vipo, lazyCreateOpt) = _getOrCreatePostToEdit(request, postId)
     val draftText = vipo.text  // in the future, load user's draft from db.
-    val editForm = Utils.formHtml(pageReq).editForm(
-      vipo, newText = draftText,
-      userName = pageReq.sid.displayName)
+    val editForm = Utils.formHtml(request).editForm(
+       vipo, newText = draftText, userName = request.sid.displayName)
     OkHtml(editForm)
   }
 
 
+  /**
+   * Lazy-creates the page that is to be edited, if it does not exist, and
+   * also lazy-creates the post to be edited, if it does not exist.
+   */
   def handleEditForm(pathIn: PagePath, postId: String)
-        = PagePostAction(MaxPostSize)(pathIn) {
-      pageReq: PagePostRequest =>
+        = PagePostAction(MaxPostSize)(pathIn, pageMustExist = false) {
+      pageReqOrig: PagePostRequest =>
 
     import Utils.ValidationImplicits._
     import HtmlForms.Edit.{InputNames => Inp}
 
-    val text = pageReq.getEmptyAsNone(Inp.Text) getOrElse
+    val text = pageReqOrig.getEmptyAsNone(Inp.Text) getOrElse
        throwBadReq("DwE8bJX2", "Empty edit")
-    val markupOpt = pageReq.getEmptyAsNone(Inp.Markup)
+    val markupOpt = pageReqOrig.getEmptyAsNone(Inp.Markup)
 
-    // Too must data?
+    _throwIfTooMuchData(text, pageReqOrig)
+
+    val pageReq = _createPageIfNeeded(pageReqOrig)
+
+    _saveEdits(pageReq, postId, text, markupOpt)
+    Utils.renderOrRedirect(pageReq)
+  }
+
+
+  /**
+   * JSON format:  {edits: [{ pageId, pagePath, postId, text, markup }]}
+   */
+  def edit = PostJsonAction(maxLength = MaxPostSize) {
+        request: JsonPostRequest =>
+
+    def getOrThrow(map: Map[String, String], key: String): String =
+      map.getOrElse(key, throwBadReq(
+        "DwE390IR7", "/-/edit JSON entry missing: "+ key))
+
+    val jsonBody = request.body.as[Map[String, List[Map[String, String]]]]
+
+    val editMapsUnsorted: List[Map[String, String]] = jsonBody("edits")
+
+    val editMapsByPageId: Map[String, List[Map[String, String]]] =
+      editMapsUnsorted.groupBy(map => map("pageId"))
+
+    for ((pageId, editMaps) <- editMapsByPageId) {
+
+      val pagePathValue = (editMaps.head)("pagePath")
+      val pagePathPerhapsId =
+        PagePath.fromUrlPath(request.tenantId, pagePathValue) match {
+          case PagePath.Parsed.Good(path) => path
+          case x => throwBadReq(
+            "DwE390SD3", "Bad page path for page id "+ pageId +": "+ x)
+        }
+
+      // Ensure all entries for `pageId` have the same page path.
+      val badPath = editMaps.find(
+        map => map.get("pagePath") != Some(pagePathValue))
+      if (badPath nonEmpty) throwBadReq(
+          "DwE390XR23", "Different page paths for page id "+ pageId +": "+
+          pagePathPerhapsId +", and: "+ badPath.get)
+
+      val pagePathWithId = pagePathPerhapsId.copy(pageId = Some(pageId))
+      val pageReqPerhapsNoPage = PageRequest(request, pagePathWithId)
+
+      val pageRequest = _createPageIfNeeded(pageReqPerhapsNoPage)
+
+      for (editMap <- editMaps) {
+        val newText = getOrThrow(editMap, "text")
+        val newMarkupOpt = editMap.get("markup")
+        val postId = getOrThrow(editMap, "postId")
+
+        _throwIfTooMuchData(newText, pageRequest)
+
+        // COULD call _saveEdits once per page instead of once
+        // per action per page.
+        _saveEdits(pageRequest, postId = postId, newText = newText,
+          newMarkupOpt = newMarkupOpt)
+      }
+    }
+
+    //BrowserPagePatcher.jsonForMyEditedPosts(pageReq, edits)
+    Ok
+  }
+
+
+  private def _throwIfTooMuchData(text: String, request: DebikiRequest[_]) {
     val postSize = text.size
-    val user = pageReq.user_!
+    val user = request.user_!
     if (user.isAdmin) {
       // Allow up to MaxPostSize chars (see above).
     }
@@ -57,13 +142,28 @@ object AppEdit extends mvc.Controller {
       if (postSize > MaxPostSizeForUnauUsers)
         throwEntityTooLarge("DwE413IJ1", "Please do not upload that much text")
     }
-
-    _saveEdits(pageReq, postId, text, markupOpt)
-    Utils.renderOrRedirect(pageReq)
   }
 
 
-  private def _saveEdits(pageReq: PagePostRequest,
+  /**
+   * If the requested page does not exist, creates it, and returns
+   * a PagePostRequest to the new page.
+   */
+  private def _createPageIfNeeded[A](pageReq: PageRequest[A])
+        : PageRequest[A] = {
+    if (pageReq.pageExists) return pageReq
+
+    AppCreatePage.throwIfMayNotCreatePage(pageReq)
+    val (pageMeta, pagePath) = AppCreatePage.newPageDataFromUrl(pageReq)
+
+    val newPage = pageReq.dao.createPage(
+        PageStuff(pageMeta, pagePath, Debate.empty("?")))
+
+    pageReq.copyWithPreloadedPage(newPage, pageExists = true)
+  }
+
+
+  private def _saveEdits(pageReq: PageRequest[_],
         postId: String, newText: String, newMarkupOpt: Option[String]) {
 
     val (post, lazyCreateOpt) = _getOrCreatePostToEdit(pageReq, postId)

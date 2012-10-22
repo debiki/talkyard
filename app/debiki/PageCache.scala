@@ -41,8 +41,8 @@ class PageCache {
    * but we need to use different TenantDao:s when loading pages,
    * so the correct tenant's quota is consumed.
    */
-  private val _tenantDaoDynVar =
-    new util.DynamicVariable[TenantDao](null)
+  private val _pageRequestDynVar =
+    new util.DynamicVariable[PageRequest[_]](null)
 
 
   private val _pageCache: ju.concurrent.ConcurrentMap[Key, NodeSeq] =
@@ -52,15 +52,15 @@ class PageCache {
        //expireAfterWrite(10. TimeUnits.MINUTES).
        makeComputingMap(new guava.base.Function[Key, NodeSeq] {
       def apply(k: Key): NodeSeq = {
-        val tenantDao = _tenantDaoDynVar.value
-        assert(tenantDao ne null)
-        _loadAndRender(k, PageRoot.TheBody, PageVersion.LatestApproved,
-            tenantDao)
+        val pageRequest = _pageRequestDynVar.value
+        assert(pageRequest ne null)
+        _loadAndRender(k, pageRequest.pagePath, PageRoot.TheBody,
+            PageVersion.LatestApproved, pageRequest.dao)
       }
     })
 
 
-  private def _loadAndRender(k: Key, pageRoot: PageRoot,
+  private def _loadAndRender(k: Key, pagePath: PagePath, pageRoot: PageRoot,
         pageVersion: PageVersion, tenantDao: TenantDao): NodeSeq = {
     assert(k.tenantId == tenantDao.tenantId)
     // COULD load only Page.BodyId, Page.TitleId if !showComments.
@@ -90,7 +90,7 @@ class PageCache {
         showComments = commentVisibility != CommentVisibility.Hidden)
       (pageReq.pageRoot, pageReq.pageVersion) match {
         case (PageRoot.Real(Page.BodyId), PageVersion.LatestApproved) =>
-          _tenantDaoDynVar.withValue(pageReq.dao) {
+          _pageRequestDynVar.withValue(pageReq) {
             // The page (with the article and all comments) includes
             // nothing user specific and can thus be cached.
             val page = _pageCache.get(key)
@@ -99,7 +99,8 @@ class PageCache {
 
         case (otherRoot, version) =>
           // The cache currently works only for the page body as page root.
-          _loadAndRender(key, otherRoot, version, pageReq.dao) ++ templates
+          _loadAndRender(key, pageReq.pagePath, otherRoot, version,
+            pageReq.dao) ++ templates
       }
     } catch {
       case e: NullPointerException =>
