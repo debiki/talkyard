@@ -54,20 +54,24 @@ class PageCache {
       def apply(k: Key): NodeSeq = {
         val pageRequest = _pageRequestDynVar.value
         assert(pageRequest ne null)
-        _loadAndRender(k, pageRequest.pagePath, PageRoot.TheBody,
-            PageVersion.LatestApproved, pageRequest.dao)
+        assert(pageRequest.pageRoot == PageRoot.TheBody)
+        assert(pageRequest.pageVersion == PageVersion.LatestApproved)
+        _loadAndRender(k, pageRequest)
       }
     })
 
 
-  private def _loadAndRender(k: Key, pagePath: PagePath, pageRoot: PageRoot,
-        pageVersion: PageVersion, tenantDao: TenantDao): NodeSeq = {
-    assert(k.tenantId == tenantDao.tenantId)
+  private def _loadAndRender(k: Key, pageReq: PageRequest[_]): NodeSeq = {
+    assert(k.tenantId == pageReq.dao.tenantId)
+    assert(k.hostAndPort == pageReq.host)
+    assert(k.pageGuid == pageReq.pageId_!)
+
     // COULD load only Page.BodyId, Page.TitleId if !showComments.
-    tenantDao.loadPage(k.pageGuid) match {
+    pageReq.dao.loadPage(k.pageGuid) match {
       case Some(page) =>
-        PageRenderer.renderArticleAndComments(page, pageVersion, pagePath,
-          pageRoot, hostAndPort = k.hostAndPort, showComments = k.showComments)
+        PageRenderer.renderArticleAndComments(page, pageReq.pageVersion,
+          pageReq.pagePath, pageReq.pageRoot, hostAndPort = k.hostAndPort,
+          showComments = k.showComments)
       case None =>
         // Page missing. Should have been noticed during access control.
         // (Or perhaps it was deleted moments ago and this is actually no
@@ -97,7 +101,7 @@ class PageCache {
               _pageCache.get(key)
             } catch {
               case ex: com.google.common.collect.ComputationException =>
-                if (ex.getCause.isInstanceOf[debiki.DebikiHttp$ResultException])
+                if (ex.getCause.isInstanceOf[debiki.DebikiHttp.ResultException])
                   throw ex.getCause
                 throw ex
             }
@@ -106,8 +110,7 @@ class PageCache {
 
         case (otherRoot, version) =>
           // The cache currently works only for the page body as page root.
-          _loadAndRender(key, pageReq.pagePath, otherRoot, version,
-            pageReq.dao) ++ templates
+          _loadAndRender(key, pageReq) ++ templates
       }
     } catch {
       case e: NullPointerException =>
