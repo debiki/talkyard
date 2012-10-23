@@ -26,6 +26,19 @@ function confirmClosePage() {
 };
 
 
+d.u.postJson = function(options) {
+  return $.ajax({
+    url: options.url,
+    type: 'POST',
+    data: JSON.stringify(options.data),
+    contentType: 'application/json; charset=utf-8',
+    headers: { 'X-XSRF-TOKEN': $.cookie('dwCoXsrf') },
+    dataType: 'json',
+    error: options.error,
+    success: options.success
+  });
+};
+
 window.onbeforeunload = confirmClosePage;
 
 

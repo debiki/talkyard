@@ -62,12 +62,18 @@ function _$showEditFormImpl() {
   var $postBody = $post.children('.dw-p-bd');
   var postId = $post.dwPostId();
   var isRootPost = $post.parent().is('.dw-depth-0');
+  var pageId = $post.dwPageId();
+  var pagePath = $post.dwPagePath();
 
   // It's confusing with Reply/Rate/etc below the edit form.
   d.i.hideActions();
 
   var editFormLoader = function(rootPostId, postId, complete) {
-    $.get('?edit='+ postId +'&view='+ rootPostId, function(editFormText) {
+    // (The page path is needed if the page doesn't exist, so the server has
+    // some way to find out which PermsOnPage to show.)
+    var url =
+        '/-/edit?pageId='+ pageId +'&pagePath='+ pagePath +'&postId='+ postId;
+    $.get(url, function(editFormText) {
       // Concerning filter(…): [0] and [2] are text nodes.
       var $editForm = $(editFormText).filter('form');
       d.u.makeIdsUniqueUpdateLabels($editForm, '#dw-e-tab-');
@@ -328,8 +334,19 @@ function _$showEditFormImpl() {
       // Ensure any text edited with CodeMirror gets submitted.
       if (codeMirrorEditor) codeMirrorEditor.save();
 
-      $.post('?edit='+ postId +'&view='+ d.i.rootPostId, $editForm.serialize(),
-          'html')
+      var jsonObj = {
+        edits: [{
+          pageId: pageId,
+          // `pagePath` is needed so the server knows where to lazy-create the
+          // page (if needed).
+          pagePath: pagePath,
+          postId: postId,
+          text: $editForm.find('[name="dw-fi-e-txt"]').val(),
+          markup: $editForm.find('[name="dw-fi-e-mup"]').val()
+        }]
+      };
+
+      d.u.postJson({ url: '/-/edit', data: jsonObj })
           .fail(d.i.showErrorEnableInputs($editForm))
           .done(function(newDebateHtml) {
         d.i.slideAwayRemove($editForm);
@@ -337,7 +354,7 @@ function _$showEditFormImpl() {
         // changed. Unless we make it visible again, it'll remain hidden
         // because mergeChangesIntoPage() ignores it (since it hasn't changed).
         $postBody.show();
-        d.i.mergeChangesIntoPage(newDebateHtml);
+        //d.i.mergeChangesIntoPage(newDebateHtml);
       });
 
       d.i.disableSubmittedForm($editForm);
