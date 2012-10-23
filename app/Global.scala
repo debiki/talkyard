@@ -74,7 +74,7 @@ object Global extends GlobalSettings {
     def mainFunVal: String =  // COULD be Option instead, change "" to None
       firstValueOf(versionAndMainFun) getOrElse ""
     lazy val mainFunVal_! : String = firstValueOf(versionAndMainFun).getOrElse(
-      throwBadReq("DwE0k32", "No post specified"))
+      throwBadReq("DwE0k32", "No `"+ mainFun +"` value specified"))
 
     // Route based on the query string.
     import controllers._
@@ -102,8 +102,10 @@ object Global extends GlobalSettings {
         AppEditHistory.showForm(pagePath, postId = mainFunVal_!)
       case ("applyedits", POST) =>
         AppEditHistory.handleForm(pagePath, postId = mainFunVal_!)
-      case ("create-page", GET) =>
-        AppCreatePage.viewNewUnsavedPage(pagePath)
+      case ("get-view-new-page-url", GET) =>
+        AppCreatePage.getViewNewPageUrl(pagePath)
+      case ("view-new-page", GET) =>
+        AppCreatePage.viewNewPage(pagePath, pageId = mainFunVal_!)
       case ("move-page", GET) =>
         AppMoveRenamePage.showMovePageForm(pagePath)
       case ("move-page", POST) =>

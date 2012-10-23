@@ -180,7 +180,7 @@ object AppEdit extends mvc.Controller {
       "DwE39KR8", "No page id, cannot lazy-create page at "+ pageReq.pagePath))
 
     val (pageMeta, pagePath) =
-      AppCreatePage.newPageDataFromUrl(pageReq, pageIdOpt = Some(pageId))
+      AppCreatePage.newPageDataFromUrl(pageReq, pageId = pageId)
 
     val actions = Debate(pageId, people = pageReq.userAsPeople)
 

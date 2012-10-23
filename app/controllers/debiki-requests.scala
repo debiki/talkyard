@@ -112,7 +112,7 @@ case class ApiRequest[A](
 object PageRequest {
 
   /**
-   * Builds a PageRequest based on an ApiRequest and a URL path to some page.
+   * Builds a PageRequest based on another DebikiRequest and a page path.
    *
    * No attempt to correct the path is made. Instead, if the page exists,
    * but `pagePath` is incorrect, an error 404 Not Found exception is thrown.
@@ -120,7 +120,7 @@ object PageRequest {
    * path, if you specify an almost correct path (e.g. superfluous
    * trailing '/').
    */
-  def apply[A](apiRequest: ApiRequest[A], pagePath: PagePath)
+  def apply[A](apiRequest: DebikiRequest[A], pagePath: PagePath)
         : PageRequest[A] = {
 
     val pageExists = apiRequest.dao.checkPagePath(pagePath) match {
@@ -133,6 +133,7 @@ object PageRequest {
         false
     }
 
+    // Dupl code, see PageActions.CheckPathAction
     val permsReq = RequestInfo(  // COULD RENAME! to PermsOnPageRequest
       tenantId = apiRequest.tenantId,
       ip = apiRequest.ip,
@@ -157,8 +158,8 @@ object PageRequest {
       request = apiRequest.request)()
   }
 
-  def apply[A](apiRequest: ApiRequest[A], pagePathStr: String, pageId: String)
-        : PageRequest[A] = {
+  def apply[A](apiRequest: DebikiRequest[A], pagePathStr: String,
+        pageId: String) : PageRequest[A] = {
     val pagePathPerhapsId =
       PagePath.fromUrlPath(apiRequest.tenantId, pagePathStr) match {
         case PagePath.Parsed.Good(path) => path
