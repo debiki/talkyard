@@ -203,6 +203,15 @@ object Utils extends Results with http.ContentTypes {
           case Some(s) => s
         }
 
+      def getBool(param: String): Option[Boolean] =
+        getFirst(param).map(_ == "t")
+
+      def getBoolOrFalse(param: String): Boolean =
+        getBool(param) getOrElse false
+
+      def getBoolOrTrue(param: String): Boolean =
+        getBool(param) getOrElse true
+
       def listSkipEmpty(param: String): Seq[String] = {
         body.get(param) match {
           case None => Nil
