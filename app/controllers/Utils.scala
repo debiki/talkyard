@@ -233,6 +233,36 @@ object Utils extends Results with http.ContentTypes {
   }
 
 
+  /**
+   * Seals (parts of) the URL so you know if e.g. any query param has been
+   * tampered with.
+   *
+   * makePasshashQueryParam helps you add [a salted hash of a value] as a
+   * query param, when you redirect to another URL. Then, in subsequent
+   * requests, you can use throwIfBadPasshash to ensure the value has not
+   * been tampered with.
+   */
+  object Passhasher {
+
+    import Utils.ValidationImplicits._
+
+    def makePasshashQueryParam(value: String): String =
+      "passhash="+ makePasshash(value)
+
+    def makePasshash(value: String): String =
+      hashSha1Base64UrlSafe(value + _PasshashSalt) take 20
+
+    private val _PasshashSalt: String =
+      "903kireki3kyu338k5irks21aSRHN"; SECURITY // COULD move to config file
+
+    def throwIfBadPasshash(request: DebikiRequest[_], value: String) {
+      val passhashIn = request.queryString.getOrThrowBadReq("passhash")
+      val goodHash = makePasshash(value)
+      if (passhashIn != goodHash)
+        throwForbidden("DwE39QH2", "Bad passhash")
+    }
+  }
+
 
   def parsePathRanges(basePath: PagePath, queryString: Map[String, Seq[String]],
         urlParamPrefix: String = "in"): PathRanges = {
