@@ -24,6 +24,11 @@ case class People(
   def + (identity: Identity) = copy(identities = identity :: identities)
   def + (user: User) = copy(users = user :: users)
 
+  def ++ (people: People) = People(
+    logins = people.logins ::: logins,
+    identities = people.identities ::: identities,
+    users = people.users ::: users)
+
   /**
    * Returns a NiLo with info on the author of the post.
    */
