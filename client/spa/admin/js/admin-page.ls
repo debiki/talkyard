@@ -559,10 +559,16 @@ function inlineBtnTogglersForPost(post)
 
 
 function analyzePagePath(path)
+  pageId = findPageIdIn(path)
+  showId = pageId != null
+  if (!pageId)
+    pageId = findPageIdForNewPage path
+
   return
     folder: parentFolderOfPage path
     pageSlug: findPageSlugIn path
-    showId: isPageIdShownIn path
+    showId: showId
+    pageId: pageId
 
 
 function parentFolderOfPage(path)
@@ -570,25 +576,37 @@ function parentFolderOfPage(path)
   if path.match //^.*/$//
     return path
   # Other pages (with id shown, or non-empty slug).
-  matches = path.match //^(/.*/)[^/]+$//
+  matches = path.match //^(/[^?]*/)[^/?]*(\?.*)?$//
   if !matches => return '/'
-  bug('DwE03Al8') if matches.length != 2
+  bug('DwE03Al8') if matches.length != 3
   matches[1]
 
 
 
 function findPageSlugIn(path)
-  matches = path.match //^.*/(-[^/^-]+-)?([^/^-][^/]*)$//
+  matches = path.match //^[^?]*/(-[a-z0-9]+-)?([^/?-][^?/]*)(\?.*)?$//
   if !matches => return ''
-  bug('DwE83KX1') if matches.length != 3
+  bug('DwE83KX1') if matches.length != 4
   matches[2]
 
 
 
-function isPageIdShownIn(path)
-  matches = path.match //^.*/-[a-z0-9]+(-[^/]*)?$//
-  if matches => true
-  else false
+function findPageIdIn(path)
+  matches = path.match //^[^?]*/-([a-z0-9]+)(-[^/]*)?(\?.*)?$//
+  if matches => matches[1]
+  else null
+
+
+
+/**
+ * When creating a new page, the server redirects to an url like
+ * /some/folder/new-page-slug?view-new-page=<page-id>. This function
+ * finds any such page id.
+ */
+function findPageIdForNewPage(path)
+  matches = path.match //^.*\?view-new-page=([a-z0-9]+).*$//
+  if matches => matches[1]
+  else null
 
 
 

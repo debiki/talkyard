@@ -51,61 +51,99 @@ describe 'analyzePagePath', ->
     expect(analyzePagePath '/').toEqual(
         folder: '/'
         pageSlug: ''
-        showId: false)
+        showId: false
+        pageId: null)
 
   it "analyze a page, id hidden", ->
     expect(analyzePagePath '/slug').toEqual(
         folder: '/'
         pageSlug: 'slug'
-        showId: false)
+        showId: false
+        pageId: null)
 
   it "analyze a page with id shown, no slug", ->
     expect(analyzePagePath '/-pageid').toEqual(
         folder: '/'
         pageSlug: ''
-        showId: true)
+        showId: true
+        pageId: 'pageid')
 
   it "analyze a page with id shown, with slug", ->
     expect(analyzePagePath '/-pageid-pageslug').toEqual(
         folder: '/'
         pageSlug: 'pageslug'
-        showId: true)
+        showId: true
+        pageId: 'pageid')
+
+  it "analyze an -id-slug page, query string with slashes and dashes", ->
+    expect(analyzePagePath '/f/-pageid-slug?/ignore/-this-please').toEqual(
+        folder: '/f/'
+        pageSlug: 'slug'
+        showId: true
+        pageId: 'pageid')
 
   it "analyze a page with id shown, trailing `-`", ->
     expect(analyzePagePath '/-pageid-').toEqual(
         folder: '/'
         pageSlug: ''
-        showId: true)
+        showId: true
+        pageId: 'pageid')
 
   it "analyze a page with id hidden, trailing `-`", ->
     expect(analyzePagePath '/slug-').toEqual(
         folder: '/'
         pageSlug: 'slug-'
-        showId: false)
+        showId: false
+        pageId: null)
 
   it "analyze a deep page, id hidden", ->
     expect(analyzePagePath '/parent/folder/the-page').toEqual(
         folder: '/parent/folder/'
         pageSlug: 'the-page'
-        showId: false)
+        showId: false
+        pageId: null)
 
   it "analyze a deep page, id shown", ->
     expect(analyzePagePath '/parent/folder/-id-the-page').toEqual(
         folder: '/parent/folder/'
         pageSlug: 'the-page'
-        showId: true)
+        showId: true
+        pageId: 'id')
 
   it "analyze a deep page, id shown, no slug", ->
     expect(analyzePagePath '/parent/folder/-pageid').toEqual(
         folder: '/parent/folder/'
         pageSlug: ''
-        showId: true)
+        showId: true
+        pageId: 'pageid')
 
   it "analyze a deep index page", ->
     expect(analyzePagePath '/parent/folder/').toEqual(
         folder: '/parent/folder/'
         pageSlug: ''
-        showId: false)
+        showId: false
+        pageId: null)
+
+  it "analyze a path with a ?view-new-page query string, id shown", ->
+    expect(analyzePagePath '/f/-ab3-sluggo?view-new-page=ab3').toEqual(
+        folder: '/f/'
+        pageSlug: 'sluggo'
+        showId: true
+        pageId: 'ab3')
+
+  it "analyze a path with a ?view-new-page query string, id hidden", ->
+    expect(analyzePagePath '/f/slugge?view-new-page=ab3').toEqual(
+        folder: '/f/'
+        pageSlug: 'slugge'
+        showId: false
+        pageId: 'ab3')
+
+  it "analyze a ?view-new-page query string, with trailing query params", ->
+    expect(analyzePagePath '/f/?view-new-page=ab3&foo=bar').toEqual(
+        folder: '/f/'
+        pageSlug: ''
+        showId: false
+        pageId: 'ab3')
 
 
 describe 'padNumberToLength2', ->
