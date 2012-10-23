@@ -24,8 +24,11 @@ case class RequestInfo(
 }
 
 
+// Remove, use a twist of PageStuff instead? With .actions = None?
 case class PageDetails(
   status: PageStatus,
+  pageRole: PageRole,
+  parentPageId: Option[String],
   cachedTitle: Option[String],
   cachedPublTime: Option[ju.Date],
   cachedSgfntMtime: Option[ju.Date],
@@ -39,6 +42,7 @@ object PageDetails {
 
 /** The page status, see debiki-for-developers.txt #9vG5I.
  */
+// Move to page-meta.scala?
 sealed abstract class PageStatus
 object PageStatus {
   // COULD rename to PrivateDraft, becaus ... other pages with limited

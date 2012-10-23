@@ -47,6 +47,11 @@ case class PageStuff( // COULD reneame to Page? if I rename Page to PageActions
 
 
 
+object PageMeta {
+  val forUnknownPage = PageMeta(pageId = "?")
+}
+
+
 case class PageMeta(
   pageId: String,
   pageRole: PageRole = PageRole.Any,
