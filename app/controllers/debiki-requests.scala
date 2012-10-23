@@ -87,6 +87,8 @@ abstract class DebikiRequest[A] {
 
   def queryString = request.queryString
 
+  def rawQueryString = request.rawQueryString
+
   def body = request.body
 
   def isAjax = DebikiHttp.isAjax(request)
@@ -245,7 +247,7 @@ case class PageRequest[A](
    */
   // COULD rename to actions_!.
   lazy val page_! : Debate =
-    page_? getOrElse throwNotFound("DwE43XWY", "Page not found")
+    page_? getOrElse throwNotFound("DwE43XWY", "Page not found, id: "+ pageId)
 
   /**
    * Adds the current login, identity and user to page_!.people.

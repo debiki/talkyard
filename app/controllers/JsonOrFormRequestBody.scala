@@ -52,6 +52,9 @@ case class JsonOrFormDataBody(
   def getBoolOrFalse(param: String): Boolean =
     getBool(param) getOrElse false
 
+  def getBoolOrTrue(param: String): Boolean =
+    getBool(param) getOrElse true
+
   def getOrThrowBadReq(param: String): String =
     parseFormDataOrJson(
       _.get(param).map(_.head),
