@@ -15,14 +15,6 @@ describe 'PathsCtrl', ->
       $controller PathsCtrl, $scope: scope
       test = scope.test
 
-  it 'should recognize pages', ->
-    expect(scope.isPage { pageId: '12ab34' }).toBe true
-    expect(scope.isPage {}).toBe false
-
-  it 'should recognize folders', ->
-    expect(scope.isFolder { pageId: '12ab34' }).toBe false
-    expect(scope.isFolder {}).toBe true
-
   it 'can sort an empty list', ->
     expect(test.sortItemsInPlace []).toEqual []
     #expect(true).toEqual(false)

@@ -206,14 +206,10 @@ AdminModule.factory 'AdminService', ['$http', ($http) ->
     moveSelectedPages fromFolder: '/', toFolder: DRAFTS_FOLDER
 
 
-  isPage = (item) -> item.pageId?
-  isFolder = (item) -> !isPage(item)
-
   $scope.listItems = []
-  $scope.isPage = isPage
-  $scope.isFolder = isFolder
+
   $scope.isFolderOrPageClass = (item) ->
-    if isPage(item) then 'is-page' else 'is-folder'
+    if item.isPage then 'is-page' else 'is-folder'
 
 
   loadAndListPages = ->
@@ -252,13 +248,14 @@ AdminModule.factory 'AdminService', ['$http', ($http) ->
     newFolderPaths = reject (== '/'), newFolderPaths
 
     oldFolderPaths =
-        [item.path for item in $scope.listItems when isFolder(item)]
+        [item.path for item in $scope.listItems when item.isFolder]
 
     for newPath in newFolderPaths when not find (== newPath), oldFolderPaths
       folderItem =
           path: newPath
           included: false
           open: false
+          isFolder: true
       $scope.listItems.push folderItem
 
     redrawPageList!
@@ -274,6 +271,7 @@ AdminModule.factory 'AdminService', ['$http', ($http) ->
         open: false
         role: page.role
         parentPageId: page.parentPageId
+        isPage: true
 
     isHomePage = (page) -> page.path == '/' || page.path == DRAFTS_FOLDER
     isIndexPage = (page) -> last(page.path) == '/'
@@ -303,8 +301,8 @@ AdminModule.factory 'AdminService', ['$http', ($http) ->
         # Sort a folder before the pages in it.
         # (A folder and its index page has identical `path`s, e.g. `/folder/`.)
         if ix + 1 == lenA and lenA == lenB
-          return -1 if isFolder(a) and isPage(b)
-          return 1 if isFolder(b) and isPage(a)
+          return -1 if a.isFolder and b.isPage
+          return 1 if b.isFolder and a.isPage
         # Sort pages before folders
         return -1 if ix + 1 == lenA and lenA < lenB
         return 1 if ix + 1 == lenB and lenB < lenA
@@ -368,7 +366,7 @@ AdminModule.factory 'AdminService', ['$http', ($http) ->
     for item in items
 
       # Leave any folder and continue from previously stacked parent.
-      if isFolder item
+      if item.isFolder
         curHideCount = 0
         curParentFolderPath = '/'
         while curParentFolderPath == '/' && folderStack.length > 0
@@ -396,7 +394,7 @@ AdminModule.factory 'AdminService', ['$http', ($http) ->
           ancestorFolder.hideCount = 0
 
       # Enter folder?
-      if isFolder item
+      if item.isFolder
         curHideCount += 1 unless item.open
         curParentFolderPath = item.path
         folderStack.push item

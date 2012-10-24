@@ -174,7 +174,7 @@
                     <span class='page-notfs'>{{stringifyOtherMarksFor(item)}}</span>
                   </a>
 
-                  <div ng-switch='isPage(item)' class='path-info'>
+                  <div ng-switch='item.isPage' class='path-info'>
                     <div ng-switch-when='true' class='page-info'>
                       Title: <a href='{{item.path}}' target='_blank'>{{item.title}}</a><br>
                       Author: <a href="#">{{item.authors}}</a><br>
