@@ -63,16 +63,30 @@ AdminModule.factory 'AdminService', ['$http', ($http) ->
   api.delete = (actions, onSuccess) ->
     onSuccess! # for now
 
-  api.createPage = ({ path, id, role, parentPageId }, callback) ->
-    { folder, pageSlug, showId } = analyzePagePath path
-    $http.post(folder + '?create-page',
-        'page-title': 'Unnamed Page'
-        'page-slug': pageSlug
-        'show-id': showId
-        'page-role': role
-        'parent-page-id': parentPageId
-        ).success (data) ->
-          callback data.newPage
+
+  /**
+   * Asks the server for an URL to view a new unsaved page (the server wants
+   * to choose page id itself).
+   *
+   * If that new unsaved page is edited later, the server will create
+   * it lazily.
+   */
+  api.getViewNewPageUrl = (pageData, callback) ->
+    getViewNewPageUrl =
+        pageData.folder +
+        '?get-view-new-page-url' +
+        '&page-slug=' + pageData.pageSlug +
+        '&show-id=' + (if pageData.showId => 't' else 'f')
+    $http.get(getViewNewPageUrl).success ({ viewNewPageUrl }) ->
+      # Add page meta to URL, so the server knows e.g. which template
+      # to use when rendering the page (and can save this info to the
+      # database later when/if the server lazy-creates the page).
+      if pageData.pageRole
+        viewNewPageUrl += '&page-role=' + pageData.pageRole
+      if pageData.parentPageId
+        viewNewPageUrl += '&parent-page-id=' + pageData.parentPageId
+      callback viewNewPageUrl
+
 
   api.movePages = (pageIds, {fromFolder, toFolder, callback}) ->
     $http.post '/-/move-pages', { pageIds: pageIds, fromFolder, toFolder }
@@ -100,9 +114,12 @@ AdminModule.factory 'AdminService', ['$http', ($http) ->
 
 
   $scope.createBlog = (location) ->
-    createPage(
-        path: location,
-        role: 'BlogMainPage')
+    { folder, pageSlug } = analyzePagePath location
+    createPage {
+        folder
+        pageSlug
+        showId: false
+        pageRole: 'BlogMainPage' }
 
 
   $scope.createDraftPage = ->
@@ -114,72 +131,55 @@ AdminModule.factory 'AdminService', ['$http', ($http) ->
 
 
   createPageInFolder = (parentFolder) ->
-    pageId = generatePageId!
-    createPage(
-        id: pageId
-        path: parentFolder + '-' + pageId + '-new-page')
+    createPage {
+        folder: parentFolder
+        pageSlug: 'new-page'
+        showId: true }
 
 
   /**
    * Creates a new page list item, which, from the user's point of view,
    * is similar to creating a new unsaved page.
    *
-   * `page` should be a: { path, (id, role, parentPageId) }
+   * `pageData` should be a:
+   *    { folder, pageSlug, showId, (pageRole, parentPageId) }
    * where (...) is optional.
    */
-  createPage = (page) ->
-    page.id ||= generatePageId!
-    pageListItem = makePageListItem(page)
-    pageListItem.marks = ['NewUnsaved']
+  createPage = (pageData) ->
+    adminService.getViewNewPageUrl pageData, (viewNewPageUrl) ->
+      page =
+          path: viewNewPageUrl
+          id: findPageIdForNewPage viewNewPageUrl
+          #title: undefined
+          #authors: undefined # should be current user
+          role: pageData.pageRole
+          parentPageId: pageData.parentPageId
 
-    # Select the new page, and nothing else, so the 'View/edit' button
-    # appears and the user hopefully understands what to do next.
-    pageListItem.included = true
-    for item in $scope.listItems
-      item.included = false
+      pageListItem = makePageListItem(page)
+      pageListItem.marks = ['NewUnsaved']
 
-    listMorePagesDeriveFolders [pageListItem]
+      # Select the new page, and nothing else, so the 'View/edit' button
+      # appears and the user hopefully understands what to do next.
+      pageListItem.included = true
+      for item in $scope.listItems
+        item.included = false
 
-
-  /**
-   * Generates an id like '5kbq9'. The id starts and ends with a digit, so
-   * as not to look like some word. And the vowels 'aoei' are excluded
-   * (but not 'u' and 'y'), to hopefully avoid generating any ugly word.
-   */
-  generatePageId = ->
-    id = ''
-    charset = '0123456789bcdfghjklmnpqrstuvwxyz'
-    for i from 1 to 5
-      charsetLength =
-          if i == 1 or i == 5 then 10 else charset.length
-      id += charset.charAt Math.floor(Math.random! * charsetLength)
-    id
+      listMorePagesDeriveFolders [pageListItem]
 
 
   /**
    * Opens a page in a new browser tab.
    *
-   * If the page was just created, but has not been saved server side,
-   * saves the page before opening it. (Requires a server roundtrip.)
+   * (If the page was just created, but has not been saved server side,
+   * the server will create it lazily if you edit and save it.)
    */
   $scope.viewSelectedPage = ->
     pageItem = getSelectedPageOrDie!
-    if find (== 'NewUnsaved'), pageItem.marks || []
-      # Open new tab directly, in direct response to the user-initiated event,
-      # or the browser's pop-up blocker tends to block it.
-      newBrowserPage = window.open 'about:blank', '_blank'
-      adminService.createPage {
-          path: pageItem.path
-          id: pageItem.pageId # ??
-          role: pageItem.role
-          parentPageId: pageItem.parentPageId
-          }, (newPage) ->
-        newBrowserPage.location = newPage.path
-        pageItem.marks = reject (== 'NewUnsaved'), pageItem.marks
-        pageItem.marks.push 'NewSaved'
-        updatePageItem pageItem, withNewPageData: newPage
-    else
-      window.open pageItem.path, '_blank'
+    window.open pageItem.path, '_blank'
+    # COULD add callback that if page saved: (see Git stash 196d8accb80b81)
+    # pageItem.marks = reject (== 'NewUnsaved'), pageItem.marks
+    # pageItem.marks.push 'NewSaved'
+    # updatePageItem pageItem, withNewPageData: newPage
 
 
   $scope.moveSelectedPage = ->
@@ -382,6 +382,8 @@ AdminModule.factory 'AdminService', ['$http', ($http) ->
 
       item.depth = folderStack.length
       item.displayPath = item.path.replace curParentFolderPath, ''
+      # Also drop any query string, e.g. ?view-new-page=<pageid>&...
+      item.displayPath = item.displayPath.replace /\?.*/, ''
       item.hideCount = curHideCount
 
       # Always show stuff with any marks (could be a page the user
