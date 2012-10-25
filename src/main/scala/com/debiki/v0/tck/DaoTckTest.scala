@@ -383,9 +383,10 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
         case List((pagePath, pageDetails)) =>
           pagePath must_== defaultPagePath.copy(pageId = pagePath.pageId)
           pageDetails.status must_== PageStatus.Draft
-          // There page currently has no title and it hasn't been published.
+          // There page currently has no title.
+          // It's published by default though.
           pageDetails.cachedTitle must_== None
-          pageDetails.cachedPublTime must_== None
+          pageDetails.cachedPublTime must_!= None
           // Shouldn't the page body post affect the
           // significant-modification-time?
           // pageDetails.cachedSgfntMtime must_== None  -- or Some(date)?
