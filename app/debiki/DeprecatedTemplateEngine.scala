@@ -423,11 +423,13 @@ object DeprecatedTemplateEngine {
    *  12 | Kaj Magnus Lindberg | 2012-04-04 17:54:23.624729
    *  3  | Debiki.com          | 2012-04-17 03:35:56.234517
    *  11 | madmind             | 2012-08-13 14:36:50.990702
+   *
+   * However, use my new templates for 1: Local, for testing.
    */
   def isOldStyleTemplateSite(tenantId: String): Boolean =
     _OldStyleTenantIds contains tenantId
 
-  private val _OldStyleTenantIds = List("1", "2", "12", "3", "11")
+  private val _OldStyleTenantIds = List("2", "12", "3", "11")
 
 
   /**
