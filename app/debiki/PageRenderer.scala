@@ -52,15 +52,15 @@ case class PageRenderer(pageReq: PageRequest[_], pageCache: Option[PageCache],
 
     val tpi = TemplateProgrammingInterface(this)
 
-    import pageReq.pagePath
+    import pageReq.{pagePath, pageMeta}
     val renderedPage: String =
       if (pagePath.isTemplatePage)
         views.html.themes.specialpages.template(tpi).body
-      else if (_isBlogArticle(pagePath))
+      else if (pageMeta.pageRole == PageRole.BlogArticle)
         views.html.themes.default20121009.blogPost(tpi).body
-      else if (_isBlogArticleListPage(pagePath))
+      else if (pageMeta.pageRole == PageRole.BlogMainPage)
         views.html.themes.default20121009.blogPostList(tpi).body
-      else if (_isHomepage(pagePath))
+      else if (pageMeta.pageRole == PageRole.Homepage)
         views.html.themes.default20121009.homepage(tpi).body
       else
         // For now, fallback to the blog post template.
@@ -174,18 +174,6 @@ object PageRenderer {
   val DummyConfig = DummyBody.copy(
     id = Page.TemplateId, parent = Page.TemplateId, text = "Click to edit",
     markup = Markup.Code.id)
-
-
-  private def _isBlogArticle(pagePath: PagePath) = {
-    // A blog article has a page slug; index pages cannot be blog articles.
-    _IsBlogRegex.matches(pagePath.folder) && !pagePath.isFolderOrIndexPage
-  }
-
-
-  private def _isBlogArticleListPage(pagePath: PagePath) = {
-    // A blog article list is an index page.
-    _IsBlogRegex.matches(pagePath.folder) && pagePath.isFolderOrIndexPage
-  }
 
 
   private def _isHomepage(pagePath: PagePath) = {
