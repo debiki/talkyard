@@ -8,18 +8,14 @@
   </script>
 </head>
 <body>
-
-<div data-replace="#debiki-page">
-
-  <!-- Make the title appear before the <ol> -->
-  <div id='debiki-page'></div>
 *@
 
 
 @wrapper(tpi) {
-  @*  @tpi.pageTitle  *@
+  @tpi.pageTitleAndBodyAndComments
 
-  @for(page <- tpi.listNewestPages(tpi.currentTree)) {
+  <ol class='page-list'>
+  @for(page <- tpi.listNewestChildPages()) {
     <li>
       <a href='@{page.path}'>
         <h1>@{page.title}</h1>
@@ -30,6 +26,7 @@
       </p>
     </li>
   }
+  </ol>
 
 }
 
