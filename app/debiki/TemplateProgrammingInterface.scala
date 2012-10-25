@@ -203,6 +203,36 @@ class TinyTemplateProgrammingInterface protected (
         title = titleOf(pageApproved), safeBodyHtml = bodyOf(pageApproved))
     }
   }
+
+
+  def listNewestChildPages(): Seq[tpi.Page] = {
+    val pathsAndDetails: Seq[(PagePath, PageDetails)] =
+      _pageReq.dao.listChildPages(parentPageId = pageId,
+          sortBy = PageSortOrder.ByPublTime, limit = 10, offset = 0)
+
+    val articlePaths = pathsAndDetails filter {
+      case (paths, details) =>
+        details.cachedPublTime.map(
+            _.getTime < _pageReq.ctime.getTime) == Some(true)
+    } map (_._1)
+
+    val pathsAndPages: Seq[(PagePath, Option[Debate])] =
+      _pageReq.dao.loadPageBodiesTitles(articlePaths)
+
+    def titleOf(page: Option[Debate]): String =
+    // Currenply HtmlSerializer ignores the `.markup` for a title Post.
+      page.flatMap(_.title).map(_.text).getOrElse("(No title)")
+
+    def bodyOf(page: Option[Debate]): String =
+      page.flatMap(_.body).map(
+        HtmlSerializer.markupTextOf(_, _pageReq.host)).getOrElse("")
+
+    pathsAndPages map { case (pagePath, pageOpt: Option[Debate]) =>
+      val pageApproved = pageOpt map (_.approvedVersion)
+      tpi.Page(id = pagePath.pageId.get, path = pagePath.path,
+        title = titleOf(pageApproved), safeBodyHtml = bodyOf(pageApproved))
+    }
+  }
 }
 
 
