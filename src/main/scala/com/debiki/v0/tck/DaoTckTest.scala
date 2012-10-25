@@ -496,6 +496,31 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
           }
         }
       }
+
+      "find no child pages of a non-existing page" >> {
+        val childs = dao.listChildPages("doesNotExist",
+          PageSortOrder.ByPublTime, limit = 10)
+        childs.length must_== 0
+      }
+
+      "find no child pages of a page with no children" >> {
+        val childs = dao.listChildPages(blogArticleId,
+          PageSortOrder.ByPublTime, limit = 10)
+        childs.length must_== 0
+      }
+
+      "find child pages of the BlogMainPage" >> {
+        val childs = dao.listChildPages(blogMainPageId,
+          PageSortOrder.ByPublTime, limit = 10)
+        childs.length must_== 1
+        childs must beLike {
+          case List((pagePath, pageDetails)) =>
+            pagePath.pageId must_== Some(blogArticleId)
+            pageDetails.pageRole must_== PageRole.BlogArticle
+            pageDetails.parentPageId must_== Some(blogMainPageId)
+            true
+        }
+      }
     }
 
 
