@@ -334,11 +334,12 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
 
     "create a debate with a root post" >> {
       val debateNoId = Debate(guid = "?", posts = ex1_rootPost::Nil)
-      val d: Debate = dao.createPage(PageStuff(defaultPagePath, debateNoId))
-      ex1_debate = d
-      d.postCount must_== 1
-      d.guid.length must be_>(1)  // not = '?'
-      d must havePostLike(ex1_rootPost)
+      val page = dao.createPage(PageStuff(defaultPagePath, debateNoId))
+      val actions = page.actions
+      ex1_debate = actions
+      actions.postCount must_== 1
+      actions.guid.length must be_>(1)  // not = '?'
+      actions must havePostLike(ex1_rootPost)
     }
 
     "find the debate and the post again" >> {
@@ -456,7 +457,8 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
           defaultPagePath.copy(
             showId = true, pageSlug = "role-test-blog-main"),
           Debate(guid = "?"))
-        val actions = dao.createPage(pageNoId)
+        val page = dao.createPage(pageNoId)
+        val actions = page.actions
         blogMainPageId = actions.pageId
         actions.postCount must_== 0
         actions.pageId.length must be_>(1)  // not = '?'
@@ -480,7 +482,8 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
           defaultPagePath.copy(
             showId = true, pageSlug = "role-test-blog-article"),
           Debate(guid = "?"))
-        val actions = dao.createPage(pageNoId)
+        val page = dao.createPage(pageNoId)
+        val actions = page.actions
         blogArticleId = actions.pageId
         actions.postCount must_== 0
         actions.pageId.length must be_>(1)  // not = '?'
