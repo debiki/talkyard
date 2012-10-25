@@ -88,7 +88,7 @@ class AutoApproverSpec extends Specification with Mockito {
       pagePath = pagePath,
       permsOnPage = PermsOnPage.All,
       dao = dao,
-      request = PlayReq)
+      request = PlayReq)()
 
   def pageReqOpenId = pageReq(openidUser, openidIdty) _
   def pageReqGuest = pageReq(guestUser, guestIdty) _
