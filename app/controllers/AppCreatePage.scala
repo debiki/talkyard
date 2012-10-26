@@ -99,6 +99,10 @@ object AppCreatePage extends mvc.Controller {
     val parentPageId: Option[String] =
       queryString.getEmptyAsNone("parent-page-id")
 
+    // In case of a Javascript bug.
+    if (parentPageId == Some("undefined"))
+      throwBadReq("DwE93HF2", "Parent page id is `undefined`")
+
     val meta = PageMeta(pageId = pageId, pageRole = pageRole,
         parentPageId = parentPageId)
 
