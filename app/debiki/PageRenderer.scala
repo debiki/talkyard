@@ -25,8 +25,8 @@ case class PageRenderer(pageReq: PageRequest[_], pageCache: Option[PageCache],
     case Some(cache) =>
       cache.get(pageReq, commentVisibility)
     case None =>
-      PageRenderer.renderArticleAndComments(
-        pageReq.page_!, pageReq.pageVersion, pageReq.pagePath,
+      val page = PageStuff(pageReq.pageMeta, pageReq.pagePath, pageReq.page_!)
+      PageRenderer.renderArticleAndComments(page, pageReq.pageVersion,
         pageReq.pageRoot, hostAndPort = pageReq.host, showComments = true)
   }
 
@@ -74,23 +74,25 @@ case class PageRenderer(pageReq: PageRequest[_], pageCache: Option[PageCache],
 object PageRenderer {
 
   // COULD break out to class ArticleRenderer?
-  def renderArticleAndComments(page: Debate, pageVersion: PageVersion,
-        pagePath: PagePath, pageRoot: PageRoot, hostAndPort: String,
-        showComments: Boolean): xml.NodeSeq = {
+  def renderArticleAndComments(page: PageStuff, pageVersion: PageVersion,
+        pageRoot: PageRoot, hostAndPort: String, showComments: Boolean)
+        : xml.NodeSeq = {
 
-    if (page.body.map(_.someVersionApproved) == Some(false) ||
-        page.title.map(_.someVersionApproved) == Some(false)) {
+    val actions = page.actions
+
+    if (actions.body.map(_.someVersionApproved) == Some(false) ||
+        actions.title.map(_.someVersionApproved) == Some(false)) {
       // Regrettably, currently the page is hidden also for admins (!).
       // But right now only admins can create new pages and they are
       // auto approved (well, will be, in the future.)
       return <p>This page is pending approval.</p>
     }
 
-    val (pageDesiredVersionStuffMissing, tooRecentActions) =
-        page.partitionByVersion(pageVersion)
+    val (actionsDesiredVersionStuffMissing, tooRecentActions) =
+      actions.partitionByVersion(pageVersion)
 
-    val pageDesiredVersion =
-      _addMissingTitleBodyConfigTo(pageDesiredVersionStuffMissing)
+    val actionsDesiredVersion =
+      _addMissingTitleBodyConfigTo(actionsDesiredVersionStuffMissing)
 
     val config = DebikiHttp.newUrlConfig(hostAndPort)
 
@@ -98,10 +100,11 @@ object PageRenderer {
     // some PageRendererInput class, that is handled to PageCache,
     // so PageCache don't need to know anything about how to render
     // a page. But for now:
-    val pageTrust = PageTrust(pageDesiredVersion)
+    val pageTrust = PageTrust(actionsDesiredVersion)
 
     // layoutPage() takes long, because markup source is converted to html.
-    val nodes = HtmlSerializer(pageDesiredVersion, pageTrust, pagePath, config,
+    val pageDesiredVersion = page.copy(actions = actionsDesiredVersion)
+    val nodes = HtmlSerializer(pageDesiredVersion, pageTrust, config,
       showComments = showComments).layoutPage(pageRoot)
 
     nodes map { html =>

@@ -24,17 +24,17 @@ $.fn.dwPostId = function() {
 
 
 /**
- * Returns the id of the page in which $(whatever) is located.
+ * Returns info on the page in which $(whatever) is located.
  * (There might be more than one Debiki page included on a single browser page.)
  */
-$.fn.dwPageId = function() {
-  // Drop initial "page-".
-  return this.closest('.dw-page').attr('id').substr(5, 999);
-};
-
-
-$.fn.dwPagePath = function() {
-  return this.closest('.dw-page').data('page_path');
+$.fn.dwPageMeta = function() {
+  var $page = this.closest('.dw-page');
+  return {
+    pageId: $page.attr('id').substr(5, 999), // drops initial "page-"
+    pagePath: $page.data('page_path'),
+    pageRole: $page.data('page_role'),
+    parentPageId: $page.data('parent_page_id')
+  };
 };
 
 

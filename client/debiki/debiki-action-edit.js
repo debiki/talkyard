@@ -62,8 +62,7 @@ function _$showEditFormImpl() {
   var $postBody = $post.children('.dw-p-bd');
   var postId = $post.dwPostId();
   var isRootPost = $post.parent().is('.dw-depth-0');
-  var pageId = $post.dwPageId();
-  var pagePath = $post.dwPagePath();
+  var pageMeta = $post.dwPageMeta();
 
   // It's confusing with Reply/Rate/etc below the edit form.
   d.i.hideActions();
@@ -72,7 +71,9 @@ function _$showEditFormImpl() {
     // (The page path is needed if the page doesn't exist, so the server has
     // some way to find out which PermsOnPage to show.)
     var url =
-        '/-/edit?pageId='+ pageId +'&pagePath='+ pagePath +'&postId='+ postId;
+        '/-/edit?pageId='+ pageMeta.pageId +
+        '&pagePath='+ pageMeta.pagePath +
+        '&postId='+ postId;
     $.get(url, function(editFormText) {
       // Concerning filter(…): [0] and [2] are text nodes.
       var $editForm = $(editFormText).filter('form');
@@ -336,10 +337,12 @@ function _$showEditFormImpl() {
 
       var jsonObj = {
         edits: [{
-          pageId: pageId,
-          // `pagePath` is needed so the server knows where to lazy-create the
-          // page (if needed).
-          pagePath: pagePath,
+          pageId: pageMeta.pageId,
+          // The meta info is needed so the server knows where to lazy-create
+          // the page (if needed).
+          pagePath: pageMeta.pagePath,
+          pageRole: pageMeta.pageRole,
+          parentPageId: pageMeta.parentPageId,
           postId: postId,
           text: $editForm.find('[name="dw-fi-e-txt"]').val(),
           markup: $editForm.find('[name="dw-fi-e-mup"]').val()

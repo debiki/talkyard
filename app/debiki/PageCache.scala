@@ -68,9 +68,10 @@ class PageCache {
 
     // COULD load only Page.BodyId, Page.TitleId if !showComments.
     pageReq.dao.loadPage(k.pageGuid) match {
-      case Some(page) =>
+      case Some(actions) =>
+        val page = PageStuff(pageReq.pageMeta, pageReq.pagePath, actions)
         PageRenderer.renderArticleAndComments(page, pageReq.pageVersion,
-          pageReq.pagePath, pageReq.pageRoot, hostAndPort = k.hostAndPort,
+          pageReq.pageRoot, hostAndPort = k.hostAndPort,
           showComments = k.showComments)
       case None =>
         // Page missing. Should have been noticed during access control.

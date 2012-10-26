@@ -164,9 +164,13 @@ object PageRequest {
         pageId: String) : PageRequest[A] = {
     val pagePathPerhapsId =
       PagePath.fromUrlPath(apiRequest.tenantId, pagePathStr) match {
-        case PagePath.Parsed.Good(path) => path
-        case x => throwBadReq(
-          "DwE390SD3", "Bad page path for page id "+ pageId +": "+ x)
+        case PagePath.Parsed.Good(path) =>
+          assErrIf(path.pageId.isDefined && path.pageId != Some(pageId),
+              "DwE309RK9", "Database page id: "+ path.pageId +
+              ", page id arg: "+ pageId)
+          path
+        case x =>
+          throwBadReq("DwE390SD3", "Bad path for page id "+ pageId +": "+ x)
       }
     val pagePathWithId = pagePathPerhapsId.copy(pageId = Some(pageId))
     PageRequest(apiRequest, pagePathWithId)

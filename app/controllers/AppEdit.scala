@@ -86,7 +86,8 @@ object AppEdit extends mvc.Controller {
 
     _throwIfTooMuchData(text, pageReqOrig)
 
-    val pageReq = _createPageIfNeeded(pageReqOrig)
+    val pageReq = _createPageIfNeeded(pageReqOrig, PageRole.Any,
+      parentPageId = None)
 
     _saveEdits(pageReq, postId, text, markupOpt)
     Utils.renderOrRedirect(pageReq)
@@ -112,18 +113,32 @@ object AppEdit extends mvc.Controller {
 
     for ((pageId, editMaps) <- editMapsByPageId) {
 
-      val pagePathValue = (editMaps.head)("pagePath")
+      val pagePathStr = (editMaps.head)("pagePath")
+      val pageRoleStr = (editMaps.head)("pageRole")
+      val parentPageIdStr = (editMaps.head)("parentPageId")
 
       // Ensure all entries for `pageId` have the same page path.
       val badPath = editMaps.find(
-        map => map.get("pagePath") != Some(pagePathValue))
+        map => map.get("pagePath") != Some(pagePathStr))
       if (badPath nonEmpty) throwBadReq(
           "DwE390XR23", "Different page paths for page id "+ pageId +": "+
-          pagePathValue +", and: "+ badPath.get)
+          pagePathStr +", and: "+ badPath.get)
 
+      // COULD ensure page role and parent page id entries are identical
+      // for all edits to the same page. Or should I add explicit
+      // `ensurePageExists: { pageId, pageRole, path, parentPageId }`
+      // entries before the actual edit data? (Lazy-creating pages is a
+      // little bit complicated since both edit data and page creation data
+      // needs to be posted to the server, and there might be many edits
+      // of the same page.)
 
-      val pageReqPerhapsNoPage = PageRequest(request, pagePathValue, pageId)
-      val pageRequest = _createPageIfNeeded(pageReqPerhapsNoPage)
+      val pageRole = AppCreatePage.stringToPageRole(pageRoleStr)
+      val parentPageId =
+        if (parentPageIdStr isEmpty) None else Some(parentPageIdStr)
+
+      val pageReqPerhapsNoPage = PageRequest(request, pagePathStr, pageId)
+      val pageRequest = _createPageIfNeeded(pageReqPerhapsNoPage,
+        pageRole, parentPageId = parentPageId)
 
       for (editMap <- editMaps) {
         val newText = getOrThrow(editMap, "text")
@@ -165,13 +180,10 @@ object AppEdit extends mvc.Controller {
    * If the requested page does not exist, creates it, and returns
    * a PagePostRequest to the new page.
    */
-  private def _createPageIfNeeded[A](pageReq: PageRequest[A])
-        : PageRequest[A] = {
+  private def _createPageIfNeeded[A](pageReq: PageRequest[A],
+        pageRole: PageRole, parentPageId: Option[String]): PageRequest[A] = {
     if (pageReq.pageExists)
       return pageReq
-
-    if (pageReq.pageExists)
-      throwForbidden("DwE390R3", "Cannot create that page; it already exists")
 
     if (!pageReq.permsOnPage.createPage)
       throwForbidden("DwE01rsk351", "You may not create that page")
@@ -179,12 +191,13 @@ object AppEdit extends mvc.Controller {
     val pageId = pageReq.pageId.getOrElse(throwBadReq(
       "DwE39KR8", "No page id, cannot lazy-create page at "+ pageReq.pagePath))
 
-    val (pageMeta, pagePath) =
-      AppCreatePage.newPageDataFromUrl(pageReq, pageId = pageId)
+    val pageMeta = PageMeta(pageId = pageId, pageRole = pageRole,
+      parentPageId = parentPageId)
 
     val actions = Debate(pageId, people = pageReq.userAsPeople)
 
-    val newPage = pageReq.dao.createPage(PageStuff(pageMeta, pagePath, actions))
+    val newPage = pageReq.dao.createPage(
+      PageStuff(pageMeta, pageReq.pagePath, actions))
 
     pageReq.copyWithPreloadedPage(newPage, pageExists = true)
   }

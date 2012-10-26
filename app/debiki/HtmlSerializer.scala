@@ -283,15 +283,20 @@ object HtmlSerializer {
 
 
 case class HtmlSerializer(
-  debate: Debate,
+  pageStuff : PageStuff,
   pageTrust: PageTrust,
-  pagePath: PagePath,
   config: HtmlConfig,
   showComments: Boolean) {
 
   import HtmlSerializer._
 
-  def page = debate
+  // COULD rename some of these weirdly named fields.
+  def debate = pageStuff.actions
+  def page = pageStuff.actions
+  def pagePath = pageStuff.path
+  def pageRole = pageStuff.role
+  def parentPageId = pageStuff.parentPageId
+
 
   private lazy val pageStats = new PageStats(debate, pageTrust)
 
@@ -332,7 +337,9 @@ case class HtmlSerializer(
 
     val cssThreadId = "dw-t-"+ rootPost.id
     <div id={"page-"+ debate.id} class='debiki dw-debate dw-page'
-        data-page_path={pagePath.path}>
+        data-page_path={pagePath.path}
+        data-page_role={pageRole.toString}
+        data-parent_page_id={parentPageId.map(_.toString) getOrElse ""}>
       <div class="dw-debate-info">{
         if (lastChange isDefined) {
           <p class="dw-last-changed">Last changed on
