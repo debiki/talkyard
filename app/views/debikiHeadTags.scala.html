@@ -1,4 +1,4 @@
-@(minMaxJs: String, minMaxCss: String)
+@(pageId: String, minMaxJs: String, minMaxCss: String)
 
 @* Some other viewport values, and the absence of a value,
 trigger Android bugs that report the wrong screen.width,
@@ -41,7 +41,7 @@ See: http://stackoverflow.com/questions/1014203/best-way-to-use-googles-hosted-j
 *@
 <script>
   var debiki = $.extend(true,
-      { v0: { util: {} }, internal: { $: jQuery } }, debiki);
+      { v0: { util: {} }, internal: { $: jQuery, pageId: '@pageId' } }, debiki);
   debiki.scriptLoad = $.Deferred();
   Modernizr.load({
     test: Modernizr.touch,

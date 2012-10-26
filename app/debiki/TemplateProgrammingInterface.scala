@@ -41,8 +41,6 @@ object TemplateProgrammingInterface {
     if (isDev) ("", "js", "css") else ("min", "min.js", "min.css")
   }
 
-  val debikiHeadTags = views.html.debikiHeadTags(minMaxJs, minMaxCss).body
-
 }
 
 
@@ -98,7 +96,7 @@ class InternalTemplateProgrammingInterface protected (
   protected def _loadPageConfigMap(pageId: String, configPostId: String)
       : Map[String, Any] = {
     // Load the page as YAML into a map.
-    _dao.loadPage(pageId) match {
+    _loadPage(pageId) match {
       case None => return Map.empty
       case Some(page) =>
         val configText = page.vipo(configPostId) match {
@@ -108,6 +106,11 @@ class InternalTemplateProgrammingInterface protected (
         DebikiYaml.parseYamlToMap(configText)
     }
   }
+
+
+  protected def _loadPage(pageId: String): Option[Debate] =
+    _dao.loadPage(pageId)
+
 }
 
 
@@ -137,6 +140,20 @@ class TinyTemplateProgrammingInterface protected (
 
   def currentFolder = PathRanges(folders = Seq(_pageReq.pagePath.folder))
   def currentTree = PathRanges(trees = Seq(_pageReq.pagePath.folder))
+
+
+  /**
+   * If there's any _pageReq.page_? that matches the requested page
+   * then use it and don't access the database. (This happens when you
+   * view a new unsaved page — then a dummy page is constructed by
+   * AppCreatePage and AppEdit, and inserted into PageReq, and this dummy
+   * page should be used, not the non-existing page in the database.
+   */
+  override protected def _loadPage(pageId: String): Option[Debate] =
+    _pageReq.page_? match {
+      case a @ Some(actions) if actions.pageId == pageId => a
+      case _ => _dao.loadPage(pageId)
+    }
 
 
   /**
@@ -247,7 +264,9 @@ class TemplateProgrammingInterface private (
   import TinyTemplateProgrammingInterface.{Page => _, _}
   import TemplateProgrammingInterface._
 
-  def debikiHeadTags = TemplateProgrammingInterface.debikiHeadTags
+  def debikiHeadTags = views.html.debikiHeadTags(
+    pageId, minMaxJs, minMaxCss).body
+
 
   def debikiAppendToBodyTags = _pageRenderer.appendToBody
 

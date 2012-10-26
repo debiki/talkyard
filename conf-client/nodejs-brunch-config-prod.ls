@@ -126,6 +126,10 @@ exports.config =
           // ^client/spa/js/new-website-choose-owner.ls
           //
 
+        'public/res/debiki-dashbar.min.js':
+          // ^client/debiki/debiki-dashbar.ls
+          //
+
       order:
         after: ['client/debiki/debiki.js']
         # bootstrap-popup.js extends -tooltip.js.

@@ -1,16 +1,21 @@
 @(tpi: debiki.TemplateProgrammingInterface)
 
+@import com.debiki.v0._
+
+
 @if(tpi.isAuthenticated) {
+  <script src='/-/res/debiki-dashbar.js'></script>
   <div id='debiki-dashbar'>
+
     <a class='debiki-dashbar-logo' href='@routes.Application.viewAdminPage.url'>
       (D)
     </a>
-    <a href=@{
-       val childPageRole = tpi.childPageRole.toString
-        "-$id-unnamed-page?create-page&role="+ childPageRole +
-          "&parentPageId="+ tpi.pageId }>
-      New Blog Post
-    </a>
+
+    @{tpi.pageRole match {
+      case PageRole.BlogMainPage => <a class='new-page'>New Blog Post</a>
+      case _ =>
+    }}
+
   </div>
 }
 
