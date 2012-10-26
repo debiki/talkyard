@@ -285,8 +285,12 @@ class TemplateProgrammingInterface private (
     HtmlSerializer.loginInfo(_pageReq.user.map(_.displayName))
 
 
+  def pageTitleAndBodyNoComments =
+    _pageRenderer.renderArticle(showComments = false)
+
+
   def pageTitleAndBodyAndComments =
-    _pageRenderer.renderPageTitleAndBodyAndComments()
+    _pageRenderer.renderArticle(showComments = true)
 
 }
 

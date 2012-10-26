@@ -20,14 +20,18 @@ case class PageRenderer(pageReq: PageRequest[_], pageCache: Option[PageCache],
 
 
   // COULD break out to class ArticleRenderer?
-  // (Also see *object* PageRenderer's renderArticleAndComments().)
-  def renderPageTitleAndBodyAndComments() = pageCache match {
+  // (Also see *object* PageRenderer's renderArticle().)
+  def renderArticle(showComments: Boolean) = pageCache match {
     case Some(cache) =>
+      val commentVisibility =
+        if (showComments) CommentVisibility.Visible
+        else CommentVisibility.Hidden
       cache.get(pageReq, commentVisibility)
     case None =>
       val page = PageStuff(pageReq.pageMeta, pageReq.pagePath, pageReq.page_!)
-      PageRenderer.renderArticleAndComments(page, pageReq.pageVersion,
-        pageReq.pageRoot, hostAndPort = pageReq.host, showComments = true)
+      PageRenderer.renderArticle(page, pageReq.pageVersion,
+        pageReq.pageRoot, hostAndPort = pageReq.host,
+        showComments = showComments)
   }
 
 
@@ -74,7 +78,7 @@ case class PageRenderer(pageReq: PageRequest[_], pageCache: Option[PageCache],
 object PageRenderer {
 
   // COULD break out to class ArticleRenderer?
-  def renderArticleAndComments(page: PageStuff, pageVersion: PageVersion,
+  def renderArticle(page: PageStuff, pageVersion: PageVersion,
         pageRoot: PageRoot, hostAndPort: String, showComments: Boolean)
         : xml.NodeSeq = {
 

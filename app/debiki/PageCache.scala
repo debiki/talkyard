@@ -70,7 +70,7 @@ class PageCache {
     pageReq.dao.loadPage(k.pageGuid) match {
       case Some(actions) =>
         val page = PageStuff(pageReq.pageMeta, pageReq.pagePath, actions)
-        PageRenderer.renderArticleAndComments(page, pageReq.pageVersion,
+        PageRenderer.renderArticle(page, pageReq.pageVersion,
           pageReq.pageRoot, hostAndPort = k.hostAndPort,
           showComments = k.showComments)
       case None =>

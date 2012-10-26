@@ -81,7 +81,7 @@ class DeprecatedTemplateEngine(val pageCache: Option[PageCache]) {
         cache.get(pageReq, commentVisibility)
       case None =>
         val page = PageStuff(pageReq.pageMeta, pageReq.pagePath, pageReq.page_!)
-        PageRenderer.renderArticleAndComments(
+        PageRenderer.renderArticle(
           page, pageReq.pageVersion,
           pageReq.pageRoot, hostAndPort = pageReq.host,
           showComments = commentVisibility == CommentVisibility.Visible)
