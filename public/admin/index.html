@@ -168,8 +168,8 @@
                        ng-model="item.included"
                        ng-change="updateSelections()" />
                   </label>
-                  <a ng-click='openClose(item)' class='open-close-path' href='#'>{{item.displayPath}}
-                    <span class='page-clarification'>{{item.clarification}}</span>
+                  <a ng-click='openClose(item)' class='open-close-path' href='#'>{{displayPath(item)}}
+                    <span class='page-clarification'>{{stringifyClarifications(item)}}</span>
                     <span class='page-notfs important'>{{stringifyImportantMarksFor(item)}}</span>
                     <span class='page-notfs'>{{stringifyOtherMarksFor(item)}}</span>
                   </a>

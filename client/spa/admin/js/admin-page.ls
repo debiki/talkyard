@@ -273,11 +273,7 @@ AdminModule.factory 'AdminService', ['$http', ($http) ->
         parentPageId: page.parentPageId
         isPage: true
 
-    isHomePage = (page) -> page.path == '/' || page.path == DRAFTS_FOLDER
-    isIndexPage = (page) -> last(page.path) == '/'
 
-    if isHomePage page => item.clarification = '(homepage)'
-    else if isIndexPage page => item.clarification = '(index page)'
     item
 
 
@@ -405,8 +401,34 @@ AdminModule.factory 'AdminService', ['$http', ($http) ->
     item.open = !item.open
     updateListItemFields $scope.listItems
 
+
   $scope.cssClassForMark = (mark) ->
     if mark then ' marked-path' else ''
+
+
+  $scope.displayPath = (item) ->
+    item.title || item.displayPath
+
+
+  $scope.stringifyClarifications = (item) ->
+    roleClarified = switch item.role
+      | 'BlogMainPage' => ['blog']
+      | _ => []
+
+    locationClarified = do ->
+      isHomePage = item.path == '/' || item.path == DRAFTS_FOLDER
+      isIndexPage = last(item.path) == '/' && !item.isFolder
+      if isHomePage => ['homepage']
+      else if isIndexPage => ['index page']
+      else []
+
+    allClarifs = append roleClarified, locationClarified
+    clarifsText = allClarifs.join ', '
+
+    if $scope.displayPath(item).length and clarifsText.length
+      clarifsText = '— ' + clarifsText
+
+    clarifsText
 
 
   $scope.stringifyImportantMarksFor = (item) ->
