@@ -241,9 +241,17 @@ AdminModule.factory 'AdminService', ['$http', ($http) ->
   listMorePagesDeriveFolders = (morePageItems) ->
     newFolderPaths = []
 
-    for pageItem in morePageItems
-      $scope.listItems.push pageItem
-      newFolderPaths.push d.i.parentFolderOfPage(pageItem.path)
+    for item in morePageItems
+      # Blog articles should be listed below the relevant blog's main page,
+      # but I've not implemented this, so hide them for now, and
+      # forum threads and wiki pages too.
+      # (They're reachable via the blog/forum/wiki main page anyway.)
+      # (Show subforum main pages — for them, both .isChildPage and
+      # .isMainPage are true.)
+      hide = item.isChildPage && !item.isMainPage
+      unless hide
+        $scope.listItems.push item
+        newFolderPaths.push d.i.parentFolderOfPage(item.path)
 
     newFolderPaths = unique newFolderPaths
     newFolderPaths = reject (== '/'), newFolderPaths
@@ -274,6 +282,9 @@ AdminModule.factory 'AdminService', ['$http', ($http) ->
         parentPageId: page.parentPageId
         isPage: true
 
+    if item.parentPageId => item.isChildPage = true
+    if find (== item.role), ['BlogMainPage', 'ForumMainPage', 'WikiMainPage']
+      item.isMainPage = true
 
     item
 
