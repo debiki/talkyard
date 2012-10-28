@@ -358,6 +358,7 @@ function _$showEditFormImpl() {
         // because mergeChangesIntoPage() ignores it (since it hasn't changed).
         $postBody.show();
         //d.i.mergeChangesIntoPage(newDebateHtml);
+        d.i.patchPage(newDebateHtml);
       });
 
       d.i.disableSubmittedForm($editForm);

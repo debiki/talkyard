@@ -39,7 +39,7 @@ case class PageRenderer(pageReq: PageRequest[_], pageCache: Option[PageCache],
 
     // Handle page config values.
     //if (commentVisibility == CommentVisibility.ShowOnClick) {
-    //  curHeadTags = curHeadTags ++ HtmlSerializer.tagsThatHideShowInteractions
+    //  curHeadTags = curHeadTags ++ HtmlPageSerializer.tagsThatHideShowInteractions
     //}
 
     // Might have to add ng-app to <html>, for AngularJS to work?
@@ -100,7 +100,7 @@ object PageRenderer {
 
     val config = DebikiHttp.newUrlConfig(hostAndPort)
 
-    // Hmm, HtmlSerializer and pageTrust should perhaps be wrapped in
+    // Hmm, HtmlPageSerializer and pageTrust should perhaps be wrapped in
     // some PageRendererInput class, that is handled to PageCache,
     // so PageCache don't need to know anything about how to render
     // a page. But for now:
@@ -108,8 +108,8 @@ object PageRenderer {
 
     // layoutPage() takes long, because markup source is converted to html.
     val pageDesiredVersion = page.copy(actions = actionsDesiredVersion)
-    val nodes = HtmlSerializer(pageDesiredVersion, pageTrust, config,
-      showComments = showComments).layoutPage(pageRoot)
+    val nodes = HtmlPageSerializer(pageDesiredVersion, pageTrust, pageRoot,
+      config, showComments = showComments).layoutPage()
 
     nodes map { html =>
     // The html is serialized here only once, then it's added to the

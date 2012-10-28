@@ -111,6 +111,8 @@ object AppEdit extends mvc.Controller {
     val editMapsByPageId: Map[String, List[Map[String, String]]] =
       editMapsUnsorted.groupBy(map => map("pageId"))
 
+    var editIdsAndPages = List[(List[String], Debate)]()
+
     for ((pageId, editMaps) <- editMapsByPageId) {
 
       val pagePathStr = (editMaps.head)("pagePath")
@@ -140,6 +142,9 @@ object AppEdit extends mvc.Controller {
       val pageRequest = _createPageIfNeeded(pageReqPerhapsNoPage,
         pageRole, parentPageId = parentPageId)
 
+      var actions = List[Action]()
+      var idsOfEditedPosts = List[String]()
+
       for (editMap <- editMaps) {
         val newText = getOrThrow(editMap, "text")
         val newMarkupOpt = editMap.get("markup")
@@ -149,13 +154,22 @@ object AppEdit extends mvc.Controller {
 
         // COULD call _saveEdits once per page instead of once
         // per action per page.
-        _saveEdits(pageRequest, postId = postId, newText = newText,
+        val editAndLazyPost: List[Action] =
+          _saveEdits(pageRequest, postId = postId, newText = newText,
           newMarkupOpt = newMarkupOpt)
+
+        val edit = editAndLazyPost.find(_.isInstanceOf[Edit]).getOrElse(
+           assErr("DwE9kH3")).asInstanceOf[Edit]
+
+        actions :::= editAndLazyPost
+        idsOfEditedPosts ::= edit.id
       }
+
+      val page = pageRequest.page_! ++ actions
+      editIdsAndPages ::= (idsOfEditedPosts, page)
     }
 
-    //BrowserPagePatcher.jsonForMyEditedPosts(pageReq, edits)
-    Ok
+    BrowserPagePatcher.jsonForMyEditedPosts(editIdsAndPages, request)
   }
 
 
@@ -204,13 +218,14 @@ object AppEdit extends mvc.Controller {
 
 
   private def _saveEdits(pageReq: PageRequest[_],
-        postId: String, newText: String, newMarkupOpt: Option[String]) {
+        postId: String, newText: String, newMarkupOpt: Option[String])
+        : List[Action] = {
 
     val (post, lazyCreateOpt) = _getOrCreatePostToEdit(pageReq, postId)
     val markupChanged =
       newMarkupOpt.isDefined && newMarkupOpt != Some(post.markup)
     if (newText == post.text && !markupChanged)
-      return  // need do nothing
+      return Nil  // need do nothing
 
     // Don't allow any kind of html in replies.
     //if (markupChanged && pid != Page.BodyId && !Markup.isPlain(newMarkup))
@@ -235,7 +250,7 @@ object AppEdit extends mvc.Controller {
 
     var actions = lazyCreateOpt.toList ::: edit :: Nil
 
-    Debiki.savePageActions(pageReq, actions)
+    Debiki.savePageActions(pageReq, actions).toList
   }
 
 
@@ -264,9 +279,17 @@ object AppEdit extends mvc.Controller {
   private def _getOrCreatePostToEdit(pageReq: PageRequest[_], postId: String)
         : (ViPo, Option[Post]) = {
 
-    // Include the current user in page.people, because `postId` might be
-    // a new post, and the user might not yet be present in page.people.
-    val page = pageReq.pageWithMe_!
+    // Add the current user to page.people, if `postId` needs to be created,
+    // or if we're posting data for it to be edited, because the user that
+    // creates it or edits it might not be present in page.people.
+    // (But otherwise don't add the current user, since there is no current
+    // user if the current user has not yet logged in.)
+    val page =
+      if (pageReq.page_!.vipo(postId).isEmpty || pageReq.isHttpPostRequest)
+        pageReq.pageWithMe_!
+      else
+        pageReq.page_!
+
     val vipoOpt: Option[ViPo] = page.vipo(postId)
 
     // The page title and template are created automatically

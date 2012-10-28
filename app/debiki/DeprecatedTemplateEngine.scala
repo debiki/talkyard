@@ -156,7 +156,7 @@ class DeprecatedTemplateEngine(val pageCache: Option[PageCache]) {
     }
 
     // Handle page config values.
-    val HS = HtmlSerializer
+    val HS = HtmlPageSerializer
     if (commentVisibility == CommentVisibility.ShowOnClick) {
         curHeadTags = curHeadTags ++ HS.tagsThatHideShowInteractions
     }

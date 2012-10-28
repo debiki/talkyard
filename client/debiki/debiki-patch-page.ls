@@ -7,11 +7,13 @@ $ = d.i.$;
 d.i.patchPage = (patches) ->
   result = newThreads: []
 
-  for newThreadPatch in patches.newThreads
+  for newThreadPatch in patches.newThreads || []
     $newThread = $ newThreadPatch.html
 
     if !newThreadPatch.approved
-      addPendingModerationMessageTo $newThread.dwChildPost!
+      addMessageToPost(
+          'Comment pending moderation.'
+          $newThread.dwChildPost!)
 
     $prevThread = d.i.findThread$ newThreadPatch.prevThreadId
     $parentThread = d.i.findThread$ newThreadPatch.parentThreadId
@@ -41,12 +43,43 @@ d.i.patchPage = (patches) ->
 
     result.newThreads.push $newThread
 
+  for pageId, editPatches of patches.editedPostsByPageId || {}
+    if pageId is d.i.pageId
+      for patch in editPatches
+        patchPostWith patch, onPage: pageId
+
   result
 
 
-addPendingModerationMessageTo = ($post) ->
+patchPostWith = (editedPostPatch, { onPage }) ->
+  pageId = onPage
+  $newPost = $ editedPostPatch.html # absent if edit not applied
+  $oldPost = $ ('#post-' + editedPostPatch.postId)
+
+  if !editedPostPatch.isEditApplied
+    addMessageToPost(
+        'Your edit has not yet been applied; it is pending review.'
+        $oldPost)
+  else if !editedPostPatch.isPostApproved
+    addMessageToPost(
+        'Your edits are pending moderation.'
+        $newPost)
+
+  if editedPostPatch.isEditApplied
+    $newPost.addClass 'dw-m-t-new'
+    replaceOldPostWith $newPost, onPage: pageId
+
+    $newPost.each d.i.$initPostsThread
+
+    $newThread = $newPost.dwClosestThread!
+    $newThread.each d.i.SVG.$drawTree
+    $newThread.dwFindPosts!.each d.i.SVG.$drawParents
+
+
+addMessageToPost = (message, $post) ->
   $post.prepend $(
-      '<div class="dw-p-pending-mod">Comment pending moderation.</div>')
+      '<div class="dw-p-pending-mod">' + message + '</div>')
+
 
 insertThread = ($thread, { after }) ->
   $pervSibling = after
@@ -60,6 +93,12 @@ prependThread = ($thread, { to }) ->
     # This is the first child thread; create empty child thread list.
     $childList = $("<ol class='dw-res'/>").appendTo $parent
   $thread.appendTo $childList
+
+
+replaceOldPostWith = ($newPost, { onPage }) ->
+  # WOULD verify that $newPost is located `onPage`, if in the future it'll be
+  # possible to edit e.g. blog posts from a blog post list page.
+  $('#' + $newPost.attr 'id').replaceWith $newPost
 
 
 # vim: fdm=marker et ts=2 sw=2 tw=80 fo=tcqwn list

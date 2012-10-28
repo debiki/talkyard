@@ -207,12 +207,12 @@ class TinyTemplateProgrammingInterface protected (
       _pageReq.dao.loadPageBodiesTitles(articlePaths)
 
     def titleOf(page: Option[Debate]): String =
-      // Currenply HtmlSerializer ignores the `.markup` for a title Post.
+      // Currenply HtmlPageSerializer ignores the `.markup` for a title Post.
       page.flatMap(_.title).map(_.text).getOrElse("(No title)")
 
     def bodyOf(page: Option[Debate]): String =
       page.flatMap(_.body).map(
-        HtmlSerializer.markupTextOf(_, _pageReq.host)).getOrElse("")
+        HtmlPageSerializer.markupTextOf(_, _pageReq.host)).getOrElse("")
 
     pathsAndPages map { case (pagePath, pageOpt: Option[Debate]) =>
       val pageApproved = pageOpt map (_.approvedVersion)
@@ -237,12 +237,12 @@ class TinyTemplateProgrammingInterface protected (
       _pageReq.dao.loadPageBodiesTitles(articlePaths)
 
     def titleOf(page: Option[Debate]): String =
-    // Currenply HtmlSerializer ignores the `.markup` for a title Post.
+    // Currenply HtmlPageSerializer ignores the `.markup` for a title Post.
       page.flatMap(_.title).map(_.text).getOrElse("(No title)")
 
     def bodyOf(page: Option[Debate]): String =
       page.flatMap(_.body).map(
-        HtmlSerializer.markupTextOf(_, _pageReq.host)).getOrElse("")
+        HtmlPageSerializer.markupTextOf(_, _pageReq.host)).getOrElse("")
 
     pathsAndPages map { case (pagePath, pageOpt: Option[Debate]) =>
       val pageApproved = pageOpt map (_.approvedVersion)
@@ -282,7 +282,7 @@ class TemplateProgrammingInterface private (
 
 
   def loginLinkAndUserName =
-    HtmlSerializer.loginInfo(_pageReq.user.map(_.displayName))
+    HtmlPageSerializer.loginInfo(_pageReq.user.map(_.displayName))
 
 
   def pageTitleAndBodyNoComments =

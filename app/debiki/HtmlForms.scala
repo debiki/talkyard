@@ -12,6 +12,7 @@ import _root_.scala.xml.{NodeSeq, Node, Elem, Text, XML, Attribute}
 import FlagReason.FlagReason
 import Prelude._
 import DebikiHttp._
+import HtmlUtils._
 
 
 /**
@@ -98,7 +99,7 @@ class HtmlForms(val config: HtmlConfig, xsrfToken: String,
     val pageRoot: PageRoot, val permsOnPage: PermsOnPage) {
 
   import HtmlForms._
-  import HtmlSerializer._
+  import HtmlPageSerializer._
 
   val ccWikiLicense =
     <a rel="license" href="http://creativecommons.org/licenses/by/3.0/"

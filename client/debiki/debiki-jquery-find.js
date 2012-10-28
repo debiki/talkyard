@@ -38,6 +38,11 @@ $.fn.dwPageMeta = function() {
 };
 
 
+$.fn.dwClosestThread = function() {
+  return this.closest('.dw-t');
+}
+
+
 $.fn.dwChildPost = function() {
   return this.children('.dw-p');
 }

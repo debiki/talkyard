@@ -58,7 +58,7 @@ object AtomFeedXml {
       // This takes rather long and should be cached.
       // Use the same cache for both plain HTML pages and Atom and RSS feeds?
       val rootPostHtml =
-        HtmlSerializer.markdownToSafeHtml(pageBody.text, hostAndPort,
+        HtmlPageSerializer.markdownToSafeHtml(pageBody.text, hostAndPort,
            makeLinksNofollow = true, // for now
            // No point in including id and class attrs in an atom html feed?
            // No stylesheet or Javascript included that cares about them anyway?

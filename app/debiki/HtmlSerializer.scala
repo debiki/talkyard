@@ -12,6 +12,16 @@ import _root_.scala.xml.{NodeSeq, Node, Elem, Text, XML, Attribute}
 import FlagReason.FlagReason
 import Prelude._
 import DebikiHttp._
+import HtmlUtils._
+
+
+object HtmlConfig {
+
+  /**
+   * A function from debate-id and post-id to a react URL.
+   */
+  def reactUrl(debateId: String, postId: String) = "?act="+ postId
+}
 
 
 abstract class HtmlConfig {
@@ -29,9 +39,6 @@ abstract class HtmlConfig {
   def loginFailedAction = ""
   def logoutAction = ""
 
-  /** A function from debate-id and post-id to a react URL.
-   */
-  def reactUrl(debateId: String, postId: String) = "?act="+ postId
 
   /** Constructs a URL to more info on a certain user,
    *  adds "http://" if needed.
@@ -59,14 +66,15 @@ abstract class HtmlConfig {
 }
 
 
-object HtmlSerializer {
+object HtmlPageSerializer {
 
 
   def markupTextOf(post: ViPo, hostAndPort: String): String =
     _markupTextOf(post, hostAndPort)._1.toString
 
 
-  private def _markupTextOf(post: ViPo, hostAndPort: String): (NodeSeq, Int) = {
+  // COULD move to HtmlPostSerializer.
+  def _markupTextOf(post: ViPo, hostAndPort: String): (NodeSeq, Int) = {
 
     val isArticle = post.id == Page.BodyId
 
@@ -145,9 +153,6 @@ object HtmlSerializer {
     (xml, lineCount)
   }
 
-  def ifThen(condition: Boolean, html: NodeSeq): NodeSeq =
-    if (condition) html else Nil
-
 
   /**
    * Converts markdown to xml.
@@ -199,16 +204,17 @@ object HtmlSerializer {
    */
   def spaceToNbsp(text: String): String = text.replace(' ', '\u00a0')
 
-  def dateAbbr(date: ju.Date, cssClass: String): NodeSeq = {
-    val dateStr = toIso8601(date)
-    <abbr class={"dw-date "+ cssClass} title={toIso8601T(dateStr)}>, {
-      dateStr}</abbr>
-  }
 
-  /** Shows a link to the user represented by NiLo.
+  /**
+   * Shows a link to the user represented by NiLo.
    */
-  def linkTo(nilo: NiLo, config: HtmlConfig): NodeSeq = {
-    var url = config.userUrl(nilo)
+  def linkTo(nilo: NiLo, config: HtmlConfig): NodeSeq = linkTo(nilo)  // for now
+
+
+  // COULD move to object HtmlPostSerializer
+  def linkTo(nilo: NiLo): NodeSeq = {
+    var url = ""  // since not implemented anyway: config.userUrl(nilo)
+
     // COULD investigate: `url' is sometimes the email address!!
     // When signed in @gmail.com, it seems.
     // For now: (this is actually a good test anyway, in case someone
@@ -270,6 +276,7 @@ object HtmlSerializer {
   private def _attrEq(name: String, value: String)(node: Node) =
     node.attribute(name).filter(_.text == value).isDefined
 
+  // COULD move to HtmlPostSerializer
   def findChildrenOfNode(withClass: String, in: NodeSeq): Option[NodeSeq] =
     (in \\ "_").filter(_attrEq("class", withClass)).
         headOption.map(_.child)
@@ -282,20 +289,21 @@ object HtmlSerializer {
 
 
 
-case class HtmlSerializer(
+case class HtmlPageSerializer(
   pageStuff : PageStuff,
   pageTrust: PageTrust,
+  pageRoot: PageRoot,
   config: HtmlConfig,
   showComments: Boolean) {
 
-  import HtmlSerializer._
+  import HtmlPageSerializer._
 
   // COULD rename some of these weirdly named fields.
-  def debate = pageStuff.actions
-  def page = pageStuff.actions
-  def pagePath = pageStuff.path
-  def pageRole = pageStuff.role
-  def parentPageId = pageStuff.parentPageId
+  private def debate = pageStuff.actions
+  private def page = pageStuff.actions
+  private def pagePath = pageStuff.path
+  private def pageRole = pageStuff.role
+  private def parentPageId = pageStuff.parentPageId
 
 
   private lazy val pageStats = new PageStats(debate, pageTrust)
@@ -304,10 +312,14 @@ case class HtmlSerializer(
     debate.lastChangeDate.map(toIso8601(_))
 
 
-  def serializeSingleThread(postId: String, pageRoot: PageRoot)
+  private def postRenderer =
+    HtmlPostRenderer(pageStuff.actions, pageStats, config.hostAndPort)
+
+
+  def serializeSingleThread(postId: String)
         : Option[SerializedSingleThread] = {
     page.vipo(postId) map { post =>
-      val html = _layoutComments(pageRoot.subId, depth = post.depth,
+      val html = _layoutComments(depth = post.depth,
          parentReplyBtn = Nil,
          posts = post::Nil)
       val siblingsSorted = _sortPostsDescFitness(post.siblingsAndMe)
@@ -327,7 +339,7 @@ case class HtmlSerializer(
    * appended at the end of the server's reply (in a special <div>), and
    * client side Javascript update the page with user specific stuff.
    */
-  def layoutPage(pageRoot: PageRoot): NodeSeq = Stats.time("layoutPage") {
+  def layoutPage(): NodeSeq = Stats.time("layoutPage") {
 
     val cssArtclThread =
       if (pageRoot.subId == Page.BodyId) " dw-ar-t" else ""
@@ -352,13 +364,13 @@ case class HtmlSerializer(
       <div id={cssThreadId}
            class={"dw-t"+ cssArtclThread +" dw-depth-0 dw-hor"}>
       {
-        val renderedRoot = _showComment(rootPost.id, rootPost)
+        val renderedRoot = postRenderer.renderPost(rootPost.id)
         renderedRoot.html ++
         ifThen(showComments, {
           val replyBtn = _replyBtnListItem(renderedRoot.replyBtnText)
           <div class='dw-t-vspace'/>
           <ol class='dw-res'>{
-            _layoutComments(rootPost.id, 1, replyBtn, rootPostsReplies)
+            _layoutComments(1, replyBtn, rootPostsReplies)
           }
           </ol>
         })
@@ -401,7 +413,7 @@ case class HtmlSerializer(
   }
 
 
-  private def _layoutComments(rootPostId: String, depth: Int,
+  private def _layoutComments(depth: Int,
                               parentReplyBtn: NodeSeq,
                               posts: List[ViPo]): NodeSeq = {
     // COULD let this function return Nil if posts.isEmpty, and otherwise
@@ -411,7 +423,8 @@ case class HtmlSerializer(
 
     var comments: NodeSeq = Nil
     for {
-      p <- _sortPostsDescFitness(posts)
+      post <- _sortPostsDescFitness(posts)
+      p = post // COULD remove
       cssThreadId = "dw-t-"+ p.id
       cssDepth = "dw-depth-"+ depth
       isInlineThread = p.where.isDefined
@@ -419,7 +432,8 @@ case class HtmlSerializer(
       cssInlineThread = if (isInlineThread) " dw-i-t" else ""
       replies = p.replies
       vipo = p // debate.vipo_!(p.id)
-      isRootOrArtclQstn = vipo.id == rootPostId || vipo.meta.isArticleQuestion
+      isRootOrArtclQstn =
+          vipo.id == pageRoot.subId || vipo.meta.isArticleQuestion
       // Layout replies horizontally, if this is an inline reply to
       // the root post, i.e. depth is 1 -- because then there's unused space
       // to the right. However, the horizontal layout results in a higher
@@ -438,14 +452,15 @@ case class HtmlSerializer(
       shallFoldPost = (postFitness.upperLimit < 0.5f &&
          postFitness.observedMean < 0.333f) || isInlineNonRootChild
     } {
-      val renderedComment: RenderedComment =
-        if (vipo.isTreeDeleted) _showDeletedTree(vipo)
-        else if (vipo.isDeleted) _showDeletedComment(vipo)
-        else _showComment(rootPostId, vipo)
+      val renderedComment: RenderedComment = postRenderer.renderPost(vipo.id)
 
-      val myReplyBtn =
-        if (!isRootOrArtclQstn) Nil
-        else _replyBtnListItem(renderedComment.replyBtnText)
+      val (myReplyBtn, actionLink) =
+        if (isRootOrArtclQstn)
+           (_replyBtnListItem(renderedComment.replyBtnText), Nil)
+        else
+          (Nil,
+            <a class='dw-as' href={HtmlConfig.reactUrl(debate.guid, post.id) +
+              "&view="+ pageRoot.subId}>React</a>)
 
       val (cssFolded, foldLinkText) =
         if (shallFoldPost)
@@ -463,7 +478,7 @@ case class HtmlSerializer(
         // COULD delete only stuff *older* than the tree deletion.
         else if (vipo.isTreeDeleted) Nil
         else <ol class='dw-res'>
-          { _layoutComments(rootPostId, depth + 1, myReplyBtn, replies) }
+          { _layoutComments(depth + 1, myReplyBtn, replies) }
         </ol>
 
       var thread = {
@@ -472,6 +487,7 @@ case class HtmlSerializer(
                cssFolded + cssHoriz + cssThreadDeleted + cssArticleQuestion}>{
           foldLink ++
           renderedComment.html ++
+          actionLink ++
           repliesHtml
         }</li>
       }
@@ -494,10 +510,41 @@ case class HtmlSerializer(
     if (replyBtnPending) comments ++ parentReplyBtn
     else comments
   }
+}
+
+
+
+case class RenderedComment(
+  html: Node,
+  replyBtnText: NodeSeq,
+  topRatingsText: Option[String],
+  templCmdNodes: NodeSeq)
+
+
+
+case class HtmlPostRenderer(
+  page: Debate,
+  pageStats: PageStats,
+  hostAndPort: String) {
+
+  // rename later... to what?
+  def debate = page
+
+
+  def renderPost(postId: String): RenderedComment = {
+    val post = page.vipo(postId) getOrElse
+       assErr("DwE209X5", "post id "+ postId +" on page "+ page.id)
+
+    if (post.isTreeDeleted) _showDeletedTree(post)
+    else if (post.isDeleted) _showDeletedComment(post)
+    else _showComment(post)
+  }
+
 
   private def _showDeletedTree(vipo: ViPo): RenderedComment = {
     _showDeletedComment(vipo, wholeTree = true)
   }
+
 
   private def _showDeletedComment(vipo: ViPo, wholeTree: Boolean = false
                                      ): RenderedComment = {
@@ -522,14 +569,7 @@ case class HtmlSerializer(
   }
 
 
-  case class RenderedComment(
-    html: NodeSeq,
-    replyBtnText: NodeSeq,
-    topRatingsText: Option[String],
-    templCmdNodes: NodeSeq)
-
-
-  private def _showComment(rootPostId: String, vipo: ViPo): RenderedComment = {
+  private def _showComment(vipo: ViPo): RenderedComment = {
     def post = vipo.post
     val editsApplied: List[ViEd] = vipo.editsAppliedDescTime
     val lastEditApplied = editsApplied.headOption
@@ -537,16 +577,17 @@ case class HtmlSerializer(
     val (cssArtclPost, cssArtclBody) =
       if (post.id != Page.BodyId) ("", "")
       else (" dw-ar-p", " dw-ar-p-bd")
-    val isRootOrArtclQstn = vipo.id == rootPostId ||
+    val isBodyOrArtclQstn = vipo.id == Page.BodyId ||
         vipo.meta.isArticleQuestion
 
     val (xmlTextInclTemplCmds, numLines) =
-      _markupTextOf(vipo, config.hostAndPort)
+      HtmlPageSerializer._markupTextOf(vipo, hostAndPort)
 
     // Find any customized reply button text.
     var replyBtnText: NodeSeq = xml.Text("Reply")
-    if (isRootOrArtclQstn) {
-      findChildrenOfNode(withClass = "debiki-0-reply-button-text",
+    if (isBodyOrArtclQstn) {
+      HtmlPageSerializer.findChildrenOfNode(
+         withClass = "debiki-0-reply-button-text",
          in = xmlTextInclTemplCmds) foreach { replyBtnText = _ }
     }
 
@@ -557,7 +598,7 @@ case class HtmlSerializer(
       //else partitionChildsWithDataAttrs(in = xmlTextInclTemplCmds)
 
     val long = numLines > 9
-    val cutS = if (long && post.id != rootPostId) " dw-x-s" else ""
+    val cutS = if (long) " dw-x-s" else ""
     val author = debate.people.authorOf_!(post)
 
     val (flagsTop: NodeSeq, flagsDetails: NodeSeq) = {
@@ -718,16 +759,16 @@ case class HtmlSerializer(
         }
         </div>
       </div>
-    </div> ++ (
-      if (isRootOrArtclQstn) Nil
-      else <a class='dw-as' href={config.reactUrl(debate.guid, post.id) +
-                  "&view="+ rootPostId}>React</a>)
+    </div>
+
 
     RenderedComment(html = commentHtml, replyBtnText = replyBtnText,
        topRatingsText = topTagsAsText, templCmdNodes = templCmdNodes)
   }
 
-  def _linkTo(nilo: NiLo) = linkTo(nilo, config)
+
+  def _linkTo(nilo: NiLo) = HtmlPageSerializer.linkTo(nilo)
+
 }
 
 
