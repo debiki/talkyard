@@ -109,8 +109,6 @@ AdminModule.factory 'AdminService', ['$http', ($http) ->
  */
 @PathsCtrl = ['$scope', 'AdminService', ($scope, adminService) ->
 
-  const DRAFTS_FOLDER = '/.drafts/'
-
 
   getSelectedFolderOrDie = ->
     bug('DwE031Z3') if selectedFolderListItems.length != 1
@@ -204,14 +202,6 @@ AdminModule.factory 'AdminService', ['$http', ($http) ->
     for pageListItem in selectedPageListItems
       adminService.movePages [pageListItem.pageId],
           { fromFolder, toFolder, callback: refreshPageList }
-
-
-  $scope.publishSelectedPages = ->
-    moveSelectedPages fromFolder: DRAFTS_FOLDER, toFolder: '/'
-
-
-  $scope.unpublishSelectedPages = ->
-    moveSelectedPages fromFolder: '/', toFolder: DRAFTS_FOLDER
 
 
   $scope.listItems = []
@@ -343,8 +333,8 @@ AdminModule.factory 'AdminService', ['$http', ($http) ->
     for item in $scope.listItems when item.included
       if item.pageId
         selectedPageListItems.push item
-        if item.path.search(DRAFTS_FOLDER) == 0 => numDrafts += 1
-        else numNonDrafts += 1
+        #if item.isDraft => numDrafts += 1
+        #else numNonDrafts += 1
       else
         selectedFolderListItems.push item
 
@@ -435,7 +425,7 @@ AdminModule.factory 'AdminService', ['$http', ($http) ->
       | _ => []
 
     locationClarified = do ->
-      isHomePage = item.path == '/' || item.path == DRAFTS_FOLDER
+      isHomePage = item.path == '/'
       isIndexPage = last(item.path) == '/' && !item.isFolder
       if isHomePage => ['homepage']
       else if isIndexPage => ['index page']
