@@ -438,6 +438,9 @@ class ViPo(debate: Debate, val post: Post) extends ViAc(debate, post) {
 
 class ViEd(debate: Debate, val edit: Edit) extends ViAc(debate, edit) {
 
+  def post = debate.vipo(edit.postId)
+  def post_! = debate.vipo_!(edit.postId)
+
   def patchText = edit.text
   def newMarkup = edit.newMarkup
 
