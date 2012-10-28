@@ -14,10 +14,14 @@ $ ->
     # blockers tend to block the new tab.
     newTab = window.open '', '_blank'
 
+    # We'll create the new page in the same folder as the current page.
+    # (?get-view-new-page-url works with folders only.)
+    folder = d.i.parentFolderOfPage window.location.pathname
+
     # Ask the server to generate a page id, and a link where we can view the
     # new unsaved page. Then open that page in `newTab`.
     getViewNewPageUrl =
-        window.location +
+        folder +
         '?get-view-new-page-url' +
         '&page-slug=new-blog-post' +
         '&show-id=t'

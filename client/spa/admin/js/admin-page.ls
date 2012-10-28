@@ -1,7 +1,8 @@
 # Copyright (c) 2012 Kaj Magnus Lindberg. All rights reserved
 
 import prelude
-bug = debiki.v0.util.die2
+d = i: debiki.internal, u: debiki.v0.util
+bug = d.u.die2
 
 
 AdminModule = angular.module('AdminModule', [])
@@ -114,7 +115,7 @@ AdminModule.factory 'AdminService', ['$http', ($http) ->
 
 
   $scope.createBlog = (location) ->
-    { folder, pageSlug } = analyzePagePath location
+    { folder, pageSlug } = d.i.analyzePagePath location
     createPage {
         folder
         pageSlug
@@ -149,7 +150,7 @@ AdminModule.factory 'AdminService', ['$http', ($http) ->
     adminService.getViewNewPageUrl pageData, (viewNewPageUrl) ->
       page =
           path: viewNewPageUrl
-          id: findPageIdForNewPage viewNewPageUrl
+          id: d.i.findPageIdForNewPage viewNewPageUrl
           #title: undefined
           #authors: undefined # should be current user
           role: pageData.pageRole
@@ -242,7 +243,7 @@ AdminModule.factory 'AdminService', ['$http', ($http) ->
 
     for pageItem in morePageItems
       $scope.listItems.push pageItem
-      newFolderPaths.push parentFolderOfPage(pageItem.path)
+      newFolderPaths.push d.i.parentFolderOfPage(pageItem.path)
 
     newFolderPaths = unique newFolderPaths
     newFolderPaths = reject (== '/'), newFolderPaths
@@ -579,59 +580,6 @@ function inlineBtnTogglersForPost(post)
   | _ => {}
 
 
-
-function analyzePagePath(path)
-  pageId = findPageIdIn(path)
-  showId = pageId != null
-  if (!pageId)
-    pageId = findPageIdForNewPage path
-
-  return
-    folder: parentFolderOfPage path
-    pageSlug: findPageSlugIn path
-    showId: showId
-    pageId: pageId
-
-
-function parentFolderOfPage(path)
-  # Index page? If so, folder path equals index page path.
-  if path.match //^.*/$//
-    return path
-  # Other pages (with id shown, or non-empty slug).
-  matches = path.match //^(/[^?]*/)[^/?]*(\?.*)?$//
-  if !matches => return '/'
-  bug('DwE03Al8') if matches.length != 3
-  matches[1]
-
-
-
-function findPageSlugIn(path)
-  matches = path.match //^[^?]*/(-[a-z0-9]+-)?([^/?-][^?/]*)(\?.*)?$//
-  if !matches => return ''
-  bug('DwE83KX1') if matches.length != 4
-  matches[2]
-
-
-
-function findPageIdIn(path)
-  matches = path.match //^[^?]*/-([a-z0-9]+)(-[^/]*)?(\?.*)?$//
-  if matches => matches[1]
-  else null
-
-
-
-/**
- * When creating a new page, the server redirects to an url like
- * /some/folder/new-page-slug?view-new-page=<page-id>. This function
- * finds any such page id.
- */
-function findPageIdForNewPage(path)
-  matches = path.match //^.*\?view-new-page=([a-z0-9]+).*$//
-  if matches => matches[1]
-  else null
-
-
-
 /**
  * A relative folder path, e.g. `2012/09/23/` (no leading slash).
  */
@@ -651,7 +599,6 @@ function padNumberToLength2(number)
 
 # For now, for the test suite:
 test = debiki.test || {}
-test.analyzePagePath = analyzePagePath
 test.padNumberToLength2 = padNumberToLength2
 
 

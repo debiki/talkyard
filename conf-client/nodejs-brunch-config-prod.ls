@@ -115,7 +115,7 @@ exports.config =
 
         'public/res/debiki-spa-admin.min.js':
           // ^client/spa/admin/js/admin-page.ls
-           | ^client/spa/admin/js/debiki-utils.ls
+           | ^client/debiki/debiki-page-path.ls
           //
 
         'public/res/debiki-spa-admin-server-mock.min.js':
@@ -128,6 +128,7 @@ exports.config =
 
         'public/res/debiki-dashbar.min.js':
           // ^client/debiki/debiki-dashbar.ls
+           | ^client/debiki/debiki-page-path.ls
           //
 
       order:
