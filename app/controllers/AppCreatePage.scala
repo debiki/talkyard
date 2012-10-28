@@ -139,6 +139,7 @@ object AppCreatePage extends mvc.Controller {
     .map(x => (x, x.toString))
 
 
+  // COULD replace with PageRole.fromString(): Option[PageRole]
   def stringToPageRole(pageRoleString: String): PageRole =
     _PageRoleLookup.find(_._2 == pageRoleString).map(_._1).getOrElse(
       throwBadReq("DwE930rR3", "Bad page role string: "+ pageRoleString))

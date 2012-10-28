@@ -64,6 +64,8 @@ object Debiki {
   /**
    * Saves page actions and refreshes caches and places messages in
    * users' inboxes, as needed.
+   *
+   * Returns the saved actions, but with ids assigned.
    */
   def savePageActions(pageReq: PageRequest[_], actions: List[Action])
         : Seq[Action] = {
@@ -87,7 +89,8 @@ object Debiki {
        host = request.host)
 
     // Would it be okay to simply overwrite the in mem cache with this
-    // updated page?
+    // updated page? — Only if I make `++` avoid adding stuff that's already
+    // present!
     //val pageWithNewActions =
     // page_! ++ actionsWithId ++ pageReq.login_! ++ pageReq.user_!
 
