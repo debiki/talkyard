@@ -106,9 +106,13 @@
               <a id='create-page-in-folder-btn' class='btn' ng-click='createPageInFolder()' ng-show='oneFolderSelected'>Create page in folder</a>
 
               <div id='create-page-dropdown' class='dropdown' ng-show='nothingSelected'>
-                <a class='btn dropdown-toggle' data-toggle='dropdown' href='#'>Create New Page</a>
+                <a class='btn dropdown-toggle' data-toggle='dropdown' href='#'>Create ...</a>
                 <ul class='dropdown-menu' role='menu' data-todo-aria-labelledby='drop5'>
-                  <li><a tabindex='-1' ng-click='createDraftPage("InfoPage")' href='#'>Information Page</a></li>
+                  <li><a tabindex='-1' ng-click='createDraftPage("InfoPage")' href='#'>New Info Page</a></li>
+                  <li class='divider'></li>
+                  <li><a tabindex='-1' ng-click='createBlog()' href='#'>New Blog</a></li>
+                  <li><a tabindex='-1' disabled>New Forum</a></li>
+                  <li><a tabindex='-1' disabled>New Wiki</a></li>
                   <li class='divider'></li>
                   <li><span>Advanced users:</span></li>
                   <li><a tabindex='-1' disabled>Script</a></li>
@@ -117,6 +121,8 @@
                 </ul>
               </div>
 
+              <!--
+              This could be the Move Page button?
               <div id='create-blog-dropdown' class='dropdown' ng-show='nothingSelected'>
                 <a class='btn dropdown-toggle' id='blog-dropdown-btn' role='button' data-toggle='dropdown' href='#'>New Blog</a>
                 <form ng-submit='createBlog(createBlogForm.location.$modelValue)' name='createBlogForm' class='dropdown-menu' role='menu' aria-labelledby='blog-dropdown-btn'>
@@ -124,25 +130,6 @@
                     <input ng-model='location' ng-init='location="/blog/"' name='location' type='text'>
                   </label>
                   <input type='submit' value='Create blog'>
-                </form>
-              </div>
-
-              <!--  Should I create AngularJS widgets to avoid this dupl code?
-              (This ucommented code is fairly untested.)
-
-              <div id='create-forum-dropdown' class="dropdown" ng-show='nothingSelected'>
-                <a class='btn dropdown-toggle' id="forum-dropdown-btn" role="button" data-toggle="dropdown" href="#">New Forum</a>
-                <form class="dropdown-menu" role="menu" aria-labelledby="forum-dropdown-btn">
-                  <label>Location: <input type="text" value="/forum/"></label>
-                  <input type="submit" value="Create forum">
-                </form>
-              </div>
-
-              <div id='create-wiki-dropdown' class="dropdown" ng-show='nothingSelected'>
-                <a class='btn dropdown-toggle' id="wiki-dropdown-btn" role="button" data-toggle="dropdown" href="#">New Wiki</a>
-                <form class="dropdown-menu" role="menu" aria-labelledby="wiki-dropdown-btn">
-                  <label>Location: <input type="text" value="/wiki/"></label>
-                  <input type="submit" value="Create wiki">
                 </form>
               </div>
               -->

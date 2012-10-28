@@ -99,6 +99,14 @@ AdminModule.factory 'AdminService', ['$http', ($http) ->
 
 
 
+/**
+ * Lists and creates pages, blogs, forums and wikis.
+ *
+ * Concerning page creation:
+ * Pages (e.g. a blog main page) are created at default locations, e.g.
+ * /blog/. Most people don't understand URLs anyway, and they who do,
+ * can move it later, via the Move button.
+ */
 @PathsCtrl = ['$scope', 'AdminService', ($scope, adminService) ->
 
   const DRAFTS_FOLDER = '/.drafts/'
@@ -115,10 +123,9 @@ AdminModule.factory 'AdminService', ['$http', ($http) ->
 
 
   $scope.createBlog = (location) ->
-    { folder, pageSlug } = d.i.analyzePagePath location
     createPage {
-        folder
-        pageSlug
+        folder: '/blog/'
+        pageSlug: ''
         showId: false
         pageRole: 'BlogMainPage' }
 
