@@ -120,6 +120,10 @@ AdminModule.factory 'AdminService', ['$http', ($http) ->
     selectedPageListItems[0]
 
 
+  $scope.patterns =
+    folderPath: //^/([^?#:\s]+/)?$//
+
+
   $scope.createBlog = (location) ->
     createPage {
         folder: '/blog/'
@@ -188,9 +192,15 @@ AdminModule.factory 'AdminService', ['$http', ($http) ->
     # updatePageItem pageItem, withNewPageData: newPage
 
 
-  $scope.moveSelectedPage = ->
+  $scope.parentFolderOfSelectedPage = ->
     pageListItem = getSelectedPageOrDie!
-    window.open <| pageListItem.path + '?move-page'
+    d.i.parentFolderOfPage pageListItem.path
+
+
+  $scope.moveSelectedPageTo = (newFolder) ->
+    pageListItem = getSelectedPageOrDie!
+    curFolder = d.i.parentFolderOfPage pageListItem.path
+    moveSelectedPages fromFolder: curFolder, toFolder: newFolder
 
 
   moveSelectedPages = ({ fromFolder, toFolder }) ->

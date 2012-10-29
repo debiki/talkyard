@@ -121,21 +121,26 @@
                 </ul>
               </div>
 
-              <!--
-              This could be the Move Page button?
-              <div id='create-blog-dropdown' class='dropdown' ng-show='nothingSelected'>
-                <a class='btn dropdown-toggle' id='blog-dropdown-btn' role='button' data-toggle='dropdown' href='#'>New Blog</a>
-                <form ng-submit='createBlog(createBlogForm.location.$modelValue)' name='createBlogForm' class='dropdown-menu' role='menu' aria-labelledby='blog-dropdown-btn'>
-                  <label>Location:
-                    <input ng-model='location' ng-init='location="/blog/"' name='location' type='text'>
+              <a id='view-page-btn' class='btn' ng-click='viewSelectedPage()' ng-show='onePageSelected'>View / Edit</a>
+
+              <div id='move-page-btn' class='dropdown'
+                  ng-show='onePageSelected'>
+                <a class='btn dropdown-toggle' id='move-page-dropdown-btn' data-toggle='dropdown' href='#' role='button'
+                      ng-click='movePageForm.newFolder = parentFolderOfSelectedPage()'>Move</a>
+                  <form name='movePageForm' class='dropdown-menu' role='menu' aria-labelledby='move-page-dropdown-btn'
+                      ng-submit='moveSelectedPageTo(movePageForm.newFolder)'>
+                  <label>Move page to folder:
+                    <input name='newFolderInput' type='text' required
+                        ng-model='movePageForm.newFolder'
+                        ng-pattern='patterns.folderPath'>
                   </label>
-                  <input type='submit' value='Create blog'>
+                  <p ng-show='movePageForm.newFolderInput.$error.pattern'>
+                    Enter a value like: <i>/some/folder/</i>
+                  </p>
+                  <input type='submit' value='Move page'
+                      ng-disabled='movePageForm.$invalid'>
                 </form>
               </div>
-              -->
-
-              <a id='view-page-btn' class='btn' ng-click='viewSelectedPage()' ng-show='onePageSelected'>View / Edit</a>
-              <a id='move-page-btn' class='btn' ng-click='moveSelectedPage()' ng-show='onePageSelected'>Move</a>
 
               <!--
               <a id='publish-page-btn' class='btn' ng-click='publishSelectedPages()' ng-show='onlyDraftsSelected'>Publish</a>
