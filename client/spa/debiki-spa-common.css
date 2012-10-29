@@ -1,0 +1,13 @@
+/* Copyright (c) 2012 Kaj Magnus Lindberg. All rights reserved */
+
+
+
+input.ng-invalid.ng-dirty {
+  /* I copied these styles from 
+    http://www.debiki.com/themes/assets/twitter-bootstrap-2.0.3-wip.css */
+  border-color: #E9322D;
+  box-shadow: #F8B9B7 0px 0px 6px;
+}
+
+
+/* vim: set fdm=marker et ts=2 sw=2 tw=80 fo=tcqwn list: */

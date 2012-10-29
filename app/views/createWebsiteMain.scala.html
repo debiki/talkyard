@@ -9,17 +9,16 @@
 
 @ngScriptTags = @{
   if (ngAppName ne null) {
-    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.0.1/angular.@minMaxJs"></script>
-    <script src="/-/res/debiki-spa-common.@minMaxJs"></script>
+    <script src={"https://ajax.googleapis.com/ajax/libs/angularjs/1.0.1/angular."+minMaxJs}></script>
+    <script src={"/-/res/debiki-spa-common."+minMaxJs}></script>
   }
   else Nil
 }
 
 @optScriptTag = @{
-  if (jsFile ne null)
-    <script src="/-/res/debiki-spa-new-website-choose-owner.@minMaxJs"></script>
-  else
-    Nil
+  if (jsFile ne null) {
+    <script src={jsFile}></script>
+  } else Nil
 }
 
 
@@ -31,6 +30,7 @@
 <link href="http://www.debiki.com/themes/assets/twitter-bootstrap-2.0.3-wip.css" rel="stylesheet">
 <link href="http://www.debiki.com/www-debiki-com.css" rel="stylesheet">
 <link href="/-/res/font-awesome/css/font-awesome.css" rel="stylesheet">
+<link href="/-/res/debiki-spa-common.css" rel="stylesheet">
 <link href="/-/res/special-pages.css" rel="stylesheet">
 <style>@css</style>
 <script src="http://cdnjs.cloudflare.com/ajax/libs/modernizr/2.5.3/modernizr.min.js"></script>

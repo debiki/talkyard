@@ -42,7 +42,7 @@ object AppCreateWebsite extends mvc.Controller {
       request =>
 
     val newWebsiteName =
-      request.body.getEmptyAsNone("website-name") getOrElse
+      request.body.getEmptyAsNone("websiteNameInp") getOrElse
         throwBadReq("DwE01kI72", "Please specify a name for your new website")
 
     if (!isOkayWebsiteName(newWebsiteName))
@@ -50,7 +50,7 @@ object AppCreateWebsite extends mvc.Controller {
         "at least 6 characters long, not be too long, contain only "+
         "lowercase a-z, 0-9 and hyphens ('-').)")
 
-    if (request.body.getFirst("accept-terms") != Some("yes"))
+    if (request.body.getFirst("acceptTermsInp") != Some("yes"))
       throwForbidden(
         "DwE9fZ31", "To create a new website, you need to accept the "+
          "Terms of Use and the Privacy Policy.")

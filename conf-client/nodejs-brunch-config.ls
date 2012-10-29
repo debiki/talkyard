@@ -123,6 +123,10 @@ exports.config =
           // ^client/spa/js/new-website-choose-owner.ls
           //
 
+        'public/res/debiki-spa-new-website-choose-name.js':
+          // ^client/spa/js/new-website-choose-name.ls
+          //
+
         'public/res/debiki-dashbar.js':
           // ^client/debiki/debiki-dashbar.ls
            | ^client/debiki/debiki-page-path.ls
@@ -136,8 +140,9 @@ exports.config =
     stylesheets:
       defaultExtension: 'styl'
       joinTo:
-        'public/res/combined-debiki.css': /^client\/debiki/
+        'public/res/combined-debiki.css': //^client/debiki//
         'public/res/debiki-spa-admin.css': //^client/spa/admin/css//
+        'public/res/debiki-spa-common.css': //^client/spa/debiki-spa-common.css//
       order:
         before: ['client/debiki/debiki.css']
 

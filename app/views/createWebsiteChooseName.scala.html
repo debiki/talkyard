@@ -1,13 +1,17 @@
 @(tpi: debiki.InternalTemplateProgrammingInterface, xsrfToken: String)
 
 
+@Tpi = @{ debiki.TemplateProgrammingInterface }
+@jsFile = @{ "/-/res/debiki-spa-new-website-choose-name." + Tpi.minMaxJs }
+
+
 @css = @{("""
 
   h1 { margin-bottom: 1em; }
 
   label { margin-bottom: 1em; }
 
-  input[name='website-name'] {
+  input[name='websiteNameInp'] {
     display: inline !important;
     text-align: right;
     font-family: monospace;
@@ -54,26 +58,36 @@ the name to lowercase.
 *@
 
 
-@createWebsiteMain(Messages("securesocial.login.title"), css = css) {
+@createWebsiteMain(Messages("securesocial.login.title"), css = css,
+    jsFile = jsFile, ngAppName = "NewWebsiteChooseName") {
   <div class='new-website-choose-name'>
 
     <h1>Choose Website Name</h1>
 
-    <form accept-charset='UTF-8' method='post' action="">
+    <form accept-charset='UTF-8' method='post' name="chooseNameForm"
+          action="@routes.AppCreateWebsite.handleWebsiteNameForm">
       <input name='dw-fi-xsrf' type='hidden' value='@xsrfToken'>
 
       <label for='website-name'>Enter a name for your new website
         at <kbd>@newWebsiteDomain</kbd>:</label>
-      <input type='text' id='website-name' name='website-name'
-          onChange="javascript:this.value=this.value.toLowerCase();"
+      <input type='text' id='website-name' name='websiteNameInp' required
+          ng-model="chooseNameForm.websiteName"
+          ng-minlength="6"
+          ng-pattern="/^[a-z][a-z0-9-]*$/"
           ><kbd class='website-domain'>.@newWebsiteDomain</kbd>
+      <div class="alert alert-block"
+          ng-show="chooseNameForm.websiteNameInp.$error.pattern">
+        Please use lowercase letters a-z and 0-9, e.g.: <i>my-new-website</i>
+      </div>
+
       <p>
         <small>You can map a domain name to the website, later (so it would be
         reachable via e.g. <kbd>www.your-domain.com</kbd>).</small>
       </p>
 
       <div id='accept-terms-inp-group'>
-      <input type='checkbox' id='accepts-terms' name='accept-terms' value='yes'>
+      <input type='checkbox' id='accepts-terms' name='acceptTermsInp' value='yes' required
+          ng-model="acceptTerms">
       <label for='accepts-terms'>
         I accept the <a href="@tpi.websiteConfigValue("new-website-terms-of-use")">Terms of Use</a>
         and the <a href="@tpi.websiteConfigValue("new-website-privacy-policy")">Privacy Policy</a>.
@@ -81,7 +95,8 @@ the name to lowercase.
       </div>
 
       <div>
-        <input type='submit' value="Next">
+        <input type='submit' value="Next"
+            ng-disabled="chooseNameForm.$invalid">
       </div>
     </form>
 
