@@ -19,7 +19,7 @@ object ApplicationBuild extends Build {
     dependsOn(debikiCore, debikiTckDao % "test"))
 
   lazy val secureSocialDeps = Seq(
-    "com.typesafe" %% "play-plugins-util" % "2.0.1",
+    // "com.typesafe" %% "play-plugins-util" % "2.0.1", // notTransitive(),
     "org.mindrot" % "jbcrypt" % "0.3m")
 
   lazy val secureSocial =
@@ -70,9 +70,9 @@ object ApplicationBuild extends Build {
        (playPackageEverything).dependsOn(combineAndGzipJs))
 
   // Cannot use, because SBT ignores above classpath elem addition:
-  //val rhinoClassDir = "target/scala-2.9.1/compiledjs/classes/"
+  //val rhinoClassDir = "target/scala-2.10.0-RC1/compiledjs/classes/"
   // Instead:
-  val rhinoClassDir = "target/scala-2.9.1/classes/"
+  val rhinoClassDir = "target/scala-2.10.0-RC1/classes/"
 
   def compileRhinoTask = TaskKey[Unit]("compile-js",
     "Invokes Rhino to compile Javascript to Java bytecode")
