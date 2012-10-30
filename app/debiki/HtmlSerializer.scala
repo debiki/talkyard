@@ -5,7 +5,7 @@
 package debiki
 
 import com.debiki.v0._
-import com.twitter.ostrich.stats.Stats
+//import com.twitter.ostrich.stats.Stats
 import java.{util => ju, io => jio}
 import scala.collection.JavaConversions._
 import _root_.scala.xml.{NodeSeq, Node, Elem, Text, XML, Attribute}
@@ -159,7 +159,7 @@ object HtmlPageSerializer {
    */
   def markdownToSafeHtml(source: String, hostAndPort: String,
         makeLinksNofollow: Boolean, allowClassIdDataAttrs: Boolean): NodeSeq
-        = Stats.time("markdownToSafeHtml") {
+        = /*Stats.time("markdownToSafeHtml")*/ {
     val htmlTextUnsafe =
        (new compiledjs.ShowdownJsImpl()).makeHtml(source, hostAndPort)
     sanitizeHtml(htmlTextUnsafe, makeLinksNofollow, allowClassIdDataAttrs)
@@ -339,7 +339,7 @@ case class HtmlPageSerializer(
    * appended at the end of the server's reply (in a special <div>), and
    * client side Javascript update the page with user specific stuff.
    */
-  def layoutPage(): NodeSeq = Stats.time("layoutPage") {
+  def layoutPage(): NodeSeq = /*Stats.time("layoutPage")*/ {
 
     val cssArtclThread =
       if (pageRoot.subId == Page.BodyId) " dw-ar-t" else ""

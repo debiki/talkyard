@@ -5,8 +5,8 @@
 
 import com.debiki.v0._
 import com.debiki.v0.Prelude._
-import com.twitter.ostrich.stats.Stats
-import com.twitter.ostrich.{admin => toa}
+//import com.twitter.ostrich.stats.Stats
+//import com.twitter.ostrich.{admin => toa}
 import debiki._
 import play.api._
 import play.api.mvc._
