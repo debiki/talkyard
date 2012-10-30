@@ -6,7 +6,7 @@
 
 package com.debiki.v0
 
-import org.specs._
+import org.specs2.mutable._
 import Prelude._
 import java.{util => ju}
 
@@ -124,7 +124,7 @@ trait PageTestValues {
 
 
 
-class PageTest extends SpecificationWithJUnit with PageTestValues {
+class PageTest extends Specification with PageTestValues {
 
   "A page" can {
 
@@ -245,8 +245,6 @@ class PageTest extends SpecificationWithJUnit with PageTestValues {
           edit.isApplied must_== false
           edit.isReverted must_== false
           edit.isDeleted must_== false
-          true
-        case _ => false
       }
     }
 
@@ -270,8 +268,6 @@ class PageTest extends SpecificationWithJUnit with PageTestValues {
           edit.isApplied must_== false
           edit.isReverted must_== false
           edit.isDeleted must_== true
-          true
-        case _ => false
       }
     }
 
@@ -306,8 +302,6 @@ class PageTest extends SpecificationWithJUnit with PageTestValues {
             edit.isApplied must_== true
             edit.isReverted must_== false
             edit.isDeleted must_== false
-            true
-          case _ => false
         }
       }
     }
@@ -359,8 +353,6 @@ class PageTest extends SpecificationWithJUnit with PageTestValues {
             edit.isApplied must_== false
             edit.isReverted must_== true
             edit.isDeleted must_== autoApplied
-            true
-          case _ => false
         }
       }
 
@@ -392,8 +384,6 @@ class PageTest extends SpecificationWithJUnit with PageTestValues {
             edit.isApplied must_== false
             edit.isReverted must_== true
             edit.isDeleted must_== true
-            true
-          case _ => false
         }
       }
     }
@@ -493,8 +483,6 @@ class PageTest extends SpecificationWithJUnit with PageTestValues {
             edit.isApplied must_== true
             edit.isReverted must_== false
             edit.isDeleted must_== false
-            true
-          case _ => false
         }
       }
 

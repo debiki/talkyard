@@ -6,12 +6,12 @@
 
 package com.debiki.v0
 
-import org.specs._
+import org.specs2.mutable._
 import java.{util => ju}
 import Prelude._
 
 
-class PreludeTest extends SpecificationWithJUnit {
+class PreludeTest extends Specification {
 
   "stripStartEndBlanks" should {
     "convert '' to ''" in { stripStartEndBlanks("") must_== "" }

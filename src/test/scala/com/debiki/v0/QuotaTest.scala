@@ -4,11 +4,11 @@ package com.debiki.v0
  * Copyright (c) 2011-2012 Kaj Magnus Lindberg (born 1979)
  */
 
-import org.specs._
+import org.specs2.mutable._
 import java.{util => ju}
 
 
-class QuotaTest extends SpecificationWithJUnit {
+class QuotaTest extends Specification {
 
   val now = new ju.Date
 

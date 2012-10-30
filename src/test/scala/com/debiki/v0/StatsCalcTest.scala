@@ -6,14 +6,9 @@
 
 package com.debiki.v0
 
-import org.specs._
-import org.specs.runner.{ConsoleRunner, JUnit4}
+import org.specs2.mutable._
 import java.{util => ju}
 
-//class PageStatsTest extends JUnit4(PageStatsSpec)
-//object PageStatsTestRunner extends ConsoleRunner(PageStatsSpec)
-
-//class PageStatsTest extends SpecificationWithJUnit {
 /*
 Cannot debug this:
 class PageStatsTest extends SpecificationWithJUnit {
@@ -31,7 +26,6 @@ NetBeans says:
           at com.debiki.v0.PageStatsTest.<clinit>(PageStatsTest.java:2)
 */
 
-//object PageStatsSpec extends Specification {
 
 object Util {
 
@@ -65,7 +59,7 @@ object Util {
 
 import Util._
 
-class PostRatingTest extends SpecificationWithJUnit {
+class PostRatingTest extends Specification {
 
   // These tests work (worked?) okay, until I did some refactoring;
   // now they don't compile. But StatsCalc seems to work just fine :-)
@@ -129,7 +123,7 @@ class PostRatingTest extends SpecificationWithJUnit {
 }
 
 /*
-class EditLikingTest extends SpecificationWithJUnit {
+class EditLikingTest extends Specification {
 
   val edit = Edit(post.id +"Ea", postId = post.id, ctime = new ju.Date,
                   loginId = "?", newIp = None, text = "text")

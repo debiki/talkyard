@@ -5,11 +5,11 @@
 package com.debiki.v0
 
 
-import org.specs._
+import org.specs2.mutable._
 import Prelude._
 
 
-class PagePathTest extends SpecificationWithJUnit {
+class PagePathTest extends Specification {
 
   "PagePath" should {
 

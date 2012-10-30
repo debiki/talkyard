@@ -6,13 +6,12 @@
 
 package com.debiki.v0
 
-import org.specs._
+import org.specs2.mutable._
 import Prelude._
 import java.{util => ju}
 
 
-class PagePartitionVersionTest extends SpecificationWithJUnit
-  with PageTestValues {
+class PagePartitionVersionTest extends Specification with PageTestValues {
 
   "Page.partitionByVersion" can {
 

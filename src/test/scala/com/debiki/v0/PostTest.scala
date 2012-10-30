@@ -2,7 +2,7 @@
 
 package com.debiki.v0
 
-import org.specs._
+import org.specs2.mutable._
 import Prelude._
 import java.{util => ju}
 
@@ -30,7 +30,7 @@ trait PostTestValues {
 
 
 
-class PostTest extends SpecificationWithJUnit with PostTestValues {
+class PostTest extends Specification with PostTestValues {
 
   "A post can" can {
 
@@ -43,9 +43,6 @@ class PostTest extends SpecificationWithJUnit with PostTestValues {
         PageWithOneReply.vipo_!(rawBody.id).replies must beLike {
           case List(reply) =>
             reply.id must_== rawReply_a.id
-            true
-          case _ =>
-            false
         }
       }
     }
@@ -57,9 +54,6 @@ class PostTest extends SpecificationWithJUnit with PostTestValues {
              ) must beTrue
           (sibling2.id == rawReply_a.id || sibling2.id == rawReply_b.id
              ) must beTrue
-          true
-        case _ =>
-          false
       }
     }
 
