@@ -70,9 +70,9 @@ object ApplicationBuild extends Build {
        (playPackageEverything).dependsOn(combineAndGzipJs))
 
   // Cannot use, because SBT ignores above classpath elem addition:
-  //val rhinoClassDir = "target/scala-2.10.0-RC1/compiledjs/classes/"
+  //val rhinoClassDir = "target/scala-2.10/compiledjs/classes/"
   // Instead:
-  val rhinoClassDir = "target/scala-2.10.0-RC1/classes/"
+  val rhinoClassDir = "target/scala-2.10/classes/"
 
   def compileRhinoTask = TaskKey[Unit]("compile-js",
     "Invokes Rhino to compile Javascript to Java bytecode")

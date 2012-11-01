@@ -2,7 +2,7 @@
 # Once to compile_javascript to Java bytecode.
 # And once to combine_and_gzip_javascript.
 
-DESTDIR=target/scala-2.9.1/classes/
+DESTDIR=target/scala-2.10/classes/
 CLASSDIR=${DESTDIR}compiledjs/
 HTML_SANITIZER_JS=client/vendor/html-sanitizer-bundle.js
 SHOWDOWN_JS=public/res/wmd/showdown.js
@@ -62,7 +62,7 @@ cleanjs:
 # Combine some Javascript files, and gzip the resulting files, so Play will serve them
 # gzip compressed.
 
-PUBLIC_JS_DIR=target/scala-2.9.1/classes/public/res/
+PUBLIC_JS_DIR=target/scala-2.10/classes/public/res/
 
 JS_DESKTOP_MIN_JS=${PUBLIC_JS_DIR}combined-debiki-desktop.min.js
 JS_TOUCH_MIN_JS=${PUBLIC_JS_DIR}combined-debiki-touch.min.js
