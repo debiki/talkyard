@@ -17,7 +17,7 @@
 <ol>
 @for(action <- actions; actionLink = Utils.localUrlTo(action)) {
   <li>
-    @action.ctime: @classNameOf(action.action)
+    @action.creationDati: @classNameOf(action.action)
     <a href='@actionLink'>@actionLink</a>
   </li>
 }
