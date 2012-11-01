@@ -8,8 +8,10 @@ import com.debiki.v0._
 import com.debiki.v0.Prelude._
 import com.debiki.v0.PagePath._  // Guid case classes
 import java.{util => ju, lang => jl}
-import org.specs._
-import org.specs.matcher.Matcher
+import org.specs2.mutable._
+import org.specs2.matcher.Matcher
+import org.specs2.matcher.Expectable
+
 
 /** Test utilities.
  */
@@ -20,10 +22,10 @@ object DebikiSpecs {
   def d2s(d: ju.Date) = simpleDate.format(d)
 
   def match_(right: ju.Date) = new Matcher[ju.Date] {
-    def apply(left: => ju.Date) = {
-      val l = left  // evaluate this lazy argument
-      (right.getTime == l.getTime, "Same date", simpleDate.format(l) +
-          " is not "+ simpleDate.format(right))
+    def apply[S <: ju.Date](expectable: Expectable[S]) = {
+      val l = expectable.value
+      result(right.getTime == l.getTime, "Same date", simpleDate.format(l) +
+          " is not "+ simpleDate.format(right), expectable)
     }
   }
 
@@ -34,14 +36,16 @@ object DebikiSpecs {
         pageId: Option[String] = null,
         //guidInPath: Option[Boolean] = None, ?? hmm
         pageSlug: String = null) = new Matcher[PagePath] {
-    def apply(left: => PagePath) = {
+
+    def apply[S <: PagePath](expectable: Expectable[S]) = {
+      val left = expectable.value
       val test = _test(left, pagePath) _
       var errs =
         test("tenantId", tenantId, _.tenantId) :::
         test("folder", folder, _.folder) :::
         test("pageId", pageId, _.pageId) :::
         test("pageSlug", pageSlug, _.pageSlug) ::: Nil
-      (errs isEmpty, "OK", errs.mkString(", and "))
+      result(errs isEmpty, "OK", errs.mkString(", and "), expectable)
     }
   }
 
@@ -54,16 +58,18 @@ object DebikiSpecs {
         newIp: String = null,
         text: String = null,
         where: Option[String] = null) = new Matcher[Debate] {
-    def apply(left: => Debate) = {
+    def apply[S <: Debate](expectable: Expectable[S]) = {
+      val left = expectable.value
       assert((id ne null) || (post ne null))  // must know id
       var id2 = id
       if (id eq null) id2 = post.id
       left.post(id2) match {
-        case Some(p: Post) =>
-          matchPost(post, id = id, parent = parent, ctime = ctime,
-              loginId = loginId, newIp = newIp, text = text, where = where).apply(p)
+        case Some(leftPost: Post) =>
+          result(_matchPostImpl(
+              leftPost, post, id, parent, ctime, loginId, newIp, text, where),
+            expectable)
         case None =>
-          (false, "", "Post missing, id: "+ id2)
+          result(false, "", "Post missing, id: "+ id2, expectable)
       }
     }
   }
@@ -77,18 +83,34 @@ object DebikiSpecs {
         newIp: String = null,
         text: String = null,
         where: Option[String] = null) = new Matcher[Post] {
-    def apply(left: => Post) = {
-      val test = _test(left, post) _
-      var errs =
-          test("id", id, _.id) :::
-          test("parent", parent, _.parent) :::
-          test("ctime", ctime, _.ctime) :::
-          test("loginId", loginId, _.loginId) :::
-          test("newIp", newIp, _.newIp) :::
-          test("text", text, _.text) :::
-          test("where", where, _.where) ::: Nil
-      (errs isEmpty, "OK", errs.mkString(", and "))
+    def apply[S <: Post](expectable: Expectable[S]) = {
+      val left = expectable.value
+      result(_matchPostImpl(
+          left, post, id, parent, ctime, loginId, newIp, text, where),
+        expectable)
     }
+  }
+
+  private def _matchPostImpl(
+        leftPost: Post,
+        post: Post,
+        id: String,
+        parent: String,
+        ctime: ju.Date,
+        loginId: String,
+        newIp: String,
+        text: String,
+        where: Option[String]): (Boolean, String, String) = {
+    val test = _test(leftPost, post) _
+    var errs =
+      test("id", id, _.id) :::
+        test("parent", parent, _.parent) :::
+        test("ctime", ctime, _.ctime) :::
+        test("loginId", loginId, _.loginId) :::
+        test("newIp", newIp, _.newIp) :::
+        test("text", text, _.text) :::
+        test("where", where, _.where) ::: Nil
+    (errs isEmpty, "OK", errs.mkString(", and "))
   }
 
   def haveRatingLike(
@@ -99,16 +121,19 @@ object DebikiSpecs {
         loginId: String = null,
         newIp: String = null,
         tags: List[String] = null) = new Matcher[Debate] {
-    def apply(left: => Debate) = {
+    def apply[S <: Debate](expectable: Expectable[S]) = {
+      val left = expectable.value: Debate
       assert((id ne null) || (rating ne null))  // must know id
       var id2 = id
       if (id2 eq null) id2 = rating.id
       left.rating(id2) match {
         case Some(r: Rating) =>
-          matchRating(rating, id = id, postId = postId, ctime = ctime,
-              loginId = loginId, newIp = newIp, tags = tags).apply(r)
+          result(
+            _matchRatingImpl(r, rating, id = id, postId = postId, ctime = ctime,
+              loginId = loginId, newIp = newIp, tags = tags),
+            expectable)
         case None =>
-          (false, "", "Rating missing, id: "+ id2)
+          result(false, "", "Rating missing, id: "+ id2, expectable)
       }
     }
   }
@@ -121,18 +146,34 @@ object DebikiSpecs {
         loginId: String = null,
         newIp: String = null,
         tags: List[String] = null) = new Matcher[Rating] {
-    def apply(left: => Rating) = {
-      val test = _test(left, rating) _
-      val errs =
-          test("id", id, _.id) :::
-          test("postId", postId, _.postId) :::
-          test("ctime", ctime, _.ctime) :::
-          test("loginId", loginId, _.loginId) :::
-          test("newIp", newIp, _.newIp) :::
-          test("tags", if (tags ne null) tags.sorted else null,
-                _.tags.sorted) ::: Nil
-      (errs isEmpty, "OK", errs.mkString(", and "))
+    def apply[S <: Rating](expectable: Expectable[S]) = {
+      val leftRating = expectable.value
+      result(
+        _matchRatingImpl(leftRating, rating, id, postId, ctime, loginId,
+            newIp, tags),
+        expectable)
     }
+  }
+
+  private def _matchRatingImpl(
+      leftRating: Rating,
+      rating: Rating,
+      id: String,
+      postId: String,
+      ctime: ju.Date,
+      loginId: String,
+      newIp: String,
+      tags: List[String]): (Boolean, String, String) = {
+    val test = _test(leftRating, rating) _
+    val errs =
+      test("id", id, _.id) :::
+        test("postId", postId, _.postId) :::
+        test("ctime", ctime, _.ctime) :::
+        test("loginId", loginId, _.loginId) :::
+        test("newIp", newIp, _.newIp) :::
+        test("tags", if (tags ne null) tags.sorted else null,
+          _.tags.sorted) ::: Nil
+    (errs isEmpty, "OK", errs.mkString(", and "))
   }
 
   def matchUser(
@@ -143,7 +184,8 @@ object DebikiSpecs {
         country: String = null,
         website: String = null,
         isSuperAdmin: jl.Boolean = null) = new Matcher[User] {
-    def apply(left: => User) = {
+    def apply[S <: User](expectable: Expectable[S]) = {
+      val left = expectable.value
       val test = _test(left, user) _
       val errs =
           test("id", id, _.id) :::
@@ -153,7 +195,7 @@ object DebikiSpecs {
           test("website", website, _.website) :::
           test("isSuperAdmin", isSuperAdmin,
               u => Boolean.box(u.isAdmin)) ::: Nil
-      (errs isEmpty, "OK", errs.mkString(", and "))
+      result(errs isEmpty, "OK", errs.mkString(", and "), expectable)
     }
   }
 

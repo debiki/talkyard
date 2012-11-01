@@ -9,10 +9,15 @@ import scala.collection.{mutable => mut}
 import com.debiki.v0
 import com.debiki.v0._
 import com.debiki.v0.Prelude._
-import org.specs._
-import org.specs.specification.PendingUntilFixed
-import org.specs.specification.Context
+import org.specs2.mutable._
 import java.{util => ju}
+
+// This test suite is broken. Don't know how to fix it — so I've asked here:
+// http://stackoverflow.com/questions/13173319/
+//    why-does-specs2-run-these-sequential-tests-in-random-order
+// and a general question about designing tests, here:
+// http://stackoverflow.com/questions/13174893/
+//    how-design-a-specs2-database-test-with-interdependent-tests
 
 
 /*
@@ -59,24 +64,29 @@ object DaoTckTest {
   case object EmptyTables extends What
   case object TablesWithData extends What
 
-  type TestContextBuilder = Function2[What, String, TestContext]
+  type TestContextBuilder =
+    Function2[What, /*schemaVersion:*/ String, TestContext]
 }
 
 import DaoTckTest._
 
 
 abstract class DaoTckTest(builder: TestContextBuilder)
-    extends SpecificationWithJUnit {
+    extends Specification {
 
-  "The Technology Compatibility Kit".isSpecifiedBy(
+  sequential
+
+  inline({
       // Need to empty the schema automatically before enabling this test?
       //new DaoSpecEmptySchema(builder),
-      new DaoSpecV002(builder))
+      new DaoSpecV002(builder)})
 }
 
 
-abstract class DaoSpec(builder: TestContextBuilder, defSchemaVersion: String)
-    extends SpecificationWithJUnit {
+abstract class DaoSpec(builder: TestContextBuilder, val defSchemaVersion: String)
+    extends Specification {
+
+  sequential
 
   // Inited in setup() below and closed in SpecContext below, after each test.
   var ctx: TestContext = _
@@ -86,15 +96,18 @@ abstract class DaoSpec(builder: TestContextBuilder, defSchemaVersion: String)
 
   def now = new ju.Date
 
+  // -------------
+  // I've replaced this with `step`s in DaoSpecV002 below (but they don't work though).
+  // -------------
   // "SUS" means Systems under specification, which is a
   // "The system" should { ...examples... } block.
   // See: <http://code.google.com/p/specs/wiki/DeclareSpecifications
   //        #Systems_under_specification>
-  def setup(what: What, version: String = defSchemaVersion) = new Context {
-    beforeSus({
-      ctx = builder(what, version)
-    })
-  }
+  //def setup(what: What, version: String = defSchemaVersion) = new Context {
+  //  beforeSus({
+  //    ctx = builder(what, version)
+  //  })
+  //}
 
   // close the dao and any db connections after each tests.
   // see: <http://code.google.com/p/specs/wiki/declarespecifications
@@ -103,17 +116,20 @@ abstract class DaoSpec(builder: TestContextBuilder, defSchemaVersion: String)
   // "[error] could not run test com.debiki.v0.oracledaotcktest:
   // org.specs.specification.pathexception: treepath(list(0, 0, 1))
   // not found for <the test name>")
-  new SpecContext {
-    afterSus({
-      if (ctx ne null) ctx.close()
-    })
-  }
+  //new SpecContext {
+  //  afterSus({
+  //    if (ctx ne null) ctx.close()
+  //  })
+  //}
+  // -------------
+  // -------------
 
-  object SLog extends org.specs.log.ConsoleLog  // logs nothing! why?
+  //object SLog extends org.specs.log.ConsoleLog  // logs nothing! why?
 
 }
 
 
+/*
 class DaoSpecEmptySchema(b: TestContextBuilder) extends DaoSpec(b, "0") {
   val schemaIsEmpty = setup(EmptySchema)
 
@@ -126,7 +142,7 @@ class DaoSpecEmptySchema(b: TestContextBuilder) extends DaoSpec(b, "0") {
       systemDao.checkRepoVersion() must_== Some("0.0.2")
     }
   }
-}
+} */
 
 
 object Templates {
@@ -146,17 +162,27 @@ object Templates {
     newIp = None, ctime = new ju.Date, tags = Nil)
 }
 
-class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
-  val tablesAreEmpty = setup(EmptyTables)
+class DaoSpecV002(testContextBuilder: TestContextBuilder)
+    extends DaoSpec(testContextBuilder, "0.0.2") {
+
+  sequential  // so e.g. loginId inited before used in ctors
 
   import com.debiki.v0._
   import com.debiki.v0.PagePath._  // Guid case classes
   val T = Templates
 
-  "A v0.DAO in an empty 0.0.2 repo" when tablesAreEmpty should {
+  step {
+    ctx = testContextBuilder(EmptyTables, defSchemaVersion)
+  }
+
+  "A v0.DAO in an empty 0.0.2 repo" should {
     "find version 0.0.2" >> {
       systemDao.checkRepoVersion() must_== Some("0.0.2")
     }
+  }
+
+  step {
+    ctx = testContextBuilder(EmptyTables, defSchemaVersion)
   }
 
   // COULD split into: 3 tests:
@@ -164,13 +190,18 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
   // Page tests: create page, reply, update.
   // Path tests: lookup GUID, handle missing/superfluous slash.
 
-  "A v0.DAO in an empty 0.0.2 repo" when tablesAreEmpty can {
-    setSequential()  // so e.g. loginId inited before used in ctors
-    shareVariables()
-    // -------------
+  "A v0.DAO in an empty 0.0.2 repo" can {
+
+    //sequential  // so e.g. loginId inited before used in ctors
+    // Should be placed at start of Spec only?
+
     val ex1_postText = "postText0-3kcvxts34wr"
     var ex1_debate: Debate = null
     var loginGrant: LoginGrant = null
+
+    // Why is this needed? There's a `step` above that does this and it should
+    // be executed befor the tests below!
+    ctx = testContextBuilder(EmptyTables, defSchemaVersion)
 
 
     // -------- Create tenant
@@ -189,7 +220,7 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
     "create a Test tenant" >> {
       val tenant = systemDao.createTenant(name = "Test")
       tenant.name must_== "Test"
-      tenant.id must notBeEmpty
+      tenant.id must_!= ""
       defaultTenantId = tenant.id
     }
 
@@ -213,8 +244,7 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
           tenant.name must_== "Test"
           tenant.hosts must_== List(TenantHost(
              "test.ex.com", TenantHost.RoleCanonical, TenantHost.HttpsNone))
-          true
-        case _ => false
+        case x => failure(s"Found wrong tenants: $x")
       }
     }
 
@@ -227,10 +257,10 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
     "throw error for an invalid login id" >> {
       val debateBadLogin = Debate(guid = "?", posts =
           T.post.copy(id = "1", loginId = "9999999")::Nil) // bad login id
-      SLog.info("Expecting ORA-02291: integrity constraint log message ------")
+      //SLog.info("Expecting ORA-02291: integrity constraint log message ------")
       dao.createPage(PageStuff(defaultPagePath, debateBadLogin)
                     ) must throwAn[Exception]
-      SLog.info("------------------------------------------------------------")
+      //SLog.info("------------------------------------------------------------")
     }
 
     "save an IdentitySimple login" >> {
@@ -346,7 +376,6 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
       dao.loadPage(ex1_debate.guid) must beLike {
         case Some(d: Debate) => {
           d must havePostLike(ex1_rootPost)
-          true
         }
       }
     }
@@ -361,9 +390,7 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
               n.identity_!.userId must_== n.user_!.id
               n.user_! must matchUser(displayName = "Målligan",
                                       email = "no@email.no")
-              true
           }
-          true
         }
       }
     }
@@ -379,7 +406,7 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
         limit = Int.MaxValue,
         offset = 0
       )
-      pagePathsDetails match {
+      pagePathsDetails must beLike {
         case List((pagePath, pageDetails)) =>
           pagePath must_== defaultPagePath.copy(pageId = pagePath.pageId)
           pageDetails.status must_== PageStatus.Draft
@@ -390,7 +417,6 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
           // Shouldn't the page body post affect the
           // significant-modification-time?
           // pageDetails.cachedSgfntMtime must_== None  -- or Some(date)?
-          true
       }
     }
 
@@ -410,7 +436,6 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
       pathsAndPages must beLike { case List(pathAndPage) =>
         pathAndPage._1 must_== badPath
         pathAndPage._2 must beEmpty
-        true
       }
     }
 
@@ -421,25 +446,23 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
         sortBy = v0.PageSortOrder.ByPath,
         limit = Int.MaxValue,
         offset = 0)
-      val path: PagePath = pathAndDetails.headOption.getOrElse(fail)._1
+      pathAndDetails.length must be_>=(1)
+      val path: PagePath = pathAndDetails.head._1
 
       val pathsAndPages = dao.loadPageBodiesTitles(path::Nil)
       pathsAndPages must beLike { case List(pathAndPage) =>
         pathAndPage._1 must_== path
         pathAndPage._2 must beLike { case Some(page) =>
-          page.bodyText must beSomething
+          page.bodyText must beSome
           page.bodyText.get.length must be_>(0)
-          page.body_!.user must beSomething
+          page.body_!.user must beSome
 
           /* Currently there is no title for the test page.
-          page.title must beSomething
+          page.title must beSome
           page.titleText.get.length must be_>(0)
-          page.title_!.user must beSomething
+          page.title_!.user must beSome
           */
-
-          true
         }
-        true
       }
     }
 
@@ -471,7 +494,6 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
             pageMeta.pageRole must_== PageRole.BlogMainPage
             pageMeta.parentPageId must_== None
             pageMeta.pageId must_== blogMainPageId
-            true
           }
         }
       }
@@ -496,7 +518,6 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
             pageMeta.pageRole must_== PageRole.BlogArticle
             pageMeta.parentPageId must_== Some(blogMainPageId)
             pageMeta.pageId must_== blogArticleId
-            true
           }
         }
       }
@@ -522,7 +543,6 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
             pagePath.pageId must_== Some(blogArticleId)
             pageDetails.pageRole must_== PageRole.BlogArticle
             pageDetails.parentPageId must_== Some(blogMainPageId)
-            true
         }
       }
     }
@@ -537,8 +557,7 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
       dao.checkPagePath(exPagePath) must beLike {
         case Some(correctPath: PagePath) =>
           correctPath must matchPagePath(exPagePath)
-          true
-        case _ => false
+        case p => failure(s"Bad path: $p")
       }
     }
 
@@ -546,8 +565,7 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
       dao.checkPagePath(exPagePath.copy(pageSlug = "incorrect")) must beLike {
         case Some(correctPath: PagePath) =>
           correctPath must matchPagePath(exPagePath)
-          true
-        case _ => false
+        case p => failure(s"Bad path: $p")
       }
     }
 
@@ -555,8 +573,7 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
       dao.checkPagePath(exPagePath.copy(folder = "/incorrect/")) must beLike {
         case Some(correctPath: PagePath) =>
           correctPath must matchPagePath(exPagePath)
-          true
-        case _ => false
+        case p => failure(s"Bad path: $p")
       }
     }
 
@@ -576,7 +593,6 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
         case List(p: Post) =>
           ex2_id = p.id
           p must matchPost(ex2_emptyPost, id = ex2_id)
-          true
       }
     }
 
@@ -584,7 +600,6 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
       dao.loadPage(ex1_debate.guid) must beLike {
         case Some(d: Debate) => {
           d must havePostLike(ex2_emptyPost, id = ex2_id)
-          true
         }
       }
     }
@@ -597,7 +612,6 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
         case List(r: Rating) =>
           ex3_ratingId = r.id
           r must matchRating(ex3_rating, id = ex3_ratingId, loginId = loginId)
-          true
       }
     }
 
@@ -605,7 +619,6 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
       dao.loadPage(ex1_debate.guid) must beLike {
         case Some(d: Debate) => {
           d must haveRatingLike(ex3_rating, id = ex3_ratingId)
-          true
         }
       }
     }
@@ -633,7 +646,6 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
           r2 must matchRating(ex4_rating2, id = ex4_rating2Id)
           ex4_rating3Id = r3.id
           r3 must matchRating(ex4_rating3, id = ex4_rating3Id)
-          true
       }
     }
 
@@ -643,7 +655,6 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
           d must haveRatingLike(ex4_rating1, id = ex4_rating1Id)
           d must haveRatingLike(ex4_rating2, id = ex4_rating2Id)
           d must haveRatingLike(ex4_rating3, id = ex4_rating3Id)
-          true
         }
       }
     }
@@ -661,7 +672,6 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
         case List(post: Post) =>
           postId = post.id
           post must_== postNoId.copy(id = postId)
-          true
       }
 
       // Load the root post, check its title.
@@ -671,7 +681,6 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
           val body = d.body_!
           body.titleText must_== Some("Page-Title")
           body.titlePosts.length must_== 1
-          true
         }
       }
     } */
@@ -695,9 +704,8 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
          newIp = None, ctime = now, approval = approval)
       dao.savePageActions(ex1_debate.guid, List(reviewNoId)) must beLike {
         case List(review: Review) =>
-          review must_== reviewNoId.copy(id = review.id)
           reviewSaved = review
-          true
+          review must_== reviewNoId.copy(id = review.id)
       }
 
       dao.loadPage(ex1_debate.guid) must beLike {
@@ -705,7 +713,6 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
           val postReviewed = page.vipo_!(reviewSaved.targetId)
           postReviewed.lastReviewDati must_== Some(reviewSaved.ctime)
           postReviewed.lastReviewWasApproval must_== Some(isApproved)
-          true
         }
       }
     }
@@ -721,7 +728,6 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
         case List(post: Post) =>
           postId = post.id
           post must_== postNoId.copy(id = postId)
-          true
       }
 
       // Load the root post, verify that it is now published.
@@ -730,7 +736,6 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
           val body = d.body_!
           body.publd must_== Some(true)
           body.publs.length must_== 1
-          true
         }
       }
     }
@@ -747,7 +752,6 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
         case List(p: Post) =>
           ex2MetaEmpty_id = p.id
           p must matchPost(exMeta_ex2EmptyMeta)
-          true
       }
     }
 
@@ -758,7 +762,6 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
           val postEx2 = d.vipo_!(ex2_id)
           postEx2.metaPosts must_== List(exMeta_ex2EmptyMeta)
           postEx2.meta.isArticleQuestion must_== false
-          true
         }
       }
     }
@@ -774,7 +777,6 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
         case List(p: Post) =>
           ex2MetaArtQst_id = p.id
           p must matchPost(exMeta_ex2ArtQst)
-          true
       }
     }
 
@@ -787,7 +789,6 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
           postEx2.metaPosts.find(_.id == ex2MetaArtQst_id) must_==
                                                     Some(exMeta_ex2ArtQst)
           postEx2.meta.isArticleQuestion must_== true
-          true
         }
       }
     }
@@ -835,7 +836,6 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
             val editedPost = d.vipo_!(post.id)
             editedPost.text must_== newText
             editedPost.markup must_== "dmd0"
-            true
           }
         }
       }
@@ -861,7 +861,6 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
             val editedPost = d.vipo_!(post.id)
             editedPost.text must_== "Edited text 054F2x"
             editedPost.markup must_== "html"
-            true
           }
         }
       }
@@ -1000,7 +999,7 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
 
         // Only dummy user ids (created for each IdentitySimple)
         // start with "-":
-        id must notStartWith("-")
+        id must not startWith("-")
       }
       exOpenId_loginReq.identity.id must_==  exOpenId_loginReq.login.identityId
       exOpenId_loginReq.user.id must_== exOpenId_loginReq.identity.userId
@@ -1081,7 +1080,6 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
         case Some((identity, user)) =>
           identity must_== exGmailLoginGrant.identity
           user must_== exGmailLoginGrant.user
-          true
       }
     }
 
@@ -1093,7 +1091,6 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
         case Some((identity, user)) =>
           identity must_== exOpenId_loginGrant_2.identity
           user must_== exOpenId_loginGrant_2.user
-          true
       }
     }
 
@@ -1107,7 +1104,6 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
         case Some((identity, user)) =>
           identity must_== exGmailLoginGrant.identity
           user must_== exGmailLoginGrant.user
-          true
       }
     }
 
@@ -1127,7 +1123,6 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
           u.id must_!= exOpenId_loginReq.user.id
           u must matchUser(exOpenId_loginReq.user, id = u.id)
           exOpenId_userIds += u.id
-          true
       }
     } */
 
@@ -1141,7 +1136,6 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
         case List(savedPost: Post) =>
           postId = savedPost.id
           savedPost must matchPost(newPost, id = postId)
-          true
       }
 
       dao.loadPage(ex1_debate.guid) must beLike {
@@ -1165,9 +1159,7 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
               // Identity data no longer copied to User.
               //n.user_! must matchUser(displayName = "Laban",
               //                        email = "oid@email.hmm")
-              true
           }
-          true
       }
     }
 
@@ -1273,7 +1265,6 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
           notfsLoaded must beLike {
             case List(notfLoaded: NotfOfPageAction) =>
               notfLoaded must_== unauUserNotfSaved
-              true
           }
         }
 
@@ -1282,11 +1273,10 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
              delayInMinutes = 0, numToLoad = 10)
           notfsToMail.usersByTenantAndId.get((defaultTenantId, unauUser.id)
              ) must_== Some(unauUser)
-          notfsToMail.notfsByTenant(defaultTenantId) match {
+          notfsToMail.notfsByTenant(defaultTenantId) must beLike {
             case List(notfLoaded: NotfOfPageAction) =>
               notfLoaded must_== unauUserNotfSaved
-              true
-            case _ => false
+            case x => failure(s"Bad notfs: $x")
           }
         }
       }
@@ -1299,7 +1289,6 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
           notfsLoaded must beLike {
             case List(notfLoaded: NotfOfPageAction) =>
               notfLoaded must_== auUserNotfSaved
-              true
           }
         }
 
@@ -1308,11 +1297,10 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
              delayInMinutes = 0, numToLoad = 10)
           notfsToMail.usersByTenantAndId.get((defaultTenantId, auUser.id)
              ) must_== Some(auUser)
-          notfsToMail.notfsByTenant(defaultTenantId) match {
+          notfsToMail.notfsByTenant(defaultTenantId) must beLike {
             case List(notfLoaded: NotfOfPageAction) =>
               notfLoaded must_== auUserNotfSaved
-              true
-            case _ => false
+            case x => failure(s"Bad notfs: $x")
           }
         }
       }
@@ -1402,8 +1390,7 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
         dao.loadNotfByEmailId(emailToSend.id) must beLike {
           case Some(notf) =>
             notf.emailId must_== Some(emailToSend.id)
-            true
-          case None => false
+          case None => failure("No notf found")
         }
       }
 
@@ -1475,8 +1462,7 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
         dao.loadNotfByEmailId(emailToSend.id) must beLike {
           case Some(notf) =>
             notf.emailId must_== Some(emailToSend.id)
-            true
-          case None => false
+          case None => failure("No notf found")
         }
       }
 
@@ -1561,10 +1547,9 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
           limit = Int.MaxValue,
           offset = 0
         )
-        pagePathsDetails match {
+        pagePathsDetails must beLike {
           case list: List[(PagePath, PageDetails)] =>
-            list.find(_._1 == finalPath) must beSomething
-            true
+            list.find(_._1 == finalPath) must beSome
         }
       }
     }
@@ -1656,8 +1641,7 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
       "create a new website, from existing tenant" >> {
         newWebsiteOpt = createWebsite("2")
         newWebsiteOpt must beLike {
-          case Some(tenant) =>
-            true
+          case Some(tenant) => ok
         }
       }
 
@@ -1922,7 +1906,7 @@ class DaoSpecV002(b: TestContextBuilder) extends DaoSpec(b, "0.0.2") {
     //  for (i <- 1 to 10000) {
     //    dao.savePageActions(
     //          "-"+ ex1_debate.id, List(ex3_emptyPost)) must beLike {
-    //      case List(p: Post) => true
+    //      case List(p: Post) => ok
     //    }
     //  }
     //}
