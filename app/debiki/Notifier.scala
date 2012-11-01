@@ -6,7 +6,6 @@ package debiki
 
 import akka.actor._
 import akka.actor.Actor._
-import akka.util.duration._
 import com.amazonaws.AmazonClientException
 import com.amazonaws.auth.BasicAWSCredentials
 import com.amazonaws.services.simpleemail._
@@ -17,6 +16,8 @@ import play.api._
 import play.api.libs.iteratee._
 import play.api.libs.concurrent._
 import play.api.Play.current
+import scala.concurrent.duration._
+import scala.concurrent.ExecutionContext.Implicits.global
 import Prelude._
 
 

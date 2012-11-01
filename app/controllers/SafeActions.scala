@@ -59,7 +59,7 @@ object SafeActions {
             "DwE034ZQ3", "Internal error, please try again, sorry. "+
                "(A certain login id has become invalid. You now have "+
                "a new id, but you will probably need to login again.)")
-             .discardingCookies("dwCoSid"))
+             .discardingCookies(DiscardingCookie("dwCoSid")))
       }
       val resultOkSid =
         if (newCookies isEmpty) resultOldCookies

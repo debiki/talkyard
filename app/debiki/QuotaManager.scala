@@ -4,7 +4,6 @@
 
 package debiki
 
-import akka.util.duration._
 import com.debiki.v0._
 import com.debiki.v0.Prelude._
 import com.google.common.{cache => ggc}
@@ -14,6 +13,8 @@ import java.util.{concurrent => juc}
 import play.api.libs.concurrent.Akka
 import play.api.Play.current
 import scala.collection.{mutable => mut}
+import scala.concurrent.duration._
+import scala.concurrent.ExecutionContext.Implicits.global
 import QuotaManager._
 import resource.Resource
 

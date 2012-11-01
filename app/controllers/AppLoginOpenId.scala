@@ -16,6 +16,10 @@ import play.api.data._
 import play.api.data.Forms._
 import play.api.libs.concurrent._
 import play.api.libs.{openid => oid}
+import scala.concurrent.Future
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.util.{Success, Failure}
+import scala.util.control.NonFatal
 import PageActions._
 import Utils.ValidationImplicits._
 
@@ -62,7 +66,7 @@ object AppLoginOpenId extends mvc.Controller {
 
     // Find out to which OpenID provider the user should be redirected to,
     // and subsequently login.
-    var promise: Promise[String] =
+    var futureUrl: Future[String] =
       oid.OpenID.redirectURL(  // issues a HTTP request
         openIdIdentifier,
         routes.AppLoginOpenId.loginCallback(returnToUrl).absoluteURL(),
@@ -70,17 +74,17 @@ object AppLoginOpenId extends mvc.Controller {
         realm = Some(realm))
 
     // On success, redirect the browser to that provider.
-    val result = promise.extend(_.value match {
-      case Redeemed(url: String) =>
-        Logger.trace("OpenID provider redirection URL discovered: " + url)
-        Redirect(url)
-      case Thrown(t) =>
+    val futureResult = futureUrl.map((url: String) => {
+      Logger.trace("OpenID provider redirection URL discovered: " + url)
+      Redirect(url)
+    }).recover(_ match {
+      case NonFatal(exception) =>
         Logger.debug("OpenID provider redirection URL error, OpenId: " +
-           openIdIdentifier +", error: "+ t)
+          openIdIdentifier +", error: "+ exception)
         Redirect(routes.AppLoginOpenId.loginGet)
     })
 
-    AsyncResult(result)
+    AsyncResult(futureResult)
   }
 
 
@@ -130,10 +134,14 @@ object AppLoginOpenId extends mvc.Controller {
         qs.get("openid.identity"))
     Logger.trace("Verifying OpenID: "+ id +" ...")
 
-    AsyncResult(oid.OpenID.verifiedId(request).extend(_.value match {
-      case Redeemed(userInfo) => _handleLoginOk(request, userInfo, returnToUrl)
-      case Thrown(t) => _handleLoginFailure(request, t)
-    }))
+    val futureResult = oid.OpenID.verifiedId(request)
+      .map(userInfo =>
+        _handleLoginOk(request, userInfo, returnToUrl))
+      .recover(_ match {
+        case NonFatal(exception) => _handleLoginFailure(request, exception)
+      })
+
+    AsyncResult(futureResult)
   }
 
 

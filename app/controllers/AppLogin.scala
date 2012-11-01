@@ -133,7 +133,8 @@ object AppLogin extends mvc.Controller {
           <a href=''>Okay</a>
         </p>)
         // keep the xsrf cookie, so login dialog works?
-        .discardingCookies("dwCoSid", AppConfigUser.ConfigCookie)
+        .discardingCookies(DiscardingCookie("dwCoSid"),
+            DiscardingCookie(AppConfigUser.ConfigCookie))
     }
 
 }

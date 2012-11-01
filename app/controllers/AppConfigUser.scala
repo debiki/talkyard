@@ -13,7 +13,6 @@ import PageActions._
 import Prelude._
 import Utils.ValidationImplicits._
 import EmailNotfPrefs.EmailNotfPrefs
-import org.hibernate.validator.constraints.Email
 
 
 object AppConfigUser extends mvc.Controller {

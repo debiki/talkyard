@@ -6,7 +6,7 @@ package debiki
 
 import akka.actor._
 import akka.actor.Actor._
-import akka.util.duration._
+import scala.concurrent.duration._
 import com.amazonaws.AmazonClientException
 import com.amazonaws.auth.BasicAWSCredentials
 import com.amazonaws.services.simpleemail._
