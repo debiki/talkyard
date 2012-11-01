@@ -447,7 +447,7 @@ class HtmlForms(val config: HtmlConfig, xsrfToken: String,
         <div>
           <label for={Inp.Details}>Details (optional)</label><br/>
           <textarea id={Inp.Details} rows='2' cols='30'
-                 name={Inp.Details} value=''/>
+                 name={Inp.Details} value=''></textarea>
         </div>
         <div class='dw-submit-set'>
           <input class='dw-fi-submit' type='submit' value='Submit'/>
@@ -651,7 +651,7 @@ class HtmlForms(val config: HtmlConfig, xsrfToken: String,
         <div>
           <label for={Inp.Reason}>Reason for deletion? (optional)</label><br/>
           <textarea id={Inp.Reason} rows='2' cols='33'
-                 name={Inp.Reason} value=''/>
+                 name={Inp.Reason} value=''></textarea>
         </div>
         <div>
           <label for={Inp.DeleteTree}>{deleteTreeLabel}</label>
