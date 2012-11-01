@@ -10,6 +10,9 @@ resolvers += Resolver.file("Local Repository", file("/mnt/data/dev/play/github2/
 // Play SBT Plugin:
 resolvers += Resolver.url("Typesafe Ivy Snapshots", url("http://repo.typesafe.com/typesafe/ivy-snapshots/"))(Resolver.ivyStylePatterns)
 
+// For Specs2:
+resolvers ++= Seq("snapshots" at "http://oss.sonatype.org/content/repositories/snapshots",
+                    "releases"  at "http://oss.sonatype.org/content/repositories/releases")
 
 // Use the Play sbt plugin for Play projects
 addSbtPlugin("play" % "sbt-plugin" % "2.1-SNAPSHOT")
