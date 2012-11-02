@@ -61,9 +61,12 @@ class AutoApproverSpec extends Specification with Mockito {
     country = openidUser.country)
 
   val PlayReq = new Request[Unit] {
+    def id = 12345
+    def tags = Map.empty
     def uri = "uri"
     def path = "path"
     def method = "METHOD"
+    def version = "1.1"
     def queryString = Map.empty
     def headers = null
     lazy val remoteAddress = Ip
