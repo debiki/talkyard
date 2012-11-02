@@ -1413,11 +1413,9 @@ class DaoSpecV002ChildSpec(testContextBuilder: TestContextBuilder)
              delayInMinutes = 0, numToLoad = 10)
           notfsToMail.usersByTenantAndId.get((defaultTenantId, unauUser.id)
              ) must_== Some(unauUser)
-          notfsToMail.notfsByTenant(defaultTenantId) must beLike {
-            case List(notfLoaded: NotfOfPageAction) =>
-              notfLoaded must_== unauUserNotfSaved
-            case x => failure(s"Bad notfs: $x")
-          }
+          val notfsByTenant = notfsToMail.notfsByTenant(defaultTenantId)
+          notfsByTenant.length must_== 1
+          notfsByTenant.head must_== unauUserNotfSaved
         }
       }
 
@@ -1438,11 +1436,10 @@ class DaoSpecV002ChildSpec(testContextBuilder: TestContextBuilder)
              delayInMinutes = 0, numToLoad = 10)
           notfsToMail.usersByTenantAndId.get((defaultTenantId, auUser.id)
              ) must_== Some(auUser)
-          notfsToMail.notfsByTenant(defaultTenantId) must beLike {
-            case List(notfLoaded: NotfOfPageAction) =>
-              notfLoaded must_== auUserNotfSaved
-            case x => failure(s"Bad notfs: $x")
-          }
+          val notfsByTenant = notfsToMail.notfsByTenant(defaultTenantId)
+          val notfFound = notfsByTenant.find(
+             _.recipientUserId == auUserNotfSaved.recipientUserId)
+          notfFound must_== Some(auUserNotfSaved)
         }
       }
 
