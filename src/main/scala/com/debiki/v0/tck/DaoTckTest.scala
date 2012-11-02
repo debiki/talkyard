@@ -145,10 +145,10 @@ class DaoSpecEmptySchema(b: TestContextBuilder) extends DaoChildSpec(b, "0") {
   val schemaIsEmpty = setup(EmptySchema)
 
   "A v0.DAO in a completely empty repo" when schemaIsEmpty should {
-    "consider the version being 0" >> {
+    "consider the version being 0" in {
       systemDao.checkRepoVersion() must_== Some("0")
     }
-    "be able to upgrade to 0.0.2" >> {
+    "be able to upgrade to 0.0.2" in {
       // dao.upgrade()  currently done automatically, but ought not to.
       systemDao.checkRepoVersion() must_== Some("0.0.2")
     }
@@ -187,7 +187,7 @@ class DaoSpecV002ChildSpec(testContextBuilder: TestContextBuilder)
   }
 
   "A v0.DAO in an empty 0.0.2 repo" should {
-    "find version 0.0.2" >> {
+    "find version 0.0.2" in {
       systemDao.checkRepoVersion() must_== Some("0.0.2")
     }
   }
@@ -206,7 +206,7 @@ class DaoSpecV002ChildSpec(testContextBuilder: TestContextBuilder)
     //sequential  // so e.g. loginId inited before used in ctors
     // Should be placed at start of Spec only?
 
-    val ex1_postText = "postText0-3kcvxts34wr"
+    lazy val ex1_postText = "postText0-3kcvxts34wr"
     var ex1_debate: Debate = null
     var loginGrant: LoginGrant = null
 
@@ -219,16 +219,16 @@ class DaoSpecV002ChildSpec(testContextBuilder: TestContextBuilder)
 
     var defaultTenantId = ""
 
-    "find no tenant for non-existing host test.ex.com" >> {
+    "find no tenant for non-existing host test.ex.com" in {
       val lookup = systemDao.lookupTenant("http", "test.ex.com")
       lookup must_== FoundNothing
     }
 
-    "find no tenant for non-existing tenant id" >> {
+    "find no tenant for non-existing tenant id" in {
       systemDao.loadTenants("non_existing_id"::Nil) must_== Nil
     }
 
-    "create a Test tenant" >> {
+    "create a Test tenant" in {
       val tenant = systemDao.createTenant(name = "Test")
       tenant.name must_== "Test"
       tenant.id must_!= ""
@@ -238,7 +238,7 @@ class DaoSpecV002ChildSpec(testContextBuilder: TestContextBuilder)
     lazy val dao = daoFactory.buildTenantDao(
        v0.QuotaConsumers(tenantId = defaultTenantId))
 
-    "add and lookup host test.ex.com" >> {
+    "add and lookup host test.ex.com" in {
       dao.addTenantHost(TenantHost("test.ex.com",
          TenantHost.RoleCanonical, TenantHost.HttpsNone))
       val lookup = systemDao.lookupTenant("http", "test.ex.com")
@@ -247,7 +247,7 @@ class DaoSpecV002ChildSpec(testContextBuilder: TestContextBuilder)
       lookup2 must_== FoundChost(defaultTenantId)
     }
 
-    "lookup tenant by id, and find all hosts" >> {
+    "lookup tenant by id, and find all hosts" in {
       val tenants = systemDao.loadTenants(defaultTenantId::Nil)
       tenants must beLike {
         case List(tenant) =>
@@ -259,13 +259,13 @@ class DaoSpecV002ChildSpec(testContextBuilder: TestContextBuilder)
       }
     }
 
-    val defaultPagePath = v0.PagePath(defaultTenantId, "/folder/",
+    lazy val defaultPagePath = v0.PagePath(defaultTenantId, "/folder/",
                                     None, false, "page-title")
 
 
     // -------- Simple logins
 
-    "throw error for an invalid login id" >> {
+    "throw error for an invalid login id" in {
       val debateBadLogin = Debate(guid = "?", posts =
           T.post.copy(id = "1", loginId = "9999999")::Nil) // bad login id
       //SLog.info("Expecting ORA-02291: integrity constraint log message ------")
@@ -274,7 +274,7 @@ class DaoSpecV002ChildSpec(testContextBuilder: TestContextBuilder)
       //SLog.info("------------------------------------------------------------")
     }
 
-    "save an IdentitySimple login" >> {
+    "save an IdentitySimple login" in {
       val loginReq = LoginRequest(T.login, T.identitySimple)
       loginGrant = dao.saveLogin(loginReq)
       loginGrant.login.id must_!= "?"
@@ -283,9 +283,9 @@ class DaoSpecV002ChildSpec(testContextBuilder: TestContextBuilder)
       loginGrant.user.id must startWith("-") // dummy user ids start with -
     }
 
-    val loginId = loginGrant.login.id
+    lazy val loginId = loginGrant.login.id
 
-    "reuse the IdentitySimple and User" >> {
+    "reuse the IdentitySimple and User" in {
       val loginReq = LoginRequest(T.login.copy(date = new ju.Date),
                             T.identitySimple)  // same identity
       var grant = dao.saveLogin(loginReq)
@@ -294,7 +294,7 @@ class DaoSpecV002ChildSpec(testContextBuilder: TestContextBuilder)
       grant.user must matchUser(loginGrant.user)  // same user
     }
 
-    "create a new dummy User for an IdentitySimple with different website" >> {
+    "create a new dummy User for an IdentitySimple with different website" in {
       val loginReq = LoginRequest(T.login.copy(date = new ju.Date),
           T.identitySimple.copy(website = "weirdplace"))
       var grant = dao.saveLogin(loginReq)
@@ -310,10 +310,10 @@ class DaoSpecV002ChildSpec(testContextBuilder: TestContextBuilder)
                                 website = "weirdplace")
     }
 
-    //"have exactly one user" >> {  // no, 2??
+    //"have exactly one user" in {  // no, 2??
     //}
 
-    "create a new User for an IdentitySimple with different email" >> {
+    "create a new User for an IdentitySimple with different email" in {
       val loginReq = LoginRequest(T.login.copy(date = new ju.Date),
         T.identitySimple.copy(email = "other@email.yes"))
       var grant = dao.saveLogin(loginReq)
@@ -330,7 +330,7 @@ class DaoSpecV002ChildSpec(testContextBuilder: TestContextBuilder)
                                 email = "other@email.yes")
      }
 
-    "create a new User for an IdentitySimple with different name" >> {
+    "create a new User for an IdentitySimple with different name" in {
       val loginReq = LoginRequest(T.login.copy(date = new ju.Date),
         T.identitySimple.copy(name = "Spöket Laban"))
       var grant = dao.saveLogin(loginReq)
@@ -350,13 +350,13 @@ class DaoSpecV002ChildSpec(testContextBuilder: TestContextBuilder)
         displayName = "Spöket Laban")
     }
 
-    // "create a new User for an IdentitySimple, for another tenant" >> {
+    // "create a new User for an IdentitySimple, for another tenant" in {
     // }
 
 
     // -------- List no pages
 
-    "list no pages, if there are none" >> {
+    "list no pages, if there are none" in {
       val pagePathsDetails = dao.listPagePaths(
         PathRanges(trees = Seq("/")),  // all pages
         include = v0.PageStatus.All,
@@ -370,10 +370,10 @@ class DaoSpecV002ChildSpec(testContextBuilder: TestContextBuilder)
 
     // -------- Page creation
 
-    val ex1_rootPost = T.post.copy(
+    lazy val ex1_rootPost = T.post.copy(
       id = "1", loginId = loginId, text = ex1_postText)
 
-    "create a debate with a root post" >> {
+    "create a debate with a root post" in {
       val debateNoId = Debate(guid = "?", posts = ex1_rootPost::Nil)
       val page = dao.createPage(PageStuff(defaultPagePath, debateNoId))
       val actions = page.actions
@@ -383,7 +383,7 @@ class DaoSpecV002ChildSpec(testContextBuilder: TestContextBuilder)
       actions must havePostLike(ex1_rootPost)
     }
 
-    "find the debate and the post again" >> {
+    "find the debate and the post again" in {
       dao.loadPage(ex1_debate.guid) must beLike {
         case Some(d: Debate) => {
           d must havePostLike(ex1_rootPost)
@@ -391,7 +391,7 @@ class DaoSpecV002ChildSpec(testContextBuilder: TestContextBuilder)
       }
     }
 
-    "find the debate and the login and user again" >> {
+    "find the debate and the login and user again" in {
       dao.loadPage(ex1_debate.guid) must beLike {
         case Some(d: Debate) => {
           d.people.nilo(ex1_rootPost.loginId) must beLike {
@@ -409,7 +409,7 @@ class DaoSpecV002ChildSpec(testContextBuilder: TestContextBuilder)
 
     // -------- List one page
 
-    "list the recently created page" >> {
+    "list the recently created page" in {
       val pagePathsDetails = dao.listPagePaths(
         PathRanges(trees = Seq("/")),
         include = v0.PageStatus.All,
@@ -431,12 +431,12 @@ class DaoSpecV002ChildSpec(testContextBuilder: TestContextBuilder)
       }
     }
 
-    "list nothing for an empty list" >> {
+    "list nothing for an empty list" in {
       val pathsAndPages = dao.loadPageBodiesTitles(Nil)
       pathsAndPages must beEmpty
     }
 
-    "list no body and title, for a non-existing page" >> {
+    "list no body and title, for a non-existing page" in {
       val badPath = PagePath(
         tenantId = defaultTenantId,
         folder = "/",
@@ -450,7 +450,7 @@ class DaoSpecV002ChildSpec(testContextBuilder: TestContextBuilder)
       }
     }
 
-    "list body and title, for a page that exists" >> {
+    "list body and title, for a page that exists" in {
       val pathAndDetails = dao.listPagePaths(
         PathRanges(trees = Seq("/")),
         include = v0.PageStatus.All,
@@ -480,12 +480,12 @@ class DaoSpecV002ChildSpec(testContextBuilder: TestContextBuilder)
 
     // -------- Page meta info
 
-    "load and save meta info" >> {
+    "load and save meta info" in {
 
       var blogMainPageId = "?"
       var blogArticleId = "?"
 
-      "create a BlogMainPage" >> {
+      "create a BlogMainPage" in {
         val pageNoId = PageStuff(
           PageMeta(pageId = "?", pageRole = PageRole.BlogMainPage,
             parentPageId = None),
@@ -499,7 +499,7 @@ class DaoSpecV002ChildSpec(testContextBuilder: TestContextBuilder)
         actions.pageId.length must be_>(1)  // not = '?'
       }
 
-      "look up meta info for the BlogMainPage" >> {
+      "look up meta info for the BlogMainPage" in {
         dao.loadPageMeta(blogMainPageId) must beLike {
           case Some(pageMeta: PageMeta) => {
             pageMeta.pageRole must_== PageRole.BlogMainPage
@@ -509,7 +509,7 @@ class DaoSpecV002ChildSpec(testContextBuilder: TestContextBuilder)
         }
       }
 
-      "create a child BlogArticle" >> {
+      "create a child BlogArticle" in {
         val pageNoId = PageStuff(
           PageMeta(pageId = "?", pageRole = PageRole.BlogArticle,
             parentPageId = Some(blogMainPageId)),
@@ -523,7 +523,7 @@ class DaoSpecV002ChildSpec(testContextBuilder: TestContextBuilder)
         actions.pageId.length must be_>(1)  // not = '?'
       }
 
-      "look up meta info for the BlogArticle" >> {
+      "look up meta info for the BlogArticle" in {
         dao.loadPageMeta(blogArticleId) must beLike {
           case Some(pageMeta: PageMeta) => {
             pageMeta.pageRole must_== PageRole.BlogArticle
@@ -533,19 +533,19 @@ class DaoSpecV002ChildSpec(testContextBuilder: TestContextBuilder)
         }
       }
 
-      "find no child pages of a non-existing page" >> {
+      "find no child pages of a non-existing page" in {
         val childs = dao.listChildPages("doesNotExist",
           PageSortOrder.ByPublTime, limit = 10)
         childs.length must_== 0
       }
 
-      "find no child pages of a page with no children" >> {
+      "find no child pages of a page with no children" in {
         val childs = dao.listChildPages(blogArticleId,
           PageSortOrder.ByPublTime, limit = 10)
         childs.length must_== 0
       }
 
-      "find child pages of the BlogMainPage" >> {
+      "find child pages of the BlogMainPage" in {
         val childs = dao.listChildPages(blogMainPageId,
           PageSortOrder.ByPublTime, limit = 10)
         childs.length must_== 1
@@ -563,8 +563,8 @@ class DaoSpecV002ChildSpec(testContextBuilder: TestContextBuilder)
 
     // COULD: Find the Identity again, and the User.
 
-    val exPagePath = defaultPagePath.copy(pageId = Some(ex1_debate.guid))
-    "recognize its correct PagePath" >> {
+    lazy val exPagePath = defaultPagePath.copy(pageId = Some(ex1_debate.guid))
+    "recognize its correct PagePath" in {
       dao.checkPagePath(exPagePath) must beLike {
         case Some(correctPath: PagePath) =>
           correctPath must matchPagePath(exPagePath)
@@ -572,7 +572,7 @@ class DaoSpecV002ChildSpec(testContextBuilder: TestContextBuilder)
       }
     }
 
-    "correct an incorrect PagePath name" >> {
+    "correct an incorrect PagePath name" in {
       dao.checkPagePath(exPagePath.copy(pageSlug = "incorrect")) must beLike {
         case Some(correctPath: PagePath) =>
           correctPath must matchPagePath(exPagePath)
@@ -580,7 +580,7 @@ class DaoSpecV002ChildSpec(testContextBuilder: TestContextBuilder)
       }
     }
 
-    "correct an incorrect PagePath folder" >> {
+    "correct an incorrect PagePath folder" in {
       dao.checkPagePath(exPagePath.copy(folder = "/incorrect/")) must beLike {
         case Some(correctPath: PagePath) =>
           correctPath must matchPagePath(exPagePath)
@@ -588,18 +588,18 @@ class DaoSpecV002ChildSpec(testContextBuilder: TestContextBuilder)
       }
     }
 
-    //"remove a superfluous slash in a no-guid path" >> {
+    //"remove a superfluous slash in a no-guid path" in {
     //}
 
-    //"add a missing slash to a folder index" >> {
+    //"add a missing slash to a folder index" in {
     //}
 
     // -------- Page actions
 
-    val ex2_emptyPost = T.post.copy(parent = "1", text = "",
+    lazy val ex2_emptyPost = T.post.copy(parent = "1", text = "",
       loginId = loginId)
     var ex2_id = ""
-    "save an empty root post child post" >> {
+    "save an empty root post child post" in {
       dao.savePageActions(ex1_debate.guid, List(ex2_emptyPost)) must beLike {
         case List(p: Post) =>
           ex2_id = p.id
@@ -607,7 +607,7 @@ class DaoSpecV002ChildSpec(testContextBuilder: TestContextBuilder)
       }
     }
 
-    "find the empty post again" >> {
+    "find the empty post again" in {
       dao.loadPage(ex1_debate.guid) must beLike {
         case Some(d: Debate) => {
           d must havePostLike(ex2_emptyPost, id = ex2_id)
@@ -616,9 +616,9 @@ class DaoSpecV002ChildSpec(testContextBuilder: TestContextBuilder)
     }
 
     var ex3_ratingId = ""
-    val ex3_rating = T.rating.copy(loginId = loginId,
+    lazy val ex3_rating = T.rating.copy(loginId = loginId,
         postId = "1",  tags = "Interesting"::"Funny"::Nil)  // 2 tags
-    "save a post rating, with 2 tags" >> {
+    "save a post rating, with 2 tags" in {
       dao.savePageActions(ex1_debate.guid, List(ex3_rating)) must beLike {
         case List(r: Rating) =>
           ex3_ratingId = r.id
@@ -626,7 +626,7 @@ class DaoSpecV002ChildSpec(testContextBuilder: TestContextBuilder)
       }
     }
 
-    "find the rating again" >> {
+    "find the rating again" in {
       dao.loadPage(ex1_debate.guid) must beLike {
         case Some(d: Debate) => {
           d must haveRatingLike(ex3_rating, id = ex3_ratingId)
@@ -635,18 +635,18 @@ class DaoSpecV002ChildSpec(testContextBuilder: TestContextBuilder)
     }
 
     var ex4_rating1Id = ""
-    val ex4_rating1 =
+    lazy val ex4_rating1 =
       T.rating.copy(id = "?1", postId = "1", loginId = loginId,
                     tags = "Funny"::Nil)
     var ex4_rating2Id = ""
-    val ex4_rating2 =
+    lazy val ex4_rating2 =
       T.rating.copy(id = "?2", postId = "1", loginId = loginId,
                     tags = "Boring"::"Stupid"::Nil)
     var ex4_rating3Id = ""
-    val ex4_rating3 =
+    lazy val ex4_rating3 =
       T.rating.copy(id = "?3", postId = "1", loginId = loginId,
                     tags = "Boring"::"Stupid"::"Funny"::Nil)
-    "save 3 ratings, with 1, 2 and 3 tags" >> {
+    "save 3 ratings, with 1, 2 and 3 tags" in {
       dao.savePageActions(ex1_debate.guid,
                 List(ex4_rating1, ex4_rating2, ex4_rating3)
       ) must beLike {
@@ -660,7 +660,7 @@ class DaoSpecV002ChildSpec(testContextBuilder: TestContextBuilder)
       }
     }
 
-    "find the 3 ratings again" >> {
+    "find the 3 ratings again" in {
       dao.loadPage(ex1_debate.guid) must beLike {
         case Some(d: Debate) => {
           d must haveRatingLike(ex4_rating1, id = ex4_rating1Id)
@@ -673,7 +673,7 @@ class DaoSpecV002ChildSpec(testContextBuilder: TestContextBuilder)
     // -------- Entitle a Page
 
     /*
-    "save a Title, load the article with the title" >> {
+    "save a Title, load the article with the title" in {
       // Save a Title, for the root post.
       var postId = ""
       val postNoId = T.post.copy(tyype = PostType.Title, text = "Page-Title",
@@ -699,11 +699,11 @@ class DaoSpecV002ChildSpec(testContextBuilder: TestContextBuilder)
 
     // -------- Save approvals and rejections
 
-    "Save and load an approval" >> {
+    "Save and load an approval" in {
       testSaveLoadReview(isApproved = true)
     }
 
-    "Save and load a rejection" >> {
+    "Save and load a rejection" in {
       testSaveLoadReview(isApproved = false)
     }
 
@@ -731,10 +731,10 @@ class DaoSpecV002ChildSpec(testContextBuilder: TestContextBuilder)
 
     // -------- Publish a Post
 
-    "save a Publish, load the page body, and now it's published" >> {
+    "save a Publish, load the page body, and now it's published" in {
       // Save a Publ, for the root post.
       var postId = ""
-      val postNoId = T.post.copy(tyype = PostType.Publish, loginId = loginId)
+      lazy val postNoId = T.post.copy(tyype = PostType.Publish, loginId = loginId)
       dao.savePageActions(ex1_debate.guid, List(postNoId)) must beLike {
         case List(post: Post) =>
           postId = post.id
@@ -754,10 +754,10 @@ class DaoSpecV002ChildSpec(testContextBuilder: TestContextBuilder)
     // -------- Meta info
 
     var ex2MetaEmpty_id = ""
-    val exMeta_ex2EmptyMetaTmpl = T.post.copy(parent = ex2_id,
+    lazy val exMeta_ex2EmptyMetaTmpl = T.post.copy(parent = ex2_id,
         text = "", loginId = loginId, tyype = PostType.Meta)
     def exMeta_ex2EmptyMeta = exMeta_ex2EmptyMetaTmpl.copy(id = ex2MetaEmpty_id)
-    "save an empty meta post" >> {
+    "save an empty meta post" in {
       dao.savePageActions(ex1_debate.guid, List(exMeta_ex2EmptyMetaTmpl)
       ) must beLike {
         case List(p: Post) =>
@@ -766,7 +766,7 @@ class DaoSpecV002ChildSpec(testContextBuilder: TestContextBuilder)
       }
     }
 
-    "find the empty meta again, understand it's for post ex2" >> {
+    "find the empty meta again, understand it's for post ex2" in {
       dao.loadPage(ex1_debate.guid) must beLike {
         case Some(d: Debate) => {
           d must havePostLike(exMeta_ex2EmptyMeta, id = ex2MetaEmpty_id)
@@ -778,10 +778,10 @@ class DaoSpecV002ChildSpec(testContextBuilder: TestContextBuilder)
     }
 
     var ex2MetaArtQst_id = ""
-    val exMeta_ex2ArtQstTmpl = T.post.copy(parent = ex2_id,
+    lazy val exMeta_ex2ArtQstTmpl = T.post.copy(parent = ex2_id,
         text = "article-question", loginId = loginId, tyype = PostType.Meta)
     def exMeta_ex2ArtQst = exMeta_ex2ArtQstTmpl.copy(id = ex2MetaArtQst_id)
-    "save another meta post, wich reads 'article-question'" >> {
+    "save another meta post, wich reads 'article-question'" in {
       dao.savePageActions(ex1_debate.guid,
         List(exMeta_ex2ArtQstTmpl)
       ) must beLike {
@@ -791,7 +791,7 @@ class DaoSpecV002ChildSpec(testContextBuilder: TestContextBuilder)
       }
     }
 
-    "find the article-question meta again, understand what it means" >> {
+    "find the article-question meta again, understand what it means" in {
       dao.loadPage(ex1_debate.guid) must beLike {
         case Some(d: Debate) => {
           d must havePostLike(exMeta_ex2ArtQst)
@@ -808,22 +808,22 @@ class DaoSpecV002ChildSpec(testContextBuilder: TestContextBuilder)
     var exEdit_postId: String = null
     var exEdit_editId: String = null
 
-    "create a post to edit" >> {
+    "create a post to edit" in {
       // Make post creation action
-      val postNoId = T.post.copy(parent = "1", text = "Initial text",
+      lazy val postNoId = T.post.copy(parent = "1", text = "Initial text",
         loginId = loginId, markup = "dmd0")
 
       // Save post
-      val List(post: Post) =
+      lazy val List(post: Post) =
         dao.savePageActions(ex1_debate.guid, List(postNoId))
 
       post.text must_== "Initial text"
       post.markup must_== "dmd0"
-      val newText = "Edited text 054F2x"
+      lazy val newText = "Edited text 054F2x"
 
       exEdit_postId = post.id
 
-      "edit the post" >> {
+      "edit the post" in {
         // Make edit actions
         val patchText = makePatch(from = post.text, to = newText)
         val editNoId = Edit(
@@ -851,7 +851,7 @@ class DaoSpecV002ChildSpec(testContextBuilder: TestContextBuilder)
         }
       }
 
-      "change the markup type" >> {
+      "change the markup type" in {
         // Make edit actions
         val editNoId = Edit(
           id = "?x", postId = post.id, ctime = now, loginId = loginId,
@@ -881,23 +881,23 @@ class DaoSpecV002ChildSpec(testContextBuilder: TestContextBuilder)
 
     // -------- Load recent actions
 
-    "load recent actions" >> {
+    "load recent actions" in {
 
-      val badIp = Some("99.99.99.99")
-      val ip = Some("1.1.1.1")
+      lazy val badIp = Some("99.99.99.99")
+      lazy val ip = Some("1.1.1.1")
 
       def hasLoginsIdtysAndUsers(people: People) =
         people.logins.nonEmpty && people.identities.nonEmpty &&
         people.users.nonEmpty
 
-      "from IP, find nothing" >> {
+      "from IP, find nothing" in {
         val (actions, people) =
             dao.loadRecentActionExcerpts(fromIp = badIp, limit = 5)
         actions must beEmpty
         people must_== People.None
       }
 
-      "from IP, find a post, and edits of that post" >> {
+      "from IP, find a post, and edits of that post" in {
         val (actions, people) =
            dao.loadRecentActionExcerpts(fromIp = ip, limit = 99)
 
@@ -912,7 +912,7 @@ class DaoSpecV002ChildSpec(testContextBuilder: TestContextBuilder)
         */
       }
 
-      "from IP, find `limit`" >> {
+      "from IP, find `limit`" in {
         val (actions, people) =
            dao.loadRecentActionExcerpts(fromIp = ip, limit = 2)
         //actions.length must be_>=(?)
@@ -926,18 +926,18 @@ class DaoSpecV002ChildSpec(testContextBuilder: TestContextBuilder)
         */
       }
 
-      "by identity id, find nothing" >> {
+      "by identity id, find nothing" in {
         val (actions, people) = dao.loadRecentActionExcerpts(
            byIdentity = Some("9999999"), limit = 99)
         actions must beEmpty
         people must_== People.None
       }
 
-      "by identity id, find ..." >> {
+      "by identity id, find ..." in {
         // Not implemented, because no OpenID identity currently does anything.
       }
 
-      "by path, find nothing, in non existing tree and folder" >> {
+      "by path, find nothing, in non existing tree and folder" in {
         val (actions, people) = dao.loadRecentActionExcerpts(
           pathRanges = PathRanges(
             trees = Seq("/does/not/exist/"),
@@ -947,14 +947,14 @@ class DaoSpecV002ChildSpec(testContextBuilder: TestContextBuilder)
         people must_== People.None
       }
 
-      "by path, find something, in root tree" >> {
+      "by path, find something, in root tree" in {
         val (actions, people) = dao.loadRecentActionExcerpts(
           pathRanges = PathRanges(trees = Seq("/")), limit = 99)
         actions.length must be_>(0)
         hasLoginsIdtysAndUsers(people) must beTrue
       }
 
-      "by path, find something, in /folder/" >> {
+      "by path, find something, in /folder/" in {
         val (actions, people) = dao.loadRecentActionExcerpts(
           pathRanges = PathRanges(folders = Seq(defaultPagePath.folder)),
           limit = 99)
@@ -962,7 +962,7 @@ class DaoSpecV002ChildSpec(testContextBuilder: TestContextBuilder)
         hasLoginsIdtysAndUsers(people) must beTrue
       }
 
-      "by page id, find nothing, non existing page" >> {
+      "by page id, find nothing, non existing page" in {
         val (actions, people) = dao.loadRecentActionExcerpts(
           pathRanges = PathRanges(pageIds = Seq("nonexistingpage")),
           limit = 99)
@@ -970,7 +970,7 @@ class DaoSpecV002ChildSpec(testContextBuilder: TestContextBuilder)
         people must_== People.None
       }
 
-      "by page id, find something, when page exists" >> {
+      "by page id, find something, when page exists" in {
         val (actions, people) = dao.loadRecentActionExcerpts(
           pathRanges = PathRanges(pageIds = Seq(ex1_debate.id)),
           limit = 99)
@@ -978,7 +978,7 @@ class DaoSpecV002ChildSpec(testContextBuilder: TestContextBuilder)
         hasLoginsIdtysAndUsers(people) must beTrue
       }
 
-      "by page id, folder and tree, find something" >> {
+      "by page id, folder and tree, find something" in {
         val (actions, people) = dao.loadRecentActionExcerpts(
           pathRanges = PathRanges(
             pageIds = Seq(ex1_debate.id),  // exists
@@ -997,7 +997,7 @@ class DaoSpecV002ChildSpec(testContextBuilder: TestContextBuilder)
     var exOpenId_loginReq: LoginGrant = null
     def exOpenId_loginGrant: LoginGrant = exOpenId_loginReq  // correct name
     var exOpenId_userIds = mut.Set[String]()
-    "save a new OpenID login and create a user" >> {
+    "save a new OpenID login and create a user" in {
       val loginReq = LoginRequest(T.login, T.identityOpenId)
       exOpenId_loginReq = dao.saveLogin(loginReq)
       for (id <- exOpenId_loginReq.login.id ::
@@ -1025,7 +1025,7 @@ class DaoSpecV002ChildSpec(testContextBuilder: TestContextBuilder)
       exOpenId_userIds += exOpenId_loginReq.user.id
     }
 
-    "reuse the IdentityOpenId and User just created" >> {
+    "reuse the IdentityOpenId and User just created" in {
       val loginReq = LoginRequest(T.login.copy(date = new ju.Date),
           T.identityOpenId)
       val grant = dao.saveLogin(loginReq)
@@ -1037,7 +1037,7 @@ class DaoSpecV002ChildSpec(testContextBuilder: TestContextBuilder)
 
     // COULD test to change name + email too, instead of only changing country.
 
-    "update the IdentityOpenId, if attributes (country) changed" >> {
+    "update the IdentityOpenId, if attributes (country) changed" in {
       // Change the country attribute. The Dao should automatically save the
       // new value to the database, and use it henceforth.
       val loginReq = LoginRequest(T.login.copy(date = new ju.Date),
@@ -1050,14 +1050,14 @@ class DaoSpecV002ChildSpec(testContextBuilder: TestContextBuilder)
       grant.user must matchUser(exOpenId_loginReq.user)
     }
 
-    //"have exactly one user" >> {  // or, 3? there're 2 IdentitySimple users?
+    //"have exactly one user" in {  // or, 3? there're 2 IdentitySimple users?
     //}
 
     var exOpenId_loginGrant_2: LoginGrant = null
 
     // COULD test w/ new tenant but same claimed_ID, should also result in
     // a new User. So you can customize your user, per tenant.
-    "create new IdentityOpenId and User for a new claimed_id" >> {
+    "create new IdentityOpenId and User for a new claimed_id" in {
       val loginReq = LoginRequest(T.login.copy(date = new ju.Date),
         T.identityOpenId.copy(oidClaimedId = "something.else.com"))
       val grant = dao.saveLogin(loginReq)
@@ -1072,7 +1072,7 @@ class DaoSpecV002ChildSpec(testContextBuilder: TestContextBuilder)
 
     var exGmailLoginGrant: LoginGrant = null
 
-    "create new IdentityOpenId and User for a new claimed_id, Gmail addr" >> {
+    "create new IdentityOpenId and User for a new claimed_id, Gmail addr" in {
       val loginReq = LoginRequest(T.login.copy(date = new ju.Date),
         T.identityOpenId.copy(
           oidEndpoint = IdentityOpenId.GoogleEndpoint,
@@ -1085,7 +1085,7 @@ class DaoSpecV002ChildSpec(testContextBuilder: TestContextBuilder)
       exOpenId_userIds += grant.user.id
     }
 
-    "lookup OpenID identity, by login id" >> {
+    "lookup OpenID identity, by login id" in {
       dao.loadIdtyDetailsAndUser(
           forLoginId = exGmailLoginGrant.login.id) must beLike {
         case Some((identity, user)) =>
@@ -1094,7 +1094,7 @@ class DaoSpecV002ChildSpec(testContextBuilder: TestContextBuilder)
       }
     }
 
-    "lookup OpenID identity, by claimed id" >> {
+    "lookup OpenID identity, by claimed id" in {
       // (Use _2 because the first one has had its country modified)
       val oidSaved = exOpenId_loginGrant_2.identity.asInstanceOf[IdentityOpenId]
       val partialIdentity = oidSaved.copy(id = "?", userId = "?")
@@ -1105,7 +1105,7 @@ class DaoSpecV002ChildSpec(testContextBuilder: TestContextBuilder)
       }
     }
 
-    "lookup OpenID identity, by email, for Gmail" >> {
+    "lookup OpenID identity, by email, for Gmail" in {
       val partialIdentity = IdentityOpenId(
          id = "?", userId = "?", oidEndpoint = IdentityOpenId.GoogleEndpoint,
          oidVersion = "?", oidRealm = "?", oidClaimedId = "?",
@@ -1118,11 +1118,11 @@ class DaoSpecV002ChildSpec(testContextBuilder: TestContextBuilder)
       }
     }
 
-    //"have exactly two users" >> {  // no, 4? 2 + 2 = 4
+    //"have exactly two users" in {  // no, 4? 2 + 2 = 4
     //}
 
     /*
-    "create a new user, for a new tenant (but same claimed_id)" >> {
+    "create a new user, for a new tenant (but same claimed_id)" in {
       val loginReq = LoginRequest(T.login.copy(date = new ju.Date),
                               T.identityOpenId)
       val grant = dao.saveLogin("some-other-tenant-id", loginReq)
@@ -1137,7 +1137,7 @@ class DaoSpecV002ChildSpec(testContextBuilder: TestContextBuilder)
       }
     } */
 
-    "load relevant OpenID logins, when loading a Page" >> {
+    "load relevant OpenID logins, when loading a Page" in {
       // Save a post, using the OpenID login. Load the page and verify
       // the OpenID identity and user were loaded with the page.
       val newPost = T.post.copy(parent = "1", text = "",
@@ -1183,7 +1183,7 @@ class DaoSpecV002ChildSpec(testContextBuilder: TestContextBuilder)
     var emailEx_UnauUser: User = null
     var emailEx_OpenIdUser: User = null
 
-    "by default send no email to a new IdentitySimple" >> {
+    "by default send no email to a new IdentitySimple" in {
       val loginReq = LoginRequest(T.login.copy(date = new ju.Date),
         T.identitySimple.copy(email = emailEx_email, name = "Imail"))
       val grant = dao.saveLogin(loginReq)
@@ -1192,7 +1192,7 @@ class DaoSpecV002ChildSpec(testContextBuilder: TestContextBuilder)
       emailEx_loginGrant = grant
     }
 
-    "configure email to IdentitySimple" >> {
+    "configure email to IdentitySimple" in {
       def login = emailEx_loginGrant.login
       dao.configIdtySimple(loginId = login.id,
             ctime = new ju.Date, emailAddr = emailEx_email,
@@ -1203,13 +1203,13 @@ class DaoSpecV002ChildSpec(testContextBuilder: TestContextBuilder)
       emailEx_UnauUser = user  // save, to other test cases
     }
 
-    "by default send no email to a new Role" >> {
+    "by default send no email to a new Role" in {
       val login = exOpenId_loginGrant.login
       val Some((idty, user)) = dao.loadIdtyAndUser(forLoginId = login.id)
       user.emailNotfPrefs must_== EmailNotfPrefs.Unspecified
     }
 
-    "configure email to a Role" >> {
+    "configure email to a Role" in {
       val userToConfig = exOpenId_loginGrant.user
       val login = exOpenId_loginGrant.login
       dao.configRole(loginId = login.id,
@@ -1226,11 +1226,11 @@ class DaoSpecV002ChildSpec(testContextBuilder: TestContextBuilder)
 
     // An unauthenticated user and an authenticated user.
     // They have already been inserted in the db, and want email notfs.
-    val unauUser = emailEx_UnauUser
-    val auUser = emailEx_OpenIdUser
+    lazy val unauUser = emailEx_UnauUser
+    lazy val auUser = emailEx_OpenIdUser
 
     // A notification to the unauthenticated user.
-    val unauUserNotfSaved = NotfOfPageAction(
+    lazy val unauUserNotfSaved = NotfOfPageAction(
       ctime = new ju.Date,
       recipientUserId = unauUser.id,
       pageTitle = "EventPageForUnauUser",
@@ -1249,16 +1249,16 @@ class DaoSpecV002ChildSpec(testContextBuilder: TestContextBuilder)
     // maps to 2 notfs! But after I've added a PK to DW1_NOTFS_PAGE_ACTIONS,
     // that PK will allow only one. Then I'll have to fix/improve this test
     // case.)
-    val auUserNotfSaved = unauUserNotfSaved.copy(
+    lazy val auUserNotfSaved = unauUserNotfSaved.copy(
       eventActionId = exEdit_editId,
       recipientActionId = exEdit_postId,
       // eventType = should-change-from-reply-to-edit
       recipientUserId = auUser.id,  // not correct but works for this test
       pageTitle = "EventPageForAuUser")
 
-    "load and save notifications" >> {
+    "load and save notifications" in {
 
-      "find none, when there are none" >> {
+      "find none, when there are none" in {
         dao.loadNotfByEmailId("BadEmailId") must_== None
         dao.loadNotfsForRole(unauUser.id) must_== Nil
         dao.loadNotfsForRole(unauUser.id) must_== Nil
@@ -1268,10 +1268,10 @@ class DaoSpecV002ChildSpec(testContextBuilder: TestContextBuilder)
         notfsLoaded.notfsByTenant must_== Map.empty
       }
 
-      "save one, to an unauthenticated user" >> {
+      "save one, to an unauthenticated user" in {
         dao.saveNotfs(unauUserNotfSaved::Nil)
 
-        "load it, by user id" >> {
+        "load it, by user id" in {
           val notfsLoaded = dao.loadNotfsForRole(unauUser.id)
           notfsLoaded must beLike {
             case List(notfLoaded: NotfOfPageAction) =>
@@ -1279,7 +1279,7 @@ class DaoSpecV002ChildSpec(testContextBuilder: TestContextBuilder)
           }
         }
 
-        "load it, by time, to mail out" >> {
+        "load it, by time, to mail out" in {
           val notfsToMail = systemDao.loadNotfsToMailOut(
              delayInMinutes = 0, numToLoad = 10)
           notfsToMail.usersByTenantAndId.get((defaultTenantId, unauUser.id)
@@ -1292,10 +1292,10 @@ class DaoSpecV002ChildSpec(testContextBuilder: TestContextBuilder)
         }
       }
 
-      "save one, to an authenticated user" >> {
+      "save one, to an authenticated user" in {
         dao.saveNotfs(auUserNotfSaved::Nil)
 
-        "load it, by user id" >> {
+        "load it, by user id" in {
           val notfsLoaded = dao.loadNotfsForRole(auUser.id)
           notfsLoaded must beLike {
             case List(notfLoaded: NotfOfPageAction) =>
@@ -1303,7 +1303,7 @@ class DaoSpecV002ChildSpec(testContextBuilder: TestContextBuilder)
           }
         }
 
-        "load it, by time, to mail out" >> {
+        "load it, by time, to mail out" in {
           val notfsToMail = systemDao.loadNotfsToMailOut(
              delayInMinutes = 0, numToLoad = 10)
           notfsToMail.usersByTenantAndId.get((defaultTenantId, auUser.id)
@@ -1316,12 +1316,12 @@ class DaoSpecV002ChildSpec(testContextBuilder: TestContextBuilder)
         }
       }
 
-      "not load any notf, when specifying another user's id " >> {
+      "not load any notf, when specifying another user's id " in {
         val notfsLoaded = dao.loadNotfsForRole("WrongUserId")
         notfsLoaded must_== Nil
       }
 
-      "not load any notf, because they are too recent" >> {
+      "not load any notf, because they are too recent" in {
         val notfsLoaded =
           systemDao.loadNotfsToMailOut(delayInMinutes = 15, numToLoad = 10)
         notfsLoaded.usersByTenantAndId must_== Map.empty
@@ -1337,7 +1337,7 @@ class DaoSpecV002ChildSpec(testContextBuilder: TestContextBuilder)
          date = now, identityId = emailId)
       val loginReq = LoginRequest(loginNoId, IdentityEmailId(emailId))
       val loginGrant = dao.saveLogin(loginReq)
-      val emailIdty = loginGrant.identity.asInstanceOf[IdentityEmailId]
+      lazy val emailIdty = loginGrant.identity.asInstanceOf[IdentityEmailId]
       emailIdty.email must_== emailSentOk.sentTo
       emailIdty.notf.flatMap(_.emailId) must_== Some(emailSentOk.id)
       emailIdty.notf.map(_.recipientUserId) must_== Some(loginGrant.user.id)
@@ -1345,11 +1345,11 @@ class DaoSpecV002ChildSpec(testContextBuilder: TestContextBuilder)
     }
 
 
-    "support emails, to unauthenticated users" >> {
+    "support emails, to unauthenticated users" in {
 
-      val emailId = "10"
+      lazy val emailId = "10"
 
-      val emailToSend = Email(
+      lazy val emailToSend = Email(
         id = emailId,
         sentTo = "test@example.com",
         sentOn = None,
@@ -1357,11 +1357,11 @@ class DaoSpecV002ChildSpec(testContextBuilder: TestContextBuilder)
         bodyHtmlText = "<i>Test content.</i>",
         providerEmailId = None)
 
-      val emailSentOk = emailToSend.copy(
+      lazy val emailSentOk = emailToSend.copy(
         sentOn = Some(now),
         providerEmailId = Some("test-provider-id"))
 
-      val emailSentFailed = emailSentOk.copy(
+      lazy val emailSentFailed = emailSentOk.copy(
         providerEmailId = None,
         failureText = Some("Test failure"))
 
@@ -1375,28 +1375,28 @@ class DaoSpecV002ChildSpec(testContextBuilder: TestContextBuilder)
         usersNotfs
       }
 
-      "find the notification to mail out, to the unauth. user" >> {
+      "find the notification to mail out, to the unauth. user" in {
         val notfs: Seq[NotfOfPageAction] = loadNotfToMailOut(unauUser.id)
         notfs.size must_!= 0
         notfs must_== List(unauUserNotfSaved)
       }
 
-      "save an email, connect it to the notification, to the unauth. user" >> {
+      "save an email, connect it to the notification, to the unauth. user" in {
         dao.saveUnsentEmailConnectToNotfs(emailToSend, unauUserNotfSaved::Nil)
           // must throwNothing (how to test that?)
       }
 
-      "skip notf, when loading notfs to mail out; email already created" >> {
+      "skip notf, when loading notfs to mail out; email already created" in {
         val notfs: Seq[NotfOfPageAction] = loadNotfToMailOut(unauUser.id)
         notfs.size must_== 0
       }
 
-      "load the saved email" >> {
+      "load the saved email" in {
         val emailLoaded = dao.loadEmailById(emailToSend.id)
         emailLoaded must_== Some(emailToSend)
       }
 
-      "load the notification, find it connected to the email" >> {
+      "load the notification, find it connected to the email" in {
         // BROKEN many notfs might map to 1 email!
         dao.loadNotfByEmailId(emailToSend.id) must beLike {
           case Some(notf) =>
@@ -1405,37 +1405,37 @@ class DaoSpecV002ChildSpec(testContextBuilder: TestContextBuilder)
         }
       }
 
-      "update the email, to sent status" >> {
+      "update the email, to sent status" in {
         dao.updateSentEmail(emailSentOk)
         // must throwNothing (how to test that?)
       }
 
-      "load the email again, find it in okay status" >> {
+      "load the email again, find it in okay status" in {
         val emailLoaded = dao.loadEmailById(emailToSend.id)
         emailLoaded must_== Some(emailSentOk)
       }
 
-      "update the email, to failed status" >> {
+      "update the email, to failed status" in {
         dao.updateSentEmail(emailSentFailed)
         // must throwNothing (how to test that?)
       }
 
-      "load the email again, find it in failed status" >> {
+      "load the email again, find it in failed status" in {
         val emailLoaded = dao.loadEmailById(emailToSend.id)
         emailLoaded must_== Some(emailSentFailed)
       }
 
-      "update the failed email to sent status (simulates a re-send)" >> {
+      "update the failed email to sent status (simulates a re-send)" in {
         dao.updateSentEmail(emailSentOk)
         // must throwNothing (how to test that?)
       }
 
-      "load the email yet again, find it in sent status" >> {
+      "load the email yet again, find it in sent status" in {
         val emailLoaded = dao.loadEmailById(emailToSend.id)
         emailLoaded must_== Some(emailSentOk)
       }
 
-      "login and unsubscribe, via email" >> {
+      "login and unsubscribe, via email" in {
         val loginGrant = testLoginViaEmail(emailId, emailSentOk)
         loginGrant.user.isAuthenticated must_== false
         dao.configIdtySimple(loginId = loginGrant.login.id,
@@ -1448,11 +1448,11 @@ class DaoSpecV002ChildSpec(testContextBuilder: TestContextBuilder)
     }
 
 
-    "support emails, to authenticated users" >> {
+    "support emails, to authenticated users" in {
 
-      val emailId = "11"
+      lazy val emailId = "11"
 
-      val emailToSend = Email(
+      lazy val emailToSend = Email(
         id = emailId,
         sentTo = "test@example.com",
         sentOn = None,
@@ -1460,16 +1460,16 @@ class DaoSpecV002ChildSpec(testContextBuilder: TestContextBuilder)
         bodyHtmlText = "<i>Test content.</i>",
         providerEmailId = None)
 
-      val emailSentOk = emailToSend.copy(
+      lazy val emailSentOk = emailToSend.copy(
         sentOn = Some(now),
         providerEmailId = Some("test-provider-id"))
 
-      "save an email, connect it to a notification, to an auth. user" >> {
+      "save an email, connect it to a notification, to an auth. user" in {
         dao.saveUnsentEmailConnectToNotfs(emailToSend, auUserNotfSaved::Nil)
         // must throwNothing (how to test that?)
       }
 
-      "load the notification, find it connected to the email" >> {
+      "load the notification, find it connected to the email" in {
         dao.loadNotfByEmailId(emailToSend.id) must beLike {
           case Some(notf) =>
             notf.emailId must_== Some(emailToSend.id)
@@ -1477,17 +1477,17 @@ class DaoSpecV002ChildSpec(testContextBuilder: TestContextBuilder)
         }
       }
 
-      "update the email, to sent status" >> {
+      "update the email, to sent status" in {
         dao.updateSentEmail(emailSentOk)
         // must throwNothing (how to test that?)
       }
 
-      "load the email, find it in sent status" >> {
+      "load the email, find it in sent status" in {
         val emailLoaded = dao.loadEmailById(emailToSend.id)
         emailLoaded must_== Some(emailSentOk)
       }
 
-      "login and unsubscribe, via email" >> {
+      "login and unsubscribe, via email" in {
         val loginGrant = testLoginViaEmail(emailId, emailSentOk)
         loginGrant.user.isAuthenticated must_== true
         dao.configRole(loginId = loginGrant.login.id,
@@ -1503,24 +1503,24 @@ class DaoSpecV002ChildSpec(testContextBuilder: TestContextBuilder)
 
     // -------- Move a page
 
-    "move and rename pages" >> {
+    "move and rename pages" in {
 
-      val pagePath = dao.lookupPagePathByPageId(ex1_debate.guid).get
+      lazy val pagePath = dao.lookupPagePathByPageId(ex1_debate.guid).get
       var finalPath: PagePath = null
 
-      "leave a page as is" >> {
+      "leave a page as is" in {
         // No move/rename options specified:
         dao.moveRenamePage(pageId = ex1_debate.guid) must_== pagePath
       }
 
-      "won't move a non-existing page" >> {
+      "won't move a non-existing page" in {
         dao.moveRenamePage(
           pageId = "non_existing_page",
           newFolder = Some("/folder/"), showId = Some(false),
           newSlug = Some("new-slug")) must throwAn[Exception]
       }
 
-      "move a page to another folder" >> {
+      "move a page to another folder" in {
         val newPath = dao.moveRenamePage(pageId = ex1_debate.guid,
           newFolder = Some("/new-folder/"))
         newPath.folder must_== "/new-folder/"
@@ -1528,7 +1528,7 @@ class DaoSpecV002ChildSpec(testContextBuilder: TestContextBuilder)
         newPath.showId must_== pagePath.showId
       }
 
-      "rename a page" >> {
+      "rename a page" in {
         val newPath = dao.moveRenamePage(
           pageId = ex1_debate.guid,
           showId = Some(!pagePath.showId), // flip
@@ -1538,7 +1538,7 @@ class DaoSpecV002ChildSpec(testContextBuilder: TestContextBuilder)
         newPath.showId must_== !pagePath.showId
       }
 
-      "move and rename a page at the same time" >> {
+      "move and rename a page at the same time" in {
         val newPath = dao.moveRenamePage(
           pageId = ex1_debate.guid,
           newFolder = Some("/new-folder-2/"),
@@ -1550,7 +1550,7 @@ class DaoSpecV002ChildSpec(testContextBuilder: TestContextBuilder)
         finalPath = newPath
       }
 
-      "list the page at the correct location" >> {
+      "list the page at the correct location" in {
         val pagePathsDetails = dao.listPagePaths(
           PathRanges(trees = Seq("/")),
           include = v0.PageStatus.All,
@@ -1569,35 +1569,35 @@ class DaoSpecV002ChildSpec(testContextBuilder: TestContextBuilder)
 
     // -------- Move many pages
 
-    "move many pages" >> {
+    "move many pages" in {
 
-      "move Nil pages" >> {
+      "move Nil pages" in {
         dao.movePages(Nil, fromFolder = "/a/", toFolder = "/b/") must_== ()
       }
 
-      "won't move non-existing pages" >> {
+      "won't move non-existing pages" in {
         dao.movePages(List("nonexistingpage"), fromFolder = "/a/",
             toFolder = "/b/") must_== ()
       }
 
-      "can move page to /move-pages/folder1/" >> {
+      "can move page to /move-pages/folder1/" in {
         val pagePath = dao.lookupPagePathByPageId(ex1_debate.guid).get
         testMovePages(pagePath.folder, "/move-pages/folder1/")
       }
 
-      "can move page from /move-pages/folder1/ to /move-pages/f2/" >> {
+      "can move page from /move-pages/folder1/ to /move-pages/f2/" in {
         testMovePages("/move-pages/folder1/", "/move-pages/f2/")
       }
 
-      "can move page from /move-pages/f2/ to /.drafts/move-pages/f2/" >> {
+      "can move page from /move-pages/f2/ to /.drafts/move-pages/f2/" in {
         testMovePages("/", "/.drafts/", "/.drafts/move-pages/f2/")
       }
 
-      "can move page from /.drafts/move-pages/f2/ back to /move-pages/f2/" >> {
+      "can move page from /.drafts/move-pages/f2/ back to /move-pages/f2/" in {
         testMovePages("/.drafts/", "/", "/move-pages/f2/")
       }
 
-      "won't move pages that shouldn't be moved" >> {
+      "won't move pages that shouldn't be moved" in {
         // If moving pages specified by id:
         // Check 1 page, same tenant but wrong id.
         // And 1 page, other tenant id but same id.
@@ -1606,13 +1606,13 @@ class DaoSpecV002ChildSpec(testContextBuilder: TestContextBuilder)
         // And 1 page, other tenand, correct folder.
       }
 
-      "can move two pages, specified by id, at once" >> {
+      "can move two pages, specified by id, at once" in {
       }
 
-      "can move all pages in a folder at once" >> {
+      "can move all pages in a folder at once" in {
       }
 
-      "throws, if illegal folder names specified" >> {
+      "throws, if illegal folder names specified" in {
         testMovePages("no-slash", "/") must throwA[RuntimeException]
         testMovePages("/", "no-slash") must throwA[RuntimeException]
         testMovePages("/regex-*?[]-chars/", "/") must throwA[RuntimeException]
@@ -1631,12 +1631,12 @@ class DaoSpecV002ChildSpec(testContextBuilder: TestContextBuilder)
 
     // -------- Create more websites
 
-    "create new websites" >> {
+    "create new websites" in {
 
-      val creatorLogin = exOpenId_loginGrant.login
-      val creatorIdentity =
+      lazy val creatorLogin = exOpenId_loginGrant.login
+      lazy val creatorIdentity =
          exOpenId_loginGrant.identity.asInstanceOf[IdentityOpenId]
-      val creatorRole = exOpenId_loginGrant.user
+      lazy val creatorRole = exOpenId_loginGrant.user
 
       var newWebsiteOpt: Option[Tenant] = null
       var newHost = TenantHost("website-2.ex.com", TenantHost.RoleCanonical,
@@ -1649,25 +1649,25 @@ class DaoSpecV002ChildSpec(testContextBuilder: TestContextBuilder)
           ownerIdentity = creatorIdentity, ownerRole = creatorRole)
       }
 
-      "create a new website, from existing tenant" >> {
+      "create a new website, from existing tenant" in {
         newWebsiteOpt = createWebsite("2")
         newWebsiteOpt must beLike {
           case Some(tenant) => ok
         }
       }
 
-      "not create the same website again" >> {
+      "not create the same website again" in {
         createWebsite("2") must_== None
       }
 
-      "lookup the new website, from existing tenant" >> {
+      "lookup the new website, from existing tenant" in {
         systemDao.loadTenants(newWebsiteOpt.get.id::Nil) must beLike {
           case List(websiteInDb) =>
             websiteInDb must_== newWebsiteOpt.get.copy(hosts = List(newHost))
         }
       }
 
-      "not create too many websites from the same IP" >> {
+      "not create too many websites from the same IP" in {
         def create100Websites() {
           for (i <- 3 to 100)
             createWebsite(i.toString)
@@ -1681,34 +1681,34 @@ class DaoSpecV002ChildSpec(testContextBuilder: TestContextBuilder)
 
     // -------- Qutoa
 
-    "manage quota" >> {
+    "manage quota" in {
 
-      val role = exOpenId_loginGrant.user
-      val ip = "1.2.3.4"
+      lazy val role = exOpenId_loginGrant.user
+      lazy val ip = "1.2.3.4"
 
-      val tenantConsumer = QuotaConsumer.Tenant(defaultTenantId)
-      val tenantIpConsumer = QuotaConsumer.PerTenantIp(defaultTenantId, ip)
-      val globalIpConsumer = QuotaConsumer.GlobalIp(ip)
-      val roleConsumer = QuotaConsumer.Role(defaultTenantId, roleId = role.id)
+      lazy val tenantConsumer = QuotaConsumer.Tenant(defaultTenantId)
+      lazy val tenantIpConsumer = QuotaConsumer.PerTenantIp(defaultTenantId, ip)
+      lazy val globalIpConsumer = QuotaConsumer.GlobalIp(ip)
+      lazy val roleConsumer = QuotaConsumer.Role(defaultTenantId, roleId = role.id)
 
-      val consumers = List[QuotaConsumer](
+      lazy val consumers = List[QuotaConsumer](
          tenantConsumer, tenantIpConsumer, globalIpConsumer, roleConsumer)
 
-      "find none, if there is none" >> {
+      "find none, if there is none" in {
         val quotaStateByConsumer = systemDao.loadQuotaState(consumers)
         quotaStateByConsumer must beEmpty
       }
 
-      "do nothin, if nothing to do" >> {
+      "do nothin, if nothing to do" in {
         systemDao.useMoreQuotaUpdateLimits(Map[QuotaConsumer, QuotaDelta]())
           // ... should throw nothing
       }
 
-      val initialQuotaUse = QuotaUse(paid = 0, free = 200, freeload = 300)
+      lazy val initialQuotaUse = QuotaUse(paid = 0, free = 200, freeload = 300)
 
-      val firstLimits = QuotaUse(0, 1002, 1003)
+      lazy val firstLimits = QuotaUse(0, 1002, 1003)
 
-      val initialResUse = ResourceUse(
+      lazy val initialResUse = ResourceUse(
          numLogins = 1,
          numIdsUnau = 2,
          numIdsAu = 3,
@@ -1721,7 +1721,7 @@ class DaoSpecV002ChildSpec(testContextBuilder: TestContextBuilder)
          numDbReqsRead = 10,
          numDbReqsWrite = 11)
 
-      val initialDeltaTenant = QuotaDelta(
+      lazy val initialDeltaTenant = QuotaDelta(
          mtime = new ju.Date,
          deltaQuota = initialQuotaUse,
          deltaResources = initialResUse,
@@ -1731,22 +1731,22 @@ class DaoSpecV002ChildSpec(testContextBuilder: TestContextBuilder)
          initialDailyFreeload = 60,
          foundInDb = false)
 
-      val initialDeltaTenantIp = initialDeltaTenant.copy(
+      lazy val initialDeltaTenantIp = initialDeltaTenant.copy(
          initialDailyFreeload = 61)
 
-      val initialDeltaGlobalIp = initialDeltaTenant.copy(
+      lazy val initialDeltaGlobalIp = initialDeltaTenant.copy(
          initialDailyFreeload = 62)
 
-      val initialDeltaRole = initialDeltaTenant.copy(
+      lazy val initialDeltaRole = initialDeltaTenant.copy(
          initialDailyFreeload = 63)
 
-      val initialDeltas = Map[QuotaConsumer, QuotaDelta](
+      lazy val initialDeltas = Map[QuotaConsumer, QuotaDelta](
          tenantConsumer -> initialDeltaTenant,
          tenantIpConsumer -> initialDeltaTenantIp,
          globalIpConsumer -> initialDeltaGlobalIp,
          roleConsumer -> initialDeltaRole)
 
-      val initialQuotaStateTenant = QuotaState(
+      lazy val initialQuotaStateTenant = QuotaState(
          ctime = initialDeltaTenant.mtime,
          mtime = initialDeltaTenant.mtime,
          quotaUse = initialQuotaUse,
@@ -1755,16 +1755,16 @@ class DaoSpecV002ChildSpec(testContextBuilder: TestContextBuilder)
          quotaDailyFreeload = 60,
          resourceUse = initialResUse)
 
-      val initialQuotaStateTenantIp = initialQuotaStateTenant.copy(
+      lazy val initialQuotaStateTenantIp = initialQuotaStateTenant.copy(
          quotaDailyFreeload = 61)
 
-      val initialQuotaStateGlobalIp = initialQuotaStateTenant.copy(
+      lazy val initialQuotaStateGlobalIp = initialQuotaStateTenant.copy(
          quotaDailyFreeload = 62)
 
-      val initialQuotaStateRole = initialQuotaStateTenant.copy(
+      lazy val initialQuotaStateRole = initialQuotaStateTenant.copy(
          quotaDailyFreeload = 63)
 
-      "create new quota entries, when adding quota" >> {
+      "create new quota entries, when adding quota" in {
         systemDao.useMoreQuotaUpdateLimits(initialDeltas)
         val quotaStateByConsumer = systemDao.loadQuotaState(consumers)
 
@@ -1784,7 +1784,7 @@ class DaoSpecV002ChildSpec(testContextBuilder: TestContextBuilder)
       var laterQuotaStateTenant: QuotaState = null
       var laterQuotaStateGlobalIp: QuotaState = null
 
-      "add quota and resource deltas, set new limits" >> {
+      "add quota and resource deltas, set new limits" in {
         // Add the same deltas again, but with new limits and mtime.
 
         val laterTime = new ju.Date
@@ -1828,7 +1828,7 @@ class DaoSpecV002ChildSpec(testContextBuilder: TestContextBuilder)
            Some(laterQuotaStateRole)
       }
 
-      "not lower limits or time" >> {
+      "not lower limits or time" in {
         val lowerLimits = initialQuotaStateTenant.quotaLimits.copy(
           free = 502, freeload = 503)
         // Set time to 10 ms before current mtime.
@@ -1862,7 +1862,7 @@ class DaoSpecV002ChildSpec(testContextBuilder: TestContextBuilder)
            Some(unchangedQuotaState)
       }
 
-      "not complain if other server just created quota state entry" >> {
+      "not complain if other server just created quota state entry" in {
         // Set foundInDb = false, for an entry that already exists.
         // The server will attempt to insert it, which causes a unique key
         // error. But the server should swallow it, and continue
@@ -1913,7 +1913,7 @@ class DaoSpecV002ChildSpec(testContextBuilder: TestContextBuilder)
 
     // -------------
     //val ex3_emptyPost = T.post.copy(parent = "1", text = "Lemmings!")
-    //"create many many random posts" >> {
+    //"create many many random posts" in {
     //  for (i <- 1 to 10000) {
     //    dao.savePageActions(
     //          "-"+ ex1_debate.id, List(ex3_emptyPost)) must beLike {
