@@ -19,6 +19,17 @@ import java.{util => ju}
 // http://stackoverflow.com/questions/13174893/
 //    how-design-a-specs2-database-test-with-interdependent-tests
 
+/*
+By naming specs ChildSpec and including in debiki-dao-pgsqlq config file this snippet:
+
+testOptions := Seq(Tests.Filter(s =>
+  Seq("Spec", "Selenium").exists(s.endsWith(_)) &&
+    ! s.endsWith("ChildSpec")))
+
+we're telling Specs2 not to instantiate and run the ChildSpec:s many times.
+(So I've added that snippet to build.sbt in debiki-dao-pgsql, for now.
+But this test suite still starts running randomly in the middle!)
+ */
 
 /*
 ======================================
@@ -79,11 +90,11 @@ abstract class DaoTckTest(builder: TestContextBuilder)
   inline({
       // Need to empty the schema automatically before enabling this test?
       //new DaoSpecEmptySchema(builder),
-      new DaoSpecV002(builder)})
+      new DaoSpecV002ChildSpec(builder)})
 }
 
 
-abstract class DaoSpec(builder: TestContextBuilder, val defSchemaVersion: String)
+abstract class DaoChildSpec(builder: TestContextBuilder, val defSchemaVersion: String)
     extends Specification {
 
   sequential
@@ -130,7 +141,7 @@ abstract class DaoSpec(builder: TestContextBuilder, val defSchemaVersion: String
 
 
 /*
-class DaoSpecEmptySchema(b: TestContextBuilder) extends DaoSpec(b, "0") {
+class DaoSpecEmptySchema(b: TestContextBuilder) extends DaoChildSpec(b, "0") {
   val schemaIsEmpty = setup(EmptySchema)
 
   "A v0.DAO in a completely empty repo" when schemaIsEmpty should {
@@ -162,8 +173,8 @@ object Templates {
     newIp = None, ctime = new ju.Date, tags = Nil)
 }
 
-class DaoSpecV002(testContextBuilder: TestContextBuilder)
-    extends DaoSpec(testContextBuilder, "0.0.2") {
+class DaoSpecV002ChildSpec(testContextBuilder: TestContextBuilder)
+    extends DaoChildSpec(testContextBuilder, "0.0.2") {
 
   sequential  // so e.g. loginId inited before used in ctors
 
