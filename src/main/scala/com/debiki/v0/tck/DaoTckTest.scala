@@ -601,7 +601,7 @@ class DaoSpecV002ChildSpec(testContextBuilder: TestContextBuilder)
 
     // -------- Page meta info
 
-    "load and save meta info" in {
+    "load and save meta info" >> {
 
       var blogMainPageId = "?"
       var blogArticleId = "?"
@@ -929,20 +929,22 @@ class DaoSpecV002ChildSpec(testContextBuilder: TestContextBuilder)
     var exEdit_postId: String = null
     var exEdit_editId: String = null
 
-    "create a post to edit" in {
+    "create a post to edit" >> {
       // Make post creation action
       lazy val postNoId = T.post.copy(parent = "1", text = "Initial text",
         loginId = loginId, markup = "dmd0")
 
-      // Save post
-      lazy val List(post: Post) =
-        dao.savePageActions(ex1_debate.guid, List(postNoId))
+      var post: Post = null
 
-      post.text must_== "Initial text"
-      post.markup must_== "dmd0"
-      lazy val newText = "Edited text 054F2x"
+      "save post" in {
+        post = dao.savePageActions(ex1_debate.guid, List(postNoId)).head
+        post.text must_== "Initial text"
+        post.markup must_== "dmd0"
+        exEdit_postId = post.id
+        ok
+      }
 
-      exEdit_postId = post.id
+      val newText = "Edited text 054F2x"
 
       "edit the post" in {
         // Make edit actions
@@ -1002,7 +1004,7 @@ class DaoSpecV002ChildSpec(testContextBuilder: TestContextBuilder)
 
     // -------- Load recent actions
 
-    "load recent actions" in {
+    "load recent actions" >> {
 
       lazy val badIp = Some("99.99.99.99")
       lazy val ip = Some("1.1.1.1")
@@ -1144,6 +1146,7 @@ class DaoSpecV002ChildSpec(testContextBuilder: TestContextBuilder)
           website = "",
           isSuperAdmin = Boolean.box(false))
       exOpenId_userIds += exOpenId_loginReq.user.id
+      ok
     }
 
     "reuse the IdentityOpenId and User just created" in {
@@ -1204,6 +1207,7 @@ class DaoSpecV002ChildSpec(testContextBuilder: TestContextBuilder)
       val grant = exGmailLoginGrant
       exOpenId_userIds.contains(grant.user.id) must_== false
       exOpenId_userIds += grant.user.id
+      ok
     }
 
     "lookup OpenID identity, by login id" in {
@@ -1311,6 +1315,7 @@ class DaoSpecV002ChildSpec(testContextBuilder: TestContextBuilder)
       val Some((idty, user)) = dao.loadIdtyAndUser(forLoginId = grant.login.id)
       user.emailNotfPrefs must_== EmailNotfPrefs.Unspecified
       emailEx_loginGrant = grant
+      ok
     }
 
     "configure email to IdentitySimple" in {
@@ -1322,6 +1327,7 @@ class DaoSpecV002ChildSpec(testContextBuilder: TestContextBuilder)
          forLoginId = emailEx_loginGrant.login.id)
       user.emailNotfPrefs must_== EmailNotfPrefs.Receive
       emailEx_UnauUser = user  // save, to other test cases
+      ok
     }
 
     "by default send no email to a new Role" in {
@@ -1340,6 +1346,7 @@ class DaoSpecV002ChildSpec(testContextBuilder: TestContextBuilder)
          dao.loadIdtyAndUser(forLoginId = login.id)
       userConfigured.emailNotfPrefs must_== EmailNotfPrefs.Receive
       emailEx_OpenIdUser = userConfigured  // remember, to other test casese
+      ok
     }
 
 
@@ -1377,7 +1384,7 @@ class DaoSpecV002ChildSpec(testContextBuilder: TestContextBuilder)
       recipientUserId = auUser.id,  // not correct but works for this test
       pageTitle = "EventPageForAuUser")
 
-    "load and save notifications" in {
+    "load and save notifications" >> {
 
       "find none, when there are none" in {
         dao.loadNotfByEmailId("BadEmailId") must_== None
@@ -1389,10 +1396,11 @@ class DaoSpecV002ChildSpec(testContextBuilder: TestContextBuilder)
         notfsLoaded.notfsByTenant must_== Map.empty
       }
 
-      "save one, to an unauthenticated user" in {
-        dao.saveNotfs(unauUserNotfSaved::Nil)
+      "save one, to an unauthenticated user" >> {
 
         "load it, by user id" in {
+          dao.saveNotfs(unauUserNotfSaved::Nil)
+
           val notfsLoaded = dao.loadNotfsForRole(unauUser.id)
           notfsLoaded must beLike {
             case List(notfLoaded: NotfOfPageAction) =>
@@ -1413,10 +1421,11 @@ class DaoSpecV002ChildSpec(testContextBuilder: TestContextBuilder)
         }
       }
 
-      "save one, to an authenticated user" in {
-        dao.saveNotfs(auUserNotfSaved::Nil)
+      "save one, to an authenticated user" >> {
 
         "load it, by user id" in {
+          dao.saveNotfs(auUserNotfSaved::Nil)
+
           val notfsLoaded = dao.loadNotfsForRole(auUser.id)
           notfsLoaded must beLike {
             case List(notfLoaded: NotfOfPageAction) =>
@@ -1466,7 +1475,7 @@ class DaoSpecV002ChildSpec(testContextBuilder: TestContextBuilder)
     }
 
 
-    "support emails, to unauthenticated users" in {
+    "support emails, to unauthenticated users" >> {
 
       lazy val emailId = "10"
 
@@ -1569,7 +1578,7 @@ class DaoSpecV002ChildSpec(testContextBuilder: TestContextBuilder)
     }
 
 
-    "support emails, to authenticated users" in {
+    "support emails, to authenticated users" >> {
 
       lazy val emailId = "11"
 
@@ -1624,7 +1633,7 @@ class DaoSpecV002ChildSpec(testContextBuilder: TestContextBuilder)
 
     // -------- Move a page
 
-    "move and rename pages" in {
+    "move and rename pages" >> {
 
       lazy val pagePath = dao.lookupPagePathByPageId(ex1_debate.guid).get
       var finalPath: PagePath = null
@@ -1690,7 +1699,7 @@ class DaoSpecV002ChildSpec(testContextBuilder: TestContextBuilder)
 
     // -------- Move many pages
 
-    "move many pages" in {
+    "move many pages" >> {
 
       "move Nil pages" in {
         dao.movePages(Nil, fromFolder = "/a/", toFolder = "/b/") must_== ()
@@ -1752,7 +1761,7 @@ class DaoSpecV002ChildSpec(testContextBuilder: TestContextBuilder)
 
     // -------- Create more websites
 
-    "create new websites" in {
+    "create new websites" >> {
 
       lazy val creatorLogin = exOpenId_loginGrant.login
       lazy val creatorIdentity =
@@ -1802,7 +1811,7 @@ class DaoSpecV002ChildSpec(testContextBuilder: TestContextBuilder)
 
     // -------- Qutoa
 
-    "manage quota" in {
+    "manage quota" >> {
 
       lazy val role = exOpenId_loginGrant.user
       lazy val ip = "1.2.3.4"
