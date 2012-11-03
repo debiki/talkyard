@@ -56,6 +56,10 @@ class PageListItem extends ListItem
       @isMainPage = true
     super!
 
+  slug: -> d.i.findPageSlugIn @path
+
+  folderPath: -> d.i.parentFolderOfPage @path
+
 
 
 class FolderListItem extends ListItem
@@ -157,6 +161,10 @@ class FolderListItem extends ListItem
       listMorePagesDeriveFolders [pageListItem]
 
 
+  $scope.selectedPage =
+    getSelectedPageOrDie
+
+
   /**
    * Opens a page in a new browser tab.
    *
@@ -172,19 +180,9 @@ class FolderListItem extends ListItem
     # updatePageItem pageItem, withNewPageData: newPage
 
 
-  $scope.parentFolderOfSelectedPage = ->
-    pageListItem = getSelectedPageOrDie!
-    d.i.parentFolderOfPage pageListItem.path
-
-
-  $scope.pageSlugOfSelectedPage = ->
-    pageListItem = getSelectedPageOrDie!
-    d.i.findPageSlugIn pageListItem.path
-
-
   $scope.moveSelectedPageTo = (newFolder) ->
     pageListItem = getSelectedPageOrDie!
-    curFolder = d.i.parentFolderOfPage pageListItem.path
+    curFolder = pageListItem.folderPath!
     moveSelectedPages fromFolder: curFolder, toFolder: newFolder
 
 
@@ -259,7 +257,7 @@ class FolderListItem extends ListItem
       hide = item.isChildPage && !item.isMainPage
       unless hide
         $scope.listItems.push item
-        newFolderPaths.push d.i.parentFolderOfPage(item.path)
+        newFolderPaths.push item.folderPath!
 
     newFolderPaths = unique newFolderPaths
     newFolderPaths = reject (== '/'), newFolderPaths

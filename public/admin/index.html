@@ -128,7 +128,7 @@
               <div id='move-page-btn' class='dropdown'
                   ng-show='onePageSelected'>
                 <a class='btn dropdown-toggle' id='move-page-dropdown-btn' data-toggle='dropdown' href='#' role='button'
-                      ng-click='movePageForm.newFolder = parentFolderOfSelectedPage()'>Move</a>
+                      ng-click='movePageForm.newFolder = selectedPage().folderPath()'>Move</a>
                   <form name='movePageForm' class='dropdown-menu' role='menu' aria-labelledby='move-page-dropdown-btn'
                       ng-submit='moveSelectedPageTo(movePageForm.newFolder)'>
                   <label>Move page to folder:
@@ -147,7 +147,7 @@
               <div id='rename-page-btn' class='dropdown'
                   ng-show='onePageSelected'>
                 <a class='btn dropdown-toggle' id='rename-page-dropdown-btn' data-toggle='dropdown' href='#' role='button'
-                      ng-click='renamePageForm.newSlug = pageSlugOfSelectedPage()'>Rename</a>
+                      ng-click='renamePageForm.newSlug = selectedPage().slug()'>Rename</a>
                   <form name='renamePageForm' class='dropdown-menu' role='menu' aria-labelledby='rename-page-dropdown-btn'
                     ng-submit='renameSelectedPageTo({ newSlug: renamePageForm.newSlug, newTitle: renamePageForm.newTitle })'>
 
