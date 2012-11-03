@@ -5,6 +5,68 @@ d = i: debiki.internal, u: debiki.v0.util
 bug = d.u.die2
 
 
+
+class ListItem
+
+  ~>
+    @included = false
+    @open = false
+
+  displayPath: ->
+    @_displayPath ?= @setDisplayPath ''
+    @title || @_displayPath
+
+
+  setDisplayPath: ({ forParentFolder }) ->
+    @_displayPath = @path.replace forParentFolder, ''
+    # Also drop any query string, e.g. ?view-new-page=<pageid>
+    @_displayPath = @_displayPath.replace /\?.*/, ''
+
+
+  prettyClarifications: ->
+    roleClarified = switch @role
+      | 'BlogMainPage' => ['blog']
+      | _ => []
+
+    isHomePage = @path == '/'
+    isIndexPage = last(@path) == '/' && !@isFolder
+    locationClarified =
+      if isHomePage => ['homepage']
+      else if isIndexPage => ['index page']
+      else []
+
+    allClarifs = append roleClarified, locationClarified
+    clarifsText = allClarifs.join ', '
+
+    if @displayPath!length and clarifsText.length
+      clarifsText = '— ' + clarifsText
+
+    clarifsText
+
+
+
+class PageListItem extends ListItem
+
+  (page) ~>
+    @ <<< page
+    @pageId = @id # rename one of them?
+    @isPage = true
+    if @parentPageId => @isChildPage = true
+    if find (== @role), ['BlogMainPage', 'ForumMainPage', 'WikiMainPage']
+      @isMainPage = true
+    super!
+
+
+
+class FolderListItem extends ListItem
+
+  (folder) ~>
+    @ <<< folder
+    @isFolder = true
+    super!
+
+
+
 /**
  * Lists and creates pages, blogs, forums and wikis.
  *
@@ -83,7 +145,7 @@ bug = d.u.die2
           role: pageData.pageRole
           parentPageId: pageData.parentPageId
 
-      pageListItem = makePageListItem(page)
+      pageListItem = PageListItem page
       pageListItem.marks = ['NewUnsaved']
 
       # Select the new page, and nothing else, so the 'View/edit' button
@@ -162,13 +224,13 @@ bug = d.u.die2
   loadAndListPages = ->
     adminService.listAllPages (data) ->
       listMorePagesDeriveFolders <|
-          [makePageListItem(page) for page in data.pages]
+          [PageListItem(page) for page in data.pages]
 
 
   updatePageItem = (pageItem, { withNewPageData }) ->
     wasOpen = pageItem.open
     wasIncluded = pageItem.included
-    pageItem <<< makePageListItem(withNewPageData)
+    pageItem <<< PageListItem withNewPageData
     pageItem.open = wasOpen
     pageItem.included = wasIncluded
     redrawPageItems [pageItem]
@@ -206,33 +268,9 @@ bug = d.u.die2
         [item.path for item in $scope.listItems when item.isFolder]
 
     for newPath in newFolderPaths when not find (== newPath), oldFolderPaths
-      folderItem =
-          path: newPath
-          included: false
-          open: false
-          isFolder: true
-      $scope.listItems.push folderItem
+      $scope.listItems.push FolderListItem({ path: newPath })
 
     redrawPageList!
-
-
-  makePageListItem = (page) ->
-    item =
-        pageId: page.id
-        path: page.path
-        title: page.title
-        authors: page.authors
-        included: false
-        open: false
-        role: page.role
-        parentPageId: page.parentPageId
-        isPage: true
-
-    if item.parentPageId => item.isChildPage = true
-    if find (== item.role), ['BlogMainPage', 'ForumMainPage', 'WikiMainPage']
-      item.isMainPage = true
-
-    item
 
 
   redrawPageList = ->
@@ -333,9 +371,7 @@ bug = d.u.die2
             folderStack.pop()
 
       item.depth = folderStack.length
-      item.displayPath = item.path.replace curParentFolderPath, ''
-      # Also drop any query string, e.g. ?view-new-page=<pageid>&...
-      item.displayPath = item.displayPath.replace /\?.*/, ''
+      item.setDisplayPath forParentFolder: curParentFolderPath
       item.hideCount = curHideCount
 
       # Always show stuff with any marks (could be a page the user
@@ -362,31 +398,6 @@ bug = d.u.die2
 
   $scope.cssClassForMark = (mark) ->
     if mark then ' marked-path' else ''
-
-
-  $scope.displayPath = (item) ->
-    item.title || item.displayPath
-
-
-  $scope.stringifyClarifications = (item) ->
-    roleClarified = switch item.role
-      | 'BlogMainPage' => ['blog']
-      | _ => []
-
-    locationClarified = do ->
-      isHomePage = item.path == '/'
-      isIndexPage = last(item.path) == '/' && !item.isFolder
-      if isHomePage => ['homepage']
-      else if isIndexPage => ['index page']
-      else []
-
-    allClarifs = append roleClarified, locationClarified
-    clarifsText = allClarifs.join ', '
-
-    if $scope.displayPath(item).length and clarifsText.length
-      clarifsText = '— ' + clarifsText
-
-    clarifsText
 
 
   $scope.stringifyImportantMarksFor = (item) ->
