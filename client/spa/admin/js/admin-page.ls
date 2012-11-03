@@ -133,7 +133,7 @@ AdminModule.factory 'AdminService', ['$http', ($http) ->
 
 
   $scope.createDraftPage = ->
-    createPageInFolder <| '/.drafts/' + curYearMonthDayRelFolder!
+    createPageInFolder '/.drafts/'
 
 
   $scope.createPageInFolder = ->
@@ -598,26 +598,10 @@ function inlineBtnTogglersForPost(post)
   | _ => {}
 
 
-/**
- * A relative folder path, e.g. `2012/09/23/` (no leading slash).
- */
-function curYearMonthDayRelFolder
-  now = new Date!
-  return
-      padNumberToLength2(now.getFullYear!) + '/' +
-      padNumberToLength2(now.getMonth!) + '/' +
-      padNumberToLength2(now.getDate!) + '/'
-
-
-
-function padNumberToLength2(number)
-  if (''+ number).length == 1 then '0' + number
-  else ''+ number
-
 
 # For now, for the test suite:
 test = debiki.test || {}
-test.padNumberToLength2 = padNumberToLength2
+# test.someFunctionToTest = someFunctionToTest
 
 
 # vim: fdm=marker et ts=2 sw=2 tw=80 fo=tcqwn list

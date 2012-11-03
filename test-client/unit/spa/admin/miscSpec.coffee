@@ -146,12 +146,5 @@ describe 'analyzePagePath', ->
         pageId: 'ab3')
 
 
-describe 'padNumberToLength2', ->
-  it 'can pad 1 to 01', ->
-    expect(debiki.test.padNumberToLength2(1)).toEqual '01'
-
-  it 'can pad 11 to 11', ->
-    expect(debiki.test.padNumberToLength2(11)).toEqual '11'
-
 
 # vim: fdm=marker et ts=2 sw=2 fo=tcqwn list tw=80
