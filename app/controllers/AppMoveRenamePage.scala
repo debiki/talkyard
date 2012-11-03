@@ -53,6 +53,27 @@ object AppMoveRenamePage extends mvc.Controller {
   }
 
 
+  def renamePage = JsonOrFormDataPostAction(maxBytes = 500) { pageReq =>
+
+    if (!pageReq.user_!.isAdmin) {
+      // For now.
+      throwForbidden("DwE84Zi31", "Insufficient permissions to list pages")
+    }
+
+    val pageId: String = pageReq.body.getOrThrowBadReq("pageId")
+    //val newTitle: String = pageReq.body.getOrThrowBadReq("newTitle")
+    val newSlug: String = pageReq.body.getOrThrowBadReq("newSlug")
+
+    try {
+      pageReq.dao.moveRenamePage(pageId, newSlug = Some(newSlug))
+      Ok
+    } catch {
+      case ex: Dao.PageNotFoundException =>
+        NotFoundResult("DwE390xH3", s"Found no page with id $pageId")
+    }
+  }
+
+
   /**
    * @deprecated
    */
