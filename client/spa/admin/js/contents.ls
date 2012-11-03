@@ -6,11 +6,10 @@ bug = d.u.die2
 
 
 
-class ListItem
-
-  ~>
-    @included = false
-    @open = false
+/**
+ * Stringifies various ListItem fields, for display in html.
+ */
+PrettyListItem =
 
   displayPath: ->
     @_displayPath ?= @setDisplayPath ''
@@ -42,6 +41,14 @@ class ListItem
       clarifsText = '— ' + clarifsText
 
     clarifsText
+
+
+
+class ListItem implements PrettyListItem
+
+  ~>
+    @included = false
+    @open = false
 
 
 
