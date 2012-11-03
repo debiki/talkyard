@@ -93,6 +93,11 @@ AdminModule.factory 'AdminService', ['$http', ($http) ->
     $http.post '/-/move-pages', { pageIds: pageIds, fromFolder, toFolder }
         .success -> callback!
 
+
+  api.renamePage = (pageId, {newTitle, newSlug, callback}) ->
+    $http.post '/-/rename-page', { pageId, newTitle, newSlug }
+        .success -> callback!
+
   api
 
   ]
@@ -120,8 +125,20 @@ AdminModule.factory 'AdminService', ['$http', ($http) ->
     selectedPageListItems[0]
 
 
+  # i18n: COULD Use http://xregexp.com/ instead of the build in regex
+  # engine (so the title and slug will accept non-Latin chars),
+  # and ... I suppose I then cannot use the ng-pattern directive,
+  # I'll have to write an x-ng-xregexp directive?
   $scope.patterns =
     folderPath: //^/([^?#:\s]+/)?$//
+    dummy: //#// # restores Vim's syntax highlighting
+                 # (Vim thinks the first # starts a comment)
+    pageTitle: //^.*$//
+    # The page slug must not start with '-', because then the
+    # rest of the slug could be mistaken for the page id.
+    # Don't allow the slug to start with '_' — perhaps I'll decide
+    # to give '_' some magic meaning in the future?
+    pageSlug: //(^$)|(^[\w\d\.][\w\d\._-]*)$//
 
 
   $scope.createBlog = (location) ->
@@ -197,6 +214,11 @@ AdminModule.factory 'AdminService', ['$http', ($http) ->
     d.i.parentFolderOfPage pageListItem.path
 
 
+  $scope.pageSlugOfSelectedPage = ->
+    pageListItem = getSelectedPageOrDie!
+    d.i.findPageSlugIn pageListItem.path
+
+
   $scope.moveSelectedPageTo = (newFolder) ->
     pageListItem = getSelectedPageOrDie!
     curFolder = d.i.parentFolderOfPage pageListItem.path
@@ -212,6 +234,22 @@ AdminModule.factory 'AdminService', ['$http', ($http) ->
     for pageListItem in selectedPageListItems
       adminService.movePages [pageListItem.pageId],
           { fromFolder, toFolder, callback: refreshPageList }
+
+
+  $scope.renameSelectedPageTo = ({ newSlug, newTitle }) ->
+    refreshPageList = ->
+      # pageListItem.title = newTitle
+      # pageListItem.changeSlug newSlug
+      pageListItem.path = '/folder/' + newSlug + '?...'
+      redrawPageItems [pageListItem]
+
+    pageListItem = getSelectedPageOrDie!
+    if find (== 'NewUnsaved'), pageListItem.marks || []
+      # Page not yet saved, don't call server.
+      refreshPageList!
+    else
+      adminService.renamePage pageListItem.pageId,
+          { newSlug, newTitle, callback: refreshPageList }
 
 
   $scope.listItems = []

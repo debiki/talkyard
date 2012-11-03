@@ -144,6 +144,38 @@
                 </form>
               </div>
 
+              <div id='rename-page-btn' class='dropdown'
+                  ng-show='onePageSelected'>
+                <a class='btn dropdown-toggle' id='rename-page-dropdown-btn' data-toggle='dropdown' href='#' role='button'
+                      ng-click='renamePageForm.newSlug = pageSlugOfSelectedPage()'>Rename</a>
+                  <form name='renamePageForm' class='dropdown-menu' role='menu' aria-labelledby='rename-page-dropdown-btn'
+                    ng-submit='renameSelectedPageTo({ newSlug: renamePageForm.newSlug, newTitle: renamePageForm.newTitle })'>
+
+                  <!--
+                  <label>Change page title to:
+                    <input name='newTitleInput' type='text' xrequired
+                        ng-model='renamePageForm.newTitle'
+                        ng-pattern='patterns.pageTitle'>
+                  </label>
+                  <p ng-show='renamePageForm.newTitleInput.$error.pattern'>
+                    Enter something like: <i>Some Page Title</i>
+                  </p>
+                  -->
+
+                  <label>Change page slug to:
+                    <input name='newSlugInput' type='text' xrequired
+                        ng-model='renamePageForm.newSlug'
+                        ng-pattern='patterns.pageSlug'>
+                  </label>
+                  <p ng-show='renamePageForm.newSlugInput.$error.pattern'>
+                    Enter something like: <i>some-page-slug</i>
+                  </p>
+
+                  <input type='submit' value='Rename'
+                      ng-disabled='renamePageForm.$invalid'>
+                </form>
+              </div>
+
               <!--
               <a id='publish-page-btn' class='btn' ng-click='publishSelectedPages()' ng-show='onlyDraftsSelected'>Publish</a>
               <a id='publish-page-btn' class='btn' ng-click='unpublishSelectedPages()' ng-show='onlyPublishedSelected'>Unpublish</a>
