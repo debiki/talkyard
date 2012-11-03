@@ -114,7 +114,7 @@ exports.config =
           //
 
         'public/res/debiki-spa-admin.min.js':
-          // ^client/spa/admin/js/admin-page.ls
+          // ^client/spa/admin/js/
            | ^client/debiki/debiki-page-path.ls
           //
 
