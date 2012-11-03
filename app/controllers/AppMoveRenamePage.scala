@@ -83,7 +83,7 @@ object AppMoveRenamePage extends mvc.Controller {
   }
 
 
-  def showRenamePageForm(pathIn: PagePath) = PageGetAction(pathIn) {
+  def showRenamePageSlugForm(pathIn: PagePath) = PageGetAction(pathIn) {
         pageReq: PageGetRequest =>
      _moveRenameGetImpl(pageReq, movePage = false)
   }
@@ -143,7 +143,7 @@ object AppMoveRenamePage extends mvc.Controller {
   }
 
 
-  def handleRenamePageForm(pathIn: PagePath) =
+  def handleRenamePageSlugForm(pathIn: PagePath) =
         PagePostAction(maxUrlEncFormBytes = 200)(pathIn) {
     pageReq: PagePostRequest =>
       val newSlug = pageReq.getOrThrowBadReq("new-slug")

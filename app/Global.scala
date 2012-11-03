@@ -110,10 +110,10 @@ object Global extends GlobalSettings {
         AppMoveRenamePage.showMovePageForm(pagePath)
       case ("move-page", POST) =>
         AppMoveRenamePage.handleMovePageForm(pagePath)
-      case ("rename-page", GET) =>
-        AppMoveRenamePage.showRenamePageForm(pagePath)
-      case ("rename-page", POST) =>
-        AppMoveRenamePage.handleRenamePageForm(pagePath)
+      case ("rename-slug", GET) =>
+        AppMoveRenamePage.showRenamePageSlugForm(pagePath)
+      case ("rename-slug", POST) =>
+        AppMoveRenamePage.handleRenamePageSlugForm(pagePath)
       case ("list-pages", GET) =>
         AppList.listPages(pagePath, DebikiHttp.ContentType.Html)
       case ("list-pages.json", GET) =>
