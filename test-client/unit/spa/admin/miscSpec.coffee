@@ -1,4 +1,7 @@
 
+d = i: debiki.internal, u: debiki.v0.util
+
+
 ab = -> { a: 'aa', b: 'bb' }
 a  = -> { a: 'aa' }
 b  = -> { b: 'bb' }
@@ -45,7 +48,7 @@ describe '_.mapValsKickUndef', ->
 
 describe 'analyzePagePath', ->
 
-  analyzePagePath = debiki.test.analyzePagePath
+  analyzePagePath = d.i.analyzePagePath
 
   it "analyze the homepage", ->
     expect(analyzePagePath '/').toEqual(

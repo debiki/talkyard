@@ -434,6 +434,8 @@ class FolderListItem extends ListItem
   $scope.test =
     sortItemsInPlace: sortItemsInPlace
     updateListItemFields: updateListItemFields
+    PageListItem: PageListItem
+    FolderListItem: FolderListItem
 
   loadAndListPages!
 
