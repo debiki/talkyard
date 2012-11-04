@@ -158,11 +158,15 @@ object AppEdit extends mvc.Controller {
           _saveEdits(pageRequest, postId = postId, newText = newText,
           newMarkupOpt = newMarkupOpt)
 
-        val edit = editAndLazyPost.find(_.isInstanceOf[Edit]).getOrElse(
-           assErr("DwE9kH3")).asInstanceOf[Edit]
-
-        actions :::= editAndLazyPost
-        idsOfEditedPosts ::= edit.id
+        if (editAndLazyPost.isEmpty) {
+          // No changes made. (newText is the current text.)
+        }
+        else {
+          val edit = editAndLazyPost.find(_.isInstanceOf[Edit]).getOrElse(
+             assErr("DwE9kH3")).asInstanceOf[Edit]
+          actions :::= editAndLazyPost
+          idsOfEditedPosts ::= edit.id
+        }
       }
 
       val page = pageRequest.page_! ++ actions
