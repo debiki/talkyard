@@ -50,14 +50,7 @@ object Debiki {
   def renderPage(pageReq: PageRequest[_], appendToBody: NodeSeq = Nil,
         skipCache: Boolean = false): String = {
     val cache = if (skipCache) None else Some(PageCache)
-    if (DeprecatedTemplateEngine.isOldStyleTemplateSite(pageReq.tenantId)) {
-      val engine = new DeprecatedTemplateEngine(cache)
-      val htmlNode: NodeSeq = engine.renderPage(pageReq, appendToBody)
-      controllers.Utils.serializeHtml(htmlNode.head)
-    }
-    else {
-      PageRenderer(pageReq, cache, appendToBody).renderPage()
-    }
+    PageRenderer(pageReq, cache, appendToBody).renderPage()
   }
 
 
