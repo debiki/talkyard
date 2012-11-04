@@ -75,9 +75,14 @@ the name to lowercase.
           ng-minlength="6"
           ng-pattern="/^[a-z][a-z0-9-]*$/"
           ><kbd class='website-domain'>.@newWebsiteDomain</kbd>
+
       <div class="alert alert-block"
           ng-show="chooseNameForm.websiteNameInp.$error.pattern">
         Please use lowercase letters a-z and 0-9, e.g.: <i>my-new-website</i>
+      </div>
+      <div class="alert alert-block"
+           ng-show="chooseNameForm.websiteNameInp.$error.minlength">
+        The name should be at least six characters long.
       </div>
 
       <p>
