@@ -616,33 +616,23 @@ class CachingTenantDao(
   import CachingTenantDao.Key
 
 
-  override def createPage(page: PageStuff): PageStuff = {
-
-    // Create page.
-    val pageWithIdsNoUsers = super.createPage(page)
-
-    // Load users.
-    // This is kind of a bug workaround: Load the page
-    // *inclusive Login:s and User:s*, since only Actions are currently
-    // included in pageWithIdsNoUsers, and it cannot be used when rendering
-    // the page (there'd be None.get errors).
-    assert(super.tenantId == page.tenantId)
-    val actionsWithIds = super.loadPage(pageWithIdsNoUsers.id).get
-    val pageWithIds = pageWithIdsNoUsers.copy(actions = actionsWithIds)
-
-    // Cache page.
-    val key = Key(page.tenantId, actionsWithIds.guid)
-    val duplicate = _cache.cache.putIfAbsent(key, actionsWithIds)
-    runErrIf3(duplicate ne null,
-      "DwE8WcK905", "Newly created page already in mem cache, cache key: "+ key)
-
-    pageWithIds
-  }
-
-
   override def savePageActions[T <: Action](
       debateId: String, xs: List[T]): List[T] = {
-    for (xsWithIds <- super.savePageActions(debateId, xs)) yield {
+    _cache.cache.remove(Key(tenantId, debateId = debateId))
+    return super.savePageActions(debateId, xs)
+
+    // COULD instead update value in cache (adding the new actions to
+    // the cached page). But then `savePageActions` also needs to know
+    // which users created the actions, so their login/idty/user instances
+    // can be cached as well (or it won't be possible to render the page,
+    // later, when it's retrieved from the cache).
+    // So: COULD save login, idty and user to databaze *lazily*.
+    // Also, logins that doesn't actually do anything won't be saved
+    // to db, which is goood since they waste space.
+    // (They're useful for statistics, but that should probably be
+    // completely separated from the "main" db?)
+
+    /*  Updating the cache would look something like:
       val key = Key(tenantId, debateId)
       var replaced = false
       while (!replaced) {
@@ -650,23 +640,11 @@ class CachingTenantDao(
            _cache.tenantDaoDynVar.withValue(this) {
              _cache.cache.get(key)
            }
-        // -- Should to: -----------
-        // val newPage = oldPage ++ xsWithIds
+        val newPage = oldPage ++ actions ++ people-who-did-the-actions
         // newPage might == oldPage, if another thread just refreshed
         // the page from the database.
-        // -- But bug: -------------
-        // None$.get: newPage might not contain xs.loginId, nor the
-        // related Identity and User. So later, when newPage
-        // is rendered, there'll be a scala.None$.get, from inside
-        // DebateHtml._layoutPosts.
-        // -- So instead: ----------
-        // This loads all Logins, Identity:s and Users referenced by the page:
-        val newPage = super.loadPage(debateId).get
-        // -------- Unfortunately.--
         replaced = _cache.cache.replace(key, oldPage, newPage)
-      }
-      xsWithIds  // COULD return newPage instead? Or possibly a pair.
-    }
+    */
   }
 
 
