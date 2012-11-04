@@ -39,6 +39,7 @@ case class HtmlPostRenderer(
 
     if (post.isTreeDeleted) _showDeletedTree(post)
     else if (post.isDeleted) _showDeletedComment(post)
+    else if (post.id == Page.TitleId) _renderPageTitle(post)
     else _showComment(post)
   }
 
@@ -217,30 +218,10 @@ case class HtmlPostRenderer(
         </span>
       }
 
-    // Make a title for this post.
-    val postTitleXml: NodeSeq = {
+    val postTitleXml: NodeSeq =
       // Currently only the page body can have a title.
       if (post.id != Page.BodyId) Nil
-      else debate.titlePost match {
-        case Some(titlePost) if titlePost.text.nonEmpty =>
-          // The title is a post, itself.
-          // Therefore this XML is almost identical to the XML
-          // for the post that this title entitles.
-          // In the future, I could make a recursive call to
-          // _renderPost, to render the title. Then it would be
-          // possible to reply-inline to the title.
-          // (Don't wrap the <h1> in a <header>; there's no need to wrap single
-          // tags in a <header>.)
-          <div id={"post-"+ titlePost.id} class='dw-p dw-p-ttl'>
-            <div class='dw-p-bd'>
-              <div class='dw-p-bd-blk'>
-                <h1 class='dw-p-ttl'>{titlePost.text}</h1>
-              </div>
-            </div>
-          </div>
-        case _ => Nil
-      }
-    }
+      else debate.titlePost map(_renderPageTitle(_).html) getOrElse Nil
 
     val commentHtml =
     <div id={cssPostId} class={"dw-p" + cssArtclPost + cutS}>
@@ -263,9 +244,31 @@ case class HtmlPostRenderer(
       </div>
     </div>
 
-
     RenderedComment(html = commentHtml, replyBtnText = replyBtnText,
        topRatingsText = topTagsAsText, templCmdNodes = templCmdNodes)
+  }
+
+
+  def _renderPageTitle(titlePost: ViPo): RenderedComment = {
+    // The title is a post, itself.
+    // Therefore this XML is almost identical to the XML
+    // for the post that this title entitles.
+    // In the future, I could make a recursive call to
+    // _renderPost, to render the title. Then it would be
+    // possible to reply-inline to the title.
+    // (Don't wrap the <h1> in a <header>; there's no need to wrap single
+    // tags in a <header>.)
+    val html =
+      <div id={"post-"+ titlePost.id} class='dw-p dw-p-ttl'>
+        <div class='dw-p-bd'>
+          <div class='dw-p-bd-blk'>
+            <h1 class='dw-p-ttl'>{titlePost.text}</h1>
+          </div>
+        </div>
+      </div>
+
+    RenderedComment(html, replyBtnText = Nil,
+      topRatingsText = None, templCmdNodes = Nil)
   }
 
 
