@@ -119,6 +119,13 @@ html.js body.dw-render-actions-pending .dw-as {
   max-height: 8em;
 }
 
+/* Don't truncate the root post. (`:not()` isn't supported in <= IE8.) */
+.dw-depth-0 > .dw-p.dw-x-s,
+.dw-depth-0 > .dw-p.dw-x-s > .dw-p-bd,
+.dw-depth-0 > .dw-p.dw-x-s > .dw-p-hd {
+  max-height: none;
+}
+
 .dw-p > .dw-x-mark {
   display: block;
   position: absolute;
