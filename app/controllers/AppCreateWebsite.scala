@@ -173,9 +173,10 @@ object AppCreateWebsite extends mvc.Controller {
 
 
   private def _makeNewWebsiteEmail(website: Tenant, owner: User): Email = {
-    val message =
-      views.html.createWebsiteWelcomeEmail(website.chost_!.address).body
-    Email(sendTo = owner.email, subject = "New Debiki website created",
+    val address = website.chost_!.address
+    val message = views.html.createWebsiteWelcomeEmail(address).body
+    Email(sendTo = owner.email,
+      subject = s"New Debiki website created, here: http://$address",
       bodyHtmlText = message)
   }
 
