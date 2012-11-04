@@ -86,10 +86,6 @@ class PageCache {
         : NodeSeq = {
     try {
       val config = DebikiHttp.newUrlConfig(pageReq)
-      // The dialog templates includes the user name and cannot currently
-      // be cached.
-      val templates = HtmlForms(config, pageReq.xsrfToken.value,
-        pageReq.pageRoot, pageReq.permsOnPage).dialogTemplates
       val key = Key(
         pageReq.tenantId, pageReq.pagePath.pageId.get, pageReq.request.host,
         showComments = commentVisibility != CommentVisibility.Hidden)
@@ -106,12 +102,12 @@ class PageCache {
                   throw ex.getCause
                 throw ex
             }
-            page ++ templates
+            page
           }
 
         case (otherRoot, version) =>
           // The cache currently works only for the page body as page root.
-          _loadAndRender(key, pageReq) ++ templates
+          _loadAndRender(key, pageReq)
       }
     } catch {
       case e: NullPointerException =>

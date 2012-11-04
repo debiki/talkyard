@@ -264,11 +264,15 @@ class TemplateProgrammingInterface private (
   import TinyTemplateProgrammingInterface.{Page => _, _}
   import TemplateProgrammingInterface._
 
+  // COULD return xml.Unparsed, not String, so needn't use Html() in templates.
+
   def debikiHeadTags = views.html.debikiHeadTags(
     pageId, minMaxJs, minMaxCss).body
 
 
-  def debikiAppendToBodyTags = _pageRenderer.appendToBody
+  def debikiAppendToBodyTags: xml.NodeSeq =
+    _pageRenderer.dialogTemplates ++ _pageRenderer.appendToBody
+
 
   val debikiHtmlTagClasses =
     "DW "+
