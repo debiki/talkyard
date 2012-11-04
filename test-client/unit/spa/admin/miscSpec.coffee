@@ -150,4 +150,51 @@ describe 'analyzePagePath', ->
 
 
 
+describe 'changePageSlugIn', ->
+
+  changePageSlugIn = d.i.changePageSlugIn
+
+  # Note that Jasmin seems to overwrite the error message from the first
+  # loop lap with the one from the 2nd lap ??. So if a test fails for both
+  # '' and '/folder', the err mess for '' might (incorrectly) be identical
+  # to the one for '/folder'. Or am I missing something?
+  # COULD replace #{folder} with #folder if porting to LiveScript.
+
+  for folder, i in ['', '/folder']
+
+    # With no slug, before.
+
+    it "can change slug in '#{folder}/' to ''", ->
+      expect(changePageSlugIn "#{folder}/", to: "").toEqual("#{folder}/")
+
+    it "can change slug in '#{folder}/' to 'slug'", ->
+      expect(changePageSlugIn "#{folder}/", to: "slug").toEqual("#{folder}/slug")
+
+    it "can change slug in '#{folder}/-id' to ''", ->
+      expect(changePageSlugIn "#{folder}/-id", to: "").toEqual("#{folder}/-id")
+
+    it "can change slug in '#{folder}/-id' to 'slug'", ->
+      expect(changePageSlugIn "#{folder}/-id", to: "slug").toEqual("#{folder}/-id-slug")
+
+    it "can change slug in '#{folder}/-id-' to ''", ->
+      expect(changePageSlugIn "#{folder}/-id-", to: "").toEqual("#{folder}/-id")
+
+    it "can change slug in '#{folder}/-id-' to 'slug'", ->
+      expect(changePageSlugIn "#{folder}/-id-", to: "slug").toEqual("#{folder}/-id-slug")
+
+    # With slug, before.
+
+    it "can change slug in '#{folder}/old' to ''", ->
+      expect(changePageSlugIn "#{folder}/old", to: "").toEqual("#{folder}/")
+
+    it "can change slug in '#{folder}/old' to 'slug'", ->
+      expect(changePageSlugIn "#{folder}/old", to: "slug").toEqual("#{folder}/slug")
+
+    it "can change slug in '#{folder}/-id-old' to ''", ->
+      expect(changePageSlugIn "#{folder}/-id-old", to: "").toEqual("#{folder}/-id")
+
+    it "can change slug in '#{folder}/-id-old' to 'slug'", ->
+      expect(changePageSlugIn "#{folder}/-id-old", to: "slug").toEqual("#{folder}/-id-slug")
+
+
 # vim: fdm=marker et ts=2 sw=2 fo=tcqwn list tw=80

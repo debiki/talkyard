@@ -30,11 +30,45 @@ d.i.parentFolderOfPage = (path) ->
 
 
 
+noPageSlugReqex = //^([^?]*/)(-[a-z0-9]+-?)?(\?.*)?$//
+pageSlugReqex = //^([^?]*/)(-[a-z0-9]+-)?([^/?-][^?/]*)(\?.*)?$//
+
+
+
 d.i.findPageSlugIn = (path) ->
-  matches = path.match //^[^?]*/(-[a-z0-9]+-)?([^/?-][^?/]*)(\?.*)?$//
+  matches = path.match pageSlugReqex
   if !matches => return ''
-  bug('DwE83KX1') if matches.length != 4
-  matches[2]
+  bug('DwE83KX1') if matches.length != 5
+  matches[3]
+
+
+
+d.i.changePageSlugIn = (path, { to }) ->
+  newSlug = to
+  matchCount = 0
+  result = path.replace noPageSlugReqex, (mtch, $1, $2, $3) ->
+    matchCount += 1
+    # Add any missing '-' between id and slug, or remove if newSlug empty.
+    $2withHyphen =
+      if !$2 => ''
+      else if !newSlug && last($2) == '-' => initial $2
+      else if !newSlug => $2
+      else if last($2) != '-' => $2 + '-'
+      else $2
+    $3 ?= ''
+    $1 + $2withHyphen + newSlug + $3
+
+  if matchCount > 0
+    return result
+
+  path.replace pageSlugReqex, (mtch, $1, $2, $3, $4) ->
+    # Remove any trailing '-' from page id, if newSlug empty.
+    $2 =
+      if !$2 => ''
+      else if !newSlug && last($2) == '-' => initial $2
+      else $2
+    $4 ?= ''
+    $1 + $2 + newSlug + $4
 
 
 

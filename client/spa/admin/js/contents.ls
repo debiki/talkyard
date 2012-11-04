@@ -108,6 +108,10 @@ class PageListItem extends ListItem
 
   folderPath: -> d.i.parentFolderOfPage @path
 
+  changeSlug: (newSlug) ->
+    @path = d.i.changePageSlugIn @path, to: newSlug
+    @clearCache!
+
 
 
 class FolderListItem extends ListItem
@@ -249,8 +253,7 @@ class FolderListItem extends ListItem
   $scope.renameSelectedPageTo = ({ newSlug, newTitle }) ->
     refreshPageList = ->
       # pageListItem.title = newTitle
-      # pageListItem.changeSlug newSlug
-      pageListItem.path = '/folder/' + newSlug + '?...'
+      pageListItem.changeSlug newSlug
       redrawPageItems [pageListItem]
 
     pageListItem = getSelectedPageOrDie!
