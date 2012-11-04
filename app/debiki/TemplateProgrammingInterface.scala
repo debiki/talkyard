@@ -72,7 +72,7 @@ class InternalTemplateProgrammingInterface protected (
    */
   def websiteConfigPagePath = PagePath(
     tenantId = _dao.tenantId, folder = "/", pageId = None,
-    showId = false, pageSlug = ".site.conf")
+    showId = false, pageSlug = ".website-config.yaml")
 
 
   protected def _websiteConfigValueOpt(confValName: String): Option[String] = {
