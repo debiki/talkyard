@@ -5,14 +5,14 @@ $ = d.i.$
 
 
 d.i.analyzePagePath = (path) ->
-  pageId = findPageIdIn(path)
+  pageId = d.i.findPageIdIn(path)
   showId = pageId != null
   if (!pageId)
-    pageId = findPageIdForNewPage path
+    pageId = d.i.findPageIdForNewPage path
 
   return
-    folder: parentFolderOfPage path
-    pageSlug: findPageSlugIn path
+    folder: d.i.parentFolderOfPage path
+    pageSlug: d.i.findPageSlugIn path
     showId: showId
     pageId: pageId
 
