@@ -11,6 +11,10 @@ bug = d.u.die2
  */
 PrettyListItem =
 
+  clearCache: ->
+    @_displayPath = null
+
+
   displayPath: ->
     @_displayPath ?= @setDisplayPath ''
     @title || @_displayPath
@@ -43,12 +47,49 @@ PrettyListItem =
     clarifsText
 
 
+  cssClassFolderOrPage: ->
+    if @isPage then 'is-page' else 'is-folder'
+
+
+  cssClassForMark: ->
+    if @marks then ' marked-path' else ''
+
+
+  stringifyImportantMarks: ->
+    text = ''
+    for mark in @marks || []
+      switch mark
+      | 'NewUnsaved' => text += ' (new, unsaved)'
+    text
+
+
+  stringifyOtherMarks: ->
+    text = ''
+    for mark in @marks || []
+      switch mark
+      | 'NewSaved' => text += ' (new, saved)'
+    text
+
+
+
 
 class ListItem implements PrettyListItem
 
   ~>
     @included = false
     @open = false
+
+  /**
+   * Updates this ListItem with data from another list item,
+   * without overwriting certain states.
+   */
+  update = ({ withDataFrom }) ->
+    wasOpen = @open
+    wasIncluded = @included
+    @ <<< withDataFrom
+    @open = wasOpen
+    @included = wasIncluded
+    @clearCache!
 
 
 
@@ -184,7 +225,8 @@ class FolderListItem extends ListItem
     # COULD add callback that if page saved: (see Git stash 196d8accb80b81)
     # pageItem.marks = reject (== 'NewUnsaved'), pageItem.marks
     # pageItem.marks.push 'NewSaved'
-    # updatePageItem pageItem, withNewPageData: newPage
+    # pageItem.update withDataFrom: ...
+    # and then: redrawPageItems [pageItem]
 
 
   $scope.moveSelectedPageTo = (newFolder) ->
@@ -222,23 +264,11 @@ class FolderListItem extends ListItem
 
   $scope.listItems = []
 
-  $scope.isFolderOrPageClass = (item) ->
-    if item.isPage then 'is-page' else 'is-folder'
-
 
   loadAndListPages = ->
     adminService.listAllPages (data) ->
       listMorePagesDeriveFolders <|
           [PageListItem(page) for page in data.pages]
-
-
-  updatePageItem = (pageItem, { withNewPageData }) ->
-    wasOpen = pageItem.open
-    wasIncluded = pageItem.included
-    pageItem <<< PageListItem withNewPageData
-    pageItem.open = wasOpen
-    pageItem.included = wasIncluded
-    redrawPageItems [pageItem]
 
 
   redrawPageItems = (pageItems) ->
@@ -399,26 +429,6 @@ class FolderListItem extends ListItem
   $scope.openClose = (item) ->
     item.open = !item.open
     updateListItemFields $scope.listItems
-
-
-  $scope.cssClassForMark = (mark) ->
-    if mark then ' marked-path' else ''
-
-
-  $scope.stringifyImportantMarksFor = (item) ->
-    text = ''
-    for mark in item.marks || []
-      switch mark
-      | 'NewUnsaved' => text += ' (new, unsaved)'
-    text
-
-
-  $scope.stringifyOtherMarksFor = (item) ->
-    text = ''
-    for mark in item.marks || []
-      switch mark
-      | 'NewSaved' => text += ' (new, saved)'
-    text
 
 
   $scope.test =

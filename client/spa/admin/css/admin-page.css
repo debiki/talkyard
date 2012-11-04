@@ -64,7 +64,7 @@ h1 {
   display: block !important;
 }
 .marked-path a {
-  color: red !important;
+  color: hsl(211, 100%, 45%) !important;
   font-weight: bold;
 }
 .page-clarification {
@@ -149,6 +149,11 @@ li {
 .open-close-path:hover,
 .included-true .open-close-path {
   color: hsl(211, 100%, 11%) !important;
+}
+
+.marked-path .open-close-path:hover,
+.marked-path.included-true .open-close-path {
+  color: hsl(211, 100%, 40%) !important;
 }
 .included-true .open-close-path:hover {
   background-color: #dfdfdf;
