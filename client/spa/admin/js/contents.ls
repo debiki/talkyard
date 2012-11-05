@@ -28,7 +28,7 @@ PrettyListItem =
 
   prettyClarifications: ->
     roleClarified = switch @role
-      | 'BlogMainPage' => ['blog']
+      | 'BlogMainPage' => ['blog main page']
       | _ => []
 
     isHomePage = @path == '/'
@@ -68,11 +68,14 @@ PrettyListItem =
     for mark in @marks || []
       switch mark
       | 'NewSaved' => text += ' (new, saved)'
+      | 'New' => text += ' (newly created)'
     text
 
 
 
-
+/**
+ * A page or a folder in the contents list.
+ */
 class ListItem implements PrettyListItem
 
   ~>
