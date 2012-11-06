@@ -352,6 +352,18 @@ function _$showEditFormImpl() {
       d.u.postJson({ url: '/-/edit', data: jsonObj })
           .fail(d.i.showErrorEnableInputs($editForm))
           .done(function(newDebateHtml) {
+
+        // In case this page is a new page that was just created from an
+        // admin page, then notify the admin page that this page was saved.
+        if (window.opener.debiki && window.opener.debiki.v0) {
+          var callbacks =
+              window.opener.debiki.v0.onChildPageSavedCallbacks || [];
+          var pageId = $editForm.dwPageMeta().pageId;
+          $.each(callbacks, function(index, callback) { 
+            callback(pageId, postId);
+          });
+        }
+
         d.i.slideAwayRemove($editForm);
         // If the edit was a *suggestion* only, the post body has not been
         // changed. Unless we make it visible again, it'll remain hidden

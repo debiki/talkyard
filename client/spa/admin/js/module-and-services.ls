@@ -15,7 +15,10 @@ AdminModule.filter 'filterProp', ->
 
 
 
-AdminModule.factory 'AdminService', ['$http', ($http) ->
+AdminModule.factory 'AdminService', ['$http', '$rootScope', adminService]
+
+
+function adminService ($http, $rootScope)
 
   pagesById = {}
   api = {}
@@ -89,6 +92,20 @@ AdminModule.factory 'AdminService', ['$http', ($http) ->
       callback viewNewPageUrl
 
 
+  # Newly created pages knows to call each function in
+  # onChildPageSavedCallbacks when saved, on window.opener.
+  debiki.v0.onChildPageSavedCallbacks ?= []
+  debiki.v0.onChildPageSavedCallbacks.push (pageId, postId) ->
+    $rootScope.$apply ->
+      for callback in onChildPageSavedCallbacks
+        callback pageId, postId
+
+  onChildPageSavedCallbacks = []
+
+  api.onPageSaved = (callback) ->
+    onChildPageSavedCallbacks.push callback
+
+
   api.movePages = (pageIds, {fromFolder, toFolder, callback}) ->
     $http.post '/-/move-pages', { pageIds: pageIds, fromFolder, toFolder }
         .success -> callback!
@@ -99,8 +116,6 @@ AdminModule.factory 'AdminService', ['$http', ($http) ->
         .success -> callback!
 
   api
-
-  ]
 
 
 # vim: fdm=marker et ts=2 sw=2 tw=80 fo=tcqwn list

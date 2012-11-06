@@ -187,33 +187,51 @@ class FolderListItem extends ListItem
 
 
   /**
-   * Creates a new page list item, which, from the user's point of view,
-   * is similar to creating a new unsaved page.
+   * Creates a new unsaved page and opens it in a new browser tab.
+   * Adds it to the contents list, marked as new, and selects it,
+   * if/when the user edits and saves the page (in the other browser tab).
    *
    * `pageData` should be a:
    *    { folder, pageSlug, showId, (pageRole, parentPageId) }
    * where (...) is optional.
    */
   createPage = (pageData) ->
+    # Open new tab directly in response to user click, or browser popup
+    # blockers tend to block the new tab.
+    newTab = window.open '', '_blank'
+
     adminService.getViewNewPageUrl pageData, (viewNewPageUrl) ->
-      page =
+      pageItem = PageListItem (
           path: viewNewPageUrl
           id: d.i.findPageIdForNewPage viewNewPageUrl
           #title: undefined
           #authors: undefined # should be current user
           role: pageData.pageRole
           parentPageId: pageData.parentPageId
+          marks: ['New'])
 
-      pageListItem = PageListItem page
-      pageListItem.marks = ['NewUnsaved']
+      # If saved, `newTab` will call debiki.v0.onChildPageSavedCallbacks
+      # on its window.opener. Then, from such a callbak (added just below),
+      # we look up `pageItem` and add it to $scope.listItems.
+      newUnsavedPageItemsById[pageItem.id] = pageItem
+      newTab.location = pageItem.path
 
-      # Select the new page, and nothing else, so the 'View/edit' button
-      # appears and the user hopefully understands what to do next.
-      pageListItem.included = true
-      for item in $scope.listItems
-        item.included = false
 
-      listMorePagesDeriveFolders [pageListItem]
+  newUnsavedPageItemsById = []
+
+  adminService.onPageSaved (pageId, postId) ->
+    newlySavedPageItem = newUnsavedPageItemsById[pageId]
+    unless newlySavedPageItem
+      bug 'DwE903KR2'
+      return
+
+    # Select the new page (unless the user has selected something else),
+    # So the user more easily finds it when returning to the dashboard?
+    otherPageSelected = find (.included), $scope.listItems
+    unless otherPageSelected
+      newlySavedPageItem.included = true
+
+    listMorePagesDeriveFolders [newlySavedPageItem]
 
 
   $scope.selectedPage =
@@ -260,12 +278,8 @@ class FolderListItem extends ListItem
       redrawPageItems [pageListItem]
 
     pageListItem = getSelectedPageOrDie!
-    if find (== 'NewUnsaved'), pageListItem.marks || []
-      # Page not yet saved, don't call server.
-      refreshPageList!
-    else
-      adminService.renamePage pageListItem.pageId,
-          { newSlug, newTitle, callback: refreshPageList }
+    adminService.renamePage pageListItem.pageId,
+        { newSlug, newTitle, callback: refreshPageList }
 
 
   $scope.listItems = []
