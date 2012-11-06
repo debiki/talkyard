@@ -130,25 +130,11 @@ class Notifier(val daoFactory: DaoFactory) extends Actor {
   def _constructEmail(origin: String, user: User,
         notfs: Seq[NotfOfPageAction]): Email = {
 
-    val rcptEmailAddr =
-      if (user.email == "kajmagnus@debiki.se"
-       || user.email == "support@debiki.se"
-       || user.email == "non-existing-address@debiki.se"
-       || user.email == "kajmagnus79@gmail.com"
-       || user.email == "kajmagnus79d@gmail.com"
-       || user.email == "kaj.lindberg@telia.com") {
-      // These addresses are AWS SES verified addresses.
-      user.email
-    } else {
-      // Direct all email to this verified address, for now.
-      "kajmagnus@debiki.se"
-    }
-
     val subject: String =
       if (notfs.size == 1) "You have a reply, to one of your comments"
       else "You have replies, to comments of yours"
 
-    val email = Email(sendTo = rcptEmailAddr, subject = subject,
+    val email = Email(sendTo = user.email, subject = subject,
       bodyHtmlText = "?")
 
     def notfToHtml(notf: NotfOfPageAction): xml.Node = {
