@@ -167,7 +167,7 @@ object PageRenderer {
     var pageWithDummies = pageNoDummies
 
     if (addDummyTitle || addDummyBody || addDummyConfig)
-      pageWithDummies = pageWithDummies + DummyAuthor
+      pageWithDummies = pageWithDummies ++ DummyAuthor
 
     if (addDummyTitle) pageWithDummies = pageWithDummies + DummyTitle
     if (addDummyBody) pageWithDummies = pageWithDummies + DummyBody
