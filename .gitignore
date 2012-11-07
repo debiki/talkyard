@@ -17,6 +17,10 @@ RUNNING_PID
 # Ignore core dump file.
 core
 
+# Ignoer shortcut to `scripts/` (autocompletion to `scripts/` doesn't work,
+# because there's a /usr/bin/script program).
+s
+
 # NPM packages folder.
 node_modules/
 
