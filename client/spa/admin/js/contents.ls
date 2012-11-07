@@ -55,6 +55,7 @@ PrettyListItem =
     if @marks then ' marked-path' else ''
 
 
+  # COULD remove
   stringifyImportantMarks: ->
     text = ''
     for mark in @marks || []
@@ -248,9 +249,7 @@ class FolderListItem extends ListItem
     pageItem = getSelectedPageOrDie!
     window.open pageItem.path, '_blank'
     # COULD add callback that if page saved: (see Git stash 196d8accb80b81)
-    # pageItem.marks = reject (== 'NewUnsaved'), pageItem.marks
-    # pageItem.marks.push 'NewSaved'
-    # pageItem.update withDataFrom: ...
+    # pageItem.update withDataFrom: { title: any-new-title }
     # and then: redrawPageItems [pageItem]
 
 
@@ -401,9 +400,10 @@ class FolderListItem extends ListItem
    * and updates all hide counts accordingly.
    *
    * COULD remove folders without children.
-   * COULD set `open = true` if all children of a folder is shown,
-   * even if folder was actually closed. (If a page is marked,
-   * e.g. with 'NewUnsaved', it's shown even if parent folder closed.)
+   * COULD change `open` to `true` if all children of a folder are
+   * shown, but folder currently closed. (If a page is selected,
+   * it's shown even if parent folder closed.)
+   * COULD add a `...` list item, if folder closed, but >= 1 child shown?
    */
   updateListItemFields = (items) ->
     curHideCount = 0
