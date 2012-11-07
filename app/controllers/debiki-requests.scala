@@ -47,7 +47,11 @@ abstract class DebikiRequest[A] {
   def identity_! : Identity =
     identity getOrElse throwForbidden("DwE7PGJ2", "Not logged in")
 
-  def userAsPeople: People = People() + _fakeLogin + identity_! + user_!
+  def anyMeAsPeople: People =
+    if (loginId isEmpty) People()
+    else People() + _fakeLogin + identity_! + user_!
+
+  def meAsPeople_! : People = People() + _fakeLogin + identity_! + user_!
 
   protected def _fakeLogin = Login(
     id = loginId_!, prevLoginId = None, ip = request.remoteAddress,
@@ -200,7 +204,8 @@ case class PageRequest[A](
   dao: TenantDao,
   request: Request[A])
   (private val _preloadedPageMeta: Option[PageMeta] = None,
-  private val _preloadedActions: Option[Debate] = None)
+  private val _preloadedActions: Option[Debate] = None,
+  private val addMeToPage: Boolean = false)
   extends DebikiRequest[A] {
 
   require(pagePath.tenantId == tenantId) //COULD remove tenantId from pagePath
@@ -210,7 +215,7 @@ case class PageRequest[A](
   def copyWithPreloadedPage(page: PageStuff, pageExists: Boolean)
         : PageRequest[A] = {
     copy(pageExists = pageExists, pagePath = page.path)(
-      Some(page.meta), Some(page.actions))
+      Some(page.meta), Some(page.actions), addMeToPage = false)
   }
 
 
@@ -218,8 +223,37 @@ case class PageRequest[A](
         pageExists: Boolean): PageRequest[A] = {
     require(pageMeta.pageId == pageActions.pageId)
     require(Some(pageMeta.pageId) == pagePath.pageId)
-    copy(pageExists = pageExists)(Some(pageMeta), Some(pageActions))
+    assert(addMeToPage == false) // or user should be added to `pageActions`
+    copy(pageExists = pageExists)(Some(pageMeta), Some(pageActions),
+        addMeToPage = false)
   }
+
+
+  /**
+   * A copy with the current user (login, identity and user instances)
+   * included on the page that the request concerns.
+   *
+   * This is useful, if the current user does his/her very first
+   * interaction with the page. Then this.page.people has no info
+   * on that user, and an error would happen if you did something
+   * with the page that required info on the current user.
+   * (For example, adding [a reply written by the user] to the page,
+   * and then rendering the page.)
+   */
+  def copyWithAnyMeOnPage: PageRequest[A] =
+    if (loginId.isEmpty || !pageExists) this
+    else {
+      if (_preloadedActions isDefined)
+        copy()(_preloadedPageMeta, _preloadedActions.map(_ ++ anyMeAsPeople),
+          false)
+      else
+        copy()(_preloadedPageMeta, None, addMeToPage = true)
+    }
+
+
+  def copyWithMeOnPage_! : PageRequest[A] =
+    if (loginId.isEmpty) throwForbidden("DwE403BZ39", "Not logged in")
+    else copyWithAnyMeOnPage
 
 
   def pageId: Option[String] = pagePath.pageId
@@ -238,7 +272,9 @@ case class PageRequest[A](
   lazy val page_? : Option[Debate] =
     _preloadedActions orElse {
       if (pageExists) {
-        pageId.flatMap(id => dao.loadPage(id))
+        val pageOpt = pageId.flatMap(id => dao.loadPage(id))
+        if (!addMeToPage) pageOpt
+        else pageOpt.map(_ ++ anyMeAsPeople)
       } else {
         // Don't load the page even if it was *created* moments ago.
         // having !pageExists and page_? = Some(..) feels risky.
@@ -255,21 +291,6 @@ case class PageRequest[A](
   lazy val page_! : Debate =
     page_? getOrElse throwNotFound("DwE43XWY", "Page not found, id: "+ pageId)
 
-  /**
-   * Adds the current login, identity and user to page_!.people.
-   * This is useful, if the current user does his/her very first
-   * interaction with the page. Then page_!.people has no info
-   * on that user, and an error would happen if you did something
-   * with the page that required info on the current user.
-   * (For example, adding [a reply written by the user] to the page,
-   * and then rendering the page.)
-   */
-  lazy val pageWithMe_! : Debate = {
-    // Could try not to add stuff that's already been added to page_!.people.
-    // But anything we add should be fairly identical to anything that's
-    // already there, so not very important?
-    page_!.copy(people = page_!.people + _fakeLogin + identity_! + user_!)
-  }
 
   /**
    * The page version is specified in the query string, e.g.:

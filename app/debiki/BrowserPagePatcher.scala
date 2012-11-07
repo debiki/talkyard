@@ -28,7 +28,7 @@ object BrowserPagePatcher {
   def jsonForMyNewPosts(pageReq: PageRequest[_], myNewPosts: List[Post])
         : pm.PlainResult = {
 
-    val actions = pageReq.pageWithMe_! ++ myNewPosts
+    val actions = pageReq.page_! ++ myNewPosts
     val pageTrust = PageTrust(actions)
     val config = DebikiHttp.newUrlConfig(pageReq.host)
     val page = PageStuff(pageReq.pageMeta, pageReq.pagePath, actions)

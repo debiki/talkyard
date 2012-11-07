@@ -31,11 +31,12 @@ object AppReply extends mvc.Controller {
 
   def handleForm(pathIn: PagePath, postId: String)
         = PagePostAction(MaxPostSize)(pathIn) {
-      pageReq: PagePostRequest =>
+      pageReqNoMeOnPage: PagePostRequest =>
 
     import Utils.ValidationImplicits._
     import HtmlForms.Reply.{InputNames => Inp}
 
+    val pageReq = pageReqNoMeOnPage.copyWithMeOnPage_!
     if (!pageReq.pageVersion.isLatest)
       throwBadReq("DwE72XS8", "Can only reply to latest page version")
 

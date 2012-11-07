@@ -60,7 +60,18 @@ object AppEdit extends mvc.Controller {
   }
 
 
-  def _showEditFormImpl(request: PageRequest[_], postId: String) = {
+  def _showEditFormImpl(pageReqWithoutMe: PageRequest[_], postId: String) = {
+    // I think, but I don't remember why, we need to add the current user
+    // to page.people, iff `postId` needs to be created (e.g. it's the
+    // page title that hasn't yet been created so the server will create
+    // a dummy post, and as author specify the current user).
+    // Don't require that there be any current user though — s/he might
+    // not yet have logged in. (And then I think it's not possible
+    // to lazily create a completely new post, because there's no one to
+    // specify as owner for the dummy post that the server lazy-creates
+    // — but you can edit existing post though, if you're not logged in.)
+    val request = pageReqWithoutMe.copyWithAnyMeOnPage // needed?
+
     val (vipo, lazyCreateOpt) = _getOrCreatePostToEdit(request, postId)
     val draftText = vipo.text  // in the future, load user's draft from db.
     val editForm = Utils.formHtml(request).editForm(
@@ -86,9 +97,9 @@ object AppEdit extends mvc.Controller {
 
     _throwIfTooMuchData(text, pageReqOrig)
 
-    val pageReq = _createPageIfNeeded(pageReqOrig, PageRole.Any,
+    val pageReqNoMeOnPage = _createPageIfNeeded(pageReqOrig, PageRole.Any,
       parentPageId = None)
-
+    val pageReq = pageReqNoMeOnPage.copyWithMeOnPage_!
     _saveEdits(pageReq, postId, text, markupOpt)
     Utils.renderOrRedirect(pageReq)
   }
@@ -139,8 +150,14 @@ object AppEdit extends mvc.Controller {
         if (parentPageIdStr isEmpty) None else Some(parentPageIdStr)
 
       val pageReqPerhapsNoPage = PageRequest(request, pagePathStr, pageId)
-      val pageRequest = _createPageIfNeeded(pageReqPerhapsNoPage,
+      val pageReqPerhapsNoMe = _createPageIfNeeded(pageReqPerhapsNoPage,
         pageRole, parentPageId = parentPageId)
+      // Include current user on the page to be edited, or it won't be
+      // possible to render the page to html, later, because the current
+      // user's name might be included in the generated html: "Edited by: ..."
+      // (but if this is the user's first contribution to the page, s/he
+      // is currently not included in the associated People).
+      val pageRequest = pageReqPerhapsNoMe.copyWithMeOnPage_!
 
       var actions = List[Action]()
       var idsOfEditedPosts = List[String]()
@@ -212,10 +229,8 @@ object AppEdit extends mvc.Controller {
     val pageMeta = PageMeta(pageId = pageId, pageRole = pageRole,
       parentPageId = parentPageId)
 
-    val actions = Debate(pageId, people = pageReq.userAsPeople)
-
     val newPage = pageReq.dao.createPage(
-      PageStuff(pageMeta, pageReq.pagePath, actions))
+      PageStuff(pageMeta, pageReq.pagePath, Debate(pageId)))
 
     pageReq.copyWithPreloadedPage(newPage, pageExists = true)
   }
@@ -282,19 +297,7 @@ object AppEdit extends mvc.Controller {
 
   private def _getOrCreatePostToEdit(pageReq: PageRequest[_], postId: String)
         : (ViPo, Option[Post]) = {
-
-    // Add the current user to page.people, if `postId` needs to be created,
-    // or if we're posting data for it to be edited, because the user that
-    // creates it or edits it might not be present in page.people.
-    // (But otherwise don't add the current user, since there is no current
-    // user if the current user has not yet logged in.)
-    val page =
-      if (pageReq.page_!.vipo(postId).isEmpty || pageReq.isHttpPostRequest)
-        pageReq.pageWithMe_!
-      else
-        pageReq.page_!
-
-    val vipoOpt: Option[ViPo] = page.vipo(postId)
+    val vipoOpt: Option[ViPo] = pageReq.page_!.vipo(postId)
 
     // The page title and template are created automatically
     // if they don't exist, when they are to be edited.
@@ -315,7 +318,7 @@ object AppEdit extends mvc.Controller {
     }
 
     val vipo = vipoOpt.getOrElse(
-      lazyCreateOpt.map(new ViPo(page, _)).getOrElse {
+      lazyCreateOpt.map(new ViPo(pageReq.page_!, _)).getOrElse {
         throwNotFound("DwE3k2190", "Post not found: "+ safed(postId))
       })
 
