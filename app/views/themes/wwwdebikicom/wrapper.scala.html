@@ -1,0 +1,103 @@
+@(tpi: debiki.TemplateProgrammingInterface, isHomepage: Boolean = false
+    )(body: Html)
+
+<!DOCTYPE html>
+
+<html class="@tpi.debikiHtmlTagClasses" @tpi.configValue("html-tag-attributes")>
+<head>
+  @Html(tpi.debikiHeadTags)
+  <title>@tpi.configValue("title")</title>
+  <meta name="description" content="@tpi.configValue("description")">
+  <meta name="keywords" content="@tpi.configValue("keywords")">
+  <link rel="stylesheet" href="http://fonts.googleapis.com/css?family=Bree+Serif">
+  <link rel="stylesheet" href="/themes/assets/twitter-bootstrap-2.0.3-wip.css"/>
+  <link rel="stylesheet" href="http://www.debiki.com/www-debiki-com.css"/>
+  <script>
+    if (!Modernizr.touch) jQuery(document).ready(function($) {
+      Modernizr.load({
+        load: [
+          '/-/site/yoxview/jquery.yoxview-2.21.min.js',
+          '/-/site/yoxview/yoxview.css'],
+        complete: function() {
+          jQuery.noConflict();
+          $('.yoxview').yoxview();
+        }
+      });
+    });
+  </script>
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-31694067-1']);
+    _gaq.push(['_trackPageview']);
+    (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+  @Html(tpi.websiteConfigValue("html-head-tags-appended-site-wide"))
+  @Html(tpi.configValue("html-head-tags-appended"))
+</head>
+<body>
+
+@Html(tpi.debikiDashbar)
+
+<div id='topbar'>
+  <div class='container ui-helper-clearfix'>
+    <a class='logo-slogan' href='/'>
+      <span class='logo'>Debiki</span>
+      <span class='slogan'>— for the fruitful conversations</span>
+    </a>
+    <span id='dw-loginout'>@tpi.loginLinkAndUserName</span>
+    <nav id='site-nav' class='debiki-0-mark-current-site-section'>
+      @if(!isHomepage) { <a href="/">Home</a> }
+      <a href="/about/">About</a>
+      <!-- <a href="/blog/">Blog</a> -->
+      <!-- <a href="/forum/">Forum</a> -->
+      <!-- <a href="/terms/">Terms</a> -->
+      <!-- <a href='/dev/'>Development</a> -->
+      <a href='/demo/-71cs1-demo-page-1'>Demo</a>
+      <!-- <a href='/#report-interest'>Sign Up?</a> -->
+    </nav>
+  </div>
+</div>
+
+<div id='alfa-info'>
+  <div class='alfa-small debiki-show-if-lte-ie7'>
+    Please consider upgrading to <a rel='nofollow'
+                                    href='http://windows.microsoft.com/en-US/internet-explorer/products/ie/home'
+      >a newer version of Internet Explorer</a>
+    (or install <a rel='nofollow' href='http://www.google.com/chrome'>Google Chrome</a>,
+    it's even faster).
+  </div>
+</div>
+
+<div class='container'>
+  <div id="content">
+    <article>
+      @body
+    </article>
+  </div>
+</div>
+
+<footer>
+  <div class='footer'>
+    <p><em>Debiki — for the fruitful conversations</em></p>
+    <p><small>Copyright &copy; 2012 Kaj Magnus Lindberg</small></p>
+    <p><small>Contact me <a href="/-0k7l6-contact">here</a></small></p>
+    <!-- <p><small>
+      <a href='http://www.debiki.se/terms/this-website/privacy-policy'>Privacy Policy</a>.
+      <a href='http://www.debiki.se/terms/this-website/terms-of-use'>Terms of Use</a>.
+      </small>
+    </p> -->
+    <p><small>User contributions licensed under
+      <a href="http://creativecommons.org/licenses/by/3.0/">CC BY 3.0</a>.
+    </small>
+    </p>
+  </div>
+</footer>
+
+@tpi.debikiAppendToBodyTags
+
+</body>
+</html>

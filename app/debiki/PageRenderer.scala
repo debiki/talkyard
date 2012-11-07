@@ -57,18 +57,44 @@ case class PageRenderer(pageReq: PageRequest[_], pageCache: Option[PageCache],
     val tpi = TemplateProgrammingInterface(this)
 
     import pageReq.{pagePath, pageMeta}
-    val renderedPage: String =
+    import views.html.themes
+    import views.html.themes._
+
+    val theme = tpi.websiteConfigValue("theme")
+
+    val renderedPage =
       if (pagePath.isTemplatePage)
-        views.html.themes.specialpages.template(tpi).body
-      else if (pageMeta.pageRole == PageRole.BlogArticle)
-        views.html.themes.default20121009.blogPost(tpi).body
-      else if (pageMeta.pageRole == PageRole.BlogMainPage)
-        views.html.themes.default20121009.blogPostList(tpi).body
-      else if (pageMeta.pageRole == PageRole.Homepage)
-        views.html.themes.default20121009.homepage(tpi).body
-      else
-        // For now, fallback to the blog post template.
-        views.html.themes.default20121009.blogPost(tpi).body
+        themes.specialpages.template(tpi).body
+      else theme match {
+        // Should this be rewritten? Lookup package via Scala 2.10's reflection,
+        // somehow. But there's no common superclass for all packages, hmm.
+        // Can I use Scala's Structural Typing?
+        // — Or does which templates exist vary by theme? Should *not* rewrite?
+
+        // Don't allow anyone to use www.debiki.com's templates.
+        case "www.debiki.com" if pageReq.host.endsWith("debiki.com") ||
+              pageReq.host.startsWith("localhost:") =>
+          if (pageMeta.pageRole == PageRole.BlogArticle)
+            wwwdebikicom.blogPost(tpi).body
+          else if (pageMeta.pageRole == PageRole.BlogMainPage)
+            wwwdebikicom.blogPostList(tpi).body
+          else if (pageMeta.pageRole == PageRole.Homepage)
+            wwwdebikicom.homepage(tpi).body
+          else
+            // For now, fallback to the blog post template.
+            wwwdebikicom.blogPost(tpi).body
+
+        case "default-2012-10-09" | _ =>
+          if (pageMeta.pageRole == PageRole.BlogArticle)
+            default20121009.blogPost(tpi).body
+          else if (pageMeta.pageRole == PageRole.BlogMainPage)
+            default20121009.blogPostList(tpi).body
+          else if (pageMeta.pageRole == PageRole.Homepage)
+            default20121009.homepage(tpi).body
+          else
+            // For now, fallback to the blog post template.
+            default20121009.blogPost(tpi).body
+      }
 
     renderedPage
   }
