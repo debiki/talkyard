@@ -92,9 +92,9 @@ object Debiki {
 
     // Notify users whose actions were affected.
     // BUG: notification lost if server restarted here.
-    // COULD rewrite Dao so the seeds can be saved in the same transaction:
-    val seeds = Notification.calcFrom(user_!, adding = actionsWithId, to = page)
-    dao.saveNotfs(seeds)
+    // COULD rewrite Dao so the notfs can be saved in the same transaction:
+    val notfs = Notification.calcFrom(user_!, adding = actionsWithId, to = page)
+    dao.saveNotfs(notfs)
 
     actionsWithId
   }

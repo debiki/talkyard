@@ -57,7 +57,7 @@ class Mailer(val daoFactory: DaoFactory) extends Actor {
 
 
   private val _awsClient = {
-    // SHOULD move this to config file.
+    SECURITY // SHOULD move this to config file.
     val accessKeyId = "AKIAJ4OCRAEOPEWEYTNQ"
     val secretKey = "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"
     new AmazonSimpleEmailServiceClient(
