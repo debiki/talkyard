@@ -355,11 +355,11 @@ function _$showEditFormImpl() {
 
         // In case this page is a new page that was just created from an
         // admin page, then notify the admin page that this page was saved.
-        if (window.opener.debiki && window.opener.debiki.v0) {
+        if (window.opener && window.opener.debiki && window.opener.debiki.v0) {
           var callbacks =
               window.opener.debiki.v0.onChildPageSavedCallbacks || [];
           var pageId = $editForm.dwPageMeta().pageId;
-          $.each(callbacks, function(index, callback) { 
+          $.each(callbacks, function(index, callback) {
             callback(pageId, postId);
           });
         }
