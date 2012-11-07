@@ -81,10 +81,17 @@ $.fn.dwLastChange = function() {
 };
 
 
-// The user id of the author of a post.
+/**
+ * The user id of the author of a post, or '' if the post is a dummy post,
+ * wich has no author.
+ */
 $.fn.dwAuthorId = function() {
   var uid = this.dwCheckIs('.dw-p')
       .find('> .dw-p-hd > .dw-p-by').attr('data-dw-u-id');
+  // Sometimes there is no author. Then return ''.
+  // (The server creates e.g. a dummy title "Unnamed page (click to edit)"
+  // if the page has no title. But there's no author of that text.)
+  uid = uid || '';
   return uid;
 };
 
