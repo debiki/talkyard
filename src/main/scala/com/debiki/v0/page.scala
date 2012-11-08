@@ -409,7 +409,8 @@ case class Debate (
   def + (deletion: Delete): Debate = copy(deletions = deletion :: deletions)
   def + (review: Review): Debate = copy(reviews = review :: reviews)
 
-  def +(people: People): Debate = this.copy(people = this.people ++ people)
+  // Could try not to add stuff that's already included in this.people.
+  def ++(people: People): Debate = this.copy(people = this.people ++ people)
 
   def ++(page: Debate): Debate = this ++ page.allActions
 
