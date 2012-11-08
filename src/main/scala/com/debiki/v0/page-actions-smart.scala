@@ -513,5 +513,14 @@ class ViEd(debate: Debate, val edit: Edit) extends ViAc(debate, edit) {
 }
 
 
+
+class SmartReview(page: Debate, val review: Review) extends ViAc(page, review) {
+
+  def approval = review.approval
+  lazy val target: ViAc = page.getSmart(review.targetId) getOrDie "DwE93UX7"
+
+}
+
+
 // vim: fdm=marker et ts=2 sw=2 tw=80 fo=tcqwn list
 

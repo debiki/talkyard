@@ -85,7 +85,19 @@ case class Debate (
   def allActions: Seq[Action] =
      deletions:::flags:::editApps:::edits:::ratings:::posts
 
+  // Try to remove/rewrite? Doesn't return e.g ViPo or ViEd.
   def smart(action: Action) = new ViAc(this, action)
+
+  // For the love of god, I have to rename this crap, this file is a mess.
+  def getSmart(actionId: String): Option[ViAc] = {
+    postsById.get(actionId).map(new ViPo(this, _)) orElse
+      rating(actionId).map(new ViAc(this, _)) orElse
+      editsById.get(actionId).map(new ViEd(this, _)) orElse
+      editApp(actionId).map(new ViAc(this, _)) orElse
+      flagsById.get(actionId).map(new ViAc(this, _)) orElse
+      deletionsById.get(actionId).map(new ViAc(this, _)) orElse
+      reviewsById.get(actionId).map(new SmartReview(this, _))
+  }
 
   lazy val (
       // COULD rename postsByParentId to textByParentId.
@@ -241,8 +253,10 @@ case class Debate (
 
   // -------- Ratings
 
-  // Currently using only by the DAO TCK, need not be fast.
-  def rating(id: String): Option[Rating] = ratings.find(_.id == id)
+  private lazy val ratingsById: imm.Map[String, Rating] =
+    imm.Map[String, Rating](ratings.map(x => (x.id, x)): _*)
+
+  def rating(id: String): Option[Rating] = ratingsById.get(id)
 
   def ratingsByActionId(actionId: String): Option[RatingsOnAction] =
     _ratingsByActionId.get(actionId)
@@ -342,7 +356,17 @@ case class Debate (
   def editApp(withId: String): Option[EditApp] =
     editApps.filter(_.id == withId).headOption
 
+
+  // -------- Flags
+
+  private lazy val flagsById: imm.Map[String, Flag] =
+    imm.Map[String, Flag](flags.map(x => (x.id, x)): _*)
+
+
   // -------- Deletions
+
+  private lazy val deletionsById: imm.Map[String, Delete] =
+    imm.Map[String, Delete](deletions.map(x => (x.id, x)): _*)
 
   /** If actionId was explicitly deleted (not indirectly, via
    *  wholeTree/recursively = true).
@@ -359,8 +383,14 @@ case class Debate (
 
   // -------- Reviews (i.e. approvals and rejections)
 
+  private lazy val reviewsById: imm.Map[String, Review] =
+    imm.Map[String, Review](reviews.map(x => (x.id, x)): _*)
+
   private lazy val reviewsByTargetId: imm.Map[String, List[Review]] =
     reviews.groupBy(_.targetId)
+
+  def getReview(id: String): Option[SmartReview] =
+    reviewsById.get(id) map (new SmartReview(this, _))
 
   def explicitReviewsOf(actionId: String): List[Review] =
     reviewsByTargetId.getOrElse(actionId, Nil)
