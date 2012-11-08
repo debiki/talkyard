@@ -1244,11 +1244,11 @@ class DaoSpecV002ChildSpec(testContextBuilder: TestContextBuilder)
       pageId = ex1_debate.guid,
       eventType = NotfOfPageAction.Type.PersonalReply,
       eventActionId = ex2_id,
-      targetActionId = None,
+      triggerActionId = ex2_id,
       recipientActionId = ex2_emptyPost.parent,
       recipientUserDispName = "RecipientUser",
       eventUserDispName = "EventUser",
-      targetUserDispName = None,
+      triggerUserDispName = None,
       emailPending = true)
 
     // A notification to the authenticated user.
