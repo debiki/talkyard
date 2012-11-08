@@ -72,8 +72,7 @@ case class Rating (
 /** Info on all ratings on a certain action, grouped and sorted in
  *  various manners.
  */
-// COULD rename to RatingsOnAction?
-abstract class SingleActionRatings {
+abstract class RatingsOnAction {
 
   /** The most recent rating, by authenticated users. */
   def mostRecentByUserId: collection.Map[String, Rating]

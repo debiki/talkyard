@@ -33,9 +33,9 @@ case class PageTrust(page: Debate) {
    *  for now.
    */
   def trustinessOf(rating: Rating): Float = {
-    val otherRatsSameActn: SingleActionRatings =
+    val otherRatsSameActn: RatingsOnAction =
       page.ratingsByActionId(rating.postId) getOrElse {
-        // Since `rating' exists, there should also be a SingleActionRatings.
+        // Since `rating' exists, there should also be a RatingsOnAction.
         assert(false); return 0f
       }
 

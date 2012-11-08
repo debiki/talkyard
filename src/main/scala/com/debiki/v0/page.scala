@@ -125,7 +125,7 @@ case class Debate (
   }
 
 
-  private class _SingleActionRatings extends SingleActionRatings {
+  private class _RatingsOnActionImpl extends RatingsOnAction {
     val _mostRecentByUserId = mut.Map[String, Rating]()
     val _mostRecentByNonAuLoginId = mut.Map[String, Rating]()
     val _allRecentByNonAuIp =
@@ -154,14 +154,14 @@ case class Debate (
 
   // Analyze ratings, per action.
   // (Never change this mut.Map once it's been constructed.)
-  private lazy val _ratingsByActionId: mut.Map[String, _SingleActionRatings] = {
+  private lazy val _ratingsByActionId: mut.Map[String, _RatingsOnActionImpl] = {
     val mutRatsByPostId =
-      mut.Map[String, _SingleActionRatings]()
+      mut.Map[String, _RatingsOnActionImpl]()
 
     // Remember the most recent ratings per user and non-authenticated login id.
     for (rating <- ratings) {
       var singlePostRats = mutRatsByPostId.getOrElseUpdate(
-        rating.postId, new _SingleActionRatings)
+        rating.postId, new _RatingsOnActionImpl)
       val user = smart(rating).user_!
       val (recentRatsMap, key) = user.isAuthenticated match {
         case true => (singlePostRats._mostRecentByUserId, user.id)
@@ -244,7 +244,7 @@ case class Debate (
   // Currently using only by the DAO TCK, need not be fast.
   def rating(id: String): Option[Rating] = ratings.find(_.id == id)
 
-  def ratingsByActionId(actionId: String): Option[SingleActionRatings] =
+  def ratingsByActionId(actionId: String): Option[RatingsOnAction] =
     _ratingsByActionId.get(actionId)
 
   def ratingsByUser(withId: String): Seq[Rating] =
