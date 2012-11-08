@@ -62,8 +62,9 @@ object AppReview extends mvc.Controller {
       }
 
     reviewsByPageId foreach { case (pageId, reviews) =>
-      val page = apiReq.dao.loadPage(pageId) getOrElse throwBadReq(
+      val pageWithoutMe = apiReq.dao.loadPage(pageId) getOrElse throwBadReq(
         "DwE93JQ3", "Page not found: "+ pageId +", only some reviews saved")
+      val page = pageWithoutMe ++ apiReq.meAsPeople_!
 
       Debiki.savePageActions(apiReq, page, reviews)
     }

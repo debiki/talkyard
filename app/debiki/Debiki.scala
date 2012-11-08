@@ -93,7 +93,8 @@ object Debiki {
     // Notify users whose actions were affected.
     // BUG: notification lost if server restarted here.
     // COULD rewrite Dao so the notfs can be saved in the same transaction:
-    val notfs = Notification.calcFrom(user_!, adding = actionsWithId, to = page)
+    val pageWithNewActions = page ++ actionsWithId
+    val notfs = NotfGenerator(pageWithNewActions, actionsWithId).generateNotfs
     dao.saveNotfs(notfs)
 
     actionsWithId

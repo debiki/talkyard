@@ -137,32 +137,10 @@ class Notifier(val daoFactory: DaoFactory) extends Actor {
     val email = Email(sendTo = user.email, subject = subject,
       bodyHtmlText = "?")
 
-    def notfToHtml(notf: NotfOfPageAction): xml.Node = {
-      // For now, don't bother about the
-      // redirect from "/-pageId" to the actual page path.
-      val pageUrl = origin +"/-"+ notf.pageId
-      // Currently eventActionId is always a post (because
-      // Notification.calcFrom currently only generates notfs for replies).
-      if (notf.eventType != NotfOfPageAction.Type.PersonalReply) {
-        logger.warn("Unsupported notification type: "+ notf.eventType)
-      }
-      val eventUrl = pageUrl +"#post-"+ notf.eventActionId
-      // Include only one link per notification, or people will (I guess)
-      // not click the link to the actual reply (that link also highlights
-      // the reply :-)). I'd guess they instead would click the
-      // visually *largest* link, e.g. to the page, and then not find the new
-      // reply, and feel annoyed.
-      <p>
-        You have a reply, <a href={eventUrl}>here</a>,<br/>
-        on page <i>{notf.pageTitle}</i>,<br/>
-        written by <i>{notf.eventUserDispName}</i>.
-      </p>
-    }
-
     val htmlContent =
       <div>
         <p>Dear {user.displayName},</p>
-        { notfs.map(notfToHtml _): xml.NodeSeq }
+        { views.NotfHtmlRenderer(origin).render(notfs) }
         <p>
           Kind regards,<br/>
           <a href="http://www.debiki.com">Debiki</a>
@@ -176,3 +154,4 @@ class Notifier(val daoFactory: DaoFactory) extends Actor {
   }
 
 }
+
