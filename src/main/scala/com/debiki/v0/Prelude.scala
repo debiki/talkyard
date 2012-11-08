@@ -54,6 +54,11 @@ object Prelude {
 
   import java.lang.{UnsupportedOperationException => UOE}
 
+  implicit class GetOrDie[A](val underlying: Option[A]) {
+    def getOrDie(errorCode: String): A = underlying.getOrElse(
+      throw new ju.NoSuchElementException("Element absent [error $errorCode]"))
+  }
+
   // Error codes should be formatted like so:
   // "DwE<number><alnum x 3><number>", e.g. "DwE8kR32".
 
