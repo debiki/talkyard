@@ -11,153 +11,30 @@ import com.debiki.v0._
 import com.debiki.v0.Prelude._
 import org.specs2.mutable._
 import java.{util => ju}
-
-// This test suite is broken. Don't know how to fix it — so I've asked here:
-// http://stackoverflow.com/questions/13173319/
-//    why-does-specs2-run-these-sequential-tests-in-random-order
-// and a general question about designing tests, here:
-// http://stackoverflow.com/questions/13174893/
-//    how-design-a-specs2-database-test-with-interdependent-tests
+import DebikiSpecs._
+import DaoTckTest._
 
 /*
-By naming specs ChildSpec and including in debiki-dao-pgsqlq config file this snippet:
 
-testOptions := Seq(Tests.Filter(s =>
-  Seq("Spec", "Selenium").exists(s.endsWith(_)) &&
-    ! s.endsWith("ChildSpec")))
-
-we're telling Specs2 not to instantiate and run the ChildSpec:s many times.
-(So I've added that snippet to build.sbt in debiki-dao-pgsql, for now.
-But this test suite still starts running randomly in the middle!)
- */
-
-/* I'll port this test suite to ScalaTest instead? Anyway, here's the call stack
-from this failing Specs2 suite:  (in case you want to try to fix it and wonder
-if the same error happens to you. Note that
-  com.debiki.v0.tck.DaoSpecV002ChildSpec$$anonfun$3.apply$mcV$sp(DaoTckTest.scala:1002)
-corresponts to the
-    "// -------- OpenID login"
-section! And Specs2 runs it before the tenant has been created. I cannot understand why???
-
-> test
-[info] Compiling 1 Scala source to /home/kajmagnus/me-dev/debiki/all/debiki-app-play-2.1/modules/debiki-tck-dao/target/scala-2.10/classes...
-[info] Compiling 1 Scala source to /home/kajmagnus/me-dev/debiki/all/debiki-app-play-2.1/modules/debiki-dao-pgsql/target/scala-2.10/test-classes...
-[error] Could not create an instance of com.debiki.v0.RelDbDaoTckSpec
-[error]   caused by org.postgresql.util.PSQLException: ERROR: insert or update on table "dw1_users" violates foreign key constraint "dw1_users__r__tenant"
-[error]   Detail: Key (tenant)=() is not present in table "dw1_tenants".
-[error]   org.postgresql.core.v3.QueryExecutorImpl.receiveErrorResponse(QueryExecutorImpl.java:2103)
-[error]   org.postgresql.core.v3.QueryExecutorImpl.processResults(QueryExecutorImpl.java:1836)
-[error]   org.postgresql.core.v3.QueryExecutorImpl.execute(QueryExecutorImpl.java:257)
-[error]   org.postgresql.jdbc2.AbstractJdbc2Statement.execute(AbstractJdbc2Statement.java:512)
-[error]   org.postgresql.jdbc2.AbstractJdbc2Statement.executeWithFlags(AbstractJdbc2Statement.java:388)
-[error]   org.postgresql.jdbc2.AbstractJdbc2Statement.executeUpdate(AbstractJdbc2Statement.java:334)
-[error]   sun.reflect.GeneratedMethodAccessor8.invoke(Unknown Source)
-[error]   sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
-[error]   java.lang.reflect.Method.invoke(Method.java:616)
-[error]   org.postgresql.ds.jdbc23.AbstractJdbc23PooledConnection$StatementHandler.invoke(AbstractJdbc23PooledConnection.java:455)
-[error]   $Proxy14.executeUpdate(Unknown Source)
-[error]   com.debiki.v0.RelDb.execImpl(RelDb.scala:253)
-[error]   com.debiki.v0.RelDb.update(RelDb.scala:219)
-[error]   com.debiki.v0.RelDbTenantDaoSpi.com$debiki$v0$RelDbTenantDaoSpi$$_insertUser(RelDbTenantDao.scala:302)
-[error]   com.debiki.v0.RelDbTenantDaoSpi$$anonfun$saveLogin$1.apply(RelDbTenantDao.scala:256)
-[error]   com.debiki.v0.RelDbTenantDaoSpi$$anonfun$saveLogin$1.apply(RelDbTenantDao.scala:239)
-[error]   com.debiki.v0.RelDb._withConnection(RelDb.scala:183)
-[error]   com.debiki.v0.RelDb.transaction(RelDb.scala:168)
-[error]   com.debiki.v0.RelDbTenantDaoSpi.saveLogin(RelDbTenantDao.scala:239)
-[error]   com.debiki.v0.TenantDao.saveLogin(Dao.scala:280)
-[error]   com.debiki.v0.tck.DaoSpecV002ChildSpec$$anonfun$3.apply$mcV$sp(DaoTckTest.scala:1002)
-[error]   com.debiki.v0.tck.DaoSpecV002ChildSpec$$anonfun$3.apply(DaoTckTest.scala:204)
-[error]   com.debiki.v0.tck.DaoSpecV002ChildSpec$$anonfun$3.apply(DaoTckTest.scala:204)
-[error]   org.specs2.mutable.SideEffectingCreationPaths$$anonfun$executeBlock$1.apply$mcV$sp(FragmentsBuilder.scala:280)
-[error]   org.specs2.mutable.SideEffectingCreationPaths$class.replay(FragmentsBuilder.scala:252)
-[error]   com.debiki.v0.tck.DaoChildSpec.replay(DaoTckTest.scala:97)
-[error]   org.specs2.mutable.FragmentsBuilder$class.fragments(FragmentsBuilder.scala:21)
-[error]   com.debiki.v0.tck.DaoChildSpec.fragments(DaoTckTest.scala:97)
-[error]   org.specs2.mutable.Specification$class.is(Specification.scala:13)
-[error]   com.debiki.v0.tck.DaoChildSpec.is(DaoTckTest.scala:97)
-[error]   org.specs2.specification.SpecificationInclusion$$anonfun$inline$1$$anonfun$apply$1.apply(BaseSpecification.scala:34)
-[error]   org.specs2.specification.SpecificationInclusion$$anonfun$inline$1$$anonfun$apply$1.apply(BaseSpecification.scala:34)
-[error]   org.specs2.specification.SpecificationStructure$class.map(BaseSpecification.scala:43)
-[error]   com.debiki.v0.tck.DaoChildSpec.map(DaoTckTest.scala:97)
-[error]   org.specs2.specification.SpecificationInclusion$$anonfun$inline$1.apply(BaseSpecification.scala:34)
-[error]   org.specs2.specification.SpecificationInclusion$$anonfun$inline$1.apply(BaseSpecification.scala:34)
-[error]   scala.collection.TraversableLike$$anonfun$flatMap$1.apply(TraversableLike.scala:251)
-[error]   scala.collection.TraversableLike$$anonfun$flatMap$1.apply(TraversableLike.scala:251)
-[error]   scala.collection.IndexedSeqOptimized$class.foreach(IndexedSeqOptimized.scala:33)
-[error]   scala.collection.mutable.WrappedArray.foreach(WrappedArray.scala:34)
-[error]   scala.collection.TraversableLike$class.flatMap(TraversableLike.scala:251)
-[error]   scala.collection.AbstractTraversable.flatMap(Traversable.scala:105)
-[error]   org.specs2.specification.SpecificationInclusion$class.inline(BaseSpecification.scala:34)
-[error]   com.debiki.v0.tck.DaoTckTest.org$specs2$mutable$SpecificationInclusion$$super$inline(DaoTckTest.scala:85)
-[error]   org.specs2.mutable.SpecificationInclusion$class.inline(SpecificationInclusion.scala:8)
-[error]   com.debiki.v0.tck.DaoTckTest.inline(DaoTckTest.scala:85)
-[error]   com.debiki.v0.tck.DaoTckTest.<init>(DaoTckTest.scala:90)
-[error]   com.debiki.v0.RelDbDaoTckSpec.<init>(RelDbDaoTckTest.scala:123)
-[error]   sun.reflect.NativeConstructorAccessorImpl.newInstance0(Native Method)
-[error]   sun.reflect.NativeConstructorAccessorImpl.newInstance(NativeConstructorAccessorImpl.java:57)
-[error]   sun.reflect.DelegatingConstructorAccessorImpl.newInstance(DelegatingConstructorAccessorImpl.java:45)
-[error]   java.lang.reflect.Constructor.newInstance(Constructor.java:532)
-[error]   org.specs2.reflect.Classes$class.createInstanceFor(Classes.scala:131)
-[error]   org.specs2.reflect.Classes$.createInstanceFor(Classes.scala:178)
-[error]   org.specs2.reflect.Classes$$anonfun$createInstanceOfEither$1.apply(Classes.scala:121)
-[error]   org.specs2.reflect.Classes$$anonfun$createInstanceOfEither$1.apply(Classes.scala:121)
-[error]   scala.Option.map(Option.scala:145)
-[error]   org.specs2.reflect.Classes$class.createInstanceOfEither(Classes.scala:121)
-[error]   org.specs2.reflect.Classes$.createInstanceOfEither(Classes.scala:178)
-[error]   org.specs2.reflect.Classes$class.liftedTree1$1(Classes.scala:95)
-[error]   org.specs2.reflect.Classes$class.tryToCreateObjectEither(Classes.scala:90)
-[error]   org.specs2.reflect.Classes$.tryToCreateObjectEither(Classes.scala:178)
-[error]   org.specs2.specification.SpecificationStructure$$anonfun$createSpecificationEither$2.apply(BaseSpecification.scala:112)
-[error]   org.specs2.specification.SpecificationStructure$$anonfun$createSpecificationEither$2.apply(BaseSpecification.scala:112)
-[error]   scala.Option.getOrElse(Option.scala:120)
-[error]   org.specs2.specification.SpecificationStructure$.createSpecificationEither(BaseSpecification.scala:112)
-[error]   org.specs2.runner.TestInterfaceRunner.runSpecification(TestInterfaceRunner.scala:57)
-[error]   org.specs2.runner.TestInterfaceRunner.run(TestInterfaceRunner.scala:52)
-[error]   sbt.TestRunner.delegateRun(TestFramework.scala:57)
-[error]   sbt.TestRunner.run(TestFramework.scala:51)
-[error]   sbt.TestRunner.runTest$1(TestFramework.scala:71)
-[error]   sbt.TestRunner.run(TestFramework.scala:80)
-[error]   sbt.TestFramework$$anonfun$6$$anonfun$apply$8$$anonfun$7$$anonfun$apply$9.apply(TestFramework.scala:178)
-[error]   sbt.TestFramework$$anonfun$6$$anonfun$apply$8$$anonfun$7$$anonfun$apply$9.apply(TestFramework.scala:178)
-[error]   sbt.TestFramework$.sbt$TestFramework$$withContextLoader(TestFramework.scala:190)
-[error]   sbt.TestFramework$$anonfun$6$$anonfun$apply$8$$anonfun$7.apply(TestFramework.scala:178)
-[error]   sbt.TestFramework$$anonfun$6$$anonfun$apply$8$$anonfun$7.apply(TestFramework.scala:178)
-[error]   sbt.Tests$$anonfun$makeParallel$1$$anonfun$apply$7.apply(Tests.scala:119)
-[error]   sbt.Tests$$anonfun$makeParallel$1$$anonfun$apply$7.apply(Tests.scala:119)
-[error]   sbt.std.Transform$$anon$3$$anonfun$apply$2.apply(System.scala:47)
-[error]   sbt.std.Transform$$anon$3$$anonfun$apply$2.apply(System.scala:47)
-[error]   sbt.std.Transform$$anon$5.work(System.scala:71)
-[error]   sbt.Execute$$anonfun$submit$1$$anonfun$apply$1.apply(Execute.scala:232)
-[error]   sbt.Execute$$anonfun$submit$1$$anonfun$apply$1.apply(Execute.scala:232)
-[error]   sbt.ErrorHandling$.wideConvert(ErrorHandling.scala:18)
-[error]   sbt.Execute.work(Execute.scala:238)
-[error]   sbt.Execute$$anonfun$submit$1.apply(Execute.scala:232)
-[error]   sbt.Execute$$anonfun$submit$1.apply(Execute.scala:232)
-[error]   sbt.ConcurrentRestrictions$$anon$4$$anonfun$1.apply(ConcurrentRestrictions.scala:159)
-[error]   sbt.CompletionService$$anon$2.call(CompletionService.scala:30)
-[error]   java.util.concurrent.FutureTask$Sync.innerRun(FutureTask.java:334)
-[error]   java.util.concurrent.FutureTask.run(FutureTask.java:166)
-[error]   java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:471)
-[error]   java.util.concurrent.FutureTask$Sync.innerRun(FutureTask.java:334)
-[error]   java.util.concurrent.FutureTask.run(FutureTask.java:166)
-[error]   java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1110)
-[error]   java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:603)
-[error]   java.lang.Thread.run(Thread.java:679)
-[error] Error: Total 1, Failed 0, Errors 1, Passed 0, Skipped 0
-[error] Error during tests:
-[error]         com.debiki.v0.RelDbDaoTckSpec
-[trace] Stack trace suppressed: run last debiki-dao-pgsql/test:test for the full output.
-[error] (debiki-dao-pgsql/test:test) Tests unsuccessful
-[error] Total time: 40 s, completed Nov 2, 2012 9:28:55 AM
-
-
- */
-/*
 ======================================
  Technology Compatibility Kit (TCK)
 ======================================
 
-Test design, including tests of upgrades:
+
+1. Dependent project configuration requirement:
+
+By naming specs ChildSpec and including in debiki-dao-pgsqlq config file this snippet:
+
+testOptions := Seq(Tests.Filter(s =>
+  s.endsWith("Spec") && !s.endsWith("ChildSpec")))
+
+we're telling Specs2 not to instantiate and run the ChildSpec:s many times.
+(So I've added that snippet to build.sbt in debiki-dao-pgsql, for now.
+I don't know how to place it here in debiki-tck-dao have it affect *dependent*
+projects.
+
+
+2. Test design, including tests of upgrades:
 
 For each released database structure version:
   1. execute the test suite (for that old version)
@@ -176,7 +53,6 @@ Could test:
 
 */
 
-import DebikiSpecs._
 
 trait TestContext {
   def daoFactory: v0.DaoFactory
@@ -190,6 +66,8 @@ trait TestContext {
   def hasRefConstraints: Boolean
 }
 
+
+
 object DaoTckTest {
   sealed class What
   case object EmptySchema extends What
@@ -200,7 +78,6 @@ object DaoTckTest {
     Function2[What, /*schemaVersion:*/ String, TestContext]
 }
 
-import DaoTckTest._
 
 
 abstract class DaoTckTest(builder: TestContextBuilder)
@@ -213,6 +90,7 @@ abstract class DaoTckTest(builder: TestContextBuilder)
       //new DaoSpecEmptySchema(builder),
       new DaoSpecV002ChildSpec(builder)})
 }
+
 
 
 abstract class DaoChildSpec(builder: TestContextBuilder, val defSchemaVersion: String)
@@ -275,6 +153,7 @@ class DaoSpecEmptySchema(b: TestContextBuilder) extends DaoChildSpec(b, "0") {
     }
   }
 } */
+
 
 
 object Templates {
