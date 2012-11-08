@@ -7,6 +7,9 @@ import Prelude._
 import java.{util => ju}
 
 
+object PostTestValues extends PostTestValues
+
+
 /**
  */
 trait PostTestValues {

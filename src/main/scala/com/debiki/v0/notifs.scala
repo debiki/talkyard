@@ -11,14 +11,21 @@ import Prelude._
 /**
  * A notification of a page action.
  *
+ * Example: You write a comment. Chatty Charlie replies to it. After a while,
+ * Adam the admin approves it; this triggers a notification to you that you've
+ * received a reply:
+ *  - Your comment is the recipientActionId
+ *  - Charlie's reply is the eventActionId (you're notified about this event)
+ *  - The approval of Charlies reply is the triggerActionId
+ *
  * @param ctime When the notification was created
  * @param recipientUserId To whom the notification should be sent
  * @param pageTitle The titel of the page where the event happened
  * @param pageId
  * @param eventType The type of the event
- * @param eventActionId The id of the event
- * @param targetActionId An action that the event-action acted upon
- * @param recipientActionId The action the recipient made, that is the reason
+ * @param eventActionId The id of the event the recipient is notified about
+ * @param triggerActionId The action that triggered the notification
+ * @param recipientActionId The action the recipient made, which is the reason
  *  s/he is to be notified.
  */
 case class NotfOfPageAction(
@@ -28,11 +35,11 @@ case class NotfOfPageAction(
   pageId: String,
   eventType: NotfOfPageAction.Type,
   eventActionId: String,
-  targetActionId: Option[String],
+  triggerActionId: String,
   recipientActionId: String,
   recipientUserDispName: String,
   eventUserDispName: String,
-  targetUserDispName: Option[String],
+  triggerUserDispName: Option[String],
   /** True iff an email should be created and sent. */
   emailPending: Boolean,
   /** An email that informs the recipient about this event.
@@ -40,9 +47,6 @@ case class NotfOfPageAction(
   emailId: Option[String] = None,
   debug: Option[String] = None) {
 
-  assErrIf(targetActionId.isDefined != targetUserDispName.isDefined, "DwE8Xd2")
-  assErrIf(eventType == NotfOfPageAction.Type.PersonalReply && (
-    targetActionId.isDefined || targetUserDispName.isDefined), "DwE09Kb35")
   // If the email is to be created and sent, then it must not already exist.
   require(!emailPending || emailId.isEmpty)
 
@@ -54,12 +58,15 @@ case class NotfOfPageAction(
 }
 
 
+
 object NotfOfPageAction {
   sealed abstract class Type
   object Type {
     case object PersonalReply extends Type
+    case object MyPostApproved extends Type
   }
 }
+
 
 
 /**
@@ -68,77 +75,6 @@ object NotfOfPageAction {
 case class NotfsToMail(
   notfsByTenant: Map[String, Seq[NotfOfPageAction]],
   usersByTenantAndId: Map[(String, String), User])
-
-
-object Notification {
-
-
-  def calcFrom(user: User, adding: Seq[Action], to: Debate)
-        : Seq[NotfOfPageAction] = {
-
-    val actions = adding
-    val page = to
-
-    def _makeNotfForUserRepliedTo(post: Post): List[NotfOfPageAction] = {
-      val postRepliedTo = page.vipo(post.parent) getOrElse {
-        // This might be a page config/template Post, and, if so,
-        // it has no parent.
-        return Nil
-      }
-      val userRepliedTo = postRepliedTo.user_!
-      if (user.id == Some(userRepliedTo.id)) {
-        // Don't notify the user of his/her own replies.
-        Nil
-      }
-      else if (post.tyype == PostType.Text) {
-        List(NotfOfPageAction(
-          ctime = post.ctime,
-          recipientUserId = userRepliedTo.id,
-          pageTitle = page.titleText.getOrElse("Unnamed page"),
-          pageId = page.id,
-          eventType = NotfOfPageAction.Type.PersonalReply,
-          eventActionId = post.id,
-          targetActionId = None,
-          recipientActionId = postRepliedTo.id,
-          recipientUserDispName = userRepliedTo.displayName,
-          eventUserDispName = user.displayName,
-          targetUserDispName = None,
-          emailPending =
-             userRepliedTo.emailNotfPrefs == EmailNotfPrefs.Receive))
-      } else {
-        // Currently not supported.
-        // Need to make loadInboxItem understand DW1_PAGE_ACTIONS = 'Tmpl',
-        // and should render Template suggestions differently from
-        // normal replies? The link should open the suggestion
-        // on a new page, with the template as root post?
-        Nil
-      }
-    }
-
-    val seeds: Seq[NotfOfPageAction] = actions flatMap (_ match {
-      case post: Post =>
-        _makeNotfForUserRepliedTo(post)
-      // Note: If you add notfs (below) for other things than replies,
-      // then, in debiki-app-play, update Mailer._constructEmail.notfToHtml
-      // so it generates correct URL anchor links to that stuff.
-      // Currently notfToHtml assumes all notfs are for replies and
-      // writes #post-<id> anchors only.
-      case e: Edit =>
-        Nil  // fix later, see note above
-      case app: EditApp =>
-        Nil  // fix later, see note above
-      case flag: Flag =>
-        Nil  // fix later, see note above
-      case _ =>
-        Nil  // skip for now
-    })
-
-    // val pageAuthorInboxSeed = ...
-    // val moderatorInboxSeed = ...
-    seeds  // ++ pageAuthorInboxSeed ++ moderatorInboxSeed
-  }
-
-}
 
 
 
