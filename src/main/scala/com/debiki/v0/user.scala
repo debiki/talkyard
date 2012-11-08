@@ -181,10 +181,10 @@ case class User (
   // And rename emailNotfPrefs to notfPrefs?
   email: String,  // COULD rename to emailAddr
   emailNotfPrefs: EmailNotfPrefs,
-  country: String,
-  website: String,
-  isAdmin: Boolean,
-  isOwner: Boolean
+  country: String = "",
+  website: String = "",
+  isAdmin: Boolean = false,
+  isOwner: Boolean = false
 ){
   checkId(id, "DwE02k125r")
   def isAuthenticated = !id.startsWith("-") && !id.startsWith("?")
@@ -283,9 +283,9 @@ case class IdentitySimple(
   override val userId: String,
   name: String,  // COULD reject weird chars, e.g. '?' or '|'
                  // Or fix later (and replace any weird chars already in db)
-  email: String,
-  location: String,
-  website: String
+  email: String = "",
+  location: String = "",
+  website: String = ""
   // COULD include signed cookie random value, so we knows if is same browser.
 ) extends Identity {
   def displayName = name
