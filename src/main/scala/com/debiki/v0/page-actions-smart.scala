@@ -77,7 +77,12 @@ class ViAc(val debate: Debate, val action: Action) {
  */
 class ViPo(debate: Debate, val post: Post) extends ViAc(debate, post) {
 
-  def parent: String = post.parent
+  def parentId: String = post.parent
+
+  def parentPost: Option[ViPo] =
+    if (parentId == id) None
+    else debate.vipo(parentId)
+
   def tyype = post.tyype
 
 
@@ -341,11 +346,11 @@ class ViPo(debate: Debate, val post: Post) extends ViAc(debate, post) {
   lazy val depth: Int = {
     var depth = 0
     var curId = id
-    var nextParent = page.vipo(parent)
+    var nextParent = page.vipo(parentId)
     while (nextParent.nonEmpty && nextParent.get.id != curId) {
       depth += 1
       curId = nextParent.get.id
-      nextParent = page.vipo(nextParent.get.parent) //nextParent.parent
+      nextParent = page.vipo(nextParent.get.parentId) //nextParent.parent
     }
     depth
   }
@@ -360,7 +365,7 @@ class ViPo(debate: Debate, val post: Post) extends ViAc(debate, post) {
 
 
   def siblingsAndMe: List[ViPo] =
-    debate.repliesTo(parent) map (new ViPo(page, _))
+    debate.repliesTo(parentId) map (new ViPo(page, _))
 
 
   /** Whether or not this Post has been published.
