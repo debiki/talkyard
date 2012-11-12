@@ -30,7 +30,7 @@ object Notifier {
    * doesn't accidentally forget forever to send some notifications.
    * (Also se object Mailer.)
    */
-  def startNewActor(daoFactory: DaoFactory): ActorRef = {
+  def startNewActor(daoFactory: RichDaoFactory): ActorRef = {
     val actorRef = Akka.system.actorOf(Props(
        new Notifier(daoFactory)), name = "NotifierActor")
     Akka.system.scheduler.schedule(0 seconds, 20 seconds, actorRef, "SendNotfs")
@@ -50,7 +50,7 @@ object Notifier {
  *
  * Thread safe.
  */
-class Notifier(val daoFactory: DaoFactory) extends Actor {
+class Notifier(val daoFactory: RichDaoFactory) extends Actor {
 
 
   val logger = play.api.Logger("app.notifier")

@@ -19,15 +19,11 @@ import QuotaManager._
 import resource.Resource
 
 
-class QuotaManager(val unitTestTicker: Option[ggb.Ticker] = None) {
+class QuotaManager(
+  val systemDao: SystemDao,
+  val unitTestTicker: Option[ggb.Ticker] = None) {
 
-
-  private var _dao: SystemDao = null
-
-  def setDao(dao: SystemDao) {
-    require(_dao eq null)
-    _dao = dao
-  }
+  def _dao = systemDao
 
   val log = play.api.Logger("app.quota")
 

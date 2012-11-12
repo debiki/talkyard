@@ -18,9 +18,8 @@ object Debiki {
 
   lazy val PageCache = new PageCache
 
-  val QuotaManager = new QuotaManager
 
-  val DaoFactory = new CachingDaoFactory(new RelDbDaoSpiFactory( {
+  private val _DaoSpiFactory = new RelDbDaoSpiFactory({
     def configStr(path: String) =
       Play.configuration.getString(path) getOrElse
          runErr("DwE93KI2", "Config value missing: "+ path)
@@ -30,20 +29,27 @@ object Debiki {
       database = configStr("debiki.pgsql.database"),
       user = configStr("debiki.pgsql.user"),
       password = configStr("debiki.pgsql.password"))
-  }), QuotaManager.QuotaChargerImpl)
+  })
 
-  QuotaManager.setDao(DaoFactory.systemDao)
+
+  val QuotaManager = new QuotaManager(SystemDao)
   QuotaManager.scheduleCleanups()
 
-  private val _MailerActorRef = Mailer.startNewActor(DaoFactory)
-  private val _NotifierActorRef = Notifier.startNewActor(DaoFactory)
 
-  def SystemDao = DaoFactory.systemDao
+  def SystemDao = new SystemDao(_DaoSpiFactory.systemDaoSpi)
+
+
+  val RichDaoFactory = new CachingRichDaoFactory(_DaoSpiFactory,
+    QuotaManager.QuotaChargerImpl /*, cache-config */)
+
+
+  private val _MailerActorRef = Mailer.startNewActor(RichDaoFactory)
+  private val _NotifierActorRef = Notifier.startNewActor(RichDaoFactory)
 
 
   def tenantDao(tenantId: String, ip: String, roleId: Option[String] = None)
-        : TenantDao =
-    DaoFactory.buildTenantDao(QuotaConsumers(ip = Some(ip),
+        : RichTenantDao =
+    RichDaoFactory.buildTenantDao(QuotaConsumers(ip = Some(ip),
        tenantId = tenantId, roleId = roleId))
 
 

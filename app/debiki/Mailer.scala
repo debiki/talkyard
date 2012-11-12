@@ -29,7 +29,7 @@ object Mailer {
    * doesn't accidentally forget forever to send some emails.
    * (Also se Notifier.scala)
    */
-  def startNewActor(daoFactory: DaoFactory): ActorRef = {
+  def startNewActor(daoFactory: RichDaoFactory): ActorRef = {
     val actorRef = Akka.system.actorOf(Props(
        new Mailer(daoFactory)), name = "EmailActor")
     actorRef
@@ -50,7 +50,7 @@ object Mailer {
  *
  * Thread safe.
  */
-class Mailer(val daoFactory: DaoFactory) extends Actor {
+class Mailer(val daoFactory: RichDaoFactory) extends Actor {
 
 
   val logger = play.api.Logger("app.mailer")
