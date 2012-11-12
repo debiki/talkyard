@@ -21,16 +21,26 @@ import EmailNotfPrefs.EmailNotfPrefs
 // and sanitaze input. That'd be an eventually inconsistent solution :-/ .)
 
 
-abstract class DaoSpiFactory {
-  def systemDaoSpi: SystemDaoSpi
-  def buildTenantDaoSpi(quotaConsumers: QuotaConsumers): TenantDaoSpi
+/**
+ * Constructs database DAO:s, implemented by service providers,
+ * (currently only debiki-dao-pgsql, for Postgres) and used by debiki-app-play.
+ */
+abstract class DbDaoFactory {
+  def systemDaoSpi: SystemDbDao
+  def buildTenantDaoSpi(quotaConsumers: QuotaConsumers): TenantDbDao
 }
 
 
 
-/** Debiki's Data Access Object service provider interface.
+/**
+ * Debiki's database Data Access Object (DAO).
+ *
+ * It's named "DbDao" not simply "Dao" because there are other kinds
+ * of DAO:s, e.g. a cache DAO that reads stuff from the database, and
+ * constructs objects and caches them in-memory / on disk. Perhaps there
+ * could be a web service DAO as well.
  */
-abstract class TenantDaoSpi {
+abstract class TenantDbDao {
 
   def quotaConsumers: QuotaConsumers
 
@@ -121,9 +131,9 @@ abstract class TenantDaoSpi {
 }
 
 
-abstract class SystemDaoSpi {
+abstract class SystemDbDao {
 
-  def close()  // remove? move to DaoSpiFactory in some manner?
+  def close()  // remove? move to DbDaoFactory in some manner?
 
   /**
    * Creates the very first tenant. Then there cannot be any creator,
@@ -158,10 +168,10 @@ abstract class SystemDaoSpi {
 /**
  * Debiki's Data Access Object, for tenant specific data.
  *
- * Delegates database requests to a TenantDaoSpi implementation.
+ * Delegates database requests to a TenantDbDao implementation.
  */
 class TenantDao(
-   private val _spi: TenantDaoSpi,
+   private val _spi: TenantDbDao,
    protected val _quotaCharger: QuotaCharger) {
 
   import com.debiki.v0.{ResourceUse => ResUsg}
@@ -484,7 +494,7 @@ class TenantDao(
 
 
 
-class SystemDao(private val _spi: SystemDaoSpi) {
+class SystemDao(private val _spi: SystemDbDao) {
 
   def close() = _spi.close()
 
