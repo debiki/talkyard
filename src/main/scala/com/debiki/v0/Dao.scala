@@ -26,8 +26,8 @@ import EmailNotfPrefs.EmailNotfPrefs
  * (currently only debiki-dao-pgsql, for Postgres) and used by debiki-app-play.
  */
 abstract class DbDaoFactory {
-  def systemDaoSpi: SystemDbDao
-  def buildTenantDaoSpi(quotaConsumers: QuotaConsumers): TenantDbDao
+  def systemDbDao: SystemDbDao
+  def newTenantDbDao(quotaConsumers: QuotaConsumers): TenantDbDao
 }
 
 
@@ -135,9 +135,15 @@ abstract class SystemDbDao {
 
   def close()  // remove? move to DbDaoFactory in some manner?
 
+
+  // ----- Websites (a.k.a. tenants)
+
   /**
-   * Creates the very first tenant. Then there cannot be any creator,
-   * because there are no users or roles (since there are on other tenants).
+   * Creates the very first tenant, assigns it an id and and returns it.
+   *
+   * It's different from TenantDbDao.createWebsite(), because there cannot be
+   * any creator of this tenant, because there are not yet any users or roles
+   * (since there are on other tenants).
    */
   // COULD rename to createFirstWebsite
   def createTenant(name: String): Tenant
@@ -148,12 +154,27 @@ abstract class SystemDbDao {
   // COULD rename to findWebsitesCanonicalHost
   def lookupTenant(scheme: String, host: String): TenantLookup
 
+
+  // ----- Emails
+
   def loadNotfsToMailOut(delayInMinutes: Int, numToLoad: Int): NotfsToMail
+
+
+  // ----- Quota
 
   def loadQuotaState(consumers: Seq[QuotaConsumer])
         : Map[QuotaConsumer, QuotaState]
 
+  /**
+   * Adds `delta.deltaQuota` and `.deltaResources` to the amount of quota
+   * and resources used, for the specified consumers.
+   * Also updates limits and timestamp.
+   * Creates new consumer quota entries if needed.
+   */
   def useMoreQuotaUpdateLimits(deltas: Map[QuotaConsumer, QuotaDelta])
+
+
+  // ----- Misc
 
   def checkRepoVersion(): Option[String]
 
@@ -489,58 +510,6 @@ class TenantDao(
                           emailAddr = emailAddr,
                           emailNotfPrefs = emailNotfPrefs)
   }
-
-}
-
-
-
-class SystemDao(private val _spi: SystemDbDao) {
-
-  def close() = _spi.close()
-
-
-  // ----- Emails
-
-  def loadNotfsToMailOut(delayInMinutes: Int, numToLoad: Int): NotfsToMail =
-    _spi.loadNotfsToMailOut(delayInMinutes, numToLoad)
-
-
-  // ----- Tenants
-
-  /**
-   * Creates a tenant, assigns it an id and and returns it.
-   */
-  def createTenant(name: String): Tenant =
-    _spi.createTenant(name)
-
-  def loadTenants(tenantIds: Seq[String]): Seq[Tenant] =
-    _spi.loadTenants(tenantIds)
-
-  def lookupTenant(scheme: String, host: String): TenantLookup =
-    _spi.lookupTenant(scheme, host)
-
-
-  // ----- Quota
-
-  def loadQuotaState(consumers: Seq[QuotaConsumer])
-        : Map[QuotaConsumer, QuotaState] =
-    _spi.loadQuotaState(consumers)
-
-  /**
-   * Adds `delta.deltaQuota` and `.deltaResources` to the amount of quota
-   * and resources used, for the specified consumers.
-   * Also updates limits and timestamp.
-   * Creates new consumer quota entries if needed.
-   */
-  def useMoreQuotaUpdateLimits(deltas: Map[QuotaConsumer, QuotaDelta]) =
-    _spi.useMoreQuotaUpdateLimits(deltas)
-
-
-  // ----- Misc
-
-  def checkRepoVersion(): Option[String] = _spi.checkRepoVersion()
-
-  def secretSalt(): String = _spi.secretSalt()
 
 }
 
