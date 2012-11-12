@@ -21,31 +21,11 @@ import EmailNotfPrefs.EmailNotfPrefs
 // and sanitaze input. That'd be an eventually inconsistent solution :-/ .)
 
 
-abstract class DaoFactory {
-  def systemDao: SystemDao
-  def buildTenantDao(quotaConsumers: QuotaConsumers): TenantDao
-}
-
-
 abstract class DaoSpiFactory {
   def systemDaoSpi: SystemDaoSpi
   def buildTenantDaoSpi(quotaConsumers: QuotaConsumers): TenantDaoSpi
 }
 
-
-class NonCachingDaoFactory(
-   private val _daoSpiFactory: DaoSpiFactory,
-   private val _quotaManager: QuotaCharger)
-  extends DaoFactory {
-
-  override val systemDao = new SystemDao(_daoSpiFactory.systemDaoSpi)
-
-  override def buildTenantDao(quotaConsumers: QuotaConsumers): TenantDao = {
-    val daoSpi = _daoSpiFactory.buildTenantDaoSpi(quotaConsumers)
-    new TenantDao(daoSpi, _quotaManager)
-  }
-
-}
 
 
 /** Debiki's Data Access Object service provider interface.
@@ -554,117 +534,6 @@ class SystemDao(private val _spi: SystemDaoSpi) {
 
 }
 
-
-
-/** Caches pages in a ConcurrentMap.
- *
- *  Thread safe, if `impl' is thread safe.
- */
-class CachingDaoFactory(
-   private val _daoSpiFactory: DaoSpiFactory,
-   private val _quotaCharger: QuotaCharger)
-  extends DaoFactory {
-
-  override val systemDao = new SystemDao(_daoSpiFactory.systemDaoSpi)
-
-  val cache = new CachingTenantDao.Cache
-
-  override def buildTenantDao(quotaConsumers: QuotaConsumers): TenantDao = {
-    val spi = _daoSpiFactory.buildTenantDaoSpi(quotaConsumers)
-    new CachingTenantDao(cache, spi, _quotaCharger)
-  }
-
-}
-
-
-object CachingTenantDao {
-
-  case class Key(tenantId: String, debateId: String)
-
-  class Cache {
-
-    // Passes the current DaoSpi (which knows which quota consumer to tax)
-    // to the cache load function. Needed because Google Guava's
-    // cache lookup method takes a cache map key only.
-    val tenantDaoDynVar =
-      new util.DynamicVariable[CachingTenantDao](null)
-
-    val cache: ju.concurrent.ConcurrentMap[Key, Debate] =
-      new guava.collect.MapMaker().
-         softValues().
-         maximumSize(100*1000).
-         //expireAfterWrite(10. TimeUnits.MINUTES).
-         makeComputingMap(new guava.base.Function[Key, Debate] {
-        def apply(k: Key): Debate = {
-          val tenantDao = tenantDaoDynVar.value
-          assert(tenantDao ne null)
-          assert(tenantDao.tenantId == k.tenantId)
-          // Don't call loadPage(), that'd cause eternal recursion.
-          tenantDao._superLoadPage(k.debateId) getOrElse null
-        }
-      })
-  }
-}
-
-
-class CachingTenantDao(
-   private val _cache: CachingTenantDao.Cache,
-   spi: TenantDaoSpi,
-   _quotaManager: QuotaCharger)
-  extends TenantDao(spi, _quotaManager) {
-
-  import CachingTenantDao.Key
-
-
-  override def savePageActions[T <: Action](
-      debateId: String, xs: List[T]): List[T] = {
-    _cache.cache.remove(Key(tenantId, debateId = debateId))
-    return super.savePageActions(debateId, xs)
-
-    // COULD instead update value in cache (adding the new actions to
-    // the cached page). But then `savePageActions` also needs to know
-    // which users created the actions, so their login/idty/user instances
-    // can be cached as well (or it won't be possible to render the page,
-    // later, when it's retrieved from the cache).
-    // So: COULD save login, idty and user to databaze *lazily*.
-    // Also, logins that doesn't actually do anything won't be saved
-    // to db, which is goood since they waste space.
-    // (They're useful for statistics, but that should probably be
-    // completely separated from the "main" db?)
-
-    /*  Updating the cache would look something like:
-      val key = Key(tenantId, debateId)
-      var replaced = false
-      while (!replaced) {
-        val oldPage =
-           _cache.tenantDaoDynVar.withValue(this) {
-             _cache.cache.get(key)
-           }
-        val newPage = oldPage ++ actions ++ people-who-did-the-actions
-        // newPage might == oldPage, if another thread just refreshed
-        // the page from the database.
-        replaced = _cache.cache.replace(key, oldPage, newPage)
-    */
-  }
-
-
-  override def loadPage(debateId: String): Option[Debate] = {
-    try {
-      _cache.tenantDaoDynVar.withValue(this) {
-        Some(_cache.cache.get(Key(tenantId, debateId)))
-      }
-    } catch {
-      case e: NullPointerException =>
-        None
-    }
-  }
-
-
-  // private[this package]
-  def _superLoadPage(pageId: String): Option[Debate] =
-    super.loadPage(pageId)
-
-}
 
 
 object Dao {
