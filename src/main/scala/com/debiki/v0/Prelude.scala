@@ -88,6 +88,9 @@ object Prelude {
   def SHOULD = ()  // Fix before release, unless short of time, or too boring.
   def COULD = ()  // Could do this, but it's not that important.
 
+  def throwNoSuchElem(errorCode: String, message: => String) =
+    throw new NoSuchElementException(s"$message [error $errorCode]")
+
   def runErr(errorCode: String, problem: => String) =
     throw new RuntimeException(problem +" [error "+ errorCode +"]")
 
