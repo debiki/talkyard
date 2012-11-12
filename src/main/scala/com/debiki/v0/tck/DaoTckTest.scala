@@ -55,15 +55,16 @@ Could test:
 
 
 trait TestContext {
-  def daoFactory: v0.DaoFactory
-  def close() = daoFactory.systemDao.close()
-  def createRestorePoint(): Unit
-  def revertToRestorePoint(): Unit
+  def daoSpiFactory: DaoSpiFactory
+  def quotaManager: QuotaCharger
+  // def close() // = daoFactory.systemDao.close()
+}
 
-  /** True if the database schema uses foreign key constraints.
-   *  (Most likely an RDBMS.)
-   */
-  def hasRefConstraints: Boolean
+
+
+trait TestContextBuilder {
+  def buildTestContext(what: DaoTckTest.What, schemaVersion: String)
+        : TestContext
 }
 
 
@@ -73,9 +74,6 @@ object DaoTckTest {
   case object EmptySchema extends What
   case object EmptyTables extends What
   case object TablesWithData extends What
-
-  type TestContextBuilder =
-    Function2[What, /*schemaVersion:*/ String, TestContext]
 }
 
 
@@ -93,16 +91,22 @@ abstract class DaoTckTest(builder: TestContextBuilder)
 
 
 
-abstract class DaoChildSpec(builder: TestContextBuilder, val defSchemaVersion: String)
-    extends Specification {
+abstract class DaoChildSpec(
+  builder: TestContextBuilder,
+  val defSchemaVersion: String)
+  extends Specification {
 
   sequential
 
   // Inited in setup() below and closed in SpecContext below, after each test.
   var ctx: TestContext = _
 
-  def daoFactory = ctx.daoFactory
-  def systemDao = daoFactory.systemDao
+  def newTenantDao(quotaConsumers: QuotaConsumers): TenantDao = {
+    val daoSpi = ctx.daoSpiFactory.buildTenantDaoSpi(quotaConsumers)
+    new TenantDao(daoSpi, ctx.quotaManager)
+  }
+
+  def systemDao = new SystemDao(ctx.daoSpiFactory.systemDaoSpi)
 
   def now = new ju.Date
 
@@ -183,7 +187,7 @@ class DaoSpecV002ChildSpec(testContextBuilder: TestContextBuilder)
   val T = Templates
 
   step {
-    ctx = testContextBuilder(EmptyTables, defSchemaVersion)
+    ctx = testContextBuilder.buildTestContext(EmptyTables, defSchemaVersion)
   }
 
   "A v0.DAO in an empty 0.0.2 repo" should {
@@ -193,7 +197,7 @@ class DaoSpecV002ChildSpec(testContextBuilder: TestContextBuilder)
   }
 
   step {
-    ctx = testContextBuilder(EmptyTables, defSchemaVersion)
+    ctx = testContextBuilder.buildTestContext(EmptyTables, defSchemaVersion)
   }
 
   // COULD split into: 3 tests:
@@ -212,7 +216,7 @@ class DaoSpecV002ChildSpec(testContextBuilder: TestContextBuilder)
 
     // Why is this needed? There's a `step` above that does this and it should
     // be executed befor the tests below!
-    ctx = testContextBuilder(EmptyTables, defSchemaVersion)
+    ctx = testContextBuilder.buildTestContext(EmptyTables, defSchemaVersion)
 
 
     // -------- Create tenant
@@ -235,8 +239,7 @@ class DaoSpecV002ChildSpec(testContextBuilder: TestContextBuilder)
       defaultTenantId = tenant.id
     }
 
-    lazy val dao = daoFactory.buildTenantDao(
-       v0.QuotaConsumers(tenantId = defaultTenantId))
+    lazy val dao = newTenantDao(v0.QuotaConsumers(tenantId = defaultTenantId))
 
     "add and lookup host test.ex.com" in {
       dao.addTenantHost(TenantHost("test.ex.com",
