@@ -55,9 +55,9 @@ Could test:
 
 
 trait TestContext {
-  def daoSpiFactory: DaoSpiFactory
+  def dbDaoFactory: DbDaoFactory
   def quotaManager: QuotaCharger
-  // def close() // = daoFactory.systemDao.close()
+  // def close() // = daoFactory.systemDbDao.close()
 }
 
 
@@ -101,12 +101,10 @@ abstract class DaoChildSpec(
   // Inited in setup() below and closed in SpecContext below, after each test.
   var ctx: TestContext = _
 
-  def newTenantDao(quotaConsumers: QuotaConsumers): TenantDao = {
-    val daoSpi = ctx.daoSpiFactory.buildTenantDaoSpi(quotaConsumers)
-    new TenantDao(daoSpi, ctx.quotaManager)
-  }
+  def newTenantDbDao(quotaConsumers: QuotaConsumers) =
+    ctx.dbDaoFactory.newTenantDbDao(quotaConsumers)
 
-  def systemDao = new SystemDao(ctx.daoSpiFactory.systemDaoSpi)
+  def systemDbDao = ctx.dbDaoFactory.systemDbDao
 
   def now = new ju.Date
 
@@ -149,11 +147,11 @@ class DaoSpecEmptySchema(b: TestContextBuilder) extends DaoChildSpec(b, "0") {
 
   "A v0.DAO in a completely empty repo" when schemaIsEmpty should {
     "consider the version being 0" in {
-      systemDao.checkRepoVersion() must_== Some("0")
+      systemDbDao.checkRepoVersion() must_== Some("0")
     }
     "be able to upgrade to 0.0.2" in {
       // dao.upgrade()  currently done automatically, but ought not to.
-      systemDao.checkRepoVersion() must_== Some("0.0.2")
+      systemDbDao.checkRepoVersion() must_== Some("0.0.2")
     }
   }
 } */
@@ -192,7 +190,7 @@ class DaoSpecV002ChildSpec(testContextBuilder: TestContextBuilder)
 
   "A v0.DAO in an empty 0.0.2 repo" should {
     "find version 0.0.2" in {
-      systemDao.checkRepoVersion() must_== Some("0.0.2")
+      systemDbDao.checkRepoVersion() must_== Some("0.0.2")
     }
   }
 
@@ -224,34 +222,34 @@ class DaoSpecV002ChildSpec(testContextBuilder: TestContextBuilder)
     var defaultTenantId = ""
 
     "find no tenant for non-existing host test.ex.com" in {
-      val lookup = systemDao.lookupTenant("http", "test.ex.com")
+      val lookup = systemDbDao.lookupTenant("http", "test.ex.com")
       lookup must_== FoundNothing
     }
 
     "find no tenant for non-existing tenant id" in {
-      systemDao.loadTenants("non_existing_id"::Nil) must_== Nil
+      systemDbDao.loadTenants("non_existing_id"::Nil) must_== Nil
     }
 
     "create a Test tenant" in {
-      val tenant = systemDao.createTenant(name = "Test")
+      val tenant = systemDbDao.createTenant(name = "Test")
       tenant.name must_== "Test"
       tenant.id must_!= ""
       defaultTenantId = tenant.id
     }
 
-    lazy val dao = newTenantDao(v0.QuotaConsumers(tenantId = defaultTenantId))
+    lazy val dao = newTenantDbDao(v0.QuotaConsumers(tenantId = defaultTenantId))
 
     "add and lookup host test.ex.com" in {
       dao.addTenantHost(TenantHost("test.ex.com",
          TenantHost.RoleCanonical, TenantHost.HttpsNone))
-      val lookup = systemDao.lookupTenant("http", "test.ex.com")
+      val lookup = systemDbDao.lookupTenant("http", "test.ex.com")
       lookup must_== FoundChost(defaultTenantId)
       val lookup2 = dao.lookupOtherTenant("http", "test.ex.com")
       lookup2 must_== FoundChost(defaultTenantId)
     }
 
     "lookup tenant by id, and find all hosts" in {
-      val tenants = systemDao.loadTenants(defaultTenantId::Nil)
+      val tenants = systemDbDao.loadTenants(defaultTenantId::Nil)
       tenants must beLike {
         case List(tenant) =>
           tenant.id must_== defaultTenantId
@@ -1272,7 +1270,7 @@ class DaoSpecV002ChildSpec(testContextBuilder: TestContextBuilder)
         dao.loadNotfByEmailId("BadEmailId") must_== None
         dao.loadNotfsForRole(unauUser.id) must_== Nil
         dao.loadNotfsForRole(unauUser.id) must_== Nil
-        val notfsLoaded = systemDao.loadNotfsToMailOut(
+        val notfsLoaded = systemDbDao.loadNotfsToMailOut(
                                           delayInMinutes = 0, numToLoad = 10)
         notfsLoaded.usersByTenantAndId must_== Map.empty
         notfsLoaded.notfsByTenant must_== Map.empty
@@ -1291,7 +1289,7 @@ class DaoSpecV002ChildSpec(testContextBuilder: TestContextBuilder)
         }
 
         "load it, by time, to mail out" in {
-          val notfsToMail = systemDao.loadNotfsToMailOut(
+          val notfsToMail = systemDbDao.loadNotfsToMailOut(
              delayInMinutes = 0, numToLoad = 10)
           notfsToMail.usersByTenantAndId.get((defaultTenantId, unauUser.id)
              ) must_== Some(unauUser)
@@ -1314,7 +1312,7 @@ class DaoSpecV002ChildSpec(testContextBuilder: TestContextBuilder)
         }
 
         "load it, by time, to mail out" in {
-          val notfsToMail = systemDao.loadNotfsToMailOut(
+          val notfsToMail = systemDbDao.loadNotfsToMailOut(
              delayInMinutes = 0, numToLoad = 10)
           notfsToMail.usersByTenantAndId.get((defaultTenantId, auUser.id)
              ) must_== Some(auUser)
@@ -1332,7 +1330,7 @@ class DaoSpecV002ChildSpec(testContextBuilder: TestContextBuilder)
 
       "not load any notf, because they are too recent" in {
         val notfsLoaded =
-          systemDao.loadNotfsToMailOut(delayInMinutes = 15, numToLoad = 10)
+          systemDbDao.loadNotfsToMailOut(delayInMinutes = 15, numToLoad = 10)
         notfsLoaded.usersByTenantAndId must_== Map.empty
         notfsLoaded.notfsByTenant must_== Map.empty
       }
@@ -1375,7 +1373,7 @@ class DaoSpecV002ChildSpec(testContextBuilder: TestContextBuilder)
         failureText = Some("Test failure"))
 
       def loadNotfToMailOut(userId: String): Seq[NotfOfPageAction] = {
-        val notfsToMail = systemDao.loadNotfsToMailOut(
+        val notfsToMail = systemDbDao.loadNotfsToMailOut(
           delayInMinutes = 0, numToLoad = 10)
         val notfs = notfsToMail.notfsByTenant(defaultTenantId)
         val usersNotfs = notfs.filter(_.recipientUserId == userId)
@@ -1670,7 +1668,7 @@ class DaoSpecV002ChildSpec(testContextBuilder: TestContextBuilder)
       }
 
       "lookup the new website, from existing tenant" in {
-        systemDao.loadTenants(newWebsiteOpt.get.id::Nil) must beLike {
+        systemDbDao.loadTenants(newWebsiteOpt.get.id::Nil) must beLike {
           case List(websiteInDb) =>
             websiteInDb must_== newWebsiteOpt.get.copy(hosts = List(newHost))
         }
@@ -1704,12 +1702,12 @@ class DaoSpecV002ChildSpec(testContextBuilder: TestContextBuilder)
          tenantConsumer, tenantIpConsumer, globalIpConsumer, roleConsumer)
 
       "find none, if there is none" in {
-        val quotaStateByConsumer = systemDao.loadQuotaState(consumers)
+        val quotaStateByConsumer = systemDbDao.loadQuotaState(consumers)
         quotaStateByConsumer must beEmpty
       }
 
       "do nothin, if nothing to do" in {
-        systemDao.useMoreQuotaUpdateLimits(Map[QuotaConsumer, QuotaDelta]())
+        systemDbDao.useMoreQuotaUpdateLimits(Map[QuotaConsumer, QuotaDelta]())
           // ... should throw nothing
       }
 
@@ -1774,8 +1772,8 @@ class DaoSpecV002ChildSpec(testContextBuilder: TestContextBuilder)
          quotaDailyFreeload = 63)
 
       "create new quota entries, when adding quota" in {
-        systemDao.useMoreQuotaUpdateLimits(initialDeltas)
-        val quotaStateByConsumer = systemDao.loadQuotaState(consumers)
+        systemDbDao.useMoreQuotaUpdateLimits(initialDeltas)
+        val quotaStateByConsumer = systemDbDao.loadQuotaState(consumers)
 
         quotaStateByConsumer.get(tenantConsumer) must_==
            Some(initialQuotaStateTenant)
@@ -1821,8 +1819,8 @@ class DaoSpecV002ChildSpec(testContextBuilder: TestContextBuilder)
         val laterQuotaStateRole = laterQuotaStateTenant.copy(
           quotaDailyFreeload = 63)
 
-        systemDao.useMoreQuotaUpdateLimits(laterDeltas)
-        val quotaStateByConsumer = systemDao.loadQuotaState(consumers)
+        systemDbDao.useMoreQuotaUpdateLimits(laterDeltas)
+        val quotaStateByConsumer = systemDbDao.loadQuotaState(consumers)
 
         quotaStateByConsumer.get(tenantConsumer) must_==
            Some(laterQuotaStateTenant)
@@ -1861,11 +1859,11 @@ class DaoSpecV002ChildSpec(testContextBuilder: TestContextBuilder)
         // Keep mtime and limits unchanged.
         val unchangedQuotaState = laterQuotaStateTenant
 
-        systemDao.useMoreQuotaUpdateLimits(
+        systemDbDao.useMoreQuotaUpdateLimits(
           Map(tenantConsumer -> lowerLimitsDelta))
 
         val quotaStateByConsumer =
-           systemDao.loadQuotaState(tenantConsumer::Nil)
+           systemDbDao.loadQuotaState(tenantConsumer::Nil)
 
         quotaStateByConsumer.get(tenantConsumer) must_==
            Some(unchangedQuotaState)
@@ -1904,8 +1902,8 @@ class DaoSpecV002ChildSpec(testContextBuilder: TestContextBuilder)
 
         // New entries sould be created for First and Last,
         // although new-entry-creation fails for Middle (already exists).
-        systemDao.useMoreQuotaUpdateLimits(deltas)
-        val quotaStateByConsumer = systemDao.loadQuotaState(ipConsumers)
+        systemDbDao.useMoreQuotaUpdateLimits(deltas)
+        val quotaStateByConsumer = systemDbDao.loadQuotaState(ipConsumers)
 
         quotaStateByConsumer.get(globalIpConsumerFirst) must_==
            Some(resultingStateFirstLast)
