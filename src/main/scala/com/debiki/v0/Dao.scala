@@ -67,8 +67,8 @@ abstract class TenantDbDao {
   def movePages(pageIds: Seq[String], fromFolder: String, toFolder: String)
 
   def moveRenamePage(pageId: String,
-        newFolder: Option[String], showId: Option[Boolean],
-        newSlug: Option[String]): PagePath
+        newFolder: Option[String] = None, showId: Option[Boolean] = None,
+        newSlug: Option[String] = None): PagePath
 
   def loadTemplate(templPath: PagePath): Option[TemplateSrcHtml]
 
@@ -77,7 +77,7 @@ abstract class TenantDbDao {
   def lookupPagePathByPageId(pageId: String): Option[PagePath]
 
   def listChildPages(parentPageId: String, sortBy: PageSortOrder,
-        limit: Int, offset: Int): Seq[(PagePath, PageDetails)]
+        limit: Int, offset: Int = 0): Seq[(PagePath, PageDetails)]
 
   def savePageActions[T <: Action](debateId: String, xs: List[T]): List[T]
 
@@ -86,9 +86,11 @@ abstract class TenantDbDao {
   def loadPageBodiesTitles(pagePaths: Seq[PagePath])
         : Seq[(PagePath, Option[Debate])]
 
-  def loadRecentActionExcerpts(fromIp: Option[String],
-        byIdentity: Option[String],
-        pathRanges: PathRanges, limit: Int): (Seq[ViAc], People)
+  def loadRecentActionExcerpts(
+        fromIp: Option[String] = None,
+        byIdentity: Option[String] = None,
+        pathRanges: PathRanges = PathRanges.Anywhere,
+        limit: Int): (Seq[ViAc], People)
 
   def listPagePaths(
         pageRanges: PathRanges,
@@ -187,13 +189,14 @@ abstract class SystemDbDao {
 
 
 /**
- * Debiki's Data Access Object, for tenant specific data.
+ * Charges the tenants with some quota for each db request.
  *
- * Delegates database requests to a TenantDbDao implementation.
+ * (It delegates database requests to a TenantDbDao implementation.)
  */
-class TenantDao(
-   private val _spi: TenantDbDao,
-   protected val _quotaCharger: QuotaCharger) {
+class ChargingTenantDbDao(
+  private val _spi: TenantDbDao,
+  protected val _quotaCharger: QuotaCharger)
+  extends TenantDbDao {
 
   import com.debiki.v0.{ResourceUse => ResUsg}
 
