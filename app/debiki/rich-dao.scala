@@ -16,7 +16,7 @@ import Prelude._
 
 abstract class DaoFactory {
   def systemDao: SystemDao
-  def buildTenantDao(quotaConsumers: QuotaConsumers): TenantDao
+  def newTenantDao(quotaConsumers: QuotaConsumers): TenantDao
 }
 
 
@@ -30,7 +30,7 @@ object DaoFactory {
 
     def systemDao = _dbDaoFactory.systemDbDao
 
-    def buildTenantDao(quotaConsumers: QuotaConsumers): TenantDao = {
+    def newTenantDao(quotaConsumers: QuotaConsumers): TenantDao = {
       val tenantDbDao = _dbDaoFactory.newTenantDbDao(quotaConsumers)
       new TenantDao(tenantDbDao, _quotaCharger)
     }

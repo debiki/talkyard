@@ -22,7 +22,7 @@ class CachingDaoFactory(
 
   def systemDao = _dbDaoFactory.systemDbDao
 
-  def buildTenantDao(quotaConsumers: QuotaConsumers): TenantDao = {
+  def newTenantDao(quotaConsumers: QuotaConsumers): TenantDao = {
     val dbDao = _dbDaoFactory.newTenantDbDao(quotaConsumers)
     new CachingTenantDao(dbDao, _quotaCharger)
   }

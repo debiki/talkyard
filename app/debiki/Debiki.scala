@@ -49,7 +49,7 @@ object Debiki {
 
   def tenantDao(tenantId: String, ip: String, roleId: Option[String] = None)
         : TenantDao =
-    RichDaoFactory.buildTenantDao(QuotaConsumers(ip = Some(ip),
+    RichDaoFactory.newTenantDao(QuotaConsumers(ip = Some(ip),
        tenantId = tenantId, roleId = roleId))
 
 

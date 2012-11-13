@@ -103,7 +103,7 @@ class Mailer(val daoFactory: DaoFactory) extends Actor {
         email
     }
 
-    val tenantDao = daoFactory.buildTenantDao(
+    val tenantDao = daoFactory.newTenantDao(
       QuotaConsumers(tenantId = tenantId))
 
     tenantDao.updateSentEmail(emailSentOrFailed)

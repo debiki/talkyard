@@ -80,7 +80,7 @@ class Notifier(val daoFactory: DaoFactory) extends Actor {
     }{
       logger.debug("Considering "+ userNotfs.size +" notfs to user "+ userId)
 
-      val tenantDao = daoFactory.buildTenantDao(
+      val tenantDao = daoFactory.newTenantDao(
          QuotaConsumers(tenantId = tenantId))
       val tenant = tenantDao.loadTenant()
       val userOpt = notfsToMail.usersByTenantAndId.get(tenantId -> userId)
