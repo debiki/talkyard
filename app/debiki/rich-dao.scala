@@ -14,32 +14,32 @@ import Prelude._
 
 
 
-abstract class RichDaoFactory {
+abstract class DaoFactory {
   def systemDao: SystemDao
-  def buildTenantDao(quotaConsumers: QuotaConsumers): RichTenantDao
+  def buildTenantDao(quotaConsumers: QuotaConsumers): TenantDao
 }
 
 
 
-object RichDaoFactory {
+object DaoFactory {
 
   def apply(dbDaoFactory: DbDaoFactory, quotaCharger: QuotaCharger)
-        = new RichDaoFactory {
+        = new DaoFactory {
     private val _dbDaoFactory = dbDaoFactory
     private val _quotaCharger = quotaCharger
 
     def systemDao = _dbDaoFactory.systemDbDao
 
-    def buildTenantDao(quotaConsumers: QuotaConsumers): RichTenantDao = {
-      val spi = _dbDaoFactory.newTenantDbDao(quotaConsumers)
-      new RichTenantDao(spi, _quotaCharger)
+    def buildTenantDao(quotaConsumers: QuotaConsumers): TenantDao = {
+      val tenantDbDao = _dbDaoFactory.newTenantDbDao(quotaConsumers)
+      new TenantDao(tenantDbDao, _quotaCharger)
     }
   }
 }
 
 
 
-class RichTenantDao(tenantDbDao: TenantDbDao, quotaCharger: QuotaCharger)
+class TenantDao(tenantDbDao: TenantDbDao, quotaCharger: QuotaCharger)
   extends ChargingTenantDbDao(tenantDbDao, quotaCharger) {
 
 }

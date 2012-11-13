@@ -39,7 +39,7 @@ object Debiki {
   def SystemDao = _DaoSpiFactory.systemDbDao
 
 
-  val RichDaoFactory = new CachingRichDaoFactory(_DaoSpiFactory,
+  val RichDaoFactory = new CachingDaoFactory(_DaoSpiFactory,
     QuotaManager.QuotaChargerImpl /*, cache-config */)
 
 
@@ -48,7 +48,7 @@ object Debiki {
 
 
   def tenantDao(tenantId: String, ip: String, roleId: Option[String] = None)
-        : RichTenantDao =
+        : TenantDao =
     RichDaoFactory.buildTenantDao(QuotaConsumers(ip = Some(ip),
        tenantId = tenantId, roleId = roleId))
 
