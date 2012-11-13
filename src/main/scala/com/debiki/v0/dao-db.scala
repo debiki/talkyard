@@ -44,10 +44,22 @@ abstract class TenantDbDao {
 
   def quotaConsumers: QuotaConsumers
 
+
+  // ----- Websites (a.k.a. tenants)
+
   def tenantId: String
 
+  /**
+   * Loads the tenant for this dao.
+   */
   def loadTenant(): Tenant
 
+  /**
+   * Returns Some(new-website) on success — that is, unless someone else
+   * created the very same website, just before you.
+   * Throws OverQuotaException if you've created too many websites already
+   * (e.g. from the same IP).
+   */
   def createWebsite(name: String, address: String, ownerIp: String,
         ownerLoginId: String, ownerIdentity: IdentityOpenId, ownerRole: User)
         : Option[Tenant]
@@ -56,8 +68,20 @@ abstract class TenantDbDao {
 
   def lookupOtherTenant(scheme: String, host: String): TenantLookup
 
+
+  // ----- Login, logout
+
+  /**
+   * Assigns ids to the login request, saves it, finds or creates a user
+   * for the specified Identity, and returns everything with ids filled in.
+   * Also, if the Identity does not already exist in the db, assigns it an ID
+   * and saves it.
+   */
   def saveLogin(loginReq: LoginRequest): LoginGrant
 
+  /**
+   * Updates the specified login with logout IP and timestamp.
+   */
   def saveLogout(loginId: String, logoutIp: String)
 
   def createPage(page: PageStuff): PageStuff
@@ -83,14 +107,38 @@ abstract class TenantDbDao {
 
   def loadPage(debateId: String): Option[Debate]
 
+  /**
+   * For each PagePath, loads a Page (well, Debate) with actions loaded
+   * only for Page.BodyId and Page.TitleId. Also loads the authors.
+   */
   def loadPageBodiesTitles(pagePaths: Seq[PagePath])
         : Seq[(PagePath, Option[Debate])]
 
+  /**
+   * Loads at most `limit` recent posts, conducted e.g. at `fromIp`.
+   * Also loads actions that affected those posts (e.g. flags, edits,
+   * approvals). Also loads the people who did the actions.
+   *
+   * When listing actions by IP, loads the most recent actions of any type.
+   * When listing by /path/, however, loads `limit` *posts*, and then loads
+   * actions that affected them. Rationale: When selecting by /path/, we
+   * probably want to list e.g. all comments on a page. But when listing
+   * by IP / user-id, we're also interested in e.g. which ratings the
+   * user has cast, to find out if s/he is astroturfing.
+   *
+   * Loads "excerpts" only:
+   * - For Rating:s, loads no rating tags.
+   * - For Post:s and Edit:s with very much text, loads only the first
+   *   200 chars or something like that (not implemented though).
+   */
   def loadRecentActionExcerpts(
         fromIp: Option[String] = None,
         byIdentity: Option[String] = None,
         pathRanges: PathRanges = PathRanges.Anywhere,
         limit: Int): (Seq[ViAc], People)
+
+
+  // ----- List stuff
 
   def listPagePaths(
         pageRanges: PathRanges,
@@ -100,12 +148,21 @@ abstract class TenantDbDao {
         offset: Int
       ): Seq[(PagePath, PageDetails)]
 
+
+  // ----- Users and permissions
+
   def loadIdtyAndUser(forLoginId: String): Option[(Identity, User)]
 
+  /**
+   * Also loads details like OpenID local identifier, endpoint and version info.
+   */
   def loadIdtyDetailsAndUser(forLoginId: String = null,
         forIdentity: Identity = null): Option[(Identity, User)]
 
   def loadPermsOnPage(reqInfo: RequestInfo): PermsOnPage
+
+
+  // ----- Notifications
 
   def saveNotfs(notfs: Seq[NotfOfPageAction])
 
@@ -115,6 +172,9 @@ abstract class TenantDbDao {
 
   def skipEmailForNotfs(notfs: Seq[NotfOfPageAction], debug: String): Unit
 
+
+  // ----- Emails
+
   def saveUnsentEmail(email: Email): Unit
 
   def saveUnsentEmailConnectToNotfs(email: Email,
@@ -123,6 +183,9 @@ abstract class TenantDbDao {
   def updateSentEmail(email: Email): Unit
 
   def loadEmailById(emailId: String): Option[Email]
+
+
+  // ----- User configuration
 
   def configRole(loginId: String, ctime: ju.Date,
                     roleId: String, emailNotfPrefs: EmailNotfPrefs)
@@ -191,6 +254,12 @@ abstract class SystemDbDao {
 /**
  * Charges the tenants with some quota for each db request.
  *
+ * Note: Verify quota is OK *before* writing anything to db. Otherwise
+ * it'd be possible to start and rollback (when over quota) transactions,
+ * which could be a DoS attack.
+ * With NoSQL databases, there's no transaction to roll back, so
+ * one must verify quota ok before writing anything.
+ *
  * (It delegates database requests to a TenantDbDao implementation.)
  *
  * ((Could move to debiki-core or debiki-dao-pgsql, but where? If I'll create
@@ -210,11 +279,6 @@ class ChargingTenantDbDao(
 
   // ----- Quota
 
-  // Verify quota is OK *before* writing anything to db. Otherwise
-  // it'd be possible to start and rollback (when over quota) transactions,
-  // which could be a DoS attack.
-  // With NoSQL databases, there's no transaction to roll back, so
-  // one must verify quota ok before writing anything.
   def quotaConsumers: QuotaConsumers = _spi.quotaConsumers
 
   private def _chargeForOneReadReq() = _chargeFor(ResUsg(numDbReqsRead = 1))
@@ -236,20 +300,11 @@ class ChargingTenantDbDao(
 
   def tenantId: String = _spi.tenantId
 
-  /**
-   * Loads the tenant for this dao.
-   */
   def loadTenant(): Tenant = {
     _chargeForOneReadReq()
     _spi.loadTenant()
   }
 
-  /**
-   * Returns Some(new-website) on success — that is, unless someone else
-   * created the very same website, just before you.
-   * Throws OverQuotaException if you've created too many websites already
-   * (e.g. from the same IP).
-   */
   def createWebsite(name: String, address: String, ownerIp: String,
         ownerLoginId: String, ownerIdentity: IdentityOpenId, ownerRole: User)
         : Option[Tenant] = {
@@ -281,12 +336,6 @@ class ChargingTenantDbDao(
 
   // ----- Login, logout
 
-  /**
-   * Assigns ids to the login request, saves it, finds or creates a user
-   * for the specified Identity, and returns everything with ids filled in.
-   * Also, if the Identity does not already exist in the db, assigns it an ID
-   * and saves it.
-   */
   def saveLogin(loginReq: LoginRequest): LoginGrant = {
     // Allow people to login via email and unsubscribe, even if over quota.
     val mayPilfer = loginReq.identity.isInstanceOf[IdentityEmailId]
@@ -309,9 +358,6 @@ class ChargingTenantDbDao(
     loginGrant
   }
 
-  /**
-   * Updates the specified login with logout IP and timestamp.
-   */
   def saveLogout(loginId: String, logoutIp: String) = {
     _chargeForOneWriteReq()
     _spi.saveLogout(loginId, logoutIp)
@@ -378,33 +424,12 @@ class ChargingTenantDbDao(
     _spi.loadPage(debateId)
   }
 
-  /**
-   * For each PagePath, loads a Page (well, Debate) with actions loaded
-   * only for Page.BodyId and Page.TitleId. Also loads the authors.
-   */
   def loadPageBodiesTitles(pagePaths: Seq[PagePath])
         : Seq[(PagePath, Option[Debate])] = {
     _chargeForOneReadReq()
     _spi.loadPageBodiesTitles(pagePaths)
   }
 
-    /**
-   * Loads at most `limit` recent posts, conducted e.g. at `fromIp`.
-   * Also loads actions that affected those posts (e.g. flags, edits,
-   * approvals). Also loads the people who did the actions.
-   *
-   * When listing actions by IP, loads the most recent actions of any type.
-   * When listing by /path/, however, loads `limit` *posts*, and then loads
-   * actions that affected them. Rationale: When selecting by /path/, we
-   * probably want to list e.g. all comments on a page. But when listing
-   * by IP / user-id, we're also interested in e.g. which ratings the
-   * user has cast, to find out if s/he is astroturfing.
-   *
-   * Loads "excerpts" only:
-   * - For Rating:s, loads no rating tags.
-   * - For Post:s and Edit:s with very much text, loads only the first
-   *   200 chars or something like that (not implemented though).
-   */
   def loadRecentActionExcerpts(
         fromIp: Option[String] = None,
         byIdentity: Option[String] = None,
@@ -436,9 +461,6 @@ class ChargingTenantDbDao(
     _spi.loadIdtyAndUser(forLoginId)
   }
 
-  /**
-   * Also loads details like OpenID local identifier, endpoint and version info.
-   */
   def loadIdtyDetailsAndUser(forLoginId: String = null,
         forIdentity: Identity = null): Option[(Identity, User)] = {
     _chargeForOneReadReq()
