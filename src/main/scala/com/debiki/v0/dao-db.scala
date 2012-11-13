@@ -5,7 +5,7 @@ package com.debiki.v0
 import com.debiki.v0.Prelude._
 import com.google.{common => guava}
 import java.{util => ju}
-import Dao._
+import DbDao._
 import EmailNotfPrefs.EmailNotfPrefs
 
 
@@ -192,6 +192,13 @@ abstract class SystemDbDao {
  * Charges the tenants with some quota for each db request.
  *
  * (It delegates database requests to a TenantDbDao implementation.)
+ *
+ * ((Could move to debiki-core or debiki-dao-pgsql, but where? If I'll create
+ * new similar classes for other db backends (e.g. Cassandra), then it
+ * should be moved to debiki-dao-pgsql. If, however, it'll be possible
+ * to reuse the same instance, with different configs (doesn't yet exist),
+ * then it could be moved to debiki-app-play, and the config classes
+ * would be placed here in debiki-core?))
  */
 class ChargingTenantDbDao(
   private val _spi: TenantDbDao,
@@ -518,7 +525,7 @@ class ChargingTenantDbDao(
 
 
 
-object Dao {
+object DbDao {
 
   case class EmailNotFoundException(emailId: String)
     extends Exception("No email with id: "+ emailId)
