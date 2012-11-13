@@ -133,7 +133,7 @@ object AppEditHistory extends mvc.Controller {
 
     // ----- Save all changes
 
-    Debiki.savePageActions(pageReq, actions)
+    pageReq.dao.savePageActions(pageReq, actions)
   }
 
 }

@@ -77,11 +77,7 @@ object AppCreatePage extends mvc.Controller {
     // If not logged in, then include an empty Yaml tag, so the browser
     // notices that it got that elem, and won't call GET ?page-info.
     val infoNode = <pre class='dw-data-yaml'>{pageInfoYaml}</pre>
-
-    // When rendering the page, bypass the page cache, since the page doesn't
-    // exist, and thus has no id and cannot be cached (as of now).
-    val pageHtml = Debiki.renderPage(pageReq, appendToBody = infoNode,
-      skipCache = true)
+    val pageHtml = pageReq.dao.renderPage(pageReq, appendToBody = infoNode)
 
     Ok(pageHtml) as HTML
   }

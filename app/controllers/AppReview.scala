@@ -66,7 +66,7 @@ object AppReview extends mvc.Controller {
         "DwE93JQ3", "Page not found: "+ pageId +", only some reviews saved")
       val page = pageWithoutMe ++ apiReq.meAsPeople_!
 
-      Debiki.savePageActions(apiReq, page, reviews)
+      apiReq.dao.savePageActions(apiReq, page, reviews)
     }
 
     Ok
@@ -105,7 +105,7 @@ object AppReview extends mvc.Controller {
         isApproved = isApproval)
     }
 
-    Debiki.savePageActions(pageReq, reviews)
+    pageReq.dao.savePageActions(pageReq, reviews)
     Ok("Done.")
   }
 

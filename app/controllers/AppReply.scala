@@ -55,7 +55,8 @@ object AppReply extends mvc.Controller {
       markup = Markup.DefaultForComments.id, tyype = PostType.Text,
       where = whereOpt, approval = approval)
 
-    val List(postWithId: Post) = Debiki.savePageActions(pageReq, postNoId::Nil)
+    val List(postWithId: Post) =
+      pageReq.dao.savePageActions(pageReq, postNoId::Nil)
 
     if (pageReq.isAjax)
       BrowserPagePatcher.jsonForMyNewPosts(pageReq, postWithId::Nil)

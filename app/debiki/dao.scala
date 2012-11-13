@@ -5,14 +5,11 @@
 package debiki
 
 import com.debiki.v0._
+import controllers._
 import java.{util => ju}
-import play.{api => p}
-import play.api.{cache => pc}
-import play.api.Play.current
-import scala.reflect.ClassTag
-import Prelude._
+import scala.xml.NodeSeq
 import EmailNotfPrefs.EmailNotfPrefs
-
+import Prelude._
 
 
 abstract class DaoFactory {
@@ -105,11 +102,42 @@ class TenantDao(protected val tenantDbDao: ChargingTenantDbDao) {
         parentPageId, sortBy, limit = limit, offset = offset)
 
 
+  def renderPage(pageReq: PageRequest[_], appendToBody: NodeSeq = Nil)
+        : String = {
+    PageRenderer(pageReq, None, appendToBody).renderPage()
+  }
+
+
   // ----- Actions
 
-  def savePageActions[T <: Action](
-        debateId: String, actions: List[T]): List[T] =
-    tenantDbDao.savePageActions(debateId, actions)
+  /**
+   * Saves page actions and places messages in users' inboxes, as needed.
+   * Returns the saved actions, with ids assigned.
+   */
+  def savePageActions(pageReq: PageRequest[_], actions: List[Action])
+        : Seq[Action] = {
+    savePageActions(pageReq, pageReq.page_!, actions)
+  }
+
+
+  def savePageActions(request: DebikiRequest[_], page: Debate,
+        actions: List[Action]): Seq[Action] = {
+
+    if (actions isEmpty)
+      return Nil
+
+    val actionsWithId = tenantDbDao.savePageActions(page.id, actions)
+
+    // Notify users whose actions were affected.
+    // BUG: notification lost if server restarted here.
+    // COULD rewrite Dao so the notfs can be saved in the same transaction:
+    val pageWithNewActions = page ++ actionsWithId
+    val notfs = NotfGenerator(pageWithNewActions, actionsWithId).generateNotfs
+    tenantDbDao.saveNotfs(notfs)
+
+    actionsWithId
+  }
+
 
   def loadPage(debateId: String): Option[Debate] =
     tenantDbDao.loadPage(debateId)

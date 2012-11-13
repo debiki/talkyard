@@ -35,7 +35,7 @@ object Application extends mvc.Controller {
     // notices that it got that elem, and won't call GET ?page-info.
     val infoNode = <pre class='dw-data-yaml'>{pageInfoYaml}</pre>
     val pageHtml =
-      Debiki.renderPage(pageReq, appendToBody = infoNode)
+      pageReq.dao.renderPage(pageReq, appendToBody = infoNode)
     Ok(pageHtml) as HTML
   }
 
@@ -64,7 +64,7 @@ object Application extends mvc.Controller {
       // COULD use a Seq not a List, and get rid of the conversion
       tags = ratingTags.toList)
 
-    Debiki.savePageActions(pageReq, rating::Nil)
+    pageReq.dao.savePageActions(pageReq, rating::Nil)
     Utils.renderOrRedirect(pageReq)
   }
 
@@ -87,7 +87,7 @@ object Application extends mvc.Controller {
       loginId = pageReq.loginId_!, newIp = pageReq.newIp,
       ctime = pageReq.ctime, reason = reason, details = details)
 
-    Debiki.savePageActions(pageReq, flag::Nil)
+    pageReq.dao.savePageActions(pageReq, flag::Nil)
 
     // COULD include the page html, so Javascript can update the browser.
     OkDialogResult("Thanks", "", // (empty summary)
@@ -112,7 +112,7 @@ object Application extends mvc.Controller {
       newIp = pageReq.newIp, ctime = pageReq.ctime, wholeTree = wholeTree,
       reason = reason)
 
-    Debiki.savePageActions(pageReq, deletion::Nil)
+    pageReq.dao.savePageActions(pageReq, deletion::Nil)
 
     // COULD include the page html, so Javascript can update the browser.
     OkDialogResult("Deleted", "", // (empty summary)

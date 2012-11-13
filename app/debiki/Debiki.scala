@@ -53,60 +53,6 @@ object Debiki {
        tenantId = tenantId, roleId = roleId))
 
 
-  def renderPage(pageReq: PageRequest[_], appendToBody: NodeSeq = Nil,
-        skipCache: Boolean = false): String = {
-    val cache = if (skipCache) None else Some(PageCache)
-    PageRenderer(pageReq, cache, appendToBody).renderPage()
-  }
-
-
-  /**
-   * Saves page actions and refreshes caches and places messages in
-   * users' inboxes, as needed.
-   *
-   * Returns the saved actions, but with ids assigned.
-   */
-  def savePageActions(pageReq: PageRequest[_], actions: List[Action])
-        : Seq[Action] = {
-    savePageActions(pageReq, pageReq.page_!, actions)
-  }
-
-
-  def savePageActions(request: DebikiRequest[_], page: Debate,
-        actions: List[Action]): Seq[Action] = {
-
-    if (actions isEmpty)
-      return Nil
-
-    import request.{dao, user_!}
-    val actionsWithId = dao.savePageActions(page.id, actions)
-
-    // Possible optimization: Examine all actions, and refresh cache only
-    // if there are e.g. EditApp:s or approved Post:s (but ignore Edit:s --
-    // unless applied & approved)
-    PageCache.refreshLater(tenantId = request.tenantId, pageId = page.id,
-       host = request.host)
-
-    // Would it be okay to simply overwrite the in mem cache with this
-    // updated page? — Only if I make `++` avoid adding stuff that's already
-    // present!
-    //val pageWithNewActions =
-    // page_! ++ actionsWithId ++ pageReq.login_! ++ pageReq.user_!
-
-    // In the future, also refresh page index cache, and cached page titles?
-    // (I.e. a cache for DW1_PAGE_PATHS.)
-
-    // Notify users whose actions were affected.
-    // BUG: notification lost if server restarted here.
-    // COULD rewrite Dao so the notfs can be saved in the same transaction:
-    val pageWithNewActions = page ++ actionsWithId
-    val notfs = NotfGenerator(pageWithNewActions, actionsWithId).generateNotfs
-    dao.saveNotfs(notfs)
-
-    actionsWithId
-  }
-
-
   def sendEmail(email: Email, websiteId: String) {
     _MailerActorRef ! (email, websiteId)
   }

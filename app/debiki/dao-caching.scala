@@ -5,11 +5,13 @@
 package debiki
 
 import com.debiki.v0._
+import controllers._
 import java.{util => ju}
 import play.{api => p}
 import play.api.{cache => pc}
 import play.api.Play.current
 import scala.reflect.ClassTag
+import scala.xml.NodeSeq
 import Prelude._
 
 
@@ -35,11 +37,40 @@ class CachingTenantDao(tenantDbDao: ChargingTenantDbDao)
   extends TenantDao(tenantDbDao) {
 
 
-  override def savePageActions[T <: Action](
-        debateId: String, xs: List[T]): List[T] = {
-    pc.Cache.remove(_pageActionsKey(debateId))
-    return super.savePageActions(debateId, xs)
+  override def renderPage(pageReq: PageRequest[_], appendToBody: NodeSeq = Nil)
+        : String = {
+    // Bypass the cache if the page doesn't yet exist (it's being created),
+    // because in the past there was some error because non-existing pages
+    // had no ids (so feels safer to bypass).
+    val cache = if (pageReq.pageExists) Some(Debiki.PageCache) else None
+    PageRenderer(pageReq, cache, appendToBody).renderPage()
+  }
 
+
+  override def savePageActions(request: DebikiRequest[_], page: Debate,
+        actions: List[Action]): Seq[Action] = {
+
+    if (actions isEmpty)
+      return Nil
+
+    val actionsWithId = super.savePageActions(request, page, actions)
+
+    // Possible optimization: Examine all actions, and refresh cache only
+    // if there are e.g. EditApp:s or approved Post:s (but ignore Edit:s --
+    // unless applied & approved)
+    Debiki.PageCache.refreshLater(tenantId = request.tenantId,
+      pageId = page.id, host = request.host)
+
+    // Would it be okay to simply overwrite the in mem cache with this
+    // updated page? — Only if I make `++` avoid adding stuff that's already
+    // present!
+    //val pageWithNewActions =
+    // page_! ++ actionsWithId ++ pageReq.login_! ++ pageReq.user_!
+
+    // In the future, also refresh page index cache, and cached page titles?
+    // (I.e. a cache for DW1_PAGE_PATHS.)
+
+    // ------ Page action cache (I'll probably remove it)
     // COULD instead update value in cache (adding the new actions to
     // the cached page). But then `savePageActions` also needs to know
     // which users created the actions, so their login/idty/user instances
@@ -64,6 +95,10 @@ class CachingTenantDao(tenantDbDao: ChargingTenantDbDao)
         // the page from the database.
         replaced = _cache.cache.replace(key, oldPage, newPage)
     */
+    pc.Cache.remove(_pageActionsKey(page.id))
+    // ------ /Page action cache
+
+    actionsWithId
   }
 
 

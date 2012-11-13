@@ -269,7 +269,7 @@ object AppEdit extends mvc.Controller {
 
     var actions = lazyCreateOpt.toList ::: edit :: Nil
 
-    Debiki.savePageActions(pageReq, actions).toList
+    pageReq.dao.savePageActions(pageReq, actions).toList
   }
 
 
