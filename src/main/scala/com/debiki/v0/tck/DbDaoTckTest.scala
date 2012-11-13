@@ -12,7 +12,7 @@ import com.debiki.v0.Prelude._
 import org.specs2.mutable._
 import java.{util => ju}
 import DebikiSpecs._
-import DaoTckTest._
+import DbDaoTckTest._
 
 /*
 
@@ -63,13 +63,13 @@ trait TestContext {
 
 
 trait TestContextBuilder {
-  def buildTestContext(what: DaoTckTest.What, schemaVersion: String)
+  def buildTestContext(what: DbDaoTckTest.What, schemaVersion: String)
         : TestContext
 }
 
 
 
-object DaoTckTest {
+object DbDaoTckTest {
   sealed class What
   case object EmptySchema extends What
   case object EmptyTables extends What
@@ -78,7 +78,7 @@ object DaoTckTest {
 
 
 
-abstract class DaoTckTest(builder: TestContextBuilder)
+abstract class DbDaoTckTest(builder: TestContextBuilder)
     extends Specification {
 
   sequential
@@ -86,12 +86,12 @@ abstract class DaoTckTest(builder: TestContextBuilder)
   inline({
       // Need to empty the schema automatically before enabling this test?
       //new DaoSpecEmptySchema(builder),
-      new DaoSpecV002ChildSpec(builder)})
+      new DbDaoV002ChildSpec(builder)})
 }
 
 
 
-abstract class DaoChildSpec(
+abstract class DbDaoChildSpec(
   builder: TestContextBuilder,
   val defSchemaVersion: String)
   extends Specification {
@@ -142,7 +142,7 @@ abstract class DaoChildSpec(
 
 
 /*
-class DaoSpecEmptySchema(b: TestContextBuilder) extends DaoChildSpec(b, "0") {
+class DaoSpecEmptySchema(b: TestContextBuilder) extends DbDaoChildSpec(b, "0") {
   val schemaIsEmpty = setup(EmptySchema)
 
   "A v0.DAO in a completely empty repo" when schemaIsEmpty should {
@@ -175,8 +175,8 @@ object Templates {
     newIp = None, ctime = new ju.Date, tags = Nil)
 }
 
-class DaoSpecV002ChildSpec(testContextBuilder: TestContextBuilder)
-    extends DaoChildSpec(testContextBuilder, "0.0.2") {
+class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
+    extends DbDaoChildSpec(testContextBuilder, "0.0.2") {
 
   sequential  // so e.g. loginId inited before used in ctors
 
