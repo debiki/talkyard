@@ -74,7 +74,7 @@ object AppUnsubscribe extends mvc.Controller {
     val loginGrant =
       try dao.saveLogin(loginReq)
       catch {
-        case ex: Dao.EmailNotFoundException =>
+        case ex: DbDao.EmailNotFoundException =>
           throwForbidden("DwE530KI37", "Email not found")
       }
 

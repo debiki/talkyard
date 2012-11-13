@@ -68,7 +68,7 @@ object AppMoveRenamePage extends mvc.Controller {
       pageReq.dao.moveRenamePage(pageId, newSlug = Some(newSlug))
       Ok
     } catch {
-      case ex: Dao.PageNotFoundException =>
+      case ex: DbDao.PageNotFoundException =>
         NotFoundResult("DwE390xH3", s"Found no page with id $pageId")
     }
   }
