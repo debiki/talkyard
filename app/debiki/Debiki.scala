@@ -19,7 +19,7 @@ object Debiki {
   lazy val PageCache = new PageCache
 
 
-  private val _DaoSpiFactory = new RelDbDaoSpiFactory({
+  private val _DaoSpiFactory = new RelDbDaoFactory({
     def configStr(path: String) =
       Play.configuration.getString(path) getOrElse
          runErr("DwE93KI2", "Config value missing: "+ path)
@@ -36,7 +36,7 @@ object Debiki {
   QuotaManager.scheduleCleanups()
 
 
-  def SystemDao = new SystemDao(_DaoSpiFactory.systemDaoSpi)
+  def SystemDao = _DaoSpiFactory.systemDbDao
 
 
   val RichDaoFactory = new CachingRichDaoFactory(_DaoSpiFactory,

@@ -126,7 +126,7 @@ object PageActions {
    */
   def CheckPathActionNoBody
         (pathIn: PagePath)
-        (f: (SidStatus, XsrfOk, Option[PagePath], TenantDao,
+        (f: (SidStatus, XsrfOk, Option[PagePath], TenantDbDao,
            Request[Option[Any]]) => PlainResult) =
     CheckPathAction(BodyParsers.parse.empty)(pathIn)(f)
 
@@ -134,7 +134,7 @@ object PageActions {
   def CheckPathAction[A]
         (parser: BodyParser[A])
         (pathIn: PagePath)
-        (f: (SidStatus, XsrfOk, Option[PagePath], TenantDao, Request[A]) =>
+        (f: (SidStatus, XsrfOk, Option[PagePath], TenantDbDao, Request[A]) =>
            PlainResult) =
     SafeActions.CheckSidAction[A](parser) { (sidStatus, xsrfOk, request) =>
       val dao = Debiki.tenantDao(tenantId = pathIn.tenantId,

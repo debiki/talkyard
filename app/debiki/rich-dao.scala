@@ -23,15 +23,15 @@ abstract class RichDaoFactory {
 
 object RichDaoFactory {
 
-  def apply(daoSpiFactory: DaoSpiFactory, quotaCharger: QuotaCharger)
+  def apply(dbDaoFactory: DbDaoFactory, quotaCharger: QuotaCharger)
         = new RichDaoFactory {
-    private val _daoSpiFactory = daoSpiFactory
+    private val _dbDaoFactory = dbDaoFactory
     private val _quotaCharger = quotaCharger
 
-    def systemDao = new SystemDao(_daoSpiFactory.systemDaoSpi)
+    def systemDao = _dbDaoFactory.systemDbDao
 
     def buildTenantDao(quotaConsumers: QuotaConsumers): RichTenantDao = {
-      val spi = _daoSpiFactory.buildTenantDaoSpi(quotaConsumers)
+      val spi = _dbDaoFactory.newTenantDbDao(quotaConsumers)
       new RichTenantDao(spi, _quotaCharger)
     }
   }
@@ -39,9 +39,8 @@ object RichDaoFactory {
 
 
 
-class RichTenantDao(spi: TenantDaoSpi, quotaCharger: QuotaCharger)
-  extends TenantDao(spi, quotaCharger) {
+class RichTenantDao(tenantDbDao: TenantDbDao, quotaCharger: QuotaCharger)
+  extends ChargingTenantDbDao(tenantDbDao, quotaCharger) {
 
 }
-
 

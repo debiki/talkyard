@@ -15,23 +15,23 @@ import Prelude._
 
 
 class CachingRichDaoFactory(
-  private val _daoSpiFactory: DaoSpiFactory,
+  private val _dbDaoFactory: DbDaoFactory,
   private val _quotaCharger: QuotaCharger
   /* _cacheConfig: CacheConfig */)
   extends RichDaoFactory {
 
-  def systemDao = new SystemDao(_daoSpiFactory.systemDaoSpi)
+  def systemDao = _dbDaoFactory.systemDbDao
 
   def buildTenantDao(quotaConsumers: QuotaConsumers): RichTenantDao = {
-    val spi = _daoSpiFactory.buildTenantDaoSpi(quotaConsumers)
-    new CachingRichTenantDao(spi, _quotaCharger)
+    val dbDao = _dbDaoFactory.newTenantDbDao(quotaConsumers)
+    new CachingRichTenantDao(dbDao, _quotaCharger)
   }
 
 }
 
 
-class CachingRichTenantDao(spi: TenantDaoSpi, quotaCharger: QuotaCharger)
-  extends RichTenantDao(spi, quotaCharger) {
+class CachingRichTenantDao(tenantDbDao: TenantDbDao, quotaCharger: QuotaCharger)
+  extends RichTenantDao(tenantDbDao, quotaCharger) {
 
 
   override def savePageActions[T <: Action](

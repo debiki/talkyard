@@ -14,7 +14,7 @@ import controllers.PageRequest
 
 object InternalTemplateProgrammingInterface {
 
-  def apply(dao: TenantDao) = new InternalTemplateProgrammingInterface(dao)
+  def apply(dao: TenantDbDao) = new InternalTemplateProgrammingInterface(dao)
 
 }
 
@@ -48,7 +48,7 @@ object TemplateProgrammingInterface {
  * Used by internal templates, e.g. /-/create-website/choose-name.
  */
 class InternalTemplateProgrammingInterface protected (
-  protected val _dao: TenantDao) {
+  protected val _dao: TenantDbDao) {
 
 
   /**

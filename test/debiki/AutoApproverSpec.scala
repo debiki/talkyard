@@ -81,7 +81,7 @@ class AutoApproverSpec extends Specification with Mockito {
      showId = true,
      pageSlug = "page-slug")
 
-  def pageReq(user: User, identity: Identity)(dao: TenantDao) =
+  def pageReq(user: User, identity: Identity)(dao: TenantDbDao) =
     PageRequest[Unit](
       sid = null,
       xsrfToken = null,
@@ -131,7 +131,7 @@ class AutoApproverSpec extends Specification with Mockito {
       if (actions nonEmpty) peopleNoLogins + login
       else People.None
 
-    val daoMock = mock[TenantDao]
+    val daoMock = mock[TenantDbDao]
     daoMock.tenantId returns TenantId
     daoMock.quotaConsumers returns quotaConsumers
 

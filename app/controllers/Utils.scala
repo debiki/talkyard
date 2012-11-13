@@ -138,7 +138,7 @@ object Utils extends Results with http.ContentTypes {
   /**
    * Might throw a LoginNotFoundException.
    */
-  def loadIdentityAndUserOrThrow(sid: SidStatus, dao: TenantDao)
+  def loadIdentityAndUserOrThrow(sid: SidStatus, dao: TenantDbDao)
         : (Option[Identity], Option[User]) = {
     val identityAndUser = sid.loginId match {
       case None => (None, None)

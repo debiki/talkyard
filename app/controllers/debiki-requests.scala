@@ -22,7 +22,7 @@ abstract class DebikiRequest[A] {
   def xsrfToken: XsrfOk
   def identity: Option[Identity]
   def user: Option[User]
-  def dao: TenantDao
+  def dao: TenantDbDao
   def request: Request[A]
 
   require(dao.quotaConsumers.tenantId == tenantId)
@@ -112,7 +112,7 @@ case class ApiRequest[A](
   xsrfToken: XsrfOk,
   identity: Option[Identity],
   user: Option[User],
-  dao: TenantDao,
+  dao: TenantDbDao,
   request: Request[A]) extends DebikiRequest[A] {
 }
 
@@ -201,7 +201,7 @@ case class PageRequest[A](
   /** If the requested page does not exist, pagePath.pageId is empty. */
   pagePath: PagePath,
   permsOnPage: PermsOnPage,
-  dao: TenantDao,
+  dao: TenantDbDao,
   request: Request[A])
   (private val _preloadedPageMeta: Option[PageMeta] = None,
   private val _preloadedActions: Option[Debate] = None,

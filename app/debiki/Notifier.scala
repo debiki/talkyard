@@ -111,7 +111,7 @@ class Notifier(val daoFactory: RichDaoFactory) extends Actor {
   }
 
 
-  def _constructAndSendEmail(tenantDao: TenantDao, chost: TenantHost,
+  def _constructAndSendEmail(tenantDao: TenantDbDao, chost: TenantHost,
         user: User, userNotfs: Seq[NotfOfPageAction]) {
     // Save the email in the db, before sending it, so even if the server
     // crashes it'll always be found, should the receiver attempt to
