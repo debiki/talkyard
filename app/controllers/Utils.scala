@@ -138,7 +138,7 @@ object Utils extends Results with http.ContentTypes {
   /**
    * Might throw a LoginNotFoundException.
    */
-  def loadIdentityAndUserOrThrow(sid: SidStatus, dao: TenantDbDao)
+  def loadIdentityAndUserOrThrow(sid: SidStatus, dao: TenantDao)
         : (Option[Identity], Option[User]) = {
     val identityAndUser = sid.loginId match {
       case None => (None, None)
@@ -151,7 +151,7 @@ object Utils extends Results with http.ContentTypes {
             // (e.g. a standby where the login entry hasn't yet been
             // created), or 2) during testing, when I sometimes manually
             // delete stuff from the database (including login entries).
-            Logger.warn("RelDbDao did not load user [error DwE01521ku35]")
+            Logger.warn("DAO did not load user [error DwE01521ku35]")
             throw LoginNotFoundException(dao.tenantId, loginId)
         }
     }

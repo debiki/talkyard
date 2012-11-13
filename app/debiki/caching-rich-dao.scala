@@ -24,14 +24,15 @@ class CachingDaoFactory(
 
   def newTenantDao(quotaConsumers: QuotaConsumers): TenantDao = {
     val dbDao = _dbDaoFactory.newTenantDbDao(quotaConsumers)
-    new CachingTenantDao(dbDao, _quotaCharger)
+    val chargingDbDao = new ChargingTenantDbDao(dbDao, _quotaCharger)
+    new CachingTenantDao(chargingDbDao)
   }
 
 }
 
 
-class CachingTenantDao(tenantDbDao: TenantDbDao, quotaCharger: QuotaCharger)
-  extends TenantDao(tenantDbDao, quotaCharger) {
+class CachingTenantDao(tenantDbDao: ChargingTenantDbDao)
+  extends TenantDao(tenantDbDao) {
 
 
   override def savePageActions[T <: Action](

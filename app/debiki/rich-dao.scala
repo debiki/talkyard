@@ -11,6 +11,7 @@ import play.api.{cache => pc}
 import play.api.Play.current
 import scala.reflect.ClassTag
 import Prelude._
+import EmailNotfPrefs.EmailNotfPrefs
 
 
 
@@ -32,15 +33,169 @@ object DaoFactory {
 
     def newTenantDao(quotaConsumers: QuotaConsumers): TenantDao = {
       val tenantDbDao = _dbDaoFactory.newTenantDbDao(quotaConsumers)
-      new TenantDao(tenantDbDao, _quotaCharger)
+      val chargingDbDao = new ChargingTenantDbDao(tenantDbDao, _quotaCharger)
+      new TenantDao(chargingDbDao)
     }
   }
 }
 
 
 
-class TenantDao(tenantDbDao: TenantDbDao, quotaCharger: QuotaCharger)
-  extends ChargingTenantDbDao(tenantDbDao, quotaCharger) {
+class TenantDao(protected val tenantDbDao: ChargingTenantDbDao) {
+
+  def quotaConsumers = tenantDbDao.quotaConsumers
+
+
+  // ----- Tenant
+
+  def tenantId: String = tenantDbDao.tenantId
+
+  def loadTenant(): Tenant = tenantDbDao.loadTenant()
+
+  def createWebsite(name: String, address: String, ownerIp: String,
+        ownerLoginId: String, ownerIdentity: IdentityOpenId, ownerRole: User)
+        : Option[Tenant] =
+    tenantDbDao.createWebsite(name = name, address = address, ownerIp = ownerIp,
+      ownerLoginId = ownerLoginId, ownerIdentity = ownerIdentity,
+      ownerRole = ownerRole)
+
+  def addTenantHost(host: TenantHost) = tenantDbDao.addTenantHost(host)
+
+  def lookupOtherTenant(scheme: String, host: String): TenantLookup =
+    tenantDbDao.lookupOtherTenant(scheme, host)
+
+
+  // ----- Login, logout
+
+  def saveLogin(loginReq: LoginRequest): LoginGrant =
+    tenantDbDao.saveLogin(loginReq)
+
+  def saveLogout(loginId: String, logoutIp: String) =
+    tenantDbDao.saveLogout(loginId, logoutIp)
+
+
+  // ----- Pages
+
+  def createPage(page: PageStuff): PageStuff = tenantDbDao.createPage(page)
+
+  def loadPageMeta(pageId: String): Option[PageMeta] =
+    tenantDbDao.loadPageMeta(pageId)
+
+  def movePages(pageIds: Seq[String], fromFolder: String, toFolder: String) =
+    tenantDbDao.movePages(pageIds, fromFolder = fromFolder, toFolder = toFolder)
+
+  def moveRenamePage(pageId: String, newFolder: Option[String] = None,
+        showId: Option[Boolean] = None, newSlug: Option[String] = None)
+        : PagePath =
+    tenantDbDao.moveRenamePage(pageId = pageId, newFolder = newFolder,
+      showId = showId, newSlug = newSlug)
+
+  def loadTemplate(templPath: PagePath): Option[TemplateSrcHtml] =
+    tenantDbDao.loadTemplate(templPath)
+
+  def checkPagePath(pathToCheck: PagePath): Option[PagePath] =
+    tenantDbDao.checkPagePath(pathToCheck)
+
+  def lookupPagePathByPageId(pageId: String): Option[PagePath] =
+    tenantDbDao.lookupPagePathByPageId(pageId = pageId)
+
+  def listChildPages(parentPageId: String, sortBy: PageSortOrder,
+        limit: Int, offset: Int = 0): Seq[(PagePath, PageDetails)] =
+    tenantDbDao.listChildPages(
+        parentPageId, sortBy, limit = limit, offset = offset)
+
+
+  // ----- Actions
+
+  def savePageActions[T <: Action](
+        debateId: String, actions: List[T]): List[T] =
+    tenantDbDao.savePageActions(debateId, actions)
+
+  def loadPage(debateId: String): Option[Debate] =
+    tenantDbDao.loadPage(debateId)
+
+  def loadPageBodiesTitles(pagePaths: Seq[PagePath])
+        : Seq[(PagePath, Option[Debate])] =
+    tenantDbDao.loadPageBodiesTitles(pagePaths)
+
+  def loadRecentActionExcerpts(
+        fromIp: Option[String] = None,
+        byIdentity: Option[String] = None,
+        pathRanges: PathRanges = PathRanges.Anywhere,
+        limit: Int): (Seq[ViAc], People) =
+    tenantDbDao.loadRecentActionExcerpts(fromIp = fromIp,
+      byIdentity = byIdentity, pathRanges = pathRanges, limit = limit)
+
+
+  // ----- List stuff
+
+  def listPagePaths(
+        pageRanges: PathRanges,
+        include: List[PageStatus],
+        sortBy: PageSortOrder,
+        limit: Int,
+        offset: Int): Seq[(PagePath, PageDetails)] =
+    tenantDbDao.listPagePaths(pageRanges, include, sortBy, limit, offset)
+
+
+  // ----- Users and permissions
+
+  def loadIdtyAndUser(forLoginId: String): Option[(Identity, User)] =
+    tenantDbDao.loadIdtyAndUser(forLoginId)
+
+
+  def loadIdtyDetailsAndUser(forLoginId: String = null,
+        forIdentity: Identity = null): Option[(Identity, User)] =
+    tenantDbDao.loadIdtyDetailsAndUser(forLoginId = forLoginId,
+      forIdentity = forIdentity)
+
+  def loadPermsOnPage(reqInfo: RequestInfo): PermsOnPage =
+    tenantDbDao.loadPermsOnPage(reqInfo)
+
+
+  // ----- Notifications
+
+  def saveNotfs(notfs: Seq[NotfOfPageAction]) =
+    tenantDbDao.saveNotfs(notfs)
+
+  def loadNotfsForRole(roleId: String): Seq[NotfOfPageAction] =
+    tenantDbDao.loadNotfsForRole(roleId)
+
+  def loadNotfByEmailId(emailId: String): Option[NotfOfPageAction] =
+    tenantDbDao.loadNotfByEmailId(emailId)
+
+  def skipEmailForNotfs(notfs: Seq[NotfOfPageAction], debug: String): Unit =
+    tenantDbDao.skipEmailForNotfs(notfs, debug)
+
+
+  // ----- Emails
+
+  def saveUnsentEmail(email: Email): Unit =
+    tenantDbDao.saveUnsentEmail(email)
+
+  def saveUnsentEmailConnectToNotfs(email: Email,
+        notfs: Seq[NotfOfPageAction]): Unit =
+    tenantDbDao.saveUnsentEmailConnectToNotfs(email, notfs)
+
+  def updateSentEmail(email: Email): Unit =
+    tenantDbDao.updateSentEmail(email)
+
+  def loadEmailById(emailId: String): Option[Email] =
+    tenantDbDao.loadEmailById(emailId)
+
+
+  // ----- User configuration
+
+  def configRole(loginId: String, ctime: ju.Date,
+        roleId: String, emailNotfPrefs: EmailNotfPrefs) =
+    tenantDbDao.configRole(loginId = loginId, ctime = ctime,
+      roleId = roleId, emailNotfPrefs = emailNotfPrefs)
+
+  def configIdtySimple(loginId: String, ctime: ju.Date,
+        emailAddr: String, emailNotfPrefs: EmailNotfPrefs) =
+    tenantDbDao.configIdtySimple(loginId = loginId, ctime = ctime,
+      emailAddr = emailAddr,
+      emailNotfPrefs = emailNotfPrefs)
 
 }
 
