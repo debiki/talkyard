@@ -17,7 +17,7 @@ trait RenderedPageHtmlDao {
 
   def renderPage(pageReq: PageRequest[_], appendToBody: NodeSeq = Nil)
         : String =
-    PageRenderer(pageReq, None, appendToBody).renderPage()
+    TemplateRenderer(pageReq, None, appendToBody).renderTemplate()
 
 }
 
@@ -32,7 +32,7 @@ trait CachingRenderedPageHtmlDao extends RenderedPageHtmlDao {
     // because in the past there was some error because non-existing pages
     // had no ids (so feels safer to bypass).
     val cache = if (pageReq.pageExists) Some(Debiki.PageCache) else None
-    PageRenderer(pageReq, cache, appendToBody).renderPage()
+    TemplateRenderer(pageReq, cache, appendToBody).renderTemplate()
   }
 
 

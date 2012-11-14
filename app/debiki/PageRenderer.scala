@@ -11,7 +11,6 @@ import PageRenderer._
 import Prelude._
 
 
-// COULD rename to TemplateRenderer?
 case class PageRenderer(pageReq: PageRequest[_], pageCache: Option[PageCache],
         appendToBody: xml.NodeSeq = Nil) {
 
@@ -19,7 +18,6 @@ case class PageRenderer(pageReq: PageRequest[_], pageCache: Option[PageCache],
   val commentVisibility = CommentVisibility.Visible // for now
 
 
-  // COULD break out to class ArticleRenderer?
   // (Also see *object* PageRenderer's renderArticle().)
   def renderArticle(showComments: Boolean) = pageCache match {
     case Some(cache) =>
@@ -32,71 +30,6 @@ case class PageRenderer(pageReq: PageRequest[_], pageCache: Option[PageCache],
       PageRenderer.renderArticle(page, pageReq.pageVersion,
         pageReq.pageRoot, hostAndPort = pageReq.host,
         showComments = showComments)
-  }
-
-
-  def renderPage(): String = {
-
-    // Handle page config values.
-    //if (commentVisibility == CommentVisibility.ShowOnClick) {
-    //  curHeadTags = curHeadTags ++ HtmlPageSerializer.tagsThatHideShowInteractions
-    //}
-
-    // Might have to add ng-app to <html>, for AngularJS to work?
-
-    //  <html class={classes}>
-    //    <head>{curHeadTags}</head>
-    //    {<body>{curBodyTags ++ appendToBody}</body> % curBodyAttrs}
-    //  </html> % curHtmlAttrs
-
-    // For now, use the same template for all websites.
-    // In the future: Create more templates, and check which one to use
-    // in a `/.site.conf` file.
-    // In the distant future, implement my ideas in play-thoughts.txt.
-
-    val tpi = TemplateProgrammingInterface(this)
-
-    import pageReq.{pagePath, pageMeta}
-    import views.html.themes
-    import views.html.themes._
-
-    val theme = tpi.websiteConfigValue("theme")
-
-    val renderedPage =
-      if (pagePath.isTemplatePage)
-        themes.specialpages.template(tpi).body
-      else theme match {
-        // Should this be rewritten? Lookup package via Scala 2.10's reflection,
-        // somehow. But there's no common superclass for all packages, hmm.
-        // Can I use Scala's Structural Typing?
-        // — Or does which templates exist vary by theme? Should *not* rewrite?
-
-        // Don't allow anyone to use www.debiki.com's templates.
-        case "www.debiki.com" if pageReq.host.endsWith("debiki.com") ||
-              pageReq.host.startsWith("localhost:") =>
-          if (pageMeta.pageRole == PageRole.BlogArticle)
-            wwwdebikicom.blogPost(tpi).body
-          else if (pageMeta.pageRole == PageRole.BlogMainPage)
-            wwwdebikicom.blogPostList(tpi).body
-          else if (pageMeta.pageRole == PageRole.Homepage)
-            wwwdebikicom.homepage(tpi).body
-          else
-            // For now, fallback to the blog post template.
-            wwwdebikicom.blogPost(tpi).body
-
-        case "default-2012-10-09" | _ =>
-          if (pageMeta.pageRole == PageRole.BlogArticle)
-            default20121009.blogPost(tpi).body
-          else if (pageMeta.pageRole == PageRole.BlogMainPage)
-            default20121009.blogPostList(tpi).body
-          else if (pageMeta.pageRole == PageRole.Homepage)
-            default20121009.homepage(tpi).body
-          else
-            // For now, fallback to the blog post template.
-            default20121009.blogPost(tpi).body
-      }
-
-    renderedPage
   }
 
 
@@ -113,7 +46,6 @@ case class PageRenderer(pageReq: PageRequest[_], pageCache: Option[PageCache],
 
 object PageRenderer {
 
-  // COULD break out to class ArticleRenderer?
   def renderArticle(page: PageStuff, pageVersion: PageVersion,
         pageRoot: PageRoot, hostAndPort: String, showComments: Boolean)
         : xml.NodeSeq = {
@@ -177,7 +109,6 @@ object PageRenderer {
   }
 
 
-  // COULD move dummy stuff below to ArticleRenderer too
   // COULD have Dao require that user/idty/login id never be "1".
 
   val DummyAuthorUser = User(id = "1", displayName = "(dummy author)",
