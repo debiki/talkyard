@@ -203,7 +203,7 @@ class TemplateProgrammingInterface private (
 
 
   def debikiAppendToBodyTags: xml.NodeSeq =
-    _pageRenderer.dialogTemplates ++ _pageRenderer.appendToBody
+    PageRenderer.dialogTemplates(_pageReq) ++ _pageRenderer.appendToBody
 
 
   val debikiHtmlTagClasses =

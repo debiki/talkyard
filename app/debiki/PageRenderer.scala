@@ -32,8 +32,14 @@ case class PageRenderer(pageReq: PageRequest[_], pageCache: Option[PageCache],
         showComments = showComments)
   }
 
+}
 
-  def dialogTemplates: xml.NodeSeq = {
+
+
+object PageRenderer {
+
+
+  def dialogTemplates(pageReq: PageRequest[_]): xml.NodeSeq = {
     // The dialog templates includes the user name and cannot currently
     // be cached.
     val config = DebikiHttp.newUrlConfig(pageReq)
@@ -41,10 +47,7 @@ case class PageRenderer(pageReq: PageRequest[_], pageCache: Option[PageCache],
       pageReq.pageRoot, pageReq.permsOnPage).dialogTemplates
     xml.Unparsed(liftweb.Html5.toString(templateHtmlNodes))
   }
-}
 
-
-object PageRenderer {
 
   def renderArticle(page: PageStuff, pageVersion: PageVersion,
         pageRoot: PageRoot, hostAndPort: String, showComments: Boolean)
