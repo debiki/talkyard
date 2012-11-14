@@ -38,7 +38,9 @@ object DaoFactory {
 
 
 
-class TenantDao(protected val tenantDbDao: ChargingTenantDbDao) {
+class TenantDao(protected val tenantDbDao: ChargingTenantDbDao)
+  extends AnyRef
+  with ConfigValueDao {
 
   def quotaConsumers = tenantDbDao.quotaConsumers
 

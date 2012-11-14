@@ -48,68 +48,15 @@ object TemplateProgrammingInterface {
  * Used by internal templates, e.g. /-/create-website/choose-name.
  */
 class InternalTemplateProgrammingInterface protected (
-  protected val _dao: TenantDao) {
+  protected val dao: TenantDao) {
 
 
-  /**
-   * Loads page /.site.conf as YAML data into a Map.
-   *
-   * SHOULD cache the result, otherwise each page view will require 2 page
-   * lookups!
-   */
-  def websiteConfigValue(confValName: String, or: => String = ""): String = {
+  def websiteConfigValue(confValName: String, or: => String = ""): String =
     _websiteConfigValueOpt(confValName) getOrElse or
-  }
 
 
-  /**
-   * A PagePath to /.site.conf, but the page id is unknown and needs to be
-   * looked up (via Dao.checkPagePath).
-   *
-   * The file starts with `.` because it should be accessible to admins only.
-   *
-   * COULD move to other module, but what module?
-   */
-  def websiteConfigPagePath = PagePath(
-    tenantId = _dao.tenantId, folder = "/", pageId = None,
-    showId = false, pageSlug = ".website-config.yaml")
-
-
-  protected def _websiteConfigValueOpt(confValName: String): Option[String] = {
-    val pagePathIdKnown = _dao.checkPagePath(websiteConfigPagePath)
-    pagePathIdKnown match {
-      case None => None
-      case Some(pagePath) =>
-        _loadConfigVal(pagePath.pageId.get, configPostId = Page.BodyId,
-          confValName = confValName)
-    }
-  }
-
-
-  protected def _loadConfigVal(pageId: String, configPostId: String,
-        confValName: String): Option[String] = {
-    val confMap: Map[String, Any] = _loadPageConfigMap(pageId, configPostId)
-    confMap.get(confValName).map(_.toString)
-  }
-
-
-  protected def _loadPageConfigMap(pageId: String, configPostId: String)
-      : Map[String, Any] = {
-    // Load the page as YAML into a map.
-    _loadPage(pageId) match {
-      case None => return Map.empty
-      case Some(page) =>
-        val configText = page.vipo(configPostId) match {
-          case None => return Map.empty
-          case Some(post) => post.text
-        }
-        DebikiYaml.parseYamlToMap(configText)
-    }
-  }
-
-
-  protected def _loadPage(pageId: String): Option[Debate] =
-    _dao.loadPage(pageId)
+  protected def _websiteConfigValueOpt(confValName: String): Option[String] =
+    dao.loadWebsiteConfigMap().get(confValName).map(_.toString)
 
 }
 
@@ -143,20 +90,6 @@ class TinyTemplateProgrammingInterface protected (
 
 
   /**
-   * If there's any _pageReq.page_? that matches the requested page
-   * then use it and don't access the database. (This happens when you
-   * view a new unsaved page — then a dummy page is constructed by
-   * AppCreatePage and AppEdit, and inserted into PageReq, and this dummy
-   * page should be used, not the non-existing page in the database.
-   */
-  override protected def _loadPage(pageId: String): Option[Debate] =
-    _pageReq.page_? match {
-      case a @ Some(actions) if actions.pageId == pageId => a
-      case _ => _dao.loadPage(pageId)
-    }
-
-
-  /**
    * A website or page config value, and page specific values take precedence.
    */
   def configValue(confValName: String, or: String = ""): String = {
@@ -180,8 +113,7 @@ class TinyTemplateProgrammingInterface protected (
 
   private def _pageConfigValueOpt(confValName: String): Option[String] = {
     val pageId = _pageReq.pageId.getOrElse(assErr("DwE83ZI78"))
-    _loadConfigVal(pageId = pageId, configPostId = Page.TemplateId,
-      confValName = confValName)
+    dao.loadPageConfigMap(pageId).get(confValName).map(_.toString)
   }
 
 

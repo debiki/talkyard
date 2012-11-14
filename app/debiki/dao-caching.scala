@@ -34,7 +34,8 @@ class CachingDaoFactory(
 
 
 class CachingTenantDao(tenantDbDao: ChargingTenantDbDao)
-  extends TenantDao(tenantDbDao) {
+  extends TenantDao(tenantDbDao)
+  with CachingConfigValueDao {
 
 
   override def renderPage(pageReq: PageRequest[_], appendToBody: NodeSeq = Nil)
