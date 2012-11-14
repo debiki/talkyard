@@ -11,30 +11,6 @@ import PageRenderer._
 import Prelude._
 
 
-case class PageRenderer(pageReq: PageRequest[_], pageCache: Option[PageCache]) {
-
-
-  val commentVisibility = CommentVisibility.Visible // for now
-
-
-  // (Also see *object* PageRenderer's renderArticle().)
-  def renderArticle(showComments: Boolean) = pageCache match {
-    case Some(cache) =>
-      val commentVisibility =
-        if (showComments) CommentVisibility.Visible
-        else CommentVisibility.Hidden
-      cache.get(pageReq, commentVisibility)
-    case None =>
-      val page = PageStuff(pageReq.pageMeta, pageReq.pagePath, pageReq.page_!)
-      PageRenderer.renderArticle(page, pageReq.pageVersion,
-        pageReq.pageRoot, hostAndPort = pageReq.host,
-        showComments = showComments)
-  }
-
-}
-
-
-
 object PageRenderer {
 
 

@@ -50,7 +50,7 @@ class CachingTenantDao(tenantDbDao: ChargingTenantDbDao)
     // Possible optimization: Examine all actions, and refresh cache only
     // if there are e.g. EditApp:s or approved Post:s (but ignore Edit:s --
     // unless applied & approved)
-    uncacheRenderedPageHtml(pageId = page.id, host = request.host)
+    uncacheRenderedPage(pageId = page.id, host = request.host)
 
     // Would it be okay to simply overwrite the in mem cache with this
     // updated page? — Only if I make `++` avoid adding stuff that's already

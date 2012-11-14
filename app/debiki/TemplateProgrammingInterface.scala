@@ -186,9 +186,9 @@ class TinyTemplateProgrammingInterface protected (
  * Passed to Scala templates.
  */
 class TemplateProgrammingInterface(
-  private val _pageRenderer: PageRenderer,
+  private val pageReq: PageRequest[_],
   private val tagsToAppendToBody: xml.NodeSeq)
-  extends TinyTemplateProgrammingInterface(_pageRenderer.pageReq) {
+  extends TinyTemplateProgrammingInterface(pageReq) {
 
   import debiki.{TinyTemplateProgrammingInterface => tpi}
   import TinyTemplateProgrammingInterface.{Page => _, _}
@@ -220,11 +220,11 @@ class TemplateProgrammingInterface(
 
 
   def pageTitleAndBodyNoComments =
-    _pageRenderer.renderArticle(showComments = false)
+    dao.renderPage(pageReq, showComments = false)
 
 
   def pageTitleAndBodyAndComments =
-    _pageRenderer.renderArticle(showComments = true)
+    dao.renderPage(pageReq, showComments = true)
 
 }
 

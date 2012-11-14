@@ -12,7 +12,6 @@ import Prelude._
 
 case class TemplateRenderer(
   pageReq: PageRequest[_],
-  pageCache: Option[PageCache],
   appendToBody: xml.NodeSeq = Nil) {
 
 
@@ -35,8 +34,7 @@ case class TemplateRenderer(
     // in a `/.site.conf` file.
     // In the distant future, implement my ideas in play-thoughts.txt.
 
-    val tpi = new TemplateProgrammingInterface(
-      PageRenderer(pageReq, pageCache), appendToBody)
+    val tpi = new TemplateProgrammingInterface(pageReq, appendToBody)
 
     import pageReq.{pagePath, pageMeta}
     import views.html.themes
