@@ -34,7 +34,7 @@ trait RenderedPageHtmlDao {
 
 
 trait CachingRenderedPageHtmlDao extends RenderedPageHtmlDao {
-  self: TenantDao =>
+  self: CachingTenantDao =>
 
 
   override def renderTemplate(pageReq: PageRequest[_],
@@ -48,22 +48,30 @@ trait CachingRenderedPageHtmlDao extends RenderedPageHtmlDao {
 
   override def renderPage(pageReq: PageRequest[_], showComments: Boolean)
         : xml.NodeSeq = {
-    if (pageReq.pageExists) {
-      val commentVisibility =
-        if (showComments) CommentVisibility.Visible
-        else CommentVisibility.Hidden
-      Debiki.PageCache.get(pageReq, commentVisibility)
+    if (pageReq.pageExists && pageReq.pageRoot == PageRoot.Real(Page.BodyId) &&
+        pageReq.pageVersion == PageVersion.LatestApproved) {
+      val key = _pageHtmlKey(
+        pageReq.pageId_!, origin = pageReq.host, showComments)
+      lookupInCache(key, orCacheAndReturn = {
+        Some(super.renderPage(pageReq, showComments))
+      }) getOrDie "DwE93IB7"
     }
     else {
+      // Bypass cache.
       super.renderPage(pageReq, showComments)
     }
   }
 
 
-  def uncacheRenderedPage(pageId: String, host: String) {
-    Debiki.PageCache.refreshLater(tenantId = tenantId, pageId = pageId,
-      host = host)
+  def uncacheRenderedPage(pageId: String, origin: String) {
+    removeFromCache(_pageHtmlKey(pageId, origin, true))
+    removeFromCache(_pageHtmlKey(pageId, origin, false))
   }
+
+
+  private def _pageHtmlKey(pageId: String, origin: String,
+        showComments: Boolean): String =
+    s"$pageId.$tenantId.$origin.$showComments.PageHtml"
 
 }
 

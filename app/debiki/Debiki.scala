@@ -16,8 +16,6 @@ import com.debiki.v0.QuotaConsumers
 
 object Debiki {
 
-  lazy val PageCache = new PageCache
-
 
   private val _DaoSpiFactory = new RelDbDaoFactory({
     def configStr(path: String) =

@@ -50,7 +50,7 @@ class CachingTenantDao(tenantDbDao: ChargingTenantDbDao)
     // Possible optimization: Examine all actions, and refresh cache only
     // if there are e.g. EditApp:s or approved Post:s (but ignore Edit:s --
     // unless applied & approved)
-    uncacheRenderedPage(pageId = page.id, host = request.host)
+    uncacheRenderedPage(pageId = page.id, origin = request.host)
 
     // Would it be okay to simply overwrite the in mem cache with this
     // updated page? — Only if I make `++` avoid adding stuff that's already
@@ -93,14 +93,14 @@ class CachingTenantDao(tenantDbDao: ChargingTenantDbDao)
   }
 
 
-  override def loadPage(pageId: String): Option[Debate] = {
-    _lookup[Debate](_pageActionsKey(pageId),
-      orInsertAndReturn = super.loadPage(pageId)
-    )
-  }
+  override def loadPage(pageId: String): Option[Debate] =
+    lookupInCache[Debate](_pageActionsKey(pageId),
+      orCacheAndReturn = {
+        super.loadPage(pageId)
+      })
 
 
-  private def _lookup[A](key: String, orInsertAndReturn: => Option[A],
+  def lookupInCache[A](key: String, orCacheAndReturn: => Option[A],
         expiration: Int = 0)(implicit classTag: ClassTag[A]): Option[A] = {
     pc.Cache.get(key) match {
       case someValue @ Some(value) =>
@@ -110,7 +110,7 @@ class CachingTenantDao(tenantDbDao: ChargingTenantDbDao)
             when looking up: `$key`""")
         someValue.asInstanceOf[Option[A]]
       case None =>
-        val newValueOpt = orInsertAndReturn
+        val newValueOpt = orCacheAndReturn
         // – In case some other thread just inserted another value,
         // overwrite it, because `newValue` is probably more recent.
         // – For now, don't store info on cache misses.
@@ -120,7 +120,12 @@ class CachingTenantDao(tenantDbDao: ChargingTenantDbDao)
   }
 
 
-  def _pageActionsKey(pageId: String): String = s"$pageId.$tenantId.PAGEID"
+  def removeFromCache(key: String) {
+    pc.Cache.remove(key)
+  }
+
+
+  def _pageActionsKey(pageId: String): String = s"$pageId.$tenantId.PageActions"
 
 }
 
