@@ -13,7 +13,7 @@ import Prelude._
 
 
 trait RenderedPageHtmlDao {
-  this: TenantDao =>
+  self: TenantDao =>
 
 
   def renderTemplate(pageReq: PageRequest[_], appendToBody: NodeSeq = Nil)
@@ -37,17 +37,11 @@ trait CachingRenderedPageHtmlDao extends RenderedPageHtmlDao {
   self: CachingTenantDao =>
 
 
-  override def renderTemplate(pageReq: PageRequest[_],
-        appendToBody: NodeSeq = Nil): String = {
+  override def renderPage(pageReq: PageRequest[_], showComments: Boolean)
+        : xml.NodeSeq = {
     // Bypass the cache if the page doesn't yet exist (it's being created),
     // because in the past there was some error because non-existing pages
     // had no ids (so feels safer to bypass).
-    TemplateRenderer(pageReq, appendToBody).renderTemplate()
-  }
-
-
-  override def renderPage(pageReq: PageRequest[_], showComments: Boolean)
-        : xml.NodeSeq = {
     if (pageReq.pageExists && pageReq.pageRoot == PageRoot.Real(Page.BodyId) &&
         pageReq.pageVersion == PageVersion.LatestApproved) {
       val key = _pageHtmlKey(
@@ -64,6 +58,8 @@ trait CachingRenderedPageHtmlDao extends RenderedPageHtmlDao {
 
 
   def uncacheRenderedPage(pageId: String, origin: String) {
+    // COULD do this for each origin listed in DW1_TENANT_HOSTS,
+    // alternatively, cache a Map[serveraddress, page-html] instead.
     removeFromCache(_pageHtmlKey(pageId, origin, true))
     removeFromCache(_pageHtmlKey(pageId, origin, false))
   }
