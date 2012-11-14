@@ -35,17 +35,8 @@ class CachingDaoFactory(
 
 class CachingTenantDao(tenantDbDao: ChargingTenantDbDao)
   extends TenantDao(tenantDbDao)
-  with CachingConfigValueDao {
-
-
-  override def renderPage(pageReq: PageRequest[_], appendToBody: NodeSeq = Nil)
-        : String = {
-    // Bypass the cache if the page doesn't yet exist (it's being created),
-    // because in the past there was some error because non-existing pages
-    // had no ids (so feels safer to bypass).
-    val cache = if (pageReq.pageExists) Some(Debiki.PageCache) else None
-    PageRenderer(pageReq, cache, appendToBody).renderPage()
-  }
+  with CachingConfigValueDao
+  with CachingRenderedPageHtmlDao {
 
 
   override def savePageActions(request: DebikiRequest[_], page: Debate,
@@ -59,8 +50,7 @@ class CachingTenantDao(tenantDbDao: ChargingTenantDbDao)
     // Possible optimization: Examine all actions, and refresh cache only
     // if there are e.g. EditApp:s or approved Post:s (but ignore Edit:s --
     // unless applied & approved)
-    Debiki.PageCache.refreshLater(tenantId = request.tenantId,
-      pageId = page.id, host = request.host)
+    uncacheRenderedPageHtml(pageId = page.id, host = request.host)
 
     // Would it be okay to simply overwrite the in mem cache with this
     // updated page? — Only if I make `++` avoid adding stuff that's already

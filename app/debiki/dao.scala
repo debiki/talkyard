@@ -40,7 +40,8 @@ object DaoFactory {
 
 class TenantDao(protected val tenantDbDao: ChargingTenantDbDao)
   extends AnyRef
-  with ConfigValueDao {
+  with ConfigValueDao
+  with RenderedPageHtmlDao {
 
   def quotaConsumers = tenantDbDao.quotaConsumers
 
@@ -102,12 +103,6 @@ class TenantDao(protected val tenantDbDao: ChargingTenantDbDao)
         limit: Int, offset: Int = 0): Seq[(PagePath, PageDetails)] =
     tenantDbDao.listChildPages(
         parentPageId, sortBy, limit = limit, offset = offset)
-
-
-  def renderPage(pageReq: PageRequest[_], appendToBody: NodeSeq = Nil)
-        : String = {
-    PageRenderer(pageReq, None, appendToBody).renderPage()
-  }
 
 
   // ----- Actions
