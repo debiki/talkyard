@@ -41,6 +41,7 @@ object DaoFactory {
 class TenantDao(protected val tenantDbDao: ChargingTenantDbDao)
   extends AnyRef
   with ConfigValueDao
+  with PagePathDao
   with RenderedPageHtmlDao {
 
   def quotaConsumers = tenantDbDao.quotaConsumers
@@ -84,20 +85,8 @@ class TenantDao(protected val tenantDbDao: ChargingTenantDbDao)
   def movePages(pageIds: Seq[String], fromFolder: String, toFolder: String) =
     tenantDbDao.movePages(pageIds, fromFolder = fromFolder, toFolder = toFolder)
 
-  def moveRenamePage(pageId: String, newFolder: Option[String] = None,
-        showId: Option[Boolean] = None, newSlug: Option[String] = None)
-        : PagePath =
-    tenantDbDao.moveRenamePage(pageId = pageId, newFolder = newFolder,
-      showId = showId, newSlug = newSlug)
-
   def loadTemplate(templPath: PagePath): Option[TemplateSrcHtml] =
     tenantDbDao.loadTemplate(templPath)
-
-  def checkPagePath(pathToCheck: PagePath): Option[PagePath] =
-    tenantDbDao.checkPagePath(pathToCheck)
-
-  def lookupPagePathByPageId(pageId: String): Option[PagePath] =
-    tenantDbDao.lookupPagePathByPageId(pageId = pageId)
 
   def listChildPages(parentPageId: String, sortBy: PageSortOrder,
         limit: Int, offset: Int = 0): Seq[(PagePath, PageDetails)] =

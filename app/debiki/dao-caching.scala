@@ -36,6 +36,7 @@ class CachingDaoFactory(
 class CachingTenantDao(tenantDbDao: ChargingTenantDbDao)
   extends TenantDao(tenantDbDao)
   with CachingConfigValueDao
+  with CachingPagePathDao
   with CachingRenderedPageHtmlDao {
 
 
