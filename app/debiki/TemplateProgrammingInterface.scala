@@ -31,9 +31,6 @@ object TinyTemplateProgrammingInterface {
 
 object TemplateProgrammingInterface {
 
-  def apply(pageRenderer: PageRenderer): TemplateProgrammingInterface =
-    new TemplateProgrammingInterface(pageRenderer)
-
   val (minMax, minMaxJs, minMaxCss) = {
     // Using Play.isDev causes Could not initialize class
     // debiki.DeprecatedTemplateEngine$ error, when running unit tests. Instead:
@@ -188,8 +185,9 @@ class TinyTemplateProgrammingInterface protected (
 /**
  * Passed to Scala templates.
  */
-class TemplateProgrammingInterface private (
-  private val _pageRenderer: PageRenderer)
+class TemplateProgrammingInterface(
+  private val _pageRenderer: PageRenderer,
+  private val tagsToAppendToBody: xml.NodeSeq)
   extends TinyTemplateProgrammingInterface(_pageRenderer.pageReq) {
 
   import debiki.{TinyTemplateProgrammingInterface => tpi}
@@ -203,7 +201,7 @@ class TemplateProgrammingInterface private (
 
 
   def debikiAppendToBodyTags: xml.NodeSeq =
-    PageRenderer.dialogTemplates(_pageReq) ++ _pageRenderer.appendToBody
+    PageRenderer.dialogTemplates(_pageReq) ++ tagsToAppendToBody
 
 
   val debikiHtmlTagClasses =

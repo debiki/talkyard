@@ -11,8 +11,7 @@ import PageRenderer._
 import Prelude._
 
 
-case class PageRenderer(pageReq: PageRequest[_], pageCache: Option[PageCache],
-        appendToBody: xml.NodeSeq = Nil) {
+case class PageRenderer(pageReq: PageRequest[_], pageCache: Option[PageCache]) {
 
 
   val commentVisibility = CommentVisibility.Visible // for now
