@@ -15,7 +15,7 @@ import Prelude._
 trait RenderedPageHtmlDao {
   this: TenantDao =>
 
-  def renderPage(pageReq: PageRequest[_], appendToBody: NodeSeq = Nil)
+  def renderTemplate(pageReq: PageRequest[_], appendToBody: NodeSeq = Nil)
         : String =
     TemplateRenderer(pageReq, None, appendToBody).renderTemplate()
 
@@ -26,8 +26,8 @@ trait RenderedPageHtmlDao {
 trait CachingRenderedPageHtmlDao extends RenderedPageHtmlDao {
   self: TenantDao =>
 
-  override def renderPage(pageReq: PageRequest[_], appendToBody: NodeSeq = Nil)
-        : String = {
+  override def renderTemplate(pageReq: PageRequest[_],
+        appendToBody: NodeSeq = Nil): String = {
     // Bypass the cache if the page doesn't yet exist (it's being created),
     // because in the past there was some error because non-existing pages
     // had no ids (so feels safer to bypass).

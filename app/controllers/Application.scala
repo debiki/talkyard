@@ -35,7 +35,7 @@ object Application extends mvc.Controller {
     // notices that it got that elem, and won't call GET ?page-info.
     val infoNode = <pre class='dw-data-yaml'>{pageInfoYaml}</pre>
     val pageHtml =
-      pageReq.dao.renderPage(pageReq, appendToBody = infoNode)
+      pageReq.dao.renderTemplate(pageReq, appendToBody = infoNode)
     Ok(pageHtml) as HTML
   }
 

@@ -76,7 +76,7 @@ object Utils extends Results with http.ContentTypes {
 
   def renderOrRedirect(pageReq: PageRequest[_]): PlainResult = {
     if (isAjax(pageReq.request)) {
-      val pageHtml = pageReq.dao.renderPage(pageReq)
+      val pageHtml = pageReq.dao.renderTemplate(pageReq)
       Ok(pageHtml) as HTML
     } else {
       val queryString =

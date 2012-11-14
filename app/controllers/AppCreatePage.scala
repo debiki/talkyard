@@ -77,7 +77,7 @@ object AppCreatePage extends mvc.Controller {
     // If not logged in, then include an empty Yaml tag, so the browser
     // notices that it got that elem, and won't call GET ?page-info.
     val infoNode = <pre class='dw-data-yaml'>{pageInfoYaml}</pre>
-    val pageHtml = pageReq.dao.renderPage(pageReq, appendToBody = infoNode)
+    val pageHtml = pageReq.dao.renderTemplate(pageReq, appendToBody = infoNode)
 
     Ok(pageHtml) as HTML
   }
