@@ -31,6 +31,10 @@ trait PagePathDao {
   def lookupPagePathByPageId(pageId: String): Option[PagePath] =
     tenantDbDao.lookupPagePathByPageId(pageId = pageId)
 
+
+  def loadPageMeta(pageId: String): Option[PageMeta] =
+    tenantDbDao.loadPageMeta(pageId)
+
 }
 
 
@@ -105,12 +109,27 @@ trait CachingPagePathDao extends PagePathDao {
   }
 
 
+  /**
+   * There's currently no way to programmatically change page meta info
+   * (parent page id and page role), so need not remove page meta entries
+   * from cache.
+   */
+  override def loadPageMeta(pageId: String): Option[PageMeta] =
+    lookupInCache[PageMeta](
+      pageMetaByIdKey(pageId),
+      orCacheAndReturn = super.loadPageMeta(pageId))
+
+
   private def _pathWithIdByPathKey(pagePath: PagePath) =
     s"$tenantId|${pagePath.path}|PagePathByPath"
 
 
   private def _pathByPageIdKey(pageId: String) =
     s"$tenantId|$pageId|PagePathById"
+
+
+  private def pageMetaByIdKey(pageId: String) =
+    s"$tenantId|$pageId|PageMetaById"
 
 }
 

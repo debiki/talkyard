@@ -76,9 +76,6 @@ class TenantDao(protected val tenantDbDao: ChargingTenantDbDao)
 
   def createPage(page: PageStuff): PageStuff = tenantDbDao.createPage(page)
 
-  def loadPageMeta(pageId: String): Option[PageMeta] =
-    tenantDbDao.loadPageMeta(pageId)
-
   def listChildPages(parentPageId: String, sortBy: PageSortOrder,
         limit: Int, offset: Int = 0): Seq[(PagePath, PageDetails)] =
     tenantDbDao.listChildPages(
