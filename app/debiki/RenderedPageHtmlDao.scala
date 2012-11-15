@@ -66,7 +66,7 @@ trait CachingRenderedPageHtmlDao extends RenderedPageHtmlDao {
 
   private def _pageHtmlKey(pageId: String, origin: String,
         showComments: Boolean): String =
-    s"$pageId.$tenantId.$origin.$showComments.PageHtml"
+    s"$pageId|$tenantId|$origin|$showComments|PageHtml"
 
 }
 

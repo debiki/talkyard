@@ -101,7 +101,7 @@ class CachingTenantDao(tenantDbDao: ChargingTenantDbDao)
       })
 
 
-  def _pageActionsKey(pageId: String): String = s"$pageId.$tenantId.PageActions"
+  def _pageActionsKey(pageId: String): String = s"$pageId|$tenantId|PageActions"
 
 }
 
