@@ -36,7 +36,8 @@ class CachingTenantDao(tenantDbDao: ChargingTenantDbDao)
   with CachingDao
   with CachingConfigValueDao
   with CachingPagePathDao
-  with CachingRenderedPageHtmlDao {
+  with CachingRenderedPageHtmlDao
+  with CachingUserDao {
 
 
   override def savePageActions(request: DebikiRequest[_], page: Debate,

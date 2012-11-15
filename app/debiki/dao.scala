@@ -47,7 +47,8 @@ class TenantDao(protected val tenantDbDao: ChargingTenantDbDao)
   extends AnyRef
   with ConfigValueDao
   with PagePathDao
-  with RenderedPageHtmlDao {
+  with RenderedPageHtmlDao
+  with UserDao {
 
   def quotaConsumers = tenantDbDao.quotaConsumers
 
@@ -69,15 +70,6 @@ class TenantDao(protected val tenantDbDao: ChargingTenantDbDao)
 
   def lookupOtherTenant(scheme: String, host: String): TenantLookup =
     tenantDbDao.lookupOtherTenant(scheme, host)
-
-
-  // ----- Login, logout
-
-  def saveLogin(loginReq: LoginRequest): LoginGrant =
-    tenantDbDao.saveLogin(loginReq)
-
-  def saveLogout(loginId: String, logoutIp: String) =
-    tenantDbDao.saveLogout(loginId, logoutIp)
 
 
   // ----- Pages
@@ -151,21 +143,6 @@ class TenantDao(protected val tenantDbDao: ChargingTenantDbDao)
     tenantDbDao.listPagePaths(pageRanges, include, sortBy, limit, offset)
 
 
-  // ----- Users and permissions
-
-  def loadIdtyAndUser(forLoginId: String): Option[(Identity, User)] =
-    tenantDbDao.loadIdtyAndUser(forLoginId)
-
-
-  def loadIdtyDetailsAndUser(forLoginId: String = null,
-        forIdentity: Identity = null): Option[(Identity, User)] =
-    tenantDbDao.loadIdtyDetailsAndUser(forLoginId = forLoginId,
-      forIdentity = forIdentity)
-
-  def loadPermsOnPage(reqInfo: RequestInfo): PermsOnPage =
-    tenantDbDao.loadPermsOnPage(reqInfo)
-
-
   // ----- Notifications
 
   def saveNotfs(notfs: Seq[NotfOfPageAction]) =
@@ -195,20 +172,6 @@ class TenantDao(protected val tenantDbDao: ChargingTenantDbDao)
 
   def loadEmailById(emailId: String): Option[Email] =
     tenantDbDao.loadEmailById(emailId)
-
-
-  // ----- User configuration
-
-  def configRole(loginId: String, ctime: ju.Date,
-        roleId: String, emailNotfPrefs: EmailNotfPrefs) =
-    tenantDbDao.configRole(loginId = loginId, ctime = ctime,
-      roleId = roleId, emailNotfPrefs = emailNotfPrefs)
-
-  def configIdtySimple(loginId: String, ctime: ju.Date,
-        emailAddr: String, emailNotfPrefs: EmailNotfPrefs) =
-    tenantDbDao.configIdtySimple(loginId = loginId, ctime = ctime,
-      emailAddr = emailAddr,
-      emailNotfPrefs = emailNotfPrefs)
 
 }
 
