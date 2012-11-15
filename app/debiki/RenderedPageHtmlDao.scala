@@ -8,7 +8,6 @@ import com.debiki.v0._
 import controllers._
 import java.{util => ju}
 import scala.xml.NodeSeq
-import EmailNotfPrefs.EmailNotfPrefs
 import Prelude._
 
 
