@@ -588,7 +588,9 @@ object PageVersion {
  * root post would be sent).
  */
 sealed abstract class PageRoot {
+  // COULD rename to `id`? Why did I call it `subId`?
   def subId: String
+  // Why did I name it "...OrCreate..."?
   def findOrCreatePostIn(page: Debate): Option[ViPo]
   def findChildrenIn(page: Debate): List[ViPo]
   def isDefault: Boolean = subId == Page.BodyId

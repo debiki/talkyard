@@ -94,6 +94,7 @@ abstract class TenantDbDao {
         newFolder: Option[String] = None, showId: Option[Boolean] = None,
         newSlug: Option[String] = None): PagePath
 
+  @deprecated("", since = "")
   def loadTemplate(templPath: PagePath): Option[TemplateSrcHtml]
 
   def checkPagePath(pathToCheck: PagePath): Option[PagePath]
@@ -389,6 +390,7 @@ class ChargingTenantDbDao(
       showId = showId, newSlug = newSlug)
   }
 
+  @deprecated("", since = "")
   def loadTemplate(templPath: PagePath): Option[TemplateSrcHtml] = {
     _chargeForOneReadReq()
     _spi.loadTemplate(templPath)
