@@ -28,11 +28,14 @@ trait UserDao {
 
   def loadIdtyDetailsAndUser(forLoginId: String = null,
         forIdentity: Identity = null): Option[(Identity, User)] =
+    // Don't cache this, because this function is rarely called
+    // — currently only when creating new website.
     tenantDbDao.loadIdtyDetailsAndUser(forLoginId = forLoginId,
       forIdentity = forIdentity)
 
 
   def loadPermsOnPage(reqInfo: RequestInfo): PermsOnPage =
+    // Currently this results in no database request; there's nothing to cache.
     tenantDbDao.loadPermsOnPage(reqInfo)
 
 
@@ -53,9 +56,52 @@ trait UserDao {
 
 
 trait CachingUserDao extends UserDao {
-  self: TenantDao =>
+  self: CachingTenantDao =>
 
-  // ... todo
+
+  override def saveLogin(loginReq: LoginRequest): LoginGrant = {
+    val loginGrant = super.saveLogin(loginReq)
+    putInCache(
+      key(loginGrant.login.id),
+      (loginGrant.identity, loginGrant.user))
+    loginGrant
+  }
+
+
+  override def saveLogout(loginId: String, logoutIp: String) {
+    super.saveLogout(loginId, logoutIp)
+    // There'll be no more requests with this login id.
+    removeFromCache(key(loginId))
+  }
+
+
+  override def loadIdtyAndUser(forLoginId: String): Option[(Identity, User)] =
+    lookupInCache[(Identity, User)](
+      key(forLoginId),
+      orCacheAndReturn = super.loadIdtyAndUser(forLoginId))
+
+
+  override def configRole(loginId: String, ctime: ju.Date,
+                 roleId: String, emailNotfPrefs: EmailNotfPrefs) {
+    super.configRole(loginId = loginId, ctime = ctime,
+      roleId = roleId, emailNotfPrefs = emailNotfPrefs)
+    removeFromCache(key(loginId))
+  }
+
+
+  override def configIdtySimple(loginId: String, ctime: ju.Date,
+                       emailAddr: String, emailNotfPrefs: EmailNotfPrefs) {
+    super.configIdtySimple(
+      loginId = loginId,
+      ctime = ctime,
+      emailAddr = emailAddr,
+      emailNotfPrefs = emailNotfPrefs)
+    removeFromCache(key(loginId))
+  }
+
+
+  private def key(loginId: String) = s"$tenantId|$loginId|UserByLoginId"
 
 }
+
 
