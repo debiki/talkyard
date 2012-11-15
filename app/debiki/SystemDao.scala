@@ -61,13 +61,36 @@ class SystemDao(protected val systemDbDao: SystemDbDao) {
 
 /**
  * Caches tenant ids by server address and port.
+ * Currently never removes anything from the cache, because it's not possible
+ * to programmatically remove/reassign a tenant's origins (for example,
+ * remove http://some-host-addr.com, or have it point to another tenant)
  *
  * Thread safe.
  */
 class CachingSystemDao(systemDbDao: SystemDbDao)
-  extends SystemDao(systemDbDao) {
+  extends SystemDao(systemDbDao) with CachingDao {
 
-  // ... todo
+
+  override def lookupTenant(scheme: String, host: String): TenantLookup = {
+    val key = _tenantLookupByOriginKey(scheme, host)
+    lookupInCache[TenantLookup](key) foreach {
+      return _
+    }
+    super.lookupTenant(scheme, host) match {
+      case FoundNothing =>
+        // Don't cache this.
+        // There are infinitely many origins that maps to nothing, since
+        // DNS names *.debiki.net resolves to Debiki's servers.
+        FoundNothing
+      case tenantLookup =>
+        putInCache(key, tenantLookup)
+        tenantLookup
+    }
+  }
+
+
+  private def _tenantLookupByOriginKey(scheme: String, host: String) =
+    s"$scheme|$host|TenantByOrigin"
 
 }
 
