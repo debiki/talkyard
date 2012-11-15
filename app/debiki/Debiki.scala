@@ -17,7 +17,7 @@ import com.debiki.v0.QuotaConsumers
 object Debiki {
 
 
-  private val _DaoSpiFactory = new RelDbDaoFactory({
+  private val _dbDaoFactory = new RelDbDaoFactory({
     def configStr(path: String) =
       Play.configuration.getString(path) getOrElse
          runErr("DwE93KI2", "Config value missing: "+ path)
@@ -30,24 +30,27 @@ object Debiki {
   })
 
 
+  val SystemDao = new CachingSystemDao(_dbDaoFactory.systemDbDao)
+
+
   val QuotaManager = new QuotaManager(SystemDao)
   QuotaManager.scheduleCleanups()
 
 
-  def SystemDao = _DaoSpiFactory.systemDbDao
-
-
-  val RichDaoFactory = new CachingDaoFactory(_DaoSpiFactory,
+  private val _tenantDaoFactory = new CachingTenantDaoFactory(_dbDaoFactory,
     QuotaManager.QuotaChargerImpl /*, cache-config */)
 
 
-  private val _MailerActorRef = Mailer.startNewActor(RichDaoFactory)
-  private val _NotifierActorRef = Notifier.startNewActor(RichDaoFactory)
+  private val _MailerActorRef = Mailer.startNewActor(_tenantDaoFactory)
+
+
+  private val _NotifierActorRef =
+    Notifier.startNewActor(SystemDao, _tenantDaoFactory)
 
 
   def tenantDao(tenantId: String, ip: String, roleId: Option[String] = None)
         : TenantDao =
-    RichDaoFactory.newTenantDao(QuotaConsumers(ip = Some(ip),
+    _tenantDaoFactory.newTenantDao(QuotaConsumers(ip = Some(ip),
        tenantId = tenantId, roleId = roleId))
 
 

@@ -12,21 +12,21 @@ import EmailNotfPrefs.EmailNotfPrefs
 import Prelude._
 
 
-abstract class DaoFactory {
-  def systemDao: SystemDao
+abstract class TenantDaoFactory {
   def newTenantDao(quotaConsumers: QuotaConsumers): TenantDao
 }
 
 
 
-object DaoFactory {
+object TenantDaoFactory {
 
+  /**
+   * Creates a non-caching TenantDaoFactory.
+   */
   def apply(dbDaoFactory: DbDaoFactory, quotaCharger: QuotaCharger)
-        = new DaoFactory {
+        = new TenantDaoFactory {
     private val _dbDaoFactory = dbDaoFactory
     private val _quotaCharger = quotaCharger
-
-    def systemDao = _dbDaoFactory.systemDbDao
 
     def newTenantDao(quotaConsumers: QuotaConsumers): TenantDao = {
       val tenantDbDao = _dbDaoFactory.newTenantDbDao(quotaConsumers)
@@ -38,6 +38,11 @@ object DaoFactory {
 
 
 
+/**
+ * Delegates most requests to TenantDbDao. However, hides some
+ * TenantDbDao methods, because calling them directly would mess up
+ * the cache in TenantDao's subclass CachingTenantDao.
+ */
 class TenantDao(protected val tenantDbDao: ChargingTenantDbDao)
   extends AnyRef
   with ConfigValueDao

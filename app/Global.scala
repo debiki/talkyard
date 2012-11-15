@@ -177,7 +177,7 @@ object Global extends GlobalSettings {
    * fails fast.  And starts Twitter Ostrich.
    */
   override def onStart(app: Application) {
-    Debiki.SystemDao
+    //Debiki.SystemDao
 
     // For now, disable in dev mode — because of the port conflict that
     // causes an error on reload and restart, see below (search for "conflict").

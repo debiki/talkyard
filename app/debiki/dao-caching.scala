@@ -16,13 +16,11 @@ import Prelude._
 
 
 
-class CachingDaoFactory(
+class CachingTenantDaoFactory(
   private val _dbDaoFactory: DbDaoFactory,
   private val _quotaCharger: QuotaCharger
   /* _cacheConfig: CacheConfig */)
-  extends DaoFactory {
-
-  def systemDao = _dbDaoFactory.systemDbDao
+  extends TenantDaoFactory {
 
   def newTenantDao(quotaConsumers: QuotaConsumers): TenantDao = {
     val dbDao = _dbDaoFactory.newTenantDbDao(quotaConsumers)

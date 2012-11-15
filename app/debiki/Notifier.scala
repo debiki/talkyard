@@ -30,9 +30,10 @@ object Notifier {
    * doesn't accidentally forget forever to send some notifications.
    * (Also se object Mailer.)
    */
-  def startNewActor(daoFactory: DaoFactory): ActorRef = {
+  def startNewActor(systemDao: SystemDao, tenantDaoFactory: TenantDaoFactory)
+        : ActorRef = {
     val actorRef = Akka.system.actorOf(Props(
-       new Notifier(daoFactory)), name = "NotifierActor")
+       new Notifier(systemDao, tenantDaoFactory)), name = "NotifierActor")
     Akka.system.scheduler.schedule(0 seconds, 20 seconds, actorRef, "SendNotfs")
     actorRef
   }
@@ -50,7 +51,8 @@ object Notifier {
  *
  * Thread safe.
  */
-class Notifier(val daoFactory: DaoFactory) extends Actor {
+class Notifier(val systemDao: SystemDao, val tenantDaoFactory: TenantDaoFactory)
+  extends Actor {
 
 
   val logger = play.api.Logger("app.notifier")
@@ -59,7 +61,7 @@ class Notifier(val daoFactory: DaoFactory) extends Actor {
   def receive = {
     case "SendNotfs" =>
       val notfsToMail =
-        daoFactory.systemDao.loadNotfsToMailOut(
+        systemDao.loadNotfsToMailOut(
            delayInMinutes = 0, numToLoad = 11)
       logger.trace("Loaded "+ notfsToMail.notfsByTenant.size +
          " notfs, to "+ notfsToMail.usersByTenantAndId.size +" users.")
@@ -80,7 +82,7 @@ class Notifier(val daoFactory: DaoFactory) extends Actor {
     }{
       logger.debug("Considering "+ userNotfs.size +" notfs to user "+ userId)
 
-      val tenantDao = daoFactory.newTenantDao(
+      val tenantDao = tenantDaoFactory.newTenantDao(
          QuotaConsumers(tenantId = tenantId))
       val tenant = tenantDao.loadTenant()
       val userOpt = notfsToMail.usersByTenantAndId.get(tenantId -> userId)
