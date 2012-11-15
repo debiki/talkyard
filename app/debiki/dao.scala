@@ -82,12 +82,6 @@ class TenantDao(protected val tenantDbDao: ChargingTenantDbDao)
   def loadPageMeta(pageId: String): Option[PageMeta] =
     tenantDbDao.loadPageMeta(pageId)
 
-  def movePages(pageIds: Seq[String], fromFolder: String, toFolder: String) =
-    tenantDbDao.movePages(pageIds, fromFolder = fromFolder, toFolder = toFolder)
-
-  def loadTemplate(templPath: PagePath): Option[TemplateSrcHtml] =
-    tenantDbDao.loadTemplate(templPath)
-
   def listChildPages(parentPageId: String, sortBy: PageSortOrder,
         limit: Int, offset: Int = 0): Seq[(PagePath, PageDetails)] =
     tenantDbDao.listChildPages(
