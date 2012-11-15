@@ -67,7 +67,7 @@ trait CachingPagePathDao extends PagePathDao {
 
   override def checkPagePath(pathToCheck: PagePath): Option[PagePath] = {
     val key = _pathWithIdByPathKey(pathToCheck)
-    lookupDontCache[PagePath](key) foreach { path =>
+    lookupInCache[PagePath](key) foreach { path =>
       return Some(path)
     }
     super.checkPagePath(pathToCheck) map { correctPath =>

@@ -33,6 +33,7 @@ class CachingTenantDaoFactory(
 
 class CachingTenantDao(tenantDbDao: ChargingTenantDbDao)
   extends TenantDao(tenantDbDao)
+  with CachingDao
   with CachingConfigValueDao
   with CachingPagePathDao
   with CachingRenderedPageHtmlDao {
@@ -97,45 +98,6 @@ class CachingTenantDao(tenantDbDao: ChargingTenantDbDao)
       orCacheAndReturn = {
         super.loadPage(pageId)
       })
-
-
-  def lookupInCache[A](key: String, orCacheAndReturn: => Option[A],
-        expiration: Int = 0)(implicit classTag: ClassTag[A]): Option[A] = {
-    lookupDontCache(key) match {
-      case someValue @ Some(value) => someValue
-      case None =>
-        val newValueOpt = orCacheAndReturn
-        // – In case some other thread just inserted another value,
-        // overwrite it, because `newValue` is probably more recent.
-        // – For now, don't store info on cache misses.
-        newValueOpt foreach(newValue => pc.Cache.set(key, newValue, expiration))
-        newValueOpt
-    }
-  }
-
-
-  def lookupDontCache[A](key: String)(implicit classTag: ClassTag[A])
-        : Option[A] =
-    pc.Cache.get(key) match {
-      case someValue @ Some(value) =>
-        if (!(classTag.runtimeClass.isInstance(value)))
-          throwNoSuchElem("DwE75Uz3", s"""Found a ${classNameOf(value)},
-            expected a ${classTag.runtimeClass.getName},
-            when looking up: `$key`""")
-        someValue.asInstanceOf[Option[A]]
-      case None =>
-        None
-    }
-
-
-  def putInCache[A](key: String, value: A) {
-    pc.Cache.set(key, value)
-  }
-
-
-  def removeFromCache(key: String) {
-    pc.Cache.remove(key)
-  }
 
 
   def _pageActionsKey(pageId: String): String = s"$pageId.$tenantId.PageActions"
