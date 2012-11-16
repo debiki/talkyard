@@ -7,9 +7,8 @@ package debiki
 import com.debiki.v0._
 import controllers.PageRequest
 import play.{api => p}
+import play.api.Play.current
 import Prelude._
-import scala.Some
-import controllers.PageRequest
 
 
 object InternalTemplateProgrammingInterface {
@@ -37,6 +36,10 @@ object TemplateProgrammingInterface {
     val isDev = p.Play.maybeApplication.map(_.mode) == Some(p.Mode.Dev)
     if (isDev) ("", "js", "css") else ("min", "min.js", "min.css")
   }
+
+  protected val assetsVersionSoftlink =
+    p.Play.configuration.getString("debiki.assets.softlink") getOrElse
+      runErr("DwE6UD32", "Config value missing: debiki.assets.softlink")
 
 }
 
@@ -197,7 +200,7 @@ class TemplateProgrammingInterface(
   // COULD return xml.Unparsed, not String, so needn't use Html() in templates.
 
   def debikiHeadTags = views.html.debikiHeadTags(
-    pageId, minMaxJs, minMaxCss).body
+    pageId, minMaxJs, minMaxCss, assetsVersionSoftlink).body
 
 
   def debikiAppendToBodyTags: xml.NodeSeq =
