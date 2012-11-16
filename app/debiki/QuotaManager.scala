@@ -156,7 +156,8 @@ class QuotaManager(
    * we coulud remember statistics for 1 000 000 IP numbers. So it could be
    * hard for a botnet to do an out-of-memory DoS attack against this IP table?)
    */
-  private val _quotaStateCache: ggc.Cache[QuotaConsumer, _CachedQuotaState] =
+  private val _quotaStateCache:
+        ggc.LoadingCache[QuotaConsumer, _CachedQuotaState] =
     ggc.CacheBuilder.newBuilder()
       .ticker(unitTestTicker.getOrElse(ggb.Ticker.systemTicker))
       .build(
