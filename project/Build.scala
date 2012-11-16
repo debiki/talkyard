@@ -67,7 +67,9 @@ object ApplicationBuild extends Build {
     Keys.compile in Compile <<=
        (Keys.compile in Compile).dependsOn(compileRhinoTask),
     playPackageEverything <<=
-       (playPackageEverything).dependsOn(combineAndGzipJs))
+       (playPackageEverything).dependsOn(combineAndGzipJs),
+    listJarsTask)
+
 
   // Cannot use, because SBT ignores above classpath elem addition:
   //val rhinoClassDir = "target/scala-2.10/compiledjs/classes/"
@@ -79,6 +81,24 @@ object ApplicationBuild extends Build {
 
   def combineAndGzipJs = TaskKey[Unit]("combine-and-gzip-js",
     "Appengs and gzips much Javascript to one single file")
+
+
+  // Lists dependencies.
+  // See: http://stackoverflow.com/a/6509428/694469
+  // ((Could do that before and after upgrading Play Framework, and run a diff,
+  // to find changed dependencies, in case terribly weird compilation
+  // errors arise, e.g. "not enough arguments for method" or
+  // "value getUnchecked is not a member of". Such errors happened when I built
+  // debiki-app-play with the very same version of Play 2.1-SNAPSHOT,
+  // but dependencies downloaded at different points in time (the more recent
+  // dependencies included a newer version of Google Guava.)))
+  def listJars = TaskKey[Unit]("list-jars")
+  def listJarsTask = listJars <<= (target, fullClasspath in Runtime) map {
+        (target, cp) =>
+    println("Target path is: "+target)
+    println("Full classpath is: "+cp.map(_.data).mkString(":"))
+  }
+
 
   // Show unchecked and deprecated warnings, in this project and all
   // its modules.
