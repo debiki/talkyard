@@ -34,7 +34,8 @@ object Global extends GlobalSettings {
     // Ignore the internal API and Javascript and CSS etcetera, in /-/.
     // Right now, when porting from Lift-Web, /classpath/ is also magic.
     if (request.path.startsWith("/-/") ||
-        request.path.startsWith("/classpath/"))
+        request.path.startsWith("/classpath/") ||
+        request.path == "/favicon.ico")
       return super.onRouteRequest(request)
 
     val tenantId = DebikiHttp.lookupTenantIdOrThrow(request, Debiki.SystemDao)
