@@ -37,9 +37,9 @@ object TemplateProgrammingInterface {
     if (isDev) ("", "js", "css") else ("min", "min.js", "min.css")
   }
 
-  protected val assetsVersionSoftlink =
-    p.Play.configuration.getString("debiki.assets.softlink") getOrElse
-      runErr("DwE6UD32", "Config value missing: debiki.assets.softlink")
+  protected lazy val assetsVersion =
+    p.Play.configuration.getString("assets.version") getOrElse
+      runErr("DwE6UD32", "Config value missing: assets.version")
 
 }
 
@@ -200,7 +200,7 @@ class TemplateProgrammingInterface(
   // COULD return xml.Unparsed, not String, so needn't use Html() in templates.
 
   def debikiHeadTags = views.html.debikiHeadTags(
-    pageId, minMaxJs, minMaxCss, assetsVersionSoftlink).body
+    pageId, minMaxJs, minMaxCss, assetsVersion).body
 
 
   def debikiAppendToBodyTags: xml.NodeSeq =

@@ -1,7 +1,6 @@
-@(pageId: String, minMaxJs: String, minMaxCss: String,
-  assetsVersionSoftlink: String)
+@(pageId: String, minMaxJs: String, minMaxCss: String, assetsVersion: String)
 
-@assetsDir = @{ s"/-/a/$assetsVersionSoftlink" }
+@assetsDir = @{ s"/-/assets/$assetsVersion" }
 
 @* Some other viewport values, and the absence of a value,
 trigger Android bugs that report the wrong screen.width,
