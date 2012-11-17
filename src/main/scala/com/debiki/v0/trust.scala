@@ -16,6 +16,26 @@ import collection.{mutable => mut}
  *
  *  In the future: Will take as input IpTrust, UserTrust,
  *  etcetera. Some kind of reputation system.
+ *
+ * Consider reading this:
+ *   http://www.paulgraham.com/hackernews.html
+ * The section that starts with "Comments
+ * Bad comments seem to be a harder problem than ...".
+ * Perhaps one efficient and simple way to automatically sort comments
+ * by how interesting they probably are, is simply to sort them by
+ * length, descending (long comments tend to be more thoughtful).
+ * And count spelling errors and grammar errors, and count ugly words.
+ * These three factors (lenght, spelling & grammar, bad words)
+ * might actually give a *good* indication of how interest a comment
+ * is?
+ * And you could read this:
+ *   http://benjamin-meyer.blogspot.se/2009/02/
+ *     comments-rating-systems-close-look-at.html
+ * And this:
+ *   http://news.ycombinator.com/item?id=495053
+ * And this:
+ *   http://stupidfilter.org/
+ * (The last three ones are linked from Paul Graham's first article.)
  */
 case class PageTrust(page: Debate) {
 
