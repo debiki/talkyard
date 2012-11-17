@@ -26,10 +26,10 @@ d.i.loadOpenIdResources = (function() {
     // in Dev builds. But that'd be 3 different cases! Postpone...)
     Modernizr.load({
       load: [
-        '/-/res/openid-selector/css/openid.css',
-        '/-/res/openid-selector/js/openid-jquery.js',
-        '/-/res/openid-selector/js/openid-en.js'],
-        // /-/res/popuplib.js is included in combined-debiki-*.js.
+        d.i.assetsUrlPathStart + 'openid-selector/css/openid.css',
+        d.i.assetsUrlPathStart + 'openid-selector/js/openid-jquery.js',
+        d.i.assetsUrlPathStart + 'openid-selector/js/openid-en.js'],
+        // d.i.assetsUrlPathStart + 'popuplib.js' incl. in combined-debiki-*.js.
       complete: function() {
         loadStatus.resolve();
       }
@@ -44,7 +44,7 @@ function initLoginOpenId() {
   if ($openid.is('.ui-dialog-content'))
     return; // already inited
 
-  openid.img_path = '/-/res/openid-selector/images/';
+  openid.img_path = d.i.assetsUrlPathStart + 'openid-selector/images/';
   openid.submitInPopup = submitLoginInPopup;
   // Keep default openid.cookie_expires, 1000 days
   // — COULD remove cookie on logout?

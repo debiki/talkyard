@@ -1,6 +1,8 @@
-@(pageId: String, minMaxJs: String, minMaxCss: String, assetsVersion: String)
+@(pageId: String, minMaxJs: String, minMaxCss: String)
 
-@assetsDir = @{ s"/-/assets/$assetsVersion" }
+@asset(file: String) = @{
+  routes.Assets.at(path = "/public/res", file)
+}
 
 @* Some other viewport values, and the absence of a value,
 trigger Android bugs that report the wrong screen.width,
@@ -12,10 +14,10 @@ See: http://code.google.com/p/android/issues/detail?id=10775#c20
 <meta charset="utf-8"/>
 
 
-<link rel="stylesheet" href="@assetsDir/jquery-ui/jquery-ui-1.8.16.custom.css"/>
-<link rel="stylesheet" href="@assetsDir/combined-debiki.@minMaxCss"/>
+<link rel="stylesheet" href="@asset("jquery-ui/jquery-ui-1.8.16.custom.css")"/>
+<link rel="stylesheet" href="@asset(s"combined-debiki.$minMaxCss")"/>
 <!--[if IE 7]>
-<link rel="stylesheet" href="@assetsDir/debiki-lift-ie7.css"/>
+<link rel="stylesheet" href="@asset("debiki-lift-ie7.css")"/>
 <![endif]-->
 
 @* Concerning when/how to use a CDN for Modernizr, see:
@@ -42,13 +44,15 @@ See: http://stackoverflow.com/questions/1014203/best-way-to-use-googles-hosted-j
    on-save callback, to be notified when a newly created page is saved.)
 *@
 <script>
-  var debiki = $.extend(true,
-      { v0: { util: {} }, internal: { $: jQuery, pageId: '@pageId' } }, debiki);
+  var debiki = $.extend(true, {
+    v0: { util: {} },
+    internal: { $: jQuery, pageId: '@pageId', assetsUrlPathStart: '@asset("")' }
+  }, debiki);
   debiki.scriptLoad = $.Deferred();
   Modernizr.load({
     test: Modernizr.touch,
-    yep: '@assetsDir/combined-debiki-touch.@minMaxJs',
-    nope: '@assetsDir/combined-debiki-desktop.@minMaxJs',
+    yep: '@asset(s"combined-debiki-touch.$minMaxJs")',
+    nope: '@asset(s"combined-debiki-desktop.$minMaxJs")'
   });
 </script>
 

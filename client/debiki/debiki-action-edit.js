@@ -29,14 +29,15 @@ d.i.$loadEditorDependencies = (function() {
       return loadStatus;
     loadStatus = $.Deferred();
     var loadCodeMirror = !Modernizr.touch;
+    var assetsPrefix = d.i.assetsUrlPathStart;
     Modernizr.load({
       test: loadCodeMirror,
       yep: [
-        '/-/res/codemirror/lib/codemirror.css',
-        '/-/res/codemirror/lib/util/dialog.css', // search dialogs
-        '/-/res/codemirror-2.25-custom.min.js'],
+        assetsPrefix + 'codemirror/lib/codemirror.css',
+        assetsPrefix + 'codemirror/lib/util/dialog.css', // search dialogs
+        assetsPrefix + 'codemirror-2.25-custom.min.js'],
       both: [
-        '/-/res/wmd/showdown.js'],
+        assetsPrefix + 'wmd/showdown.js'],
       complete: function() {
         loadStatus.resolve();
       }

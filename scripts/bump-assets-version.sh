@@ -11,28 +11,24 @@ set -u  # exit on unset variable
 set -e  # exit on non-zero command exit code
 set -o pipefail  # exit on false | true
 
-config_file=conf/assets-version.conf
 
 # Find current assets version number.
-current_assets_version=""
-if [ -f $config_file ] ; then
-  current_assets_version=`sed -nr 's/^assets.version="([0-9]+)"$/\1/p' < $config_file`
+
+find_version_regex='s#^GET.*/-/assets/([0-9]+)/\*file\s+controllers.Assets.at.*$#\1#p'
+current_version=`sed -nr "$find_version_regex" < conf/routes`
+
+if [ -z "$current_version" ] ; then
+  echo "Assets version number not found in conf/routes; regex matched nothing:"
+  echo "$find_version_regex"
+  exit 1
 fi
 
-# In case $config_file does not yet exist.
-if [ -z "$current_assets_version" ] ; then
-  current_assets_version=0
-fi
 
-# Bumb version number.
-next_assets_version=`printf '%d' $(($current_assets_version + 1))`
+# Bump version number.
 
-# Update Play Framework config value with new version.
-cat > $config_file <<EOF
-# *** Generated file. It will be overwritten. ***
-# See scripts/bump-assets-version.sh.
-assets.version="$next_assets_version"
-EOF
+next_version=`printf '%d' $(($current_version + 1))`
+new_routes=`sed -r "s#(^.*/-/assets/)([0-9]+)(/.*$)#\1$next_version\3#" < conf/routes`
+echo "$new_routes" > conf/routes
 
-echo "Bumbed assets version from $current_assets_version to $next_assets_version."
+echo "Bumped assets version number from $current_version to $next_version."
 

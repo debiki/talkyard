@@ -36,6 +36,3 @@ public/res/debiki-dashbar*
 test-client/debiki-utils.js
 test-client/unit/spa/admin/*.js
 
-# Ignore generated config file (see scripts/bump-assets-version.sh)
-conf/assets-version.conf
-
