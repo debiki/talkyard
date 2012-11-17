@@ -1,6 +1,6 @@
 #!/bin/bash
 
-play=/mnt/data/dev/play/github/play
+play=/mnt/data/dev/play/github2/play
 
 set -u  # exit on unset variable
 set -e  # exit on non-zero command exit code
@@ -34,6 +34,10 @@ rsync -avz \
 $ssh_ec2_user \
   ec2-user@$host \
   "cd $basedir; chmod o+x app1/start"
+
+# Change URL to assets, so browsers will download them agagin next time we
+# deploy. (They're otherwise cached for quite long.)
+./scripts/bump-assets-version.sh
 
 $ssh_play_user \
   play@$host \
