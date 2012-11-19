@@ -547,16 +547,33 @@ case class Debate (
 
   // -------- Misc
 
-  /** When the most recent post was made,
-   *  or the mos recent edit was applied or reverted.
+  /**
+   * The most recent outwardly visible action, e.g. the last edit application,
+   * or the last reversion of an applied edit. Might also
+   * return an even more recent action that does actually not affect
+   * how this page is being rendered (e.g. a deletion of a pending edit).
    */
-  lazy val lastChangeDate: Option[ju.Date] = {
-    def maxDate(a: ju.Date, b: ju.Date) = if (a.compareTo(b) > 0) a else b
-    val allDates: Iterator[ju.Date] = editApps.iterator.map(_.ctime) ++
-                                        posts.iterator.map(_.ctime)
-    if (allDates isEmpty) None
-    else Some(allDates reduceLeft (maxDate(_, _)))
+  lazy val lastOrLaterVisibleAction: Option[Action] = {
+    def lastAction(a: Action, b: Action) =
+      if (a.ctime.getTime > b.ctime.getTime) a else b
+
+    // Edits might be auto applied, so check their dates.
+    // Deletions might revert edit applications, so check their dates.
+    // Hmm, check everything, or a bug will pop up, later on.
+    val all = allActions
+    if (all isEmpty) None
+    else Some(all reduceLeft (lastAction(_, _)))
   }
+
+
+  /**
+   * When the most recent change to this page was made —
+   * but unappliied (i.e. pending) edits are ignored.
+   * Might return a somewhat more recent date, e.g. for a pending edit
+   * that was deleted (but not an earlier date, that'd be a bug).
+   */
+  lazy val lastOrLaterChangeDate: Option[ju.Date] =
+    lastOrLaterVisibleAction.map(_.ctime)
 
 }
 
