@@ -4,7 +4,7 @@
 
 
 @if(tpi.isAuthenticated) {
-  <script src='/-/res/debiki-dashbar.js'></script>
+  <script src='@routes.Assets.at("/public/res", "debiki-dashbar.js")'></script>
   <div id='debiki-dashbar'>
 
     <a class='debiki-dashbar-logo' href='@routes.Application.viewAdminPage.url'>
