@@ -36,3 +36,8 @@ public/res/debiki-dashbar*
 test-client/debiki-utils.js
 test-client/unit/spa/admin/*.js
 
+# Ignore SecureSocial dummy folder, with target/ and dist/ dir.  (See commit
+# message of tag 'v0.3.14-dist-ok-despite-securesocial'. Remove when it's a
+# real submodule again, if ever.)
+modules/securesocial
+
