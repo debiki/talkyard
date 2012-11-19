@@ -7,3 +7,4 @@
 2012-11-18 14:35 f74f8ff Cache JS forever: Cache for one day
 2012-11-19 11:15 02e3e7a Make dist build work: place some SecureSocial files in app/ dir
 2012-11-19 13:28 a4d7b49 Speed up page loading: Don't load jQuery over HTTPS
+2012-11-19 14:40 668f290 Speed up page loading: Load CSS first, then JS
