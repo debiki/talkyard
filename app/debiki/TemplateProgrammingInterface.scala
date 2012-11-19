@@ -193,10 +193,14 @@ class TemplateProgrammingInterface(
   import TinyTemplateProgrammingInterface.{Page => _, _}
   import TemplateProgrammingInterface._
 
-  // COULD return xml.Unparsed, not String, so needn't use Html() in templates.
 
-  def debikiHeadTags = views.html.debikiHeadTags(
-    pageId, minMaxJs, minMaxCss).body
+  def debikiMeta = xml.Unparsed(views.html.debikiMeta().body)
+
+  def debikiStyles = xml.Unparsed(
+    views.html.debikiStyles(minMaxJs, minMaxCss).body)
+
+  def debikiScripts = xml.Unparsed(
+    views.html.debikiScripts(pageId, minMaxJs, minMaxCss).body)
 
 
   def debikiAppendToBodyTags: xml.NodeSeq =
@@ -211,7 +215,7 @@ class TemplateProgrammingInterface(
     "dw-render-layout-pending "
 
 
-  def debikiDashbar: String = views.html.dashbar(this).body
+  def debikiDashbar = xml.Unparsed(views.html.dashbar(this).body)
 
 
   def loginLinkAndUserName =

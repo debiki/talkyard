@@ -3,15 +3,23 @@
 
 <!DOCTYPE html>
 
-<html class="@tpi.debikiHtmlTagClasses" @tpi.configValue("html-tag-attributes")>
+<html class="@tpi.debikiHtmlTagClasses @tpi.configValue("html-tag-classes")"
+    @tpi.configValue("html-tag-attributes-excl-class")>
 <head>
-  @Html(tpi.debikiHeadTags)
+  @tpi.debikiMeta
+
   <title>@tpi.configValue("title")</title>
   <meta name="description" content="@tpi.configValue("description")">
   <meta name="keywords" content="@tpi.configValue("keywords")">
+
+  @tpi.debikiStyles
+
   <link rel="stylesheet" href="http://fonts.googleapis.com/css?family=Bree+Serif">
   <link rel="stylesheet" href="/themes/assets/twitter-bootstrap-2.0.3-wip.css"/>
   <link rel="stylesheet" href="http://www.debiki.com/www-debiki-com.css"/>
+
+  @tpi.debikiScripts
+
   <script>
     if (!Modernizr.touch) jQuery(document).ready(function($) {
       Modernizr.load({
@@ -35,12 +43,13 @@
     var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
     })();
   </script>
+
   @Html(tpi.websiteConfigValue("html-head-tags-appended-site-wide"))
   @Html(tpi.configValue("html-head-tags-appended"))
 </head>
 <body>
 
-@Html(tpi.debikiDashbar)
+@tpi.debikiDashbar
 
 <div id='topbar'>
   <div class='container ui-helper-clearfix'>
