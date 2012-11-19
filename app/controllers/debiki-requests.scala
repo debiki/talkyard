@@ -95,9 +95,13 @@ abstract class DebikiRequest[A] {
 
   def body = request.body
 
+  def headers = request.headers
+
   def isAjax = DebikiHttp.isAjax(request)
 
   def isHttpPostRequest = request.method == "POST"
+
+  def httpVersion = request.version
 
   def quotaConsumers = dao.quotaConsumers
 

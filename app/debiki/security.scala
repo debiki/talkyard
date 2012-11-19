@@ -22,8 +22,14 @@ object DebikiSecurity {
    * login id, no user, no display name), and a new SID and xsrf cookie.
    * @throws DebikiHttp.ResultException, for non-GET requests,
    * if the SID or the XSRF token is bad.
+   *
+   * However, for GET request where `maySetCookies` is false, and there
+   * is no XSRF cookie, creates no new cookies, and returns XsrfOk("").
+   * (No cookies should be set if the response might be cached by a proxy
+   * server.)
    */
-  def checkSidAndXsrfToken(request: play.api.mvc.Request[_])
+  def checkSidAndXsrfToken(request: play.api.mvc.Request[_],
+        maySetCookies: Boolean)
         : (SidStatus, XsrfOk, List[Cookie]) = {
 
     val sidCookieValOpt = urlDecodeCookie("dwCoSid", request)
@@ -46,6 +52,11 @@ object DebikiSecurity {
           if (xsrfCookieValOpt.isDefined) {
             (XsrfOk(xsrfCookieValOpt.get), Nil)
           }
+          else if (!maySetCookies) {
+            // No XSRF token available, and none needed, since this
+            // a GET request.
+            (XsrfOk(""), Nil)
+          }
           else {
             val newXsrfOk = Xsrf.create()
             val cookie = urlEncodeCookie("dwCoXsrf", newXsrfOk.value)
@@ -58,6 +69,7 @@ object DebikiSecurity {
         // Reject this request if the XSRF token is invalid,
         // or if the SID is corrupt (but not if simply absent).
         assert(request.method == "POST")
+        assert(maySetCookies)
 
         // There must be an xsrf token in a certain header, or in a certain
         // input in any POST:ed form data. Check the header first, in case

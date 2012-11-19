@@ -10,6 +10,7 @@ import debiki._
 import java.{util => ju, io => jio}
 import play.api._
 import play.api.mvc.{Action => _, _}
+import play.api.Play.current
 import ApiActions._
 import PageActions._
 import DebikiHttp._
@@ -40,14 +41,59 @@ object Application extends mvc.Controller {
   }
 
 
-  def rawBody(pathIn: PagePath) = PageGetAction(pathIn) { pageReq =>
+  /**
+   * Fallback to "public" so public web proxies caches the assets
+   * and so certain versions of Firefox caches the assets to disk even
+   * if in the future they'll be served over HTTPS.
+   *
+   * Fallback to 1 hour, for now (I change site specific CSS somewhat
+   * infrequently, and might as well disable my browser's cache).
+   * MUST set to 0 or use fingerprinting, before allowing anyone but
+   * me to edit JS and CSS — or they won't understand why their changes
+   * doesn't take effect.
+   *
+   * See: https://developers.google.com/speed/docs/best-practices/caching
+   */
+  val siteSpecificCacheControl =
+    Play.configuration.getString("debiki.site.assets.defaultCache")
+      .getOrElse("public, max-age=3600")
+
+
+  /**
+   * Sends as Cache-Control the config value debiki.site.assets.defaultCache.
+   * Sets no cookies, since the intention is that the response be cached
+   * by proxy servers.
+   */
+  def rawBody(pathIn: PagePath) = PageGetAction(pathIn, maySetCookies = false) {
+        pageReq =>
     val pageBody = pageReq.page_!.body_!
-    val contentType = (pageReq.pagePath.suffix match {
+    val contentType = pageReq.pagePath.suffix match {
       case "css" => CSS
       case "js" => JAVASCRIPT
-    })
+    }
     if (!pageBody.someVersionApproved) Ok("Page pending approval.")
-    else Ok(pageBody.text) as contentType
+    else {
+      // Action ids are unique per page, so use as ETag the id of the
+      // most recent outwardly visible action. (Well, for now, use
+      // the id of the most recent action, whichever it may be.)
+      val etag = pageReq.page_!.lastOrLaterVisibleAction.map(_.id) getOrElse
+        throwNotFound("DwE903RK3", "Page is completely empty")
+
+      val isEtagOk = pageReq.headers.get(IF_NONE_MATCH) == Some(etag)
+      if (isEtagOk) NotModified
+      else {
+        // 1. Add cache headers, also in Dev builds, so I'll notice stale
+        // cache issues.
+        // 2. Really don't set any new cookies (don't know from where they
+        // could come, but remove any anyway).
+        val response = Ok(pageBody.text)
+        val cacheableResponse = response.withHeaders(
+          CACHE_CONTROL -> siteSpecificCacheControl,
+          ETAG -> etag,
+          SET_COOKIE -> "")
+        cacheableResponse as contentType
+      }
+    }
   }
 
 

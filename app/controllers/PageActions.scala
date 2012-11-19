@@ -40,10 +40,17 @@ object PageActions {
   type PagePostRequest2 = PageRequest[JsonOrFormDataBody]
 
 
+  /**
+   * Set `maySetCookies` to false if the response might be cached by
+   * proxy servers, e.g. static JS and CSS. (Otherwise silly serveres
+   * might serve the same cached XSRF cookie to everyone.)
+   */
   def PageGetAction
-        (pathIn: PagePath, pageMustExist: Boolean = true)
+        (pathIn: PagePath, pageMustExist: Boolean = true,
+         maySetCookies: Boolean = true)
         (f: PageGetRequest => PlainResult) =
-    PageReqAction(BodyParsers.parse.empty)(pathIn, pageMustExist)(f)
+    PageReqAction(BodyParsers.parse.empty)(
+      pathIn, pageMustExist, maySetCookies = maySetCookies)(f)
 
 
   /**
@@ -76,9 +83,10 @@ object PageActions {
 
   def PageReqAction[A]
         (parser: BodyParser[A])
-        (pathIn: PagePath, pageMustExist: Boolean)
+        (pathIn: PagePath, pageMustExist: Boolean,
+         maySetCookies: Boolean = true)
         (f: PageRequest[A] => PlainResult)
-        = CheckPathAction[A](parser)(pathIn) {
+        = CheckPathAction[A](parser)(pathIn, maySetCookies = maySetCookies) {
       (sidStatus, xsrfOk, pathOkOpt, dao, request) =>
 
     if (pathOkOpt.isEmpty && pageMustExist)
@@ -133,10 +141,11 @@ object PageActions {
 
   def CheckPathAction[A]
         (parser: BodyParser[A])
-        (pathIn: PagePath)
+        (pathIn: PagePath, maySetCookies: Boolean = true)
         (f: (SidStatus, XsrfOk, Option[PagePath], TenantDao, Request[A]) =>
            PlainResult) =
-    SafeActions.CheckSidAction[A](parser) { (sidStatus, xsrfOk, request) =>
+    SafeActions.CheckSidAction[A](parser, maySetCookies = maySetCookies) {
+        (sidStatus, xsrfOk, request) =>
       val dao = Debiki.tenantDao(tenantId = pathIn.tenantId,
          ip = request.remoteAddress, sidStatus.roleId)
       dao.checkPagePath(pathIn) match {

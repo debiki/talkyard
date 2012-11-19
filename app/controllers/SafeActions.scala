@@ -43,11 +43,12 @@ object SafeActions {
    */
   // COULD rename to CheckSidAndXsrfAction?
   def CheckSidAction[A]
-        (parser: BodyParser[A])
+        (parser: BodyParser[A], maySetCookies: Boolean = true)
         (f: (SidStatus, XsrfOk, Request[A]) => PlainResult) =
     ExceptionAction[A](parser) { request =>
       val (sidStatus, xsrfOk, newCookies) =
-         DebikiSecurity.checkSidAndXsrfToken(request)
+         DebikiSecurity.checkSidAndXsrfToken(
+           request, maySetCookies = maySetCookies)
       val resultOldCookies = try {
         f(sidStatus, xsrfOk, request)
       } catch {
@@ -63,7 +64,10 @@ object SafeActions {
       }
       val resultOkSid =
         if (newCookies isEmpty) resultOldCookies
-        else resultOldCookies.withCookies(newCookies: _*)
+        else {
+          assert(maySetCookies)
+          resultOldCookies.withCookies(newCookies: _*)
+        }
       resultOkSid
     }
 
