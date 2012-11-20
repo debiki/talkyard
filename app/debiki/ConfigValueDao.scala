@@ -14,7 +14,7 @@ trait ConfigValueDao {
 
 
   def loadPageConfigMap(pageId: String): Map[String, Any] =
-    _loadConfigMap(pageId, configPostId = Page.TemplateId)
+    loadConfigMap(pageId, configPostId = Page.TemplateId)
 
 
   def loadWebsiteConfigMap(): Map[String, Any] = {
@@ -22,12 +22,12 @@ trait ConfigValueDao {
     pagePathIdKnown match {
       case None => Map.empty
       case Some(pagePath) =>
-        _loadConfigMap(pagePath.pageId.get, configPostId = Page.BodyId)
+        loadConfigMap(pagePath.pageId.get, configPostId = Page.BodyId)
     }
   }
 
 
-  private def _loadConfigMap(pageId: String, configPostId: String)
+  protected def loadConfigMap(pageId: String, configPostId: String)
         : Map[String, Any] = {
     // Load the post as YAML into a map.
     loadPage(pageId) match {
@@ -57,10 +57,32 @@ trait ConfigValueDao {
 }
 
 
-trait CachingConfigValueDao extends ConfigValueDao {
-  self: TenantDao =>
 
-  // COULD override methods and cache stuff.
+trait CachingConfigValueDao extends ConfigValueDao {
+  self: TenantDao with CachingDao =>
+
+
+  protected override def loadConfigMap(pageId: String, configPostId: String)
+        : Map[String, Any] = {
+    val key = pageConfigMapKey(pageId)
+    val mapOpt = lookupInCache[Map[String, Any]](key)
+    mapOpt match {
+      case None =>
+        val map = super.loadConfigMap(pageId, configPostId = configPostId)
+        putInCache[Map[String, Any]](key, value = map)
+        map
+      case Some(map) =>
+        map
+    }
+  }
+
+
+  def pageConfigMapKey(pageId: String) = s"$pageId|$tenantId|ConfigMap"
+
+
+  def uncacheConfigMap(pageId: String) {
+    removeFromCache(pageConfigMapKey(pageId))
+  }
 
 }
 

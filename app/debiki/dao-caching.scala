@@ -53,6 +53,10 @@ class CachingTenantDao(tenantDbDao: ChargingTenantDbDao)
     // unless applied & approved)
     uncacheRenderedPage(pageId = page.id, origin = request.host)
 
+    // Who should know about all these uncache-this-on-change-
+    // -of-that relationships? For now:
+    uncacheConfigMap(pageId = page.id)
+
     // Would it be okay to simply overwrite the in mem cache with this
     // updated page? — Only if I make `++` avoid adding stuff that's already
     // present!
