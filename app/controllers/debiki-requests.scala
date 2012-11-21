@@ -126,23 +126,34 @@ object PageRequest {
   /**
    * Builds a PageRequest based on another DebikiRequest and a page path.
    *
-   * No attempt to correct the path is made. Instead, if the page exists,
-   * but `pagePath` is incorrect, an error 404 Not Found exception is thrown.
+   * If `fixIncorrectPath`, changes `pagePath` to the real path to the page,
+   * if needed (and if the page exists). Otherwise, if  `pagePath` is
+   * incorrect, throws an error 404 Not Found exception.
    * (PageActions.CheckPathAction however redirects the browser to the correct
    * path, if you specify an almost correct path (e.g. superfluous
    * trailing '/').
    */
-  def apply[A](apiRequest: DebikiRequest[A], pagePath: PagePath)
+  def apply[A](apiRequest: DebikiRequest[A], pagePath: PagePath,
+        fixBadPath: Boolean = false)
         : PageRequest[A] = {
 
-    val pageExists = apiRequest.dao.checkPagePath(pagePath) match {
-      case Some(correct: PagePath) =>
-        if (correct.path != pagePath.path)
-          throwNotFound("DwE305RI2", "Mismatching page path: "+ pagePath +
-             ", should be: "+ correct)
-        true
+    val (pageExists, okPath) = apiRequest.dao.checkPagePath(pagePath) match {
+      case Some(correctPath: PagePath) =>
+        // Require page id (so we know for sure which page to e.g. edit).
+        assErrIf(pagePath.pageId.isEmpty,
+          "DwE8ISD2", s"Page id missing, pagePath: $pagePath")
+        // And require that the page id matches, always.
+        assErrIf(correctPath.pageId.get != pagePath.pageId.get,
+          "DwE390IR2", s"Specified page id `${pagePath.pageId.get}' " +
+            s"differs from database page id `${correctPath.pageId.get}'")
+        // Check for bad paths.
+        if (correctPath.path != pagePath.path && !fixBadPath)
+          throwNotFound("DwE305RI2", s"Mismatching page path: `$pagePath', " +
+             s"should be `$correctPath'")
+        // Fix any bad path:
+        (true, correctPath)
       case None =>
-        false
+        (false, pagePath)
     }
 
     // Dupl code, see PageActions.CheckPathAction
@@ -152,7 +163,7 @@ object PageRequest {
       loginId = apiRequest.sid.loginId,
       identity = apiRequest.identity,
       user = apiRequest.user,
-      pagePath = pagePath)
+      pagePath = okPath)
 
     val permsOnPage = apiRequest.dao.loadPermsOnPage(permsReq)
     if (!permsOnPage.accessPage)
@@ -164,26 +175,26 @@ object PageRequest {
       identity = apiRequest.identity,
       user = apiRequest.user,
       pageExists = pageExists,
-      pagePath = pagePath,
+      pagePath = okPath,
       permsOnPage = permsOnPage,
       dao = apiRequest.dao,
       request = apiRequest.request)()
   }
 
   def apply[A](apiRequest: DebikiRequest[A], pagePathStr: String,
-        pageId: String) : PageRequest[A] = {
+        pageId: String, fixBadPath: Boolean = false) : PageRequest[A] = {
     val pagePathPerhapsId =
       PagePath.fromUrlPath(apiRequest.tenantId, pagePathStr) match {
         case PagePath.Parsed.Good(path) =>
           assErrIf(path.pageId.isDefined && path.pageId != Some(pageId),
-              "DwE309RK9", "Database page id: "+ path.pageId +
-              ", page id arg: "+ pageId)
+              "DwE309RK9", s"pagePathStr page id `${path.pageId}' " +
+              s" differs from pageId `$pageId'")
           path
         case x =>
           throwBadReq("DwE390SD3", "Bad path for page id "+ pageId +": "+ x)
       }
     val pagePathWithId = pagePathPerhapsId.copy(pageId = Some(pageId))
-    PageRequest(apiRequest, pagePathWithId)
+    PageRequest(apiRequest, pagePathWithId, fixBadPath = fixBadPath)
   }
 }
 

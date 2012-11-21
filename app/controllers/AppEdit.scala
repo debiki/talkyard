@@ -37,11 +37,19 @@ object AppEdit extends mvc.Controller {
   }
 
 
+  // In case the page has been moved since it was cached, or rendered
+  // in the browser, the posted page path might be incorrect. If so,
+  // simply fix it. (The path is only useful if the page doesn't yet exist,
+  // so we know where to create it.)
+  private def yesFixPath = true
+
+
   def showEditFormAnyPage(pageId: String, pagePath: String, postId: String)
         = GetAction { request =>
 
     val pageReqPerhapsNoPage =
-      PageRequest(request, pagePathStr = pagePath, pageId = pageId)
+      PageRequest(request, pagePathStr = pagePath, pageId = pageId,
+        fixBadPath = yesFixPath)
 
     val pageReq =
       if (pageReqPerhapsNoPage.pageExists) pageReqPerhapsNoPage
@@ -149,7 +157,9 @@ object AppEdit extends mvc.Controller {
       val parentPageId =
         if (parentPageIdStr isEmpty) None else Some(parentPageIdStr)
 
-      val pageReqPerhapsNoPage = PageRequest(request, pagePathStr, pageId)
+      val pageReqPerhapsNoPage = PageRequest(request, pagePathStr, pageId,
+        fixBadPath = yesFixPath)
+
       val pageReqPerhapsNoMe = _createPageIfNeeded(pageReqPerhapsNoPage,
         pageRole, parentPageId = parentPageId)
       // Include current user on the page to be edited, or it won't be
