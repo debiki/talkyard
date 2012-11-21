@@ -9,3 +9,4 @@
 2012-11-19 13:28 a4d7b49 Speed up page loading: Don't load jQuery over HTTPS
 2012-11-19 14:40 668f290 Speed up page loading: Load CSS first, then JS
 2012-11-20 01:16 fa748bb Cache config values: implement CachingConfigValueDao.
+2012-11-21 08:45 e5f9890 Fix broken /-/site/ assets links
