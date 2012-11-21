@@ -10,3 +10,4 @@
 2012-11-19 14:40 668f290 Speed up page loading: Load CSS first, then JS
 2012-11-20 01:16 fa748bb Cache config values: implement CachingConfigValueDao.
 2012-11-21 08:45 e5f9890 Fix broken /-/site/ assets links
+2012-11-21 12:38 a9e0d3e Let /-/edit correct any bad page path
