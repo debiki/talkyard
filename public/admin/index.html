@@ -61,7 +61,9 @@
               <a class='btn'>#Delete</a>
               <a class='btn'>Sort</a> -->
             </div>
-            <table class='table -table-bordered -table-striped'>
+            <p ng-show="!actionList.length">No activity thus far.</p>
+            <table class='table -table-bordered -table-striped'
+                 ng-show="actionList.length">
               <thead>
                 <tr>
                   <th class='row-selector'>
@@ -226,6 +228,8 @@
           </div>
 
           <div ng-controller='UserListCtrl' class='tab-pane' id='users-tab'>
+            <p>Not yet implemented.</p>
+            <!--
             <div>
               <a class='btn'>Contact</a>
               <a class='btn'>Subscribe</a>
@@ -270,6 +274,8 @@
                   <td><a target='_blank'>{{user.lastLoginTime.replace('T', ' ')}}</a></td>
                 </tr>
               </tbody>
+            </table>
+            -->
           </div>
         </div>
       </div>
