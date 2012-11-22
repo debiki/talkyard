@@ -49,7 +49,7 @@ POST  /-/reject                 controllers.AppReview.reject
 
 # Don't change the URL on the next line. The /-/assets/<version-number>/ is
 # updated by the deployment script (asset fingerprinting).
-GET   /-/assets/1/*file         controllers.Assets.at(path = "/public/res", file)
+GET   /-/assets/2/*file         controllers.Assets.at(path = "/public/res", file)
 GET   /-/*file                  controllers.Assets.at(path = "/public", file)
 GET   /robots.txt               controllers.Assets.at(path = "/public", file = "robots.txt")
 GET   /favicon.ico              controllers.Assets.at(path = "/public/site/img", file = "favicon-test-2.ico")
