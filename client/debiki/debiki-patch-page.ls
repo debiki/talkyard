@@ -30,16 +30,21 @@ d.i.patchPage = (patches) ->
     # Avoid float drop, in caze thread added to horizontal list.
     d.i.resizeRootThread!
 
-    # Really both $drawTree, and $drawParents for each child post??
+    drawArrows = ->
+      # Really both $drawTree, and $drawParents for each child post??
+      # (Not $drawPost; $newThread might have child threads.)
+      $newThread.each d.i.SVG.$drawTree
 
-    # (Not $drawPost; $newThread might have child threads.)
-    $newThread.each d.i.SVG.$drawTree
+      # 1. Draw arrows after post has been inited, because initing it
+      # might change its size.
+      # 2. If some parent is an inline post, *its* parent might need to be
+      # redrawn. So redraw all parents.
+      $newThread.dwFindPosts!.each d.i.SVG.$drawParents
 
-    # 1. Draw arrows after post has been inited, because initing it
-    # might change its size.
-    # 2. If some parent is an inline post, *its* parent might need to be
-    # redrawn. So redraw all parents.
-    $newThread.dwFindPosts!.each d.i.SVG.$drawParents
+    # Don't draw arrows until all posts have gotten their final position.
+    # (The caller might remove a horizontal reply button, and show it again,
+    # later, and the arrows might be drawn incorrectly if drawn inbetween.)
+    setTimeout drawArrows, 0
 
     result.newThreads.push $newThread
 
