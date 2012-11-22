@@ -43,14 +43,13 @@
     <div>
       <div id='details'>
         <ul class="nav nav-tabs">
-          <li class='active'><a href="#events-tab" data-toggle="tab">Activity</a></li>
-          <li><a href="#pages-tab" data-toggle="tab">Contents</a></li>
+          <li class='active'><a href="#pages-tab" data-toggle="tab">Contents</a></li>
+          <li><a href="#events-tab" data-toggle="tab">Activity</a></li>
           <li><a href="#users-tab" data-toggle="tab">Users</a></li>
         </ul>
 
         <div class="tab-content">
-          <div ng-controller='ActionListCtrl' class='tab-pane active'
-                id='events-tab'>
+          <div ng-controller='ActionListCtrl' class='tab-pane' id='events-tab'>
             <div class='selection-related-btns'>
               <!--<a id='btn-view-post' class='btn' ng-show='oneRowChecked'>View</a>-->
               <a id='btn-approve-post' class='btn' ng-show='manyRowsChecked'>Approve</a>
@@ -104,7 +103,7 @@
             </table>
           </div>
 
-          <div ng-controller='PathsCtrl' class='tab-pane' id='pages-tab'>
+          <div ng-controller='PathsCtrl' class='tab-pane active' id='pages-tab'>
 
             <div class='selection-related-btns'>
               <a id='create-page-in-folder-btn' class='btn' ng-click='createPageInFolder()' ng-show='oneFolderSelected'>Create page in folder</a>
