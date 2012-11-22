@@ -39,6 +39,10 @@ h1 {
   font-style: italic;
 }
 
+#help-welcome-create-blog {
+  margin: 2em 0;
+}
+
 #page-tree-container ol {
   margin-top: 1.5em;
 }

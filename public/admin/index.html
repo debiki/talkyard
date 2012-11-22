@@ -105,6 +105,12 @@
 
           <div ng-controller='PathsCtrl' class='tab-pane active' id='pages-tab'>
 
+            <div id="help-welcome-create-blog"
+                ng-show="!listItems.length">
+              <p>Welcome to your new website!</p>
+              <p>Click <b>Create...</b> and then <b>New Blog</b> to create a new blog.</p>
+            </div>
+
             <div class='selection-related-btns'>
               <a id='create-page-in-folder-btn' class='btn' ng-click='createPageInFolder()' ng-show='oneFolderSelected'>Create page in folder</a>
 
