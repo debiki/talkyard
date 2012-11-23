@@ -73,12 +73,17 @@ function fold($elem, how) {
 };
 
 
-function $foldInLeft() {
+d.i.$foldInLeft = function() {
   // COULD optimize: See $slideUp(…), but pointless right now.
   var $i = $(this);
   var realHeight = $i.height();
   var realWidth = $i.width();
   $i.height(30).width(0).show();
+  if ($i.parent().css('display') === 'table-row') {
+    // jQuery.show has set `display: list-item`, if the parent is
+    // an <ol>. That messes up the (end of the) animation.
+    $i.css({'display': 'table-cell'});
+  }
   fold($i, {
     firstProps: {width: realWidth},
     firstDuration: 400,
@@ -150,39 +155,7 @@ function $removeClosestForms() {
 };
 
 
-// Slide in reply, edit and rate forms -- I think it's
-// easier to understand how they are related to other elems
-// if they slide in, instead of just appearing abruptly.
-// If $where is specified, $form is appended to the thread 
-// $where.closest('.dw-t'), otherwise it is assumed that it has
-// alread been inserted appropriately.
-d.i.slideInActionForm = function($form, $where) {
-  if ($where) {
-    // Insert before the first .dw-fs, or the .dw-res, or append.
-    var $thread = $where.closest('.dw-t');
-    var $oldFormOrCmts = $thread.children('.dw-fs, .dw-res').filter(':eq(0)');
-    if ($oldFormOrCmts.length) $oldFormOrCmts.before($form);
-    else $thread.append($form);
-  }
-  else $where = $form.closest('.dw-t');
-  // Slide in from left, if <form> siblings ordered horizontally.
-  // Otherwise slide down (siblings ordered vertically).
-  if ($where.filter('.dw-hor, .dw-debate').length && // COULD rm .dw-debate?
-      !$form.closest('ol').filter('.dw-i-ts').length) {
-    $form.each($foldInLeft);
-  } else {
-    $form.each(d.i.$slideDown);
-  }
-
-  // Scroll form into view.
-  $form.queue(function(next){
-    $form.dwScrollIntoView();
-    next();
-  });
-};
-
-
-// Remove new-reply and rating forms on cancel, but 
+// Remove new-reply and rating forms on cancel, but
 // the edit form has some own special logic.
 $(function() {
   $('.debiki').delegate(

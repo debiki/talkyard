@@ -186,7 +186,11 @@ d.i.$showReplyForm = function(event, opt_where) {
       $replyFormParent.css('min-width', $anyHorizReplyBtn.outerWidth(true));
     }
 
-    d.i.slideInActionForm($replyFormParent);
+    // Slide in the reply form.
+    $replyFormParent.each(d.i.$foldInLeft).queue(function(next) {
+      $replyForm.dwScrollIntoView();
+      next();
+    });
   })();
 };
 
