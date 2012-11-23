@@ -188,7 +188,6 @@ d.i.$showReplyForm = function(event, opt_where) {
       $replyFormParent.css('min-width', $anyHorizReplyBtn.outerWidth(true));
     }
 
-    d.i.SVG.drawArrowsToReplyForm($replyFormParent); // is this needed?
     d.i.slideInActionForm($replyFormParent);
   })();
 };

@@ -44,6 +44,7 @@ body.dw-render-layout-pending .debiki.dw-debate {
 .DW.DW .dw-res {
   margin: 0;
   padding: 0; /* if no CSS reset included */
+  line-height: normal; /* or PNG arrows and [-] offset incorrectly */
 }
 
 
@@ -105,27 +106,33 @@ For that to work, this is needed: */
   width: 25em; /* avoids > 1 column for this depth */
 }
 
-.dw-depth-1.dw-hor > .dw-res {
-  width: 9999px; /* for now. COULD calculate in JavaScript instead
-                    — the hardcoded width is almost always too large, but
-                    sometimes too small and then causes float drop.
-                Or use display: table-cell, although breaks old IE versions ? */
-}
 
-
-/* Show column separator and resizor on hower. */
-.DW.DW .dw-hor > .dw-res > * > .ui-resizable-handle.ui-resizable-e {
+/* Draw dashed line between horizontal threads, on hower. */
+.DW.DW .dw-hor > .dw-res > li > .dw-t > .ui-resizable-e {
   border-right: 2px dashed transparent;
 }
-.DW.DW .dw-hor > .dw-res > :hover > .ui-resizable-handle.ui-resizable-e {
+.DW.DW .dw-hor > .dw-res > li:hover > .dw-t > .ui-resizable-e {
   border-right-color: lightgray;
 }
 
-.dw-hor > .dw-res > li {
-  float: left;
-  padding: 0 27px 10px 0;
-  margin: 10px 23px 0 0;
+.dw-hor > .dw-res {
+  display: table-row; /* doesn't work in IE7, fine */
 }
+
+.dw-hor > .dw-res > li {
+  display: table-cell;
+  padding: 19px 0 10px 28px;
+}
+
+.dw-hor > .dw-res > li:first-child {
+  padding-left: 0;
+}
+
+.dw-hor > .dw-res > li > .dw-t {
+  padding: 0 27px 0 0;
+  margin: 0;
+}
+
 
 /* Empty space between a post and its child threads, when laid
  out horizontally. SVG relationship arrows drawn here. */
@@ -229,7 +236,6 @@ For that to work, this is needed: */
 
 /* A child, the root thread .dw-depth-0, floats left. */
 .debiki.dw-debate:after,
-.dw-t.dw-hor > .dw-res:after, /* children, .dw-t:s floats left */
 /* Makes the root post wrap its (floating) children,
 don't know if needed for other horizontal threads. */
 .dw-t.dw-hor > .dw-p:after,
@@ -345,7 +351,7 @@ JavaScript. Then I can still place all CSS stuff in this file. */
 }
 
 .dw-t > .dw-svg-fake-harrow {
-  top: -54px;
+  top: -62px;
   background-color: white;
   display: block;
   height: 10px;
@@ -353,7 +359,7 @@ JavaScript. Then I can still place all CSS stuff in this file. */
 
 .dw-t > .dw-svg-fake-harrow-end {
   display: block;
-  top: -54px;
+  top: -62px;
   background-color: white;
   display: block;
   height: 10px;
@@ -374,21 +380,26 @@ JavaScript. Then I can still place all CSS stuff in this file. */
   background-color: transparent;
   background: url(img/arrows-etcetera-gray.png) no-repeat 0 -225px;
   position: absolute;
-  top: -52px;
+  top: -60px;
   left: -44px;
   height: 59px;
   width: 39px;
 }
 
-.dw-t:last-child > .dw-svg-fake-hcurve {
-  z-index: 2; /* hide the horizontal arrow below */
+.dw-hor > .dw-res > li:last-child > .dw-t > .dw-svg-fake-hcurve,
+.dw-res > .dw-t:last-child > .dw-svg-fake-vcurve-short {
+  /* Hide parts of the end of the horizontal or vertical line that spans
+  all child threads, by placing this arrow's background on top.
+  (The rest of the line is hiddenb by .dw-svg-fake-varrow-hider-left
+  and certain .dw-svg-fake-harrow:s.) */
+  z-index: 2;
 }
 
 .dw-svg-fake-hcurve,
 .dw-svg-fake-hcurve-start {
   background: transparent url(img/arrows-etcetera-gray.png) no-repeat 0 0;
   position: absolute;
-  top: -52px;
+  top: -60px;
   left: -24px;
   height: 34px;
   width: 61px;
@@ -411,9 +422,10 @@ JavaScript. Then I can still place all CSS stuff in this file. */
   width: 38px;
 }
 
+/*
 .dw-svg-fake-arrow-hider {
   z-index: 2; /* hides the varrow or harrow */
-}
+
 
 .dw-svg-fake-varrow-hider-hi,
 .dw-svg-fake-varrow-hider-lo,

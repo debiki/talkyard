@@ -201,8 +201,8 @@ debiki.internal.makeSvgDrawer = function($) {
                  ' l -5 -7 m 5 7 l 8 -4';   // arrow end       v
       } else {
         // $to is placed to the right of $thread. Draw west-east curve.
-        xe += 10;
-        ye -= 13;
+        xe += 10 + 28; // 28 is the child thread's padding-left
+        ye -= 12;
         var dx = 40;
         var xm = (xe - xs - dx) / 2;
         var dy = 28;

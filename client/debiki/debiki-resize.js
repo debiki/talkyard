@@ -85,7 +85,7 @@ d.i.$threadToggleFolded = function() {
 // or a reply/rate/edit form is shown/resized, the east-most threads
 // will float-drop below the other threads.
 d.i.resizeRootThread = function() {
-  resizeRootThreadImpl();
+  //resizeRootThreadImpl();
 };
 
 
@@ -93,7 +93,7 @@ d.i.resizeRootThread = function() {
 // This almost avoids all float drops, when quickly resizing an element
 // (making it larger).
 d.i.resizeRootThreadExtraWide = function() {
-  resizeRootThreadImpl(true);
+  //resizeRootThreadImpl(true);
 };
 
 
@@ -106,15 +106,18 @@ d.i.resizeRootThreadExtraWide = function() {
 // after a while when the browser is (probably) done
 // doing its layout stuff.
 d.i.resizeRootThreadNowAndLater = (function(){
-  var handle;
+  //var handle;
   return function() {
+    /*
     d.i.resizeRootThread();
     if (handle) clearTimeout(handle);
     handle = setTimeout(d.i.resizeRootThread, 1500);
+    */
   };
 }());
 
 
+/*
 // Makes the root thread wide enough to contain all its child posts.
 // Unless this is done e.g. when child posts are resized or stacked eastwards,
 // or a reply/rate/edit form is shown/resized, the east-most threads
@@ -159,7 +162,7 @@ function resizeRootThreadImpl(extraWidth) {
   // float drop.
   // This also requires us to add 100px in debiki.css, see [3krdi2].
   $rootThread.width(requiredWidth + 100);
-};
+}; */
 
 
 })();

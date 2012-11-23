@@ -355,11 +355,11 @@ class HtmlForms(val config: HtmlConfig, xsrfToken: String,
           { _xsrfToken }
           {/* timeWaistWarning("reply", "is") */}
           <input type='hidden' id={Inp.Where} name={Inp.Where} value='' />
-          <p>
+          <div>
             <label for={Inp.Text}>Your reply:</label><br/>
             <textarea id={Inp.Text} name={Inp.Text} rows='13'
               cols='38'>{text}</textarea>
-          </p>
+          </div>
           { termsAgreement("Post as ...") }
           <div class='dw-submit-set'>
             <input class='dw-fi-cancel' type='button' value='Cancel'/>

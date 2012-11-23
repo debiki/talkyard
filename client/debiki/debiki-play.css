@@ -82,6 +82,16 @@ html.js body.dw-render-actions-pending .dw-as {
 /* === Threads === */
 
 
+/* Align horizontal replies properly.
+A certain reply form label, and the reply button title, might push the baseline
+downwards, for all sibling table cells to the right; this incorrectly offsets
+PNG arrows. */
+.dw-hor > .dw-res > .dw-fs-re label,
+.dw-hor-a.dw-p-as {
+  vertical-align: top;
+}
+
+
 /* === Posts === */
 
 /* Hide the reply form resize handle unless hovering the form. */
@@ -194,7 +204,7 @@ so there's some space for the SVG arrows. */
   margin-top: 35px;
 }
 .dw-hor:not(.dw-depth-0) > .dw-hor-a {
-  margin-top: 48px;a /* aligns with the .dw-p:s to the right, which
+  margin-top: 48px; /* aligns with the .dw-p:s to the right, which
                       have some padding */
 }
 
@@ -340,11 +350,11 @@ each other. I should rewrite, and try to avoid float:left?  (skip old IE) */
 }
 
 .dw-hor-a {
-  float: left;
   position: relative; /* curve image placed relative */
   padding-right: 20px;
   margin: 10px 16px 0 12px;
 }
+
 
 /* The reply button text can be customized, so it might be rather wide,
 so set max-width and line height. */
@@ -680,7 +690,9 @@ until they've been moved into the .dw-bd-blk > .dw-i-ts. */
 }
 
 .dw-hor > .dw-res > .dw-fs {
-  clear: none; /* or root post forms would be stacked vertically */
+  margin: 0;
+  padding-right: 19px;
+  padding-left: 0; /* nothing to the left */
 }
 
 .dw-fs form {
@@ -937,7 +949,7 @@ key presses).*/
 .dw-fs-re label {
   display: inline-block;
   margin-right: 0.4em;
-  margin-top: 0;
+  margin-top: 0 !important; 
   float: none; /* cancel Twitter Bootstrap's float: left */
   width: auto; /* cancel Twitter Bootstrap's width: NNNpx */
 }

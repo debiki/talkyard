@@ -8,28 +8,36 @@ debiki.internal.makeFakeDrawer = function($) {
   // to add these images of arrows instead.
 
   function initialize() {
-    // North-south arrows: (for vertical layout)
+    // Vertical layout
+    // ---------------
+
     $('.dw-depth-0 .dw-t:has(.dw-t)').each(function(){
       $(this).prepend("<div class='dw-arw dw-svg-fake-varrow'/>");
       $(this).prepend("<div class='dw-arw dw-svg-fake-varrow-hider-hi'/>");
       $(this).prepend("<div class='dw-arw dw-svg-fake-varrow-hider-lo'/>");
     });
+
+    // Draw a  `-> arrow to $(this).
     $('.dw-depth-1 .dw-t:not(.dw-i-t)').each(function(){
-      var hider = $(this).filter(':last-child').length ?
-                    ' dw-svg-fake-arrow-hider' : '';
-      $(this).prepend(
-          '<div class="dw-arw dw-svg-fake-vcurve-short'+ hider +'"/>');
+      $(this).prepend('<div class="dw-arw dw-svg-fake-vcurve-short"/>');
     });
+
+    // If this is the last child, then just below the `-> we just added,
+    // the vertical line from which `-> originates continues downwards.
+    // Hide the remaining part of that line.
     $('.dw-depth-1 .dw-t:not(.dw-i-t):last-child').each(function(){
       $(this).prepend("<div class='dw-arw dw-svg-fake-varrow-hider-left'/>");
     });
+
     // COULD fix: Inline threads:  .dw-t:not(.dw-hor) > .dw-i-ts > .dw-i-t
     // COULD fix: First one: .dw-t:not(.dw-hor) > .dw-i-ts > .dw-i-t:first-child
     // COULD fix: Root post's inline threads:  .dw-t.dw-hor > .dw-i-ts > .dw-i-t
   }
 
-  // Points on the Reply button, and branches out to the replies to the
-  // right of the button.
+  // Horizontal layout
+  // -----------------
+
+  // Points on the Reply button, and continues eastwards, spans all replies.
   var replyBtnBranchingArrow =
       '<div class="dw-arw dw-svg-fake-hcurve-start"/>' + // branches out
       '<div class="dw-arw dw-svg-fake-harrow"></div>';  // extends branch
@@ -37,13 +45,14 @@ debiki.internal.makeFakeDrawer = function($) {
   var horizListItemEndArrow =
       '<div class="dw-arw dw-svg-fake-hcurve"/>';
 
-  // Arrows to each child thread.
+  // Draw arrows to reply button and child threads.
   function $initPostSvg() {
-    var $post = $(this).filter('.dw-p').dwBugIfEmpty();
+    var $post = $(this).filter('.dw-p').dwBugIfEmpty('DwE2KR3');
     var $thread = $post.closest('.dw-t');
     var $parentThread = $thread.parent().closest('.dw-t');
-    // If this is a horizontally laid out thread that has an always visible
-    // Reply button, draw an arrow to that button.
+
+    // Draw arrow to reply button, i this is a horizontally laid out thread
+    // (with an always visible Reply button).
     if ($thread.is('.dw-hor')) {
       var childCount = $thread.find('.dw-res > li').length;
       var arrowsHtml = childCount === 1 ?
@@ -52,13 +61,17 @@ debiki.internal.makeFakeDrawer = function($) {
       $thread.children('.dw-t-vspace').append(arrowsHtml);
     }
 
+    // Draw arrow to this thread from any horizontally laid out parent thread.
     if ($parentThread.is('.dw-hor')) {
-      // There's a horizontal line above; make it branch out to this thread.
+      // There's a horizontal line above that spans this thread and all
+      // siblings; make the line branch out to this thread.
       $thread.prepend(horizListItemEndArrow);
-      if ($thread.is(':last-child')) {
-        // The line above continues above this thread although there is
-        // no threads to the right. So hide the end of that horizontal line.
-        // (CSS makes these three <div>s actually hide it).
+
+      // If this is the last child thread, hide the tail of the horizontal
+      // line (since there's nothign more to the right).
+      var $listItem = $thread.parent().dwCheckIs('li', 'DwE90dk2');
+      if ($listItem.is(':last-child')) {
+        // CSS makes these <div>s actually hide the line.
         $thread.prepend(
             '<div class="dw-svg-fake-harrow"></div>' +
             '<div class="dw-svg-fake-harrow-end"></div>');

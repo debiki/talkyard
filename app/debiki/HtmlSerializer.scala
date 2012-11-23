@@ -492,6 +492,15 @@ case class HtmlPageSerializer(
         }</li>
       }
 
+      val horizontalLayout = parentReplyBtn.nonEmpty
+      if (horizontalLayout) {
+        // Make this thread resizable, eastwards, by wrapping it in a <div>.
+        // The <li> has display: table-cell and cannot be resized, so we'll
+        // resize the <div> instead.
+        thread = thread.copy(label = "div")
+        thread = <li>{ thread }</li>
+      }
+
       // For inline comments, add info on where to place them.
       // COULD rename attr to data-where, that's search/replace:able enough.
       if (p.where isDefined) thread = thread % Attribute(
