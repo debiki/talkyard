@@ -106,9 +106,22 @@
           <div ng-controller='PathsCtrl' class='tab-pane active' id='pages-tab'>
 
             <div id="help-welcome-create-blog"
-                ng-show="!listItems.length">
+                ng-show="!pageStats.blogOrForumExists">
               <p>Welcome to your new website!</p>
               <p>Click <b>Create...</b> and then <b>New Blog</b> to create a new blog.</p>
+            </div>
+
+            <div id="help-create-blog-article"
+                ng-show="pageStats.blogExistsButNoBlogPosts">
+              <p>To create a blog article:</p>
+              <ol>
+                <li>Go to the blog main page — click on the
+                  <em>blog main page</em>, below.
+                </li>
+                <li>On the blog main page, click <b>New Blog Post</b>,
+                  at the very top of the page.
+                </li>
+              </ol>
             </div>
 
             <div class='selection-related-btns'>

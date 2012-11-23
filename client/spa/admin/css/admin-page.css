@@ -43,6 +43,14 @@ h1 {
   margin: 2em 0;
 }
 
+#help-create-blog-article {
+  padding: 1em 0;
+}
+
+#help-create-blog-article ol {
+  margin: 0 0 9px 25px;
+}
+
 #page-tree-container ol {
   margin-top: 1.5em;
 }
