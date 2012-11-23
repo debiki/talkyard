@@ -946,6 +946,12 @@ key presses).*/
   margin-top: 0;
 }
 
+.dw-hor > .dw-res > .dw-fs-re > form {
+  /* There's nothing to the left. */
+  margin-left: 0;
+  padding-left: 0;
+}
+
 .dw-fs-re label {
   display: inline-block;
   margin-right: 0.4em;
