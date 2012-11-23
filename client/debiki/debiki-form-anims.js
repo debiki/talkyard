@@ -119,7 +119,6 @@ d.i.removeInstantly = function($form) {
   // Refresh SVG threads. When the last animation step callback was
   // invoked, the $form had not yet been remove()d.
   $thread.each(d.i.SVG.$drawPost).each(d.i.SVG.$drawParents);
-  d.i.resizeRootThread();
 };
 
 
@@ -166,8 +165,6 @@ d.i.slideInActionForm = function($form, $where) {
     else $thread.append($form);
   }
   else $where = $form.closest('.dw-t');
-  // Extra width prevents float drop.
-  d.i.resizeRootThreadExtraWide();
   // Slide in from left, if <form> siblings ordered horizontally.
   // Otherwise slide down (siblings ordered vertically).
   if ($where.filter('.dw-hor, .dw-debate').length && // COULD rm .dw-debate?
@@ -177,15 +174,11 @@ d.i.slideInActionForm = function($form, $where) {
     $form.each(d.i.$slideDown);
   }
 
-  // Scroll form into view, and cancel extra width.
-  // Or add even more width, to prevent float drops
-  // -- needs to be done also when sliding downwards, since that sometimes
-  // makes the root thread child threads wider.
+  // Scroll form into view.
   $form.queue(function(next){
-      d.i.resizeRootThreadNowAndLater();
-      $form.dwScrollIntoView();
-      next();
-    });
+    $form.dwScrollIntoView();
+    next();
+  });
 };
 
 

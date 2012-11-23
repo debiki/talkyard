@@ -201,10 +201,6 @@ function renderPageEtc() {
     d.i.initUtterscrollAndTips();
   }
 
-  // When you zoom in or out, the width of the root thread might change
-  // a few pixels — then its parent should be resized so the root
-  // thread fits inside with no float drop.
-  d.u.zoomListeners.push(d.i.resizeRootThread);
 
   var steps = [];
 
@@ -236,11 +232,7 @@ function renderPageEtc() {
 
   steps.push(d.i.scrollToUrlAnchorPost);
 
-  // Resize the article, now when the page has been rendered, and all inline
-  // threads have been placed and can be taken into account.
   steps.push(function() {
-    d.i.resizeRootThread();
-    $('html').removeClass('dw-render-layout-pending');
     debiki.scriptLoad.resolve();
   });
 

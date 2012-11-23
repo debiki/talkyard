@@ -27,9 +27,6 @@ d.i.patchPage = (patches) ->
 
     $newThread.dwFindPosts!each d.i.$initPostsThread
 
-    # Avoid float drop, in caze thread added to horizontal list.
-    d.i.resizeRootThread!
-
     drawArrows = ->
       # Really both $drawTree, and $drawParents for each child post??
       # (Not $drawPost; $newThread might have child threads.)

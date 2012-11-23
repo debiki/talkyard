@@ -76,10 +76,8 @@ d.i.$showReplyForm = function(event, opt_where) {
     $replyForm.resizable({
         alsoResize: $replyForm.find('textarea'),
         resize: function() {
-          d.i.resizeRootThreadExtraWide(); // COULD rm textarea width?
           $post.each(d.i.SVG.$drawParents);
         },
-        stop: d.i.resizeRootThreadNowAndLater,
         minHeight: 180,  // or lower parts of form might overflow
         minWidth: 210  // or Cancel button might float drop
       });

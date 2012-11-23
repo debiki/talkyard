@@ -4,26 +4,6 @@
 /* ===== Page and threads ===== */
 
 
-/* Avoid float dropping of root post replies, early when the page width
-has not been calculated.
-1. Details: The root post might be too narrow and stuff might float drop,
-which is ugly, and could rersult in SVG arrows being drawn incorrectly.
-Avoid this, by making the root thread wide, whilst rendering the page.
-When done, resizeRootThread, in debiki.js (which is loaded asynchronously),
-will size the root thread properly.
-2. It's a bad idea to completely hide comments until the layout is completed:
-any <footer> would flash in the middle of the page (just below the article)
-and then moments later be pushed downwards off screen, by all comments,
-when they appear.
-3. Sometimes <html> elem classes cannot be edited (namely in certain WordPress
-themes) so make all this work also when Debiki's classes are placed on the
-<body>.
-*/
-html.dw-render-layout-pending .debiki.dw-debate,
-body.dw-render-layout-pending .debiki.dw-debate {
-  width: 200200px;
-}
-
 .dw-debate {
   position: relative;
 }
@@ -89,12 +69,8 @@ and two folded threads would overlap, unless: */
   margin: 8px 0 0 5px;
 }
 
-/* The root thread's parent elem is resized to be as wide as the root thread,
-to avoid float drop. See resizeRootThreadImpl() in debiki.js.
-For that to work, this is needed: */
 .dw-depth-0.dw-t {
-  /* Make the root thread not [expand eastwards to fill up its
-  parent's width]. */
+  /* Without this, SVG arrows are cropped a bit to the right. Why? Weird? */
   float: left;
   /* Ensure the root thread fits inside its parent, if the parent
   width is set to the root thread's width. */
@@ -364,10 +340,8 @@ JavaScript. Then I can still place all CSS stuff in this file. */
   display: block;
   height: 10px;
   position: absolute;
-  /* 30px is enough, but because of a 100px bug workaround in
-  `resizeRootThreadImpl()` in debiki.js, it's 130px. [3krdi2]*/
-  right: -130px;
-  width: 130px;
+  right: -30px;
+  width: 30px;
 }
 
 .dw-svg-fake-varrow {

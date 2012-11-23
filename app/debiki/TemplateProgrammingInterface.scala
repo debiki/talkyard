@@ -211,8 +211,7 @@ class TemplateProgrammingInterface(
     "DW "+
     "dw-pri "+
     "dw-ui-simple "+
-    "dw-render-actions-pending "+
-    "dw-render-layout-pending "
+    "dw-render-actions-pending "
 
 
   def debikiDashbar = xml.Unparsed(views.html.dashbar(this).body)
