@@ -5,7 +5,8 @@ d = i: debiki.internal, u: debiki.v0.util
 bug = d.u.die2
 
 
-AdminModule = angular.module('AdminModule', [])
+# The 'ui' module is http://angular-ui.github.com/.
+AdminModule = angular.module('AdminModule', ['ui'])
 
 
 

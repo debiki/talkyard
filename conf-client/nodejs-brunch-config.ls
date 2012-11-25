@@ -105,6 +105,8 @@ exports.config =
 
         'public/res/debiki-spa-common.js':
           // ^client/vendor/bootstrap-.*.js
+           | ^client/vendor/angular-ui/module.js
+           | ^client/vendor/angular-ui/directives/jq/jq.js
            | ^client/debiki/debiki-util.js
            | ^client/spa/js/angular-util.ls
            | ^client/vendor/livescript/prelude-browser-min.js
@@ -135,7 +137,10 @@ exports.config =
       order:
         after: ['client/debiki/debiki.js']
         # bootstrap-popup.js extends -tooltip.js.
-        before: ['client/vendor/bootstrap-tooltip.js']
+        # module.js is required by AngularUI directives.
+        before: [
+          'client/vendor/bootstrap-tooltip.js',
+          'client/vendor/angular-ui/module.js']
 
     stylesheets:
       defaultExtension: 'styl'
