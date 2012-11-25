@@ -19,3 +19,6 @@
 [submodule "modules/angular-seed"]
 	path = modules/angular-seed
 	url = https://github.com/angular/angular-seed.git
+[submodule "modules/angular-ui"]
+	path = modules/angular-ui
+	url = https://github.com/angular-ui/angular-ui.git
