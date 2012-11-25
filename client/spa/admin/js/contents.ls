@@ -20,12 +20,32 @@ PrettyListItem =
     @title || @_displayPath
 
 
+  prettyUrl: ->
+    #bug 'DwE95R8' unless @isPage
+    if @path is '/' => '/ (homepage)'
+    else if !@isPage => @path + ' folder!'
+    else @path
+
+
   setDisplayPath: ({ forParentFolder }) ->
     @_displayPath = @path.replace forParentFolder, ''
     # Also drop any query string, e.g. ?view-new-page=<pageid>
     @_displayPath = @_displayPath.replace /\?.*/, ''
 
 
+  prettyRole: ->
+    switch @role
+      | 'BlogMainPage' => 'Blog main page'
+      | _ => ''
+
+
+  prettyRoleTooltip: ->
+    switch @role
+      | 'BlogMainPage' => 'A blog. Lists blog posts.'
+      | _ => ''
+
+
+  # COULD remove?
   prettyClarifications: ->
     roleClarified = switch @role
       | 'BlogMainPage' => ['blog main page']
@@ -35,7 +55,7 @@ PrettyListItem =
     isIndexPage = last(@path) == '/' && !@isFolder
     locationClarified =
       if isHomePage => ['homepage']
-      else if isIndexPage => ['index page']
+      #else if isIndexPage => ['index page']
       else []
 
     allClarifs = append roleClarified, locationClarified
@@ -45,6 +65,13 @@ PrettyListItem =
       clarifsText = '— ' + clarifsText
 
     clarifsText
+
+  prettyMenu: ->
+    'MainMenu#1'
+
+
+  prettyMenuTooltip: ->
+    'Menu item number 1 in a menu named "MainMenu" links to the page.'
 
 
   cssClassFolderOrPage: ->

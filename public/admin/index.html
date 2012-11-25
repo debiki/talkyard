@@ -63,7 +63,7 @@
                  ng-show="actionList.length">
               <thead>
                 <tr>
-                  <th class='row-selector'>
+                  <th class='row-selector'><!-- dupl code! -->
                     <label>
                       <input type='checkbox' ng-change='toggleAllChecked()'
                       ng-model='allSelected'>
@@ -77,7 +77,7 @@
               </thead>
               <tbody>
                 <tr ng-repeat='action in actionList'>
-                  <td class='row-selector'>
+                  <td class='row-selector'><!-- dupl code! -->
                     <label>
                       <input type='checkbox' ng-model='action.selected'
                           ng-click='onRowCheckedChange()'>
@@ -103,24 +103,25 @@
 
           <div ng-controller='PathsCtrl' class='tab-pane active' id='pages-tab'>
 
-            <div id="help-welcome-create-blog"
+            <div id="help-welcome-create-blog" class="help-tips"
                 ng-show="!pageStats.blogOrForumExists">
               <p>Welcome to your new website!</p>
               <p>Click <b>Create...</b> and then <b>New Blog</b> to create a new blog.</p>
             </div>
 
-            <div id="help-create-blog-article"
+            <div id="help-create-blog-article" class="help-tips"
                 ng-show="pageStats.blogExistsButNoBlogPosts">
               <p>To create a blog article:</p>
               <ol>
-                <li>Go to the blog main page — click on the
-                  <em>blog main page</em>, below.
+                <li>Go to the blog main page — click on it, below.
                 </li>
                 <li>On the blog main page, click <b>New Blog Post</b>,
                   at the very top of the page.
                 </li>
               </ol>
             </div>
+
+            <div style="clear: both;"></div><!-- clear any floating tips -->
 
             <div class='selection-related-btns'>
               <a id='create-page-in-folder-btn' class='btn' ng-click='createPageInFolder()' ng-show='oneFolderSelected'>Create page in folder</a>
@@ -206,6 +207,53 @@
               <label>Filter paths: <input ng-model="pathFilterText"/></label>
                 -->
 
+              <table id="page-table" class="table">
+                <thead>
+                  <tr>
+                    <th class='row-selector'><!-- dupl code! -->
+                      <!-- Why would one need to select all pages?
+                      <label>
+                        <input type='checkbox'
+                            xxng-change='toggleAllChecked()'
+                            xxng-model='allSelected'>
+                      </label> -->
+                    </th>
+                    <th>Title</th>
+                    <th><div ui-jq="tooltip" title="Influences how the page is rendered and what you can do with it.">Role</th>
+                    <th><div ui-jq="tooltip" title="A menu lists links to pages on the website.">Menu</div></th>
+                    <th>URL</th>
+                    <th>Authors</th>
+                    <th>Last modified</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr ng-repeat="page in listItems | filterProp:'path':pathFilterText"
+                      ng-show="page.isPage">
+                    <td class='row-selector'><!-- dupl code! -->
+                      <label>
+                        <input type='checkbox'
+                            ng-model='page.included'
+                            xxng-click='onRowCheckedChange()'
+                            ng-click='updateSelections()'>
+                      </label>
+                    </td>
+                    <td class='page-title'>
+                      <a href="{{ page.path }}">Page Title <i>(todo)</i></a>
+                      <span class="page-notfs important">{{ page.stringifyImportantMarks() }}</span>
+                      <span class="page-notfs">{{ page.stringifyOtherMarks() }}</span>
+                    </td>
+                    <td><div data-original-title="{{ page.prettyRoleTooltip() }}" ui-jq="tooltip">{{ page.prettyRole() }}</div></td>
+                    <td><div data-original-title="{{ page.prettyMenuTooltip() }}" ui-jq="tooltip">{{ page.prettyMenu() }}</div></td>
+                    <td>{{ page.prettyUrl() }}</td>
+                    <td></td>
+                    <td></td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <!--
+              <br><br>
+              <hr>
               <ol id='page-tree' class='{{"full-paths-"+ showFullPaths}}'>
                 <li ng-show="item.hideCount == 0 || item.included"
                     ng-repeat="item in listItems | filterProp:'path':pathFilterText"
@@ -226,20 +274,22 @@
                       Title: <a href='{{item.path}}' target='_blank'>{{item.title}}</a><br>
                       Author: <a href="#">{{item.authors}}</a><br>
                       Published: <span>2012-05-03 22:40</span>
-                      <!-- <div class='actions'>
+                      <!- <div class='actions'>
                         <a href='{{item.path + "?move-page"}}'>Move</a>
                         <a href='{{item.path + "?rename-page"}}'>Rename</a>
-                      </div> -->
+                      </div> ->
                     </div>
-                    <!-- <div ng-switch-default class='folder-info'>
+                    <!- <div ng-switch-default class='folder-info'>
                       <div class='actions'>
                         <a>Create page</a>
                         <a>Move folder</a>
                       </div>
-                    </div> -->
+                    </div> - >
                   </div>
                 </li>
               </ol>
+              -->
+
             </div>
           </div>
 
@@ -301,5 +351,5 @@
 </div>
 </body>
 </html>
-<!-- vim: fdm=marker et ts=2 sw=2 fo=tcqwn list
+<!-- vim: fdm=marker et ts=2 sw=2 fo=tcqwn list tw=0
 -->

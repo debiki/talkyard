@@ -5,6 +5,12 @@ h1 {
   margin-bottom: 35px;
 }
 
+.btn {
+  /* Cancel Twitter Bootstrap's 14px .btn font size.
+    (I use Verdana, which is a fairly large font.) */
+  font-size: 13px;
+}
+
 .instruction-list {
   padding: 0 0 1.5em 25px;
 }
@@ -39,16 +45,35 @@ h1 {
   font-style: italic;
 }
 
-#help-welcome-create-blog {
-  margin: 2em 0;
+[ui-jq=tooltip] {
+  /* Make the tag shrink to fit only the contained text,
+  so the tooltip points on the text (and not on whitespace
+  *after* the text, in a <tr><td> that's mostly empty.) */
+  float: left;
 }
 
-#help-create-blog-article {
-  padding: 1em 0;
+/* Don't lett Debiki's other styles affect Bootstrap's tooltip text */
+.tooltip {
+  white-space: normal !important;
+  font-size: 13px !important;
+  font-weight: normal !important;
+  font-style: normal !important;
+}
+
+.help-tips {
+  float: left;
+  padding: 1em 1.5em;
+  margin: 1.3em 0 1.5em;
+  box-shadow: 3px 3px 5px hsl(0, 0%, 53%);
+  border: 1px solid lightgray;
 }
 
 #help-create-blog-article ol {
   margin: 0 0 9px 25px;
+}
+
+#page-table td.page-title {
+  color: hsl(211, 35%, 30%);
 }
 
 #page-tree-container ol {
