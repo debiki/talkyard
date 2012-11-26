@@ -22,9 +22,11 @@ PrettyListItem =
 
   prettyUrl: ->
     #bug 'DwE95R8' unless @isPage
+    # Remove any '?view-new-page=...&passhash=...' query string.
+    prettyPath = @path.replace /\?.*/, ''
     if @path is '/' => '/ (homepage)'
-    else if !@isPage => @path + ' folder!'
-    else @path
+    else if !@isPage => prettyPath + ' folder!'
+    else prettyPath
 
 
   setDisplayPath: ({ forParentFolder }) ->
