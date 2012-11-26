@@ -17,6 +17,7 @@
 <script src="http://cdnjs.cloudflare.com/ajax/libs/modernizr/2.5.3/modernizr.min.js"></script>
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.js"></script>
 <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.0.1/angular.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.0.1/angular-sanitize.min.js"></script>
 <script>
   var debiki = { v0: { util: {} }, internal: { $: jQuery } };
   debiki.scriptLoad = $.Deferred();
@@ -233,7 +234,7 @@
                       </label>
                     </td>
                     <td class='page-title'>
-                      <a href="{{ page.path }}">Page Title <i>(todo)</i></a>
+                      <a href="{{ page.path }}" ng-bind-html="page.title"></a>
                       <span class="page-notfs important">{{ page.stringifyImportantMarks() }}</span>
                       <span class="page-notfs">{{ page.stringifyOtherMarks() }}</span>
                     </td>

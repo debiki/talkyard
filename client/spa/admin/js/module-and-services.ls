@@ -6,7 +6,7 @@ bug = d.u.die2
 
 
 # The 'ui' module is http://angular-ui.github.com/.
-AdminModule = angular.module('AdminModule', ['ui'])
+AdminModule = angular.module('AdminModule', ['ui', 'ngSanitize'])
 
 
 

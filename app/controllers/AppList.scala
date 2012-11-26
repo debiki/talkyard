@@ -225,6 +225,9 @@ object AppList extends mvc.Controller {
     if (pageMeta.parentPageId.isDefined)
       data += "parentPageId" -> JsString(pageMeta.parentPageId.get)
 
+    if (pageMeta.cachedTitle.isDefined)
+      data += "title" -> JsString(pageMeta.cachedTitle.get)
+
     toJson(data)
   }
 
