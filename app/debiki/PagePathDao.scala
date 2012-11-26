@@ -120,6 +120,11 @@ trait CachingPagePathDao extends PagePathDao {
       orCacheAndReturn = super.loadPageMeta(pageId))
 
 
+  def uncachePageMeta(pageId: String) {
+    removeFromCache(pageMetaByIdKey(pageId))
+  }
+
+
   private def _pathWithIdByPathKey(pagePath: PagePath) =
     s"$tenantId|${pagePath.path}|PagePathByPath"
 

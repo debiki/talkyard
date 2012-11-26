@@ -7,8 +7,7 @@ package debiki
 import com.debiki.v0._
 import controllers._
 import java.{util => ju}
-import scala.xml.NodeSeq
-import EmailNotfPrefs.EmailNotfPrefs
+import DebikiHttp._
 import Prelude._
 
 
@@ -90,22 +89,34 @@ class TenantDao(protected val tenantDbDao: ChargingTenantDbDao)
    */
   def savePageActions(pageReq: PageRequest[_], actions: List[Action])
         : Seq[Action] = {
-    savePageActions(pageReq, pageReq.page_!, actions)
+    savePageActionsImpl(pageReq, pageReq.page_!, actions, pageReq.pageMeta)
   }
 
 
   def savePageActions(request: DebikiRequest[_], page: Debate,
         actions: List[Action]): Seq[Action] = {
+    val pageMeta = tenantDbDao.loadPageMeta(page.id) getOrElse
+      throwNotFound("DwE115Xf3", s"Found no meta for page ${page.id}")
+    savePageActionsImpl(request, page, actions, pageMeta)
+  }
 
+
+  protected def savePageActionsImpl(request: DebikiRequest[_], page: Debate,
+        actions: List[Action], pageMeta: PageMeta): Seq[Action] = {
     if (actions isEmpty)
       return Nil
 
     val actionsWithId = tenantDbDao.savePageActions(page.id, actions)
+    val pageWithNewActions = page ++ actionsWithId
+
+    val newMeta = PageMeta.forChangedPage(pageMeta, pageWithNewActions)
+    if (newMeta != pageMeta)
+      tenantDbDao.updatePageMeta(newMeta) // BUG: race condition
+                        // Could fix by using Optimistic Concurrency Control?
 
     // Notify users whose actions were affected.
     // BUG: notification lost if server restarted here.
     // COULD rewrite Dao so the notfs can be saved in the same transaction:
-    val pageWithNewActions = page ++ actionsWithId
     val notfs = NotfGenerator(pageWithNewActions, actionsWithId).generateNotfs
     tenantDbDao.saveNotfs(notfs)
 

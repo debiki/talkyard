@@ -40,13 +40,14 @@ class CachingTenantDao(tenantDbDao: ChargingTenantDbDao)
   with CachingUserDao {
 
 
-  override def savePageActions(request: DebikiRequest[_], page: Debate,
-        actions: List[Action]): Seq[Action] = {
+  override def savePageActionsImpl(request: DebikiRequest[_], page: Debate,
+        actions: List[Action], pageMeta: PageMeta): Seq[Action] = {
 
     if (actions isEmpty)
       return Nil
 
-    val actionsWithId = super.savePageActions(request, page, actions)
+    val actionsWithId =
+      super.savePageActionsImpl(request, page, actions, pageMeta)
 
     // Possible optimization: Examine all actions, and refresh cache only
     // if there are e.g. EditApp:s or approved Post:s (but ignore Edit:s --
@@ -55,7 +56,8 @@ class CachingTenantDao(tenantDbDao: ChargingTenantDbDao)
 
     // Who should know about all these uncache-this-on-change-
     // -of-that relationships? For now:
-    uncacheConfigMap(pageId = page.id)
+    uncacheConfigMap(page.id)
+    uncachePageMeta(page.id)
 
     // Would it be okay to simply overwrite the in mem cache with this
     // updated page? — Only if I make `++` avoid adding stuff that's already
