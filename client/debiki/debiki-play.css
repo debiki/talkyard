@@ -42,18 +42,25 @@ del {
 /* === Dashbar === */
 
 #debiki-dashbar {
-  background: #555;
+  background: black;
 }
 
-#debiki-dashbar .debiki-dashbar-logo {
+#debiki-dashbar .debiki-dashbar-logo img {
+  width: 26px;
+  padding: 0;
+  margin: 0;
+  position: relative;
 }
 
 #debiki-dashbar a {
   display: inline-block;
-  padding: 6px 10px;
-  color: #ddd;
+  color: hsl(0, 0%, 87%);
   font-family: Verdana, sans-serif;
   text-decoration: none;
+  font-weight: bold;
+  height: 100%;
+  padding: 5px 7px 6px 7px;
+  vertical-align: middle;
 }
 
 #debiki-dashbar a:hover {
