@@ -88,6 +88,8 @@ abstract class TenantDbDao {
 
   def loadPageMeta(pageId: String): Option[PageMeta]
 
+  def updatePageMeta(meta: PageMeta)
+
   def movePages(pageIds: Seq[String], fromFolder: String, toFolder: String)
 
   def moveRenamePage(pageId: String,
@@ -375,6 +377,11 @@ class ChargingTenantDbDao(
   def loadPageMeta(pageId: String): Option[PageMeta] = {
     _chargeForOneReadReq()
     _spi.loadPageMeta(pageId)
+  }
+
+  def updatePageMeta(meta: PageMeta) {
+    _chargeForOneReadReq()
+    _spi.updatePageMeta(meta)
   }
 
   def movePages(pageIds: Seq[String], fromFolder: String, toFolder: String) {
