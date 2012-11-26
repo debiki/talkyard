@@ -60,6 +60,14 @@ object PageMeta {
       modificationDati = creationDati, pageRole = pageRole,
       parentPageId = parentPageId)
 
+  def forChangedPage(originalMeta: PageMeta, changedPage: Debate): PageMeta = {
+    require(changedPage.id == originalMeta.pageId)
+    originalMeta.copy(
+      cachedTitle = changedPage.titleText,
+      modificationDati =
+        changedPage.modificationDati getOrElse originalMeta.modificationDati)
+  }
+
   case class AuthorInfo(roleId: String, displayName: String)
 }
 
@@ -69,14 +77,19 @@ case class PageMeta(
   pageId: String,
   pageRole: PageRole = PageRole.Any,
   parentPageId: Option[String] = None,
-  status: PageStatus = PageStatus.Draft,
   cachedTitle: Option[String] = None,
   creationDati: ju.Date,
   modificationDati: ju.Date,
   cachedPublTime: Option[ju.Date] = None,
   cachedSgfntMtime: Option[ju.Date] = None,
   cachedAuthors: List[PageMeta.AuthorInfo] = Nil,
-  cachedCommentCount: Int = 0)
+  cachedCommentCount: Int = 0) {
+
+  def status: PageStatus =
+    if (cachedPublTime.isDefined) PageStatus.Published
+    else PageStatus.Draft
+
+}
 
 
 
