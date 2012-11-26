@@ -4,12 +4,14 @@
 
 package com.debiki.v0
 
+import java.{util => ju}
+
 
 object PageStuff {
 
-  def apply(path: PagePath, actions: Debate): PageStuff = {
-    val emptyMeta = PageMeta(actions.id)
-    PageStuff(emptyMeta, path, actions)
+  def forNewPage(path: PagePath, actions: Debate): PageStuff = {
+    val meta = PageMeta.forNewPage(actions.id)
+    PageStuff(meta, path, actions)
   }
 
 }
@@ -48,15 +50,33 @@ case class PageStuff( // COULD reneame to Page? if I rename Page to PageActions
 
 
 object PageMeta {
-  val forUnknownPage = PageMeta(pageId = "?")
+
+  def forNewPage(
+        pageId: String = "?",
+        creationDati: ju.Date = new ju.Date,
+        pageRole: PageRole = PageRole.Any,
+        parentPageId: Option[String] = None) =
+    PageMeta(pageId = pageId, creationDati = creationDati,
+      modificationDati = creationDati, pageRole = pageRole,
+      parentPageId = parentPageId)
+
+  case class AuthorInfo(roleId: String, displayName: String)
 }
+
 
 
 case class PageMeta(
   pageId: String,
   pageRole: PageRole = PageRole.Any,
-  parentPageId: Option[String] = None) {
-}
+  parentPageId: Option[String] = None,
+  status: PageStatus = PageStatus.Draft,
+  cachedTitle: Option[String] = None,
+  creationDati: ju.Date,
+  modificationDati: ju.Date,
+  cachedPublTime: Option[ju.Date] = None,
+  cachedSgfntMtime: Option[ju.Date] = None,
+  cachedAuthors: List[PageMeta.AuthorInfo] = Nil,
+  cachedCommentCount: Int = 0)
 
 
 
@@ -99,4 +119,23 @@ object PageStatus {
   case object Purged extends PageStatus
 }
 */
+
+
+/**
+ * The page status, see debiki-for-developers.txt #9vG5I.
+ */
+sealed abstract class PageStatus
+object PageStatus {
+  // COULD rename to PrivateDraft, becaus ... other pages with limited
+  // visibility might be considered Drafts (e.g. pages submitted for review).
+  case object Draft extends PageStatus
+  //COULD rename to Normal, because access control rules might result in
+  // it effectively being non-pulbished.
+  case object Published extends PageStatus
+
+  case object Deleted extends PageStatus
+  val All = List(Draft, Published, Deleted)
+}
+
+
 

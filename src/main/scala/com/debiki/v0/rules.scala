@@ -24,38 +24,6 @@ case class RequestInfo(
 }
 
 
-// Remove, use a twist of PageStuff instead? With .actions = None?
-case class PageDetails(
-  status: PageStatus,
-  pageRole: PageRole,
-  parentPageId: Option[String],
-  cachedTitle: Option[String],
-  cachedPublTime: Option[ju.Date],
-  cachedSgfntMtime: Option[ju.Date],
-  cachedAuthors: List[PageDetails.AuthorInfo],
-  cachedCommentCount: Int)
-
-object PageDetails {
-  case class AuthorInfo(roleId: String, displayName: String)
-}
-
-
-/** The page status, see debiki-for-developers.txt #9vG5I.
- */
-// Move to page-meta.scala?
-sealed abstract class PageStatus
-object PageStatus {
-  // COULD rename to PrivateDraft, becaus ... other pages with limited
-  // visibility might be considered Drafts (e.g. pages submitted for review).
-  case object Draft extends PageStatus
-  //COULD rename to Normal, because access control rules might result in
-  // it effectively being non-pulbished.
-  case object Published extends PageStatus
-
-  case object Deleted extends PageStatus
-  val All = List(Draft, Published, Deleted)
-}
-
 
 sealed abstract class PageSortOrder
 object PageSortOrder {
