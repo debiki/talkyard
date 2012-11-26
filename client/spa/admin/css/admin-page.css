@@ -22,6 +22,7 @@ h1 {
 .selection-related-btns {
   min-height: 50px; /* if no buttons shown */
   margin: 5px 0;
+  clear: both; /* clear any floating .help-tips */
 }
 
 .selection-related-btns > * {
@@ -63,7 +64,7 @@ h1 {
 .help-tips {
   float: left;
   padding: 1em 1.5em;
-  margin: 1.3em 0 1.5em;
+  margin: 1.3em 0 3em;
   box-shadow: 3px 3px 5px hsl(0, 0%, 53%);
   border: 1px solid lightgray;
 }
