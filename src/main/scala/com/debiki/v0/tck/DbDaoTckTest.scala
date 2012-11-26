@@ -270,7 +270,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
       val debateBadLogin = Debate(guid = "?", posts =
           T.post.copy(id = "1", loginId = "9999999")::Nil) // bad login id
       //SLog.info("Expecting ORA-02291: integrity constraint log message ------")
-      dao.createPage(PageStuff(defaultPagePath, debateBadLogin)
+      dao.createPage(PageStuff.forNewPage(defaultPagePath, debateBadLogin)
                     ) must throwAn[Exception]
       //SLog.info("------------------------------------------------------------")
     }
@@ -376,7 +376,8 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
 
     "create a debate with a root post" in {
       val debateNoId = Debate(guid = "?", posts = ex1_rootPost::Nil)
-      val page = dao.createPage(PageStuff(defaultPagePath, debateNoId))
+      val page = dao.createPage(
+        PageStuff.forNewPage(defaultPagePath, debateNoId))
       val actions = page.actions
       ex1_debate = actions
       actions.postCount must_== 1
@@ -421,7 +422,9 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
       pagePathsDetails must beLike {
         case List((pagePath, pageDetails)) =>
           pagePath must_== defaultPagePath.copy(pageId = pagePath.pageId)
-          pageDetails.status must_== PageStatus.Draft
+          // When I've implemented Draft/Published status, Draft will be
+          // the default:
+          pageDetails.status must_== PageStatus.Published
           // There page currently has no title.
           // It's published by default though.
           pageDetails.cachedTitle must_== None
@@ -488,7 +491,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
 
       "create a BlogMainPage" in {
         val pageNoId = PageStuff(
-          PageMeta(pageId = "?", pageRole = PageRole.BlogMainPage,
+          PageMeta.forNewPage("?", now, PageRole.BlogMainPage,
             parentPageId = None),
           defaultPagePath.copy(
             showId = true, pageSlug = "role-test-blog-main"),
@@ -513,7 +516,8 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
       "create a child BlogArticle" in {
         val pageNoId = PageStuff(
           PageMeta(pageId = "?", pageRole = PageRole.BlogArticle,
-            parentPageId = Some(blogMainPageId)),
+            parentPageId = Some(blogMainPageId),
+            creationDati = now, modificationDati = now),
           defaultPagePath.copy(
             showId = true, pageSlug = "role-test-blog-article"),
           Debate(guid = "?"))
@@ -1566,7 +1570,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
           offset = 0
         )
         pagePathsDetails must beLike {
-          case list: List[(PagePath, PageDetails)] =>
+          case list: List[(PagePath, PageMeta)] =>
             list.find(_._1 == finalPath) must beSome
         }
       }
