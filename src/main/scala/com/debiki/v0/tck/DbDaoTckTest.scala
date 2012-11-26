@@ -484,7 +484,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
 
     // -------- Page meta info
 
-    "load and save meta info" >> {
+    "create, load and save meta info" >> {
 
       var blogMainPageId = "?"
       var blogArticleId = "?"
@@ -550,15 +550,43 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
         childs.length must_== 0
       }
 
+      def testBlogArticleMeta(meta: PageMeta) = {
+        meta.pageId must_== blogArticleId
+        meta.pageRole must_== PageRole.BlogArticle
+        meta.parentPageId must_== Some(blogMainPageId)
+      }
+
       "find child pages of the BlogMainPage" in {
         val childs = dao.listChildPages(blogMainPageId,
           PageSortOrder.ByPublTime, limit = 10)
         childs.length must_== 1
         childs must beLike {
-          case List((pagePath, pageDetails)) =>
+          case List((pagePath, pageMeta)) =>
             pagePath.pageId must_== Some(blogArticleId)
-            pageDetails.pageRole must_== PageRole.BlogArticle
-            pageDetails.parentPageId must_== Some(blogMainPageId)
+            testBlogArticleMeta(pageMeta)
+        }
+      }
+
+      "update all BlogArticle meta info"  in {
+        val blogArticleMeta = dao.loadPageMeta(blogArticleId) match {
+          case Some(pageMeta: PageMeta) =>
+            testBlogArticleMeta(pageMeta) // extra test
+            pageMeta
+          case x => failure(s"Bad meta: $x")
+        }
+        // Edit meta
+        val nextDay = new ju.Date(
+          blogArticleMeta.modificationDati.getTime + 1000 * 3600 * 24)
+        val newMeta = blogArticleMeta.copy(
+          pageRole = PageRole.Any,
+          parentPageId = None,
+          cachedTitle = Some("NewCachedPageTitle"),
+          modificationDati = nextDay)
+        dao.updatePageMeta(newMeta)
+        // Reload and test
+        dao.loadPageMeta(blogArticleId) must beLike {
+          case Some(meta2: PageMeta) =>
+            meta2 must_== newMeta
         }
       }
     }
