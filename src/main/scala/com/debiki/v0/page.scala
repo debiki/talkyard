@@ -553,8 +553,14 @@ case class Debate (
    * return an even more recent action that does actually not affect
    * how this page is being rendered (e.g. a deletion of a pending edit).
    */
-  lazy val lastOrLaterVisibleAction: Option[Action] = {
-    def lastAction(a: Action, b: Action) =
+  def lastOrLaterVisibleAction: Option[Action] = lastAction  // for now
+
+
+  /**
+   * The most recent action.
+   */
+  lazy val lastAction: Option[Action] = {
+    def mostRecentAction(a: Action, b: Action) =
       if (a.ctime.getTime > b.ctime.getTime) a else b
 
     // Edits might be auto applied, so check their dates.
@@ -562,7 +568,7 @@ case class Debate (
     // Hmm, check everything, or a bug will pop up, later on.
     val all = allActions
     if (all isEmpty) None
-    else Some(all reduceLeft (lastAction(_, _)))
+    else Some(all reduceLeft (mostRecentAction(_, _)))
   }
 
 
@@ -574,6 +580,10 @@ case class Debate (
    */
   lazy val lastOrLaterChangeDate: Option[ju.Date] =
     lastOrLaterVisibleAction.map(_.ctime)
+
+
+  lazy val modificationDati: Option[ju.Date] =
+    lastAction.map(_.ctime)
 
 }
 
