@@ -46,7 +46,7 @@ object AppList extends mvc.Controller {
       limit = Int.MaxValue,
       offset = 0)
 
-    def renderPageListHtml(pagePathsDetails: Seq[(PagePath, PageDetails)]) =
+    def renderPageListHtml(pagePathsDetails: Seq[(PagePath, PageMeta)]) =
       <ol>{
         for ((pagePath, details) <- pagePathsDetails) yield {
           <li>
@@ -63,8 +63,8 @@ object AppList extends mvc.Controller {
         OkHtml(<html><body>{pageNode}</body></html>)
       case DebikiHttp.ContentType.Json =>
         OkSafeJson(toJson(Map("pages" -> (
-           pathsAndDetails map { case (pagePath, pageDetails) =>
-             jsonFor(pagePath, pageDetails)
+           pathsAndDetails map { case (pagePath, pageMeta) =>
+             jsonFor(pagePath, pageMeta)
            }))))
     }
   }
@@ -213,17 +213,17 @@ object AppList extends mvc.Controller {
 
 
   // COULD move to other file, e.g. DebikiJson.scala?
-  def jsonFor(pagePath: PagePath, pageDetails: PageDetails): JsValue = {
+  def jsonFor(pagePath: PagePath, pageMeta: PageMeta): JsValue = {
     var data = Map(
       "id" -> JsString(pagePath.pageId.get),
       "folder" -> JsString(pagePath.folder),
       "path" -> JsString(pagePath.path))
 
-    if (pageDetails.pageRole != PageRole.Any)
-      data += "role" -> JsString(pageDetails.pageRole.toString)
+    if (pageMeta.pageRole != PageRole.Any)
+      data += "role" -> JsString(pageMeta.pageRole.toString)
 
-    if (pageDetails.parentPageId.isDefined)
-      data += "parentPageId" -> JsString(pageDetails.parentPageId.get)
+    if (pageMeta.parentPageId.isDefined)
+      data += "parentPageId" -> JsString(pageMeta.parentPageId.get)
 
     toJson(data)
   }

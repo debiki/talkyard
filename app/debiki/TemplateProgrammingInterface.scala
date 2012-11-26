@@ -114,7 +114,7 @@ class TinyTemplateProgrammingInterface protected (
 
 
   def listNewestPages(pathRanges: PathRanges): Seq[tpi.Page] = {
-    val pathsAndDetails = _pageReq.dao.listPagePaths(
+    val pathsAndMeta = _pageReq.dao.listPagePaths(
       pathRanges,
       include = PageStatus.Published::Nil,
       sortBy = PageSortOrder.ByPublTime,
@@ -128,7 +128,7 @@ class TinyTemplateProgrammingInterface protected (
     // folder/or/index/pages/, and hidden pages (even for admins).
     // In the future: Pass info via URL to `listPagePaths` on which
     // pages to include. Some PageType param? PageType.Article/Css/Js/etc.))
-    val articlePaths = pathsAndDetails map (_._1) filter (
+    val articlePaths = pathsAndMeta map (_._1) filter (
        controllers.Utils.isPublicArticlePage _)
 
     val pathsAndPages: Seq[(PagePath, Option[Debate])] =
@@ -151,11 +151,11 @@ class TinyTemplateProgrammingInterface protected (
 
 
   def listNewestChildPages(): Seq[tpi.Page] = {
-    val pathsAndDetails: Seq[(PagePath, PageDetails)] =
+    val pathsAndMeta: Seq[(PagePath, PageMeta)] =
       _pageReq.dao.listChildPages(parentPageId = pageId,
           sortBy = PageSortOrder.ByPublTime, limit = 10, offset = 0)
 
-    val articlePaths = pathsAndDetails filter {
+    val articlePaths = pathsAndMeta filter {
       case (paths, details) =>
         details.cachedPublTime.map(
             _.getTime < _pageReq.ctime.getTime) == Some(true)

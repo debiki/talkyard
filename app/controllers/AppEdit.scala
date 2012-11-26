@@ -59,9 +59,9 @@ object AppEdit extends mvc.Controller {
         // an empty dummy post in place of the one that doesn't
         // yet exist, but is to be edited.
         val postToEdit = _createPostToEdit(pageReqPerhapsNoPage, postId)
+        val meta = PageMeta.forNewPage(pageId, pageReqPerhapsNoPage.ctime)
         pageReqPerhapsNoPage.copyWithPreloadedPage(
-          PageMeta(pageId = pageId), Debate(pageId) + postToEdit,
-          pageExists = false)
+          meta, Debate(pageId) + postToEdit, pageExists = false)
       }
 
     _showEditFormImpl(pageReq, postId)
@@ -236,7 +236,7 @@ object AppEdit extends mvc.Controller {
     val pageId = pageReq.pageId.getOrElse(throwBadReq(
       "DwE39KR8", "No page id, cannot lazy-create page at "+ pageReq.pagePath))
 
-    val pageMeta = PageMeta(pageId = pageId, pageRole = pageRole,
+    val pageMeta = PageMeta.forNewPage(pageId, pageReq.ctime, pageRole,
       parentPageId = parentPageId)
 
     val newPage = pageReq.dao.createPage(

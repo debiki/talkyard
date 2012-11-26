@@ -355,9 +355,9 @@ case class PageRequest[A](
   lazy val pageMeta: PageMeta = {
     _preloadedPageMeta getOrElse {
       if (pageExists) {
-        pageId.flatMap(dao.loadPageMeta _) getOrElse PageMeta.forUnknownPage
+        pageId.flatMap(dao.loadPageMeta _) getOrElse PageMeta.forNewPage()
       }
-      else PageMeta.forUnknownPage
+      else PageMeta.forNewPage()
     }
   }
 

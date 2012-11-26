@@ -77,7 +77,7 @@ class TenantDao(protected val tenantDbDao: ChargingTenantDbDao)
   def createPage(page: PageStuff): PageStuff = tenantDbDao.createPage(page)
 
   def listChildPages(parentPageId: String, sortBy: PageSortOrder,
-        limit: Int, offset: Int = 0): Seq[(PagePath, PageDetails)] =
+        limit: Int, offset: Int = 0): Seq[(PagePath, PageMeta)] =
     tenantDbDao.listChildPages(
         parentPageId, sortBy, limit = limit, offset = offset)
 
@@ -136,7 +136,7 @@ class TenantDao(protected val tenantDbDao: ChargingTenantDbDao)
         include: List[PageStatus],
         sortBy: PageSortOrder,
         limit: Int,
-        offset: Int): Seq[(PagePath, PageDetails)] =
+        offset: Int): Seq[(PagePath, PageMeta)] =
     tenantDbDao.listPagePaths(pageRanges, include, sortBy, limit, offset)
 
 
