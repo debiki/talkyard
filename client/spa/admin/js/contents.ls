@@ -38,13 +38,18 @@ PrettyListItem =
   prettyRole: ->
     switch @role
       | 'BlogMainPage' => 'Blog main page'
-      | _ => ''
+      | 'BlogArticle' => 'Blog post'
+      | _ => @role
 
 
   prettyRoleTooltip: ->
     switch @role
       | 'BlogMainPage' => 'A blog. Lists blog posts.'
       | _ => ''
+
+
+  cssForRole: ->
+    "page-role-#{@role}"
 
 
   # COULD remove?
@@ -333,16 +338,11 @@ class FolderListItem extends ListItem
     newFolderPaths = []
 
     for item in morePageItems
-      # Blog articles should be listed below the relevant blog's main page,
-      # but I've not implemented this, so hide them for now, and
-      # forum threads and wiki pages too.
-      # (They're reachable via the blog/forum/wiki main page anyway.)
-      # (Show subforum main pages — for them, both .isChildPage and
-      # .isMainPage are true.)
-      hide = item.isChildPage && !item.isMainPage
-      unless hide
-        $scope.listItems.push item
-        newFolderPaths.push item.folderPath!
+      # If `item.isChildPage && !item.isMainPage`, and there're very
+      # many such pages, could group them into a single table row
+      # that expands on click.
+      $scope.listItems.push item
+      newFolderPaths.push item.folderPath!
 
     newFolderPaths = unique newFolderPaths
     newFolderPaths = reject (== '/'), newFolderPaths

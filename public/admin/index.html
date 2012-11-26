@@ -223,7 +223,8 @@
                   </tr>
                 </thead>
                 <tbody>
-                  <tr ng-repeat="page in listItems | filterProp:'path':pathFilterText"
+                  <tr class="{{page.cssForRole()}}"
+                      ng-repeat="page in listItems | filterProp:'path':pathFilterText"
                       ng-show="page.isPage">
                     <td class='row-selector'><!-- dupl code! -->
                       <label>
