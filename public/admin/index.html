@@ -214,7 +214,7 @@
                             xxng-model='allSelected'>
                       </label> -->
                     </th>
-                    <th>Title</th>
+                    <th>Page Title</th>
                     <th><div ui-jq="tooltip" title="Influences how the page is rendered and what you can do with it.">Role</th>
                     <th><div ui-jq="tooltip" title="A menu lists links to pages on the website.">Menu</div></th>
                     <th>URL</th>
@@ -235,7 +235,7 @@
                       </label>
                     </td>
                     <td class='page-title'>
-                      <a href="{{ page.path }}" ng-bind-html="page.title"></a>
+                      <a href="{{ page.path }}" target="_blank" ng-bind-html="page.title"></a>
                       <span class="page-notfs important">{{ page.stringifyImportantMarks() }}</span>
                       <span class="page-notfs">{{ page.stringifyOtherMarks() }}</span>
                     </td>

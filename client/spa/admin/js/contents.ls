@@ -73,8 +73,12 @@ PrettyListItem =
 
     clarifsText
 
+
   prettyMenu: ->
-    'MainMenu#1'
+    # Mock up the implementation for now.
+    if @path == '/' => 'MainMenu#1'  # homepage probably no 1
+    else if @role == 'BlogMainPage' => 'MainMenu#2'
+    else => ''
 
 
   prettyMenuTooltip: ->
