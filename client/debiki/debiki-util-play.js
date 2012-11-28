@@ -1,8 +1,5 @@
 /* Copyright (c) 2010 - 2012 Kaj Magnus Lindberg. All rights reserved. */
 
-
-(function() {
-
 var d = { i: debiki.internal, u: debiki.v0.util };
 var $ = d.i.$;
 
@@ -42,7 +39,16 @@ d.u.postJson = function(options) {
 window.onbeforeunload = confirmClosePage;
 
 
-})();
+/**
+ * Returns the text of the title of the page in which the current $ elem
+ * is located.
+ */
+$.fn.dwPageTitleText = function() {
+  var $page = this.closest('.dw-page');
+  var $title = $page.find('> .dw-ar-t > .dw-p > .dw-p-ttl .dw-p-ttl');
+  return $title.text();
+}
+
 
 
 // vim: fdm=marker et ts=2 sw=2 tw=80 fo=tcqwn list
