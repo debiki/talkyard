@@ -363,12 +363,15 @@ function _$showEditFormImpl() {
         // on the admin page.
         var pageMeta = $editForm.dwPageMeta();
         var curOpener = window.opener;
+        var pageTitle = $editForm.dwPageTitleText();
         while (curOpener) {
           if (curOpener && curOpener.debiki && curOpener.debiki.v0) {
             var callbacks =
                 curOpener.debiki.v0.onOpenedPageSavedCallbacks || [];
             $.each(callbacks, function(index, callback) {
-              callback(pageMeta.pageId, postId);
+              // Hmm, I need to move this to below `patchPage`, or the
+              // *old* title will be sent.
+              callback(pageMeta, pageTitle);
             });
           }
           curOpener = curOpener.opener;

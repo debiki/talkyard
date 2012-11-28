@@ -108,6 +108,7 @@ PrettyListItem =
       switch mark
       | 'NewSaved' => text += ' (new, saved)'
       | 'New' => text += ' (newly created)'
+      | 'Edited' => text += ' (edited)'
     text
 
 
@@ -240,37 +241,28 @@ class FolderListItem extends ListItem
     newTab = window.open '', '_blank'
 
     adminService.getViewNewPageUrl pageData, (viewNewPageUrl) ->
-      pageItem = PageListItem (
-          path: viewNewPageUrl
-          id: d.i.findPageIdForNewPage viewNewPageUrl
-          #title: undefined
-          #authors: undefined # should be current user
-          role: pageData.pageRole
-          parentPageId: pageData.parentPageId
-          marks: ['New'])
-
-      # If saved, `newTab` will call debiki.v0.onOpenedPageSavedCallbacks
-      # on its window.opener. Then, from such a callbak (added just below),
-      # we look up `pageItem` and add it to $scope.listItems.
-      newUnsavedPageItemsById[pageItem.id] = pageItem
       newTab.location = pageItem.path
+      # If the new page is saved, `newTab` will call the `onPageSaved`
+      # callback just below. Then we'll update $scope.listItems.
 
 
-  newUnsavedPageItemsById = []
+  adminService.onPageSaved (pageMeta, pageTitle) ->
+    newlySavedPageItem = PageListItem(
+        path: pageMeta.pagePath
+        id: pageMeta.pageId # remove:? d.i.findPageIdForNewPage viewNewPageUrl
+        title: pageTitle
+        #authors: undefined # should be current user
+        role: pageMeta.pageRole
+        parentPageId: pageMeta.parentPageId)
 
-  adminService.onPageSaved (pageId, postId) ->
-    newlySavedPageItem = newUnsavedPageItemsById[pageId]
-    unless newlySavedPageItem
-      bug 'DwE903KR2'
-      return
+    isNewPage = not find (.id == newlySavedPageItem.id), $scope.listItems
 
-    # Select the new page (unless the user has selected something else),
-    # So the user more easily finds it when returning to the dashboard?
-    otherPageSelected = find (.included), $scope.listItems
-    unless otherPageSelected
-      newlySavedPageItem.included = true
-
-    listMorePagesDeriveFolders [newlySavedPageItem]
+    if isNewPage
+      newlySavedPageItem.marks = ['New']
+      listMorePagesDeriveFolders [newlySavedPageItem]
+    else
+      newlySavedPageItem.marks = ['Edited']
+      updatePage newlySavedPageItem
 
 
   $scope.selectedPage =
@@ -357,6 +349,15 @@ class FolderListItem extends ListItem
     for newPath in newFolderPaths when not find (== newPath), oldFolderPaths
       $scope.listItems.push FolderListItem({ path: newPath })
 
+    redrawPageList!
+
+
+  updatePage = !(pageItem) ->
+    oldItem = find (.id == pageItem.id), $scope.listItems
+    bug 'DwE6SH90' unless oldItem
+    oldMarks = oldItem.marks
+    oldItem <<< pageItem
+    oldItem.marks = concat [oldItem.marks, oldMarks] |> unique
     redrawPageList!
 
 
