@@ -34,4 +34,21 @@ $ ->
 
 
 
+DebikiPageModule = angular.module('DebikiPageModule', [])
+
+
+
+DebikiPageModule.directive 'dwDashbar', ->
+  template: """
+    <div ng-show="pageExists && currentUser.isAuthenticated">
+      <a class="debiki-dashbar-logo" href="/-/admin/">
+        <img src="/-/site/img/logo-128x120.png">
+      </a>
+      <a ng-show="pageRole == 'BlogMainPage'" class="new-page">
+        New Blog Post
+      </a>
+    </div>
+    """
+
+
 # vim: fdm=marker et ts=2 sw=2 tw=80 fo=tcqwn list

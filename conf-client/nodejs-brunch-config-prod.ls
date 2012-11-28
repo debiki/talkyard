@@ -14,6 +14,7 @@ exports.config =
       joinTo:
         'public/res/combined-debiki-desktop.min.js':
           // ^client/debiki/debiki-action-delete.js
+           | ^client/debiki/bootstrap-angularjs.ls
            | ^client/debiki/debiki-action-edit.js
            | ^client/debiki/debiki-action-flag.js
            | ^client/debiki/debiki-action-links.js
@@ -63,6 +64,7 @@ exports.config =
 
         'public/res/combined-debiki-touch.min.js':
           // ^client/debiki/android-zoom-bug-workaround.js
+           | ^client/debiki/bootstrap-angularjs.ls
            | ^client/debiki/debiki-action-delete.js
            | ^client/debiki/debiki-action-edit.js
            | ^client/debiki/debiki-action-flag.js

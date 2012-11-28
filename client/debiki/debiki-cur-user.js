@@ -145,6 +145,12 @@ d.i.makeCurUser = function() {
     isLoggedIn: function() { return userProps.loginId ? true : false; },
     getLoginId: function() { return userProps.loginId; },
     getUserId: function() { return userProps.userId; },
+    isAuthenticated: function() {
+      // If starts with '-', then not authenticated. (In the future:
+      // if *ends* with '-'? Well works anyway.)
+      return !!userProps.userId.match(/^[a-z0-9]+$/);
+    },
+    getPermsOnPage: function() { return permsOnPage; },
     mayEdit: function($post) {
       return userProps.userId === $post.dwAuthorId() ||
           permsOnPage.editPage ||
@@ -173,6 +179,21 @@ function fireLoginImpl(Me) {
 
   Me.clearMyPageInfo();
   Me.loadAndMarkMyPageInfo();
+
+  // Tell the parts of this page that uses AngularJS about the current user.
+  d.i.angularApply(function($rootScope) {
+    // Why don't I expose a nice user = { name:, loginId:, ... } object?
+    // Instead:
+    $rootScope.setCurrentUser({
+      displayName: Me.getName(),
+      loginId: Me.getLoginId(),
+      userId: Me.getUserId(),
+      permsOnPage: Me.getPermsOnPage(),
+      emailNotfPrefs: Me.getEmailNotfPrefs(),
+      isEmailKnown: Me.isEmailKnown(),
+      isAuthenticated: Me.isAuthenticated()
+    });
+  });
 };
 
 
@@ -193,6 +214,12 @@ function fireLogoutImpl(Me) {
   $('.dw-loginsubmit-on-click').trigger('dwEvLoggedInOut', [undefined]);
 
   Me.clearMyPageInfo();
+
+  // If AngularJS has been started, tell the parts of this page that
+  // uses AngularJS about the logout.
+  d.i.anyAngularApply(function($rootScope) {
+    $rootScope.clearCurrentUser();
+  });
 };
 
 

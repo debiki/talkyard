@@ -1594,6 +1594,17 @@ inside widgets, rather than buttons and tabs. */
 .dw-pri input.ui-button { padding: .4em 1em; }
 
 
+
+/* AngularJS
+==========================*/
+
+/* See: http://docs.angularjs.org/api/ng.directive:ngCloak */
+[ng\:cloak], [ng-cloak], .ng-cloak {
+  display: none !important;
+}
+
+
+
 /* Twitter Bootstrap
 ==========================*/
 
