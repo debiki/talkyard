@@ -33,7 +33,8 @@ $.fn.dwPageMeta = function() {
     pageId: $page.attr('id').substr(5, 999), // drops initial "page-"
     pagePath: $page.data('page_path'),
     pageRole: $page.data('page_role'),
-    parentPageId: $page.data('parent_page_id')
+    parentPageId: $page.data('parent_page_id'),
+    pageExists: $page.data('page_exists')
   };
 };
 

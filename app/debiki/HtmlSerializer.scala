@@ -349,6 +349,7 @@ case class HtmlPageSerializer(
 
     val cssThreadId = "dw-t-"+ rootPost.id
     <div id={"page-"+ debate.id} class='debiki dw-debate dw-page'
+        data-page_exists={pageStuff.meta.pageExists.toString}
         data-page_path={pagePath.path}
         data-page_role={pageRole.toString}
         data-parent_page_id={parentPageId.map(_.toString) getOrElse ""}>
