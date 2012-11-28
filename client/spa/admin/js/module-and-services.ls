@@ -94,17 +94,17 @@ function adminService ($http, $rootScope)
 
 
   # Newly created pages knows to call each function in
-  # onChildPageSavedCallbacks when saved, on window.opener.
-  debiki.v0.onChildPageSavedCallbacks ?= []
-  debiki.v0.onChildPageSavedCallbacks.push (pageId, postId) ->
+  # onOpenedPageSavedCallbacks when saved, on window.opener.
+  debiki.v0.onOpenedPageSavedCallbacks ?= []
+  debiki.v0.onOpenedPageSavedCallbacks.push (pageId, postId) ->
     $rootScope.$apply ->
-      for callback in onChildPageSavedCallbacks
+      for callback in onOpenedPageSavedCallbacks
         callback pageId, postId
 
-  onChildPageSavedCallbacks = []
+  onOpenedPageSavedCallbacks = []
 
   api.onPageSaved = (callback) ->
-    onChildPageSavedCallbacks.push callback
+    onOpenedPageSavedCallbacks.push callback
 
 
   api.movePages = (pageIds, {fromFolder, toFolder, callback}) ->

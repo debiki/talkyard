@@ -356,13 +356,22 @@ function _$showEditFormImpl() {
 
         // In case this page is a new page that was just created from an
         // admin page, then notify the admin page that this page was saved.
+        // Check the opener's opener too, and so on, in case 1) a page P was
+        // from the admin page, and then 2) from P another page P2 was
+        // created (P could be a blog main page, and P2 a blog article)
+        // — then we should still find and call onOpenedPageSavedCallbacks
+        // on the admin page.
         var pageMeta = $editForm.dwPageMeta();
-        if (window.opener && window.opener.debiki && window.opener.debiki.v0) {
-          var callbacks =
-              window.opener.debiki.v0.onChildPageSavedCallbacks || [];
-          $.each(callbacks, function(index, callback) {
-            callback(pageMeta.pageId, postId);
-          });
+        var curOpener = window.opener;
+        while (curOpener) {
+          if (curOpener && curOpener.debiki && curOpener.debiki.v0) {
+            var callbacks =
+                curOpener.debiki.v0.onOpenedPageSavedCallbacks || [];
+            $.each(callbacks, function(index, callback) {
+              callback(pageMeta.pageId, postId);
+            });
+          }
+          curOpener = curOpener.opener;
         }
 
         if (!pageMeta.pageExists) {

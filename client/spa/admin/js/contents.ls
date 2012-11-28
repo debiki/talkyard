@@ -249,7 +249,7 @@ class FolderListItem extends ListItem
           parentPageId: pageData.parentPageId
           marks: ['New'])
 
-      # If saved, `newTab` will call debiki.v0.onChildPageSavedCallbacks
+      # If saved, `newTab` will call debiki.v0.onOpenedPageSavedCallbacks
       # on its window.opener. Then, from such a callbak (added just below),
       # we look up `pageItem` and add it to $scope.listItems.
       newUnsavedPageItemsById[pageItem.id] = pageItem
