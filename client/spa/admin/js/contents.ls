@@ -241,7 +241,7 @@ class FolderListItem extends ListItem
     newTab = window.open '', '_blank'
 
     adminService.getViewNewPageUrl pageData, (viewNewPageUrl) ->
-      newTab.location = pageItem.path
+      newTab.location = viewNewPageUrl
       # If the new page is saved, `newTab` will call the `onPageSaved`
       # callback just below. Then we'll update $scope.listItems.
 
