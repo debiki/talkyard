@@ -496,7 +496,14 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
           defaultPagePath.copy(
             showId = true, pageSlug = "role-test-blog-main"),
           Debate(guid = "?"))
+
+        pageNoId.meta.pageExists must_== false
         val page = dao.createPage(pageNoId)
+
+        page.meta.pageExists must_== true
+        page.meta.pageRole must_== PageRole.BlogMainPage
+        page.meta.parentPageId must_== None
+
         val actions = page.actions
         blogMainPageId = actions.pageId
         actions.postCount must_== 0
@@ -506,6 +513,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
       "look up meta info for the BlogMainPage" in {
         dao.loadPageMeta(blogMainPageId) must beLike {
           case Some(pageMeta: PageMeta) => {
+            pageMeta.pageExists must_== true
             pageMeta.pageRole must_== PageRole.BlogMainPage
             pageMeta.parentPageId must_== None
             pageMeta.pageId must_== blogMainPageId
