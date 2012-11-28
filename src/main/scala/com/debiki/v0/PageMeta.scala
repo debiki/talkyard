@@ -58,7 +58,7 @@ object PageMeta {
         parentPageId: Option[String] = None) =
     PageMeta(pageId = pageId, creationDati = creationDati,
       modificationDati = creationDati, pageRole = pageRole,
-      parentPageId = parentPageId)
+      parentPageId = parentPageId, pageExists = false)
 
   def forChangedPage(originalMeta: PageMeta, changedPage: Debate): PageMeta = {
     require(changedPage.id == originalMeta.pageId)
@@ -83,7 +83,8 @@ case class PageMeta(
   cachedPublTime: Option[ju.Date] = None,
   cachedSgfntMtime: Option[ju.Date] = None,
   cachedAuthors: List[PageMeta.AuthorInfo] = Nil,
-  cachedCommentCount: Int = 0) {
+  cachedCommentCount: Int = 0,
+  pageExists: Boolean = true) {
 
   def status: PageStatus =
     if (cachedPublTime.isDefined) PageStatus.Published
