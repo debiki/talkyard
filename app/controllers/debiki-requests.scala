@@ -137,15 +137,18 @@ object PageRequest {
         fixBadPath: Boolean = false)
         : PageRequest[A] = {
 
+    // Require page id (so we know for sure which page to e.g. edit).
+    assErrIf(pagePath.pageId.isEmpty,
+      "DwE8ISD2", s"Page id missing, pagePath: $pagePath")
+
     val (pageExists, okPath) = apiRequest.dao.checkPagePath(pagePath) match {
       case Some(correctPath: PagePath) =>
-        // Require page id (so we know for sure which page to e.g. edit).
-        assErrIf(pagePath.pageId.isEmpty,
-          "DwE8ISD2", s"Page id missing, pagePath: $pagePath")
-        // And require that the page id matches, always.
-        assErrIf(correctPath.pageId.get != pagePath.pageId.get,
-          "DwE390IR2", s"Specified page id `${pagePath.pageId.get}' " +
-            s"differs from database page id `${correctPath.pageId.get}'")
+        // Does another page already exist at `pagePath`? (It'd have the
+        // same path, but another id.)
+         if (correctPath.pageId.get != pagePath.pageId.get)
+           throw new PathClashException(databasePageId = correctPath.pageId.get,
+             newPathPageId = pagePath.pageId.get)
+
         // Check for bad paths.
         if (correctPath.path != pagePath.path && !fixBadPath)
           throwNotFound("DwE305RI2", s"Mismatching page path: `$pagePath', " +
@@ -196,6 +199,11 @@ object PageRequest {
     val pagePathWithId = pagePathPerhapsId.copy(pageId = Some(pageId))
     PageRequest(apiRequest, pagePathWithId, fixBadPath = fixBadPath)
   }
+
+
+  case class PathClashException(databasePageId: String, newPathPageId: String)
+    extends Exception
+
 }
 
 

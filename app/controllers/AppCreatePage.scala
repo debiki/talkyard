@@ -15,6 +15,7 @@ import PageActions._
 import Prelude._
 import Utils._
 import Utils.ValidationImplicits._
+import controllers.PageRequest.PathClashException
 
 
 object AppCreatePage extends mvc.Controller {
@@ -60,12 +61,26 @@ object AppCreatePage extends mvc.Controller {
     // Create a PageRequest for the new page (and be sure to use `pageId`
     // so people cannot /specify/any/-pageId).
     val pageReq = {
-      // If the new page exists, lazy-load it from database. Otherwise, use
-      // an empty dummy page; configure it according to newPageMeta.
       val newPagePath = newPagePathFromUrl(pageReqOrig, pageId)
-      val request = PageRequest(pageReqOrig, newPagePath)
-      if (request.pageExists) request
+      val request =
+        try { PageRequest(pageReqOrig, newPagePath) }
+        catch {
+          case ex: PathClashException =>
+            throwForbidden(
+              "DwE17Sf3", s"Cannot create new page at ${newPagePath.path}," +
+              s" with id `$pageId`: There is already another page at that" +
+              s" location, with id `${ex.databasePageId}`")
+        }
+
+      if (request.pageExists) {
+        // The page we're supposed to create has already been created,
+        // so we don't need to create any empty dummy page to show before
+        // the page has actually been created. (The URL to this new
+        // page is probably being reloaded, after the page was saved.)
+        request
+      }
       else {
+        // Create empty dummy page.
         val newPageMeta = newPageMetaFromUrl(pageReqOrig, pageId)
         pageReqOrig.copyWithPreloadedPage(
           PageStuff(newPageMeta, newPagePath, Debate(newPageMeta.pageId)),
