@@ -354,6 +354,19 @@ function _$showEditFormImpl() {
           .fail(d.i.showErrorEnableInputs($editForm))
           .done(function(newDebateHtml) {
 
+        d.i.slideAwayRemove($editForm);
+
+        // If the edit was a *suggestion* only, the post body has not been
+        // changed. Unless we make it visible again, it'll remain hidden
+        // because mergeChangesIntoPage() ignores it (since it hasn't changed).
+        $postBody.show();
+
+        // This destroys $post, $postBody etcetera...
+        d.i.patchPage(newDebateHtml);
+
+        // ... So find them again, when needed:
+        $editedPost = d.i.findPost$(postId);
+
         // In case this page is a new page that was just created from an
         // admin page, then notify the admin page that this page was saved.
         // Check the opener's opener too, and so on, in case 1) a page P was
@@ -361,17 +374,15 @@ function _$showEditFormImpl() {
         // created (P could be a blog main page, and P2 a blog article)
         // — then we should still find and call onOpenedPageSavedCallbacks
         // on the admin page.
-        var pageMeta = $editForm.dwPageMeta();
+        var editedTitle = $editedPost.dwPageTitleText();
+        var editedMeta = $editedPost.dwPageMeta();
         var curOpener = window.opener;
-        var pageTitle = $editForm.dwPageTitleText();
         while (curOpener) {
           if (curOpener && curOpener.debiki && curOpener.debiki.v0) {
             var callbacks =
                 curOpener.debiki.v0.onOpenedPageSavedCallbacks || [];
             $.each(callbacks, function(index, callback) {
-              // Hmm, I need to move this to below `patchPage`, or the
-              // *old* title will be sent.
-              callback(pageMeta, pageTitle);
+              callback(editedMeta, editedTitle);
             });
           }
           curOpener = curOpener.opener;
@@ -388,14 +399,6 @@ function _$showEditFormImpl() {
             rootScope.pageExists = true;
           });
         }
-
-        d.i.slideAwayRemove($editForm);
-        // If the edit was a *suggestion* only, the post body has not been
-        // changed. Unless we make it visible again, it'll remain hidden
-        // because mergeChangesIntoPage() ignores it (since it hasn't changed).
-        $postBody.show();
-        //d.i.mergeChangesIntoPage(newDebateHtml);
-        d.i.patchPage(newDebateHtml);
       });
 
       d.i.disableSubmittedForm($editForm);

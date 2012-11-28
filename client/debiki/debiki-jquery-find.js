@@ -7,8 +7,14 @@ var d = { i: debiki.internal, u: debiki.v0.util };
 var $ = d.i.$;
 
 
+
 d.i.findThread$ = function(threadId) {
   return $('#dw-t-'+ threadId);
+}
+
+
+d.i.findPost$ = function(postId) {
+  return $('#post-'+ postId);
 }
 
 
