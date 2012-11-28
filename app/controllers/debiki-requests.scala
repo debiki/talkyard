@@ -349,9 +349,8 @@ case class PageRequest[A](
 
   /**
    * Gets/loads page meta data from cache/database, or, if not found,
-   * returns PageMeta.forUnknownPage.
+   * returns PageMeta.forNewPage.
    */
-  // COULD cache!
   lazy val pageMeta: PageMeta = {
     _preloadedPageMeta getOrElse {
       if (pageExists) {
