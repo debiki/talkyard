@@ -357,7 +357,6 @@ class FolderListItem extends ListItem
     for newPath in newFolderPaths when not find (== newPath), oldFolderPaths
       $scope.listItems.push FolderListItem({ path: newPath })
 
-    updatePageStats!
     redrawPageList!
 
 
@@ -401,21 +400,19 @@ class FolderListItem extends ListItem
 
   /**
    * Updates statistics on which types of pages exists.
+   * Currently only does this if a new page is added.
+   * (Concerning `.length`: what if a page is added and another
+   * one removed? Cannot happen right now though)
    */
-  updatePageStats = ->
+  $scope.$watch 'listItems.length', ->
     stats = $scope.pageStats = {}
 
     for item in $scope.listItems
-      if item.role is 'BlogMainPage'
-        stats.blogMainPageExists = true
-      if item.role is 'BlogPost'
-        stats.blogPostExists = true
-
-    stats.blogExistsButNoBlogPosts =
-        stats.blogMainPageExists && !stats.blogPostExists
+      if item.role is 'BlogMainPage' => stats.blogExists = true
+      if item.role is 'BlogArticle' => stats.blogPostExists = true
 
     stats.blogOrForumExists =
-        stats.blogMainPageExists  # || forumMainPageExists
+        stats.blogExists  # || forumMainPageExists
 
 
   $scope.nothingSelected = true
