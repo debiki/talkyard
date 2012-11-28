@@ -23,7 +23,6 @@ exports.config =
            | ^client/debiki/debiki-actions-inline.js
            | ^client/debiki/debiki-arrows-png.js
            | ^client/debiki/debiki-arrows-svg.js
-           | ^client/debiki/debiki.css
            | ^client/debiki/debiki-cur-user.js
            | ^client/debiki/debiki-edit-history.js
            | ^client/debiki/debiki-form-anims.js
@@ -74,7 +73,6 @@ exports.config =
            | ^client/debiki/debiki-actions-inline.js
            | ^client/debiki/debiki-arrows-png.js
            | ^client/debiki/debiki-arrows-svg.js
-           | ^client/debiki/debiki.css
            | ^client/debiki/debiki-cur-user.js
            | ^client/debiki/debiki-edit-history.js
            | ^client/debiki/debiki-form-anims.js
