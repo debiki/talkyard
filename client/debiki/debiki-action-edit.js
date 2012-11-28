@@ -356,12 +356,24 @@ function _$showEditFormImpl() {
 
         // In case this page is a new page that was just created from an
         // admin page, then notify the admin page that this page was saved.
+        var pageMeta = $editForm.dwPageMeta();
         if (window.opener && window.opener.debiki && window.opener.debiki.v0) {
           var callbacks =
               window.opener.debiki.v0.onChildPageSavedCallbacks || [];
-          var pageId = $editForm.dwPageMeta().pageId;
           $.each(callbacks, function(index, callback) {
-            callback(pageId, postId);
+            callback(pageMeta.pageId, postId);
+          });
+        }
+
+        if (!pageMeta.pageExists) {
+          // Now the page does exist, since it's been saved,
+          // so tell AngularJS to update the page as appropriately,
+          // e.g. show certain buttons in the admin dashbar.
+          // ((This won't update the data-page_exists attribute though,
+          // so we'll trigger Angular's $digest whenever we edit the page,
+          // if it is newly created (didn't exist when it was rendered).))
+          d.i.angularApply(function(rootScope) {
+            rootScope.pageExists = true;
           });
         }
 
