@@ -59,16 +59,20 @@ object AppCreatePage extends mvc.Controller {
 
     // Create a PageRequest for the new page (and be sure to use `pageId`
     // so people cannot /specify/any/-pageId).
-    val (newPageMeta, newPagePath) = newPageDataFromUrl(pageReqOrig, pageId)
     val pageReq = {
       // If the new page exists, lazy-load it from database. Otherwise, use
       // an empty dummy page; configure it according to newPageMeta.
+      val newPagePath = newPagePathFromUrl(pageReqOrig, pageId)
       val request = PageRequest(pageReqOrig, newPagePath)
       if (request.pageExists) request
-      else pageReqOrig.copyWithPreloadedPage(
+      else {
+        val newPageMeta = newPageMetaFromUrl(pageReqOrig, pageId)
+        pageReqOrig.copyWithPreloadedPage(
           PageStuff(newPageMeta, newPagePath, Debate(newPageMeta.pageId)),
           pageExists = false)
+      }
     }
+    assert(pageReq.pageExists == pageReq.pageMeta.pageExists)
 
     val pageInfoYaml =
       if (pageReq.user.isEmpty) ""
@@ -83,11 +87,16 @@ object AppCreatePage extends mvc.Controller {
   }
 
 
-  def newPageDataFromUrl(pageReq: PageRequest[_], pageId: String)
-        : (PageMeta, PagePath) = {
-    import pageReq.queryString
-
+  def newPagePathFromUrl(pageReq: PageRequest[_], pageId: String): PagePath = {
     val pageSlug = pageReq.pagePath.pageSlug
+    val showId = pageReq.pagePath.showId
+    pageReq.pagePath.copy(pageId = Some(pageId),
+      pageSlug = pageSlug, showId = showId)
+  }
+
+
+  def newPageMetaFromUrl(pageReq: PageRequest[_], pageId: String): PageMeta = {
+    import pageReq.queryString
 
     val pageRole = queryString.getEmptyAsNone("page-role").map(
       stringToPageRole _) getOrElse PageRole.Any
@@ -99,15 +108,8 @@ object AppCreatePage extends mvc.Controller {
     if (parentPageId == Some("undefined"))
       throwBadReq("DwE93HF2", "Parent page id is `undefined`")
 
-    val meta = PageMeta.forNewPage(pageId, pageReq.ctime, pageRole,
+    PageMeta.forNewPage(pageId, pageReq.ctime, pageRole,
       parentPageId = parentPageId)
-
-    val showId = pageReq.pagePath.showId
-
-    val path = pageReq.pagePath.copy(pageId = Some(pageId),
-      pageSlug = pageSlug, showId = showId)
-
-    (meta, path)
   }
 
 
