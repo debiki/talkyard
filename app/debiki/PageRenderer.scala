@@ -24,6 +24,16 @@ object PageRenderer {
   }
 
 
+  def renderArticle(pageReq: PageRequest[_], showComments: Boolean)
+        : xml.NodeSeq = {
+    val page = PageStuff(pageReq.pageMeta, pageReq.pagePath,
+      pageReq.page_!)
+
+    renderArticle(page, pageReq.pageVersion, pageReq.pageRoot,
+      hostAndPort = pageReq.host, showComments = showComments)
+  }
+
+
   def renderArticle(page: PageStuff, pageVersion: PageVersion,
         pageRoot: PageRoot, hostAndPort: String, showComments: Boolean)
         : xml.NodeSeq = {

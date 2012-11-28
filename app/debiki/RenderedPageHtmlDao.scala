@@ -21,12 +21,8 @@ trait RenderedPageHtmlDao {
 
 
   def renderPage(pageReq: PageRequest[_], showComments: Boolean)
-        : xml.NodeSeq = {
-    val page = PageStuff(pageReq.pageMeta, pageReq.pagePath, pageReq.page_!)
-    PageRenderer.renderArticle(page, pageReq.pageVersion,
-        pageReq.pageRoot, hostAndPort = pageReq.host,
-        showComments = showComments)
-  }
+        : xml.NodeSeq =
+    PageRenderer.renderArticle(pageReq, showComments)
 
 }
 
