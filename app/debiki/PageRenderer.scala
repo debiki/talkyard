@@ -133,8 +133,15 @@ object PageRenderer {
     markup = Markup.DefaultForPageBody.id)
 
 
+  private val ConfigPageDummyText = """
+    |This is an empty configuration page.
+    |
+    |Click this text to edit.
+    |""".stripMargin
+
+
   val DummyConfig = DummyBody.copy(
-    id = Page.TemplateId, parent = Page.TemplateId, text = "Click to edit",
+    id = Page.TemplateId, parent = Page.TemplateId, text = ConfigPageDummyText,
     markup = Markup.Code.id)
 
 
