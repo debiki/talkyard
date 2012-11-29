@@ -76,7 +76,8 @@ function initFlagForm() {
 
 
 // warning, dupl code, see $showDeleteCommentForm.
-d.i.$showFlagForm = function() {
+d.i.$showFlagForm = function(event) {
+  event.preventDefault();
   initFlagForm();
   var $i = $(this);
   var $t = $i.closest('.dw-t');

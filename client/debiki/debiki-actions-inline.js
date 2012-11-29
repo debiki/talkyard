@@ -199,13 +199,13 @@ function $showInlineActionMenu(event) {
   $post.each(d.i.$loadEditorDependencies);
 
   // Bind actions.
-  $menu.find('.dw-a-edit-i').click(function(){
+  $menu.find('.dw-a-edit-i').click(function(event){
     d.i.showInteractionsIfHidden();
-    $post.each(d.i.$showEditForm);
+    d.i.$showEditForm.call($post, event);
     $menu.remove();
   });
 
-  $menu.find('.dw-a-reply-i').click(function(){
+  $menu.find('.dw-a-reply-i').click(function(event){
     // To have somewhere to place the reply form, split the block into
     // smaller .dw-p-bd-blk:s, and add .dw-i-ts, if not already
     // done (which is the case if this post has no inline replies).

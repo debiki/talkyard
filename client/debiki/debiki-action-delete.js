@@ -55,7 +55,8 @@ function initDeleteForm() {
 
 
 // warning: dupl code, see $showFlagForm.
-d.i.$showDeleteForm = function() {
+d.i.$showDeleteForm = function(event) {
+  event.preventDefault();
   initDeleteForm();
   var $i = $(this);
   var $t = $i.closest('.dw-t');

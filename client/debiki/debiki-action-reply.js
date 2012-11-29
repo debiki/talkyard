@@ -9,8 +9,9 @@ var $ = d.i.$;
 
 // Shows a reply form, either below the relevant post, or inside it,
 // if the reply is an inline comment -- whichever is the case is determined
-// by event.target.
+// by event.target [what? `event.target` isn't used anywhere! Old comment?]
 d.i.$showReplyForm = function(event, opt_where) {
+  event.preventDefault();
   // Warning: Some duplicated code, see .dw-r-tag click() above.
   var $thread = $(this).closest('.dw-t');
   var $replyAction = $thread.find('> .dw-p-as > .dw-a-reply');

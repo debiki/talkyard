@@ -8,6 +8,7 @@ var $ = d.i.$;
 
 
 d.i.$showRatingForm = function(event) {
+  event.preventDefault();
   if (lazyInit) {
     lazyInit();
     lazyInit = null;

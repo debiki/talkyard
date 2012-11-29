@@ -30,22 +30,30 @@ d.i.SVG = !Modernizr.touch && Modernizr.inlinesvg &&
 d.i.Me = d.i.makeCurUser();
 
 
-// Inits a post and its parent thread.
-// Makes posts resizable, activates mouseenter/leave functionality,
-// draws arrows to child threads, etc.
+// Activates mouseenter/leave functionality, draws arrows to child threads, etc.
 // Initing a thread is done in 4 steps. This function calls all those 4 steps.
 // (The initialization is split into steps, so everything need not be done
 // at once on page load.)
 // Call on posts.
-d.i.$initPostsThread = function() {
-  $initPostsThreadStep1.apply(this);
-  $initPostsThreadStep2.apply(this);
-  $initPostsThreadStep3.apply(this);
-  $initPostsThreadStep4.apply(this);
+d.i.$initPostAndParentThread = function() {
+  $initStep1.apply(this);
+  d.i.$initPost.apply(this);
+  $initStep4.apply(this);
 };
 
 
-function $initPostsThreadStep1() {
+/**
+ * Inits a post, not its parent thread. Call when a post has been replaced
+ * e.g. after having been edited, but when the parent thread hasn't been
+ * replaced.
+ */
+d.i.$initPost = function() {
+  $initStep2.apply(this);
+  $initStep3.apply(this);
+};
+
+
+function $initStep1() {
   // Binding click events to action links takes rather long (100 ms on my
   // 6 core 2.8 GHz AMD for 200 posts) and could be split out to a separate
   // step, done as late as possible.
@@ -57,32 +65,22 @@ function $initPostsThreadStep1() {
 };
 
 
-function $initPostsThreadStep2() {
+function $initStep2() {
   d.i.shohwActionLinksOnHoverPost(this);
   d.i.placeInlineThreadsForPost(this);
   d.i.makeHeaderPrettyForPost(this);
 };
 
 
-function $initPostsThreadStep3() {
+function $initStep3() {
   // $initPostSvg takes rather long (190 ms on my 6 core 2.8 GHz AMD, for
   // 100 posts), and  need not be done until just before SVG is drawn.
   d.i.SVG.$initPostSvg.apply(this);
 };
 
 
-function $initPostsThreadStep4() {
+function $initStep4() {
   d.i.makeThreadResizableForPost(this);
-};
-
-
-// Inits a post, not its parent thread.
-d.i.$initPost = function() {
-  // ? Should I call createAndBindActionLinksForPost and
-  // shohwActionLinksOnHoverPost from here, sometimes ?
-  d.i.placeInlineThreadsForPost(this);
-  d.i.makeHeaderPrettyForPost(this);
-  d.i.SVG.$initPostSvg.apply(this);
 };
 
 
@@ -205,23 +203,23 @@ function renderPageEtc() {
   var steps = [];
 
   steps.push(function() {
-    $posts.each($initPostsThreadStep1);
+    $posts.each($initStep1);
     $('html').removeClass('dw-render-actions-pending');
   });
 
   steps.push(function() {
-    $posts.each($initPostsThreadStep2)
+    $posts.each($initStep2)
   });
 
   steps.push(function() {
-    $posts.each($initPostsThreadStep3);
+    $posts.each($initStep3);
     registerEventHandlersFireLoginOut();
   });
 
   // COULD fire login earlier; it's confusing that the 'Login' link
   // is visible for rather long, when you load a *huge* page.
   steps.push(function() {
-    $posts.each($initPostsThreadStep4)
+    $posts.each($initStep4)
   });
 
   // Don't draw SVG until all html tags has been placed, or the SVG

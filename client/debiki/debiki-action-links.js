@@ -37,7 +37,8 @@ d.i.createAndBindActionLinksForPost = function(post) {
   // delegation is used instead). }}}
   $actions.children('.dw-a-reply').click(d.i.$showReplyForm);
   $actions.children('.dw-a-rate').click(d.i.$showRatingForm);
-  $actions.children('.dw-a-more').click(function() {
+  $actions.children('.dw-a-more').click(function(event) {
+    event.preventDefault();
     $(this).closest('.dw-p-as').find('.dw-a')
         .show()
         .end().end().remove();

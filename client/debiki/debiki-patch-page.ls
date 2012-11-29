@@ -25,7 +25,7 @@ d.i.patchPage = (patches) ->
     $newThread.addClass 'dw-m-t-new'
 
 
-    $newThread.dwFindPosts!each d.i.$initPostsThread
+    $newThread.dwFindPosts!each d.i.$initPostAndParentThread
 
     drawArrows = ->
       # Really both $drawTree, and $drawParents for each child post??
@@ -71,7 +71,7 @@ patchPostWith = (editedPostPatch, { onPage }) ->
     $newPost.addClass 'dw-m-t-new'
     replaceOldPostWith $newPost, onPage: pageId
 
-    $newPost.each d.i.$initPostsThread
+    $newPost.each d.i.$initPost
 
     $newThread = $newPost.dwClosestThread!
     $newThread.each d.i.SVG.$drawTree

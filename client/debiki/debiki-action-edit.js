@@ -50,7 +50,8 @@ d.i.$loadEditorDependencies = (function() {
 /**
  * Loads editor resources and opens the edit form.
  */
-d.i.$showEditForm = function() {
+d.i.$showEditForm = function(event) {
+  event.preventDefault();
   var i = this;
   d.i.$loadEditorDependencies.call(i).done(function() {
     _$showEditFormImpl.call(i);
