@@ -9,6 +9,7 @@ h1 {
   /* Cancel Twitter Bootstrap's 14px .btn font size.
     (I use Verdana, which is a fairly large font.) */
   font-size: 13px;
+  color: hsl(211, 30%, 40%);
 }
 
 .instruction-list {
