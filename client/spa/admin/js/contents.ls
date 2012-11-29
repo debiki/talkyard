@@ -35,6 +35,11 @@ PrettyListItem =
     @_displayPath = @_displayPath.replace /\?.*/, ''
 
 
+  prettyTitle: ->
+    if @title?.length => @title
+    else '(Unnamed page)'
+
+
   prettyRole: ->
     switch @role
       | 'BlogMainPage' => 'Blog main page'

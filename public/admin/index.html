@@ -235,7 +235,7 @@
                       </label>
                     </td>
                     <td class='page-title'>
-                      <a href="{{ page.path }}" target="_blank" ng-bind-html="page.title"></a>
+                      <a href="{{ page.path }}" target="_blank" ng-bind-html="page.prettyTitle()"></a>
                       <span class="page-notfs important">{{ page.stringifyImportantMarks() }}</span>
                       <span class="page-notfs">{{ page.stringifyOtherMarks() }}</span>
                     </td>
