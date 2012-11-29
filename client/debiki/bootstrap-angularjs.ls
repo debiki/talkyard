@@ -51,6 +51,9 @@ findRootScope = ->
   $pageDataTag = $ '.dw-page'  # or are there > 1 on blog main page?
   $rootScope <<< $pageDataTag.dwPageMeta!
 
+  $rootScope.viewsPageConfigPost =
+    $pageDataTag.children('.dw-t')[0].id == 'dw-t-' + d.i.pageConfigPostId
+
   $rootScope.setCurrentUser = !(userProps) ->
     $rootScope.currentUser ?= {}
     $rootScope.currentUser <<< userProps

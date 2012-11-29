@@ -4,6 +4,9 @@ var d = { i: debiki.internal, u: debiki.v0.util };
 var $ = d.i.$;
 
 
+d.i.pageConfigPostId = 3;
+
+
 function confirmClosePage() {
   // If there're any reply forms with non-empty replies (textareas),
   // or any edit forms, then return a confirm close message.
