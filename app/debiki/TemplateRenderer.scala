@@ -51,10 +51,16 @@ case class TemplateRenderer(
         // Can I use Scala's Structural Typing?
         // — Or does which templates exist vary by theme? Should *not* rewrite?
 
+        // For page config posts (?view=3), use the `blogPost` template,
+        // because it e.g. doesn't list any child pages (which a
+        // `blogPostList` template however does).
+
         // Don't allow anyone to use www.debiki.com's templates.
         case "www.debiki.com" if pageReq.host.endsWith("debiki.com") ||
               pageReq.host.startsWith("localhost:") =>
-          if (pageMeta.pageRole == PageRole.BlogArticle)
+          if (pageReq.pageRoot.isPageTemplate)
+            wwwdebikicom.blogPost(tpi).body // see comment above
+          else if (pageMeta.pageRole == PageRole.BlogArticle)
             wwwdebikicom.blogPost(tpi).body
           else if (pageMeta.pageRole == PageRole.BlogMainPage)
             wwwdebikicom.blogPostList(tpi).body
@@ -65,7 +71,9 @@ case class TemplateRenderer(
             wwwdebikicom.blogPost(tpi).body
 
         case "default-2012-10-09" | _ =>
-          if (pageMeta.pageRole == PageRole.BlogArticle)
+          if (pageReq.pageRoot.isPageTemplate)
+            default20121009.blogPost(tpi).body
+          else if (pageMeta.pageRole == PageRole.BlogArticle)
             default20121009.blogPost(tpi).body
           else if (pageMeta.pageRole == PageRole.BlogMainPage)
             default20121009.blogPostList(tpi).body
