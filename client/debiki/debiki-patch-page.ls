@@ -85,6 +85,11 @@ addMessageToPost = (message, $post) ->
 
 insertThread = ($thread, { after }) ->
   $pervSibling = after
+  if $pervSibling.parent!is 'li'
+    # Horizontal layout. Threads are wrapped in <li>s (with
+    # display: table-cell).
+    $thread = $('<li></li>').append $thread
+    $pervSibling = $pervSibling.parent!
   $pervSibling.after $thread
 
 
@@ -94,6 +99,9 @@ prependThread = ($thread, { to }) ->
   if !$childList.length
     # This is the first child thread; create empty child thread list.
     $childList = $("<ol class='dw-res'/>").appendTo $parent
+  if $parent.is '.dw-hor'
+    # Horizontal layout, see comment in `insertThread` above.
+    $thread = $('<li></li>').append $thread
   $thread.appendTo $childList
 
 
