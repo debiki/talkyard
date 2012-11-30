@@ -46,10 +46,10 @@ trait CachingDao {
         someValue.asInstanceOf[Option[A]]
 
       case None =>
-        if (orCacheAndReturn eq null)
+        val newValueOpt = orCacheAndReturn
+        if (newValueOpt eq null)
           return None
 
-        val newValueOpt = orCacheAndReturn
         // – In case some other thread just inserted another value,
         // overwrite it, because `newValue` is probably more recent.
         // – For now, don't store info on cache misses.
