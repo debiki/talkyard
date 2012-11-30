@@ -65,6 +65,23 @@ trait CachingDao {
   }
 
 
+  def putInCacheIfAbsent[A](key: String, value: A): Boolean = {
+    debugCheckKey(key)
+    val anyOldElem = ehcache.putIfAbsent(cacheElem(key, value))
+    val wasInserted = anyOldElem eq null
+    wasInserted
+  }
+
+
+  def replaceInCache[A](key: String, oldValue: A, newValue: A): Boolean = {
+    debugCheckKey(key)
+    val oldElem = cacheElem(key, oldValue)
+    val newElem = cacheElem(key, newValue)
+    val wasReplaced = ehcache.replace(oldElem, newElem)
+    wasReplaced
+  }
+
+
   def removeFromCache(key: String) {
     debugCheckKey(key)
     pc.Cache.remove(key)
@@ -79,4 +96,20 @@ trait CachingDao {
     assert(key contains "|")
   }
 
+
+  private def ehcache: net.sf.ehcache.Cache =
+      net.sf.ehcache.CacheManager.create().getCache("play")
+
+
+  private def cacheElem(key: String, value: Any) = {
+    val elem = new net.sf.ehcache.Element(key, value)
+    // For now, cache forever. These two lines is how Play Framework
+    // specifies that `elem` is to be cached forever. By default, EHCache
+    // otherwise removes the elem after a few seconds or minutes.
+    elem.setEternal(true)
+    elem.setTimeToLive(0)
+    elem
+  }
+
 }
+
