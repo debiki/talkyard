@@ -40,14 +40,14 @@ class CachingTenantDao(tenantDbDao: ChargingTenantDbDao)
   with CachingUserDao {
 
 
-  override def savePageActionsImpl(request: DebikiRequest[_], page: Debate,
-        actions: List[Action], pageMeta: PageMeta): Seq[Action] = {
+  override def savePageActionsImpl(page: Debate, actions: List[Action],
+        pageMeta: PageMeta): Seq[Action] = {
 
     if (actions isEmpty)
       return Nil
 
     val actionsWithId =
-      super.savePageActionsImpl(request, page, actions, pageMeta)
+      super.savePageActionsImpl(page, actions, pageMeta)
 
     // Possible optimization: Examine all actions, and refresh cache only
     // if there are e.g. EditApp:s or approved Post:s (but ignore Edit:s --

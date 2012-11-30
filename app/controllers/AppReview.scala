@@ -66,7 +66,7 @@ object AppReview extends mvc.Controller {
         "DwE93JQ3", "Page not found: "+ pageId +", only some reviews saved")
       val page = pageWithoutMe ++ apiReq.meAsPeople_!
 
-      apiReq.dao.savePageActions(apiReq, page, reviews)
+      apiReq.dao.savePageActions(page, reviews)
     }
 
     Ok

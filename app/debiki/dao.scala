@@ -87,22 +87,22 @@ class TenantDao(protected val tenantDbDao: ChargingTenantDbDao)
    * Saves page actions and places messages in users' inboxes, as needed.
    * Returns the saved actions, with ids assigned.
    */
-  def savePageActions(pageReq: PageRequest[_], actions: List[Action])
+  final def savePageActions(pageReq: PageRequest[_], actions: List[Action])
         : Seq[Action] = {
-    savePageActionsImpl(pageReq, pageReq.page_!, actions, pageReq.pageMeta)
+    savePageActionsImpl(pageReq.page_!, actions, pageReq.pageMeta)
   }
 
 
-  def savePageActions(request: DebikiRequest[_], page: Debate,
-        actions: List[Action]): Seq[Action] = {
+  final def savePageActions(page: Debate, actions: List[Action])
+        : Seq[Action] = {
     val pageMeta = tenantDbDao.loadPageMeta(page.id) getOrElse
       throwNotFound("DwE115Xf3", s"Found no meta for page ${page.id}")
-    savePageActionsImpl(request, page, actions, pageMeta)
+    savePageActionsImpl(page, actions, pageMeta)
   }
 
 
-  protected def savePageActionsImpl(request: DebikiRequest[_], page: Debate,
-        actions: List[Action], pageMeta: PageMeta): Seq[Action] = {
+  def savePageActionsImpl(page: Debate, actions: List[Action],
+        pageMeta: PageMeta): Seq[Action] = {
     if (actions isEmpty)
       return Nil
 
