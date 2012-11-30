@@ -52,7 +52,7 @@ class CachingTenantDao(tenantDbDao: ChargingTenantDbDao)
     // Possible optimization: Examine all actions, and refresh cache only
     // if there are e.g. EditApp:s or approved Post:s (but ignore Edit:s --
     // unless applied & approved)
-    uncacheRenderedPage(pageId = page.id, origin = request.host)
+    uncacheRenderedPage(pageId = page.id)
 
     // Who should know about all these uncache-this-on-change-
     // -of-that relationships? For now:

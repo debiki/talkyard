@@ -42,6 +42,7 @@ trait CachingRenderedPageHtmlDao extends RenderedPageHtmlDao {
       val key = _pageHtmlKey(
         pageReq.pageId_!, origin = pageReq.host, showComments)
       lookupInCache(key, orCacheAndReturn = {
+        rememberOrigin(pageReq.host)
         Some(super.renderPage(pageReq, showComments))
       }) getOrDie "DwE93IB7"
     }
@@ -52,17 +53,58 @@ trait CachingRenderedPageHtmlDao extends RenderedPageHtmlDao {
   }
 
 
-  def uncacheRenderedPage(pageId: String, origin: String) {
-    // COULD do this for each origin listed in DW1_TENANT_HOSTS,
-    // alternatively, cache a Map[serveraddress, page-html] instead.
-    removeFromCache(_pageHtmlKey(pageId, origin, true))
-    removeFromCache(_pageHtmlKey(pageId, origin, false))
+  /**
+   * Remembers (caches) origins via which this server has been accessed.
+   * Sometimes a server is accessed via many addresses/origins,
+   * e.g. www.debiki.com and localhost:9003 (SSH tunnel),
+   * or https://www.debiki.com and http://www.debiki.com.
+   */
+  private def rememberOrigin(origin: String) {
+    var done = false
+    do {
+      lookupInCache[List[String]](originsKey) match {
+        case None =>
+          done = putInCacheIfAbsent(originsKey, List(origin))
+        case Some(knownOrigins) =>
+          if (knownOrigins contains origin)
+            return
+          val newOrigins = origin :: knownOrigins
+          done = replaceInCache(originsKey, knownOrigins, newValue = newOrigins)
+      }
+    }
+    while (!done)
+  }
+
+
+  private def knownOrigins: List[String] =
+    lookupInCache[List[String]](originsKey) getOrElse Nil
+
+
+  def uncacheRenderedPage(pageId: String) {
+    // Since the server address might be included in the generated html,
+    // we need to uncache pageId for each server address that maps
+    // to the current website (this.tenantId).
+    for (origin <- knownOrigins) {
+      removeFromCache(_pageHtmlKey(pageId, origin, showComments = true))
+      removeFromCache(_pageHtmlKey(pageId, origin, showComments = false))
+    }
+
+    // BUG race condition: What if anotoher thread started rendering a page
+    // just before the invokation of this function, and is finished
+    // just after we've cleared the cache? Then that other thread will insert
+    // a stale cache item. Could fix, by verifying that when you cache
+    // something, the current version of the page is the same as the page
+    // version when you started generating the cache value (e.g. started
+    // rendering a page).
   }
 
 
   private def _pageHtmlKey(pageId: String, origin: String,
         showComments: Boolean): String =
     s"$pageId|$tenantId|$origin|$showComments|PageHtml"
+
+
+  private def originsKey: String = s"$tenantId|PossibleOrigins"
 
 }
 
