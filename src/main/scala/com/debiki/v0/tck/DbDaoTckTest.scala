@@ -1689,6 +1689,19 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
       var newHost = TenantHost("website-2.ex.com", TenantHost.RoleCanonical,
          TenantHost.HttpsNone)
 
+      def newWebsiteDao() =
+        newTenantDbDao(v0.QuotaConsumers(tenantId = newWebsiteOpt.get.id))
+
+      var homepageId = "?"
+
+      val homepageTitle = Post(Page.TitleId, Page.TitleId, now,
+        loginId = SystemUser.Login.id,
+        newIp = None,
+        text = "Default Homepage",
+        markup = Markup.DefaultForPageTitle.id,
+        approval = Some(Approval.AuthoritativeUser),
+        tyype = PostType.Text)
+
       def createWebsite(suffix: String): Option[Tenant] = {
         dao.createWebsite(
           name = "website-"+ suffix, address = "website-"+ suffix +".ex.com",
@@ -1722,6 +1735,30 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
         create100Websites() must throwAn[OverQuotaException]
       }
 
+      "create a default homepage, with a title authored by SystemUser" in {
+        val emptyPage = Debate(guid = "?")
+        val pagePath = v0.PagePath(newWebsiteOpt.get.id, "/", None, false, "")
+        val dao = newWebsiteDao()
+        val page = dao.createPage(PageStuff.forNewPage(pagePath, emptyPage))
+        homepageId = page.id
+        dao.savePageActions(page.id, List(homepageTitle))
+        ok
+      }
+
+      "load the homepage title by SystemUser" in {
+        // Now the DbDao must use SystemUser._ stuff instead of creating
+        // new login, identity and user.
+        newWebsiteDao().loadPage(homepageId) must beLike {
+          case Some(page: Debate) =>
+            page.title must beLike {
+              case Some(title) =>
+                title.text must_== homepageTitle.text
+                title.login_! must_== SystemUser.Login
+                title.identity_! must_== SystemUser.Identity
+                title.user_! must_== SystemUser.User
+            }
+        }
+      }
     }
 
 
