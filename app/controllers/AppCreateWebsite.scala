@@ -233,15 +233,15 @@ object AppCreateWebsite extends mvc.Controller {
     //newWebsiteDao.moveRenamePage(Seq(pageId), newFolder = Some("/"),
     //  newSlug = Some(""))
 
-    // Set homepage title. (First, allow loginId to be None.)
-    /*
+    // Set homepage title.
     val title = Post(Page.TitleId, Page.TitleId, creationDati,
-      loginId = unimplemented("Null loginId"), newIp = None,
+      loginId = SystemUser.Login.id,
+      newIp = None,
       text = DefaultHomepageTitle,
-      markup = Markup.DefaultForPageTitle.id, approval = None,
+      markup = Markup.DefaultForPageTitle.id,
+      approval = Some(Approval.AuthoritativeUser),
       tyype = PostType.Text)
     newWebsiteDao.savePageActionsImpl(emptyPage, List(title), pageMeta)
-    */
   }
 
 
