@@ -99,13 +99,19 @@ case class PagePath(  // COULD move to debate.scala.  Rename to RequestPath?
   def isTemplatePage = pageSlug endsWith ".template"
 
   /**
-   * Pages and folders that start with '.' are visible to admins only.
+   * Pages and folders that start with '_' are visible to admins only.
    *
-   * For example, config pages, e.g. '.site.config', and
-   * the '/.drafts/' folder (in my current primitive draft/published
-   * implementation).
+   * For example, config pages, e.g. '_website-config.yaml', and any
+   * '/_old/' folder. I chose '_' not '.', because if there will ever
+   * be a file based DbDao, it will probably consider files that
+   * start with '.' OS or tooling specific files, e.g. '.git' or '.gitignore',
+   * if the filesystem DbDao is placed in a Git repo. (And such files
+   * shouldn't be served to the browser.)
    */
-  def isHiddenPage = pageSlug.startsWith(".") || folder.contains("/.")
+  def isHiddenPage =
+    pageSlug.startsWith(".") || // COULD remove, should forbid . as first char?
+    pageSlug.startsWith("_") ||
+    folder.contains("/_")
 
   // COULD rename to isIndexPageOrFolder (it's never a "FolderPage")
   /** True iff path ends with a `/'. Then this is a path to a  folder or
@@ -216,7 +222,12 @@ object PagePath {
 
   // All punctuation chars:     """!"#$%&'()*+,-./:;<=>?@[\]^_`{|}~"""
   private val _BadPunctSlug =   """!"#$%&'()*+,/:;<=>?@[\]^_`{|}~""" // -. ok
-  private val _BadPunctFolder = """!"#$%&'()*+,:;<=>?@[\]^_`{|}~""" // -./ ok
+  private val _BadPunctFolder = """!"#$%&'()*+,.:;<=>?@[\]^`{|}~""" // -/_ OK...
+  // ... Concerning disallowing '.' in folders: Perhaps '.' will mean
+  // something magic, in the future. For example, if using a file based DbDao,
+  // perhaps '/.folder/' could be a Git repo?! (/.git/) Then, better
+  // ignore folders & files starting with '.', so /.git/ isn't served to
+  // the browser.
 
   // If a folder ends with .../-something/, then `something' is in fact
   // a page guid and slug. The trailing slash should be removed.
