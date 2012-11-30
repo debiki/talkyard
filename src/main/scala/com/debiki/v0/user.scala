@@ -45,30 +45,36 @@ case class People(
 
   def nilo_!(loginId: String): NiLo = new NiLo(this, login_!(loginId))
 
+
   // -------- Logins
 
-  // COULD optimize.
-  def login(id: String): Option[Login] = logins.find(_.id == id)
-  def login_!(id: String): Login = login(id) getOrElse runErr(
-    "DwE8K3520z23", "Login not found: "+ safed(id))
+  def login(id: String): Option[Login] =
+    if (id == SystemUser.Login.id) Some(SystemUser.Login)
+    else logins.find(_.id == id)  // COULD optimize
 
-  def identity(id: String): Option[Identity] = identities.find(_.id == id)
+  def login_!(id: String): Login =
+    login(id) getOrElse runErr("DwE8K3520z23", s"Login not found: $id")
+
+
+  // -------- Identities
+
+  def identity(id: String): Option[Identity] =
+    if (id == SystemUser.Identity.id) Some(SystemUser.Identity)
+    else identities.find(_.id == id)  // COULD optimize
+
   def identity_!(id: String): Identity = identity(id) getOrElse runErr(
     "DwE021kr3k09", "Identity not found: "+ safed(id))
 
 
   // -------- Users
 
-  // COULD optimize.
-  def user(id: String): Option[User] = users.find(_.id == id)
+  def user(id: String): Option[User] =
+    if (id == SystemUser.User.id) Some(SystemUser.User)
+    else users.find(_.id == id)  // COULD optimize
+
   def user_!(id: String): User = user(id) getOrElse runErr(
     "DwE730krq849", "User not found: "+ safed(id))
 
-  // COULD create Action parent class, use instead of Edit.
-  //def authorOf(e: Edit): Option[User] =
-  //login(e.loginId).flatMap((l: Login) => user(l.userId))
-
-  //def authorOf_!(e: Edit): User = user_!(login_!(e.loginId).userId)
 }
 
 
@@ -369,6 +375,31 @@ case class LoginGrant(
     if (user.email nonEmpty) user.email
     else identity.email
   }
+}
+
+
+/**
+ * Used when things are inserted automatically into the database,
+ * e.g. an automatically generated default homepage, for a new website.
+ */
+object SystemUser {
+
+  import com.debiki.v0
+
+  val User = v0.User(id = "1", displayName = "System", email = "",
+    emailNotfPrefs = EmailNotfPrefs.DontReceive, isAdmin = true)
+
+  val Identity = new v0.Identity {
+    val id = "1"
+    val userId = User.id
+    val displayName = User.displayName
+    def email = User.email
+  }
+
+  val Login = v0.Login(
+    id = "1", prevLoginId = None, ip = "127.0.0.1",
+    date = new ju.Date(0), identityId = Identity.id)
+
 }
 
 

@@ -17,8 +17,9 @@ sealed abstract class Action {  // COULD delete, replace with Post:s?
   require(id != "0")
   require(id nonEmpty)
 
-  /** An id that identifies the login session, which in turn identifies
-   *  the user and IP and session creation time.
+  /**
+   * Identifies the login session, which in turn identifies
+   * the user and IP and session creation time.
    */
   def loginId: String
 
