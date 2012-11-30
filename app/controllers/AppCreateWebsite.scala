@@ -138,6 +138,10 @@ object AppCreateWebsite extends mvc.Controller {
 
         Debiki.sendEmail(email, website.id)
 
+        val newWebsiteDao = Debiki.tenantDao(
+          tenantId = website.id, ip = request.ip, roleId = None)
+        createHomepage(newWebsiteDao, creationDati = request.ctime)
+
         Redirect("http://"+ websiteAddr +
            routes.AppCreateWebsite.welcomeOwner.url)
       case None =>
@@ -193,5 +197,54 @@ object AppCreateWebsite extends mvc.Controller {
     // Tenantdao.createWebsite already throws error if too many websites
     // created from the same IP.
   }
+
+
+  /**
+   * Creates an empty page at /, with PageRole.Homepage, so I don't need
+   * to tell users how to create a homepage. Instead, I create a default
+   * empty homepage, and add a "Use this page as homepage" button,
+   * so they can easily switch homepage.
+   * If they make another page to the homepage, the default homepage
+   * is automatically moved from / to /_old/default-homepage.
+   */
+  private def createHomepage(newWebsiteDao: TenantDao, creationDati: ju.Date) {
+    val pageId = AppCreatePage.generateNewPageId()
+    val emptyPage = Debate(pageId)
+    val pageMeta = PageMeta.forNewPage(pageId, creationDati, PageRole.Homepage)
+
+    val oldPath = PagePath(newWebsiteDao.tenantId, folder = "/_old/",
+      pageId = Some(pageId), showId = false, pageSlug = "default-homepage")
+
+    val path = oldPath.copy(folder = "/", pageSlug = "")
+
+    // First create the homepage at '/_old/default-homepage'.
+    // Then change its location to '/'. — When '/' is overwritten by a
+    // path to another page (if the admin lets another page be the homepage),
+    // the old path will be activated again (since it's the one that was
+    // in use before we changed to '/'). ...
+    //  ... But! Not implemented: reactivation of old paths. So:
+
+    // For now:
+    newWebsiteDao.createPage(PageStuff(pageMeta, path, emptyPage))
+    // Because the code below would *overwrite* oldPath, instead of adding
+    // a new PagePath entry.
+    //// COULD do like this: (when old path reactivation implemented, see above)
+    //newWebsiteDao.createPage(PageStuff(pageMeta, oldPath, emptyPage))
+    //newWebsiteDao.moveRenamePage(Seq(pageId), newFolder = Some("/"),
+    //  newSlug = Some(""))
+
+    // Set homepage title. (First, allow loginId to be None.)
+    /*
+    val title = Post(Page.TitleId, Page.TitleId, creationDati,
+      loginId = unimplemented("Null loginId"), newIp = None,
+      text = DefaultHomepageTitle,
+      markup = Markup.DefaultForPageTitle.id, approval = None,
+      tyype = PostType.Text)
+    newWebsiteDao.savePageActionsImpl(emptyPage, List(title), pageMeta)
+    */
+  }
+
+
+  val DefaultHomepageTitle = "Default Homepage (click to edit)"
 
 }
