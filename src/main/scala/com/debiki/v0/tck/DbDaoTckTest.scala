@@ -1636,12 +1636,12 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
         testMovePages("/move-pages/folder1/", "/move-pages/f2/")
       }
 
-      "can move page from /move-pages/f2/ to /.drafts/move-pages/f2/" in {
-        testMovePages("/", "/.drafts/", "/.drafts/move-pages/f2/")
+      "can move page from /move-pages/f2/ to /_drafts/move-pages/f2/" in {
+        testMovePages("/", "/_drafts/", "/_drafts/move-pages/f2/")
       }
 
-      "can move page from /.drafts/move-pages/f2/ back to /move-pages/f2/" in {
-        testMovePages("/.drafts/", "/", "/move-pages/f2/")
+      "can move page from /_drafts/move-pages/f2/ back to /move-pages/f2/" in {
+        testMovePages("/_drafts/", "/", "/move-pages/f2/")
       }
 
       "won't move pages that shouldn't be moved" in {
