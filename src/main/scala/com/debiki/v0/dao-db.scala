@@ -92,6 +92,10 @@ abstract class TenantDbDao {
 
   def movePages(pageIds: Seq[String], fromFolder: String, toFolder: String)
 
+  /**
+   * Throws a PathClashException if there's already a page in the
+   * `newFolder` with slug `newSlug` and if no ids are shown.
+   */
   def moveRenamePage(pageId: String,
         newFolder: Option[String] = None, showId: Option[Boolean] = None,
         newSlug: Option[String] = None): PagePath
@@ -564,6 +568,10 @@ object DbDao {
   case class PageNotFoundException(tenantId: String, pageId: String)
     extends IllegalArgumentException("Page not found, id: "+ pageId +
        ", tenant id: "+ tenantId)
+
+  case class PathClashException(
+    existingPagePath: PagePath, newPagePath: PagePath)
+    extends Exception
 
 }
 
