@@ -15,7 +15,7 @@ import PageActions._
 import Prelude._
 import Utils._
 import Utils.ValidationImplicits._
-import controllers.PageRequest.PathClashException
+import DbDao.PathClashException
 
 
 object AppCreatePage extends mvc.Controller {
@@ -67,10 +67,13 @@ object AppCreatePage extends mvc.Controller {
         try { PageRequest(pageReqOrig, newPagePath) }
         catch {
           case ex: PathClashException =>
+            val duplicateIdInfo =
+              if (ex.existingPagePath.pageId.isEmpty) ""
+              else ", with id " + ex.existingPagePath.pageId.get
             throwForbidden(
               "DwE17Sf3", s"Cannot create new page at ${newPagePath.path}," +
               s" with id `$pageId`: There is already another page at that" +
-              s" location, with id `${ex.databasePageId}`")
+              " location" + duplicateIdInfo)
         }
 
       if (request.pageExists) {

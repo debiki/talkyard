@@ -12,6 +12,7 @@ import play.api._
 import play.api.mvc.{Action => _, _}
 import Prelude._
 import Utils.ValidationImplicits._
+import DbDao.PathClashException
 
 
 /**
@@ -146,8 +147,8 @@ object PageRequest {
         // Does another page already exist at `pagePath`? (It'd have the
         // same path, but another id.)
          if (correctPath.pageId.get != pagePath.pageId.get)
-           throw new PathClashException(databasePageId = correctPath.pageId.get,
-             newPathPageId = pagePath.pageId.get)
+           throw PathClashException(
+             existingPagePath = correctPath, newPagePath = pagePath)
 
         // Check for bad paths.
         if (correctPath.path != pagePath.path && !fixBadPath)
@@ -199,10 +200,6 @@ object PageRequest {
     val pagePathWithId = pagePathPerhapsId.copy(pageId = Some(pageId))
     PageRequest(apiRequest, pagePathWithId, fixBadPath = fixBadPath)
   }
-
-
-  case class PathClashException(databasePageId: String, newPathPageId: String)
-    extends Exception
 
 }
 
