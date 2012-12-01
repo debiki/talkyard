@@ -142,9 +142,13 @@ object AppList extends mvc.Controller {
       case DebikiHttp.ContentType.Html =>
         Ok(views.html.listActions(actions))
       case DebikiHttp.ContentType.Json =>
+        // Include the SystemUser, because it's the author of the
+        // default homepage. (COULD skip adding it, in the future when
+        // there's a Robots table and it's added automatically, if needed.)
+        val peopleAndSystemUser = people + SystemUser.User
         OkSafeJson(toJson(Map(
           "actions" -> JsArray(posts.map(_jsonFor _)),
-          "users" -> JsArray(people.users.map(_jsonFor _)),
+          "users" -> JsArray(peopleAndSystemUser.users.map(_jsonFor _)),
           "postTextLengthLimit" -> JsNumber(PostTextLengthLimit),
           // This limit is only approximate, if you list pages both
           // by folder path and by page id. see
