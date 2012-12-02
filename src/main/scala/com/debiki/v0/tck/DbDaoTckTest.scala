@@ -13,6 +13,7 @@ import org.specs2.mutable._
 import java.{util => ju}
 import DebikiSpecs._
 import DbDaoTckTest._
+import v0.DbDao.PathClashException
 
 /*
 
@@ -1553,11 +1554,31 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
     "move and rename pages" >> {
 
       lazy val pagePath = dao.lookupPagePathByPageId(ex1_debate.guid).get
-      var finalPath: PagePath = null
+
+      var oldPaths: List[PagePath] = Nil
+      var newPath: PagePath = null
+      var previousPath: PagePath = null
+
+      def testThat(pathCount: Int, oldPaths:  List[PagePath],
+            redirectTo: PagePath) = {
+        assert(pathCount == oldPaths.size) // test test suite
+        val newPath = redirectTo
+        for (oldPath <- oldPaths) {
+          // If page id not shown in URL, remove id, or the path will be
+          // trivially resolved.
+          val pathPerhapsNoId =
+            if (oldPath.showId == false) oldPath.copy(pageId = None)
+            else oldPath
+          dao.checkPagePath(pathPerhapsNoId) must_== Some(newPath)
+        }
+        ok
+      }
 
       "leave a page as is" in {
         // No move/rename options specified:
         dao.moveRenamePage(pageId = ex1_debate.guid) must_== pagePath
+        oldPaths ::= pagePath
+        ok
       }
 
       "won't move a non-existing page" in {
@@ -1568,33 +1589,59 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
       }
 
       "move a page to another folder" in {
-        val newPath = dao.moveRenamePage(pageId = ex1_debate.guid,
+        newPath = dao.moveRenamePage(pageId = ex1_debate.guid,
           newFolder = Some("/new-folder/"))
         newPath.folder must_== "/new-folder/"
         newPath.pageSlug must_== pagePath.pageSlug
         newPath.showId must_== pagePath.showId
       }
 
+      "and redirect one old path to new path" in {
+        testThat(1, oldPaths, redirectTo = newPath)
+      }
+
       "rename a page" in {
-        val newPath = dao.moveRenamePage(
+        oldPaths ::= newPath
+        newPath = dao.moveRenamePage(
           pageId = ex1_debate.guid,
-          showId = Some(!pagePath.showId), // flip
           newSlug = Some("new-slug"))
+        newPath.folder must_== "/new-folder/"
+        newPath.pageSlug must_== "new-slug"
+        newPath.showId must_== pagePath.showId
+      }
+
+      "and redirect two old paths to new path" in {
+        testThat(2, oldPaths, redirectTo = newPath)
+      }
+
+      "toggle page id visibility in URL" in {
+        oldPaths ::= newPath
+        newPath = dao.moveRenamePage(
+          pageId = ex1_debate.guid,
+          showId = Some(!pagePath.showId))
         newPath.folder must_== "/new-folder/"
         newPath.pageSlug must_== "new-slug"
         newPath.showId must_== !pagePath.showId
       }
 
+      "and redirect three old paths to new path" in {
+        testThat(3, oldPaths, redirectTo = newPath)
+      }
+
       "move and rename a page at the same time" in {
-        val newPath = dao.moveRenamePage(
+        oldPaths ::= newPath
+        previousPath = newPath // we'll move it back to here, soon
+        newPath = dao.moveRenamePage(
           pageId = ex1_debate.guid,
           newFolder = Some("/new-folder-2/"),
           showId = Some(true), newSlug = Some("new-slug-2"))
         newPath.folder must_== "/new-folder-2/"
         newPath.pageSlug must_== "new-slug-2"
         newPath.showId must_== true
+      }
 
-        finalPath = newPath
+      "and redirect four old paths to new path" in {
+        testThat(4, oldPaths, redirectTo = newPath)
       }
 
       "list the page at the correct location" in {
@@ -1607,8 +1654,157 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
         )
         pagePathsDetails must beLike {
           case list: List[(PagePath, PageMeta)] =>
-            list.find(_._1 == finalPath) must beSome
+            list.find(_._1 == newPath) must beSome
         }
+      }
+
+      "move-rename the page back to its previous location" in {
+        oldPaths ::= newPath
+        newPath = dao.moveRenamePage(
+          pageId = ex1_debate.guid,
+          newFolder = Some(previousPath.folder),
+          showId = Some(previousPath.showId),
+          newSlug = Some(previousPath.pageSlug))
+        newPath must_== previousPath
+      }
+
+      "and redirect five paths to the current (a previous) location" in {
+        testThat(5, oldPaths, redirectTo = newPath)
+      }
+    }
+
+
+    // -------- Page path clashes
+
+
+    def createPage(path: String, showId: Boolean = false): PageStuff = {
+      val pagePath =
+        PagePath.fromUrlPath(defaultTenantId, path = path) match {
+          case PagePath.Parsed.Good(path) => path.copy(showId = showId)
+          case x => failure(s"Test broken, bad path: $x")
+        }
+      dao.createPage(PageStuff.forNewEmptyPage(pagePath))
+    }
+
+
+    "not overwrite page paths, but overwrite redirects, when creating page" >> {
+
+      var page_f_index: PageStuff = null
+      var page_f_page: PageStuff = null
+
+      "create page /f/ and /f/page" in {
+        page_f_index = createPage("/f/")
+        page_f_page = createPage("/f/page")
+      }
+
+      "reject new page /f/ and /f/page, since would overwrite paths" in {
+        debugBreakpointA
+        createPage("/f/") must throwA[PathClashException]
+        createPage("/f/page") must throwA[PathClashException]
+      }
+
+      "create pages /f/-id, /f/-id-page and /f/-id2-page, since ids shown" in {
+        createPage("/f/", showId = true)
+        createPage("/f/page/", showId = true)
+        createPage("/f/page/", showId = true) // ok, since different id
+        ok
+      }
+
+      "move page /f/ to /f/former-index, redirect old path" in {
+        dao.moveRenamePage(page_f_index.id, newSlug = Some("former-index"))
+        val newPath = dao.checkPagePath(page_f_index.path.copy(pageId = None))
+        newPath must_== Some(page_f_index.path.copy(pageSlug = "former-index"))
+      }
+
+      "move page /f/page to /f/former-page, redirect old path" in {
+        dao.moveRenamePage(page_f_page.id, newSlug = Some("former-page"))
+        val newPath = dao.checkPagePath(page_f_page.path.copy(pageId = None))
+        newPath must_== Some(page_f_page.path.copy(pageSlug = "former-page"))
+      }
+
+      "create new page /f/, overwrite redirect to /f/former-index" in {
+        val page_f_index_2 = createPage("/f/")
+        page_f_index_2 must_!= page_f_index
+        // Now the path that previously resolved to page_f_index
+        // must instead point to page_f_index_2.
+        val path = dao.checkPagePath(page_f_index.path.copy(pageId = None))
+        path must_== Some(page_f_index_2.path)
+      }
+
+      "create new page /f/page, overwrite redirect to /f/page-2" in {
+        val page_f_page_2 = createPage("/f/page")
+        page_f_page_2 must_!= page_f_page
+        // Now the path that previously resolved to page_f_page
+        // must instead point to page_f_page_2.
+        val path = dao.checkPagePath(page_f_page.path.copy(pageId = None))
+        path must_== Some(page_f_page_2.path)
+      }
+    }
+
+
+
+    "not overwrite page paths, when moving pages" >> {
+
+      var page_g_index: PageStuff = null
+      var page_g_2: PageStuff = null
+      var page_g_page: PageStuff = null
+      var page_g_page_2: PageStuff = null
+
+      "create page /g/, /g/2, and /g/page, /g/page-2" in {
+        page_g_index = createPage("/g/")
+        page_g_2 = createPage("/g/2")
+        page_g_page = createPage("/g/page")
+        page_g_page_2 = createPage("/g/page-2")
+      }
+
+      "refuse to move /g/2 to /g/ — would overwrite path" in {
+        debugBreakpointA
+        dao.moveRenamePage(page_g_2.id, newSlug = Some("")) must
+          throwA[PathClashException]
+      }
+
+      "refuse to move /g/page-2 to /g/page — would overwrite path" in {
+        debugBreakpointA
+        dao.moveRenamePage(page_g_page_2.id, newSlug = Some("page")) must
+          throwA[PathClashException]
+      }
+
+      "move /g/ to /g/old-ix, redirect old path" in {
+        val newPath = dao.moveRenamePage(page_g_index.id, newSlug = Some("old-ix"))
+        val resolvedPath = dao.checkPagePath(page_g_index.path.copy(pageId = None))
+        resolvedPath must_== Some(newPath)
+        resolvedPath.map(_.pageSlug) must_== Some("old-ix")
+      }
+
+      "move /g/page to /g/former-page, redirect old path" in {
+        val newPath = dao.moveRenamePage(page_g_page.id, newSlug = Some("old-page"))
+        val resolvedPath = dao.checkPagePath(page_g_page.path.copy(pageId = None))
+        resolvedPath must_== Some(newPath)
+        resolvedPath.map(_.pageSlug) must_== Some("old-page")
+      }
+
+      "now move /g/2 to /g/ — overwrite redirect, fine" in {
+        val newPath = dao.moveRenamePage(page_g_2.id, newSlug = Some(""))
+        newPath must_== page_g_2.path.copy(pageSlug = "")
+        // Now the path that previously resolved to page_g_index must
+        // point to page_g_2.
+        val resolvedPath = dao.checkPagePath(page_g_index.path.copy(pageId = None))
+        resolvedPath must_== Some(newPath)
+        // And page_g_2's former location must point to its new location.
+        val resolvedPath2 = dao.checkPagePath(page_g_2.path.copy(pageId = None))
+        resolvedPath2 must_== Some(newPath)
+      }
+
+      "and move /g/page-2 to /g/page — overwrite redirect" in {
+        val newPath = dao.moveRenamePage(page_g_page_2.id, newSlug = Some("page"))
+        newPath must_== page_g_page_2.path.copy(pageSlug = "page")
+        // Now the path that previously resolved to page_g_page must
+        // point to page_g_page_2.
+        val resolvedPath = dao.checkPagePath(page_g_page.path.copy(pageId = None))
+        resolvedPath must_== Some(newPath)
+        // And page_g_page_2's former location must point to its new location.
+        val resolvedPath2 = dao.checkPagePath(page_g_page_2.path.copy(pageId = None))
+        resolvedPath2 must_== Some(newPath)
       }
     }
 
