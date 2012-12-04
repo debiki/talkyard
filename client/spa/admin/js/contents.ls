@@ -217,7 +217,7 @@ class FolderListItem extends ListItem
 
 
   $scope.createDraftPage = ->
-    createPageInFolder '/.drafts/'
+    createPageInFolder '/'
 
 
   $scope.createPageInFolder = ->
