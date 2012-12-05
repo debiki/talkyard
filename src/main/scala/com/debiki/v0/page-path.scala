@@ -37,9 +37,9 @@ case class PagePath(  // COULD move to debate.scala.  Rename to RequestPath?
   showId: Boolean,
   pageSlug: String
 ){
-  require(tenantId.nonEmpty)
-  require(pageId != Some("?"))
-  require(pageId != Some(""))
+  require(tenantId.nonEmpty, "DwE73BU8")
+  require(pageId != Some("?"), "DwE16Is3")
+  require(pageId != Some(""), "DwE0Bj35")
 
   if (!folder.startsWith("/"))
     throw PagePathException(
@@ -125,7 +125,7 @@ case class PagePath(  // COULD move to debate.scala.  Rename to RequestPath?
   // Whether or not Path is to a folder or a page would always be known.
   def isFolder = isFolderOrIndexPage && pageId.isEmpty
 
-  def parentFolder: Option[PagePath] = {
+  def parentFolder: Option[PagePath] = {  // COULD rename: parentFolderPagePath
     if (!isFolder)
       return Some(copy(pageSlug = "", showId = false, pageId = None))
     if (folder == "/")
