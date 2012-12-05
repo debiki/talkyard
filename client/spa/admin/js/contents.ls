@@ -350,6 +350,10 @@ class FolderListItem extends ListItem
         return
       pageListItem.title = newTitle if newTitle?
       pageListItem.setPath { newFolder, newSlug, showId }
+
+      if data.pagePushedToPrevLoc
+        updatePage data.pagePushedToPrevLoc
+
       redrawPageItems [pageListItem]
 
     pageListItem = getSelectedPageOrDie!
