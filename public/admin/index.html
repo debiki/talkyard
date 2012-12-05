@@ -193,6 +193,24 @@
                 </form>
               </div>
 
+              <div id='use-as-homepage-btn' class='dropdown'
+                  ng-show='onePageSelected && !homepageSelected'>
+                <a class='btn dropdown-toggle' id='use-as-homepage-dropdown-btn' data-toggle='dropdown' href='#' role='button'>Use as Homepage</a>
+                  <form name='useAsHomepageForm' class='dropdown-menu' role='menu' aria-labelledby='use-as-homepage-dropdown-btn'
+                      ng-submit='changeHomepageToSelectedPage()'>
+                    <p>Change homepage to <em>{{ anySelectedPageTitle() }}</em>?</p>
+                    <!-- COULD clarify:
+                    <p>The current homepage will be available here: (URL to previous page path to current homepage)</p>
+                    -->
+                    <input type='submit' class='btn' value='Yes, do it'>
+                    <!--
+                    Currently this actually *submits* the form, why??
+                    <button class='btn'
+                      ng-click='closeDropdown()'>Cancel</button>
+                    -->
+                </form>
+              </div>
+
               <!--
               <a id='publish-page-btn' class='btn' ng-click='publishSelectedPages()' ng-show='onlyDraftsSelected'>Publish</a>
               <a id='publish-page-btn' class='btn' ng-click='unpublishSelectedPages()' ng-show='onlyPublishedSelected'>Unpublish</a>

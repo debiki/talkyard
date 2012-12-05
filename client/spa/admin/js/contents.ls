@@ -192,6 +192,11 @@ class FolderListItem extends ListItem
     selectedPageListItems[0]
 
 
+  anySelectedPage = ->
+    return void unless selectedPageListItems.length
+    selectedPageListItems[0]
+
+
   # i18n: COULD Use http://xregexp.com/ instead of the build in regex
   # engine (so the title and slug will accept non-Latin chars),
   # and ... I suppose I then cannot use the ng-pattern directive,
@@ -274,6 +279,10 @@ class FolderListItem extends ListItem
     getSelectedPageOrDie
 
 
+  $scope.anySelectedPageTitle = ->
+    anySelectedPage!?prettyTitle()
+
+
   /**
    * Opens a page in a new browser tab.
    *
@@ -306,14 +315,36 @@ class FolderListItem extends ListItem
 
 
   $scope.renameSelectedPageTo = ({ newSlug, newTitle }) ->
-    refreshPageList = ->
-      # pageListItem.title = newTitle
-      pageListItem.changeSlug newSlug
+    moveRenameSelectedPageTo { newSlug, newTitle }
+
+
+  $scope.changeHomepageToSelectedPage = !->
+    # The previous path to the current homepage will be reactivated
+    # when we overwrite the current path with the selected page.
+    # (So the current homepage will remain reachable.)
+    moveRenameSelectedPageTo (
+      newFolder: '/', newSlug: '', showId: false,
+      pushExistingPageToPrevLoc: true)
+
+
+  moveRenameSelectedPageTo = !({
+      newFolder, newSlug, showId, newTitle, pushExistingPageToPrevLoc }) ->
+
+    refreshPageList = !(data, status, headers, config) ->
+      if status != 200
+        $scope.showModalDialog (
+          title: "Error #status"
+          body: data || "Something went wrong.")
+        return
+      pageListItem.title = newTitle if newTitle?
+      pageListItem.changeSlug newSlug if newSlug?
+      pageListItem.changeFolder newFolder if newFolder? # CREATE?
       redrawPageItems [pageListItem]
 
     pageListItem = getSelectedPageOrDie!
-    adminService.renamePage pageListItem.pageId,
-        { newSlug, newTitle, callback: refreshPageList }
+    adminService.moveRenamePage pageListItem.pageId, {
+        newFolder, newSlug, showId, newTitle, pushExistingPageToPrevLoc,
+        callback: refreshPageList }
 
 
   $scope.listItems = []
@@ -435,9 +466,11 @@ class FolderListItem extends ListItem
     selectedFolderListItems := []
     numDrafts = 0
     numNonDrafts = 0
+    $scope.homepageSelected = false
     for item in $scope.listItems when item.included
       if item.pageId
         selectedPageListItems.push item
+        $scope.homepageSelected = true if item.path == '/'
         #if item.isDraft => numDrafts += 1
         #else numNonDrafts += 1
       else

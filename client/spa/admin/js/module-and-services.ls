@@ -112,9 +112,14 @@ function adminService ($http, $rootScope)
         .success -> callback!
 
 
-  api.renamePage = (pageId, {newTitle, newSlug, callback}) ->
-    $http.post '/-/rename-page', { pageId, newTitle, newSlug }
-        .success -> callback!
+  api.moveRenamePage = !(pageId,
+      {newFolder, newSlug, newTitle, showId, pushExistingPageToPrevLoc,
+      callback}) ->
+    $http.post '/-/move-rename-page', {
+        pageId, newFolder, newSlug, showId, newTitle,
+        pushExistingPageToPrevLoc }
+        .success callback
+        .error callback
 
   api
 
