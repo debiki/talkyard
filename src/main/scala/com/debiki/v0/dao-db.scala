@@ -100,12 +100,33 @@ abstract class TenantDbDao {
         newFolder: Option[String] = None, showId: Option[Boolean] = None,
         newSlug: Option[String] = None): PagePath
 
+  /**
+   * Throws a PathClashException, if there's another page at `pagePath`.
+   */
+  def moveRenamePage(pagePath: PagePath)
+
+  /**
+   * Moves the page at pagePath to the location where it was placed before
+   * it was moved to pagePath. Returns that location, or does nothing and
+   * returns None, if there is no such location.
+   */
+  def movePageToItsPreviousLocation(pagePath: PagePath): Option[PagePath]
+
   @deprecated("", since = "")
   def loadTemplate(templPath: PagePath): Option[TemplateSrcHtml]
 
   def checkPagePath(pathToCheck: PagePath): Option[PagePath]
 
-  def lookupPagePathByPageId(pageId: String): Option[PagePath]
+  /**
+   * Loads the canonical path to pageId.
+   */
+  def lookupPagePath(pageId: String): Option[PagePath]
+
+  /**
+   * Loads all PagePaths that map to pageId. The canonical path is placed first
+   * and the tail consists only of any redirection paths.
+   */
+  def lookupPagePathAndRedirects(pageId: String): List[PagePath]
 
   def listChildPages(parentPageId: String, sortBy: PageSortOrder,
         limit: Int, offset: Int = 0): Seq[(PagePath, PageMeta)]
@@ -401,6 +422,16 @@ class ChargingTenantDbDao(
       showId = showId, newSlug = newSlug)
   }
 
+  def moveRenamePage(pagePath: PagePath) {
+    _chargeForOneWriteReq()
+    _spi.moveRenamePage(pagePath)
+  }
+
+  def movePageToItsPreviousLocation(pagePath: PagePath): Option[PagePath] = {
+    _chargeForOneWriteReq()
+    _spi.movePageToItsPreviousLocation(pagePath)
+  }
+
   @deprecated("", since = "")
   def loadTemplate(templPath: PagePath): Option[TemplateSrcHtml] = {
     _chargeForOneReadReq()
@@ -412,9 +443,14 @@ class ChargingTenantDbDao(
     _spi.checkPagePath(pathToCheck)
   }
 
-  def lookupPagePathByPageId(pageId: String): Option[PagePath] = {
+  def lookupPagePath(pageId: String): Option[PagePath] = {
     _chargeForOneReadReq()
-    _spi.lookupPagePathByPageId(pageId = pageId)
+    _spi.lookupPagePath(pageId)
+  }
+
+  def lookupPagePathAndRedirects(pageId: String): List[PagePath] = {
+    _chargeForOneReadReq()
+    _spi.lookupPagePathAndRedirects(pageId)
   }
 
   def listChildPages(parentPageId: String, sortBy: PageSortOrder,
@@ -563,15 +599,33 @@ class ChargingTenantDbDao(
 object DbDao {
 
   case class EmailNotFoundException(emailId: String)
-    extends Exception("No email with id: "+ emailId)
+    extends RuntimeException("No email with id: "+ emailId)
 
-  case class PageNotFoundException(tenantId: String, pageId: String)
-    extends IllegalArgumentException("Page not found, id: "+ pageId +
-       ", tenant id: "+ tenantId)
+  class PageNotFoundException(message: String) extends RuntimeException(message)
+
+  case class PageNotFoundByIdException(
+    tenantId: String,
+    pageId: String,
+    details: Option[String] = None)
+    extends PageNotFoundException(
+      s"Found no page with id: $pageId, tenant id: $tenantId" +
+        prettyDetails(details))
+
+  case class PageNotFoundByPathException(
+    pagePath: PagePath,
+    details: Option[String] = None)
+    extends PageNotFoundException(
+      s"Found no page at: ${pagePath.path}, tenant id: ${pagePath.tenantId}" +
+        prettyDetails(details))
 
   case class PathClashException(
     existingPagePath: PagePath, newPagePath: PagePath)
     extends Exception
+
+  private def prettyDetails(anyDetails: Option[String]) = anyDetails match {
+    case None => ""
+    case Some(message) => s", details: $message"
+  }
 
 }
 
