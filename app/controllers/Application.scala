@@ -189,7 +189,7 @@ object Application extends mvc.Controller {
     val feedPagePaths =
       if (!pagePath.isFolderOrIndexPage) List(pagePath)
       else pageReq.dao.listPagePaths(
-        Utils.parsePathRanges(pageReq.pagePath, pageReq.request.queryString,
+        Utils.parsePathRanges(pageReq.pagePath.folder, pageReq.request.queryString,
            urlParamPrefix = "for"),
         include = List(PageStatus.Published),
         sortBy = PageSortOrder.ByPublTime,

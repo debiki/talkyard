@@ -46,6 +46,7 @@ POST  /-/move-pages             controllers.AppMoveRenamePage.movePages
 POST  /-/move-rename-page       controllers.AppMoveRenamePage.moveRenamePage
 POST  /-/approve                controllers.AppReview.approve
 POST  /-/reject                 controllers.AppReview.reject
+GET   /-/list-pages             controllers.AppList.listPages
 
 # Don't change the URL on the next line. The /-/assets/<version-number>/ is
 # updated by the deployment script (asset fingerprinting).

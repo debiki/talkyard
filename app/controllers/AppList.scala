@@ -14,6 +14,7 @@ import play.api.libs.json._
 import play.api.libs.json.Json.toJson
 import play.api.mvc.{Action => _, _}
 import xml.{Node, NodeSeq}
+import ApiActions._
 import PageActions._
 import DebikiHttp._
 import Prelude._
@@ -30,17 +31,29 @@ object AppList extends mvc.Controller {
   val PostTextLengthLimit = 500
 
 
-  def listPages(pathIn: PagePath, contentType: DebikiHttp.ContentType) =
-        PageGetAction(pathIn, pageMustExist = false) { pageReq =>
+  def listPages = GetAction { implicit request =>
+    val pathRanges = Utils.parsePathRanges("/", request.queryString)
+    listPagesImpl(pathRanges, DebikiHttp.ContentType.Json)
+  }
 
+
+  def listPages(pathIn: PagePath, contentType: DebikiHttp.ContentType) =
+        PageGetAction(pathIn, pageMustExist = false) { implicit pageReq =>
     if (!pageReq.user_!.isAdmin) {
       // If ever allowing non-admins to list any pages, fitler out
       // folders that start with a dot, e.g. /some/.folder/.
       throwForbidden("DwE84Zi31", "Insufficient permissions to list pages")
     }
+    val pathRanges = Utils.parsePathRanges(pathIn.folder, pageReq.queryString)
+    listPagesImpl(pathRanges, contentType)
+  }
 
-    val pathsAndDetails = pageReq.dao.listPagePaths(
-      Utils.parsePathRanges(pathIn, pageReq.queryString),
+
+  def listPagesImpl(pathRanges: PathRanges, contentType: DebikiHttp.ContentType)(
+        implicit request: DebikiRequest[_]) = {
+
+    val pathsAndDetails = request.dao.listPagePaths(
+      pathRanges,
       include = PageStatus.All,
       sortBy = PageSortOrder.ByPath,
       limit = Int.MaxValue,
@@ -76,7 +89,7 @@ object AppList extends mvc.Controller {
     val tpi = TinyTemplateProgrammingInterface(pageReq)
 
     val pages = tpi.listNewestPages(
-      Utils.parsePathRanges(pathIn, pageReq.queryString))
+      Utils.parsePathRanges(pathIn.folder, pageReq.queryString))
 
     def pageTitlesAndBodiesHtml =
       <ol>{
@@ -124,7 +137,7 @@ object AppList extends mvc.Controller {
     val pathRanges = {
       import pageReq.pagePath
       if (pagePath.isFolderOrIndexPage)
-        Utils.parsePathRanges(pagePath, pageReq.queryString)
+        Utils.parsePathRanges(pagePath.folder, pageReq.queryString)
       else throwBadReq(
         "DwE92GK31", "Currently you cannot list actions on single pages. "+
         "Try with http://server-address/?list-actions")

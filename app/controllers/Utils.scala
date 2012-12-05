@@ -273,7 +273,7 @@ object Utils extends Results with http.ContentTypes {
   }
 
 
-  def parsePathRanges(basePath: PagePath, queryString: Map[String, Seq[String]],
+  def parsePathRanges(baseFolder: String, queryString: Map[String, Seq[String]],
         urlParamPrefix: String = "in"): PathRanges = {
 
     import Utils.ValidationImplicits._
@@ -285,7 +285,7 @@ object Utils extends Results with http.ContentTypes {
       val pathsListNoPrefix = pathsString.split(",").toList
       pathsListNoPrefix map { path =>
         val isAbsolute = path.startsWith("/")
-        if (isAbsolute) path else basePath.folder + path
+        if (isAbsolute) path else baseFolder + path
       }
     }
 
@@ -299,20 +299,20 @@ object Utils extends Results with http.ContentTypes {
       // Include everything in the tree designated by basePath.
       // Need consider no other parameters (parent paths like "/../" are not
       // supported).
-      treePathsList = List(basePath.folder)
+      treePathsList = List(baseFolder)
     } else {
       treePathsList = makeListOfParamValues(urlParamPrefix +"-trees")
       folderPathsList = makeListOfParamValues(urlParamPrefix +"-folders")
       pageIdsList = queryString.getEmptyAsNone("for-pages")
          .map(_.split(",").toList) getOrElse Nil
       if (forCurFolder isDefined) {
-        folderPathsList ::= basePath.folder
+        folderPathsList ::= baseFolder
       }
     }
 
     // List folder contents, by default.
     if (folderPathsList.isEmpty && treePathsList.isEmpty && pageIdsList.isEmpty)
-      folderPathsList ::= basePath.folder
+      folderPathsList ::= baseFolder
 
     PathRanges(folders = folderPathsList, trees = treePathsList,
         pageIds = pageIdsList)
