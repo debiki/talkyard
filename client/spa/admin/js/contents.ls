@@ -79,17 +79,14 @@ class ListItem implements PrettyListItem
 
   ~>
     @included = false
-    @open = false
 
   /**
    * Updates this ListItem with data from another list item,
    * without overwriting certain states.
    */
   update = ({ withDataFrom }) ->
-    wasOpen = @open
     wasIncluded = @included
     @ <<< withDataFrom
-    @open = wasOpen
     @included = wasIncluded
     @clearCache!
 
@@ -368,7 +365,6 @@ class FolderListItem extends ListItem
 
   redrawPageList = ->
     sortItemsInPlace $scope.listItems
-    updateListItemFields $scope.listItems
     $scope.updateSelections!
 
 
@@ -461,64 +457,9 @@ class FolderListItem extends ListItem
     # right. Or show a preview, if only one single page selected.
     return
 
-  /**
-   * Traverses the $scope.listItems list once, checks each item.closed,
-   * and updates all hide counts accordingly.
-   *
-   * COULD remove folders without children.
-   * COULD change `open` to `true` if all children of a folder are
-   * shown, but folder currently closed. (If a page is selected,
-   * it's shown even if parent folder closed.)
-   * COULD add a `...` list item, if folder closed, but >= 1 child shown?
-   */
-  updateListItemFields = (items) ->
-    curHideCount = 0
-    curParentFolderPath = '/'
-    folderStack = []
-    # Could, instead?: folderStack = [{ hideCount: 0, path: '/' }]
-    for item in items
-
-      # Leave any folder and continue from previously stacked parent.
-      if item.isFolder
-        curHideCount = 0
-        curParentFolderPath = '/'
-        while curParentFolderPath == '/' && folderStack.length > 0
-          lastFolder = last folderStack
-          if item.path.search(lastFolder.path) == 0
-            curHideCount = lastFolder.hideCount
-            curHideCount += 1 unless lastFolder.open
-            curParentFolderPath = lastFolder.path
-          else
-            folderStack.pop()
-
-      item.depth = folderStack.length
-      item.hideCount = curHideCount
-
-      # Always show stuff with any marks (could be a page the user
-      # just created), and show its ancestor folders too.
-      if item.marks
-        item.hideCount = 0
-        for ancestorFolder in folderStack
-          # BUG SHOULD recursively update hide counts of any folder children.
-          # (So they're 1 if folder closed, or 0 if open).
-          ancestorFolder.hideCount = 0
-
-      # Enter folder?
-      if item.isFolder
-        curHideCount += 1 unless item.open
-        curParentFolderPath = item.path
-        folderStack.push item
-    return
-
-
-  $scope.openClose = (item) ->
-    item.open = !item.open
-    updateListItemFields $scope.listItems
-
 
   $scope.test =
     sortItemsInPlace: sortItemsInPlace
-    updateListItemFields: updateListItemFields
     PageListItem: PageListItem
     FolderListItem: FolderListItem
 
