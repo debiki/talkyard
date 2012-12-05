@@ -95,7 +95,6 @@ class PageListItem extends ListItem
   (page) ~>
     @ <<< page
     @pageId = @id # rename one of them?
-    @isPage = true
     if @parentPageId => @isChildPage = true
     if find (== @role), ['BlogMainPage', 'ForumMainPage', 'WikiMainPage']
       @isMainPage = true
@@ -349,11 +348,6 @@ class PageListItem extends ListItem
       for ix from 1 to minLen
         partA = partsA[ix]
         partB = partsB[ix]
-        # Sort a folder before the pages in it.
-        # (A folder and its index page has identical `path`s, e.g. `/folder/`.)
-        if ix + 1 == lenA and lenA == lenB
-          return -1 if a.isFolder and b.isPage
-          return 1 if b.isFolder and a.isPage
         # Sort pages before folders
         return -1 if ix + 1 == lenA and lenA < lenB
         return 1 if ix + 1 == lenB and lenB < lenA
