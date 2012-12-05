@@ -136,6 +136,14 @@ class PageListItem extends ListItem
   $scope.listItems = []
 
 
+  getPageById = (pageId) ->
+    # COULD optimize: Store pages by id in an object too?
+    # But bug risk, would need to sync with listItems.
+    # Or write my own SortedMap datastructure? Or use this one?:
+    # http://dailyjs.com/2012/09/24/linkedhashmap/
+    find (.id == pageId), $scope.listItems
+
+
   getSelectedPageOrDie = ->
     bug('DwE83Iw2') if selectedPageListItems.length != 1
     selectedPageListItems[0]
@@ -337,23 +345,37 @@ class PageListItem extends ListItem
     $scope.updateSelections!
 
 
-  # Places deep paths at the end. Sorts alphabetically, at each depth.
+  /**
+   * Sort table rows by parent page id, folder and page slug.
+   */
   sortItemsInPlace = (items) ->
+
+    sortOrderOf = (item) ->
+      return item._sortOrder if item._sortOrder
+      # Derive and cache item's sort order.
+      # Use ' ' as sort field delimiter — this results in the homepage
+      # appearing at the top of the table. ((Since it'd start with
+      # ' /  <homepage-id>'), before e.g. any '/_old/' folder or '/aaa/'
+      # folder. Space is the lowest printable ASCII char, and doesn't appear
+      # in the url path segment as folder or page slug.))
+      parentSortOrder =
+        if item.parentPageId
+          parent = getPageById item.parentPageId
+          sortOrderOf parent
+        else
+          ''
+      mySafeFolder = item.folderPath!.replace ' ', '' # shouldn't be needed
+      mySafeSlug = item.slug!.replace ' ', ''
+      mySortOrder = "#mySafeFolder #mySafeSlug #{item.id}"
+      item._sortOrder = "#parentSortOrder #mySortOrder"
+      item._sortOrder
+
+    for item in items
+      item._sortOrder = void
+
     items.sort (a, b) ->
-      partsA = a.path.split '/'
-      partsB = b.path.split '/'
-      lenA = partsA.length
-      lenB = partsB.length
-      minLen = Math.min(lenA, lenB)
-      for ix from 1 to minLen
-        partA = partsA[ix]
-        partB = partsB[ix]
-        # Sort pages before folders
-        return -1 if ix + 1 == lenA and lenA < lenB
-        return 1 if ix + 1 == lenB and lenB < lenA
-        # Sort alphabetically
-        return -1 if partA < partB
-        return 1 if partB < partA
+      return -1 if sortOrderOf(a) < sortOrderOf(b)
+      return +1 if sortOrderOf(b) < sortOrderOf(a)
       return 0
 
 
