@@ -114,8 +114,12 @@ object Prelude {
   def illArgErr(errorCode: String, problem: => String) =
     throw new IllegalArgumentException(problem +" [error "+ errorCode +"]")
 
+  def illArgErrIf(condition: Boolean, errorCode: String, problem: => String) =
+    if (condition) illArgErr(errorCode, problem)
+
+  // COULD remove
   def illArgErrIf3(condition: Boolean, errorCode: String, problem: => String) =
-    if (condition) illArgErr(problem, errorCode)
+    if (condition) illArgErr(errorCode, problem)
 
   /** Converts {@code text} to a single line printable ASCII, not very long,
    *  so it can be included in an error message even if it is end user defined
