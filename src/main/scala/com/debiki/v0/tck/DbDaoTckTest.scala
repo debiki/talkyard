@@ -13,7 +13,7 @@ import org.specs2.mutable._
 import java.{util => ju}
 import DebikiSpecs._
 import DbDaoTckTest._
-import v0.DbDao.PathClashException
+import v0.DbDao._
 
 /*
 
@@ -1699,6 +1699,77 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
     "list no paths for a non-existing page" in {
       dao.lookupPagePathAndRedirects("badpageid") must_== Nil
     }
+
+
+    // -------- Move page to previous location
+
+
+    "move a page to its previous location" >> {
+
+      "fail to move a non-existing page" in {
+        val badPath = PagePath(defaultTenantId, "/folder/", None,
+          showId = false, pageSlug = "non-existing-page-532853")
+        dao.movePageToItsPreviousLocation(badPath) must
+          throwA[PageNotFoundByPathException]
+      }
+
+      var origHomepage: PageStuff = null
+      var newHomepage: PageStuff = null
+
+      def homepagePathNoId = PagePath(defaultTenantId, "/", None, false, "")
+
+      def homepagePathWithIdTo(page: PageStuff) =
+        homepagePathNoId.copy(pageId = Some(page.id))
+
+      "create page /_old/homepage" in {
+        origHomepage = createPage("/_old/homepage", showId = false)
+        ok
+      }
+
+      "move it page to / (homepage)" in {
+        val homepagePath = homepagePathWithIdTo(origHomepage)
+        dao.moveRenamePage(homepagePath)
+        val newPath = dao.checkPagePath(homepagePath.copy(pageId = None))
+        newPath must_== Some(homepagePath)
+      }
+
+      "move it back to its previous location" in {
+        val oldPath = PagePath(defaultTenantId, "/_old/",
+          Some(origHomepage.id), showId = false, pageSlug = "homepage")
+        val newPath = dao.movePageToItsPreviousLocation(homepagePathNoId)
+        newPath must_== Some(oldPath)
+      }
+
+      "create a new homepage at /new-homepage" in {
+        newHomepage = createPage("/new-homepage", showId = true)
+        ok
+      }
+
+      "move the new homepage to /" in {
+        val homepagePath = homepagePathWithIdTo(newHomepage)
+        dao.moveRenamePage(homepagePath)
+        val newPath = dao.checkPagePath(homepagePath.copy(pageId = None))
+        newPath must_== Some(homepagePath)
+      }
+
+      "move new homepage back to its previous location" in {
+        dao.movePageToItsPreviousLocation(homepagePathNoId) must beLike {
+          case Some(pagePath) =>
+            pagePath.pageSlug must_== "new-homepage"
+            pagePath.folder must_== "/"
+            pagePath.showId must_== true
+        }
+      }
+
+      "move the original homepage to / again" in {
+        val homepagePath = homepagePathWithIdTo(origHomepage)
+        dao.moveRenamePage(homepagePath)
+        val newPath = dao.checkPagePath(homepagePath.copy(pageId = None))
+        newPath must_== Some(homepagePath)
+      }
+   }
+
+
 
     // -------- Page path clashes
 
