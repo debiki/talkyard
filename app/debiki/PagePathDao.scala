@@ -24,12 +24,21 @@ trait PagePathDao {
       showId = showId, newSlug = newSlug)
 
 
+  def movePageToItsPreviousLocation(pagePath: PagePath): Option[PagePath] = {
+    tenantDbDao.movePageToItsPreviousLocation(pagePath)
+  }
+
+
   def checkPagePath(pathToCheck: PagePath): Option[PagePath] =
     tenantDbDao.checkPagePath(pathToCheck)
 
 
-  def lookupPagePathByPageId(pageId: String): Option[PagePath] =
-    tenantDbDao.lookupPagePathByPageId(pageId = pageId)
+  def lookupPagePath(pageId: String): Option[PagePath] =
+    tenantDbDao.lookupPagePath(pageId = pageId)
+
+
+  def lookupPagePathAndRedirects(pageId: String): List[PagePath] =
+    tenantDbDao.lookupPagePathAndRedirects(pageId)
 
 
   def loadPageMeta(pageId: String): Option[PageMeta] =
@@ -82,17 +91,17 @@ trait CachingPagePathDao extends PagePathDao {
   }
 
 
-  override def lookupPagePathByPageId(pageId: String): Option[PagePath] =
+  override def lookupPagePath(pageId: String): Option[PagePath] =
     lookupInCache(
       _pathByPageIdKey(pageId),
       orCacheAndReturn =
-        super.lookupPagePathByPageId(pageId = pageId))
+        super.lookupPagePath(pageId = pageId))
 
 
   private def _removeCachedPathsTo(pageId: String) {
     // Remove cache entries from id to path,
     // and from a browser's specified path to the correct path with id.
-    super.lookupPagePathByPageId(pageId) foreach { oldPath =>
+    super.lookupPagePath(pageId) foreach { oldPath =>
       removeFromCache(_pathWithIdByPathKey(oldPath))
       removeFromCache(_pathByPageIdKey(pageId))
     }
