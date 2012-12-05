@@ -10,12 +10,6 @@ AdminModule = angular.module('AdminModule', ['ui', 'ngSanitize'])
 
 
 
-AdminModule.filter 'filterProp', ->
-  (inputs, propName, textToMatch) ->
-    [i for i in inputs when i[propName].search(textToMatch) >= 0]
-
-
-
 AdminModule.factory 'AdminService', ['$http', '$rootScope', adminService]
 
 

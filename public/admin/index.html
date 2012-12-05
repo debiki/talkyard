@@ -244,7 +244,7 @@
                 </thead>
                 <tbody>
                   <tr class="{{page.cssForRole()}}"
-                      ng-repeat="page in listItems | filterProp:'path':pathFilterText"
+                      ng-repeat="page in listItems"
                       ng-show="page.isPage">
                     <td class='row-selector'><!-- dupl code! -->
                       <label>
@@ -256,7 +256,6 @@
                     </td>
                     <td class='page-title'>
                       <a href="{{ page.path }}" target="_blank" ng-bind-html="page.prettyTitle()"></a>
-                      <span class="page-notfs important">{{ page.stringifyImportantMarks() }}</span>
                       <span class="page-notfs">{{ page.stringifyOtherMarks() }}</span>
                     </td>
                     <td><div data-original-title="{{ page.prettyRoleTooltip() }}" ui-jq="tooltip">{{ page.prettyRole() }}</div></td>
@@ -267,46 +266,6 @@
                   </tr>
                 </tbody>
               </table>
-
-              <!--
-              <br><br>
-              <hr>
-              <ol id='page-tree' class='{{"full-paths-"+ showFullPaths}}'>
-                <li ng-show="item.hideCount == 0 || item.included"
-                    ng-repeat="item in listItems | filterProp:'path':pathFilterText"
-                    class='{{item.cssClassFolderOrPage() + " open-" + item.open + " path-depth-" + item.depth + " included-" + item.included + item.cssClassForMark()}}'>
-                  <label class="checkbox">
-                    <input type="checkbox"
-                       ng-model="item.included"
-                       ng-change="updateSelections()" />
-                  </label>
-                  <a ng-click='openClose(item)' class='open-close-path' href='#'>{{item.displayPath()}}
-                    <span class='page-clarification'>{{item.prettyClarifications()}}</span>
-                    <span class='page-notfs important'>{{item.stringifyImportantMarks()}}</span>
-                    <span class='page-notfs'>{{item.stringifyOtherMarks()}}</span>
-                  </a>
-
-                  <div ng-switch='item.isPage' class='path-info'>
-                    <div ng-switch-when='true' class='page-info'>
-                      Title: <a href='{{item.path}}' target='_blank'>{{item.title}}</a><br>
-                      Author: <a href="#">{{item.authors}}</a><br>
-                      Published: <span>2012-05-03 22:40</span>
-                      <!- <div class='actions'>
-                        <a href='{{item.path + "?move-page"}}'>Move</a>
-                        <a href='{{item.path + "?rename-page"}}'>Rename</a>
-                      </div> ->
-                    </div>
-                    <!- <div ng-switch-default class='folder-info'>
-                      <div class='actions'>
-                        <a>Create page</a>
-                        <a>Move folder</a>
-                      </div>
-                    </div> - >
-                  </div>
-                </li>
-              </ol>
-              -->
-
             </div>
           </div>
 

@@ -92,27 +92,6 @@ h1 {
   padding-left: 3em;
 }
 
-#page-tree-container ol {
-  margin-top: 1.5em;
-}
-#page-tree-container ol > li {
-  position: relative;
-  list-style: none;
-  margin: 0;
-  padding-left: 25px; /* .path-open-close placed here */
-}
-#page-tree-container ol > li > label:hover {
-  background-color: #E5E5E5;
-}
-#page-tree-container ol > li > label > input {
-  opacity: 0.77; /* or they're too conspicuous */
-}
-#page-tree-container ol > li > label:hover {
-  -background-color: #ececec;
-}
-#page-tree-container ol > li > label > span {
-  margin-left: 5px;
-}
 #marked-path {
   display: block !important;
 }
@@ -120,115 +99,19 @@ h1 {
   color: hsl(211, 100%, 45%) !important;
   font-weight: bold;
 }
-.page-clarification {
-  font-style: italic;
-}
 .page-notfs {
   color: black;
   font-style: italic;
-}
-.page-notfs.important {
-  color: red;
-}
-.page-info {
-  padding-left: 7px;
-  margin-bottom: 5px;
-  background-color: #fbfbfb;
-  border-bottom: 1px solid #eaeaea;
-  border-top: 1px solid #eaeaea;
-  font-size: 11px;
-  letter-spacing: 1px;
-}
-#page-tree-container li .actions {
-  margin-top: 5px;
-  visibility: hidden;
-}
-#page-tree-container li:hover .actions {
-  visibility: visible;
-}
-#page-tree-container li .actions a {
-  color: red;
-  letter-spacing: 0;
-  font-size: 12px;
 }
 li {
   margin-left: 0; /* or space between Twitter Bootstrap tabs */
 }
 
-#page-tree > li.open-false > .path-info {
-  display: none;
-}
-
-#page-tree > li > label {
-  position: absolute;
-  top: -2px;
-  left: -14px; /* cancel padding below */
-  padding: 0px 11px 0px 14px;
-  cursor: pointer;
-  opacity: 0.7;
-  color: hsl(211, 50%, 40%) !important;
-}
-#page-tree > li > label:hover {
-  color: black;
-  opacity: 1;
-  background-color: #e5e5e5;
-  text-decoration: none;
-}
-#page-tree > li > label > input {
-  margin-left: 0; /* cancel Bootstrap */
-}
-
-.open-close-path, .path-message {
-  font-family: monospace;
-  white-space: nowrap; /* no line breaks in page paths */
-}
 .path-message {
   color: #777 !important;
   font-style: italic;
   padding-left: 1ex;
 }
-
-.open-close-path, .path-message {
-  color: hsl(211, 35%, 30%) !important;
-}
-.open-close-path:hover {
-  background-color: #eaeaea;
-  /* alternatively, outline: solid #EAEAEA; */
-  text-decoration: none;
-}
-.included-true .open-close-path {
-  background-color: #eeeeee;
-}
-.open-close-path:hover,
-.included-true .open-close-path {
-  color: hsl(211, 100%, 11%) !important;
-}
-
-.marked-path .open-close-path:hover,
-.marked-path.included-true .open-close-path {
-  color: hsl(211, 100%, 40%) !important;
-}
-.included-true .open-close-path:hover {
-  background-color: #dfdfdf;
-}
-
-.is-folder.open-false .open-close-path {
-  font-weight: bold;
-}
-
-
-/* Indent nested pages and foledrs, but not the checkbox that filters in/out
- events. */
-#page-tree:not(.full-paths-true) .path-depth-0 > :not(.checkbox) { padding-left:   0px }
-#page-tree:not(.full-paths-true) .path-depth-1 > :not(.checkbox) { padding-left:  20px }
-#page-tree:not(.full-paths-true) .path-depth-2 > :not(.checkbox) { padding-left:  40px }
-#page-tree:not(.full-paths-true) .path-depth-3 > :not(.checkbox) { padding-left:  60px }
-#page-tree:not(.full-paths-true) .path-depth-4 > :not(.checkbox) { padding-left:  80px }
-#page-tree:not(.full-paths-true) .path-depth-5 > :not(.checkbox) { padding-left: 100px }
-#page-tree:not(.full-paths-true) .path-depth-6 > :not(.checkbox) { padding-left: 120px }
-#page-tree:not(.full-paths-true) .path-depth-7 > :not(.checkbox) { padding-left: 140px }
-#page-tree:not(.full-paths-true) .path-depth-8 > :not(.checkbox) { padding-left: 160px }
-#page-tree:not(.full-paths-true) .path-depth-9 > :not(.checkbox) { padding-left: 180px }
 
 #details > .tab-content {
   overflow: visible;

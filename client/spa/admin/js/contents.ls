@@ -12,12 +12,7 @@ bug = d.u.die2
 PrettyListItem =
 
   clearCache: ->
-    @_displayPath = null
-
-
-  displayPath: ->
-    @_displayPath ?= @setDisplayPath ''
-    @title || @_displayPath
+    void
 
 
   prettyUrl: ->
@@ -27,12 +22,6 @@ PrettyListItem =
     if @path is '/' => '/ (homepage)'
     else if !@isPage => prettyPath + ' folder!'
     else prettyPath
-
-
-  setDisplayPath: ({ forParentFolder }) ->
-    @_displayPath = @path.replace forParentFolder, ''
-    # Also drop any query string, e.g. ?view-new-page=<pageid>
-    @_displayPath = @_displayPath.replace /\?.*/, ''
 
 
   prettyTitle: ->
@@ -57,28 +46,6 @@ PrettyListItem =
     "page-role-#{@role}"
 
 
-  # COULD remove?
-  prettyClarifications: ->
-    roleClarified = switch @role
-      | 'BlogMainPage' => ['blog main page']
-      | _ => []
-
-    isHomePage = @path == '/'
-    isIndexPage = last(@path) == '/' && !@isFolder
-    locationClarified =
-      if isHomePage => ['homepage']
-      #else if isIndexPage => ['index page']
-      else []
-
-    allClarifs = append roleClarified, locationClarified
-    clarifsText = allClarifs.join ', '
-
-    if @displayPath!length and clarifsText.length
-      clarifsText = '— ' + clarifsText
-
-    clarifsText
-
-
   prettyMenu: ->
     # Mock up the implementation for now.
     if @path == '/' => 'MainMenu#1'  # homepage probably no 1
@@ -90,21 +57,8 @@ PrettyListItem =
     'Menu item number 1 in a menu named "MainMenu" links to the page.'
 
 
-  cssClassFolderOrPage: ->
-    if @isPage then 'is-page' else 'is-folder'
-
-
   cssClassForMark: ->
     if @marks then ' marked-path' else ''
-
-
-  # COULD remove
-  stringifyImportantMarks: ->
-    text = ''
-    for mark in @marks || []
-      switch mark
-      | 'NewUnsaved' => text += ' (new, unsaved)'
-    text
 
 
   stringifyOtherMarks: ->
@@ -538,7 +492,6 @@ class FolderListItem extends ListItem
             folderStack.pop()
 
       item.depth = folderStack.length
-      item.setDisplayPath forParentFolder: curParentFolderPath
       item.hideCount = curHideCount
 
       # Always show stuff with any marks (could be a page the user
