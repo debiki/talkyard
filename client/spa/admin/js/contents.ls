@@ -16,11 +16,9 @@ PrettyListItem =
 
 
   prettyUrl: ->
-    #bug 'DwE95R8' unless @isPage
     # Remove any '?view-new-page=...&passhash=...' query string.
     prettyPath = @path.replace /\?.*/, ''
     if @path is '/' => '/ (homepage)'
-    else if !@isPage => prettyPath + ' folder!'
     else prettyPath
 
 
@@ -73,7 +71,7 @@ PrettyListItem =
 
 
 /**
- * A page or a folder in the contents list.
+ * Page data for a row in the page table.
  */
 class ListItem implements PrettyListItem
 
@@ -125,15 +123,6 @@ class PageListItem extends ListItem
 
 
 
-class FolderListItem extends ListItem
-
-  (folder) ~>
-    @ <<< folder
-    @isFolder = true
-    super!
-
-
-
 /**
  * Lists and creates pages, blogs, forums and wikis.
  *
@@ -146,11 +135,6 @@ class FolderListItem extends ListItem
 
 
   $scope.listItems = []
-
-
-  getSelectedFolderOrDie = ->
-    bug('DwE031Z3') if selectedFolderListItems.length != 1
-    selectedFolderListItems[0]
 
 
   getSelectedPageOrDie = ->
@@ -189,10 +173,6 @@ class FolderListItem extends ListItem
 
   $scope.createDraftPage = ->
     createPageInFolder '/'
-
-
-  $scope.createPageInFolder = ->
-    createPageInFolder getSelectedFolderOrDie!path
 
 
   createPageInFolder = (parentFolder) ->
@@ -333,23 +313,13 @@ class FolderListItem extends ListItem
 
 
   listMorePagesDeriveFolders = (morePageItems) ->
-    newFolderPaths = []
 
     for item in morePageItems
       # If `item.isChildPage && !item.isMainPage`, and there're very
       # many such pages, could group them into a single table row
       # that expands on click.
+      # Could also grup pages by path, e.g. all pages in /about/?
       $scope.listItems.push item
-      newFolderPaths.push item.folderPath!
-
-    newFolderPaths = unique newFolderPaths
-    newFolderPaths = reject (== '/'), newFolderPaths
-
-    oldFolderPaths =
-        [item.path for item in $scope.listItems when item.isFolder]
-
-    for newPath in newFolderPaths when not find (== newPath), oldFolderPaths
-      $scope.listItems.push FolderListItem({ path: newPath })
 
     redrawPageList!
 
@@ -420,38 +390,31 @@ class FolderListItem extends ListItem
   $scope.nothingSelected = true
 
   selectedPageListItems = []
-  selectedFolderListItems = []
 
   /**
-   * Scans $scope.listItems and updates page and folder selection count
+   * Scans $scope.listItems and updates page selection count
    * variables.
    */
   $scope.updateSelections = ->
     selectedPageListItems := []
-    selectedFolderListItems := []
     numDrafts = 0
     numNonDrafts = 0
     $scope.homepageSelected = false
     for item in $scope.listItems when item.included
-      if item.pageId
-        selectedPageListItems.push item
-        $scope.homepageSelected = true if item.path == '/'
-        #if item.isDraft => numDrafts += 1
-        #else numNonDrafts += 1
-      else
-        selectedFolderListItems.push item
+      selectedPageListItems.push item
+      $scope.homepageSelected = true if item.path == '/'
+      #if item.isDraft => numDrafts += 1
+      #else numNonDrafts += 1
 
     numPages = selectedPageListItems.length
-    numFolders = selectedFolderListItems.length
 
-    $scope.nothingSelected = numPages == 0 && numFolders == 0
-    $scope.onePageSelected = numPages == 1 && numFolders == 0
-    $scope.oneFolderSelected = numFolders == 1 && numPages == 0
+    $scope.nothingSelected = numPages == 0
+    $scope.onePageSelected = numPages == 1
 
     $scope.onlyDraftsSelected =
-        numDrafts > 0 && numNonDrafts == 0 && numFolders == 0
+        numDrafts > 0 && numNonDrafts == 0
     $scope.onlyPublishedSelected =
-        numDrafts == 0 && numNonDrafts > 0 && numFolders == 0
+        numDrafts == 0 && numNonDrafts > 0
 
     # In the future, show stats on the selected pages, in a <div> to the
     # right. Or show a preview, if only one single page selected.
@@ -461,7 +424,6 @@ class FolderListItem extends ListItem
   $scope.test =
     sortItemsInPlace: sortItemsInPlace
     PageListItem: PageListItem
-    FolderListItem: FolderListItem
 
   loadAndListPages!
 
