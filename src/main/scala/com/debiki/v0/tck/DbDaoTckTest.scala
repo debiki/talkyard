@@ -377,8 +377,8 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
 
     "create a debate with a root post" in {
       val debateNoId = Debate(guid = "?", posts = ex1_rootPost::Nil)
-      val page = dao.createPage(
-        PageStuff.forNewPage(defaultPagePath, debateNoId))
+      val page = dao.createPage(PageStuff.forNewPage(
+        defaultPagePath, debateNoId, publishDirectly = true))
       val actions = page.actions
       ex1_debate = actions
       actions.postCount must_== 1
@@ -1555,7 +1555,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
 
     "move and rename pages" >> {
 
-      lazy val pagePath = dao.lookupPagePathByPageId(ex1_debate.guid).get
+      lazy val pagePath = dao.lookupPagePath(ex1_debate.guid).get
 
       var oldPaths: List[PagePath] = Nil
       var newPath: PagePath = null
@@ -1724,7 +1724,6 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
       }
 
       "reject new page /f/ and /f/page, since would overwrite paths" in {
-        debugBreakpointA
         createPage("/f/") must throwA[PathClashException]
         createPage("/f/page") must throwA[PathClashException]
       }
@@ -1784,13 +1783,11 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
       }
 
       "refuse to move /g/2 to /g/ — would overwrite path" in {
-        debugBreakpointA
         dao.moveRenamePage(page_g_2.id, newSlug = Some("")) must
           throwA[PathClashException]
       }
 
       "refuse to move /g/page-2 to /g/page — would overwrite path" in {
-        debugBreakpointA
         dao.moveRenamePage(page_g_page_2.id, newSlug = Some("page")) must
           throwA[PathClashException]
       }
