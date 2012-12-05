@@ -41,35 +41,72 @@ object AppMoveRenamePage extends mvc.Controller {
     if (!pageReq.user_!.isAdmin) {
       // Could allow non-admins to move pages, but be sure to return
       // 403 Forbidden if attempting to move a page that ... one may not move.
-      throwForbidden("DwE84Zi31", "Insufficient permissions to list pages")
+      throwForbidden("DwE68Mr2", "Insufficient permissions to move pages")
     }
 
     val pageIds: Seq[String] = pageReq.body.listSkipEmpty("pageIds")
     val fromFolder: String = pageReq.body.getOrThrowBadReq("fromFolder")
     val toFolder: String = pageReq.body.getOrThrowBadReq("toFolder")
 
+    // Ooops, now broken, after I've added DW1_PAGE_PATHS.CANONICAL.
+    // (_movePages in RelDbTenantDao throws method-not-supported)
     pageReq.dao.movePages(pageIds, fromFolder = fromFolder, toFolder = toFolder)
     Ok
   }
 
 
-  def renamePage = JsonOrFormDataPostAction(maxBytes = 500) { pageReq =>
+  def moveRenamePage = JsonOrFormDataPostAction(maxBytes = 500) {
+        implicit pageReq =>
 
     if (!pageReq.user_!.isAdmin) {
       // For now.
-      throwForbidden("DwE84Zi31", "Insufficient permissions to list pages")
+      throwForbidden("DwE573IZ7", "Insufficient permissions to move page")
     }
 
-    val pageId: String = pageReq.body.getOrThrowBadReq("pageId")
-    //val newTitle: String = pageReq.body.getOrThrowBadReq("newTitle")
-    val newSlug: String = pageReq.body.getOrThrowBadReq("newSlug")
+    val pageId = pageReq.body.getOrThrowBadReq("pageId")
+    val anyNewFolder = pageReq.body.getFirst("newFolder")
+    //  newTitle = pageReq.body.getOrThrowBadReq("newTitle")
+    val anyNewSlug = pageReq.body.getFirst("newSlug")
+    val anyShowId = pageReq.body.getBool("showId")
+    val pushExistingPage = pageReq.body.getBoolOrFalse(
+      "pushExistingPageToPrevLoc")
 
+    // Could: if (newFolder.isDefined || showId.isDefined ||
+    //  newSlug.isDefined || anyShowId.isDefined || newTitle.isDefined) ...
+
+    moveRenamePageImpl(pageId, anyNewFolder, anyNewSlug = anyNewSlug,
+      anyShowId = anyShowId, pushExistingPage = pushExistingPage)
+  }
+
+
+  def moveRenamePageImpl(pageId: String, anyNewFolder: Option[String],
+        anyNewSlug: Option[String], anyShowId: Option[Boolean],
+        pushExistingPage: Boolean)(implicit request: DebikiRequest[_])
+        : mvc.PlainResult = {
     try {
-      pageReq.dao.moveRenamePage(pageId, newSlug = Some(newSlug))
+      request.dao.moveRenamePage(
+        pageId, newFolder = anyNewFolder, newSlug = anyNewSlug, showId = anyShowId)
       Ok
     } catch {
       case ex: DbDao.PageNotFoundException =>
         NotFoundResult("DwE390xH3", s"Found no page with id $pageId")
+      case DbDao.PathClashException(existingPagePath, newPagePath) =>
+        if (pushExistingPage) {
+          // Move the page that's located at /anyNewFolder/anyNewSlug,
+          // and try again (but only once).
+          val anyNewLoc =
+            request.dao.movePageToItsPreviousLocation(existingPagePath)
+          if (anyNewLoc.isDefined)
+            return moveRenamePageImpl(pageId, anyNewFolder, anyNewSlug = anyNewSlug,
+              anyShowId = anyShowId, pushExistingPage = false)
+          // else: The page at `existingPagePath` hasn't been located anywhere
+          // else, so it wasn't possible to push it away to any other location.
+        }
+        ForbiddenResult(
+          "DwE7IK96", s"Cannot move page to ${existingPagePath.path}. " +
+          "There is already another page at that location, " +
+          "and I don't know to where I could move it instead " +
+          "— you need to move it first yourself, please.")
     }
   }
 
