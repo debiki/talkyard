@@ -37,7 +37,7 @@ function adminService ($http, $rootScope)
     pagesById[pageId]
 
   api.listAllPages = (onSuccess) ->
-    $http.get('/?list-pages.json&in-tree').success (data) ->
+    $http.get('/-/list-pages?in-tree').success (data) ->
       # Angular has already parsed the JSON.
       for page in data.pages
         pagesById[page.id] = page
