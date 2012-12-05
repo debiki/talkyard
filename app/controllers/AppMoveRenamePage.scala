@@ -9,10 +9,11 @@ import debiki._
 import debiki.DebikiHttp._
 import play.api._
 import play.api.mvc.{Action => _}
+import play.api.libs.json.Json.toJson
 import PageActions._
 import ApiActions._
 import Prelude._
-import Utils.OkHtml
+import Utils.OkSafeJson
 import Utils.ValidationImplicits._
 
 
@@ -74,35 +75,47 @@ object AppMoveRenamePage extends mvc.Controller {
     // Could: if (newFolder.isDefined || showId.isDefined ||
     //  newSlug.isDefined || anyShowId.isDefined || newTitle.isDefined) ...
 
-    moveRenamePageImpl(pageId, anyNewFolder, anyNewSlug = anyNewSlug,
+    val anyPushedPagePath = moveRenamePageImpl(
+      pageId, anyNewFolder, anyNewSlug = anyNewSlug,
       anyShowId = anyShowId, pushExistingPage = pushExistingPage)
+
+    anyPushedPagePath match {
+      case None => Ok
+      case Some(pushedPagePath) =>
+        // The Admin SPA needs to know that [a page other than the one we
+        // wanted to move] has been moved.
+        OkSafeJson(toJson(Map(
+          "pagePushedToPrevLoc" -> AppList.jsonFor(pushedPagePath))))
+    }
   }
 
 
   def moveRenamePageImpl(pageId: String, anyNewFolder: Option[String],
         anyNewSlug: Option[String], anyShowId: Option[Boolean],
         pushExistingPage: Boolean)(implicit request: DebikiRequest[_])
-        : mvc.PlainResult = {
+        : Option[PagePath] = {
     try {
       request.dao.moveRenamePage(
         pageId, newFolder = anyNewFolder, newSlug = anyNewSlug, showId = anyShowId)
-      Ok
+      None
     } catch {
       case ex: DbDao.PageNotFoundException =>
-        NotFoundResult("DwE390xH3", s"Found no page with id $pageId")
+        throwNotFound("DwE390xH3", s"Found no page with id $pageId")
       case DbDao.PathClashException(existingPagePath, newPagePath) =>
         if (pushExistingPage) {
           // Move the page that's located at /anyNewFolder/anyNewSlug,
           // and try again (but only once).
           val anyNewLoc =
             request.dao.movePageToItsPreviousLocation(existingPagePath)
-          if (anyNewLoc.isDefined)
-            return moveRenamePageImpl(pageId, anyNewFolder, anyNewSlug = anyNewSlug,
+          if (anyNewLoc.isDefined) {
+            moveRenamePageImpl(pageId, anyNewFolder, anyNewSlug = anyNewSlug,
               anyShowId = anyShowId, pushExistingPage = false)
+            return anyNewLoc
+          }
           // else: The page at `existingPagePath` hasn't been located anywhere
           // else, so it wasn't possible to push it away to any other location.
         }
-        ForbiddenResult(
+        throwForbidden(
           "DwE7IK96", s"Cannot move page to ${existingPagePath.path}. " +
           "There is already another page at that location, " +
           "and I don't know to where I could move it instead " +

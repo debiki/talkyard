@@ -229,12 +229,13 @@ object AppList extends mvc.Controller {
   }
 
 
+  def jsonFor(pagePath: PagePath): JsValue =
+    toJson(_jsonMapFor(pagePath))
+
+
   // COULD move to other file, e.g. DebikiJson.scala?
   def jsonFor(pagePath: PagePath, pageMeta: PageMeta): JsValue = {
-    var data = Map(
-      "id" -> JsString(pagePath.pageId.get),
-      "folder" -> JsString(pagePath.folder),
-      "path" -> JsString(pagePath.path))
+    var data = _jsonMapFor(pagePath)
 
     if (pageMeta.pageRole != PageRole.Any)
       data += "role" -> JsString(pageMeta.pageRole.toString)
@@ -247,6 +248,12 @@ object AppList extends mvc.Controller {
 
     toJson(data)
   }
+
+
+  private def _jsonMapFor(pagePath: PagePath): Map[String, JsString] = Map(
+    "id" -> JsString(pagePath.pageId.get),
+    "folder" -> JsString(pagePath.folder),
+    "path" -> JsString(pagePath.path))
 
 
   private def _jsonFor(user: User): JsValue = {
