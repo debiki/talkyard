@@ -44,7 +44,7 @@ PrettyListItem =
     switch @role
       | 'BlogMainPage' => 'Blog main page'
       | 'BlogArticle' => 'Blog post'
-      | _ => @role
+      | _ => ''
 
 
   prettyRoleTooltip: ->
@@ -192,6 +192,9 @@ class FolderListItem extends ListItem
  * can move it later, via the Move button.
  */
 @PathsCtrl = ['$scope', 'AdminService', ($scope, adminService) ->
+
+
+  $scope.listItems = []
 
 
   getSelectedFolderOrDie = ->
@@ -360,9 +363,6 @@ class FolderListItem extends ListItem
     adminService.moveRenamePage pageListItem.pageId, {
         newFolder, newSlug, showId, newTitle, pushExistingPageToPrevLoc,
         callback: refreshPageList }
-
-
-  $scope.listItems = []
 
 
   loadAndListPages = ->
