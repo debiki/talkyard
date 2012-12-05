@@ -9,10 +9,14 @@ import java.{util => ju}
 
 object PageStuff {
 
-  def forNewPage(path: PagePath, actions: Debate): PageStuff = {
-    val meta = PageMeta.forNewPage(actions.id)
+  def forNewPage(path: PagePath, actions: Debate,
+        publishDirectly: Boolean = false): PageStuff = {
+    val meta = PageMeta.forNewPage(
+      actions.id, publishDirectly = publishDirectly)
     PageStuff(meta, path, actions)
   }
+
+  def forNewEmptyPage(path: PagePath) = forNewPage(path, Debate(guid = "?"))
 
 }
 
@@ -55,10 +59,16 @@ object PageMeta {
         pageId: String = "?",
         creationDati: ju.Date = new ju.Date,
         pageRole: PageRole = PageRole.Any,
-        parentPageId: Option[String] = None) =
-    PageMeta(pageId = pageId, creationDati = creationDati,
-      modificationDati = creationDati, pageRole = pageRole,
-      parentPageId = parentPageId, pageExists = false)
+        parentPageId: Option[String] = None,
+        publishDirectly: Boolean = false) =
+    PageMeta(
+      pageId = pageId,
+      creationDati = creationDati,
+      modificationDati = creationDati,
+      cachedPublTime = if (publishDirectly) Some(creationDati) else None,
+      pageRole = pageRole,
+      parentPageId = parentPageId,
+      pageExists = false)
 
   def forChangedPage(originalMeta: PageMeta, changedPage: Debate): PageMeta = {
     require(changedPage.id == originalMeta.pageId)
