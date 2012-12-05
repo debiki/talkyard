@@ -156,8 +156,20 @@ class PageListItem extends ListItem
 
   folderPath: -> d.i.parentFolderOfPage @path
 
-  changeSlug: (newSlug) ->
-    @path = d.i.changePageSlugIn @path, to: newSlug
+  setPath: !({ newFolder, newSlug, showId }) ->
+    if newSlug? && !newFolder? && !showId?
+      # For now.
+      # I haven't implemented `changeShowIdIn` or `changeFolderIn`.
+      # If I do, place all change... functions in d.i.pagePath.*?
+      @path = d.i.changePageSlugIn @path, to: newSlug
+    else
+      bug 'showId currently required [DwE28JW2]' unless showId?
+      bug 'showId == true unsupported [DwE01bI3]' if showId
+      bug 'newFolder currently required [DwE84KB35]' unless newFolder?
+      bug 'newSlug currently required [DwE74kIR3]' unless newSlug?
+      @path = newFolder + newSlug
+      @folder = newFolder  # COULD try to derive @folder! from @path instead
+                           # (or bug risk, need to update both at same time)
     @clearCache!
 
 
@@ -337,8 +349,7 @@ class FolderListItem extends ListItem
           body: data || "Something went wrong.")
         return
       pageListItem.title = newTitle if newTitle?
-      pageListItem.changeSlug newSlug if newSlug?
-      pageListItem.changeFolder newFolder if newFolder? # CREATE?
+      pageListItem.setPath { newFolder, newSlug, showId }
       redrawPageItems [pageListItem]
 
     pageListItem = getSelectedPageOrDie!
