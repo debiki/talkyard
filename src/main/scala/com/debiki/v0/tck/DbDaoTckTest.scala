@@ -1551,6 +1551,8 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
 
     // -------- Move a page
 
+    var allPathsCanonicalFirst: List[PagePath] = null
+
     "move and rename pages" >> {
 
       lazy val pagePath = dao.lookupPagePathByPageId(ex1_debate.guid).get
@@ -1658,7 +1660,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
         }
       }
 
-      "move-rename the page back to its previous location" in {
+      "move-rename to a location that happens to be its previous location" in {
         oldPaths ::= newPath
         newPath = dao.moveRenamePage(
           pageId = ex1_debate.guid,
@@ -1670,9 +1672,33 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
 
       "and redirect five paths to the current (a previous) location" in {
         testThat(5, oldPaths, redirectTo = newPath)
+        // For next test:
+        allPathsCanonicalFirst = newPath :: oldPaths.filterNot(_ == newPath)
+        ok
       }
     }
 
+
+    // -------- List page paths
+
+
+    "list page paths including redirects" in {
+      val keys = allPathsCanonicalFirst
+      val pageId = keys.head.pageId.get
+      val pathsLoaded = dao.lookupPagePathAndRedirects(pageId)
+      val keysFound = keys.filter(key => pathsLoaded.find(_ == key).isDefined)
+      val superfluousPathsLoaded =
+        pathsLoaded.filter(pathLoaded => keys.find(_ == pathLoaded).isEmpty)
+      keysFound must_== keys
+      superfluousPathsLoaded must_== Nil
+      pathsLoaded.length must_== keys.length // Not needed? Feels safer.
+      // The canonical path must be the first one listed.
+      pathsLoaded.head must_== keys.head
+    }
+
+    "list no paths for a non-existing page" in {
+      dao.lookupPagePathAndRedirects("badpageid") must_== Nil
+    }
 
     // -------- Page path clashes
 
