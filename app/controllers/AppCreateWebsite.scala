@@ -210,28 +210,18 @@ object AppCreateWebsite extends mvc.Controller {
   private def createHomepage(newWebsiteDao: TenantDao, creationDati: ju.Date) {
     val pageId = AppCreatePage.generateNewPageId()
     val emptyPage = Debate(pageId)
-    val pageMeta = PageMeta.forNewPage(pageId, creationDati, PageRole.Homepage)
-
+    val pageMeta = PageMeta.forNewPage(
+      pageId, creationDati, PageRole.Homepage, publishDirectly = true)
     val oldPath = PagePath(newWebsiteDao.tenantId, folder = "/_old/",
       pageId = Some(pageId), showId = false, pageSlug = "default-homepage")
 
-    val path = oldPath.copy(folder = "/", pageSlug = "")
-
     // First create the homepage at '/_old/default-homepage'.
-    // Then change its location to '/'. — When '/' is overwritten by a
-    // path to another page (if the admin lets another page be the homepage),
-    // the old path will be activated again (since it's the one that was
-    // in use before we changed to '/'). ...
-    //  ... But! Not implemented: reactivation of old paths. So:
-
-    // For now:
-    newWebsiteDao.createPage(PageStuff(pageMeta, path, emptyPage))
-    // Because the code below would *overwrite* oldPath, instead of adding
-    // a new PagePath entry.
-    //// COULD do like this: (when old path reactivation implemented, see above)
-    //newWebsiteDao.createPage(PageStuff(pageMeta, oldPath, emptyPage))
-    //newWebsiteDao.moveRenamePage(Seq(pageId), newFolder = Some("/"),
-    //  newSlug = Some(""))
+    // Then change its location to '/'. If the admin later on lets
+    // another page be the homepage, then '/' would be overwritten by the
+    // new homepage. The old path to the oridinal homepage will then be
+    // activated again.
+    newWebsiteDao.createPage(PageStuff(pageMeta, oldPath, emptyPage))
+    newWebsiteDao.moveRenamePage(pageId, newFolder = Some("/"), newSlug = Some(""))
 
     // Set homepage title.
     val title = Post(Page.TitleId, Page.TitleId, creationDati,
