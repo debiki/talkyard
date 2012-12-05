@@ -44,6 +44,10 @@ d.i.findPageSlugIn = (path) ->
 
 
 d.i.changePageSlugIn = (path, { to }) ->
+  # What! Wouldn't it have been easier to 1) `analyzePagePath` and then
+  # 2) replace `pageSlug` in the resulting Object, and then 3) write
+  # a function that builds a path string from an analyzed path.
+  # I'd need a new field for ?view-new-page though.
   newSlug = to
   matchCount = 0
   result = path.replace noPageSlugReqex, (mtch, $1, $2, $3) ->
