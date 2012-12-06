@@ -11,6 +11,25 @@
 *@
 
 
+@recentBlogPosts = @{
+  val blogPosts = tpi.listNewestChildPages()
+  if (blogPosts.nonEmpty)
+    blogPosts
+  else Seq(debiki.TinyTemplateProgrammingInterface.Page(
+    id = "", path = "", title = "Example Blog Post", safeBodyHtml = """
+    <div>
+      <p>This is your new blog.</p>
+      <p>This is an example blog post. It will be removed once you have written
+        your first blog post.</p>
+      <p>To write a blog post:</p>
+      <ol>
+        <li>Click <b>Write new blog post</b>, in the upper left corner of the page.</li>
+        <li>A new page opens. Edit it (that is, write a blog post) and save it.</li>
+      </ol>
+    </div>
+    """))
+}
+
 @wrapper(tpi) {
   @* Don't include: @tpi.pageTitleAndBodyNoComments
   If included, people (my father) confuse editing the blog main page title and body
@@ -22,7 +41,7 @@
   @tpi.pageMeta
 
   <ol class='page-list'>
-  @for(page <- tpi.listNewestChildPages()) {
+  @for(page <- recentBlogPosts) {
     <li>
       <a href='@{page.path}'>
         <h1>@{page.title}</h1>
