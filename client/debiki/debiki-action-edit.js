@@ -127,7 +127,7 @@ function _$showEditFormImpl() {
     $submitBtn.button({ disabled: true }); // you need to preview before submit
     $cancelBtn.button();
 
-    $editForm.insertBefore($postBody);
+    $editForm.insertAfter($postBody); // not before, that'd mess up css [8K3U5]
     $postBody.hide();
     $cancelBtn.click(function() {
       $postBody.show();

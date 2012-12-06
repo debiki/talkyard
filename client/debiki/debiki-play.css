@@ -321,7 +321,9 @@ title — that'd push away the .dw-p-hd away. So add to the -bd instead.
 <h2> should have a fairly large margin-top (because it's a h2), so skip it.
 — The reason all this is needed is that the elems
 float:left, which makes margins add to each other, instead of overlapping
-each other. I should rewrite, and try to avoid float:left?  (skip old IE) */
+each other. I should rewrite, and try to avoid float:left?  (skip old IE)
+[8K3U5] */
+.dw-p-ttl + .dw-p-bd > .dw-p-bd-blk > :first-child:not(h2), /* if no header */
 .dw-p-ttl + .dw-p-hd + .dw-p-bd > .dw-p-bd-blk > :first-child:not(h2) {
   margin-top: 26px;
 }
