@@ -1321,8 +1321,8 @@ related to. */
 /* === Marks === */
 
 /* Outline all posts in a new thread. */
-.dw-m-t-new .dw-p {
-  border: 3px solid #bbb;
+.dw-m-t-new > .dw-p > .dw-p-hd {
+  border: 1px solid black;
 }
 
 .dw-m-p-edited {
