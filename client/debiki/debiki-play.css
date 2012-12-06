@@ -1322,7 +1322,7 @@ related to. */
 
 /* Outline all posts in a new thread. */
 .dw-m-t-new > .dw-p > .dw-p-hd {
-  border: 1px solid black;
+  /* border: 1px solid black;  — no, ugly */
 }
 
 .dw-m-p-edited {
