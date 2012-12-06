@@ -170,17 +170,9 @@ object AppCreatePage extends mvc.Controller {
     "New Page (click to edit)"
 
   val DummyPageText: String =
-    """|**To edit this page:**
+    """|Page body.
        |
-       |  - Click this text, anywhere.
-       |  - Then select *Improve* in the menu that appears.
-       |
-       |## Example Subtitle
-       |
-       |### Example Sub Subtitle
-       |
-       |[Example link, to nowhere](http://example.com/does/not/exist)
-       |
+       |Click to edit, and select *Improve* in the menu that appears.
        |""".stripMargin
 
 }
