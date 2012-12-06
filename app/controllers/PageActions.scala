@@ -46,11 +46,17 @@ object PageActions {
    * might serve the same cached XSRF cookie to everyone.)
    */
   def PageGetAction
-        (pathIn: PagePath, pageMustExist: Boolean = true,
+        (pathIn: PagePath, pageMustExist: Boolean = true, fixPath: Boolean = true,
          maySetCookies: Boolean = true)
         (f: PageGetRequest => PlainResult) =
     PageReqAction(BodyParsers.parse.empty)(
-      pathIn, pageMustExist, maySetCookies = maySetCookies)(f)
+      pathIn, pageMustExist, fixPath = fixPath, maySetCookies = maySetCookies)(f)
+
+
+  def FolderGetAction
+        (pathIn: PagePath)
+        (f: PageGetRequest => PlainResult) =
+    FolderReqAction(BodyParsers.parse.empty)(pathIn)(f)
 
 
   /**
@@ -59,11 +65,11 @@ object PageActions {
    */
   def PagePostAction
         (maxUrlEncFormBytes: Int)
-        (pathIn: PagePath, pageMustExist: Boolean = true)
+        (pathIn: PagePath, pageMustExist: Boolean = true, fixPath: Boolean = true)
         (f: PagePostRequest => PlainResult) =
     PageReqAction(
       BodyParsers.parse.urlFormEncoded(maxLength = maxUrlEncFormBytes))(
-      pathIn, pageMustExist)(f)
+      pathIn, pageMustExist, fixPath = fixPath)(f)
 
 
   /**
@@ -74,19 +80,20 @@ object PageActions {
    */
   def PagePostAction2
         (maxBytes: Int)
-        (pathIn: PagePath, pageMustExist: Boolean = true)
+        (pathIn: PagePath, pageMustExist: Boolean = true, fixPath: Boolean = true)
         (f: PagePostRequest2 => PlainResult) =
     PageReqAction(
       JsonOrFormDataBody.parser(maxBytes = maxBytes))(
-      pathIn, pageMustExist)(f)
+      pathIn, pageMustExist, fixPath = fixPath)(f)
 
 
   def PageReqAction[A]
         (parser: BodyParser[A])
-        (pathIn: PagePath, pageMustExist: Boolean,
+        (pathIn: PagePath, pageMustExist: Boolean, fixPath: Boolean,
          maySetCookies: Boolean = true)
         (f: PageRequest[A] => PlainResult)
-        = CheckPathAction[A](parser)(pathIn, maySetCookies = maySetCookies) {
+        = CheckPathAction[A](parser)(
+            pathIn, maySetCookies = maySetCookies, fixPath = fixPath) {
       (sidStatus, xsrfOk, pathOkOpt, dao, request) =>
 
     if (pathOkOpt.isEmpty && pageMustExist)
@@ -126,6 +133,52 @@ object PageActions {
   }
 
 
+  // For now. (COULD create a FolderRequest, later.)
+  def FolderReqAction[A]
+        (parser: BodyParser[A])
+        (pathIn: PagePath)
+        (f: PageRequest[A] => PlainResult)
+    = SafeActions.CheckSidAction[A](parser, maySetCookies = true) {
+        (sidStatus, xsrfOk, request) =>
+
+    if (!pathIn.isFolderOrIndexPage)
+      throwBadReq("DwE903XH3", s"Call on folders only, not pages: ${request.uri}")
+
+    val dao = Debiki.tenantDao(tenantId = pathIn.tenantId,
+      ip = request.remoteAddress, sidStatus.roleId)
+
+    val (identity, user) = Utils.loadIdentityAndUserOrThrow(sidStatus, dao)
+
+    // Load permissions.
+    val permsReq = RequestInfo(  // COULD RENAME! to PermsOnPageRequest
+      tenantId = pathIn.tenantId,
+      ip = request.remoteAddress,
+      loginId = sidStatus.loginId,
+      identity = identity,
+      user = user,
+      pagePath = pathIn)
+
+    val permsOnPage = dao.loadPermsOnPage(permsReq)
+    if (!permsOnPage.accessPage)
+      throwForbidden("DwE67BY2", "You are not allowed to access that page.")
+
+    // Construct the actual request. COULD create and use a FolderRequest instead.
+    val pageReq = PageRequest[A](
+      sid = sidStatus,
+      xsrfToken = xsrfOk,
+      identity = identity,
+      user = user,
+      pageExists = false,
+      pagePath = pathIn,
+      permsOnPage = permsOnPage,
+      dao = dao,
+      request = request)()
+
+    val result = f(pageReq)
+    result
+  }
+
+
   /**
    * Attempts to redirect almost correct requests to the correct path,
    * e.g. adds/removes an absent or superfluous trailing slash
@@ -141,7 +194,7 @@ object PageActions {
 
   def CheckPathAction[A]
         (parser: BodyParser[A])
-        (pathIn: PagePath, maySetCookies: Boolean = true)
+        (pathIn: PagePath, maySetCookies: Boolean = true, fixPath: Boolean = true)
         (f: (SidStatus, XsrfOk, Option[PagePath], TenantDao, Request[A]) =>
            PlainResult) =
     SafeActions.CheckSidAction[A](parser, maySetCookies = maySetCookies) {
@@ -152,6 +205,8 @@ object PageActions {
         case Some(correct: PagePath) =>
           if (correct.path == pathIn.path) {
             f(sidStatus, xsrfOk, Some(correct), dao, request)
+          } else if (!fixPath) {
+            f(sidStatus, xsrfOk, None, dao, request)
           } else {
             Results.MovedPermanently(correct.path)
           }
