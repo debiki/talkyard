@@ -312,6 +312,22 @@ case class PageRequest[A](
     page_? getOrElse throwNotFound("DwE43XWY", "Page not found, id: "+ pageId)
 
 
+  lazy val pageDesiredVersion_! : Debate = {
+    val page = page_!
+    if (page.body.map(_.someVersionApproved) == Some(false) ||
+      page.title.map(_.someVersionApproved) == Some(false)) {
+      PageRenderer.emptyUnapprovedPage
+    }
+    else {
+      val (pageDesiredVersionStuffMissing, tooRecentActions) =
+        page.partitionByVersion(pageVersion)
+      val pageDesiredVersion =
+        PageRenderer.addMissingTitleBodyConfigTo(pageDesiredVersionStuffMissing)
+      pageDesiredVersion
+    }
+  }
+
+
   /**
    * The page version is specified in the query string, e.g.:
    * ?view&version=2012-08-20T23:59:59Z&unapproved
@@ -332,6 +348,7 @@ case class PageRequest[A](
         PageVersion(dati, approved)
     }
   }
+
 
   /**
    * The page root tells which post to start with when rendering a page.

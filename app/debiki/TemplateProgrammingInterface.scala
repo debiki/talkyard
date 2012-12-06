@@ -203,8 +203,16 @@ class TemplateProgrammingInterface(
     views.html.debikiScripts(pageId, minMaxJs, minMaxCss).body)
 
 
-  def debikiAppendToBodyTags: xml.NodeSeq =
-    PageRenderer.dialogTemplates(_pageReq) ++ tagsToAppendToBody
+  def debikiAppendToBodyTags: xml.NodeSeq = {
+    // The dialog templates includes the user name and cannot currently be cached.
+    val dialogTemplates: xml.NodeSeq = {
+      val config = DebikiHttp.newUrlConfig(pageReq)
+      val templateHtmlNodes = HtmlForms(config, pageReq.xsrfToken.value,
+        pageReq.pageRoot, pageReq.permsOnPage).dialogTemplates
+      xml.Unparsed(liftweb.Html5.toString(templateHtmlNodes))
+    }
+    dialogTemplates ++ tagsToAppendToBody
+  }
 
 
   val debikiHtmlTagClasses =
@@ -221,15 +229,36 @@ class TemplateProgrammingInterface(
     HtmlPageSerializer.loginInfo(_pageReq.user.map(_.displayName))
 
 
-  def pageMeta =
-    dao.renderPage(pageReq, showComments = false, showMetaOnly = true)
+  def page(contents: play.api.templates.Html) = {
+    val page = PageStuff(pageReq.pageMeta, pageReq.pagePath,
+      Debate.empty(pageReq.pageId_!))
+    HtmlPageSerializer.wrapInPageTag(page) {
+      xml.Unparsed(contents.body)
+    }
+  }
+
+
+  def pageMeta = dao.renderPageMeta(pageReq)
+
+
+  def title = dao.renderPageTitle(pageReq)
+
+
+  def authorAndDate = dao.renderAuthorAndDate(pageReq)
+
+
+  def body = dao.renderPage(pageReq, showComments = false)
+
+
+  def comments = dao.renderComments(pageReq)
+
 
   def pageTitleAndBodyNoComments =
-    dao.renderPage(pageReq, showComments = false)
+    title ++ authorAndDate ++ dao.renderPage(pageReq, showComments = false)
 
 
   def pageTitleAndBodyAndComments =
-    dao.renderPage(pageReq, showComments = true)
+    title ++ authorAndDate ++ dao.renderPage(pageReq, showComments = true)
 
 }
 

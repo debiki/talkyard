@@ -11,83 +11,25 @@ import PageRenderer._
 import Prelude._
 
 
-object PageRenderer {
+
+object PageRenderer {   // COULD rename to DummyPage
 
 
-  def dialogTemplates(pageReq: PageRequest[_]): xml.NodeSeq = {
-    // The dialog templates includes the user name and cannot currently
-    // be cached.
-    val config = DebikiHttp.newUrlConfig(pageReq)
-    val templateHtmlNodes = HtmlForms(config, pageReq.xsrfToken.value,
-      pageReq.pageRoot, pageReq.permsOnPage).dialogTemplates
-    xml.Unparsed(liftweb.Html5.toString(templateHtmlNodes))
-  }
-
-
-  def renderPageMeta(pageReq: PageRequest[_]): xml.NodeSeq = {
-    val page = PageStuff(pageReq.pageMeta, pageReq.pagePath,
-      Debate.empty(pageReq.pageId_!))
-    val nodes = HtmlPageSerializer.wrapInPageAndMetaTag(page) { Nil }
-    nodes map { html =>
-      xml.Unparsed(liftweb.Html5.toString(html))
-    }
-  }
-
-
-  def renderArticle(pageReq: PageRequest[_], showComments: Boolean)
-        : xml.NodeSeq = {
-    val page = PageStuff(pageReq.pageMeta, pageReq.pagePath,
-      pageReq.page_!)
-
-    renderArticle(page, pageReq.pageVersion, pageReq.pageRoot,
-      hostAndPort = pageReq.host, showComments = showComments)
-  }
-
-
-  def renderArticle(page: PageStuff, pageVersion: PageVersion,
-        pageRoot: PageRoot, hostAndPort: String, showComments: Boolean)
-        : xml.NodeSeq = {
-
-    val actions = page.actions
-
-    if (actions.body.map(_.someVersionApproved) == Some(false) ||
-        actions.title.map(_.someVersionApproved) == Some(false)) {
-      // Regrettably, currently the page is hidden also for admins (!).
-      // But right now only admins can create new pages and they are
-      // auto approved (well, will be, in the future.)
-      return <p>This page is pending approval.</p>
-    }
-
-    val (actionsDesiredVersionStuffMissing, tooRecentActions) =
-      actions.partitionByVersion(pageVersion)
-
-    val actionsDesiredVersion =
-      _addMissingTitleBodyConfigTo(actionsDesiredVersionStuffMissing)
-
-    val config = DebikiHttp.newUrlConfig(hostAndPort)
-
-    // Hmm, HtmlPageSerializer and pageTrust should perhaps be wrapped in
-    // some PageRendererInput class, that is handled to PageCache,
-    // so PageCache don't need to know anything about how to render
-    // a page. But for now:
-    val pageTrust = PageTrust(actionsDesiredVersion)
-
-    // layoutPage() takes long, because markup source is converted to html.
-    val pageDesiredVersion = page.copy(actions = actionsDesiredVersion)
-    val nodes = HtmlPageSerializer(pageDesiredVersion, pageTrust, pageRoot,
-      config, showComments = showComments).layoutPage()
-
-    nodes map { html =>
-      xml.Unparsed(liftweb.Html5.toString(html))
-    }
-  }
+  /**
+   * A page with "This page is pendig approval" body.
+   */
+  def emptyUnapprovedPage = unimplemented
+    // Regrettably, currently the page is hidden also for admins (!).
+    // But right now only admins can create new pages and they are
+    // auto approved (well, will be, in the future.)
+    //return <p>This page is pending approval.</p>
 
 
   /**
    * Adds an empty title, an empty page body, and a config text, if they
    * don't yet exist, so there is something to edit.
    */
-  private def _addMissingTitleBodyConfigTo(pageNoDummies: Debate): Debate = {
+  def addMissingTitleBodyConfigTo(pageNoDummies: Debate): Debate = {
     val addDummyTitle = pageNoDummies.title.isEmpty
     val addDummyBody = pageNoDummies.body.isEmpty
     val addDummyConfig = pageNoDummies.pageTemplatePost.isEmpty

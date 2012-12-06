@@ -20,14 +20,43 @@ trait RenderedPageHtmlDao {
     TemplateRenderer(pageReq, appendToBody).renderTemplate()
 
 
-  def renderPage(pageReq: PageRequest[_], showComments: Boolean,
-         showMetaOnly: Boolean = false): xml.NodeSeq = {
-    if (showMetaOnly)
-      PageRenderer.renderPageMeta(pageReq)
-    else
-      PageRenderer.renderArticle(pageReq, showComments)
+  def renderPageMeta(pageReq: PageRequest[_]): NodeSeq = {
+    HtmlPageSerializer.wrapInPageTag(pageReq.pageMeta, pageReq.pagePath)(Nil)
+      .map(html => xml.Unparsed(liftweb.Html5.toString(html)))
   }
 
+
+  def renderPageTitle(pageReq: PageRequest[_]): NodeSeq = {
+    val page = pageReq.pageDesiredVersion_!
+    page.titlePost.map(HtmlPostRenderer.renderPageTitle(_)) getOrElse Nil
+  }
+
+
+  def renderAuthorAndDate(pageReq: PageRequest[_]): NodeSeq = {
+    <i>Date_Date</i>
+  }
+
+
+  def renderPage(pageReq: PageRequest[_], showComments: Boolean): xml.NodeSeq = {
+    val config = DebikiHttp.newUrlConfig(pageReq.host)
+    val page = pageReq.pageDesiredVersion_!
+    val pageStuff = PageStuff(pageReq.pageMeta, pageReq.pagePath, page)
+    val pageTrust = PageTrust(page)
+
+    val renderer = HtmlPageSerializer(pageStuff, pageTrust, pageReq.pageRoot,
+      config, showComments = showComments)
+
+    val htmlNode = renderer.layoutPage() map { html =>
+      xml.Unparsed(liftweb.Html5.toString(html))
+    }
+
+    htmlNode
+  }
+
+
+  def renderComments(pageReq: PageRequest[_]): xml.NodeSeq = {
+    <b>Comments_comments_comments</b>
+  }
 }
 
 
@@ -36,18 +65,17 @@ trait CachingRenderedPageHtmlDao extends RenderedPageHtmlDao {
   self: CachingTenantDao =>
 
 
-  override def renderPage(pageReq: PageRequest[_], showComments: Boolean,
-        showMetaOnly: Boolean): xml.NodeSeq = {
+  override def renderPage(pageReq: PageRequest[_], showComments: Boolean): xml.NodeSeq = {
     // Bypass the cache if the page doesn't yet exist (it's being created),
     // because in the past there was some error because non-existing pages
     // had no ids (so feels safer to bypass).
     if (pageReq.pageExists && pageReq.pageRoot == PageRoot.Real(Page.BodyId) &&
         pageReq.pageVersion == PageVersion.LatestApproved) {
       val key = _pageHtmlKey(
-        pageReq.pageId_!, origin = pageReq.host, showComments, showMetaOnly = showMetaOnly)
+        pageReq.pageId_!, origin = pageReq.host, showComments)
       lookupInCache(key, orCacheAndReturn = {
         rememberOrigin(pageReq.host)
-        Some(super.renderPage(pageReq, showComments, showMetaOnly = showMetaOnly))
+        Some(super.renderPage(pageReq, showComments))
       }) getOrDie "DwE93IB7"
     }
     else {
@@ -89,11 +117,8 @@ trait CachingRenderedPageHtmlDao extends RenderedPageHtmlDao {
     // we need to uncache pageId for each server address that maps
     // to the current website (this.tenantId).
     for (origin <- knownOrigins) {
-      // Remove all possible combinations of showComments and showMetaOnly.
-      removeFromCache(_pageHtmlKey(pageId, origin, false, false))
-      removeFromCache(_pageHtmlKey(pageId, origin, false, true))
-      removeFromCache(_pageHtmlKey(pageId, origin, true, false))
-      removeFromCache(_pageHtmlKey(pageId, origin, true, true))
+      removeFromCache(_pageHtmlKey(pageId, origin, showComments = false))
+      removeFromCache(_pageHtmlKey(pageId, origin, showComments = true))
     }
 
     // BUG race condition: What if anotoher thread started rendering a page
@@ -106,9 +131,8 @@ trait CachingRenderedPageHtmlDao extends RenderedPageHtmlDao {
   }
 
 
-  private def _pageHtmlKey(pageId: String, origin: String,
-        showComments: Boolean, showMetaOnly: Boolean): String =
-    s"$pageId|$tenantId|$origin|$showComments|$showMetaOnly|PageHtml"
+  private def _pageHtmlKey(pageId: String, origin: String, showComments: Boolean) =
+    s"$pageId|$tenantId|$origin|$showComments|PageHtml"
 
 
   private def originsKey: String = s"$tenantId|PossibleOrigins"

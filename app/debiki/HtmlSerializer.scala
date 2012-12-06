@@ -286,12 +286,16 @@ object HtmlPageSerializer {
     htmlNodes: NodeSeq)
 
 
-  def wrapInPageAndMetaTag(page: PageStuff)(body: =>NodeSeq): NodeSeq = {
-    <div id={"page-"+ page.id} class='debiki dw-debate dw-page'
-        data-page_exists={page.meta.pageExists.toString}
-        data-page_path={page.path.path}
-        data-page_role={page.role.toString}
-        data-parent_page_id={page.parentPageId.map(_.toString) getOrElse ""}>
+  def wrapInPageTag(page: PageStuff)(body: NodeSeq): NodeSeq =
+    wrapInPageTag(page.meta, page.path)(body)
+
+
+  def wrapInPageTag(pageMeta: PageMeta, pagePath: PagePath)(body: NodeSeq): NodeSeq = {
+    <div id={"page-"+ pageMeta.pageId} class='debiki dw-debate dw-page'
+        data-page_exists={pageMeta.pageExists.toString}
+        data-page_path={pagePath.path}
+        data-page_role={pageMeta.pageRole.toString}
+        data-parent_page_id={pageMeta.parentPageId.map(_.toString) getOrElse ""}>
       { body }
     </div>
   }
@@ -358,7 +362,7 @@ case class HtmlPageSerializer(
     val rootPost: ViPo = pageRoot.findOrCreatePostIn(debate) getOrElse
        throwNotFound("DwE0PJ404", "Post not found: "+ pageRoot.subId)
 
-    wrapInPageAndMetaTag(pageStuff) {
+    wrapInPageTag(pageStuff) {
       <div class="dw-debate-info">{
         if (lastChange isDefined) {
           <p class="dw-last-changed">Last changed on

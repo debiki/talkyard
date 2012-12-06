@@ -13,6 +13,7 @@ import FlagReason.FlagReason
 import Prelude._
 import DebikiHttp._
 import HtmlUtils._
+import HtmlPostRenderer._
 
 
 
@@ -37,10 +38,20 @@ case class HtmlPostRenderer(
     val post = page.vipo(postId) getOrElse
        assErr("DwE209X5", "post id "+ postId +" on page "+ page.id)
 
-    if (post.isTreeDeleted) _showDeletedTree(post)
-    else if (post.isDeleted) _showDeletedComment(post)
-    else if (post.id == Page.TitleId) _renderPageTitle(post)
-    else _showComment(post)
+    if (post.isTreeDeleted) {
+      _showDeletedTree(post)
+    }
+    else if (post.isDeleted) {
+      _showDeletedComment(post)
+    }
+    else if (post.id == Page.TitleId) {
+      val titleHtml = renderPageTitle(post)
+      RenderedComment(titleHtml, replyBtnText = Nil,
+        topRatingsText = None, templCmdNodes = Nil)
+    }
+    else {
+      _showComment(post)
+    }
   }
 
 
@@ -218,14 +229,8 @@ case class HtmlPostRenderer(
         </span>
       }
 
-    val postTitleXml: NodeSeq =
-      // Currently only the page body can have a title.
-      if (post.id != Page.BodyId) Nil
-      else debate.titlePost map(_renderPageTitle(_).html) getOrElse Nil
-
     val commentHtml =
     <div id={cssPostId} class={"dw-p" + cssArtclPost + cutS}>
-      { postTitleXml }
       { ifThen(post.loginId != PageRenderer.DummyAuthorLogin.id,
       <div class='dw-p-hd'>
         By { _linkTo(author)}{ dateAbbr(post.ctime, "dw-p-at")
@@ -247,9 +252,13 @@ case class HtmlPostRenderer(
     RenderedComment(html = commentHtml, replyBtnText = replyBtnText,
        topRatingsText = topTagsAsText, templCmdNodes = templCmdNodes)
   }
+}
 
 
-  def _renderPageTitle(titlePost: ViPo): RenderedComment = {
+
+object HtmlPostRenderer {
+
+  def renderPageTitle(titlePost: ViPo): Node = {
     // The title is a post, itself.
     // Therefore this XML is almost identical to the XML
     // for the post that this title entitles.
@@ -258,7 +267,6 @@ case class HtmlPostRenderer(
     // possible to reply-inline to the title.
     // (Don't wrap the <h1> in a <header>; there's no need to wrap single
     // tags in a <header>.)
-    val html =
       <div id={"post-"+ titlePost.id} class='dw-p dw-p-ttl'>
         <div class='dw-p-bd'>
           <div class='dw-p-bd-blk'>
@@ -266,9 +274,6 @@ case class HtmlPostRenderer(
           </div>
         </div>
       </div>
-
-    RenderedComment(html, replyBtnText = Nil,
-      topRatingsText = None, templCmdNodes = Nil)
   }
 
 
