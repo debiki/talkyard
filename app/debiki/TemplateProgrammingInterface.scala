@@ -221,6 +221,9 @@ class TemplateProgrammingInterface(
     HtmlPageSerializer.loginInfo(_pageReq.user.map(_.displayName))
 
 
+  def pageMeta =
+    dao.renderPage(pageReq, showComments = false, showMetaOnly = true)
+
   def pageTitleAndBodyNoComments =
     dao.renderPage(pageReq, showComments = false)
 

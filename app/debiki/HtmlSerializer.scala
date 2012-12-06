@@ -285,6 +285,17 @@ object HtmlPageSerializer {
     prevSiblingId: Option[String],
     htmlNodes: NodeSeq)
 
+
+  def wrapInPageAndMetaTag(page: PageStuff)(body: =>NodeSeq): NodeSeq = {
+    <div id={"page-"+ page.id} class='debiki dw-debate dw-page'
+        data-page_exists={page.meta.pageExists.toString}
+        data-page_path={page.path.path}
+        data-page_role={page.role.toString}
+        data-parent_page_id={page.parentPageId.map(_.toString) getOrElse ""}>
+      { body }
+    </div>
+  }
+
 }
 
 
@@ -347,12 +358,7 @@ case class HtmlPageSerializer(
     val rootPost: ViPo = pageRoot.findOrCreatePostIn(debate) getOrElse
        throwNotFound("DwE0PJ404", "Post not found: "+ pageRoot.subId)
 
-    val cssThreadId = "dw-t-"+ rootPost.id
-    <div id={"page-"+ debate.id} class='debiki dw-debate dw-page'
-        data-page_exists={pageStuff.meta.pageExists.toString}
-        data-page_path={pagePath.path}
-        data-page_role={pageRole.toString}
-        data-parent_page_id={parentPageId.map(_.toString) getOrElse ""}>
+    wrapInPageAndMetaTag(pageStuff) {
       <div class="dw-debate-info">{
         if (lastChange isDefined) {
           <p class="dw-last-changed">Last changed on
@@ -362,7 +368,7 @@ case class HtmlPageSerializer(
         }
       }
       </div>
-      <div id={cssThreadId}
+      <div id={"dw-t-"+ rootPost.id}
            class={"dw-t"+ cssArtclThread +" dw-depth-0 dw-hor"}>
       {
         val renderedRoot = postRenderer.renderPost(rootPost.id)
@@ -377,7 +383,7 @@ case class HtmlPageSerializer(
         })
       }
       </div>
-    </div>
+    }
   }
 
 

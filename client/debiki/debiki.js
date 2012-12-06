@@ -84,6 +84,14 @@ function $initStep4() {
 };
 
 
+function fireLoginOrLogout() {
+  if (d.i.Me.isLoggedIn())
+    d.i.Me.fireLogin();
+  else
+    d.i.Me.fireLogout();
+};
+
+
 function registerEventHandlersFireLoginOut() {
 
   // Hide all action forms, since they will be slided in.
@@ -106,8 +114,7 @@ function registerEventHandlersFireLoginOut() {
   // COULD move this to debiki-login.js
   $('.dw-loginsubmit-on-click').click(d.i.$loginThenSubmit);
 
-  if (d.i.Me.isLoggedIn()) d.i.Me.fireLogin();
-  else d.i.Me.fireLogout();
+  fireLoginOrLogout();
 
   // If the user switches browser tab, s/he might logout and login
   // in another tab. That'd invalidate all xsrf tokens on this page,
@@ -143,19 +150,16 @@ function registerEventHandlersFireLoginOut() {
 };
 
 
-// Render the page step by step, to reduce page loading time. (When the first
-// step is done, the user should conceive the page as mostly loaded.)
-
-function renderPageEtc() {
-
-  // XSRF token refresh, and
-  // JSON vulnerability protection
-  // ((Details: Strip a certain reply prefix. This prevents the JSON
-  // from being parsed as Javascript from a <script> tag. This'd otherwise
-  // allow third party websites to turn your JSON resource URL into JSONP
-  // request under some conditions, see:
-  //   http://docs.angularjs.org/api/ng.$http, the "JSON Vulnerability
-  // Protection" section.))
+/**
+ * XSRF token refresh, and JSON vulnerability protection
+ * ((Details: Strips a certain reply prefix. This prevents the JSON
+ * from being parsed as Javascript from a <script> tag. This'd otherwise
+ * allow third party websites to turn your JSON resource URL into JSONP
+ * request under some conditions, see:
+ *   http://docs.angularjs.org/api/ng.$http, the "JSON Vulnerability
+ * Protection" section.))
+ */
+function configureAjaxRequests() {
   $.ajaxSetup({
     dataFilter: function (response, type) {
       // Don't know why, but `type` is alwyas undefined, so won't work:
@@ -176,6 +180,16 @@ function renderPageEtc() {
       $('input.dw-fi-xsrf').attr('value', token);
     }
   });
+};
+
+
+/**
+ * Renders the page, step by step, to reduce page loading time. (When the
+ * first step is done, the user should conceive the page as mostly loaded.)
+ */
+function renderPageEtc() {
+
+  configureAjaxRequests();
 
   var $posts = $('.debiki .dw-p:not(.dw-p-ttl)');
 
@@ -245,10 +259,31 @@ function renderPageEtc() {
 };
 
 
-// Dont render page, if there is no root post, or some error happens,
-// which kills other Javascript that runs on page load.
-if (!d.i.rootPostId)
+/**
+ * Use this function if there is no root post on the page, but only meta info.
+ * (Otherwise, if you use `renderPageEtc()`, some error happens, which kills
+ * other Javascript that runs on page load.)
+ */
+function renderEmptyPage() {
+  // (Don't skip all steps, although the page is empty. For example, the admin
+  // dashbar depends on login/logout events, and it's shown even if there's no
+  // root post — e.g. on blog list pages, which list child pages only but no
+  // main title or article.)
+  configureAjaxRequests();
+  d.i.Me.refreshProps();
+  if (!Modernizr.touch) {
+    d.i.initKeybdShortcuts($);
+    d.i.initUtterscrollAndTips();
+  }
+  fireLoginOrLogout();
+};
+
+
+if (!d.i.rootPostId) {
+  // Skip most of the rendering step, since there is no root post.
+  renderEmptyPage();
   return;
+}
 
 renderPageEtc();
 

@@ -24,6 +24,16 @@ object PageRenderer {
   }
 
 
+  def renderPageMeta(pageReq: PageRequest[_]): xml.NodeSeq = {
+    val page = PageStuff(pageReq.pageMeta, pageReq.pagePath,
+      Debate.empty(pageReq.pageId_!))
+    val nodes = HtmlPageSerializer.wrapInPageAndMetaTag(page) { Nil }
+    nodes map { html =>
+      xml.Unparsed(liftweb.Html5.toString(html))
+    }
+  }
+
+
   def renderArticle(pageReq: PageRequest[_], showComments: Boolean)
         : xml.NodeSeq = {
     val page = PageStuff(pageReq.pageMeta, pageReq.pagePath,
@@ -68,8 +78,6 @@ object PageRenderer {
       config, showComments = showComments).layoutPage()
 
     nodes map { html =>
-    // The html is serialized here only once, then it's added to the
-    // page cache (if pageRoot is the Page.body -- see get() below).
       xml.Unparsed(liftweb.Html5.toString(html))
     }
   }

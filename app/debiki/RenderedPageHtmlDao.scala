@@ -20,9 +20,13 @@ trait RenderedPageHtmlDao {
     TemplateRenderer(pageReq, appendToBody).renderTemplate()
 
 
-  def renderPage(pageReq: PageRequest[_], showComments: Boolean)
-        : xml.NodeSeq =
-    PageRenderer.renderArticle(pageReq, showComments)
+  def renderPage(pageReq: PageRequest[_], showComments: Boolean,
+         showMetaOnly: Boolean = false): xml.NodeSeq = {
+    if (showMetaOnly)
+      PageRenderer.renderPageMeta(pageReq)
+    else
+      PageRenderer.renderArticle(pageReq, showComments)
+  }
 
 }
 
@@ -32,18 +36,18 @@ trait CachingRenderedPageHtmlDao extends RenderedPageHtmlDao {
   self: CachingTenantDao =>
 
 
-  override def renderPage(pageReq: PageRequest[_], showComments: Boolean)
-        : xml.NodeSeq = {
+  override def renderPage(pageReq: PageRequest[_], showComments: Boolean,
+        showMetaOnly: Boolean): xml.NodeSeq = {
     // Bypass the cache if the page doesn't yet exist (it's being created),
     // because in the past there was some error because non-existing pages
     // had no ids (so feels safer to bypass).
     if (pageReq.pageExists && pageReq.pageRoot == PageRoot.Real(Page.BodyId) &&
         pageReq.pageVersion == PageVersion.LatestApproved) {
       val key = _pageHtmlKey(
-        pageReq.pageId_!, origin = pageReq.host, showComments)
+        pageReq.pageId_!, origin = pageReq.host, showComments, showMetaOnly = showMetaOnly)
       lookupInCache(key, orCacheAndReturn = {
         rememberOrigin(pageReq.host)
-        Some(super.renderPage(pageReq, showComments))
+        Some(super.renderPage(pageReq, showComments, showMetaOnly = showMetaOnly))
       }) getOrDie "DwE93IB7"
     }
     else {
@@ -85,8 +89,11 @@ trait CachingRenderedPageHtmlDao extends RenderedPageHtmlDao {
     // we need to uncache pageId for each server address that maps
     // to the current website (this.tenantId).
     for (origin <- knownOrigins) {
-      removeFromCache(_pageHtmlKey(pageId, origin, showComments = true))
-      removeFromCache(_pageHtmlKey(pageId, origin, showComments = false))
+      // Remove all possible combinations of showComments and showMetaOnly.
+      removeFromCache(_pageHtmlKey(pageId, origin, false, false))
+      removeFromCache(_pageHtmlKey(pageId, origin, false, true))
+      removeFromCache(_pageHtmlKey(pageId, origin, true, false))
+      removeFromCache(_pageHtmlKey(pageId, origin, true, true))
     }
 
     // BUG race condition: What if anotoher thread started rendering a page
@@ -100,8 +107,8 @@ trait CachingRenderedPageHtmlDao extends RenderedPageHtmlDao {
 
 
   private def _pageHtmlKey(pageId: String, origin: String,
-        showComments: Boolean): String =
-    s"$pageId|$tenantId|$origin|$showComments|PageHtml"
+        showComments: Boolean, showMetaOnly: Boolean): String =
+    s"$pageId|$tenantId|$origin|$showComments|$showMetaOnly|PageHtml"
 
 
   private def originsKey: String = s"$tenantId|PossibleOrigins"

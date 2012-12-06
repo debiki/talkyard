@@ -12,7 +12,14 @@
 
 
 @wrapper(tpi) {
-  @tpi.pageTitleAndBodyNoComments
+  @* Don't include: @tpi.pageTitleAndBodyNoComments
+  If included, people (my father) confuse editing the blog main page title and body
+  with writing a blog article. Instead, show nothing but the list of blog articles.
+  — I could add a page config values: show-title, show-body, which default
+  to false, for a blog main page?
+  Page meta data is needed though, for the admin dashbar to work: *@
+
+  @tpi.pageMeta
 
   <ol class='page-list'>
   @for(page <- tpi.listNewestChildPages()) {
