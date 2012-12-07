@@ -49,7 +49,7 @@ trait RenderedPageHtmlDao {
     val renderer = HtmlPageSerializer(pageStuff, pageTrust, pageReq.pageRoot,
       config, showComments = showComments)
 
-    val htmlNode = renderer.layoutPage() map { html =>
+    val htmlNode = renderer.renderBodyAndComments() map { html =>
       xml.Unparsed(liftweb.Html5.toString(html))
     }
 

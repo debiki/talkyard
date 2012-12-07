@@ -40,7 +40,7 @@ object BrowserPagePatcher {
       showComments = true)
     val postsAndHtml: List[(Post, SerializedSingleThread)] =
           myNewPosts map { post =>
-      val serializedThread = serializer.serializeSingleThread(post.id) getOrElse
+      val serializedThread = serializer.renderSingleThread(post.id) getOrElse
          logAndThrowInternalError(
             "DwE3EH48", "Post not found, id: "+ post.id +", page: "+ page.id)
       (post, serializedThread)

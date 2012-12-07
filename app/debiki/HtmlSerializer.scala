@@ -331,10 +331,10 @@ case class HtmlPageSerializer(
     HtmlPostRenderer(pageStuff.actions, pageStats, config.hostAndPort)
 
 
-  def serializeSingleThread(postId: String)
+  def renderSingleThread(postId: String)
         : Option[SerializedSingleThread] = {
     page.vipo(postId) map { post =>
-      val html = _layoutComments(depth = post.depth,
+      val html = renderThreads(depth = post.depth,
          parentReplyBtn = Nil,
          posts = post::Nil)
       val siblingsSorted = _sortPostsDescFitness(post.siblingsAndMe)
@@ -354,7 +354,7 @@ case class HtmlPageSerializer(
    * appended at the end of the server's reply (in a special <div>), and
    * client side Javascript update the page with user specific stuff.
    */
-  def layoutPage(): NodeSeq = /*Stats.time("layoutPage")*/ {
+  def renderBodyAndComments(): NodeSeq = /*Stats.time("renderBodyAndComments")*/ {
 
     val cssArtclThread =
       if (pageRoot.subId == Page.BodyId) " dw-ar-t" else ""
@@ -381,7 +381,7 @@ case class HtmlPageSerializer(
           val replyBtn = _replyBtnListItem(renderedRoot.replyBtnText)
           <div class='dw-t-vspace'/>
           <ol class='dw-res'>{
-            _layoutComments(1, replyBtn, rootPostsReplies)
+            renderThreads(1, replyBtn, rootPostsReplies)
           }
           </ol>
         })
@@ -424,7 +424,7 @@ case class HtmlPageSerializer(
   }
 
 
-  private def _layoutComments(depth: Int,
+  private def renderThreads(depth: Int,
                               parentReplyBtn: NodeSeq,
                               posts: List[ViPo]): NodeSeq = {
     // COULD let this function return Nil if posts.isEmpty, and otherwise
@@ -489,7 +489,7 @@ case class HtmlPageSerializer(
         // COULD delete only stuff *older* than the tree deletion.
         else if (vipo.isTreeDeleted) Nil
         else <ol class='dw-res'>
-          { _layoutComments(depth + 1, myReplyBtn, replies) }
+          { renderThreads(depth + 1, myReplyBtn, replies) }
         </ol>
 
       var thread = {
