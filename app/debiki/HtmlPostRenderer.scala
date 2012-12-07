@@ -64,7 +64,7 @@ case class HtmlPostRenderer(
   private def renderPostImpl(vipo: ViPo): RenderedPost = {
     def post = vipo.post
 
-    val postHeader = renderPostHeader(vipo, pageStats)
+    val postHeader = renderPostHeader(vipo, Some(pageStats))
     val postBody = renderPostBody(vipo, hostAndPort)
 
     val long = postBody.approxLineCount > 9
@@ -115,7 +115,14 @@ object HtmlPostRenderer {
   }
 
 
-  def renderPostHeader(vipo: ViPo, pageStats: PageStats): RenderedPostHeader = {
+  /**
+   * Renders a .dw-p-hd tag reading:
+   *  "By (author) (date) Edited by (editor)
+   *    Flagged (top flags) Rated (top ratings)"
+   * If anyPageStats is None, skips "Flagged ... Rated ..." statistics/info.
+   */
+  def renderPostHeader(vipo: ViPo, anyPageStats: Option[PageStats])
+        : RenderedPostHeader = {
     if (vipo.loginId == PageRenderer.DummyAuthorLogin.id)
       return RenderedPostHeader(Nil, None)
 
@@ -125,27 +132,89 @@ object HtmlPostRenderer {
     val lastEditApplied = editsApplied.headOption
     val author = page.people.authorOf_!(post)
 
-    val (flagsTop: NodeSeq, flagsDetails: NodeSeq) = {
-      if (vipo.flags isEmpty) (Nil: NodeSeq, Nil: NodeSeq)
-      else {
-        import HtmlForms.FlagForm.prettify
-        val mtime = toIso8601T(vipo.lastFlag.get.ctime)
-        val fbr = vipo.flagsByReasonSorted
-        (<span class='dw-p-flgs-top'>, flagged <em>{
-            prettify(fbr.head._1).toLowerCase}</em></span>,
-        <div class='dw-p-flgs-all' data-mtime={mtime}>{
-          vipo.flags.length} flags: <ol class='dw-flgs'>{
-            for ((r: FlagReason, fs: List[Flag]) <- fbr) yield
-              <li class="dw-flg">{
-                // The `×' is the multiplication sign, "\u00D7".
-                prettify(r).toLowerCase +" × "+ fs.length.toString
-              } </li>
-          }</ol>
-        </div>)
-      }
-    }
+    val (flagsTop: NodeSeq, flagsDetails: NodeSeq) =
+      if (anyPageStats.isDefined) renderFlags(vipo)
+      else (Nil: NodeSeq, Nil: NodeSeq)
 
-    val postRatingStats = pageStats.ratingStatsFor(post.id)
+    val (topTagsAsText: Option[String],
+        ratingTagsTop: NodeSeq,
+        ratingTagsDetails: NodeSeq) =
+      if (anyPageStats.isDefined) renderRatings(vipo, anyPageStats.get)
+      else (None, Nil: NodeSeq, Nil: NodeSeq)
+
+    val editInfo =
+      // If closed: <span class='dw-p-re-cnt'>{count} replies</span>
+      if (editsApplied.isEmpty) Nil
+      else {
+        val lastEditDate = vipo.modificationDati
+        // ((This identity count doesn't take into account that a user
+        // can have many identities, e.g. Twitter, Facebook and Gmail. So
+        // even if many different *identities* have edited the post,
+        // perhaps only one single actual *user* has edited it. Cannot easily
+        // compare users though, because IdentitySimple maps to no user!))
+        val editorsCount =
+          editsApplied.map(edAp => page.vied_!(edAp.id).identity_!.id).
+          distinct.length
+        lazy val editor =
+          page.people.authorOf_!(page.editsById(lastEditApplied.get.id))
+        <span class='dw-p-hd-e'>{
+            Text(", edited ") ++
+            (if (editorsCount > 1) {
+              Text("by ") ++ <a>various people</a>
+            } else if (editor.identity_!.id != author.identity_!.id) {
+              Text("by ") ++ _linkTo(editor)
+            } else {
+              // Edited by the author. Don't repeat his/her name.
+              Nil
+            })
+          }{dateAbbr(lastEditDate, "dw-p-at")}
+        </span>
+      }
+
+    val commentHtml =
+      <div class='dw-p-hd'>
+        By { _linkTo(author)}{ dateAbbr(post.ctime, "dw-p-at")
+        }{ flagsTop }{ ratingTagsTop }{ editInfo }{ flagsDetails
+        }{ ratingTagsDetails }
+      </div>
+
+    RenderedPostHeader(html = commentHtml, topRatingsText = topTagsAsText)
+  }
+
+
+  private def renderFlags(vipo: ViPo): (NodeSeq, NodeSeq) = {
+    if (vipo.flags isEmpty)
+      return (Nil: NodeSeq, Nil: NodeSeq)
+
+    import HtmlForms.FlagForm.prettify
+    val mtime = toIso8601T(vipo.lastFlag.get.ctime)
+    val fbr = vipo.flagsByReasonSorted
+
+    val topFlags =
+      <span class='dw-p-flgs-top'>, flagged <em>{
+        prettify(fbr.head._1).toLowerCase
+      }</em></span>
+
+    val allFlagListItems =
+      for ((r: FlagReason, fs: List[Flag]) <- fbr) yield
+        <li class="dw-flg">{
+          // The `×' is the multiplication sign, "\u00D7".
+          prettify(r).toLowerCase +" × "+ fs.length.toString
+        } </li>
+
+    val allFlags =
+      <div class='dw-p-flgs-all' data-mtime={mtime}>{
+        vipo.flags.length } flags: <ol class='dw-flgs'>{
+          allFlagListItems
+        }</ol>
+      </div>
+
+    (topFlags, allFlags)
+  }
+
+
+  private def renderRatings(post: ViPo, pageStats: PageStats) = {
+    val postRatingStats: PostRatingStats = pageStats.ratingStatsFor(post.id)
     // Sort the rating tags by their observed fittingness, descending
     // (the most popular tags first).
     val tagStatsSorted = postRatingStats.tagStats.toList.sortBy(
@@ -210,43 +279,7 @@ object HtmlPostRenderer {
       }
     }
 
-    val editInfo =
-      // If closed: <span class='dw-p-re-cnt'>{count} replies</span>
-      if (editsApplied.isEmpty) Nil
-      else {
-        val lastEditDate = vipo.modificationDati
-        // ((This identity count doesn't take into account that a user
-        // can have many identities, e.g. Twitter, Facebook and Gmail. So
-        // even if many different *identities* have edited the post,
-        // perhaps only one single actual *user* has edited it. Cannot easily
-        // compare users though, because IdentitySimple maps to no user!))
-        val editorsCount =
-          editsApplied.map(edAp => page.vied_!(edAp.id).identity_!.id).
-          distinct.length
-        lazy val editor =
-          page.people.authorOf_!(page.editsById(lastEditApplied.get.id))
-        <span class='dw-p-hd-e'>{
-            Text(", edited ") ++
-            (if (editorsCount > 1) {
-              Text("by ") ++ <a>various people</a>
-            } else if (editor.identity_!.id != author.identity_!.id) {
-              Text("by ") ++ _linkTo(editor)
-            } else {
-              // Edited by the author. Don't repeat his/her name.
-              Nil
-            })
-          }{dateAbbr(lastEditDate, "dw-p-at")}
-        </span>
-      }
-
-    val commentHtml =
-      <div class='dw-p-hd'>
-        By { _linkTo(author)}{ dateAbbr(post.ctime, "dw-p-at")
-        }{ flagsTop }{ ratingTagsTop }{ editInfo }{ flagsDetails
-        }{ ratingTagsDetails }
-      </div>
-
-    RenderedPostHeader(html = commentHtml, topRatingsText = topTagsAsText)
+    (topTagsAsText, ratingTagsTop, ratingTagsDetails)
   }
 
 
