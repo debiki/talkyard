@@ -2,5 +2,9 @@
 
 @wrapper(tpi) {
   <!-- homepage.scala.html -->
-  @tpi.pageTitleAndBodyAndComments
+  @tpi.page {
+    @tpi.title
+    @tpi.authorAndDate
+    @tpi.body
+  }
 }

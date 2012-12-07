@@ -1,6 +1,10 @@
 @(tpi: debiki.TemplateProgrammingInterface)
 
 @wrapper(tpi, isHomepage = true) {
-  <!-- homepage.scala.html -->
-  @tpi.pageTitleAndBodyAndComments
+  <!-- wwwdebikicom/homepage.scala.html -->
+  @tpi.page {
+    @tpi.title
+    @tpi.authorAndDate
+    @tpi.body
+  }
 }

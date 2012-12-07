@@ -362,7 +362,6 @@ case class HtmlPageSerializer(
     val rootPost: ViPo = pageRoot.findOrCreatePostIn(debate) getOrElse
        throwNotFound("DwE0PJ404", "Post not found: "+ pageRoot.subId)
 
-    wrapInPageTag(pageStuff) {
       <div class="dw-debate-info">{
         if (lastChange isDefined) {
           <p class="dw-last-changed">Last changed on
@@ -387,7 +386,6 @@ case class HtmlPageSerializer(
         })
       }
       </div>
-    }
   }
 
 

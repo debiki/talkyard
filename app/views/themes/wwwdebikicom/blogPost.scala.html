@@ -2,7 +2,11 @@
 
 
 @wrapper(tpi) {
-  <!-- blogPost.scala.html -->
-  @tpi.pageTitleAndBodyAndComments
+  <!-- wwwdebikicom/blogPost.scala.html -->
+  @tpi.page {
+    @tpi.title
+    @tpi.authorAndDate
+    @tpi.body
+  }
 }
 
