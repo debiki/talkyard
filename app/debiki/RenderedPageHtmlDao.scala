@@ -33,7 +33,10 @@ trait RenderedPageHtmlDao {
 
 
   def renderAuthorAndDate(pageReq: PageRequest[_]): NodeSeq = {
-    <i>Date_Date</i>
+    val page = pageReq.pageDesiredVersion_!
+    page.titlePost map { titlePost =>
+      HtmlPostRenderer.renderPostHeader(titlePost, anyPageStats = None)
+    } map (_.html) getOrElse Nil
   }
 
 
