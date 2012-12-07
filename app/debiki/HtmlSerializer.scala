@@ -283,7 +283,7 @@ object HtmlPageSerializer {
 
   case class SerializedSingleThread(
     prevSiblingId: Option[String],
-    htmlNodes: NodeSeq)
+    htmlNodes: Node)
 
 
   def wrapInPageTag(page: PageStuff)(body: NodeSeq): NodeSeq =
@@ -337,12 +337,13 @@ case class HtmlPageSerializer(
       val html = renderThreads(depth = post.depth,
          parentReplyBtn = Nil,
          posts = post::Nil)
+      assert(html.length == 1)
       val siblingsSorted = _sortPostsDescFitness(post.siblingsAndMe)
       var prevSibling: Option[ViPo] = None
       siblingsSorted.takeWhile(_.id != postId).foreach { sibling =>
         prevSibling = Some(sibling)
       }
-      SerializedSingleThread(prevSibling.map(_.id), html)
+      SerializedSingleThread(prevSibling.map(_.id), html.head)
     }
   }
 
@@ -432,6 +433,7 @@ case class HtmlPageSerializer(
       cssInlineThread = if (isInlineThread) " dw-i-t" else ""
       replies = p.replies
       vipo = p // debate.vipo_!(p.id)
+      isTitle = post.id == Page.TitleId
       isRootOrArtclQstn =
           vipo.id == pageRoot.subId || vipo.meta.isArticleQuestion
       // Layout replies horizontally, if this is an inline reply to
@@ -455,7 +457,9 @@ case class HtmlPageSerializer(
       val renderedComment: RenderedPost = postRenderer.renderPost(vipo.id)
 
       val (myReplyBtn, actionLink) =
-        if (isRootOrArtclQstn)
+        if (isTitle)
+          (Nil, Nil)
+        else if (isRootOrArtclQstn)
            (_replyBtnListItem(renderedComment.replyBtnText), Nil)
         else
           (Nil,
@@ -470,7 +474,7 @@ case class HtmlPageSerializer(
           ("", "[–]") // the – is an `em dash' not a minus
 
       val foldLink =
-        if (isRootOrArtclQstn || vipo.isTreeDeleted) Nil
+        if (isTitle || isRootOrArtclQstn || vipo.isTreeDeleted) Nil
         else <a class='dw-z'>{foldLinkText}</a>
 
       val repliesHtml =
@@ -499,6 +503,10 @@ case class HtmlPageSerializer(
         // resize the <div> instead.
         thread = thread.copy(label = "div")
         thread = <li>{ thread }</li>
+      }
+      else if (isTitle) {
+        // The title isn't placed in any list.
+        thread = thread.copy(label = "div")
       }
 
       // For inline comments, add info on where to place them.

@@ -64,7 +64,15 @@ case class HtmlPostRenderer(
   private def renderPostImpl(vipo: ViPo): RenderedPost = {
     def post = vipo.post
 
-    val postHeader = renderPostHeader(vipo, Some(pageStats))
+    val postHeader =
+      if (post.id == Page.BodyId) {
+        // Body author and date info rendered separately, for the page body.
+        RenderedPostHeader(Nil, None)
+      }
+      else {
+        renderPostHeader(vipo, Some(pageStats))
+      }
+
     val postBody = renderPostBody(vipo, hostAndPort)
 
     val long = postBody.approxLineCount > 9
