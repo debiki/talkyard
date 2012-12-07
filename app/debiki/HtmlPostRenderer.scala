@@ -45,10 +45,10 @@ case class HtmlPostRenderer(
        assErr("DwE209X5", "post id "+ postId +" on page "+ page.id)
 
     if (post.isTreeDeleted) {
-      _showDeletedTree(post)
+      renderDeletedTree(post)
     }
     else if (post.isDeleted) {
-      _showDeletedComment(post)
+      renderDeletedComment(post)
     }
     else if (post.id == Page.TitleId) {
       val titleHtml = renderPageTitle(post)
@@ -56,39 +56,12 @@ case class HtmlPostRenderer(
         topRatingsText = None)
     }
     else {
-      renderPost(post)
+      renderPostImpl(post)
     }
   }
 
 
-  private def _showDeletedTree(vipo: ViPo): RenderedComment = {
-    _showDeletedComment(vipo, wholeTree = true)
-  }
-
-
-  private def _showDeletedComment(vipo: ViPo, wholeTree: Boolean = false
-                                     ): RenderedComment = {
-    val cssPostId = "post-"+ vipo.id
-    val deletion = vipo.firstDelete.get
-    val deleter = page.people.authorOf_!(deletion)
-    // COULD add itemscope and itemtype attrs, http://schema.org/Comment
-    val html =
-    <div id={cssPostId} class='dw-p dw-p-dl'>
-      <div class='dw-p-hd'>{
-        if (wholeTree) "Thread" else "1 comment"
-        } deleted by { _linkTo(deleter)
-        /* COULD show flagsTop, e.g. "flagged spam".
-        COULD include details, shown on click:
-        Posted on ...,, rated ... deleted on ..., reasons for deletion: ...
-        X flags: ... -- but perhaps better / easier with a View link,
-        that opens the deleted post, incl. details, in a new browser tab?  */}
-      </div>
-    </div>
-    RenderedComment(html, replyBtnText = Nil, topRatingsText = None)
-  }
-
-
-  private def renderPost(vipo: ViPo): RenderedComment = {
+  private def renderPostImpl(vipo: ViPo): RenderedComment = {
     def post = vipo.post
 
     val postHeader = renderPostHeader(vipo, pageStats)
@@ -113,6 +86,34 @@ case class HtmlPostRenderer(
 
 
 object HtmlPostRenderer {
+
+
+  def renderDeletedTree(vipo: ViPo): RenderedComment = {
+    renderDeletedComment(vipo, wholeTree = true)
+  }
+
+
+  def renderDeletedComment(vipo: ViPo, wholeTree: Boolean = false)
+        : RenderedComment = {
+    val page = vipo.debate
+    val cssPostId = "post-"+ vipo.id
+    val deletion = vipo.firstDelete.get
+    val deleter = page.people.authorOf_!(deletion)
+    // COULD add itemscope and itemtype attrs, http://schema.org/Comment
+    val html =
+      <div id={cssPostId} class='dw-p dw-p-dl'>
+        <div class='dw-p-hd'>{
+          if (wholeTree) "Thread" else "1 comment"
+          } deleted by { _linkTo(deleter)
+          /* COULD show flagsTop, e.g. "flagged spam".
+            COULD include details, shown on click:
+            Posted on ...,, rated ... deleted on ..., reasons for deletion: ...
+            X flags: ... -- but perhaps better / easier with a View link,
+            that opens the deleted post, incl. details, in a new browser tab?  */}
+        </div>
+      </div>
+    RenderedComment(html, replyBtnText = Nil, topRatingsText = None)
+  }
 
 
   def renderPostHeader(vipo: ViPo, pageStats: PageStats): RenderedPostHeader = {
