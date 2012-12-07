@@ -39,9 +39,6 @@ case class HtmlPostRenderer(
   pageStats: PageStats,
   hostAndPort: String) {
 
-  // rename later... to what?
-  def debate = page
-
 
   def renderPost(postId: String): RenderedComment = {
     val post = page.vipo(postId) getOrElse
@@ -73,7 +70,7 @@ case class HtmlPostRenderer(
                                      ): RenderedComment = {
     val cssPostId = "post-"+ vipo.id
     val deletion = vipo.firstDelete.get
-    val deleter = debate.people.authorOf_!(deletion)
+    val deleter = page.people.authorOf_!(deletion)
     // COULD add itemscope and itemtype attrs, http://schema.org/Comment
     val html =
     <div id={cssPostId} class='dw-p dw-p-dl'>
@@ -123,10 +120,10 @@ object HtmlPostRenderer {
       return RenderedPostHeader(Nil, None)
 
     def post = vipo.post
-    def debate = vipo.debate // COULD rename to `page`
+    def page = vipo.debate
     val editsApplied: List[ViEd] = vipo.editsAppliedDescTime
     val lastEditApplied = editsApplied.headOption
-    val author = debate.people.authorOf_!(post)
+    val author = page.people.authorOf_!(post)
 
     val (flagsTop: NodeSeq, flagsDetails: NodeSeq) = {
       if (vipo.flags isEmpty) (Nil: NodeSeq, Nil: NodeSeq)
@@ -224,10 +221,10 @@ object HtmlPostRenderer {
         // perhaps only one single actual *user* has edited it. Cannot easily
         // compare users though, because IdentitySimple maps to no user!))
         val editorsCount =
-          editsApplied.map(edAp => debate.vied_!(edAp.id).identity_!.id).
+          editsApplied.map(edAp => page.vied_!(edAp.id).identity_!.id).
           distinct.length
         lazy val editor =
-          debate.people.authorOf_!(debate.editsById(lastEditApplied.get.id))
+          page.people.authorOf_!(page.editsById(lastEditApplied.get.id))
         <span class='dw-p-hd-e'>{
             Text(", edited ") ++
             (if (editorsCount > 1) {
