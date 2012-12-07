@@ -247,18 +247,14 @@ class TemplateProgrammingInterface(
   def authorAndDate = dao.renderAuthorAndDate(pageReq)
 
 
-  def body = dao.renderPage(pageReq, showComments = false)
+  def body = dao.renderPageBodyAndComments(pageReq)
 
 
   def comments = dao.renderComments(pageReq)
 
 
-  def pageTitleAndBodyNoComments =
-    title ++ authorAndDate ++ dao.renderPage(pageReq, showComments = false)
-
-
   def pageTitleAndBodyAndComments =
-    title ++ authorAndDate ++ dao.renderPage(pageReq, showComments = true)
+    title ++ authorAndDate ++ dao.renderPageBodyAndComments(pageReq)
 
 }
 

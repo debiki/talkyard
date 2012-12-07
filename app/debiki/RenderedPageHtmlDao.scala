@@ -11,6 +11,14 @@ import scala.xml.NodeSeq
 import Prelude._
 
 
+
+case class RenderedPage(
+  title: NodeSeq,
+  authorAndDate: NodeSeq,
+  bodyAndComments: NodeSeq)
+
+
+
 trait RenderedPageHtmlDao {
   self: TenantDao =>
 
@@ -20,45 +28,51 @@ trait RenderedPageHtmlDao {
     TemplateRenderer(pageReq, appendToBody).renderTemplate()
 
 
-  def renderPageMeta(pageReq: PageRequest[_]): NodeSeq = {
+  final def renderPageMeta(pageReq: PageRequest[_]): NodeSeq = {
     HtmlPageSerializer.wrapInPageTag(pageReq.pageMeta, pageReq.pagePath)(Nil)
       .map(html => xml.Unparsed(liftweb.Html5.toString(html)))
   }
 
 
-  def renderPageTitle(pageReq: PageRequest[_]): NodeSeq = {
-    val page = pageReq.pageDesiredVersion_!
-    page.titlePost.map(HtmlPostRenderer.renderPageTitle(_)) getOrElse Nil
-  }
+  final def renderPageTitle(pageReq: PageRequest[_]): NodeSeq =
+    renderPage(pageReq).title
 
 
-  def renderAuthorAndDate(pageReq: PageRequest[_]): NodeSeq = {
-    val page = pageReq.pageDesiredVersion_!
-    page.titlePost map { titlePost =>
-      HtmlPostRenderer.renderPostHeader(titlePost, anyPageStats = None)
-    } map (_.html) getOrElse Nil
-  }
+  final def renderAuthorAndDate(pageReq: PageRequest[_]): NodeSeq =
+    renderPage(pageReq).authorAndDate
 
 
-  def renderPage(pageReq: PageRequest[_], showComments: Boolean): xml.NodeSeq = {
+  final def renderPageBodyAndComments(pageReq: PageRequest[_]): xml.NodeSeq =
+    renderPage(pageReq).bodyAndComments
+
+
+  final def renderComments(pageReq: PageRequest[_]): xml.NodeSeq =
+    unimplemented("Rendering comments only")
+
+
+  def renderPage(pageReq: PageRequest[_]): RenderedPage = {
     val config = DebikiHttp.newUrlConfig(pageReq.host)
     val page = pageReq.pageDesiredVersion_!
     val pageStuff = PageStuff(pageReq.pageMeta, pageReq.pagePath, page)
     val pageTrust = PageTrust(page)
 
     val renderer = HtmlPageSerializer(pageStuff, pageTrust, pageReq.pageRoot,
-      config, showComments = showComments)
+      config, showComments = true)
 
-    val htmlNode = renderer.renderBodyAndComments() map { html =>
+    val pageTitle = renderer.renderSingleThread(Page.TitleId) map { renderedThread =>
+      xml.Unparsed(liftweb.Html5.toString(renderedThread.htmlNodes))
+    } getOrElse Nil
+
+    val pageAuthorAndDate = page.body map { bodyPost =>
+      HtmlPostRenderer.renderPostHeader(bodyPost, anyPageStats = None)
+    } map (_.html) getOrElse Nil
+
+    val pageBodyAndComments = renderer.renderBodyAndComments() map { html =>
       xml.Unparsed(liftweb.Html5.toString(html))
     }
 
-    htmlNode
-  }
-
-
-  def renderComments(pageReq: PageRequest[_]): xml.NodeSeq = {
-    <b>Comments_comments_comments</b>
+    RenderedPage(title = pageTitle, authorAndDate = pageAuthorAndDate,
+      bodyAndComments = pageBodyAndComments)
   }
 }
 
@@ -68,22 +82,21 @@ trait CachingRenderedPageHtmlDao extends RenderedPageHtmlDao {
   self: CachingTenantDao =>
 
 
-  override def renderPage(pageReq: PageRequest[_], showComments: Boolean): xml.NodeSeq = {
+  override def renderPage(pageReq: PageRequest[_]): RenderedPage= {
     // Bypass the cache if the page doesn't yet exist (it's being created),
     // because in the past there was some error because non-existing pages
     // had no ids (so feels safer to bypass).
     if (pageReq.pageExists && pageReq.pageRoot == PageRoot.Real(Page.BodyId) &&
         pageReq.pageVersion == PageVersion.LatestApproved) {
-      val key = _pageHtmlKey(
-        pageReq.pageId_!, origin = pageReq.host, showComments)
+      val key = _pageHtmlKey(pageReq.pageId_!, origin = pageReq.host)
       lookupInCache(key, orCacheAndReturn = {
         rememberOrigin(pageReq.host)
-        Some(super.renderPage(pageReq, showComments))
+        Some(super.renderPage(pageReq))
       }) getOrDie "DwE93IB7"
     }
     else {
       // Bypass cache.
-      super.renderPage(pageReq, showComments)
+      super.renderPage(pageReq)
     }
   }
 
@@ -120,8 +133,7 @@ trait CachingRenderedPageHtmlDao extends RenderedPageHtmlDao {
     // we need to uncache pageId for each server address that maps
     // to the current website (this.tenantId).
     for (origin <- knownOrigins) {
-      removeFromCache(_pageHtmlKey(pageId, origin, showComments = false))
-      removeFromCache(_pageHtmlKey(pageId, origin, showComments = true))
+      removeFromCache(_pageHtmlKey(pageId, origin))
     }
 
     // BUG race condition: What if anotoher thread started rendering a page
@@ -134,8 +146,8 @@ trait CachingRenderedPageHtmlDao extends RenderedPageHtmlDao {
   }
 
 
-  private def _pageHtmlKey(pageId: String, origin: String, showComments: Boolean) =
-    s"$pageId|$tenantId|$origin|$showComments|PageHtml"
+  private def _pageHtmlKey(pageId: String, origin: String) =
+    s"$pageId|$tenantId|$origin|PageHtml"
 
 
   private def originsKey: String = s"$tenantId|PossibleOrigins"
