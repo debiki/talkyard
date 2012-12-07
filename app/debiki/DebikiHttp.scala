@@ -203,7 +203,7 @@ object DebikiHttp {
     Cookie(
       name = name,
       value = urlEncode(convertEvil(value)),  // see comment above
-      maxAge = maxAgeSecs,
+      maxAge = Some(maxAgeSecs),
       path = "/",
       domain = None,
       secure = false,

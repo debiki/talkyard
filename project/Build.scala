@@ -1,6 +1,6 @@
 import sbt._
 import Keys._
-import PlayProject._
+import play.Project._
 
 object ApplicationBuild extends Build {
 
@@ -23,7 +23,7 @@ object ApplicationBuild extends Build {
     "org.mindrot" % "jbcrypt" % "0.3m")
 
   lazy val secureSocial =
-    PlayProject("securesocial", appVersion, secureSocialDeps, mainLang = SCALA,
+    play.Project("securesocial", appVersion, secureSocialDeps,
         path = file("modules/securesocial")
     ).settings(
       resolvers ++= Seq(
@@ -45,7 +45,7 @@ object ApplicationBuild extends Build {
   override def settings =
     super.settings ++ org.sbtidea.SbtIdeaPlugin.ideaSettings
 
-  val main = PlayProject(appName, appVersion, appDependencies, mainLang = SCALA
+  val main = play.Project(appName, appVersion, appDependencies
     ).settings(
       mainSettings: _*
     ).dependsOn(
