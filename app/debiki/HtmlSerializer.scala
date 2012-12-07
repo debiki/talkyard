@@ -463,7 +463,7 @@ case class HtmlPageSerializer(
       shallFoldPost = (postFitness.upperLimit < 0.5f &&
          postFitness.observedMean < 0.333f) || isInlineNonRootChild
     } {
-      val renderedComment: RenderedComment = postRenderer.renderPost(vipo.id)
+      val renderedComment: RenderedPost = postRenderer.renderPost(vipo.id)
 
       val (myReplyBtn, actionLink) =
         if (isRootOrArtclQstn)

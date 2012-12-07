@@ -16,7 +16,7 @@ import HtmlPostRenderer._
 
 
 
-case class RenderedComment(
+case class RenderedPost(
   html: Node,
   replyBtnText: NodeSeq,
   topRatingsText: Option[String])
@@ -40,7 +40,7 @@ case class HtmlPostRenderer(
   hostAndPort: String) {
 
 
-  def renderPost(postId: String): RenderedComment = {
+  def renderPost(postId: String): RenderedPost = {
     val post = page.vipo(postId) getOrElse
        assErr("DwE209X5", "post id "+ postId +" on page "+ page.id)
 
@@ -52,7 +52,7 @@ case class HtmlPostRenderer(
     }
     else if (post.id == Page.TitleId) {
       val titleHtml = renderPageTitle(post)
-      RenderedComment(titleHtml, replyBtnText = Nil,
+      RenderedPost(titleHtml, replyBtnText = Nil,
         topRatingsText = None)
     }
     else {
@@ -61,7 +61,7 @@ case class HtmlPostRenderer(
   }
 
 
-  private def renderPostImpl(vipo: ViPo): RenderedComment = {
+  private def renderPostImpl(vipo: ViPo): RenderedPost = {
     def post = vipo.post
 
     val postHeader = renderPostHeader(vipo, pageStats)
@@ -77,7 +77,7 @@ case class HtmlPostRenderer(
         postBody.html
       }</div>
 
-    RenderedComment(html = commentHtml, replyBtnText = postBody.replyBtnText,
+    RenderedPost(html = commentHtml, replyBtnText = postBody.replyBtnText,
       topRatingsText = postHeader.topRatingsText)
   }
 
@@ -88,13 +88,12 @@ case class HtmlPostRenderer(
 object HtmlPostRenderer {
 
 
-  def renderDeletedTree(vipo: ViPo): RenderedComment = {
+  def renderDeletedTree(vipo: ViPo): RenderedPost = {
     renderDeletedComment(vipo, wholeTree = true)
   }
 
 
-  def renderDeletedComment(vipo: ViPo, wholeTree: Boolean = false)
-        : RenderedComment = {
+  def renderDeletedComment(vipo: ViPo, wholeTree: Boolean = false): RenderedPost = {
     val page = vipo.debate
     val cssPostId = "post-"+ vipo.id
     val deletion = vipo.firstDelete.get
@@ -112,7 +111,7 @@ object HtmlPostRenderer {
             that opens the deleted post, incl. details, in a new browser tab?  */}
         </div>
       </div>
-    RenderedComment(html, replyBtnText = Nil, topRatingsText = None)
+    RenderedPost(html, replyBtnText = Nil, topRatingsText = None)
   }
 
 
