@@ -11,7 +11,6 @@ import scala.collection.JavaConversions._
 import _root_.scala.xml.{NodeSeq, Node, Elem, Text, XML, Attribute}
 import FlagReason.FlagReason
 import Prelude._
-import DebikiHttp._
 import HtmlUtils._
 import HtmlPostRenderer._
 
@@ -20,8 +19,18 @@ import HtmlPostRenderer._
 case class RenderedComment(
   html: Node,
   replyBtnText: NodeSeq,
-  topRatingsText: Option[String],
-  templCmdNodes: NodeSeq)
+  topRatingsText: Option[String])
+
+
+case class RenderedPostHeader(
+  html: NodeSeq,
+  topRatingsText: Option[String])
+
+
+case class RenderedPostBody(
+  html: NodeSeq,
+  approxLineCount: Int,
+  replyBtnText: NodeSeq)
 
 
 
@@ -47,10 +56,10 @@ case class HtmlPostRenderer(
     else if (post.id == Page.TitleId) {
       val titleHtml = renderPageTitle(post)
       RenderedComment(titleHtml, replyBtnText = Nil,
-        topRatingsText = None, templCmdNodes = Nil)
+        topRatingsText = None)
     }
     else {
-      _showComment(post)
+      renderPost(post)
     }
   }
 
@@ -78,41 +87,45 @@ case class HtmlPostRenderer(
         that opens the deleted post, incl. details, in a new browser tab?  */}
       </div>
     </div>
-    RenderedComment(html, replyBtnText = Nil, topRatingsText = None,
-       templCmdNodes = Nil)
+    RenderedComment(html, replyBtnText = Nil, topRatingsText = None)
   }
 
 
-  private def _showComment(vipo: ViPo): RenderedComment = {
+  private def renderPost(vipo: ViPo): RenderedComment = {
     def post = vipo.post
+
+    val postHeader = renderPostHeader(vipo, pageStats)
+    val postBody = renderPostBody(vipo, hostAndPort)
+
+    val long = postBody.approxLineCount > 9
+    val cutS = if (long) " dw-x-s" else ""
+
+    val cssArtclPost = if (post.id != Page.BodyId) "" else " dw-ar-p"
+    val commentHtml =
+      <div id={"post-"+ post.id} class={"dw-p" + cssArtclPost + cutS}>{
+        postHeader.html ++
+        postBody.html
+      }</div>
+
+    RenderedComment(html = commentHtml, replyBtnText = postBody.replyBtnText,
+      topRatingsText = postHeader.topRatingsText)
+  }
+
+}
+
+
+
+object HtmlPostRenderer {
+
+
+  def renderPostHeader(vipo: ViPo, pageStats: PageStats): RenderedPostHeader = {
+    if (vipo.loginId == PageRenderer.DummyAuthorLogin.id)
+      return RenderedPostHeader(Nil, None)
+
+    def post = vipo.post
+    def debate = vipo.debate // COULD rename to `page`
     val editsApplied: List[ViEd] = vipo.editsAppliedDescTime
     val lastEditApplied = editsApplied.headOption
-    val cssPostId = "post-"+ post.id
-    val (cssArtclPost, cssArtclBody) =
-      if (post.id != Page.BodyId) ("", "")
-      else (" dw-ar-p", " dw-ar-p-bd")
-    val isBodyOrArtclQstn = vipo.id == Page.BodyId ||
-        vipo.meta.isArticleQuestion
-
-    val (xmlTextInclTemplCmds, numLines) =
-      HtmlPageSerializer._markupTextOf(vipo, hostAndPort)
-
-    // Find any customized reply button text.
-    var replyBtnText: NodeSeq = xml.Text("Reply")
-    if (isBodyOrArtclQstn) {
-      HtmlPageSerializer.findChildrenOfNode(
-         withClass = "debiki-0-reply-button-text",
-         in = xmlTextInclTemplCmds) foreach { replyBtnText = _ }
-    }
-
-    // Find any template comands.
-    val (templCmdNodes: NodeSeq, xmlText: NodeSeq) =
-      (Nil: NodeSeq, xmlTextInclTemplCmds)  // for now, ignore all
-      //if (!isRootOrArtclQstn) (Nil, xmlTextInclTemplCmds)
-      //else partitionChildsWithDataAttrs(in = xmlTextInclTemplCmds)
-
-    val long = numLines > 9
-    val cutS = if (long) " dw-x-s" else ""
     val author = debate.people.authorOf_!(post)
 
     val (flagsTop: NodeSeq, flagsDetails: NodeSeq) = {
@@ -230,33 +243,15 @@ case class HtmlPostRenderer(
       }
 
     val commentHtml =
-    <div id={cssPostId} class={"dw-p" + cssArtclPost + cutS}>
-      { ifThen(post.loginId != PageRenderer.DummyAuthorLogin.id,
       <div class='dw-p-hd'>
         By { _linkTo(author)}{ dateAbbr(post.ctime, "dw-p-at")
         }{ flagsTop }{ ratingTagsTop }{ editInfo }{ flagsDetails
         }{ ratingTagsDetails }
       </div>
-      )}
-      <div class={"dw-p-bd"+ cssArtclBody}>
-        <div class='dw-p-bd-blk'>
-        { xmlText
-        // (Don't  place a .dw-i-ts here. Splitting the -bd into
-        // -bd-blks and -i-ts is better done client side, where the
-        // heights of stuff is known.)
-        }
-        </div>
-      </div>
-    </div>
 
-    RenderedComment(html = commentHtml, replyBtnText = replyBtnText,
-       topRatingsText = topTagsAsText, templCmdNodes = templCmdNodes)
+    RenderedPostHeader(html = commentHtml, topRatingsText = topTagsAsText)
   }
-}
 
-
-
-object HtmlPostRenderer {
 
   def renderPageTitle(titlePost: ViPo): Node = {
     // The title is a post, itself.
@@ -279,6 +274,37 @@ object HtmlPostRenderer {
 
   def _linkTo(nilo: NiLo) = HtmlPageSerializer.linkTo(nilo)
 
-}
 
+  def renderPostBody(vipo: ViPo, hostAndPort: String): RenderedPostBody = {
+    def post = vipo.post
+    val cssArtclBody = if (post.id != Page.BodyId) "" else " dw-ar-p-bd"
+    val isBodyOrArtclQstn = vipo.id == Page.BodyId || vipo.meta.isArticleQuestion
+    val (xmlTextInclTemplCmds, approxLineCount) =
+      HtmlPageSerializer._markupTextOf(vipo, hostAndPort)
+
+    // Find any customized reply button text.
+    var replyBtnText: NodeSeq = xml.Text("Reply")
+    if (isBodyOrArtclQstn) {
+      HtmlPageSerializer.findChildrenOfNode(
+        withClass = "debiki-0-reply-button-text",
+        in = xmlTextInclTemplCmds) foreach { replyBtnText = _ }
+    }
+
+    val xmlText: NodeSeq = xmlTextInclTemplCmds // old rename
+    //if (!isRootOrArtclQstn) (Nil, xmlTextInclTemplCmds)
+    //else partitionChildsWithDataAttrs(in = xmlTextInclTemplCmds)
+
+    val postBodyHtml =
+      <div class={"dw-p-bd"+ cssArtclBody}>
+        <div class='dw-p-bd-blk'>{ xmlText
+          // (Don't  place a .dw-i-ts here. Splitting the -bd into
+          // -bd-blks and -i-ts is better done client side, where the
+          // heights of stuff is known.)
+        }</div>
+      </div>
+
+    RenderedPostBody(html = postBodyHtml, approxLineCount = approxLineCount,
+      replyBtnText = replyBtnText)
+  }
+}
 
