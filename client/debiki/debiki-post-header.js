@@ -5,10 +5,8 @@ var d = { i: debiki.internal, u: debiki.v0.util };
 var $ = d.i.$;
 
 
-d.i.makeHeaderPrettyForPost = function(post) {
-  var $post = $(post).dwCheckIs('.dw-p'),
-      $hdr = $post.find('.dw-p-hd'),
-      $postedAt = $hdr.children('.dw-p-at'),
+d.i.makePostHeaderPretty = function($hdr) {
+  var $postedAt = $hdr.children('.dw-p-at'),
       postedAtTitle = $postedAt.attr('title'),
       postedAt = d.u.isoDateToMillis(postedAtTitle),
       $editedAt = $hdr.find('> .dw-p-hd-e > .dw-p-at'),

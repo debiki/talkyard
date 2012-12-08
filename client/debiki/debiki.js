@@ -68,7 +68,7 @@ function $initStep1() {
 function $initStep2() {
   d.i.shohwActionLinksOnHoverPost(this);
   d.i.placeInlineThreadsForPost(this);
-  d.i.makeHeaderPrettyForPost(this);
+  d.i.makePostHeaderPretty($(this).children('.dw-p-hd'));
 };
 
 
@@ -213,6 +213,7 @@ function renderPageEtc() {
     d.i.initUtterscrollAndTips();
   }
 
+  d.i.makePostHeaderPretty($('.dw-ar-p-hd'));
 
   var steps = [];
 
