@@ -70,7 +70,7 @@ and two folded threads would overlap, unless: */
 }
 
 .dw-depth-0.dw-t {
-  /* Without this, SVG arrows are cropped a bit to the right. Why? Weird? */
+  /* Without this, SVG arrows are cropped a bit to the right. Why? [8DbF3] */
   float: left;
   /* Ensure the root thread fits inside its parent, if the parent
   width is set to the root thread's width. */

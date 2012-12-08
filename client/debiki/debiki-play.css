@@ -79,6 +79,16 @@ html.js body.dw-render-actions-pending .dw-as {
 }
 
 
+/* === Page title === */
+
+
+#dw-t-2 {
+  /* Don't float title, or body will appear to the right of the title,
+  rather than below it.
+  There're no SVG arrows that can be cropped, see above, [8DbF3]. */
+  float: none;
+}
+
 /* === Threads === */
 
 
@@ -181,7 +191,6 @@ PNG arrows. */
 }
 
 /* Sync these selectors with showCommentsOnClick in debiki.js. */
-.dw-hide-interactions .dw-ar-t > .dw-p > .dw-p-hd,
 .dw-hide-interactions .dw-ar-t > .dw-res,
 .dw-hide-interactions .dw-ar-t > .dw-p > .dw-p-bd > .dw-p-bd-blk .dw-i-m-start,
 .dw-hide-interactions .dw-ar-t > .dw-p > .dw-p-bd > .dw-i-ts,
@@ -220,14 +229,10 @@ looks better if they appear close to the fold link. */
   margin-left: 0;
 }
 
-.dw-ar-p > .dw-p-hd {
-  border: none;
-}
-
 
 /* Don't pad the root post and titles (titles are already indented since
 they're placed inside another post already). */
-.dw-depth-0 > .dw-p > .dw-p-hd,
+.dw-ar-p-hd,
 .dw-depth-0 > .dw-p > .dw-p-bd,
 .dw-p-ttl,
 .dw-p-ttl > .dw-p-bd {
@@ -271,15 +276,16 @@ span.dw-p-e-by {
 /* For the *article* itself, make author and post date info less conspicuous,
 or it steals attention from the page title. (But don't do this for any root
 post, only for the article.) */
-.dw-ar-p > .dw-p-hd {
+.dw-ar-p-hd {
+  border: none;
   background-color: transparent;
   opacity: 0.6;
   font-size: 10px;
 }
-.dw-ar-p > .dw-p-hd:hover {
+.dw-ar-p-hd:hover {
   opacity: 1;
 }
-.dw-ar-p > .dw-p-hd > .dw-p-by {
+.dw-ar-p-hd > .dw-p-by {
   color: #396D99;
 }
 
@@ -314,10 +320,10 @@ title — that'd push away the .dw-p-hd away. So add to the -bd instead.
 <h2> should have a fairly large margin-top (because it's a h2), so skip it.
 — The reason all this is needed is that the elems
 float:left, which makes margins add to each other, instead of overlapping
-each other. I should rewrite, and try to avoid float:left?  (skip old IE)
+each other. I should rewrite, and try to avoid float:left? [8DbF3]
+(skip old IE)
 [8K3U5] */
-.dw-p-ttl + .dw-p-bd > .dw-p-bd-blk > :first-child:not(h2), /* if no header */
-.dw-p-ttl + .dw-p-hd + .dw-p-bd > .dw-p-bd-blk > :first-child:not(h2) {
+.dw-ar-t > .dw-p > .dw-p-bd > .dw-p-bd-blk > :first-child:not(h2) {
   margin-top: 26px;
 }
 

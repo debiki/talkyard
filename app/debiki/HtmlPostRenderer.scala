@@ -179,8 +179,12 @@ object HtmlPostRenderer {
         </span>
       }
 
+    val cssArticlePostHeader =
+      if (post.id == Page.BodyId) " dw-ar-p-hd"
+      else ""
+
     val commentHtml =
-      <div class='dw-p-hd'>
+      <div class={"dw-p-hd" + cssArticlePostHeader}>
         By { _linkTo(author)}{ dateAbbr(post.ctime, "dw-p-at")
         }{ flagsTop }{ ratingTagsTop }{ editInfo }{ flagsDetails
         }{ ratingTagsDetails }
