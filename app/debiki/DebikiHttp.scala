@@ -199,11 +199,11 @@ object DebikiHttp {
   // javax.servlet.http.Cookie? Why? Not needed!, '%' is safe.
   // So I've modified jquery-cookie.js to remove double quotes when
   // reading cookie values.
-  def urlEncodeCookie(name: String, value: String, maxAgeSecs: Int = -1) =
+  def urlEncodeCookie(name: String, value: String, maxAgeSecs: Option[Int] = None) =
     Cookie(
       name = name,
       value = urlEncode(convertEvil(value)),  // see comment above
-      maxAge = Some(maxAgeSecs),
+      maxAge = maxAgeSecs,
       path = "/",
       domain = None,
       secure = false,
