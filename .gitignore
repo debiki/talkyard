@@ -13,3 +13,9 @@ project/
 debiki-core.iml
 debiki-core.ipr
 debiki-core.iws
+
+# Eclipse
+.cache
+.classpath
+.project
+.settings/
