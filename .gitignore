@@ -14,6 +14,12 @@ tmp
 debiki-app-play.iml
 RUNNING_PID
 
+# Eclipse
+.cache
+.classpath
+.project
+.settings/
+
 # Ignore core dump file.
 core
 
