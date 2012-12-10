@@ -1,6 +1,7 @@
 import sbt._
 import Keys._
 import play.Project._
+import com.typesafe.sbteclipse.plugin.EclipsePlugin.EclipseKeys
 
 object ApplicationBuild extends Build {
 
@@ -43,7 +44,12 @@ object ApplicationBuild extends Build {
 
   // Make `idea with-sources` work in subprojects.
   override def settings =
-    super.settings ++ org.sbtidea.SbtIdeaPlugin.ideaSettings
+    super.settings ++ org.sbtidea.SbtIdeaPlugin.ideaSettings ++
+    // By default, sbteclipse skips parent projects.
+    // See the "skipParents" section, here:
+    // https://github.com/typesafehub/sbteclipse/wiki/Using-sbteclipse
+    Seq(EclipseKeys.skipParents := false, resolvers := Seq())
+
 
   val main = play.Project(appName, appVersion, appDependencies
     ).settings(

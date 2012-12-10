@@ -27,3 +27,10 @@ resolvers += "sbt-idea-repo" at "http://mpeltonen.github.com/maven/"
 // libraryDependencies += "com.github.mpeltonen" %% "sbt-idea" % "0.10.0"
 addSbtPlugin("com.github.mpeltonen" % "sbt-idea" % "1.1.0-M2-TYPESAFE")
 
+
+// Eclipse project files
+// ---------------------------------------------------------------
+addSbtPlugin("com.typesafe.sbteclipse" % "sbteclipse-plugin" % "2.1.0")
+// And see `override def settings =` in Build.scala.
+// Generate Eclipse project files like so: `eclipse with-source=true` (in SBT)
+
