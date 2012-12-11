@@ -88,10 +88,14 @@ class TinyTemplateProgrammingInterface protected (
   /**
    * A website or page config value, and page specific values take precedence.
    */
-  def configValue(confValName: String, or: String = ""): String = {
+  def configValueOpt(confValName: String): Option[String] =
     _pageConfigValueOpt(confValName) orElse
-       _websiteConfigValueOpt(confValName) getOrElse or
-  }
+      _websiteConfigValueOpt(confValName)
+
+
+  def configValue(confValName: String, or: String = ""): String =
+    configValueOpt(confValName) getOrElse or
+
 
 
   /**
@@ -263,8 +267,8 @@ class TemplateProgrammingInterface(
   /**
    * Use in templates, e.g. like so: `@if(shall("show-title")) { @title }`
    */
-  def shall(confValName: String): Boolean =
-    pageConfigValue(confValName).toLowerCase == "true"
+  def shall(confValName: String, default: Boolean = false): Boolean =
+    configValueOpt(confValName).map(_.toLowerCase == "true") getOrElse default
 
 }
 

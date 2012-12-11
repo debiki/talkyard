@@ -1,12 +1,13 @@
 @(tpi: debiki.TemplateProgrammingInterface)
 
+@import tpi._
 
 @wrapper(tpi) {
-  <!-- blogPost.scala.html -->
-  @tpi.page {
-    @tpi.title
-    @tpi.authorAndDate
-    @tpi.body
+  <!-- default20121009/blogPost.scala.html -->
+  @page {
+    @if(shall("show-title", true)) { @title }
+    @if(shall("show-author-and-date", true)) { @authorAndDate }
+    @body
   }
 }
 
