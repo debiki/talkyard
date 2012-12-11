@@ -63,17 +63,11 @@ object ApplicationBuild extends Build {
 
   def mainSettings = List(
     compileRhinoTask := { "make compile_javascript"! },
-    // SBT ignores this line:
-    fullClasspath in Compile +=
-       Attributed.blank(file(rhinoClassDir)),
     Keys.compile in Compile <<=
        (Keys.compile in Compile).dependsOn(compileRhinoTask),
     listJarsTask)
 
 
-  // Cannot use, because SBT ignores above classpath elem addition:
-  //val rhinoClassDir = "target/scala-2.10/compiledjs/classes/"
-  // Instead:
   val rhinoClassDir = "target/scala-2.10/classes/"
 
   def compileRhinoTask = TaskKey[Unit]("compile-js",
