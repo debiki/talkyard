@@ -63,6 +63,9 @@ case class PagePath(  // COULD move to debate.scala.  Rename to RequestPath?
   if (pageSlug startsWith "-")
     throw PagePathException("DwE2Yb35", "Page slug starts with '-': "+ pageSlug)
 
+  if (pageSlug startsWith ".")
+    throw PagePathException("DwE5IF01", "Page slug starts with '.': "+ pageSlug)
+
   if ((pageSlug intersect _BadPunctSlug).nonEmpty)
     throw PagePathException(
       "DwE093KG12", "Bad punctuation chars in this page slug: "+ pageSlug)
@@ -109,7 +112,6 @@ case class PagePath(  // COULD move to debate.scala.  Rename to RequestPath?
    * shouldn't be served to the browser.)
    */
   def isHiddenPage =
-    pageSlug.startsWith(".") || // COULD remove, should forbid . as first char?
     pageSlug.startsWith("_") ||
     folder.contains("/_")
 
@@ -221,7 +223,7 @@ object PagePath {
   }
 
   // All punctuation chars:     """!"#$%&'()*+,-./:;<=>?@[\]^_`{|}~"""
-  private val _BadPunctSlug =   """!"#$%&'()*+,/:;<=>?@[\]^_`{|}~""" // -. ok
+  private val _BadPunctSlug =   """!"#$%&'()*+,/:;<=>?@[\]^`{|}~""" // -._ ok
   private val _BadPunctFolder = """!"#$%&'()*+,.:;<=>?@[\]^`{|}~""" // -/_ OK...
   // ... Concerning disallowing '.' in folders: Perhaps '.' will mean
   // something magic, in the future. For example, if using a file based DbDao,
