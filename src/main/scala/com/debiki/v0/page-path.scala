@@ -99,7 +99,9 @@ case class PagePath(  // COULD move to debate.scala.  Rename to RequestPath?
        (pageSlug endsWith ".js") ||
        (pageSlug endsWith ".css")
 
-  def isTemplatePage = pageSlug endsWith ".template"
+  def isTemplatePage =
+    pageSlug.endsWith(".template") ||
+    pageSlug.endsWith(".yaml")
 
   /**
    * Pages and folders that start with '_' are visible to admins only.
