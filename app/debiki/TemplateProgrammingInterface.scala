@@ -244,6 +244,9 @@ class TemplateProgrammingInterface(
   def title = dao.renderPageTitle(pageReq)
 
 
+  def titleText = dao.renderPageTitleText(pageReq)
+
+
   def authorAndDate = dao.renderAuthorAndDate(pageReq)
 
 
@@ -255,6 +258,13 @@ class TemplateProgrammingInterface(
 
   def pageTitleAndBodyAndComments =
     title ++ authorAndDate ++ dao.renderPageBodyAndComments(pageReq)
+
+
+  /**
+   * Use in templates, e.g. like so: `@if(shall("show-title")) { @title }`
+   */
+  def shall(confValName: String): Boolean =
+    pageConfigValue(confValName).toLowerCase == "true"
 
 }
 

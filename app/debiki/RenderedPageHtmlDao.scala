@@ -14,6 +14,7 @@ import Prelude._
 
 case class RenderedPage(
   title: NodeSeq,
+  titleText: String,
   authorAndDate: NodeSeq,
   bodyAndComments: NodeSeq)
 
@@ -36,6 +37,10 @@ trait RenderedPageHtmlDao {
 
   final def renderPageTitle(pageReq: PageRequest[_]): NodeSeq =
     renderPage(pageReq).title
+
+
+  final def renderPageTitleText(pageReq: PageRequest[_]): String =
+    renderPage(pageReq).titleText
 
 
   final def renderAuthorAndDate(pageReq: PageRequest[_]): NodeSeq =
@@ -71,7 +76,10 @@ trait RenderedPageHtmlDao {
       xml.Unparsed(liftweb.Html5.toString(html))
     }
 
-    RenderedPage(title = pageTitle, authorAndDate = pageAuthorAndDate,
+    RenderedPage(
+      title = pageTitle,
+      titleText = page.titleText getOrElse "",
+      authorAndDate = pageAuthorAndDate,
       bodyAndComments = pageBodyAndComments)
   }
 }
