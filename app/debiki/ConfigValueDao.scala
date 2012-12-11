@@ -43,16 +43,16 @@ trait ConfigValueDao {
 
 
   /**
-   * A PagePath to /.website-config.yaml, but the page id is unknown and
+   * A PagePath to /_website-config.yaml, but the page id is unknown and
    * needs to be looked up (via Dao.checkPagePath).
    *
-   * The file starts with `.` because it should be accessible to admins only.
+   * The file starts with `_` because it should be accessible to admins only.
    *
    * COULD move to other module, but what module?
    */
   def websiteConfigPagePath = PagePath(
     tenantId = tenantId, folder = "/", pageId = None,
-    showId = false, pageSlug = ".website-config.yaml")
+    showId = false, pageSlug = "_website-config.yaml")
 
 }
 
