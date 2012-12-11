@@ -349,7 +349,13 @@ object Prelude {
       val kept = underlying.takeRight(underlying.length - 1 - dropIx)
       kept
     }
+
+    def orIfEmpty(otherString: =>String): String = {
+      if (underlying nonEmpty) underlying
+      else otherString
+    }
   }
+
 
   /**
    * It's impossible to place breakpoints in Specs test suites, so
