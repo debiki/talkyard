@@ -63,17 +63,11 @@ object ApplicationBuild extends Build {
 
   def mainSettings = List(
     compileRhinoTask := { "make compile_javascript"! },
-    combineAndGzipJs := {
-      "make combine_and_gzip_javascript"!
-    },
-    combineAndGzipJs <<= combineAndGzipJs.dependsOn(compile in Compile),
     // SBT ignores this line:
     fullClasspath in Compile +=
        Attributed.blank(file(rhinoClassDir)),
     Keys.compile in Compile <<=
        (Keys.compile in Compile).dependsOn(compileRhinoTask),
-    playPackageEverything <<=
-       (playPackageEverything).dependsOn(combineAndGzipJs),
     listJarsTask)
 
 
@@ -84,9 +78,6 @@ object ApplicationBuild extends Build {
 
   def compileRhinoTask = TaskKey[Unit]("compile-js",
     "Invokes Rhino to compile Javascript to Java bytecode")
-
-  def combineAndGzipJs = TaskKey[Unit]("combine-and-gzip-js",
-    "Appengs and gzips much Javascript to one single file")
 
 
   // Lists dependencies.
