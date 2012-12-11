@@ -1,0 +1,27 @@
+@(tpi: debiki.TemplateProgrammingInterface, errorException: Exception)
+
+
+<!DOCTYPE html>
+<html>
+<head>
+  <!-- specialpages.brokenPage.scala.html -->
+  <title>Error</title>
+  <link rel="stylesheet" href="/-/res/debiki-default-scaffold.css"/>
+  <style>
+    #template-info {
+      margin: 2em;
+      max-width: 40em;
+    }
+  </style>
+</head>
+<body>
+
+<div id='template-info'>
+  <p>There is some error with the page settings:</p>
+  <pre>@errorException.getMessage</pre>
+  <p><a href="?view=3">View / edit page settings</a></p>
+  <p><a href="/_website-config.yaml">View / edit website configuration</a></p>
+</div>
+
+</body>
+</html>

@@ -1,44 +1,26 @@
-@(tpi: debiki.TemplateProgrammingInterface)
+@(tpi: debiki.TemplateProgrammingInterface, isPageSettings: Boolean)
 
-<!DOCTYPE html>
+@import tpi._
 
-<html>
-<head>
-  <!-- template.scala.html -->
-  <title>{title}</title>
-  <meta name="description" content=""/>
-  <meta name="keywords" content=""/>
-  <link rel="stylesheet" href="/-/res/debiki-default-scaffold.css"/>
-  <style>
-    #template-info {
-      font-style: italic;
-      margin: 1ex 0 2em;
-      max-width: 40em;
+@wrapper(tpi) {
+  <!-- specialpages/template.scala.html -->
+
+  @page {
+    @if(isPageSettings) {
+      <h1>
+        <small>Settings for:</small><br>
+        <span style="
+            font-style: italic;
+            padding-top: 13px;
+            display: inline-block;">
+          @titleText</span>
+      </h1>
+    } else {
+      <h1>@titleText</h1>
     }
-  </style>
-</head>
-<body>
-<nav id="site-nav">
-  <span id='dw-loginout'>@tpi.loginLinkAndUserName</span>
-</nav>
 
-<div id='template-info'>This is a template page.</div>)
+    @body
+  }
 
-@* (Old info text.)
-When you view or edit a template, all your other templates,
-stylesheets and javascripts are disabled. Otherwise,
-if you accidentally break the template (e.g. malformed HTML),
-you could end up in a situation where you could neither view
-any page, nor view or edit the template again.</div>
-*@
+}
 
-<div id='page' class='ui-helper-clearfix'>
-  <div id='content'>
-    { prependToContent }
-    <article>
-      <div id='debiki-page'></div>
-    </article>
-  </div>
-</div>
-</body>
-</html>

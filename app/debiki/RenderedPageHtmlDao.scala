@@ -26,7 +26,7 @@ trait RenderedPageHtmlDao {
 
   def renderTemplate(pageReq: PageRequest[_], appendToBody: NodeSeq = Nil)
         : String =
-    TemplateRenderer(pageReq, appendToBody).renderTemplate()
+    TemplateRenderer.renderTemplate(pageReq, appendToBody)
 
 
   final def renderPageMeta(pageReq: PageRequest[_]): NodeSeq = {

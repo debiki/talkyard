@@ -1,0 +1,57 @@
+@(tpi: debiki.TemplateProgrammingInterface)(body: Html)
+
+<!DOCTYPE html>
+
+<html class="@tpi.debikiHtmlTagClasses">
+<head>
+  <!-- specialpages/wrapper.scala.html -->
+
+  @tpi.debikiMeta
+  @tpi.debikiStyles
+
+  <link rel="stylesheet" href="http://fonts.googleapis.com/css?family=Bree+Serif">
+  <link rel="stylesheet" href="/themes/assets/twitter-bootstrap-2.0.3-wip.css"/>
+  <link rel="stylesheet" href="http://www.debiki.com/www-debiki-com.css"/>
+
+  @tpi.debikiScripts
+
+  <script>
+    if (!Modernizr.touch) jQuery(document).ready(function($) {
+      Modernizr.load({
+        load: [
+          '/-/site/yoxview/jquery.yoxview-2.21.min.js',
+          '/-/site/yoxview/yoxview.css'],
+        complete: function() {
+          jQuery.noConflict();
+          $('.yoxview').yoxview();
+        }
+      });
+    });
+  </script>
+</head>
+<body>
+
+@tpi.debikiDashbar   @* COULD show login link, unless logged in? *@
+
+<div id='alfa-info'>
+  <div class='alfa-small debiki-show-if-lte-ie7'>
+    Please consider upgrading to
+    <a rel='nofollow' href='http://windows.microsoft.com/en-US/internet-explorer/products/ie/home'
+      >a newer version of Internet Explorer</a>
+    (or install <a rel='nofollow' href='http://www.google.com/chrome'>Google Chrome</a>,
+    it's even faster).
+  </div>
+</div>
+
+<div class='container'>
+  <div id="content">
+    <article>
+      @body
+    </article>
+  </div>
+</div>
+
+@tpi.debikiAppendToBodyTags
+
+</body>
+</html>
