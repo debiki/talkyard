@@ -2,11 +2,13 @@
 # Once to compile_javascript to Java bytecode.
 # And once to combine_and_gzip_javascript.
 
-DESTDIR=target/scala-2.10/classes/
+DESTDIR=target/scala-2.10/compiledjs-classes/
 CLASSDIR=${DESTDIR}compiledjs/
 HTML_SANITIZER_JS=client/vendor/html-sanitizer-bundle.js
 SHOWDOWN_JS=public/res/wmd/showdown.js
 RHINOJAR=/mnt/data/dev/play/github/repository/cache/rhino/js/jars/js-1.7R2.jar
+
+SBT_CLASSDIR_ROOT=target/scala-2.10/classes/
 
 help:
 	@echo Open the Makefile and read it.
@@ -16,7 +18,8 @@ help:
 
 compile_javascript: \
 		${CLASSDIR}HtmlSanitizerJsImpl.class \
-		${CLASSDIR}ShowdownJsImpl.class
+		${CLASSDIR}ShowdownJsImpl.class \
+		silly_copy_to_sbt_classdir
 
 ${CLASSDIR}HtmlSanitizerJsImpl.class: ${CLASSDIR}HtmlSanitizerJs.class ${RHINOJAR} ${HTML_SANITIZER_JS}
 	java -cp ${RHINOJAR}:${DESTDIR} \
@@ -51,6 +54,12 @@ ShowdownJs: ${CLASSDIR}ShowdownJs.class
 ${CLASSDIR}ShowdownJs.class: app/compiledjs/ShowdownJs.java
 	mkdir -p ${DESTDIR}
 	javac $< -d ${DESTDIR}
+
+
+silly_copy_to_sbt_classdir: \
+		${CLASSDIR}HtmlSanitizerJsImpl.class \
+		${CLASSDIR}ShowdownJsImpl.class
+	cp -a ${DESTDIR}compiledjs ${SBT_CLASSDIR_ROOT}
 
 
 cleanjs:

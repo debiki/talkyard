@@ -65,6 +65,9 @@ object ApplicationBuild extends Build {
     compileRhinoTask := { "make compile_javascript"! },
     Keys.compile in Compile <<=
        (Keys.compile in Compile).dependsOn(compileRhinoTask),
+    unmanagedClasspath in Compile <+= (baseDirectory) map { bd =>
+      Attributed.blank(bd / "target/scala-2.10/compiledjs-classes")
+    },
     listJarsTask)
 
 
