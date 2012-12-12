@@ -235,8 +235,8 @@ case class Debate (
   def title = titlePost // COULD remove `titlePost`
   def titlePost: Option[ViPo] = vipo(Page.TitleId)
 
-  /** The page title, as plain text. */
-  def titleText: Option[String] = titlePost.map(_.text)
+  /** The page title, as plain text, but the empty string is changed to None. */
+  def titleText: Option[String] = titlePost.map(_.text).filter(_.nonEmpty)
 
   /** The page title, as XML. */
   //def titleXml: Option[xml.Node] = body.flatMap(_.titleXml)
