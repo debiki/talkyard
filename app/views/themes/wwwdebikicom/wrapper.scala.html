@@ -26,8 +26,8 @@
     if (!Modernizr.touch) jQuery(document).ready(function($) {
       Modernizr.load({
         load: [
-          '/-/site/yoxview/jquery.yoxview-2.21.min.js',
-          '/-/site/yoxview/yoxview.css'],
+          '/-/tmp/yoxview/jquery.yoxview-2.21.min.js',
+          '/-/tmp/yoxview/yoxview.css'],
         complete: function() {
           jQuery.noConflict();
           $('.yoxview').yoxview();
@@ -56,7 +56,7 @@
 <div id='topbar'>
   <div class='container ui-helper-clearfix'>
     <a class='logo-slogan' href='/'>
-      <img src="@routes.Assets.at("/public", "site/img/logo-128x120.png")">
+      <img src="@routes.Assets.at("/public", "img/logo-128x120.png")">
       <span class='logo'>Debiki</span>
       <span class='slogan'>— for the fruitful conversations</span>
     </a>

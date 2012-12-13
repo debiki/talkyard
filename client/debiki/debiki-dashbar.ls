@@ -40,7 +40,7 @@ DebikiPageModule.directive 'dwDashbar', ->
   template: """
     <div ng-show="currentUser.isAuthenticated">
       <a class="debiki-dashbar-logo" href="/-/admin/">
-        <img src="/-/site/img/logo-128x120.png">
+        <img src="/-/img/logo-128x120.png">
       </a>
       <span ng-show="pageExists && !viewsPageConfigPost">
         <a class="page-settings">
