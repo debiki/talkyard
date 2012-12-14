@@ -19,9 +19,9 @@ trait AssetBundleDao {
   def loadAssetBundleFileName(bundleName: String): String = {
     bundleName match {
       case AssetBundleNameRegex(nameNoSuffix, suffix) =>
-        val assetBundleText =
+        val AssetBundleAndDependencies(bundleText, assetPageIds) =
           AssetBundleLoader.loadAssetBundle(nameNoSuffix, suffix, this)
-        val version = hashSha1Base64UrlSafe(assetBundleText)
+        val version = hashSha1Base64UrlSafe(bundleText)
         assetBundleFileName(nameNoSuffix, version, suffix)
       case _ =>
         throw new TemplateRenderer.BadTemplateException(
@@ -32,7 +32,9 @@ trait AssetBundleDao {
 
 
   def loadAssetBundle(nameNoSuffix: String, suffix: String): String = {
-    AssetBundleLoader.loadAssetBundle(nameNoSuffix, suffix, this)
+    val AssetBundleAndDependencies(bundleText, assetPageIds) =
+      AssetBundleLoader.loadAssetBundle(nameNoSuffix, suffix, this)
+    bundleText
   }
 
 }

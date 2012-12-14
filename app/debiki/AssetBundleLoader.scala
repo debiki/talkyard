@@ -11,6 +11,11 @@ import java.{util => ju}
 import Prelude._
 
 
+case class AssetBundleAndDependencies(
+  assetBundleText: String,
+  assetPageIds: Seq[String])
+
+
 /**
  * Loads bundles of styles and scripts.
  */
@@ -20,7 +25,8 @@ object AssetBundleLoader {
    * Loads and concatenates the contents of the files in an asset bundle.
    */
   def loadAssetBundle(
-        bundleNameNoSuffix: String,  bundleSuffix: String, dao: TenantDao): String = {
+        bundleNameNoSuffix: String,  bundleSuffix: String, dao: TenantDao)
+        : AssetBundleAndDependencies = {
 
     def bundleName = s"$bundleNameNoSuffix.$bundleSuffix"
     def die(exception: DebikiException) =
@@ -29,7 +35,7 @@ object AssetBundleLoader {
             ${exception.getMessage}""")
 
     val assetPaths =
-      try { findAssetPathsAndPages(bundleName, dao) }
+      try { findAssetPagePaths(bundleName, dao) }
       catch {
         case ex: DebikiException => die(ex)
       }
@@ -56,11 +62,12 @@ object AssetBundleLoader {
       sb.toString
     }
 
-    bundleText
+    val assetPageIds = assetPaths map (_.pageId.get)
+    AssetBundleAndDependencies(bundleText, assetPageIds)
   }
 
 
-  private def findAssetPathsAndPages(
+  private def findAssetPagePaths(
       bundleName: String, dao: TenantDao): Seq[PagePath] = {
 
     def die(errCode: String, details: String) =
