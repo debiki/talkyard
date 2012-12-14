@@ -130,7 +130,10 @@ abstract class TenantDbDao {
 
   def savePageActions[T <: Action](debateId: String, xs: List[T]): List[T]
 
-  def loadPage(debateId: String): Option[Debate]
+  /**
+   * Loads another tenant's page, if tenantId is specified.
+   */
+  def loadPage(debateId: String, tenantId: Option[String] = None): Option[Debate]
 
   /**
    * For each PagePath, loads a Page (well, Debate) with actions loaded
@@ -459,9 +462,9 @@ class ChargingTenantDbDao(
     _spi.savePageActions(debateId, actions)
   }
 
-  def loadPage(debateId: String): Option[Debate] = {
+  def loadPage(debateId: String, tenantId: Option[String]): Option[Debate] = {
     _chargeForOneReadReq()
-    _spi.loadPage(debateId)
+    _spi.loadPage(debateId, tenantId)
   }
 
   def loadPageBodiesTitles(pagePaths: Seq[PagePath])
