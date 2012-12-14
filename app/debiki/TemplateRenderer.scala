@@ -73,7 +73,9 @@ object TemplateRenderer {
         try { renderThemeTemplate(theme, template, tpi) }
         catch {
           case ex: PageConfigException =>
-            views.html.themes.specialpages.brokenPage(tpi, ex).body
+            views.html.themes.specialpages.brokenPage(ex).body
+          case ex: BadTemplateException =>
+            views.html.themes.specialpages.brokenPage(ex).body
         }
       }
 
@@ -94,17 +96,19 @@ object TemplateRenderer {
     }
     catch {
       case ex: jl.ClassNotFoundException =>
-        throw PageConfigException(s"Template not found: `$template', theme: `$theme'")
+        throw new PageConfigException(s"Template not found: `$template', theme: `$theme'")
       case ex: jl.NoSuchMethodException =>
-        throw PageConfigException(
+        throw new PageConfigException(
           s"Template `$template', theme: `$theme', is broken. Does it not start with " +
             "`@(tpi: TemplateProgrammingInterface)`?")
     }
   }
 
 
-  case class PageConfigException(message: String)
+  class PageConfigException(message: String)
     extends Exception(message)
 
-}
+  class BadTemplateException(errorCode: String, details: String)
+    extends DebikiException(errorCode, details)
 
+}

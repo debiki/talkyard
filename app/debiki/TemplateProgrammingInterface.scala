@@ -5,7 +5,7 @@
 package debiki
 
 import com.debiki.v0._
-import controllers.PageRequest
+import controllers.{PageRequest, SiteAssetBundles}
 import play.{api => p}
 import play.api.Play.current
 import Prelude._
@@ -269,6 +269,10 @@ class TemplateProgrammingInterface(
    */
   def shall(confValName: String, default: Boolean = false): Boolean =
     configValueOpt(confValName).map(_.toLowerCase == "true") getOrElse default
+
+
+  def stylesheetBundle(bundle: String): xml.NodeSeq =
+    SiteAssetBundles.linkTo(bundle)(pageReq)
 
 }
 

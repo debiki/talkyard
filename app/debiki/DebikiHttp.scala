@@ -71,13 +71,7 @@ object DebikiHttp {
    * Thrown on error, caught in Global.onError, which returns the wrapped
    * result to the browser.
    */
-  case class ResultException(result: PlainResult) extends RuntimeException("") {
-    // Fill in no stack trace. Calculating the stack trace is very expensive,
-    // and this is a control flow exception rather than an error condition.
-    // (Well, actually, the end user has made an error, or is evil. Or some
-    // internal bug happened.)
-    override def fillInStackTrace(): Throwable = this
-  }
+  case class ResultException(result: PlainResult) extends QuickException
 
   def throwRedirect(url: String) =
     throw ResultException(R.Redirect(url))
@@ -86,10 +80,13 @@ object DebikiHttp {
     throw ResultException(BadReqResult(errCode, message))
 
   def throwBadParamValue(errCode: String, paramName: String) =
-    throw throwBadReq(errCode, "Bad `"+ paramName +"` value")
+    throwBadReq(errCode, "Bad `"+ paramName +"` value")
+
+  def throwBadConfigFile(errCode: String, message: String) =
+    throwNotFound(errCode, message)
 
   def throwParamMissing(errCode: String, paramName: String) =
-    throw throwBadReq(errCode, "Parameter missing: "+ paramName)
+    throwBadReq(errCode, "Parameter missing: "+ paramName)
 
   // There's currently no WWW-Authenticate header
   // field in the response though!

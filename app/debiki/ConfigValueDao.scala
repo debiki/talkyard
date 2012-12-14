@@ -27,6 +27,10 @@ trait ConfigValueDao {
   }
 
 
+  def loadWebsiteConfig(): WebsiteConfig =
+    WebsiteConfig.fromSnakeYamlMap(loadWebsiteConfigMap())
+
+
   protected def loadConfigMap(pageId: String, configPostId: String)
         : Map[String, Any] = {
     // Load the post as YAML into a map.
