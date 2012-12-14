@@ -112,9 +112,6 @@ abstract class TenantDbDao {
    */
   def movePageToItsPreviousLocation(pagePath: PagePath): Option[PagePath]
 
-  @deprecated("", since = "")
-  def loadTemplate(templPath: PagePath): Option[TemplateSrcHtml]
-
   def checkPagePath(pathToCheck: PagePath): Option[PagePath]
 
   /**
@@ -430,12 +427,6 @@ class ChargingTenantDbDao(
   def movePageToItsPreviousLocation(pagePath: PagePath): Option[PagePath] = {
     _chargeForOneWriteReq()
     _spi.movePageToItsPreviousLocation(pagePath)
-  }
-
-  @deprecated("", since = "")
-  def loadTemplate(templPath: PagePath): Option[TemplateSrcHtml] = {
-    _chargeForOneReadReq()
-    _spi.loadTemplate(templPath)
   }
 
   def checkPagePath(pathToCheck: PagePath): Option[PagePath] = {

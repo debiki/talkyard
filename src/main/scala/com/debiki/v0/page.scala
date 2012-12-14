@@ -244,12 +244,6 @@ case class Debate (
   /** A Post with template engine source code, for the whole page. */
   def pageTemplatePost: Option[ViPo] = vipo(Page.TemplateId)
 
-  /** If there is a page template for this page,
-   * returns its template source. */
-  def pageTemplateSrc: Option[TemplateSource] =
-    pageTemplatePost.map(post =>
-      TemplateSrcHtml(post.text, "/"+ idd +"?view=template"))
-
 
   // -------- Ratings
 
