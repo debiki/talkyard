@@ -5,7 +5,7 @@
 package debiki
 
 import com.debiki.v0._
-import controllers.{PageRequest, SiteAssetBundles}
+import controllers.{PageRequest, SiteAssetBundles, routes}
 import play.{api => p}
 import play.api.Play.current
 import Prelude._
@@ -271,8 +271,10 @@ class TemplateProgrammingInterface(
     configValueOpt(confValName).map(_.toLowerCase == "true") getOrElse default
 
 
-  def stylesheetBundle(bundle: String): xml.NodeSeq =
-    SiteAssetBundles.linkTo(bundle)(pageReq)
+  def stylesheetBundle(bundleName: String): xml.NodeSeq = {
+    val fileName = dao.loadAssetBundleFileName(bundleName)
+    <link rel="stylesheet" href={ routes.SiteAssetBundles.at(fileName).url }/>
+  }
 
 }
 

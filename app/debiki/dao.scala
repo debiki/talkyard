@@ -44,6 +44,7 @@ object TenantDaoFactory {
  */
 class TenantDao(protected val tenantDbDao: ChargingTenantDbDao)
   extends AnyRef
+  with AssetBundleDao
   with ConfigValueDao
   with PagePathDao
   with RenderedPageHtmlDao
