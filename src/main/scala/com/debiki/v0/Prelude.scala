@@ -369,4 +369,84 @@ object Prelude {
   def debugBreakpointB {
     println("debugBreakpointA")
   }
+
+
+  /**
+   * Indents arguments that should be indented. For example:
+   * {{{
+   * t"""
+   *   |Hello
+   *   |   $name"""
+   * }}}
+   * would result in e.g.:
+   * """
+   * Hello
+   *    Planet
+   *    Earth"""
+   *
+   * BUT Somewhat BROKEN because this doesn't work:
+    scala> val ir = """(.*)""".r
+    ir: scala.util.matching.Regex = (.*)
+
+    scala> "aa\n   " match { case ir(a) => a; case y => "noo" }
+    res22: String = noo
+   */
+  implicit class StripIndentStringInterpolator(val stringContext: StringContext) {
+    // Find test cases in StringInterpolatorsTest.
+
+    def ind(args: Any*): String = {
+      stringContext.checkLengths(args)
+      val stringBuilder = new StringBuilder()
+
+      for ((partNotStripped, arg) <- stringContext.parts zip args) {
+        val part = stripped(partNotStripped)
+        stringBuilder append part
+
+        val argIndented = part match {
+          case IndentationRegex(indentation) =>
+            arg.toString.replaceAll("\n", "\n" + indentation)
+          case _ =>
+            arg.toString
+        }
+
+        stringBuilder append argIndented
+      }
+
+      if (stringContext.parts.size > args.size)
+        stringBuilder append stripped(stringContext.parts.last)
+
+      stringBuilder.toString
+    }
+
+    private def stripped(string: String): String =
+      StripRegex.replaceAllIn(string, "\n")
+
+    private val StripRegex = """\n\s*\|""".r
+    private val IndentationRegex = """\n(\s+)$""".r
+  }
+
+
+  implicit class OneLineStringInterpolator(val stringContext: StringContext) {
+    // Find test cases in StringInterpolatorsTest.
+
+    def o(args: Any*): String = {
+      stringContext.checkLengths(args)
+      val stringBuilder = new StringBuilder()
+      stringBuilder append withSpacesCollapsed(trimLeft(stringContext.parts.head))
+      for ((part, arg) <- stringContext.parts.tail zip args) {
+        stringBuilder append arg.toString
+        stringBuilder append withSpacesCollapsed(part)
+      }
+      stringBuilder.toString
+    }
+
+    private def trimLeft(string: String): String =
+      TrimLeftRegex.replaceAllIn(string, "")
+
+    private def withSpacesCollapsed(string: String): String =
+      CollapseSpacesRegex.replaceAllIn(string, " ")
+
+    private val TrimLeftRegex = """^\s*""".r
+    private val CollapseSpacesRegex = """\s\s*""".r
+  }
 }
