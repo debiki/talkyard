@@ -52,8 +52,10 @@ trait CachingPagePathDao extends PagePathDao {
   self: CachingTenantDao =>
 
 
+  @deprecated("Cannot fire page moved events?")
   override def movePages(pageIds: Seq[String], fromFolder: String,
         toFolder: String) = {
+    unimplemented("Firing page moved events")
     pageIds foreach (_removeCachedPathsTo _)
     super.movePages(pageIds, fromFolder = fromFolder, toFolder = toFolder)
   }
@@ -129,11 +131,6 @@ trait CachingPagePathDao extends PagePathDao {
   }
 
 
-  /**
-   * There's currently no way to programmatically change page meta info
-   * (parent page id and page role), so need not remove page meta entries
-   * from cache.
-   */
   override def loadPageMeta(pageId: String): Option[PageMeta] =
     lookupInCache[PageMeta](
       pageMetaByIdKey(pageId),
