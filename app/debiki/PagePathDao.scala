@@ -76,6 +76,16 @@ trait CachingPagePathDao extends PagePathDao {
   }
 
 
+  override def movePageToItsPreviousLocation(pagePath: PagePath): Option[PagePath] = {
+    val restoredPath = super.movePageToItsPreviousLocation(pagePath)
+    restoredPath foreach { path =>
+      _removeCachedPathsTo(path.pageId.get)
+      firePageMoved(path)
+    }
+    restoredPath
+  }
+
+
   override def checkPagePath(pathToCheck: PagePath): Option[PagePath] = {
     val key = _pathWithIdByPathKey(pathToCheck)
     lookupInCache[PagePath](key) foreach { path =>
