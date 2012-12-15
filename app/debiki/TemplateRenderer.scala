@@ -101,6 +101,9 @@ object TemplateRenderer {
         throw new PageConfigException(
           s"Template `$template', theme: `$theme', is broken. Does it not start with " +
             "`@(tpi: TemplateProgrammingInterface)`?")
+      case wrappingException: jl.reflect.InvocationTargetException =>
+        val originalException = wrappingException.getCause
+        throw originalException
     }
   }
 
