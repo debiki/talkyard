@@ -139,11 +139,17 @@ case class PagePath(  // COULD move to debate.scala.  Rename to RequestPath?
     Some(copy(
       folder = grandparent, pageSlug = "", showId = false, pageId = None))
   }
+
+  def sitePageId: Option[SitePageId] =
+    pageId map (SitePageId(tenantId, _))
+
 }
+
 
 
 case class PagePathException(errorCode: String,  message: String)
   extends IllegalArgumentException(message +" [error "+ errorCode +"]")
+
 
 
 object PagePath {
@@ -284,4 +290,10 @@ case class PathRanges(
 object PathRanges {
   val Anywhere = PathRanges(trees = Seq("/"))
 }
+
+
+/**
+ * If not the full page path is needed, but only website and page ids.
+ */
+case class SitePageId(siteId: String, pageId: String)
 
