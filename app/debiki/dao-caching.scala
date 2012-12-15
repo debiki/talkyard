@@ -59,6 +59,11 @@ class CachingTenantDao(tenantDbDao: ChargingTenantDbDao)
     // -of-that relationships? For now:
     uncacheConfigMap(page.id)
     uncachePageMeta(page.id)
+    // ... Like so perhaps? Each module registers change listeners?
+    firePageSaved(SitePageId(siteId = tenantId, pageId = page.id))
+
+    // if (is _site-config.yaml || is any stylesheet or script)
+    // then clear all asset bundle related caches. For ... all websites, for now??
 
     // Would it be okay to simply overwrite the in mem cache with this
     // updated page? — Only if I make `++` avoid adding stuff that's already

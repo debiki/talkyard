@@ -71,6 +71,7 @@ trait CachingPagePathDao extends PagePathDao {
     // entry that maps `newPath` to something, remove it.
     removeFromCache(_pathWithIdByPathKey(newPath))
 
+    firePageMoved(newPath)
     newPath
   }
 

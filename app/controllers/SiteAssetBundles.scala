@@ -30,7 +30,14 @@ object SiteAssetBundles extends mvc.Controller {
       case AssetBundleFileNameRegex(nameNoSuffix, version, suffix) =>
         // Ignore `version` for now. It's only used for asset versioning —
         // but we always serve the most recent version of the bundle.
-        val bundleText = request.dao.loadAssetBundle(nameNoSuffix, suffix)
+        val bundleText = try {
+          request.dao.loadAssetBundle(nameNoSuffix, suffix)
+        }
+        catch {
+          case ex: DebikiException =>
+            throwNotFound(ex.errorCode, ex.details)
+        }
+
         Ok(bundleText) // COULD cache forever, asset versioning
       case _ =>
         NotFoundResult("DwE93BY1", s"Bad asset bundle URL path: $file")

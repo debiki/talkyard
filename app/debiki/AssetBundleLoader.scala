@@ -13,11 +13,29 @@ import Prelude._
 
 case class AssetBundleAndDependencies(
   assetBundleText: String,
-  assetPageIds: Seq[String])
+  version: String, // SHA1 hash of assetBundleText
+  assetPageIds: Seq[SitePageId],
+  configPageId: String)
+  // COULD: missingAssets: Seq[MissingAsset])
+
+
+/* COULD rebuild a broken bundle, if a missing asset is created.
+ * siteOrHostId: Either the tenant ID was resolved, or only the address to
+ * a not-yet-created website is known.
+ * assetPath: Remember page path, not id, since there is not yet any id.
+object AssetBundleAndDependencies {
+  case class MissingAsset(
+    siteHostOrId: Either[String, String],
+    assetPath: String)
+} */
+
 
 
 /**
  * Loads bundles of styles and scripts.
+ *
+ * If you cache the result, you might want to consider race conditions
+ * — have a look at CachingAssetBundleDao.loadBundleAndDependencies().
  */
 object AssetBundleLoader {
 
@@ -30,8 +48,8 @@ object AssetBundleLoader {
 
     def bundleName = s"$bundleNameNoSuffix.$bundleSuffix"
     def die(exception: DebikiException) =
-      throwNotFound(
-        "DwE9b3HK1", o"""Cannot serve '$bundleNameNoSuffix-<version>.$bundleSuffix':
+      throw DebikiException(
+        "DwE9b3HK1", o"""Cannot serve '$bundleNameNoSuffix.<version>.$bundleSuffix':
             ${exception.getMessage}""")
 
     val assetPaths =
@@ -62,8 +80,14 @@ object AssetBundleLoader {
       sb.toString
     }
 
-    val assetPageIds = assetPaths map (_.pageId.get)
-    AssetBundleAndDependencies(bundleText, assetPageIds)
+    val assetPageIds = assetPaths map (_.sitePageId getOrDie "DwE90If5")
+    val siteConfigPageId = dao.loadWebsiteConfigPageId() getOrElse
+      die(DebikiException("DwE38bkF5", "Website config page was just deleted"))
+
+    val sha1sum = hashSha1Base64UrlSafe(bundleText)
+
+    AssetBundleAndDependencies(
+      bundleText, sha1sum, assetPageIds, configPageId = siteConfigPageId)
   }
 
 

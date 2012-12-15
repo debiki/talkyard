@@ -18,17 +18,21 @@ trait ConfigValueDao {
 
 
   def loadWebsiteConfigMap(): Map[String, Any] = {
-    val pagePathIdKnown = checkPagePath(websiteConfigPagePath)
+    val pagePathIdKnown = loadWebsiteConfigPageId()
     pagePathIdKnown match {
       case None => Map.empty
-      case Some(pagePath) =>
-        loadConfigMap(pagePath.pageId.get, configPostId = Page.BodyId)
+      case Some(pageId) =>
+        loadConfigMap(pageId, configPostId = Page.BodyId)
     }
   }
 
 
   def loadWebsiteConfig(): WebsiteConfig =
     WebsiteConfig.fromSnakeYamlMap(loadWebsiteConfigMap())
+
+
+  def loadWebsiteConfigPageId(): Option[String] =
+    checkPagePath(websiteConfigPagePath).map(_.pageId.get)
 
 
   protected def loadConfigMap(pageId: String, configPostId: String)

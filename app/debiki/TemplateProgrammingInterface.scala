@@ -6,9 +6,11 @@ package debiki
 
 import com.debiki.v0._
 import controllers.{PageRequest, SiteAssetBundles, routes}
+import java.{util => ju}
 import play.{api => p}
 import play.api.Play.current
 import Prelude._
+import SiteAssetBundles.{AssetBundleNameRegex, assetBundleFileName}
 
 
 object InternalTemplateProgrammingInterface {
@@ -272,8 +274,33 @@ class TemplateProgrammingInterface(
 
 
   def stylesheetBundle(bundleName: String): xml.NodeSeq = {
-    val fileName = dao.loadAssetBundleFileName(bundleName)
-    <link rel="stylesheet" href={ routes.SiteAssetBundles.at(fileName).url }/>
+
+    val (nameNoSuffix, suffix) = bundleName match {
+      case AssetBundleNameRegex(nameNoSuffix, suffix) =>
+        (nameNoSuffix, suffix)
+      case _ =>
+        throw new TemplateRenderer.BadTemplateException(
+          "DwE13BKf8", o"""Invalid asset bundle name: '$bundleName'. Only names
+          like 'some-bundle-name.css' and 'some-scripts.js' are allowed.""")
+    }
+
+    try {
+      val version = dao.loadAssetBundleVersion(nameNoSuffix, suffix)
+      val fileName = assetBundleFileName(nameNoSuffix, version, suffix)
+      <link rel="stylesheet" href={ routes.SiteAssetBundles.at(fileName).url }/>
+    }
+    catch {
+      case ex: DebikiException =>
+        // The bundle is broken somehow. Don't fail the whole page because of this?
+        // E.g. search engines should work fine although the bundle is broken.
+        // Instead, indicate to designers/developers that it's broken, via
+        // a Javascript console log message.
+        val messEscaped = ex.getMessage.replaceAllLiterally("'", """\'""")
+        <script>{o"""throw new Error(
+          'Asset-bundle \'$bundleName\' is broken and was therefore not included
+           on the page. Details: $messEscaped');"""
+        }</script>
+    }
   }
 
 }

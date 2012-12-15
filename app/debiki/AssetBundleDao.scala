@@ -8,34 +8,25 @@ import com.debiki.v0._
 import controllers.SiteAssetBundles
 import java.{util => ju}
 import Prelude._
-import SiteAssetBundles.{AssetBundleNameRegex, assetBundleFileName}
-
+import CachingAssetBundleDao._
 
 
 trait AssetBundleDao {
   self: TenantDao =>
 
 
-  def loadAssetBundleFileName(bundleName: String): String = {
-    bundleName match {
-      case AssetBundleNameRegex(nameNoSuffix, suffix) =>
-        val AssetBundleAndDependencies(bundleText, assetPageIds) =
-          AssetBundleLoader.loadAssetBundle(nameNoSuffix, suffix, this)
-        val version = hashSha1Base64UrlSafe(bundleText)
-        assetBundleFileName(nameNoSuffix, version, suffix)
-      case _ =>
-        throw new TemplateRenderer.BadTemplateException(
-          "DwE13BKf8", o"""Bad assets bundle: $bundleName,
-            should be like: some-bundle-name.css, or scripts.js""")
-    }
-  }
+  final def loadAssetBundleVersion(
+        bundleNameNoSuffix: String, bundleSuffix: String): String =
+    loadBundleAndDependencies(bundleNameNoSuffix, bundleSuffix).version
 
 
-  def loadAssetBundle(nameNoSuffix: String, suffix: String): String = {
-    val AssetBundleAndDependencies(bundleText, assetPageIds) =
-      AssetBundleLoader.loadAssetBundle(nameNoSuffix, suffix, this)
-    bundleText
-  }
+  final def loadAssetBundle(nameNoSuffix: String, suffix: String): String =
+    loadBundleAndDependencies(nameNoSuffix, suffix).assetBundleText
+
+
+  protected def loadBundleAndDependencies(nameNoSuffix: String, suffix: String)
+      : AssetBundleAndDependencies =
+    AssetBundleLoader.loadAssetBundle(nameNoSuffix, suffix, this)
 
 }
 
@@ -44,5 +35,131 @@ trait AssetBundleDao {
 trait CachingAssetBundleDao extends AssetBundleDao {
   self: TenantDao with CachingDao =>
 
+  onPageSaved { sitePageId =>
+    tryUncacheAll(
+      makeDependencyKey(sitePageId))
+  }
+
+  onPageMoved { (newPath: PagePath) =>
+    tryUncacheAll(
+      makeDependencyKey(newPath.sitePageId getOrDie "DwE54BI3"))
+  }
+
+  // Somewhat unimportant?, but:
+  // Could add: onPageCreated { ... }, onWebsiteCreated { ... },
+  // so that a broken bundle will be fixed when a missing asset is created,
+  // or even when a missing website is created. Currently, any previously
+  // broken and cached bundle, but that is now in fact okay, is only fixed
+  // on server restart.
+  // Could add, when that functionality exists: onGroupPermissionsChanged { ... }
+
+
+  protected override def loadBundleAndDependencies(nameNoSuffix: String, suffix: String)
+      : AssetBundleAndDependencies = {
+    val bundleName = s"$nameNoSuffix.$suffix"
+    val bundleKey = makeBundleKey(bundleName, tenantId = tenantId)
+    val cachedBundleAndDeps = lookupInCache[AssetBundleAndDependencies](bundleKey)
+    if (cachedBundleAndDeps.isDefined)
+      return cachedBundleAndDeps.get
+
+    // Concerning race conditions: There should be none (but there are, currently).
+    // Consider these there cases:
+    // We could be 1) be loading a bundle of behalf of a *published*
+    // version of the website, and a published version can never change
+    // (in the same manner as the contents of a Git commit can never change).
+    // Or we could be loading 2) a published *test* version, that is later to
+    // be promoted to the current active version. Such a test version is
+    // also frozen, like a Git commit. Or 3) we could be loading
+    // assets on behalf of a developer's / an admin's "local" test version.
+    // But only the developer or the admin, and no one else, should have
+    // access to that version.
+    // — In no case will race conditions be an issue.
+    //
+    // However right now I haven't implemented website versioning.
+    // So there are race conditions. If many people modify asset definitions,
+    // and move or edit asset files, at the same time, corrupt asset bundles
+    // might be generated, and they might last until the _site-config.yaml file
+    // is edited and saved (or until the server is restarted).
+    //
+    // Website versioning would include all files with a '.' in their name.
+    // E.g. site-config.yml, some-script.js, some-style.css, some-template.tpl.
+    // But not blog posts or the homepage or other "normal pages".
+
+    val bundleAndDeps = AssetBundleLoader.loadAssetBundle(nameNoSuffix, suffix, this)
+    cacheDependencies(bundleName, bundleAndDeps)
+    putInCache(bundleKey, bundleAndDeps)
+
+    bundleAndDeps
+  }
+
+
+  /**
+   * Caches which pages the bundle depends on, so it can be uncached,
+   * should any of the dependencies change.
+   */
+  private def cacheDependencies(
+        bundleName: String, bundleAndDeps: AssetBundleAndDependencies) {
+    val bundleDeps = BundleDependencyData(bundleName, bundleAndDeps, siteId = tenantId)
+    for (sitePageId <- bundleDeps.dependeePageIds) {
+      val depKey = makeDependencyKey(sitePageId)
+      putInCache(depKey, bundleDeps)
+    }
+  }
+
+
+  private def tryUncacheAll(dependencyKey: String) {
+    lookupInCache[BundleDependencyData](dependencyKey) foreach { depsData =>
+      doUncacheAll(depsData)
+    }
+  }
+
+
+  private def doUncacheAll(bundleDeps: BundleDependencyData) {
+    // First uncache dependencies. Then uncache bundle.
+    // (If you uncache the bundle first, another thread might start to regenerate
+    // it and cache dependencies, whilst you're still busy uncaching the mostly
+    // same dependencies!)
+
+    for (depSitePageIds <- bundleDeps.dependeePageIds) {
+      removeFromCache(
+        makeDependencyKey(depSitePageIds))
+    }
+
+    removeFromCache(
+      makeBundleKey(
+        bundleDeps.bundleName, tenantId = bundleDeps.siteId))
+  }
+
+
+  private def makeBundleKey(bundleName: String, tenantId: String) =
+    s"$tenantId|$bundleName|AssetBundle"
+
+  private def makeDependencyKey(sitePageId: SitePageId) =
+    s"${sitePageId.siteId}|${sitePageId.pageId}|BundleDependency"
+
 }
 
+
+
+object CachingAssetBundleDao {
+
+  class BundleDependencyData(
+    val siteId: String,
+    val bundleName: String,
+    val dependeePageIds: List[SitePageId])
+
+  case object BundleDependencyData {
+    def apply(
+          bundleName: String,
+          bundleAndDeps: AssetBundleAndDependencies,
+          siteId: String): BundleDependencyData = {
+      new BundleDependencyData(
+        siteId = siteId,
+        bundleName = bundleName,
+        dependeePageIds =
+          SitePageId(siteId, bundleAndDeps.configPageId)
+            :: bundleAndDeps.assetPageIds.toList)
+    }
+  }
+
+}

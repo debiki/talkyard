@@ -14,6 +14,37 @@ import scala.reflect.ClassTag
 import Prelude._
 
 
+
+trait CacheEvents {  // COULD move to separate file
+
+  private var pageSavedListeners = List[(SitePageId => Unit)]()
+  private var pageMovedListeners = List[(PagePath => Unit)]()
+
+
+  def onPageSaved(callback: (SitePageId => Unit)) {
+    pageSavedListeners ::= callback
+  }
+
+
+  def firePageSaved(sitePageId: SitePageId) {
+    pageSavedListeners foreach (_(sitePageId))
+  }
+
+
+  def onPageMoved(callback: (PagePath => Unit)) {
+    pageMovedListeners ::= callback
+  }
+
+
+  def firePageMoved(newPath: PagePath) {
+    pageMovedListeners foreach (_(newPath))
+  }
+
+
+}
+
+
+
 /**
  * Functions that lookup, add and remove stuff to/from a cache.
  *
@@ -21,7 +52,7 @@ import Prelude._
  * accidentally passed in a raw string, not yet converted to a cache key).
  * Use e.g. this key format:  (tenant-id)|(page-id)|(cache-entry-type).
  */
-trait CachingDao {
+trait CachingDao extends CacheEvents {
 
 
   /**
