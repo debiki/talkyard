@@ -56,7 +56,8 @@ object Prelude {
 
   implicit class GetOrDie[A](val underlying: Option[A]) {
     def getOrDie(errorCode: String): A = underlying.getOrElse(
-      throw new ju.NoSuchElementException("Element absent [error $errorCode]"))
+      throw new ju.NoSuchElementException(
+        s"Element absent, `None.get` [error $errorCode]"))
   }
 
   // Error codes should be formatted like so:
