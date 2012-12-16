@@ -11,6 +11,9 @@ import Prelude._
 import CachingAssetBundleDao._
 
 
+case class AssetBundle(body: String, version: String)
+
+
 trait AssetBundleDao {
   self: TenantDao =>
 
@@ -20,8 +23,10 @@ trait AssetBundleDao {
     loadBundleAndDependencies(bundleNameNoSuffix, bundleSuffix).version
 
 
-  final def loadAssetBundle(nameNoSuffix: String, suffix: String): String =
-    loadBundleAndDependencies(nameNoSuffix, suffix).assetBundleText
+  final def loadAssetBundle(nameNoSuffix: String, suffix: String): AssetBundle = {
+    val bundleAndDeps = loadBundleAndDependencies(nameNoSuffix, suffix)
+    AssetBundle(bundleAndDeps.assetBundleText, version = bundleAndDeps.version)
+  }
 
 
   protected def loadBundleAndDependencies(nameNoSuffix: String, suffix: String)

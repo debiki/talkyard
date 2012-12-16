@@ -24,13 +24,25 @@ import Prelude._
 object SiteAssetBundles extends mvc.Controller {
 
 
+  /**
+   * Serves asset bundles.
+   *
+   * - Asks the client to cache the response forever (1 year), since asset
+   * versioning is used (a new URL is generated whenever the bundle body
+   * changes).
+   * - Sets no cookies, since the intention is that the response be cached
+   * by proxy servers.
+   */
   def at(file: String) = GetAction { request =>
     // `file` is like: bundle-name.<version>.css.
     file match {
       case AssetBundleFileNameRegex(nameNoSuffix, version, suffix) =>
         // Ignore `version` for now. It's only used for asset versioning —
         // but we always serve the most recent version of the bundle.
-        val bundleText = try {
+        val bundle = try {
+          // SECURITY don't load foreign tenant stuff from any private
+          // other-site/_hidden-underscore-folder/, or if read access restricted
+          // in some other manner. (Fix later, in AssetBundleLoader?)
           request.dao.loadAssetBundle(nameNoSuffix, suffix)
         }
         catch {
@@ -38,7 +50,23 @@ object SiteAssetBundles extends mvc.Controller {
             throwNotFound(ex.errorCode, ex.details)
         }
 
-        Ok(bundleText) // COULD cache forever, asset versioning
+        val etag = bundle.version
+        val isEtagOk = request.headers.get(IF_NONE_MATCH) == Some(etag)
+        if (isEtagOk) {
+          NotModified
+        }
+        else {
+          val contentType =
+            if (request.uri endsWith "css") CSS
+            else if (request.uri endsWith "js") JAVASCRIPT
+            else TEXT
+          Ok(bundle.body).withHeaders(
+            CACHE_CONTROL -> "public, max-age=31536000",
+            ETAG -> etag,
+            // Really don't set any new cookies (don't know from where they
+            // could come, but remove any anyway).
+            SET_COOKIE -> "") as contentType
+        }
       case _ =>
         NotFoundResult("DwE93BY1", s"Bad asset bundle URL path: $file")
     }
