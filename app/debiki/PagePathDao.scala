@@ -79,6 +79,7 @@ trait CachingPagePathDao extends PagePathDao {
 
 
   override def movePageToItsPreviousLocation(pagePath: PagePath): Option[PagePath] = {
+    require(pagePath.tenantId == tenantId)
     val restoredPath = super.movePageToItsPreviousLocation(pagePath)
     restoredPath foreach { path =>
       _removeCachedPathsTo(path.pageId.get)
@@ -94,9 +95,13 @@ trait CachingPagePathDao extends PagePathDao {
       return Some(path)
     }
     super.checkPagePath(pathToCheck) map { correctPath =>
-      // Only cache correct paths, since there are infinitely many incorrect
-      // paths that map to `correctPath`, if page id included in path.
-      if (correctPath.path == pathToCheck.path)
+      // Don't cache non-exact paths if page id shown, since there are
+      // infinitely many such paths.
+      // Performance, caching: COULD let checkPagePath() clarify whether
+      // pathToCheck was actually found in the database (in DW1_PAGE_PATHS),
+      // and cache it, if found, regardless of if id shown in url.
+      // Or better & much simpler: Cache SitePageId —> correctPath.
+      if (!pathToCheck.showId || correctPath.path == pathToCheck.path)
         putInCache(key, correctPath)
       return Some(correctPath)
     }
@@ -142,8 +147,11 @@ trait CachingPagePathDao extends PagePathDao {
   }
 
 
+  // Might be a page from another site. (For example, we might be looking up
+  // an URL to find which page to include in an asset bundle — the page
+  // could be a public stylesheet from e.g. www.debik.com.)
   private def _pathWithIdByPathKey(pagePath: PagePath) =
-    s"$tenantId|${pagePath.path}|PagePathByPath"
+    s"${pagePath.tenantId}|${pagePath.path}|PagePathByPath"
 
 
   private def _pathByPageIdKey(pageId: String) =
