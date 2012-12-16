@@ -54,7 +54,15 @@ class InternalTemplateProgrammingInterface protected (
 
 
   protected def _websiteConfigValueOpt(confValName: String): Option[String] =
-    dao.loadWebsiteConfigMap().get(confValName).map(_.toString)
+    try {
+      dao.loadWebsiteConfigMap().get(confValName).map(_.toString)
+    }
+    catch {
+      case ex: DebikiException =>
+        throw TemplateRenderer.PageConfigException(
+          "DwE48IB3", o"""Error loading website config value '$confValName':
+            ${ex.getMessage}""")
+    }
 
 }
 
@@ -114,8 +122,15 @@ class TinyTemplateProgrammingInterface protected (
 
 
   private def _pageConfigValueOpt(confValName: String): Option[String] = {
-    val pageId = _pageReq.pageId.getOrElse(assErr("DwE83ZI78"))
-    dao.loadPageConfigMap(pageId).get(confValName).map(_.toString)
+    val pageId = _pageReq.pageId getOrDie "DwE83ZI78"
+    try {
+      dao.loadPageConfigMap(pageId).get(confValName).map(_.toString)
+    }
+    catch {
+      case ex: DebikiException =>
+        throw TemplateRenderer.PageConfigException(
+          "DwE63D8", s"Error loading page config value '$confValName': ${ex.getMessage}")
+    }
   }
 
 
@@ -279,7 +294,7 @@ class TemplateProgrammingInterface(
       case AssetBundleNameRegex(nameNoSuffix, suffix) =>
         (nameNoSuffix, suffix)
       case _ =>
-        throw new TemplateRenderer.BadTemplateException(
+        throw TemplateRenderer.BadTemplateException(
           "DwE13BKf8", o"""Invalid asset bundle name: '$bundleName'. Only names
           like 'some-bundle-name.css' and 'some-scripts.js' are allowed.""")
     }

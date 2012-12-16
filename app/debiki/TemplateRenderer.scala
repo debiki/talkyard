@@ -15,7 +15,30 @@ object TemplateRenderer {
 
 
   def renderTemplate(pageReq: PageRequest[_], appendToBody: xml.NodeSeq = Nil)
-        : String = {
+        : String =
+    try {
+      renderTemplateImpl(pageReq, appendToBody)
+    }
+    catch {
+      case ex: PageConfigException =>
+        views.html.themes.specialpages.brokenPage(ex).body
+      case ex: BadTemplateException =>
+        views.html.themes.specialpages.brokenPage(ex).body
+    }
+
+
+  private def renderTemplateImpl(
+        pageReq: PageRequest[_], appendToBody: xml.NodeSeq): String = {
+
+    val tpi = new TemplateProgrammingInterface(pageReq, appendToBody)
+
+    if (pageReq.pageRoot.isPageTemplate || pageReq.pagePath.isTemplatePage) {
+      // Use a page that we know for sure is not broken, so it's possible
+      // to fix errors. And do this before loading any config values,
+      // since a config file might be corrupted (exception thrown).
+      return views.html.themes.specialpages.template(
+        tpi, isPageSettings = pageReq.pageRoot.isPageTemplate).body
+    }
 
     // Handle page config values.
     //if (commentVisibility == CommentVisibility.ShowOnClick) {
@@ -34,9 +57,7 @@ object TemplateRenderer {
     // in a `/.site.conf` file.
     // In the distant future, implement my ideas in play-thoughts.txt.
 
-    val tpi = new TemplateProgrammingInterface(pageReq, appendToBody)
 
-    import pageReq.{pagePath, pageMeta}
 
     val theme = {
       val themeUnsafe = tpi.websiteConfigValue("theme") orIfEmpty "default20121009"
@@ -49,6 +70,7 @@ object TemplateRenderer {
         themeNoDelims
     }
 
+    import pageReq.{pageMeta}
     val template =
       tpi.pageConfigValue("template") orIfEmpty {
         // Select template based on page role.
@@ -62,24 +84,7 @@ object TemplateRenderer {
         }
       }
 
-    val renderedPage =
-      if (pageReq.pageRoot.isPageTemplate || pagePath.isTemplatePage) {
-        // Use a page that we know for sure is not broken,
-        // so it's possible to fix errors.
-        views.html.themes.specialpages.template(
-          tpi, isPageSettings = pageReq.pageRoot.isPageTemplate).body
-      }
-      else {
-        try { renderThemeTemplate(theme, template, tpi) }
-        catch {
-          case ex: PageConfigException =>
-            views.html.themes.specialpages.brokenPage(ex).body
-          case ex: BadTemplateException =>
-            views.html.themes.specialpages.brokenPage(ex).body
-        }
-      }
-
-    renderedPage
+    renderThemeTemplate(theme, template, tpi)
   }
 
 
@@ -96,11 +101,12 @@ object TemplateRenderer {
     }
     catch {
       case ex: jl.ClassNotFoundException =>
-        throw new PageConfigException(s"Template not found: `$template', theme: `$theme'")
+        throw PageConfigException(
+          "DwE0b3X9", s"Template not found: `$template', theme: `$theme'")
       case ex: jl.NoSuchMethodException =>
         throw new PageConfigException(
-          s"Template `$template', theme: `$theme', is broken. Does it not start with " +
-            "`@(tpi: TemplateProgrammingInterface)`?")
+          "DwE68St8", o"""Template `$template', theme: `$theme', is broken.
+          Does it not start with `@(tpi: TemplateProgrammingInterface)'?""")
       case wrappingException: jl.reflect.InvocationTargetException =>
         val originalException = wrappingException.getCause
         throw originalException
@@ -108,10 +114,21 @@ object TemplateRenderer {
   }
 
 
-  class PageConfigException(message: String)
-    extends Exception(message)
+  class PageConfigException(errorCode: String, details: String)
+    extends DebikiException(errorCode, details)
+
+  object PageConfigException {
+    def apply(errorCode: String, details: String) =
+      new PageConfigException(errorCode, details)
+  }
+
 
   class BadTemplateException(errorCode: String, details: String)
     extends DebikiException(errorCode, details)
+
+  object BadTemplateException {
+    def apply(errorCode: String, details: String) =
+      new BadTemplateException(errorCode, details)
+  }
 
 }
