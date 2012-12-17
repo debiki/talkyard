@@ -1,6 +1,6 @@
 #!/bin/bash
 
-play=/mnt/data/dev/play/github2/play
+play=/mnt/data/dev/play/kajmagnus79/play
 
 set -u  # exit on unset variable
 set -e  # exit on non-zero command exit code
