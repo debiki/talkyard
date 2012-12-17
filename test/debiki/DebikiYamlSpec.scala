@@ -49,7 +49,7 @@ class DebikiYamlSpec extends Specification {
         """
           |- List Item A
           |- List Item B
-        """.stripMargin) must throwAn[RuntimeException]
+        """.stripMargin) must throwAn[DebikiException]
     }
 
     "parse a Yaml list to a Scala List, not a Java ArrayList" >> {
