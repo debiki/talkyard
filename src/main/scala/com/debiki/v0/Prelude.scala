@@ -395,7 +395,10 @@ object Prelude {
   implicit class StripIndentStringInterpolator(val stringContext: StringContext) {
     // Find test cases in StringInterpolatorsTest.
 
-    def ind(args: Any*): String = {
+    @deprecated("from today", "use `i` instead")
+    def ind(args: Any*) = i(args:_*)
+
+    def i(args: Any*): String = {
       stringContext.checkLengths(args)
       val stringBuilder = new StringBuilder()
 
