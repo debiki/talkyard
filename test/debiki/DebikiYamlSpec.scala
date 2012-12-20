@@ -44,6 +44,15 @@ class DebikiYamlSpec extends Specification {
         "lines: indeed\n")
     }
 
+    "throw error if there's more than one document" >> {
+      DebikiYaml.parseYamlToMap(
+        i"""
+          |first: document
+          |---
+          |other: document
+        """) must throwAn[DebikiException]
+    }
+
     "throw error for top level Yaml lists" >> {
       DebikiYaml.parseYamlToMap(
         """

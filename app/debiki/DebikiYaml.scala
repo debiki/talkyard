@@ -17,7 +17,18 @@ object DebikiYaml {
 
   def parseYamlToMap(yamlText: String): Map[String, Any] = {
     val yaml: y.Yaml = new y.Yaml(new y.constructor.SafeConstructor)
-    val yamlObj = yaml.load(yamlText)
+
+    val yamlObj =
+      try { yaml.load(yamlText) }
+      catch {
+        case ex: org.yaml.snakeyaml.composer.ComposerException =>
+          // This hapens e.g. if there's any "\n---\n" in the `yamlText`, which
+          // means another Yaml doc follows — `yaml.load` expects only one doc.
+          throw DebikiException(
+            "DwE04DB3", o"""Bad config file: More than one Yaml document
+              (remove any line containing only "---", please)""")
+      }
+
     val javaMap: ju.Map[String, Any] =
       try { yamlObj.asInstanceOf[ju.Map[String, Any]] }
       catch {
