@@ -404,8 +404,8 @@ class HtmlForms(val config: HtmlConfig, xsrfToken: String,
                 rateBox("off-topic")
               }</div>
               <div class='dw-r-tag-set dw-r-tag-set-2'>{
-                rateBox("boring") ++
-                rateBox("stupid")
+                rateBox("mediocre") ++
+                rateBox("faulty")
               }</div>
               {/* One can report (flag) a comment as spam, so there's
               no need for a spam tag too. I don't think the troll tag is
