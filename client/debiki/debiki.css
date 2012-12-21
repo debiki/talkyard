@@ -312,15 +312,13 @@ JavaScript. Then I can still place all CSS stuff in this file. */
 /* --- PNG arrows --- */
 
 .dw-svg-fake-varrow,
-.dw-svg-fake-harrow,
-.dw-svg-fake-harrow-end {
+.dw-svg-fake-harrow {
   background-color: #ddd;
   position: absolute;
   z-index: 1;
 }
 
-.dw-svg-fake-harrow,
-.dw-svg-fake-harrow-end {
+.dw-svg-fake-harrow {
   height: 3px;
   width: 100%;
   top: 44px;
@@ -331,17 +329,6 @@ JavaScript. Then I can still place all CSS stuff in this file. */
   background-color: white;
   display: block;
   height: 10px;
-}
-
-.dw-t > .dw-svg-fake-harrow-end {
-  display: block;
-  top: -62px;
-  background-color: white;
-  display: block;
-  height: 10px;
-  position: absolute;
-  right: -30px;
-  width: 30px;
 }
 
 .dw-svg-fake-varrow {

@@ -68,13 +68,11 @@ debiki.internal.makeFakeDrawer = function($) {
       $thread.prepend(horizListItemEndArrow);
 
       // If this is the last child thread, hide the tail of the horizontal
-      // line (since there's nothign more to the right).
+      // line (since there's nothing more to the right).
       var $listItem = $thread.parent().dwCheckIs('li', 'DwE90dk2');
       if ($listItem.is(':last-child')) {
         // CSS makes these <div>s actually hide the line.
-        $thread.prepend(
-            '<div class="dw-svg-fake-harrow"></div>' +
-            '<div class="dw-svg-fake-harrow-end"></div>');
+        $thread.prepend('<div class="dw-svg-fake-harrow"></div>');
       }
     } else {
       // vertical arrow, already handled above.
