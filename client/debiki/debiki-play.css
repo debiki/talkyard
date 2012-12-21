@@ -89,20 +89,9 @@ html.js body.dw-render-actions-pending .dw-as {
   float: none;
 }
 
-/* === Threads === */
-
-
-/* Align horizontal replies properly.
-A certain reply form label, and the reply button title, might push the baseline
-downwards, for all sibling table cells to the right; this incorrectly offsets
-PNG arrows. */
-.dw-hor > .dw-res > .dw-fs-re label,
-.dw-hor-a.dw-p-as {
-  vertical-align: top;
-}
-
 
 /* === Posts === */
+
 
 /* Hide the reply form resize handle unless hovering the form. */
 .dw-fs-re .ui-resizable-se { visibility: hidden; }
