@@ -34,7 +34,16 @@ object ApplicationBuild extends Build {
 
   val appDependencies = Seq(
     "com.amazonaws" % "aws-java-sdk" % "1.3.4",
-    "com.google.guava" % "guava" % "10.0.1",
+    "com.google.guava" % "guava" % "13.0.1",
+    // JSR 305 is requried by Guava, at build time only (so specify "provided"
+    // so it won't be included in the JAR), or there's this weird error: """
+    //   class file '...guava-13.0.1.jar(.../LocalCache.class)' is broken
+    //   [error] (class java.lang.RuntimeException/bad constant pool tag 9 at byte 125)
+    //   [warn] Class javax.annotation.CheckReturnValue not found ..."""
+    // See: http://code.google.com/p/guava-libraries/issues/detail?id=776
+    // and: http://stackoverflow.com/questions/10007994/
+    //              why-do-i-need-jsr305-to-use-guava-in-scala
+    "com.google.code.findbugs" % "jsr305" % "1.3.9" % "provided",
     // "com.twitter" %% "ostrich" % "4.10.6",
     "rhino" % "js" % "1.7R2",
     "org.yaml" % "snakeyaml" % "1.11",

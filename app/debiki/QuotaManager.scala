@@ -157,7 +157,7 @@ class QuotaManager(
    * hard for a botnet to do an out-of-memory DoS attack against this IP table?)
    */
   private val _quotaStateCache:
-        ggc.Cache[QuotaConsumer, _CachedQuotaState] =
+        ggc.LoadingCache[QuotaConsumer, _CachedQuotaState] =
     ggc.CacheBuilder.newBuilder()
       .ticker(unitTestTicker.getOrElse(ggb.Ticker.systemTicker))
       .build(
