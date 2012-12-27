@@ -47,3 +47,8 @@ test-client/unit/spa/admin/*.js
 # real submodule again, if ever.)
 modules/securesocial
 
+# When running Chrome browser tests, ChromeDriver generates this file and it
+# seems it's location is hardcoded,
+#   see: http://code.google.com/p/selenium/issues/detail?id=3475
+/chromedriver.log
+
