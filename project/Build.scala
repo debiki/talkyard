@@ -47,7 +47,9 @@ object ApplicationBuild extends Build {
     // "com.twitter" %% "ostrich" % "4.10.6",
     "rhino" % "js" % "1.7R2",
     "org.yaml" % "snakeyaml" % "1.11",
-    "org.mockito" % "mockito-all" % "1.9.0" % "test"
+    "org.mockito" % "mockito-all" % "1.9.0" % "test", // I use Mockito with Specs2...
+    "org.scalatest" % "scalatest_2.10.0-RC1" % "2.0.M4" % "test", // but prefer ScalaTest
+    "org.scala-lang" % "scala-actors" % "2.10.0-RC1" % "test" // needed by ScalaTest
   )
 
 
@@ -79,6 +81,10 @@ object ApplicationBuild extends Build {
     },
     listJarsTask)
 
+  // This is supposedly needed when using ScalaTest instead of Specs2,
+  // see: http://stackoverflow.com/a/10378430/694469, but I haven't
+  // activated this, because ScalaTest works fine anyway:
+  // `testOptions in Test := Nil`
 
   val rhinoClassDir = "target/scala-2.10/classes/"
 
