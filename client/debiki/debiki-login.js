@@ -185,12 +185,14 @@ var initLoginResultForms = (function() {
     var $loginResultForm = $loginResult.find('form');
     $loginResult.find('input').hide(); // Use jQuery UI's dialog buttons instead
     $loginResult.dialog($.extend({}, d.i.jQueryDialogNoClose, {
-      buttons: {
-        'OK': function() {
+      buttons: [{
+        text: 'OK',
+        id: 'dw-f-lgi-ok-ok',
+        click: function() {
           $(this).dialog('close');
           !continueClbk || continueClbk();
         }
-      }
+      }]
     }));
   }
 })();

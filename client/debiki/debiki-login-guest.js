@@ -27,14 +27,19 @@ function initLoginSimple() {
   // suggests your email address?
   $login.dialog($.extend({}, d.i.jQueryDialogReset, {
     width: 452,
-    buttons: {
-      Submit: function() {
+    buttons: [{
+      text: 'Submit',
+      id: 'dw-f-lgi-spl-submit',
+      click: function() {
         $loginForm.submit();
-      },
-      Cancel: function() {
+      }
+    }, {
+      text: 'Cancel',
+      id: 'dw-f-lgi-spl-cancel',
+      click: function() {
         $(this).dialog('close');
       }
-    }
+    }]
   }));
 
   $loginForm.submit(function() {

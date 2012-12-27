@@ -4,79 +4,99 @@
 
 package test
 
-import org.specs2.mutable._
-import play.api.test._
-import play.api.test.Helpers._
-//import fr.javafreelance.fluentlenium.core.filter.{FilterConstructor => FC}
+import org.openqa.selenium.WebDriver
+import org.scalatest.{FreeSpec, BeforeAndAfterAll}
+import org.scalatest.matchers.ShouldMatchers
+import org.scalatest.selenium.WebBrowser
+import org.scalatest.concurrent.{Eventually, ScaledTimeSpans}
+import org.scalatest.time.{Span, Seconds, Millis}
+import play.api.{test => pt}
+import pt.Helpers.testServerPort
 
-class BrowserFirefoxSpec extends Specification {
 
-  /*
-  "The browser Firefox" should {
+class BrowserSpec extends FreeSpec
+  with WebBrowser
+  with BeforeAndAfterAll with ShouldMatchers
+  with Eventually with ScaledTimeSpans {
 
-    "work from within a browser" in {
-      running(TestServer(3333), FIREFOX) { browser =>
-        browser.goTo("http://localhost:3333/")
 
-        browser.$("#dw-a-login").click();
-        browser.$("#dw-fi-login-name").text("Firefox")
-        val a = browser.$("#dw-fs-login-simple")
-        val b = browser.$("#dw-fs-login-simple").find(".ui-dialog-buttonset")
-        val c = browser.$("#dw-fs-login-simple").find(".ui-dialog-buttonset").find("button")
-        val d = browser.$("#dw-fs-login-simple").find(".ui-dialog-buttonset").find("button", FC.withText("Submit"))
-        d.click();
+  lazy val testServer = pt.TestServer(testServerPort, pt.FakeApplication())
+  implicit val webDriver: WebDriver = ChromeDriverFactory.createDriver()
 
-        //browser.await().atMost(1000, java.util.concurrent.TimeUnit.)
 
-        browser.$(".dw-hor-a .dw-a-reply").click();
+  override def beforeAll() {
+    testServer.start()
+  }
 
-        /*
-        browser.$("h1").first.getText must equalTo("Configure your 'Hello world':")
 
-        browser.$("#name").text("Bob")
-        browser.$("#submit").click()
+  override def afterAll() {
+    testServer.stop()
+    //webDriver.quit() // quit browser
+    ChromeDriverFactory.stop()
+  }
 
-        browser.$("dl.error").size must equalTo(1)
-        browser.$("dl#repeat_field dd.error").first.getText must equalTo("Numeric value expected")
-        browser.$("#name").first.getValue must equalTo("Bob")
 
-        browser.$("#repeat").text("xxx")
-        browser.$("#submit").click()
+  implicit override val patienceConfig = PatienceConfig(
+    timeout = scaled(Span(8, Seconds)),
+    interval = scaled(Span(100, Millis)))
 
-        browser.$("dl.error").size must equalTo(1)
-        browser.$("dl#repeat_field dd.error").first.getText must equalTo("Numeric value expected")
-        browser.$("#name").first.getValue must equalTo("Bob")
-        browser.$("#repeat").first.getValue must equalTo("xxx")
 
-        browser.$("#name").text("")
-        browser.$("#submit").click()
+  lazy val testPage = new Page {
+    val url = s"localhost:$testServerPort/-3nnb9-new-page"
+  }
 
-        browser.$("dl.error").size must equalTo(2)
-        browser.$("dl#name_field dd.error").first.getText must equalTo("This field is required")
-        browser.$("dl#repeat_field dd.error").first.getText must equalTo("Numeric value expected")
-        browser.$("#name").first.getValue must equalTo("")
-        browser.$("#repeat").first.getValue must equalTo("xxx")
 
-        browser.$("#name").text("Bob")
-        browser.$("#repeat").text("10")
-        browser.$("#submit").click()
+  val replyText = "BrowserSpec reply to article."
 
-        browser.$("header a").first.getText must equalTo("Here is the result:")
 
-        val items = browser.$("section ul li")
+  "A browser can" - {
 
-        items.size must equalTo(10)
-        items.get(0).getText must equalTo("Hello Bob!")
+    "open a test page" in {
+      go to testPage
+    }
 
-        browser.$("p.buttons a").click()
-        */
-
-        browser.$("h1").first.getText must equalTo("Configure your 'Hello world':")
-
+    "click Reply" in {
+      Thread.sleep(3 * 1000)
+      eventually {
+        click on linkText("Reply")
       }
     }
-    
+
+    "write a reply" in {
+      eventually {
+        click on "dw-fi-reply-text_sno-1"
+        enter(replyText)
+        textArea("dw-fi-reply-text_sno-1").value should be === replyText
+      }
+    }
+
+    "click Post as ..." in {
+      eventually {
+        click on cssSelector(".dw-fi-submit")
+      }
+    }
+
+    "click Submit (be satisfied with the default name)" in {
+      eventually {
+        click on "dw-f-lgi-spl-submit"
+      }
+    }
+
+    "click OK to acknowledge 'You have been logged in' message" in {
+      eventually {
+        click on "dw-dlg-rsp-ok"
+      }
+    }
+
+    "specify no email address" in {
+      eventually {
+        click on cssSelector("label[for='dw-fi-eml-prf-rcv-no']")
+      }
+    }
+
+    // But if I *do* specify an email address, theres' a bad XSRF token error!
   }
-  */
-  
+
 }
+
+

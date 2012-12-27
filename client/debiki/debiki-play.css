@@ -926,7 +926,7 @@ key presses).*/
   width: 18em;
 }
 
-#dw-f-eml-prf input[type='submit'] { /* the Done button */
+#dw-fi-eml-prf-submit-email {
   margin-top: 1.3em;
 }
 

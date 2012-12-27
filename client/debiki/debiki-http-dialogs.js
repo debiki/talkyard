@@ -148,12 +148,14 @@ d.i.showServerResponseDialog = function(jqXhrOrHtml, opt_errorType,
     title: title,
     autoOpen: true,
     width: width,
-    buttons: {
-      OK: function() {
+    buttons: [{
+      text: 'OK',
+      id: 'dw-dlg-rsp-ok',
+      click: function() {
         $(this).dialog('close');
         if (opt_continue) opt_continue();
       }
-    }
+    }]
   }));
 };
 
