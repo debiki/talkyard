@@ -16,7 +16,7 @@
     "grunt-contrib-mincss": ">= 0.3.2",
     "grunt-contrib-watch": ">= 0.1.x < 0.2",
     "grunt-livescript": ">= 0.4.x",
-    "prelude-ls": ">= 0.6 < 0.7",
+    "prelude-ls": ">= 0.6 < 0.7"
   },
   "devDependencies": {
     "chai": "1.0.4",
