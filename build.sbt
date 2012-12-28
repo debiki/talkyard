@@ -12,4 +12,7 @@ libraryDependencies ++= Seq(
   "org.specs2" % "specs2_2.10.0-RC1" % "1.12.2"
 )
 
+// See: https://groups.google.com/forum/?fromgroups=#!topic/simple-build-tool/bkF1IDZj4L0
+ideaPackagePrefix := None
+
 // vim: fdm=marker et ts=2 sw=2 tw=80 fo=tcqwn list
