@@ -6,17 +6,18 @@ package test
 
 import org.openqa.selenium.WebDriver
 import org.scalatest.{FreeSpec, BeforeAndAfterAll}
-import org.scalatest.matchers.ShouldMatchers
+import org.scalatest.matchers.MustMatchers
 import org.scalatest.selenium.WebBrowser
 import org.scalatest.concurrent.{Eventually, ScaledTimeSpans}
 import org.scalatest.time.{Span, Seconds, Millis}
 import play.api.{test => pt}
 import pt.Helpers.testServerPort
+import com.debiki.v0.Prelude._
 
 
 class BrowserSpec extends FreeSpec
   with WebBrowser
-  with BeforeAndAfterAll with ShouldMatchers
+  with FailsOneFailAll with BeforeAndAfterAll with MustMatchers
   with Eventually with ScaledTimeSpans {
 
 
@@ -37,7 +38,7 @@ class BrowserSpec extends FreeSpec
 
 
   implicit override val patienceConfig = PatienceConfig(
-    timeout = scaled(Span(8, Seconds)),
+    timeout = scaled(Span(4, Seconds)),
     interval = scaled(Span(100, Millis)))
 
 
@@ -51,22 +52,70 @@ class BrowserSpec extends FreeSpec
 
   "A browser can" - {
 
-    "open a test page" in {
+    "open a test page, logout if logged in" in {
       go to testPage
+      // Consider the page loaded when login/out links appear.
+      eventually(Timeout(Span(10, Seconds))) {
+        val loginLinkWebElem = find(loginLink)
+        val logoutinkWebElem = find(logoutLink)
+        assert(loginLinkWebElem.isDefined || logoutinkWebElem.isDefined)
+      }
+    }
+
+    "reply, rate, edit as Anonymous, no email" - {
+      logoutReplyRateEditAsAnon(name = s"Anon-${nextRandomString()}")
+    }
+
+    "reply, rate, edit as Anonymous, specify email directly" - {
+      val name = s"anon-${nextRandomString()}"
+      logoutReplyRateEditAsAnon(name, email = s"$name@example.com")
+    }
+
+    "reply, rate, edit as Anonymous, specify email later" - {
+      val name = s"anon-${nextRandomString()}"
+      logoutReplyRateEditAsAnon(name, email = s"$name@example.com", waitWithEmail = true)
+
+      // But if I *do* specify an email address, theres' a bad XSRF token error!
+    }
+
+    "reply, rate, edit as Anonymous, specify email later, then change her mind" - {
+      val name = s"anon-${nextRandomString()}"
+      logoutReplyRateEditAsAnon(name, email = s"$name@example.com",
+        waitWithEmail = true, waitWithEmailThenCancel = true)
+
+      // But if I *do* specify an email address, theres' a bad XSRF token error!
+    }
+  }
+
+
+  var replyFormSno = 0
+
+
+  def logoutReplyRateEditAsAnon(
+        name: String,
+        email: String = "",
+        waitWithEmail: Boolean = false,
+        waitWithEmailThenCancel: Boolean = false) {
+
+    val testText = s"replyRateEditAsAnon ${nextRandomString()}"
+
+    "logout if needed" in {
+      logoutIfLoggedIn()
     }
 
     "click Reply" in {
-      Thread.sleep(3 * 1000)
       eventually {
-        click on linkText("Reply")
+        click on articleReplyLink
       }
     }
 
     "write a reply" in {
+      replyFormSno += 1
+      val textAreaId = s"dw-fi-reply-text_sno-$replyFormSno"
       eventually {
-        click on "dw-fi-reply-text_sno-1"
-        enter(replyText)
-        textArea("dw-fi-reply-text_sno-1").value should be === replyText
+        click on textAreaId
+        enter(testText)
+        textArea(textAreaId).value must be === testText
       }
     }
 
@@ -76,26 +125,83 @@ class BrowserSpec extends FreeSpec
       }
     }
 
-    "click Submit (be satisfied with the default name)" in {
+    "login and submit" in {
       eventually {
-        click on "dw-f-lgi-spl-submit"
+        click on "dw-fi-lgi-name"
       }
-    }
 
-    "click OK to acknowledge 'You have been logged in' message" in {
+      enter(name)
+      if (email.nonEmpty && !waitWithEmail) {
+        click on "dw-fi-lgi-email"
+        enter(email)
+      }
+      click on "dw-f-lgi-spl-submit"
+
       eventually {
         click on "dw-dlg-rsp-ok"
       }
-    }
 
-    "specify no email address" in {
-      eventually {
-        click on cssSelector("label[for='dw-fi-eml-prf-rcv-no']")
+      def noEmailBtn = cssSelector("label[for='dw-fi-eml-prf-rcv-no']")
+      def yesEmailBtn = cssSelector("label[for='dw-fi-eml-prf-rcv-yes']")
+      def submitBtn = "dw-fi-eml-prf-done"
+
+      if (waitWithEmail) {
+        eventually { click on yesEmailBtn }
+        if (waitWithEmailThenCancel) {
+          eventually { click on noEmailBtn }
+        }
+        else {
+          eventually { click on "dw-fi-eml-prf-adr" }
+          enter(email)
+          click on submitBtn
+        }
+      }
+      else if (email.nonEmpty) {
+        eventually { click on yesEmailBtn }
+      }
+      else {
+        eventually { click on noEmailBtn }
       }
     }
 
-    // But if I *do* specify an email address, theres' a bad XSRF token error!
+    "view her new reply" in {
+      eventually {
+        val allPostBodies = findAll(cssSelector(".dw-p-bd"))
+        val myNewPost = allPostBodies.find(_.text == testText)
+        assert(myNewPost.nonEmpty)
+      }
+    }
+
+    "logout" in {
+      logout()
+    }
   }
+
+
+  def logoutIfLoggedIn() {
+    logout(mustBeLoggedIn = false)
+  }
+
+
+  def logout(mustBeLoggedIn: Boolean = true) {
+    def isLoggedIn = find(logoutLink).map(_.isDisplayed) == Some(true)
+    if (isLoggedIn) {
+      click on logoutLink
+      click on logoutSubmit
+      eventually {
+        isLoggedIn must be === false
+      }
+    }
+    else if (mustBeLoggedIn) {
+      fail("Not logged in; must be logged in")
+    }
+  }
+
+
+  def articleReplyLink = cssSelector(".dw-hor-a > .dw-a-reply")
+  def loginLink = "dw-a-login"
+  def logoutLink = "dw-a-logout"
+  def logoutSubmit = "dw-f-lgo-submit"
 
 }
 
