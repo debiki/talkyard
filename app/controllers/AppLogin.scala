@@ -111,7 +111,7 @@ object AppLogin extends mvc.Controller {
   // CheckSidAndPathAction(parse.urlFormEncoded(maxLength = 100)) {
   //  (sidOk, xsrfOk, pagePath, request) =>
   // -----------------------------------
-  def logout = mvc.Action(parse.urlFormEncoded(maxLength = 100)) { request =>
+  def logout = mvc.Action(parse.empty) { request =>
       /*
       val sidCookieVal = LiftUtil.decodeCookie("dwCoSid")
       val sid = sidCookieVal.map(Sid.checkSid(_)) openOr SidAbsent

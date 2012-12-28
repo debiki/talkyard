@@ -152,7 +152,9 @@ d.i.showServerResponseDialog = function(jqXhrOrHtml, opt_errorType,
       text: 'OK',
       id: 'dw-dlg-rsp-ok',
       click: function() {
-        $(this).dialog('close');
+        // Remove the dialog, so the OK button id can be reused
+        // — then it's easier to write automatic tests.
+        $(this).dialog('destroy').remove()
         if (opt_continue) opt_continue();
       }
     }]

@@ -17,19 +17,26 @@ function initLogout() {
     return; // already inited
 
   var $logoutForm = $logout.find('form');
-  $logout.find('input').hide(); // Use jQuery UI's dialog buttons instead
+  // Use jQuery UI's dialog buttons instead; remove so ids won't clash:
+  $logout.find('input').remove();
+
   $logout.dialog($.extend({}, d.i.jQueryDialogDefault, {
     height: 180,
     width: 280,
-    buttons: {
-      Cancel: function() {
+    buttons: [{
+      text: 'Cancel',
+      id: 'dw-f-lgo-cancel',
+      click: function() {
         $(this).dialog('close');
-      },
-      'Log out': function() {
+      }
+    }, {
+      text: 'Log out',
+      id: 'dw-f-lgo-submit',
+      click: function() {
         $(this).dialog('close');
         $logoutForm.submit();
       }
-    }
+    }]
   }));
   $logoutForm.submit(function() {
     // Don't clear the user name and email cookies until the server has

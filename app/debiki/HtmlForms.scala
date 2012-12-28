@@ -292,7 +292,8 @@ class HtmlForms(val config: HtmlConfig, xsrfToken: String,
           <p>Are you sure?</p>
           <div class='dw-submit-set'>
             <input class='dw-fi-cancel' type='button' value='Cancel'/>
-            <input class='dw-fi-submit' type='submit' value='Log out'/>
+            <input id='dw-f-lgo-submit' class='dw-fi-submit' type='submit'
+                   value='Log out'/>
           </div>
         </form>
       </div>
