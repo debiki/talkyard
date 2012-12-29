@@ -82,7 +82,7 @@ object AppLoginGuest extends mvc.Controller {
 
     val loginReq = LoginRequest(
        login = Login(id = "?", prevLoginId = loginId,
-          ip = "?.?.?.?", date = pageReq.ctime, identityId = "?i"),
+          ip = pageReq.ip, date = pageReq.ctime, identityId = "?i"),
        identity = identity_!.asInstanceOf[IdentitySimple].copy(
           id = "?i", userId = "?", email = newEmailAddr))
 

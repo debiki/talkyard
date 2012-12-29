@@ -113,14 +113,17 @@ object DebikiSecurity {
             // token be created here. (?)
 
             throwForbiddenDialog(
-              "DwE35k3wkU9", "Security issue (bad XSRF token)", "",
-              "Please try again.\n"+
-              "(You now have a new XSRF token).\n"+
-              "\n"+
-              "If that doesn't work, please reload this page.\n"+
-              "(And copy-paste any unsaved text to a text editor,\n"+
-              "or it'll be lost on reload).",
-              withCookie = Some(newXsrfCookie))
+              "DwE35k3wkU9", "Security issue: Bad XSRF token", "", i"""
+              |Please try again:
+              |  - Click any button you just clicked, again.
+              |  - Or reload the page.
+              |  - Or return to the previous page and reload it.
+              |
+              |If you reload the page, copy-paste any unsaved text to a text editor,
+              |or it'll be lost on reload.
+              |
+              |(You now have a new XSRF token.)
+              """, withCookie = Some(newXsrfCookie))
           }
           xsrfStatus.asInstanceOf[XsrfOk]
         }
