@@ -14,11 +14,11 @@ import com.debiki.v0.Prelude._
  * when submitting, 2) by clicking Rate and logging in when rating,
  * and 3) via the "Log in" link,
  */
-// From ScalaTest 2.0-M5 and above, use this: `@org.scalatest.DoNotDiscover`
+// From ScalaTest 2.0-M5 and above, use this: `@DoNotDiscover`
 // instead of `abstract`.
 abstract class AnonLoginSpec extends DebikiBrowserSpec {
 
-  "A browser can" - {
+  "Anon user with a browser can" - {
 
     "open a test page" in {
       go to testPage
@@ -30,45 +30,56 @@ abstract class AnonLoginSpec extends DebikiBrowserSpec {
       }
     }
 
-    "login and reply as Anonymous, specify no email" - {
+    "login and reply as new Anon User, specify no email" - {
       loginAndReplyAsAnon(name = s"Anon-${nextRandomString()}")
     }
 
-    "login and reply as Anonymous, specify email directly" - {
+    "login and reply as new Anon User, specify email directly" - {
       val name = s"anon-${nextRandomString()}"
       loginAndReplyAsAnon(name, email = s"$name@example.com")
     }
 
-    "login and reply as Anonymous, specify email later" - {
+    "login and reply as new Anon User, specify email later" - {
       // Place this test after the `specify email directly` test just above,
       // to trigger bug#9kie35.
       val name = s"anon-${nextRandomString()}"
       loginAndReplyAsAnon(name, email = s"$name@example.com", waitWithEmail = true)
     }
 
-    "login and reply as Anonymous, specify email later, then change her mind" - {
+    "login and reply as new Anon User, specify email later, then change her mind" - {
       val name = s"anon-${nextRandomString()}"
       loginAndReplyAsAnon(name, email = s"$name@example.com",
         waitWithEmail = true, waitWithEmailThenCancel = true)
     }
 
-    /*
-    "login and rate as Anonymous, specify no email" - {
+    "login and reply as existing Anon User with no email" in {
+      pending
+    }
+
+    "login and reply as existing Anon User with email specified directly" in {
+      pending
+    }
+
+    "login and reply as existing Anon User with email specified later" in {
+      pending
+    }
+
+    "login and rate as new Anon User, specify no email" - {
       loginAndRateAsAnon(name = nextName())
     }
 
-    "login and rate as Anonymous, specify email directly" - {
+    "login and rate as new Anon User, specify email" - {
       val name = nextName()
       loginAndRateAsAnon(name, email = s"$name@example.com")
     }
 
-    "login and rate as Anonymous, specify email later" - {
-      val name = nextName()
-      loginAndRateAsAnon(name, email = s"$name@example.com", waitWithEmail = true)
+    "login and rate as existing Anon User with no email" in {
+      pending
     }
 
-    "login and rate as Anonymous, specify email later, then change her mind" - {
-    */
+    "login and rate as existing Anon User with email specified" in {
+      pending
+    }
 
   }
 
@@ -84,7 +95,7 @@ abstract class AnonLoginSpec extends DebikiBrowserSpec {
         waitWithEmail: Boolean = false,
         waitWithEmailThenCancel: Boolean = false) {
 
-    val testText = s"replyRateEditAsAnon ${nextRandomString()}"
+    val testText = s"ReplyAsAnon ${nextRandomString()}"
 
     "logout if needed" in {
       logoutIfLoggedIn()
@@ -113,42 +124,7 @@ abstract class AnonLoginSpec extends DebikiBrowserSpec {
     }
 
     "login and submit" in {
-      eventually {
-        click on "dw-fi-lgi-name"
-      }
-
-      enter(name)
-      if (email.nonEmpty && !waitWithEmail) {
-        click on "dw-fi-lgi-email"
-        enter(email)
-      }
-      click on "dw-f-lgi-spl-submit"
-
-      eventually {
-        click on "dw-dlg-rsp-ok"
-      }
-
-      def noEmailBtn = cssSelector("label[for='dw-fi-eml-prf-rcv-no']")
-      def yesEmailBtn = cssSelector("label[for='dw-fi-eml-prf-rcv-yes']")
-      def submitBtn = "dw-fi-eml-prf-done"
-
-      if (waitWithEmail) {
-        eventually { click on yesEmailBtn }
-        if (waitWithEmailThenCancel) {
-          click on noEmailBtn
-        }
-        else {
-          click on "dw-fi-eml-prf-adr"
-          enter(email)
-          click on submitBtn
-        }
-      }
-      else if (email.nonEmpty) {
-        eventually { click on yesEmailBtn }
-      }
-      else {
-        eventually { click on noEmailBtn }
-      }
+      loginAndSubmitReply(name, email, waitWithEmail, waitWithEmailThenCancel)
     }
 
     "view her new reply" in {
@@ -161,6 +137,103 @@ abstract class AnonLoginSpec extends DebikiBrowserSpec {
 
     "logout" in {
       logout()
+    }
+  }
+
+
+  private def loginAndRateAsAnon(
+        name: String,
+        email: String = "",
+        waitWithEmail: Boolean = false,
+        waitWithEmailThenCancel: Boolean = false) {
+
+    "logout if needed" in {
+      logoutIfLoggedIn()
+    }
+
+    "click Rate" in {
+      eventually {
+        click on visibleRateLink
+      }
+    }
+
+    "select one rating tag" in {
+      eventually {
+        click on anyRatingTag
+      }
+    }
+
+    "click Post as ..." in {
+      eventually {
+        click on cssSelector(".dw-fi-submit")
+      }
+    }
+
+    "login and submit" in {
+      loginAndSubmitRating(name, email)
+    }
+
+    "view her new rating" in {
+      eventually {
+        // Currently we're rating the same post over and over again,
+        // so there'll be only 1 rating.
+        val allRatingsByMe = findAll(cssSelector(".dw-p-r-by-me"))
+        allRatingsByMe.length must be === 1
+      }
+    }
+
+    "logout" in {
+      logout()
+    }
+  }
+
+
+  def loginAndSubmitRating(name: String, email: String = "") {
+    eventually { click on "dw-fi-lgi-name" }
+    enter(name)
+    if (email.nonEmpty) {
+      click on "dw-fi-lgi-email"
+      enter(email)
+    }
+    click on "dw-f-lgi-spl-submit"
+    eventually { click on "dw-dlg-rsp-ok" }
+  }
+
+
+  def loginAndSubmitReply(
+        name: String,
+        email: String = "",
+        waitWithEmail: Boolean = false,
+        waitWithEmailThenCancel: Boolean = false) {
+
+    // The flow is similar to when we submit a rating, except that
+    // after we've logged in, we're asked about email notifications
+    // (since we actually submitted text, and we might be interested
+    // in replies, even if we didn't care to specify any email earlier
+    // in the original dialog).
+    loginAndSubmitRating(
+      name, if (waitWithEmail) "" else email)
+
+    def noEmailBtn = cssSelector("label[for='dw-fi-eml-prf-rcv-no']")
+    def yesEmailBtn = cssSelector("label[for='dw-fi-eml-prf-rcv-yes']")
+    def submitBtn = "dw-fi-eml-prf-done"
+
+    if (waitWithEmail) {
+      eventually { click on yesEmailBtn }
+      if (waitWithEmailThenCancel) {
+        click on noEmailBtn
+      }
+      else {
+        click on "dw-fi-eml-prf-adr"
+        enter(email)
+        click on submitBtn
+      }
+    }
+    else if (email.nonEmpty) {
+      eventually { click on yesEmailBtn }
+    }
+    else {
+      eventually { click on noEmailBtn }
     }
   }
 
@@ -189,6 +262,9 @@ abstract class AnonLoginSpec extends DebikiBrowserSpec {
   def loginLink = "dw-a-login"
   def logoutLink = "dw-a-logout"
   def logoutSubmit = "dw-f-lgo-submit"
+
+  def visibleRateLink = cssSelector("#dw-p-as-shown .dw-a-rate")
+  def anyRatingTag = cssSelector(".dw-r-tag-set > .ui-button > .ui-button-text")
 
 }
 

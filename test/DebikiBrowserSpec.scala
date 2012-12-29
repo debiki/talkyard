@@ -18,13 +18,13 @@ import com.debiki.v0.Prelude._
  * A specification for browser end-to-end/integration tests.
  */
 abstract class DebikiBrowserSpec extends FreeSpec with WebBrowser
-  with FailsOneFailAll with BeforeAndAfterAll
+  with FailsOneCancelRemaining with BeforeAndAfterAll
   with Eventually with ScaledTimeSpans
   with MustMatchers {
 
   implicit override val patienceConfig = PatienceConfig(
     // Set long timeout so I can step through code in the debugger.
-    timeout = scaled(Span(999, Seconds)),
+    timeout = scaled(Span(60, Seconds)),
     interval = scaled(Span(100, Millis)))
 
   lazy val testPage = new Page {
