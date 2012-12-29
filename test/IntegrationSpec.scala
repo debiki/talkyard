@@ -38,7 +38,8 @@ class BrowserSpec extends FreeSpec
 
 
   implicit override val patienceConfig = PatienceConfig(
-    timeout = scaled(Span(4, Seconds)),
+    // Set long timeout so I can step through Scala code in the debugger.
+    timeout = scaled(Span(999, Seconds)),
     interval = scaled(Span(100, Millis)))
 
 
