@@ -11,28 +11,32 @@ import org.openqa.selenium.remote.RemoteWebDriver
 import org.openqa.selenium.WebDriver
 
 
+/**
+ * Starts the Chrome browser, that is, knows where the ChromeDriver
+ * is located, starts it and creates a WebDriver.
+ */
 object ChromeDriverFactory {
 
   // This driver executable controls the Chrome browser.
   // For more information, see http://code.google.com/p/selenium/wiki/ChromeDriver.
   // Download the the driver here: http://code.google.com/p/chromedriver/downloads/list
   // For now:
-  val ChromeDriverPath = "/mnt/tmp/dev/chromedriver_linux64_23.0.1240.0"
+  private val ChromeDriverPath = "/mnt/tmp/dev/chromedriver_linux64_23.0.1240.0"
   // COULD assume it's located in ./tmp/? And have the caller use a Firefox driver
   // if not available, and an IE driver if both Chrome and FF absent?
 
-  lazy val service: ChromeDriverService = {
+  private lazy val service: ChromeDriverService = {
     val service = new ChromeDriverService.Builder()
       .usingDriverExecutable(new jio.File(ChromeDriverPath))
       .usingAnyFreePort()
       .build()
-    service.start()
     service
   }
 
-  // Where call `service.stop()`? @AfterClass in Google's example:
-  //   http://code.google.com/p/selenium/wiki/ChromeDriver
-  // For now:
+  def start() {
+    service.start()
+  }
+
   def stop() {
     service.stop()
   }
