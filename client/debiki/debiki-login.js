@@ -94,18 +94,15 @@ var configEmailPerhapsRelogin = (function() {
 
     // Init dialog, do once only.
     if (!$form.parent().is('.ui-dialog')) {
-      $form.dialog($.extend({}, d.i.jQueryDialogDefault, {
-        close: function() {
-          dialogStatus.reject();
-          // Better not remember email addr. Perhaps this is a public
-          // computer, e.g. in a public library.
-          d.i.jQueryDialogReset.close.apply(this);
-        }
-      }));
+      $form.dialog($.extend({}, d.i.jQueryDialogReset));
       $('#dw-f-eml-prf').find('input[type="radio"], input[type="submit"]')
           .button();
 
-      $dontRecvBtn.click(submitForm); // always
+      // Always submit form on No click.
+      // (However, on Yes click, we submit the form directly only
+      // if email known — otherwise we show an email input field.)
+      $dontRecvBtn.click(submitForm);
+
       $form.submit(function() {
         $yesRecvBtn.button('enable'); // or value not posted
 
@@ -116,21 +113,32 @@ var configEmailPerhapsRelogin = (function() {
 
         $.post($form.attr('action'), $form.serialize(), 'html')
             .done(function(responseHtml) {
+
               // Fire login event, to update xsrf tokens, if the server
               // created a new login session (because we changed email addr).
               d.i.Me.fireLoginIfNewSession(loginIdBefore);
 
-              dialogStatus.resolve();
+              // Delay dialogStatus.resolve() so any new XSRF token has been
+              // applied before, via jQuery ajaxSetup.complete.
+              // Temporary (?) fix of [bug#9kie35].
+              setTimeout(function() {
+                dialogStatus.resolve();
+              }, 1);
+
               $form.dialog('close');
               // (Ignore responseHtml; it's empty, or a Welcome message.)
             })
-            .fail(d.i.showServerResponseDialog);
+            .fail(function() {
+              d.i.showServerResponseDialog();
+              dialogStatus.reject();
+            })
         return false;
       });
     }
 
-    // Hide email input, if email addr already specified,
+    // Now, hide email input, if email addr already specified,
     // and submit directly on Yes/No click.
+
     function submitForm() {
       $form.submit();
       return false;
@@ -143,14 +151,14 @@ var configEmailPerhapsRelogin = (function() {
 
     $emailAddrDiv.hide();
     $yesRecvBtn.button('enable');
+
+    $yesRecvBtn.off('click');
     if (d.i.Me.isEmailKnown()) {
       // Submit directly; need not ask for email addr.
       $yesRecvBtn.click(submitForm);
-      $yesRecvBtn.off('click', showEmailAddrInp);
     } else {
       // Ask for email addr; submit via Done button.
       $yesRecvBtn.click(showEmailAddrInp);
-      $yesRecvBtn.off('click', submitForm);
     }
 
     $form.dialog('open');

@@ -63,6 +63,10 @@ d.i.jQueryDialogDefault = {
 
 /**
  * Resets input fields on close.
+ *
+ * Sometimes it's better to e.g. not remember name and email address.
+ * Perhaps the computer in use is a public computer, e.g. in a public
+ * library.
  */
 d.i.jQueryDialogReset = $.extend({}, d.i.jQueryDialogDefault, {
   close: function() {

@@ -72,6 +72,8 @@ class BrowserSpec extends FreeSpec
       logoutReplyRateEditAsAnon(name, email = s"$name@example.com")
     }
 
+    // Place this test after the `specify email directly` test just above,
+    // to trigger bug#9kie35.
     "reply, rate, edit as Anonymous, specify email later" - {
       val name = s"anon-${nextRandomString()}"
       logoutReplyRateEditAsAnon(name, email = s"$name@example.com", waitWithEmail = true)
