@@ -83,6 +83,12 @@ class Mailer(val daoFactory: TenantDaoFactory) extends Actor {
 
   private def _sendEmail(emailToSend: Email, tenantId: String) {
 
+    // I often use @example.com, or simply @ex.com, when posting test comments
+    // — don't send those emails, to keep down the bounce rate.
+    if (emailToSend.sentTo.endsWith("example.com") ||
+        emailToSend.sentTo.endsWith("ex.com"))
+      return
+
     val awsSendReq = _makeAwsSendReq(emailToSend)
     val now = Some(new ju.Date)
     val emailSentOrFailed = _tellAwsToSendEmail(awsSendReq) match {
