@@ -125,7 +125,7 @@ object HtmlPostRenderer {
 
   /**
    * Renders a .dw-p-hd tag reading:
-   *  "By (author) (date) Edited by (editor)
+   *  "By (author) (date), improved by (editor)
    *    Flagged (top flags) Rated (top ratings)"
    * If anyPageStats is None, skips "Flagged ... Rated ..." statistics/info.
    */
@@ -166,7 +166,7 @@ object HtmlPostRenderer {
         lazy val editor =
           page.people.authorOf_!(page.editsById(lastEditApplied.get.id))
         <span class='dw-p-hd-e'>{
-            Text(", edited ") ++
+            Text(", improved ") ++
             (if (editorsCount > 1) {
               Text("by ") ++ <a>various people</a>
             } else if (editor.identity_!.id != author.identity_!.id) {
