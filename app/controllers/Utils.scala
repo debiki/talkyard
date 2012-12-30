@@ -150,7 +150,7 @@ object Utils extends Results with http.ContentTypes {
         dao.loadIdtyAndUser(forLoginId = loginId)
         match {
           case Some((identity, user)) =>
-            if (Some(user.id) == sid.roleId) {
+            if (Some(user.id) == sid.userId) {
               // Fine.
               (Some(identity), Some(user))
             }
