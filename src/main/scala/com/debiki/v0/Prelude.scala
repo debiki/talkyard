@@ -115,6 +115,9 @@ object Prelude {
   def illArgErr(errorCode: String, problem: => String) =
     throw new IllegalArgumentException(problem +" [error "+ errorCode +"]")
 
+  def illArgIf(condition: Boolean, errorCode: String, problem: => String) =
+    if (condition) illArgErr(errorCode, problem)
+
   def illArgErrIf(condition: Boolean, errorCode: String, problem: => String) =
     if (condition) illArgErr(errorCode, problem)
 
