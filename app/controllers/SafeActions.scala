@@ -56,7 +56,7 @@ object SafeActions {
           // This might happen if I manually deleted stuff from the
           // database during development, or if the server has fallbacked
           // to a standby database.
-          throw ResultException(ForbiddenResult(
+          throw ResultException(InternalErrorResult(
             "DwE034ZQ3", "Internal error, please try again, sorry. "+
                "(A certain login id has become invalid. You now have "+
                "a new id, but you will probably need to login again.)")

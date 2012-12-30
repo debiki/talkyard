@@ -136,7 +136,11 @@ object Utils extends Results with http.ContentTypes {
 
 
   /**
-   * Might throw a LoginNotFoundException.
+   * Loads a person from the database, given a login id.
+   * Verifies that the loaded ids match the ids encoded in the session identifier,
+   * and throws a LoginNotFoundException on mismatch (happens e.g. if
+   * I've connected the server to another backend, or access many backends
+   * via the same hostname but different ports).
    */
   def loadIdentityAndUserOrThrow(sid: SidStatus, dao: TenantDao)
         : (Option[Identity], Option[User]) = {
@@ -145,7 +149,20 @@ object Utils extends Results with http.ContentTypes {
       case Some(loginId) =>
         dao.loadIdtyAndUser(forLoginId = loginId)
         match {
-          case Some((identity, user)) => (Some(identity), Some(user))
+          case Some((identity, user)) =>
+            if (Some(user.id) == sid.roleId) {
+              // Fine.
+              (Some(identity), Some(user))
+            }
+            else {
+              // Sometimes I access different databases via different ports,
+              // but from the same host name. Browsers, however, usually ignore
+              // port numbers when sending cookies. So they sometimes send
+              // the wrong login-id and user-id to the server.
+              Logger.warn(
+                s"DAO loaded wrong user, session: $sid, role: $user [error DwE9kD4]")
+              throw LoginNotFoundException(dao.tenantId, loginId)
+            }
           case None =>
             // This might happen 1) if the server connected to a new database
             // (e.g. a standby where the login entry hasn't yet been
