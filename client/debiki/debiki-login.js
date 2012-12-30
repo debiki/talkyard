@@ -128,8 +128,9 @@ var configEmailPerhapsRelogin = (function() {
               $form.dialog('close');
               // (Ignore responseHtml; it's empty, or a Welcome message.)
             })
-            .fail(function() {
-              d.i.showServerResponseDialog();
+            .fail(function(jqXhrOrHtml, errorType, httpStatusText) {
+              d.i.showServerResponseDialog(
+                  jqXhrOrHtml, errorType, httpStatusText);
               dialogStatus.reject();
             })
         return false;
