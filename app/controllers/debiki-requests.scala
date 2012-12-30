@@ -26,10 +26,17 @@ abstract class DebikiRequest[A] {
   def dao: TenantDao
   def request: Request[A]
 
-  require(dao.quotaConsumers.tenantId == tenantId)
-  require(dao.quotaConsumers.ip == Some(ip))
-  require(dao.quotaConsumers.roleId ==
-     user.filter(_.isAuthenticated).map(_.id))
+  illArgIf(dao.quotaConsumers.tenantId != tenantId,
+    "DwE6IW1B3", s"Quota consumer tenant id differs from request tenant id; $debugDiff")
+
+  illArgIf(dao.quotaConsumers.ip != Some(ip),
+    "DwE94BK21", s"Quota consumer IP differs from request IP; $debugDiff")
+
+  illArgIf(dao.quotaConsumers.roleId != user.filter(_.isAuthenticated).map(_.id),
+    "DwE03BK44", s"Quota consumer role id differs from request role id; $debugDiff")
+
+  private def debugDiff =
+    s"quota consumers: ${dao.quotaConsumers}, tenant/ip/role: $tenantId/$ip/$user"
 
   def tenantId = dao.tenantId
 
