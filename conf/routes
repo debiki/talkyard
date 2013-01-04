@@ -24,13 +24,34 @@ GET   /-/api/login-openid-clbk  controllers.AppLoginOpenId.loginCallback(returnT
 GET   /-/api/logout             controllers.AppLogin.logout
 POST  /-/api/logout             controllers.AppLogin.logout
 
-# SecureSocial, temporary links (I'll integrate with OpenID/Guest login later)
-GET     /-/ss-test-login                   securesocial.controllers.LoginPage.login
-GET     /-/ss-test-logout                  securesocial.controllers.LoginPage.logout
-GET     /-/ss-test-signup                  securesocial.controllers.Registration.signUp
-POST    /-/ss-test-signup                  securesocial.controllers.Registration.handleSignUp
-GET     /-/ss-test-authenticate/:provider  securesocial.controllers.LoginPage.authenticate(provider)
-POST    /-/ss-test-authenticate/:provider  securesocial.controllers.LoginPage.authenticateByPost(provider)
+# ---------------------------------------------------------------
+# SecureSocial, test links (I'll integrate with OpenID/Guest login later)
+# ---------------------------------------------------------------
+# Map static resources from the /public folder to the /assets URL path
+GET     /-/ss/assets/*file               controllers.Assets.at(path="/public/securesocial", file)
+
+# Login page
+GET     /-/ss/login                      securesocial.controllers.LoginPage.login
+GET     /-/ss/logout                     securesocial.controllers.LoginPage.logout
+
+# User Registration and password handling (only needed if you are using UsernamePasswordProvider)
+GET     /-/ss/signup                     securesocial.controllers.Registration.startSignUp
+POST    /-/ss/signup                     securesocial.controllers.Registration.handleStartSignUp
+GET     /-/ss/signup/:token              securesocial.controllers.Registration.signUp(token)
+POST    /-/ss/signup/:token              securesocial.controllers.Registration.handleSignUp(token)
+GET     /-/ss/reset                      securesocial.controllers.Registration.startResetPassword
+POST    /-/ss/reset                      securesocial.controllers.Registration.handleStartResetPassword
+GET     /-/ss/reset/:token               securesocial.controllers.Registration.resetPassword(token)
+POST    /-/ss/reset/:token               securesocial.controllers.Registration.handleResetPassword(token)
+GET     /-/ss/password                   securesocial.controllers.PasswordChange.page
+POST    /-/ss/password                   securesocial.controllers.PasswordChange.handlePasswordChange
+
+# Providers entry points
+GET     /-/ss/authenticate/:provider     securesocial.controllers.ProviderController.authenticate(provider)
+POST    /-/ss/authenticate/:provider     securesocial.controllers.ProviderController.authenticateByPost(provider)
+GET     /-/ss/not-authorized             securesocial.controllers.ProviderController.notAuthorized
+# ---------------------------------------------------------------
+# ---------------------------------------------------------------
 
 GET   /-/new-website/choose-name   controllers.AppCreateWebsite.showWebsiteNameForm
 POST  /-/new-website/choose-name   controllers.AppCreateWebsite.handleWebsiteNameForm
