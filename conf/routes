@@ -47,8 +47,8 @@ GET     /-/ss/password                   securesocial.controllers.PasswordChange
 POST    /-/ss/password                   securesocial.controllers.PasswordChange.handlePasswordChange
 
 # Providers entry points
-GET     /-/ss/authenticate/:provider     securesocial.controllers.ProviderController.authenticate(provider)
-POST    /-/ss/authenticate/:provider     securesocial.controllers.ProviderController.authenticateByPost(provider)
+GET     /-/ss/authenticate/:provider     controllers.AppLoginSecureSocial.authenticate(provider)
+POST    /-/ss/authenticate/:provider     controllers.AppLoginSecureSocial.authenticateByPost(provider)
 GET     /-/ss/not-authorized             securesocial.controllers.ProviderController.notAuthorized
 # ---------------------------------------------------------------
 # ---------------------------------------------------------------
