@@ -21,8 +21,16 @@ object ApplicationBuild extends Build {
 
   lazy val secureSocialDeps = Seq(
     // "com.typesafe" %% "play-plugins-util" % "2.0.1", // notTransitive(), — not available yet for Scala 2.10? (as of December 19, 2012 - and certainly not in October 2012.)
-    // "com.typesafe" %% "play-plugins-mailer" % "2.1-RC1", is this available anywhere?
+    //"com.typesafe" %% "play-plugins-mailer" % "2.1-RC1",
+    // -- Instead of the mailer:---------------
+    // "play" %% "play" % playVersion,
+    "org.apache.commons" % "commons-email" % "1.2",
+    // "com.typesafe" %% "play-plugins-util" % "2.1-SNAPSHOT" // already included above
+    // ----------------------------------------
+    //"com.typesafe" %% "play-plugins-mailer" % "2.0.4",
     "org.mindrot" % "jbcrypt" % "0.3m")
+
+
 
   lazy val secureSocial =
     play.Project("securesocial", appVersion, secureSocialDeps,
