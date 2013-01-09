@@ -551,18 +551,33 @@ case class Debate (
 
 
   /**
-   * The most recent action.
+   * The action with the most recent creation dati.
    */
-  lazy val lastAction: Option[Action] = {
-    def mostRecentAction(a: Action, b: Action) =
-      if (a.ctime.getTime > b.ctime.getTime) a else b
+  lazy val lastAction: Option[Action] = oldestOrLatestAction(latest = true)
+
+
+  /**
+   * The action with the oldest creation dati.
+   */
+  private def oldestAction: Option[Action] = oldestOrLatestAction(latest = false)
+
+
+  private def oldestOrLatestAction(latest: Boolean): Option[Action] = {
+    def latestOrOldestAction(a: Action, b: Action) = {
+      if (latest) {
+        if (a.ctime.getTime < b.ctime.getTime) b else a
+      }
+      else {
+        if (a.ctime.getTime < b.ctime.getTime) a else b
+      }
+    }
 
     // Edits might be auto applied, so check their dates.
     // Deletions might revert edit applications, so check their dates.
     // Hmm, check everything, or a bug will pop up, later on.
     val all = allActions
     if (all isEmpty) None
-    else Some(all reduceLeft (mostRecentAction(_, _)))
+    else Some(all reduceLeft (latestOrOldestAction(_, _)))
   }
 
 
@@ -578,6 +593,10 @@ case class Debate (
 
   lazy val modificationDati: Option[ju.Date] =
     lastAction.map(_.ctime)
+
+
+  lazy val oldestDati: Option[ju.Date] =
+    oldestAction.map(_.ctime)
 
 }
 

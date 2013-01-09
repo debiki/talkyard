@@ -12,7 +12,8 @@ object PageStuff {
   def forNewPage(path: PagePath, actions: Debate,
         publishDirectly: Boolean = false): PageStuff = {
     val meta = PageMeta.forNewPage(
-      actions.id, publishDirectly = publishDirectly)
+      actions.id, creationDati = actions.oldestDati getOrElse new ju.Date,
+      publishDirectly = publishDirectly)
     PageStuff(meta, path, actions)
   }
 
