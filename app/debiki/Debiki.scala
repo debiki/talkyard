@@ -6,11 +6,8 @@ package debiki
 
 import com.debiki.v0._
 import com.debiki.v0.Prelude._
-import controllers.{DebikiRequest, PageRequest}
 import play.api.Play
 import play.api.Play.current
-import xml.NodeSeq
-import controllers.PageRequest
 import com.debiki.v0.QuotaConsumers
 
 
@@ -18,19 +15,35 @@ object Debiki {
 
 
   private val _dbDaoFactory = new RelDbDaoFactory({
+
+    def configPrefix = if (Play.isTest) "test." else ""
+
     def configStr(path: String) =
-      Play.configuration.getString(path) getOrElse
+      Play.configuration.getString(configPrefix + path) getOrElse
          runErr("DwE93KI2", "Config value missing: "+ path)
+
+    // I've hardcoded credentials to the test database here, so that it
+    // cannot possibly happen, that you accidentally connect to the prod
+    // database. (You'll never name the prod schema "debiki_test_0_0_2_empty",
+    // with "auto-dropped" as password?)
+    def user =
+      if (Play.isTest) "debiki_test_0_0_2_empty"
+      else configStr("debiki.pgsql.user")
+    def password =
+      if (Play.isTest) "auto-dropped"
+      else configStr("debiki.pgsql.password")
+
     new RelDb(
       server = configStr("debiki.pgsql.server"),
       port = configStr("debiki.pgsql.port"),
       database = configStr("debiki.pgsql.database"),
-      user = configStr("debiki.pgsql.user"),
-      password = configStr("debiki.pgsql.password"))
+      user = user,
+      password = password)
   })
 
 
   val SystemDao = new CachingSystemDao(_dbDaoFactory.systemDbDao)
+  def systemDao = SystemDao // use instead, shouldn't be uppercase
 
 
   val QuotaManager = new QuotaManager(SystemDao)
