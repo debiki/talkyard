@@ -1414,6 +1414,7 @@ form .dw-ntf {
 }
 .dw-p-as-with-tips {
   visibility: visible !important;
+  z-index: 11 !important; /* place above .dw-p:hover, with z-index: 10 */
 }
 
 

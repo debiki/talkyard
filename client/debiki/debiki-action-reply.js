@@ -45,6 +45,10 @@ d.i.$showReplyForm = function(event, opt_where) {
     var $rateAction = $actions.children('.dw-a-rate');
     var timeoutHandler;
 
+    // Hide any old tips and stop showing related Rate action link.
+    $tips.closest('.dw-p-as').removeClass('dw-p-as-with-tips');
+    $tips.hide();
+
     function removeOrCancelTips(opt_event) {
       $rateAction.unbind('click', removeOrCancelTips);
       $tips.unbind('click');
