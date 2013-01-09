@@ -7,6 +7,8 @@ package debiki
 
 import com.debiki.v0._
 import java.{util => ju}
+import play.api.Play
+import play.api.Play.current
 import Prelude._
 
 
@@ -49,6 +51,14 @@ class SystemDao(protected val systemDbDao: SystemDbDao) {
 
   def useMoreQuotaUpdateLimits(deltas: Map[QuotaConsumer, QuotaDelta]): Unit =
     systemDbDao.useMoreQuotaUpdateLimits(deltas)
+
+
+  // ----- Testing
+
+  def emptyDatabase() {
+    require(Play.isTest)
+    systemDbDao.emptyDatabase()
+  }
 
 }
 
