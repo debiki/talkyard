@@ -275,6 +275,19 @@ abstract class SystemDbDao {
    *  is included in HTML. */
   def secretSalt(): String
 
+
+  // ----- Testing
+
+  // These dangerous functions COULD be moved to a separate artifact,
+  // debiki-core-test (?), that only SBT % "test" configs depend on.
+  // So one cannot possibly call `emptyDatabase()` when Play.isProd.
+
+  /**
+   * Deletes all data from the database. For example, for a RDBMS,
+   * would delete all rows from all tables.
+   */
+  def emptyDatabase()
+
 }
 
 
