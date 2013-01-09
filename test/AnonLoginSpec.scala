@@ -18,6 +18,8 @@ import com.debiki.v0.Prelude._
 // instead of `abstract`.
 abstract class AnonLoginSpec extends DebikiBrowserSpec {
 
+  lazy val testPage = createTestPage()
+
   "Anon user with a browser can" - {
 
     "open a test page" in {

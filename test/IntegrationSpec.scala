@@ -4,22 +4,25 @@
 
 package test
 
-import org.scalatest.{Suites, BeforeAndAfterAll}
+import org.scalatest.{Suite, Suites, BeforeAndAfterAll}
 import play.api.{test => pt}
 import pt.Helpers.testServerPort
+import com.debiki.v0._
 import com.debiki.v0.Prelude._
 
 
-class BrowserSpec extends Suites(
-  new AnonLoginSpec {})
-  with BeforeAndAfterAll {
+/**
+ * Starts a Debiki server and Google Chrome and empties the database.
+ */
+trait ChromeSuiteMixin extends BeforeAndAfterAll {
+  self: Suite =>
 
   lazy val testServer = pt.TestServer(testServerPort, pt.FakeApplication())
-
 
   override def beforeAll() {
     ChromeDriverFactory.start()
     testServer.start()
+    debiki.Debiki.SystemDao.emptyDatabase()
   }
 
 
@@ -29,4 +32,14 @@ class BrowserSpec extends Suites(
   }
 
 }
+
+
+/**
+ * Runs all end to end tests. Empties the database and restarts the browser
+ * before each specification.
+ */
+class BrowserSpec extends Suites(
+  new e2e.CreateSiteSpec {},
+  new AnonLoginSpec {})
+  with ChromeSuiteMixin
 
