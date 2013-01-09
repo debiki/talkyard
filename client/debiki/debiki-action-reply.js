@@ -133,7 +133,7 @@ d.i.$showReplyForm = function(event, opt_where) {
 
           d.i.showAndHighlightPost($myNewPost,
               { marginRight: 300, marginBottom: 300 });
-          d.i.$showActions($myNewPost);
+          d.i.$showActions.apply($myNewPost);
         });
 
       d.i.disableSubmittedForm($replyForm);
