@@ -31,11 +31,7 @@ abstract class DebikiBrowserSpec extends FreeSpec with WebBrowser
     timeout = scaled(Span(60, Seconds)),
     interval = scaled(Span(100, Millis)))
 
-  lazy val createWebsiteChooseNamePage = new Page {
-    val url = s"$origin/-/new-website/choose-name"
-  }
-
-  private def origin = s"localhost:$testServerPort"
+  private def firstSiteHost = s"localhost:$testServerPort"
 
   implicit def webDriver = _webDriver
   private var _webDriver: WebDriver = null
@@ -54,18 +50,23 @@ abstract class DebikiBrowserSpec extends FreeSpec with WebBrowser
   /**
    * The id of website with origin http://localhost:test-server-port.
    * It's created lazily.
+   *
+   * `firstSiteOrigin` is computed here so accessing it triggers the
+   * creation of the site, if not done before.
+   *
+   * Perhaps I should do this in `beforeAll` instead?
    */
-  lazy val firstSiteId = {
+  lazy val (firstSiteId: String, firstSiteOrigin: String) = {
     import debiki.Debiki.systemDao
-    systemDao.lookupTenant("http", origin) match {
+    systemDao.lookupTenant("http", firstSiteHost) match {
       case FoundNothing =>
         val firstSite = systemDao.createTenant(name = "FirstSite")
         val firstSiteDao = Debiki.tenantDao(firstSite.id, "127.0.0.1")
         firstSiteDao.addTenantHost(TenantHost(
-          origin, TenantHost.RoleCanonical, TenantHost.HttpsNone))
-        firstSite.id
+          firstSiteHost, TenantHost.RoleCanonical, TenantHost.HttpsNone))
+        (firstSite.id, "http://" + firstSiteHost)
       case FoundChost(siteId) =>
-        siteId
+        (siteId, "http://" + firstSiteHost)
       case _ => assErr("DwE26kbSF7")
     }
   }
@@ -109,7 +110,7 @@ abstract class DebikiBrowserSpec extends FreeSpec with WebBrowser
       newIp = None, ctime = new ju.Date, approval = Some(Approval.Manual))))
 
     new Page {
-      val url = origin + pageStuffNoPeople.path.path
+      val url = firstSiteHost + pageStuffNoPeople.path.path
     }
   }
 
