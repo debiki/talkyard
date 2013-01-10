@@ -2,7 +2,7 @@
  * Copyright (c) 2012 Kaj Magnus Lindberg (born 1979)
  */
 
-package test
+package test.e2e
 
 import java.{util => ju}
 import org.openqa.selenium.WebDriver
@@ -16,6 +16,7 @@ import play.api.test.Helpers.testServerPort
 import com.debiki.v0.Prelude._
 import com.debiki.v0._
 import debiki.Debiki
+import test.FailsOneCancelRemaining
 
 
 /**

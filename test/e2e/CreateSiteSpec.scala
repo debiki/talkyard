@@ -14,7 +14,7 @@ import com.debiki.v0.Prelude._
  */
 abstract class CreateSiteSpecRunner extends org.scalatest.Suites(
   new CreateSiteSpec {})
-  with test.ChromeSuiteMixin
+  with ChromeSuiteMixin
 
 
 /**
@@ -22,7 +22,7 @@ abstract class CreateSiteSpecRunner extends org.scalatest.Suites(
  */
 // From ScalaTest 2.0-M5 and above, use this: `@DoNotDiscover`
 // instead of `abstract`.
-abstract class CreateSiteSpec extends test.DebikiBrowserSpec {
+abstract class CreateSiteSpec extends DebikiBrowserSpec {
 
   "A user with a browser can" - {
 

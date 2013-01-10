@@ -2,7 +2,7 @@
  * Copyright (c) 2012 Kaj Magnus Lindberg (born 1979)
  */
 
-package test
+package test.e2e
 
 import org.scalatest.{Suite, Suites, BeforeAndAfterAll}
 import play.api.{test => pt}
@@ -38,8 +38,8 @@ trait ChromeSuiteMixin extends BeforeAndAfterAll {
  * Runs all end to end tests. Empties the database and restarts the browser
  * before each specification.
  */
-class BrowserSpec extends Suites(
-  new e2e.CreateSiteSpec {},
+class EndToEndSuite extends Suites(
+  new CreateSiteSpec {},
   new AnonLoginSpec {})
   with ChromeSuiteMixin
 

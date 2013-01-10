@@ -2,7 +2,7 @@
  * Copyright (c) 2012 Kaj Magnus Lindberg (born 1979)
  */
 
-package test
+package test.e2e
 
 import org.scalatest.time.{Span, Seconds}
 import org.scalatest.DoNotDiscover
