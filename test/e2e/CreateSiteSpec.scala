@@ -4,8 +4,9 @@
 
 package test.e2e
 
-import org.scalatest.time.{Span, Seconds}
 import com.debiki.v0.Prelude._
+import org.scalatest.time.{Span, Seconds}
+import play.api.test.Helpers.testServerPort
 
 
 /**
@@ -22,6 +23,9 @@ class CreateSiteSpecRunner extends org.scalatest.Suites(
 
 /**
  * Tests website creation.
+ *
+ * Among other things, logs in as debiki.tester@gmail.com and creates
+ * test-site and test-site-2.
  */
 // From ScalaTest 2.0-M5 and above, use this: `@DoNotDiscover`
 // instead of `abstract`.
@@ -29,7 +33,7 @@ abstract class CreateSiteSpec extends DebikiBrowserSpec {
 
   "A user with a browser can" - {
 
-    "goto /-/new-website/choose-name" in {
+    "go to site creation page" in {
       go to createWebsiteChooseNamePage
     }
 
@@ -74,6 +78,49 @@ abstract class CreateSiteSpec extends DebikiBrowserSpec {
       pending
     }
 
+    "login with Gmail OpenID, goto admin page of test-site" - {
+      loginWithGmailGotoAdminPage("test-site")
+    }
+
+    "return to site creation page" in {
+      go to createWebsiteChooseNamePage
+    }
+
+    "not create another site with the same address" in {
+      click on "website-name"
+      enter("test-site")
+      click on "accepts-terms"
+      click on cssSelector("input[type=submit]")
+
+      // COULD fix: Regrettably, the server won't notice that the name is taken
+      // until you've logged in.
+      loginWithGmailOpenId()
+
+      // Now an error pags should load. Click a certain try again link
+      // (there's only one link?)
+      assert(pageSource contains "You need to choose another name")
+      click on partialLinkText("Okay")
+    }
+
+    "create test-site-2" in {
+      click on "website-name"
+      enter("test-site-2")
+      click on "accepts-terms"
+      click on cssSelector("input[type=submit]")
+    }
+
+    "login with Gmail again, goto admin page of test-site-2" - {
+      loginWithGmailGotoAdminPage("test-site-2")
+    }
+  }
+
+
+  def createWebsiteChooseNamePage = new Page {
+    val url = s"$firstSiteOrigin/-/new-website/choose-name"
+  }
+
+
+  def loginWithGmailGotoAdminPage(newSiteName: String) {
     "login with Gmail OpenID" in {
       loginWithGmailOpenId()
     }
@@ -86,21 +133,23 @@ abstract class CreateSiteSpec extends DebikiBrowserSpec {
     }
 
     "login to admin dashboard" in {
-      loginWithGmailAgain()
+      loginWithGmailOpenId()
+      assert(pageSource contains "Welcome to your new website")
+      webDriver.getCurrentUrl() must be === originOf(newSiteName) + "/-/admin/"
     }
   }
 
 
-  def createWebsiteChooseNamePage = new Page {
-    val url = s"$firstSiteOrigin/-/new-website/choose-name"
-  }
+  def originOf(newSiteName: String) =
+    s"http://$newSiteName.localhost:$testServerPort"
 
+  private var firstGmailLogin = true
 
-  def loginWithGmailOpenId(
-        approvePermissions: Boolean = true, firstLogin: Boolean = true) {
+  def loginWithGmailOpenId(approvePermissions: Boolean = true) {
     click on cssSelector("a.login-link-google")
 
-    if (firstLogin) {
+    if (firstGmailLogin) {
+      firstGmailLogin = false
       // 1. I've created a dedicated Gmail OpenID test account, see below.
       // 2. `enter(email)` throws: """Currently selected element is neither
       // a text field nor a text area""", in org.scalatest.selenium.WebBrowser,
@@ -121,11 +170,6 @@ abstract class CreateSiteSpec extends DebikiBrowserSpec {
       click on "approve_button"
     else
       click on "reject_button"
-  }
-
-
-  def loginWithGmailAgain() {
-    loginWithGmailOpenId(firstLogin = false)
   }
 
 }
