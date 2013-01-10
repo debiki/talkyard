@@ -19,7 +19,7 @@ import play.api.test.Helpers.testServerPort
 trait StuffCreator {
   self: Assertions with WebBrowser =>
 
-  private def firstSiteHost = s"localhost:$testServerPort"
+  def firstSiteHost = s"localhost:$testServerPort"
 
 
   /**
@@ -47,27 +47,54 @@ trait StuffCreator {
   }
 
 
+  lazy val firstSiteDao = Debiki.tenantDao(firstSiteId, "127.0.0.1")
+
+
+  /**
+   * A loginGrant for a certain user that creates all stuff.
+   */
+  private lazy val (loginGrant: LoginGrant, postTemplate: Post) = {
+
+    val login = Login(id = "?", prevLoginId = None, ip = "1.1.1.1",
+      date = new ju.Date, identityId = "?i")
+
+    val identitySimple = IdentitySimple(id = "?i", userId = "?",
+      name = "Stoffe Kreitor", email = "no@email.no", location = "", website = "")
+
+    val loginReq = LoginRequest(login, identitySimple)
+    val loginGrant = firstSiteDao.saveLogin(loginReq)
+
+    val postTemplate = Post(id = "?", parent = "1", ctime = new ju.Date,
+      loginId = loginGrant.login.id, newIp = None, text = "", markup = "para",
+      tyype = PostType.Text, where = None, approval = Some(Approval.AuthoritativeUser))
+
+    (loginGrant, postTemplate)
+  }
+
+
+  /**
+   * Creates the _website-config.yaml page for stie `siteId` and inserts
+   * `configValues`.
+   */
+  def createSiteConfigPage(siteId: String, configValues: String) {
+    val p = postTemplate
+    if (p eq null) println("Mooooää")
+    val body = p.copy(id = Page.BodyId, text = configValues)
+    val pagePath = PagePath(
+      firstSiteId, "/", pageId = None, showId = false, pageSlug = "_website-config.yaml")
+    val page = Debate(guid = "?", posts = body::Nil)
+    firstSiteDao.createPage(PageStuff.forNewPage(
+      pagePath, page, publishDirectly = true))
+  }
+
+
   /**
    * Creates a test page in site `firstSiteId`.
    */
   def createTestPage() = {
 
-    val postTemplate = Post(id = "?", parent = "1", ctime = new ju.Date,
-      loginId = "?", newIp = None, text = "", markup = "para",
-      tyype = PostType.Text, where = None, approval = None)
-
-    val login = Login(id = "?", prevLoginId = None, ip = "1.1.1.1",
-      date = new ju.Date, identityId = "?i")
-    val identitySimple = IdentitySimple(id = "?i", userId = "?",
-      name = "Målligan", email = "no@email.no", location = "", website = "")
-
-    val firstSiteDao = Debiki.tenantDao(firstSiteId, "127.0.0.1")
-
-    val loginReq = LoginRequest(login, identitySimple)
-    val loginGrant = firstSiteDao.saveLogin(loginReq)
-
-    lazy val bodyPost = postTemplate.copy(
-      id = Page.BodyId, loginId = loginGrant.login.id, text = "Test page text 953Ih31.")
+    val bodyPost = postTemplate.copy(
+      id = Page.BodyId, text = "Test page text 953Ih31.")
 
     val pagePath = PagePath(
       firstSiteId, "/", pageId = None, showId = true, pageSlug = "test-page")
@@ -78,11 +105,6 @@ trait StuffCreator {
 
     val pageWithPeople = firstSiteDao.loadPage(pageStuffNoPeople.id).getOrElse(
       fail("Error loading page with people"))
-
-    // Approve the page.
-    firstSiteDao.savePageActions(pageWithPeople, List(Review(
-      "?", targetId = Page.BodyId, loginId = loginGrant.login.id,
-      newIp = None, ctime = new ju.Date, approval = Some(Approval.Manual))))
 
     new Page {
       val url = firstSiteHost + pageStuffNoPeople.path.path

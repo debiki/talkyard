@@ -9,10 +9,13 @@ import com.debiki.v0.Prelude._
 
 
 /**
- * Runs the CreateSiteSpec suite in the test:console:
+ * Runs the CreateSiteSpec suite
+ * in SBT:
+ *  test-only test.e2e.CreateSiteSpecRunner
+ * in SBT's test:console:
  *  (new test.e2e.CreateSiteSpecRunner {}).execute()
  */
-abstract class CreateSiteSpecRunner extends org.scalatest.Suites(
+class CreateSiteSpecRunner extends org.scalatest.Suites(
   new CreateSiteSpec {})
   with ChromeSuiteMixin
 
@@ -28,7 +31,6 @@ abstract class CreateSiteSpec extends DebikiBrowserSpec {
 
     "goto /-/new-website/choose-name" in {
       go to createWebsiteChooseNamePage
-      Thread.sleep(5*1000)
     }
 
     "not have an invalid name accepted" in {
@@ -41,22 +43,51 @@ abstract class CreateSiteSpec extends DebikiBrowserSpec {
 
     "enter new website name and accept terms" in {
       click on "website-name"
-      enter("test-website")
+      enter("test-site")
       click on "accepts-terms"
-      click on cssSelector("input[type=submit]")
-      Thread.sleep(5*1000)
     }
-    // -->  Forbidden   may not create website from this website
 
-    // "/-/new-website/choose-owner" loads...
+    "not allow site creation if there's no `new-website-domain' config value" in {
+      // Verify that clicking Submit results in:
+      // 403 Forbidden, "... may not create website from this website ..."
+      pending
+    }
 
-    // click on cssSelector("a.login-link-google")
-    // how login???
+    "create `new-website-domain' config value" in {
+      createSiteConfigPage(firstSiteId, i"""
+        |new-website-domain: $firstSiteHost
+        |new-website-terms-of-use: /hosting/terms-of-service
+        |new-website-privacy-policy: /hosting/privacy-policy
+        |""")
+    }
 
-    // /-/new-website/welcome-owner loads
+    "submit site name" in {
+      click on cssSelector("input[type=submit]")
+      // We should now be taken to page /-/new-website/choose-owner.
+    }
 
-    // click on cssSelector(".a") // there's only one link; it takes you to /-/admin/
-    // click on cssSelector("a.login-link-google") // login to admin dasboard
+    "login with Gmail OpenID, but deny permissions" in {
+      // This opens an Authentication failed, Unknown error page.
+      // Instead, should show the login page again, and a message
+      // that one needs to click the approval button?
+      //loginWithGmailOpenId(approvePermissions = false)
+      pending
+    }
+
+    "login with Gmail OpenID" in {
+      loginWithGmailOpenId()
+    }
+
+    "click login link on welcome owner page" in {
+      // We should now be on page /-/new-website/welcome-owner.
+      // There should be only one link, which takes you to /-/admin/.
+      assert(pageSource contains "Website created")
+      click on cssSelector("a")
+    }
+
+    "login to admin dashboard" in {
+      loginWithGmailAgain()
+    }
   }
 
 
@@ -64,6 +95,38 @@ abstract class CreateSiteSpec extends DebikiBrowserSpec {
     val url = s"$firstSiteOrigin/-/new-website/choose-name"
   }
 
-}
 
+  def loginWithGmailOpenId(
+        approvePermissions: Boolean = true, firstLogin: Boolean = true) {
+    click on cssSelector("a.login-link-google")
+
+    if (firstLogin) {
+      // 1. I've created a dedicated Gmail OpenID test account, see below.
+      // 2. `enter(email)` throws: """Currently selected element is neither
+      // a text field nor a text area""", in org.scalatest.selenium.WebBrowser,
+      // so use `pressKeys` instead.
+      click on "Email"
+      pressKeys("debiki.tester@gmail.com")
+      click on "Passwd"
+      pressKeys("ZKFIREK90krI38bk3WK1r0")
+      click on "signIn"
+    }
+
+    // Now Google should show another page, which ask about permissions.
+     // Uncheck a certain remember choices checkbox, or this page won't be shown
+     // next time (and then we cannot choose to deny access).
+    click on "remember_choices_checkbox"
+
+    if (approvePermissions)
+      click on "approve_button"
+    else
+      click on "reject_button"
+  }
+
+
+  def loginWithGmailAgain() {
+    loginWithGmailOpenId(firstLogin = false)
+  }
+
+}
 
