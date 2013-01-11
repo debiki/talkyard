@@ -115,6 +115,11 @@ function adminService ($http, $rootScope)
         .success callback
         .error callback
 
+
+  api.changePageStatus = !(pageId, newStatus) ->
+    alert('boo');
+
+
   api
 
 

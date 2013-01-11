@@ -315,6 +315,11 @@ class PageListItem extends ListItem
         callback: refreshPageList }
 
 
+  $scope.changePageStatus = !(newStatus) ->
+    pageListItem = getSelectedPageOrDie!
+    adminService.changePageStatus pageListItem.pageId, newStatus
+
+
   loadAndListPages = ->
     adminService.listAllPages (data) ->
       listMorePagesDeriveFolders <|
@@ -426,23 +431,21 @@ class PageListItem extends ListItem
   $scope.updateSelections = ->
     selectedPageListItems := []
     numDrafts = 0
-    numNonDrafts = 0
+    numPublished = 0
     $scope.homepageSelected = false
     for item in $scope.listItems when item.included
       selectedPageListItems.push item
       $scope.homepageSelected = true if item.path == '/'
-      #if item.isDraft => numDrafts += 1
-      #else numNonDrafts += 1
+      if item.status == 'Draft' => numDrafts += 1
+      if item.status == 'Published' => numPublished += 1
 
     numPages = selectedPageListItems.length
 
     $scope.nothingSelected = numPages == 0
-    $scope.onePageSelected = numPages == 1
+    $scope.onlySelectedOnePage = numPages == 1
 
-    $scope.onlyDraftsSelected =
-        numDrafts > 0 && numNonDrafts == 0
-    $scope.onlyPublishedSelected =
-        numDrafts == 0 && numNonDrafts > 0
+    $scope.onlySelectedDrafts = numDrafts == numPages && numPages > 0
+    $scope.onlySelectedPubldPages = numPublished == numPages && numPages > 0
 
     # In the future, show stats on the selected pages, in a <div> to the
     # right. Or show a preview, if only one single page selected.

@@ -140,10 +140,10 @@
                 </ul>
               </div>
 
-              <a id='view-page-btn' class='btn' ng-click='viewSelectedPage()' ng-show='onePageSelected'>View / Edit</a>
+              <a id='view-page-btn' class='btn' ng-click='viewSelectedPage()' ng-show='onlySelectedOnePage'>View / Edit</a>
 
               <div id='move-page-btn' class='dropdown'
-                  ng-show='onePageSelected'>
+                  ng-show='onlySelectedOnePage'>
                 <a class='btn dropdown-toggle' id='move-page-dropdown-btn' data-toggle='dropdown' href='#' role='button'
                       ng-click='movePageForm.newFolder = selectedPage().folderPath()'>Move</a>
                   <form name='movePageForm' class='dropdown-menu' role='menu' aria-labelledby='move-page-dropdown-btn'
@@ -162,7 +162,7 @@
               </div>
 
               <div id='rename-page-btn' class='dropdown'
-                  ng-show='onePageSelected'>
+                  ng-show='onlySelectedOnePage'>
                 <a class='btn dropdown-toggle' id='rename-page-dropdown-btn' data-toggle='dropdown' href='#' role='button'
                       ng-click='renamePageForm.newSlug = selectedPage().slug()'>Rename</a>
                   <form name='renamePageForm' class='dropdown-menu' role='menu' aria-labelledby='rename-page-dropdown-btn'
@@ -193,8 +193,20 @@
                 </form>
               </div>
 
+              <a id='publish-page-btn' class='btn'
+                  ng-click="changePageStatus('Published')"
+                  ng-show='onlySelectedDrafts'>
+                  Publish
+              </a>
+
+              <a id='unpublish-page-btn' class='btn'
+                  ng-click="changePageStatus('Draft')"
+                  ng-show='onlySelectedPubldPages'>
+                Unpublish
+              </a>
+
               <div id='use-as-homepage-btn' class='dropdown'
-                  ng-show='onePageSelected && !homepageSelected'>
+                  ng-show='onlySelectedOnePage && !homepageSelected'>
                 <a class='btn dropdown-toggle' id='use-as-homepage-dropdown-btn' data-toggle='dropdown' href='#' role='button'>Use as Homepage</a>
                   <form name='useAsHomepageForm' class='dropdown-menu' role='menu' aria-labelledby='use-as-homepage-dropdown-btn'
                       ng-submit='changeHomepageToSelectedPage()'>
@@ -211,10 +223,6 @@
                 </form>
               </div>
 
-              <!--
-              <a id='publish-page-btn' class='btn' ng-click='publishSelectedPages()' ng-show='onlyDraftsSelected'>Publish</a>
-              <a id='publish-page-btn' class='btn' ng-click='unpublishSelectedPages()' ng-show='onlyPublishedSelected'>Unpublish</a>
-              -->
             </div>
 
             <div id='page-tree-container'>
