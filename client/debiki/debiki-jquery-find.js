@@ -39,7 +39,11 @@ $.fn.dwPageMeta = function() {
     pageId: $page.attr('id').substr(5, 999), // drops initial "page-"
     pagePath: $page.data('page_path'),
     pageRole: $page.data('page_role'),
-    parentPageId: $page.data('parent_page_id'),
+    // Ensure the id isn't parsed as a number (in case there happens to be
+    // no chars in the id) because then there'll be lots of trouble in
+    // the future, for example, the id might be posted as a JSON integer
+    // back to the server, which would complain.
+    parentPageId: '' + $page.data('parent_page_id'),
     pageExists: $page.data('page_exists')
   };
 };
