@@ -40,6 +40,18 @@ PrettyListItem =
       | _ => ''
 
 
+  prettyStatus: ->
+    @status
+
+
+  prettyStatusTooltip: ->
+    switch @status
+      | 'Published' => 'The page is visible to anyone.'
+      | 'Draft' => '''
+            Only the page's author and administrators can view the page.'''
+      | _ => ''
+
+
   cssForRole: ->
     "page-role-#{@role}"
 

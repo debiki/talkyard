@@ -240,6 +240,8 @@ object AppList extends mvc.Controller {
     if (pageMeta.pageRole != PageRole.Any)
       data += "role" -> JsString(pageMeta.pageRole.toString)
 
+    data += "status" -> JsString(pageMeta.status.toString)
+
     if (pageMeta.parentPageId.isDefined)
       data += "parentPageId" -> JsString(pageMeta.parentPageId.get)
 

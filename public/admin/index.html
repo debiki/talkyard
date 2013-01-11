@@ -236,6 +236,7 @@
                     </th>
                     <th>Page Title</th>
                     <th><div ui-jq="tooltip" title="Influences how the page is rendered and what you can do with it.">Role</th>
+                    <th><div ui-jq="tooltip" title="The status can be e.g. published, draft, deleted.">Status</th>
                     <th><div ui-jq="tooltip" title="A menu lists links to pages on the website.">Menu</div></th>
                     <th>URL</th>
                     <th>Authors</th>
@@ -258,6 +259,7 @@
                       <span class="page-notfs">{{ page.stringifyOtherMarks() }}</span>
                     </td>
                     <td><div data-original-title="{{ page.prettyRoleTooltip() }}" ui-jq="tooltip">{{ page.prettyRole() }}</div></td>
+                    <td><div data-original-title="{{ page.prettyStatusTooltip() }}" ui-jq="tooltip">{{ page.prettyStatus() }}</div></td>
                     <td><div data-original-title="{{ page.prettyMenuTooltip() }}" ui-jq="tooltip">{{ page.prettyMenu() }}</div></td>
                     <td>{{ page.prettyUrl() }}</td>
                     <td></td>
