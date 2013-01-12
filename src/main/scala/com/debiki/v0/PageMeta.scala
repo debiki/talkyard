@@ -65,8 +65,8 @@ object PageMeta {
     PageMeta(
       pageId = pageId,
       creationDati = creationDati,
-      modificationDati = creationDati,
-      cachedPublTime = if (publishDirectly) Some(creationDati) else None,
+      modDati = creationDati,
+      pubDati = if (publishDirectly) Some(creationDati) else None,
       pageRole = pageRole,
       parentPageId = parentPageId,
       pageExists = false)
@@ -75,8 +75,8 @@ object PageMeta {
     require(changedPage.id == originalMeta.pageId)
     originalMeta.copy(
       cachedTitle = changedPage.titleText,
-      modificationDati =
-        changedPage.modificationDati getOrElse originalMeta.modificationDati)
+      modDati =
+        changedPage.modificationDati getOrElse originalMeta.modDati)
   }
 
   case class AuthorInfo(roleId: String, displayName: String)
@@ -90,15 +90,15 @@ case class PageMeta(
   parentPageId: Option[String] = None,
   cachedTitle: Option[String] = None,
   creationDati: ju.Date,
-  modificationDati: ju.Date,
-  cachedPublTime: Option[ju.Date] = None,
-  cachedSgfntMtime: Option[ju.Date] = None,
+  modDati: ju.Date,
+  pubDati: Option[ju.Date] = None,
+  sgfntModDati: Option[ju.Date] = None,
   cachedAuthors: List[PageMeta.AuthorInfo] = Nil,
   cachedCommentCount: Int = 0,
   pageExists: Boolean = true) {
 
   def status: PageStatus =
-    if (cachedPublTime.isDefined) PageStatus.Published
+    if (pubDati.isDefined) PageStatus.Published
     else PageStatus.Draft
 
 }
@@ -160,6 +160,12 @@ object PageStatus {
 
   case object Deleted extends PageStatus
   val All = List(Draft, Published, Deleted)
+
+  def parse(text: String): PageStatus = text match {
+    case "Draft" => Draft
+    case "Published" => Published
+    case "Deleted" => Deleted
+  }
 }
 
 
