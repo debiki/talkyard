@@ -84,11 +84,17 @@ abstract class TenantDbDao {
    */
   def saveLogout(loginId: String, logoutIp: String)
 
+
+  // ----- New pages, page meta
+
   def createPage(page: PageStuff): PageStuff
 
   def loadPageMeta(pageId: String): Option[PageMeta]
 
   def updatePageMeta(meta: PageMeta)
+
+
+  // ----- Moving and renaming pages
 
   def movePages(pageIds: Seq[String], fromFolder: String, toFolder: String)
 
@@ -112,6 +118,9 @@ abstract class TenantDbDao {
    */
   def movePageToItsPreviousLocation(pagePath: PagePath): Option[PagePath]
 
+
+  // ----- Page paths
+
   def checkPagePath(pathToCheck: PagePath): Option[PagePath]
 
   /**
@@ -127,6 +136,9 @@ abstract class TenantDbDao {
 
   def listChildPages(parentPageId: String, sortBy: PageSortOrder,
         limit: Int, offset: Int = 0): Seq[(PagePath, PageMeta)]
+
+
+  // ----- Loading and saving pages
 
   def savePageActions[T <: Action](debateId: String, xs: List[T]): List[T]
 
