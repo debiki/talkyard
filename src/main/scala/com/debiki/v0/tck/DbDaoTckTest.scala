@@ -429,10 +429,10 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
           // There page currently has no title.
           // It's published by default though.
           pageDetails.cachedTitle must_== None
-          pageDetails.cachedPublTime must_!= None
+          pageDetails.pubDati must_!= None
           // Shouldn't the page body post affect the
           // significant-modification-time?
-          // pageDetails.cachedSgfntMtime must_== None  -- or Some(date)?
+          // pageDetails.sgfntModDati must_== None  -- or Some(date)?
       }
     }
 
@@ -504,6 +504,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
         page.meta.pageExists must_== true
         page.meta.pageRole must_== PageRole.BlogMainPage
         page.meta.parentPageId must_== None
+        page.meta.pubDati must_== None
 
         val actions = page.actions
         blogMainPageId = actions.pageId
@@ -518,6 +519,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
             pageMeta.pageRole must_== PageRole.BlogMainPage
             pageMeta.parentPageId must_== None
             pageMeta.pageId must_== blogMainPageId
+            pageMeta.pubDati must_== None
           }
         }
       }
@@ -526,7 +528,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
         val pageNoId = PageStuff(
           PageMeta(pageId = "?", pageRole = PageRole.BlogArticle,
             parentPageId = Some(blogMainPageId),
-            creationDati = now, modificationDati = now),
+            creationDati = now, modDati = now),
           defaultPagePath.copy(
             showId = true, pageSlug = "role-test-blog-article"),
           Debate(guid = "?"))
@@ -543,6 +545,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
             pageMeta.pageRole must_== PageRole.BlogArticle
             pageMeta.parentPageId must_== Some(blogMainPageId)
             pageMeta.pageId must_== blogArticleId
+            pageMeta.pubDati must_== None
           }
         }
       }
@@ -585,12 +588,13 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
         }
         // Edit meta
         val nextDay = new ju.Date(
-          blogArticleMeta.modificationDati.getTime + 1000 * 3600 * 24)
+          blogArticleMeta.modDati.getTime + 1000 * 3600 * 24)
         val newMeta = blogArticleMeta.copy(
           pageRole = PageRole.Any,
           parentPageId = None,
           cachedTitle = Some("NewCachedPageTitle"),
-          modificationDati = nextDay)
+          modDati = nextDay,
+          pubDati = Some(nextDay))
         dao.updatePageMeta(newMeta)
         // Reload and test
         dao.loadPageMeta(blogArticleId) must beLike {
