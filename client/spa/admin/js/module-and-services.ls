@@ -116,8 +116,11 @@ function adminService ($http, $rootScope)
         .error callback
 
 
-  api.changePageStatus = !(pageId, newStatus) ->
-    alert('boo');
+  api.changePageMeta = !(newStatuses, {callback}) ->
+    $http.post '/-/change-page-meta', newStatuses
+        .success callback
+        .error callback
+
 
 
   api

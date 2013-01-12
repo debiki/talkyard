@@ -317,7 +317,15 @@ class PageListItem extends ListItem
 
   $scope.changePageStatus = !(newStatus) ->
     pageListItem = getSelectedPageOrDie!
-    adminService.changePageStatus pageListItem.pageId, newStatus
+
+    refreshPageList = ->
+      pageListItem.status = newStatus
+      redrawPageItems selectedPageListItems
+
+    adminService.changePageMeta(
+        [{ pageId: pageListItem.pageId, newStatus }],
+        callback: refreshPageList)
+
 
 
   loadAndListPages = ->
