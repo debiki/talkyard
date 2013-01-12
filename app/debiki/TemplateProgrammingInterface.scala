@@ -178,7 +178,7 @@ class TinyTemplateProgrammingInterface protected (
 
     val articlePaths = pathsAndMeta filter {
       case (paths, details) =>
-        details.cachedPublTime.map(
+        details.pubDati.map(
             _.getTime < _pageReq.ctime.getTime) == Some(true)
     } map (_._1)
 

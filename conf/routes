@@ -68,6 +68,7 @@ POST  /-/move-rename-page       controllers.AppMoveRenamePage.moveRenamePage
 POST  /-/approve                controllers.AppReview.approve
 POST  /-/reject                 controllers.AppReview.reject
 GET   /-/list-pages             controllers.AppList.listPages
+POST  /-/change-page-meta       controllers.AppChangePageMeta.changeMeta
 
 GET   /-/site/*file             controllers.SiteAssetBundles.at(file)
 

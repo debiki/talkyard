@@ -44,6 +44,10 @@ trait PagePathDao {
   def loadPageMeta(pageId: String): Option[PageMeta] =
     tenantDbDao.loadPageMeta(pageId)
 
+
+  def updatePageMeta(meta: PageMeta) =
+    tenantDbDao.updatePageMeta(meta)
+
 }
 
 
@@ -140,6 +144,12 @@ trait CachingPagePathDao extends PagePathDao {
     lookupInCache[PageMeta](
       pageMetaByIdKey(pageId),
       orCacheAndReturn = super.loadPageMeta(pageId))
+
+
+  override def updatePageMeta(meta: PageMeta) {
+    uncachePageMeta(meta.pageId)
+    super.updatePageMeta(meta)
+  }
 
 
   def uncachePageMeta(pageId: String) {
