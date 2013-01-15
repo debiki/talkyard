@@ -568,15 +568,33 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
         meta.parentPageId must_== Some(blogMainPageId)
       }
 
-      "find child pages of the BlogMainPage" in {
-        val childs = dao.listChildPages(blogMainPageId,
-          PageSortOrder.ByPublTime, limit = 10)
+      def testFoundChild(childs: Seq[(PagePath, PageMeta)]) {
         childs.length must_== 1
         childs must beLike {
           case List((pagePath, pageMeta)) =>
             pagePath.pageId must_== Some(blogArticleId)
             testBlogArticleMeta(pageMeta)
         }
+      }
+
+      "find child pages of the BlogMainPage" in {
+        val childs = dao.listChildPages(blogMainPageId,
+          PageSortOrder.ByPublTime, limit = 10)
+        testFoundChild(childs)
+      }
+
+      "find child pages also when page role specified" in {
+        val childs = dao.listChildPages(blogMainPageId,
+          PageSortOrder.ByPublTime, limit = 10,
+          filterPageRole = Some(PageRole.BlogArticle))
+        testFoundChild(childs)
+      }
+
+      "find no child pages of the wrong page role" in {
+        val childs = dao.listChildPages(blogMainPageId,
+          PageSortOrder.ByPublTime, limit = 10,
+          filterPageRole = Some(PageRole.ForumThread))
+        childs.length must_== 0
       }
 
       "update all BlogArticle meta info"  in {
