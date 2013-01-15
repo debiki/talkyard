@@ -42,7 +42,6 @@ module.exports = function(grunt) {
       'target/client/debiki/debiki-markup.js',
       'target/client/debiki/debiki-merge-changes.js',
       'target/client/debiki/debiki-patch-page.js',
-      'target/client/debiki/debiki-play.css',
       'target/client/debiki/debiki-post-header.js',
       'target/client/debiki/debiki-resize.js',
       'target/client/debiki/debiki-scroll-into-view.js',
@@ -88,7 +87,6 @@ module.exports = function(grunt) {
       'target/client/debiki/debiki-markup.js',
       'target/client/debiki/debiki-merge-changes.js',
       'target/client/debiki/debiki-patch-page.js',
-      'target/client/debiki/debiki-play.css',
       'target/client/debiki/debiki-post-header.js',
       'target/client/debiki/debiki-resize.js',
       'target/client/debiki/debiki-scroll-into-view.js',
@@ -132,6 +130,12 @@ module.exports = function(grunt) {
           'public/res/jquery-ui/jquery-ui-1.8.16.custom.css',
           'client/debiki/debiki.css',
           'client/debiki/debiki-play.css'],
+
+      'public/res/debiki-spa-admin.css': [
+          'client/spa/admin/css/admin-page.css'],
+
+      'public/res/debiki-spa-common.css': [
+          'client/spa/debiki-spa-common.css'],
 
       'public/res/combined-debiki-desktop.js':
           debikiDesktopFiles,
