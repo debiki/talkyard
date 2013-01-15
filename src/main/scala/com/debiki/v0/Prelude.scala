@@ -100,8 +100,11 @@ object Prelude {
 
   /** Assertion errors do not require a problem description. */
   def assErr(errorCode: String, problem: => String = null) =
-    throw new AssertionError(
-      (if (problem eq null) "" else problem +" ") +"[error "+ errorCode +"]")
+    throw new AssertionError(formatErrorMessage(errorCode, problem))
+
+  private def formatErrorMessage(errorCode: String, details: String) =
+      (if ((details eq null) || details.isEmpty) "" else details +" ") +
+        "[error "+ errorCode +"]"
 
   // delete
   def assErrIf3(condition: Boolean, errorCode: String,
@@ -112,10 +115,10 @@ object Prelude {
        problem: => String = null) =
     if (condition) assErr(errorCode, problem)
 
-  def illArgErr(errorCode: String, problem: => String) =
-    throw new IllegalArgumentException(problem +" [error "+ errorCode +"]")
+  def illArgErr(errorCode: String, problem: => String = null) =
+    throw new IllegalArgumentException(formatErrorMessage(errorCode, problem))
 
-  def illArgIf(condition: Boolean, errorCode: String, problem: => String) =
+  def illArgIf(condition: Boolean, errorCode: String, problem: => String = null) =
     if (condition) illArgErr(errorCode, problem)
 
   def illArgErrIf(condition: Boolean, errorCode: String, problem: => String) =
