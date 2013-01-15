@@ -172,14 +172,14 @@ object Prelude {
     text  // for now, COULD implement it (convertBadChars) some day.
   }
 
-  def classNameOf(x: Any): String = x match {
+  def classNameOf(x: Any): String = (x: @unchecked) match {
+    case x: AnyRef => x.getClass.getSimpleName
     case _: Int => "Int"
     case _: Long => "Long"
     case _: Char => "Char"
     case _: Byte => "Byte"
     case _: Any => "Any"
     case null => "null"
-    case x: AnyRef => x.getClass.getSimpleName
   }
 
   def stripStartEndBlanks(text: String): String = {
