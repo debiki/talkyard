@@ -26,6 +26,8 @@ object TinyTemplateProgrammingInterface {
     new TinyTemplateProgrammingInterface(pageReq)
 
   case class Page(id: String, path: String, title: String, safeBodyHtml: String)
+  case class Forum(id: String, path: String, title: String)
+  case class ForumThread(id: String, path: String, title: String)
 }
 
 
@@ -199,6 +201,41 @@ class TinyTemplateProgrammingInterface protected (
         title = titleOf(pageApproved), safeBodyHtml = bodyOf(pageApproved))
     }
   }
+
+
+  def listSubForums(): Seq[tpi.Forum] =
+    listPublishedChildren(filterPageRole = Some(PageRole.ForumMainPage)) map {
+      case (pagePath, pageMeta) =>
+        tpi.Forum(
+          pageMeta.pageId, path = pagePath.path,
+          title = pageMeta.cachedTitle getOrElse "(Unnamed subforum)")
+    }
+
+
+  def listRecentForumThreads(): Seq[tpi.ForumThread] =
+    listPublishedChildren(filterPageRole = Some(PageRole.ForumThread)) map {
+      case (pagePath, pageMeta) =>
+        tpi.ForumThread(
+          pageMeta.pageId, path = pagePath.path,
+          title = pageMeta.cachedTitle getOrElse "(Unnamed forum thread)")
+    }
+
+
+  private def listPublishedChildren(filterPageRole: Option[PageRole])
+        : Seq[(PagePath, PageMeta)] = {
+    val pathsAndMeta: Seq[(PagePath, PageMeta)] =
+      _pageReq.dao.listChildPages(parentPageId = pageId,
+        sortBy = PageSortOrder.ByPublTime, limit = 10, offset = 0,
+        filterPageRole = filterPageRole)
+
+    val publishedPathsAndMeta = pathsAndMeta filter {
+      case (paths, details) =>
+        details.pubDati.map(
+          _.getTime < _pageReq.ctime.getTime) == Some(true)
+    }
+    publishedPathsAndMeta
+  }
+
 }
 
 
