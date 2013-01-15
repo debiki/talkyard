@@ -135,7 +135,8 @@ abstract class TenantDbDao {
   def lookupPagePathAndRedirects(pageId: String): List[PagePath]
 
   def listChildPages(parentPageId: String, sortBy: PageSortOrder,
-        limit: Int, offset: Int = 0): Seq[(PagePath, PageMeta)]
+        limit: Int, offset: Int = 0, filterPageRole: Option[PageRole] = None)
+        : Seq[(PagePath, PageMeta)]
 
 
   // ----- Loading and saving pages
@@ -473,9 +474,11 @@ class ChargingTenantDbDao(
   }
 
   def listChildPages(parentPageId: String, sortBy: PageSortOrder,
-        limit: Int, offset: Int = 0): Seq[(PagePath, PageMeta)] = {
+        limit: Int, offset: Int = 0, filterPageRole: Option[PageRole])
+        : Seq[(PagePath, PageMeta)] = {
     _chargeForOneReadReq()
-    _spi.listChildPages(parentPageId, sortBy, limit = limit, offset = offset)
+    _spi.listChildPages(parentPageId, sortBy, limit = limit, offset = offset,
+      filterPageRole = filterPageRole)
   }
 
 
