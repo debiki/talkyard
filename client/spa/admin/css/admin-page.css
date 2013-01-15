@@ -87,9 +87,11 @@ h1 {
   border-bottom: 1px solid hsl(0, 0%, 87%);
 }
 
-#page-table tr.page-depth-1 td.page-title {
-  padding-left: 3em;
-}
+#page-table tr.page-depth-1 td.page-title { padding-left:  3em; }
+#page-table tr.page-depth-2 td.page-title { padding-left:  6em; }
+#page-table tr.page-depth-3 td.page-title { padding-left:  9em; }
+#page-table tr.page-depth-4 td.page-title { padding-left: 12em; }
+#page-table tr.page-depth-5 td.page-title { padding-left: 15em; }
 
 #marked-path {
   display: block !important;
