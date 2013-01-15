@@ -78,8 +78,7 @@ h1 {
   color: hsl(211, 35%, 30%);
 }
 
-
-#page-table tr.page-role-BlogArticle td {
+#page-table tr:not(.page-depth-0) td {
   border-top: none;
 }
 
@@ -88,7 +87,7 @@ h1 {
   border-bottom: 1px solid hsl(0, 0%, 87%);
 }
 
-#page-table tr.page-role-BlogArticle td.page-title {
+#page-table tr.page-depth-1 td.page-title {
   padding-left: 3em;
 }
 

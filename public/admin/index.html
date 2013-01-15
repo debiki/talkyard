@@ -130,7 +130,7 @@
                   <li><a tabindex='-1' ng-click='createDraftPage("InfoPage")' href='#'>New Info Page</a></li>
                   <li class='divider'></li>
                   <li><a tabindex='-1' ng-click='createBlog()' href='#'>New Blog</a></li>
-                  <li><a tabindex='-1' disabled>New Forum</a></li>
+                  <li><a tabindex='-1' ng-click='createForum()' href='#'>New Forum</a></li>
                   <li><a tabindex='-1' disabled>New Wiki</a></li>
                   <li class='divider'></li>
                   <li><span>Advanced users:</span></li>
@@ -205,6 +205,12 @@
                 Unpublish
               </a>
 
+              <a id='create-subforum-btn' class='btn'
+                  ng-click='createSubforum()'
+                  ng-show='onlySelectedOneForum'>
+                  Create subforum
+              </a>
+
               <div id='use-as-homepage-btn' class='dropdown'
                   ng-show='onlySelectedOnePage && !homepageSelected'>
                 <a class='btn dropdown-toggle' id='use-as-homepage-dropdown-btn' data-toggle='dropdown' href='#' role='button'>Use as Homepage</a>
@@ -252,7 +258,7 @@
                   </tr>
                 </thead>
                 <tbody>
-                  <tr class="{{page.cssForRole()}}"
+                  <tr class="{{page.cssForRole()}} page-depth-{{ countParentsOf(page) }}"
                       ng-repeat="page in listItems">
                     <td class='row-selector'><!-- dupl code! -->
                       <label>

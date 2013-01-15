@@ -31,12 +31,14 @@ PrettyListItem =
     switch @role
       | 'BlogMainPage' => 'Blog main page'
       | 'BlogArticle' => 'Blog post'
+      | 'ForumMainPage' => 'Forum main page'
       | _ => ''
 
 
   prettyRoleTooltip: ->
     switch @role
       | 'BlogMainPage' => 'A blog. Lists blog posts.'
+      | 'ForumMainPage' => 'A forum. Lists subforums and threads.'
       | _ => ''
 
 
@@ -156,6 +158,15 @@ class PageListItem extends ListItem
     find (.id == pageId), $scope.listItems
 
 
+  $scope.countParentsOf = (pageItem) ->
+    curItem = pageItem
+    parentCount = 0
+    while curItem.parentPageId
+      parentCount += 1
+      curItem = getPageById curItem.parentPageId
+    parentCount
+
+
   getSelectedPageOrDie = ->
     bug('DwE83Iw2') if selectedPageListItems.length != 1
     selectedPageListItems[0]
@@ -182,7 +193,7 @@ class PageListItem extends ListItem
     pageSlug: //(^$)|(^[\w\d\.][\w\d\._-]*)$//
 
 
-  $scope.createBlog = (location) ->
+  $scope.createBlog = !->
     createPage {
         folder: '/blog/'
         pageSlug: ''
@@ -190,11 +201,30 @@ class PageListItem extends ListItem
         pageRole: 'BlogMainPage' }
 
 
-  $scope.createDraftPage = ->
+  $scope.createForum = !->
+    createPage {
+        folder: '/forum/'
+        pageSlug: ''
+        showId: false
+        pageRole: 'ForumMainPage' }
+
+
+  $scope.createSubforum = !->
+    mainForum = getSelectedPageOrDie!
+    parentFolder = d.i.parentFolderOfPage mainForum.path
+    createPage {
+        folder: parentFolder
+        pageSlug: 'subforum'
+        showId: true
+        pageRole: 'ForumMainPage'
+        parentPageId: mainForum.id }
+
+
+  $scope.createDraftPage = !->
     createPageInFolder '/'
 
 
-  createPageInFolder = (parentFolder) ->
+  createPageInFolder = !(parentFolder) ->
     createPage {
         folder: parentFolder
         pageSlug: 'new-page'
@@ -327,7 +357,6 @@ class PageListItem extends ListItem
         callback: refreshPageList)
 
 
-
   loadAndListPages = ->
     adminService.listAllPages (data) ->
       listMorePagesDeriveFolders <|
@@ -440,17 +469,20 @@ class PageListItem extends ListItem
     selectedPageListItems := []
     numDrafts = 0
     numPublished = 0
+    numForums = 0
     $scope.homepageSelected = false
     for item in $scope.listItems when item.included
       selectedPageListItems.push item
       $scope.homepageSelected = true if item.path == '/'
       if item.status == 'Draft' => numDrafts += 1
       if item.status == 'Published' => numPublished += 1
+      if item.role == 'ForumMainPage' => numForums += 1
 
     numPages = selectedPageListItems.length
 
     $scope.nothingSelected = numPages == 0
     $scope.onlySelectedOnePage = numPages == 1
+    $scope.onlySelectedOneForum = numForums == 1 && numPages == 1
 
     $scope.onlySelectedDrafts = numDrafts == numPages && numPages > 0
     $scope.onlySelectedPubldPages = numPublished == numPages && numPages > 0
