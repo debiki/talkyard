@@ -9,7 +9,7 @@ import java.{util => ju}
 import Prelude._
 
 
-trait PagePathDao {
+trait PagePathMetaDao {
   self: TenantDao =>
 
 
@@ -52,7 +52,7 @@ trait PagePathDao {
 
 
 
-trait CachingPagePathDao extends PagePathDao {
+trait CachingPagePathMetaDao extends PagePathMetaDao {
   self: CachingTenantDao =>
 
 

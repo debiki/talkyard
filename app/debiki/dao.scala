@@ -46,7 +46,7 @@ class TenantDao(protected val tenantDbDao: ChargingTenantDbDao)
   extends AnyRef
   with AssetBundleDao
   with ConfigValueDao
-  with PagePathDao
+  with PagePathMetaDao
   with RenderedPageHtmlDao
   with UserDao {
 
