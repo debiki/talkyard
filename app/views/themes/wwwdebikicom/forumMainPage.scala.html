@@ -1,0 +1,26 @@
+@(tpi: debiki.TemplateProgrammingInterface)
+
+
+@wrapper(tpi) {
+  <!-- forumMainPage.scala.html -->
+
+  @tpi.page {
+    @tpi.title
+  }
+
+  <!-- <p>
+    <b>Click to select forums.</b>
+    Threads from selected forums are then listed below.
+  </p> -->
+
+  <ol class="subforum-list">
+  @for(subforum <- tpi.listSubForums()) {
+    <a href='@{subforum.path}'>@{subforum.title}</a>
+  }
+  </ol>
+
+  <ol class="thread-list">
+  </ol>
+
+}
+

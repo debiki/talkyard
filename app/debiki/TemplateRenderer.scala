@@ -78,6 +78,12 @@ object TemplateRenderer {
           "blogPost"
         } else if (pageMeta.pageRole == PageRole.BlogMainPage) {
           "blogMainPage"
+        } else if (pageMeta.pageRole == PageRole.ForumMainPage) {
+          if (pageMeta.parentPageId isEmpty) "forumMainPage"
+          else "subforum"
+        } else if (pageMeta.pageRole == PageRole.ForumThread) {
+          // For now:
+          "blogPost"
         } else {
           // A blog post template works well for most pages?
           "blogPost"
