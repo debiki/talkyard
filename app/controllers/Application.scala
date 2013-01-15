@@ -110,7 +110,7 @@ object Application extends mvc.Controller {
       // COULD use a Seq not a List, and get rid of the conversion
       tags = ratingTags.toList)
 
-    pageReq.dao.savePageActions(pageReq, rating::Nil)
+    pageReq.dao.savePageActionsGenNotfs(pageReq, rating::Nil)
     Utils.renderOrRedirect(pageReq)
   }
 
@@ -133,7 +133,7 @@ object Application extends mvc.Controller {
       loginId = pageReq.loginId_!, newIp = pageReq.newIp,
       ctime = pageReq.ctime, reason = reason, details = details)
 
-    pageReq.dao.savePageActions(pageReq, flag::Nil)
+    pageReq.dao.savePageActionsGenNotfs(pageReq, flag::Nil)
 
     // COULD include the page html, so Javascript can update the browser.
     OkDialogResult("Thanks", "", // (empty summary)
@@ -158,7 +158,7 @@ object Application extends mvc.Controller {
       newIp = pageReq.newIp, ctime = pageReq.ctime, wholeTree = wholeTree,
       reason = reason)
 
-    pageReq.dao.savePageActions(pageReq, deletion::Nil)
+    pageReq.dao.savePageActionsGenNotfs(pageReq, deletion::Nil)
 
     // COULD include the page html, so Javascript can update the browser.
     OkDialogResult("Deleted", "", // (empty summary)

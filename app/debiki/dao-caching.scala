@@ -41,14 +41,14 @@ class CachingTenantDao(tenantDbDao: ChargingTenantDbDao)
   with CachingUserDao {
 
 
-  override def savePageActionsImpl(page: Debate, actions: List[Action],
+  override def savePageActionsGenNotfsImpl(page: Debate, actions: List[Action],
         pageMeta: PageMeta): Seq[Action] = {
 
     if (actions isEmpty)
       return Nil
 
     val actionsWithId =
-      super.savePageActionsImpl(page, actions, pageMeta)
+      super.savePageActionsGenNotfsImpl(page, actions, pageMeta)
 
     // Possible optimization: Examine all actions, and refresh cache only
     // if there are e.g. EditApp:s or approved Post:s (but ignore Edit:s --
@@ -76,7 +76,7 @@ class CachingTenantDao(tenantDbDao: ChargingTenantDbDao)
 
     // ------ Page action cache (I'll probably remove it)
     // COULD instead update value in cache (adding the new actions to
-    // the cached page). But then `savePageActions` also needs to know
+    // the cached page). But then `savePageActionsGenNotfs` also needs to know
     // which users created the actions, so their login/idty/user instances
     // can be cached as well (or it won't be possible to render the page,
     // later, when it's retrieved from the cache).

@@ -56,7 +56,7 @@ object AppReply extends mvc.Controller {
       where = whereOpt, approval = approval)
 
     val List(postWithId: Post) =
-      pageReq.dao.savePageActions(pageReq, postNoId::Nil)
+      pageReq.dao.savePageActionsGenNotfs(pageReq, postNoId::Nil)
 
     if (pageReq.isAjax)
       BrowserPagePatcher.jsonForMyNewPosts(pageReq, postWithId::Nil)

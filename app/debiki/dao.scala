@@ -89,21 +89,21 @@ class TenantDao(protected val tenantDbDao: ChargingTenantDbDao)
    * Saves page actions and places messages in users' inboxes, as needed.
    * Returns the saved actions, with ids assigned.
    */
-  final def savePageActions(pageReq: PageRequest[_], actions: List[Action])
+  final def savePageActionsGenNotfs(pageReq: PageRequest[_], actions: List[Action])
         : Seq[Action] = {
-    savePageActionsImpl(pageReq.page_!, actions, pageReq.pageMeta)
+    savePageActionsGenNotfsImpl(pageReq.page_!, actions, pageReq.pageMeta)
   }
 
 
-  final def savePageActions(page: Debate, actions: List[Action])
+  final def savePageActionsGenNotfs(page: Debate, actions: List[Action])
         : Seq[Action] = {
     val pageMeta = tenantDbDao.loadPageMeta(page.id) getOrElse
       throwNotFound("DwE115Xf3", s"Found no meta for page ${page.id}")
-    savePageActionsImpl(page, actions, pageMeta)
+    savePageActionsGenNotfsImpl(page, actions, pageMeta)
   }
 
 
-  def savePageActionsImpl(page: Debate, actions: List[Action],
+  def savePageActionsGenNotfsImpl(page: Debate, actions: List[Action],
         pageMeta: PageMeta): Seq[Action] = {
     if (actions isEmpty)
       return Nil

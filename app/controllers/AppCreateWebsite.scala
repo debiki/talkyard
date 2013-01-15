@@ -231,7 +231,7 @@ object AppCreateWebsite extends mvc.Controller {
       markup = Markup.DefaultForPageTitle.id,
       approval = Some(Approval.AuthoritativeUser),
       tyype = PostType.Text)
-    newWebsiteDao.savePageActionsImpl(emptyPage, List(title), pageMeta)
+    newWebsiteDao.savePageActionsGenNotfsImpl(emptyPage, List(title), pageMeta)
   }
 
 

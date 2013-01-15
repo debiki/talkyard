@@ -133,7 +133,7 @@ object AppEditHistory extends mvc.Controller {
 
     // ----- Save all changes
 
-    pageReq.dao.savePageActions(pageReq, actions)
+    pageReq.dao.savePageActionsGenNotfs(pageReq, actions)
   }
 
 }
