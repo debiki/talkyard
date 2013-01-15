@@ -19,8 +19,6 @@ import Utils.ValidationImplicits._
 /**
  * Approves and rejects comments and edits of comments, and new pages,
  * etcetera.
- *
- * Use like so: POST /some/page?review=commentId&approve
  */
 object AppReview extends mvc.Controller {
 

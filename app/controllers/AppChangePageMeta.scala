@@ -30,6 +30,8 @@ object AppChangePageMeta extends mvc.Controller {
 
   def changeMeta = PostJsonAction(maxLength = 5000) { apiReq =>
 
+    SECURITY; BUG // I've forgotten user permisson control?
+
     val changes: List[Map[String, String]] =
       apiReq.body.as[List[Map[String, String]]]
 
@@ -58,59 +60,24 @@ object AppChangePageMeta extends mvc.Controller {
     }
 
     Ok
-
-    /*
-    SECURITY; BUG // I've forgotten user permisson control?
-
-    // Play throws java.util.NoSuchElementException: key not found: pageId
-    // and e.g. new RuntimeException("String expected")
-    // on invalid JSON structure. COULD in some way convert to 400 Bad Request
-    // instead of failing with 500 Internal Server Error in Prod mode.
-    val actionObjs: List[Map[String, String]] =
-       apiReq.body.as[List[Map[String, String]]]
-
-    val reviewsList: List[(String, Review)] = actionObjs map { actionObj =>
-      val pageId = actionObj("pageId")
-      val actionId = actionObj("actionId")
-      pageId -> Review(
-          id = "?", targetId = actionId, loginId = apiReq.loginId_!,
-          newIp = None, ctime = apiReq.ctime,
-          approval = (if (shallApprove) Some(Approval.Manual) else None))
-    }
-
-    val reviewsByPageId: Map[String, List[Review]] =
-      reviewsList groupBy (_._1) mapValues {
-        pageIdAndReviews: List[(String, Review)] => pageIdAndReviews.map(_._2)
-      }
-
-    reviewsByPageId foreach { case (pageId, reviews) =>
-      val pageWithoutMe = apiReq.dao.loadPage(pageId) getOrElse throwBadReq(
-        "DwE93JQ3", "Page not found: "+ pageId +", only some reviews saved")
-      val page = pageWithoutMe ++ apiReq.meAsPeople_!
-
-      apiReq.dao.savePageActions(page, reviews)
-    }
-    */
-
-
-    /*
-    val body: JsValue = apiReq.body
-    println("body: "+ body)
-
-    val listOfPagesToChange: JsValue = (__ \ "changePageMeta")(body)
-    println("listOfPagesToChange: "+ listOfPagesToChange)
-
-    val listOfPagesToChange: JsValue = (__ \ "changePageMeta")(body)
-    println("listOfPagesToChange: "+ listOfPagesToChange)
-
-
-    val readNewMeta = (
-      (__ \ "id").read[String] andThen
-      (__ \ "status").read[String]
-      ) tupled
-    */
   }
 
+  /* How do I use Play 2.1's Json stuff??
+
+  val body: JsValue = apiReq.body
+  println("body: "+ body)
+
+  val listOfPagesToChange: JsValue = (__ \ "changePageMeta")(body)
+  println("listOfPagesToChange: "+ listOfPagesToChange)
+
+  val listOfPagesToChange: JsValue = (__ \ "changePageMeta")(body)
+  println("listOfPagesToChange: "+ listOfPagesToChange)
+
+  val readNewMeta = (
+    (__ \ "id").read[String] andThen
+    (__ \ "status").read[String]
+    ) tupled
+  */
 
 }
 
