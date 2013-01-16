@@ -49,6 +49,25 @@ trait PagePathMetaDao {
   def updatePageMeta(meta: PageMeta) =
     tenantDbDao.updatePageMeta(meta)
 
+
+  /**
+   * Returns a list like: grandparent-meta :: parent-meta :: meta-for-pageId :: Nil
+   */
+  final def listAncestorsAndSelf(pageId: String): List[(PagePath, PageMeta)] = {
+    var curPageMeta = loadPageMeta(pageId)
+    var curPagePath = lookupPagePath(pageId)
+    var result: List[(PagePath, PageMeta)] = Nil
+
+    while (curPageMeta.isDefined && curPagePath.isDefined) {
+      result ::= (curPagePath.get, curPageMeta.get)
+      val parentId = curPageMeta.get.parentPageId
+      curPageMeta = parentId.flatMap(loadPageMeta _)
+      curPagePath = parentId.flatMap(lookupPagePath _)
+    }
+
+    result
+  }
+
 }
 
 

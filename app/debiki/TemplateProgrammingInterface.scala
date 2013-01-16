@@ -203,6 +203,18 @@ class TinyTemplateProgrammingInterface protected (
   }
 
 
+  /**
+   * Returns any parent forums, e.g.: grandparent-forum :: parent-forum :: Nil.
+   */
+  def listParentForums(): Seq[tpi.Forum] = {
+    _pageReq.dao.listAncestorsAndSelf(pageId).init map { case (pagePath, pageMeta) =>
+      tpi.Forum(
+        pageMeta.pageId, path = pagePath.path,
+        title = pageMeta.cachedTitle getOrElse "(Unnamed forum)")
+    }
+  }
+
+
   def listSubForums(): Seq[tpi.Forum] =
     listPublishedChildren(filterPageRole = Some(PageRole.ForumMainPage)) map {
       case (pagePath, pageMeta) =>

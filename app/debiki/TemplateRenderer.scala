@@ -81,8 +81,7 @@ object TemplateRenderer {
         } else if (pageMeta.pageRole == PageRole.ForumMainPage) {
           "forumMainPage"
         } else if (pageMeta.pageRole == PageRole.ForumThread) {
-          // For now:
-          "blogPost"
+          "forumThread"
         } else {
           // A blog post template works well for most pages?
           "blogPost"
