@@ -79,8 +79,7 @@ object TemplateRenderer {
         } else if (pageMeta.pageRole == PageRole.BlogMainPage) {
           "blogMainPage"
         } else if (pageMeta.pageRole == PageRole.ForumMainPage) {
-          if (pageMeta.parentPageId isEmpty) "forumMainPage"
-          else "subforum"
+          "forumMainPage"
         } else if (pageMeta.pageRole == PageRole.ForumThread) {
           // For now:
           "blogPost"

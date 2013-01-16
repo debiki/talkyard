@@ -53,6 +53,9 @@ module.exports = function(grunt) {
       'target/client/debiki/debiki-util-play.js',
       'target/client/debiki/debiki-utterscroll-init-tips.js',//
       'client/debiki/debiki-utterscroll.js',//
+      'target/client/debiki/debiki-forum.js',
+      'target/client/debiki/debiki-page-path.js',
+      'target/client/debiki/debiki-create-page.js',
       'target/client/debiki/debiki.js']
 
   var debikiTouchFiles = [
@@ -96,6 +99,9 @@ module.exports = function(grunt) {
       'target/client/debiki/debiki-util.js',
       'target/client/debiki/debiki-util-browser.js',
       'target/client/debiki/debiki-util-play.js',
+      'target/client/debiki/debiki-forum.js',
+      'target/client/debiki/debiki-page-path.js',
+      'target/client/debiki/debiki-create-page.js',
       'target/client/debiki/debiki.js']
 
   grunt.initConfig({
@@ -168,7 +174,6 @@ module.exports = function(grunt) {
           'target/client/spa/js/new-website-choose-name.js'],
 
       'public/res/debiki-dashbar.js': [
-          'target/client/debiki/debiki-page-path.js',
           'target/client/debiki/debiki-dashbar.js'],
     },
     min: {

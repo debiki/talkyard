@@ -13,13 +13,28 @@
     Threads from selected forums are then listed below.
   </p> -->
 
-  <ol class="subforum-list">
+  <ol class="forum-list">
   @for(subforum <- tpi.listSubForums()) {
-    <a href='@{subforum.path}'>@{subforum.title}</a>
+    <li>
+      <a href='@{subforum.path}'>
+        <h2>@{subforum.title}</h2>
+      </a>
+    </li>
   }
   </ol>
 
+  @if(tpi.listSubForums().isEmpty) {
+    <a class='dw-a-new-forum-thread'>New Topic</a>
+  }
+
   <ol class="thread-list">
+  @for(thread <- tpi.listRecentForumThreads()) {
+    <li>
+      <a href='@{thread.path}'>
+        <h3>@{thread.title}</h3>
+      </a>
+    </li>
+  }
   </ol>
 
 }
