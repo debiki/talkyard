@@ -58,7 +58,8 @@ object AppEdit extends mvc.Controller {
         // a newly created but unsaved page. Construct a dummy page with
         // an empty dummy post in place of the one that doesn't
         // yet exist, but is to be edited.
-        val postToEdit = _createPostToEdit(pageReqPerhapsNoPage, postId)
+        val postToEdit = _createPostToEdit(pageReqPerhapsNoPage, postId,
+          authorLoginId = PageRenderer.DummyAuthorLogin.id)
         val meta = PageMeta.forNewPage(pageId, pageReqPerhapsNoPage.ctime)
         pageReqPerhapsNoPage.copyWithPreloadedPage(
           meta, Debate(pageId) + postToEdit, pageExists = false)
@@ -80,7 +81,8 @@ object AppEdit extends mvc.Controller {
     // — but you can edit existing post though, if you're not logged in.)
     val request = pageReqWithoutMe.copyWithAnyMeOnPage // needed?
 
-    val (vipo, lazyCreateOpt) = _getOrCreatePostToEdit(request, postId)
+    val (vipo, lazyCreateOpt) = _getOrCreatePostToEdit(request, postId,
+      authorLoginId = PageRenderer.DummyAuthorLogin.id)
     val draftText = vipo.text  // in the future, load user's draft from db.
     val editForm = Utils.formHtml(request).editForm(
        vipo, newText = draftText, userName = request.sid.displayName)
@@ -250,7 +252,8 @@ object AppEdit extends mvc.Controller {
         postId: String, newText: String, newMarkupOpt: Option[String])
         : List[Action] = {
 
-    val (post, lazyCreateOpt) = _getOrCreatePostToEdit(pageReq, postId)
+    val (post, lazyCreateOpt) =
+      _getOrCreatePostToEdit(pageReq, postId, authorLoginId = pageReq.loginId_!)
     val markupChanged =
       newMarkupOpt.isDefined && newMarkupOpt != Some(post.markup)
     if (newText == post.text && !markupChanged)
@@ -305,8 +308,10 @@ object AppEdit extends mvc.Controller {
   }
 
 
-  private def _getOrCreatePostToEdit(pageReq: PageRequest[_], postId: String)
+  private def _getOrCreatePostToEdit(
+        pageReq: PageRequest[_], postId: String, authorLoginId: String)
         : (ViPo, Option[Post]) = {
+
     val vipoOpt: Option[ViPo] = pageReq.page_!.vipo(postId)
 
     // The page title and template are created automatically
@@ -319,7 +324,7 @@ object AppEdit extends mvc.Controller {
       // But create a title or template, lazily, if needed.
       else if (postId == Page.TitleId || postId == Page.TemplateId ||
           postId == Page.BodyId) {
-        Some(_createPostToEdit(pageReq, postId = postId))
+        Some(_createPostToEdit(pageReq, postId = postId, authorLoginId = authorLoginId))
       }
       // Most post are not created automatically (instead error is returned).
       else {
@@ -336,8 +341,9 @@ object AppEdit extends mvc.Controller {
   }
 
 
-  private def _createPostToEdit(pageReq: PageRequest[_], postId: String)
-        : Post = {
+  private def _createPostToEdit(
+        pageReq: PageRequest[_], postId: String, authorLoginId: String): Post = {
+
     val markup =
       if (postId == Page.TemplateId) Markup.Code
       else if (postId == Page.TitleId) Markup.DefaultForPageTitle
@@ -349,7 +355,7 @@ object AppEdit extends mvc.Controller {
     // 2. The post will be auto approved implicitly, if the Edit is
     // auto approved.
     Post(id = postId, parent = postId, ctime = pageReq.ctime,
-      loginId = pageReq.loginId_!, newIp = pageReq.newIp, text = "",
+      loginId = authorLoginId, newIp = pageReq.newIp, text = "",
       markup = markup.id, tyype = PostType.Text,
       where = None, approval = None)
   }
