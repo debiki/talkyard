@@ -121,6 +121,9 @@ object AppCreatePage extends mvc.Controller {
     val pageRole = queryString.getEmptyAsNone("page-role").map(
       stringToPageRole _) getOrElse PageRole.Any
 
+    val publishDirectly: Boolean = queryString.getEmptyAsNone("status").map(
+      PageStatus.parse _) == Some(PageStatus.Published)
+
     val parentPageId: Option[String] =
       queryString.getEmptyAsNone("parent-page-id")
 
@@ -129,7 +132,7 @@ object AppCreatePage extends mvc.Controller {
       throwBadReq("DwE93HF2", "Parent page id is `undefined`")
 
     PageMeta.forNewPage(pageId, pageReq.ctime, pageRole,
-      parentPageId = parentPageId)
+      parentPageId = parentPageId, publishDirectly = publishDirectly)
   }
 
 

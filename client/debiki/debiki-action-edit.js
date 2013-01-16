@@ -344,6 +344,7 @@ function _$showEditFormImpl() {
           // the page (if needed).
           pagePath: pageMeta.pagePath,
           pageRole: pageMeta.pageRole,
+          pageStatus: pageMeta.pageStatus,
           parentPageId: pageMeta.parentPageId,
           postId: postId,
           text: $editForm.find('[name="dw-fi-e-txt"]').val(),

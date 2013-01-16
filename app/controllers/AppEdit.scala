@@ -108,7 +108,7 @@ object AppEdit extends mvc.Controller {
     _throwIfTooMuchData(text, pageReqOrig)
 
     val pageReqNoMeOnPage = _createPageIfNeeded(pageReqOrig, PageRole.Any,
-      parentPageId = None)
+      PageStatus.Draft, parentPageId = None)
     val pageReq = pageReqNoMeOnPage.copyWithMeOnPage_!
     _saveEdits(pageReq, postId, text, markupOpt)
     Utils.renderOrRedirect(pageReq)
@@ -138,6 +138,7 @@ object AppEdit extends mvc.Controller {
 
       val pagePathStr = (editMaps.head)("pagePath")
       val pageRoleStr = (editMaps.head)("pageRole")
+      val pageStatusStr = (editMaps.head)("pageStatus")
       val parentPageIdStr = (editMaps.head)("parentPageId")
 
       // Ensure all entries for `pageId` have the same page path.
@@ -156,6 +157,7 @@ object AppEdit extends mvc.Controller {
       // of the same page.)
 
       val pageRole = AppCreatePage.stringToPageRole(pageRoleStr)
+      val pageStatus = PageStatus.parse(pageStatusStr)
       val parentPageId =
         if (parentPageIdStr isEmpty) None else Some(parentPageIdStr)
 
@@ -163,7 +165,7 @@ object AppEdit extends mvc.Controller {
         fixBadPath = yesFixPath)
 
       val pageReqPerhapsNoMe = _createPageIfNeeded(pageReqPerhapsNoPage,
-        pageRole, parentPageId = parentPageId)
+        pageRole, pageStatus, parentPageId = parentPageId)
       // Include current user on the page to be edited, or it won't be
       // possible to render the page to html, later, because the current
       // user's name might be included in the generated html: "Edited by: ..."
@@ -227,8 +229,12 @@ object AppEdit extends mvc.Controller {
    * If the requested page does not exist, creates it, and returns
    * a PagePostRequest to the new page.
    */
-  private def _createPageIfNeeded[A](pageReq: PageRequest[A],
-        pageRole: PageRole, parentPageId: Option[String]): PageRequest[A] = {
+  private def _createPageIfNeeded[A](
+    pageReq: PageRequest[A],
+    pageRole: PageRole,
+    pageStatus: PageStatus,
+    parentPageId: Option[String]): PageRequest[A] = {
+
     if (pageReq.pageExists)
       return pageReq
 
@@ -239,7 +245,7 @@ object AppEdit extends mvc.Controller {
       "DwE39KR8", "No page id, cannot lazy-create page at "+ pageReq.pagePath))
 
     val pageMeta = PageMeta.forNewPage(pageId, pageReq.ctime, pageRole,
-      parentPageId = parentPageId)
+      parentPageId = parentPageId, publishDirectly = pageStatus == PageStatus.Published)
 
     val newPage = pageReq.dao.createPage(
       PageStuff(pageMeta, pageReq.pagePath, Debate(pageId)))

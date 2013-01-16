@@ -5,7 +5,9 @@ $ = d.i.$;
 
 
 $('.dw-a-new-forum-thread').click !->
-  d.i.createChildPage pageRole: 'ForumThread'
+  # Create a new forum thread. Publish it directly, that's how
+  # forums usually work?
+  d.i.createChildPage pageRole: 'ForumThread', status: 'Published'
 
 
 # vim: fdm=marker et ts=2 sw=2 tw=80 fo=tcqwn list

@@ -295,6 +295,7 @@ object HtmlPageSerializer {
         data-page_exists={pageMeta.pageExists.toString}
         data-page_path={pagePath.path}
         data-page_role={pageMeta.pageRole.toString}
+        data-page_status={pageMeta.status.toString}
         data-parent_page_id={pageMeta.parentPageId.map(_.toString) getOrElse ""}>
       { body }
     </div>

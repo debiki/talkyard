@@ -7,7 +7,7 @@ $ = d.i.$;
 /**
  * Opens a new unsaved page in a new browser tab.
  */
-d.i.createChildPage = !({ pageRole, parentPageId }) ->
+d.i.createChildPage = !({ pageRole, parentPageId, status }) ->
   # Open new tab directly in response to user click, or browser popup
   # blockers tend to block the new tab.
   newTab = window.open '', '_blank'
@@ -29,6 +29,7 @@ d.i.createChildPage = !({ pageRole, parentPageId }) ->
     viewNewPageUrl += '&page-role=' + pageRole
     parentPageId = d.i.pageId if !parentPageId
     viewNewPageUrl += '&parent-page-id=' + parentPageId if parentPageId
+    viewNewPageUrl += '&status=' + status if status
     newTab.location = viewNewPageUrl
 
 
