@@ -5,15 +5,11 @@
 package debiki
 
 import com.debiki.v0._
-import controllers.{AppCreatePage, PageRequest}
 import java.{util => ju}
-import PageRenderer._
 import Prelude._
 
 
-
 object PageRenderer {   // COULD rename to DummyPage
-
 
   /**
    * A page with "This page is pendig approval" body.
@@ -72,18 +68,29 @@ object PageRenderer {   // COULD rename to DummyPage
     ctime = new ju.Date,
     loginId = DummyAuthorLogin.id,
     newIp = None,
-    text = AppCreatePage.DummyTitleText,
+    text = DummyTitleText,
     markup = Markup.DefaultForPageTitle.id,
     approval = Some(Approval.Preliminary),
     tyype = PostType.Text)
 
 
   val DummyBody = DummyTitle.copy(
-    id = Page.BodyId, parent = Page.BodyId, text = AppCreatePage.DummyPageText,
+    id = Page.BodyId, parent = Page.BodyId, text = DummyPageText,
     markup = Markup.DefaultForPageBody.id)
 
 
-  private val ConfigPageDummyText = """
+  private def DummyTitleText =
+    "New Page (click to edit)"
+
+
+  private def DummyPageText = i"""
+    |Page body.
+    |
+    |Click to edit, and select *Improve* in the menu that appears.
+    |"""
+
+
+  private def ConfigPageDummyText = """
     |This is an empty configuration page.
     |
     |Click this text to edit.
@@ -93,15 +100,6 @@ object PageRenderer {   // COULD rename to DummyPage
   val DummyConfig = DummyBody.copy(
     id = Page.TemplateId, parent = Page.TemplateId, text = ConfigPageDummyText,
     markup = Markup.Code.id)
-
-
-  private def _isHomepage(pagePath: PagePath) = {
-    _IsHomepageRegex.matches(pagePath.folder) && pagePath.isFolderOrIndexPage
-  }
-
-
-  private val _IsBlogRegex = """.*/blog/|.*/[0-9]{4}/[0-9]{2}/[0-9]{2}/""".r
-  private val _IsHomepageRegex = """/|\./drafts/""".r
 
 }
 

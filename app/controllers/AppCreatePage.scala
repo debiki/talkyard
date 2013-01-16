@@ -133,19 +133,6 @@ object AppCreatePage extends mvc.Controller {
   }
 
 
-  def dummyTitle(request: PageRequest[_]) = Post(
-    id = Page.TitleId, parent = Page.TitleId, ctime = request.ctime,
-    loginId = request.loginId_!, newIp = None, text = DummyTitleText,
-    markup = Markup.DefaultForPageTitle.id,
-    approval = Some(Approval.Preliminary),
-    tyype = PostType.Text)
-
-
-  def dummyBody(request: PageRequest[_]) = dummyTitle(request).copy(
-    id = Page.BodyId, parent = Page.BodyId, text = DummyPageText,
-    markup = Markup.DefaultForPageBody.id)
-
-
   /**
    * Hmm, regrettably this breaks should I rename any case object.
    * Perhaps use a match ... case list instead?
@@ -161,18 +148,5 @@ object AppCreatePage extends mvc.Controller {
   def stringToPageRole(pageRoleString: String): PageRole =
     _PageRoleLookup.find(_._2 == pageRoleString).map(_._1).getOrElse(
       throwBadReq("DwE930rR3", "Bad page role string: "+ pageRoleString))
-
-
-  private def _pageRoleToString(pageRole: PageRole): String = pageRole.toString
-
-
-  val DummyTitleText =
-    "New Page (click to edit)"
-
-  val DummyPageText: String =
-    """|Page body.
-       |
-       |Click to edit, and select *Improve* in the menu that appears.
-       |""".stripMargin
 
 }
