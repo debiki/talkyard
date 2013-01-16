@@ -30,13 +30,7 @@ import Utils.ValidationImplicits._
 object AppMoveRenamePage extends mvc.Controller {
 
 
-  /**
-   * This is the only function in this class that's actually needed
-   * (it's used by the Admin SPA). All other functions are invoked manually
-   * from a browser's URL, for debugging mostly (should I remove them?).
-   *
-   * However, ?rename-page via the URL is still useful.
-   */
+  /*
   def movePages = JsonOrFormDataPostAction(maxBytes = 2000) { pageReq =>
 
     if (!pageReq.user_!.isAdmin) {
@@ -53,7 +47,7 @@ object AppMoveRenamePage extends mvc.Controller {
     // (_movePages in RelDbTenantDao throws method-not-supported)
     pageReq.dao.movePages(pageIds, fromFolder = fromFolder, toFolder = toFolder)
     Ok
-  }
+  } */
 
 
   def moveRenamePage = JsonOrFormDataPostAction(maxBytes = 500) {
@@ -133,6 +127,9 @@ object AppMoveRenamePage extends mvc.Controller {
   }
 
 
+  /**
+   * Only invoked via the browser address bar, as of now: `?rename-page`
+   */
   def showRenamePageSlugForm(pathIn: PagePath) = PageGetAction(pathIn) {
         pageReq: PageGetRequest =>
      _moveRenameGetImpl(pageReq, movePage = false)

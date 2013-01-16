@@ -12,9 +12,10 @@ import Prelude._
 trait PagePathMetaDao {
   self: TenantDao =>
 
-
+  /*
   def movePages(pageIds: Seq[String], fromFolder: String, toFolder: String) =
     tenantDbDao.movePages(pageIds, fromFolder = fromFolder, toFolder = toFolder)
+    */
 
 
   def moveRenamePage(pageId: String, newFolder: Option[String] = None,
@@ -56,13 +57,14 @@ trait CachingPagePathMetaDao extends PagePathMetaDao {
   self: CachingTenantDao =>
 
 
-  @deprecated("Cannot fire page moved events?")
+  /*
+  @deprecated("Cannot fire page moved events?", since = "now")
   override def movePages(pageIds: Seq[String], fromFolder: String,
         toFolder: String) = {
     unimplemented("Firing page moved events")
     pageIds foreach (_removeCachedPathsTo _)
     super.movePages(pageIds, fromFolder = fromFolder, toFolder = toFolder)
-  }
+  }*/
 
 
   override def moveRenamePage(pageId: String, newFolder: Option[String] = None,
