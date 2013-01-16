@@ -29,9 +29,10 @@ PrettyListItem =
 
   prettyRole: ->
     switch @role
-      | 'BlogMainPage' => 'Blog main page'
+      | 'BlogMainPage' => 'Blog'
       | 'BlogArticle' => 'Blog post'
-      | 'ForumMainPage' => 'Forum main page'
+      | 'ForumMainPage' => 'Forum'
+      | 'ForumThread' => 'Forum thread'
       | _ => ''
 
 
