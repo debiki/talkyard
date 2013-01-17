@@ -12,11 +12,18 @@
 
 
 @recentBlogPosts = @{
+  // Show help text on how to write blog articles,
+  // if there are not yet any articles.
   val blogPosts = tpi.listNewestChildPages()
   if (blogPosts.nonEmpty)
     blogPosts
   else Seq(debiki.TinyTemplateProgrammingInterface.Page(
-    id = "", path = "", title = "Example Blog Post", safeBodyHtml = """
+    id = "",
+    path = "",
+    title = "Example Blog Post",
+    creationDati = new java.util.Date(),
+    pubDati = Some(new java.util.Date()),
+    safeBodyHtml = """
     <div>
       <p>This is your new blog.</p>
       <p>This is an example blog post. It will be removed once you have written

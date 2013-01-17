@@ -132,9 +132,8 @@ class TenantDao(protected val tenantDbDao: ChargingTenantDbDao)
   def loadPageAnyTenant(tenantId: String, pageId: String): Option[Debate] =
     tenantDbDao.loadPage(pageId, tenantId = Some(tenantId))
 
-  def loadPageBodiesTitles(pagePaths: Seq[PagePath])
-        : Seq[(PagePath, Option[Debate])] =
-    tenantDbDao.loadPageBodiesTitles(pagePaths)
+  def loadPageBodiesTitles(pageIds: Seq[String]): Map[String, Debate] =
+    tenantDbDao.loadPageBodiesTitles(pageIds)
 
   def loadRecentActionExcerpts(
         fromIp: Option[String] = None,

@@ -25,9 +25,58 @@ object TinyTemplateProgrammingInterface {
   def apply(pageReq: PageRequest[_]): TinyTemplateProgrammingInterface =
     new TinyTemplateProgrammingInterface(pageReq)
 
-  case class Page(id: String, path: String, title: String, safeBodyHtml: String)
-  case class Forum(id: String, path: String, title: String)
-  case class ForumThread(id: String, path: String, title: String)
+
+  case class Page(
+    id: String,
+    path: String,
+    title: String,
+    creationDati: ju.Date,
+    pubDati: Option[ju.Date],
+    safeBodyHtml: String)
+
+  case class Forum(
+    id: String, path: String, title: String, pubDati: Option[ju.Date])
+
+  case class ForumThread(
+    id: String, path: String, title: String, pubDati: Option[ju.Date])
+
+
+  object Page {
+    def apply(page: PageStuff, host: String): Page = Page(
+      id = page.id,
+      path = page.path.path,
+      title = titleOf(page),
+      creationDati = page.meta.creationDati,
+      pubDati = page.meta.pubDati,
+      safeBodyHtml = bodyOf(page, host))
+
+    private def titleOf(page: PageStuff): String =
+      // Currently HtmlPageSerializer ignores the `.markup` for a title Post.
+      page.actions.title.map(_.text).getOrElse("(No title)")
+
+    private def bodyOf(page: PageStuff, host: String): String =
+      page.actions.body.map(
+        HtmlPageSerializer.markupTextOf(_, host)).getOrElse("")
+  }
+
+
+  object Forum {
+    def apply(pageMeta: PageMeta, pagePath: PagePath): Forum = Forum(
+      id = pageMeta.pageId,
+      path = pagePath.path,
+      title = pageMeta.cachedTitle getOrElse "(Unnamed forum)",
+      pubDati = pageMeta.pubDati)
+  }
+
+
+  object ForumThread {
+    def apply(pageMeta: PageMeta, pagePath: PagePath): ForumThread = ForumThread(
+      id = pageMeta.pageId,
+      path = pagePath.path,
+      title = pageMeta.cachedTitle getOrElse "(Unnamed topic)",
+      pubDati = pageMeta.pubDati)
+  }
+
 }
 
 
@@ -154,21 +203,19 @@ class TinyTemplateProgrammingInterface protected (
     val articlePaths = pathsAndMeta map (_._1) filter (
        controllers.Utils.isPublicArticlePage _)
 
-    val pathsAndPages: Seq[(PagePath, Option[Debate])] =
-      _pageReq.dao.loadPageBodiesTitles(articlePaths)
+    // ----- Dupl code! See listNewestChildPages() below.
 
-    def titleOf(page: Option[Debate]): String =
-      // Currenply HtmlPageSerializer ignores the `.markup` for a title Post.
-      page.flatMap(_.title).map(_.text).getOrElse("(No title)")
+    val pagesById: Map[String, Debate] =
+      _pageReq.dao.loadPageBodiesTitles(
+        articlePaths.map(_.pageId getOrDie "DwE82AJ7"))
 
-    def bodyOf(page: Option[Debate]): String =
-      page.flatMap(_.body).map(
-        HtmlPageSerializer.markupTextOf(_, _pageReq.host)).getOrElse("")
-
-    pathsAndPages map { case (pagePath, pageOpt: Option[Debate]) =>
-      val pageApproved = pageOpt map (_.approvedVersion)
-      tpi.Page(id = pagePath.pageId.get, path = pagePath.path,
-        title = titleOf(pageApproved), safeBodyHtml = bodyOf(pageApproved))
+    for {
+      (pagePath, pageMeta) <- pathsAndMeta
+      pageActions <- pagesById.get(pageMeta.pageId)
+    } yield {
+      tpi.Page(
+        PageStuff(pageMeta, pagePath, pageActions.approvedVersion),
+        host = _pageReq.host)
     }
   }
 
@@ -178,27 +225,25 @@ class TinyTemplateProgrammingInterface protected (
       _pageReq.dao.listChildPages(parentPageId = pageId,
           sortBy = PageSortOrder.ByPublTime, limit = 10, offset = 0)
 
-    val articlePaths = pathsAndMeta filter {
+    // "Access control". Filter out pages that has not yet been published.
+    val pubPathsAndMeta = pathsAndMeta filter {
       case (paths, details) =>
         details.pubDati.map(
             _.getTime < _pageReq.ctime.getTime) == Some(true)
-    } map (_._1)
+    }
 
-    val pathsAndPages: Seq[(PagePath, Option[Debate])] =
-      _pageReq.dao.loadPageBodiesTitles(articlePaths)
+    // ----- Dupl code! See listNewestPages() above.
 
-    def titleOf(page: Option[Debate]): String =
-    // Currenply HtmlPageSerializer ignores the `.markup` for a title Post.
-      page.flatMap(_.title).map(_.text).getOrElse("(No title)")
+    val pagesById: Map[String, Debate] =
+      _pageReq.dao.loadPageBodiesTitles(pubPathsAndMeta.map(_._2.pageId))
 
-    def bodyOf(page: Option[Debate]): String =
-      page.flatMap(_.body).map(
-        HtmlPageSerializer.markupTextOf(_, _pageReq.host)).getOrElse("")
-
-    pathsAndPages map { case (pagePath, pageOpt: Option[Debate]) =>
-      val pageApproved = pageOpt map (_.approvedVersion)
-      tpi.Page(id = pagePath.pageId.get, path = pagePath.path,
-        title = titleOf(pageApproved), safeBodyHtml = bodyOf(pageApproved))
+    for {
+      (pagePath, pageMeta) <- pubPathsAndMeta
+      pageActions <- pagesById.get(pageMeta.pageId)
+    } yield {
+      tpi.Page(
+        PageStuff(pageMeta, pagePath, pageActions.approvedVersion),
+        host = _pageReq.host)
     }
   }
 
@@ -208,9 +253,7 @@ class TinyTemplateProgrammingInterface protected (
    */
   def listParentForums(): Seq[tpi.Forum] = {
     _pageReq.dao.listAncestorsAndSelf(pageId).init map { case (pagePath, pageMeta) =>
-      tpi.Forum(
-        pageMeta.pageId, path = pagePath.path,
-        title = pageMeta.cachedTitle getOrElse "(Unnamed forum)")
+      tpi.Forum(pageMeta, pagePath)
     }
   }
 
@@ -218,18 +261,14 @@ class TinyTemplateProgrammingInterface protected (
   def listSubForums(): Seq[tpi.Forum] =
     listPublishedChildren(filterPageRole = Some(PageRole.ForumMainPage)) map {
       case (pagePath, pageMeta) =>
-        tpi.Forum(
-          pageMeta.pageId, path = pagePath.path,
-          title = pageMeta.cachedTitle getOrElse "(Unnamed subforum)")
+        tpi.Forum(pageMeta, pagePath)
     }
 
 
   def listRecentForumThreads(): Seq[tpi.ForumThread] =
     listPublishedChildren(filterPageRole = Some(PageRole.ForumThread)) map {
       case (pagePath, pageMeta) =>
-        tpi.ForumThread(
-          pageMeta.pageId, path = pagePath.path,
-          title = pageMeta.cachedTitle getOrElse "(Unnamed forum thread)")
+        tpi.ForumThread(pageMeta, pagePath)
     }
 
 

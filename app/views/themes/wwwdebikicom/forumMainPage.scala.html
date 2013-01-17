@@ -38,9 +38,8 @@
   <ol class="thread-list">
   @for(thread <- tpi.listRecentForumThreads()) {
     <li>
-      <a href='@{thread.path}'>
-        <h3>@{thread.title}</h3>
-      </a>
+      <a href='@{thread.path}'><h3>@{thread.title}</h3></a><br>
+      on @{thread.pubDati.toString}
     </li>
   }
   </ol>
