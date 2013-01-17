@@ -152,8 +152,7 @@ abstract class TenantDbDao {
    * For each PagePath, loads a Page (well, Debate) with actions loaded
    * only for Page.BodyId and Page.TitleId. Also loads the authors.
    */
-  def loadPageBodiesTitles(pagePaths: Seq[PagePath])
-        : Seq[(PagePath, Option[Debate])]
+  def loadPageBodiesTitles(pageIds: Seq[String]): Map[String, Debate]
 
   /**
    * Loads at most `limit` recent posts, conducted e.g. at `fromIp`.
@@ -495,8 +494,7 @@ class ChargingTenantDbDao(
     _spi.loadPage(debateId, tenantId)
   }
 
-  def loadPageBodiesTitles(pagePaths: Seq[PagePath])
-        : Seq[(PagePath, Option[Debate])] = {
+  def loadPageBodiesTitles(pagePaths: Seq[String]): Map[String, Debate] = {
     _chargeForOneReadReq()
     _spi.loadPageBodiesTitles(pagePaths)
   }
