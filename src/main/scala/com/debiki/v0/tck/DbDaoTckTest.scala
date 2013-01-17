@@ -442,17 +442,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
     }
 
     "list no body and title, for a non-existing page" in {
-      val badPath = PagePath(
-        tenantId = defaultTenantId,
-        folder = "/",
-        pageId = Some("nonexistingpage"),
-        showId = true,
-        pageSlug = "page-slug")
-      val pathsAndPages = dao.loadPageBodiesTitles(List(badPath))
-      pathsAndPages must beLike { case List(pathAndPage) =>
-        pathAndPage._1 must_== badPath
-        pathAndPage._2 must beEmpty
-      }
+      dao.loadPageBodiesTitles("nonexistingpage"::Nil) must beEmpty
     }
 
     "list body and title, for a page that exists" in {
@@ -465,20 +455,18 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
       pathAndDetails.length must be_>=(1)
       val path: PagePath = pathAndDetails.head._1
 
-      val pathsAndPages = dao.loadPageBodiesTitles(path::Nil)
-      pathsAndPages must beLike { case List(pathAndPage) =>
-        pathAndPage._1 must_== path
-        pathAndPage._2 must beLike { case Some(page) =>
-          page.bodyText must beSome
-          page.bodyText.get.length must be_>(0)
-          page.body_!.user must beSome
+      val pathsAndPages = dao.loadPageBodiesTitles(path.pageId.get::Nil)
+      pathsAndPages.size must_== 1
+      pathsAndPages.get(path.pageId.get) must beLike { case Some(page) =>
+        page.bodyText must beSome
+        page.bodyText.get.length must be_>(0)
+        page.body_!.user must beSome
 
-          /* Currently there is no title for the test page.
-          page.title must beSome
-          page.titleText.get.length must be_>(0)
-          page.title_!.user must beSome
-          */
-        }
+        /* Currently there is no title for the test page.
+        page.title must beSome
+        page.titleText.get.length must be_>(0)
+        page.title_!.user must beSome
+        */
       }
     }
 
