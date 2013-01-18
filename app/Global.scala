@@ -119,10 +119,12 @@ object Global extends GlobalSettings {
         AppList.listPages(pagePath, DebikiHttp.ContentType.Html)
       case ("list-pages.json", GET) =>
         AppList.listPages(pagePath, DebikiHttp.ContentType.Json)
+        /*
       case ("list-newest-pages", GET) =>
         AppList.listNewestPages(pagePath, DebikiHttp.ContentType.Html)
       case ("list-newest-pages.json", GET) =>
         AppList.listNewestPages(pagePath, DebikiHttp.ContentType.Json)
+        */
       case ("list-actions", GET) =>
         AppList.listActions(pagePath, DebikiHttp.ContentType.Html)
       case ("list-actions.json", GET) =>

@@ -83,6 +83,7 @@ object AppList extends mvc.Controller {
   }
 
 
+  /*
   def listNewestPages(pathIn: PagePath, contentType: DebikiHttp.ContentType) =
         PageGetAction(pathIn, pageMustExist = false) { pageReq =>
 
@@ -120,7 +121,7 @@ object AppList extends mvc.Controller {
         // For rendering e.g. newest blog articles list via Javascrpit.
         OkSafeJson(pageTitlesAndBodiesJson)
     }
-  }
+  }*/
 
 
   def listActions(pathIn: PagePath, contentType: DebikiHttp.ContentType) =
