@@ -67,13 +67,13 @@ object Debate {
 case class Debate (
   guid: String,  // COULD rename to pageId?
   people: People = People.None,
-  private[debiki] val posts: List[Post] = Nil,
-  private[debiki] val ratings: List[Rating] = Nil,
-  private[debiki] val edits: List[Edit] = Nil,
-  private[debiki] val editApps: List[EditApp] = Nil,
-  private[debiki] val flags: List[Flag] = Nil,
-  private[debiki] val deletions: List[Delete] = Nil,
-  private[debiki] val reviews: List[Review] = Nil) {
+  posts: List[Post] = Nil,
+  ratings: List[Rating] = Nil,
+  edits: List[Edit] = Nil,
+  editApps: List[EditApp] = Nil,
+  flags: List[Flag] = Nil,
+  deletions: List[Delete] = Nil,
+  reviews: List[Review] = Nil) {
 
   private lazy val postsById =
       imm.Map[String, Post](posts.map(x => (x.id, x)): _*)
