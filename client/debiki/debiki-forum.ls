@@ -4,7 +4,7 @@ d = i: debiki.internal, u: debiki.v0.util
 $ = d.i.$;
 
 
-$('.dw-a-new-forum-thread').click !->
+$('.dw-a-new-forum-topic').click !->
   # Create a new forum thread. Publish it directly, that's how
   # forums usually work?
   d.i.createChildPage pageRole: 'ForumThread', status: 'Published'

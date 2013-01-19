@@ -37,6 +37,7 @@ class CachingTenantDao(tenantDbDao: ChargingTenantDbDao)
   with CachingAssetBundleDao
   with CachingConfigValueDao
   with CachingPagePathMetaDao
+  with CachingPageSummaryDao
   with CachingRenderedPageHtmlDao
   with CachingUserDao {
 

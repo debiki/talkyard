@@ -34,11 +34,31 @@ object TinyTemplateProgrammingInterface {
     pubDati: Option[ju.Date],
     safeBodyHtml: String)
 
-  case class Forum(
-    id: String, path: String, title: String, pubDati: Option[ju.Date])
 
-  case class ForumThread(
-    id: String, path: String, title: String, pubDati: Option[ju.Date])
+  case class ParentForum(
+    id: String, path: String, title: String)
+
+
+  case class SubForum(
+    id: String, path: String, title: String)
+    // and, in the future: num topics, num contributors and num replies?
+
+
+  case class ForumTopic(
+    id: String,
+    path: String,
+    title: String,
+    excerpt: String,
+    authorDisplayName: String,
+    authorUserId: String,
+    numRepliesApproved: Int,
+    numRepliesRejected: Int,
+    numRepliesPendingReview: Int,
+    numRepliesFlagged: Int,
+    numRepliesDeleted: Int,
+    numContributors: Int,
+    pubDati: Option[ju.Date],
+    lastReplyDati: Option[ju.Date])
 
 
   object Page {
@@ -60,21 +80,40 @@ object TinyTemplateProgrammingInterface {
   }
 
 
-  object Forum {
-    def apply(pageMeta: PageMeta, pagePath: PagePath): Forum = Forum(
+  object ParentForum {
+    def apply(pageMeta: PageMeta, pagePath: PagePath): ParentForum = ParentForum(
       id = pageMeta.pageId,
       path = pagePath.path,
-      title = pageMeta.cachedTitle getOrElse "(Unnamed forum)",
-      pubDati = pageMeta.pubDati)
+      title = pageMeta.cachedTitle getOrElse "(Unnamed forum)")
   }
 
 
-  object ForumThread {
-    def apply(pageMeta: PageMeta, pagePath: PagePath): ForumThread = ForumThread(
+  object SubForum {
+    def apply(pageMeta: PageMeta, pagePath: PagePath): SubForum = SubForum(
       id = pageMeta.pageId,
       path = pagePath.path,
-      title = pageMeta.cachedTitle getOrElse "(Unnamed topic)",
-      pubDati = pageMeta.pubDati)
+      title = pageMeta.cachedTitle getOrElse "(Unnamed forum)")
+  }
+
+
+  object ForumTopic {
+    def apply(pageMeta: PageMeta, pagePath: PagePath, pageSummary: PageSummary)
+          : ForumTopic =
+      ForumTopic(
+        id = pageMeta.pageId,
+        path = pagePath.path,
+        title = pageMeta.cachedTitle getOrElse "(Unnamed topic)",
+        excerpt = pageSummary.textExcerpt,
+        authorDisplayName = pageSummary.authorDisplayName,
+        authorUserId = pageSummary.authorUserId,
+        numRepliesApproved = pageSummary.numPostsApproved,
+        numRepliesRejected = pageSummary.numPostsRejected,
+        numRepliesPendingReview = pageSummary.numPostsPendingReview,
+        numRepliesFlagged = pageSummary.numPostsFlagged,
+        numRepliesDeleted = pageSummary.numPostsDeleted,
+        numContributors = pageSummary.numContributors,
+        pubDati = pageMeta.pubDati,
+        lastReplyDati = pageSummary.lastApprovedPostDati)
   }
 
 }
@@ -258,18 +297,28 @@ class TinyTemplateProgrammingInterface protected (
   }
 
 
-  def listSubForums(): Seq[tpi.Forum] =
+  def listSubForums(): Seq[tpi.ParentForum] =
     listPublishedChildren(filterPageRole = Some(PageRole.ForumMainPage)) map {
       case (pagePath, pageMeta) =>
-        tpi.Forum(pageMeta, pagePath)
+        tpi.ParentForum(pageMeta, pagePath)
     }
 
 
-  def listRecentForumThreads(): Seq[tpi.ForumThread] =
-    listPublishedChildren(filterPageRole = Some(PageRole.ForumThread)) map {
-      case (pagePath, pageMeta) =>
-        tpi.ForumThread(pageMeta, pagePath)
+  def listRecentForumTopics(): Seq[tpi.ForumTopic] = {
+    val topicPathsAndMeta: Seq[(PagePath, PageMeta)] =
+      listPublishedChildren(filterPageRole = Some(PageRole.ForumThread))
+
+    val topicSummaries: Map[String, PageSummary] =
+      _pageReq.dao.loadPageSummaries(topicPathsAndMeta.map(_._2.pageId))
+
+    for {
+      (pagePath, pageMeta) <- topicPathsAndMeta
+      summary <- topicSummaries.get(pageMeta.pageId)
     }
+    yield {
+      tpi.ForumTopic(pageMeta, pagePath, summary)
+    }
+  }
 
 
   private def listPublishedChildren(filterPageRole: Option[PageRole])

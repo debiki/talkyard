@@ -47,6 +47,7 @@ class TenantDao(protected val tenantDbDao: ChargingTenantDbDao)
   with AssetBundleDao
   with ConfigValueDao
   with PagePathMetaDao
+  with PageSummaryDao
   with RenderedPageHtmlDao
   with UserDao {
 
