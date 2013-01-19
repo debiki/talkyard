@@ -86,6 +86,10 @@ class ViPo(debate: Debate, val post: Post) extends ViAc(debate, post) {
   def tyype = post.tyype
 
 
+  def isArticleOrConfig =
+    id == Page.TitleId || id == Page.BodyId || id == Page.TemplateId
+
+
   def initiallyApproved: Boolean = {
     // If initially preliminarily auto approved, that approval is cancelled by
     // any contiguous and subsequent rejection. (And `lastApproval` takes
