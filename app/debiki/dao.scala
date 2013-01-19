@@ -133,6 +133,9 @@ class TenantDao(protected val tenantDbDao: ChargingTenantDbDao)
   def loadPageAnyTenant(tenantId: String, pageId: String): Option[Debate] =
     tenantDbDao.loadPage(pageId, tenantId = Some(tenantId))
 
+  /**
+   * Loads articles (title + body) e.g. for inclusion on a blog post list page.
+   */
   def loadPageBodiesTitles(pageIds: Seq[String]): Map[String, Debate] =
     tenantDbDao.loadPageBodiesTitles(pageIds)
 
