@@ -25,7 +25,7 @@ object PageRenderer {   // COULD rename to DummyPage
    * Adds an empty title, an empty page body, and a config text, if they
    * don't yet exist, so there is something to edit.
    */
-  def addMissingTitleBodyConfigTo(pageNoDummies: Debate): Debate = {
+  def addMissingTitleBodyConfigTo(pageNoDummies: Debate, pageRole: PageRole): Debate = {
     val addDummyTitle = pageNoDummies.title.isEmpty
     val addDummyBody = pageNoDummies.body.isEmpty
     val addDummyConfig = pageNoDummies.pageTemplatePost.isEmpty
@@ -35,9 +35,14 @@ object PageRenderer {   // COULD rename to DummyPage
     if (addDummyTitle || addDummyBody || addDummyConfig)
       pageWithDummies = pageWithDummies ++ DummyAuthor
 
-    if (addDummyTitle) pageWithDummies = pageWithDummies + DummyTitle
-    if (addDummyBody) pageWithDummies = pageWithDummies + DummyBody
-    if (addDummyConfig) pageWithDummies = pageWithDummies + DummyConfig
+    val texts: Texts = pageRole match {
+      case PageRole.ForumThread => ForumTopicTexts
+      case _ => DefaultTexts
+    }
+
+    if (addDummyTitle) pageWithDummies = pageWithDummies + dummyTitle(texts)
+    if (addDummyBody) pageWithDummies = pageWithDummies + dummyBody(texts)
+    if (addDummyConfig) pageWithDummies = pageWithDummies + dummyConfig(texts)
 
     pageWithDummies
   }
@@ -62,44 +67,68 @@ object PageRenderer {   // COULD rename to DummyPage
     List(DummyAuthorLogin), List(DummyAuthorIdty), List(DummyAuthorUser))
 
 
-  val DummyTitle = Post(
+  private def dummyTitle(texts: Texts) = Post(
     id = Page.TitleId,
     parent = Page.TitleId,
     ctime = new ju.Date,
     loginId = DummyAuthorLogin.id,
     newIp = None,
-    text = DummyTitleText,
+    text = texts.titleText,
     markup = Markup.DefaultForPageTitle.id,
     approval = Some(Approval.Preliminary),
     tyype = PostType.Text)
 
 
-  val DummyBody = DummyTitle.copy(
-    id = Page.BodyId, parent = Page.BodyId, text = DummyPageText,
+  private def dummyBody(texts: Texts) = dummyTitle(texts).copy(
+    id = Page.BodyId, parent = Page.BodyId, text = texts.bodyText,
     markup = Markup.DefaultForPageBody.id)
 
 
-  private def DummyTitleText =
-    "New Page (click to edit)"
-
-
-  private def DummyPageText = i"""
-    |Page body.
-    |
-    |Click to edit, and select *Improve* in the menu that appears.
-    |"""
-
-
-  private def ConfigPageDummyText = """
-    |This is an empty configuration page.
-    |
-    |Click this text to edit.
-    |""".stripMargin
-
-
-  val DummyConfig = DummyBody.copy(
-    id = Page.TemplateId, parent = Page.TemplateId, text = ConfigPageDummyText,
+  private def dummyConfig(texts: Texts) = dummyBody(texts).copy(
+    id = Page.TemplateId, parent = Page.TemplateId, text = texts.configText,
     markup = Markup.Code.id)
+
+
+  private abstract class Texts {
+    def titleText: String
+    def bodyText: String
+    def configText: String
+  }
+
+
+  private object DefaultTexts extends DefaultTexts
+
+
+  private class DefaultTexts extends Texts {
+
+    def titleText =
+      "New Page (click to edit)"
+
+    def bodyText = i"""
+      |Page body.
+      |
+      |Click to edit, and select *Improve* in the menu that appears.
+      |"""
+
+    def configText = i"""
+      |This is an empty configuration page.
+      |
+      |Click this text to edit.
+      |"""
+  }
+
+
+  private object ForumTopicTexts extends DefaultTexts {
+
+    override val titleText =
+      "Forum topic title (click to edit)"
+
+    override val bodyText = i"""
+      |Forum topic text.
+      |
+      |Click to edit; select *Improve* in the menu that appears.
+      |"""
+  }
 
 }
 

@@ -329,7 +329,8 @@ case class PageRequest[A](
       val (pageDesiredVersionStuffMissing, tooRecentActions) =
         page.partitionByVersion(pageVersion)
       val pageDesiredVersion =
-        PageRenderer.addMissingTitleBodyConfigTo(pageDesiredVersionStuffMissing)
+        PageRenderer.addMissingTitleBodyConfigTo(
+          pageDesiredVersionStuffMissing, pageMeta.pageRole)
       pageDesiredVersion
     }
   }
