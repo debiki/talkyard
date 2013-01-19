@@ -53,7 +53,7 @@ trait PagePathMetaDao {
   /**
    * Returns a list like: grandparent-meta :: parent-meta :: meta-for-pageId :: Nil
    */
-  final def listAncestorsAndSelf(pageId: String): List[(PagePath, PageMeta)] = {
+  final def listAncestorsAndOwnMeta(pageId: String): List[(PagePath, PageMeta)] = {
     var curPageMeta = loadPageMeta(pageId)
     var curPagePath = lookupPagePath(pageId)
     var result: List[(PagePath, PageMeta)] = Nil

@@ -290,9 +290,13 @@ class TinyTemplateProgrammingInterface protected (
   /**
    * Returns any parent forums, e.g.: grandparent-forum :: parent-forum :: Nil.
    */
-  def listParentForums(): Seq[tpi.Forum] = {
-    _pageReq.dao.listAncestorsAndSelf(pageId).init map { case (pagePath, pageMeta) =>
-      tpi.Forum(pageMeta, pagePath)
+  def listParentForums(): Seq[tpi.ParentForum] = {
+    _pageReq.pageMeta.parentPageId match {
+      case None => Nil
+      case Some(pageId) =>
+        _pageReq.dao.listAncestorsAndOwnMeta(pageId) map { case (pagePath, pageMeta) =>
+          tpi.ParentForum(pageMeta, pagePath)
+        }
     }
   }
 
