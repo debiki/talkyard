@@ -36,6 +36,7 @@ object PageRenderer {   // COULD rename to DummyPage
       pageWithDummies = pageWithDummies ++ DummyAuthor
 
     val texts: Texts = pageRole match {
+      case PageRole.ForumMainPage => ForumMainPageTexts
       case PageRole.ForumThread => ForumTopicTexts
       case _ => DefaultTexts
     }
@@ -114,6 +115,19 @@ object PageRenderer {   // COULD rename to DummyPage
       |This is an empty configuration page.
       |
       |Click this text to edit.
+      |"""
+  }
+
+
+  private object ForumMainPageTexts extends DefaultTexts {
+
+    override val titleText =
+      "New Forum (click to edit)"
+
+    override val bodyText = i"""
+      |Optional forum info (instead of sticky topics).
+      |
+      |Click to edit; select *Improve* in the menu that appears.
       |"""
   }
 
