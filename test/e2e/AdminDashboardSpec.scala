@@ -93,20 +93,35 @@ abstract class AdminDashboardSpec extends DebikiBrowserSpec {
     }
 
 
-    "create info page, but cancel" - {
+    "create pages, but cancel" - {
 
-      "open new page, via the Create... dropdown" in {
-        clickCreateNewPage(PageRole.Any)
+      "create info page, but cancel" - {
+        createButCancel(PageRole.Any)
       }
 
-      "close the new page tab, so no page is created" in {
-        // Since the new page hasn't been edited, it'll vanish when it's closed.
-        close()
-        switch to dashboardWindow
+      "create blog, but cancel" - {
+        createButCancel(PageRole.BlogMainPage)
       }
 
-      "back in the dashboard, there must be no new page listed" in {
-        findAll(cssSelector("#page-table > tbody > tr")).length must be === 1
+      "create forum, but cancel" - {
+        createButCancel(PageRole.ForumMainPage)
+      }
+
+      def createButCancel(pageRole: PageRole) {
+        "open new page via Create... dropdown" in {
+          clickCreateNewPage(pageRole)
+        }
+
+        "close the new page tab, without editing and saving page" in {
+          // Since the new page hasn't been edited, it'll vanish when it's closed.
+          close()
+          switch to dashboardWindow
+        }
+
+        "back in the dashboard, there must be no new page listed" in {
+          // Only the homepage (1 page) must be listed.
+          findAll(cssSelector("#page-table > tbody > tr")).length must be === 1
+        }
       }
     }
 
@@ -141,11 +156,6 @@ abstract class AdminDashboardSpec extends DebikiBrowserSpec {
         findAll(cssSelector(s"#page-table > tbody > tr $newPageLink")
                 ).length must be === 1
       }
-    }
-
-
-    "create blog, cancel" in {
-      pending
     }
 
 

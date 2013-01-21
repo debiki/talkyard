@@ -87,11 +87,18 @@ trait StuffTestClicker {
    * Returns the id of the newly created (but not yet saved) page.
    */
   def clickCreateNewPage(pageRole: PageRole): String = {
+    val (newPageLink, newPageTitlePart) = pageRole match {
+      case PageRole.Any => ("create-info-page", "New Page")
+      case PageRole.BlogMainPage => ("create-blog", "Example Blog Post")
+      case PageRole.ForumMainPage => ("create-forum", "New Forum")
+      case _ => fail(s"Bad page role: $pageRole")
+    }
+
     click on cssSelector("#create-page-dropdown > .btn")
-    click on "create-info-page"
+    click on newPageLink
     switchToNewlyOpenedWindow()
     eventually {
-      pageSource.contains("New Page") must be === true
+      pageSource.contains(newPageTitlePart) must be === true
     }
 
     val anyPageElem = find(cssSelector(".dw-page"))
