@@ -31,6 +31,10 @@ class CreateSiteSpecRunner extends org.scalatest.Suites(
 // instead of `abstract`.
 abstract class CreateSiteSpec extends DebikiBrowserSpec {
 
+  val firstSiteName = nextSiteName()
+  val secondSiteName = nextSiteName()
+
+
   "A user with a browser can" - {
 
     "go to site creation page" in {
@@ -47,22 +51,16 @@ abstract class CreateSiteSpec extends DebikiBrowserSpec {
 
     "enter new website name and accept terms" in {
       click on "website-name"
-      enter("test-site")
+      enter(firstSiteName)
       click on "accepts-terms"
     }
 
     "not allow site creation if there's no `new-website-domain' config value" in {
       // Verify that clicking Submit results in:
       // 403 Forbidden, "... may not create website from this website ..."
+      // Have to do this from another site; `localhost` allows website creation,
+      // see StuffCreator.createFirstSite().
       pending
-    }
-
-    "create `new-website-domain' config value" in {
-      createSiteConfigPage(firstSiteId, i"""
-        |new-website-domain: $firstSiteHost
-        |new-website-terms-of-use: /hosting/terms-of-service
-        |new-website-privacy-policy: /hosting/privacy-policy
-        |""")
     }
 
     "submit site name" in {
@@ -78,8 +76,8 @@ abstract class CreateSiteSpec extends DebikiBrowserSpec {
       pending
     }
 
-    "login with Gmail OpenID, goto admin page of test-site" - {
-      loginWithGmailGotoAdminPage("test-site")
+    s"login with Gmail OpenID, goto admin page of $firstSiteName" - {
+      loginWithGmailGotoAdminPage(firstSiteName)
     }
 
     "return to site creation page" in {
@@ -88,13 +86,13 @@ abstract class CreateSiteSpec extends DebikiBrowserSpec {
 
     "not create another site with the same address" in {
       click on "website-name"
-      enter("test-site")
+      enter(firstSiteName)
       click on "accepts-terms"
       click on cssSelector("input[type=submit]")
 
       // COULD fix: Regrettably, the server won't notice that the name is taken
       // until you've logged in.
-      loginWithGmailOpenId()
+      clickLoginWithGmailOpenId()
 
       // Now an error pags should load. Click a certain try again link
       // (there's only one link?)
@@ -102,27 +100,25 @@ abstract class CreateSiteSpec extends DebikiBrowserSpec {
       click on partialLinkText("Okay")
     }
 
-    "create test-site-2" in {
-      click on "website-name"
-      enter("test-site-2")
-      click on "accepts-terms"
-      click on cssSelector("input[type=submit]")
+    s"create $secondSiteName" - {
+      clickCreateSite(secondSiteName, alreadyOnNewWebsitePage = true)
     }
 
-    "login with Gmail again, goto admin page of test-site-2" - {
-      loginWithGmailGotoAdminPage("test-site-2")
+    s"login with Gmail again, goto admin page of $secondSiteName" - {
+      loginWithGmailGotoAdminPage(secondSiteName)
     }
-  }
 
-
-  def createWebsiteChooseNamePage = new Page {
-    val url = s"$firstSiteOrigin/-/new-website/choose-name"
+    /*"create even more websites" - {
+      clickCreateSite("test-site-3")
+      clickCreateSite("test-site-4")
+      clickCreateSite("test-site-5")
+    } */
   }
 
 
   def loginWithGmailGotoAdminPage(newSiteName: String) {
     "login with Gmail OpenID" in {
-      loginWithGmailOpenId()
+      clickLoginWithGmailOpenId()
     }
 
     "click login link on welcome owner page" in {
@@ -133,7 +129,7 @@ abstract class CreateSiteSpec extends DebikiBrowserSpec {
     }
 
     "login to admin dashboard" in {
-      loginWithGmailOpenId()
+      clickLoginWithGmailOpenId()
       assert(pageSource contains "Welcome to your new website")
       webDriver.getCurrentUrl() must be === originOf(newSiteName) + "/-/admin/"
     }
@@ -142,35 +138,6 @@ abstract class CreateSiteSpec extends DebikiBrowserSpec {
 
   def originOf(newSiteName: String) =
     s"http://$newSiteName.localhost:$testServerPort"
-
-  private var firstGmailLogin = true
-
-  def loginWithGmailOpenId(approvePermissions: Boolean = true) {
-    click on cssSelector("a.login-link-google")
-
-    if (firstGmailLogin) {
-      firstGmailLogin = false
-      // 1. I've created a dedicated Gmail OpenID test account, see below.
-      // 2. `enter(email)` throws: """Currently selected element is neither
-      // a text field nor a text area""", in org.scalatest.selenium.WebBrowser,
-      // so use `pressKeys` instead.
-      click on "Email"
-      pressKeys("debiki.tester@gmail.com")
-      click on "Passwd"
-      pressKeys("ZKFIREK90krI38bk3WK1r0")
-      click on "signIn"
-    }
-
-    // Now Google should show another page, which ask about permissions.
-     // Uncheck a certain remember choices checkbox, or this page won't be shown
-     // next time (and then we cannot choose to deny access).
-    click on "remember_choices_checkbox"
-
-    if (approvePermissions)
-      click on "approve_button"
-    else
-      click on "reject_button"
-  }
 
 }
 

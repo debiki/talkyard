@@ -20,7 +20,7 @@ abstract class DebikiBrowserSpec extends FreeSpec with WebBrowser
   with FailsOneCancelRemaining with BeforeAndAfterAll
   with Eventually with ScaledTimeSpans
   with MustMatchers
-  with StuffCreator {
+  with StuffCreator with StuffTestClicker {
 
   implicit override val patienceConfig = PatienceConfig(
     // Set long timeout so I can step through code in the debugger.

@@ -40,6 +40,7 @@ trait ChromeSuiteMixin extends BeforeAndAfterAll {
  */
 class EndToEndSuite extends Suites(
   new CreateSiteSpec {},
+  new AdminDashboardSpec {},
   new AnonLoginSpec {})
   with ChromeSuiteMixin
 

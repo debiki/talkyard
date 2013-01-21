@@ -127,10 +127,10 @@
               <div id='create-page-dropdown' class='dropdown' ng-show='nothingSelected'>
                 <a class='btn dropdown-toggle' data-toggle='dropdown' href='#'>Create ...</a>
                 <ul class='dropdown-menu' role='menu' data-todo-aria-labelledby='drop5'>
-                  <li><a tabindex='-1' ng-click='createDraftPage("InfoPage")' href='#'>New Info Page</a></li>
+                  <li><a ng-click='createDraftPage("InfoPage")' id='create-info-page' tabindex='-1' href='#'>New Info Page</a></li>
                   <li class='divider'></li>
-                  <li><a tabindex='-1' ng-click='createBlog()' href='#'>New Blog</a></li>
-                  <li><a tabindex='-1' ng-click='createForum()' href='#'>New Forum</a></li>
+                  <li><a ng-click='createBlog()' id='create-blog' tabindex='-1' href='#'>New Blog</a></li>
+                  <li><a ng-click='createForum()' id='create-forum' tabindex='-1' href='#'>New Forum</a></li>
                   <li><a tabindex='-1' disabled>New Wiki</a></li>
                   <li class='divider'></li>
                   <li><span>Advanced users:</span></li>

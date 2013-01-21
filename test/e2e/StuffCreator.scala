@@ -32,14 +32,9 @@ trait StuffCreator {
    * Perhaps I should do this in `beforeAll` instead?
    */
   lazy val (firstSiteId: String, firstSiteOrigin: String) = {
-    import debiki.Debiki.systemDao
-    systemDao.lookupTenant("http", firstSiteHost) match {
+    Debiki.systemDao.lookupTenant("http", firstSiteHost) match {
       case FoundNothing =>
-        val firstSite = systemDao.createTenant(name = "FirstSite")
-        val firstSiteDao = Debiki.tenantDao(firstSite.id, "127.0.0.1")
-        firstSiteDao.addTenantHost(TenantHost(
-          firstSiteHost, TenantHost.RoleCanonical, TenantHost.HttpsNone))
-        (firstSite.id, "http://" + firstSiteHost)
+        createFirstSite()
       case FoundChost(siteId) =>
         (siteId, "http://" + firstSiteHost)
       case _ => assErr("DwE26kbSF7")
@@ -69,6 +64,28 @@ trait StuffCreator {
       tyype = PostType.Text, where = None, approval = Some(Approval.AuthoritativeUser))
 
     (loginGrant, postTemplate)
+  }
+
+
+  /**
+   * Creates a `localhost` website, from which creation of other websites
+   * is allowed.
+   *
+   * Returns (firstSiteId, firstSiteOrigin).
+   */
+  private def createFirstSite(): (String, String) = {
+    val firstSite = Debiki.systemDao.createTenant(name = "FirstSite")
+    val firstSiteDao = Debiki.tenantDao(firstSite.id, "127.0.0.1")
+    firstSiteDao.addTenantHost(TenantHost(
+      firstSiteHost, TenantHost.RoleCanonical, TenantHost.HttpsNone))
+
+    createSiteConfigPage(firstSiteId, i"""
+          |new-website-domain: $firstSiteHost
+          |new-website-terms-of-use: /hosting/terms-of-service
+          |new-website-privacy-policy: /hosting/privacy-policy
+          |""")
+
+    (firstSite.id, "http://" + firstSiteHost)
   }
 
 
