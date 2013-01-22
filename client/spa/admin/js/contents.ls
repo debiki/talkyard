@@ -11,7 +11,7 @@ bug = d.u.die2
  */
 PrettyListItem =
 
-  clearCache: ->
+  clearCache: !->
     void
 
 
@@ -97,7 +97,7 @@ class ListItem implements PrettyListItem
    * Updates this ListItem with data from another list item,
    * without overwriting certain states.
    */
-  update = ({ withDataFrom }) ->
+  update = !({ withDataFrom }) ->
     wasIncluded = @included
     @ <<< withDataFrom
     @included = wasIncluded
@@ -241,18 +241,18 @@ class PageListItem extends ListItem
    *    { folder, pageSlug, showId, (pageRole, parentPageId) }
    * where (...) is optional.
    */
-  createPage = (pageData) ->
+  createPage = !(pageData) ->
     # Open new tab directly in response to user click, or browser popup
     # blockers tend to block the new tab.
     newTab = window.open '', '_blank'
 
-    adminService.getViewNewPageUrl pageData, (viewNewPageUrl) ->
+    adminService.getViewNewPageUrl pageData, !(viewNewPageUrl) ->
       newTab.location = viewNewPageUrl
       # If the new page is saved, `newTab` will call the `onPageSaved`
       # callback just below. Then we'll update $scope.listItems.
 
 
-  adminService.onPageSaved (pageMeta, pageTitle) ->
+  adminService.onPageSaved !(pageMeta, pageTitle) ->
     newlySavedPageItem = PageListItem(
         path: pageMeta.pagePath
         id: pageMeta.pageId # remove:? d.i.findPageIdForNewPage viewNewPageUrl
@@ -285,7 +285,7 @@ class PageListItem extends ListItem
    * (If the page was just created, but has not been saved server side,
    * the server will create it lazily if you edit and save it.)
    */
-  $scope.viewSelectedPage = ->
+  $scope.viewSelectedPage = !->
     pageItem = getSelectedPageOrDie!
     window.open pageItem.path, '_blank'
     # COULD add callback that if page saved: (see Git stash 196d8accb80b81)
@@ -293,13 +293,13 @@ class PageListItem extends ListItem
     # and then: redrawPageItems [pageItem]
 
 
-  $scope.moveSelectedPageTo = (newFolder) ->
+  $scope.moveSelectedPageTo = !(newFolder) ->
     pageListItem = getSelectedPageOrDie!
     curFolder = pageListItem.folderPath!
     moveSelectedPages fromFolder: curFolder, toFolder: newFolder
 
 
-  moveSelectedPages = ({ fromFolder, toFolder }) ->
+  moveSelectedPages = !({ fromFolder, toFolder }) ->
     refreshPageList = ->
       for pageListItem in selectedPageListItems
         pageListItem.path .= replace fromFolder, toFolder
@@ -310,7 +310,7 @@ class PageListItem extends ListItem
           { fromFolder, toFolder, callback: refreshPageList }
 
 
-  $scope.renameSelectedPageTo = ({ newSlug, newTitle }) ->
+  $scope.renameSelectedPageTo = !({ newSlug, newTitle }) ->
     moveRenameSelectedPageTo { newSlug, newTitle }
 
 
@@ -358,13 +358,13 @@ class PageListItem extends ListItem
         callback: refreshPageList)
 
 
-  loadAndListPages = ->
+  loadAndListPages = !->
     adminService.listAllPages (data) ->
       listMorePagesDeriveFolders <|
           [PageListItem(page) for page in data.pages]
 
 
-  redrawPageItems = (pageItems) ->
+  redrawPageItems = !(pageItems) ->
     # Remove pageItem and add it again, so any missing parent folder
     # is created, in case pageItem has been moved.
     # For now, call listMorePagesDeriveFolders once per pageItem
@@ -374,7 +374,7 @@ class PageListItem extends ListItem
       listMorePagesDeriveFolders [pageItem]
 
 
-  listMorePagesDeriveFolders = (morePageItems) ->
+  listMorePagesDeriveFolders = !(morePageItems) ->
 
     for item in morePageItems
       # If `item.isChildPage && !item.isMainPage`, and there're very
@@ -395,7 +395,7 @@ class PageListItem extends ListItem
     redrawPageList!
 
 
-  redrawPageList = ->
+  redrawPageList = !->
     sortItemsInPlace $scope.listItems
     $scope.updateSelections!
 
@@ -403,7 +403,7 @@ class PageListItem extends ListItem
   /**
    * Sort table rows by parent page id, folder and page slug.
    */
-  sortItemsInPlace = (items) ->
+  sortItemsInPlace = !(items) ->
 
     sortOrderOf = (item) ->
       return item._sortOrder if item._sortOrder
@@ -447,7 +447,7 @@ class PageListItem extends ListItem
    * (Concerning `.length`: what if a page is added and another
    * one removed? Cannot happen right now though)
    */
-  $scope.$watch 'listItems.length', ->
+  $scope.$watch 'listItems.length', !->
     stats = $scope.pageStats = {}
 
     for item in $scope.listItems
@@ -466,7 +466,7 @@ class PageListItem extends ListItem
    * Scans $scope.listItems and updates page selection count
    * variables.
    */
-  $scope.updateSelections = ->
+  $scope.updateSelections = !->
     selectedPageListItems := []
     numDrafts = 0
     numPublished = 0
@@ -490,7 +490,6 @@ class PageListItem extends ListItem
 
     # In the future, show stats on the selected pages, in a <div> to the
     # right. Or show a preview, if only one single page selected.
-    return
 
 
   $scope.test =

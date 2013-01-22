@@ -19,25 +19,25 @@ function adminService ($http, $rootScope)
   api = {}
   selectedPathsListeners = []
 
-  api.selectPaths = (treesFoldersPageIds) ->
+  api.selectPaths = !(treesFoldersPageIds) ->
     for listener in selectedPathsListeners
       listener(treesFoldersPageIds)
 
-  api.onPathSelectionChange = (listener) ->
+  api.onPathSelectionChange = !(listener) ->
     selectedPathsListeners.push listener
 
   api.getPageById = (pageId) ->
     if pagesById == {} then api.listAllPages -> 'noop'
     pagesById[pageId]
 
-  api.listAllPages = (onSuccess) ->
+  api.listAllPages = !(onSuccess) ->
     $http.get('/-/list-pages?in-tree').success (data) ->
       # Angular has already parsed the JSON.
       for page in data.pages
         pagesById[page.id] = page
       onSuccess(data)
 
-  api.listActions = (treesFoldersPageIds, onSuccess) ->
+  api.listActions = !(treesFoldersPageIds, onSuccess) ->
     treesStr   = treesFoldersPageIds.trees?.join(',') || ''
     foldersStr = treesFoldersPageIds.folders?.join(',') || ''
     pageIdsStr = treesFoldersPageIds.pageIds?.join(',') || ''
@@ -51,15 +51,15 @@ function adminService ($http, $rootScope)
     toJsonObj = (action) -> { pageId: action.pageId, actionId: action.id }
     map toJsonObj, actions
 
-  api.approve = (actions, onSuccess) ->
+  api.approve = !(actions, onSuccess) ->
     $http.post '/-/approve', actionsToJsonObjs(actions)
         .success -> onSuccess!
 
-  api.reject = (actions, onSuccess) ->
+  api.reject = !(actions, onSuccess) ->
     $http.post '/-/reject', actionsToJsonObjs(actions)
         .success -> onSuccess!
 
-  api.delete = (actions, onSuccess) ->
+  api.delete = !(actions, onSuccess) ->
     onSuccess! # for now
 
 
@@ -70,13 +70,13 @@ function adminService ($http, $rootScope)
    * If that new unsaved page is edited later, the server will create
    * it lazily.
    */
-  api.getViewNewPageUrl = (pageData, callback) ->
+  api.getViewNewPageUrl = !(pageData, callback) ->
     getViewNewPageUrl =
         pageData.folder +
         '?get-view-new-page-url' +
         '&page-slug=' + pageData.pageSlug +
         '&show-id=' + (if pageData.showId => 't' else 'f')
-    $http.get(getViewNewPageUrl).success ({ viewNewPageUrl }) ->
+    $http.get(getViewNewPageUrl).success !({ viewNewPageUrl }) ->
       # Add page meta to URL, so the server knows e.g. which template
       # to use when rendering the page (and can save this info to the
       # database later when/if the server lazy-creates the page).
@@ -97,11 +97,11 @@ function adminService ($http, $rootScope)
 
   onOpenedPageSavedCallbacks = []
 
-  api.onPageSaved = (callback) ->
+  api.onPageSaved = !(callback) ->
     onOpenedPageSavedCallbacks.push callback
 
 
-  api.movePages = (pageIds, {fromFolder, toFolder, callback}) ->
+  api.movePages = !(pageIds, {fromFolder, toFolder, callback}) ->
     $http.post '/-/move-pages', { pageIds: pageIds, fromFolder, toFolder }
         .success -> callback!
 
@@ -120,7 +120,6 @@ function adminService ($http, $rootScope)
     $http.post '/-/change-page-meta', newStatuses
         .success callback
         .error callback
-
 
 
   api
