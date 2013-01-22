@@ -283,8 +283,12 @@ object Utils extends Results with http.ContentTypes {
 
     def throwIfBadPasshash(request: DebikiRequest[_], value: String) {
       val passhashIn = request.queryString.getOrThrowBadReq("passhash")
-      val goodHash = makePasshash(value)
-      if (passhashIn != goodHash)
+      throwIfBadPasshash(passhashIn, valueToHash = value)
+    }
+
+    def throwIfBadPasshash(specifiedPasshash: String, valueToHash: String) {
+      val goodHash = makePasshash(valueToHash)
+      if (specifiedPasshash != goodHash)
         throwForbidden("DwE39QH2", "Bad passhash")
     }
   }

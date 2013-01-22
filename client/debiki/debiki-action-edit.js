@@ -337,15 +337,32 @@ function _$showEditFormImpl() {
       // Ensure any text edited with CodeMirror gets submitted.
       if (codeMirrorEditor) codeMirrorEditor.save();
 
+      // Save any not-yet-created ancestor pages.
+      // E.g. if this page is a blog post, save-create the related
+      // blog main page, in case it has not yet been created.
+      // Or if this is a forum topic, and the parent subforum page,
+      // and grandparent forum main page, have not yet been saved.
+      var pagesToCreate = [];
+      d.i.forEachOpenerCall('addCreatePageData', [pageMeta, pagesToCreate]);
+
+      if (!pageMeta.pageExists) {
+        // When the server generated this page, which doesn't exist,
+        // it included a passhash in the URL, which we need to send back
+        // to the server, so it knows that the server itself actually
+        // generated the folder and id for this page (and that the client
+        // cannot forge a mallicious id, for example).
+        var passhash = location.toString().match(
+            /http.*\?view-new-page=.*&passhash=([a-zA-Z0-9_-]+)/)[1];
+        // (It's okay to mutate pageMeta a little bit.)
+        pageMeta.passhash = passhash;
+        // Push don't unshift; http://server/-/edit expects them in that order.
+        pagesToCreate.push(pageMeta);
+      }
+
       var jsonObj = {
-        edits: [{
+        createPages: pagesToCreate,
+        editPosts: [{
           pageId: pageMeta.pageId,
-          // The meta info is needed so the server knows where to lazy-create
-          // the page (if needed).
-          pagePath: pageMeta.pagePath,
-          pageRole: pageMeta.pageRole,
-          pageStatus: pageMeta.pageStatus,
-          parentPageId: pageMeta.parentPageId,
           postId: postId,
           text: $editForm.find('[name="dw-fi-e-txt"]').val(),
           markup: $editForm.find('[name="dw-fi-e-mup"]').val()
@@ -378,17 +395,8 @@ function _$showEditFormImpl() {
         // on the admin page.
         var editedTitle = $editedPost.dwPageTitleText();
         var editedMeta = $editedPost.dwPageMeta();
-        var curOpener = window.opener;
-        while (curOpener) {
-          if (curOpener && curOpener.debiki && curOpener.debiki.v0) {
-            var callbacks =
-                curOpener.debiki.v0.onOpenedPageSavedCallbacks || [];
-            $.each(callbacks, function(index, callback) {
-              callback(editedMeta, editedTitle);
-            });
-          }
-          curOpener = curOpener.opener;
-        }
+        d.i.forEachOpenerCall('onOpenedPageSavedCallbacks',
+            [editedMeta, editedTitle]);
 
         if (!pageMeta.pageExists) {
           // Now the page does exist, since it's been saved,
@@ -417,6 +425,21 @@ function _$showEditFormImpl() {
     focusEditor();
     scrollPostIntoView();
   });
+};
+
+
+// COULD move to LiveScript-something.
+d.i.forEachOpenerCall = function(callbackName, params) {
+  var curOpener = window.opener;
+  while (curOpener) {
+    if (curOpener && curOpener.debiki && curOpener.debiki.internal) {
+      var callbacks = curOpener.debiki.internal[callbackName] || [];
+      $.each(callbacks, function(index, callback) {
+        callback.apply(null, params);
+      });
+    }
+    curOpener = curOpener.opener;
+  }
 };
 
 

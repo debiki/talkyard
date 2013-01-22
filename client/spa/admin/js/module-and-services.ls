@@ -89,9 +89,9 @@ function adminService ($http, $rootScope)
 
   # Newly created pages knows to call each function in
   # onOpenedPageSavedCallbacks when saved, on window.opener.
-  debiki.v0.onOpenedPageSavedCallbacks ?= []
-  debiki.v0.onOpenedPageSavedCallbacks.push (pageMeta, pageTitle) ->
-    $rootScope.$apply ->
+  d.i.onOpenedPageSavedCallbacks ?= []
+  d.i.onOpenedPageSavedCallbacks.push !(pageMeta, pageTitle) ->
+    $rootScope.$apply !->
       for callback in onOpenedPageSavedCallbacks
         callback pageMeta, pageTitle
 

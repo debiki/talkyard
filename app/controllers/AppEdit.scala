@@ -8,7 +8,7 @@ import com.debiki.v0._
 import debiki._
 import debiki.DebikiHttp._
 import play.api._
-import libs.json.JsValue
+import libs.json.{JsString, JsValue}
 import play.api.data._
 import play.api.data.Forms._
 import play.api.mvc.{Action => _, _}
@@ -16,7 +16,7 @@ import scala.collection.{mutable => mut}
 import PageActions._
 import ApiActions._
 import Prelude._
-import Utils.{OkHtml}
+import Utils.{OkHtml, Passhasher}
 
 
 /**
@@ -37,19 +37,11 @@ object AppEdit extends mvc.Controller {
   }
 
 
-  // In case the page has been moved since it was cached, or rendered
-  // in the browser, the posted page path might be incorrect. If so,
-  // simply fix it. (The path is only useful if the page doesn't yet exist,
-  // so we know where to create it.)
-  private def yesFixPath = true
-
-
   def showEditFormAnyPage(pageId: String, pagePath: String, postId: String)
         = GetAction { request =>
 
     val pageReqPerhapsNoPage =
-      PageRequest(request, pagePathStr = pagePath, pageId = pageId,
-        fixBadPath = yesFixPath)
+      PageRequest.forPageThatMightExist(request, pagePathStr = pagePath, pageId = pageId)
 
     val pageReq =
       if (pageReqPerhapsNoPage.pageExists) pageReqPerhapsNoPage
@@ -91,81 +83,91 @@ object AppEdit extends mvc.Controller {
 
 
   /**
-   * Lazy-creates the page that is to be edited, if it does not exist, and
-   * also lazy-creates the post to be edited, if it does not exist.
-   */
-  def handleEditForm(pathIn: PagePath, postId: String)
-        = PagePostAction(MaxPostSize)(pathIn, pageMustExist = false) {
-      pageReqOrig: PagePostRequest =>
-
-    import Utils.ValidationImplicits._
-    import HtmlForms.Edit.{InputNames => Inp}
-
-    val text = pageReqOrig.getEmptyAsNone(Inp.Text) getOrElse
-       throwBadReq("DwE8bJX2", "Empty edit")
-    val markupOpt = pageReqOrig.getEmptyAsNone(Inp.Markup)
-
-    _throwIfTooMuchData(text, pageReqOrig)
-
-    val pageReqNoMeOnPage = _createPageIfNeeded(pageReqOrig, PageRole.Any,
-      PageStatus.Draft, parentPageId = None)
-    val pageReq = pageReqNoMeOnPage.copyWithMeOnPage_!
-    _saveEdits(pageReq, postId, text, markupOpt)
-    Utils.renderOrRedirect(pageReq)
-  }
-
-
-  /**
-   * JSON format:  {edits: [{ pageId, pagePath, postId, text, markup }]}
+   * Edits posts. Creates pages too, if needed.
+   *
+   * JSON format, as Yaml:
+   *  createPages:
+   *    - passhash
+   *      pageId
+   *      pagePath
+   *      pageRole
+   *      pageStatus
+   *      parentPageId
+   *    - ...more pages
+   *
+   *  editPosts:
+   *    - pageId
+   *      postId
+   *      text
+   *      markup
+   *    - ...more edits
    */
   def edit = PostJsonAction(maxLength = MaxPostSize) {
         request: JsonPostRequest =>
 
-    def getOrThrow(map: Map[String, String], key: String): String =
-      map.getOrElse(key, throwBadReq(
-        "DwE390IR7", "/-/edit JSON entry missing: "+ key))
+    val ErrPrefix = "/-/edit: Bad JSON:"
 
-    val jsonBody = request.body.as[Map[String, List[Map[String, String]]]]
+    def getTextOrThrow(map: Map[String, JsValue], key: String): String =
+      getTextOptOrThrow(map, key).getOrElse(throwBadReq(
+        "DwE390IR7", s"$ErrPrefix Entry missing: $key"))
 
-    val editMapsUnsorted: List[Map[String, String]] = jsonBody("edits")
+    def getTextOptOrThrow(map: Map[String, JsValue], key: String): Option[String] =
+      map.get(key).map(_ match {
+        case s: JsString => s.value
+        case x => throwBadReq("DwE77dY0", o"""$ErrPrefix Entry `$key' is no string: `$x',
+            it is a ${classNameOf(x)}""")
+      })
 
-    val editMapsByPageId: Map[String, List[Map[String, String]]] =
-      editMapsUnsorted.groupBy(map => map("pageId"))
+    val jsonBody = request.body.as[Map[String, List[Map[String, JsValue]]]]
 
-    var editIdsAndPages = List[(List[String], Debate)]()
+    // ----- Create pages
 
-    for ((pageId, editMaps) <- editMapsByPageId) {
+    // First create all required pages. (For example, if saving the title
+    // of a new blog post, first save the blog main page and the blog post page
+    // itself, if not already done.)
 
-      val pagePathStr = (editMaps.head)("pagePath")
-      val pageRoleStr = (editMaps.head)("pageRole")
-      val pageStatusStr = (editMaps.head)("pageStatus")
-      val parentPageIdStr = (editMaps.head)("parentPageId")
+    val createPagesMaps: List[Map[String, JsValue]] = jsonBody("createPages")
+    var pageReqsById = Map[String, PageRequest[_]]()
 
-      // Ensure all entries for `pageId` have the same page path.
-      val badPath = editMaps.find(
-        map => map.get("pagePath") != Some(pagePathStr))
-      if (badPath nonEmpty) throwBadReq(
-          "DwE390XR23", "Different page paths for page id "+ pageId +": "+
-          pagePathStr +", and: "+ badPath.get)
-
-      // COULD ensure page role and parent page id entries are identical
-      // for all edits to the same page. Or should I add explicit
-      // `ensurePageExists: { pageId, pageRole, path, parentPageId }`
-      // entries before the actual edit data? (Lazy-creating pages is a
-      // little bit complicated since both edit data and page creation data
-      // needs to be posted to the server, and there might be many edits
-      // of the same page.)
+    for (pageData <- createPagesMaps) {
+      val passhashStr = getTextOrThrow(pageData, "passhash")
+      val pageId = getTextOrThrow(pageData, "pageId")
+      val pagePathStr = getTextOrThrow(pageData, "pagePath")
+      val pageRoleStr = getTextOrThrow(pageData, "pageRole")
+      val pageStatusStr = getTextOrThrow(pageData, "pageStatus")
+      val parentPageIdStr = getTextOrThrow(pageData, "parentPageId")
 
       val pageRole = AppCreatePage.stringToPageRole(pageRoleStr)
       val pageStatus = PageStatus.parse(pageStatusStr)
       val parentPageId =
         if (parentPageIdStr isEmpty) None else Some(parentPageIdStr)
 
-      val pageReqPerhapsNoPage = PageRequest(request, pagePathStr, pageId,
-        fixBadPath = yesFixPath)
+      val createPageReq = PageRequest.forPageToCreate(request, pagePathStr, pageId)
 
-      val pageReqPerhapsNoMe = _createPageIfNeeded(pageReqPerhapsNoPage,
-        pageRole, pageStatus, parentPageId = parentPageId)
+      val pageReq = createPage(createPageReq, passhash = passhashStr,
+        pageRole = pageRole, pageStatus = pageStatus, parentPageId = parentPageId)
+
+      pageReqsById += pageId -> pageReq
+    }
+
+    // ----- Edit posts
+
+    val editMapsUnsorted: List[Map[String, JsValue]] = jsonBody("editPosts")
+    val editMapsByPageId: Map[String, List[Map[String, JsValue]]] =
+      editMapsUnsorted.groupBy(map => getTextOrThrow(map, "pageId"))
+    var editIdsAndPages = List[(List[String], Debate)]()
+
+    for ((pageId, editMaps) <- editMapsByPageId) {
+
+      val pageReqPerhapsNoMe = pageReqsById.get(pageId) match {
+        case None =>
+          PageRequest.forPageThatExists(request, pageId)
+        case Some(pageReq) =>
+          // We just created the page. Reuse the PageRequest that was used
+          // when we created it.
+          pageReq
+      }
+
       // Include current user on the page to be edited, or it won't be
       // possible to render the page to html, later, because the current
       // user's name might be included in the generated html: "Edited by: ..."
@@ -177,9 +179,9 @@ object AppEdit extends mvc.Controller {
       var idsOfEditedPosts = List[String]()
 
       for (editMap <- editMaps) {
-        val newText = getOrThrow(editMap, "text")
-        val newMarkupOpt = editMap.get("markup")
-        val postId = getOrThrow(editMap, "postId")
+        val newText = getTextOrThrow(editMap, "text")
+        val newMarkupOpt = getTextOptOrThrow(editMap, "markup")
+        val postId = getTextOrThrow(editMap, "postId")
 
         _throwIfTooMuchData(newText, pageRequest)
 
@@ -225,30 +227,31 @@ object AppEdit extends mvc.Controller {
   }
 
 
-  /**
-   * If the requested page does not exist, creates it, and returns
-   * a PagePostRequest to the new page.
-   */
-  private def _createPageIfNeeded[A](
+  private def createPage[A](
     pageReq: PageRequest[A],
+    passhash: String,
     pageRole: PageRole,
     pageStatus: PageStatus,
     parentPageId: Option[String]): PageRequest[A] = {
 
-    if (pageReq.pageExists)
-      return pageReq
+    assErrIf(pageReq.pageExists, "DwE70QU2")
+    Passhasher.throwIfBadPasshash(
+      specifiedPasshash = passhash,
+      valueToHash = pageReq.pagePath.folder + pageReq.pageId_!)
 
-    if (!pageReq.permsOnPage.createPage)
-      throwForbidden("DwE01rsk351", "You may not create that page")
+    // SECURITY SHOULD do this test in AppCreatePage instead?, when generating page id:
+    //if (!pageReq.permsOnPage.createPage)
+      //throwForbidden("DwE01rsk351", "You may not create that page")
 
-    val pageId = pageReq.pageId.getOrElse(throwBadReq(
-      "DwE39KR8", "No page id, cannot lazy-create page at "+ pageReq.pagePath))
-
-    val pageMeta = PageMeta.forNewPage(pageId, pageReq.ctime, pageRole,
-      parentPageId = parentPageId, publishDirectly = pageStatus == PageStatus.Published)
+    val pageMeta = PageMeta.forNewPage(
+      pageReq.pageId_!,
+      pageReq.ctime,
+      pageRole,
+      parentPageId = parentPageId,
+      publishDirectly = pageStatus == PageStatus.Published)
 
     val newPage = pageReq.dao.createPage(
-      PageStuff(pageMeta, pageReq.pagePath, Debate(pageId)))
+      PageStuff(pageMeta, pageReq.pagePath, Debate(pageMeta.pageId)))
 
     pageReq.copyWithPreloadedPage(newPage, pageExists = true)
   }

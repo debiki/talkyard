@@ -129,6 +129,7 @@ case class ApiRequest[A](
 }
 
 
+
 object PageRequest {
 
   /**
@@ -141,9 +142,12 @@ object PageRequest {
    * path, if you specify an almost correct path (e.g. superfluous
    * trailing '/').
    */
-  def apply[A](apiRequest: DebikiRequest[A], pagePath: PagePath,
-        fixBadPath: Boolean = false)
-        : PageRequest[A] = {
+  def apply[A](
+    apiRequest: DebikiRequest[A],
+    pagePath: PagePath,
+    pageMightExist: Boolean = true,
+    pageMustExist: Boolean = false,
+    fixBadPath: Boolean = false): PageRequest[A] = {
 
     // Require page id (so we know for sure which page to e.g. edit).
     assErrIf(pagePath.pageId.isEmpty,
@@ -151,11 +155,15 @@ object PageRequest {
 
     val (pageExists, okPath) = apiRequest.dao.checkPagePath(pagePath) match {
       case Some(correctPath: PagePath) =>
-        // Does another page already exist at `pagePath`? (It'd have the
+        // Check if another page already exist at `pagePath`? (It'd have the
         // same path, but another id.)
          if (correctPath.pageId.get != pagePath.pageId.get)
            throw PathClashException(
              existingPagePath = correctPath, newPagePath = pagePath)
+
+        if (!pageMightExist)
+          throwForbidden("DwE21VH8", o"""Page already exists, id: ${pagePath.pageId.get}
+            path: ${pagePath.path}""")
 
         // Check for bad paths.
         if (correctPath.path != pagePath.path && !fixBadPath)
@@ -166,6 +174,9 @@ object PageRequest {
       case None =>
         (false, pagePath)
     }
+
+    if (!pageExists && pageMustExist)
+      throwNotFound("DwE42Im0", s"Page not found, id: ${pagePath.pageId.get}")
 
     // Dupl code, see PageActions.CheckPathAction
     val permsReq = RequestInfo(  // COULD RENAME! to PermsOnPageRequest
@@ -192,23 +203,49 @@ object PageRequest {
       request = apiRequest.request)()
   }
 
-  def apply[A](apiRequest: DebikiRequest[A], pagePathStr: String,
-        pageId: String, fixBadPath: Boolean = false) : PageRequest[A] = {
+
+  def forPageThatMightExist[A](apiRequest: DebikiRequest[A], pagePathStr: String,
+        pageId: String): PageRequest[A] =
+    forPageToCreateOrThatExists(
+      apiRequest, pagePathStr, pageId = pageId, pageMightExist = true)
+
+
+  def forPageToCreate[A](apiRequest: DebikiRequest[A], pagePathStr: String,
+        pageId: String): PageRequest[A] =
+    forPageToCreateOrThatExists(
+      apiRequest, pagePathStr, pageId = pageId, pageMightExist = false)
+
+
+  private def forPageToCreateOrThatExists[A](apiRequest: DebikiRequest[A],
+        pagePathStr: String, pageId: String, pageMightExist: Boolean): PageRequest[A] = {
     val pagePathPerhapsId =
       PagePath.fromUrlPath(apiRequest.tenantId, pagePathStr) match {
         case PagePath.Parsed.Good(path) =>
           assErrIf(path.pageId.isDefined && path.pageId != Some(pageId),
-              "DwE309RK9", s"pagePathStr page id `${path.pageId}' " +
-              s" differs from pageId `$pageId'")
+            "DwE309RK9", o"""pagePathStr page id `${path.pageId}'
+                 differs from pageId `$pageId'""")
           path
         case x =>
           throwBadReq("DwE390SD3", "Bad path for page id "+ pageId +": "+ x)
       }
     val pagePathWithId = pagePathPerhapsId.copy(pageId = Some(pageId))
-    PageRequest(apiRequest, pagePathWithId, fixBadPath = fixBadPath)
+    PageRequest(apiRequest, pagePathWithId, pageMightExist = pageMightExist)
+  }
+
+
+  def forPageThatExists[A](apiRequest: DebikiRequest[A], pageId: String) : PageRequest[A] = {
+    // COULD try to remove either `lookupPagePath` on the next line, or
+    // remove `checkPagePath` in PageRequest.apply(..) above.
+    val pagePath = apiRequest.dao.lookupPagePath(pageId) match {
+      case Some(path) => path
+      case None =>
+        throwBadReq("DwE47ZI2", s"Page `$pageId' does not exist")
+    }
+    PageRequest(apiRequest, pagePath, pageMustExist = true, fixBadPath = true)
   }
 
 }
+
 
 
 /**

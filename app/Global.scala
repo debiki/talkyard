@@ -85,8 +85,6 @@ object Global extends GlobalSettings {
     val action = (mainFun, request.method) match {
       case ("edit", GET) =>
         AppEdit.showEditForm(pagePath, postId = mainFunVal_!)
-      case ("edit", POST) =>
-        AppEdit.handleEditForm(pagePath, postId = mainFunVal_!)
       case ("view", GET) =>
         App.viewPost(pagePath)
       case ("reply", GET) =>
