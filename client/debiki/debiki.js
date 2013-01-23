@@ -161,6 +161,9 @@ function registerEventHandlersFireLoginOut() {
  */
 function configureAjaxRequests() {
   $.ajaxSetup({
+    // There're questions at StackOverflow asking why `cache: false`
+    // doesn't work with IE8. Does it not? I've not yet tested.
+    cache: false,
     dataFilter: function (response, type) {
       // Don't know why, but `type` is alwyas undefined, so won't work:
       // if (type !== 'json') return response;
