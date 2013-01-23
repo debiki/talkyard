@@ -9,7 +9,7 @@ import java.{util => ju}
 import Prelude._
 
 
-object PageRenderer {   // COULD rename to DummyPage
+object DummyPage {
 
   /**
    * A page with "This page is pendig approval" body.

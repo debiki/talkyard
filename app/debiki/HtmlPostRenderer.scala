@@ -131,7 +131,7 @@ object HtmlPostRenderer {
    */
   def renderPostHeader(vipo: ViPo, anyPageStats: Option[PageStats])
         : RenderedPostHeader = {
-    if (vipo.loginId == PageRenderer.DummyAuthorLogin.id)
+    if (vipo.loginId == DummyPage.DummyAuthorLogin.id)
       return RenderedPostHeader(Nil, None)
 
     def post = vipo.post

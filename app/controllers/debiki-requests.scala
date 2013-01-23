@@ -372,13 +372,13 @@ case class PageRequest[A](
     val page = page_!
     if (page.body.map(_.someVersionApproved) == Some(false) ||
       page.title.map(_.someVersionApproved) == Some(false)) {
-      PageRenderer.emptyUnapprovedPage
+      DummyPage.emptyUnapprovedPage
     }
     else {
       val (pageDesiredVersionStuffMissing, tooRecentActions) =
         page.partitionByVersion(pageVersion)
       val pageDesiredVersion =
-        PageRenderer.addMissingTitleBodyConfigTo(
+        DummyPage.addMissingTitleBodyConfigTo(
           pageDesiredVersionStuffMissing, pageMeta.pageRole)
       pageDesiredVersion
     }

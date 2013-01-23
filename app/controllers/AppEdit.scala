@@ -51,7 +51,7 @@ object AppEdit extends mvc.Controller {
         // an empty dummy post in place of the one that doesn't
         // yet exist, but is to be edited.
         val postToEdit = _createPostToEdit(pageReqPerhapsNoPage, postId,
-          authorLoginId = PageRenderer.DummyAuthorLogin.id)
+          authorLoginId = DummyPage.DummyAuthorLogin.id)
         val meta = PageMeta.forNewPage(pageId, pageReqPerhapsNoPage.ctime)
         pageReqPerhapsNoPage.copyWithPreloadedPage(
           meta, Debate(pageId) + postToEdit, pageExists = false)
@@ -74,7 +74,7 @@ object AppEdit extends mvc.Controller {
     val request = pageReqWithoutMe.copyWithAnyMeOnPage // needed?
 
     val (vipo, lazyCreateOpt) = _getOrCreatePostToEdit(request, postId,
-      authorLoginId = PageRenderer.DummyAuthorLogin.id)
+      authorLoginId = DummyPage.DummyAuthorLogin.id)
     val draftText = vipo.text  // in the future, load user's draft from db.
     val editForm = Utils.formHtml(request).editForm(
        vipo, newText = draftText, userName = request.sid.displayName)

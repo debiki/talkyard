@@ -53,7 +53,7 @@ trait PageSummaryDao {
       page <- loadPage(pageId)
       author = (page.body orElse page.title).flatMap(_.user) getOrElse {
         logger.warn(s"No author loaded for page `$pageId' [error DwE903Ik2]")
-        PageRenderer.DummyAuthorUser
+        DummyPage.DummyAuthorUser
       }
     } {
       var numPostsApproved = 0
