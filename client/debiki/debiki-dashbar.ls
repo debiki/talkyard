@@ -78,14 +78,14 @@ function dwDashbar ($http)
 
 
 
-function thisPageMeta (rootScope)
+function thisPageMeta (scope)
   return
     passhash: d.i.parsePasshashInPageUrl!
-    pageId: rootScope.pageId
-    pagePath: rootScope.pagePath
-    pageRole: rootScope.pageRole
-    pageStatus: rootScope.pageStatus
-    parentPageId: rootScope.parentPageId
+    pageId: scope.pageId
+    pagePath: scope.pagePath
+    pageRole: scope.pageRole
+    pageStatus: scope.pageStatus
+    parentPageId: scope.parentPageId
 
 
 
