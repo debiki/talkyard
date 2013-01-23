@@ -36,6 +36,7 @@ object DummyPage {
       pageWithDummies = pageWithDummies ++ DummyAuthor
 
     val texts: Texts = pageRole match {
+      case PageRole.BlogArticle => BlogArticleTexts
       case PageRole.ForumMainPage => ForumMainPageTexts
       case PageRole.ForumThread => ForumTopicTexts
       case _ => DefaultTexts
@@ -115,6 +116,19 @@ object DummyPage {
       |This is an empty configuration page.
       |
       |Click this text to edit.
+      |"""
+  }
+
+
+  private object BlogArticleTexts extends DefaultTexts {
+
+    override val titleText =
+      "New Blog Post (click to edit)"
+
+    override val bodyText = i"""
+      |Blog post text.
+      |
+      |Click to edit; select *Improve* in the menu that appears.
       |"""
   }
 
