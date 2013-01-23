@@ -129,7 +129,8 @@ object AppEdit extends mvc.Controller {
     // of a new blog post, first save the blog main page and the blog post page
     // itself, if not already done.)
 
-    val createPagesMaps: List[Map[String, JsValue]] = jsonBody("createPagesUnlessExist")
+    val createPagesMaps: List[Map[String, JsValue]] =
+      jsonBody.getOrElse("createPagesUnlessExist", Nil)
     var pageReqsById = Map[String, PageRequest[_]]()
 
     for (pageData <- createPagesMaps) {
@@ -160,7 +161,9 @@ object AppEdit extends mvc.Controller {
 
     // ----- Edit posts
 
-    val editMapsUnsorted: List[Map[String, JsValue]] = jsonBody("editPosts")
+    val editMapsUnsorted: List[Map[String, JsValue]] =
+      jsonBody.getOrElse("editPosts", Nil)
+
     val editMapsByPageId: Map[String, List[Map[String, JsValue]]] =
       editMapsUnsorted.groupBy(map => getTextOrThrow(map, "pageId"))
     var editIdsAndPages = List[(List[String], Debate)]()

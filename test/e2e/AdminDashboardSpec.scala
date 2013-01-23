@@ -7,10 +7,6 @@ package test.e2e
 import com.debiki.v0.{Page, PageRole}
 import com.debiki.v0.Prelude._
 import java.{lang => jl}
-import org.openqa.selenium.{Keys, By, WebElement}
-import org.scalatest.time.{Span, Seconds}
-import akka.actor.IllegalActorStateException
-import com.debiki.v0.PageRole.BlogMainPage
 
 
 /**
@@ -161,14 +157,6 @@ abstract class AdminDashboardSpec extends DebikiBrowserSpec {
     }
 
 
-    "create blog, edit title, check admin page" in {
-      pending
-    }
-
-
-    "create blog post, check admin page" in {
-      pending
-
     "create blog, create blog post, then save blog post before blog main page" - {
 
       val BlogPostTitle = "Blog Post Title 3905Kf3"
@@ -221,6 +209,57 @@ abstract class AdminDashboardSpec extends DebikiBrowserSpec {
           // probably something like "Blog" which woulud match the blog post
           // title too.
           pageSource.contains("page-role-BlogMainPage") must be === true
+        }
+      }
+    }
+
+
+    "create blog, create blog post, close blog main page, then save blog post" - {
+
+      val BlogPostTitle = "Blog Post Title 580IR1"
+      var blogMainPageWindow: WindowTarget = null
+      var blogMainPageId = "?"
+      var blogPostWindow: WindowTarget = null
+      var blogPostId = "?"
+
+      "create blog" in {
+        blogMainPageId = clickCreateNewPage(PageRole.BlogMainPage)
+        blogMainPageWindow = window(webDriver.getWindowHandle)
+      }
+
+      "create blog post" in {
+        blogPostId = clickCreateBlogPost()
+        blogPostWindow = window(webDriver.getWindowHandle)
+      }
+
+      "close blog main page" in {
+        switch to blogMainPageWindow
+        close()
+        switch to blogPostWindow
+      }
+
+      "edit blog post title" - {
+        clickAndEdit(Page.TitleId, BlogPostTitle)
+      }
+
+      "close blog post" in {
+        close()
+        switch to dashboardWindow
+      }
+
+      "on dashboard page" - {
+        "find blog post" in {
+          // Does not currently work. When the blog post's opener was closed
+          // it seems the opener chain bach to the dashboard was broken, so
+          // the dashboard wasn't updated.
+          // pageSource.contains(BlogPostTitle) must be === true
+          pending
+        }
+
+        "find blog main page" in {
+          // There's already a blog main page listed here now;
+          // cannot simply search for CSS class `page-role-BlogMainPage`.
+          pending
         }
       }
     }

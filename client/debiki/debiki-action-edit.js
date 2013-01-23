@@ -337,14 +337,7 @@ function _$showEditFormImpl() {
       // Ensure any text edited with CodeMirror gets submitted.
       if (codeMirrorEditor) codeMirrorEditor.save();
 
-      // Save any not-yet-created ancestor pages.
-      // E.g. if this page is a blog post, save-create the related
-      // blog main page, in case it has not yet been created.
-      // Or if this is a forum topic, and the parent subforum page,
-      // and grandparent forum main page, have not yet been saved.
       var pagesToCreate = [];
-      d.i.forEachOpenerCall('addCreatePageData', [pageMeta, pagesToCreate]);
-
       if (!pageMeta.pageExists) {
         // When the server generated this page, which doesn't exist,
         // it included a passhash in the URL, which we need to send back

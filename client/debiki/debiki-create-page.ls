@@ -7,10 +7,10 @@ $ = d.i.$;
 /**
  * Opens a new unsaved page in a new browser tab.
  */
-d.i.createChildPage = !({ pageRole, parentPageId, status }) ->
+d.i.createChildPage = !({ pageRole, parentPageId, status }, preOpenedNewTab) ->
   # Open new tab directly in response to user click, or browser popup
   # blockers tend to block the new tab.
-  newTab = window.open '', '_blank'
+  newTab = preOpenedNewTab || window.open '', '_blank'
 
   # We'll create the new page in the same folder as the current page.
   # (?get-view-new-page-url works with folders only.)

@@ -112,7 +112,10 @@ trait StuffTestClicker {
   def clickCreateBlogPost(): String = {
     click on cssSelector("a.create-blog-post")
     switchToNewlyOpenedWindow()
-    findPageId()
+    // It takes a while for the new page to load.
+    eventually {
+      findPageId()
+    }
   }
 
 
