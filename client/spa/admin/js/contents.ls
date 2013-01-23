@@ -255,10 +255,11 @@ class PageListItem extends ListItem
   adminService.onPageSaved !(pageMeta, pageTitle) ->
     newlySavedPageItem = PageListItem(
         path: pageMeta.pagePath
-        id: pageMeta.pageId # remove:? d.i.findPageIdForNewPage viewNewPageUrl
+        id: pageMeta.pageId
         title: pageTitle
         #authors: undefined # should be current user
         role: pageMeta.pageRole
+        status: pageMeta.pageStatus
         parentPageId: pageMeta.parentPageId)
 
     isNewPage = not find (.id == newlySavedPageItem.id), $scope.listItems
