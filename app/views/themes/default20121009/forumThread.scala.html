@@ -1,1 +1,22 @@
-../wwwdebikicom/forumThread.scala.html
+@(tpi: debiki.TemplateProgrammingInterface)
+
+
+@wrapper(tpi) {
+  <!-- forumThread.scala.html -->
+
+  <ol class="parent-forums-list">
+    @for(parentForum <- tpi.listParentForums()) {
+    <li>
+        <a href="@{parentForum.path}">@{parentForum.title}</a>
+    </li>
+    }
+  </ol>
+
+  @tpi.page {
+    @tpi.title
+    @tpi.authorAndDate
+    @tpi.body
+  }
+
+}
+
