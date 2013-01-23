@@ -4,7 +4,6 @@
 module.exports = function(grunt) {
 
   grunt.loadNpmTasks('grunt-contrib-mincss');
-  grunt.loadNpmTasks('grunt-contrib-watch');
   grunt.loadNpmTasks('grunt-livescript');
   grunt.loadNpmTasks('grunt-wrap');
 
@@ -200,7 +199,7 @@ module.exports = function(grunt) {
             'client/**/*.js',
             'client/**/*.ls',
             'client/**/*.css'],
-        tasks: 'default',
+        tasks: ['default'],
         options: {
           interrupt: true
         }
