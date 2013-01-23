@@ -195,16 +195,18 @@ class PageListItem extends ListItem
 
 
   $scope.createBlog = !->
+    folder = findFreePathLike '/blog/'
     createPage {
-        folder: '/blog/'
+        folder: folder
         pageSlug: ''
         showId: false
         pageRole: 'BlogMainPage' }
 
 
   $scope.createForum = !->
+    folder = findFreePathLike '/forum/'
     createPage {
-        folder: '/forum/'
+        folder: folder
         pageSlug: ''
         showId: false
         pageRole: 'ForumMainPage' }
@@ -223,6 +225,30 @@ class PageListItem extends ListItem
 
   $scope.createDraftPage = !->
     createPageInFolder '/'
+
+
+  /**
+   * Finds a path similar to `path` but where no page is currently located.
+   * `path` must end with at slash.
+   * For example, if there's already a page at /blog/,
+   * `findFreePathLike '/blog/'` would return '/blog-2/' instead.
+   */
+  findFreePathLike = (path) ->
+    pathNoSlash = initial path
+    suffix = ''
+    curPath = ''
+    for count from 1 to 100
+      curPath = switch count
+        | 1 => path
+        | 100 => throw Error "Too many pages like #path"
+        | _ => "#pathNoSlash-#count/"
+      oldPath = null
+      for item in $scope.listItems
+        if item.path == curPath
+          oldPath = item.path
+          break
+      break if !oldPath
+    curPath
 
 
   createPageInFolder = !(parentFolder) ->
