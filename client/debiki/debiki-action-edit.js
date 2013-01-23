@@ -351,8 +351,7 @@ function _$showEditFormImpl() {
         // to the server, so it knows that the server itself actually
         // generated the folder and id for this page (and that the client
         // cannot forge a mallicious id, for example).
-        var passhash = location.toString().match(
-            /http.*\?view-new-page=.*&passhash=([a-zA-Z0-9_-]+)/)[1];
+        var passhash = d.i.parsePasshashInPageUrl();
         // (It's okay to mutate pageMeta a little bit.)
         pageMeta.passhash = passhash;
         // Push don't unshift; http://server/-/edit expects them in that order.
@@ -428,7 +427,6 @@ function _$showEditFormImpl() {
 };
 
 
-// COULD move to LiveScript-something.
 d.i.forEachOpenerCall = function(callbackName, params) {
   var curOpener = window.opener;
   while (curOpener) {

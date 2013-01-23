@@ -101,14 +101,31 @@ trait StuffTestClicker {
       pageSource.contains(newPageTitlePart) must be === true
     }
 
-    val anyPageElem = find(cssSelector(".dw-page"))
+    findPageId()
+  }
+
+
+  /**
+   * Returns the id of the new page.
+   */
+  // COULD place in a BlogMainPage page object? And return a BlogPost page object?
+  def clickCreateBlogPost(): String = {
+    click on cssSelector("a.create-blog-post")
+    switchToNewlyOpenedWindow()
+    findPageId()
+  }
+
+
+  def findPageId(): String = {
+    val anyPageElem = eventually {
+      find(cssSelector(".dw-page"))
+    }
     val anyPageIdAttr = anyPageElem.flatMap(_.attribute("id"))
-    val newPageId = anyPageIdAttr match {
+    val pageId = anyPageIdAttr match {
       case Some(id) => id.drop(5) // drop "page-"
       case None => fail("No .dw-page with an id attribute found")
     }
-
-    newPageId
+    pageId
   }
 
 

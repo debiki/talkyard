@@ -50,7 +50,13 @@ $.fn.dwPageTitleText = function() {
   var $page = this.closest('.dw-page');
   var $title = $page.find('.dw-p.dw-p-ttl .dw-p-ttl');
   return $title.text();
-}
+};
+
+
+d.i.parsePasshashInPageUrl = function() {
+  return location.toString().match(
+      /http.*\?view-new-page=.*&passhash=([a-zA-Z0-9_-]+)/)[1];
+};
 
 
 
