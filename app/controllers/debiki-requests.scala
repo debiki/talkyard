@@ -162,8 +162,8 @@ object PageRequest {
              existingPagePath = correctPath, newPagePath = pagePath)
 
         if (!pageMightExist)
-          throwForbidden("DwE21VH8", o"""Page already exists, id: ${pagePath.pageId.get}
-            path: ${pagePath.path}""")
+          throw PageExistsException("DwE21VH8", o"""Page already exists,
+            id: ${pagePath.pageId.get} path: ${pagePath.path}""")
 
         // Check for bad paths.
         if (correctPath.path != pagePath.path && !fixBadPath)
@@ -210,6 +210,9 @@ object PageRequest {
       apiRequest, pagePathStr, pageId = pageId, pageMightExist = true)
 
 
+  /**
+   * Throws a PageExistsException if the page already exists.
+   */
   def forPageToCreate[A](apiRequest: DebikiRequest[A], pagePathStr: String,
         pageId: String): PageRequest[A] =
     forPageToCreateOrThatExists(
@@ -242,6 +245,15 @@ object PageRequest {
         throwBadReq("DwE47ZI2", s"Page `$pageId' does not exist")
     }
     PageRequest(apiRequest, pagePath, pageMustExist = true, fixBadPath = true)
+  }
+
+
+  class PageExistsException(errorCode: String, details: String)
+    extends DebikiException(errorCode, details)
+
+  object PageExistsException {
+    def apply(errorCode: String, details: String) =
+      new PageExistsException(errorCode, details)
   }
 
 }

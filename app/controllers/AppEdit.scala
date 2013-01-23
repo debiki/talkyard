@@ -86,7 +86,10 @@ object AppEdit extends mvc.Controller {
    * Edits posts. Creates pages too, if needed.
    *
    * JSON format, as Yaml:
-   *  createPages:
+   *  # Parent pages must be listed before their child pages.
+   *  # If a page with `pageId` (see below) exists, other `createPagesUnlessExist`
+   *  # entries for that particular page are ignored.
+   *  createPagesUnlessExist:
    *    - passhash
    *      pageId
    *      pagePath
@@ -126,7 +129,7 @@ object AppEdit extends mvc.Controller {
     // of a new blog post, first save the blog main page and the blog post page
     // itself, if not already done.)
 
-    val createPagesMaps: List[Map[String, JsValue]] = jsonBody("createPages")
+    val createPagesMaps: List[Map[String, JsValue]] = jsonBody("createPagesUnlessExist")
     var pageReqsById = Map[String, PageRequest[_]]()
 
     for (pageData <- createPagesMaps) {
@@ -142,12 +145,17 @@ object AppEdit extends mvc.Controller {
       val parentPageId =
         if (parentPageIdStr isEmpty) None else Some(parentPageIdStr)
 
-      val createPageReq = PageRequest.forPageToCreate(request, pagePathStr, pageId)
+      try {
+        val createPageReq = PageRequest.forPageToCreate(request, pagePathStr, pageId)
 
-      val pageReq = createPage(createPageReq, passhash = passhashStr,
-        pageRole = pageRole, pageStatus = pageStatus, parentPageId = parentPageId)
+        val pageReq = createPage(createPageReq, passhash = passhashStr,
+          pageRole = pageRole, pageStatus = pageStatus, parentPageId = parentPageId)
 
-      pageReqsById += pageId -> pageReq
+        pageReqsById += pageId -> pageReq
+      }
+      catch {
+        case ex: PageRequest.PageExistsException => // Fine, ignore
+      }
     }
 
     // ----- Edit posts

@@ -360,7 +360,7 @@ function _$showEditFormImpl() {
       }
 
       var jsonObj = {
-        createPages: pagesToCreate,
+        createPagesUnlessExist: pagesToCreate,
         editPosts: [{
           pageId: pageMeta.pageId,
           postId: postId,
