@@ -83,6 +83,8 @@ object SafeActions {
       f(request)
     } catch {
       case DebikiHttp.ResultException(result) => result
+      case ex: play.api.libs.json.JsResultException =>
+        Results.BadRequest(s"Bad JSON: $ex [error DwE70KX3]")
     }
   }
 
