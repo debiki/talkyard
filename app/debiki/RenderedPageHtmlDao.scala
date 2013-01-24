@@ -51,6 +51,10 @@ trait RenderedPageHtmlDao {
     renderPage(pageReq).bodyAndComments
 
 
+  final def renderPageBody(pageReq: PageRequest[_]): xml.NodeSeq =
+    unimplemented("Rendering page body without comments")
+
+
   final def renderComments(pageReq: PageRequest[_]): xml.NodeSeq =
     unimplemented("Rendering comments only")
 

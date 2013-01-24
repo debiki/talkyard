@@ -412,7 +412,10 @@ class TemplateProgrammingInterface(
   def authorAndDate = dao.renderAuthorAndDate(pageReq)
 
 
-  def body = dao.renderPageBodyAndComments(pageReq)
+  def bodyAndComments = dao.renderPageBodyAndComments(pageReq)
+
+
+  //def body = dao.renderPageBody(pageReq)
 
 
   def comments = dao.renderComments(pageReq)
