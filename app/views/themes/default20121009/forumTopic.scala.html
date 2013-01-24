@@ -2,7 +2,7 @@
 
 
 @wrapper(tpi) {
-  <!-- forumThread.scala.html -->
+  <!-- default20121009/forumTopic.scala.html -->
 
   <ol class="parent-forums-list">
     @for(parentForum <- tpi.listParentForums()) {
@@ -15,7 +15,7 @@
   @tpi.page {
     @tpi.title
     @tpi.authorAndDate
-    @tpi.body
+    @tpi.bodyAndComments
   }
 
 }

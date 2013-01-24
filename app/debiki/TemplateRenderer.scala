@@ -70,23 +70,17 @@ object TemplateRenderer {
         themeNoDelims
     }
 
-    import pageReq.{pageMeta}
-    val template =
-      tpi.pageConfigValue("template") orIfEmpty {
-        // Select template based on page role.
-        if (pageMeta.pageRole == PageRole.BlogPost) {
-          "blogPost"
-        } else if (pageMeta.pageRole == PageRole.Blog) {
-          "blogMainPage"
-        } else if (pageMeta.pageRole == PageRole.Forum) {
-          "forumMainPage"
-        } else if (pageMeta.pageRole == PageRole.ForumTopic) {
-          "forumThread"
-        } else {
-          // A blog post template works well for most pages?
-          "blogPost"
-        }
+    val template = tpi.pageConfigValue("template") orIfEmpty {
+      pageReq.pageMeta.pageRole match {
+        case PageRole.BlogPost => "blogPost"
+        case PageRole.Blog => "blog"
+        case PageRole.Forum => "forum"
+        case PageRole.ForumTopic => "forumTopic"
+        case _ =>
+        // A blog post template works well for most pages?
+        "blogPost"
       }
+    }
 
     renderThemeTemplate(theme, template, tpi)
   }
