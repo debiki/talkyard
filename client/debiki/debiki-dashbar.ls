@@ -50,6 +50,7 @@ function dwDashbar ($http)
     returnToPageBtn.click !-> returnToPage!
 
 
+    # Warning: Dupl code. See `createThisPageUnlessExists` in debiki-forum.ls.
     function createThisPageUnlessExists (onSuccess)
       if scope.pageExists
         onSuccess!
