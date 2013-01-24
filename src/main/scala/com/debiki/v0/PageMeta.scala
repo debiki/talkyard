@@ -123,11 +123,12 @@ object PageRole {
   case object Any extends PageRole
   case object Homepage extends PageRole
 
-  case object BlogMainPage extends PageRole(_childRole = BlogArticle)
-  case object BlogArticle extends PageRole(_parentRole = BlogMainPage)
+  case object Blog extends PageRole(_childRole = BlogPost)
+  case object BlogPost extends PageRole(_parentRole = Blog)
 
-  case object ForumMainPage extends PageRole(_childRole = ForumThread)
-  case object ForumThread extends PageRole(_parentRole = ForumMainPage)
+  case object ForumGroup extends PageRole(_childRole = Forum)
+  case object Forum extends PageRole(_childRole = ForumTopic)
+  case object ForumTopic extends PageRole(_parentRole = Forum)
 
   case object WikiMainPage extends PageRole(_childRole = WikiPage)
   case object WikiPage extends PageRole(_parentRole = WikiMainPage)
