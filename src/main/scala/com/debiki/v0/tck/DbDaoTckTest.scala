@@ -478,9 +478,9 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
       var blogMainPageId = "?"
       var blogArticleId = "?"
 
-      "create a BlogMainPage" in {
+      "create a Blog" in {
         val pageNoId = PageStuff(
-          PageMeta.forNewPage("?", now, PageRole.BlogMainPage,
+          PageMeta.forNewPage("?", now, PageRole.Blog,
             parentPageId = None),
           defaultPagePath.copy(
             showId = true, pageSlug = "role-test-blog-main"),
@@ -490,7 +490,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
         val page = dao.createPage(pageNoId)
 
         page.meta.pageExists must_== true
-        page.meta.pageRole must_== PageRole.BlogMainPage
+        page.meta.pageRole must_== PageRole.Blog
         page.meta.parentPageId must_== None
         page.meta.pubDati must_== None
 
@@ -500,11 +500,11 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
         actions.pageId.length must be_>(1)  // not = '?'
       }
 
-      "look up meta info for the BlogMainPage" in {
+      "look up meta info for the Blog" in {
         dao.loadPageMeta(blogMainPageId) must beLike {
           case Some(pageMeta: PageMeta) => {
             pageMeta.pageExists must_== true
-            pageMeta.pageRole must_== PageRole.BlogMainPage
+            pageMeta.pageRole must_== PageRole.Blog
             pageMeta.parentPageId must_== None
             pageMeta.pageId must_== blogMainPageId
             pageMeta.pubDati must_== None
@@ -512,9 +512,9 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
         }
       }
 
-      "create a child BlogArticle" in {
+      "create a child BlogPost" in {
         val pageNoId = PageStuff(
-          PageMeta(pageId = "?", pageRole = PageRole.BlogArticle,
+          PageMeta(pageId = "?", pageRole = PageRole.BlogPost,
             parentPageId = Some(blogMainPageId),
             creationDati = now, modDati = now),
           defaultPagePath.copy(
@@ -527,10 +527,10 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
         actions.pageId.length must be_>(1)  // not = '?'
       }
 
-      "look up meta info for the BlogArticle" in {
+      "look up meta info for the BlogPost" in {
         dao.loadPageMeta(blogArticleId) must beLike {
           case Some(pageMeta: PageMeta) => {
-            pageMeta.pageRole must_== PageRole.BlogArticle
+            pageMeta.pageRole must_== PageRole.BlogPost
             pageMeta.parentPageId must_== Some(blogMainPageId)
             pageMeta.pageId must_== blogArticleId
             pageMeta.pubDati must_== None
@@ -552,7 +552,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
 
       def testBlogArticleMeta(meta: PageMeta) = {
         meta.pageId must_== blogArticleId
-        meta.pageRole must_== PageRole.BlogArticle
+        meta.pageRole must_== PageRole.BlogPost
         meta.parentPageId must_== Some(blogMainPageId)
       }
 
@@ -565,7 +565,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
         }
       }
 
-      "find child pages of the BlogMainPage" in {
+      "find child pages of the Blog" in {
         val childs = dao.listChildPages(blogMainPageId,
           PageSortOrder.ByPublTime, limit = 10)
         testFoundChild(childs)
@@ -574,18 +574,18 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
       "find child pages also when page role specified" in {
         val childs = dao.listChildPages(blogMainPageId,
           PageSortOrder.ByPublTime, limit = 10,
-          filterPageRole = Some(PageRole.BlogArticle))
+          filterPageRole = Some(PageRole.BlogPost))
         testFoundChild(childs)
       }
 
       "find no child pages of the wrong page role" in {
         val childs = dao.listChildPages(blogMainPageId,
           PageSortOrder.ByPublTime, limit = 10,
-          filterPageRole = Some(PageRole.ForumThread))
+          filterPageRole = Some(PageRole.ForumTopic))
         childs.length must_== 0
       }
 
-      "update all BlogArticle meta info"  in {
+      "update all BlogPost meta info"  in {
         val blogArticleMeta = dao.loadPageMeta(blogArticleId) match {
           case Some(pageMeta: PageMeta) =>
             testBlogArticleMeta(pageMeta) // extra test
@@ -630,59 +630,59 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
           Debate(guid = "?"))
 
       "create a forum" in {
-        val forumNoId = forumStuff(PageRole.ForumMainPage)
+        val forumNoId = forumStuff(PageRole.Forum)
         forum = dao.createPage(forumNoId)
         ok
       }
 
       "create a subforum in the forum" in {
         val subforumNoId = forumStuff(
-          PageRole.ForumMainPage, Some(forum.id), pageSlug = "", showId = false)
+          PageRole.Forum, Some(forum.id), pageSlug = "", showId = false)
         subforum = dao.createPage(subforumNoId)
         ok
       }
 
       "not create topics in the forum, since there is a subforum" in {
-        val topicNoId = forumStuff(PageRole.ForumThread, Some(forum.id))
+        val topicNoId = forumStuff(PageRole.ForumTopic, Some(forum.id))
         dao.createPage(topicNoId) must throwAn[Exception]
         ok
       }
 
       "create a topic in the subforum" in {
-        val topicNoId = forumStuff(PageRole.ForumThread, Some(subforum.id))
+        val topicNoId = forumStuff(PageRole.ForumTopic, Some(subforum.id))
         topic = dao.createPage(topicNoId)
         ok
       }
 
       "not create sub-sub-forum in the subforum, since there is a topic" in {
-        val subSubForumNoId = forumStuff(PageRole.ForumMainPage, Some(subforum.id))
+        val subSubForumNoId = forumStuff(PageRole.Forum, Some(subforum.id))
         dao.createPage(subSubForumNoId) must throwAn[Exception]
       }
 
       "not create a topic in a topic" in {
-        val topicInTopic = forumStuff(PageRole.ForumThread, Some(topic.id))
+        val topicInTopic = forumStuff(PageRole.ForumTopic, Some(topic.id))
         dao.createPage(topicInTopic) must throwAn[Exception]
       }
 
       "not create a subforum in a topic" in {
-        val forumInTopic = forumStuff(PageRole.ForumMainPage, Some(topic.id))
+        val forumInTopic = forumStuff(PageRole.Forum, Some(topic.id))
         dao.createPage(forumInTopic) must throwAn[Exception]
       }
 
       "find the forum, subforum and topic" in {
         dao.loadPageMeta(forum.id) must beLike {
           case Some(pageMeta) =>
-            pageMeta.pageRole must_== PageRole.ForumMainPage
+            pageMeta.pageRole must_== PageRole.Forum
         }
 
         dao.loadPageMeta(subforum.id) must beLike {
           case Some(pageMeta) =>
-            pageMeta.pageRole must_== PageRole.ForumMainPage
+            pageMeta.pageRole must_== PageRole.Forum
         }
 
         dao.loadPageMeta(topic.id) must beLike {
           case Some(pageMeta) =>
-            pageMeta.pageRole must_== PageRole.ForumThread
+            pageMeta.pageRole must_== PageRole.ForumTopic
         }
       }
     }
