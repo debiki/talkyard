@@ -611,6 +611,83 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
     }
 
 
+    // -------- Forums
+
+    "create forums and topics" >> {
+
+      var forum: PageStuff = null
+      var subforum: PageStuff = null
+      var topic: PageStuff = null
+
+      def forumStuff(
+            pageRole: PageRole,
+            parentPageId: Option[String] = None,
+            pageSlug: String = "forum-or-topic",
+            showId: Boolean = true): PageStuff =
+        PageStuff(
+          PageMeta.forNewPage("?", now, pageRole, parentPageId),
+          defaultPagePath.copy(folder = "/forum/", showId = showId, pageSlug = pageSlug),
+          Debate(guid = "?"))
+
+      "create a forum" in {
+        val forumNoId = forumStuff(PageRole.ForumMainPage)
+        forum = dao.createPage(forumNoId)
+        ok
+      }
+
+      "create a subforum in the forum" in {
+        val subforumNoId = forumStuff(
+          PageRole.ForumMainPage, Some(forum.id), pageSlug = "", showId = false)
+        subforum = dao.createPage(subforumNoId)
+        ok
+      }
+
+      "not create topics in the forum, since there is a subforum" in {
+        val topicNoId = forumStuff(PageRole.ForumThread, Some(forum.id))
+        dao.createPage(topicNoId) must throwAn[Exception]
+        ok
+      }
+
+      "create a topic in the subforum" in {
+        val topicNoId = forumStuff(PageRole.ForumThread, Some(subforum.id))
+        topic = dao.createPage(topicNoId)
+        ok
+      }
+
+      "not create sub-sub-forum in the subforum, since there is a topic" in {
+        val subSubForumNoId = forumStuff(PageRole.ForumMainPage, Some(subforum.id))
+        dao.createPage(subSubForumNoId) must throwAn[Exception]
+      }
+
+      "not create a topic in a topic" in {
+        val topicInTopic = forumStuff(PageRole.ForumThread, Some(topic.id))
+        dao.createPage(topicInTopic) must throwAn[Exception]
+      }
+
+      "not create a subforum in a topic" in {
+        val forumInTopic = forumStuff(PageRole.ForumMainPage, Some(topic.id))
+        dao.createPage(forumInTopic) must throwAn[Exception]
+      }
+
+      "find the forum, subforum and topic" in {
+        dao.loadPageMeta(forum.id) must beLike {
+          case Some(pageMeta) =>
+            pageMeta.pageRole must_== PageRole.ForumMainPage
+        }
+
+        dao.loadPageMeta(subforum.id) must beLike {
+          case Some(pageMeta) =>
+            pageMeta.pageRole must_== PageRole.ForumMainPage
+        }
+
+        dao.loadPageMeta(topic.id) must beLike {
+          case Some(pageMeta) =>
+            pageMeta.pageRole must_== PageRole.ForumThread
+        }
+      }
+    }
+
+
     // -------- Paths
 
     // COULD: Find the Identity again, and the User.
