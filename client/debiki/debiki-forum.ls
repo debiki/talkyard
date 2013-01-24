@@ -17,7 +17,7 @@ $('.dw-a-new-forum-topic').click !->
   # or the topics would have no parent forum main page.
   createThisPageUnlessExists !->
     d.i.createChildPage(
-        pageRole: 'ForumThread', status: 'Published'
+        pageRole: 'ForumTopic', status: 'Published'
         newTab)
 
 

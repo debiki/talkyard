@@ -29,17 +29,17 @@ PrettyListItem =
 
   prettyRole: ->
     switch @role
-      | 'BlogMainPage' => 'Blog'
-      | 'BlogArticle' => 'Blog post'
-      | 'ForumMainPage' => 'Forum'
-      | 'ForumThread' => 'Forum thread'
+      | 'Blog' => 'Blog'
+      | 'BlogPost' => 'Blog post'
+      | 'Forum' => 'Forum'
+      | 'ForumTopic' => 'Forum topic'
       | _ => ''
 
 
   prettyRoleTooltip: ->
     switch @role
-      | 'BlogMainPage' => 'A blog. Lists blog posts.'
-      | 'ForumMainPage' => 'A forum. Lists subforums and threads.'
+      | 'Blog' => 'A blog, lists blog posts.'
+      | 'Forum' => 'A forum, lists forum topics.'
       | _ => ''
 
 
@@ -62,7 +62,7 @@ PrettyListItem =
   prettyMenu: ->
     # Mock up the implementation for now.
     if @path == '/' => 'MainMenu#1'  # homepage probably no 1
-    else if @role == 'BlogMainPage' => 'MainMenu#2'
+    else if @role == 'Blog' => 'MainMenu#2'
     else => ''
 
 
@@ -111,7 +111,7 @@ class PageListItem extends ListItem
     @ <<< page
     @pageId = @id # rename one of them?
     if @parentPageId => @isChildPage = true
-    if find (== @role), ['BlogMainPage', 'ForumMainPage', 'WikiMainPage']
+    if find (== @role), ['Blog', 'Forum', 'WikiMainPage']
       @isMainPage = true
     super!
 
@@ -200,7 +200,7 @@ class PageListItem extends ListItem
         folder: folder
         pageSlug: ''
         showId: false
-        pageRole: 'BlogMainPage' }
+        pageRole: 'Blog' }
 
 
   $scope.createForum = !->
@@ -213,7 +213,7 @@ class PageListItem extends ListItem
         # some child forums appear, and others don't, because they're
         # published or not-yet-published.
         status: 'Published'
-        pageRole: 'ForumMainPage' }
+        pageRole: 'Forum' }
 
 
   $scope.createSubforum = !->
@@ -224,7 +224,7 @@ class PageListItem extends ListItem
         pageSlug: 'subforum'
         showId: true
         status: 'Published'  # see comment in `createForum` above
-        pageRole: 'ForumMainPage'
+        pageRole: 'Forum'
         parentPageId: mainForum.id }
 
 
@@ -483,8 +483,8 @@ class PageListItem extends ListItem
     stats = $scope.pageStats = {}
 
     for item in $scope.listItems
-      if item.role is 'BlogMainPage' => stats.blogExists = true
-      if item.role is 'BlogArticle' => stats.blogPostExists = true
+      if item.role is 'Blog' => stats.blogExists = true
+      if item.role is 'BlogPost' => stats.blogPostExists = true
 
     stats.blogOrForumExists =
         stats.blogExists  # || forumMainPageExists
@@ -509,7 +509,7 @@ class PageListItem extends ListItem
       $scope.homepageSelected = true if item.path == '/'
       if item.status == 'Draft' => numDrafts += 1
       if item.status == 'Published' => numPublished += 1
-      if item.role == 'ForumMainPage' => numForums += 1
+      if item.role == 'Forum' => numForums += 1
 
     numPages = selectedPageListItems.length
 

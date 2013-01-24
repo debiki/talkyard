@@ -89,8 +89,8 @@ trait StuffTestClicker {
   def clickCreateNewPage(pageRole: PageRole): String = {
     val (newPageLink, newPageTitlePart) = pageRole match {
       case PageRole.Any => ("create-info-page", "New Page")
-      case PageRole.BlogMainPage => ("create-blog", "Example Blog Post")
-      case PageRole.ForumMainPage => ("create-forum", "New Forum")
+      case PageRole.Blog => ("create-blog", "Example Blog Post")
+      case PageRole.Forum => ("create-forum", "New Forum")
       case _ => fail(s"Bad page role: $pageRole")
     }
 
@@ -108,7 +108,7 @@ trait StuffTestClicker {
   /**
    * Returns the id of the new page.
    */
-  // COULD place in a BlogMainPage page object? And return a BlogPost page object?
+  // COULD place in a Blog page object? And return a BlogPost page object?
   def clickCreateBlogPost(): String = {
     click on cssSelector("a.create-blog-post")
     switchToNewlyOpenedWindow()

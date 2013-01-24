@@ -36,9 +36,9 @@ object DummyPage {
       pageWithDummies = pageWithDummies ++ DummyAuthor
 
     val texts: Texts = pageRole match {
-      case PageRole.BlogArticle => BlogArticleTexts
-      case PageRole.ForumMainPage => ForumMainPageTexts
-      case PageRole.ForumThread => ForumTopicTexts
+      case PageRole.BlogPost => BlogPostTexts
+      case PageRole.Forum => ForumTexts
+      case PageRole.ForumTopic => ForumTopicTexts
       case _ => DefaultTexts
     }
 
@@ -120,7 +120,7 @@ object DummyPage {
   }
 
 
-  private object BlogArticleTexts extends DefaultTexts {
+  private object BlogPostTexts extends DefaultTexts {
 
     override val titleText =
       "New Blog Post (click to edit)"
@@ -133,7 +133,7 @@ object DummyPage {
   }
 
 
-  private object ForumMainPageTexts extends DefaultTexts {
+  private object ForumTexts extends DefaultTexts {
 
     override val titleText =
       "New Forum Title (click to edit)"

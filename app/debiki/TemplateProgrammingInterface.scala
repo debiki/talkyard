@@ -302,7 +302,7 @@ class TinyTemplateProgrammingInterface protected (
 
 
   def listPublishedSubForums(): Seq[tpi.ParentForum] =
-    listPublishedChildren(filterPageRole = Some(PageRole.ForumMainPage)) map {
+    listPublishedChildren(filterPageRole = Some(PageRole.Forum)) map {
       case (pagePath, pageMeta) =>
         tpi.ParentForum(pageMeta, pagePath)
     }
@@ -315,14 +315,14 @@ class TinyTemplateProgrammingInterface protected (
     // list all of them.
     val pathsAndMeta = _pageReq.dao.listChildPages(parentPageId = pageId,
       sortBy = PageSortOrder.ByPublTime, limit = 1, offset = 0,
-      filterPageRole = Some(PageRole.ForumMainPage))
+      filterPageRole = Some(PageRole.Forum))
     pathsAndMeta.nonEmpty
   }
 
 
   def listRecentForumTopics(): Seq[tpi.ForumTopic] = {
     val topicPathsAndMeta: Seq[(PagePath, PageMeta)] =
-      listPublishedChildren(filterPageRole = Some(PageRole.ForumThread))
+      listPublishedChildren(filterPageRole = Some(PageRole.ForumTopic))
 
     val topicSummaries: Map[String, PageSummary] =
       _pageReq.dao.loadPageSummaries(topicPathsAndMeta.map(_._2.pageId))

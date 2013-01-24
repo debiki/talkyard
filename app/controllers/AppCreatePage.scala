@@ -141,8 +141,8 @@ object AppCreatePage extends mvc.Controller {
    * Perhaps use a match ... case list instead?
    */
   private val _PageRoleLookup = Vector(
-    PageRole.Any, PageRole.Homepage, PageRole.BlogMainPage,
-    PageRole.BlogArticle, PageRole.ForumMainPage, PageRole.ForumThread,
+    PageRole.Any, PageRole.Homepage, PageRole.Blog,
+    PageRole.BlogPost, PageRole.Forum, PageRole.ForumTopic,
     PageRole.WikiMainPage, PageRole.WikiPage)
     .map(x => (x, x.toString))
 

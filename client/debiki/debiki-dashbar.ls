@@ -20,7 +20,7 @@ function dwDashbar ($http)
         <a ng-show="pageExists" class="page-settings">
           View page settings
         </a>
-        <a ng-show="pageRole == 'BlogMainPage'" class="create-blog-post">
+        <a ng-show="pageRole == 'Blog'" class="create-blog-post">
           Write new blog post
         </a>
       </span>
@@ -41,7 +41,7 @@ function dwDashbar ($http)
       # Create the blog main page before any blog post,
       # or the blog posts would have no parent blog main page.
       createThisPageUnlessExists !->
-        d.i.createChildPage { pageRole: 'BlogArticle' }, newTab
+        d.i.createChildPage { pageRole: 'BlogPost' }, newTab
 
     pageSettingsBtn = element.find('a.page-settings')
     pageSettingsBtn.click !-> viewPageSettings!

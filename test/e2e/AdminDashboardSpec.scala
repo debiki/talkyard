@@ -97,11 +97,11 @@ abstract class AdminDashboardSpec extends DebikiBrowserSpec {
       }
 
       "create blog, but cancel" - {
-        createButCancel(PageRole.BlogMainPage)
+        createButCancel(PageRole.Blog)
       }
 
       "create forum, but cancel" - {
-        createButCancel(PageRole.ForumMainPage)
+        createButCancel(PageRole.Forum)
       }
 
       def createButCancel(pageRole: PageRole) {
@@ -164,7 +164,7 @@ abstract class AdminDashboardSpec extends DebikiBrowserSpec {
       var blogPostId = "?"
 
       "create blog" in {
-        blogMainPageId = clickCreateNewPage(PageRole.BlogMainPage)
+        blogMainPageId = clickCreateNewPage(PageRole.Blog)
         blogMainPageWindow = window(webDriver.getWindowHandle)
       }
 
@@ -206,7 +206,7 @@ abstract class AdminDashboardSpec extends DebikiBrowserSpec {
           // Search for a certain CSS class, since the blog main page title is
           // probably something like "Blog" which woulud match the blog post
           // title too.
-          pageSource must include ("page-role-BlogMainPage")
+          pageSource must include ("page-role-Blog")
         }
       }
     }
@@ -220,7 +220,7 @@ abstract class AdminDashboardSpec extends DebikiBrowserSpec {
       var blogPostId = "?"
 
       "create blog" in {
-        blogMainPageId = clickCreateNewPage(PageRole.BlogMainPage)
+        blogMainPageId = clickCreateNewPage(PageRole.Blog)
         blogMainPageWindow = window(webDriver.getWindowHandle)
       }
 
@@ -255,7 +255,7 @@ abstract class AdminDashboardSpec extends DebikiBrowserSpec {
 
         "find blog main page" in {
           // There's already a blog main page listed here now;
-          // cannot simply search for CSS class `page-role-BlogMainPage`.
+          // cannot simply search for CSS class `page-role-Blog`.
           pending
         }
       }
@@ -287,7 +287,7 @@ abstract class AdminDashboardSpec extends DebikiBrowserSpec {
       var forumMainPageWindow: WindowTarget = null
 
       "create forum" in {
-        forumMainPageId = clickCreateNewPage(PageRole.ForumMainPage)
+        forumMainPageId = clickCreateNewPage(PageRole.Forum)
         forumMainPageWindow = window(webDriver.getWindowHandle)
       }
 

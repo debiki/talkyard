@@ -74,13 +74,13 @@ object TemplateRenderer {
     val template =
       tpi.pageConfigValue("template") orIfEmpty {
         // Select template based on page role.
-        if (pageMeta.pageRole == PageRole.BlogArticle) {
+        if (pageMeta.pageRole == PageRole.BlogPost) {
           "blogPost"
-        } else if (pageMeta.pageRole == PageRole.BlogMainPage) {
+        } else if (pageMeta.pageRole == PageRole.Blog) {
           "blogMainPage"
-        } else if (pageMeta.pageRole == PageRole.ForumMainPage) {
+        } else if (pageMeta.pageRole == PageRole.Forum) {
           "forumMainPage"
-        } else if (pageMeta.pageRole == PageRole.ForumThread) {
+        } else if (pageMeta.pageRole == PageRole.ForumTopic) {
           "forumThread"
         } else {
           // A blog post template works well for most pages?
