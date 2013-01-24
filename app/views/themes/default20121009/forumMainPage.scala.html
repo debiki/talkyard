@@ -31,7 +31,7 @@
   </p> -->
 
   <ol class="forum-list">
-  @for(subforum <- tpi.listSubForums()) {
+  @for(subforum <- tpi.listPublishedSubForums()) {
     <li>
       <a href='@{subforum.path}'>
         <h2>@{subforum.title}</h2>
@@ -40,7 +40,7 @@
   }
   </ol>
 
-  @if(tpi.listSubForums().isEmpty) {
+  @if(! tpi.hasSubForums) {
     <a class='btn dw-a-new-forum-topic'>New Topic</a>
   }
 

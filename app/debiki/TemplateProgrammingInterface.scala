@@ -301,11 +301,23 @@ class TinyTemplateProgrammingInterface protected (
   }
 
 
-  def listSubForums(): Seq[tpi.ParentForum] =
+  def listPublishedSubForums(): Seq[tpi.ParentForum] =
     listPublishedChildren(filterPageRole = Some(PageRole.ForumMainPage)) map {
       case (pagePath, pageMeta) =>
         tpi.ParentForum(pageMeta, pagePath)
     }
+
+
+  def hasSubForums: Boolean = {
+    // COULD make this more efficient. We already do a database roundtrip
+    // via `listPublishedSubForums` — Might as well ask for all sub forums
+    // from here, because if there *are* any sub forums, we will most likely
+    // list all of them.
+    val pathsAndMeta = _pageReq.dao.listChildPages(parentPageId = pageId,
+      sortBy = PageSortOrder.ByPublTime, limit = 1, offset = 0,
+      filterPageRole = Some(PageRole.ForumMainPage))
+    pathsAndMeta.nonEmpty
+  }
 
 
   def listRecentForumTopics(): Seq[tpi.ForumTopic] = {
