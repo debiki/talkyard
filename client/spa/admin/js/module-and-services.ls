@@ -71,6 +71,9 @@ function adminService ($http, $rootScope)
    * it lazily.
    */
   api.getViewNewPageUrl = !(pageData, callback) ->
+
+    # Warning: Dupl code. See client/debiki/debiki-create-page.ls
+
     getViewNewPageUrl =
         pageData.folder +
         '?get-view-new-page-url' +
@@ -84,6 +87,8 @@ function adminService ($http, $rootScope)
         viewNewPageUrl += '&page-role=' + pageData.pageRole
       if pageData.parentPageId
         viewNewPageUrl += '&parent-page-id=' + pageData.parentPageId
+      if pageData.status
+        viewNewPageUrl += '&status=' + pageData.status
       callback viewNewPageUrl
 
 

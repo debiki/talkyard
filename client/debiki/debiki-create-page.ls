@@ -8,6 +8,10 @@ $ = d.i.$;
  * Opens a new unsaved page in a new browser tab.
  */
 d.i.createChildPage = !({ pageRole, parentPageId, status }, preOpenedNewTab) ->
+
+  # Warning: Dupl code. See client/spa/admin/module-and-services.ls,
+  # function getViewNewPageUrl().
+
   # Open new tab directly in response to user click, or browser popup
   # blockers tend to block the new tab.
   newTab = preOpenedNewTab || window.open '', '_blank'

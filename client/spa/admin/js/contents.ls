@@ -209,6 +209,10 @@ class PageListItem extends ListItem
         folder: folder
         pageSlug: ''
         showId: false
+        # Create a *published* forum — I'm always so confused when
+        # some child forums appear, and others don't, because they're
+        # published or not-yet-published.
+        status: 'Published'
         pageRole: 'ForumMainPage' }
 
 
@@ -219,6 +223,7 @@ class PageListItem extends ListItem
         folder: parentFolder
         pageSlug: 'subforum'
         showId: true
+        status: 'Published'  # see comment in `createForum` above
         pageRole: 'ForumMainPage'
         parentPageId: mainForum.id }
 
