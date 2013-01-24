@@ -136,7 +136,7 @@ object DummyPage {
   private object ForumMainPageTexts extends DefaultTexts {
 
     override val titleText =
-      "New Forum (click to edit)"
+      "New Forum Title (click to edit)"
 
     override val bodyText = i"""
       |Optional forum info (instead of sticky topics).
