@@ -78,7 +78,7 @@ abstract class AdminDashboardSpec extends DebikiBrowserSpec {
         // This results in a weird error:
         // org.openqa.selenium.WebDriverException: Navigation failed with error code=3.
         //reloadPage()
-        //pageSource.contains(EditedHomepageTitle) must be === true
+        //pageSource must include (EditedHomepageTitle)
         pending
       }
 
@@ -124,7 +124,6 @@ abstract class AdminDashboardSpec extends DebikiBrowserSpec {
 
 
     "create info page, edit it, add a comment" - {
-
       var newPageId = ""
 
       "open new page, via the Create... dropdown" in {
@@ -158,7 +157,6 @@ abstract class AdminDashboardSpec extends DebikiBrowserSpec {
 
 
     "create blog, create blog post, then save blog post before blog main page" - {
-
       val BlogPostTitle = "Blog Post Title 3905Kf3"
       val BlogPostBody = "Blog post body 53IKF3"
       var blogMainPageWindow: WindowTarget = null
@@ -191,7 +189,7 @@ abstract class AdminDashboardSpec extends DebikiBrowserSpec {
 
       "find blog post title on blog main page" in {
         // Currently one has to reload this page for the blog post to appear.
-        pending // pageSource.contains(BlogPostTitle) must be === true
+        pending // pageSource must include (BlogPostTitle)
       }
 
       "close blog main page" in {
@@ -201,21 +199,20 @@ abstract class AdminDashboardSpec extends DebikiBrowserSpec {
 
       "on dashboard page" - {
         "find blog post" in {
-          pageSource.contains(BlogPostTitle) must be === true
+          pageSource must include (BlogPostTitle)
         }
 
         "find blog main page" in {
           // Search for a certain CSS class, since the blog main page title is
           // probably something like "Blog" which woulud match the blog post
           // title too.
-          pageSource.contains("page-role-BlogMainPage") must be === true
+          pageSource must include ("page-role-BlogMainPage")
         }
       }
     }
 
 
     "create blog, create blog post, close blog main page, then save blog post" - {
-
       val BlogPostTitle = "Blog Post Title 580IR1"
       var blogMainPageWindow: WindowTarget = null
       var blogMainPageId = "?"
@@ -252,7 +249,7 @@ abstract class AdminDashboardSpec extends DebikiBrowserSpec {
           // Does not currently work. When the blog post's opener was closed
           // it seems the opener chain bach to the dashboard was broken, so
           // the dashboard wasn't updated.
-          // pageSource.contains(BlogPostTitle) must be === true
+          // pageSource must include (BlogPostTitle)
           pending
         }
 
@@ -265,8 +262,74 @@ abstract class AdminDashboardSpec extends DebikiBrowserSpec {
     }
 
 
-    "create forum, publish, create topics" in {
-      pending
+    "create forum, edit title, create topic, edit title" - {
+      createForumAndTopicTest(
+        forumMainPageTitle = "Forum Main Page 26GJf3",
+        forumTopicTitle = "Forum Topic Title RE0512",
+        saveTopicFirst = false)
+    }
+
+
+    "create forum, create topic, edit topic first" - {
+      createForumAndTopicTest(
+        forumMainPageTitle = "Forum Main Page 74XIkw2",
+        forumTopicTitle = "Forum Topic Title 901RE1",
+        saveTopicFirst = true)
+    }
+
+
+    def createForumAndTopicTest(
+      forumMainPageTitle: String,
+      forumTopicTitle: String,
+      saveTopicFirst: Boolean) {
+
+      var forumMainPageId: String = "?"
+      var forumMainPageWindow: WindowTarget = null
+
+      "create forum" in {
+        forumMainPageId = clickCreateNewPage(PageRole.ForumMainPage)
+        forumMainPageWindow = window(webDriver.getWindowHandle)
+      }
+
+      if (!saveTopicFirst)
+        editForumTitle()
+
+      "create topic" in {
+        click on cssSelector(".dw-a-new-forum-topic")
+        switchToNewlyOpenedWindow()
+      }
+
+      "edit topic title" - {
+        clickAndEdit(Page.TitleId, forumTopicTitle)
+      }
+
+      "close topic" in {
+        close
+        switch to forumMainPageWindow
+      }
+
+      "find topic listed on forum main page" in {
+        pending
+      }
+
+      if (saveTopicFirst)
+        editForumTitle()
+
+      "close forum main page" in {
+        close
+        switch to dashboardWindow
+      }
+
+      "find forum and topic listed on dashboard page" in {
+        pageSource must include (forumMainPageTitle)
+        pageSource must include (forumTopicTitle)
+      }
+
+      def editForumTitle() {
+        "edit forum title" - {
+          clickAndEdit(Page.TitleId, forumMainPageTitle)
+        }
+      }
     }
 
 
