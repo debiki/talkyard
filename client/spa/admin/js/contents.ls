@@ -200,6 +200,9 @@ class PageListItem extends ListItem
         folder: folder
         pageSlug: ''
         showId: false
+        # Publish the blog itself. I think people will otherwise forget
+        # to publish it (because I do) and wonder why it's hidden.
+        status: 'Published'
         pageRole: 'Blog' }
 
 
