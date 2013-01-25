@@ -585,18 +585,17 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
         childs.length must_== 0
       }
 
-      "update all BlogPost meta info"  in {
+      "can update meta info, except for page role"  in {
         val blogArticleMeta = dao.loadPageMeta(blogArticleId) match {
           case Some(pageMeta: PageMeta) =>
             testBlogArticleMeta(pageMeta) // extra test
             pageMeta
           case x => failure(s"Bad meta: $x")
         }
-        // Edit meta
+        // Edit meta (but not page role, cannot be changed)
         val nextDay = new ju.Date(
           blogArticleMeta.modDati.getTime + 1000 * 3600 * 24)
         val newMeta = blogArticleMeta.copy(
-          pageRole = PageRole.Any,
           parentPageId = None,
           cachedTitle = Some("NewCachedPageTitle"),
           modDati = nextDay,
@@ -608,6 +607,16 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
             meta2 must_== newMeta
         }
       }
+
+      "cannot change page role" in {
+        val blogArticleMeta = dao.loadPageMeta(blogArticleId) match {
+          case Some(pageMeta: PageMeta) => pageMeta
+          case x => failure(s"Bad meta: $x")
+        }
+        val newMeta = blogArticleMeta.copy(pageRole = PageRole.Forum)
+        dao.updatePageMeta(newMeta) must throwA[PageNotFoundByIdAndRoleException]
+      }
+
     }
 
 
