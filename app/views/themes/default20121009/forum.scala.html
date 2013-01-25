@@ -25,24 +25,7 @@
     }
   </div>
 
-  <!-- <p>
-    <b>Click to select forums.</b>
-    Topics from selected forums are then listed below.
-  </p> -->
-
-  <ol class="forum-list">
-  @for(subforum <- tpi.listPublishedSubForums()) {
-    <li>
-      <a href='@{subforum.path}'>
-        <h2>@{subforum.title}</h2>
-      </a>
-    </li>
-  }
-  </ol>
-
-  @if(! tpi.hasSubForums) {
-    <a class='btn dw-a-new-forum-topic'>New Topic</a>
-  }
+  <a class='btn dw-a-new-forum-topic'>New Topic</a>
 
   <table class="table topic-table">
     @*

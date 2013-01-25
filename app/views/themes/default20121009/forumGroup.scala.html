@@ -1,0 +1,44 @@
+@(tpi: debiki.TemplateProgrammingInterface)
+
+@import com.debiki.v0.Prelude.{toIso8601T, toIso8601Day}
+
+
+@datiTag(dati: java.util.Date) = {
+  <abbr title="@{toIso8601T(dati)}">@{toIso8601Day(dati)}</abbr>}
+
+
+@wrapper(tpi) {
+  <!-- default20121009/forumGroup.scala.html -->
+
+  <ol class="parent-forums-list">
+    @for(parentForum <- tpi.listParentForums()) {
+    <li>
+        <a href="@{parentForum.path}">@{parentForum.title}</a>
+    </li>
+    }
+  </ol>
+
+  <div class="forum-title">
+    @tpi.page {
+      @tpi.title
+      @* @tpi.body — not implemented *@
+    }
+  </div>
+
+  <!-- <p>
+    <b>Click to select forums.</b>
+    Topics from selected forums are then listed below.
+  </p> -->
+
+  <ol class="forum-list">
+  @for(subforum <- tpi.listPublishedSubForums()) {
+    <li>
+      <a href='@{subforum.path}'>
+        <h2>@{subforum.title}</h2>
+      </a>
+    </li>
+  }
+  </ol>
+
+}
+
