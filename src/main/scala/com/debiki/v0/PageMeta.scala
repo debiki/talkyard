@@ -114,7 +114,6 @@ sealed abstract class PageRole {
 
 object PageRole {
   case object Any extends PageRole
-  case object Homepage extends PageRole
 
   case object Blog extends PageRole {
     override val childRole = Some(BlogPost)
