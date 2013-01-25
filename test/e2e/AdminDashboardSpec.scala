@@ -135,11 +135,12 @@ abstract class AdminDashboardSpec extends DebikiBrowserSpec {
       }
 
       "edit title" - {
-        clickAndEdit(Page.TitleId, newText = "Fat Rats Fear Cats")
+        // Clicking the Improve button fails, don't know why!??
+        clickAndEdit(Page.TitleId, newText = "Info Page Title")
       }
 
       "edit body (broken, inline menu won't appear)" in {
-        //clickAndEdit(Page.BodyId, newText = "Wise mice slice rice.")
+        //clickAndEdit(Page.BodyId, newText = "Info page body.")
         pending
       }
 
