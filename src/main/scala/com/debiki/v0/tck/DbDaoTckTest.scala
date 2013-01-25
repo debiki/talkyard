@@ -625,8 +625,8 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
     "create forums and topics" >> {
 
       var forum: PageStuff = null
-      var subforum: PageStuff = null
       var topic: PageStuff = null
+      var forumGroup: PageStuff = null
 
       def forumStuff(
             pageRole: PageRole,
@@ -639,33 +639,25 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
           Debate(guid = "?"))
 
       "create a forum" in {
-        val forumNoId = forumStuff(PageRole.Forum)
+        val forumNoId = forumStuff(PageRole.Forum, pageSlug = "", showId = false)
         forum = dao.createPage(forumNoId)
         ok
       }
 
-      "create a subforum in the forum" in {
-        val subforumNoId = forumStuff(
-          PageRole.Forum, Some(forum.id), pageSlug = "", showId = false)
-        subforum = dao.createPage(subforumNoId)
-        ok
+      "not create a forum in the forum" in {
+        val subforumNoId = forumStuff(PageRole.Forum, Some(forum.id))
+        dao.createPage(subforumNoId) must throwAn[Exception]
       }
 
-      "not create topics in the forum, since there is a subforum" in {
+      "not create a forum group in the forum" in {
+        val groupNoId = forumStuff(PageRole.ForumGroup, Some(forum.id))
+        dao.createPage(groupNoId) must throwAn[Exception]
+      }
+
+      "create a topic in the forum" in {
         val topicNoId = forumStuff(PageRole.ForumTopic, Some(forum.id))
-        dao.createPage(topicNoId) must throwAn[Exception]
-        ok
-      }
-
-      "create a topic in the subforum" in {
-        val topicNoId = forumStuff(PageRole.ForumTopic, Some(subforum.id))
         topic = dao.createPage(topicNoId)
         ok
-      }
-
-      "not create sub-sub-forum in the subforum, since there is a topic" in {
-        val subSubForumNoId = forumStuff(PageRole.Forum, Some(subforum.id))
-        dao.createPage(subSubForumNoId) must throwAn[Exception]
       }
 
       "not create a topic in a topic" in {
@@ -673,18 +665,34 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
         dao.createPage(topicInTopic) must throwAn[Exception]
       }
 
-      "not create a subforum in a topic" in {
+      "not create a forum in a topic" in {
         val forumInTopic = forumStuff(PageRole.Forum, Some(topic.id))
         dao.createPage(forumInTopic) must throwAn[Exception]
       }
 
-      "find the forum, subforum and topic" in {
-        dao.loadPageMeta(forum.id) must beLike {
-          case Some(pageMeta) =>
-            pageMeta.pageRole must_== PageRole.Forum
-        }
+      "not create a forum group in a topic" in {
+        val groupInTopic = forumStuff(PageRole.ForumGroup, Some(topic.id))
+        dao.createPage(groupInTopic) must throwAn[Exception]
+      }
 
-        dao.loadPageMeta(subforum.id) must beLike {
+      "create a forum group P, place the original forum inside" in {
+        failure
+      }.pendingUntilFixed()
+
+      "not create a topic in a forum group" in {
+        failure
+      }.pendingUntilFixed()
+
+      "create a forum group C, place in forum group P" in {
+        failure
+      }.pendingUntilFixed()
+
+      "create a forum, place in forum group C" in {
+        failure
+      }.pendingUntilFixed()
+
+      "find the forum, topic and forum group" in {
+        dao.loadPageMeta(forum.id) must beLike {
           case Some(pageMeta) =>
             pageMeta.pageRole must_== PageRole.Forum
         }
@@ -693,6 +701,11 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
           case Some(pageMeta) =>
             pageMeta.pageRole must_== PageRole.ForumTopic
         }
+
+        /* dao.loadPageMeta(forumGroup.id) must beLike {
+          case Some(pageMeta) =>
+            pageMeta.pageRole must_== PageRole.ForumGroup
+        } */
       }
     }
 
