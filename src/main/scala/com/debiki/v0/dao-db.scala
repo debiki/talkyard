@@ -631,6 +631,15 @@ object DbDao {
       s"Found no page with id: $pageId, tenant id: $tenantId" +
         prettyDetails(details))
 
+  case class PageNotFoundByIdAndRoleException(
+    tenantId: String,
+    pageId: String,
+    pageRole: PageRole,
+    details: Option[String] = None)
+    extends PageNotFoundException(
+      s"Found no page with id: $pageId, tenant id: $tenantId, role: $pageRole" +
+        prettyDetails(details))
+
   case class PageNotFoundByPathException(
     pagePath: PagePath,
     details: Option[String] = None)
@@ -640,7 +649,10 @@ object DbDao {
 
   case class PathClashException(
     existingPagePath: PagePath, newPagePath: PagePath)
-    extends Exception
+    extends RuntimeException
+
+  case class BadPageRoleException(details: String)
+    extends RuntimeException
 
   private def prettyDetails(anyDetails: Option[String]) = anyDetails match {
     case None => ""
