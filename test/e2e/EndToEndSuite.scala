@@ -19,10 +19,14 @@ trait ChromeSuiteMixin extends BeforeAndAfterAll {
 
   lazy val testServer = pt.TestServer(testServerPort, pt.FakeApplication())
 
+  protected def emptyDatabaseBeforeAll = true
+
+
   override def beforeAll() {
     ChromeDriverFactory.start()
     testServer.start()
-    debiki.Debiki.SystemDao.emptyDatabase()
+    if (emptyDatabaseBeforeAll)
+      debiki.Debiki.SystemDao.emptyDatabase()
   }
 
 

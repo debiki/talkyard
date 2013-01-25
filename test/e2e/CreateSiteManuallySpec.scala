@@ -5,8 +5,7 @@
 package test.e2e
 
 import com.debiki.v0.Prelude._
-import org.scalatest.time.{Span, Seconds}
-import play.api.test.Helpers.testServerPort
+import org.scalatest.Suites
 
 
 /**
@@ -16,7 +15,7 @@ import play.api.test.Helpers.testServerPort
  * in SBT's test:console:
  *  (new test.e2e.CreateSiteManuallySpecRunner {}).execute()
  */
-class CreateSiteManuallySpecRunner extends org.scalatest.Suites(
+class CreateSiteManuallySpecRunner extends Suites(
   new CreateSiteManuallySpec {})
   with ChromeSuiteMixin
 
@@ -25,8 +24,11 @@ class CreateSiteManuallySpecRunner extends org.scalatest.Suites(
  * Opens the site creation page, and waits for you to test stuff manually,
  * untill you kill the server.
  *
- * You can login as debiki.tester@gmail.com with password:
- *
+ * You can login as debiki.tester@gmail.com with email:
+ *   debiki.tester@gmail.com
+ * and password:
+ *   ZKFIREK90krI38bk3WK1r0
+ * (See clickLoginWithGmailOpenId() in StuffTestClicker.)
  */
 // From ScalaTest 2.0-M5 and above, use this: `@DoNotDiscover`
 // instead of `abstract`.
@@ -48,14 +50,12 @@ abstract class CreateSiteManuallySpec extends DebikiBrowserSpec {
 }
 
 
+
 /**
- * Runs the BuildSiteManuallySpec suite
- * in SBT:
+ * Runs the BuildSiteManuallySpec suite, in SBT:
  *  test-only test.e2e.BuildSiteManuallySpecRunner
- * in SBT's test:console:
- *  (new test.e2e.BuildSiteManuallySpecRunner {}).execute()
  */
-class BuildSiteManuallySpecRunner extends org.scalatest.Suites(
+class BuildSiteManuallySpecRunner extends Suites(
   new BuildSiteManuallySpec {})
 with ChromeSuiteMixin
 
@@ -83,6 +83,36 @@ abstract class BuildSiteManuallySpec extends DebikiBrowserSpec {
       Thread.sleep(365 * 24 * 3600 * 1000)
     }
 
+  }
+
+}
+
+
+
+/**
+ * Runs the ContinueManualTests suite
+ * in SBT:
+ *  test-only test.e2e.ContinueManualTestsRunner
+ */
+class ContinueManualTestsRunner extends Suites(new ContinueManualTests {})
+    with ChromeSuiteMixin {
+  override val emptyDatabaseBeforeAll = false
+}
+
+
+/**
+ * Starts a test server that does not erase the test database, and then sleeps,
+ * so you can continue interacting with some website you've build
+ * in previous test runs.
+ */
+abstract class ContinueManualTests extends DebikiBrowserSpec {
+
+  "A browser can go to the dashboard of test-site-1" in {
+    go to (originOf(nextSiteName()) + "/-/admin/")
+  }
+
+  "A human can stare at a computer monitor for one year" in {
+    Thread.sleep(365 * 24 * 3600 * 1000)
   }
 
 }

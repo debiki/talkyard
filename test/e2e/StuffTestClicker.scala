@@ -223,7 +223,7 @@ trait StuffTestClicker {
   }
 
 
-  private def originOf(newSiteName: String) =
+  def originOf(newSiteName: String) =
     s"http://$newSiteName.localhost:$testServerPort"
 
 }
