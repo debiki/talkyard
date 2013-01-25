@@ -6,6 +6,8 @@ package test.e2e
 
 import org.openqa.selenium.Keys
 import com.debiki.v0.PageRole
+import play.api.test.Helpers.testServerPort
+import com.debiki.v0.Prelude._
 
 
 /**
@@ -50,6 +52,22 @@ trait StuffTestClicker {
     }
 
     name
+  }
+
+
+  def clickWelcomeLoginToDashboard(newSiteName: String) {
+    "click login link on welcome owner page" in {
+      // We should now be on page /-/new-website/welcome-owner.
+      // There should be only one link, which takes you to /-/admin/.
+      assert(pageSource contains "Website created")
+      click on cssSelector("a")
+    }
+
+    "login to admin dashboard" in {
+      clickLoginWithGmailOpenId()
+      assert(pageSource contains "Welcome to your new website")
+      webDriver.getCurrentUrl() must be === originOf(newSiteName) + "/-/admin/"
+    }
   }
 
 
@@ -203,6 +221,10 @@ trait StuffTestClicker {
     knownWindowHandles += newHandle
     window(newHandle)
   }
+
+
+  private def originOf(newSiteName: String) =
+    s"http://$newSiteName.localhost:$testServerPort"
 
 }
 

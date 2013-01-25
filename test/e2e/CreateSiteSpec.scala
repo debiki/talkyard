@@ -6,7 +6,6 @@ package test.e2e
 
 import com.debiki.v0.Prelude._
 import org.scalatest.time.{Span, Seconds}
-import play.api.test.Helpers.testServerPort
 
 
 /**
@@ -76,8 +75,12 @@ abstract class CreateSiteSpec extends DebikiBrowserSpec {
       pending
     }
 
-    s"login with Gmail OpenID, goto admin page of $firstSiteName" - {
-      loginWithGmailGotoAdminPage(firstSiteName)
+    s"login with Gmail OpenID" in {
+      clickLoginWithGmailOpenId()
+    }
+
+    s"goto admin page of $firstSiteName" - {
+      clickWelcomeLoginToDashboard(firstSiteName)
     }
 
     "return to site creation page" in {
@@ -105,7 +108,7 @@ abstract class CreateSiteSpec extends DebikiBrowserSpec {
     }
 
     s"login with Gmail again, goto admin page of $secondSiteName" - {
-      loginWithGmailGotoAdminPage(secondSiteName)
+      clickWelcomeLoginToDashboard(secondSiteName)
     }
 
     /*"create even more websites" - {
@@ -114,30 +117,6 @@ abstract class CreateSiteSpec extends DebikiBrowserSpec {
       clickCreateSite("test-site-5")
     } */
   }
-
-
-  def loginWithGmailGotoAdminPage(newSiteName: String) {
-    "login with Gmail OpenID" in {
-      clickLoginWithGmailOpenId()
-    }
-
-    "click login link on welcome owner page" in {
-      // We should now be on page /-/new-website/welcome-owner.
-      // There should be only one link, which takes you to /-/admin/.
-      assert(pageSource contains "Website created")
-      click on cssSelector("a")
-    }
-
-    "login to admin dashboard" in {
-      clickLoginWithGmailOpenId()
-      assert(pageSource contains "Welcome to your new website")
-      webDriver.getCurrentUrl() must be === originOf(newSiteName) + "/-/admin/"
-    }
-  }
-
-
-  def originOf(newSiteName: String) =
-    s"http://$newSiteName.localhost:$testServerPort"
 
 }
 
