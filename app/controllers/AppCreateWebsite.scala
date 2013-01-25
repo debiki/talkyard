@@ -211,7 +211,7 @@ object AppCreateWebsite extends mvc.Controller {
     val pageId = AppCreatePage.generateNewPageId()
     val emptyPage = Debate(pageId)
     val pageMeta = PageMeta.forNewPage(
-      pageId, creationDati, PageRole.Homepage, publishDirectly = true)
+      pageId, creationDati, PageRole.Any, publishDirectly = true)
     val oldPath = PagePath(newWebsiteDao.tenantId, folder = "/_old/",
       pageId = Some(pageId), showId = false, pageSlug = "default-homepage")
 
