@@ -5,6 +5,7 @@
 package com.debiki.v0
 
 import java.{util => ju}
+import Prelude._
 
 
 object PageStuff {
@@ -105,17 +106,9 @@ case class PageMeta(
 
 
 
-sealed abstract class PageRole private(
-  // Defaulting to `null`, since Any(Any, Any) causes a "constructor cannot
-  // be passed a self reference" error.
-  private val _parentRole: PageRole = null,
-  private val _childRole: PageRole = null) {
-
-  def parentRole: PageRole =
-    if (_parentRole eq null) PageRole.Any else _parentRole
-
-  def childRole: PageRole =
-    if (_childRole eq null) PageRole.Any else _childRole
+sealed abstract class PageRole {
+  def parentRole: Option[PageRole] = None
+  def childRole: Option[PageRole] = None
 }
 
 
@@ -123,15 +116,35 @@ object PageRole {
   case object Any extends PageRole
   case object Homepage extends PageRole
 
-  case object Blog extends PageRole(_childRole = BlogPost)
-  case object BlogPost extends PageRole(_parentRole = Blog)
+  case object Blog extends PageRole {
+    override val childRole = Some(BlogPost)
+  }
 
-  case object ForumGroup extends PageRole(_childRole = Forum)
-  case object Forum extends PageRole(_childRole = ForumTopic)
-  case object ForumTopic extends PageRole(_parentRole = Forum)
+  case object BlogPost extends PageRole {
+    override val parentRole = Some(Blog)
+  }
 
-  case object WikiMainPage extends PageRole(_childRole = WikiPage)
-  case object WikiPage extends PageRole(_parentRole = WikiMainPage)
+  case object ForumGroup extends PageRole {
+    // BUG, childRole should include ForumGroup itself.
+    override val childRole = Some(Forum)
+  }
+
+  case object Forum extends PageRole {
+    override val parentRole = Some(ForumGroup)
+    override val childRole = Some(ForumTopic)
+  }
+
+  case object ForumTopic extends PageRole {
+    override val parentRole = Some(Forum)
+  }
+
+  case object WikiMainPage extends PageRole {
+    override val childRole = Some(WikiPage)
+  }
+
+  case object WikiPage extends PageRole {
+    override val parentRole = Some(WikiMainPage)
+  }
 }
 
 
