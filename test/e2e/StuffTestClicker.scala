@@ -165,7 +165,13 @@ trait StuffTestClicker {
       }
     }
 
-    "edit text" in {
+    val prettyNewText = {
+      val firstLine = newText.takeWhile(0 < _ - ' ')
+      if (firstLine.length <= 50) firstLine
+      else firstLine.take(47) + "..."
+    }
+
+    s"edit text to: ``$prettyNewText''" in {
       // Wait for network request that loads editor data.
       // Then focus editor and send keys.
       // ((It doesn't seem possible to click on CodeMirror. But using `sendKeys`
