@@ -17,6 +17,24 @@
   val blogPosts = tpi.listNewestChildPages()
   if (blogPosts.nonEmpty)
     blogPosts
+  else if (tpi.hasChildPages) Seq(debiki.TinyTemplateProgrammingInterface.Page(
+    id = "",
+    path = "",
+    title = "Unpublished Blog Post",
+    creationDati = new java.util.Date(),
+    pubDati = Some(new java.util.Date()),
+    safeBodyHtml = """
+    <div>
+      <p>Now you have written a blog post. You also need to publish it,
+        for it to appear here. To do that:</p>
+      <ol>
+        <li>Go to the admin page. <small>Click the Debiki icon in the upper left corner
+          — the white thing with a <em>D</em> inside.</small>
+        </li>
+        <li>Then select the blog post and click <b>Publish</b>.</li>
+      </ol>
+    </div>
+    """))
   else Seq(debiki.TinyTemplateProgrammingInterface.Page(
     id = "",
     path = "",

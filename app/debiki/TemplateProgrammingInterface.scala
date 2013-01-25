@@ -308,14 +308,13 @@ class TinyTemplateProgrammingInterface protected (
     }
 
 
-  def hasSubForums: Boolean = {
+  def hasChildPages: Boolean = {
     // COULD make this more efficient. We already do a database roundtrip
-    // via `listPublishedSubForums` — Might as well ask for all sub forums
-    // from here, because if there *are* any sub forums, we will most likely
-    // list all of them.
+    // via e.g. `listPublishedSubForums` — Might as well ask for all successor
+    // pages from here, because if there *are* any successors, we will
+    // likely list all of them.
     val pathsAndMeta = _pageReq.dao.listChildPages(parentPageId = pageId,
-      sortBy = PageSortOrder.ByPublTime, limit = 1, offset = 0,
-      filterPageRole = Some(PageRole.Forum))
+      sortBy = PageSortOrder.ByPublTime, limit = 1, offset = 0)
     pathsAndMeta.nonEmpty
   }
 
