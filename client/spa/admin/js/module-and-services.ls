@@ -106,6 +106,13 @@ function adminService ($http, $rootScope)
     onOpenedPageSavedCallbacks.push callback
 
 
+  api.wrapForumInGroup = (forumPageId, { onSuccess }) ->
+    $http.post(
+        '/-/wrap-forums-in-group'
+        wrapForumsInNewGroup: [forumPageId])
+      .success -> onSuccess!
+
+
   api.movePages = !(pageIds, {fromFolder, toFolder, callback}) ->
     $http.post '/-/move-pages', { pageIds: pageIds, fromFolder, toFolder }
         .success -> callback!

@@ -205,9 +205,16 @@
                 Unpublish
               </a>
 
+              <!-- Currently forum groups cannot be wrapped, see class PageRole in PageMeta.scala -->
+              <a id='create-wrapping-forum-group-btn' class='btn'
+                  ng-click='createWrappingForumGroup()'
+                  ng-show='onlySelectedOneForum'>
+                  Create forum group that wraps selected forum
+              </a>
+
               <a id='create-subforum-btn' class='btn'
                   ng-click='createSubforum()'
-                  ng-show='onlySelectedOneForum'>
+                  ng-show='onlySelectedOneForumGroup'>
                   Create subforum
               </a>
 

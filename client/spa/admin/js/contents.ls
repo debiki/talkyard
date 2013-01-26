@@ -219,6 +219,19 @@ class PageListItem extends ListItem
         pageRole: 'Forum' }
 
 
+  $scope.createWrappingForumGroup = !->
+    forum = getSelectedPageOrDie!
+    bug 'DwE23W5' unless forum.role == 'Forum'
+    insertForumGroup = !({ newPages, editedPages }) ->
+      if newPages.length != 1 || newPages[0].pageRole != 'ForumGroup'
+        bug 'DwE70q3'
+      if editedPages.length != 1 || editedPages[0].pageRole != 'Forum'
+        bug 'DwE6Rx5'
+      handleSavedPage newPages[0]
+      handleSavedPage editedPages[0]
+    adminService.wrapForumInGroup forum.id, onSuccess: insertForumGroup
+
+
   $scope.createSubforum = !->
     mainForum = getSelectedPageOrDie!
     parentFolder = d.i.parentFolderOfPage mainForum.path
@@ -286,7 +299,10 @@ class PageListItem extends ListItem
       # callback just below. Then we'll update $scope.listItems.
 
 
-  adminService.onPageSaved !(pageMeta, pageTitle) ->
+  adminService.onPageSaved handleSavedPage
+
+
+  handleSavedPage = !(pageMeta, pageTitle) ->
     newlySavedPageItem = PageListItem(
         path: pageMeta.pagePath
         id: pageMeta.pageId
@@ -505,6 +521,7 @@ class PageListItem extends ListItem
     selectedPageListItems := []
     numDrafts = 0
     numPublished = 0
+    numForumGroups = 0
     numForums = 0
     $scope.homepageSelected = false
     for item in $scope.listItems when item.included
@@ -512,12 +529,14 @@ class PageListItem extends ListItem
       $scope.homepageSelected = true if item.path == '/'
       if item.status == 'Draft' => numDrafts += 1
       if item.status == 'Published' => numPublished += 1
+      if item.role == 'ForumGroup' => numForumGroups += 1
       if item.role == 'Forum' => numForums += 1
 
     numPages = selectedPageListItems.length
 
     $scope.nothingSelected = numPages == 0
     $scope.onlySelectedOnePage = numPages == 1
+    $scope.onlySelectedOneForumGroup = numForumGroups == 1 && numPages == 1
     $scope.onlySelectedOneForum = numForums == 1 && numPages == 1
 
     $scope.onlySelectedDrafts = numDrafts == numPages && numPages > 0
