@@ -67,11 +67,15 @@ object AppForum extends mvc.Controller {
 
     val (anyCommonParentId, commonParentFolder, makeIndexPage) = {
       var anyParentId: Option[String] = null
-      var commonParentFolder: String = null
+      var commonParentFolder = ""
       var makeIndexPage = false
 
       for (forum <- forumPathsAndMetas) {
-        if (anyParentId eq null) {
+        if (forum.role != PageRole.Forum && forum.role != PageRole.ForumGroup) {
+          throwForbidden("DwE4UWx3", o"""Page `${forum.id}' is not a forum
+            nor a forum group""")
+        }
+        else if (anyParentId eq null) {
           anyParentId = forum.parentPageId
           commonParentFolder = forum.folder
           makeIndexPage = forum.path.isFolderOrIndexPage
@@ -79,11 +83,6 @@ object AppForum extends mvc.Controller {
         else if (anyParentId != forum.parentPageId) {
           throwForbidden("DwE2YKf8", o"""Specified forums have different parent pages,
             namely `$anyParentId' and `${forum.parentPageId}'""")
-        }
-        else if (forum.role != PageRole.Forum &&
-            forum.role != PageRole.ForumGroup) {
-          throwForbidden("DwE4UWx3", o"""Page `${forum.id}' is not a forum
-            nor a forum group""")  // """)
         }
         else if (forum.folder != commonParentFolder) {
           throwForbidden("DwE5XAw8", o"""Specified forums are located in different
