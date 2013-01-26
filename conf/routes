@@ -63,6 +63,7 @@ GET   /-/admin/                 controllers.Application.viewAdminPage
 
 GET   /-/edit                   controllers.AppEdit.showEditFormAnyPage(pageId, pagePath, postId)
 POST  /-/edit                   controllers.AppEdit.edit
+POST  /-/wrap-forums-in-group   controllers.AppForum.wrapForumsInNewGroup
 #POST /-/move-pages             controllers.AppMoveRenamePage.movePages
 POST  /-/move-rename-page       controllers.AppMoveRenamePage.moveRenamePage
 POST  /-/approve                controllers.AppReview.approve
