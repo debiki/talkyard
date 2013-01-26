@@ -37,6 +37,7 @@ object DummyPage {
 
     val texts: Texts = pageRole match {
       case PageRole.BlogPost => BlogPostTexts
+      case PageRole.ForumGroup => ForumGroupTexts
       case PageRole.Forum => ForumTexts
       case PageRole.ForumTopic => ForumTopicTexts
       case _ => DefaultTexts
@@ -133,16 +134,26 @@ object DummyPage {
   }
 
 
-  private object ForumTexts extends DefaultTexts {
-
-    override val titleText =
-      "New Forum Title (click to edit)"
+  private trait ForumBodyText {
+    self: DefaultTexts =>
 
     override val bodyText = i"""
       |Optional forum info (instead of sticky topics).
       |
       |Click to edit; select *Improve* in the menu that appears.
       |"""
+  }
+
+
+  private object ForumGroupTexts extends DefaultTexts with ForumBodyText {
+    override val titleText =
+      "New Forum Group Title (click to edit)"
+  }
+
+
+  private object ForumTexts extends DefaultTexts with ForumBodyText {
+    override val titleText =
+      "New Forum Title (click to edit)"
   }
 
 

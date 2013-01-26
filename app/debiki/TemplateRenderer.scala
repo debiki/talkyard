@@ -74,6 +74,7 @@ object TemplateRenderer {
       pageReq.pageMeta.pageRole match {
         case PageRole.BlogPost => "blogPost"
         case PageRole.Blog => "blog"
+        case PageRole.ForumGroup => "forumGroup"
         case PageRole.Forum => "forum"
         case PageRole.ForumTopic => "forumTopic"
         case _ =>
