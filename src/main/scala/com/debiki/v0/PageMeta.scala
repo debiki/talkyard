@@ -8,6 +8,31 @@ import java.{util => ju}
 import Prelude._
 
 
+
+trait HasPageMeta {
+  self: { def meta: PageMeta } =>
+
+  def id = meta.pageId
+  def role = meta.pageRole
+  def parentPageId = meta.parentPageId
+}
+
+
+
+trait HasPagePath {
+  self: { def path: PagePath } =>
+
+  def anyId = path.pageId
+  @deprecated("now", "use `siteId` instead")
+  def tenantId = path.tenantId
+  def siteId = path.tenantId
+  def folder = path.folder
+  def slug = path.pageSlug
+  def idShownInUrl = path.showId
+}
+
+
+
 object PageStuff {
 
   def forNewPage(path: PagePath, actions: Debate,
@@ -27,22 +52,12 @@ case class PageStuff( // COULD reneame to Page? if I rename Page to PageActions
                           // (well, rather, if I rename Debate to PageActions)
   meta: PageMeta,
   path: PagePath,
-  actions: Debate) {
+  actions: Debate) extends HasPageMeta with HasPagePath {
 
   if (path.pageId.isDefined) require(meta.pageId == path.pageId.get)
   else require(meta.pageId == "?")
 
   require(meta.pageId == actions.id)
-
-  def id = meta.pageId
-  def tenantId = path.tenantId
-
-  def folder = path.folder
-  def slug = path.pageSlug
-  def idShownInUrl = path.showId
-
-  def role = meta.pageRole
-  def parentPageId = meta.parentPageId
 
   def hasIdAssigned = id != "?"
 
@@ -52,6 +67,10 @@ case class PageStuff( // COULD reneame to Page? if I rename Page to PageActions
       actions = actions.copy(guid = newId))
 
 }
+
+
+case class PagePathAndMeta(path: PagePath, meta: PageMeta)
+  extends HasPagePath with HasPageMeta
 
 
 
