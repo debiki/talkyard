@@ -31,6 +31,7 @@ PrettyListItem =
     switch @role
       | 'Blog' => 'Blog'
       | 'BlogPost' => 'Blog post'
+      | 'ForumGroup' => 'Forum group'
       | 'Forum' => 'Forum'
       | 'ForumTopic' => 'Forum topic'
       | _ => ''
@@ -38,8 +39,9 @@ PrettyListItem =
 
   prettyRoleTooltip: ->
     switch @role
-      | 'Blog' => 'A blog, lists blog posts.'
-      | 'Forum' => 'A forum, lists forum topics.'
+      | 'Blog' => 'Lists blog posts.'
+      | 'ForumGroup' => 'Groups forums and forum groups.'
+      | 'Forum' => 'Lists forum topics.'
       | _ => ''
 
 
