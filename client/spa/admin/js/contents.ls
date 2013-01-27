@@ -24,7 +24,22 @@ PrettyListItem =
 
   prettyTitle: ->
     if @title?.length => @title
-    else '(Unnamed page)'
+    else switch @role
+      | 'Blog' =>
+        # 1. The title of a blog is currently not shown (there is no blog
+        # page Scala template that shows the title post) and therefore
+        # cannot be edited. But showing "Blog" rather than "(Unnamed page)"
+        # should make everything easier to understand?
+        # 2. If this is /blog-2/ or -3, however, show "Blog 2" or "Blog 3".
+        # 3. COULD make blog title editable, if needed by templates (if
+        # there'll be a template that shows the title) or for SEO purposes.
+        blogNo = @path.match //^/blog-([\d])+/$//
+        if blogNo?.length == 2 => "Blog #{blogNo[1]}"
+        else 'Blog'
+      | 'ForumGroup' => '(Unnamed forum group)'
+      | 'Forum' => '(Unnamed forum)'
+      | 'ForumTopic' => '(Unnamed forum topic)'
+      | _ => '(Unnamed page)'
 
 
   prettyRole: ->
