@@ -1,9 +1,8 @@
-@(status: String, message: String)
+@(status: String, message: String, anyReturnToUrl: Option[String])
 
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Logged in</title>
   <script type='text/javascript'>
   function returnToOpener() {
     window.opener.debiki.internal.handleLoginResponse({
@@ -17,7 +16,16 @@
 <body onload='returnToOpener();'>
   @* If javascript disabled, show a message, and (todo) an OK link that
   redirects to the last page? *@
-  @message
+
+  <p>
+    @message
+  </p>
+
+  @for(returnToUrl <- anyReturnToUrl) {
+    <p>
+      <a href="@returnToUrl">Go back and try again</a>
+    </p>
+  }
 </body>
 </html>
 

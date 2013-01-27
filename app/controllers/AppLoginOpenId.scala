@@ -138,7 +138,8 @@ object AppLoginOpenId extends mvc.Controller {
       .map(userInfo =>
         _handleLoginOk(request, userInfo, returnToUrl))
       .recover(_ match {
-        case NonFatal(exception) => _handleLoginFailure(request, exception)
+        case NonFatal(exception) =>
+          _handleLoginFailure(request, exception, returnToUrl)
       })
 
     AsyncResult(futureResult)
@@ -212,7 +213,8 @@ object AppLoginOpenId extends mvc.Controller {
     val result = returnToUrl match {
       case "" =>
         Ok(views.html.loginOpenidCallback("LoginOk",
-          "You have been logged in, welcome " + loginGrant.displayName +"!"))
+          s"You have been logged in, welcome ${loginGrant.displayName}!",
+          anyReturnToUrl = None))
       case url =>
         Redirect(url)
     }
@@ -222,24 +224,34 @@ object AppLoginOpenId extends mvc.Controller {
 
 
   private def _handleLoginFailure(
-        request: Request[AnyContent], thrown: scala.Throwable) = {
+        request: Request[AnyContent], thrown: scala.Throwable, returnToUrl: String) = {
+
+    import play.api.libs.openid.Errors
+    import play.api.libs.openid.OpenIDError
+
+    // Some errors are described here:
+    //   http://openid.net/specs/openid-authentication-2_0.html
+    // e.g. AUTH_ERROR which I think is indicated by the endpoint
+    // sending is_valid=false, see section 11.4.2.2.
 
     val mess = thrown match {
-      case play.api.libs.openid.Errors.AUTH_ERROR =>
-        // Concerning is_valid=false, see section 11.4.2.2 here:
-        // http://openid.net/specs/openid-authentication-2_0.html
-        Logger.debug("OpenID verification failed: "+ thrown)
-        "Authentication failed: The OpenID provider said: is_valid=false."
-      case _ =>
-        Logger.warn("Openid verification failed: Unknown error: "+ thrown)
-        "Authentication failed: Unknown error."
+      case Errors.AUTH_CANCEL =>
+        // This message is easier to understand than Play's built in message?
+        "Login failed: You cancelled the login, by denying access?"
+      case error: OpenIDError =>
+        Logger.warn(s"OpenID login failed: ${error.message}")
+        s"Login failed: ${error.message}"
     }
+
+    val anyReturnToUrl =
+      if (returnToUrl.nonEmpty) Some(returnToUrl)
+      else None
 
     // COULD fix status code handling: "LoginFailed" results in debiki.js
     // informing the user that "You closed the login window?" (which is
     // incorrect).
     Ok(views.html.loginOpenidCallback(
-      "LoginFailed", mess + " [error DwE3903r32]"))
+      "LoginFailed", mess + " [error DwE3903r32]", anyReturnToUrl))
     //Redirect(routes.AppAuth.loginOpenidGet).flashing(
     //  "OpenID login failure" -> t.toString)
   }
