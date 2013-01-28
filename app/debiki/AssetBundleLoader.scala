@@ -9,6 +9,7 @@ import debiki._
 import debiki.DebikiHttp._
 import java.{util => ju}
 import Prelude._
+import WebsiteConfig.AssetBundleItem
 
 
 case class AssetBundleAndDependencies(
@@ -110,7 +111,8 @@ object AssetBundleLoader {
 
     def itsEntryPrefix = s"The 'asset-bundles' entry for '$bundleName'"
 
-    val assetPaths: Seq[PagePath] = assetUrls map { assetUrl =>
+    val assetPaths: Seq[PagePath] =
+          assetUrls flatMap { case AssetBundleItem(assetUrl, isOptional) =>
       import UrlToPagePathResolver.Result
       UrlToPagePathResolver.resolveUrl(assetUrl, basePath, dao) match {
         case Result.BadUrl(errorMessage) =>
@@ -119,9 +121,10 @@ object AssetBundleLoader {
         case Result.HostNotFound(host) =>
           die("DwE58BK3", s"$itsEntryPrefix refers to an unknown host: $host")
         case Result.PageNotFound =>
-          die("DwE4YBz3", s"$itsEntryPrefix refers to a non-existing page: $assetUrl")
+          if (isOptional) Nil
+          else die("DwE4YBz3", s"$itsEntryPrefix refers to non-existing page: $assetUrl")
         case Result.Ok(path) =>
-          path
+          path::Nil
       }
     }
 
