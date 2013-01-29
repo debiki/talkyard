@@ -157,6 +157,50 @@ object PostType {
   //case object FlagSpam extends PostType with FlagReason
 }
 
+
+
+case object Post {
+
+  def newTitleBySystem(text: String, creationDati: ju.Date) =
+    newTitle(text, creationDati, loginId = SystemUser.Login.id,
+      approval = Some(Approval.AuthoritativeUser))
+
+  def newPageBodyBySystem(text: String, creationDati: ju.Date) =
+    newPageBody(text, creationDati, loginId = SystemUser.Login.id,
+      approval = Some(Approval.AuthoritativeUser))
+
+
+  def newTitle(
+        text: String,
+        creationDati: ju.Date,
+        loginId: String,
+        approval: Option[Approval]) =
+    Post(Page.TitleId, Page.TitleId, creationDati,
+      loginId = loginId,
+      newIp = None,
+      text = text,
+      markup = Markup.DefaultForPageTitle.id,
+      approval = approval,
+      tyype = PostType.Text)
+
+
+  def newPageBody(
+        text: String,
+        creationDati: ju.Date,
+        loginId: String,
+        approval: Option[Approval]) =
+    Post(Page.BodyId, Page.BodyId, creationDati,
+      loginId = loginId,
+      newIp = None,
+      text = text,
+      markup = Markup.DefaultForPageBody.id,
+      approval = approval,
+      tyype = PostType.Text)
+
+}
+
+
+
 case class Post(  // COULD merge all actions into Post,
                   // and use different PostType:s (which would include
                   // the payload) for various different actions.
