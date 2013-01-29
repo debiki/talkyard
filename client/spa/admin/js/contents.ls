@@ -319,7 +319,7 @@ class PageListItem extends ListItem
   adminService.onPageSaved handleSavedPage
 
 
-  handleSavedPage = !(pageMeta, pageTitle) ->
+  !function handleSavedPage (pageMeta, pageTitle)
     newlySavedPageItem = PageListItem(
         path: pageMeta.pagePath
         id: pageMeta.pageId
