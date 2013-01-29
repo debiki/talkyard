@@ -155,7 +155,7 @@ trait StuffTestClicker {
    * edits the post and verifies that the changes were probably saved.
    */
   def clickAndEdit(postId: String, newText: String) {
-    s"click #post-$postId, select Improve" in {
+    //s"click #post-$postId, select Improve" in {
       eventually {
         // (The inline menu disappears after 1 second or so, which
         // breaks the test if I place a breakpoint on the 2nd line here,
@@ -163,7 +163,7 @@ trait StuffTestClicker {
         click on cssSelector(s"#post-$postId .dw-p-bd-blk")
         click on cssSelector(".dw-a-edit-i")
       }
-    }
+    //}
 
     val prettyNewText = {
       val firstLine = newText.takeWhile(0 < _ - ' ')
@@ -171,7 +171,7 @@ trait StuffTestClicker {
       else firstLine.take(47) + "..."
     }
 
-    s"edit text to: ``$prettyNewText''" in {
+    //s"edit text to: ``$prettyNewText''" in {
       // Wait for network request that loads editor data.
       // Then focus editor and send keys.
       // ((It doesn't seem possible to click on CodeMirror. But using `sendKeys`
@@ -192,22 +192,22 @@ trait StuffTestClicker {
             textarea.sendKeys(newText)
         }
       }
-    }
+    //}
 
-    "click preview, then submit" in {
+    //"click preview, then submit" in {
       // The edit tab id ends with a serial number, which depends on how
       // many edit forms have already been opened. So match only on the
       // start of the edit tab id.
       click on cssSelector(s"#post-$postId a[href^='#dw-e-tab-prvw_sno-']")
       click on cssSelector(s"#post-$postId .dw-f-e .dw-fi-submit")
-    }
+    //}
 
-    "find new text in page source" in {
+    //"find new text in page source" in {
       eventually {
         //pageSource.contains(newText) must be === true
         find(cssSelector(s"#post-$postId .dw-p-bd")).map(_.text) must be === Some(newText)
       }
-    }
+    //}
   }
 
 

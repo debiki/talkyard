@@ -61,7 +61,7 @@ abstract class AdminDashboardSpec extends DebikiBrowserSpec {
         }
       }
 
-      "edit homepage title" - {
+      "edit homepage title" in {
         clickAndEdit(Page.TitleId, newText = EditedHomepageTitle)
       }
 
@@ -134,7 +134,7 @@ abstract class AdminDashboardSpec extends DebikiBrowserSpec {
         pending
       }
 
-      "edit title" - {
+      "edit title" in {
         // Clicking the Improve button fails, don't know why!??
         clickAndEdit(Page.TitleId, newText = "Info Page Title")
       }
@@ -173,7 +173,7 @@ abstract class AdminDashboardSpec extends DebikiBrowserSpec {
         blogPostId = clickCreateBlogPost()
       }
 
-      "edit blog post title" - {
+      "edit blog post title" in {
         clickAndEdit(Page.TitleId, BlogPostTitle)
       }
 
@@ -236,7 +236,7 @@ abstract class AdminDashboardSpec extends DebikiBrowserSpec {
         switch to blogPostWindow
       }
 
-      "edit blog post title" - {
+      "edit blog post title" in {
         clickAndEdit(Page.TitleId, BlogPostTitle)
       }
 
@@ -300,7 +300,7 @@ abstract class AdminDashboardSpec extends DebikiBrowserSpec {
         switchToNewlyOpenedWindow()
       }
 
-      "edit topic title" - {
+      "edit topic title" in {
         clickAndEdit(Page.TitleId, forumTopicTitle)
       }
 
@@ -327,7 +327,7 @@ abstract class AdminDashboardSpec extends DebikiBrowserSpec {
       }
 
       def editForumTitle() {
-        "edit forum title" - {
+        "edit forum title" in {
           clickAndEdit(Page.TitleId, forumMainPageTitle)
         }
       }
