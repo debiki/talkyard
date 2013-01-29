@@ -28,7 +28,7 @@ object DummyPage {
   def addMissingTitleBodyConfigTo(pageNoDummies: Debate, pageRole: PageRole): Debate = {
     val addDummyTitle = pageNoDummies.title.isEmpty
     val addDummyBody = pageNoDummies.body.isEmpty
-    val addDummyConfig = pageNoDummies.pageTemplatePost.isEmpty
+    val addDummyConfig = pageNoDummies.pageConfigPost.isEmpty
 
     var pageWithDummies = pageNoDummies
 
@@ -88,7 +88,7 @@ object DummyPage {
 
 
   private def dummyConfig(texts: Texts) = dummyBody(texts).copy(
-    id = Page.TemplateId, parent = Page.TemplateId, text = texts.configText,
+    id = Page.ConfigPostId, parent = Page.ConfigPostId, text = texts.configText,
     markup = Markup.Code.id)
 
 

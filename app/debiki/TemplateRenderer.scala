@@ -32,12 +32,12 @@ object TemplateRenderer {
 
     val tpi = new TemplateProgrammingInterface(pageReq, appendToBody)
 
-    if (pageReq.pageRoot.isPageTemplate || pageReq.pagePath.isTemplatePage) {
+    if (pageReq.pageRoot.isPageConfigPost || pageReq.pagePath.isConfigPage) {
       // Use a page that we know for sure is not broken, so it's possible
       // to fix errors. And do this before loading any config values,
       // since a config file might be corrupted (exception thrown).
       return views.html.themes.specialpages.template(
-        tpi, isPageSettings = pageReq.pageRoot.isPageTemplate).body
+        tpi, isPageSettings = pageReq.pageRoot.isPageConfigPost).body
     }
 
     // Handle page config values.

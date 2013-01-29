@@ -13,8 +13,7 @@ import Prelude._
  * Provides config values for the website and for individual pages.
  *
  * Site wide config values are read from /_site.conf.
- * Page specific config values are read from any post with id Page.TemplateId (which
- * should be renamed to perhaps Page.ConfigPostId / ConfigId).
+ * Page specific config values are read from any post with id Page.ConfigPostId.
  *
  * Site wide config values fallback to any other config file specified in _site.conf
  * like so: `extend: http://other-server/themes/some-theme/theme.conf`, recursively.
@@ -24,7 +23,7 @@ trait ConfigValueDao {
 
 
   def loadPageConfigMap(pageId: String): Map[String, Any] =
-    loadConfigMap(SitePageId(tenantId, pageId), configPostId = Page.TemplateId)
+    loadConfigMap(SitePageId(tenantId, pageId), configPostId = Page.ConfigPostId)
 
 
   /**

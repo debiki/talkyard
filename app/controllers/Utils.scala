@@ -115,7 +115,7 @@ object Utils extends Results with http.ContentTypes {
     // pages.
     val fragment = "/-"+ action.page.id
     val query =
-      if (action.id == Page.TemplateId) "?view="+ Page.TemplateId
+      if (action.id == Page.ConfigPostId) "?view="+ Page.ConfigPostId
       else "?view"
     val hash = action match {
       case post: ViPo => "#post-"+ action.id
@@ -132,7 +132,7 @@ object Utils extends Results with http.ContentTypes {
 
 
   def isPrivatePage(pagePath: PagePath): Boolean =
-    pagePath.isCodePage || pagePath.isTemplatePage || pagePath.isHiddenPage
+    pagePath.isConfigPage || pagePath.isHiddenPage
 
 
   /**

@@ -315,7 +315,7 @@ object AppEdit extends mvc.Controller {
     def isOwnPost = user.map(_.id) == Some(post.identity_!.userId)
     def isPage = post.id == Page.BodyId || post.id == Page.TitleId
 
-    if (post.id == Page.TemplateId && !perms.editPageTemplate)
+    if (post.id == Page.ConfigPostId && !perms.editPageTemplate)
       (false, "May not edit page template")
     else if (isOwnPost)
       (true, "May edit own post")
@@ -342,7 +342,7 @@ object AppEdit extends mvc.Controller {
         None
       }
       // But create a title or template, lazily, if needed.
-      else if (postId == Page.TitleId || postId == Page.TemplateId ||
+      else if (postId == Page.TitleId || postId == Page.ConfigPostId ||
           postId == Page.BodyId) {
         Some(_createPostToEdit(pageReq, postId = postId, authorLoginId = authorLoginId))
       }
@@ -365,7 +365,7 @@ object AppEdit extends mvc.Controller {
         pageReq: PageRequest[_], postId: String, authorLoginId: String): Post = {
 
     val markup =
-      if (postId == Page.TemplateId) Markup.Code
+      if (postId == Page.ConfigPostId) Markup.Code
       else if (postId == Page.TitleId) Markup.DefaultForPageTitle
       else if (postId == Page.BodyId) Markup.DefaultForPageBody
       else Markup.DefaultForComments
