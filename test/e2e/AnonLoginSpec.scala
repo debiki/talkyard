@@ -10,6 +10,13 @@ import com.debiki.v0.Prelude._
 
 
 /**
+ * Runs the AnonLoginSpec suite, in SBT:  test-only test.e2e.AnonLoginSpecRunner
+ */
+class AnonLoginSpecRunner extends org.scalatest.Suites(new AnonLoginSpec {})
+with ChromeSuiteMixin
+
+
+/**
  * Tests anonymous user login, 1) by clicking Reply and logging in
  * when submitting, 2) by clicking Rate and logging in when rating,
  * and 3) via the "Log in" link,
