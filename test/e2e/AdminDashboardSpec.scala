@@ -116,8 +116,8 @@ abstract class AdminDashboardSpec extends DebikiBrowserSpec {
         }
 
         "back in the dashboard, there must be no new page listed" in {
-          // Only the homepage (1 page) must be listed.
-          findAll(cssSelector("#page-table > tbody > tr")).length must be === 1
+          // Only the homepage and _site.conf (2 pages) must be listed.
+          findAll(cssSelector("#page-table > tbody > tr")).length must be === 2
         }
       }
     }
