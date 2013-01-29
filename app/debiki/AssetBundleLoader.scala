@@ -16,7 +16,7 @@ case class AssetBundleAndDependencies(
   assetBundleText: String,
   version: String, // SHA1 hash of assetBundleText
   assetPageIds: Seq[SitePageId],
-  configPageId: String)
+  configPageIds: Seq[SitePageId])
   // COULD: missingAssets: Seq[MissingAsset])
 
 
@@ -82,13 +82,13 @@ object AssetBundleLoader {
     }
 
     val assetPageIds = assetPaths map (_.sitePageId getOrDie "DwE90If5")
-    val siteConfigPageId = dao.loadWebsiteConfigPageId() getOrElse
-      die(DebikiException("DwE38bkF5", "Website config page was just deleted"))
+    val siteConfig = dao.loadWebsiteConfig()
+    val configPageIds = siteConfig.configLeaves.map(_.sitePageId)
 
     val sha1sum = hashSha1Base64UrlSafe(bundleText)
 
     AssetBundleAndDependencies(
-      bundleText, sha1sum, assetPageIds, configPageId = siteConfigPageId)
+      bundleText, sha1sum, assetPageIds, configPageIds = configPageIds)
   }
 
 
@@ -106,15 +106,13 @@ object AssetBundleLoader {
           die("DwE2B1x8", ex.getMessage)
       }
 
-    val basePath = PagePath(tenantId = dao.tenantId,
-      folder = "/themes/local/", pageId = None, showId = false, pageSlug = "")
-
     def itsEntryPrefix = s"The 'asset-bundles' entry for '$bundleName'"
 
     val assetPaths: Seq[PagePath] =
           assetUrls flatMap { case AssetBundleItem(assetUrl, isOptional) =>
       import UrlToPagePathResolver.Result
-      UrlToPagePathResolver.resolveUrl(assetUrl, basePath, dao) match {
+      UrlToPagePathResolver.resolveUrl(assetUrl, dao,
+          baseSiteId = dao.tenantId, baseFolder = "/themes/local/") match {
         case Result.BadUrl(errorMessage) =>
           die("DwE3bK31", o"""$itsEntryPrefix lists an invalid URL: $assetUrl,
              error: $errorMessage""")

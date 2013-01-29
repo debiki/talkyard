@@ -34,7 +34,8 @@ object UrlToPagePathResolver {
    *
    * Throws Not Found if a host cannot be resolved to a tenant id.
    */
-  def resolveUrl(url: String, basePage: PagePath, dao: TenantDao): Result = {
+  def resolveUrl(url: String, dao: TenantDao, baseSiteId: String, baseFolder: String)
+        : Result = {
 
     // Parse URL, resolve host name to tenant id.
     val parsedUrl = parseUrl(url) match {
@@ -43,7 +44,7 @@ object UrlToPagePathResolver {
     }
 
     val tenantId = parsedUrl.schemeHostOpt match {
-      case None => basePage.tenantId
+      case None => baseSiteId
       case Some((scheme, host)) =>
         dao.lookupOtherTenant(scheme, host) match {
           case found: FoundChost => found.tenantId
@@ -55,7 +56,7 @@ object UrlToPagePathResolver {
     // Handle relative folder paths.
     val folder =
       if (parsedUrl.folder startsWith "/") parsedUrl.folder
-      else basePage.parentFolder + parsedUrl.folder
+      else baseFolder + parsedUrl.folder
 
     val pagePathNoId = PagePath(tenantId = tenantId, folder = folder,
       pageId = None, showId = false, pageSlug = parsedUrl.page)

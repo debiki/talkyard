@@ -19,13 +19,23 @@ import Utils.ValidationImplicits._
 
 object AppCreateWebsite extends mvc.Controller {
 
-  val log = play.api.Logger("app.create-website")
+  val log = play.api.Logger("app.create-site")
 
-  def newWebsiteAddr(websiteName: String,
-        tpi: InternalTemplateProgrammingInterface): String = {
-    websiteName +"."+ tpi.websiteConfigValue("new-website-domain",
-      or = throwForbidden(
-        "DwE903IKW3", "You may not create a new website from this website"))
+
+  object ConfValNames {
+    val NewSiteConfigText = "new-site-config-page-text"
+    val NewSiteDomain = "new-site-domain"
+  }
+
+
+  def newWebsiteAddr(websiteName: String, dao: TenantDao): String = {
+    def die = throwForbidden(
+      "DwE30SC3", "You may not create a new website from this website")
+    val siteConfig = dao.loadWebsiteConfig()
+    val domain = siteConfig.getText(ConfValNames.NewSiteDomain) getOrElse die
+    // Ensure other required config values are present too (fail fast).
+    siteConfig.getText(ConfValNames.NewSiteConfigText) getOrElse die
+    s"$websiteName.$domain"
   }
 
 
@@ -55,8 +65,7 @@ object AppCreateWebsite extends mvc.Controller {
         "DwE9fZ31", "To create a new website, you need to accept the "+
          "Terms of Use and the Privacy Policy.")
 
-    val websiteAddr = newWebsiteAddr(newWebsiteName,
-       InternalTemplateProgrammingInterface(request.dao))
+    val websiteAddr = newWebsiteAddr(newWebsiteName, request.dao)
 
     // *Preliminarily* test if it's possible & allowed to create the website.
     _throwIfMayNotCreateWebsite(request, newWebsiteAddr = Some(websiteAddr))
@@ -110,8 +119,7 @@ object AppCreateWebsite extends mvc.Controller {
       throwForbidden("DwE091EQ7", "No website-name cookie")
     }
 
-    val tpi = InternalTemplateProgrammingInterface(request.dao)
-    val websiteAddr = newWebsiteAddr(newWebsiteName, tpi)
+    val websiteAddr = newWebsiteAddr(newWebsiteName, request.dao)
 
     _throwIfMayNotCreateWebsite(request, newWebsiteAddr = Some(websiteAddr))
 
@@ -138,8 +146,13 @@ object AppCreateWebsite extends mvc.Controller {
 
         Debiki.sendEmail(email, website.id)
 
+        val newSiteConfigText = request.dao.loadWebsiteConfig().getText(
+          ConfValNames.NewSiteConfigText) getOrDie "DwE74Vf9"
+
         val newWebsiteDao = Debiki.tenantDao(
           tenantId = website.id, ip = request.ip, roleId = None)
+
+        createConfigPage(newSiteConfigText, newWebsiteDao, creationDati = request.ctime)
         createHomepage(newWebsiteDao, creationDati = request.ctime)
 
         Redirect("http://"+ websiteAddr +
@@ -199,6 +212,22 @@ object AppCreateWebsite extends mvc.Controller {
   }
 
 
+  private def createConfigPage(
+    text: String, newSiteDao: TenantDao, creationDati: ju.Date) {
+
+    val pageId = AppCreatePage.generateNewPageId()
+    val pageBody = Post.newPageBodyBySystem(text, creationDati).copy(
+        markup = Markup.Code.id)
+
+    newSiteDao.createPage(PageStuff(
+      PageMeta.forNewPage(
+        pageId, creationDati, PageRole.Any, publishDirectly = true),
+      PagePath(newSiteDao.tenantId, folder = "/",
+        pageId = Some(pageId), showId = false, pageSlug = "_website-config.yaml"),
+      Debate(pageId, posts = List(pageBody))))
+  }
+
+
   /**
    * Creates an empty page at /, with PageRole.Homepage, so I don't need
    * to tell users how to create a homepage. Instead, I create a default
@@ -224,13 +253,7 @@ object AppCreateWebsite extends mvc.Controller {
     newWebsiteDao.moveRenamePage(pageId, newFolder = Some("/"), newSlug = Some(""))
 
     // Set homepage title.
-    val title = Post(Page.TitleId, Page.TitleId, creationDati,
-      loginId = SystemUser.Login.id,
-      newIp = None,
-      text = DefaultHomepageTitle,
-      markup = Markup.DefaultForPageTitle.id,
-      approval = Some(Approval.AuthoritativeUser),
-      tyype = PostType.Text)
+    val title = Post.newTitleBySystem(text = DefaultHomepageTitle, creationDati)
     newWebsiteDao.savePageActionsGenNotfsImpl(emptyPage, List(title), pageMeta)
   }
 

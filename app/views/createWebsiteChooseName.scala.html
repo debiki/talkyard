@@ -46,7 +46,7 @@
 """)}
 
 
-@newWebsiteDomain = @{ tpi.websiteConfigValue("new-website-domain") }
+@newWebsiteDomain = @{ tpi.websiteConfigValue("new-site-domain") }
 
 
 @* Usability note:
@@ -94,8 +94,8 @@ the name to lowercase.
       <input type='checkbox' id='accepts-terms' name='acceptTermsInp' value='yes' required
           ng-model="acceptTerms">
       <label for='accepts-terms'>
-        I accept the <a href="@tpi.websiteConfigValue("new-website-terms-of-use")">Terms of Use</a>
-        and the <a href="@tpi.websiteConfigValue("new-website-privacy-policy")">Privacy Policy</a>.
+        I accept the <a href="@tpi.websiteConfigValue("new-site-terms-of-use")">Terms of Use</a>
+        and the <a href="@tpi.websiteConfigValue("new-site-privacy-policy")">Privacy Policy</a>.
       </label>
       </div>
 

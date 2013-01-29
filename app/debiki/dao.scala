@@ -130,6 +130,9 @@ class TenantDao(protected val tenantDbDao: ChargingTenantDbDao)
   def loadPage(debateId: String): Option[Debate] =
     tenantDbDao.loadPage(debateId)
 
+  def loadPageAnyTenant(sitePageId: SitePageId): Option[Debate] =
+    loadPageAnyTenant(tenantId = sitePageId.siteId, pageId = sitePageId.pageId)
+
   def loadPageAnyTenant(tenantId: String, pageId: String): Option[Debate] =
     tenantDbDao.loadPage(pageId, tenantId = Some(tenantId))
 

@@ -162,8 +162,7 @@ object CachingAssetBundleDao {
         siteId = siteId,
         bundleName = bundleName,
         dependeePageIds =
-          SitePageId(siteId, bundleAndDeps.configPageId)
-            :: bundleAndDeps.assetPageIds.toList)
+          bundleAndDeps.configPageIds.toList ::: bundleAndDeps.assetPageIds.toList)
     }
   }
 

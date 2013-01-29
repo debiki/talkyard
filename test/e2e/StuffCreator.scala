@@ -79,10 +79,20 @@ trait StuffCreator {
     firstSiteDao.addTenantHost(TenantHost(
       firstSiteHost, TenantHost.RoleCanonical, TenantHost.HttpsNone))
 
+    // TODO
+    // Create ./example-theme/theme.conf and ./example-theme/styles.css,
+    // referred to by the new site config page.
+    //createThemeToExtend()
+
     createSiteConfigPage(firstSiteId, i"""
-          |new-website-domain: $firstSiteHost
-          |new-website-terms-of-use: /hosting/terms-of-service
-          |new-website-privacy-policy: /hosting/privacy-policy
+          |new-site-domain: $firstSiteHost
+          |new-site-terms-of-use: /hosting/terms-of-service
+          |new-site-privacy-policy: /hosting/privacy-policy
+          |new-site-config-page-text: |
+          |  # extend: localhost:$testServerPort/example-theme/theme.conf
+          |  asset-bundles:
+          |    styles.css:
+          |      - /dummy-file.css, optional
           |""")
 
     (firstSite.id, "http://" + firstSiteHost)
@@ -93,9 +103,8 @@ trait StuffCreator {
    * Creates the _website-config.yaml page for stie `siteId` and inserts
    * `configValues`.
    */
-  def createSiteConfigPage(siteId: String, configValues: String) {
+  private def createSiteConfigPage(siteId: String, configValues: String) {
     val p = postTemplate
-    if (p eq null) println("Mooooää")
     val body = p.copy(id = Page.BodyId, text = configValues)
     val pagePath = PagePath(
       firstSiteId, "/", pageId = None, showId = false, pageSlug = "_website-config.yaml")

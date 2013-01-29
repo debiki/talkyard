@@ -144,15 +144,7 @@ class InternalTemplateProgrammingInterface protected (
 
 
   protected def _websiteConfigValueOpt(confValName: String): Option[String] =
-    try {
-      dao.loadWebsiteConfigMap().get(confValName).map(_.toString)
-    }
-    catch {
-      case ex: DebikiException =>
-        throw TemplateRenderer.PageConfigException(
-          "DwE48IB3", o"""Error loading website config value '$confValName':
-            ${ex.getMessage}""")
-    }
+    dao.loadWebsiteConfig().getText(confValName)
 
 }
 
