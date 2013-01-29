@@ -87,7 +87,7 @@ class ViPo(debate: Debate, val post: Post) extends ViAc(debate, post) {
 
 
   def isArticleOrConfig =
-    id == Page.TitleId || id == Page.BodyId || id == Page.TemplateId
+    id == Page.TitleId || id == Page.BodyId || id == Page.ConfigPostId
 
 
   def initiallyApproved: Boolean = {

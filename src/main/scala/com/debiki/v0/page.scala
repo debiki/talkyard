@@ -13,7 +13,7 @@ import FlagReason.FlagReason
 object Page {
   val BodyId = "1"
   val TitleId = "2"
-  val TemplateId = "3"
+  val ConfigPostId = "3"
   type Page = Debate   // import Page.Page and type ": Page", not ": Debate"
 }
 
@@ -242,7 +242,7 @@ case class Debate (
   //def titleXml: Option[xml.Node] = body.flatMap(_.titleXml)
 
   /** A Post with template engine source code, for the whole page. */
-  def pageTemplatePost: Option[ViPo] = vipo(Page.TemplateId)
+  def pageConfigPost: Option[ViPo] = vipo(Page.ConfigPostId)
 
 
   // -------- Ratings
@@ -634,7 +634,7 @@ sealed abstract class PageRoot {
   def findOrCreatePostIn(page: Debate): Option[ViPo]
   def findChildrenIn(page: Debate): List[ViPo]
   def isDefault: Boolean = subId == Page.BodyId
-  def isPageTemplate: Boolean = subId == Page.TemplateId
+  def isPageConfigPost: Boolean = subId == Page.ConfigPostId
 }
 
 
@@ -667,7 +667,7 @@ object PageRoot {
       // and if so show an error page root post.
       case "" => Real(Page.BodyId)  // the default, if nothing specified
       case "title" => Real(Page.TitleId)
-      case "template" => Real(Page.TemplateId)
+      case "template" => Real(Page.ConfigPostId)
       case id => Real(id)
     }
   }

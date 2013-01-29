@@ -94,14 +94,9 @@ case class PagePath(  // COULD move to debate.scala.  Rename to RequestPath?
 
   /** True if the slug ends with e.g. `.template' or `.js' or `.css'.
    */
-  def isCodePage =
-    isTemplatePage ||
-       (pageSlug endsWith ".js") ||
-       (pageSlug endsWith ".css")
+  def isScriptOrStyle = pageSlug.endsWith(".js") || pageSlug.endsWith(".css")
 
-  def isTemplatePage =
-    pageSlug.endsWith(".template") ||
-    pageSlug.endsWith(".yaml")
+  def isConfigPage = pageSlug.endsWith(".yaml") || pageSlug.endsWith(".conf")
 
   /**
    * Pages and folders that start with '_' are visible to admins only.
