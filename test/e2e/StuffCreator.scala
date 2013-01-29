@@ -79,35 +79,37 @@ trait StuffCreator {
     firstSiteDao.addTenantHost(TenantHost(
       firstSiteHost, TenantHost.RoleCanonical, TenantHost.HttpsNone))
 
-    // TODO
-    // Create ./example-theme/theme.conf and ./example-theme/styles.css,
+    // Create ./themes/example/theme.conf and ./themes/example/theme.css,
     // referred to by the new site config page.
-    //createThemeToExtend()
+    createCodePage(firstSiteId, "/themes/example/", "theme.conf", i"""
+      |asset-bundles:
+      |  styles.css:
+      |    - http://$firstSiteHost/themes/example/theme.css
+      |    - /themes/local/theme.css, optional
+      |""")
 
-    createSiteConfigPage(firstSiteId, i"""
+    createCodePage(firstSiteId, "/themes/example/", "theme.css", i"""
+      |body {
+      |  background: cornsilk !important;
+      |}
+      |""")
+
+    createCodePage(firstSiteId, "/", "_website-config.yaml", i"""
           |new-site-domain: $firstSiteHost
           |new-site-terms-of-use: /hosting/terms-of-service
           |new-site-privacy-policy: /hosting/privacy-policy
           |new-site-config-page-text: |
-          |  # extend: localhost:$testServerPort/example-theme/theme.conf
-          |  asset-bundles:
-          |    styles.css:
-          |      - /dummy-file.css, optional
+          |  extend: http://$firstSiteHost/themes/example/theme.conf
           |""")
 
     (firstSite.id, "http://" + firstSiteHost)
   }
 
 
-  /**
-   * Creates the _website-config.yaml page for stie `siteId` and inserts
-   * `configValues`.
-   */
-  private def createSiteConfigPage(siteId: String, configValues: String) {
-    val p = postTemplate
-    val body = p.copy(id = Page.BodyId, text = configValues)
+  private def createCodePage(siteId: String, folder: String, slug: String, text: String) {
+    val body = postTemplate.copy(id = Page.BodyId, text = text, markup = Markup.Code.id)
     val pagePath = PagePath(
-      firstSiteId, "/", pageId = None, showId = false, pageSlug = "_website-config.yaml")
+      firstSiteId, folder, pageId = None, showId = false, pageSlug = slug)
     val page = Debate(guid = "?", posts = body::Nil)
     firstSiteDao.createPage(PageStuff.forNewPage(
       pagePath, page, publishDirectly = true))
