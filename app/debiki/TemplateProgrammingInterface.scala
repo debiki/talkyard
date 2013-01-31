@@ -406,6 +406,9 @@ class TemplateProgrammingInterface(
   def pageMeta = dao.renderPageMeta(pageReq)
 
 
+  def pageUrlPath = pageReq.pagePath.path
+
+
   def title = dao.renderPageTitle(pageReq)
 
 

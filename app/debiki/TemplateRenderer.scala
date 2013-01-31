@@ -77,6 +77,7 @@ object TemplateRenderer {
         case PageRole.ForumGroup => "forumGroup"
         case PageRole.Forum => "forum"
         case PageRole.ForumTopic => "forumTopic"
+        case PageRole.Code => "codePage"
         case _ =>
         // A blog post template works well for most pages?
         "blogPost"
