@@ -168,6 +168,18 @@ object PageRole {
   case object WikiPage extends PageRole {
     override val parentRole = Some(WikiMainPage)
   }
+
+  // Hmm, regrettably this breaks should I rename any case object.
+  // Perhaps use a match ... case list instead?
+  private val _PageRoleLookup = Vector(
+    Any, Blog, BlogPost,
+    ForumGroup, Forum, ForumTopic,
+    WikiMainPage, WikiPage, Code).map(x => (x, x.toString))
+
+  def parse(pageRoleString: String): PageRole =
+    _PageRoleLookup.find(_._2 == pageRoleString).map(_._1).getOrElse(
+      illArgErr("DwE930rR3", s"Bad page role: `$pageRoleString'"))
+
 }
 
 
@@ -202,6 +214,7 @@ object PageStatus {
     case "Draft" => Draft
     case "Published" => Published
     case "Deleted" => Deleted
+    case x => illArgErr("DwE3WJH7", s"Bad page status: `$x'")
   }
 }
 
