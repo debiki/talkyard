@@ -68,7 +68,14 @@ PrettyListItem =
 
 
   prettyStatus: ->
-    @status
+    if @isPrivate! => 'Private'
+    else @status
+
+
+  isPrivate: ->
+    # Pages or folders that start with '_' are private.
+    # ('Published'/'Draft' is ignored by the server.)
+    //\/_//.test @path
 
 
   prettyStatusTooltip: ->
@@ -572,8 +579,8 @@ class PageListItem extends ListItem
 
       selectedPageListItems.push item
       $scope.homepageSelected = true if item.path == '/'
-      if item.status == 'Draft' => numDrafts += 1
-      if item.status == 'Published' => numPublished += 1
+      if item.status == 'Draft' && !item.isPrivate! => numDrafts += 1
+      if item.status == 'Published' && !item.isPrivate! => numPublished += 1
       if item.role == 'ForumGroup' => numForumGroups += 1
       if item.role == 'Forum' => numForums += 1
 
