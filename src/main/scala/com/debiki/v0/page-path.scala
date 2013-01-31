@@ -74,6 +74,7 @@ case class PagePath(  // COULD move to debate.scala.  Rename to RequestPath?
     throw PagePathException(
       "DwE37ZQU2", "Page slug contains whitespace: "+ pageSlug)
 
+
   def path: String =
     if (showId) {
       val g = pageId.getOrElse(assErr( //Break out GuidLookup so cannot happen?
@@ -84,19 +85,21 @@ case class PagePath(  // COULD move to debate.scala.  Rename to RequestPath?
       folder + pageSlug
     }
 
+
   def suffix: String = (pageSlug lastIndexOf '.') match {
     case -1 => ""
     case lastDot => pageSlug.substring(lastDot + 1)
   }
 
+
   def slugOrIdOrQustnMark =
     if (pageSlug nonEmpty) pageSlug else pageId.map("-"+ _) getOrElse "?"
 
-  /** True if the slug ends with e.g. `.template' or `.js' or `.css'.
-   */
+
   def isScriptOrStyle = pageSlug.endsWith(".js") || pageSlug.endsWith(".css")
 
   def isConfigPage = pageSlug.endsWith(".yaml") || pageSlug.endsWith(".conf")
+
 
   /**
    * Pages and folders that start with '_' are visible to admins only.
@@ -112,17 +115,20 @@ case class PagePath(  // COULD move to debate.scala.  Rename to RequestPath?
     pageSlug.startsWith("_") ||
     folder.contains("/_")
 
+
   // COULD rename to isIndexPageOrFolder (it's never a "FolderPage")
   /** True iff path ends with a `/'. Then this is a path to a  folder or
    *  a folder's index page (which is a page with an empty slug and !showId).
    */
   def isFolderOrIndexPage = pageSlug.isEmpty && !showId
 
+
   // Bad name: When asking for an index page, pageId is unknown and therefore
   // set to None, but this doesn't mean the PagePath is to a folder.
   // Solution?: Split PagePath in 2 classes: PathLookup and Path?
   // Whether or not Path is to a folder or a page would always be known.
   def isFolder = isFolderOrIndexPage && pageId.isEmpty
+
 
   def parentFolder: Option[PagePath] = {  // COULD rename: parentFolderPagePath
     if (!isFolder)
@@ -134,6 +140,7 @@ case class PagePath(  // COULD move to debate.scala.  Rename to RequestPath?
     Some(copy(
       folder = grandparent, pageSlug = "", showId = false, pageId = None))
   }
+
 
   def sitePageId: Option[SitePageId] =
     pageId map (SitePageId(tenantId, _))
