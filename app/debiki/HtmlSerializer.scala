@@ -161,7 +161,7 @@ object HtmlPageSerializer {
         makeLinksNofollow: Boolean, allowClassIdDataAttrs: Boolean): NodeSeq
         = /*Stats.time("markdownToSafeHtml")*/ {
     val htmlTextUnsafe =
-       (new compiledjs.ShowdownJsImpl()).makeHtml(source, hostAndPort)
+       (new compiledjs.PagedownJsImpl()).makeHtml(source, hostAndPort)
     sanitizeHtml(htmlTextUnsafe, makeLinksNofollow, allowClassIdDataAttrs)
   }
 

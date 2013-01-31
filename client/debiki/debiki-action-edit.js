@@ -37,7 +37,7 @@ d.i.$loadEditorDependencies = (function() {
         assetsPrefix + 'codemirror/lib/util/dialog.css', // search dialogs
         assetsPrefix + 'codemirror-2.25-custom.min.js'],
       both: [
-        assetsPrefix + 'wmd/showdown.js'],
+        assetsPrefix + 'debiki-pagedown.min.js'],
       complete: function() {
         loadStatus.resolve();
       }

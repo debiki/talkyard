@@ -16,7 +16,14 @@ d.i.markdownToSafeHtml = function(markdownSrc, hostAndPort, sanitizerOptions) {
 
 
 function markdownToUnsafeHtml(markdownSrc, hostAndPort) {
-  var converter = new Showdown.converter();
+  var converter = new Markdown.Converter();
+
+  // Duplicated hook. See client/compiledjs/PagedownJavaInterface.js.
+  // (This hook is for the browser. The duplicate is for the JVM.)
+  converter.hooks.chain('postConversion', function(text) {
+    return text.replace(/(https?:\/\/)\//g, '$1'+ hostAndPort +'/');
+  });
+
   var htmlTextUnsafe = converter.makeHtml(markdownSrc, hostAndPort);
   return htmlTextUnsafe;
 };

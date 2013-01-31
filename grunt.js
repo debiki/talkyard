@@ -174,6 +174,10 @@ module.exports = function(grunt) {
 
       'public/res/debiki-dashbar.js': [
           'target/client/debiki/debiki-dashbar.js'],
+
+      'public/res/debiki-pagedown.js': [
+        'modules/pagedown/Markdown.Converter.js',
+        'client/compiledjs/PagedownJavaInterface.js']
     },
     min: {
       'public/res/combined-debiki-desktop.min.js': [
@@ -182,7 +186,10 @@ module.exports = function(grunt) {
 
       'public/res/combined-debiki-touch.min.js': [
           '<banner>',
-          'public/res/combined-debiki-touch.js']
+          'public/res/combined-debiki-touch.js'],
+
+      'public/res/debiki-pagedown.min.js': [
+          'public/res/debiki-pagedown.js']
     },
     // This results in malfunctioning CSS?
     mincss: {
