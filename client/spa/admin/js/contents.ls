@@ -24,7 +24,10 @@ PrettyListItem =
 
   prettyTitle: ->
     if @title?.length => @title
+    else if @path == '/_website-config.yaml'
+      "#{@path} (website configuration)"
     else switch @role
+      | 'Code' => @path
       | 'Blog' =>
         # 1. The title of a blog is currently not shown (there is no blog
         # page Scala template that shows the title post) and therefore
@@ -44,12 +47,15 @@ PrettyListItem =
 
   prettyRole: ->
     switch @role
+      | 'Code' => 'Code'
       | 'Blog' => 'Blog'
       | 'BlogPost' => 'Blog post'
       | 'ForumGroup' => 'Forum group'
       | 'Forum' => 'Forum'
       | 'ForumTopic' => 'Forum topic'
-      | _ => ''
+      | 'Wiki' => 'Wiki'
+      | 'WikiPage' => 'Wiki page'
+      | _ => 'Page'
 
 
   prettyRoleTooltip: ->
@@ -259,6 +265,18 @@ class PageListItem extends ListItem
         status: 'Published'  # see comment in `createForum` above
         pageRole: 'Forum'
         parentPageId: mainForum.id }
+
+
+  $scope.createLocalThemeStyle = !->
+    createPage {
+        folder: localThemeFolder
+        pageSlug: 'site.css'
+        showId: false
+        status: 'Published'
+        pageRole: 'Code' }
+
+
+  localThemeFolder = '/themes/local/'
 
 
   $scope.createDraftPage = !->
@@ -530,6 +548,7 @@ class PageListItem extends ListItem
 
   selectedPageListItems = []
 
+
   /**
    * Scans $scope.listItems and updates page selection count
    * variables.
@@ -541,7 +560,15 @@ class PageListItem extends ListItem
     numForumGroups = 0
     numForums = 0
     $scope.homepageSelected = false
-    for item in $scope.listItems when item.included
+    $scope.localThemeStyleExists = false
+
+    for item in $scope.listItems
+
+      if item.path == "#{localThemeFolder}site.css"
+        $scope.localThemeStyleExists = true
+
+      continue unless item.included
+
       selectedPageListItems.push item
       $scope.homepageSelected = true if item.path == '/'
       if item.status == 'Draft' => numDrafts += 1
@@ -566,6 +593,7 @@ class PageListItem extends ListItem
   $scope.test =
     sortItemsInPlace: sortItemsInPlace
     PageListItem: PageListItem
+
 
   loadAndListPages!
 
