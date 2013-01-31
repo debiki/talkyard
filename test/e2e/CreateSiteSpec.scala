@@ -83,6 +83,10 @@ abstract class CreateSiteSpec extends DebikiBrowserSpec {
       clickWelcomeLoginToDashboard(firstSiteName)
     }
 
+    "find default homepage and website config page" in {
+      eventuallyFindHomepageAndCofigPage()
+    }
+
     "return to site creation page" in {
       go to createWebsiteChooseNamePage
     }
@@ -111,11 +115,29 @@ abstract class CreateSiteSpec extends DebikiBrowserSpec {
       clickWelcomeLoginToDashboard(secondSiteName)
     }
 
+    "again find default homepage and website config page" in {
+      eventuallyFindHomepageAndCofigPage()
+    }
+
     /*"create even more websites" - {
       clickCreateSite("test-site-3")
       clickCreateSite("test-site-4")
       clickCreateSite("test-site-5")
     } */
+
+    def eventuallyFindHomepageAndCofigPage() {
+      eventually {
+        find(cssSelector("tr.page-role-undefined > td a[href='/']")) match {
+          case Some(elem) => elem.text must include("Homepage")
+          case None => fail("No homepage link found")
+        }
+        find(cssSelector("tr.page-role-Code > td a[href*='_website-config.yaml']"))
+            match {
+          case Some(elem) => elem.text must include("configuration")
+          case None => fail("No website config page link found")
+        }
+      }
+    }
   }
 
 }

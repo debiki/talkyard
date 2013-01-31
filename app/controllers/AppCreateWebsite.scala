@@ -220,7 +220,7 @@ object AppCreateWebsite extends mvc.Controller {
 
     newSiteDao.createPage(PageStuff(
       PageMeta.forNewPage(
-        PageRole.Any, creationDati, pageId = pageId, publishDirectly = true),
+        PageRole.Code, creationDati, pageId = pageId, publishDirectly = true),
       PagePath(newSiteDao.tenantId, folder = "/",
         pageId = Some(pageId), showId = false, pageSlug = "_website-config.yaml"),
       Debate(pageId, posts = List(pageBody))))
