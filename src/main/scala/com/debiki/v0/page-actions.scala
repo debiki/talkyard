@@ -165,8 +165,8 @@ case object Post {
     newTitle(text, creationDati, loginId = SystemUser.Login.id,
       approval = Some(Approval.AuthoritativeUser))
 
-  def newPageBodyBySystem(text: String, creationDati: ju.Date) =
-    newPageBody(text, creationDati, loginId = SystemUser.Login.id,
+  def newPageBodyBySystem(text: String, creationDati: ju.Date, pageRole: PageRole) =
+    newPageBody(text, creationDati, pageRole, loginId = SystemUser.Login.id,
       approval = Some(Approval.AuthoritativeUser))
 
 
@@ -187,13 +187,14 @@ case object Post {
   def newPageBody(
         text: String,
         creationDati: ju.Date,
+        pageRole: PageRole,
         loginId: String,
         approval: Option[Approval]) =
     Post(Page.BodyId, Page.BodyId, creationDati,
       loginId = loginId,
       newIp = None,
       text = text,
-      markup = Markup.DefaultForPageBody.id,
+      markup = Markup.defaultForPageBody(pageRole).id,
       approval = approval,
       tyype = PostType.Text)
 

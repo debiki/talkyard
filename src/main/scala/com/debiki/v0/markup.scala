@@ -13,7 +13,11 @@ object Markup {
   val All = List(Para, Dmd0, Html, Code)
 
   val DefaultForComments = Dmd0
-  val DefaultForPageBody = Dmd0
+
+  def defaultForPageBody(pageRole: PageRole) = pageRole match {
+    case PageRole.Code => Code
+    case _ => Dmd0
+  }
 
   // Currently only plain text (para) is possible, because
   // postTitleXml in _showComment in html.scala inlines post.text as is.

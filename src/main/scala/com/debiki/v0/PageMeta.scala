@@ -35,15 +35,18 @@ trait HasPagePath {
 
 object PageStuff {
 
-  def forNewPage(path: PagePath, actions: Debate,
+  def forNewPage(pageRole: PageRole, path: PagePath, actions: Debate,
         publishDirectly: Boolean = false): PageStuff = {
     val meta = PageMeta.forNewPage(
-      actions.id, creationDati = actions.oldestDati getOrElse new ju.Date,
+      pageRole,
+      creationDati = actions.oldestDati getOrElse new ju.Date,
+      pageId = actions.id,
       publishDirectly = publishDirectly)
     PageStuff(meta, path, actions)
   }
 
-  def forNewEmptyPage(path: PagePath) = forNewPage(path, Debate(guid = "?"))
+  def forNewEmptyPage(pageRole: PageRole, path: PagePath) =
+    forNewPage(pageRole, path, Debate(guid = "?"))
 
 }
 
@@ -77,9 +80,9 @@ case class PagePathAndMeta(path: PagePath, meta: PageMeta)
 object PageMeta {
 
   def forNewPage(
-        pageId: String = "?",
+        pageRole: PageRole,
         creationDati: ju.Date = new ju.Date,
-        pageRole: PageRole = PageRole.Any,
+        pageId: String = "?",
         parentPageId: Option[String] = None,
         publishDirectly: Boolean = false) =
     PageMeta(
@@ -133,6 +136,8 @@ sealed abstract class PageRole {
 
 object PageRole {
   case object Any extends PageRole
+
+  case object Code extends PageRole
 
   case object Blog extends PageRole {
     override val childRole = Some(BlogPost)
