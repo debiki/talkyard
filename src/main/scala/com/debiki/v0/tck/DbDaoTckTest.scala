@@ -271,7 +271,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
       val debateBadLogin = Debate(guid = "?", posts =
           T.post.copy(id = "1", loginId = "9999999")::Nil) // bad login id
       //SLog.info("Expecting ORA-02291: integrity constraint log message ------")
-      dao.createPage(PageStuff.forNewPage(PageRole.Any, defaultPagePath, debateBadLogin)
+      dao.createPage(PageStuff.forNewPage(PageRole.Generic, defaultPagePath, debateBadLogin)
                     ) must throwAn[Exception]
       //SLog.info("------------------------------------------------------------")
     }
@@ -378,7 +378,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
     "create a debate with a root post" in {
       val debateNoId = Debate(guid = "?", posts = ex1_rootPost::Nil)
       val page = dao.createPage(PageStuff.forNewPage(
-        PageRole.Any, defaultPagePath, debateNoId, publishDirectly = true))
+        PageRole.Generic, defaultPagePath, debateNoId, publishDirectly = true))
       val actions = page.actions
       ex1_debate = actions
       actions.postCount must_== 1
@@ -1889,7 +1889,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
           case PagePath.Parsed.Good(path) => path.copy(showId = showId)
           case x => failure(s"Test broken, bad path: $x")
         }
-      dao.createPage(PageStuff.forNewEmptyPage(PageRole.Any, pagePath))
+      dao.createPage(PageStuff.forNewEmptyPage(PageRole.Generic, pagePath))
     }
 
 
@@ -2143,7 +2143,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
         val emptyPage = Debate(guid = "?")
         val pagePath = v0.PagePath(newWebsiteOpt.get.id, "/", None, false, "")
         val dao = newWebsiteDao()
-        val page = dao.createPage(PageStuff.forNewPage(PageRole.Any, pagePath, emptyPage))
+        val page = dao.createPage(PageStuff.forNewPage(PageRole.Generic, pagePath, emptyPage))
         homepageId = page.id
         dao.savePageActions(page.id, List(homepageTitle))
         ok
