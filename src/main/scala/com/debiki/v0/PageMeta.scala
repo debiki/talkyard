@@ -109,7 +109,7 @@ object PageMeta {
 
 case class PageMeta(
   pageId: String,
-  pageRole: PageRole = PageRole.Any,
+  pageRole: PageRole = PageRole.Generic,
   parentPageId: Option[String] = None,
   cachedTitle: Option[String] = None,
   creationDati: ju.Date,
@@ -135,7 +135,7 @@ sealed abstract class PageRole {
 
 
 object PageRole {
-  case object Any extends PageRole
+  case object Generic extends PageRole
 
   case object Code extends PageRole
 
@@ -172,7 +172,7 @@ object PageRole {
   // Hmm, regrettably this breaks should I rename any case object.
   // Perhaps use a match ... case list instead?
   private val _PageRoleLookup = Vector(
-    Any, Blog, BlogPost,
+    Generic, Blog, BlogPost,
     ForumGroup, Forum, ForumTopic,
     WikiMainPage, WikiPage, Code).map(x => (x, x.toString))
 
