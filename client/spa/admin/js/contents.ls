@@ -47,6 +47,7 @@ PrettyListItem =
 
   prettyRole: ->
     switch @role
+      | 'Generic' => 'Page'
       | 'Code' => 'Code'
       | 'Blog' => 'Blog'
       | 'BlogPost' => 'Blog post'
@@ -55,7 +56,7 @@ PrettyListItem =
       | 'ForumTopic' => 'Forum topic'
       | 'Wiki' => 'Wiki'
       | 'WikiPage' => 'Wiki page'
-      | _ => 'Page'
+      | _ => ''
 
 
   prettyRoleTooltip: ->

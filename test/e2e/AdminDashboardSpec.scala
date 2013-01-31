@@ -93,7 +93,7 @@ abstract class AdminDashboardSpec extends DebikiBrowserSpec {
     "create pages, but cancel" - {
 
       "create info page, but cancel" - {
-        createButCancel(PageRole.Any)
+        createButCancel(PageRole.Generic)
       }
 
       "create blog, but cancel" - {
@@ -127,7 +127,7 @@ abstract class AdminDashboardSpec extends DebikiBrowserSpec {
       var newPageId = ""
 
       "open new page, via the Create... dropdown" in {
-        newPageId = clickCreateNewPage(PageRole.Any)
+        newPageId = clickCreateNewPage(PageRole.Generic)
       }
 
       "verify cannot post reply before body created?" in {

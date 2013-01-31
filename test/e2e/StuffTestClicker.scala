@@ -106,7 +106,7 @@ trait StuffTestClicker {
    */
   def clickCreateNewPage(pageRole: PageRole): String = {
     val (newPageLink, newPageTitlePart) = pageRole match {
-      case PageRole.Any => ("create-info-page", "New Page")
+      case PageRole.Generic => ("create-info-page", "New Page")
       case PageRole.Blog => ("create-blog", "Example Blog Post")
       case PageRole.Forum => ("create-forum", "New Forum")
       case _ => fail(s"Bad page role: $pageRole")

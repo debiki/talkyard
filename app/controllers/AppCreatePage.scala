@@ -119,7 +119,7 @@ object AppCreatePage extends mvc.Controller {
     import pageReq.queryString
 
     val pageRole = queryString.getEmptyAsNone("page-role").map(
-      PageRole.parse _) getOrElse PageRole.Any
+      PageRole.parse _) getOrElse PageRole.Generic
 
     assErrIf((pageReq.pagePath.isConfigPage || pageReq.pagePath.isScriptOrStyle) &&
       pageRole != PageRole.Code, "DwE6HEr4")

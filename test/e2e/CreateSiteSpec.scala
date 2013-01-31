@@ -127,7 +127,7 @@ abstract class CreateSiteSpec extends DebikiBrowserSpec {
 
     def eventuallyFindHomepageAndCofigPage() {
       eventually {
-        find(cssSelector("tr.page-role-undefined > td a[href='/']")) match {
+        find(cssSelector("tr.page-role-Generic > td a[href='/']")) match {
           case Some(elem) => elem.text must include("Homepage")
           case None => fail("No homepage link found")
         }

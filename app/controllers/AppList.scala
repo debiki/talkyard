@@ -238,9 +238,7 @@ object AppList extends mvc.Controller {
   def jsonFor(pagePath: PagePath, pageMeta: PageMeta): JsValue = {
     var data = _jsonMapFor(pagePath)
 
-    if (pageMeta.pageRole != PageRole.Any)
-      data += "role" -> JsString(pageMeta.pageRole.toString)
-
+    data += "role" -> JsString(pageMeta.pageRole.toString)
     data += "status" -> JsString(pageMeta.status.toString)
 
     if (pageMeta.parentPageId.isDefined)
