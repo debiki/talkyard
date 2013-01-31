@@ -119,7 +119,7 @@ object AppForum extends mvc.Controller {
 
     // Create a forum group with parent `anyCommonParentId`.
 
-    val groupMeta = PageMeta.forNewPage("?", request.ctime, PageRole.ForumGroup,
+    val groupMeta = PageMeta.forNewPage(PageRole.ForumGroup, request.ctime,
       parentPageId = anyCommonParentId, publishDirectly = true)
 
     val groupPath = PagePath(tenantId = request.tenantId, folder = commonParentFolder,

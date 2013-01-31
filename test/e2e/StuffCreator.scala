@@ -112,7 +112,7 @@ trait StuffCreator {
       firstSiteId, folder, pageId = None, showId = false, pageSlug = slug)
     val page = Debate(guid = "?", posts = body::Nil)
     firstSiteDao.createPage(PageStuff.forNewPage(
-      pagePath, page, publishDirectly = true))
+      PageRole.Any, pagePath, page, publishDirectly = true))
   }
 
 
@@ -129,7 +129,7 @@ trait StuffCreator {
 
     val debateNoId = Debate(guid = "?", posts = bodyPost::Nil)
     val pageStuffNoPeople = firstSiteDao.createPage(PageStuff.forNewPage(
-      pagePath, debateNoId, publishDirectly = true))
+      PageRole.Any, pagePath, debateNoId, publishDirectly = true))
 
     val pageWithPeople = firstSiteDao.loadPage(pageStuffNoPeople.id).getOrElse(
       fail("Error loading page with people"))

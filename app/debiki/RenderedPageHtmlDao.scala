@@ -30,7 +30,7 @@ trait RenderedPageHtmlDao {
 
 
   final def renderPageMeta(pageReq: PageRequest[_]): NodeSeq = {
-    HtmlPageSerializer.wrapInPageTag(pageReq.pageMeta, pageReq.pagePath)(Nil)
+    HtmlPageSerializer.wrapInPageTag(pageReq.pageMeta_!, pageReq.pagePath)(Nil)
       .map(html => xml.Unparsed(liftweb.Html5.toString(html)))
   }
 
@@ -61,8 +61,8 @@ trait RenderedPageHtmlDao {
 
   def renderPage(pageReq: PageRequest[_]): RenderedPage = {
     val config = DebikiHttp.newUrlConfig(pageReq.host)
-    val page = pageReq.pageDesiredVersion_!
-    val pageStuff = PageStuff(pageReq.pageMeta, pageReq.pagePath, page)
+    val page = pageReq.pageDesiredVersionWithDummies_!
+    val pageStuff = PageStuff(pageReq.pageMeta_!, pageReq.pagePath, page)
     val pageTrust = PageTrust(page)
 
     val renderer = HtmlPageSerializer(pageStuff, pageTrust, pageReq.pageRoot,

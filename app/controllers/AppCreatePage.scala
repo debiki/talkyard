@@ -89,7 +89,7 @@ object AppCreatePage extends mvc.Controller {
           pageExists = false)
       }
     }
-    assert(pageReq.pageExists == pageReq.pageMeta.pageExists)
+    assert(pageReq.pageExists == pageReq.pageMeta_!.pageExists)
 
     val pageInfoYaml =
       if (pageReq.user.isEmpty) ""
@@ -107,7 +107,7 @@ object AppCreatePage extends mvc.Controller {
   def generateNewPageId(): String = nextRandomString()
 
 
-  def newPagePathFromUrl(pageReq: PageRequest[_], pageId: String): PagePath = {
+  private def newPagePathFromUrl(pageReq: PageRequest[_], pageId: String): PagePath = {
     val pageSlug = pageReq.pagePath.pageSlug
     val showId = pageReq.pagePath.showId
     pageReq.pagePath.copy(pageId = Some(pageId),
@@ -115,11 +115,14 @@ object AppCreatePage extends mvc.Controller {
   }
 
 
-  def newPageMetaFromUrl(pageReq: PageRequest[_], pageId: String): PageMeta = {
+  private def newPageMetaFromUrl(pageReq: PageRequest[_], pageId: String): PageMeta = {
     import pageReq.queryString
 
     val pageRole = queryString.getEmptyAsNone("page-role").map(
-      stringToPageRole _) getOrElse PageRole.Any
+      PageRole.parse _) getOrElse PageRole.Any
+
+    assErrIf((pageReq.pagePath.isConfigPage || pageReq.pagePath.isScriptOrStyle) &&
+      pageRole != PageRole.Code, "DwE6HEr4")
 
     val publishDirectly: Boolean = queryString.getEmptyAsNone("status").map(
       PageStatus.parse _) == Some(PageStatus.Published)
@@ -131,25 +134,8 @@ object AppCreatePage extends mvc.Controller {
     if (parentPageId == Some("undefined"))
       throwBadReq("DwE93HF2", "Parent page id is `undefined`")
 
-    PageMeta.forNewPage(pageId, pageReq.ctime, pageRole,
+    PageMeta.forNewPage(pageRole, pageReq.ctime, pageId = pageId,
       parentPageId = parentPageId, publishDirectly = publishDirectly)
   }
-
-
-  /**
-   * Hmm, regrettably this breaks should I rename any case object.
-   * Perhaps use a match ... case list instead?
-   */
-  private val _PageRoleLookup = Vector(
-    PageRole.Any, PageRole.Blog, PageRole.BlogPost,
-    PageRole.ForumGroup, PageRole.Forum, PageRole.ForumTopic,
-    PageRole.WikiMainPage, PageRole.WikiPage)
-    .map(x => (x, x.toString))
-
-
-  // COULD replace with PageRole.fromString(): Option[PageRole]
-  def stringToPageRole(pageRoleString: String): PageRole =
-    _PageRoleLookup.find(_._2 == pageRoleString).map(_._1).getOrElse(
-      throwBadReq("DwE930rR3", "Bad page role string: "+ pageRoleString))
 
 }

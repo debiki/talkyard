@@ -40,11 +40,12 @@ object DummyPage {
       case PageRole.ForumGroup => ForumGroupTexts
       case PageRole.Forum => ForumTexts
       case PageRole.ForumTopic => ForumTopicTexts
+      case PageRole.Code => CodeTexts
       case _ => DefaultTexts
     }
 
     if (addDummyTitle) pageWithDummies = pageWithDummies + dummyTitle(texts)
-    if (addDummyBody) pageWithDummies = pageWithDummies + dummyBody(texts)
+    if (addDummyBody) pageWithDummies = pageWithDummies + dummyBody(texts, pageRole)
     if (addDummyConfig) pageWithDummies = pageWithDummies + dummyConfig(texts)
 
     pageWithDummies
@@ -82,12 +83,12 @@ object DummyPage {
     tyype = PostType.Text)
 
 
-  private def dummyBody(texts: Texts) = dummyTitle(texts).copy(
+  private def dummyBody(texts: Texts, pageRole: PageRole) = dummyTitle(texts).copy(
     id = Page.BodyId, parent = Page.BodyId, text = texts.bodyText,
-    markup = Markup.DefaultForPageBody.id)
+    markup = Markup.defaultForPageBody(pageRole).id)
 
 
-  private def dummyConfig(texts: Texts) = dummyBody(texts).copy(
+  private def dummyConfig(texts: Texts) = dummyTitle(texts).copy(
     id = Page.ConfigPostId, parent = Page.ConfigPostId, text = texts.configText,
     markup = Markup.Code.id)
 
@@ -166,6 +167,17 @@ object DummyPage {
       |Forum topic text.
       |
       |Click to edit; select *Improve* in the menu that appears.
+      |"""
+  }
+
+
+  private object CodeTexts extends DefaultTexts {
+
+    override val bodyText = i"""
+      |This is a code page. For example, a configuration page,
+      |or Javascript or CSS.
+      |
+      |Click to edit. Select *Improve* in the menu that appears.
       |"""
   }
 

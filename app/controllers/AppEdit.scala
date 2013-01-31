@@ -37,27 +37,34 @@ object AppEdit extends mvc.Controller {
   }
 
 
-  def showEditFormAnyPage(pageId: String, pagePath: String, postId: String)
+  def showEditFormAnyPage(
+        pageId: String, pagePath: String, pageRole: String, postId: String)
         = GetAction { request =>
 
     val pageReqPerhapsNoPage =
       PageRequest.forPageThatMightExist(request, pagePathStr = pagePath, pageId = pageId)
 
-    val pageReq =
+    val completePageReq =
       if (pageReqPerhapsNoPage.pageExists) pageReqPerhapsNoPage
       else {
         // Since the page doesn't exist, this request probably concerns
         // a newly created but unsaved page. Construct a dummy page with
-        // an empty dummy post in place of the one that doesn't
+        // 1) the correct meta data (e.g. correct page role), and with
+        // 2) an empty dummy post in place of the one that doesn't
         // yet exist, but is to be edited.
-        val postToEdit = _createPostToEdit(pageReqPerhapsNoPage, postId,
+        // Could reuse AppCreatePage.newPageMetaFromUrl(..) in some way?
+        val pageMeta =
+          PageMeta.forNewPage(
+            PageRole.parse(pageRole), pageReqPerhapsNoPage.ctime, pageId = pageId,
+            // These shouldn't matter when rendering the edit form anyway:
+            parentPageId = None, publishDirectly = false)
+        val pageReqWithMeta = pageReqPerhapsNoPage.copyWithPreloadedMeta(pageMeta)
+        val postToEdit = _createPostToEdit(pageReqWithMeta, postId,
           authorLoginId = DummyPage.DummyAuthorLogin.id)
-        val meta = PageMeta.forNewPage(pageId, pageReqPerhapsNoPage.ctime)
-        pageReqPerhapsNoPage.copyWithPreloadedPage(
-          meta, Debate(pageId) + postToEdit, pageExists = false)
+        pageReqWithMeta.copyWithPreloadedActions(Debate(pageId) + postToEdit)
       }
 
-    _showEditFormImpl(pageReq, postId)
+    _showEditFormImpl(completePageReq, postId)
   }
 
 
@@ -141,7 +148,7 @@ object AppEdit extends mvc.Controller {
       val pageStatusStr = getTextOrThrow(pageData, "pageStatus")
       val parentPageIdStr = getTextOrThrow(pageData, "parentPageId")
 
-      val pageRole = AppCreatePage.stringToPageRole(pageRoleStr)
+      val pageRole = PageRole.parse(pageRoleStr)
       val pageStatus = PageStatus.parse(pageStatusStr)
       val parentPageId =
         if (parentPageIdStr isEmpty) None else Some(parentPageIdStr)
@@ -255,9 +262,9 @@ object AppEdit extends mvc.Controller {
       //throwForbidden("DwE01rsk351", "You may not create that page")
 
     val pageMeta = PageMeta.forNewPage(
-      pageReq.pageId_!,
-      pageReq.ctime,
       pageRole,
+      pageReq.ctime,
+      pageId = pageReq.pageId_!,
       parentPageId = parentPageId,
       publishDirectly = pageStatus == PageStatus.Published)
 
@@ -367,7 +374,7 @@ object AppEdit extends mvc.Controller {
     val markup =
       if (postId == Page.ConfigPostId) Markup.Code
       else if (postId == Page.TitleId) Markup.DefaultForPageTitle
-      else if (postId == Page.BodyId) Markup.DefaultForPageBody
+      else if (postId == Page.BodyId) Markup.defaultForPageBody(pageReq.pageRole_!)
       else Markup.DefaultForComments
 
     // 1. (A page body, title or template is its own parent.

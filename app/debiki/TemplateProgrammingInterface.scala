@@ -164,7 +164,7 @@ class TinyTemplateProgrammingInterface protected (
   import debiki.{TinyTemplateProgrammingInterface => tpi}
 
   def pageId = _pageReq.pageId_!
-  def pageRole = _pageReq.pageRole
+  def pageRole = _pageReq.pageRole_!
   def childPageRole = pageRole.childRole
 
   def isLoggedIn = _pageReq.loginId isDefined
@@ -283,7 +283,7 @@ class TinyTemplateProgrammingInterface protected (
    * Returns any parent forums, e.g.: grandparent-forum :: parent-forum :: Nil.
    */
   def listParentForums(): Seq[tpi.ParentForum] = {
-    _pageReq.pageMeta.parentPageId match {
+    _pageReq.pageMeta_!.parentPageId match {
       case None => Nil
       case Some(pageId) =>
         _pageReq.dao.listAncestorsAndOwnMeta(pageId) map { case (pagePath, pageMeta) =>
@@ -395,7 +395,7 @@ class TemplateProgrammingInterface(
 
 
   def page(contents: play.api.templates.Html) = {
-    val page = PageStuff(pageReq.pageMeta, pageReq.pagePath,
+    val page = PageStuff(pageReq.pageMeta_!, pageReq.pagePath,
       Debate.empty(pageReq.pageId_!))
     HtmlPageSerializer.wrapInPageTag(page) {
       xml.Unparsed(contents.body)

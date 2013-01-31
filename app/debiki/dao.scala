@@ -92,7 +92,7 @@ class TenantDao(protected val tenantDbDao: ChargingTenantDbDao)
    */
   final def savePageActionsGenNotfs(pageReq: PageRequest[_], actions: List[Action])
         : Seq[Action] = {
-    savePageActionsGenNotfsImpl(pageReq.page_!, actions, pageReq.pageMeta)
+    savePageActionsGenNotfsImpl(pageReq.page_!, actions, pageReq.pageMeta_!)
   }
 
 

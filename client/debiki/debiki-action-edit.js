@@ -75,7 +75,8 @@ function _$showEditFormImpl() {
     var url =
         '/-/edit?pageId='+ pageMeta.pageId +
         '&pagePath='+ pageMeta.pagePath +
-        '&postId='+ postId;
+        '&postId='+ postId +
+        '&pageRole=' + pageMeta.pageRole;
     $.get(url, function(editFormText) {
       // Concerning filter(…): [0] and [2] are text nodes.
       var $editForm = $(editFormText).filter('form');

@@ -295,12 +295,27 @@ case class PageRequest[A](
   }
 
 
-  def copyWithPreloadedPage(pageMeta: PageMeta, pageActions: Debate,
-        pageExists: Boolean): PageRequest[A] = {
-    require(pageMeta.pageId == pageActions.pageId)
+  /**
+   * Adds meta info for a request for a non-existing page, that is, a page
+   * that is to be created, presumably.
+   */
+  def copyWithPreloadedMeta(pageMeta: PageMeta): PageRequest[A] = {
+    require(pageExists == false)
+    require(pageMeta.pageExists == false)
     require(Some(pageMeta.pageId) == pagePath.pageId)
+    assert(addMeToPage == false) // see copyWithPreloadedPage() below
+    copy()(Some(pageMeta), _preloadedActions, addMeToPage = false)
+  }
+
+
+  def copyWithPreloadedActions(pageActions: Debate): PageRequest[A] = {
+    require(pageExists == false)
+    _preloadedPageMeta.foreach { meta =>
+      require(meta.pageId == pageActions.pageId)
+    }
+    require(Some(pageActions.pageId) == pagePath.pageId)
     assert(addMeToPage == false) // or user should be added to `pageActions`
-    copy(pageExists = pageExists)(Some(pageMeta), Some(pageActions),
+    copy(pageExists = pageExists)(_preloadedPageMeta, Some(pageActions),
         addMeToPage = false)
   }
 
@@ -368,7 +383,7 @@ case class PageRequest[A](
     page_? getOrElse throwNotFound("DwE43XWY", "Page not found, id: "+ pageId)
 
 
-  lazy val pageDesiredVersion_! : Debate = {
+  lazy val pageDesiredVersionWithDummies_! : Debate = {
     val page = page_!
     if (page.body.map(_.someVersionApproved) == Some(false) ||
       page.title.map(_.someVersionApproved) == Some(false)) {
@@ -379,7 +394,7 @@ case class PageRequest[A](
         page.partitionByVersion(pageVersion)
       val pageDesiredVersion =
         DummyPage.addMissingTitleBodyConfigTo(
-          pageDesiredVersionStuffMissing, pageMeta.pageRole)
+          pageDesiredVersionStuffMissing, pageMeta_!.pageRole)
       pageDesiredVersion
     }
   }
@@ -421,21 +436,23 @@ case class PageRequest[A](
     }) getOrElse PageRoot.TheBody
 
 
-  def pageRole: PageRole = pageMeta.pageRole
+  def pageRole_! : PageRole = pageMeta_!.pageRole
 
-  def parentPageId: Option[String] = pageMeta.parentPageId
+  def parentPageId_! : Option[String] = pageMeta_!.parentPageId
 
 
   /**
-   * Gets/loads page meta data from cache/database, or, if not found,
-   * returns PageMeta.forNewPage.
+   * Gets/loads page meta data from cache/database, or throws 404 Not Found.
    */
-  lazy val pageMeta: PageMeta = {
+  lazy val pageMeta_! : PageMeta = {
     _preloadedPageMeta getOrElse {
       if (pageExists) {
-        pageId.flatMap(dao.loadPageMeta _) getOrElse PageMeta.forNewPage()
+        pageId.flatMap(dao.loadPageMeta _) getOrElse throwNotFound(
+          "DwE0FET3", s"No meta data found in database for page id: `$pageId'")
       }
-      else PageMeta.forNewPage()
+      else {
+        throwNotFound("DwE7Rd32", s"No page meta found for page id: `$pageId'")
+      }
     }
   }
 

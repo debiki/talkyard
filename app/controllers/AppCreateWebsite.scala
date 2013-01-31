@@ -216,12 +216,11 @@ object AppCreateWebsite extends mvc.Controller {
     text: String, newSiteDao: TenantDao, creationDati: ju.Date) {
 
     val pageId = AppCreatePage.generateNewPageId()
-    val pageBody = Post.newPageBodyBySystem(text, creationDati).copy(
-        markup = Markup.Code.id)
+    val pageBody = Post.newPageBodyBySystem(text, creationDati, PageRole.Code)
 
     newSiteDao.createPage(PageStuff(
       PageMeta.forNewPage(
-        pageId, creationDati, PageRole.Any, publishDirectly = true),
+        PageRole.Any, creationDati, pageId = pageId, publishDirectly = true),
       PagePath(newSiteDao.tenantId, folder = "/",
         pageId = Some(pageId), showId = false, pageSlug = "_website-config.yaml"),
       Debate(pageId, posts = List(pageBody))))
@@ -240,7 +239,7 @@ object AppCreateWebsite extends mvc.Controller {
     val pageId = AppCreatePage.generateNewPageId()
     val emptyPage = Debate(pageId)
     val pageMeta = PageMeta.forNewPage(
-      pageId, creationDati, PageRole.Any, publishDirectly = true)
+      PageRole.Any, creationDati, pageId = pageId, publishDirectly = true)
     val oldPath = PagePath(newWebsiteDao.tenantId, folder = "/_old/",
       pageId = Some(pageId), showId = false, pageSlug = "default-homepage")
 

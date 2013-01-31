@@ -31,7 +31,7 @@ object BrowserPagePatcher {
     val actions = pageReq.page_! ++ myNewPosts
     val pageTrust = PageTrust(actions)
     val config = DebikiHttp.newUrlConfig(pageReq.host)
-    val page = PageStuff(pageReq.pageMeta, pageReq.pagePath, actions)
+    val page = PageStuff(pageReq.pageMeta_!, pageReq.pagePath, actions)
     val serializer = HtmlPageSerializer(
       page, pageTrust, pageReq.pageRoot, config,
       // If replying with a comment, comments should be shown of course.
