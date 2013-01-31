@@ -27,6 +27,12 @@ object DebikiYaml {
           throw DebikiException(
             "DwE04DB3", o"""Bad config file: More than one Yaml document
               (remove any line containing only "---", please)""")
+        case ex: Exception =>
+          // (`ex.getMessage` ends with "...\n^" to show where on the line the
+          // error happened, and appending `classNameOf(ex)` directly results
+          // in a nicely formatted message.)
+          throw DebikiException(
+            "DwE08Nf2", s"Bad config file: ${ex.getMessage} ${classNameOf(ex)}")
       }
 
     val javaMap: ju.Map[String, Any] =
