@@ -6,20 +6,21 @@
   <!-- specialpages/template.scala.html -->
 
   @page {
-    @if(isPageSettings) {
-      <h1>
+    <h1>
+      @if(isPageSettings) {
         <small>Settings for:</small><br>
         <span style="
             font-style: italic;
             padding-top: 13px;
             display: inline-block;">
           @titleText</span>
-      </h1>
-    } else {
-      <h1>@titleText</h1>
-    }
+      } else {
+        <span style="font: bold 23px monospace;">
+          @{tpi.pageUrlPath}</span>
+      }
+    </h1>
 
-    @body
+    @bodyAndComments
   }
 
 }
