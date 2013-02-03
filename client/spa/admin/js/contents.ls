@@ -109,9 +109,13 @@ PrettyListItem =
     text = ''
     for mark in @marks || []
       switch mark
+      | _ => ''
+      /* Ignore other marks for now. I think they actually clutter up
+      the page, make it harder to read.
       | 'NewSaved' => text += ' (new, saved)'
       | 'New' => text += ' (newly created)'
       | 'Edited' => text += ' (edited)'
+        */
     text
 
 
