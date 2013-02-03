@@ -1,5 +1,6 @@
 @(xsrfToken: String, returnToUrl: String, title: String,
-  message: Option[String] = None, providerLoginMessage: String = "")
+  message: Option[String] = None, providerLoginMessage: String = "",
+  showCreateAccountOption: Boolean = false)
 
 
 @css = @{("""
@@ -11,7 +12,13 @@ h1 {
 """)}
 
 @messageTag = @{
-  if (message nonEmpty) <p class="why-login">{message.get}</p>
+  if (message nonEmpty)
+    <p class="why-login">{
+      message.get + (
+        if (!showCreateAccountOption) " Click your account provider:"
+        else "" // What-to-do info is shown below Either ... Or ... headers.
+      )
+    }</p>
   else Nil
 }
 
@@ -27,6 +34,7 @@ h1 {
 
   <div class='span5'>
 
+    @if(showCreateAccountOption) {
     <h2>Either:</h2>
     <p>If you already have an account on one of the sites below,
       then click that site, to log in with your account here.
@@ -35,6 +43,7 @@ h1 {
       verification, or Facebook's Login Approvals. Concerning Yahoo, you
       could make use of their login seals. -->
     </p>
+    }
 
     <ul class='login-links'>
       <li>
@@ -76,10 +85,23 @@ h1 {
     </ul>
   </div>
 
+  @if(showCreateAccountOption) {
   <div class='span5'>
     <h2>Or:</h2>
-    <p>Login with email and password. Not yet implemented though.
+    <p>
+      <a target="_blank" href="https://accounts.google.com/SignUp?service=mail">
+        Create a new Google account</a>.
+      Then return to this page and login with it.
     </p>
+
+    @* (This info is pointless? People who don't know won't care and those who
+    know already know.)
+    <p>
+      (We suggest a Google account, because are very secure if you enable two step
+      verification. Tips: You can configure Gmail to forward any emails to any
+      existing account of yours.)
+    </p>  *@
+
     <!--
     <p>Do not reuse any of your existing passwords — instead, make up a new one.
       <small>In the future, this page will be served over HTTPS.</small>
@@ -139,9 +161,9 @@ h1 {
 
       </div>
       -->
-    </div>
-
   </div>
+  }
+
   </div>
   </div>
 }
