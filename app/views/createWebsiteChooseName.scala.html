@@ -76,11 +76,13 @@ the name to lowercase.
           ng-pattern="/^[a-z][a-z0-9-]*$/"
           ><kbd class='website-domain'>.@newWebsiteDomain</kbd>
 
-      <div class="alert alert-block"
+      @* COULD add a separate pattern warning for `.` since people might think
+      they're entering a second + top level domain name (my father thought he was). *@
+      <div class="alert alert-error"
           ng-show="chooseNameForm.websiteNameInp.$error.pattern">
-        Please use lowercase letters a-z and 0-9, e.g.: <i>my-new-website</i>
+        Please only use lowercase letters a-z and 0-9, e.g.: <i>my-new-website</i>
       </div>
-      <div class="alert alert-block"
+      <div class="alert alert-error"
            ng-show="chooseNameForm.websiteNameInp.$error.minlength">
         The name should be at least six characters long.
       </div>
