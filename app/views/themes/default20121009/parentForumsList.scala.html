@@ -1,0 +1,12 @@
+@(tpi: debiki.TemplateProgrammingInterface)
+
+<!-- default20121009/parentForumsList.scala.htm -->
+
+<ol class="parent-forums-list">
+  @for(parentForum <- tpi.listParentForums()) {
+  <li>
+      <a href="@{parentForum.path}">@{parentForum.title}</a>
+  </li>
+  }
+</ol>
+

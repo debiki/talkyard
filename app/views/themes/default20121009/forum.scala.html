@@ -10,13 +10,7 @@
 @wrapper(tpi) {
   <!-- default20121009/forum.scala.html -->
 
-  <ol class="parent-forums-list">
-    @for(parentForum <- tpi.listParentForums()) {
-    <li>
-        <a href="@{parentForum.path}">@{parentForum.title}</a>
-    </li>
-    }
-  </ol>
+  @parentForumsList(tpi)
 
   <div class="forum-title">
     @tpi.page {
