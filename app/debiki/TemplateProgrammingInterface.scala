@@ -35,13 +35,10 @@ object TinyTemplateProgrammingInterface {
     safeBodyHtml: String)
 
 
-  case class ParentForum(
-    id: String, path: String, title: String)
-
-
-  case class SubForum(
+  case class Forum(
     id: String, path: String, title: String)
     // and, in the future: num topics, num contributors and num replies?
+
 
 
   case class ForumTopic(
@@ -80,16 +77,8 @@ object TinyTemplateProgrammingInterface {
   }
 
 
-  object ParentForum {
-    def apply(pageMeta: PageMeta, pagePath: PagePath): ParentForum = ParentForum(
-      id = pageMeta.pageId,
-      path = pagePath.path,
-      title = pageMeta.cachedTitle getOrElse "(Unnamed forum)")
-  }
-
-
-  object SubForum {
-    def apply(pageMeta: PageMeta, pagePath: PagePath): SubForum = SubForum(
+  object Forum {
+    def apply(pageMeta: PageMeta, pagePath: PagePath): Forum = Forum(
       id = pageMeta.pageId,
       path = pagePath.path,
       title = pageMeta.cachedTitle getOrElse "(Unnamed forum)")
@@ -180,13 +169,14 @@ class TinyTemplateProgrammingInterface protected (
   /**
    * A website or page config value, and page specific values take precedence.
    */
-  def configValueOpt(confValName: String): Option[String] =
-    _pageConfigValueOpt(confValName) orElse
+  def configValueOpt(confValName: String, pageId: Option[String] = None): Option[String] =
+    _pageConfigValueOpt(confValName, pageId) orElse
       _websiteConfigValueOpt(confValName)
 
 
-  def configValue(confValName: String, or: String = ""): String =
-    configValueOpt(confValName) getOrElse or
+  def configValue(confValName: String, pageId: Option[String] = None, or: String = "")
+        : String =
+    configValueOpt(confValName, pageId) getOrElse or
 
 
 
@@ -198,15 +188,17 @@ class TinyTemplateProgrammingInterface protected (
    * SHOULD cache the result, otherwise we'll have to parse YAML
    * each time a page is viewed.
    */
-  def pageConfigValue(confValName: String, or: String = ""): String = {
-    _pageConfigValueOpt(confValName) getOrElse or
+  def pageConfigValue(confValName: String, pageId: Option[String] = None, or: String = "")
+        : String = {
+    _pageConfigValueOpt(confValName, pageId) getOrElse or
   }
 
 
-  private def _pageConfigValueOpt(confValName: String): Option[String] = {
-    val pageId = _pageReq.pageId getOrDie "DwE83ZI78"
+  private def _pageConfigValueOpt(confValName: String, pageId: Option[String])
+        : Option[String] = {
+    val thePageId = pageId orElse _pageReq.pageId getOrDie "DwE83ZI78"
     try {
-      dao.loadPageConfigMap(pageId).get(confValName).map(_.toString)
+      dao.loadPageConfigMap(thePageId).get(confValName).map(_.toString)
     }
     catch {
       case ex: DebikiException =>
@@ -282,22 +274,32 @@ class TinyTemplateProgrammingInterface protected (
   /**
    * Returns any parent forums, e.g.: grandparent-forum :: parent-forum :: Nil.
    */
-  def listParentForums(): Seq[tpi.ParentForum] = {
+  def listParentForums(): Seq[tpi.Forum] = {
     _pageReq.pageMeta_!.parentPageId match {
       case None => Nil
       case Some(pageId) =>
         _pageReq.dao.listAncestorsAndOwnMeta(pageId) map { case (pagePath, pageMeta) =>
-          tpi.ParentForum(pageMeta, pagePath)
+          tpi.Forum(pageMeta, pagePath)
         }
     }
   }
 
 
-  def listPublishedSubForums(): Seq[tpi.ParentForum] =
-    listPublishedChildren(filterPageRole = Some(PageRole.Forum)) map {
-      case (pagePath, pageMeta) =>
-        tpi.ParentForum(pageMeta, pagePath)
-    }
+  def listPublishedSubForums(): Seq[tpi.Forum] =
+    listPubSubForumsImpl(pageId)
+
+
+  def listPublishedSubForumsOf(forum: tpi.Forum): Seq[tpi.Forum] =
+    listPubSubForumsImpl(forum.id)
+
+
+  private def listPubSubForumsImpl(parentPageId: String): Seq[tpi.Forum] =
+    listPublishedChildren(
+      parentPageId = Some(parentPageId),
+      filterPageRole = Some(PageRole.Forum)) map {
+        case (pagePath, pageMeta) =>
+          tpi.Forum(pageMeta, pagePath)
+      }
 
 
   def hasChildPages: Boolean = {
@@ -311,9 +313,21 @@ class TinyTemplateProgrammingInterface protected (
   }
 
 
-  def listRecentForumTopics(): Seq[tpi.ForumTopic] = {
+  def listRecentForumTopics(limit: Int): Seq[tpi.ForumTopic] =
+    listRecentForumTopicsImpl(pageId, limit = limit)
+
+
+  def listRecentForumTopicsIn(forum: tpi.Forum, limit: Int): Seq[tpi.ForumTopic] =
+    listRecentForumTopicsImpl(forum.id, limit = limit)
+
+
+  private def listRecentForumTopicsImpl(parentForumId: String, limit: Int)
+        : Seq[tpi.ForumTopic] = {
     val topicPathsAndMeta: Seq[(PagePath, PageMeta)] =
-      listPublishedChildren(filterPageRole = Some(PageRole.ForumTopic))
+      listPublishedChildren(
+        parentPageId = Some(parentForumId),
+        filterPageRole = Some(PageRole.ForumTopic),
+        limit = limit)
 
     val topicSummaries: Map[String, PageSummary] =
       _pageReq.dao.loadPageSummaries(topicPathsAndMeta.map(_._2.pageId))
@@ -328,13 +342,20 @@ class TinyTemplateProgrammingInterface protected (
   }
 
 
-  private def listPublishedChildren(filterPageRole: Option[PageRole])
+  private def listPublishedChildren(
+        parentPageId: Option[String] = None,
+        filterPageRole: Option[PageRole],
+        limit: Int = 10,
+        offset: Int = 0)
         : Seq[(PagePath, PageMeta)] = {
+
     val pathsAndMeta: Seq[(PagePath, PageMeta)] =
-      _pageReq.dao.listChildPages(parentPageId = pageId,
-        sortBy = PageSortOrder.ByPublTime, limit = 10, offset = 0,
+      _pageReq.dao.listChildPages(parentPageId = parentPageId getOrElse pageId,
+        sortBy = PageSortOrder.ByPublTime, limit = limit, offset = offset,
         filterPageRole = filterPageRole)
 
+    // BUG This might result in fewer than `limit` pages being returned.
+    // In the future, move filtering to `pageReq.dao` instead?
     val publishedPathsAndMeta = pathsAndMeta filter {
       case (paths, details) =>
         details.pubDati.map(

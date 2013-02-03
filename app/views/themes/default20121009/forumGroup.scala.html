@@ -24,15 +24,94 @@
     Topics from selected forums are then listed below.
   </p> -->
 
+  @*
   <ol class="forum-list">
-  @for(subforum <- tpi.listPublishedSubForums()) {
+  @for(forum <- tpi.listPublishedSubForums()) {
     <li>
-      <a href='@{subforum.path}'>
-        <h2>@{subforum.title}</h2>
+      <a href='@{forum.path}'>
+        <h2>@{forum.title}</h2>
       </a>
+
+      @*
+      <ol class="subforum-list">
+        @for(subforum <- tpi.listPublishedSubForumsOf(forum)) @{
+          // Currently always empty, because a ForumGroup cannot have any
+          // ForumGroup children (should change this).
+        }
+      </ol> * @
+
+      <ol class="topic-list">
+        @for(topic <- tpi.listRecentForumTopicsIn(forum, limit = 5)) {
+        <li>
+          <a class="topic-title" href="@{topic.path}">
+            @{topic.title}
+            (@{topic.numRepliesApproved})
+          </a>
+        </li>
+        }
+        <li class='topic-count'>
+          <a>+ 99 @* @{tpi.forum.topicCount - 5} * @ other topics ...</a>
+        </li>
+      </ol>
     </li>
   }
   </ol>
+  *@
 
+  <table class="forum-table table">
+  <thead>
+    <tr>
+      <th>Forum</th>
+      <th>Recent Topics</th>
+    </tr>
+  </thead>
+  <tbody>
+    @for(forum <- tpi.listPublishedSubForums()) {
+      <tr>
+        <td class="forum-info">
+          <div class="forum-title-wrap">
+            <a class="forum-title" href="@{forum.path}">@{forum.title}</a>
+          </div>
+          <p class="forum-description">@tpi.configValue("forum-description", pageId = Some(forum.id))
+          </p>
+          <p class="topic-count">99@* @{tpi.forum.topicCount} *@ topics</p>
+
+          @*
+          <ol class="subforum-list">
+            @for(subforum <- tpi.listPublishedSubForumsOf(forum)) @{
+            // Currently always empty, because a ForumGroup cannot have any
+            // ForumGroup children (should change this).
+            }
+          </ol> *@
+        </td>
+
+        <td>
+          <table class="topic-table-excerpt table table-condensed">
+          <tbody>
+            @for(topic <- tpi.listRecentForumTopicsIn(forum, limit = 5)) {
+              <tr>
+                <td>
+                  <a class="topic-title" href="@{topic.path}">
+                    @{topic.title}
+                  </a>
+                  <span class="topic-details">
+                  – @{topic.pubDati.map(datiTag _) getOrElse "not published"}
+                  – @{topic.numRepliesApproved} replies
+                  </span>
+                </td>
+              </tr>
+            }
+            @* <tr>
+              <td>
+                <a class='topic-count'>+ 99 @* @{tpi.forum.topicCount - 5} * @ other topics ...</a>
+              </td>
+            </tr> *@
+          </tbody>
+          </table>
+        </td>
+      </tr>
+    }
+  <tbody>
+  </table>
 }
 

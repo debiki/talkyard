@@ -32,7 +32,7 @@
       </tr>
     </thead> *@
     <tbody>
-      @for(topic <- tpi.listRecentForumTopics() if topic.pubDati.isDefined) {
+      @for(topic <- tpi.listRecentForumTopics(limit = 40)) {
       <tr>
         <td>
           <div>
@@ -74,7 +74,7 @@
 
 @* Alternative implementation, using list items:
   <ol class="table topic-list">
-    @for(topic <- tpi.listRecentForumTopics() if topic.pubDati.isDefined) {
+    @for(topic <- tpi.listRecentForumTopics(limit = 40)) {
     <li>
       <h3 class="topic-title">
         <a href="@{topic.path}">@{topic.title}</a>
