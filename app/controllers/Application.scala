@@ -291,26 +291,13 @@ object Application extends mvc.Controller {
   }
 
 
-  /**
-   * The file is not secret, but mostly unusable, unless you've logged in.
-   */
-  private val _adminPageFileString: String = {
-    // In prod builds, the file is embedded in a JAR, and accessing it via
-    // an URI causes an IllegalArgumentException: "URI is not hierarchical".
-    // So use a stream instead.
-    val adminPageStream: jio.InputStream =
-      this.getClass().getResourceAsStream("/public/admin/index.html")
-    io.Source.fromInputStream(adminPageStream).mkString("")
-  }
-
-
   def viewAdminPage() = GetAction { apiReq =>
     if (apiReq.user.map(_.isAdmin) != Some(true))
       Ok(views.html.login(xsrfToken = apiReq.xsrfToken.value,
         returnToUrl = apiReq.uri, title = "Login", message = Some(
           "Login as administrator to access this page.")))
     else
-      Ok(_adminPageFileString) as HTML withCookies (
+      Ok(views.html.adminPage(apiReq.host).body) as HTML withCookies (
           mvc.Cookie(
             DebikiSecurity.AngularJsXsrfCookieName, apiReq.xsrfToken.value,
             httpOnly = false))
