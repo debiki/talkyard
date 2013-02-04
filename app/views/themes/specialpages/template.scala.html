@@ -5,6 +5,12 @@
 @wrapper(tpi) {
   <!-- specialpages/template.scala.html -->
 
+  <h2 style="color: hsl(0, 50%, 50%);">Please ignore this page.</h2>
+  @if(isPageSettings) {
+    <p>Click <b>Return to page</b> in the upper left corner.</p>
+  }
+  <p>Configuration pages are dangerous and undocumented!</p>
+
   @page {
     <h1>
       @if(isPageSettings) {
