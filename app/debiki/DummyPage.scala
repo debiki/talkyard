@@ -106,18 +106,18 @@ object DummyPage {
   private class DefaultTexts extends Texts {
 
     def titleText =
-      "New Page (click to edit)"
+      "New Page Title (click to edit)"
 
     def bodyText = i"""
       |Page body.
       |
-      |Click to edit, and select *Improve* in the menu that appears.
+      |$ClickToEditSelectImprove
       |"""
 
     def configText = i"""
       |This is an empty configuration page.
       |
-      |Click this text to edit.
+      |$ClickToEditSelectImprove
       |"""
   }
 
@@ -125,12 +125,12 @@ object DummyPage {
   private object BlogPostTexts extends DefaultTexts {
 
     override val titleText =
-      "New Blog Post (click to edit)"
+      "New Blog Post Title (click to edit)"
 
     override val bodyText = i"""
       |Blog post text.
       |
-      |Click to edit; select *Improve* in the menu that appears.
+      |$ClickToEditSelectImprove
       |"""
   }
 
@@ -141,7 +141,7 @@ object DummyPage {
     override val bodyText = i"""
       |Optional forum info (instead of sticky topics).
       |
-      |Click to edit; select *Improve* in the menu that appears.
+      |$ClickToEditSelectImprove
       |"""
   }
 
@@ -166,7 +166,7 @@ object DummyPage {
     override val bodyText = i"""
       |Forum topic text.
       |
-      |Click to edit; select *Improve* in the menu that appears.
+      |$ClickToEditSelectImprove
       |"""
   }
 
@@ -177,9 +177,13 @@ object DummyPage {
       |This is a code page. For example, a configuration page,
       |or Javascript or CSS.
       |
-      |Click to edit. Select *Improve* in the menu that appears.
+      |$ClickToEditSelectImprove
       |"""
   }
+
+
+  private val ClickToEditSelectImprove =
+    "Click to edit. Select *Improve* in the menu that appears."
 
 }
 
