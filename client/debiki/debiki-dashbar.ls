@@ -17,11 +17,14 @@ function dwDashbar ($http)
         <img src="/-/img/logo-128x120.png">
       </a>
       <span ng-show="!viewsPageConfigPost">
-        <a ng-show="pageExists" class="page-settings">
-          View page settings
-        </a>
         <a ng-show="pageRole == 'Blog'" class="create-blog-post">
           Write new blog post
+        </a>
+        <a ng-show="pageRole == 'BlogPost'" class="return-to-blog">
+          Return to blog main page
+        </a>
+        <a ng-show="pageExists" class="page-settings">
+          View page settings
         </a>
       </span>
       <span ng-show="viewsPageConfigPost">
@@ -47,6 +50,11 @@ function dwDashbar ($http)
 
     returnToPageBtn = element.find('a.return-to-page')
     returnToPageBtn.click !-> returnToPage!
+
+    returnToBlogBtn = element.find '.return-to-blog'
+    returnToBlogBtn.click !->
+      # This redirects to the blog main page.
+      window.location = "/-#{scope.parentPageId}"
 
 
     # Warning: Dupl code. See `createThisPageUnlessExists` in debiki-forum.ls.
