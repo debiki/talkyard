@@ -69,6 +69,13 @@ del {
 }
 
 
+/* Hide reply button until a page body has been written. */
+.dw-t.dw-dummy > .dw-res,
+.dw-t.dw-dummy > .dw-t-vspace {
+  display: none;
+}
+
+
 /* === Page rendering === */
 
 /* Hide ugly React action links until they've been converted to

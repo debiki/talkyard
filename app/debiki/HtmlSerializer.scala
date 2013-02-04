@@ -363,9 +363,11 @@ case class HtmlPageSerializer(
     val rootPostsReplies = pageRoot.findChildrenIn(debate)
     val rootPost: ViPo = pageRoot.findOrCreatePostIn(debate) getOrElse
        throwNotFound("DwE0PJ404", "Post not found: "+ pageRoot.subId)
+    val cssDummy =
+      if (rootPost.user_!.id == DummyPage.DummyAuthorUser.id) " dw-dummy" else ""
 
       <div id={"dw-t-"+ rootPost.id}
-           class={"dw-t"+ cssArtclThread +" dw-depth-0 dw-hor"}>
+           class={"dw-t"+ cssArtclThread + cssDummy +" dw-depth-0 dw-hor"}>
       {
         val renderedRoot = postRenderer.renderPost(rootPost.id)
         renderedRoot.html ++

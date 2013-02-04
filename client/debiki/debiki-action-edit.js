@@ -368,6 +368,11 @@ function _$showEditFormImpl() {
 
         d.i.slideAwayRemove($editForm);
 
+        // Show page body reply button if the page body was just created.
+        // (Do this before `patchPage` or SVG arrows apparently won't appear
+        // until after zoom or resize.)
+        $post.closest('.dw-t').removeClass('dw-dummy');
+
         // If the edit was a *suggestion* only, the post body has not been
         // changed. Unless we make it visible again, it'll remain hidden
         // because mergeChangesIntoPage() ignores it (since it hasn't changed).
