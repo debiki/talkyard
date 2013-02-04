@@ -427,16 +427,14 @@ function _$showEditFormImpl() {
 
 
 d.i.forEachOpenerCall = function(callbackName, params) {
-  var curOpener = window.opener;
-  while (curOpener) {
+  $.each(d.i.windowOpeners, function(index, curOpener) {
     if (curOpener && curOpener.debiki && curOpener.debiki.internal) {
       var callbacks = curOpener.debiki.internal[callbackName] || [];
       $.each(callbacks, function(index, callback) {
         callback.apply(null, params);
       });
     }
-    curOpener = curOpener.opener;
-  }
+  });
 };
 
 

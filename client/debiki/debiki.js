@@ -13,6 +13,18 @@
 var d = { i: debiki.internal, u: debiki.v0.util };
 
 
+// Remembers grandparent openers even if the parent opener is closed.
+d.i.windowOpeners = (function() {
+  var curOpener = window.opener;
+  var openers = [];
+  while (curOpener) {
+    openers.push(curOpener);
+    curOpener = curOpener.opener;
+  }
+  return openers;
+})();
+
+
 // Debiki convention: Dialog elem tabindexes should vary from 101 to 109.
 // HTML generation code assumes this, too. See Debiki for Developers, #7bZG31.
 d.i.DEBIKI_TABINDEX_DIALOG_MAX = 109;

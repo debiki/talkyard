@@ -35,13 +35,12 @@ function dwDashbar ($http)
   link: !(scope, element, attrs) ->
     newPageBtn = element.find('a.create-blog-post')
     newPageBtn.click !->
-      # Open new tab directly in response to user click, or browser popup
-      # blockers tend to block the new tab.
-      newTab = window.open '', '_blank'
       # Create the blog main page before any blog post,
       # or the blog posts would have no parent blog main page.
       createThisPageUnlessExists !->
-        d.i.createChildPage { pageRole: 'BlogPost' }, newTab
+        # Open new page in this window, so there won't be any
+        # old stale blog main page that the user can return to.
+        d.i.createChildPage { pageRole: 'BlogPost' }, window
 
     pageSettingsBtn = element.find('a.page-settings')
     pageSettingsBtn.click !-> viewPageSettings!
