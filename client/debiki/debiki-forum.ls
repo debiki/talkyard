@@ -10,15 +10,14 @@ $('.dw-a-new-forum-topic').click !->
 
   # Warning: Dupl code. See AngularJS code in debiki-dashbar.ls.
 
-  # Open new tab directly in response to user click, or browser popup
-  # blockers tend to block the new tab.
-  newTab = window.open '', '_blank'
   # Create the forum main page before any forum topic,
   # or the topics would have no parent forum main page.
   createThisPageUnlessExists !->
+    # Open the new topic in the current browser tab, so there won't be
+    # any old forum topic list tab that doesn't list the new topic.
     d.i.createChildPage(
         pageRole: 'ForumTopic', status: 'Published'
-        newTab)
+        window)
 
 
 

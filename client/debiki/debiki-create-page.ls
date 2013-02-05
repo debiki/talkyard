@@ -6,6 +6,11 @@ $ = d.i.$;
 
 /**
  * Opens a new unsaved page in a new browser tab.
+ *
+ * You need to open the `preOpenedNewTab` directly in response to
+ * a user action (mouse click), or browser popup blockers tend to
+ * block the new tab. Alternatively, you could specify the current
+ * `window` (which is already open, obviously).
  */
 d.i.createChildPage = !({ pageRole, parentPageId, status }, preOpenedNewTab) ->
 
