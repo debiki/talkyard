@@ -21,20 +21,10 @@
 
   <a class='btn dw-a-new-forum-topic'>New Topic</a>
 
-  <table class="table topic-table">
-    @*
-    <thead>
-      <tr>
-        <th>Activity</th>
-        <th>Author</th>
-        <th>Date</th>
-        <th>Text</th>
-      </tr>
-    </thead> *@
-    <tbody>
-      @for(topic <- tpi.listRecentForumTopics(limit = 40)) {
-      <tr>
-        <td>
+  <ol class="topic-table topic-list dw-forum-topic-list">
+    @for(topic <- tpi.listRecentForumTopics(limit = 40)) {
+      <li>
+        <div class="accordion-heading" >
           <div>
             <a class="topic-title" href="@{topic.path}">@{topic.title}</a>
           </div>
@@ -62,53 +52,14 @@
               </span>
             }
           </div>
-        </td>
-        @*
-        <td class="topic-excerpt">
-          @{topic.excerpt}
-        </td> *@
-      </tr>
-      }
-    </tbody>
-  </table>
-
-@* Alternative implementation, using list items:
-  <ol class="table topic-list">
-    @for(topic <- tpi.listRecentForumTopics(limit = 40)) {
-    <li>
-      <h3 class="topic-title">
-        <a href="@{topic.path}">@{topic.title}</a>
-      </h3>
-      <div class="topic-details">
-        <span class="topic-author">
-          By <a>@{topic.authorDisplayName}</a>,
-        </span>
-        <span class="topic-pub-dati">
-          @{topic.pubDati.map(datiTag _) getOrElse "not published"},
-        </span>
-        @if(topic.lastReplyDati.isDefined) {
-          <span class="topic-mod-dati">
-            updated @{datiTag(topic.lastReplyDati.get)},
-          </span>
-        }
-        <span class="topic-stats">
-          @{topic.numRepliesApproved} replies.
-          <!--
-          @{topic.numRepliesRejected} replies rejected,
-          @{topic.numRepliesPendingReview} pending review,
-          @{topic.numRepliesFlagged} flagged,
-          @{topic.numRepliesDeleted} deleted,
-          @{topic.numContributors} contributors,
-          -->
-        </span>
-      </div>
-      <p class="topic-excerpt">
-        @{topic.excerpt}
-      </p>
-    </li>
+        </div>
+        <div class="accordion-toggle xcollapse topic-excerpt"
+             data-parent="#dw-forum-topic-list">
+          <em>Excerpt:</em> @{topic.excerpt}
+        </div>
+      </li>
     }
   </ol>
-*@
 
 }
 
