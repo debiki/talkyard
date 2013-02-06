@@ -47,6 +47,9 @@ abstract class TenantDbDao {
 
   // ----- Websites (a.k.a. tenants)
 
+  def siteId: String
+
+  @deprecated("use siteId instead", "now")
   def tenantId: String
 
   /**
@@ -351,6 +354,9 @@ class ChargingTenantDbDao(
 
   // ----- Tenant
 
+  def siteId: String = _spi.tenantId
+
+  //@deprecated("use siteId instead", "now") -- gah, terrible many warnings!
   def tenantId: String = _spi.tenantId
 
   def loadTenant(): Tenant = {
