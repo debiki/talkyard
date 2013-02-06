@@ -90,6 +90,12 @@ abstract class TenantDbDao {
 
   // ----- New pages, page meta
 
+  /**
+   * Creates a page; returns it, but with an id assigned to the page,
+   * if it didn't already have an id, and to actions, if they didn't
+   * already have ids specified. (For example, the page body always
+   * has id 1 so it'd be pre-assigned. But comments have random ids.)
+   */
   def createPage(page: PageStuff): PageStuff
 
   def loadPageMeta(pageId: String): Option[PageMeta]
