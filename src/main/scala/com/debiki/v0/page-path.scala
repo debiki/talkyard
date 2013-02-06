@@ -299,3 +299,9 @@ object PathRanges {
  */
 case class SitePageId(siteId: String, pageId: String)
 
+
+/**
+ * An URL path, relative a certain site.
+ */
+case class SitePath(siteId: String, path: String)
+
