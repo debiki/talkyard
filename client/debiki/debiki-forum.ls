@@ -53,46 +53,31 @@ function createThisPageUnlessExists (onSuccess)
 
 
 /**
- * Toggles open forum topic list items on hover (after you've hovered
- * for about one second).
+ * Shows forum topic excerpts on click (like an accordion), for desktops only.
  */
 debiki.scriptLoad.done !->
 
-  # Open topic on <li> click.
+  return if Modernizr.touch
+
+  # Slide down excerpt on <li> click; slide up other excerpts.
   $('.dw-forum-topic-list > li').click !(event) ->
-    # But not if clicked a link.
+
+    # Ignore links though.
     return if $(event.target).is 'a'
-    topicUrl = $(this).find('.topic-title').attr 'href'
-    window.location = topicUrl
 
-  # Show excerpt on <li> hover.
+    $elemHovered = $(this)
+    topicExcerpt = $elemHovered.children('.accordion-toggle')[0]
 
-  return unless $.fn.hover
-  slideHandle = null
+    # Slide up other excerpts.
+    $elemHovered
+        .closest('.dw-forum-topic-list')
+        .find('li > .accordion-toggle')
+        .filter((index, elem) -> elem != topicExcerpt)
+        .stop(true, true)
+        .slideUp!
 
-  function cancelPendingSlide
-    return unless slideHandle
-    clearTimeout slideHandle
-    slideHandle := null
-
-  $('.dw-forum-topic-list > li').hover(
-      !->
-        cancelPendingSlide!
-        elemHovered = this
-        topicExcerpt = $(elemHovered).children('.accordion-toggle')[0]
-        slideHandle := setTimeout(
-          !->
-            $(elemHovered)
-                .closest('.dw-forum-topic-list')
-                .find('li > .accordion-toggle')
-                .filter((index, elem) -> elem != topicExcerpt)
-                .stop(true, true)
-                .slideUp!
-            $(topicExcerpt).slideDown!
-          500)
-      !->
-        cancelPendingSlide!
-      )
+    # Slide down the one clicked (or up, if already slided down).
+    $(topicExcerpt).slideToggle!
 
 
 # vim: fdm=marker et ts=2 sw=2 tw=80 fo=tcqwn list

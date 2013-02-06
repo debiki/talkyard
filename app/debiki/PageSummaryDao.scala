@@ -34,7 +34,7 @@ case class PageSummary(
 trait PageSummaryDao {
   self: TenantDao =>
 
-  val ExcerptLength = 120
+  val ExcerptLength = 500
 
   val logger = play.api.Logger("app.page-summary-dao")
 
