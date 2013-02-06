@@ -25,6 +25,47 @@ class PreludeTest extends Specification {
        stripStartEndBlanks("  xyz  ") must_== "xyz" }
   }
 
+  "stripOrigin" should {
+    "strip '' to None" in { stripOrigin("") must_== None }
+    "strip '/dir/' to None" in { stripOrigin("/dir/") must_== None }
+    "strip '/dir/page' to None" in { stripOrigin("/dir/page/") must_== None }
+
+    val HttpServer = "http://server"
+    val HttpsServer = "https://server"
+    val HttpServerPort = "http://server:443"
+    val HttpsServerPort = "https://server:443"
+    val SomePath = "/some/path"
+
+    s"strip 'http(s)://server(:port)' to None" in {
+      stripOrigin(s"$HttpServer") must_== None
+      stripOrigin(s"$HttpsServer") must_== None
+      stripOrigin(s"$HttpServerPort") must_== None
+      stripOrigin(s"$HttpsServerPort") must_== None
+    }
+
+    s"strip 'http(s)://server(:port)/' to Some('/')" in {
+      stripOrigin(s"$HttpServer/") must_== Some("/")
+      stripOrigin(s"$HttpsServer/") must_== Some("/")
+      stripOrigin(s"$HttpServerPort/") must_== Some("/")
+      stripOrigin(s"$HttpsServerPort/") must_== Some("/")
+    }
+
+    s"strip 'http(s)://server(:port)$SomePath' to Some('$SomePath')" in {
+      stripOrigin(s"$HttpServer$SomePath") must_== Some(SomePath)
+      stripOrigin(s"$HttpsServer$SomePath") must_== Some(SomePath)
+      stripOrigin(s"$HttpServerPort$SomePath") must_== Some(SomePath)
+      stripOrigin(s"$HttpsServerPort$SomePath") must_== Some(SomePath)
+    }
+
+    s"undersdand das-and-dot host names" in {
+      stripOrigin(s"http://dash-and-dot.example.com:80/a/b") must_== Some("/a/b")
+    }
+
+    s"reject bad prodocol" in {
+      stripOrigin(s"nothttp://server/path") must_== None
+    }
+  }
+
   "nextRandomString" should {
     "be at least 5 chars and contain no vowels but `uy'" >> {
       for (i <- 1 to 50) {
