@@ -42,6 +42,13 @@ class CachingTenantDao(tenantDbDao: ChargingTenantDbDao)
   with CachingUserDao {
 
 
+  override def createPage(page: PageStuff): PageStuff = {
+    val pageWithIds = tenantDbDao.createPage(page)
+    firePageCreated(pageWithIds)
+    pageWithIds
+  }
+
+
   override def savePageActionsGenNotfsImpl(page: Debate, actions: List[Action],
         pageMeta: PageMeta): Seq[Action] = {
 

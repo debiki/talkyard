@@ -22,6 +22,9 @@ trait StuffCreator {
   def firstSiteHost = s"localhost:$testServerPort"
 
 
+  val DefaultBackgroundColor = "rgba(255, 248, 220, 1)" // that's cornsilk
+
+
   /**
    * The id of website with origin http://localhost:test-server-port.
    * It's created lazily.
@@ -90,7 +93,7 @@ trait StuffCreator {
 
     createCodePage(firstSiteId, "/themes/example/", "theme.css", i"""
       |body {
-      |  background: cornsilk !important;
+      |  background: $DefaultBackgroundColor !important;
       |}
       |""")
 

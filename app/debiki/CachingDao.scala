@@ -17,8 +17,19 @@ import Prelude._
 
 trait CacheEvents {  // COULD move to separate file
 
+  private var pageCreatedListeners = List[(PageStuff => Unit)]()
   private var pageSavedListeners = List[(SitePageId => Unit)]()
   private var pageMovedListeners = List[(PagePath => Unit)]()
+
+
+  def onPageCreated(callback: (PageStuff => Unit)) {
+    pageCreatedListeners ::= callback
+  }
+
+
+  def firePageCreated(page: PageStuff) {
+    pageCreatedListeners foreach (_(page))
+  }
 
 
   def onPageSaved(callback: (SitePageId => Unit)) {

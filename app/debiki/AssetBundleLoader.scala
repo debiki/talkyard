@@ -16,7 +16,8 @@ case class AssetBundleAndDependencies(
   assetBundleText: String,
   version: String, // SHA1 hash of assetBundleText
   assetPageIds: Seq[SitePageId],
-  configPageIds: Seq[SitePageId])
+  configPageIds: Seq[SitePageId],
+  missingOptAssetPaths: Seq[SitePath])
   // COULD: missingAssets: Seq[MissingAsset])
 
 
@@ -53,7 +54,7 @@ object AssetBundleLoader {
         "DwE9b3HK1", o"""Cannot serve '$bundleNameNoSuffix.<version>.$bundleSuffix':
             ${exception.getMessage}""")
 
-    val assetPaths =
+    val (assetPaths, missingOptAssetPaths) =
       try { findAssetPagePaths(bundleName, dao) }
       catch {
         case ex: DebikiException => die(ex)
@@ -88,12 +89,16 @@ object AssetBundleLoader {
     val sha1sum = hashSha1Base64UrlSafe(bundleText)
 
     AssetBundleAndDependencies(
-      bundleText, sha1sum, assetPageIds, configPageIds = configPageIds)
+      bundleText, sha1sum, assetPageIds, configPageIds = configPageIds,
+        missingOptAssetPaths = missingOptAssetPaths)
   }
 
 
+  /**
+   * Returns paths to assets found, and to *optional* assets not found.
+   */
   private def findAssetPagePaths(
-      bundleName: String, dao: TenantDao): Seq[PagePath] = {
+      bundleName: String, dao: TenantDao): (Seq[PagePath], Seq[SitePath]) = {
 
     def die(errCode: String, details: String) =
       throw DebikiException(
@@ -108,6 +113,8 @@ object AssetBundleLoader {
 
     def itsEntryPrefix = s"The 'asset-bundles' entry for '$bundleName'"
 
+    var missingOptPaths = List[SitePath]()
+
     val assetPaths: Seq[PagePath] =
           assetUrls flatMap { case AssetBundleItem(assetUrl, isOptional) =>
       import UrlToPagePathResolver.Result
@@ -119,14 +126,17 @@ object AssetBundleLoader {
         case Result.HostNotFound(host) =>
           die("DwE58BK3", s"$itsEntryPrefix refers to an unknown host: $host")
         case Result.PageNotFound =>
-          if (isOptional) Nil
-          else die("DwE4YBz3", s"$itsEntryPrefix refers to non-existing page: $assetUrl")
+          if (!isOptional) die(
+            "DwE4YBz3", s"$itsEntryPrefix refers to non-existing page: $assetUrl")
+          val path = stripOrigin(assetUrl) getOrElse  assetUrl
+          missingOptPaths ::= SitePath(dao.siteId, path = path)
+          Nil
         case Result.Ok(path) =>
           path::Nil
       }
     }
 
-    assetPaths
+    (assetPaths, missingOptPaths)
   }
 
 }

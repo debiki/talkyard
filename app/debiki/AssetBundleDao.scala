@@ -40,6 +40,11 @@ trait AssetBundleDao {
 trait CachingAssetBundleDao extends AssetBundleDao {
   self: TenantDao with CachingDao =>
 
+  onPageCreated { page =>
+    tryUncacheAll(
+      makeSitePathDependencyKey(page.siteId, path = page.path.path))
+  }
+
   onPageSaved { sitePageId =>
     tryUncacheAll(
       makeDependencyKey(sitePageId))
@@ -99,14 +104,21 @@ trait CachingAssetBundleDao extends AssetBundleDao {
 
 
   /**
-   * Caches which pages the bundle depends on, so it can be uncached,
-   * should any of the dependencies change.
+   * Caches 1) which pages the bundle depends on, so it can be uncached,
+   * should any of the dependencies change. And 2) which non-existing optional
+   * assets the bundle depends on, so the bundle can be regenerated if any
+   * of those assets is created later on.
    */
   private def cacheDependencies(
         bundleName: String, bundleAndDeps: AssetBundleAndDependencies) {
-    val bundleDeps = BundleDependencyData(bundleName, bundleAndDeps, siteId = tenantId)
+    val bundleDeps = BundleDependencyData(bundleName, bundleAndDeps, siteId = siteId)
     for (sitePageId <- bundleDeps.dependeePageIds) {
       val depKey = makeDependencyKey(sitePageId)
+      putInCache(depKey, bundleDeps)
+    }
+
+    for (sitePath <- bundleDeps.missingOptAssetPaths) {
+      val depKey = makeSitePathDependencyKey(sitePath)
       putInCache(depKey, bundleDeps)
     }
   }
@@ -130,6 +142,11 @@ trait CachingAssetBundleDao extends AssetBundleDao {
         makeDependencyKey(depSitePageIds))
     }
 
+    for (depSitePath <- bundleDeps.missingOptAssetPaths) {
+      removeFromCache(
+        makeSitePathDependencyKey(depSitePath))
+    }
+
     removeFromCache(
       makeBundleKey(
         bundleDeps.bundleName, tenantId = bundleDeps.siteId))
@@ -140,7 +157,13 @@ trait CachingAssetBundleDao extends AssetBundleDao {
     s"$tenantId|$bundleName|AssetBundle"
 
   private def makeDependencyKey(sitePageId: SitePageId) =
-    s"${sitePageId.siteId}|${sitePageId.pageId}|BundleDependency"
+    s"${sitePageId.siteId}|${sitePageId.pageId}|BundleSitePageIdDep"
+
+  private def makeSitePathDependencyKey(siteId: String, path: String): String =
+    s"$siteId|$path|BundleSitePathDep"
+
+  private def makeSitePathDependencyKey(sitePath: SitePath): String =
+    makeSitePathDependencyKey(sitePath.siteId, path = sitePath.path)
 
 }
 
@@ -151,7 +174,8 @@ object CachingAssetBundleDao {
   class BundleDependencyData(
     val siteId: String,
     val bundleName: String,
-    val dependeePageIds: List[SitePageId])
+    val dependeePageIds: List[SitePageId],
+    val missingOptAssetPaths: List[SitePath])
 
   case object BundleDependencyData {
     def apply(
@@ -162,7 +186,8 @@ object CachingAssetBundleDao {
         siteId = siteId,
         bundleName = bundleName,
         dependeePageIds =
-          bundleAndDeps.configPageIds.toList ::: bundleAndDeps.assetPageIds.toList)
+          bundleAndDeps.configPageIds.toList ::: bundleAndDeps.assetPageIds.toList,
+        missingOptAssetPaths = bundleAndDeps.missingOptAssetPaths.toList)
     }
   }
 

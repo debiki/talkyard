@@ -56,6 +56,9 @@ class TenantDao(protected val tenantDbDao: ChargingTenantDbDao)
 
   // ----- Tenant
 
+  def siteId = tenantDbDao.siteId
+
+  //@deprecated("use siteId instead", "now") -- gah, terrible many warnings!
   def tenantId: String = tenantDbDao.tenantId
 
   def loadTenant(): Tenant = tenantDbDao.loadTenant()

@@ -22,6 +22,9 @@ trait StuffTestClicker {
   private var knownWindowHandles = Set[String]()
 
 
+  val DefaultHomepageTitle = "Default Homepage"
+
+
   def createWebsiteChooseNamePage = new Page {
     val url = s"$firstSiteOrigin/-/new-website/choose-name"
   }
@@ -104,11 +107,12 @@ trait StuffTestClicker {
    * Switches to the new browser tab, with the new page.
    * Returns the id of the newly created (but not yet saved) page.
    */
-  def clickCreateNewPage(pageRole: PageRole): String = {
-    val (newPageLink, newPageTitlePart) = pageRole match {
-      case PageRole.Generic => ("create-info-page", "New Page")
-      case PageRole.Blog => ("create-blog", "Example Blog Post")
-      case PageRole.Forum => ("create-forum", "New Forum")
+  def clickCreateNewPage(pageRole: PageRole, suffix: String = null): String = {
+    val (newPageLink, newPageTitlePart) = (pageRole, suffix) match {
+      case (PageRole.Generic, _) => ("create-info-page", "New Page")
+      case (PageRole.Blog, _) => ("create-blog", "Example Blog Post")
+      case (PageRole.Forum, _) => ("create-forum", "New Forum")
+      case (PageRole.Code, "css") => ("create-local-theme-style", "/themes/local/theme.css")
       case _ => fail(s"Bad page role: $pageRole")
     }
 
@@ -187,8 +191,8 @@ trait StuffTestClicker {
             fail()
           case Some(textarea) =>
             // Select all current text.
-            textarea.sendKeys(Keys.chord(Keys.SHIFT, Keys.END))
-            // Overwrite selecetd text.
+            textarea.sendKeys(Keys.chord(Keys.SHIFT, Keys.CONTROL, Keys.END))
+            // Overwrite selected text.
             textarea.sendKeys(newText)
         }
       }
@@ -204,10 +208,20 @@ trait StuffTestClicker {
 
     //"find new text in page source" in {
       eventually {
-        //pageSource.contains(newText) must be === true
-        find(cssSelector(s"#post-$postId .dw-p-bd")).map(_.text) must be === Some(newText)
+        find(cssSelector(s"#post-$postId .dw-p-bd")).map(_.text) must be ===
+          Some(stripStartEndBlanks(newText))
       }
     //}
+  }
+
+
+  def openAndSwitchToFirstPage(pageTitle: String): WindowTarget = {
+    // The Admin SPA does a network request to get a page listing.
+    eventually {
+      // Clicking the link opens a new browser tab.
+      click on partialLinkText(pageTitle)
+      switchToNewlyOpenedWindow()
+    }
   }
 
 

@@ -282,13 +282,15 @@ class PageListItem extends ListItem
   $scope.createLocalThemeStyle = !->
     createPage {
         folder: localThemeFolder
-        pageSlug: 'site.css'
+        pageSlug: localThemeStyleSlug
         showId: false
         status: 'Published'
         pageRole: 'Code' }
 
 
   localThemeFolder = '/themes/local/'
+  localThemeStyleSlug = 'theme.css'
+  localThemeStylePath = "#localThemeFolder#localThemeStyleSlug"
 
 
   $scope.createDraftPage = !->
@@ -576,7 +578,7 @@ class PageListItem extends ListItem
 
     for item in $scope.listItems
 
-      if item.path == "#{localThemeFolder}site.css"
+      if item.path == localThemeStylePath
         $scope.localThemeStyleExists = true
 
       continue unless item.included

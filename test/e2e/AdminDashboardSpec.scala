@@ -53,12 +53,7 @@ abstract class AdminDashboardSpec extends DebikiBrowserSpec {
     "edit homepage" - {
 
       "open homepage" in {
-        // The Admin SPA does a network request to get a page listing.
-        eventually {
-          // Clicking the link opens a new browser tab.
-          click on partialLinkText("Default Homepage")
-          switchToNewlyOpenedWindow()
-        }
+        openAndSwitchToFirstPage(DefaultHomepageTitle)
       }
 
       "edit homepage title" in {
