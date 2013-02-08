@@ -434,6 +434,15 @@ object Approval {
    */
   case object Manual extends Approval
 
+
+  def parse(text: String): Approval = text match {
+    case "Preliminary" => Preliminary
+    case "WellBehavedUser" => WellBehavedUser
+    case "AuthoritativeUser" => AuthoritativeUser
+    case "Manual" => Manual
+    case _ => illArgErr("DwE931k35", s"Bad approval value: `$text'")
+  }
+
 }
 
 
