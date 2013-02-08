@@ -158,8 +158,7 @@ object Global extends GlobalSettings {
         }
       // If invalid function specified:
       case (fun, met) => throwBadReq(
-        "DwEQ435", "Bad method or query string: "+
-           met +" ?"+ fun)
+        "DwEQ435", s"Bad method or query string: `$met' `?$fun'")
     }
     Some(action)
   }
