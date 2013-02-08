@@ -43,36 +43,36 @@ case class PagePath(  // COULD move to debate.scala.  Rename to RequestPath?
 
   if (!folder.startsWith("/"))
     throw PagePathException(
-      "DwE83RIK2", "Folder does not start with '/': "+ folder)
+      "DwE83RIK2", s"Folder does not start with '/': `$folder'")
 
   if (!folder.endsWith("/"))
     throw PagePathException(
-      "DwE6IIJQ2", "Folder does not end with '/': "+ folder)
+      "DwE6IIJQ2", s"Folder does not end with '/': `$folder'")
 
   if (folder.contains("/-"))
-    throw PagePathException("DwE7Ib3", "Folder name starts with '-': "+ folder)
+    throw PagePathException("DwE7Ib3", s"Folder name starts with '-': `$folder'")
 
   if ((folder intersect _BadPunctFolder).nonEmpty)
     throw PagePathException(
-      "DwE38IQ2", "Bad punctuation chars in this folder: "+ folder)
+      "DwE38IQ2", s"Bad punctuation chars in this folder: `$folder'")
 
   if (_AnyWhitespaceRegex matches folder)
     throw PagePathException(
-      "DwE9IJb2", "Folder contains whitespace: "+ folder)
+      "DwE9IJb2", s"Folder contains whitespace: `$folder'")
 
   if (pageSlug startsWith "-")
-    throw PagePathException("DwE2Yb35", "Page slug starts with '-': "+ pageSlug)
+    throw PagePathException("DwE2Yb35", s"Page slug starts with '-' `$pageSlug'")
 
   if (pageSlug startsWith ".")
-    throw PagePathException("DwE5IF01", "Page slug starts with '.': "+ pageSlug)
+    throw PagePathException("DwE5IF01", s"Page slug starts with '.': `$pageSlug'")
 
   if ((pageSlug intersect _BadPunctSlug).nonEmpty)
     throw PagePathException(
-      "DwE093KG12", "Bad punctuation chars in this page slug: "+ pageSlug)
+      "DwE093KG12", s"Bad punctuation chars in this page slug: `$pageSlug'")
 
   if (_AnyWhitespaceRegex matches pageSlug)
     throw PagePathException(
-      "DwE37ZQU2", "Page slug contains whitespace: "+ pageSlug)
+      "DwE37ZQU2", s"Page slug contains whitespace: `$pageSlug'")
 
 
   def path: String =
