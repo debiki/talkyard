@@ -19,6 +19,59 @@ object AutoApprover {
   val NumFirstCommentsToApprovePreliminarily = 2
   val TooManyUnreviewedComments = 10
 
+
+  def perhapsApproveNewPage(
+        folderReq: PageRequest[_], pageRole: PageRole, parentPageId: Option[String])
+        : Option[Approval] = {
+
+    if (folderReq.pageExists) throwForbidden(
+      "DwE10X3k3", o"""Page `${folderReq.pageId_!}' already exists; I cannot grant
+       an approval to create it, again""") //"""
+
+    if (folderReq.user_!.isAdmin)
+      return Some(Approval.AuthoritativeUser)
+
+    // For now, allow other people to create forum topics only.
+    if (pageRole == PageRole.ForumTopic) {
+
+      if (parentPageId.isEmpty)
+        throwBadReq("DwE76BCK0", "No parent page id specified")
+
+      val parentMeta =
+        folderReq.dao.loadPageMeta(parentPageId.get) getOrElse throwNotFound(
+          "DwE78BI21", s"Parent page not found, id: `${parentPageId.get}'")
+
+      if (parentMeta.pageRole != PageRole.Forum)
+        throwForbidden("DwE830BIR5", "A forum topic's parent page must be a forum")
+
+      // For now:
+      return Some(Approval.Preliminary)
+
+      // ...but SECURITY COULD check recent actions, break up
+      // _checkUserHistoryPerhapsApprove() into reusable parts and reuse, somehow?
+    }
+
+    None
+  }
+
+
+  def upholdNewPageApproval(pageReq: PageRequest[_], oldApproval: Approval)
+        : Option[Approval] = {
+    // For now:
+    Some(oldApproval)
+
+    // SECURITY: Perhaps retract new page approval:
+    // In the future: Check recent actions, and if the user is apparently very
+    // evil, retract the approval (return false). This will make the user upset,
+    // because s/he has already been allowed to create the page and written
+    // e.g. a new forum topic. Now the page is supposed to be saved and
+    // the page created lazily. But the server changes its mind and retracts the
+    // approval! The user will be upset for sure (?), so s/he better be an
+    // "evil" user for sure (so everyone else will understand why the server retracted
+    /// the page creation approval).
+  }
+
+
   def perhapsApprove(pageReq: PageRequest[_]): Option[Approval] = {
     if (pageReq.user_!.isAdmin)
       Some(Approval.AuthoritativeUser)

@@ -59,5 +59,11 @@ d.i.parsePasshashInPageUrl = function() {
 };
 
 
+d.i.parseApprovalInPageUrl = function() {
+  return location.toString().match(
+      /http.*\?view-new-page=.*&newPageApproval=([a-zA-Z]+)/)[1];
+};
+
+
 
 // vim: fdm=marker et ts=2 sw=2 tw=80 fo=tcqwn list

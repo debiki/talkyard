@@ -19,7 +19,9 @@
     }
   </div>
 
-  <a class='btn dw-a-new-forum-topic'>New Topic</a>
+  <form method="POST">
+    <input type="submit" value="New Topic" class="btn dw-a-new-forum-topic"></input>
+  </form>
 
   <ol class="topic-table topic-list dw-forum-topic-list">
     @for(topic <- tpi.listRecentForumTopics(limit = 40)) {

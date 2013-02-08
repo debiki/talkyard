@@ -138,16 +138,18 @@ object AppEdit extends mvc.Controller {
 
     val createPagesMaps: List[Map[String, JsValue]] =
       jsonBody.getOrElse("createPagesUnlessExist", Nil)
-    var pageReqsById = Map[String, PageRequest[_]]()
+    var pageReqsById = Map[String, (PageRequest[_], Approval)]()
 
     for (pageData <- createPagesMaps) {
       val passhashStr = getTextOrThrow(pageData, "passhash")
+      val approvalStr = getTextOrThrow(pageData, "newPageApproval")
       val pageId = getTextOrThrow(pageData, "pageId")
       val pagePathStr = getTextOrThrow(pageData, "pagePath")
       val pageRoleStr = getTextOrThrow(pageData, "pageRole")
       val pageStatusStr = getTextOrThrow(pageData, "pageStatus")
       val parentPageIdStr = getTextOrThrow(pageData, "parentPageId")
 
+      val prevPageApproval = Approval.parse(approvalStr)
       val pageRole = PageRole.parse(pageRoleStr)
       val pageStatus = PageStatus.parse(pageStatusStr)
       val parentPageId =
@@ -155,14 +157,33 @@ object AppEdit extends mvc.Controller {
 
       try {
         val createPageReq = PageRequest.forPageToCreate(request, pagePathStr, pageId)
+        val newPath = createPageReq.pagePath
 
-        val pageReq = createPage(createPageReq, passhash = passhashStr,
+        val correctPasshash = AppCreatePage.makePagePasshash(
+          prevPageApproval, pageRole, pageStatus, folder = newPath.folder,
+          slug = newPath.pageSlug, showId = newPath.showId, pageId = pageId,
+          parentPageId = parentPageId)
+
+        if (passhashStr != correctPasshash)
+          throwForbidden("DwE82RfY5", "Bad passhash")
+
+        // In case the user has been allowed to create a new page, then did
+        // evil things, and now finally submitted the first edit of the page, then,
+        // here we need to consider his/her deeds, and perhaps cancel the old
+        // already granted approval.
+        val newPageApproval =
+          AutoApprover.upholdNewPageApproval(createPageReq, prevPageApproval) getOrElse
+            throwForbidden("DwE03WCS8", "Page creation approval retracted")
+
+        // Throws PageExistsException if page already exists.
+        val pageReq = createPage(createPageReq,
           pageRole = pageRole, pageStatus = pageStatus, parentPageId = parentPageId)
 
-        pageReqsById += pageId -> pageReq
+        pageReqsById += pageId -> (pageReq, newPageApproval)
       }
       catch {
-        case ex: PageRequest.PageExistsException => // Fine, ignore
+        case ex: PageRequest.PageExistsException =>
+          // Fine, ignore. We're probably continuing editing a page we just created.
       }
     }
 
@@ -177,13 +198,13 @@ object AppEdit extends mvc.Controller {
 
     for ((pageId, editMaps) <- editMapsByPageId) {
 
-      val pageReqPerhapsNoMe = pageReqsById.get(pageId) match {
+      val (pageReqPerhapsNoMe, anyNewPageApproval) = pageReqsById.get(pageId) match {
         case None =>
-          PageRequest.forPageThatExists(request, pageId)
-        case Some(pageReq) =>
+          (PageRequest.forPageThatExists(request, pageId), None)
+        case Some((pageReq, newPageApproval)) =>
           // We just created the page. Reuse the PageRequest that was used
           // when we created it.
-          pageReq
+          (pageReq, Some(newPageApproval))
       }
 
       // Include current user on the page to be edited, or it won't be
@@ -203,11 +224,18 @@ object AppEdit extends mvc.Controller {
 
         _throwIfTooMuchData(newText, pageRequest)
 
+        // If we're creating a new page lazily, by editing title or body,
+        // ensure we're really editing the title or body.
+        if (anyNewPageApproval.isDefined &&
+            postId != Page.BodyId && postId != Page.TitleId)
+          throwForbidden(
+            "DwE69Ro8", "Title or body must be edited before other page parts")
+
         // COULD call _saveEdits once per page instead of once
         // per action per page.
         val editAndLazyPost: List[Action] =
           _saveEdits(pageRequest, postId = postId, newText = newText,
-          newMarkupOpt = newMarkupOpt)
+          newMarkupOpt = newMarkupOpt, anyNewPageApproval)
 
         if (editAndLazyPost.isEmpty) {
           // No changes made. (newText is the current text.)
@@ -247,15 +275,11 @@ object AppEdit extends mvc.Controller {
 
   private def createPage[A](
     pageReq: PageRequest[A],
-    passhash: String,
     pageRole: PageRole,
     pageStatus: PageStatus,
     parentPageId: Option[String]): PageRequest[A] = {
 
     assErrIf(pageReq.pageExists, "DwE70QU2")
-    Passhasher.throwIfBadPasshash(
-      specifiedPasshash = passhash,
-      valueToHash = pageReq.pagePath.folder + pageReq.pageId_!)
 
     // SECURITY SHOULD do this test in AppCreatePage instead?, when generating page id:
     //if (!pageReq.permsOnPage.createPage)
@@ -276,7 +300,8 @@ object AppEdit extends mvc.Controller {
 
 
   private def _saveEdits(pageReq: PageRequest[_],
-        postId: String, newText: String, newMarkupOpt: Option[String])
+        postId: String, newText: String, newMarkupOpt: Option[String],
+        anyNewPageApproval: Option[Approval])
         : List[Action] = {
 
     val (post, lazyCreateOpt) =
@@ -298,8 +323,10 @@ object AppEdit extends mvc.Controller {
       AppEdit.mayEdit(pageReq.user, post, pageReq.permsOnPage)
 
     val approval =
-      if (mayEdit) AutoApprover.perhapsApprove(pageReq)
-      else None
+      anyNewPageApproval orElse (upholdEarlierApproval(pageReq, postId) getOrElse {
+        if (mayEdit) AutoApprover.perhapsApprove(pageReq)
+        else None
+      })
 
     var edit = Edit(
       id = "?x", postId = post.id, ctime = pageReq.ctime,
@@ -332,6 +359,45 @@ object AppEdit extends mvc.Controller {
       (true, "May edit root post")
     else
       (false, "")
+  }
+
+
+  /**
+   * Finds out if the user is creating a missing title or body of a page
+   * s/he just created, and, if so, attempts to uphold the approval previously
+   * granted when the page was created.
+   *
+   * Returns None if there isn't any earlier approval to uphold.
+   * Returns Some(Some(approval)) if an earlier approval was uphold,
+   *   and Some(None) if the earlier approval was retracted.
+   */
+  private def upholdEarlierApproval(pageReq: PageRequest[_], postId: String)
+        : Option[Option[Approval]] = {
+
+    if (postId != Page.BodyId && postId != Page.TitleId)
+      return None
+
+    val page = pageReq.page_!
+    val titleOrBodyExists = page.title.isDefined || page.body.isDefined
+    val titleOrBodyAbsent = page.title.isEmpty || page.body.isEmpty
+    if (!titleOrBodyExists || !titleOrBodyAbsent) {
+      // We're not creating a missing title or body, after having created
+      // the body or title.
+      return None
+    }
+
+    val titleOrBody = (page.title orElse page.body).get
+    if (titleOrBody.user_! == pageReq.user_!) {
+      // This user authored the title or body, and is now attempting to create
+      // the missing body or title. Prefer to uphold the earlier approval.
+      val newReview = titleOrBody.lastApproval.flatMap(_.approval) flatMap {
+        earlierApproval =>
+          AutoApprover.upholdNewPageApproval(pageReq, earlierApproval)
+      }
+      return Some(newReview)
+    }
+
+    None
   }
 
 

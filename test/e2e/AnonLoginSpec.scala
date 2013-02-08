@@ -4,9 +4,10 @@
 
 package test.e2e
 
+import com.debiki.v0.Prelude._
+import com.debiki.v0.PageRole
 import org.scalatest.time.{Span, Seconds}
 import org.scalatest.DoNotDiscover
-import com.debiki.v0.Prelude._
 
 
 /**
@@ -25,7 +26,8 @@ with ChromeSuiteMixin
 // instead of `abstract`.
 abstract class AnonLoginSpec extends DebikiBrowserSpec {
 
-  lazy val testPage = createTestPage()
+  lazy val testPage = createTestPage(PageRole.Generic,
+    title = "Test Page Title 27KV09", body = Some("Test page text 953Ih31."))
 
   "Anon user with a browser can" - {
 

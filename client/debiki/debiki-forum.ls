@@ -4,7 +4,9 @@ d = i: debiki.internal, u: debiki.v0.util
 $ = d.i.$;
 
 
-$('.dw-a-new-forum-topic').click !->
+$newTopicBtn = $('.dw-a-new-forum-topic')
+$newTopicBtn.each d.i.$loginSubmitOnClick!
+$newTopicBtn.closest('form').submit ->
   # Create a new forum thread. Publish it directly, that's how
   # forums usually work?
 
@@ -18,6 +20,7 @@ $('.dw-a-new-forum-topic').click !->
     d.i.createChildPage(
         pageRole: 'ForumTopic', status: 'Published'
         window)
+  false
 
 
 

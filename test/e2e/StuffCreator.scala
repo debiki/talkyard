@@ -122,17 +122,25 @@ trait StuffCreator {
   /**
    * Creates a test page in site `firstSiteId`.
    */
-  def createTestPage() = {
+  def createTestPage(
+        pageRole: PageRole,
+        pageSlug: String = "test-page",
+        title: String,
+        body: Option[String]) = {
 
-    val bodyPost = postTemplate.copy(
-      id = Page.BodyId, text = "Test page text 953Ih31.")
+    val titlePost = postTemplate.copy(
+      id = Page.TitleId, parent = Page.TitleId, text = title)
+
+    val bodyPost = body map { text =>
+      postTemplate.copy(id = Page.BodyId, text = text)
+    }
 
     val pagePath = PagePath(
-      firstSiteId, "/", pageId = None, showId = true, pageSlug = "test-page")
+      firstSiteId, "/", pageId = None, showId = true, pageSlug = pageSlug)
 
-    val debateNoId = Debate(guid = "?", posts = bodyPost::Nil)
+    val debateNoId = Debate(guid = "?", posts = titlePost :: bodyPost.toList)
     val pageStuffNoPeople = firstSiteDao.createPage(PageStuff.forNewPage(
-      PageRole.Generic, pagePath, debateNoId, publishDirectly = true))
+      pageRole, pagePath, debateNoId, publishDirectly = true))
 
     val pageWithPeople = firstSiteDao.loadPage(pageStuffNoPeople.id).getOrElse(
       fail("Error loading page with people"))

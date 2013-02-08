@@ -25,20 +25,27 @@ d.i.createChildPage = !({ pageRole, parentPageId, status }, preOpenedNewTab) ->
   # (?get-view-new-page-url works with folders only.)
   folder = d.i.parentFolderOfPage window.location.pathname
 
-  # Ask the server to generate a page id, and a link where we can view the
-  # new unsaved page. Then open that page in `newTab`.
+  slug = switch pageRole
+    | 'BlogPost' => 'new-blog-post'
+    | 'ForumTopic' => 'new-forum-topic'
+    | _ => 'new-page'
+
+  # Ask the server if it's okay to create the page. If it is, the server
+  # generates a page id — and also a link where we can view the
+  # new unsaved page. We'll open that link in `newTab` (at the very end
+  # of this function).
   getViewNewPageUrl =
       folder +
       '?get-view-new-page-url' +
-      '&page-slug=new-blog-post' +
-      '&show-id=t'
+      "&pageSlug=#slug" +
+      "&pageRole=#pageRole" +
+      '&showId=t'
+
+  parentPageId = d.i.pageId if !parentPageId
+  getViewNewPageUrl += "&parentPageId=#parentPageId" if parentPageId
+  getViewNewPageUrl += '&status=' + status if status
+
   $.getJSON(getViewNewPageUrl).done !({ viewNewPageUrl }) ->
-    # Add page meta to new-page-URL, so the server knows that it should
-    # create e.g. a blog article.
-    viewNewPageUrl += '&page-role=' + pageRole
-    parentPageId = d.i.pageId if !parentPageId
-    viewNewPageUrl += '&parent-page-id=' + parentPageId if parentPageId
-    viewNewPageUrl += '&status=' + status if status
     newTab.location = viewNewPageUrl
 
 

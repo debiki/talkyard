@@ -272,19 +272,11 @@ object Utils extends Results with http.ContentTypes {
 
     import Utils.ValidationImplicits._
 
-    def makePasshashQueryParam(value: String): String =
-      "passhash="+ makePasshash(value)
-
     def makePasshash(value: String): String =
       hashSha1Base64UrlSafe(value + _PasshashSalt) take 20
 
     private val _PasshashSalt: String =
       "903kireki3kyu338k5irks21aSRHN"; SECURITY // COULD move to config file
-
-    def throwIfBadPasshash(request: DebikiRequest[_], value: String) {
-      val passhashIn = request.queryString.getOrThrowBadReq("passhash")
-      throwIfBadPasshash(passhashIn, valueToHash = value)
-    }
 
     def throwIfBadPasshash(specifiedPasshash: String, valueToHash: String) {
       val goodHash = makePasshash(valueToHash)

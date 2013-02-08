@@ -343,11 +343,11 @@ function _$showEditFormImpl() {
         // When the server generated this page, which doesn't exist,
         // it included a passhash in the URL, which we need to send back
         // to the server, so it knows that the server itself actually
-        // generated the folder and id for this page (and that the client
-        // cannot forge a mallicious id, for example).
-        var passhash = d.i.parsePasshashInPageUrl();
+        // generated the page creation data (and that the client cannot e.g.
+        // forge a mallicious id).
         // (It's okay to mutate pageMeta a little bit.)
-        pageMeta.passhash = passhash;
+        pageMeta.passhash = d.i.parsePasshashInPageUrl();
+        pageMeta.newPageApproval = d.i.parseApprovalInPageUrl();
         // Push don't unshift; http://server/-/edit expects them in that order.
         pagesToCreate.push(pageMeta);
       }
