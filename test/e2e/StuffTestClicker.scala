@@ -177,14 +177,19 @@ trait StuffTestClicker {
 
     val textElemSize = textElem.underlying.getSize
     var xOffset = 6
-    var yOffset = 6
+    var yOffset = textElemSize.height
 
     eventually {
       // There might be whitespace in `textElem`, but we need to click text for
       // the inline menu with the Improve button to appear. So click here and
-      // there along a diagonal line, starting in the upper left corner.
-      yOffset = if (textElemSize.height < yOffset) 0 else yOffset + yOffset / 3
+      // there along a diagonal line, starting in the lower left corner (because
+      // then it won't matter much if the dashbar suddenly appears and pushes
+      // everything downwards, see the bug mentioned in the next paragraph).
+      yOffset = if (yOffset < 0) textElemSize.height else yOffset - 10
       xOffset = if (textElemSize.width < xOffset) 0 else xOffset + xOffset / 3
+
+      // BUG Sometimes the *dashbar* is loaded just after `moveToElement` and the
+      // dashbar "View page settings" button receives the click.
       (new Actions(webDriver)).moveToElement(
         textElem.underlying, xOffset, yOffset).click().perform()
 
@@ -199,6 +204,16 @@ trait StuffTestClicker {
         // button again and again until it's gone.
         while (findImproveBtn != None)
           click on improveBtn
+      }
+
+      // Unless the editor appears within a few seconds, try again to click
+      // text and select Improve. (Sometimes the above click on Improve has
+      // no effect. Perhaps this could happen if the dashbar happens to be loaded
+      // just after `moveToElement` (above) but before `click`? The dashbar pushes
+      // elems downwards a bit, so we might click the wrong thing?)
+      import org.scalatest.time.{Span, Seconds}
+      eventually(Timeout(Span(3, Seconds))) {
+        find(cssSelector(".CodeMirror textarea")) getOrElse fail()
       }
     }
 
@@ -219,12 +234,6 @@ trait StuffTestClicker {
       // is also supposed to work, see e.g.:
       //   https://groups.google.com/forum/?fromgroups=#!topic/webdriver/Rhm-NZRBgXY ))
       eventually {
-        // BUG Very infrequently the editor never appears although the Improve button
-        // was obviously just clicked. COULD click Improve again if that happens?
-        // Or could have an Improve click that did take effect show a "Loading
-        // editor ..." message that this function can test for, and if it doesn't
-        // appear then click Improve again and again...
-
         find(cssSelector(".CodeMirror textarea")).map(_.underlying) match {
           case None =>
             // Try again later; editor loaded via Ajax request.
