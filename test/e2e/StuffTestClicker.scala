@@ -225,42 +225,41 @@ trait StuffTestClicker {
 
     info(s"edit text to: ``$prettyNewText''")
 
-      // Wait for network request that loads editor data.
-      // Then focus editor and send keys.
-      // ((It doesn't seem possible to click on CodeMirror. But using `sendKeys`
-      // directly works. Alternatively, executing this JS string:
-      //   driver.asInstanceOf[JavascriptExecutor].executeScript(
-      //      """window.editor.setValue("Hello");""")
-      // is also supposed to work, see e.g.:
-      //   https://groups.google.com/forum/?fromgroups=#!topic/webdriver/Rhm-NZRBgXY ))
-      eventually {
-        find(cssSelector(".CodeMirror textarea")).map(_.underlying) match {
-          case None =>
-            // Try again later; editor loaded via Ajax request.
-            fail()
-          case Some(textarea) =>
-            // Select all current text.
-            textarea.sendKeys(Keys.chord(Keys.SHIFT, Keys.CONTROL, Keys.END))
-            // Overwrite selected text.
-            textarea.sendKeys(newText)
-        }
+    // Wait for network request that loads editor data.
+    // Then focus editor and send keys.
+    // ((It doesn't seem possible to click on CodeMirror. But using `sendKeys`
+    // directly works. Alternatively, executing this JS string:
+    //   driver.asInstanceOf[JavascriptExecutor].executeScript(
+    //      """window.editor.setValue("Hello");""")
+    // is also supposed to work, see e.g.:
+    //   https://groups.google.com/forum/?fromgroups=#!topic/webdriver/Rhm-NZRBgXY ))
+    eventually {
+      find(cssSelector(".CodeMirror textarea")).map(_.underlying) match {
+        case None =>
+          // Try again later; editor loaded via Ajax request.
+          fail()
+        case Some(textarea) =>
+          // Select all current text.
+          textarea.sendKeys(Keys.chord(Keys.SHIFT, Keys.CONTROL, Keys.END))
+          // Overwrite selected text.
+          textarea.sendKeys(newText)
       }
+    }
 
     info("click preview, then submit")
 
-      // The edit tab id ends with a serial number, which depends on how
-      // many edit forms have already been opened. So match only on the
-      // start of the edit tab id.
-      click on cssSelector(s"#post-$postId a[href^='#dw-e-tab-prvw_sno-']")
-      click on cssSelector(s"#post-$postId .dw-f-e .dw-fi-submit")
-    //}
+    // The edit tab id ends with a serial number, which depends on how
+    // many edit forms have already been opened. So match only on the
+    // start of the edit tab id.
+    click on cssSelector(s"#post-$postId a[href^='#dw-e-tab-prvw_sno-']")
+    click on cssSelector(s"#post-$postId .dw-f-e .dw-fi-submit")
 
     info("find new text in page source")
 
-      eventually {
-        find(cssSelector(s"#post-$postId .dw-p-bd")).map(_.text) must be ===
-          Some(stripStartEndBlanks(newText))
-      }
+    eventually {
+      find(cssSelector(s"#post-$postId .dw-p-bd")).map(_.text) must be ===
+        Some(stripStartEndBlanks(newText))
+    }
   }
 
 
