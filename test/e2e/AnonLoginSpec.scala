@@ -6,6 +6,7 @@ package test.e2e
 
 import com.debiki.v0.Prelude._
 import com.debiki.v0.PageRole
+import org.openqa.selenium.interactions.Actions
 import org.scalatest.time.{Span, Seconds}
 import org.scalatest.DoNotDiscover
 
@@ -164,13 +165,21 @@ abstract class AnonLoginSpec extends DebikiBrowserSpec {
 
     "click Rate" in {
       eventually {
+        scrollIntoView(visibleRateLink)
         click on visibleRateLink
       }
     }
 
-    "select one rating tag" in {
+    "select any rating tag" in {
+      // Clicking the rate link (which we just did) opens a form, which automatically
+      // scrolls into view. However, whilst it scrolls into view, clicking a
+      // rating tag works, from Selenium's point of view, but the click does not
+      // toggle the rating tag selected — so the submit button won't be enabled.
+      // Therefore, click any rating tag again and again until eventually
+      // the Submit button becomes enabled.
       eventually {
         click on anyRatingTag
+        find(cssSelector(".dw-fi-submit")).map(_.isEnabled) must be === Some(true)
       }
     }
 
@@ -257,8 +266,12 @@ abstract class AnonLoginSpec extends DebikiBrowserSpec {
   def logout(mustBeLoggedIn: Boolean = true) {
     def isLoggedIn = find(logoutLink).map(_.isDisplayed) == Some(true)
     if (isLoggedIn) {
-      click on logoutLink
-      click on logoutSubmit
+      eventually {
+        scrollIntoView(logoutLink)
+        click on logoutLink
+        //scrollIntoView(logoutSubmit)
+        click on logoutSubmit
+      }
       eventually {
         isLoggedIn must be === false
       }
@@ -266,6 +279,19 @@ abstract class AnonLoginSpec extends DebikiBrowserSpec {
     else if (mustBeLoggedIn) {
       fail("Not logged in; must be logged in")
     }
+  }
+
+
+  def scrollIntoView(obj: Any) {
+    val webElem = obj match {
+      case Some(elem: Element) => elem.underlying
+      case elem: Element => elem.underlying
+      case underlyingWebElem: org.openqa.selenium.WebElement => underlyingWebElem
+      case query: Query => query.findElement.map(_.underlying) getOrElse fail()
+      case id: String => find(id).map(_.underlying) getOrElse fail()
+      case x: Any => fail(s"Don't know how to scroll a ${classNameOf(x)} into view")
+    }
+    (new Actions(webDriver)).moveToElement(webElem).perform()
   }
 
 
