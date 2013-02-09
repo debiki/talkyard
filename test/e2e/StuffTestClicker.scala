@@ -123,6 +123,7 @@ trait StuffTestClicker {
     eventually {
       pageSource.contains(newPageTitlePart) must be === true
     }
+    waitForDashbar()
 
     findPageId()
   }
@@ -137,10 +138,17 @@ trait StuffTestClicker {
     eventually {
       click on cssSelector("a.create-blog-post")
     }
+    waitForDashbar()
     // It takes a while for the new page to load.
     eventually {
       findPageId()
     }
+  }
+
+
+  def clickCreateForumTopic() {
+    click on cssSelector(".dw-a-new-forum-topic")
+    waitForDashbar()
   }
 
 
@@ -160,6 +168,12 @@ trait StuffTestClicker {
   /**
    * Clicks on the specified post, selects Improve in the inline menu,
    * edits the post and verifies that the changes were probably saved.
+   *
+   * If the dashbar might appear later on, be sure to call waitForDashbar()
+   * before this function, because otherwise this function might accidentally
+   * click the wrong links, e.g. click "View page settings" in the dashbar.
+   * (All functions in this file currently calls waitForDashbar() when needed,
+   * I think.)
    */
   def clickAndEdit(postId: String, newText: String) {
     info("click #post-$postId, select Improve")
@@ -170,26 +184,18 @@ trait StuffTestClicker {
     }
 
     // Click text and select Improve.
-    // Selenium seems to click in the middle of the elem. However there might
-    // be whitespace there and then no Improve button will be shown. So try
-    // clicking here and there until eventually we click some text (or the test
-    // fails and this snippet has to be improved upon).
 
     val textElemSize = textElem.underlying.getSize
     var xOffset = 6
-    var yOffset = textElemSize.height
+    var yOffset = 6
 
     eventually {
       // There might be whitespace in `textElem`, but we need to click text for
       // the inline menu with the Improve button to appear. So click here and
-      // there along a diagonal line, starting in the lower left corner (because
-      // then it won't matter much if the dashbar suddenly appears and pushes
-      // everything downwards, see the bug mentioned in the next paragraph).
-      yOffset = if (yOffset < 0) textElemSize.height else yOffset - 10
+      // there along a diagonal line, starting in the upper left corner. (Clicking
+      // in the middle won't always work.)
+      yOffset = if (textElemSize.height < yOffset) 0 else yOffset + yOffset / 3
       xOffset = if (textElemSize.width < xOffset) 0 else xOffset + xOffset / 3
-
-      // BUG Sometimes the *dashbar* is loaded just after `moveToElement` and the
-      // dashbar "View page settings" button receives the click.
       (new Actions(webDriver)).moveToElement(
         textElem.underlying, xOffset, yOffset).click().perform()
 
@@ -268,8 +274,10 @@ trait StuffTestClicker {
     eventually {
       // Clicking the link opens a new browser tab.
       click on partialLinkText(pageTitle)
-      switchToNewlyOpenedWindow()
     }
+    val window = switchToNewlyOpenedWindow()
+    waitForDashbar()
+    window
   }
 
 
@@ -292,7 +300,10 @@ trait StuffTestClicker {
 
 
   def clickReturnToParentForum() {
+    val hadDashbar = isDashbarVisible
     click on cssSelector(".parent-forums-list > li:last-child a")
+    if (hadDashbar)
+      waitForDashbar()
   }
 
 
@@ -302,6 +313,7 @@ trait StuffTestClicker {
       find(cssSelector(".return-to-blog")) getOrElse fail()
     }
     click on returnLink
+    waitForDashbar()
     // Wait for the write-new-blog-post button to appear, which indicates that
     // we're back on the blog main page.
     eventually {
@@ -311,6 +323,24 @@ trait StuffTestClicker {
 
   def originOf(newSiteName: String) =
     s"http://$newSiteName.localhost:$testServerPort"
+
+
+  /**
+   * Waits until the dashbar has been loaded. It's better to wait until it's been
+   * loaded, because when it appears it pushes other elems on the page downwards,
+   * and this sometimes makes `moveToElement(..., x, y).click()` fail (if the
+   * dashbar appears just between the mouse movement and the mouse click).
+   */
+  private def waitForDashbar() {
+    eventually {
+      isDashbarVisible must be === true
+    }
+  }
+
+
+  private def isDashbarVisible: Boolean = {
+    find(cssSelector(".debiki-dashbar-logo")) != None
+  }
 
 }
 

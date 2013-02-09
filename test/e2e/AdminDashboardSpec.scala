@@ -254,7 +254,7 @@ abstract class AdminDashboardSpec extends DebikiBrowserSpec {
         editForumTitle()
 
       "create topic" in {
-        click on cssSelector(".dw-a-new-forum-topic")
+        clickCreateForumTopic()
       }
 
       "edit topic title" in {
