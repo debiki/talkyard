@@ -46,6 +46,7 @@ class EndToEndSuite extends Suites(
   new CreateSiteSpec {},
   new AdminDashboardSpec {},
   new AnonLoginSpec {},
+  new ForumSpec {},
   new StyleSiteSpecSpec {})
   with ChromeSuiteMixin
 
