@@ -5,6 +5,7 @@
 package test.e2e
 
 import org.openqa.selenium.Keys
+import org.openqa.selenium.interactions.Actions
 import com.debiki.v0.PageRole
 import play.api.test.Helpers.testServerPort
 import com.debiki.v0.Prelude._
@@ -161,23 +162,54 @@ trait StuffTestClicker {
    * edits the post and verifies that the changes were probably saved.
    */
   def clickAndEdit(postId: String, newText: String) {
-    //s"click #post-$postId, select Improve" in {
-      eventually {
-        // (The inline menu disappears after 1 second or so, which
-        // breaks the test if I place a breakpoint on the 2nd line here,
-        // unless wrapped in `eventually`.)
-        click on cssSelector(s"#post-$postId .dw-p-bd-blk")
-        click on cssSelector(".dw-a-edit-i")
+    info("click #post-$postId, select Improve")
+
+    // Place mouse on text to edit.
+    val textElem = eventually {
+      find(cssSelector(s"#post-$postId .dw-p-bd-blk > *")) getOrElse fail()
+    }
+
+    // Click text and select Improve.
+    // Selenium seems to click in the middle of the elem. However there might
+    // be whitespace there and then no Improve button will be shown. So try
+    // clicking here and there until eventually we click some text (or the test
+    // fails and this snippet has to be improved upon).
+
+    val textElemSize = textElem.underlying.getSize
+    var xOffset = 6
+    var yOffset = 6
+
+    eventually {
+      // There might be whitespace in `textElem`, but we need to click text for
+      // the inline menu with the Improve button to appear. So click here and
+      // there along a diagonal line, starting in the upper left corner.
+      yOffset = if (textElemSize.height < yOffset) 0 else yOffset + yOffset / 3
+      xOffset = if (textElemSize.width < xOffset) 0 else xOffset + xOffset / 3
+      (new Actions(webDriver)).moveToElement(
+        textElem.underlying, xOffset, yOffset).click().perform()
+
+      // Sometimes some moveByOffset click apparently happens to open the editor,
+      // so don't try to open it, if it's open already.
+      if (find(cssSelector(".CodeMirror textarea")).isEmpty) {
+        def findImproveBtn = find(cssSelector(".dw-a-edit-i"))
+        val improveBtn = findImproveBtn getOrElse fail()
+        click on improveBtn
+        // Very infrequently, the first click on the Improve button does not
+        // trigger any real click, but only selects it. So click the Improve
+        // button again and again until it's gone.
+        while (findImproveBtn != None)
+          click on improveBtn
       }
-    //}
+    }
 
     val prettyNewText = {
-      val firstLine = newText.takeWhile(0 < _ - ' ')
+      val firstLine = newText.takeWhile(0 <= _ - ' ')
       if (firstLine.length <= 50) firstLine
       else firstLine.take(47) + "..."
     }
 
-    //s"edit text to: ``$prettyNewText''" in {
+    info(s"edit text to: ``$prettyNewText''")
+
       // Wait for network request that loads editor data.
       // Then focus editor and send keys.
       // ((It doesn't seem possible to click on CodeMirror. But using `sendKeys`
@@ -187,6 +219,12 @@ trait StuffTestClicker {
       // is also supposed to work, see e.g.:
       //   https://groups.google.com/forum/?fromgroups=#!topic/webdriver/Rhm-NZRBgXY ))
       eventually {
+        // BUG Very infrequently the editor never appears although the Improve button
+        // was obviously just clicked. COULD click Improve again if that happens?
+        // Or could have an Improve click that did take effect show a "Loading
+        // editor ..." message that this function can test for, and if it doesn't
+        // appear then click Improve again and again...
+
         find(cssSelector(".CodeMirror textarea")).map(_.underlying) match {
           case None =>
             // Try again later; editor loaded via Ajax request.
@@ -198,9 +236,9 @@ trait StuffTestClicker {
             textarea.sendKeys(newText)
         }
       }
-    //}
 
-    //"click preview, then submit" in {
+    info("click preview, then submit")
+
       // The edit tab id ends with a serial number, which depends on how
       // many edit forms have already been opened. So match only on the
       // start of the edit tab id.
@@ -208,12 +246,12 @@ trait StuffTestClicker {
       click on cssSelector(s"#post-$postId .dw-f-e .dw-fi-submit")
     //}
 
-    //"find new text in page source" in {
+    info("find new text in page source")
+
       eventually {
         find(cssSelector(s"#post-$postId .dw-p-bd")).map(_.text) must be ===
           Some(stripStartEndBlanks(newText))
       }
-    //}
   }
 
 
