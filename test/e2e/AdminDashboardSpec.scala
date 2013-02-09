@@ -118,7 +118,7 @@ abstract class AdminDashboardSpec extends DebikiBrowserSpec {
     }
 
 
-    "create info page, edit it, add a comment" - {
+    "create info page, edit, publish, add comment, find in dashboard" - {
       var newPageId = ""
 
       "open new page, via the Create... dropdown" in {
@@ -139,6 +139,10 @@ abstract class AdminDashboardSpec extends DebikiBrowserSpec {
         pending
       }
 
+      "publish, via dashbar Publish button" in {
+        pending
+      }
+
       "post reply" in {
         pending
       }
@@ -152,16 +156,22 @@ abstract class AdminDashboardSpec extends DebikiBrowserSpec {
     }
 
 
-    "create blog, create blog post, then save blog post before blog main page" - {
+    "create info page, publish via dashboard" in {
+      pending
+    }
+
+
+    "create blog, create blog post, find unpublished, publish via dashbar" - {
+
       val BlogPostTitle = "Blog Post Title 3905Kf3"
       val BlogPostBody = "Blog post body 53IKF3"
-      var blogMainPageWindow: WindowTarget = null
+      var blogWindow: WindowTarget = null
       var blogMainPageId = "?"
       var blogPostId = "?"
 
       "create blog" in {
         blogMainPageId = clickCreateNewPage(PageRole.Blog)
-        blogMainPageWindow = window(webDriver.getWindowHandle)
+        blogWindow = window(webDriver.getWindowHandle)
       }
 
       "create blog post" in {
@@ -178,23 +188,26 @@ abstract class AdminDashboardSpec extends DebikiBrowserSpec {
         pending
       }
 
-      "close blog post" in {
-        close()
-        switch to blogMainPageWindow
+      "find unpublished blog post info on blog main page" in {
+        clickReturnToBlogMainPage()
+        pageSource must include("Unpublished Blog Post")
+      }
+
+      "publish blog post" in {
+        //click on linkText(??? "Unpublished ..." ???)
+        // click on Publish link, does not yet exist
+        pending
       }
 
       "find blog post title on blog main page" in {
-        // Currently one has to reload this page for the blog post to appear.
-        pending // pageSource must include (BlogPostTitle)
-      }
-
-      "close blog main page" in {
-        close()
-        switch to dashboardWindow
+        //clickReturnToBlogMainPage()
+        //pageSource must include(BlogPostTitle)
+        pending
       }
 
       "on dashboard page" - {
         "find blog post" in {
+          switch to dashboardWindow
           pageSource must include (BlogPostTitle)
         }
 
@@ -203,56 +216,6 @@ abstract class AdminDashboardSpec extends DebikiBrowserSpec {
           // probably something like "Blog" which woulud match the blog post
           // title too.
           pageSource must include ("page-role-Blog")
-        }
-      }
-    }
-
-
-    "create blog, create blog post, close blog main page, then save blog post" - {
-      val BlogPostTitle = "Blog Post Title 580IR1"
-      var blogMainPageWindow: WindowTarget = null
-      var blogMainPageId = "?"
-      var blogPostWindow: WindowTarget = null
-      var blogPostId = "?"
-
-      "create blog" in {
-        blogMainPageId = clickCreateNewPage(PageRole.Blog)
-        blogMainPageWindow = window(webDriver.getWindowHandle)
-      }
-
-      "create blog post" in {
-        blogPostId = clickCreateBlogPost()
-        blogPostWindow = window(webDriver.getWindowHandle)
-      }
-
-      "close blog main page" in {
-        switch to blogMainPageWindow
-        close()
-        switch to blogPostWindow
-      }
-
-      "edit blog post title" in {
-        clickAndEdit(Page.TitleId, BlogPostTitle)
-      }
-
-      "close blog post" in {
-        close()
-        switch to dashboardWindow
-      }
-
-      "on dashboard page" - {
-        "find blog post" in {
-          // Does not currently work. When the blog post's opener was closed
-          // it seems the opener chain bach to the dashboard was broken, so
-          // the dashboard wasn't updated.
-          // pageSource must include (BlogPostTitle)
-          pending
-        }
-
-        "find blog main page" in {
-          // There's already a blog main page listed here now;
-          // cannot simply search for CSS class `page-role-Blog`.
-          pending
         }
       }
     }
@@ -280,11 +243,11 @@ abstract class AdminDashboardSpec extends DebikiBrowserSpec {
       saveTopicFirst: Boolean) {
 
       var forumMainPageId: String = "?"
-      var forumMainPageWindow: WindowTarget = null
+      var forumWindow: WindowTarget = null
 
       "create forum" in {
         forumMainPageId = clickCreateNewPage(PageRole.Forum)
-        forumMainPageWindow = window(webDriver.getWindowHandle)
+        forumWindow = window(webDriver.getWindowHandle)
       }
 
       if (!saveTopicFirst)
@@ -292,26 +255,21 @@ abstract class AdminDashboardSpec extends DebikiBrowserSpec {
 
       "create topic" in {
         click on cssSelector(".dw-a-new-forum-topic")
-        switchToNewlyOpenedWindow()
       }
 
       "edit topic title" in {
         clickAndEdit(Page.TitleId, forumTopicTitle)
       }
 
-      "close topic" in {
-        close
-        switch to forumMainPageWindow
-      }
-
       "find topic listed on forum main page" in {
+        clickReturnToParentForum()
         pending
       }
 
       if (saveTopicFirst)
         editForumTitle()
 
-      "close forum main page" in {
+      "close forum page" in {
         close
         switch to dashboardWindow
       }

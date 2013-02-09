@@ -73,22 +73,20 @@ function adminService ($http, $rootScope)
   api.getViewNewPageUrl = !(pageData, callback) ->
 
     # Warning: Dupl code. See client/debiki/debiki-create-page.ls
+    # COULD break out function `buildGetViewNewPageUrl`?
 
     getViewNewPageUrl =
         pageData.folder +
         '?get-view-new-page-url' +
-        '&page-slug=' + pageData.pageSlug +
-        '&show-id=' + (if pageData.showId => 't' else 'f')
+        "&pageSlug=#{pageData.pageSlug}" +
+        "&pageRole=#{pageData.pageRole}" +
+        "&showId=#{if pageData.showId => 't' else 'f'}" +
+        "&status=#{pageData.status}"
+
+    if pageData.parentPageId
+      getViewNewPageUrl += "&parentPageId=#{pageData.parentPageId}"
+
     $http.get(getViewNewPageUrl).success !({ viewNewPageUrl }) ->
-      # Add page meta to URL, so the server knows e.g. which template
-      # to use when rendering the page (and can save this info to the
-      # database later when/if the server lazy-creates the page).
-      if pageData.pageRole
-        viewNewPageUrl += '&page-role=' + pageData.pageRole
-      if pageData.parentPageId
-        viewNewPageUrl += '&parent-page-id=' + pageData.parentPageId
-      if pageData.status
-        viewNewPageUrl += '&status=' + pageData.status
       callback viewNewPageUrl
 
 

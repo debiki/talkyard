@@ -14,9 +14,6 @@ $ = d.i.$;
  */
 d.i.createChildPage = !({ pageRole, parentPageId, status }, preOpenedNewTab) ->
 
-  # Warning: Dupl code. See client/spa/admin/module-and-services.ls,
-  # function getViewNewPageUrl().
-
   # Open new tab directly in response to user click, or browser popup
   # blockers tend to block the new tab.
   newTab = preOpenedNewTab || window.open '', '_blank'
@@ -30,6 +27,10 @@ d.i.createChildPage = !({ pageRole, parentPageId, status }, preOpenedNewTab) ->
     | 'ForumTopic' => 'new-forum-topic'
     | _ => 'new-page'
 
+  # Warning: Dupl code below. See client/spa/admin/module-and-services.ls,
+  # function getViewNewPageUrl().
+  # COULD break out function `buildGetViewNewPageUrl`?
+
   # Ask the server if it's okay to create the page. If it is, the server
   # generates a page id — and also a link where we can view the
   # new unsaved page. We'll open that link in `newTab` (at the very end
@@ -39,11 +40,11 @@ d.i.createChildPage = !({ pageRole, parentPageId, status }, preOpenedNewTab) ->
       '?get-view-new-page-url' +
       "&pageSlug=#slug" +
       "&pageRole=#pageRole" +
-      '&showId=t'
+      '&showId=t' +
+      "&status=#status"
 
   parentPageId = d.i.pageId if !parentPageId
   getViewNewPageUrl += "&parentPageId=#parentPageId" if parentPageId
-  getViewNewPageUrl += '&status=' + status if status
 
   $.getJSON(getViewNewPageUrl).done !({ viewNewPageUrl }) ->
     newTab.location = viewNewPageUrl

@@ -132,8 +132,10 @@ trait StuffTestClicker {
    */
   // COULD place in a Blog page object? And return a BlogPost page object?
   def clickCreateBlogPost(): String = {
-    click on cssSelector("a.create-blog-post")
-    switchToNewlyOpenedWindow()
+    // Sometimes the dashbar has not yet been loaded.
+    eventually {
+      click on cssSelector("a.create-blog-post")
+    }
     // It takes a while for the new page to load.
     eventually {
       findPageId()
@@ -242,6 +244,24 @@ trait StuffTestClicker {
     window(newHandle)
   }
 
+
+  def clickReturnToParentForum() {
+    click on cssSelector(".parent-forums-list > li:last-child a")
+  }
+
+
+  def clickReturnToBlogMainPage() {
+    // Sometimes the dashbar might not yet have been loaded; wait for it to appear.
+    val returnLink = eventually {
+      find(cssSelector(".return-to-blog")) getOrElse fail()
+    }
+    click on returnLink
+    // Wait for the write-new-blog-post button to appear, which indicates that
+    // we're back on the blog main page.
+    eventually {
+      find(cssSelector(".create-blog-post")) must not be None
+    }
+  }
 
   def originOf(newSiteName: String) =
     s"http://$newSiteName.localhost:$testServerPort"

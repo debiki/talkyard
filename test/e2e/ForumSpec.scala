@@ -117,10 +117,5 @@ abstract class ForumSpec extends DebikiBrowserSpec {
     eventually { click on "dw-dlg-rsp-ok" }
   }
 
-
-  private def clickReturnToParentForum() {
-    click on cssSelector(".parent-forums-list > li:last-child a")
-  }
-
 }
 

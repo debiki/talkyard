@@ -325,7 +325,9 @@ class PageListItem extends ListItem
     createPage {
         folder: parentFolder
         pageSlug: 'new-page'
-        showId: true }
+        showId: true
+        status: 'Draft'
+        pageRole: 'Generic' }
 
 
   /**

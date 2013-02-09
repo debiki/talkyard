@@ -35,6 +35,7 @@ function createThisPageUnlessExists (onSuccess)
     return
 
   pageMeta.passhash = d.i.parsePasshashInPageUrl!
+  pageMeta.newPageApproval = d.i.parseApprovalInPageUrl!
   newPageData = createPagesUnlessExist: [pageMeta]
 
   d.u.postJson url: '/-/edit', data: newPageData
