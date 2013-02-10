@@ -151,11 +151,8 @@ object Global extends GlobalSettings {
         AppUnsubscribe.handleForm(tenantId)
       // If no main function specified:
       case ("", GET) =>
-        pagePath.suffix match {
-          case "css" => App.rawBody(pagePath)
-          case "js" => App.rawBody(pagePath)
-          case _ => App.viewPost(pagePath)
-        }
+        // CSS and JS are served via asset bundles, so they can be cached forever.
+        App.viewPost(pagePath)
       // If invalid function specified:
       case (fun, met) => throwBadReq(
         "DwEQ435", s"Bad method or query string: `$met' `?$fun'")

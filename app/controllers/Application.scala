@@ -59,44 +59,6 @@ object Application extends mvc.Controller {
       .getOrElse("public, max-age=3600")
 
 
-  /**
-   * Sends as Cache-Control the config value debiki.site.assets.defaultCache.
-   * Sets no cookies, since the intention is that the response be cached
-   * by proxy servers.
-   */
-  def rawBody(pathIn: PagePath) = PageGetAction(pathIn, maySetCookies = false) {
-        pageReq =>
-    val pageBody = pageReq.page_!.body_!
-    val contentType = pageReq.pagePath.suffix match {
-      case "css" => CSS
-      case "js" => JAVASCRIPT
-    }
-    if (!pageBody.someVersionApproved) Ok("Page pending approval.")
-    else {
-      // Action ids are unique per page, so use as ETag the id of the
-      // most recent outwardly visible action. (Well, for now, use
-      // the id of the most recent action, whichever it may be.)
-      val etag = pageReq.page_!.lastOrLaterVisibleAction.map(_.id) getOrElse
-        throwNotFound("DwE903RK3", "Page is completely empty")
-
-      val isEtagOk = pageReq.headers.get(IF_NONE_MATCH) == Some(etag)
-      if (isEtagOk) NotModified
-      else {
-        // 1. Add cache headers, also in Dev builds, so I'll notice stale
-        // cache issues.
-        // 2. Really don't set any new cookies (don't know from where they
-        // could come, but remove any anyway).
-        val response = Ok(pageBody.text)
-        val cacheableResponse = response.withHeaders(
-          CACHE_CONTROL -> siteSpecificCacheControl,
-          ETAG -> etag,
-          SET_COOKIE -> "")
-        cacheableResponse as contentType
-      }
-    }
-  }
-
-
   def handleRateForm(pathIn: PagePath, postId: String)
         = PagePostAction(maxUrlEncFormBytes = 1000)(pathIn) { pageReq =>
 

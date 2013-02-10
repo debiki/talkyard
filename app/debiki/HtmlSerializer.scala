@@ -324,8 +324,8 @@ case class HtmlPageSerializer(
 
   private lazy val pageStats = new PageStats(debate, pageTrust)
 
-  private def lastChange: Option[String] =
-    debate.lastOrLaterChangeDate.map(toIso8601(_))
+  //private def lastChange: Option[String] =
+  //  debate.lastOrLaterChangeDate.map(toIso8601(_))
 
 
   private def postRenderer =
