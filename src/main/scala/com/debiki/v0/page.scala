@@ -546,7 +546,7 @@ case class Debate (
    * return an even more recent action that does actually not affect
    * how this page is being rendered (e.g. a deletion of a pending edit).
    */
-  def lastOrLaterVisibleAction: Option[Action] = lastAction  // for now
+  //def lastOrLaterVisibleAction: Option[Action] = lastAction  // for now
 
 
   /**
@@ -586,8 +586,8 @@ case class Debate (
    * Might return a somewhat more recent date, e.g. for a pending edit
    * that was deleted (but not an earlier date, that'd be a bug).
    */
-  lazy val lastOrLaterChangeDate: Option[ju.Date] =
-    lastOrLaterVisibleAction.map(_.ctime)
+  //lazy val lastOrLaterChangeDate: Option[ju.Date] =
+  //  lastOrLaterVisibleAction.map(_.ctime)
 
 
   lazy val modificationDati: Option[ju.Date] =
