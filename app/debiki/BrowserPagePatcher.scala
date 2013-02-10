@@ -33,11 +33,7 @@ object BrowserPagePatcher {
     val config = DebikiHttp.newUrlConfig(pageReq.host)
     val page = PageStuff(pageReq.pageMeta_!, pageReq.pagePath, actions)
     val serializer = HtmlPageSerializer(
-      page, pageTrust, pageReq.pageRoot, config,
-      // If replying with a comment, comments should be shown of course.
-      // If editing, replies aren't (well, won't be) included in the patch
-      // anyway, so the value of `showComments` wouldn't matter.
-      showComments = true)
+      page, pageTrust, pageReq.pageRoot, config)
     val postsAndHtml: List[(Post, SerializedSingleThread)] =
           myNewPosts map { post =>
       val serializedThread = serializer.renderSingleThread(post.id) getOrElse

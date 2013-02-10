@@ -13,9 +13,9 @@
   @parentForumsList(tpi)
 
   <div class="forum-title">
-    @tpi.page {
+    @tpi.page(showAuthorAndDate = false, showBody = false, showComments = false) {
       @tpi.title
-      @* @tpi.body — not implemented *@
+      @tpi.bodyAndComments
     }
   </div>
 

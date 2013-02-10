@@ -379,6 +379,16 @@ class TemplateProgrammingInterface(
   import TinyTemplateProgrammingInterface.{Page => _, _}
   import TemplateProgrammingInterface._
 
+  var renderPageSettings: Option[RenderPageSettings] = None
+
+  lazy val renderedPage: RenderedPage =
+    dao.renderPage(
+      pageReq,
+      renderPageSettings getOrElse {
+        throw TemplateRenderer.BadTemplateException(
+          "DwE3KR58", "Please wrap @tpi.title, @tpi.body etcerera inside a @tpi.page tag")
+      })
+
 
   def debikiMeta = xml.Unparsed(views.html.debikiMeta().body)
 
@@ -415,9 +425,25 @@ class TemplateProgrammingInterface(
     HtmlPageSerializer.loginInfo(_pageReq.user.map(_.displayName))
 
 
-  def page(contents: play.api.templates.Html) = {
+  def page(contents: => play.api.templates.Html): xml.NodeSeq = page()(contents)
+
+
+  def page(
+    showTitle: Boolean = true,
+    showAuthorAndDate: Boolean = true,
+    showBody: Boolean = true,
+    showComments: Boolean = true)(
+    contents: => play.api.templates.Html): xml.NodeSeq = {
+
+    renderPageSettings = Some(RenderPageSettings(
+      showTitle = shall("show-title", showTitle),
+      showAuthorAndDate = shall("show-author-and-date", showAuthorAndDate),
+      showBody = shall("show-body", showBody),
+      showComments = shall("show-comments", showComments)))
+
     val page = PageStuff(pageReq.pageMeta_!, pageReq.pagePath,
       Debate.empty(pageReq.pageId_!))
+
     HtmlPageSerializer.wrapInPageTag(page) {
       xml.Unparsed(contents.body)
     }
@@ -430,26 +456,16 @@ class TemplateProgrammingInterface(
   def pageUrlPath = pageReq.pagePath.path
 
 
-  def title = dao.renderPageTitle(pageReq)
+  def title = renderedPage.title
 
 
-  def titleText = dao.renderPageTitleText(pageReq)
+  def titleText = renderedPage.titleText
 
 
-  def authorAndDate = dao.renderAuthorAndDate(pageReq)
+  def authorAndDate = renderedPage.authorAndDate
 
 
-  def bodyAndComments = dao.renderPageBodyAndComments(pageReq)
-
-
-  //def body = dao.renderPageBody(pageReq)
-
-
-  def comments = dao.renderComments(pageReq)
-
-
-  def pageTitleAndBodyAndComments =
-    title ++ authorAndDate ++ dao.renderPageBodyAndComments(pageReq)
+  def bodyAndComments = renderedPage.bodyAndComments
 
 
   /**

@@ -12,6 +12,13 @@ import Prelude._
 
 
 
+case class RenderPageSettings(
+  showTitle: Boolean,
+  showAuthorAndDate: Boolean,
+  showBody: Boolean,
+  showComments: Boolean)
+
+
 case class RenderedPage(
   title: NodeSeq,
   titleText: String,
@@ -35,50 +42,40 @@ trait RenderedPageHtmlDao {
   }
 
 
-  final def renderPageTitle(pageReq: PageRequest[_]): NodeSeq =
-    renderPage(pageReq).title
+  def renderPage(pageReq: PageRequest[_], renderSettings: RenderPageSettings)
+        : RenderedPage = {
 
-
-  final def renderPageTitleText(pageReq: PageRequest[_]): String =
-    renderPage(pageReq).titleText
-
-
-  final def renderAuthorAndDate(pageReq: PageRequest[_]): NodeSeq =
-    renderPage(pageReq).authorAndDate
-
-
-  final def renderPageBodyAndComments(pageReq: PageRequest[_]): xml.NodeSeq =
-    renderPage(pageReq).bodyAndComments
-
-
-  final def renderPageBody(pageReq: PageRequest[_]): xml.NodeSeq =
-    unimplemented("Rendering page body without comments")
-
-
-  final def renderComments(pageReq: PageRequest[_]): xml.NodeSeq =
-    unimplemented("Rendering comments only")
-
-
-  def renderPage(pageReq: PageRequest[_]): RenderedPage = {
     val config = DebikiHttp.newUrlConfig(pageReq.host)
     val page = pageReq.pageDesiredVersionWithDummies_!
     val pageStuff = PageStuff(pageReq.pageMeta_!, pageReq.pagePath, page)
     val pageTrust = PageTrust(page)
 
-    val renderer = HtmlPageSerializer(pageStuff, pageTrust, pageReq.pageRoot,
-      config, showComments = true)
+    val renderer = HtmlPageSerializer(pageStuff, pageTrust, pageReq.pageRoot, config)
 
-    val pageTitle = renderer.renderSingleThread(Page.TitleId) map { renderedThread =>
-      xml.Unparsed(liftweb.Html5.toString(renderedThread.htmlNodes))
-    } getOrElse Nil
+    val pageTitle =
+      if (!renderSettings.showTitle) Nil
+      else {
+        renderer.renderSingleThread(Page.TitleId) map { renderedThread =>
+          xml.Unparsed(liftweb.Html5.toString(renderedThread.htmlNodes))
+        } getOrElse Nil
+      }
 
-    val pageAuthorAndDate = page.body map { bodyPost =>
-      HtmlPostRenderer.renderPostHeader(bodyPost, anyPageStats = None)
-    } map (_.html) getOrElse Nil
+    val pageAuthorAndDate =
+      if (!renderSettings.showAuthorAndDate) Nil
+      else {
+        page.body map { bodyPost =>
+          HtmlPostRenderer.renderPostHeader(bodyPost, anyPageStats = None)
+        } map (_.html) getOrElse Nil
+      }
 
-    val pageBodyAndComments = renderer.renderBodyAndComments() map { html =>
-      xml.Unparsed(liftweb.Html5.toString(html))
-    }
+    val pageBodyAndComments =
+      if (!renderSettings.showBody && !renderSettings.showComments) Nil
+      else {
+        renderer.renderBodyAndComments(showComments = renderSettings.showComments) map {
+          html =>
+            xml.Unparsed(liftweb.Html5.toString(html))
+          }
+      }
 
     RenderedPage(
       title = pageTitle,
@@ -86,6 +83,7 @@ trait RenderedPageHtmlDao {
       authorAndDate = pageAuthorAndDate,
       bodyAndComments = pageBodyAndComments)
   }
+
 }
 
 
@@ -94,7 +92,8 @@ trait CachingRenderedPageHtmlDao extends RenderedPageHtmlDao {
   self: CachingTenantDao =>
 
 
-  override def renderPage(pageReq: PageRequest[_]): RenderedPage= {
+  override def renderPage(pageReq: PageRequest[_], renderSettings: RenderPageSettings)
+        : RenderedPage = {
     // Bypass the cache if the page doesn't yet exist (it's being created),
     // because in the past there was some error because non-existing pages
     // had no ids (so feels safer to bypass).
@@ -103,12 +102,12 @@ trait CachingRenderedPageHtmlDao extends RenderedPageHtmlDao {
       val key = _pageHtmlKey(pageReq.pageId_!, origin = pageReq.host)
       lookupInCache(key, orCacheAndReturn = {
         rememberOrigin(pageReq.host)
-        Some(super.renderPage(pageReq))
+        Some(super.renderPage(pageReq, renderSettings))
       }) getOrDie "DwE93IB7"
     }
     else {
       // Bypass cache.
-      super.renderPage(pageReq)
+      super.renderPage(pageReq, renderSettings)
     }
   }
 

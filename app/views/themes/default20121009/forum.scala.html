@@ -12,12 +12,12 @@
 
   @parentForumsList(tpi)
 
-  <div class="forum-title">
-    @tpi.page {
-      @tpi.title
-      @* @tpi.body — not implemented *@
+    @tpi.page(showAuthorAndDate = false, showBody = false, showComments = false) {
+      <div class="forum-title">
+        @tpi.title
+      </div>
+      @tpi.bodyAndComments
     }
-  </div>
 
   <form method="POST">
     <input type="submit" value="New Topic" class="btn dw-a-new-forum-topic"></input>

@@ -309,8 +309,7 @@ case class HtmlPageSerializer(
   pageStuff : PageStuff,
   pageTrust: PageTrust,
   pageRoot: PageRoot,
-  config: HtmlConfig,
-  showComments: Boolean) {
+  config: HtmlConfig) {
 
   import HtmlPageSerializer._
 
@@ -356,7 +355,8 @@ case class HtmlPageSerializer(
    * appended at the end of the server's reply (in a special <div>), and
    * client side Javascript update the page with user specific stuff.
    */
-  def renderBodyAndComments(): NodeSeq = /*Stats.time("renderBodyAndComments")*/ {
+  def renderBodyAndComments(showComments: Boolean): NodeSeq = {
+        // = Stats.time("renderBodyAndComments") {
 
     val cssArtclThread =
       if (pageRoot.subId == Page.BodyId) " dw-ar-t" else ""
