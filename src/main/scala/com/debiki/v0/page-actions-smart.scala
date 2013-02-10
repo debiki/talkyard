@@ -113,7 +113,7 @@ class ViPo(debate: Debate, val post: Post) extends ViAc(debate, post) {
    * then the state of all edits at that dati would have to be computed.
    * But at a given dati, an edit might or might not have been applied and
    * approved, and taking that into account results in terribly messy code.
-   * Instead, use Page.partitionByVersion(), to get a version of the page
+   * Instead, use Page.splitByVersion(), to get a version of the page
    * at a certain point in time.)
    */
   private def _applyEdits: (String, String) = {

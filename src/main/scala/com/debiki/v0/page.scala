@@ -439,32 +439,44 @@ case class Debate (
    * Returns a Page with all non-approved stuff removed.
    */
   def approvedVersion: Debate =
-    partitionByVersion(PageVersion.LatestApproved)._1
+    splitByVersion(PageVersion.LatestApproved).desired
 
   /**
-   * Partitions this page into two parts: the first contains everything
-   * that happened up to and including `pageVersion`, and the second
-   * contains things that happened afterwards.
+   * Partitions this page into two or three parts:
+   * 1) The `desired` part, which contains everything that happened
+   *    up to and including `pageVersion`, and, if pageVersion.approved,
+   *    only things that have been approved.
+   * 2) The `inclUnapproved` part, which contains everything that happened
+   *    up to and including `pageVersion.dati`, including unapproved stuff.
+   * 3) The `inclTooRecent` part which is the whole page unchanged (both
+   *    too recent and unapproved stuff).
    *
    * However when partitioning on Post approval date, only
    * Posts, Edits and EditApps are partitioned; everything else is
-   * included in _1 of the returned pair.
+   * included in all of 1, 2, and 3 above.
    */
-  def partitionByVersion(pageVersion: PageVersion): (Debate, Debate) = {
-    val (pageUpToAndInclDati, pageAfterDati) =
-      _partitionByTime(pageVersion.dati)
+  def splitByVersion(pageVersion: PageVersion): PageSplitByVersion = {
+
+    val pageUpToAndInclDati = splitByTime(pageVersion.dati)
 
     if (!pageVersion.approved)
-      return (pageUpToAndInclDati, pageAfterDati)
+      return PageSplitByVersion(
+        desired = pageUpToAndInclDati,
+        inclUnapproved = pageUpToAndInclDati,
+        inclTooRecent = this,
+        version = pageVersion)
 
-    val (pageApproved, pageUnapproved) =
-      pageUpToAndInclDati._partitionByApproval
+    val pageApproved = pageUpToAndInclDati.splitByApproval
 
-    (pageApproved, pageUnapproved ++ pageAfterDati)
+    PageSplitByVersion(
+      desired = pageApproved,
+      inclUnapproved = pageUpToAndInclDati,
+      inclTooRecent = this,
+      version = pageVersion)
   }
 
 
-  private def _partitionByTime(dati: ju.Date): (Debate, Debate) = {
+  private def splitByTime(dati: ju.Date): Debate = {
     def happenedInTime(action: Action) =
       action.ctime.getTime <= dati.getTime
 
@@ -485,20 +497,11 @@ case class Debate (
       deletions = deletionsBefore,
       reviews = reviewsBefore)
 
-    val pageAfterDati = copy(
-      posts = postsAfter,
-      ratings = ratingsAfter,
-      edits = editsAfter,
-      editApps = editAppsAfter,
-      flags = flagsAfter,
-      deletions = deletionsAfter,
-      reviews = reviewsAfter)
-
-    (pageUpToAndInclDati, pageAfterDati)
+    pageUpToAndInclDati
   }
 
 
-  private def _partitionByApproval: (Debate, Debate) = {
+  private def splitByApproval: Debate = {
 
       val (postsApproved, postsUnapproved) = posts partition { rawPost =>
         val post = vipo_!(rawPost.id)
@@ -522,7 +525,7 @@ case class Debate (
         }
       }
 
-      // As mentioned in the docs of partitionByVersion, only Posts,
+      // As mentioned in the docs of splitByVersion, only Posts,
       // Edits and EditApps are partitioned.
       // BUG Should also partition deletions? In the future, when/if
       // they can be approved/rejected.
@@ -531,11 +534,7 @@ case class Debate (
         edits = editsApproved,
         editApps = editAppsApproved)
 
-      val remainingUnapprovedStuff = Debate(id, people, postsUnapproved,
-        ratings = Nil, edits = editsUnapproved, editApps = editAppsUnapproved,
-        flags = Nil, deletions = Nil, reviews = Nil)
-
-    (approvedVersionOfPage, remainingUnapprovedStuff)
+    approvedVersionOfPage
   }
 
 
@@ -619,6 +618,17 @@ object PageVersion {
   val LatestUnapproved = latest(approved = false)
 
 }
+
+
+case class PageSplitByVersion(
+  /** Includes everything up to a certain date, and perhaps only approved things. */
+  desired: Debate,
+  /** Includes everything up to a certain date, also unapproved things. */
+  inclUnapproved: Debate,
+  /** Includes everything regardles of date and approval status. */
+  inclTooRecent: Debate,
+  /** The version at which the page was split. */
+  version: PageVersion)
 
 
 
