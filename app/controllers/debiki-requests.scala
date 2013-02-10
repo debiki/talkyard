@@ -384,19 +384,8 @@ case class PageRequest[A](
 
 
   lazy val pageDesiredVersionWithDummies_! : Debate = {
-    val page = page_!
-    if (page.body.map(_.someVersionApproved) == Some(false) ||
-      page.title.map(_.someVersionApproved) == Some(false)) {
-      DummyPage.emptyUnapprovedPage
-    }
-    else {
-      val (pageDesiredVersionStuffMissing, tooRecentActions) =
-        page.partitionByVersion(pageVersion)
-      val pageDesiredVersion =
-        DummyPage.addMissingTitleBodyConfigTo(
-          pageDesiredVersionStuffMissing, pageMeta_!.pageRole)
-      pageDesiredVersion
-    }
+    DummyPage.addMissingTitleBodyConfigTo(
+      page_!.splitByVersion(pageVersion), pageMeta_!.pageRole)
   }
 
 

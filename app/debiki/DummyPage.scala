@@ -11,24 +11,23 @@ import Prelude._
 
 object DummyPage {
 
-  /**
-   * A page with "This page is pendig approval" body.
-   */
-  def emptyUnapprovedPage = unimplemented
-    // Regrettably, currently the page is hidden also for admins (!).
-    // But right now only admins can create new pages and they are
-    // auto approved (well, will be, in the future.)
-    //return <p>This page is pending approval.</p>
-
 
   /**
    * Adds an empty title, an empty page body, and a config text, if they
    * don't yet exist, so there is something to edit.
    */
-  def addMissingTitleBodyConfigTo(pageNoDummies: Debate, pageRole: PageRole): Debate = {
+  def addMissingTitleBodyConfigTo(
+        pageSplitByVersion: PageSplitByVersion, pageRole: PageRole): Debate = {
+
+    val pageNoDummies = pageSplitByVersion.desired
+    val pageInclUnapproved = pageSplitByVersion.inclUnapproved
+
     val addDummyTitle = pageNoDummies.title.isEmpty
     val addDummyBody = pageNoDummies.body.isEmpty
     val addDummyConfig = pageNoDummies.pageConfigPost.isEmpty
+
+    val isTitleUnapproved = addDummyTitle && pageInclUnapproved.title.isDefined
+    val isBodyUnapproved = addDummyBody && pageInclUnapproved.body.isDefined
 
     var pageWithDummies = pageNoDummies
 
@@ -44,9 +43,9 @@ object DummyPage {
       case _ => DefaultTexts
     }
 
-    if (addDummyTitle) pageWithDummies = pageWithDummies + dummyTitle(texts)
-    if (addDummyBody) pageWithDummies = pageWithDummies + dummyBody(texts, pageRole)
-    if (addDummyConfig) pageWithDummies = pageWithDummies + dummyConfig(texts)
+    if (addDummyTitle) pageWithDummies += dummyTitle(texts, isTitleUnapproved)
+    if (addDummyBody) pageWithDummies += dummyBody(texts, isBodyUnapproved, pageRole)
+    if (addDummyConfig) pageWithDummies += dummyConfig(texts)
 
     pageWithDummies
   }
@@ -71,31 +70,35 @@ object DummyPage {
     List(DummyAuthorLogin), List(DummyAuthorIdty), List(DummyAuthorUser))
 
 
-  private def dummyTitle(texts: Texts) = Post(
+  private def dummyTitle(texts: Texts, absentSinceUnapproved: Boolean) = Post(
     id = Page.TitleId,
     parent = Page.TitleId,
     ctime = new ju.Date,
     loginId = DummyAuthorLogin.id,
     newIp = None,
-    text = texts.titleText,
+    text = if (absentSinceUnapproved) texts.unapprovedTitleText else texts.noTitleText,
     markup = Markup.DefaultForPageTitle.id,
     approval = Some(Approval.Preliminary),
     tyype = PostType.Text)
 
 
-  private def dummyBody(texts: Texts, pageRole: PageRole) = dummyTitle(texts).copy(
-    id = Page.BodyId, parent = Page.BodyId, text = texts.bodyText,
-    markup = Markup.defaultForPageBody(pageRole).id)
+  private def dummyBody(texts: Texts, absentSinceUnapproved: Boolean, pageRole: PageRole) =
+    dummyTitle(texts, false).copy(
+      id = Page.BodyId, parent = Page.BodyId,
+      text = if (absentSinceUnapproved) texts.unapprovedBodyText else texts.noBodyText,
+      markup = Markup.defaultForPageBody(pageRole).id)
 
 
-  private def dummyConfig(texts: Texts) = dummyTitle(texts).copy(
+  private def dummyConfig(texts: Texts) = dummyTitle(texts, false).copy(
     id = Page.ConfigPostId, parent = Page.ConfigPostId, text = texts.configText,
     markup = Markup.Code.id)
 
 
   private abstract class Texts {
-    def titleText: String
-    def bodyText: String
+    def noTitleText: String
+    def unapprovedTitleText: String
+    def noBodyText: String
+    def unapprovedBodyText: String
     def configText: String
   }
 
@@ -105,14 +108,17 @@ object DummyPage {
 
   private class DefaultTexts extends Texts {
 
-    def titleText =
-      "New Page Title (click to edit)"
+    def noTitleText = "New Page Title (click to edit)"
 
-    def bodyText = i"""
+    def unapprovedTitleText = "(Title pending approval)"
+
+    def noBodyText = i"""
       |Page body.
       |
       |$ClickToEditSelectImprove
       |"""
+
+    def unapprovedBodyText = "(Text pending approval.)"
 
     def configText = i"""
       |This is an empty configuration page.
@@ -124,10 +130,10 @@ object DummyPage {
 
   private object BlogPostTexts extends DefaultTexts {
 
-    override val titleText =
+    override val noTitleText =
       "New Blog Post Title (click to edit)"
 
-    override val bodyText = i"""
+    override val noBodyText = i"""
       |Blog post text.
       |
       |$ClickToEditSelectImprove
@@ -138,7 +144,7 @@ object DummyPage {
   private trait ForumBodyText {
     self: DefaultTexts =>
 
-    override val bodyText = i"""
+    override val noBodyText = i"""
       |Optional forum info (instead of sticky topics).
       |
       |$ClickToEditSelectImprove
@@ -147,23 +153,23 @@ object DummyPage {
 
 
   private object ForumGroupTexts extends DefaultTexts with ForumBodyText {
-    override val titleText =
+    override val noTitleText =
       "New Forum Group Title (click to edit)"
   }
 
 
   private object ForumTexts extends DefaultTexts with ForumBodyText {
-    override val titleText =
+    override val noTitleText =
       "New Forum Title (click to edit)"
   }
 
 
   private object ForumTopicTexts extends DefaultTexts {
 
-    override val titleText =
+    override val noTitleText =
       "Forum topic title (click to edit)"
 
-    override val bodyText = i"""
+    override val noBodyText = i"""
       |Forum topic text.
       |
       |$ClickToEditSelectImprove
@@ -173,7 +179,7 @@ object DummyPage {
 
   private object CodeTexts extends DefaultTexts {
 
-    override val bodyText = i"""
+    override val noBodyText = i"""
       |This is a code page. For example, a configuration page,
       |or Javascript or CSS.
       |
