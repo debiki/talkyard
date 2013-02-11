@@ -35,14 +35,7 @@ d.i.showCurLocationInSiteNav = function() {
     if (linkPath.search(/[?#]/) !== -1)
       return false;
     // Does `location' start with `linkPath'?
-    // But ingore any page name part of `linkPath'. Only folder paths
-    // constitute site sections, I've decided.
-    // {{{ So you can have <nav> links like this one: site/folder/path/-<guid>,
-    // that is, reference the section "index" page via guid,
-    // so redirects will work, should you redesign your site and
-    // move sections elsewhere (to site/another/path/-<but-same-guid>). }}}
-    var linkFolderPath = linkPath.substr(0, linkPath.lastIndexOf('/') + 1);
-    var locStartsWithLink = location.pathname.search(linkFolderPath) === 0;
+    var locStartsWithLink = location.pathname.search(linkPath) === 0;
     return locStartsWithLink;
   };
 
