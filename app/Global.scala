@@ -38,7 +38,7 @@ object Global extends GlobalSettings {
         request.path == "/favicon.ico")
       return super.onRouteRequest(request)
 
-    val tenantId = DebikiHttp.lookupTenantIdOrThrow(request, Debiki.SystemDao)
+    val tenantId = DebikiHttp.lookupTenantIdOrThrow(request, Debiki.systemDao)
 
     // Parse URL path: find folder, page id and slug.
     val pagePath = PagePath.fromUrlPath(tenantId, request.path) match {

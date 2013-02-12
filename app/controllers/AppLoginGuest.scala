@@ -46,7 +46,7 @@ object AppLoginGuest extends mvc.Controller {
         "Please specify a website address with no weird characters.")
 
     val addr = request.remoteAddress
-    val tenantId = DebikiHttp.lookupTenantIdOrThrow(request, Debiki.SystemDao)
+    val tenantId = DebikiHttp.lookupTenantIdOrThrow(request, Debiki.systemDao)
 
     val loginReq = LoginRequest(
       login = Login(id = "?", prevLoginId = sidStatus.loginId,

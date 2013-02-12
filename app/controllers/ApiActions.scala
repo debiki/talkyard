@@ -86,7 +86,7 @@ object ApiActions {
     SafeActions.CheckSidAction[A](parser) { (sidOk, xsrfOk, request) =>
 
       val tenantId = DebikiHttp.lookupTenantIdOrThrow(request,
-         Debiki.SystemDao)
+         Debiki.systemDao)
 
       val dao = Debiki.tenantDao(tenantId = tenantId,
          ip = request.remoteAddress, sidOk.roleId)

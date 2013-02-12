@@ -14,7 +14,7 @@ import com.debiki.v0.QuotaConsumers
 object Debiki {
 
 
-  private val _dbDaoFactory = new RelDbDaoFactory({
+  private val dbDaoFactory = new RelDbDaoFactory({
 
     def configPrefix = if (Play.isTest) "test." else ""
 
@@ -42,33 +42,32 @@ object Debiki {
   })
 
 
-  val SystemDao = new CachingSystemDao(_dbDaoFactory.systemDbDao)
-  def systemDao = SystemDao // use instead, shouldn't be uppercase
+  def systemDao = new CachingSystemDao(dbDaoFactory.systemDbDao)
 
 
-  val QuotaManager = new QuotaManager(SystemDao)
-  QuotaManager.scheduleCleanups()
+  private val quotaManager = new QuotaManager(systemDao)
+  quotaManager.scheduleCleanups()
 
 
-  private val _tenantDaoFactory = new CachingTenantDaoFactory(_dbDaoFactory,
-    QuotaManager.QuotaChargerImpl /*, cache-config */)
-
-
-  private val _MailerActorRef = Mailer.startNewActor(_tenantDaoFactory)
-
-
-  private val _NotifierActorRef =
-    Notifier.startNewActor(SystemDao, _tenantDaoFactory)
+  private val tenantDaoFactory = new CachingTenantDaoFactory(dbDaoFactory,
+    quotaManager.QuotaChargerImpl /*, cache-config */)
 
 
   def tenantDao(tenantId: String, ip: String, roleId: Option[String] = None)
         : TenantDao =
-    _tenantDaoFactory.newTenantDao(QuotaConsumers(ip = Some(ip),
-       tenantId = tenantId, roleId = roleId))
+    tenantDaoFactory.newTenantDao(QuotaConsumers(ip = Some(ip),
+      tenantId = tenantId, roleId = roleId))
+
+
+  private val mailerActorRef = Mailer.startNewActor(tenantDaoFactory)
+
+
+  private val notifierActorRef =
+    Notifier.startNewActor(systemDao, tenantDaoFactory)
 
 
   def sendEmail(email: Email, websiteId: String) {
-    _MailerActorRef ! (email, websiteId)
+    mailerActorRef ! (email, websiteId)
   }
 
 }
