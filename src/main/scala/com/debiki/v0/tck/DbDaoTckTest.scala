@@ -2089,12 +2089,12 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
          exOpenId_loginGrant.identity.asInstanceOf[IdentityOpenId]
       lazy val creatorRole = exOpenId_loginGrant.user
 
-      var newWebsiteOpt: Option[Tenant] = null
+      var newWebsiteOpt: Tenant = null
       var newHost = TenantHost("website-2.ex.com", TenantHost.RoleCanonical,
          TenantHost.HttpsNone)
 
       def newWebsiteDao() =
-        newTenantDbDao(v0.QuotaConsumers(tenantId = newWebsiteOpt.get.id))
+        newTenantDbDao(v0.QuotaConsumers(tenantId = newWebsiteOpt.id))
 
       var homepageId = "?"
 
@@ -2106,7 +2106,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
         approval = Some(Approval.AuthoritativeUser),
         tyype = PostType.Text)
 
-      def createWebsite(suffix: String): Option[Tenant] = {
+      def createWebsite(suffix: String): Option[(Tenant, User)] = {
         dao.createWebsite(
           name = "website-"+ suffix, address = "website-"+ suffix +".ex.com",
           ownerIp = creatorLogin.ip, ownerLoginId = creatorLogin.id,
@@ -2114,9 +2114,10 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
       }
 
       "create a new website, from existing tenant" in {
-        newWebsiteOpt = createWebsite("2")
-        newWebsiteOpt must beLike {
-          case Some(tenant) => ok
+        createWebsite("2") must beLike {
+          case Some((site, user)) =>
+            newWebsiteOpt = site
+            ok
         }
       }
 
@@ -2125,9 +2126,9 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
       }
 
       "lookup the new website, from existing tenant" in {
-        systemDbDao.loadTenants(newWebsiteOpt.get.id::Nil) must beLike {
+        systemDbDao.loadTenants(newWebsiteOpt.id::Nil) must beLike {
           case List(websiteInDb) =>
-            websiteInDb must_== newWebsiteOpt.get.copy(hosts = List(newHost))
+            websiteInDb must_== newWebsiteOpt.copy(hosts = List(newHost))
         }
       }
 
@@ -2136,12 +2137,12 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
           for (i <- 3 to 100)
             createWebsite(i.toString)
         }
-        create100Websites() must throwAn[OverQuotaException]
+        create100Websites() must throwA[TooManySitesCreatedException]
       }
 
       "create a default homepage, with a title authored by SystemUser" in {
         val emptyPage = Debate(guid = "?")
-        val pagePath = v0.PagePath(newWebsiteOpt.get.id, "/", None, false, "")
+        val pagePath = v0.PagePath(newWebsiteOpt.id, "/", None, false, "")
         val dao = newWebsiteDao()
         val page = dao.createPage(PageStuff.forNewPage(PageRole.Generic, pagePath, emptyPage))
         homepageId = page.id
