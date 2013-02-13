@@ -30,7 +30,7 @@
   }
 
   #accept-terms-inp-group {
-    margin-top: 1em;
+    margin-top: 20px;
   }
 
   input[name='accepts-terms'],
@@ -38,9 +38,21 @@
     display: inline;
   }
 
+  input#accepts-terms {
+    margin: 0;
+  }
+
+  p#please-note {
+    margin-top: 20px;
+    @* Copy Bootstrap's styles that are applied to the site name input label: *@
+    font-size: 14px;
+    color: hsl(0, 0%, 20%);
+  }
+
   input[type='submit'] {
-    margin-top: 2.5em;
+    margin: 2.3em 0 0 -1px;
     min-width: 5em;
+    background: white;
   }
 
 """)}
@@ -62,13 +74,13 @@ the name to lowercase.
     jsFile = jsFile, ngAppName = "NewWebsiteChooseName") {
   <div class='new-website-choose-name'>
 
-    <h1>Choose Website Name</h1>
+    <h1>Choose Site Name</h1>
 
     <form accept-charset='UTF-8' method='post' name="chooseNameForm"
           action="@routes.AppCreateWebsite.handleWebsiteNameForm">
       <input name='dw-fi-xsrf' type='hidden' value='@xsrfToken'>
 
-      <label for='website-name'>Enter a name for your new website
+      <label for='website-name'>Enter a name for your new website/forum/blog
         at <kbd>@newWebsiteDomain</kbd>:</label>
       <input type='text' id='website-name' name='websiteNameInp' required
           ng-model="chooseNameForm.websiteName"
@@ -88,7 +100,7 @@ the name to lowercase.
       </div>
 
       <p>
-        <small>You can map a domain name to the website, later (so it would be
+        <small>You can map a domain name to the site, later (so it would be
         reachable via e.g. <kbd>www.your-domain.com</kbd>).</small>
       </p>
 
@@ -101,8 +113,13 @@ the name to lowercase.
       </label>
       </div>
 
+      <p id="please-note">
+        <b>Please note:</b> The software is unfinished — some really basic features<br>
+        are missing — and there might be bugs.
+      </p>
+
       <div>
-        <input type='submit' value="Next"
+        <input class="btn" type="submit" value="Next"
             ng-disabled="chooseNameForm.$invalid">
       </div>
     </form>
