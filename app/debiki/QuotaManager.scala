@@ -390,6 +390,10 @@ object QuotaManager {
    * so each consumer will be able to consume 7% of the tenant's quota
    * (and Mallory alone cannot DoS the tenant).
    *
+   * Set the global quota higher than the per site quota. So even if an
+   * IP runs out of quota at a certain site, it'll still be able to access
+   * other sites.
+   *
    * COULD read values from database, perhaps id = 'default' rows? Fix later...
    */
   def newQuotaStateWithLimits(time: ju.Date, consumer: QuotaConsumer)
@@ -399,7 +403,7 @@ object QuotaManager {
     val (freeQuota, freeloadPerDay) = consumer match {
       case _: QuotaConsumer.Tenant => (oneDollar, 0)
       case _: QuotaConsumer.PerTenantIp => (0, oneHundredth)
-      case _: QuotaConsumer.GlobalIp => (0, oneHundredth)
+      case _: QuotaConsumer.GlobalIp => (0, 2 * oneHundredth)
       case _: QuotaConsumer.Role => (0, oneHundredth)
     }
 
