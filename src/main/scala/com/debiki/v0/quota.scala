@@ -18,7 +18,15 @@ trait QuotaCharger {
 }
 
 
-case class OverQuotaException(message: String) extends Exception(message)
+case class OverQuotaException(
+  consumer: QuotaConsumer,
+  stateNow: QuotaState,
+  stateAfter: QuotaState,
+  outstanding: Long,
+  message: String) extends QuickException {
+
+  override def getMessage = message
+}
 
 
 /**
@@ -69,6 +77,8 @@ case class QuotaUse(paid: Long, free: Long, freeload: Long) {
     paid = paid - that.paid,
     free = free - that.free,
     freeload = freeload - that.freeload)
+
+  override def toString = s"QuotaUse(paid: $paid, free: $free, freeload: $freeload)"
 }
 
 
@@ -102,6 +112,19 @@ case class ResourceUse(
      numEmailsOut = numEmailsOut + that.numEmailsOut,
      numDbReqsRead = numDbReqsRead + that.numDbReqsRead,
      numDbReqsWrite = numDbReqsWrite + that.numDbReqsWrite)
+
+  override def toString = o"""
+    ResourceUse(numLogins: $numLogins,
+     numIdsUnau: $numIdsUnau,
+     numIdsAu: $numIdsAu,
+     numRoles: $numRoles,
+     numPages: $numPages,
+     numActions: $numActions,
+     numActionTextBytes: $numActionTextBytes,
+     numNotfs: $numNotfs,
+     numEmailsOut: $numEmailsOut,
+     numDbReqsRead: $numDbReqsRead,
+     numDbReqsWrite: $numDbReqsWrite)"""
 }
 
 

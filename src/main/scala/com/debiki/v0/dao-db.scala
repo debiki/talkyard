@@ -636,6 +636,10 @@ class ChargingTenantDbDao(
 
 object DbDao {
 
+  case class TooManySitesCreatedException(ip: String) extends QuickException {
+    override def getMessage = "Website creation limit exceeded"
+  }
+
   case class EmailNotFoundException(emailId: String)
     extends RuntimeException("No email with id: "+ emailId)
 
