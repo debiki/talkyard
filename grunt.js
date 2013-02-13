@@ -136,10 +136,9 @@ module.exports = function(grunt) {
           'client/debiki/debiki.css',
           'client/debiki/debiki-play.css'],
 
-      'public/res/debiki-spa-admin.css': [
-          'client/spa/admin/css/admin-page.css'],
-
-      'public/res/debiki-spa-common.css': [
+      'public/res/admin.css': [
+          'client/admin/admin-theme.css',
+          'client/spa/admin/css/admin-page.css',
           'client/spa/debiki-spa-common.css'],
 
       'public/res/combined-debiki-desktop.js':
