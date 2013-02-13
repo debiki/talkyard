@@ -65,7 +65,7 @@ abstract class TenantDbDao {
    */
   def createWebsite(name: String, address: String, ownerIp: String,
         ownerLoginId: String, ownerIdentity: IdentityOpenId, ownerRole: User)
-        : Option[Tenant]
+        : Option[(Tenant, User)]
 
   def addTenantHost(host: TenantHost)
 
@@ -370,9 +370,15 @@ class ChargingTenantDbDao(
     _spi.loadTenant()
   }
 
+  /**
+   * Creates a website and returns it and its owner.
+   *
+   * The new site owner is based on the owner's role at the site via which
+   * the new website is being created.
+   */
   def createWebsite(name: String, address: String, ownerIp: String,
         ownerLoginId: String, ownerIdentity: IdentityOpenId, ownerRole: User)
-        : Option[Tenant] = {
+        : Option[(Tenant, User)] = {
 
     // SHOULD consume IP quota — but not tenant quota!? — when generating
     // new tenant ID. Don't consume tenant quota because the tenant
