@@ -65,7 +65,7 @@ class TenantDao(protected val tenantDbDao: ChargingTenantDbDao)
 
   def createWebsite(name: String, address: String, ownerIp: String,
         ownerLoginId: String, ownerIdentity: IdentityOpenId, ownerRole: User)
-        : Option[Tenant] =
+        : Option[(Tenant, User)] =
     tenantDbDao.createWebsite(name = name, address = address, ownerIp = ownerIp,
       ownerLoginId = ownerLoginId, ownerIdentity = ownerIdentity,
       ownerRole = ownerRole)

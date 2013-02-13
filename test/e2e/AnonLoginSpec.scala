@@ -27,8 +27,10 @@ with ChromeSuiteMixin
 // instead of `abstract`.
 abstract class AnonLoginSpec extends DebikiBrowserSpec {
 
-  lazy val testPage = createTestPage(PageRole.Generic,
-    title = "Test Page Title 27KV09", body = Some("Test page text 953Ih31."))
+  lazy val testPage = new Page {
+    val url = createTestPage(PageRole.Generic,
+      title = "Test Page Title 27KV09", body = Some("Test page text 953Ih31."))
+  }
 
   "Anon user with a browser can" - {
 

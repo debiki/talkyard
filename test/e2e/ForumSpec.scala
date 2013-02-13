@@ -25,8 +25,11 @@ with ChromeSuiteMixin
 abstract class ForumSpec extends DebikiBrowserSpec {
 
   var forumWindow: WindowTarget = null
-  lazy val forumPage = createTestPage(
-    PageRole.Forum, pageSlug = "test-forum", title = "Test Forum 27KV09", body = None)
+
+  lazy val forumPage = new Page {
+    val url = createTestPage(
+      PageRole.Forum, pageSlug = "test-forum", title = "Test Forum 27KV09", body = None)
+  }
 
 
   "An anonymous forum user can" - {

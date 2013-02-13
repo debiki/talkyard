@@ -132,37 +132,64 @@ object AppCreateWebsite extends mvc.Controller {
     // Require OpenID or OAuth (todo) or password (todo) login.
     val idtyOpenId = identity.asInstanceOf[IdentityOpenId]
 
-    // CreateWebsite throws error if one creates too many websites
-    // from the same IP.
-    val newWebsite = request.dao.createWebsite(
-       name = newWebsiteName, address = websiteAddr,
-       ownerIp = request.ip, ownerLoginId = loginId,
-       ownerIdentity = idtyOpenId, ownerRole = user)
-
-    val result = newWebsite match {
-      case Some(website) =>
-        // COULD do this in the same transaction as `createWebsite`?
-        val email = _makeNewWebsiteEmail(website, user)
-        request.dao.saveUnsentEmail(email)
-
-        Debiki.sendEmail(email, website.id)
-
-        val newSiteConfigText = request.dao.loadWebsiteConfig().getText(
-          ConfValNames.NewSiteConfigText) getOrDie "DwE74Vf9"
-
-        val newWebsiteDao = Debiki.tenantDao(
-          tenantId = website.id, ip = request.ip, roleId = None)
-
-        createConfigPage(newSiteConfigText, newWebsiteDao, creationDati = request.ctime)
-        createHomepage(newWebsiteDao, creationDati = request.ctime)
-
-        Redirect("http://"+ websiteAddr +
-           routes.AppCreateWebsite.welcomeOwner.url)
+    val result =
+      createWebsite(
+        request.dao,
+        request.ctime,
+        name = newWebsiteName,
+        host = websiteAddr,
+        ownerIp = request.ip,
+        ownerLoginId = loginId,
+        ownerIdentity = idtyOpenId,
+        ownerRole = user) match {
+      case Some(site) =>
+        Redirect(s"http://$websiteAddr${routes.AppCreateWebsite.welcomeOwner.url}")
       case None =>
         Ok(views.html.createWebsiteFailNotFirst())
     }
 
     result.withSession(request.session - "website-name")
+  }
+
+
+  def createWebsite(
+        dao: TenantDao,
+        creationDati: ju.Date,
+        name: String,
+        host: String,
+        ownerIp: String,
+        ownerLoginId: String,
+        ownerIdentity: IdentityOpenId,
+        ownerRole: User): Option[(Tenant, User)] = {
+
+    // CreateWebsite throws error if one creates too many websites
+    // from the same IP.
+    val newSiteAndOwner = dao.createWebsite(
+       name = name, address = host, ownerIp = ownerIp, ownerLoginId = ownerLoginId,
+       ownerIdentity = ownerIdentity, ownerRole = ownerRole)
+
+    newSiteAndOwner match {
+      case Some((website, ownerAtNewSite)) =>
+        // COULD try to do this in the same transaction as `createWebsite`?
+        val newWebsiteDao = Debiki.tenantDao(
+          tenantId = website.id, ip = ownerIp, roleId = None)
+
+        val email = _makeNewWebsiteEmail(website, ownerAtNewSite)
+        newWebsiteDao.saveUnsentEmail(email)
+
+        Debiki.sendEmail(email, website.id)
+
+        val newSiteConfigText = dao.loadWebsiteConfig().getText(
+          ConfValNames.NewSiteConfigText) getOrDie "DwE74Vf9"
+
+        createConfigPage(newSiteConfigText, newWebsiteDao, creationDati = creationDati)
+        createHomepage(newWebsiteDao, creationDati = creationDati)
+
+        newSiteAndOwner
+
+      case None =>
+        None
+    }
   }
 
 

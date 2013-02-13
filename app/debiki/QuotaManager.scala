@@ -317,10 +317,11 @@ class QuotaManager(
 
       // SHOULD not throw, instead, try with next payer!
       if (payerQuotaOutstanding > 0)
-        throw OverQuotaException(
-           _nameOf(payer) +" over quota. Cannot pay "+ quotaCost +
-           " microquota: if using up all remaining free and paid quota, "+
-           payerQuotaOutstanding +" microquota is outstanding")
+        throw OverQuotaException(payer, stateNow = payerStateNow,
+          stateAfter = payerStateAfter, outstanding = payerQuotaOutstanding,
+          message = o"""${_nameOf(payer)} over quota. Cannot pay $quotaCost
+            microquota: if using up all remaining free and paid quota,
+            $payerQuotaOutstanding microquota is outstanding""")
 
       // ----- Die if any freeloader is over quota.
 
@@ -340,10 +341,12 @@ class QuotaManager(
 
           // SHOULD not throw, instead, try with next payer!
           if (freeldrOutstanding > 0)
-            throw OverQuotaException(_nameOf(freeloader) +
-               " over freeload quota. Cannot freeload "+ quotaCost +
-               " microquota: if using up all remaining freeload quota, "+
-               freeldrOutstanding +" microquota is outstanding")
+            throw OverQuotaException(freeloader, stateNow = freeldrStateNow,
+              stateAfter = freeldrStateAfter, outstanding = freeldrOutstanding,
+              message = o"""${_nameOf(freeloader)} over freeload quota.
+                Cannot freeload $quotaCost microquota: if using up all
+                remaining freeload quota, $freeldrOutstanding microquota
+                is outstanding""")
 
           (freeloader, freeldrCached, freeldrStateAfter)
         }

@@ -17,7 +17,6 @@ import play.api.test.Helpers.testServerPort
  * A specification for browser end-to-end/integration tests.
  */
 trait StuffCreator {
-  self: Assertions with WebBrowser =>
 
   def firstSiteHost = s"localhost:$testServerPort"
 
@@ -120,13 +119,13 @@ trait StuffCreator {
 
 
   /**
-   * Creates a test page in site `firstSiteId`.
+   * Creates a test page in site `firstSiteId`, returns a URL.
    */
   def createTestPage(
         pageRole: PageRole,
         pageSlug: String = "test-page",
         title: String,
-        body: Option[String]) = {
+        body: Option[String]): String = {
 
     val titlePost = postTemplate.copy(
       id = Page.TitleId, parent = Page.TitleId, text = title)
@@ -143,11 +142,9 @@ trait StuffCreator {
       pageRole, pagePath, debateNoId, publishDirectly = true))
 
     val pageWithPeople = firstSiteDao.loadPage(pageStuffNoPeople.id).getOrElse(
-      fail("Error loading page with people"))
+      assErr("DwE381kK0", "Error loading page with people"))
 
-    new Page {
-      val url = firstSiteHost + pageStuffNoPeople.path.path
-    }
+    firstSiteHost + pageStuffNoPeople.path.path
   }
 
 }
