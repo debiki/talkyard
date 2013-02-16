@@ -81,22 +81,10 @@
 
 <footer>
   <div class='footer'>
-    <p><small>
-      Copyright &copy; @tpi.websiteConfigValue("copyright-holder")
-    </small></p>
-    <p><small>
-      @tpi.websiteConfigValue("license", or = "All rights reserved")
-    </small></p>
-    <p><small>
-      @Html(tpi.websiteConfigValue("user-contributions-license",
-        or = """User contributions licensed under
-        <a href="http://creativecommons.org/licenses/by/3.0/">CC BY 3.0</a>"""))
-    </small>
-    </p>
-    <p><small>
-      <a href='@tpi.websiteConfigValue("contact-page", or = "/contact")'>Contact</a>
-    </small>
-    </p>
+    <p><small class="copyright">@Html(tpi.configValue("copyright"))</small></p>
+    <p><small class="license">@Html(tpi.configValue("license"))</small></p>
+    <p><small class="user-contrib-license">@Html(tpi.configValue("user-contributions-license"))</small></p>
+    <p><small class="contact-link">@Html(tpi.configValue("contact-link"))</small></p>
   </div>
 </footer>
 
