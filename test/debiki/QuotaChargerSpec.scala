@@ -252,7 +252,7 @@ abstract class QuotaChargerSpec extends RichFreeSpec with MustMatchers {
     }
 
 
-    "allow freeloading" in {
+    "accumulate free quota day by bay" in {
       pending
     }
 
