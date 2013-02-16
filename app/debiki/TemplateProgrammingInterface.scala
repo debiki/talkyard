@@ -198,7 +198,11 @@ class TinyTemplateProgrammingInterface protected (
         : Option[String] = {
     val thePageId = pageId orElse _pageReq.pageId getOrDie "DwE83ZI78"
     try {
-      dao.loadPageConfigMap(thePageId).get(confValName).map(_.toString)
+      dao.loadPageConfigMap(thePageId).get(confValName) match {
+        case None => None
+        case Some(null) => Some("") // SnakeYaml is Java and uses `null`.
+        case x: Some[String] => x
+      }
     }
     catch {
       case ex: DebikiException =>

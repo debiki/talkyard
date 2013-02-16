@@ -24,6 +24,8 @@ object TemplateRenderer {
         views.html.themes.specialpages.brokenPage(ex).body
       case ex: BadTemplateException =>
         views.html.themes.specialpages.brokenPage(ex).body
+      case ex: WebsiteConfigException =>
+        views.html.themes.specialpages.brokenPage(ex).body
     }
 
 

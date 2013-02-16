@@ -37,6 +37,8 @@ trait ConfigValueDao {
    *   extend: www.debiki.com/themes/default-2012-10-21/theme.conf
    * Now config values will first be read from _site.conf,
    * and if absent, config values in theme.conf will be used instead.
+   *
+   * Throws WebsiteConfigException e.g. if a config page cannot be found.
    */
   def loadWebsiteConfig(): WebsiteConfig = {
     var leaves: List[WebsiteConfigLeaf] = Nil

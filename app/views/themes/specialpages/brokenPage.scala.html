@@ -1,14 +1,15 @@
 @(errorException: Exception)
 
 @import debiki.TemplateRenderer._
+@import debiki.WebsiteConfigException
 
 @withSomething = @{
-  if (errorException.isInstanceOf[BadTemplateException])
-    " with the page template"
-  else if (errorException.isInstanceOf[PageConfigException])
-    " with the page settings"
-  else
-    ""
+  errorException match {
+    case _: BadTemplateException => " with the page template"
+    case _: PageConfigException => " with the page settings"
+    case _: WebsiteConfigException => " with the website configuration"
+    case _ => ""
+  }
 }
 
 <!DOCTYPE html>
