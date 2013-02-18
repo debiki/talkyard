@@ -201,7 +201,7 @@ class TinyTemplateProgrammingInterface protected (
       dao.loadPageConfigMap(thePageId).get(confValName) match {
         case None => None
         case Some(null) => Some("") // SnakeYaml is Java and uses `null`.
-        case x: Some[String] => x
+        case Some(x) => Some(x.toString)
       }
     }
     catch {
@@ -476,7 +476,13 @@ class TemplateProgrammingInterface(
    * Use in templates, e.g. like so: `@if(shall("show-title")) { @title }`
    */
   def shall(confValName: String, default: Boolean = false): Boolean =
-    configValueOpt(confValName).map(_.toLowerCase == "true") getOrElse default
+    configValueOpt(confValName).getOrElse(default) match {
+      case b: Boolean => b
+      case s: String => s.toLowerCase == "true"
+      case x => throw TemplateRenderer.PageConfigException(
+        "DwE1W840", s"""Don't know how to convert config value `$confValName' = `$x',
+        which is a ${classNameOf(x)}, to a Boolean""")
+    }
 
 
   def stylesheetBundle(bundleName: String): xml.NodeSeq = {
