@@ -276,6 +276,10 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
       //SLog.info("------------------------------------------------------------")
     }
 
+    "list no users when there are none" in {
+      dao.listUsers(UserQuery()) must_== Nil
+    }
+
     "save an IdentitySimple login" in {
       val loginReq = LoginRequest(T.login, T.identitySimple)
       loginGrant = dao.saveLogin(loginReq)
@@ -283,6 +287,10 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
       loginGrant.user must matchUser(
           displayName = "Målligan", email = "no@email.no")
       loginGrant.user.id must startWith("-") // dummy user ids start with -
+    }
+
+    "list simple user" in {
+      dao.listUsers(UserQuery()) must_== List((loginGrant.user, List("Guest")))
     }
 
     lazy val loginId = loginGrant.login.id
@@ -1177,6 +1185,12 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
           isSuperAdmin = Boolean.box(false))
       exOpenId_userIds += exOpenId_loginReq.user.id
       ok
+    }
+
+    "list OpenID user" in {
+      val openIdEntry = dao.listUsers(UserQuery()).find(_._2 != List("Guest"))
+      openIdEntry must_== Some(
+        (exOpenId_loginGrant.user, List(T.identityOpenId.oidEndpoint)))
     }
 
     "reuse the IdentityOpenId and User just created" in {
