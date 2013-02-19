@@ -36,12 +36,6 @@ d.i.rootPostId = $('.dw-depth-0');
 d.i.rootPostId = d.i.rootPostId.length ?
     d.i.rootPostId.attr('id').substr(5) : undefined; // drops initial `dw-t-'
 
-// If there's no SVG support, use PNG arrow images instead.
-// Also use PNG arrows on mobiles; rendering SVG arrows takes rather long.
-d.i.SVG = !Modernizr.touch && Modernizr.inlinesvg &&
-      document.URL.indexOf('svg=false') === -1 ?
-    d.i.makeSvgDrawer($) : d.i.makeFakeDrawer($);
-
 d.i.Me = d.i.makeCurUser();
 
 
@@ -210,6 +204,16 @@ function renderPageEtc() {
   configureAjaxRequests();
 
   var $posts = $('.debiki .dw-p:not(.dw-p-ttl)');
+
+  // If there's no SVG support, use PNG arrow images instead.
+  // Also use PNG arrows on mobiles; rendering SVG arrows takes rather long.
+  // And use PNG arrows if there are many comments, because then rendering
+  // takes too long also on desktops.
+  d.i.SVG = !Modernizr.touch && Modernizr.inlinesvg &&
+        document.URL.indexOf('svg=false') === -1 &&
+        $posts.length < 15 ?
+      d.i.makeSvgDrawer($) : d.i.makeFakeDrawer($);
+
 
   (d.u.workAroundAndroidZoomBug || function() {})($);
 
