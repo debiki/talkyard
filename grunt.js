@@ -14,6 +14,7 @@ module.exports = function(grunt) {
       'client/vendor/javascript-yaml-parser.js',
       'client/vendor/jquery-cookie.js',
       'client/vendor/jquery-scrollable.js', //
+      'client/vendor/livescript/prelude-browser.js',
       'client/vendor/popuplib.js',
       'client/debiki/tagdog.js',
       'target/client/debiki/bootstrap-angularjs.js',
@@ -62,6 +63,7 @@ module.exports = function(grunt) {
       'client/vendor/html-sanitizer-bundle.js',
       'client/vendor/javascript-yaml-parser.js',
       'client/vendor/jquery-cookie.js',
+      'client/vendor/livescript/prelude-browser.js',
       'client/vendor/popuplib.js',
       'client/debiki/tagdog.js',
       'target/client/debiki/android-zoom-bug-workaround.js', //

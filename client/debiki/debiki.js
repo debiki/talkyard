@@ -10,6 +10,9 @@
 
 "use strict";
 
+// Import LiveScript's prelude, http://gkz.github.com/prelude-ls/.
+prelude.installPrelude(window);
+
 var d = { i: debiki.internal, u: debiki.v0.util };
 
 
