@@ -9,6 +9,9 @@ Surfing:  Use e.g. the Tor Network or mullvad.net, or combine them both.
 
 Now:
 
+Debate(posts: List[Post], deletions: List[Delete], ...)
+
+
 abstract Action
   def id: String
   def loginId: String
@@ -22,7 +25,7 @@ Rating
 
 Flag
   postId
-  reason FlagReason = Spam | Illegal | CopyVio | Other
+  reason: FlagReason = Spam | Illegal | CopyVio | Other
   details: String
 
 Post
@@ -50,7 +53,57 @@ Delete
   wholeTree
   reason
 
+Review
+  approval: Option[Approval]
 
+
+**Need:**
+
+Summary(text: String)
+CloseThread
+PinThread(position: Int?)
+
+
+{{{ Alt 6 (2013-02-18)
+
+Debate --> PageParts
+
+Action --> PostCmd
+
+PostCommand:
+
+  id: String
+  postId: String
+
+  userId: String
+  loginId: String
+  ip: Option[String]
+
+  creationDati: ju.Date
+
+
+  Payload:
+
+  Create(text)
+  Flag(reason, details)
+  Rate(tags)
+  Edit(diff, newMarkup)
+  EditApp(editId)
+  Review
+  Delete(commandId)
+
+  Pin(position)
+  Close
+  Collapse
+
+
+ViPo etc -->
+  Text extends PagePart
+
+
+
+
+}}}
 {{{2 Alt 5. Generic base class, w/o text?
 
 abstract Action
