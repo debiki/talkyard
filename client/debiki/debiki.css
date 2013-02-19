@@ -85,7 +85,7 @@ and two folded threads would overlap, unless: */
 
 /* Draw dashed line between horizontal threads, on hower. */
 .DW.DW .dw-hor > .dw-res > li > .dw-t > .ui-resizable-e {
-  border-right: 2px dashed transparent;
+  border-right: 1px dashed transparent;
 }
 .DW.DW .dw-hor > .dw-res > li:hover > .dw-t > .ui-resizable-e {
   border-right-color: lightgray;
@@ -97,7 +97,7 @@ and two folded threads would overlap, unless: */
 
 .dw-hor > .dw-res > li {
   display: table-cell;
-  padding: 19px 0 10px 28px;
+  padding: 19px 0 10px 45px;
   vertical-align: top; /* or Reply form pushes other <li>s down
                         which offsets PNG arrows incorrectly */
 }

@@ -236,6 +236,7 @@ function renderPageEtc() {
   var steps = [];
 
   steps.push(function() {
+    d.i.layoutThreads();
     $posts.each($initStep1);
     $('html').removeClass('dw-render-actions-pending');
   });
