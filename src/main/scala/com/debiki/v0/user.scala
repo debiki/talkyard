@@ -205,6 +205,12 @@ case class User (
 }
 
 
+/**
+ * Used when searching for users.
+ */
+case class UserQuery()
+
+
 object EmailNotfPrefs extends Enumeration {
   type EmailNotfPrefs = Value
   val Receive, DontReceive, ForbiddenForever, Unspecified = Value

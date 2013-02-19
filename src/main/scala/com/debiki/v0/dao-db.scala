@@ -210,6 +210,8 @@ abstract class TenantDbDao {
 
   def loadPermsOnPage(reqInfo: RequestInfo): PermsOnPage
 
+  def listUsers(userQuery: UserQuery): Seq[(User, Seq[String])]
+
 
   // ----- Notifications
 
@@ -560,6 +562,10 @@ class ChargingTenantDbDao(
     _spi.loadPermsOnPage(reqInfo)
   }
 
+  def listUsers(userQuery: UserQuery): Seq[(User, Seq[String])] = {
+    _chargeForOneReadReq()
+    _spi.listUsers(userQuery)
+  }
 
   // ----- Notifications
 
