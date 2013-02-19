@@ -44,8 +44,8 @@ function adminService ($http, $rootScope)
     $http.get("/?list-actions.json" +
         "&in-trees=#treesStr" +
         "&in-folders=#foldersStr" +
-        "&for-pages=#pageIdsStr").success (data) ->
-      onSuccess data
+        "&for-pages=#pageIdsStr").success onSuccess
+
 
   actionsToJsonObjs = (actions) ->
     toJsonObj = (action) -> { pageId: action.pageId, actionId: action.id }
@@ -53,11 +53,11 @@ function adminService ($http, $rootScope)
 
   api.approve = !(actions, onSuccess) ->
     $http.post '/-/approve', actionsToJsonObjs(actions)
-        .success -> onSuccess!
+        .success onSuccess
 
   api.reject = !(actions, onSuccess) ->
     $http.post '/-/reject', actionsToJsonObjs(actions)
-        .success -> onSuccess!
+        .success onSuccess
 
   api.delete = !(actions, onSuccess) ->
     onSuccess! # for now
