@@ -173,9 +173,16 @@ object AppList extends mvc.Controller {
   }
 
 
-  def listUsers(pathIn: PagePath, contentType: DebikiHttp.ContentType) =
-        PageGetAction(pathIn, pageMustExist = false) { pageReq =>
-    Ok
+  def listUsers = GetAction { implicit request =>
+    if (!request.user_!.isAdmin) {
+      // Could list the current user itself only. But for now:
+      throwForbidden("DwE71FKZ0", "Insufficient permissions to list users")
+    }
+    val usersAndIdEndpoints = request.dao.listUsers(UserQuery())
+    OkSafeJson(toJson(Map("users" -> (
+      usersAndIdEndpoints map { case (user, identityEndpoints) =>
+        _jsonFor(user)
+      }))))
   }
 
 

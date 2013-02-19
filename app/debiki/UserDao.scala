@@ -51,6 +51,10 @@ trait UserDao {
       emailAddr = emailAddr,
       emailNotfPrefs = emailNotfPrefs)
 
+
+  def listUsers(userQuery: UserQuery): Seq[(User, Seq[String])] =
+    tenantDbDao.listUsers(userQuery)
+
 }
 
 

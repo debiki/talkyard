@@ -127,14 +127,6 @@ object Global extends GlobalSettings {
         AppList.listActions(pagePath, DebikiHttp.ContentType.Html)
       case ("list-actions.json", GET) =>
         AppList.listActions(pagePath, DebikiHttp.ContentType.Json)
-      case ("list-users", GET) =>
-        AppList.listUsers(pagePath, DebikiHttp.ContentType.Html)
-      case ("list-users.json", GET) =>
-        AppList.listUsers(pagePath, DebikiHttp.ContentType.Json)
-      case ("list-ips", GET) =>
-        AppList.listIps(pagePath, DebikiHttp.ContentType.Html)
-      case ("list-ips.json", GET) =>
-        AppList.listIps(pagePath, DebikiHttp.ContentType.Json)
       case ("feed", GET) =>
         App.feed(pagePath)
       case ("act", GET) =>

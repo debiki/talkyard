@@ -8,7 +8,7 @@ bug = d.u.die2
 
 @ActionListCtrl = ['$scope', 'AdminService', ($scope, adminService) ->
 
-  mixinInfoListCommon $scope, 'actionList'
+  d.i.mixinInfoListCommon $scope, 'actionList'
 
   doInlineAction = (adminServiceFn, actionRows, doneMessage) ->
     for row in actionRows
@@ -61,7 +61,8 @@ bug = d.u.die2
  * Common functionality for ActionListCtrl, UserListCtrl and (in the future)
  * PageListCtrl.
  */
-function mixinInfoListCommon($scope, infoListName)
+# COULD move to shared utility file?
+d.i.mixinInfoListCommon = !($scope, infoListName) ->
 
   $scope.toggleAllChecked = ->
     for info in $scope[infoListName]

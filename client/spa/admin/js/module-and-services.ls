@@ -132,6 +132,12 @@ function adminService ($http, $rootScope)
         .error callback
 
 
+  api.listUsers = !(userQuery, { onSuccess, onError }) ->
+    bug 'DwE44Qzk1' unless !userQuery
+    $http.get '/-/list-users'
+        .success onSuccess
+        .error onError
+
   api
 
 

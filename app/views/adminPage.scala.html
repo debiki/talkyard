@@ -296,7 +296,6 @@
           </div>
 
           <div ng-controller='UserListCtrl' class='tab-pane' id='users-tab'>
-            <p>Not yet implemented.</p>
             <!--
             <div>
               <a class='btn'>Contact</a>
@@ -305,6 +304,8 @@
               <a class='btn'>Block</a>
               <a class='btn'>Sort</a>
             </div>
+            -->
+
             <table class='table'>
               <thead>
                 <tr>
@@ -314,16 +315,19 @@
                       ng-model='allSelected'>
                     </label>
                   </th>
+
                   <th>Name</th>
-                  <th>Roles</th>
-                  <th>Action Count</th>
                   <th>Email</th>
                   <th>Location</th>
+                  <th>Logs in with</th>
+                  <!-- Takes too long to lookup. Move to separate user tab.
                   <th>IPs</th>
                   <th>First Login</th>
                   <th>Last Login</th>
+                  -->
                 </tr>
               </thead>
+
               <tbody>
                 <tr ng-repeat='user in userList'>
                   <td class='row-selector'>
@@ -332,18 +336,20 @@
                           ng-click='onRowCheckedChange()'>
                     </label>
                   </td>
-                  <td><a target='_blank'>{{user.name}}</a></td>
-                  <td><a target='_blank'>[todo]</a></td>
-                  <td><a target='_blank'>[todo]</a></td>
+
+                  <td><a target='_blank' href='#'>{{user.displayName}}</a></td>
                   <td><a target='_blank'>{{user.email || ''}}</a></td>
                   <td><a target='_blank'>{{user.country || user.location}}</a></td>
-                  <td><a target='_blank'>[todo]</a></td>
+                  <td><a target='_blank'>(todo)</a></td>
+                  <!--
+                  <td><a target='_blank'>?.?.?.?</a></td>
                   <td><a target='_blank'>{{user.ctime.replace('T', ' ')}}</a></td>
                   <td><a target='_blank'>{{user.lastLoginTime.replace('T', ' ')}}</a></td>
+                  -->
                 </tr>
               </tbody>
             </table>
-            -->
+
           </div>
         </div>
       </div>
