@@ -21,3 +21,4 @@
 2013-02-11 17:01 73a41f2 Don't always highlight "Pricing" www.debiki.com homepage link.
 2013-02-13 12:46 597db74 Update module debiki-tck-dao (compilation error).
 2013-02-18 11:31 3299680 Fix template config value type bug
+2013-02-19 09:22 53a5475 Admin SPA: Somewhat simplify callback invocation.
