@@ -163,6 +163,30 @@ and two folded threads would overlap, unless: */
 }
 
 
+/* --- Read / unread marks --- */
+
+.dw-cycle-mark {
+  position: absolute;
+  left: 8px;
+  color: hsl(0, 0%, 55%);
+  font-size: 21px;
+  top: -6px;
+  z-index: 2;
+  padding: 5px;
+}
+
+.dw-cycle-mark-○ {
+  color: hsl(0, 0%, 67%);
+  font-size: 20px;
+  padding: 6px; /* Make it easier to click */
+  top: -7px;
+  left: 7px;
+}
+
+.dw-z {
+  left: -5px;
+}
+
 
 /* ===== Tips ===== */
 

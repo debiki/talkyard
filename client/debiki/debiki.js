@@ -268,6 +268,8 @@ function renderPageEtc() {
 
   steps.push(d.i.scrollToUrlAnchorPost);
 
+  steps.push(d.i.startNextUnreadPostCycler);
+
   steps.push(function() {
     debiki.scriptLoad.resolve();
   });

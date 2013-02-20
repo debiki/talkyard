@@ -471,10 +471,15 @@ case class HtmlPageSerializer(
 
       val (cssFolded, foldLinkText) =
         if (shallFoldPost)
+          // (Could use "Downwards arrow from bar",
+          // http://shapecatcher.com/unicode/info/8615, instead of [+] but [+]
+          // actually looks better?)
           (" dw-zd", "[+] Click to show more replies" +
              renderedComment.topRatingsText.map(", rated "+ _).getOrElse(""))
         else
-          ("", "[–]") // the – is an `em dash' not a minus
+          ("", "↕")
+          // ↕ "Up down arrow", 8597
+          // ↥ "Upwards arrow from bar", http://shapecatcher.com/unicode/info/8613
 
       val foldLink =
         if (isTitle || isRootOrArtclQstn || vipo.isTreeDeleted) Nil

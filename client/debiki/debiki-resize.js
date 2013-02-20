@@ -60,7 +60,8 @@ d.i.$threadToggleFolded = function() {
     // Thread is folded, open it.
     $childrenToFold.each(d.i.$slideDown);
     $thread.removeClass('dw-zd');
-    $foldLink.text('[–]'); // not a '-', but an en dash, \u2013,
+    $foldLink.text('↕'); // "Up down arrow", Unicode token 8597 (decimal)
+                         // http://shapecatcher.com/unicode/info/8597
   } else {
     // Fold thread.
     var postCount = $thread.find('.dw-p').length;
