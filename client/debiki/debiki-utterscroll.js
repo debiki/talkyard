@@ -58,6 +58,10 @@ debiki.Utterscroll.enable = function(options) {
   var startPos;
   var lastPos;
 
+  debiki.Utterscroll.isScrolling = function() {
+    return !!startPos;
+  };
+
   // Avoids firing onHasUtterscrolled twice.
   var hasFiredHasUtterscrolled = false;
   // We fire onHasUtterscrolled, when the user has scrolled more than this.
