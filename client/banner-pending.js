@@ -43,6 +43,13 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  THE SOFTWARE.
 
+
+ * jQuery Waypoints
+ * Copyright (c) 2011-2013 Caleb Troughton
+ * Dual licensed under the MIT license and GPL license.
+ * https://github.com/imakewebthings/jquery-waypoints/blob/master/licenses.txt
+
+
 Cookie plugin
  *
  * Copyright (c) 2006 Klaus Hartl (stilbuero.de)

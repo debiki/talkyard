@@ -16,6 +16,7 @@ module.exports = function(grunt) {
       'client/vendor/jquery-scrollable.js', //
       'client/vendor/livescript/prelude-browser.js',
       'client/vendor/popuplib.js',
+      'client/vendor/waypoints.js',
       'client/debiki/tagdog.js',
       'target/client/debiki/bootstrap-angularjs.js',
       'target/client/debiki/debiki-action-delete.js',
@@ -67,6 +68,7 @@ module.exports = function(grunt) {
       'client/vendor/jquery-cookie.js',
       'client/vendor/livescript/prelude-browser.js',
       'client/vendor/popuplib.js',
+      'client/vendor/waypoints.js',
       'client/debiki/tagdog.js',
       'target/client/debiki/android-zoom-bug-workaround.js', //
       'target/client/debiki/bootstrap-angularjs.js',

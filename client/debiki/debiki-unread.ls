@@ -48,18 +48,23 @@ d.i.startNextUnreadPostCycler = !->
     symbol = postsReadMem[$post.dwPostId!]
     markPostVisually $post, symbol
 
-  # Mark posts as read on mouseenter.
-  $posts.mouseenter !->
-    # Do nothing if dragscrolling.
-    return if debiki.Utterscroll.isScrolling!
-    setNewMark $(this), (curSymbol) ->
-      # If `curSymbol' exists, the post is one of:
-      # - Manually marked as read or unread — this should not change
-      #   on mouseover; do nothing.
-      # - Already 'RA' (marked as read, automatically, on mouseover),
-      #   need do nothing.
-      if curSymbol => false
-      else postAutoReadSymbol
+  # Mark posts read, when scrolled outside the viewport.
+  # COULD start a timer when a post is scrolled into viewport, then
+  # consider the post read, if it's been on screen longh enough (taking
+  # into account total num chars on whole screen) when it's scrolled off
+  # screen.
+  # COULD consider a post read, if one rates it or replies to it.
+  $posts.waypoint(
+    horizontal: true
+    handler: (direction) ->
+      setNewMark $(this), (curSymbol) ->
+        # If `curSymbol' exists, the post is one of:
+        # - Manually marked as read or unread — this should not change
+        #   on mouseover; do nothing.
+        # - Already 'RA' (marked as read, automatically, on mouseover),
+        #   need do nothing.
+        if curSymbol => false
+        else postAutoReadSymbol)
 
   # Toggle read/unread on read/unread symbol click.
   $posts.parent!children('.dw-cycle-mark').click !->
@@ -69,7 +74,7 @@ d.i.startNextUnreadPostCycler = !->
         | postManuallyUnreadSymbol => postManuallyReadSymbol
         | _ => postManuallyUnreadSymbol
 
-  setNewMark = ($post, deriveSymbolFn) ->
+  function setNewMark ($post, deriveSymbolFn)
     postId = $post.dwPostId!
     curSymbol = postsReadMem[postId]
     newSymbol = deriveSymbolFn(curSymbol)
