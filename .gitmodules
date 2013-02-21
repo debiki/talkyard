@@ -25,3 +25,6 @@
 [submodule "modules/pagedown"]
 	path = modules/pagedown
 	url = https://github.com/ujifgc/pagedown.git
+[submodule "modules/jquery-waypoints"]
+	path = modules/jquery-waypoints
+	url = https://github.com/imakewebthings/jquery-waypoints.git

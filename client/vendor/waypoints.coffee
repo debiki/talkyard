@@ -1,0 +1,1 @@
+../../modules/jquery-waypoints/waypoints.coffee
