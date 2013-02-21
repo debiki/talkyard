@@ -25,7 +25,7 @@ $ = d.i.$;
 
 
 postUnreadSymbol = '●'          # new post, unread
-postAutoReadSymbol = '○'        # auto-made-read (currently on mouseover)
+postAutoReadSymbol = '○'        # auto-made-read (if scrolled out of viewport)
 postManuallyUnreadSymbol = '■'  # clicked unread (manually toggled)
 postManuallyReadSymbol = '□'    # clicked read
 # postManuallyStarredSymbol = '★'
@@ -57,7 +57,11 @@ d.i.startNextUnreadPostCycler = !->
   $posts.waypoint(
     horizontal: true
     handler: (direction) ->
-      setNewMark $(this), (curSymbol) ->
+      return unless direction == 'right'
+      $post = $ this
+      return unless $post.is(':visible')
+      return unless isInVerticalViewport $post
+      setNewMark $post, (curSymbol) ->
         # If `curSymbol' exists, the post is one of:
         # - Manually marked as read or unread — this should not change
         #   on mouseover; do nothing.
@@ -121,6 +125,23 @@ function getReadPostsMemory (pageId)
 
 function storageKey (pageId)
   "com.debiki.postsRead.#pageId"
+
+
+
+/**
+ * Finds out if the center of $elem is inside the viewport, considering
+ * only the vertical dimension (window scrollTop() and .height()).
+ */
+function isInVerticalViewport ($elem)
+  $win = $ window
+  $winScrollTop = $win.scrollTop!
+  $winScrollBottom = $winScrollTop + $win.height!
+  $elemCenter = $elem.offset!top + $elem.height! / 2
+
+  centerBelowWinTop = $winScrollTop <= $elemCenter
+  centerAboveWinBottom = $elemCenter <= $winScrollBottom
+
+  centerBelowWinTop && centerAboveWinBottom
 
 
 
