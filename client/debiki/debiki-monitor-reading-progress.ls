@@ -133,7 +133,7 @@ d.i.startReadingProgresMonitor = !->
       colorChange = ceiling(100 * fractionLeft)
       redColor = (155 + colorChange).toString 16
       greenColor = colorChange.toString 16
-      blueColor = (80 + 100 * fractionRead).toString 16
+      blueColor = ceiling(80 + 100 * fractionRead).toString 16
       color = '#' + redColor + greenColor + blueColor
       $bookmark = $('#post-' + stats.postId).parent!children '.dw-cycle-mark'
       $bookmark.css 'outline', "#{outlineThickness}px #color solid"
