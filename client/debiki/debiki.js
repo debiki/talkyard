@@ -272,6 +272,7 @@ function renderPageEtc() {
 
   steps.push(function() {
     debiki.scriptLoad.resolve();
+    d.i.startReadingProgresMonitor();
   });
 
   function runNextStep() {
