@@ -14,7 +14,7 @@ statsByPostId = {}
 
 postsVisibleLastTick = {}
 
-charsReadPerSecond = 40
+charsReadPerSecond = 35
 secondsBetweenTicks =
   if debugDrawReadingProgress => 0.25
   else 2
@@ -29,7 +29,7 @@ secondsSpentReading = 0
 secondsLostPerNewPostInViewport = 0.5
 
 # `secondsLostPerNewPostInViewport` is capped to this value.
-maxConfusionSeconds = -1.5
+maxConfusionSeconds = -1
 
 
 d.i.startReadingProgresMonitor = !->
@@ -70,11 +70,6 @@ d.i.startReadingProgresMonitor = !->
     numVisibleUnreadChars += stats.textLength
 
 
-  # Avoid division by 0.
-  if numVisibleUnreadChars == 0
-    return
-
-
   # Count num posts scrolled into viewport.
 
   numPostsScrolledIntoViewport = 0
@@ -84,7 +79,7 @@ d.i.startReadingProgresMonitor = !->
   postsVisibleLastTick := postsVisibleThisTick
 
 
-  # Estimate how many seconds the user spent reading stuff.
+  # Estimate how many chars the user might have read since the last tick.
 
   secondsSpentReading +=
     secondsBetweenTicks -
@@ -94,27 +89,27 @@ d.i.startReadingProgresMonitor = !->
   if secondsBetweenTicks < secondsSpentReading
     secondsSpentReading := secondsBetweenTicks
 
+  # This happens if fairly many posts are scrolled into view.
   if secondsSpentReading < maxConfusionSeconds
     secondsSpentReading := maxConfusionSeconds
 
-  # See explanation below.
-  fractionReadSinceLastTick = max(0,
-      charsReadPerSecond * secondsSpentReading / numVisibleUnreadChars)
+  charsReadThisTick = max(0, charsReadPerSecond * secondsSpentReading)
+  charsLeftThisTick = charsReadThisTick
 
 
-  # Update reading stats for the posts viewed.
+  # Update reading stats for the posts viewed. Assume they're
+  # being read in depth first traversal. (COULD be better to assume
+  # that replies to the root post are read first — then depth first
+  # traversal? But that's more complicated.)
 
   for stats in visibleUnreadPostsStats
 
-    ## Re "See explanation below" just above: This:
-    # attentionSpentOnThisPost =
-    #     stats.textLength / numVisibleUnreadChars
-    # fractionReadSinceLastTick =
-    #     charsReadPerSecond * secondsSpentReading * attentionSpentOnThisPost
-    #     / stats.textLength
-    ## Is the same as the-expression-above-that-requires-an-explanation.
-
-    stats.fractionRead += fractionReadSinceLastTick
+    fractionLeft = 1.0 - stats.fractionRead
+    charsReadNow = min charsLeftThisTick, stats.textLength * fractionLeft
+    charsLeftThisTick -= charsReadNow
+    stats.fractionRead =
+      if stats.textLength == 0 => 1.0
+      else stats.fractionRead + charsReadNow / stats.textLength
 
     if stats.fractionRead >= 1.0
       stats.hasBeenRead = true
@@ -122,11 +117,12 @@ d.i.startReadingProgresMonitor = !->
       # person seems to have read the related $post.
 
     if debugDrawReadingProgress
-      outlineThickness = max(0, ceiling(7 * (1 - stats.fractionRead)))
-      colorChange = ceiling(100 * (1 - stats.fractionRead))
+      outlineThickness = max(0, ceiling(7 * fractionLeft))
+      colorChange = ceiling(100 * fractionLeft)
       redColor = (155 + colorChange).toString 16
-      otherColor = colorChange.toString 16
-      color = '#' + redColor + otherColor + otherColor
+      greenColor = colorChange.toString 16
+      blueColor = (80 + 100 * stats.fractionRead).toString 16
+      color = '#' + redColor + greenColor + blueColor
       $bookmark = $('#post-' + stats.postId).parent!children '.dw-cycle-mark'
       $bookmark.css 'outline', "#{outlineThickness}px #color solid"
 
