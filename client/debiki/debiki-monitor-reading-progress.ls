@@ -38,12 +38,18 @@ secondsLostPerNewPostInViewport = 0.5
 maxConfusionSeconds = -1
 
 
+
 d.i.startReadingProgresMonitor = !->
   debugIntervalHandler :=
       setInterval monitorReadingProgress, secondsBetweenTicks * 1000
 
 
+
 !function monitorReadingProgress
+
+  if !document.hasFocus!
+    secondsSpentReading := maxConfusionSeconds
+    return
 
   visibleUnreadPostsStats = []
   numVisibleUnreadChars = 0
