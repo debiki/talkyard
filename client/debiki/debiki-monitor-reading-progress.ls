@@ -15,6 +15,12 @@ statsByPostId = {}
 postsVisibleLastTick = {}
 
 charsReadPerSecond = 35
+
+# Assume readers only skim the start of every post. Otherwise a very
+# long comment would in effect make the computer believe the reader didn't
+# read anything at all.
+maxCharsReadPerPost = charsReadPerSecond * 4.5
+
 secondsBetweenTicks =
   if debugDrawReadingProgress => 0.25
   else 2
@@ -58,7 +64,7 @@ d.i.startReadingProgresMonitor = !->
 
     stats = statsByPostId[postId]
     if !stats
-      stats = { postId, fractionRead: 0.0 }
+      stats = { postId, charsRead: 0 }
       statsByPostId[postId] = stats
 
     if stats.hasBeenRead
@@ -104,24 +110,24 @@ d.i.startReadingProgresMonitor = !->
 
   for stats in visibleUnreadPostsStats
 
-    fractionLeft = 1.0 - stats.fractionRead
-    charsReadNow = min charsLeftThisTick, stats.textLength * fractionLeft
+    charsToRead = min maxCharsReadPerPost, stats.textLength
+    charsReadNow = min charsLeftThisTick, charsToRead - stats.charsRead
     charsLeftThisTick -= charsReadNow
-    stats.fractionRead =
-      if stats.textLength == 0 => 1.0
-      else stats.fractionRead + charsReadNow / stats.textLength
+    stats.charsRead += charsReadNow
 
-    if stats.fractionRead >= 1.0
+    if stats.charsRead >= charsToRead
       stats.hasBeenRead = true
       # COULD post message to the server, so it knows that yet another
       # person seems to have read the related $post.
 
     if debugDrawReadingProgress
+      fractionRead = if !charsToRead => 1.0 else stats.charsRead / charsToRead
+      fractionLeft = 1.0 - fractionRead
       outlineThickness = max(0, ceiling(7 * fractionLeft))
       colorChange = ceiling(100 * fractionLeft)
       redColor = (155 + colorChange).toString 16
       greenColor = colorChange.toString 16
-      blueColor = (80 + 100 * stats.fractionRead).toString 16
+      blueColor = (80 + 100 * fractionRead).toString 16
       color = '#' + redColor + greenColor + blueColor
       $bookmark = $('#post-' + stats.postId).parent!children '.dw-cycle-mark'
       $bookmark.css 'outline', "#{outlineThickness}px #color solid"
