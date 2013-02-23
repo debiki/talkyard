@@ -178,24 +178,32 @@ trait StuffTestClicker {
   def clickAndEdit(postId: String, newText: String) {
     info("click #post-$postId, select Improve")
 
-    // Place mouse on text to edit.
-    val textElem = eventually {
-      find(cssSelector(s"#post-$postId .dw-p-bd-blk > *")) getOrElse fail()
-    }
-
-    // Click text and select Improve.
-
-    val textElemSize = textElem.underlying.getSize
     var xOffset = 6
     var yOffset = 6
 
     eventually {
+      // Find the elem to edit. And find it again, and again..., read on:
+      // 1. The very first time we get to here, we need to wait until the elem
+      // becomes visible (in case the page is loading).
+      // 2. After we've found the elem once, we sometimes need to find it again!:
+      // For unknown reasons, the WebDriver ID of `textElem` sometimes becomes
+      // stale, just after the elem has been found. Chrome then complains that
+      // "Element does not exist in cache", and throws a
+      //    org.openqa.selenium.StaleElementReferenceException  when we perform()
+      // the below moveToElement() command (which is relative `textElem`).
+      // So find `textElem` again here, to refresh the id.
+      // See:  http://seleniumhq.org/exceptions/stale_element_reference.html
+      var textElem =
+        find(cssSelector(s"#post-$postId .dw-p-bd-blk > *")) getOrElse fail()
+
+      // Click text and select Improve.
       // There might be whitespace in `textElem`, but we need to click text for
       // the inline menu with the Improve button to appear. So click here and
       // there along a diagonal line, starting in the upper left corner. (Clicking
       // in the middle won't always work.)
-      yOffset = if (textElemSize.height < yOffset) 0 else yOffset + yOffset / 3
-      xOffset = if (textElemSize.width < xOffset) 0 else xOffset + xOffset / 3
+      val textElemSize = textElem.underlying.getSize
+      yOffset = if (textElemSize.height < yOffset) 3 else yOffset + yOffset / 3
+      xOffset = if (textElemSize.width < xOffset) 3 else xOffset + xOffset / 3
       (new Actions(webDriver)).moveToElement(
         textElem.underlying, xOffset, yOffset).click().perform()
 
