@@ -55,7 +55,9 @@ object AppEdit extends mvc.Controller {
         // Could reuse AppCreatePage.newPageMetaFromUrl(..) in some way?
         val pageMeta =
           PageMeta.forNewPage(
-            PageRole.parse(pageRole), pageReqPerhapsNoPage.ctime, pageId = pageId,
+            PageRole.parse(pageRole),
+            creationDati = pageReqPerhapsNoPage.ctime,
+            pageId = pageId,
             // These shouldn't matter when rendering the edit form anyway:
             parentPageId = None, publishDirectly = false)
         val pageReqWithMeta = pageReqPerhapsNoPage.copyWithPreloadedMeta(pageMeta)
@@ -287,7 +289,7 @@ object AppEdit extends mvc.Controller {
 
     val pageMeta = PageMeta.forNewPage(
       pageRole,
-      pageReq.ctime,
+      creationDati = pageReq.ctime,
       pageId = pageReq.pageId_!,
       parentPageId = parentPageId,
       publishDirectly = pageStatus == PageStatus.Published)
