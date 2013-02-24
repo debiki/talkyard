@@ -79,7 +79,7 @@ case class PagePathAndMeta(path: PagePath, meta: PageMeta)
 
 object PageMeta {
 
-  def forNewPage(
+  def forNewPage(  // fix
         pageRole: PageRole,
         creationDati: ju.Date = new ju.Date,
         pageId: String = "?",
@@ -87,14 +87,15 @@ object PageMeta {
         publishDirectly: Boolean = false) =
     PageMeta(
       pageId = pageId,
+      pageRole = pageRole,
       creationDati = creationDati,
       modDati = creationDati,
       pubDati = if (publishDirectly) Some(creationDati) else None,
-      pageRole = pageRole,
       parentPageId = parentPageId,
       pageExists = false)
 
   def forChangedPage(originalMeta: PageMeta, changedPage: Debate): PageMeta = {
+    // fix!
     require(changedPage.id == originalMeta.pageId)
     originalMeta.copy(
       cachedTitle = changedPage.titleText,
@@ -109,16 +110,16 @@ object PageMeta {
 
 case class PageMeta(
   pageId: String,
-  pageRole: PageRole = PageRole.Generic,
-  parentPageId: Option[String] = None,
-  cachedTitle: Option[String] = None,
+  pageRole: PageRole,
   creationDati: ju.Date,
   modDati: ju.Date,
   pubDati: Option[ju.Date] = None,
   sgfntModDati: Option[ju.Date] = None,
+  parentPageId: Option[String] = None,
+  pageExists: Boolean = true,
+  cachedTitle: Option[String] = None,
   cachedAuthors: List[PageMeta.AuthorInfo] = Nil,
-  cachedCommentCount: Int = 0,
-  pageExists: Boolean = true) {
+  cachedCommentCount: Int = 0) {
 
   def status: PageStatus =
     if (pubDati.isDefined) PageStatus.Published
