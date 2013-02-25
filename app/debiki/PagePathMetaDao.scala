@@ -56,8 +56,8 @@ trait PagePathMetaDao {
   }
 
 
-  def updatePageMeta(meta: PageMeta) =
-    tenantDbDao.updatePageMeta(meta)
+  def updatePageMeta(meta: PageMeta, old: PageMeta) =
+    tenantDbDao.updatePageMeta(meta, old = old)
 
 
   /**
@@ -177,9 +177,11 @@ trait CachingPagePathMetaDao extends PagePathMetaDao {
       orCacheAndReturn = super.loadPageMeta(pageId))
 
 
-  override def updatePageMeta(meta: PageMeta) {
+  override def updatePageMeta(meta: PageMeta, old: PageMeta) {
+    // BUG SHOULD uncache meta for old and new parent page too,
+    // if this page changes parent page?
     uncachePageMeta(meta.pageId)
-    super.updatePageMeta(meta)
+    super.updatePageMeta(meta, old = old)
   }
 
 

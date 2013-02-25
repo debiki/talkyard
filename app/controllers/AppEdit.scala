@@ -56,8 +56,9 @@ object AppEdit extends mvc.Controller {
         val pageMeta =
           PageMeta.forNewPage(
             PageRole.parse(pageRole),
+            pageReqPerhapsNoPage.user_!,
+            Debate(pageId),
             creationDati = pageReqPerhapsNoPage.ctime,
-            pageId = pageId,
             // These shouldn't matter when rendering the edit form anyway:
             parentPageId = None, publishDirectly = false)
         val pageReqWithMeta = pageReqPerhapsNoPage.copyWithPreloadedMeta(pageMeta)
@@ -288,11 +289,8 @@ object AppEdit extends mvc.Controller {
       //throwForbidden("DwE01rsk351", "You may not create that page")
 
     val pageMeta = PageMeta.forNewPage(
-      pageRole,
-      creationDati = pageReq.ctime,
-      pageId = pageReq.pageId_!,
-      parentPageId = parentPageId,
-      publishDirectly = pageStatus == PageStatus.Published)
+      pageRole, pageReq.user_!, Debate(pageReq.pageId_!), pageReq.ctime,
+      parentPageId = parentPageId, publishDirectly = pageStatus == PageStatus.Published)
 
     val newPage = pageReq.dao.createPage(
       PageStuff(pageMeta, pageReq.pagePath, Debate(pageMeta.pageId)))

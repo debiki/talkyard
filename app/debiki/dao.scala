@@ -117,7 +117,7 @@ class TenantDao(protected val tenantDbDao: ChargingTenantDbDao)
 
     val newMeta = PageMeta.forChangedPage(pageMeta, pageWithNewActions)
     if (newMeta != pageMeta)
-      tenantDbDao.updatePageMeta(newMeta) // BUG: race condition
+      tenantDbDao.updatePageMeta(newMeta, old = pageMeta) // BUG: race condition
                         // Could fix by using Optimistic Concurrency Control?
 
     // Notify users whose actions were affected.

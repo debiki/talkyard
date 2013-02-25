@@ -95,7 +95,7 @@ abstract class QuotaChargerSpec extends RichFreeSpec with MustMatchers {
         loopUntilDeclined[QuotaConsumer.PerTenantIp](min = 20, max = 100) {
           // We're charging the same site-id and IP all the time, so the IP
           // will run out of quota, for `site.id`.
-          createPage(loginGrant.login.id, dao)
+          createPage(loginGrant.login.id, loginGrant.user, dao)
         }
       }
 
@@ -108,7 +108,7 @@ abstract class QuotaChargerSpec extends RichFreeSpec with MustMatchers {
           // The role should run out of quota, for `site.id`, before the IP?
           // because when you login and get a role, the IP quota is larger than
           // if you're not logged in? (Or how did I implement this?)
-          createPage(loginGrant.login.id, dao)
+          createPage(loginGrant.login.id, loginGrant.user, dao)
         }
       }
 
@@ -118,7 +118,7 @@ abstract class QuotaChargerSpec extends RichFreeSpec with MustMatchers {
           // We're charging the same site-id and role all the time, but a different IP.
           // The role should run out of quota.
           val dao = tenantDao(site.id, ip = nextIp(), roleId = Some(loginGrant.user.id))
-          createPage(loginGrant.login.id, dao)
+          createPage(loginGrant.login.id, loginGrant.user, dao)
         }
       }
 
@@ -144,7 +144,7 @@ abstract class QuotaChargerSpec extends RichFreeSpec with MustMatchers {
           val siteAndIp = SiteAndIp(site.id, nextIp())
           val loginGrant = loginNewGuestUser("GuestTest", siteAndIp)
           for (i <- 1 to pagesPerLap)
-            createPage(loginGrant.login.id, tenantDao(siteAndIp))
+            createPage(loginGrant.login.id, loginGrant.user, tenantDao(siteAndIp))
         }
       }
 
@@ -179,7 +179,7 @@ abstract class QuotaChargerSpec extends RichFreeSpec with MustMatchers {
             siteIds += guestDao.siteId
 
             // Test quota charger.
-            createPage(guestLoginGrant.login.id, guestDao)
+            createPage(guestLoginGrant.login.id, guestLoginGrant.user, guestDao)
           }
         }
       }
@@ -362,19 +362,20 @@ abstract class QuotaChargerSpec extends RichFreeSpec with MustMatchers {
   }
 
 
-  def createPage(loginId: String, dao: TenantDao) = {
+  def createPage(loginId: String, author: User, dao: TenantDao) = {
     val creationDati = new ju.Date
     val pageId = AppCreatePage.generateNewPageId()
     val pageRole = PageRole.Generic
     val pageBody = Post.newPageBody("Page body.", creationDati, pageRole,
       loginId = loginId, approval = Some(Approval.Preliminary))
+    val actions = Debate(pageId, posts = List(pageBody))
 
     dao.createPage(PageStuff(
       PageMeta.forNewPage(
-        pageRole, creationDati, pageId = pageId, publishDirectly = true),
+        pageRole, author, actions, creationDati, publishDirectly = true),
       PagePath(dao.siteId, folder = "/",
         pageId = Some(pageId), showId = true, pageSlug = "test-page"),
-      Debate(pageId, posts = List(pageBody))))
+      actions))
   }
 
 

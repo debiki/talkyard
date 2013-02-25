@@ -56,7 +56,7 @@ object AppChangePageMeta extends mvc.Controller {
       }
 
       if (newMeta != curMeta)
-        apiReq.dao.updatePageMeta(newMeta)
+        apiReq.dao.updatePageMeta(newMeta, old = curMeta)
     }
 
     Ok

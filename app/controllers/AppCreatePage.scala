@@ -162,7 +162,7 @@ object AppCreatePage extends mvc.Controller {
     if (parentPageId == Some("undefined"))
       throwBadReq("DwE93HF2", "Parent page id is `undefined`")
 
-    PageMeta.forNewPage(pageRole, creationDati = pageReq.ctime, pageId = pageId,
+    PageMeta.forNewPage(pageRole, pageReq.user_!, Debate(pageId), pageReq.ctime,
       parentPageId = parentPageId, publishDirectly = publishDirectly)
   }
 
