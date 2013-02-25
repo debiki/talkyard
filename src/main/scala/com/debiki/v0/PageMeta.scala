@@ -44,8 +44,8 @@ object PageStuff {
     val meta = PageMeta.forNewPage(
       pageRole,
       author,
+      actions,
       creationDati = actions.oldestDati getOrElse new ju.Date,
-      pageId = actions.id,
       publishDirectly = publishDirectly)
     PageStuff(meta, path, actions)
   }
@@ -87,20 +87,28 @@ object PageMeta {
   def forNewPage(
         pageRole: PageRole,
         author: User,
+        actions: Debate,
         creationDati: ju.Date = new ju.Date,
-        pageId: String = "?",
         parentPageId: Option[String] = None,
         publishDirectly: Boolean = false) =
     PageMeta(
-      pageId = pageId,
+      pageId = actions.pageId,
       pageRole = pageRole,
       creationDati = creationDati,
       modDati = creationDati,
       pubDati = if (publishDirectly) Some(creationDati) else None,
       parentPageId = parentPageId,
       pageExists = false,
+      cachedTitle = actions.titleText,
       cachedAuthorDispName = author.displayName,
-      cachedAuthorUserId = author.id)
+      cachedAuthorUserId = author.id,
+      cachedNumPosters = actions.numPosters,
+      cachedNumActions = actions.actionCount,
+      cachedNumPostsToReview = actions.numPostsToReview,
+      cachedNumPostsDeleted = actions.numPostsDeleted,
+      cachedNumRepliesVisible = actions.numRepliesVisible,
+      cachedLastVisiblePostDati = actions.lastVisiblePostDati,
+      cachedNumChildPages = 0)
 
   def forChangedPage(originalMeta: PageMeta, changedPage: Debate): PageMeta = {
     require(changedPage.id == originalMeta.pageId)
