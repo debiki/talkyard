@@ -41,15 +41,30 @@ object Debate {
   /** Assigns ids to actions and updates references from e.g. Edits to Posts.
    *  Only remaps IDs that start with "?".
    */
-  def assignIdsTo[T <: Action](actionsToRemap: List[T]): List[T] = {
+  def assignIdsTo[T <: Action](actionsToRemap: List[T], nextNewReplyId: Int): List[T] = {
     val remaps = mut.Map[String, String]()
+    var nextReplyId = nextNewReplyId
 
     // Generate new ids.
     actionsToRemap foreach { a: T =>
       require(!remaps.contains(a.id)) // each action must be remapped only once
       remaps(a.id) =
-          if (a.id.head == '?') nextRandomString()
-          else a.id
+          if (a.id.head == '?') {
+            if (Page.isReply(a)) {
+              // Reply ids should be small consecutive numbers that can be used
+              // as indexes into a bitset. That's why they're allocated in
+              // this manner.
+              nextReplyId += 1
+              (nextReplyId - 1).toString
+            }
+            else {
+              nextRandomString()
+            }
+          }
+          else {
+            assert(Page.isArticleOrConfigPostId(a.id))
+            a.id
+          }
     }
 
     // Remap ids, and update references to ids.
@@ -66,8 +81,8 @@ object Debate {
       case r: Review => r.copy(id = remaps(r.id), targetId = rmpd(r.targetId))
       case x => assErr("DwE3RSEK9]")
     }).asInstanceOf[T]
-    val actionsRemapped: List[T] = actionsToRemap map updateIds
 
+    val actionsRemapped: List[T] = actionsToRemap map updateIds
     actionsRemapped
   }
 
