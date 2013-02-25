@@ -271,7 +271,8 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
       val debateBadLogin = Debate(guid = "?", posts =
           T.post.copy(id = "1", loginId = "9999999")::Nil) // bad login id
       //SLog.info("Expecting ORA-02291: integrity constraint log message ------")
-      dao.createPage(PageStuff.forNewPage(PageRole.Generic, defaultPagePath, debateBadLogin)
+      dao.createPage(PageStuff.forNewPage(
+        PageRole.Generic, defaultPagePath, debateBadLogin, author = SystemUser.User)
                     ) must throwAn[Exception]
       //SLog.info("------------------------------------------------------------")
     }
@@ -386,12 +387,22 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
     "create a debate with a root post" in {
       val debateNoId = Debate(guid = "?", posts = ex1_rootPost::Nil)
       val page = dao.createPage(PageStuff.forNewPage(
-        PageRole.Generic, defaultPagePath, debateNoId, publishDirectly = true))
+        PageRole.Generic, defaultPagePath, debateNoId, publishDirectly = true,
+        author = loginGrant.user))
       val actions = page.actions
       ex1_debate = actions
       actions.postCount must_== 1
       actions.guid.length must be_>(1)  // not = '?'
       actions must havePostLike(ex1_rootPost)
+      page.meta.cachedAuthorDispName must_== loginGrant.user.displayName
+      page.meta.cachedAuthorUserId must_== loginGrant.user.id
+      page.meta.cachedNumPosters must_== 0
+      page.meta.cachedNumActions must_== 1
+      page.meta.cachedNumPostsDeleted must_== 0
+      page.meta.cachedNumRepliesVisible must_== 0
+      page.meta.cachedNumPostsToReview must_== 1
+      page.meta.cachedNumChildPages must_== 0
+      page.meta.cachedLastVisiblePostDati must_== None
     }
 
     "find the debate and the post again" in {
@@ -488,8 +499,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
 
       "create a Blog" in {
         val pageNoId = PageStuff(
-          PageMeta.forNewPage(PageRole.Blog, now,
-            parentPageId = None),
+          PageMeta.forNewPage(PageRole.Blog, loginGrant.user, Debate("?"), now),
           defaultPagePath.copy(
             showId = true, pageSlug = "role-test-blog-main"),
           Debate(guid = "?"))
@@ -508,7 +518,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
         actions.pageId.length must be_>(1)  // not = '?'
       }
 
-      "look up meta info for the Blog" in {
+      "look up meta info for the Blog, find no child pages" in {
         dao.loadPageMeta(blogMainPageId) must beLike {
           case Some(pageMeta: PageMeta) => {
             pageMeta.pageExists must_== true
@@ -516,15 +526,15 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
             pageMeta.parentPageId must_== None
             pageMeta.pageId must_== blogMainPageId
             pageMeta.pubDati must_== None
+            pageMeta.cachedNumChildPages must_== 0
           }
         }
       }
 
       "create a child BlogPost" in {
         val pageNoId = PageStuff(
-          PageMeta(pageId = "?", pageRole = PageRole.BlogPost,
-            parentPageId = Some(blogMainPageId),
-            creationDati = now, modDati = now),
+          PageMeta.forNewPage(PageRole.BlogPost, loginGrant.user, Debate("?"), now,
+            parentPageId = Some(blogMainPageId)),
           defaultPagePath.copy(
             showId = true, pageSlug = "role-test-blog-article"),
           Debate(guid = "?"))
@@ -533,6 +543,15 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
         blogArticleId = actions.pageId
         actions.postCount must_== 0
         actions.pageId.length must be_>(1)  // not = '?'
+      }
+
+      "look up meta info for the Blog again, find one child page" in {
+        dao.loadPageMeta(blogMainPageId) must beLike {
+          case Some(pageMeta: PageMeta) => {
+            pageMeta.pageId must_== blogMainPageId
+            pageMeta.cachedNumChildPages must_== 1
+          }
+        }
       }
 
       "look up meta info for the BlogPost" in {
@@ -593,7 +612,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
         childs.length must_== 0
       }
 
-      "can update meta info, except for page role"  in {
+      "can update meta info, and parent page child count"  in {
         val blogArticleMeta = dao.loadPageMeta(blogArticleId) match {
           case Some(pageMeta: PageMeta) =>
             testBlogArticleMeta(pageMeta) // extra test
@@ -605,14 +624,46 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
           blogArticleMeta.modDati.getTime + 1000 * 3600 * 24)
         val newMeta = blogArticleMeta.copy(
           parentPageId = None,
-          cachedTitle = Some("NewCachedPageTitle"),
           modDati = nextDay,
-          pubDati = Some(nextDay))
-        dao.updatePageMeta(newMeta)
+          pubDati = Some(nextDay),
+          // Use stupid incorrect values here, just for testing.
+          cachedTitle = Some("NewCachedPageTitle"),
+          cachedAuthorDispName = "cachedAuthorDispName",
+          cachedAuthorUserId = "cachedAuthorUserId",
+          cachedNumPosters = 11,
+          cachedNumActions = 12,
+          cachedNumPostsToReview = 13,
+          cachedNumPostsDeleted = 14,
+          cachedNumRepliesVisible = 15,
+          cachedLastVisiblePostDati = Some(new ju.Date(12345)),
+          cachedNumChildPages = 17)
+
+        dao.updatePageMeta(newMeta, old = blogArticleMeta)
+
         // Reload and test
         dao.loadPageMeta(blogArticleId) must beLike {
           case Some(meta2: PageMeta) =>
             meta2 must_== newMeta
+        }
+
+        // The former parent page's meta should also have changed:
+        dao.loadPageMeta(blogMainPageId) must beLike {
+          case Some(pageMeta: PageMeta) => {
+            pageMeta.pageId must_== blogMainPageId
+            pageMeta.cachedNumChildPages must_== 0
+          }
+        }
+
+        // Change parent back to the old one.
+        val newMetaOldParent = newMeta.copy(parentPageId = blogArticleMeta.parentPageId)
+        dao.updatePageMeta(newMetaOldParent, old = newMeta)
+
+        // Now the former parent page's child count should be 1 again.
+        dao.loadPageMeta(blogMainPageId) must beLike {
+          case Some(pageMeta: PageMeta) => {
+            pageMeta.pageId must_== blogMainPageId
+            pageMeta.cachedNumChildPages must_== 1
+          }
         }
       }
 
@@ -622,7 +673,8 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
           case x => failure(s"Bad meta: $x")
         }
         val newMeta = blogArticleMeta.copy(pageRole = PageRole.Forum)
-        dao.updatePageMeta(newMeta) must throwA[PageNotFoundByIdAndRoleException]
+        dao.updatePageMeta(
+          newMeta, old = blogArticleMeta) must throwA[PageNotFoundByIdAndRoleException]
       }
 
     }
@@ -642,7 +694,8 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
             pageSlug: String = "forum-or-topic",
             showId: Boolean = true): PageStuff =
         PageStuff(
-          PageMeta.forNewPage(pageRole, now, parentPageId = parentPageId),
+          PageMeta.forNewPage(pageRole, loginGrant.user, Debate("?"), now,
+            parentPageId = parentPageId),
           defaultPagePath.copy(folder = "/forum/", showId = showId, pageSlug = pageSlug),
           Debate(guid = "?"))
 
@@ -1903,7 +1956,8 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
           case PagePath.Parsed.Good(path) => path.copy(showId = showId)
           case x => failure(s"Test broken, bad path: $x")
         }
-      dao.createPage(PageStuff.forNewEmptyPage(PageRole.Generic, pagePath))
+      dao.createPage(PageStuff.forNewEmptyPage(PageRole.Generic, pagePath,
+        author = loginGrant.user))
     }
 
 
@@ -2158,7 +2212,8 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
         val emptyPage = Debate(guid = "?")
         val pagePath = v0.PagePath(newWebsiteOpt.id, "/", None, false, "")
         val dao = newWebsiteDao()
-        val page = dao.createPage(PageStuff.forNewPage(PageRole.Generic, pagePath, emptyPage))
+        val page = dao.createPage(PageStuff.forNewPage(
+          PageRole.Generic, pagePath, emptyPage, author = SystemUser.User))
         homepageId = page.id
         dao.savePageActions(page.id, List(homepageTitle))
         ok
