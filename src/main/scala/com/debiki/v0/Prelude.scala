@@ -381,9 +381,9 @@ object Prelude {
       kept
     }
 
-    def orIfEmpty(otherString: =>String): String = {
+    def orIfEmpty[A >: String](other: => A): A = {
       if (underlying nonEmpty) underlying
-      else otherString
+      else other
     }
   }
 
