@@ -15,6 +15,17 @@ object Page {
   val TitleId = "2"
   val ConfigPostId = "3"
   type Page = Debate   // import Page.Page and type ": Page", not ": Debate"
+
+  def isArticleOrConfigPostId(id: String) =
+    id == Page.BodyId || id == Page.TitleId || id == Page.ConfigPostId
+
+  def isReply(action: Action): Boolean = action match {
+    case post: Post if post.tyype == PostType.Text && !isArticleOrConfigPostId(post.id) =>
+      true
+    case _ =>
+      false
+  }
+
 }
 
 
@@ -281,6 +292,43 @@ case class Debate (
 
   def postsByUser(withId: String): Seq[Post] =
     posts.filter(smart(_).identity.map(_.userId) == Some(withId))
+
+  def numPosters = 0 // posts.map(_.userId).toSet.size
+
+  lazy val (
+      numPostsDeleted,
+      numRepliesVisible,
+      numPostsToReview,
+      lastVisiblePostDati) = {
+    var numDeleted = 0
+    var numVisible = 0
+    var numPendingReview = 0
+    var lastDati: Option[ju.Date] = None
+    for (post <- vipos_!) {
+      if (post.tyype != PostType.Text) {
+        // Ignore. Should probably refactor and remove non-text stuff.
+      }
+      else if (post.isDeleted) numDeleted += 1
+      else if (post.someVersionApproved) {
+        if (Page.isReply(post.action)) {
+          numVisible += 1
+        }
+        else {
+          // Ignore. We don't count the page body or title — it's rather uninteresting
+          // to count them because they always exist (on normal pages) Num replies,
+          // however, is interesting.
+        }
+        val isNewer = lastDati.isEmpty || lastDati.get.getTime < post.creationDati.getTime
+        if (isNewer) lastDati = Some(post.creationDati)
+      }
+      else numPendingReview += 1
+    }
+    (numDeleted, numVisible, numPendingReview, lastDati)
+  }
+
+
+  private def vipos_! : List[ViPo] = // rename!
+    posts.map(post => vipo_!(post.id))
 
 
   // -------- Replies

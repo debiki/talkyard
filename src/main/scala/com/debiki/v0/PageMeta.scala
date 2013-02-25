@@ -35,18 +35,23 @@ trait HasPagePath {
 
 object PageStuff {
 
-  def forNewPage(pageRole: PageRole, path: PagePath, actions: Debate,
-        publishDirectly: Boolean = false): PageStuff = {
+  def forNewPage(
+        pageRole: PageRole,
+        path: PagePath,
+        actions: Debate,
+        publishDirectly: Boolean = false,
+        author: User): PageStuff = {
     val meta = PageMeta.forNewPage(
       pageRole,
+      author,
       creationDati = actions.oldestDati getOrElse new ju.Date,
       pageId = actions.id,
       publishDirectly = publishDirectly)
     PageStuff(meta, path, actions)
   }
 
-  def forNewEmptyPage(pageRole: PageRole, path: PagePath) =
-    forNewPage(pageRole, path, Debate(guid = "?"))
+  def forNewEmptyPage(pageRole: PageRole, path: PagePath, author: User) =
+    forNewPage(pageRole, path, Debate(guid = "?"), author = author)
 
 }
 
@@ -79,8 +84,9 @@ case class PagePathAndMeta(path: PagePath, meta: PageMeta)
 
 object PageMeta {
 
-  def forNewPage(  // fix
+  def forNewPage(
         pageRole: PageRole,
+        author: User,
         creationDati: ju.Date = new ju.Date,
         pageId: String = "?",
         parentPageId: Option[String] = None,
@@ -92,18 +98,24 @@ object PageMeta {
       modDati = creationDati,
       pubDati = if (publishDirectly) Some(creationDati) else None,
       parentPageId = parentPageId,
-      pageExists = false)
+      pageExists = false,
+      cachedAuthorDispName = author.displayName,
+      cachedAuthorUserId = author.id)
 
   def forChangedPage(originalMeta: PageMeta, changedPage: Debate): PageMeta = {
-    // fix!
     require(changedPage.id == originalMeta.pageId)
     originalMeta.copy(
       cachedTitle = changedPage.titleText,
-      modDati =
-        changedPage.modificationDati getOrElse originalMeta.modDati)
+      modDati = changedPage.modificationDati getOrElse originalMeta.modDati,
+      cachedNumPosters = changedPage.numPosters,
+      cachedNumActions = changedPage.actionCount,
+      cachedNumPostsDeleted = changedPage.numPostsDeleted,
+      cachedNumRepliesVisible = changedPage.numRepliesVisible,
+      cachedNumPostsToReview = changedPage.numPostsToReview,
+      cachedLastVisiblePostDati = changedPage.lastVisiblePostDati)
+    // (cachedNumChildPages is updated elsewhere — when a child page is created.)
   }
 
-  case class AuthorInfo(roleId: String, displayName: String)
 }
 
 
@@ -118,8 +130,15 @@ case class PageMeta(
   parentPageId: Option[String] = None,
   pageExists: Boolean = true,
   cachedTitle: Option[String] = None,
-  cachedAuthors: List[PageMeta.AuthorInfo] = Nil,
-  cachedCommentCount: Int = 0) {
+  cachedAuthorDispName: String,
+  cachedAuthorUserId: String,
+  cachedNumPosters: Int = 0,
+  cachedNumActions: Int = 0,
+  cachedNumPostsDeleted: Int = 0,
+  cachedNumRepliesVisible: Int = 0,
+  cachedNumPostsToReview: Int = 0,
+  cachedNumChildPages: Int = 0,
+  cachedLastVisiblePostDati: Option[ju.Date] = None) {
 
   def status: PageStatus =
     if (pubDati.isDefined) PageStatus.Published
