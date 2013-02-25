@@ -308,9 +308,8 @@ case class Debate (
   def postsByUser(withId: String): Seq[Post] =
     posts.filter(smart(_).identity.map(_.userId) == Some(withId))
 
-  def numPosters = 0 // posts.map(_.userId).toSet.size
-
   lazy val (
+      numPosters,
       numPostsDeleted,
       numRepliesVisible,
       numPostsToReview,
@@ -319,12 +318,14 @@ case class Debate (
     var numVisible = 0
     var numPendingReview = 0
     var lastDati: Option[ju.Date] = None
+    var posterUserIds = mut.Set[String]()
     for (post <- vipos_!) {
       if (post.tyype != PostType.Text) {
         // Ignore. Should probably refactor and remove non-text stuff.
       }
       else if (post.isDeleted) numDeleted += 1
       else if (post.someVersionApproved) {
+        posterUserIds.add(post.user_!.id)
         if (Page.isReply(post.action)) {
           numVisible += 1
         }
@@ -338,7 +339,7 @@ case class Debate (
       }
       else numPendingReview += 1
     }
-    (numDeleted, numVisible, numPendingReview, lastDati)
+    (posterUserIds.size, numDeleted, numVisible, numPendingReview, lastDati)
   }
 
 
