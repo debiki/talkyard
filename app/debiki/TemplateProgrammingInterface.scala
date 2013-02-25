@@ -36,7 +36,7 @@ object TinyTemplateProgrammingInterface {
 
 
   case class Forum(
-    id: String, path: String, title: String)
+    id: String, path: String, title: String, numTopics: Int)
     // and, in the future: num topics, num contributors and num replies?
 
 
@@ -81,7 +81,8 @@ object TinyTemplateProgrammingInterface {
     def apply(pageMeta: PageMeta, pagePath: PagePath): Forum = Forum(
       id = pageMeta.pageId,
       path = pagePath.path,
-      title = pageMeta.cachedTitle getOrElse "(Unnamed forum)")
+      title = pageMeta.cachedTitle getOrElse "(Unnamed forum)",
+      numTopics = pageMeta.cachedNumChildPages)
   }
 
 

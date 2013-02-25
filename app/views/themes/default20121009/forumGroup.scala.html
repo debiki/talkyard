@@ -74,7 +74,7 @@
           </div>
           <p class="forum-description">@tpi.configValue("forum-description", pageId = Some(forum.id))
           </p>
-          <p class="topic-count">99@* @{tpi.forum.topicCount} *@ topics</p>
+          <p class="topic-count">@{forum.numTopics} topics</p>
 
           @*
           <ol class="subforum-list">
