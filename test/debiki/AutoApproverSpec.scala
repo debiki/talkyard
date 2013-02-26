@@ -105,7 +105,7 @@ class AutoApproverSpec extends Specification with Mockito {
   val loginId = "101"
 
   val body =
-    Post(id = "1", parent = "1", ctime = startDati,
+    Post(id = Page.BodyId, parent = Page.BodyId, ctime = startDati,
       loginId = loginId, newIp = None, text = "täxt-tåxt",
       markup = "", approval = None, tyype = PostType.Text,
       where = None)

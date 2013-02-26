@@ -175,7 +175,7 @@ object Application extends mvc.Controller {
 
     val mostRecentPageCtime: ju.Date =
       pathsAndPages.headOption.map(pathAndPage =>
-        pathAndPage._2.vipo_!(Debate.PageBodyId).creationDati
+        pathAndPage._2.vipo_!(Page.BodyId).creationDati
       ).getOrElse(new ju.Date)
 
     val feedUrl = "http://"+ pageReq.request.host + pageReq.request.uri
