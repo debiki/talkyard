@@ -19,7 +19,7 @@ trait NotfGeneratorTestValues {
   val (reviewer, reviewerIdty, reviewerLogin) = makePerson("ReviewerAuthor")
 
   val rawBody = PostTestValues.postSkeleton.copy(
-    id = "1", parent = "1", loginId = bodyAuthorLogin.id)
+    id = Page.BodyId, parent = Page.BodyId, loginId = bodyAuthorLogin.id)
   val rawBodyPrelApproved = rawBody.copy(approval = Some(Approval.Preliminary))
   val rawBodyWellBehavedApproved = rawBody.copy(approval = Some(
     Approval.WellBehavedUser))
@@ -33,7 +33,7 @@ trait NotfGeneratorTestValues {
   val rejectionOfBody = approvalOfBody.copy(id = "3", approval = None)
 
   val rawReply = PostTestValues.postSkeleton.copy(
-    id = "11", parent = "1", loginId = replyAuthorLogin.id)
+    id = "11", parent = rawBody.id, loginId = replyAuthorLogin.id)
   val rawReplyPrelApproved = rawReply.copy(approval =
     Some(Approval.Preliminary))
   val rawReplyWellBehavedApproved = rawReply.copy(approval = Some(

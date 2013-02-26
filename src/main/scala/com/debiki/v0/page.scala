@@ -11,9 +11,9 @@ import FlagReason.FlagReason
 
 // Preparing to rename Debate to Page:
 object Page {
-  val BodyId = "1"
-  val TitleId = "2"
-  val ConfigPostId = "3"
+  val TitleId = "0t"
+  val BodyId = "0b"
+  val ConfigPostId = "0c"
   type Page = Debate   // import Page.Page and type ": Page", not ": Debate"
 
   def isArticleOrConfigPostId(id: String) =
@@ -30,8 +30,6 @@ object Page {
 
 
 object Debate {
-
-  val PageBodyId = "1"
 
   def empty(id: String) = Debate(id)
 
@@ -248,9 +246,9 @@ case class Debate (
   def idd = guidd
   def pageId = id  // when/if I rename Debate to PageActions.
 
-  def body: Option[ViPo] = vipo(PageBodyId)
+  def body: Option[ViPo] = vipo(Page.BodyId)
 
-  def body_! = vipo_!(PageBodyId)
+  def body_! = vipo_!(Page.BodyId)
 
   def bodyText: Option[String] = vipo(Page.BodyId).map(_.text)
 

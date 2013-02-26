@@ -20,7 +20,7 @@ trait PostTestValues {
         markup = "", approval = None, tyype = PostType.Text,
         where = None)
 
-  val rawBody = postSkeleton.copy(id = "1", parent = "1")
+  val rawBody = postSkeleton.copy(id = Page.BodyId, parent = Page.BodyId)
   val rawReply_a = postSkeleton.copy(id = "a", parent = rawBody.id)
   val rawReply_b = postSkeleton.copy(id = "b", parent = rawBody.id)
 
