@@ -323,7 +323,8 @@ case class Debate (
       }
       else if (post.isDeleted) numDeleted += 1
       else if (post.someVersionApproved) {
-        posterUserIds.add(post.user_!.id)
+        // posterUserIds.add(post.user_!.id) — breaks, users sometimes absent.
+        // Wait until I've added DW1_PAGE_ACTIONS.USER_ID?
         if (Page.isReply(post.action)) {
           numVisible += 1
         }
