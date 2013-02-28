@@ -268,7 +268,8 @@ function renderPageEtc() {
 
   steps.push(d.i.scrollToUrlAnchorPost);
 
-  steps.push(d.i.startNextUnreadPostCycler);
+  // Disable for now, I'll rewrite it to consider timestamps.
+  //steps.push(d.i.startNextUnreadPostCycler);
 
   steps.push(function() {
     debiki.scriptLoad.resolve();
