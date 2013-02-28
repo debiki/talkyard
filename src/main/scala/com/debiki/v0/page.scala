@@ -5,8 +5,7 @@ package com.debiki.v0
 import java.{util => ju}
 import collection.{immutable => imm, mutable => mut}
 import Prelude._
-import Debate._
-import FlagReason.FlagReason
+import Page._
 
 
 // Preparing to rename Debate to Page:
@@ -26,15 +25,10 @@ object Page {
       false
   }
 
-}
-
-
-object Debate {
-
-  def empty(id: String) = Debate(id)
 
   def fromActions(guid: String, people: People, actions: List[AnyRef]): Debate =
     Debate(guid, people) ++ actions
+
 
   /** Assigns ids to actions and updates references from e.g. Edits to Posts.
    *  Only remaps IDs that start with "?".
@@ -53,7 +47,7 @@ object Debate {
               // as indexes into a bitset. That's why they're allocated in
               // this manner.
               nextReplyId += 1
-              (nextReplyId - 1).toString
+              intToReplyId(nextReplyId - 1)
             }
             else {
               nextRandomString()
@@ -82,6 +76,53 @@ object Debate {
 
     val actionsRemapped: List[T] = actionsToRemap map updateIds
     actionsRemapped
+  }
+
+
+  val ReplyIdAlphabet =
+    "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+
+  val ReplyIdAlphabetBase = ReplyIdAlphabet.length
+
+  assert(ReplyIdAlphabetBase == 62)
+
+
+  /**
+   * Converts a number to a reply id, namely a base-62 string. Examples:
+   * 1 -> "1"  10 -> "A"  11 -> "B"  61 -> "z"
+   * 64 -> "12", 72 -> "1A"
+   *
+   * (An alternative is to reverse the digits, which would tend to result in more
+   * well balanced binary trees (assuming ids used as keys). This would, however
+   * result in related replies being located "randomly" (withing one page) when
+   * stored in a database. Therefore, it'd usually be more work to load only parts
+   * of a page? And it's better store replies sorted by time (not reverse digits)?)
+   */
+  def intToReplyId(value: Int): String = {
+    var remaining = value
+    var replyId = ""
+    while (remaining > 0) {
+      val remainder = remaining % 62
+      remaining = remaining / 62
+      replyId += ReplyIdAlphabet.charAt(remainder)
+    }
+    replyId.reverse
+  }
+
+
+  def replyIdToInt(replyId: String): Int = {
+    var multiplier = 1
+    replyId.foldRight(0) { (sum, ch) =>
+      val value = ch match {
+        case num if '0' <= ch && ch <= '9' => ch - '0'
+        case upper if 'A' <= ch && ch <= 'Z' => ch - 'A' + 10
+        case lower if 'a' <= ch && ch <= 'z' => ch - 'a' + 10 + 26
+        case x => assErr("DwE15GW08", s"Bad reply id, cannot convert to int: `$replyId'")
+      }
+      val newSum = sum + value * multiplier
+      multiplier *= ReplyIdAlphabetBase
+      newSum
+    }
   }
 
 }
