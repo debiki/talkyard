@@ -1,7 +1,7 @@
 /* Debiki Utterscroll — dragscroll everywhere
  * http://www.debiki.com/dev/utterscroll
  *
- * Copyright (c) 2012 Kaj Magnus Lindberg (born 1979)
+ * Copyright (c) 2012 - 2013 Kaj Magnus Lindberg (born 1979)
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -24,15 +24,26 @@
 if (!window.debiki) window.debiki = {};
 if (!debiki.Utterscroll) debiki.Utterscroll = {};
 
+
+
 /**
- * Enables Utterscroll.
+ * Utterscroll. API:
  *
- * Options:
+ * `enable(options)` enables Utterscroll.  Options:
  *  scrollstoppers:
  *    jQuery selectors, e.g. '.CodeMirror, div.your-class'.
  *    Dragging the mouse inside a scrollstopper never results in scrolling.
+ *
+ * `enable()` (with no options specified) enables Utterscroll and remembers
+ *   any option you specified the last time you did specify options.
+ *
+ * `disable()`
+ *
+ * `isEnabled()`
+ *
+ * `isScrolling()` is true iff the user is currently dragscrolling.
  */
-debiki.Utterscroll.enable = function(options) {
+debiki.Utterscroll = (function(options) {
 
   // Don't call console.debug in IE 9 (and 7 & 8); it's not available unless
   // the dev tools window is open. Use this safe wrapper instead of
@@ -49,18 +60,14 @@ debiki.Utterscroll.enable = function(options) {
     onHasUtterscrolled: function() {}
   };
 
-  var settings = $.extend({}, defaults, options);
-  var allScrollstoppers = settings.defaultScrollstoppers;
-  if (settings.scrollstoppers.length > 0)
-    allScrollstoppers += ', '+ options.scrollstoppers;
+  var enabled;
+  var settings;
+  var allScrollstoppers;
 
   var $elemToScroll;
   var startPos;
   var lastPos;
 
-  debiki.Utterscroll.isScrolling = function() {
-    return !!startPos;
-  };
 
   // Avoids firing onHasUtterscrolled twice.
   var hasFiredHasUtterscrolled = false;
@@ -77,6 +84,9 @@ debiki.Utterscroll.enable = function(options) {
 
 
   function startScrollPerhaps(event) {
+    if (!enabled)
+      return;
+
     // Only left button drag-scrolls.
     if (event.which !== 1 )
       return;
@@ -418,7 +428,38 @@ debiki.Utterscroll.enable = function(options) {
     return false;
   };
 
-};
+
+  var api = {
+    enable: function(options) {
+      enabled = true;
+
+      // If no options specified, remember any options specified last time
+      // Utterscroll was enabled.
+      if (!options && settings)
+        return;
+
+      settings = $.extend({}, defaults, options);
+      allScrollstoppers = settings.defaultScrollstoppers;
+      if (settings.scrollstoppers.length > 0)
+        allScrollstoppers += ', '+ options.scrollstoppers;
+    },
+
+    disable: function() {
+      enabled = false;
+    },
+
+    isEnabled: function() {
+      return enabled;
+    },
+
+    isScrolling: function() {
+      return !!startPos;
+    }
+  };
+
+
+  return api;
+})();
 
 //----------------------------------------
   })(jQuery);
