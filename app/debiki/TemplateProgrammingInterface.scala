@@ -447,7 +447,7 @@ class TemplateProgrammingInterface(
       showComments = shall("show-comments", showComments)))
 
     val page = PageStuff(pageReq.pageMeta_!, pageReq.pagePath,
-      Debate.empty(pageReq.pageId_!))
+      Debate(pageReq.pageId_!))
 
     HtmlPageSerializer.wrapInPageTag(page) {
       xml.Unparsed(contents.body)
