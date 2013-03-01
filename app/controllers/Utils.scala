@@ -108,8 +108,8 @@ object Utils extends Results with http.ContentTypes {
 
 
   def localUrlTo(action: ViAc): String = {
-    // - Add `?view=3` for templates, since they're on their own virtual page
-    // not connected to the root post.
+    // - Add `?view=<config-post-id>` for templates, since they're on their
+    // own virtual page not connected to the root post.
     // - Add `?view` to paths that end with .js or .css or Debiki will
     // render the page as text, not html. Currently done for all non-template
     // pages.

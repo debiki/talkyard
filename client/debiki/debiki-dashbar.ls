@@ -77,7 +77,7 @@ function dwDashbar ($http)
   # But would then need to refresh page when dialog closed?
   # ((If the user is editing something, a 'Really close page?' dialog
   # is popped up by some other module.))
-  window.location = window.location.pathname + '?view=3'
+  window.location = window.location.pathname + '?view=0c'
 
 
 

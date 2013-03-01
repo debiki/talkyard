@@ -4,7 +4,7 @@ var d = { i: debiki.internal, u: debiki.v0.util };
 var $ = d.i.$;
 
 
-d.i.pageConfigPostId = 3;
+d.i.pageConfigPostId = '0c';
 
 
 function confirmClosePage() {
