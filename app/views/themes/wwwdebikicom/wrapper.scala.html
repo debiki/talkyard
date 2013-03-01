@@ -45,6 +45,10 @@
     })();
   </script>
 
+  @if(tpi.configValue("social-links").nonEmpty && tpi.configValue("social-links") != "none") {
+    @Html(tpi.configValue("social-scripts"))
+  }
+
   @Html(tpi.websiteConfigValue("html-head-tags-appended-site-wide"))
   @Html(tpi.configValue("html-head-tags-appended"))
 </head>

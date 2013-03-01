@@ -30,6 +30,7 @@ See: http://stackoverflow.com/questions/1014203/best-way-to-use-googles-hosted-j
 *@
 <script>
   var debiki = $.extend(true, {
+    getPageId: function() { return '@pageId'; },
     v0: { util: {} },
     internal: { $: jQuery, pageId: '@pageId', assetsUrlPathStart: '@asset("")' }
   }, debiki);
