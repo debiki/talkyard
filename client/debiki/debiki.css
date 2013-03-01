@@ -40,6 +40,8 @@
   font-family: Verdana;
   text-decoration:none;
   z-index: 2; /* place above PNG arrow hiders */
+  left: 2px;
+  top: -1px;
 }
 .dw-z:hover {
   color: #c77405;
@@ -138,7 +140,7 @@ and two folded threads would overlap, unless: */
 
 
 .dw-p {
-  margin-left: 35px;
+  margin-left: 25px;
   /* overflow: hidden; No, or sort order and reply btn tips won't appear */
   background-color: white;
 }
@@ -164,7 +166,7 @@ and two folded threads would overlap, unless: */
 
 
 /* --- Read / unread marks --- */
-
+/*
 .dw-cycle-mark {
   position: absolute;
   left: 8px;
@@ -178,14 +180,14 @@ and two folded threads would overlap, unless: */
 .dw-cycle-mark-○ {
   color: hsl(0, 0%, 67%);
   font-size: 20px;
-  padding: 6px; /* Make it easier to click */
+  padding: 6px; / * Make it easier to click * /
   top: -9px;
   left: 7px;
 }
 
 .dw-z {
   left: -5px;
-}
+} */
 
 
 /* ===== Tips ===== */
@@ -420,19 +422,19 @@ JavaScript. Then I can still place all CSS stuff in this file. */
   background-color: white;
   position: absolute;
   height: 35px;
-  width: 30px; /* the curve images are fairly wide */
+  width: 15px; /* the curve images are fairly wide */
   z-index: 2;
 }
 
 .dw-svg-fake-varrow-hider-lo {
   bottom: 0px;
-  height: 40px;
+  height: 25px;
 }
 
 .dw-svg-fake-varrow-hider-left {
   bottom: 0px;
   height: 100%;
-  left: -55px;
+  left: -45px;
 }
 
 

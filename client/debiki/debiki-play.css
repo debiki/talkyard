@@ -344,7 +344,7 @@ each other. I should rewrite, and try to avoid float:left? [8DbF3]
 }
 
 .dw-as {
-  margin: 0 0 9px 37px;
+  margin: 0 0 9px 28px;
   /* Use padding-top not margin-top here, or there'll be a tiny space between
   the post and the .dw-as, which triggers a certain $thread.mouseleave() in
   debiki.js which, for inline actions, hides the action menu — just before
