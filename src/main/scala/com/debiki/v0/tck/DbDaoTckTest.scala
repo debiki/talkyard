@@ -894,13 +894,13 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
     }
 
     def testSaveLoadReview(isApproved: Boolean) {
-      var reviewSaved: Review = null
+      var reviewSaved: ReviewPostAction = null
       val targetId = ex1_rootPost.id
       val approval = if (isApproved) Some(Approval.Manual) else None
-      val reviewNoId = Review("?", targetId = targetId, loginId = loginId,
+      val reviewNoId = ReviewPostAction("?", targetId = targetId, loginId = loginId,
          newIp = None, ctime = now, approval = approval)
       dao.savePageActions(ex1_debate.guid, List(reviewNoId)) must beLike {
-        case List(review: Review) =>
+        case List(review: ReviewPostAction) =>
           reviewSaved = review
           review must_== reviewNoId.copy(id = review.id)
       }
