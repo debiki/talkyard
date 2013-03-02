@@ -22,7 +22,7 @@ object Page {
 
 
   def isReply(action: RawPostActionOld): Boolean = action match {
-    case post: Post if !isArticleOrConfigPostId(post.id) => true
+    case post: CreatePostAction if !isArticleOrConfigPostId(post.id) => true
     case _ => false
   }
 
@@ -65,7 +65,7 @@ object Page {
     // Yes, if I introduce RawPostActionOld.parentId and targetId and destId.)
     def rmpd(id: String) = remaps.getOrElse(id, id)
     def updateIds(action: T): T = (action match {
-      case p: Post => p.copy(id = remaps(p.id), parent = rmpd(p.parent))
+      case p: CreatePostAction => p.copy(id = remaps(p.id), parent = rmpd(p.parent))
       case r: Rating => r.copy(id = remaps(r.id), postId = rmpd(r.postId))
       case f: Flag => f.copy(id = remaps(f.id), postId = rmpd(f.postId))
       case e: Edit => e.copy(id = remaps(e.id), postId = rmpd(e.postId))
@@ -133,7 +133,7 @@ object Page {
 case class Debate (
   guid: String,  // COULD rename to pageId?
   people: People = People.None,
-  posts: List[Post] = Nil,
+  posts: List[CreatePostAction] = Nil,
   ratings: List[Rating] = Nil,
   edits: List[Edit] = Nil,
   editApps: List[EditApp] = Nil,
@@ -142,7 +142,7 @@ case class Debate (
   reviews: List[Review] = Nil) {
 
   private lazy val postsById =
-      imm.Map[String, Post](posts.map(x => (x.id, x)): _*)
+      imm.Map[String, CreatePostAction](posts.map(x => (x.id, x)): _*)
 
   def actionCount: Int =
      posts.size + ratings.size + edits.size + editApps.size +
@@ -166,28 +166,28 @@ case class Debate (
   }
 
   lazy val (
-      postsByParentId: imm.Map[String, List[Post]]
+      postsByParentId: imm.Map[String, List[CreatePostAction]]
         ) = {
 
     // Add id -> post mappings to mutable multimaps.
-    var postMap = mut.Map[String, mut.Set[Post]]()
+    var postMap = mut.Map[String, mut.Set[CreatePostAction]]()
     for (p <- posts) {
       val mmap = postMap
       // =  p.tyype match {
       //  case PostType.Text => postMap
       // }
       mmap.getOrElse(
-        p.parent, { val s = mut.Set[Post](); mmap.put(p.parent, s); s }) += p
+        p.parent, { val s = mut.Set[CreatePostAction](); mmap.put(p.parent, s); s }) += p
     }
 
     // Copy to immutable versions.
-    def buildImmMap(mutMap: mut.Map[String, mut.Set[Post]]
-                       ): imm.Map[String, List[Post]] = {
+    def buildImmMap(mutMap: mut.Map[String, mut.Set[CreatePostAction]]
+                       ): imm.Map[String, List[CreatePostAction]] = {
       // COULD sort the list in ascenting ctime order?
       // Then list.head would be e.g. the oldest title -- other code
       // assume posts ase sorted in this way?
       // See ViPo.templatePost, titlePost.
-      imm.Map[String, List[Post]](
+      imm.Map[String, List[CreatePostAction]](
         (for ((parentId, postsSet) <- mutMap)
         yield (parentId, postsSet.toList // <-- sort this list by ctime asc?
               )).toList: _*).withDefaultValue(Nil)
@@ -327,7 +327,7 @@ case class Debate (
 
   def postCount = posts.length
 
-  def post(id: String): Option[Post] = postsById.get(id)
+  def post(id: String): Option[CreatePostAction] = postsById.get(id)
 
   def vipo_!(postId: String): ViPo =  // COULD rename to post_!(withId = ...)
     vipo(postId).getOrElse(runErr(
@@ -336,7 +336,7 @@ case class Debate (
   def vipo(postId: String): Option[ViPo] = // COULD rename to post(withId =...)
     post(postId).map(new ViPo(this, _))
 
-  def postsByUser(withId: String): Seq[Post] =
+  def postsByUser(withId: String): Seq[CreatePostAction] =
     posts.filter(smart(_).identity.map(_.userId) == Some(withId))
 
   lazy val (
@@ -378,10 +378,10 @@ case class Debate (
 
   // -------- Replies
 
-  def repliesTo(id: String): List[Post] =
+  def repliesTo(id: String): List[CreatePostAction] =
     postsByParentId.getOrElse(id, Nil).filterNot(_.id == id)
 
-  def successorsTo(postId: String): List[Post] = {
+  def successorsTo(postId: String): List[CreatePostAction] = {
     val res = repliesTo(postId)
     res.flatMap(r => successorsTo(r.id)) ::: res
   }
@@ -481,7 +481,7 @@ case class Debate (
 
   // -------- Construction
 
-  def + (post: Post): Debate = copy(posts = post :: posts)
+  def + (post: CreatePostAction): Debate = copy(posts = post :: posts)
   def + (rating: Rating): Debate = copy(ratings = rating :: ratings)
   def + (edit: Edit): Debate = copy(edits = edit :: edits)
   def + (editApp: EditApp): Debate = copy(editApps = editApp :: editApps)
@@ -504,7 +504,7 @@ case class Debate (
     var dels2 = deletions
     var reviews2 = reviews
     for (a <- actions) a match {
-      case p: Post => posts2 ::= p
+      case p: CreatePostAction => posts2 ::= p
       case r: Rating => ratings2 ::= r
       case e: Edit => edits2 ::= e
       case a: EditApp => editApps2 ::= a

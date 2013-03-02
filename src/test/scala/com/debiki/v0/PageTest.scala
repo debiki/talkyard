@@ -27,7 +27,7 @@ trait PageTestValues {
   val textAfterFirstEdit = "body-text-after-first-edit"
 
   val bodySkeleton =
-    Post(id = Page.BodyId, parent = Page.BodyId, ctime = new ju.Date(1000),
+    CreatePostAction(id = Page.BodyId, parent = Page.BodyId, ctime = new ju.Date(1000),
         loginId = "101", newIp = None, text = textInitially,
         markup = "", approval = None, tyype = PostType.Text,
         where = None)

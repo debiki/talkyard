@@ -15,7 +15,7 @@ object PostTestValues extends PostTestValues
 trait PostTestValues {
 
   val postSkeleton =
-    Post(id = "?", parent = "?", ctime = new ju.Date(1000),
+    CreatePostAction(id = "?", parent = "?", ctime = new ju.Date(1000),
         loginId = "101", newIp = None, text = "text-text-text",
         markup = "", approval = None, tyype = PostType.Text,
         where = None)

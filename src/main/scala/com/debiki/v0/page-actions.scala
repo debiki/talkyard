@@ -119,7 +119,7 @@ case class Flag(
 
 
 
-case object Post {
+case object CreatePostAction {
 
   def newTitleBySystem(text: String, creationDati: ju.Date) =
     newTitle(text, creationDati, loginId = SystemUser.Login.id,
@@ -135,7 +135,7 @@ case object Post {
         creationDati: ju.Date,
         loginId: String,
         approval: Option[Approval]) =
-    Post(Page.TitleId, Page.TitleId, creationDati,
+    CreatePostAction(Page.TitleId, Page.TitleId, creationDati,
       loginId = loginId,
       newIp = None,
       text = text,
@@ -149,7 +149,7 @@ case object Post {
         pageRole: PageRole,
         loginId: String,
         approval: Option[Approval]) =
-    Post(Page.BodyId, Page.BodyId, creationDati,
+    CreatePostAction(Page.BodyId, Page.BodyId, creationDati,
       loginId = loginId,
       newIp = None,
       text = text,
@@ -160,7 +160,7 @@ case object Post {
 
 
 
-case class Post(  // COULD merge all actions into Post,
+case class CreatePostAction(  // COULD merge all actions into Post,
                   // and use different PostType:s (which would include
                   // the payload) for various different actions.
                   // And rename to ... Action? PageAction?

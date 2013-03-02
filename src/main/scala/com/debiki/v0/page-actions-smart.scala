@@ -12,7 +12,7 @@ import FlagReason.FlagReason
 object PostAction {
 
   def apply(page: Debate, action: RawPostActionOld): PostAction = action match {
-    case p: Post => new ViPo(page, p)
+    case p: CreatePostAction => new ViPo(page, p)
     case a: RawPostActionOld => new PostAction(page, a)
   }
 
@@ -68,9 +68,9 @@ class PostAction(val debate: Debate, val action: RawPostActionOld) {
 
 
 
-/** A Virtual Post into account all edits applied to the actual post.
+/** A Virtual CreatePostAction into account all edits applied to the actual post.
  */
-class ViPo(debate: Debate, val post: Post) extends PostAction(debate, post) {
+class ViPo(debate: Debate, val post: CreatePostAction) extends PostAction(debate, post) {
 
   def parentId: String = post.parent
 

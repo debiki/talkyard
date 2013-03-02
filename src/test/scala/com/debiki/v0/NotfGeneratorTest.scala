@@ -94,7 +94,7 @@ class NotfGeneratorTest extends Specification with NotfGeneratorTestValues {
     }
 
     "generate a notf for other auto approved replies" in {
-      def test(reply: Post) = {
+      def test(reply: CreatePostAction) = {
         val page = PageWithApprovedBody + reply
         val notfs = genNotfs(bodyAuthor, page, reply)
         notfs.length must_== 1

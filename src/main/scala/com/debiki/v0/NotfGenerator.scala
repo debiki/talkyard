@@ -18,7 +18,7 @@ case class NotfGenerator(pageInclNewActions: Debate, newActions: Seq[RawPostActi
 
 
   def generateNotfs: Seq[NotfOfPageAction] = newActions flatMap (_ match {
-    case post: Post =>
+    case post: CreatePostAction =>
       _makePersonalReplyNotf(page.vipo_!(post.id))
     // Note:
     // If you add notfs (below) for other things than replies,

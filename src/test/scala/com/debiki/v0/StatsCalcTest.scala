@@ -44,7 +44,7 @@ object Util {
     (p2 - z10 * root, p2 + z10 * root)
   }
 
-  val post = Post(id = "Ca", parent = "0", ctime = new ju.Date,
+  val post = CreatePostAction(id = "Ca", parent = "0", ctime = new ju.Date,
                   loginId = "?", newIp = None, text = "test",
                   markup = "", tyype = PostType.Text,
                   approval = Some(Approval.WellBehavedUser))
