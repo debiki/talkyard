@@ -121,7 +121,7 @@ class AutoApproverSpec extends Specification with Mockito {
 
   def newDaoMock(actions: List[Post], login: Login) = {
 
-    val viacs: Seq[ViAc] = {
+    val viacs: Seq[PostAction] = {
       val page = Debate("pageid") ++ actions
       actions map (new ViPo(page, _))
     }

@@ -217,7 +217,7 @@ object AppEdit extends mvc.Controller {
       // is currently not included in the associated People).
       val pageRequest = pageReqPerhapsNoMe.copyWithMeOnPage_!
 
-      var actions = List[Action]()
+      var actions = List[RawPostActionOld]()
       var idsOfEditedPosts = List[String]()
 
       for (editMap <- editMaps) {
@@ -236,7 +236,7 @@ object AppEdit extends mvc.Controller {
 
         // COULD call _saveEdits once per page instead of once
         // per action per page.
-        val editAndLazyPost: List[Action] =
+        val editAndLazyPost: List[RawPostActionOld] =
           _saveEdits(pageRequest, postId = postId, newText = newText,
           newMarkupOpt = newMarkupOpt, anyNewPageApproval)
 
@@ -302,7 +302,7 @@ object AppEdit extends mvc.Controller {
   private def _saveEdits(pageReq: PageRequest[_],
         postId: String, newText: String, newMarkupOpt: Option[String],
         anyNewPageApproval: Option[Approval])
-        : List[Action] = {
+        : List[RawPostActionOld] = {
 
     val (post, lazyCreateOpt) =
       _getOrCreatePostToEdit(pageReq, postId, authorLoginId = pageReq.loginId_!)

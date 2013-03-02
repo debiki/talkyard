@@ -49,8 +49,8 @@ class CachingTenantDao(tenantDbDao: ChargingTenantDbDao)
   }
 
 
-  override def savePageActionsGenNotfsImpl(page: Debate, actions: List[Action],
-        pageMeta: PageMeta): Seq[Action] = {
+  override def savePageActionsGenNotfsImpl(page: Debate, actions: List[RawPostActionOld],
+        pageMeta: PageMeta): Seq[RawPostActionOld] = {
 
     if (actions isEmpty)
       return Nil
