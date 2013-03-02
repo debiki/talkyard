@@ -12,7 +12,7 @@ import Prelude._
  * Analyzes page actions, e.g. replies and their approvals, and
  * generates and returns the appropriate notifications.
  */
-case class NotfGenerator(pageInclNewActions: Debate, newActions: Seq[Action]) {
+case class NotfGenerator(pageInclNewActions: Debate, newActions: Seq[RawPostActionOld]) {
 
   def page = pageInclNewActions
 

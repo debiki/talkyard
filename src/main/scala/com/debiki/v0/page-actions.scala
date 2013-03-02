@@ -9,7 +9,7 @@ import Debate._
 import FlagReason.FlagReason
 
 
-sealed abstract class Action {  // COULD delete, replace with Post:s?
+sealed abstract class RawPostActionOld {
   /** A local id, unique only in the Debate that this action modifies.
     * "?" means unknown.
     */
@@ -34,7 +34,7 @@ sealed abstract class Action {  // COULD delete, replace with Post:s?
 
 
 
-abstract class MaybeApproval extends Action {
+abstract class MaybeApproval extends RawPostActionOld {
 
   /**
    * If defined, this action implicitly approves the related post.
@@ -67,7 +67,7 @@ case class Rating (
   newIp: Option[String],
   ctime: ju.Date,
   tags: List[String]
-) extends Action
+) extends RawPostActionOld
 
 
 
@@ -113,7 +113,7 @@ case class Flag(
   ctime: ju.Date,
   reason: FlagReason,
   details: String
-) extends Action {
+) extends RawPostActionOld {
   override def textLengthUtf8: Int = details.getBytes("UTF-8").length
 }
 
@@ -325,7 +325,7 @@ case class Delete(
   ctime: ju.Date,
   wholeTree: Boolean,  // COULD rename to `recursively'?
   reason: String  // COULD replace with a Post that is a reply to this Delete?
-) extends Action {
+) extends RawPostActionOld {
   override def textLengthUtf8: Int = reason.getBytes("UTF-8").length
 }
 

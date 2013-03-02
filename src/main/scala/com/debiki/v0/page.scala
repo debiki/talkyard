@@ -21,7 +21,7 @@ object Page {
     id == Page.BodyId || id == Page.TitleId || id == Page.ConfigPostId
 
 
-  def isReply(action: Action): Boolean = action match {
+  def isReply(action: RawPostActionOld): Boolean = action match {
     case post: Post if !isArticleOrConfigPostId(post.id) => true
     case _ => false
   }
@@ -34,7 +34,7 @@ object Page {
   /** Assigns ids to actions and updates references from e.g. Edits to Posts.
    *  Only remaps IDs that start with "?".
    */
-  def assignIdsTo[T <: Action](actionsToRemap: List[T], nextNewReplyId: Int): List[T] = {
+  def assignIdsTo[T <: RawPostActionOld](actionsToRemap: List[T], nextNewReplyId: Int): List[T] = {
     val remaps = mut.Map[String, String]()
     var nextReplyId = nextNewReplyId
 
@@ -61,8 +61,8 @@ object Page {
     }
 
     // Remap ids, and update references to ids.
-    // (Can this be done in a generic manner: once `case' for most Action:s?)
-    // Yes, if I introduce Action.parentId and targetId and destId.)
+    // (Can this be done in a generic manner: once `case' for most RawPostActionOld:s?)
+    // Yes, if I introduce RawPostActionOld.parentId and targetId and destId.)
     def rmpd(id: String) = remaps.getOrElse(id, id)
     def updateIds(action: T): T = (action match {
       case p: Post => p.copy(id = remaps(p.id), parent = rmpd(p.parent))
@@ -148,20 +148,20 @@ case class Debate (
      posts.size + ratings.size + edits.size + editApps.size +
      flags.size + deletions.size
 
-  def allActions: Seq[Action] =
+  def allActions: Seq[RawPostActionOld] =
      deletions:::flags:::editApps:::edits:::ratings:::posts
 
   // Try to remove/rewrite? Doesn't return e.g ViPo or ViEd.
-  def smart(action: Action) = new ViAc(this, action)
+  def smart(action: RawPostActionOld) = new PostAction(this, action)
 
   // For the love of god, I have to rename this crap, this file is a mess.
-  def getSmart(actionId: String): Option[ViAc] = {
+  def getSmart(actionId: String): Option[PostAction] = {
     postsById.get(actionId).map(new ViPo(this, _)) orElse
-      rating(actionId).map(new ViAc(this, _)) orElse
+      rating(actionId).map(new PostAction(this, _)) orElse
       editsById.get(actionId).map(new ViEd(this, _)) orElse
-      editApp(actionId).map(new ViAc(this, _)) orElse
-      flagsById.get(actionId).map(new ViAc(this, _)) orElse
-      deletionsById.get(actionId).map(new ViAc(this, _)) orElse
+      editApp(actionId).map(new PostAction(this, _)) orElse
+      flagsById.get(actionId).map(new PostAction(this, _)) orElse
+      deletionsById.get(actionId).map(new PostAction(this, _)) orElse
       reviewsById.get(actionId).map(new SmartReview(this, _))
   }
 
@@ -475,7 +475,7 @@ case class Debate (
   def explicitReviewsOf(actionId: String): List[Review] =
     reviewsByTargetId.getOrElse(actionId, Nil)
 
-  def explicitReviewsOf(action: Action): List[Review] =
+  def explicitReviewsOf(action: RawPostActionOld): List[Review] =
     explicitReviewsOf(action.id)
 
 
@@ -563,7 +563,7 @@ case class Debate (
 
 
   private def splitByTime(dati: ju.Date): Debate = {
-    def happenedInTime(action: Action) =
+    def happenedInTime(action: RawPostActionOld) =
       action.ctime.getTime <= dati.getTime
 
     val (postsBefore, postsAfter) = posts partition happenedInTime
@@ -638,17 +638,17 @@ case class Debate (
   /**
    * The action with the most recent creation dati.
    */
-  lazy val lastAction: Option[Action] = oldestOrLatestAction(latest = true)
+  lazy val lastAction: Option[RawPostActionOld] = oldestOrLatestAction(latest = true)
 
 
   /**
    * The action with the oldest creation dati.
    */
-  private def oldestAction: Option[Action] = oldestOrLatestAction(latest = false)
+  private def oldestAction: Option[RawPostActionOld] = oldestOrLatestAction(latest = false)
 
 
-  private def oldestOrLatestAction(latest: Boolean): Option[Action] = {
-    def latestOrOldestAction(a: Action, b: Action) = {
+  private def oldestOrLatestAction(latest: Boolean): Option[RawPostActionOld] = {
+    def latestOrOldestAction(a: RawPostActionOld, b: RawPostActionOld) = {
       if (latest) {
         if (a.ctime.getTime < b.ctime.getTime) b else a
       }

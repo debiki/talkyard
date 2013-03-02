@@ -134,7 +134,7 @@ object ResourceUse {
      login: Login = null,
      identity: Identity = null,
      user: User = null,
-     actions: Seq[Action] = Nil,
+     actions: Seq[RawPostActionOld] = Nil,
      page: Debate = null,
      notfs: Seq[NotfOfPageAction] = Nil,
      email: Email = null)

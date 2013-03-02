@@ -9,24 +9,22 @@ import Debate._
 import FlagReason.FlagReason
 
 
-object SmartAction {
+object PostAction {
 
-  def apply(page: Debate, action: Action): ViAc = action match {
+  def apply(page: Debate, action: RawPostActionOld): PostAction = action match {
     case p: Post => new ViPo(page, p)
-    case a: Action => new ViAc(page, a)
+    case a: RawPostActionOld => new PostAction(page, a)
   }
 
 }
 
 
-// COULD rename all these ViAc/NiPo/whatever to SmartAction/Post/Whatever.
 // COULD take an Action subclass type param, so it'd be possible to use e.g. a
 // SmartPageAction[Rating].
-// COULD rename Action to RawAction or PlainAction, and ViAc to Action.
 /** A virtual Action, that is, an Action plus some utility methods that
  *  look up other stuff in the relevant Debate.
  */
-class ViAc(val debate: Debate, val action: Action) {
+class PostAction(val debate: Debate, val action: RawPostActionOld) {
   def page = debate // should rename `debate` to `page`
   def id: String = action.id
   def creationDati = action.ctime
@@ -72,7 +70,7 @@ class ViAc(val debate: Debate, val action: Action) {
 
 /** A Virtual Post into account all edits applied to the actual post.
  */
-class ViPo(debate: Debate, val post: Post) extends ViAc(debate, post) {
+class ViPo(debate: Debate, val post: Post) extends PostAction(debate, post) {
 
   def parentId: String = post.parent
 
@@ -415,7 +413,7 @@ class ViPo(debate: Debate, val post: Post) extends ViAc(debate, post) {
 
 
 
-class ViEd(debate: Debate, val edit: Edit) extends ViAc(debate, edit) {
+class ViEd(debate: Debate, val edit: Edit) extends PostAction(debate, edit) {
 
   def post = debate.vipo(edit.postId)
   def post_! = debate.vipo_!(edit.postId)
@@ -488,10 +486,10 @@ class ViEd(debate: Debate, val edit: Edit) extends ViAc(debate, edit) {
 
 
 
-class SmartReview(page: Debate, val review: Review) extends ViAc(page, review) {
+class SmartReview(page: Debate, val review: Review) extends PostAction(page, review) {
 
   def approval = review.approval
-  lazy val target: ViAc = page.getSmart(review.targetId) getOrDie "DwE93UX7"
+  lazy val target: PostAction = page.getSmart(review.targetId) getOrDie "DwE93UX7"
 
 }
 

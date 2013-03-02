@@ -150,7 +150,7 @@ abstract class TenantDbDao {
 
   // ----- Loading and saving pages
 
-  def savePageActions[T <: Action](debateId: String, xs: List[T]): List[T]
+  def savePageActions[T <: RawPostActionOld](debateId: String, xs: List[T]): List[T]
 
   /**
    * Loads another tenant's page, if tenantId is specified.
@@ -184,7 +184,7 @@ abstract class TenantDbDao {
         fromIp: Option[String] = None,
         byIdentity: Option[String] = None,
         pathRanges: PathRanges = PathRanges.Anywhere,
-        limit: Int): (Seq[ViAc], People)
+        limit: Int): (Seq[PostAction], People)
 
 
   // ----- List stuff
@@ -503,7 +503,7 @@ class ChargingTenantDbDao(
 
   // ----- Actions
 
-  def savePageActions[T <: Action](
+  def savePageActions[T <: RawPostActionOld](
         debateId: String, actions: List[T]): List[T] = {
     _chargeFor(ResUsg.forStoring(actions = actions))
     _spi.savePageActions(debateId, actions)
@@ -523,7 +523,7 @@ class ChargingTenantDbDao(
         fromIp: Option[String] = None,
         byIdentity: Option[String] = None,
         pathRanges: PathRanges = PathRanges.Anywhere,
-        limit: Int): (Seq[ViAc], People) = {
+        limit: Int): (Seq[PostAction], People) = {
     _chargeForOneReadReq()
     _spi.loadRecentActionExcerpts(fromIp = fromIp, byIdentity = byIdentity,
         pathRanges = pathRanges, limit = limit)

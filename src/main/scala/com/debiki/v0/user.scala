@@ -29,15 +29,16 @@ case class People(
     identities = people.identities ::: identities,
     users = people.users ::: users)
 
+
   /**
    * Returns a NiLo with info on the author of the post.
    */
-  def authorOf_!(action: Action): NiLo = {  // COULD rename to loginFor?
+  def authorOf_!(action: RawPostActionOld): NiLo = {  // COULD rename to loginFor?
                                          // or return a User?
     new NiLo(this, login_!(action.loginId))
   }
 
-  def loginFor_!(action: ViAc): NiLo =
+  def loginFor_!(action: PostAction): NiLo =
     new NiLo(this, login_!(action.loginId))
 
   def nilo(loginId: String): Option[NiLo] =
