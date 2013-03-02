@@ -29,15 +29,15 @@ case class NotfGenerator(pageInclNewActions: Debate, newActions: Seq[RawPostActi
       Nil  // fix later, see note above
     case flag: Flag =>
       Nil  // fix later, see note above
-    case review: Review =>
+    case review: ReviewPostAction =>
       _makeReviewNotfs(page.getReview(review.id) getOrDie "DwE093k7")
     case _ =>
       Nil  // skip for now
   })
 
 
-  def _makePersonalReplyNotf(post: ViPo,
-          review: Option[SmartReview] = None): List[NotfOfPageAction] = {
+  def _makePersonalReplyNotf(post: Post,
+          review: Option[Review] = None): List[NotfOfPageAction] = {
 
     val (triggerAction, approvalOpt) =
       review.map(r => (r, r.approval)) getOrElse (
@@ -79,12 +79,12 @@ case class NotfGenerator(pageInclNewActions: Debate, newActions: Seq[RawPostActi
   }
 
 
-  def _makeReviewNotfs(review: SmartReview): List[NotfOfPageAction] = {
+  def _makeReviewNotfs(review: Review): List[NotfOfPageAction] = {
     // For now, only consider approvals of posts.
-    if (!review.target.isInstanceOf[ViPo])
+    if (!review.target.isInstanceOf[Post])
       return Nil
 
-    lazy val actionReviewed: ViPo = review.target.asInstanceOf[ViPo]
+    lazy val actionReviewed: Post = review.target.asInstanceOf[Post]
     lazy val userReviewed = actionReviewed.user_!
     lazy val reviewer = review.user_!
 

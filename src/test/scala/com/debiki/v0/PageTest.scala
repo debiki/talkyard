@@ -16,8 +16,8 @@ import java.{util => ju}
  * and an Edit of that text,
  * and an EditApp of that Edit,
  * and a Delete of that Edit, or the EditApp,
- * or a Review & approval of the EditApp,
- * or a Review & rejection of the EditApp.
+ * or a ReviewPostAction & approval of the EditApp,
+ * or a ReviewPostAction & rejection of the EditApp.
  */
 trait PageTestValues {
 
@@ -39,7 +39,7 @@ trait PageTestValues {
     approval = Some(Approval.Preliminary))
 
   val bodyApprovalSkeleton =
-    Review("11", targetId = bodySkeleton.id, loginId = "111", newIp = None,
+    ReviewPostAction("11", targetId = bodySkeleton.id, loginId = "111", newIp = None,
         ctime = new ju.Date(11000), approval = Some(Approval.Manual))
 
   val bodyRejectionSkeleton = bodyApprovalSkeleton.copy(approval = None)
@@ -65,7 +65,7 @@ trait PageTestValues {
         loginId = "115", newIp = None, ctime = new ju.Date(15000),
         wholeTree = false, reason = "")
 
-  val approvalOfEditApp = Review(id = "16", targetId = editAppSkeleton.id,
+  val approvalOfEditApp = ReviewPostAction(id = "16", targetId = editAppSkeleton.id,
         loginId = "116", newIp = None, ctime = new ju.Date(16000),
         approval = Some(Approval.Manual))
 
@@ -390,7 +390,7 @@ class PageTest extends Specification with PageTestValues {
         body.editsAppliedDescTime must beEmpty
         findEditInList(body.editsRevertedDescTime)
 
-        def findEditInList(list: List[ViEd]) = list must beLike {
+        def findEditInList(list: List[Patch]) = list must beLike {
           case List(edit) =>
             edit.id must_== editSkeleton.id
             edit.applicationDati must_== None
@@ -422,7 +422,7 @@ class PageTest extends Specification with PageTestValues {
         findEditIn(body.editsRevertedDescTime)
         findEditIn(body.editsDeletedDescTime)
 
-        def findEditIn(list: List[ViEd]) = list must beLike {
+        def findEditIn(list: List[Patch]) = list must beLike {
           case List(edit) =>
             edit.id must_== editSkeleton.id
             edit.applicationDati must_== None
@@ -519,7 +519,7 @@ class PageTest extends Specification with PageTestValues {
         testEditLists(body)
       }
 
-      def testEditLists(post: ViPo) {
+      def testEditLists(post: Post) {
         post.editsPendingDescTime must beEmpty
         post.editsDeletedDescTime must beEmpty
         post.editsRevertedDescTime must beEmpty
@@ -534,7 +534,7 @@ class PageTest extends Specification with PageTestValues {
         }
       }
 
-      def _testApprovedEdit(post: ViPo, approvalDati: ju.Date,
+      def _testApprovedEdit(post: Post, approvalDati: ju.Date,
             manualApprovalDati: Option[ju.Date], preliminarily: Boolean) {
         post.currentVersionReviewed must_== true //
         post.currentVersionRejected must_== false

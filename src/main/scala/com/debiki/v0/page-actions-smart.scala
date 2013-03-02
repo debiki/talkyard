@@ -12,7 +12,7 @@ import FlagReason.FlagReason
 object PostAction {
 
   def apply(page: Debate, action: RawPostActionOld): PostAction = action match {
-    case p: CreatePostAction => new ViPo(page, p)
+    case p: CreatePostAction => new Post(page, p)
     case a: RawPostActionOld => new PostAction(page, a)
   }
 
@@ -68,13 +68,16 @@ class PostAction(val debate: Debate, val action: RawPostActionOld) {
 
 
 
-/** A Virtual CreatePostAction into account all edits applied to the actual post.
+/**
+ * Takes into account all edits applied to the actual post.
+ *
+ * Created via CreatePostAction:s.
  */
-class ViPo(debate: Debate, val post: CreatePostAction) extends PostAction(debate, post) {
+class Post(debate: Debate, val post: CreatePostAction) extends PostAction(debate, post) {
 
   def parentId: String = post.parent
 
-  def parentPost: Option[ViPo] =
+  def parentPost: Option[Post] =
     if (parentId == id) None
     else debate.vipo(parentId)
 
@@ -133,18 +136,18 @@ class ViPo(debate: Debate, val post: CreatePostAction) extends PostAction(debate
 
   def textInitially: String = post.text
   def where: Option[String] = post.where
-  def edits: List[ViEd] = page.editsFor(post.id)
+  def edits: List[Patch] = page.editsFor(post.id)
 
   lazy val (
-      editsDeletedDescTime: List[ViEd],
-      editsPendingDescTime: List[ViEd],
-      editsAppliedDescTime: List[ViEd],
-      editsRevertedDescTime: List[ViEd]) = {
+      editsDeletedDescTime: List[Patch],
+      editsPendingDescTime: List[Patch],
+      editsAppliedDescTime: List[Patch],
+      editsRevertedDescTime: List[Patch]) = {
 
-    var deleted = List[ViEd]()
-    var pending = List[ViEd]()
-    var applied = List[ViEd]()
-    var reverted = List[ViEd]()
+    var deleted = List[Patch]()
+    var pending = List[Patch]()
+    var applied = List[Patch]()
+    var reverted = List[Patch]()
 
     edits foreach { edit =>
       // (Cannot easily move the below `assert`s to Edit, because
@@ -192,7 +195,7 @@ class ViPo(debate: Debate, val post: CreatePostAction) extends PostAction(debate
 
 
   private lazy val _reviewsDescTime: List[MaybeApproval] = {
-    // (If a Review.approval.isEmpty, this Post was rejected.
+    // (If a ReviewPostAction.approval.isEmpty, this Post was rejected.
     // An Edit.approval or EditApp.approval being empty, however,
     // means only that this Post has not yet been reviewed — so the Edit
     // or EditApp is simply ignored.)
@@ -357,12 +360,12 @@ class ViPo(debate: Debate, val post: CreatePostAction) extends PostAction(debate
     debate.repliesTo(id).length
 
 
-  def replies: List[ViPo] =
-    debate.repliesTo(id) map (new ViPo(page, _))
+  def replies: List[Post] =
+    debate.repliesTo(id) map (new Post(page, _))
 
 
-  def siblingsAndMe: List[ViPo] =
-    debate.repliesTo(parentId) map (new ViPo(page, _))
+  def siblingsAndMe: List[Post] =
+    debate.repliesTo(parentId) map (new Post(page, _))
 
 
   // COULD optimize this, do once for all flags.
@@ -413,7 +416,7 @@ class ViPo(debate: Debate, val post: CreatePostAction) extends PostAction(debate
 
 
 
-class ViEd(debate: Debate, val edit: Edit) extends PostAction(debate, edit) {
+class Patch(debate: Debate, val edit: Edit) extends PostAction(debate, edit) {
 
   def post = debate.vipo(edit.postId)
   def post_! = debate.vipo_!(edit.postId)
@@ -486,7 +489,7 @@ class ViEd(debate: Debate, val edit: Edit) extends PostAction(debate, edit) {
 
 
 
-class SmartReview(page: Debate, val review: Review) extends PostAction(page, review) {
+class Review(page: Debate, val review: ReviewPostAction) extends PostAction(page, review) {
 
   def approval = review.approval
   lazy val target: PostAction = page.getSmart(review.targetId) getOrDie "DwE93UX7"

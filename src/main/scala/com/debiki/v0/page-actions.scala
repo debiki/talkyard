@@ -346,7 +346,7 @@ case class Delete(
 /**
  * Approves or rejects e.g. comments and edits to `targetId`.
  */
-case class Review(
+case class ReviewPostAction(
   id: String,
   targetId: String,
   loginId: String,

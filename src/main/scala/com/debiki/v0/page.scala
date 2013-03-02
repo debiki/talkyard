@@ -71,7 +71,7 @@ object Page {
       case e: Edit => e.copy(id = remaps(e.id), postId = rmpd(e.postId))
       case a: EditApp => a.copy(id = remaps(a.id), editId = rmpd(a.editId))
       case d: Delete => d.copy(id = remaps(d.id), postId = rmpd(d.postId))
-      case r: Review => r.copy(id = remaps(r.id), targetId = rmpd(r.targetId))
+      case r: ReviewPostAction => r.copy(id = remaps(r.id), targetId = rmpd(r.targetId))
       case x => assErr("DwE3RSEK9]")
     }).asInstanceOf[T]
 
@@ -139,7 +139,7 @@ case class Debate (
   editApps: List[EditApp] = Nil,
   flags: List[Flag] = Nil,
   deletions: List[Delete] = Nil,
-  reviews: List[Review] = Nil) {
+  reviews: List[ReviewPostAction] = Nil) {
 
   private lazy val postsById =
       imm.Map[String, CreatePostAction](posts.map(x => (x.id, x)): _*)
@@ -151,18 +151,18 @@ case class Debate (
   def allActions: Seq[RawPostActionOld] =
      deletions:::flags:::editApps:::edits:::ratings:::posts
 
-  // Try to remove/rewrite? Doesn't return e.g ViPo or ViEd.
+  // Try to remove/rewrite? Doesn't return e.g Post or Patch.
   def smart(action: RawPostActionOld) = new PostAction(this, action)
 
   // For the love of god, I have to rename this crap, this file is a mess.
   def getSmart(actionId: String): Option[PostAction] = {
-    postsById.get(actionId).map(new ViPo(this, _)) orElse
+    postsById.get(actionId).map(new Post(this, _)) orElse
       rating(actionId).map(new PostAction(this, _)) orElse
-      editsById.get(actionId).map(new ViEd(this, _)) orElse
+      editsById.get(actionId).map(new Patch(this, _)) orElse
       editApp(actionId).map(new PostAction(this, _)) orElse
       flagsById.get(actionId).map(new PostAction(this, _)) orElse
       deletionsById.get(actionId).map(new PostAction(this, _)) orElse
-      reviewsById.get(actionId).map(new SmartReview(this, _))
+      reviewsById.get(actionId).map(new Review(this, _))
   }
 
   lazy val (
@@ -186,7 +186,7 @@ case class Debate (
       // COULD sort the list in ascenting ctime order?
       // Then list.head would be e.g. the oldest title -- other code
       // assume posts ase sorted in this way?
-      // See ViPo.templatePost, titlePost.
+      // See Post.templatePost, titlePost.
       imm.Map[String, List[CreatePostAction]](
         (for ((parentId, postsSet) <- mutMap)
         yield (parentId, postsSet.toList // <-- sort this list by ctime asc?
@@ -283,7 +283,7 @@ case class Debate (
   def idd = guidd
   def pageId = id  // when/if I rename Debate to PageActions.
 
-  def body: Option[ViPo] = vipo(Page.BodyId)
+  def body: Option[Post] = vipo(Page.BodyId)
 
   def body_! = vipo_!(Page.BodyId)
 
@@ -294,7 +294,7 @@ case class Debate (
 
   /** The page title if any. */
   def title = titlePost // COULD remove `titlePost`
-  def titlePost: Option[ViPo] = vipo(Page.TitleId)
+  def titlePost: Option[Post] = vipo(Page.TitleId)
 
   /** The page title, as plain text, but the empty string is changed to None. */
   def titleText: Option[String] = titlePost.map(_.text).filter(_.nonEmpty)
@@ -303,7 +303,7 @@ case class Debate (
   //def titleXml: Option[xml.Node] = body.flatMap(_.titleXml)
 
   /** A Post with template engine source code, for the whole page. */
-  def pageConfigPost: Option[ViPo] = vipo(Page.ConfigPostId)
+  def pageConfigPost: Option[Post] = vipo(Page.ConfigPostId)
 
 
   // -------- Ratings
@@ -329,12 +329,12 @@ case class Debate (
 
   def post(id: String): Option[CreatePostAction] = postsById.get(id)
 
-  def vipo_!(postId: String): ViPo =  // COULD rename to post_!(withId = ...)
+  def vipo_!(postId: String): Post =  // COULD rename to post_!(withId = ...)
     vipo(postId).getOrElse(runErr(
       "DwE3kR49", "Post not found: "+ safed(postId)))
 
-  def vipo(postId: String): Option[ViPo] = // COULD rename to post(withId =...)
-    post(postId).map(new ViPo(this, _))
+  def vipo(postId: String): Option[Post] = // COULD rename to post(withId =...)
+    post(postId).map(new Post(this, _))
 
   def postsByUser(withId: String): Seq[CreatePostAction] =
     posts.filter(smart(_).identity.map(_.userId) == Some(withId))
@@ -372,7 +372,7 @@ case class Debate (
   }
 
 
-  private def vipos_! : List[ViPo] = // rename!
+  private def vipos_! : List[Post] = // rename!
     posts.map(post => vipo_!(post.id))
 
 
@@ -389,11 +389,11 @@ case class Debate (
 
   // -------- Edits
 
-  def vied_!(editId: String): ViEd =
+  def vied_!(editId: String): Patch =
     vied(editId).getOrElse(assErr("DwE03ke1"))
 
-  def vied(editId: String): Option[ViEd] =
-    editsById.get(editId).map(new ViEd(this, _))
+  def vied(editId: String): Option[Patch] =
+    editsById.get(editId).map(new Patch(this, _))
 
   lazy val editsById: imm.Map[String, Edit] = {
     val m = edits.groupBy(_.id)
@@ -423,8 +423,8 @@ case class Debate (
   private lazy val editAppsByPostId: imm.Map[String, List[EditApp]] =
     editApps.groupBy(ea => editsById(ea.editId).postId)
 
-  def editsFor(postId: String): List[ViEd] =
-    editsByPostId.getOrElse(postId, Nil) map (new ViEd(this, _))
+  def editsFor(postId: String): List[Patch] =
+    editsByPostId.getOrElse(postId, Nil) map (new Patch(this, _))
 
   /** Edits applied to the specified post, sorted by most-recent first.
    */
@@ -463,19 +463,19 @@ case class Debate (
 
   // -------- Reviews (i.e. approvals and rejections)
 
-  private lazy val reviewsById: imm.Map[String, Review] =
-    imm.Map[String, Review](reviews.map(x => (x.id, x)): _*)
+  private lazy val reviewsById: imm.Map[String, ReviewPostAction] =
+    imm.Map[String, ReviewPostAction](reviews.map(x => (x.id, x)): _*)
 
-  private lazy val reviewsByTargetId: imm.Map[String, List[Review]] =
+  private lazy val reviewsByTargetId: imm.Map[String, List[ReviewPostAction]] =
     reviews.groupBy(_.targetId)
 
-  def getReview(id: String): Option[SmartReview] =
-    reviewsById.get(id) map (new SmartReview(this, _))
+  def getReview(id: String): Option[Review] =
+    reviewsById.get(id) map (new Review(this, _))
 
-  def explicitReviewsOf(actionId: String): List[Review] =
+  def explicitReviewsOf(actionId: String): List[ReviewPostAction] =
     reviewsByTargetId.getOrElse(actionId, Nil)
 
-  def explicitReviewsOf(action: RawPostActionOld): List[Review] =
+  def explicitReviewsOf(action: RawPostActionOld): List[ReviewPostAction] =
     explicitReviewsOf(action.id)
 
 
@@ -487,7 +487,7 @@ case class Debate (
   def + (editApp: EditApp): Debate = copy(editApps = editApp :: editApps)
   def + (flag: Flag): Debate = copy(flags = flag :: flags)
   def + (deletion: Delete): Debate = copy(deletions = deletion :: deletions)
-  def + (review: Review): Debate = copy(reviews = review :: reviews)
+  def + (review: ReviewPostAction): Debate = copy(reviews = review :: reviews)
 
   // Could try not to add stuff that's already included in this.people.
   def ++(people: People): Debate = this.copy(people = this.people ++ people)
@@ -510,7 +510,7 @@ case class Debate (
       case a: EditApp => editApps2 ::= a
       case f: Flag => flags2 ::= f
       case d: Delete => dels2 ::= d
-      case r: Review => reviews2 ::= r
+      case r: ReviewPostAction => reviews2 ::= r
       case x => runErr(
         "DwE8k3EC", "Unknown action type: "+ classNameOf(x))
     }
@@ -727,8 +727,8 @@ sealed abstract class PageRoot {
   // COULD rename to `id`? Why did I call it `subId`?
   def subId: String
   // Why did I name it "...OrCreate..."?
-  def findOrCreatePostIn(page: Debate): Option[ViPo]
-  def findChildrenIn(page: Debate): List[ViPo]
+  def findOrCreatePostIn(page: Debate): Option[Post]
+  def findChildrenIn(page: Debate): List[Post]
   def isDefault: Boolean = subId == Page.BodyId
   def isPageConfigPost: Boolean = subId == Page.ConfigPostId
 }
@@ -744,10 +744,10 @@ object PageRoot {
     assErrIf3(subId contains "-", "DwE0ksEW3", "Real id contains hyphen: "+
           safed(subId))
 
-    def findOrCreatePostIn(page: Debate): Option[ViPo] = page.vipo(subId)
+    def findOrCreatePostIn(page: Debate): Option[Post] = page.vipo(subId)
 
-    def findChildrenIn(page: Debate): List[ViPo] =
-      page.repliesTo(subId) map (new ViPo(page, _))
+    def findChildrenIn(page: Debate): List[Post] =
+      page.repliesTo(subId) map (new Post(page, _))
   }
 
   // In the future, something like this:
