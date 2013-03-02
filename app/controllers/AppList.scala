@@ -203,7 +203,7 @@ object AppList extends mvc.Controller {
       "cdati" -> JsString(toIso8601T(action.creationDati)))
 
     action match {
-      case post: ViPo =>
+      case post: Post =>
         data += "text" -> JsString(post.text take PostTextLengthLimit)
         if (post.editsAppliedDescTime.nonEmpty)
           data += "editsAppliedCount" -> JsNumber(post.editsAppliedDescTime.length)

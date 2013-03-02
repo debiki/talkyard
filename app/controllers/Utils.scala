@@ -118,7 +118,7 @@ object Utils extends Results with http.ContentTypes {
       if (action.id == Page.ConfigPostId) "?view="+ Page.ConfigPostId
       else "?view"
     val hash = action match {
-      case post: ViPo => "#post-"+ action.id
+      case post: Post => "#post-"+ action.id
       case other: PostAction =>
         "" // SHOULD be: "#post-"+ action.target.id  -- but not implemented
     }

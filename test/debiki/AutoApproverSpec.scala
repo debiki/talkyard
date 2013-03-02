@@ -123,7 +123,7 @@ class AutoApproverSpec extends Specification with Mockito {
 
     val viacs: Seq[PostAction] = {
       val page = Debate("pageid") ++ actions
-      actions map (new ViPo(page, _))
+      actions map (new Post(page, _))
     }
 
     val people =

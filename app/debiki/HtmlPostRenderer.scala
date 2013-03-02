@@ -61,7 +61,7 @@ case class HtmlPostRenderer(
   }
 
 
-  private def renderPostImpl(vipo: ViPo): RenderedPost = {
+  private def renderPostImpl(vipo: Post): RenderedPost = {
     def post = vipo.post
 
     val postHeader =
@@ -96,12 +96,12 @@ case class HtmlPostRenderer(
 object HtmlPostRenderer {
 
 
-  def renderDeletedTree(vipo: ViPo): RenderedPost = {
+  def renderDeletedTree(vipo: Post): RenderedPost = {
     renderDeletedComment(vipo, wholeTree = true)
   }
 
 
-  def renderDeletedComment(vipo: ViPo, wholeTree: Boolean = false): RenderedPost = {
+  def renderDeletedComment(vipo: Post, wholeTree: Boolean = false): RenderedPost = {
     val page = vipo.debate
     val cssPostId = "post-"+ vipo.id
     val deletion = vipo.firstDelete.get
@@ -129,14 +129,14 @@ object HtmlPostRenderer {
    *    Flagged (top flags) Rated (top ratings)"
    * If anyPageStats is None, skips "Flagged ... Rated ..." statistics/info.
    */
-  def renderPostHeader(vipo: ViPo, anyPageStats: Option[PageStats])
+  def renderPostHeader(vipo: Post, anyPageStats: Option[PageStats])
         : RenderedPostHeader = {
     if (vipo.loginId == DummyPage.DummyAuthorLogin.id)
       return RenderedPostHeader(Nil, None)
 
     def post = vipo.post
     def page = vipo.debate
-    val editsApplied: List[ViEd] = vipo.editsAppliedDescTime
+    val editsApplied: List[Patch] = vipo.editsAppliedDescTime
     val lastEditApplied = editsApplied.headOption
     val author = page.people.authorOf_!(post)
 
@@ -194,7 +194,7 @@ object HtmlPostRenderer {
   }
 
 
-  private def renderFlags(vipo: ViPo): (NodeSeq, NodeSeq) = {
+  private def renderFlags(vipo: Post): (NodeSeq, NodeSeq) = {
     if (vipo.flags isEmpty)
       return (Nil: NodeSeq, Nil: NodeSeq)
 
@@ -225,7 +225,7 @@ object HtmlPostRenderer {
   }
 
 
-  private def renderRatings(post: ViPo, pageStats: PageStats) = {
+  private def renderRatings(post: Post, pageStats: PageStats) = {
     val postRatingStats: PostRatingStats = pageStats.ratingStatsFor(post.id)
     // Sort the rating tags by their observed fittingness, descending
     // (the most popular tags first).
@@ -295,7 +295,7 @@ object HtmlPostRenderer {
   }
 
 
-  def renderPageTitle(titlePost: ViPo): Node = {
+  def renderPageTitle(titlePost: Post): Node = {
     // The title is a post, itself.
     // Therefore this XML is almost identical to the XML
     // for the post that this title entitles.
@@ -317,7 +317,7 @@ object HtmlPostRenderer {
   def _linkTo(nilo: NiLo) = HtmlPageSerializer.linkTo(nilo)
 
 
-  def renderPostBody(vipo: ViPo, hostAndPort: String): RenderedPostBody = {
+  def renderPostBody(vipo: Post, hostAndPort: String): RenderedPostBody = {
     def post = vipo.post
     val cssArtclBody = if (post.id != Page.BodyId) "" else " dw-ar-p-bd"
     val isBodyOrArtclQstn = vipo.id == Page.BodyId // || vipo.meta.isArticleQuestion

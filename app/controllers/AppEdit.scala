@@ -343,7 +343,7 @@ object AppEdit extends mvc.Controller {
   /**
    * Returns (true/false, reason) if the user may/not edit `vipo'.
    */
-  def mayEdit(user: Option[User], post: ViPo, perms: PermsOnPage)
+  def mayEdit(user: Option[User], post: Post, perms: PermsOnPage)
         : (Boolean, String) = {
 
     def isOwnPost = user.map(_.id) == Some(post.identity_!.userId)
@@ -403,9 +403,9 @@ object AppEdit extends mvc.Controller {
 
   private def _getOrCreatePostToEdit(
         pageReq: PageRequest[_], postId: String, authorLoginId: String)
-        : (ViPo, Option[CreatePostAction]) = {
+        : (Post, Option[CreatePostAction]) = {
 
-    val vipoOpt: Option[ViPo] = pageReq.page_!.vipo(postId)
+    val vipoOpt: Option[Post] = pageReq.page_!.vipo(postId)
 
     // The page title and template are created automatically
     // if they don't exist, when they are to be edited.
@@ -426,7 +426,7 @@ object AppEdit extends mvc.Controller {
     }
 
     val vipo = vipoOpt.getOrElse(
-      lazyCreateOpt.map(new ViPo(pageReq.page_!, _)).getOrElse {
+      lazyCreateOpt.map(new Post(pageReq.page_!, _)).getOrElse {
         throwNotFound("DwE3k2190", "Post not found: "+ safed(postId))
       })
 

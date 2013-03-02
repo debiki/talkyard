@@ -470,9 +470,9 @@ class HtmlForms(val config: HtmlConfig, xsrfToken: String,
    * which the changes should be made.
    * (One year later: Why didn't I simply use Json??)
    */
-  def editsDialog(nipo: ViPo, page: Debate, userName: Option[String],
+  def editsDialog(nipo: Post, page: Debate, userName: Option[String],
                   mayEdit: Boolean): NodeSeq = {
-    def xmlFor(edit: ViEd): NodeSeq = {
+    def xmlFor(edit: Patch): NodeSeq = {
       val applied = edit.isApplied
       val editorLogin = page.people.loginFor_!(edit)
       def applier_! = page.people.nilo_!(edit.applierLoginId.get)
@@ -572,7 +572,7 @@ class HtmlForms(val config: HtmlConfig, xsrfToken: String,
     </form>
   }
 
-  def editForm(postToEdit: ViPo, newText: String, userName: Option[String]) = {
+  def editForm(postToEdit: Post, newText: String, userName: Option[String]) = {
     import Edit.{InputNames => Inp}
     val isForTitle = postToEdit.id == Page.TitleId
     val cssArtclBody =
@@ -638,7 +638,7 @@ class HtmlForms(val config: HtmlConfig, xsrfToken: String,
     </form>
   }
 
-  def deleteForm(postToDelete: Option[ViPo]): NodeSeq = {
+  def deleteForm(postToDelete: Option[Post]): NodeSeq = {
     val deleteAction =
       if (postToDelete.isDefined) "?delete="+ postToDelete.get.id
       else "" // Javascript will fill in post id, do nothing here

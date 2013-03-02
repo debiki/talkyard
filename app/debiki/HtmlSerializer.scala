@@ -69,12 +69,12 @@ abstract class HtmlConfig {
 object HtmlPageSerializer {
 
 
-  def markupTextOf(post: ViPo, hostAndPort: String): String =
+  def markupTextOf(post: Post, hostAndPort: String): String =
     _markupTextOf(post, hostAndPort)._1.toString
 
 
   // COULD move to HtmlPostSerializer.
-  def _markupTextOf(post: ViPo, hostAndPort: String): (NodeSeq, Int) = {
+  def _markupTextOf(post: Post, hostAndPort: String): (NodeSeq, Int) = {
 
     val isArticle = post.id == Page.BodyId
 
@@ -339,7 +339,7 @@ case class HtmlPageSerializer(
          posts = post::Nil)
       assert(html.length == 1)
       val siblingsSorted = _sortPostsDescFitness(post.siblingsAndMe)
-      var prevSibling: Option[ViPo] = None
+      var prevSibling: Option[Post] = None
       siblingsSorted.takeWhile(_.id != postId).foreach { sibling =>
         prevSibling = Some(sibling)
       }
@@ -361,7 +361,7 @@ case class HtmlPageSerializer(
     val cssArtclThread =
       if (pageRoot.subId == Page.BodyId) " dw-ar-t" else ""
     val rootPostsReplies = pageRoot.findChildrenIn(debate)
-    val rootPost: ViPo = pageRoot.findOrCreatePostIn(debate) getOrElse
+    val rootPost: Post = pageRoot.findOrCreatePostIn(debate) getOrElse
        throwNotFound("DwE0PJ404", "Post not found: "+ pageRoot.subId)
     val cssDummy =
       if (rootPost.user_!.id == DummyPage.DummyAuthorUser.id) " dw-dummy" else ""
@@ -400,7 +400,7 @@ case class HtmlPageSerializer(
   }
 
 
-  private def _sortPostsDescFitness(posts: List[ViPo]): List[ViPo] = {
+  private def _sortPostsDescFitness(posts: List[Post]): List[Post] = {
     // Sort by: 1) Fixed position, 2) deleted? (see below)
     // 3) fitness, descending, 4) time, ascending.
     // Concerning deleted posts: Place them last, since they're rather
@@ -419,7 +419,7 @@ case class HtmlPageSerializer(
 
   private def renderThreads(depth: Int,
                               parentReplyBtn: NodeSeq,
-                              posts: List[ViPo]): NodeSeq = {
+                              posts: List[Post]): NodeSeq = {
     // COULD let this function return Nil if posts.isEmpty, and otherwise
     // wrap any posts in <ol>:s, with .dw-ts or .dw-i-ts CSS classes
     // — this would reduce dupl wrapping code.

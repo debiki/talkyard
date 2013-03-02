@@ -127,8 +127,8 @@ object AutoApprover {
     var postCount = 0
 
     for {
-      action <- recentActions if action.isInstanceOf[ViPo]
-      post = action.asInstanceOf[ViPo]
+      action <- recentActions if action.isInstanceOf[Post]
+      post = action.asInstanceOf[Post]
     } {
       // If any recent post has been rejected, don't auto approve.
       if (post.currentVersionRejected)

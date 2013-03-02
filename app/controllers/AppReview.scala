@@ -45,18 +45,18 @@ object AppReview extends mvc.Controller {
     val actionObjs: List[Map[String, String]] =
        apiReq.body.as[List[Map[String, String]]]
 
-    val reviewsList: List[(String, Review)] = actionObjs map { actionObj =>
+    val reviewsList: List[(String, ReviewPostAction)] = actionObjs map { actionObj =>
       val pageId = actionObj("pageId")
       val actionId = actionObj("actionId")
-      pageId -> Review(
+      pageId -> ReviewPostAction(
           id = "?", targetId = actionId, loginId = apiReq.loginId_!,
           newIp = None, ctime = apiReq.ctime,
           approval = (if (shallApprove) Some(Approval.Manual) else None))
     }
 
-    val reviewsByPageId: Map[String, List[Review]] =
+    val reviewsByPageId: Map[String, List[ReviewPostAction]] =
       reviewsList groupBy (_._1) mapValues {
-        pageIdAndReviews: List[(String, Review)] => pageIdAndReviews.map(_._2)
+        pageIdAndReviews: List[(String, ReviewPostAction)] => pageIdAndReviews.map(_._2)
       }
 
     reviewsByPageId foreach { case (pageId, reviews) =>
@@ -98,7 +98,7 @@ object AppReview extends mvc.Controller {
     val actionIdsStr = pageReq.body.getOrThrowBadReq("action-ids")
     val actionIds = actionIdsStr.split(",").toList
     val reviews = actionIds map { actionId =>
-      Review(id = "?", targetId = actionId, loginId = pageReq.loginId_!,
+      ReviewPostAction(id = "?", targetId = actionId, loginId = pageReq.loginId_!,
         newIp = pageReq.newIp, ctime = pageReq.ctime,
         isApproved = isApproval)
     }
