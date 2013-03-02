@@ -10,19 +10,20 @@ import Page._
 
 // Preparing to rename Debate to Page:
 object Page {
+
+
   val TitleId = "0t"
   val BodyId = "0b"
   val ConfigPostId = "0c"
-  type Page = Debate   // import Page.Page and type ": Page", not ": Debate"
+
 
   def isArticleOrConfigPostId(id: String) =
     id == Page.BodyId || id == Page.TitleId || id == Page.ConfigPostId
 
+
   def isReply(action: Action): Boolean = action match {
-    case post: Post if post.tyype == PostType.Text && !isArticleOrConfigPostId(post.id) =>
-      true
-    case _ =>
-      false
+    case post: Post if !isArticleOrConfigPostId(post.id) => true
+    case _ => false
   }
 
 
@@ -165,40 +166,35 @@ case class Debate (
   }
 
   lazy val (
-      // COULD rename postsByParentId to textByParentId.
-      postsByParentId: imm.Map[String, List[Post]],
-      publsByParentId: imm.Map[String, List[Post]],
-      metaByParentId: imm.Map[String, List[Post]]
+      postsByParentId: imm.Map[String, List[Post]]
         ) = {
-    // Add post -> replies/meta mappings to mutable multimaps.
+
+    // Add id -> post mappings to mutable multimaps.
     var postMap = mut.Map[String, mut.Set[Post]]()
-    var publMap = mut.Map[String, mut.Set[Post]]()
-    var metaMap = mut.Map[String, mut.Set[Post]]()
     for (p <- posts) {
-      val mmap = p.tyype match {
-        case PostType.Text => postMap  // COULD rename to comment/text/artclMap
-        case PostType.Publish => publMap
-        case PostType.Meta => metaMap
-      }
+      val mmap = postMap
+      // =  p.tyype match {
+      //  case PostType.Text => postMap
+      // }
       mmap.getOrElse(
         p.parent, { val s = mut.Set[Post](); mmap.put(p.parent, s); s }) += p
     }
+
     // Copy to immutable versions.
     def buildImmMap(mutMap: mut.Map[String, mut.Set[Post]]
                        ): imm.Map[String, List[Post]] = {
       // COULD sort the list in ascenting ctime order?
       // Then list.head would be e.g. the oldest title -- other code
       // assume posts ase sorted in this way?
-      // See ViPo.templatePost, titlePost and publd.
+      // See ViPo.templatePost, titlePost.
       imm.Map[String, List[Post]](
         (for ((parentId, postsSet) <- mutMap)
         yield (parentId, postsSet.toList // <-- sort this list by ctime asc?
               )).toList: _*).withDefaultValue(Nil)
     }
+
     val immPostMap = buildImmMap(postMap)
-    val immPublMap = buildImmMap(publMap)
-    val immMetaMap = buildImmMap(metaMap)
-    (immPostMap, immPublMap, immMetaMap)
+    immPostMap
   }
 
 
@@ -326,10 +322,6 @@ case class Debate (
 
   // ====== Older stuff below (everything in use though!) ======
 
-  // Instead of the stuff below, simply use
-  //   postsById  /  publsById  /  etc.
-  // and place utility functions in NiPo.
-
 
   // -------- Posts
 
@@ -359,10 +351,7 @@ case class Debate (
     var lastDati: Option[ju.Date] = None
     var posterUserIds = mut.Set[String]()
     for (post <- vipos_!) {
-      if (post.tyype != PostType.Text) {
-        // Ignore. Should probably refactor and remove non-text stuff.
-      }
-      else if (post.isDeleted) numDeleted += 1
+      if (post.isDeleted) numDeleted += 1
       else if (post.someVersionApproved) {
         // posterUserIds.add(post.user_!.id) — breaks, users sometimes absent.
         // Wait until I've added DW1_PAGE_ACTIONS.USER_ID?
@@ -396,13 +385,6 @@ case class Debate (
     val res = repliesTo(postId)
     res.flatMap(r => successorsTo(r.id)) ::: res
   }
-
-  // -------- Meta
-
-  def metaFor(id: String): List[Post] =
-    metaByParentId.getOrElse(id, Nil).filterNot(_.id == id)
-
-  def metaFor(action: ViAc): List[Post] = metaFor(action.id)
 
 
   // -------- Edits

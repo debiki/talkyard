@@ -70,6 +70,7 @@ case class Rating (
 ) extends Action
 
 
+
 /** Info on all ratings on a certain action, grouped and sorted in
  *  various manners.
  */
@@ -96,10 +97,13 @@ abstract class RatingsOnAction {
 }
 
 
+
 object FlagReason extends Enumeration {
   type FlagReason = Value
   val Spam, Illegal, /* Copyright Violation */ CopyVio, Other = Value
 }
+
+
 
 case class Flag(
   id: String,
@@ -111,50 +115,6 @@ case class Flag(
   details: String
 ) extends Action {
   override def textLengthUtf8: Int = details.getBytes("UTF-8").length
-}
-
-
-// ?? Replace with ActionBody, which is a case object or case class +
-// text: String (for an article/comment) / tags: List[String] (for ratings).
-sealed abstract class PostType
-object PostType {
-
-  /** A blog post, or forum questiom or comment. */
-  case object Text extends PostType
-
-  /** Edits a Post.text. */
-  //case object Edit extends PostType
-
-  /** Makes an Action suggestion take effect.
-   */
-  case object Publish extends PostType
-
-  /** Meta information describes another Post. */
-  // COULD use dedicated PostType:s instead, then the computer/database
-  // would understand what is it (but it'd have to parse the Meta.text to
-  // understand what is it.
-  case object Meta extends PostType
-
-  /** Deletes something, e.g. a post.
-   *
-   * Instead of the deleted thing information that the thing
-   * was deleted is shown, e.g. "3 comments deleted by <someone>".
-   */
-  // case object Deletion extends PostType
-
-  /** Undoes an action, as if had it never been done.
-   *
-   * This is different from Delete, because if you delete a post,
-   * information is shown on the page that here is a deleted post.
-   * However, if you Undo a post, there'll be not a trace of it
-   * on the generated page.
-   * Initially, though, only Undo:s of Deletion:s and Flag:s will be
-   * implemented (so you can undelete an unflag stuff).
-   */
-  // case object Undo extends PostType
-
-  //sealed abstract trait FlagReason
-  //case object FlagSpam extends PostType with FlagReason
 }
 
 
@@ -180,8 +140,7 @@ case object Post {
       newIp = None,
       text = text,
       markup = Markup.DefaultForPageTitle.id,
-      approval = approval,
-      tyype = PostType.Text)
+      approval = approval)
 
 
   def newPageBody(
@@ -195,8 +154,7 @@ case object Post {
       newIp = None,
       text = text,
       markup = Markup.defaultForPageBody(pageRole).id,
-      approval = approval,
-      tyype = PostType.Text)
+      approval = approval)
 
 }
 
@@ -226,8 +184,6 @@ case class Post(  // COULD merge all actions into Post,
    */
   approval: Option[Approval],
 
-  tyype: PostType,
-
   /** If defined, this is an inline comment and the value
    *  specifies where in the parent post it is to be placed.
    */
@@ -242,10 +198,7 @@ case class Post(  // COULD merge all actions into Post,
   override def textLengthUtf8: Int = text.getBytes("UTF-8").length
 }
 
-case class PostMeta(
-  isArticleQuestion: Boolean = false,
-  fixedPos: Option[Int] = None
-)
+
 
 // Could rename to Patch? or Diff?
 // SHOULD merge into Post and PostType.Edit

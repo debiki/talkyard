@@ -45,9 +45,6 @@ class ViAc(val debate: Debate, val action: Action) {
   def ipSaltHash: Option[String] = ip.map(saltAndHashIp(_))
   def ipSaltHash_! : String = saltAndHashIp(ip_!)
 
-  def metaPosts = debate.metaFor(this)
-  lazy val metaText: String = metaPosts.foldLeft("")(_ + _.text)
-
   def isTreeDeleted = {
     // In case there are > 1 deletions, consider the first one only.
     // (Once an action has been deleted, it isn't really possible to
@@ -82,8 +79,6 @@ class ViPo(debate: Debate, val post: Post) extends ViAc(debate, post) {
   def parentPost: Option[ViPo] =
     if (parentId == id) None
     else debate.vipo(parentId)
-
-  def tyype = post.tyype
 
 
   def isArticleOrConfig =
@@ -372,22 +367,9 @@ class ViPo(debate: Debate, val post: Post) extends ViAc(debate, post) {
     debate.repliesTo(parentId) map (new ViPo(page, _))
 
 
-  /** Whether or not this Post has been published.
-   *
-   *  If the root post is published, then the whole page is published.
-   *  If a comment is published, then it's been approved (it's not spam).
-   */
-  lazy val publd: Option[Boolean] = {
-    if (publs isEmpty) None
-    else Some(true)  // for now, don't consider deletions of publications
-  }
-
-  /** Only the first (w.r.t. its ctime) non-deleted publication has any effect.
-   */
-  lazy val publs: List[Post] = debate.publsByParentId(id)
-
   // COULD optimize this, do once for all flags.
   lazy val flags = debate.flags.filter(_.postId == post.id)
+
 
   def flagsDescTime: List[Flag] = flags.sortBy(- _.ctime.getTime)
 
@@ -429,18 +411,6 @@ class ViPo(debate: Debate, val post: Post) extends ViAc(debate, post) {
     flagsByReason.toList.sortWith((a, b) => a._2.length > b._2.length)
   }
 
-  private val _FixPosRegex = """fixed-position: ?(\d+)""".r
-
-  lazy val meta: PostMeta = {
-    var fixedPos: Option[Int] = None
-    var isArticleQuestion = false
-    for (m <- metaPosts ; line <- m.text.lines) line match {
-      case "article-question" => isArticleQuestion = true
-      case _FixPosRegex(pos) => fixedPos = Some(pos.toInt)
-      case _ =>
-    }
-    PostMeta(isArticleQuestion = isArticleQuestion, fixedPos = fixedPos)
-  }
 }
 
 

@@ -62,16 +62,6 @@ case class NotfGenerator(pageInclNewActions: Debate, newActions: Seq[Action]) {
     if (replier.id == Some(userRepliedTo.id))
       return Nil
 
-    // I think I'll refactor the PostType stuff. For now:
-    if (post.tyype != PostType.Text) {
-      // Currently not supported.
-      // Need to make loadInboxItem understand DW1_PAGE_ACTIONS = 'Tmpl',
-      // and should render Template suggestions differently from
-      // normal replies? The link should open the suggestion
-      // on a new page, with the template as root post?
-      return Nil
-    }
-
     List(NotfOfPageAction(
         ctime = triggerAction.creationDati,
         recipientUserId = userRepliedTo.id,
