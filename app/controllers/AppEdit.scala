@@ -403,13 +403,13 @@ object AppEdit extends mvc.Controller {
 
   private def _getOrCreatePostToEdit(
         pageReq: PageRequest[_], postId: String, authorLoginId: String)
-        : (ViPo, Option[Post]) = {
+        : (ViPo, Option[CreatePostAction]) = {
 
     val vipoOpt: Option[ViPo] = pageReq.page_!.vipo(postId)
 
     // The page title and template are created automatically
     // if they don't exist, when they are to be edited.
-    val lazyCreateOpt: Option[Post] = {
+    val lazyCreateOpt: Option[CreatePostAction] = {
       // Usually, the post-to-be-edited already exists.
       if (vipoOpt isDefined) {
         None
@@ -435,7 +435,7 @@ object AppEdit extends mvc.Controller {
 
 
   private def _createPostToEdit(
-        pageReq: PageRequest[_], postId: String, authorLoginId: String): Post = {
+        pageReq: PageRequest[_], postId: String, authorLoginId: String): CreatePostAction = {
 
     val markup =
       if (postId == Page.ConfigPostId) Markup.Code
@@ -447,7 +447,7 @@ object AppEdit extends mvc.Controller {
     // Dupl knowledge! see AppCreatePage.handleForm.)
     // 2. The post will be auto approved implicitly, if the Edit is
     // auto approved.
-    Post(id = postId, parent = postId, ctime = pageReq.ctime,
+    CreatePostAction(id = postId, parent = postId, ctime = pageReq.ctime,
       loginId = authorLoginId, newIp = pageReq.newIp, text = "",
       markup = markup.id, where = None, approval = None)
   }

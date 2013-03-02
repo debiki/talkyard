@@ -50,7 +50,7 @@ trait StuffCreator {
   /**
    * A loginGrant for a certain user that creates all stuff.
    */
-  private lazy val (loginGrant: LoginGrant, postTemplate: Post) = {
+  private lazy val (loginGrant: LoginGrant, postTemplate: CreatePostAction) = {
 
     val login = Login(id = "?", prevLoginId = None, ip = "1.1.1.1",
       date = new ju.Date, identityId = "?i")
@@ -61,7 +61,7 @@ trait StuffCreator {
     val loginReq = LoginRequest(login, identitySimple)
     val loginGrant = firstSiteDao.saveLogin(loginReq)
 
-    val postTemplate = Post(id = "?", parent = Page.BodyId, ctime = new ju.Date,
+    val postTemplate = CreatePostAction(id = "?", parent = Page.BodyId, ctime = new ju.Date,
       loginId = loginGrant.login.id, newIp = None, text = "", markup = "para",
       where = None, approval = Some(Approval.AuthoritativeUser))
 

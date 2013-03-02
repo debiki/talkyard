@@ -25,7 +25,7 @@ object BrowserPagePatcher {
   implicit private val logger = play.api.Logger(this.getClass)
 
 
-  def jsonForMyNewPosts(pageReq: PageRequest[_], myNewPosts: List[Post])
+  def jsonForMyNewPosts(pageReq: PageRequest[_], myNewPosts: List[CreatePostAction])
         : pm.PlainResult = {
 
     val actions = pageReq.page_! ++ myNewPosts
@@ -34,7 +34,7 @@ object BrowserPagePatcher {
     val page = PageStuff(pageReq.pageMeta_!, pageReq.pagePath, actions)
     val serializer = HtmlPageSerializer(
       page, pageTrust, pageReq.pageRoot, config)
-    val postsAndHtml: List[(Post, SerializedSingleThread)] =
+    val postsAndHtml: List[(CreatePostAction, SerializedSingleThread)] =
           myNewPosts map { post =>
       val serializedThread = serializer.renderSingleThread(post.id) getOrElse
          logAndThrowInternalError(
@@ -72,7 +72,7 @@ object BrowserPagePatcher {
   }
 
 
-  private def _jsonForNewPost(post: Post,
+  private def _jsonForNewPost(post: CreatePostAction,
         serializedThread: SerializedSingleThread): JsValue = {
     var data = Map[String, JsValue](
       "id" -> JsString(post.id),

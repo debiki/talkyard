@@ -244,7 +244,7 @@ object AppCreateWebsite extends mvc.Controller {
     text: String, newSiteDao: TenantDao, creationDati: ju.Date) {
 
     val pageId = AppCreatePage.generateNewPageId()
-    val pageBody = Post.newPageBodyBySystem(text, creationDati, PageRole.Code)
+    val pageBody = CreatePostAction.newPageBodyBySystem(text, creationDati, PageRole.Code)
     val actions = Debate(pageId, posts = List(pageBody))
     newSiteDao.createPage(PageStuff(
       PageMeta.forNewPage(
@@ -280,7 +280,7 @@ object AppCreateWebsite extends mvc.Controller {
     newWebsiteDao.moveRenamePage(pageId, newFolder = Some("/"), newSlug = Some(""))
 
     // Set homepage title.
-    val title = Post.newTitleBySystem(text = DefaultHomepageTitle, creationDati)
+    val title = CreatePostAction.newTitleBySystem(text = DefaultHomepageTitle, creationDati)
     newWebsiteDao.savePageActionsGenNotfsImpl(emptyPage, List(title), pageMeta)
   }
 

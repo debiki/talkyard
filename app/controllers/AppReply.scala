@@ -50,11 +50,11 @@ object AppReply extends mvc.Controller {
 
     val approval = AutoApprover.perhapsApprove(pageReq)
 
-    val postNoId = Post(id = "?", parent = postId, ctime = pageReq.ctime,
+    val postNoId = CreatePostAction(id = "?", parent = postId, ctime = pageReq.ctime,
       loginId = pageReq.loginId_!, newIp = pageReq.newIp, text = text,
       markup = Markup.DefaultForComments.id, where = whereOpt, approval = approval)
 
-    val List(postWithId: Post) =
+    val List(postWithId: CreatePostAction) =
       pageReq.dao.savePageActionsGenNotfs(pageReq, postNoId::Nil)
 
     if (pageReq.isAjax)
@@ -64,7 +64,7 @@ object AppReply extends mvc.Controller {
   }
 
 
-  private def _showHtmlResultPage(pageReq: PageRequest[_], post: Post)
+  private def _showHtmlResultPage(pageReq: PageRequest[_], post: CreatePostAction)
         : PlainResult = {
     val nextPageUrl =
       Utils.queryStringAndHashToView(pageReq.pageRoot, pageReq.pageVersion,

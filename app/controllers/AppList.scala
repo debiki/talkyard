@@ -150,7 +150,7 @@ object AppList extends mvc.Controller {
 
     // COULD rename this function to listPosts?
     // Or:  ?list-actions&type=posts&...
-    def posts = actions filter (_.action.isInstanceOf[Post])
+    def posts = actions filter (_.action.isInstanceOf[CreatePostAction])
 
     contentType match {
       case DebikiHttp.ContentType.Html =>

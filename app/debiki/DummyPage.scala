@@ -70,7 +70,7 @@ object DummyPage {
     List(DummyAuthorLogin), List(DummyAuthorIdty), List(DummyAuthorUser))
 
 
-  private def dummyTitle(texts: Texts, absentSinceUnapproved: Boolean) = Post(
+  private def dummyTitle(texts: Texts, absentSinceUnapproved: Boolean) = CreatePostAction(
     id = Page.TitleId,
     parent = Page.TitleId,
     ctime = new ju.Date,

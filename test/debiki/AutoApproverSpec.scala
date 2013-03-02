@@ -105,7 +105,7 @@ class AutoApproverSpec extends Specification with Mockito {
   val loginId = "101"
 
   val body =
-    Post(id = Page.BodyId, parent = Page.BodyId, ctime = startDati,
+    CreatePostAction(id = Page.BodyId, parent = Page.BodyId, ctime = startDati,
       loginId = loginId, newIp = None, text = "täxt-tåxt",
       markup = "", approval = None, where = None)
 
@@ -119,7 +119,7 @@ class AutoApproverSpec extends Specification with Mockito {
       login.copy(identityId = openidIdty.id))
   }
 
-  def newDaoMock(actions: List[Post], login: Login) = {
+  def newDaoMock(actions: List[CreatePostAction], login: Login) = {
 
     val viacs: Seq[PostAction] = {
       val page = Debate("pageid") ++ actions
