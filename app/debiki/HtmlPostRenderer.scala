@@ -320,7 +320,7 @@ object HtmlPostRenderer {
   def renderPostBody(vipo: ViPo, hostAndPort: String): RenderedPostBody = {
     def post = vipo.post
     val cssArtclBody = if (post.id != Page.BodyId) "" else " dw-ar-p-bd"
-    val isBodyOrArtclQstn = vipo.id == Page.BodyId || vipo.meta.isArticleQuestion
+    val isBodyOrArtclQstn = vipo.id == Page.BodyId // || vipo.meta.isArticleQuestion
     val (xmlTextInclTemplCmds, approxLineCount) =
       HtmlPageSerializer._markupTextOf(vipo, hostAndPort)
 

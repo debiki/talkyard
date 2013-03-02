@@ -80,7 +80,7 @@ object HtmlPageSerializer {
 
     // Use nofollow links in people's comments, so Google won't punish
     // the website if someone posts spam.
-    def isArticeOrArticleQuestion = isArticle || post.meta.isArticleQuestion
+    def isArticeOrArticleQuestion = isArticle // || post.meta.isArticleQuestion
     val makeNofollowLinks = !isArticeOrArticleQuestion
 
     post.markup match {
@@ -413,7 +413,7 @@ case class HtmlPageSerializer(
       .sortBy(p => -pageStats.ratingStatsFor(p.id)
           .fitnessDefaultTags.lowerLimit)
       .sortBy(p => if (p.isDeleted) -p.replyCount else Int.MinValue)
-      .sortBy(p => p.meta.fixedPos.getOrElse(Int.MaxValue))
+      // .sortBy(p => p.meta.fixedPos.getOrElse(Int.MaxValue))
   }
 
 
@@ -438,7 +438,7 @@ case class HtmlPageSerializer(
       vipo = p // debate.vipo_!(p.id)
       isTitle = post.id == Page.TitleId
       isRootOrArtclQstn =
-          vipo.id == pageRoot.subId || vipo.meta.isArticleQuestion
+          vipo.id == pageRoot.subId // || vipo.meta.isArticleQuestion
       // Layout replies horizontally, if this is an inline reply to
       // the root post, i.e. depth is 1 -- because then there's unused space
       // to the right. However, the horizontal layout results in a higher
@@ -525,7 +525,7 @@ case class HtmlPageSerializer(
       // Place the Reply button just after the last fixed-position comment.
       // Then it'll be obvious (?) that if you click the Reply button,
       // your comment will appear to the right of the fixed-pos comments.
-      if (replyBtnPending && p.meta.fixedPos.isEmpty) {
+      if (replyBtnPending) { // && p.meta.fixedPos.isEmpty) {
         replyBtnPending = false
         comments ++= parentReplyBtn
       }

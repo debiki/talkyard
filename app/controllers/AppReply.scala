@@ -52,8 +52,7 @@ object AppReply extends mvc.Controller {
 
     val postNoId = Post(id = "?", parent = postId, ctime = pageReq.ctime,
       loginId = pageReq.loginId_!, newIp = pageReq.newIp, text = text,
-      markup = Markup.DefaultForComments.id, tyype = PostType.Text,
-      where = whereOpt, approval = approval)
+      markup = Markup.DefaultForComments.id, where = whereOpt, approval = approval)
 
     val List(postWithId: Post) =
       pageReq.dao.savePageActionsGenNotfs(pageReq, postNoId::Nil)

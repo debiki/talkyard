@@ -78,8 +78,7 @@ object DummyPage {
     newIp = None,
     text = if (absentSinceUnapproved) texts.unapprovedTitleText else texts.noTitleText,
     markup = Markup.DefaultForPageTitle.id,
-    approval = Some(Approval.Preliminary),
-    tyype = PostType.Text)
+    approval = Some(Approval.Preliminary))
 
 
   private def dummyBody(texts: Texts, absentSinceUnapproved: Boolean, pageRole: PageRole) =

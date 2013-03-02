@@ -63,7 +63,7 @@ trait StuffCreator {
 
     val postTemplate = Post(id = "?", parent = Page.BodyId, ctime = new ju.Date,
       loginId = loginGrant.login.id, newIp = None, text = "", markup = "para",
-      tyype = PostType.Text, where = None, approval = Some(Approval.AuthoritativeUser))
+      where = None, approval = Some(Approval.AuthoritativeUser))
 
     (loginGrant, postTemplate)
   }

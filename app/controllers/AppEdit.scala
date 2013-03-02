@@ -449,8 +449,7 @@ object AppEdit extends mvc.Controller {
     // auto approved.
     Post(id = postId, parent = postId, ctime = pageReq.ctime,
       loginId = authorLoginId, newIp = pageReq.newIp, text = "",
-      markup = markup.id, tyype = PostType.Text,
-      where = None, approval = None)
+      markup = markup.id, where = None, approval = None)
   }
 
 }
