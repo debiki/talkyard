@@ -50,7 +50,7 @@ object DebikiSpecs {
   }
 
   def havePostLike(
-        post: Post = null,
+        post: CreatePostAction = null,
         id: String = null,
         parent: String = null,
         ctime: ju.Date = null,
@@ -64,7 +64,7 @@ object DebikiSpecs {
       var id2 = id
       if (id eq null) id2 = post.id
       left.post(id2) match {
-        case Some(leftPost: Post) =>
+        case Some(leftPost: CreatePostAction) =>
           result(_matchPostImpl(
               leftPost, post, id, parent, ctime, loginId, newIp, text, where),
             expectable)
@@ -75,15 +75,15 @@ object DebikiSpecs {
   }
 
   def matchPost(  // COULD write unit test for this one!
-        post: Post = null,
+        post: CreatePostAction = null,
         id: String = null,
         parent: String = null,
         ctime: ju.Date = null,
         loginId: String = null,
         newIp: String = null,
         text: String = null,
-        where: Option[String] = null) = new Matcher[Post] {
-    def apply[S <: Post](expectable: Expectable[S]) = {
+        where: Option[String] = null) = new Matcher[CreatePostAction] {
+    def apply[S <: CreatePostAction](expectable: Expectable[S]) = {
       val left = expectable.value
       result(_matchPostImpl(
           left, post, id, parent, ctime, loginId, newIp, text, where),
@@ -92,8 +92,8 @@ object DebikiSpecs {
   }
 
   private def _matchPostImpl(
-        leftPost: Post,
-        post: Post,
+        leftPost: CreatePostAction,
+        post: CreatePostAction,
         id: String,
         parent: String,
         ctime: ju.Date,

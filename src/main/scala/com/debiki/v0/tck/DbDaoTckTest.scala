@@ -169,7 +169,7 @@ object Templates {
     oidRealm = "example.com", oidClaimedId = "claimed-id.com",
     oidOpLocalId = "provider.com/local/id",
     firstName = "Laban", email = "oid@email.hmm", country = "Sweden")
-  val post = v0.Post(id = "?", parent = Page.BodyId, ctime = new ju.Date,
+  val post = v0.CreatePostAction(id = "?", parent = Page.BodyId, ctime = new ju.Date,
     loginId = "?", newIp = None, text = "", markup = "para",
     where = None, approval = None)
   val rating = v0.Rating(id = "?", postId = Page.BodyId, loginId = "?",
@@ -813,7 +813,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
     var ex2_id = ""
     "save an empty root post child post" in {
       dao.savePageActions(ex1_debate.guid, List(ex2_emptyPost)) must beLike {
-        case List(p: Post) =>
+        case List(p: CreatePostAction) =>
           ex2_id = p.id
           p must matchPost(ex2_emptyPost, id = ex2_id)
       }
@@ -926,7 +926,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
       lazy val postNoId = T.post.copy(parent = Page.BodyId, text = "Initial text",
         loginId = loginId, markup = "dmd0")
 
-      var post: Post = null
+      var post: CreatePostAction = null
 
       "save post" in {
         post = dao.savePageActions(ex1_debate.guid, List(postNoId)).head
@@ -1267,7 +1267,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
                                 loginId = exOpenId_loginReq.login.id)
       var postId = "?"
       dao.savePageActions(ex1_debate.guid, List(newPost)) must beLike {
-        case List(savedPost: Post) =>
+        case List(savedPost: CreatePostAction) =>
           postId = savedPost.id
           savedPost must matchPost(newPost, id = postId)
       }
@@ -2067,7 +2067,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
 
       var homepageId = "?"
 
-      val homepageTitle = Post(Page.TitleId, Page.TitleId, now,
+      val homepageTitle = CreatePostAction(Page.TitleId, Page.TitleId, now,
         loginId = SystemUser.Login.id,
         newIp = None,
         text = "Default Homepage",
