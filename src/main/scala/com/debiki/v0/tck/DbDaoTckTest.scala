@@ -171,7 +171,7 @@ object Templates {
     firstName = "Laban", email = "oid@email.hmm", country = "Sweden")
   val post = v0.Post(id = "?", parent = Page.BodyId, ctime = new ju.Date,
     loginId = "?", newIp = None, text = "", markup = "para",
-    tyype = v0.PostType.Text, where = None, approval = None)
+    where = None, approval = None)
   val rating = v0.Rating(id = "?", postId = Page.BodyId, loginId = "?",
     newIp = None, ctime = new ju.Date, tags = Nil)
 }
@@ -882,32 +882,6 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
       }
     }
 
-    // -------- Entitle a Page
-
-    /*
-    "save a Title, load the article with the title" in {
-      // Save a Title, for the root post.
-      var postId = ""
-      val postNoId = T.post.copy(tyype = PostType.Title, text = "Page-Title",
-                                  loginId = loginId)
-      dao.savePageActions(
-            ex1_debate.guid, List(postNoId)) must beLike {
-        case List(post: Post) =>
-          postId = post.id
-          post must_== postNoId.copy(id = postId)
-      }
-
-      // Load the root post, check its title.
-      dao.loadPage(ex1_debate.guid) must beLike {
-        case Some(d: Debate) => {
-          d.titleText must_== Some("Page-Title")
-          val body = d.body_!
-          body.titleText must_== Some("Page-Title")
-          body.titlePosts.length must_== 1
-        }
-      }
-    } */
-
 
     // -------- Save approvals and rejections
 
@@ -941,80 +915,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
     }
 
 
-    // -------- Publish a Post
-
-    "save a Publish, load the page body, and now it's published" in {
-      // Save a Publ, for the root post.
-      var postId = ""
-      lazy val postNoId = T.post.copy(tyype = PostType.Publish, loginId = loginId)
-      dao.savePageActions(ex1_debate.guid, List(postNoId)) must beLike {
-        case List(post: Post) =>
-          postId = post.id
-          post must_== postNoId.copy(id = postId)
-      }
-
-      // Load the root post, verify that it is now published.
-      dao.loadPage(ex1_debate.guid) must beLike {
-        case Some(d: Debate) => {
-          val body = d.body_!
-          body.publd must_== Some(true)
-          body.publs.length must_== 1
-        }
-      }
-    }
-
-    // -------- Meta info
-
-    var ex2MetaEmpty_id = ""
-    lazy val exMeta_ex2EmptyMetaTmpl = T.post.copy(parent = ex2_id,
-        text = "", loginId = loginId, tyype = PostType.Meta)
-    def exMeta_ex2EmptyMeta = exMeta_ex2EmptyMetaTmpl.copy(id = ex2MetaEmpty_id)
-    "save an empty meta post" in {
-      dao.savePageActions(ex1_debate.guid, List(exMeta_ex2EmptyMetaTmpl)
-      ) must beLike {
-        case List(p: Post) =>
-          ex2MetaEmpty_id = p.id
-          p must matchPost(exMeta_ex2EmptyMeta)
-      }
-    }
-
-    "find the empty meta again, understand it's for post ex2" in {
-      dao.loadPage(ex1_debate.guid) must beLike {
-        case Some(d: Debate) => {
-          d must havePostLike(exMeta_ex2EmptyMeta, id = ex2MetaEmpty_id)
-          val postEx2 = d.vipo_!(ex2_id)
-          postEx2.metaPosts must_== List(exMeta_ex2EmptyMeta)
-          postEx2.meta.isArticleQuestion must_== false
-        }
-      }
-    }
-
-    var ex2MetaArtQst_id = ""
-    lazy val exMeta_ex2ArtQstTmpl = T.post.copy(parent = ex2_id,
-        text = "article-question", loginId = loginId, tyype = PostType.Meta)
-    def exMeta_ex2ArtQst = exMeta_ex2ArtQstTmpl.copy(id = ex2MetaArtQst_id)
-    "save another meta post, wich reads 'article-question'" in {
-      dao.savePageActions(ex1_debate.guid,
-        List(exMeta_ex2ArtQstTmpl)
-      ) must beLike {
-        case List(p: Post) =>
-          ex2MetaArtQst_id = p.id
-          p must matchPost(exMeta_ex2ArtQst)
-      }
-    }
-
-    "find the article-question meta again, understand what it means" in {
-      dao.loadPage(ex1_debate.guid) must beLike {
-        case Some(d: Debate) => {
-          d must havePostLike(exMeta_ex2ArtQst)
-          val postEx2 = d.vipo_!(ex2_id)
-          postEx2.metaPosts.length must_== 2
-          postEx2.metaPosts.find(_.id == ex2MetaArtQst_id) must_==
-                                                    Some(exMeta_ex2ArtQst)
-          postEx2.meta.isArticleQuestion must_== true
-        }
-      }
-    }
+    // -------- Edit posts
 
 
     var exEdit_postId: String = null
@@ -2171,8 +2072,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
         newIp = None,
         text = "Default Homepage",
         markup = Markup.DefaultForPageTitle.id,
-        approval = Some(Approval.AuthoritativeUser),
-        tyype = PostType.Text)
+        approval = Some(Approval.AuthoritativeUser))
 
       def createWebsite(suffix: String): Option[(Tenant, User)] = {
         dao.createWebsite(
