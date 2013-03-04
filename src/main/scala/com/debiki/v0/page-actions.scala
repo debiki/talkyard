@@ -9,6 +9,80 @@ import Debate._
 import FlagReason.FlagReason
 
 
+/** Actions builds up a page: a page consists of various posts,
+  * e.g. the title post, the body post, and comments posted, and actions
+  * that edit and affect these posts. (This is the action, a.k.a. command,
+  * design pattern.)
+  *
+  * RawPostAction is a rather stupid data transfer object (DTO): it's used
+  * by DbDao, when saving and loading pages. — If you want some more
+  * functionality, use the PostAction:s Post and Patch instead. (That's what you
+  * almost have to do anyway because that's what Debate(/PageParts/whatever) gives you.)
+  *
+  * @param id A local id, unique per page. "?" means unknown (used when
+  * creating new posts).
+  * @param loginId the login session, which in turn identifies
+  * the user and IP and session creation time.
+  * @param newIp Always None, unless the post was sent from somewhere else than
+  * the relevant Login.ip.
+  * @param payload What this action does. For example, creates a new post,
+  * edits a post, flags it, closes a thread, etcetera.
+  */
+// SHOULD rename to PostActionDto (data transfer object)
+case class RawPostAction(
+  id: String,
+  creationDati: ju.Date,
+  payload: PostActionPayload,
+  postId: String,
+  loginId: String,
+  newIp: Option[String]) extends RawPostActionOld {
+
+  require(id != "0")
+  require(id nonEmpty)
+
+  def ctime = creationDati
+}
+
+
+
+sealed abstract class PostActionPayload
+
+
+
+object PostActionPayload {
+
+
+  sealed trait HidingPostPayload
+
+
+  /** Closes a thread: collapses it and tucks it away under a Closed Threads
+    * column, far away to the right.
+    *
+    * Use on old obsolete threads, e.g. a comment about a spelling mistake
+    * that has since been fixed.
+    */
+  case object CloseTree extends PostActionPayload with HidingPostPayload
+
+  case object CollapsePost extends PostActionPayload with HidingPostPayload
+
+  case object CollapseReplies extends PostActionPayload with HidingPostPayload
+
+  case object CollapseTree extends PostActionPayload with HidingPostPayload
+
+  /** Undoes another action, e.g. an Undo with targetActionId = a CloseTree action
+    * would reopen the closed tree.
+    *
+    * Requires another coulmn in DW1_PAGE_ACTIONS, namely TARGET_ACTION_ID.
+    */
+  case class Undo(targetActionId: String) extends PostActionPayload
+
+}
+
+
+
+/** Should use RawPostAction + PostActionPayload instead; then it's much
+  * easier to add new types of actions.
+  */
 sealed abstract class RawPostActionOld {
   /** A local id, unique only in the Debate that this action modifies.
     * "?" means unknown.

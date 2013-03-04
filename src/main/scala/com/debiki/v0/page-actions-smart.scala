@@ -19,11 +19,21 @@ object PostAction {
 }
 
 
-// COULD take an Action subclass type param, so it'd be possible to use e.g. a
+// SHOULD rename to PostActionNew
+class PostActionNew(page: Debate, actionDto: RawPostAction)
+  extends PostAction(page, actionDto) {
+
+  def postId = actionDto.postId
+  def payload = actionDto.payload
+}
+
+
+
 // SmartPageAction[Rating].
 /** A virtual Action, that is, an Action plus some utility methods that
  *  look up other stuff in the relevant Debate.
  */
+// SHOULD rename to PostActionOld
 class PostAction(val debate: Debate, val action: RawPostActionOld) {
   def page = debate // should rename `debate` to `page`
   def id: String = action.id
@@ -95,6 +105,9 @@ class Post(debate: Debate, val post: CreatePostAction) extends PostAction(debate
 
 
   lazy val (text: String, markup: String) = _applyEdits
+
+
+  def actions: List[PostActionNew] = page.getActionsByPostId(id)
 
 
   /**
@@ -366,6 +379,27 @@ class Post(debate: Debate, val post: CreatePostAction) extends PostAction(debate
 
   def siblingsAndMe: List[Post] =
     debate.repliesTo(parentId) map (new Post(page, _))
+
+
+  def isTreeCollapsed: Boolean =
+    hasHappenedNotUndone(PostActionPayload.CollapseTree)
+
+
+  def isOnlyPostCollapsed: Boolean =
+    hasHappenedNotUndone(PostActionPayload.CollapsePost)
+
+
+  def areRepliesCollapsed: Boolean =
+    hasHappenedNotUndone(PostActionPayload.CollapseReplies)
+
+  def isTreeClosed: Boolean =
+    hasHappenedNotUndone(PostActionPayload.CloseTree)
+
+
+  private def hasHappenedNotUndone(payload: PostActionPayload): Boolean =
+    actions.find { action =>
+      action.payload == payload  // && !action.wasUndone
+    }.nonEmpty
 
 
   // COULD optimize this, do once for all flags.

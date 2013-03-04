@@ -60,9 +60,7 @@ object Page {
           }
     }
 
-    // Remap ids, and update references to ids.
-    // (Can this be done in a generic manner: once `case' for most RawPostActionOld:s?)
-    // Yes, if I introduce RawPostActionOld.parentId and targetId and destId.)
+    // Remap ids and update references to ids.
     def rmpd(id: String) = remaps.getOrElse(id, id)
     def updateIds(action: T): T = (action match {
       case p: CreatePostAction => p.copy(id = remaps(p.id), parent = rmpd(p.parent))
@@ -72,7 +70,8 @@ object Page {
       case a: EditApp => a.copy(id = remaps(a.id), editId = rmpd(a.editId))
       case d: Delete => d.copy(id = remaps(d.id), postId = rmpd(d.postId))
       case r: ReviewPostAction => r.copy(id = remaps(r.id), targetId = rmpd(r.targetId))
-      case x => assErr("DwE3RSEK9]")
+      case a: RawPostAction => a.copy(id = remaps(a.id), postId = rmpd(a.postId))
+      case x => assErr("DwE3RSEK9")
     }).asInstanceOf[T]
 
     val actionsRemapped: List[T] = actionsToRemap map updateIds
@@ -129,7 +128,66 @@ object Page {
 }
 
 
-// Could rename to PageActions.
+/** Wraps PostActionDto:s in PostActions and groups them by post id.
+  *
+  * That is, for each PostActionDto, wraps it in a PostAction, and people
+  * can then use the PostAction, instead of the rather non-user-friendly
+  * PostActionDto (data-transfer-object).
+  */
+abstract class PostActionsWrapper { self: Debate =>
+
+
+  def actionDtos: List[RawPostAction]
+
+
+  def getActionById(id: String): Option[PostActionNew] =
+    actionsById.get(id)
+
+
+  def getActionsByPostId(postId: String): List[PostActionNew] =
+    actionsByPostId(postId)
+
+
+  // Maps data-transfer-objects to PostAction:s. Never mutated once constructed.
+  private lazy val (
+    actionsById,
+    actionsByPostId): (mut.Map[String, PostActionNew], mut.Map[String, List[PostActionNew]]) = {
+
+    var actionsById = mut.Map[String, PostActionNew]()
+    var actionsByPostId = mut.Map[String, List[PostActionNew]]().withDefaultValue(Nil)
+
+    for (actionDto <- actionDtos) {
+      val action = actionDto.payload match {
+        // case _ => CreatePostAction => Post(this.asInstanceOf[Debate], action)
+        // case _ => EditPostAction => Patch(this.asInstanceOf[Debate], action)
+        case _ => new PostActionNew(this.asInstanceOf[Debate], actionDto)
+      }
+      actionsById(action.id) = action
+      val otherActions = actionsByPostId(action.postId)
+      if (otherActions.find(_.id == action.id).isEmpty)
+        actionsByPostId(actionDto.postId) = action :: otherActions
+    }
+
+    (actionsById, actionsByPostId)
+  }
+
+}
+
+
+
+/** A page. It is constructed via actions (the Action/Command design pattern
+  * that create posts (e.g. title, body, comments), edit them, review, close, delete,
+  * etcetera.
+  *
+  * @param guid The page's id, unique per website.
+  * @param people People who has contributed to the page. If some people are missing,
+  * certain functions might fail (e.g. a function that fetches the name of the author
+  * of the page body). — This class never fetches anything lazily from database.
+  * @param posts And all other params, except for `actions` are ... deprecated? And
+  * should instead be merged into `actions`.
+  * @param actionDtos The actions that build up the page.
+  */
+// Could rename to Page,... no, PageActions or *PageParts*?
 case class Debate (
   guid: String,  // COULD rename to pageId?
   people: People = People.None,
@@ -139,22 +197,24 @@ case class Debate (
   editApps: List[EditApp] = Nil,
   flags: List[Flag] = Nil,
   deletions: List[Delete] = Nil,
-  reviews: List[ReviewPostAction] = Nil) {
+  reviews: List[ReviewPostAction] = Nil,
+  actionDtos : List[RawPostAction] = Nil) extends PostActionsWrapper {
 
   private lazy val postsById =
       imm.Map[String, CreatePostAction](posts.map(x => (x.id, x)): _*)
 
   def actionCount: Int =
      posts.size + ratings.size + edits.size + editApps.size +
-     flags.size + deletions.size
+     flags.size + deletions.size + actionDtos.size
 
   def allActions: Seq[RawPostActionOld] =
-     deletions:::flags:::editApps:::edits:::ratings:::posts
+     deletions:::flags:::editApps:::edits:::ratings:::posts:::actionDtos
 
   // Try to remove/rewrite? Doesn't return e.g Post or Patch.
   def smart(action: RawPostActionOld) = new PostAction(this, action)
 
   // For the love of god, I have to rename this crap, this file is a mess.
+  // Fixed (soon). Rewrite to PostActionDto and use PostActionsWrapper.
   def getSmart(actionId: String): Option[PostAction] = {
     postsById.get(actionId).map(new Post(this, _)) orElse
       rating(actionId).map(new PostAction(this, _)) orElse
@@ -488,6 +548,7 @@ case class Debate (
   def + (flag: Flag): Debate = copy(flags = flag :: flags)
   def + (deletion: Delete): Debate = copy(deletions = deletion :: deletions)
   def + (review: ReviewPostAction): Debate = copy(reviews = review :: reviews)
+  def + (action: RawPostAction): Debate = copy(actionDtos = action :: actionDtos)
 
   // Could try not to add stuff that's already included in this.people.
   def ++(people: People): Debate = this.copy(people = this.people ++ people)
@@ -503,6 +564,7 @@ case class Debate (
     var flags2 = flags
     var dels2 = deletions
     var reviews2 = reviews
+    var actions2 = this.actionDtos
     for (a <- actions) a match {
       case p: CreatePostAction => posts2 ::= p
       case r: Rating => ratings2 ::= r
@@ -511,11 +573,12 @@ case class Debate (
       case f: Flag => flags2 ::= f
       case d: Delete => dels2 ::= d
       case r: ReviewPostAction => reviews2 ::= r
+      case a: RawPostAction => actions2 ::= a
       case x => runErr(
         "DwE8k3EC", "Unknown action type: "+ classNameOf(x))
     }
     Debate(id, people, posts2, ratings2,
-        edits2, editApps2, flags2, dels2, reviews2)
+        edits2, editApps2, flags2, dels2, reviews2, actions2)
   }
 
 
@@ -573,6 +636,7 @@ case class Debate (
     val (flagsBefore, flagsAfter) = flags partition happenedInTime
     val (deletionsBefore, deletionsAfter) = deletions partition happenedInTime
     val (reviewsBefore, reviewsAfter) = reviews partition happenedInTime
+    val (actionsBefore, actionsAfter) = actionDtos partition happenedInTime
 
     val pageUpToAndInclDati = copy(
       posts = postsBefore,
@@ -581,7 +645,8 @@ case class Debate (
       editApps = editAppsBefore,
       flags = flagsBefore,
       deletions = deletionsBefore,
-      reviews = reviewsBefore)
+      reviews = reviewsBefore,
+      actionDtos = actionsBefore)
 
     pageUpToAndInclDati
   }
