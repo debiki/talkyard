@@ -20,6 +20,7 @@ module.exports = function(grunt) {
       'client/debiki/tagdog.js',
       'target/client/debiki/bootstrap-angularjs.js',
       'target/client/debiki/debiki-action-delete.js',
+      'target/client/debiki/debiki-action-dialogs.js',
       'target/client/debiki/debiki-action-edit.js',
       'target/client/debiki/debiki-action-flag.js',
       'target/client/debiki/debiki-action-links.js',
@@ -74,6 +75,7 @@ module.exports = function(grunt) {
       'target/client/debiki/android-zoom-bug-workaround.js', //
       'target/client/debiki/bootstrap-angularjs.js',
       'target/client/debiki/debiki-action-delete.js',
+      'target/client/debiki/debiki-action-dialogs.js',
       'target/client/debiki/debiki-action-edit.js',
       'target/client/debiki/debiki-action-flag.js',
       'target/client/debiki/debiki-action-links.js',

@@ -8,7 +8,7 @@ var $ = d.i.$;
 
 // warning: dupl code, see initDeleteForm,
 // and initLogout/initLoginSimple/initLoginOpenId etc.
-// COULD break out some common dialog init/show functions?
+// Solve like so: Merge this code into debiki-action-dialogs.ls.
 function initFlagForm() {
   var $form = $('#dw-f-flg');
   var $parent = $form.parent();

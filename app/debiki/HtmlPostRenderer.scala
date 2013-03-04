@@ -47,8 +47,14 @@ case class HtmlPostRenderer(
     if (post.isTreeDeleted) {
       renderDeletedTree(post)
     }
+    else if (post.isTreeCollapsed) {
+      renderCollapsedTree(post)
+    }
     else if (post.isDeleted) {
       renderDeletedComment(post)
+    }
+    else if (post.isOnlyPostCollapsed) {
+      renderCollapsedComment(post)
     }
     else if (post.id == Page.TitleId) {
       val titleHtml = renderPageTitle(post)
@@ -62,7 +68,7 @@ case class HtmlPostRenderer(
 
 
   private def renderPostImpl(vipo: Post): RenderedPost = {
-    def post = vipo.post
+    def post = vipo
 
     val postHeader =
       if (post.id == Page.BodyId) {
@@ -118,6 +124,20 @@ object HtmlPostRenderer {
             X flags: ... -- but perhaps better / easier with a View link,
             that opens the deleted post, incl. details, in a new browser tab?  */}
         </div>
+      </div>
+    RenderedPost(html, replyBtnText = Nil, topRatingsText = None)
+  }
+
+
+  def renderCollapsedTree(post: Post): RenderedPost = {
+    RenderedPost(<div></div>, Nil, None)
+  }
+
+
+  def renderCollapsedComment(post: Post): RenderedPost = {
+    val html =
+      <div id={htmlIdOf(post)} class="dw-p dw-p-zd">
+        <a class="dw-p-z">Click to show this comment</a>
       </div>
     RenderedPost(html, replyBtnText = Nil, topRatingsText = None)
   }
@@ -312,6 +332,9 @@ object HtmlPostRenderer {
         </div>
       </div>
   }
+
+
+  def htmlIdOf(post: Post) = s"post-${post.id}"
 
 
   def _linkTo(nilo: NiLo) = HtmlPageSerializer.linkTo(nilo)

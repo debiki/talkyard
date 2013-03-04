@@ -454,8 +454,6 @@ case class HtmlPageSerializer(
       // more than two out of three people think so too, then fold it.
       // Also fold inline threads (except for root post inline replies)
       // -- they confuse people (my father), in their current shape.
-      shallFoldPost = (postFitness.upperLimit < 0.5f &&
-         postFitness.observedMean < 0.333f) || isInlineNonRootChild
     } {
       val renderedComment: RenderedPost = postRenderer.renderPost(vipo.id)
 
@@ -469,29 +467,38 @@ case class HtmlPageSerializer(
             <a class='dw-as' href={HtmlConfig.reactUrl(debate.guid, post.id) +
               "&view="+ pageRoot.subId}>React</a>)
 
-      val (cssFolded, foldLinkText) =
+      val (cssFolded, foldLinkText) = {
+        val shallFoldPost =
+          (postFitness.upperLimit < 0.5f && postFitness.observedMean < 0.333f) ||
+            isInlineNonRootChild || post.isTreeClosed || post.isTreeCollapsed
+
         if (shallFoldPost)
           // (Could use "Downwards arrow from bar",
           // http://shapecatcher.com/unicode/info/8615, instead of [+] but [+]
           // actually looks better?)
-          (" dw-zd", "[+] Click to show more replies" +
+          (" dw-zd", "[+] Click to show this thread" +
              renderedComment.topRatingsText.map(", rated "+ _).getOrElse(""))
         else
           ("", "↕")
           // ↕ "Up down arrow", 8597
           // ↥ "Upwards arrow from bar", http://shapecatcher.com/unicode/info/8613
+      }
 
       val foldLink =
         if (isTitle || isRootOrArtclQstn || vipo.isTreeDeleted) Nil
         else <a class='dw-z'>{foldLinkText}</a>
 
-      val repliesHtml =
+      val repliesHtml = {
+        def shallHideReplies = post.isTreeDeleted || post.isTreeClosed ||
+          post.isTreeCollapsed
         if (replies.isEmpty && myReplyBtn.isEmpty) Nil
-        // COULD delete only stuff *older* than the tree deletion.
-        else if (vipo.isTreeDeleted) Nil
+        else if (shallHideReplies) Nil
+        else if (post.areRepliesCollapsed)
+          renderCollapsedReplies(replies)
         else <ol class='dw-res'>
           { renderThreads(depth + 1, myReplyBtn, replies) }
         </ol>
+      }
 
       var thread = {
         val cssHoriz = if (horizontal) " dw-hor" else ""
@@ -535,6 +542,14 @@ case class HtmlPageSerializer(
     if (replyBtnPending) comments ++ parentReplyBtn
     else comments
   }
+
+
+  private def renderCollapsedReplies(posts: List[Post]): NodeSeq = {
+    <ol class="dw-res dw-res-zd">{/* COULD rename dw-res to dw-ts, "threads"/"tree" */}
+      <li class="dw-t"><a class="dw-ts-z">Click to show {posts.length} threads</a></li>
+    </ol>
+  }
+
 }
 
 

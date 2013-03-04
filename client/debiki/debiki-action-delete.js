@@ -8,6 +8,7 @@ var $ = d.i.$;
 
 
 // warning: dupl code, see initFlagForm.
+// Solve like so: Merge this code into debiki-action-dialogs.ls.
 function initDeleteForm() {
   var $form = $('#dw-f-dl');
   var $parent = $form.parent();

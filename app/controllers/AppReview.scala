@@ -39,6 +39,10 @@ object AppReview extends mvc.Controller {
     if (!apiReq.user_!.isAdmin)
       throwForbidden("DwE4LU90", "Insufficient permissions to review posts")
 
+    // *WARNING* duplicated code, see AppSimple. Resolve like so: Rewrite
+    // ReviewPostAction to a PostActionPayload and add approvePost/rejectPost
+    // functions to AppSimple.
+
     // Play throws java.util.NoSuchElementException: key not found: pageId
     // and e.g. new RuntimeException("String expected")
     // on invalid JSON structure. COULD in some way convert to 400 Bad Request

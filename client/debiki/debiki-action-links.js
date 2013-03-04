@@ -47,6 +47,8 @@ d.i.createAndBindActionLinksForPost = function(post) {
   $actions.children('.dw-a-edit').click(d.i.$showEditsDialog);
   $actions.children('.dw-a-flag').click(d.i.$showFlagForm);
   $actions.children('.dw-a-delete').click(d.i.$showDeleteForm);
+  $actions.children('.dw-a-close').click(d.i.$showActionDialog('CloseThread'));
+  $actions.children('.dw-a-collapse').click(d.i.$showActionDialog('Collapse'));
 };
 
 

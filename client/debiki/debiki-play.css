@@ -391,6 +391,9 @@ so set max-width and line height. */
 .dw-t > .dw-as > .dw-a-link,
 .dw-t > .dw-as > .dw-a-edit,
 .dw-t > .dw-as > .dw-a-flag,
+.dw-t > .dw-as > .dw-a-collapse,
+.dw-t > .dw-as > .dw-a-close,
+.dw-t > .dw-as > .dw-a-move,
 .dw-t > .dw-as > .dw-a-delete {
   color: #777; /* make rather uninteresting actions gray */
 }
@@ -434,6 +437,9 @@ Show a cogwheel next to the title instead. For now, hide `More...'. */
 .dw-a-link,
 .dw-a-edit,
 .dw-a-flag,
+.dw-a-collapse,
+.dw-a-close,
+.dw-a-move,
 .dw-a-delete {
   display: none; /* shown on .dw-a-more click */
 }

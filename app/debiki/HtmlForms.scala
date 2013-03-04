@@ -113,6 +113,8 @@ class HtmlForms(val config: HtmlConfig, xsrfToken: String,
       replyForm("", "") ++
       ratingForm ++
       flagForm ++
+      collapseForm ++
+      closeTreeForm ++
       deleteForm(None) ++
       submittingFormInfoDiv ++
       sortOrterTipsDiv ++
@@ -129,6 +131,7 @@ class HtmlForms(val config: HtmlConfig, xsrfToken: String,
     logoutForm ++
     emailNotfPrefsForm
 
+
   def actionMenu =
       <div id='dw-action-menu' class='dw-as dw-p-as'>
         <a class='dw-a dw-a-reply'>Reply</a>
@@ -138,7 +141,10 @@ class HtmlForms(val config: HtmlConfig, xsrfToken: String,
         <a class='dw-a dw-a-edit'>Edits</a>
         <a class='dw-a dw-a-flag'>Report</a>
         { ifThen(permsOnPage.deleteAnyReply, // hide for now only
-            <a class='dw-a dw-a-delete'>Delete</a>) }
+            <a class='dw-a dw-a-delete'>Delete</a>
+            <a class='dw-a dw-a-close'>Close</a>
+            <a class='dw-a dw-a-collapse'>Collapse</a>
+            <a class='dw-a dw-a-move'>Move</a>) }
         {/*  Disable the Edit form and link for now,
         doesn't work very well right now, or not at all.
         <a class='dw-a dw-a-edit'>Edit</a>
@@ -146,6 +152,7 @@ class HtmlForms(val config: HtmlConfig, xsrfToken: String,
       </div>
       // Could skip <a>Edit</a> for now, and teach people to
       // use the inline menu instead?
+
 
   /** A query string param that remembers which part of a page we are
    *  currently viewing.
@@ -457,6 +464,41 @@ class HtmlForms(val config: HtmlConfig, xsrfToken: String,
       </form>
     </div>
   }
+
+
+  def collapseForm = {
+    <div title='Collapse?'>
+      <p><small>
+        When you collapse something, it's made small, so it won't grab people's attention.
+        Do this, to hide rather uninteresting things.
+      </small></p>
+      <p>What do you want to collapse?</p>
+      <form id="dw-f-collapse">
+        <input type="submit" id="dw-f-collapse-post" value="The comment"/>
+        <input type="submit" id="dw-f-collapse-replies" value="All replies"/>
+        <input type="submit" id="dw-f-collapse-tree" value="The comment and all replies"/>
+        <input type='button' class='dw-fi-cancel' value='Cancel'/>
+      </form>
+    </div>
+  }
+
+
+  def closeTreeForm = {
+    <div title='Close comment and all replies?'>
+      <form id="dw-f-close-tree">
+        <p><small>
+          They will be collapsed and tucked away under a Closed Threads section.
+        </small></p>
+        <p><small>
+          Only close something if you're sure it's of interest to no one,
+          e.g. a comment about a spelling error that has since been fixed.
+        </small></p>
+        <input type="submit" id="dw-f-close-tree-yes" value="Yes, close it"/>
+        <input type="button" class="dw-fi-cancel" value="Cancel"/>
+      </form>
+    </div>
+  }
+
 
   /**
    * Lists improvement suggestions and improvements already applied.
