@@ -43,21 +43,12 @@ object AppReview extends mvc.Controller {
     // and e.g. new RuntimeException("String expected")
     // on invalid JSON structure. COULD in some way convert to 400 Bad Request
     // instead of failing with 500 Internal Server Error in Prod mode.
-    val actionObjs: List[Map[String, String]] =
-       apiReq.body.as[List[Map[String, String]]]
-
-    val reviewsList: List[(String, ReviewPostAction)] = actionObjs map { actionObj =>
-      val pageId = actionObj("pageId")
-      val actionId = actionObj("actionId")
-      pageId -> ReviewPostAction(
+    val reviewsByPageId: Map[String, List[ReviewPostAction]] =
+      Utils.parsePageActionIds(apiReq.body.as[List[Map[String, String]]]) { actionId =>
+        ReviewPostAction(
           id = "?", targetId = actionId, loginId = apiReq.loginId_!,
           newIp = None, ctime = apiReq.ctime,
           approval = (if (shallApprove) Some(Approval.Manual) else None))
-    }
-
-    val reviewsByPageId: Map[String, List[ReviewPostAction]] =
-      reviewsList groupBy (_._1) mapValues {
-        pageIdAndReviews: List[(String, ReviewPostAction)] => pageIdAndReviews.map(_._2)
       }
 
     reviewsByPageId foreach { case (pageId, reviews) =>

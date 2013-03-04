@@ -286,6 +286,25 @@ object Utils extends Results with http.ContentTypes {
   }
 
 
+  def parsePageActionIds[A](
+        pageActionIds: List[Map[String, String]])(fn: (String) => A)
+        : Map[String, List[A]] = {
+
+    val pagesAndThings: List[(String, A)] = pageActionIds map { pageActionId =>
+      val pageId = pageActionId("pageId")
+      val actionId = pageActionId("actionId")
+      pageId -> fn(actionId)
+    }
+
+    val thingsByPageId: Map[String, List[A]] =
+      pagesAndThings groupBy (_._1) mapValues { somePageIdsThings: List[(String, A)] =>
+        somePageIdsThings.map(_._2)
+    }
+
+    thingsByPageId
+  }
+
+
   def parsePathRanges(baseFolder: String, queryString: Map[String, Seq[String]],
         urlParamPrefix: String = "in"): PathRanges = {
 
