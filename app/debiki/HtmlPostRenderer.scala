@@ -86,7 +86,7 @@ case class HtmlPostRenderer(
 
     val cssArtclPost = if (post.id != Page.BodyId) "" else " dw-ar-p"
     val commentHtml =
-      <div id={"post-"+ post.id} class={"dw-p" + cssArtclPost + cutS}>{
+      <div id={htmlIdOf(post)} class={"dw-p" + cssArtclPost + cutS}>{
         postHeader.html ++
         postBody.html
       }</div>
@@ -109,12 +109,11 @@ object HtmlPostRenderer {
 
   def renderDeletedComment(vipo: Post, wholeTree: Boolean = false): RenderedPost = {
     val page = vipo.debate
-    val cssPostId = "post-"+ vipo.id
     val deletion = vipo.firstDelete.get
     val deleter = page.people.authorOf_!(deletion)
     // COULD add itemscope and itemtype attrs, http://schema.org/Comment
     val html =
-      <div id={cssPostId} class='dw-p dw-p-dl'>
+      <div id={htmlIdOf(vipo)} class='dw-p dw-p-dl'>
         <div class='dw-p-hd'>{
           if (wholeTree) "Thread" else "1 comment"
           } deleted by { _linkTo(deleter)
@@ -324,7 +323,7 @@ object HtmlPostRenderer {
     // possible to reply-inline to the title.
     // (Don't wrap the <h1> in a <header>; there's no need to wrap single
     // tags in a <header>.)
-      <div id={"post-"+ titlePost.id} class='dw-p dw-p-ttl'>
+      <div id={htmlIdOf(titlePost)} class='dw-p dw-p-ttl'>
         <div class='dw-p-bd'>
           <div class='dw-p-bd-blk'>
             <h1 class='dw-p-ttl'>{titlePost.text}</h1>
