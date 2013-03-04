@@ -5,8 +5,9 @@ $ = d.i.$;
 
 
 d.i.patchPage = (patches) ->
-  result = newThreads: []
+  result = newThreads: [], patchedThreads: []
 
+  # Warning: Dupl code! COULD merge this loop into `patchThreadWith`
   for newThreadPatch in patches.newThreads || []
     $newThread = $ newThreadPatch.html
 
@@ -45,12 +46,61 @@ d.i.patchPage = (patches) ->
 
     result.newThreads.push $newThread
 
+  for pageId, threadPatches of patches.threadsByPageId || {}
+    if pageId is d.i.pageId
+      for patch in threadPatches
+        patchThreadWith patch, { onPage: pageId, result }
+
   for pageId, editPatches of patches.editedPostsByPageId || {}
     if pageId is d.i.pageId
       for patch in editPatches
         patchPostWith patch, onPage: pageId
 
   result
+
+
+
+# Warning: Dupl code! A certain loop above could be merged into this function,
+# search for "Dupl code" above.
+patchThreadWith = (threadPatch, { onPage, result }) ->
+  pageId = onPage
+  isNewThread = ! $('#post-' + threadPatch.id).length
+  $newThread = $ threadPatch.html
+
+  if !threadPatch.approved
+    addMessageToPost 'Comment pending moderation.', $newThread.dwChildPost!
+
+  if isNewThread
+    $prevThread = d.i.findThread$ threadPatch.prevThreadId
+    $parentThread = d.i.findThread$ threadPatch.parentThreadId
+    if $prevThread.length
+      insertThread $newThread, after: $prevThread
+    else if $parentThread.length
+      prependThread $newThread, to: $parentThread
+    $newThread.addClass 'dw-m-t-new'
+  else
+    replaceOldWith $newThread, onPage: pageId
+
+  $newThread.dwFindPosts!each d.i.$initPostAndParentThread
+
+  drawArrows = ->
+    # Really both $drawTree, and $drawParents for each child post??
+    # (Not $drawPost; $newThread might have child threads.)
+    $newThread.each d.i.SVG.$drawTree
+
+    # 1. Draw arrows after post has been inited, because initing it
+    # might change its size.
+    # 2. If some parent is an inline post, *its* parent might need to be
+    # redrawn. So redraw all parents.
+    $newThread.dwFindPosts!.each d.i.SVG.$drawParents
+
+  # Don't draw arrows until all posts have gotten their final position.
+  # (The caller might remove a horizontal reply button, and show it again,
+  # later, and the arrows might be drawn incorrectly if drawn inbetween.)
+  setTimeout drawArrows, 0
+
+  result.patchedThreads.push $newThread
+
 
 
 patchPostWith = (editedPostPatch, { onPage }) ->
@@ -69,7 +119,7 @@ patchPostWith = (editedPostPatch, { onPage }) ->
 
   if editedPostPatch.isEditApplied
     $newPost.addClass 'dw-m-t-new'
-    replaceOldPostWith $newPost, onPage: pageId
+    replaceOldWith $newPost, onPage: pageId
 
     $newPost.each d.i.$initPost
 
@@ -105,10 +155,10 @@ prependThread = ($thread, { to }) ->
   $thread.appendTo $childList
 
 
-replaceOldPostWith = ($newPost, { onPage }) ->
-  # WOULD verify that $newPost is located `onPage`, if in the future it'll be
+replaceOldWith = ($new, { onPage }) ->
+  # WOULD verify that $new is located `onPage`, if in the future it'll be
   # possible to edit e.g. blog posts from a blog post list page.
-  $('#' + $newPost.attr 'id').replaceWith $newPost
+  $('#' + $new.attr 'id').replaceWith $new
 
 
 # vim: fdm=marker et ts=2 sw=2 tw=80 fo=tcqwn list

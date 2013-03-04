@@ -62,15 +62,19 @@ object AppSimple extends mvc.Controller {
         loginId = apiReq.loginId_!, newIp = None)
     }
 
+    var pagesAndPostIds = List[(Debate, List[String])]()
+
     actionsByPageId foreach { case (pageId, actions) =>
       val pageWithoutMe = apiReq.dao.loadPage(pageId) getOrElse throwNotFound(
         "DwE6Xf80", "Page not found, id: `"+ pageId +"'; could not do all changes")
       val page = pageWithoutMe ++ apiReq.meAsPeople_!
 
-      apiReq.dao.savePageActionsGenNotfs(page, actions)
+      val (pageWithNewActions, _) = apiReq.dao.savePageActionsGenNotfs(page, actions)
+
+      pagesAndPostIds ::= (pageWithNewActions, actions.map(_.postId))
     }
 
-    Ok
+    BrowserPagePatcher.jsonForThreads(pagesAndPostIds, apiReq)
   }
 
 }

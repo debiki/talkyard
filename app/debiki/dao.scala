@@ -91,16 +91,16 @@ class TenantDao(protected val tenantDbDao: ChargingTenantDbDao)
 
   /**
    * Saves page actions and places messages in users' inboxes, as needed.
-   * Returns the saved actions, with ids assigned.
+   * Returns the page including new actions, and the actions, but with ids assigned.
    */
   final def savePageActionsGenNotfs(pageReq: PageRequest[_], actions: List[PostActionDtoOld])
-        : Seq[PostActionDtoOld] = {
+        : (Debate, Seq[PostActionDtoOld]) = {
     savePageActionsGenNotfsImpl(pageReq.page_!, actions, pageReq.pageMeta_!)
   }
 
 
   final def savePageActionsGenNotfs(page: Debate, actions: List[PostActionDtoOld])
-        : Seq[PostActionDtoOld] = {
+        : (Debate, Seq[PostActionDtoOld]) = {
     val pageMeta = tenantDbDao.loadPageMeta(page.id) getOrElse
       throwNotFound("DwE115Xf3", s"Found no meta for page ${page.id}")
     savePageActionsGenNotfsImpl(page, actions, pageMeta)
@@ -108,9 +108,9 @@ class TenantDao(protected val tenantDbDao: ChargingTenantDbDao)
 
 
   def savePageActionsGenNotfsImpl(page: Debate, actions: List[PostActionDtoOld],
-        pageMeta: PageMeta): Seq[PostActionDtoOld] = {
+        pageMeta: PageMeta): (Debate, Seq[PostActionDtoOld]) = {
     if (actions isEmpty)
-      return Nil
+      return (page, Nil)
 
     val actionsWithId = tenantDbDao.savePageActions(page.id, actions)
     val pageWithNewActions = page ++ actionsWithId
@@ -126,7 +126,7 @@ class TenantDao(protected val tenantDbDao: ChargingTenantDbDao)
     val notfs = NotfGenerator(pageWithNewActions, actionsWithId).generateNotfs
     tenantDbDao.saveNotfs(notfs)
 
-    actionsWithId
+    (pageWithNewActions, actionsWithId)
   }
 
 

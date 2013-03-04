@@ -47,10 +47,8 @@ trait RenderedPageHtmlDao {
 
     val config = DebikiHttp.newUrlConfig(pageReq.host)
     val page = pageReq.pageDesiredVersionWithDummies_!
-    val pageStuff = PageStuff(pageReq.pageMeta_!, pageReq.pagePath, page)
-    val pageTrust = PageTrust(page)
 
-    val renderer = HtmlPageSerializer(pageStuff, pageTrust, pageReq.pageRoot, config)
+    val renderer = HtmlPageSerializer(page, PageTrust(page), pageReq.pageRoot, config)
 
     val pageTitle =
       if (!renderSettings.showTitle) Nil

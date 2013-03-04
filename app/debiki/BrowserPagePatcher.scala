@@ -29,16 +29,16 @@ object BrowserPagePatcher {
         : pm.PlainResult = {
 
     val actions = pageReq.page_! ++ myNewPosts
-    val pageTrust = PageTrust(actions)
     val config = DebikiHttp.newUrlConfig(pageReq.host)
-    val page = PageStuff(pageReq.pageMeta_!, pageReq.pagePath, actions)
+
     val serializer = HtmlPageSerializer(
-      page, pageTrust, pageReq.pageRoot, config)
+      actions, PageTrust(actions), pageReq.pageRoot, config)
+
     val postsAndHtml: List[(CreatePostAction, SerializedSingleThread)] =
           myNewPosts map { post =>
       val serializedThread = serializer.renderSingleThread(post.id) getOrElse
          logAndThrowInternalError(
-            "DwE3EH48", "Post not found, id: "+ post.id +", page: "+ page.id)
+            "DwE3EH48", "Post not found, id: "+ post.id +", page: "+ actions.id)
       (post, serializedThread)
     }
 
@@ -50,6 +50,31 @@ object BrowserPagePatcher {
               _jsonForNewPost(post, serializedThread)
       })
    )))
+  }
+
+
+  def jsonForThreads(
+        pagesAndPostIds: List[(Debate, List[String])], request: DebikiRequest[_])
+        : pm.PlainResult = {
+
+    var patchesByPageId = Map[String, List[Map[String, JsValue]]]()
+    for ((page: Debate, postIds: List[String]) <- pagesAndPostIds) {
+
+      val serializer = HtmlPageSerializer(
+        page, PageTrust(page), PageRoot.TheBody, DebikiHttp.newUrlConfig(request.host))
+
+      val patchesOnCurPage = for (postId <- postIds) yield {
+        val serializedThread = serializer.renderSingleThread(postId) getOrElse
+          logAndThrowInternalError(
+            "DwE573R2", "Post not found, id: "+ postId +", page: "+ page.id)
+        _jsonForThread(page.vipo_!(postId), serializedThread)
+      }
+
+      patchesByPageId += page.pageId -> patchesOnCurPage
+    }
+
+    OkSafeJson(toJson(Map(
+      "threadsByPageId" -> patchesByPageId)))
   }
 
 
@@ -91,6 +116,28 @@ object BrowserPagePatcher {
     }
 
     toJson(data)
+  }
+
+
+  private def _jsonForThread(post: Post, serializedThread: SerializedSingleThread)
+        : Map[String, JsValue] = {
+    var data = Map[String, JsValue](
+      "id" -> JsString(post.id),
+      "cdati" -> JsString(toIso8601T(post.creationDati)),
+      "approved" -> JsBoolean(post.someVersionApproved),
+      "html" -> JsString(serializedThread.htmlNodes.foldLeft("") {
+        (html, htmlNode) => html + lw.Html5.toString(htmlNode)
+      }))
+
+    if (post.parentId != post.id) {
+      data += "parentThreadId" -> JsString(post.parentId)
+    }
+
+    serializedThread.prevSiblingId.foreach { siblingId =>
+      data += "prevThreadId" -> JsString(siblingId)
+    }
+
+    data
   }
 
 

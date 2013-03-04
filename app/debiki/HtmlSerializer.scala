@@ -306,29 +306,21 @@ object HtmlPageSerializer {
 
 
 case class HtmlPageSerializer(
-  pageStuff : PageStuff,
+  page : Debate,
   pageTrust: PageTrust,
   pageRoot: PageRoot,
   config: HtmlConfig) {
 
   import HtmlPageSerializer._
 
-  // COULD rename some of these weirdly named fields.
-  private def debate = pageStuff.actions
-  private def page = pageStuff.actions
-  private def pagePath = pageStuff.path
-  private def pageRole = pageStuff.role
-  private def parentPageId = pageStuff.parentPageId
-
-
-  private lazy val pageStats = new PageStats(debate, pageTrust)
+  private lazy val pageStats = new PageStats(page, pageTrust)
 
   //private def lastChange: Option[String] =
-  //  debate.lastOrLaterChangeDate.map(toIso8601(_))
+  //  page.lastOrLaterChangeDate.map(toIso8601(_))
 
 
   private def postRenderer =
-    HtmlPostRenderer(pageStuff.actions, pageStats, config.hostAndPort)
+    HtmlPostRenderer(page, pageStats, config.hostAndPort)
 
 
   def renderSingleThread(postId: String)
@@ -360,8 +352,8 @@ case class HtmlPageSerializer(
 
     val cssArtclThread =
       if (pageRoot.subId == Page.BodyId) " dw-ar-t" else ""
-    val rootPostsReplies = pageRoot.findChildrenIn(debate)
-    val rootPost: Post = pageRoot.findOrCreatePostIn(debate) getOrElse
+    val rootPostsReplies = pageRoot.findChildrenIn(page)
+    val rootPost: Post = pageRoot.findOrCreatePostIn(page) getOrElse
        throwNotFound("DwE0PJ404", "Post not found: "+ pageRoot.subId)
     val cssDummy =
       if (rootPost.user_!.id == DummyPage.DummyAuthorUser.id) " dw-dummy" else ""
@@ -462,7 +454,7 @@ case class HtmlPageSerializer(
            (_replyBtnListItem(renderedComment.replyBtnText), Nil)
         else
           (Nil,
-            <a class='dw-as' href={HtmlConfig.reactUrl(debate.guid, post.id) +
+            <a class='dw-as' href={HtmlConfig.reactUrl(page.id, post.id) +
               "&view="+ pageRoot.subId}>React</a>)
 
       val (cssFolded, foldLinkText) = {

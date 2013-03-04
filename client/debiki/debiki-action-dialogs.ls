@@ -4,15 +4,20 @@ d = i: debiki.internal, u: debiki.v0.util
 $ = d.i.$;
 
 
+targetPostId = ''
+
 
 d.i.$showActionDialog = !(whichDialog, event) -->
   event.preventDefault!
+
+  formId = switch whichDialog
+    | 'CloseThread' => initCloseDialog!
+    | 'Collapse' => initCollapseDialog!
+
+  # Pass data to dialog via shared variable `targetPostId`.
   $thread = $(this).closest '.dw-t'
   $post = $thread.children '.dw-p'
-  postId = $post.dwPostId!
-  formId = switch whichDialog
-    | 'CloseThread' => initCloseDialog postId
-    | 'Collapse' => initCollapseDialog postId
+  targetPostId := $post.dwPostId!
 
   $(formId).parent!dialog('open')
 
@@ -21,7 +26,8 @@ d.i.$showActionDialog = !(whichDialog, event) -->
 
 
 
-function initCollapseDialog (postId)
+# Warning: Dupl code, similar to: initCloseDialog
+function initCollapseDialog
   formId = '#dw-f-collapse'
 
   $form = $(formId)
@@ -44,18 +50,24 @@ function initCollapseDialog (postId)
     submit '/-/collapse-tree'
 
   function submit (apiFunction)
-    data = [{ pageId: d.i.pageId, actionId: postId }]
+    data = [{ pageId: d.i.pageId, actionId: targetPostId }]
     d.u.postJson { url: apiFunction, data }
         .fail d.i.showServerResponseDialog
         .done !(newDebateHtml) ->
-          alert 'unimplemented DwE3kRK50'
+          result = d.i.patchPage newDebateHtml
+          result.patchedThreads[0].dwScrollIntoView!
+        .always !->
+          $dialog.dialog 'close'
+
+    # Prevent browser's built-in action.
     false
 
   formId
 
 
 
-function initCloseDialog (postId)
+# Warning: Dupl code, similar to: initCollapseDialog
+function initCloseDialog
   formId = '#dw-f-close-tree'
 
   $form = $(formId)
@@ -72,11 +84,16 @@ function initCloseDialog (postId)
     submit '/-/close-tree'
 
   function submit (apiFunction)
-    data = [{ pageId: d.i.pageId, actionId: postId }]
+    data = [{ pageId: d.i.pageId, actionId: targetPostId }]
     d.u.postJson { url: apiFunction, data }
         .fail d.i.showServerResponseDialog
         .done !(newDebateHtml) ->
-          alert 'unimplemented DwE1k3R5r0'
+          result = d.i.patchPage newDebateHtml
+          result.patchedThreads[0].dwScrollIntoView!
+        .always !->
+          $dialog.dialog 'close'
+
+    # Prevent browser's built-in action.
     false
 
   formId

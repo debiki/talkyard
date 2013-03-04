@@ -336,7 +336,8 @@ object AppEdit extends mvc.Controller {
 
     var actions = lazyCreateOpt.toList ::: edit :: Nil
 
-    pageReq.dao.savePageActionsGenNotfs(pageReq, actions).toList
+    val (_, actionsWithIds) = pageReq.dao.savePageActionsGenNotfs(pageReq, actions)
+    actionsWithIds.toList
   }
 
 

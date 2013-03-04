@@ -54,7 +54,7 @@ object AppReply extends mvc.Controller {
       loginId = pageReq.loginId_!, newIp = pageReq.newIp, text = text,
       markup = Markup.DefaultForComments.id, where = whereOpt, approval = approval)
 
-    val List(postWithId: CreatePostAction) =
+    val (_, List(postWithId: CreatePostAction)) =
       pageReq.dao.savePageActionsGenNotfs(pageReq, postNoId::Nil)
 
     if (pageReq.isAjax)
