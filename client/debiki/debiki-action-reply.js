@@ -117,8 +117,8 @@ d.i.$showReplyForm = function(event, opt_where) {
           // dw-svg-fake-harrow.
           d.i.removeInstantly($replyFormParent);
           $replyAction.dwActionLinkEnable();
-          var $result = d.i.patchPage(newDebateHtml);
-          var $myNewPost = $result.newThreads[0].children('.dw-p');
+          var result = d.i.patchPage(newDebateHtml);
+          var $myNewPost = result.patchedThreads[0].children('.dw-p');
           d.u.bugIf($myNewPost.length !== 1, 'DwE3TW39');
           d.i.markMyPost($myNewPost.dwPostId());
           // Any horizontal reply button has been hidden.

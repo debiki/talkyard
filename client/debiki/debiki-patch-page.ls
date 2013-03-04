@@ -4,47 +4,13 @@ d = i: debiki.internal, u: debiki.v0.util
 $ = d.i.$;
 
 
+/**
+ * Inserts new replies and replaces old threads and edited posts with
+ * new HTML provided by the server. Returns and object with info on what
+ * was patched.
+ */
 d.i.patchPage = (patches) ->
-  result = newThreads: [], patchedThreads: []
-
-  # Warning: Dupl code! COULD merge this loop into `patchThreadWith`
-  for newThreadPatch in patches.newThreads || []
-    $newThread = $ newThreadPatch.html
-
-    if !newThreadPatch.approved
-      addMessageToPost(
-          'Comment pending moderation.'
-          $newThread.dwChildPost!)
-
-    $prevThread = d.i.findThread$ newThreadPatch.prevThreadId
-    $parentThread = d.i.findThread$ newThreadPatch.parentThreadId
-    if $prevThread.length
-      insertThread $newThread, after: $prevThread
-    else if $parentThread.length
-      prependThread $newThread, to: $parentThread
-
-    $newThread.addClass 'dw-m-t-new'
-
-
-    $newThread.dwFindPosts!each d.i.$initPostAndParentThread
-
-    drawArrows = ->
-      # Really both $drawTree, and $drawParents for each child post??
-      # (Not $drawPost; $newThread might have child threads.)
-      $newThread.each d.i.SVG.$drawTree
-
-      # 1. Draw arrows after post has been inited, because initing it
-      # might change its size.
-      # 2. If some parent is an inline post, *its* parent might need to be
-      # redrawn. So redraw all parents.
-      $newThread.dwFindPosts!.each d.i.SVG.$drawParents
-
-    # Don't draw arrows until all posts have gotten their final position.
-    # (The caller might remove a horizontal reply button, and show it again,
-    # later, and the arrows might be drawn incorrectly if drawn inbetween.)
-    setTimeout drawArrows, 0
-
-    result.newThreads.push $newThread
+  result = patchedThreads: []
 
   for pageId, threadPatches of patches.threadsByPageId || {}
     if pageId is d.i.pageId
@@ -60,8 +26,6 @@ d.i.patchPage = (patches) ->
 
 
 
-# Warning: Dupl code! A certain loop above could be merged into this function,
-# search for "Dupl code" above.
 patchThreadWith = (threadPatch, { onPage, result }) ->
   pageId = onPage
   isNewThread = ! $('#post-' + threadPatch.id).length

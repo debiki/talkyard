@@ -54,11 +54,12 @@ object AppReply extends mvc.Controller {
       loginId = pageReq.loginId_!, newIp = pageReq.newIp, text = text,
       markup = Markup.DefaultForComments.id, where = whereOpt, approval = approval)
 
-    val (_, List(postWithId: CreatePostAction)) =
+    val (pageWithNewPost, List(postWithId: CreatePostAction)) =
       pageReq.dao.savePageActionsGenNotfs(pageReq, postNoId::Nil)
 
     if (pageReq.isAjax)
-      BrowserPagePatcher.jsonForMyNewPosts(pageReq, postWithId::Nil)
+      BrowserPagePatcher.jsonForThreads(
+        List((pageWithNewPost, postWithId.id::Nil)), pageReq)
     else
       _showHtmlResultPage(pageReq, postWithId)
   }

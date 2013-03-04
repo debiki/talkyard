@@ -25,34 +25,6 @@ object BrowserPagePatcher {
   implicit private val logger = play.api.Logger(this.getClass)
 
 
-  def jsonForMyNewPosts(pageReq: PageRequest[_], myNewPosts: List[CreatePostAction])
-        : pm.PlainResult = {
-
-    val actions = pageReq.page_! ++ myNewPosts
-    val config = DebikiHttp.newUrlConfig(pageReq.host)
-
-    val serializer = HtmlPageSerializer(
-      actions, PageTrust(actions), pageReq.pageRoot, config)
-
-    val postsAndHtml: List[(CreatePostAction, SerializedSingleThread)] =
-          myNewPosts map { post =>
-      val serializedThread = serializer.renderSingleThread(post.id) getOrElse
-         logAndThrowInternalError(
-            "DwE3EH48", "Post not found, id: "+ post.id +", page: "+ actions.id)
-      (post, serializedThread)
-    }
-
-    // WOULD return `newThreadsByPageId`, had it been possible to edit
-    // e.g. blog posts directly from a blog post list page.
-    OkSafeJson(toJson(Map(
-      "newThreads" -> JsArray(postsAndHtml map {
-            case (post, serializedThread) =>
-              _jsonForNewPost(post, serializedThread)
-      })
-   )))
-  }
-
-
   def jsonForThreads(
         pagesAndPostIds: List[(Debate, List[String])], request: DebikiRequest[_])
         : pm.PlainResult = {
@@ -60,8 +32,13 @@ object BrowserPagePatcher {
     var patchesByPageId = Map[String, List[Map[String, JsValue]]]()
     for ((page: Debate, postIds: List[String]) <- pagesAndPostIds) {
 
+      val pageRoot = request match {
+        case p: PageRequest[_] => p.pageRoot
+        case _ => PageRoot.TheBody
+      }
+
       val serializer = HtmlPageSerializer(
-        page, PageTrust(page), PageRoot.TheBody, DebikiHttp.newUrlConfig(request.host))
+        page, PageTrust(page), pageRoot, DebikiHttp.newUrlConfig(request.host))
 
       val patchesOnCurPage = for (postId <- postIds) yield {
         val serializedThread = serializer.renderSingleThread(postId) getOrElse
@@ -94,28 +71,6 @@ object BrowserPagePatcher {
 
     OkSafeJson(toJson(Map(
       "editedPostsByPageId" -> patchesByPageId)))
-  }
-
-
-  private def _jsonForNewPost(post: CreatePostAction,
-        serializedThread: SerializedSingleThread): JsValue = {
-    var data = Map[String, JsValue](
-      "id" -> JsString(post.id),
-      "cdati" -> JsString(toIso8601T(post.ctime)),
-      "approved" -> JsBoolean(post.approval.isDefined),
-      "html" -> JsString(serializedThread.htmlNodes.foldLeft("") {
-        (html, htmlNode) => html + lw.Html5.toString(htmlNode)
-      }))
-
-    if (post.parent != post.id) {
-      data += "parentThreadId" -> JsString(post.parent)
-    }
-
-    serializedThread.prevSiblingId.foreach { siblingId =>
-      data += "prevThreadId" -> JsString(siblingId)
-    }
-
-    toJson(data)
   }
 
 
