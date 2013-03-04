@@ -14,7 +14,7 @@ import FlagReason.FlagReason
   * that edit and affect these posts. (This is the action, a.k.a. command,
   * design pattern.)
   *
-  * RawPostAction is a rather stupid data transfer object (DTO): it's used
+  * PostActionDto is a rather stupid data transfer object (DTO): it's used
   * by DbDao, when saving and loading pages. — If you want some more
   * functionality, use the PostAction:s Post and Patch instead. (That's what you
   * almost have to do anyway because that's what Debate(/PageParts/whatever) gives you.)
@@ -28,14 +28,13 @@ import FlagReason.FlagReason
   * @param payload What this action does. For example, creates a new post,
   * edits a post, flags it, closes a thread, etcetera.
   */
-// SHOULD rename to PostActionDto (data transfer object)
-case class RawPostAction(
+case class PostActionDto(
   id: String,
   creationDati: ju.Date,
   payload: PostActionPayload,
   postId: String,
   loginId: String,
-  newIp: Option[String]) extends RawPostActionOld {
+  newIp: Option[String]) extends PostActionDtoOld {
 
   require(id != "0")
   require(id nonEmpty)
@@ -80,10 +79,10 @@ object PostActionPayload {
 
 
 
-/** Should use RawPostAction + PostActionPayload instead; then it's much
+/** Should use PostActionDto + PostActionPayload instead; then it's much
   * easier to add new types of actions.
   */
-sealed abstract class RawPostActionOld {
+sealed abstract class PostActionDtoOld {
   /** A local id, unique only in the Debate that this action modifies.
     * "?" means unknown.
     */
@@ -108,7 +107,7 @@ sealed abstract class RawPostActionOld {
 
 
 
-abstract class MaybeApproval extends RawPostActionOld {
+abstract class MaybeApproval extends PostActionDtoOld {
 
   /**
    * If defined, this action implicitly approves the related post.
@@ -141,7 +140,7 @@ case class Rating (
   newIp: Option[String],
   ctime: ju.Date,
   tags: List[String]
-) extends RawPostActionOld
+) extends PostActionDtoOld
 
 
 
@@ -187,7 +186,7 @@ case class Flag(
   ctime: ju.Date,
   reason: FlagReason,
   details: String
-) extends RawPostActionOld {
+) extends PostActionDtoOld {
   override def textLengthUtf8: Int = details.getBytes("UTF-8").length
 }
 
@@ -234,10 +233,7 @@ case object CreatePostAction {
 
 
 
-case class CreatePostAction(  // COULD merge all actions into Post,
-                  // and use different PostType:s (which would include
-                  // the payload) for various different actions.
-                  // And rename to ... Action? PageAction?
+case class CreatePostAction(
 
   // is "?" if unknown, or e.g. "?x" if it's unknown.
   // COULD replace w case classes e.g. IdKnown(id)/IdPending(tmpId)/IdUnknown,
@@ -274,8 +270,6 @@ case class CreatePostAction(  // COULD merge all actions into Post,
 
 
 
-// Could rename to Patch? or Diff?
-// SHOULD merge into Post and PostType.Edit
 case class Edit (
   id: String,
   postId: String,
@@ -333,10 +327,9 @@ case class Edit (
  *  And each Action could have a applied=true/false field?
  *  so they can be applied directly on creation?
  */
-// SHOULD merge into Post and use case class PostType.Appl?
-case class EditApp(   // COULD rename to Appl?
+case class EditApp(
   id: String,
-  editId: String,  // COULD rename to actionId?
+  editId: String,
   loginId: String,
   newIp: Option[String],
   ctime: ju.Date,
@@ -390,16 +383,15 @@ case class EditApp(   // COULD rename to Appl?
  *  in the list of edits that can be applied.
  *  -----------------------------
  */
-// SHOULD merge into Post and use case class PostType.Deletion?
 case class Delete(
   id: String,
-  postId: String,  // COULD rename to actionId
+  postId: String,
   loginId: String,
   newIp: Option[String],
   ctime: ju.Date,
   wholeTree: Boolean,  // COULD rename to `recursively'?
   reason: String  // COULD replace with a Post that is a reply to this Delete?
-) extends RawPostActionOld {
+) extends PostActionDtoOld {
   override def textLengthUtf8: Int = reason.getBytes("UTF-8").length
 }
 

@@ -21,7 +21,7 @@ object Page {
     id == Page.BodyId || id == Page.TitleId || id == Page.ConfigPostId
 
 
-  def isReply(action: RawPostActionOld): Boolean = action match {
+  def isReply(action: PostActionDtoOld): Boolean = action match {
     case post: CreatePostAction if !isArticleOrConfigPostId(post.id) => true
     case _ => false
   }
@@ -34,7 +34,7 @@ object Page {
   /** Assigns ids to actions and updates references from e.g. Edits to Posts.
    *  Only remaps IDs that start with "?".
    */
-  def assignIdsTo[T <: RawPostActionOld](actionsToRemap: List[T], nextNewReplyId: Int): List[T] = {
+  def assignIdsTo[T <: PostActionDtoOld](actionsToRemap: List[T], nextNewReplyId: Int): List[T] = {
     val remaps = mut.Map[String, String]()
     var nextReplyId = nextNewReplyId
 
@@ -70,7 +70,7 @@ object Page {
       case a: EditApp => a.copy(id = remaps(a.id), editId = rmpd(a.editId))
       case d: Delete => d.copy(id = remaps(d.id), postId = rmpd(d.postId))
       case r: ReviewPostAction => r.copy(id = remaps(r.id), targetId = rmpd(r.targetId))
-      case a: RawPostAction => a.copy(id = remaps(a.id), postId = rmpd(a.postId))
+      case a: PostActionDto => a.copy(id = remaps(a.id), postId = rmpd(a.postId))
       case x => assErr("DwE3RSEK9")
     }).asInstanceOf[T]
 
@@ -137,30 +137,30 @@ object Page {
 abstract class PostActionsWrapper { self: Debate =>
 
 
-  def actionDtos: List[RawPostAction]
+  def actionDtos: List[PostActionDto]
 
 
-  def getActionById(id: String): Option[PostActionNew] =
+  def getActionById(id: String): Option[PostAction] =
     actionsById.get(id)
 
 
-  def getActionsByPostId(postId: String): List[PostActionNew] =
+  def getActionsByPostId(postId: String): List[PostAction] =
     actionsByPostId(postId)
 
 
   // Maps data-transfer-objects to PostAction:s. Never mutated once constructed.
   private lazy val (
     actionsById,
-    actionsByPostId): (mut.Map[String, PostActionNew], mut.Map[String, List[PostActionNew]]) = {
+    actionsByPostId): (mut.Map[String, PostAction], mut.Map[String, List[PostAction]]) = {
 
-    var actionsById = mut.Map[String, PostActionNew]()
-    var actionsByPostId = mut.Map[String, List[PostActionNew]]().withDefaultValue(Nil)
+    var actionsById = mut.Map[String, PostAction]()
+    var actionsByPostId = mut.Map[String, List[PostAction]]().withDefaultValue(Nil)
 
     for (actionDto <- actionDtos) {
       val action = actionDto.payload match {
         // case _ => CreatePostAction => Post(this.asInstanceOf[Debate], action)
         // case _ => EditPostAction => Patch(this.asInstanceOf[Debate], action)
-        case _ => new PostActionNew(this.asInstanceOf[Debate], actionDto)
+        case _ => new PostAction(this.asInstanceOf[Debate], actionDto)
       }
       actionsById(action.id) = action
       val otherActions = actionsByPostId(action.postId)
@@ -198,7 +198,7 @@ case class Debate (
   flags: List[Flag] = Nil,
   deletions: List[Delete] = Nil,
   reviews: List[ReviewPostAction] = Nil,
-  actionDtos : List[RawPostAction] = Nil) extends PostActionsWrapper {
+  actionDtos : List[PostActionDto] = Nil) extends PostActionsWrapper {
 
   private lazy val postsById =
       imm.Map[String, CreatePostAction](posts.map(x => (x.id, x)): _*)
@@ -207,21 +207,21 @@ case class Debate (
      posts.size + ratings.size + edits.size + editApps.size +
      flags.size + deletions.size + actionDtos.size
 
-  def allActions: Seq[RawPostActionOld] =
+  def allActions: Seq[PostActionDtoOld] =
      deletions:::flags:::editApps:::edits:::ratings:::posts:::actionDtos
 
   // Try to remove/rewrite? Doesn't return e.g Post or Patch.
-  def smart(action: RawPostActionOld) = new PostAction(this, action)
+  def smart(action: PostActionDtoOld) = new PostActionOld(this, action)
 
   // For the love of god, I have to rename this crap, this file is a mess.
   // Fixed (soon). Rewrite to PostActionDto and use PostActionsWrapper.
-  def getSmart(actionId: String): Option[PostAction] = {
+  def getSmart(actionId: String): Option[PostActionOld] = {
     postsById.get(actionId).map(new Post(this, _)) orElse
-      rating(actionId).map(new PostAction(this, _)) orElse
+      rating(actionId).map(new PostActionOld(this, _)) orElse
       editsById.get(actionId).map(new Patch(this, _)) orElse
-      editApp(actionId).map(new PostAction(this, _)) orElse
-      flagsById.get(actionId).map(new PostAction(this, _)) orElse
-      deletionsById.get(actionId).map(new PostAction(this, _)) orElse
+      editApp(actionId).map(new PostActionOld(this, _)) orElse
+      flagsById.get(actionId).map(new PostActionOld(this, _)) orElse
+      deletionsById.get(actionId).map(new PostActionOld(this, _)) orElse
       reviewsById.get(actionId).map(new Review(this, _))
   }
 
@@ -535,7 +535,7 @@ case class Debate (
   def explicitReviewsOf(actionId: String): List[ReviewPostAction] =
     reviewsByTargetId.getOrElse(actionId, Nil)
 
-  def explicitReviewsOf(action: RawPostActionOld): List[ReviewPostAction] =
+  def explicitReviewsOf(action: PostActionDtoOld): List[ReviewPostAction] =
     explicitReviewsOf(action.id)
 
 
@@ -548,7 +548,7 @@ case class Debate (
   def + (flag: Flag): Debate = copy(flags = flag :: flags)
   def + (deletion: Delete): Debate = copy(deletions = deletion :: deletions)
   def + (review: ReviewPostAction): Debate = copy(reviews = review :: reviews)
-  def + (action: RawPostAction): Debate = copy(actionDtos = action :: actionDtos)
+  def + (action: PostActionDto): Debate = copy(actionDtos = action :: actionDtos)
 
   // Could try not to add stuff that's already included in this.people.
   def ++(people: People): Debate = this.copy(people = this.people ++ people)
@@ -573,7 +573,7 @@ case class Debate (
       case f: Flag => flags2 ::= f
       case d: Delete => dels2 ::= d
       case r: ReviewPostAction => reviews2 ::= r
-      case a: RawPostAction => actions2 ::= a
+      case a: PostActionDto => actions2 ::= a
       case x => runErr(
         "DwE8k3EC", "Unknown action type: "+ classNameOf(x))
     }
@@ -626,7 +626,7 @@ case class Debate (
 
 
   private def splitByTime(dati: ju.Date): Debate = {
-    def happenedInTime(action: RawPostActionOld) =
+    def happenedInTime(action: PostActionDtoOld) =
       action.ctime.getTime <= dati.getTime
 
     val (postsBefore, postsAfter) = posts partition happenedInTime
@@ -703,17 +703,17 @@ case class Debate (
   /**
    * The action with the most recent creation dati.
    */
-  lazy val lastAction: Option[RawPostActionOld] = oldestOrLatestAction(latest = true)
+  lazy val lastAction: Option[PostActionDtoOld] = oldestOrLatestAction(latest = true)
 
 
   /**
    * The action with the oldest creation dati.
    */
-  private def oldestAction: Option[RawPostActionOld] = oldestOrLatestAction(latest = false)
+  private def oldestAction: Option[PostActionDtoOld] = oldestOrLatestAction(latest = false)
 
 
-  private def oldestOrLatestAction(latest: Boolean): Option[RawPostActionOld] = {
-    def latestOrOldestAction(a: RawPostActionOld, b: RawPostActionOld) = {
+  private def oldestOrLatestAction(latest: Boolean): Option[PostActionDtoOld] = {
+    def latestOrOldestAction(a: PostActionDtoOld, b: PostActionDtoOld) = {
       if (latest) {
         if (a.ctime.getTime < b.ctime.getTime) b else a
       }

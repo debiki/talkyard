@@ -9,19 +9,19 @@ import Debate._
 import FlagReason.FlagReason
 
 
-object PostAction {
+object PostActionOld {
 
-  def apply(page: Debate, action: RawPostActionOld): PostAction = action match {
+  def apply(page: Debate, action: PostActionDtoOld): PostActionOld = action match {
     case p: CreatePostAction => new Post(page, p)
-    case a: RawPostActionOld => new PostAction(page, a)
+    case a: PostActionDtoOld => new PostActionOld(page, a)
   }
 
 }
 
 
-// SHOULD rename to PostActionNew
-class PostActionNew(page: Debate, actionDto: RawPostAction)
-  extends PostAction(page, actionDto) {
+
+class PostAction(page: Debate, actionDto: PostActionDto)
+  extends PostActionOld(page, actionDto) {
 
   def postId = actionDto.postId
   def payload = actionDto.payload
@@ -33,8 +33,7 @@ class PostActionNew(page: Debate, actionDto: RawPostAction)
 /** A virtual Action, that is, an Action plus some utility methods that
  *  look up other stuff in the relevant Debate.
  */
-// SHOULD rename to PostActionOld
-class PostAction(val debate: Debate, val action: RawPostActionOld) {
+class PostActionOld(val debate: Debate, val action: PostActionDtoOld) {
   def page = debate // should rename `debate` to `page`
   def id: String = action.id
   def creationDati = action.ctime
@@ -83,7 +82,7 @@ class PostAction(val debate: Debate, val action: RawPostActionOld) {
  *
  * Created via CreatePostAction:s.
  */
-class Post(debate: Debate, val post: CreatePostAction) extends PostAction(debate, post) {
+class Post(debate: Debate, val post: CreatePostAction) extends PostActionOld(debate, post) {
 
   def parentId: String = post.parent
 
@@ -107,7 +106,7 @@ class Post(debate: Debate, val post: CreatePostAction) extends PostAction(debate
   lazy val (text: String, markup: String) = _applyEdits
 
 
-  def actions: List[PostActionNew] = page.getActionsByPostId(id)
+  def actions: List[PostAction] = page.getActionsByPostId(id)
 
 
   /**
@@ -450,7 +449,7 @@ class Post(debate: Debate, val post: CreatePostAction) extends PostAction(debate
 
 
 
-class Patch(debate: Debate, val edit: Edit) extends PostAction(debate, edit) {
+class Patch(debate: Debate, val edit: Edit) extends PostActionOld(debate, edit) {
 
   def post = debate.vipo(edit.postId)
   def post_! = debate.vipo_!(edit.postId)
@@ -523,10 +522,10 @@ class Patch(debate: Debate, val edit: Edit) extends PostAction(debate, edit) {
 
 
 
-class Review(page: Debate, val review: ReviewPostAction) extends PostAction(page, review) {
+class Review(page: Debate, val review: ReviewPostAction) extends PostActionOld(page, review) {
 
   def approval = review.approval
-  lazy val target: PostAction = page.getSmart(review.targetId) getOrDie "DwE93UX7"
+  lazy val target: PostActionOld = page.getSmart(review.targetId) getOrDie "DwE93UX7"
 
 }
 
