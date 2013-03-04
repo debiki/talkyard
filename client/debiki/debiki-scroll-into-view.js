@@ -1,6 +1,9 @@
 /* Copyright (c) 2010 - 2012 Kaj Magnus Lindberg. All rights reserved. */
 
 jQuery.fn.dwScrollIntoView = function(options) {
+  if (!this.length)
+    return this;
+
   var $ = jQuery;
   if (!options) options = {};
   var duration = options.duration || 'slow';
