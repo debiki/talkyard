@@ -96,7 +96,7 @@ object AutoApprover {
     //   if (pageReq.emailAddr.isEmpty) Nil
     //   else pageReq.dao.loadRecentActionExcerpts(byEmail = pageReq.emailAddr)
 
-    val recentActions: List[PostAction] =
+    val recentActions: List[PostActionOld] =
       (actionsFromIp.toList ::: actionsByIdentity.toList)
          .sortBy(- _.creationDati.getTime).distinct
 
@@ -121,7 +121,7 @@ object AutoApprover {
   }
 
 
-  private def _considerPosts(recentActions: List[PostAction]): Option[Approval] = {
+  private def _considerPosts(recentActions: List[PostActionOld]): Option[Approval] = {
     var manuallyApprovedCount = 0
     var unreviewedCount = 0
     var postCount = 0
@@ -161,8 +161,8 @@ object AutoApprover {
   }
 
 
-  private def _considerFlags(recentActions: List[PostAction]): Option[Approval] = {
-    for (flag: PostAction <- recentActions if flag.action.isInstanceOf[Flag]) {
+  private def _considerFlags(recentActions: List[PostActionOld]): Option[Approval] = {
+    for (flag: PostActionOld <- recentActions if flag.action.isInstanceOf[Flag]) {
       // If any post has been flagged, don't approve.
       return None
     }
@@ -170,7 +170,7 @@ object AutoApprover {
   }
 
 
-  private def _considerRatings(recentActions: List[PostAction]): Option[Approval] = {
+  private def _considerRatings(recentActions: List[PostActionOld]): Option[Approval] = {
     // Don't consider ratings at all, for now.
     Some(Approval.WellBehavedUser)
   }

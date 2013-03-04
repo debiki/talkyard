@@ -67,19 +67,17 @@ case class HtmlPostRenderer(
   }
 
 
-  private def renderPostImpl(vipo: Post): RenderedPost = {
-    def post = vipo
-
+  private def renderPostImpl(post: Post): RenderedPost = {
     val postHeader =
       if (post.id == Page.BodyId) {
         // Body author and date info rendered separately, for the page body.
         RenderedPostHeader(Nil, None)
       }
       else {
-        renderPostHeader(vipo, Some(pageStats))
+        renderPostHeader(post, Some(pageStats))
       }
 
-    val postBody = renderPostBody(vipo, hostAndPort)
+    val postBody = renderPostBody(post, hostAndPort)
 
     val long = postBody.approxLineCount > 9
     val cutS = if (long) " dw-x-s" else ""
@@ -102,18 +100,18 @@ case class HtmlPostRenderer(
 object HtmlPostRenderer {
 
 
-  def renderDeletedTree(vipo: Post): RenderedPost = {
-    renderDeletedComment(vipo, wholeTree = true)
+  def renderDeletedTree(post: Post): RenderedPost = {
+    renderDeletedComment(post, wholeTree = true)
   }
 
 
-  def renderDeletedComment(vipo: Post, wholeTree: Boolean = false): RenderedPost = {
-    val page = vipo.debate
-    val deletion = vipo.firstDelete.get
+  def renderDeletedComment(post: Post, wholeTree: Boolean = false): RenderedPost = {
+    val page = post.debate
+    val deletion = post.firstDelete.get
     val deleter = page.people.authorOf_!(deletion)
     // COULD add itemscope and itemtype attrs, http://schema.org/Comment
     val html =
-      <div id={htmlIdOf(vipo)} class='dw-p dw-p-dl'>
+      <div id={htmlIdOf(post)} class='dw-p dw-p-dl'>
         <div class='dw-p-hd'>{
           if (wholeTree) "Thread" else "1 comment"
           } deleted by { _linkTo(deleter)
@@ -148,32 +146,31 @@ object HtmlPostRenderer {
    *    Flagged (top flags) Rated (top ratings)"
    * If anyPageStats is None, skips "Flagged ... Rated ..." statistics/info.
    */
-  def renderPostHeader(vipo: Post, anyPageStats: Option[PageStats])
+  def renderPostHeader(post: Post, anyPageStats: Option[PageStats])
         : RenderedPostHeader = {
-    if (vipo.loginId == DummyPage.DummyAuthorLogin.id)
+    if (post.loginId == DummyPage.DummyAuthorLogin.id)
       return RenderedPostHeader(Nil, None)
 
-    def post = vipo.post
-    def page = vipo.debate
-    val editsApplied: List[Patch] = vipo.editsAppliedDescTime
+    def page = post.debate
+    val editsApplied: List[Patch] = post.editsAppliedDescTime
     val lastEditApplied = editsApplied.headOption
-    val author = page.people.authorOf_!(post)
+    val author = page.people.authorOf_!(post.post)
 
     val (flagsTop: NodeSeq, flagsDetails: NodeSeq) =
-      if (anyPageStats.isDefined) renderFlags(vipo)
+      if (anyPageStats.isDefined) renderFlags(post)
       else (Nil: NodeSeq, Nil: NodeSeq)
 
     val (topTagsAsText: Option[String],
         ratingTagsTop: NodeSeq,
         ratingTagsDetails: NodeSeq) =
-      if (anyPageStats.isDefined) renderRatings(vipo, anyPageStats.get)
+      if (anyPageStats.isDefined) renderRatings(post, anyPageStats.get)
       else (None, Nil: NodeSeq, Nil: NodeSeq)
 
     val editInfo =
       // If closed: <span class='dw-p-re-cnt'>{count} replies</span>
       if (editsApplied.isEmpty) Nil
       else {
-        val lastEditDate = vipo.modificationDati
+        val lastEditDate = post.modificationDati
         // ((This identity count doesn't take into account that a user
         // can have many identities, e.g. Twitter, Facebook and Gmail. So
         // even if many different *identities* have edited the post,
@@ -204,7 +201,7 @@ object HtmlPostRenderer {
 
     val commentHtml =
       <div class={"dw-p-hd" + cssArticlePostHeader}>
-        By { _linkTo(author)}{ dateAbbr(post.ctime, "dw-p-at")
+        By { _linkTo(author)}{ dateAbbr(post.creationDati, "dw-p-at")
         }{ flagsTop }{ ratingTagsTop }{ editInfo }{ flagsDetails
         }{ ratingTagsDetails }
       </div>
@@ -213,13 +210,13 @@ object HtmlPostRenderer {
   }
 
 
-  private def renderFlags(vipo: Post): (NodeSeq, NodeSeq) = {
-    if (vipo.flags isEmpty)
+  private def renderFlags(post: Post): (NodeSeq, NodeSeq) = {
+    if (post.flags isEmpty)
       return (Nil: NodeSeq, Nil: NodeSeq)
 
     import HtmlForms.FlagForm.prettify
-    val mtime = toIso8601T(vipo.lastFlag.get.ctime)
-    val fbr = vipo.flagsByReasonSorted
+    val mtime = toIso8601T(post.lastFlag.get.ctime)
+    val fbr = post.flagsByReasonSorted
 
     val topFlags =
       <span class='dw-p-flgs-top'>, flagged <em>{
@@ -235,7 +232,7 @@ object HtmlPostRenderer {
 
     val allFlags =
       <div class='dw-p-flgs-all' data-mtime={mtime}>{
-        vipo.flags.length } flags: <ol class='dw-flgs'>{
+        post.flags.length } flags: <ol class='dw-flgs'>{
           allFlagListItems
         }</ol>
       </div>
@@ -339,12 +336,11 @@ object HtmlPostRenderer {
   def _linkTo(nilo: NiLo) = HtmlPageSerializer.linkTo(nilo)
 
 
-  def renderPostBody(vipo: Post, hostAndPort: String): RenderedPostBody = {
-    def post = vipo.post
+  def renderPostBody(post: Post, hostAndPort: String): RenderedPostBody = {
     val cssArtclBody = if (post.id != Page.BodyId) "" else " dw-ar-p-bd"
-    val isBodyOrArtclQstn = vipo.id == Page.BodyId // || vipo.meta.isArticleQuestion
+    val isBodyOrArtclQstn = post.id == Page.BodyId // || post.meta.isArticleQuestion
     val (xmlTextInclTemplCmds, approxLineCount) =
-      HtmlPageSerializer._markupTextOf(vipo, hostAndPort)
+      HtmlPageSerializer._markupTextOf(post, hostAndPort)
 
     // Find any customized reply button text.
     var replyBtnText: NodeSeq = xml.Text("Reply")

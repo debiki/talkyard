@@ -428,34 +428,32 @@ case class HtmlPageSerializer(
     var comments: NodeSeq = Nil
     for {
       post <- _sortPostsDescFitness(posts)
-      p = post // COULD remove
-      cssThreadId = "dw-t-"+ p.id
+      cssThreadId = "dw-t-"+ post.id
       cssDepth = "dw-depth-"+ depth
-      isInlineThread = p.where.isDefined
+      isInlineThread = post.where.isDefined
       isInlineNonRootChild = isInlineThread && depth >= 2
       cssInlineThread = if (isInlineThread) " dw-i-t" else ""
-      replies = p.replies
-      vipo = p // debate.vipo_!(p.id)
+      replies = post.replies
       isTitle = post.id == Page.TitleId
       isRootOrArtclQstn =
-          vipo.id == pageRoot.subId // || vipo.meta.isArticleQuestion
+          post.id == pageRoot.subId // || post.meta.isArticleQuestion
       // Layout replies horizontally, if this is an inline reply to
       // the root post, i.e. depth is 1 -- because then there's unused space
       // to the right. However, the horizontal layout results in a higher
       // thread if there's only one reply. So only do this if there's more
       // than one reply.
-      horizontal = (p.where.isDefined && depth == 1 && replies.length > 1) ||
+      horizontal = (post.where.isDefined && depth == 1 && replies.length > 1) ||
                     isRootOrArtclQstn
-      cssThreadDeleted = if (vipo.isTreeDeleted) " dw-t-dl" else ""
+      cssThreadDeleted = if (post.isTreeDeleted) " dw-t-dl" else ""
       cssArticleQuestion = if (isRootOrArtclQstn) " dw-p-art-qst" else ""
-      postFitness = pageStats.ratingStatsFor(p.id).fitnessDefaultTags
+      postFitness = pageStats.ratingStatsFor(post.id).fitnessDefaultTags
       // For now: If with a probability of 90%, most people find this post
       // boring/faulty/off-topic, and if, on average,
       // more than two out of three people think so too, then fold it.
       // Also fold inline threads (except for root post inline replies)
       // -- they confuse people (my father), in their current shape.
     } {
-      val renderedComment: RenderedPost = postRenderer.renderPost(vipo.id)
+      val renderedComment: RenderedPost = postRenderer.renderPost(post.id)
 
       val (myReplyBtn, actionLink) =
         if (isTitle)
@@ -485,7 +483,7 @@ case class HtmlPageSerializer(
       }
 
       val foldLink =
-        if (isTitle || isRootOrArtclQstn || vipo.isTreeDeleted) Nil
+        if (isTitle || isRootOrArtclQstn || post.isTreeDeleted) Nil
         else <a class='dw-z'>{foldLinkText}</a>
 
       val repliesHtml = {
@@ -526,13 +524,13 @@ case class HtmlPageSerializer(
 
       // For inline comments, add info on where to place them.
       // COULD rename attr to data-where, that's search/replace:able enough.
-      if (p.where isDefined) thread = thread % Attribute(
-        None, "data-dw-i-t-where", Text(p.where.get), scala.xml.Null)
+      if (post.where isDefined) thread = thread % Attribute(
+        None, "data-dw-i-t-where", Text(post.where.get), scala.xml.Null)
 
       // Place the Reply button just after the last fixed-position comment.
       // Then it'll be obvious (?) that if you click the Reply button,
       // your comment will appear to the right of the fixed-pos comments.
-      if (replyBtnPending) { // && p.meta.fixedPos.isEmpty) {
+      if (replyBtnPending) { // && post.meta.fixedPos.isEmpty) {
         replyBtnPending = false
         comments ++= parentReplyBtn
       }

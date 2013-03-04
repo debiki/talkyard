@@ -107,7 +107,7 @@ object Utils extends Results with http.ContentTypes {
   }
 
 
-  def localUrlTo(action: PostAction): String = {
+  def localUrlTo(action: PostActionOld): String = {
     // - Add `?view=<config-post-id>` for templates, since they're on their
     // own virtual page not connected to the root post.
     // - Add `?view` to paths that end with .js or .css or Debiki will
@@ -119,7 +119,7 @@ object Utils extends Results with http.ContentTypes {
       else "?view"
     val hash = action match {
       case post: Post => "#post-"+ action.id
-      case other: PostAction =>
+      case other: PostActionOld =>
         "" // SHOULD be: "#post-"+ action.target.id  -- but not implemented
     }
     fragment + query + hash

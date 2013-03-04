@@ -58,7 +58,7 @@ object AppSimple extends mvc.Controller {
     val pageActionIds = apiReq.body.as[List[Map[String, String]]]
 
     val actionsByPageId = Utils.parsePageActionIds(pageActionIds) { actionId =>
-      RawPostAction("?", apiReq.ctime, payload, postId = actionId,
+      PostActionDto("?", apiReq.ctime, payload, postId = actionId,
         loginId = apiReq.loginId_!, newIp = None)
     }
 

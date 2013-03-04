@@ -93,22 +93,22 @@ class TenantDao(protected val tenantDbDao: ChargingTenantDbDao)
    * Saves page actions and places messages in users' inboxes, as needed.
    * Returns the saved actions, with ids assigned.
    */
-  final def savePageActionsGenNotfs(pageReq: PageRequest[_], actions: List[RawPostActionOld])
-        : Seq[RawPostActionOld] = {
+  final def savePageActionsGenNotfs(pageReq: PageRequest[_], actions: List[PostActionDtoOld])
+        : Seq[PostActionDtoOld] = {
     savePageActionsGenNotfsImpl(pageReq.page_!, actions, pageReq.pageMeta_!)
   }
 
 
-  final def savePageActionsGenNotfs(page: Debate, actions: List[RawPostActionOld])
-        : Seq[RawPostActionOld] = {
+  final def savePageActionsGenNotfs(page: Debate, actions: List[PostActionDtoOld])
+        : Seq[PostActionDtoOld] = {
     val pageMeta = tenantDbDao.loadPageMeta(page.id) getOrElse
       throwNotFound("DwE115Xf3", s"Found no meta for page ${page.id}")
     savePageActionsGenNotfsImpl(page, actions, pageMeta)
   }
 
 
-  def savePageActionsGenNotfsImpl(page: Debate, actions: List[RawPostActionOld],
-        pageMeta: PageMeta): Seq[RawPostActionOld] = {
+  def savePageActionsGenNotfsImpl(page: Debate, actions: List[PostActionDtoOld],
+        pageMeta: PageMeta): Seq[PostActionDtoOld] = {
     if (actions isEmpty)
       return Nil
 
@@ -149,7 +149,7 @@ class TenantDao(protected val tenantDbDao: ChargingTenantDbDao)
         fromIp: Option[String] = None,
         byIdentity: Option[String] = None,
         pathRanges: PathRanges = PathRanges.Anywhere,
-        limit: Int): (Seq[PostAction], People) =
+        limit: Int): (Seq[PostActionOld], People) =
     tenantDbDao.loadRecentActionExcerpts(fromIp = fromIp,
       byIdentity = byIdentity, pathRanges = pathRanges, limit = limit)
 
