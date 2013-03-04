@@ -133,8 +133,8 @@ object HtmlPostRenderer {
 
   def renderCollapsedComment(post: Post): RenderedPost = {
     val html =
-      <div id={htmlIdOf(post)} class="dw-p dw-p-zd">
-        <a class="dw-p-z">Click to show this comment</a>
+      <div id={htmlIdOf(post)} class="dw-p dw-zd">
+        <a class="dw-z">Click to show this comment</a>
       </div>
     RenderedPost(html, replyBtnText = Nil, topRatingsText = None)
   }

@@ -466,7 +466,7 @@ case class HtmlPageSerializer(
           // (Could use "Downwards arrow from bar",
           // http://shapecatcher.com/unicode/info/8615, instead of [+] but [+]
           // actually looks better?)
-          (" dw-zd", "[+] Click to show this thread" +
+          (" dw-zd", "Click to show this thread" +
              renderedComment.topRatingsText.map(", rated "+ _).getOrElse(""))
         else
           ("", "↕")
@@ -535,8 +535,8 @@ case class HtmlPageSerializer(
 
 
   private def renderCollapsedReplies(posts: List[Post]): NodeSeq = {
-    <ol class="dw-res dw-res-zd">{/* COULD rename dw-res to dw-ts, "threads"/"tree" */}
-      <li class="dw-t"><a class="dw-ts-z">Click to show {posts.length} threads</a></li>
+    <ol class="dw-res dw-zd">{/* COULD rename dw-res to dw-ts, "threads"/"tree" */}
+      <li class="dw-t"><a class="dw-z">Click to show {posts.length} threads</a></li>
     </ol>
   }
 

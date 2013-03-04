@@ -66,7 +66,7 @@ d.i.$threadToggleFolded = function() {
     // Fold thread.
     var postCount = $thread.find('.dw-p').length;
     $childrenToFold.each(d.i.$slideUp).queue(function(next) {
-      $foldLink.text('[+] Click to show '+  // COULD add i18n
+      $foldLink.text('Click to show '+  // COULD add i18n
           postCount +' posts');
       $thread.addClass('dw-zd');
       next();

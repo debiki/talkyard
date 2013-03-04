@@ -1,7 +1,9 @@
 /* Copyright (c) 2010 - 2012 Kaj Magnus Lindberg. All rights reserved. */
 
 
-/* ===== Page and threads ===== */
+
+/* Page and threads
+===============================*/
 
 
 .dw-debate {
@@ -28,10 +30,12 @@
 }
 
 
-/* --- Folded threads --- */
+
+/* Folded things
+-------------------------------*/
+
 
 .dw-z {
-  position: absolute !important; /* or set to relative by :not(svg) [31Ik53] */
   /* Could use blue (#369) to indicate they're clickable, but don't — I guess
   it's more important that they don't grab any attention, than that
   people notice that they can close threads. */
@@ -47,23 +51,41 @@
   color: #c77405;
 }
 
+.dw-zd .dw-z {
+  font-style: italic;
+}
+
+/* --- Folded threads, .dw-t --- */
+
 /* Don't underline the fold link, [-]. (Ignore old borken browsers.) */
 .dw-t:not(.dw-zd) > .dw-z { text-decoration: none; }
 
+.dw-t > .dw-z {
+  position: absolute !important; /* or set to relative by :not(svg) [31Ik53] */
+}
+
 /* When a thread is folded, there's nothing in it that occupies any space,
 and two folded threads would overlap, unless: */
-.dw-zd > .dw-z {
+.dw-zd.dw-t > .dw-z {
   position: relative !important; /* cancel position: absolute */
 }
 
 /* For a folded thread, only the open link (.dw-z) is visible. */
 /* This verbose code works also in IE 7: */
-.dw-zd > * { display: none; }
-.dw-zd > .dw-z, .dw-zd > .dw-arw { display: block; }
-.dw-zd > .dw-svg-fake-varrow { display: none; }
+.dw-zd.dw-t > * { display: none; }
+.dw-zd.dw-t > .dw-z,
+.dw-zd.dw-t > .dw-arw { display: block; } /* show arrows pointing *to* thread */
+.dw-zd.dw-t > .dw-svg-fake-varrow { display: none; }
+
+/* --- Folded replies --- */
+
+/* --- Folded comments --- */
 
 
-/* --- Horizontal layout --- */
+
+/* Horizontal layout
+-------------------------------*/
+
 
 .dw-t {
   /* SVG graphics is absolute positioned relative thread */
