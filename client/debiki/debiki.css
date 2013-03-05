@@ -35,11 +35,11 @@
 -------------------------------*/
 
 
-.dw-z {
+.DW .dw-z {
   /* Could use blue (#369) to indicate they're clickable, but don't — I guess
   it's more important that they don't grab any attention, than that
   people notice that they can close threads. */
-  color: #666;
+  color: #777;
   font-size: 13px;
   font-family: Verdana;
   text-decoration:none;
@@ -47,12 +47,14 @@
   left: 2px;
   top: -1px;
 }
-.dw-z:hover {
+.DW .dw-z:hover {
   color: #c77405;
 }
+.dw-z:hover:before {
+  background: hsl(34, 95%, 89%);
+}
 
-
-/* --- Folded threads, .dw-t --- */
+/* Show a collapse-thread symbol in (before) the .dw-z <div>. */
 
 .dw-z:before {
   /* ↕ is "Up down arrow", 8597,
@@ -60,15 +62,20 @@
   http://shapecatcher.com/unicode/info/8613, but that's the wrong
   direction (sometimes) */
   content: "↕";
-  display: inline-block;
-  width: 24px; /* align with uncollapsed replies */
   background: white;
+  /* Align with uncollapsed replies: 16 + 8 = 24, looks ok */
+  display: inline-block;
+  width: 16px;
+  margin-right: 8px;
 }
 
 .dw-p .dw-z:before {
   /* Show no collapse-thread symbol inside *posts* however. */
   content: none;
 }
+
+
+/* --- Folded threads, .dw-t --- */
 
 /* Don't underline the fold link, [-]. (Ignore old borken browsers.) */
 .dw-t:not(.dw-zd) > .dw-z { text-decoration: none; }
