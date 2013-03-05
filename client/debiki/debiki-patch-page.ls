@@ -40,7 +40,7 @@ patchThreadWith = (threadPatch, { onPage, result }) ->
     if $prevThread.length
       insertThread $newThread, after: $prevThread
     else if $parentThread.length
-      prependThread $newThread, to: $parentThread
+      appendThread $newThread, to: $parentThread
     $newThread.addClass 'dw-m-t-new'
   else
     replaceOldWith $newThread, onPage: pageId
@@ -107,7 +107,8 @@ insertThread = ($thread, { after }) ->
   $pervSibling.after $thread
 
 
-prependThread = ($thread, { to }) ->
+
+appendThread = ($thread, { to }) ->
   $parent = to
   $childList = $parent.children '.dw-res'
   if !$childList.length
