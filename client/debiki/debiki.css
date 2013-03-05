@@ -427,6 +427,20 @@ JavaScript. Then I can still place all CSS stuff in this file. */
   width: 39px;
 }
 
+/* Tweak offset for arrows to collapsed replies (there's no .dw-t
+ that "adjusts" the offset) */
+.dw-res.dw-zd .dw-svg-fake-vcurve-short {
+  left: -39px;
+  top: -50px;
+  z-index: 2; /* hide vertical arrow — there're no more replies below;
+                all replies are collapsed */
+}
+
+.dw-res.dw-zd {
+  position: relative;
+}
+
+
 .dw-hor > .dw-res > li:last-child > .dw-t > .dw-svg-fake-hcurve,
 .dw-res > .dw-t:last-child > .dw-svg-fake-vcurve-short {
   /* Hide parts of the end of the horizontal or vertical line that spans

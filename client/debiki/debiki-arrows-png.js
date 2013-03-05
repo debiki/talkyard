@@ -11,21 +11,26 @@ debiki.internal.makeFakeDrawer = function($) {
     // Vertical layout
     // ---------------
 
-    $('.dw-depth-0 .dw-t:has(.dw-t)').each(function(){
+    // Find threads with child threads and threads with replies collapsed,
+    // and draw vertical lines towards those children / collapsed replies.
+    $('.dw-depth-0 .dw-t').has('.dw-t, .dw-res.dw-zd').each(function() {
       $(this).prepend("<div class='dw-arw dw-svg-fake-varrow'/>");
       $(this).prepend("<div class='dw-arw dw-svg-fake-varrow-hider-hi'/>");
       $(this).prepend("<div class='dw-arw dw-svg-fake-varrow-hider-lo'/>");
     });
 
-    // Draw a  `-> arrow to $(this).
-    $('.dw-depth-1 .dw-t:not(.dw-i-t)').each(function(){
+    var $childThreads = $('.dw-depth-1 .dw-t:not(.dw-i-t)');
+    var $collapsedReplies = $('.dw-depth-1 .dw-res.dw-zd > li');
+
+    // Draw a `-> arrow to child threads and collapsed replies.
+    $childThreads.add($collapsedReplies).each(function() {
       $(this).prepend('<div class="dw-arw dw-svg-fake-vcurve-short"/>');
     });
 
-    // If this is the last child, then just below the `-> we just added,
+    // For each last child, then just below the `-> we just added,
     // the vertical line from which `-> originates continues downwards.
-    // Hide the remaining part of that line.
-    $('.dw-depth-1 .dw-t:not(.dw-i-t):last-child').each(function(){
+    // Hide the remaining part of that vertical line.
+    $childThreads.filter(':last-child').each(function() {
       $(this).prepend("<div class='dw-arw dw-svg-fake-varrow-hider-left'/>");
     });
 
