@@ -46,36 +46,6 @@ function $makeThreadEastResizable() {
 };
 
 
-d.i.$threadToggleFolded = function() {
-  var $thread = $(this).closest('.dw-t');
-  // Don't hide the toggle-folded-link and arrows pointing *to* this thread.
-  var $childrenToFold = $thread.children(':not(.dw-z, .dw-arw)');
-  var $foldLink = $thread.children('.dw-z');
-  // {{{ COULD make the animation somewhat smoother, by sliting up the
-  // thread only until it's as high as the <a> and then hide it and add
-  // .dw-zd, because otherwie when the <a>'s position changes from absolute
-  // to static, the thread height suddenly changes from 0 to the highht
-  // of the <a>). }}}
-  if ($thread.is('.dw-zd')) {
-    // Thread is folded, open it.
-    $childrenToFold.each(d.i.$slideDown);
-    $thread.removeClass('dw-zd');
-    $foldLink.text('↕'); // "Up down arrow", Unicode token 8597 (decimal)
-                         // http://shapecatcher.com/unicode/info/8597
-  } else {
-    // Fold thread.
-    var postCount = $thread.find('.dw-p').length;
-    $childrenToFold.each(d.i.$slideUp).queue(function(next) {
-      $foldLink.text('Click to show '+  // COULD add i18n
-          postCount +' posts');
-      $thread.addClass('dw-zd');
-      next();
-    });
-  }
-  return false; // don't follow any <a> link
-};
-
-
 })();
 
 // vim: fdm=marker et ts=2 sw=2 tw=80 fo=tcqwn list

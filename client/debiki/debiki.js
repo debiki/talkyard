@@ -67,10 +67,6 @@ function $initStep1() {
   // 6 core 2.8 GHz AMD for 200 posts) and could be split out to a separate
   // step, done as late as possible.
   d.i.createAndBindActionLinksForPost(this);
-
-  // Open/close threads if the fold link is clicked.
-  var $thread = $(this).closest('.dw-t');
-  $thread.children('.dw-z').click(d.i.$threadToggleFolded);
 };
 
 

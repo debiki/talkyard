@@ -43,6 +43,47 @@ object AppSimple extends mvc.Controller {
   }
 
 
+  def loadThreads = PostJsonAction(maxLength = 5000) { apiReq =>
+    val pageActionIds = apiReq.body.as[List[Map[String, String]]]
+
+    val actionsByPageId: Map[String, List[String]] =
+      Utils.parsePageActionIds(pageActionIds)(identity)
+
+    var pagesAndPostIds = List[(Debate, List[String])]()
+
+    actionsByPageId foreach { case (pageId, postIds) =>
+      val page = apiReq.dao.loadPage(pageId) getOrElse throwNotFound(
+        "DwE80Bw2", s"Page not found, id: `$pageId'; could not do all changes")
+      pagesAndPostIds ::= (page, postIds)
+    }
+
+    BrowserPagePatcher.jsonForThreads(pagesAndPostIds, apiReq)
+  }
+
+
+  def loadReplies = PostJsonAction(maxLength = 5000) { apiReq =>
+    val pageActionIds = apiReq.body.as[List[Map[String, String]]]
+
+    val actionsByPageId: Map[String, List[String]] =
+      Utils.parsePageActionIds(pageActionIds)(identity)
+
+    var pagesAndPostIds = List[(Debate, List[String])]()
+
+    actionsByPageId foreach { case (pageId, postIds) =>
+      val page = apiReq.dao.loadPage(pageId) getOrElse throwNotFound(
+        "DwE80Bw2", s"Page not found, id: `$pageId'; could not do all changes")
+      val posts = postIds map { postId => page.vipo_!(postId) }
+      val replyIds = posts.foldLeft(Nil: List[String]) { (replyIds, post) =>
+        post.replies.map(_.id) ::: replyIds
+      }
+
+      pagesAndPostIds ::= (page, replyIds)
+    }
+
+    BrowserPagePatcher.jsonForThreads(pagesAndPostIds, apiReq)
+  }
+
+
   private def closeOrReopenTree(apiReq: JsonPostRequest, payload: PostActionPayload)
         : mvc.PlainResult = {
 
@@ -66,7 +107,7 @@ object AppSimple extends mvc.Controller {
 
     actionsByPageId foreach { case (pageId, actions) =>
       val pageWithoutMe = apiReq.dao.loadPage(pageId) getOrElse throwNotFound(
-        "DwE6Xf80", "Page not found, id: `"+ pageId +"'; could not do all changes")
+        "DwE6Xf80", s"Page not found, id: `$pageId'; could not do all changes")
       val page = pageWithoutMe ++ apiReq.meAsPeople_!
 
       val (pageWithNewActions, _) = apiReq.dao.savePageActionsGenNotfs(page, actions)

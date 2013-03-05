@@ -77,9 +77,18 @@ and two folded threads would overlap, unless: */
 .dw-zd.dw-t > .dw-arw { display: block; } /* show arrows pointing *to* thread */
 .dw-zd.dw-t > .dw-svg-fake-varrow { display: none; }
 
+
 /* --- Folded replies --- */
 
+.dw-res.dw-zd > li {
+  margin: 4px 0 0 10px;
+}
+
+
 /* --- Folded comments --- */
+
+/* Search for '.dw-p.dw-zd' in this file.
+ */
 
 
 
@@ -167,7 +176,8 @@ and two folded threads would overlap, unless: */
   background-color: white;
 }
 
-.dw-p-hd {
+.dw-p-hd,
+.dw-p.dw-zd {  /* folded comment */
   padding-left: 3px;
   font-size: 10px;
   color: #141414;

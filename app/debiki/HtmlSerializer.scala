@@ -323,12 +323,10 @@ case class HtmlPageSerializer(
     HtmlPostRenderer(page, pageStats, config.hostAndPort)
 
 
-  def renderSingleThread(postId: String)
-        : Option[SerializedSingleThread] = {
+  def renderSingleThread(postId: String): Option[SerializedSingleThread] = {
     page.vipo(postId) map { post =>
-      val html = renderThreads(depth = post.depth,
-         parentReplyBtn = Nil,
-         posts = post::Nil)
+      val html = renderThreads(depth = post.depth, parentReplyBtn = Nil,
+        posts = post::Nil, uncollapseFirst = true)
       assert(html.length == 1)
       val siblingsSorted = _sortPostsDescFitness(post.siblingsAndMe)
       var prevSibling: Option[Post] = None
@@ -409,9 +407,12 @@ case class HtmlPageSerializer(
   }
 
 
-  private def renderThreads(depth: Int,
-                              parentReplyBtn: NodeSeq,
-                              posts: List[Post]): NodeSeq = {
+  private def renderThreads(
+    depth: Int,
+    parentReplyBtn: NodeSeq,
+    posts: List[Post],
+    uncollapseFirst: Boolean = false): NodeSeq = {
+
     // COULD let this function return Nil if posts.isEmpty, and otherwise
     // wrap any posts in <ol>:s, with .dw-ts or .dw-i-ts CSS classes
     // — this would reduce dupl wrapping code.
@@ -445,7 +446,8 @@ case class HtmlPageSerializer(
       // Also fold inline threads (except for root post inline replies)
       // -- they confuse people (my father), in their current shape.
     } {
-      val renderedComment: RenderedPost = postRenderer.renderPost(post.id)
+      val renderedComment: RenderedPost =
+        postRenderer.renderPost(post.id, uncollapse = uncollapseFirst)
 
       val (myReplyBtn, actionLink) =
         if (isTitle)
@@ -459,13 +461,11 @@ case class HtmlPageSerializer(
 
       val (cssFolded, foldLinkText) = {
         val shallFoldPost =
+          !uncollapseFirst && (
           (postFitness.upperLimit < 0.5f && postFitness.observedMean < 0.333f) ||
-            isInlineNonRootChild || post.isTreeClosed || post.isTreeCollapsed
+            isInlineNonRootChild || post.isTreeClosed || post.isTreeCollapsed)
 
         if (shallFoldPost)
-          // (Could use "Downwards arrow from bar",
-          // http://shapecatcher.com/unicode/info/8615, instead of [+] but [+]
-          // actually looks better?)
           (" dw-zd", "Click to show this thread" +
              renderedComment.topRatingsText.map(", rated "+ _).getOrElse(""))
         else
@@ -479,8 +479,8 @@ case class HtmlPageSerializer(
         else <a class='dw-z'>{foldLinkText}</a>
 
       val repliesHtml = {
-        def shallHideReplies = post.isTreeDeleted || post.isTreeClosed ||
-          post.isTreeCollapsed
+        def shallHideReplies = post.isTreeDeleted ||
+          (!uncollapseFirst && (post.isTreeClosed || post.isTreeCollapsed))
         if (replies.isEmpty && myReplyBtn.isEmpty) Nil
         else if (shallHideReplies) Nil
         else if (post.areRepliesCollapsed)
@@ -536,7 +536,7 @@ case class HtmlPageSerializer(
 
   private def renderCollapsedReplies(posts: List[Post]): NodeSeq = {
     <ol class="dw-res dw-zd">{/* COULD rename dw-res to dw-ts, "threads"/"tree" */}
-      <li class="dw-t"><a class="dw-z">Click to show {posts.length} threads</a></li>
+      <li><a class="dw-z">Click to show {posts.length} threads</a></li>
     </ol>
   }
 

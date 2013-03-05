@@ -40,20 +40,20 @@ case class HtmlPostRenderer(
   hostAndPort: String) {
 
 
-  def renderPost(postId: String): RenderedPost = {
+  def renderPost(postId: String, uncollapse: Boolean = false): RenderedPost = {
     val post = page.vipo(postId) getOrElse
        assErr("DwE209X5", "post id "+ postId +" on page "+ page.id)
 
     if (post.isTreeDeleted) {
       renderDeletedTree(post)
     }
-    else if (post.isTreeCollapsed) {
+    else if (post.isTreeCollapsed && !uncollapse) {
       renderCollapsedTree(post)
     }
     else if (post.isDeleted) {
       renderDeletedComment(post)
     }
-    else if (post.isOnlyPostCollapsed) {
+    else if (post.isOnlyPostCollapsed && !uncollapse) {
       renderCollapsedComment(post)
     }
     else if (post.id == Page.TitleId) {
@@ -127,7 +127,9 @@ object HtmlPostRenderer {
 
 
   def renderCollapsedTree(post: Post): RenderedPost = {
-    RenderedPost(<div></div>, Nil, None)
+    // Include the post id, so Javascript finds the post and inits action links,
+    // e.g. links that uncollapses the thread.
+    RenderedPost(<div id={htmlIdOf(post)} class="dw-p"></div>, Nil, None)
   }
 
 

@@ -49,6 +49,13 @@ d.i.createAndBindActionLinksForPost = function(post) {
   $actions.children('.dw-a-delete').click(d.i.$showDeleteForm);
   $actions.children('.dw-a-close').click(d.i.$showActionDialog('CloseThread'));
   $actions.children('.dw-a-collapse').click(d.i.$showActionDialog('Collapse'));
+
+  // Bind uncollapse comment/thread/replies links.
+  $thread.find(
+      '> .dw-z,' + // the whole three is collapsed
+      '> .dw-res.dw-zd > li > .dw-z,' + // replies are collapsed
+      '> .dw-p.dw-zd > .dw-z')  // only the comment is collapsed (not replies)
+    .click(d.i.$toggleCollapsed);
 };
 
 
