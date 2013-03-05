@@ -51,11 +51,23 @@
   color: #c77405;
 }
 
-.dw-zd .dw-z {
-  font-style: italic;
-}
 
 /* --- Folded threads, .dw-t --- */
+
+.dw-z:before {
+  /* ↕ is "Up down arrow", 8597,
+  There's also: ↥ "Upwards arrow from bar",
+  http://shapecatcher.com/unicode/info/8613, but that's the wrong
+  direction (sometimes) */
+  content: "↕";
+  display: inline-block;
+  width: 24px; /* align with uncollapsed replies */
+}
+
+.dw-p .dw-z:before {
+  /* Show no collapse-thread symbol inside *posts* however. */
+  content: none;
+}
 
 /* Don't underline the fold link, [-]. (Ignore old borken browsers.) */
 .dw-t:not(.dw-zd) > .dw-z { text-decoration: none; }

@@ -469,9 +469,7 @@ case class HtmlPageSerializer(
           (" dw-zd", "Click to show this thread" +
              renderedComment.topRatingsText.map(", rated "+ _).getOrElse(""))
         else
-          ("", "↕")
-          // ↕ "Up down arrow", 8597
-          // ↥ "Upwards arrow from bar", http://shapecatcher.com/unicode/info/8613
+          ("", "")
       }
 
       val foldLink =
