@@ -36,8 +36,7 @@ d.i.$toggleCollapsed = ->
     if contentsLoaded
       $childrenToFold.each d.i.$slideDown
       $thread.removeClass 'dw-zd'
-      $foldLink.text '↕' # "Up down arrow", Unicode token 8597 (decimal)
-                         # http://shapecatcher.com/unicode/info/8597
+      $foldLink.text ''
     else
       loadAndInsertThread $thread
   else
