@@ -25,33 +25,50 @@ object BrowserPagePatcher {
   implicit private val logger = play.api.Logger(this.getClass)
 
 
-  def jsonForThreads(
-        pagesAndPostIds: List[(Debate, List[String])], request: DebikiRequest[_])
-        : pm.PlainResult = {
+  case class PostPatchSpec(id: String, wholeThread: Boolean)
 
-    var patchesByPageId = Map[String, List[Map[String, JsValue]]]()
-    for ((page: Debate, postIds: List[String]) <- pagesAndPostIds) {
 
-      val pageRoot = request match {
-        case p: PageRequest[_] => p.pageRoot
-        case _ => PageRoot.TheBody
-      }
+  def jsonForThreadsAndPosts(
+        pagesAndPatchSpecs: List[(Debate, List[PostPatchSpec])],
+        request: DebikiRequest[_]): pm.PlainResult = {
+
+    var threadPatchesByPageId = Map[String, List[Map[String, JsValue]]]()
+    var postPatchesByPageId   = Map[String, List[Map[String, JsValue]]]()
+
+    val pageRoot = request match {
+      case p: PageRequest[_] => p.pageRoot
+      case _ => PageRoot.TheBody
+    }
+
+    for ((page, postPatchRequests) <- pagesAndPatchSpecs) {
 
       val serializer = HtmlPageSerializer(
         page, PageTrust(page), pageRoot, DebikiHttp.newUrlConfig(request.host))
 
-      val patchesOnCurPage = for (postId <- postIds) yield {
-        val serializedThread = serializer.renderSingleThread(postId) getOrElse
-          logAndThrowInternalError(
-            "DwE573R2", "Post not found, id: "+ postId +", page: "+ page.id)
-        _jsonForThread(page.vipo_!(postId), serializedThread)
+      var threadPatchesOnCurPage = List[Map[String, JsValue]]()
+      var postPatchesOnCurPage   = List[Map[String, JsValue]]()
+
+      for (PostPatchSpec(postId, wholeThread) <- postPatchRequests) {
+        if (wholeThread) {
+          val serializedThread = serializer.renderSingleThread(postId) getOrElse
+            logAndThrowInternalError(
+              "DwE573R2", s"Post not found, id: $postId, page: ${page.id}")
+          threadPatchesOnCurPage ::=
+            _jsonForThread(page.vipo_!(postId), serializedThread)
+        }
+        else {
+          postPatchesOnCurPage ::=
+            jsonForPost(page.vipo_!(postId), request)
+        }
       }
 
-      patchesByPageId += page.pageId -> patchesOnCurPage
+      threadPatchesByPageId += page.id -> threadPatchesOnCurPage
+      postPatchesByPageId += page.id -> postPatchesOnCurPage
     }
 
     OkSafeJson(toJson(Map(
-      "threadsByPageId" -> patchesByPageId)))
+      "threadsByPageId" -> threadPatchesByPageId,
+      "postsByPageId" -> postPatchesByPageId)))
   }
 
 
@@ -70,7 +87,7 @@ object BrowserPagePatcher {
     }
 
     OkSafeJson(toJson(Map(
-      "editedPostsByPageId" -> patchesByPageId)))
+      "postsByPageId" -> patchesByPageId)))
   }
 
 
@@ -96,6 +113,22 @@ object BrowserPagePatcher {
   }
 
 
+  private def jsonForPost(post: Post, request: DebikiRequest[_])
+        : Map[String, JsValue] = {
+    val jsHtml = {
+      val pageStats = new PageStats(post.page, PageTrust(post.page))
+      val renderer = HtmlPostRenderer(post.page, pageStats, hostAndPort = request.host)
+      val renderedPost = renderer.renderPost(post.id, uncollapse = true)
+      val htmlText = lw.Html5.toString(renderedPost.html)
+      JsString(htmlText)
+    }
+    Map(
+      "postId" -> JsString(post.id),
+      "isPostApproved" -> JsBoolean(post.currentVersionApproved),
+      "html" -> jsHtml)
+  }
+
+
   private def _jsonForEditedPost(editId: String, page: Debate,
         request: DebikiRequest[_]): Map[String, JsValue] = {
     val edit = page.vied_!(editId)
@@ -107,9 +140,8 @@ object BrowserPagePatcher {
     val jsHtml =
       if (edit.isApplied) {
         val pageStats = new PageStats(page, PageTrust(page))
-        val renderer = HtmlPostRenderer(page, pageStats,
-          hostAndPort = request.host)
-        val renderedPost = renderer.renderPost(edit.post_!.id)
+        val renderer = HtmlPostRenderer(page, pageStats, hostAndPort = request.host)
+        val renderedPost = renderer.renderPost(edit.post_!.id, uncollapse = true)
         val htmlText = lw.Html5.toString(renderedPost.html)
         JsString(htmlText)
       }

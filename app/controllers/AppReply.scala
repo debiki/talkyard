@@ -14,6 +14,7 @@ import play.api.mvc.{Action => _, _}
 import PageActions._
 import Prelude._
 import Utils.{OkHtml, OkHtmlBody}
+import BrowserPagePatcher.PostPatchSpec
 
 
 object AppReply extends mvc.Controller {
@@ -57,9 +58,11 @@ object AppReply extends mvc.Controller {
     val (pageWithNewPost, List(postWithId: CreatePostAction)) =
       pageReq.dao.savePageActionsGenNotfs(pageReq, postNoId::Nil)
 
-    if (pageReq.isAjax)
-      BrowserPagePatcher.jsonForThreads(
-        List((pageWithNewPost, postWithId.id::Nil)), pageReq)
+    if (pageReq.isAjax) {
+      val patchSpec = PostPatchSpec(postWithId.id, wholeThread = true)
+      BrowserPagePatcher.jsonForThreadsAndPosts(
+        List((pageWithNewPost, List(patchSpec))), pageReq)
+    }
     else
       _showHtmlResultPage(pageReq, postWithId)
   }

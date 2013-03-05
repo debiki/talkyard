@@ -11,8 +11,7 @@ d.i.$toggleCollapsed = ->
   if $parent.is('.dw-t')
     toggleThreadFolded $parent
   else if $parent.is('.dw-p')
-    # Should: uncollapsePost $parent
-    alert 'Unimplemented: Loading a folded post only [DwE0XKf6]'
+    uncollapsePost $parent
   else if $parent.parent!.is('.dw-res')
     uncollapseReplies $parent.closest '.dw-t'
   false # don't follow any <a> link
@@ -51,6 +50,11 @@ d.i.$toggleCollapsed = ->
 
 
 
+!function uncollapsePost ($post)
+  loadAndInsert $post, { url: '/-/load-posts' }
+
+
+
 !function uncollapseReplies ($thread)
   # Fist remove the un-collapse button.
   $replies = $thread.children('.dw-res.dw-zd').dwBugIfEmpty('DwE3BKw8')
@@ -63,14 +67,20 @@ d.i.$toggleCollapsed = ->
   loadAndInsert $thread, { url: '/-/load-threads' }
 
 
-
-!function loadAndInsert ($thread, { url })
-  data = [{ pageId: d.i.pageId, actionId: $thread.dwChildPost!dwPostId! }]
+/**
+ * Loads and inserts $what, which should be a thread or a post.
+ */
+!function loadAndInsert ($what, { url })
+  postId =
+    if $what.is '.dw-p' => $what.dwPostId!
+    else $what.dwChildPost!dwPostId!
+  data = [{ pageId: d.i.pageId, actionId: postId }]
   d.u.postJson { url, data }
       .fail d.i.showServerResponseDialog
       .done !(patches) ->
         result = d.i.patchPage patches
-        result.patchedThreads[0].dwScrollIntoView!
+        (result.patchedThreads[0] || result.patchedPosts[0])
+            .dwScrollIntoView!
 
 
 

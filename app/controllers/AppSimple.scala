@@ -13,6 +13,7 @@ import play.api.libs.json._
 import ApiActions._
 import Prelude._
 import Utils.ValidationImplicits._
+import BrowserPagePatcher.PostPatchSpec
 
 
 /** Handles simple actions like closing and collapsing trees and posts.
@@ -43,44 +44,47 @@ object AppSimple extends mvc.Controller {
   }
 
 
-  def loadThreads = PostJsonAction(maxLength = 5000) { apiReq =>
-    val pageActionIds = apiReq.body.as[List[Map[String, String]]]
-
-    val actionsByPageId: Map[String, List[String]] =
-      Utils.parsePageActionIds(pageActionIds)(identity)
-
-    var pagesAndPostIds = List[(Debate, List[String])]()
-
-    actionsByPageId foreach { case (pageId, postIds) =>
-      val page = apiReq.dao.loadPage(pageId) getOrElse throwNotFound(
-        "DwE80Bw2", s"Page not found, id: `$pageId'; could not do all changes")
-      pagesAndPostIds ::= (page, postIds)
+  def loadThreads =
+    loadThreadsOrPosts { (page, postIds) =>
+      postIds.map(PostPatchSpec(_, wholeThread = true))
     }
 
-    BrowserPagePatcher.jsonForThreads(pagesAndPostIds, apiReq)
-  }
+
+  def loadPosts =
+    loadThreadsOrPosts { (page, postIds) =>
+      postIds.map(PostPatchSpec(_, wholeThread = false))
+    }
 
 
-  def loadReplies = PostJsonAction(maxLength = 5000) { apiReq =>
-    val pageActionIds = apiReq.body.as[List[Map[String, String]]]
-
-    val actionsByPageId: Map[String, List[String]] =
-      Utils.parsePageActionIds(pageActionIds)(identity)
-
-    var pagesAndPostIds = List[(Debate, List[String])]()
-
-    actionsByPageId foreach { case (pageId, postIds) =>
-      val page = apiReq.dao.loadPage(pageId) getOrElse throwNotFound(
-        "DwE80Bw2", s"Page not found, id: `$pageId'; could not do all changes")
+  def loadReplies =
+    loadThreadsOrPosts { (page, postIds) =>
       val posts = postIds map { postId => page.vipo_!(postId) }
-      val replyIds = posts.foldLeft(Nil: List[String]) { (replyIds, post) =>
-        post.replies.map(_.id) ::: replyIds
+      val patchSpecs = posts.foldLeft(Nil: List[PostPatchSpec]) { (specs, post) =>
+        post.replies.map(reply => PostPatchSpec(reply.id, wholeThread = true)) ::: specs
       }
-
-      pagesAndPostIds ::= (page, replyIds)
+      patchSpecs
     }
 
-    BrowserPagePatcher.jsonForThreads(pagesAndPostIds, apiReq)
+
+  private def loadThreadsOrPosts(
+        loadWhatFn: (Debate, List[String]) => List[PostPatchSpec]) =
+      PostJsonAction(maxLength = 5000) { apiReq =>
+
+    val pageActionIds = apiReq.body.as[List[Map[String, String]]]
+
+    val actionsByPageId: Map[String, List[String]] =
+      Utils.parsePageActionIds(pageActionIds)(identity)
+
+    var pagesAndPatchSpecs = List[(Debate, List[PostPatchSpec])]()
+
+    actionsByPageId foreach { case (pageId, postIds) =>
+      val page = apiReq.dao.loadPage(pageId) getOrElse throwNotFound(
+        "DwE80Bw2", s"Page not found, id: `$pageId'; could not do all changes")
+      val postIdsToLoad = loadWhatFn(page, postIds)
+      pagesAndPatchSpecs ::= (page, postIdsToLoad)
+    }
+
+    BrowserPagePatcher.jsonForThreadsAndPosts(pagesAndPatchSpecs, apiReq)
   }
 
 
@@ -103,7 +107,7 @@ object AppSimple extends mvc.Controller {
         loginId = apiReq.loginId_!, newIp = None)
     }
 
-    var pagesAndPostIds = List[(Debate, List[String])]()
+    var pagesAndPatchSpecs = List[(Debate, List[PostPatchSpec])]()
 
     actionsByPageId foreach { case (pageId, actions) =>
       val pageWithoutMe = apiReq.dao.loadPage(pageId) getOrElse throwNotFound(
@@ -112,10 +116,11 @@ object AppSimple extends mvc.Controller {
 
       val (pageWithNewActions, _) = apiReq.dao.savePageActionsGenNotfs(page, actions)
 
-      pagesAndPostIds ::= (pageWithNewActions, actions.map(_.postId))
+      val patchSpecs = actions.map(a => PostPatchSpec(a.postId, wholeThread = true))
+      pagesAndPatchSpecs ::= (pageWithNewActions, patchSpecs)
     }
 
-    BrowserPagePatcher.jsonForThreads(pagesAndPostIds, apiReq)
+    BrowserPagePatcher.jsonForThreadsAndPosts(pagesAndPatchSpecs, apiReq)
   }
 
 }

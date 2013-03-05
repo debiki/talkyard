@@ -10,17 +10,17 @@ $ = d.i.$;
  * was patched.
  */
 d.i.patchPage = (patches) ->
-  result = patchedThreads: []
+  result = patchedThreads: [], patchedPosts: []
 
   for pageId, threadPatches of patches.threadsByPageId || {}
     if pageId is d.i.pageId
       for patch in threadPatches
         patchThreadWith patch, { onPage: pageId, result }
 
-  for pageId, editPatches of patches.editedPostsByPageId || {}
+  for pageId, postPatches of patches.postsByPageId || {}
     if pageId is d.i.pageId
-      for patch in editPatches
-        patchPostWith patch, onPage: pageId
+      for patch in postPatches
+        patchPostWith patch, { onPage: pageId, result }
 
   result
 
@@ -67,21 +67,24 @@ patchThreadWith = (threadPatch, { onPage, result }) ->
 
 
 
-patchPostWith = (editedPostPatch, { onPage }) ->
+patchPostWith = (postPatch, { onPage, result }) ->
   pageId = onPage
-  $newPost = $ editedPostPatch.html # absent if edit not applied
-  $oldPost = $ ('#post-' + editedPostPatch.postId)
+  $newPost = $ postPatch.html # absent if edit not applied
+  $oldPost = $ ('#post-' + postPatch.postId)
+  isEditPatch = !!postPatch.editId
 
-  if !editedPostPatch.isEditApplied
+  if not isEditPatch
+    void # Skip the messages below.
+  else if !postPatch.isEditApplied
     addMessageToPost(
         'Your edit has not yet been applied; it is pending review.'
         $oldPost)
-  else if !editedPostPatch.isPostApproved
+  else if !postPatch.isPostApproved
     addMessageToPost(
         'Your edits are pending moderation.'
         $newPost)
 
-  if editedPostPatch.isEditApplied
+  unless isEditPatch && !postPatch.isEditApplied
     $newPost.addClass 'dw-m-t-new'
     replaceOldWith $newPost, onPage: pageId
 
@@ -90,6 +93,9 @@ patchPostWith = (editedPostPatch, { onPage }) ->
     $newThread = $newPost.dwClosestThread!
     $newThread.each d.i.SVG.$drawTree
     $newThread.dwFindPosts!.each d.i.SVG.$drawParents
+
+  result.patchedPosts.push $newThread
+
 
 
 addMessageToPost = (message, $post) ->
