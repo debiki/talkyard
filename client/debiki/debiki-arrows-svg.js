@@ -401,7 +401,6 @@ debiki.internal.makeSvgDrawer = function($) {
     $drawParents: $drawParents,
     $drawParentsAndTree: $drawParentsAndTree,
     drawEverything: drawEverything,
-    drawArrowsToReplyForm: function() {},
     $highlightOn: $highlightOn,
     $highlightOff: $highlightOff
   };

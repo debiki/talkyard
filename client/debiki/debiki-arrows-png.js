@@ -8,21 +8,44 @@ debiki.internal.makeFakeDrawer = function($) {
   // to add these images of arrows instead.
 
   function initialize() {
+    $drawTree.call($('.dw-t.dw-depth-0'));
+  };
+
+  function $drawTree() {
+
+    var $startThread = $(this);
+
     // Vertical layout
     // ---------------
 
     // Find threads with child threads and threads with replies collapsed,
     // and draw vertical lines towards those children / collapsed replies.
-    $('.dw-depth-0 .dw-t').has('.dw-t, .dw-res.dw-zd').each(function() {
+    var $meIfVerticalParent = $startThread.filter(':not(.dw-depth-0)');
+    $startThread.find('.dw-t').add($meIfVerticalParent)
+        .has('.dw-t, .dw-res.dw-zd').each(function() {
       $(this).prepend("<div class='dw-arw dw-svg-fake-varrow'/>");
       $(this).prepend("<div class='dw-arw dw-svg-fake-varrow-hider-hi'/>");
       $(this).prepend("<div class='dw-arw dw-svg-fake-varrow-hider-lo'/>");
     });
 
-    var $childThreads = $('.dw-depth-1 .dw-t:not(.dw-i-t)');
-    var $collapsedReplies = $('.dw-depth-1 .dw-res.dw-zd > li');
+    //        \ 
+    // Draw a  `->  arrow to child threads and collapsed replies.
 
-    // Draw a `-> arrow to child threads and collapsed replies.
+    // Find child threads laid out vertically: depth > 1. (COULD use .dw-hor
+    // instead?)
+    var $childSearchStart =
+      $startThread.closest('.dw-depth-1').length ?
+        $startThread : $startThread.find('.dw-depth-1');
+
+    var $childThreads = $childSearchStart.find('.dw-t:not(.dw-i-t)');
+    var $collapsedReplies = $childSearchStart.find('.dw-res.dw-zd > li');
+
+    // Include $startThread, unless it's laid out horizontally (depth <= 1)
+    var $meIfVerticalChild = $startThread.filter(
+        ':not(.dw-depth-0, .dw-depth-1, .dw-i-t)');
+    $childThreads = $childThreads.add($meIfVerticalChild);
+
+
     $childThreads.add($collapsedReplies).each(function() {
       $(this).prepend('<div class="dw-arw dw-svg-fake-vcurve-short"/>');
     });
@@ -33,6 +56,16 @@ debiki.internal.makeFakeDrawer = function($) {
     $childThreads.filter(':last-child').each(function() {
       $(this).prepend("<div class='dw-arw dw-svg-fake-varrow-hider-left'/>");
     });
+
+    // BUG: If adding new reply, and it's the parent's first reply, the parent
+    // thread currently has no vertical line pointing downwards to the replies.
+    // COULD add such a line. (Currently only the \   line to the reply
+    // is added, above.)                           `->
+
+    // BUG: If adding new reply, and it's *not* the parent's first reply,
+    // another earlier reply is the last one, and it has a 
+    // dw-svg-fake-varrow-hider-left, which hides part of the vertical line
+    // to this new reply.
 
     // COULD fix: Inline threads:  .dw-t:not(.dw-hor) > .dw-i-ts > .dw-i-t
     // COULD fix: First one: .dw-t:not(.dw-hor) > .dw-i-ts > .dw-i-t:first-child
@@ -86,23 +119,19 @@ debiki.internal.makeFakeDrawer = function($) {
     }
   }
 
-  function $drawParentsAndTree() {}  // ?? do I need to do something?
+  // COULD rename to $animateParentsAndTree? Need do nothing.
+  function $drawParentsAndTree() {
+  }
 
-  function $drawParents() {}  // ?? do I need to do something?
-
-  function $drawTree() {} // COULD implement?
+  function $drawParents() {
+    // Need do nothing, because the browser resize horizontal/vertical
+    // "arrows" automatically (they are colored borders actually).
+  }
 
   function $drawPost() {
     // COULD fix: If any SVG native support: draw arrows to inline threads?
     // Or implement via fake .png arrows?
     // COULD draw arrows to new vertical replies
-  }
-
-  function drawArrowsToReplyForm($formParent) {
-    var arws = $formParent.closest('.dw-t').is('.dw-hor')
-        ? replyBtnBranchingArrow
-        : '<div class="dw-svg-fake-vcurve-short"/>'; // dw-png-arw-vt-curve-end?
-    $formParent.prepend(arws);
   }
 
   function $highlightOn() {
@@ -121,7 +150,6 @@ debiki.internal.makeFakeDrawer = function($) {
     $drawParents: $drawParents,
     $drawParentsAndTree: $drawParentsAndTree,
     drawEverything: function() {},
-    drawArrowsToReplyForm: drawArrowsToReplyForm,
     $highlightOn: $highlightOn,
     $highlightOff: $highlightOff
   };
