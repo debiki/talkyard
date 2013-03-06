@@ -134,6 +134,11 @@ $.fn.dwIsUnauReply = function() {
 };
 
 
+$.fn.dwIsCollapsed = function() {
+  return this.is('.dw-zd');
+};
+
+
 })();
 
 // vim: fdm=marker et ts=2 sw=2 tw=80 fo=tcqwn list

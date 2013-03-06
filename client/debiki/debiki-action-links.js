@@ -11,7 +11,13 @@ d.i.createAndBindActionLinksForPost = function(post) {
   var $post = $(post).dwCheckIs('.dw-p');
   var $thread = $post.closest('.dw-t');
 
-  // Find or add action buttons.
+  var $actions = findOrAddActionLinks($thread);
+  bindActionLinks($actions);
+  bindUncollapseLink($thread);
+};
+
+
+function findOrAddActionLinks($thread) {
   var $actions = $thread.children('.dw-res').children('.dw-p-as');
   if ($actions.length) {
     // This thread is laid out horizontally and the action links have
@@ -27,7 +33,11 @@ d.i.createAndBindActionLinksForPost = function(post) {
       $actions.children('.dw-a-reply, .dw-a-rate')
           .css('visibility', 'visible');
   }
+  return $actions;
+}
 
+
+function bindActionLinks($actions) {
   // {{{ On delegating events for reply/rate/edit.
   // Placing a jQuery delegate on e.g. .debiki instead, entails that
   // these links are given excessively low precedence on Android:
@@ -49,24 +59,26 @@ d.i.createAndBindActionLinksForPost = function(post) {
   $actions.children('.dw-a-delete').click(d.i.$showDeleteForm);
   $actions.children('.dw-a-close').click(d.i.$showActionDialog('CloseThread'));
   $actions.children('.dw-a-collapse').click(d.i.$showActionDialog('Collapse'));
+}
 
-  // Bind uncollapse comment/thread/replies links.
+
+function bindUncollapseLink($thread) {
   $thread.find(
       '> .dw-z,' + // the whole three is collapsed
       '> .dw-res.dw-zd > li > .dw-z,' + // replies are collapsed
       '> .dw-p.dw-zd > .dw-z')  // only the comment is collapsed (not replies)
     .click(d.i.$toggleCollapsed);
-};
+}
 
 
 d.i.shohwActionLinksOnHoverPost  = function(post) {
   var $thread = $(post).dwCheckIs('.dw-p').closest('.dw-t');
   var $post = $thread.filter(':not(.dw-depth-0)').children('.dw-p');
 
-  // When hovering a post, show actions (except for the root post reply link,
-  // which is always visible).
+  // When hovering a non-collapsed post, show actions (except for
+  // the root post reply link, which is always visible).
   // (Better avoid delegates for frequent events such as mouseenter.)
-  $post.mouseenter(function() {
+  if (!$post.dwIsCollapsed()) $post.mouseenter(function() {
     var $i = $(this);
 
     // If actions are already shown for an inline child post, ignore event.
