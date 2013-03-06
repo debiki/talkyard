@@ -1,5 +1,4 @@
-@(tpi: debiki.TemplateProgrammingInterface, isHomepage: Boolean = false
-    )(body: Html)
+@(tpi: debiki.TemplateProgrammingInterface, isHomepage: Boolean = false)(body: Html)
 
 @homepage = @{ if (isHomepage) " homepage" else "" }
 
@@ -16,7 +15,7 @@
 
   @tpi.debikiStyles
 
-  <link rel="stylesheet" href="http://fonts.googleapis.com/css?family=Bree+Serif">
+  <link rel='stylesheet' href='http://fonts.googleapis.com/css?family=Bree+Serif'>
   @tpi.stylesheetBundle("styles.css")
 
   @tpi.debikiScripts
@@ -33,16 +32,6 @@
         }
       });
     });
-  </script>
-  <script type="text/javascript">
-    var _gaq = _gaq || [];
-    _gaq.push(['_setAccount', 'UA-31694067-1']);
-    _gaq.push(['_trackPageview']);
-    (function() {
-    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
-    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
-    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
-    })();
   </script>
 
   @if(tpi.configValue("social-links").nonEmpty && tpi.configValue("social-links") != "none") {
@@ -66,22 +55,15 @@
     <span id='dw-loginout'>@tpi.loginLinkAndUserName</span>
     <nav id='site-nav' class='debiki-0-mark-current-site-section'>
       @if(!isHomepage) { <a href="/">Home</a> }
-      <a href="/about/">About</a>
-      <!-- <a href="/blog/">Blog</a> -->
-      <a href="/forum/">Forum</a>
-      <a href="/-9p2u1-pricing">Pricing</a>
-      <!-- <a href="/terms/">Terms</a> -->
-      <!-- <a href='/dev/'>Development</a> -->
-      <a href='/demo/-71cs1-demo-page-1'>Demo</a>
-      <!-- <a href='/#report-interest'>Sign Up?</a> -->
+      @Html(tpi.websiteConfigValue("navigation-links"))
     </nav>
   </div>
 </div>
 
 <div id='alfa-info' class='debiki-show-if-lte-ie7'>
   <div class='alfa-small'>
-    Please consider upgrading to <a rel='nofollow'
-                                    href='http://windows.microsoft.com/en-US/internet-explorer/products/ie/home'
+    Please consider upgrading to
+    <a rel='nofollow' href='http://windows.microsoft.com/en-US/internet-explorer/products/ie/home'
       >a newer version of Internet Explorer</a>
     (or install <a rel='nofollow' href='http://www.google.com/chrome'>Google Chrome</a>,
     it's even faster).
@@ -117,3 +99,4 @@
 
 </body>
 </html>
+
