@@ -119,6 +119,7 @@ object DebikiSpecs {
         postId: String = null,
         ctime: ju.Date = null,
         loginId: String = null,
+        userId: String = null,
         newIp: String = null,
         tags: List[String] = null) = new Matcher[Debate] {
     def apply[S <: Debate](expectable: Expectable[S]) = {
@@ -130,7 +131,7 @@ object DebikiSpecs {
         case Some(r: Rating) =>
           result(
             _matchRatingImpl(r, rating, id = id, postId = postId, ctime = ctime,
-              loginId = loginId, newIp = newIp, tags = tags),
+              loginId = loginId, userId = userId, newIp = newIp, tags = tags),
             expectable)
         case None =>
           result(false, "", "Rating missing, id: "+ id2, expectable)
@@ -144,13 +145,14 @@ object DebikiSpecs {
         postId: String = null,
         ctime: ju.Date = null,
         loginId: String = null,
+        userId: String = null,
         newIp: String = null,
         tags: List[String] = null) = new Matcher[Rating] {
     def apply[S <: Rating](expectable: Expectable[S]) = {
       val leftRating = expectable.value
       result(
         _matchRatingImpl(leftRating, rating, id, postId, ctime, loginId,
-            newIp, tags),
+            userId, newIp, tags),
         expectable)
     }
   }
@@ -162,6 +164,7 @@ object DebikiSpecs {
       postId: String,
       ctime: ju.Date,
       loginId: String,
+      userId: String,
       newIp: String,
       tags: List[String]): (Boolean, String, String) = {
     val test = _test(leftRating, rating) _
@@ -170,6 +173,7 @@ object DebikiSpecs {
         test("postId", postId, _.postId) :::
         test("ctime", ctime, _.ctime) :::
         test("loginId", loginId, _.loginId) :::
+        test("userId", userId, _.userId) :::
         test("newIp", newIp, _.newIp) :::
         test("tags", if (tags ne null) tags.sorted else null,
           _.tags.sorted) ::: Nil

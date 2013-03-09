@@ -170,10 +170,10 @@ object Templates {
     oidOpLocalId = "provider.com/local/id",
     firstName = "Laban", email = "oid@email.hmm", country = "Sweden")
   val post = v0.CreatePostAction(id = "?", parent = Page.BodyId, ctime = new ju.Date,
-    loginId = "?", newIp = None, text = "", markup = "para",
+    loginId = "?", userId = "?", newIp = None, text = "", markup = "para",
     where = None, approval = None)
   val rating = v0.Rating(id = "?", postId = Page.BodyId, loginId = "?",
-    newIp = None, ctime = new ju.Date, tags = Nil)
+    userId = "?", newIp = None, ctime = new ju.Date, tags = Nil)
 }
 
 class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
@@ -269,7 +269,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
 
     "throw error for an invalid login id" in {
       val debateBadLogin = Debate(guid = "?", posts =
-          T.post.copy(id = Page.BodyId, loginId = "9999999")::Nil) // bad login id
+          T.post.copy(id = Page.BodyId, loginId = "99999", userId = "99999")::Nil) // bad ids
       //SLog.info("Expecting ORA-02291: integrity constraint log message ------")
       dao.createPage(PageStuff.forNewPage(
         PageRole.Generic, defaultPagePath, debateBadLogin, author = SystemUser.User)
@@ -295,6 +295,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
     }
 
     lazy val loginId = loginGrant.login.id
+    lazy val globalUserId = loginGrant.user.id
 
     "reuse the IdentitySimple and User" in {
       val loginReq = LoginRequest(T.login.copy(date = new ju.Date),
@@ -382,7 +383,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
     // -------- Page creation
 
     lazy val ex1_rootPost = T.post.copy(
-      id = Page.BodyId, loginId = loginId, text = ex1_postText)
+      id = Page.BodyId, loginId = loginId, userId = globalUserId, text = ex1_postText)
 
     "create a debate with a root post" in {
       val debateNoId = Debate(guid = "?", posts = ex1_rootPost::Nil)
@@ -809,7 +810,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
     // -------- Page actions
 
     lazy val ex2_emptyPost = T.post.copy(parent = Page.BodyId, text = "",
-      loginId = loginId)
+      loginId = loginId, userId = globalUserId)
     var ex2_id = ""
     "save an empty root post child post" in {
       dao.savePageActions(ex1_debate.guid, List(ex2_emptyPost)) must beLike {
@@ -828,13 +829,14 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
     }
 
     var ex3_ratingId = ""
-    lazy val ex3_rating = T.rating.copy(loginId = loginId,
-        postId = Page.BodyId,  tags = "Interesting"::"Funny"::Nil)  // 2 tags
+    lazy val ex3_rating = T.rating.copy(loginId = loginId, userId = globalUserId,
+      postId = Page.BodyId,  tags = "Interesting"::"Funny"::Nil)  // 2 tags
     "save a post rating, with 2 tags" in {
       dao.savePageActions(ex1_debate.guid, List(ex3_rating)) must beLike {
         case List(r: Rating) =>
           ex3_ratingId = r.id
-          r must matchRating(ex3_rating, id = ex3_ratingId, loginId = loginId)
+          r must matchRating(ex3_rating, id = ex3_ratingId,
+            loginId = loginId, userId = globalUserId)
       }
     }
 
@@ -849,15 +851,16 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
     var ex4_rating1Id = ""
     lazy val ex4_rating1 =
       T.rating.copy(id = "?1", postId = Page.BodyId, loginId = loginId,
-                    tags = "Funny"::Nil)
+        userId = globalUserId, tags = "Funny"::Nil)
     var ex4_rating2Id = ""
     lazy val ex4_rating2 =
       T.rating.copy(id = "?2", postId = Page.BodyId, loginId = loginId,
-                    tags = "Boring"::"Stupid"::Nil)
+        userId = globalUserId, tags = "Boring"::"Stupid"::Nil)
     var ex4_rating3Id = ""
     lazy val ex4_rating3 =
       T.rating.copy(id = "?3", postId = Page.BodyId, loginId = loginId,
-                    tags = "Boring"::"Stupid"::"Funny"::Nil)
+        userId = globalUserId, tags = "Boring"::"Stupid"::"Funny"::Nil)
+
     "save 3 ratings, with 1, 2 and 3 tags" in {
       dao.savePageActions(ex1_debate.guid,
                 List(ex4_rating1, ex4_rating2, ex4_rating3)
@@ -897,7 +900,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
       var reviewSaved: ReviewPostAction = null
       val approval = if (isApproved) Some(Approval.Manual) else None
       val reviewNoId = ReviewPostAction("?", postId = ex1_rootPost.id, loginId = loginId,
-         newIp = None, ctime = now, approval = approval)
+         userId = globalUserId, newIp = None, ctime = now, approval = approval)
       dao.savePageActions(ex1_debate.guid, List(reviewNoId)) must beLike {
         case List(review: ReviewPostAction) =>
           reviewSaved = review
@@ -923,7 +926,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
     "create a post to edit" >> {
       // Make post creation action
       lazy val postNoId = T.post.copy(parent = Page.BodyId, text = "Initial text",
-        loginId = loginId, markup = "dmd0")
+        loginId = loginId, userId = globalUserId, markup = "dmd0")
 
       var post: CreatePostAction = null
 
@@ -942,11 +945,12 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
         val patchText = makePatch(from = post.text, to = newText)
         val editNoId = Edit(
           id = "?x", postId = post.id, ctime = now, loginId = loginId,
+          userId = globalUserId,
           newIp = None, text = patchText, newMarkup = None,
           approval = None, autoApplied = false)
         val publNoId = EditApp(
           id = "?", editId = "?x", postId = post.id, ctime = now,
-          loginId = loginId, newIp = None, result = newText,
+          loginId = loginId, userId = globalUserId, newIp = None, result = newText,
           approval = None)
 
         // Save
@@ -969,11 +973,11 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
         // Make edit actions
         val editNoId = Edit(
           id = "?x", postId = post.id, ctime = now, loginId = loginId,
-          newIp = None, text = "", newMarkup = Some("html"),
+          userId = globalUserId, newIp = None, text = "", newMarkup = Some("html"),
           approval = None, autoApplied = false)
         val publNoId = EditApp(
           id = "?", editId = "?x", postId = post.id, ctime = now,
-          loginId = loginId, newIp = None, result = newText,
+          loginId = loginId, userId = globalUserId, newIp = None, result = newText,
           approval = None)
 
         // Save
@@ -1263,7 +1267,8 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
       // Save a post, using the OpenID login. Load the page and verify
       // the OpenID identity and user were loaded with the page.
       val newPost = T.post.copy(parent = Page.BodyId, text = "",
-                                loginId = exOpenId_loginReq.login.id)
+        loginId = exOpenId_loginGrant.login.id,
+        userId = exOpenId_loginGrant.user.id)
       var postId = "?"
       dao.savePageActions(ex1_debate.guid, List(newPost)) must beLike {
         case List(savedPost: CreatePostAction) =>
@@ -2068,6 +2073,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
 
       val homepageTitle = CreatePostAction(Page.TitleId, Page.TitleId, now,
         loginId = SystemUser.Login.id,
+        userId = SystemUser.User.id,
         newIp = None,
         text = "Default Homepage",
         markup = Markup.DefaultForPageTitle.id,
