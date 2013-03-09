@@ -34,6 +34,7 @@ case class PostActionDto(
   payload: PostActionPayload,
   postId: String,
   loginId: String,
+  userId: String,
   newIp: Option[String]) extends PostActionDtoOld {
 
   require(id != "0")
@@ -100,6 +101,9 @@ sealed abstract class PostActionDtoOld {
    */
   def loginId: String
 
+  /** The guest or role that did this action. */
+  def userId: String
+
   /** Always None, unless the post was sent from somewhere else than
    *  the relevant Login.ip.
    */
@@ -107,6 +111,10 @@ sealed abstract class PostActionDtoOld {
   def ctime: ju.Date
 
   def textLengthUtf8: Int = 0
+
+  def anyGuestId = if (userId.headOption == Some('-')) Some(userId drop 1) else None
+  def anyRoleId =  if (userId.headOption == Some('-')) None else Some(userId)
+
 }
 
 
@@ -141,6 +149,7 @@ case class Rating (
   id: String,
   postId: String,
   loginId: String,
+  userId: String,
   newIp: Option[String],
   ctime: ju.Date,
   tags: List[String]
@@ -186,6 +195,7 @@ case class Flag(
   id: String,
   postId: String,
   loginId: String,
+  userId: String,
   newIp: Option[String],
   ctime: ju.Date,
   reason: FlagReason,
@@ -200,20 +210,22 @@ case object CreatePostAction {
 
   def newTitleBySystem(text: String, creationDati: ju.Date) =
     newTitle(text, creationDati, loginId = SystemUser.Login.id,
-      approval = Some(Approval.AuthoritativeUser))
+      userId = SystemUser.User.id, approval = Some(Approval.AuthoritativeUser))
 
   def newPageBodyBySystem(text: String, creationDati: ju.Date, pageRole: PageRole) =
     newPageBody(text, creationDati, pageRole, loginId = SystemUser.Login.id,
-      approval = Some(Approval.AuthoritativeUser))
+      userId = SystemUser.User.id, approval = Some(Approval.AuthoritativeUser))
 
 
   def newTitle(
         text: String,
         creationDati: ju.Date,
         loginId: String,
+        userId: String,
         approval: Option[Approval]) =
     CreatePostAction(Page.TitleId, Page.TitleId, creationDati,
       loginId = loginId,
+      userId = userId,
       newIp = None,
       text = text,
       markup = Markup.DefaultForPageTitle.id,
@@ -225,9 +237,11 @@ case object CreatePostAction {
         creationDati: ju.Date,
         pageRole: PageRole,
         loginId: String,
+        userId: String,
         approval: Option[Approval]) =
     CreatePostAction(Page.BodyId, Page.BodyId, creationDati,
       loginId = loginId,
+      userId = userId,
       newIp = None,
       text = text,
       markup = Markup.defaultForPageBody(pageRole).id,
@@ -246,6 +260,7 @@ case class CreatePostAction(
   parent: String,
   ctime: ju.Date,
   loginId: String,
+  userId: String,
   newIp: Option[String],
   text: String,
 
@@ -281,6 +296,7 @@ case class Edit (
   postId: String,
   ctime: ju.Date,
   loginId: String,
+  userId: String,
   newIp: Option[String],
   text: String,
 
@@ -338,6 +354,7 @@ case class EditApp(
   editId: String,
   postId: String,
   loginId: String,
+  userId: String,
   newIp: Option[String],
   ctime: ju.Date,
   approval: Option[Approval],
@@ -394,6 +411,7 @@ case class Delete(
   id: String,
   postId: String,
   loginId: String,
+  userId: String,
   newIp: Option[String],
   ctime: ju.Date,
   wholeTree: Boolean,  // COULD rename to `recursively'?
@@ -423,6 +441,7 @@ case class ReviewPostAction(
   id: String,
   postId: String,
   loginId: String,
+  userId: String,
   newIp: Option[String],
   ctime: ju.Date,
   approval: Option[Approval]) extends MaybeApproval {
