@@ -83,6 +83,10 @@ object PostActionPayload {
   * easier to add new types of actions.
   */
 sealed abstract class PostActionDtoOld {
+
+  /** The post that this action affects. */
+  def postId: String
+
   /** A local id, unique only in the Debate that this action modifies.
     * "?" means unknown.
     */
@@ -266,6 +270,8 @@ case class CreatePostAction(
                                 // ...?? arrows to e.g. 3 other comments ??
 ) extends MaybeApproval {
   override def textLengthUtf8: Int = text.getBytes("UTF-8").length
+
+  def postId = id
 }
 
 
@@ -330,6 +336,7 @@ case class Edit (
 case class EditApp(
   id: String,
   editId: String,
+  postId: String,
   loginId: String,
   newIp: Option[String],
   ctime: ju.Date,
@@ -410,11 +417,11 @@ case class Delete(
 
 
 /**
- * Approves or rejects e.g. comments and edits to `targetId`.
+ * Approves or rejects e.g. comments and edits to `postId`.
  */
 case class ReviewPostAction(
   id: String,
-  targetId: String,
+  postId: String,
   loginId: String,
   newIp: Option[String],
   ctime: ju.Date,

@@ -27,7 +27,7 @@ trait NotfGeneratorTestValues {
     Approval.AuthoritativeUser))
 
   val approvalOfBody =
-    ReviewPostAction("2", targetId = rawBody.id, loginId = reviewerLogin.id,
+    ReviewPostAction("2", postId = rawBody.id, loginId = reviewerLogin.id,
       newIp = None, ctime = new ju.Date(11000),
       approval = Some(Approval.Manual))
   val rejectionOfBody = approvalOfBody.copy(id = "3", approval = None)
@@ -42,7 +42,7 @@ trait NotfGeneratorTestValues {
     Approval.AuthoritativeUser))
 
   val approvalOfReply =
-    ReviewPostAction("12", targetId = rawReply.id, loginId = reviewerLogin.id,
+    ReviewPostAction("12", postId = rawReply.id, loginId = reviewerLogin.id,
       newIp = None, ctime = new ju.Date(11000),
       approval = Some(Approval.Manual))
   val rejectionOfReply = approvalOfReply.copy(id = "13", approval = None)

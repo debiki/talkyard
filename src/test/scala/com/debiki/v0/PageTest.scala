@@ -39,7 +39,7 @@ trait PageTestValues {
     approval = Some(Approval.Preliminary))
 
   val bodyApprovalSkeleton =
-    ReviewPostAction("11", targetId = bodySkeleton.id, loginId = "111", newIp = None,
+    ReviewPostAction("11", postId = bodySkeleton.id, loginId = "111", newIp = None,
         ctime = new ju.Date(11000), approval = Some(Approval.Manual))
 
   val bodyRejectionSkeleton = bodyApprovalSkeleton.copy(approval = None)
@@ -65,7 +65,7 @@ trait PageTestValues {
         loginId = "115", newIp = None, ctime = new ju.Date(15000),
         wholeTree = false, reason = "")
 
-  val approvalOfEditApp = ReviewPostAction(id = "16", targetId = editAppSkeleton.id,
+  val approvalOfEditApp = ReviewPostAction(id = "16", postId = editAppSkeleton.id,
         loginId = "116", newIp = None, ctime = new ju.Date(16000),
         approval = Some(Approval.Manual))
 

@@ -63,13 +63,15 @@ object Page {
     // Remap ids and update references to ids.
     def rmpd(id: String) = remaps.getOrElse(id, id)
     def updateIds(action: T): T = (action match {
-      case p: CreatePostAction => p.copy(id = remaps(p.id), parent = rmpd(p.parent))
+      case p: CreatePostAction => p.copy(id = remaps(p.id), // postId == id
+        parent = rmpd(p.parent))
       case r: Rating => r.copy(id = remaps(r.id), postId = rmpd(r.postId))
       case f: Flag => f.copy(id = remaps(f.id), postId = rmpd(f.postId))
       case e: Edit => e.copy(id = remaps(e.id), postId = rmpd(e.postId))
-      case a: EditApp => a.copy(id = remaps(a.id), editId = rmpd(a.editId))
+      case a: EditApp => a.copy(id = remaps(a.id), editId = rmpd(a.editId),
+        postId = rmpd(a.postId))
       case d: Delete => d.copy(id = remaps(d.id), postId = rmpd(d.postId))
-      case r: ReviewPostAction => r.copy(id = remaps(r.id), targetId = rmpd(r.targetId))
+      case r: ReviewPostAction => r.copy(id = remaps(r.id), postId = rmpd(r.postId))
       case a: PostActionDto => a.copy(id = remaps(a.id), postId = rmpd(a.postId))
       case x => assErr("DwE3RSEK9")
     }).asInstanceOf[T]
@@ -527,7 +529,7 @@ case class Debate (
     imm.Map[String, ReviewPostAction](reviews.map(x => (x.id, x)): _*)
 
   private lazy val reviewsByTargetId: imm.Map[String, List[ReviewPostAction]] =
-    reviews.groupBy(_.targetId)
+    reviews.groupBy(_.postId)
 
   def getReview(id: String): Option[Review] =
     reviewsById.get(id) map (new Review(this, _))

@@ -525,7 +525,7 @@ class Patch(debate: Debate, val edit: Edit) extends PostActionOld(debate, edit) 
 class Review(page: Debate, val review: ReviewPostAction) extends PostActionOld(page, review) {
 
   def approval = review.approval
-  lazy val target: PostActionOld = page.getSmart(review.targetId) getOrDie "DwE93UX7"
+  lazy val target: PostActionOld = page.getSmart(review.postId) getOrDie "DwE93UX7"
 
 }
 
