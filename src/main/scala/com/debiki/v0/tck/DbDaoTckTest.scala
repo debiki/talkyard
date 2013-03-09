@@ -895,9 +895,8 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
 
     def testSaveLoadReview(isApproved: Boolean) {
       var reviewSaved: ReviewPostAction = null
-      val targetId = ex1_rootPost.id
       val approval = if (isApproved) Some(Approval.Manual) else None
-      val reviewNoId = ReviewPostAction("?", targetId = targetId, loginId = loginId,
+      val reviewNoId = ReviewPostAction("?", postId = ex1_rootPost.id, loginId = loginId,
          newIp = None, ctime = now, approval = approval)
       dao.savePageActions(ex1_debate.guid, List(reviewNoId)) must beLike {
         case List(review: ReviewPostAction) =>
@@ -907,7 +906,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
 
       dao.loadPage(ex1_debate.guid) must beLike {
         case Some(page: Debate) => {
-          val postReviewed = page.vipo_!(reviewSaved.targetId)
+          val postReviewed = page.vipo_!(reviewSaved.postId)
           postReviewed.lastReviewDati must_== Some(reviewSaved.ctime)
           postReviewed.lastReviewWasApproval must_== Some(isApproved)
         }
@@ -946,7 +945,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
           newIp = None, text = patchText, newMarkup = None,
           approval = None, autoApplied = false)
         val publNoId = EditApp(
-          id = "?", editId = "?x", ctime = now,
+          id = "?", editId = "?x", postId = post.id, ctime = now,
           loginId = loginId, newIp = None, result = newText,
           approval = None)
 
@@ -973,7 +972,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
           newIp = None, text = "", newMarkup = Some("html"),
           approval = None, autoApplied = false)
         val publNoId = EditApp(
-          id = "?", editId = "?x", ctime = now,
+          id = "?", editId = "?x", postId = post.id, ctime = now,
           loginId = loginId, newIp = None, result = newText,
           approval = None)
 
