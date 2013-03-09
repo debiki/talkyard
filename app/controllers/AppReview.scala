@@ -50,7 +50,7 @@ object AppReview extends mvc.Controller {
     val reviewsByPageId: Map[String, List[ReviewPostAction]] =
       Utils.parsePageActionIds(apiReq.body.as[List[Map[String, String]]]) { actionId =>
         ReviewPostAction(
-          id = "?", targetId = actionId, loginId = apiReq.loginId_!,
+          id = "?", postId = actionId, loginId = apiReq.loginId_!,
           newIp = None, ctime = apiReq.ctime,
           approval = (if (shallApprove) Some(Approval.Manual) else None))
       }
@@ -94,7 +94,7 @@ object AppReview extends mvc.Controller {
     val actionIdsStr = pageReq.body.getOrThrowBadReq("action-ids")
     val actionIds = actionIdsStr.split(",").toList
     val reviews = actionIds map { actionId =>
-      ReviewPostAction(id = "?", targetId = actionId, loginId = pageReq.loginId_!,
+      ReviewPostAction(id = "?", postId = actionId, loginId = pageReq.loginId_!,
         newIp = pageReq.newIp, ctime = pageReq.ctime,
         isApproved = isApproval)
     }

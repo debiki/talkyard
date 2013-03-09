@@ -112,6 +112,10 @@ class TenantDao(protected val tenantDbDao: ChargingTenantDbDao)
     if (actions isEmpty)
       return (page, Nil)
 
+    // COULD check that e.g. a deleted post is really a post, an applied edit is
+    // really an edit, an action undone is not itself an Undo action,
+    // and lots of other similar tests.
+
     val actionsWithId = tenantDbDao.savePageActions(page.id, actions)
     val pageWithNewActions = page ++ actionsWithId
 
