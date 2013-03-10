@@ -62,8 +62,7 @@ object AppEdit extends mvc.Controller {
             // These shouldn't matter when rendering the edit form anyway:
             parentPageId = None, publishDirectly = false)
         val pageReqWithMeta = pageReqPerhapsNoPage.copyWithPreloadedMeta(pageMeta)
-        val postToEdit = _createPostToEdit(pageReqWithMeta, postId,
-          authorLoginId = DummyPage.DummyAuthorLogin.id)
+        val postToEdit = _createPostToEdit(pageReqWithMeta, postId, DummyAuthorIds)
         pageReqWithMeta.copyWithPreloadedActions(Debate(pageId) + postToEdit)
       }
 
@@ -83,8 +82,7 @@ object AppEdit extends mvc.Controller {
     // — but you can edit existing post though, if you're not logged in.)
     val request = pageReqWithoutMe.copyWithAnyMeOnPage // needed?
 
-    val (vipo, lazyCreateOpt) = _getOrCreatePostToEdit(request, postId,
-      authorLoginId = DummyPage.DummyAuthorLogin.id)
+    val (vipo, lazyCreateOpt) = _getOrCreatePostToEdit(request, postId, DummyAuthorIds)
     val draftText = vipo.text  // in the future, load user's draft from db.
     val editForm = Utils.formHtml(request).editForm(
        vipo, newText = draftText, userName = request.sid.displayName)
@@ -305,7 +303,8 @@ object AppEdit extends mvc.Controller {
         : List[PostActionDtoOld] = {
 
     val (post, lazyCreateOpt) =
-      _getOrCreatePostToEdit(pageReq, postId, authorLoginId = pageReq.loginId_!)
+      _getOrCreatePostToEdit(
+        pageReq, postId, AuthorIds(pageReq.loginId_!, userId = pageReq.user_!.id))
     val markupChanged =
       newMarkupOpt.isDefined && newMarkupOpt != Some(post.markup)
     if (newText == post.text && !markupChanged)
@@ -317,7 +316,6 @@ object AppEdit extends mvc.Controller {
     // (and also when *creating* a post)
 
     val patchText = makePatch(from = post.text, to = newText)
-    val loginId = pageReq.loginId_!
 
     val (mayEdit, mayEditReason) =
       AppEdit.mayEdit(pageReq.user, post, pageReq.permsOnPage)
@@ -330,7 +328,7 @@ object AppEdit extends mvc.Controller {
 
     var edit = Edit(
       id = "?x", postId = post.id, ctime = pageReq.ctime,
-      loginId = loginId, newIp = pageReq.newIp,
+      loginId = pageReq.loginId_!, userId = pageReq.user_!.id, newIp = pageReq.newIp,
       text = patchText, newMarkup = newMarkupOpt,
       approval = approval, autoApplied = mayEdit)
 
@@ -402,8 +400,16 @@ object AppEdit extends mvc.Controller {
   }
 
 
+  private case class AuthorIds(loginId: String, userId: String)
+
+
+  private val DummyAuthorIds = AuthorIds(
+    loginId = DummyPage.DummyAuthorLogin.id,
+    userId = DummyPage.DummyAuthorUser.id)
+
+
   private def _getOrCreatePostToEdit(
-        pageReq: PageRequest[_], postId: String, authorLoginId: String)
+        pageReq: PageRequest[_], postId: String, authorIds: AuthorIds)
         : (Post, Option[CreatePostAction]) = {
 
     val vipoOpt: Option[Post] = pageReq.page_!.vipo(postId)
@@ -418,7 +424,7 @@ object AppEdit extends mvc.Controller {
       // But create a title or template, lazily, if needed.
       else if (postId == Page.TitleId || postId == Page.ConfigPostId ||
           postId == Page.BodyId) {
-        Some(_createPostToEdit(pageReq, postId = postId, authorLoginId = authorLoginId))
+        Some(_createPostToEdit(pageReq, postId = postId, authorIds))
       }
       // Most post are not created automatically (instead error is returned).
       else {
@@ -436,7 +442,7 @@ object AppEdit extends mvc.Controller {
 
 
   private def _createPostToEdit(
-        pageReq: PageRequest[_], postId: String, authorLoginId: String): CreatePostAction = {
+        pageReq: PageRequest[_], postId: String, authorIds: AuthorIds): CreatePostAction = {
 
     val markup =
       if (postId == Page.ConfigPostId) Markup.Code
@@ -449,7 +455,8 @@ object AppEdit extends mvc.Controller {
     // 2. The post will be auto approved implicitly, if the Edit is
     // auto approved.
     CreatePostAction(id = postId, parent = postId, ctime = pageReq.ctime,
-      loginId = authorLoginId, newIp = pageReq.newIp, text = "",
+      loginId = authorIds.loginId, userId = authorIds.userId,
+      newIp = pageReq.newIp, text = "",
       markup = markup.id, where = None, approval = None)
   }
 

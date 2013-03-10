@@ -104,7 +104,7 @@ object AppSimple extends mvc.Controller {
 
     val actionsByPageId = Utils.parsePageActionIds(pageActionIds) { actionId =>
       PostActionDto("?", apiReq.ctime, payload, postId = actionId,
-        loginId = apiReq.loginId_!, newIp = None)
+        loginId = apiReq.loginId_!, userId = apiReq.user_!.id, newIp = None)
     }
 
     var pagesAndPatchSpecs = List[(Debate, List[PostPatchSpec])]()

@@ -367,7 +367,7 @@ abstract class QuotaChargerSpec extends RichFreeSpec with MustMatchers {
     val pageId = AppCreatePage.generateNewPageId()
     val pageRole = PageRole.Generic
     val pageBody = CreatePostAction.newPageBody("Page body.", creationDati, pageRole,
-      loginId = loginId, approval = Some(Approval.Preliminary))
+      loginId = loginId, userId = author.id, approval = Some(Approval.Preliminary))
     val actions = Debate(pageId, posts = List(pageBody))
 
     dao.createPage(PageStuff(

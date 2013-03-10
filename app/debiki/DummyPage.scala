@@ -75,6 +75,7 @@ object DummyPage {
     parent = Page.TitleId,
     ctime = new ju.Date,
     loginId = DummyAuthorLogin.id,
+    userId = DummyAuthorUser.id,
     newIp = None,
     text = if (absentSinceUnapproved) texts.unapprovedTitleText else texts.noTitleText,
     markup = Markup.DefaultForPageTitle.id,

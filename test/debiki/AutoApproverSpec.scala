@@ -106,7 +106,7 @@ class AutoApproverSpec extends Specification with Mockito {
 
   val body =
     CreatePostAction(id = Page.BodyId, parent = Page.BodyId, ctime = startDati,
-      loginId = loginId, newIp = None, text = "täxt-tåxt",
+      loginId = loginId, userId = "?", newIp = None, text = "täxt-tåxt",
       markup = "", approval = None, where = None)
 
   val replyA = body.copy(id = "2", parent = body.id)
@@ -165,13 +165,15 @@ class AutoApproverSpec extends Specification with Mockito {
       "the second" >> {
         // SHOULD prel approve replyA.
         AutoApprover.perhapsApprove(pageReqGuest(newDaoMock(
-          List(replyA), guestLogin))) must_== Some(Approval.Preliminary)
+          List(replyA).map(_.copy(userId = guestUser.id)), guestLogin))
+          ) must_== Some(Approval.Preliminary)
       }
 
       "but not the third one" >> {
         // SHOULD prel approve replyA and B.
         AutoApprover.perhapsApprove(pageReqGuest(newDaoMock(
-          List(replyA, replyB), guestLogin))) must_== None
+          List(replyA, replyB).map(_.copy(userId = guestUser.id)), guestLogin))
+          ) must_== None
       }
     }
 

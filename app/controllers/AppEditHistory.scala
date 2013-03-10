@@ -115,7 +115,8 @@ object AppEditHistory extends mvc.Controller {
         case HistoryEdit.ApplyEdit =>
           EditApp(  // COULD rename to Appl
             id = "?"+ sno, editId = actionId, postId = postAffected.id,
-            loginId = pageReq.loginId_!, newIp = pageReq.newIp,
+            loginId = pageReq.loginId_!, userId = pageReq.user_!.id,
+            newIp = pageReq.newIp,
             ctime = pageReq.ctime, result = "(Could apply diff)",
             approval = approval)
         case HistoryEdit.DeleteEditApp =>
@@ -128,8 +129,8 @@ object AppEditHistory extends mvc.Controller {
           // for now, deletions are always auto approved.
           Delete( // Should be renamed to Undo? ...
             id = "?"+ sno, postId = actionId, // And `postId to actionId?
-            loginId = pageReq.loginId_!, newIp = pageReq.newIp,
-            ctime = pageReq.ctime, wholeTree = false, reason = "")
+            loginId = pageReq.loginId_!, userId = pageReq.user_!.id,
+            newIp = pageReq.newIp, ctime = pageReq.ctime, wholeTree = false, reason = "")
           */
       }
     }

@@ -62,7 +62,8 @@ trait StuffCreator {
     val loginGrant = firstSiteDao.saveLogin(loginReq)
 
     val postTemplate = CreatePostAction(id = "?", parent = Page.BodyId, ctime = new ju.Date,
-      loginId = loginGrant.login.id, newIp = None, text = "", markup = "para",
+      loginId = loginGrant.login.id, userId = loginGrant.user.id,
+      newIp = None, text = "", markup = "para",
       where = None, approval = Some(Approval.AuthoritativeUser))
 
     (loginGrant, postTemplate)

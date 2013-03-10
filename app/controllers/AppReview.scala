@@ -51,7 +51,7 @@ object AppReview extends mvc.Controller {
       Utils.parsePageActionIds(apiReq.body.as[List[Map[String, String]]]) { actionId =>
         ReviewPostAction(
           id = "?", postId = actionId, loginId = apiReq.loginId_!,
-          newIp = None, ctime = apiReq.ctime,
+          userId = apiReq.user_!.id, newIp = None, ctime = apiReq.ctime,
           approval = (if (shallApprove) Some(Approval.Manual) else None))
       }
 

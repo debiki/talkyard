@@ -52,7 +52,8 @@ object AppReply extends mvc.Controller {
     val approval = AutoApprover.perhapsApprove(pageReq)
 
     val postNoId = CreatePostAction(id = "?", parent = postId, ctime = pageReq.ctime,
-      loginId = pageReq.loginId_!, newIp = pageReq.newIp, text = text,
+      loginId = pageReq.loginId_!, userId = pageReq.user_!.id,
+      newIp = pageReq.newIp, text = text,
       markup = Markup.DefaultForComments.id, where = whereOpt, approval = approval)
 
     val (pageWithNewPost, List(postWithId: CreatePostAction)) =

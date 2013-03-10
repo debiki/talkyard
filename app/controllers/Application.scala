@@ -68,7 +68,7 @@ object Application extends mvc.Controller {
 
     var rating = Rating(
       id = "?", postId = postId, ctime = pageReq.ctime,
-      loginId = pageReq.loginId_!, newIp = pageReq.newIp,
+      loginId = pageReq.loginId_!, userId = pageReq.user_!.id, newIp = pageReq.newIp,
       // COULD use a Seq not a List, and get rid of the conversion
       tags = ratingTags.toList)
 
@@ -92,7 +92,7 @@ object Application extends mvc.Controller {
     val details = pageReq.getNoneAsEmpty(Inp.Details)
 
     val flag = Flag(id = "?", postId = postId,
-      loginId = pageReq.loginId_!, newIp = pageReq.newIp,
+      loginId = pageReq.loginId_!, userId = pageReq.user_!.id, newIp = pageReq.newIp,
       ctime = pageReq.ctime, reason = reason, details = details)
 
     pageReq.dao.savePageActionsGenNotfs(pageReq, flag::Nil)
@@ -117,8 +117,8 @@ object Application extends mvc.Controller {
 
     val deletion = Delete(
       id = "?", postId = postId, loginId = pageReq.loginId_!,
-      newIp = pageReq.newIp, ctime = pageReq.ctime, wholeTree = wholeTree,
-      reason = reason)
+      userId = pageReq.user_!.id, newIp = pageReq.newIp,
+      ctime = pageReq.ctime, wholeTree = wholeTree, reason = reason)
 
     pageReq.dao.savePageActionsGenNotfs(pageReq, deletion::Nil)
 
