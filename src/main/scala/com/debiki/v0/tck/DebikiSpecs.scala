@@ -6,9 +6,7 @@ package com.debiki.v0.tck
 
 import com.debiki.v0._
 import com.debiki.v0.Prelude._
-import com.debiki.v0.PagePath._  // Guid case classes
 import java.{util => ju, lang => jl}
-import org.specs2.mutable._
 import org.specs2.matcher.Matcher
 import org.specs2.matcher.Expectable
 
@@ -50,7 +48,7 @@ object DebikiSpecs {
   }
 
   def havePostLike(
-        post: CreatePostAction = null,
+        post: PostActionDto[PostActionPayload.CreatePost] = null,
         id: String = null,
         parent: String = null,
         ctime: ju.Date = null,
@@ -63,10 +61,10 @@ object DebikiSpecs {
       assert((id ne null) || (post ne null))  // must know id
       var id2 = id
       if (id eq null) id2 = post.id
-      left.post(id2) match {
-        case Some(leftPost: CreatePostAction) =>
+      left.getPost(id2) match {
+        case Some(leftPost: Post) =>
           result(_matchPostImpl(
-              leftPost, post, id, parent, ctime, loginId, newIp, text, where),
+              leftPost.actionDto, post, id, parent, ctime, loginId, newIp, text, where),
             expectable)
         case None =>
           result(false, "", "Post missing, id: "+ id2, expectable)
@@ -75,15 +73,17 @@ object DebikiSpecs {
   }
 
   def matchPost(  // COULD write unit test for this one!
-        post: CreatePostAction = null,
+        post: PostActionDto[PostActionPayload.CreatePost] = null,
         id: String = null,
         parent: String = null,
         ctime: ju.Date = null,
         loginId: String = null,
         newIp: String = null,
         text: String = null,
-        where: Option[String] = null) = new Matcher[CreatePostAction] {
-    def apply[S <: CreatePostAction](expectable: Expectable[S]) = {
+        where: Option[String] = null) =
+          new Matcher[PostActionDto[PostActionPayload.CreatePost]] {
+    def apply[S <: PostActionDto[PostActionPayload.CreatePost]](
+          expectable: Expectable[S]) = {
       val left = expectable.value
       result(_matchPostImpl(
           left, post, id, parent, ctime, loginId, newIp, text, where),
@@ -92,8 +92,8 @@ object DebikiSpecs {
   }
 
   private def _matchPostImpl(
-        leftPost: CreatePostAction,
-        post: CreatePostAction,
+        leftPost: PostActionDto[PostActionPayload.CreatePost],
+        post: PostActionDto[PostActionPayload.CreatePost],
         id: String,
         parent: String,
         ctime: ju.Date,
@@ -104,12 +104,12 @@ object DebikiSpecs {
     val test = _test(leftPost, post) _
     var errs =
       test("id", id, _.id) :::
-        test("parent", parent, _.parent) :::
-        test("ctime", ctime, _.ctime) :::
+        test("parent", parent, _.payload.parentPostId) :::
+        test("ctime", ctime, _.creationDati) :::
         test("loginId", loginId, _.loginId) :::
         test("newIp", newIp, _.newIp) :::
-        test("text", text, _.text) :::
-        test("where", where, _.where) ::: Nil
+        test("text", text, _.payload.text) :::
+        test("where", where, _.payload.where) ::: Nil
     (errs isEmpty, "OK", errs.mkString(", and "))
   }
 
