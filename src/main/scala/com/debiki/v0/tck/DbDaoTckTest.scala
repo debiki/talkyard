@@ -910,7 +910,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
 
       dao.loadPage(ex1_debate.guid) must beLike {
         case Some(page: Debate) => {
-          val postReviewed = page.vipo_!(reviewSaved.postId)
+          val postReviewed = page.getPost_!(reviewSaved.postId)
           postReviewed.lastReviewDati must_== Some(reviewSaved.ctime)
           postReviewed.lastReviewWasApproval must_== Some(isApproved)
         }
@@ -964,7 +964,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
         // Verify text changed
         dao.loadPage(ex1_debate.guid) must beLike {
           case Some(d: Debate) => {
-            val editedPost = d.vipo_!(post.id)
+            val editedPost = d.getPost_!(post.id)
             editedPost.text must_== newText
             editedPost.markup must_== "dmd0"
           }
@@ -989,7 +989,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
         // Verify markup type changed
         dao.loadPage(ex1_debate.guid) must beLike {
           case Some(d: Debate) => {
-            val editedPost = d.vipo_!(post.id)
+            val editedPost = d.getPost_!(post.id)
             editedPost.text must_== "Edited text 054F2x"
             editedPost.markup must_== "html"
           }
