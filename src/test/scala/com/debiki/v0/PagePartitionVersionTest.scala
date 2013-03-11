@@ -52,11 +52,13 @@ class PagePartitionVersionTest extends Specification with PageTestValues {
       // page returned by splitByVersion.
       val page =  PageWithEditManuallyAppliedNothingApproved
       val pageWithsPostAndEdits = EmptyPage.copy(
-        posts = page.posts,
+        actionDtos = page.actionDtos, // includes CollapsePost etc and Undo though
+                                  // but thoes are not used in this test.(If I move more
+                                  //  things to actionDtos, this test might break.)
         edits = page.edits,
         editApps = page.editApps)
       val pageWithFlagsEtc = page.copy(
-        posts = Nil,
+        actionDtos = Nil,
         edits = Nil,
         editApps = Nil)
       val pageSplit = page.splitByVersion(PageVersion.LatestApproved)

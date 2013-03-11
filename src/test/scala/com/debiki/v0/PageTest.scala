@@ -27,54 +27,58 @@ trait PageTestValues {
   val textAfterFirstEdit = "body-text-after-first-edit"
 
   val bodySkeleton =
-    CreatePostAction(id = Page.BodyId, parent = Page.BodyId, ctime = new ju.Date(1000),
-        loginId = "101", newIp = None, text = textInitially,
-        markup = "", approval = None, tyype = PostType.Text,
-        where = None)
+    PostActionDto(id = Page.BodyId, postId = Page.BodyId,
+      creationDati = new ju.Date(1000),
+      loginId = "101", userId = "?", newIp = None,
+      payload = PostActionPayload.CreatePost(
+        parentPostId = Page.BodyId,
+        text = textInitially,
+        markup = "",
+        approval = None))
 
-  val bodySkeletonAutoApproved = bodySkeleton.copy(
-        approval = Some(Approval.WellBehavedUser))
+  val bodySkeletonAutoApproved =
+    PostActionDto.copy(bodySkeleton, approval = Some(Approval.WellBehavedUser))
 
-  val bodySkeletonPrelApproved = bodySkeleton.copy(
-    approval = Some(Approval.Preliminary))
+  val bodySkeletonPrelApproved =
+    PostActionDto.copy(bodySkeleton, approval = Some(Approval.Preliminary))
 
   val bodyApprovalSkeleton =
-    ReviewPostAction("11", postId = bodySkeleton.id, loginId = "111", newIp = None,
+    ReviewPostAction("11", postId = bodySkeleton.id, loginId = "111", userId = "?", newIp = None,
         ctime = new ju.Date(11000), approval = Some(Approval.Manual))
 
   val bodyRejectionSkeleton = bodyApprovalSkeleton.copy(approval = None)
 
   val editSkeleton =
     Edit(id = "12", postId = bodySkeleton.id, ctime = new ju.Date(12000),
-        loginId = "112", newIp = None,
+        loginId = "112", userId = "?", newIp = None,
         text = makePatch(from = textInitially, to = textAfterFirstEdit),
         newMarkup = None, approval = None, autoApplied = false)
 
   def deletionOfEdit =
     Delete(id = "13", postId = editSkeleton.id,
-      loginId = "113", newIp = None, ctime = new ju.Date(13000),
+      loginId = "113", userId = "?", newIp = None, ctime = new ju.Date(13000),
       wholeTree = false, reason = "")
 
   val editAppSkeleton =
-    EditApp(id = "14", editId = editSkeleton.id, loginId = "114",
-        newIp = None, ctime = new ju.Date(14000),
-        approval = None, result = "ignored")
+    EditApp(id = "14", editId = editSkeleton.id, postId = editSkeleton.postId,
+      loginId = "114", userId = "?", newIp = None, ctime = new ju.Date(14000),
+      approval = None, result = "ignored")
 
   val deletionOfEditApp =
     Delete(id = "15", postId = editAppSkeleton.id,
-        loginId = "115", newIp = None, ctime = new ju.Date(15000),
+        loginId = "115", userId = "?", newIp = None, ctime = new ju.Date(15000),
         wholeTree = false, reason = "")
 
   val approvalOfEditApp = ReviewPostAction(id = "16", postId = editAppSkeleton.id,
-        loginId = "116", newIp = None, ctime = new ju.Date(16000),
+        loginId = "116", userId = "?", newIp = None, ctime = new ju.Date(16000),
         approval = Some(Approval.Manual))
 
   val rejectionOfEditApp = approvalOfEditApp.copy(approval = None)
 
-  val ratingOfBody = Rating("17", postId = bodySkeleton.id, loginId = "117",
+  val ratingOfBody = Rating("17", postId = bodySkeleton.id, loginId = "117", userId = "?",
     newIp = None, ctime = new ju.Date(17000), tags = Nil)
 
-  val flagOfBody = Flag("18", postId = bodySkeleton.id, loginId = "118",
+  val flagOfBody = Flag("18", postId = bodySkeleton.id, loginId = "118", userId = "?",
     newIp = None, ctime = new ju.Date(18000), reason = FlagReason.Spam,
     details = "")
 
@@ -149,7 +153,7 @@ class PageTest extends Specification with PageTestValues {
       Page.intToReplyId(197) must_== "3B"
       Page.intToReplyId(4475) must_== "1AB" // 1 * 62 ** 2 + 10 * 62 + 11 = 4475
       Page.intToReplyId(89925) must_== "NOP" // 23 * (62 ** 2) + 24 * 62 + 25 = 89925
-      Page.intToReplyId(246205) must_== "xyz" // 63 * (62 ** 2) + 64 * 62 + 65 = 246205
+      Page.intToReplyId(230577) must_== "xyz" // 59 * (62 ** 2) + 60 * 62 + 61 = 230577
 
       // ... And convert back again:
       Page.replyIdToInt("") must_== 0
@@ -173,7 +177,7 @@ class PageTest extends Specification with PageTestValues {
       Page.replyIdToInt("3B") must_== 197
       Page.replyIdToInt("1AB") must_== 4475 // 1 * 62 ** 2 + 10 * 62 + 11 = 4475
       Page.replyIdToInt("NOP") must_== 89925 // 23 * (62 ** 2) + 24 * 62 + 25 = 89925
-      Page.replyIdToInt("xyz") must_== 246205 // 63 * (62 ** 2) + 64 * 62 + 65 = 246205
+      Page.replyIdToInt("xyz") must_== 230577 // 59 * (62 ** 2) + 60 * 62 + 61 = 230577
     }
 
     "have a body" >> {
@@ -210,7 +214,7 @@ class PageTest extends Specification with PageTestValues {
         page.body_!.someVersionPermanentlyApproved must_== false
         page.body_!.initiallyApproved must_== true
         page.body_!.lastPermanentApproval must_== None
-        page.body_!.lastApproval must_== Some(bodySkeletonPrelApproved)
+        page.body_!.lastApproval must_== Some(page.body_!)
         page.body_!.lastApprovalDati must_== Some(bodySkeleton.ctime)
         page.body_!.lastManualApprovalDati must_== None
         page.body_!.text must_== textInitially
@@ -274,7 +278,8 @@ class PageTest extends Specification with PageTestValues {
 
     "have a body, with an edit, pending" >> {
       val body =
-        bodySkeleton.copy(approval = Some(Approval.WellBehavedUser))
+        bodySkeleton.copy(payload = bodySkeleton.payload.copy(
+          approval = Some(Approval.WellBehavedUser)))
       val page = EmptyPage + body + editSkeleton
       page.body_!.text must_== textInitially
       page.body_!.modificationDati must_== page.body_!.creationDati
@@ -544,7 +549,7 @@ class PageTest extends Specification with PageTestValues {
         post.someVersionApproved must_== true
 
         if (preliminarily)
-          post.lastPermanentApproval must_== Some(post.action)
+          post.lastPermanentApproval must_== Some(post)
         // Could test other cases:
         // post.lastPermanentApproval must_== (
         //  if (preliminarily) post.action

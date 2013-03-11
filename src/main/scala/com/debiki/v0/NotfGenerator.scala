@@ -18,8 +18,11 @@ case class NotfGenerator(pageInclNewActions: Debate, newActions: Seq[PostActionD
 
 
   def generateNotfs: Seq[NotfOfPageAction] = newActions flatMap (_ match {
-    case post: CreatePostAction =>
-      _makePersonalReplyNotf(page.vipo_!(post.id))
+    case action: PostActionDto[_] => action.payload match {
+      case p: PostActionPayload.CreatePost =>
+        _makePersonalReplyNotf(page.getPost(action.id).get)
+      case _ => Nil // skip for now
+    }
     // Note:
     // If you add notfs (below) for other things than replies,
     // then, in debiki-app-play, update NotfHtmlRenderer.
@@ -41,7 +44,7 @@ case class NotfGenerator(pageInclNewActions: Debate, newActions: Seq[PostActionD
 
     val (triggerAction, approvalOpt) =
       review.map(r => (r, r.approval)) getOrElse (
-        post, post.post.approval)
+        post, post.approval)
 
     // Don't notify about unapproved comments.
     if (approvalOpt.isEmpty)
@@ -95,7 +98,7 @@ case class NotfGenerator(pageInclNewActions: Debate, newActions: Seq[PostActionD
     // If the actionReviewed was approved with Approval.WellBehavedUser,
     // a notf has already been generated (and right now we're simply
     // confirming that that approval was okay).
-    if (actionReviewed.post.approval == Some(Approval.WellBehavedUser))
+    if (actionReviewed.approval == Some(Approval.WellBehavedUser))
       return Nil
 
     // If the actionReviewed is a reply to the reviewer, don't notify her.

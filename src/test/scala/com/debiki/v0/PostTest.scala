@@ -15,14 +15,17 @@ object PostTestValues extends PostTestValues
 trait PostTestValues {
 
   val postSkeleton =
-    CreatePostAction(id = "?", parent = "?", ctime = new ju.Date(1000),
-        loginId = "101", newIp = None, text = "text-text-text",
-        markup = "", approval = None, tyype = PostType.Text,
-        where = None)
+    PostActionDto(id = "?", postId = "?", creationDati = new ju.Date(1000),
+      loginId = "101", userId = "?", newIp = None,
+      payload = PostActionPayload.CreatePost(
+        parentPostId = "?",
+        text = "text-text-text",
+        markup = "",
+        approval = None))
 
-  val rawBody = postSkeleton.copy(id = Page.BodyId, parent = Page.BodyId)
-  val rawReply_a = postSkeleton.copy(id = "a", parent = rawBody.id)
-  val rawReply_b = postSkeleton.copy(id = "b", parent = rawBody.id)
+  val rawBody = PostActionDto.copy(postSkeleton, id = Page.BodyId, parentPostId = Page.BodyId)
+  val rawReply_a = PostActionDto.copy(postSkeleton, id = "a", parentPostId = rawBody.id)
+  val rawReply_b = PostActionDto.copy(postSkeleton, id = "b", parentPostId = rawBody.id)
 
   val EmptyPage = Debate("a")
   val PageWithBody = EmptyPage + rawBody

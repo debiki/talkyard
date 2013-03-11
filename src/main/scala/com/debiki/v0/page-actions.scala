@@ -7,7 +7,7 @@ import collection.{immutable => imm, mutable => mut}
 import Prelude._
 import Debate._
 import FlagReason.FlagReason
-
+import com.debiki.v0.{PostActionPayload => PAP}
 
 /** Actions builds up a page: a page consists of various posts,
   * e.g. the title post, the body post, and comments posted, and actions
@@ -28,10 +28,10 @@ import FlagReason.FlagReason
   * @param payload What this action does. For example, creates a new post,
   * edits a post, flags it, closes a thread, etcetera.
   */
-case class PostActionDto(
+case class PostActionDto[P]( // [P <: PostActionPayload] -> compilation errors for PostAction
   id: String,
   creationDati: ju.Date,
-  payload: PostActionPayload,
+  payload: P,
   postId: String,
   loginId: String,
   userId: String,
@@ -45,6 +45,77 @@ case class PostActionDto(
 
 
 
+object PostActionDto {
+
+  def forNewPost(
+      id: String,
+      creationDati: ju.Date,
+      loginId: String,
+      userId: String,
+      newIp: Option[String],
+      parentPostId: String,
+      text: String,
+      markup: String,
+      approval: Option[Approval]) =
+    PostActionDto(
+      id, creationDati, postId = id, loginId = loginId, userId = userId, newIp = newIp,
+      payload = PAP.CreatePost(
+        parentPostId = parentPostId, text = text,
+        markup = markup, approval = approval))
+
+
+  def forNewTitleBySystem(text: String, creationDati: ju.Date) =
+    forNewTitle(text, creationDati, loginId = SystemUser.Login.id,
+      userId = SystemUser.User.id, approval = Some(Approval.AuthoritativeUser))
+
+
+  def forNewPageBodyBySystem(text: String, creationDati: ju.Date, pageRole: PageRole) =
+    forNewPageBody(text, creationDati, pageRole, loginId = SystemUser.Login.id,
+      userId = SystemUser.User.id, approval = Some(Approval.AuthoritativeUser))
+
+
+  def forNewTitle(text: String, creationDati: ju.Date,
+               loginId: String, userId: String, approval: Option[Approval]) =
+    forNewPost(Page.TitleId, creationDati, loginId = loginId, userId = userId,
+      newIp = None, parentPostId = Page.TitleId, text = text,
+      markup = Markup.DefaultForPageTitle.id, approval = approval)
+
+
+  def forNewPageBody(text: String, creationDati: ju.Date, pageRole: PageRole,
+                  loginId: String, userId: String, approval: Option[Approval]) =
+    forNewPost(Page.BodyId, creationDati, loginId = loginId, userId = userId,
+      newIp = None, parentPostId = Page.BodyId, text = text,
+      markup = Markup.defaultForPageBody(pageRole).id, approval = approval)
+
+
+  def copyCreatePost(
+        old: PostActionDto[PAP.CreatePost],
+        id: String = null,
+        creationDati: ju.Date = null,
+        loginId: String = null,
+        userId: String = null,
+        newIp: Option[String] = null,
+        parentPostId: String = null,
+        text: String = null,
+        markup: String = null,
+        approval: Option[Approval] = null): PostActionDto[PAP.CreatePost] =
+    PostActionDto(
+      id = if (id ne null) id else old.id,
+      postId = if (id ne null) id else old.id, // same as id
+      creationDati =  if (creationDati ne null) creationDati else old.creationDati,
+      loginId = if (loginId ne null) loginId else old.loginId,
+      userId = if (userId ne null) userId else old.userId,
+      newIp = if (newIp ne null) newIp else old.newIp,
+      payload = PAP.CreatePost(
+        parentPostId = if (parentPostId ne null) parentPostId else old.payload.parentPostId,
+        text = if (text ne null) text else old.payload.text,
+        markup = if (markup ne null) markup else old.payload.markup,
+        approval = if (approval ne null) approval else old.payload.approval))
+
+}
+
+
+
 sealed abstract class PostActionPayload
 
 
@@ -52,7 +123,22 @@ sealed abstract class PostActionPayload
 object PostActionPayload {
 
 
-  sealed trait HidingPostPayload
+  /** Creates a page title, a page body, a comment, or a page config post.
+    *
+    * @param markup The markup language to use when rendering this post.
+    * @param approval Defined iff the post was approved on creation, and clarifies why it was.
+    * @param where If defined, this is an inline comment and the value specifies where
+    *  in the parent post it is to be placed. COULD move to separate Meta post?
+    *  Benefits: Editing and versioning of `where', without affecting this Post.text.
+    *  Benefit 2: There could be > 1 meta-Where for each post, so you could make e.g. a
+    *  generic comment that results in ?? arrows to e.g. 3 other comments ??
+    */
+  case class CreatePost(
+    parentPostId: String,
+    text: String,
+    markup: String,
+    approval: Option[Approval],
+    where: Option[String] = None) extends PostActionPayload
 
 
   /** Closes a thread: collapses it and tucks it away under a Closed Threads
@@ -61,13 +147,13 @@ object PostActionPayload {
     * Use on old obsolete threads, e.g. a comment about a spelling mistake
     * that has since been fixed.
     */
-  case object CloseTree extends PostActionPayload with HidingPostPayload
+  case object CloseTree extends PostActionPayload
 
-  case object CollapsePost extends PostActionPayload with HidingPostPayload
+  case object CollapsePost extends PostActionPayload
 
-  case object CollapseReplies extends PostActionPayload with HidingPostPayload
+  case object CollapseReplies extends PostActionPayload
 
-  case object CollapseTree extends PostActionPayload with HidingPostPayload
+  case object CollapseTree extends PostActionPayload
 
   /** Undoes another action, e.g. an Undo with targetActionId = a CloseTree action
     * would reopen the closed tree.
@@ -114,22 +200,6 @@ sealed abstract class PostActionDtoOld {
 
   def anyGuestId = if (userId.headOption == Some('-')) Some(userId drop 1) else None
   def anyRoleId =  if (userId.headOption == Some('-')) None else Some(userId)
-
-}
-
-
-
-abstract class MaybeApproval extends PostActionDtoOld {
-
-  /**
-   * If defined, this action implicitly approves the related post.
-   *
-   * For example, if an admin edits a post, then `edit.approval`
-   * might be set to Approval.AuthoritativeUser, and `edit.isApplied`
-   * would be set to true, and then the new version of the edited post
-   * has "automatically" been approved.
-   */
-  def approval: Option[Approval]
 
 }
 
@@ -205,92 +275,6 @@ case class Flag(
 }
 
 
-
-case object CreatePostAction {
-
-  def newTitleBySystem(text: String, creationDati: ju.Date) =
-    newTitle(text, creationDati, loginId = SystemUser.Login.id,
-      userId = SystemUser.User.id, approval = Some(Approval.AuthoritativeUser))
-
-  def newPageBodyBySystem(text: String, creationDati: ju.Date, pageRole: PageRole) =
-    newPageBody(text, creationDati, pageRole, loginId = SystemUser.Login.id,
-      userId = SystemUser.User.id, approval = Some(Approval.AuthoritativeUser))
-
-
-  def newTitle(
-        text: String,
-        creationDati: ju.Date,
-        loginId: String,
-        userId: String,
-        approval: Option[Approval]) =
-    CreatePostAction(Page.TitleId, Page.TitleId, creationDati,
-      loginId = loginId,
-      userId = userId,
-      newIp = None,
-      text = text,
-      markup = Markup.DefaultForPageTitle.id,
-      approval = approval)
-
-
-  def newPageBody(
-        text: String,
-        creationDati: ju.Date,
-        pageRole: PageRole,
-        loginId: String,
-        userId: String,
-        approval: Option[Approval]) =
-    CreatePostAction(Page.BodyId, Page.BodyId, creationDati,
-      loginId = loginId,
-      userId = userId,
-      newIp = None,
-      text = text,
-      markup = Markup.defaultForPageBody(pageRole).id,
-      approval = approval)
-
-}
-
-
-
-case class CreatePostAction(
-
-  // is "?" if unknown, or e.g. "?x" if it's unknown.
-  // COULD replace w case classes e.g. IdKnown(id)/IdPending(tmpId)/IdUnknown,
-  // then it would not be possible to forget to check for "?".
-  id: String,
-  parent: String,
-  ctime: ju.Date,
-  loginId: String,
-  userId: String,
-  newIp: Option[String],
-  text: String,
-
-  /** The markup language to use when rendering this post.
-   */
-  markup: String,
-
-  /**
-   * Defined iff this post was approved on creation, and clarifies why it was.
-   */
-  approval: Option[Approval],
-
-  /** If defined, this is an inline comment and the value
-   *  specifies where in the parent post it is to be placed.
-   */
-  where: Option[String] = None   // COULD move to separate Meta post?
-                                 // Benefits: Editing and versioning of
-                                 // `where', without affecting this Post.text.
-                                // Benefit 2: There could be > 1 meta-Where
-                                // for each post, so you could make e.g. a
-                                // generic comment that results in ...
-                                // ...?? arrows to e.g. 3 other comments ??
-) extends MaybeApproval {
-  override def textLengthUtf8: Int = text.getBytes("UTF-8").length
-
-  def postId = id
-}
-
-
-
 case class Edit (
   id: String,
   postId: String,
@@ -329,7 +313,7 @@ case class Edit (
    * auto applied.
    */
   autoApplied: Boolean
-) extends MaybeApproval {
+) extends PostActionDtoOld {
   override def textLengthUtf8: Int = text.getBytes("UTF-8").length
 
   // An edit that hasn't been applied cannot have been approved.
@@ -380,7 +364,7 @@ case class EditApp(
    *  Or store cached post texts in a dedicated db table.
    */
   result: String
-) extends MaybeApproval
+) extends PostActionDtoOld
 
 /** Deletes an action. When actionId (well, postId right now)
  *  is a post, it won't be rendered. If `wholeTree', no reply is shown either.
@@ -444,7 +428,7 @@ case class ReviewPostAction(
   userId: String,
   newIp: Option[String],
   ctime: ju.Date,
-  approval: Option[Approval]) extends MaybeApproval {
+  approval: Option[Approval]) extends PostActionDtoOld {
 }
 
 

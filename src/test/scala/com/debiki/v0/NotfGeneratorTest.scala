@@ -19,30 +19,37 @@ trait NotfGeneratorTestValues {
   val (reviewer, reviewerIdty, reviewerLogin) = makePerson("ReviewerAuthor")
 
   val rawBody = PostTestValues.postSkeleton.copy(
-    id = Page.BodyId, parent = Page.BodyId, loginId = bodyAuthorLogin.id)
-  val rawBodyPrelApproved = rawBody.copy(approval = Some(Approval.Preliminary))
-  val rawBodyWellBehavedApproved = rawBody.copy(approval = Some(
-    Approval.WellBehavedUser))
-  val rawBodyAuthzApproved = rawBody.copy(approval = Some(
-    Approval.AuthoritativeUser))
+    id = Page.BodyId, loginId = bodyAuthorLogin.id, payload =
+      PostTestValues.postSkeleton.payload.copy(parentPostId = Page.BodyId))
+
+  val rawBodyPrelApproved = rawBody.copy(payload = rawBody.payload.copy(
+    approval = Some(Approval.Preliminary)))
+  val rawBodyWellBehavedApproved = rawBody.copy(payload = rawBody.payload.copy(
+    approval = Some(Approval.WellBehavedUser)))
+  val rawBodyAuthzApproved = rawBody.copy(payload = rawBody.payload.copy(
+    approval = Some(Approval.AuthoritativeUser)))
 
   val approvalOfBody =
     ReviewPostAction("2", postId = rawBody.id, loginId = reviewerLogin.id,
+      userId = reviewer.id,
       newIp = None, ctime = new ju.Date(11000),
       approval = Some(Approval.Manual))
   val rejectionOfBody = approvalOfBody.copy(id = "3", approval = None)
 
   val rawReply = PostTestValues.postSkeleton.copy(
-    id = "11", parent = rawBody.id, loginId = replyAuthorLogin.id)
-  val rawReplyPrelApproved = rawReply.copy(approval =
-    Some(Approval.Preliminary))
-  val rawReplyWellBehavedApproved = rawReply.copy(approval = Some(
-    Approval.WellBehavedUser))
-  val rawReplyAuthzApproved = rawReply.copy(approval = Some(
-    Approval.AuthoritativeUser))
+    id = "11", loginId = replyAuthorLogin.id, payload =
+      PostTestValues.postSkeleton.payload.copy(parentPostId = rawBody.id))
+
+  val rawReplyPrelApproved = rawReply.copy(payload = rawBody.payload.copy(
+    approval = Some(Approval.Preliminary)))
+  val rawReplyWellBehavedApproved = rawReply.copy(payload = rawBody.payload.copy(
+    approval = Some(Approval.WellBehavedUser)))
+  val rawReplyAuthzApproved = rawReply.copy(payload = rawBody.payload.copy(
+    approval = Some(Approval.AuthoritativeUser)))
 
   val approvalOfReply =
     ReviewPostAction("12", postId = rawReply.id, loginId = reviewerLogin.id,
+      userId = reviewer.id,
       newIp = None, ctime = new ju.Date(11000),
       approval = Some(Approval.Manual))
   val rejectionOfReply = approvalOfReply.copy(id = "13", approval = None)
@@ -94,7 +101,7 @@ class NotfGeneratorTest extends Specification with NotfGeneratorTestValues {
     }
 
     "generate a notf for other auto approved replies" in {
-      def test(reply: CreatePostAction) = {
+      def test(reply: PostActionDto[PostActionPayload.CreatePost]) = {
         val page = PageWithApprovedBody + reply
         val notfs = genNotfs(bodyAuthor, page, reply)
         notfs.length must_== 1
@@ -128,7 +135,8 @@ class NotfGeneratorTest extends Specification with NotfGeneratorTestValues {
     }
 
     "generate no notf when a reply is approved by the one replied to" in {
-      val approval = approvalOfReply.copy(loginId = bodyAuthorLogin.id)
+      val approval = approvalOfReply.copy(
+        loginId = bodyAuthorLogin.id, userId = bodyAuthor.id)
       val page = PageWithApprovedBody + rawReply + approval
       val notfs = genNotfs(bodyAuthor, page, approval)
       notfs.length must_== 0

@@ -6,6 +6,7 @@ import java.{util => ju}
 import collection.{immutable => imm, mutable => mut}
 import Prelude._
 import Page._
+import com.debiki.v0.{PostActionPayload => PAP}
 
 
 // Preparing to rename Debate to Page:
@@ -21,8 +22,11 @@ object Page {
     id == Page.BodyId || id == Page.TitleId || id == Page.ConfigPostId
 
 
-  def isReply(action: PostActionDtoOld): Boolean = action match {
-    case post: CreatePostAction if !isArticleOrConfigPostId(post.id) => true
+  def isReply(actionOld: PostActionDtoOld): Boolean = actionOld match {
+    case post: PostActionDto[_] => post.payload match {
+      case _: PAP.CreatePost if !isArticleOrConfigPostId(post.id) => true
+      case _ => false
+    }
     case _ => false
   }
 
@@ -63,8 +67,6 @@ object Page {
     // Remap ids and update references to ids.
     def rmpd(id: String) = remaps.getOrElse(id, id)
     def updateIds(action: T): T = (action match {
-      case p: CreatePostAction => p.copy(id = remaps(p.id), // postId == id
-        parent = rmpd(p.parent))
       case r: Rating => r.copy(id = remaps(r.id), postId = rmpd(r.postId))
       case f: Flag => f.copy(id = remaps(f.id), postId = rmpd(f.postId))
       case e: Edit => e.copy(id = remaps(e.id), postId = rmpd(e.postId))
@@ -72,7 +74,12 @@ object Page {
         postId = rmpd(a.postId))
       case d: Delete => d.copy(id = remaps(d.id), postId = rmpd(d.postId))
       case r: ReviewPostAction => r.copy(id = remaps(r.id), postId = rmpd(r.postId))
-      case a: PostActionDto => a.copy(id = remaps(a.id), postId = rmpd(a.postId))
+      case a: PostActionDto[_] =>
+        val rmpdPaylad = a.payload match {
+          case c: PAP.CreatePost => c.copy(parentPostId = rmpd(c.parentPostId))
+          case x => x
+        }
+        a.copy(id = remaps(a.id), postId = rmpd(a.postId), payload = rmpdPaylad)
       case x => assErr("DwE3RSEK9")
     }).asInstanceOf[T]
 
@@ -114,12 +121,13 @@ object Page {
 
   def replyIdToInt(replyId: String): Int = {
     var multiplier = 1
-    replyId.foldRight(0) { (sum, ch) =>
+    replyId.foldRight(0) { (ch, sum) =>
       val value = ch match {
         case num if '0' <= ch && ch <= '9' => ch - '0'
         case upper if 'A' <= ch && ch <= 'Z' => ch - 'A' + 10
         case lower if 'a' <= ch && ch <= 'z' => ch - 'a' + 10 + 26
-        case x => assErr("DwE15GW08", s"Bad reply id, cannot convert to int: `$replyId'")
+        case x => assErr("DwE15GW08", o"""Bad reply id char: `$ch', cannot convert
+          reply id to int: `$replyId'""")
       }
       val newSum = sum + value * multiplier
       multiplier *= ReplyIdAlphabetBase
@@ -139,30 +147,39 @@ object Page {
 abstract class PostActionsWrapper { self: Debate =>
 
 
-  def actionDtos: List[PostActionDto]
+  def actionDtos: List[PostActionDto[_]]
 
 
-  def getActionById(id: String): Option[PostAction] =
+  def getActionById(id: String): Option[PostAction[_]] =
     actionsById.get(id)
 
 
-  def getActionsByPostId(postId: String): List[PostAction] =
+  def getActionsByPostId(postId: String): List[PostAction[_]] =
     actionsByPostId(postId)
+
+
+  // /** WARNING Doesn't include any PostActionOld */
+  def getAllActions: Seq[PostAction[_]] =
+    actionsByPostId.valuesIterator.toSeq.flatten
 
 
   // Maps data-transfer-objects to PostAction:s. Never mutated once constructed.
   private lazy val (
     actionsById,
-    actionsByPostId): (mut.Map[String, PostAction], mut.Map[String, List[PostAction]]) = {
+    actionsByPostId)
+      : (mut.Map[String, PostAction[_]], mut.Map[String, List[PostAction[_]]]) = {
 
-    var actionsById = mut.Map[String, PostAction]()
-    var actionsByPostId = mut.Map[String, List[PostAction]]().withDefaultValue(Nil)
+    var actionsById = mut.Map[String, PostAction[_]]()
+    var actionsByPostId = mut.Map[String, List[PostAction[_]]]().withDefaultValue(Nil)
 
     for (actionDto <- actionDtos) {
+      def thisAsPage = this.asInstanceOf[Debate]
       val action = actionDto.payload match {
-        // case _ => CreatePostAction => Post(this.asInstanceOf[Debate], action)
+        case _: PAP.CreatePost =>
+          new Post(thisAsPage, actionDto.asInstanceOf[PostActionDto[PAP.CreatePost]])
         // case _ => EditPostAction => Patch(this.asInstanceOf[Debate], action)
-        case _ => new PostAction(this.asInstanceOf[Debate], actionDto)
+        case _ =>
+          new PostAction(thisAsPage, actionDto)
       }
       actionsById(action.id) = action
       val otherActions = actionsByPostId(action.postId)
@@ -193,68 +210,52 @@ abstract class PostActionsWrapper { self: Debate =>
 case class Debate (
   guid: String,  // COULD rename to pageId?
   people: People = People.None,
-  posts: List[CreatePostAction] = Nil,
   ratings: List[Rating] = Nil,
   edits: List[Edit] = Nil,
   editApps: List[EditApp] = Nil,
   flags: List[Flag] = Nil,
   deletions: List[Delete] = Nil,
   reviews: List[ReviewPostAction] = Nil,
-  actionDtos : List[PostActionDto] = Nil) extends PostActionsWrapper {
+  actionDtos : List[PostActionDto[_]] = Nil) extends PostActionsWrapper {
 
-  private lazy val postsById =
-      imm.Map[String, CreatePostAction](posts.map(x => (x.id, x)): _*)
 
   def actionCount: Int =
-     posts.size + ratings.size + edits.size + editApps.size +
+     ratings.size + edits.size + editApps.size +
      flags.size + deletions.size + actionDtos.size
 
+
   def allActions: Seq[PostActionDtoOld] =
-     deletions:::flags:::editApps:::edits:::ratings:::posts:::actionDtos
+     deletions:::flags:::editApps:::edits:::ratings:::actionDtos
+
 
   // Try to remove/rewrite? Doesn't return e.g Post or Patch.
   def smart(action: PostActionDtoOld) = new PostActionOld(this, action)
-
-  // For the love of god, I have to rename this crap, this file is a mess.
+  // ^ For the love of god, I have to rename this crap, this file is a mess.
   // Fixed (soon). Rewrite to PostActionDto and use PostActionsWrapper.
-  def getSmart(actionId: String): Option[PostActionOld] = {
-    postsById.get(actionId).map(new Post(this, _)) orElse
-      rating(actionId).map(new PostActionOld(this, _)) orElse
-      editsById.get(actionId).map(new Patch(this, _)) orElse
-      editApp(actionId).map(new PostActionOld(this, _)) orElse
-      flagsById.get(actionId).map(new PostActionOld(this, _)) orElse
-      deletionsById.get(actionId).map(new PostActionOld(this, _)) orElse
-      reviewsById.get(actionId).map(new Review(this, _))
-  }
 
-  lazy val (
-      postsByParentId: imm.Map[String, List[CreatePostAction]]
-        ) = {
 
-    // Add id -> post mappings to mutable multimaps.
-    var postMap = mut.Map[String, mut.Set[CreatePostAction]]()
-    for (p <- posts) {
-      val mmap = postMap
-      // =  p.tyype match {
-      //  case PostType.Text => postMap
-      // }
-      mmap.getOrElse(
-        p.parent, { val s = mut.Set[CreatePostAction](); mmap.put(p.parent, s); s }) += p
+  lazy val (postsByParentId: Map[String, List[Post]]) = {
+    // Sort posts by parent id.
+    var postMap = mut.Map[String, mut.Set[Post]]()
+    for (post <- getAllPosts) {
+      def addNewSet() = {
+        val set = mut.Set[Post]()
+        postMap.put(post.parentId, set)
+        set
+      }
+      postMap.getOrElse(post.parentId, addNewSet()) += post
     }
-
     // Copy to immutable versions.
-    def buildImmMap(mutMap: mut.Map[String, mut.Set[CreatePostAction]]
-                       ): imm.Map[String, List[CreatePostAction]] = {
+    def buildImmMap(mutMap: mut.Map[String, mut.Set[Post]]): Map[String, List[Post]] = {
       // COULD sort the list in ascenting ctime order?
       // Then list.head would be e.g. the oldest title -- other code
       // assume posts ase sorted in this way?
       // See Post.templatePost, titlePost.
-      imm.Map[String, List[CreatePostAction]](
+      Map[String, List[Post]](
         (for ((parentId, postsSet) <- mutMap)
         yield (parentId, postsSet.toList // <-- sort this list by ctime asc?
               )).toList: _*).withDefaultValue(Nil)
     }
-
     val immPostMap = buildImmMap(postMap)
     immPostMap
   }
@@ -387,19 +388,27 @@ case class Debate (
 
   // -------- Posts
 
-  def postCount = posts.length
+  def getPost(id: String): Option[Post] =
+    getActionById(id) match {
+      case p @ Some(_: Post) => p.asInstanceOf[Option[Post]]
+      case None => None
+      case x => runErr("DwE57BI0", s"Action `$id' is not a Post but a: ${classNameOf(x)}")
+    }
 
-  def post(id: String): Option[CreatePostAction] = postsById.get(id)
+  def getAllPosts: Seq[Post] =
+    getAllActions.filter(_.isInstanceOf[Post]).asInstanceOf[Seq[Post]]
 
-  def vipo_!(postId: String): Post =  // COULD rename to post_!(withId = ...)
-    vipo(postId).getOrElse(runErr(
+  def postCount = getAllPosts.length
+
+  def vipo_!(postId: String): Post =
+    getPost(postId).getOrElse(runErr(
       "DwE3kR49", "Post not found: "+ safed(postId)))
 
-  def vipo(postId: String): Option[Post] = // COULD rename to post(withId =...)
-    post(postId).map(new Post(this, _))
+  def vipo(postId: String): Option[Post] = getPost(postId)
 
-  def postsByUser(withId: String): Seq[CreatePostAction] =
-    posts.filter(smart(_).identity.map(_.userId) == Some(withId))
+  def postsByUser(withId: String): Seq[Post] = {
+    getAllPosts.filter(_.userId == withId)
+  }
 
   lazy val (
       numPosters,
@@ -412,7 +421,7 @@ case class Debate (
     var numPendingReview = 0
     var lastDati: Option[ju.Date] = None
     var posterUserIds = mut.Set[String]()
-    for (post <- vipos_!) {
+    for (post <- getAllPosts) {
       if (post.isDeleted) numDeleted += 1
       else if (post.someVersionApproved) {
         // posterUserIds.add(post.user_!.id) — breaks, users sometimes absent.
@@ -434,16 +443,13 @@ case class Debate (
   }
 
 
-  private def vipos_! : List[Post] = // rename!
-    posts.map(post => vipo_!(post.id))
-
-
   // -------- Replies
 
-  def repliesTo(id: String): List[CreatePostAction] =
+  def repliesTo(id: String): List[Post] =
+    // Filter out title, body config post. (Parent id = its own id)
     postsByParentId.getOrElse(id, Nil).filterNot(_.id == id)
 
-  def successorsTo(postId: String): List[CreatePostAction] = {
+  def successorsTo(postId: String): List[Post] = {
     val res = repliesTo(postId)
     res.flatMap(r => successorsTo(r.id)) ::: res
   }
@@ -534,23 +540,22 @@ case class Debate (
   def getReview(id: String): Option[Review] =
     reviewsById.get(id) map (new Review(this, _))
 
-  def explicitReviewsOf(actionId: String): List[ReviewPostAction] =
-    reviewsByTargetId.getOrElse(actionId, Nil)
+  def explicitReviewsOf(actionId: String): List[Review] =
+    reviewsByTargetId.getOrElse(actionId, Nil).map(new Review(this, _))
 
-  def explicitReviewsOf(action: PostActionDtoOld): List[ReviewPostAction] =
+  def explicitReviewsOf(action: PostActionDtoOld): List[Review] =
     explicitReviewsOf(action.id)
 
 
   // -------- Construction
 
-  def + (post: CreatePostAction): Debate = copy(posts = post :: posts)
   def + (rating: Rating): Debate = copy(ratings = rating :: ratings)
   def + (edit: Edit): Debate = copy(edits = edit :: edits)
   def + (editApp: EditApp): Debate = copy(editApps = editApp :: editApps)
   def + (flag: Flag): Debate = copy(flags = flag :: flags)
   def + (deletion: Delete): Debate = copy(deletions = deletion :: deletions)
   def + (review: ReviewPostAction): Debate = copy(reviews = review :: reviews)
-  def + (action: PostActionDto): Debate = copy(actionDtos = action :: actionDtos)
+  def + (action: PostActionDto[_]): Debate = copy(actionDtos = action :: actionDtos)
 
   // Could try not to add stuff that's already included in this.people.
   def ++(people: People): Debate = this.copy(people = this.people ++ people)
@@ -559,7 +564,6 @@ case class Debate (
 
   // COULD [T <: Action] instead of >: AnyRef?
   def ++[T >: AnyRef] (actions: Seq[T]): Debate = {
-    var posts2 = posts
     var ratings2 = ratings
     var edits2 = edits
     var editApps2 = editApps
@@ -568,18 +572,17 @@ case class Debate (
     var reviews2 = reviews
     var actions2 = this.actionDtos
     for (a <- actions) a match {
-      case p: CreatePostAction => posts2 ::= p
       case r: Rating => ratings2 ::= r
       case e: Edit => edits2 ::= e
       case a: EditApp => editApps2 ::= a
       case f: Flag => flags2 ::= f
       case d: Delete => dels2 ::= d
       case r: ReviewPostAction => reviews2 ::= r
-      case a: PostActionDto => actions2 ::= a
+      case a: PostActionDto[_] => actions2 ::= a
       case x => runErr(
         "DwE8k3EC", "Unknown action type: "+ classNameOf(x))
     }
-    Debate(id, people, posts2, ratings2,
+    Debate(id, people, ratings2,
         edits2, editApps2, flags2, dels2, reviews2, actions2)
   }
 
@@ -631,7 +634,6 @@ case class Debate (
     def happenedInTime(action: PostActionDtoOld) =
       action.ctime.getTime <= dati.getTime
 
-    val (postsBefore, postsAfter) = posts partition happenedInTime
     val (ratingsBefore, ratingsAfter) = ratings partition happenedInTime
     val (editsBefore, editsAfter) = edits partition happenedInTime
     val (editAppsBefore, editAppsAfter) = editApps partition happenedInTime
@@ -641,7 +643,6 @@ case class Debate (
     val (actionsBefore, actionsAfter) = actionDtos partition happenedInTime
 
     val pageUpToAndInclDati = copy(
-      posts = postsBefore,
       ratings = ratingsBefore,
       edits = editsBefore,
       editApps = editAppsBefore,
@@ -656,13 +657,16 @@ case class Debate (
 
   private def splitByApproval: Debate = {
 
-      val (postsApproved, postsUnapproved) = posts partition { rawPost =>
-        val post = vipo_!(rawPost.id)
-        post.lastApprovalDati.isDefined
-      }
+      val (actionsApproved, actionsUnapproved) = actionDtos.partition(actionDto =>
+        actionDto.payload match {
+          case _: PAP.CreatePost =>
+            val post = getPost(actionDto.id) getOrDie "Dw87R3"
+            post.lastApprovalDati.isDefined
+          case _ => true
+        })
 
       val (editsApproved, editsUnapproved) = edits partition { edit =>
-        val post = vipo_!(edit.postId)
+        val post = getPost(edit.postId) getOrDie "Dw6BJ8"
         post.lastApprovalDati match {
           case None => false
           case Some(approvalDati) => edit.ctime.getTime <= approvalDati.getTime
@@ -683,7 +687,7 @@ case class Debate (
       // BUG Should also partition deletions? In the future, when/if
       // they can be approved/rejected.
       val approvedVersionOfPage = copy(
-        posts = postsApproved,
+        actionDtos = actionsApproved,
         edits = editsApproved,
         editApps = editAppsApproved)
 
@@ -811,10 +815,9 @@ object PageRoot {
     assErrIf3(subId contains "-", "DwE0ksEW3", "Real id contains hyphen: "+
           safed(subId))
 
-    def findOrCreatePostIn(page: Debate): Option[Post] = page.vipo(subId)
+    def findOrCreatePostIn(page: Debate): Option[Post] = page.getPost(subId)
 
-    def findChildrenIn(page: Debate): List[Post] =
-      page.repliesTo(subId) map (new Post(page, _))
+    def findChildrenIn(page: Debate): List[Post] = page.repliesTo(subId)
   }
 
   // In the future, something like this:

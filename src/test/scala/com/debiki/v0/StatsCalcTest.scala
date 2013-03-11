@@ -8,6 +8,7 @@ package com.debiki.v0
 
 import org.specs2.mutable._
 import java.{util => ju}
+import Util._
 
 /*
 Cannot debug this:
@@ -44,20 +45,24 @@ object Util {
     (p2 - z10 * root, p2 + z10 * root)
   }
 
-  val post = CreatePostAction(id = "Ca", parent = "0", ctime = new ju.Date,
-                  loginId = "?", newIp = None, text = "test",
-                  markup = "", tyype = PostType.Text,
-                  approval = Some(Approval.WellBehavedUser))
-  val debate = Debate("test", posts = post::Nil)
+  val post = PostActionDto(
+    id = "Ca", postId = "Ca", creationDati = new ju.Date, loginId = "?", userId = "?",
+    newIp = None, payload = PostActionPayload.CreatePost(parentPostId = "0",
+      text = "test", markup = "", approval = Some(Approval.WellBehavedUser)))
+
+  val debate = Debate("test", actionDtos = post::Nil)
+
   val rating_interesting =
-        Rating(id = "?", postId = post.id, loginId = "?", ctime = new ju.Date,
+        Rating(id = "?", postId = post.id, loginId = "?", userId = "?", ctime = new ju.Date,
                newIp = None, tags = List("interesting"))
+
   val rating_stupid =
-        Rating(id = "?", postId = post.id, loginId = "?", ctime = new ju.Date,
+        Rating(id = "?", postId = post.id, loginId = "?", userId = "?", ctime = new ju.Date,
                newIp = None, tags = List("stupid"))
+
 }
 
-import Util._
+
 
 class PostRatingTest extends Specification {
 

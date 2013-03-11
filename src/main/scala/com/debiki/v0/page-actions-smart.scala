@@ -7,12 +7,14 @@ import collection.{immutable => imm, mutable => mut}
 import Prelude._
 import Debate._
 import FlagReason.FlagReason
+import com.debiki.v0.{PostActionPayload => PAP}
 
 
 object PostActionOld {
 
+  // Remove, when all PostActionDtoOld have been replaced with PostActionDto.
   def apply(page: Debate, action: PostActionDtoOld): PostActionOld = action match {
-    case p: CreatePostAction => new Post(page, p)
+    case a: PostActionDto[_] => page.getActionById(action.id) getOrDie "DwE20KF58"
     case a: PostActionDtoOld => new PostActionOld(page, a)
   }
 
@@ -20,11 +22,27 @@ object PostActionOld {
 
 
 
-class PostAction(page: Debate, actionDto: PostActionDto)
-  extends PostActionOld(page, actionDto) {
+class PostAction[P](  // [P <: PostActionPayload] causes compilation errors
+  page: Debate,
+  val actionDto: PostActionDto[P]) extends PostActionOld(page, actionDto) {
 
   def postId = actionDto.postId
-  def payload = actionDto.payload
+  def payload: P = actionDto.payload
+}
+
+
+
+trait MaybeApproval {
+
+  /** If defined, this action implicitly approves the related post.
+    *
+    * For example, if an admin edits a post, then `edit.approval`
+    * might be set to Approval.AuthoritativeUser, and `edit.isApplied`
+    * would be set to true, and then the new version of the edited post
+    * has "automatically" been approved.
+    */
+  def approval: Option[Approval]
+
 }
 
 
@@ -45,6 +63,11 @@ class PostActionOld(val debate: Debate, val action: PostActionDtoOld) {
   def identity: Option[Identity] = login.flatMap(l =>
                                     debate.people.identity(l.identityId))
   def identity_! : Identity = debate.people.identity_!(login_!.identityId)
+  def userId = {
+    // Temporary (?) debug test: (I just introduced `userId`)
+    user foreach { u => assErrIf(u.id != action.userId, "DwE43KbX6") }
+    action.userId
+  }
   def user : Option[User] = identity.flatMap(i => debate.people.user(i.userId))
   def user_! : User = debate.people.user_!(identity_!.userId)
   def ip: Option[String] = action.newIp.orElse(login.map(_.ip))
@@ -82,13 +105,18 @@ class PostActionOld(val debate: Debate, val action: PostActionDtoOld) {
  *
  * Created via CreatePostAction:s.
  */
-class Post(debate: Debate, val post: CreatePostAction) extends PostActionOld(debate, post) {
+class Post(debate: Debate, theActionDto: PostActionDto[PostActionPayload.CreatePost])
+  extends PostAction[PostActionPayload.CreatePost](debate, theActionDto)
+  with MaybeApproval {
 
-  def parentId: String = post.parent
+  def parentId: String = payload.parentPostId
 
   def parentPost: Option[Post] =
     if (parentId == id) None
-    else debate.vipo(parentId)
+    else debate.getPost(parentId)
+
+
+  def approval = payload.approval
 
 
   def isArticleOrConfig =
@@ -99,14 +127,14 @@ class Post(debate: Debate, val post: CreatePostAction) extends PostActionOld(deb
     // If initially preliminarily auto approved, that approval is cancelled by
     // any contiguous and subsequent rejection. (And `lastApproval` takes
     // that cancellation into account.)
-    lastApproval.isDefined && post.approval.isDefined
+    lastApproval.isDefined && approval.isDefined
   }
 
 
   lazy val (text: String, markup: String) = _applyEdits
 
 
-  def actions: List[PostAction] = page.getActionsByPostId(id)
+  def actions: List[PostAction[_]] = page.getActionsByPostId(id)
 
 
   /**
@@ -125,8 +153,8 @@ class Post(debate: Debate, val post: CreatePostAction) extends PostActionOld(deb
    * at a certain point in time.)
    */
   private def _applyEdits: (String, String) = {
-    var curText = post.text
-    var curMarkup = post.markup
+    var curText = payload.text
+    var curMarkup = payload.markup
     val dmp = new name.fraser.neil.plaintext.diff_match_patch
     // Loop through all edits and patch curText.
     for (edit <- editsAppliedAscTime) {
@@ -146,9 +174,9 @@ class Post(debate: Debate, val post: CreatePostAction) extends PostActionOld(deb
     (curText, curMarkup)
   }
 
-  def textInitially: String = post.text
-  def where: Option[String] = post.where
-  def edits: List[Patch] = page.editsFor(post.id)
+  def textInitially: String = payload.text
+  def where: Option[String] = payload.where
+  def edits: List[Patch] = page.editsFor(id)
 
   lazy val (
       editsDeletedDescTime: List[Patch],
@@ -206,21 +234,23 @@ class Post(debate: Debate, val post: CreatePostAction) extends PostActionOld(deb
   }
 
 
-  private lazy val _reviewsDescTime: List[MaybeApproval] = {
+  private lazy val _reviewsDescTime: List[PostActionOld with MaybeApproval] = {
     // (If a ReviewPostAction.approval.isEmpty, this Post was rejected.
     // An Edit.approval or EditApp.approval being empty, however,
     // means only that this Post has not yet been reviewed — so the Edit
     // or EditApp is simply ignored.)
-    var explicitReviews = page.explicitReviewsOf(id).sortBy(-_.ctime.getTime)
-    var implicitApprovals = List[MaybeApproval]()
-    if (post.approval.isDefined)
-      implicitApprovals ::= post
+    var explicitReviews = page.explicitReviewsOf(id).sortBy(-_.creationDati.getTime)
+    var implicitApprovals = List[PostActionOld with MaybeApproval]()
+    if (approval.isDefined)
+      implicitApprovals ::= this
     for (edit <- edits) {
-      if (edit.edit.approval.isDefined)
-        implicitApprovals ::= edit.edit
+      if (edit.approval.isDefined)
+        implicitApprovals ::= edit
       for (editApp <- page.editAppsByEdit(edit.id)) {
+        // Ought to reuse PostActionsWrapper's wrapped actionDto:s rather than
+        // creating new objects here.
         if (editApp.approval.isDefined)
-          implicitApprovals ::= editApp
+          implicitApprovals ::= new ApplyPatchAction(page, editApp)
         for (editAppReview <- page.explicitReviewsOf(editApp)) {
           explicitReviews ::= editAppReview
         }
@@ -246,7 +276,7 @@ class Post(debate: Debate, val post: CreatePostAction) extends PostActionOld(deb
     // for (deletion <- page.deletionsFor(action)) ...
 
     val allReviews = explicitReviews ::: implicitApprovals
-    allReviews.sortBy(- _.ctime.getTime)
+    allReviews.sortBy(- _.creationDati.getTime)
   }
 
 
@@ -255,19 +285,19 @@ class Post(debate: Debate, val post: CreatePostAction) extends PostActionOld(deb
    * this dati.
    */
   def lastAuthoritativeReviewDati: Option[ju.Date] =
-    lastAuthoritativeReview.map(_.ctime)
+    lastAuthoritativeReview.map(_.creationDati)
 
 
   def lastReviewDati: Option[ju.Date] =
-    _reviewsDescTime.headOption.map(_.ctime)
+    _reviewsDescTime.headOption.map(_.creationDati)
 
 
-  lazy val lastApproval: Option[MaybeApproval] = {
+  lazy val lastApproval: Option[PostActionOld with MaybeApproval] = {
     // A rejection cancels all earlier and contiguous preliminary auto
     // approvals, so loop through the reviews:
     var rejectionFound = false
     var reviewsLeft = _reviewsDescTime
-    var lastApproval: Option[MaybeApproval] = None
+    var lastApproval: Option[PostActionOld with MaybeApproval] = None
     while (reviewsLeft nonEmpty) {
       val review = reviewsLeft.head
       reviewsLeft = reviewsLeft.tail
@@ -289,13 +319,13 @@ class Post(debate: Debate, val post: CreatePostAction) extends PostActionOld(deb
    * (But not by any well behaved user, which the computer might have decided
    * to trust.)
    */
-  def lastAuthoritativeReview: Option[MaybeApproval] =
+  def lastAuthoritativeReview: Option[PostActionOld with MaybeApproval] =
     _reviewsDescTime.find(review =>
        review.approval != Some(Approval.Preliminary) &&
        review.approval != Some(Approval.WellBehavedUser))
 
 
-  def lastPermanentApproval: Option[MaybeApproval] =
+  def lastPermanentApproval: Option[PostActionOld with MaybeApproval] =
     _reviewsDescTime.find(review =>
         review.approval.isDefined &&
         review.approval != Some(Approval.Preliminary))
@@ -305,11 +335,11 @@ class Post(debate: Debate, val post: CreatePostAction) extends PostActionOld(deb
    * All actions that affected this Post and didn't happen after
    * this dati should be considered when rendering this Post.
    */
-  def lastApprovalDati: Option[ju.Date] = lastApproval.map(_.ctime)
+  def lastApprovalDati: Option[ju.Date] = lastApproval.map(_.creationDati)
 
 
   def lastManualApprovalDati: Option[ju.Date] =
-    _reviewsDescTime.find(_.approval == Some(Approval.Manual)).map(_.ctime)
+    _reviewsDescTime.find(_.approval == Some(Approval.Manual)).map(_.creationDati)
 
 
   def lastReviewWasApproval: Option[Boolean] =
@@ -372,12 +402,10 @@ class Post(debate: Debate, val post: CreatePostAction) extends PostActionOld(deb
     debate.repliesTo(id).length
 
 
-  def replies: List[Post] =
-    debate.repliesTo(id) map (new Post(page, _))
+  def replies: List[Post] = debate.repliesTo(id)
 
 
-  def siblingsAndMe: List[Post] =
-    debate.repliesTo(parentId) map (new Post(page, _))
+  def siblingsAndMe: List[Post] = debate.repliesTo(parentId)
 
 
   def isTreeCollapsed: Boolean =
@@ -402,7 +430,7 @@ class Post(debate: Debate, val post: CreatePostAction) extends PostActionOld(deb
 
 
   // COULD optimize this, do once for all flags.
-  lazy val flags = debate.flags.filter(_.postId == post.id)
+  lazy val flags = debate.flags.filter(_.postId == this.id)
 
 
   def flagsDescTime: List[Flag] = flags.sortBy(- _.ctime.getTime)
@@ -449,7 +477,8 @@ class Post(debate: Debate, val post: CreatePostAction) extends PostActionOld(deb
 
 
 
-class Patch(debate: Debate, val edit: Edit) extends PostActionOld(debate, edit) {
+class Patch(debate: Debate, val edit: Edit)
+  extends PostActionOld(debate, edit) with MaybeApproval {
 
   def post = debate.vipo(edit.postId)
   def post_! = debate.vipo_!(edit.postId)
@@ -458,6 +487,8 @@ class Patch(debate: Debate, val edit: Edit) extends PostActionOld(debate, edit) 
   def newMarkup = edit.newMarkup
 
   def isPending = !isApplied && !isDeleted
+
+  def approval = edit.approval
 
   private def _initiallyAutoApplied = edit.autoApplied
 
@@ -522,10 +553,17 @@ class Patch(debate: Debate, val edit: Edit) extends PostActionOld(debate, edit) 
 
 
 
-class Review(page: Debate, val review: ReviewPostAction) extends PostActionOld(page, review) {
+class ApplyPatchAction(page: Debate, val editApp: EditApp)
+  extends PostActionOld(page, editApp) with MaybeApproval {
+  def approval = editApp.approval
+}
+
+
+class Review(page: Debate, val review: ReviewPostAction)
+  extends PostActionOld(page, review) with MaybeApproval {
 
   def approval = review.approval
-  lazy val target: PostActionOld = page.getSmart(review.postId) getOrDie "DwE93UX7"
+  lazy val target: Post = page.getPost(review.postId) getOrDie "DwE93UX7"
 
 }
 
