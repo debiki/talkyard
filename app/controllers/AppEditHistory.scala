@@ -21,7 +21,7 @@ object AppEditHistory extends mvc.Controller {
         = PageGetAction(pathIn) { pageReq: PageGetRequest =>
 
     val page = pageReq.page_!
-    val post = page.vipo(postId) getOrElse
+    val post = page.getPost(postId) getOrElse
       throwForbidden("DwE9kIJ4", "Post "+ safed(postId) +" not found")
 
     val (mayEdit, mayEditReason) =
@@ -100,7 +100,7 @@ object AppEditHistory extends mvc.Controller {
       val editAffected = page.editsById.get(editId) getOrElse
         throwForbidden("DwE03k23", "Edit not found: "+ safed(editId))
 
-      val postAffected = page.vipo(editAffected.postId) getOrElse
+      val postAffected = page.getPost(editAffected.postId) getOrElse
         throwForbidden("DwE82U13k7", "Post not found: "+
            safed(editAffected.postId))
 

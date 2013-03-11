@@ -414,13 +414,13 @@ object AppEdit extends mvc.Controller {
         pageReq: PageRequest[_], postId: String, authorIds: AuthorIds)
         : (Post, Option[PostActionDto[PAP.CreatePost]]) = {
 
-    val vipoOpt: Option[Post] = pageReq.page_!.vipo(postId)
+    val anyPost: Option[Post] = pageReq.page_!.getPost(postId)
 
     // The page title and template are created automatically
     // if they don't exist, when they are to be edited.
     val lazyCreateOpt: Option[PostActionDto[PAP.CreatePost]] = {
       // Usually, the post-to-be-edited already exists.
-      if (vipoOpt isDefined) {
+      if (anyPost isDefined) {
         None
       }
       // But create a title or template, lazily, if needed.
@@ -434,12 +434,12 @@ object AppEdit extends mvc.Controller {
       }
     }
 
-    val vipo = vipoOpt.getOrElse(
+    val post = anyPost.getOrElse(
       lazyCreateOpt.map(new Post(pageReq.page_!, _)).getOrElse {
         throwNotFound("DwE3k2190", "Post not found: "+ safed(postId))
       })
 
-    (vipo, lazyCreateOpt)
+    (post, lazyCreateOpt)
   }
 
 

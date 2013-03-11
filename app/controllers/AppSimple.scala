@@ -58,7 +58,7 @@ object AppSimple extends mvc.Controller {
 
   def loadReplies =
     loadThreadsOrPosts { (page, postIds) =>
-      val posts = postIds map { postId => page.vipo_!(postId) }
+      val posts = postIds map { postId => page.getPost_!(postId) }
       val patchSpecs = posts.foldLeft(Nil: List[PostPatchSpec]) { (specs, post) =>
         post.replies.map(reply => PostPatchSpec(reply.id, wholeThread = true)) ::: specs
       }

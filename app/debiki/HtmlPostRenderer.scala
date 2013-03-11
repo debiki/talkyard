@@ -41,7 +41,7 @@ case class HtmlPostRenderer(
 
 
   def renderPost(postId: String, uncollapse: Boolean = false): RenderedPost = {
-    val post = page.vipo(postId) getOrElse
+    val post = page.getPost(postId) getOrElse
        assErr("DwE209X5", "post id "+ postId +" on page "+ page.id)
 
     if (post.isTreeDeleted) {
@@ -179,7 +179,7 @@ object HtmlPostRenderer {
         // perhaps only one single actual *user* has edited it. Cannot easily
         // compare users though, because IdentitySimple maps to no user!))
         val editorsCount =
-          editsApplied.map(edAp => page.vied_!(edAp.id).identity_!.id).
+          editsApplied.map(edAp => page.getPatch_!(edAp.id).identity_!.id).
           distinct.length
         lazy val editor =
           page.people.authorOf_!(page.editsById(lastEditApplied.get.id))

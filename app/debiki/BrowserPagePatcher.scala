@@ -54,11 +54,11 @@ object BrowserPagePatcher {
             logAndThrowInternalError(
               "DwE573R2", s"Post not found, id: $postId, page: ${page.id}")
           threadPatchesOnCurPage ::=
-            _jsonForThread(page.vipo_!(postId), serializedThread)
+            _jsonForThread(page.getPost_!(postId), serializedThread)
         }
         else {
           postPatchesOnCurPage ::=
-            jsonForPost(page.vipo_!(postId), request)
+            jsonForPost(page.getPost_!(postId), request)
         }
       }
 
@@ -131,7 +131,7 @@ object BrowserPagePatcher {
 
   private def _jsonForEditedPost(editId: String, page: Debate,
         request: DebikiRequest[_]): Map[String, JsValue] = {
-    val edit = page.vied_!(editId)
+    val edit = page.getPatch_!(editId)
 
     // Include HTML only if the edit was applied. (Otherwise I don't know
     // how to handle subsequent edits, since they would be based on an edit

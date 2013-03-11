@@ -324,7 +324,7 @@ case class HtmlPageSerializer(
 
 
   def renderSingleThread(postId: String): Option[SerializedSingleThread] = {
-    page.vipo(postId) map { post =>
+    page.getPost(postId) map { post =>
       val html = renderThreads(depth = post.depth, parentReplyBtn = Nil,
         posts = post::Nil, uncollapseFirst = true)
       assert(html.length == 1)

@@ -76,7 +76,7 @@ trait ConfigValueDao {
     loadPageAnyTenant(sitePageId) match {
       case None => return Map.empty
       case Some(page) =>
-        val configText = page.vipo(configPostId) match {
+        val configText = page.getPost(configPostId) match {
           case None => return Map.empty
           case Some(post) => post.text
         }
