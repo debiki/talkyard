@@ -362,10 +362,10 @@ class ChargingTenantDbDao(
 
   // ----- Tenant
 
-  def siteId: String = _spi.tenantId
+  def siteId: String = _spi.siteId
 
   //@deprecated("use siteId instead", "now") -- gah, terrible many warnings!
-  def tenantId: String = _spi.tenantId
+  def tenantId: String = _spi.siteId
 
   def loadTenant(): Tenant = {
     _chargeForOneReadReq()
