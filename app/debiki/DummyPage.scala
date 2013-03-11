@@ -70,28 +70,38 @@ object DummyPage {
     List(DummyAuthorLogin), List(DummyAuthorIdty), List(DummyAuthorUser))
 
 
-  private def dummyTitle(texts: Texts, absentSinceUnapproved: Boolean) = CreatePostAction(
+  private def dummyTitle(texts: Texts, absentSinceUnapproved: Boolean) = PostActionDto(
     id = Page.TitleId,
-    parent = Page.TitleId,
-    ctime = new ju.Date,
+    postId = Page.TitleId,
+    creationDati = new ju.Date,
     loginId = DummyAuthorLogin.id,
     userId = DummyAuthorUser.id,
     newIp = None,
-    text = if (absentSinceUnapproved) texts.unapprovedTitleText else texts.noTitleText,
-    markup = Markup.DefaultForPageTitle.id,
-    approval = Some(Approval.Preliminary))
+    payload = PostActionPayload.CreatePost(
+      parentPostId = Page.TitleId,
+      text = if (absentSinceUnapproved) texts.unapprovedTitleText else texts.noTitleText,
+      markup = Markup.DefaultForPageTitle.id,
+      approval = Some(Approval.Preliminary)))
 
 
-  private def dummyBody(texts: Texts, absentSinceUnapproved: Boolean, pageRole: PageRole) =
-    dummyTitle(texts, false).copy(
-      id = Page.BodyId, parent = Page.BodyId,
-      text = if (absentSinceUnapproved) texts.unapprovedBodyText else texts.noBodyText,
-      markup = Markup.defaultForPageBody(pageRole).id)
+  private def dummyBody(texts: Texts, absentSinceUnapproved: Boolean, pageRole: PageRole) = {
+    val prototype = dummyTitle(texts, false)
+    prototype.copy(id = Page.BodyId, postId = Page.BodyId,
+      payload = prototype.payload.copy(
+        parentPostId = Page.BodyId,
+        text = if (absentSinceUnapproved) texts.unapprovedBodyText else texts.noBodyText,
+        markup = Markup.defaultForPageBody(pageRole).id))
+  }
 
 
-  private def dummyConfig(texts: Texts) = dummyTitle(texts, false).copy(
-    id = Page.ConfigPostId, parent = Page.ConfigPostId, text = texts.configText,
-    markup = Markup.Code.id)
+  private def dummyConfig(texts: Texts) = {
+    val prototype = dummyTitle(texts, false)
+    prototype.copy(id = Page.ConfigPostId, postId = Page.ConfigPostId,
+      payload = prototype.payload.copy(
+        parentPostId = Page.ConfigPostId,
+        text = texts.configText,
+        markup = Markup.Code.id))
+  }
 
 
   private abstract class Texts {

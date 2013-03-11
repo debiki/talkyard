@@ -11,6 +11,7 @@ import org.specs2.mutable._
 import org.specs2.mock._
 import Prelude._
 import play.api.mvc.Request
+import com.debiki.v0.{PostActionPayload => PAP}
 
 
 class AutoApproverSpec extends Specification with Mockito {
@@ -105,12 +106,12 @@ class AutoApproverSpec extends Specification with Mockito {
   val loginId = "101"
 
   val body =
-    CreatePostAction(id = Page.BodyId, parent = Page.BodyId, ctime = startDati,
-      loginId = loginId, userId = "?", newIp = None, text = "täxt-tåxt",
-      markup = "", approval = None, where = None)
+    PostActionDto.forNewPageBody(creationDati = startDati,
+      loginId = loginId, userId = "?", text = "täxt-tåxt",
+      pageRole = PageRole.Generic, approval = None)
 
-  val replyA = body.copy(id = "2", parent = body.id)
-  val replyB = body.copy(id = "3", parent = body.id)
+  val replyA = PostActionDto.copyCreatePost(body, id = "2", parentPostId = body.id)
+  val replyB = PostActionDto.copyCreatePost(body, id = "3", parentPostId = body.id)
 
   val (guestLogin, openidLogin) = {
     val login = Login(id = loginId, ip = Ip, prevLoginId = None,
@@ -119,7 +120,7 @@ class AutoApproverSpec extends Specification with Mockito {
       login.copy(identityId = openidIdty.id))
   }
 
-  def newDaoMock(actions: List[CreatePostAction], login: Login) = {
+  def newDaoMock(actions: List[PostActionDto[PAP.CreatePost]], login: Login) = {
 
     val viacs: Seq[PostActionOld] = {
       val page = Debate("pageid") ++ actions

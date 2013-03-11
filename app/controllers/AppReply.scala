@@ -4,6 +4,7 @@
 
 package controllers
 
+import com.debiki.v0
 import com.debiki.v0._
 import debiki._
 import debiki.DebikiHttp._
@@ -15,6 +16,7 @@ import PageActions._
 import Prelude._
 import Utils.{OkHtml, OkHtmlBody}
 import BrowserPagePatcher.PostPatchSpec
+import v0.{PostActionPayload => PAP}
 
 
 object AppReply extends mvc.Controller {
@@ -41,7 +43,7 @@ object AppReply extends mvc.Controller {
     if (!pageReq.pageVersion.isLatest)
       throwBadReq("DwE72XS8", "Can only reply to latest page version")
 
-    if (pageReq.page_!.post(postId) isEmpty)
+    if (pageReq.page_!.getPost(postId) isEmpty)
       throwBadReq("DwEe8HD36", "Cannot reply to post "+ safed(postId) +
          "; it does not exist")
 
@@ -51,12 +53,13 @@ object AppReply extends mvc.Controller {
 
     val approval = AutoApprover.perhapsApprove(pageReq)
 
-    val postNoId = CreatePostAction(id = "?", parent = postId, ctime = pageReq.ctime,
+    val postNoId = PostActionDto(id = "?", postId = "?", creationDati = pageReq.ctime,
       loginId = pageReq.loginId_!, userId = pageReq.user_!.id,
-      newIp = pageReq.newIp, text = text,
-      markup = Markup.DefaultForComments.id, where = whereOpt, approval = approval)
+      newIp = pageReq.newIp, payload = PAP.CreatePost(
+        parentPostId = postId, text = text, markup = Markup.DefaultForComments.id,
+        where = whereOpt, approval = approval))
 
-    val (pageWithNewPost, List(postWithId: CreatePostAction)) =
+    val (pageWithNewPost, List(postWithId: PostActionDto[PAP.CreatePost])) =
       pageReq.dao.savePageActionsGenNotfs(pageReq, postNoId::Nil)
 
     if (pageReq.isAjax) {
@@ -69,15 +72,15 @@ object AppReply extends mvc.Controller {
   }
 
 
-  private def _showHtmlResultPage(pageReq: PageRequest[_], post: CreatePostAction)
-        : PlainResult = {
+  private def _showHtmlResultPage(
+        pageReq: PageRequest[_], post: PostActionDto[PAP.CreatePost]): PlainResult = {
     val nextPageUrl =
       Utils.queryStringAndHashToView(pageReq.pageRoot, pageReq.pageVersion,
-         post.approval.map(_ => post.id),
+         post.payload.approval.map(_ => post.id),
          // Write a '?' even if query string is empty, so '?reply' is removed.
          forceQuery = true)
     OkHtmlBody(
-      if (post.approval.isDefined)
+      if (post.payload.approval.isDefined)
         <p>Comment saved.</p>
         <p><a href={nextPageUrl}>Okay, let me view it</a></p>
       else

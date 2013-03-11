@@ -4,6 +4,7 @@
 
 package controllers
 
+import com.debiki.v0
 import com.debiki.v0._
 import debiki._
 import debiki.DebikiHttp._
@@ -16,6 +17,7 @@ import scala.collection.{mutable => mut}
 import PageActions._
 import ApiActions._
 import Prelude._
+import v0.{PostActionPayload => PAP}
 import Utils.{OkHtml, Passhasher}
 
 
@@ -410,13 +412,13 @@ object AppEdit extends mvc.Controller {
 
   private def _getOrCreatePostToEdit(
         pageReq: PageRequest[_], postId: String, authorIds: AuthorIds)
-        : (Post, Option[CreatePostAction]) = {
+        : (Post, Option[PostActionDto[PAP.CreatePost]]) = {
 
     val vipoOpt: Option[Post] = pageReq.page_!.vipo(postId)
 
     // The page title and template are created automatically
     // if they don't exist, when they are to be edited.
-    val lazyCreateOpt: Option[CreatePostAction] = {
+    val lazyCreateOpt: Option[PostActionDto[PAP.CreatePost]] = {
       // Usually, the post-to-be-edited already exists.
       if (vipoOpt isDefined) {
         None
@@ -442,7 +444,8 @@ object AppEdit extends mvc.Controller {
 
 
   private def _createPostToEdit(
-        pageReq: PageRequest[_], postId: String, authorIds: AuthorIds): CreatePostAction = {
+        pageReq: PageRequest[_], postId: String, authorIds: AuthorIds)
+        : PostActionDto[PAP.CreatePost] = {
 
     val markup =
       if (postId == Page.ConfigPostId) Markup.Code
@@ -454,10 +457,12 @@ object AppEdit extends mvc.Controller {
     // Dupl knowledge! see AppCreatePage.handleForm.)
     // 2. The post will be auto approved implicitly, if the Edit is
     // auto approved.
-    CreatePostAction(id = postId, parent = postId, ctime = pageReq.ctime,
-      loginId = authorIds.loginId, userId = authorIds.userId,
-      newIp = pageReq.newIp, text = "",
-      markup = markup.id, where = None, approval = None)
+    PostActionDto(
+      id = postId, postId = postId, creationDati = pageReq.ctime,
+      loginId = authorIds.loginId, userId = authorIds.userId, newIp = pageReq.newIp,
+      payload = PAP.CreatePost(
+        parentPostId = postId, text = "",
+        markup = markup.id, where = None, approval = None))
   }
 
 }

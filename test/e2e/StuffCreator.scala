@@ -11,6 +11,7 @@ import java.{util => ju}
 import org.scalatest.Assertions
 import org.scalatest.selenium.WebBrowser
 import play.api.test.Helpers.testServerPort
+import com.debiki.v0.{PostActionPayload => PAP}
 
 
 /**
@@ -50,7 +51,7 @@ trait StuffCreator {
   /**
    * A loginGrant for a certain user that creates all stuff.
    */
-  private lazy val (loginGrant: LoginGrant, postTemplate: CreatePostAction) = {
+  private lazy val (loginGrant: LoginGrant, postTemplate: PostActionDto[PAP.CreatePost]) = {
 
     val login = Login(id = "?", prevLoginId = None, ip = "1.1.1.1",
       date = new ju.Date, identityId = "?i")
@@ -61,10 +62,11 @@ trait StuffCreator {
     val loginReq = LoginRequest(login, identitySimple)
     val loginGrant = firstSiteDao.saveLogin(loginReq)
 
-    val postTemplate = CreatePostAction(id = "?", parent = Page.BodyId, ctime = new ju.Date,
+    val postTemplate = PostActionDto.forNewPost(
+      id = "?", parentPostId = Page.BodyId, creationDati = new ju.Date,
       loginId = loginGrant.login.id, userId = loginGrant.user.id,
       newIp = None, text = "", markup = "para",
-      where = None, approval = Some(Approval.AuthoritativeUser))
+      approval = Some(Approval.AuthoritativeUser))
 
     (loginGrant, postTemplate)
   }
@@ -110,10 +112,11 @@ trait StuffCreator {
 
 
   private def createCodePage(siteId: String, folder: String, slug: String, text: String) {
-    val body = postTemplate.copy(id = Page.BodyId, text = text, markup = Markup.Code.id)
+    val body = PostActionDto.copyCreatePost(postTemplate,
+      id = Page.BodyId, text = text, markup = Markup.Code.id)
     val pagePath = PagePath(
       firstSiteId, folder, pageId = None, showId = false, pageSlug = slug)
-    val page = Debate(guid = "?", posts = body::Nil)
+    val page = Debate(guid = "?", actionDtos = body::Nil)
     firstSiteDao.createPage(PageStuff.forNewPage(
       PageRole.Generic, pagePath, page, publishDirectly = true, author = loginGrant.user))
   }
@@ -128,17 +131,17 @@ trait StuffCreator {
         title: String,
         body: Option[String]): String = {
 
-    val titlePost = postTemplate.copy(
-      id = Page.TitleId, parent = Page.TitleId, text = title)
+    val titlePost = PostActionDto.copyCreatePost(postTemplate,
+      id = Page.TitleId, parentPostId = Page.TitleId, text = title)
 
     val bodyPost = body map { text =>
-      postTemplate.copy(id = Page.BodyId, text = text)
+      PostActionDto.copyCreatePost(postTemplate, id = Page.BodyId, text = text)
     }
 
     val pagePath = PagePath(
       firstSiteId, "/", pageId = None, showId = true, pageSlug = pageSlug)
 
-    val debateNoId = Debate(guid = "?", posts = titlePost :: bodyPost.toList)
+    val debateNoId = Debate(guid = "?", actionDtos = titlePost :: bodyPost.toList)
     val pageStuffNoPeople = firstSiteDao.createPage(PageStuff.forNewPage(
       pageRole, pagePath, debateNoId, publishDirectly = true, author = loginGrant.user))
 

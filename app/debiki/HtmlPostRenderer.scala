@@ -156,7 +156,7 @@ object HtmlPostRenderer {
     def page = post.debate
     val editsApplied: List[Patch] = post.editsAppliedDescTime
     val lastEditApplied = editsApplied.headOption
-    val author = page.people.authorOf_!(post.post)
+    val author = post.page.people.authorOf_!(post.actionDto)
 
     val (flagsTop: NodeSeq, flagsDetails: NodeSeq) =
       if (anyPageStats.isDefined) renderFlags(post)

@@ -63,7 +63,7 @@ trait PageSummaryDao {
       var numPostsDeleted = 0
       var lastDefiniteApprovalDati = Option(new ju.Date(0))
 
-      val posts: Seq[Post] = page.posts.map(post => page.vipo_!(post.id))
+      val posts: Seq[Post] = page.getAllPosts
       for (post <- posts) {
 
         // Update reply counts.
