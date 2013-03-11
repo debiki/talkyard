@@ -388,11 +388,11 @@ class Post(debate: Debate, theActionDto: PostActionDto[PostActionPayload.CreateP
   lazy val depth: Int = {
     var depth = 0
     var curId = id
-    var nextParent = page.vipo(parentId)
+    var nextParent = page.getPost(parentId)
     while (nextParent.nonEmpty && nextParent.get.id != curId) {
       depth += 1
       curId = nextParent.get.id
-      nextParent = page.vipo(nextParent.get.parentId) //nextParent.parent
+      nextParent = page.getPost(nextParent.get.parentId)
     }
     depth
   }
@@ -480,8 +480,8 @@ class Post(debate: Debate, theActionDto: PostActionDto[PostActionPayload.CreateP
 class Patch(debate: Debate, val edit: Edit)
   extends PostActionOld(debate, edit) with MaybeApproval {
 
-  def post = debate.vipo(edit.postId)
-  def post_! = debate.vipo_!(edit.postId)
+  def post = debate.getPost(edit.postId)
+  def post_! = debate.getPost_!(edit.postId)
 
   def patchText = edit.text
   def newMarkup = edit.newMarkup

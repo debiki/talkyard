@@ -346,18 +346,18 @@ case class Debate (
   def idd = guidd
   def pageId = id  // when/if I rename Debate to PageActions.
 
-  def body: Option[Post] = vipo(Page.BodyId)
+  def body: Option[Post] = getPost(Page.BodyId)
 
-  def body_! = vipo_!(Page.BodyId)
+  def body_! = getPost(Page.BodyId) getOrDie "DwE30XF5"
 
-  def bodyText: Option[String] = vipo(Page.BodyId).map(_.text)
+  def bodyText: Option[String] = body.map(_.text)
 
 
-  def title_! = vipo_!(Page.TitleId)
+  def title_! = getPost(Page.TitleId) getOrDie "DwE72RP3"
 
   /** The page title if any. */
   def title = titlePost // COULD remove `titlePost`
-  def titlePost: Option[Post] = vipo(Page.TitleId)
+  def titlePost: Option[Post] = getPost(Page.TitleId)
 
   /** The page title, as plain text, but the empty string is changed to None. */
   def titleText: Option[String] = titlePost.map(_.text).filter(_.nonEmpty)
@@ -366,7 +366,7 @@ case class Debate (
   //def titleXml: Option[xml.Node] = body.flatMap(_.titleXml)
 
   /** A Post with template engine source code, for the whole page. */
-  def pageConfigPost: Option[Post] = vipo(Page.ConfigPostId)
+  def pageConfigPost: Option[Post] = getPost(Page.ConfigPostId)
 
 
   // -------- Ratings
@@ -400,11 +400,9 @@ case class Debate (
 
   def postCount = getAllPosts.length
 
-  def vipo_!(postId: String): Post =
+  def getPost_!(postId: String): Post =
     getPost(postId).getOrElse(runErr(
-      "DwE3kR49", "Post not found: "+ safed(postId)))
-
-  def vipo(postId: String): Option[Post] = getPost(postId)
+      "DwE3kR49", s"Post `$postId' not found on page `$id'"))
 
   def postsByUser(withId: String): Seq[Post] = {
     getAllPosts.filter(_.userId == withId)
@@ -457,17 +455,18 @@ case class Debate (
 
   // -------- Edits
 
-  def vied_!(editId: String): Patch =
-    vied(editId).getOrElse(assErr("DwE03ke1"))
+  def getPatch_!(editId: String): Patch =
+    getPatch(editId).getOrElse(assErr(
+      "DwE03kE1", s"Edit id `$editId' not found on page `$id'"))
 
-  def vied(editId: String): Option[Patch] =
+  def getPatch(editId: String): Option[Patch] =
     editsById.get(editId).map(new Patch(this, _))
 
   lazy val editsById: imm.Map[String, Edit] = {
     val m = edits.groupBy(_.id)
     m.mapValues(list => {
       runErrIf3(list.tail.nonEmpty,
-        "DwE9ksE53", "Two ore more Edit:s with this id: "+ list.head.id)
+        "DwE9ksE53", s"Two ore more Edit:s with id `${list.head.id}' on page `$id'")
       list.head
     })
   }
@@ -660,13 +659,13 @@ case class Debate (
       val (actionsApproved, actionsUnapproved) = actionDtos.partition(actionDto =>
         actionDto.payload match {
           case _: PAP.CreatePost =>
-            val post = getPost(actionDto.id) getOrDie "Dw87R3"
+            val post = getPost_!(actionDto.id)
             post.lastApprovalDati.isDefined
           case _ => true
         })
 
       val (editsApproved, editsUnapproved) = edits partition { edit =>
-        val post = getPost(edit.postId) getOrDie "Dw6BJ8"
+        val post = getPost_!(edit.postId)
         post.lastApprovalDati match {
           case None => false
           case Some(approvalDati) => edit.ctime.getTime <= approvalDati.getTime
@@ -675,7 +674,7 @@ case class Debate (
 
       val (editAppsApproved, editAppsUnapproved) = editApps partition { edApp =>
         val edit = editsById(edApp.editId)
-        val post = vipo_!(edit.postId)
+        val post = getPost_!(edit.postId)
         post.lastApprovalDati match {
           case None => false
           case Some(approvalDati) => edApp.ctime.getTime <= approvalDati.getTime
