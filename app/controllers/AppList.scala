@@ -196,7 +196,7 @@ object AppList extends mvc.Controller {
     var data = Map[String, JsValue](
       "id" -> JsString(action.id),
       "pageId" -> JsString(action.page.id),
-      "type" -> JsString(classNameOf(action.action)),
+      "type" -> JsString(classNameOf(action)),
       "userId" -> JsString(action.user_!.id),
       "idtyId" -> JsString(action.identity_!.id),
       "loginId" -> JsString(action.loginId),
