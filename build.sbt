@@ -4,12 +4,11 @@ organization := "com.debiki"
 
 version := "0.0.2-SNAPSHOT"
 
-scalaVersion := "2.10.0-RC1"
+scalaVersion := "2.10.0"
 
 libraryDependencies ++= Seq(
   "junit" % "junit" % "4.7",
-  //"org.specs2" %% "specs2" % "1.12.2"  —> unresolved dependency: //"org.specs2#specs2_2.10;1.12.2: not found"
-  "org.specs2" % "specs2_2.10.0-RC1" % "1.12.2"
+  "org.specs2" %% "specs2" % "1.14"
 )
 
 // See: https://groups.google.com/forum/?fromgroups=#!topic/simple-build-tool/bkF1IDZj4L0
