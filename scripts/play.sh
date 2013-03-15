@@ -1,4 +1,4 @@
 #!/bin/bash
 
-/mnt/data/dev/play/kajmagnus79/play $@
+/mnt/data/dev/play/github/play $@
 
