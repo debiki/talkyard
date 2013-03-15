@@ -9,6 +9,7 @@ package com.debiki.v0
 import org.specs2.mutable._
 import Prelude._
 import java.{util => ju}
+import PostActionDto.copyCreatePost
 
 
 /**
@@ -37,10 +38,10 @@ trait PageTestValues {
         approval = None))
 
   val bodySkeletonAutoApproved =
-    PostActionDto.copy(bodySkeleton, approval = Some(Approval.WellBehavedUser))
+    copyCreatePost(bodySkeleton, approval = Some(Approval.WellBehavedUser))
 
   val bodySkeletonPrelApproved =
-    PostActionDto.copy(bodySkeleton, approval = Some(Approval.Preliminary))
+    copyCreatePost(bodySkeleton, approval = Some(Approval.Preliminary))
 
   val bodyApprovalSkeleton =
     ReviewPostAction("11", postId = bodySkeleton.id, loginId = "111", userId = "?", newIp = None,

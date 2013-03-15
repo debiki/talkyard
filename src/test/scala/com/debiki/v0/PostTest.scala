@@ -3,8 +3,9 @@
 package com.debiki.v0
 
 import org.specs2.mutable._
-import Prelude._
 import java.{util => ju}
+import PostActionDto.copyCreatePost
+import Prelude._
 
 
 object PostTestValues extends PostTestValues
@@ -23,9 +24,9 @@ trait PostTestValues {
         markup = "",
         approval = None))
 
-  val rawBody = PostActionDto.copy(postSkeleton, id = Page.BodyId, parentPostId = Page.BodyId)
-  val rawReply_a = PostActionDto.copy(postSkeleton, id = "a", parentPostId = rawBody.id)
-  val rawReply_b = PostActionDto.copy(postSkeleton, id = "b", parentPostId = rawBody.id)
+  val rawBody = copyCreatePost(postSkeleton, id = Page.BodyId, parentPostId = Page.BodyId)
+  val rawReply_a = copyCreatePost(postSkeleton, id = "a", parentPostId = rawBody.id)
+  val rawReply_b = copyCreatePost(postSkeleton, id = "b", parentPostId = rawBody.id)
 
   val EmptyPage = Debate("a")
   val PageWithBody = EmptyPage + rawBody
@@ -42,11 +43,11 @@ class PostTest extends Specification with PostTestValues {
 
     "find its replies" >> {
       "when there are none" >> {
-        PageWithBody.vipo_!(rawBody.id).replies must beEmpty
+        PageWithBody.getPost_!(rawBody.id).replies must beEmpty
       }
 
       "when there is one" >> {
-        PageWithOneReply.vipo_!(rawBody.id).replies must beLike {
+        PageWithOneReply.getPost_!(rawBody.id).replies must beLike {
           case List(reply) =>
             reply.id must_== rawReply_a.id
         }
@@ -54,7 +55,7 @@ class PostTest extends Specification with PostTestValues {
     }
 
     "find its siblings" >> {
-      PageWithTwoReplies.vipo_!(rawReply_a.id).siblingsAndMe must beLike {
+      PageWithTwoReplies.getPost_!(rawReply_a.id).siblingsAndMe must beLike {
         case List(sibling1, sibling2) =>
           (sibling1.id == rawReply_a.id || sibling1.id == rawReply_b.id
              ) must beTrue
@@ -65,12 +66,12 @@ class PostTest extends Specification with PostTestValues {
 
     "know its depth" >> {
       "when there is no parent" >> {
-        val post = PageWithOneReply.vipo_!(rawBody.id)
+        val post = PageWithOneReply.getPost_!(rawBody.id)
         post.depth must_== 0
       }
 
       "when there is one parent" >> {
-        val post = PageWithOneReply.vipo_!(rawReply_a.id)
+        val post = PageWithOneReply.getPost_!(rawReply_a.id)
         post.depth must_== 1
       }
     }
