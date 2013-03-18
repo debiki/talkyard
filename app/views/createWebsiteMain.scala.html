@@ -5,7 +5,7 @@
 
 @minMaxJs = @{ if (play.api.Play.isProd) "min.js" else "js" }
 
-@ngAppAttr = @{ if (ngAppName ne null) "ng-app='"+ ngAppName +"'" else ""}
+@ngAppAttr = @{ if (ngAppName ne null) s"""ng-app="$ngAppName"""" else ""}
 
 @ngScriptTags = @{
   if (ngAppName ne null) {
@@ -23,7 +23,7 @@
 
 
 <!doctype html>
-<html @ngAppAttr>
+<html @Html(ngAppAttr)>
 <head>
 <title>Create Website</title>
 <link href="http://fonts.googleapis.com/css?family=Bree+Serif" rel="stylesheet">
