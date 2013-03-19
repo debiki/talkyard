@@ -194,15 +194,24 @@ abstract class AdminDashboardSpec extends DebikiBrowserSpec {
       }
 
       "publish blog post" in {
-        //click on linkText(??? "Unpublished ..." ???)
-        // click on Publish link, does not yet exist
-        pending
+        click on partialLinkText("admin page")
+        eventually {
+          click on cssSelector(".page-role-BlogPost .row-selector input[type='checkbox']")
+        }
+        click on "publish-page-btn"
+        click on cssSelector("a[href='/blog/']")
+        switchToNewlyOpenedWindow()
+
+        /*
+        click on linkText("Unpublished Blog Post") — but link is dead
+        click on cssSelector(".publish-page")
+        eventually {
+          find(cssSelector(".unpublish-page")) must not be 'empty
+        } */
       }
 
       "find blog post title on blog main page" in {
-        //clickReturnToBlogMainPage()
-        //pageSource must include(BlogPostTitle)
-        pending
+        pageSource must include(BlogPostTitle)
       }
 
       "on dashboard page" - {
