@@ -17,12 +17,26 @@ function dwDashbar ($http)
         <img src="/-/img/logo-128x120.png">
       </a>
       <span ng-show="!viewsPageConfigPost">
+
         <a ng-show="pageRole == 'Blog'" class="create-blog-post">
           Write new blog post
         </a>
-        <a ng-show="pageRole == 'BlogPost'" class="return-to-blog">
-          Return to blog main page
-        </a>
+
+        <span ng-show="pageRole == 'BlogPost'">
+          <a class="return-to-blog">
+            Return to blog main page
+          </a>
+
+          <span ng-show="pageExists">
+            <a ng-show="pageStatus == 'Draft'" class="publish-page">
+              Publish this blog post
+            </a>
+            <a ng-show="pageStatus == 'Published'" class="unpublish-page">
+              Unpublish
+            </a>
+          </span>
+        </span>
+
         <a ng-show="pageExists" class="page-settings">
           View page settings
         </a>
@@ -56,9 +70,14 @@ function dwDashbar ($http)
       # This redirects to the blog main page.
       window.location = "/-#{scope.parentPageId}"
 
+    publishPageBtn = element.find('a.publish-page')
+    publishPageBtn.click !-> changePageMeta { newStatus: 'Published' }
+
+    unpublishPageBtn = element.find('a.unpublish-page')
+    unpublishPageBtn.click !-> changePageMeta { newStatus: 'Draft' }
 
     # Warning: Dupl code. See `createThisPageUnlessExists` in debiki-forum.ls.
-    function createThisPageUnlessExists (onSuccess)
+    !function createThisPageUnlessExists (onSuccess)
       if scope.pageExists
         onSuccess!
         return
@@ -70,6 +89,15 @@ function dwDashbar ($http)
             d.i.forEachOpenerCall 'onOpenedPageSavedCallbacks', [pageMeta]
             onSuccess!
 
+    !function changePageMeta ({ newStatus })
+      pageMeta = thisPageMeta scope
+      $http.post(
+          '/-/change-page-meta',
+          [{ pageId: pageMeta.pageId, newStatus }])
+        .success !->
+          scope.pageStatus = newStatus
+        .error !->
+          alert 'Error changing page meta [error DwE57KR21]'
 
 
 !function viewPageSettings
