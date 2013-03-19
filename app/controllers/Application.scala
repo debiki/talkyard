@@ -261,7 +261,7 @@ object Application extends mvc.Controller {
     else
       Ok(views.html.adminPage(apiReq.host).body) as HTML withCookies (
           mvc.Cookie(
-            DebikiSecurity.AngularJsXsrfCookieName, apiReq.xsrfToken.value,
+            DebikiSecurity.XsrfCookieName, apiReq.xsrfToken.value,
             httpOnly = false))
   }
 

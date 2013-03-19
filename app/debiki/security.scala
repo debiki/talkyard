@@ -11,6 +11,7 @@ import java.{util => ju, io => jio}
 import play.api.mvc.Cookie
 import play.api.Logger
 import scala.xml.{Text, Node, NodeSeq}
+import DebikiSecurity._
 
 
 object DebikiSecurity {
@@ -38,7 +39,7 @@ object DebikiSecurity {
 
     // On GET requests, simply accept the value of the xsrf cookie.
     // (On POST requests, however, we check the xsrf form input value)
-    val xsrfCookieValOpt = urlDecodeCookie("dwCoXsrf", request)
+    val xsrfCookieValOpt = urlDecodeCookie(XsrfCookieName, request)
 
     val sidXsrfNewCookies: (SidStatus, XsrfOk, List[Cookie]) =
       if (request.method == "GET") {
@@ -59,7 +60,7 @@ object DebikiSecurity {
           }
           else {
             val newXsrfOk = Xsrf.create()
-            val cookie = urlEncodeCookie("dwCoXsrf", newXsrfOk.value)
+            val cookie = urlEncodeCookie(XsrfCookieName, newXsrfOk.value)
             (newXsrfOk, List(cookie))
           }
 
@@ -97,7 +98,8 @@ object DebikiSecurity {
             // (If Javascript is enabled, debiki.js should detect logins
             // in other browser tabs, and then check the new SID cookie and
             // refresh XSRF tokens in any <form>s.)
-            val newXsrfCookie = urlEncodeCookie("dwCoXsrf", Xsrf.create().value)
+            val newXsrfCookie =
+              urlEncodeCookie(XsrfCookieName, Xsrf.create().value)
 
             // If this request is indeed part of one of Mallory's XSRF attacks,
             // the cookie still won't be sent to Mallory's web page, so creating
@@ -145,10 +147,11 @@ object DebikiSecurity {
    */
   val AngularJsXsrfHeaderName = "X-XSRF-TOKEN"
 
-  /**
-   * AngularJS copies the value of this cookie to the HTTP header just above.
-   */
-  val AngularJsXsrfCookieName = "XSRF-TOKEN"
+  /** Don't rename. Is used by AngularJS: AngularJS copies the value of
+    * this cookie to the HTTP header just above.
+    * See: http://docs.angularjs.org/api/ng.$http, search for "XSRF-TOKEN".
+    */
+  val XsrfCookieName = "XSRF-TOKEN"
 }
 
 
@@ -206,7 +209,7 @@ object Xsrf {
     val sidOk = Sid.create(loginId, userId, displayName)
     val xsrfOk = create()
     val sidCookie = urlEncodeCookie("dwCoSid", sidOk.value)
-    val xsrfCookie = urlEncodeCookie("dwCoXsrf", xsrfOk.value)
+    val xsrfCookie = urlEncodeCookie(XsrfCookieName, xsrfOk.value)
     (sidOk, xsrfOk, sidCookie::xsrfCookie::Nil)
   }
 }

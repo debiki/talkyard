@@ -184,7 +184,7 @@ function configureAjaxRequests() {
       // (that happens e.g. if I change certain server side XSRF code, or
       // perhaps I'll some day decide that XSRF tokens will be valid for
       // one month only).
-      var token = $.cookie('dwCoXsrf');
+      var token = $.cookie('XSRF-TOKEN');
       $('input.dw-fi-xsrf').attr('value', token);
     }
   });
