@@ -54,14 +54,16 @@ $.fn.dwPageTitleText = function() {
 
 
 d.i.parsePasshashInPageUrl = function() {
-  return location.toString().match(
-      /http.*\?view-new-page=.*&passhash=([a-zA-Z0-9_-]+)/)[1];
+  var matches = location.toString().match(
+      /http.*\?view-new-page=.*&passhash=([a-zA-Z0-9_-]+)/);
+  return matches && matches.length == 2 ? matches[1] : undefined;
 };
 
 
 d.i.parseApprovalInPageUrl = function() {
-  return location.toString().match(
-      /http.*\?view-new-page=.*&newPageApproval=([a-zA-Z]+)/)[1];
+  var matches = location.toString().match(
+      /http.*\?view-new-page=.*&newPageApproval=([a-zA-Z]+)/);
+  return matches && matches.length == 2 ? matches[1] : undefined;
 };
 
 
