@@ -84,6 +84,7 @@ object ApplicationBuild extends Build {
 
   def mainSettings = List(
     compileRhinoTask := { "make compile_javascript"! },
+    Keys.fork in Test := false, // or cannot place breakpoints in test suites
     Keys.compile in Compile <<=
        (Keys.compile in Compile).dependsOn(compileRhinoTask),
     unmanagedClasspath in Compile <+= (baseDirectory) map { bd =>
