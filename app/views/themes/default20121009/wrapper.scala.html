@@ -13,14 +13,8 @@
   <meta name="keywords" content="@tpi.configValue("keywords")">
 
   @tpi.debikiStyles
-
-  <link rel='stylesheet' href='http://fonts.googleapis.com/css?family=Averia+Libre:400,700|Architects+Daughter' type='text/css'>
-  <link rel="stylesheet" href="//netdna.bootstrapcdn.com/twitter-bootstrap/2.1.1/css/bootstrap.min.css">
+  @Html(tpi.configValue("html-head-styles"))
   @tpi.stylesheetBundle("styles.css")
-  @* Should correspond to:
-  <link rel="stylesheet" href="http://www.debiki.com/themes/default-2012-10-09/theme.css">
-  <link rel="stylesheet" href="/themes/local/theme.css">
-  *@
 
   @tpi.debikiScripts
 
@@ -38,8 +32,7 @@
     });
   </script>
 
-  @Html(tpi.websiteConfigValue("html-head-tags-appended-site-wide"))
-  @Html(tpi.configValue("html-head-tags-appended"))
+  @Html(tpi.configValue("html-head-scripts"))
 </head>
 <body>
 

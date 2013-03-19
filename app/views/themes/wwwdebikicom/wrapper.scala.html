@@ -13,8 +13,7 @@
   <meta name="keywords" content="@tpi.configValue("keywords")">
 
   @tpi.debikiStyles
-
-  <link rel='stylesheet' href='http://fonts.googleapis.com/css?family=Bree+Serif'>
+  @Html(tpi.configValue("html-head-styles"))
   @tpi.stylesheetBundle("styles.css")
 
   @tpi.debikiScripts
