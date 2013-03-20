@@ -108,8 +108,10 @@ the name to lowercase.
       <label>
         <input type='checkbox' id='accepts-terms' name='acceptTermsInp' value='yes' required
                ng-model="acceptTerms">
-        I accept the <a href="@tpi.websiteConfigValue("new-site-terms-of-use")">Terms of Use</a>
-        and the <a href="@tpi.websiteConfigValue("new-site-privacy-policy")">Privacy Policy</a>.
+        I accept the <a href="@tpi.websiteConfigValue("new-site-terms-of-service")"
+            target="_blank">Terms of Service</a>
+        and the <a href="@tpi.websiteConfigValue("new-site-privacy-policy")"
+            target="_blank">Privacy Policy</a>.
       </label>
       </div>
 
