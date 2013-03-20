@@ -21,6 +21,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import Prelude._
 
 
+
 object Notifier {
 
   /**
@@ -33,12 +34,18 @@ object Notifier {
   def startNewActor(systemDao: SystemDao, tenantDaoFactory: TenantDaoFactory)
         : ActorRef = {
     val actorRef = Akka.system.actorOf(Props(
-       new Notifier(systemDao, tenantDaoFactory)), name = "NotifierActor")
+      new Notifier(systemDao, tenantDaoFactory)),
+      name = s"NotifierActor-$testInstanceCounter")
     Akka.system.scheduler.schedule(0 seconds, 20 seconds, actorRef, "SendNotfs")
+    testInstanceCounter += 1
     actorRef
   }
 
+  // Not thread safe; only needed in integration tests.
+  var testInstanceCounter = 1
+
 }
+
 
 
 /**

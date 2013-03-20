@@ -8,7 +8,7 @@ import com.debiki.v0._
 import com.debiki.v0.Prelude._
 import com.google.common.{cache => ggc}
 import com.google.common.{base => ggb}
-import java.{util => ju}
+import java.{util => ju, lang => jl}
 import java.util.{concurrent => juc}
 import play.api.libs.concurrent.Akka
 import play.api.Play.current
@@ -21,6 +21,7 @@ import resource.Resource
 
 class QuotaManager(
   val systemDao: SystemDao,
+  val freeDollarsToEachNewSite: Float,
   val unitTestTicker: Option[ggb.Ticker] = None) {
 
   def _dao = systemDao
@@ -62,7 +63,7 @@ class QuotaManager(
 
 
   val CacheFlusherRef = Akka.system.actorOf(akka.actor.Props(CacheFlusher),
-     name = "CacheFlusher")
+     name = s"CacheFlusher-${jl.System.identityHashCode(this)}")
 
 
   /**
@@ -173,7 +174,7 @@ class QuotaManager(
     val timeNow = new ju.Date
     val quotaStateInDb = stateByConsumer.get(key)
     val quotaState = quotaStateInDb.getOrElse(
-       newQuotaStateWithLimits(timeNow, key))
+       newQuotaStateWithLimits(timeNow, key, freeDollarsToEachNewSite))
     CacheFlusherRef ! CacheKeyAddition(key, timeNow)
     val state = _CachedQuotaState(mtime = timeNow, quotaStateOrig = quotaState,
        foundInDb = quotaStateInDb.nonEmpty)
@@ -396,12 +397,13 @@ object QuotaManager {
    *
    * COULD read values from database, perhaps id = 'default' rows? Fix later...
    */
-  def newQuotaStateWithLimits(time: ju.Date, consumer: QuotaConsumer)
+  def newQuotaStateWithLimits(
+        time: ju.Date, consumer: QuotaConsumer, freeDollarsToEachNewSite: Float)
         : QuotaState = {
-    val oneDollar = MicroQuotaPerDollar
-    val oneHundredth = oneDollar / 100
+    val freeForOneSite = (MicroQuotaPerDollar * freeDollarsToEachNewSite).toInt
+    val oneHundredth = freeForOneSite / 100
     val (freeQuota, freeloadPerDay) = consumer match {
-      case _: QuotaConsumer.Tenant => (oneDollar, 0)
+      case _: QuotaConsumer.Tenant => (freeForOneSite, 0)
       case _: QuotaConsumer.PerTenantIp => (0, oneHundredth)
       case _: QuotaConsumer.GlobalIp => (0, 2 * oneHundredth)
       case _: QuotaConsumer.Role => (0, oneHundredth)

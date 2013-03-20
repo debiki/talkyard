@@ -63,7 +63,6 @@ trait RichFreeSpec extends FreeSpec {
  * Runs the QuotaChargerSpec suite, in SBT:  test-only debiki.QuotaChargerSpecRunner
  */
 class QuotaChargerSpecRunner extends Suites(new QuotaChargerSpec {})
-  with RunningServerMixin
 
 
 
@@ -72,7 +71,15 @@ class QuotaChargerSpecRunner extends Suites(new QuotaChargerSpec {})
  */
 // From ScalaTest 2.0-M5 and above, use this: `@DoNotDiscover`
 // instead of `abstract`.
-abstract class QuotaChargerSpec extends RichFreeSpec with MustMatchers {
+abstract class QuotaChargerSpec extends RichFreeSpec with MustMatchers
+  with RunningServerMixin {
+
+
+  lazy val testDebiki = new Debiki {
+    // By default, the test configuration grants very much quota.
+    // Let's grant $1 only, so we'll actually run out of quota sometimes.
+    override def freeDollarsToEachNewSite = 1f
+  }
 
 
   "QuotaCharger can" - {
@@ -164,7 +171,7 @@ abstract class QuotaChargerSpec extends RichFreeSpec with MustMatchers {
           for (i <- 1 to numSites)
           yield {
             val site = createSite(fromIp = nextIp())
-            val guestDao = Debiki.tenantDao(site.id, fixIp)
+            val guestDao = testDebiki.tenantDao(site.id, fixIp)
             val guestLoginGrant = loginNewGuestUser("GuestTest", SiteAndIp(site.id, fixIp))
             (site, guestLoginGrant, guestDao)
           }
@@ -290,7 +297,7 @@ abstract class QuotaChargerSpec extends RichFreeSpec with MustMatchers {
 
 
   def tenantDao(siteAndIp: SiteAndIp, roleId: Option[String] = None): TenantDao =
-    Debiki.tenantDao(siteAndIp.siteId, ip = siteAndIp.ip, roleId = roleId)
+    testDebiki.tenantDao(siteAndIp.siteId, ip = siteAndIp.ip, roleId = roleId)
 
 
   def createSite(fromIp: String): Tenant =

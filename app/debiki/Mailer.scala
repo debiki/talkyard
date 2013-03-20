@@ -20,6 +20,7 @@ import play.api.Play.current
 import Prelude._
 
 
+
 object Mailer {
 
   /**
@@ -30,12 +31,17 @@ object Mailer {
    * (Also se Notifier.scala)
    */
   def startNewActor(daoFactory: TenantDaoFactory): ActorRef = {
-    val actorRef = Akka.system.actorOf(Props(
-       new Mailer(daoFactory)), name = "EmailActor")
+    val actorRef = Akka.system.actorOf(
+      Props(new Mailer(daoFactory)), name = s"MailerActor-$testInstanceCounter")
+    testInstanceCounter += 1
     actorRef
   }
 
+  // Not thread safe; only needed in integration tests.
+  private var testInstanceCounter = 1
+
 }
+
 
 
 /**

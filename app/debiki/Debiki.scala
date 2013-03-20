@@ -11,8 +11,10 @@ import play.api.Play.current
 import com.debiki.v0.QuotaConsumers
 
 
-object Debiki {
+object Debiki extends Debiki
 
+
+class Debiki {
 
   private val dbDaoFactory = new RelDbDaoFactory({
 
@@ -45,7 +47,11 @@ object Debiki {
   def systemDao = new CachingSystemDao(dbDaoFactory.systemDbDao)
 
 
-  private val quotaManager = new QuotaManager(systemDao)
+  // Don't run out of quota when running e2e tests.
+  protected def freeDollarsToEachNewSite: Float = if (Play.isTest) 1000.0f else 1.0f
+
+
+  private val quotaManager = new QuotaManager(systemDao, freeDollarsToEachNewSite)
   quotaManager.scheduleCleanups()
 
 
