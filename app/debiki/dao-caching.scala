@@ -65,7 +65,6 @@ class CachingTenantDao(tenantDbDao: ChargingTenantDbDao)
 
     // Who should know about all these uncache-this-on-change-
     // -of-that relationships? For now:
-    uncacheConfigMap(SitePageId(tenantId, page.id))
     uncachePageMeta(page.id)
     // ... Like so perhaps? Each module registers change listeners?
     firePageSaved(SitePageId(siteId = tenantId, pageId = page.id))

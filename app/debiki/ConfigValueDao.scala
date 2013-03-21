@@ -103,9 +103,18 @@ trait CachingConfigValueDao extends ConfigValueDao {
   self: TenantDao with CachingDao =>
 
 
+  onPageSaved { sitePageId =>
+    // We don't know if the page is a config page, and its body was edited, or
+    // if only the page's config post was edited. — Simply attempt to remove both
+    // config values from cache.
+    removeFromCache(configMapKey(sitePageId, Page.BodyId))
+    removeFromCache(configMapKey(sitePageId, Page.ConfigPostId))
+  }
+
+
   protected override def loadConfigMap(sitePageId: SitePageId, configPostId: String)
         : Map[String, Any] = {
-    val key = pageConfigMapKey(sitePageId)
+    val key = configMapKey(sitePageId, configPostId)
     val mapOpt = lookupInCache[Map[String, Any]](key)
     mapOpt match {
       case None =>
@@ -118,13 +127,12 @@ trait CachingConfigValueDao extends ConfigValueDao {
   }
 
 
-  def pageConfigMapKey(sitePageId: SitePageId) =
-    s"${sitePageId.pageId}|${sitePageId.siteId}|ConfigMap"
-
-
-  def uncacheConfigMap(sitePageId: SitePageId) {
-    removeFromCache(pageConfigMapKey(sitePageId))
-  }
+  // Include the config post id in the key, because otherwise when a config *page*
+  // is reloaded, that config page's own *configuration post* will be cached, and
+  // overwrite the cached value of the config map the page's body represents
+  // (since they'd share the same keys, were `configPostId` not included in the key).
+  private def configMapKey(sitePageId: SitePageId, configPostId: String) =
+    s"${sitePageId.pageId}|${sitePageId.siteId}|$configPostId|ConfigMap"
 
 }
 
