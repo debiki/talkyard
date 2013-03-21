@@ -55,8 +55,7 @@ object TemplateRenderer {
     //  </html> % curHtmlAttrs
 
     // For now, use the same template for all websites.
-    // In the future: Create more templates, and check which one to use
-    // in a `/.site.conf` file.
+    // In the future: Create more templates, and check which one to use in _site.conf.
     // In the distant future, implement my ideas in play-thoughts.txt.
 
 

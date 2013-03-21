@@ -69,7 +69,7 @@ class CachingTenantDao(tenantDbDao: ChargingTenantDbDao)
     // ... Like so perhaps? Each module registers change listeners?
     firePageSaved(SitePageId(siteId = tenantId, pageId = page.id))
 
-    // if (is _site-config.yaml || is any stylesheet or script)
+    // if (is _site.conf || is any stylesheet or script)
     // then clear all asset bundle related caches. For ... all websites, for now??
 
     // Would it be okay to simply overwrite the in mem cache with this

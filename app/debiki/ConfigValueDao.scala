@@ -91,9 +91,8 @@ trait ConfigValueDao {
    * The file starts with `_` because it should be accessible to admins only.
    *
    * COULD move to other module, but what module?
-   * COULD rename to _site.conf? And update database records.
    */
-  val websiteConfigPath = "_website-config.yaml"
+  val websiteConfigPath = "_site.conf"
 
 }
 

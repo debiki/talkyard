@@ -24,7 +24,7 @@ PrettyListItem =
 
   prettyTitle: ->
     if @title?.length => @title
-    else if @path == '/_website-config.yaml'
+    else if @path == '/_site.conf'
       "#{@path} (website configuration)"
     else switch @role
       | 'Code' => @path

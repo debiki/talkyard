@@ -102,7 +102,7 @@ object AssetBundleLoader {
 
     def die(errCode: String, details: String) =
       throw DebikiException(
-        errCode, s"There's an error in _website-config.yaml: $details")
+        errCode, s"There's an error in _site.conf: $details")
 
     val assetUrls =
       try { dao.loadWebsiteConfig().listAssetBundleUrls(bundleName) }

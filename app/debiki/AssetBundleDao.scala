@@ -88,11 +88,11 @@ trait CachingAssetBundleDao extends AssetBundleDao {
     // However right now I haven't implemented website versioning.
     // So there are race conditions. If many people modify asset definitions,
     // and move or edit asset files, at the same time, corrupt asset bundles
-    // might be generated, and they might last until the _site-config.yaml file
+    // might be generated, and they might last until the _site.conf file
     // is edited and saved (or until the server is restarted).
     //
     // Website versioning would include all files with a '.' in their name.
-    // E.g. site-config.yml, some-script.js, some-style.css, some-template.tpl.
+    // E.g. _site.conf, some-script.js, some-style.css, some-template.tpl.
     // But not blog posts or the homepage or other "normal pages".
 
     val bundleAndDeps = AssetBundleLoader.loadAssetBundle(nameNoSuffix, suffix, this)

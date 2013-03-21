@@ -251,7 +251,7 @@ object AppCreateWebsite extends mvc.Controller {
       PageMeta.forNewPage(
         PageRole.Code, SystemUser.User, actions, creationDati, publishDirectly = true),
       PagePath(newSiteDao.tenantId, folder = "/",
-        pageId = Some(pageId), showId = false, pageSlug = "_website-config.yaml"),
+        pageId = Some(pageId), showId = false, pageSlug = "_site.conf"),
       actions))
   }
 
