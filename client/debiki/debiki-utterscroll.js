@@ -366,6 +366,16 @@ debiki.Utterscroll = (function(options) {
       y: event.clientY - lastPos.y
     };
 
+    // Sometimes we should scroll in one direction only.
+    if ($elemToScroll[0] === window) {
+      // $(window).css('overflow-x') and '...-y' results in an error:
+      //  "Cannot read property 'defaultView' of undefined"
+      // therefore, always scroll, if window viewport too small.
+    } else {
+      if ($elemToScroll.css('overflow-y') === 'hidden') distNow.y = 0;
+      if ($elemToScroll.css('overflow-x') === 'hidden') distNow.x = 0;
+    }
+
     // Trigger onHasUtterscrolled(), if scrolled > min distance.
     if (!hasFiredHasUtterscrolled &&
         (distTotal.x * distTotal.x + distTotal.y * distTotal.y >
