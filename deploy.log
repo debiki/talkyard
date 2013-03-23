@@ -30,3 +30,4 @@
 2013-03-08 10:39 9591de0 Update debiki-dao-pgsql: Add done-at-prod notes only.
 2013-03-15 10:08 9f01f14 Update debiki-dao-pgsql: todo at prod comments.
 2013-03-18 11:54 e238a6d Fix /-/create-website/choose-name JS and CSS bugs.
+2013-03-21 08:48 e237447 Rename _website-config.yaml to _site.conf.
