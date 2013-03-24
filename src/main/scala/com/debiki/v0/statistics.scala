@@ -9,6 +9,23 @@ import Prelude._
 import Distributions._
 
 
+/* Related reading:
+ *
+ * 1. http://www.evanmiller.org/how-not-to-sort-by-average-rating.html
+ * — It's about sorting comments by the lower bound of a binomial proportion
+ * estimate of the "true" usefulness/fitness of the comment.
+ * (I came up with the methods here independently of that article.)
+ * (Already implemented.)
+ *
+ * And Reddit has taken the same approach:
+ *  http://blog.reddit.com/2009/10/reddits-new-comment-sorting-system.html?m=1
+ *
+ * 2. www.debiki.com/-9qb49-solving-problem-first-comment-gets-all-upvotes
+ * — that's an article I wrote about taking into account how many people have
+ * actually *read* a comment, not just up/down votes).
+ * (When will I have time to implement this?)
+ */
+
 case class ConfidenceInterval(
   observedMean: Float,
   lowerLimit: Float,
