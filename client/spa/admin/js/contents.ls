@@ -79,7 +79,8 @@ PrettyListItem =
 
 
   prettyStatusTooltip: ->
-    switch @status
+    if @isPrivate! => 'Only administrators can view the page.'
+    else switch @status
       | 'Published' => 'The page is visible to anyone.'
       | 'Draft' => '''
             Only the page's author and administrators can view the page.'''
