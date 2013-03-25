@@ -13,7 +13,8 @@
   <meta name="keywords" content="@tpi.configValue("keywords")">
 
   @tpi.debikiStyles
-  @Html(tpi.configValue("html-head-styles"))
+  @Html(tpi.configValue("html-styles"))
+  @Html(tpi.pageConfigValue("html-styles-this-page"))
   @tpi.stylesheetBundle("styles.css")
 
   @tpi.debikiScripts
@@ -32,7 +33,12 @@
     });
   </script>
 
-  @Html(tpi.configValue("html-head-scripts"))
+  @if(tpi.configValue("social-links").nonEmpty && tpi.configValue("social-links") != "none") {
+    @Html(tpi.configValue("social-scripts"))
+  }
+
+  @Html(tpi.configValue("html-scripts"))
+  @Html(tpi.pageConfigValue("html-scripts-this-page"))
 </head>
 <body>
 
@@ -41,13 +47,11 @@
 <div id='topbar'>
   <div class='container ui-helper-clearfix'>
     <a class='logo-slogan' href='/'>
-      <img src="@tpi.websiteConfigValue("logo-image")">
-      <span class='logo'>@Html(tpi.websiteConfigValue("logo-text"))</span>
-      <span class='slogan'>@Html(tpi.websiteConfigValue("slogan"))</span>
+      @Html(tpi.websiteConfigValue("html-logo-slogan"))
     </a>
     <span id='dw-loginout'>@tpi.loginLinkAndUserName</span>
     <nav id='site-nav' class='debiki-0-mark-current-site-section'>
-      @Html(tpi.websiteConfigValue("navigation-links"))
+      @Html(tpi.websiteConfigValue("html-navigation-links"))
     </nav>
   </div>
 </div>
@@ -72,10 +76,7 @@
 
 <footer>
   <div class='footer'>
-    <p><small class="copyright">@Html(tpi.configValue("copyright"))</small></p>
-    <p><small class="license">@Html(tpi.configValue("license"))</small></p>
-    <p><small class="user-contrib-license">@Html(tpi.configValue("user-contributions-license"))</small></p>
-    <p><small class="contact-link">@Html(tpi.configValue("contact-link"))</small></p>
+    @Html(tpi.configValue("html-footer"))
   </div>
 </footer>
 

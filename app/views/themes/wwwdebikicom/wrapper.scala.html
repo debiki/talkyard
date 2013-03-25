@@ -13,7 +13,8 @@
   <meta name="keywords" content="@tpi.configValue("keywords")">
 
   @tpi.debikiStyles
-  @Html(tpi.configValue("html-head-styles"))
+  @Html(tpi.configValue("html-styles"))
+  @Html(tpi.pageConfigValue("html-styles-this-page"))
   @tpi.stylesheetBundle("styles.css")
 
   @tpi.debikiScripts
@@ -36,8 +37,8 @@
     @Html(tpi.configValue("social-scripts"))
   }
 
-  @Html(tpi.websiteConfigValue("html-head-tags-appended-site-wide"))
-  @Html(tpi.configValue("html-head-tags-appended"))
+  @Html(tpi.configValue("html-scripts"))
+  @Html(tpi.pageConfigValue("html-scripts-this-page"))
 </head>
 <body>
 
@@ -46,14 +47,12 @@
 <div id='topbar'>
   <div class='container ui-helper-clearfix'>
     <a class='logo-slogan' href='/'>
-      <img src="@routes.Assets.at("/public", "img/logo-128x120.png")">
-      <span class='logo'>Debiki</span>
-      <span class='slogan'>— for the fruitful conversations</span>
+      @Html(tpi.websiteConfigValue("html-logo-slogan"))
     </a>
     <span id='dw-loginout'>@tpi.loginLinkAndUserName</span>
     <nav id='site-nav' class='debiki-0-mark-current-site-section'>
       @if(!isHomepage) { <a href="/">Home</a> }
-      @Html(tpi.websiteConfigValue("navigation-links"))
+      @Html(tpi.websiteConfigValue("html-navigation-links"))
     </nav>
   </div>
 </div>
@@ -78,18 +77,7 @@
 
 <footer>
   <div class='footer'>
-    <p><em>Debiki — for the fruitful conversations</em></p>
-    <p><small>Copyright &copy; 2012 Kaj Magnus Lindberg</small></p>
-    <p><small>Contact me <a href="/-0k7l6-contact">here</a></small></p>
-    <!-- <p><small>
-      <a href='http://www.debiki.se/terms/this-website/privacy-policy'>Privacy Policy</a>.
-      <a href='http://www.debiki.se/terms/this-website/terms-of-use'>Terms of Use</a>.
-      </small>
-    </p> -->
-    <p><small>User contributions licensed under
-      <a href="http://creativecommons.org/licenses/by/3.0/">CC BY 3.0</a>.
-    </small>
-    </p>
+    @Html(tpi.configValue("html-footer"))
   </div>
 </footer>
 
