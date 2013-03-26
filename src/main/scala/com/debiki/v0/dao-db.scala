@@ -96,7 +96,7 @@ abstract class TenantDbDao {
    * already have ids specified. (For example, the page body always
    * has id 1 so it'd be pre-assigned. But comments have random ids.)
    */
-  def createPage(page: PageStuff): PageStuff
+  def createPage(page: Page): Page
 
   def loadPageMeta(pageId: String): Option[PageMeta]
 
@@ -439,8 +439,8 @@ class ChargingTenantDbDao(
 
   // ----- Pages
 
-  def createPage(page: PageStuff): PageStuff = {
-    _chargeFor(ResUsg.forStoring(page = page.actions))
+  def createPage(page: Page): Page = {
+    _chargeFor(ResUsg.forStoring(page = page.parts))
     _spi.createPage(page)
   }
 

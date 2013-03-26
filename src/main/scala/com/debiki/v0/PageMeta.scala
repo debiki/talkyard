@@ -33,46 +33,45 @@ trait HasPagePath {
 
 
 
-object PageStuff {
+object Page {
 
-  def forNewPage(
+  def newPage(
         pageRole: PageRole,
         path: PagePath,
-        actions: PageParts,
+        parts: PageParts,
         publishDirectly: Boolean = false,
-        author: User): PageStuff = {
+        author: User): Page = {
     val meta = PageMeta.forNewPage(
       pageRole,
       author,
-      actions,
-      creationDati = actions.oldestDati getOrElse new ju.Date,
+      parts,
+      creationDati = parts.oldestDati getOrElse new ju.Date,
       publishDirectly = publishDirectly)
-    PageStuff(meta, path, actions)
+    Page(meta, path, parts)
   }
 
-  def forNewEmptyPage(pageRole: PageRole, path: PagePath, author: User) =
-    forNewPage(pageRole, path, PageParts(guid = "?"), author = author)
+  def newEmptyPage(pageRole: PageRole, path: PagePath, author: User) =
+    newPage(pageRole, path, PageParts(guid = "?"), author = author)
 
 }
 
 
-case class PageStuff( // COULD reneame to Page? if I rename Page to PageActions
-                          // (well, rather, if I rename Debate to PageActions)
+case class Page(
   meta: PageMeta,
   path: PagePath,
-  actions: PageParts) extends HasPageMeta with HasPagePath {
+  parts: PageParts) extends HasPageMeta with HasPagePath {
 
   if (path.pageId.isDefined) require(meta.pageId == path.pageId.get)
   else require(meta.pageId == "?")
 
-  require(meta.pageId == actions.id)
+  require(meta.pageId == parts.id)
 
   def hasIdAssigned = id != "?"
 
   def copyWithNewId(newId: String) =
-    PageStuff(
+    Page(
       meta.copy(pageId = newId), path = path.copy(pageId = Some(newId)),
-      actions = actions.copy(guid = newId))
+      parts = parts.copy(guid = newId))
 
 }
 
@@ -87,27 +86,27 @@ object PageMeta {
   def forNewPage(
         pageRole: PageRole,
         author: User,
-        actions: PageParts,
+        parts: PageParts,
         creationDati: ju.Date = new ju.Date,
         parentPageId: Option[String] = None,
         publishDirectly: Boolean = false) =
     PageMeta(
-      pageId = actions.pageId,
+      pageId = parts.pageId,
       pageRole = pageRole,
       creationDati = creationDati,
       modDati = creationDati,
       pubDati = if (publishDirectly) Some(creationDati) else None,
       parentPageId = parentPageId,
       pageExists = false,
-      cachedTitle = actions.titleText,
+      cachedTitle = parts.titleText,
       cachedAuthorDispName = author.displayName,
       cachedAuthorUserId = author.id,
-      cachedNumPosters = actions.numPosters,
-      cachedNumActions = actions.actionCount,
-      cachedNumPostsToReview = actions.numPostsToReview,
-      cachedNumPostsDeleted = actions.numPostsDeleted,
-      cachedNumRepliesVisible = actions.numRepliesVisible,
-      cachedLastVisiblePostDati = actions.lastVisiblePostDati,
+      cachedNumPosters = parts.numPosters,
+      cachedNumActions = parts.actionCount,
+      cachedNumPostsToReview = parts.numPostsToReview,
+      cachedNumPostsDeleted = parts.numPostsDeleted,
+      cachedNumRepliesVisible = parts.numRepliesVisible,
+      cachedLastVisiblePostDati = parts.lastVisiblePostDati,
       cachedNumChildPages = 0)
 
   def forChangedPage(originalMeta: PageMeta, changedPage: PageParts): PageMeta = {
