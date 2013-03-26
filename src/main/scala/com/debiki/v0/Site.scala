@@ -6,6 +6,8 @@
 package com.debiki.v0
 
 
+/** A website. (Should be renamed to Site.)
+  */
 case class Tenant(
   id: String,
   name: String,
@@ -23,6 +25,10 @@ case class Tenant(
 }
 
 
+
+/** A server name that replies to requests to a certain website.
+  * (Should be renamed to SiteHost.)
+  */
 object TenantHost {
   sealed abstract class HttpsInfo { def required = false }
 
