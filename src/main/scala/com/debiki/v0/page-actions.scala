@@ -5,7 +5,7 @@ package com.debiki.v0
 import java.{util => ju}
 import collection.{immutable => imm, mutable => mut}
 import Prelude._
-import Debate._
+import PageParts._
 import FlagReason.FlagReason
 import com.debiki.v0.{PostActionPayload => PAP}
 
@@ -76,15 +76,15 @@ object PostActionDto {
 
   def forNewTitle(text: String, creationDati: ju.Date,
                loginId: String, userId: String, approval: Option[Approval]) =
-    forNewPost(Page.TitleId, creationDati, loginId = loginId, userId = userId,
-      newIp = None, parentPostId = Page.TitleId, text = text,
+    forNewPost(PageParts.TitleId, creationDati, loginId = loginId, userId = userId,
+      newIp = None, parentPostId = PageParts.TitleId, text = text,
       markup = Markup.DefaultForPageTitle.id, approval = approval)
 
 
   def forNewPageBody(text: String, creationDati: ju.Date, pageRole: PageRole,
                   loginId: String, userId: String, approval: Option[Approval]) =
-    forNewPost(Page.BodyId, creationDati, loginId = loginId, userId = userId,
-      newIp = None, parentPostId = Page.BodyId, text = text,
+    forNewPost(PageParts.BodyId, creationDati, loginId = loginId, userId = userId,
+      newIp = None, parentPostId = PageParts.BodyId, text = text,
       markup = Markup.defaultForPageBody(pageRole).id, approval = approval)
 
 

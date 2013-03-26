@@ -5,7 +5,7 @@ package com.debiki.v0
 import java.{util => ju}
 import collection.{immutable => imm, mutable => mut}
 import Prelude._
-import Debate._
+import PageParts._
 import FlagReason.FlagReason
 import com.debiki.v0.{PostActionPayload => PAP}
 
@@ -13,7 +13,7 @@ import com.debiki.v0.{PostActionPayload => PAP}
 object PostActionOld {
 
   // Remove, when all PostActionDtoOld have been replaced with PostActionDto.
-  def apply(page: Debate, action: PostActionDtoOld): PostActionOld = action match {
+  def apply(page: PageParts, action: PostActionDtoOld): PostActionOld = action match {
     case a: PostActionDto[_] => page.getActionById(action.id) getOrDie "DwE20KF58"
     case a: PostActionDtoOld => new PostActionOld(page, a)
   }
@@ -23,7 +23,7 @@ object PostActionOld {
 
 
 class PostAction[P](  // [P <: PostActionPayload] causes compilation errors
-  page: Debate,
+  page: PageParts,
   val actionDto: PostActionDto[P]) extends PostActionOld(page, actionDto) {
 
   def postId = actionDto.postId
@@ -51,7 +51,7 @@ trait MaybeApproval {
 /** A virtual Action, that is, an Action plus some utility methods that
  *  look up other stuff in the relevant Debate.
  */
-class PostActionOld(val debate: Debate, val action: PostActionDtoOld) {
+class PostActionOld(val debate: PageParts, val action: PostActionDtoOld) {
   def page = debate // should rename `debate` to `page`
   def id: String = action.id
   def creationDati = action.ctime
@@ -105,7 +105,7 @@ class PostActionOld(val debate: Debate, val action: PostActionDtoOld) {
  *
  * Created via CreatePostAction:s.
  */
-class Post(debate: Debate, theActionDto: PostActionDto[PostActionPayload.CreatePost])
+class Post(debate: PageParts, theActionDto: PostActionDto[PostActionPayload.CreatePost])
   extends PostAction[PostActionPayload.CreatePost](debate, theActionDto)
   with MaybeApproval {
 
@@ -120,7 +120,7 @@ class Post(debate: Debate, theActionDto: PostActionDto[PostActionPayload.CreateP
 
 
   def isArticleOrConfig =
-    id == Page.TitleId || id == Page.BodyId || id == Page.ConfigPostId
+    id == PageParts.TitleId || id == PageParts.BodyId || id == PageParts.ConfigPostId
 
 
   def initiallyApproved: Boolean = {
@@ -477,7 +477,7 @@ class Post(debate: Debate, theActionDto: PostActionDto[PostActionPayload.CreateP
 
 
 
-class Patch(debate: Debate, val edit: Edit)
+class Patch(debate: PageParts, val edit: Edit)
   extends PostActionOld(debate, edit) with MaybeApproval {
 
   def post = debate.getPost(edit.postId)
@@ -553,13 +553,13 @@ class Patch(debate: Debate, val edit: Edit)
 
 
 
-class ApplyPatchAction(page: Debate, val editApp: EditApp)
+class ApplyPatchAction(page: PageParts, val editApp: EditApp)
   extends PostActionOld(page, editApp) with MaybeApproval {
   def approval = editApp.approval
 }
 
 
-class Review(page: Debate, val review: ReviewPostAction)
+class Review(page: PageParts, val review: ReviewPostAction)
   extends PostActionOld(page, review) with MaybeApproval {
 
   def approval = review.approval

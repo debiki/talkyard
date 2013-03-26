@@ -37,7 +37,7 @@ import collection.{mutable => mut}
  *   http://stupidfilter.org/
  * (The last three ones are linked from Paul Graham's first article.)
  */
-case class PageTrust(page: Debate) {
+case class PageTrust(page: PageParts) {
 
   /** Analyzes number of ratings per IP and user, and returns a value
    *  between 0 and 1, where 1 means the rating is completely trustworthy.

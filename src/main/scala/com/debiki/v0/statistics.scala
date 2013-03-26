@@ -208,7 +208,7 @@ abstract class PostRatingStats {
 
 
 
-class PageStats(val debate: Debate, val pageTrust: PageTrust) {
+class PageStats(val debate: PageParts, val pageTrust: PageTrust) {
 
   private class PostRatingStatsImpl extends PostRatingStats {
     var ratingCountUntrusty = 0

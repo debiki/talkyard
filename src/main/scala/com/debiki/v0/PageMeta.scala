@@ -38,7 +38,7 @@ object PageStuff {
   def forNewPage(
         pageRole: PageRole,
         path: PagePath,
-        actions: Debate,
+        actions: PageParts,
         publishDirectly: Boolean = false,
         author: User): PageStuff = {
     val meta = PageMeta.forNewPage(
@@ -51,7 +51,7 @@ object PageStuff {
   }
 
   def forNewEmptyPage(pageRole: PageRole, path: PagePath, author: User) =
-    forNewPage(pageRole, path, Debate(guid = "?"), author = author)
+    forNewPage(pageRole, path, PageParts(guid = "?"), author = author)
 
 }
 
@@ -60,7 +60,7 @@ case class PageStuff( // COULD reneame to Page? if I rename Page to PageActions
                           // (well, rather, if I rename Debate to PageActions)
   meta: PageMeta,
   path: PagePath,
-  actions: Debate) extends HasPageMeta with HasPagePath {
+  actions: PageParts) extends HasPageMeta with HasPagePath {
 
   if (path.pageId.isDefined) require(meta.pageId == path.pageId.get)
   else require(meta.pageId == "?")
@@ -87,7 +87,7 @@ object PageMeta {
   def forNewPage(
         pageRole: PageRole,
         author: User,
-        actions: Debate,
+        actions: PageParts,
         creationDati: ju.Date = new ju.Date,
         parentPageId: Option[String] = None,
         publishDirectly: Boolean = false) =
@@ -110,7 +110,7 @@ object PageMeta {
       cachedLastVisiblePostDati = actions.lastVisiblePostDati,
       cachedNumChildPages = 0)
 
-  def forChangedPage(originalMeta: PageMeta, changedPage: Debate): PageMeta = {
+  def forChangedPage(originalMeta: PageMeta, changedPage: PageParts): PageMeta = {
     require(changedPage.id == originalMeta.pageId)
     originalMeta.copy(
       cachedTitle = changedPage.titleText,

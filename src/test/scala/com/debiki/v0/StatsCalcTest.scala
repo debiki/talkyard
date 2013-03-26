@@ -50,7 +50,7 @@ object Util {
     newIp = None, payload = PostActionPayload.CreatePost(parentPostId = "0",
       text = "test", markup = "", approval = Some(Approval.WellBehavedUser)))
 
-  val debate = Debate("test", actionDtos = post::Nil)
+  val debate = PageParts("test", actionDtos = post::Nil)
 
   val rating_interesting =
         Rating(id = "?", postId = post.id, loginId = "?", userId = "?", ctime = new ju.Date,

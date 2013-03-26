@@ -24,11 +24,11 @@ trait PostTestValues {
         markup = "",
         approval = None))
 
-  val rawBody = copyCreatePost(postSkeleton, id = Page.BodyId, parentPostId = Page.BodyId)
+  val rawBody = copyCreatePost(postSkeleton, id = PageParts.BodyId, parentPostId = PageParts.BodyId)
   val rawReply_a = copyCreatePost(postSkeleton, id = "a", parentPostId = rawBody.id)
   val rawReply_b = copyCreatePost(postSkeleton, id = "b", parentPostId = rawBody.id)
 
-  val EmptyPage = Debate("a")
+  val EmptyPage = PageParts("a")
   val PageWithBody = EmptyPage + rawBody
   val PageWithOneReply = PageWithBody + rawReply_a
   val PageWithTwoReplies = PageWithOneReply + rawReply_b

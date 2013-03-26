@@ -5,12 +5,11 @@ package com.debiki.v0
 import java.{util => ju}
 import collection.{immutable => imm, mutable => mut}
 import Prelude._
-import Page._
+import PageParts._
 import com.debiki.v0.{PostActionPayload => PAP}
 
 
-// Preparing to rename Debate to Page:
-object Page {
+object PageParts {
 
 
   val TitleId = "0t"
@@ -19,7 +18,7 @@ object Page {
 
 
   def isArticleOrConfigPostId(id: String) =
-    id == Page.BodyId || id == Page.TitleId || id == Page.ConfigPostId
+    id == PageParts.BodyId || id == PageParts.TitleId || id == PageParts.ConfigPostId
 
 
   def isReply(actionOld: PostActionDtoOld): Boolean = actionOld match {
@@ -31,8 +30,8 @@ object Page {
   }
 
 
-  def fromActions(guid: String, people: People, actions: List[AnyRef]): Debate =
-    Debate(guid, people) ++ actions
+  def fromActions(guid: String, people: People, actions: List[AnyRef]): PageParts =
+    PageParts(guid, people) ++ actions
 
 
   /** Assigns ids to actions and updates references from e.g. Edits to Posts.
@@ -47,7 +46,7 @@ object Page {
       require(!remaps.contains(a.id)) // each action must be remapped only once
       remaps(a.id) =
           if (a.id.head == '?') {
-            if (Page.isReply(a)) {
+            if (PageParts.isReply(a)) {
               // Reply ids should be small consecutive numbers that can be used
               // as indexes into a bitset. That's why they're allocated in
               // this manner.
@@ -59,7 +58,7 @@ object Page {
             }
           }
           else {
-            assert(Page.isArticleOrConfigPostId(a.id))
+            assert(PageParts.isArticleOrConfigPostId(a.id))
             a.id
           }
     }
@@ -144,7 +143,7 @@ object Page {
   * can then use the PostAction, instead of the rather non-user-friendly
   * PostActionDto (data-transfer-object).
   */
-abstract class PostActionsWrapper { self: Debate =>
+abstract class PostActionsWrapper { self: PageParts =>
 
 
   def actionDtos: List[PostActionDto[_]]
@@ -173,7 +172,7 @@ abstract class PostActionsWrapper { self: Debate =>
     var actionsByPostId = mut.Map[String, List[PostAction[_]]]().withDefaultValue(Nil)
 
     for (actionDto <- actionDtos) {
-      def thisAsPage = this.asInstanceOf[Debate]
+      def thisAsPage = this.asInstanceOf[PageParts]
       val action = actionDto.payload match {
         case _: PAP.CreatePost =>
           new Post(thisAsPage, actionDto.asInstanceOf[PostActionDto[PAP.CreatePost]])
@@ -206,8 +205,7 @@ abstract class PostActionsWrapper { self: Debate =>
   * should instead be merged into `actions`.
   * @param actionDtos The actions that build up the page.
   */
-// Could rename to Page,... no, PageActions or *PageParts*?
-case class Debate (
+case class PageParts (
   guid: String,  // COULD rename to pageId?
   people: People = People.None,
   ratings: List[Rating] = Nil,
@@ -346,18 +344,18 @@ case class Debate (
   def idd = guidd
   def pageId = id  // when/if I rename Debate to PageActions.
 
-  def body: Option[Post] = getPost(Page.BodyId)
+  def body: Option[Post] = getPost(PageParts.BodyId)
 
-  def body_! = getPost(Page.BodyId) getOrDie "DwE30XF5"
+  def body_! = getPost(PageParts.BodyId) getOrDie "DwE30XF5"
 
   def bodyText: Option[String] = body.map(_.text)
 
 
-  def title_! = getPost(Page.TitleId) getOrDie "DwE72RP3"
+  def title_! = getPost(PageParts.TitleId) getOrDie "DwE72RP3"
 
   /** The page title if any. */
   def title = titlePost // COULD remove `titlePost`
-  def titlePost: Option[Post] = getPost(Page.TitleId)
+  def titlePost: Option[Post] = getPost(PageParts.TitleId)
 
   /** The page title, as plain text, but the empty string is changed to None. */
   def titleText: Option[String] = titlePost.map(_.text).filter(_.nonEmpty)
@@ -366,7 +364,7 @@ case class Debate (
   //def titleXml: Option[xml.Node] = body.flatMap(_.titleXml)
 
   /** A Post with template engine source code, for the whole page. */
-  def pageConfigPost: Option[Post] = getPost(Page.ConfigPostId)
+  def pageConfigPost: Option[Post] = getPost(PageParts.ConfigPostId)
 
 
   // -------- Ratings
@@ -424,7 +422,7 @@ case class Debate (
       else if (post.someVersionApproved) {
         // posterUserIds.add(post.user_!.id) — breaks, users sometimes absent.
         // Wait until I've added DW1_PAGE_ACTIONS.USER_ID?
-        if (Page.isReply(post.action)) {
+        if (PageParts.isReply(post.action)) {
           numVisible += 1
         }
         else {
@@ -548,21 +546,21 @@ case class Debate (
 
   // -------- Construction
 
-  def + (rating: Rating): Debate = copy(ratings = rating :: ratings)
-  def + (edit: Edit): Debate = copy(edits = edit :: edits)
-  def + (editApp: EditApp): Debate = copy(editApps = editApp :: editApps)
-  def + (flag: Flag): Debate = copy(flags = flag :: flags)
-  def + (deletion: Delete): Debate = copy(deletions = deletion :: deletions)
-  def + (review: ReviewPostAction): Debate = copy(reviews = review :: reviews)
-  def + (action: PostActionDto[_]): Debate = copy(actionDtos = action :: actionDtos)
+  def + (rating: Rating): PageParts = copy(ratings = rating :: ratings)
+  def + (edit: Edit): PageParts = copy(edits = edit :: edits)
+  def + (editApp: EditApp): PageParts = copy(editApps = editApp :: editApps)
+  def + (flag: Flag): PageParts = copy(flags = flag :: flags)
+  def + (deletion: Delete): PageParts = copy(deletions = deletion :: deletions)
+  def + (review: ReviewPostAction): PageParts = copy(reviews = review :: reviews)
+  def + (action: PostActionDto[_]): PageParts = copy(actionDtos = action :: actionDtos)
 
   // Could try not to add stuff that's already included in this.people.
-  def ++(people: People): Debate = this.copy(people = this.people ++ people)
+  def ++(people: People): PageParts = this.copy(people = this.people ++ people)
 
-  def ++(page: Debate): Debate = this ++ page.allActions
+  def ++(page: PageParts): PageParts = this ++ page.allActions
 
   // COULD [T <: Action] instead of >: AnyRef?
-  def ++[T >: AnyRef] (actions: Seq[T]): Debate = {
+  def ++[T >: AnyRef] (actions: Seq[T]): PageParts = {
     var ratings2 = ratings
     var edits2 = edits
     var editApps2 = editApps
@@ -581,7 +579,7 @@ case class Debate (
       case x => runErr(
         "DwE8k3EC", "Unknown action type: "+ classNameOf(x))
     }
-    Debate(id, people, ratings2,
+    PageParts(id, people, ratings2,
         edits2, editApps2, flags2, dels2, reviews2, actions2)
   }
 
@@ -591,7 +589,7 @@ case class Debate (
   /**
    * Returns a Page with all non-approved stuff removed.
    */
-  def approvedVersion: Debate =
+  def approvedVersion: PageParts =
     splitByVersion(PageVersion.LatestApproved).desired
 
   /**
@@ -629,7 +627,7 @@ case class Debate (
   }
 
 
-  private def splitByTime(dati: ju.Date): Debate = {
+  private def splitByTime(dati: ju.Date): PageParts = {
     def happenedInTime(action: PostActionDtoOld) =
       action.ctime.getTime <= dati.getTime
 
@@ -654,7 +652,7 @@ case class Debate (
   }
 
 
-  private def splitByApproval: Debate = {
+  private def splitByApproval: PageParts = {
 
       val (actionsApproved, actionsUnapproved) = actionDtos.partition(actionDto =>
         actionDto.payload match {
@@ -778,11 +776,11 @@ object PageVersion {
 
 case class PageSplitByVersion(
   /** Includes everything up to a certain date, and perhaps only approved things. */
-  desired: Debate,
+  desired: PageParts,
   /** Includes everything up to a certain date, also unapproved things. */
-  inclUnapproved: Debate,
+  inclUnapproved: PageParts,
   /** Includes everything regardles of date and approval status. */
-  inclTooRecent: Debate,
+  inclTooRecent: PageParts,
   /** The version at which the page was split. */
   version: PageVersion)
 
@@ -797,16 +795,16 @@ sealed abstract class PageRoot {
   // COULD rename to `id`? Why did I call it `subId`?
   def subId: String
   // Why did I name it "...OrCreate..."?
-  def findOrCreatePostIn(page: Debate): Option[Post]
-  def findChildrenIn(page: Debate): List[Post]
-  def isDefault: Boolean = subId == Page.BodyId
-  def isPageConfigPost: Boolean = subId == Page.ConfigPostId
+  def findOrCreatePostIn(page: PageParts): Option[Post]
+  def findChildrenIn(page: PageParts): List[Post]
+  def isDefault: Boolean = subId == PageParts.BodyId
+  def isPageConfigPost: Boolean = subId == PageParts.ConfigPostId
 }
 
 
 object PageRoot {
 
-  val TheBody = Real(Page.BodyId)
+  val TheBody = Real(PageParts.BodyId)
 
   /** A real post, e.g. the page body post. */
   case class Real(subId: String) extends PageRoot {
@@ -814,9 +812,9 @@ object PageRoot {
     assErrIf3(subId contains "-", "DwE0ksEW3", "Real id contains hyphen: "+
           safed(subId))
 
-    def findOrCreatePostIn(page: Debate): Option[Post] = page.getPost(subId)
+    def findOrCreatePostIn(page: PageParts): Option[Post] = page.getPost(subId)
 
-    def findChildrenIn(page: Debate): List[Post] = page.repliesTo(subId)
+    def findChildrenIn(page: PageParts): List[Post] = page.repliesTo(subId)
   }
 
   // In the future, something like this:
@@ -830,9 +828,9 @@ object PageRoot {
       case null => assErr("DwE0392kr53", "Id is null")
       // COULD check if `id' is invalid, e.g.contains a hyphen,
       // and if so show an error page root post.
-      case "" => Real(Page.BodyId)  // the default, if nothing specified
-      case "title" => Real(Page.TitleId)
-      case "template" => Real(Page.ConfigPostId)
+      case "" => Real(PageParts.BodyId)  // the default, if nothing specified
+      case "title" => Real(PageParts.TitleId)
+      case "template" => Real(PageParts.ConfigPostId)
       case id => Real(id)
     }
   }

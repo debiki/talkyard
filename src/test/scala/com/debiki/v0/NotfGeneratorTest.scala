@@ -19,8 +19,8 @@ trait NotfGeneratorTestValues {
   val (reviewer, reviewerIdty, reviewerLogin) = makePerson("ReviewerAuthor")
 
   val rawBody = PostTestValues.postSkeleton.copy(
-    id = Page.BodyId, loginId = bodyAuthorLogin.id, payload =
-      PostTestValues.postSkeleton.payload.copy(parentPostId = Page.BodyId))
+    id = PageParts.BodyId, loginId = bodyAuthorLogin.id, payload =
+      PostTestValues.postSkeleton.payload.copy(parentPostId = PageParts.BodyId))
 
   val rawBodyPrelApproved = rawBody.copy(payload = rawBody.payload.copy(
     approval = Some(Approval.Preliminary)))
@@ -54,7 +54,7 @@ trait NotfGeneratorTestValues {
       approval = Some(Approval.Manual))
   val rejectionOfReply = approvalOfReply.copy(id = "13", approval = None)
 
-  val EmptyPage = Debate("pageId") ++ (People() +
+  val EmptyPage = PageParts("pageId") ++ (People() +
     bodyAuthor + replyAuthor + reviewer +
     bodyAuthorIdty + replyAuthorIdty + reviewerIdty +
     bodyAuthorLogin + replyAuthorLogin + reviewerLogin)
@@ -65,7 +65,7 @@ trait NotfGeneratorTestValues {
 
 class NotfGeneratorTest extends Specification with NotfGeneratorTestValues {
 
-  def genNotfs(user: User, page: Debate, actions: PostActionDtoOld*) =
+  def genNotfs(user: User, page: PageParts, actions: PostActionDtoOld*) =
     NotfGenerator(page, actions).generateNotfs
 
   def checkThatFor(notf: NotfOfPageAction, recipient: User, actor: User,

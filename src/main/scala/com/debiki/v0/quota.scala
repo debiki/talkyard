@@ -135,7 +135,7 @@ object ResourceUse {
      identity: Identity = null,
      user: User = null,
      actions: Seq[PostActionDtoOld] = Nil,
-     page: Debate = null,
+     page: PageParts = null,
      notfs: Seq[NotfOfPageAction] = Nil,
      email: Email = null)
       : ResourceUse = {
