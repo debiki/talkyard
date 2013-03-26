@@ -48,7 +48,10 @@ trait RenderedPageHtmlDao {
     val config = DebikiHttp.newUrlConfig(pageReq.host)
     val page = pageReq.pageDesiredVersionWithDummies_!
 
-    val renderer = HtmlPageSerializer(page, PageTrust(page), pageReq.pageRoot, config)
+    val renderer = HtmlPageSerializer(page, PageTrust(page), pageReq.pageRoot, config,
+      // Use follow links for the article, unless it's a forum topic — anyone
+      // may start a new forum topic.
+      nofollowArticle = pageReq.pageRole_! == PageRole.ForumTopic)
 
     val pageTitle =
       if (!renderSettings.showTitle) Nil

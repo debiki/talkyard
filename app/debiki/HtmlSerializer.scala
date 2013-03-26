@@ -69,26 +69,32 @@ abstract class HtmlConfig {
 object HtmlPageSerializer {
 
 
-  def markupTextOf(post: Post, hostAndPort: String): String =
-    _markupTextOf(post, hostAndPort)._1.toString
+  /**
+    * @param nofollowArticle If true, links in the page body will be rel=nofollow.
+    *   The only time it's set to false, is when we serve data to search engines, but
+    *   usually we're replying to ajax requests. So defaults to true (and this feels safe).
+    */
+  def markupTextOf(post: Post, hostAndPort: String, nofollowArticle: Boolean = true): String =
+    _markupTextOf(post, hostAndPort, nofollowArticle)._1.toString
 
 
   // COULD move to HtmlPostSerializer.
-  def _markupTextOf(post: Post, hostAndPort: String): (NodeSeq, Int) = {
+  def _markupTextOf(post: Post, hostAndPort: String, nofollowArticle: Boolean = true)
+        : (NodeSeq, Int) = {
 
     val isArticle = post.id == PageParts.BodyId
 
     // Use nofollow links in people's comments, so Google won't punish
     // the website if someone posts spam.
     def isArticeOrArticleQuestion = isArticle // || post.meta.isArticleQuestion
-    val makeNofollowLinks = !isArticeOrArticleQuestion
+    val makeNofollowLinks =
+      !isArticeOrArticleQuestion || (nofollowArticle && post.id == PageParts.BodyId)
 
     post.markup match {
       case "dmd0" =>
         // Debiki flavored markdown.
         val html = markdownToSafeHtml(
-          post.text, hostAndPort, makeNofollowLinks,
-          allowClassIdDataAttrs = isArticle)
+          post.text, hostAndPort, allowClassIdDataAttrs = isArticle, makeNofollowLinks)
         (html, -1)
       case "para" =>
         textToHtml(post.text)
@@ -100,8 +106,9 @@ object HtmlPageSerializer {
       // But nothing that makes text stand out, e.g. skip <h1>, <section>.
       */
       case "html" =>
-        (sanitizeHtml(post.text, makeNofollowLinks,
-          allowClassIdDataAttrs = isArticle), -1)
+        val cleanHtml = sanitizeHtml(
+          post.text, allowClassIdDataAttrs = isArticle, makeNofollowLinks)
+        (cleanHtml, -1)
       case "code" =>
         (<pre class='prettyprint'>{post.text}</pre>,
            post.text.count(_ == '\n'))
@@ -126,7 +133,7 @@ object HtmlPageSerializer {
         // change to "para" for everything else.
         // Then warnDbgDie-default to "para" here not "dmd0".)
         (markdownToSafeHtml(post.text, hostAndPort,
-          makeNofollowLinks, allowClassIdDataAttrs = isArticle), -1)
+          allowClassIdDataAttrs = isArticle, makeNofollowLinks), -1)
     }
   }
 
@@ -158,16 +165,16 @@ object HtmlPageSerializer {
    * Converts markdown to xml.
    */
   def markdownToSafeHtml(source: String, hostAndPort: String,
-        makeLinksNofollow: Boolean, allowClassIdDataAttrs: Boolean): NodeSeq
+        allowClassIdDataAttrs: Boolean, makeLinksNofollow: Boolean = true): NodeSeq
         = /*Stats.time("markdownToSafeHtml")*/ {
     val htmlTextUnsafe =
        (new compiledjs.PagedownJsImpl()).makeHtml(source, hostAndPort)
-    sanitizeHtml(htmlTextUnsafe, makeLinksNofollow, allowClassIdDataAttrs)
+    sanitizeHtml(htmlTextUnsafe, allowClassIdDataAttrs, makeLinksNofollow)
   }
 
 
-  def sanitizeHtml(htmlTextUnsafe: String,
-        makeLinksNofollow: Boolean, allowClassIdDataAttrs: Boolean): NodeSeq = {
+  def sanitizeHtml(htmlTextUnsafe: String, allowClassIdDataAttrs: Boolean,
+        makeLinksNofollow: Boolean = true): NodeSeq = {
 
     var htmlTextSafe: String =
       (new compiledjs.HtmlSanitizerJsImpl()).googleCajaSanitizeHtml(
@@ -309,7 +316,8 @@ case class HtmlPageSerializer(
   page : PageParts,
   pageTrust: PageTrust,
   pageRoot: PageRoot,
-  config: HtmlConfig) {
+  config: HtmlConfig,
+  nofollowArticle: Boolean = true) {
 
   import HtmlPageSerializer._
 
@@ -320,7 +328,7 @@ case class HtmlPageSerializer(
 
 
   private def postRenderer =
-    HtmlPostRenderer(page, pageStats, config.hostAndPort)
+    HtmlPostRenderer(page, pageStats, config.hostAndPort, nofollowArticle)
 
 
   def renderSingleThread(postId: String): Option[SerializedSingleThread] = {

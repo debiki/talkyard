@@ -37,7 +37,8 @@ case class RenderedPostBody(
 case class HtmlPostRenderer(
   page: PageParts,
   pageStats: PageStats,
-  hostAndPort: String) {
+  hostAndPort: String,
+  nofollowArticle: Boolean = true) {
 
 
   def renderPost(postId: String, uncollapse: Boolean = false): RenderedPost = {
@@ -62,12 +63,12 @@ case class HtmlPostRenderer(
         topRatingsText = None)
     }
     else {
-      renderPostImpl(post)
+      renderPostImpl(post, nofollowArticle)
     }
   }
 
 
-  private def renderPostImpl(post: Post): RenderedPost = {
+  private def renderPostImpl(post: Post, nofollowArticle: Boolean): RenderedPost = {
     val postHeader =
       if (post.id == PageParts.BodyId) {
         // Body author and date info rendered separately, for the page body.
@@ -77,7 +78,7 @@ case class HtmlPostRenderer(
         renderPostHeader(post, Some(pageStats))
       }
 
-    val postBody = renderPostBody(post, hostAndPort)
+    val postBody = renderPostBody(post, hostAndPort, nofollowArticle)
 
     val long = postBody.approxLineCount > 9
     val cutS = if (long) " dw-x-s" else ""
@@ -338,11 +339,12 @@ object HtmlPostRenderer {
   def _linkTo(nilo: NiLo) = HtmlPageSerializer.linkTo(nilo)
 
 
-  def renderPostBody(post: Post, hostAndPort: String): RenderedPostBody = {
+  def renderPostBody(post: Post, hostAndPort: String, nofollowArticle: Boolean)
+        : RenderedPostBody = {
     val cssArtclBody = if (post.id != PageParts.BodyId) "" else " dw-ar-p-bd"
     val isBodyOrArtclQstn = post.id == PageParts.BodyId // || post.meta.isArticleQuestion
     val (xmlTextInclTemplCmds, approxLineCount) =
-      HtmlPageSerializer._markupTextOf(post, hostAndPort)
+      HtmlPageSerializer._markupTextOf(post, hostAndPort, nofollowArticle)
 
     // Find any customized reply button text.
     var replyBtnText: NodeSeq = xml.Text("Reply")
