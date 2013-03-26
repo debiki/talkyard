@@ -7,6 +7,7 @@ package views
 import com.debiki.v0._
 import java.{util => ju}
 import Prelude._
+import scala.xml.{NodeSeq}
 
 
 /**
@@ -35,35 +36,32 @@ case class NotfHtmlRenderer(origin: String) {
     s"${pageUrl(notf)}#post-${notf.eventActionId}"
 
 
-  def render(notfs: Seq[NotfOfPageAction]): String = {
+  def render(notfs: Seq[NotfOfPageAction]): NodeSeq = {
     (for (notf <- notfs) yield {
-      "<p>" +
       (notf.eventType match {
         case PersonalReply => personalReply(notf)
         case MyPostApproved => myPostApproved(notf)
-      }) +
-      "</p>"
-    }).mkString
+      })
+    })
   }
 
 
   def personalReply(notf: NotfOfPageAction) = {
     assert(notf.eventType == PersonalReply)
-    s"""
-    You have a reply, <a href="${postUrl(notf)}">here</a>,<br/>
-      on page <i>${notf.pageTitle}</i>,<br/>
-      written by <i>${notf.eventUserDispName}</i>.
-    """
+    <p>
+      You have a reply, <a href={postUrl(notf)}>here</a>,<br/>
+      on page <i>{notf.pageTitle}</i>,<br/>
+      written by <i>{notf.eventUserDispName}</i>.
+    </p>
   }
 
 
   def myPostApproved(notf: NotfOfPageAction) = {
     assert(notf.eventType == MyPostApproved)
-    s"""
-    You have a reply, <a href="${postUrl(notf)}">here</a>,<br/>
-      on page <i>${notf.pageTitle}</i>,<br/>
-      written by <i>${notf.eventUserDispName}</i>.
-    """
+    <p>
+      <a href={postUrl(notf)}>Your post</a> has been approved,<br/>
+      on page <i>{notf.pageTitle}</i>.
+    </p>
   }
 
 }
