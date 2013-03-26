@@ -99,7 +99,7 @@ trait StuffCreator {
       |}
       |""")
 
-    createCodePage(firstSiteId, "/", "_website-config.yaml", i"""
+    createCodePage(firstSiteId, "/", "_site.conf", i"""
           |new-site-domain: $firstSiteHost
           |new-site-terms-of-use: /hosting/terms-of-service
           |new-site-privacy-policy: /hosting/privacy-policy

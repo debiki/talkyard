@@ -44,7 +44,7 @@ abstract class AdminDashboardSpec extends DebikiBrowserSpec {
 
 
     "go to admin dashboard, login as admin" in {
-      click on partialLinkText("admin page")
+      click on partialLinkText("administration page")
       clickLoginWithGmailOpenId()
       dashboardWindow = window(webDriver.getWindowHandle)
     }

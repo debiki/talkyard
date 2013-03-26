@@ -131,7 +131,7 @@ abstract class CreateSiteSpec extends DebikiBrowserSpec {
           case Some(elem) => elem.text must include("Homepage")
           case None => fail("No homepage link found")
         }
-        find(cssSelector("tr.page-role-Code > td a[href*='_website-config.yaml']"))
+        find(cssSelector("tr.page-role-Code > td a[href*='_site.conf']"))
             match {
           case Some(elem) => elem.text must include("configuration")
           case None => fail("No website config page link found")
