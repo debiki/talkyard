@@ -246,7 +246,7 @@ object AppCreateWebsite extends mvc.Controller {
     val pageId = AppCreatePage.generateNewPageId()
     val pageBody = PostActionDto.forNewPageBodyBySystem(
       text, creationDati, PageRole.Code)
-    val actions = Debate(pageId, actionDtos = List(pageBody))
+    val actions = PageParts(pageId, actionDtos = List(pageBody))
     newSiteDao.createPage(PageStuff(
       PageMeta.forNewPage(
         PageRole.Code, SystemUser.User, actions, creationDati, publishDirectly = true),
@@ -266,7 +266,7 @@ object AppCreateWebsite extends mvc.Controller {
    */
   private def createHomepage(newWebsiteDao: TenantDao, creationDati: ju.Date) {
     val pageId = AppCreatePage.generateNewPageId()
-    val emptyPage = Debate(pageId)
+    val emptyPage = PageParts(pageId)
     val pageMeta = PageMeta.forNewPage(
       PageRole.Generic, SystemUser.User, emptyPage, creationDati, publishDirectly = true)
     val oldPath = PagePath(newWebsiteDao.tenantId, folder = "/_old/",

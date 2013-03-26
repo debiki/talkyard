@@ -4,7 +4,7 @@
 
 package test.e2e
 
-import com.debiki.v0.{Page, PageRole}
+import com.debiki.v0.{PageParts, PageRole}
 import com.debiki.v0.Prelude._
 import java.{lang => jl}
 
@@ -143,7 +143,7 @@ abstract class StyleSiteSpecSpec extends DebikiBrowserSpec {
 
 
   private def editBackgroundTo(color: String) {
-    clickAndEdit(Page.BodyId, i"""
+    clickAndEdit(PageParts.BodyId, i"""
       |body {
       |background-color: $color !important;
       |}

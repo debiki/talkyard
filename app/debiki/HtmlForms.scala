@@ -159,7 +159,7 @@ class HtmlForms(val config: HtmlConfig, xsrfToken: String,
    */
   private def _viewRoot = {
     // The page body is the default, need not be specified.
-    if (pageRoot.subId == Page.BodyId) ""
+    if (pageRoot.subId == PageParts.BodyId) ""
     else "&view="+ pageRoot.subId
   }
 
@@ -512,7 +512,7 @@ class HtmlForms(val config: HtmlConfig, xsrfToken: String,
    * which the changes should be made.
    * (One year later: Why didn't I simply use Json??)
    */
-  def editsDialog(nipo: Post, page: Debate, userName: Option[String],
+  def editsDialog(nipo: Post, page: PageParts, userName: Option[String],
                   mayEdit: Boolean): NodeSeq = {
     def xmlFor(edit: Patch): NodeSeq = {
       val applied = edit.isApplied
@@ -573,7 +573,7 @@ class HtmlForms(val config: HtmlConfig, xsrfToken: String,
     // Must be sorted by time, most recent first (debiki.js requires this).
     val applied = nipo.editsAppliedDescTime
     val cssMayEdit = if (mayEdit) "dw-e-sgs-may-edit" else ""
-    val cssArtclBody = if (nipo.id == Page.BodyId) " dw-ar-p-bd" else ""
+    val cssArtclBody = if (nipo.id == PageParts.BodyId) " dw-ar-p-bd" else ""
 
     <form id='dw-e-sgs' action={"?applyedits"+ _viewRoot}
           class={cssMayEdit} title='Improvements'>
@@ -616,9 +616,9 @@ class HtmlForms(val config: HtmlConfig, xsrfToken: String,
 
   def editForm(postToEdit: Post, newText: String, userName: Option[String]) = {
     import Edit.{InputNames => Inp}
-    val isForTitle = postToEdit.id == Page.TitleId
+    val isForTitle = postToEdit.id == PageParts.TitleId
     val cssArtclBody =
-      if (postToEdit.id == Page.BodyId) " dw-ar-p-bd"
+      if (postToEdit.id == PageParts.BodyId) " dw-ar-p-bd"
       else ""
     val submitBtnText = "Submit as "+ userName.getOrElse("...")
     <form class='dw-f dw-f-e'

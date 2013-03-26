@@ -76,7 +76,7 @@ object HtmlPageSerializer {
   // COULD move to HtmlPostSerializer.
   def _markupTextOf(post: Post, hostAndPort: String): (NodeSeq, Int) = {
 
-    val isArticle = post.id == Page.BodyId
+    val isArticle = post.id == PageParts.BodyId
 
     // Use nofollow links in people's comments, so Google won't punish
     // the website if someone posts spam.
@@ -306,7 +306,7 @@ object HtmlPageSerializer {
 
 
 case class HtmlPageSerializer(
-  page : Debate,
+  page : PageParts,
   pageTrust: PageTrust,
   pageRoot: PageRoot,
   config: HtmlConfig) {
@@ -349,7 +349,7 @@ case class HtmlPageSerializer(
         // = Stats.time("renderBodyAndComments") {
 
     val cssArtclThread =
-      if (pageRoot.subId == Page.BodyId) " dw-ar-t" else ""
+      if (pageRoot.subId == PageParts.BodyId) " dw-ar-t" else ""
     val rootPostsReplies = pageRoot.findChildrenIn(page)
     val rootPost: Post = pageRoot.findOrCreatePostIn(page) getOrElse
        throwNotFound("DwE0PJ404", "Post not found: "+ pageRoot.subId)
@@ -427,7 +427,7 @@ case class HtmlPageSerializer(
       isInlineNonRootChild = isInlineThread && depth >= 2
       cssInlineThread = if (isInlineThread) " dw-i-t" else ""
       replies = post.replies
-      isTitle = post.id == Page.TitleId
+      isTitle = post.id == PageParts.TitleId
       isRootOrArtclQstn =
           post.id == pageRoot.subId // || post.meta.isArticleQuestion
       // Layout replies horizontally, if this is an inline reply to

@@ -233,7 +233,7 @@ class TinyTemplateProgrammingInterface protected (
 
     // ----- Dupl code! See listNewestChildPages() below.
 
-    val pagesById: Map[String, Debate] =
+    val pagesById: Map[String, PageParts] =
       _pageReq.dao.loadPageBodiesTitles(
         articlePaths.map(_.pageId getOrDie "DwE82AJ7"))
 
@@ -262,7 +262,7 @@ class TinyTemplateProgrammingInterface protected (
 
     // ----- Dupl code! See listNewestPages() above.
 
-    val pagesById: Map[String, Debate] =
+    val pagesById: Map[String, PageParts] =
       _pageReq.dao.loadPageBodiesTitles(pubPathsAndMeta.map(_._2.pageId))
 
     for {
@@ -447,7 +447,7 @@ class TemplateProgrammingInterface(
       showComments = shall("show-comments", showComments)))
 
     val page = PageStuff(pageReq.pageMeta_!, pageReq.pagePath,
-      Debate(pageReq.pageId_!))
+      PageParts(pageReq.pageId_!))
 
     HtmlPageSerializer.wrapInPageTag(page) {
       xml.Unparsed(contents.body)

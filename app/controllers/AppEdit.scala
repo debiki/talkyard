@@ -59,13 +59,13 @@ object AppEdit extends mvc.Controller {
           PageMeta.forNewPage(
             PageRole.parse(pageRole),
             pageReqPerhapsNoPage.user_!,
-            Debate(pageId),
+            PageParts(pageId),
             creationDati = pageReqPerhapsNoPage.ctime,
             // These shouldn't matter when rendering the edit form anyway:
             parentPageId = None, publishDirectly = false)
         val pageReqWithMeta = pageReqPerhapsNoPage.copyWithPreloadedMeta(pageMeta)
         val postToEdit = _createPostToEdit(pageReqWithMeta, postId, DummyAuthorIds)
-        pageReqWithMeta.copyWithPreloadedActions(Debate(pageId) + postToEdit)
+        pageReqWithMeta.copyWithPreloadedActions(PageParts(pageId) + postToEdit)
       }
 
     _showEditFormImpl(completePageReq, postId)
@@ -197,7 +197,7 @@ object AppEdit extends mvc.Controller {
 
     val editMapsByPageId: Map[String, List[Map[String, JsValue]]] =
       editMapsUnsorted.groupBy(map => getTextOrThrow(map, "pageId"))
-    var editIdsAndPages = List[(List[String], Debate)]()
+    var editIdsAndPages = List[(List[String], PageParts)]()
 
     for ((pageId, editMaps) <- editMapsByPageId) {
 
@@ -230,7 +230,7 @@ object AppEdit extends mvc.Controller {
         // If we're creating a new page lazily, by editing title or body,
         // ensure we're really editing the title or body.
         if (anyNewPageApproval.isDefined &&
-            postId != Page.BodyId && postId != Page.TitleId)
+            postId != PageParts.BodyId && postId != PageParts.TitleId)
           throwForbidden(
             "DwE69Ro8", "Title or body must be edited before other page parts")
 
@@ -289,11 +289,11 @@ object AppEdit extends mvc.Controller {
       //throwForbidden("DwE01rsk351", "You may not create that page")
 
     val pageMeta = PageMeta.forNewPage(
-      pageRole, pageReq.user_!, Debate(pageReq.pageId_!), pageReq.ctime,
+      pageRole, pageReq.user_!, PageParts(pageReq.pageId_!), pageReq.ctime,
       parentPageId = parentPageId, publishDirectly = pageStatus == PageStatus.Published)
 
     val newPage = pageReq.dao.createPage(
-      PageStuff(pageMeta, pageReq.pagePath, Debate(pageMeta.pageId)))
+      PageStuff(pageMeta, pageReq.pagePath, PageParts(pageMeta.pageId)))
 
     pageReq.copyWithPreloadedPage(newPage, pageExists = true)
   }
@@ -348,9 +348,9 @@ object AppEdit extends mvc.Controller {
         : (Boolean, String) = {
 
     def isOwnPost = user.map(_.id) == Some(post.identity_!.userId)
-    def isPage = post.id == Page.BodyId || post.id == Page.TitleId
+    def isPage = post.id == PageParts.BodyId || post.id == PageParts.TitleId
 
-    if (post.id == Page.ConfigPostId && !perms.editPageTemplate)
+    if (post.id == PageParts.ConfigPostId && !perms.editPageTemplate)
       (false, "May not edit page template")
     else if (isOwnPost)
       (true, "May edit own post")
@@ -375,7 +375,7 @@ object AppEdit extends mvc.Controller {
   private def upholdEarlierApproval(pageReq: PageRequest[_], postId: String)
         : Option[Option[Approval]] = {
 
-    if (postId != Page.BodyId && postId != Page.TitleId)
+    if (postId != PageParts.BodyId && postId != PageParts.TitleId)
       return None
 
     val page = pageReq.page_!
@@ -424,8 +424,8 @@ object AppEdit extends mvc.Controller {
         None
       }
       // But create a title or template, lazily, if needed.
-      else if (postId == Page.TitleId || postId == Page.ConfigPostId ||
-          postId == Page.BodyId) {
+      else if (postId == PageParts.TitleId || postId == PageParts.ConfigPostId ||
+          postId == PageParts.BodyId) {
         Some(_createPostToEdit(pageReq, postId = postId, authorIds))
       }
       // Most post are not created automatically (instead error is returned).
@@ -448,9 +448,9 @@ object AppEdit extends mvc.Controller {
         : PostActionDto[PAP.CreatePost] = {
 
     val markup =
-      if (postId == Page.ConfigPostId) Markup.Code
-      else if (postId == Page.TitleId) Markup.DefaultForPageTitle
-      else if (postId == Page.BodyId) Markup.defaultForPageBody(pageReq.pageRole_!)
+      if (postId == PageParts.ConfigPostId) Markup.Code
+      else if (postId == PageParts.TitleId) Markup.DefaultForPageTitle
+      else if (postId == PageParts.BodyId) Markup.defaultForPageBody(pageReq.pageRole_!)
       else Markup.DefaultForComments
 
     // 1. (A page body, title or template is its own parent.

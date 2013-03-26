@@ -4,7 +4,7 @@
 
 package test.e2e
 
-import com.debiki.v0.{Page, PageRole}
+import com.debiki.v0.{PageParts, PageRole}
 import com.debiki.v0.Prelude._
 import java.{lang => jl}
 
@@ -57,7 +57,7 @@ abstract class AdminDashboardSpec extends DebikiBrowserSpec {
       }
 
       "edit homepage title" in {
-        clickAndEdit(Page.TitleId, newText = EditedHomepageTitle)
+        clickAndEdit(PageParts.TitleId, newText = EditedHomepageTitle)
       }
 
       "edit homepage body (broken, inline menu won't appear)" in {
@@ -131,7 +131,7 @@ abstract class AdminDashboardSpec extends DebikiBrowserSpec {
 
       "edit title" in {
         // Clicking the Improve button fails, don't know why!??
-        clickAndEdit(Page.TitleId, newText = "Info Page Title")
+        clickAndEdit(PageParts.TitleId, newText = "Info Page Title")
       }
 
       "edit body (broken, inline menu won't appear)" in {
@@ -179,7 +179,7 @@ abstract class AdminDashboardSpec extends DebikiBrowserSpec {
       }
 
       "edit blog post title" in {
-        clickAndEdit(Page.TitleId, BlogPostTitle)
+        clickAndEdit(PageParts.TitleId, BlogPostTitle)
       }
 
       "edit blog post body (broken, inline menu won't appear)" in {
@@ -267,7 +267,7 @@ abstract class AdminDashboardSpec extends DebikiBrowserSpec {
       }
 
       "edit topic title" in {
-        clickAndEdit(Page.TitleId, forumTopicTitle)
+        clickAndEdit(PageParts.TitleId, forumTopicTitle)
       }
 
       "find topic listed on forum main page" in {
@@ -290,7 +290,7 @@ abstract class AdminDashboardSpec extends DebikiBrowserSpec {
 
       def editForumTitle() {
         "edit forum title" in {
-          clickAndEdit(Page.TitleId, forumMainPageTitle)
+          clickAndEdit(PageParts.TitleId, forumMainPageTitle)
         }
       }
     }

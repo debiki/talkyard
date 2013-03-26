@@ -67,7 +67,7 @@ object AppSimple extends mvc.Controller {
 
 
   private def loadThreadsOrPosts(
-        loadWhatFn: (Debate, List[String]) => List[PostPatchSpec]) =
+        loadWhatFn: (PageParts, List[String]) => List[PostPatchSpec]) =
       PostJsonAction(maxLength = 5000) { apiReq =>
 
     val pageActionIds = apiReq.body.as[List[Map[String, String]]]
@@ -75,7 +75,7 @@ object AppSimple extends mvc.Controller {
     val actionsByPageId: Map[String, List[String]] =
       Utils.parsePageActionIds(pageActionIds)(identity)
 
-    var pagesAndPatchSpecs = List[(Debate, List[PostPatchSpec])]()
+    var pagesAndPatchSpecs = List[(PageParts, List[PostPatchSpec])]()
 
     actionsByPageId foreach { case (pageId, postIds) =>
       val page = apiReq.dao.loadPage(pageId) getOrElse throwNotFound(
@@ -107,7 +107,7 @@ object AppSimple extends mvc.Controller {
         loginId = apiReq.loginId_!, userId = apiReq.user_!.id, newIp = None)
     }
 
-    var pagesAndPatchSpecs = List[(Debate, List[PostPatchSpec])]()
+    var pagesAndPatchSpecs = List[(PageParts, List[PostPatchSpec])]()
 
     actionsByPageId foreach { case (pageId, actions) =>
       val pageWithoutMe = apiReq.dao.loadPage(pageId) getOrElse throwNotFound(

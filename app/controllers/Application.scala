@@ -163,7 +163,7 @@ object Application extends mvc.Controller {
     // Somewhat dupl code, see AppList.listNewestPages.
     val feedPathsPublic = feedPagePaths filter (Utils.isPublicArticlePage _)
 
-    val pathsAndPages: Seq[(PagePath, Debate)] = feedPathsPublic flatMap {
+    val pathsAndPages: Seq[(PagePath, PageParts)] = feedPathsPublic flatMap {
       feedPagePath =>
         val pageId: String = feedPagePath.pageId.getOrElse {
           errDbgDie("[error DwE012210u9]")
@@ -175,7 +175,7 @@ object Application extends mvc.Controller {
 
     val mostRecentPageCtime: ju.Date =
       pathsAndPages.headOption.map(pathAndPage =>
-        pathAndPage._2.getPost_!(Page.BodyId).creationDati
+        pathAndPage._2.getPost_!(PageParts.BodyId).creationDati
       ).getOrElse(new ju.Date)
 
     val feedUrl = "http://"+ pageReq.request.host + pageReq.request.uri

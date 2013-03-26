@@ -120,7 +120,7 @@ object AppForum extends mvc.Controller {
     // Create a forum group with parent `anyCommonParentId`.
 
     val groupMeta = PageMeta.forNewPage(
-      PageRole.ForumGroup, request.user_!, Debate("?"), request.ctime,
+      PageRole.ForumGroup, request.user_!, PageParts("?"), request.ctime,
       parentPageId = anyCommonParentId, publishDirectly = true)
 
     val groupPath = PagePath(tenantId = request.tenantId, folder = commonParentFolder,
@@ -128,7 +128,7 @@ object AppForum extends mvc.Controller {
       pageSlug = if (makeIndexPage) "" else "forum")
 
     val parentGroup = request.dao.createPage(
-      PageStuff(groupMeta, groupPath, Debate(groupMeta.pageId)))
+      PageStuff(groupMeta, groupPath, PageParts(groupMeta.pageId)))
 
     // Update other forums: Set their parent page to the parent group.
     // Is `makeIndexPage`, there should be only one child forum, and we need

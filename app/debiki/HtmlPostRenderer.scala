@@ -35,7 +35,7 @@ case class RenderedPostBody(
 
 
 case class HtmlPostRenderer(
-  page: Debate,
+  page: PageParts,
   pageStats: PageStats,
   hostAndPort: String) {
 
@@ -56,7 +56,7 @@ case class HtmlPostRenderer(
     else if (post.isOnlyPostCollapsed && !uncollapse) {
       renderCollapsedComment(post)
     }
-    else if (post.id == Page.TitleId) {
+    else if (post.id == PageParts.TitleId) {
       val titleHtml = renderPageTitle(post)
       RenderedPost(titleHtml, replyBtnText = Nil,
         topRatingsText = None)
@@ -69,7 +69,7 @@ case class HtmlPostRenderer(
 
   private def renderPostImpl(post: Post): RenderedPost = {
     val postHeader =
-      if (post.id == Page.BodyId) {
+      if (post.id == PageParts.BodyId) {
         // Body author and date info rendered separately, for the page body.
         RenderedPostHeader(Nil, None)
       }
@@ -82,7 +82,7 @@ case class HtmlPostRenderer(
     val long = postBody.approxLineCount > 9
     val cutS = if (long) " dw-x-s" else ""
 
-    val cssArtclPost = if (post.id != Page.BodyId) "" else " dw-ar-p"
+    val cssArtclPost = if (post.id != PageParts.BodyId) "" else " dw-ar-p"
     val commentHtml =
       <div id={htmlIdOf(post)} class={"dw-p" + cssArtclPost + cutS}>{
         postHeader.html ++
@@ -198,7 +198,7 @@ object HtmlPostRenderer {
       }
 
     val cssArticlePostHeader =
-      if (post.id == Page.BodyId) " dw-ar-p-hd"
+      if (post.id == PageParts.BodyId) " dw-ar-p-hd"
       else ""
 
     val commentHtml =
@@ -339,8 +339,8 @@ object HtmlPostRenderer {
 
 
   def renderPostBody(post: Post, hostAndPort: String): RenderedPostBody = {
-    val cssArtclBody = if (post.id != Page.BodyId) "" else " dw-ar-p-bd"
-    val isBodyOrArtclQstn = post.id == Page.BodyId // || post.meta.isArticleQuestion
+    val cssArtclBody = if (post.id != PageParts.BodyId) "" else " dw-ar-p-bd"
+    val isBodyOrArtclQstn = post.id == PageParts.BodyId // || post.meta.isArticleQuestion
     val (xmlTextInclTemplCmds, approxLineCount) =
       HtmlPageSerializer._markupTextOf(post, hostAndPort)
 

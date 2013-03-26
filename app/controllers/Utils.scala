@@ -115,7 +115,7 @@ object Utils extends Results with http.ContentTypes {
     // pages.
     val fragment = "/-"+ action.page.id
     val query =
-      if (action.id == Page.ConfigPostId) "?view="+ Page.ConfigPostId
+      if (action.id == PageParts.ConfigPostId) "?view="+ PageParts.ConfigPostId
       else "?view"
     val hash = action match {
       case post: Post => "#post-"+ action.id

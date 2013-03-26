@@ -1,6 +1,6 @@
 @(errorException: Exception)
 
-@import com.debiki.v0.Page
+@import com.debiki.v0.PageParts
 @import debiki.TemplateRenderer._
 @import debiki.WebsiteConfigException
 
@@ -31,7 +31,7 @@
 <div id='template-info'>
   <p>There is some error@withSomething:</p>
   <pre>@errorException.getMessage</pre>
-  <p><a href="?view=@{Page.ConfigPostId}">View / edit page settings</a></p>
+  <p><a href="?view=@{PageParts.ConfigPostId}">View / edit page settings</a></p>
   <p><a href="/_site.conf">View / edit website configuration</a></p>
 </div>
 

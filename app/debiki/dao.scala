@@ -94,21 +94,21 @@ class TenantDao(protected val tenantDbDao: ChargingTenantDbDao)
    * Returns the page including new actions, and the actions, but with ids assigned.
    */
   final def savePageActionsGenNotfs(pageReq: PageRequest[_], actions: List[PostActionDtoOld])
-        : (Debate, Seq[PostActionDtoOld]) = {
+        : (PageParts, Seq[PostActionDtoOld]) = {
     savePageActionsGenNotfsImpl(pageReq.page_!, actions, pageReq.pageMeta_!)
   }
 
 
-  final def savePageActionsGenNotfs(page: Debate, actions: List[PostActionDtoOld])
-        : (Debate, Seq[PostActionDtoOld]) = {
+  final def savePageActionsGenNotfs(page: PageParts, actions: List[PostActionDtoOld])
+        : (PageParts, Seq[PostActionDtoOld]) = {
     val pageMeta = tenantDbDao.loadPageMeta(page.id) getOrElse
       throwNotFound("DwE115Xf3", s"Found no meta for page ${page.id}")
     savePageActionsGenNotfsImpl(page, actions, pageMeta)
   }
 
 
-  def savePageActionsGenNotfsImpl(page: Debate, actions: List[PostActionDtoOld],
-        pageMeta: PageMeta): (Debate, Seq[PostActionDtoOld]) = {
+  def savePageActionsGenNotfsImpl(page: PageParts, actions: List[PostActionDtoOld],
+        pageMeta: PageMeta): (PageParts, Seq[PostActionDtoOld]) = {
     if (actions isEmpty)
       return (page, Nil)
 
@@ -134,19 +134,19 @@ class TenantDao(protected val tenantDbDao: ChargingTenantDbDao)
   }
 
 
-  def loadPage(debateId: String): Option[Debate] =
+  def loadPage(debateId: String): Option[PageParts] =
     tenantDbDao.loadPage(debateId)
 
-  def loadPageAnyTenant(sitePageId: SitePageId): Option[Debate] =
+  def loadPageAnyTenant(sitePageId: SitePageId): Option[PageParts] =
     loadPageAnyTenant(tenantId = sitePageId.siteId, pageId = sitePageId.pageId)
 
-  def loadPageAnyTenant(tenantId: String, pageId: String): Option[Debate] =
+  def loadPageAnyTenant(tenantId: String, pageId: String): Option[PageParts] =
     tenantDbDao.loadPage(pageId, tenantId = Some(tenantId))
 
   /**
    * Loads articles (title + body) e.g. for inclusion on a blog post list page.
    */
-  def loadPageBodiesTitles(pageIds: Seq[String]): Map[String, Debate] =
+  def loadPageBodiesTitles(pageIds: Seq[String]): Map[String, PageParts] =
     tenantDbDao.loadPageBodiesTitles(pageIds)
 
   def loadRecentActionExcerpts(

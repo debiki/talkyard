@@ -44,8 +44,8 @@ abstract class ForumSpec extends DebikiBrowserSpec {
     }
 
     "edit topic title first, then body" in {
-      clickAndEdit(Page.TitleId, "Topic title 71DH3X0")
-      clickAndEdit(Page.BodyId, "Topic body text 85BK213.")
+      clickAndEdit(PageParts.TitleId, "Topic title 71DH3X0")
+      clickAndEdit(PageParts.BodyId, "Topic body text 85BK213.")
     }
 
     "create another topic, already logged in" in {
@@ -54,8 +54,8 @@ abstract class ForumSpec extends DebikiBrowserSpec {
     }
 
     "edit topic body first, then title" in {
-      clickAndEdit(Page.BodyId, "Another topic body text 933KS3.")
-      clickAndEdit(Page.TitleId, "Another topic title 4WKFEN39")
+      clickAndEdit(PageParts.BodyId, "Another topic body text 933KS3.")
+      clickAndEdit(PageParts.TitleId, "Another topic title 4WKFEN39")
     }
 
     "edit missing topic body in other tab" - {
@@ -66,7 +66,7 @@ abstract class ForumSpec extends DebikiBrowserSpec {
       "create a third-topic, edit title" in {
         clickReturnToParentForum()
         thirdTopicWin = createForumTopic()
-        clickAndEdit(Page.TitleId, ThirdTopicTitleText)
+        clickAndEdit(PageParts.TitleId, ThirdTopicTitleText)
       }
 
       "open topic tab again, without passhash etc, via reloaded forum page" in {
@@ -76,7 +76,7 @@ abstract class ForumSpec extends DebikiBrowserSpec {
       }
 
       "edit body" in {
-        clickAndEdit(Page.BodyId, ThirdTopicBodyText)
+        clickAndEdit(PageParts.BodyId, ThirdTopicBodyText)
       }
 
       "reload topic, find page body" in {

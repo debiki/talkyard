@@ -113,7 +113,7 @@ object AppCreatePage extends mvc.Controller {
       else {
         // Create empty dummy page.
         pageReqOrig.copyWithPreloadedPage(
-          PageStuff(newPageMeta, newPagePath, Debate(newPageMeta.pageId)),
+          PageStuff(newPageMeta, newPagePath, PageParts(newPageMeta.pageId)),
           pageExists = false)
       }
     }
@@ -162,7 +162,7 @@ object AppCreatePage extends mvc.Controller {
     if (parentPageId == Some("undefined"))
       throwBadReq("DwE93HF2", "Parent page id is `undefined`")
 
-    PageMeta.forNewPage(pageRole, pageReq.user_!, Debate(pageId), pageReq.ctime,
+    PageMeta.forNewPage(pageRole, pageReq.user_!, PageParts(pageId), pageReq.ctime,
       parentPageId = parentPageId, publishDirectly = publishDirectly)
   }
 

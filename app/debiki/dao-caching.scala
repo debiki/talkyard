@@ -49,8 +49,8 @@ class CachingTenantDao(tenantDbDao: ChargingTenantDbDao)
   }
 
 
-  override def savePageActionsGenNotfsImpl(page: Debate, actions: List[PostActionDtoOld],
-        pageMeta: PageMeta): (Debate, Seq[PostActionDtoOld]) = {
+  override def savePageActionsGenNotfsImpl(page: PageParts, actions: List[PostActionDtoOld],
+        pageMeta: PageMeta): (PageParts, Seq[PostActionDtoOld]) = {
 
     if (actions isEmpty)
       return (page, Nil)
@@ -113,8 +113,8 @@ class CachingTenantDao(tenantDbDao: ChargingTenantDbDao)
   }
 
 
-  override def loadPage(pageId: String): Option[Debate] =
-    lookupInCache[Debate](_pageActionsKey(pageId),
+  override def loadPage(pageId: String): Option[PageParts] =
+    lookupInCache[PageParts](_pageActionsKey(pageId),
       orCacheAndReturn = {
         super.loadPage(pageId)
       })

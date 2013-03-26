@@ -17,7 +17,7 @@ object DummyPage {
    * don't yet exist, so there is something to edit.
    */
   def addMissingTitleBodyConfigTo(
-        pageSplitByVersion: PageSplitByVersion, pageRole: PageRole): Debate = {
+        pageSplitByVersion: PageSplitByVersion, pageRole: PageRole): PageParts = {
 
     val pageNoDummies = pageSplitByVersion.desired
     val pageInclUnapproved = pageSplitByVersion.inclUnapproved
@@ -71,14 +71,14 @@ object DummyPage {
 
 
   private def dummyTitle(texts: Texts, absentSinceUnapproved: Boolean) = PostActionDto(
-    id = Page.TitleId,
-    postId = Page.TitleId,
+    id = PageParts.TitleId,
+    postId = PageParts.TitleId,
     creationDati = new ju.Date,
     loginId = DummyAuthorLogin.id,
     userId = DummyAuthorUser.id,
     newIp = None,
     payload = PostActionPayload.CreatePost(
-      parentPostId = Page.TitleId,
+      parentPostId = PageParts.TitleId,
       text = if (absentSinceUnapproved) texts.unapprovedTitleText else texts.noTitleText,
       markup = Markup.DefaultForPageTitle.id,
       approval = Some(Approval.Preliminary)))
@@ -86,9 +86,9 @@ object DummyPage {
 
   private def dummyBody(texts: Texts, absentSinceUnapproved: Boolean, pageRole: PageRole) = {
     val prototype = dummyTitle(texts, false)
-    prototype.copy(id = Page.BodyId, postId = Page.BodyId,
+    prototype.copy(id = PageParts.BodyId, postId = PageParts.BodyId,
       payload = prototype.payload.copy(
-        parentPostId = Page.BodyId,
+        parentPostId = PageParts.BodyId,
         text = if (absentSinceUnapproved) texts.unapprovedBodyText else texts.noBodyText,
         markup = Markup.defaultForPageBody(pageRole).id))
   }
@@ -96,9 +96,9 @@ object DummyPage {
 
   private def dummyConfig(texts: Texts) = {
     val prototype = dummyTitle(texts, false)
-    prototype.copy(id = Page.ConfigPostId, postId = Page.ConfigPostId,
+    prototype.copy(id = PageParts.ConfigPostId, postId = PageParts.ConfigPostId,
       payload = prototype.payload.copy(
-        parentPostId = Page.ConfigPostId,
+        parentPostId = PageParts.ConfigPostId,
         text = texts.configText,
         markup = Markup.Code.id))
   }

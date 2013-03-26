@@ -53,7 +53,7 @@ trait RenderedPageHtmlDao {
     val pageTitle =
       if (!renderSettings.showTitle) Nil
       else {
-        renderer.renderSingleThread(Page.TitleId) map { renderedThread =>
+        renderer.renderSingleThread(PageParts.TitleId) map { renderedThread =>
           xml.Unparsed(liftweb.Html5.toString(renderedThread.htmlNodes))
         } getOrElse Nil
       }
@@ -95,7 +95,7 @@ trait CachingRenderedPageHtmlDao extends RenderedPageHtmlDao {
     // Bypass the cache if the page doesn't yet exist (it's being created),
     // because in the past there was some error because non-existing pages
     // had no ids (so feels safer to bypass).
-    if (pageReq.pageExists && pageReq.pageRoot == PageRoot.Real(Page.BodyId) &&
+    if (pageReq.pageExists && pageReq.pageRoot == PageRoot.Real(PageParts.BodyId) &&
         pageReq.pageVersion == PageVersion.LatestApproved) {
       val key = _pageHtmlKey(pageReq.pageId_!, origin = pageReq.host)
       lookupInCache(key, orCacheAndReturn = {

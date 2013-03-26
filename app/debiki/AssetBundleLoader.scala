@@ -60,7 +60,7 @@ object AssetBundleLoader {
         case ex: DebikiException => die(ex)
       }
 
-    val assetPathsAndPages: Seq[(PagePath, Option[Debate])] = assetPaths map { path =>
+    val assetPathsAndPages: Seq[(PagePath, Option[PageParts])] = assetPaths map { path =>
       val page = dao.loadPageAnyTenant(
         tenantId = path.tenantId, pageId = path.pageId.get)
       (path, page)

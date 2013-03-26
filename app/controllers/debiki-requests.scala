@@ -280,7 +280,7 @@ case class PageRequest[A](
   dao: TenantDao,
   request: Request[A])
   (private val _preloadedPageMeta: Option[PageMeta] = None,
-  private val _preloadedActions: Option[Debate] = None,
+  private val _preloadedActions: Option[PageParts] = None,
   private val addMeToPage: Boolean = false)
   extends DebikiRequest[A] {
 
@@ -308,7 +308,7 @@ case class PageRequest[A](
   }
 
 
-  def copyWithPreloadedActions(pageActions: Debate): PageRequest[A] = {
+  def copyWithPreloadedActions(pageActions: PageParts): PageRequest[A] = {
     require(pageExists == false)
     _preloadedPageMeta.foreach { meta =>
       require(meta.pageId == pageActions.pageId)
@@ -360,7 +360,7 @@ case class PageRequest[A](
    * The page this PageRequest concerns, or None if not found
    * (e.g. if !pageExists, or if it was deleted just moments ago).
    */
-  lazy val page_? : Option[Debate] =
+  lazy val page_? : Option[PageParts] =
     _preloadedActions orElse {
       if (pageExists) {
         val pageOpt = pageId.flatMap(id => dao.loadPage(id))
@@ -379,11 +379,11 @@ case class PageRequest[A](
    * (The page might have been deleted, just after the access control step.)
    */
   // COULD rename to actions_!.
-  lazy val page_! : Debate =
+  lazy val page_! : PageParts =
     page_? getOrElse throwNotFound("DwE43XWY", "Page not found, id: "+ pageId)
 
 
-  lazy val pageDesiredVersionWithDummies_! : Debate = {
+  lazy val pageDesiredVersionWithDummies_! : PageParts = {
     DummyPage.addMissingTitleBodyConfigTo(
       page_!.splitByVersion(pageVersion), pageMeta_!.pageRole)
   }

@@ -30,7 +30,7 @@ object AtomFeedXml {
    * in a significant way.
    */
   def renderFeed(hostUrl: String, feedId: String, feedTitle: String,
-                 feedUpdated: ju.Date, pathsAndPages: Seq[(PagePath, Debate)]
+                 feedUpdated: ju.Date, pathsAndPages: Seq[(PagePath, PageParts)]
                     ): Node = {
     // Based on:
     //   http://exploring.liftweb.net/master/index-15.html#toc-Section-15.7
@@ -41,7 +41,7 @@ object AtomFeedXml {
     val baseUrl = hostUrl +"/"
     def urlTo(pp: PagePath) = baseUrl + pp.path.dropWhile(_ == '/')
 
-    def pageToAtom(pathAndPage: (PagePath, Debate)): NodeSeq = {
+    def pageToAtom(pathAndPage: (PagePath, PageParts)): NodeSeq = {
       val pagePath = pathAndPage._1
       val page = pathAndPage._2
       val pageBody = page.body.getOrElse {

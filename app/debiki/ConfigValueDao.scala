@@ -23,7 +23,7 @@ trait ConfigValueDao {
 
 
   def loadPageConfigMap(pageId: String): Map[String, Any] =
-    loadConfigMap(SitePageId(tenantId, pageId), configPostId = Page.ConfigPostId)
+    loadConfigMap(SitePageId(tenantId, pageId), configPostId = PageParts.ConfigPostId)
 
 
   /**
@@ -64,7 +64,7 @@ trait ConfigValueDao {
         throw WebsiteConfigException("DwE8PkF1", s"Bad URL: `$url'")
       case Result.Ok(pagePath) =>
         val configSitePageId = pagePath.sitePageId getOrDie "DwE0Bv3"
-        val configMap = loadConfigMap(configSitePageId, configPostId = Page.BodyId)
+        val configMap = loadConfigMap(configSitePageId, configPostId = PageParts.BodyId)
         WebsiteConfigLeaf.fromSnakeYamlMap(configMap, configSitePageId)
     }
   }
@@ -106,8 +106,8 @@ trait CachingConfigValueDao extends ConfigValueDao {
     // We don't know if the page is a config page, and its body was edited, or
     // if only the page's config post was edited. — Simply attempt to remove both
     // config values from cache.
-    removeFromCache(configMapKey(sitePageId, Page.BodyId))
-    removeFromCache(configMapKey(sitePageId, Page.ConfigPostId))
+    removeFromCache(configMapKey(sitePageId, PageParts.BodyId))
+    removeFromCache(configMapKey(sitePageId, PageParts.ConfigPostId))
   }
 
 

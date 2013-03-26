@@ -29,7 +29,7 @@ object BrowserPagePatcher {
 
 
   def jsonForThreadsAndPosts(
-        pagesAndPatchSpecs: List[(Debate, List[PostPatchSpec])],
+        pagesAndPatchSpecs: List[(PageParts, List[PostPatchSpec])],
         request: DebikiRequest[_]): pm.PlainResult = {
 
     var threadPatchesByPageId = Map[String, List[Map[String, JsValue]]]()
@@ -72,12 +72,12 @@ object BrowserPagePatcher {
   }
 
 
-  def jsonForMyEditedPosts(editIdsAndPages: List[(List[String], Debate)],
+  def jsonForMyEditedPosts(editIdsAndPages: List[(List[String], PageParts)],
         request: DebikiRequest[_]): pm.PlainResult = {
 
     var patchesByPageId = Map[String, List[Map[String, JsValue]]]()
 
-    for ((editIds: List[String], page: Debate) <- editIdsAndPages) {
+    for ((editIds: List[String], page: PageParts) <- editIdsAndPages) {
 
       val patchesOnCurPage = for (editId <- editIds) yield {
         _jsonForEditedPost(editId, page, request)
@@ -129,7 +129,7 @@ object BrowserPagePatcher {
   }
 
 
-  private def _jsonForEditedPost(editId: String, page: Debate,
+  private def _jsonForEditedPost(editId: String, page: PageParts,
         request: DebikiRequest[_]): Map[String, JsValue] = {
     val edit = page.getPatch_!(editId)
 
