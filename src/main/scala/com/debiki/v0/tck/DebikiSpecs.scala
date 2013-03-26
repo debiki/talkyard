@@ -55,8 +55,8 @@ object DebikiSpecs {
         loginId: String = null,
         newIp: String = null,
         text: String = null,
-        where: Option[String] = null) = new Matcher[Debate] {
-    def apply[S <: Debate](expectable: Expectable[S]) = {
+        where: Option[String] = null) = new Matcher[PageParts] {
+    def apply[S <: PageParts](expectable: Expectable[S]) = {
       val left = expectable.value
       assert((id ne null) || (post ne null))  // must know id
       var id2 = id
@@ -121,9 +121,9 @@ object DebikiSpecs {
         loginId: String = null,
         userId: String = null,
         newIp: String = null,
-        tags: List[String] = null) = new Matcher[Debate] {
-    def apply[S <: Debate](expectable: Expectable[S]) = {
-      val left = expectable.value: Debate
+        tags: List[String] = null) = new Matcher[PageParts] {
+    def apply[S <: PageParts](expectable: Expectable[S]) = {
+      val left = expectable.value: PageParts
       assert((id ne null) || (rating ne null))  // must know id
       var id2 = id
       if (id2 eq null) id2 = rating.id
