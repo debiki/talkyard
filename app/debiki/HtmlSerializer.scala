@@ -286,7 +286,7 @@ object HtmlPageSerializer {
     htmlNodes: Node)
 
 
-  def wrapInPageTag(page: PageStuff)(body: NodeSeq): NodeSeq =
+  def wrapInPageTag(page: Page)(body: NodeSeq): NodeSeq =
     wrapInPageTag(page.meta, page.path)(body)
 
 

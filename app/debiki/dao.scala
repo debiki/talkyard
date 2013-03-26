@@ -78,7 +78,7 @@ class TenantDao(protected val tenantDbDao: ChargingTenantDbDao)
 
   // ----- Pages
 
-  def createPage(page: PageStuff): PageStuff = tenantDbDao.createPage(page)
+  def createPage(page: Page): Page = tenantDbDao.createPage(page)
 
   def listChildPages(parentPageId: String, sortBy: PageSortOrder,
         limit: Int, offset: Int = 0, filterPageRole: Option[PageRole] = None)

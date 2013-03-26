@@ -113,7 +113,7 @@ object AppCreatePage extends mvc.Controller {
       else {
         // Create empty dummy page.
         pageReqOrig.copyWithPreloadedPage(
-          PageStuff(newPageMeta, newPagePath, PageParts(newPageMeta.pageId)),
+          Page(newPageMeta, newPagePath, PageParts(newPageMeta.pageId)),
           pageExists = false)
       }
     }

@@ -128,7 +128,7 @@ object AppForum extends mvc.Controller {
       pageSlug = if (makeIndexPage) "" else "forum")
 
     val parentGroup = request.dao.createPage(
-      PageStuff(groupMeta, groupPath, PageParts(groupMeta.pageId)))
+      Page(groupMeta, groupPath, PageParts(groupMeta.pageId)))
 
     // Update other forums: Set their parent page to the parent group.
     // Is `makeIndexPage`, there should be only one child forum, and we need

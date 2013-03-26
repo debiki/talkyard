@@ -4,6 +4,7 @@
 
 package debiki
 
+import com.debiki.v0
 import com.debiki.v0._
 import controllers.{PageRequest, SiteAssetBundles, routes}
 import java.{util => ju}
@@ -59,7 +60,7 @@ object TinyTemplateProgrammingInterface {
 
 
   object Page {
-    def apply(page: PageStuff, host: String): Page = Page(
+    def apply(page: v0.Page, host: String): Page = Page(
       id = page.id,
       path = page.path.path,
       title = titleOf(page),
@@ -67,12 +68,12 @@ object TinyTemplateProgrammingInterface {
       pubDati = page.meta.pubDati,
       safeBodyHtml = bodyOf(page, host))
 
-    private def titleOf(page: PageStuff): String =
+    private def titleOf(page: v0.Page): String =
       // Currently HtmlPageSerializer ignores the `.markup` for a title Post.
-      page.actions.title.map(_.text).getOrElse("(No title)")
+      page.parts.title.map(_.text).getOrElse("(No title)")
 
-    private def bodyOf(page: PageStuff, host: String): String =
-      page.actions.body.map(
+    private def bodyOf(page: v0.Page, host: String): String =
+      page.parts.body.map(
         HtmlPageSerializer.markupTextOf(_, host)).getOrElse("")
   }
 
@@ -242,7 +243,7 @@ class TinyTemplateProgrammingInterface protected (
       pageActions <- pagesById.get(pageMeta.pageId)
     } yield {
       tpi.Page(
-        PageStuff(pageMeta, pagePath, pageActions.approvedVersion),
+        Page(pageMeta, pagePath, pageActions.approvedVersion),
         host = _pageReq.host)
     }
   }
@@ -270,7 +271,7 @@ class TinyTemplateProgrammingInterface protected (
       pageActions <- pagesById.get(pageMeta.pageId)
     } yield {
       tpi.Page(
-        PageStuff(pageMeta, pagePath, pageActions.approvedVersion),
+        Page(pageMeta, pagePath, pageActions.approvedVersion),
         host = _pageReq.host)
     }
   }
@@ -446,7 +447,7 @@ class TemplateProgrammingInterface(
       showBody = shall("show-body", showBody),
       showComments = shall("show-comments", showComments)))
 
-    val page = PageStuff(pageReq.pageMeta_!, pageReq.pagePath,
+    val page = Page(pageReq.pageMeta_!, pageReq.pagePath,
       PageParts(pageReq.pageId_!))
 
     HtmlPageSerializer.wrapInPageTag(page) {

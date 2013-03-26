@@ -288,10 +288,10 @@ case class PageRequest[A](
   require(!pageExists || pagePath.pageId.isDefined)
 
 
-  def copyWithPreloadedPage(page: PageStuff, pageExists: Boolean)
+  def copyWithPreloadedPage(page: Page, pageExists: Boolean)
         : PageRequest[A] = {
     copy(pageExists = pageExists, pagePath = page.path)(
-      Some(page.meta), Some(page.actions), addMeToPage = false)
+      Some(page.meta), Some(page.parts), addMeToPage = false)
   }
 
 

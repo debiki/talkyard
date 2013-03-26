@@ -247,7 +247,7 @@ object AppCreateWebsite extends mvc.Controller {
     val pageBody = PostActionDto.forNewPageBodyBySystem(
       text, creationDati, PageRole.Code)
     val actions = PageParts(pageId, actionDtos = List(pageBody))
-    newSiteDao.createPage(PageStuff(
+    newSiteDao.createPage(Page(
       PageMeta.forNewPage(
         PageRole.Code, SystemUser.User, actions, creationDati, publishDirectly = true),
       PagePath(newSiteDao.tenantId, folder = "/",
@@ -277,7 +277,7 @@ object AppCreateWebsite extends mvc.Controller {
     // another page be the homepage, then '/' would be overwritten by the
     // new homepage. The old path to the oridinal homepage will then be
     // activated again.
-    newWebsiteDao.createPage(PageStuff(pageMeta, oldPath, emptyPage))
+    newWebsiteDao.createPage(Page(pageMeta, oldPath, emptyPage))
     newWebsiteDao.moveRenamePage(pageId, newFolder = Some("/"), newSlug = Some(""))
 
     // Set homepage title.

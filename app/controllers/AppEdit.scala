@@ -293,7 +293,7 @@ object AppEdit extends mvc.Controller {
       parentPageId = parentPageId, publishDirectly = pageStatus == PageStatus.Published)
 
     val newPage = pageReq.dao.createPage(
-      PageStuff(pageMeta, pageReq.pagePath, PageParts(pageMeta.pageId)))
+      Page(pageMeta, pageReq.pagePath, PageParts(pageMeta.pageId)))
 
     pageReq.copyWithPreloadedPage(newPage, pageExists = true)
   }

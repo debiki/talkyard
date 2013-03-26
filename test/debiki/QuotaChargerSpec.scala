@@ -377,7 +377,7 @@ abstract class QuotaChargerSpec extends RichFreeSpec with MustMatchers
       loginId = loginId, userId = author.id, approval = Some(Approval.Preliminary))
     val actions = PageParts(pageId, actionDtos = List(pageBody))
 
-    dao.createPage(PageStuff(
+    dao.createPage(Page(
       PageMeta.forNewPage(
         pageRole, author, actions, creationDati, publishDirectly = true),
       PagePath(dao.siteId, folder = "/",

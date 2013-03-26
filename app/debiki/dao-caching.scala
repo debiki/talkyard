@@ -42,7 +42,7 @@ class CachingTenantDao(tenantDbDao: ChargingTenantDbDao)
   with CachingUserDao {
 
 
-  override def createPage(page: PageStuff): PageStuff = {
+  override def createPage(page: Page): Page = {
     val pageWithIds = tenantDbDao.createPage(page)
     firePageCreated(pageWithIds)
     pageWithIds
