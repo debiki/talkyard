@@ -272,7 +272,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
           PostActionDto.copyCreatePost(T.post, id = PageParts.BodyId,
             loginId = "99999", userId = "99999")::Nil) // bad ids
       //SLog.info("Expecting ORA-02291: integrity constraint log message ------")
-      dao.createPage(PageStuff.forNewPage(
+      dao.createPage(Page.newPage(
         PageRole.Generic, defaultPagePath, debateBadLogin, author = SystemUser.User)
                     ) must throwAn[Exception]
       //SLog.info("------------------------------------------------------------")
@@ -388,10 +388,10 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
 
     "create a debate with a root post" in {
       val debateNoId = PageParts(guid = "?", actionDtos = ex1_rootPost::Nil)
-      val page = dao.createPage(PageStuff.forNewPage(
+      val page = dao.createPage(Page.newPage(
         PageRole.Generic, defaultPagePath, debateNoId, publishDirectly = true,
         author = loginGrant.user))
-      val actions = page.actions
+      val actions = page.parts
       ex1_debate = actions
       actions.postCount must_== 1
       actions.guid.length must be_>(1)  // not = '?'
@@ -500,7 +500,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
       var blogArticleId = "?"
 
       "create a Blog" in {
-        val pageNoId = PageStuff(
+        val pageNoId = Page(
           PageMeta.forNewPage(PageRole.Blog, loginGrant.user, PageParts("?"), now),
           defaultPagePath.copy(
             showId = true, pageSlug = "role-test-blog-main"),
@@ -514,7 +514,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
         page.meta.parentPageId must_== None
         page.meta.pubDati must_== None
 
-        val actions = page.actions
+        val actions = page.parts
         blogMainPageId = actions.pageId
         actions.postCount must_== 0
         actions.pageId.length must be_>(1)  // not = '?'
@@ -534,14 +534,14 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
       }
 
       "create a child BlogPost" in {
-        val pageNoId = PageStuff(
+        val pageNoId = Page(
           PageMeta.forNewPage(PageRole.BlogPost, loginGrant.user, PageParts("?"), now,
             parentPageId = Some(blogMainPageId)),
           defaultPagePath.copy(
             showId = true, pageSlug = "role-test-blog-article"),
           PageParts(guid = "?"))
         val page = dao.createPage(pageNoId)
-        val actions = page.actions
+        val actions = page.parts
         blogArticleId = actions.pageId
         actions.postCount must_== 0
         actions.pageId.length must be_>(1)  // not = '?'
@@ -686,16 +686,16 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
 
     "create forums and topics" >> {
 
-      var forum: PageStuff = null
-      var topic: PageStuff = null
-      var forumGroup: PageStuff = null
+      var forum: Page = null
+      var topic: Page = null
+      var forumGroup: Page = null
 
       def forumStuff(
             pageRole: PageRole,
             parentPageId: Option[String] = None,
             pageSlug: String = "forum-or-topic",
-            showId: Boolean = true): PageStuff =
-        PageStuff(
+            showId: Boolean = true): Page =
+        Page(
           PageMeta.forNewPage(pageRole, loginGrant.user, PageParts("?"), now,
             parentPageId = parentPageId),
           defaultPagePath.copy(folder = "/forum/", showId = showId, pageSlug = pageSlug),
@@ -1797,12 +1797,12 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
           throwA[PageNotFoundByPathException]
       }
 
-      var origHomepage: PageStuff = null
-      var newHomepage: PageStuff = null
+      var origHomepage: Page = null
+      var newHomepage: Page = null
 
       def homepagePathNoId = PagePath(defaultTenantId, "/", None, false, "")
 
-      def homepagePathWithIdTo(page: PageStuff) =
+      def homepagePathWithIdTo(page: Page) =
         homepagePathNoId.copy(pageId = Some(page.id))
 
       "create page /_old/homepage" in {
@@ -1858,21 +1858,21 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
     // -------- Page path clashes
 
 
-    def createPage(path: String, showId: Boolean = false): PageStuff = {
+    def createPage(path: String, showId: Boolean = false): Page = {
       val pagePath =
         PagePath.fromUrlPath(defaultTenantId, path = path) match {
           case PagePath.Parsed.Good(path) => path.copy(showId = showId)
           case x => failure(s"Test broken, bad path: $x")
         }
-      dao.createPage(PageStuff.forNewEmptyPage(PageRole.Generic, pagePath,
+      dao.createPage(Page.newEmptyPage(PageRole.Generic, pagePath,
         author = loginGrant.user))
     }
 
 
     "not overwrite page paths, but overwrite redirects, when creating page" >> {
 
-      var page_f_index: PageStuff = null
-      var page_f_page: PageStuff = null
+      var page_f_index: Page = null
+      var page_f_page: Page = null
 
       "create page /f/ and /f/page" in {
         page_f_index = createPage("/f/")
@@ -1926,10 +1926,10 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
 
     "not overwrite page paths, when moving pages" >> {
 
-      var page_g_index: PageStuff = null
-      var page_g_2: PageStuff = null
-      var page_g_page: PageStuff = null
-      var page_g_page_2: PageStuff = null
+      var page_g_index: Page = null
+      var page_g_2: Page = null
+      var page_g_page: Page = null
+      var page_g_page_2: Page = null
 
       "create page /g/, /g/2, and /g/page, /g/page-2" in {
         page_g_index = createPage("/g/")
@@ -2115,7 +2115,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
         val emptyPage = PageParts(guid = "?")
         val pagePath = v0.PagePath(newWebsiteOpt.id, "/", None, false, "")
         val dao = newWebsiteDao()
-        val page = dao.createPage(PageStuff.forNewPage(
+        val page = dao.createPage(Page.newPage(
           PageRole.Generic, pagePath, emptyPage, author = SystemUser.User))
         homepageId = page.id
         dao.savePageActions(page.id, List(homepageTitle))
