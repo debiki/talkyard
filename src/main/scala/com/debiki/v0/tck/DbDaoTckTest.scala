@@ -814,8 +814,9 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
       parentPostId = PageParts.BodyId, text = "", loginId = loginId, userId = globalUserId)
     var ex2_id = ""
     "save an empty root post child post" in {
-      dao.savePageActions(ex1_debate.guid, List(ex2_emptyPost)) must beLike {
-        case List(p: PostActionDto[PAP.CreatePost]) =>
+      ex1_debate += loginGrant.user
+      dao.savePageActions(ex1_debate, List(ex2_emptyPost)) must beLike {
+        case (_, List(p: PostActionDto[PAP.CreatePost])) =>
           ex2_id = p.id
           p must matchPost(ex2_emptyPost, id = ex2_id)
       }
@@ -833,8 +834,8 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
     lazy val ex3_rating = T.rating.copy(loginId = loginId, userId = globalUserId,
       postId = PageParts.BodyId,  tags = "Interesting"::"Funny"::Nil)  // 2 tags
     "save a post rating, with 2 tags" in {
-      dao.savePageActions(ex1_debate.guid, List(ex3_rating)) must beLike {
-        case List(r: Rating) =>
+      dao.savePageActions(ex1_debate, List(ex3_rating)) must beLike {
+        case (_, List(r: Rating)) =>
           ex3_ratingId = r.id
           r must matchRating(ex3_rating, id = ex3_ratingId,
             loginId = loginId, userId = globalUserId)
@@ -863,10 +864,10 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
         userId = globalUserId, tags = "Boring"::"Stupid"::"Funny"::Nil)
 
     "save 3 ratings, with 1, 2 and 3 tags" in {
-      dao.savePageActions(ex1_debate.guid,
+      dao.savePageActions(ex1_debate,
                 List(ex4_rating1, ex4_rating2, ex4_rating3)
       ) must beLike {
-        case List(r1: Rating, r2: Rating, r3: Rating) =>
+        case (_, List(r1: Rating, r2: Rating, r3: Rating)) =>
           ex4_rating1Id = r1.id
           r1 must matchRating(ex4_rating1, id = ex4_rating1Id)
           ex4_rating2Id = r2.id
@@ -902,8 +903,8 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
       val approval = if (isApproved) Some(Approval.Manual) else None
       val reviewNoId = ReviewPostAction("?", postId = ex1_rootPost.id, loginId = loginId,
          userId = globalUserId, newIp = None, ctime = now, approval = approval)
-      dao.savePageActions(ex1_debate.guid, List(reviewNoId)) must beLike {
-        case List(review: ReviewPostAction) =>
+      dao.savePageActions(ex1_debate, List(reviewNoId)) must beLike {
+        case (_, List(review: ReviewPostAction)) =>
           reviewSaved = review
           review must_== reviewNoId.copy(id = review.id)
       }
@@ -933,10 +934,11 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
       var post: PostActionDto[PAP.CreatePost] = null
 
       "save post" in {
-        post = dao.savePageActions(ex1_debate.guid, List(postNoId)).head
+        post = dao.savePageActions(ex1_debate, List(postNoId))._2.head
         post.payload.text must_== "Initial text"
         post.payload.markup must_== "dmd0"
         exEdit_postId = post.id
+        ex1_debate += post
         ok
       }
 
@@ -957,7 +959,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
 
         // Save
         val List(edit: Edit, publ: EditApp) =
-          dao.savePageActions(ex1_debate.guid, List(editNoId, publNoId))
+          dao.savePageActions(ex1_debate, List(editNoId, publNoId))._2
 
         exEdit_editId = edit.id
 
@@ -984,7 +986,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
 
         // Save
         val List(edit: Edit, publ: EditApp) =
-          dao.savePageActions(ex1_debate.guid, List(editNoId, publNoId))
+          dao.savePageActions(ex1_debate, List(editNoId, publNoId))._2
 
         // Verify markup type changed
         dao.loadPage(ex1_debate.guid) must beLike {
@@ -1273,8 +1275,9 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
         loginId = exOpenId_loginGrant.login.id,
         userId = exOpenId_loginGrant.user.id)
       var postId = "?"
-      dao.savePageActions(ex1_debate.guid, List(newPost)) must beLike {
-        case List(savedPost: PostActionDto[PAP.CreatePost]) =>
+      ex1_debate += exOpenId_loginGrant.user
+      dao.savePageActions(ex1_debate, List(newPost)) must beLike {
+        case (_, List(savedPost: PostActionDto[PAP.CreatePost])) =>
           postId = savedPost.id
           savedPost must matchPost(newPost, id = postId)
       }
@@ -2118,7 +2121,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
         val page = dao.createPage(Page.newPage(
           PageRole.Generic, pagePath, emptyPage, author = SystemUser.User))
         homepageId = page.id
-        dao.savePageActions(page.id, List(homepageTitle))
+        dao.savePageActions(page.parts, List(homepageTitle))
         ok
       }
 
@@ -2378,7 +2381,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
     //"create many many random posts" in {
     //  for (i <- 1 to 10000) {
     //    dao.savePageActions(
-    //          "-"+ ex1_debate.id, List(ex3_emptyPost)) must beLike {
+    //          "-"+ ex1_debate, List(ex3_emptyPost)) must beLike {
     //      case List(p: Post) => ok
     //    }
     //  }
