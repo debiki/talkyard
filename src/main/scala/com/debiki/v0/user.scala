@@ -407,6 +407,8 @@ object SystemUser {
     id = "1", prevLoginId = None, ip = "127.0.0.1",
     date = new ju.Date(0), identityId = Identity.id)
 
+  val Person = People(List(Login), List(Identity), List(User))
+
 }
 
 
