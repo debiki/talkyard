@@ -41,13 +41,14 @@ object Page {
         parts: PageParts,
         publishDirectly: Boolean = false,
         author: User): Page = {
+    val partsInclAuthor = parts + author
     val meta = PageMeta.forNewPage(
       pageRole,
       author,
-      parts,
+      parts = partsInclAuthor,
       creationDati = parts.oldestDati getOrElse new ju.Date,
       publishDirectly = publishDirectly)
-    Page(meta, path, parts)
+    Page(meta, path, partsInclAuthor)
   }
 
   def newEmptyPage(pageRole: PageRole, path: PagePath, author: User) =
