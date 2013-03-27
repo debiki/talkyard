@@ -116,8 +116,8 @@ class TenantDao(protected val tenantDbDao: ChargingTenantDbDao)
     // really an edit, an action undone is not itself an Undo action,
     // and lots of other similar tests.
 
-    val actionsWithId = tenantDbDao.savePageActions(page.id, actions)
-    val pageWithNewActions = page ++ actionsWithId
+    val (pageWithNewActions, actionsWithId) =
+      tenantDbDao.savePageActions(page, actions)
 
     val newMeta = PageMeta.forChangedPage(pageMeta, pageWithNewActions)
     if (newMeta != pageMeta)
