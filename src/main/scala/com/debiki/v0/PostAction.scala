@@ -65,11 +65,11 @@ class PostActionOld(val debate: PageParts, val action: PostActionDtoOld) {
   def identity_! : Identity = debate.people.identity_!(login_!.identityId)
   def userId = {
     // Temporary (?) debug test: (I just introduced `userId`)
-    user foreach { u => assErrIf(u.id != action.userId, "DwE43KbX6") }
+    identity foreach { i => assErrIf(i.userId != action.userId, "DwE43KbX6") }
     action.userId
   }
-  def user : Option[User] = identity.flatMap(i => debate.people.user(i.userId))
-  def user_! : User = debate.people.user_!(identity_!.userId)
+  def user : Option[User] = debate.people.user(action.userId)
+  def user_! : User = debate.people.user_!(action.userId)
   def ip: Option[String] = action.newIp.orElse(login.map(_.ip))
   def ip_! : String = action.newIp.getOrElse(login_!.ip)
   def ipSaltHash: Option[String] = ip.map(saltAndHashIp(_))
