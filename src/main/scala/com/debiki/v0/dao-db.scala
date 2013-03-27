@@ -150,7 +150,8 @@ abstract class TenantDbDao {
 
   // ----- Loading and saving pages
 
-  def savePageActions[T <: PostActionDtoOld](debateId: String, xs: List[T]): List[T]
+  def savePageActions[T <: PostActionDtoOld](pageParts: PageParts, xs: List[T])
+        : (PageParts, List[T])
 
   /**
    * Loads another tenant's page, if tenantId is specified.
@@ -504,9 +505,9 @@ class ChargingTenantDbDao(
   // ----- Actions
 
   def savePageActions[T <: PostActionDtoOld](
-        debateId: String, actions: List[T]): List[T] = {
+        pageParts: PageParts, actions: List[T]): (PageParts, List[T]) = {
     _chargeFor(ResUsg.forStoring(actions = actions))
-    _spi.savePageActions(debateId, actions)
+    _spi.savePageActions(pageParts, actions)
   }
 
   def loadPage(debateId: String, tenantId: Option[String]): Option[PageParts] = {
