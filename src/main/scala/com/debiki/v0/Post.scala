@@ -30,6 +30,7 @@ case class Post(pageParts: PageParts, private val state: PostState)
     else debate.getPost(parentId)
 
 
+  // Rename to `initialApproval`??? I'm confusing myself!
   def approval = payload.approval
 
 
@@ -49,6 +50,11 @@ case class Post(pageParts: PageParts, private val state: PostState)
 
 
   def actions: List[PostAction[_]] = page.getActionsByPostId(id)
+
+
+  def numPendingDeletes = state.numPendingDeletes + 0 // currently happens directly
+
+  def numPendingMoves = state.numPendingMoves + 0 // not implemented
 
 
   /**
@@ -134,6 +140,15 @@ case class Post(pageParts: PageParts, private val state: PostState)
 
   lazy val lastEditApplied = editsAppliedDescTime.headOption
   lazy val lastEditReverted = editsRevertedDescTime.headOption
+
+  def numPendingEditSuggestions =
+    state.numPendingEditSuggestions + editsPendingDescTime.length
+
+  def numPendingEditApps =
+    state.numPendingEditApps + (editsAppliedDescTime takeWhile { patch =>
+    if (anyPermanentApprovalDati.isEmpty) true
+    else anyPermanentApprovalDati.get.getTime < patch.applicationDati.get.getTime
+  }).length
 
 
   /**
@@ -245,6 +260,8 @@ case class Post(pageParts: PageParts, private val state: PostState)
         review.approval != Some(Approval.Preliminary))
 
 
+  def anyPermanentApprovalDati = lastPermanentApproval.map(_.creationDati)
+
   /**
    * All actions that affected this Post and didn't happen after
    * this dati should be considered when rendering this Post.
@@ -264,8 +281,9 @@ case class Post(pageParts: PageParts, private val state: PostState)
   def currentVersionReviewed: Boolean = {
     // Use >= not > because a comment might be auto approved, and then
     // the approval dati equals the comment creationDati.
-    lastReviewDati.isDefined && lastReviewDati.get.getTime >=
-       modificationDati.getTime
+    lastReviewDati.isDefined &&
+      lastReviewDati.get.getTime >= modificationDati.getTime &&
+      numPendingEditApps == 0
   }
 
 
@@ -322,6 +340,9 @@ case class Post(pageParts: PageParts, private val state: PostState)
   def siblingsAndMe: List[Post] = debate.repliesTo(parentId)
 
 
+  def numPendingCollapses = state.numPendingCollapses + 0 // currently happens directly
+
+
   def isTreeCollapsed: Boolean =
     hasHappenedNotUndone(PostActionPayload.CollapseTree)
 
@@ -362,6 +383,8 @@ case class Post(pageParts: PageParts, private val state: PostState)
       else lastAuthoritativeReviewDati.get.getTime <= flag.ctime.getTime
     }
 
+  def numPendingFlags = state.numPendingFlags + flagsPendingReview.length
+  def numHandledFlags = state.numHandledFlags + flagsReviewed.length
 
   lazy val lastFlag = flagsDescTime.headOption
 

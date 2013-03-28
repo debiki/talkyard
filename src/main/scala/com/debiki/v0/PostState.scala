@@ -13,7 +13,7 @@ import com.debiki.v0.{PostActionPayload => PAP}
 object PostState {
 
   def whenCreated(creationPostActionDto: PostActionDto[PAP.CreatePost]): PostState = {
-    PostState(creationPostActionDto)
+    PostState(creationPostActionDto, 0, 0, 0, 0, 0, 0, 0)
   }
 
 }
@@ -26,7 +26,14 @@ object PostState {
   * so all historic info don't have to be reapplied to get to the current state.
   */
 case class PostState(
-  creationPostActionDto: PostActionDto[PostActionPayload.CreatePost])
+  creationPostActionDto: PostActionDto[PostActionPayload.CreatePost],
+  numPendingEditApps: Int,
+  numPendingEditSuggestions: Int,
+  numPendingMoves: Int,
+  numPendingCollapses: Int,
+  numPendingDeletes: Int,
+  numPendingFlags: Int,
+  numHandledFlags: Int)
 
 
 /*

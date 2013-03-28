@@ -56,12 +56,13 @@ object PostActionDto {
       parentPostId: String,
       text: String,
       markup: String,
-      approval: Option[Approval]) =
+      approval: Option[Approval],
+      where: Option[String] = None) =
     PostActionDto(
       id, creationDati, postId = id, loginId = loginId, userId = userId, newIp = newIp,
       payload = PAP.CreatePost(
         parentPostId = parentPostId, text = text,
-        markup = markup, approval = approval))
+        markup = markup, approval = approval, where = where))
 
 
   def forNewTitleBySystem(text: String, creationDati: ju.Date) =
