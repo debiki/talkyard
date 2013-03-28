@@ -133,6 +133,7 @@ object AppList extends mvc.Controller {
       throwForbidden("DwE401zG7", "Insufficient permissions to list actions")
     }
 
+    /*
     val fromIpOpt = pageReq.queryString.getEmptyAsNone("from-ip")
     val byIdtyOpt = pageReq.queryString.getEmptyAsNone("by-identity")
     val pathRanges = {
@@ -151,10 +152,14 @@ object AppList extends mvc.Controller {
     // COULD rename this function to listPosts?
     // Or:  ?list-actions&type=posts&...
     def posts = actions filter (_.isInstanceOf[Post])
+      */
+
+    val (posts, people: People) =
+      pageReq.dao.loadPostsRecentlyActive(limit = ActionCountLimit)
 
     contentType match {
       case DebikiHttp.ContentType.Html =>
-        Ok(views.html.listActions(actions))
+        unimplemented // Ok(views.html.listActions(actions))
       case DebikiHttp.ContentType.Json =>
         // Include the SystemUser, because it's the author of the
         // default homepage. (COULD skip adding it, in the future when
@@ -198,17 +203,12 @@ object AppList extends mvc.Controller {
       "pageId" -> JsString(action.page.id),
       "type" -> JsString(classNameOf(action)),
       "userId" -> JsString(action.user_!.id),
-      "idtyId" -> JsString(action.identity_!.id),
       "loginId" -> JsString(action.loginId),
       "cdati" -> JsString(toIso8601T(action.creationDati)))
 
     action match {
       case post: Post =>
         data += "text" -> JsString(post.text take PostTextLengthLimit)
-        if (post.editsAppliedDescTime.nonEmpty)
-          data += "editsAppliedCount" -> JsNumber(post.editsAppliedDescTime.length)
-        if (post.editsPendingDescTime.nonEmpty)
-          data += "editsPendingCount" -> JsNumber(post.editsPendingDescTime.length)
 
         val status =
           if (post.currentVersionPrelApproved) {
@@ -225,10 +225,14 @@ object AppList extends mvc.Controller {
 
         data += "status" -> JsString(status)
 
-        if (post.flagsPendingReview nonEmpty)
-          data += "newFlags" -> _jsonFor(post.flagsPendingReview)
-        if (post.flagsReviewed nonEmpty)
-          data += "oldFlags" -> _jsonFor(post.flagsReviewed)
+        if (post.numPendingEditApps > 0)
+          data += "numPendingEditApps" -> JsNumber(post.numPendingEditApps)
+        if (post.numPendingEditSuggestions > 0)
+          data += "numPendingEditSuggestions" -> JsNumber(post.numPendingEditSuggestions)
+        if (post.numPendingFlags > 0)
+          data += "numPendingFlags" -> JsNumber(post.numPendingFlags)
+        if (post.numHandledFlags > 0)
+          data += "numHandledFlags" -> JsNumber(post.numHandledFlags)
 
       case _ =>
     }
@@ -278,6 +282,7 @@ object AppList extends mvc.Controller {
   }
 
 
+  /*
   private def _jsonFor(flags: List[Flag]): JsValue = {
     def jsonForFlag(flag: Flag): JsValue = {
       var data = Map[String, JsValue](
@@ -288,7 +293,7 @@ object AppList extends mvc.Controller {
       toJson(data)
     }
     JsArray(flags map (jsonForFlag _))
-  }
+  } */
 
 }
 

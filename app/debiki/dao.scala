@@ -149,6 +149,9 @@ class TenantDao(protected val tenantDbDao: ChargingTenantDbDao)
   def loadPageBodiesTitles(pageIds: Seq[String]): Map[String, PageParts] =
     tenantDbDao.loadPageBodiesTitles(pageIds)
 
+  def loadPostsRecentlyActive(limit: Int): (Seq[Post], People) =
+    tenantDbDao.loadPostsRecentlyActive(limit, offset = 0)
+
   def loadRecentActionExcerpts(
         fromIp: Option[String] = None,
         byIdentity: Option[String] = None,
