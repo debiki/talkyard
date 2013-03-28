@@ -381,6 +381,11 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
     }
 
 
+    "list no posts, when there are none" in {
+      dao.loadPostsRecentlyActive(limit = 10, offset = 0)._1 must beEmpty
+    }
+
+
     // -------- Page creation
 
     lazy val ex1_rootPost = PostActionDto.copyCreatePost(T.post,
@@ -488,6 +493,14 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
         page.titleText.get.length must be_>(0)
         page.title_!.user must beSome
         */
+      }
+    }
+
+
+    "list the posts, it's recently active " in {
+      dao.loadPostsRecentlyActive(limit = 10, offset = 0)._1 must beLike {
+        case List(post: Post) =>
+          post.id must_== ex1_rootPost.id
       }
     }
 
