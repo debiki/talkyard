@@ -171,6 +171,14 @@ abstract class TenantDbDao {
    */
   def loadPageBodiesTitles(pageIds: Seq[String]): Map[String, PageParts]
 
+  /** Loads posts that have e.g. been created, edited, flagged recently.
+    *
+    * The most interesting ones are loaded first — that is, flagged posts,
+    * because moderators might need to delete such posts. Then new posts
+    * that needs to be reviewed, then posts that have been edited, and so on.
+    */
+  def loadPostsRecentlyActive(limit: Int, offset: Int): (Seq[Post], People)
+
   /**
    * Loads at most `limit` recent posts, conducted e.g. at `fromIp`.
    * Also loads actions that affected those posts (e.g. flags, edits,
@@ -524,6 +532,11 @@ class ChargingTenantDbDao(
   def loadPageBodiesTitles(pagePaths: Seq[String]): Map[String, PageParts] = {
     _chargeForOneReadReq()
     _spi.loadPageBodiesTitles(pagePaths)
+  }
+
+  def loadPostsRecentlyActive(limit: Int, offset: Int): (Seq[Post], People) = {
+    _chargeForOneReadReq()
+    _spi.loadPostsRecentlyActive(limit, offset = offset)
   }
 
   def loadRecentActionExcerpts(
