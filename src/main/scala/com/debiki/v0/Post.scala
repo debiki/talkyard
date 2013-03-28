@@ -11,14 +11,17 @@ import com.debiki.v0.{PostActionPayload => PAP}
 
 
 
-/**
- * Takes into account all edits applied to the actual post.
- *
- * Created via CreatePostAction:s.
- */
-class Post(debate: PageParts, theActionDto: PostActionDto[PostActionPayload.CreatePost])
-  extends PostAction[PostActionPayload.CreatePost](debate, theActionDto)
+/** Takes into account all actions in pageParts that affect this post.
+  */
+case class Post(pageParts: PageParts, private val state: PostState)
+  extends PostAction[PAP.CreatePost](pageParts, state.creationPostActionDto)
   with MaybeApproval {
+
+
+  def this(pageParts: PageParts, creationAction: PostActionDto[PAP.CreatePost]) {
+    this(pageParts, PostState.whenCreated(creationAction))
+  }
+
 
   def parentId: String = payload.parentPostId
 

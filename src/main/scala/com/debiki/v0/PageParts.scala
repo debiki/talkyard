@@ -171,19 +171,34 @@ abstract class PostActionsWrapper { self: PageParts =>
     var actionsById = mut.Map[String, PostAction[_]]()
     var actionsByPostId = mut.Map[String, List[PostAction[_]]]().withDefaultValue(Nil)
 
+    for (state <- self.postStates) {
+      addAction(new Post(self, state))
+    }
+
     for (actionDto <- actionDtos) {
-      def thisAsPage = this.asInstanceOf[PageParts]
       val action = actionDto.payload match {
         case _: PAP.CreatePost =>
-          new Post(thisAsPage, actionDto.asInstanceOf[PostActionDto[PAP.CreatePost]])
+          new Post(self, actionDto.asInstanceOf[PostActionDto[PAP.CreatePost]])
         // case _ => EditPostAction => Patch(this.asInstanceOf[Debate], action)
         case _ =>
-          new PostAction(thisAsPage, actionDto)
+          new PostAction(self, actionDto)
+      }
+      addAction(action)
+    }
+
+    def addAction(action: PostAction[_]) {
+      val anyOldAction = actionsById.get(action.id)
+      anyOldAction foreach { oldAction =>
+        // This would fail if a Post is added both via a cached PostState and
+        // via a create-new-post-action.
+        if (oldAction != action)
+          assErr("DwE75BW0", o"""Cannot map action `$action.id` to two different actions:
+            the first: $oldAction, and the second: $action""")
       }
       actionsById(action.id) = action
       val otherActions = actionsByPostId(action.postId)
       if (otherActions.find(_.id == action.id).isEmpty)
-        actionsByPostId(actionDto.postId) = action :: otherActions
+        actionsByPostId(action.actionDto.postId) = action :: otherActions
     }
 
     (actionsById, actionsByPostId)
@@ -214,7 +229,8 @@ case class PageParts (
   flags: List[Flag] = Nil,
   deletions: List[Delete] = Nil,
   reviews: List[ReviewPostAction] = Nil,
-  actionDtos : List[PostActionDto[_]] = Nil) extends PostActionsWrapper {
+  postStates: List[PostState] = Nil,
+  actionDtos: List[PostActionDto[_]] = Nil) extends PostActionsWrapper {
 
 
   def actionCount: Int =
@@ -581,7 +597,7 @@ case class PageParts (
         "DwE8k3EC", "Unknown action type: "+ classNameOf(x))
     }
     PageParts(id, people, ratings2,
-        edits2, editApps2, flags2, dels2, reviews2, actions2)
+        edits2, editApps2, flags2, dels2, reviews2, postStates, actions2)
   }
 
 
