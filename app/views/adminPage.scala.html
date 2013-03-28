@@ -88,6 +88,7 @@
                       <a class='inline-action approve-action' ng-click='approve(action)' ng-show='action.approveBtnText'>{{action.approveBtnText}}</a>
                       <a class='inline-action reject-action' ng-click='reject(action)' ng-show='action.showRejectBtn'>Reject</a>
                       <a class='inline-action delete-action' ng-click='delete(action)' ng-show='action.showDeleteBtn'>Delete</a>
+                      <a class='inline-action suggestions-link' ng-show='action.showViewSuggsLink'>{{action.numPendingEditSuggestions}} improvement suggestions</a>
                       <span class='inline-message'>{{action.inlineMessage}}</span>
                     </div>
                     <a target='_blank' class='action-path' href='{{action.url}}'>{{action.pagePath}}</a>

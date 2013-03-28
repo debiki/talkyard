@@ -18,13 +18,13 @@ bug = d.u.die2
       for row in actionRows
         row.inlineMessage = doneMessage
 
-  $scope.approve = (actionRow) ->
+  $scope.approve = !(actionRow) ->
     doInlineAction adminService.approve, [actionRow], 'Approved.'
 
-  $scope.reject = (actionRow) ->
+  $scope.reject = !(actionRow) ->
     doInlineAction adminService.reject, [actionRow], 'Rejected.'
 
-  $scope.delete = (actionRow) ->
+  $scope.delete = !(actionRow) ->
     doInlineAction adminService.delete, [actionRow], 'Deleted.'
 
   updateActionList = (treesFoldersPageIds) ->
@@ -110,15 +110,26 @@ function describePost(post)
 
 
 function inlineBtnToggledAllOff
-  { approveBtnText: null, showRejectBtn: false }
+  approveBtnText: null
+  showRejectBtn: false
+  showViewSuggsLink: false
 
 function inlineBtnTogglersForPost(post)
   switch post.status
   | 'NewPrelApproved' \
-    'EditsPrelApproved' => { approveBtnText: 'Okay', showRejectBtn: true }
+    'EditsPrelApproved' =>
+      approveBtnText: 'Okay'
+      showRejectBtn: true
+      showViewSuggsLink: false
   | 'New' \
-    'NewEdits' => { approveBtnText: 'Approve', showRejectBtn: true }
-  | _ => {}
+    'NewEdits' =>
+      approveBtnText: 'Approve'
+      showRejectBtn: true
+      showViewSuggsLink: false
+  | _ =>
+    if post.numPendingEditSuggestions > 0 =>
+      showViewSuggsLink: true
+    else {}
 
 
 

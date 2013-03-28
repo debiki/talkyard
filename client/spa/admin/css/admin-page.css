@@ -169,6 +169,12 @@ li {
   margin-left: 1em;
 }
 
+/* Improvement suggestions aren't reall the moderator's responsibility
+  (but rather the text author's responsibility) so give them a weaker
+  shade of red (50% not 100% saturation). */
+#details .inline-action.suggestions-link {
+  color: hsl(0, 50%, 50%) !important;
+}
 
 
 /* vim: fdm=marker et ts=2 sw=2 tw=80 fo=tcqwn list
