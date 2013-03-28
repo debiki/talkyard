@@ -143,6 +143,13 @@ abstract class TenantDbDao {
    */
   def lookupPagePathAndRedirects(pageId: String): List[PagePath]
 
+  def listPagePaths(
+        pageRanges: PathRanges,
+        include: List[PageStatus],
+        sortBy: PageSortOrder,
+        limit: Int,
+        offset: Int): Seq[(PagePath, PageMeta)]
+
   def listChildPages(parentPageId: String, sortBy: PageSortOrder,
         limit: Int, offset: Int = 0, filterPageRole: Option[PageRole] = None)
         : Seq[(PagePath, PageMeta)]
@@ -186,17 +193,6 @@ abstract class TenantDbDao {
         byIdentity: Option[String] = None,
         pathRanges: PathRanges = PathRanges.Anywhere,
         limit: Int): (Seq[PostActionOld], People)
-
-
-  // ----- List stuff
-
-  def listPagePaths(
-        pageRanges: PathRanges,
-        include: List[PageStatus],
-        sortBy: PageSortOrder,
-        limit: Int,
-        offset: Int
-      ): Seq[(PagePath, PageMeta)]
 
 
   // ----- Users and permissions
@@ -493,6 +489,16 @@ class ChargingTenantDbDao(
     _spi.lookupPagePathAndRedirects(pageId)
   }
 
+  def listPagePaths(
+        pageRanges: PathRanges,
+        include: List[PageStatus],
+        sortBy: PageSortOrder,
+        limit: Int,
+        offset: Int): Seq[(PagePath, PageMeta)] = {
+    _chargeForOneReadReq()
+    _spi.listPagePaths(pageRanges, include, sortBy, limit, offset)
+  }
+
   def listChildPages(parentPageId: String, sortBy: PageSortOrder,
         limit: Int, offset: Int = 0, filterPageRole: Option[PageRole])
         : Seq[(PagePath, PageMeta)] = {
@@ -528,19 +534,6 @@ class ChargingTenantDbDao(
     _chargeForOneReadReq()
     _spi.loadRecentActionExcerpts(fromIp = fromIp, byIdentity = byIdentity,
         pathRanges = pathRanges, limit = limit)
-  }
-
-
-  // ----- List stuff
-
-  def listPagePaths(
-        pageRanges: PathRanges,
-        include: List[PageStatus],
-        sortBy: PageSortOrder,
-        limit: Int,
-        offset: Int): Seq[(PagePath, PageMeta)] = {
-    _chargeForOneReadReq()
-    _spi.listPagePaths(pageRanges, include, sortBy, limit, offset)
   }
 
 
