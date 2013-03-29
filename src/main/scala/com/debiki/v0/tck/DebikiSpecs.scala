@@ -1,8 +1,8 @@
-package com.debiki.v0.tck
-
 /**
- * Copyright (c) 2011 Kaj Magnus Lindberg (born 1979)
+ * Copyright (c) 2011-2013 Kaj Magnus Lindberg (born 1979)
  */
+
+package com.debiki.v0.tck
 
 import com.debiki.v0._
 import com.debiki.v0.Prelude._
@@ -222,4 +222,4 @@ object DebikiSpecs {
   }
 }
 
-// vim: fdm=marker et ts=2 sw=2 tw=80 fo=tcqwn list
+// vim: fdm=marker et ts=2 sw=2 fo=tcqwn list
