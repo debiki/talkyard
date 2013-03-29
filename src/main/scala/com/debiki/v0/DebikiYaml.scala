@@ -1,4 +1,6 @@
-// vim: fdm=marker et ts=2 sw=2 tw=80 fo=tcqwn list
+/**
+ * Copyright (c) 2011 Kaj Magnus Lindberg (born 1979)
+ */
 
 /*  I added Login and User/Simple/OpenId/..., so now DebikiYaml
     requires a partial rewrite.
@@ -464,4 +466,5 @@ class DebikiYaml {
 
 }
 
+// vim: fdm=marker et ts=2 sw=2 fo=tcqwn list
 */

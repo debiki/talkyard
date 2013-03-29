@@ -1,7 +1,5 @@
-// vim: fdm=marker et ts=2 sw=2 tw=80 fo=tcqwn list
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
+/**
+ * Copyright (c) 2011-2013 Kaj Magnus Lindberg (born 1979)
  */
 
 package com.debiki.v0
@@ -484,3 +482,7 @@ object Prelude {
     private val CollapseSpacesRegex = """\s\s*""".r
   }
 }
+
+
+// vim: fdm=marker et ts=2 sw=2 fo=tcqwn list
+

@@ -1,4 +1,6 @@
-// vim: fdm=marker et ts=2 sw=2 tw=80 fo=tcqwn list
+/**
+ * Copyright (c) 2012-2013 Kaj Magnus Lindberg (born 1979)
+ */
 
 package com.debiki.v0
 
@@ -854,3 +856,4 @@ object PageRoot {
 }
 
 
+// vim: fdm=marker et ts=2 sw=2 fo=tcqwn list

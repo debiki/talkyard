@@ -1,6 +1,5 @@
 /**
  * Copyright (c) 2011 Kaj Magnus Lindberg (born 1979)
- * Created on 2011-09-15.
  */
 
 package com.debiki.v0

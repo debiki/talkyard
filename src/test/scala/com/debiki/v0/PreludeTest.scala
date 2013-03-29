@@ -1,7 +1,5 @@
-// vim: ts=2 sw=2 et
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
+/**
+ * Copyright (c) 2012-2013 Kaj Magnus Lindberg (born 1979)
  */
 
 package com.debiki.v0

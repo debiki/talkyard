@@ -1,8 +1,8 @@
-package com.debiki.v0
-
 /**
  * Copyright (c) 2011-2012 Kaj Magnus Lindberg (born 1979)
  */
+
+package com.debiki.v0
 
 import org.specs2.mutable._
 import java.{util => ju}

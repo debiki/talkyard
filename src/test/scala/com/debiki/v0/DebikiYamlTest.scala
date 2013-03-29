@@ -1,4 +1,7 @@
-// vim: ts=2 sw=2 et
+/**
+ * Copyright (c) 2011 Kaj Magnus Lindberg (born 1979)
+ */
+
 /*
 
 package com.debiki.v0
