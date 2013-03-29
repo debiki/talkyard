@@ -1,4 +1,4 @@
-/* Copyright (c) 2010 - 2012 Kaj Magnus Lindberg. All rights reserved. */
+/* Copyright (c) 2010-2012 Kaj Magnus Lindberg. All rights reserved. */
 
 /**
  * This file: Login and logout control flow, and dialogs for

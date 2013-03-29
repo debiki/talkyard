@@ -1,8 +1,8 @@
-package controllers
-
 /**
  * Copyright (c) 2012 Kaj Magnus Lindberg (born 1979)
  */
+
+package controllers
 
 import com.debiki.v0._
 import com.debiki.v0.Prelude._

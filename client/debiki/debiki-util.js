@@ -1,4 +1,4 @@
-/* Copyright (c) 2010 - 2012 Kaj Magnus Lindberg. All rights reserved. */
+/* Copyright (c) 2010-2012 Kaj Magnus Lindberg. All rights reserved. */
 
 // COULD move to namespace debiki.v0.util? (not `window.*`!)
 // (I just broke out this file, that's why I haven't fixed that yet.)

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2012 Kaj Magnus Lindberg (born 1979)
+ * Copyright (c) 2013 Kaj Magnus Lindberg (born 1979)
  */
 
 package controllers

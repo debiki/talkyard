@@ -1,4 +1,4 @@
-/* Copyright (c) 2010 - 2012 Kaj Magnus Lindberg. All rights reserved. */
+/* Copyright (c) 2012-2013 Kaj Magnus Lindberg. All rights reserved. */
 
 d = i: debiki.internal, u: debiki.v0.util
 $ = d.i.$;

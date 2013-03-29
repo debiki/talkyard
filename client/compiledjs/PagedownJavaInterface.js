@@ -1,3 +1,6 @@
+/*
+ * Copyright (c) 2012-2013 Kaj Magnus Lindberg (born 1979)
+ */
 
 
 /**

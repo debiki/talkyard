@@ -1,4 +1,4 @@
-/* Copyright (c) 2010 - 2011 Kaj Magnus Lindberg */
+/* Copyright (c) 2010-2011 Kaj Magnus Lindberg */
 /* Parts Copyright (C) 2006 Google Inc. */
 
 // The tag dog simplifies searching text inside html tags, without

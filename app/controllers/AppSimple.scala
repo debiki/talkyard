@@ -70,6 +70,9 @@ object AppSimple extends mvc.Controller {
         loadWhatFn: (PageParts, List[String]) => List[PostPatchSpec]) =
       PostJsonAction(maxLength = 5000) { apiReq =>
 
+    SECURITY // What about access control?! Page ids generally unknown however, but
+    // should really fix anyway.
+
     val pageActionIds = apiReq.body.as[List[Map[String, String]]]
 
     val actionsByPageId: Map[String, List[String]] =

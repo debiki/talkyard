@@ -1,4 +1,4 @@
-/* Copyright (c) 2010 - 2012 Kaj Magnus Lindberg. All rights reserved. */
+/* Copyright (c) 2010-2012 Kaj Magnus Lindberg. All rights reserved. */
 
 
 var d = { i: debiki.internal, u: debiki.v0.util };
