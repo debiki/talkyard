@@ -436,9 +436,9 @@ class TemplateProgrammingInterface(
 
   def page(
     showTitle: Boolean = true,
-    showAuthorAndDate: Boolean = true,
+    showAuthorAndDate: Boolean = !isHomepage,
     showBody: Boolean = true,
-    showComments: Boolean = true)(
+    showComments: Boolean = !isHomepage)(
     contents: => play.api.templates.Html): xml.NodeSeq = {
 
     renderPageSettings =
@@ -469,6 +469,9 @@ class TemplateProgrammingInterface(
 
 
   def pageUrlPath = pageReq.pagePath.path
+
+
+  def isHomepage = pageUrlPath == "/"
 
 
   def title = renderedPage.title
