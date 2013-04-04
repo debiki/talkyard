@@ -298,13 +298,28 @@ post, only for the article.) */
    /* fix the header instead? I need to fix it anayway */
 }
 
-:not(.dw-ar-p-bd) > .dw-p-bd-blk {
+:not(.dw-hor) > .dw-p > .dw-p-bd > .dw-p-bd-blk {
   /* Cancel .dw-p-bd 3px padding-left:, because the .dw-p-bd-blk is
   100% wide though, and without padding-right, text might be cropped. */
   padding-right: 3px;
   /* Adjus max comment width: don't span whole screen even if
   .post.cropped-e is removed. */
   max-width: 40em;
+}
+
+/* Cancel .dw-p-bd-blk max width for code pages, and for the page config post. */
+[data-page_role='Code'] .dw-hor > .dw-p > .dw-p-bd > .dw-p-bd-blk,
+[data-page_role='Code'] .dw-hor > .dw-p > .dw-f-e > .dw-e-tabs > .dw-e-tab > .dw-p-bd-blk,
+#post-0c > .dw-p-bd > .dw-p-bd-blk,
+#post-0c > .dw-f-e > .dw-e-tabs > .dw-e-tab > .dw-p-bd-blk {
+  max-width: none;
+}
+
+
+/* Cancel Twitter Bootsrap wrapping of <pre> */
+.dw-hor > .dw-p > .dw-p-bd > .dw-p-bd-blk > pre {
+  white-space: pre;
+  word-wrap: normal;
 }
 
 
