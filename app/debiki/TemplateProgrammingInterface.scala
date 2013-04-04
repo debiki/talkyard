@@ -441,11 +441,20 @@ class TemplateProgrammingInterface(
     showComments: Boolean = true)(
     contents: => play.api.templates.Html): xml.NodeSeq = {
 
-    renderPageSettings = Some(RenderPageSettings(
-      showTitle = shall("show-title", showTitle),
-      showAuthorAndDate = shall("show-author-and-date", showAuthorAndDate),
-      showBody = shall("show-body", showBody),
-      showComments = shall("show-comments", showComments)))
+    renderPageSettings =
+      if (pageReq.pageRoot.isPageConfigPost) {
+        // Don't load any config values in case the config post is corrupt, or
+        // it wouldn't be possible to edit the config file and fix the errors.
+        Some(RenderPageSettings(
+          showTitle = true, showAuthorAndDate = false, showBody = true, showComments = true))
+      }
+      else {
+        Some(RenderPageSettings(
+          showTitle = shall("show-title", showTitle),
+          showAuthorAndDate = shall("show-author-and-date", showAuthorAndDate),
+          showBody = shall("show-body", showBody),
+          showComments = shall("show-comments", showComments)))
+      }
 
     val page = Page(pageReq.pageMeta_!, pageReq.pagePath,
       PageParts(pageReq.pageId_!))
