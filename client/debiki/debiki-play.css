@@ -107,6 +107,7 @@ html.js body.dw-render-actions-pending .dw-as {
 /* Prevent the edit form from getting as wide as the page. */
 .dw-depth-0 > .dw-p > .dw-f-e .dw-e-tabs {
   float: left;
+  clear: both;
 }
 
 
@@ -1143,6 +1144,27 @@ key presses).*/
 .dw-pri .dw-f-e.ui-widget-content {
   background: transparent;
   border: none;
+}
+
+.dw-f-e-help-show {
+  color: hsl(211, 85%, 35%);
+  float: left;
+}
+
+.dw-f-e-help-text {
+  display: none;
+  box-shadow: 3px 3px hsl(0, 0%, 50%);
+  background-color: #fcfcfc;
+  border: 1px solid hsl(0, 0%, 50%);
+  padding: 3px 15px;
+  margin: 5px 0 10px 3px;
+  float: left; /* or wills whole screen */
+  clear: both;
+}
+
+/* Hide help text for comments; show only for page body. */
+:not(.dw-hor) > .dw-p > .dw-f-e .dw-f-e-help-show {
+  display: none;
 }
 
 .dw-ui-simple .dw-f-e-mup { display: none; }

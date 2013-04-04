@@ -627,6 +627,7 @@ class HtmlForms(val config: HtmlConfig, xsrfToken: String,
           method='post'>
       { _xsrfToken }
       {/* timeWaistWarning("edits", "are") */}
+      { xml.Unparsed(views.html.editorHelp().body) }
       <div class='dw-f-e-inf-save'>Scroll down and click Submit when done.</div>
       <div class='dw-f-e-mup'>
         <label for={Inp.Markup}>Markup: </label>

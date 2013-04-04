@@ -136,6 +136,12 @@ function _$showEditFormImpl() {
       $post.each(d.i.SVG.$drawParents);
     });
 
+    // Show Markdown help text on click.
+    // IF mode = markdown && is page body THEN:
+    $editForm.find('.dw-f-e-help-show').click(function() {
+      $editForm.find('.dw-f-e-help-text').toggle();
+    });
+
     // Find the post's current (old) source text, and store in
     // .dw-e-src-old, so it's easily accessible to $updateEditFormDiff(…).
     if (!$editForm.data('dw-e-src-old')) {
