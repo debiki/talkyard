@@ -14,6 +14,12 @@ import com.debiki.v0.{PostActionPayload => PAP}
 
 
 /** Takes into account all actions in pageParts that affect this post.
+  *
+  * Re reviews and approvals: A post can be:
+  * Unreviewed (then not yet approved).
+  * Preliminarily approved (by the computer, automatically — it guesses / uses heuristics).
+  * Permanently reviewed (by a moderator, or a well-behaved user).
+  * Authoritatively reviewed (by a moderator but not a well-behaved user).
   */
 case class Post(pageParts: PageParts, private val state: PostState)
   extends PostAction[PAP.CreatePost](pageParts, state.creationPostActionDto)
@@ -54,9 +60,11 @@ case class Post(pageParts: PageParts, private val state: PostState)
   def actions: List[PostAction[_]] = page.getActionsByPostId(id)
 
 
-  def numPendingDeletes = state.numPendingDeletes + 0 // currently happens directly
+  def numDeleteSuggestions = state.numDeleteSuggestions + 0 // currently happens directly
+  def numDeletesToReview = state.numDeletesToReview + 0 // currently happens directly
 
-  def numPendingMoves = state.numPendingMoves + 0 // not implemented
+  def numMoveSuggestions = state.numMoveSuggestions + 0 // not implemented
+  def numMovesToReview = state.numMovesToReview + 0 // not implemented
 
 
   /**
@@ -144,13 +152,56 @@ case class Post(pageParts: PageParts, private val state: PostState)
   lazy val lastEditReverted = editsRevertedDescTime.headOption
 
   def numPendingEditSuggestions =
-    state.numPendingEditSuggestions + editsPendingDescTime.length
+    state.numEditSuggestions + editsPendingDescTime.length
 
-  def numPendingEditApps =
-    state.numPendingEditApps + (editsAppliedDescTime takeWhile { patch =>
-    if (anyPermanentApprovalDati.isEmpty) true
-    else anyPermanentApprovalDati.get.getTime < patch.applicationDati.get.getTime
-  }).length
+
+  /** Counts edits applied to this post but that have not yet been reviewed,
+    * not even auto-reviewed by the computer.
+    */
+  def numEditsAppliedUnreviewed = {
+    val numNew =
+      if (lastReviewDati.isEmpty) editsAppliedDescTime.length
+      else (editsAppliedDescTime takeWhile { patch =>
+        lastReviewDati.get.getTime < patch.applicationDati.get.getTime
+      }).length
+    state.numEditsAppliedUnreviewed + numNew
+  }
+
+
+  /** Counts the edits made to this post that 1) have been preliminarily
+    * approved by the computer, but 2) not permanently approved (by some moderator).
+    */
+  def numEditsAppldPrelApproved = {
+    val anyPrelApproval = lastApproval.filter(_.approval == Some(Approval.Preliminary))
+    val numNew = anyPrelApproval match {
+      case None => 0
+      case Some(prelApproval) =>
+        (editsAppliedDescTime takeWhile { patch =>
+          val perhapsPrelApprvd =
+            patch.applicationDati.get.getTime <= prelApproval.creationDati.getTime
+          val isPermApprvd =
+            if (anyPermanentApprovalDati.isEmpty) false
+            else patch.applicationDati.get.getTime <= anyPermanentApprovalDati.get.getTime
+          perhapsPrelApprvd && !isPermApprvd
+        }).length
+    }
+    state.numEditsAppldPrelApproved + numNew
+  }
+
+
+  /** Edits done after the last review — ignoring preliminary auto approval reviews —
+    * need to be reviewed.
+    */
+  def numEditsToReview = {
+    val numNew = anyPermanentApprovalDati match {
+      case None => editsAppliedDescTime.length
+      case Some(permApprovalDati) =>
+        (editsAppliedDescTime takeWhile { patch =>
+          permApprovalDati.getTime < patch.applicationDati.get.getTime
+        }).length
+    }
+    state.numEditsToReview + numNew
+  }
 
 
   /**
@@ -161,7 +212,7 @@ case class Post(pageParts: PageParts, private val state: PostState)
     val maxTime = math.max(
        lastEditApplied.map(_.applicationDati.get.getTime).getOrElse(0: Long),
        lastEditReverted.map(_.revertionDati.get.getTime).getOrElse(0: Long))
-    if (maxTime == 0) creationDati else new ju.Date(maxTime)
+    if (maxTime == 0) state.modifiedAt else new ju.Date(maxTime)
   }
 
 
@@ -247,8 +298,7 @@ case class Post(pageParts: PageParts, private val state: PostState)
 
   /**
    * The most recent review of this post by an admin or moderator.
-   * (But not by any well behaved user, which the computer might have decided
-   * to trust.)
+   * (But not by seemingly well behaved users.)
    */
   def lastAuthoritativeReview: Option[PostActionOld with MaybeApproval] =
     _reviewsDescTime.find(review =>
@@ -280,15 +330,26 @@ case class Post(pageParts: PageParts, private val state: PostState)
     else Some(lastReviewDati == lastApprovalDati)
 
 
+  /** Has this post been reviewed by a moderator, well behaved user or by the computer?
+    */
   def currentVersionReviewed: Boolean = {
     // Use >= not > because a comment might be auto approved, and then
     // the approval dati equals the comment creationDati.
     lastReviewDati.isDefined &&
       lastReviewDati.get.getTime >= modificationDati.getTime &&
-      numPendingEditApps == 0
+      numEditsAppliedUnreviewed == 0
   }
 
 
+  /** If this post has been reviewed by a moderator or in some cases a well
+    * behaved user, it is considered permanently reviewed.
+    */
+  def currentVersionPermReviewed: Boolean =
+    numEditsAppldPrelApproved == 0 && currentVersionReviewed
+
+
+  /** Has the computer preliminarily approved this post, or the last few edits?
+    */
   def currentVersionPrelApproved: Boolean =
     currentVersionReviewed &&
        lastApproval.flatMap(_.approval) == Some(Approval.Preliminary)
@@ -342,7 +403,8 @@ case class Post(pageParts: PageParts, private val state: PostState)
   def siblingsAndMe: List[Post] = debate.repliesTo(parentId)
 
 
-  def numPendingCollapses = state.numPendingCollapses + 0 // currently happens directly
+  def numCollapseSuggestions = state.numCollapseSuggestions + 0 // currently happens directly
+  def numCollapsesToReview = state.numCollapsesToReview + 0 // currently happens directly
 
 
   def isTreeCollapsed: Boolean =

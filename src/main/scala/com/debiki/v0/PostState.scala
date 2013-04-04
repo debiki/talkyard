@@ -15,7 +15,10 @@ import com.debiki.v0.{PostActionPayload => PAP}
 object PostState {
 
   def whenCreated(creationPostActionDto: PostActionDto[PAP.CreatePost]): PostState = {
-    PostState(creationPostActionDto, 0, 0, 0, 0, 0, 0, 0)
+    PostState(
+      creationPostActionDto,
+      creationPostActionDto.creationDati,
+      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
   }
 
 }
@@ -29,14 +32,19 @@ object PostState {
   */
 case class PostState(
   creationPostActionDto: PostActionDto[PostActionPayload.CreatePost],
-  numPendingEditApps: Int,
-  numPendingEditSuggestions: Int,
-  numPendingMoves: Int,
-  numPendingCollapses: Int,
-  numPendingDeletes: Int,
+  modifiedAt: ju.Date,
+  numEditSuggestions: Int,
+  numEditsAppliedUnreviewed: Int,
+  numEditsAppldPrelApproved: Int,
+  numEditsToReview: Int,
+  numCollapseSuggestions: Int,
+  numCollapsesToReview: Int,
+  numMoveSuggestions: Int,
+  numMovesToReview: Int,
+  numDeleteSuggestions: Int,
+  numDeletesToReview: Int,
   numPendingFlags: Int,
   numHandledFlags: Int)
-
 
 /*
 
