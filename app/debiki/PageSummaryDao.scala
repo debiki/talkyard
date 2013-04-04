@@ -69,8 +69,7 @@ trait PageSummaryDao {
         // Update reply counts.
         if (post.isArticleOrConfig) { } // Ignore, this is no reply.
         else if (post.isDeleted) numPostsDeleted += 1
-        else if (!post.currentVersionReviewed || post.currentVersionPrelApproved)
-          numPostsPendingReview += 1
+        else if (!post.currentVersionPermReviewed) numPostsPendingReview += 1
         else if (post.currentVersionRejected) numPostsRejected += 1
         else numPostsApproved += 1
 

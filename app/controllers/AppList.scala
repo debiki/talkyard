@@ -225,8 +225,8 @@ object AppList extends mvc.Controller {
 
         data += "status" -> JsString(status)
 
-        if (post.numPendingEditApps > 0)
-          data += "numPendingEditApps" -> JsNumber(post.numPendingEditApps)
+        if (post.numEditsToReview > 0)
+          data += "numEditsToReview" -> JsNumber(post.numEditsToReview)
         if (post.numPendingEditSuggestions > 0)
           data += "numPendingEditSuggestions" -> JsNumber(post.numPendingEditSuggestions)
         if (post.numPendingFlags > 0)
