@@ -322,7 +322,7 @@ class QuotaManager(
           stateAfter = payerStateAfter, outstanding = payerQuotaOutstanding,
           message = o"""${_nameOf(payer)} over quota. Cannot pay $quotaCost
             microquota: if using up all remaining free and paid quota,
-            $payerQuotaOutstanding microquota is outstanding""")
+            $payerQuotaOutstanding microquota is outstanding [DwE48PB0]""")
 
       // ----- Die if any freeloader is over quota.
 
@@ -347,7 +347,7 @@ class QuotaManager(
               message = o"""${_nameOf(freeloader)} over freeload quota.
                 Cannot freeload $quotaCost microquota: if using up all
                 remaining freeload quota, $freeldrOutstanding microquota
-                is outstanding""")
+                is outstanding [DwE6CXJ7]""")
 
           (freeloader, freeldrCached, freeldrStateAfter)
         }
@@ -422,10 +422,14 @@ object QuotaManager {
 
 
   private def _nameOf(consumer: QuotaConsumer) = consumer match {
-    case _: QuotaConsumer.Tenant => "Tenant"
-    case _: QuotaConsumer.PerTenantIp => "IP (per tenant)"
-    case _: QuotaConsumer.GlobalIp => "IP"
-    case _: QuotaConsumer.Role => "Role"
+    case tenantConsumer: QuotaConsumer.Tenant =>
+      s"Site ${tenantConsumer.tenantId}"
+    case tenantIpConsumer: QuotaConsumer.PerTenantIp =>
+      s"IP ${tenantIpConsumer.ip} at site ${tenantIpConsumer.tenantId}"
+    case globalIpConsumer: QuotaConsumer.GlobalIp =>
+      s"IP ${globalIpConsumer.ip}, gobally,"
+    case roleConsumer: QuotaConsumer.Role =>
+      s"Role ${roleConsumer.roleId} at site ${roleConsumer.tenantId}"
   }
 
 
