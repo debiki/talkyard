@@ -270,6 +270,13 @@ span.dw-p-e-by {
   padding-right: 2px;
 }
 
+/* Permalinks */
+.dw-p-link {
+float: right;
+  font-family: monospace;
+  padding: 2px 3px 2px 4px;
+}
+
 /* For the *article* itself, make author and post date info less conspicuous,
 or it steals attention from the page title. (But don't do this for any root
 post, only for the article.) */

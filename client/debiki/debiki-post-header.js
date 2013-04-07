@@ -80,6 +80,22 @@ function $makePostHeadTooltips() {  // i18n
       placement: 'right' // or '?' cursor hides tooltip arrow
     });
   });
+
+  $postHead.find('.dw-p-link').each(function() {
+    var $i = $(this);
+    $i.tooltip({
+      title: 'The ID of this post. Click to copy permalink.',
+      // Re placement: I'd prefer 'left'a or 'top' but then some bug
+      // (not mine?!) breaks the tooltip in two:
+      //    [tooltip text]  ...whitespace...  |> (the tip)
+      placement: 'right'
+    });
+    if (!Modernizr.touch) $i.click(function() {
+      var hash = '#post-' + $i.text().substring(1); // drops '#' from '#id'
+      var url = window.location.host + '/-' + debiki.getPageId() + hash;
+      window.prompt("To copy permalink, press Ctrl+C then Enter", url);
+    });
+  });
 };
 
 
