@@ -28,17 +28,17 @@ var $ = d.i.$;
  * and then background highlighting is placed on them instead of on $tag.
  */
 function highlightBriefly($tag, opt_backgroundSelector) {
-  var duration = 2500;
+  var duration = 7500;
   var $background = opt_backgroundSelector ?
       $tag.find(opt_backgroundSelector) : $tag;
   $background.effect('highlight',
       { easing: 'easeInExpo', color: 'yellow' }, duration);
   $tag.css('outline', 'solid thick #f0a005');
-  // Remove the outline quickly (during 500 ms). Otherwise it looks
+  // Remove the outline somewhat quickly (during 600 ms). Otherwise it looks
   // jerky: removing 1px at a time, slowly, is very noticeable!
   setTimeout(function() {
-    $tag.animate({ outlineWidth: '0px' }, 400);
-  }, Math.max(duration - 550, 0));
+    $tag.animate({ outlineWidth: '0px' }, 600);
+  }, Math.max(duration - 1500, 0));
   /// This won't work, jQuery plugin doesn't support rgba animation:
   //$post.animate(
   //    { outlineColor: 'rgba(255, 0, 0, .5)' }, duration, 'easeInExpo');
