@@ -86,15 +86,15 @@ trait PageSummaryDao {
       if (lastDefiniteApprovalDati.get.getTime == 0)
         lastDefiniteApprovalDati = None
 
-      val excerpt: String = page.body match {
+      val excerpt: String = page.approvedBodyText match {
         case None => ""
-        case Some(body) =>
-          if (body.text.length <= ExcerptLength + 3) body.text
-          else body.text.take(ExcerptLength) + "..."
+        case Some(text) =>
+          if (text.length <= ExcerptLength + 3) text
+          else text.take(ExcerptLength) + "..."
       }
 
       val summary = PageSummary(
-        title = page.titleText getOrElse "(No title)",
+        title = page.approvedTitleTextOrNoTitle,
         textExcerpt = excerpt,
         authorDisplayName = author.displayName,
         authorUserId = author.id,

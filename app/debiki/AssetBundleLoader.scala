@@ -75,7 +75,7 @@ object AssetBundleLoader {
     }
 
     val assetBodies: Seq[String] =
-      assetPathsAndPages map (_._2.get.bodyText getOrElse "")
+      assetPathsAndPages map (_._2.get.approvedBodyText getOrElse "")
     val bundleText = {
       val sb = new StringBuilder
       assetBodies.foreach { sb append _ }

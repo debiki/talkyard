@@ -115,7 +115,7 @@ object HtmlPostRenderer {
       <div id={htmlIdOf(post)} class='dw-p dw-p-dl'>
         <div class='dw-p-hd'>{
           if (wholeTree) "Thread" else "1 comment"
-          } deleted by { _linkTo(deleter)
+          } deleted by { _linkTo(deleter.user_!)
           /* COULD show flagsTop, e.g. "flagged spam".
             COULD include details, shown on click:
             Posted on ...,, rated ... deleted on ..., reasons for deletion: ...
@@ -155,9 +155,7 @@ object HtmlPostRenderer {
       return RenderedPostHeader(Nil, None)
 
     def page = post.debate
-    val editsApplied: List[Patch] = post.editsAppliedDescTime
-    val lastEditApplied = editsApplied.headOption
-    val author = post.page.people.authorOf_!(post.actionDto)
+    val author = post.user_!
 
     val (flagsTop: NodeSeq, flagsDetails: NodeSeq) =
       if (anyPageStats.isDefined) renderFlags(post)
@@ -171,30 +169,21 @@ object HtmlPostRenderer {
 
     val editInfo =
       // If closed: <span class='dw-p-re-cnt'>{count} replies</span>
-      if (editsApplied.isEmpty) Nil
+      if (post.lastEditAppliedAt.isEmpty) Nil
       else {
-        val lastEditDate = post.modificationDati
-        // ((This identity count doesn't take into account that a user
-        // can have many identities, e.g. Twitter, Facebook and Gmail. So
-        // even if many different *identities* have edited the post,
-        // perhaps only one single actual *user* has edited it. Cannot easily
-        // compare users though, because IdentitySimple maps to no user!))
-        val editorsCount =
-          editsApplied.map(edAp => page.getPatch_!(edAp.id).identity_!.id).
-          distinct.length
-        lazy val editor =
-          page.people.authorOf_!(page.editsById(lastEditApplied.get.id))
+        val editorsCount = post.numDistinctEditors
+        lazy val editor = page.people.user_!(post.lastEditorId getOrDie "DwE94IR7")
         <span class='dw-p-hd-e'>{
             Text(", improved ") ++
             (if (editorsCount > 1) {
               Text("by ") ++ <a>various people</a>
-            } else if (editor.identity_!.id != author.identity_!.id) {
+            } else if (editor.id != author.id) {
               Text("by ") ++ _linkTo(editor)
             } else {
               // Edited by the author. Don't repeat his/her name.
               Nil
             })
-          }{dateAbbr(lastEditDate, "dw-p-at")}
+          }{dateAbbr(post.textLastEditedAt, "dw-p-at")}
         </span>
       }
 
@@ -330,7 +319,9 @@ object HtmlPostRenderer {
       <div id={htmlIdOf(titlePost)} class='dw-p dw-p-ttl'>
         <div class='dw-p-bd'>
           <div class='dw-p-bd-blk'>
-            <h1 class='dw-p-ttl'>{titlePost.text}</h1>
+            <h1 class='dw-p-ttl'>{
+              titlePost.approvedText getOrElse "(Page title not yet approved)"
+            }</h1>
           </div>
         </div>
       </div>
@@ -340,7 +331,7 @@ object HtmlPostRenderer {
   def htmlIdOf(post: Post) = s"post-${post.id}"
 
 
-  def _linkTo(nilo: NiLo) = HtmlPageSerializer.linkTo(nilo)
+  def _linkTo(user: User) = HtmlPageSerializer.linkTo(user)
 
 
   def renderPostBody(post: Post, hostAndPort: String, nofollowArticle: Boolean)

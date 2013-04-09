@@ -90,28 +90,33 @@ object HtmlPageSerializer {
     val makeNofollowLinks =
       !isArticeOrArticleQuestion || (nofollowArticle && post.id == PageParts.BodyId)
 
+    if (post.approvedText.isEmpty)
+      return (Nil, 0)
+
+    def approvedText: String = post.approvedText.get
+
     post.markup match {
       case "dmd0" =>
         // Debiki flavored markdown.
         val html = markdownToSafeHtml(
-          post.text, hostAndPort, allowClassIdDataAttrs = isArticle, makeNofollowLinks)
+          approvedText, hostAndPort, allowClassIdDataAttrs = isArticle, makeNofollowLinks)
         (html, -1)
       case "para" =>
-        textToHtml(post.text)
+        textToHtml(approvedText)
       /*
     case "link" =>
-      textToHtml(post.text) and linkify-url:s, w/ rel=nofollow)
+      textToHtml(approvedText) and linkify-url:s, w/ rel=nofollow)
     case "img" =>
       // Like "link", but also accept <img> tags and <pre>.
       // But nothing that makes text stand out, e.g. skip <h1>, <section>.
       */
       case "html" =>
         val cleanHtml = sanitizeHtml(
-          post.text, allowClassIdDataAttrs = isArticle, makeNofollowLinks)
+          approvedText, allowClassIdDataAttrs = isArticle, makeNofollowLinks)
         (cleanHtml, -1)
       case "code" =>
-        (<pre class='prettyprint'>{post.text}</pre>,
-           post.text.count(_ == '\n'))
+        (<pre class='prettyprint'>{approvedText}</pre>,
+           approvedText.count(_ == '\n'))
       /*
     case c if c startsWith "code" =>
       // Wrap the text in:
@@ -122,7 +127,7 @@ object HtmlPageSerializer {
       // Works with: http://code.google.com/p/google-code-prettify/
       var lang = c.dropWhile(_ != '-')
       if (lang nonEmpty) lang = " lang"+lang  ; UN TESTED // if nonEmpty
-      (<pre class={"prettyprint"+ lang}>{post.text}</pre>,
+      (<pre class={"prettyprint"+ lang}>{approvedText}</pre>,
         post.text.count(_ == '\n'))
       // COULD include google-code-prettify js and css, and
       // onload="prettyPrint()".
@@ -132,7 +137,7 @@ object HtmlPageSerializer {
         // (Later: update database, change null/'' to "dmd0" for the page body,
         // change to "para" for everything else.
         // Then warnDbgDie-default to "para" here not "dmd0".)
-        (markdownToSafeHtml(post.text, hostAndPort,
+        (markdownToSafeHtml(approvedText, hostAndPort,
           allowClassIdDataAttrs = isArticle, makeNofollowLinks), -1)
     }
   }
@@ -215,11 +220,11 @@ object HtmlPageSerializer {
   /**
    * Shows a link to the user represented by NiLo.
    */
-  def linkTo(nilo: NiLo, config: HtmlConfig): NodeSeq = linkTo(nilo)  // for now
+  def linkTo(user: User, config: HtmlConfig): NodeSeq = linkTo(user)  // for now
 
 
   // COULD move to object HtmlPostSerializer
-  def linkTo(nilo: NiLo): NodeSeq = {
+  def linkTo(user: User): NodeSeq = {
     var url = ""  // since not implemented anyway: config.userUrl(nilo)
 
     // COULD investigate: `url' is sometimes the email address!!
@@ -231,8 +236,8 @@ object HtmlPageSerializer {
         "URL contains email? It contains `@' or `%40': "+ url)
       url = ""
     }
-    val nameElem: NodeSeq = nilo.identity_! match {
-      case s: IdentitySimple =>
+    val nameElem: NodeSeq = user.isAuthenticated match {
+      case false =>
         // Indicate that the user was not logged in, that we're not sure
         // about his/her identity, by appending "??". If however s/he
         // provided an email address then only append one "?", because
@@ -240,16 +245,16 @@ object HtmlPageSerializer {
         // for them people to impersonate her.
         // (Well, at least if I some day in some way indicate that two
         // persons with the same name actually have different emails.)
-        xml.Text(nilo.displayName) ++
+        xml.Text(user.displayName) ++
             <span class='dw-lg-t-spl'>{
-              if (s.email isEmpty) "??" else "?"}</span>
-      case _ => xml.Text(nilo.displayName)
+              if (user.email isEmpty) "??" else "?"}</span>
+      case _ => xml.Text(user.displayName)
     }
     val userLink = if (url nonEmpty) {
-      <a class='dw-p-by' href={url} data-dw-u-id={nilo.user_!.id}
+      <a class='dw-p-by' href={url} data-dw-u-id={user.id}
          rel='nofollow' target='_blank'>{nameElem}</a>
     } else {
-      <span class='dw-p-by' data-dw-u-id={nilo.user_!.id}>{nameElem}</span>
+      <span class='dw-p-by' data-dw-u-id={user.id}>{nameElem}</span>
     }
     userLink
   }

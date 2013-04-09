@@ -85,7 +85,7 @@ object AppEdit extends mvc.Controller {
     val request = pageReqWithoutMe.copyWithAnyMeOnPage // needed?
 
     val (vipo, lazyCreateOpt) = _getOrCreatePostToEdit(request, postId, DummyAuthorIds)
-    val draftText = vipo.text  // in the future, load user's draft from db.
+    val draftText = vipo.currentText  // in the future, load user's draft from db.
     val editForm = Utils.formHtml(request).editForm(
        vipo, newText = draftText, userName = request.sid.displayName)
     OkHtml(editForm)
@@ -309,7 +309,7 @@ object AppEdit extends mvc.Controller {
         pageReq, postId, AuthorIds(pageReq.loginId_!, userId = pageReq.user_!.id))
     val markupChanged =
       newMarkupOpt.isDefined && newMarkupOpt != Some(post.markup)
-    if (newText == post.text && !markupChanged)
+    if (newText == post.currentText && !markupChanged)
       return Nil  // need do nothing
 
     // Don't allow any kind of html in replies.
@@ -317,7 +317,7 @@ object AppEdit extends mvc.Controller {
     // reply forbidden
     // (and also when *creating* a post)
 
-    val patchText = makePatch(from = post.text, to = newText)
+    val patchText = makePatch(from = post.currentText, to = newText)
 
     val (mayEdit, mayEditReason) =
       AppEdit.mayEdit(pageReq.user, post, pageReq.permsOnPage)

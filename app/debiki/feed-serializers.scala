@@ -49,7 +49,7 @@ object AtomFeedXml {
               " lacks a root post [error DwE09k14p2]")
         return Nil
       }
-      val pageTitle = page.titleText getOrElse pagePath.slugOrIdOrQustnMark
+      val pageTitle = page.approvedTitleText getOrElse pagePath.slugOrIdOrQustnMark
       val pageBodyAuthor =
             pageBody.user.map(_.displayName) getOrElse "(Author name unknown)"
       val hostAndPort = hostUrl.stripPrefix("https://").stripPrefix("http://")
@@ -58,7 +58,7 @@ object AtomFeedXml {
       // This takes rather long and should be cached.
       // Use the same cache for both plain HTML pages and Atom and RSS feeds?
       val rootPostHtml =
-        HtmlPageSerializer.markdownToSafeHtml(pageBody.text, hostAndPort,
+        HtmlPageSerializer.markdownToSafeHtml(pageBody.approvedText getOrElse "", hostAndPort,
            makeLinksNofollow = true, // for now
            // No point in including id and class attrs in an atom html feed?
            // No stylesheet or Javascript included that cares about them anyway?

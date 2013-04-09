@@ -80,7 +80,7 @@ trait RenderedPageHtmlDao {
 
     RenderedPage(
       title = pageTitle,
-      titleText = page.titleText getOrElse "",
+      titleText = page.approvedTitleText getOrElse "",
       authorAndDate = pageAuthorAndDate,
       bodyAndComments = pageBodyAndComments)
   }

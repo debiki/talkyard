@@ -208,7 +208,12 @@ object AppList extends mvc.Controller {
 
     action match {
       case post: Post =>
-        data += "text" -> JsString(post.text take PostTextLengthLimit)
+        post.approvedText foreach { text =>
+          data += "approvedText" -> JsString(text take PostTextLengthLimit)
+        }
+        post.unapprovedText foreach { text =>
+          data += "unapprovedText" -> JsString(text take PostTextLengthLimit)
+        }
 
         val status =
           if (post.currentVersionPrelApproved) {

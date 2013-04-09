@@ -70,7 +70,7 @@ object TinyTemplateProgrammingInterface {
 
     private def titleOf(page: v0.Page): String =
       // Currently HtmlPageSerializer ignores the `.markup` for a title Post.
-      page.parts.title.map(_.text).getOrElse("(No title)")
+      page.parts.approvedTitleTextOrNoTitle
 
     private def bodyOf(page: v0.Page, host: String): String =
       page.parts.body.map(

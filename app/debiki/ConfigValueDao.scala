@@ -78,7 +78,10 @@ trait ConfigValueDao {
       case Some(page) =>
         val configText = page.getPost(configPostId) match {
           case None => return Map.empty
-          case Some(post) => post.text
+          case Some(post) =>
+            post.approvedText getOrElse {
+              return Map.empty
+            }
         }
         DebikiYaml.parseYamlToMap(configText)
     }

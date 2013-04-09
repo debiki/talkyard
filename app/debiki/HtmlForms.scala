@@ -516,13 +516,12 @@ class HtmlForms(val config: HtmlConfig, xsrfToken: String,
                   mayEdit: Boolean): NodeSeq = {
     def xmlFor(edit: Patch): NodeSeq = {
       val applied = edit.isApplied
-      val editorLogin = page.people.loginFor_!(edit)
-      def applier_! = page.people.nilo_!(edit.applierLoginId.get)
+      def applier_! = page.people.user_!(edit.applierLoginId.get)
       <li class='dw-e-sg'>
         <div class='dw-e-sg-e'>{
             <div>{
               (if (applied) "Suggested by " else "By ") ++
-              linkTo(editorLogin, config) ++
+              linkTo(edit.user_!, config) ++
               dateAbbr(edit.creationDati, "dw-e-sg-dt")
               }</div> ++
             (if (!applied) Nil
@@ -665,8 +664,8 @@ class HtmlForms(val config: HtmlConfig, xsrfToken: String,
         </div>
         { // In debiki.js, updateEditFormDiff() uses textarea.val()
           // (i.e. newText) if there's no .dw-e-src-old tag.
-          if (postToEdit.text == newText) Nil
-          else <pre class='dw-e-src-old'>{postToEdit.text}</pre> }
+          if (postToEdit.currentText == newText) Nil
+          else <pre class='dw-e-src-old'>{postToEdit.currentText}</pre> }
       </div>
       { termsAgreement("Submit as ...") }
       <div class='dw-f-e-prvw-info'>To submit, first click <em>Preview</em>
