@@ -591,6 +591,13 @@ case class PageParts (
 
   def ++(page: PageParts): PageParts = this ++ page.allActions
 
+  /** Adds many actions to this page.
+    *
+    * Takes O(n^2) time but I think there must be perhaps 10 000 posts for this to
+    * matter, and long before that ever happens there'll be some other bottleneck?
+    * Anyway could avoid loading more than e.g. 1 000 posts at a time,
+    * because of this O(n^2).
+    */
   // COULD [T <: Action] instead of >: AnyRef?
   def ++[T >: AnyRef] (actions: Seq[T]): PageParts = {
     var ratings2 = ratings
@@ -600,14 +607,36 @@ case class PageParts (
     var dels2 = deletions
     var reviews2 = reviews
     var actions2 = this.actionDtos
+    type SthWithId = { def id: String }
+    def dieIfIdClash(olds: Seq[SthWithId], a: SthWithId) =
+      olds.find(_.id == a.id) match {
+        case None => // fine, `a` is not present in `olds`
+        case Some(old) =>
+          assErr("DwE4BFY8", s"Cannot add new action $a; there is an old with same id: $old")
+      }
+
     for (a <- actions) a match {
-      case r: Rating => ratings2 ::= r
-      case e: Edit => edits2 ::= e
-      case a: EditApp => editApps2 ::= a
-      case f: Flag => flags2 ::= f
-      case d: Delete => dels2 ::= d
-      case r: ReviewPostAction => reviews2 ::= r
-      case a: PostActionDto[_] => actions2 ::= a
+      case r: Rating =>
+        dieIfIdClash(ratings2, r)
+        ratings2 ::= r
+      case e: Edit =>
+        dieIfIdClash(edits2, e)
+        edits2 ::= e
+      case a: EditApp =>
+        dieIfIdClash(editApps2, a)
+        editApps2 ::= a
+      case f: Flag =>
+        dieIfIdClash(flags2, f)
+        flags2 ::= f
+      case d: Delete =>
+        dieIfIdClash(dels2, d)
+        dels2 ::= d
+      case r: ReviewPostAction =>
+        dieIfIdClash(reviews2, r)
+        reviews2 ::= r
+      case a: PostActionDto[_] =>
+        dieIfIdClash(actions2, a)
+        actions2 ::= a
       case x => runErr(
         "DwE8k3EC", "Unknown action type: "+ classNameOf(x))
     }
