@@ -174,6 +174,8 @@ module.exports = function(grunt) {
           'target/client/spa/js/angular-util.js'],
 
       'public/res/debiki-spa-admin.js': [
+          'client/vendor/diff_match_patch.js',
+          'target/client/debiki/debiki-diff-match-patch.js',
           'target/client/debiki/debiki-page-path.js',
           'target/client/spa/admin/js/*.js',
           'target/client/spa/admin/js/modal-dialog.js'], // requires AngularJS module

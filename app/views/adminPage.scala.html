@@ -99,7 +99,7 @@
                   </td>
                   <td><a target='_blank' href='#!/user/{{action.authorId}}'>{{action.authorDisplayName}}</a></td>
                   <td>{{action.cdati.replace('T', ' ')}}</td>
-                  <td class='post-text'>{{action.text}}</td>
+                  <td class='post-text'>{{ postTextOrDiff(action) }}</td>
                 </tr>
               </tbody>
             </table>

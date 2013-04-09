@@ -50,6 +50,19 @@ bug = d.u.die2
 
   adminService.onPathSelectionChange updateActionList
 
+  $scope.postTextOrDiff = (post) ->
+    htmlDiff = -> d.i.makeHtmlDiff post.approvedText, post.unapprovedText
+    switch post.status
+    | 'New' => post.unapprovedText
+    | 'NewPrelApproved' \
+      'Approved' => post.approvedText
+    | 'Rejected' => post.unapprovedText
+    | 'EditsRejected' \
+      'EditsPrelApproved' \
+      'NewEdits' => htmlDiff()
+    | _ => die 'DwE38RUJ0'
+
+
   # On page load, list the most recent actions, for all pages.
   updateActionList { trees: ['/'] }
 
