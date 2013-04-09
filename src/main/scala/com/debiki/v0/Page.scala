@@ -99,7 +99,7 @@ object PageMeta {
       pubDati = if (publishDirectly) Some(creationDati) else None,
       parentPageId = parentPageId,
       pageExists = false,
-      cachedTitle = parts.titleText,
+      cachedTitle = parts.maybeUnapprovedTitleText,
       cachedAuthorDispName = author.displayName,
       cachedAuthorUserId = author.id,
       cachedNumPosters = parts.numPosters,
@@ -113,7 +113,7 @@ object PageMeta {
   def forChangedPage(originalMeta: PageMeta, changedPage: PageParts): PageMeta = {
     require(changedPage.id == originalMeta.pageId)
     originalMeta.copy(
-      cachedTitle = changedPage.titleText,
+      cachedTitle = changedPage.approvedTitleText,
       modDati = changedPage.modificationDati getOrElse originalMeta.modDati,
       cachedNumPosters = changedPage.numPosters,
       cachedNumActions = changedPage.actionCount,

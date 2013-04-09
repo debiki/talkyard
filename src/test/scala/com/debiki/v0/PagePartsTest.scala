@@ -339,7 +339,7 @@ class PagePartsTest extends Specification with PageTestValues {
            makePageWithEditApplied(autoApplied)
 
         page.body_!.text must_== textAfterFirstEdit
-        page.body_!.modificationDati must_== editApplDati
+        page.body_!.textLastEditedAt must_== editApplDati
 
         page.body_!.editsPendingDescTime must beEmpty
         page.body_!.editsDeletedDescTime must beEmpty

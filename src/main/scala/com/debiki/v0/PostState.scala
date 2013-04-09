@@ -15,14 +15,36 @@ import com.debiki.v0.{PostActionPayload => PAP}
 object PostState {
 
   def whenCreated(creationPostActionDto: PostActionDto[PAP.CreatePost]): PostState = {
-    PostState(
+    def approval = creationPostActionDto.payload.approval
+    val lastApprovalDati =
+      if (approval.isDefined) Some(creationPostActionDto.creationDati)
+      else None
+    new PostState(
       creationPostActionDto,
-      creationPostActionDto.creationDati,
-      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+      lastActedUponAt = creationPostActionDto.creationDati,
+      lastReviewDati = lastApprovalDati,
+      lastAuthoritativeReviewDati =
+        if (approval.filter(_.isAuthoritative).isDefined) lastApprovalDati
+        else None,
+      lastApprovalDati = lastApprovalDati,
+      lastApprovedText =
+        if (approval.isDefined) Some(creationPostActionDto.payload.text)
+        else None,
+      lastPermanentApprovalDati =
+        if (approval.filter(_.isPermanent).isDefined) lastApprovalDati
+        else None,
+      lastManualApprovalDati =
+        if (approval.filter(_ == Approval.Manual).isDefined) lastApprovalDati
+        else None,
+      lastEditAppliedAt = None,
+      lastEditRevertedAt = None,
+      lastEditorId = None,
+      collapsed = None,
+      deletedAt = None,
+      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
   }
 
 }
-
 
 
 /** The state of a post — historic info up to the time this state concerns is gone.
@@ -30,153 +52,44 @@ object PostState {
   * Saved and loaded from a database table (DW1_POSTS) that caches posts states
   * so all historic info don't have to be reapplied to get to the current state.
   */
-case class PostState(
-  creationPostActionDto: PostActionDto[PostActionPayload.CreatePost],
-  modifiedAt: ju.Date,
-  numEditSuggestions: Int,
-  numEditsAppliedUnreviewed: Int,
-  numEditsAppldPrelApproved: Int,
-  numEditsToReview: Int,
-  numCollapseSuggestions: Int,
-  numCollapsesToReview: Int,
-  numMoveSuggestions: Int,
-  numMovesToReview: Int,
-  numDeleteSuggestions: Int,
-  numDeletesToReview: Int,
-  numPendingFlags: Int,
-  numHandledFlags: Int)
+class PostState(
+  val creationPostActionDto: PostActionDto[PostActionPayload.CreatePost],
+  val lastActedUponAt: ju.Date,
+  val lastReviewDati: Option[ju.Date],
+  val lastAuthoritativeReviewDati: Option[ju.Date],
+  val lastApprovalDati: Option[ju.Date],
+  val lastApprovedText: Option[String],
+  val lastPermanentApprovalDati: Option[ju.Date],
+  val lastManualApprovalDati: Option[ju.Date],
+  val lastEditAppliedAt: Option[ju.Date],
+  val lastEditRevertedAt: Option[ju.Date],
+  val lastEditorId: Option[String],
+  val collapsed: Option[PostActionPayload.CollapseSomething],
+  val deletedAt: Option[ju.Date],
+  val numEditSuggestions: Int,
+  val numEditsAppliedUnreviewed: Int,
+  val numEditsAppldPrelApproved: Int,
+  val numEditsToReview: Int,
+  val numDistinctEditors: Int,
+  val numCollapseSuggestions: Int,
+  val numCollapsesToReview: Int,
+  val numMoveSuggestions: Int,
+  val numMovesToReview: Int,
+  val numDeleteSuggestions: Int,
+  val numDeletesToReview: Int,
+  val numPendingFlags: Int,
+  val numHandledFlags: Int) {
 
-/*
+  def lastApprovalType: Option[Approval] = creationPostActionDto.payload.approval
 
-object PostState {
-
-  def whenCreated(createPostActionDto: PostActionDto[PAP.CreatePost]): PostState = {
-    PostState(
-      id = createPostActionDto.id,
-      createdAt = createPostActionDto.creationDati,
-      loginId = createPostActionDto.loginId,
-      userId = createPostActionDto.userId,
-      parentPostId = createPostActionDto.payload.parentPostId,
-      text = createPostActionDto.payload.text,
-      markup = createPostActionDto.payload.markup,
-      approval = createPostActionDto.payload.approval,
-      where = createPostActionDto.payload.where)
-  }
-
+  require(lastAuthoritativeReviewDati.isEmpty || lastReviewDati.isDefined)
+  require(lastApprovalDati.isEmpty || lastReviewDati.isDefined)
+  require(lastApprovalDati.isDefined == lastApprovalType.isDefined)
+  require(lastApprovedText.isEmpty || lastApprovalDati.isDefined)
+  require(lastPermanentApprovalDati.isEmpty || lastApprovalDati.isDefined)
+  require(lastManualApprovalDati.isEmpty || lastPermanentApprovalDati.isDefined)
+  require(lastEditAppliedAt.isDefined == lastEditorId.isDefined)
 }
-
-
-
-/** The state of a post — historic info up to the time this state concerns is gone.
-  *
-  * Saved and loaded from a database table (DW1_POSTS) that caches posts states
-  * so all historic info don't have to be reapplied to get to the current state.
-  */
-case class PostState(
-  createPostActionDto: PostActionDto[PostActionPayload.CreatePost]]
-  id: String,
-  createdAt: ju.Date,
-  loginId: String,
-  userId: String,
-  parentPostId: String,
-  text: String,
-  markup: String,
-  approval: Option[Approval],
-  where: Option[String]) {
-
-  def makeCreatePostActionForThisState: PostActionDto[PAP.CreatePost] = {
-    unimplemented
-  }
-
-}
-
-*/
-/*
-
-  def initiallyApproved: Boolean
-  def textInitially: String = payload.text
-
-  def modificationDati: ju.Date
-
-  def lastAuthoritativeReviewDati: Option[ju.Date]
-
-  def lastReviewDati: Option[ju.Date]
-
-
-  lazy val lastApproval: Option[PostActionOld with MaybeApproval]
-
- def lastAuthoritativeReview: Option[PostActionOld with MaybeApproval]
-
-  def lastPermanentApproval: Option[PostActionOld with MaybeApproval]
-
-  def lastApprovalDati: Option[ju.Date]
-
-
-  def lastManualApprovalDati: Option[ju.Date]
-
-
-  def lastReviewWasApproval: Option[Boolean]
-
-
-  def currentVersionReviewed: Boolean
-
-
-  def currentVersionPrelApproved: Boolean
-
-
-  def currentVersionApproved: Boolean
-
-
-  def currentVersionRejected: Boolean
-
-
-  def someVersionApproved: Boolean
-
-  def someVersionPermanentlyApproved: Boolean
-
-
-  def someVersionManuallyApproved: Boolean
-
-
-  lazy val depth
-
-  def replyCount
-
-
-  def isTreeCollapsed: Boolean
-
-
-  def isOnlyPostCollapsed: Boolean
-
-
-  def areRepliesCollapsed: Boolean
-
-  def isTreeClosed: Boolean
-
-
-  private def hasHappenedNotUndone(payload: PostActionPayload): Boolean =
-    actions.find { action =>
-      action.payload == payload  // && !action.wasUndone
-    }.nonEmpty
-
-
-  lazy val flags: List[Flag]
-
-
-  def flagsDescTime: List[Flag]
-
-
-  lazy val (
-      flagsPendingReview: List[Flag],
-      flagsReviewed: List[Flag]) =
-
-  lazy val lastFlag = flagsDescTime.headOption
-
-  lazy val flagsByReason: imm.Map[FlagReason, List[Flag]]
-
-  lazy val flagsByReasonSorted: List[(FlagReason, List[Flag])]
-
-*/
 
 
 // vim: fdm=marker et ts=2 sw=2 fo=tcqwn list

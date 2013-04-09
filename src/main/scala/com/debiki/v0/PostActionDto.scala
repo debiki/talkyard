@@ -144,19 +144,21 @@ object PostActionPayload {
     where: Option[String] = None) extends PostActionPayload
 
 
+  class CollapseSomething extends PostActionPayload
+
   /** Closes a thread: collapses it and tucks it away under a Closed Threads
     * column, far away to the right.
     *
     * Use on old obsolete threads, e.g. a comment about a spelling mistake
     * that has since been fixed.
     */
-  case object CloseTree extends PostActionPayload
+  case object CloseTree extends CollapseSomething
 
-  case object CollapsePost extends PostActionPayload
+  case object CollapsePost extends CollapseSomething
 
-  case object CollapseReplies extends PostActionPayload
+  case object CollapseReplies extends CollapseSomething
 
-  case object CollapseTree extends PostActionPayload
+  case object CollapseTree extends CollapseSomething
 
   /** Undoes another action, e.g. an Undo with targetActionId = a CloseTree action
     * would reopen the closed tree.
@@ -440,8 +442,17 @@ case class ReviewPostAction(
  * Only the `Manual` approval is done manually by a human,
  * all others happen automatically, done by the computer.
  * (Should I prefix them with 'Auto'?)
+ *
+ * @param isPermanent true iff the approval is not preliminary. (If not, it was made by
+ * some trusted user, and moderators therefore won't be asked to review it — the approval
+ * will most likely uphold forever.)
+ * @param isAuthoritative true iff the post was approved by a moderator or admin.
  */
-sealed abstract class Approval
+sealed abstract class Approval(
+  val isPermanent: Boolean = false,
+  val isAuthoritative: Boolean = false)
+
+
 object Approval {
 
   /**
@@ -454,17 +465,17 @@ object Approval {
    * A user that has posted many useful comments will have a few of
    * his/her next comments approved automatically, and no admin is nodified.
    */
-  case object WellBehavedUser extends Approval
+  case object WellBehavedUser extends Approval(isPermanent = true)
 
   /**
    * Posts by admins and moderators are always automatically approved.
    */
-  case object AuthoritativeUser extends Approval
+  case object AuthoritativeUser extends Approval(isPermanent = true, isAuthoritative = true)
 
   /**
    * When an authoritative user manually approved something.
    */
-  case object Manual extends Approval
+  case object Manual extends Approval(isPermanent = true, isAuthoritative = true)
 
 
   def parse(text: String): Approval = text match {

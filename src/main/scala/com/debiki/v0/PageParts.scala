@@ -366,7 +366,7 @@ case class PageParts (
 
   def body_! = getPost(PageParts.BodyId) getOrDie "DwE30XF5"
 
-  def bodyText: Option[String] = body.map(_.text)
+  def approvedBodyText: Option[String] = body.flatMap(_.approvedText)
 
 
   def title_! = getPost(PageParts.TitleId) getOrDie "DwE72RP3"
@@ -376,7 +376,20 @@ case class PageParts (
   def titlePost: Option[Post] = getPost(PageParts.TitleId)
 
   /** The page title, as plain text, but the empty string is changed to None. */
-  def titleText: Option[String] = titlePost.map(_.text).filter(_.nonEmpty)
+  def approvedTitleText: Option[String] =
+    titlePost.flatMap(_.approvedText).filter(_.nonEmpty)
+
+  def unapprovedTitleText: Option[String] =
+    titlePost.flatMap(_.unapprovedText).filter(_.nonEmpty)
+
+  def maybeUnapprovedTitleText: Option[String] =
+    unapprovedTitleText orElse approvedTitleText
+
+  def approvedTitleTextOrNoTitle = approvedTitleText getOrElse {
+    if (unapprovedTitleText.isEmpty) "(No title)"
+    else "(Page title pending approval)"
+  }
+
 
   /** The page title, as XML. */
   //def titleXml: Option[xml.Node] = body.flatMap(_.titleXml)

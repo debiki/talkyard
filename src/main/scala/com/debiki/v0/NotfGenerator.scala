@@ -68,7 +68,7 @@ case class NotfGenerator(pageInclNewActions: PageParts, newActions: Seq[PostActi
     List(NotfOfPageAction(
         ctime = triggerAction.creationDati,
         recipientUserId = userRepliedTo.id,
-        pageTitle = page.titleText.getOrElse("Unnamed page"),
+        pageTitle = page.approvedTitleText.getOrElse("Unnamed page"),
         pageId = page.id,
         eventType = NotfOfPageAction.Type.PersonalReply,
         eventActionId = post.id,
@@ -120,7 +120,7 @@ case class NotfGenerator(pageInclNewActions: PageParts, newActions: Seq[PostActi
     val authorNotf = NotfOfPageAction(
        ctime = review.creationDati,
        recipientUserId = userReviewed.id,
-       pageTitle = page.titleText.getOrElse("Unnamed page"),
+       pageTitle = page.approvedTitleText.getOrElse("Unnamed page"),
        pageId = page.id,
        eventType = NotfOfPageAction.Type.MyPostApproved,
        eventActionId = review.id,

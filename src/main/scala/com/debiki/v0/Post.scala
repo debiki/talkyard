@@ -21,13 +21,16 @@ import com.debiki.v0.{PostActionPayload => PAP}
   * Permanently reviewed (by a moderator, or a well-behaved user).
   * Authoritatively reviewed (by a moderator but not a well-behaved user).
   */
-case class Post(pageParts: PageParts, private val state: PostState)
+case class Post(
+    pageParts: PageParts,
+    private val state: PostState,
+    private val isLoadedFromCache: Boolean = true)
   extends PostAction[PAP.CreatePost](pageParts, state.creationPostActionDto)
   with MaybeApproval {
 
 
   def this(pageParts: PageParts, creationAction: PostActionDto[PAP.CreatePost]) {
-    this(pageParts, PostState.whenCreated(creationAction))
+    this(pageParts, PostState.whenCreated(creationAction), isLoadedFromCache = false)
   }
 
 
@@ -38,7 +41,6 @@ case class Post(pageParts: PageParts, private val state: PostState)
     else debate.getPost(parentId)
 
 
-  // Rename to `initialApproval`??? I'm confusing myself!
   def approval = payload.approval
 
 
@@ -50,11 +52,22 @@ case class Post(pageParts: PageParts, private val state: PostState)
     // If initially preliminarily auto approved, that approval is cancelled by
     // any contiguous and subsequent rejection. (And `lastApproval` takes
     // that cancellation into account.)
-    lastApproval.isDefined && approval.isDefined
+    lastApprovalDati.isDefined && approval.isDefined
   }
 
 
-  lazy val (text: String, markup: String) = _applyEdits
+  lazy val (currentText: String, markup: String, approvedText: Option[String]) = _applyEdits
+
+
+  /** The initial text of this post: either 1) when created, or 2) when loaded from cache
+    * (if it was loaded from cache).
+    */
+  def textInitially: String = payload.text
+
+
+  def unapprovedText: Option[String] =
+    if (Some(currentText) != approvedText) Some(currentText)
+    else None
 
 
   def actions: List[PostAction[_]] = page.getActionsByPostId(id)
@@ -82,31 +95,34 @@ case class Post(pageParts: PageParts, private val state: PostState)
    * Instead, use Page.splitByVersion(), to get a version of the page
    * at a certain point in time.)
    */
-  private def _applyEdits: (String, String) = {
+  private def _applyEdits: (String, String, Option[String]) = {
+    // (If loaded from cache, payload.text and .markup have both been inited
+    // to the cached text, which includes all edits up to the cached version.)
     var curText = payload.text
+    var approvedText =
+      if (lastApprovalDati.isDefined) state.lastApprovedText orElse Some(curText)
+      else None
     var curMarkup = payload.markup
-    val dmp = new name.fraser.neil.plaintext.diff_match_patch
     // Loop through all edits and patch curText.
     for (edit <- editsAppliedAscTime) {
       curMarkup = edit.newMarkup.getOrElse(curMarkup)
       val patchText = edit.patchText
       if (patchText nonEmpty) {
-        // COULD check [1, 2, 3, …] to find out if the patch applied
-        // cleanaly. (The result is in [0].)
-        type P = name.fraser.neil.plaintext.diff_match_patch.Patch
-        val patches: ju.List[P] = dmp.patch_fromText(patchText) // silly API, ...
-        val p2 = patches.asInstanceOf[ju.LinkedList[P]] // returns List but needs...
-        val result = dmp.patch_apply(p2, curText) // ...a LinkedList
-        val newText = result(0).asInstanceOf[String]
+        val newText = applyPatch(patchText, to = curText)
         curText = newText
+        if (lastApprovalDati.map(edit.applicationDati.get.getTime <= _.getTime) == Some(true))
+          approvedText = Some(curText)
       }
     }
-    (curText, curMarkup)
+    (curText, curMarkup, approvedText)
   }
 
-  def textInitially: String = payload.text
+
   def where: Option[String] = payload.where
+
+
   def edits: List[Patch] = page.editsFor(id)
+
 
   lazy val (
       editsDeletedDescTime: List[Patch],
@@ -146,10 +162,37 @@ case class Post(pageParts: PageParts, private val state: PostState)
        reverted.sortBy(- _.revertionDati.get.getTime))
   }
 
+
   def editsAppliedAscTime = editsAppliedDescTime.reverse
 
-  lazy val lastEditApplied = editsAppliedDescTime.headOption
-  lazy val lastEditReverted = editsRevertedDescTime.headOption
+
+  def lastEditApplied = editsAppliedDescTime.headOption
+
+  def lastEditAppliedAt: Option[ju.Date] =
+    lastEditApplied.flatMap(_.applicationDati) orElse state.lastEditAppliedAt
+
+  def lastEditorId: Option[String] =
+    lastEditApplied.map(_.userId) orElse state.lastEditorId
+
+
+  def lastEditReverted = editsRevertedDescTime.headOption
+
+  def lastEditRevertedAt: Option[ju.Date] =
+    lastEditReverted.flatMap(_.revertionDati) orElse state.lastEditRevertedAt
+
+
+  /** How many different people that have edited this post. If loaded from cache,
+    * ignores edits that happened after the cached version.
+    */
+  def numDistinctEditors: Int = {
+    // Since we don't store the ids of all editors over time in the database post state
+    // cache, it's not possible to know if any more recent `editsAppliedDescTime` editor
+    // id coincides with any of the `state.numDistinctEditors` earlier editors.
+    math.max(
+      state.numDistinctEditors,
+      editsAppliedDescTime.map(_.userId).distinct.length)
+  }
+
 
   def numPendingEditSuggestions =
     state.numEditSuggestions + editsPendingDescTime.length
@@ -172,19 +215,18 @@ case class Post(pageParts: PageParts, private val state: PostState)
     * approved by the computer, but 2) not permanently approved (by some moderator).
     */
   def numEditsAppldPrelApproved = {
-    val anyPrelApproval = lastApproval.filter(_.approval == Some(Approval.Preliminary))
-    val numNew = anyPrelApproval match {
-      case None => 0
-      case Some(prelApproval) =>
+    val numNew =
+      if (lastApprovalType != Some(Approval.Preliminary)) 0
+      else {
         (editsAppliedDescTime takeWhile { patch =>
           val perhapsPrelApprvd =
-            patch.applicationDati.get.getTime <= prelApproval.creationDati.getTime
+            patch.applicationDati.get.getTime <= lastApprovalDati.get.getTime
           val isPermApprvd =
-            if (anyPermanentApprovalDati.isEmpty) false
-            else patch.applicationDati.get.getTime <= anyPermanentApprovalDati.get.getTime
+            if (lastPermanentApprovalDati.isEmpty) false
+            else patch.applicationDati.get.getTime <= lastPermanentApprovalDati.get.getTime
           perhapsPrelApprvd && !isPermApprvd
         }).length
-    }
+      }
     state.numEditsAppldPrelApproved + numNew
   }
 
@@ -193,7 +235,7 @@ case class Post(pageParts: PageParts, private val state: PostState)
     * need to be reviewed.
     */
   def numEditsToReview = {
-    val numNew = anyPermanentApprovalDati match {
+    val numNew = lastPermanentApprovalDati match {
       case None => editsAppliedDescTime.length
       case Some(permApprovalDati) =>
         (editsAppliedDescTime takeWhile { patch =>
@@ -204,16 +246,28 @@ case class Post(pageParts: PageParts, private val state: PostState)
   }
 
 
-  /**
-   * Modification date time: When the text of this Post was last changed
-   * (that is, an edit was applied, or a previously applied edit was reverted).
-   */
-  def modificationDati: ju.Date = {
+  /** When the text was last edited, or when this post was created.
+    */
+  def textLastEditedAt : ju.Date =
+    lastEditAppliedAt getOrElse creationDati
+
+
+  /** When the text of this Post was last edited or reverted to an earlier version.
+    */
+  def textLastEditedOrRevertedAt : ju.Date = {
     val maxTime = math.max(
-       lastEditApplied.map(_.applicationDati.get.getTime).getOrElse(0: Long),
-       lastEditReverted.map(_.revertionDati.get.getTime).getOrElse(0: Long))
-    if (maxTime == 0) state.modifiedAt else new ju.Date(maxTime)
+       lastEditAppliedAt.map(_.getTime).getOrElse(0: Long),
+       lastEditRevertedAt.map(_.getTime).getOrElse(0: Long))
+    if (maxTime == 0) creationDati else new ju.Date(maxTime)
   }
+
+
+  /** When this post was last edited, reverted, deleted, collapsed, flagged, anything
+    * except up/downvotes. Used when sorting posts in the activity list in the admin UI.
+    *
+    * Currently only considers edits (could fix...)
+    */
+  def lastActedUponAt = textLastEditedOrRevertedAt
 
 
   private lazy val _reviewsDescTime: List[PostActionOld with MaybeApproval] = {
@@ -267,11 +321,15 @@ case class Post(pageParts: PageParts, private val state: PostState)
    * this dati.
    */
   def lastAuthoritativeReviewDati: Option[ju.Date] =
-    lastAuthoritativeReview.map(_.creationDati)
+    lastAuthoritativeReview.map(_.creationDati) orElse state.lastAuthoritativeReviewDati
 
 
   def lastReviewDati: Option[ju.Date] =
-    _reviewsDescTime.headOption.map(_.creationDati)
+    _reviewsDescTime.headOption.map(_.creationDati) orElse state.lastReviewDati
+
+
+  def lastApprovalType: Option[Approval] =
+    lastApproval.flatMap(_.approval) orElse state.lastApprovalType
 
 
   lazy val lastApproval: Option[PostActionOld with MaybeApproval] = {
@@ -312,17 +370,20 @@ case class Post(pageParts: PageParts, private val state: PostState)
         review.approval != Some(Approval.Preliminary))
 
 
-  def anyPermanentApprovalDati = lastPermanentApproval.map(_.creationDati)
+  def lastPermanentApprovalDati: Option[ju.Date] =
+    lastPermanentApproval.map(_.creationDati) orElse state.lastPermanentApprovalDati
 
   /**
    * All actions that affected this Post and didn't happen after
    * this dati should be considered when rendering this Post.
    */
-  def lastApprovalDati: Option[ju.Date] = lastApproval.map(_.creationDati)
+  def lastApprovalDati: Option[ju.Date] =
+    lastApproval.map(_.creationDati) orElse state.lastApprovalDati
 
 
   def lastManualApprovalDati: Option[ju.Date] =
-    _reviewsDescTime.find(_.approval == Some(Approval.Manual)).map(_.creationDati)
+    _reviewsDescTime.find(_.approval == Some(Approval.Manual)).map(_.creationDati) orElse
+      state.lastManualApprovalDati
 
 
   def lastReviewWasApproval: Option[Boolean] =
@@ -335,9 +396,13 @@ case class Post(pageParts: PageParts, private val state: PostState)
   def currentVersionReviewed: Boolean = {
     // Use >= not > because a comment might be auto approved, and then
     // the approval dati equals the comment creationDati.
-    lastReviewDati.isDefined &&
-      lastReviewDati.get.getTime >= modificationDati.getTime &&
-      numEditsAppliedUnreviewed == 0
+    val isReviewed = lastReviewDati.isDefined &&
+      textLastEditedAt.getTime <= lastReviewDati.get.getTime
+    if (isReviewed)
+      assErrIf(numEditsAppliedUnreviewed != 0,
+        "DwE408B0", o"""Bad state. Page ${page.pageId}, post $id,
+          numEditsAppliedUnreviewed = $numEditsAppliedUnreviewed""")
+    isReviewed
   }
 
 
@@ -345,14 +410,13 @@ case class Post(pageParts: PageParts, private val state: PostState)
     * behaved user, it is considered permanently reviewed.
     */
   def currentVersionPermReviewed: Boolean =
-    numEditsAppldPrelApproved == 0 && currentVersionReviewed
+    currentVersionReviewed && lastApprovalType != Some(Approval.Preliminary)
 
 
   /** Has the computer preliminarily approved this post, or the last few edits?
     */
   def currentVersionPrelApproved: Boolean =
-    currentVersionReviewed &&
-       lastApproval.flatMap(_.approval) == Some(Approval.Preliminary)
+    currentVersionReviewed && lastApprovalType == Some(Approval.Preliminary)
 
 
   def currentVersionApproved: Boolean =
@@ -373,7 +437,7 @@ case class Post(pageParts: PageParts, private val state: PostState)
 
 
   def someVersionPermanentlyApproved: Boolean =
-    lastPermanentApproval.nonEmpty
+    lastPermanentApprovalDati.nonEmpty
 
 
   def someVersionManuallyApproved: Boolean =
@@ -408,18 +472,21 @@ case class Post(pageParts: PageParts, private val state: PostState)
 
 
   def isTreeCollapsed: Boolean =
-    hasHappenedNotUndone(PostActionPayload.CollapseTree)
-
+    hasHappenedNotUndone(PostActionPayload.CollapseTree) ||
+      state.collapsed == Some(PAP.CollapseTree)
 
   def isOnlyPostCollapsed: Boolean =
-    hasHappenedNotUndone(PostActionPayload.CollapsePost)
+    hasHappenedNotUndone(PostActionPayload.CollapsePost) ||
+      state.collapsed == Some(PAP.CollapsePost)
 
 
   def areRepliesCollapsed: Boolean =
-    hasHappenedNotUndone(PostActionPayload.CollapseReplies)
+    hasHappenedNotUndone(PostActionPayload.CollapseReplies) ||
+      state.collapsed == Some(PAP.CollapseReplies)
 
   def isTreeClosed: Boolean =
-    hasHappenedNotUndone(PostActionPayload.CloseTree)
+    hasHappenedNotUndone(PostActionPayload.CloseTree) ||
+      state.collapsed == Some(PAP.CloseTree)
 
 
   private def hasHappenedNotUndone(payload: PostActionPayload): Boolean =
@@ -473,6 +540,11 @@ case class Post(pageParts: PageParts, private val state: PostState)
   lazy val flagsByReasonSorted: List[(FlagReason, List[Flag])] = {
     flagsByReason.toList.sortWith((a, b) => a._2.length > b._2.length)
   }
+
+
+  override def deletionDati: Option[ju.Date] =
+    firstDelete.map(_.ctime) orElse state.deletedAt
+    // ? Why does this recurse forever: super.deletionDati orElse state.deletedAt
 
 }
 

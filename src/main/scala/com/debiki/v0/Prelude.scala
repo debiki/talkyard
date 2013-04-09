@@ -336,6 +336,19 @@ object Prelude {
     patchText
   }
 
+  def applyPatch(patchText: String, to: String): String = {
+    val textToPatch = to
+    // COULD check [1, 2, 3, …] to find out if the patch applied
+    // cleanaly. (The result is in [0].)
+    val dmp = new name.fraser.neil.plaintext.diff_match_patch
+    type P = name.fraser.neil.plaintext.diff_match_patch.Patch
+    val patches: ju.List[P] = dmp.patch_fromText(patchText) // silly API, ...
+    val p2 = patches.asInstanceOf[ju.LinkedList[P]] // returns List but needs...
+    val result = dmp.patch_apply(p2, textToPatch) // ...a LinkedList
+    val newText = result(0).asInstanceOf[String]
+    newText
+  }
+
 
   // ------ Utilities
 
