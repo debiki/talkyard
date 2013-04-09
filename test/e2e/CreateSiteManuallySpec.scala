@@ -109,6 +109,7 @@ abstract class ContinueManualTests extends DebikiBrowserSpec {
 
   "A browser can go to the dashboard of test-site-1" in {
     go to (originOf(nextSiteName()) + "/-/admin/")
+    clickLoginWithGmailOpenId()
   }
 
   "A human can stare at a computer monitor for one year" in {
