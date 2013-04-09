@@ -194,7 +194,7 @@ abstract class PostActionsWrapper { self: PageParts =>
         // This would fail if a Post is added both via a cached PostState and
         // via a create-new-post-action.
         if (oldAction != action)
-          assErr("DwE75BW0", o"""Cannot map action `$action.id` to two different actions:
+          assErr("DwE75BW0", o"""Cannot map action `${action.id}' to two different actions:
             the first: $oldAction, and the second: $action""")
       }
       actionsById(action.id) = action
