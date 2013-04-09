@@ -14,11 +14,6 @@ d.i.EditTabIdLast = d.i.EditTabIdPreview;
 d.i.EditTabCount = 3;
 
 
-d.i.diffMatchPatch = new diff_match_patch();
-d.i.diffMatchPatch.Diff_Timeout = 1; // seconds
-d.i.diffMatchPatch.Match_Distance = 100*1000; // for now
-d.i.diffMatchPatch.maxMatchLength = d.i.diffMatchPatch.Match_MaxBits;
-
 
 d.i.$loadEditorDependencies = (function() {
   // COULD use 2 loadStatus, and load Code Mirror only iff `this`
@@ -456,14 +451,12 @@ function $updateEditFormDiff() {
   var newSrc = $textarea.val();
   var oldSrc = $editForm.data('dw-e-src-old');
 
-  // Run new diff.
-  var diff = d.i.diffMatchPatch.diff_main(oldSrc, newSrc);
-  d.i.diffMatchPatch.diff_cleanupSemantic(diff);
-  var htmlString = d.i.prettyHtmlFor(diff);
+  var htmlDiff = d.i.makeHtmlDiff(oldSrc, newSrc);
+
   // Remove any old diff.
   $diffTab.children('.dw-p-diff').remove();
   // Show the new diff.
-  $diffTab.append('<div class="dw-p-diff">'+ htmlString +'</div>\n');
+  $diffTab.append('<div class="dw-p-diff">'+ htmlDiff +'</div>\n');
 };
 
 
@@ -530,13 +523,12 @@ d.i.$showEditDiff = function() {
   var newText = $(this).val();
   if (newText === '') newText = $(this).text();
   newText = newText.trim() +'\n';  // $htmlToMarkup trims in this way
-  // Run diff
-  var diff = d.i.diffMatchPatch.diff_main(oldText, newText);
-  d.i.diffMatchPatch.diff_cleanupSemantic(diff);
-  var htmlString = d.i.prettyHtmlFor(diff);
+
+  var htmlDiff = d.i.makeHtmlDiff(oldText, newText);
+
   // Hide the post body, show the diff instead.
   $postBody.hide();
-  $postBody.after('<div class="dw-p-diff">'+ htmlString +'</div>\n');
+  $postBody.after('<div class="dw-p-diff">'+ htmlDiff +'</div>\n');
   // Fix the height of the post, so it won't change when showing
   // another diff, causing everything below to jump up/down.
 
@@ -567,42 +559,6 @@ function $extractMarkupSrcFromHtml() {
   return mup.trim() +'\n';
 };
 
-
-// Converts a google-diff-match-patch diff array into a pretty HTML report.
-// Based on diff_match_patch.prototype.diff_prettyHtml(), here:
-//  http://code.google.com/p/google-diff-match-patch/source/browse/
-//    trunk/javascript/diff_match_patch_uncompressed.js
-// @param {!Array.<!diff_match_patch.Diff>} diffs Array of diff tuples.
-// @return {string} HTML representation.
-d.i.prettyHtmlFor = function(diffs) {
-  var html = [];
-  var x, i = 0;
-  var pattern_amp = /&/g;
-  var pattern_lt = /</g;
-  var pattern_gt = />/g;
-  var pattern_para = /\n/g;
-  for (x = 0; x < diffs.length; x++) {
-    var op = diffs[x][0];    // Operation (insert, delete, equal)
-    var data = diffs[x][1];  // Text of change.
-    var text = data.replace(pattern_amp, '&amp;').replace(pattern_lt, '&lt;')
-        .replace(pattern_gt, '&gt;').replace(pattern_para, '¶<br />');
-    switch (op) {
-      case DIFF_INSERT:
-        html[x] = '<ins>' + text + '</ins>';
-        break;
-      case DIFF_DELETE:
-        html[x] = '<del>' + text + '</del>';
-        break;
-      case DIFF_EQUAL:
-        html[x] = '<span>' + text + '</span>';
-        break;
-    }
-    if (op !== DIFF_DELETE) {
-      i += data.length;
-    }
-  }
-  return html.join('');
-};
 
 
 })();
