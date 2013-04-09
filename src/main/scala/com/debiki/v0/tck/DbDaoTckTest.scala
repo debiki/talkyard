@@ -483,8 +483,9 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
       val pathsAndPages = dao.loadPageBodiesTitles(path.pageId.get::Nil)
       pathsAndPages.size must_== 1
       pathsAndPages.get(path.pageId.get) must beLike { case Some(page) =>
-        page.bodyText must beSome
-        page.bodyText.get.length must be_>(0)
+        val bodyText = page.body.map(_.currentText)
+        bodyText must beSome
+        bodyText.get.length must be_>(0)
         page.body_!.user must beSome
 
         /* Currently there is no title for the test page.
@@ -979,7 +980,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
         dao.loadPage(ex1_debate.guid) must beLike {
           case Some(d: PageParts) => {
             val editedPost = d.getPost_!(post.id)
-            editedPost.text must_== newText
+            editedPost.currentText must_== newText
             editedPost.markup must_== "dmd0"
           }
         }
@@ -1004,7 +1005,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
         dao.loadPage(ex1_debate.guid) must beLike {
           case Some(d: PageParts) => {
             val editedPost = d.getPost_!(post.id)
-            editedPost.text must_== "Edited text 054F2x"
+            editedPost.currentText must_== "Edited text 054F2x"
             editedPost.markup must_== "html"
           }
         }
@@ -2144,7 +2145,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
           case Some(page: PageParts) =>
             page.title must beLike {
               case Some(title) =>
-                title.text must_== homepageTitle.payload.text
+                title.currentText must_== homepageTitle.payload.text
                 title.login_! must_== SystemUser.Login
                 title.identity_! must_== SystemUser.Identity
                 title.user_! must_== SystemUser.User
