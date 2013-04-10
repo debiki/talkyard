@@ -209,7 +209,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
     // Should be placed at start of Spec only?
 
     lazy val ex1_postText = "postText0-3kcvxts34wr"
-    var ex1_debate: PageParts = null
+    var testPage: PageNoPath = null
     var loginGrant: LoginGrant = null
 
     // Why is this needed? There's a `step` above that does this and it should
@@ -396,7 +396,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
         PageRole.Generic, defaultPagePath, debateNoId, publishDirectly = true,
         author = loginGrant.user))
       val actions = page.parts
-      ex1_debate = actions
+      testPage = PageNoPath(page.parts, page.meta)
       actions.postCount must_== 1
       actions.guid.length must be_>(1)  // not = '?'
       actions must havePostLike(ex1_rootPost)
@@ -412,7 +412,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
     }
 
     "find the debate and the post again" in {
-      dao.loadPage(ex1_debate.guid) must beLike {
+      dao.loadPage(testPage.id) must beLike {
         case Some(d: PageParts) => {
           d must havePostLike(ex1_rootPost)
         }
@@ -420,7 +420,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
     }
 
     "find the debate and the login and user again" in {
-      dao.loadPage(ex1_debate.guid) must beLike {
+      dao.loadPage(testPage.id) must beLike {
         case Some(d: PageParts) => {
           d.people.nilo(ex1_rootPost.loginId) must beLike {
             case Some(n: NiLo) =>  // COULD make separate NiLo test?
@@ -790,7 +790,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
 
     // COULD: Find the Identity again, and the User.
 
-    lazy val exPagePath = defaultPagePath.copy(pageId = Some(ex1_debate.guid))
+    lazy val exPagePath = defaultPagePath.copy(pageId = Some(testPage.id))
     "recognize its correct PagePath" in {
       dao.checkPagePath(exPagePath) must beLike {
         case Some(correctPath: PagePath) =>
@@ -827,8 +827,8 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
       parentPostId = PageParts.BodyId, text = "", loginId = loginId, userId = globalUserId)
     var ex2_id = ""
     "save an empty root post child post" in {
-      ex1_debate += loginGrant.user
-      dao.savePageActions(ex1_debate, List(ex2_emptyPost)) must beLike {
+      testPage += loginGrant.user
+      dao.savePageActions(testPage, List(ex2_emptyPost)) must beLike {
         case (_, List(p: PostActionDto[PAP.CreatePost])) =>
           ex2_id = p.id
           p must matchPost(ex2_emptyPost, id = ex2_id)
@@ -836,7 +836,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
     }
 
     "find the empty post again" in {
-      dao.loadPage(ex1_debate.guid) must beLike {
+      dao.loadPage(testPage.id) must beLike {
         case Some(d: PageParts) => {
           d must havePostLike(ex2_emptyPost, id = ex2_id)
         }
@@ -847,7 +847,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
     lazy val ex3_rating = T.rating.copy(loginId = loginId, userId = globalUserId,
       postId = PageParts.BodyId,  tags = "Interesting"::"Funny"::Nil)  // 2 tags
     "save a post rating, with 2 tags" in {
-      dao.savePageActions(ex1_debate, List(ex3_rating)) must beLike {
+      dao.savePageActions(testPage, List(ex3_rating)) must beLike {
         case (_, List(r: Rating)) =>
           ex3_ratingId = r.id
           r must matchRating(ex3_rating, id = ex3_ratingId,
@@ -856,7 +856,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
     }
 
     "find the rating again" in {
-      dao.loadPage(ex1_debate.guid) must beLike {
+      dao.loadPage(testPage.id) must beLike {
         case Some(d: PageParts) => {
           d must haveRatingLike(ex3_rating, id = ex3_ratingId)
         }
@@ -877,7 +877,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
         userId = globalUserId, tags = "Boring"::"Stupid"::"Funny"::Nil)
 
     "save 3 ratings, with 1, 2 and 3 tags" in {
-      dao.savePageActions(ex1_debate,
+      dao.savePageActions(testPage,
                 List(ex4_rating1, ex4_rating2, ex4_rating3)
       ) must beLike {
         case (_, List(r1: Rating, r2: Rating, r3: Rating)) =>
@@ -891,7 +891,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
     }
 
     "find the 3 ratings again" in {
-      dao.loadPage(ex1_debate.guid) must beLike {
+      dao.loadPage(testPage.id) must beLike {
         case Some(d: PageParts) => {
           d must haveRatingLike(ex4_rating1, id = ex4_rating1Id)
           d must haveRatingLike(ex4_rating2, id = ex4_rating2Id)
@@ -916,13 +916,13 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
       val approval = if (isApproved) Some(Approval.Manual) else None
       val reviewNoId = ReviewPostAction("?", postId = ex1_rootPost.id, loginId = loginId,
          userId = globalUserId, newIp = None, ctime = now, approval = approval)
-      dao.savePageActions(ex1_debate, List(reviewNoId)) must beLike {
+      dao.savePageActions(testPage, List(reviewNoId)) must beLike {
         case (_, List(review: ReviewPostAction)) =>
           reviewSaved = review
           review must_== reviewNoId.copy(id = review.id)
       }
 
-      dao.loadPage(ex1_debate.guid) must beLike {
+      dao.loadPage(testPage.id) must beLike {
         case Some(page: PageParts) => {
           val postReviewed = page.getPost_!(reviewSaved.postId)
           postReviewed.lastReviewDati must_== Some(reviewSaved.ctime)
@@ -947,11 +947,11 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
       var post: PostActionDto[PAP.CreatePost] = null
 
       "save post" in {
-        post = dao.savePageActions(ex1_debate, List(postNoId))._2.head
+        post = dao.savePageActions(testPage, List(postNoId))._2.head
         post.payload.text must_== "Initial text"
         post.payload.markup must_== "dmd0"
         exEdit_postId = post.id
-        ex1_debate += post
+        testPage += post
         ok
       }
 
@@ -972,12 +972,12 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
 
         // Save
         val List(edit: Edit, publ: EditApp) =
-          dao.savePageActions(ex1_debate, List(editNoId, publNoId))._2
+          dao.savePageActions(testPage, List(editNoId, publNoId))._2
 
         exEdit_editId = edit.id
 
         // Verify text changed
-        dao.loadPage(ex1_debate.guid) must beLike {
+        dao.loadPage(testPage.id) must beLike {
           case Some(d: PageParts) => {
             val editedPost = d.getPost_!(post.id)
             editedPost.currentText must_== newText
@@ -999,10 +999,10 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
 
         // Save
         val List(edit: Edit, publ: EditApp) =
-          dao.savePageActions(ex1_debate, List(editNoId, publNoId))._2
+          dao.savePageActions(testPage, List(editNoId, publNoId))._2
 
         // Verify markup type changed
-        dao.loadPage(ex1_debate.guid) must beLike {
+        dao.loadPage(testPage.id) must beLike {
           case Some(d: PageParts) => {
             val editedPost = d.getPost_!(post.id)
             editedPost.currentText must_== "Edited text 054F2x"
@@ -1107,7 +1107,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
 
       "by page id, find something, when page exists" in {
         val (actions, people) = dao.loadRecentActionExcerpts(
-          pathRanges = PathRanges(pageIds = Seq(ex1_debate.id)),
+          pathRanges = PathRanges(pageIds = Seq(testPage.id)),
           limit = 99)
         actions.length must be_>(0)
         hasLoginsIdtysAndUsers(people) must beTrue
@@ -1116,7 +1116,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
       "by page id, folder and tree, find something" in {
         val (actions, people) = dao.loadRecentActionExcerpts(
           pathRanges = PathRanges(
-            pageIds = Seq(ex1_debate.id),  // exists
+            pageIds = Seq(testPage.id),  // exists
             folders = Seq("/folder/"),  // there's a page in this folder
             trees = Seq("/")),  // everything
           limit = 99)
@@ -1288,14 +1288,14 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
         loginId = exOpenId_loginGrant.login.id,
         userId = exOpenId_loginGrant.user.id)
       var postId = "?"
-      ex1_debate += exOpenId_loginGrant.user
-      dao.savePageActions(ex1_debate, List(newPost)) must beLike {
+      testPage += exOpenId_loginGrant.user
+      dao.savePageActions(testPage, List(newPost)) must beLike {
         case (_, List(savedPost: PostActionDto[PAP.CreatePost])) =>
           postId = savedPost.id
           savedPost must matchPost(newPost, id = postId)
       }
 
-      dao.loadPage(ex1_debate.guid) must beLike {
+      dao.loadPage(testPage.id) must beLike {
         case Some(d: PageParts) =>
           d must havePostLike(newPost, id = postId)
           d.people.nilo(exOpenId_loginReq.login.id) must beLike {
@@ -1383,7 +1383,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
       ctime = new ju.Date,
       recipientUserId = unauUser.id,
       pageTitle = "EventPageForUnauUser",
-      pageId = ex1_debate.guid,
+      pageId = testPage.id,
       eventType = NotfOfPageAction.Type.PersonalReply,
       eventActionId = ex2_id,
       triggerActionId = ex2_id,
@@ -1655,7 +1655,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
 
     "move and rename pages" >> {
 
-      lazy val pagePath = dao.lookupPagePath(ex1_debate.guid).get
+      lazy val pagePath = dao.lookupPagePath(testPage.id).get
 
       var oldPaths: List[PagePath] = Nil
       var newPath: PagePath = null
@@ -1678,7 +1678,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
 
       "leave a page as is" in {
         // No move/rename options specified:
-        dao.moveRenamePage(pageId = ex1_debate.guid) must_== pagePath
+        dao.moveRenamePage(pageId = testPage.id) must_== pagePath
         oldPaths ::= pagePath
         ok
       }
@@ -1691,7 +1691,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
       }
 
       "move a page to another folder" in {
-        newPath = dao.moveRenamePage(pageId = ex1_debate.guid,
+        newPath = dao.moveRenamePage(pageId = testPage.id,
           newFolder = Some("/new-folder/"))
         newPath.folder must_== "/new-folder/"
         newPath.pageSlug must_== pagePath.pageSlug
@@ -1705,7 +1705,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
       "rename a page" in {
         oldPaths ::= newPath
         newPath = dao.moveRenamePage(
-          pageId = ex1_debate.guid,
+          pageId = testPage.id,
           newSlug = Some("new-slug"))
         newPath.folder must_== "/new-folder/"
         newPath.pageSlug must_== "new-slug"
@@ -1719,7 +1719,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
       "toggle page id visibility in URL" in {
         oldPaths ::= newPath
         newPath = dao.moveRenamePage(
-          pageId = ex1_debate.guid,
+          pageId = testPage.id,
           showId = Some(!pagePath.showId))
         newPath.folder must_== "/new-folder/"
         newPath.pageSlug must_== "new-slug"
@@ -1734,7 +1734,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
         oldPaths ::= newPath
         previousPath = newPath // we'll move it back to here, soon
         newPath = dao.moveRenamePage(
-          pageId = ex1_debate.guid,
+          pageId = testPage.id,
           newFolder = Some("/new-folder-2/"),
           showId = Some(true), newSlug = Some("new-slug-2"))
         newPath.folder must_== "/new-folder-2/"
@@ -1763,7 +1763,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
       "move-rename to a location that happens to be its previous location" in {
         oldPaths ::= newPath
         newPath = dao.moveRenamePage(
-          pageId = ex1_debate.guid,
+          pageId = testPage.id,
           newFolder = Some(previousPath.folder),
           showId = Some(previousPath.showId),
           newSlug = Some(previousPath.pageSlug))
@@ -2023,7 +2023,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
       }
 
       "can move page to /move-pages/folder1/" in {
-        val pagePath = dao.lookupPagePathByPageId(ex1_debate.guid).get
+        val pagePath = dao.lookupPagePathByPageId(testPage.id).get
         testMovePages(pagePath.folder, "/move-pages/folder1/")
       }
 
@@ -2062,11 +2062,11 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
 
       def testMovePages(fromFolder: String, toFolder: String,
             resultingFolder: String = null) {
-        dao.movePages(pageIds = List(ex1_debate.guid),
+        dao.movePages(pageIds = List(testPage.id),
           fromFolder = fromFolder, toFolder = toFolder)
-        val pagePathAfter = dao.lookupPagePathByPageId(ex1_debate.guid).get
+        val pagePathAfter = dao.lookupPagePathByPageId(testPage.id).get
         pagePathAfter.folder must_== Option(resultingFolder).getOrElse(toFolder)
-        pagePathAfter.pageId must_== Some(ex1_debate.guid)
+        pagePathAfter.pageId must_== Some(testPage.id)
       }
     }
     */
@@ -2134,7 +2134,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
         val page = dao.createPage(Page.newPage(
           PageRole.Generic, pagePath, emptyPage, author = SystemUser.User))
         homepageId = page.id
-        dao.savePageActions(page.parts, List(homepageTitle))
+        dao.savePageActions(page.withoutPath, List(homepageTitle))
         ok
       }
 
@@ -2394,7 +2394,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
     //"create many many random posts" in {
     //  for (i <- 1 to 10000) {
     //    dao.savePageActions(
-    //          "-"+ ex1_debate, List(ex3_emptyPost)) must beLike {
+    //          "-"+ testPage.parts (what??), List(ex3_emptyPost)) must beLike {
     //      case List(p: Post) => ok
     //    }
     //  }
