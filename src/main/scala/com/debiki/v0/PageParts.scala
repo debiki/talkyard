@@ -577,13 +577,7 @@ case class PageParts (
 
   // -------- Construction
 
-  def + (rating: Rating): PageParts = copy(ratings = rating :: ratings)
-  def + (edit: Edit): PageParts = copy(edits = edit :: edits)
-  def + (editApp: EditApp): PageParts = copy(editApps = editApp :: editApps)
-  def + (flag: Flag): PageParts = copy(flags = flag :: flags)
-  def + (deletion: Delete): PageParts = copy(deletions = deletion :: deletions)
-  def + (review: ReviewPostAction): PageParts = copy(reviews = review :: reviews)
-  def + (action: PostActionDto[_]): PageParts = copy(actionDtos = action :: actionDtos)
+  def +(actionDto: PostActionDtoOld) = ++(actionDto::Nil)
 
   // Could try not to add stuff that's already included in this.people.
   def ++(people: People): PageParts = this.copy(people = this.people ++ people)

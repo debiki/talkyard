@@ -159,8 +159,13 @@ abstract class TenantDbDao {
 
   // ----- Loading and saving pages
 
-  def savePageActions[T <: PostActionDtoOld](pageParts: PageParts, xs: List[T])
-        : (PageParts, List[T])
+  /** Saves actions, updates related page meta data (e.g. if you save edits
+    * to the page title post, the page title metadata field is updated),
+    * and generates notifications (for example, if you save a reply to Alice,
+    * a notification to Alice is generated).
+    */
+  def savePageActions[T <: PostActionDtoOld](
+        page: PageNoPath, actions: List[T]): (PageNoPath, List[T])
 
   /**
    * Loads another tenant's page, if tenantId is specified.
@@ -521,9 +526,9 @@ class ChargingTenantDbDao(
   // ----- Actions
 
   def savePageActions[T <: PostActionDtoOld](
-        pageParts: PageParts, actions: List[T]): (PageParts, List[T]) = {
+        page: PageNoPath, actions: List[T]): (PageNoPath, List[T]) = {
     _chargeFor(ResUsg.forStoring(actions = actions))
-    _spi.savePageActions(pageParts, actions)
+    _spi.savePageActions(page, actions)
   }
 
   def loadPage(debateId: String, tenantId: Option[String]): Option[PageParts] = {

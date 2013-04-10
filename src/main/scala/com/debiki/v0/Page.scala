@@ -74,11 +74,29 @@ case class Page(
       meta.copy(pageId = newId), path = path.copy(pageId = Some(newId)),
       parts = parts.copy(guid = newId))
 
+  def withoutPath = PageNoPath(parts, meta)
 }
 
 
+/** A page that does not know what it contains (the `parts` fields is absent).
+  */
 case class PagePathAndMeta(path: PagePath, meta: PageMeta)
   extends HasPagePath with HasPageMeta
+
+
+
+/** A page that does not know where it's located (it doesn't know its URL).
+  */
+case class PageNoPath(parts: PageParts, meta: PageMeta)
+  extends HasPageMeta {
+
+  def +(user: User): PageNoPath =
+    copy(parts = parts + user)
+
+  def +(actionDto: PostActionDtoOld): PageNoPath =
+    copy(parts = parts + actionDto)
+
+}
 
 
 
