@@ -130,9 +130,20 @@ object PageMeta {
 
   def forChangedPage(originalMeta: PageMeta, changedPage: PageParts): PageMeta = {
     require(changedPage.id == originalMeta.pageId)
+
+    // Re the page modification dati: Sometimes an empty page is created,
+    // and then, later on, a title (for example) is added to the page. But this
+    // title might have an older creation time than the page itself, if the
+    // title was created in-memory before the page. Then use the page's
+    // modification time, not the title's, so we won't accidentally set the
+    // page modification time to *before* its creation time.
+    val modifiedAt = new ju.Date(math.max(
+      changedPage.modificationDati.map(_.getTime) getOrElse 0: Long,
+      originalMeta.modDati.getTime))
+
     originalMeta.copy(
       cachedTitle = changedPage.approvedTitleText,
-      modDati = changedPage.modificationDati getOrElse originalMeta.modDati,
+      modDati = modifiedAt,
       cachedNumPosters = changedPage.numPosters,
       cachedNumActions = changedPage.actionCount,
       cachedNumPostsDeleted = changedPage.numPostsDeleted,
