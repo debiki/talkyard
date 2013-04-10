@@ -40,7 +40,7 @@ object AppReply extends mvc.Controller {
     import HtmlForms.Reply.{InputNames => Inp}
 
     val pageReq = pageReqNoMeOnPage.copyWithMeOnPage_!
-    if (!pageReq.pageVersion.isLatest)
+    if (pageReq.oldPageVersion.isDefined)
       throwBadReq("DwE72XS8", "Can only reply to latest page version")
 
     if (pageReq.page_!.getPost(postId) isEmpty)
@@ -75,7 +75,7 @@ object AppReply extends mvc.Controller {
   private def _showHtmlResultPage(
         pageReq: PageRequest[_], post: PostActionDto[PAP.CreatePost]): PlainResult = {
     val nextPageUrl =
-      Utils.queryStringAndHashToView(pageReq.pageRoot, pageReq.pageVersion,
+      Utils.queryStringAndHashToView(pageReq.pageRoot, pageReq.oldPageVersion,
          post.payload.approval.map(_ => post.id),
          // Write a '?' even if query string is empty, so '?reply' is removed.
          forceQuery = true)

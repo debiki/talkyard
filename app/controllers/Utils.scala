@@ -80,7 +80,7 @@ object Utils extends Results with http.ContentTypes {
       Ok(pageHtml) as HTML
     } else {
       val queryString =
-         queryStringAndHashToView(pageReq.pageRoot, pageReq.pageVersion)
+         queryStringAndHashToView(pageReq.pageRoot, pageReq.oldPageVersion)
       Redirect(pageReq.pagePath.path + queryString)
     }
   }
@@ -92,12 +92,11 @@ object Utils extends Results with http.ContentTypes {
       pageReq.pageRoot, pageReq.permsOnPage)
 
 
-  def queryStringAndHashToView(pageRoot: PageRoot, pageVersion: PageVersion,
+  def queryStringAndHashToView(pageRoot: PageRoot, pageVersion: Option[ju.Date],
         actionId: Option[String] = None, forceQuery: Boolean = false)
         : String = {
     var params = List[String]()
-    if (!pageVersion.approved) params ::= "unapproved"
-    if (!pageVersion.isLatest) params ::= "version="+ pageVersion.datiIsoStr
+    if (pageVersion.isDefined) params ::= s"version=${toIso8601T(pageVersion.get)}"
     if (pageRoot.isDefault && params.nonEmpty) params ::= "?view"
     else if (!pageRoot.isDefault) params ::= "?view=" + pageRoot.subId
     var queryString = params.mkString("&")

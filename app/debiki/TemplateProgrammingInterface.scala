@@ -243,8 +243,7 @@ class TinyTemplateProgrammingInterface protected (
       pageActions <- pagesById.get(pageMeta.pageId)
     } yield {
       tpi.Page(
-        Page(pageMeta, pagePath, pageActions.approvedVersion),
-        host = _pageReq.host)
+        Page(pageMeta, pagePath, pageActions), host = _pageReq.host)
     }
   }
 
@@ -271,8 +270,7 @@ class TinyTemplateProgrammingInterface protected (
       pageActions <- pagesById.get(pageMeta.pageId)
     } yield {
       tpi.Page(
-        Page(pageMeta, pagePath, pageActions.approvedVersion),
-        host = _pageReq.host)
+        Page(pageMeta, pagePath, pageActions), host = _pageReq.host)
     }
   }
 

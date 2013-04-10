@@ -99,7 +99,7 @@ trait CachingRenderedPageHtmlDao extends RenderedPageHtmlDao {
     // because in the past there was some error because non-existing pages
     // had no ids (so feels safer to bypass).
     if (pageReq.pageExists && pageReq.pageRoot == PageRoot.Real(PageParts.BodyId) &&
-        pageReq.pageVersion == PageVersion.LatestApproved) {
+        pageReq.oldPageVersion.isEmpty) {
       val key = _pageHtmlKey(pageReq.pageId_!, origin = pageReq.host)
       lookupInCache(key, orCacheAndReturn = {
         rememberOrigin(pageReq.host)

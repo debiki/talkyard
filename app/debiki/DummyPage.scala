@@ -16,20 +16,13 @@ object DummyPage {
    * Adds an empty title, an empty page body, and a config text, if they
    * don't yet exist, so there is something to edit.
    */
-  def addMissingTitleBodyConfigTo(
-        pageSplitByVersion: PageSplitByVersion, pageRole: PageRole): PageParts = {
+  def addMissingTitleBodyConfigTo(pageParts: PageParts, pageRole: PageRole): PageParts = {
 
-    val pageNoDummies = pageSplitByVersion.desired
-    val pageInclUnapproved = pageSplitByVersion.inclUnapproved
+    val addDummyTitle = pageParts.title.isEmpty
+    val addDummyBody = pageParts.body.isEmpty
+    val addDummyConfig = pageParts.pageConfigPost.isEmpty
 
-    val addDummyTitle = pageNoDummies.title.isEmpty
-    val addDummyBody = pageNoDummies.body.isEmpty
-    val addDummyConfig = pageNoDummies.pageConfigPost.isEmpty
-
-    val isTitleUnapproved = addDummyTitle && pageInclUnapproved.title.isDefined
-    val isBodyUnapproved = addDummyBody && pageInclUnapproved.body.isDefined
-
-    var pageWithDummies = pageNoDummies
+    var pageWithDummies = pageParts
 
     if (addDummyTitle || addDummyBody || addDummyConfig)
       pageWithDummies = pageWithDummies ++ DummyAuthor
@@ -43,8 +36,8 @@ object DummyPage {
       case _ => DefaultTexts
     }
 
-    if (addDummyTitle) pageWithDummies += dummyTitle(texts, isTitleUnapproved)
-    if (addDummyBody) pageWithDummies += dummyBody(texts, isBodyUnapproved, pageRole)
+    if (addDummyTitle) pageWithDummies += dummyTitle(texts)
+    if (addDummyBody) pageWithDummies += dummyBody(texts, pageRole)
     if (addDummyConfig) pageWithDummies += dummyConfig(texts)
 
     pageWithDummies
@@ -70,7 +63,7 @@ object DummyPage {
     List(DummyAuthorLogin), List(DummyAuthorIdty), List(DummyAuthorUser))
 
 
-  private def dummyTitle(texts: Texts, absentSinceUnapproved: Boolean) = PostActionDto(
+  private def dummyTitle(texts: Texts) = PostActionDto(
     id = PageParts.TitleId,
     postId = PageParts.TitleId,
     creationDati = new ju.Date,
@@ -79,23 +72,23 @@ object DummyPage {
     newIp = None,
     payload = PostActionPayload.CreatePost(
       parentPostId = PageParts.TitleId,
-      text = if (absentSinceUnapproved) texts.unapprovedTitleText else texts.noTitleText,
+      text = texts.noTitleText,
       markup = Markup.DefaultForPageTitle.id,
       approval = Some(Approval.Preliminary)))
 
 
-  private def dummyBody(texts: Texts, absentSinceUnapproved: Boolean, pageRole: PageRole) = {
-    val prototype = dummyTitle(texts, false)
+  private def dummyBody(texts: Texts, pageRole: PageRole) = {
+    val prototype = dummyTitle(texts)
     prototype.copy(id = PageParts.BodyId, postId = PageParts.BodyId,
       payload = prototype.payload.copy(
         parentPostId = PageParts.BodyId,
-        text = if (absentSinceUnapproved) texts.unapprovedBodyText else texts.noBodyText,
+        text = texts.noBodyText,
         markup = Markup.defaultForPageBody(pageRole).id))
   }
 
 
   private def dummyConfig(texts: Texts) = {
-    val prototype = dummyTitle(texts, false)
+    val prototype = dummyTitle(texts)
     prototype.copy(id = PageParts.ConfigPostId, postId = PageParts.ConfigPostId,
       payload = prototype.payload.copy(
         parentPostId = PageParts.ConfigPostId,
@@ -106,9 +99,7 @@ object DummyPage {
 
   private abstract class Texts {
     def noTitleText: String
-    def unapprovedTitleText: String
     def noBodyText: String
-    def unapprovedBodyText: String
     def configText: String
   }
 
@@ -120,15 +111,11 @@ object DummyPage {
 
     def noTitleText = "New Page Title (click to edit)"
 
-    def unapprovedTitleText = "(Title pending approval)"
-
     def noBodyText = i"""
       |Page body.
       |
       |$ClickToEditSelectImprove
       |"""
-
-    def unapprovedBodyText = "(Text pending approval.)"
 
     def configText = i"""
       |This is an empty configuration page.

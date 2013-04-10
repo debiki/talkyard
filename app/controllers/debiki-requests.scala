@@ -385,28 +385,21 @@ case class PageRequest[A](
 
   lazy val pageDesiredVersionWithDummies_! : PageParts = {
     DummyPage.addMissingTitleBodyConfigTo(
-      page_!.splitByVersion(pageVersion), pageMeta_!.pageRole)
+      oldPageVersion.map(page_!.asOf(_)) getOrElse page_!, pageMeta_!.pageRole)
   }
 
 
-  /**
-   * The page version is specified in the query string, e.g.:
-   * ?view&version=2012-08-20T23:59:59Z&unapproved
-   *
-   * The default version is the most recent approved version.
-   */
-  lazy val pageVersion: PageVersion = {
-    val approved = request.queryString.getFirst("unapproved").isEmpty
-    request.queryString.getEmptyAsNone("version") match {
-      case None => PageVersion.latest(approved)
-      case Some(datiString) =>
-        val dati = try {
-          parseIso8601DateTime(datiString)
-        } catch {
-          case ex: IllegalArgumentException =>
-            throwBadReq("DwE3DW27", "Bad version query param")
-        }
-        PageVersion(dati, approved)
+  /** Any page version specified in the query string, e.g.:
+    * ?view&version=2012-08-20T23:59:59Z
+    */
+  lazy val oldPageVersion: Option[ju.Date] = {
+    request.queryString.getEmptyAsNone("version") map { datiString =>
+      try {
+        parseIso8601DateTime(datiString)
+      } catch {
+        case ex: IllegalArgumentException =>
+          throwBadReq("DwE3DW27", "Bad version query param")
+      }
     }
   }
 
