@@ -15,6 +15,11 @@ function $hideInlineActionMenu(event) {
 // Opens a menu with Inline Reply and Edit endries.
 // Does currently not work (does nothing) in IE 7 and 8.
 function $showInlineActionMenu(event) {
+
+  // One may not edit old historic page versions.
+  if (d.i.isViewingOldPageVersion())
+    return;
+
   var $menu;
   var $target = $(event.target);
   if ($target.closest('.dw-fs').length) {

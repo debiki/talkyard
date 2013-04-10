@@ -67,5 +67,13 @@ d.i.parseApprovalInPageUrl = function() {
 };
 
 
+/**
+ * For now only. Would be better to hide stuff via CSS? Perhaps add a
+ * clarifying message at the top of the page, server side?
+ */
+d.i.isViewingOldPageVersion = function() {
+  return window.location.toString().search('&version=') !== -1;
+};
+
 
 // vim: fdm=marker et ts=2 sw=2 tw=80 fo=tcqwn list

@@ -18,6 +18,13 @@ d.i.createAndBindActionLinksForPost = function(post) {
 
 
 function findOrAddActionLinks($thread) {
+  // One may not reply-to/edit old page versions. (Could be interesting
+  // to show edit suggestions as of this date,  however.)
+  if (d.i.isViewingOldPageVersion()) {
+    $thread.find('> .dw-as').html('');
+    return $();
+  }
+
   var $actions = $thread.children('.dw-res').children('.dw-p-as');
   if ($actions.length) {
     // This thread is laid out horizontally and the action links have
