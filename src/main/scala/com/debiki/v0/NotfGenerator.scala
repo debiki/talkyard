@@ -6,22 +6,25 @@ package com.debiki.v0
 
 import java.{util => ju}
 import Prelude._
+import com.debiki.v0.{PostActionPayload => PAP}
 
 
 /**
  * Analyzes page actions, e.g. replies and their approvals, and
  * generates and returns the appropriate notifications.
  */
-case class NotfGenerator(pageInclNewActions: PageParts, newActions: Seq[PostActionDtoOld]) {
+case class NotfGenerator(pageExclNewActions: PageParts, newActions: Seq[PostActionDtoOld]) {
 
-  def page = pageInclNewActions
+  def page = pageExclNewActions
 
 
   def generateNotfs: Seq[NotfOfPageAction] = newActions flatMap (_ match {
     case action: PostActionDto[_] => action.payload match {
       case p: PostActionPayload.CreatePost =>
-        _makePersonalReplyNotf(page.getPost(action.id).get)
-      case _ => Nil // skip for now
+        _makePersonalReplyNotf(
+          new Post(page, action.asInstanceOf[PostActionDto[PAP.CreatePost]]))
+      case _ =>
+        Nil // skip for now
     }
     // Note:
     // If you add notfs (below) for other things than replies,
@@ -33,7 +36,7 @@ case class NotfGenerator(pageInclNewActions: PageParts, newActions: Seq[PostActi
     case flag: Flag =>
       Nil  // fix later, see note above
     case review: ReviewPostAction =>
-      _makeReviewNotfs(page.getReview(review.id) getOrDie "DwE093k7")
+      _makeReviewNotfs(new Review(page, review))
     case _ =>
       Nil  // skip for now
   })
@@ -101,9 +104,6 @@ case class NotfGenerator(pageInclNewActions: PageParts, newActions: Seq[PostActi
     // (This could happen if the post is WellBehavedUser-approved on creation,
     // or if it is approved manually, then edited, and a new approval that concerns
     // the edits is saved.)
-    // OOOPS BUG: lastPermanentApprovalDati is always == (never <) review.creationDati
-    // because the last approval *is* the review — it's already been added to the page :-(
-    // Should rewrite TenantDao.savePageActionsGenNotfsImpl to fix this?
     val alreadySavedNotf =
       postReviewed.lastPermanentApprovalDati.map(
         _.getTime < review.creationDati.getTime) == Some(true)
