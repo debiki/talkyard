@@ -65,7 +65,7 @@ object AppReply extends mvc.Controller {
     if (pageReq.isAjax) {
       val patchSpec = PostPatchSpec(postWithId.id, wholeThread = true)
       BrowserPagePatcher.jsonForThreadsAndPosts(
-        List((pageWithNewPost, List(patchSpec))), pageReq)
+        List((pageWithNewPost.parts, List(patchSpec))), pageReq)
     }
     else
       _showHtmlResultPage(pageReq, postWithId)

@@ -49,14 +49,14 @@ class CachingTenantDao(tenantDbDao: ChargingTenantDbDao)
   }
 
 
-  override def savePageActionsGenNotfsImpl(page: PageParts, actions: List[PostActionDtoOld],
-        pageMeta: PageMeta): (PageParts, Seq[PostActionDtoOld]) = {
+  override def savePageActionsGenNotfsImpl(page: PageNoPath, actions: List[PostActionDtoOld])
+        : (PageNoPath, Seq[PostActionDtoOld]) = {
 
     if (actions isEmpty)
       return (page, Nil)
 
-    val pageActionsWithId =
-      super.savePageActionsGenNotfsImpl(page, actions, pageMeta)
+    val newPageAndActionsWithId =
+      super.savePageActionsGenNotfsImpl(page, actions)
 
     // Possible optimization: Examine all actions, and refresh cache only
     // if there are e.g. EditApp:s or approved Post:s (but ignore Edit:s --
@@ -109,7 +109,7 @@ class CachingTenantDao(tenantDbDao: ChargingTenantDbDao)
     pc.Cache.remove(_pageActionsKey(page.id))
     // ------ /Page action cache
 
-    pageActionsWithId
+   newPageAndActionsWithId
   }
 
 

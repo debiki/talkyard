@@ -94,21 +94,21 @@ class TenantDao(protected val tenantDbDao: ChargingTenantDbDao)
    * Returns the page including new actions, and the actions, but with ids assigned.
    */
   final def savePageActionsGenNotfs(pageReq: PageRequest[_], actions: List[PostActionDtoOld])
-        : (PageParts, Seq[PostActionDtoOld]) = {
-    savePageActionsGenNotfsImpl(pageReq.page_!, actions, pageReq.pageMeta_!)
+        : (PageNoPath, Seq[PostActionDtoOld]) = {
+    savePageActionsGenNotfsImpl(PageNoPath(pageReq.page_!, pageReq.pageMeta_!), actions)
   }
 
 
   final def savePageActionsGenNotfs(page: PageParts, actions: List[PostActionDtoOld])
-        : (PageParts, Seq[PostActionDtoOld]) = {
+        : (PageNoPath, Seq[PostActionDtoOld]) = {
     val pageMeta = tenantDbDao.loadPageMeta(page.id) getOrElse
       throwNotFound("DwE115Xf3", s"Found no meta for page ${page.id}")
-    savePageActionsGenNotfsImpl(page, actions, pageMeta)
+    savePageActionsGenNotfsImpl(PageNoPath(page, pageMeta), actions)
   }
 
 
-  def savePageActionsGenNotfsImpl(page: PageParts, actions: List[PostActionDtoOld],
-        pageMeta: PageMeta): (PageParts, Seq[PostActionDtoOld]) = {
+  def savePageActionsGenNotfsImpl(page: PageNoPath, actions: List[PostActionDtoOld])
+        : (PageNoPath, Seq[PostActionDtoOld]) = {
     if (actions isEmpty)
       return (page, Nil)
 
@@ -118,17 +118,6 @@ class TenantDao(protected val tenantDbDao: ChargingTenantDbDao)
 
     val (pageWithNewActions, actionsWithId) =
       tenantDbDao.savePageActions(page, actions)
-
-    val newMeta = PageMeta.forChangedPage(pageMeta, pageWithNewActions)
-    if (newMeta != pageMeta)
-      tenantDbDao.updatePageMeta(newMeta, old = pageMeta) // BUG: race condition
-                        // Could fix by using Optimistic Concurrency Control?
-
-    // Notify users whose actions were affected.
-    // BUG: notification lost if server restarted here.
-    // COULD rewrite Dao so the notfs can be saved in the same transaction:
-    val notfs = NotfGenerator(pageWithNewActions, actionsWithId).generateNotfs
-    tenantDbDao.saveNotfs(notfs)
 
     (pageWithNewActions, actionsWithId)
   }

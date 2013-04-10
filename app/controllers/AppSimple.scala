@@ -120,7 +120,7 @@ object AppSimple extends mvc.Controller {
       val (pageWithNewActions, _) = apiReq.dao.savePageActionsGenNotfs(page, actions)
 
       val patchSpecs = actions.map(a => PostPatchSpec(a.postId, wholeThread = true))
-      pagesAndPatchSpecs ::= (pageWithNewActions, patchSpecs)
+      pagesAndPatchSpecs ::= (pageWithNewActions.parts, patchSpecs)
     }
 
     BrowserPagePatcher.jsonForThreadsAndPosts(pagesAndPatchSpecs, apiReq)
