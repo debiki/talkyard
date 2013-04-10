@@ -639,50 +639,12 @@ case class PageParts (
   }
 
 
-  // -------- Partition by version
-
-  /**
-   * Returns a Page with all non-approved stuff removed.
-   */
-  def approvedVersion: PageParts =
-    splitByVersion(PageVersion.LatestApproved).desired
-
-  /**
-   * Partitions this page into two or three parts:
-   * 1) The `desired` part, which contains everything that happened
-   *    up to and including `pageVersion`, and, if pageVersion.approved,
-   *    only things that have been approved.
-   * 2) The `inclUnapproved` part, which contains everything that happened
-   *    up to and including `pageVersion.dati`, including unapproved stuff.
-   * 3) The `inclTooRecent` part which is the whole page unchanged (both
-   *    too recent and unapproved stuff).
-   *
-   * However when partitioning on Post approval date, only
-   * Posts, Edits and EditApps are partitioned; everything else is
-   * included in all of 1, 2, and 3 above.
-   */
-  def splitByVersion(pageVersion: PageVersion): PageSplitByVersion = {
-
-    val pageUpToAndInclDati = splitByTime(pageVersion.dati)
-
-    if (!pageVersion.approved)
-      return PageSplitByVersion(
-        desired = pageUpToAndInclDati,
-        inclUnapproved = pageUpToAndInclDati,
-        inclTooRecent = this,
-        version = pageVersion)
-
-    val pageApproved = pageUpToAndInclDati.splitByApproval
-
-    PageSplitByVersion(
-      desired = pageApproved,
-      inclUnapproved = pageUpToAndInclDati,
-      inclTooRecent = this,
-      version = pageVersion)
-  }
+  // -------- Time
 
 
-  private def splitByTime(dati: ju.Date): PageParts = {
+  /** This page, as it was at some time in the past (everything more recent is dropped).
+    */
+  def asOf(dati: ju.Date): PageParts = {
     def happenedInTime(action: PostActionDtoOld) =
       action.ctime.getTime <= dati.getTime
 
@@ -706,48 +668,6 @@ case class PageParts (
     pageUpToAndInclDati
   }
 
-
-  private def splitByApproval: PageParts = {
-
-      val (actionsApproved, actionsUnapproved) = actionDtos.partition(actionDto =>
-        actionDto.payload match {
-          case _: PAP.CreatePost =>
-            val post = getPost_!(actionDto.id)
-            post.lastApprovalDati.isDefined
-          case _ => true
-        })
-
-      val (editsApproved, editsUnapproved) = edits partition { edit =>
-        val post = getPost_!(edit.postId)
-        post.lastApprovalDati match {
-          case None => false
-          case Some(approvalDati) => edit.ctime.getTime <= approvalDati.getTime
-        }
-      }
-
-      val (editAppsApproved, editAppsUnapproved) = editApps partition { edApp =>
-        val edit = editsById(edApp.editId)
-        val post = getPost_!(edit.postId)
-        post.lastApprovalDati match {
-          case None => false
-          case Some(approvalDati) => edApp.ctime.getTime <= approvalDati.getTime
-        }
-      }
-
-      // As mentioned in the docs of splitByVersion, only Posts,
-      // Edits and EditApps are partitioned.
-      // BUG Should also partition deletions? In the future, when/if
-      // they can be approved/rejected.
-      val approvedVersionOfPage = copy(
-        actionDtos = actionsApproved,
-        edits = editsApproved,
-        editApps = editAppsApproved)
-
-    approvedVersionOfPage
-  }
-
-
-  // -------- Misc
 
   /**
    * The most recent outwardly visible action, e.g. the last edit application,
@@ -807,37 +727,6 @@ case class PageParts (
     oldestAction.map(_.ctime)
 
 }
-
-
-
-case class PageVersion(dati: ju.Date, approved: Boolean) {
-
-  def isLatest: Boolean = dati.getTime == Long.MaxValue
-  def datiIsoStr: String = toIso8601T(dati)
-
-}
-
-
-object PageVersion {
-
-  def latest(approved: Boolean) =
-    PageVersion(new ju.Date(Long.MaxValue), approved)
-
-  val LatestApproved = latest(approved = true)
-  val LatestUnapproved = latest(approved = false)
-
-}
-
-
-case class PageSplitByVersion(
-  /** Includes everything up to a certain date, and perhaps only approved things. */
-  desired: PageParts,
-  /** Includes everything up to a certain date, also unapproved things. */
-  inclUnapproved: PageParts,
-  /** Includes everything regardles of date and approval status. */
-  inclTooRecent: PageParts,
-  /** The version at which the page was split. */
-  version: PageVersion)
 
 
 
