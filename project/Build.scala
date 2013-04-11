@@ -58,8 +58,8 @@ object ApplicationBuild extends Build {
     "rhino" % "js" % "1.7R2",
     "org.yaml" % "snakeyaml" % "1.11",
     "org.mockito" % "mockito-all" % "1.9.0" % "test", // I use Mockito with Specs2...
-    "org.scalatest" % "scalatest_2.10.0-RC1" % "2.0.M4" % "test", // but prefer ScalaTest
-    "org.scala-lang" % "scala-actors" % "2.10.0-RC1" % "test" // needed by ScalaTest
+    "org.scalatest" % "scalatest_2.10" % "2.0.M5b" % "test", // but prefer ScalaTest
+    "org.scala-lang" % "scala-actors" % "2.10.1" % "test" // needed by ScalaTest
   )
 
 
@@ -83,6 +83,7 @@ object ApplicationBuild extends Build {
 
 
   def mainSettings = List(
+    scalaVersion := "2.10.1",
     compileRhinoTask := { "make compile_javascript"! },
     Keys.fork in Test := false, // or cannot place breakpoints in test suites
     Keys.compile in Compile <<=

@@ -7,7 +7,7 @@ package debiki
 import com.debiki.v0._
 import controllers.{AppCreatePage, AppCreateWebsite}
 import java.{util => ju}
-import org.scalatest.{Suite, Suites, BeforeAndAfterAll, FreeSpec}
+import org.scalatest.{Suite, Suites, BeforeAndAfterAll, FreeSpec, Status}
 import org.scalatest.matchers.MustMatchers
 import play.api.{test => pt}
 import pt.Helpers.testServerPort
@@ -51,7 +51,7 @@ trait RichFreeSpec extends FreeSpec {
   private var _currentTestName: Option[String] = None
   def currentTestName = _currentTestName getOrDie "DwE90RXP2"
 
-  protected override def runTest(testName: String, args: org.scalatest.Args) {
+  protected override def runTest(testName: String, args: org.scalatest.Args): Status = {
     _currentTestName = Some(testName)
     super.runTest(testName, args)
   }

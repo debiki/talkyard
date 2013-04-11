@@ -1,3 +1,7 @@
+// scalaVersion := "2.10.1"               // --> "play#sbt-plugin;2.1.0: not found"  no matter what version I specify
+// scalaVersion in ThisBuild := "2.10.1"  // --> "play#sbt-plugin;2.1.0: not found"  no matter what version I specify
+// But when I added 2.10.1 to Build.scala instead, everything (?) works fine.
+
 // Comment to get more information during initialization
 logLevel := Level.Warn
 
@@ -5,7 +9,7 @@ logLevel := Level.Warn
 resolvers += "Typesafe repository" at "http://repo.typesafe.com/typesafe/releases/"
 
 // Not needed when using Play — but needed when using SBT.
-resolvers += Resolver.file("Local Repository", file("/mnt/data/dev/play/github/repository/local"))(Resolver.ivyStylePatterns)
+resolvers += Resolver.file("Local Repository", file("/mnt/data/dev/play/github2/repository/local"))(Resolver.ivyStylePatterns)
 
 // Play SBT Plugin:
 resolvers += Resolver.url("Typesafe Ivy Snapshots", url("http://repo.typesafe.com/typesafe/ivy-snapshots/"))(Resolver.ivyStylePatterns)
@@ -16,7 +20,9 @@ resolvers ++= Seq("snapshots" at "http://oss.sonatype.org/content/repositories/s
 
 // Use the Play sbt plugin for Play projects
 addSbtPlugin("play" % "sbt-plugin" % "2.1-SNAPSHOT")
-	// Option(System.getProperty("play.version")).getOrElse("2.0"))
+
+// addSbtPlugin("play" % "sbt-plugin" % Option(System.getProperty("play.version")).getOrElse("2.0"))  -- not found
+//  Here it is:  /mnt/data/dev/play/github2/repository/local/play/sbt-plugin/scala_2.9.2/sbt_0.12/2.1-SNAPSHOT/jars/sbt-plugin.jar
 
 
 
@@ -30,7 +36,7 @@ addSbtPlugin("com.github.mpeltonen" % "sbt-idea" % "1.1.0-M2-TYPESAFE")
 
 // Eclipse project files
 // ---------------------------------------------------------------
-addSbtPlugin("com.typesafe.sbteclipse" % "sbteclipse-plugin" % "2.1.0")
+addSbtPlugin("com.typesafe.sbteclipse" % "sbteclipse-plugin" % "2.1.1")
 // And see `override def settings =` in Build.scala.
 // Generate Eclipse project files like so: `eclipse with-source=true` (in SBT)
 
