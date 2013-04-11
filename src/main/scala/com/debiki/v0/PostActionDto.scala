@@ -115,6 +115,16 @@ object PostActionDto {
         markup = if (markup ne null) markup else old.payload.markup,
         approval = if (approval ne null) approval else old.payload.approval))
 
+
+  def forTemporaryApprovalOf(postAction: PostActionDto[_]) = ReviewPostAction(
+    id = nextRandomString(),
+    postId = postAction.postId,
+    loginId = SystemUser.Login.id,
+    userId = SystemUser.User.id,
+    newIp = None,
+    ctime = postAction.ctime,
+    approval = Some(Approval.Preliminary))
+
 }
 
 
