@@ -338,8 +338,8 @@ case class HtmlPageSerializer(
 
   def renderSingleThread(postId: String): Option[SerializedSingleThread] = {
     page.getPost(postId) map { post =>
-      val html = renderThreads(depth = post.depth, parentReplyBtn = Nil,
-        posts = post::Nil, uncollapseFirst = true)
+      val html = renderThreads(depth = post.depth, posts = post::Nil,
+        parentHorizontal = false, uncollapseFirst = true)
       assert(html.length == 1)
       val siblingsSorted = _sortPostsDescFitness(post.siblingsAndMe)
       var prevSibling: Option[Post] = None
@@ -377,9 +377,9 @@ case class HtmlPageSerializer(
         ifThen(showComments, {
           val replyBtn = _replyBtnListItem(renderedRoot.replyBtnText)
           <div class='dw-t-vspace'/>
-          <ol class='dw-res'>{
-            renderThreads(1, replyBtn, rootPostsReplies)
-          }
+          <ol class='dw-res'>
+            { replyBtn }
+            { renderThreads(1, rootPostsReplies, parentHorizontal = true) }
           </ol>
         })
       }
@@ -422,14 +422,13 @@ case class HtmlPageSerializer(
 
   private def renderThreads(
     depth: Int,
-    parentReplyBtn: NodeSeq,
     posts: List[Post],
+    parentHorizontal: Boolean,
     uncollapseFirst: Boolean = false): NodeSeq = {
 
     // COULD let this function return Nil if posts.isEmpty, and otherwise
     // wrap any posts in <ol>:s, with .dw-ts or .dw-i-ts CSS classes
     // — this would reduce dupl wrapping code.
-    var replyBtnPending = parentReplyBtn.nonEmpty
 
     var comments: NodeSeq = Nil
     for {
@@ -497,7 +496,8 @@ case class HtmlPageSerializer(
         else if (post.areRepliesCollapsed)
           renderCollapsedReplies(replies)
         else <ol class='dw-res'>
-          { renderThreads(depth + 1, myReplyBtn, replies) }
+          { myReplyBtn }
+          { renderThreads(depth + 1, replies, parentHorizontal = horizontal) }
         </ol>
       }
 
@@ -512,8 +512,7 @@ case class HtmlPageSerializer(
         }</li>
       }
 
-      val horizontalLayout = parentReplyBtn.nonEmpty
-      if (horizontalLayout) {
+      if (parentHorizontal) {
         // Make this thread resizable, eastwards, by wrapping it in a <div>.
         // The <li> has display: table-cell and cannot be resized, so we'll
         // resize the <div> instead.
@@ -530,18 +529,10 @@ case class HtmlPageSerializer(
       if (post.where isDefined) thread = thread % Attribute(
         None, "data-dw-i-t-where", Text(post.where.get), scala.xml.Null)
 
-      // Place the Reply button just after the last fixed-position comment.
-      // Then it'll be obvious (?) that if you click the Reply button,
-      // your comment will appear to the right of the fixed-pos comments.
-      if (replyBtnPending) { // && post.meta.fixedPos.isEmpty) {
-        replyBtnPending = false
-        comments ++= parentReplyBtn
-      }
       comments ++= thread
     }
 
-    if (replyBtnPending) comments ++ parentReplyBtn
-    else comments
+    comments
   }
 
 
