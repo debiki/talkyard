@@ -13,9 +13,6 @@
 [submodule "modules/twitter-bootstrap"]
 	path = modules/twitter-bootstrap
 	url = https://github.com/twitter/bootstrap.git
-[submodule "modules/font-awesome"]
-	path = modules/font-awesome
-	url = https://github.com/FortAwesome/Font-Awesome.git
 [submodule "modules/angular-seed"]
 	path = modules/angular-seed
 	url = https://github.com/angular/angular-seed.git
