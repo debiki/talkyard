@@ -373,33 +373,16 @@ case class HtmlPageSerializer(
            class={"dw-t"+ cssArtclThread + cssDummy +" dw-depth-0 dw-hor"}>
       {
         val renderedRoot = postRenderer.renderPost(rootPost.id)
-        renderedRoot.html ++
+        renderedRoot.headAndBodyHtml ++
         ifThen(showComments, {
-          val replyBtn = _replyBtnListItem(renderedRoot.replyBtnText)
           <div class='dw-t-vspace'/>
           <ol class='dw-res'>
-            { replyBtn }
+            <li class="dw-hor-a">{ renderedRoot.actionsHtml }</li>
             { renderThreads(1, rootPostsReplies, parentHorizontal = true) }
           </ol>
         })
       }
       </div>
-  }
-
-
-  private def _replyBtnListItem(replyBtnText: NodeSeq): NodeSeq = {
-    // Don't show the Rate and Flag buttons. An article-question
-    // cannot be rated/flaged separately (instead, you flag the
-    // article).
-    <li class='dw-hor-a dw-p-as dw-as'>{/* COULD remove! dw-hor-a */}
-      <a class='dw-a dw-a-reply'>{replyBtnText}</a>{/*
-      COULD remove More... and Edits, later when article questions
-      are merged into the root post, so that there's only one Post
-      to edit (but >= 1 posts are created when the page is
-      rendered) */}
-      <a class='dw-a dw-a-more'>More...</a>
-      <a class='dw-a dw-a-edit'>Edits</a>
-    </li>
   }
 
 
@@ -461,15 +444,15 @@ case class HtmlPageSerializer(
       val renderedComment: RenderedPost =
         postRenderer.renderPost(post.id, uncollapse = uncollapseFirst)
 
-      val (myReplyBtn, actionLink) =
-        if (isTitle)
+      val (myActionsIfHorizontalLayout, myActionsIfVerticalLayout) =
+        if (isTitle) {
           (Nil, Nil)
-        else if (isRootOrArtclQstn)
-           (_replyBtnListItem(renderedComment.replyBtnText), Nil)
-        else
-          (Nil,
-            <a class='dw-as' href={HtmlConfig.reactUrl(page.id, post.id) +
-              "&view="+ pageRoot.subId}>React</a>)
+        } else if (horizontal) {
+          (<li class="dw-hor-a">{ renderedComment.actionsHtml }</li>, Nil)
+            ///<li class='dw-hor-a dw-p-as dw-as'>{  }</li>, Nil)
+        } else {
+          (Nil, renderedComment.actionsHtml)
+        }
 
       val (cssFolded, foldLinkText) = {
         val shallFoldPost =
@@ -491,12 +474,12 @@ case class HtmlPageSerializer(
       val repliesHtml = {
         def shallHideReplies = post.isTreeDeleted ||
           (!uncollapseFirst && (post.isTreeClosed || post.isTreeCollapsed))
-        if (replies.isEmpty && myReplyBtn.isEmpty) Nil
+        if (replies.isEmpty && myActionsIfHorizontalLayout.isEmpty) Nil
         else if (shallHideReplies) Nil
         else if (post.areRepliesCollapsed)
           renderCollapsedReplies(replies)
         else <ol class='dw-res'>
-          { myReplyBtn }
+          { myActionsIfHorizontalLayout }
           { renderThreads(depth + 1, replies, parentHorizontal = horizontal) }
         </ol>
       }
@@ -506,8 +489,8 @@ case class HtmlPageSerializer(
         <li id={cssThreadId} class={"dw-t "+ cssDepth + cssInlineThread +
                cssFolded + cssHoriz + cssThreadDeleted + cssArticleQuestion}>{
           foldLink ++
-          renderedComment.html ++
-          actionLink ++
+          renderedComment.headAndBodyHtml ++
+          myActionsIfVerticalLayout ++
           repliesHtml
         }</li>
       }

@@ -7,85 +7,77 @@ var d = { i: debiki.internal, u: debiki.v0.util };
 var $ = d.i.$;
 
 
-d.i.createAndBindActionLinksForPost = function(post) {
-  var $post = $(post).dwCheckIs('.dw-p');
-  var $thread = $post.closest('.dw-t');
-
-  var $actions = findOrAddActionLinks($thread);
-  bindActionLinks($actions);
-  bindUncollapseLink($thread);
+d.i.bindActionLinksForSinglePost = function(post) {
+  bindActionLinksImpl(post)
 };
 
 
-function findOrAddActionLinks($thread) {
-  // One may not reply-to/edit old page versions. (Could be interesting
-  // to show edit suggestions as of this date,  however.)
-  if (d.i.isViewingOldPageVersion()) {
-    $thread.find('> .dw-as').html('');
-    return $();
+/** Handling all posts at once is perhaps 10x faster than one post at a time,
+  * if there are 200-300 posts.
+  */
+d.i.bindActionLinksForAllPosts = function() {
+  bindActionLinksImpl(undefined);
+};
+
+
+function bindActionLinksImpl(anyPost) {
+  var $actions, $collapses;
+  var collapseSelectors =
+      '.dw-t > .dw-z,' +
+      '.dw-res.dw-zd > li > .dw-z,' +
+      '.dw-p.dw-zd > .dw-z';
+
+  if (anyPost) {
+    $actions = $(anyPost).parent().children('.dw-as');
+    var $thread = $actions.parent();
+    $collapses = $thread.children('.dw-z');
+    $collapses.add($thread.find(collapseSelectors));
+  }
+  else {
+    $actions = $('.dw-t > .dw-as, .dw-hor-a > .dw-as');
+    $collapses = $(collapseSelectors);
   }
 
-  var $actions = $thread.children('.dw-res').children('.dw-p-as');
-  if ($actions.length) {
-    // This thread is laid out horizontally and the action links have
-    // already been placed somewhere in the child thread <ol>.
-  } else {
-    $actions = $('#dw-action-menu')
-        .clone()
-        .removeAttr('id')
-        .css('visibility', 'hidden');
-    $thread.find('> .dw-as').replaceWith($actions);
-    // Touch devices cannot show-on-mouse-hover.
-    if (Modernizr.touch)
-      $actions.children('.dw-a-reply, .dw-a-rate')
-          .css('visibility', 'visible');
-  }
-  return $actions;
-}
-
-
-function bindActionLinks($actions) {
-  // {{{ On delegating events for reply/rate/edit.
+  // On delegating events for reply/rate/edit.
   // Placing a jQuery delegate on e.g. .debiki instead, entails that
   // these links are given excessively low precedence on Android:
   // on a screen touch, any <a> nearby that has a real click event
   // is clicked instead of the <a> with a delegate event. The reply/
   // reply/rate/edit links becomes virtually unclickable (if event
-  // delegation is used instead). }}}
+  // delegation is used instead).
+
   $actions.children('.dw-a-reply').click(d.i.$showReplyForm);
   $actions.children('.dw-a-rate').click(d.i.$showRatingForm);
   $actions.children('.dw-a-more').click(function(event) {
     event.preventDefault();
-    $(this).closest('.dw-p-as').find('.dw-a')
+    $(this).closest('.dw-p-as').find('.dw-p-as-more')
         .show()
         .end().end().remove();
   });
-  //$actions.children('.dw-a-link').click($showLinkForm); — not implemented
+
   $actions.children('.dw-a-edit').click(d.i.$showEditsDialog);
   $actions.children('.dw-a-flag').click(d.i.$showFlagForm);
   $actions.children('.dw-a-delete').click(d.i.$showDeleteForm);
   $actions.children('.dw-a-close').click(d.i.$showActionDialog('CloseThread'));
   $actions.children('.dw-a-collapse').click(d.i.$showActionDialog('Collapse'));
-}
+
+  $actions.css('visibility', 'hidden');
+
+  $collapses.click(d.i.$toggleCollapsed);
+};
 
 
-function bindUncollapseLink($thread) {
-  $thread.find(
-      '> .dw-z,' + // the whole three is collapsed
-      '> .dw-res.dw-zd > li > .dw-z,' + // replies are collapsed
-      '> .dw-p.dw-zd > .dw-z')  // only the comment is collapsed (not replies)
-    .click(d.i.$toggleCollapsed);
-}
-
-
+/** Takes long? Can be made 5-10 x faster if I do it for all posts at once?
+  */
 d.i.shohwActionLinksOnHoverPost  = function(post) {
   var $thread = $(post).dwCheckIs('.dw-p').closest('.dw-t');
   var $post = $thread.filter(':not(.dw-depth-0)').children('.dw-p');
+  var $actions = $thread.children('.dw-p-as');
 
   // When hovering a non-collapsed post, show actions (except for
   // the root post reply link, which is always visible).
   // (Better avoid delegates for frequent events such as mouseenter.)
-  if (!$post.dwIsCollapsed()) $post.mouseenter(function() {
+  if (!$post.dwIsCollapsed()) $post.add($actions).mouseenter(function() {
     var $i = $(this);
 
     // If actions are already shown for an inline child post, ignore event.

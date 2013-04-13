@@ -17,8 +17,8 @@ import HtmlPostRenderer._
 
 
 case class RenderedPost(
-  html: Node,
-  replyBtnText: NodeSeq,
+  headAndBodyHtml: Node,
+  actionsHtml: Node,
   topRatingsText: Option[String])
 
 
@@ -59,8 +59,7 @@ case class HtmlPostRenderer(
     }
     else if (post.id == PageParts.TitleId) {
       val titleHtml = renderPageTitle(post)
-      RenderedPost(titleHtml, replyBtnText = Nil,
-        topRatingsText = None)
+      RenderedPost(titleHtml, actionsHtml = <span></span>, topRatingsText = None)
     }
     else {
       renderPostImpl(post, nofollowArticle)
@@ -90,7 +89,7 @@ case class HtmlPostRenderer(
         postBody.html
       }</div>
 
-    RenderedPost(html = commentHtml, replyBtnText = postBody.replyBtnText,
+    RenderedPost(commentHtml, actionsHtml = renderActionLinks(post),
       topRatingsText = postHeader.topRatingsText)
   }
 
@@ -123,14 +122,15 @@ object HtmlPostRenderer {
             that opens the deleted post, incl. details, in a new browser tab?  */}
         </div>
       </div>
-    RenderedPost(html, replyBtnText = Nil, topRatingsText = None)
+    RenderedPost(html, actionsHtml = renderActionLinks(post), topRatingsText = None)
   }
 
 
   def renderCollapsedTree(post: Post): RenderedPost = {
     // Include the post id, so Javascript finds the post and inits action links,
     // e.g. links that uncollapses the thread.
-    RenderedPost(<div id={htmlIdOf(post)} class="dw-p"></div>, Nil, None)
+    RenderedPost(<div id={htmlIdOf(post)} class="dw-p"></div>,
+      actionsHtml = renderActionLinks(post), None)
   }
 
 
@@ -139,7 +139,7 @@ object HtmlPostRenderer {
       <div id={htmlIdOf(post)} class="dw-p dw-zd">
         <a class="dw-z">Click to show this comment</a>
       </div>
-    RenderedPost(html, replyBtnText = Nil, topRatingsText = None)
+    RenderedPost(html, actionsHtml = renderActionLinks(post), topRatingsText = None)
   }
 
 
@@ -365,5 +365,73 @@ object HtmlPostRenderer {
     RenderedPostBody(html = postBodyHtml, approxLineCount = approxLineCount,
       replyBtnText = replyBtnText)
   }
+
+
+  def renderActionLinks(post: Post): Node = {
+
+    val (replyLink, rateLink) = {
+      if (post.isDeleted) (Nil, Nil)
+      else (
+        <a class="dw-a dw-a-reply">Reply</a>,
+        <a class="dw-a dw-a-rate" title="Vote up or down">Like?</a>)
+    }
+
+    val anyPendingFlags = {
+      if (post.numPendingFlags == 0) Nil
+      else <a class="dw-a dw-a-flag-suggs icon-flag"
+              title="View flags, e.g. if flagged as spam">×{ post.numFlags }</a>
+    }
+
+    val flagLink = <a class="dw-a dw-a-flag icon-flag">Report</a>
+
+    val anyEditSuggestions = {
+      if (post.numPendingEditSuggestions == 0) xml.Null
+      else <a class="dw-a dw-a-edit icon-edit" title="View edit suggestions">×{
+        post.numPendingEditSuggestions }</a>
+    }
+
+    val anyCollapseSuggestions = {
+      if (post.isTreeCollapsed || post.numCollapsesToReview == 0) Nil
+      else <a class="dw-a dw-a-collapse-suggs icon-collapse"
+              title="View collapse suggestions">×{post.numCollapseSuggestions}</a>
+    }
+
+    val collapseLink = {
+      if (post.isTreeCollapsed) Nil
+      else <a class="dw-a dw-a-collapse icon-collapse">Collapse</a>
+    }
+
+    val anyMoveSuggestions = Nil
+    val moveLink: NodeSeq = Nil   // <a class="dw-a dw-a-move">Move</a>
+
+    val anyDeleteSuggestions = {
+      if (post.isDeleted || post.numDeleteSuggestions == 0) Nil
+      else <a class="dw-a dw-a-delete-suggs icon-trash"
+              title="View deletion suggestions">×{post.numDeleteSuggestions}</a>
+    }
+
+    val deleteLink = {
+      if (post.isDeleted) Nil
+      else <a class="dw-a dw-a-delete icon-trash">Delete</a>
+    }
+
+    <div class="dw-p-as dw-as">
+      { replyLink }
+      { rateLink }
+      { anyEditSuggestions }
+      { anyPendingFlags }
+      { anyCollapseSuggestions }
+      { anyMoveSuggestions }
+      { anyDeleteSuggestions }
+      <a class="dw-a dw-a-more">More...</a>
+      <span class="dw-p-as-more">
+        { flagLink }
+        { collapseLink }
+        { moveLink }
+        { deleteLink }
+      </span>
+    </div>
+  }
+
 }
 

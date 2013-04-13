@@ -108,8 +108,7 @@ class HtmlForms(val config: HtmlConfig, xsrfToken: String,
 
   def dialogTemplates = {
     <div id="dw-hidden-templates">
-    { actionMenu ++
-      loginForms ++
+    { loginForms ++
       replyForm("", "") ++
       ratingForm ++
       flagForm ++
@@ -130,28 +129,6 @@ class HtmlForms(val config: HtmlConfig, xsrfToken: String,
     loginFailedForm() ++
     logoutForm ++
     emailNotfPrefsForm
-
-
-  def actionMenu =
-      <div id='dw-action-menu' class='dw-as dw-p-as'>
-        <a class='dw-a dw-a-reply'>Reply</a>
-        <a class='dw-a dw-a-rate'>Rate</a>
-        <a class='dw-a dw-a-more'>More...</a>
-        {/*<a class='dw-a dw-a-link'>Link</a>*/}
-        <a class='dw-a dw-a-edit'>Edits</a>
-        <a class='dw-a dw-a-flag'>Report</a>
-        { ifThen(permsOnPage.deleteAnyReply, // hide for now only
-            <a class='dw-a dw-a-delete'>Delete</a>
-            <a class='dw-a dw-a-close'>Close</a>
-            <a class='dw-a dw-a-collapse'>Collapse</a>
-            <a class='dw-a dw-a-move'>Move</a>) }
-        {/*  Disable the Edit form and link for now,
-        doesn't work very well right now, or not at all.
-        <a class='dw-a dw-a-edit'>Edit</a>
-        */}
-      </div>
-      // Could skip <a>Edit</a> for now, and teach people to
-      // use the inline menu instead?
 
 
   /** A query string param that remembers which part of a page we are

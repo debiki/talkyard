@@ -401,24 +401,23 @@ so set max-width and line height. */
 .dw-a-disabled { color: #d2d2d2 !important; cursor: default; }
 .dw-a-disabled:hover { text-decoration: none !important; }
 
-.dw-t > .dw-as > .dw-a {
-  color: #ff4836; /* make action links stand out (but skip root post link) */
+.DW .dw-t > .dw-as .dw-a {
+  display: inline-block;
   margin-right: 12px;
 }
 
-.dw-a-color-primary {
-  color: #ff4836 !important; /* the color for the most common actions */
+#dw-p-as-shown a {
+  color: hsl(210, 51%, 45%);
 }
 
-.dw-t > .dw-as > .dw-a-more,
-.dw-t > .dw-as > .dw-a-link,
-.dw-t > .dw-as > .dw-a-edit,
-.dw-t > .dw-as > .dw-a-flag,
-.dw-t > .dw-as > .dw-a-collapse,
-.dw-t > .dw-as > .dw-a-close,
-.dw-t > .dw-as > .dw-a-move,
-.dw-t > .dw-as > .dw-a-delete {
-  color: #777; /* make rather uninteresting actions gray */
+.dw-a-color-primary {
+  color: hsl(210, 51%, 45%) !important; /* the color for most common actions */
+                                        /* (should be a Stylus/LESS variable) */
+}
+
+
+.dw-p-as-more {
+  display: none; /* shown on .dw-a-more click */
 }
 
 .dw-t > .dw-as > .dw-a:last-child {
@@ -455,16 +454,6 @@ Show a cogwheel next to the title instead. For now, hide `More...'. */
 .dw-u-is-admin .dw-hor-a > .dw-a.dw-a-more {
   visibility: visible;
   opacity: 0.65; /* the reply link is the important one */
-}
-
-.dw-a-link,
-.dw-a-edit,
-.dw-a-flag,
-.dw-a-collapse,
-.dw-a-close,
-.dw-a-move,
-.dw-a-delete {
-  display: none; /* shown on .dw-a-more click */
 }
 
 body.dw-u-ui-simple .dw-a-edit { display: none !important; }

@@ -45,7 +45,7 @@ d.i.Me = d.i.makeCurUser();
 // at once on page load.)
 // Call on posts.
 d.i.$initPostAndParentThread = function() {
-  $initStep1.apply(this);
+  d.i.bindActionLinksForSinglePost(this);
   d.i.$initPost.apply(this);
   $initStep4.apply(this);
 };
@@ -62,11 +62,8 @@ d.i.$initPost = function() {
 };
 
 
-function $initStep1() {
-  // Binding click events to action links takes rather long (100 ms on my
-  // 6 core 2.8 GHz AMD for 200 posts) and could be split out to a separate
-  // step, done as late as possible.
-  d.i.createAndBindActionLinksForPost(this);
+function initStep1() {
+  d.i.bindActionLinksForAllPosts();
 };
 
 
@@ -237,7 +234,7 @@ function renderPageEtc() {
 
   steps.push(function() {
     d.i.layoutThreads();
-    $posts.each($initStep1);
+    initStep1();
     $('html').removeClass('dw-render-actions-pending');
   });
 

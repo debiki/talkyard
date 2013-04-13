@@ -117,17 +117,19 @@ object BrowserPagePatcher {
 
   private def jsonForPost(post: Post, request: DebikiRequest[_])
         : Map[String, JsValue] = {
-    val jsHtml = {
+    val (headAndBodyHtml, actionsHtml) = {
       val pageStats = new PageStats(post.page, PageTrust(post.page))
       val renderer = HtmlPostRenderer(post.page, pageStats, hostAndPort = request.host)
       val renderedPost = renderer.renderPost(post.id, uncollapse = true)
-      val htmlText = lw.Html5.toString(renderedPost.html)
-      JsString(htmlText)
+      val headAndBodyHtml = lw.Html5.toString(renderedPost.headAndBodyHtml)
+      val actionsHtml = lw.Html5.toString(renderedPost.actionsHtml)
+      (headAndBodyHtml, actionsHtml)
     }
     Map(
       "postId" -> JsString(post.id),
       "isPostApproved" -> JsBoolean(post.currentVersionApproved),
-      "html" -> jsHtml)
+      "html" -> JsString(headAndBodyHtml),
+      "actionsHtml" -> JsString(actionsHtml))
   }
 
 
@@ -139,22 +141,24 @@ object BrowserPagePatcher {
     // how to handle subsequent edits, since they would be based on an edit
     // that was never applied, that is, on a future version of the post
     // that will perhaps never exist.)
-    val jsHtml =
+    val (jsHeadAndBodyHtml, jsActionsHtml) =
       if (edit.isApplied) {
         val pageStats = new PageStats(page, PageTrust(page))
         val renderer = HtmlPostRenderer(page, pageStats, hostAndPort = request.host)
         val renderedPost = renderer.renderPost(edit.post_!.id, uncollapse = true)
-        val htmlText = lw.Html5.toString(renderedPost.html)
-        JsString(htmlText)
+        val headAndBodyHtml = lw.Html5.toString(renderedPost.headAndBodyHtml)
+        val actionsHtml = lw.Html5.toString(renderedPost.actionsHtml)
+        (JsString(headAndBodyHtml), JsString(actionsHtml))
       }
-      else JsUndefined("")
+      else (JsUndefined(""), JsUndefined(""))
 
     Map(
       "postId" -> JsString(edit.post_!.id),
       "editId" -> JsString(edit.id),
       "isEditApplied" -> JsBoolean(edit.isApplied),
       "isPostApproved" -> JsBoolean(edit.post_!.currentVersionApproved),
-      "html" -> jsHtml)
+      "html" -> jsHeadAndBodyHtml,
+      "actionsHtml" -> jsActionsHtml)
   }
 
 }
