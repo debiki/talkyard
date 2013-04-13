@@ -464,6 +464,7 @@ body.dw-u-ui-simple .dw-a-edit { display: none !important; }
 .dw-p-pending-mod {
   margin-bottom: 1em;
   font-style: italic;
+  font-weight: bold;
 }
 
 .dw-p-hd .dw-p-at {

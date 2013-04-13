@@ -77,7 +77,7 @@ patchPostWith = (postPatch, { onPage, result }) ->
     void # Skip the messages below.
   else if !postPatch.isEditApplied
     addMessageToPost(
-        'Your edit has not yet been applied; it is pending review.'
+        '<a href="">Your suggestions</a> are pending review.'
         $oldPost)
   else if !postPatch.isPostApproved
     addMessageToPost(
@@ -97,7 +97,9 @@ patchPostWith = (postPatch, { onPage, result }) ->
   result.patchedPosts.push $newThread
 
 
-
+/**
+ * Inserts a HTML message above the post.
+ */
 addMessageToPost = (message, $post) ->
   $post.prepend $(
       '<div class="dw-p-pending-mod">' + message + '</div>')
