@@ -86,7 +86,7 @@ class PostActionOld(val debate: PageParts, val action: PostActionDtoOld) {
     firstDelete.map(_.wholeTree) == Some(true)
   }
 
-  def isDeleted = deletions nonEmpty
+  def isDeleted: Boolean = deletions nonEmpty
 
   // COULD optimize this, do once for all posts, store in map.
   lazy val deletions = debate.deletions.filter(_.postId == action.id)

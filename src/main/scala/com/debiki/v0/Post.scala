@@ -495,6 +495,15 @@ case class Post(
     }.nonEmpty
 
 
+  /** How many people have up/downvoted this post. Might be a tiny bit
+    * inaccurate, if a cached post state is relied on (because it doesn't
+    * store the ids of all raters, and if you add yet another rater, we don't
+    * know if you're adding a new rating, or changing any old one of yours).
+    */
+  def numDistinctRaters = 1234  // unimpleimented
+    // state.numDistinctRaters + num new ratings ratings
+
+
   // COULD optimize this, do once for all flags.
   lazy val flags = debate.flags.filter(_.postId == this.id)
 
@@ -516,6 +525,7 @@ case class Post(
 
   def numPendingFlags = state.numPendingFlags + flagsPendingReview.length
   def numHandledFlags = state.numHandledFlags + flagsReviewed.length
+  def numFlags = numPendingFlags + numHandledFlags
 
   lazy val lastFlag = flagsDescTime.headOption
 
