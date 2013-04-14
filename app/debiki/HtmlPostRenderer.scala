@@ -376,23 +376,26 @@ object HtmlPostRenderer {
         <a class="dw-a dw-a-rate" title="Vote up or down">Like?</a>)
     }
 
-    val anyPendingFlags = {
-      if (post.numPendingFlags == 0) Nil
-      else <a class="dw-a dw-a-flag-suggs icon-flag"
-              title="View flags, e.g. if flagged as spam">×{ post.numFlags }</a>
+    var suggestionsOld: NodeSeq = Nil
+    var suggestionsNew: NodeSeq = Nil
+
+    if (post.numFlags > 0) {
+      val pendingClass = if (post.numPendingFlags == 0) "" else " dw-a-pending-review"
+      val html = <a class={"dw-a dw-a-flag-suggs icon-flag" + pendingClass}
+                    title="View flags, e.g. if flagged as spam">×{ post.numFlags }</a>
+      if (post.numPendingFlags == 0) suggestionsOld ++= html
+      else suggestionsNew ++= html
     }
 
     val flagLink = <a class="dw-a dw-a-flag icon-flag">Report</a>
 
-    val anyEditSuggestions = {
-      if (post.numPendingEditSuggestions == 0) xml.Null
-      else <a class="dw-a dw-a-edit icon-edit" title="View edit suggestions">×{
-        post.numPendingEditSuggestions }</a>
+    if (post.numPendingEditSuggestions > 0) {
+      suggestionsNew ++= <a class="dw-a dw-a-edit icon-edit dw-a-pending-review"
+           title="View edit suggestions">×{post.numPendingEditSuggestions}</a>
     }
 
-    val anyCollapseSuggestions = {
-      if (post.isTreeCollapsed || post.numCollapsesToReview == 0) Nil
-      else <a class="dw-a dw-a-collapse-suggs icon-collapse"
+    if (!post.isTreeCollapsed && post.numCollapsesToReview > 0) {
+      suggestionsNew ++= <a class="dw-a dw-a-collapse-suggs icon-collapse dw-a-pending-review"
               title="View collapse suggestions">×{post.numCollapseSuggestions}</a>
     }
 
@@ -404,9 +407,8 @@ object HtmlPostRenderer {
     val anyMoveSuggestions = Nil
     val moveLink: NodeSeq = Nil   // <a class="dw-a dw-a-move">Move</a>
 
-    val anyDeleteSuggestions = {
-      if (post.isDeleted || post.numDeleteSuggestions == 0) Nil
-      else <a class="dw-a dw-a-delete-suggs icon-trash"
+    if (!post.isDeleted && post.numDeleteSuggestions > 0) {
+      suggestionsNew ++= <a class="dw-a dw-a-delete-suggs icon-trash dw-a-pending-review"
               title="View deletion suggestions">×{post.numDeleteSuggestions}</a>
     }
 
@@ -415,14 +417,21 @@ object HtmlPostRenderer {
       else <a class="dw-a dw-a-delete icon-trash">Delete</a>
     }
 
+    // 1) Re the order of these links, see [bkfK20qE9] in debiki-play.css — there
+    // are some selectors that assume the More... and Delete actions are the last
+    // visible float-left-actions. (So don't move More... and `deleteLink`.)
+    // 2) The suggestions float right. New not-yet-decided-on suggestions are always
+    // visible, and are hence placed to the very right (they need to appear first in
+    // the list below). Old suggestions are only shown when you hover the post with
+    // the mouse (so as not to clutter the GUI) (ignore touch devices for now),
+    // and are thus placed to the left of the new not-yet-decided-on suggestions.
     <div class="dw-p-as dw-as">
+      {/* --- These float right --- */}
+      { suggestionsNew }
+      { suggestionsOld }
+      {/* --- The rest float left --- */}
       { replyLink }
       { rateLink }
-      { anyEditSuggestions }
-      { anyPendingFlags }
-      { anyCollapseSuggestions }
-      { anyMoveSuggestions }
-      { anyDeleteSuggestions }
       <a class="dw-a dw-a-more">More...</a>
       <span class="dw-p-as-more">
         { flagLink }

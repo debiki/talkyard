@@ -420,14 +420,32 @@ so set max-width and line height. */
   display: none; /* shown on .dw-a-more click */
 }
 
-.dw-t > .dw-as > .dw-a:last-child {
-  margin-right: 0; /* avoid float drop */
+/*  Avoid float drop; tese are the last visible float-left actions.
+ (See app/debiki/HtmlPostRenderer.scala [bkfK20qE9])*/
+.dw-p-as-more,
+.dw-a-delete {
+  margin-right: 0;
 }
 
 /* Make the reply and rate links easy to notice. */
 .dw-t > .dw-as > .dw-a-reply,
 .dw-t > .dw-as > .dw-a-rate {
   font-weight: bold;
+}
+
+.DW .dw-t > .dw-as > .dw-a-edit,
+.DW .dw-t > .dw-as > .dw-a-collapse-suggs,
+.DW .dw-t > .dw-as > .dw-a-flag-suggs,
+.DW .dw-t > .dw-as > .dw-a-delete-suggs {
+  float: right;
+  margin: 0 0 0 12px;
+  color: #888;
+}
+
+.DW .dw-t > .dw-as > .dw-a.dw-a-pending-review {
+  /* Show these pending-suggestion links, even when not hovering posts,
+   so people are encouraged to consider each other's suggestions. */
+  visibility: visible;
 }
 
 .dw-a:hover {
