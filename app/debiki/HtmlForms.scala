@@ -493,7 +493,7 @@ class HtmlForms(val config: HtmlConfig, xsrfToken: String,
                   mayEdit: Boolean): NodeSeq = {
     def xmlFor(edit: Patch): NodeSeq = {
       val applied = edit.isApplied
-      def applier_! = page.people.user_!(edit.applierLoginId.get)
+      def applier_! = page.people.user_!(edit.applierUserId.get)
       <li class='dw-e-sg'>
         <div class='dw-e-sg-e'>{
             <div>{
