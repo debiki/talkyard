@@ -53,7 +53,7 @@ class Patch(debate: PageParts, val edit: Edit)
   // COULD let isApplied, applicationDati, applierLoginId, applicationActionId
   // be functions, and remember only Some(applicationAction)?
   val (isApplied, applicationDati,
-      applierLoginId, applicationActionId,
+      applierUserId, applicationActionId,
       isReverted, revertionDati)
         : (Boolean, Option[ju.Date], Option[String], Option[String],
           Boolean, Option[ju.Date]) = {
@@ -64,7 +64,7 @@ class Patch(debate: PageParts, val edit: Edit)
         case (false, _) => (false, None, None, None, false, None)
         case (true, false) =>
           // Auto applied at creation. This edit itself is its own application.
-          (true, Some(creationDati), Some(loginId), Some(id), false, None)
+          (true, Some(creationDati), Some(userId), Some(id), false, None)
         case (true, true) =>
           // Auto applied, but later deleted and implicitly reverted.
           (false, None, None, None, true, deletionDati)
@@ -79,7 +79,7 @@ class Patch(debate: PageParts, val edit: Edit)
         page.deletionFor(lastEditApp.id).map(_.ctime) orElse deletionDati
       if (revertionDati isEmpty)
         (true, Some(lastEditApp.ctime),
-           Some(lastEditApp.loginId), Some(lastEditApp.id), false, None)
+           Some(lastEditApp.userId), Some(lastEditApp.id), false, None)
       else
         (false, None, None, None, true, Some(revertionDati.get))
     }
