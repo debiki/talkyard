@@ -199,7 +199,7 @@ html.js body.dw-render-actions-pending .dw-as {
 
 /* Make the column separator at least this high. But don't do this for
 .dw-fs because forms are folded/slided out, i.e. shrinked to zero height */
-.dw-hor-a,
+.dw-p-as-hz,
 .dw-depth-1:not(.dw-i-t) {
   min-height: 100px;
 }
@@ -209,7 +209,7 @@ so there's some space for the SVG arrows. */
 .DW.DW .dw-hor:not(.dw-depth-0) > .dw-res {
   margin-top: 35px;
 }
-.dw-hor:not(.dw-depth-0) > .dw-hor-a {
+.dw-hor:not(.dw-depth-0) > .dw-p-as-hz {
   margin-top: 48px; /* aligns with the .dw-p:s to the right, which
                       have some padding */
 }
@@ -377,7 +377,7 @@ each other. I should rewrite, and try to avoid float:left? [8DbF3]
   position: relative; /* for position: absolute 'Click this...' tips, inside */
 }
 
-.dw-hor-a {
+.dw-p-as-hz {
   position: relative; /* curve image placed relative */
   padding-right: 20px;
   margin: 10px 16px 0 12px;
@@ -386,7 +386,7 @@ each other. I should rewrite, and try to avoid float:left? [8DbF3]
 
 /* The reply button text can be customized, so it might be rather wide,
 so set max-width and line height. */
-.dw-hor-a > .dw-a-reply {
+.dw-p-as-hz > .dw-a-reply {
   max-width: 8em;
   display: inline-block; /* or max-width has no effect */
   line-height: 120%;
@@ -453,23 +453,33 @@ so set max-width and line height. */
   text-decoration: underline;
 }
 
-.dw-hor-a > .dw-a.dw-a-reply {
+.dw-p-as-hz > .dw-a.dw-a-reply {
   font-size: 17px;
   margin: 0;
 }
 
-.dw-hor-a > .dw-a:not(.dw-a-reply) {
+.dw-p-as-hz > .dw-a {
   display: block;
-  margin-top: 1.3em;
-  visibility: hidden; /* shown on .dw-a-more click */
-  font-size: 80%;
 }
-/* IE 7 and 8 bugfix */
-.dw-hor-a > .dw-a-more { visibility: hidden; }
+
+.dw-p-as-hz > .dw-a:not(.dw-a-reply) {
+  margin-top: 1.3em;
+  color: #777;
+}
+
+.dw-p-as-hz > .dw-a:not(.dw-a-reply):hover {
+  color: hsl(211, 30%, 40%);
+}
+
+/* For now... */
+.dw-p-as-hz > .dw-a-more,
+.dw-p-as-hz > .dw-a-rate {
+  display: none;
+}
 
 /* The `More...' link under the Reply button confuses test users.
 Show a cogwheel next to the title instead. For now, hide `More...'. */
-.dw-u-is-admin .dw-hor-a > .dw-a.dw-a-more {
+.dw-u-is-admin .dw-p-as-hz > .dw-a.dw-a-more {
   visibility: visible;
   opacity: 0.65; /* the reply link is the important one */
 }

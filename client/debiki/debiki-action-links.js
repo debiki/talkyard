@@ -34,7 +34,7 @@ function bindActionLinksImpl(anyPost) {
     $collapses.add($thread.find(collapseSelectors));
   }
   else {
-    $actions = $('.dw-t > .dw-as, .dw-hor-a > .dw-as');
+    $actions = $('.dw-t > .dw-as, .dw-p-as-hz');
     $collapses = $(collapseSelectors);
   }
 
@@ -55,16 +55,26 @@ function bindActionLinksImpl(anyPost) {
         .end().end().remove();
   });
 
-  $actions.children('.dw-a-edit').click(d.i.$showEditsDialog);
-  $actions.children('.dw-a-flag').click(d.i.$showFlagForm);
-  $actions.children('.dw-a-delete').click(d.i.$showDeleteForm);
-  $actions.children('.dw-a-close').click(d.i.$showActionDialog('CloseThread'));
-  $actions.children('.dw-a-collapse').click(d.i.$showActionDialog('Collapse'));
+  $actions.find('.dw-a-edit').click(d.i.$showEditsDialog);
+  $actions.find('.dw-a-flag').click(d.i.$showFlagForm);
+  $actions.find('.dw-a-delete').click(d.i.$showDeleteForm);
+  //$actions.find('.dw-a-close').click(d.i.$showActionDialog('CloseThread'));
+  $actions.find('.dw-a-collapse').click(d.i.$showActionDialog('Collapse'));
 
+  $actions.find('.dw-a-flag-suggs').click(showNotImplMessage);
+
+  // Action links are shown on hover.
   $actions.css('visibility', 'hidden');
+  // But show the article's reply button.
+  $('.dw-p-as-hz').css('visibility', 'visible');
 
   $collapses.click(d.i.$toggleCollapsed);
 };
+
+
+function showNotImplMessage() {
+  alert("Not implemented, sorry");
+}
 
 
 /** Takes long? Can be made 5-10 x faster if I do it for all posts at once?

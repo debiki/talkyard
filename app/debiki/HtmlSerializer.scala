@@ -364,6 +364,7 @@ case class HtmlPageSerializer(
     val cssArtclThread =
       if (pageRoot.subId == PageParts.BodyId) " dw-ar-t" else ""
     val rootPostsReplies = pageRoot.findChildrenIn(page)
+    val approvedReplies = rootPostsReplies.filter(_.someVersionApproved)
     val rootPost: Post = pageRoot.findOrCreatePostIn(page) getOrElse
        throwNotFound("DwE0PJ404", "Post not found: "+ pageRoot.subId)
     val cssDummy =
@@ -377,8 +378,8 @@ case class HtmlPageSerializer(
         ifThen(showComments, {
           <div class='dw-t-vspace'/>
           <ol class='dw-res'>
-            <li class="dw-hor-a">{ renderedRoot.actionsHtml }</li>
-            { renderThreads(1, rootPostsReplies, parentHorizontal = true) }
+            { renderedRoot.actionsHtml.copy(label = "li") }
+            { renderThreads(1, approvedReplies, parentHorizontal = true) }
           </ol>
         })
       }
@@ -421,7 +422,7 @@ case class HtmlPageSerializer(
       isInlineThread = post.where.isDefined
       isInlineNonRootChild = isInlineThread && depth >= 2
       cssInlineThread = if (isInlineThread) " dw-i-t" else ""
-      replies = post.replies
+      replies = post.replies.filter(_.someVersionApproved)
       isTitle = post.id == PageParts.TitleId
       isRootOrArtclQstn =
           post.id == pageRoot.subId // || post.meta.isArticleQuestion
@@ -448,8 +449,8 @@ case class HtmlPageSerializer(
         if (isTitle) {
           (Nil, Nil)
         } else if (horizontal) {
-          (<li class="dw-hor-a">{ renderedComment.actionsHtml }</li>, Nil)
-            ///<li class='dw-hor-a dw-p-as dw-as'>{  }</li>, Nil)
+          // Change from <div> to <li>.
+          (renderedComment.actionsHtml.copy(label = "li"), Nil)
         } else {
           (Nil, renderedComment.actionsHtml)
         }

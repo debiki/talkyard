@@ -18,7 +18,7 @@ import HtmlPostRenderer._
 
 case class RenderedPost(
   headAndBodyHtml: Node,
-  actionsHtml: Node,
+  actionsHtml: Elem,
   topRatingsText: Option[String])
 
 
@@ -367,7 +367,7 @@ object HtmlPostRenderer {
   }
 
 
-  def renderActionLinks(post: Post): Node = {
+  def renderActionLinks(post: Post): Elem = {
 
     val (replyLink, rateLink) = {
       if (post.isDeleted) (Nil, Nil)
@@ -417,29 +417,47 @@ object HtmlPostRenderer {
       else <a class="dw-a dw-a-delete icon-trash">Delete</a>
     }
 
-    // 1) Re the order of these links, see [bkfK20qE9] in debiki-play.css — there
-    // are some selectors that assume the More... and Delete actions are the last
-    // visible float-left-actions. (So don't move More... and `deleteLink`.)
-    // 2) The suggestions float right. New not-yet-decided-on suggestions are always
-    // visible, and are hence placed to the very right (they need to appear first in
-    // the list below). Old suggestions are only shown when you hover the post with
-    // the mouse (so as not to clutter the GUI) (ignore touch devices for now),
-    // and are thus placed to the left of the new not-yet-decided-on suggestions.
-    <div class="dw-p-as dw-as">
-      {/* --- These float right --- */}
-      { suggestionsNew }
-      { suggestionsOld }
-      {/* --- The rest float left --- */}
-      { replyLink }
-      { rateLink }
-      <a class="dw-a dw-a-more">More...</a>
-      <span class="dw-p-as-more">
-        { flagLink }
-        { collapseLink }
-        { moveLink }
-        { deleteLink }
-      </span>
-    </div>
+    val renderActionsVertically = post.id == PageParts.BodyId // for now
+    if (renderActionsVertically) {
+      <div class="dw-p-as dw-as dw-p-as-hz">
+        { replyLink }
+        { rateLink }
+        <a class="dw-a dw-a-more">More...</a>
+        <span class="dw-p-as-more">
+          { flagLink }
+          { collapseLink }
+          { moveLink }
+          { deleteLink }
+        </span>
+        { suggestionsNew }
+        { suggestionsOld }
+      </div>
+    }
+    else {
+      // 1) Re the order of these links, see [bkfK20qE9] in debiki-play.css — there
+      // are some selectors that assume the More... and Delete actions are the last
+      // visible float-left-actions. (So don't move More... and `deleteLink`.)
+      // 2) The suggestions float right. New not-yet-decided-on suggestions are always
+      // visible, and are hence placed to the very right (they need to appear first in
+      // the list below). Old suggestions are only shown when you hover the post with
+      // the mouse (so as not to clutter the GUI) (ignore touch devices for now),
+      // and are thus placed to the left of the new not-yet-decided-on suggestions.
+      <div class="dw-p-as dw-as">
+        {/* --- These float right --- */}
+        { suggestionsNew }
+        { suggestionsOld }
+        {/* --- The rest float left --- */}
+        { replyLink }
+        { rateLink }
+        <a class="dw-a dw-a-more">More...</a>
+        <span class="dw-p-as-more">
+          { flagLink }
+          { collapseLink }
+          { moveLink }
+          { deleteLink }
+        </span>
+      </div>
+    }
   }
 
 }

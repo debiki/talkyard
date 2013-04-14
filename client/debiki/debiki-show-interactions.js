@@ -26,8 +26,8 @@ debiki.v0.showInteractionsOnClick = function() {
   var text = numComments > 1 ?  'Visa '+ numComments +' kommentarer' : // i18n
      (numComments == 1 ?  'Visa 1 kommentar' : 'Lämna en kommentar');
   var $showBtn = $(
-      '<div class="dw-as dw-hor-a">' +
-      '<a class="dw-a dw-a-show-interactions"></a></div>');
+      '<li class="dw-as dw-p-as-hz">' +
+      '<a class="dw-a dw-a-show-interactions"></a></li>');
   $showBtn.find('a')
       .text(text)  // xss safe
       .css('font-size', '80%')
