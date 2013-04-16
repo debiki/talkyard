@@ -24,18 +24,8 @@ import BrowserPagePatcher.PostPatchSpec
 object AppSimple extends mvc.Controller {
 
 
-  def closeTree = PostJsonAction(maxLength = 5000) { apiReq =>
-    closeOrReopenTree(apiReq, PostActionPayload.CloseTree)
-  }
-
-
   def collapsePost = PostJsonAction(maxLength = 5000) { apiReq =>
     closeOrReopenTree(apiReq, PostActionPayload.CollapsePost)
-  }
-
-
-  def collapseReplies = PostJsonAction(maxLength = 5000) { apiReq =>
-    closeOrReopenTree(apiReq, PostActionPayload.CollapseReplies)
   }
 
 

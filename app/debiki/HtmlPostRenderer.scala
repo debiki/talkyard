@@ -54,7 +54,7 @@ case class HtmlPostRenderer(
     else if (post.isDeleted) {
       renderDeletedComment(post)
     }
-    else if (post.isOnlyPostCollapsed && !uncollapse) {
+    else if (post.isPostCollapsed && !uncollapse) {
       renderCollapsedComment(post)
     }
     else if (post.id == PageParts.TitleId) {

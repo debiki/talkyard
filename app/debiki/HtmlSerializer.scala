@@ -459,7 +459,7 @@ case class HtmlPageSerializer(
         val shallFoldPost =
           !uncollapseFirst && (
           (postFitness.upperLimit < 0.5f && postFitness.observedMean < 0.333f) ||
-            isInlineNonRootChild || post.isTreeClosed || post.isTreeCollapsed)
+            isInlineNonRootChild || post.isTreeCollapsed)
 
         if (shallFoldPost)
           (" dw-zd", "Click to show this thread" +
@@ -474,11 +474,12 @@ case class HtmlPageSerializer(
 
       val repliesHtml = {
         def shallHideReplies = post.isTreeDeleted ||
-          (!uncollapseFirst && (post.isTreeClosed || post.isTreeCollapsed))
+          (!uncollapseFirst && post.isTreeCollapsed)
         if (replies.isEmpty && myActionsIfHorizontalLayout.isEmpty) Nil
         else if (shallHideReplies) Nil
-        else if (post.areRepliesCollapsed)
-          renderCollapsedReplies(replies)
+        // else if the-computer-thinks-the-comment-is-off-topic-and-that-
+        // -replies-therefore-should-be-hidden,
+        // then: renderCollapsedReplies(replies)
         else <ol class='dw-res'>
           { myActionsIfHorizontalLayout }
           { renderThreads(depth + 1, replies, parentHorizontal = horizontal) }

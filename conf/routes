@@ -68,9 +68,7 @@ POST  /-/wrap-forums-in-group   controllers.AppForum.wrapForumsInNewGroup
 POST  /-/move-rename-page       controllers.AppMoveRenamePage.moveRenamePage
 POST  /-/approve                controllers.AppReview.approve
 POST  /-/reject                 controllers.AppReview.reject
-POST  /-/close-tree             controllers.AppSimple.closeTree
 POST  /-/collapse-post          controllers.AppSimple.collapsePost
-POST  /-/collapse-replies       controllers.AppSimple.collapseReplies
 POST  /-/collapse-tree          controllers.AppSimple.collapseTree
 POST  /-/load-threads           controllers.AppSimple.loadThreads
 POST  /-/load-posts             controllers.AppSimple.loadPosts
