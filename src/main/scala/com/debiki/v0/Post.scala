@@ -488,7 +488,7 @@ case class Post(
     hasHappenedNotUndone(PostActionPayload.CollapseTree) ||
       state.collapsed == Some(PAP.CollapseTree)
 
-  def isOnlyPostCollapsed: Boolean =
+  def isPostCollapsed: Boolean =
     hasHappenedNotUndone(PostActionPayload.CollapsePost) ||
       state.collapsed == Some(PAP.CollapsePost)
 
