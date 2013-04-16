@@ -156,18 +156,14 @@ object PostActionPayload {
 
   class CollapseSomething extends PostActionPayload
 
-  /** Closes a thread: collapses it and tucks it away under a Closed Threads
-    * column, far away to the right.
-    *
-    * Use on old obsolete threads, e.g. a comment about a spelling mistake
-    * that has since been fixed.
-    */
-  case object CloseTree extends CollapseSomething
-
   case object CollapsePost extends CollapseSomething
 
-  case object CollapseReplies extends CollapseSomething
-
+  /** Collapses a thread: collapses it, and perhaps tucks it away under a Collapsed Threads
+    * section (which would be far away to the right?, if the thread is laid out horizontally).
+    *
+    * Use on old obsolete threads, e.g. a comment about a spelling mistake
+    * that has since been fixed. Or on uninteresting off-topic threads.
+    */
   case object CollapseTree extends CollapseSomething
 
   /** Undoes another action, e.g. an Undo with targetActionId = a CloseTree action

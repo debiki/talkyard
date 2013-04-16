@@ -493,15 +493,6 @@ case class Post(
       state.collapsed == Some(PAP.CollapsePost)
 
 
-  def areRepliesCollapsed: Boolean =
-    hasHappenedNotUndone(PostActionPayload.CollapseReplies) ||
-      state.collapsed == Some(PAP.CollapseReplies)
-
-  def isTreeClosed: Boolean =
-    hasHappenedNotUndone(PostActionPayload.CloseTree) ||
-      state.collapsed == Some(PAP.CloseTree)
-
-
   private def hasHappenedNotUndone(payload: PostActionPayload): Boolean =
     actions.find { action =>
       action.payload == payload  // && !action.wasUndone
