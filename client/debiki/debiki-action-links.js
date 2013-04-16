@@ -7,8 +7,13 @@ var d = { i: debiki.internal, u: debiki.v0.util };
 var $ = d.i.$;
 
 
+d.i.bindActionAndFoldLinksForSinglePost = function(post) {
+  bindActionLinksImpl(post, true)
+};
+
+
 d.i.bindActionLinksForSinglePost = function(post) {
-  bindActionLinksImpl(post)
+  bindActionLinksImpl(post, false)
 };
 
 
@@ -20,7 +25,7 @@ d.i.bindActionLinksForAllPosts = function() {
 };
 
 
-function bindActionLinksImpl(anyPost) {
+function bindActionLinksImpl(anyPost, bindFoldLinks) {
   var $actions, $collapses;
   var collapseSelectors =
       '.dw-t > .dw-z,' +
@@ -30,8 +35,13 @@ function bindActionLinksImpl(anyPost) {
   if (anyPost) {
     $actions = $(anyPost).parent().children('.dw-as');
     var $thread = $actions.parent();
-    $collapses = $thread.children('.dw-z');
-    $collapses.add($thread.find(collapseSelectors));
+    if (bindFoldLinks) {
+      $collapses = $thread.children('.dw-z');
+      $collapses.add($thread.find(collapseSelectors));
+    }
+    else {
+      $collapses = $();
+    }
   }
   else {
     $actions = $('.dw-t > .dw-as, .dw-p-as-hz');
@@ -84,10 +94,8 @@ d.i.shohwActionLinksOnHoverPost  = function(post) {
   var $post = $thread.filter(':not(.dw-depth-0)').children('.dw-p');
   var $actions = $thread.children('.dw-p-as');
 
-  // When hovering a non-collapsed post, show actions (except for
-  // the root post reply link, which is always visible).
   // (Better avoid delegates for frequent events such as mouseenter.)
-  if (!$post.dwIsCollapsed()) $post.add($actions).mouseenter(function() {
+  $post.add($actions).mouseenter(function() {
     var $i = $(this);
 
     // If actions are already shown for an inline child post, ignore event.

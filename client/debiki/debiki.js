@@ -45,7 +45,7 @@ d.i.Me = d.i.makeCurUser();
 // at once on page load.)
 // Call on posts.
 d.i.$initPostAndParentThread = function() {
-  d.i.bindActionLinksForSinglePost(this);
+  d.i.bindActionAndFoldLinksForSinglePost(this);
   d.i.$initPost.apply(this);
   $initStep4.apply(this);
 };

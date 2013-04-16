@@ -71,6 +71,8 @@ patchPostWith = (postPatch, { onPage, result }) ->
   pageId = onPage
   $newPost = $ postPatch.html # absent if edit not applied
   $oldPost = $ ('#post-' + postPatch.postId)
+  $newActions = $ postPatch.actionsHtml
+  $oldActions = $oldPost.parent!children '.dw-p-as'
   isEditPatch = !!postPatch.editId
 
   if not isEditPatch
@@ -93,6 +95,9 @@ patchPostWith = (postPatch, { onPage, result }) ->
     $newThread = $newPost.dwClosestThread!
     $newThread.each d.i.SVG.$drawTree
     $newThread.dwFindPosts!.each d.i.SVG.$drawParents
+
+  $oldActions.replaceWith $newActions
+  d.i.bindActionLinksForSinglePost $newPost[0]
 
   result.patchedPosts.push $newThread
 
