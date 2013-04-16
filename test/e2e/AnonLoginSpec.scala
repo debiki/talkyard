@@ -14,6 +14,7 @@ import org.scalatest.DoNotDiscover
 /**
  * Runs the AnonLoginSpec suite, in SBT:  test-only test.e2e.AnonLoginSpecRunner
  */
+@DoNotDiscover
 class AnonLoginSpecRunner extends org.scalatest.Suites(new AnonLoginSpec {})
 with ChromeSuiteMixin
 
@@ -23,9 +24,8 @@ with ChromeSuiteMixin
  * when submitting, 2) by clicking Rate and logging in when rating,
  * and 3) via the "Log in" link,
  */
-// From ScalaTest 2.0-M5 and above, use this: `@DoNotDiscover`
-// instead of `abstract`.
-abstract class AnonLoginSpec extends DebikiBrowserSpec {
+@DoNotDiscover
+class AnonLoginSpec extends DebikiBrowserSpec {
 
   lazy val testPage = new Page {
     val url = createTestPage(PageRole.Generic,

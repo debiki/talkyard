@@ -7,6 +7,7 @@ package test.e2e
 import com.debiki.v0.{PageParts, PageRole}
 import com.debiki.v0.Prelude._
 import java.{lang => jl}
+import org.scalatest.DoNotDiscover
 
 
 /**
@@ -16,6 +17,7 @@ import java.{lang => jl}
  * in SBT's test:console:
  *  (new test.e2e.StyleSiteSpecRunner {}).execute()
  */
+@DoNotDiscover
 class StyleSiteSpecRunner extends org.scalatest.Suites(
   new StyleSiteSpecSpec {})
   with ChromeSuiteMixin
@@ -26,8 +28,7 @@ class StyleSiteSpecRunner extends org.scalatest.Suites(
  * are refreshed when things have been edited. That is, tests that there's
  * no stale stuff in any cache.
  */
-// From ScalaTest 2.0-M5 and above, use this: `@DoNotDiscover`
-// instead of `abstract`.
+@DoNotDiscover
 abstract class StyleSiteSpecSpec extends DebikiBrowserSpec {
 
 

@@ -6,6 +6,7 @@ package test.e2e
 
 import com.debiki.v0.Prelude._
 import org.scalatest.time.{Span, Seconds}
+import org.scalatest.DoNotDiscover
 
 
 /**
@@ -15,6 +16,7 @@ import org.scalatest.time.{Span, Seconds}
  * in SBT's test:console:
  *  (new test.e2e.CreateSiteSpecRunner {}).execute()
  */
+@DoNotDiscover
 class CreateSiteSpecRunner extends org.scalatest.Suites(
   new CreateSiteSpec {})
   with ChromeSuiteMixin
@@ -26,8 +28,7 @@ class CreateSiteSpecRunner extends org.scalatest.Suites(
  * Among other things, logs in as debiki.tester@gmail.com and creates
  * test-site and test-site-2.
  */
-// From ScalaTest 2.0-M5 and above, use this: `@DoNotDiscover`
-// instead of `abstract`.
+@DoNotDiscover
 abstract class CreateSiteSpec extends DebikiBrowserSpec {
 
   val firstSiteName = nextSiteName()

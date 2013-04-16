@@ -7,6 +7,7 @@ package test.e2e
 import com.debiki.v0.{PageParts, PageRole}
 import com.debiki.v0.Prelude._
 import java.{lang => jl}
+import org.scalatest.DoNotDiscover
 
 
 /**
@@ -16,6 +17,7 @@ import java.{lang => jl}
  * in SBT's test:console:
  *  (new test.e2e.AdminDashboardRunner {}).execute()
  */
+@DoNotDiscover
 class AdminDashboardRunner extends org.scalatest.Suites(
   new AdminDashboardSpec {})
   with ChromeSuiteMixin
@@ -24,8 +26,7 @@ class AdminDashboardRunner extends org.scalatest.Suites(
 /**
  * Tests the admin ashboard, /-/admin/.
  */
-// From ScalaTest 2.0-M5 and above, use this: `@DoNotDiscover`
-// instead of `abstract`.
+@DoNotDiscover
 abstract class AdminDashboardSpec extends DebikiBrowserSpec {
 
   val EditedHomepageTitle = "Edited Homepage Title"

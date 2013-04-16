@@ -13,6 +13,7 @@ import com.debiki.v0._
 /**
  * Runs the ForumSpec suite, in SBT:  test-only test.e2e.ForumSpecRunner
  */
+@DoNotDiscover
 class ForumSpecRunner extends org.scalatest.Suites(new ForumSpec {})
 with ChromeSuiteMixin
 
@@ -20,8 +21,7 @@ with ChromeSuiteMixin
 /**
  * Tests creation of new forum topics.
  */
-// From ScalaTest 2.0-M5 and above, use this: `@DoNotDiscover`
-// instead of `abstract`.
+@DoNotDiscover
 abstract class ForumSpec extends DebikiBrowserSpec {
 
   var forumWindow: WindowTarget = null
