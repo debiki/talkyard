@@ -73,11 +73,16 @@ case class Post(
   def actions: List[PostAction[_]] = page.getActionsByPostId(id)
 
 
-  def numDeleteSuggestions = state.numDeleteSuggestions + 0 // currently happens directly
-  def numDeletesToReview = state.numDeletesToReview + 0 // currently happens directly
+   // This currently happens directly, hence + 0:
+  def numDeletePostVotesPending = state.numDeletePostVotes.pending + 0
+  def numDeleteTreeVotesPending = state.numDeleteTreeVotes.pending + 0
+  def numDeleteVotesPending = numDeletePostVotesPending + numDeleteTreeVotesPending
+  def numDeletesToReview = state.numDeletesToReview + 0
+  def numUndeletesToReview = state.numUndeletesToReview + 0
 
-  def numMoveSuggestions = state.numMoveSuggestions + 0 // not implemented
+  def numMoveVotesPending = state.numMoveVotes.pending + 0 // not implemented
   def numMovesToReview = state.numMovesToReview + 0 // not implemented
+  def numUnmovesToReview = state.numUnmovesToReview + 0 // not implemented
 
 
   /**
@@ -467,8 +472,16 @@ case class Post(
   def siblingsAndMe: List[Post] = debate.repliesTo(parentId)
 
 
-  def numCollapseSuggestions = state.numCollapseSuggestions + 0 // currently happens directly
-  def numCollapsesToReview = state.numCollapsesToReview + 0 // currently happens directly
+  // This currently happens directly, hence + 0:
+  def numCollapsePostVotesPending = state.numCollapsePostVotes.pending + 0
+  def numCollapseTreeVotesPending = state.numCollapseTreeVotes.pending + 0
+  def numCollapseVotesPending = numCollapsePostVotesPending + numCollapseTreeVotesPending
+
+  def numUncollapsePostVotesPending = state.numCollapsePostVotes.undoPending + 0
+  def numUncollapseTreeVotesPending = state.numCollapseTreeVotes.undoPending + 0
+
+  def numCollapsesToReview = state.numCollapsesToReview + 0
+  def numUncollapsesToReview = state.numUncollapsesToReview + 0
 
 
   def isTreeCollapsed: Boolean =
