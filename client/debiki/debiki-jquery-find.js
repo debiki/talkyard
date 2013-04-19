@@ -126,11 +126,11 @@ $.fn.dwIsReply = function() {
 };
 
 
-$.fn.dwIsUnauReply = function() {
+$.fn.dwIsGuestReply = function() {
   var isReply = this.dwIsReply();
   // Unauthenticated users have '-' in their user ids.
-  var unauAuthor = this.dwAuthorId().indexOf('-') !== -1;
-  return isReply && unauAuthor;
+  var guestAuthor = this.dwAuthorId().indexOf('-') !== -1;
+  return isReply && guestAuthor;
 };
 
 

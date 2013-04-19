@@ -78,7 +78,12 @@ d.i.makeCurUser = function() {
   function clearMyPageInfo() {
     $('.dw-p-by-me').removeClass('dw-p-by-me');
     $('.dw-p-r-by-me').remove();
-    permsOnPage = {};
+    setPermsOnPage({});
+  }
+
+  function setPermsOnPage(newPerms) {
+    permsOnPage = newPerms;
+    showHideActions(permsOnPage);
   }
 
   /**
@@ -115,7 +120,7 @@ d.i.makeCurUser = function() {
 
     function parseYamlMarkActions(yamlData) {
       var pageInfo = YAML.eval(yamlData);
-      permsOnPage = pageInfo.permsOnPage;
+      setPermsOnPage(pageInfo.permsOnPage);
       markMyActions(pageInfo);
     }
 
@@ -155,7 +160,7 @@ d.i.makeCurUser = function() {
       return userProps.userId === $post.dwAuthorId() ||
           permsOnPage.editPage ||
           (permsOnPage.editAnyReply && $post.dwIsReply()) ||
-          (permsOnPage.editUnauReply && $post.dwIsUnauReply());
+          (permsOnPage.editGuestReply && $post.dwIsGuestReply());
     },
     getEmailNotfPrefs: function() { return emailPrefs; },
     isEmailKnown: function() { return emailSpecified; }
@@ -242,6 +247,22 @@ d.i.markMyPost = function(postId) {
   var $header = d.i.findPostHeader$(postId);
   $header.children('.dw-p-by').addClass('dw-p-by-me');
 };
+
+
+/** Enables and disables action links, based on the user's `permsOnPage`.
+  */
+function showHideActions(permsOnPage) {
+  function showHideActionLinks(permission, selector) {
+    var $actionLinks = $(selector);
+    if (permsOnPage[permission]) $actionLinks.show();
+    else $actionLinks.hide();
+  }
+
+  showHideActionLinks(
+      'collapseThings', '.dw-a-collapse-tree, .dw-a-collapse-post');
+  showHideActionLinks(
+      'deleteAnyReply', '.dw-a-delete');
+}
 
 
 })();

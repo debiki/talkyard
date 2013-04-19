@@ -226,7 +226,8 @@ object Application extends mvc.Controller {
        "\n editPageTemplate: " ++= perms.editPageTemplate.toString ++=
        "\n editPage: " ++= perms.editPage.toString ++=
        "\n editAnyReply: " ++= perms.editAnyReply.toString ++=
-       "\n editUnauReply: " ++= perms.editUnauReply.toString ++=
+       "\n editGuestReply: " ++= perms.editUnauReply.toString ++=
+       "\n collapseThings: " ++= perms.collapseThings.toString ++=
        "\n deleteAnyReply: " ++= perms.deleteAnyReply.toString
 
     // List posts by this user, so they can be highlighted.
