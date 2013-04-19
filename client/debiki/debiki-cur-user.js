@@ -83,7 +83,7 @@ d.i.makeCurUser = function() {
 
   function setPermsOnPage(newPerms) {
     permsOnPage = newPerms;
-    showHideActions(permsOnPage);
+    d.i.showAllowedActionsOnly();
   }
 
   /**
@@ -251,17 +251,22 @@ d.i.markMyPost = function(postId) {
 
 /** Enables and disables action links, based on the user's `permsOnPage`.
   */
-function showHideActions(permsOnPage) {
+d.i.showAllowedActionsOnly = function(anyRootPost) {
+  var permsOnPage = d.i.Me.getPermsOnPage();
   function showHideActionLinks(permission, selector) {
-    var $actionLinks = $(selector);
+    var $actionLinks = anyRootPost
+        ? $(anyRootPost).parent().children('.dw-p-as').find(selector)
+        : $(selector);
     if (permsOnPage[permission]) $actionLinks.show();
     else $actionLinks.hide();
   }
 
   showHideActionLinks(
-      'collapseThings', '.dw-a-collapse-tree, .dw-a-collapse-post');
+      'collapseThings',
+        '.dw-a-collapse-tree, .dw-a-collapse-post, ' +
+        '.dw-a-uncollapse-tree, .dw-a-uncollapse-post');
   showHideActionLinks(
-      'deleteAnyReply', '.dw-a-delete');
+      'deleteAnyReply', '.dw-a-delete, .dw-a-undelete');
 }
 
 

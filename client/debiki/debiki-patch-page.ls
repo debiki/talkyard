@@ -45,7 +45,9 @@ patchThreadWith = (threadPatch, { onPage, result }) ->
   else
     replaceOldWith $newThread, onPage: pageId
 
-  $newThread.dwFindPosts!each d.i.$initPostAndParentThread
+  $newThread.dwFindPosts!each !->
+    d.i.$initPostAndParentThread.apply this
+    d.i.showAllowedActionsOnly this
 
   drawArrows = ->
     # Really both $drawTree, and $drawParents for each child post??
@@ -98,6 +100,7 @@ patchPostWith = (postPatch, { onPage, result }) ->
 
   $oldActions.replaceWith $newActions
   d.i.bindActionLinksForSinglePost $newPost[0]
+  d.i.showAllowedActionsOnly $newPost[0]
 
   result.patchedPosts.push $newThread
 
