@@ -39,14 +39,15 @@ sealed abstract class Perms
 
 object PermsOnPage {
 
-  val All = PermsOnPage(true, true, true, true, true, true, true, true, true)
+  val All = PermsOnPage(true, true, true, true, true, true, true, true, true, true)
 
   val Wiki = PermsOnPage(
     accessPage = true,
     createPage = true,
     editPage = true,
     editAnyReply = true,
-    editUnauReply = true
+    editUnauReply = true,
+    collapseThings = true
   )
 
   val None = PermsOnPage()
@@ -82,6 +83,8 @@ case class PermsOnPage(
 
   /** Edit unauthenticated users' replies. */
   val editUnauReply: Boolean = false,
+
+  val collapseThings: Boolean = false,
 
   /** Should be granted to admins, managers, moderators only.
    *
