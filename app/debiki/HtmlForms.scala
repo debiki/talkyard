@@ -112,8 +112,6 @@ class HtmlForms(val config: HtmlConfig, xsrfToken: String,
       replyForm("", "") ++
       ratingForm ++
       flagForm ++
-      collapseForm ++
-      closeTreeForm ++
       deleteForm(None) ++
       submittingFormInfoDiv ++
       sortOrterTipsDiv ++
@@ -438,40 +436,6 @@ class HtmlForms(val config: HtmlConfig, xsrfToken: String,
           <input class='dw-fi-submit' type='submit' value='Submit'/>
           <input class='dw-fi-cancel' type='button' value='Cancel'/>
         </div>
-      </form>
-    </div>
-  }
-
-
-  def collapseForm = {
-    <div title='Collapse?'>
-      <p><small>
-        When you collapse something, it's made small, so it won't grab people's attention.
-        Do this, to hide rather uninteresting things.
-      </small></p>
-      <p>What do you want to collapse?</p>
-      <form id="dw-f-collapse">
-        <input type="submit" id="dw-f-collapse-post" value="The comment"/>
-        <input type="submit" id="dw-f-collapse-replies" value="All replies"/>
-        <input type="submit" id="dw-f-collapse-tree" value="The comment and all replies"/>
-        <input type='button' class='dw-fi-cancel' value='Cancel'/>
-      </form>
-    </div>
-  }
-
-
-  def closeTreeForm = {
-    <div title='Close comment and all replies?'>
-      <form id="dw-f-close-tree">
-        <p><small>
-          They will be collapsed and tucked away under a Closed Threads section.
-        </small></p>
-        <p><small>
-          Only close something if you're sure it's of interest to no one,
-          e.g. a comment about a spelling error that has since been fixed.
-        </small></p>
-        <input type="submit" id="dw-f-close-tree-yes" value="Yes, close it"/>
-        <input type="button" class="dw-fi-cancel" value="Cancel"/>
       </form>
     </div>
   }

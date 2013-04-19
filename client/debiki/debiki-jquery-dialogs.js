@@ -76,6 +76,14 @@ d.i.jQueryDialogReset = $.extend({}, d.i.jQueryDialogDefault, {
 });
 
 
+d.i.jQueryDialogDestroy = $.extend({}, d.i.jQueryDialogDefault, {
+  close: function() {
+    $(this).dialog('destroy');
+    $(this).remove();
+  }
+});
+
+
 /**
  * Has no close button and doesn't close on Esc key.
  * Use if the user must click e.g. an OK button to close the dealog,

@@ -413,9 +413,11 @@ object HtmlPostRenderer {
     // if there is one already. Instead, show a link you can click to upvote
     // the existing suggestion:
 
-    if ((!post.isTreeCollapsed && post.numCollapseTreeVotesPending == 0) ||
-       (!post.isPostCollapsed && post.numCollapsePostVotesPending == 0))
-      moreActionLinks ++= <a class="dw-a dw-a-collapse icon-collapse">Collapse</a>
+    if (!post.isTreeCollapsed && post.numCollapseTreeVotesPending == 0)
+      moreActionLinks ++= <a class="dw-a dw-a-collapse-tree icon-collapse">Collapse tree</a>
+
+    if (!post.isPostCollapsed && post.numCollapsePostVotesPending == 0)
+      moreActionLinks ++= <a class="dw-a dw-a-collapse-post icon-collapse">Collapse post</a>
 
     if (post.isTreeCollapsed && post.numUncollapseTreeVotesPending == 0)
       moreActionLinks ++= <a class="dw-a dw-a-uncollapse-tree">Uncollapse tree</a>

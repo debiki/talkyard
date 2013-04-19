@@ -10,44 +10,43 @@ targetPostId = ''
 d.i.$showActionDialog = !(whichDialog, event) -->
   event.preventDefault!
 
-  formId = switch whichDialog
-    | 'CloseThread' => initCloseDialog!
-    | 'Collapse' => initCollapseDialog!
+  $dialog = switch whichDialog
+    | 'CollapseTree' \
+      'CollapsePost' => newCollapseDialog whichDialog
+    | _ => die 'DwE8GA1'
 
   # Pass data to dialog via shared variable `targetPostId`.
   $thread = $(this).closest '.dw-t'
   $post = $thread.children '.dw-p'
   targetPostId := $post.dwPostId!
 
-  $(formId).parent!dialog('open')
+  $dialog.dialog('open')
 
     #parent().position({
     #my: 'center top', at: 'center bottom', of: $post, offset: '0 40'});
 
 
 
-# Warning: Dupl code, similar to: initCloseDialog
-function initCollapseDialog
-  formId = '#dw-f-collapse'
+function newCollapseDialog (whichDialog)
+  conf = switch whichDialog
+    | 'CollapsePost' =>
+        title: 'Collapse Comment?'
+        details: 'Collapse this comment? (Not any replies, only the comment)'
+        url: '/-/collapse-post'
+    | 'CollapseTree' =>
+        title: 'Collapse Thread?'
+        details: 'Collapse this comment and all replies?'
+        url: '/-/collapse-tree'
+    | _ => die 'DwE7BE8'
 
-  $form = $(formId)
-  $dialog = $form.parent!
-  if $dialog.is '.ui-dialog-content'
-    return formId # already inited
+  $dialog = collapseDialogHtml conf
+  $dialog.dialog $.extend({}, d.i.jQueryDialogDestroy)
 
-  $dialog.dialog $.extend({}, d.i.jQueryDialogReset)
-
-  $form.find('.dw-fi-cancel').button!click !->
+  $dialog.find('.dw-fi-cancel').button!click !->
     $dialog.dialog 'close'
 
-  $form.find('#dw-f-collapse-post').button!click ->
-    submit '/-/collapse-post'
-
-  $form.find('#dw-f-collapse-replies').button!click ->
-    submit '/-/collapse-replies'
-
-  $form.find('#dw-f-collapse-tree').button!click ->
-    submit '/-/collapse-tree'
+  $dialog.find('.dw-f-collapse-yes').button!click ->
+    submit conf.url
 
   function submit (apiFunction)
     data = [{ pageId: d.i.pageId, actionId: targetPostId }]
@@ -62,41 +61,25 @@ function initCollapseDialog
     # Prevent browser's built-in action.
     false
 
-  formId
+  $dialog
 
 
 
-# Warning: Dupl code, similar to: initCollapseDialog
-function initCloseDialog
-  formId = '#dw-f-close-tree'
-
-  $form = $(formId)
-  $dialog = $form.parent!
-  if $dialog.is '.ui-dialog-content'
-    return formId # already inited
-
-  $dialog.dialog $.extend({}, d.i.jQueryDialogReset)
-
-  $form.find('.dw-fi-cancel').button!click !->
-    $dialog.dialog 'close'
-
-  $form.find('#dw-f-close-tree-yes').button!click ->
-    submit '/-/close-tree'
-
-  function submit (apiFunction)
-    data = [{ pageId: d.i.pageId, actionId: targetPostId }]
-    d.u.postJson { url: apiFunction, data }
-        .fail d.i.showServerResponseDialog
-        .done !(newDebateHtml) ->
-          result = d.i.patchPage newDebateHtml
-          result.patchedThreads[0].dwScrollIntoView!
-        .always !->
-          $dialog.dialog 'close'
-
-    # Prevent browser's built-in action.
-    false
-
-  formId
+function collapseDialogHtml (conf)
+  # (Watch out for XSS, only use safe things from `conf` above.)
+  $("""
+    <div title="#{conf.title}">
+      <p><small>
+        When you collapse something, it's made small, so it won't grab
+        people's attention. You can do this to hide uninteresting things.
+      </small></p>
+      <p>#{conf.details}</p>
+      <form id="dw-f-collapse">
+        <input type="submit" class="dw-f-collapse-yes" value="Yes, collapse"/>
+        <input type="button" class="dw-fi-cancel" value="Cancel"/>
+      </form>
+    </div>
+    """)
 
 
 
