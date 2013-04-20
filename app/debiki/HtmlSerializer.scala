@@ -417,6 +417,8 @@ case class HtmlPageSerializer(
     var comments: NodeSeq = Nil
     for {
       post <- _sortPostsDescFitness(posts)
+      if !post.isTreeDeleted
+      if !(post.isPostDeleted && post.replies.isEmpty)
       cssThreadId = "dw-t-"+ post.id
       cssDepth = "dw-depth-"+ depth
       isInlineThread = post.where.isDefined
