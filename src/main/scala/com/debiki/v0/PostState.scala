@@ -5,10 +5,7 @@
 package com.debiki.v0
 
 import java.{util => ju}
-import collection.{immutable => imm, mutable => mut}
 import Prelude._
-import PageParts._
-import FlagReason.FlagReason
 import com.debiki.v0.{PostActionPayload => PAP}
 
 
@@ -39,11 +36,12 @@ object PostState {
       lastEditAppliedAt = None,
       lastEditRevertedAt = None,
       lastEditorId = None,
-      collapsed = None,
-      deletedAt = None,
+      postCollapsedAt = None,
+      treeCollapsedAt = None,
+      postDeletedAt = None,
+      treeDeletedAt = None,
       0, 0, 0, 0, 0,
       PostVoteState(), PostVoteState(), 0, 0,
-      PostVoteState(), 0, 0,
       PostVoteState(), PostVoteState(), 0, 0,
       0, 0)
   }
@@ -52,15 +50,18 @@ object PostState {
 
 
 
-/** A summary of the number of pending votes (.pending) do do something
-  * with a post, and to undo it (.undo). And of old already considered votes
-  * to do/undo it (old/undoOld).
+/** A summary of the number of votes to do something (.pro) and not do it (.con, "contra")
+  * with a post. And to undo it (undoPro) or not undo it (undoCon).
+  *
+  * For example, if 5 people has voted that a comment be collapsed, .pro would be 5.
+  * And if 3 people have voted that it *not* be collapsed (that is, dissent with the 5
+  * others), then .con would be 3.
   */
-case class PostVoteState(pending: Int, old: Int, undoPending: Int, undoOld: Int) {
-  require(pending >= 0)
-  require(old >= 0)
-  require(undoPending >= 0)
-  require(undoOld >= 0)
+case class PostVoteState(pro: Int, con: Int, undoPro: Int, undoCon: Int) {
+  require(pro >= 0)
+  require(con >= 0)
+  require(undoPro >= 0)
+  require(undoCon >= 0)
 }
 
 
@@ -88,8 +89,10 @@ class PostState(
   val lastEditAppliedAt: Option[ju.Date],
   val lastEditRevertedAt: Option[ju.Date],
   val lastEditorId: Option[String],
-  val collapsed: Option[PostActionPayload.CollapseSomething],
-  val deletedAt: Option[ju.Date],
+  val postCollapsedAt: Option[ju.Date],
+  val treeCollapsedAt: Option[ju.Date],
+  val postDeletedAt: Option[ju.Date],
+  val treeDeletedAt: Option[ju.Date],
   val numEditSuggestions: Int,
   val numEditsAppliedUnreviewed: Int,
   val numEditsAppldPrelApproved: Int,
@@ -99,9 +102,6 @@ class PostState(
   val numCollapseTreeVotes: PostVoteState,
   val numCollapsesToReview: Int,
   val numUncollapsesToReview: Int,
-  val numMoveVotes: PostVoteState,
-  val numMovesToReview: Int,
-  val numUnmovesToReview: Int,
   val numDeletePostVotes: PostVoteState,
   val numDeleteTreeVotes: PostVoteState,
   val numDeletesToReview: Int,
@@ -126,8 +126,6 @@ class PostState(
   require(numDistinctEditors >= 0)
   require(numCollapsesToReview >= 0)
   require(numUncollapsesToReview >= 0)
-  require(numMovesToReview >= 0)
-  require(numUnmovesToReview >= 0)
   require(numDeletesToReview >= 0)
   require(numUndeletesToReview >= 0)
   require(numPendingFlags >= 0)

@@ -77,27 +77,6 @@ class PostActionOld(val debate: PageParts, val action: PostActionDtoOld) {
   def ipSaltHash: Option[String] = ip.map(saltAndHashIp(_))
   def ipSaltHash_! : String = saltAndHashIp(ip_!)
 
-  def isTreeDeleted = {
-    // In case there are > 1 deletions, consider the first one only.
-    // (Once an action has been deleted, it isn't really possible to
-    // delete it again in some other manner? However non transactional
-    // (nosql) databases might return many deletions? and we should
-    // care only about the first.)
-    firstDelete.map(_.wholeTree) == Some(true)
-  }
-
-  def isDeleted: Boolean = deletions nonEmpty
-
-  // COULD optimize this, do once for all posts, store in map.
-  lazy val deletions = debate.deletions.filter(_.postId == action.id)
-
-  /** Deletions, the most recent first. */
-  lazy val deletionsDescTime = deletions.sortBy(- _.ctime.getTime)
-
-  lazy val lastDelete = deletionsDescTime.headOption
-  lazy val firstDelete = deletionsDescTime.lastOption
-
-  def deletionDati: Option[ju.Date] = firstDelete.map(_.ctime)
 }
 
 

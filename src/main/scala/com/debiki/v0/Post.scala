@@ -74,15 +74,41 @@ case class Post(
 
 
    // This currently happens directly, hence + 0:
-  def numDeletePostVotesPending = state.numDeletePostVotes.pending + 0
-  def numDeleteTreeVotesPending = state.numDeleteTreeVotes.pending + 0
-  def numDeleteVotesPending = numDeletePostVotesPending + numDeleteTreeVotesPending
+  def numDeletePostVotesPro = state.numDeletePostVotes.pro + 0
+  def numDeletePostVotesCon = state.numDeletePostVotes.con + 0
+  def numUndeletePostVotesPro = state.numDeletePostVotes.undoPro + 0
+  def numUndeletePostVotesCon = state.numDeletePostVotes.undoCon + 0
+
+  def numDeleteTreeVotesPro = state.numDeleteTreeVotes.pro + 0
+  def numDeleteTreeVotesCon = state.numDeleteTreeVotes.con + 0
+  def numUndeleteTreeVotesPro = state.numDeleteTreeVotes.undoPro + 0
+  def numUndeleteTreeVotesCon = state.numDeleteTreeVotes.undoCon + 0
+
+  def numDeleteVotesPro = numDeletePostVotesPro + numDeleteTreeVotesPro
+  def numDeleteVotesCon = numDeletePostVotesCon + numDeleteTreeVotesCon
+  def numUndeleteVotesPro = numUndeletePostVotesPro + numUndeleteTreeVotesPro
+  def numUndeleteVotesCon = numUndeletePostVotesCon + numUndeleteTreeVotesCon
+
   def numDeletesToReview = state.numDeletesToReview + 0
   def numUndeletesToReview = state.numUndeletesToReview + 0
 
-  def numMoveVotesPending = state.numMoveVotes.pending + 0 // not implemented
-  def numMovesToReview = state.numMovesToReview + 0 // not implemented
-  def numUnmovesToReview = state.numUnmovesToReview + 0 // not implemented
+  def numCollapsePostVotesPro = state.numCollapsePostVotes.pro + 0
+  def numCollapsePostVotesCon = state.numCollapsePostVotes.con + 0
+  def numUncollapsePostVotesPro = state.numCollapsePostVotes.undoPro + 0
+  def numUncollapsePostVotesCon = state.numCollapsePostVotes.undoCon + 0
+
+  def numCollapseTreeVotesPro = state.numCollapseTreeVotes.pro + 0
+  def numCollapseTreeVotesCon = state.numCollapseTreeVotes.con + 0
+  def numUncollapseTreeVotesPro = state.numCollapseTreeVotes.undoPro + 0
+  def numUncollapseTreeVotesCon = state.numCollapseTreeVotes.undoCon + 0
+
+  def numCollapseVotesPro = numCollapsePostVotesPro + numCollapseTreeVotesPro
+  def numCollapseVotesCon = numCollapsePostVotesCon + numCollapseTreeVotesCon
+  def numUncollapseVotesPro = numUncollapsePostVotesPro + numUncollapseTreeVotesPro
+  def numUncollapseVotesCon = numUncollapsePostVotesCon + numUncollapseTreeVotesCon
+
+  def numCollapsesToReview = state.numCollapsesToReview + 0
+  def numUncollapsesToReview = state.numUncollapsesToReview + 0
 
 
   /**
@@ -161,7 +187,7 @@ case class Post(
       if (edit.isPending) pending ::= edit
     }
 
-    (deleted.sortBy(- _.deletionDati.get.getTime),
+    (deleted.sortBy(- _.deletedAt.get.getTime),
        pending.sortBy(- _.creationDati.getTime),
        applied.sortBy(- _.applicationDati.get.getTime),
        reverted.sortBy(- _.revertionDati.get.getTime))
@@ -472,31 +498,37 @@ case class Post(
   def siblingsAndMe: List[Post] = debate.repliesTo(parentId)
 
 
-  // This currently happens directly, hence + 0:
-  def numCollapsePostVotesPending = state.numCollapsePostVotes.pending + 0
-  def numCollapseTreeVotesPending = state.numCollapseTreeVotes.pending + 0
-  def numCollapseVotesPending = numCollapsePostVotesPending + numCollapseTreeVotesPending
+  def postCollapsedAt: Option[ju.Date] =
+    findLastDateOf(PAP.CollapsePost) orElse state.postCollapsedAt
 
-  def numUncollapsePostVotesPending = state.numCollapsePostVotes.undoPending + 0
-  def numUncollapseTreeVotesPending = state.numCollapseTreeVotes.undoPending + 0
+  def treeCollapsedAt: Option[ju.Date] =
+    findLastDateOf(PAP.CollapseTree) orElse state.treeCollapsedAt
 
-  def numCollapsesToReview = state.numCollapsesToReview + 0
-  def numUncollapsesToReview = state.numUncollapsesToReview + 0
-
-
-  def isTreeCollapsed: Boolean =
-    hasHappenedNotUndone(PostActionPayload.CollapseTree) ||
-      state.collapsed == Some(PAP.CollapseTree)
-
-  def isPostCollapsed: Boolean =
-    hasHappenedNotUndone(PostActionPayload.CollapsePost) ||
-      state.collapsed == Some(PAP.CollapsePost)
+  def isPostCollapsed: Boolean = postCollapsedAt.nonEmpty
+  def isTreeCollapsed: Boolean = treeCollapsedAt.nonEmpty
+  def isCollapsedSomehow: Boolean = isPostCollapsed || isTreeCollapsed
 
 
-  private def hasHappenedNotUndone(payload: PostActionPayload): Boolean =
+  private def findLastDateOf(payload: PostActionPayload): Option[ju.Date] =
     actions.find { action =>
       action.payload == payload  // && !action.wasUndone
-    }.nonEmpty
+    }.map(_.creationDati)
+
+
+  def treeDeletion = deletionsDescTime.find(_.wholeTree)
+  def postDeletion = deletionsDescTime.find(!_.wholeTree)
+
+  def treeDeletedAt: Option[ju.Date] = treeDeletion.map(_.ctime)
+  def postDeletedAt: Option[ju.Date] = postDeletion.map(_.ctime)
+
+  def isTreeDeleted = treeDeletion.nonEmpty
+  def isPostDeleted = postDeletion.nonEmpty
+  def isDeletedSomehow: Boolean = isTreeDeleted || isPostDeleted
+
+  /** Deletions, the most recent first. */
+  // COULD optimize this, do once for all posts, store in map.
+  lazy val deletionsDescTime: List[Delete] =
+    page.deletions.filter(_.postId == action.id).sortBy(- _.ctime.getTime)
 
 
   /** How many people have up/downvoted this post. Might be a tiny bit
@@ -554,11 +586,6 @@ case class Post(
   lazy val flagsByReasonSorted: List[(FlagReason, List[Flag])] = {
     flagsByReason.toList.sortWith((a, b) => a._2.length > b._2.length)
   }
-
-
-  override def deletionDati: Option[ju.Date] =
-    firstDelete.map(_.ctime) orElse state.deletedAt
-    // ? Why does this recurse forever: super.deletionDati orElse state.deletedAt
 
 }
 

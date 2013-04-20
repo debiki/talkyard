@@ -22,6 +22,9 @@ class Patch(debate: PageParts, val edit: Edit)
   def patchText = edit.text
   def newMarkup = edit.newMarkup
 
+  def isDeleted = false // for now. Later: Add PostActionPayload.DeleteEdit?
+  def deletedAt: Option[ju.Date] = None // for now
+
   def isPending = !isApplied && !isDeleted
 
   def approval = edit.approval
@@ -67,7 +70,7 @@ class Patch(debate: PageParts, val edit: Edit)
           (true, Some(creationDati), Some(userId), Some(id), false, None)
         case (true, true) =>
           // Auto applied, but later deleted and implicitly reverted.
-          (false, None, None, None, true, deletionDati)
+          (false, None, None, None, true, deletedAt)
       }
     } else {
       // Consider the most recent EditApp only. If it hasn't been deleted,
@@ -76,7 +79,7 @@ class Patch(debate: PageParts, val edit: Edit)
       // because you cannot apply an edit that's already been applied.
       val lastEditApp = allEditApps.maxBy(_.ctime.getTime)
       val revertionDati =
-        page.deletionFor(lastEditApp.id).map(_.ctime) orElse deletionDati
+        page.deletionFor(lastEditApp.id).map(_.ctime) orElse deletedAt
       if (revertionDati isEmpty)
         (true, Some(lastEditApp.ctime),
            Some(lastEditApp.userId), Some(lastEditApp.id), false, None)

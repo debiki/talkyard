@@ -449,7 +449,8 @@ case class PageParts (
     var lastDati: Option[ju.Date] = None
     var posterUserIds = mut.Set[String]()
     for (post <- getAllPosts) {
-      if (post.isDeleted) numDeleted += 1
+      // Minor BUG: I think this won't ignore posts whose whole ancestor tree has been deleted.
+      if (post.isDeletedSomehow) numDeleted += 1
       else if (post.someVersionApproved) {
         // posterUserIds.add(post.user_!.id) — breaks, users sometimes absent.
         // Wait until I've added DW1_PAGE_ACTIONS.USER_ID?
