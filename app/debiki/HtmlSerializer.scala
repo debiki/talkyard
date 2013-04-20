@@ -399,7 +399,7 @@ case class HtmlPageSerializer(
     posts.sortBy(p => p.creationDati.getTime) // the oldest first
       .sortBy(p => -pageStats.ratingStatsFor(p.id)
           .fitnessDefaultTags.lowerLimit)
-      .sortBy(p => if (p.isDeleted) -p.replyCount else Int.MinValue)
+      .sortBy(p => if (p.isDeletedSomehow) -p.replyCount else Int.MinValue)
       // .sortBy(p => p.meta.fixedPos.getOrElse(Int.MaxValue))
   }
 

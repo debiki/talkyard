@@ -51,7 +51,7 @@ case class HtmlPostRenderer(
     else if (post.isTreeCollapsed && !uncollapse) {
       renderCollapsedTree(post)
     }
-    else if (post.isDeleted) {
+    else if (post.isPostDeleted) {
       renderDeletedComment(post)
     }
     else if (post.isPostCollapsed && !uncollapse) {
@@ -107,16 +107,20 @@ object HtmlPostRenderer {
 
   def renderDeletedComment(post: Post, wholeTree: Boolean = false): RenderedPost = {
     val page = post.debate
-    val deletion = post.firstDelete.get
-    val deleter = page.people.authorOf_!(deletion)
+    val deletion = post.postDeletion.get
     // COULD add itemscope and itemtype attrs, http://schema.org/Comment
+    val byWhom =
+      if (post.userId == deletion.userId) "comment author"
+      else "a moderator"
+    val (topFlags, _) = renderFlags(post)
     val html =
       <div id={htmlIdOf(post)} class='dw-p dw-p-dl'>
         <div class='dw-p-hd'>{
-          if (wholeTree) "Thread" else "1 comment"
-          } deleted by { _linkTo(deleter.user_!)
-          /* COULD show flagsTop, e.g. "flagged spam".
-            COULD include details, shown on click:
+          if (wholeTree) "Thread" else "1 comment" } deleted by { byWhom }{ topFlags }{/*
+          For now, don't show name of deleter, because then Mallory could choose
+           a terribly illegal name that would be shown also after the post had
+           been deleted.  by { _linkTo(deleter.user_!)
+          COULD include details, shown on click:
             Posted on ...,, rated ... deleted on ..., reasons for deletion: ...
             X flags: ... -- but perhaps better / easier with a View link,
             that opens the deleted post, incl. details, in a new browser tab?  */}
@@ -376,7 +380,7 @@ object HtmlPostRenderer {
     // ----- Reply and rate links
 
     val (replyLink, rateLink) = {
-      if (post.isDeleted) (Nil, Nil)
+      if (post.isDeletedSomehow) (Nil, Nil)
       else (
         <a class="dw-a dw-a-reply">Reply</a>,
         <a class="dw-a dw-a-rate" title="Vote up or down">Like?</a>)
@@ -404,25 +408,33 @@ object HtmlPostRenderer {
 
     suggestionsNew ++= renderUncollapseSuggestions(post)
 
-    if (post.numCollapseVotesPending > 0)
-      suggestionsNew ++= <a class="dw-a dw-a-collapse-suggs icon-collapse dw-a-pending-review"
-            title="View collapse suggestions">×{post.numCollapseVotesPending}</a>
+    if (!post.isPostCollapsed && post.numCollapsePostVotesPro > 0)
+      suggestionsNew ++=
+        <a class="dw-a dw-a-collapse-suggs icon-collapse-post dw-a-pending-review"
+          title="Vote for or against collapsing this comment">×{
+            post.numCollapsePostVotesPro}–{post.numCollapsePostVotesCon}</a>
+
+    if (!post.isTreeCollapsed && post.numCollapseTreeVotesPro > 0)
+      suggestionsNew ++=
+        <a class="dw-a dw-a-collapse-suggs icon-collapse-tree dw-a-pending-review"
+          title="Vote for or against collapsing this whole thread">×{
+            post.numCollapseTreeVotesPro}–{post.numCollapseTreeVotesCon}</a>
 
     // People should upvote any already existing suggestion, not create
     // new ones, so don't include any action link for creating a new suggestion,
     // if there is one already. Instead, show a link you can click to upvote
     // the existing suggestion:
 
-    if (!post.isTreeCollapsed && post.numCollapseTreeVotesPending == 0)
+    if (!post.isTreeCollapsed && post.numCollapseTreeVotesPro == 0)
       moreActionLinks ++= <a class="dw-a dw-a-collapse-tree icon-collapse">Collapse tree</a>
 
-    if (!post.isPostCollapsed && post.numCollapsePostVotesPending == 0)
+    if (!post.isPostCollapsed && post.numCollapsePostVotesPro == 0)
       moreActionLinks ++= <a class="dw-a dw-a-collapse-post icon-collapse">Collapse post</a>
 
-    if (post.isTreeCollapsed && post.numUncollapseTreeVotesPending == 0)
+    if (post.isTreeCollapsed && post.numUncollapseTreeVotesPro == 0)
       moreActionLinks ++= <a class="dw-a dw-a-uncollapse-tree">Uncollapse tree</a>
 
-    if (post.isPostCollapsed && post.numUncollapsePostVotesPending == 0)
+    if (post.isPostCollapsed && post.numUncollapsePostVotesPro == 0)
       moreActionLinks ++= <a class="dw-a dw-a-uncollapse-post">Uncollapse post</a>
 
     // ----- Move links
@@ -431,11 +443,17 @@ object HtmlPostRenderer {
 
     // ----- Delete links
 
-    if (!post.isDeleted && post.numDeleteVotesPending > 0)
-      suggestionsNew ++= <a class="dw-a dw-a-delete-suggs icon-trash dw-a-pending-review"
-            title="View deletion suggestions">×{post.numDeleteVotesPending}</a>
+    if (!post.isPostDeleted && post.numDeletePostVotesPro > 0)
+      suggestionsNew ++= <a class="dw-a dw-a-delete-suggs icon-delete-post dw-a-pending-review"
+          title="Vote for or against deleting this comment">×{
+            post.numDeletePostVotesPro }–{ post.numDeletePostVotesCon }</a>
 
-    if (post.numDeleteTreeVotesPending == 0 || post.numDeletePostVotesPending == 0)
+    if (!post.isTreeDeleted && post.numDeleteTreeVotesPro > 0)
+      suggestionsNew ++= <a class="dw-a dw-a-delete-suggs icon-delete-tree dw-a-pending-review"
+          title="Vote for or against deleting this whole thread">×{
+            post.numDeleteTreeVotesPro }–{ post.numDeleteTreeVotesCon }</a>
+
+    if (post.numDeleteTreeVotesPro == 0 || post.numDeletePostVotesPro == 0)
       moreActionLinks ++= <a class="dw-a dw-a-delete icon-trash">Delete</a>
 
 
@@ -494,18 +512,21 @@ object HtmlPostRenderer {
   def renderUncollapseSuggestions(post: Post): NodeSeq = {
     var suggestions: NodeSeq = Nil
     if (post.isTreeCollapsed) {
-      if (post.numUncollapseTreeVotesPending > 0)
+      if (post.numUncollapseTreeVotesPro > 0)
         suggestions ++=
           <a class="dw-a dw-a-uncollapse-tree-suggs dw-a-pending-review"
-              >Uncollapse × {post.numUncollapseTreeVotesPending}</a>
+                >Uncollapse × {post.numUncollapseTreeVotesPro} – {
+              post.numUncollapseTreeVotesCon }</a>
     }
     else if (post.isPostCollapsed) {
       // Only show these uncollapse-post actions if the whole *tree* is not already
       // collapsed (if it is, the post itself isn't visible at all).
-      if (post.numUncollapsePostVotesPending > 0)
+      if (post.numUncollapsePostVotesPro > 0)
         suggestions ++=
           <a class="dw-a dw-a-uncollapse-post-suggs dw-a-pending-review"
-              >Uncollapse × {post.numUncollapsePostVotesPending}</a>
+            >Uncollapse × {post.numUncollapsePostVotesPro} – {
+              post.numUncollapsePostVotesCon
+            }</a>
     }
 
     suggestions
