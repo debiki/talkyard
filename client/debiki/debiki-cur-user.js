@@ -120,7 +120,7 @@ d.i.makeCurUser = function() {
 
     function parseYamlMarkActions(yamlData) {
       var pageInfo = YAML.eval(yamlData);
-      setPermsOnPage(pageInfo.permsOnPage);
+      setPermsOnPage(pageInfo.permsOnPage || {});
       markMyActions(pageInfo);
     }
 
