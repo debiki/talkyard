@@ -8,6 +8,7 @@ import org.specs2.mutable._
 import Prelude._
 import java.{util => ju}
 import PostActionDto.copyCreatePost
+import com.debiki.v0.{PostActionPayload => PAP}
 
 
 /**
@@ -48,15 +49,16 @@ trait PageTestValues {
   val bodyRejectionSkeleton = bodyApprovalSkeleton.copy(approval = None)
 
   val editSkeleton =
-    Edit(id = "12", postId = bodySkeleton.id, ctime = new ju.Date(12000),
+    PostActionDto.toEditPost(
+        id = "12", postId = bodySkeleton.id, ctime = new ju.Date(12000),
         loginId = "112", userId = "?", newIp = None,
         text = makePatch(from = textInitially, to = textAfterFirstEdit),
         newMarkup = None, approval = None, autoApplied = false)
 
   def deletionOfEdit =
-    Delete(id = "13", postId = editSkeleton.id,
-      loginId = "113", userId = "?", newIp = None, ctime = new ju.Date(13000),
-      wholeTree = false, reason = "")
+    PostActionDto(id = "13", postId = editSkeleton.postId,
+      loginId = "113", userId = "?", newIp = None, creationDati = new ju.Date(13000),
+      payload = PAP.Delete(editSkeleton.id))
 
   val editAppSkeleton =
     EditApp(id = "14", editId = editSkeleton.id, postId = editSkeleton.postId,
@@ -64,9 +66,9 @@ trait PageTestValues {
       approval = None, result = "ignored")
 
   val deletionOfEditApp =
-    Delete(id = "15", postId = editAppSkeleton.id,
-        loginId = "115", userId = "?", newIp = None, ctime = new ju.Date(15000),
-        wholeTree = false, reason = "")
+    PostActionDto(id = "15", postId = editAppSkeleton.postId,
+        loginId = "115", userId = "?", newIp = None, creationDati = new ju.Date(15000),
+        payload = PAP.Delete(editSkeleton.id))
 
   val approvalOfEditApp = ReviewPostAction(id = "16", postId = editAppSkeleton.id,
         loginId = "116", userId = "?", newIp = None, ctime = new ju.Date(16000),
@@ -82,14 +84,15 @@ trait PageTestValues {
     details = "")
 
 
-  case class PageWithEditApplied(page: PageParts, edit: Edit, applDate: ju.Date)
+  case class PageWithEditApplied(
+    page: PageParts, edit: PostActionDto[PAP.EditPost], applDate: ju.Date)
 
   val EmptyPage = PageParts("a")
 
   def makePageWithEditApplied(autoApplied: Boolean): PageWithEditApplied = {
     val (edit, editApplDati) =
       if (autoApplied)
-        (editSkeleton.copy(autoApplied = true), editSkeleton.ctime)
+        (PostActionDto.copyEditPost(editSkeleton, autoApplied = Some(true)), editSkeleton.ctime)
       else
         (editSkeleton, editAppSkeleton.ctime)
     var page = EmptyPage + bodySkeletonAutoApproved + edit

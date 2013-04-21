@@ -13,23 +13,23 @@ import com.debiki.v0.{PostActionPayload => PAP}
 
 
 
-class Patch(debate: PageParts, val edit: Edit)
-  extends PostActionOld(debate, edit) with MaybeApproval {
+class Patch(debate: PageParts, val edit: PostActionDto[PAP.EditPost])
+  extends PostAction[PAP.EditPost](debate, edit) with MaybeApproval with PostActionActedUpon {
 
   def post = debate.getPost(edit.postId)
   def post_! = debate.getPost_!(edit.postId)
 
-  def patchText = edit.text
-  def newMarkup = edit.newMarkup
+  def patchText = edit.payload.text
+  def newMarkup = edit.payload.newMarkup
 
   def isDeleted = false // for now. Later: Add PostActionPayload.DeleteEdit?
   def deletedAt: Option[ju.Date] = None // for now
 
   def isPending = !isApplied && !isDeleted
 
-  def approval = edit.approval
+  def approval = edit.payload.approval
 
-  private def _initiallyAutoApplied = edit.autoApplied
+  private def _initiallyAutoApplied = edit.payload.autoApplied
 
   /**
    * The result of applying patchText to the related Post, as it was
@@ -79,7 +79,10 @@ class Patch(debate: PageParts, val edit: Edit)
       // because you cannot apply an edit that's already been applied.
       val lastEditApp = allEditApps.maxBy(_.ctime.getTime)
       val revertionDati =
-        page.deletionFor(lastEditApp.id).map(_.ctime) orElse deletedAt
+        (None // for now. Later, check Undo,
+              // was before, broken now:  page.deletionFor(lastEditApp.id).map(_.ctime)
+              // perhaps in the future:  lastEditApp.undoneAt
+          orElse deletedAt)
       if (revertionDati isEmpty)
         (true, Some(lastEditApp.ctime),
            Some(lastEditApp.userId), Some(lastEditApp.id), false, None)

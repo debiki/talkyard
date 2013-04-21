@@ -30,6 +30,25 @@ class PostAction[P](  // [P <: PostActionPayload] causes compilation errors
 
   def postId = actionDto.postId
   def payload: P = actionDto.payload
+
+}
+
+
+/** A post action that is affected by other actions. For example,
+  * a Post is affected by DeletePost, and DeletePost is affected by Undo.
+  * However, Undo isn't affected by any other action (an Undo cannot be Undo:ne),
+  * and does therefore not implement this trait.
+  */
+trait PostActionActedUpon {
+  self: PostActionOld =>
+
+  protected def actions: List[PostAction[_]] = page.getActionsByTargetId(id)
+
+  protected def findLastAction[P <: PostActionPayload](payload: P): Option[PostAction[P]] =
+    actions.find { action =>
+      action.payload == payload  // && !action.wasUndone
+    }.asInstanceOf[Option[PostAction[P]]]
+
 }
 
 

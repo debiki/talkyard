@@ -23,14 +23,14 @@ case class NotfGenerator(pageExclNewActions: PageParts, newActions: Seq[PostActi
       case p: PostActionPayload.CreatePost =>
         _makePersonalReplyNotf(
           new Post(page, action.asInstanceOf[PostActionDto[PAP.CreatePost]]))
+      case e: PAP.EditPost =>
+        Nil  // fix later, see "Note:" below
       case _ =>
         Nil // skip for now
     }
     // Note:
     // If you add notfs (below) for other things than replies,
     // then, in debiki-app-play, update NotfHtmlRenderer.
-    case e: Edit =>
-      Nil  // fix later, see note above
     case app: EditApp =>
       Nil  // fix later, see note above
     case flag: Flag =>

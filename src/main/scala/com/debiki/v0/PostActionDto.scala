@@ -116,6 +116,43 @@ object PostActionDto {
         approval = if (approval ne null) approval else old.payload.approval))
 
 
+  def toEditPost(
+        id: String, postId: String, ctime: ju.Date,
+        loginId: String, userId: String, newIp: Option[String],
+        text: String, autoApplied: Boolean, approval: Option[Approval],
+        newMarkup: Option[String] = None) =
+    PostActionDto(
+      id, ctime, postId = postId, loginId = loginId, userId = userId, newIp = newIp,
+      payload = PAP.EditPost(
+        text = text, newMarkup = newMarkup, autoApplied = autoApplied, approval = approval))
+
+
+  def copyEditPost(
+        old: PostActionDto[PAP.EditPost],
+        id: String = null,
+        postId: String = null,
+        createdAt: ju.Date = null,
+        loginId: String = null,
+        userId: String = null,
+        newIp: Option[String] = null,
+        text: String = null,
+        autoApplied: Option[Boolean] = None,
+        approval: Option[Approval] = null,
+        newMarkup: Option[String] = null) =
+    PostActionDto(
+      id = if (id ne null) id else old.id,
+      postId = if (postId ne null) postId else old.postId,
+      creationDati =  if (createdAt ne null) createdAt else old.creationDati,
+      loginId = if (loginId ne null) loginId else old.loginId,
+      userId = if (userId ne null) userId else old.userId,
+      newIp = if (newIp ne null) newIp else old.newIp,
+      payload = PAP.EditPost(
+        text = if (text ne null) text else old.payload.text,
+        newMarkup = if (newMarkup ne null) newMarkup else old.payload.newMarkup,
+        autoApplied = if (autoApplied.isDefined) autoApplied.get else old.payload.autoApplied,
+        approval = if (approval ne null) approval else old.payload.approval))
+
+
   def forTemporaryApprovalOf(postAction: PostActionDto[_]) = ReviewPostAction(
     id = nextRandomString(),
     postId = postAction.postId,
@@ -124,6 +161,20 @@ object PostActionDto {
     newIp = None,
     ctime = postAction.ctime,
     approval = Some(Approval.Preliminary))
+
+
+  def toDeletePost(
+        andReplies: Boolean,
+        id: String,
+        postIdToDelete: String,
+        loginId: String,
+        userId: String,
+        newIp: Option[String],
+        createdAt: ju.Date) =
+    PostActionDto(
+      id, creationDati = createdAt, postId = postIdToDelete,
+      loginId = loginId, userId = userId, newIp = newIp,
+      payload = if (andReplies) PAP.DeleteTree else PAP.DeletePost)
 
 }
 
@@ -154,9 +205,48 @@ object PostActionPayload {
     where: Option[String] = None) extends PostActionPayload
 
 
+  /** Edits the text of a post, and/or changes the markup (from e.g. Markdown to HTML).
+    *
+    * @param text A diff from the current post text to the new. (Should rename to .diff?)
+    * @param newMarkup Changes the markup henceforth applied to postId's text.
+    * None means reuse the current markup.
+    * @param autoApplied If this edit was applied automatically on creation, e.g. because
+    * someone edited his/her own comment.
+    * Currently not in use (yes it is!?? or?) And I'd have to
+    * refactor page-actions-smart.scala fairly much for `autoApplied`to work,
+    * since currently all appl info is instead handled via EditApp:s.
+    *   - Perhaps easier to remove this field, and construct
+    * an additional EditApp action when reading an Edit from database,
+    * if the db says it was auto approved? But I might need this field
+    * anyway, when *saving* an edit, so the db knows it should mark it as
+    * auto applied.
+    * @param approval If the related post is to be automatically approved, when this
+    * edit is auto applied. (Example: a moderator edits a comment
+    * that is already approved, then the edit would be
+    * auto applied, and the related post would be approved implicitly,
+    * (since it was already approved, and a *moderator* did the edit.))
+    */
+  case class EditPost(
+    text: String, // (Should rename to `diff`?)
+    newMarkup: Option[String],
+    autoApplied: Boolean,
+    approval: Option[Approval]) extends PostActionPayload {
+
+    // override def textLengthUtf8: Int = text.getBytes("UTF-8").length
+
+    // An edit that hasn't been applied cannot have been approved.
+    // (It might have been applied, but not approved, however, if a
+    // user edits his/her own comment, and the changes are then pending
+    // moderator review.)
+    require(approval.isEmpty || autoApplied)
+  }
+
+
   class CollapseSomething extends PostActionPayload
 
+
   case object CollapsePost extends CollapseSomething
+
 
   /** Collapses a thread: collapses it, and perhaps tucks it away under a Collapsed Threads
     * section (which would be far away to the right?, if the thread is laid out horizontally).
@@ -165,6 +255,23 @@ object PostActionPayload {
     * that has since been fixed. Or on uninteresting off-topic threads.
     */
   case object CollapseTree extends CollapseSomething
+
+
+  /** Deletes a single comment.
+    */
+  case object DeletePost extends PostActionPayload
+
+
+  /** Deletes a comment and all replies, recursively.
+    */
+  case object DeleteTree extends PostActionPayload
+
+
+  /** Deletes things an edit suggestion or a flag. (But not a post — use DeletePost
+    * and DeleteTree instead.)
+    */
+  case class Delete(targetActionId: String) extends PostActionPayload
+
 
   /** Undoes another action, e.g. an Undo with targetActionId = a CloseTree action
     * would reopen the closed tree.
@@ -286,54 +393,6 @@ case class Flag(
 }
 
 
-case class Edit (
-  id: String,
-  postId: String,
-  ctime: ju.Date,
-  loginId: String,
-  userId: String,
-  newIp: Option[String],
-  text: String,
-
-  /** Changes the markup henceforth applied to postId's text.
-   *
-   * None means reuse the current markup.
-   */
-  newMarkup: Option[String],
-
-  /**
-   * If the related post is to be automatically approved, when this
-   * edit is auto applied. (Example: a moderator edits a comment
-   * that is already approved, then the edit would be
-   * auto applied, and the related post would be approved implicitly,
-   * (since it was already approved, and a *moderator* did the edit.))
-   */
-  approval: Option[Approval],
-
-  /**
-   * If this edit was applied automatically on creation, e.g. because
-   * someone edited his/her own comment.
-   *
-   * Currently not in use. And I'd have to refactor page-actions-smart.scala
-   * fairly much for `autoApplied`to work, since currently all appl info
-   * is instead handled via EditApp:s.
-   *   - Perhaps easier to remove this field, and construct
-   * an additional EditApp action when reading an Edit from database,
-   * if the db says it was auto approved? But I might need this field
-   * anyway, when *saving* an edit, so the db knows it should mark it as
-   * auto applied.
-   */
-  autoApplied: Boolean
-) extends PostActionDtoOld {
-  override def textLengthUtf8: Int = text.getBytes("UTF-8").length
-
-  // An edit that hasn't been applied cannot have been approved.
-  // (It might have been applied, but not approved, however, if a
-  // user edits his/her own comment, and the changes are then pending
-  // moderator review.)
-  require(approval.isEmpty || autoApplied)
-}
-
 
 /** Edit applications (i.e. when edits are applied).
  *
@@ -377,43 +436,6 @@ case class EditApp(
   result: String
 ) extends PostActionDtoOld
 
-/** Deletes an action. When actionId (well, postId right now)
- *  is a post, it won't be rendered. If `wholeTree', no reply is shown either.
- *  If actionId is an EditApp, that edit is undone. BAD??! Too complicated??
- *    What does it mean to Delete an EditApp Delete:ion?
- *    Of course it would mean that the Deletion was undone,
- *    that is, Undo, that is, the EditApp would be in effect again,
- *    that is, the Edit would be in effect again.
- *    However I think this is too complicated.
- *    Perhaps it's easier to introduce a Revert class.
- *    And if there are many Apply:s and Revert:s for an Edit,
- *    then the most recent Apply or Revert is in effect.
- *    Benefit: You'd never need to walk along a chain of Delete:s,
- *    to find out which EditApp or Post was actually deleted.
- *    ????
- *    Perhaps introduce a class ToggleExistence, and the very last
- *    instance determines if a Post is deleted or restored.
- *  --- Not implemented: --------
- *  If `wholeTree', all edit applications from actionId and up to
- *  delete.ctime are undone.
- *  If actionId is an Edit, the edit will no longer appear in the list of
- *  edits you can choose to apply.
- *  If `wholeTree', no Edit from actionId up to delete.ctime will appear
- *  in the list of edits that can be applied.
- *  -----------------------------
- */
-case class Delete(
-  id: String,
-  postId: String,
-  loginId: String,
-  userId: String,
-  newIp: Option[String],
-  ctime: ju.Date,
-  wholeTree: Boolean,  // COULD rename to `recursively'?
-  reason: String  // COULD replace with a Post that is a reply to this Delete?
-) extends PostActionDtoOld {
-  override def textLengthUtf8: Int = reason.getBytes("UTF-8").length
-}
 
 
 // COULD make a Deletion class, and a DelApp (deletion application) class.

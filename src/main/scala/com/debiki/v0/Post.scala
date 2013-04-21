@@ -26,7 +26,7 @@ case class Post(
     private val state: PostState,
     private val isLoadedFromCache: Boolean = true)
   extends PostAction[PAP.CreatePost](pageParts, state.creationPostActionDto)
-  with MaybeApproval {
+  with MaybeApproval with PostActionActedUpon {
 
 
   def this(pageParts: PageParts, creationAction: PostActionDto[PAP.CreatePost]) {
@@ -70,7 +70,7 @@ case class Post(
     else None
 
 
-  def actions: List[PostAction[_]] = page.getActionsByPostId(id)
+  override def actions: List[PostAction[_]] = page.getActionsByPostId(id)
 
 
    // This currently happens directly, hence + 0:
@@ -152,7 +152,8 @@ case class Post(
   def where: Option[String] = payload.where
 
 
-  def edits: List[Patch] = page.editsFor(id)
+  def edits: List[Patch] =
+    actions.filter(a => a.isInstanceOf[Patch]).asInstanceOf[List[Patch]]
 
 
   lazy val (
@@ -499,36 +500,37 @@ case class Post(
 
 
   def postCollapsedAt: Option[ju.Date] =
-    findLastDateOf(PAP.CollapsePost) orElse state.postCollapsedAt
+    findLastAction(PAP.CollapsePost).map(_.creationDati) orElse state.postCollapsedAt
 
   def treeCollapsedAt: Option[ju.Date] =
-    findLastDateOf(PAP.CollapseTree) orElse state.treeCollapsedAt
+    findLastAction(PAP.CollapseTree).map(_.creationDati) orElse state.treeCollapsedAt
 
   def isPostCollapsed: Boolean = postCollapsedAt.nonEmpty
   def isTreeCollapsed: Boolean = treeCollapsedAt.nonEmpty
   def isCollapsedSomehow: Boolean = isPostCollapsed || isTreeCollapsed
 
 
-  private def findLastDateOf(payload: PostActionPayload): Option[ju.Date] =
-    actions.find { action =>
-      action.payload == payload  // && !action.wasUndone
-    }.map(_.creationDati)
+  private def postDeletion: Option[PostAction[PAP.DeletePost.type]] =
+    findLastAction(PAP.DeletePost)
 
+  private def treeDeletion: Option[PostAction[PAP.DeleteTree.type]] =
+    findLastAction(PAP.DeleteTree)
 
-  def treeDeletion = deletionsDescTime.find(_.wholeTree)
-  def postDeletion = deletionsDescTime.find(!_.wholeTree)
+  def postDeletedAt: Option[ju.Date] =
+    postDeletion.map(_.creationDati) orElse state.postDeletedAt
 
-  def treeDeletedAt: Option[ju.Date] = treeDeletion.map(_.ctime)
-  def postDeletedAt: Option[ju.Date] = postDeletion.map(_.ctime)
+  def treeDeletedAt: Option[ju.Date] =
+    treeDeletion.map(_.creationDati) orElse state.treeDeletedAt
 
-  def isTreeDeleted = treeDeletion.nonEmpty
-  def isPostDeleted = postDeletion.nonEmpty
-  def isDeletedSomehow: Boolean = isTreeDeleted || isPostDeleted
+  def postDeleterUserId: Option[String] =
+    postDeletion.map(_.userId) orElse unimplemented("DwE6XD43")
 
-  /** Deletions, the most recent first. */
-  // COULD optimize this, do once for all posts, store in map.
-  lazy val deletionsDescTime: List[Delete] =
-    page.deletions.filter(_.postId == action.id).sortBy(- _.ctime.getTime)
+  def treeDeleterUserId: Option[String] =
+    treeDeletion.map(_.userId) orElse unimplemented("DwE8QB91")
+
+  def isPostDeleted: Boolean = postDeletedAt.nonEmpty
+  def isTreeDeleted: Boolean = treeDeletedAt.nonEmpty
+  def isDeletedSomehow: Boolean = isPostDeleted || isTreeDeleted
 
 
   /** How many people have up/downvoted this post. Might be a tiny bit

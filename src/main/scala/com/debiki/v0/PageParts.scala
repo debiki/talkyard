@@ -70,14 +70,14 @@ object PageParts {
     def updateIds(action: T): T = (action match {
       case r: Rating => r.copy(id = remaps(r.id), postId = rmpd(r.postId))
       case f: Flag => f.copy(id = remaps(f.id), postId = rmpd(f.postId))
-      case e: Edit => e.copy(id = remaps(e.id), postId = rmpd(e.postId))
       case a: EditApp => a.copy(id = remaps(a.id), editId = rmpd(a.editId),
         postId = rmpd(a.postId))
-      case d: Delete => d.copy(id = remaps(d.id), postId = rmpd(d.postId))
       case r: ReviewPostAction => r.copy(id = remaps(r.id), postId = rmpd(r.postId))
       case a: PostActionDto[_] =>
         val rmpdPaylad = a.payload match {
           case c: PAP.CreatePost => c.copy(parentPostId = rmpd(c.parentPostId))
+          case d: PAP.Delete => d.copy(targetActionId = rmpd(d.targetActionId))
+          case u: PAP.Undo => u.copy(targetActionId = rmpd(u.targetActionId))
           case x => x
         }
         a.copy(id = remaps(a.id), postId = rmpd(a.postId), payload = rmpdPaylad)
@@ -159,6 +159,10 @@ abstract class PostActionsWrapper { self: PageParts =>
     actionsByPostId(postId)
 
 
+  def getActionsByTargetId(targetId: String): List[PostAction[_]] =
+    actionsByTargetActionId(targetId)
+
+
   // /** WARNING Doesn't include any PostActionOld */
   def getAllActions: Seq[PostAction[_]] =
     actionsByPostId.valuesIterator.toSeq.flatten
@@ -167,23 +171,26 @@ abstract class PostActionsWrapper { self: PageParts =>
   // Maps data-transfer-objects to PostAction:s. Never mutated once constructed.
   private lazy val (
     actionsById,
-    actionsByPostId)
-      : (mut.Map[String, PostAction[_]], mut.Map[String, List[PostAction[_]]]) = {
+    actionsByPostId,
+    actionsByTargetActionId): (
+      mut.Map[String, PostAction[_]],
+      mut.Map[String, List[PostAction[_]]],
+      mut.Map[String, List[PostAction[_]]]) = {
 
     var actionsById = mut.Map[String, PostAction[_]]()
     var actionsByPostId = mut.Map[String, List[PostAction[_]]]().withDefaultValue(Nil)
+    val actionsByTargetId = mut.Map[String, List[PostAction[_]]]().withDefaultValue(Nil)
 
     for (state <- self.postStates) {
       addAction(new Post(self, state))
     }
 
     for (actionDto <- actionDtos) {
+      def actionAs[T <: PAP] = actionDto.asInstanceOf[PostActionDto[T]]
       val action = actionDto.payload match {
-        case _: PAP.CreatePost =>
-          new Post(self, actionDto.asInstanceOf[PostActionDto[PAP.CreatePost]])
-        // case _ => EditPostAction => Patch(this.asInstanceOf[Debate], action)
-        case _ =>
-          new PostAction(self, actionDto)
+        case _: PAP.CreatePost => new Post(self, actionAs[PAP.CreatePost])
+        case _: PAP.EditPost => new Patch(self, actionAs[PAP.EditPost])
+        case _ => new PostAction(self, actionDto)
       }
       addAction(action)
     }
@@ -198,12 +205,23 @@ abstract class PostActionsWrapper { self: PageParts =>
             the first: $oldAction, and the second: $action""")
       }
       actionsById(action.id) = action
-      val otherActions = actionsByPostId(action.postId)
-      if (otherActions.find(_.id == action.id).isEmpty)
-        actionsByPostId(action.actionDto.postId) = action :: otherActions
+      val otherActionsSamePost = actionsByPostId(action.postId)
+      if (otherActionsSamePost.find(_.id == action.id).isEmpty)
+        actionsByPostId(action.actionDto.postId) = action :: otherActionsSamePost
+
+      def addActionByTargetId(targetId: String) {
+        val otherActionsSameTarget = actionsByTargetId(action.postId)
+        actionsByTargetId(targetId) = action :: otherActionsSameTarget
+      }
+
+      action.payload match {
+        case PAP.Undo(targetActionId) => addActionByTargetId(targetActionId)
+        case PAP.Delete(targetActionId) => addActionByTargetId(targetActionId)
+        case _ =>
+      }
     }
 
-    (actionsById, actionsByPostId)
+    (actionsById, actionsByPostId, actionsByTargetId)
   }
 
 }
@@ -226,22 +244,20 @@ case class PageParts (
   guid: String,  // COULD rename to pageId?
   people: People = People.None,
   ratings: List[Rating] = Nil,
-  edits: List[Edit] = Nil,
   editApps: List[EditApp] = Nil,
   flags: List[Flag] = Nil,
-  deletions: List[Delete] = Nil,
   reviews: List[ReviewPostAction] = Nil,
   postStates: List[PostState] = Nil,
   actionDtos: List[PostActionDto[_]] = Nil) extends PostActionsWrapper {
 
 
   def actionCount: Int =
-     ratings.size + edits.size + editApps.size +
-     flags.size + deletions.size + actionDtos.size
+     ratings.size + editApps.size +
+     flags.size + actionDtos.size
 
 
   def allActions: Seq[PostActionDtoOld] =
-     deletions:::flags:::editApps:::edits:::ratings:::actionDtos
+     flags:::editApps:::ratings:::actionDtos
 
 
   // Try to remove/rewrite? Doesn't return e.g Post or Patch.
@@ -489,16 +505,10 @@ case class PageParts (
     getPatch(editId).getOrElse(assErr(
       "DwE03kE1", s"Edit id `$editId' not found on page `$id'"))
 
-  def getPatch(editId: String): Option[Patch] =
-    editsById.get(editId).map(new Patch(this, _))
-
-  lazy val editsById: imm.Map[String, Edit] = {
-    val m = edits.groupBy(_.id)
-    m.mapValues(list => {
-      runErrIf3(list.tail.nonEmpty,
-        "DwE9ksE53", s"Two ore more Edit:s with id `${list.head.id}' on page `$id'")
-      list.head
-    })
+  def getPatch(editId: String): Option[Patch] = getActionById(id) match {
+    case p @ Some(_: Patch) => p.asInstanceOf[Option[Patch]]
+    case None => None
+    case x => runErr("DwE0GK43", s"Action `$id' is not a Patch but a: ${classNameOf(x)}")
   }
 
   def editAppsByEdit(id: String) = _editAppsByEditId.getOrElse(id, Nil)
@@ -514,14 +524,8 @@ case class PageParts (
     //})
   }
 
-  private lazy val editsByPostId: imm.Map[String, List[Edit]] =
-    edits.groupBy(_.postId)
-
   private lazy val editAppsByPostId: imm.Map[String, List[EditApp]] =
-    editApps.groupBy(ea => editsById(ea.editId).postId)
-
-  def editsFor(postId: String): List[Patch] =
-    editsByPostId.getOrElse(postId, Nil) map (new Patch(this, _))
+    editApps.groupBy(ea => getPatch_!(ea.editId).postId)
 
   /** Edits applied to the specified post, sorted by most-recent first.
    */
@@ -538,24 +542,6 @@ case class PageParts (
 
   private lazy val flagsById: imm.Map[String, Flag] =
     imm.Map[String, Flag](flags.map(x => (x.id, x)): _*)
-
-
-  // -------- Deletions
-
-  private lazy val deletionsById: imm.Map[String, Delete] =
-    imm.Map[String, Delete](deletions.map(x => (x.id, x)): _*)
-
-  /** If actionId was explicitly deleted (not indirectly, via
-   *  wholeTree/recursively = true).
-   */
-  def deletionFor(actionId: String): Option[Delete] =
-    deletions.find(_.postId == actionId).headOption
-    // COULD check if the deletion itself was deleted!?
-    // That is, if the deletion was *undone*. Delete, undo, redo... a redo
-    // would be a deleted deletion of a deletion?
-
-  def deletion(withId: String): Option[Delete] =
-    deletions.filter(_.id == withId).headOption
 
 
   // -------- Reviews (i.e. approvals and rejections)
@@ -596,10 +582,8 @@ case class PageParts (
   // COULD [T <: Action] instead of >: AnyRef?
   def ++[T >: AnyRef] (actions: Seq[T]): PageParts = {
     var ratings2 = ratings
-    var edits2 = edits
     var editApps2 = editApps
     var flags2 = flags
-    var dels2 = deletions
     var reviews2 = reviews
     var actions2 = this.actionDtos
     type SthWithId = { def id: String }
@@ -614,18 +598,12 @@ case class PageParts (
       case r: Rating =>
         dieIfIdClash(ratings2, r)
         ratings2 ::= r
-      case e: Edit =>
-        dieIfIdClash(edits2, e)
-        edits2 ::= e
       case a: EditApp =>
         dieIfIdClash(editApps2, a)
         editApps2 ::= a
       case f: Flag =>
         dieIfIdClash(flags2, f)
         flags2 ::= f
-      case d: Delete =>
-        dieIfIdClash(dels2, d)
-        dels2 ::= d
       case r: ReviewPostAction =>
         dieIfIdClash(reviews2, r)
         reviews2 ::= r
@@ -636,7 +614,7 @@ case class PageParts (
         "DwE8k3EC", "Unknown action type: "+ classNameOf(x))
     }
     PageParts(id, people, ratings2,
-        edits2, editApps2, flags2, dels2, reviews2, postStates, actions2)
+        editApps2, flags2, reviews2, postStates, actions2)
   }
 
 
@@ -650,19 +628,15 @@ case class PageParts (
       action.ctime.getTime <= dati.getTime
 
     val (ratingsBefore, ratingsAfter) = ratings partition happenedInTime
-    val (editsBefore, editsAfter) = edits partition happenedInTime
     val (editAppsBefore, editAppsAfter) = editApps partition happenedInTime
     val (flagsBefore, flagsAfter) = flags partition happenedInTime
-    val (deletionsBefore, deletionsAfter) = deletions partition happenedInTime
     val (reviewsBefore, reviewsAfter) = reviews partition happenedInTime
     val (actionsBefore, actionsAfter) = actionDtos partition happenedInTime
 
     val pageUpToAndInclDati = copy(
       ratings = ratingsBefore,
-      edits = editsBefore,
       editApps = editAppsBefore,
       flags = flagsBefore,
-      deletions = deletionsBefore,
       reviews = reviewsBefore,
       actionDtos = actionsBefore)
 
