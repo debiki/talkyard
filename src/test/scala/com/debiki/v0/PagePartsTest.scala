@@ -183,7 +183,7 @@ class PagePartsTest extends Specification with PageTestValues {
     }
 
     "have a body" >> {
-      "unapproved" >> {
+      "unapproved" in {
         val page = EmptyPage + bodySkeleton
         page.body_!.currentVersionReviewed must_== false
         page.body_!.currentVersionRejected must_== false
@@ -194,7 +194,7 @@ class PagePartsTest extends Specification with PageTestValues {
         page.body_!.currentText must_== textInitially
       }
 
-      "approved, automatically, permanently" >> {
+      "approved, automatically, permanently" in {
         val page = EmptyPage + bodySkeletonAutoApproved
         page.body_!.currentVersionReviewed must_== true
         page.body_!.currentVersionRejected must_== false
@@ -207,7 +207,7 @@ class PagePartsTest extends Specification with PageTestValues {
         page.body_!.currentText must_== textInitially
       }
 
-      "approved, automatically, preliminarily" >> {
+      "approved, automatically, preliminarily" in {
         val page = EmptyPage + bodySkeletonPrelApproved
         page.body_!.currentVersionReviewed must_== true // by the computer
         page.body_!.currentVersionRejected must_== false
@@ -222,7 +222,7 @@ class PagePartsTest extends Specification with PageTestValues {
         page.body_!.currentText must_== textInitially
       }
 
-      "approved, automatically, permanently, then rejected" >> {
+      "approved, automatically, permanently, then rejected" in {
         // This shouldn't happen — the computer shouldn't allow
         // you to reject a permanently approved comment.
         // Instead, first you'd need to delete the approval.
@@ -235,13 +235,13 @@ class PagePartsTest extends Specification with PageTestValues {
         // But there are no such edits, so the rejection has no effect.
       }
 
-      "approved, automatically, preliminarily, then rejected" >> {
+      "approved, automatically, preliminarily, then rejected" in {
         // The rejection cancels all effects of the preliminary approval.
         val page = EmptyPage + bodySkeletonPrelApproved + bodyRejectionSkeleton
         _verifyBodyCorrectlyRejected(page)
       }
 
-      "approved, manually" >> {
+      "approved, manually" in {
         val page = EmptyPage + bodySkeleton +
            bodyApprovalSkeleton
         page.body_!.currentVersionReviewed must_== true
@@ -256,7 +256,7 @@ class PagePartsTest extends Specification with PageTestValues {
         page.body_!.currentText must_== textInitially
       }
 
-      "rejected" >> {
+      "rejected" in {
         val page = EmptyPage + bodySkeleton + bodyRejectionSkeleton
         _verifyBodyCorrectlyRejected(page)
       }
@@ -278,7 +278,7 @@ class PagePartsTest extends Specification with PageTestValues {
     }
 
 
-    "have a body, with an edit, pending" >> {
+    "have a body, with an edit, pending" in {
       val body =
         bodySkeleton.copy(payload = bodySkeleton.payload.copy(
           approval = Some(Approval.WellBehavedUser)))
@@ -304,7 +304,7 @@ class PagePartsTest extends Specification with PageTestValues {
     }
 
 
-    "have a body, with an edit, deleted" >> {
+    "have a body, with an edit, deleted" in {
       val page = EmptyPage + bodySkeletonAutoApproved +
          editSkeleton + deletionOfEdit
       page.body_!.currentText must_== textInitially
@@ -329,11 +329,11 @@ class PagePartsTest extends Specification with PageTestValues {
 
     "have a body, with an edit, applied" >> {
 
-      "automatically" >> {
+      "automatically" in {
         _testImpl(autoApplied = true)
       }
 
-      "manually" >> {
+      "manually" in {
         _testImpl(autoApplied = false)
       }
 
@@ -363,11 +363,11 @@ class PagePartsTest extends Specification with PageTestValues {
 
     "have a body, with an edit, applied" >> {
 
-      "automatically, then reverted & deleted (cannot revert only)" >> {
+      "automatically, then reverted & deleted (cannot revert only)" in {
         _testImpl(autoApplied = true)
       }
 
-      "manually, then reverted" >> {
+      "manually, then reverted" in {
         _testImpl(autoApplied = false)
       }
 
@@ -411,7 +411,7 @@ class PagePartsTest extends Specification with PageTestValues {
         }
       }
 
-      "manually, then reverted and then deleted" >> {
+      "manually, then reverted and then deleted" in {
         val PageWithEditApplied(pageNotReverted, _, _) =
               makePageWithEditApplied(autoApplied = false)
         val deletionAfterRevertion = deletionOfEdit.copy(
@@ -447,7 +447,7 @@ class PagePartsTest extends Specification with PageTestValues {
 
     "have a body, with an edit, applied, and" >> {
 
-      "unapproved" >> {
+      "unapproved" in {
         val page = EmptyPage + bodySkeletonAutoApproved +
            editSkeleton + editAppSkeleton // not approved
 
@@ -463,7 +463,7 @@ class PagePartsTest extends Specification with PageTestValues {
         testEditLists(page.body_!)
       }
 
-      "approved, automatically, permanently" >> {
+      "approved, automatically, permanently" in {
         val page = PageWithEditManuallyAppliedAndAutoApproved
         //val page = EmptyPage + bodySkeletonAutoApproved +
         //   editSkeleton + editAppSkeleton.copy(
@@ -472,24 +472,24 @@ class PagePartsTest extends Specification with PageTestValues {
             manualApprovalDati = None, preliminarily = false)
       }
 
-      "approved, automatically, preliminarily" >> {
+      "approved, automatically, preliminarily" in {
         val page = PageWithEditManuallyAppliedAndPrelApproved
         _testApprovedEdit(page.body_!, editAppSkeleton.ctime,
           manualApprovalDati = None, preliminarily = true)
       }
 
-      "approved, automatically, permanently, then rejected" >> {
+      "approved, automatically, permanently, then rejected" in {
         // The rejection should have no effect. See the comment in
         // another "permanently, then rejected" test, somewhere above.
       }
 
-      "approved, automatically, preliminarily, then rejected" >> {
+      "approved, automatically, preliminarily, then rejected" in {
         // The rejection cancels the auto prel approval.
         val page = PageWithEditManuallyAppliedAndPrelApprovedThenRejected
         _testRejectedEdit(page)
       }
 
-      "approved, manually" >> {
+      "approved, manually" in {
         val page = PageWithEditManuallyAppliedAndExplApproved
         //val page = EmptyPage + bodySkeletonAutoApproved +
         ///   editSkeleton + editAppSkeleton + approvalOfEditApp
@@ -498,12 +498,12 @@ class PagePartsTest extends Specification with PageTestValues {
             preliminarily = false)
       }
 
-      "approved, and then reverted, but the revertion is not yet approved" >> {
+      "approved, and then reverted, but the revertion is not yet approved" in {
         // Cannot implement right now: not possible to approve / not-approve
         // deletions of EditApp:s.
       }
 
-      "rejected" >> {
+      "rejected" in {
         val page = PageWithEditManuallyAppliedAndRejected
         //val page = EmptyPage + bodySkeletonAutoApproved +
         //   editSkeleton + editAppSkeleton + rejectionOfEditApp
@@ -570,23 +570,23 @@ class PagePartsTest extends Specification with PageTestValues {
 
 
     "have a body, with one edit, pending, and a more recent edit that is" >> {
-      "pending" >> {
+      "pending" in {
         // text = textApproved = textInitially
       }
 
-      "applied, not approved" >> {
+      "applied, not approved" in {
         // text = textAfterSecondEditSkipFirst
         // textApproved = textInitially
       }
 
-      "applied, and approved" >> {
+      "applied, and approved" in {
         // Do this 2 times:
         // for the second edit being 1) manually and 2) auto approved.
 
         // text = textApproved = textAfterSecondEditSkipFirst
       }
 
-      "applied and rejected" >> {
+      "applied and rejected" in {
         // text = textAfterSecondEditSkipFirst
         // textApproved = textInitially
       }
@@ -595,30 +595,30 @@ class PagePartsTest extends Specification with PageTestValues {
 
     "have a body, with one approved edit, and another that is" >> {
 
-      "pending" >> {
+      "pending" in {
         // text = textApproved = textAfterFirstEdit
       }
 
       // Do this 2 times:
       // for the first edit being 1) manually and 2) auto approved.
 
-      "unapproved" >> {
+      "unapproved" in {
         // text = textAfterSecondEdit
         // textApproved = textAfterFirstEdit
       }
 
-      "approved" >> {
+      "approved" in {
         // Do this 2 times:
         // for the second edit being 1) manually and 2) auto approved.
 
         // text = textApproved = textAfterSecondEdit
       }
 
-      "approved, manually" >> {
+      "approved, manually" in {
         // text = textApproved = textAfterSecondEdit
       }
 
-      "rejected" >> {
+      "rejected" in {
         // text = textAfterFirstEdit
         // textApproved = textAfterFirstEdit
       }
