@@ -191,7 +191,7 @@ class PagePartsTest extends Specification with PageTestValues {
         page.body_!.initiallyApproved must_== false
         page.body_!.lastApprovalDati must_== None
         page.body_!.lastManualApprovalDati must_== None
-        page.body_!.text must_== textInitially
+        page.body_!.currentText must_== textInitially
       }
 
       "approved, automatically, permanently" >> {
@@ -204,7 +204,7 @@ class PagePartsTest extends Specification with PageTestValues {
         page.body_!.initiallyApproved must_== true
         page.body_!.lastApprovalDati must_== Some(bodySkeleton.ctime)
         page.body_!.lastManualApprovalDati must_== None
-        page.body_!.text must_== textInitially
+        page.body_!.currentText must_== textInitially
       }
 
       "approved, automatically, preliminarily" >> {
@@ -219,7 +219,7 @@ class PagePartsTest extends Specification with PageTestValues {
         page.body_!.lastApproval must_== Some(page.body_!)
         page.body_!.lastApprovalDati must_== Some(bodySkeleton.ctime)
         page.body_!.lastManualApprovalDati must_== None
-        page.body_!.text must_== textInitially
+        page.body_!.currentText must_== textInitially
       }
 
       "approved, automatically, permanently, then rejected" >> {
@@ -253,7 +253,7 @@ class PagePartsTest extends Specification with PageTestValues {
         page.body_!.lastApprovalDati must_== Some(bodyApprovalSkeleton.ctime)
         page.body_!.lastManualApprovalDati must_==
            Some(bodyApprovalSkeleton.ctime)
-        page.body_!.text must_== textInitially
+        page.body_!.currentText must_== textInitially
       }
 
       "rejected" >> {
@@ -273,7 +273,7 @@ class PagePartsTest extends Specification with PageTestValues {
         body.lastApproval must_== None
         body.lastApprovalDati must_== None
         body.lastManualApprovalDati must_== None
-        body.text must_== textInitially
+        body.currentText must_== textInitially
       }
     }
 
@@ -283,8 +283,8 @@ class PagePartsTest extends Specification with PageTestValues {
         bodySkeleton.copy(payload = bodySkeleton.payload.copy(
           approval = Some(Approval.WellBehavedUser)))
       val page = EmptyPage + body + editSkeleton
-      page.body_!.text must_== textInitially
-      page.body_!.modificationDati must_== page.body_!.creationDati
+      page.body_!.currentText must_== textInitially
+      page.body_!.textLastEditedAt must_== page.body_!.creationDati
 
       page.body_!.editsDeletedDescTime must beEmpty
       page.body_!.editsAppliedDescTime must beEmpty
@@ -295,7 +295,7 @@ class PagePartsTest extends Specification with PageTestValues {
           edit.creationDati must_== editSkeleton.ctime
           edit.applicationDati must_== None
           edit.revertionDati must_== None
-          edit.deletionDati must_== None
+          edit.deletedAt must_== None
           edit.isPending must_== true
           edit.isApplied must_== false
           edit.isReverted must_== false
@@ -307,8 +307,8 @@ class PagePartsTest extends Specification with PageTestValues {
     "have a body, with an edit, deleted" >> {
       val page = EmptyPage + bodySkeletonAutoApproved +
          editSkeleton + deletionOfEdit
-      page.body_!.text must_== textInitially
-      page.body_!.modificationDati must_== page.body_!.creationDati
+      page.body_!.currentText must_== textInitially
+      page.body_!.textLastEditedAt must_== page.body_!.creationDati
 
       page.body_!.editsPendingDescTime must beEmpty
       page.body_!.editsAppliedDescTime must beEmpty
@@ -318,7 +318,7 @@ class PagePartsTest extends Specification with PageTestValues {
           edit.id must_== editSkeleton.id
           edit.applicationDati must_== None
           edit.revertionDati must_== None
-          edit.deletionDati must_== Some(deletionOfEdit.ctime)
+          edit.deletedAt must_== Some(deletionOfEdit.ctime)
           edit.isPending must_== false
           edit.isApplied must_== false
           edit.isReverted must_== false
@@ -341,7 +341,7 @@ class PagePartsTest extends Specification with PageTestValues {
         val PageWithEditApplied(page, edit, editApplDati) =
            makePageWithEditApplied(autoApplied)
 
-        page.body_!.text must_== textAfterFirstEdit
+        page.body_!.currentText must_== textAfterFirstEdit
         page.body_!.textLastEditedAt must_== editApplDati
 
         page.body_!.editsPendingDescTime must beEmpty
@@ -352,7 +352,7 @@ class PagePartsTest extends Specification with PageTestValues {
             edit.id must_== editSkeleton.id
             edit.applicationDati must_== Some(editApplDati)
             edit.revertionDati must_== None
-            edit.deletionDati must_== None
+            edit.deletedAt must_== None
             edit.isPending must_== false
             edit.isApplied must_== true
             edit.isReverted must_== false
@@ -384,8 +384,8 @@ class PagePartsTest extends Specification with PageTestValues {
              (pageNotReverted + deletionOfEditApp, deletionOfEditApp.ctime)
 
         val body = page.body_!
-        body.text must_== textInitially
-        body.modificationDati must_== revertionDati
+        body.currentText must_== textInitially
+        body.textLastEditedOrRevertedAt must_== revertionDati
 
         // If `autoApplied` the Edit is deleted, otherwise it's pending again.
         if (autoApplied) body.editsPendingDescTime must beEmpty
@@ -402,7 +402,7 @@ class PagePartsTest extends Specification with PageTestValues {
             edit.id must_== editSkeleton.id
             edit.applicationDati must_== None
             edit.revertionDati must_== Some(revertionDati)
-            edit.deletionDati must_==
+            edit.deletedAt must_==
                (if (autoApplied) Some(revertionDati) else None)
             edit.isPending must_== !autoApplied
             edit.isApplied must_== false
@@ -415,14 +415,14 @@ class PagePartsTest extends Specification with PageTestValues {
         val PageWithEditApplied(pageNotReverted, _, _) =
               makePageWithEditApplied(autoApplied = false)
         val deletionAfterRevertion = deletionOfEdit.copy(
-              ctime = new ju.Date(deletionOfEditApp.ctime.getTime + 1))
+          creationDati = new ju.Date(deletionOfEditApp.ctime.getTime + 1))
         val page = pageNotReverted + deletionOfEditApp + deletionAfterRevertion
 
         val body = page.body_!
-        body.text must_== textInitially
+        body.currentText must_== textInitially
         // When the edit itself was deleted doesn't matter, only when it
         // was reverted.
-        body.modificationDati must_== deletionOfEditApp.ctime
+        body.textLastEditedOrRevertedAt must_== deletionOfEditApp.ctime
 
         body.editsPendingDescTime must beEmpty
         body.editsAppliedDescTime must beEmpty
@@ -434,7 +434,7 @@ class PagePartsTest extends Specification with PageTestValues {
             edit.id must_== editSkeleton.id
             edit.applicationDati must_== None
             edit.revertionDati must_== Some(deletionOfEditApp.ctime)
-            edit.deletionDati must_== Some(deletionAfterRevertion.ctime)
+            edit.deletedAt must_== Some(deletionAfterRevertion.ctime)
             edit.isPending must_== false
             edit.isApplied must_== false
             edit.isReverted must_== true
@@ -459,7 +459,7 @@ class PagePartsTest extends Specification with PageTestValues {
         page.body_!.lastReviewDati must_== Some(page.body_!.creationDati)
         page.body_!.lastApprovalDati must_== Some(page.body_!.creationDati)
         page.body_!.lastManualApprovalDati must_== None
-        page.body_!.text must_== textAfterFirstEdit
+        page.body_!.currentText must_== textAfterFirstEdit
         testEditLists(page.body_!)
       }
 
@@ -522,7 +522,7 @@ class PagePartsTest extends Specification with PageTestValues {
         body.lastReviewDati must_== Some(rejectionOfEditApp.ctime)
         body.lastApprovalDati must_== Some(page.body_!.creationDati)
         body.lastManualApprovalDati must_== None
-        body.text must_== textAfterFirstEdit
+        body.currentText must_== textAfterFirstEdit
         testEditLists(body)
       }
 
@@ -563,7 +563,7 @@ class PagePartsTest extends Specification with PageTestValues {
         post.lastReviewDati must_== Some(approvalDati)
         post.lastApprovalDati must_== Some(approvalDati)
         post.lastManualApprovalDati must_== manualApprovalDati
-        post.text must_== textAfterFirstEdit
+        post.currentText must_== textAfterFirstEdit
         testEditLists(post)
       }
     }
