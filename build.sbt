@@ -13,7 +13,9 @@ libraryDependencies ++= Seq(
   "commons-codec" % "commons-codec" % "1.5",
   "nu.validator.htmlparser" % "htmlparser" % "1.2.1",
   "junit" % "junit" % "4.7" % "test",
-  "org.specs2" %% "specs2" % "1.14" % "test"
+  "org.specs2" %% "specs2" % "1.14" % "test",
+  "org.scalatest" % "scalatest_2.10" % "2.0.M5b" % "test",
+  "org.scala-lang" % "scala-actors" % "2.10.1" % "test" // needed by ScalaTest?
 )
 
 scalacOptions += "-deprecation"
