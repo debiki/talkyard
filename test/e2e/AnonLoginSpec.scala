@@ -297,7 +297,7 @@ class AnonLoginSpec extends DebikiBrowserSpec {
   }
 
 
-  def articleReplyLink = cssSelector(".dw-hor-a > .dw-a-reply")
+  def articleReplyLink = cssSelector(".dw-p-as-hz > .dw-a-reply")
   def loginLink = "dw-a-login"
   def logoutLink = "dw-a-logout"
   def logoutSubmit = "dw-f-lgo-submit"
