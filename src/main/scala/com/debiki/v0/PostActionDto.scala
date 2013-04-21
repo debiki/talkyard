@@ -169,8 +169,8 @@ object PostActionDto {
         postIdToDelete: String,
         loginId: String,
         userId: String,
-        newIp: Option[String],
-        createdAt: ju.Date) =
+        createdAt: ju.Date,
+        newIp: Option[String] = None) =
     PostActionDto(
       id, creationDati = createdAt, postId = postIdToDelete,
       loginId = loginId, userId = userId, newIp = newIp,
