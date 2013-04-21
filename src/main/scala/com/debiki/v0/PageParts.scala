@@ -503,12 +503,12 @@ case class PageParts (
 
   def getPatch_!(editId: String): Patch =
     getPatch(editId).getOrElse(assErr(
-      "DwE03kE1", s"Edit id `$editId' not found on page `$id'"))
+      "DwE03kE1", s"Edit id `$editId' not found on page `$pageId'"))
 
-  def getPatch(editId: String): Option[Patch] = getActionById(id) match {
+  def getPatch(editId: String): Option[Patch] = getActionById(editId) match {
     case p @ Some(_: Patch) => p.asInstanceOf[Option[Patch]]
     case None => None
-    case x => runErr("DwE0GK43", s"Action `$id' is not a Patch but a: ${classNameOf(x)}")
+    case x => runErr("DwE0GK43", s"Action `$editId' is not a Patch but a: ${classNameOf(x)}")
   }
 
   def editAppsByEdit(id: String) = _editAppsByEditId.getOrElse(id, Nil)
