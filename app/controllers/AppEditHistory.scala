@@ -97,7 +97,7 @@ object AppEditHistory extends mvc.Controller {
           editApp.editId
       }
 
-      val editAffected = page.editsById.get(editId) getOrElse
+      val editAffected = page.getPatch(editId) getOrElse
         throwForbidden("DwE03k23", "Edit not found: "+ safed(editId))
 
       val postAffected = page.getPost(editAffected.postId) getOrElse

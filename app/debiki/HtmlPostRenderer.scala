@@ -106,11 +106,12 @@ object HtmlPostRenderer {
 
 
   def renderDeletedComment(post: Post, wholeTree: Boolean = false): RenderedPost = {
-    val page = post.debate
-    val deletion = post.postDeletion.get
+    val deleterUserId =
+      if (wholeTree) post.treeDeleterUserId.get
+      else post.postDeleterUserId.get
     // COULD add itemscope and itemtype attrs, http://schema.org/Comment
     val byWhom =
-      if (post.userId == deletion.userId) "comment author"
+      if (post.userId == deleterUserId) "comment author"
       else "a moderator"
     val (topFlags, _) = renderFlags(post)
     val html =

@@ -115,10 +115,10 @@ object Application extends mvc.Controller {
     if (!pageReq.permsOnPage.deleteAnyReply)
       throwForbidden("DwE0523k1250", "You may not delete that comment")
 
-    val deletion = Delete(
-      id = "?", postId = postId, loginId = pageReq.loginId_!,
+    val deletion = PostActionDto.toDeletePost(andReplies = wholeTree,
+      id = "?", postIdToDelete = postId, loginId = pageReq.loginId_!,
       userId = pageReq.user_!.id, newIp = pageReq.newIp,
-      ctime = pageReq.ctime, wholeTree = wholeTree, reason = reason)
+      createdAt = pageReq.ctime)
 
     pageReq.dao.savePageActionsGenNotfs(pageReq, deletion::Nil)
 

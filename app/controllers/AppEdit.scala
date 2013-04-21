@@ -236,18 +236,12 @@ object AppEdit extends mvc.Controller {
 
         // COULD call _saveEdits once per page instead of once
         // per action per page.
-        val editAndLazyPost: List[PostActionDtoOld] =
-          _saveEdits(pageRequest, postId = postId, newText = newText,
-          newMarkupOpt = newMarkupOpt, anyNewPageApproval)
-
-        if (editAndLazyPost.isEmpty) {
-          // No changes made. (newText is the current text.)
-        }
-        else {
-          val edit = editAndLazyPost.find(_.isInstanceOf[Edit]).getOrElse(
-             assErr("DwE9kH3")).asInstanceOf[Edit]
-          actions :::= editAndLazyPost
-          idsOfEditedPosts ::= edit.id
+        _saveEdits(pageRequest, postId = postId, newText = newText,
+            newMarkupOpt = newMarkupOpt, anyNewPageApproval) match {
+          case None => // No changes made. (newText is the current text.)
+          case Some((anyLazilyCreatedPost: Option[_], edit)) =>
+            actions :::= anyLazilyCreatedPost.toList ::: edit :: Nil
+            idsOfEditedPosts ::= edit.id
         }
       }
 
@@ -299,10 +293,14 @@ object AppEdit extends mvc.Controller {
   }
 
 
+  /** Saves an edit in the database.
+    * Returns 1) any lazily created post, and 2) the edit that was saved.
+    * Returns None if no changes was made (if old text == new text).
+    */
   private def _saveEdits(pageReq: PageRequest[_],
         postId: String, newText: String, newMarkupOpt: Option[String],
         anyNewPageApproval: Option[Approval])
-        : List[PostActionDtoOld] = {
+        : Option[(Option[PostActionDtoOld], PostActionDtoOld)] = {
 
     val (post, lazyCreateOpt) =
       _getOrCreatePostToEdit(
@@ -310,7 +308,7 @@ object AppEdit extends mvc.Controller {
     val markupChanged =
       newMarkupOpt.isDefined && newMarkupOpt != Some(post.markup)
     if (newText == post.currentText && !markupChanged)
-      return Nil  // need do nothing
+      return None  // need do nothing
 
     // Don't allow any kind of html in replies.
     //if (markupChanged && pid != Page.BodyId && !Markup.isPlain(newMarkup))
@@ -328,16 +326,20 @@ object AppEdit extends mvc.Controller {
         else None
       })
 
-    var edit = Edit(
+    var edit = PostActionDto.toEditPost(
       id = "?x", postId = post.id, ctime = pageReq.ctime,
       loginId = pageReq.loginId_!, userId = pageReq.user_!.id, newIp = pageReq.newIp,
       text = patchText, newMarkup = newMarkupOpt,
       approval = approval, autoApplied = mayEdit)
 
     var actions = lazyCreateOpt.toList ::: edit :: Nil
-
     val (_, actionsWithIds) = pageReq.dao.savePageActionsGenNotfs(pageReq, actions)
-    actionsWithIds.toList
+
+    val anyLazyCreate = lazyCreateOpt.map(_ => actionsWithIds.head)
+    assert(anyLazyCreate.isDefined == (actionsWithIds.size == 2))
+    assert(anyLazyCreate.isEmpty == (actionsWithIds.size == 1))
+
+    Some((anyLazyCreate, actionsWithIds.last))
   }
 
 
