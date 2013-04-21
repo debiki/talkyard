@@ -960,7 +960,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
       "edit the post" in {
         // Make edit actions
         val patchText = makePatch(from = post.payload.text, to = newText)
-        val editNoId = Edit(
+        val editNoId = PostActionDto.toEditPost(
           id = "?x", postId = post.id, ctime = now, loginId = loginId,
           userId = globalUserId,
           newIp = None, text = patchText, newMarkup = None,
@@ -971,7 +971,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
           approval = None)
 
         // Save
-        val List(edit: Edit, publ: EditApp) =
+        val List(edit: PostActionDto[PAP.EditPost], publ: EditApp) =
           dao.savePageActions(testPage, List(editNoId, publNoId))._2
 
         exEdit_editId = edit.id
@@ -988,7 +988,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
 
       "change the markup type" in {
         // Make edit actions
-        val editNoId = Edit(
+        val editNoId = PostActionDto.toEditPost(
           id = "?x", postId = post.id, ctime = now, loginId = loginId,
           userId = globalUserId, newIp = None, text = "", newMarkup = Some("html"),
           approval = None, autoApplied = false)
@@ -998,7 +998,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
           approval = None)
 
         // Save
-        val List(edit: Edit, publ: EditApp) =
+        val List(edit: PostActionDto[PAP.EditPost], publ: EditApp) =
           dao.savePageActions(testPage, List(editNoId, publNoId))._2
 
         // Verify markup type changed
