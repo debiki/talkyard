@@ -4,6 +4,23 @@ Truly anonymous:
 Hosting:  Pay anonymously via Bitcoin.
 Surfing:  Use e.g. the Tor Network or mullvad.net, or combine them both.
 
+{{{ Old thoughts about actions and votes. (Old bad names? I'll simply use...
+VoteUp and VoteDown instead?, and a generic db column: IS_SUGGESTION, if an
+admin wants to make a suggestion?)
+
+// COULD make a Deletion class, and a DelApp (deletion application) class.
+// Then sometimes e.g. 3 people must delete a post for it to really
+// be deleted. Perhaps DelSug = deletion suggestion?
+// And rename Edit to EditSug?
+// EditSug & EditApp, + DelSug & DelApp - or join these 4 classes to 2 generic?
+// What about Flag and FlagApp? Eventually if flagged as spam e.g. 2 times
+// then the post would be automatically hidden?
+// What about only one ActionApp class, that applies the relevant action?
+// But then e.g. EditApp.result (resulting text) would be gone!?
+// And DelApp.wholeTree ... and FlagApp.reason + details.
+// Perhaps better have many small specialized classes.
+
+}}}
 
 {{{1 Test html - IE 6, 7, 8, and dw- classes/ids, and XSS
 
