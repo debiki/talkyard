@@ -177,15 +177,22 @@ function configureAjaxRequests() {
       return response;
     },
     complete: function() {
-      // Refresh <form> xsrf tokens, in case the server set a new cookie
-      // (that happens e.g. if I change certain server side XSRF code, or
-      // perhaps I'll some day decide that XSRF tokens will be valid for
-      // one month only).
-      var token = $.cookie('XSRF-TOKEN');
-      $('input.dw-fi-xsrf').attr('value', token);
+      // Refresh <form> xsrf tokens, in case the server set a new cookie.
+      // (That happens if the user logs in, or if I change certain server
+      // side XSRF code, or perhaps I'll some day decide that XSRF tokens
+      /// will be valid for one month only.)
+      d.i.refreshFormXsrfTokens();
     }
   });
 };
+
+
+
+d.i.refreshFormXsrfTokens = function() {
+  var token = $.cookie('XSRF-TOKEN');
+  $('input.dw-fi-xsrf').attr('value', token);
+};
+
 
 
 /**
