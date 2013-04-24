@@ -27,7 +27,8 @@ class AdminDashboardRunner extends org.scalatest.Suites(
  * Tests the admin ashboard, /-/admin/.
  */
 @DoNotDiscover
-abstract class AdminDashboardSpec extends DebikiBrowserSpec {
+abstract class AdminDashboardSpec extends DebikiBrowserSpec
+  with TestSiteCreator with TestEditor {
 
   val EditedHomepageTitle = "Edited Homepage Title"
   val EditedHomepageBody = "Edited homepage body."

@@ -22,7 +22,7 @@ with ChromeSuiteMixin
  * Tests creation of new forum topics.
  */
 @DoNotDiscover
-abstract class ForumSpec extends DebikiBrowserSpec {
+abstract class ForumSpec extends DebikiBrowserSpec with TestEditor {
 
   var forumWindow: WindowTarget = null
 

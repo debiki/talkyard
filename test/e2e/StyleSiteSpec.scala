@@ -29,7 +29,8 @@ class StyleSiteSpecRunner extends org.scalatest.Suites(
  * no stale stuff in any cache.
  */
 @DoNotDiscover
-abstract class StyleSiteSpecSpec extends DebikiBrowserSpec {
+abstract class StyleSiteSpecSpec extends DebikiBrowserSpec
+  with TestSiteCreator with TestEditor {
 
 
   val NextBackgroundColor = "rgba(0, 0, 255, 1)" // green

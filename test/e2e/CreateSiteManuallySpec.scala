@@ -33,7 +33,7 @@ class CreateSiteManuallySpecRunner extends Suites(
  * (See clickLoginWithGmailOpenId() in StuffTestClicker.)
  */
 @DoNotDiscover
-class CreateSiteManuallySpec extends DebikiBrowserSpec {
+class CreateSiteManuallySpec extends DebikiBrowserSpec with TestSiteCreator {
 
   "A human can" - {
 
@@ -67,7 +67,7 @@ with ChromeSuiteMixin
  * test build a website. It's deleted later automatically.
  */
 @DoNotDiscover
-class BuildSiteManuallySpec extends DebikiBrowserSpec {
+class BuildSiteManuallySpec extends DebikiBrowserSpec with TestSiteCreator {
 
   val siteName = nextSiteName()
 
@@ -110,7 +110,7 @@ class ContinueManualTestsRunner extends Suites(new ContinueManualTests {})
  * in previous test runs.
  */
 @DoNotDiscover
-class ContinueManualTests extends DebikiBrowserSpec {
+class ContinueManualTests extends DebikiBrowserSpec with TestSiteCreator {
 
   "A browser can go to the dashboard of test-site-1" in {
     go to (originOf(nextSiteName()) + "/-/admin/")

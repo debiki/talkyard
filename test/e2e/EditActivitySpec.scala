@@ -22,7 +22,8 @@ with ChromeSuiteMixin
   * admin dashboard activity list.
   */
 @DoNotDiscover
-class EditActivitySpec extends DebikiBrowserSpec with TestReplyer with TestLoginner {
+class EditActivitySpec extends DebikiBrowserSpec
+  with TestReplyer with TestLoginner with TestEditor {
 
   lazy val testPageUrl = createTestPage(PageRole.Generic,
     title = "Test Page Title 5902RK", body = Some("Test page text 10EIJ55."))

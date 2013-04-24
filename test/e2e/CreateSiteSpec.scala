@@ -29,7 +29,7 @@ class CreateSiteSpecRunner extends org.scalatest.Suites(
  * test-site and test-site-2.
  */
 @DoNotDiscover
-abstract class CreateSiteSpec extends DebikiBrowserSpec {
+abstract class CreateSiteSpec extends DebikiBrowserSpec with TestSiteCreator {
 
   val firstSiteName = nextSiteName()
   val secondSiteName = nextSiteName()

@@ -14,6 +14,7 @@ trait TestLoginner {
   self: DebikiBrowserSpec with StuffTestClicker =>
 
 
+  private var firstGmailLogin = true
   val GmailUserEmail = "debiki.tester@gmail.com"
 
 
@@ -44,6 +45,36 @@ trait TestLoginner {
   def loginAsAdmin() {
     // For now, the admin and the gmail user are one and the same.
     loginAsGmailUser()
+  }
+
+
+  def fillInGoogleCredentials(approvePermissions: Boolean = true) {
+    if (firstGmailLogin) {
+      firstGmailLogin = false
+      // 1. I've created a dedicated Gmail OpenID test account, see below.
+      // 2. `enter(email)` throws: """Currently selected element is neither
+      // a text field nor a text area""", in org.scalatest.selenium.WebBrowser,
+      // so use `pressKeys` instead.
+      eventually {
+        click on "Email"
+      }
+      pressKeys("debiki.tester@gmail.com")
+      click on "Passwd"
+      pressKeys("ZKFIREK90krI38bk3WK1r0")
+      click on "signIn"
+    }
+
+    // Now Google should show another page, which ask about permissions.
+    // Uncheck a certain remember choices checkbox, or this page won't be shown
+    // next time (and then we cannot choose to deny access).
+    eventually {
+      click on "remember_choices_checkbox"
+    }
+
+    if (approvePermissions)
+      click on "approve_button"
+    else
+      click on "reject_button"
   }
 
 
