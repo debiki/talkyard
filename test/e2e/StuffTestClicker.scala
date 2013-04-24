@@ -9,6 +9,7 @@ import org.openqa.selenium.interactions.Actions
 import com.debiki.v0.PageRole
 import play.api.test.Helpers.testServerPort
 import com.debiki.v0.Prelude._
+import org.scalatest.time.{Seconds, Span}
 
 
 /**
@@ -77,14 +78,20 @@ trait StuffTestClicker {
 
   def clickLoginWithGmailOpenId(approvePermissions: Boolean = true) {
     click on cssSelector("a.login-link-google")
+    fillInGoogleCredentials(approvePermissions)
+  }
 
+
+  def fillInGoogleCredentials(approvePermissions: Boolean = true) {
     if (firstGmailLogin) {
       firstGmailLogin = false
       // 1. I've created a dedicated Gmail OpenID test account, see below.
       // 2. `enter(email)` throws: """Currently selected element is neither
       // a text field nor a text area""", in org.scalatest.selenium.WebBrowser,
       // so use `pressKeys` instead.
-      click on "Email"
+      eventually {
+        click on "Email"
+      }
       pressKeys("debiki.tester@gmail.com")
       click on "Passwd"
       pressKeys("ZKFIREK90krI38bk3WK1r0")
@@ -94,7 +101,9 @@ trait StuffTestClicker {
     // Now Google should show another page, which ask about permissions.
     // Uncheck a certain remember choices checkbox, or this page won't be shown
     // next time (and then we cannot choose to deny access).
-    click on "remember_choices_checkbox"
+    eventually {
+      click on "remember_choices_checkbox"
+    }
 
     if (approvePermissions)
       click on "approve_button"
@@ -307,6 +316,17 @@ trait StuffTestClicker {
   }
 
 
+  def gotoDiscussionPage(pageUrl: String) {
+    go to (new Page { val url = pageUrl })
+    // Consider the page loaded when login/out links appear.
+    eventually(Timeout(Span(10, Seconds))) {
+      val loginLinkWebElem = find(loginLink)
+      val logoutinkWebElem = find(logoutLink)
+      assert(loginLinkWebElem.isDefined || logoutinkWebElem.isDefined)
+    }
+  }
+
+
   def clickReturnToParentForum() {
     val hadDashbar = isDashbarVisible
     click on cssSelector(".parent-forums-list > li:last-child a")
@@ -329,6 +349,7 @@ trait StuffTestClicker {
     }
   }
 
+
   def originOf(newSiteName: String) =
     s"http://$newSiteName.localhost:$testServerPort"
 
@@ -350,5 +371,33 @@ trait StuffTestClicker {
     find(cssSelector(".debiki-dashbar-logo")) != None
   }
 
+
+  def scrollIntoView(obj: Any) {
+    val webElem = obj match {
+      case Some(elem: Element) => elem.underlying
+      case elem: Element => elem.underlying
+      case underlyingWebElem: org.openqa.selenium.WebElement => underlyingWebElem
+      case query: Query => query.findElement.map(_.underlying) getOrElse fail()
+      case id: String => find(id).map(_.underlying) getOrElse fail()
+      case x: Any => fail(s"Don't know how to scroll a ${classNameOf(x)} into view")
+    }
+    (new Actions(webDriver)).moveToElement(webElem).perform()
+  }
+
+
+  def findActionLink(postId: String, actionLinkClass: String) = {
+    // Is there no other way to find $postId's parent element, than using this
+    // totally terrible XPath expression? (Note that o""" collapses the two lines
+    // to One line with no space inbetween.)
+    val query = o"""//div[@id='post-$postId']/../
+      div[@class='dw-p-as dw-as']/a[@class='dw-a $actionLinkClass']"""
+    val link = find(xpath(query)) getOrDie s"No $actionLinkClass link found for post $postId"
+    link
+  }
+
+
+  private def loginLink = "dw-a-login"
+  private def logoutLink = "dw-a-logout"
+  private def logoutSubmit = "dw-f-lgo-submit"
 }
 

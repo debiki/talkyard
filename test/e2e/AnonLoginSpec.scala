@@ -25,23 +25,16 @@ with ChromeSuiteMixin
  * and 3) via the "Log in" link,
  */
 @DoNotDiscover
-class AnonLoginSpec extends DebikiBrowserSpec {
+class AnonLoginSpec extends DebikiBrowserSpec with TestReplyer with TestLoginner {
 
-  lazy val testPage = new Page {
-    val url = createTestPage(PageRole.Generic,
+  lazy val testPageUrl = createTestPage(PageRole.Generic,
       title = "Test Page Title 27KV09", body = Some("Test page text 953Ih31."))
-  }
+
 
   "Anon user with a browser can" - {
 
     "open a test page" in {
-      go to testPage
-      // Consider the page loaded when login/out links appear.
-      eventually(Timeout(Span(10, Seconds))) {
-        val loginLinkWebElem = find(loginLink)
-        val logoutinkWebElem = find(logoutLink)
-        assert(loginLinkWebElem.isDefined || logoutinkWebElem.isDefined)
-      }
+      gotoDiscussionPage(testPageUrl)
     }
 
     "login and reply as new Anon User, specify no email" - {
@@ -100,8 +93,6 @@ class AnonLoginSpec extends DebikiBrowserSpec {
 
   private def nextName() = s"Anon-${nextRandomString()}"
 
-  private var replyFormSno = 0
-
 
   private def loginAndReplyAsAnon(
         name: String,
@@ -116,29 +107,19 @@ class AnonLoginSpec extends DebikiBrowserSpec {
     }
 
     "click Reply" in {
-      eventually {
-        click on articleReplyLink
-      }
+      clickArticleReplyLink()
     }
 
     "write a reply" in {
-      replyFormSno += 1
-      val textAreaId = s"dw-fi-reply-text_sno-$replyFormSno"
-      eventually {
-        click on textAreaId
-        enter(testText)
-        textArea(textAreaId).value must be === testText
-      }
+      writeReply(testText)
     }
 
     "click Post as ..." in {
-      eventually {
-        click on cssSelector(".dw-fi-submit")
-      }
+      clickPostReply()
     }
 
     "login and submit" in {
-      loginAndSubmitReply(name, email, waitWithEmail, waitWithEmailThenCancel)
+      submitGuestLoginAnswerEmailQuestion(name, email, waitWithEmail, waitWithEmailThenCancel)
     }
 
     "view her new reply" in {
@@ -192,7 +173,7 @@ class AnonLoginSpec extends DebikiBrowserSpec {
     }
 
     "login and submit" in {
-      loginAndSubmitRating(name, email)
+      submitGuestLoginNoEmailQuestion(name, email)
     }
 
     "view her new rating" in {
@@ -209,98 +190,6 @@ class AnonLoginSpec extends DebikiBrowserSpec {
     }
   }
 
-
-  def loginAndSubmitRating(name: String, email: String = "") {
-    eventually { click on "dw-fi-lgi-name" }
-    enter(name)
-    if (email.nonEmpty) {
-      click on "dw-fi-lgi-email"
-      enter(email)
-    }
-    click on "dw-f-lgi-spl-submit"
-    eventually { click on "dw-dlg-rsp-ok" }
-  }
-
-
-  def loginAndSubmitReply(
-        name: String,
-        email: String = "",
-        waitWithEmail: Boolean = false,
-        waitWithEmailThenCancel: Boolean = false) {
-
-    // The flow is similar to when we submit a rating, except that
-    // after we've logged in, we're asked about email notifications
-    // (since we actually submitted text, and we might be interested
-    // in replies, even if we didn't care to specify any email earlier
-    // in the original dialog).
-    loginAndSubmitRating(
-      name, if (waitWithEmail) "" else email)
-
-    def noEmailBtn = cssSelector("label[for='dw-fi-eml-prf-rcv-no']")
-    def yesEmailBtn = cssSelector("label[for='dw-fi-eml-prf-rcv-yes']")
-    def submitBtn = "dw-fi-eml-prf-done"
-
-    if (waitWithEmail) {
-      eventually { click on yesEmailBtn }
-      if (waitWithEmailThenCancel) {
-        click on noEmailBtn
-      }
-      else {
-        click on "dw-fi-eml-prf-adr"
-        enter(email)
-        click on submitBtn
-      }
-    }
-    else if (email.nonEmpty) {
-      eventually { click on yesEmailBtn }
-    }
-    else {
-      eventually { click on noEmailBtn }
-    }
-  }
-
-
-  def logoutIfLoggedIn() {
-    logout(mustBeLoggedIn = false)
-  }
-
-
-  def logout(mustBeLoggedIn: Boolean = true) {
-    def isLoggedIn = find(logoutLink).map(_.isDisplayed) == Some(true)
-    if (isLoggedIn) {
-      eventually {
-        scrollIntoView(logoutLink)
-        click on logoutLink
-        //scrollIntoView(logoutSubmit)
-        click on logoutSubmit
-      }
-      eventually {
-        isLoggedIn must be === false
-      }
-    }
-    else if (mustBeLoggedIn) {
-      fail("Not logged in; must be logged in")
-    }
-  }
-
-
-  def scrollIntoView(obj: Any) {
-    val webElem = obj match {
-      case Some(elem: Element) => elem.underlying
-      case elem: Element => elem.underlying
-      case underlyingWebElem: org.openqa.selenium.WebElement => underlyingWebElem
-      case query: Query => query.findElement.map(_.underlying) getOrElse fail()
-      case id: String => find(id).map(_.underlying) getOrElse fail()
-      case x: Any => fail(s"Don't know how to scroll a ${classNameOf(x)} into view")
-    }
-    (new Actions(webDriver)).moveToElement(webElem).perform()
-  }
-
-
-  def articleReplyLink = cssSelector(".dw-p-as-hz > .dw-a-reply")
-  def loginLink = "dw-a-login"
-  def logoutLink = "dw-a-logout"
-  def logoutSubmit = "dw-f-lgo-submit"
 
   def visibleRateLink = cssSelector("#dw-p-as-shown .dw-a-rate")
   def anyRatingTag = cssSelector(".dw-r-tag-set > .ui-button > .ui-button-text")
