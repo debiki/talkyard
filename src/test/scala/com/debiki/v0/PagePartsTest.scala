@@ -7,7 +7,7 @@ package com.debiki.v0
 import org.specs2.mutable._
 import Prelude._
 import java.{util => ju}
-import PostActionDto.copyCreatePost
+import PostActionDto.{copyCreatePost, copyReviewPost}
 import com.debiki.v0.{PostActionPayload => PAP}
 
 
@@ -42,11 +42,11 @@ trait PageTestValues {
   val bodySkeletonPrelApproved =
     copyCreatePost(bodySkeleton, approval = Some(Approval.Preliminary))
 
-  val bodyApprovalSkeleton =
-    ReviewPostAction("11", postId = bodySkeleton.id, loginId = "111", userId = "?", newIp = None,
+  val bodyApprovalSkeleton = PostActionDto.toReviewPost(
+    "11", postId = bodySkeleton.id, loginId = "111", userId = "?", newIp = None,
         ctime = new ju.Date(11000), approval = Some(Approval.Manual))
 
-  val bodyRejectionSkeleton = bodyApprovalSkeleton.copy(approval = None)
+  val bodyRejectionSkeleton = copyReviewPost(bodyApprovalSkeleton, approval = None)
 
   val editSkeleton =
     PostActionDto.toEditPost(
@@ -70,11 +70,11 @@ trait PageTestValues {
         loginId = "115", userId = "?", newIp = None, creationDati = new ju.Date(15000),
         payload = PAP.Delete(editSkeleton.id))
 
-  val approvalOfEditApp = ReviewPostAction(id = "16", postId = editAppSkeleton.id,
+  val approvalOfEditApp = PostActionDto.toReviewPost(id = "16", postId = editAppSkeleton.id,
         loginId = "116", userId = "?", newIp = None, ctime = new ju.Date(16000),
         approval = Some(Approval.Manual))
 
-  val rejectionOfEditApp = approvalOfEditApp.copy(approval = None)
+  val rejectionOfEditApp = copyReviewPost(approvalOfEditApp, approval = None)
 
   val ratingOfBody = Rating("17", postId = bodySkeleton.id, loginId = "117", userId = "?",
     newIp = None, ctime = new ju.Date(17000), tags = Nil)

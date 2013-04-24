@@ -9,6 +9,7 @@ import collection.{immutable => imm, mutable => mut}
 import Prelude._
 import PageParts._
 import com.debiki.v0.{PostActionPayload => PAP}
+import com.debiki.v0.PostActionPayload.EditPost
 
 
 object PageParts {
@@ -72,7 +73,6 @@ object PageParts {
       case f: Flag => f.copy(id = remaps(f.id), postId = rmpd(f.postId))
       case a: EditApp => a.copy(id = remaps(a.id), editId = rmpd(a.editId),
         postId = rmpd(a.postId))
-      case r: ReviewPostAction => r.copy(id = remaps(r.id), postId = rmpd(r.postId))
       case a: PostActionDto[_] =>
         val rmpdPaylad = a.payload match {
           case c: PAP.CreatePost => c.copy(parentPostId = rmpd(c.parentPostId))
@@ -190,6 +190,8 @@ abstract class PostActionsWrapper { self: PageParts =>
       val action = actionDto.payload match {
         case _: PAP.CreatePost => new Post(self, actionAs[PAP.CreatePost])
         case _: PAP.EditPost => new Patch(self, actionAs[PAP.EditPost])
+        //case _: PAP.ApplyEdit => new ApplyPatchAction(self, actionAs[PAP.PAP.ApplyEdit])
+        case _: PAP.ReviewPost => new Review(self, actionAs[PAP.ReviewPost])
         case _ => new PostAction(self, actionDto)
       }
       addAction(action)
@@ -215,9 +217,15 @@ abstract class PostActionsWrapper { self: PageParts =>
       }
 
       action.payload match {
+        case _: PAP.CreatePost => // doesn't affect any post; creates a new one
+        case _: PAP.EditPost => addActionByTargetId(action.postId)
+        case _: PAP.ReviewPost => addActionByTargetId(action.postId)
+        case PAP.CollapsePost => addActionByTargetId(action.postId)
+        case PAP.CollapseTree => addActionByTargetId(action.postId)
+        case PAP.DeletePost => addActionByTargetId(action.postId)
+        case PAP.DeleteTree => addActionByTargetId(action.postId)
         case PAP.Undo(targetActionId) => addActionByTargetId(targetActionId)
         case PAP.Delete(targetActionId) => addActionByTargetId(targetActionId)
-        case _ =>
       }
     }
 
@@ -246,7 +254,6 @@ case class PageParts (
   ratings: List[Rating] = Nil,
   editApps: List[EditApp] = Nil,
   flags: List[Flag] = Nil,
-  reviews: List[ReviewPostAction] = Nil,
   postStates: List[PostState] = Nil,
   actionDtos: List[PostActionDto[_]] = Nil) extends PostActionsWrapper {
 
@@ -544,22 +551,13 @@ case class PageParts (
     imm.Map[String, Flag](flags.map(x => (x.id, x)): _*)
 
 
-  // -------- Reviews (i.e. approvals and rejections)
+  // -------- Reviews (manual approvals and rejections, no auto approvals)
 
-  private lazy val reviewsById: imm.Map[String, ReviewPostAction] =
-    imm.Map[String, ReviewPostAction](reviews.map(x => (x.id, x)): _*)
-
-  private lazy val reviewsByTargetId: imm.Map[String, List[ReviewPostAction]] =
-    reviews.groupBy(_.postId)
-
-  def getReview(id: String): Option[Review] =
-    reviewsById.get(id) map (new Review(this, _))
-
-  def explicitReviewsOf(actionId: String): List[Review] =
-    reviewsByTargetId.getOrElse(actionId, Nil).map(new Review(this, _))
-
-  def explicitReviewsOf(action: PostActionDtoOld): List[Review] =
-    explicitReviewsOf(action.id)
+  def getReview(reviewId: String): Option[Review] = getActionById(reviewId) match {
+    case p @ Some(_: Review) => p.asInstanceOf[Option[Review]]
+    case None => None
+    case x => runErr("DwE0GK43", s"Action `$reviewId' is no Review but a: ${classNameOf(x)}")
+  }
 
 
   // -------- Construction
@@ -584,7 +582,6 @@ case class PageParts (
     var ratings2 = ratings
     var editApps2 = editApps
     var flags2 = flags
-    var reviews2 = reviews
     var actions2 = this.actionDtos
     type SthWithId = { def id: String }
     def dieIfIdClash(olds: Seq[SthWithId], a: SthWithId) =
@@ -604,9 +601,6 @@ case class PageParts (
       case f: Flag =>
         dieIfIdClash(flags2, f)
         flags2 ::= f
-      case r: ReviewPostAction =>
-        dieIfIdClash(reviews2, r)
-        reviews2 ::= r
       case a: PostActionDto[_] =>
         dieIfIdClash(actions2, a)
         actions2 ::= a
@@ -614,7 +608,7 @@ case class PageParts (
         "DwE8k3EC", "Unknown action type: "+ classNameOf(x))
     }
     PageParts(id, people, ratings2,
-        editApps2, flags2, reviews2, postStates, actions2)
+        editApps2, flags2, postStates, actions2)
   }
 
 
@@ -630,14 +624,12 @@ case class PageParts (
     val (ratingsBefore, ratingsAfter) = ratings partition happenedInTime
     val (editAppsBefore, editAppsAfter) = editApps partition happenedInTime
     val (flagsBefore, flagsAfter) = flags partition happenedInTime
-    val (reviewsBefore, reviewsAfter) = reviews partition happenedInTime
     val (actionsBefore, actionsAfter) = actionDtos partition happenedInTime
 
     val pageUpToAndInclDati = copy(
       ratings = ratingsBefore,
       editApps = editAppsBefore,
       flags = flagsBefore,
-      reviews = reviewsBefore,
       actionDtos = actionsBefore)
 
     pageUpToAndInclDati

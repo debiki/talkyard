@@ -70,9 +70,6 @@ case class Post(
     else None
 
 
-  override def actions: List[PostAction[_]] = page.getActionsByPostId(id)
-
-
    // This currently happens directly, hence + 0:
   def numDeletePostVotesPro = state.numDeletePostVotes.pro + 0
   def numDeletePostVotesCon = state.numDeletePostVotes.con + 0
@@ -307,7 +304,11 @@ case class Post(
     // An Edit.approval or EditApp.approval being empty, however,
     // means only that this Post has not yet been reviewed — so the Edit
     // or EditApp is simply ignored.)
-    var explicitReviews = page.explicitReviewsOf(id).sortBy(-_.creationDati.getTime)
+
+    val explicitReviewsDescTime =
+      actions.filter(_.isInstanceOf[Review]).sortBy(-_.creationDati.getTime).
+      asInstanceOf[List[PostActionOld with MaybeApproval]]
+
     var implicitApprovals = List[PostActionOld with MaybeApproval]()
     if (approval.isDefined)
       implicitApprovals ::= this
@@ -319,16 +320,12 @@ case class Post(
         // creating new objects here.
         if (editApp.approval.isDefined)
           implicitApprovals ::= new ApplyPatchAction(page, editApp)
-        for (editAppReview <- page.explicitReviewsOf(editApp)) {
-          explicitReviews ::= editAppReview
-        }
 
         // In the future, deletions (and any other actions?) should also
         // be considered:
         //for (deletion <- page.deletionsFor(editApp)) {
         //  if (deletion.approval.isDefined)
         //    implicitApprovals ::= deletion
-        //  ... check explicit reviews of `deletion`.
         //}
       }
 
@@ -336,14 +333,13 @@ case class Post(
       //for (deletion <- page.deletionsFor(edit)) {
       //  if (deletion.approval.isDefined)
       //    implicitApprovals ::= deletion
-      //  ... check explicit reviews of `deletion`.
       //}
     }
 
     // In the future, consider deletions of `this.action`?
     // for (deletion <- page.deletionsFor(action)) ...
 
-    val allReviews = explicitReviews ::: implicitApprovals
+    val allReviews = explicitReviewsDescTime ::: implicitApprovals
     allReviews.sortBy(- _.creationDati.getTime)
   }
 

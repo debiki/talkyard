@@ -153,7 +153,40 @@ object PostActionDto {
         approval = if (approval ne null) approval else old.payload.approval))
 
 
-  def forTemporaryApprovalOf(postAction: PostActionDto[_]) = ReviewPostAction(
+  def toReviewPost(
+        id: String,
+        postId: String,
+        loginId: String,
+        userId: String,
+        ctime: ju.Date,
+        newIp: Option[String] = None,
+        approval: Option[Approval]): PostActionDto[PAP.ReviewPost] =
+    PostActionDto(
+      id, creationDati = ctime, postId = postId,
+      loginId = loginId, userId = userId, newIp = newIp,
+      payload = PAP.ReviewPost(approval))
+
+
+  def copyReviewPost(
+        old: PostActionDto[PAP.ReviewPost],
+        id: String = null,
+        postId: String = null,
+        loginId: String = null,
+        userId: String = null,
+        createdAt: ju.Date = null,
+        newIp: Option[String] = null,
+        approval: Option[Approval] = null): PostActionDto[PAP.ReviewPost] =
+    PostActionDto(
+      id = if (id ne null) id else old.id,
+      creationDati = if (createdAt ne null) createdAt else old.creationDati,
+      postId = if (postId ne null) postId else old.postId,
+      loginId = if (loginId ne null) loginId else old.loginId,
+      userId = if (userId ne null) userId else old.userId,
+      newIp = if (newIp ne null) newIp else old.newIp,
+      payload = if (approval ne null) PAP.ReviewPost(approval) else old.payload)
+
+
+  def forTemporaryApprovalOf(postAction: PostActionDto[_]) = toReviewPost(
     id = nextRandomString(),
     postId = postAction.postId,
     loginId = SystemUser.Login.id,
@@ -240,6 +273,11 @@ object PostActionPayload {
     // moderator review.)
     require(approval.isEmpty || autoApplied)
   }
+
+
+  /** Approves and rejects comments and edits of the related post.
+    */
+  case class ReviewPost(approval: Option[Approval]) extends PostActionPayload
 
 
   class CollapseSomething extends PostActionPayload
@@ -449,20 +487,6 @@ case class EditApp(
 // But then e.g. EditApp.result (resulting text) would be gone!?
 // And DelApp.wholeTree ... and FlagApp.reason + details.
 // Perhaps better have many small specialized classes.
-
-
-/**
- * Approves or rejects e.g. comments and edits to `postId`.
- */
-case class ReviewPostAction(
-  id: String,
-  postId: String,
-  loginId: String,
-  userId: String,
-  newIp: Option[String],
-  ctime: ju.Date,
-  approval: Option[Approval]) extends PostActionDtoOld {
-}
 
 
 /**

@@ -107,10 +107,10 @@ class ApplyPatchAction(page: PageParts, val editApp: EditApp)
 
 
 
-class Review(page: PageParts, val review: ReviewPostAction)
-  extends PostActionOld(page, review) with MaybeApproval {
+class Review(page: PageParts, val review: PostActionDto[PAP.ReviewPost])
+  extends PostAction(page, review) with MaybeApproval {
 
-  def approval = review.approval
+  def approval = review.payload.approval
   lazy val target: Post = page.getPost(review.postId) getOrDie "DwE93UX7"
 
 }

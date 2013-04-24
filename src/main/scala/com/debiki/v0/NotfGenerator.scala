@@ -25,6 +25,8 @@ case class NotfGenerator(pageExclNewActions: PageParts, newActions: Seq[PostActi
           new Post(page, action.asInstanceOf[PostActionDto[PAP.CreatePost]]))
       case e: PAP.EditPost =>
         Nil  // fix later, see "Note:" below
+      case _: PAP.ReviewPost =>
+        _makeReviewNotfs(new Review(page, action.asInstanceOf[PostActionDto[PAP.ReviewPost]]))
       case _ =>
         Nil // skip for now
     }
@@ -35,8 +37,6 @@ case class NotfGenerator(pageExclNewActions: PageParts, newActions: Seq[PostActi
       Nil  // fix later, see note above
     case flag: Flag =>
       Nil  // fix later, see note above
-    case review: ReviewPostAction =>
-      _makeReviewNotfs(new Review(page, review))
     case _ =>
       Nil  // skip for now
   })
