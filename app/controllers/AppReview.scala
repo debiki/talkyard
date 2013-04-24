@@ -5,6 +5,7 @@
 package controllers
 
 import com.debiki.v0._
+import com.debiki.v0.{PostActionPayload => PAP}
 import debiki._
 import debiki.DebikiHttp._
 import java.{util => ju}
@@ -47,9 +48,9 @@ object AppReview extends mvc.Controller {
     // and e.g. new RuntimeException("String expected")
     // on invalid JSON structure. COULD in some way convert to 400 Bad Request
     // instead of failing with 500 Internal Server Error in Prod mode.
-    val reviewsByPageId: Map[String, List[ReviewPostAction]] =
+    val reviewsByPageId: Map[String, List[PostActionDto[PAP.ReviewPost]]] =
       Utils.parsePageActionIds(apiReq.body.as[List[Map[String, String]]]) { actionId =>
-        ReviewPostAction(
+        PostActionDto.toReviewPost(
           id = "?", postId = actionId, loginId = apiReq.loginId_!,
           userId = apiReq.user_!.id, newIp = None, ctime = apiReq.ctime,
           approval = (if (shallApprove) Some(Approval.Manual) else None))
