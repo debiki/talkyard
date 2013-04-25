@@ -1359,15 +1359,16 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
     }
 
     "configure email to a Role" in {
+      // Somewhat dupl code, see `def testAdmin` test helper.
       val userToConfig = exOpenId_loginGrant.user
       val login = exOpenId_loginGrant.login
       dao.configRole(loginId = login.id,
          ctime = new ju.Date, roleId = userToConfig.id,
-         emailNotfPrefs = EmailNotfPrefs.Receive)
+         emailNotfPrefs = Some(EmailNotfPrefs.Receive))
       val Some((idty, userConfigured)) =
          dao.loadIdtyAndUser(forLoginId = login.id)
       userConfigured.emailNotfPrefs must_== EmailNotfPrefs.Receive
-      emailEx_OpenIdUser = userConfigured  // remember, to other test casese
+      emailEx_OpenIdUser = userConfigured  // remember, to other test cases
       ok
     }
 
@@ -1641,13 +1642,38 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
         loginGrant.user.isAuthenticated must_== true
         dao.configRole(loginId = loginGrant.login.id,
           ctime = loginGrant.login.date, roleId = loginGrant.user.id,
-          emailNotfPrefs = EmailNotfPrefs.DontReceive)
+          emailNotfPrefs = Some(EmailNotfPrefs.DontReceive))
         // must throwNothing (how to test that?)
       }
 
       // COULD verify email prefs changed to DontReceive?
     }
 
+
+    // -------- Admins
+
+    "create and revoke admin privs" >> {
+
+      def testAdmin(makeAdmin: Boolean) = {
+        // Somewhat dupl code, see "configure email to a Role" test.
+        val userToConfig = exOpenId_loginGrant.user
+        val login = exOpenId_loginGrant.login
+        dao.configRole(loginId = login.id, ctime = new ju.Date, roleId = userToConfig.id,
+          isAdmin = Some(makeAdmin))
+        val Some((idty, userConfigured)) = dao.loadIdtyAndUser(forLoginId = login.id)
+        userConfigured.isAdmin must_== makeAdmin
+        emailEx_OpenIdUser = userConfigured  // remember, to other test cases
+        ok
+      }
+
+      "make a Role and aministrator" in {
+        testAdmin(true)
+      }
+
+      "change the Role back to a normal user" in {
+        testAdmin(false)
+      }
+    }
 
 
     // -------- Move a page
