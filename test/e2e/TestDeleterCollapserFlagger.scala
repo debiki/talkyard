@@ -25,7 +25,27 @@ trait TestDeleterCollapserFlagger {
 
 
   private def deleteCommentImpl(postId: String, wholeTree: Boolean) {
-    // Click delete link.
+    // Click More...; this makes the delete link appear.
+    val moreLink = findActionLink(postId, "dw-a-more")
+    scrollIntoView(moreLink)
+
+    // For whatever reasons, `mouse.moveMouse` and `Actions.moveToElement` doesn't
+    // trigger the hover event that makes the More... menu visible, so it can be
+    // clicked. Instead, fire the hover event "manually":
+    // (I'll break out a reusable function... later on.)
+    executeScript(i"""
+      jQuery('#post-$postId').parent().find('> .dw-p-as').trigger('mouseenter');
+      """)
+
+    // More details on how I failed to trigger the on hover event. This didn't work:
+    //   val mouse = (webDriver.asInstanceOf[HasInputDevices]).getMouse
+    //   val hoverItem: Locatable = moreLink.underlying.asInstanceOf[Locatable]
+    //   mouse.mouseMove(hoverItem.getCoordinates)
+    // Neither did this:
+    //   (new Actions(webDriver)).moveToElement(moreLink.underlying).perform()
+
+    click on moreLink
+
     val deleteLink = findActionLink(postId, "dw-a-delete")
     click on deleteLink
 
