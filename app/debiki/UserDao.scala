@@ -39,10 +39,10 @@ trait UserDao {
     tenantDbDao.loadPermsOnPage(reqInfo)
 
 
-  def configRole(loginId: String, ctime: ju.Date,
-        roleId: String, emailNotfPrefs: EmailNotfPrefs) =
+  def configRole(loginId: String, ctime: ju.Date, roleId: String,
+        emailNotfPrefs: Option[EmailNotfPrefs] = None, isAdmin: Option[Boolean] = None) =
     tenantDbDao.configRole(loginId = loginId, ctime = ctime,
-      roleId = roleId, emailNotfPrefs = emailNotfPrefs)
+      roleId = roleId, emailNotfPrefs = emailNotfPrefs, isAdmin = isAdmin)
 
 
   def configIdtySimple(loginId: String, ctime: ju.Date,
@@ -85,10 +85,10 @@ trait CachingUserDao extends UserDao {
       orCacheAndReturn = super.loadIdtyAndUser(forLoginId))
 
 
-  override def configRole(loginId: String, ctime: ju.Date,
-                 roleId: String, emailNotfPrefs: EmailNotfPrefs) {
+  override def configRole(loginId: String, ctime: ju.Date, roleId: String,
+        emailNotfPrefs: Option[EmailNotfPrefs], isAdmin: Option[Boolean]) {
     super.configRole(loginId = loginId, ctime = ctime,
-      roleId = roleId, emailNotfPrefs = emailNotfPrefs)
+      roleId = roleId, emailNotfPrefs = emailNotfPrefs, isAdmin = isAdmin)
     removeFromCache(key(loginId))
   }
 

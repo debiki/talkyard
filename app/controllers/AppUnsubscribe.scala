@@ -91,7 +91,7 @@ object AppUnsubscribe extends mvc.Controller {
     // Do it.
     if (user.isAuthenticated) {
       dao.configRole(loginId = login.id, ctime = login.date,
-         roleId = user.id, emailNotfPrefs = emailNotfPrefs)
+         roleId = user.id, emailNotfPrefs = Some(emailNotfPrefs))
     }
     else {
       val emailAddr = idtyEmailId.emailSent.get.sentTo

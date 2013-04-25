@@ -93,7 +93,7 @@ object AppConfigUser extends mvc.Controller {
 
         if (emailNotfPrefs != user.emailNotfPrefs) {
           pageReq.dao.configRole(loginId, pageReq.ctime,
-             user.id, emailNotfPrefs)
+             roleId = user.id, emailNotfPrefs = Some(emailNotfPrefs))
         }
       case Some(addr) =>
         // Update DW1_USERS: add new email? and cofig notf prefs.
