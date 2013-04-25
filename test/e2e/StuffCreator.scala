@@ -56,10 +56,12 @@ trait StuffCreator {
     val login = Login(id = "?", prevLoginId = None, ip = "1.1.1.1",
       date = new ju.Date, identityId = "?i")
 
-    val identitySimple = IdentitySimple(id = "?i", userId = "?",
-      name = "Stoffe Kreitor", email = "no@email.no", location = "", website = "")
+    val identity = IdentityOpenId(id = "?i",
+      userId = "?", oidEndpoint = "http://test-endpoint.com", oidVersion = "", oidRealm = "",
+      oidClaimedId = "StuffCreatorClaimedId", oidOpLocalId = "StuffCreatorLocalId",
+      firstName = "Stuff-Creator", email = "stuff-creator@example.com", country = "")
 
-    val loginReq = LoginRequest(login, identitySimple)
+    val loginReq = LoginRequest(login, identity)
     val loginGrant = firstSiteDao.saveLogin(loginReq)
 
     val postTemplate = PostActionDto.forNewPost(
