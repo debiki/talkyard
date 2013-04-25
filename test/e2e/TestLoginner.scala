@@ -5,6 +5,7 @@
 package test.e2e
 
 import com.debiki.v0.Prelude._
+import java.{util => ju}
 import org.scalatest.time.{Seconds, Span}
 
 
@@ -17,6 +18,7 @@ trait TestLoginner {
   private var firstGmailLogin = true
   val GmailUserEmail = "debiki.tester@gmail.com"
 
+  private var adminMadeAdmin = false
 
   /** Clicks the login link at the top of the page and logs in.
     * Specifies no email.
@@ -42,9 +44,38 @@ trait TestLoginner {
   }
 
 
-  def loginAsAdmin() {
-    // For now, the admin and the gmail user are one and the same.
-    loginAsGmailUser()
+  /** Creates an admin user, if not already done, and logs in as that user.
+    * However, does this via direct database calls; does not use Selenium / ScalaTest.
+    */
+  def cheatLoginAsAdmin() {
+    import com.debiki.{v0 => d}
+
+    val login = d.Login(id = "?", prevLoginId = None, ip = "1.1.1.1", date = new ju.Date,
+        identityId = "?i")
+
+    val identity = d.IdentityOpenId(id = "?i",
+      userId = "?", oidEndpoint = "http://test-endpoint.com", oidVersion = "",
+      oidRealm = "", oidClaimedId = "TestAdminClaimedId", oidOpLocalId = "TestAdminLocalId",
+      firstName = "TestAdmin", email = "test-admin@example.com", country = "")
+
+    val loginReq = d.LoginRequest(login, identity)
+    val dao = debiki.Debiki.tenantDao(firstSiteId, ip = "1.1.1.1")
+    val loginGrant = dao.saveLogin(loginReq)
+
+    if (!adminMadeAdmin) {
+      adminMadeAdmin = true
+      dao.configRole(loginGrant.login.id, ctime = loginGrant.login.date,
+        roleId = loginGrant.user.id, isAdmin = Some(true))
+    }
+
+    // Update the browser: set cookies.
+    val (_, _, sidAndXsrfCookies) = d.Xsrf.newSidAndXsrf(Some(loginGrant))
+    val userConfigCookie = controllers.AppConfigUser.userConfigCookie(loginGrant)
+    for (cookie <- userConfigCookie :: sidAndXsrfCookies)
+      add.cookie(cookie.name, cookie.value)
+
+    // Redraw login related stuff and sync XSRF tokens.
+    executeScript("debiki.internal.Me.fireLogin()")
   }
 
 

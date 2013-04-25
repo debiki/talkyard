@@ -42,7 +42,7 @@ class DeleteActivitySpec extends DebikiBrowserSpec with TestReplyer with TestLog
 
     "login as admin" in {
       logoutIfLoggedIn()
-      loginAsAdmin()
+      cheatLoginAsAdmin()
     }
 
     "add four comments: #ad1, #ad2, #ad3, #ad4" in {

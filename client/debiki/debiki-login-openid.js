@@ -105,12 +105,6 @@ function submitLoginInPopup($openidLoginForm) {
 
   // This callback is called from the return_to page:
   d.i.handleLoginResponse = function(result) {
-    // The server might have set new SID and XSRF tokens, but the
-    // $.ajaxSetup complete() handler won't have been triggered, since with
-    // OpenID the login happens in another browser tab.
-    // (What about OpenAuth: Facebook, Twitter etcetera?)
-    d.i.refreshFormXsrfTokens();
-
     d.i.handleLoginResponse = null;
     var errorMsg;
     if (/openid\.mode=cancel/.test(result.queryString)) {
