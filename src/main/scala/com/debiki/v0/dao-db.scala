@@ -250,8 +250,8 @@ abstract class TenantDbDao {
 
   // ----- User configuration
 
-  def configRole(loginId: String, ctime: ju.Date,
-                    roleId: String, emailNotfPrefs: EmailNotfPrefs)
+  def configRole(loginId: String, ctime: ju.Date, roleId: String,
+        emailNotfPrefs: Option[EmailNotfPrefs] = None, isAdmin: Option[Boolean] = None)
 
   def configIdtySimple(loginId: String, ctime: ju.Date,
                        emailAddr: String, emailNotfPrefs: EmailNotfPrefs)
@@ -630,16 +630,16 @@ class ChargingTenantDbDao(
 
   // ----- User configuration
 
-  def configRole(loginId: String, ctime: ju.Date,
-        roleId: String, emailNotfPrefs: EmailNotfPrefs) =  {
+  def configRole(loginId: String, ctime: ju.Date, roleId: String,
+        emailNotfPrefs: Option[EmailNotfPrefs], isAdmin: Option[Boolean]) =  {
     // When auditing of changes to roles has been implemented,
     // `configRole` will create new rows, and we should:
     // _chargeFor(ResUsg.forStoring(quotaConsumers.role.get))
     // And don't care about whether or not quotaConsumers.role.id == roleId. ?
     // But for now:
     _chargeForOneWriteReq()
-    _spi.configRole(loginId = loginId, ctime = ctime,
-                    roleId = roleId, emailNotfPrefs = emailNotfPrefs)
+    _spi.configRole(loginId = loginId, ctime = ctime, roleId = roleId,
+      emailNotfPrefs = emailNotfPrefs, isAdmin = isAdmin)
   }
 
   def configIdtySimple(loginId: String, ctime: ju.Date,
