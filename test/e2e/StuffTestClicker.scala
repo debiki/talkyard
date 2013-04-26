@@ -179,14 +179,43 @@ trait StuffTestClicker {
   }
 
 
-  def findActionLink(postId: String, actionLinkClass: String) = {
-    // Is there no other way to find $postId's parent element, than using this
-    // totally terrible XPath expression? (Note that o""" collapses the two lines
-    // to One line with no space inbetween.)
-    val query = o"""//div[@id='post-$postId']/../
-      div[@class='dw-p-as dw-as']/a[@class='dw-a $actionLinkClass']"""
-    val link = find(xpath(query)) getOrDie s"No $actionLinkClass link found for post $postId"
-    link
+  /** Fakes a mouseenter event that results in the "Reply, Like?, More..." links
+    * being shown, for postId.
+    */
+  def showActionLinks(postId: String) = {
+    // For whatever reasons, `mouse.moveMouse` and `Actions.moveToElement` doesn't
+    // trigger the hover event that makes the More... menu visible, so it can be
+    // clicked. Instead, fire the hover event "manually":
+    // (I'll break out a reusable function... later on.)
+    executeScript(i"""
+      jQuery('#post-$postId').parent().find('> .dw-p-as').trigger('mouseenter');
+      """)
+
+    // More details on how I failed to trigger the on hover event. This didn't work:
+    //   val mouse = (webDriver.asInstanceOf[HasInputDevices]).getMouse
+    //   val hoverItem: Locatable = moreLink.underlying.asInstanceOf[Locatable]
+    //   mouse.mouseMove(hoverItem.getCoordinates)
+    // Neither did this:
+    //   (new Actions(webDriver)).moveToElement(moreLink.underlying).perform()
+  }
+
+
+  def findActionLink_!(postId: String, actionLinkClass: String): Element = {
+    findActionLink(postId, actionLinkClass) getOrDie
+        s"No $actionLinkClass link found for post $postId"
+  }
+
+
+  def findActionLink(postId: String, actionLinkClass: String): Option[Element] = {
+    // Is there no other way to find $postId's parent element, than using XPath?
+    val query =
+      // Find parent post:
+      s"//div[@id='post-$postId']/../" +
+      // Find action links: (use `contains` since "unknown" classes might have been added)
+      "div[contains(concat(' ', @class, ' '), ' dw-p-as ')]" +
+      // Find one specific action link:
+      s"//a[contains(concat(' ', @class, ' '), ' $actionLinkClass ')]"
+    find(xpath(query))
   }
 
 

@@ -25,7 +25,9 @@ trait TestReplyer {
 
 
   def replyToComment(postId: String, text: String): String = {
-    val replyLink = findActionLink(postId, "dw-a-reply")
+    showActionLinks(postId)
+    val replyLink = findActionLink_!(postId, "dw-a-reply")
+    scrollIntoView(replyLink)
     click on replyLink
     writeAndSubmitReply(text)
   }
@@ -71,6 +73,7 @@ trait TestReplyer {
 
   def clickArticleReplyLink() {
     eventually {
+      scrollIntoView(articleReplyLink)
       click on articleReplyLink
     }
   }
