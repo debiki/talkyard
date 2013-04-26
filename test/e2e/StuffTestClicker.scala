@@ -200,6 +200,11 @@ trait StuffTestClicker {
   }
 
 
+  def findPost(postId: String): Option[Element] = {
+    find(s"post-$postId")
+  }
+
+
   def findActionLink_!(postId: String, actionLinkClass: String): Element = {
     findActionLink(postId, actionLinkClass) getOrDie
         s"No $actionLinkClass link found for post $postId"

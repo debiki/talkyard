@@ -6,8 +6,6 @@ package test.e2e
 
 import com.debiki.v0.Prelude._
 import com.debiki.v0.PageRole
-import org.openqa.selenium.interactions.Actions
-import org.scalatest.time.{Span, Seconds}
 import org.scalatest.DoNotDiscover
 
 
@@ -18,15 +16,23 @@ class DeleteActivitySpecRunner extends org.scalatest.Suites(new DeleteActivitySp
 with ChromeSuiteMixin
 
 
-/** Tests that recent activity, e.g. flags and edit suggestions, appear in the
-  * admin dashboard activity list.
+/** Tests that comments can be deleted.
+  *
+  * Creates these comments:
+  *
+  *   ad1
+  *   ad2 --> ad3  (ad3 replies to ad2)
+  *   ad4
+  *
+  * Then deletes #ad1 and #ad2, and tests that they plus #ad3 are gone,
+  * but that #ad4 is still visible.
   */
 @DoNotDiscover
 class DeleteActivitySpec extends DebikiBrowserSpec with TestReplyer with TestLoginner
   with TestDeleterCollapserFlagger {
 
   lazy val testPageUrl = createTestPage(PageRole.Generic,
-    title = "Test Page Title 053KRI", body = Some("Test page text 71QE05."))
+    title = "Delete Comments Test 053KRI", body = Some("Delete comments test 71QE05."))
 
   var postId_ad1 = ""
   var postId_ad2 = ""
@@ -34,7 +40,7 @@ class DeleteActivitySpec extends DebikiBrowserSpec with TestReplyer with TestLog
   var postId_ad4 = ""
 
 
-  "Lets test the activity view:" - {
+  "Comments and comment trees can be deleted:" - {
 
     "open a test page" in {
       gotoDiscussionPage(testPageUrl)
@@ -45,10 +51,10 @@ class DeleteActivitySpec extends DebikiBrowserSpec with TestReplyer with TestLog
       cheatLoginAsAdmin()
     }
 
-    "add four comments: #ad1, #ad2, #ad3, #ad4" in {
+    "add four comments: #ad1 --> #ad2, #ad3, #ad4" in {
       postId_ad1 = replyToArticle("ad1-text")
-      postId_ad2 = replyToComment(postId_ad1, text = "ad2-text")
-      postId_ad3 = replyToArticle("ad3-text")
+      postId_ad2 = replyToArticle("ad2-text")
+      postId_ad3 = replyToComment(postId_ad2, text = "ad3-text")
       postId_ad4 = replyToArticle("ad4-text")
     }
 
@@ -62,10 +68,12 @@ class DeleteActivitySpec extends DebikiBrowserSpec with TestReplyer with TestLog
     }
 
     "find only comment #ad4" in {
-      find(postId_ad1) must be ('empty)
-      find(postId_ad2) must be ('empty)
-      find(postId_ad3) must be ('empty)
-      find(postId_ad4) must be ('defined)
+      eventually {
+        findPost(postId_ad1) must be ('empty)
+        findPost(postId_ad2) must be ('empty)
+        findPost(postId_ad3) must be ('empty)
+        findPost(postId_ad4) must be ('defined)
+      }
     }
 
   }

@@ -15,26 +15,19 @@ function initDeleteForm() {
   if ($parent.is('.ui-dialog-content'))
     return; // already inited
 
-  $form.find('.dw-submit-set input').hide(); // use jQuery UI's buttons instead
-  // Don't make a button of -tree, because then it's a tiny bit
-  // harder to realize wethere it's checked or not, and this is a
-  // rather important button.
-  // Skip: $form.find('#dw-fi-dl-tree').button();
+  $form.find('.dw-fi-submit').button().click(function() {
+    if (!d.i.Me.isLoggedIn()) $form.each(d.i.$loginThenSubmit);
+    else $form.submit();
+    return false;
+  });
+
+  $form.find('.dw-fi-cancel').button().click(function() {
+    $parent.dialog('close');
+  });
+
+
   $parent.dialog($.extend({}, d.i.jQueryDialogReset, {
-    width: d.i.mobileWidthOr(360),
-    buttons: {
-      Cancel: function() {
-        $(this).dialog('close');
-      },
-      Delete: function() {
-        // COULD ensure details specified if "Others" reason selected.
-        // COULD show a "Submitting..." message.
-        if (!d.i.Me.isLoggedIn())
-          $form.each(d.i.$loginThenSubmit)
-        else
-          $form.submit();
-      }
-    }
+    width: d.i.mobileWidthOr(360)
   }));
 
   $form.submit(function() {
