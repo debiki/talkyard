@@ -132,11 +132,17 @@ d.i.makeCurUser = function() {
     }
   }
 
+  function deletePageInfoInServerReply() {
+    var hiddenYamlTag = $('.dw-data-yaml');
+    hiddenYamlTag.hide().removeClass('dw-data-yaml');
+  };
+
   var api = {
     // Call whenever the SID changes: on page load, on login and logout.
     refreshProps: refreshProps,
     clearMyPageInfo: clearMyPageInfo,
     loadAndMarkMyPageInfo: loadAndMarkMyPageInfo,
+    deletePageInfoInServerReply: deletePageInfoInServerReply,
     fireLogin: function() { fireLoginImpl(api); },
     fireLogout: function() { fireLogoutImpl(api); },
     // Call when a re-login might have happened, e.g. if focusing
@@ -230,6 +236,7 @@ function fireLogoutImpl(Me) {
   $('.dw-loginsubmit-on-click').trigger('dwEvLoggedInOut', [undefined]);
 
   Me.clearMyPageInfo();
+  Me.deletePageInfoInServerReply(); // so not reused if logging in later
 
   // If AngularJS has been started, tell the parts of this page that
   // uses AngularJS about the logout.
