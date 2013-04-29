@@ -166,6 +166,12 @@ trait StuffTestClicker {
   }
 
 
+  def clickGotoDashbarActivityTab() {
+    click on cssSelector("a[href='/-/admin/']")
+    click on linkText("Activity")
+  }
+
+
   def scrollIntoView(obj: Any) {
     val webElem = obj match {
       case Some(elem: Element) => elem.underlying
