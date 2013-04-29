@@ -49,10 +49,9 @@ case class Post(
 
 
   def initiallyApproved: Boolean = {
-    // If initially preliminarily auto approved, that approval is cancelled by
-    // any contiguous and subsequent rejection. (And `lastApproval` takes
-    // that cancellation into account.)
-    lastApprovalDati.isDefined && approval.isDefined
+    val initiallyApprovedPerhapsPreliminarily = approval.isDefined
+    val initialApprovalNotCancelled = lastApprovalDati.isDefined
+    initiallyApprovedPerhapsPreliminarily && initialApprovalNotCancelled
   }
 
 
