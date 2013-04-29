@@ -123,8 +123,11 @@ trait TestEditor {
     info("find new text in page source")
 
     eventually {
-      find(cssSelector(s"#post-$postId .dw-p-bd")).map(_.text) must be ===
-        Some(stripStartEndBlanks(newText))
+      val isPendingModeration = findEditsPendingModerationMessage(postId).nonEmpty
+      val isTextCorrectlyUpdated =
+        find(cssSelector(s"#post-$postId .dw-p-bd")).map(_.text) ==
+          Some(stripStartEndBlanks(newText))
+      isPendingModeration must not be ===(isTextCorrectlyUpdated)
     }
   }
 
@@ -132,6 +135,11 @@ trait TestEditor {
   private def findAnyEditorTextarea(): Option[Element] = {
     find(cssSelector(".CodeMirror textarea")) orElse
       find(cssSelector(".dw-e-tab textarea"))
+  }
+
+
+  private def findEditsPendingModerationMessage(postId: String): Option[Element] = {
+    find(cssSelector(s"#post-$postId .dw-p-pending-mod"))
   }
 
 }
