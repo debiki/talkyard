@@ -320,9 +320,19 @@ object AppEdit extends mvc.Controller {
     val (mayEdit, mayEditReason) =
       AppEdit.mayEdit(pageReq.user, post, pageReq.permsOnPage)
 
+    def editsOwnPost = pageReq.user_!.id == post.userId
+
     val approval =
       anyNewPageApproval orElse (upholdEarlierApproval(pageReq, postId) getOrElse {
-        if (mayEdit) AutoApprover.perhapsApprove(pageReq)
+        if (mayEdit) {
+          if (editsOwnPost && post.currentVersionPrelApproved) {
+            // Let the user continue editing his/her preliminarily approved comment.
+            Some(Approval.Preliminary)
+          }
+          else {
+            AutoApprover.perhapsApprove(pageReq)
+          }
+        }
         else None
       })
 
