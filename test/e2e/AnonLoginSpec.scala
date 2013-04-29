@@ -27,14 +27,14 @@ with ChromeSuiteMixin
 @DoNotDiscover
 class AnonLoginSpec extends DebikiBrowserSpec with TestReplyer with TestLoginner {
 
-  lazy val testPageUrl = createTestPage(PageRole.Generic,
+  lazy val testPage = createTestPage(PageRole.Generic,
       title = "Test Page Title 27KV09", body = Some("Test page text 953Ih31."))
 
 
   "Anon user with a browser can" - {
 
     "open a test page" in {
-      gotoDiscussionPage(testPageUrl)
+      gotoDiscussionPage(testPage.url)
     }
 
     "login and reply as new Anon User, specify no email" - {

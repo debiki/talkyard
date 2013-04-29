@@ -25,8 +25,8 @@ with ChromeSuiteMixin
 class EditActivitySpec extends DebikiBrowserSpec
   with TestReplyer with TestLoginner with TestEditor {
 
-  lazy val testPageUrl = createTestPage(PageRole.Generic,
-    title = "Test Page Title 5902RK", body = Some("Test page text 10EIJ55."))
+  lazy val testPage = createTestPage(PageRole.Generic,
+    title = "Edit Suggestions Test 5902RK", body = Some("Edit suggestions test 10EIJ55."))
 
   val anonUserName = s"Activity-Anon-${nextRandomString()}"
 
@@ -40,7 +40,7 @@ class EditActivitySpec extends DebikiBrowserSpec
   "Lets test the activity view:" - {
 
     "open a test page" in {
-      gotoDiscussionPage(testPageUrl)
+      gotoDiscussionPage(testPage.url)
     }
 
     // ------ Anon adds comments

@@ -124,14 +124,16 @@ trait StuffCreator {
   }
 
 
-  /**
-   * Creates a test page in site `firstSiteId`, returns a URL.
-   */
+  class TestPage(val url: String, val id: String) extends WebBrowser.Page
+
+
+  /** Creates a test page in site `firstSiteId`.
+    */
   def createTestPage(
         pageRole: PageRole,
         pageSlug: String = "test-page",
         title: String,
-        body: Option[String]): String = {
+        body: Option[String]): TestPage = {
 
     val titlePost = PostActionDto.copyCreatePost(postTemplate,
       id = PageParts.TitleId, parentPostId = PageParts.TitleId, text = title)
@@ -150,7 +152,9 @@ trait StuffCreator {
     val pageWithPeople = firstSiteDao.loadPage(pageStuffNoPeople.id).getOrElse(
       assErr("DwE381kK0", "Error loading page with people"))
 
-    firstSiteHost + pageStuffNoPeople.path.path
+    new TestPage(
+      url = firstSiteHost + pageStuffNoPeople.path.path,
+      id = pageStuffNoPeople.path.pageId.get)
   }
 
 }

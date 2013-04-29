@@ -31,7 +31,7 @@ with ChromeSuiteMixin
 class DeleteActivitySpec extends DebikiBrowserSpec with TestReplyer with TestLoginner
   with TestDeleterCollapserFlagger {
 
-  lazy val testPageUrl = createTestPage(PageRole.Generic,
+  lazy val testPage = createTestPage(PageRole.Generic,
     title = "Delete Comments Test 053KRI", body = Some("Delete comments test 71QE05."))
 
   var postId_ad1 = ""
@@ -43,7 +43,7 @@ class DeleteActivitySpec extends DebikiBrowserSpec with TestReplyer with TestLog
   "Comments and comment trees can be deleted:" - {
 
     "open a test page" in {
-      gotoDiscussionPage(testPageUrl)
+      gotoDiscussionPage(testPage.url)
     }
 
     "login as admin" in {
