@@ -259,6 +259,25 @@ object Prelude {
     calendarUtc
   }
 
+  /* Comment in and test, if needed.
+  def anyMax[T <: math.Ordered](a: Option[T], b: Option[T]): Option[T] = {
+    if (a.isEmpty && b.isEmpty) None
+    else if (a.isEmpty) b
+    else if (b.isEmpty) a
+    else if (a.get < b.get) b
+    else a
+  }*/
+
+
+  def anyMaxDate(a: Option[ju.Date], b: Option[ju.Date]): Option[ju.Date] = {
+    if (a.isEmpty && b.isEmpty) None
+    else if (a.isEmpty) b
+    else if (b.isEmpty) a
+    else if (a.get.getTime < b.get.getTime) b
+    else a
+  }
+
+
   // Is thread safe.
   private val _random = new java.security.SecureRandom();
 

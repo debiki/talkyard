@@ -366,15 +366,17 @@ case class Post(
    * this dati.
    */
   def lastAuthoritativeReviewDati: Option[ju.Date] =
-    lastAuthoritativeReview.map(_.creationDati) orElse state.lastAuthoritativeReviewDati
+    anyMaxDate(lastAuthoritativeReview.map(_.creationDati), state.lastAuthoritativeReviewDati)
 
 
   def lastReviewDati: Option[ju.Date] =
-    _reviewsDescTime.headOption.map(_.creationDati) orElse state.lastReviewDati
+    anyMaxDate(_reviewsDescTime.headOption.map(_.creationDati), state.lastReviewDati)
 
 
-  def lastApprovalType: Option[Approval] =
-    lastApproval.flatMap(_.approval) orElse state.lastApprovalType
+  def lastApprovalType: Option[Approval] = {
+    if (lastApprovalDati == state.lastApprovalDati) state.lastApprovalType
+    else lastApproval.flatMap(_.approval)
+  }
 
 
   private lazy val lastApproval: Option[PostActionOld with MaybeApproval] = {
@@ -416,19 +418,20 @@ case class Post(
 
 
   def lastPermanentApprovalDati: Option[ju.Date] =
-    lastPermanentApproval.map(_.creationDati) orElse state.lastPermanentApprovalDati
+    anyMaxDate(lastPermanentApproval.map(_.creationDati), state.lastPermanentApprovalDati)
 
   /**
    * All actions that affected this Post and didn't happen after
    * this dati should be considered when rendering this Post.
    */
   def lastApprovalDati: Option[ju.Date] =
-    lastApproval.map(_.creationDati) orElse state.lastApprovalDati
+    anyMaxDate(lastApproval.map(_.creationDati), state.lastApprovalDati)
 
 
   def lastManualApprovalDati: Option[ju.Date] =
-    _reviewsDescTime.find(_.approval == Some(Approval.Manual)).map(_.creationDati) orElse
-      state.lastManualApprovalDati
+    anyMaxDate(
+      _reviewsDescTime.find(_.approval == Some(Approval.Manual)).map(_.creationDati),
+      state.lastManualApprovalDati)
 
 
   def lastReviewWasApproval: Option[Boolean] =
