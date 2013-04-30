@@ -298,7 +298,25 @@ case class Post(
   def lastActedUponAt = textLastEditedOrRevertedAt
 
 
+  /** The most recent reviews, or Nil if all most recent reviews might not
+    * have been loaded.
+    */
   private lazy val _reviewsDescTime: List[PostActionOld with MaybeApproval] = {
+    // If loaded from cache, we will have loaded no reviews, or only one review,
+    // namely `this`, if this post was auto-approved (e.g. a preliminarily
+    // approved comment, or a comment posted by an admin).
+    // However, returning only `this` is incorrect, if there are in fact other
+    // reviews that happened later (but haven't been loaded). Because other functions
+    // assume that _reviewsDescTime includes any most recent review. So instead
+    // of returning List(this), return Nil; then other functions work as they
+    // should (if _reviewsDescTime is empty rather than incorrectly containing only
+    // the first one of many reviews).
+    if (isLoadedFromCache) Nil
+    else findReviews
+  }
+
+
+  private def findReviews = {
     // (If a ReviewPostAction.approval.isEmpty, this Post was rejected.
     // An Edit.approval or EditApp.approval being empty, however,
     // means only that this Post has not yet been reviewed — so the Edit
