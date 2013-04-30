@@ -115,8 +115,8 @@ class EditActivitySpec extends DebikiBrowserSpec
         for (postId <- List(postId_ad1, postId_ad2, postId_ad3, postId_ad4, postId_ad5))
           findPost(postId) must be ('defined)
       }
-
     }
+
 
     "the dashboard activity list lists all comments" - {
 
@@ -183,7 +183,6 @@ class EditActivitySpec extends DebikiBrowserSpec
         cheatLoginAsAdmin()
         clickAndEdit(postId_ad3, "ad3-text, edited by admin")
       }
-
     }
 
 
@@ -206,48 +205,102 @@ class EditActivitySpec extends DebikiBrowserSpec
         checkCommentStatus(postId_gu2, CST.PrelApprovedComment)  // edited by gmail user
         checkCommentStatus(postId_gu3, CST.ApprovedComment)   // not edited
 
-        checkCommentStatus(postId_gm1, CST.ApprovedComment, withSuggestions = true) // guest
+        checkCommentStatus(postId_gm1, CST.ApprovedComment, numSuggestions = 1) // guest
         checkCommentStatus(postId_gm2, CST.UnapprovedEdits)  // edited by author, gmail user
         checkCommentStatus(postId_gm3, CST.ApprovedComment)  // not edited
 
         // The guest and Gmail users have edited admin's comments 1, 2, 4, 5.
-        checkCommentStatus(postId_ad1, CST.ApprovedComment, withSuggestions = true) // guest
-        checkCommentStatus(postId_ad2, CST.ApprovedComment, withSuggestions = true) // gmail
+        checkCommentStatus(postId_ad1, CST.ApprovedComment, numSuggestions = 1) // guest
+        checkCommentStatus(postId_ad2, CST.ApprovedComment, numSuggestions = 1) // gmail
         checkCommentStatus(postId_ad3, CST.ApprovedComment)  // admin edited it
-        checkCommentStatus(postId_ad4, CST.ApprovedComment, withSuggestions = true) // guest
-        checkCommentStatus(postId_ad5, CST.ApprovedComment, withSuggestions = true) // gmail
+        checkCommentStatus(postId_ad4, CST.ApprovedComment, numSuggestions = 1) // guest
+        checkCommentStatus(postId_ad5, CST.ApprovedComment, numSuggestions = 1) // gmail
       }
-
     }
 
 
     "people applies each other's edit suggestion" - {
 
+      s"return to discussion" in {
+        goBack()
+        reloadPage()
+      }
+
+      s"Admin approves suggestions to comment #ad1 and #ad2" in {
+        approveEdits(postId_ad1)
+        approveEdits(postId_ad2)
+      }
+
+      "Gmail user approves edits to #gm1" in {
+        logout()
+        loginAsGmailUser()
+        approveEdits(postId_gm1)
+      }
+
+      "Guest user approves edits to #gu1" in {
+        logout()
+        loginAsGuest(guestUserName)
+        approveEdits(postId_gu2)
+      }
+
+      def approveEdits(postId: String) {
+        clickViewEditSuggestions(postId)
+        // It takes a while to load the edits form.
+        eventually { clickApproveAnySuggestion() }
+        submitEditSuggestionsForm()
+      }
     }
 
 
     "the admin views and approves the pending edits in the dashboard activity list" - {
 
-      // approve all changes, except for #ad5 and #ad6
+      "goto Admin dashbar" in {
+        logout()
+        cheatLoginAsAdmin()
+        clickGotoDashbarActivityTab()
+      }
 
+      "find listed the Guest and Gmail users' applied but unapproved edit suggestions" in {
+        val CST = CommentStatusText
+
+        eventually {
+          checkCommentStatus(postId_gu1, CST.PrelApprovedComment)
+        }
+
+        // Comment #gu2 is prel approved and there's a suggestion that the Guest has applied.
+        // I don't care if the comment shows up as PrelApprovedComment or UnapprovedComment;
+        // for now UnapprovedComment works however:
+        checkCommentStatus(postId_gu2, CST.UnapprovedComment) // prel aprvd, edited by gmail
+        checkCommentStatus(postId_gu3, CST.ApprovedComment) // not edited
+
+        checkCommentStatus(postId_gm1, CST.UnapprovedEdits) // guest's edits applied
+        checkCommentStatus(postId_gm2, CST.UnapprovedEdits) // edited by author, gmail user
+        checkCommentStatus(postId_gm3, CST.ApprovedComment) // not edited
+
+        // The guest and Gmail users' suggestions have been applied and approved by the admin.
+        checkCommentStatus(postId_ad1, CST.ApprovedComment, numSuggestions = 0) // guest
+        checkCommentStatus(postId_ad2, CST.ApprovedComment, numSuggestions = 0) // gmail
+        checkCommentStatus(postId_ad3, CST.ApprovedComment)  // admin edited it
+        checkCommentStatus(postId_ad4, CST.ApprovedComment, numSuggestions = 1) // guest
+        checkCommentStatus(postId_ad5, CST.ApprovedComment, numSuggestions = 1) // gmail
+      }
     }
-
-
-    "the admin reloads the page, finds the correct versions of everything" - {
-
-    }
-
   }
 
 
   def checkCommentStatus(postId: String, commentStatusText: String,
-        withSuggestions: Boolean = false) {
+        numSuggestions: Int = -1) {
     val commentLink = find(cssSelector(s"a[href='/-${testPage.id}#post-$postId']")).
       getOrElse(fail(s"Comment `$postId' not listed"))
     commentLink.text must be === commentStatusText
 
-    if (withSuggestions) {
-      // hmm
+    if (numSuggestions != -1) {
+      val link = findImprovementSuggestionsLink(testPage.id, postId)
+      val isVisible = link.map(_.isDisplayed) == Some(true)
+      if (numSuggestions == 0 && isVisible)
+        fail(s"Improvement suggestions incorrectly listed for post `$postId'")
+      if (numSuggestions >= 1 && !isVisible)
+        fail(s"No improvement suggestions listed for post `$postId'")
     }
   }
 
@@ -266,6 +319,10 @@ class EditActivitySpec extends DebikiBrowserSpec
 
   def findPostApprovedText(pageId: String, postId: String) =
     findPostInlineSomething(pageId, postId, cssClass = "inline-message", text = "Approved.")
+
+
+  def findImprovementSuggestionsLink(pageId: String, postId: String) =
+    findPostInlineSomething(pageId, postId, "suggestions-link")
 
 
   private def findPostInlineSomething(

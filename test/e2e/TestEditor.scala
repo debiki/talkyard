@@ -142,5 +142,25 @@ trait TestEditor {
     find(cssSelector(s"#post-$postId .dw-p-pending-mod"))
   }
 
+
+  def clickViewEditSuggestions(postId: String) {
+    val suggestionsLink = findActionLink_!(postId, "dw-a-pending-review")
+    scrollIntoView(suggestionsLink)
+    click on suggestionsLink
+  }
+
+
+  def clickApproveAnySuggestion() {
+    val applySuggestionBtn =
+      find(cssSelector("label[for^='dw-fi-appdel-apply-']")) getOrElse fail(
+        "No suggestions to apply found for post `postId_ad1'")
+    click on applySuggestionBtn
+  }
+
+
+  def submitEditSuggestionsForm() {
+    click on cssSelector("#dw-e-sgs input[type='submit']")
+  }
+
 }
 
