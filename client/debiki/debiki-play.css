@@ -874,7 +874,7 @@ key presses).*/
 }
 
 .dw-submit-set {
-  float: left;
+  float: right;
   clear: both;
   margin-top: 1.3em;
 }

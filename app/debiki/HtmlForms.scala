@@ -551,6 +551,10 @@ class HtmlForms(val config: HtmlConfig, xsrfToken: String,
           <div id='dw-e-sgs-prvw-html' class='dw-p-bd-blk'/>
         </div>
       </div>
+      <div class='dw-submit-set'>
+        <input type='submit' class='dw-fi-submit' value='Save'/>
+        <input type='button' class='dw-fi-cancel' value='Cancel'/>
+      </div>
     </form>
   }
 

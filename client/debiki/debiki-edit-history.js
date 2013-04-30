@@ -22,27 +22,28 @@ function showEditsDialogImpl($post) {
       .fail(d.i.showServerResponseDialog)
       .done(function(editsHtml) {
     var $editDlg = $(editsHtml).filter('form#dw-e-sgs'); // filter out text node
-    var buttons = {
-      Cancel: function() {
-        $(this).dialog('close');
-      }
-    };
-    if ($editDlg.is('.dw-e-sgs-may-edit')) buttons.Save = function() {
-      // COULD show "Saving..." dialog and close when done.
-      // Otherwise the new html might arrive when the user has started
-      // doing something else.
-      $(this).submit().dialog('close');
-    };
-    $editDlg.dialog($.extend({}, d.i.jQueryDialogDefault, {
-      width: 1000,
-      height: 600,
-      buttons: buttons,
-      close: function() {
-        // Need to remove() this, so ids won't clash should a new form
-        // be loaded later.
-        $(this).remove();
-      }
-    }));
+
+    $editDlg.find('.dw-fi-cancel').button().click(function() {
+      $editDlg.dialog('close');
+    });
+
+    $saveBtn = $editDlg.find('.dw-fi-submit');
+    if ($editDlg.is('.dw-e-sgs-may-edit')) {
+      $saveBtn.show().button().click(function() {
+        // COULD show "Saving..." dialog and close when done.
+        // Otherwise the new html might arrive after the user has started
+        // doing something else.
+        $editDlg.submit().dialog('close');
+        return false;
+      });
+    }
+    else {
+      $saveBtn.hide();
+    }
+
+    // Use jQueryDialogDestroy so ids won't clash, should a new form
+    // be loaded later.
+    $editDlg.dialog($.extend({}, d.i.jQueryDialogDestroy, { width: 1000 }));
 
     initSuggestions($editDlg); // later:? .find('#dw-e-tb-sgs'));
     // For now, open directly, discard on close and
