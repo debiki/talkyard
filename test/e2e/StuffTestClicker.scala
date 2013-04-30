@@ -167,7 +167,9 @@ trait StuffTestClicker {
 
 
   def clickGotoDashbarActivityTab() {
-    click on cssSelector("a[href='/-/admin/']")
+    val dashboardLink = cssSelector("a[href='/-/admin/']")
+    scrollIntoView(dashboardLink)
+    click on dashboardLink
     click on linkText("Activity")
   }
 
