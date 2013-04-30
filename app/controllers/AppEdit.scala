@@ -403,7 +403,7 @@ object AppEdit extends mvc.Controller {
     if (titleOrBody.user_! == pageReq.user_!) {
       // This user authored the title or body, and is now attempting to create
       // the missing body or title. Prefer to uphold the earlier approval.
-      val newReview = titleOrBody.lastApproval.flatMap(_.approval) flatMap {
+      val newReview = titleOrBody.lastApprovalType flatMap {
         earlierApproval =>
           AutoApprover.upholdNewPageApproval(pageReq, earlierApproval)
       }
