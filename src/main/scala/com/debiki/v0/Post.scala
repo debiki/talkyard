@@ -359,7 +359,7 @@ case class Post(
     lastApproval.flatMap(_.approval) orElse state.lastApprovalType
 
 
-  lazy val lastApproval: Option[PostActionOld with MaybeApproval] = {
+  private lazy val lastApproval: Option[PostActionOld with MaybeApproval] = {
     // A rejection cancels all earlier and contiguous preliminary auto
     // approvals, so loop through the reviews:
     var rejectionFound = false
@@ -385,13 +385,13 @@ case class Post(
    * The most recent review of this post by an admin or moderator.
    * (But not by seemingly well behaved users.)
    */
-  def lastAuthoritativeReview: Option[PostActionOld with MaybeApproval] =
+  private def lastAuthoritativeReview: Option[PostActionOld with MaybeApproval] =
     _reviewsDescTime.find(review =>
        review.approval != Some(Approval.Preliminary) &&
        review.approval != Some(Approval.WellBehavedUser))
 
 
-  def lastPermanentApproval: Option[PostActionOld with MaybeApproval] =
+  private def lastPermanentApproval: Option[PostActionOld with MaybeApproval] =
     _reviewsDescTime.find(review =>
         review.approval.isDefined &&
         review.approval != Some(Approval.Preliminary))

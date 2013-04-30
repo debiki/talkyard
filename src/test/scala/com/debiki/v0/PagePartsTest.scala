@@ -215,7 +215,7 @@ class PagePartsTest extends Specification with PageTestValues {
         page.body_!.currentVersionPrelApproved must_== true
         page.body_!.someVersionPermanentlyApproved must_== false
         page.body_!.initiallyApproved must_== true
-        page.body_!.lastPermanentApproval must_== None
+        page.body_!.lastPermanentApprovalDati must_== None
         page.body_!.lastApproval must_== Some(page.body_!)
         page.body_!.lastApprovalDati must_== Some(bodySkeleton.ctime)
         page.body_!.lastManualApprovalDati must_== None
@@ -269,8 +269,8 @@ class PagePartsTest extends Specification with PageTestValues {
         body.currentVersionPrelApproved must_== false
         body.someVersionPermanentlyApproved must_== false
         body.initiallyApproved must_== false
-        body.lastPermanentApproval must_== None
-        body.lastApproval must_== None
+        body.lastPermanentApprovalDati must_== None
+        body.lastApprovalType must_== None
         body.lastApprovalDati must_== None
         body.lastManualApprovalDati must_== None
         body.currentText must_== textInitially
@@ -551,7 +551,7 @@ class PagePartsTest extends Specification with PageTestValues {
         post.someVersionApproved must_== true
 
         if (preliminarily)
-          post.lastPermanentApproval must_== Some(post)
+          post.lastPermanentApprovalDati must_== Some(post.creationDati)
         // Could test other cases:
         // post.lastPermanentApproval must_== (
         //  if (preliminarily) post.action
