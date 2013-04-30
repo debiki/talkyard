@@ -201,22 +201,21 @@ class EditActivitySpec extends DebikiBrowserSpec
           checkCommentStatus(postId_gu1, CST.PrelApprovedComment)
         }
 
-        // Currently authenticated users may edit guest users' comments, so this
-        // edit made by the Gmail user has already been applied (but not approved).
+        // The Gmail user's edits of #gu2 are not indicated before the preliminary
+        // approval of the comment has been upheld.
         checkCommentStatus(postId_gu2, CST.PrelApprovedComment)  // edited by gmail user
         checkCommentStatus(postId_gu3, CST.ApprovedComment)   // not edited
 
-        checkCommentStatus(postId_gm1, CST.ApprovedComment, withSuggestions = true)  // guest
-        checkCommentStatus(postId_gm2, CST.UnapprovedEdits)  // edited by gmail user
+        checkCommentStatus(postId_gm1, CST.ApprovedComment, withSuggestions = true) // guest
+        checkCommentStatus(postId_gm2, CST.UnapprovedEdits)  // edited by author, gmail user
         checkCommentStatus(postId_gm3, CST.ApprovedComment)  // not edited
 
-        // Currently authenticated users may also edit admins' comments (!)
-        // (I should change this I think?) but the edits need to be approved.
+        // The guest and Gmail users have edited admin's comments 1, 2, 4, 5.
         checkCommentStatus(postId_ad1, CST.ApprovedComment, withSuggestions = true) // guest
-        checkCommentStatus(postId_ad2, CST.UnapprovedEdits)  // gmail user edited it
+        checkCommentStatus(postId_ad2, CST.ApprovedComment, withSuggestions = true) // gmail
         checkCommentStatus(postId_ad3, CST.ApprovedComment)  // admin edited it
         checkCommentStatus(postId_ad4, CST.ApprovedComment, withSuggestions = true) // guest
-        checkCommentStatus(postId_ad5, CST.UnapprovedEdits)  // gmail user
+        checkCommentStatus(postId_ad5, CST.ApprovedComment, withSuggestions = true) // gmail
       }
 
     }
