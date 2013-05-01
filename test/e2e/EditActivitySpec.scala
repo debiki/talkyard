@@ -22,7 +22,7 @@ with ChromeSuiteMixin
 /** Tests edit suggestions, applications and approvals, and that the
   * admin dashboard activity list shows suggestions and things to review.
   *
-  * This is done:  ... **will** be done — not implemented ...
+  * This is done:
   *
   * A guest user adds comments #gu1-4,
   * a Gmail user adds #gm1-4,
@@ -231,6 +231,10 @@ class EditActivitySpec extends DebikiBrowserSpec
         approveEdits(postId_ad2)
       }
 
+      s"Admin rejects suggestions to comment #ad5 and #ad6" in {
+        pending
+      }
+
       "Gmail user approves edits to #gm1" in {
         logout()
         loginAsGmailUser()
@@ -281,6 +285,9 @@ class EditActivitySpec extends DebikiBrowserSpec
         checkCommentStatus(postId_ad1, CST.ApprovedComment, numSuggestions = 0) // guest
         checkCommentStatus(postId_ad2, CST.ApprovedComment, numSuggestions = 0) // gmail
         checkCommentStatus(postId_ad3, CST.ApprovedComment)  // admin edited it
+
+        // These suggestions should have been rejected, but not implemented (search
+        // for a "pending" test, above), neither the test or the feature.
         checkCommentStatus(postId_ad4, CST.ApprovedComment, numSuggestions = 1) // guest
         checkCommentStatus(postId_ad5, CST.ApprovedComment, numSuggestions = 1) // gmail
       }
