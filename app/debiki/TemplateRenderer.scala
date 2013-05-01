@@ -103,7 +103,7 @@ object TemplateRenderer {
     catch {
       case ex: jl.ClassNotFoundException =>
         throw PageConfigException(
-          "DwE0b3X9", s"Template not found: `$template', theme: `$theme'")
+          "DwE7F3X9", s"Template not found: `$template', theme: `$theme'")
       case ex: jl.NoSuchMethodException =>
         throw new PageConfigException(
           "DwE68St8", o"""Template `$template', theme: `$theme', is broken.

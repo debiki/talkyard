@@ -111,7 +111,7 @@ object JsonOrFormDataBody {
             case jsObject: JsObject =>
               JsonOrFormDataBody(formDataBody = None, jsonBody = Some(jsObject))
             case _ =>
-              throwBadReq("DwE40bW72", "JSON data is not an object but a " +
+              throwBadReq("DwE48BW72", "JSON data is not an object but a " +
                   classNameOf(jsValue))
           }
         }
