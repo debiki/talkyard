@@ -168,7 +168,8 @@ class PagePartsTest extends Specification with PageTestValues {
         page.body_!.someVersionPermanentlyApproved must_== false
         page.body_!.initiallyApproved must_== true
         page.body_!.lastPermanentApprovalDati must_== None
-        page.body_!.lastApproval must_== Some(page.body_!)
+        page.body_!.lastApprovalDati must_== Some(page.body_!.creationDati)
+        page.body_!.lastApprovalType must_== page.body_!.approval
         page.body_!.lastApprovalDati must_== Some(bodySkeleton.ctime)
         page.body_!.lastManualApprovalDati must_== None
         page.body_!.currentText must_== textInitially
