@@ -55,7 +55,7 @@ object PageParts {
               // show in which order comments were posted and to refer to other
               // people's comments. That's why they're allocated in this manner.
               nextReplyId += 1
-              nextReplyId.toString
+              (nextReplyId - 1).toString
             }
             else {
               nextRandomActionId.toString
