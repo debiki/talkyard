@@ -462,9 +462,9 @@ class PageListItem extends ListItem
 
 
   loadAndListPages = !->
-    adminService.listAllPages (data) ->
+    adminService.listAllPages !(pagesById) ->
       listMorePagesDeriveFolders <|
-          [PageListItem(page) for page in data.pages]
+          [PageListItem(page) for id, page of pagesById]
 
 
   redrawPageItems = !(pageItems) ->

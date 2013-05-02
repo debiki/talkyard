@@ -64,7 +64,8 @@ bug = d.u.die2
 
 
   # On page load, list the most recent actions, for all pages.
-  updateActionList { trees: ['/'] }
+  adminService.listAllPages !->  # temp fix: but wait until page info loaded
+    updateActionList { trees: ['/'] }
 
   ]
 

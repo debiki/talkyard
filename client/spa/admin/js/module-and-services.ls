@@ -27,15 +27,17 @@ function adminService ($http, $rootScope)
     selectedPathsListeners.push listener
 
   api.getPageById = (pageId) ->
-    if pagesById == {} then api.listAllPages -> 'noop'
     pagesById[pageId]
 
   api.listAllPages = !(onSuccess) ->
-    $http.get('/-/list-pages?in-tree').success (data) ->
+    if !empty(pagesById)
+      onSuccess pagesById
+    else $http.get('/-/list-pages?in-tree').success !(data) ->
       # Angular has already parsed the JSON.
       for page in data.pages
         pagesById[page.id] = page
-      onSuccess(data)
+      onSuccess(pagesById)
+
 
   api.listActions = !(treesFoldersPageIds, onSuccess) ->
     treesStr   = treesFoldersPageIds.trees?.join(',') || ''
