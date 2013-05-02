@@ -419,31 +419,45 @@ case class HtmlPageSerializer(
       post <- _sortPostsDescFitness(posts)
       if !post.isTreeDeleted
       if !(post.isPostDeleted && post.replies.isEmpty)
-      cssThreadId = "dw-t-"+ post.id
-      cssDepth = "dw-depth-"+ depth
-      isInlineThread = post.where.isDefined
-      isInlineNonRootChild = isInlineThread && depth >= 2
-      cssInlineThread = if (isInlineThread) " dw-i-t" else ""
-      replies = post.replies.filter(_.someVersionApproved)
-      isTitle = post.id == PageParts.TitleId
-      isRootOrArtclQstn =
+    } {
+      val thread = renderThread(post, depth, parentHorizontal, uncollapseFirst)
+      comments ++= thread
+    }
+
+    comments
+  }
+
+
+  private def renderThread(post: Post, depth: Int, parentHorizontal: Boolean,
+      uncollapseFirst: Boolean) = {
+
+    val cssThreadId = "dw-t-"+ post.id
+    val cssDepth = "dw-depth-"+ depth
+    val isInlineThread = post.where.isDefined
+    val isInlineNonRootChild = isInlineThread && depth >= 2
+    val cssInlineThread = if (isInlineThread) " dw-i-t" else ""
+    val replies = post.replies.filter(_.someVersionApproved)
+    val isTitle = post.id == PageParts.TitleId
+    val isRootOrArtclQstn =
           post.id == pageRoot.subId // || post.meta.isArticleQuestion
+
       // Layout replies horizontally, if this is an inline reply to
       // the root post, i.e. depth is 1 -- because then there's unused space
       // to the right. However, the horizontal layout results in a higher
       // thread if there's only one reply. So only do this if there's more
       // than one reply.
-      horizontal = (post.where.isDefined && depth == 1 && replies.length > 1) ||
+    val horizontal = (post.where.isDefined && depth == 1 && replies.length > 1) ||
                     isRootOrArtclQstn
-      cssThreadDeleted = if (post.isTreeDeleted) " dw-t-dl" else ""
-      cssArticleQuestion = if (isRootOrArtclQstn) " dw-p-art-qst" else ""
-      postFitness = pageStats.ratingStatsFor(post.id).fitnessDefaultTags
+    val cssThreadDeleted = if (post.isTreeDeleted) " dw-t-dl" else ""
+    val cssArticleQuestion = if (isRootOrArtclQstn) " dw-p-art-qst" else ""
+    val postFitness = pageStats.ratingStatsFor(post.id).fitnessDefaultTags
       // For now: If with a probability of 90%, most people find this post
       // boring/faulty/off-topic, and if, on average,
       // more than two out of three people think so too, then fold it.
       // Also fold inline threads (except for root post inline replies)
       // -- they confuse people (my father), in their current shape.
-    } {
+
+    // ----- Indentation broken -----
       val renderedComment: RenderedPost =
         postRenderer.renderPost(post.id, uncollapse = uncollapseFirst)
 
@@ -515,11 +529,9 @@ case class HtmlPageSerializer(
       // COULD rename attr to data-where, that's search/replace:able enough.
       if (post.where isDefined) thread = thread % Attribute(
         None, "data-dw-i-t-where", Text(post.where.get), scala.xml.Null)
+    // ----- END Indentation broken -----
 
-      comments ++= thread
-    }
-
-    comments
+    thread
   }
 
 
