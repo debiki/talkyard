@@ -106,9 +106,9 @@ function urlToPost(post)
 
 function describePost(post)
   what = switch post.id
-    | '0t' => 'Page title'
-    | '0b' => 'Page'
-    | '0c' => 'Page config'
+    | '65501' => 'Page title'
+    | '65502' => 'Page'
+    | '65503' => 'Page config'
     | _   => 'Comment'
 
   switch post.status

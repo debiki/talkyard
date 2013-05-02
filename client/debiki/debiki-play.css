@@ -89,7 +89,7 @@ html.js body.dw-render-actions-pending .dw-as {
 /* === Page title === */
 
 
-#dw-t-0t {
+#dw-t-65501 {  /* the page title post has id 65501 */
   /* Don't float title, or body will appear to the right of the title,
   rather than below it.
   There're no SVG arrows that can be cropped, see above, [8DbF3]. */
@@ -317,8 +317,8 @@ post, only for the article.) */
 /* Cancel .dw-p-bd-blk max width for code pages, and for the page config post. */
 [data-page_role='Code'] .dw-hor > .dw-p > .dw-p-bd > .dw-p-bd-blk,
 [data-page_role='Code'] .dw-hor > .dw-p > .dw-f-e > .dw-e-tabs > .dw-e-tab > .dw-p-bd-blk,
-#post-0c > .dw-p-bd > .dw-p-bd-blk,
-#post-0c > .dw-f-e > .dw-e-tabs > .dw-e-tab > .dw-p-bd-blk {
+#post-65503 > .dw-p-bd > .dw-p-bd-blk,
+#post-65503 > .dw-f-e > .dw-e-tabs > .dw-e-tab > .dw-p-bd-blk {
   max-width: none;
 }
 
