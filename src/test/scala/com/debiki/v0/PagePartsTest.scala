@@ -134,54 +134,6 @@ class PagePartsTest extends Specification with PageTestValues {
 
   "A page" can {
 
-    "convert reply ids to and from integers" in {
-      PageParts.intToReplyId(0) must_== "" // 0 is not used anyway (it's reserved)
-      PageParts.intToReplyId(1) must_== "1"
-      PageParts.intToReplyId(9) must_== "9"
-      PageParts.intToReplyId(10) must_== "A"
-      PageParts.intToReplyId(35) must_== "Z"
-      PageParts.intToReplyId(36) must_== "a"
-      PageParts.intToReplyId(61) must_== "z"
-      PageParts.intToReplyId(62) must_== "10"
-      PageParts.intToReplyId(63) must_== "11"
-      PageParts.intToReplyId(64) must_== "12"
-      PageParts.intToReplyId(72) must_== "1A"
-      PageParts.intToReplyId(98) must_== "1a"
-      PageParts.intToReplyId(123) must_== "1z"
-      PageParts.intToReplyId(124) must_== "20"
-      PageParts.intToReplyId(134) must_== "2A"
-      PageParts.intToReplyId(185) must_== "2z"
-      PageParts.intToReplyId(187) must_== "31"
-      PageParts.intToReplyId(197) must_== "3B"
-      PageParts.intToReplyId(4475) must_== "1AB" // 1 * 62 ** 2 + 10 * 62 + 11 = 4475
-      PageParts.intToReplyId(89925) must_== "NOP" // 23 * (62 ** 2) + 24 * 62 + 25 = 89925
-      PageParts.intToReplyId(230577) must_== "xyz" // 59 * (62 ** 2) + 60 * 62 + 61 = 230577
-
-      // ... And convert back again:
-      PageParts.replyIdToInt("") must_== 0
-      PageParts.replyIdToInt("0") must_== 0
-      PageParts.replyIdToInt("1") must_== 1
-      PageParts.replyIdToInt("9") must_== 9
-      PageParts.replyIdToInt("A") must_== 10
-      PageParts.replyIdToInt("Z") must_== 35
-      PageParts.replyIdToInt("a") must_== 36
-      PageParts.replyIdToInt("z") must_== 61
-      PageParts.replyIdToInt("10") must_== 62
-      PageParts.replyIdToInt("11") must_== 63
-      PageParts.replyIdToInt("12") must_== 64
-      PageParts.replyIdToInt("1A") must_== 72
-      PageParts.replyIdToInt("1a") must_== 98
-      PageParts.replyIdToInt("1z") must_== 123
-      PageParts.replyIdToInt("20") must_== 124
-      PageParts.replyIdToInt("2A") must_== 134
-      PageParts.replyIdToInt("2z") must_== 185
-      PageParts.replyIdToInt("31") must_== 187
-      PageParts.replyIdToInt("3B") must_== 197
-      PageParts.replyIdToInt("1AB") must_== 4475 // 1 * 62 ** 2 + 10 * 62 + 11 = 4475
-      PageParts.replyIdToInt("NOP") must_== 89925 // 23 * (62 ** 2) + 24 * 62 + 25 = 89925
-      PageParts.replyIdToInt("xyz") must_== 230577 // 59 * (62 ** 2) + 60 * 62 + 61 = 230577
-    }
-
     "have a body" >> {
       "unapproved" in {
         val page = EmptyPage + bodySkeleton

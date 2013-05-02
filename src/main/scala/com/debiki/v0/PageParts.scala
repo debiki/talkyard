@@ -15,9 +15,9 @@ import com.debiki.v0.PostActionPayload.EditPost
 object PageParts {
 
 
-  val TitleId = "0t"
-  val BodyId = "0b"
-  val ConfigPostId = "0c"
+  val TitleId = "65501"
+  val BodyId = "65502"
+  val ConfigPostId = "65503"
 
 
   def isArticleOrConfigPostId(id: String) =
@@ -51,13 +51,14 @@ object PageParts {
           if (a.id.head == '?') {
             if (PageParts.isReply(a)) {
               // Reply ids should be small consecutive numbers that can be used
-              // as indexes into a bitset. That's why they're allocated in
-              // this manner.
+              // as indexes into a bitset, or as parts of permalinks, or to
+              // show in which order comments were posted and to refer to other
+              // people's comments. That's why they're allocated in this manner.
               nextReplyId += 1
-              intToReplyId(nextReplyId - 1)
+              nextReplyId.toString
             }
             else {
-              nextRandomString()
+              nextRandomActionId.toString
             }
           }
           else {
@@ -89,52 +90,15 @@ object PageParts {
   }
 
 
-  val ReplyIdAlphabet =
-    "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
-
-  val ReplyIdAlphabetBase = ReplyIdAlphabet.length
-
-  assert(ReplyIdAlphabetBase == 62)
-
-
-  /**
-   * Converts a number to a reply id, namely a base-62 string. Examples:
-   * 1 -> "1"  10 -> "A"  11 -> "B"  61 -> "z"
-   * 64 -> "12", 72 -> "1A"
-   *
-   * (An alternative is to reverse the digits, which would tend to result in more
-   * well balanced binary trees (assuming ids used as keys). This would, however
-   * result in related replies being located "randomly" (withing one page) when
-   * stored in a database. Therefore, it'd usually be more work to load only parts
-   * of a page? And it's better store replies sorted by time (not reverse digits)?)
-   */
-  def intToReplyId(value: Int): String = {
-    var remaining = value
-    var replyId = ""
-    while (remaining > 0) {
-      val remainder = remaining % 62
-      remaining = remaining / 62
-      replyId += ReplyIdAlphabet.charAt(remainder)
-    }
-    replyId.reverse
-  }
-
-
-  def replyIdToInt(replyId: String): Int = {
-    var multiplier = 1
-    replyId.foldRight(0) { (ch, sum) =>
-      val value = ch match {
-        case num if '0' <= ch && ch <= '9' => ch - '0'
-        case upper if 'A' <= ch && ch <= 'Z' => ch - 'A' + 10
-        case lower if 'a' <= ch && ch <= 'z' => ch - 'a' + 10 + 26
-        case x => assErr("DwE15GW08", o"""Bad reply id char: `$ch', cannot convert
-          reply id to int: `$replyId'""")
-      }
-      val newSum = sum + value * multiplier
-      multiplier *= ReplyIdAlphabetBase
-      newSum
-    }
-  }
+  /** If we restrict num comments to 2^16, then we could use as non-post action ids
+    * values from 65536 and upwards (= 2^16). However, let's start at 10e6, so we
+    * can create really huge discussions, should someone want to do that in the
+    * future some day. Some forums have threads that are 5000 pages long,
+    * and if there are 100 comments on each page, there'd be 500 000 comments!
+    * So 10 000 000 should be reasonably safe?
+    */
+  private def nextRandomActionId =
+    10*1000*1000 + (math.random * (Int.MaxValue - 10*1000*1000)).toInt
 
 }
 
