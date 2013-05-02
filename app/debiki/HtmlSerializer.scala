@@ -370,6 +370,7 @@ case class HtmlPageSerializer(
     val cssDummy =
       if (rootPost.user_!.id == DummyPage.DummyAuthorUser.id) " dw-dummy" else ""
 
+    val bodyAndComments =
       <div id={"dw-t-"+ rootPost.id}
            class={"dw-t"+ cssArtclThread + cssDummy +" dw-depth-0 dw-hor"}>
       {
@@ -384,6 +385,8 @@ case class HtmlPageSerializer(
         })
       }
       </div>
+
+    bodyAndComments
   }
 
 
@@ -414,17 +417,17 @@ case class HtmlPageSerializer(
     // wrap any posts in <ol>:s, with .dw-ts or .dw-i-ts CSS classes
     // — this would reduce dupl wrapping code.
 
-    var comments: NodeSeq = Nil
+    var threads: NodeSeq = Nil
     for {
       post <- _sortPostsDescFitness(posts)
       if !post.isTreeDeleted
       if !(post.isPostDeleted && post.replies.isEmpty)
     } {
       val thread = renderThread(post, depth, parentHorizontal, uncollapseFirst)
-      comments ++= thread
+      threads ++= thread
     }
 
-    comments
+    threads
   }
 
 
@@ -441,11 +444,11 @@ case class HtmlPageSerializer(
     val isRootOrArtclQstn =
           post.id == pageRoot.subId // || post.meta.isArticleQuestion
 
-      // Layout replies horizontally, if this is an inline reply to
-      // the root post, i.e. depth is 1 -- because then there's unused space
-      // to the right. However, the horizontal layout results in a higher
-      // thread if there's only one reply. So only do this if there's more
-      // than one reply.
+    // Layout replies horizontally, if this is an inline reply to
+    // the root post, i.e. depth is 1 -- because then there's unused space
+    // to the right. However, the horizontal layout results in a higher
+    // thread if there's only one reply. So only do this if there's more
+    // than one reply.
     val horizontal = (post.where.isDefined && depth == 1 && replies.length > 1) ||
                     isRootOrArtclQstn
     val cssThreadDeleted = if (post.isTreeDeleted) " dw-t-dl" else ""
@@ -457,79 +460,77 @@ case class HtmlPageSerializer(
       // Also fold inline threads (except for root post inline replies)
       // -- they confuse people (my father), in their current shape.
 
-    // ----- Indentation broken -----
-      val renderedComment: RenderedPost =
-        postRenderer.renderPost(post.id, uncollapse = uncollapseFirst)
+    val renderedComment: RenderedPost =
+      postRenderer.renderPost(post.id, uncollapse = uncollapseFirst)
 
-      val (myActionsIfHorizontalLayout, myActionsIfVerticalLayout) =
-        if (isTitle) {
-          (Nil, Nil)
-        } else if (horizontal) {
-          // Change from <div> to <li>.
-          (renderedComment.actionsHtml.copy(label = "li"), Nil)
-        } else {
-          (Nil, renderedComment.actionsHtml)
-        }
-
-      val (cssFolded, foldLinkText) = {
-        val shallFoldPost =
-          !uncollapseFirst && (
-          (postFitness.upperLimit < 0.5f && postFitness.observedMean < 0.333f) ||
-            isInlineNonRootChild || post.isTreeCollapsed)
-
-        if (shallFoldPost)
-          (" dw-zd", "Click to show this thread" +
-             renderedComment.topRatingsText.map(", rated "+ _).getOrElse(""))
-        else
-          ("", "")
+    val (myActionsIfHorizontalLayout, myActionsIfVerticalLayout) =
+      if (isTitle) {
+        (Nil, Nil)
+      } else if (horizontal) {
+        // Change from <div> to <li>.
+        (renderedComment.actionsHtml.copy(label = "li"), Nil)
+      } else {
+        (Nil, renderedComment.actionsHtml)
       }
 
-      val foldLink =
-        if (isTitle || isRootOrArtclQstn || post.isTreeDeleted) Nil
-        else <a class='dw-z'>{foldLinkText}</a>
+    val (cssFolded, foldLinkText) = {
+      val shallFoldPost =
+        !uncollapseFirst && (
+        (postFitness.upperLimit < 0.5f && postFitness.observedMean < 0.333f) ||
+          isInlineNonRootChild || post.isTreeCollapsed)
 
-      val repliesHtml = {
-        def shallHideReplies = post.isTreeDeleted ||
-          (!uncollapseFirst && post.isTreeCollapsed)
-        if (replies.isEmpty && myActionsIfHorizontalLayout.isEmpty) Nil
-        else if (shallHideReplies) Nil
-        // else if the-computer-thinks-the-comment-is-off-topic-and-that-
-        // -replies-therefore-should-be-hidden,
-        // then: renderCollapsedReplies(replies)
-        else <ol class='dw-res'>
-          { myActionsIfHorizontalLayout }
-          { renderThreads(depth + 1, replies, parentHorizontal = horizontal) }
-        </ol>
-      }
+      if (shallFoldPost)
+        (" dw-zd", "Click to show this thread" +
+           renderedComment.topRatingsText.map(", rated "+ _).getOrElse(""))
+      else
+        ("", "")
+    }
 
-      var thread = {
-        val cssHoriz = if (horizontal) " dw-hor" else ""
-        <li id={cssThreadId} class={"dw-t "+ cssDepth + cssInlineThread +
-               cssFolded + cssHoriz + cssThreadDeleted + cssArticleQuestion}>{
-          foldLink ++
-          renderedComment.headAndBodyHtml ++
-          myActionsIfVerticalLayout ++
-          repliesHtml
-        }</li>
-      }
+    val foldLink =
+      if (isTitle || isRootOrArtclQstn || post.isTreeDeleted) Nil
+      else <a class='dw-z'>{foldLinkText}</a>
 
-      if (parentHorizontal) {
-        // Make this thread resizable, eastwards, by wrapping it in a <div>.
-        // The <li> has display: table-cell and cannot be resized, so we'll
-        // resize the <div> instead.
-        thread = thread.copy(label = "div")
-        thread = <li>{ thread }</li>
-      }
-      else if (isTitle) {
-        // The title isn't placed in any list.
-        thread = thread.copy(label = "div")
-      }
+    val repliesHtml = {
+      def shallHideReplies = post.isTreeDeleted ||
+        (!uncollapseFirst && post.isTreeCollapsed)
+      if (replies.isEmpty && myActionsIfHorizontalLayout.isEmpty) Nil
+      else if (shallHideReplies) Nil
+      // else if the-computer-thinks-the-comment-is-off-topic-and-that-
+      // -replies-therefore-should-be-hidden,
+      // then: renderCollapsedReplies(replies)
+      else <ol class='dw-res'>
+        { myActionsIfHorizontalLayout }
+        { renderThreads(depth + 1, replies, parentHorizontal = horizontal) }
+      </ol>
+    }
 
-      // For inline comments, add info on where to place them.
-      // COULD rename attr to data-where, that's search/replace:able enough.
-      if (post.where isDefined) thread = thread % Attribute(
-        None, "data-dw-i-t-where", Text(post.where.get), scala.xml.Null)
-    // ----- END Indentation broken -----
+    var thread = {
+      val cssHoriz = if (horizontal) " dw-hor" else ""
+      <li id={cssThreadId} class={"dw-t "+ cssDepth + cssInlineThread +
+             cssFolded + cssHoriz + cssThreadDeleted + cssArticleQuestion}>{
+        foldLink ++
+        renderedComment.headAndBodyHtml ++
+        myActionsIfVerticalLayout ++
+        repliesHtml
+      }</li>
+    }
+
+    if (parentHorizontal) {
+      // Make this thread resizable, eastwards, by wrapping it in a <div>.
+      // The <li> has display: table-cell and cannot be resized, so we'll
+      // resize the <div> instead.
+      thread = thread.copy(label = "div")
+      thread = <li>{ thread }</li>
+    }
+    else if (isTitle) {
+      // The title isn't placed in any list.
+      thread = thread.copy(label = "div")
+    }
+
+    // For inline comments, add info on where to place them.
+    // COULD rename attr to data-where, that's search/replace:able enough.
+    if (post.where isDefined) thread = thread % Attribute(
+      None, "data-dw-i-t-where", Text(post.where.get), scala.xml.Null)
 
     thread
   }
