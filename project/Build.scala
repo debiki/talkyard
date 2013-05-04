@@ -19,28 +19,6 @@ object ApplicationBuild extends Build {
     (Project("debiki-dao-pgsql", file("modules/debiki-dao-pgsql"))
     dependsOn(debikiCore, debikiTckDao % "test"))
 
-  lazy val secureSocialDeps = Seq(
-    // "com.typesafe" %% "play-plugins-util" % "2.0.1", // notTransitive(), — not available yet for Scala 2.10? (as of December 19, 2012 - and certainly not in October 2012.)
-    //"com.typesafe" %% "play-plugins-mailer" % "2.1-RC1",
-    // -- Instead of the mailer:---------------
-    // "play" %% "play" % playVersion,
-    "org.apache.commons" % "commons-email" % "1.2",
-    // "com.typesafe" %% "play-plugins-util" % "2.1-SNAPSHOT" // already included above
-    // ----------------------------------------
-    //"com.typesafe" %% "play-plugins-mailer" % "2.0.4",
-    "org.mindrot" % "jbcrypt" % "0.3m")
-
-
-
-  lazy val secureSocial =
-    play.Project("securesocial", appVersion, secureSocialDeps,
-        path = file("modules/securesocial")
-    ).settings(
-      resolvers ++= Seq(
-        "jBCrypt Repository" at "http://repo1.maven.org/maven2/org/",
-        "Typesafe Repository" at "http://repo.typesafe.com/typesafe/releases/")
-    )
-
 
   val appDependencies = Seq(
     "com.amazonaws" % "aws-java-sdk" % "1.3.4",
@@ -57,6 +35,7 @@ object ApplicationBuild extends Build {
     // "com.twitter" %% "ostrich" % "4.10.6",
     "rhino" % "js" % "1.7R2",
     "org.yaml" % "snakeyaml" % "1.11",
+    "securesocial" %% "securesocial" % "master-SNAPSHOT",
     "org.mockito" % "mockito-all" % "1.9.0" % "test", // I use Mockito with Specs2...
     "org.scalatest" % "scalatest_2.10" % "2.0.M5b" % "test", // but prefer ScalaTest
     "org.scala-lang" % "scala-actors" % "2.10.1" % "test" // needed by ScalaTest
@@ -76,9 +55,7 @@ object ApplicationBuild extends Build {
     ).settings(
       mainSettings: _*
     ).dependsOn(
-      debikiCore, debikiDaoPgsql, secureSocial
-    ).aggregate(
-      secureSocial
+      debikiCore, debikiDaoPgsql
     )
 
 
@@ -86,6 +63,8 @@ object ApplicationBuild extends Build {
     scalaVersion := "2.10.1",
     compileRhinoTask := { "make compile_javascript"! },
     Keys.fork in Test := false, // or cannot place breakpoints in test suites
+    // SecureSocial — ignored if placed in `plugins.sbt`, no idea why?
+    resolvers += Resolver.url("sbt-plugin-snapshots", new URL("http://repo.scala-sbt.org/scalasbt/sbt-plugin-snapshots/"))(Resolver.ivyStylePatterns),
     Keys.compile in Compile <<=
        (Keys.compile in Compile).dependsOn(compileRhinoTask),
     unmanagedClasspath in Compile <+= (baseDirectory) map { bd =>
