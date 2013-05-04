@@ -34,7 +34,7 @@ case class Post(
   }
 
 
-  def parentId: String = payload.parentPostId
+  def parentId: ActionId = payload.parentPostId
 
   def parentPost: Option[Post] =
     if (parentId == id) None

@@ -15,12 +15,18 @@ import com.debiki.v0.PostActionPayload.EditPost
 object PageParts {
 
 
-  val TitleId = "65501"
-  val BodyId = "65502"
-  val ConfigPostId = "65503"
+  val TitleId = 65501
+  val BodyId = 65502
+  val ConfigPostId = 65503
+  val NoId = 0
+  val UnassignedId = -1
+  val UnassignedId2 = -2
+  val UnassignedId3 = -3
+  val UnassignedId4 = -4
+  def isActionIdUnknown(id: ActionId) = id < 0
 
 
-  def isArticleOrConfigPostId(id: String) =
+  def isArticleOrConfigPostId(id: ActionId) =
     id == PageParts.BodyId || id == PageParts.TitleId || id == PageParts.ConfigPostId
 
 
@@ -38,27 +44,27 @@ object PageParts {
 
 
   /** Assigns ids to actions and updates references from e.g. Edits to Posts.
-   *  Only remaps IDs that start with "?".
+   *  Only remaps IDs that are unknown (< 0).
    */
   def assignIdsTo[T <: PostActionDtoOld](actionsToRemap: List[T], nextNewReplyId: Int): List[T] = {
-    val remaps = mut.Map[String, String]()
+    val remaps = mut.Map[ActionId, ActionId]()
     var nextReplyId = nextNewReplyId
 
     // Generate new ids.
     actionsToRemap foreach { a: T =>
       require(!remaps.contains(a.id)) // each action must be remapped only once
       remaps(a.id) =
-          if (a.id.head == '?') {
+          if (isActionIdUnknown(a.id)) {
             if (PageParts.isReply(a)) {
               // Reply ids should be small consecutive numbers that can be used
               // as indexes into a bitset, or as parts of permalinks, or to
               // show in which order comments were posted and to refer to other
               // people's comments. That's why they're allocated in this manner.
               nextReplyId += 1
-              (nextReplyId - 1).toString
+              nextReplyId - 1
             }
             else {
-              nextRandomActionId.toString
+              nextRandomActionId
             }
           }
           else {
@@ -68,7 +74,7 @@ object PageParts {
     }
 
     // Remap ids and update references to ids.
-    def rmpd(id: String) = remaps.getOrElse(id, id)
+    def rmpd(id: ActionId) = remaps.getOrElse(id, id)
     def updateIds(action: T): T = (action match {
       case r: Rating => r.copy(id = remaps(r.id), postId = rmpd(r.postId))
       case f: Flag => f.copy(id = remaps(f.id), postId = rmpd(f.postId))
@@ -90,14 +96,16 @@ object PageParts {
   }
 
 
-  /** If we restrict num comments to 2^16, then we could use as non-post action ids
+  /** Ids 1, 2, 3 and upwards are for comments. Other actons, e.g. edits and flags,
+    * start elsewhere:
+    *   If we restrict num comments to 2^16, then we could use as non-post action ids
     * values from 65536 and upwards (= 2^16). However, let's start at 10e6, so we
     * can create really huge discussions, should someone want to do that in the
     * future some day. Some forums have threads that are 5000 pages long,
     * and if there are 100 comments on each page, there'd be 500 000 comments!
     * So 10 000 000 should be reasonably safe?
     */
-  private def nextRandomActionId =
+  def nextRandomActionId =
     10*1000*1000 + (math.random * (Int.MaxValue - 10*1000*1000)).toInt
 
 }
@@ -115,15 +123,15 @@ abstract class PostActionsWrapper { self: PageParts =>
   def actionDtos: List[PostActionDto[_]]
 
 
-  def getActionById(id: String): Option[PostAction[_]] =
+  def getActionById(id: ActionId): Option[PostAction[_]] =
     actionsById.get(id)
 
 
-  def getActionsByPostId(postId: String): List[PostAction[_]] =
+  def getActionsByPostId(postId: ActionId): List[PostAction[_]] =
     actionsByPostId(postId)
 
 
-  def getActionsByTargetId(targetId: String): List[PostAction[_]] =
+  def getActionsByTargetId(targetId: ActionId): List[PostAction[_]] =
     actionsByTargetActionId(targetId)
 
 
@@ -137,13 +145,13 @@ abstract class PostActionsWrapper { self: PageParts =>
     actionsById,
     actionsByPostId,
     actionsByTargetActionId): (
-      mut.Map[String, PostAction[_]],
-      mut.Map[String, List[PostAction[_]]],
-      mut.Map[String, List[PostAction[_]]]) = {
+      mut.Map[ActionId, PostAction[_]],
+      mut.Map[ActionId, List[PostAction[_]]],
+      mut.Map[ActionId, List[PostAction[_]]]) = {
 
-    var actionsById = mut.Map[String, PostAction[_]]()
-    var actionsByPostId = mut.Map[String, List[PostAction[_]]]().withDefaultValue(Nil)
-    val actionsByTargetId = mut.Map[String, List[PostAction[_]]]().withDefaultValue(Nil)
+    var actionsById = mut.Map[ActionId, PostAction[_]]()
+    var actionsByPostId = mut.Map[ActionId, List[PostAction[_]]]().withDefaultValue(Nil)
+    val actionsByTargetId = mut.Map[ActionId, List[PostAction[_]]]().withDefaultValue(Nil)
 
     for (state <- self.postStates) {
       addAction(new Post(self, state))
@@ -175,7 +183,7 @@ abstract class PostActionsWrapper { self: PageParts =>
       if (otherActionsSamePost.find(_.id == action.id).isEmpty)
         actionsByPostId(action.actionDto.postId) = action :: otherActionsSamePost
 
-      def addActionByTargetId(targetId: String) {
+      def addActionByTargetId(targetId: ActionId) {
         val otherActionsSameTarget = actionsByTargetId(action.postId)
         actionsByTargetId(targetId) = action :: otherActionsSameTarget
       }
@@ -237,9 +245,9 @@ case class PageParts (
   // Fixed (soon). Rewrite to PostActionDto and use PostActionsWrapper.
 
 
-  lazy val (postsByParentId: Map[String, List[Post]]) = {
+  lazy val (postsByParentId: Map[ActionId, List[Post]]) = {
     // Sort posts by parent id.
-    var postMap = mut.Map[String, mut.Set[Post]]()
+    var postMap = mut.Map[ActionId, mut.Set[Post]]()
     for (post <- getAllPosts) {
       def addNewSet() = {
         val set = mut.Set[Post]()
@@ -249,12 +257,12 @@ case class PageParts (
       postMap.getOrElse(post.parentId, addNewSet()) += post
     }
     // Copy to immutable versions.
-    def buildImmMap(mutMap: mut.Map[String, mut.Set[Post]]): Map[String, List[Post]] = {
+    def buildImmMap(mutMap: mut.Map[ActionId, mut.Set[Post]]): Map[ActionId, List[Post]] = {
       // COULD sort the list in ascenting ctime order?
       // Then list.head would be e.g. the oldest title -- other code
       // assume posts ase sorted in this way?
       // See Post.templatePost, titlePost.
-      Map[String, List[Post]](
+      Map[ActionId, List[Post]](
         (for ((parentId, postsSet) <- mutMap)
         yield (parentId, postsSet.toList // <-- sort this list by ctime asc?
               )).toList: _*).withDefaultValue(Nil)
@@ -293,9 +301,9 @@ case class PageParts (
 
   // Analyze ratings, per action.
   // (Never change this mut.Map once it's been constructed.)
-  private lazy val _ratingsByActionId: mut.Map[String, _RatingsOnActionImpl] = {
+  private lazy val _ratingsByActionId: mut.Map[ActionId, _RatingsOnActionImpl] = {
     val mutRatsByPostId =
-      mut.Map[String, _RatingsOnActionImpl]()
+      mut.Map[ActionId, _RatingsOnActionImpl]()
 
     // Remember the most recent ratings per user and non-authenticated login id.
     for (rating <- ratings) {
@@ -387,12 +395,12 @@ case class PageParts (
 
   // -------- Ratings
 
-  private lazy val ratingsById: imm.Map[String, Rating] =
-    imm.Map[String, Rating](ratings.map(x => (x.id, x)): _*)
+  private lazy val ratingsById: imm.Map[ActionId, Rating] =
+    imm.Map[ActionId, Rating](ratings.map(x => (x.id, x)): _*)
 
-  def rating(id: String): Option[Rating] = ratingsById.get(id)
+  def rating(id: ActionId): Option[Rating] = ratingsById.get(id)
 
-  def ratingsByActionId(actionId: String): Option[RatingsOnAction] =
+  def ratingsByActionId(actionId: ActionId): Option[RatingsOnAction] =
     _ratingsByActionId.get(actionId)
 
   def ratingsByUser(withId: String): Seq[Rating] =
@@ -404,7 +412,7 @@ case class PageParts (
 
   // -------- Posts
 
-  def getPost(id: String): Option[Post] =
+  def getPost(id: ActionId): Option[Post] =
     getActionById(id) match {
       case p @ Some(_: Post) => p.asInstanceOf[Option[Post]]
       case None => None
@@ -416,7 +424,7 @@ case class PageParts (
 
   def postCount = getAllPosts.length
 
-  def getPost_!(postId: String): Post =
+  def getPost_!(postId: ActionId): Post =
     getPost(postId).getOrElse(runErr(
       "DwE3kR49", s"Post `$postId' not found on page `$id'"))
 
@@ -460,11 +468,11 @@ case class PageParts (
 
   // -------- Replies
 
-  def repliesTo(id: String): List[Post] =
+  def repliesTo(id: ActionId): List[Post] =
     // Filter out title, body config post. (Parent id = its own id)
     postsByParentId.getOrElse(id, Nil).filterNot(_.id == id)
 
-  def successorsTo(postId: String): List[Post] = {
+  def successorsTo(postId: ActionId): List[Post] = {
     val res = repliesTo(postId)
     res.flatMap(r => successorsTo(r.id)) ::: res
   }
@@ -472,19 +480,19 @@ case class PageParts (
 
   // -------- Edits
 
-  def getPatch_!(editId: String): Patch =
+  def getPatch_!(editId: ActionId): Patch =
     getPatch(editId).getOrElse(assErr(
       "DwE03kE1", s"Edit id `$editId' not found on page `$pageId'"))
 
-  def getPatch(editId: String): Option[Patch] = getActionById(editId) match {
+  def getPatch(editId: ActionId): Option[Patch] = getActionById(editId) match {
     case p @ Some(_: Patch) => p.asInstanceOf[Option[Patch]]
     case None => None
     case x => runErr("DwE0GK43", s"Action `$editId' is not a Patch but a: ${classNameOf(x)}")
   }
 
-  def editAppsByEdit(id: String) = _editAppsByEditId.getOrElse(id, Nil)
+  def editAppsByEdit(id: ActionId) = _editAppsByEditId.getOrElse(id, Nil)
 
-  private lazy val _editAppsByEditId: imm.Map[String, List[EditApp]] = {
+  private lazy val _editAppsByEditId: imm.Map[ActionId, List[EditApp]] = {
     editApps.groupBy(_.editId)
     // Skip this List --> head conversion. There might be > 1 app per edit,
     // since apps can be deleted -- then the edit can be applied again later.
@@ -495,29 +503,29 @@ case class PageParts (
     //})
   }
 
-  private lazy val editAppsByPostId: imm.Map[String, List[EditApp]] =
+  private lazy val editAppsByPostId: imm.Map[ActionId, List[EditApp]] =
     editApps.groupBy(ea => getPatch_!(ea.editId).postId)
 
   /** Edits applied to the specified post, sorted by most-recent first.
    */
-  def editAppsTo(postId: String): List[EditApp] =
+  def editAppsTo(postId: ActionId): List[EditApp] =
     // The list is probably already sorted, since new EditApp:s are
     // prefixed to the editApps list.
     editAppsByPostId.getOrElse(postId, Nil).sortBy(- _.ctime.getTime)
 
-  def editApp(withId: String): Option[EditApp] =
+  def editApp(withId: ActionId): Option[EditApp] =
     editApps.filter(_.id == withId).headOption
 
 
   // -------- Flags
 
-  private lazy val flagsById: imm.Map[String, Flag] =
-    imm.Map[String, Flag](flags.map(x => (x.id, x)): _*)
+  private lazy val flagsById: imm.Map[ActionId, Flag] =
+    imm.Map[ActionId, Flag](flags.map(x => (x.id, x)): _*)
 
 
   // -------- Reviews (manual approvals and rejections, no auto approvals)
 
-  def getReview(reviewId: String): Option[Review] = getActionById(reviewId) match {
+  def getReview(reviewId: ActionId): Option[Review] = getActionById(reviewId) match {
     case p @ Some(_: Review) => p.asInstanceOf[Option[Review]]
     case None => None
     case x => runErr("DwE0GK43", s"Action `$reviewId' is no Review but a: ${classNameOf(x)}")
@@ -547,7 +555,7 @@ case class PageParts (
     var editApps2 = editApps
     var flags2 = flags
     var actions2 = this.actionDtos
-    type SthWithId = { def id: String }
+    type SthWithId = { def id: ActionId }
     def dieIfIdClash(olds: Seq[SthWithId], a: SthWithId) =
       olds.find(_.id == a.id) match {
         case None => // fine, `a` is not present in `olds`
@@ -668,7 +676,7 @@ case class PageParts (
  */
 sealed abstract class PageRoot {
   // COULD rename to `id`? Why did I call it `subId`?
-  def subId: String
+  def subId: ActionId
   // Why did I name it "...OrCreate..."?
   def findOrCreatePostIn(page: PageParts): Option[Post]
   def findChildrenIn(page: PageParts): List[Post]
@@ -677,18 +685,14 @@ sealed abstract class PageRoot {
 }
 
 
+// No longer needed? Was used in the past when post ids were strigns. Ok remove.
 object PageRoot {
 
   val TheBody = Real(PageParts.BodyId)
 
   /** A real post, e.g. the page body post. */
-  case class Real(subId: String) extends PageRoot {
-    // Only virtual ids may contain hyphens, e.g. "page-template".
-    assErrIf3(subId contains "-", "DwE0ksEW3", "Real id contains hyphen: "+
-          safed(subId))
-
+  case class Real(subId: ActionId) extends PageRoot {
     def findOrCreatePostIn(page: PageParts): Option[Post] = page.getPost(subId)
-
     def findChildrenIn(page: PageParts): List[Post] = page.repliesTo(subId)
   }
 
@@ -698,17 +702,9 @@ object PageRoot {
   // And lots of other virtual roots that provide whatever info on
   // the page?
 
-  def apply(id: String): PageRoot = {
-    id match {
-      case null => assErr("DwE0392kr53", "Id is null")
-      // COULD check if `id' is invalid, e.g.contains a hyphen,
-      // and if so show an error page root post.
-      case "" => Real(PageParts.BodyId)  // the default, if nothing specified
-      case "title" => Real(PageParts.TitleId)
-      case "template" => Real(PageParts.ConfigPostId)
-      case id => Real(id)
-    }
-  }
+  // No longer needed; was used in the past when post ids were strigns. Ok remove.
+  def apply(id: ActionId) = Real(id)
+
 }
 
 

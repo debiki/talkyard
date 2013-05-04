@@ -11,6 +11,7 @@ import PageParts._
 import FlagReason.FlagReason
 import com.debiki.v0.{PostActionPayload => PAP}
 
+
 /** Actions builds up a page: a page consists of various posts,
   * e.g. the title post, the body post, and comments posted, and actions
   * that edit and affect these posts. (This is the action, a.k.a. command,
@@ -31,16 +32,15 @@ import com.debiki.v0.{PostActionPayload => PAP}
   * edits a post, flags it, closes a thread, etcetera.
   */
 case class PostActionDto[P]( // [P <: PostActionPayload] -> compilation errors for PostAction
-  id: String,
+  id: ActionId,
   creationDati: ju.Date,
   payload: P,
-  postId: String,
+  postId: ActionId,
   loginId: String,
   userId: String,
   newIp: Option[String]) extends PostActionDtoOld {
 
-  require(id != "0")
-  require(id nonEmpty)
+  require(id != PageParts.NoId)
 
   def ctime = creationDati
 }
@@ -50,12 +50,12 @@ case class PostActionDto[P]( // [P <: PostActionPayload] -> compilation errors f
 object PostActionDto {
 
   def forNewPost(
-      id: String,
+      id: ActionId,
       creationDati: ju.Date,
       loginId: String,
       userId: String,
       newIp: Option[String],
-      parentPostId: String,
+      parentPostId: ActionId,
       text: String,
       markup: String,
       approval: Option[Approval],
@@ -93,31 +93,32 @@ object PostActionDto {
 
   def copyCreatePost(
         old: PostActionDto[PAP.CreatePost],
-        id: String = null,
+        id: ActionId = PageParts.NoId,
         creationDati: ju.Date = null,
         loginId: String = null,
         userId: String = null,
         newIp: Option[String] = null,
-        parentPostId: String = null,
+        parentPostId: ActionId = PageParts.NoId,
         text: String = null,
         markup: String = null,
         approval: Option[Approval] = null): PostActionDto[PAP.CreatePost] =
     PostActionDto(
-      id = if (id ne null) id else old.id,
-      postId = if (id ne null) id else old.id, // same as id
+      id = if (id != PageParts.NoId) id else old.id,
+      postId = if (id != PageParts.NoId) id else old.id, // same as id
       creationDati =  if (creationDati ne null) creationDati else old.creationDati,
       loginId = if (loginId ne null) loginId else old.loginId,
       userId = if (userId ne null) userId else old.userId,
       newIp = if (newIp ne null) newIp else old.newIp,
       payload = PAP.CreatePost(
-        parentPostId = if (parentPostId ne null) parentPostId else old.payload.parentPostId,
+        parentPostId =
+          if (parentPostId != PageParts.NoId) parentPostId else old.payload.parentPostId,
         text = if (text ne null) text else old.payload.text,
         markup = if (markup ne null) markup else old.payload.markup,
         approval = if (approval ne null) approval else old.payload.approval))
 
 
   def toEditPost(
-        id: String, postId: String, ctime: ju.Date,
+        id: ActionId, postId: ActionId, ctime: ju.Date,
         loginId: String, userId: String, newIp: Option[String],
         text: String, autoApplied: Boolean, approval: Option[Approval],
         newMarkup: Option[String] = None) =
@@ -129,8 +130,8 @@ object PostActionDto {
 
   def copyEditPost(
         old: PostActionDto[PAP.EditPost],
-        id: String = null,
-        postId: String = null,
+        id: ActionId = PageParts.NoId,
+        postId: ActionId = PageParts.NoId,
         createdAt: ju.Date = null,
         loginId: String = null,
         userId: String = null,
@@ -140,8 +141,8 @@ object PostActionDto {
         approval: Option[Approval] = null,
         newMarkup: Option[String] = null) =
     PostActionDto(
-      id = if (id ne null) id else old.id,
-      postId = if (postId ne null) postId else old.postId,
+      id = if (id != PageParts.NoId) id else old.id,
+      postId = if (postId != PageParts.NoId) postId else old.postId,
       creationDati =  if (createdAt ne null) createdAt else old.creationDati,
       loginId = if (loginId ne null) loginId else old.loginId,
       userId = if (userId ne null) userId else old.userId,
@@ -154,8 +155,8 @@ object PostActionDto {
 
 
   def toReviewPost(
-        id: String,
-        postId: String,
+        id: ActionId,
+        postId: ActionId,
         loginId: String,
         userId: String,
         ctime: ju.Date,
@@ -169,17 +170,17 @@ object PostActionDto {
 
   def copyReviewPost(
         old: PostActionDto[PAP.ReviewPost],
-        id: String = null,
-        postId: String = null,
+        id: ActionId = PageParts.NoId,
+        postId: ActionId = PageParts.NoId,
         loginId: String = null,
         userId: String = null,
         createdAt: ju.Date = null,
         newIp: Option[String] = null,
         approval: Option[Approval] = null): PostActionDto[PAP.ReviewPost] =
     PostActionDto(
-      id = if (id ne null) id else old.id,
+      id = if (id != PageParts.NoId) id else old.id,
       creationDati = if (createdAt ne null) createdAt else old.creationDati,
-      postId = if (postId ne null) postId else old.postId,
+      postId = if (postId != PageParts.NoId) postId else old.postId,
       loginId = if (loginId ne null) loginId else old.loginId,
       userId = if (userId ne null) userId else old.userId,
       newIp = if (newIp ne null) newIp else old.newIp,
@@ -187,7 +188,7 @@ object PostActionDto {
 
 
   def forTemporaryApprovalOf(postAction: PostActionDto[_]) = toReviewPost(
-    id = nextRandomString(),
+    id = PageParts.nextRandomActionId,
     postId = postAction.postId,
     loginId = SystemUser.Login.id,
     userId = SystemUser.User.id,
@@ -198,8 +199,8 @@ object PostActionDto {
 
   def toDeletePost(
         andReplies: Boolean,
-        id: String,
-        postIdToDelete: String,
+        id: ActionId,
+        postIdToDelete: ActionId,
         loginId: String,
         userId: String,
         createdAt: ju.Date,
@@ -231,7 +232,7 @@ object PostActionPayload {
     *  generic comment that results in ?? arrows to e.g. 3 other comments ??
     */
   case class CreatePost(
-    parentPostId: String,
+    parentPostId: ActionId,
     text: String,
     markup: String,
     approval: Option[Approval],
@@ -308,7 +309,7 @@ object PostActionPayload {
   /** Deletes things an edit suggestion or a flag. (But not a post — use DeletePost
     * and DeleteTree instead.)
     */
-  case class Delete(targetActionId: String) extends PostActionPayload
+  case class Delete(targetActionId: ActionId) extends PostActionPayload
 
 
   /** Undoes another action, e.g. an Undo with targetActionId = a CloseTree action
@@ -316,7 +317,7 @@ object PostActionPayload {
     *
     * Requires another coulmn in DW1_PAGE_ACTIONS, namely TARGET_ACTION_ID.
     */
-  case class Undo(targetActionId: String) extends PostActionPayload
+  case class Undo(targetActionId: ActionId) extends PostActionPayload
 
 }
 
@@ -328,14 +329,13 @@ object PostActionPayload {
 sealed abstract class PostActionDtoOld {
 
   /** The post that this action affects. */
-  def postId: String
+  def postId: ActionId
 
   /** A local id, unique only in the Debate that this action modifies.
-    * "?" means unknown.
+    * Negative values means unknown id.
     */
-  def id: String
-  require(id != "0")
-  require(id nonEmpty)
+  def id: ActionId
+  require(id != PageParts.NoId)
 
   /**
    * Identifies the login session, which in turn identifies
@@ -372,8 +372,8 @@ sealed abstract class PostActionDtoOld {
  *    But I might as well ask them to login instead? Saves my time, and CPU.
  */
 case class Rating (
-  id: String,
-  postId: String,
+  id: ActionId,
+  postId: ActionId,
   loginId: String,
   userId: String,
   newIp: Option[String],
@@ -418,8 +418,8 @@ object FlagReason extends Enumeration {
 
 
 case class Flag(
-  id: String,
-  postId: String,
+  id: ActionId,
+  postId: ActionId,
   loginId: String,
   userId: String,
   newIp: Option[String],
@@ -442,9 +442,9 @@ case class Flag(
  *  so they can be applied directly on creation?
  */
 case class EditApp(
-  id: String,
-  editId: String,
-  postId: String,
+  id: ActionId,
+  editId: ActionId,
+  postId: ActionId,
   loginId: String,
   userId: String,
   newIp: Option[String],

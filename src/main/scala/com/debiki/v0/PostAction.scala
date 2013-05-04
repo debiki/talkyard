@@ -74,13 +74,12 @@ trait MaybeApproval {
  */
 class PostActionOld(val debate: PageParts, val action: PostActionDtoOld) {
   def page = debate // should rename `debate` to `page`
-  def id: String = action.id
+  def id: ActionId = action.id
   def creationDati = action.ctime
   def loginId = action.loginId
   def login: Option[Login] = debate.people.login(action.loginId)
   def login_! : Login = login.getOrElse(runErr(
-     "DwE6gG32", "No login with id "+ safed(action.loginId) +
-     " for action "+ safed(id)))
+     "DwE6gG32", s"No login with id `${action.loginId}' for action $id"))
   def identity: Option[Identity] = login.flatMap(l =>
                                     debate.people.identity(l.identityId))
   def identity_! : Identity = debate.people.identity_!(login_!.identityId)

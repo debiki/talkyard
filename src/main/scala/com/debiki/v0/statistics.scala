@@ -253,7 +253,7 @@ class PageStats(val debate: PageParts, val pageTrust: PageTrust) {
     }
   }
 
-  private val postRatingStats = mut.Map[String, PostRatingStatsImpl]()
+  private val postRatingStats = mut.Map[ActionId, PostRatingStatsImpl]()
   private val postRatingStatsEmpty = new PostRatingStatsImpl
 
   // Calculate tag counts, store in mutable map.
@@ -281,7 +281,7 @@ class PageStats(val debate: PageParts, val pageTrust: PageTrust) {
   }
 
 
-  def ratingStatsFor(postId: String): PostRatingStats =
+  def ratingStatsFor(postId: ActionId): PostRatingStats =
     postRatingStats.getOrElse(postId, postRatingStatsEmpty)
 
 }

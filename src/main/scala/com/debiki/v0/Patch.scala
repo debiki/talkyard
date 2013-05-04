@@ -58,7 +58,7 @@ class Patch(debate: PageParts, val edit: PostActionDto[PAP.EditPost])
   val (isApplied, applicationDati,
       applierUserId, applicationActionId,
       isReverted, revertionDati)
-        : (Boolean, Option[ju.Date], Option[String], Option[String],
+        : (Boolean, Option[ju.Date], Option[String], Option[ActionId],
           Boolean, Option[ju.Date]) = {
     val allEditApps = page.editAppsByEdit(id)
     if (allEditApps isEmpty) {
