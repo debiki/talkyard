@@ -24,7 +24,7 @@ abstract class DebikiBrowserSpec extends FreeSpec with WebBrowser
 
   implicit override val patienceConfig = PatienceConfig(
     // Set long timeout so I can step through code in the debugger.
-    timeout = scaled(Span(60, Seconds)),
+    timeout = scaled(Span(6000, Seconds)),
     interval = scaled(Span(100, Millis)))
 
   implicit def webDriver = _webDriver

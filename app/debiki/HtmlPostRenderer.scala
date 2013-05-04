@@ -41,7 +41,7 @@ case class HtmlPostRenderer(
   nofollowArticle: Boolean = true) {
 
 
-  def renderPost(postId: String, uncollapse: Boolean = false): RenderedPost = {
+  def renderPost(postId: ActionId, uncollapse: Boolean = false): RenderedPost = {
     val post = page.getPost(postId) getOrElse
        assErr("DwE209X5", "post id "+ postId +" on page "+ page.id)
 

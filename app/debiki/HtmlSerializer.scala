@@ -20,7 +20,7 @@ object HtmlConfig {
   /**
    * A function from debate-id and post-id to a react URL.
    */
-  def reactUrl(debateId: String, postId: String) = "?act="+ postId
+  def reactUrl(debateId: String, postId: ActionId) = "?act="+ postId
 }
 
 
@@ -294,7 +294,7 @@ object HtmlPageSerializer {
         headOption.map(_.child)
 
   case class SerializedSingleThread(
-    prevSiblingId: Option[String],
+    prevSiblingId: Option[ActionId],
     htmlNodes: Node)
 
 
@@ -336,7 +336,7 @@ case class HtmlPageSerializer(
     HtmlPostRenderer(page, pageStats, config.hostAndPort, nofollowArticle)
 
 
-  def renderSingleThread(postId: String): Option[SerializedSingleThread] = {
+  def renderSingleThread(postId: ActionId): Option[SerializedSingleThread] = {
     page.getPost(postId) map { post =>
       val html = renderThreads(depth = post.depth, posts = post::Nil,
         parentHorizontal = false, uncollapseFirst = true)

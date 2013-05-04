@@ -5,6 +5,7 @@
 package test.e2e
 
 import com.debiki.v0.Prelude._
+import com.debiki.v0.ActionId
 import org.scalatest.time.{Seconds, Span}
 
 
@@ -18,13 +19,13 @@ trait TestReplyer {
 
   /** Adds a new reply; returns its id.
     */
-  def replyToArticle(text: String): String = {
+  def replyToArticle(text: String): ActionId = {
     clickArticleReplyLink()
     writeAndSubmitReply(text)
   }
 
 
-  def replyToComment(postId: String, text: String): String = {
+  def replyToComment(postId: ActionId, text: String): ActionId = {
     showActionLinks(postId)
     val replyLink = findActionLink_!(postId, "dw-a-reply")
     scrollIntoView(replyLink)
@@ -33,7 +34,7 @@ trait TestReplyer {
   }
 
 
-  private def writeAndSubmitReply(text: String): String = {
+  private def writeAndSubmitReply(text: String): ActionId = {
     writeReply(text)
 
     val postIdsBefore = findAllPostIds
@@ -68,7 +69,7 @@ trait TestReplyer {
   /** Finds the ids of all posts (without the "post-" prefix).
     */
   private def findAllPostIds =
-    findAll(cssSelector(".dw-p")).flatMap(_.attribute("id").map(_ drop 5)).toSet
+    findAll(cssSelector(".dw-p")).flatMap(_.attribute("id").map(_.drop(5).toInt)).toSet
 
 
   def clickArticleReplyLink() {

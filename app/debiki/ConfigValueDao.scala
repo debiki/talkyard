@@ -70,7 +70,7 @@ trait ConfigValueDao {
   }
 
 
-  protected def loadConfigMap(sitePageId: SitePageId, configPostId: String)
+  protected def loadConfigMap(sitePageId: SitePageId, configPostId: ActionId)
         : Map[String, Any] = {
     // Load the post as YAML into a map.
     loadPageAnyTenant(sitePageId) match {
@@ -114,7 +114,7 @@ trait CachingConfigValueDao extends ConfigValueDao {
   }
 
 
-  protected override def loadConfigMap(sitePageId: SitePageId, configPostId: String)
+  protected override def loadConfigMap(sitePageId: SitePageId, configPostId: ActionId)
         : Map[String, Any] = {
     val key = configMapKey(sitePageId, configPostId)
     val mapOpt = lookupInCache[Map[String, Any]](key)
@@ -133,7 +133,7 @@ trait CachingConfigValueDao extends ConfigValueDao {
   // is reloaded, that config page's own *configuration post* will be cached, and
   // overwrite the cached value of the config map the page's body represents
   // (since they'd share the same keys, were `configPostId` not included in the key).
-  private def configMapKey(sitePageId: SitePageId, configPostId: String) =
+  private def configMapKey(sitePageId: SitePageId, configPostId: ActionId) =
     s"${sitePageId.pageId}|${sitePageId.siteId}|$configPostId|ConfigMap"
 
 }

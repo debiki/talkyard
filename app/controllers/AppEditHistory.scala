@@ -12,17 +12,18 @@ import play.api.mvc.{Action => _}
 import PageActions._
 import Prelude._
 import Utils.{OkHtml}
+import Utils.parseIntOrThrowBadReq
 
 
 object AppEditHistory extends mvc.Controller {
 
 
-  def showForm(pathIn: PagePath, postId: String)
+  def showForm(pathIn: PagePath, postId: ActionId)
         = PageGetAction(pathIn) { pageReq: PageGetRequest =>
 
     val page = pageReq.page_!
     val post = page.getPost(postId) getOrElse
-      throwForbidden("DwE9kIJ4", "Post "+ safed(postId) +" not found")
+      throwForbidden("DwE9kIJ4", s"Post `$postId' not found")
 
     val (mayEdit, mayEditReason) =
       AppEdit.mayEdit(pageReq.user, post, pageReq.permsOnPage)
@@ -34,7 +35,7 @@ object AppEditHistory extends mvc.Controller {
   }
 
 
-  def handleForm(pathIn: PagePath, postId: String)
+  def handleForm(pathIn: PagePath, postId: ActionId)
         = PagePostAction(MaxPostSize)(pathIn) {
       pageReq: PagePostRequest =>
 
@@ -48,12 +49,12 @@ object AppEditHistory extends mvc.Controller {
     // For "-delete-", the id is an edit application id.
     // For "-apply-", it is an edit id.
     val appsAndDels = pageReq.listSkipEmpty("dw-fi-appdel").sorted
-    var actions = List[(HistoryEdit, String)]()
+    var actions = List[(HistoryEdit, ActionId)]()
     for (seqNoAppOrDel <- appsAndDels) seqNoAppOrDel.split('-') match {
       case Array(seqNo, "delete", editAppId) =>
-        actions ::= HistoryEdit.DeleteEditApp -> editAppId
+        actions ::= HistoryEdit.DeleteEditApp -> parseIntOrThrowBadReq(editAppId, "DwE71bF4")
       case Array(seqNo, "apply", editId) =>
-        actions ::= HistoryEdit.ApplyEdit -> editId
+        actions ::= HistoryEdit.ApplyEdit -> parseIntOrThrowBadReq(editId, "DwE65fB7")
       case _ =>
         throwBadReq("DwE0kr1x7476", "Bad dw-fi-appdel value: " +
            safed(seqNoAppOrDel))
@@ -71,7 +72,7 @@ object AppEditHistory extends mvc.Controller {
   }
 
 
-  private def _applyAndUndoEdits(changes: List[(HistoryEdit, String)],
+  private def _applyAndUndoEdits(changes: List[(HistoryEdit, ActionId)],
         pageReq: PageRequest[_]) {
 
     val approval = AutoApprover.perhapsApprove(pageReq)
@@ -93,16 +94,15 @@ object AppEditHistory extends mvc.Controller {
         case HistoryEdit.DeleteEditApp =>
           // Look up the EditApp to find the Edit id.
           val editApp = page.editApp(withId = actionId) getOrElse
-            throwForbidden("DwE017v34", "EditApp not found: "+ safed(actionId))
+            throwForbidden("DwE017v34", s"EditApp not found: `$actionId'")
           editApp.editId
       }
 
       val editAffected = page.getPatch(editId) getOrElse
-        throwForbidden("DwE03k23", "Edit not found: "+ safed(editId))
+        throwForbidden("DwE03k23", s"Edit not found: `$editId'")
 
       val postAffected = page.getPost(editAffected.postId) getOrElse
-        throwForbidden("DwE82U13k7", "Post not found: "+
-           safed(editAffected.postId))
+        throwForbidden("DwE82U13k7", s"Post not found: `${editAffected.postId}'")
 
       val (mayEdit, mayEditReason) =
         AppEdit.mayEdit(pageReq.user, postAffected, pageReq.permsOnPage)
@@ -114,7 +114,7 @@ object AppEditHistory extends mvc.Controller {
       histEdit match {
         case HistoryEdit.ApplyEdit =>
           EditApp(  // COULD rename to Appl
-            id = "?"+ sno, editId = actionId, postId = postAffected.id,
+            id = PageParts.UnassignedId - sno, editId = actionId, postId = postAffected.id,
             loginId = pageReq.loginId_!, userId = pageReq.user_!.id,
             newIp = pageReq.newIp,
             ctime = pageReq.ctime, result = "(Could apply diff)",

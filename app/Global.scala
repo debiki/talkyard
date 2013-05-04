@@ -6,6 +6,7 @@ import com.debiki.v0._
 import com.debiki.v0.Prelude._
 //import com.twitter.ostrich.stats.Stats
 //import com.twitter.ostrich.{admin => toa}
+import controllers.Utils.parseIntOrThrowBadReq
 import debiki._
 import play.api._
 import play.api.mvc._
@@ -75,6 +76,7 @@ object Global extends GlobalSettings {
       firstValueOf(versionAndMainFun) getOrElse ""
     lazy val mainFunVal_! : String = firstValueOf(versionAndMainFun).getOrElse(
       throwBadReq("DwE0k32", "No `"+ mainFun +"` value specified"))
+    def mainFunValAsInt_! = parseIntOrThrowBadReq(mainFunVal_!, "DwE451RW0")
 
     // Route based on the query string.
     import controllers._
@@ -83,23 +85,23 @@ object Global extends GlobalSettings {
     val POST = "POST"
     val action = (mainFun, request.method) match {
       case ("edit", GET) =>
-        AppEdit.showEditForm(pagePath, postId = mainFunVal_!)
+        AppEdit.showEditForm(pagePath, postId = mainFunValAsInt_!)
       case ("view", GET) =>
         App.viewPost(pagePath)
       case ("reply", GET) =>
-        AppReply.showForm(pagePath, postId = mainFunVal_!)
+        AppReply.showForm(pagePath, postId = mainFunValAsInt_!)
       case ("reply", POST) =>
-        AppReply.handleForm(pagePath, postId = mainFunVal_!)
+        AppReply.handleForm(pagePath, postId = mainFunValAsInt_!)
       case ("rate", POST) =>
-        App.handleRateForm(pagePath, postId = mainFunVal_!)
+        App.handleRateForm(pagePath, postId = mainFunValAsInt_!)
       case ("flag", POST) =>
-        App.handleFlagForm(pagePath, postId = mainFunVal_!)
+        App.handleFlagForm(pagePath, postId = mainFunValAsInt_!)
       case ("delete", POST) =>
-        App.handleDeleteForm(pagePath, postId = mainFunVal_!)
+        App.handleDeleteForm(pagePath, postId = mainFunValAsInt_!)
       case ("viewedits", GET) =>
-        AppEditHistory.showForm(pagePath, postId = mainFunVal_!)
+        AppEditHistory.showForm(pagePath, postId = mainFunValAsInt_!)
       case ("applyedits", POST) =>
-        AppEditHistory.handleForm(pagePath, postId = mainFunVal_!)
+        AppEditHistory.handleForm(pagePath, postId = mainFunValAsInt_!)
       case ("get-view-new-page-url", GET) =>
         AppCreatePage.getViewNewPageUrl(pagePath)
       case ("view-new-page", GET) =>
@@ -129,7 +131,7 @@ object Global extends GlobalSettings {
       case ("feed", GET) =>
         App.feed(pagePath)
       case ("act", GET) =>
-        Application.showActionLinks(pagePath, postId = mainFunVal_!)
+        Application.showActionLinks(pagePath, postId = mainFunValAsInt_!)
       case ("page-info", GET) =>
         Application.showPageInfo(pagePath)
       case ("config-user", GET) =>

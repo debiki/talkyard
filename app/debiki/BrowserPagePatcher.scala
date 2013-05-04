@@ -27,7 +27,7 @@ object BrowserPagePatcher {
   implicit private val logger = play.api.Logger(this.getClass)
 
 
-  case class PostPatchSpec(id: String, wholeThread: Boolean)
+  case class PostPatchSpec(id: ActionId, wholeThread: Boolean)
 
 
   def jsonForThreadsAndPosts(
@@ -74,12 +74,12 @@ object BrowserPagePatcher {
   }
 
 
-  def jsonForMyEditedPosts(editIdsAndPages: List[(List[String], PageParts)],
+  def jsonForMyEditedPosts(editIdsAndPages: List[(List[ActionId], PageParts)],
         request: DebikiRequest[_]): pm.PlainResult = {
 
     var patchesByPageId = Map[String, List[Map[String, JsValue]]]()
 
-    for ((editIds: List[String], page: PageParts) <- editIdsAndPages) {
+    for ((editIds: List[ActionId], page: PageParts) <- editIdsAndPages) {
 
       val patchesOnCurPage = for (editId <- editIds) yield {
         _jsonForEditedPost(editId, page, request)
@@ -96,7 +96,7 @@ object BrowserPagePatcher {
   private def _jsonForThread(post: Post, serializedThread: SerializedSingleThread)
         : Map[String, JsValue] = {
     var data = Map[String, JsValue](
-      "id" -> JsString(post.id),
+      "id" -> JsString(post.id.toString),
       "cdati" -> JsString(toIso8601T(post.creationDati)),
       "approved" -> JsBoolean(post.someVersionApproved),
       "html" -> JsString(serializedThread.htmlNodes.foldLeft("") {
@@ -104,11 +104,11 @@ object BrowserPagePatcher {
       }))
 
     if (post.parentId != post.id) {
-      data += "parentThreadId" -> JsString(post.parentId)
+      data += "parentThreadId" -> JsString(post.parentId.toString)
     }
 
     serializedThread.prevSiblingId.foreach { siblingId =>
-      data += "prevThreadId" -> JsString(siblingId)
+      data += "prevThreadId" -> JsString(siblingId.toString)
     }
 
     data
@@ -126,14 +126,14 @@ object BrowserPagePatcher {
       (headAndBodyHtml, actionsHtml)
     }
     Map(
-      "postId" -> JsString(post.id),
+      "postId" -> JsString(post.id.toString),
       "isPostApproved" -> JsBoolean(post.currentVersionApproved),
       "html" -> JsString(headAndBodyHtml),
       "actionsHtml" -> JsString(actionsHtml))
   }
 
 
-  private def _jsonForEditedPost(editId: String, page: PageParts,
+  private def _jsonForEditedPost(editId: ActionId, page: PageParts,
         request: DebikiRequest[_]): Map[String, JsValue] = {
     val edit = page.getPatch_!(editId)
 
@@ -153,8 +153,8 @@ object BrowserPagePatcher {
       else (JsUndefined(""), JsUndefined(""))
 
     Map(
-      "postId" -> JsString(edit.post_!.id),
-      "editId" -> JsString(edit.id),
+      "postId" -> JsString(edit.post_!.id.toString),
+      "editId" -> JsString(edit.id.toString),
       "isEditApplied" -> JsBoolean(edit.isApplied),
       "isPostApproved" -> JsBoolean(edit.post_!.currentVersionApproved),
       "html" -> jsHeadAndBodyHtml,

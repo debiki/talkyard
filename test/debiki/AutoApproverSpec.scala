@@ -110,8 +110,8 @@ class AutoApproverSpec extends Specification with Mockito {
       loginId = loginId, userId = "?", text = "täxt-tåxt",
       pageRole = PageRole.Generic, approval = None)
 
-  val replyA = PostActionDto.copyCreatePost(body, id = "2", parentPostId = body.id)
-  val replyB = PostActionDto.copyCreatePost(body, id = "3", parentPostId = body.id)
+  val replyA = PostActionDto.copyCreatePost(body, id = 2, parentPostId = body.id)
+  val replyB = PostActionDto.copyCreatePost(body, id = 3, parentPostId = body.id)
 
   val (guestLogin, openidLogin) = {
     val login = Login(id = loginId, ip = Ip, prevLoginId = None,

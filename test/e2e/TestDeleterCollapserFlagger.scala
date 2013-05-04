@@ -4,6 +4,7 @@
 
 package test.e2e
 
+import com.debiki.v0.ActionId
 import com.debiki.v0.Prelude._
 import org.scalatest.time.{Seconds, Span}
 
@@ -14,17 +15,17 @@ trait TestDeleterCollapserFlagger {
   self: DebikiBrowserSpec with StuffTestClicker =>
 
 
-  def deleteSingleComment(postId: String) {
+  def deleteSingleComment(postId: ActionId) {
     deleteCommentImpl(postId, wholeTree = false)
   }
 
 
-  def deleteCommentTree(postId: String) {
+  def deleteCommentTree(postId: ActionId) {
     deleteCommentImpl(postId, wholeTree = true)
   }
 
 
-  private def deleteCommentImpl(postId: String, wholeTree: Boolean) {
+  private def deleteCommentImpl(postId: ActionId, wholeTree: Boolean) {
     showActionLinks(postId)
 
     // Click More...; this makes the delete link appear (unless already done).

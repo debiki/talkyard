@@ -4,8 +4,10 @@
 
 package test.e2e
 
+import com.debiki.v0.ActionId
 import com.debiki.v0.Prelude._
 import com.debiki.v0.PageRole
+import com.debiki.v0.PageParts
 import org.openqa.selenium.interactions.Actions
 import org.scalatest.time.{Span, Seconds}
 import org.scalatest.DoNotDiscover
@@ -51,17 +53,17 @@ class EditActivitySpec extends DebikiBrowserSpec
 
   val guestUserName = s"Activity-Anon-${nextRandomString()}"
 
-  var postId_gu1 = ""
-  var postId_gu2 = ""
-  var postId_gu3 = ""
-  var postId_gm1 = ""
-  var postId_gm2 = ""
-  var postId_gm3 = ""
-  var postId_ad1 = ""
-  var postId_ad2 = ""
-  var postId_ad3 = ""
-  var postId_ad4 = ""
-  var postId_ad5 = ""
+  var postId_gu1 = PageParts.NoId
+  var postId_gu2 = PageParts.NoId
+  var postId_gu3 = PageParts.NoId
+  var postId_gm1 = PageParts.NoId
+  var postId_gm2 = PageParts.NoId
+  var postId_gm3 = PageParts.NoId
+  var postId_ad1 = PageParts.NoId
+  var postId_ad2 = PageParts.NoId
+  var postId_ad3 = PageParts.NoId
+  var postId_ad4 = PageParts.NoId
+  var postId_ad5 = PageParts.NoId
 
 
   "One can leave and accept improvement suggestions:" - {
@@ -247,7 +249,7 @@ class EditActivitySpec extends DebikiBrowserSpec
         approveEdits(postId_gu2)
       }
 
-      def approveEdits(postId: String) {
+      def approveEdits(postId: ActionId) {
         clickViewEditSuggestions(postId)
         // It takes a while to load the edits form.
         eventually { clickApproveAnySuggestion() }
@@ -295,7 +297,7 @@ class EditActivitySpec extends DebikiBrowserSpec
   }
 
 
-  def checkCommentStatus(postId: String, commentStatusText: String,
+  def checkCommentStatus(postId: ActionId, commentStatusText: String,
         numSuggestions: Int = -1) {
     val commentLink = find(cssSelector(s"a[href='/-${testPage.id}#post-$postId']")).
       getOrElse(fail(s"Comment `$postId' not listed"))
@@ -320,20 +322,20 @@ class EditActivitySpec extends DebikiBrowserSpec
   }
 
 
-  def findApprovePostLink(pageId: String, postId: String) =
+  def findApprovePostLink(pageId: String, postId: ActionId) =
     findPostInlineSomething(pageId, postId, cssClass = "approve-action", text = "Approve")
 
 
-  def findPostApprovedText(pageId: String, postId: String) =
+  def findPostApprovedText(pageId: String, postId: ActionId) =
     findPostInlineSomething(pageId, postId, cssClass = "inline-message", text = "Approved.")
 
 
-  def findImprovementSuggestionsLink(pageId: String, postId: String) =
+  def findImprovementSuggestionsLink(pageId: String, postId: ActionId) =
     findPostInlineSomething(pageId, postId, "suggestions-link")
 
 
   private def findPostInlineSomething(
-        pageId: String, postId: String, cssClass: String, text: String = null)
+        pageId: String, postId: ActionId, cssClass: String, text: String = null)
         : Option[Element] = {
     val query =
       // Find the link to the comment

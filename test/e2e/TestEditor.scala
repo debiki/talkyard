@@ -7,6 +7,7 @@ package test.e2e
 import org.openqa.selenium.Keys
 import org.openqa.selenium.interactions.Actions
 import com.debiki.v0.PageRole
+import com.debiki.v0.ActionId
 import play.api.test.Helpers.testServerPort
 import com.debiki.v0.Prelude._
 import org.scalatest.time.{Seconds, Span}
@@ -27,8 +28,8 @@ trait TestEditor {
     * (All functions in this file currently calls waitForDashbar() when needed,
     * I think.)
     */
-  def clickAndEdit(postId: String, newText: String) {
-    info("click #post-$postId, select Improve")
+  def clickAndEdit(postId: ActionId, newText: String) {
+    info(s"click #post-$postId, select Improve")
 
     var xOffset = 6
     var yOffset = 6
@@ -138,12 +139,12 @@ trait TestEditor {
   }
 
 
-  private def findEditsPendingModerationMessage(postId: String): Option[Element] = {
+  private def findEditsPendingModerationMessage(postId: ActionId): Option[Element] = {
     find(cssSelector(s"#post-$postId .dw-p-pending-mod"))
   }
 
 
-  def clickViewEditSuggestions(postId: String) {
+  def clickViewEditSuggestions(postId: ActionId) {
     val suggestionsLink = findActionLink_!(postId, "dw-a-pending-review")
     scrollIntoView(suggestionsLink)
     click on suggestionsLink

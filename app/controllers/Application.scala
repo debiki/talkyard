@@ -22,7 +22,7 @@ import Utils.{OkHtml, OkXml}
 object Application extends mvc.Controller {
 
 
-  def showActionLinks(pathIn: PagePath, postId: String) =
+  def showActionLinks(pathIn: PagePath, postId: ActionId) =
     PageGetAction(pathIn) { pageReq =>
       val links = Utils.formHtml(pageReq).actLinks(postId)
       OkHtml(links)
@@ -59,7 +59,7 @@ object Application extends mvc.Controller {
       .getOrElse("public, max-age=3600")
 
 
-  def handleRateForm(pathIn: PagePath, postId: String)
+  def handleRateForm(pathIn: PagePath, postId: ActionId)
         = PagePostAction(maxUrlEncFormBytes = 1000)(pathIn) { pageReq =>
 
     val ratingTags =
@@ -67,7 +67,7 @@ object Application extends mvc.Controller {
       .ifEmpty(throwBadReq("DwE84Ef6", "No rating tags"))
 
     var rating = Rating(
-      id = "?", postId = postId, ctime = pageReq.ctime,
+      id = PageParts.UnassignedId, postId = postId, ctime = pageReq.ctime,
       loginId = pageReq.loginId_!, userId = pageReq.user_!.id, newIp = pageReq.newIp,
       // COULD use a Seq not a List, and get rid of the conversion
       tags = ratingTags.toList)
@@ -77,7 +77,7 @@ object Application extends mvc.Controller {
   }
 
 
-  def handleFlagForm(pathIn: PagePath, postId: String)
+  def handleFlagForm(pathIn: PagePath, postId: ActionId)
         = PagePostAction(MaxDetailsSize)(pathIn) { pageReq =>
 
     import HtmlForms.FlagForm.{InputNames => Inp}
@@ -91,7 +91,7 @@ object Application extends mvc.Controller {
       }
     val details = pageReq.getNoneAsEmpty(Inp.Details)
 
-    val flag = Flag(id = "?", postId = postId,
+    val flag = Flag(id = PageParts.UnassignedId, postId = postId,
       loginId = pageReq.loginId_!, userId = pageReq.user_!.id, newIp = pageReq.newIp,
       ctime = pageReq.ctime, reason = reason, details = details)
 
@@ -104,7 +104,7 @@ object Application extends mvc.Controller {
   }
 
 
-  def handleDeleteForm(pathIn: PagePath, postId: String)
+  def handleDeleteForm(pathIn: PagePath, postId: ActionId)
         = PagePostAction(MaxDetailsSize)(pathIn) { pageReq =>
 
     import HtmlForms.Delete.{InputNames => Inp}
@@ -116,7 +116,7 @@ object Application extends mvc.Controller {
       throwForbidden("DwE0523k1250", "You may not delete that comment")
 
     val deletion = PostActionDto.toDeletePost(andReplies = wholeTree,
-      id = "?", postIdToDelete = postId, loginId = pageReq.loginId_!,
+      id = PageParts.UnassignedId, postIdToDelete = postId, loginId = pageReq.loginId_!,
       userId = pageReq.user_!.id, newIp = pageReq.newIp,
       createdAt = pageReq.ctime)
 
@@ -233,7 +233,7 @@ object Application extends mvc.Controller {
     // List posts by this user, so they can be highlighted.
     reply ++= "\nauthorOf:"
     for (post <- page.postsByUser(withId = my.id)) {
-      reply ++= "\n - " ++= post.id
+      reply ++= s"\n - ${post.id}"
     }
 
     // List the user's ratings so they can be highlighted so the user
@@ -242,7 +242,7 @@ object Application extends mvc.Controller {
     // overwritten ratings are included).
     reply ++= "\nratings:"
     for (rating <- page.ratingsByUser(withId = my.id)) {
-      reply ++= "\n " ++= rating.postId ++= ": [" ++=
+      reply ++= s"\n ${rating.postId}: [" ++=
          rating.tags.mkString(",") ++= "]"
     }
 

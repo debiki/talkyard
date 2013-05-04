@@ -51,7 +51,7 @@ object AppReview extends mvc.Controller {
     val reviewsByPageId: Map[String, List[PostActionDto[PAP.ReviewPost]]] =
       Utils.parsePageActionIds(apiReq.body.as[List[Map[String, String]]]) { actionId =>
         PostActionDto.toReviewPost(
-          id = "?", postId = actionId, loginId = apiReq.loginId_!,
+          id = PageParts.UnassignedId, postId = actionId, loginId = apiReq.loginId_!,
           userId = apiReq.user_!.id, newIp = None, ctime = apiReq.ctime,
           approval = (if (shallApprove) Some(Approval.Manual) else None))
       }

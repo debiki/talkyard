@@ -18,7 +18,7 @@ import PageActions._
 import ApiActions._
 import Prelude._
 import v0.{PostActionPayload => PAP}
-import Utils.{OkHtml, Passhasher}
+import Utils.{OkHtml, Passhasher, parseIntOrThrowBadReq}
 
 
 /**
@@ -32,7 +32,7 @@ import Utils.{OkHtml, Passhasher}
 object AppEdit extends mvc.Controller {
 
 
-  def showEditForm(pathIn: PagePath, postId: String)
+  def showEditForm(pathIn: PagePath, postId: ActionId)
         = PageGetAction(pathIn) {
       pageReq: PageGetRequest =>
     _showEditFormImpl(pageReq, postId)
@@ -42,6 +42,8 @@ object AppEdit extends mvc.Controller {
   def showEditFormAnyPage(
         pageId: String, pagePath: String, pageRole: String, postId: String)
         = GetAction { request =>
+
+    val postIdAsInt = parseIntOrThrowBadReq(postId, "DwE1Hu80")
 
     val pageReqPerhapsNoPage =
       PageRequest.forPageThatMightExist(request, pagePathStr = pagePath, pageId = pageId)
@@ -64,15 +66,15 @@ object AppEdit extends mvc.Controller {
             // These shouldn't matter when rendering the edit form anyway:
             parentPageId = None, publishDirectly = false)
         val pageReqWithMeta = pageReqPerhapsNoPage.copyWithPreloadedMeta(pageMeta)
-        val postToEdit = _createPostToEdit(pageReqWithMeta, postId, DummyAuthorIds)
+        val postToEdit = _createPostToEdit(pageReqWithMeta, postIdAsInt, DummyAuthorIds)
         pageReqWithMeta.copyWithPreloadedActions(PageParts(pageId) + postToEdit)
       }
 
-    _showEditFormImpl(completePageReq, postId)
+    _showEditFormImpl(completePageReq, postIdAsInt)
   }
 
 
-  def _showEditFormImpl(pageReqWithoutMe: PageRequest[_], postId: String) = {
+  def _showEditFormImpl(pageReqWithoutMe: PageRequest[_], postId: ActionId) = {
     // I think, but I don't remember why, we need to add the current user
     // to page.people, iff `postId` needs to be created (e.g. it's the
     // page title that hasn't yet been created so the server will create
@@ -119,6 +121,9 @@ object AppEdit extends mvc.Controller {
         request: JsonPostRequest =>
 
     val ErrPrefix = "/-/edit: Bad JSON:"
+
+    def getIntOrThrow(map: Map[String, JsValue], key: String): Int =
+      parseIntOrThrowBadReq(getTextOrThrow(map, key), "DwE38XU7")
 
     def getTextOrThrow(map: Map[String, JsValue], key: String): String =
       getTextOptOrThrow(map, key).getOrElse(throwBadReq(
@@ -197,7 +202,7 @@ object AppEdit extends mvc.Controller {
 
     val editMapsByPageId: Map[String, List[Map[String, JsValue]]] =
       editMapsUnsorted.groupBy(map => getTextOrThrow(map, "pageId"))
-    var editIdsAndPages = List[(List[String], PageParts)]()
+    var editIdsAndPages = List[(List[ActionId], PageParts)]()
 
     for ((pageId, editMaps) <- editMapsByPageId) {
 
@@ -218,12 +223,12 @@ object AppEdit extends mvc.Controller {
       val pageRequest = pageReqPerhapsNoMe.copyWithMeOnPage_!
 
       var actions = List[PostActionDtoOld]()
-      var idsOfEditedPosts = List[String]()
+      var idsOfEditedPosts = List[ActionId]()
 
       for (editMap <- editMaps) {
         val newText = getTextOrThrow(editMap, "text")
         val newMarkupOpt = getTextOptOrThrow(editMap, "markup")
-        val postId = getTextOrThrow(editMap, "postId")
+        val postId = getIntOrThrow(editMap, "postId")
 
         _throwIfTooMuchData(newText, pageRequest)
 
@@ -298,7 +303,7 @@ object AppEdit extends mvc.Controller {
     * Returns None if no changes was made (if old text == new text).
     */
   private def _saveEdits(pageReq: PageRequest[_],
-        postId: String, newText: String, newMarkupOpt: Option[String],
+        postId: ActionId, newText: String, newMarkupOpt: Option[String],
         anyNewPageApproval: Option[Approval])
         : Option[(Option[PostActionDtoOld], PostActionDtoOld)] = {
 
@@ -337,7 +342,7 @@ object AppEdit extends mvc.Controller {
       })
 
     var edit = PostActionDto.toEditPost(
-      id = "?x", postId = post.id, ctime = pageReq.ctime,
+      id = PageParts.UnassignedId, postId = post.id, ctime = pageReq.ctime,
       loginId = pageReq.loginId_!, userId = pageReq.user_!.id, newIp = pageReq.newIp,
       text = patchText, newMarkup = newMarkupOpt,
       approval = approval, autoApplied = mayEdit)
@@ -384,7 +389,7 @@ object AppEdit extends mvc.Controller {
    * Returns Some(Some(approval)) if an earlier approval was uphold,
    *   and Some(None) if the earlier approval was retracted.
    */
-  private def upholdEarlierApproval(pageReq: PageRequest[_], postId: String)
+  private def upholdEarlierApproval(pageReq: PageRequest[_], postId: ActionId)
         : Option[Option[Approval]] = {
 
     if (postId != PageParts.BodyId && postId != PageParts.TitleId)
@@ -423,7 +428,7 @@ object AppEdit extends mvc.Controller {
 
 
   private def _getOrCreatePostToEdit(
-        pageReq: PageRequest[_], postId: String, authorIds: AuthorIds)
+        pageReq: PageRequest[_], postId: ActionId, authorIds: AuthorIds)
         : (Post, Option[PostActionDto[PAP.CreatePost]]) = {
 
     val anyPost: Option[Post] = pageReq.page_!.getPost(postId)
@@ -448,7 +453,7 @@ object AppEdit extends mvc.Controller {
 
     val post = anyPost.getOrElse(
       lazyCreateOpt.map(new Post(pageReq.page_!, _)).getOrElse {
-        throwNotFound("DwE3k2190", "Post not found: "+ safed(postId))
+        throwNotFound("DwE3k2190", s"Post not found: $postId")
       })
 
     (post, lazyCreateOpt)
@@ -456,7 +461,7 @@ object AppEdit extends mvc.Controller {
 
 
   private def _createPostToEdit(
-        pageReq: PageRequest[_], postId: String, authorIds: AuthorIds)
+        pageReq: PageRequest[_], postId: ActionId, authorIds: AuthorIds)
         : PostActionDto[PAP.CreatePost] = {
 
     val markup =

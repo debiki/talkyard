@@ -22,7 +22,7 @@ import v0.{PostActionPayload => PAP}
 object AppReply extends mvc.Controller {
 
 
-  def showForm(pathIn: PagePath, postId: String) = PageGetAction(pathIn) {
+  def showForm(pathIn: PagePath, postId: ActionId) = PageGetAction(pathIn) {
       pageReq: PageGetRequest =>
 
     val replyForm: xml.NodeSeq =
@@ -32,7 +32,7 @@ object AppReply extends mvc.Controller {
   }
 
 
-  def handleForm(pathIn: PagePath, postId: String)
+  def handleForm(pathIn: PagePath, postId: ActionId)
         = PagePostAction(MaxPostSize)(pathIn) {
       pageReqNoMeOnPage: PagePostRequest =>
 
@@ -44,8 +44,7 @@ object AppReply extends mvc.Controller {
       throwBadReq("DwE72XS8", "Can only reply to latest page version")
 
     if (pageReq.page_!.getPost(postId) isEmpty)
-      throwBadReq("DwEe8HD36", "Cannot reply to post "+ safed(postId) +
-         "; it does not exist")
+      throwBadReq("DwEe8HD36", s"Cannot reply to post `$postId'; it does not exist")
 
     val text = pageReq.getEmptyAsNone(Inp.Text) getOrElse
       throwBadReq("DwE93k21", "Empty reply")
@@ -53,8 +52,8 @@ object AppReply extends mvc.Controller {
 
     val approval = AutoApprover.perhapsApprove(pageReq)
 
-    val postNoId = PostActionDto(id = "?", postId = "?", creationDati = pageReq.ctime,
-      loginId = pageReq.loginId_!, userId = pageReq.user_!.id,
+    val postNoId = PostActionDto(id = PageParts.UnassignedId, postId = PageParts.UnassignedId,
+      creationDati = pageReq.ctime, loginId = pageReq.loginId_!, userId = pageReq.user_!.id,
       newIp = pageReq.newIp, payload = PAP.CreatePost(
         parentPostId = postId, text = text, markup = Markup.DefaultForComments.id,
         where = whereOpt, approval = approval))

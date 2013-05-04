@@ -199,7 +199,7 @@ object AppList extends mvc.Controller {
 
   private def _jsonFor(action: PostActionOld): JsValue = {
     var data = Map[String, JsValue](
-      "id" -> JsString(action.id),
+      "id" -> JsString(action.id.toString),
       "pageId" -> JsString(action.page.id),
       "type" -> JsString(classNameOf(action)),
       "userId" -> JsString(action.user_!.id),

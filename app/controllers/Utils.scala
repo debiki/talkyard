@@ -93,7 +93,7 @@ object Utils extends Results with http.ContentTypes {
 
 
   def queryStringAndHashToView(pageRoot: PageRoot, pageVersion: Option[ju.Date],
-        actionId: Option[String] = None, forceQuery: Boolean = false)
+        actionId: Option[ActionId] = None, forceQuery: Boolean = false)
         : String = {
     var params = List[String]()
     if (pageVersion.isDefined) params ::= s"version=${toIso8601T(pageVersion.get)}"
@@ -177,6 +177,17 @@ object Utils extends Results with http.ContentTypes {
 
   case class LoginNotFoundException(tenantId: String, loginId: String)
      extends Exception("No login with id: "+ loginId +", tenantId: "+ tenantId)
+
+
+  def parseIntOrThrowBadReq(text: String, errorCode: String = "DwE50BK7"): Int = {
+    try {
+      text.toInt
+    }
+    catch {
+      case ex: NumberFormatException =>
+        throwBadReq(s"Not an integer: ``$text''", errorCode)
+    }
+  }
 
 
   object ValidationImplicits {
@@ -286,12 +297,13 @@ object Utils extends Results with http.ContentTypes {
 
 
   def parsePageActionIds[A](
-        pageActionIds: List[Map[String, String]])(fn: (String) => A)
+        pageActionIds: List[Map[String, String]])(fn: (ActionId) => A)
         : Map[String, List[A]] = {
 
     val pagesAndThings: List[(String, A)] = pageActionIds map { pageActionId =>
       val pageId = pageActionId("pageId")
-      val actionId = pageActionId("actionId")
+      val actionIdStr = pageActionId("actionId")
+      val actionId = parseIntOrThrowBadReq(actionIdStr, "DwE77BH3")
       pageId -> fn(actionId)
     }
 

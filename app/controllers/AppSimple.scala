@@ -57,7 +57,7 @@ object AppSimple extends mvc.Controller {
 
 
   private def loadThreadsOrPosts(
-        loadWhatFn: (PageParts, List[String]) => List[PostPatchSpec]) =
+        loadWhatFn: (PageParts, List[ActionId]) => List[PostPatchSpec]) =
       PostJsonAction(maxLength = 5000) { apiReq =>
 
     SECURITY // What about access control?! Page ids generally unknown however, but
@@ -65,7 +65,7 @@ object AppSimple extends mvc.Controller {
 
     val pageActionIds = apiReq.body.as[List[Map[String, String]]]
 
-    val actionsByPageId: Map[String, List[String]] =
+    val actionsByPageId: Map[String, List[ActionId]] =
       Utils.parsePageActionIds(pageActionIds)(identity)
 
     var pagesAndPatchSpecs = List[(PageParts, List[PostPatchSpec])]()
@@ -96,7 +96,7 @@ object AppSimple extends mvc.Controller {
     val pageActionIds = apiReq.body.as[List[Map[String, String]]]
 
     val actionsByPageId = Utils.parsePageActionIds(pageActionIds) { actionId =>
-      PostActionDto("?", apiReq.ctime, payload, postId = actionId,
+      PostActionDto(PageParts.UnassignedId, apiReq.ctime, payload, postId = actionId,
         loginId = apiReq.loginId_!, userId = apiReq.user_!.id, newIp = None)
     }
 

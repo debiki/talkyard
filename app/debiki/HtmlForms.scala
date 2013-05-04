@@ -109,7 +109,7 @@ class HtmlForms(val config: HtmlConfig, xsrfToken: String,
   def dialogTemplates = {
     <div id="dw-hidden-templates">
     { loginForms ++
-      replyForm("", "") ++
+      replyForm(PageParts.NoId, text = "") ++
       ratingForm ++
       flagForm ++
       deleteForm(None) ++
@@ -315,24 +315,26 @@ class HtmlForms(val config: HtmlConfig, xsrfToken: String,
     </form>
 
 
-  def actLinks(pid: String) = {
-    val safePid = safe(pid)  // Prevent xss attacks.
+  def actLinks(pid: ActionId) = {
     // COULD check permsOnPage.replyHidden/Visible etc.
     <ul>
-     <li><a href={"?reply=" + safePid + _viewRoot}>Reply to post</a></li>
-     <li><a href={"?rate="  + safePid + _viewRoot}>Rate it</a></li>
-     <li><a href={"?edit="  + safePid + _viewRoot}>Suggest edit</a></li>
-     <li><a href={"?flag="  + safePid + _viewRoot}>Report spam or abuse</a></li>
-     <li><a href={"?delete="+ safePid + _viewRoot}>Delete</a></li>
+     <li><a href={"?reply=" + pid + _viewRoot}>Reply to post</a></li>
+     <li><a href={"?rate="  + pid + _viewRoot}>Rate it</a></li>
+     <li><a href={"?edit="  + pid + _viewRoot}>Suggest edit</a></li>
+     <li><a href={"?flag="  + pid + _viewRoot}>Report spam or abuse</a></li>
+     <li><a href={"?delete="+ pid + _viewRoot}>Delete</a></li>
     </ul>
   }
 
-  def replyForm(replyToPostId: String, text: String) = {
+
+  def replyForm(replyToPostId: ActionId, text: String) = {
       import Reply.{InputNames => Inp}
+    val replyToPostIdStr =
+      if (replyToPostId == PageParts.NoId) "" else replyToPostId.toString
     val submitButtonText = "Post as ..." // COULD read user name from `config'
       <li class='dw-fs dw-fs-re'>
         <form
-            action={config.replyAction +"="+ replyToPostId + _viewRoot}
+            action={config.replyAction +"="+ replyToPostIdStr + _viewRoot}
             accept-charset='UTF-8'
             method='post'>
           { _xsrfToken }
@@ -351,6 +353,7 @@ class HtmlForms(val config: HtmlConfig, xsrfToken: String,
         </form>
       </li>
   }
+
 
   def ratingForm =
       <div class='dw-fs dw-fs-r'>

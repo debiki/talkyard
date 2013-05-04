@@ -12,6 +12,7 @@ import org.scalatest.Assertions
 import org.scalatest.selenium.WebBrowser
 import play.api.test.Helpers.testServerPort
 import com.debiki.v0.{PostActionPayload => PAP}
+import PageParts.UnassignedId
 
 
 /**
@@ -65,7 +66,7 @@ trait StuffCreator {
     val loginGrant = firstSiteDao.saveLogin(loginReq)
 
     val postTemplate = PostActionDto.forNewPost(
-      id = "?", parentPostId = PageParts.BodyId, creationDati = new ju.Date,
+      id = UnassignedId, parentPostId = PageParts.BodyId, creationDati = new ju.Date,
       loginId = loginGrant.login.id, userId = loginGrant.user.id,
       newIp = None, text = "", markup = "para",
       approval = Some(Approval.AuthoritativeUser))

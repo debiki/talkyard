@@ -9,6 +9,7 @@ import org.openqa.selenium.interactions.Actions
 import com.debiki.v0.PageRole
 import play.api.test.Helpers.testServerPort
 import com.debiki.v0.Prelude._
+import com.debiki.v0.ActionId
 import org.scalatest.time.{Seconds, Span}
 
 
@@ -190,7 +191,7 @@ trait StuffTestClicker {
   /** Fakes a mouseenter event that results in the "Reply, Like?, More..." links
     * being shown, for postId.
     */
-  def showActionLinks(postId: String) = {
+  def showActionLinks(postId: ActionId) = {
     // For whatever reasons, `mouse.moveMouse` and `Actions.moveToElement` doesn't
     // trigger the hover event that makes the More... menu visible, so it can be
     // clicked. Instead, fire the hover event "manually":
@@ -208,18 +209,18 @@ trait StuffTestClicker {
   }
 
 
-  def findPost(postId: String): Option[Element] = {
+  def findPost(postId: ActionId): Option[Element] = {
     find(s"post-$postId")
   }
 
 
-  def findActionLink_!(postId: String, actionLinkClass: String): Element = {
+  def findActionLink_!(postId: ActionId, actionLinkClass: String): Element = {
     findActionLink(postId, actionLinkClass) getOrDie
         s"No $actionLinkClass link found for post $postId"
   }
 
 
-  def findActionLink(postId: String, actionLinkClass: String): Option[Element] = {
+  def findActionLink(postId: ActionId, actionLinkClass: String): Option[Element] = {
     // Is there no other way to find $postId's parent element, than using XPath?
     val query =
       // Find parent post:

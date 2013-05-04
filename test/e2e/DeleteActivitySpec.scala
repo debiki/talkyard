@@ -5,6 +5,7 @@
 package test.e2e
 
 import com.debiki.v0.Prelude._
+import com.debiki.v0.PageParts
 import com.debiki.v0.PageRole
 import org.scalatest.DoNotDiscover
 
@@ -34,10 +35,10 @@ class DeleteActivitySpec extends DebikiBrowserSpec with TestReplyer with TestLog
   lazy val testPage = createTestPage(PageRole.Generic,
     title = "Delete Comments Test 053KRI", body = Some("Delete comments test 71QE05."))
 
-  var postId_ad1 = ""
-  var postId_ad2 = ""
-  var postId_ad3 = ""
-  var postId_ad4 = ""
+  var postId_ad1 = PageParts.NoId
+  var postId_ad2 = PageParts.NoId
+  var postId_ad3 = PageParts.NoId
+  var postId_ad4 = PageParts.NoId
 
 
   "Comments and comment trees can be deleted:" - {

@@ -12,6 +12,7 @@ import play.api._
 import play.api.mvc.{Action => _, _}
 import Prelude._
 import Utils.ValidationImplicits._
+import Utils.parseIntOrThrowBadReq
 import DbDao.PathClashException
 
 
@@ -411,7 +412,7 @@ case class PageRequest[A](
    */
   lazy val pageRoot: PageRoot =
     request.queryString.get("view").map(rootPosts => rootPosts.size match {
-      case 1 => PageRoot(rootPosts.head)
+      case 1 => PageRoot(parseIntOrThrowBadReq(rootPosts.head))
       // It seems this cannot hapen with Play Framework:
       case 0 => assErr("DwE03kI8", "Query string param with no value")
       case _ => throwBadReq("DwE0k35", "Too many `view' query params")
