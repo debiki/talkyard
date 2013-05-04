@@ -49,8 +49,8 @@ object DebikiSpecs {
 
   def havePostLike(
         post: PostActionDto[PostActionPayload.CreatePost] = null,
-        id: String = null,
-        parent: String = null,
+        id: ActionId = PageParts.NoId,
+        parent: ActionId = PageParts.NoId,
         ctime: ju.Date = null,
         loginId: String = null,
         newIp: String = null,
@@ -58,9 +58,9 @@ object DebikiSpecs {
         where: Option[String] = null) = new Matcher[PageParts] {
     def apply[S <: PageParts](expectable: Expectable[S]) = {
       val left = expectable.value
-      assert((id ne null) || (post ne null))  // must know id
+      assert((id != PageParts.NoId) || (post ne null))  // must know id
       var id2 = id
-      if (id eq null) id2 = post.id
+      if (id == PageParts.NoId) id2 = post.id
       left.getPost(id2) match {
         case Some(leftPost: Post) =>
           result(_matchPostImpl(
@@ -74,8 +74,8 @@ object DebikiSpecs {
 
   def matchPost(  // COULD write unit test for this one!
         post: PostActionDto[PostActionPayload.CreatePost] = null,
-        id: String = null,
-        parent: String = null,
+        id: ActionId = PageParts.NoId,
+        parent: ActionId = PageParts.NoId,
         ctime: ju.Date = null,
         loginId: String = null,
         newIp: String = null,
@@ -94,17 +94,18 @@ object DebikiSpecs {
   private def _matchPostImpl(
         leftPost: PostActionDto[PostActionPayload.CreatePost],
         post: PostActionDto[PostActionPayload.CreatePost],
-        id: String,
-        parent: String,
+        id: ActionId,
+        parent: ActionId,
         ctime: ju.Date,
         loginId: String,
         newIp: String,
         text: String,
         where: Option[String]): (Boolean, String, String) = {
     val test = _test(leftPost, post) _
+    val testId = _testId(leftPost, post) _
     var errs =
-      test("id", id, _.id) :::
-        test("parent", parent, _.payload.parentPostId) :::
+      testId("id", id, _.id) :::
+        testId("parent", parent, _.payload.parentPostId) :::
         test("ctime", ctime, _.creationDati) :::
         test("loginId", loginId, _.loginId) :::
         test("newIp", newIp, _.newIp) :::
@@ -115,8 +116,8 @@ object DebikiSpecs {
 
   def haveRatingLike(
         rating: Rating = null,
-        id: String = null,
-        postId: String = null,
+        id: ActionId = PageParts.NoId,
+        postId: ActionId = PageParts.NoId,
         ctime: ju.Date = null,
         loginId: String = null,
         userId: String = null,
@@ -124,9 +125,9 @@ object DebikiSpecs {
         tags: List[String] = null) = new Matcher[PageParts] {
     def apply[S <: PageParts](expectable: Expectable[S]) = {
       val left = expectable.value: PageParts
-      assert((id ne null) || (rating ne null))  // must know id
+      assert((id != PageParts.NoId) || (rating ne null))  // must know id
       var id2 = id
-      if (id2 eq null) id2 = rating.id
+      if (id2 == PageParts.NoId) id2 = rating.id
       left.rating(id2) match {
         case Some(r: Rating) =>
           result(
@@ -141,8 +142,8 @@ object DebikiSpecs {
 
   def matchRating(
         rating: Rating = null,
-        id: String = null,
-        postId: String = null,
+        id: ActionId = PageParts.NoId,
+        postId: ActionId = PageParts.NoId,
         ctime: ju.Date = null,
         loginId: String = null,
         userId: String = null,
@@ -160,17 +161,18 @@ object DebikiSpecs {
   private def _matchRatingImpl(
       leftRating: Rating,
       rating: Rating,
-      id: String,
-      postId: String,
+      id: ActionId = PageParts.NoId,
+      postId: ActionId = PageParts.NoId,
       ctime: ju.Date,
       loginId: String,
       userId: String,
       newIp: String,
       tags: List[String]): (Boolean, String, String) = {
     val test = _test(leftRating, rating) _
+    val testId = _testId(leftRating, rating) _
     val errs =
-      test("id", id, _.id) :::
-        test("postId", postId, _.postId) :::
+      testId("id", id, _.id) :::
+        testId("postId", postId, _.postId) :::
         test("ctime", ctime, _.ctime) :::
         test("loginId", loginId, _.loginId) :::
         test("userId", userId, _.userId) :::
@@ -202,6 +204,21 @@ object DebikiSpecs {
       result(errs isEmpty, "OK", errs.mkString(", and "), expectable)
     }
   }
+
+  /** Returns List(error: String), or Nil. */
+  private def _testId[T <: AnyRef](left: T, right: T)
+      (what: String, value: ActionId, getValue: (T) => ActionId): List[String] = {
+    var v = value
+    if ((value == PageParts.NoId) && (right ne null)) v = getValue(right)
+    val lv = getValue(left)
+    List(v match {
+      case PageParts.NoId => return Nil // skip this field
+      case `lv` => return Nil // matched, fine
+      case bad =>
+        "`"+ what +"' is: `"+ lv +"', should be: `"+ v +"'"
+    })
+  }
+
 
   /** Returns List(error: String), or Nil. */
   private def _test[T <: AnyRef, V <: AnyRef]

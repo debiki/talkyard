@@ -14,6 +14,11 @@ import DebikiSpecs._
 import DbDaoTckTest._
 import v0.DbDao._
 import v0.{PostActionPayload => PAP}
+import PageParts.UnassignedId
+import PageParts.UnassignedId2
+import PageParts.UnassignedId3
+import PageParts.UnassignedId4
+
 
 /*
 
@@ -169,10 +174,10 @@ object Templates {
     oidRealm = "example.com", oidClaimedId = "claimed-id.com",
     oidOpLocalId = "provider.com/local/id",
     firstName = "Laban", email = "oid@email.hmm", country = "Sweden")
-  val post = PostActionDto.forNewPost(id = "?", creationDati = new ju.Date,
+  val post = PostActionDto.forNewPost(id = UnassignedId, creationDati = new ju.Date,
     loginId = "?", userId = "?", newIp = None,  parentPostId = PageParts.BodyId,
     text = "", markup = "para", approval = None)
-  val rating = v0.Rating(id = "?", postId = PageParts.BodyId, loginId = "?",
+  val rating = v0.Rating(id = UnassignedId, postId = PageParts.BodyId, loginId = "?",
     userId = "?", newIp = None, ctime = new ju.Date, tags = Nil)
 }
 
@@ -825,7 +830,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
 
     lazy val ex2_emptyPost = PostActionDto.copyCreatePost(T.post,
       parentPostId = PageParts.BodyId, text = "", loginId = loginId, userId = globalUserId)
-    var ex2_id = ""
+    var ex2_id = PageParts.NoId
     "save an empty root post child post" in {
       testPage += loginGrant.user
       dao.savePageActions(testPage, List(ex2_emptyPost)) must beLike {
@@ -843,7 +848,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
       }
     }
 
-    var ex3_ratingId = ""
+    var ex3_ratingId = PageParts.NoId
     lazy val ex3_rating = T.rating.copy(loginId = loginId, userId = globalUserId,
       postId = PageParts.BodyId,  tags = "Interesting"::"Funny"::Nil)  // 2 tags
     "save a post rating, with 2 tags" in {
@@ -863,17 +868,17 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
       }
     }
 
-    var ex4_rating1Id = ""
+    var ex4_rating1Id = PageParts.NoId
     lazy val ex4_rating1 =
-      T.rating.copy(id = "?1", postId = PageParts.BodyId, loginId = loginId,
+      T.rating.copy(id = UnassignedId2, postId = PageParts.BodyId, loginId = loginId,
         userId = globalUserId, tags = "Funny"::Nil)
-    var ex4_rating2Id = ""
+    var ex4_rating2Id = PageParts.NoId
     lazy val ex4_rating2 =
-      T.rating.copy(id = "?2", postId = PageParts.BodyId, loginId = loginId,
+      T.rating.copy(id = UnassignedId3, postId = PageParts.BodyId, loginId = loginId,
         userId = globalUserId, tags = "Boring"::"Stupid"::Nil)
-    var ex4_rating3Id = ""
+    var ex4_rating3Id = PageParts.NoId
     lazy val ex4_rating3 =
-      T.rating.copy(id = "?3", postId = PageParts.BodyId, loginId = loginId,
+      T.rating.copy(id = UnassignedId4, postId = PageParts.BodyId, loginId = loginId,
         userId = globalUserId, tags = "Boring"::"Stupid"::"Funny"::Nil)
 
     "save 3 ratings, with 1, 2 and 3 tags" in {
@@ -915,7 +920,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
       var reviewSaved: PostActionDto[PAP.ReviewPost] = null
       val approval = if (isApproved) Some(Approval.Manual) else None
       val reviewNoId = PostActionDto.toReviewPost(
-         "?", postId = ex1_rootPost.id, loginId = loginId,
+         UnassignedId, postId = ex1_rootPost.id, loginId = loginId,
          userId = globalUserId, newIp = None, ctime = now, approval = approval)
       dao.savePageActions(testPage, List(reviewNoId)) must beLike {
         case (_, List(review: PostActionDto[PAP.ReviewPost])) =>
@@ -936,8 +941,8 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
     // -------- Edit posts
 
 
-    var exEdit_postId: String = null
-    var exEdit_editId: String = null
+    var exEdit_postId: ActionId = PageParts.NoId
+    var exEdit_editId: ActionId = PageParts.NoId
 
     "create a post to edit" >> {
       // Make post creation action
@@ -962,12 +967,12 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
         // Make edit actions
         val patchText = makePatch(from = post.payload.text, to = newText)
         val editNoId = PostActionDto.toEditPost(
-          id = "?x", postId = post.id, ctime = now, loginId = loginId,
+          id = UnassignedId, postId = post.id, ctime = now, loginId = loginId,
           userId = globalUserId,
           newIp = None, text = patchText, newMarkup = None,
           approval = None, autoApplied = false)
         val publNoId = EditApp(
-          id = "?", editId = "?x", postId = post.id, ctime = now,
+          id = UnassignedId2, editId = UnassignedId, postId = post.id, ctime = now,
           loginId = loginId, userId = globalUserId, newIp = None, result = newText,
           approval = None)
 
@@ -990,11 +995,11 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
       "change the markup type" in {
         // Make edit actions
         val editNoId = PostActionDto.toEditPost(
-          id = "?x", postId = post.id, ctime = now, loginId = loginId,
+          id = UnassignedId, postId = post.id, ctime = now, loginId = loginId,
           userId = globalUserId, newIp = None, text = "", newMarkup = Some("html"),
           approval = None, autoApplied = false)
         val publNoId = EditApp(
-          id = "?", editId = "?x", postId = post.id, ctime = now,
+          id = UnassignedId2, editId = UnassignedId, postId = post.id, ctime = now,
           loginId = loginId, userId = globalUserId, newIp = None, result = newText,
           approval = None)
 
@@ -1288,7 +1293,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
         parentPostId = PageParts.BodyId, text = "",
         loginId = exOpenId_loginGrant.login.id,
         userId = exOpenId_loginGrant.user.id)
-      var postId = "?"
+      var postId = PageParts.NoId
       testPage += exOpenId_loginGrant.user
       dao.savePageActions(testPage, List(newPost)) must beLike {
         case (_, List(savedPost: PostActionDto[PAP.CreatePost])) =>
