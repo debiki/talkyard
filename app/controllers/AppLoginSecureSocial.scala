@@ -62,6 +62,13 @@ object AppLoginSecureSocial extends mvc.Controller {
 
   // Not async? This blocks a thread?
   private def handleAuth(provider: String) = mvc.Action { implicit request =>
+    // Copy implementation from
+    //   modules/securesocial-git/module-code/app/securesocial/controllers/
+    //      ProviderController.scala ?
+    // (Copyright notice alerady okay at the top of this file.)
+
+    unimplemented
+    /*
     Registry.providers.get(provider) match {
       case Some(p) => {
         try {
@@ -89,7 +96,7 @@ object AppLoginSecureSocial extends mvc.Controller {
       }
       case _ =>
         throwNotFound("DwE26SK3", s"No provider with id `$provider'")
-    }
+    }*/
   }
 
 }
