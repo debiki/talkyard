@@ -132,7 +132,7 @@ object AppCreatePage extends mvc.Controller {
   }
 
 
-  def generateNewPageId(): String = nextRandomString()
+  def generateNewPageId(): String = nextRandomPageId()
 
 
   private def newPagePathFromUrl(pageReq: PageRequest[_], pageId: String): PagePath = {

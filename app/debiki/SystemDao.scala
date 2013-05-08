@@ -24,6 +24,9 @@ class SystemDao(protected val systemDbDao: SystemDbDao) {
 
   // ----- Websites (a.k.a. tenants)
 
+  def checkInstallationStatus(): InstallationStatus =
+    systemDbDao.checkInstallationStatus()
+
   // COULD rename to createFirstWebsite
   def createTenant(name: String): Tenant =
     systemDbDao.createTenant(name)

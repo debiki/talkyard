@@ -30,6 +30,7 @@ class AnonLoginSpec extends DebikiBrowserSpec with TestReplyer with TestLoginner
   lazy val testPage = createTestPage(PageRole.Generic,
       title = "Test Page Title 27KV09", body = Some("Test page text 953Ih31."))
 
+  def randomId() = nextRandomString() take 5
 
   "Anon user with a browser can" - {
 
@@ -38,23 +39,23 @@ class AnonLoginSpec extends DebikiBrowserSpec with TestReplyer with TestLoginner
     }
 
     "login and reply as new Anon User, specify no email" - {
-      loginAndReplyAsAnon(name = s"Anon-${nextRandomString()}")
+      loginAndReplyAsAnon(name = s"Anon-${randomId()}")
     }
 
     "login and reply as new Anon User, specify email directly" - {
-      val name = s"anon-${nextRandomString()}"
+      val name = s"anon-${randomId()}"
       loginAndReplyAsAnon(name, email = s"$name@example.com")
     }
 
     "login and reply as new Anon User, specify email later" - {
       // Place this test after the `specify email directly` test just above,
       // to trigger bug#9kie35.
-      val name = s"anon-${nextRandomString()}"
+      val name = s"anon-${randomId()}"
       loginAndReplyAsAnon(name, email = s"$name@example.com", waitWithEmail = true)
     }
 
     "login and reply as new Anon User, specify email later, then change her mind" - {
-      val name = s"anon-${nextRandomString()}"
+      val name = s"anon-${randomId()}"
       loginAndReplyAsAnon(name, email = s"$name@example.com",
         waitWithEmail = true, waitWithEmailThenCancel = true)
     }
@@ -91,7 +92,7 @@ class AnonLoginSpec extends DebikiBrowserSpec with TestReplyer with TestLoginner
   }
 
 
-  private def nextName() = s"Anon-${nextRandomString()}"
+  private def nextName() = s"Anon-${randomId()}"
 
 
   private def loginAndReplyAsAnon(
@@ -100,7 +101,7 @@ class AnonLoginSpec extends DebikiBrowserSpec with TestReplyer with TestLoginner
         waitWithEmail: Boolean = false,
         waitWithEmailThenCancel: Boolean = false) {
 
-    val testText = s"ReplyAsAnon ${nextRandomString()}"
+    val testText = s"ReplyAsAnon ${randomId()}"
 
     "logout if needed" in {
       logoutIfLoggedIn()

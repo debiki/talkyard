@@ -51,7 +51,7 @@ class EditActivitySpec extends DebikiBrowserSpec
   lazy val testPage = createTestPage(PageRole.Generic,
     title = "Edit Suggestions Test 5902RK", body = Some("Edit suggestions test 10EIJ55."))
 
-  val guestUserName = s"Activity-Anon-${nextRandomString()}"
+  val guestUserName = s"Activity-Anon-${nextRandomString() take 5}"
 
   var postId_gu1 = PageParts.NoId
   var postId_gu2 = PageParts.NoId
