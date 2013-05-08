@@ -83,3 +83,14 @@ case class FoundAlias(
  */
 case object FoundNothing extends TenantLookup
 
+
+/** The installation status of this website, that is, if we have yet to create
+  * the very first site hosted by this server, or an admin for that site.
+  */
+sealed abstract class InstallationStatus
+
+object InstallationStatus {
+  case object CreateFirstSite extends InstallationStatus
+  case object CreateFirstSiteAdmin extends InstallationStatus
+  case object AllDone extends InstallationStatus
+}

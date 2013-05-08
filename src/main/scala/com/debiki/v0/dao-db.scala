@@ -266,6 +266,10 @@ abstract class SystemDbDao {
 
   // ----- Websites (a.k.a. tenants)
 
+  /** Finds out if we have yet to create the very first site, or an admin for that site.
+    */
+  def checkInstallationStatus(): InstallationStatus
+
   /**
    * Creates the very first tenant, assigns it an id and and returns it.
    *
