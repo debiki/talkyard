@@ -281,11 +281,15 @@ object Prelude {
   // Is thread safe.
   private val _random = new java.security.SecureRandom();
 
+
+  def nextRandomString(): String =
+    new java.math.BigInteger(130, _random).toString(36) // 0..9, a..z
+
   // COULD split this in a random string function, and other id generation
   // functions, with string length adjusted, depending on how the random
   // string will be used.
-  def nextRandomString(): String = {  // TODO exclude vowels, so no bad words
-    var s = new java.math.BigInteger(130, _random).toString(36); // 0..9, a..z
+  def nextRandomPageId(): String = {  // TODO exclude vowels, so no bad words
+    var s = nextRandomString()
     // Remove vowels to reduce the possibility of ugly bad words.
     // Keep vowels "uy" though, so there are 32 chars in total.
     // "uy" are the least common vowels.

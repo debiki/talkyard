@@ -64,10 +64,10 @@ class PreludeTest extends Specification {
     }
   }
 
-  "nextRandomString" should {
+  "nextRandomPageId" should {
     "be at least 5 chars and contain no vowels but `uy'" >> {
       for (i <- 1 to 50) {
-        val s = nextRandomString
+        val s = nextRandomPageId
         // Vowels aoei forbidden, and only lowercase chars (+ numbers) allowed.
         ("aoeiABCDEFGHIJKLMNOPQRSTUVWXYZ" intersect s) must_== ""
         s.length must be_>=(5)
