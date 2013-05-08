@@ -29,7 +29,7 @@ import play.api._
 import i18n.Messages
 import play.api.mvc.{Action => _, _}
 import play.api.Play.current
-import securesocial.core.{AccessDeniedException, Registry, SecureSocial}
+import securesocial.core._
 import securesocial.controllers.TemplatesPlugin
 import securesocial.core.providers.utils.RoutesHelper
 
@@ -60,43 +60,50 @@ object AppLoginSecureSocial extends mvc.Controller {
   def authenticate(provider: String) = handleAuth(provider)
   def authenticateByPost(provider: String) = handleAuth(provider)
 
+
   // Not async? This blocks a thread?
   private def handleAuth(provider: String) = mvc.Action { implicit request =>
-    // Copy implementation from
-    //   modules/securesocial-git/module-code/app/securesocial/controllers/
-    //      ProviderController.scala ?
-    // (Copyright notice alerady okay at the top of this file.)
-
-    unimplemented
-    /*
     Registry.providers.get(provider) match {
       case Some(p) => {
         try {
           p.authenticate().fold( result => result , {
-            user =>
-              Logger.debug(s"User logged in: $user")
-              Redirect(toUrl).withSession { session +
-                (SecureSocial.UserKey -> user.id.id) +
-                SecureSocial.lastAccess +
-                (SecureSocial.ProviderKey -> user.id.providerId) -
-                SecureSocial.OriginalUrlKey
-              }
+            user => completeAuthentication(user, session)
           })
         } catch {
           case ex: AccessDeniedException => {
-            Redirect(RoutesHelper.login()).flashing(
-              "error" -> Messages("securesocial.login.accessDenied"))
+            Redirect(RoutesHelper.login()).flashing("error" -> Messages("securesocial.login.accessDenied"))
           }
+
           case other: Throwable => {
             Logger.error("Unable to log user in. An exception was thrown", other)
-            Redirect(RoutesHelper.login()).flashing(
-              "error" -> Messages("securesocial.login.errorLoggingIn"))
+            Redirect(RoutesHelper.login()).flashing("error" -> Messages("securesocial.login.errorLoggingIn"))
           }
         }
       }
       case _ =>
         throwNotFound("DwE26SK3", s"No provider with id `$provider'")
-    }*/
+    }
+  }
+
+
+  private def completeAuthentication(user: Identity, session: Session)(
+        implicit request: RequestHeader): PlainResult = {
+    if ( Logger.isDebugEnabled ) {
+      Logger.debug("[securesocial] user logged in : [" + user + "]")
+    }
+    val withSession = Events.fire(new LoginEvent(user)).getOrElse(session)
+    Authenticator.create(user) match {
+      case Right(authenticator) => {
+        Redirect(toUrl).withSession(withSession -
+          SecureSocial.OriginalUrlKey -
+          IdentityProvider.SessionId -
+          OAuth1Provider.CacheKey).withCookies(authenticator.toCookie)
+      }
+      case Left(error) => {
+        // improve this
+        throw new RuntimeException("Error creating authenticator")
+      }
+    }
   }
 
 }
