@@ -24,4 +24,4 @@
 	url = https://github.com/imakewebthings/jquery-waypoints.git
 [submodule "modules/securesocial-git"]
 	path = modules/securesocial-git
-	url = https://github.com/jaliss/securesocial.git
+	url = git://github.com/kajmagnus79/securesocial.git
