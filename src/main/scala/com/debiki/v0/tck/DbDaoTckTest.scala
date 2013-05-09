@@ -235,8 +235,9 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
       systemDbDao.loadTenants("non_existing_id"::Nil) must_== Nil
     }
 
-    "create a Test tenant" in {
-      val tenant = systemDbDao.createTenant(name = "Test")
+    "create a test site (that we'll use hereafter)" in {
+      val tenant = systemDbDao.createFirstSite(
+        name = "Test", address = "test.ex.com", https = TenantHost.HttpsNone)
       tenant.name must_== "Test"
       tenant.id must_!= ""
       defaultTenantId = tenant.id
@@ -244,9 +245,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
 
     lazy val dao = newTenantDbDao(v0.QuotaConsumers(tenantId = defaultTenantId))
 
-    "add and lookup host test.ex.com" in {
-      dao.addTenantHost(TenantHost("test.ex.com",
-         TenantHost.RoleCanonical, TenantHost.HttpsNone))
+    "lookup test tenant host test.ex.com" in {
       val lookup = systemDbDao.lookupTenant("http", "test.ex.com")
       lookup must_== FoundChost(defaultTenantId)
       val lookup2 = dao.lookupOtherTenant("http", "test.ex.com")
@@ -1659,24 +1658,32 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
 
     "create and revoke admin privs" >> {
 
-      def testAdmin(makeAdmin: Boolean) = {
+      def testAdmin(makeAdmin: Boolean, makeOwner: Option[Boolean]) = {
         // Somewhat dupl code, see "configure email to a Role" test.
         val userToConfig = exOpenId_loginGrant.user
         val login = exOpenId_loginGrant.login
         dao.configRole(loginId = login.id, ctime = new ju.Date, roleId = userToConfig.id,
-          isAdmin = Some(makeAdmin))
+          isAdmin = Some(makeAdmin), isOwner = makeOwner)
         val Some((idty, userConfigured)) = dao.loadIdtyAndUser(forLoginId = login.id)
         userConfigured.isAdmin must_== makeAdmin
         emailEx_OpenIdUser = userConfigured  // remember, to other test cases
         ok
       }
 
-      "make a Role and aministrator" in {
-        testAdmin(true)
+      "make a Role an administrator" in {
+        testAdmin(true, makeOwner = None)
       }
 
       "change the Role back to a normal user" in {
-        testAdmin(false)
+        testAdmin(false, makeOwner = None)
+      }
+
+      "make a Role an admin and owner" in {
+        testAdmin(true, makeOwner = Some(true))
+      }
+
+      "change the Role back to a normal user" in {
+        testAdmin(false, makeOwner = Some(false))
       }
     }
 
