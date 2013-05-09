@@ -278,8 +278,7 @@ abstract class SystemDbDao {
    * any creator of this tenant, because there are not yet any users or roles
    * (since there are on other tenants).
    */
-  // COULD rename to createFirstWebsite
-  def createTenant(name: String): Tenant
+  def createFirstSite(name: String, address: String, https: TenantHost.HttpsInfo): Tenant
 
   // COULD rename to loadWebsitesByIds
   def loadTenants(tenantIds: Seq[String]): Seq[Tenant]
