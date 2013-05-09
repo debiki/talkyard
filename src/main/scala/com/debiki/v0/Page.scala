@@ -74,6 +74,9 @@ case class Page(
       meta.copy(pageId = newId), path = path.copy(pageId = Some(newId)),
       parts = parts.copy(guid = newId))
 
+  def copyWithNewSiteId(newSiteId: String) =
+    Page(meta, path = path.copy(tenantId = newSiteId), parts)
+
   def withoutPath = PageNoPath(parts, meta)
 }
 

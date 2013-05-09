@@ -94,3 +94,29 @@ object InstallationStatus {
   case object CreateFirstSiteAdmin extends InstallationStatus
   case object AllDone extends InstallationStatus
 }
+
+
+/** Data that the database DAO needs when creating the very first site.
+  * There's no owner data, because the database should be empty.
+  */
+abstract class FirstSiteData {
+  def name: String
+  def address: String
+  def https: TenantHost.HttpsInfo
+  def pagesToCreate: List[Page]
+}
+
+
+/** Data that the database DAO needs when creating a new site (but not
+  * the very first one).
+  */
+abstract class NewSiteData extends FirstSiteData {
+  def newSiteOwnerData: NewSiteOwnerData
+}
+
+
+case class NewSiteOwnerData(
+  ownerIp: String,
+  ownerLoginId: String,
+  ownerIdentity: IdentityOpenId,
+  ownerRole: User)
