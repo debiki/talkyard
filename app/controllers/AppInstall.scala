@@ -84,6 +84,10 @@ object AppInstall extends mvc.Controller {
 
     Debiki.systemDao.createFirstSite(name = "Main Website", address = request.host,
       https = TenantHost.HttpsNone)
+
+    // When we reply OK, a related AngularJS app will reload the page, and
+    // viewInstallationPage() (just above) will be called again, and notice that
+    // now a site has been created.
     Ok
   }
 
