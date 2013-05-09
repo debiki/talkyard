@@ -40,9 +40,10 @@ trait UserDao {
 
 
   def configRole(loginId: String, ctime: ju.Date, roleId: String,
-        emailNotfPrefs: Option[EmailNotfPrefs] = None, isAdmin: Option[Boolean] = None) =
+        emailNotfPrefs: Option[EmailNotfPrefs] = None, isAdmin: Option[Boolean] = None,
+        isOwner: Option[Boolean] = None) =
     tenantDbDao.configRole(loginId = loginId, ctime = ctime,
-      roleId = roleId, emailNotfPrefs = emailNotfPrefs, isAdmin = isAdmin)
+      roleId = roleId, emailNotfPrefs = emailNotfPrefs, isAdmin = isAdmin, isOwner = isOwner)
 
 
   def configIdtySimple(loginId: String, ctime: ju.Date,
@@ -86,9 +87,10 @@ trait CachingUserDao extends UserDao {
 
 
   override def configRole(loginId: String, ctime: ju.Date, roleId: String,
-        emailNotfPrefs: Option[EmailNotfPrefs], isAdmin: Option[Boolean]) {
+        emailNotfPrefs: Option[EmailNotfPrefs], isAdmin: Option[Boolean],
+        isOwner: Option[Boolean]) {
     super.configRole(loginId = loginId, ctime = ctime,
-      roleId = roleId, emailNotfPrefs = emailNotfPrefs, isAdmin = isAdmin)
+      roleId = roleId, emailNotfPrefs = emailNotfPrefs, isAdmin = isAdmin, isOwner = isOwner)
     removeFromCache(key(loginId))
   }
 

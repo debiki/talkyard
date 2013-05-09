@@ -64,6 +64,10 @@ GET     /-/ss/not-authorized             securesocial.controllers.ProviderContro
 # ---------------------------------------------------------------
 # ---------------------------------------------------------------
 
+GET   /-/install/                   controllers.AppInstall.viewInstallationPage
+POST  /-/install/create-first-site  controllers.AppInstall.createFirstSite
+GET   /-/install/create-first-owner controllers.AppInstall.createFirstSiteOwner(password)
+
 GET   /-/new-website/choose-name   controllers.AppCreateWebsite.showWebsiteNameForm
 POST  /-/new-website/choose-name   controllers.AppCreateWebsite.handleWebsiteNameForm
 GET   /-/new-website/choose-owner  controllers.AppCreateWebsite.showWebsiteOwnerForm

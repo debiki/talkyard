@@ -180,6 +180,9 @@ module.exports = function(grunt) {
           'target/client/spa/admin/js/*.js',
           'target/client/spa/admin/js/modal-dialog.js'], // requires AngularJS module
 
+      'public/res/debiki-spa-install-first-site.js': [
+          'target/client/spa/install/install-ng-app.js'],
+
       'public/res/debiki-spa-admin-server-mock.js': [
           'target/client/spa/admin/js/debiki-v0-server-mock.js'],
 
