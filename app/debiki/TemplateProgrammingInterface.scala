@@ -440,8 +440,8 @@ class TemplateProgrammingInterface(
     contents: => play.api.templates.Html): xml.NodeSeq = {
 
     renderPageSettings =
-      if (pageReq.pageRoot.isPageConfigPost) {
-        // Don't load any config values in case the config post is corrupt, or
+      if (pageReq.pageRoot.isPageConfigPost || pageReq.pagePath.isConfigPage) {
+        // Don't load any config values in case the config post/page is corrupt — otherwise
         // it wouldn't be possible to edit the config file and fix the errors.
         Some(RenderPageSettings(
           showTitle = true, showAuthorAndDate = false, showBody = true, showComments = true))

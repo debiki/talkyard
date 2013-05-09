@@ -64,7 +64,15 @@ trait ConfigValueDao {
         throw WebsiteConfigException("DwE8PkF1", s"Bad URL: `$url'")
       case Result.Ok(pagePath) =>
         val configSitePageId = pagePath.sitePageId getOrDie "DwE0Bv3"
-        val configMap = loadConfigMap(configSitePageId, configPostId = PageParts.BodyId)
+        val configMap =
+          try {
+            loadConfigMap(configSitePageId, configPostId = PageParts.BodyId)
+          }
+          catch {
+            case ex: DebikiException =>
+              throw WebsiteConfigException(
+                "DwE5bHD0", s"Cannot load website configuration: ${ex.getMessage}")
+          }
         WebsiteConfigLeaf.fromSnakeYamlMap(configMap, configSitePageId)
     }
   }
