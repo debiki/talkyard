@@ -95,17 +95,31 @@ trait TestLoginner {
       click on "signIn"
     }
 
+    // Apparently Google has changed the login process. Now the remember-choices
+    // checkbox no longer seems to appear, but there's a "stay signed in"
+    // button below the email and password fields (filled in just above).
+    // For now, simply comment out this, and then Google's OpenID login will work:
+    /*
     // Now Google should show another page, which ask about permissions.
     // Uncheck a certain remember choices checkbox, or this page won't be shown
     // next time (and then we cannot choose to deny access).
     eventually {
       click on "remember_choices_checkbox"
-    }
+    } */
 
-    if (approvePermissions)
-      click on "approve_button"
-    else
-      click on "reject_button"
+    eventually {
+      if (!currentUrl.contains("google.com")) {
+        // For whatever reasons, Google didn't show Approve/Reject buttons this
+        // time, so there's nothing to click. Simply continue: all tests should
+        // work fine, except for any test that requires that we deny permissions.
+      }
+      else if (approvePermissions) {
+        click on "submit_approve_access"
+      }
+      else {
+        click on "submit_deny_access"
+      }
+    }
   }
 
 
