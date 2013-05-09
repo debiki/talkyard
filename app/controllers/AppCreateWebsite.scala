@@ -171,6 +171,8 @@ object AppCreateWebsite extends mvc.Controller {
     newSiteAndOwner match {
       case Some((website, ownerAtNewSite)) =>
         // COULD try to do this in the same transaction as `createWebsite`?
+        // -- This whole function could be rewritten/replaced to/with
+        //      CreateSiteSystemDaoMixin.createSiteImpl() ?  in debiki-dao-pgsql
         val newWebsiteDao = Debiki.tenantDao(
           tenantId = website.id, ip = ownerIp, roleId = None)
 
@@ -182,7 +184,10 @@ object AppCreateWebsite extends mvc.Controller {
         val newSiteConfigText = dao.loadWebsiteConfig().getText(
           ConfValNames.NewSiteConfigText) getOrDie "DwE74Vf9"
 
-        createConfigPage(newSiteConfigText, newWebsiteDao, creationDati = creationDati)
+        newWebsiteDao.createPage(makeConfigPage(
+          newSiteConfigText, siteId = website.id, creationDati = creationDati,
+          path = s"/${ConfigValueDao.WebsiteConfigPageSlug}"))
+
         createHomepage(newWebsiteDao, creationDati = creationDati)
 
         newSiteAndOwner
@@ -240,19 +245,21 @@ object AppCreateWebsite extends mvc.Controller {
   }
 
 
-  private def createConfigPage(
-    text: String, newSiteDao: TenantDao, creationDati: ju.Date) {
-
+  def makeConfigPage(text: String, siteId: String, creationDati: ju.Date, path: String): Page = {
     val pageId = AppCreatePage.generateNewPageId()
     val pageBody = PostActionDto.forNewPageBodyBySystem(
       text, creationDati, PageRole.Code)
     val actions = PageParts(pageId, SystemUser.Person, actionDtos = List(pageBody))
-    newSiteDao.createPage(Page(
+    val parsedPagePath = PagePath.fromUrlPath(siteId, path = path) match {
+      case PagePath.Parsed.Good(pagePath) if !pagePath.showId => pagePath
+      case x => assErr("DwE7Bfh2", s"Bad hardcoded config page path: $path")
+    }
+    Page(
       PageMeta.forNewPage(
         PageRole.Code, SystemUser.User, actions, creationDati, publishDirectly = true),
-      PagePath(newSiteDao.tenantId, folder = "/",
-        pageId = Some(pageId), showId = false, pageSlug = "_site.conf"),
-      actions))
+      PagePath(siteId, folder = parsedPagePath.folder,
+        pageId = Some(pageId), showId = false, pageSlug = parsedPagePath.pageSlug),
+      actions)
   }
 
 

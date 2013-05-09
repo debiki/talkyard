@@ -82,8 +82,24 @@ object AppInstall extends mvc.Controller {
     if (Debiki.systemDao.checkInstallationStatus() != InstallationStatus.CreateFirstSite)
       throwForbidden("DwE5BK18", "The first site has already been created")
 
-    Debiki.systemDao.createFirstSite(name = "Main Website", address = request.host,
-      https = TenantHost.HttpsNone)
+    val now = new ju.Date()
+
+    val siteConfigPage = AppCreateWebsite.makeConfigPage(
+      text = views.txt.install.firstSiteConfigPageText(DefaultThemeConfigPath).body,
+      path = s"/${ConfigValueDao.WebsiteConfigPageSlug}", siteId = "?", creationDati = now)
+
+    val defaultThemeConfigPage = AppCreateWebsite.makeConfigPage(
+      text = views.txt.install.defaultThemeConfigPageText().body,
+      path = DefaultThemeConfigPath, siteId = "?", creationDati = now)
+
+    val firstSiteData = new FirstSiteData {
+      val name = "Main Website"
+      val address = request.host
+      val https = TenantHost.HttpsNone
+      val pagesToCreate = siteConfigPage :: defaultThemeConfigPage :: Nil
+    }
+
+    Debiki.systemDao.createFirstSite(firstSiteData)
 
     // When we reply OK, a related AngularJS app will reload the page, and
     // viewInstallationPage() (just above) will be called again, and notice that
@@ -108,6 +124,9 @@ object AppInstall extends mvc.Controller {
 
   def OkAllDone(host: String) =
     Ok(views.html.install.allDone(host).body) as HTML
+
+
+  private val DefaultThemeConfigPath = "/themes/default-2012-10-09/theme.conf"
 
 }
 

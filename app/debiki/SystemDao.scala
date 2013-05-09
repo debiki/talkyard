@@ -27,8 +27,8 @@ class SystemDao(protected val systemDbDao: SystemDbDao) {
   def checkInstallationStatus(): InstallationStatus =
     systemDbDao.checkInstallationStatus()
 
-  def createFirstSite(name: String, address: String, https: TenantHost.HttpsInfo): Tenant =
-    systemDbDao.createFirstSite(name, address = address, https = https)
+  def createFirstSite(firstSiteData: FirstSiteData): Tenant =
+    systemDbDao.createFirstSite(firstSiteData)
 
   // COULD rename to loadWebsitesByIds
   def loadTenants(tenantIds: Seq[String]): Seq[Tenant] =

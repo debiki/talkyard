@@ -82,8 +82,13 @@ trait StuffCreator {
    * Returns (firstSiteId, firstSiteOrigin).
    */
   private def createFirstSite(): (String, String) = {
-    val firstSite = Debiki.systemDao.createFirstSite(
-      name = "FirstSite", address = firstSiteHost, https = TenantHost.HttpsNone)
+
+    val firstSite = Debiki.systemDao.createFirstSite(new FirstSiteData {
+      val name = "FirstSite"
+      val address = firstSiteHost
+      val https = TenantHost.HttpsNone
+      val pagesToCreate = Nil
+    })
 
     // Create ./themes/example/theme.conf and ./themes/example/theme.css,
     // referred to by the new site config page.

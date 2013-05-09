@@ -1,0 +1,14 @@
+@(defaultThemeConfigPath: String)
+
+extend: @defaultThemeConfigPath
+
+#html-navigation-links: |
+#  <a href="/about/">About</a>
+#  <a href="/forum/">Forum</a>
+#  <a href="/blog/">Blog</a>
+
+#logo-slogan: |
+#  Site-logo-and-slogan HTML
+
+#footer: |
+#  Footer-HTML

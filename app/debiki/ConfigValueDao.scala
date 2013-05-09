@@ -21,6 +21,7 @@ import Prelude._
 trait ConfigValueDao {
   self: TenantDao =>
 
+  import ConfigValueDao._
 
   def loadPageConfigMap(pageId: String): Map[String, Any] =
     loadConfigMap(SitePageId(tenantId, pageId), configPostId = PageParts.ConfigPostId)
@@ -42,7 +43,7 @@ trait ConfigValueDao {
    */
   def loadWebsiteConfig(): WebsiteConfig = {
     var leaves: List[WebsiteConfigLeaf] = Nil
-    var nextLeafUrl: Option[String] = Some(websiteConfigPath)
+    var nextLeafUrl: Option[String] = Some(WebsiteConfigPageSlug)
     do {
       val nextLeaf: WebsiteConfigLeaf = loadWebsiteConfigLeaf(nextLeafUrl.get)
       leaves ::= nextLeaf
@@ -95,6 +96,10 @@ trait ConfigValueDao {
     }
   }
 
+}
+
+
+object ConfigValueDao {
 
   /**
    * The location of the website config page.
@@ -103,8 +108,7 @@ trait ConfigValueDao {
    *
    * COULD move to other module, but what module?
    */
-  val websiteConfigPath = "_site.conf"
-
+  val WebsiteConfigPageSlug = "_site.conf"
 }
 
 
