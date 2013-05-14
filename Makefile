@@ -8,7 +8,8 @@ DESTDIR=target/scala-2.10/compiledjs-classes/
 CLASSDIR=${DESTDIR}compiledjs/
 HTML_SANITIZER_JS=client/vendor/html-sanitizer-bundle.js
 PAGEDOWN_JS=public/res/debiki-pagedown.js
-RHINOJAR=/mnt/data/dev/play/github/repository/cache/rhino/js/jars/js-1.7R2.jar
+# RHINOJAR=target/js-1.7R2.jar
+RHINOJAR=target/rhino1_7R2/js.jar
 
 SBT_CLASSDIR_ROOT=target/scala-2.10/classes/
 
@@ -49,8 +50,8 @@ ${CLASSDIR}PagedownJsImpl.class: ${CLASSDIR}PagedownJs.class ${RHINOJAR} ${PAGED
 	  ${PAGEDOWN_JS}
 
 ${RHINOJAR}:
-	echo 'No Rhino jar, please run `play update`.'
-	exit 1
+	wget -O target/rhino1_7R2.zip ftp://ftp.mozilla.org/pub/mozilla.org/js/rhino1_7R2.zip
+	unzip target/rhino1_7R2.zip -d target
 
 
 # Compile Java interfaces to Javascript files.
