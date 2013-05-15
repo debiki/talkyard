@@ -44,11 +44,6 @@ public/res/admin.css
 test-client/debiki-utils.js
 test-client/unit/spa/admin/*.js
 
-# Ignore SecureSocial dummy folder, with target/ and dist/ dir.  (See commit
-# message of tag 'v0.3.14-dist-ok-despite-securesocial'. Remove when it's a
-# real submodule again, if ever.)
-modules/securesocial
-
 # When running Chrome browser tests, ChromeDriver generates this file and it
 # seems it's location is hardcoded,
 #   see: http://code.google.com/p/selenium/issues/detail?id=3475
