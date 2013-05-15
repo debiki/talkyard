@@ -131,38 +131,18 @@ module.exports = function(grunt) {
     },
     livescript: {
       options: {
-        // See https://github.com/DavidSouther/grunt-livescript/blob/master/tasks/livescript.js
+        // See <https://github.com/DavidSouther/grunt-livescript/blob/master/
+        //        tasks/livescript.js>
       },
       src: {
-        files: {
-          // This doesn't work any more:
+        files: [{
           // Transpiled files will appear in target/client/**/*.js.
-          //'target/client/*.js': 'client/**/*.ls'
-          // Instead, COULD refactor this to:
-          //   single-file.js: all/files/in/dir/*.ls
-
-          'target/client/debiki/debiki-forum.js': 'client/debiki/debiki-forum.ls',
-          'target/client/debiki/debiki-dashbar.js': 'client/debiki/debiki-dashbar.ls',
-          'target/client/debiki/debiki-toggle-collapsed.js': 'client/debiki/debiki-toggle-collapsed.ls',
-          'target/client/debiki/debiki-diff-match-patch.js': 'client/debiki/debiki-diff-match-patch.ls',
-          'target/client/debiki/debiki-action-dialogs.js': 'client/debiki/debiki-action-dialogs.ls',
-          'target/client/debiki/debiki-unread.js': 'client/debiki/debiki-unread.ls',
-          'target/client/debiki/debiki-monitor-reading-progress.js': 'client/debiki/debiki-monitor-reading-progress.ls',
-          'target/client/debiki/debiki-page-path.js': 'client/debiki/debiki-page-path.ls',
-          'target/client/debiki/debiki-create-page.js': 'client/debiki/debiki-create-page.ls',
-          'target/client/debiki/debiki-layout.js': 'client/debiki/debiki-layout.ls',
-          'target/client/debiki/bootstrap-angularjs.js': 'client/debiki/bootstrap-angularjs.ls',
-          'target/client/debiki/debiki-patch-page.js': 'client/debiki/debiki-patch-page.ls',
-          'target/client/spa/install/install-ng-app.js': 'client/spa/install/install-ng-app.ls',
-          'target/client/spa/admin/js/users.js': 'client/spa/admin/js/users.ls',
-          'target/client/spa/admin/js/activity.js': 'client/spa/admin/js/activity.ls',
-          'target/client/spa/admin/js/debiki-v0-server-mock.js': 'client/spa/admin/js/debiki-v0-server-mock.ls',
-          'target/client/spa/admin/js/modal-dialog.js': 'client/spa/admin/js/modal-dialog.ls',
-          'target/client/spa/admin/js/contents.js': 'client/spa/admin/js/contents.ls',
-          'target/client/spa/admin/js/module-and-services.js': 'client/spa/admin/js/module-and-services.ls',
-          'target/client/spa/js/new-website-choose-name.js': 'client/spa/js/new-website-choose-name.ls',
-          'target/client/spa/js/new-website-choose-owner.js': 'client/spa/js/new-website-choose-owner.ls'
-        }
+          expand: true,
+          cwd: 'client/',
+          src: '**/*.ls',
+          dest: 'target/client',
+          ext: '.js'
+        }]
       }
     },
     wrap: {
