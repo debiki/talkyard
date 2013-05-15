@@ -6,6 +6,9 @@ module.exports = function(grunt) {
   grunt.loadNpmTasks('grunt-contrib-mincss');
   grunt.loadNpmTasks('grunt-livescript');
   grunt.loadNpmTasks('grunt-wrap');
+  grunt.loadNpmTasks('grunt-contrib-concat');
+  grunt.loadNpmTasks('grunt-contrib-watch');
+  grunt.loadNpmTasks('grunt-contrib-uglify');
 
   var debikiDesktopFiles = [
       'client/vendor/bootstrap-tooltip.js', //
@@ -127,10 +130,38 @@ module.exports = function(grunt) {
       banner: '<%= banner %>'
     },
     livescript: {
-      compile: {
+      options: {
+        // See https://github.com/DavidSouther/grunt-livescript/blob/master/tasks/livescript.js
+      },
+      src: {
         files: {
+          // This doesn't work any more:
           // Transpiled files will appear in target/client/**/*.js.
-          'target/client/*.js': 'client/**/*.ls'
+          //'target/client/*.js': 'client/**/*.ls'
+          // Instead, COULD refactor this to:
+          //   single-file.js: all/files/in/dir/*.ls
+
+          'target/client/debiki/debiki-forum.js': 'client/debiki/debiki-forum.ls',
+          'target/client/debiki/debiki-dashbar.js': 'client/debiki/debiki-dashbar.ls',
+          'target/client/debiki/debiki-toggle-collapsed.js': 'client/debiki/debiki-toggle-collapsed.ls',
+          'target/client/debiki/debiki-diff-match-patch.js': 'client/debiki/debiki-diff-match-patch.ls',
+          'target/client/debiki/debiki-action-dialogs.js': 'client/debiki/debiki-action-dialogs.ls',
+          'target/client/debiki/debiki-unread.js': 'client/debiki/debiki-unread.ls',
+          'target/client/debiki/debiki-monitor-reading-progress.js': 'client/debiki/debiki-monitor-reading-progress.ls',
+          'target/client/debiki/debiki-page-path.js': 'client/debiki/debiki-page-path.ls',
+          'target/client/debiki/debiki-create-page.js': 'client/debiki/debiki-create-page.ls',
+          'target/client/debiki/debiki-layout.js': 'client/debiki/debiki-layout.ls',
+          'target/client/debiki/bootstrap-angularjs.js': 'client/debiki/bootstrap-angularjs.ls',
+          'target/client/debiki/debiki-patch-page.js': 'client/debiki/debiki-patch-page.ls',
+          'target/client/spa/install/install-ng-app.js': 'client/spa/install/install-ng-app.ls',
+          'target/client/spa/admin/js/users.js': 'client/spa/admin/js/users.ls',
+          'target/client/spa/admin/js/activity.js': 'client/spa/admin/js/activity.ls',
+          'target/client/spa/admin/js/debiki-v0-server-mock.js': 'client/spa/admin/js/debiki-v0-server-mock.ls',
+          'target/client/spa/admin/js/modal-dialog.js': 'client/spa/admin/js/modal-dialog.ls',
+          'target/client/spa/admin/js/contents.js': 'client/spa/admin/js/contents.ls',
+          'target/client/spa/admin/js/module-and-services.js': 'client/spa/admin/js/module-and-services.ls',
+          'target/client/spa/js/new-website-choose-name.js': 'client/spa/js/new-website-choose-name.ls',
+          'target/client/spa/js/new-website-choose-owner.js': 'client/spa/js/new-website-choose-owner.ls'
         }
       }
     },
@@ -146,80 +177,98 @@ module.exports = function(grunt) {
       }
     },
     concat: {
-      'public/res/combined-debiki.css': [
-          'client/banner.css',
-          'public/res/jquery-ui/jquery-ui-1.8.16.custom.css',
-          'client/debiki/debiki.css',
-          'client/debiki/debiki-play.css'],
+      options: {
+        // See https://npmjs.org/package/grunt-contrib-concat
+      },
+      dist: {
+       files: {
+        'public/res/combined-debiki.css': [
+            'client/banner.css',
+            'public/res/jquery-ui/jquery-ui-1.8.16.custom.css',
+            'client/debiki/debiki.css',
+            'client/debiki/debiki-play.css'],
 
-      'public/res/admin.css': [
-          'client/admin/admin-theme.css',
-          'client/spa/admin/css/admin-page.css',
-          'client/spa/debiki-spa-common.css'],
+        'public/res/admin.css': [
+            'client/admin/admin-theme.css',
+            'client/spa/admin/css/admin-page.css',
+            'client/spa/debiki-spa-common.css'],
 
-      'public/res/combined-debiki-desktop.js':
-          debikiDesktopFiles,
+        'public/res/combined-debiki-desktop.js':
+            debikiDesktopFiles,
 
-      'public/res/combined-debiki-touch.js':
-          debikiTouchFiles,
+        'public/res/combined-debiki-touch.js':
+            debikiTouchFiles,
 
-      'public/res/debiki-spa-common.js': [
-          'target/client/vendor/livescript/prelude-browser-min.js',
-          'target/client/vendor/bootstrap-tooltip.js', // -popup.js dependee
-          'target/client/vendor/bootstrap-*.js',
-          'target/client/vendor/angular-ui/module.js',
-          'target/client/vendor/angular-ui/directives/jq/jq.js',
-          'target/client/vendor/angular-ui/directives/modal/modal.js',
-          'target/client/debiki/debiki-util.js',
-          'target/client/spa/js/angular-util.js'],
+        'public/res/debiki-spa-common.js': [
+            'target/client/vendor/livescript/prelude-browser-min.js',
+            'target/client/vendor/bootstrap-tooltip.js', // -popup.js dependee
+            'target/client/vendor/bootstrap-*.js',
+            'target/client/vendor/angular-ui/module.js',
+            'target/client/vendor/angular-ui/directives/jq/jq.js',
+            'target/client/vendor/angular-ui/directives/modal/modal.js',
+            'target/client/debiki/debiki-util.js',
+            'target/client/spa/js/angular-util.js'],
 
-      'public/res/debiki-spa-admin.js': [
-          'client/vendor/diff_match_patch.js',
-          'target/client/debiki/debiki-diff-match-patch.js',
-          'target/client/debiki/debiki-page-path.js',
-          'target/client/spa/admin/js/*.js',
-          'target/client/spa/admin/js/modal-dialog.js'], // requires AngularJS module
+        'public/res/debiki-spa-admin.js': [
+            'client/vendor/diff_match_patch.js',
+            'target/client/debiki/debiki-diff-match-patch.js',
+            'target/client/debiki/debiki-page-path.js',
+            'target/client/spa/admin/js/*.js',
+            'target/client/spa/admin/js/modal-dialog.js'], // requires AngularJS module
 
-      'public/res/debiki-spa-install-first-site.js': [
-          'target/client/spa/install/install-ng-app.js'],
+        'public/res/debiki-spa-install-first-site.js': [
+            'target/client/spa/install/install-ng-app.js'],
 
-      'public/res/debiki-spa-admin-server-mock.js': [
-          'target/client/spa/admin/js/debiki-v0-server-mock.js'],
+        'public/res/debiki-spa-admin-server-mock.js': [
+            'target/client/spa/admin/js/debiki-v0-server-mock.js'],
 
-      'public/res/debiki-spa-new-website-choose-owner.js': [
-          'target/client/spa/js/new-website-choose-owner.js'],
+        'public/res/debiki-spa-new-website-choose-owner.js': [
+            'target/client/spa/js/new-website-choose-owner.js'],
 
-      'public/res/debiki-spa-new-website-choose-name.js': [
-          'target/client/spa/js/new-website-choose-name.js'],
+        'public/res/debiki-spa-new-website-choose-name.js': [
+            'target/client/spa/js/new-website-choose-name.js'],
 
-      'public/res/debiki-dashbar.js': [
-          'target/client/debiki/debiki-dashbar.js'],
+        'public/res/debiki-dashbar.js': [
+            'target/client/debiki/debiki-dashbar.js'],
 
-      'public/res/debiki-pagedown.js': [
-        'modules/pagedown/Markdown.Converter.js',
-        'client/compiledjs/PagedownJavaInterface.js']
+        'public/res/debiki-pagedown.js': [
+          'modules/pagedown/Markdown.Converter.js',
+          'client/compiledjs/PagedownJavaInterface.js']
+       }
+      },
     },
-    min: {
-      'public/res/combined-debiki-desktop.min.js': [
-          '<banner>',
-          'public/res/combined-debiki-desktop.js'],
-
-      'public/res/combined-debiki-touch.min.js': [
-          '<banner>',
-          'public/res/combined-debiki-touch.js'],
-
-      'public/res/debiki-pagedown.min.js': [
-          'public/res/debiki-pagedown.js']
-    },
-    // This results in malfunctioning CSS?
-    mincss: {
-      compress: {
+    uglify: {
+      all: {
+        options: {}, // see https://npmjs.org/package/grunt-contrib-uglify
         files: {
-          'public/res/combined-debiki.min.css':
-              'public/res/combined-debiki.css'
+          'public/res/combined-debiki-desktop.min.js': [
+              '<banner>',
+              'public/res/combined-debiki-desktop.js'],
+
+          'public/res/combined-debiki-touch.min.js': [
+              '<banner>',
+              'public/res/combined-debiki-touch.js'],
+
+          'public/res/debiki-pagedown.min.js': [
+              'public/res/debiki-pagedown.js']
         }
       }
     },
+    /*
+    // This results in malfunctioning CSS?
+    // And a """Warning: Object #<Object> has no method 'expandFiles'
+    // Use --force to continue.""" error, as of Grunt v0.4.1 (May 2013),
+    // see <https://github.com/gruntjs/grunt/wiki/Configuring-tasks
+    //        #building-the-files-object-dynamically>
+    // for info on how to perhaps fix that error.
+    mincss: {
+      compress: {
+        files: {
+          'public/res/combined-debiki.min.css': [
+            'public/res/combined-debiki.css']
+        }
+      }
+    }, */
     watch: {
       all: {
         files: [
@@ -234,7 +283,7 @@ module.exports = function(grunt) {
     }
   });
 
-  grunt.registerTask('default', 'livescript wrap concat min mincss');
+  grunt.registerTask('default', ['livescript', 'wrap', 'concat', 'uglify']); //, 'mincss']);
 
 };
 
