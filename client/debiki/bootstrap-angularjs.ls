@@ -40,7 +40,7 @@ findRootScope = ->
   # (See:
   # http://stackoverflow.com/questions/10490570/
   #   call-angular-js-from-legacy-code )
-  return undefined unless angular?
+  return void unless angular?
   angular.element($('html')).scope!
 
 
@@ -59,7 +59,7 @@ findRootScope = ->
     $rootScope.currentUser <<< userProps
 
   $rootScope.clearCurrentUser = !->
-    $rootScope.currentUser = undefined
+    $rootScope.currentUser = void
 
 
 
