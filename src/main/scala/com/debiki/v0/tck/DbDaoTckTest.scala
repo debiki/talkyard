@@ -236,8 +236,12 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
     }
 
     "create a test site (that we'll use hereafter)" in {
-      val tenant = systemDbDao.createFirstSite(
-        name = "Test", address = "test.ex.com", https = TenantHost.HttpsNone)
+      val tenant = systemDbDao.createFirstSite(new FirstSiteData {
+        val name = "Test"
+        val address = "test.ex.com"
+        val https = TenantHost.HttpsNone
+        val pagesToCreate = Nil
+      })
       tenant.name must_== "Test"
       tenant.id must_!= ""
       defaultTenantId = tenant.id
