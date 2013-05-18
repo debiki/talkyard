@@ -1,75 +1,40 @@
---
--- PostgreSQL database dump
---
-
-SET statement_timeout = 0;
-SET client_encoding = 'UTF8';
-SET standard_conforming_strings = on;
-SET check_function_bodies = false;
-SET client_min_messages = warning;
-
-SET SESSION AUTHORIZATION 'debiki_prod_daily_2013_05_17';
-
---
--- Name: debiki_prod_daily_2013_05_17; Type: SCHEMA; Schema: -; Owner: debiki_prod_daily_2013_05_17
---
-
-CREATE SCHEMA debiki_prod_daily_2013_05_17;
+# Generated like so:
+#  pg_dump --host 192.168.0.123 --username=debiki_prod_daily_2013_05_17 --schema-only --no-tablespaces --use-set-session-authorization > conf/evolutions/default/1.sql
+#
+# Then manually processed like so:
+#
+#   Remove some  SET ...  commands, and
+#   also some "REVOKE ..." and "GRANT ..." commands.
+#
+#   And then, in Vim, remove comment lines and empty lines:
+#     '<,'>s/^--.*$//g
+#     %s/\n\n\n\n\n\n\n/\r\r\r/g
+#
+#   And also add "Ups".
 
 
-SET SESSION AUTHORIZATION DEFAULT;
+# --- !Ups
 
---
--- Name: plpgsql; Type: EXTENSION; Schema: -; Owner: 
---
-
-CREATE EXTENSION IF NOT EXISTS plpgsql WITH SCHEMA pg_catalog;
-
-
---
--- Name: EXTENSION plpgsql; Type: COMMENT; Schema: -; Owner: 
---
-
-COMMENT ON EXTENSION plpgsql IS 'PL/pgSQL procedural language';
-
-
-SET SESSION AUTHORIZATION 'debiki_prod_daily_2013_05_17';
-
-SET search_path = debiki_prod_daily_2013_05_17, pg_catalog;
-
---
--- Name: inc_next_per_page_reply_id(character varying, character varying, integer); Type: FUNCTION; Schema: debiki_prod_daily_2013_05_17; Owner: debiki_prod_daily_2013_05_17
---
 
 CREATE FUNCTION inc_next_per_page_reply_id(site_id character varying, page_id character varying, step integer) RETURNS integer
     LANGUAGE plpgsql
     AS $$
 declare
-  next_id int;
+  next_id int;;
 begin
   update DW1_PAGES
     set NEXT_REPLY_ID = NEXT_REPLY_ID + step
     where TENANT = site_id and GUID = page_id
-    returning NEXT_REPLY_ID into next_id;
-  return next_id;
-end;
+    returning NEXT_REPLY_ID into next_id;;
+  return next_id;;
+end;;
 $$;
 
-
-SET default_with_oids = false;
-
---
--- Name: dw0_version; Type: TABLE; Schema: debiki_prod_daily_2013_05_17; Owner: debiki_prod_daily_2013_05_17
---
 
 CREATE TABLE dw0_version (
     version character varying(100) NOT NULL
 );
 
-
---
--- Name: dw1_emails_out; Type: TABLE; Schema: debiki_prod_daily_2013_05_17; Owner: debiki_prod_daily_2013_05_17
---
 
 CREATE TABLE dw1_emails_out (
     tenant character varying(32) NOT NULL,
@@ -88,10 +53,6 @@ CREATE TABLE dw1_emails_out (
 );
 
 
---
--- Name: dw1_guests; Type: TABLE; Schema: debiki_prod_daily_2013_05_17; Owner: debiki_prod_daily_2013_05_17
---
-
 CREATE TABLE dw1_guests (
     site_id character varying(32) NOT NULL,
     id character varying(32) NOT NULL,
@@ -101,10 +62,6 @@ CREATE TABLE dw1_guests (
     url character varying(100) NOT NULL
 );
 
-
---
--- Name: dw1_ids_openid; Type: TABLE; Schema: debiki_prod_daily_2013_05_17; Owner: debiki_prod_daily_2013_05_17
---
 
 CREATE TABLE dw1_ids_openid (
     sno character varying(32) NOT NULL,
@@ -124,10 +81,6 @@ CREATE TABLE dw1_ids_openid (
 );
 
 
---
--- Name: dw1_ids_simple_email; Type: TABLE; Schema: debiki_prod_daily_2013_05_17; Owner: debiki_prod_daily_2013_05_17
---
-
 CREATE TABLE dw1_ids_simple_email (
     tenant character varying(32) NOT NULL,
     login character varying(32),
@@ -141,10 +94,6 @@ CREATE TABLE dw1_ids_simple_email (
 );
 
 
---
--- Name: dw1_ids_sno; Type: SEQUENCE; Schema: debiki_prod_daily_2013_05_17; Owner: debiki_prod_daily_2013_05_17
---
-
 CREATE SEQUENCE dw1_ids_sno
     START WITH 10
     INCREMENT BY 1
@@ -152,10 +101,6 @@ CREATE SEQUENCE dw1_ids_sno
     NO MAXVALUE
     CACHE 1;
 
-
---
--- Name: dw1_logins; Type: TABLE; Schema: debiki_prod_daily_2013_05_17; Owner: debiki_prod_daily_2013_05_17
---
 
 CREATE TABLE dw1_logins (
     sno character varying(32) NOT NULL,
@@ -172,10 +117,6 @@ CREATE TABLE dw1_logins (
 );
 
 
---
--- Name: dw1_logins_sno; Type: SEQUENCE; Schema: debiki_prod_daily_2013_05_17; Owner: debiki_prod_daily_2013_05_17
---
-
 CREATE SEQUENCE dw1_logins_sno
     START WITH 10
     INCREMENT BY 1
@@ -183,10 +124,6 @@ CREATE SEQUENCE dw1_logins_sno
     NO MAXVALUE
     CACHE 1;
 
-
---
--- Name: dw1_notfs_page_actions; Type: TABLE; Schema: debiki_prod_daily_2013_05_17; Owner: debiki_prod_daily_2013_05_17
---
 
 CREATE TABLE dw1_notfs_page_actions (
     tenant character varying(32) NOT NULL,
@@ -214,10 +151,6 @@ CREATE TABLE dw1_notfs_page_actions (
     CONSTRAINT dw1_ntfpga_status__c CHECK (((status)::text = ANY (ARRAY[('N'::character varying)::text, ('O'::character varying)::text])))
 );
 
-
---
--- Name: dw1_page_actions; Type: TABLE; Schema: debiki_prod_daily_2013_05_17; Owner: debiki_prod_daily_2013_05_17
---
 
 CREATE TABLE dw1_page_actions (
     page character varying(32),
@@ -256,10 +189,6 @@ CREATE TABLE dw1_page_actions (
 );
 
 
---
--- Name: dw1_page_paths; Type: TABLE; Schema: debiki_prod_daily_2013_05_17; Owner: debiki_prod_daily_2013_05_17
---
-
 CREATE TABLE dw1_page_paths (
     tenant character varying(32) NOT NULL,
     parent_folder character varying(100) NOT NULL,
@@ -278,10 +207,6 @@ CREATE TABLE dw1_page_paths (
 );
 
 
---
--- Name: dw1_page_ratings; Type: TABLE; Schema: debiki_prod_daily_2013_05_17; Owner: debiki_prod_daily_2013_05_17
---
-
 CREATE TABLE dw1_page_ratings (
     page character varying(32),
     paid character varying(32) NOT NULL,
@@ -290,10 +215,6 @@ CREATE TABLE dw1_page_ratings (
     page_id character varying(32) NOT NULL
 );
 
-
---
--- Name: dw1_pages; Type: TABLE; Schema: debiki_prod_daily_2013_05_17; Owner: debiki_prod_daily_2013_05_17
---
 
 CREATE TABLE dw1_pages (
     sno character varying(32) NOT NULL,
@@ -325,10 +246,6 @@ CREATE TABLE dw1_pages (
 );
 
 
---
--- Name: dw1_pages_sno; Type: SEQUENCE; Schema: debiki_prod_daily_2013_05_17; Owner: debiki_prod_daily_2013_05_17
---
-
 CREATE SEQUENCE dw1_pages_sno
     START WITH 10
     INCREMENT BY 1
@@ -336,10 +253,6 @@ CREATE SEQUENCE dw1_pages_sno
     NO MAXVALUE
     CACHE 1;
 
-
---
--- Name: dw1_paths; Type: TABLE; Schema: debiki_prod_daily_2013_05_17; Owner: debiki_prod_daily_2013_05_17
---
 
 CREATE TABLE dw1_paths (
     tenant character varying(32) NOT NULL,
@@ -351,10 +264,6 @@ CREATE TABLE dw1_paths (
     CONSTRAINT dw1_paths_guidinpath__c CHECK (((guid_in_path)::text = ANY (ARRAY[('T'::character varying)::text, ('F'::character varying)::text])))
 );
 
-
---
--- Name: dw1_posts; Type: TABLE; Schema: debiki_prod_daily_2013_05_17; Owner: debiki_prod_daily_2013_05_17
---
 
 CREATE TABLE dw1_posts (
     site_id character varying(32) NOT NULL,
@@ -414,10 +323,6 @@ CREATE TABLE dw1_posts (
 );
 
 
---
--- Name: dw1_quotas; Type: TABLE; Schema: debiki_prod_daily_2013_05_17; Owner: debiki_prod_daily_2013_05_17
---
-
 CREATE TABLE dw1_quotas (
     tenant character varying(32),
     ip character varying(32),
@@ -450,10 +355,6 @@ CREATE TABLE dw1_quotas (
 );
 
 
---
--- Name: dw1_tenant_hosts; Type: TABLE; Schema: debiki_prod_daily_2013_05_17; Owner: debiki_prod_daily_2013_05_17
---
-
 CREATE TABLE dw1_tenant_hosts (
     tenant character varying(32) NOT NULL,
     host character varying(50) NOT NULL,
@@ -465,10 +366,6 @@ CREATE TABLE dw1_tenant_hosts (
     CONSTRAINT dw1_tnthsts_https__c CHECK (((https)::text = ANY (ARRAY[('R'::character varying)::text, ('A'::character varying)::text, ('N'::character varying)::text])))
 );
 
-
---
--- Name: dw1_tenants; Type: TABLE; Schema: debiki_prod_daily_2013_05_17; Owner: debiki_prod_daily_2013_05_17
---
 
 CREATE TABLE dw1_tenants (
     id character varying(32) NOT NULL,
@@ -484,10 +381,6 @@ CREATE TABLE dw1_tenants (
 );
 
 
---
--- Name: dw1_tenants_id; Type: SEQUENCE; Schema: debiki_prod_daily_2013_05_17; Owner: debiki_prod_daily_2013_05_17
---
-
 CREATE SEQUENCE dw1_tenants_id
     START WITH 10
     INCREMENT BY 1
@@ -495,10 +388,6 @@ CREATE SEQUENCE dw1_tenants_id
     NO MAXVALUE
     CACHE 1;
 
-
---
--- Name: dw1_users; Type: TABLE; Schema: debiki_prod_daily_2013_05_17; Owner: debiki_prod_daily_2013_05_17
---
 
 CREATE TABLE dw1_users (
     tenant character varying(32) NOT NULL,
@@ -521,10 +410,6 @@ CREATE TABLE dw1_users (
 );
 
 
---
--- Name: dw1_users_sno; Type: SEQUENCE; Schema: debiki_prod_daily_2013_05_17; Owner: debiki_prod_daily_2013_05_17
---
-
 CREATE SEQUENCE dw1_users_sno
     START WITH 10
     INCREMENT BY 1
@@ -533,631 +418,291 @@ CREATE SEQUENCE dw1_users_sno
     CACHE 1;
 
 
---
--- Name: moo; Type: TABLE; Schema: debiki_prod_daily_2013_05_17; Owner: debiki_prod_daily_2013_05_17
---
-
 CREATE TABLE moo (
     "mää" integer
 );
 
 
---
--- Name: dw1_arts__p; Type: CONSTRAINT; Schema: debiki_prod_daily_2013_05_17; Owner: debiki_prod_daily_2013_05_17
---
-
 ALTER TABLE ONLY dw1_page_ratings
     ADD CONSTRAINT dw1_arts__p PRIMARY KEY (tenant, page_id, paid, tag);
 
-
---
--- Name: dw1_emlot_tnt_id__p; Type: CONSTRAINT; Schema: debiki_prod_daily_2013_05_17; Owner: debiki_prod_daily_2013_05_17
---
 
 ALTER TABLE ONLY dw1_emails_out
     ADD CONSTRAINT dw1_emlot_tnt_id__p PRIMARY KEY (tenant, id);
 
 
---
--- Name: dw1_guests__u; Type: CONSTRAINT; Schema: debiki_prod_daily_2013_05_17; Owner: debiki_prod_daily_2013_05_17
---
-
 ALTER TABLE ONLY dw1_guests
     ADD CONSTRAINT dw1_guests__u UNIQUE (site_id, name, email_addr, location, url);
 
-
---
--- Name: dw1_guests_site_id__p; Type: CONSTRAINT; Schema: debiki_prod_daily_2013_05_17; Owner: debiki_prod_daily_2013_05_17
---
 
 ALTER TABLE ONLY dw1_guests
     ADD CONSTRAINT dw1_guests_site_id__p PRIMARY KEY (site_id, id);
 
 
---
--- Name: dw1_idsmpleml__p; Type: CONSTRAINT; Schema: debiki_prod_daily_2013_05_17; Owner: debiki_prod_daily_2013_05_17
---
-
 ALTER TABLE ONLY dw1_ids_simple_email
     ADD CONSTRAINT dw1_idsmpleml__p PRIMARY KEY (tenant, email, ctime);
 
-
---
--- Name: dw1_idsoid_sno__p; Type: CONSTRAINT; Schema: debiki_prod_daily_2013_05_17; Owner: debiki_prod_daily_2013_05_17
---
 
 ALTER TABLE ONLY dw1_ids_openid
     ADD CONSTRAINT dw1_idsoid_sno__p PRIMARY KEY (sno);
 
 
---
--- Name: dw1_idsoid_tnt_oid__u; Type: CONSTRAINT; Schema: debiki_prod_daily_2013_05_17; Owner: debiki_prod_daily_2013_05_17
---
-
 ALTER TABLE ONLY dw1_ids_openid
     ADD CONSTRAINT dw1_idsoid_tnt_oid__u UNIQUE (tenant, oid_claimed_id);
 
-
---
--- Name: dw1_logins_sno__p; Type: CONSTRAINT; Schema: debiki_prod_daily_2013_05_17; Owner: debiki_prod_daily_2013_05_17
---
 
 ALTER TABLE ONLY dw1_logins
     ADD CONSTRAINT dw1_logins_sno__p PRIMARY KEY (sno);
 
 
---
--- Name: dw1_ntfpga_t_pg_evt_rcpt__p; Type: CONSTRAINT; Schema: debiki_prod_daily_2013_05_17; Owner: debiki_prod_daily_2013_05_17
---
-
 ALTER TABLE ONLY dw1_notfs_page_actions
     ADD CONSTRAINT dw1_ntfpga_t_pg_evt_rcpt__p PRIMARY KEY (tenant, page_id, event_pga, rcpt_pga);
 
-
---
--- Name: dw1_pages__u; Type: CONSTRAINT; Schema: debiki_prod_daily_2013_05_17; Owner: debiki_prod_daily_2013_05_17
---
 
 ALTER TABLE ONLY dw1_pages
     ADD CONSTRAINT dw1_pages__u UNIQUE (tenant, guid);
 
 
---
--- Name: dw1_pages_sno__p; Type: CONSTRAINT; Schema: debiki_prod_daily_2013_05_17; Owner: debiki_prod_daily_2013_05_17
---
-
 ALTER TABLE ONLY dw1_pages
     ADD CONSTRAINT dw1_pages_sno__p PRIMARY KEY (sno);
 
-
---
--- Name: dw1_paths_tnt_page__p; Type: CONSTRAINT; Schema: debiki_prod_daily_2013_05_17; Owner: debiki_prod_daily_2013_05_17
---
 
 ALTER TABLE ONLY dw1_paths
     ADD CONSTRAINT dw1_paths_tnt_page__p PRIMARY KEY (tenant, page_guid);
 
 
---
--- Name: dw1_pgas_tnt_pgid_id__p; Type: CONSTRAINT; Schema: debiki_prod_daily_2013_05_17; Owner: debiki_prod_daily_2013_05_17
---
-
 ALTER TABLE ONLY dw1_page_actions
     ADD CONSTRAINT dw1_pgas_tnt_pgid_id__p PRIMARY KEY (tenant, page_id, paid);
 
-
---
--- Name: dw1_posts_site_page_post__p; Type: CONSTRAINT; Schema: debiki_prod_daily_2013_05_17; Owner: debiki_prod_daily_2013_05_17
---
 
 ALTER TABLE ONLY dw1_posts
     ADD CONSTRAINT dw1_posts_site_page_post__p PRIMARY KEY (site_id, page_id, post_id);
 
 
---
--- Name: dw1_tenants_id__p; Type: CONSTRAINT; Schema: debiki_prod_daily_2013_05_17; Owner: debiki_prod_daily_2013_05_17
---
-
 ALTER TABLE ONLY dw1_tenants
     ADD CONSTRAINT dw1_tenants_id__p PRIMARY KEY (id);
 
-
---
--- Name: dw1_tenants_name__u; Type: CONSTRAINT; Schema: debiki_prod_daily_2013_05_17; Owner: debiki_prod_daily_2013_05_17
---
 
 ALTER TABLE ONLY dw1_tenants
     ADD CONSTRAINT dw1_tenants_name__u UNIQUE (name);
 
 
---
--- Name: dw1_tnthsts_host__u; Type: CONSTRAINT; Schema: debiki_prod_daily_2013_05_17; Owner: debiki_prod_daily_2013_05_17
---
-
 ALTER TABLE ONLY dw1_tenant_hosts
     ADD CONSTRAINT dw1_tnthsts_host__u UNIQUE (host);
 
-
---
--- Name: dw1_users_tnt_sno__p; Type: CONSTRAINT; Schema: debiki_prod_daily_2013_05_17; Owner: debiki_prod_daily_2013_05_17
---
 
 ALTER TABLE ONLY dw1_users
     ADD CONSTRAINT dw1_users_tnt_sno__p PRIMARY KEY (tenant, sno);
 
 
---
--- Name: dw1_idsmpleml_login; Type: INDEX; Schema: debiki_prod_daily_2013_05_17; Owner: debiki_prod_daily_2013_05_17
---
-
 CREATE INDEX dw1_idsmpleml_login ON dw1_ids_simple_email USING btree (login);
 
-
---
--- Name: dw1_idsmpleml_version__u; Type: INDEX; Schema: debiki_prod_daily_2013_05_17; Owner: debiki_prod_daily_2013_05_17
---
 
 CREATE UNIQUE INDEX dw1_idsmpleml_version__u ON dw1_ids_simple_email USING btree (tenant, email, version) WHERE (version = 'C'::bpchar);
 
 
---
--- Name: dw1_idsoid_email; Type: INDEX; Schema: debiki_prod_daily_2013_05_17; Owner: debiki_prod_daily_2013_05_17
---
-
 CREATE INDEX dw1_idsoid_email ON dw1_ids_openid USING btree (email);
 
-
---
--- Name: dw1_idsoid_tnt_email__u; Type: INDEX; Schema: debiki_prod_daily_2013_05_17; Owner: debiki_prod_daily_2013_05_17
---
 
 CREATE UNIQUE INDEX dw1_idsoid_tnt_email__u ON dw1_ids_openid USING btree (tenant, email) WHERE ((oid_endpoint)::text = 'https://www.google.com/accounts/o8/ud'::text);
 
 
---
--- Name: dw1_idsoid_tnt_usr; Type: INDEX; Schema: debiki_prod_daily_2013_05_17; Owner: debiki_prod_daily_2013_05_17
---
-
 CREATE INDEX dw1_idsoid_tnt_usr ON dw1_ids_openid USING btree (tenant, usr);
 
-
---
--- Name: dw1_logins_prevl; Type: INDEX; Schema: debiki_prod_daily_2013_05_17; Owner: debiki_prod_daily_2013_05_17
---
 
 CREATE INDEX dw1_logins_prevl ON dw1_logins USING btree (prev_login);
 
 
---
--- Name: dw1_logins_tnt; Type: INDEX; Schema: debiki_prod_daily_2013_05_17; Owner: debiki_prod_daily_2013_05_17
---
-
 CREATE INDEX dw1_logins_tnt ON dw1_logins USING btree (tenant);
 
-
---
--- Name: dw1_ntfpga_emlpndng_ctime; Type: INDEX; Schema: debiki_prod_daily_2013_05_17; Owner: debiki_prod_daily_2013_05_17
---
 
 CREATE INDEX dw1_ntfpga_emlpndng_ctime ON dw1_notfs_page_actions USING btree (email_status, ctime) WHERE ((email_status)::text = 'P'::text);
 
 
---
--- Name: dw1_ntfpga_t_idsmpl_pg_evt__u; Type: INDEX; Schema: debiki_prod_daily_2013_05_17; Owner: debiki_prod_daily_2013_05_17
---
-
 CREATE UNIQUE INDEX dw1_ntfpga_t_idsmpl_pg_evt__u ON dw1_notfs_page_actions USING btree (tenant, rcpt_id_simple, page_id, event_pga) WHERE (rcpt_id_simple IS NOT NULL);
 
-
---
--- Name: dw1_ntfpga_tnt_emailsent; Type: INDEX; Schema: debiki_prod_daily_2013_05_17; Owner: debiki_prod_daily_2013_05_17
---
 
 CREATE INDEX dw1_ntfpga_tnt_emailsent ON dw1_notfs_page_actions USING btree (tenant, email_sent);
 
 
---
--- Name: dw1_ntfpga_tnt_idsmpl_ctime; Type: INDEX; Schema: debiki_prod_daily_2013_05_17; Owner: debiki_prod_daily_2013_05_17
---
-
 CREATE INDEX dw1_ntfpga_tnt_idsmpl_ctime ON dw1_notfs_page_actions USING btree (tenant, rcpt_id_simple, ctime);
 
-
---
--- Name: dw1_ntfpga_tnt_rl_pg_evt__u; Type: INDEX; Schema: debiki_prod_daily_2013_05_17; Owner: debiki_prod_daily_2013_05_17
---
 
 CREATE UNIQUE INDEX dw1_ntfpga_tnt_rl_pg_evt__u ON dw1_notfs_page_actions USING btree (tenant, rcpt_role_id, page_id, event_pga) WHERE (rcpt_role_id IS NOT NULL);
 
 
---
--- Name: dw1_ntfpga_tnt_role_ctime; Type: INDEX; Schema: debiki_prod_daily_2013_05_17; Owner: debiki_prod_daily_2013_05_17
---
-
 CREATE INDEX dw1_ntfpga_tnt_role_ctime ON dw1_notfs_page_actions USING btree (tenant, rcpt_role_id, ctime);
 
-
---
--- Name: dw1_ntfpga_tnt_status_ctime; Type: INDEX; Schema: debiki_prod_daily_2013_05_17; Owner: debiki_prod_daily_2013_05_17
---
 
 CREATE INDEX dw1_ntfpga_tnt_status_ctime ON dw1_notfs_page_actions USING btree (tenant, status, ctime);
 
 
---
--- Name: dw1_pactions_login; Type: INDEX; Schema: debiki_prod_daily_2013_05_17; Owner: debiki_prod_daily_2013_05_17
---
-
 CREATE INDEX dw1_pactions_login ON dw1_page_actions USING btree (login);
 
-
---
--- Name: dw1_pages_tnt_parent_publdati; Type: INDEX; Schema: debiki_prod_daily_2013_05_17; Owner: debiki_prod_daily_2013_05_17
---
 
 CREATE INDEX dw1_pages_tnt_parent_publdati ON dw1_pages USING btree (tenant, parent_page_id, publ_dati);
 
 
---
--- Name: dw1_pages_tnt_parentpage; Type: INDEX; Schema: debiki_prod_daily_2013_05_17; Owner: debiki_prod_daily_2013_05_17
---
-
 CREATE INDEX dw1_pages_tnt_parentpage ON dw1_pages USING btree (tenant, parent_page_id);
 
-
---
--- Name: dw1_pages_tnt_prnt_cdati_nopub; Type: INDEX; Schema: debiki_prod_daily_2013_05_17; Owner: debiki_prod_daily_2013_05_17
---
 
 CREATE INDEX dw1_pages_tnt_prnt_cdati_nopub ON dw1_pages USING btree (tenant, parent_page_id, cdati) WHERE (publ_dati IS NULL);
 
 
---
--- Name: dw1_paths__u; Type: INDEX; Schema: debiki_prod_daily_2013_05_17; Owner: debiki_prod_daily_2013_05_17
---
-
 CREATE UNIQUE INDEX dw1_paths__u ON dw1_paths USING btree (tenant, folder, page_name, page_guid) WHERE ((guid_in_path)::text = 'T'::text);
 
-
---
--- Name: dw1_paths_all; Type: INDEX; Schema: debiki_prod_daily_2013_05_17; Owner: debiki_prod_daily_2013_05_17
---
 
 CREATE INDEX dw1_paths_all ON dw1_paths USING btree (tenant, folder, page_name, page_guid);
 
 
---
--- Name: dw1_pgas_tenant_page_post; Type: INDEX; Schema: debiki_prod_daily_2013_05_17; Owner: debiki_prod_daily_2013_05_17
---
-
 CREATE INDEX dw1_pgas_tenant_page_post ON dw1_page_actions USING btree (tenant, page_id, post_id);
 
-
---
--- Name: dw1_pgas_tnt_guestid; Type: INDEX; Schema: debiki_prod_daily_2013_05_17; Owner: debiki_prod_daily_2013_05_17
---
 
 CREATE INDEX dw1_pgas_tnt_guestid ON dw1_page_actions USING btree (tenant, guest_id);
 
 
---
--- Name: dw1_pgas_tnt_roleid; Type: INDEX; Schema: debiki_prod_daily_2013_05_17; Owner: debiki_prod_daily_2013_05_17
---
-
 CREATE INDEX dw1_pgas_tnt_roleid ON dw1_page_actions USING btree (tenant, role_id);
 
-
---
--- Name: dw1_pgpths_path__u; Type: INDEX; Schema: debiki_prod_daily_2013_05_17; Owner: debiki_prod_daily_2013_05_17
---
 
 CREATE UNIQUE INDEX dw1_pgpths_path__u ON dw1_page_paths USING btree (tenant, page_id, parent_folder, page_slug, show_id);
 
 
---
--- Name: dw1_pgpths_path_noid_cncl__u; Type: INDEX; Schema: debiki_prod_daily_2013_05_17; Owner: debiki_prod_daily_2013_05_17
---
-
 CREATE UNIQUE INDEX dw1_pgpths_path_noid_cncl__u ON dw1_page_paths USING btree (tenant, parent_folder, page_slug) WHERE (((show_id)::text = 'F'::text) AND ((canonical)::text = 'C'::text));
 
-
---
--- Name: dw1_pgpths_tnt_fldr_slg_cncl; Type: INDEX; Schema: debiki_prod_daily_2013_05_17; Owner: debiki_prod_daily_2013_05_17
---
 
 CREATE INDEX dw1_pgpths_tnt_fldr_slg_cncl ON dw1_page_paths USING btree (tenant, parent_folder, page_slug, canonical);
 
 
---
--- Name: dw1_pgpths_tnt_pgid_cncl; Type: INDEX; Schema: debiki_prod_daily_2013_05_17; Owner: debiki_prod_daily_2013_05_17
---
-
 CREATE INDEX dw1_pgpths_tnt_pgid_cncl ON dw1_page_paths USING btree (tenant, page_id, canonical);
 
-
---
--- Name: dw1_pgpths_tnt_pgid_cncl__u; Type: INDEX; Schema: debiki_prod_daily_2013_05_17; Owner: debiki_prod_daily_2013_05_17
---
 
 CREATE UNIQUE INDEX dw1_pgpths_tnt_pgid_cncl__u ON dw1_page_paths USING btree (tenant, page_id) WHERE ((canonical)::text = 'C'::text);
 
 
---
--- Name: dw1_posts_pending_edit_suggs; Type: INDEX; Schema: debiki_prod_daily_2013_05_17; Owner: debiki_prod_daily_2013_05_17
---
-
 CREATE INDEX dw1_posts_pending_edit_suggs ON dw1_posts USING btree (site_id, last_acted_upon_at) WHERE ((((((((num_pending_flags = 0) AND ((last_approval_type)::text = ANY ((ARRAY['W'::character varying, 'A'::character varying, 'M'::character varying])::text[]))) AND (num_edits_to_review = 0)) AND (num_collapses_to_review = 0)) AND (num_uncollapses_to_review = 0)) AND (num_deletes_to_review = 0)) AND (num_undeletes_to_review = 0)) AND (((((((((num_edit_suggestions > 0) OR ((num_collapse_post_votes_pro > 0) AND (post_collapsed_at IS NULL))) OR ((num_uncollapse_post_votes_pro > 0) AND (post_collapsed_at IS NOT NULL))) OR ((num_collapse_tree_votes_pro > 0) AND (tree_collapsed_at IS NULL))) OR ((num_uncollapse_tree_votes_pro > 0) AND (tree_collapsed_at IS NOT NULL))) OR ((num_delete_post_votes_pro > 0) AND (post_deleted_at IS NULL))) OR ((num_undelete_post_votes_pro > 0) AND (post_deleted_at IS NOT NULL))) OR ((num_delete_tree_votes_pro > 0) AND (tree_deleted_at IS NULL))) OR ((num_undelete_tree_votes_pro > 0) AND (tree_deleted_at IS NOT NULL))));
 
-
---
--- Name: dw1_posts_pending_flags; Type: INDEX; Schema: debiki_prod_daily_2013_05_17; Owner: debiki_prod_daily_2013_05_17
---
 
 CREATE INDEX dw1_posts_pending_flags ON dw1_posts USING btree (site_id, num_pending_flags) WHERE (num_pending_flags > 0);
 
 
---
--- Name: dw1_posts_pending_nothing; Type: INDEX; Schema: debiki_prod_daily_2013_05_17; Owner: debiki_prod_daily_2013_05_17
---
-
 CREATE INDEX dw1_posts_pending_nothing ON dw1_posts USING btree (site_id, last_acted_upon_at) WHERE (((((((((num_pending_flags = 0) AND ((last_approval_type)::text = ANY ((ARRAY['W'::character varying, 'A'::character varying, 'M'::character varying])::text[]))) AND (num_edits_to_review = 0)) AND (num_collapses_to_review = 0)) AND (num_uncollapses_to_review = 0)) AND (num_deletes_to_review = 0)) AND (num_undeletes_to_review = 0)) AND (num_edit_suggestions = 0)) AND (NOT (((((((((num_edit_suggestions > 0) OR ((num_collapse_post_votes_pro > 0) AND (post_collapsed_at IS NULL))) OR ((num_uncollapse_post_votes_pro > 0) AND (post_collapsed_at IS NOT NULL))) OR ((num_collapse_tree_votes_pro > 0) AND (tree_collapsed_at IS NULL))) OR ((num_uncollapse_tree_votes_pro > 0) AND (tree_collapsed_at IS NOT NULL))) OR ((num_delete_post_votes_pro > 0) AND (post_deleted_at IS NULL))) OR ((num_undelete_post_votes_pro > 0) AND (post_deleted_at IS NOT NULL))) OR ((num_delete_tree_votes_pro > 0) AND (tree_deleted_at IS NULL))) OR ((num_undelete_tree_votes_pro > 0) AND (tree_deleted_at IS NOT NULL)))));
 
-
---
--- Name: dw1_posts_pending_sth; Type: INDEX; Schema: debiki_prod_daily_2013_05_17; Owner: debiki_prod_daily_2013_05_17
---
 
 CREATE INDEX dw1_posts_pending_sth ON dw1_posts USING btree (site_id, last_acted_upon_at) WHERE ((num_pending_flags = 0) AND (((((((last_approval_type IS NULL) OR ((last_approval_type)::text = 'P'::text)) OR (num_edits_to_review > 0)) OR (num_collapses_to_review > 0)) OR (num_uncollapses_to_review > 0)) OR (num_deletes_to_review > 0)) OR (num_undeletes_to_review > 0)));
 
 
---
--- Name: dw1_qtas_tnt_ip_role__u; Type: INDEX; Schema: debiki_prod_daily_2013_05_17; Owner: debiki_prod_daily_2013_05_17
---
-
 CREATE UNIQUE INDEX dw1_qtas_tnt_ip_role__u ON dw1_quotas USING btree ((COALESCE(tenant, '-'::character varying)), (COALESCE(ip, '-'::character varying)), (COALESCE(role_id, '-'::character varying)));
 
-
---
--- Name: dw1_tenants_creatorip; Type: INDEX; Schema: debiki_prod_daily_2013_05_17; Owner: debiki_prod_daily_2013_05_17
---
 
 CREATE INDEX dw1_tenants_creatorip ON dw1_tenants USING btree (creator_ip);
 
 
---
--- Name: dw1_tenants_creatorlogin; Type: INDEX; Schema: debiki_prod_daily_2013_05_17; Owner: debiki_prod_daily_2013_05_17
---
-
 CREATE INDEX dw1_tenants_creatorlogin ON dw1_tenants USING btree (creator_tenant_id, creator_login_id);
 
-
---
--- Name: dw1_tenants_creatorrole; Type: INDEX; Schema: debiki_prod_daily_2013_05_17; Owner: debiki_prod_daily_2013_05_17
---
 
 CREATE INDEX dw1_tenants_creatorrole ON dw1_tenants USING btree (creator_tenant_id, creator_role_id);
 
 
---
--- Name: dw1_tnthsts_tnt_cncl__u; Type: INDEX; Schema: debiki_prod_daily_2013_05_17; Owner: debiki_prod_daily_2013_05_17
---
-
 CREATE UNIQUE INDEX dw1_tnthsts_tnt_cncl__u ON dw1_tenant_hosts USING btree (tenant) WHERE ((canonical)::text = 'C'::text);
 
-
---
--- Name: dw1_arts__r__pgas; Type: FK CONSTRAINT; Schema: debiki_prod_daily_2013_05_17; Owner: debiki_prod_daily_2013_05_17
---
 
 ALTER TABLE ONLY dw1_page_ratings
     ADD CONSTRAINT dw1_arts__r__pgas FOREIGN KEY (tenant, page_id, paid) REFERENCES dw1_page_actions(tenant, page_id, paid) DEFERRABLE;
 
 
---
--- Name: dw1_emlot__r__tnts; Type: FK CONSTRAINT; Schema: debiki_prod_daily_2013_05_17; Owner: debiki_prod_daily_2013_05_17
---
-
 ALTER TABLE ONLY dw1_emails_out
     ADD CONSTRAINT dw1_emlot__r__tnts FOREIGN KEY (tenant) REFERENCES dw1_tenants(id);
 
-
---
--- Name: dw1_idsmpleml__r__logins; Type: FK CONSTRAINT; Schema: debiki_prod_daily_2013_05_17; Owner: debiki_prod_daily_2013_05_17
---
 
 ALTER TABLE ONLY dw1_ids_simple_email
     ADD CONSTRAINT dw1_idsmpleml__r__logins FOREIGN KEY (login) REFERENCES dw1_logins(sno);
 
 
---
--- Name: dw1_idsoid_usr_tnt__r__users; Type: FK CONSTRAINT; Schema: debiki_prod_daily_2013_05_17; Owner: debiki_prod_daily_2013_05_17
---
-
 ALTER TABLE ONLY dw1_ids_openid
     ADD CONSTRAINT dw1_idsoid_usr_tnt__r__users FOREIGN KEY (tenant, usr) REFERENCES dw1_users(tenant, sno) DEFERRABLE;
 
-
---
--- Name: dw1_logins__r__logins; Type: FK CONSTRAINT; Schema: debiki_prod_daily_2013_05_17; Owner: debiki_prod_daily_2013_05_17
---
 
 ALTER TABLE ONLY dw1_logins
     ADD CONSTRAINT dw1_logins__r__logins FOREIGN KEY (prev_login) REFERENCES dw1_logins(sno) DEFERRABLE;
 
 
---
--- Name: dw1_logins_tnt__r__tenants; Type: FK CONSTRAINT; Schema: debiki_prod_daily_2013_05_17; Owner: debiki_prod_daily_2013_05_17
---
-
 ALTER TABLE ONLY dw1_logins
     ADD CONSTRAINT dw1_logins_tnt__r__tenants FOREIGN KEY (tenant) REFERENCES dw1_tenants(id) DEFERRABLE;
 
-
---
--- Name: dw1_ntfpga__r__emlot; Type: FK CONSTRAINT; Schema: debiki_prod_daily_2013_05_17; Owner: debiki_prod_daily_2013_05_17
---
 
 ALTER TABLE ONLY dw1_notfs_page_actions
     ADD CONSTRAINT dw1_ntfpga__r__emlot FOREIGN KEY (tenant, email_sent) REFERENCES dw1_emails_out(tenant, id);
 
 
---
--- Name: dw1_ntfpga__r__guests; Type: FK CONSTRAINT; Schema: debiki_prod_daily_2013_05_17; Owner: debiki_prod_daily_2013_05_17
---
-
 ALTER TABLE ONLY dw1_notfs_page_actions
     ADD CONSTRAINT dw1_ntfpga__r__guests FOREIGN KEY (tenant, rcpt_id_simple) REFERENCES dw1_guests(site_id, id) DEFERRABLE;
 
-
---
--- Name: dw1_ntfpga__r__rls; Type: FK CONSTRAINT; Schema: debiki_prod_daily_2013_05_17; Owner: debiki_prod_daily_2013_05_17
---
 
 ALTER TABLE ONLY dw1_notfs_page_actions
     ADD CONSTRAINT dw1_ntfpga__r__rls FOREIGN KEY (tenant, rcpt_role_id) REFERENCES dw1_users(tenant, sno) DEFERRABLE;
 
 
---
--- Name: dw1_pactions__r__logins; Type: FK CONSTRAINT; Schema: debiki_prod_daily_2013_05_17; Owner: debiki_prod_daily_2013_05_17
---
-
 ALTER TABLE ONLY dw1_page_actions
     ADD CONSTRAINT dw1_pactions__r__logins FOREIGN KEY (login) REFERENCES dw1_logins(sno) DEFERRABLE;
 
-
---
--- Name: dw1_pactions__r__pages; Type: FK CONSTRAINT; Schema: debiki_prod_daily_2013_05_17; Owner: debiki_prod_daily_2013_05_17
---
 
 ALTER TABLE ONLY dw1_page_actions
     ADD CONSTRAINT dw1_pactions__r__pages FOREIGN KEY (page) REFERENCES dw1_pages(sno) DEFERRABLE;
 
 
---
--- Name: dw1_pages__r__tenant; Type: FK CONSTRAINT; Schema: debiki_prod_daily_2013_05_17; Owner: debiki_prod_daily_2013_05_17
---
-
 ALTER TABLE ONLY dw1_pages
     ADD CONSTRAINT dw1_pages__r__tenant FOREIGN KEY (tenant) REFERENCES dw1_tenants(id) DEFERRABLE;
 
-
---
--- Name: dw1_pages_parentpage__r__pages; Type: FK CONSTRAINT; Schema: debiki_prod_daily_2013_05_17; Owner: debiki_prod_daily_2013_05_17
---
 
 ALTER TABLE ONLY dw1_pages
     ADD CONSTRAINT dw1_pages_parentpage__r__pages FOREIGN KEY (tenant, parent_page_id) REFERENCES dw1_pages(tenant, guid) DEFERRABLE;
 
 
---
--- Name: dw1_paths_tnt_page__r__pages; Type: FK CONSTRAINT; Schema: debiki_prod_daily_2013_05_17; Owner: debiki_prod_daily_2013_05_17
---
-
 ALTER TABLE ONLY dw1_paths
     ADD CONSTRAINT dw1_paths_tnt_page__r__pages FOREIGN KEY (tenant, page_guid) REFERENCES dw1_pages(tenant, guid) DEFERRABLE;
 
-
---
--- Name: dw1_pgas__r__guests; Type: FK CONSTRAINT; Schema: debiki_prod_daily_2013_05_17; Owner: debiki_prod_daily_2013_05_17
---
 
 ALTER TABLE ONLY dw1_page_actions
     ADD CONSTRAINT dw1_pgas__r__guests FOREIGN KEY (tenant, guest_id) REFERENCES dw1_guests(site_id, id) DEFERRABLE;
 
 
---
--- Name: dw1_pgas__r__pgas; Type: FK CONSTRAINT; Schema: debiki_prod_daily_2013_05_17; Owner: debiki_prod_daily_2013_05_17
---
-
 ALTER TABLE ONLY dw1_page_actions
     ADD CONSTRAINT dw1_pgas__r__pgas FOREIGN KEY (tenant, page_id, relpa) REFERENCES dw1_page_actions(tenant, page_id, paid) DEFERRABLE;
 
-
---
--- Name: dw1_pgas__r__roles; Type: FK CONSTRAINT; Schema: debiki_prod_daily_2013_05_17; Owner: debiki_prod_daily_2013_05_17
---
 
 ALTER TABLE ONLY dw1_page_actions
     ADD CONSTRAINT dw1_pgas__r__roles FOREIGN KEY (tenant, role_id) REFERENCES dw1_users(tenant, sno) DEFERRABLE;
 
 
---
--- Name: dw1_pgas_tnt_pgid__r__pages; Type: FK CONSTRAINT; Schema: debiki_prod_daily_2013_05_17; Owner: debiki_prod_daily_2013_05_17
---
-
 ALTER TABLE ONLY dw1_page_actions
     ADD CONSTRAINT dw1_pgas_tnt_pgid__r__pages FOREIGN KEY (tenant, page_id) REFERENCES dw1_pages(tenant, guid) DEFERRABLE;
 
-
---
--- Name: dw1_pgpths_tnt_pgid__r__pages; Type: FK CONSTRAINT; Schema: debiki_prod_daily_2013_05_17; Owner: debiki_prod_daily_2013_05_17
---
 
 ALTER TABLE ONLY dw1_page_paths
     ADD CONSTRAINT dw1_pgpths_tnt_pgid__r__pages FOREIGN KEY (tenant, page_id) REFERENCES dw1_pages(tenant, guid) DEFERRABLE;
 
 
---
--- Name: dw1_qtas_tnt__r__tenants; Type: FK CONSTRAINT; Schema: debiki_prod_daily_2013_05_17; Owner: debiki_prod_daily_2013_05_17
---
-
 ALTER TABLE ONLY dw1_quotas
     ADD CONSTRAINT dw1_qtas_tnt__r__tenants FOREIGN KEY (tenant) REFERENCES dw1_tenants(id) DEFERRABLE;
 
-
---
--- Name: dw1_qtas_tnt_role__r__roles; Type: FK CONSTRAINT; Schema: debiki_prod_daily_2013_05_17; Owner: debiki_prod_daily_2013_05_17
---
 
 ALTER TABLE ONLY dw1_quotas
     ADD CONSTRAINT dw1_qtas_tnt_role__r__roles FOREIGN KEY (tenant, role_id) REFERENCES dw1_users(tenant, sno) DEFERRABLE;
 
 
---
--- Name: dw1_tenants_creator__r__roles; Type: FK CONSTRAINT; Schema: debiki_prod_daily_2013_05_17; Owner: debiki_prod_daily_2013_05_17
---
-
 ALTER TABLE ONLY dw1_tenants
     ADD CONSTRAINT dw1_tenants_creator__r__roles FOREIGN KEY (creator_tenant_id, creator_role_id) REFERENCES dw1_users(tenant, sno) DEFERRABLE;
 
-
---
--- Name: dw1_tenants_creator__r__tnts; Type: FK CONSTRAINT; Schema: debiki_prod_daily_2013_05_17; Owner: debiki_prod_daily_2013_05_17
---
 
 ALTER TABLE ONLY dw1_tenants
     ADD CONSTRAINT dw1_tenants_creator__r__tnts FOREIGN KEY (creator_tenant_id) REFERENCES dw1_tenants(id) DEFERRABLE;
 
 
---
--- Name: dw1_tnthsts__r__tenants; Type: FK CONSTRAINT; Schema: debiki_prod_daily_2013_05_17; Owner: debiki_prod_daily_2013_05_17
---
-
 ALTER TABLE ONLY dw1_tenant_hosts
     ADD CONSTRAINT dw1_tnthsts__r__tenants FOREIGN KEY (tenant) REFERENCES dw1_tenants(id);
 
 
---
--- Name: dw1_users__r__tenant; Type: FK CONSTRAINT; Schema: debiki_prod_daily_2013_05_17; Owner: debiki_prod_daily_2013_05_17
---
-
 ALTER TABLE ONLY dw1_users
     ADD CONSTRAINT dw1_users__r__tenant FOREIGN KEY (tenant) REFERENCES dw1_tenants(id) DEFERRABLE;
 
-
-SET SESSION AUTHORIZATION 'postgres';
-
---
--- Name: public; Type: ACL; Schema: -; Owner: postgres
---
-
-REVOKE ALL ON SCHEMA public FROM PUBLIC;
-REVOKE ALL ON SCHEMA public FROM postgres;
-GRANT ALL ON SCHEMA public TO postgres;
-GRANT ALL ON SCHEMA public TO PUBLIC;
-
-
---
--- PostgreSQL database dump complete
---
 
