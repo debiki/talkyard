@@ -193,8 +193,9 @@ module.exports = function(grunt) {
             'client/vendor/diff_match_patch.js',
             'target/client/debiki/debiki-diff-match-patch.js',
             'target/client/debiki/debiki-page-path.js',
-            'target/client/spa/admin/js/*.js',
-            'target/client/spa/admin/js/modal-dialog.js'], // requires AngularJS module
+            // Include the module first; it's needed by modal-dialog.js.
+            'target/client/spa/admin/js/module-and-services.js',
+            'target/client/spa/admin/js/*.js'],
 
         'public/res/debiki-spa-install-first-site.js': [
             'target/client/spa/install/install-ng-app.js'],
