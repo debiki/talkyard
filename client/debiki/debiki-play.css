@@ -1682,6 +1682,16 @@ inside widgets, rather than buttons and tabs. */
 /* Twitter Bootstrap
 ==========================*/
 
+/* Cancel .icon 14px width — I'm using Fontello's icons, instead of Twitter's.
+There are some other icon styles that Bootstrap applies and that could be
+cancelled here — what should be done, in fact, is to build Bootstrap
+and comment out:  @import "./bootstrap/less/sprites.less
+see http://drupal.org/node/1949992 */
+.DW [class^="icon-"],
+.DW [class*=" icon-"] {
+  width: auto;
+}
+
 /* From http://twitter.github.com/bootstrap/assets/css/bootstrap.css,
 2012-03-21, v.2.0.2. */
 .tooltip {
