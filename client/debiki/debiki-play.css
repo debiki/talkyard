@@ -1291,6 +1291,7 @@ related to. */
 .dw-f-e .dw-submit-set {
   margin-top: 0.5em;
   margin-bottom: 1em;
+  float: left;
 }
 
 .dw-f-e .dw-inf-submitting-form {
