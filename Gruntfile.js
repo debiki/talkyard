@@ -3,12 +3,12 @@
 
 module.exports = function(grunt) {
 
-  grunt.loadNpmTasks('grunt-contrib-mincss');
   grunt.loadNpmTasks('grunt-livescript');
   grunt.loadNpmTasks('grunt-wrap');
   grunt.loadNpmTasks('grunt-contrib-concat');
   grunt.loadNpmTasks('grunt-contrib-watch');
   grunt.loadNpmTasks('grunt-contrib-uglify');
+  //grunt.loadNpmTasks('grunt-contrib-cssmin');
 
   var debikiDesktopFiles = [
       'client/vendor/bootstrap-tooltip.js', //
@@ -168,6 +168,11 @@ module.exports = function(grunt) {
             'client/debiki/debiki.css',
             'client/debiki/debiki-play.css'],
 
+        // The `cssmin` plugin is broken (see below, search for `cssmin`)
+        // so right now simply copy the complete CSS file.
+        'public/res/combined-debiki.min.css': [
+          'public/res/combined-debiki.css'],
+
         'public/res/admin.css': [
             'client/admin/admin-theme.css',
             'client/spa/admin/css/admin-page.css',
@@ -235,21 +240,23 @@ module.exports = function(grunt) {
         }
       }
     },
-    /*
     // This results in malfunctioning CSS?
     // And a """Warning: Object #<Object> has no method 'expandFiles'
     // Use --force to continue.""" error, as of Grunt v0.4.1 (May 2013),
     // see <https://github.com/gruntjs/grunt/wiki/Configuring-tasks
     //        #building-the-files-object-dynamically>
     // for info on how to perhaps fix that error.
-    mincss: {
+    // Therefore, for now, only `combine:` but don't `minify:`.
+    // Ooops, both `combine` and `compress` strips my `.DW [class*=" icon-"]`
+    // rules! Comment out this weird plugin ("grunt-contrib-cssmin": "~0.6.0".)
+    /*cssmin: {
       compress: {
         files: {
           'public/res/combined-debiki.min.css': [
             'public/res/combined-debiki.css']
         }
       }
-    }, */
+    },*/
     watch: {
       all: {
         files: [
@@ -264,7 +271,7 @@ module.exports = function(grunt) {
     }
   });
 
-  grunt.registerTask('default', ['livescript', 'wrap', 'concat', 'uglify']); //, 'mincss']);
+  grunt.registerTask('default', ['livescript', 'wrap', 'concat', 'uglify']);//, 'cssmin']);
 
 };
 
