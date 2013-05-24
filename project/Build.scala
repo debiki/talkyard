@@ -2,6 +2,7 @@ import sbt._
 import Keys._
 import play.Project._
 import com.typesafe.sbteclipse.plugin.EclipsePlugin.EclipseKeys
+import java.{net => jn}
 
 object ApplicationBuild extends Build {
 
@@ -90,9 +91,16 @@ object ApplicationBuild extends Build {
   def mainSettings = List(
     scalaVersion := "2.10.1",
     compileRhinoTask := { "make compile_javascript"! },
+    compileJsAndCss := { "grunt"! },
+
+    // Make Grunt bundle JS files and CSS automatically.
+    playOnStarted += startGruntTask,
+    playOnStopped += stopGruntTask,
+
     Keys.fork in Test := false, // or cannot place breakpoints in test suites
     Keys.compile in Compile <<=
        (Keys.compile in Compile).dependsOn(compileRhinoTask),
+    playPackageEverything <<= playPackageEverything dependsOn compileJsAndCss,
     unmanagedClasspath in Compile <+= (baseDirectory) map { bd =>
       Attributed.blank(bd / "target/scala-2.10/compiledjs-classes")
     },
@@ -105,8 +113,36 @@ object ApplicationBuild extends Build {
 
   val rhinoClassDir = "target/scala-2.10/classes/"
 
-  def compileRhinoTask = TaskKey[Unit]("compile-js",
+  def compileRhinoTask = TaskKey[Unit]("compile-js-to-java",
     "Invokes Rhino to compile Javascript to Java bytecode")
+
+  def compileJsAndCss = TaskKey[Unit]("bundle-js-and-css",
+    "Invokes Grunt to transpile LiveScript to Javascript, " +
+      "and combine and minify Javascript and CSS")
+
+
+  // Starts Grunt on play run. (Grunt transpiles Livescript to Javascript and bundles
+  // minified Javascript and CSS files.)
+  def startGruntTask = (_: jn.InetSocketAddress) => {
+    println("Starting `grunt watch` to build Javascript and CSS...")
+    gruntProcess = Some(Process("grunt watch").run)
+  }
+
+  // Stop grunt when `play run` stops.
+  // However! On my computer, there's a weird JNotifyException_linux error
+  // that prevents the `stopGruntTask` from running and stopping Grunt.
+  // Read more here: https://groups.google.com/forum/#!topic/play-framework/6Z34QLdl4e8
+  // But when I installed everything on a clean Ubuntu 12.04 LTS server,
+  // there were no JNotifyException_linux errors so perhaps it's just my machine
+  // that's stupid.
+  def stopGruntTask = () => {
+    println("echo 'Stopping `grunt watch`...")
+    gruntProcess.map(p => p.destroy())
+    gruntProcess = None
+  }
+
+  private var gruntProcess: Option[Process] = None
+
 
 
   // Lists dependencies.
