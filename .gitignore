@@ -27,6 +27,9 @@ core
 # because there's a /usr/bin/script program).
 s
 
+# Ignore softlinks to the Play installation directory, e.g. scripts/play-2.1.sh
+scripts/play-*.sh
+
 # NPM packages folder.
 node_modules/
 

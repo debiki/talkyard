@@ -1,0 +1,15 @@
+#!/bin/bash
+
+# You can ignore this script if you want to. The purpose of this script is only
+# to make it obvious which version of play you are supposed to use.
+
+# Please create a softlink, scripts/play-2.X.Y.sh, that links to your Play
+# installation version 2.X.Y. Use the version of Play Framework that is assumed
+# on the very last line of this script.
+
+# For example:
+#   $ cd scripts/
+#   $ ln -s ~/dev/play/play-2.1.1/play play-2.1.1.sh
+
+scripts/play-2.1.1.sh $@
+
