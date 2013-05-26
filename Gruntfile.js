@@ -217,6 +217,8 @@ module.exports = function(grunt) {
         'public/res/debiki-dashbar.js': [
             'target/client/debiki/debiki-dashbar.js'],
 
+        // Warning: Duplicated rule. A corresponding rule is also present
+        // in the Makefile. Keep in sync.
         'public/res/debiki-pagedown.js': [
           'modules/pagedown/Markdown.Converter.js',
           'client/compiledjs/PagedownJavaInterface.js']

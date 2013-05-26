@@ -49,6 +49,11 @@ ${CLASSDIR}PagedownJsImpl.class: ${CLASSDIR}PagedownJs.class ${RHINOJAR} ${PAGED
 	  -o PagedownJsImpl \
 	  ${PAGEDOWN_JS}
 
+# Warning: Duplicated rule. A corresponding rule is also present in the Gruntfile. Keep in sync.
+${PAGEDOWN_JS}: modules/pagedown/Markdown.Converter.js client/compiledjs/PagedownJavaInterface.js
+	# Grunt merges Javascript files from ./client/ to ./public/.
+	grunt
+
 ${RHINOJAR}:
 	wget -O target/rhino1_7R2.zip ftp://ftp.mozilla.org/pub/mozilla.org/js/rhino1_7R2.zip
 	unzip target/rhino1_7R2.zip -d target
