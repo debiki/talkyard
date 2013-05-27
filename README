@@ -1,141 +1,145 @@
 
 
-
-Building and Startign Debiki
+<a href="http://www.debiki.com/">![Logo](http://www.debiki.com/-/img/logo-128x120.png) Debiki</a>
 =============================
 
-I've done this on Ubuntu Linux only; I'm using Ubuntu Desktop 12.04 LTS.
+Debiki is an open source (AGPL) discussion platform for forums, blogs
+and simple websites.
+
+It intends to:
+
+- Save time, by showing the interesting comments first,
+  and solving the off-topic problem, and other things
+
+- Promote fruitful discussions
+
+- Help people better understand others with different points of view
+  
+Read more at http://www.debiki.com/.
+
+A good alternative to Debiki might be [Discourse](http://www.discourse.org/) —
+it has a different focus: a "flattened, endlessly scrolling discussion". It
+does not intend to show the most interesting comments first.  I think that
+Discourse is more like a combined forum + chat, and Debiki is more like a
+combined forum/blog + Question/Answers site.
+
+Debiki is under development and I have not yet released any stable
+version or written any installation instructions.
 
 
-
-1. Install and start PostgreSQL
------------------------------
-
-If you use Ubuntu Server 12.04 LTS:
-
-$ sudo aptitude install postgresql-9.1 postgresql-contrib-9.1
-
-(PostgreSQL starts automatically)
-
-
-
-2. Create a PostgreSQL database and user
------------------------------
-
-$ sudo su - postgres
-$ psql
-postgres=# create user debiki_prod password 'apaskalabanan';
-postgres=# alter user debiki_prod set search_path to '$user';
-postgres=# create database debiki_prod owner debiki_prod encoding 'UTF8';
-postgres=# \q
-$ psql --dbname debiki_prod
-debiki_prod=# drop schema public;
-debiki_prod=# create schema authorization debiki_prod;
-
-
-
-3. Install Java and Play Framework 2.1, Make and Nodejs
------------------------------
-
-See: http://www.playframework.com/documentation/2.1.0/Installing
-
-In short:
-
-Install Java:
-
-$ sudo aptitude install openjdk-7-jdk
-
-
-Install Play:
-
-$ cd ~
-$ mkdir play-2.1
-$ cd play-2.1
-$ wget http://downloads.typesafe.com/play/2.1.1/play-2.1.1.zip
-$ unzip play-2.1.0.zip
-$ chmod a+x play-2.1.0/play
-$ cd ~
-$ mkdir bin
-$ cd bin
-$ ln -s ~/play-2.1/play-2.1.0/play ./
-
-Now you can test start Play like so:
-
-$ ~/bin/play help
-
-
-Install Nodejs:
-
-$ sudo apt-get install build-essential
-$ sudo apt-get install python
-$ mkdir ~/nodejs/
-$ cd ~/nodejs/
-$ wget http://nodejs.org/dist/v0.10.5/node-v0.10.5.tar.gz
-$ sudo tar -xzvf node-v0.10.5.tar.gz
-$ cd node-v0.10.5/
-$ sudo ./configure --prefix=/usr/local/
-$ sudo make
-$ sudo make install
-$ sudo npm install -g grunt-cli
-
-
-
-Install Make:
-
-$ sudo aptitude install make
-
-
-
-
-4. Download Debiki to your local desktop machine:
------------------------------
-
-$ sudo aptitude install git
-$ mkdir -p ~/dev/debiki
-$ cd ~/dev/debiki
-$ git clone ...
-$ cd debiki-app-play/
-$ git submodule init
-$ git submodule update
-
-Download Node modules:
-$ /usr/local/bin/npm install
-
-For now, compile JS manually: (Sorry!)
-$ grunt
-
-
-5. Start Debiki and create the first website
------------------------------
-
-$ cd ~/dev/debiki/debiki-app-play/
-$ play
-[debiki-app-play]$ compile
-[debiki-app-play]$ run
-
-Then go to http(s)://serveradress/-/install/ and follow the instructions.
-
-(If you're curious: The instructions tells you to find a password in the server
-log files, and then to input that password, so the server knows that you are
-you (in case other people also have access to the web pages, over the
-internet).  After this, you're asked to create an admin account. That is,
-specify a username and a password, or login via e.g. Gmail.)
-
-Once you've installed everything, visit 
-  http(s)://serveradress/-/admin/
-
-and create a forum or a blog or something.
-
-
-
-License
+Setting Up a Development Environment
 =============================
 
-AGPL. There is no commercial license.
+Debiki is written in Scala, Javascript, LiveScript, HTML, CSS and SQL.
+It uses Play Framework 2.1, PostgreSQL, jQuery, AngularJS and Node.js Grunt.
 
-In the distant future, perhaps the license requirements will be relaxed from AGPL to GPL.
+Here are the steps to get Debiki up and running on a virtual machine that you
+can use for development. This should work on Windows, Linux and Mac.
 
-Why not GPL directly? Please have a look at this blog post.
+1. Install things:
+
+  - VirtualBox, www.virtualbox.org/wiki/Downloads,
+    or simply (on Ubuntu Linux) `apt-get install virtualbox`.
+
+    [Here](http://blog.discourse.org/2013/04/discourse-as-your-first-rails-app/)
+    are some tips (the *Step 1: VirtualBox*) section only).
+
+  - Vagrant, which prepares a VirtualBox VM.
+      You can download version 1.1.2 or higher from 
+      [downloads.vagrantup.com](http://downloads.vagrantup.com/).
+
+  - Git
+
+    On Ubuntu: `apt-get install git`
+
+    On Windows and Mac, consider using:
+
+      <a href="http://windows.github.com/">GitHub for Windows</a>
+      <a href="http://mac.github.com/">GitHub for Mac</a>
+
+
+2. Get the source code
+
+      git clone ...
+      git submodule init
+      git submodule update
+
+
+3. Start a Virtual Machine
+
+  The virtual machine (VM) will automatically have access to the source code
+  you downloaded (via Git) to your desktop machine (Vagrant [syncs folder
+  contents](http://docs.vagrantup.com/v2/synced-folders/index.html)).
+
+  Start a virtual machine:
+
+      vagrant up
+
+  This takes long, because Vagrant installs e.g. PostgreSQL, Java and Node.js.
+
+
+4. Start Debiki
+
+      $ vagrant ssh
+      $ cd ~/dev/debiki/debiki-app-play/
+      $ scripts/play
+      [...]$ run
+  
+
+  Then go to `http(s)://serveradress/-/install/` and follow the instructions.
+ 
+  <sub>(If you're curious: The instructions tell you to find a password in the server
+  log files, and then to input that password, so the server knows that you are
+  you (in case other people also have access to the web pages, over the
+  internet).  After this, you're asked to create an admin account.)</sub>
+ 
+  Once you've installed everything, visit  http(s)://serveradress/-/admin/
+  and create a forum or blog.
+
+  You can shut down the virtual machine by hitting `vagrant halt` or `vagrant suspend`,
+  and start it again via `vagrant up` or `vagrant resume`.
+
+  Be careful with `vagrant destroy`, because then 1) any development database contents
+  is lost, and 2) the next time you do `vagrant up` it'll take rather long.
+
+
+
+Contributing
+=============================
+
+If you'd like to contribute any source code, please send me an email, or a
+GitHub pull request but first sign this CLA (oops! it does not yet exist. But
+it'll be similar to [Google's CLA](https://developers.google.com/open-source/cla/individual)
+— you'll open source your code and grant me a copyrigt license).
+
+Please wrap lines if longer than 100 characters.
+And, for Scala code, please use [the official style guide](http://docs.scala-lang.org/style/).
+For Javascript, use [Google's style guide](http://google-styleguide.googlecode.com/svn/trunk/javascriptguide.xml).
+
+If you write a single line Git commit message, end it with `.` (a dot).
+Please keep commit message lines below 80 characters.
+
+
+
+License (AGPL)
+=============================
+
+    Copyright (C) 2010-2013  Kaj Magnus Lindberg (born 1979)
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as
+    published by the Free Software Foundation, either version 3 of the
+    License, or (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
+    You should have received a copy of the GNU Affero General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+
 
 
 vim: fdm=marker et ts=2 sw=2 list
