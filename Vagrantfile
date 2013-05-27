@@ -1,5 +1,5 @@
 # -*- mode: ruby -*-
-# vi: set ft=ruby :
+# vi: set ft=ruby list et ts=2 sw=2 :
 
 Vagrant.configure("2") do |config|
   # All Vagrant configuration is done here. The most common configuration
@@ -46,10 +46,18 @@ Vagrant.configure("2") do |config|
   config.vm.provider :virtualbox do |vb|
     # Don't boot with headless mode
     #vb.gui = true
- 
+
     # Use VBoxManage to customize the VM. For example to change memory:
     vb.customize ["modifyvm", :id, "--memory", "4096"]
+
+    # Allow the VM to use all cores, unless we're on Windows.
+    # From: https://gist.github.com/WIZARDISHUNGRY/2660808
+    if not RUBY_PLATFORM.downcase.include?("mswin")
+      vb.customize ["modifyvm", :id, "--cpus",
+        `awk "/^processor/ {++n} END {print n}" /proc/cpuinfo 2> /dev/null || sh -c 'sysctl hw.logicalcpu 2> /dev/null || echo ": 2"' | awk \'{print \$2}\' `.chomp]
+    end
   end
+
 
   # Enable provisioning with Puppet stand alone.  Puppet manifests
   # are contained in a directory path relative to this Vagrantfile.
