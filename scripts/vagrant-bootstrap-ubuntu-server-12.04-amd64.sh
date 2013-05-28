@@ -22,7 +22,7 @@ apt-get -y install postgresql-9.1 postgresql-contrib-9.1
 
 
 
-echo '===== Configure PostgreSQL to trust *everyone*'
+echo '===== Configuring PostgreSQL to trust *everyone*'
 
 # For now:
 # Trust everyone, this is a dev/test machine only.
@@ -42,6 +42,24 @@ if [ ! -f $pg_hba ]; then
   echo 'host    all             all              127.0.0.1/32           trust' >> $pg_hba
   service postgresql reload
 fi
+
+
+
+echo '===== Configuring PostgreSQL to listen on all interfaces'
+
+# read -r -d '' pgsql_cmd <<'EOF'
+pgsql_conf=/etc/postgresql/9.1/main/postgresql.conf
+if [ ! -f $pgsql_conf.orig ]; then
+  mv $pgsql_conf $pgsql_conf.orig
+fi
+
+if [ ! -f $pgsql_conf ]; then
+  cat $pgsql_conf.orig \
+    | sed -r "s/^#(listen_addresses = )'localhost'/\1'*'\t/" \
+    > $pgsql_conf
+fi
+#EOF
+#sudo sh -c "$pgsql_cmd"  # if want to test as non-root user
 
 
 
@@ -90,7 +108,7 @@ if [ ! -f $play_parent/play-2.1.1/play ]; then
   rm $play_zip_file
   rm -fr $play_dir_name
   wget http://downloads.typesafe.com/play/2.1.1/$play_zip_file
-  unzip $play_zip_file
+  unzip -q $play_zip_file
   chmod a+x $play_dir_name/play
   chown --recursive vagrant:vagrant $play_parent
 fi
@@ -133,7 +151,7 @@ if [ -z "`grep 'alias play=' ~/.bashrc`" ]; then
   chown root /home/vagrant/.bashrc
   echo "
 alias l='ls -CF'
-alias l1='l -1'
+alias lal='ls -al'
 alias c='cat'
 alias v='view'
 alias m='less -S'
