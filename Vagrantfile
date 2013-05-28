@@ -28,6 +28,11 @@ Vagrant.configure("2") do |config|
   # using a specific IP.
   config.vm.network :private_network, ip: "192.168.33.101"
 
+  # Use NFS; VirtualBox shared folders have high performance penalties. (On my
+  # computer, running `play exit` takes 20 seconds without NFS, 15 with NFS.)
+  # See http://docs.vagrantup.com/v2/synced-folders/nfs.html
+  config.vm.synced_folder ".", "/vagrant", :nfs => true
+
   # Create a public network, which generally matched to bridged network.
   # Bridged networks make the machine appear as another physical device on
   # your network.
