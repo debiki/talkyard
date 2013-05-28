@@ -38,8 +38,15 @@ fi
 
 # Create new pg_hba.conf that trusts localhost.
 if [ ! -f $pg_hba ]; then
+  # Comment out old rules.
   cat $pg_hba_orig | sed 's/^host  /#host /' > $pg_hba
-  echo 'host    all             all              127.0.0.1/32           trust' >> $pg_hba
+  # Add new rules.
+  echo '
+host    debiki_dev      debiki_dev       0.0.0.0/0            trust
+host    debiki_test     debiki_test      0.0.0.0/0            trust
+host    debiki_test_evolutions debiki_test_evolutions 0.0.0.0/0 trust
+' >> $pg_hba
+
   service postgresql reload
 fi
 
