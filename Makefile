@@ -55,7 +55,8 @@ ${PAGEDOWN_JS}: modules/pagedown/Markdown.Converter.js client/compiledjs/Pagedow
 	grunt
 
 ${RHINOJAR}:
-	wget -O target/rhino1_7R2.zip ftp://ftp.mozilla.org/pub/mozilla.org/js/rhino1_7R2.zip
+	# Don't use ftp:// because then RETR blocks forever in my Vagrant VM (passive FTP mode).
+	wget -O target/rhino1_7R2.zip http://ftp.mozilla.org/pub/mozilla.org/js/rhino1_7R2.zip
 	unzip target/rhino1_7R2.zip -d target
 
 
