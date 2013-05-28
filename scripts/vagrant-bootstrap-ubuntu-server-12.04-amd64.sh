@@ -1,6 +1,12 @@
 #!/usr/bin/env bash
 
 
+# Warning: This is the same address as in the Vagrantfile, this setting:
+#   config.vm.network :private_network, ip: "192.168.33.101"
+vm_ip=192.168.33.101  # should be a script argument somehow?
+                      # or `grep | sed` from the Vagrantfile?
+
+
 if [ -f ~/vagrant-bootstrap-done ]; then
   echo 'VM already bootstrapped, fine.'
   exit 0;
@@ -180,19 +186,22 @@ alias play='$play_parent/$play_dir_name/play'
 fi
 
 
-echo '===== All done
+echo "===== All done
 
 You can now start Debiki like so:
+  $ vagrant ssh
+  $ # ... wait some seconds for your computer to connect to the virtual machine ...
   $ cd /vagrant/
-  $ play
-  [play]$ run
+  $ play  # this takes a while, the first time
+  [debiki] $ run   # this also takes a while, the first time
 
-And point your browser to http://serveradress/-/install/
-and follow the instructions.
+Then point your browser to http://$vm_ip/-/install/
+and wait... until the server has been compiled and started,
+then follow the instructions.
 
 The virtual machine folder /vagrant/ is synced with the source code
 on your desktop machine.
-'
+"
 
 
 # All done; skip this script the next time.

@@ -26,6 +26,8 @@ Vagrant.configure("2") do |config|
 
   # Create a private network, which allows host-only access to the machine
   # using a specific IP.
+  # Warning: IP currently hardcoded also in
+  #   scripts/vagrant-bootstrap-ubuntu-server-12.04-amd64.sh
   config.vm.network :private_network, ip: "192.168.33.101"
 
   # Use NFS; VirtualBox shared folders have high performance penalties. (On my
