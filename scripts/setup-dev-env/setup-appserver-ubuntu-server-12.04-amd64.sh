@@ -9,9 +9,15 @@ rather than from inside a Vagrant VM (since a VM is rather slow).
 
 Usage:
   $0  play-framework-installation-dir  nodejs-build-dir  nodejs-installation-dir
+
 For example:
   $0 ~/dev/play ~/dev/nodejs /usr/local
 "
+
+# The script's parent directory. See:
+# http://stackoverflow.com/questions/59895/can-a-bash-script-tell-what-directory-its-stored-in
+# (Must do this before cd:ing to other directories.)
+script_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 
 set -u  # exit on unset variable
@@ -77,17 +83,20 @@ fi
 
 
 
-echo '===== Installing Node.js v0.10.5 and Grunt CLI'
+node_version=v0.10.5
+echo "===== Installing Node.js $node_version and Grunt CLI"
 
-node_dir_name=node-v0.10.5
-node_zip_file=node-v0.10.5.tar.gz
+# COULD avoid installing Node if a newer version is already installed? Check `npm --version`?
 
-if [ -z `which grunt` ]; then
+node_dir_name=node-$node_version
+node_zip_file=node-$node_version.tar.gz
+
+if [ -z "`which node`" ] || [ "$node_version" \> "`node --version`" ]; then
   sudo apt-get -y install build-essential python
   mkdir -p "$node_build_dir"
   cd "$node_build_dir"
   if [ ! -f $node_zip_file ]; then
-    wget http://nodejs.org/dist/v0.10.5/$node_zip_file
+    wget http://nodejs.org/dist/$node_version/$node_zip_file
   fi
   # In case any previous build is only somewhat completed, perhaps
   # better start from scratch? So remove directory.
@@ -97,6 +106,9 @@ if [ -z `which grunt` ]; then
   ./configure --prefix=$node_installation_dir
   make
   sudo make install
+fi
+
+if [ -z `which grunt` ]; then
   sudo npm install -g grunt-cli
 fi
 
@@ -104,12 +116,12 @@ fi
 
 echo '===== Installing local NPM modules'
 
-# Move to the base directory (the one with .git in, and a
-# package.js Node.js file).  See:
-#   http://stackoverflow.com/questions/59895/can-a-bash-script-tell-what-directory-its-stored-in
+# Move to the base directory (the one with .git in, and a package.js Node.js file).
 
-my_parent_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-cd $my_parent_dir/../..
+echo "This script is located in: $script_dir"
+echo cd $script_dir/../..
+cd $script_dir/../..
+echo 'Running `npm install` in:' `pwd`
 
 npm install
 
