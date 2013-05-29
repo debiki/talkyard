@@ -30,11 +30,18 @@ if [ ! -f ~/vagrant-bootstrapped-db ]; then
 fi
 
 
+play_script_path=""
 if [ ! -f ~/vagrant-bootstrapped-appserver ]; then
 
-  echo SHOULD:
+  play_dir=/opt/play
+  echo **** SHOULD *****
   echo /vagrant/scripts/setup-dev-env/setup-appserver-ubuntu-server-12.04-amd64.sh \
-			/opt/play  ~/build/nodejs/  /usr/local  vagrant
+      $play_dir  ~/build/nodejs/  /usr/local  vagrant
+
+  # Warning: Duplicated code.
+  # This value ought to be returned from the above script, but
+  # Bash scripts cannot return values :-(
+  play_script_path=$play_dir/play-2.1.1/play
 
   touch ~/vagrant-bootstrapped-appserver
 fi
@@ -44,12 +51,13 @@ fi
 
 bashrc=/home/vagrant/.bashrc
 
-if [ -z "`grep 'alias play=' $bashrc`" ]; then
+if [ -n "$play_script_path" -a -z "`egrep 'alias play(-2.1.1)?=' $bashrc`" ]; then
 
+  echo ''
   echo '===== Adding helpful aliases'
 
   chown root $bashrc
-  echo "
+  aliases="
 alias l='ls -CF'
 alias lal='ls -al'
 alias c='cat'
@@ -58,36 +66,50 @@ alias m='less -S'
 alias t='tree'
 alias ft='tree -f'
 alias ..='cd ..'
-alias ...='cd ../..' 
-alias ....='cd ../../..' 
-alias .....='cd ../../../..' 
-alias ......='cd ../../../../..' 
-alias .......='cd ../../../../../..' 
-alias ........='cd ../../../../../../..' 
-alias .........='cd ../../../../../../../..' 
-alias ..........='cd ../../../../../../../../..' 
-alias ...........='cd ../../../../../../../../../..' 
-alias play='$play_parent/$play_dir_name/play'
-" >> $bashrc
+alias ...='cd ../..'
+alias ....='cd ../../..'
+alias .....='cd ../../../..'
+alias ......='cd ../../../../..'
+alias .......='cd ../../../../../..'
+alias ........='cd ../../../../../../..'
+alias .........='cd ../../../../../../../..'
+alias ..........='cd ../../../../../../../../..'
+alias ...........='cd ../../../../../../../../../..'
+alias play-2.1.1='$play_script_path'
+"
+  echo "$aliases"
+  echo "$aliases" >> $bashrc
   chown vagrant $bashrc
 fi
 
 
-echo "===== All done
+cat <<EOF
+===== All done: VM bootstrapped
+
+The virtual machine (VM) folder /vagrant/ is synced with the source
+code in your current working director (on your desktop/laptop).
 
 You can now start Debiki like so:
   $ vagrant ssh
-  $ # Then, in the virtual machine (VM):
+  $ # Then, in the VM:
   $ cd /vagrant/
-  $ play          # this takes a while, the first time
-  [debiki] $ run  # this also takes a while, the first time
+  $ play-2.1.1
+  [debiki] $ run
 
-Then point your browser to http://$vm_ip/-/install/
-and wait... until the server has been compiled and started,
-then follow the instructions.
+Then point your browser to:
 
-The VM folder /vagrant/ is synced with the source code on your
-desktop machine.
-"
+  http://$vm_ip:9000/-/install/
+
+And wait until the server has been compiled and started; then follow
+the instructions:
+
+  First, you'll click a certain "Apply this script now!" button,
+  so that database tables are created (in the VM).
+
+  Then you'll authenticate yourself.
+
+  And after that you'll create an admin account for the 'debiki_dev'
+  database.
+EOF
 
 

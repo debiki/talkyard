@@ -1,11 +1,14 @@
 #!/usr/bin/env bash
 
 help_text="
-This script installs Java 7, Play Framework, Node.js and Node.js modules.
+This script installs Java 7, Play Framework, Node.js, Grunt and
+Node.js modules.
 
-You can probably run it on your own Ubuntu 12.04 desktop/laptop,
+It is used by a certain Vagrant bootstrap script, but you can
+probably run it yourself on your own Ubuntu 12.04 desktop/laptop,
 if you want to run Play directly on your desktop/laptop,
 rather than from inside a Vagrant VM (since a VM is rather slow).
+(No warranties through!)
 
 Usage:
   $0  play-framework-installation-dir  nodejs-build-dir  nodejs-installation-dir
@@ -62,8 +65,10 @@ echo '===== Installing Play Framework 2.1.1'
 play_parent=$play_framework_installation_dir
 play_zip_file=play-2.1.1.zip
 play_dir_name=play-2.1.1
+# Warning: Also defined in: vagrant-bootstrap-ubuntu-server-12.04-amd64.sh
+play_script_path=$play_parent/$play_dir_name/play
 
-if [ ! -f $play_parent/play-2.1.1/play ]; then
+if [ ! -f $play_script_path ]; then
   mkdir -p $play_parent
   cd $play_parent
   if [ ! -f $play_zip_file ]; then
@@ -124,6 +129,43 @@ cd $script_dir/../..
 echo 'Running `npm install` in:' `pwd`
 
 npm install
+
+
+
+cat <<EOF
+
+===== Installation done
+
+- Java installed: \`java\` and \`javac\` now available.
+
+- Node.js and Grunt installed: \`npm\` and \`grunt\` now available.
+  Installed here: $node_installation_dir/
+  Build dir: $node_build_dir/
+
+- Play Framework installed, find the startup script here:
+    $play_script_path
+EOF
+
+# Only show this help message if running this script manually, i.e.
+# when it's not run by Vagrant.
+if [ -z "$play_owner" ]; then
+  cat <<-EOF
+		
+		You could add an alias or a softlink to the Play Framework startup script
+		so that you can easily start Play. For example, add to your .bashrc:
+		
+		  alias play-2.1.1='$play_script_path'
+		
+		Alternatively, add an \`export\` to your .bashrc:
+		
+		  export PATH=\$PATH:$play_parent/$play_dir_name/
+		
+		  Then \`play\` (but not \`play-2.1.1\`) will be available on your \$PATH.
+		  (See http://www.playframework.com/documentation/2.1.1/Installing )
+		
+		Afterwards, you can run \`play-2.1.1\` (or \`play\`) in this directory.
+		EOF
+fi
 
 
 # vim: list ts=2 sw=2
