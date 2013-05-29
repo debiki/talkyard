@@ -34,8 +34,7 @@ play_script_path=""
 if [ ! -f ~/vagrant-bootstrapped-appserver ]; then
 
   play_dir=/opt/play
-  echo **** SHOULD *****
-  echo /vagrant/scripts/setup-dev-env/setup-appserver-ubuntu-server-12.04-amd64.sh \
+  /vagrant/scripts/setup-dev-env/setup-appserver-ubuntu-server-12.04-amd64.sh \
       $play_dir  ~/build/nodejs/  /usr/local  vagrant
 
   # Warning: Duplicated code.
