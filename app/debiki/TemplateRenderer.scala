@@ -21,11 +21,11 @@ object TemplateRenderer {
     }
     catch {
       case ex: PageConfigException =>
-        views.html.themes.specialpages.brokenPage(ex).body
+        views.html.specialpages.brokenPage(ex).body
       case ex: BadTemplateException =>
-        views.html.themes.specialpages.brokenPage(ex).body
+        views.html.specialpages.brokenPage(ex).body
       case ex: WebsiteConfigException =>
-        views.html.themes.specialpages.brokenPage(ex).body
+        views.html.specialpages.brokenPage(ex).body
     }
 
 
@@ -38,7 +38,7 @@ object TemplateRenderer {
       // Use a page that we know for sure is not broken, so it's possible
       // to fix errors. And do this before loading any config values,
       // since a config file might be corrupted (exception thrown).
-      return views.html.themes.specialpages.template(
+      return views.html.specialpages.template(
         tpi, isPageSettings = pageReq.pageRoot.isPageConfigPost).body
     }
 
