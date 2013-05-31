@@ -250,20 +250,17 @@ module.exports = function(grunt) {
       }
     },
     uglify: {
+      // Minifies ./public/res/*.js to *.min.js in the same directory.
       server: {
-        options: {}, // see https://npmjs.org/package/grunt-contrib-uglify
-        files: {
-          'public/res/combined-debiki-desktop.min.js': [
-              '<banner>',
-              'public/res/combined-debiki-desktop.js'],
-
-          'public/res/combined-debiki-touch.min.js': [
-              '<banner>',
-              'public/res/combined-debiki-touch.js'],
-
-          'public/res/debiki-pagedown.min.js': [
-              'public/res/debiki-pagedown.js']
-        }
+        options: {
+          // See https://npmjs.org/package/grunt-contrib-uglify
+          preserveComments: 'some' // preserves bang comments: /*!  ... */
+        },
+        expand: true,
+        cwd: 'public/res/',
+        src: ['*.js', '!*.min.js'],
+        dest: 'public/res/',
+        ext: '.min.js',
       }
     },
     // This results in malfunctioning CSS?
