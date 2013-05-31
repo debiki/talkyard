@@ -11,7 +11,8 @@ Vagrant.configure("2") do |config|
 
   # This .sh file tells Vagrant which packages to install in a newly
   # launched VM.
-  config.vm.provision :shell, :path => "scripts/setup-dev-env/vagrant-bootstrap-ubuntu-server-12.04-amd64.sh"
+  config.vm.provision :shell, :path =>
+      "server/scripts/setup-dev-env/vagrant-bootstrap-ubuntu-server-12.04-amd64.sh"
 
   # The url from where the 'config.vm.box' box will be fetched if it
   # doesn't already exist on the user's system.
