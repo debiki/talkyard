@@ -14,8 +14,9 @@ It intends to:
 - Promote fruitful discussions
 
 - Help people better understand others with different points of view
-  
-Read more at http://www.debiki.com/.
+
+Read more at http://www.debiki.com/, and have a look at
+[this demo](www.debiki.com/demo/-71cs1-demo-page-1).
 
 A good alternative to Debiki might be [Discourse](http://www.discourse.org/) —
 it has a different focus: a "flattened, endlessly scrolling discussion". It
@@ -27,14 +28,13 @@ Debiki is under development and I have not yet released any stable
 version or written any installation instructions.
 
 
+
 Setting Up a Development Environment
 =============================
 
-Debiki is written in Scala, Javascript, LiveScript, HTML, CSS and SQL.
-It uses Play Framework 2.1, PostgreSQL, jQuery, AngularJS and Node.js Grunt.
-
-Here are the steps to get Debiki up and running on a virtual machine that you
-can use for development. This should work on Windows, Linux and Mac.
+Here are some steps to get Debiki up and running on a virtual machine (VM) that you
+can use for development. This hopefully work on Windows, Linux and Mac.  (Works
+for me on Ubuntu Linux 12.04 at least.)
 
 1. Install things:
 
@@ -42,7 +42,7 @@ can use for development. This should work on Windows, Linux and Mac.
     or simply (on Ubuntu Linux) `apt-get install virtualbox`.
 
     [Here](http://blog.discourse.org/2013/04/discourse-as-your-first-rails-app/)
-    are some tips (the *Step 1: VirtualBox*) section only).
+    are some performance related tips (the *Step 1: VirtualBox* section only).
 
   - Vagrant, which prepares a VirtualBox VM.
       You can download version 1.1.2 or higher from 
@@ -50,7 +50,7 @@ can use for development. This should work on Windows, Linux and Mac.
 
   - Git
 
-    On Ubuntu: `apt-get install git`
+    On Ubuntu Linux: `apt-get install git`
 
     On Windows and Mac, consider using:
 
@@ -61,13 +61,12 @@ can use for development. This should work on Windows, Linux and Mac.
 2. Get the source code
 
       git clone ...
-      git submodule init
-      git submodule update
+      git submodule update --init --recursive
 
 
 3. Start a Virtual Machine
 
-  The virtual machine (VM) will automatically have access to the source code
+  The virtual machine will automatically have access to the source code
   you downloaded (via Git) to your desktop machine (Vagrant [syncs folder
   contents](http://docs.vagrantup.com/v2/synced-folders/index.html)).
 
@@ -75,49 +74,58 @@ can use for development. This should work on Windows, Linux and Mac.
 
       vagrant up
 
-  This takes long, because Vagrant installs e.g. PostgreSQL, Java and Node.js.
+  This takes long (15 minutes?) because Vagrant installs (on the VM) Java and
+  PostgreSQL and builds Node.js.
 
 
 4. Start Debiki
 
       $ vagrant ssh
-      $ cd ~/dev/debiki/debiki-app-play/
-      $ scripts/play
-      [...]$ run
-  
+      $ # And then, inside the VM: (this takes a while the first time)
+      $ play-2.1.1
+      [debiki-server] $ run
 
-  Then go to `http(s)://serveradress/-/install/` and follow the instructions.
- 
+
+  Then go to `http://192.168.33.101:9000/-/install/` and follow the instructions.
+
+  (IP address 192.168.33.101 is specified in the Vagrantfile.)
+
   <sub>(If you're curious: The instructions tell you to find a password in the server
   log files, and then to input that password, so the server knows that you are
   you (in case other people also have access to the web pages, over the
   internet).  After this, you're asked to create an admin account.)</sub>
- 
-  Once you've installed everything, visit  http(s)://serveradress/-/admin/
+
+  Once you've installed everything, visit  http://192.168.33.101:9000/-/admin/
   and create a forum or blog.
 
-  You can shut down the virtual machine by hitting `vagrant halt` or `vagrant suspend`,
-  and start it again via `vagrant up` or `vagrant resume`.
+  You can shut down the virtual machine by hitting `vagrant halt` or `vagrant suspend`
+  on your desktop/laptop, and start it again via `vagrant up` or `vagrant resume`.
 
   Be careful with `vagrant destroy`, because then 1) any development database contents
   is lost, and 2) the next time you do `vagrant up` it'll take rather long.
+
+5. Tweak CSS and HTML by editing `<site-base-dir>/themes/local_theme/styles.css/all.css`
+  or edit source code in `<site-base-dir>/server/`, on your desktop/laptop. Then type
+  `play-2.1.1` in the VM followed by `run`, and your changes should take effect.
+  After you've started Play Framework (via *run*), it should hot-reloads most of your
+  changes.
 
 
 
 Contributing
 =============================
 
-If you'd like to contribute any source code, please send me an email, or a
-GitHub pull request but first sign this CLA (oops! it does not yet exist. But
-it'll be similar to [Google's CLA](https://developers.google.com/open-source/cla/individual)
-— you'll open source your code and grant me a copyrigt license).
+Debiki is written in Scala, Javascript, LiveScript, HTML, CSS and SQL.
+It uses Play Framework 2.1, PostgreSQL, jQuery, AngularJS and Node.js Grunt.
 
-Please wrap lines if longer than 100 characters.
+If you'd like to contribute any source code, then perhaps you could to send me an email, or a
+GitHub pull request. You'd need to sign this CLA (oops! it does not yet exist. But
+it'll be similar to [Google's CLA](https://developers.google.com/open-source/cla/individual)
+— you'd open source your code and grant me a copyrigt license).
+
+Please wrap lines if theyr're longer than 100 characters.
 And, for Scala code, please use [the official style guide](http://docs.scala-lang.org/style/).
 For Javascript, use [Google's style guide](http://google-styleguide.googlecode.com/svn/trunk/javascriptguide.xml).
-
-If you write a single line Git commit message, end it with `.` (a dot).
-Please keep commit message lines below 80 characters.
 
 
 
