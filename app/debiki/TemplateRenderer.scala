@@ -14,6 +14,10 @@ import Prelude._
 object TemplateRenderer {
 
 
+  private val BuiltinThemesPrefix = "builtin."  // after '/' has been replaced with '.'
+  private val DefaultThemeName = s"${BuiltinThemesPrefix}default20121009"
+
+
   def renderTemplate(pageReq: PageRequest[_], appendToBody: xml.NodeSeq = Nil)
         : String =
     try {
@@ -61,12 +65,16 @@ object TemplateRenderer {
 
 
     val theme = {
-      val themeUnsafe = tpi.websiteConfigValue("theme") orIfEmpty "default20121009"
-      val themeNoDelims = themeUnsafe filterNot (ch => ch == '.' || ch == '-')
+      val themeUnsafe = tpi.websiteConfigValue("theme") orIfEmpty DefaultThemeName
+      // People place themes in file system dirs, so allow them to use "/" when
+      // specifying in which directory the theme is located? This is more user friendly
+      // than forcing them to use Javas package delimiter, '.'? But we need to convert to '.'
+      // now so we can look up the Scala package + class.
+      val themeNoDelims = themeUnsafe.replace('/', '.')
       // Don't allow anyone to use the www.debiki.com template:
       if (themeNoDelims == "wwwdebikicom" && !pageReq.host.endsWith("debiki.com")
           && !pageReq.host.startsWith("localhost:"))
-        "default20121009"
+        DefaultThemeName
       else
         themeNoDelims
     }
@@ -91,7 +99,16 @@ object TemplateRenderer {
 
   private def renderThemeTemplate(theme: String, template: String,
         tpi: TemplateProgrammingInterface): String = {
-    val viewClassName = s"views.html.themes.$theme.$template"
+
+    // Search one of two folders for the theme file, either themes/ or themesbuiltin/:
+    // a few built-in default themes are located in app/views/themesbuiltin/,
+    // other site specific themes are placed in app/views/themes/, which is a
+    // softlink to a ../themes/ folder in a supposed parent Git repository with
+    // site specific stuff.
+    val viewClassName =
+      if (theme startsWith BuiltinThemesPrefix) s"views.html.themes$theme.$template"
+      else s"views.html.themes.$theme.$template"
+
     try {
       val viewClass : Class[_] = Play.current.classloader.loadClass(viewClassName)
       val renderMethod: jl.reflect.Method = viewClass.getDeclaredMethod(
