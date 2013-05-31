@@ -15,8 +15,8 @@ set -o pipefail  # exit on false | true
 echo '===== Installing PostgreSQL 9.1'
 
 sudo apt-get update
-apt-get -y install postgresql-9.1 postgresql-contrib-9.1
-
+apt-get -y install postgresql-9.1 postgresql-contrib-9.1 tree
+# `tree` is not needed but I like it.
 
 
 echo '===== Configuring PostgreSQL to trust *everyone*'

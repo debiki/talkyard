@@ -72,7 +72,7 @@ if [ ! -f $play_script_path ]; then
   mkdir -p $play_parent
   cd $play_parent
   if [ ! -f $play_zip_file ]; then
-    wget http://downloads.typesafe.com/play/2.1.1/$play_zip_file
+    wget -nv http://downloads.typesafe.com/play/2.1.1/$play_zip_file
   fi
   rm -fr $play_dir_name
   unzip -q $play_zip_file
@@ -101,7 +101,7 @@ if [ -z "`which node`" ] || [ "$node_version" \> "`node --version`" ]; then
   mkdir -p "$node_build_dir"
   cd "$node_build_dir"
   if [ ! -f $node_zip_file ]; then
-    wget http://nodejs.org/dist/$node_version/$node_zip_file
+    wget -nv http://nodejs.org/dist/$node_version/$node_zip_file
   fi
   # In case any previous build is only somewhat completed, perhaps
   # better start from scratch? So remove directory.
