@@ -54,19 +54,21 @@ object AssetBundleLoader {
         "DwE9b3HK1", o"""Cannot serve '$bundleNameNoSuffix.<version>.$bundleSuffix':
             ${exception.getMessage}""")
 
+    // Find PagePath:s to each JS/CSS page in the bundle.
     val (assetPaths, missingOptAssetPaths) =
       try { findAssetPagePaths(bundleName, dao) }
       catch {
         case ex: DebikiException => die(ex)
       }
 
+    // Load the JS/CSS pages that are to be bundled.
     val assetPathsAndPages: Seq[(PagePath, Option[PageParts])] = assetPaths map { path =>
       val page = dao.loadPageAnyTenant(
         tenantId = path.tenantId, pageId = path.pageId.get)
       (path, page)
     }
 
-    // Fail unless we found all assets to bundle.
+    // Die if we didn't find all assets to bundle.
     assetPathsAndPages find (_._2 isEmpty) match {
       case Some((pagePath, None)) =>
         die(DebikiException("DwE53X03", o"""Asset '${pagePath.path}'
@@ -74,6 +76,7 @@ object AssetBundleLoader {
       case _ => ()
     }
 
+    // Construct the currently approved text of the JS/CSS pages.
     val assetBodies: Seq[String] =
       assetPathsAndPages map (_._2.get.approvedBodyText getOrElse "")
     val bundleText = {
@@ -82,6 +85,8 @@ object AssetBundleLoader {
       sb.toString
     }
 
+    // Find ids of config pases, and assets included in the bundle.
+    // (If any of these pages is modified, we'll rebuild the bundle.)
     val assetPageIds = assetPaths map (_.sitePageId getOrDie "DwE90If5")
     val siteConfig = dao.loadWebsiteConfig()
     val configPageIds = siteConfig.configLeaves.map(_.sitePageId)
@@ -94,9 +99,10 @@ object AssetBundleLoader {
   }
 
 
-  /**
-   * Returns paths to assets found, and to *optional* assets not found.
-   */
+  /** Returns PagePath:s to JS and CSS pages that are to be included in the
+    * asset bundle. Includes PagePath:s to *optional* assets that are not found,
+    * but dies if non-optional assets are not found.
+    */
   private def findAssetPagePaths(
       bundleName: String, dao: TenantDao): (Seq[PagePath], Seq[SitePath]) = {
 
