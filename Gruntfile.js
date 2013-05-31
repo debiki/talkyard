@@ -134,7 +134,7 @@ module.exports = function(grunt) {
         // See <https://github.com/DavidSouther/grunt-livescript/blob/master/
         //        tasks/livescript.js>
       },
-      src: {
+      server: {
         files: [{
           // Transpiled files will appear in target/client/**/*.js.
           expand: true,
@@ -146,7 +146,7 @@ module.exports = function(grunt) {
       }
     },
     wrap: {
-      javascript: {
+      server_javascript: {
         src: 'client/**/*.js',
         // Files will appear in target/client/**/*.js — apparently, 
         // the whole `src` path is appendet to `dest` (unlike the
@@ -160,7 +160,7 @@ module.exports = function(grunt) {
       options: {
         // See https://npmjs.org/package/grunt-contrib-concat
       },
-      dist: {
+      server: {
        files: {
         'public/res/combined-debiki.css': [
             'client/banner.css',
@@ -224,9 +224,33 @@ module.exports = function(grunt) {
           'client/compiledjs/PagedownJavaInterface.js']
        }
       },
+      // Finds theme specific files in app/views/themes/<themeName>/<bundleName>/*.css
+      // and concatenates them to public/themes/<themeName>/<bundleName>
+      // and <bundleName> must currently be 'styles.css'.
+      themes: {
+        files: [{
+          expand: true,
+          cwd: 'app/views/themes/',
+          src: '*/styles.css/*.css',
+          dest: 'public/themes/',
+          rename: function(dest, src) {
+            // `dest` is:  public/themes/
+            // `src` is:  <themeName>/<bundleName>/<fileName>
+            grunt.verbose.writeln('Placing source file: ' + src);
+            var matchesArray = src.match(
+                //<theme name>   <bundle name>  <file name>
+                //e.g. ex_theme e.g. styles.css e.g. some-file.css
+                /^([a-z0-9_]+)\/([a-z0-9_.]+)\/[a-z0-9_.-]+$/);
+            var themeName = matchesArray[1];
+            var bundleName = matchesArray[2];
+            grunt.verbose.writeln('in theme/bundle: ' + themeName + '/' + bundleName);
+            return dest + themeName + '/' + bundleName;
+          }
+        }]
+      }
     },
     uglify: {
-      all: {
+      server: {
         options: {}, // see https://npmjs.org/package/grunt-contrib-uglify
         files: {
           'public/res/combined-debiki-desktop.min.js': [
@@ -260,15 +284,21 @@ module.exports = function(grunt) {
       }
     },*/
     watch: {
-      all: {
+      options: {
+        interrupt: true
+      },
+      server: {
         files: [
             'client/**/*.js',
             'client/**/*.ls',
             'client/**/*.css'],
-        tasks: ['default'],
-        options: {
-          interrupt: true
-        }
+        tasks: ['default']
+      },
+      themes: {
+        files: [
+            'app/views/themes/**/*.js',
+            'app/views/themes/**/*.css']
+        // tasks: ['???'],
       }
     }
   });

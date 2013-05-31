@@ -54,6 +54,7 @@ public/res/debiki-spa-*
 public/res/debiki-dashbar*
 public/res/debiki-pagedown*
 public/res/admin.css
+public/themes/*
 
 # Ignore generated test JS files.
 test-client/debiki-utils.js

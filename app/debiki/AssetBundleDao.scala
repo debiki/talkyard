@@ -31,7 +31,7 @@ trait AssetBundleDao {
 
   protected def loadBundleAndDependencies(nameNoSuffix: String, suffix: String)
       : AssetBundleAndDependencies =
-    AssetBundleLoader.loadAssetBundle(nameNoSuffix, suffix, this)
+    AssetBundleLoader(nameNoSuffix, suffix, this).loadAssetBundle()
 
 }
 
@@ -95,7 +95,7 @@ trait CachingAssetBundleDao extends AssetBundleDao {
     // E.g. _site.conf, some-script.js, some-style.css, some-template.tpl.
     // But not blog posts or the homepage or other "normal pages".
 
-    val bundleAndDeps = AssetBundleLoader.loadAssetBundle(nameNoSuffix, suffix, this)
+    val bundleAndDeps = super.loadBundleAndDependencies(nameNoSuffix, suffix)
     cacheDependencies(bundleName, bundleAndDeps)
     putInCache(bundleKey, bundleAndDeps)
 
