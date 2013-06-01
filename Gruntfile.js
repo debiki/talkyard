@@ -1,6 +1,9 @@
 // Config file for Javascript minification and concatenation.
 // See http://gruntjs.com/
 
+// COULD compile certain coffeescript files in test/ and test-client/
+// or translate it to LiveScript.
+
 module.exports = function(grunt) {
 
   grunt.loadNpmTasks('grunt-livescript');
