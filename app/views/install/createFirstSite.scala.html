@@ -37,6 +37,8 @@
     </form>
 
     <div ng-show="badPassword" class="alert alert-error">
+      @* COULD show another err mess if the problem is e.g.:  PSQLException: ERROR: relation "dw1_posts" does not exist,
+      i.e. that db evolution script 1.sql in debiki-dao-pgsql failed  *@
       Bad password, please try again.
     </div>
 

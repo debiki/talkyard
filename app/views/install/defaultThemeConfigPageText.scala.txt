@@ -9,6 +9,6 @@ html-head-styles: |
 
 asset-bundles:
   styles.css:
-    - http://www.debiki.com/themes/default-2012-10-09/theme.css
+    - /themes/default-2012-10-09/theme.css
     - /themes/local/theme.css, optional
 
