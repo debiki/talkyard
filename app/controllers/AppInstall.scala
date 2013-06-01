@@ -30,27 +30,26 @@ import BrowserPagePatcher.PostPatchSpec
   */
 object AppInstall extends mvc.Controller {
 
-  private val logger = Logger("app.install")
 
   /** A password the server admin needs to specify when creating the very first site.
     * It's public so it can be accessed from the ServerInstallationSpec.
     * For now, assume we're using one application server only: use a server local
     * create-first-site password.
     */
-  val firstSitePassword = nextRandomString() take 10
+  val firstSitePassword = nextRandomString() take 15
 
   private val firstSiteOwnerPassword = nextRandomString() take 15
+
+  private val FirstSitePasswordCookieName = "dwCoFirstSitePswd"
 
 
   def viewInstallationPage() = ExceptionActionNoBody { request =>
     Debiki.systemDao.checkInstallationStatus() match {
       case InstallationStatus.CreateFirstSite =>
-        logger.info(i"""
-          |==============================================
-          |The installation password:  $firstSitePassword
-          |==============================================
-          """)
-        Ok(views.html.install.createFirstSite(request.host).body) as HTML
+        showPasswordInputLogPassword(request)
+
+      case InstallationStatus.CreateFirstSiteAdmin if !okPassCookie(request) =>
+        showPasswordInputLogPassword(request)
 
       case InstallationStatus.CreateFirstSiteAdmin =>
         val xsrfToken = nextRandomString() take 20
@@ -70,7 +69,30 @@ object AppInstall extends mvc.Controller {
   }
 
 
+  private def showPasswordInputLogPassword(request: mvc.Request[_]) = {
+    Logger("app.installation.password").info(i"""
+      |==============================================
+      |The installation password:  $firstSitePassword
+      |==============================================
+      """)
+    Ok(views.html.install.createFirstSite(request.host).body) as HTML
+  }
+
+
   def createFirstSite = ExceptionAction(parse.json(maxLength = 100)) { request =>
+    val passCookie = throwIfBadPasswordElseCreatePassCookie(request)
+
+    if (Debiki.systemDao.checkInstallationStatus() == InstallationStatus.CreateFirstSite)
+      doCreateFirstSite(request)
+
+    // When we reply OK, a related AngularJS app will reload the page, and
+    // viewInstallationPage() (just above) will be called again, and notice that
+    // now a site has been created.
+    Ok.withCookies(passCookie)
+  }
+
+
+  private def throwIfBadPasswordElseCreatePassCookie(request: mvc.Request[JsValue]): mvc.Cookie = {
     val jsonMap = request.body.validate[Map[String, String]] recoverTotal { e =>
       throwBadReq("DwE39bK7", s"Bad JSON: ${JsError.toFlatJson(e)}")
     }
@@ -79,9 +101,17 @@ object AppInstall extends mvc.Controller {
     if (password != firstSitePassword)
       throwForbidden("DwE74Bi0", "Bad create-first-site password")
 
-    if (Debiki.systemDao.checkInstallationStatus() != InstallationStatus.CreateFirstSite)
-      throwForbidden("DwE5BK18", "The first site has already been created")
+    urlEncodeCookie(FirstSitePasswordCookieName, firstSitePassword)
+  }
 
+
+  private def okPassCookie(request: mvc.Request[_]) = {
+    val anyCookie = request.cookies.get(FirstSitePasswordCookieName)
+    anyCookie.map(_.value) == Some(firstSitePassword)
+  }
+
+
+  private def doCreateFirstSite(request: mvc.Request[JsValue]) {
     val now = new ju.Date()
 
     val siteConfigPage = AppCreateWebsite.makeConfigPage(
@@ -100,15 +130,16 @@ object AppInstall extends mvc.Controller {
     }
 
     Debiki.systemDao.createFirstSite(firstSiteData)
-
-    // When we reply OK, a related AngularJS app will reload the page, and
-    // viewInstallationPage() (just above) will be called again, and notice that
-    // now a site has been created.
-    Ok
   }
 
 
   def createFirstSiteOwner(password: String) = GetAction { apiReq =>
+    if (!okPassCookie(apiReq.request))
+      throwForbidden("DwE7G304", "Bad create-first-site password cookie")
+
+    // Perhaps this 1) isn't needed (the cookie check above suffice?) and 2) is not totally
+    // safe  anyway, since the  password was sent to the OpenID/OAuth provider (it's included
+    // in the return-to query string parameter). But why remove this extra check?
     if (password != firstSiteOwnerPassword)
       throwForbidden("DwE4dH09", "Bad create-first-site-owner password")
 
