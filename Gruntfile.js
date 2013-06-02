@@ -28,6 +28,7 @@ module.exports = function(grunt) {
   //grunt.loadNpmTasks('grunt-contrib-cssmin');
 
   var debikiDesktopFiles = [
+      'client/banners/combined-debiki-desktop.js-banner.js',
       'client/vendor/bootstrap-tooltip.js', //
       'client/vendor/diff_match_patch.js',
       'client/vendor/html-sanitizer-bundle.js',
@@ -86,6 +87,7 @@ module.exports = function(grunt) {
       'target/client/debiki/debiki.js']
 
   var debikiTouchFiles = [
+      'client/banners/combined-debiki-touch.js-banner.js',
       'client/vendor/diff_match_patch.js',
       'client/vendor/html-sanitizer-bundle.js',
       'client/vendor/javascript-yaml-parser.js',
@@ -141,11 +143,6 @@ module.exports = function(grunt) {
 
   grunt.initConfig({
     pkg: '<json:package.json>',
-    banner: grunt.file.read('client/banner.js'),
-    meta: {
-      name: 'debiki-app-play',
-      banner: '<%= banner %>'
-    },
     livescript: {
       options: {
         // See <https://github.com/DavidSouther/grunt-livescript/blob/master/
@@ -180,7 +177,7 @@ module.exports = function(grunt) {
       server: {
        files: {
         'public/res/combined-debiki.css': [
-            'client/banner.css',
+            'client/banners/combined-debiki.css-banner.css',
             'public/res/jquery-ui/jquery-ui-1.8.16.custom.css',
             'client/debiki/debiki.css',
             'client/debiki/debiki-play.css'],
@@ -191,6 +188,7 @@ module.exports = function(grunt) {
           'public/res/combined-debiki.css'],
 
         'public/res/admin.css': [
+            'client/banners/admin.css-banner.css',
             'client/admin/admin-theme.css',
             'client/spa/admin/css/admin-page.css',
             'client/spa/debiki-spa-common.css'],
@@ -202,6 +200,7 @@ module.exports = function(grunt) {
             debikiTouchFiles,
 
         'public/res/debiki-spa-common.js': [
+            'client/banners/debiki-spa-common.js-banner.js',
             'target/client/vendor/livescript/prelude-browser-min.js',
             'target/client/vendor/bootstrap-tooltip.js', // -popup.js dependee
             'target/client/vendor/bootstrap-*.js',
@@ -212,6 +211,7 @@ module.exports = function(grunt) {
             'target/client/spa/js/angular-util.js'],
 
         'public/res/debiki-spa-admin.js': [
+            'client/banners/debiki-spa-admin.js-banner.js',
             'client/vendor/diff_match_patch.js',
             'target/client/debiki/debiki-diff-match-patch.js',
             'target/client/debiki/debiki-page-path.js',
@@ -222,9 +222,6 @@ module.exports = function(grunt) {
         'public/res/debiki-spa-install-first-site.js': [
             'target/client/spa/install/install-ng-app.js'],
 
-        'public/res/debiki-spa-admin-server-mock.js': [
-            'target/client/spa/admin/js/debiki-v0-server-mock.js'],
-
         'public/res/debiki-spa-new-website-choose-owner.js': [
             'target/client/spa/js/new-website-choose-owner.js'],
 
@@ -232,11 +229,13 @@ module.exports = function(grunt) {
             'target/client/spa/js/new-website-choose-name.js'],
 
         'public/res/debiki-dashbar.js': [
+            'client/banners/debiki-dashbar.js-banner.js',
             'target/client/debiki/debiki-dashbar.js'],
 
         // Warning: Duplicated rule. A corresponding rule is also present
         // in the Makefile. Keep in sync.
         'public/res/debiki-pagedown.js': [
+          'client/banners/debiki-pagedown.js-banner.js',
           'modules/pagedown/Markdown.Converter.js',
           'client/compiledjs/PagedownJavaInterface.js']
        }
@@ -271,7 +270,10 @@ module.exports = function(grunt) {
       server: {
         options: {
           // See https://npmjs.org/package/grunt-contrib-uglify
-          preserveComments: 'some' // preserves bang comments: /*!  ... */
+          // preserves bang comments: /*!  ... */. You'll find such
+          // comments in client/banners/, and the 'concat' target above
+          // prefixes them to most JS (and CSS) bundle files.
+          preserveComments: 'some'
         },
         expand: true,
         cwd: 'public/res/',
