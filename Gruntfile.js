@@ -290,6 +290,7 @@ module.exports = function(grunt) {
       }
     },
     // This results in malfunctioning CSS?
+    // Try grunt-csso instead? Or CSSTidy?
     // And a """Warning: Object #<Object> has no method 'expandFiles'
     // Use --force to continue.""" error, as of Grunt v0.4.1 (May 2013),
     // see <https://github.com/gruntjs/grunt/wiki/Configuring-tasks

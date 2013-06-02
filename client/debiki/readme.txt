@@ -1,25 +1,5 @@
 
-Could use: CSSO http://css.github.com/csso/csso.html
-http://stackoverflow.com/a/11624173/694469
-and CSSTidy
-  http://cdburnerxp.se/cssparse/css_optimiser.php
-
-
-
-
-// Google Closure Linter: Run like so:
-//  gjslint src/main/resources/toserve/js/debiki.js | egrep -v 'E:0002:'
-
-/*{{{ Bug avoidance notes
-
-For an <a>, use this.hash not $(this).attr('href'), because in IE 7
-attr() prepends 'http://server/.../page' to the href.  Related:
-  http://goo.gl/OF16Q  — the JavaScript Bible page 603
-  http://webmasters.stackexchange.com/questions/20621/
-                    okay-to-use-the-hash-dom-node-property
-
-}}}*/
-/* {{{ Misc naming notes
+{{{ Misc naming notes
 
  dwCoSid:
   "dw" is a prefix, avoids name clashes.
@@ -40,6 +20,7 @@ attr() prepends 'http://server/.../page' to the href.  Related:
           embedding-custom-non-visible-data-with-the-data-attributes>
  Using underscoer ensures the data names in the html doc matches
  the names in the Javascript source code which avoids confusion.
+ (Oops these very short names might be a bit crazy.)
  Example:  zd_t_id  means:  folded (zd, 'z' is fold)  thread (t)  id (id).
  But don't use:  zd-t-id, that'd be converted to 'zdTId' I think.
  If the data is only set and read via Javascript (never serialized to html),
@@ -50,9 +31,10 @@ attr() prepends 'http://server/.../page' to the href.  Related:
  Let names of functions that should be passed to jQuery.each start with $.
  Let jQuery objects start with $.
  Currently jQuery extensions are prefixed by 'dw', e.g. $post.dwAuthorId().
+
  Example:
    var $header = d.i.findPostHeader$(postId);
    $header.each($doSomething);
 
-}}}*/
+}}}
 
