@@ -1,5 +1,24 @@
-/* Copyright (c) 2010-2011 Kaj Magnus Lindberg */
-/* Parts Copyright (C) 2006 Google Inc. */
+/* Finds plain text in HTML, without being confused by HTML tags.
+ *
+ * - Copyright (C) 2010-2011 Kaj Magnus Lindberg (born 1979)
+ *
+ * - Parts Copyright (C) 2006 Google Inc. Search for "Copyright" below
+ *   to find Google's code. (It's licensed under the Apache 2 license.)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 
 // The tag dog simplifies searching text inside html tags, without
 // being so very confused by tags and attributes.

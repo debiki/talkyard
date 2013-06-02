@@ -1,5 +1,19 @@
-/* Copyright (c) 2010-2012 Kaj Magnus Lindberg. All rights reserved. */
-
+/* Shows OpenID login dialog.
+ * Copyright (C) 2010-2012 Kaj Magnus Lindberg (born 1979)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 
 (function() {
 
@@ -150,14 +164,14 @@ function submitLoginInPopup($openidLoginForm) {
 // openid.ns=http://specs.openid.net/auth/2.0
 // openid.mode=id_res
 // openid.op_endpoint=https://www.google.com/accounts/o8/ud
-// openid.response_nonce=2011-04-10T20:14:19Zwq0i9rEOAN0QsA
+// openid.response_nonce=2011-04-10T20:14:19Zwq0i...
 // openid.return_to=http://10.42.43.10:8080/openid/response
-// openid.assoc_handle=AOQobUdh75yilxlGb-KbwvcLIocAG...
+// openid.assoc_handle=AOQobUdh75yi...
 // openid.signed=op_endpoint,claimed_id,identity,return_to,
 //    response_nonce,assoc_handle,ns.ext1,ext1.mode,ext1.type.first,
 //    ext1.value.first,ext1.type.email,ext1.value.email,
 //    ext1.type.country,ext1.value.country
-// openid.sig=jlCF7WrP99%2Be1Ee8eq1s03JUE0h4wILx37FHZkv/KlA=
+// openid.sig=jlCF7WrP...
 // openid.identity=https://www.google.com/accounts/o8/id?id=AItOaw...
 // openid.claimed_id=https://www.google.com/accounts/o8/id?id=AItO...
 // openid.ns.ext1=http://openid.net/srv/ax/1.0
