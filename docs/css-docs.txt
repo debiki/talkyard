@@ -1,10 +1,8 @@
-Copyright (c) 2010 - 2012 Kaj Magnus Lindberg
-
-(Copied from former debiki.css, now renamed to debiki-play.css.)
-
+I've used rather short CSS class names. Perhaps that was a weird idea. Anyway,
+this file lists those terribly short class names, and their meanings.
 
 
-Tips: List all CSS classes
+Listing all CSS classes
 ---------------------
 
 Like so: (old `find`, finds nothing nowadays?)
@@ -16,7 +14,7 @@ Narrower:
 
 
 
-Form names decrypted
+CSS class names and their meanings
 ---------------------
 
 debiki-       public API
@@ -138,7 +136,7 @@ dw-x-         miscellaneous classes, perhaps to be renamed later
 COULD rename dw-e-tab  to  dw-e-f-pnls  or  dw-e-f-tab-pnls  (panels)
 
 
-/* Public CSS API  -- DEPRECATED  I think e.g. simply .lt-ie7 is better
+/* Public CSS API  -- DEPRECATED  I think e.g. simply .lt-ie7 is better /edit: Now I don't support IE7 anyway. */
 
 Sometimes including a version number (i.e. '0'), if the behavior
 might change in the future.

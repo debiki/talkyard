@@ -1,10 +1,8 @@
-
-Tip: The default content size can be defined in application.conf:
-parsers.text.maxLength=128K
-https://github.com/playframework/Play20/wiki/ScalaBodyParsers
-
+Tips and notes.
 
 {{{1 AngularJS non-binbable filter
+==================================
+
 https://groups.google.com/forum/#!topic/angular/PwB0er_OEyU
     I created a filter named "nobind":
     module.filter('nobind', function() {
@@ -15,56 +13,5 @@ https://groups.google.com/forum/#!topic/angular/PwB0er_OEyU
     Then use it as:
     <p ng-bind-html-unsafe="content|nobind"></p>
 
-{{{1 An old function that creates a new page programmatically via a POST request.
-
-  def handleForm(pathIn: PagePath) =
-        PagePostAction2(MaxPostSize)(pathIn, pageMustExist = false) {
-          pageReq: PagePostRequest2 =>
-    _throwIfMayNotCreate(pathIn, pageReq)
-
-    val pageTitle: String = pageReq.body.getOrThrowBadReq("page-title")
-    val pageSlug: String = pageReq.body.getOrThrowBadReq("page-slug")
-    val showId: Boolean = pageReq.body.getBoolOrFalse("show-id")
-    val pageRole: PageRole =
-      pageReq.body.getEmptyAsNone("page-role").map(_stringToPageRole _)
-      .getOrElse(PageRole.Any)
-    val parentPageId: Option[String] =
-      pageReq.body.getEmptyAsNone("parent-page-id")
-
-    val newPagePathNoId = pageReq.pagePath.copy(
-      pageSlug = pageSlug, pageId = None, showId = showId)
-
-    val (pageMarkup: Markup, pageText: String) =
-      if (newPagePathNoId.isCodePage) (Markup.Code, "")
-      else (Markup.DefaultForPageBody, DefaultPageText)
-
-    val approval = AutoApprover.perhapsApprove(pageReq)
-
-    val rootPost = Post(id = Page.BodyId,
-      parent = Page.BodyId, ctime = pageReq.ctime,
-      loginId = pageReq.loginId_!, newIp = pageReq.newIp,
-      text = pageText, markup = pageMarkup.id,
-      tyype = PostType.Text, where = None,
-      approval = approval)
-
-    // (A page title and template (and body) is its own parent.
-    // Dupl knowledge! see AppEdit._getOrCreatePostToEdit.)
-    val titlePost = rootPost.copy(id = Page.TitleId,
-      parent = Page.TitleId, text = pageTitle,
-      markup = Markup.DefaultForPageTitle.id)
-
-    val pageStuffNoId = PageStuff(
-      PageMeta(pageId = "?", pageRole = pageRole, parentPageId = parentPageId),
-      newPagePathNoId,
-      Debate(guid = "?", posts = rootPost::titlePost::Nil))
-
-    val newPage: Debate = pageReq.dao.createPage(pageStuffNoId )
-
-    val newPagePath = newPagePathNoId.copy(pageId = Some(newPage.id))
-    if (pageReq.isAjax)
-      OkSafeJson(toJson(Map("newPage" -> AppList.jsonFor(newPagePath))))
-    else
-      Redirect(newPagePath.path)
-  }
-}}}
-
+}}}1
+vim: fdm=marker et ts=2 sw=2
