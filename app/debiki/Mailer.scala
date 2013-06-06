@@ -67,7 +67,10 @@ object Mailer {
  * no incoming mail, instead such mail ends up in a certain Google Domains
  * account instead, namely support at debiki dot se (as of today 2012-03-30).
  *
- * Thread safe.
+ * COULD rewrite to use Apache Common's email module instead, and not
+ * depend on AWS classes and to not need the AWS access key. But it's not
+ * possible to get back AWS' email guid from Apache Common email lib, or is it?
+ * (That guid can be used to track bounces etcetera I think.)
  */
 class Mailer(val daoFactory: TenantDaoFactory) extends Actor {
 
@@ -76,9 +79,8 @@ class Mailer(val daoFactory: TenantDaoFactory) extends Actor {
 
 
   private val _awsClient = {
-    SECURITY // SHOULD move this to config file.
-    val accessKeyId = "AKIAJ4OCRAEOPEWEYTNQ"
-    val secretKey = "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"
+    val accessKeyId = Utils.getConfigStringOrDie("aws.accessKeyId")
+    val secretKey = Utils.getConfigStringOrDie("aws.secretKey")
     new AmazonSimpleEmailServiceClient(
        new BasicAWSCredentials(accessKeyId, secretKey))
   }
@@ -135,7 +137,7 @@ class Mailer(val daoFactory: TenantDaoFactory) extends Actor {
   }
 
 
-  def _makeAwsSendReq(email: Email): SendEmailRequest = {
+  private def _makeAwsSendReq(email: Email): SendEmailRequest = {
 
     val toAddresses = new ju.ArrayList[String]
     toAddresses.add(email.sentTo)
@@ -162,7 +164,7 @@ class Mailer(val daoFactory: TenantDaoFactory) extends Actor {
    * Perhaps good reading:
    * http://colinmackay.co.uk/blog/2011/11/18/handling-bounces-on-amazon-ses/
    */
-  def _tellAwsToSendEmail(awsSendReq: SendEmailRequest)
+  private def _tellAwsToSendEmail(awsSendReq: SendEmailRequest)
         : Either[String, String] = {
 
     // Amazon SES automatically intercepts all bounces and complaints,

@@ -20,12 +20,12 @@ package debiki
 import com.debiki.v0._
 import com.debiki.v0.{liftweb => lw}
 import controllers._
+import controllers.Utils.OkSafeJson
 import play.api.{mvc => pm}
 import play.api.libs.json._
 import play.api.libs.json.Json.toJson
 import DebikiHttp._
 import Prelude._
-import Utils.OkSafeJson
 import HtmlPageSerializer.SerializedSingleThread
 
 
