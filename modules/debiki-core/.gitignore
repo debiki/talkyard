@@ -1,0 +1,21 @@
+scratch.txt
+scratch/
+
+# Maven
+target/
+
+# SBT
+lib_managed/
+src_managed/
+project/
+
+# Idea
+debiki-core.iml
+debiki-core.ipr
+debiki-core.iws
+
+# Eclipse
+.cache
+.classpath
+.project
+.settings/

@@ -1,0 +1,520 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+ "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml" xmlns:lift="http://liftweb.net/">
+        <head>
+          <title>Test mock layout</title>
+          <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"></meta>
+          <style type="text/css">
+
+/* === Standard tags === */
+
+/* --- CSS-reset ---*/
+/* http://meyerweb.com/eric/tools/css/reset/ */
+/* v1.0 | 20080212 */
+
+html, body, div, span, applet, object, iframe,
+h1, h2, h3, h4, h5, h6, p, blockquote, pre,
+a, abbr, acronym, address, big, cite, code,
+del, dfn, em, font, img, ins, kbd, q, s, samp,
+small, strike, strong, sub, sup, tt, var,
+b, u, i, center,
+dl, dt, dd, ol, ul, li,
+fieldset, form, label, legend,
+table, caption, tbody, tfoot, thead, tr, th, td {
+	margin: 0;
+	padding: 0;
+	border: 0;
+	outline: 0;
+	font-size: 100%;
+	vertical-align: baseline;
+	background: transparent;
+}
+body {
+	line-height: 1;
+}
+ol, ul {
+	list-style: none;
+}
+blockquote, q {
+	quotes: none;
+}
+blockquote:before, blockquote:after,
+q:before, q:after {
+	content: '';
+	content: none;
+}
+
+/* remember to define focus styles! */
+:focus {
+	outline: 0;
+}
+
+/* remember to highlight inserts somehow! */
+ins {
+	text-decoration: none;
+}
+del {
+	text-decoration: line-through;
+}
+
+/* tables still need 'cellspacing=&quot;0&quot;' in the markup */
+table {
+	border-collapse: collapse;
+	border-spacing: 0;
+}
+
+/* --- Standard elems ---*/
+p {
+  margin: 0 0 0.7em;
+}
+p:last-child {
+  margin-bottom: 0;
+}
+
+/* === Debate === */
+
+.debate {
+  margin-left: 0.3em;
+}
+
+/* === Threads === */
+
+/* --- Indentation ---*/
+.thread.depth-0 {
+  /* center root post */
+  margin: 1em auto;
+  }
+.thread.depth-0 .thread {
+  margin: 1em 0 0 0;
+  border-left: 1em solid white;
+  border-bottom: 1ex solid white;
+  }
+.thread.depth-0 &gt; .thread {
+  margin-left: 0.5em;
+  }
+.xx.thread.depth-0 &gt; .thread:nth-child(2) {
+  /* thread no. 2 is currently the leftmost one,
+   * need no left margin, since whole .debate already
+   * has left margin.
+   * - no, disable. Might indent badly on Android.
+   */
+  margin-left: 0;
+  }
+.thread.depth-1 .thread {
+  margin-left: 0.0em;
+  padding-left: 0;
+  border-top: none;
+  }
+.thread.depth-0 .thread:hover {
+  border-left: 1em solid #CCC;
+  border-bottom: 1ex solid #777;
+  }
+
+/* --- Float ---*/
+.thread {
+  float: left;
+  }
+.depth-2 * {
+  float: none;
+  }
+
+/* --- Width ---*/
+.depth-1 {
+  /* Avoids &gt;1 column for this depth */
+  max-width: 25em;
+  }
+.post {
+  max-width: 25em;
+  min-width: 22em;
+  --max-height: 4em;
+  }
+.post:hover {
+  --z-index: 100;
+  --max-height: none;
+}
+
+/* === Hover === */
+
+/* --- Overflow --- (not in use) */
+body * {
+  overflow: hidden
+  }
+body *:hover {
+  overflow: visible;
+  }
+
+/* === Posts === */
+
+.post {
+  border-top: 5px solid #EEE;
+  }
+
+.post:hover {
+	background-color: #DDFFDD;
+}
+
+/* --- Meta ---*/
+.post {
+  position: relative;
+  }
+.post .meta {
+  display: none;
+  position: absolute;
+  top: -16px;
+  margin: 0;
+  padding: 0 1.2em 0 5px; /* there's a .thread border to the left */
+  background-color: lightGrey;
+  }
+.post:hover .meta {
+  --display: block
+  }
+
+/* --- Buttons ---*/
+.post .owner,
+.post .time {
+  float: left;
+  background-color: #DDD;
+}
+
+.post .owner {
+  padding-right: 1em;
+}
+
+.post .edit,
+.post .vote,
+.post .reply {
+  float: right;
+  margin-left: 0.5em;
+  background-color: #BBF;
+  visibility: hidden;
+}
+
+.post:hover .edit,
+.post:hover .vote,
+.post:hover .reply {
+  visibility: visible;
+}
+
+.post .owner,
+.post .time,
+.post .edit,
+.post .vote,
+.post .reply {
+  padding: 1px 0.3em;
+  margin-bottom: 2px;
+  position: relative;
+}
+
+.post .owner:hover,
+.post .time:hover,
+.post .edit:hover,
+.post .vote:hover,
+.post .reply:hover {
+  background-color: #CCF;
+  cursor: default;
+}
+
+/* --- Text ---*/
+.post .text {
+  clear: both;
+	padding: 3px 3px 3px 0;
+}
+
+/* --- Menus ---*/
+.post .menu {
+  position: absolute;
+  background-color: #CCF;
+  left: 1ex;
+  z-index: 100;
+}
+
+.post .menu li {
+  padding: 0.8ex 1ex;
+}
+
+.post .menu li:hover {
+  background-color: #EEF;
+  cursor: crosshair;
+}
+
+#hidden-menus {
+  display: none;
+}
+
+.post .menu .sub.menu {
+  visibility: hidden;
+  left: 2em;
+  background-color: #DBF;
+}
+
+.post .menu li:hover &gt; .sub.menu {
+  visibility: visible;
+}
+
+.post .sub.menu li:hover {
+  background-color: #EDF;
+}
+
+/* === Misc === */
+
+.parent-ref {
+  font-weight: bold;
+}
+
+.highlight {
+  outline: blue dotted medium
+}
+
+.fixtest {
+	position: fixed;
+	bottom: 0;
+}
+
+.thread.preview {
+	outline: fuchsia dashed medium;
+	--background-color: #FFE;
+	z-index: 100;
+}
+
+.agree textarea {
+	background-color: #EFF;
+}
+
+</style>
+          <script type="text/javascript" src="jquery-1.4.2.js"></script>
+          <script type="text/javascript" src="debiki.js"></script>
+        </head>
+        <body>
+
+			<div class="fixtest"><p>Edit here</p>
+				</div>
+          <div class="debate">
+      <div class="left depth-0 thread" id="thread-a">
+        <div class="post" id="post-a">
+          <pre class="meta">id: a  parent: root  depth: 0</pre>
+          <div class="owner">None</div>
+          <div class="time">April 1, 2010, 00:01</div>
+          <div class="reply">Reply</div>
+          <div class="vote">Vote</div>
+          <div class="edit">Edit</div>
+          <div class="text"><p>Bör MMA vara tillåtet i Sverige?</p><p>Mixed Martial Arts,
+MMA,
+är en sport där strypningar och slag mot huvudet ingår.
+MMA-tävlingar är tillåtna i Sverige.
+Bör MMA-tävlingar vara tillåtna i Sverige?
+</p>
+    </div>
+        </div>
+        <div class="left depth-1 thread" id="thread-b">
+        <div class="post" id="post-b">
+          <pre class="meta">id: b  parent: a  depth: 1</pre>
+          <div class="owner">None</div>
+          <div class="time">April 1, 2010, 00:01</div>
+          <div class="reply">Reply</div>
+          <div class="vote">Vote</div>
+          <div class="edit">Edit</div>
+          <div class="text"><p>Tillåt MMA</p><p>Det är bra att MMA-tävlingar är tillåtna i Sverige.
+</p>
+    </div>
+        </div>
+        <div class="depth-2 thread" id="thread-d">
+        <div class="post" id="post-d">
+          <pre class="meta">id: d  parent: b  depth: 2</pre>
+          <div class="owner">None</div>
+          <div class="time">April 1, 2010, 00:01</div>
+          <div class="reply">Reply</div>
+          <div class="vote">Vote</div>
+          <div class="edit">Edit</div>
+          <div class="text"><p>För frihetenss skull.</p><p>Ska vi förbjuda allt i samhället som är lika farligt som MMA,
+får vi en polisstat.
+Vi får förbjuda rökning,
+olika typer av hästhoppning,
+kanske dykning,
+bergsklättring i för farliga berg.
+Och ha polis som ser till lagen efterlevs.
+</p>
+    </div>
+        </div>
+        <div class="depth-3 thread" id="thread-e">
+        <div class="post" id="post-e">
+          <pre class="meta">id: e  parent: d  depth: 3</pre>
+          <div class="owner">None</div>
+          <div class="time">April 1, 2010, 00:01</div>
+          <div class="reply">Reply</div>
+          <div class="vote">Vote</div>
+          <div class="edit">Edit</div>
+          <div class="text"><p>Såvida de gamla sura gubbarna i själva verket är ute efter att förbjuda sånt de inte gillar,
+precis som muslimerna vill förbjuda alla att inte ha slöja.
+</p>
+    </div>
+        </div>
+        
+      </div>
+      </div><div class="depth-2 thread" id="thread-f">
+        <div class="post" id="post-f">
+          <pre class="meta">id: f  parent: b  depth: 2</pre>
+          <div class="owner">None</div>
+          <div class="time">April 1, 2010, 00:01</div>
+          <div class="reply">Reply</div>
+          <div class="vote">Vote</div>
+          <div class="edit">Edit</div>
+          <div class="text"><p>Håller ungdommar borta från gatan</p><p>En del ungdommar riskerar hamna snett i livet:
+riskerar börja supa och knarka och stjäla.
+De kan räddas av MMA: Deras liv får en innebörd,
+när de har en dröm att kämpa och begå stordåd i MMA-tävlingar.
+</p>
+    </div>
+        </div>
+        <div class="depth-3 thread" id="thread-h">
+        <div class="post" id="post-h">
+          <pre class="meta">id: h  parent: f  depth: 3</pre>
+          <div class="owner">None</div>
+          <div class="time">April 1, 2010, 00:01</div>
+          <div class="reply">Reply</div>
+          <div class="vote">Vote</div>
+          <div class="edit">Edit</div>
+          <div class="text"><p>De behöver inte slåss för att ha något att göra.
+Det finns fotboll och basket och annat.
+</p>
+    </div>
+        </div>
+        <div class="depth-4 thread" id="thread-i">
+        <div class="post" id="post-i">
+          <pre class="meta">id: i  parent: h  depth: 4</pre>
+          <div class="owner">None</div>
+          <div class="time">April 1, 2010, 00:01</div>
+          <div class="reply">Reply</div>
+          <div class="vote">Vote</div>
+          <div class="edit">Edit</div>
+          <div class="text"><p>Du kan inte jämföra ett härligt slagsmål med fotboll!
+</p>
+    </div>
+        </div>
+        <div class="depth-5 thread" id="thread-j">
+        <div class="post" id="post-j">
+          <pre class="meta">id: j  parent: i  depth: 5</pre>
+          <div class="owner">None</div>
+          <div class="time">April 1, 2010, 00:01</div>
+          <div class="reply">Reply</div>
+          <div class="vote">Vote</div>
+          <div class="edit">Edit</div>
+          <div class="text"><p>Idiot
+</p>
+    </div>
+        </div>
+        <div class="depth-6 thread" id="thread-k">
+        <div class="post" id="post-k">
+          <pre class="meta">id: k  parent: j  depth: 6</pre>
+          <div class="owner">None</div>
+          <div class="time">April 1, 2010, 00:01</div>
+          <div class="reply">Reply</div>
+          <div class="vote">Vote</div>
+          <div class="edit">Edit</div>
+          <div class="text"><p>***NEJ***!!!</p><p>Trots att fotbollsmatcher spelas, stämmer ju ligorna
+träff för att slåss! Där ser du att fotbollen
+**inte** ersätter ett slagsmål med hjältedåd!!!
+</p>
+    </div>
+        </div>
+
+<div class="depth-3 thread reply preview" id="thread-e">
+<div class="post" id="post-e">
+  <pre class="meta">id: e  parent: d  depth: 3</pre>
+  <div class="owner"><i>You</i></div>
+  <div class="time"><i>Today, right now</i></div>
+  <div class="text"><p>The cat was playing in the garden.</p>
+<p> Reply text in progress,
+    reply text in progress, reply text in progress, reply text in progress</p>
+</div>
+</div>
+<form class="agree reply" action="">
+<textarea rows="10" cols="30">
+The cat was playing in the garden.
+
+Reply text in progress, reply text in progress,
+reply text in progress, reply text in progress
+</textarea><br />
+<input type="button" value="Hello world!" />
+</form>
+</div>
+
+  
+      </div>
+      </div>
+      </div>
+      </div><div class="depth-3 thread" id="thread-g">
+        <div class="post" id="post-g">
+          <pre class="meta">id: g  parent: f  depth: 3</pre>
+          <div class="owner">None</div>
+          <div class="time">April 1, 2010, 00:01</div>
+          <div class="reply">Reply</div>
+          <div class="vote">Vote</div>
+          <div class="edit">Edit</div>
+          <div class="text"><p>Ja,
+liksom fotbollen ingjuder hopp och framtidstro hos ungdommar i Afrika,
+ger MMA hopp och framtidstro till en del ungdommar i Sverige.
+</p>
+    </div>
+        </div>
+      
+      </div>
+      </div>
+      </div><div class="left depth-1 thread" id="thread-c">
+        <div class="post" id="post-c">
+          <pre class="meta">id: c  parent: a  depth: 1</pre>
+          <div class="owner">None</div>
+          <div class="time">April 1, 2010, 00:01</div>
+          <div class="reply">Reply</div>
+          <div class="vote">Vote</div>
+          <div class="edit">Edit</div>
+          <div class="text"><p>Förbjud MMA</p><p>MMA-tävlingar borde förbjudas i Sverige.
+</p>
+    </div>
+        </div>
+        
+      </div>
+      </div>
+    </div>
+          <div id="hidden-menus">
+      <ul class="menu" id="edit-menu">
+        <li>Edit</li>
+        <li>Copy&nbsp;&amp;&nbsp;edit</li>
+        <li>Delete</li>
+        <li>Move</li>
+      </ul>
+      <ul class="menu" id="vote-menu">
+        <li class="up">Vote&nbsp;up</li>
+        <li class="down">Vote&nbsp;down</li>
+        <li class="it">It...
+          <ul class="sub menu">
+            <li>Agrees&nbsp;(with&nbsp;the&nbsp;<span class="parent-ref">parent</span>&nbsp;post,
+              <i>but not necessarily with you</i>)</li>
+            <li>Disagrees</li>
+          </ul>
+        </li>
+        <li class="it-is">It is...
+          <ul class="sub menu">
+            <li>Interesting</li>
+            <li>Obvious</li>
+            <li>Insightsful</li>
+            <li>Stupid</li>
+            <li>Funny</li>
+            <li>Off topic</li>
+            <li>Troll</li>
+          </ul>
+        </li>
+        <li class="suggestions">Vote&nbsp;on&nbsp;suggestions...
+          <ul class="sub menu">
+            <li>Show&nbsp;all</li>
+          </ul>
+        </li>
+      </ul>
+      <ul class="menu" id="reply-menu">
+        <li>Just&nbsp;reply</li>
+        <li>Agree</li>
+        <li>Dissent</li>
+        <li>Off&nbsp;topic</li>
+      </ul>
+    </div>
+        </body>
+      </html>
