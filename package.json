@@ -1,6 +1,6 @@
 {
   "author": "Kaj Magnus Lindberg",
-  "name": "debiki-app-play-client",
+  "name": "debiki-client",
   "description": "Javascripts and styles for Debiki's hosting service",
   "version": "0.0.1",
   "homepage": "www.debiki.com",

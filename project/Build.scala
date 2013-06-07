@@ -23,7 +23,7 @@ import java.{net => jn}
 
 object ApplicationBuild extends Build {
 
-  val appName         = "debiki-app-play"
+  val appName         = "debiki-server"
   val appVersion      = "1.0-SNAPSHOT"
 
   lazy val debikiCore =
@@ -168,7 +168,7 @@ object ApplicationBuild extends Build {
   // to find changed dependencies, in case terribly weird compilation
   // errors arise, e.g. "not enough arguments for method" or
   // "value getUnchecked is not a member of". Such errors happened when I built
-  // debiki-app-play with the very same version of Play 2.1-SNAPSHOT,
+  // debiki-server with the very same version of Play 2.1-SNAPSHOT,
   // but dependencies downloaded at different points in time (the more recent
   // dependencies included a newer version of Google Guava.)))
   def listJars = TaskKey[Unit]("list-jars")

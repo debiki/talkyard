@@ -12,7 +12,7 @@
 
 # Rare compilation problem tips:
 # If there's ever again any impossibly weird error like:
-#   [error] /home/kajmagnus/me-dev/debiki/all/debiki-app-play-2.1/conf/routes:14:
+#   [error] /home/kajmagnus/me-dev/debiki/all/debiki-server/conf/routes:14:
 #     too many arguments for method apply:
 #     (name: String, constraint: String)play.core.DynamicPart in object DynamicPart
 #   [error] GET /-/login/:provider  controllers.AppLogin.loginWith(provider, returnToUrl)

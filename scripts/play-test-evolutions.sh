@@ -54,7 +54,7 @@ psql -h "$db_address" "$db_name" "$db_user" -c "$drop_recreate_schema"
 
 # ===== Apply evolutions
 
-# For now, since evolutions are handled by debiki-app-play, not debiki-dao-pgsql,
+# For now, since evolutions are handled by debiki-server, not debiki-dao-pgsql,
 # start a server, wait for a while, then kill it.
 
 # COULD have debiki-dao-pgsql use Play's JDBC module, then this wouldn't be needed.
