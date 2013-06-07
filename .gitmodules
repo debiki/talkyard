@@ -1,6 +1,3 @@
-[submodule "modules/debiki-core"]
-	path = modules/debiki-core
-	url = ../debiki-core.git
 [submodule "modules/debiki-dao-pgsql"]
 	path = modules/debiki-dao-pgsql
 	url = ../debiki-dao-pgsql.git
