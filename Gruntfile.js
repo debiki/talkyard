@@ -185,10 +185,10 @@ module.exports = function(grunt) {
           " * than the AGPL. Files are separated by a '======' line.\n" +
           " */\n" +
           "\n" +
-          "//=== The first file: ============================================\n",
+          "/*=== The first file: ==========================================*/\n",
         separator:
-          ";\n" +
-          "//=== Next file: =================================================\n"
+          "\n" +
+          "/*=== Next file: ===============================================*/\n"
       },
       server: {
        files: {
