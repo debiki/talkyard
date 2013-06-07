@@ -36,10 +36,9 @@ import EmailNotfPrefs.EmailNotfPrefs
 // and sanitaze input. That'd be an eventually inconsistent solution :-/ .)
 
 
-/**
- * Constructs database DAO:s, implemented by service providers,
- * (currently only debiki-dao-pgsql, for Postgres) and used by debiki-app-play.
- */
+/** Constructs database DAO:s, implemented by service providers,
+  * (currently only debiki-dao-pgsql, for Postgres) and used by debiki-server.
+  */
 abstract class DbDaoFactory {
   def systemDbDao: SystemDbDao
   def newTenantDbDao(quotaConsumers: QuotaConsumers): TenantDbDao
@@ -355,11 +354,11 @@ abstract class SystemDbDao {
  *
  * (It delegates database requests to a TenantDbDao implementation.)
  *
- * ((Could move to debiki-core or debiki-dao-pgsql, but where? If I'll create
+ * ((Place in which module? debiki-core, -server or -dao-pgsql?  If I'll create
  * new similar classes for other db backends (e.g. Cassandra), then it
  * should be moved to debiki-dao-pgsql. If, however, it'll be possible
  * to reuse the same instance, with different configs (doesn't yet exist),
- * then it could be moved to debiki-app-play, and the config classes
+ * then it could be moved to debiki-server, and the config classes
  * would be placed here in debiki-core?))
  */
 class ChargingTenantDbDao(

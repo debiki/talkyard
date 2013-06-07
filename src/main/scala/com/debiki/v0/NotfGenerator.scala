@@ -45,7 +45,7 @@ case class NotfGenerator(pageExclNewActions: PageParts, newActions: Seq[PostActi
     }
     // Note:
     // If you add notfs (below) for other things than replies,
-    // then, in debiki-app-play, update NotfHtmlRenderer.
+    // then, in debiki-server, update NotfHtmlRenderer.
     case app: EditApp =>
       Nil  // fix later, see note above
     case flag: Flag =>
