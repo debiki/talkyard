@@ -1,6 +1,0 @@
-# Searches for usages of functions without them being prefixed with d.i.  (for
-# the debiki.internal namespace).  You'd want to replace the in list with
-# something that suits your case, before searching.
-
-for x in '$initPostsThread' '$initPost' '$loginThenSubmit' '$loginSubmitOnClick' '$showActions' '$undoInlineThreads' 'disableSubmittedForm' 'markMyPost' 'Me' 'resizeRootThreadExtraWide' 'resizeRootThreadNowAndLater' 'SVG' 'removeInstantly' 'showAndHighlightPost' 'showErrorEnableInputs' 'showMyRatings' 'showServerResponseDialog' 'slideInActionForm' 'slideAwayRemove' ; do   echo "------- $x";   grep -Ir "$x" app/ public/ modules/*/src/ | grep -v '/debiki.js:' | grep '.*\.js' | grep -v '\.min\.js' | egrep -v '\<d\.i\.' ; done
-
