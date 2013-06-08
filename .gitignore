@@ -47,3 +47,6 @@ test-client/unit/spa/admin/*.js
 #   see: http://code.google.com/p/selenium/issues/detail?id=3475
 /chromedriver.log
 
+# Ignore my shorthand softlinks (to ./scripts/ and ./scripts/local/).
+s
+scripts/l
