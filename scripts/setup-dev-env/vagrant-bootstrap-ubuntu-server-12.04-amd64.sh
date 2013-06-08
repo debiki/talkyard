@@ -96,6 +96,7 @@ code in your current working director (on your desktop/laptop).
 You can now start Debiki like so:
   $ vagrant ssh
   $ # Then, in the VM:
+  $ cd /vagrant/server/
   $ play-2.1.1
   [debiki] $ run
 
