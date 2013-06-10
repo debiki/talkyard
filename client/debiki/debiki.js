@@ -224,10 +224,15 @@ function renderPageEtc() {
   // Also use PNG arrows on mobiles; rendering SVG arrows takes rather long.
   // And use PNG arrows if there are many comments, because then rendering
   // takes too long also on desktops.
+  // FOR NOW, disable SVG, always, because I've not yet made SVG
+  // avoid indenting deeply nested replies "too much".
+  d.i.SVG = d.i.makeFakeDrawer($);
+  /*
   d.i.SVG = !Modernizr.touch && Modernizr.inlinesvg &&
         document.URL.indexOf('svg=false') === -1 &&
         $posts.length < 15 ?
       d.i.makeSvgDrawer($) : d.i.makeFakeDrawer($);
+  */
 
 
   (d.u.workAroundAndroidZoomBug || function() {})($);
