@@ -199,6 +199,10 @@ and two folded threads would overlap, unless: */
   padding-top: 3px;
 }
 
+/* Don't intent the last reply though */
+.DW.DW .dw-depth-1 .dw-res > li:last-child {
+  margin-left: -35px;
+}
 
 
 /* ===== Posts ===== */
@@ -441,6 +445,14 @@ JavaScript. Then I can still place all CSS stuff in this file. */
   width: 39px;
 }
 
+/* The last reply isn't indented. */
+.dw-res > li:last-child > .dw-svg-fake-vcurve-short {
+  left: 3px;
+  top: -50px;
+  width: 18px;
+  background: url(img/arrows-etcetera-gray.png) no-repeat -57px -79px;
+}
+
 /* Tweak offset for arrows to collapsed replies (there's no .dw-t
  that "adjusts" the offset) */
 .dw-res.dw-zd .dw-svg-fake-vcurve-short {
@@ -497,7 +509,6 @@ JavaScript. Then I can still place all CSS stuff in this file. */
 
 
 .dw-svg-fake-varrow-hider-hi,
-.dw-svg-fake-varrow-hider-lo,
 .dw-svg-fake-varrow-hider-left {
   background-color: white;
   position: absolute;
@@ -506,15 +517,15 @@ JavaScript. Then I can still place all CSS stuff in this file. */
   z-index: 2;
 }
 
-.dw-svg-fake-varrow-hider-lo {
-  bottom: 0px;
-  height: 25px;
-}
-
 .dw-svg-fake-varrow-hider-left {
   bottom: 0px;
   height: 100%;
   left: -45px;
+}
+
+/* The last reply isn't indented. */
+.dw-res > li:last-child > .dw-svg-fake-varrow-hider-left {
+  left: -5px;
 }
 
 

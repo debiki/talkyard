@@ -40,7 +40,6 @@ debiki.internal.makeFakeDrawer = function($) {
         .has('.dw-t, .dw-res.dw-zd').each(function() {
       $(this).prepend("<div class='dw-arw dw-svg-fake-varrow'/>");
       $(this).prepend("<div class='dw-arw dw-svg-fake-varrow-hider-hi'/>");
-      $(this).prepend("<div class='dw-arw dw-svg-fake-varrow-hider-lo'/>");
     });
 
     //        \
@@ -67,9 +66,11 @@ debiki.internal.makeFakeDrawer = function($) {
 
     // For each last child, then just below the `-> we just added,
     // the vertical line from which `-> originates continues downwards.
-    // Hide the remaining part of that vertical line.
+    // If, however, there are no further replies below, then hide it.
     $childThreads.filter(':last-child').each(function() {
-      $(this).prepend("<div class='dw-arw dw-svg-fake-varrow-hider-left'/>");
+      var $thread = $(this);
+      if (!$thread.find('.dw-res > li').length)
+        $thread.prepend("<div class='dw-arw dw-svg-fake-varrow-hider-left'/>");
     });
 
     // BUG: If adding new reply, and it's the parent's first reply, the parent
@@ -98,11 +99,24 @@ debiki.internal.makeFakeDrawer = function($) {
   var horizListItemEndArrow =
       '<div class="dw-arw dw-svg-fake-hcurve"/>';
 
-  // Draw arrows to reply button and child threads.
+  // Draw arrows to reply button and child threads, and remove any
+  // previous-sibling or parent-thread vertical-arrow-hider.
   function $initPostSvg() {
     var $post = $(this).filter('.dw-p').dwBugIfEmpty('DwE2KR3');
     var $thread = $post.closest('.dw-t');
     var $parentThread = $thread.parent().closest('.dw-t');
+
+    // If this is a newly added thread:
+    // If any previous-sibling or parent-thread had no children or
+    // siblings below, then it has a hide-horizontal-arrow tag.
+    // Remove it, so the horizontal arrow to this post is shown.
+    var $prevSibling = $thread.prev();
+    $prevSibling.add($parentThread).children(
+        '.dw-svg-fake-varrow-hider-left').remove();
+    if ($parentThread.filter(':not(.dw-hor)').length &&
+        !$parentThread.children('.dw-svg-fake-varrow').length) {
+      $parentThread.prepend("<div class='dw-arw dw-svg-fake-varrow'/>");
+    }
 
     // Draw arrow to reply button, i this is a horizontally laid out thread
     // (with an always visible Reply button).
