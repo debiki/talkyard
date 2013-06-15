@@ -19,6 +19,7 @@ package debiki
 
 import com.debiki.v0._
 import com.debiki.v0.Prelude._
+import play.{api => p}
 import play.api.Play
 import play.api.Play.current
 import com.debiki.v0.QuotaConsumers
@@ -30,30 +31,16 @@ object Debiki extends Debiki
 class Debiki {
 
   private val dbDaoFactory = new RelDbDaoFactory({
+    val dataSourceName = if (Play.isTest) "test" else "default"
+    val dataSource = p.db.DB.getDataSource(dataSourceName)
+    val db = new RelDb(dataSource)
 
-    def configPrefix = if (Play.isTest) "test." else ""
+    // Log which database we've connected to.
+    val boneDataSource = dataSource.asInstanceOf[com.jolbox.bonecp.BoneCPDataSource]
+    p.Logger.info(o"""Connected to database:
+      ${boneDataSource.getJdbcUrl} as user ${boneDataSource.getUsername}.""")
 
-    def configStr(path: String) =
-      Play.configuration.getString(configPrefix + path) getOrElse
-         runErr("DwE93KI2", "Config value missing: "+ path)
-
-    // I've hardcoded credentials to the test database here, so that it
-    // cannot possibly happen, that you accidentally connect to the prod
-    // database. (You'll never name the prod schema "debiki_test_0_0_2_empty",
-    // with "auto-dropped" as password?)
-    def user =
-      if (Play.isTest) "debiki_test_0_0_2_empty"
-      else configStr("debiki.pgsql.user")
-    def password =
-      if (Play.isTest) "auto-dropped"
-      else configStr("debiki.pgsql.password")
-
-    new RelDb(
-      server = configStr("debiki.pgsql.server"),
-      port = configStr("debiki.pgsql.port"),
-      database = configStr("debiki.pgsql.database"),
-      user = user,
-      password = password)
+    db
   })
 
 
