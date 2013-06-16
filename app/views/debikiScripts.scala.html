@@ -51,6 +51,7 @@ See: http://stackoverflow.com/questions/1014203/best-way-to-use-googles-hosted-j
     v0: { util: {} },
     internal: { $: jQuery, pageId: '@pageId', assetsUrlPathStart: '@asset("")' }
   }, debiki);
+  @* COULD move to debiki.internal instead! Now relying on &lt;script type=js/x-debiki-config&gt;*@
   debiki.scriptLoad = $.Deferred();
   Modernizr.load({
     test: Modernizr.touch,

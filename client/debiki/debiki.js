@@ -210,6 +210,16 @@ d.i.refreshFormXsrfTokens = function() {
 
 
 
+function runSiteConfigScripts() {
+  var configScripts = $('head script[type="text/x-debiki-config"]');
+  configScripts.each(function() {
+    var javascriptCode = $(this).text();
+    eval(javascriptCode);
+  });
+};
+
+
+
 /**
  * Renders the page, step by step, to reduce page loading time. (When the
  * first step is done, the user should conceive the page as mostly loaded.)
@@ -293,6 +303,7 @@ function renderPageEtc() {
 
   steps.push(function() {
     debiki.scriptLoad.resolve();
+    runSiteConfigScripts();
     d.i.startReadingProgresMonitor();
   });
 

@@ -29,6 +29,11 @@ d.i.EditTabIdLast = d.i.EditTabIdPreview;
 d.i.EditTabCount = 3;
 
 
+var onEditPreviewCallbacks = [];
+debiki.onEditPreviewShown = function(callback) {
+  onEditPreviewCallbacks.push(callback);
+};
+
 
 d.i.$loadEditorDependencies = (function() {
   // COULD use 2 loadStatus, and load Code Mirror only iff `this`
@@ -280,6 +285,9 @@ function _$showEditFormImpl() {
             $previewTabLink.focus();
             $(this).each($updateEditFormPreview);
             enableSubmitBtn();
+            $.each(onEditPreviewCallbacks, function(index, callback) {
+              callback($previewPanel.attr('id'));
+            });
             break;
           default: d.u.die('[error DwE4krERS]');
         };

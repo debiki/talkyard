@@ -19,9 +19,20 @@ d = i: debiki.internal, u: debiki.v0.util
 $ = d.i.$;
 
 
+
+onPagePatchedCallbacks = []
+
+
+debiki.onPagePatched = !(callback) ->
+  onPagePatchedCallbacks.push callback
+
+
+
 /**
  * Inserts new replies and replaces old threads and edited posts with
- * new HTML provided by the server. Returns and object with info on what
+ * new HTML provided by the server. And calls all onPagePatchedCallbacks.
+ *
+ * Returns and object with info on what
  * was patched.
  */
 d.i.patchPage = (patches) ->
@@ -36,6 +47,9 @@ d.i.patchPage = (patches) ->
     if pageId is d.i.pageId
       for patch in postPatches
         patchPostWith patch, { onPage: pageId, result }
+
+  for c in onPagePatchedCallbacks
+    c()
 
   result
 
