@@ -19,6 +19,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+
+# Find the google-diff-match-patch API documented here:
+#   https://code.google.com/p/google-diff-match-patch/wiki/API
+
+
 d = i: debiki.internal, u: debiki.v0.util
 bug = d.u.die2
 
@@ -27,11 +32,15 @@ d.i.diffMatchPatch = new diff_match_patch()
 d.i.diffMatchPatch.Diff_Timeout = 1  # seconds
 d.i.diffMatchPatch.Match_Distance = 100*1000  # for now
 d.i.diffMatchPatch.maxMatchLength = d.i.diffMatchPatch.Match_MaxBits
+d.i.diffMatchPatch.Diff_EditCost = 9
+
 
 
 d.i.makeHtmlDiff = (oldText, newText) ->
   diff = d.i.diffMatchPatch.diff_main oldText, newText
-  d.i.diffMatchPatch.diff_cleanupSemantic diff
+  # Could use: `diff_cleanupSemantic diff` instead, but that sometimes
+  # result in the diff algorithm sometimes replacing too much old text.
+  d.i.diffMatchPatch.diff_cleanupEfficiency diff
   htmlString = d.i.prettyHtmlFor(diff)
   htmlString
 
@@ -84,6 +93,7 @@ d.i.prettyHtmlFor = (diffs) ->
       i += data.length
 
   html.join ''
+
 
 
 # vim: fdm=marker et ts=2 sw=2 tw=80 fo=tcqwn list
