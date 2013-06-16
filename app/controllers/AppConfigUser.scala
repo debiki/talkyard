@@ -60,7 +60,13 @@ object AppConfigUser extends mvc.Controller {
       case Some("yes") => EmailNotfPrefs.Receive
       case Some("no") => EmailNotfPrefs.DontReceive
       case Some(x) => throwBadParamValue("DwE09EF32", FormPramEmailNotfs)
-      case _ => throwParamMissing("DwE83IhB6", FormPramEmailNotfs)
+      case _ =>
+        // This happened only once when I clicked the No button in Firefox, therefore:
+        EmailNotfPrefs.DontReceive
+        // I don't know why no post data was received. I'd rather have Some("no")
+        // to be posted, and I would rather do:
+        //   throwParamMissing("DwE83IhB6", FormPramEmailNotfs)
+
       // (There's no value that maps to ForbiddenForever. That functionality
       // is only available via email login, that is, for the actual
       // owner of the email address.)
