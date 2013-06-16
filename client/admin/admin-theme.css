@@ -20,6 +20,16 @@ body,
 
 .container { margin: 0 auto; }
 
+/* This <ins> and <del> was copied from debiki-play.css. */
+ins {
+  text-decoration: none;
+  background: #9f9;
+}
+del {
+  text-decoration: line-through;
+  background: #ffd0d0;
+}
+
 p, /* override Twitter Bootstrap */
 body,
 .dw-depth-1 blockquote p { /* override Bootstrap */

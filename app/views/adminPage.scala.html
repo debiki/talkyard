@@ -111,7 +111,7 @@
                   </td>
                   <td><a target='_blank' href='#!/user/{{action.authorId}}'>{{action.authorDisplayName}}</a></td>
                   <td>{{action.cdati.replace('T', ' ')}}</td>
-                  <td class='post-text'>{{ postTextOrDiff(action) }}</td>
+                  <td class='post-text' ng-bind-html="postTextOrDiff(action)"></td>
                 </tr>
               </tbody>
             </table>

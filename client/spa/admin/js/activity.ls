@@ -69,14 +69,15 @@ bug = d.u.die2
   $scope.postTextOrDiff = (post) ->
     htmlDiff = -> d.i.makeHtmlDiff post.approvedText, post.unapprovedText
     switch post.status
-    | 'New' => post.unapprovedText
+    | 'New' => escapeHtml post.unapprovedText
     | 'NewPrelApproved' \
-      'Approved' => post.approvedText
-    | 'Rejected' => post.unapprovedText
+      'Approved' => escapeHtml post.approvedText
+    | 'Rejected' => escapeHtml post.unapprovedText
     | 'EditsRejected' \
       'EditsPrelApproved' \
       'NewEdits' => htmlDiff()
     | _ => die 'DwE38RUJ0'
+
 
 
   # On page load, list the most recent actions, for all pages.
@@ -84,6 +85,16 @@ bug = d.u.die2
     updateActionList { trees: ['/'] }
 
   ]
+
+
+
+# COULD move to some debiki-common.js or debiki-utils.js?
+function escapeHtml (html)
+  html
+   .replace(/&/g, "&amp;")
+   .replace(/</g, "&lt;")
+   .replace(/>/g, "&gt;")
+   # Could also replace ' and " if needs to escape attribute value.
 
 
 
