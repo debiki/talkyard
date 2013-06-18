@@ -81,22 +81,16 @@ function markMarkdownTrailingSpaces(stream) {
   if (stream.match(/ (?= +$)/))
     return singleTrailingSpace();
 
-  // Case 3: the very last space on this line. Count num trailing spaces up to
-  // and including the last char on this line. If there are exactly 2 spaces,
-  // we have a line break.
+  // Case 3: the very last char on this line, and it's a space.
+  // Count num trailing spaces up to including this last char on this line.
+  // If there are 2 spaces (or more), we have a line break.
   var str = stream.string;
   var len = str.length;
-  var oneTrailingSpace = str[len - 1] == ' '; // always true I think
-  var twoTrailingSpaces = oneTrailingSpace && len >= 2 && str[len - 2] == ' ';
-  var tooManyTrailingSpaces = twoTrailingSpaces && len >= 3 && str[len - 3] == ' ';
+  var twoTrailingSpaces = len >= 2 && str[len - 2] == ' ';
   stream.eat(/./);
-  if (tooManyTrailingSpaces)
-    return singleTrailingSpace();
   if (twoTrailingSpaces)
     return "markdown-line-break";
-  if (oneTrailingSpace)
-    return singleTrailingSpace();
-  return null;
+  return singleTrailingSpace();
 };
 
 
