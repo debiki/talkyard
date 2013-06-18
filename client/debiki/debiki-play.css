@@ -863,11 +863,11 @@ key presses).*/
 /* Make CodeMirror auto-resize its height.
 (Works also without .dw-prio -- although CodeMirror specifies 300px
 *later*. Weird.) */
-.dw-pri .CodeMirror-scroll {
+.DW .CodeMirror {
   height: auto;
-  overflow-y: hidden;
+  /* overflow-y: hidden;
   overflow-x: auto;
-  width: 100%;
+  width: 100%; */
 }
 /* Show tabs. */
 .cm-tab:after {

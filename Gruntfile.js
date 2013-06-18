@@ -169,7 +169,8 @@ module.exports = function(grunt) {
       }
     },
     concat: {
-      options: {
+      server: {
+       options: {
         // See https://npmjs.org/package/grunt-contrib-concat
         banner:
           "/*!\n" +
@@ -189,8 +190,7 @@ module.exports = function(grunt) {
         separator:
           "\n" +
           "/*=== Next file: ===============================================*/\n"
-      },
-      server: {
+       },
        files: {
         'public/res/combined-debiki.css': [
             'public/res/jquery-ui/jquery-ui-1.8.16.custom.css',
@@ -247,8 +247,46 @@ module.exports = function(grunt) {
         // in the Makefile. Keep in sync.
         'public/res/debiki-pagedown.js': [
           'modules/pagedown/Markdown.Converter.js',
-          'client/compiledjs/PagedownJavaInterface.js']
-       }
+          'client/compiledjs/PagedownJavaInterface.js'],
+       },
+      },
+      editor: {
+        options: {
+          banner:
+            "/*!\n" +
+            " * Copyright (C) 2013 Marijn Haverbeke <marijnh@gmail.com>\n" +
+            " * Source code available under the MIT license, see:\n" +
+            " *   http://github.com/marijnh/CodeMirror\n" +
+            " *\n" +
+            " * Parts Copyright (C) 2013 Kaj Magnus Lindberg\n" +
+            " * (a certain codemirror-show-markdown-line-breaks addon only)\n" +
+            " */\n" +
+            "\n",
+        },
+        files: {
+          'public/res/codemirror-3-13-custom.js': [
+            'client/third-party/codemirror/lib/codemirror.js',
+            'client/third-party/codemirror/mode/css/css.js',
+            'client/third-party/codemirror/mode/xml/xml.js',
+            'client/third-party/codemirror/mode/javascript/javascript.js',
+            'client/third-party/codemirror/mode/markdown/markdown.js',
+            'client/third-party/codemirror/mode/yaml/yaml.js',
+            'client/third-party/codemirror/mode/htmlmixed/htmlmixed.js',
+            'client/third-party/codemirror/addon/dialog/dialog.js',
+            'client/third-party/codemirror/addon/search/search.js',
+            'client/third-party/codemirror/addon/search/searchcursor.js',
+            'client/third-party/codemirror/addon/edit/matchbrackets.js',
+            // No:
+            //'client/third-party/codemirror/addon/edit/trailingspace.js',
+            // Instead:
+            'client/third-party/codemirror-show-markdown-line-breaks.js',
+          ],
+          'public/res/codemirror-3-13-custom.css': [
+            'client/third-party/codemirror/lib/codemirror.css',
+            'client/third-party/codemirror/addon/dialog/dialog.css', // for the search dialog
+            'client/third-party/codemirror-show-markdown-line-breaks.css',
+          ],
+        }
       },
       // Finds theme specific files in app/views/themes/<themeName>/<bundleName>/*.css
       // and concatenates them to public/themes/<themeName>/<bundleName>

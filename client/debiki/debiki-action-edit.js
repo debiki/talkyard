@@ -48,9 +48,8 @@ d.i.$loadEditorDependencies = (function() {
     Modernizr.load({
       test: loadCodeMirror,
       yep: [
-        assetsPrefix + 'codemirror/lib/codemirror.css',
-        assetsPrefix + 'codemirror/lib/util/dialog.css', // search dialogs
-        assetsPrefix + 'codemirror-2.25-custom.min.js'],
+        assetsPrefix + 'codemirror-3-13-custom.css',
+        assetsPrefix + 'codemirror-3-13-custom.js'],
       both: [
         assetsPrefix + 'debiki-pagedown.min.js'],
       complete: function() {
@@ -201,6 +200,8 @@ function _$showEditFormImpl() {
         lineNumbers: true, //isRootPost,
         lineWrapping: true,
         mode: "text/html", // for now
+        showMarkdownLineBreaks: true,
+        // showTrailingSpace: true,
         tabMode: "indent"
       });
     }
