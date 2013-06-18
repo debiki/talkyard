@@ -16,3 +16,6 @@
 [submodule "modules/securesocial-git"]
 	path = modules/securesocial-git
 	url = git://github.com/kajmagnus79/securesocial.git
+[submodule "modules/codemirror"]
+	path = modules/codemirror
+	url = https://github.com/marijnh/CodeMirror.git
