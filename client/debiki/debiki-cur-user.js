@@ -108,18 +108,18 @@ d.i.makeCurUser = function() {
    * and the user's permissions on this page.
    *
    * If, however, the server has already included the relevant data
-   * in a certain hidden .dw-data-yaml node on the page, then use
+   * in a certain hidden .dw-user-page-data node on the page, then use
    * that data, but only once (thereafter always query the server).
    * — So the first invokation happens synchronously, subsequent
    * invokations happens asynchronously.
    */
   function loadAndMarkMyPageInfo() {
-    // Avoid a roundtrip by using any yaml data already inlined on the page.
+    // Avoid a roundtrip by using any json data already inlined on the page.
     // Then delete it because it's only valid on page load.
-    var hiddenYamlTag = $('.dw-data-yaml');
-    if (hiddenYamlTag.length) {
-      parseYamlMarkActions(hiddenYamlTag.text());
-      hiddenYamlTag.hide().removeClass('dw-data-yaml');
+    var hiddenUserDataTag = $('.dw-user-page-data');
+    if (hiddenUserDataTag.length) {
+      parseUserDataMarkActions(hiddenUserDataTag.text());
+      hiddenUserDataTag.hide().removeClass('dw-user-page-data');
     }
     else {
       // Query the server.
@@ -127,13 +127,13 @@ d.i.makeCurUser = function() {
       // reporting interface?
       $.get('?page-info&user=me', 'text')
           .fail(d.i.showServerResponseDialog)  // for now
-          .done(function(yamlData) {
-        parseYamlMarkActions(yamlData);
+          .done(function(jsonData) {
+        parseUserDataMarkActions(jsonData);
       });
     }
 
-    function parseYamlMarkActions(yamlData) {
-      var pageInfo = YAML.eval(yamlData);
+    function parseUserDataMarkActions(jsonData) {
+      var pageInfo = JSON.parse(jsonData);
       setPermsOnPage(pageInfo.permsOnPage || {});
       markMyActions(pageInfo);
     }
@@ -147,8 +147,8 @@ d.i.makeCurUser = function() {
   }
 
   function deletePageInfoInServerReply() {
-    var hiddenYamlTag = $('.dw-data-yaml');
-    hiddenYamlTag.hide().removeClass('dw-data-yaml');
+    var hiddenUserDataTag = $('.dw-user-page-data');
+    hiddenUserDataTag.hide().removeClass('dw-user-page-data');
   };
 
   var api = {

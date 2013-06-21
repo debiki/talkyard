@@ -31,7 +31,6 @@ module.exports = function(grunt) {
       'client/vendor/bootstrap-tooltip.js', //
       'client/vendor/diff_match_patch.js',
       'client/vendor/html-sanitizer-bundle.js',
-      'client/vendor/javascript-yaml-parser.js',
       'client/vendor/jquery-cookie.js',
       'client/vendor/jquery-scrollable.js', //
       'client/vendor/livescript/prelude-browser.js',
@@ -88,7 +87,6 @@ module.exports = function(grunt) {
   var debikiTouchFiles = [
       'client/vendor/diff_match_patch.js',
       'client/vendor/html-sanitizer-bundle.js',
-      'client/vendor/javascript-yaml-parser.js',
       'client/vendor/jquery-cookie.js',
       'client/vendor/livescript/prelude-browser.js',
       'client/vendor/popuplib.js',

@@ -136,13 +136,13 @@ object AppCreatePage extends mvc.Controller {
     }
     assert(pageReq.pageExists == pageReq.pageMeta_!.pageExists)
 
-    val pageInfoYaml =
+    val userPageDataJson =
       if (pageReq.user.isEmpty) ""
-      else AppViewPosts.buildPageInfoYaml(pageReq)
+      else AppViewPosts.buildUserPageDataJson(pageReq)
 
     // If not logged in, then include an empty Yaml tag, so the browser
     // notices that it got that elem, and won't call GET ?page-info.
-    val infoNode = <pre class='dw-data-yaml'>{pageInfoYaml}</pre>
+    val infoNode = <pre class='dw-user-page-data'>{userPageDataJson}</pre>
     val pageHtml = pageReq.dao.renderTemplate(pageReq, appendToBody = infoNode)
 
     Ok(pageHtml) as HTML
