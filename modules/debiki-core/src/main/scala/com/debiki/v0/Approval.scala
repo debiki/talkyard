@@ -39,6 +39,13 @@ sealed abstract class Approval(
 
 object Approval {
 
+  /** Something approved for one request only. This happens if you submit a
+    * comment, but it's placed in the moderation queue. Now, it's nice
+    * to show it to the one who posted it, however, so it's approved temporarily,
+    * for the request only. It'll vanish on page reload, currently.
+    */
+  case object Temporary extends Approval
+
   /**
    * The first few posts of a new user are approved preliminarily.
    * (An admin is notified though and might decide to delete the posts.)
@@ -63,6 +70,7 @@ object Approval {
 
 
   def parse(text: String): Approval = text match {
+    case "Temporary" => Temporary
     case "Preliminary" => Preliminary
     case "WellBehavedUser" => WellBehavedUser
     case "AuthoritativeUser" => AuthoritativeUser

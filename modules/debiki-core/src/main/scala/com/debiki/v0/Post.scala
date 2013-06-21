@@ -54,7 +54,7 @@ case class Post(
     else debate.getPost(parentId)
 
 
-  def approval = payload.approval
+  def directApproval = payload.approval
 
 
   def isArticleOrConfig =
@@ -62,7 +62,7 @@ case class Post(
 
 
   def initiallyApproved: Boolean = {
-    val initiallyApprovedPerhapsPreliminarily = approval.isDefined
+    val initiallyApprovedPerhapsPreliminarily = directApproval.isDefined
     val initialApprovalNotCancelled = lastApprovalDati.isDefined
     initiallyApprovedPerhapsPreliminarily && initialApprovalNotCancelled
   }
@@ -340,10 +340,10 @@ case class Post(
       asInstanceOf[List[PostActionOld with MaybeApproval]]
 
     var implicitApprovals = List[PostActionOld with MaybeApproval]()
-    if (approval.isDefined)
+    if (directApproval.isDefined)
       implicitApprovals ::= this
     for (edit <- edits) {
-      if (edit.approval.isDefined)
+      if (edit.directApproval.isDefined)
         implicitApprovals ::= edit
       for (editApp <- page.editAppsByEdit(edit.id)) {
         // Ought to reuse PostActionsWrapper's wrapped actionDto:s rather than
@@ -388,7 +388,7 @@ case class Post(
 
   def lastApprovalType: Option[Approval] = {
     if (lastApprovalDati == state.lastApprovalDati) state.lastApprovalType
-    else lastApproval.flatMap(_.approval)
+    else lastApproval.flatMap(_.directApproval)
   }
 
 
@@ -401,9 +401,9 @@ case class Post(
     while (reviewsLeft nonEmpty) {
       val review = reviewsLeft.head
       reviewsLeft = reviewsLeft.tail
-      if (review.approval == Some(Approval.Preliminary) && rejectionFound) {
+      if (review.directApproval.map(_.isPermanent) == Some(false) && rejectionFound) {
         // Ignore this approval — the rejection cancels it.
-      } else if (review.approval.isEmpty) {
+      } else if (review.directApproval.isEmpty) {
         rejectionFound = true
       } else {
         lastApproval = Some(review)
@@ -420,14 +420,12 @@ case class Post(
    */
   private def lastAuthoritativeReview: Option[PostActionOld with MaybeApproval] =
     _reviewsDescTime.find(review =>
-       review.approval != Some(Approval.Preliminary) &&
-       review.approval != Some(Approval.WellBehavedUser))
+      review.directApproval.map(_.isAuthoritative) != Some(false))
 
 
   private def lastPermanentApproval: Option[PostActionOld with MaybeApproval] =
     _reviewsDescTime.find(review =>
-        review.approval.isDefined &&
-        review.approval != Some(Approval.Preliminary))
+        review.directApproval.map(_.isPermanent) == Some(true))
 
 
   def lastPermanentApprovalDati: Option[ju.Date] =
@@ -443,7 +441,7 @@ case class Post(
 
   def lastManualApprovalDati: Option[ju.Date] =
     anyMaxDate(
-      _reviewsDescTime.find(_.approval == Some(Approval.Manual)).map(_.creationDati),
+      _reviewsDescTime.find(_.directApproval == Some(Approval.Manual)).map(_.creationDati),
       state.lastManualApprovalDati)
 
 
@@ -471,7 +469,7 @@ case class Post(
     * behaved user, it is considered permanently reviewed.
     */
   def currentVersionPermReviewed: Boolean =
-    currentVersionReviewed && lastApprovalType != Some(Approval.Preliminary)
+    currentVersionReviewed && lastApprovalType.map(_.isPermanent) == Some(true)
 
 
   /** Has the computer preliminarily approved this post, or the last few edits?

@@ -73,9 +73,11 @@ trait MaybeApproval {
     * For example, if an admin edits a post, then `edit.approval`
     * might be set to Approval.AuthoritativeUser, and `edit.isApplied`
     * would be set to true, and then the new version of the edited post
-    * has "automatically" been approved.
+    * has automatically been approved, directly on creation.
+    * Sometimes a Post isn't approved until later, via a Review.
+    * Then Post.directApproval is None and Post.lastApproval is Some(...).
     */
-  def approval: Option[Approval]
+  def directApproval: Option[Approval]
 
 }
 
@@ -114,7 +116,7 @@ class PostActionOld(val debate: PageParts, val action: PostActionDtoOld) {
 
 class ApplyPatchAction(page: PageParts, val editApp: EditApp)
   extends PostActionOld(page, editApp) with MaybeApproval {
-  def approval = editApp.approval
+  def directApproval = editApp.approval
 }
 
 
@@ -122,7 +124,7 @@ class ApplyPatchAction(page: PageParts, val editApp: EditApp)
 class Review(page: PageParts, val review: PostActionDto[PAP.ReviewPost])
   extends PostAction(page, review) with MaybeApproval {
 
-  def approval = review.payload.approval
+  def directApproval = review.payload.approval
   lazy val target: Post = page.getPost(review.postId) getOrDie "DwE93UX7"
 
 }

@@ -59,16 +59,16 @@ case class NotfGenerator(pageExclNewActions: PageParts, newActions: Seq[PostActi
           review: Option[Review] = None): List[NotfOfPageAction] = {
 
     val (triggerAction, approvalOpt) =
-      review.map(r => (r, r.approval)) getOrElse (
-        post, post.approval)
+      review.map(r => (r, r.directApproval)) getOrElse (
+        post, post.directApproval)
 
     // Don't notify about unapproved comments.
     if (approvalOpt.isEmpty)
       return Nil
 
-    // Don't notify about preliminarily approved comments
+    // Don't notify about preliminarily or temporarily approved comments
     // (wait until moderator upholds it).
-    if (approvalOpt == Some(Approval.Preliminary))
+    if (approvalOpt.map(_.isPermanent) == Some(false))
       return Nil
 
     // This might be a page config/template Post; if so, it has no parent.
@@ -108,7 +108,7 @@ case class NotfGenerator(pageExclNewActions: PageParts, newActions: Seq[PostActi
     lazy val reviewer = review.user_!
 
     // If the postReviewed was rejected, don't notify anyone.
-    if (review.approval.isEmpty)
+    if (review.directApproval.isEmpty)
       return Nil
 
     // If the postReviewed has already been permanently approved, a notification

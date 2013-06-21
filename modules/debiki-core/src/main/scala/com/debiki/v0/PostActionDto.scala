@@ -207,7 +207,7 @@ object PostActionDto {
     userId = SystemUser.User.id,
     newIp = None,
     ctime = postAction.ctime,
-    approval = Some(Approval.Preliminary))
+    approval = Some(Approval.Temporary))
 
 
   def toDeletePost(

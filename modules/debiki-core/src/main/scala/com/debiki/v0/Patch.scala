@@ -40,7 +40,7 @@ class Patch(debate: PageParts, val edit: PostActionDto[PAP.EditPost])
 
   def isPending = !isApplied && !isDeleted
 
-  def approval = edit.payload.approval
+  def directApproval = edit.payload.approval
 
   private def _initiallyAutoApplied = edit.payload.autoApplied
 
