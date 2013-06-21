@@ -60,8 +60,16 @@ patchThreadWith = (threadPatch, { onPage, result }) ->
   isNewThread = ! $('#post-' + threadPatch.id).length
   $newThread = $ threadPatch.html
 
-  if !threadPatch.approved
-    addMessageToPost 'Comment pending moderation.', $newThread.dwChildPost!
+  switch threadPatch.approval
+  | 'Temporary' =>
+    addMessageToPost('Comment pending moderation. ' +
+        "If you reload the page, it'll be gone, until approved.",
+        $newThread.dwChildPost!)
+  | 'Preliminary' =>
+    addMessageToPost('Comment *preliminarily* approved. ' +
+        "The person you replied to won't be notified until it has " +
+        "been *permanently* approved.", $newThread.dwChildPost!)
+  | _ => void
 
   if isNewThread
     $prevThread = d.i.findThread$ threadPatch.prevThreadId

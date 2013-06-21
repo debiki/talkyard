@@ -515,6 +515,8 @@ body.dw-u-ui-simple .dw-a-edit { display: none !important; }
   margin-bottom: 1em;
   font-style: italic;
   font-weight: bold;
+  font-size: 140%;
+  color: hsl(0, 100%, 30%);  /* dark strong red */
 }
 
 .dw-p-hd .dw-p-at {

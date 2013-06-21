@@ -111,10 +111,13 @@ object BrowserPagePatcher {
     var data = Map[String, JsValue](
       "id" -> JsString(post.id.toString),
       "cdati" -> JsString(toIso8601T(post.creationDati)),
-      "approved" -> JsBoolean(post.someVersionApproved),
       "html" -> JsString(serializedThread.htmlNodes.foldLeft("") {
         (html, htmlNode) => html + lw.Html5.toString(htmlNode)
       }))
+
+    post.lastApprovalType.foreach { approval =>
+      data += "approval" -> JsString(approval.toString)
+    }
 
     if (post.parentId != post.id) {
       data += "parentThreadId" -> JsString(post.parentId.toString)
