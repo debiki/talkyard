@@ -33,28 +33,9 @@ import Utils.{OkHtml, OkXml}
 
 
 
-/** Miscellaneous controller functions, including view-post, flag & delete comment.
+/** Miscellaneous controller functions, including rate, flag and delete comment.
   */
 object Application extends mvc.Controller {
-
-
-  def showActionLinks(pathIn: PagePath, postId: ActionId) =
-    PageGetAction(pathIn) { pageReq =>
-      val links = Utils.formHtml(pageReq).actLinks(postId)
-      OkHtml(links)
-    }
-
-
-  def viewPost(pathIn: PagePath) = PageGetAction(pathIn) {
-        pageReq =>
-    val pageInfoYaml = pageReq.user.isEmpty ? "" | buildPageInfoYaml(pageReq)
-    // If not logged in, then include an empty Yaml tag, so the browser
-    // notices that it got that elem, and won't call GET ?page-info.
-    val infoNode = <pre class='dw-data-yaml'>{pageInfoYaml}</pre>
-    val pageHtml =
-      pageReq.dao.renderTemplate(pageReq, appendToBody = infoNode)
-    Ok(pageHtml) as HTML
-  }
 
 
   /**
@@ -204,69 +185,6 @@ object Application extends mvc.Controller {
       pathsAndPages)
 
     OkXml(feedXml, "application/atom+xml")
-  }
-
-
-  /**
-   * Lists e.g. all posts and ratings by a certain user, on a page.
-   *
-   * Initially, on page load, all (?) this info is already implicitly included
-   * in the html sent by the server, e.g. the user's own posts are highlighted.
-   * However, the user might logout and login, without refreshing the page,
-   * so we need a way for the browser to fetch authorship info
-   * dynamically.
-   */
-  // COULD rename to listUserPageData?
-  def showPageInfo(pathIn: PagePath) = PageGetAction(pathIn) { pageReq =>
-    if (!pageReq.request.rawQueryString.contains("&user=me"))
-      throwBadReq("DwE0GdZ22", "Right now you need to specify ``&user=me''.")
-    val yaml = buildPageInfoYaml(pageReq)
-    Ok(yaml)
-  }
-
-
-  // COULD move to separate file? What file? DebikiYaml.scala?
-  def buildPageInfoYaml(pageReq: PageRequest[_]): String = {
-    import pageReq.{permsOnPage => perms}
-    val page = pageReq.page_!
-    val my = pageReq.user_!
-    val reply = new StringBuilder
-
-    // List permissions.
-    reply ++=
-       "\npermsOnPage:" ++=
-       "\n accessPage: " ++= perms.accessPage.toString ++=
-       "\n createPage: " ++= perms.createPage.toString ++=
-       "\n moveRenamePage: " ++= perms.moveRenamePage.toString ++=
-       "\n hidePageIdInUrl: " ++= perms.hidePageIdInUrl.toString ++=
-       "\n editPageTemplate: " ++= perms.editPageTemplate.toString ++=
-       "\n editPage: " ++= perms.editPage.toString ++=
-       "\n editAnyReply: " ++= perms.editAnyReply.toString ++=
-       "\n editGuestReply: " ++= perms.editUnauReply.toString ++=
-       "\n collapseThings: " ++= perms.collapseThings.toString ++=
-       "\n deleteAnyReply: " ++= perms.deleteAnyReply.toString
-
-    // List posts by this user, so they can be highlighted.
-    reply ++= "\nauthorOf:"
-    for (post <- page.postsByUser(withId = my.id)) {
-      reply ++= s"\n - ${post.id}"
-    }
-
-    // List the user's ratings so they can be highlighted so the user
-    // won't rate the same post again and again and again each day.
-    // COULD list only the very last rating per post (currently all old
-    // overwritten ratings are included).
-    reply ++= "\nratings:"
-    for (rating <- page.ratingsByUser(withId = my.id)) {
-      reply ++= s"\n ${rating.postId}: [" ++=
-         rating.tags.mkString(",") ++= "]"
-    }
-
-    // (COULD include HTML for any notifications to the user.
-    // Not really related to the current page only though.)
-    // reply ++= "\nnotfs: ..."
-
-    reply.toString
   }
 
 
