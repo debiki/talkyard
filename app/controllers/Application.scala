@@ -38,24 +38,6 @@ import Utils.{OkHtml, OkXml}
 object Application extends mvc.Controller {
 
 
-  /**
-   * Fallback to "public" so public web proxies caches the assets
-   * and so certain versions of Firefox caches the assets to disk even
-   * if in the future they'll be served over HTTPS.
-   *
-   * Fallback to 1 hour, for now (I change site specific CSS somewhat
-   * infrequently, and might as well disable my browser's cache).
-   * MUST set to 0 or use fingerprinting, before allowing anyone but
-   * me to edit JS and CSS — or they won't understand why their changes
-   * doesn't take effect.
-   *
-   * See: https://developers.google.com/speed/docs/best-practices/caching
-   */
-  val siteSpecificCacheControl =
-    Play.configuration.getString("debiki.site.assets.defaultCache")
-      .getOrElse("public, max-age=3600")
-
-
   def handleRateForm(pathIn: PagePath, postId: ActionId)
         = PagePostAction(maxUrlEncFormBytes = 1000)(pathIn) { pageReq =>
 
@@ -63,7 +45,7 @@ object Application extends mvc.Controller {
       pageReq.listSkipEmpty(HtmlForms.Rating.InputNames.Tag)
       .ifEmpty(throwBadReq("DwE84Ef6", "No rating tags"))
 
-    var rating = Rating(
+    val rating = Rating(
       id = PageParts.UnassignedId, postId = postId, ctime = pageReq.ctime,
       loginId = pageReq.loginId_!, userId = pageReq.user_!.id, newIp = pageReq.newIp,
       // COULD use a Seq not a List, and get rid of the conversion
