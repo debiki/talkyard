@@ -88,7 +88,10 @@ class Debiki {
   //                        heroku-play-bonecp-connection-issues/15500442#15500442
   private def getPostgreSqlDataSource(): javax.sql.DataSource = {
 
-    def configPrefix = if (Play.isTest) "test." else ""
+    if (Play.isTest)
+      return p.db.DB.getDataSource("test")
+
+    def configPrefix = ""
 
     def configStr(path: String) =
       Play.configuration.getString(configPrefix + path) getOrElse
