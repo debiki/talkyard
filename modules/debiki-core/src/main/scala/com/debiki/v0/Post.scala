@@ -54,6 +54,20 @@ case class Post(
     else debate.getPost(parentId)
 
 
+  /** Ancestors, starting with the post closest to this post. */
+  def ancestorPosts: List[Post] = {
+    var ancestors: List[Post] = Nil
+    var curPost: Option[Post] = Some(this)
+    while ({
+      curPost = curPost.get.parentPost
+      curPost.nonEmpty
+    }) {
+      ancestors ::= curPost.get
+    }
+    ancestors.reverse
+  }
+
+
   def directApproval = payload.approval
 
 

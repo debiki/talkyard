@@ -20,6 +20,7 @@ package com.debiki.v0
 import org.specs2.mutable._
 import java.{util => ju}
 import PostActionDto.copyCreatePost
+import com.debiki.v0.{PostActionPayload => PAP}
 import Prelude._
 
 
@@ -47,7 +48,7 @@ trait PostTestValues {
   val EmptyPage = PageParts("a")
   val PageWithBody = EmptyPage + rawBody
   val PageWithOneReply = PageWithBody + rawReply_a
-  val PageWithTwoReplies = PageWithOneReply + rawReply_b
+  val PageWithThreeComments = PageWithOneReply + rawReply_b + rawReply_a_a
 
 }
 
@@ -71,7 +72,7 @@ class PostTest extends Specification with PostTestValues {
     }
 
     "find its siblings" >> {
-      PageWithTwoReplies.getPost_!(rawReply_a.id).siblingsAndMe must beLike {
+      PageWithThreeComments.getPost_!(rawReply_a.id).siblingsAndMe must beLike {
         case List(sibling1, sibling2) =>
           (sibling1.id == rawReply_a.id || sibling1.id == rawReply_b.id
              ) must beTrue
@@ -92,6 +93,14 @@ class PostTest extends Specification with PostTestValues {
       }
     }
 
+    "list ancestors" >> {
+      def ancestorIdsOf(postDto: PostActionDto[PAP.CreatePost]) =
+        PageWithThreeComments.getPost_!(postDto.id).ancestorPosts.map(_.id)
+
+      ancestorIdsOf(rawBody) must_== Nil
+      ancestorIdsOf(rawReply_a) must_== List(rawBody.id)
+      ancestorIdsOf(rawReply_a_a) must_== List(rawReply_a.id, rawBody.id)
+    }
   }
 
 }
