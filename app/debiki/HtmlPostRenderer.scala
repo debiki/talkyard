@@ -560,27 +560,22 @@ object HtmlPostRenderer {
     if (post.currentVersionApproved)
       return Nil
 
-    val AnyNotfEmailSentLater = "Any notification email won't be sent " +
-      "to the one you replied to, until a moderator has had a look."
-
     val text =
       if (post.someVersionApproved) {
         if (post.currentVersionRejected) {
           "Edits rejected: a moderator refused to approve the edits."
-        }
-        else if (post.currentVersionPrelApproved) {
-          "Edits preliminarily approved by me, the computer. " + AnyNotfEmailSentLater
         }
         else {
           "Edits pending approval."
         }
       }
       else {
+        // 1. This must be a new (possibly edited) comment, or a new page, since no
+        // previous version has been approved.
+        // 2. Use the word "Text" not "Comment" because this might be a page title
+        // or a blog post article (need not be a comment).
         if (post.currentVersionRejected) {
           "Text rejected: a moderator refused to approve it."
-        }
-        else if (post.currentVersionPrelApproved) {
-          "Text preliminarily approved by me, the computer. " + AnyNotfEmailSentLater
         }
         else {
           "Text pending approval."
