@@ -481,15 +481,20 @@ case class Post(
 
   /** If this post has been reviewed by a moderator or in some cases a well
     * behaved user, it is considered permanently reviewed.
+    * (Rejections are permanent, and all approvals except for Approval.Preliminary.)
     */
   def currentVersionPermReviewed: Boolean =
-    currentVersionReviewed && lastApprovalType.map(_.isPermanent) == Some(true)
+    currentVersionReviewed && !currentVersionPrelApproved
+
+
+  def currentVersionPermApproved: Boolean =
+    currentVersionApproved && lastApprovalType.get.isPermanent
 
 
   /** Has the computer preliminarily approved this post, or the last few edits?
     */
   def currentVersionPrelApproved: Boolean =
-    currentVersionReviewed && lastApprovalType == Some(Approval.Preliminary)
+    currentVersionApproved && lastApprovalType == Some(Approval.Preliminary)
 
 
   def currentVersionApproved: Boolean =
