@@ -38,25 +38,28 @@ import Prelude._
   */
 class PagePartsDeletionTest extends FreeSpec with MustMatchers {
 
+  var postId = 1001
+  def nextId() = { postId += 1 ; postId }
+
   private def time(when: Int) = new ju.Date(when)
 
-  val gp = PostActionDto.forNewPost("gp", creationDati = time(100),
+  val gp = PostActionDto.forNewPost(1001, creationDati = time(100),
     loginId = SystemUser.Login.id, userId = SystemUser.User.id, newIp = None,
-    parentPostId = "gp", text = "gp-text", markup = Markup.DefaultForComments.id,
+    parentPostId = 1001, text = "gp-text", markup = Markup.DefaultForComments.id,
     approval = Some(Approval.AuthoritativeUser))
 
-  val p = copyCreatePost(gp, id = "p", parentPostId = "gp", text = "p-text")
-  val c = copyCreatePost(gp, id = "c", parentPostId = "p", text = "c-text")
+  val p = copyCreatePost(gp, id = nextId(), parentPostId = gp.id, text = "p-text")
+  val c = copyCreatePost(gp, id = nextId(), parentPostId = p.id, text = "c-text")
 
-  val d = copyCreatePost(gp, id = "d", parentPostId = "gp", text = "d-text")
-  val e = copyCreatePost(gp, id = "e", parentPostId = "gp", text = "e-text")
+  val d = copyCreatePost(gp, id = nextId(), parentPostId = gp.id, text = "d-text")
+  val e = copyCreatePost(gp, id = nextId(), parentPostId = gp.id, text = "e-text")
 
   val delete_p_tree = PostActionDto(
-    "delete_p_tree", creationDati = time(101), postId = "p",
+    nextId(), creationDati = time(101), postId = p.id,
       loginId = SystemUser.Login.id, userId = SystemUser.User.id, newIp = None,
       payload = PAP.DeleteTree)
 
-  val delete_d = delete_p_tree.copy(id = "delete_d", postId = "d", payload = PAP.DeletePost)
+  val delete_d = delete_p_tree.copy(id = nextId(), postId = d.id, payload = PAP.DeletePost)
 
   val pageNoDeletes =
     PageParts("pnd", actionDtos = gp::p::c::d::e::Nil)

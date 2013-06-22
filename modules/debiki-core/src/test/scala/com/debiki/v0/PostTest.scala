@@ -31,17 +31,18 @@ object PostTestValues extends PostTestValues
 trait PostTestValues {
 
   val postSkeleton =
-    PostActionDto(id = "?", postId = "?", creationDati = new ju.Date(1000),
+    PostActionDto(id = 101, postId = 101, creationDati = new ju.Date(1000),
       loginId = "101", userId = "?", newIp = None,
       payload = PostActionPayload.CreatePost(
-        parentPostId = "?",
+        parentPostId = 101,
         text = "text-text-text",
         markup = "",
         approval = None))
 
   val rawBody = copyCreatePost(postSkeleton, id = PageParts.BodyId, parentPostId = PageParts.BodyId)
-  val rawReply_a = copyCreatePost(postSkeleton, id = "a", parentPostId = rawBody.id)
-  val rawReply_b = copyCreatePost(postSkeleton, id = "b", parentPostId = rawBody.id)
+  val rawReply_a = copyCreatePost(postSkeleton, id = 102, parentPostId = rawBody.id)
+  val rawReply_b = copyCreatePost(postSkeleton, id = 103, parentPostId = rawBody.id)
+  val rawReply_a_a = copyCreatePost(postSkeleton, id = 104, parentPostId = rawReply_a.id)
 
   val EmptyPage = PageParts("a")
   val PageWithBody = EmptyPage + rawBody

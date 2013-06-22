@@ -57,18 +57,18 @@ object Util {
   }
 
   val post = PostActionDto(
-    id = "Ca", postId = "Ca", creationDati = new ju.Date, loginId = "?", userId = "?",
-    newIp = None, payload = PostActionPayload.CreatePost(parentPostId = "0",
+    id = 1001, postId = 1001, creationDati = new ju.Date, loginId = "?", userId = "?",
+    newIp = None, payload = PostActionPayload.CreatePost(parentPostId = 1000,
       text = "test", markup = "", approval = Some(Approval.WellBehavedUser)))
 
   val debate = PageParts("test", actionDtos = post::Nil)
 
   val rating_interesting =
-        Rating(id = "?", postId = post.id, loginId = "?", userId = "?", ctime = new ju.Date,
+        Rating(id = 1002, postId = post.id, loginId = "?", userId = "?", ctime = new ju.Date,
                newIp = None, tags = List("interesting"))
 
   val rating_stupid =
-        Rating(id = "?", postId = post.id, loginId = "?", userId = "?", ctime = new ju.Date,
+        Rating(id = 1003, postId = post.id, loginId = "?", userId = "?", ctime = new ju.Date,
                newIp = None, tags = List("stupid"))
 
 }

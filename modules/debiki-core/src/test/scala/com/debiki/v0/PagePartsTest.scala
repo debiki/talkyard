@@ -56,43 +56,43 @@ trait PageTestValues {
     copyCreatePost(bodySkeleton, approval = Some(Approval.Preliminary))
 
   val bodyApprovalSkeleton = PostActionDto.toReviewPost(
-    "11", postId = bodySkeleton.id, loginId = "111", userId = "?", newIp = None,
+    11, postId = bodySkeleton.id, loginId = "111", userId = "?", newIp = None,
         ctime = new ju.Date(11000), approval = Some(Approval.Manual))
 
   val bodyRejectionSkeleton = copyReviewPost(bodyApprovalSkeleton, approval = None)
 
   val editSkeleton =
     PostActionDto.toEditPost(
-        id = "12", postId = bodySkeleton.id, ctime = new ju.Date(12000),
+        id = 12, postId = bodySkeleton.id, ctime = new ju.Date(12000),
         loginId = "112", userId = "?", newIp = None,
         text = makePatch(from = textInitially, to = textAfterFirstEdit),
         newMarkup = None, approval = None, autoApplied = false)
 
   def deletionOfEdit =
-    PostActionDto(id = "13", postId = editSkeleton.postId,
+    PostActionDto(id = 13, postId = editSkeleton.postId,
       loginId = "113", userId = "?", newIp = None, creationDati = new ju.Date(13000),
       payload = PAP.Delete(editSkeleton.id))
 
   val editAppSkeleton =
-    EditApp(id = "14", editId = editSkeleton.id, postId = editSkeleton.postId,
+    EditApp(id = 14, editId = editSkeleton.id, postId = editSkeleton.postId,
       loginId = "114", userId = "?", newIp = None, ctime = new ju.Date(14000),
       approval = None, result = "ignored")
 
   val deletionOfEditApp =
-    PostActionDto(id = "15", postId = editAppSkeleton.postId,
+    PostActionDto(id = 15, postId = editAppSkeleton.postId,
         loginId = "115", userId = "?", newIp = None, creationDati = new ju.Date(15000),
         payload = PAP.Delete(editSkeleton.id))
 
-  val approvalOfEditApp = PostActionDto.toReviewPost(id = "16", postId = editAppSkeleton.id,
+  val approvalOfEditApp = PostActionDto.toReviewPost(id = 16, postId = editAppSkeleton.id,
         loginId = "116", userId = "?", newIp = None, ctime = new ju.Date(16000),
         approval = Some(Approval.Manual))
 
   val rejectionOfEditApp = copyReviewPost(approvalOfEditApp, approval = None)
 
-  val ratingOfBody = Rating("17", postId = bodySkeleton.id, loginId = "117", userId = "?",
+  val ratingOfBody = Rating(17, postId = bodySkeleton.id, loginId = "117", userId = "?",
     newIp = None, ctime = new ju.Date(17000), tags = Nil)
 
-  val flagOfBody = Flag("18", postId = bodySkeleton.id, loginId = "118", userId = "?",
+  val flagOfBody = Flag(18, postId = bodySkeleton.id, loginId = "118", userId = "?",
     newIp = None, ctime = new ju.Date(18000), reason = FlagReason.Spam,
     details = "")
 
@@ -150,6 +150,7 @@ class PagePartsTest extends Specification with PageTestValues {
     "have a body" >> {
       "unapproved" in {
         val page = EmptyPage + bodySkeleton
+        page.body_!.directApproval must_== None
         page.body_!.currentVersionReviewed must_== false
         page.body_!.currentVersionRejected must_== false
         page.body_!.currentVersionApproved must_== false
@@ -182,7 +183,7 @@ class PagePartsTest extends Specification with PageTestValues {
         page.body_!.initiallyApproved must_== true
         page.body_!.lastPermanentApprovalDati must_== None
         page.body_!.lastApprovalDati must_== Some(page.body_!.creationDati)
-        page.body_!.lastApprovalType must_== page.body_!.approval
+        page.body_!.lastApprovalType must_== page.body_!.directApproval
         page.body_!.lastApprovalDati must_== Some(bodySkeleton.ctime)
         page.body_!.lastManualApprovalDati must_== None
         page.body_!.currentText must_== textInitially
