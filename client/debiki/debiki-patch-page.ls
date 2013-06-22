@@ -111,7 +111,8 @@ patchPostWith = (postPatch, { onPage, result }) ->
             'lower right corner of this comment, to view all suggections.',
         $oldPost)
 
-  unless isEditPatch && !postPatch.isEditApplied
+  shallReplacePost = !isEditPatch || postPatch.isEditApplied
+  if shallReplacePost
     $newPost.addClass 'dw-m-t-new'
     replaceOldWith $newPost, onPage: pageId
 
@@ -122,8 +123,12 @@ patchPostWith = (postPatch, { onPage, result }) ->
     $newThread.dwFindPosts!.each d.i.SVG.$drawParents
 
   $oldActions.replaceWith $newActions
-  d.i.bindActionLinksForSinglePost $newPost[0]
-  d.i.showAllowedActionsOnly $newPost[0]
+
+  editedPost =
+    if shallReplacePost then $newPost[0] else $oldPost[0]
+
+  d.i.bindActionLinksForSinglePost editedPost
+  d.i.showAllowedActionsOnly editedPost
 
   result.patchedPosts.push $newThread
 

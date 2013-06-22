@@ -184,23 +184,24 @@ case class BrowserPagePatcher(request: DebikiRequest[_], showUnapproved: Boolean
   }
 
 
+  /** Only edits that have been applied are included. — Unapproved (but applied)
+    * edits *are* included.
+    */
   private def _jsonForEditedPost(editId: ActionId, page: PageParts): JsPatch = {
     val edit = page.getPatch_!(editId)
 
-    // Include HTML only if the edit was applied. (Otherwise I don't know
-    // how to handle subsequent edits, since they would be based on an edit
-    // that was never applied, that is, on a future version of the post
-    // that will perhaps never exist.)
-    val (jsHeadAndBodyHtml, jsActionsHtml) =
-      if (edit.isApplied) {
+    // Even if the edit hasn't been applied, generate new HTML anyway, because
+    // an unapplied edit suggestion does affect the action list, i.e. `jsActionsHtml`
+    // below: a pen icon with num-pending-suggestions might appear.
+    val (jsHeadAndBodyHtml, jsActionsHtml) = {
         val pageStats = new PageStats(page, PageTrust(page))
-        val renderer = HtmlPostRenderer(page, pageStats, hostAndPort = request.host)
+        val renderer = HtmlPostRenderer(page, pageStats, hostAndPort = request.host,
+          showUnapproved = showUnapproved)
         val renderedPost = renderer.renderPost(edit.post_!.id, uncollapse = true)
         val headAndBodyHtml = lw.Html5.toString(renderedPost.headAndBodyHtml)
         val actionsHtml = lw.Html5.toString(renderedPost.actionsHtml)
         (JsString(headAndBodyHtml), JsString(actionsHtml))
       }
-      else (JsUndefined(""), JsUndefined(""))
 
     Map(
       "postId" -> JsString(edit.post_!.id.toString),
