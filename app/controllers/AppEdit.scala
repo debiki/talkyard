@@ -31,7 +31,7 @@ import PageActions._
 import ApiActions._
 import Prelude._
 import v0.{PostActionPayload => PAP}
-import Utils.{OkHtml, Passhasher, parseIntOrThrowBadReq}
+import Utils.{OkSafeJson, OkHtml, Passhasher, parseIntOrThrowBadReq}
 
 
 /** Edits pages. And lazily saves new unsaved pages "created" by AppCreatePage.
@@ -268,7 +268,11 @@ object AppEdit extends mvc.Controller {
       editIdsAndPages ::= (idsOfEditedPosts, page)
     }
 
-    BrowserPagePatcher.jsonForMyEditedPosts(editIdsAndPages, request)
+    // Show the unapproved version of this post, so any applied edits are included.
+    // (An edit suggestion, however, won't be included, until it's been applied.)
+    OkSafeJson(
+      BrowserPagePatcher(request, showUnapproved = true)
+        .jsonForMyEditedPosts(editIdsAndPages))
   }
 
 

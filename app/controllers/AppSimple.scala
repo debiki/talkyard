@@ -18,6 +18,7 @@
 package controllers
 
 import com.debiki.v0._
+import controllers.Utils.OkSafeJson
 import debiki._
 import debiki.DebikiHttp._
 import java.{util => ju}
@@ -90,7 +91,9 @@ object AppSimple extends mvc.Controller {
       pagesAndPatchSpecs ::= (page, postIdsToLoad)
     }
 
-    BrowserPagePatcher.jsonForThreadsAndPosts(pagesAndPatchSpecs, apiReq)
+    OkSafeJson(
+      BrowserPagePatcher(apiReq, showUnapproved = false)
+        .jsonForThreadsAndPosts(pagesAndPatchSpecs))
   }
 
 
@@ -126,7 +129,9 @@ object AppSimple extends mvc.Controller {
       pagesAndPatchSpecs ::= (pageWithNewActions.parts, patchSpecs)
     }
 
-    BrowserPagePatcher.jsonForThreadsAndPosts(pagesAndPatchSpecs, apiReq)
+    OkSafeJson(
+      BrowserPagePatcher(apiReq, showUnapproved = false)
+        .jsonForThreadsAndPosts(pagesAndPatchSpecs))
   }
 
 }

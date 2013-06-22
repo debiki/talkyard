@@ -19,6 +19,7 @@ package controllers
 
 import com.debiki.v0
 import com.debiki.v0._
+import controllers.Utils.OkSafeJson
 import debiki._
 import debiki.DebikiHttp._
 import play.api._
@@ -74,19 +75,15 @@ object AppReply extends mvc.Controller {
     val (pageWithNewPost, List(postWithId: PostActionDto[PAP.CreatePost])) =
       pageReq.dao.savePageActionsGenNotfs(pageReq, postNoId::Nil)
 
-    // Only approved parts of a page are rendered. Therefore, temporarily approve
-    // the new post, for now, when rendering it and sending it back to the user.
-    var partsWithApproval = pageWithNewPost.parts
-    if (approval.isEmpty)
-      partsWithApproval += PostActionDto.forTemporaryApprovalOf(postWithId)
-
     if (pageReq.isAjax) {
       val patchSpec = PostPatchSpec(postWithId.id, wholeThread = true)
-      BrowserPagePatcher.jsonForThreadsAndPosts(
-        List((partsWithApproval, List(patchSpec))), pageReq)
+      OkSafeJson(
+        BrowserPagePatcher(pageReq, showUnapproved = true).
+          jsonForThreadsAndPosts(List((pageWithNewPost.parts, List(patchSpec)))))
     }
-    else
+    else {
       _showHtmlResultPage(pageReq, postWithId)
+    }
   }
 
 

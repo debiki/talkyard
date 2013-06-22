@@ -73,7 +73,7 @@ patchThreadWith = (threadPatch, { onPage, result }) ->
 
   if isNewThread
     $prevThread = d.i.findThread$ threadPatch.prevThreadId
-    $parentThread = d.i.findThread$ threadPatch.parentThreadId
+    $parentThread = d.i.findThread$ threadPatch.ancestorThreadIds[0]
     if $prevThread.length
       insertThread $newThread, after: $prevThread
     else if $parentThread.length

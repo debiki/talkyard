@@ -20,107 +20,142 @@ package debiki
 import com.debiki.v0._
 import com.debiki.v0.{liftweb => lw}
 import controllers._
-import controllers.Utils.OkSafeJson
 import play.api.{mvc => pm}
 import play.api.libs.json._
 import play.api.libs.json.Json.toJson
 import DebikiHttp._
 import Prelude._
 import HtmlPageSerializer.SerializedSingleThread
+import BrowserPagePatcher._
 
 
-/**
- * Makes HTTP replies that describe changes to a page.
- * When a browser gets such a reply, it updates the page.
- * For example, the browser adds a new reply, or updates a comment
- * to show the most recent edits.
- */
+
 object BrowserPagePatcher {
+
+  case class PostPatchSpec(id: ActionId, wholeThread: Boolean)
+
+  type JsPatch = Map[String, JsValue]
+
+}
+
+
+
+/** Builds JSON that describe changes to a page.
+  *
+  * This JSON is then sent to the browser, which uses it to update parts of the page.
+  * For example, it adds a new reply, or updates a comment
+  * to show the most recent edits.
+  *
+  * @param showUnapproved If comments that are pending approval should be shown.
+  */
+case class BrowserPagePatcher(request: DebikiRequest[_], showUnapproved: Boolean) {
 
   implicit private val logger = play.api.Logger(this.getClass)
 
 
-  case class PostPatchSpec(id: ActionId, wholeThread: Boolean)
+  type JsPatchesByPageId = Map[String, List[JsPatch]]
+  def newJsPatchesByPageId() = Map[String, List[JsPatch]]()
 
 
-  def jsonForThreadsAndPosts(
-        pagesAndPatchSpecs: List[(PageParts, List[PostPatchSpec])],
-        request: DebikiRequest[_]): pm.PlainResult = {
+  def jsonForThreadPatches(page: PageParts, threadIds: Seq[ActionId]): List[JsPatch] = {
+    val threadSpecs = threadIds.map(id => PostPatchSpec(id, wholeThread = true))
+    val (threadPatches, _) = makeThreadAndPostPatchesSinglePage(page, threadSpecs)
+    threadPatches
+  }
 
-    var threadPatchesByPageId = Map[String, List[Map[String, JsValue]]]()
-    var postPatchesByPageId   = Map[String, List[Map[String, JsValue]]]()
+
+  def jsonForThreadsAndPosts(pagesAndPatchSpecs: List[(PageParts, List[PostPatchSpec])])
+        : JsValue = {
+    val (threadPatchesByPageId, postPatchesByPageId) =
+      jsonForThreadsAndPostsImpl(pagesAndPatchSpecs)
+    toJson(Map(
+      "threadsByPageId" -> threadPatchesByPageId,
+      "postsByPageId" -> postPatchesByPageId))
+  }
+
+
+  private def jsonForThreadsAndPostsImpl(
+        pagesAndPatchSpecs: List[(PageParts,  List[PostPatchSpec])])
+        : (JsPatchesByPageId, JsPatchesByPageId) = {
+
+    var threadPatchesByPageId = newJsPatchesByPageId()
+    var postPatchesByPageId = newJsPatchesByPageId()
+
+    for ((page, patchSpecs) <- pagesAndPatchSpecs) {
+
+      val (threadPatchesOnCurPage, postPatchesOnCurPage) =
+        makeThreadAndPostPatchesSinglePage(page, patchSpecs)
+
+      threadPatchesByPageId += page.id -> threadPatchesOnCurPage
+      postPatchesByPageId += page.id -> postPatchesOnCurPage
+    }
+
+    (threadPatchesByPageId, postPatchesByPageId)
+  }
+
+
+  /** COULD fix: Currently includes a thread T twice, if patchSpecs mentions
+    * both T and one of its ancestors.
+    */
+  private def makeThreadAndPostPatchesSinglePage(page: PageParts, patchSpecs: Seq[PostPatchSpec])
+        : (List[JsPatch],  List[JsPatch]) = {
 
     val pageRoot = request match {
       case p: PageRequest[_] => p.pageRoot
       case _ => PageRoot.TheBody
     }
 
-    for ((page, postPatchRequests) <- pagesAndPatchSpecs) {
+    val serializer = HtmlPageSerializer(
+      page, PageTrust(page), pageRoot, DebikiHttp.newUrlConfig(request.host),
+      showUnapproved = showUnapproved)
 
-      val serializer = HtmlPageSerializer(
-        page, PageTrust(page), pageRoot, DebikiHttp.newUrlConfig(request.host))
+    var threadPatches = List[JsPatch]()
+    var postPatches = List[JsPatch]()
 
-      var threadPatchesOnCurPage = List[Map[String, JsValue]]()
-      var postPatchesOnCurPage   = List[Map[String, JsValue]]()
-
-      for (PostPatchSpec(postId, wholeThread) <- postPatchRequests) {
-        if (wholeThread) {
-          val serializedThread = serializer.renderSingleThread(postId) getOrElse
-            logAndThrowInternalError(
-              "DwE573R2", s"Post not found, id: $postId, page: ${page.id}")
-          threadPatchesOnCurPage ::=
-            _jsonForThread(page.getPost_!(postId), serializedThread)
-        }
-        else {
-          postPatchesOnCurPage ::=
-            jsonForPost(page.getPost_!(postId), request)
-        }
+    for (PostPatchSpec(postId, wholeThread) <- patchSpecs) {
+      if (wholeThread) {
+        val serializedThread = serializer.renderSingleThread(postId) getOrElse
+          logAndThrowInternalError(
+            "DwE573R2", s"Post not found, id: $postId, page: ${page.id}")
+        threadPatches ::=
+          _jsonForThread(page.getPost_!(postId), serializedThread)
       }
-
-      threadPatchesByPageId += page.id -> threadPatchesOnCurPage
-      postPatchesByPageId += page.id -> postPatchesOnCurPage
+      else {
+        postPatches ::=
+          jsonForPost(page.getPost_!(postId))
+      }
     }
 
-    OkSafeJson(toJson(Map(
-      "threadsByPageId" -> threadPatchesByPageId,
-      "postsByPageId" -> postPatchesByPageId)))
+    (threadPatches, postPatches)
   }
 
 
-  def jsonForMyEditedPosts(editIdsAndPages: List[(List[ActionId], PageParts)],
-        request: DebikiRequest[_]): pm.PlainResult = {
+  def jsonForMyEditedPosts(editIdsAndPages: List[(List[ActionId], PageParts)]): JsValue = {
 
-    var patchesByPageId = Map[String, List[Map[String, JsValue]]]()
+    var patchesByPageId = newJsPatchesByPageId()
 
     for ((editIds: List[ActionId], page: PageParts) <- editIdsAndPages) {
-
       val patchesOnCurPage = for (editId <- editIds) yield {
-        _jsonForEditedPost(editId, page, request)
+        _jsonForEditedPost(editId, page)
       }
-
       patchesByPageId += page.pageId -> patchesOnCurPage
     }
 
-    OkSafeJson(toJson(Map(
-      "postsByPageId" -> patchesByPageId)))
+    toJson(Map("postsByPageId" -> patchesByPageId))
   }
 
 
-  private def _jsonForThread(post: Post, serializedThread: SerializedSingleThread)
-        : Map[String, JsValue] = {
+  private def _jsonForThread(post: Post, serializedThread: SerializedSingleThread): JsPatch = {
     var data = Map[String, JsValue](
       "id" -> JsString(post.id.toString),
       "cdati" -> JsString(toIso8601T(post.creationDati)),
+      "ancestorThreadIds" -> toJson(post.ancestorPosts.map(_.id)),
       "html" -> JsString(serializedThread.htmlNodes.foldLeft("") {
         (html, htmlNode) => html + lw.Html5.toString(htmlNode)
       }))
 
     post.lastApprovalType.foreach { approval =>
       data += "approval" -> JsString(approval.toString)
-    }
-
-    if (post.parentId != post.id) {
-      data += "parentThreadId" -> JsString(post.parentId.toString)
     }
 
     serializedThread.prevSiblingId.foreach { siblingId =>
@@ -131,11 +166,11 @@ object BrowserPagePatcher {
   }
 
 
-  private def jsonForPost(post: Post, request: DebikiRequest[_])
-        : Map[String, JsValue] = {
+  private def jsonForPost(post: Post): JsPatch = {
     val (headAndBodyHtml, actionsHtml) = {
       val pageStats = new PageStats(post.page, PageTrust(post.page))
-      val renderer = HtmlPostRenderer(post.page, pageStats, hostAndPort = request.host)
+      val renderer = HtmlPostRenderer(post.page, pageStats, hostAndPort = request.host,
+        showUnapproved = showUnapproved)
       val renderedPost = renderer.renderPost(post.id, uncollapse = true)
       val headAndBodyHtml = lw.Html5.toString(renderedPost.headAndBodyHtml)
       val actionsHtml = lw.Html5.toString(renderedPost.actionsHtml)
@@ -149,8 +184,7 @@ object BrowserPagePatcher {
   }
 
 
-  private def _jsonForEditedPost(editId: ActionId, page: PageParts,
-        request: DebikiRequest[_]): Map[String, JsValue] = {
+  private def _jsonForEditedPost(editId: ActionId, page: PageParts): JsPatch = {
     val edit = page.getPatch_!(editId)
 
     // Include HTML only if the edit was applied. (Otherwise I don't know

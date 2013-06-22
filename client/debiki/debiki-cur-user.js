@@ -113,12 +113,12 @@ d.i.makeCurUser = function() {
    * — So the first invokation happens synchronously, subsequent
    * invokations happens asynchronously.
    */
-  function loadAndMarkMyPageInfo() {
+  function loadAndHandleUserPageData() {
     // Avoid a roundtrip by using any json data already inlined on the page.
     // Then delete it because it's only valid on page load.
     var hiddenUserDataTag = $('.dw-user-page-data');
     if (hiddenUserDataTag.length) {
-      parseUserDataMarkActions(hiddenUserDataTag.text());
+      handleUserPageData(hiddenUserDataTag.text());
       hiddenUserDataTag.hide().removeClass('dw-user-page-data');
     }
     else {
@@ -128,14 +128,17 @@ d.i.makeCurUser = function() {
       $.get('?page-info&user=me', 'text')
           .fail(d.i.showServerResponseDialog)  // for now
           .done(function(jsonData) {
-        parseUserDataMarkActions(jsonData);
+        handleUserPageData(jsonData);
       });
     }
 
-    function parseUserDataMarkActions(jsonData) {
-      var pageInfo = JSON.parse(jsonData);
-      setPermsOnPage(pageInfo.permsOnPage || {});
-      markMyActions(pageInfo);
+    function handleUserPageData(jsonData) {
+      var myPageData = JSON.parse(jsonData);
+      setPermsOnPage(myPageData.permsOnPage || {});
+      markMyActions(myPageData);
+      // In `myPageData.threadsByPageId` are any not-yet-approved comments
+      // by the current user. Insert them into the page:
+      d.i.patchPage(myPageData);
     }
 
     function markMyActions(actions) {
@@ -155,7 +158,7 @@ d.i.makeCurUser = function() {
     // Call whenever the SID changes: on page load, on login and logout.
     refreshProps: refreshProps,
     clearMyPageInfo: clearMyPageInfo,
-    loadAndMarkMyPageInfo: loadAndMarkMyPageInfo,
+    loadAndHandleUserPageData: loadAndHandleUserPageData,
     deletePageInfoInServerReply: deletePageInfoInServerReply,
     fireLogin: function() { fireLoginImpl(api); },
     fireLogout: function() { fireLogoutImpl(api); },
@@ -214,7 +217,7 @@ function fireLoginImpl(Me) {
       .trigger('dwEvLoggedInOut', [Me.getName()]);
 
   Me.clearMyPageInfo();
-  Me.loadAndMarkMyPageInfo();
+  Me.loadAndHandleUserPageData();
 
   // Tell the parts of this page that uses AngularJS about the current user.
   d.i.angularApply(function($rootScope) {

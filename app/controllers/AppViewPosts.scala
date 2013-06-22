@@ -21,6 +21,7 @@ import com.debiki.v0._
 import debiki._
 import java.{util => ju, io => jio}
 import play.api._
+import play.api.Play.current
 import play.api.mvc.{Action => _, _}
 import play.api.libs.json.Json.toJson
 import play.api.libs.json._
@@ -105,9 +106,12 @@ object AppViewPosts extends mvc.Controller {
       ownRatingsMap += rating.postId.toString -> toJson(rating.tags)
     }
 
-    //reply ++= "\nmyUnapprovedComments:"
-    //val myPendingPosts =  page.postsByUser(my.id).filter(!_.currentVersionReviewed).map(_.id)
-    // for each post, include jsonForPost, + list of ancestor post ids.
+    // Generate html for any posts-by-this-user that are pending approval. Plus info
+    // on ancestor post ids, so the browser knows where to insert the html.
+    val myPendingPosts =  page.postsByUser(my.id).filter(!_.currentVersionReviewed)
+    val myPendingPostsJsPatches: List[BrowserPagePatcher.JsPatch] =
+      BrowserPagePatcher(pageReq, showUnapproved = true).
+        jsonForThreadPatches(page, myPendingPosts.map(_.id))
 
     // (COULD include HTML for any notifications to the user.
     // Not really related to the current page only though.)
@@ -116,9 +120,16 @@ object AppViewPosts extends mvc.Controller {
     val json = toJson(Map(
       "permsOnPage" -> toJson(permsMap),
       "authorOf" -> toJson(ownPostsIdsList),
-      "ratings" -> toJson(ownRatingsMap)))
+      "ratings" -> toJson(ownRatingsMap),
+      // Suddenly using a by-page-id map is a bit weird, but what debiki-patch-page.ls
+      // currently expects. Could map *everything* in the page id instead?
+      // (Background: This is supposed to work on e.g. pages that lists many blog posts,
+      // i.e. many pages.)
+      "threadsByPageId" -> toJson(Map(
+          page.id -> toJson(myPendingPostsJsPatches)))))
 
-    Json.stringify(json)
+    if (Play.isDev) Json.prettyPrint(json)
+    else Json.stringify(json)
   }
 
 }

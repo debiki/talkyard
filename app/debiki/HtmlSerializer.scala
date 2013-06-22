@@ -92,8 +92,8 @@ object HtmlPageSerializer {
 
 
   // COULD move to HtmlPostSerializer.
-  def _markupTextOf(post: Post, hostAndPort: String, nofollowArticle: Boolean = true)
-        : (NodeSeq, Int) = {
+  def _markupTextOf(post: Post, hostAndPort: String, nofollowArticle: Boolean = true,
+        showUnapproved: Boolean = false): (NodeSeq, Int) = {
 
     val isArticle = post.id == PageParts.BodyId
 
@@ -103,33 +103,35 @@ object HtmlPageSerializer {
     val makeNofollowLinks =
       !isArticeOrArticleQuestion || (nofollowArticle && post.id == PageParts.BodyId)
 
-    if (post.approvedText.isEmpty)
-      return (Nil, 0)
 
-    def approvedText: String = post.approvedText.get
+    val text: String =
+      if (showUnapproved) post.currentText
+      else post.approvedText getOrElse {
+        return (Nil, 0)
+      }
 
     post.markup match {
       case "dmd0" =>
         // Debiki flavored markdown.
         val html = markdownToSafeHtml(
-          approvedText, hostAndPort, allowClassIdDataAttrs = isArticle, makeNofollowLinks)
+          text, hostAndPort, allowClassIdDataAttrs = isArticle, makeNofollowLinks)
         (html, -1)
       case "para" =>
-        textToHtml(approvedText)
+        textToHtml(text)
       /*
     case "link" =>
-      textToHtml(approvedText) and linkify-url:s, w/ rel=nofollow)
+      textToHtml(text) and linkify-url:s, w/ rel=nofollow)
     case "img" =>
       // Like "link", but also accept <img> tags and <pre>.
       // But nothing that makes text stand out, e.g. skip <h1>, <section>.
       */
       case "html" =>
         val cleanHtml = sanitizeHtml(
-          approvedText, allowClassIdDataAttrs = isArticle, makeNofollowLinks)
+          text, allowClassIdDataAttrs = isArticle, makeNofollowLinks)
         (cleanHtml, -1)
       case "code" =>
-        (<pre class='prettyprint'>{approvedText}</pre>,
-           approvedText.count(_ == '\n'))
+        (<pre class='prettyprint'>{text}</pre>,
+           text.count(_ == '\n'))
       /*
     case c if c startsWith "code" =>
       // Wrap the text in:
@@ -140,7 +142,7 @@ object HtmlPageSerializer {
       // Works with: http://code.google.com/p/google-code-prettify/
       var lang = c.dropWhile(_ != '-')
       if (lang nonEmpty) lang = " lang"+lang  ; UN TESTED // if nonEmpty
-      (<pre class={"prettyprint"+ lang}>{approvedText}</pre>,
+      (<pre class={"prettyprint"+ lang}>{text}</pre>,
         post.text.count(_ == '\n'))
       // COULD include google-code-prettify js and css, and
       // onload="prettyPrint()".
@@ -150,7 +152,7 @@ object HtmlPageSerializer {
         // (Later: update database, change null/'' to "dmd0" for the page body,
         // change to "para" for everything else.
         // Then warnDbgDie-default to "para" here not "dmd0".)
-        (markdownToSafeHtml(approvedText, hostAndPort,
+        (markdownToSafeHtml(text, hostAndPort,
           allowClassIdDataAttrs = isArticle, makeNofollowLinks), -1)
     }
   }
@@ -335,7 +337,8 @@ case class HtmlPageSerializer(
   pageTrust: PageTrust,
   pageRoot: PageRoot,
   config: HtmlConfig,
-  nofollowArticle: Boolean = true) {
+  nofollowArticle: Boolean = true,
+  showUnapproved: Boolean = false) {
 
   import HtmlPageSerializer._
 
@@ -346,7 +349,8 @@ case class HtmlPageSerializer(
 
 
   private def postRenderer =
-    HtmlPostRenderer(page, pageStats, config.hostAndPort, nofollowArticle)
+    HtmlPostRenderer(page, pageStats, config.hostAndPort, nofollowArticle,
+      showUnapproved = showUnapproved)
 
 
   def renderSingleThread(postId: ActionId): Option[SerializedSingleThread] = {
@@ -376,10 +380,16 @@ case class HtmlPageSerializer(
 
     val cssArtclThread =
       if (pageRoot.subId == PageParts.BodyId) " dw-ar-t" else ""
-    val rootPostsReplies = pageRoot.findChildrenIn(page)
-    val approvedReplies = rootPostsReplies.filter(_.someVersionApproved)
+
+    val rootPostsReplies = {
+      val children = pageRoot.findChildrenIn(page)
+      if (showUnapproved) children
+      else children.filter(_.someVersionApproved)
+    }
+
     val rootPost: Post = pageRoot.findOrCreatePostIn(page) getOrElse
        throwNotFound("DwE0PJ404", "Post not found: "+ pageRoot.subId)
+
     val cssDummy =
       if (rootPost.user_!.id == DummyPage.DummyAuthorUser.id) " dw-dummy" else ""
 
@@ -393,7 +403,7 @@ case class HtmlPageSerializer(
           <div class='dw-t-vspace'/>
           <ol class='dw-res'>
             { renderedRoot.actionsHtml.copy(label = "li") }
-            { renderThreads(1, approvedReplies, parentHorizontal = true) }
+            { renderThreads(1, rootPostsReplies, parentHorizontal = true) }
           </ol>
         })
       }
@@ -452,7 +462,9 @@ case class HtmlPageSerializer(
     val isInlineThread = post.where.isDefined
     val isInlineNonRootChild = isInlineThread && depth >= 2
     val cssInlineThread = if (isInlineThread) " dw-i-t" else ""
-    val replies = post.replies.filter(_.someVersionApproved)
+    val replies =
+      if (showUnapproved) post.replies
+      else post.replies.filter(_.someVersionApproved)
     val isTitle = post.id == PageParts.TitleId
     val isRootOrArtclQstn =
           post.id == pageRoot.subId // || post.meta.isArticleQuestion

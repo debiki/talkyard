@@ -51,7 +51,8 @@ case class HtmlPostRenderer(
   page: PageParts,
   pageStats: PageStats,
   hostAndPort: String,
-  nofollowArticle: Boolean = true) {
+  nofollowArticle: Boolean = true,
+  showUnapproved: Boolean = false) {
 
 
   def renderPost(postId: ActionId, uncollapse: Boolean = false): RenderedPost = {
@@ -71,7 +72,7 @@ case class HtmlPostRenderer(
       renderCollapsedComment(post)
     }
     else if (post.id == PageParts.TitleId) {
-      val titleHtml = renderPageTitle(post)
+      val titleHtml = renderPageTitle(post, showUnapproved)
       RenderedPost(titleHtml, actionsHtml = <span></span>, topRatingsText = None)
     }
     else {
@@ -90,7 +91,8 @@ case class HtmlPostRenderer(
         renderPostHeader(post, Some(pageStats))
       }
 
-    val postBody = renderPostBody(post, hostAndPort, nofollowArticle)
+    val postBody = renderPostBody(post, hostAndPort, nofollowArticle,
+      showUnapproved = showUnapproved)
 
     val long = postBody.approxLineCount > 9
     val cutS = if (long) " dw-x-s" else ""
@@ -325,7 +327,7 @@ object HtmlPostRenderer {
   }
 
 
-  def renderPageTitle(titlePost: Post): Node = {
+  def renderPageTitle(titlePost: Post, showUnapproved: Boolean): Node = {
     // The title is a post, itself.
     // Therefore this XML is almost identical to the XML
     // for the post that this title entitles.
@@ -338,7 +340,8 @@ object HtmlPostRenderer {
         <div class='dw-p-bd'>
           <div class='dw-p-bd-blk'>
             <h1 class='dw-p-ttl'>{
-              titlePost.approvedText getOrElse "(Page title not yet approved)"
+              if (showUnapproved) titlePost.currentText
+              else titlePost.approvedText getOrElse "(Page title not yet approved)"
             }</h1>
           </div>
         </div>
@@ -352,12 +355,13 @@ object HtmlPostRenderer {
   def _linkTo(user: User) = HtmlPageSerializer.linkTo(user)
 
 
-  def renderPostBody(post: Post, hostAndPort: String, nofollowArticle: Boolean)
-        : RenderedPostBody = {
+  def renderPostBody(post: Post, hostAndPort: String, nofollowArticle: Boolean,
+        showUnapproved: Boolean): RenderedPostBody = {
     val cssArtclBody = if (post.id != PageParts.BodyId) "" else " dw-ar-p-bd"
     val isBodyOrArtclQstn = post.id == PageParts.BodyId // || post.meta.isArticleQuestion
     val (xmlTextInclTemplCmds, approxLineCount) =
-      HtmlPageSerializer._markupTextOf(post, hostAndPort, nofollowArticle)
+      HtmlPageSerializer._markupTextOf(post, hostAndPort, nofollowArticle,
+        showUnapproved = showUnapproved)
 
     // Find any customized reply button text.
     var replyBtnText: NodeSeq = xml.Text("Reply")
