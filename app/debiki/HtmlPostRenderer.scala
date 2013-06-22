@@ -94,12 +94,17 @@ case class HtmlPostRenderer(
     val postBody = renderPostBody(post, hostAndPort, nofollowArticle,
       showUnapproved = showUnapproved)
 
+    val anyPendingApprovalText: NodeSeq =
+      if (showUnapproved) makePendingApprovalText(post)
+      else Nil
+
     val long = postBody.approxLineCount > 9
     val cutS = if (long) " dw-x-s" else ""
-
     val cssArtclPost = if (post.id != PageParts.BodyId) "" else " dw-ar-p"
+
     val commentHtml =
       <div id={htmlIdOf(post)} class={"dw-p" + cssArtclPost + cutS}>{
+        anyPendingApprovalText ++
         postHeader.html ++
         postBody.html
       }</div>
@@ -548,6 +553,41 @@ object HtmlPostRenderer {
     }
 
     suggestions
+  }
+
+
+  def makePendingApprovalText(post: Post): NodeSeq = {
+    if (post.currentVersionApproved)
+      return Nil
+
+    val AnyNotfEmailSentLater = "Any notification email won't be sent " +
+      "to the one you replied to, until a moderator has had a look."
+
+    val text =
+      if (post.someVersionApproved) {
+        if (post.currentVersionRejected) {
+          "Edits rejected: a moderator refused to approve the edits."
+        }
+        else if (post.currentVersionPrelApproved) {
+          "Edits preliminarily approved by me, the computer. " + AnyNotfEmailSentLater
+        }
+        else {
+          "Edits pending approval."
+        }
+      }
+      else {
+        if (post.currentVersionRejected) {
+          "Text rejected: a moderator refused to approve it."
+        }
+        else if (post.currentVersionPrelApproved) {
+          "Text preliminarily approved by me, the computer. " + AnyNotfEmailSentLater
+        }
+        else {
+          "Text pending approval."
+        }
+      }
+
+    <div class="dw-p-pending-mod">{text}</div>
   }
 
 }

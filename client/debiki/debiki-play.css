@@ -512,11 +512,9 @@ body.dw-u-ui-simple .dw-a-edit { display: none !important; }
 /* --- Post info ---*/
 
 .dw-p-pending-mod {
-  margin-bottom: 1em;
+  margin-bottom: 5px;
   font-style: italic;
   font-weight: bold;
-  font-size: 140%;
-  color: hsl(0, 100%, 30%);  /* dark strong red */
 }
 
 .dw-p-hd .dw-p-at {
