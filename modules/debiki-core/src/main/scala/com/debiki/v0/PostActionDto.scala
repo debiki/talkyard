@@ -200,16 +200,6 @@ object PostActionDto {
       payload = if (approval ne null) PAP.ReviewPost(approval) else old.payload)
 
 
-  def forTemporaryApprovalOf(postAction: PostActionDto[_]) = toReviewPost(
-    id = PageParts.nextRandomActionId,
-    postId = postAction.postId,
-    loginId = SystemUser.Login.id,
-    userId = SystemUser.User.id,
-    newIp = None,
-    ctime = postAction.ctime,
-    approval = Some(Approval.Temporary))
-
-
   def toDeletePost(
         andReplies: Boolean,
         id: ActionId,
