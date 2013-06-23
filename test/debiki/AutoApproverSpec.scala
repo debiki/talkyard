@@ -33,6 +33,8 @@ class AutoApproverSpec extends Specification with Mockito {
   val TenantId = "tenantid"
   val Ip = "1.1.1.1"
   val PageId = "pageid"
+  def now() = new ju.Date()
+
 
   val guestUser = User(
     id = "-guestid",
@@ -51,6 +53,7 @@ class AutoApproverSpec extends Specification with Mockito {
     email = guestUser.email,
     location = guestUser.country,
     website = guestUser.website)
+
 
   val openidUser = User(
     id = "openid",
@@ -74,6 +77,7 @@ class AutoApproverSpec extends Specification with Mockito {
     email = openidUser.email,
     country = openidUser.country)
 
+
   val PlayReq = new Request[Unit] {
     def id = 12345
     def tags = Map.empty
@@ -88,12 +92,14 @@ class AutoApproverSpec extends Specification with Mockito {
     val body = ()
   }
 
+
   val pagePath = PagePath(
      tenantId = TenantId,
      folder = "/",
      pageId = Some(PageId),
      showId = true,
      pageSlug = "page-slug")
+
 
   def pageReq(user: User, identity: Identity)(dao: TenantDao) =
     PageRequest[Unit](
@@ -110,34 +116,58 @@ class AutoApproverSpec extends Specification with Mockito {
   def pageReqOpenId = pageReq(openidUser, openidIdty) _
   def pageReqGuest = pageReq(guestUser, guestIdty) _
 
+
   val quotaConsumers = QuotaConsumers(
     tenantId = TenantId, ip = Some(Ip), roleId = None)
 
   val peopleNoLogins =
-    People() + guestIdty + openidIdty + guestUser + openidUser
+    People() + guestIdty + openidIdty + guestUser + openidUser +
+      SystemUser.Identity + SystemUser.User
 
-  val loginId = "101"
+  val testUserLoginId = "101"
 
-  val body =
+
+  def testUserPageBody(implicit testUserId: String) =
     PostActionDto.forNewPageBody(creationDati = startDati,
-      loginId = loginId, userId = "?", text = "täxt-tåxt",
+      loginId = testUserLoginId, userId = testUserId, text = "täxt-tåxt",
       pageRole = PageRole.Generic, approval = None)
 
-  val replyA = PostActionDto.copyCreatePost(body, id = 2, parentPostId = body.id)
-  val replyB = PostActionDto.copyCreatePost(body, id = 3, parentPostId = body.id)
+  val testUserReplyAId = 2
+  def testUserReplyA(implicit testUserId: String) =
+    PostActionDto.copyCreatePost(testUserPageBody, id = testUserReplyAId,
+      parentPostId = testUserPageBody.id)
+
+  val testUserReplyBId = 3
+  def testUserReplyB(implicit testUserId: String) =
+    PostActionDto.copyCreatePost(testUserPageBody, id = testUserReplyBId,
+      parentPostId = testUserPageBody.id)
+
+  def manyTestUserReplies(num: Int)(implicit testUserId: String)
+        : List[PostActionDto[PAP.CreatePost]] =
+    (101 to (100 + num)).toList map { postId =>
+      PostActionDto.copyCreatePost(testUserPageBody, id = postId,
+        parentPostId = testUserPageBody.id)
+    }
+
+
+  val approvalOfReplyA: PostActionDto[PAP.ReviewPost] = PostActionDto.toReviewPost(
+    id = 10002, postId = testUserReplyAId, loginId = SystemUser.Login.id,
+    userId = SystemUser.Identity.id, ctime = now(), approval = Some(Approval.Manual))
+
 
   val (guestLogin, openidLogin) = {
-    val login = Login(id = loginId, ip = Ip, prevLoginId = None,
+    val login = Login(id = testUserLoginId, ip = Ip, prevLoginId = None,
        date = startDati, identityId = "?")
     (login.copy(identityId = guestIdty.id),
       login.copy(identityId = openidIdty.id))
   }
 
-  def newDaoMock(actionDtos: List[PostActionDto[PAP.CreatePost]], login: Login) = {
+
+  def newDaoMock(actionDtos: List[PostActionDto[_]], login: Login, testUserId: String) = {
 
     val actions: Seq[PostActionOld] = {
       val page = PageParts("pageid") ++ actionDtos
-      actionDtos map (new Post(page, _))
+      page.postsByUser(withId = testUserId)
     }
 
     val people =
@@ -169,25 +199,51 @@ class AutoApproverSpec extends Specification with Mockito {
     }
 
 
-    "approve a user's first comments preliminarily" >> {
+    "approve a guest user's first comments preliminarily" >> {
+
+      implicit val testUserId = guestUser.id
 
       "the first one" >> {
-        AutoApprover.perhapsApprove(pageReqGuest(newDaoMock(
-          Nil, null))) must_== Some(Approval.Preliminary)
+        implicit val testUserId = guestUser.id
+        val dao = newDaoMock(Nil, null, testUserId)
+        AutoApprover.perhapsApprove(pageReqGuest(dao)) must_== Some(Approval.Preliminary)
       }
 
       "the second" >> {
-        // SHOULD prel approve replyA.
-        AutoApprover.perhapsApprove(pageReqGuest(newDaoMock(
-          List(replyA).map(_.copy(userId = guestUser.id)), guestLogin))
-          ) must_== Some(Approval.Preliminary)
+        // This prel approves replyA.
+        val dao = newDaoMock(List(testUserReplyA), guestLogin, testUserId)
+        AutoApprover.perhapsApprove(pageReqGuest(dao)) must_== Some(Approval.Preliminary)
       }
 
       "but not the third one" >> {
-        // SHOULD prel approve replyA and B.
-        AutoApprover.perhapsApprove(pageReqGuest(newDaoMock(
-          List(replyA, replyB).map(_.copy(userId = guestUser.id)), guestLogin))
-          ) must_== None
+        // This prel approves replyA and B.
+        val dao = newDaoMock(List(testUserReplyA, testUserReplyB), guestLogin, testUserId)
+        AutoApprover.perhapsApprove(pageReqGuest(dao)) must_== None
+      }
+
+      "do approve the third comment, when one other comment has been manually approved" >> {
+        val dao = newDaoMock(List(
+          testUserReplyA, testUserReplyB, approvalOfReplyA), guestLogin, testUserId)
+        AutoApprover.perhapsApprove(pageReqGuest(dao)) must_== Some(Approval.Preliminary)
+      }
+
+      "approve up to five comments, when one has been manually approved" >> {
+        // 1 approved comment + 5 unreviewed but prel approved =>
+        //   the next comment should also be prel approved, 5 is not many (if we
+        //   already allow 2 from completely new users).
+        val dao = newDaoMock(List(
+            testUserReplyA, testUserReplyB, approvalOfReplyA) ::: manyTestUserReplies(4),
+          guestLogin, testUserId)
+        AutoApprover.perhapsApprove(pageReqGuest(dao)) must_== Some(Approval.Preliminary)
+      }
+
+      "not approve ten or more comments, when only one has been manually approved" >> {
+        // 1 approved comment + 10 unreviewed but prel approved =>
+        //  the next comment won't be prel approved.
+        val dao = newDaoMock(List(
+          testUserReplyA, testUserReplyB, approvalOfReplyA) ::: manyTestUserReplies(9),
+          guestLogin, testUserId)
+        AutoApprover.perhapsApprove(pageReqGuest(dao)) must_== None
       }
     }
 
