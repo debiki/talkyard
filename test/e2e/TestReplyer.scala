@@ -104,6 +104,16 @@ trait TestReplyer {
   }
 
 
+  override def reloadPage()(implicit driver: org.openqa.selenium.WebDriver) {
+    replyFormSno = 0
+    // I don't know how to call WebBrowser.reloadPage() from here?
+    // self.reloadPage() recurses, and super.reloadPage() -> compilation error.
+    // So I just copied the implementation to here. This is error prone?
+    // In case some other function also override reloadPage().  ??
+    driver.navigate.refresh()
+  }
+
+
   def clickPostReply() {
     eventually {
       click on cssSelector(".dw-fi-submit")
