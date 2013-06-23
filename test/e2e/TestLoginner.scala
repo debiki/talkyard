@@ -29,7 +29,6 @@ trait TestLoginner {
 
 
   private var firstGmailLogin = true
-  val GmailUserEmail = "debiki.tester@gmail.com"
 
   private var adminMadeAdmin = false
 
@@ -102,9 +101,11 @@ trait TestLoginner {
       eventually {
         click on "Email"
       }
-      pressKeys("debiki.tester@gmail.com")
+      val gmailAddr = debiki.Utils.getConfigStringOrDie("debiki.test.gmail.address")
+      val gmailPswd = debiki.Utils.getConfigStringOrDie("debiki.test.gmail.password")
+      pressKeys(gmailAddr)
       click on "Passwd"
-      pressKeys("ZKFIREK90krI38bk3WK1r0")
+      pressKeys(gmailPswd)
       click on "signIn"
     }
 
