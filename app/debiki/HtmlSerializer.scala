@@ -440,6 +440,9 @@ case class HtmlPageSerializer(
     // wrap any posts in <ol>:s, with .dw-ts or .dw-i-ts CSS classes
     // — this would reduce dupl wrapping code.
 
+    // COULD change this to a bredth first search for the 100 most interesting
+    // comments, and rename this function to `findSomeInterestingComments'.
+
     var threads: NodeSeq = Nil
     for {
       post <- _sortPostsDescFitness(posts)
