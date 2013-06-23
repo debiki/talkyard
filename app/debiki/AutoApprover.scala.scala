@@ -29,10 +29,12 @@ import Prelude._
  */
 object AutoApprover {
 
-  private[debiki] val RecentActionsLimit = 15
+  private[debiki] val RecentActionsLimit = 20
 
   val NumFirstCommentsToPrelApprove = 2
-  val TooManyUnreviewedComments = 10
+
+  // Used when computing max num pending comments, given num comments approved so far.
+  val InvLogDivisor = 1.0 / math.log(1.1)
 
 
   def perhapsApproveNewPage(
@@ -151,6 +153,8 @@ object AutoApprover {
       post = action.asInstanceOf[Post]
     } {
       // If any recent post has been rejected, don't auto approve.
+      // ??? But I should verify that any edits were made by the current user ???
+      // (What if it's a wiki page, and someone else spoiled the comment.)
       if (post.currentVersionRejected)
         return None
 
@@ -159,25 +163,19 @@ object AutoApprover {
       else unreviewedCount += 1
     }
 
+    // Prel approve really many comments, if a few comments by this user and IP have
+    // been manually approved already. But use the `log` function to restrict
+    // the max num comments we prel approve.
+    val maxNumPendingReview =
+      2 + math.log1p(manuallyApprovedCount) * InvLogDivisor
+
     // If there are too many outstanding unreviewed comments, don't approve.
     // (Even if all your comments that've been reviewed have actually been
     // approved.)
-    if (unreviewedCount >= TooManyUnreviewedComments)
+    if (unreviewedCount >= maxNumPendingReview)
       return None
 
-    // If all initial comments, plus the moderated one,
-    // have been approved, auto approve.
-    if (manuallyApprovedCount > NumFirstCommentsToPrelApprove)
-      return Some(Approval.Preliminary)
-
-    // Allow all new users to post a few comments, and approve them
-    // preliminarily. I hope that spammers tend to post many comments?
-    if (postCount < NumFirstCommentsToPrelApprove)
-      return Some(Approval.Preliminary)
-
-    // If you've posted more than 1 or 2 comments, and they haven't
-    // been reviewed, don't auto approve any more comments.
-    None
+    Some(Approval.Preliminary)
   }
 
 
