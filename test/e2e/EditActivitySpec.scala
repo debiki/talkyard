@@ -93,18 +93,42 @@ class EditActivitySpec extends DebikiBrowserSpec
         loginAsGuest(guestUserName)
         postId_gu1 = replyToArticle("gu1-text")
         postId_gu2 = replyToComment(postId_gu1, "gu2-text")
-        //anyCommentIsPendingModeration must be === false
-
         postId_gu3 = replyToComment(postId_gu2, "gu3-text")
-        //anyCommentIsPendingModeration must be === true
+      }
+
+      "only the first two guest user's comments where prel approved" in {
+        isPostApproved(postId_gu1) must be === true
+        isPostApproved(postId_gu2) must be === true
+        isPostApproved(postId_gu3) must be === false
+      }
+
+      "reload page, find comment #gu3 pending moderation" in {
+        reloadPage()
+        waitUntilUserSpecificDataHandled()
+        isPostApproved(postId_gu3) must be === false
+      }
+
+      "logout and reload, then find only approved comments, i.e. not #gu3" in {
+        logout()
+        reloadPage()
+        waitUntilUserSpecificDataHandled()
+        findPost(postId_gu1) must be('defined)
+        findPost(postId_gu2) must be('defined)
+        findPost(postId_gu3) must be('empty)
       }
 
       "login as Gmail user, add comments: #gm1, #gm2, #gm3" in {
-        logout()
         loginAsGmailUser()
         postId_gm1 = replyToArticle("gm1-text")
         postId_gm2 = replyToComment(postId_gm1, "gm2-text")
         postId_gm3 = replyToComment(postId_gm2, "gm3-text")
+      }
+
+      "only the first two Gmail user's comments where prel approved" in {
+        // Ooops currently the auto approver is rather restrictive. Change?
+        //isCommentApproved(postId_gm1) must be === true
+        //isCommentApproved(postId_gm2) must be === true
+        isPostApproved(postId_gm3) must be === false
       }
 
       "login as admin, add comments: #ad1, #ad2, #ad3, #ad4, #ad5" in {
@@ -115,6 +139,10 @@ class EditActivitySpec extends DebikiBrowserSpec
         postId_ad3 = replyToComment(postId_ad2, "ad3-text")
         postId_ad4 = replyToComment(postId_ad3, "ad4-text")
         postId_ad5 = replyToComment(postId_ad4, "ad5-text")
+      }
+
+      "admin's comments are auto approved" in {
+        isPostApproved(postId_ad5) must be === true
       }
 
       "not show unapproved comments" in {
@@ -179,18 +207,18 @@ class EditActivitySpec extends DebikiBrowserSpec
         eventually { logout() }
         loginAsGuest(guestUserName)
         clickAndEdit(postId_gu1, "gu1-text, edited by guest")
-        clickAndEdit(postId_gm1, "gm1-text, edited by guest")
-        clickAndEdit(postId_ad1, "ad1-text, edited by guest")
-        clickAndEdit(postId_ad4, "ad4-text, edited by guest")
+        clickAndEdit(postId_gm1, "gm1-text, edited by guest", isSuggestion = true)
+        clickAndEdit(postId_ad1, "ad1-text, edited by guest", isSuggestion = true)
+        clickAndEdit(postId_ad4, "ad4-text, edited by guest", isSuggestion = true)
       }
 
       s"login as Gmail user, edit #gu2, #gm2, #ad2, #ad5" in {
         logout()
         loginAsGmailUser()
-        clickAndEdit(postId_gu2, "gu2-text, edited by Gmail user")
+        clickAndEdit(postId_gu2, "gu2-text, edited by Gmail user", isSuggestion = true)
         clickAndEdit(postId_gm2, "gm2-text, edited by Gmail user")
-        clickAndEdit(postId_ad2, "ad2-text, edited by Gmail user")
-        clickAndEdit(postId_ad5, "ad5-text, edited by Gmail user")
+        clickAndEdit(postId_ad2, "ad2-text, edited by Gmail user", isSuggestion = true)
+        clickAndEdit(postId_ad5, "ad5-text, edited by Gmail user", isSuggestion = true)
       }
 
       s"login as Admin, edit #ad3" in {
@@ -310,6 +338,15 @@ class EditActivitySpec extends DebikiBrowserSpec
   }
 
 
+  // For a discussion page. Should be moved to a page object?
+  def waitUntilUserSpecificDataHandled() {
+    eventually {
+      find(cssSelector(".dw-user-page-data")) must be('empty)
+    }
+  }
+
+
+  // For the admin dashboard. Should be moved to a page object?
   def checkCommentStatus(postId: ActionId, commentStatusText: String,
         numSuggestions: Int = -1) {
     val commentLink = find(cssSelector(s"a[href='/-${testPage.id}#post-$postId']")).
