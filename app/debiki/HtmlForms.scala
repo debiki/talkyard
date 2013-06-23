@@ -629,9 +629,6 @@ class HtmlForms(val config: HtmlConfig, xsrfToken: String,
           else <pre class='dw-e-src-old'>{postToEdit.currentText}</pre> }
       </div>
       { termsAgreement("Submit as ...") }
-      <div class='dw-f-e-prvw-info'>To submit, first click <em>Preview</em>
-        (just above).
-      </div>
       <div class='dw-f-e-sugg-info'>You are submitting a
         <strong>suggestion</strong>.</div>
       <div class='dw-submit-set'>

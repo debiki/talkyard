@@ -99,20 +99,14 @@ function _$showEditFormImpl() {
     }, 'text');
   };
 
-  function $disableSubmitBtn() {
-    $(this).find('input.dw-fi-submit').button({ disabled: true }).end()
-        .find('.dw-f-e-prvw-info').show();
-  }
-
   function scrollPostIntoView() {
-    $post.dwScrollIntoView({ marginLeft: 40, marginTop: -35 });
+    $post.dwScrollIntoView({ marginLeft: 40, marginTop: -1 });
   }
 
   // If the edit form has already been opened, but hidden by a Cancel click,
   // reuse the old hidden form, so any edits aren't lost.
   var $oldEditForm = $post.children('.dw-f-e');
   if ($oldEditForm.length) {
-    $oldEditForm.each($disableSubmitBtn);
     $oldEditForm.find('.dw-e-tabs').tabs('select' , d.i.EditTabIdEdit);
     $oldEditForm.show();
     $postBody.hide();
@@ -128,7 +122,6 @@ function _$showEditFormImpl() {
     var $submitBtn = $editForm.find('input.dw-fi-submit');
     var $cancelBtn = $editForm.find('input.dw-fi-cancel');
 
-    var $clickPreviewHelp = $editForm.find('.dw-f-e-prvw-info');
     var $suggestOnlyHelp = $editForm.find('.dw-f-e-sugg-info');
 
     var $editTabs = $editForm.children('.dw-e-tabs');
@@ -139,7 +132,7 @@ function _$showEditFormImpl() {
 
     var codeMirrorEditor = null;
 
-    $submitBtn.button({ disabled: true }); // you need to preview before submit
+    $submitBtn.button();
     $cancelBtn.button();
 
     $editForm.insertAfter($postBody); // not before, that'd mess up css [8K3U5]
@@ -175,13 +168,10 @@ function _$showEditFormImpl() {
     // because the 'Click Preview then Save' help text is alo visible.)
     $suggestOnlyHelp.hide();
 
-    var enableSubmitBtn = function() {
-      $submitBtn.button({ disabled: false });
-      $clickPreviewHelp.hide();
+    var showIsSuggestionTips = function() {
       // Notify the user if s/he is making an edit suggestion only.
       var hideOrShow = d.i.Me.mayEdit($post) ? 'hide' : 'show';
       $suggestOnlyHelp[hideOrShow]();
-      $editForm.children('.dw-submit-set').dwScrollIntoView();
     }
 
     // Update the preview, if the markup type is changed.
@@ -271,6 +261,7 @@ function _$showEditFormImpl() {
         // Sync the edit panel <textarea> with any codeMirrorEditor,
         // so the diff and preview tabs will work correctly.
         if (codeMirrorEditor) codeMirrorEditor.save();
+        showIsSuggestionTips();
 
         // Update the tab to be shown.
         var $panel = $(ui.panel);
@@ -285,7 +276,6 @@ function _$showEditFormImpl() {
           case $previewPanel.attr('id'):
             $previewTabLink.focus();
             $(this).each($updateEditFormPreview);
-            enableSubmitBtn();
             $.each(onEditPreviewCallbacks, function(index, callback) {
               callback($previewPanel.attr('id'));
             });
