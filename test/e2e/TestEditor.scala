@@ -173,7 +173,10 @@ trait TestEditor {
 
 
   def submitEditSuggestionsForm() {
-    click on cssSelector("#dw-e-sgs input[type='submit']")
+    val submitBtn = find(cssSelector("#dw-e-sgs input[type='submit']")) getOrElse fail(
+      "Found no edit suggestions button")
+    scrollIntoView(submitBtn)
+    click on submitBtn
   }
 
 }
