@@ -114,7 +114,7 @@ object Global extends GlobalSettings {
       case ("viewedits", GET) =>
         AppEditHistory.showForm(pagePath, postId = mainFunValAsInt_!)
       case ("applyedits", POST) =>
-        AppEditHistory.handleForm(pagePath, postId = mainFunValAsInt_!)
+        AppEditHistory.handleForm(pagePath)
       case ("get-view-new-page-url", GET) =>
         AppCreatePage.getViewNewPageUrl(pagePath)
       case ("view-new-page", GET) =>

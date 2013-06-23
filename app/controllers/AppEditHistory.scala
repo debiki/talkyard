@@ -50,7 +50,7 @@ object AppEditHistory extends mvc.Controller {
   }
 
 
-  def handleForm(pathIn: PagePath, postId: ActionId)
+  def handleForm(pathIn: PagePath)
         = PagePostAction(MaxPostSize)(pathIn) {
       pageReq: PagePostRequest =>
 
