@@ -29,9 +29,9 @@ import Prelude._
  */
 object AutoApprover {
 
-  private[debiki] val Limit = 15
+  private[debiki] val RecentActionsLimit = 15
 
-  val NumFirstCommentsToApprovePreliminarily = 2
+  val NumFirstCommentsToPrelApprove = 2
   val TooManyUnreviewedComments = 10
 
 
@@ -90,21 +90,21 @@ object AutoApprover {
   def perhapsApprove(pageReq: PageRequest[_]): Option[Approval] = {
     if (pageReq.user_!.isAdmin)
       Some(Approval.AuthoritativeUser)
-    else
-      _checkUserHistoryPerhapsApprove(pageReq)
+    else {
+      val history = loadUserHistory(pageReq)
+      checkUserHistoryPerhapsApprove(history)
+    }
   }
 
 
-  private def _checkUserHistoryPerhapsApprove(pageReq: PageRequest[_])
-        : Option[Approval] = {
-
+  private def loadUserHistory(pageReq: PageRequest[_]): List[PostActionOld] = {
     val (actionsFromIp, peopleFromIp) =
       pageReq.dao.loadRecentActionExcerpts(
-        fromIp = Some(pageReq.ip), limit = Limit)
+        fromIp = Some(pageReq.ip), limit = RecentActionsLimit)
 
     val (actionsByIdentity, peopleForIdty) =
       pageReq.dao.loadRecentActionExcerpts(
-        byIdentity = Some(pageReq.identity_!.id), limit = Limit)
+        byIdentity = Some(pageReq.identity_!.id), limit = RecentActionsLimit)
 
     // lazy val actionsByGuestsWithSameEmail =
     // -- or??: lazy val actionsByAnyoneWithSameEmail =
@@ -115,6 +115,11 @@ object AutoApprover {
       (actionsFromIp.toList ::: actionsByIdentity.toList)
          .sortBy(- _.creationDati.getTime).distinct
 
+    recentActions
+  }
+
+
+  def checkUserHistoryPerhapsApprove(recentActions: List[PostActionOld]): Option[Approval] = {
     val approval: Option[Approval] = for {
       approvalGivenPosts <- _considerPosts(recentActions)
       approvalGivenFlags <- _considerFlags(recentActions)
@@ -162,12 +167,12 @@ object AutoApprover {
 
     // If all initial comments, plus the moderated one,
     // have been approved, auto approve.
-    if (manuallyApprovedCount > NumFirstCommentsToApprovePreliminarily)
+    if (manuallyApprovedCount > NumFirstCommentsToPrelApprove)
       return Some(Approval.Preliminary)
 
     // Allow all new users to post a few comments, and approve them
     // preliminarily. I hope that spammers tend to post many comments?
-    if (postCount < NumFirstCommentsToApprovePreliminarily)
+    if (postCount < NumFirstCommentsToPrelApprove)
       return Some(Approval.Preliminary)
 
     // If you've posted more than 1 or 2 comments, and they haven't

@@ -133,15 +133,15 @@ class AutoApproverSpec extends Specification with Mockito {
       login.copy(identityId = openidIdty.id))
   }
 
-  def newDaoMock(actions: List[PostActionDto[PAP.CreatePost]], login: Login) = {
+  def newDaoMock(actionDtos: List[PostActionDto[PAP.CreatePost]], login: Login) = {
 
-    val viacs: Seq[PostActionOld] = {
-      val page = PageParts("pageid") ++ actions
-      actions map (new Post(page, _))
+    val actions: Seq[PostActionOld] = {
+      val page = PageParts("pageid") ++ actionDtos
+      actionDtos map (new Post(page, _))
     }
 
     val people =
-      if (actions nonEmpty) peopleNoLogins + login
+      if (actionDtos nonEmpty) peopleNoLogins + login
       else People.None
 
     val daoMock = mock[TenantDao]
@@ -150,13 +150,13 @@ class AutoApproverSpec extends Specification with Mockito {
 
     daoMock.loadRecentActionExcerpts(
       fromIp = Some(Ip),
-      limit = AutoApprover.Limit)
-       .returns(viacs -> people)
+      limit = AutoApprover.RecentActionsLimit)
+       .returns(actions -> people)
 
     daoMock.loadRecentActionExcerpts(
       byIdentity = Some(guestIdty.id),
-      limit = AutoApprover.Limit)
-       .returns(viacs -> people)
+      limit = AutoApprover.RecentActionsLimit)
+       .returns(actions -> people)
 
     daoMock
   }
