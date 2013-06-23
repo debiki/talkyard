@@ -227,6 +227,11 @@ trait StuffTestClicker {
   }
 
 
+  def isPostApproved(postId: ActionId): Boolean = {
+    find(cssSelector(s"#post-$postId .dw-p-pending-mod")).isEmpty
+  }
+
+
   def findActionLink_!(postId: ActionId, actionLinkClass: String): Element = {
     findActionLink(postId, actionLinkClass) getOrDie
         s"No $actionLinkClass link found for post $postId"

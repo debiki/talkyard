@@ -41,7 +41,7 @@ trait TestEditor {
     * (All functions in this file currently calls waitForDashbar() when needed,
     * I think.)
     */
-  def clickAndEdit(postId: ActionId, newText: String) {
+  def clickAndEdit(postId: ActionId, newText: String, isSuggestion: Boolean = false) {
     info(s"click #post-$postId, select Improve")
 
     var xOffset = 6
@@ -134,14 +134,19 @@ trait TestEditor {
     click on cssSelector(s"#post-$postId a[href^='#dw-e-tab-prvw_sno-']")
     click on cssSelector(s"#post-$postId .dw-f-e .dw-fi-submit")
 
-    info("find new text in page source")
+    info(
+      if (isSuggestion) "find pending edit suggestions"
+      else "find new text in page source")
 
-    eventually {
-      val isPendingModeration = findEditsPendingModerationMessage(postId).nonEmpty
+    if (isSuggestion) eventually {
+      // COULD count # pending edits before and after, verify incremented by 1.
+      isPostApproved(postId) must be === false
+    }
+    else eventually {
       val isTextCorrectlyUpdated =
         find(cssSelector(s"#post-$postId .dw-p-bd")).map(_.text) ==
           Some(stripStartEndBlanks(newText))
-      isPendingModeration must not be ===(isTextCorrectlyUpdated)
+      isTextCorrectlyUpdated must be === true
     }
   }
 
@@ -149,11 +154,6 @@ trait TestEditor {
   private def findEditorTextareaFor(postId: ActionId): Option[Element] = {
     find(cssSelector(s"#post-$postId .CodeMirror textarea")) orElse
       find(cssSelector(s"#post-$postId .dw-e-tab textarea"))
-  }
-
-
-  private def findEditsPendingModerationMessage(postId: ActionId): Option[Element] = {
-    find(cssSelector(s"#post-$postId .dw-p-pending-mod"))
   }
 
 
