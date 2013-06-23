@@ -75,7 +75,7 @@ trait TestEditor {
 
       // Sometimes some moveByOffset click apparently happens to open the editor,
       // so don't try to open it, if it's open already.
-      if (findAnyEditorTextarea().isEmpty) {
+      if (findEditorTextareaFor(postId).isEmpty) {
         def findImproveBtn = find(cssSelector(".dw-a-edit-i"))
         val improveBtn = findImproveBtn getOrElse fail()
         click on improveBtn
@@ -93,7 +93,7 @@ trait TestEditor {
       // elems downwards a bit, so we might click the wrong thing?)
       import org.scalatest.time.{Span, Seconds}
       eventually(Timeout(Span(3, Seconds))) {
-        findAnyEditorTextarea() getOrElse fail()
+        findEditorTextareaFor(postId) getOrElse fail()
       }
     }
 
@@ -114,7 +114,7 @@ trait TestEditor {
     // is also supposed to work, see e.g.:
     //   https://groups.google.com/forum/?fromgroups=#!topic/webdriver/Rhm-NZRBgXY ))
     eventually {
-      findAnyEditorTextarea().map(_.underlying) match {
+      findEditorTextareaFor(postId).map(_.underlying) match {
         case None =>
           // Try again later; editor loaded via Ajax request.
           fail()
@@ -146,9 +146,9 @@ trait TestEditor {
   }
 
 
-  private def findAnyEditorTextarea(): Option[Element] = {
-    find(cssSelector(".CodeMirror textarea")) orElse
-      find(cssSelector(".dw-e-tab textarea"))
+  private def findEditorTextareaFor(postId: ActionId): Option[Element] = {
+    find(cssSelector(s"#post-$postId .CodeMirror textarea")) orElse
+      find(cssSelector(s"#post-$postId .dw-e-tab textarea"))
   }
 
 
