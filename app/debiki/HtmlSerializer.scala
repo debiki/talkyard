@@ -357,6 +357,9 @@ case class HtmlPageSerializer(
     page.getPost(postId) map { post =>
       val html = renderThreads(depth = post.depth, posts = post::Nil,
         parentHorizontal = false, uncollapseFirst = true)
+      // The post might have been deleted.
+      if (html.isEmpty)
+        return None
       assert(html.length == 1)
       val siblingsSorted = _sortPostsDescFitness(post.siblingsAndMe)
       var prevSibling: Option[Post] = None

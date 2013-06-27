@@ -113,16 +113,16 @@ case class BrowserPagePatcher(request: DebikiRequest[_], showUnapproved: Boolean
     var postPatches = List[JsPatch]()
 
     for (PostPatchSpec(postId, wholeThread) <- patchSpecs) {
+      val post = page.getPost(postId) getOrElse logAndThrowInternalError(
+         "DwE573R2", s"Post not found, id: $postId, page: ${page.id}")
       if (wholeThread) {
-        val serializedThread = serializer.renderSingleThread(postId) getOrElse
-          logAndThrowInternalError(
-            "DwE573R2", s"Post not found, id: $postId, page: ${page.id}")
-        threadPatches ::=
-          _jsonForThread(page.getPost_!(postId), serializedThread)
+        // If the post has been deleted, this `foreach` won't happen.
+        serializer.renderSingleThread(postId) foreach { serializedThread =>
+          threadPatches ::= _jsonForThread(post, serializedThread)
+        }
       }
       else {
-        postPatches ::=
-          jsonForPost(page.getPost_!(postId))
+        postPatches ::= jsonForPost(post)
       }
     }
 

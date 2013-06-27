@@ -91,8 +91,17 @@ object Application extends mvc.Controller {
        ifNotOneOf("tf", throwBadReq("DwE93kK3", "Bad whole tree value"))
     val reason = pageReq.getNoneAsEmpty(Inp.Reason)
 
-    if (!pageReq.permsOnPage.deleteAnyReply)
+    val post = pageReq.page_!.getPost_!(postId)
+    val isAuthor = post.userId == pageReq.user_!.id
+
+    if (!isAuthor && !pageReq.permsOnPage.deleteAnyReply)
       throwForbidden("DwE0523k1250", "You may not delete that comment")
+
+    if (wholeTree && !pageReq.permsOnPage.deleteAnyReply) {
+      // Deny operation, even if there are 0 replies, because another JVM thread
+      // might create a reply at any time.
+      throwForbidden("DwE74GKt5", "You may not delete that whole comment tree")
+    }
 
     val deletion = PostActionDto.toDeletePost(andReplies = wholeTree,
       id = PageParts.UnassignedId, postIdToDelete = postId, loginId = pageReq.loginId_!,
