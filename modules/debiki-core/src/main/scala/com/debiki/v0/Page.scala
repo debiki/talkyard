@@ -70,6 +70,13 @@ object Page {
 }
 
 
+/** A Page can be a blog post, a forum topic, a forum topic list, a Wiki page,
+  * a Wiki main page, or a site's homepage — for example.
+  *
+  * @param meta Meta info on the page, e.g. creation date and author user id.
+  * @param path Where the page is located: site id + URL path to the page.
+  * @param parts Page contents: title, body and comments.
+  */
 case class Page(
   meta: PageMeta,
   path: PagePath,
@@ -255,17 +262,6 @@ object PageRole {
 
 }
 
-
-/* In the future: ?
-
-sealed abstract class PageStatus
-
-object PageStatus {
-  case object Normal extends PageStatus
-  case object Deleted extends PageStatus
-  case object Purged extends PageStatus
-}
-*/
 
 
 /**

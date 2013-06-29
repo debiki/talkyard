@@ -26,7 +26,12 @@ import com.debiki.v0.{PostActionPayload => PAP}
 
 
 
-/** Takes into account all actions in pageParts that affect this post.
+/** A "post" represents a part of a page, e.g. the title, the body, or a comment.
+  * A Post instance wraps the action that created that particular page part
+  * (namely a PostAction[PostActionPayload.CreatePost].) It also takes into
+  * account all actions in pageParts that affect this post. For example,
+  * `currentText` loops through all edits, and applies them, to construct the
+  * current text.
   *
   * Re reviews and approvals: A post can be:
   * Unreviewed (then not yet approved).

@@ -63,8 +63,8 @@ object AssetBundleAndDependencies {
   *   create style files via a Web browser, and the files are stored in the
   *   database.)
   *
-  * If there's both a file system bundle and a database bundle, their contents
-  * is concatenated — and the database bundle is appended, so it takes
+  * If there's a file system bundle and a database bundle with the same name, their
+  * contents is concatenated — and the database bundle is appended, so it takes
   * precedence over the file system stuff.
   *
   * If you cache the result, you might want to consider race conditions

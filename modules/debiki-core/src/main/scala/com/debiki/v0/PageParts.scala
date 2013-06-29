@@ -28,10 +28,22 @@ import com.debiki.v0.PostActionPayload.EditPost
 object PageParts {
 
 
+  // IDs for some magic posts: page title, page body and page config post.
+  // - They don't start at 1, because I think it's nice to let ids 1, 2, 3 be
+  // comment ids instead (so the very first comment can have id 1).
+  // - They assume that usually one won't need more than 2 bytes to index
+  // all comments on a page (2^16 = 65536). (So I won't have to write any code
+  // that avoids these IDs in the nearest future.)
+  // - Also seee `nextRandomActionId` later in this file.
   val TitleId = 65501
   val BodyId = 65502
   val ConfigPostId = 65503
+
   val NoId = 0
+
+  // These are used when new comments or actions are submitted to the server.
+  // When they're submitted, their ids are unknown (the server has not yet
+  // assigned them any id).
   val UnassignedId = -1
   val UnassignedId2 = -2
   val UnassignedId3 = -3
@@ -221,16 +233,18 @@ abstract class PostActionsWrapper { self: PageParts =>
 
 
 
-/** A page. It is constructed via actions (the Action/Command design pattern
-  * that create posts (e.g. title, body, comments), edit them, review, close, delete,
-  * etcetera.
+/** A page. It is constructed via actions (the Action/Command design pattern).
+  * The actions create "posts", e.g. title, body, comments. The actions also
+  * edit them, and review, close, flag, delete, etcetera.
   *
   * @param guid The page's id, unique per website.
   * @param people People who has contributed to the page. If some people are missing,
   * certain functions might fail (e.g. a function that fetches the name of the author
   * of the page body). — This class never fetches anything lazily from database.
-  * @param posts And all other params, except for `actions` are ... deprecated? And
-  * should instead be merged into `actions`.
+  * @param ratings Deprecated, see below.
+  * @param editApps Deprecated, see next line.
+  * @param flags Deprecated? I should convert Ratings, EditApps and Flags to PostActionDto:s
+  * and use only `actionDtos` instead?
   * @param actionDtos The actions that build up the page.
   */
 case class PageParts (
@@ -398,9 +412,6 @@ case class PageParts (
     else "(Page title pending approval)"
   }
 
-
-  /** The page title, as XML. */
-  //def titleXml: Option[xml.Node] = body.flatMap(_.titleXml)
 
   /** A Post with template engine source code, for the whole page. */
   def pageConfigPost: Option[Post] = getPost(PageParts.ConfigPostId)

@@ -31,9 +31,10 @@ import com.debiki.v0.{PostActionPayload => PAP}
   * design pattern.)
   *
   * PostActionDto is a rather stupid data transfer object (DTO): it's used
-  * by DbDao, when saving and loading pages. — If you want some more
-  * functionality, use the PostAction:s Post and Patch instead. (That's what you
-  * almost have to do anyway because that's what Debate(/PageParts/whatever) gives you.)
+  * by DbDao (database data-access-object), when saving and loading pages.
+  * If you want some more functionality, use the PostAction:s Post and Patch instead.
+  * (That's what you almost have to do anyway because that's what
+  * Debate(/PageParts/whatever) gives you.)
   *
   * @param id A local id, unique per page. "?" means unknown (used when
   * creating new posts).
