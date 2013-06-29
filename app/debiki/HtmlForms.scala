@@ -38,9 +38,8 @@ import HtmlUtils._
  */
 object HtmlForms {
 
-  def apply(config: HtmlConfig, xsrfToken: String,
-        pageRoot: PageRoot, permsOnPage: PermsOnPage) =
-    new HtmlForms(config, xsrfToken, pageRoot, permsOnPage)
+  def apply(xsrfToken: String, pageRoot: PageRoot, permsOnPage: PermsOnPage) =
+    new HtmlForms(xsrfToken, pageRoot, permsOnPage)
 
   val XsrfInpName = "dw-fi-xsrf"
 
@@ -108,11 +107,12 @@ object HtmlForms {
 }
 
 
-class HtmlForms(val config: HtmlConfig, xsrfToken: String,
-    val pageRoot: PageRoot, val permsOnPage: PermsOnPage) {
+class HtmlForms(xsrfToken: String, val pageRoot: PageRoot, val permsOnPage: PermsOnPage) {
 
   import HtmlForms._
   import HtmlPageSerializer._
+
+  val config = new HtmlConfig()
 
   val ccWikiLicense =
     <a rel="license" href="http://creativecommons.org/licenses/by/3.0/"
@@ -478,11 +478,11 @@ class HtmlForms(val config: HtmlConfig, xsrfToken: String,
         <div class='dw-e-sg-e'>{
             <div>{
               (if (applied) "Suggested by " else "By ") ++
-              linkTo(edit.user_!, config) ++
+              linkTo(edit.user_!) ++
               dateAbbr(edit.creationDati, "dw-e-sg-dt")
               }</div> ++
             (if (!applied) Nil
-            else <div>Applied by { linkTo(applier_!, config) ++
+            else <div>Applied by { linkTo(applier_!) ++
               dateAbbr(edit.applicationDati.get, "dw-e-ap-dt") }</div>)
           }
           <div class='dw-as'>{

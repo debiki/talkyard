@@ -420,8 +420,7 @@ class TemplateProgrammingInterface(
   def debikiAppendToBodyTags: xml.NodeSeq = {
     // The dialog templates includes the user name and cannot currently be cached.
     val dialogTemplates: xml.NodeSeq = {
-      val config = DebikiHttp.newUrlConfig(pageReq)
-      val templateHtmlNodes = HtmlForms(config, pageReq.xsrfToken.value,
+      val templateHtmlNodes = HtmlForms(pageReq.xsrfToken.value,
         pageReq.pageRoot, pageReq.permsOnPage).dialogTemplates
       xml.Unparsed(liftweb.Html5.toString(templateHtmlNodes))
     }

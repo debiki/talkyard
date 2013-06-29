@@ -28,53 +28,23 @@ import DebikiHttp._
 import HtmlUtils._
 
 
-object HtmlConfig {
 
-  /**
-   * A function from debate-id and post-id to a react URL.
-   */
-  def reactUrl(debateId: String, postId: ActionId) = "?act="+ postId
-}
-
-
-abstract class HtmlConfig {
-  def termsOfUseUrl: String
+class HtmlConfig {
+  val termsOfUseUrl = "/terms-of-use"
 
   // If a form action is the empty string, the browser POSTS to the current
   // page, says the URI spec: http://www.apps.ietf.org/rfc/rfc3986.html#sec-5.4
   // COULD rename replyAction -> replyUrl (or reactUrl -> reactAction).
-  def replyAction = "?reply"
-  def rateAction = "?rate"
-  def flagAction = "?flag"
-  def loginActionSimple = ""
-  def loginActionOpenId = ""
-  def loginOkAction = ""
-  def loginFailedAction = ""
-  def logoutAction = ""
+  val replyAction = "?reply"
+  val rateAction = "?rate"
+  val flagAction = "?flag"
 
-
-  /** Constructs a URL to more info on a certain user,
-   *  adds "http://" if needed.
-   */
-  def userUrl(nilo: NiLo) = {
-    "" // for now, since OpenID users cannot specify url, fix ...
-    /*
-    // Lift-Web or Java? escapes cookie values, so unescape `://'.
-    // Scala 1.9? val ws = user.website.replaceAllLiterally("%3A%2F%2F", "://")
-    val ws = user.website.replaceAll("%3A%2F%2F", "://")
-    if (ws isEmpty) {
-      ""
-    } else if (ws.startsWith("http://") ||
-                ws.startsWith("https://")) {
-      ws
-    } else {
-      "http://"+ ws
-    } */
-  }
-
-  /** Whether or not to show edit suggestions. */
-  def showEdits_? = false  // doesn't work at all right now
-  def hostAndPort = "localhost"
+  val loginActionSimple = "/-/api/login-simple"
+  val loginActionOpenId = "/-/api/login-openid"
+  val logoutAction = "/-/api/logout"
+  //val hostAndPort = _hostAndPort
+  val loginOkAction = ""
+  val loginFailedAction = ""
 
 }
 
@@ -235,9 +205,6 @@ object HtmlPageSerializer {
   /**
    * Shows a link to the user represented by NiLo.
    */
-  def linkTo(user: User, config: HtmlConfig): NodeSeq = linkTo(user)  // for now
-
-
   // COULD move to object HtmlPostSerializer
   def linkTo(user: User): NodeSeq = {
     var url = ""  // since not implemented anyway: config.userUrl(nilo)
@@ -336,7 +303,7 @@ case class HtmlPageSerializer(
   page : PageParts,
   pageTrust: PageTrust,
   pageRoot: PageRoot,
-  config: HtmlConfig,
+  hostAndPort: String,
   nofollowArticle: Boolean = true,
   showUnapproved: Boolean = false) {
 
@@ -349,7 +316,7 @@ case class HtmlPageSerializer(
 
 
   private def postRenderer =
-    HtmlPostRenderer(page, pageStats, config.hostAndPort, nofollowArticle,
+    HtmlPostRenderer(page, pageStats, hostAndPort, nofollowArticle,
       showUnapproved = showUnapproved)
 
 

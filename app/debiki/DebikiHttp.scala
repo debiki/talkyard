@@ -258,21 +258,5 @@ object DebikiHttp {
   def isAjax(request: Request[_]) =
     request.headers.get("X-Requested-With") == Some("XMLHttpRequest")
 
-
-  // ----- Old stuff
-
-  // Could get rid of, completely? Or clean up, delete members.
-
-  def newUrlConfig(pageReq: PageRequest[_]): HtmlConfig =
-    newUrlConfig(pageReq.request.host)
-
-  def newUrlConfig(_hostAndPort: String) = new HtmlConfig {
-    override val loginActionSimple = "/-/api/login-simple"
-    override val loginActionOpenId = "/-/api/login-openid"
-    override val logoutAction = "/-/api/logout"
-    override val hostAndPort = _hostAndPort
-    override def termsOfUseUrl = "/terms-of-use"
-  }
-
 }
 

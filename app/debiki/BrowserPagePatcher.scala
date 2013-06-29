@@ -106,8 +106,7 @@ case class BrowserPagePatcher(request: DebikiRequest[_], showUnapproved: Boolean
     }
 
     val serializer = HtmlPageSerializer(
-      page, PageTrust(page), pageRoot, DebikiHttp.newUrlConfig(request.host),
-      showUnapproved = showUnapproved)
+      page, PageTrust(page), pageRoot, request.host, showUnapproved = showUnapproved)
 
     var threadPatches = List[JsPatch]()
     var postPatches = List[JsPatch]()

@@ -101,9 +101,7 @@ object Utils extends Results with http.ContentTypes {
 
 
   def formHtml(pageReq: PageRequest[_]) =
-    HtmlForms(
-      newUrlConfig(pageReq), pageReq.xsrfToken.value,
-      pageReq.pageRoot, pageReq.permsOnPage)
+    HtmlForms(pageReq.xsrfToken.value, pageReq.pageRoot, pageReq.permsOnPage)
 
 
   def queryStringAndHashToView(pageRoot: PageRoot, pageVersion: Option[ju.Date],
