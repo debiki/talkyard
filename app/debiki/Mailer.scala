@@ -25,6 +25,7 @@ import com.amazonaws.auth.BasicAWSCredentials
 import com.amazonaws.services.simpleemail._
 import com.amazonaws.services.simpleemail.model._
 import com.debiki.v0._
+import debiki.dao.TenantDaoFactory
 import java.{util => ju}
 import play.api._
 import play.api.libs.iteratee._

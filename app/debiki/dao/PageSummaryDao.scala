@@ -15,13 +15,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package debiki
+package debiki.dao
 
 import com.debiki.v0._
-import controllers.SiteAssetBundles
+import debiki._
 import java.{util => ju}
 import Prelude._
-import CachingAssetBundleDao._
 
 
 /**

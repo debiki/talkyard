@@ -20,6 +20,7 @@ package controllers
 import com.debiki.v0._
 import debiki._
 import debiki.DebikiHttp._
+import debiki.dao.TenantDao
 import java.{util => ju}
 import play.api._
 import play.api.mvc.{Action => _, _}

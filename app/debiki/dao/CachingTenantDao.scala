@@ -15,16 +15,14 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package debiki
+package debiki.dao
 
 import com.debiki.v0._
-import controllers._
+import debiki._
 import java.{util => ju}
 import play.{api => p}
 import play.api.{cache => pc}
 import play.api.Play.current
-import scala.reflect.ClassTag
-import scala.xml.NodeSeq
 import Prelude._
 
 

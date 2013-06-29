@@ -19,6 +19,7 @@ package debiki
 
 import controllers._
 import com.debiki.v0._
+import debiki.dao.TenantDao
 import java.{util => ju}
 import org.specs2.mutable._
 import org.specs2.mock._

@@ -23,6 +23,7 @@ import play.{api => p}
 import play.api.Play
 import play.api.Play.current
 import com.debiki.v0.QuotaConsumers
+import debiki.dao.{SystemDao, TenantDao, CachingTenantDaoFactory, CachingSystemDao}
 
 
 object Debiki extends Debiki
@@ -45,7 +46,7 @@ class Debiki {
   })
 
 
-  def systemDao = new CachingSystemDao(dbDaoFactory.systemDbDao)
+  def systemDao: SystemDao = new CachingSystemDao(dbDaoFactory.systemDbDao)
 
 
   // Don't run out of quota when running e2e tests.

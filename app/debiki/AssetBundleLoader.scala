@@ -20,6 +20,7 @@ package debiki
 import com.debiki.v0._
 import debiki._
 import debiki.DebikiHttp._
+import debiki.dao.TenantDao
 import java.{util => ju}
 import play.api.Play
 import play.api.Play.current

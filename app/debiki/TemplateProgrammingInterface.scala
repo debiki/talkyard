@@ -20,6 +20,7 @@ package debiki
 import com.debiki.v0
 import com.debiki.v0._
 import controllers.{PageRequest, SiteAssetBundles, routes}
+import debiki.dao._
 import java.{util => ju}
 import play.{api => p}
 import play.api.Play.current

@@ -19,6 +19,7 @@ package debiki
 
 import com.debiki.v0._
 import controllers.{AppCreatePage, AppCreateWebsite}
+import debiki.dao.TenantDao
 import java.{util => ju}
 import org.scalatest.{Suite, Suites, BeforeAndAfterAll, FreeSpec, Status}
 import org.scalatest.matchers.MustMatchers

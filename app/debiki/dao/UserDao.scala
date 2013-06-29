@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package debiki
+package debiki.dao
 
 import com.debiki.v0._
 import java.{util => ju}

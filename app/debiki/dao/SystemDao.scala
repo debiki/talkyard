@@ -16,7 +16,7 @@
  */
 
 
-package debiki
+package debiki.dao
 
 import com.debiki.v0._
 import java.{util => ju}
