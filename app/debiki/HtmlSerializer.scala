@@ -29,26 +29,6 @@ import HtmlUtils._
 
 
 
-class HtmlConfig {
-  val termsOfUseUrl = "/terms-of-use"
-
-  // If a form action is the empty string, the browser POSTS to the current
-  // page, says the URI spec: http://www.apps.ietf.org/rfc/rfc3986.html#sec-5.4
-  // COULD rename replyAction -> replyUrl (or reactUrl -> reactAction).
-  val replyAction = "?reply"
-  val rateAction = "?rate"
-  val flagAction = "?flag"
-
-  val loginActionSimple = "/-/api/login-simple"
-  val loginActionOpenId = "/-/api/login-openid"
-  val logoutAction = "/-/api/logout"
-  //val hostAndPort = _hostAndPort
-  val loginOkAction = ""
-  val loginFailedAction = ""
-
-}
-
-
 object HtmlPageSerializer {
 
 

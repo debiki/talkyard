@@ -112,7 +112,25 @@ class HtmlForms(xsrfToken: String, val pageRoot: PageRoot, val permsOnPage: Perm
   import HtmlForms._
   import HtmlPageSerializer._
 
-  val config = new HtmlConfig()
+  val config = new {
+    // It'd be better to use Play's revere routing, rather than these old weird constants.
+
+    val termsOfUseUrl = "/terms-of-use"
+
+    // If a form action is the empty string, the browser POSTS to the current
+    // page, says the URI spec: http://www.apps.ietf.org/rfc/rfc3986.html#sec-5.4
+    // COULD rename replyAction -> replyUrl (or reactUrl -> reactAction).
+    val replyAction = "?reply"
+    val rateAction = "?rate"
+    val flagAction = "?flag"
+
+    val loginActionSimple = "/-/api/login-simple"
+    val loginActionOpenId = "/-/api/login-openid"
+    val logoutAction = "/-/api/logout"
+    val loginOkAction = ""
+    val loginFailedAction = ""
+  }
+
 
   val ccWikiLicense =
     <a rel="license" href="http://creativecommons.org/licenses/by/3.0/"
