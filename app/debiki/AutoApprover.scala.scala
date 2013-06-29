@@ -31,10 +31,13 @@ object AutoApprover {
 
   private[debiki] val RecentActionsLimit = 20
 
-  val NumFirstCommentsToPrelApprove = 2
 
-  // Used when computing max num pending comments, given num comments approved so far.
-  val InvLogDivisor = 1.0 / math.log(1.1)
+  private def calcMaxNumPendingComments(numCommentsManuallyApproved: Int) =
+    2 + math.log1p(numCommentsManuallyApproved) * MaxPendingCommentsLogBase
+
+
+  /** Used when computing max num pending comments. */
+  private val MaxPendingCommentsLogBase = 1.0 / math.log(1.1)
 
 
   def perhapsApproveNewPage(
@@ -163,11 +166,10 @@ object AutoApprover {
       else unreviewedCount += 1
     }
 
-    // Prel approve really many comments, if a few comments by this user and IP have
+    // Preliminarily approve really many comments, if a few comments by this user and IP have
     // been manually approved already. But use the `log` function to restrict
     // the max num comments we prel approve.
-    val maxNumPendingReview =
-      2 + math.log1p(manuallyApprovedCount) * InvLogDivisor
+    val maxNumPendingReview = calcMaxNumPendingComments(manuallyApprovedCount)
 
     // If there are too many outstanding unreviewed comments, don't approve.
     // (Even if all your comments that've been reviewed have actually been
