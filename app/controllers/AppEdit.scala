@@ -271,7 +271,7 @@ object AppEdit extends mvc.Controller {
     // Show the unapproved version of this post, so any applied edits are included.
     // (An edit suggestion, however, won't be included, until it's been applied.)
     OkSafeJson(
-      BrowserPagePatcher(request, showUnapproved = true)
+      BrowserPagePatcher(request, showAllUnapproved = true)
         .jsonForMyEditedPosts(editIdsAndPages))
   }
 

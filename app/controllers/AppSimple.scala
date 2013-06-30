@@ -92,8 +92,7 @@ object AppSimple extends mvc.Controller {
     }
 
     OkSafeJson(
-      BrowserPagePatcher(apiReq, showUnapproved = false)
-        .jsonForThreadsAndPosts(pagesAndPatchSpecs))
+      BrowserPagePatcher(apiReq).jsonForThreadsAndPosts(pagesAndPatchSpecs))
   }
 
 
@@ -130,8 +129,7 @@ object AppSimple extends mvc.Controller {
     }
 
     OkSafeJson(
-      BrowserPagePatcher(apiReq, showUnapproved = false)
-        .jsonForThreadsAndPosts(pagesAndPatchSpecs))
+      BrowserPagePatcher(apiReq).jsonForThreadsAndPosts(pagesAndPatchSpecs))
   }
 
 }

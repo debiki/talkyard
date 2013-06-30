@@ -108,10 +108,10 @@ object AppViewPosts extends mvc.Controller {
 
     // Generate html for any posts-by-this-user that are pending approval. Plus info
     // on ancestor post ids, so the browser knows where to insert the html.
-    val myPendingPosts =  page.postsByUser(my.id).filter(!_.currentVersionReviewed)
-    val myPendingPostsJsPatches: List[BrowserPagePatcher.JsPatch] =
-      BrowserPagePatcher(pageReq, showUnapproved = true).
-        jsonForThreadPatches(page, myPendingPosts.map(_.id))
+    val postsOfInterest = if (my.isAdmin) page.getAllPosts else page.postsByUser(my.id)
+    val pendingPosts = postsOfInterest.filter(!_.currentVersionReviewed)
+    val pendingPostsJsPatches: List[BrowserPagePatcher.JsPatch] =
+      BrowserPagePatcher(pageReq).jsonForThreadPatches(page, pendingPosts.map(_.id))
 
     // (COULD include HTML for any notifications to the user.
     // Not really related to the current page only though.)
@@ -126,7 +126,7 @@ object AppViewPosts extends mvc.Controller {
       // (Background: This is supposed to work on e.g. pages that lists many blog posts,
       // i.e. many pages.)
       "threadsByPageId" -> toJson(Map(
-          page.id -> toJson(myPendingPostsJsPatches)))))
+          page.id -> toJson(pendingPostsJsPatches)))))
 
     if (Play.isDev) Json.prettyPrint(json)
     else Json.stringify(json)

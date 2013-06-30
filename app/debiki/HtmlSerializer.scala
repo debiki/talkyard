@@ -43,7 +43,7 @@ object HtmlPageSerializer {
 
   // COULD move to HtmlPostSerializer.
   def _markupTextOf(post: Post, hostAndPort: String, nofollowArticle: Boolean = true,
-        showUnapproved: Boolean = false): (NodeSeq, Int) = {
+        showUnapproved: ShowUnapproved = ShowUnapproved.None): (NodeSeq, Int) = {
 
     val isArticle = post.id == PageParts.BodyId
 
@@ -55,7 +55,7 @@ object HtmlPageSerializer {
 
 
     val text: String =
-      if (showUnapproved) post.currentText
+      if (showUnapproved.shallShow(post)) post.currentText
       else post.approvedText getOrElse {
         return (Nil, 0)
       }
@@ -112,8 +112,7 @@ object HtmlPageSerializer {
    *
    * Splits into <p>:s and <br>:s at newlines, does nothing else.
    */
-  def textToHtml(text: String, charsPerLine: Int = 80)
-      : Tuple2[NodeSeq, Int] = {
+  def textToHtml(text: String, charsPerLine: Int = 80): (NodeSeq, Int) = {
     var lineCount = 0
     val xml =
       // Two newlines end a paragraph.
@@ -285,7 +284,7 @@ case class HtmlPageSerializer(
   pageRoot: PageRoot,
   hostAndPort: String,
   nofollowArticle: Boolean = true,
-  showUnapproved: Boolean = false) {
+  showUnapproved: ShowUnapproved = ShowUnapproved.None) {
 
   import HtmlPageSerializer._
 
@@ -331,11 +330,7 @@ case class HtmlPageSerializer(
     val cssArtclThread =
       if (pageRoot.subId == PageParts.BodyId) " dw-ar-t" else ""
 
-    val rootPostsReplies = {
-      val children = pageRoot.findChildrenIn(page)
-      if (showUnapproved) children
-      else children.filter(_.someVersionApproved)
-    }
+    val rootPostsReplies = pageRoot.findChildrenIn(page)
 
     val rootPost: Post = pageRoot.findOrCreatePostIn(page) getOrElse
        throwNotFound("DwE0PJ404", "Post not found: "+ pageRoot.subId)
@@ -398,6 +393,7 @@ case class HtmlPageSerializer(
       post <- _sortPostsDescFitness(posts)
       if !post.isTreeDeleted
       if !(post.isPostDeleted && post.replies.isEmpty)
+      if showUnapproved.shallShow(post)
     } {
       val thread = renderThread(post, depth, parentHorizontal, uncollapseFirst)
       threads ++= thread
@@ -415,9 +411,7 @@ case class HtmlPageSerializer(
     val isInlineThread = post.where.isDefined
     val isInlineNonRootChild = isInlineThread && depth >= 2
     val cssInlineThread = if (isInlineThread) " dw-i-t" else ""
-    val replies =
-      if (showUnapproved) post.replies
-      else post.replies.filter(_.someVersionApproved)
+    val replies = post.replies
     val isTitle = post.id == PageParts.TitleId
     val isRootOrArtclQstn =
           post.id == pageRoot.subId // || post.meta.isArticleQuestion

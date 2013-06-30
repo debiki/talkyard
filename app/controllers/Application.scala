@@ -108,12 +108,13 @@ object Application extends mvc.Controller {
       userId = pageReq.user_!.id, newIp = pageReq.newIp,
       createdAt = pageReq.ctime)
 
-    pageReq.dao.savePageActionsGenNotfs(pageReq, deletion::Nil)
+    val (page, _) =
+      pageReq.dao.savePageActionsGenNotfs(pageReq, deletion::Nil)
 
-    // COULD include the page html, so Javascript can update the browser.
-    OkDialogResult("Deleted", "", // (empty summary)
-      "You have deleted it. Sorry but you need to reload the"+
-      " page, to notice that it is gone.")
+    val json = BrowserPagePatcher(pageReq).jsonForThreadsAndPosts(
+      page.parts, BrowserPagePatcher.PostPatchSpec(postId, wholeThread = wholeTree))
+
+    Utils.OkSafeJson(json)
   }
 
 

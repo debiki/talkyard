@@ -47,12 +47,36 @@ case class RenderedPostBody(
 
 
 
+sealed abstract class ShowUnapproved {
+  def shallShow(post: Post): Boolean
+}
+
+
+object ShowUnapproved {
+
+  case object None extends ShowUnapproved {
+    override def shallShow(post: Post) =
+      post.someVersionApproved
+  }
+
+  case object All extends ShowUnapproved {
+    override def shallShow(post: Post) = true
+  }
+
+  case class WrittenByUser(userId: String) extends ShowUnapproved {
+    override def shallShow(post: Post) =
+      post.userId == userId
+  }
+}
+
+
+
 case class HtmlPostRenderer(
   page: PageParts,
   pageStats: PageStats,
   hostAndPort: String,
   nofollowArticle: Boolean = true,
-  showUnapproved: Boolean = false) {
+  showUnapproved: ShowUnapproved = ShowUnapproved.None) {
 
 
   def renderPost(postId: ActionId, uncollapse: Boolean = false): RenderedPost = {
@@ -95,7 +119,7 @@ case class HtmlPostRenderer(
       showUnapproved = showUnapproved)
 
     val anyPendingApprovalText: NodeSeq =
-      if (showUnapproved) makePendingApprovalText(post)
+      if (showUnapproved.shallShow(post)) makePendingApprovalText(post)
       else Nil
 
     val long = postBody.approxLineCount > 9
@@ -332,7 +356,7 @@ object HtmlPostRenderer {
   }
 
 
-  def renderPageTitle(titlePost: Post, showUnapproved: Boolean): Node = {
+  def renderPageTitle(titlePost: Post, showUnapproved: ShowUnapproved): Node = {
     // The title is a post, itself.
     // Therefore this XML is almost identical to the XML
     // for the post that this title entitles.
@@ -345,7 +369,7 @@ object HtmlPostRenderer {
         <div class='dw-p-bd'>
           <div class='dw-p-bd-blk'>
             <h1 class='dw-p-ttl'>{
-              if (showUnapproved) titlePost.currentText
+              if (showUnapproved.shallShow(titlePost)) titlePost.currentText
               else titlePost.approvedText getOrElse "(Page title not yet approved)"
             }</h1>
           </div>
@@ -361,7 +385,7 @@ object HtmlPostRenderer {
 
 
   def renderPostBody(post: Post, hostAndPort: String, nofollowArticle: Boolean,
-        showUnapproved: Boolean): RenderedPostBody = {
+        showUnapproved: ShowUnapproved): RenderedPostBody = {
     val cssArtclBody = if (post.id != PageParts.BodyId) "" else " dw-ar-p-bd"
     val isBodyOrArtclQstn = post.id == PageParts.BodyId // || post.meta.isArticleQuestion
     val (xmlTextInclTemplCmds, approxLineCount) =

@@ -46,11 +46,16 @@ object BrowserPagePatcher {
   * For example, it adds a new reply, or updates a comment
   * to show the most recent edits.
   *
-  * @param showUnapproved If comments that are pending approval should be shown.
+  * Shows unapproved comments and edits written by the current user, unless
+  * s/he is a moderator or admin, in which case all unapproved things are shown.
   */
-case class BrowserPagePatcher(request: DebikiRequest[_], showUnapproved: Boolean) {
+case class BrowserPagePatcher(request: DebikiRequest[_], showAllUnapproved: Boolean = false) {
 
   implicit private val logger = play.api.Logger(this.getClass)
+
+  private val showUnapproved: ShowUnapproved =
+    if (showAllUnapproved || request.user_!.isAdmin) ShowUnapproved.All
+    else ShowUnapproved.WrittenByUser(request.user_!.id)
 
 
   type JsPatchesByPageId = Map[String, List[JsPatch]]
@@ -61,6 +66,11 @@ case class BrowserPagePatcher(request: DebikiRequest[_], showUnapproved: Boolean
     val threadSpecs = threadIds.map(id => PostPatchSpec(id, wholeThread = true))
     val (threadPatches, _) = makeThreadAndPostPatchesSinglePage(page, threadSpecs)
     threadPatches
+  }
+
+
+  def jsonForThreadsAndPosts(page: PageParts, patchSpecs: PostPatchSpec*): JsValue = {
+    jsonForThreadsAndPosts(List((page, patchSpecs.toList)))
   }
 
 

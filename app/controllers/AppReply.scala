@@ -78,8 +78,7 @@ object AppReply extends mvc.Controller {
     if (pageReq.isAjax) {
       val patchSpec = PostPatchSpec(postWithId.id, wholeThread = true)
       OkSafeJson(
-        BrowserPagePatcher(pageReq, showUnapproved = true).
-          jsonForThreadsAndPosts(List((pageWithNewPost.parts, List(patchSpec)))))
+        BrowserPagePatcher(pageReq).jsonForThreadsAndPosts(pageWithNewPost.parts, patchSpec))
     }
     else {
       _showHtmlResultPage(pageReq, postWithId)

@@ -47,7 +47,7 @@ function initDeleteForm() {
 
   $form.submit(function() {
     $.post($form.attr("action"), $form.serialize(), 'html')
-        .done(function(responseHtml) {
+        .done(function(json) {
           $parent.dialog('close');
           // Don't show already submitted deletion reason,
           // if reopening form, and clear the delete-all-replies
@@ -55,7 +55,8 @@ function initDeleteForm() {
           $form.find('textarea').val('').end()
               .find('input:checked')
                 .prop('checked', false).button('refresh');
-          d.i.showServerResponseDialog(responseHtml);
+
+          var result = d.i.patchPage(json);
         })
         .fail(d.i.showServerResponseDialog);
     return false;
