@@ -18,9 +18,10 @@
 package views
 
 import com.debiki.v0._
+import debiki.dao.TenantDao
 import java.{util => ju}
 import Prelude._
-import scala.xml.{NodeSeq}
+import scala.xml.{NodeSeq, Text}
 
 
 /**
@@ -36,40 +37,64 @@ import scala.xml.{NodeSeq}
  *
  * 2. For now, don't bother about the redirect from "/-pageId#..."
  * to the actual page path.
+ *
+ * COULD remove columns from DW1_NOTFS_PAGE_ACTIONS because now I'm
+ * loading the page + comment from here anyway!
  */
-case class NotfHtmlRenderer(origin: String) {
+case class NotfHtmlRenderer(siteDao: TenantDao, origin: String) {
 
   import NotfOfPageAction.Type._
 
 
-  def pageUrl(notf: NotfOfPageAction) =
+  private def pageUrl(notf: NotfOfPageAction) =
     s"$origin/-${notf.pageId}"
 
-  def postUrl(notf: NotfOfPageAction) =
+  private def postUrl(notf: NotfOfPageAction) =
     s"${pageUrl(notf)}#post-${notf.eventActionId}"
 
 
   def render(notfs: Seq[NotfOfPageAction]): NodeSeq = {
-    (for (notf <- notfs) yield {
-      (notf.eventType match {
+    var result = Nil: NodeSeq
+    for (notf <- notfs)
+      result ++= (notf.eventType match {
         case PersonalReply => personalReply(notf)
         case MyPostApproved => myPostApproved(notf)
       })
-    })
+
+    result
   }
 
 
-  def personalReply(notf: NotfOfPageAction) = {
+  private def personalReply(notf: NotfOfPageAction): NodeSeq = {
     assert(notf.eventType == PersonalReply)
+
+    val page = siteDao.loadPage(notf.pageId) getOrElse {
+      return Nil
+    }
+    val post = page.getPost(notf.eventActionId) getOrElse {
+      return Nil
+    }
+    val markupSource = post.approvedText getOrElse {
+      return Nil
+    }
+
+    val date = toIso8601Day(post.creationDati)
+
+    // Don't include HTML right now. I do sanitize the HTML, but nevertheless
+    // I'm a bit worried that there's any bug that results in XSS attacks,
+    // which would then target the user's email account (!).
+    //val (html, _) = HtmlPageSerializer._markupTextOf(post, origin)
+    val html = Text(markupSource)
+
     <p>
-      You have a reply, <a href={postUrl(notf)}>here</a>,<br/>
-      on page <i>{notf.pageTitle}</i>,<br/>
-      written by <i>{notf.eventUserDispName}</i>.
+      You have a reply, <a href={postUrl(notf)}>here</a>, on page <i>{notf.pageTitle}</i>,<br/>
+      written by <i>{notf.eventUserDispName}</i>. On {date}, he or she wrote:
     </p>
+    <blockquote>{html}</blockquote>
   }
 
 
-  def myPostApproved(notf: NotfOfPageAction) = {
+  private def myPostApproved(notf: NotfOfPageAction): NodeSeq = {
     assert(notf.eventType == MyPostApproved)
     <p>
       <a href={postUrl(notf)}>Your post</a> has been approved,<br/>

@@ -79,14 +79,14 @@ class Notifier(val systemDao: SystemDao, val tenantDaoFactory: TenantDaoFactory)
            delayInMinutes = 0, numToLoad = 11)
       logger.trace("Loaded "+ notfsToMail.notfsByTenant.size +
          " notfs, to "+ notfsToMail.usersByTenantAndId.size +" users.")
-      _trySendEmailNotfs(notfsToMail)
+      trySendEmailNotfs(notfsToMail)
   }
 
 
   /**
    * Sends notifications, for all tenants and notifications specified.
    */
-  def _trySendEmailNotfs(notfsToMail: NotfsToMail) {
+  private def trySendEmailNotfs(notfsToMail: NotfsToMail) {
 
     for {
       (tenantId, tenantNotfs) <- notfsToMail.notfsByTenant
@@ -104,7 +104,7 @@ class Notifier(val systemDao: SystemDao, val tenantDaoFactory: TenantDaoFactory)
       // Send email, or remember why we didn't.
       val problemOpt = (tenant.chost, userOpt.map(_.emailNotfPrefs)) match {
         case (Some(chost), Some(EmailNotfPrefs.Receive)) =>
-          _constructAndSendEmail(tenantDao, chost, userOpt.get, userNotfs)
+          constructAndSendEmail(tenantDao, chost, userOpt.get, userNotfs)
           None
         case (None, _) =>
           val problem = "No chost for tenant id: "+ tenantId
@@ -127,7 +127,7 @@ class Notifier(val systemDao: SystemDao, val tenantDaoFactory: TenantDaoFactory)
   }
 
 
-  def _constructAndSendEmail(tenantDao: TenantDao, chost: TenantHost,
+  private def constructAndSendEmail(tenantDao: TenantDao, chost: TenantHost,
         user: User, userNotfs: Seq[NotfOfPageAction]) {
     // Save the email in the db, before sending it, so even if the server
     // crashes it'll always be found, should the receiver attempt to
@@ -135,7 +135,11 @@ class Notifier(val systemDao: SystemDao, val tenantDaoFactory: TenantDaoFactory)
     // might crash inbetween and it wouldn't be possible to unsubscribe.)
     val origin =
       (chost.https.required ? "https://" | "http://") + chost.address
-    val email = _constructEmail(origin, user, userNotfs)
+    val email = constructEmail(tenantDao, origin, user, userNotfs) getOrElse {
+      logger.debug(o"""Not sending any email to ${user.displayName} because the page
+        or the comment is gone or not approved or something like that.""")
+      return
+    }
     tenantDao.saveUnsentEmailConnectToNotfs(email, userNotfs)
 
     logger.debug("About to send email to "+ email.sentTo)
@@ -143,8 +147,8 @@ class Notifier(val systemDao: SystemDao, val tenantDaoFactory: TenantDaoFactory)
   }
 
 
-  def _constructEmail(origin: String, user: User,
-        notfs: Seq[NotfOfPageAction]): Email = {
+  private def constructEmail(dao: TenantDao, origin: String, user: User,
+        notfs: Seq[NotfOfPageAction]): Option[Email] = {
 
     val subject: String =
       if (notfs.size == 1) "You have a reply, to one of your comments"
@@ -153,10 +157,14 @@ class Notifier(val systemDao: SystemDao, val tenantDaoFactory: TenantDaoFactory)
     val email = Email(sendTo = user.email, subject = subject,
       bodyHtmlText = "?")
 
+    val contents = views.NotfHtmlRenderer(dao, origin).render(notfs)
+    if (contents isEmpty)
+      return None
+
     val htmlContent =
       <div>
         <p>Dear {user.displayName},</p>
-        { views.NotfHtmlRenderer(origin).render(notfs) }
+        { contents }
         <p>
           Kind regards,<br/>
           <a href="http://www.debiki.com">Debiki</a>
@@ -166,7 +174,7 @@ class Notifier(val systemDao: SystemDao, val tenantDaoFactory: TenantDaoFactory)
         </p>
       </div>.toString
 
-    email.copy(bodyHtmlText = htmlContent)
+    Some(email.copy(bodyHtmlText = htmlContent))
   }
 
 }
