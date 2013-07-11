@@ -100,7 +100,7 @@
                   </td>
                   <td class='action-what'>
                     <div>
-                      <a target='_blank' class='action-description' href='{{action.url}}'>{{action.description}}</a>
+                      <a class='action-description' href='{{action.url}}'>{{action.description}}</a>
 
                       <a class='inline-action new-flags-link' ng-show='action.showNewFlagsLink'>
                         {{action.numPendingFlags}} flags
@@ -128,7 +128,7 @@
 
                       <span class='inline-message'>{{action.inlineMessage}}</span>
                     </div>
-                    <a target='_blank' class='action-path' href='{{action.url}}'>{{action.pagePath}}</a>
+                    <span class='action-path'>{{action.pagePath}}</span>
                   </td>
                   <td><a target='_blank' href='#!/user/{{action.authorId}}'>{{action.authorDisplayName}}</a></td>
                   <td>{{action.cdati.replace('T', ' ')}}</td>
