@@ -60,7 +60,8 @@ bug = d.u.die2
         if action.type is 'Post'
           actionWithDetails.url = urlToPost(action)
           actionWithDetails.description = describePost(action)
-          actionWithDetails <<< inlineBtnTogglersForPost(action)
+          #actionWithDetails <<< infoOnFlags(action)
+          actionWithDetails <<< inlineBtnTogglersForPost(actionWithDetails)
         $scope.actionList.push actionWithDetails
       return
 
@@ -150,26 +151,46 @@ function describePost(post)
 
 
 
+# Currently not much info on flags is stored in DW1_POSTS so this is
+# currently not possible:
+/*
+function infoOnFlags(action)
+  if action.numPendingFlags > 0
+    prettyFlags: 'PRETTYFLAGS'  # examine action.flagCountsByReason
+  else
+    {} */
+
+
+
 function inlineBtnToggledAllOff
   approveBtnText: null
   showRejectBtn: false
   showViewSuggsLink: false
 
 function inlineBtnTogglersForPost(post)
+  showNewFlagsLink = post.numPendingFlags > 0
+  showOldFlagsLink = post.numHandledFlags > 0
+
   switch post.status
   | 'NewPrelApproved' \
-    'EditsPrelApproved' =>
-      approveBtnText: 'Okay'
-      showRejectBtn: true
-      showViewSuggsLink: false
+    'EditsPrelApproved' => {
+      approveBtnText: 'Okay',
+      showRejectBtn: true,
+      showViewSuggsLink: false,
+      showNewFlagsLink,
+      showOldFlagsLink }
   | 'New' \
-    'NewEdits' =>
-      approveBtnText: 'Approve'
-      showRejectBtn: true
-      showViewSuggsLink: false
+    'NewEdits' => {
+      approveBtnText: 'Approve',
+      showRejectBtn: true,
+      showViewSuggsLink: false,
+      showNewFlagsLink,
+      showOldFlagsLink }
   | _ =>
-    if post.numPendingEditSuggestions > 0 =>
-      showViewSuggsLink: true
+    if post.numPendingEditSuggestions > 0 => {
+      showViewSuggsLink: true,
+      showNewFlagsLink,
+      showOldFlagsLink }
     else {}
 
 

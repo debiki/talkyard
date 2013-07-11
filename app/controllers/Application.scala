@@ -74,7 +74,16 @@ object Application extends mvc.Controller {
       loginId = pageReq.loginId_!, userId = pageReq.user_!.id, newIp = pageReq.newIp,
       ctime = pageReq.ctime, reason = reason, details = details)
 
-    pageReq.dao.savePageActionsGenNotfs(pageReq, flag::Nil)
+    // Cancel any preliminary approval, sice post has been flagged.
+    /*
+    val flaggedPost = pageReq.page_!.getPost_!(postId)
+    val anyPrelApprovalCancellation =
+      if (!flaggedPost.currentVersionPrelApproved) Nil
+      else {
+        PostActionDto.forCancellationOfPrelApproval
+      } */
+
+    pageReq.dao.savePageActionsGenNotfs(pageReq, flag::Nil) // anyPrelApprovalCancellation)
 
     // COULD include the page html, so Javascript can update the browser.
     OkDialogResult("Thanks", "", // (empty summary)

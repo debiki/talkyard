@@ -247,10 +247,23 @@ object AppList extends mvc.Controller {
           data += "numEditsToReview" -> JsNumber(post.numEditsToReview)
         if (post.numPendingEditSuggestions > 0)
           data += "numPendingEditSuggestions" -> JsNumber(post.numPendingEditSuggestions)
-        if (post.numPendingFlags > 0)
+        if (post.numFlags > 0) {
           data += "numPendingFlags" -> JsNumber(post.numPendingFlags)
-        if (post.numHandledFlags > 0)
           data += "numHandledFlags" -> JsNumber(post.numHandledFlags)
+        }
+
+        // This info is currently not present in DW1_POSTS and is thus not available
+        // in `post` (since it's loaded from DW1_POSTS, not constructed from DW1_PAGE_ACTIONS.
+        /*
+        if (post.numFlags > 0) {
+          data += "flagCountsByReason" -> toJson(post.flagsByReason map { case (reason, flags) =>
+            (reason.toString, flags.length)
+          })
+          data += "firstPendingFlaggerUrl" -> JsString("FIRST_FLAGGER_URL")
+          data += "firstPendingFlaggerName" -> JsString("FIRST_FLAGGER_NAME")
+          data += "firstPendingFlaggerIp" -> JsString("FIRST_FLAGGER_IP")
+          data += "firstPendingFlaggerIpUrl" -> JsString("FIRST_FLAGGER_IP_URL")
+        } */
 
       case _ =>
     }

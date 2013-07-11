@@ -101,10 +101,31 @@
                   <td class='action-what'>
                     <div>
                       <a target='_blank' class='action-description' href='{{action.url}}'>{{action.description}}</a>
+
+                      <a class='inline-action new-flags-link' ng-show='action.showNewFlagsLink'>
+                        {{action.numPendingFlags}} flags
+                      </a>
+                      <a class='inline-action old-flags-link' ng-show='action.showOldFlagsLink'>
+                        {{action.numHandledFlags}} old flags
+                      </a>
+                      @* Info to construct this HTML is currently not saved in DW1_POSTS:
+                      <div class='inline-flags' ng-show='action.showFlagsLink'>
+                        <a class='inline-action flags-link'>
+                          Flagged: {{action.prettyFlags}}
+                        </a>
+                        <span class='first-flagger'>
+                          First flagged by <a href="{{action.firstFlaggerUrl}}">{{action.firstFlaggerName}}</a><br>
+                          from IP <a href="{{action.firstFlaggerIpUrl}}">{{action.firstFlaggerIp}}</a>
+                        </span>
+                      </div> *@
+
                       <a class='inline-action approve-action' ng-click='approve(action)' ng-show='action.approveBtnText'>{{action.approveBtnText}}</a>
                       <a class='inline-action reject-action' ng-click='reject(action)' ng-show='action.showRejectBtn'>Reject</a>
+
                       <a class='inline-action delete-action' ng-click='delete(action)' ng-show='action.showDeleteBtn'>Delete</a>
+
                       <a class='inline-action suggestions-link' ng-show='action.showViewSuggsLink'>{{action.numPendingEditSuggestions}} improvement suggestions</a>
+
                       <span class='inline-message'>{{action.inlineMessage}}</span>
                     </div>
                     <a target='_blank' class='action-path' href='{{action.url}}'>{{action.pagePath}}</a>

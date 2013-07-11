@@ -195,6 +195,14 @@ li {
   margin-left: 1em;
 }
 
+#details .inline-action.new-flags-link {
+  font-weight: bold;
+}
+
+#details .inline-action.old-flags-link {
+  color: black !important;
+}
+
 /* Improvement suggestions aren't reall the moderator's responsibility
   (but rather the text author's responsibility) so give them a weaker
   shade of red (50% not 100% saturation). */
