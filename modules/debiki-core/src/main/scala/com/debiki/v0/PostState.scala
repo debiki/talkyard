@@ -25,27 +25,15 @@ import com.debiki.v0.{PostActionPayload => PAP}
 object PostState {
 
   def whenCreated(creationPostActionDto: PostActionDto[PAP.CreatePost]): PostState = {
-    def approval = creationPostActionDto.payload.approval
-    val lastApprovalDati =
-      if (approval.isDefined) Some(creationPostActionDto.creationDati)
-      else None
     new PostState(
       creationPostActionDto,
       lastActedUponAt = creationPostActionDto.creationDati,
-      lastReviewDati = lastApprovalDati,
-      lastAuthoritativeReviewDati =
-        if (approval.filter(_.isAuthoritative).isDefined) lastApprovalDati
-        else None,
-      lastApprovalDati = lastApprovalDati,
-      lastApprovedText =
-        if (approval.isDefined) Some(creationPostActionDto.payload.text)
-        else None,
-      lastPermanentApprovalDati =
-        if (approval.filter(_.isPermanent).isDefined) lastApprovalDati
-        else None,
-      lastManualApprovalDati =
-        if (approval.filter(_ == Approval.Manual).isDefined) lastApprovalDati
-        else None,
+      lastReviewDati = None,
+      lastAuthoritativeReviewDati = None,
+      lastApprovalDati = None,
+      lastApprovedText = None,
+      lastPermanentApprovalDati = None,
+      lastManualApprovalDati = None,
       lastEditAppliedAt = None,
       lastEditRevertedAt = None,
       lastEditorId = None,
@@ -122,11 +110,14 @@ class PostState(
   val numPendingFlags: Int,
   val numHandledFlags: Int) {
 
-  def lastApprovalType: Option[Approval] = creationPostActionDto.payload.approval
+  def lastApprovalType: Option[Approval] = {
+    // `lastApprovalDati` is empty, if `this` created by PostState.whenCreated(...).
+    if (lastApprovalDati.isEmpty) None
+    else creationPostActionDto.payload.approval
+  }
 
   require(lastAuthoritativeReviewDati.isEmpty || lastReviewDati.isDefined)
   require(lastApprovalDati.isEmpty || lastReviewDati.isDefined)
-  require(lastApprovalDati.isDefined == lastApprovalType.isDefined)
   require(lastApprovedText.isEmpty || lastApprovalDati.isDefined)
   require(lastPermanentApprovalDati.isEmpty || lastApprovalDati.isDefined)
   require(lastManualApprovalDati.isEmpty || lastPermanentApprovalDati.isDefined)
