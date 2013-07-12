@@ -65,32 +65,46 @@ case class PageTrust(page: PageParts) {
    *  ... now at least they'd need to create a new OpenID account. This'll do
    *  for now.
    */
-  def trustinessOf(rating: Rating): Float = {
+  def trustinessOf(ratingDto: Rating): Float = {
     val otherRatsSameActn: RatingsOnAction =
-      page.ratingsByActionId(rating.postId) getOrElse {
+      page.ratingsByActionId(ratingDto.postId) getOrElse {
         // Since `rating' exists, there should also be a RatingsOnAction.
         assert(false); return 0f
       }
 
-    val curVersion = otherRatsSameActn.curVersionOf(rating)
+    var trust = 1f
+
     // Ignore old overwritten ratings.
-    if (rating.id != curVersion.id) {
+    val curVersion = otherRatsSameActn.curVersionOf(ratingDto)
+    if (ratingDto.id != curVersion.id)
       return 0f
-    }
+
     // `rating' is the most recent version.
-    assert(curVersion == rating)
+    assert(curVersion == ratingDto)
+
+    // If you are the comment author, the trust is reduced to 0.1 if you choose
+    // any positive rating tag (e.g. Insightful). Otherwise, if you choose e.g.
+    // Off-topic only, the trust remains 1.0.
+    val rating = page.smart(ratingDto)
+    val post = page.getPost(ratingDto.postId) getOrElse { return 0f }
+    val isAuthor = post.userId == rating.userId
+    val containsAnyGoodTag = PostRatingStats.DefaultLikedTags.intersect(ratingDto.tags).nonEmpty
+    if (isAuthor && containsAnyGoodTag) {
+      trust *= 0.1f
+    }
+    // Could: else if (post.ip == rating.ip_!) trust *= 0.5f
 
     // If you have authenticated yourelf, you are trusted. (As of right now.)
-    if (page.smart(rating).user_!.isAuthenticated)
-      return 1f
+    if (rating.user_!.isAuthenticated)
+      return trust
 
     // Otherwise, your rating's trust is divided by the total number of ratings
     // from the same ip.
-    val ip = page.smart(rating).ip_!
+    val ip = rating.ip_!
     val otherRatsSameIp = otherRatsSameActn.allRecentByNonAuIp(ip)
     val ipCount = otherRatsSameIp.size
     if (ipCount == 0) { assert(false); return 0f }
-    1f / ipCount
+    trust / ipCount
   }
 
 }

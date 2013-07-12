@@ -141,3 +141,5 @@ trait PageTestValues {
 }
 
 
+object PageTestValues extends PageTestValues
+
