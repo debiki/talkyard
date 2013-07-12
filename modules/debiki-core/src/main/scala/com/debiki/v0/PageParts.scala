@@ -563,6 +563,8 @@ case class PageParts (
   // Could try not to add stuff that's already included in this.people.
   def ++(people: People): PageParts = this.copy(people = this.people ++ people)
   def +(user: User) = this ++ People(users = user::Nil)
+  def +(login: Login) = this ++ People(logins = login::Nil)
+  def +(identity: Identity) = this ++ People(identities = identity::Nil)
 
   def ++(page: PageParts): PageParts = this ++ page.allActions
 
