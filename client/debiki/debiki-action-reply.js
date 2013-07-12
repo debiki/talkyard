@@ -48,44 +48,6 @@ d.i.$showReplyForm = function(event, opt_where) {
     }, delay);
   }
 
-  // (Could use http://www.lullabot.com/files/bt/bt-latest/DEMO/index.html
-  // to draw arrow from tips to Rate button.)
-  function showRateOwnCommentTipsLater($newPost, delayMillis) {
-    var rateOwnPostClass = 'dw-tps-rate-own-post';
-    var withTipsClass = 'dw-p-as-with-tips';
-    var $tips = $('#dw-tps-rate-own-comment');
-    var $newThread = $newPost.closest('.dw-t');
-    var $actions = $newThread.children('.dw-p-as');
-    var $rateAction = $actions.children('.dw-a-rate');
-    var timeoutHandler;
-
-    // Hide any old tips and stop showing related Rate action link.
-    $tips.closest('.dw-p-as').removeClass('dw-p-as-with-tips');
-    $tips.hide();
-
-    function removeOrCancelTips(opt_event) {
-      $rateAction.unbind('click', removeOrCancelTips);
-      $tips.unbind('click');
-      if (timeoutHandler) clearTimeout(timeoutHandler);
-      else $tips.fadeOut(function() {
-        $tips.removeClass(rateOwnPostClass);
-        $actions.removeClass(withTipsClass);
-        // Show the action buttons for $newPost, or people will be
-        // very confused when they're hidden now when the tips is
-        // dismissed (since `withTipsClass' was just removed).
-        $newPost.each(d.i.$showActions);
-      });
-    }
-
-    $rateAction.click(removeOrCancelTips);
-    timeoutHandler = setTimeout(function() {
-      timeoutHandler = null;
-      $actions.addClass(withTipsClass);
-      $tips.addClass(rateOwnPostClass).show().insertAfter($rateAction)
-          .dwScrollIntoView()
-          .click(removeOrCancelTips);
-    }, delayMillis);
-  }
 
   (function() { // in the past, loaded reply form here
 
@@ -138,16 +100,14 @@ d.i.$showReplyForm = function(event, opt_where) {
           // Any horizontal reply button has been hidden.
           $anyHorizReplyBtn.show();
 
-          // Don't show any tips instantly, because if
+          // Don't show sort order tips instantly, because if
           // the new comment and the tips appear at the same time,
           // the user will be confused? S/he won't know where to look?
           // So wait a few seconds.
           // Don't show sort order tips if there are few replies,
           // then nothing is really being sorted anyway.
-          var delayMillis = 3500;
           var showSortTips = horizLayout && replyCountBefore >= 2;
           if (showSortTips) showSortOrderTipsLater($myNewPost, 2050);
-          else showRateOwnCommentTipsLater($myNewPost, delayMillis);
 
           d.i.showAndHighlightPost($myNewPost,
               { marginRight: 300, marginBottom: 300 });

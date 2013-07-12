@@ -1495,26 +1495,6 @@ form .dw-ntf {
   vertical-align: middle;
 }
 
-/* Tips to rate one's own reply. */
-.dw-pri .dw-tps-rate-own-post {
-  position: absolute;
-  width: 210px;
-  top: -40px;
-  left: 115px;
-}
-.dw-tps-arw-left {
-  background: url(img/arrows-etcetera-gray.png) no-repeat 0 -287px;
-  position: absolute;
-  left: -20px;
-  top: 13px;
-  width: 26px;
-  height: 38px;
-}
-.dw-p-as-with-tips {
-  visibility: visible !important;
-  z-index: 11 !important; /* place above .dw-p:hover, with z-index: 10 */
-}
-
 
 /* === Inbox === */
 /* COULD get rid of #sidebar selector somehow — make selectors in

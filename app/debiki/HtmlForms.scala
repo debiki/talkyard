@@ -145,8 +145,7 @@ class HtmlForms(xsrfToken: String, val pageRoot: PageRoot, val permsOnPage: Perm
       flagForm ++
       deleteForm(None) ++
       submittingFormInfoDiv ++
-      sortOrterTipsDiv ++
-      rateOwnCommentTipsDiv }
+      sortOrterTipsDiv }
     </div>
   }
 
@@ -705,19 +704,6 @@ class HtmlForms(xsrfToken: String, val pageRoot: PageRoot, val permsOnPage: Perm
       <span class="dw-tps-sort-order-arw"></span>
       Comments rated <i>boring, stupid</i>
       <div class='dw-tps-close'>(Click this box to dismiss)</div>
-    </div>
-  }
-
-  /**
-   *  A tips to rate one's own comments.
-   */
-  val rateOwnCommentTipsDiv: NodeSeq = {
-    <div class='dw-tps' id='dw-tps-rate-own-comment'>
-      <div class='dw-tps-arw-left'/>
-      <p><strong>Rate your own comment:</strong>
-        Click the <strong class='dw-a-color-primary'>Rate</strong> button.
-      </p>
-      <p class='dw-tps-close'>(click this box to dismiss)</p>
     </div>
   }
 
