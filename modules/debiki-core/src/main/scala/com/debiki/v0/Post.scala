@@ -338,7 +338,7 @@ case class Post(
     // namely `this`, if this post was auto-approved (e.g. a preliminarily
     // approved comment, or a comment posted by an admin).
     // However, returning only `this` is incorrect, if there are in fact other
-    // reviews that happened later (but haven't been loaded). Because other functions
+    // reviews that happened later, but haven't been loaded; other functions
     // assume that _reviewsDescTime includes any most recent review. So instead
     // of returning List(this), return Nil; then other functions work as they
     // should (if _reviewsDescTime is empty rather than incorrectly containing only

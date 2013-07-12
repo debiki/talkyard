@@ -82,7 +82,7 @@ trait PageTestValues {
         loginId = "115", userId = "?", newIp = None, creationDati = new ju.Date(15000),
         payload = PAP.Delete(editSkeleton.id))
 
-  val approvalOfEditApp = PostActionDto.toReviewPost(id = 16, postId = editAppSkeleton.id,
+  val approvalOfEditApp = PostActionDto.toReviewPost(id = 16, postId = editAppSkeleton.postId,
         loginId = "116", userId = "?", newIp = None, ctime = new ju.Date(16000),
         approval = Some(Approval.Manual))
 
