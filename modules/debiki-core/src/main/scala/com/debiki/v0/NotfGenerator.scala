@@ -34,12 +34,12 @@ case class NotfGenerator(pageExclNewActions: PageParts, newActions: Seq[PostActi
   def generateNotfs: Seq[NotfOfPageAction] = newActions flatMap (_ match {
     case action: PostActionDto[_] => action.payload match {
       case p: PostActionPayload.CreatePost =>
-        _makePersonalReplyNotf(
+        makePersonalReplyNotf(
           new Post(page, action.asInstanceOf[PostActionDto[PAP.CreatePost]]))
       case e: PAP.EditPost =>
         Nil  // fix later, see "Note:" below
       case _: PAP.ReviewPost =>
-        _makeReviewNotfs(new Review(page, action.asInstanceOf[PostActionDto[PAP.ReviewPost]]))
+        makeReviewNotfs(new Review(page, action.asInstanceOf[PostActionDto[PAP.ReviewPost]]))
       case _ =>
         Nil // skip for now
     }
@@ -55,7 +55,7 @@ case class NotfGenerator(pageExclNewActions: PageParts, newActions: Seq[PostActi
   })
 
 
-  def _makePersonalReplyNotf(post: Post,
+  private def makePersonalReplyNotf(post: Post,
           review: Option[Review] = None): List[NotfOfPageAction] = {
 
     val (triggerAction, approvalOpt) =
@@ -78,7 +78,7 @@ case class NotfGenerator(pageExclNewActions: PageParts, newActions: Seq[PostActi
     val replier = post.user_!
 
     // Don't notify the user about his/her own replies.
-    if (replier.id == Some(userRepliedTo.id))
+    if (replier.id == userRepliedTo.id)
       return Nil
 
     List(NotfOfPageAction(
@@ -98,7 +98,7 @@ case class NotfGenerator(pageExclNewActions: PageParts, newActions: Seq[PostActi
   }
 
 
-  def _makeReviewNotfs(review: Review): List[NotfOfPageAction] = {
+  private def makeReviewNotfs(review: Review): List[NotfOfPageAction] = {
     // For now, only consider approvals of posts.
     if (!review.target.isInstanceOf[Post])
       return Nil
@@ -159,7 +159,7 @@ case class NotfGenerator(pageExclNewActions: PageParts, newActions: Seq[PostActi
     // (that has been approved).
     val notfToAuthorOfParentPost =
       if (postReviewed.parentPost.isEmpty) Nil
-      else _makePersonalReplyNotf(postReviewed, Some(review))
+      else makePersonalReplyNotf(postReviewed, Some(review))
 
     //authorNotf ::
     notfToAuthorOfParentPost

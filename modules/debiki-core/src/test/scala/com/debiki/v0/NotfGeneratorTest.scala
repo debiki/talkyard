@@ -22,7 +22,7 @@ import java.{util => ju}
 import org.specs2.mutable._
 import org.specs2.execute.Pending
 import NotfOfPageAction.Type._
-import PostActionDto.copyReviewPost
+import PostActionDto.{copyCreatePost, copyReviewPost}
 import Prelude._
 
 
@@ -78,6 +78,7 @@ trait NotfGeneratorTestValues {
 }
 
 
+
 class NotfGeneratorTest extends Specification with NotfGeneratorTestValues {
 
   def genNotfs(user: User, page: PageParts, actions: PostActionDtoOld*) =
@@ -101,27 +102,32 @@ class NotfGeneratorTest extends Specification with NotfGeneratorTestValues {
     notf.emailId must_== None
   }
 
+
   "NotfGenerator" should {
 
+    "generate no notf for a reply to one's own comment" in {
+      val ownReply = copyCreatePost(rawReply, loginId = bodyAuthorLogin.id,
+        userId = bodyAuthor.id, approval = Some(Approval.WellBehavedUser))
+      val notfs = genNotfs(bodyAuthor, PageWithApprovedBody, ownReply)
+      notfs.length must_== 0
+    }
+
     "generate no notf for an unapproved reply" in {
-      val page = PageWithApprovedBody + rawReply
-      val notfs = genNotfs(bodyAuthor, page, rawReply)
+      val notfs = genNotfs(bodyAuthor, PageWithApprovedBody, rawReply)
       notfs.length must_== 0
     }
 
     "generate no notf for a prel approved reply" in {
-      val page = PageWithApprovedBody + rawReplyPrelApproved
-      val notfs = genNotfs(bodyAuthor, page, rawReplyPrelApproved)
+      val notfs = genNotfs(bodyAuthor, PageWithApprovedBody, rawReplyPrelApproved)
       notfs.length must_== 0
     }
 
     "generate a notf for other auto approved replies" in {
       def test(reply: PostActionDto[PostActionPayload.CreatePost]) = {
-        val page = PageWithApprovedBody + reply
-        val notfs = genNotfs(bodyAuthor, page, reply)
+        val notfs = genNotfs(bodyAuthor, PageWithApprovedBody, reply)
         notfs.length must_== 1
         val notf = notfs.head
-        notf.pageId must_== page.id
+        notf.pageId must_== PageWithApprovedBody.id
         notf.eventType must_== PersonalReply
         checkThatFor(notf, recipient = bodyAuthor, actor = replyAuthor,
             recipientAction = rawBody, actorAction = reply,
@@ -132,13 +138,13 @@ class NotfGeneratorTest extends Specification with NotfGeneratorTestValues {
     }
 
     "generate no notf for a rejected reply" in {
-      val page = PageWithApprovedBody + rawReply + rejectionOfReply
+      val page = PageWithApprovedBody + rawReply
       val notfs = genNotfs(bodyAuthor, page, rejectionOfReply)
       notfs.length must_== 0
     }
 
     "generate reply notf when a reply is approved, manually" in {
-      val page = PageWithApprovedBody + rawReply + approvalOfReply
+      val page = PageWithApprovedBody + rawReply
       val notfs = genNotfs(bodyAuthor, page, approvalOfReply)
       notfs.length must_== 1
       val notf = notfs.head
@@ -152,14 +158,15 @@ class NotfGeneratorTest extends Specification with NotfGeneratorTestValues {
     "generate no notf when a reply is approved by the one replied to" in {
       val approval = approvalOfReply.copy(
         loginId = bodyAuthorLogin.id, userId = bodyAuthor.id)
-      val page = PageWithApprovedBody + rawReply + approval
+      val page = PageWithApprovedBody + rawReply
       val notfs = genNotfs(bodyAuthor, page, approval)
       notfs.length must_== 0
     }
 
-    "generate no notfs when well-behaved-user prel approval upheld" in {
-      val page = PageWithApprovedBody + rawReplyWellBehavedApproved +
-          approvalOfReply
+    "generate no notfs if well-behaved-user approval upheld" in {
+      // This cannot really happen: moderators aren't asked to review comments by
+      // well-behaved users. But include this test anyway.
+      val page = PageWithApprovedBody + rawReplyWellBehavedApproved
       val notfs = genNotfs(bodyAuthor, page, approvalOfReply)
       notfs.length must_== 0
     }
