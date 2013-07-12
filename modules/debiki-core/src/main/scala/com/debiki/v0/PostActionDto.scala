@@ -284,6 +284,11 @@ object PostActionPayload {
     */
   case class ReviewPost(approval: Option[Approval]) extends PostActionPayload
 
+  val RejectPost = ReviewPost(approval = None)
+  val PrelApprovePost = ReviewPost(Some(Approval.Preliminary))
+  val WellBehavedApprovePost = ReviewPost(Some(Approval.WellBehavedUser))
+  val ManuallyApprovePost = ReviewPost(Some(Approval.Manual))
+
 
   class CollapseSomething extends PostActionPayload
 

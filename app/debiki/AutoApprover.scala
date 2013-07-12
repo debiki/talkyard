@@ -147,37 +147,47 @@ object AutoApprover {
 
 
   private def _considerPosts(recentActions: List[PostActionOld]): Option[Approval] = {
-    var manuallyApprovedCount = 0
-    var unreviewedCount = 0
-    var postCount = 0
+    var anyCurrentApproval: Option[Approval] = None
+    var numPosts = 0
 
     for {
       action <- recentActions if action.isInstanceOf[Post]
       post = action.asInstanceOf[Post]
     } {
+      numPosts += 1
+
       // If any recent post has been rejected, don't auto approve.
       // ??? But I should verify that any edits were made by the current user ???
       // (What if it's a wiki page, and someone else spoiled the comment.)
       if (post.currentVersionRejected)
         return None
 
-      postCount += 1
-      if (post.someVersionManuallyApproved) manuallyApprovedCount += 1
-      else unreviewedCount += 1
+      // For now, assume an old post was "bad" if it is both flagged and deleted.
+      // In the future: Perhaps allow moderators to clarify why they deleted the post?
+      if (post.isDeletedSomehow && post.numFlags > 0)
+        return None
+
+      // If any recent post flagged, but the flags haven't been reviewed,
+      // don't approve this post.
+      if (post.flagsPendingReview.nonEmpty)
+        return None
+
+      // After any manual approval, consider this user being a well behaved user.
+      // And continue automatically approving a well behaved user.
+      post.lastApprovalType foreach { approval =>
+        val startConsiderWellBehaved = approval == Approval.Manual
+        val alreadyConsideredWellBehaved = approval == Approval.WellBehavedUser
+        if (alreadyConsideredWellBehaved || startConsiderWellBehaved) {
+          anyCurrentApproval = Some(Approval.WellBehavedUser)
+        }
+      }
     }
 
-    // Preliminarily approve really many comments, if a few comments by this user and IP have
-    // been manually approved already. But use the `log` function to restrict
-    // the max num comments we prel approve.
-    val maxNumPendingReview = calcMaxNumPendingComments(manuallyApprovedCount)
+    // Preliminarily approve the very first 2 comments of a new user.
+    if (anyCurrentApproval.isEmpty && numPosts + 1 <= 2)
+      anyCurrentApproval = Some(Approval.Preliminary)
 
-    // If there are too many outstanding unreviewed comments, don't approve.
-    // (Even if all your comments that've been reviewed have actually been
-    // approved.)
-    if (unreviewedCount >= maxNumPendingReview)
-      return None
-
-    Some(Approval.Preliminary)
+    anyCurrentApproval
   }
 
 

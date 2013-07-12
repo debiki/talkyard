@@ -34,7 +34,8 @@ class AutoApproverSpec extends Specification with Mockito {
   val TenantId = "tenantid"
   val Ip = "1.1.1.1"
   val PageId = "pageid"
-  def now() = new ju.Date()
+  def now() = new ju.Date(0)
+  def later(seconds: Int) = new ju.Date(0 + seconds * 1000)
 
 
   val guestUser = User(
@@ -153,8 +154,37 @@ class AutoApproverSpec extends Specification with Mockito {
 
   val approvalOfReplyA: PostActionDto[PAP.ReviewPost] = PostActionDto.toReviewPost(
     id = 10002, postId = testUserReplyAId, loginId = SystemUser.Login.id,
-    userId = SystemUser.Identity.id, ctime = now(), approval = Some(Approval.Manual))
+    userId = SystemUser.User.id, ctime = later(10), approval = Some(Approval.Manual))
 
+  val wellBehavedApprovalOfReplyA = approvalOfReplyA.copy(payload = PAP.WellBehavedApprovePost)
+  val prelApprovalOfReplyA = approvalOfReplyA.copy(payload = PAP.PrelApprovePost)
+
+  val veryRecentApprovalOfReplyA = approvalOfReplyA.copy(creationDati = later(100))
+
+  val approvalOfReplyB: PostActionDto[PAP.ReviewPost] =
+    approvalOfReplyA.copy(id = 10003, postId = testUserReplyBId)
+
+  val prelApprovalOfReplyB = approvalOfReplyB.copy(payload = PAP.PrelApprovePost)
+
+  val rejectionOfReplyA: PostActionDto[PAP.ReviewPost] =
+    approvalOfReplyA.copy(id = 10004, payload = PAP.RejectPost)
+
+  val flagOfReplyA = Flag(id = 10005, postId = testUserReplyAId, loginId = SystemUser.Login.id,
+    userId = SystemUser.User.id, newIp = None, ctime = later(20), reason = FlagReason.Other,
+    details = "")
+
+  val deletionOfReplyA: PostActionDto[_] = PostActionDto.toDeletePost(
+    andReplies = false, id = 10006, postIdToDelete = testUserReplyAId,
+    loginId = SystemUser.Login.id, userId = SystemUser.User.id, createdAt = later(30))
+
+  def replyAUnapprovedAndBPrelApproved(implicit testUserId: String): List[PostActionDto[_]] =
+    List(testUserReplyA, testUserReplyB, prelApprovalOfReplyB)
+
+  def replyAAndBBothPrelApproved(implicit testUserId: String): List[PostActionDto[_]] =
+    List(testUserReplyA, prelApprovalOfReplyA, testUserReplyB, prelApprovalOfReplyB)
+
+  def replyAPrelApprovedAndBManApproved(implicit testUserId: String): List[PostActionDto[_]] =
+    List(testUserReplyA, testUserReplyB, approvalOfReplyB)
 
   val (guestLogin, openidLogin) = {
     val login = Login(id = testUserLoginId, ip = Ip, prevLoginId = None,
@@ -164,10 +194,11 @@ class AutoApproverSpec extends Specification with Mockito {
   }
 
 
-  def newDaoMock(actionDtos: List[PostActionDto[_]], login: Login, testUserId: String) = {
+  def newDaoMock(actionDtos: List[PostActionDto[_]], login: Login, testUserId: String,
+        actionDtosOld: List[PostActionDtoOld] = Nil) = {
 
     val actions: Seq[PostActionOld] = {
-      val page = PageParts("pageid") ++ actionDtos
+      val page = PageParts("pageid") ++ actionDtos ++ actionDtosOld
       page.postsByUser(withId = testUserId)
     }
 
@@ -212,38 +243,52 @@ class AutoApproverSpec extends Specification with Mockito {
 
       "the second" >> {
         // This prel approves replyA.
-        val dao = newDaoMock(List(testUserReplyA), guestLogin, testUserId)
+        val dao = newDaoMock(List(testUserReplyA, prelApprovalOfReplyA), guestLogin, testUserId)
         AutoApprover.perhapsApprove(pageReqGuest(dao)) must_== Some(Approval.Preliminary)
       }
 
       "but not the third one" >> {
         // This prel approves replyA and B.
-        val dao = newDaoMock(List(testUserReplyA, testUserReplyB), guestLogin, testUserId)
+        val dao = newDaoMock(replyAAndBBothPrelApproved, guestLogin, testUserId)
         AutoApprover.perhapsApprove(pageReqGuest(dao)) must_== None
       }
 
-      "do approve the third comment, when one other comment has been manually approved" >> {
-        val dao = newDaoMock(List(
-          testUserReplyA, testUserReplyB, approvalOfReplyA), guestLogin, testUserId)
-        AutoApprover.perhapsApprove(pageReqGuest(dao)) must_== Some(Approval.Preliminary)
+      "well-behaved approve third comment, when other recent comment manually approved" >> {
+        val dao = newDaoMock(
+          approvalOfReplyA::replyAUnapprovedAndBPrelApproved, guestLogin, testUserId)
+        AutoApprover.perhapsApprove(pageReqGuest(dao)) must_== Some(Approval.WellBehavedUser)
       }
 
-      "approve up to five comments, when one has been manually approved" >> {
-        // 1 approved comment + 5 unreviewed but prel approved =>
-        //   the next comment should also be prel approved, 5 is not many (if we
-        //   already allow 2 from completely new users).
-        val dao = newDaoMock(List(
-            testUserReplyA, testUserReplyB, approvalOfReplyA) ::: manyTestUserReplies(4),
+      "continue well-behaved-approve comments" >> {
+        // Since reply A is approved with Approval.WellBehavedUsers, subsequent
+        // posts are approved in the same manner (when there are no flags or rejections).
+        val dao = newDaoMock(
+          wellBehavedApprovalOfReplyA::replyAUnapprovedAndBPrelApproved:::manyTestUserReplies(10),
           guestLogin, testUserId)
-        AutoApprover.perhapsApprove(pageReqGuest(dao)) must_== Some(Approval.Preliminary)
+        AutoApprover.perhapsApprove(pageReqGuest(dao)) must_== Some(Approval.WellBehavedUser)
       }
 
-      "not approve ten or more comments, when only one has been manually approved" >> {
-        // 1 approved comment + 10 unreviewed but prel approved =>
-        //  the next comment won't be prel approved.
-        val dao = newDaoMock(List(
-          testUserReplyA, testUserReplyB, approvalOfReplyA) ::: manyTestUserReplies(9),
-          guestLogin, testUserId)
+      "not approve any further comments, when one comment rejected" >> {
+        val dao = newDaoMock(rejectionOfReplyA::replyAPrelApprovedAndBManApproved, guestLogin, testUserId)
+        AutoApprover.perhapsApprove(pageReqGuest(dao)) must_== None
+      }
+
+      "not approve any further comments, when there's one unreviewed flag" >> {
+        val dao = newDaoMock(replyAPrelApprovedAndBManApproved,
+          guestLogin, testUserId, flagOfReplyA::Nil)
+        AutoApprover.perhapsApprove(pageReqGuest(dao)) must_== None
+      }
+
+      "do approve any further comments, when there's one reviewed and ignored flag" >> {
+        // The very recent approval of A ignores the flag.
+        val dao = newDaoMock(veryRecentApprovalOfReplyA::replyAPrelApprovedAndBManApproved,
+          guestLogin,  testUserId,  flagOfReplyA::Nil)
+        AutoApprover.perhapsApprove(pageReqGuest(dao)) must_== Some(Approval.WellBehavedUser)
+      }
+
+      "not approve any further comments, when one comment flagged and deleted" >> {
+        val dao = newDaoMock(deletionOfReplyA::replyAPrelApprovedAndBManApproved,
+          guestLogin, testUserId,  flagOfReplyA::Nil)
         AutoApprover.perhapsApprove(pageReqGuest(dao)) must_== None
       }
     }
