@@ -158,7 +158,7 @@ object PageActions {
     if (!pathIn.isFolderOrIndexPage)
       throwBadReq("DwE903XH3", s"Call on folders only, not pages: ${request.uri}")
 
-    val dao = Debiki.tenantDao(tenantId = pathIn.tenantId,
+    val dao = Globals.tenantDao(tenantId = pathIn.tenantId,
       ip = request.remoteAddress, sidStatus.roleId)
 
     val (identity, user) = Utils.loadIdentityAndUserOrThrow(sidStatus, dao)
@@ -213,7 +213,7 @@ object PageActions {
            PlainResult) =
     SafeActions.CheckSidAction[A](parser, maySetCookies = maySetCookies) {
         (sidStatus, xsrfOk, request) =>
-      val dao = Debiki.tenantDao(tenantId = pathIn.tenantId,
+      val dao = Globals.tenantDao(tenantId = pathIn.tenantId,
          ip = request.remoteAddress, sidStatus.roleId)
       dao.checkPagePath(pathIn) match {
         case Some(correct: PagePath) =>

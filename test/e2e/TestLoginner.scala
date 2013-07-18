@@ -71,7 +71,7 @@ trait TestLoginner {
       firstName = "TestAdmin", email = "test-admin@example.com", country = "")
 
     val loginReq = d.LoginRequest(login, identity)
-    val dao = debiki.Debiki.tenantDao(firstSiteId, ip = "1.1.1.1")
+    val dao = debiki.Globals.tenantDao(firstSiteId, ip = "1.1.1.1")
     val loginGrant = dao.saveLogin(loginReq)
 
     if (!adminMadeAdmin) {

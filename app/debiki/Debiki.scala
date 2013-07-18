@@ -17,67 +17,16 @@
 
 package debiki
 
-import com.debiki.v0._
 import com.debiki.v0.Prelude._
 import play.{api => p}
 import play.api.Play
 import play.api.Play.current
-import com.debiki.v0.QuotaConsumers
-import debiki.dao.{SystemDao, TenantDao, CachingTenantDaoFactory, CachingSystemDao}
 
 
-object Debiki extends Debiki
+// COULD remove, see comments just below:
 
-
-class Debiki {
-
-  private val dbDaoFactory = new RelDbDaoFactory({
-    //val dataSourceName = if (Play.isTest) "test" else "default"
-    //val dataSource = p.db.DB.getDataSource(dataSourceName)
-    val dataSource = getPostgreSqlDataSource()
-    val db = new RelDb(dataSource)
-
-    // Log which database we've connected to.
-    //val boneDataSource = dataSource.asInstanceOf[com.jolbox.bonecp.BoneCPDataSource]
-    //p.Logger.info(o"""Connected to database:
-    //  ${boneDataSource.getJdbcUrl} as user ${boneDataSource.getUsername}.""")
-
-    db
-  })
-
-
-  def systemDao: SystemDao = new CachingSystemDao(dbDaoFactory.systemDbDao)
-
-
-  // Don't run out of quota when running e2e tests.
-  protected def freeDollarsToEachNewSite: Float = if (Play.isTest) 1000.0f else 1.0f
-
-
-  private val quotaManager = new QuotaManager(systemDao, freeDollarsToEachNewSite)
-  quotaManager.scheduleCleanups()
-
-
-  private val tenantDaoFactory = new CachingTenantDaoFactory(dbDaoFactory,
-    quotaManager.QuotaChargerImpl /*, cache-config */)
-
-
-  def tenantDao(tenantId: String, ip: String, roleId: Option[String] = None)
-        : TenantDao =
-    tenantDaoFactory.newTenantDao(QuotaConsumers(ip = Some(ip),
-      tenantId = tenantId, roleId = roleId))
-
-
-  private val mailerActorRef = Mailer.startNewActor(tenantDaoFactory)
-
-
-  private val notifierActorRef =
-    Notifier.startNewActor(systemDao, tenantDaoFactory)
-
-
-  def sendEmail(email: Email, websiteId: String) {
-    mailerActorRef ! (email, websiteId)
-  }
-
+@deprecated("Remove once the BoneCP bug has been fixed", since = "a while ago")
+object Debiki {
 
   // Play's BoneCP v.0.7.1 is broken and unusable, and SBT refuses to use version 0.8 RC1
   // which supposedly has fixed the problem. Use Postgres connection pool instead.
@@ -87,7 +36,7 @@ class Debiki {
   //                                  ~[com.jolbox.bonecp-0.7.1.RELEASE.jar:0.7.1.RELEASE
   // See: http://stackoverflow.com/questions/15480506/
   //                        heroku-play-bonecp-connection-issues/15500442#15500442
-  private def getPostgreSqlDataSource(): javax.sql.DataSource = {
+  def getPostgreSqlDataSource(): javax.sql.DataSource = {
 
     if (Play.isTest)
       return p.db.DB.getDataSource("test")

@@ -82,7 +82,7 @@ object AppUnsubscribe extends mvc.Controller {
     val loginNoId = Login(id = "?", prevLoginId = None,
        ip = request.remoteAddress, date = new ju.Date, identityId = emailId)
     val loginReq = LoginRequest(loginNoId, IdentityEmailId(emailId))
-    val dao = Debiki.tenantDao(tenantId, ip = request.remoteAddress)
+    val dao = Globals.tenantDao(tenantId, ip = request.remoteAddress)
 
     val loginGrant =
       try dao.saveLogin(loginReq)

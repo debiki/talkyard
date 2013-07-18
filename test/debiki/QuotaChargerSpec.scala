@@ -42,7 +42,7 @@ trait RunningServerMixin extends BeforeAndAfterAll {
   override def beforeAll() {
     testServer.start()
     if (emptyDatabaseBeforeAll)
-      debiki.Debiki.systemDao.emptyDatabase()
+      Globals.systemDao.emptyDatabase()
   }
 
 
@@ -89,7 +89,7 @@ abstract class QuotaChargerSpec extends RichFreeSpec with MustMatchers
   with RunningServerMixin {
 
 
-  lazy val testDebiki = new Debiki {
+  lazy val testGlobals = new debiki.Globals {
     // By default, the test configuration grants very much quota.
     // Let's grant $1 only, so we'll actually run out of quota sometimes.
     override def freeDollarsToEachNewSite = 1f
@@ -185,7 +185,7 @@ abstract class QuotaChargerSpec extends RichFreeSpec with MustMatchers
           for (i <- 1 to numSites)
           yield {
             val site = createSite(fromIp = nextIp())
-            val guestDao = testDebiki.tenantDao(site.id, fixIp)
+            val guestDao = testGlobals.tenantDao(site.id, fixIp)
             val guestLoginGrant = loginNewGuestUser("GuestTest", SiteAndIp(site.id, fixIp))
             (site, guestLoginGrant, guestDao)
           }
@@ -311,7 +311,7 @@ abstract class QuotaChargerSpec extends RichFreeSpec with MustMatchers
 
 
   def tenantDao(siteAndIp: SiteAndIp, roleId: Option[String] = None): TenantDao =
-    testDebiki.tenantDao(siteAndIp.siteId, ip = siteAndIp.ip, roleId = roleId)
+    testGlobals.tenantDao(siteAndIp.siteId, ip = siteAndIp.ip, roleId = roleId)
 
 
   def createSite(fromIp: String): Tenant =

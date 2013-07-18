@@ -143,7 +143,7 @@ class Notifier(val systemDao: SystemDao, val tenantDaoFactory: TenantDaoFactory)
     tenantDao.saveUnsentEmailConnectToNotfs(email, userNotfs)
 
     logger.debug("About to send email to "+ email.sentTo)
-    Debiki.sendEmail(email, tenantDao.tenantId)
+    Globals.sendEmail(email, tenantDao.tenantId)
   }
 
 

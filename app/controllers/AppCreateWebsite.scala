@@ -189,13 +189,13 @@ object AppCreateWebsite extends mvc.Controller {
         // COULD try to do this in the same transaction as `createWebsite`?
         // -- This whole function could be rewritten/replaced to/with
         //      CreateSiteSystemDaoMixin.createSiteImpl() ?  in debiki-dao-pgsql
-        val newWebsiteDao = Debiki.tenantDao(
+        val newWebsiteDao = Globals.tenantDao(
           tenantId = website.id, ip = ownerIp, roleId = None)
 
         val email = _makeNewWebsiteEmail(website, ownerAtNewSite)
         newWebsiteDao.saveUnsentEmail(email)
 
-        Debiki.sendEmail(email, website.id)
+        Globals.sendEmail(email, website.id)
 
         val newSiteConfigText = dao.loadWebsiteConfig().getText(
           ConfValNames.NewSiteConfigText) getOrDie "DwE74Vf9"

@@ -26,23 +26,36 @@ import play.api.mvc._
 import DebikiHttp._
 
 
+/** Delegates to debiki.Globals. Also provides some query string based routing,
+  * which I'd rather remove actually.
+  */
 object Global extends GlobalSettings {
 
 
-  /**
-   * Query string based routing and tenant ID lookup.
-   */
+  /** Query string based routing and tenant ID lookup.
+    * COULD refactor and remove, see QueryStringBasedRouting.
+    */
   override def onRouteRequest(request: RequestHeader): Option[Handler] = {
     try {
-      _routeRequestOrThrow(request)
-    } catch {
+      routeRequestOrThrow(request)
+    }
+    catch {
       case DebikiHttp.ResultException(result) =>
         Some(Action(BodyParsers.parse.empty){ _ => result })
     }
   }
 
 
-  private def _routeRequestOrThrow(request: RequestHeader): Option[Handler] = {
+  /** Routes requests to the correct controller, based on the query string,
+    * e.g. routes ...?reply to AppReply.
+    *
+    * COULD try to remove this, use the `routes` file instead:
+    * I once thuoght that would be a useful API for troubleshooting stuff
+    * and trying out things manually, but it turned out not being very useful.
+    * So I could remove all this and use Play's routes file instead,
+    * and a "standard" server/api/function/... URL * naming approach instead.
+    */
+  private def routeRequestOrThrow(request: RequestHeader): Option[Handler] = {
 
     // Ignore the internal API and Javascript and CSS etcetera, in /-/.
     // Right now, when porting from Lift-Web, /classpath/ is also magic.
@@ -51,7 +64,7 @@ object Global extends GlobalSettings {
         request.path == "/favicon.ico")
       return super.onRouteRequest(request)
 
-    val tenantId = DebikiHttp.lookupTenantIdOrThrow(request, Debiki.systemDao)
+    val tenantId = DebikiHttp.lookupTenantIdOrThrow(request, debiki.Globals.systemDao)
 
     // Parse URL path: find folder, page id and slug.
     val pagePath = PagePath.fromUrlPath(tenantId, request.path) match {
@@ -167,47 +180,13 @@ object Global extends GlobalSettings {
   }
 
 
-  /**
-   * The Twitter Ostrich admin service, listens on port 9100.
-   */
-  /*
-  private val _ostrichAdminService = new toa.AdminHttpService(9100, 20, Stats,
-    new toa.RuntimeEnvironment(getClass))
-   */
-
-  /**
-   * Ensures lazy values are initialized early, so everything
-   * fails fast.  And starts Twitter Ostrich.
-   */
   override def onStart(app: Application) {
-    //Debiki.SystemDao
-
-    // For now, disable in dev mode — because of the port conflict that
-    // causes an error on reload and restart, see below (search for "conflict").
-    /*
-    _ostrichAdminService.start()
-    Logger.info("Twitter Ostrich listening on port "+
-       _ostrichAdminService.address.getPort)
-     */
+    debiki.Globals.onServerStartup(app)
   }
 
 
-  /**
-   * Stops Twitter Ostrich admin service, and
-   * SHOULD stop the Mailer and QuotaManager without losing in memory data.
-   */
   override def onStop(app: Application) {
-    Logger.info("Shutting down, gracefully...")
-    //_ostrichAdminService.shutdown()
-
-    // COULD stop Twitter Ostrich on reload too -- currently there's a
-    // port conflict on reload.
-    // See: <https://groups.google.com/
-    //    forum/?fromgroups#!topic/play-framework/g6uixxX2BVw>
-    // "There is an Actor system reserved for the application code that is
-    // automatically shutdown when the application restart. You can access it
-    // in:  play.api.libs.Akka.system"
-
+    debiki.Globals.onServerShutdown(app)
   }
 
 }

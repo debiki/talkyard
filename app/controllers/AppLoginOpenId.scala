@@ -179,7 +179,7 @@ object AppLoginOpenId extends mvc.Controller {
     val prevSidValOpt = urlDecodeCookie("dwCoSid", request)
     val prevSid = prevSidValOpt.map(Sid.check _) getOrElse SidAbsent
     val addr = request.remoteAddress
-    val tenantId = DebikiHttp.lookupTenantIdOrThrow(request, Debiki.systemDao)
+    val tenantId = DebikiHttp.lookupTenantIdOrThrow(request, Globals.systemDao)
 
     def getQueryParam(paramName: String): Option[String] =
       request.queryString.get(paramName).flatMap(_.headOption)
@@ -216,7 +216,7 @@ object AppLoginOpenId extends mvc.Controller {
         country = countryOpt getOrElse ""))
 
     val loginGrant =
-       Debiki.tenantDao(tenantId, ip = addr).saveLogin(loginReq)
+       Globals.tenantDao(tenantId, ip = addr).saveLogin(loginReq)
 
     // ----- Reply, with session cookies
 

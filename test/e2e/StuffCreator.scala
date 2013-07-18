@@ -19,7 +19,7 @@ package test.e2e
 
 import com.debiki.v0.Prelude._
 import com.debiki.v0._
-import debiki.Debiki
+import debiki.Globals
 import java.{util => ju}
 import org.scalatest.Assertions
 import org.scalatest.selenium.WebBrowser
@@ -49,7 +49,7 @@ trait StuffCreator {
    * Perhaps I should do this in `beforeAll` instead?
    */
   lazy val (firstSiteId: String, firstSiteOrigin: String) = {
-    Debiki.systemDao.lookupTenant("http", firstSiteHost) match {
+    Globals.systemDao.lookupTenant("http", firstSiteHost) match {
       case FoundNothing =>
         createFirstSite()
       case FoundChost(siteId) =>
@@ -59,7 +59,7 @@ trait StuffCreator {
   }
 
 
-  lazy val firstSiteDao = Debiki.tenantDao(firstSiteId, "127.0.0.1")
+  lazy val firstSiteDao = Globals.tenantDao(firstSiteId, "127.0.0.1")
 
 
   /**
@@ -96,7 +96,7 @@ trait StuffCreator {
    */
   private def createFirstSite(): (String, String) = {
 
-    val firstSite = Debiki.systemDao.createFirstSite(new FirstSiteData {
+    val firstSite = Globals.systemDao.createFirstSite(new FirstSiteData {
       val name = "FirstSite"
       val address = firstSiteHost
       val https = TenantHost.HttpsNone

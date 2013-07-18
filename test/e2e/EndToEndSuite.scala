@@ -39,7 +39,7 @@ trait ChromeSuiteMixin extends BeforeAndAfterAll {
     ChromeDriverFactory.start()
     testServer.start()
     if (emptyDatabaseBeforeAll)
-      debiki.Debiki.systemDao.emptyDatabase()
+      debiki.Globals.systemDao.emptyDatabase()
   }
 
 

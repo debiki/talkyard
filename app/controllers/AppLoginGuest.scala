@@ -59,7 +59,7 @@ object AppLoginGuest extends mvc.Controller {
         "Please specify a website address with no weird characters.")
 
     val addr = request.remoteAddress
-    val tenantId = DebikiHttp.lookupTenantIdOrThrow(request, Debiki.systemDao)
+    val tenantId = DebikiHttp.lookupTenantIdOrThrow(request, Globals.systemDao)
 
     val loginReq = LoginRequest(
       login = Login(id = "?", prevLoginId = sidStatus.loginId,
@@ -67,8 +67,7 @@ object AppLoginGuest extends mvc.Controller {
       identity = IdentitySimple(id = "?i", userId = "?", name = name,
         email = email, location = "", website = url))
 
-    val loginGrant =
-       Debiki.tenantDao(tenantId, ip = addr).saveLogin(loginReq)
+    val loginGrant = Globals.tenantDao(tenantId, ip = addr).saveLogin(loginReq)
 
     val (_, _, sidAndXsrfCookies) = Xsrf.newSidAndXsrf(Some(loginGrant))
     val userConfigCookie = AppConfigUser.userConfigCookie(loginGrant)

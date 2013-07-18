@@ -58,7 +58,7 @@ object AppInstall extends mvc.Controller {
 
 
   def viewInstallationPage() = ExceptionActionNoBody { request =>
-    Debiki.systemDao.checkInstallationStatus() match {
+    Globals.systemDao.checkInstallationStatus() match {
       case InstallationStatus.CreateFirstSite =>
         showPasswordInputLogPassword(request)
 
@@ -96,7 +96,7 @@ object AppInstall extends mvc.Controller {
   def createFirstSite = ExceptionAction(parse.json(maxLength = 100)) { request =>
     val passCookie = throwIfBadPasswordElseCreatePassCookie(request)
 
-    if (Debiki.systemDao.checkInstallationStatus() == InstallationStatus.CreateFirstSite)
+    if (Globals.systemDao.checkInstallationStatus() == InstallationStatus.CreateFirstSite)
       doCreateFirstSite(request)
 
     // When we reply OK, a related AngularJS app will reload the page, and
@@ -143,7 +143,7 @@ object AppInstall extends mvc.Controller {
       val pagesToCreate = siteConfigPage :: defaultThemeConfigPage :: Nil
     }
 
-    Debiki.systemDao.createFirstSite(firstSiteData)
+    Globals.systemDao.createFirstSite(firstSiteData)
   }
 
 
@@ -157,7 +157,7 @@ object AppInstall extends mvc.Controller {
     if (password != firstSiteOwnerPassword)
       throwForbidden("DwE4dH09", "Bad create-first-site-owner password")
 
-    if (Debiki.systemDao.checkInstallationStatus() != InstallationStatus.CreateFirstSiteAdmin)
+    if (Globals.systemDao.checkInstallationStatus() != InstallationStatus.CreateFirstSiteAdmin)
       throwForbidden("DwE2HDS8", "The first site owner account has already been created")
 
     apiReq.dao.configRole(apiReq.loginId_!, apiReq.ctime, roleId = apiReq.user_!.id,
