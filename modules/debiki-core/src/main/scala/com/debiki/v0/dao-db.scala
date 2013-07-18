@@ -269,6 +269,11 @@ abstract class TenantDbDao {
   def configIdtySimple(loginId: String, ctime: ju.Date,
                        emailAddr: String, emailNotfPrefs: EmailNotfPrefs)
 
+
+  // ----- Full text search
+
+  def fullTextSearch(phrase: String, anyRootPageId: Option[String]): FullTextSearchResult
+
 }
 
 
@@ -665,6 +670,14 @@ class ChargingTenantDbDao(
     _spi.configIdtySimple(loginId = loginId, ctime = ctime,
                           emailAddr = emailAddr,
                           emailNotfPrefs = emailNotfPrefs)
+  }
+
+
+  // ----- Full text search
+
+  def fullTextSearch(phrase: String, anyRootPageId: Option[String]): FullTextSearchResult = {
+    _chargeForOneReadReq() // should charge much more?
+    _spi.fullTextSearch(phrase, anyRootPageId)
   }
 
 }

@@ -164,6 +164,12 @@ class TenantDao(protected val tenantDbDao: ChargingTenantDbDao)
       byIdentity = byIdentity, pathRanges = pathRanges, limit = limit)
 
 
+  // ----- Full text search
+
+  def fullTextSearch(phrase: String, anyRootPageId: Option[String]): FullTextSearchResult =
+    tenantDbDao.fullTextSearch(phrase, anyRootPageId)
+
+
   // ----- List stuff
 
   def listPagePaths(
