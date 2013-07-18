@@ -46,6 +46,7 @@ case class Post(
   extends PostAction[PAP.CreatePost](pageParts, state.creationPostActionDto)
   with MaybeApproval with PostActionActedUpon {
 
+  require(postId == id)
 
   def this(pageParts: PageParts, creationAction: PostActionDto[PAP.CreatePost]) {
     this(pageParts, PostState.whenCreated(creationAction), isLoadedFromCache = false)
@@ -640,7 +641,16 @@ case class Post(
     flagsByReason.toList.sortWith((a, b) => a._2.length > b._2.length)
   }
 
+
+  def toJsonString: String = Protocols.postToJsonString(this)
+
 }
 
 
-// vim: fdm=marker et ts=2 sw=2 fo=tcqwn list
+
+object Post {
+
+  def fromJsonString(jsonString: String) = Protocols.jsonStringToPost(jsonString)
+
+}
+
