@@ -497,6 +497,9 @@ class TemplateProgrammingInterface(
   def bodyAndComments = renderedPage.bodyAndComments
 
 
+  def xsrfToken: String = pageReq.xsrfToken.value
+
+
   /**
    * Use in templates, e.g. like so: `@if(shall("show-title")) { @title }`
    */

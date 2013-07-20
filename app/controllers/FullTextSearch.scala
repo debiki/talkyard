@@ -29,9 +29,37 @@ import Prelude._
   */
 object FullTextSearch extends mvc.Controller {
 
+  private val SearchPhraseFieldName = "searchPhrase"
 
-  def searchWholeSite(phrase: String) = GetAction { apiReq =>
-    val result = apiReq.dao.fullTextSearch(phrase, anyRootPageId = None)
+
+  def searchWholeSiteFor(phrase: String) = GetAction { apiReq =>
+    searchImpl(phrase, anyRootPageId = None, apiReq)
+  }
+
+
+  def searchWholeSite() = JsonOrFormDataPostAction(maxBytes = 200) {
+        apiReq: ApiRequest[JsonOrFormDataBody] =>
+    val searchPhrase = apiReq.body.getOrThrowBadReq(SearchPhraseFieldName)
+    searchImpl(searchPhrase, anyRootPageId = None, apiReq)
+  }
+
+
+  def searchSiteSectionFor(phrase: String, pageId: String) = GetAction { apiReq =>
+    searchImpl(phrase, anyRootPageId = Some(pageId), apiReq)
+  }
+
+
+  def searchSiteSection(pageId: String) = JsonOrFormDataPostAction(maxBytes = 200) {
+        apiReq: ApiRequest[JsonOrFormDataBody] =>
+    val searchPhrase = apiReq.body.getOrThrowBadReq(SearchPhraseFieldName)
+    searchImpl(searchPhrase, anyRootPageId = Some(pageId), apiReq)
+  }
+
+
+  private def searchImpl(phrase: String, anyRootPageId: Option[String],
+        apiReq:  DebikiRequest[_]) = {
+
+    val result = apiReq.dao.fullTextSearch(phrase, anyRootPageId)
 
     // For now:
     val html = <div>{
@@ -45,12 +73,6 @@ object FullTextSearch extends mvc.Controller {
     }</div>
 
     Utils.OkHtmlBody(html)
-  }
-
-
-  def searchSiteSection(pageId: String, phrase: String) = GetAction { apiReq =>
-    apiReq.dao.fullTextSearch(phrase, anyRootPageId = Some(pageId))
-          unimplemented
   }
 
 }

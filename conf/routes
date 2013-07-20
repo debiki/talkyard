@@ -35,8 +35,10 @@ GET   /-/api/login-openid-clbk  controllers.AppLoginOpenId.loginCallback(returnT
 GET   /-/api/logout             controllers.AppLogin.logout
 POST  /-/api/logout             controllers.AppLogin.logout
 
-GET   /-/search/whole-site/for/:phrase      controllers.FullTextSearch.searchWholeSite(phrase)
-GET   /-/search/section/:pageId/for/:phrase controllers.FullTextSearch.searchSiteSection(pageId, phrase)
+POST  /-/search/site                        controllers.FullTextSearch.searchWholeSite()
+GET   /-/search/site/for/:phrase            controllers.FullTextSearch.searchWholeSiteFor(phrase)
+POST  /-/search/section/:pageId             controllers.FullTextSearch.searchSiteSection(pageId)
+GET   /-/search/section/:pageId/for/:phrase controllers.FullTextSearch.searchSiteSectionFor(phrase, pageId)
 
 # ---------------------------------------------------------------
 # SecureSocial, test links (I'll integrate with OpenID/Guest login later)
