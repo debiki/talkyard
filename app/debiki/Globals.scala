@@ -111,7 +111,7 @@ class Globals {
 
   def onServerShutdown(app: Application) {
     Logger.info("Shutting down, gracefully...")
-    //dbDaoFactory.shutdown()
+    dbDaoFactory.shutdown()
 
     //_ostrichAdminService.shutdown()
 
