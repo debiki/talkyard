@@ -121,7 +121,7 @@ object AppEdit extends mvc.Controller {
    *      pagePath
    *      pageRole
    *      pageStatus
-   *      ancestorIdsParentFirst
+   *      parentPageId
    *    - ...more pages
    *
    *  editPosts:
@@ -169,13 +169,13 @@ object AppEdit extends mvc.Controller {
       val pagePathStr = getTextOrThrow(pageData, "pagePath")
       val pageRoleStr = getTextOrThrow(pageData, "pageRole")
       val pageStatusStr = getTextOrThrow(pageData, "pageStatus")
-      val ancestorIdsStr = getTextOrThrow(pageData, "ancestorIdsParentFirst")
+      val parentPageIdStr = getTextOrThrow(pageData, "parentPageId")
 
       val prevPageApproval = Approval.parse(approvalStr)
       val pageRole = PageRole.parse(pageRoleStr)
       val pageStatus = PageStatus.parse(pageStatusStr)
-      val ancestorIdsParentFirst =
-        if (ancestorIdsStr isEmpty) Nil else ancestorIdsStr.split(",").toList
+      val parentPageId =
+        if (parentPageIdStr isEmpty) None else Some(parentPageIdStr)
 
       try {
         val createPageReq = PageRequest.forPageToCreate(request, pagePathStr, pageId)
@@ -184,17 +184,30 @@ object AppEdit extends mvc.Controller {
         val correctPasshash = AppCreatePage.makePagePasshash(
           prevPageApproval, pageRole, pageStatus, folder = newPath.folder,
           slug = newPath.pageSlug, showId = newPath.showId, pageId = pageId,
-          ancestorIdsParentFirst = ancestorIdsParentFirst)
+          parentPageId = parentPageId)
 
         if (passhashStr != correctPasshash)
           throwForbidden("DwE82RfY5", "Bad passhash")
+
+        val ancestorIdsParentFirst: List[PageId] =
+          parentPageId map { parentId =>
+            val parentsAncestorIds = request.dao.loadAncestorIdsParentFirst(parentId)
+            parentId :: parentsAncestorIds
+          } getOrElse Nil
 
         // In case the user has been allowed to create a new page, then did
         // evil things, and now finally submitted the first edit of the page, then,
         // here we need to consider his/her deeds, and perhaps cancel the old
         // already granted approval.
         val newPageApproval =
-          AutoApprover.upholdNewPageApproval(createPageReq, prevPageApproval) getOrElse
+          AutoApprover.upholdNewPageApproval(
+            createPageReq, prevPageApproval
+            // SECURITY SHOULD check access to ancestor pages again:
+            // security settings might have been changed since the original page creation
+            // request was approved. I.e. pass `ancestorIdsParentFirst` to AutoApprover?
+            // But there's a race condition! What if security settings are changed again,
+            // just after we checked access.
+            /* , ancestorIdsParentFirst */) getOrElse
             throwForbidden("DwE03WCS8", "Page creation approval retracted")
 
         // Throws PageExistsException if page already exists.

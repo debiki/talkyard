@@ -41,7 +41,7 @@ object AutoApprover {
 
 
   def perhapsApproveNewPage(
-        folderReq: PageRequest[_], pageRole: PageRole, ancestorIdsParentFirst: List[PageId])
+        folderReq: PageRequest[_], pageRole: PageRole, parentPageId: Option[PageId])
         : Option[Approval] = {
 
     if (folderReq.pageExists) throwForbidden(
@@ -51,9 +51,8 @@ object AutoApprover {
     if (folderReq.user_!.isAdmin)
       return Some(Approval.AuthoritativeUser)
 
-    // Should load and verify `ancestorIdsParentFirst` and check access to all those ancestors.
-
-    val parentPageId = ancestorIdsParentFirst.headOption
+    SECURITY // COULD load `ancestorIdsParentFirst` and check access to all those ancestors.
+    // (In the future, when it's at all possible to configure access :-))
 
     // For now, allow other people to create forum topics only.
     if (pageRole == PageRole.ForumTopic) {

@@ -296,6 +296,7 @@ case class PageRequest[A](
   request: Request[A])
   (private val _preloadedPageMeta: Option[PageMeta] = None,
   private val _preloadedActions: Option[PageParts] = None,
+  private val _preloadedAncestorIds: Option[List[PageId]] = None,
   private val addMeToPage: Boolean = false)
   extends DebikiRequest[A] {
 
@@ -306,7 +307,7 @@ case class PageRequest[A](
   def copyWithPreloadedPage(page: Page, pageExists: Boolean)
         : PageRequest[A] = {
     copy(pageExists = pageExists, pagePath = page.path)(
-      Some(page.meta), Some(page.parts), addMeToPage = false)
+      Some(page.meta), Some(page.parts), Some(page.ancestorIdsParentFirst), addMeToPage = false)
   }
 
 
@@ -318,8 +319,9 @@ case class PageRequest[A](
     require(pageExists == false)
     require(pageMeta.pageExists == false)
     require(Some(pageMeta.pageId) == pagePath.pageId)
+    require(_preloadedAncestorIds.map(_.headOption == pageMeta.parentPageId) != Some(false))
     assert(addMeToPage == false) // see copyWithPreloadedPage() below
-    copy()(Some(pageMeta), _preloadedActions, addMeToPage = false)
+    copy()(Some(pageMeta), _preloadedActions, _preloadedAncestorIds, addMeToPage = false)
   }
 
 
@@ -330,7 +332,7 @@ case class PageRequest[A](
     }
     require(Some(pageActions.pageId) == pagePath.pageId)
     assert(addMeToPage == false) // or user should be added to `pageActions`
-    copy(pageExists = pageExists)(_preloadedPageMeta, Some(pageActions),
+    copy(pageExists = pageExists)(_preloadedPageMeta, Some(pageActions), _preloadedAncestorIds,
         addMeToPage = false)
   }
 
@@ -351,9 +353,9 @@ case class PageRequest[A](
     else {
       if (_preloadedActions isDefined)
         copy()(_preloadedPageMeta, _preloadedActions.map(_ ++ anyMeAsPeople),
-          false)
+          _preloadedAncestorIds, addMeToPage = false)
       else
-        copy()(_preloadedPageMeta, None, addMeToPage = true)
+        copy()(_preloadedPageMeta, None, _preloadedAncestorIds, addMeToPage = true)
     }
 
 
@@ -455,7 +457,7 @@ case class PageRequest[A](
 
 
   lazy val ancestorIdsParentFirst_! : List[PageId] =
-    dao.loadAncestorIdsParentFirst(pageId_!)
+    _preloadedAncestorIds getOrElse dao.loadAncestorIdsParentFirst(pageId_!)
 
 
   def pathAndMeta_! = PagePathAndMeta(pagePath, ancestorIdsParentFirst_!, pageMeta_!)
