@@ -492,7 +492,7 @@ class ChargingTenantDbDao(
 
   def loadAncestorIdsParentFirst(pageId: PageId): List[PageId] = {
     _chargeForOneReadReq()
-    loadAncestorIdsParentFirst(pageId)
+    _spi.loadAncestorIdsParentFirst(pageId)
   }
 
   def movePages(pageIds: Seq[String], fromFolder: String, toFolder: String) {
