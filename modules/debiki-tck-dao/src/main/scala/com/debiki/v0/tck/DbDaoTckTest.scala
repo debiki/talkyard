@@ -473,7 +473,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
         offset = 0
       )
       pagePathsDetails must beLike {
-        case List((pagePath, pageDetails)) =>
+        case List(PagePathAndMeta(pagePath, _, pageDetails)) =>
           pagePath must_== defaultPagePath.copy(pageId = pagePath.pageId)
           // When I've implemented Draft/Published status, Draft will be
           // the default:
@@ -505,7 +505,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
         limit = Int.MaxValue,
         offset = 0)
       pathAndDetails.length must be_>=(1)
-      val path: PagePath = pathAndDetails.head._1
+      val path: PagePath = pathAndDetails.head.path
 
       val pathsAndPages = dao.loadPageBodiesTitles(path.pageId.get::Nil)
       pathsAndPages.size must_== 1
@@ -544,6 +544,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
           PageMeta.forNewPage(PageRole.Blog, loginGrant.user, PageParts("?"), now),
           defaultPagePath.copy(
             showId = true, pageSlug = "role-test-blog-main"),
+          ancestorIdsParentFirst = Nil,
           PageParts(guid = "?"))
 
         pageNoId.meta.pageExists must_== false
@@ -579,6 +580,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
             parentPageId = Some(blogMainPageId)),
           defaultPagePath.copy(
             showId = true, pageSlug = "role-test-blog-article"),
+          ancestorIdsParentFirst = blogMainPageId::Nil,
           PageParts(guid = "?"))
         val page = dao.createPage(pageNoId)
         val actions = page.parts
@@ -625,12 +627,13 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
         meta.parentPageId must_== Some(blogMainPageId)
       }
 
-      def testFoundChild(childs: Seq[(PagePath, PageMeta)]) {
+      def testFoundChild(childs: Seq[PagePathAndMeta]) {
         childs.length must_== 1
         childs must beLike {
-          case List((pagePath, pageMeta)) =>
+          case List(PagePathAndMeta(pagePath, ancestorIdsParentFirst, pageMeta)) =>
             pagePath.pageId must_== Some(blogArticleId)
             testBlogArticleMeta(pageMeta)
+            ancestorIdsParentFirst must_== List(blogMainPageId)
         }
       }
 
@@ -739,6 +742,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
           PageMeta.forNewPage(pageRole, loginGrant.user, PageParts("?"), now,
             parentPageId = parentPageId),
           defaultPagePath.copy(folder = "/forum/", showId = showId, pageSlug = pageSlug),
+          ancestorIdsParentFirst = parentPageId.toList,
           PageParts(guid = "?"))
 
       "create a forum" in {
@@ -779,8 +783,13 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
       }
 
       "create a forum group P, place the original forum inside" in {
-        failure
-      }.pendingUntilFixed()
+        var forumGroupNoId = forumStuff(PageRole.ForumGroup, pageSlug = "forum-group")
+        forumGroup = dao.createPage(forumGroupNoId)
+        val forumBefore = forum
+        forum = forumBefore.copyWithNewAncestors(forumGroup.id::Nil)
+        dao.updatePageMeta(forum.meta, old = forumBefore.meta)
+        ok
+      }
 
       "not create a topic in a forum group" in {
         failure
@@ -798,18 +807,57 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
         dao.loadPageMeta(forum.id) must beLike {
           case Some(pageMeta) =>
             pageMeta.pageRole must_== PageRole.Forum
+            pageMeta.parentPageId must_== Some(forumGroup.id)
         }
 
         dao.loadPageMeta(topic.id) must beLike {
           case Some(pageMeta) =>
             pageMeta.pageRole must_== PageRole.ForumTopic
+            pageMeta.parentPageId must_== Some(forum.id)
         }
 
-        /* dao.loadPageMeta(forumGroup.id) must beLike {
+        dao.loadPageMeta(forumGroup.id) must beLike {
           case Some(pageMeta) =>
             pageMeta.pageRole must_== PageRole.ForumGroup
-        } */
+            pageMeta.parentPageId must_== None
+        }
+        ok
       }
+
+      "can load ancestors of the forum group (there are none)" in {
+        val ancestorIds = dao.loadAncestorIdsParentFirst(forumGroup.id)
+        ancestorIds must_== Nil
+      }
+
+      "can load ancestors of the forum (i.e. the forum group)" in {
+        val ancestorIds = dao.loadAncestorIdsParentFirst(forum.id)
+        ancestorIds must_== List(forumGroup.id)
+      }
+
+      "can load ancestors of the forum topic (i.e. the forum and the forum group)" in {
+        val ancestorIds = dao.loadAncestorIdsParentFirst(topic.id)
+        ancestorIds must_== List(forum.id, forumGroup.id)
+      }
+
+      "can load ancestors, when listing child pages" in {
+        val forumChilds = dao.listChildPages(forum.id, PageSortOrder.ByPublTime, limit = 10)
+        forumChilds.length must_== 1
+        forumChilds must beLike {
+          case List(PagePathAndMeta(_, ancestorIdsParentFirst, _)) =>
+            ancestorIdsParentFirst must_== List(forum.id, forumGroup.id)
+        }
+        ok
+      }
+
+      /*
+      "can batch load ancestors of the forum topic, the forum and the forum group" in {
+        val ancestorIdsByPageId = dao.batchLoadAncestorIdsParentFirst(List(
+          topic.id, forum.id, forumGroup.id)
+        ancestorIdsByPageId.size() must_== 3
+        ancestorIdsByPageId.get(topic.id) must_== Some(List(forum.id, forumGroup.id))
+        ancestorIdsByPageId.get(forum.id) must_== Some(List(forumGroup.id))
+        ancestorIdsByPageId.get(forumGrouop.id) must_== Some(Nil)
+      } */
     }
 
 
@@ -1817,8 +1865,8 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
           offset = 0
         )
         pagePathsDetails must beLike {
-          case list: List[(PagePath, PageMeta)] =>
-            list.find(_._1 == newPath) must beSome
+          case list: List[PagePathAndMeta] =>
+            list.find(_.path == newPath) must beSome
         }
       }
 
