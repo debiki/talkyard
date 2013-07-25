@@ -59,13 +59,18 @@ trait PagePathMetaDao {
     tenantDbDao.loadPageMeta(pageId)
 
 
+  def loadAncestorIdsParentFirst(pageId: PageId): List[PageId] =
+    tenantDbDao.loadAncestorIdsParentFirst(pageId)
+
+
   def loadPageMetaAndPath(pageId: String): Option[PagePathAndMeta] = {
     // I don't think writing a dedicated SQL query that does this in one
     // roundtrip is worth the trouble? Won't work with NoSQL databases anyway?
     val anyMeta = loadPageMeta(pageId)
+    val ancestorIds = loadAncestorIdsParentFirst(pageId)
     val anyPath = lookupPagePath(pageId)
     for (meta <- anyMeta; path <- anyPath)
-      yield PagePathAndMeta(path, meta)
+      yield PagePathAndMeta(path, ancestorIds, meta)
   }
 
 

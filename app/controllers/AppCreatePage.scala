@@ -51,14 +51,14 @@ object AppCreatePage extends mvc.Controller {
   def getViewNewPageUrl(pathIn: PagePath) =
         FolderGetAction(pathIn) { folderReq =>
 
-    val anyParentPageId = folderReq.queryString.getFirst("parentPageId")
+    val ancestorIdsParentFirst = getAncestorIdsParentFirst(folderReq)
     val pageRoleStr = folderReq.queryString.getOrThrowBadReq("pageRole")
     val pageRole = PageRole.parse(pageRoleStr)
     val statusStr = folderReq.queryString.getOrThrowBadReq("status")
     val status = PageStatus.parse(statusStr)
 
     val approval: Approval = AutoApprover.perhapsApproveNewPage(
-      folderReq, pageRole, anyParentPageId) getOrElse
+      folderReq, pageRole, ancestorIdsParentFirst) getOrElse
         throwForbidden("DwE53KVE0", "Page creation request rejected")
 
     val pageId = generateNewPageId()
@@ -68,7 +68,7 @@ object AppCreatePage extends mvc.Controller {
 
     val passhash = makePagePasshash(
       approval, pageRole, status, folder = pathIn.folder, slug = pageSlug,
-      showId = showId, pageId = pageId, parentPageId = anyParentPageId)
+      showId = showId, pageId = pageId, ancestorIdsParentFirst = ancestorIdsParentFirst)
 
     val newPath = folderReq.pagePath.copy(
       pageId = Some(pageId), showId = showId, pageSlug = pageSlug)
@@ -78,7 +78,7 @@ object AppCreatePage extends mvc.Controller {
       s"&passhash=$passhash" +
       s"&newPageApproval=${approval}" +
       s"&pageRole=$pageRole" +
-      s"&parentPageId=${anyParentPageId getOrElse ""}" +
+      s"&ancestorIdsParentFirst=${ancestorIdsParentFirst mkString ","}" +
       s"&status=$statusStr"
 
     OkSafeJson(JsObject(Seq("viewNewPageUrl" -> JsString(viewNewPageUrl))))
@@ -92,14 +92,14 @@ object AppCreatePage extends mvc.Controller {
     val approval = Approval.parse(
       pageReqOrig.queryString.getOrThrowBadReq("newPageApproval"))
 
-    val newPageMeta = newPageMetaFromUrl(pageReqOrig, pageId)
+    val (newPageMeta, ancestorIdsParentFirst) = newPageMetaFromUrl(pageReqOrig, pageId)
 
     // Ensure page creation data was generated or approved by the server.
     val passhashGiven = pageReqOrig.queryString.getOrThrowBadReq("passhash")
     val correctPasshash = makePagePasshash(
       approval, newPageMeta.pageRole, newPageMeta.status, folder = pathIn.folder,
       slug = pathIn.pageSlug, showId = pathIn.showId, pageId = pageId,
-      parentPageId = newPageMeta.parentPageId)
+      ancestorIdsParentFirst = ancestorIdsParentFirst)
     if (passhashGiven != correctPasshash)
       throwForbidden("DwE7Gp0W2", "Bad passhash")
 
@@ -130,7 +130,7 @@ object AppCreatePage extends mvc.Controller {
       else {
         // Create empty dummy page.
         pageReqOrig.copyWithPreloadedPage(
-          Page(newPageMeta, newPagePath, PageParts(newPageMeta.pageId)),
+          Page(newPageMeta, newPagePath, ancestorIdsParentFirst, PageParts(newPageMeta.pageId)),
           pageExists = false)
       }
     }
@@ -160,7 +160,8 @@ object AppCreatePage extends mvc.Controller {
   }
 
 
-  private def newPageMetaFromUrl(pageReq: PageRequest[_], pageId: String): PageMeta = {
+  private def newPageMetaFromUrl(pageReq: PageRequest[_], pageId: String)
+      : (PageMeta, List[PageId]) = {
     import pageReq.queryString
 
     val pageRole = queryString.getEmptyAsNone("pageRole").map(
@@ -172,15 +173,12 @@ object AppCreatePage extends mvc.Controller {
     val publishDirectly: Boolean = queryString.getEmptyAsNone("status").map(
       PageStatus.parse _) == Some(PageStatus.Published)
 
-    val parentPageId: Option[String] =
-      queryString.getEmptyAsNone("parentPageId")
+    val ancestorIdsParentFirst = getAncestorIdsParentFirst(pageReq)
 
-    // In case of a Javascript bug.
-    if (parentPageId == Some("undefined"))
-      throwBadReq("DwE93HF2", "Parent page id is `undefined`")
+    val meta = PageMeta.forNewPage(pageRole, pageReq.user_!, PageParts(pageId), pageReq.ctime,
+      parentPageId = ancestorIdsParentFirst.headOption, publishDirectly = publishDirectly)
 
-    PageMeta.forNewPage(pageRole, pageReq.user_!, PageParts(pageId), pageReq.ctime,
-      parentPageId = parentPageId, publishDirectly = publishDirectly)
+    (meta, ancestorIdsParentFirst)
   }
 
 
@@ -192,8 +190,16 @@ object AppCreatePage extends mvc.Controller {
         slug: String,
         showId: Boolean,
         pageId: String,
-        parentPageId: Option[String]) =
+        ancestorIdsParentFirst: List[PageId]) =
     Passhasher.makePasshash(
-      s"$approval|$pageRole|$status|$folder|$slug|$showId|$pageId|$parentPageId")
+      s"$approval|$pageRole|$status|$folder|$slug|$showId|$pageId|" +
+        ancestorIdsParentFirst.mkString(","))
+
+
+  private def getAncestorIdsParentFirst(request: DebikiRequest[_]): List[PageId] = {
+    val anyValue = request.queryString.getFirst("ancestorIdsParentFirst")
+    val ancestorIdsParentFirst = anyValue.map(_.split(",").toList) getOrElse Nil
+    ancestorIdsParentFirst
+  }
 
 }

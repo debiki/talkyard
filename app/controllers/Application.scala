@@ -155,7 +155,7 @@ object Application extends mvc.Controller {
         sortBy = PageSortOrder.ByPublTime,
         limit = 10,
         offset = 0
-      ). map(_._1)  // discards PageMeta, ._2
+      ).map(_.path)
 
     // Access control.
     // Somewhat dupl code, see AppList.listNewestPages.

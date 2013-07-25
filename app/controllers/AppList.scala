@@ -72,9 +72,9 @@ object AppList extends mvc.Controller {
       limit = Int.MaxValue,
       offset = 0)
 
-    def renderPageListHtml(pagePathsDetails: Seq[(PagePath, PageMeta)]) =
+    def renderPageListHtml(pagePathsDetails: Seq[PagePathAndMeta]) =
       <ol>{
-        for ((pagePath, details) <- pagePathsDetails) yield {
+        for (PagePathAndMeta(pagePath, _, details) <- pagePathsDetails) yield {
           <li>
             <a href={pagePath.path}>{pagePath.path}</a>,
             { details.pageRole.toString +
@@ -89,7 +89,7 @@ object AppList extends mvc.Controller {
         OkHtml(<html><body>{pageNode}</body></html>)
       case DebikiHttp.ContentType.Json =>
         OkSafeJson(toJson(Map("pages" -> (
-           pathsAndDetails map { case (pagePath, pageMeta) =>
+           pathsAndDetails map { case PagePathAndMeta(pagePath, _, pageMeta) =>
              jsonFor(pagePath, pageMeta)
            }))))
     }

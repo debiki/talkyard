@@ -396,6 +396,7 @@ abstract class QuotaChargerSpec extends RichFreeSpec with MustMatchers
         pageRole, author, actions, creationDati, publishDirectly = true),
       PagePath(dao.siteId, folder = "/",
         pageId = Some(pageId), showId = true, pageSlug = "test-page"),
+      ancestorIdsParentFirst = Nil,
       actions))
   }
 

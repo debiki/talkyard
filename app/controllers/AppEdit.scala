@@ -121,7 +121,7 @@ object AppEdit extends mvc.Controller {
    *      pagePath
    *      pageRole
    *      pageStatus
-   *      parentPageId
+   *      ancestorIdsParentFirst
    *    - ...more pages
    *
    *  editPosts:
@@ -169,13 +169,13 @@ object AppEdit extends mvc.Controller {
       val pagePathStr = getTextOrThrow(pageData, "pagePath")
       val pageRoleStr = getTextOrThrow(pageData, "pageRole")
       val pageStatusStr = getTextOrThrow(pageData, "pageStatus")
-      val parentPageIdStr = getTextOrThrow(pageData, "parentPageId")
+      val ancestorIdsStr = getTextOrThrow(pageData, "ancestorIdsParentFirst")
 
       val prevPageApproval = Approval.parse(approvalStr)
       val pageRole = PageRole.parse(pageRoleStr)
       val pageStatus = PageStatus.parse(pageStatusStr)
-      val parentPageId =
-        if (parentPageIdStr isEmpty) None else Some(parentPageIdStr)
+      val ancestorIdsParentFirst =
+        if (ancestorIdsStr isEmpty) Nil else ancestorIdsStr.split(",").toList
 
       try {
         val createPageReq = PageRequest.forPageToCreate(request, pagePathStr, pageId)
@@ -184,7 +184,7 @@ object AppEdit extends mvc.Controller {
         val correctPasshash = AppCreatePage.makePagePasshash(
           prevPageApproval, pageRole, pageStatus, folder = newPath.folder,
           slug = newPath.pageSlug, showId = newPath.showId, pageId = pageId,
-          parentPageId = parentPageId)
+          ancestorIdsParentFirst = ancestorIdsParentFirst)
 
         if (passhashStr != correctPasshash)
           throwForbidden("DwE82RfY5", "Bad passhash")
@@ -198,8 +198,7 @@ object AppEdit extends mvc.Controller {
             throwForbidden("DwE03WCS8", "Page creation approval retracted")
 
         // Throws PageExistsException if page already exists.
-        val pageReq = createPage(createPageReq,
-          pageRole = pageRole, pageStatus = pageStatus, parentPageId = parentPageId)
+        val pageReq = createPage(createPageReq, pageRole, pageStatus, ancestorIdsParentFirst)
 
         pageReqsById += pageId -> (pageReq, newPageApproval)
       }
@@ -297,7 +296,7 @@ object AppEdit extends mvc.Controller {
     pageReq: PageRequest[A],
     pageRole: PageRole,
     pageStatus: PageStatus,
-    parentPageId: Option[String]): PageRequest[A] = {
+    ancestorIdsParentFirst: List[String]): PageRequest[A] = {
 
     assErrIf(pageReq.pageExists, "DwE70QU2")
 
@@ -307,10 +306,11 @@ object AppEdit extends mvc.Controller {
 
     val pageMeta = PageMeta.forNewPage(
       pageRole, pageReq.user_!, PageParts(pageReq.pageId_!), pageReq.ctime,
-      parentPageId = parentPageId, publishDirectly = pageStatus == PageStatus.Published)
+      parentPageId = ancestorIdsParentFirst.headOption,
+      publishDirectly = pageStatus == PageStatus.Published)
 
     val newPage = pageReq.dao.createPage(
-      Page(pageMeta, pageReq.pagePath, PageParts(pageMeta.pageId)))
+      Page(pageMeta, pageReq.pagePath, ancestorIdsParentFirst, PageParts(pageMeta.pageId)))
 
     pageReq.copyWithPreloadedPage(newPage, pageExists = true)
   }

@@ -41,7 +41,7 @@ object AutoApprover {
 
 
   def perhapsApproveNewPage(
-        folderReq: PageRequest[_], pageRole: PageRole, parentPageId: Option[String])
+        folderReq: PageRequest[_], pageRole: PageRole, ancestorIdsParentFirst: List[PageId])
         : Option[Approval] = {
 
     if (folderReq.pageExists) throwForbidden(
@@ -50,6 +50,10 @@ object AutoApprover {
 
     if (folderReq.user_!.isAdmin)
       return Some(Approval.AuthoritativeUser)
+
+    // Should load and verify `ancestorIdsParentFirst` and check access to all those ancestors.
+
+    val parentPageId = ancestorIdsParentFirst.headOption
 
     // For now, allow other people to create forum topics only.
     if (pageRole == PageRole.ForumTopic) {
@@ -88,7 +92,11 @@ object AutoApprover {
     // the page created lazily. But the server changes its mind and retracts the
     // approval! The user will be upset for sure (?), so s/he better be an
     // "evil" user for sure (so everyone else will understand why the server retracted
-    /// the page creation approval).
+    // the page creation approval).
+
+    // Also, if any ancestor page was changed from public to private,
+    // retract the approval. So look up and check access on all ancestor pages
+    // — should do this in `perhapsApproveNewPage()` too of course.
   }
 
 

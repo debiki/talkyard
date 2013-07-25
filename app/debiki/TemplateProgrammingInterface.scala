@@ -243,7 +243,7 @@ class TinyTemplateProgrammingInterface protected (
     // folder/or/index/pages/, and hidden pages (even for admins).
     // In the future: Pass info via URL to `listPagePaths` on which
     // pages to include. Some PageType param? PageType.Article/Css/Js/etc.))
-    val articlePaths = pathsAndMeta map (_._1) filter (
+    val articlePaths = pathsAndMeta map (_.path) filter (
        controllers.Utils.isPublicArticlePage _)
 
     // ----- Dupl code! See listNewestChildPages() below.
@@ -253,38 +253,36 @@ class TinyTemplateProgrammingInterface protected (
         articlePaths.map(_.pageId getOrDie "DwE82AJ7"))
 
     for {
-      (pagePath, pageMeta) <- pathsAndMeta
-      pageActions <- pagesById.get(pageMeta.pageId)
+      pathAndMeta <- pathsAndMeta
+      pageParts <- pagesById.get(pathAndMeta.pageId)
     } yield {
       tpi.Page(
-        Page(pageMeta, pagePath, pageActions), host = _pageReq.host)
+        Page(pathAndMeta, pageParts), host = _pageReq.host)
     }
   }
 
 
   def listNewestChildPages(): Seq[tpi.Page] = {
-    val pathsAndMeta: Seq[(PagePath, PageMeta)] =
+    val pathsAndMeta: Seq[PagePathAndMeta] =
       _pageReq.dao.listChildPages(parentPageId = pageId,
           sortBy = PageSortOrder.ByPublTime, limit = 10, offset = 0)
 
     // "Access control". Filter out pages that has not yet been published.
-    val pubPathsAndMeta = pathsAndMeta filter {
-      case (paths, details) =>
-        details.pubDati.map(
-            _.getTime < _pageReq.ctime.getTime) == Some(true)
+    val pubPathsAndMeta = pathsAndMeta filter { pathAndMeta =>
+      pathAndMeta.meta.pubDati.map(_.getTime < _pageReq.ctime.getTime) == Some(true)
     }
 
     // ----- Dupl code! See listNewestPages() above.
 
     val pagesById: Map[String, PageParts] =
-      _pageReq.dao.loadPageBodiesTitles(pubPathsAndMeta.map(_._2.pageId))
+      _pageReq.dao.loadPageBodiesTitles(pubPathsAndMeta.map(_.pageId))
 
     for {
-      (pagePath, pageMeta) <- pubPathsAndMeta
-      pageActions <- pagesById.get(pageMeta.pageId)
+      pathAndMeta <- pubPathsAndMeta
+      pageActions <- pagesById.get(pathAndMeta.pageId)
     } yield {
       tpi.Page(
-        Page(pageMeta, pagePath, pageActions), host = _pageReq.host)
+        Page(pathAndMeta, pageActions), host = _pageReq.host)
     }
   }
 
@@ -314,9 +312,8 @@ class TinyTemplateProgrammingInterface protected (
   private def listPubSubForumsImpl(parentPageId: String): Seq[tpi.Forum] =
     listPublishedChildren(
       parentPageId = Some(parentPageId),
-      filterPageRole = Some(PageRole.Forum)) map {
-        case (pagePath, pageMeta) =>
-          tpi.Forum(pageMeta, pagePath)
+      filterPageRole = Some(PageRole.Forum)) map { pathAndMeta =>
+        tpi.Forum(pathAndMeta.meta, pathAndMeta.path)
       }
 
 
@@ -341,21 +338,21 @@ class TinyTemplateProgrammingInterface protected (
 
   private def listRecentForumTopicsImpl(parentForumId: String, limit: Int)
         : Seq[tpi.ForumTopic] = {
-    val topicPathsAndMeta: Seq[(PagePath, PageMeta)] =
+    val topicPathsAndMeta: Seq[PagePathAndMeta] =
       listPublishedChildren(
         parentPageId = Some(parentForumId),
         filterPageRole = Some(PageRole.ForumTopic),
         limit = limit)
 
     val topicSummaries: Map[String, PageSummary] =
-      _pageReq.dao.loadPageSummaries(topicPathsAndMeta.map(_._2.pageId))
+      _pageReq.dao.loadPageSummaries(topicPathsAndMeta.map(_.pageId))
 
     for {
-      (pagePath, pageMeta) <- topicPathsAndMeta
-      summary <- topicSummaries.get(pageMeta.pageId)
+      pathAndMeta <- topicPathsAndMeta
+      summary <- topicSummaries.get(pathAndMeta.pageId)
     }
     yield {
-      tpi.ForumTopic(pageMeta, pagePath, summary)
+      tpi.ForumTopic(pathAndMeta.meta, pathAndMeta.path, summary)
     }
   }
 
@@ -365,19 +362,17 @@ class TinyTemplateProgrammingInterface protected (
         filterPageRole: Option[PageRole],
         limit: Int = 10,
         offset: Int = 0)
-        : Seq[(PagePath, PageMeta)] = {
+        : Seq[PagePathAndMeta] = {
 
-    val pathsAndMeta: Seq[(PagePath, PageMeta)] =
+    val pathsAndMeta: Seq[PagePathAndMeta] =
       _pageReq.dao.listChildPages(parentPageId = parentPageId getOrElse pageId,
         sortBy = PageSortOrder.ByPublTime, limit = limit, offset = offset,
         filterPageRole = filterPageRole)
 
     // BUG This might result in fewer than `limit` pages being returned.
     // In the future, move filtering to `pageReq.dao` instead?
-    val publishedPathsAndMeta = pathsAndMeta filter {
-      case (paths, details) =>
-        details.pubDati.map(
-          _.getTime < _pageReq.ctime.getTime) == Some(true)
+    val publishedPathsAndMeta = pathsAndMeta filter { pathAndMeta =>
+      pathAndMeta.meta.pubDati.map(_.getTime < _pageReq.ctime.getTime) == Some(true)
     }
     publishedPathsAndMeta
   }
@@ -467,7 +462,7 @@ class TemplateProgrammingInterface(
           showComments = shall("show-comments", showComments)))
       }
 
-    val page = Page(pageReq.pageMeta_!, pageReq.pagePath,
+    val page = Page(pageReq.pageMeta_!, pageReq.pagePath,  unimplemented, //pageReq.ancestorIdsParentFirst,
       PageParts(pageReq.pageId_!))
 
     HtmlPageSerializer.wrapInPageTag(page) {

@@ -78,8 +78,8 @@ object AppForum extends mvc.Controller {
 
     // Find common parent page and folder, and check for bugs.
 
-    val (anyCommonParentId, commonParentFolder, makeIndexPage) = {
-      var anyParentId: Option[String] = null
+    val (commonAncestorIdsParentFirst, commonParentFolder, makeIndexPage) = {
+      var ancestorIdsParentFirst: List[PageId] = Nil
       var commonParentFolder = ""
       var makeIndexPage = false
 
@@ -88,14 +88,14 @@ object AppForum extends mvc.Controller {
           throwForbidden("DwE4UWx3", o"""Page `${forum.id}' is not a forum
             nor a forum group""")
         }
-        else if (anyParentId eq null) {
-          anyParentId = forum.parentPageId
+        else if (ancestorIdsParentFirst.isEmpty) {
+          ancestorIdsParentFirst = forum.ancestorIdsParentFirst
           commonParentFolder = forum.folder
           makeIndexPage = forum.path.isFolderOrIndexPage
         }
-        else if (anyParentId != forum.parentPageId) {
+        else if (ancestorIdsParentFirst != forum.ancestorIdsParentFirst) {
           throwForbidden("DwE2YKf8", o"""Specified forums have different parent pages,
-            namely `$anyParentId' and `${forum.parentPageId}'""")
+            namely `$ancestorIdsParentFirst' and `${forum.ancestorIdsParentFirst}'""")
         }
         else if (forum.folder != commonParentFolder) {
           throwForbidden("DwE5XAw8", o"""Specified forums are located in different
@@ -108,7 +108,7 @@ object AppForum extends mvc.Controller {
         }
       }
 
-      (anyParentId, commonParentFolder, makeIndexPage)
+      (ancestorIdsParentFirst, commonParentFolder, makeIndexPage)
     }
 
     // Move any index page forum.
@@ -132,6 +132,8 @@ object AppForum extends mvc.Controller {
 
     // Create a forum group with parent `anyCommonParentId`.
 
+    val anyCommonParentId = commonAncestorIdsParentFirst.headOption
+
     val groupMeta = PageMeta.forNewPage(
       PageRole.ForumGroup, request.user_!, PageParts("?"), request.ctime,
       parentPageId = anyCommonParentId, publishDirectly = true)
@@ -141,17 +143,18 @@ object AppForum extends mvc.Controller {
       pageSlug = if (makeIndexPage) "" else "forum")
 
     val parentGroup = request.dao.createPage(
-      Page(groupMeta, groupPath, PageParts(groupMeta.pageId)))
+      Page(groupMeta, groupPath, commonAncestorIdsParentFirst, PageParts(groupMeta.pageId)))
 
     // Update other forums: Set their parent page to the parent group.
     // Is `makeIndexPage`, there should be only one child forum, and we need
     // to change its path (so it won't clash with the new group).
 
+    val newCommonAncestorIds = parentGroup.id :: commonAncestorIdsParentFirst
     val childForums = for (forum <- forumsWithAnyIndexMoved) {
       val metaWithGroupAsParent = forum.meta.copy(parentPageId = Some(parentGroup.id))
       request.dao.updatePageMeta(metaWithGroupAsParent, old = forum.meta)
 
-      PagePathAndMeta(forum.path, metaWithGroupAsParent)
+      PagePathAndMeta(forum.path, newCommonAncestorIds, metaWithGroupAsParent)
     }
 
     Ok

@@ -275,6 +275,7 @@ object AppCreateWebsite extends mvc.Controller {
         PageRole.Code, SystemUser.User, actions, creationDati, publishDirectly = true),
       PagePath(siteId, folder = parsedPagePath.folder,
         pageId = Some(pageId), showId = false, pageSlug = parsedPagePath.pageSlug),
+      ancestorIdsParentFirst = Nil,
       actions)
   }
 
@@ -300,7 +301,7 @@ object AppCreateWebsite extends mvc.Controller {
     // another page be the homepage, then '/' would be overwritten by the
     // new homepage. The old path to the oridinal homepage will then be
     // activated again.
-    newWebsiteDao.createPage(Page(pageMeta, oldPath, emptyPage))
+    newWebsiteDao.createPage(Page(pageMeta, oldPath, ancestorIdsParentFirst = Nil, emptyPage))
     newWebsiteDao.moveRenamePage(pageId, newFolder = Some("/"), newSlug = Some(""))
 
     // Set homepage title.
