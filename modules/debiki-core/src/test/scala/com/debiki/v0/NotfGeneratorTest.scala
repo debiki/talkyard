@@ -33,16 +33,13 @@ trait NotfGeneratorTestValues {
   val (replyAuthor, replyAuthorIdty, replyAuthorLogin) = makePerson("Replier")
   val (reviewer, reviewerIdty, reviewerLogin) = makePerson("ReviewerAuthor")
 
-  val rawBody = PostTestValues.postSkeleton.copy(
-    id = PageParts.BodyId, loginId = bodyAuthorLogin.id, userId = bodyAuthor.id, payload =
-      PostTestValues.postSkeleton.payload.copy(parentPostId = PageParts.BodyId))
+  val rawBody = copyCreatePost(PostTestValues.postSkeleton,
+    id = PageParts.BodyId, loginId = bodyAuthorLogin.id, userId = bodyAuthor.id,
+    parentPostId = PageParts.BodyId)
 
-  val rawBodyPrelApproved = rawBody.copy(payload = rawBody.payload.copy(
-    approval = Some(Approval.Preliminary)))
-  val rawBodyWellBehavedApproved = rawBody.copy(payload = rawBody.payload.copy(
-    approval = Some(Approval.WellBehavedUser)))
-  val rawBodyAuthzApproved = rawBody.copy(payload = rawBody.payload.copy(
-    approval = Some(Approval.AuthoritativeUser)))
+  val rawBodyPrelApproved = copyCreatePost(rawBody, approval = Some(Approval.Preliminary))
+  val rawBodyWellBehavedAprvd = copyCreatePost(rawBody, approval = Some(Approval.WellBehavedUser))
+  val rawBodyAuthzApproved = copyCreatePost(rawBody, approval = Some(Approval.AuthoritativeUser))
 
   val approvalOfBody =
     PostActionDto.toReviewPost(2, postId = rawBody.id, loginId = reviewerLogin.id,
@@ -51,9 +48,8 @@ trait NotfGeneratorTestValues {
       approval = Some(Approval.Manual))
   val rejectionOfBody = copyReviewPost(approvalOfBody, id = 3, approval = None)
 
-  val rawReply = PostTestValues.postSkeleton.copy(
-    id = 11, loginId = replyAuthorLogin.id, userId = replyAuthor.id, payload =
-      PostTestValues.postSkeleton.payload.copy(parentPostId = rawBody.id))
+  val rawReply = copyCreatePost(PostTestValues.postSkeleton,
+    id = 11, loginId = replyAuthorLogin.id, userId = replyAuthor.id, parentPostId = rawBody.id)
 
   val rawReplyPrelApproved = rawReply.copy(payload = rawBody.payload.copy(
     approval = Some(Approval.Preliminary)))
