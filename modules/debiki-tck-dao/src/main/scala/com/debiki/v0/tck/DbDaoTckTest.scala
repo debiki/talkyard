@@ -76,7 +76,9 @@ Could test:
 trait TestContext {
   def dbDaoFactory: DbDaoFactory
   def quotaManager: QuotaCharger
-  // def close() // = daoFactory.systemDbDao.close()
+  def shutdown() {
+    dbDaoFactory.shutdown()
+  }
 }
 
 
@@ -117,8 +119,14 @@ abstract class DbDaoChildSpec(
 
   sequential
 
-  // Inited in setup() below and closed in SpecContext below, after each test.
-  var ctx: TestContext = _
+  private var _ctx: TestContext = _
+  def ctx = _ctx
+
+  // Take a lazy TestContext so it's not created before any existing _ctx has been shutdown.
+  def setNewTestContext(newTestContext: => TestContext) {
+    if (_ctx ne null) _ctx.shutdown()
+    _ctx = newTestContext
+  }
 
   def newTenantDbDao(quotaConsumers: QuotaConsumers) =
     ctx.dbDaoFactory.newTenantDbDao(quotaConsumers)
@@ -203,7 +211,8 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
   val T = Templates
 
   step {
-    ctx = testContextBuilder.buildTestContext(EmptyTables, defSchemaVersion)
+    setNewTestContext(
+      testContextBuilder.buildTestContext(EmptyTables, defSchemaVersion))
   }
 
   "A v0.DAO in an empty 0.0.2 repo" should {
@@ -213,7 +222,8 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
   }
 
   step {
-    ctx = testContextBuilder.buildTestContext(EmptyTables, defSchemaVersion)
+    setNewTestContext(
+      testContextBuilder.buildTestContext(EmptyTables, defSchemaVersion))
   }
 
   // COULD split into: 3 tests:
@@ -2455,6 +2465,10 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
     //    }
     //  }
     //}
+  }
+
+  step {
+    ctx.shutdown()
   }
 
 }

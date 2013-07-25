@@ -42,6 +42,7 @@ import EmailNotfPrefs.EmailNotfPrefs
 abstract class DbDaoFactory {
   def systemDbDao: SystemDbDao
   def newTenantDbDao(quotaConsumers: QuotaConsumers): TenantDbDao
+  def shutdown()
 }
 
 
