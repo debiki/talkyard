@@ -453,6 +453,13 @@ case class PageRequest[A](
     }
   }
 
+
+  lazy val ancestorIdsParentFirst_! : List[PageId] =
+    dao.loadAncestorIdsParentFirst(pageId_!)
+
+
+  def pathAndMeta_! = PagePathAndMeta(pagePath, ancestorIdsParentFirst_!, pageMeta_!)
+
 }
 
 
