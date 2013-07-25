@@ -240,10 +240,6 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
     var testPage: PageNoPath = null
     var loginGrant: LoginGrant = null
 
-    // Why is this needed? There's a `step` above that does this and it should
-    // be executed befor the tests below!
-    ctx = testContextBuilder.buildTestContext(EmptyTables, defSchemaVersion)
-
 
     // -------- Create tenant
 
@@ -265,9 +261,9 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
         val https = TenantHost.HttpsNone
         val pagesToCreate = Nil
       })
+      defaultTenantId = tenant.id
       tenant.name must_== "Test"
       tenant.id must_!= ""
-      defaultTenantId = tenant.id
     }
 
     lazy val dao = newTenantDbDao(v0.QuotaConsumers(tenantId = defaultTenantId))
