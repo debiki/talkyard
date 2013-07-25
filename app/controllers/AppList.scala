@@ -88,10 +88,7 @@ object AppList extends mvc.Controller {
         val pageNode = renderPageListHtml(pathsAndDetails)
         OkHtml(<html><body>{pageNode}</body></html>)
       case DebikiHttp.ContentType.Json =>
-        OkSafeJson(toJson(Map("pages" -> (
-           pathsAndDetails map { case PagePathAndMeta(pagePath, _, pageMeta) =>
-             jsonFor(pagePath, pageMeta)
-           }))))
+        OkSafeJson(toJson(Map("pages" -> pathsAndDetails.map(jsonFor(_)))))
     }
   }
 
@@ -277,8 +274,9 @@ object AppList extends mvc.Controller {
 
 
   // COULD move to other file, e.g. DebikiJson.scala?
-  def jsonFor(pagePath: PagePath, pageMeta: PageMeta): JsValue = {
-    var data = _jsonMapFor(pagePath)
+  def jsonFor(pathAndMeta: PagePathAndMeta): JsValue = {
+    var data = _jsonMapFor(pathAndMeta.path)
+    def pageMeta = pathAndMeta.meta
 
     data += "role" -> JsString(pageMeta.pageRole.toString)
     data += "status" -> JsString(pageMeta.status.toString)

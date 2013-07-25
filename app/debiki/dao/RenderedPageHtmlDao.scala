@@ -51,7 +51,7 @@ trait RenderedPageHtmlDao {
 
 
   final def renderPageMeta(pageReq: PageRequest[_]): NodeSeq = {
-    HtmlPageSerializer.wrapInPageTag(pageReq.pageMeta_!, pageReq.pagePath)(Nil)
+    HtmlPageSerializer.wrapInPageTag(pageReq.pathAndMeta_!)(Nil)
       .map(html => xml.Unparsed(liftweb.Html5.toString(html)))
   }
 

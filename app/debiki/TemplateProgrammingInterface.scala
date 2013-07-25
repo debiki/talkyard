@@ -462,10 +462,7 @@ class TemplateProgrammingInterface(
           showComments = shall("show-comments", showComments)))
       }
 
-    val page = Page(pageReq.pageMeta_!, pageReq.pagePath,  unimplemented, //pageReq.ancestorIdsParentFirst,
-      PageParts(pageReq.pageId_!))
-
-    HtmlPageSerializer.wrapInPageTag(page) {
+    HtmlPageSerializer.wrapInPageTag(pageReq.pathAndMeta_!) {
       xml.Unparsed(contents.body)
     }
   }

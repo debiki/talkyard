@@ -259,14 +259,11 @@ object HtmlPageSerializer {
     htmlNodes: Node)
 
 
-  def wrapInPageTag(page: Page)(body: NodeSeq): NodeSeq =
-    wrapInPageTag(page.meta, page.path)(body)
-
-
-  def wrapInPageTag(pageMeta: PageMeta, pagePath: PagePath)(body: NodeSeq): NodeSeq = {
+  def wrapInPageTag(pathAndMeta: PagePathAndMeta)(body: NodeSeq): NodeSeq = {
+    def pageMeta = pathAndMeta.meta
     <div id={"page-"+ pageMeta.pageId} class='debiki dw-debate dw-page'
         data-page_exists={pageMeta.pageExists.toString}
-        data-page_path={pagePath.path}
+        data-page_path={pathAndMeta.path.path}
         data-page_role={pageMeta.pageRole.toString}
         data-page_status={pageMeta.status.toString}
         data-parent_page_id={pageMeta.parentPageId.map(_.toString) getOrElse ""}>
