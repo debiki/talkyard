@@ -22,5 +22,7 @@ package object v0 {
 
   type ActionId = Int
 
+  type PageId = String
+
 }
 

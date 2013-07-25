@@ -28,6 +28,9 @@ trait HasPageMeta {
   def id = meta.pageId
   def role = meta.pageRole
   def parentPageId = meta.parentPageId
+
+  // Useful if referring to instance as e.g. "pathAndMeta", without "page" in the name.
+  def pageId = meta.pageId
 }
 
 
@@ -48,6 +51,12 @@ trait HasPagePath {
 
 object Page {
 
+  def apply(pathAndMeta: PagePathAndMeta, parts: PageParts): Page = Page(
+    meta = pathAndMeta.meta,
+    path = pathAndMeta.path,
+    ancestorIdsParentFirst = pathAndMeta.ancestorIdsParentFirst,
+    parts = parts)
+
   def newPage(
         pageRole: PageRole,
         path: PagePath,
@@ -61,7 +70,7 @@ object Page {
       parts = partsInclAuthor,
       creationDati = parts.oldestDati getOrElse new ju.Date,
       publishDirectly = publishDirectly)
-    Page(meta, path, partsInclAuthor)
+    Page(meta, path, ancestorIdsParentFirst = Nil, partsInclAuthor)
   }
 
   def newEmptyPage(pageRole: PageRole, path: PagePath, author: User) =
@@ -80,22 +89,27 @@ object Page {
 case class Page(
   meta: PageMeta,
   path: PagePath,
+  ancestorIdsParentFirst: List[PageId],
   parts: PageParts) extends HasPageMeta with HasPagePath {
 
-  if (path.pageId.isDefined) require(meta.pageId == path.pageId.get)
-  else require(meta.pageId == "?")
-
+  requireMetaMatchesPaths(this)
   require(meta.pageId == parts.id)
 
   def hasIdAssigned = id != "?"
 
   def copyWithNewId(newId: String) =
-    Page(
-      meta.copy(pageId = newId), path = path.copy(pageId = Some(newId)),
+    copy(
+      meta = meta.copy(pageId = newId),
+      path = path.copy(pageId = Some(newId)),
       parts = parts.copy(guid = newId))
 
   def copyWithNewSiteId(newSiteId: String) =
-    Page(meta, path = path.copy(tenantId = newSiteId), parts)
+    copy(path = path.copy(tenantId = newSiteId))
+
+  def copyWithNewAncestors(newAncestorIdsParentFirst: List[PageId]): Page =
+    copy(
+      meta = meta.copy(parentPageId = newAncestorIdsParentFirst.headOption),
+      ancestorIdsParentFirst = newAncestorIdsParentFirst)
 
   def withoutPath = PageNoPath(parts, meta)
 }
@@ -103,12 +117,36 @@ case class Page(
 
 /** A page that does not know what it contains (the `parts` fields is absent).
   */
-case class PagePathAndMeta(path: PagePath, meta: PageMeta)
-  extends HasPagePath with HasPageMeta
+case class PagePathAndMeta(
+  path: PagePath,
+  ancestorIdsParentFirst: List[PageId],
+  meta: PageMeta)
+  extends HasPagePath with HasPageMeta {
+
+  requireMetaMatchesPaths(this)
+}
 
 
 
-/** A page that does not know where it's located (it doesn't know its URL).
+/** Helper function that checks that page meta and page path IDs matches. */
+object requireMetaMatchesPaths {
+  def apply(page: {
+    def meta: PageMeta
+    def path: PagePath
+    def ancestorIdsParentFirst: List[PageId]
+  }) {
+    if (page.path.pageId.isDefined) require(page.meta.pageId == page.path.pageId.get)
+    else require(page.meta.pageId == "?")
+
+    require(page.ancestorIdsParentFirst.headOption == page.meta.parentPageId,
+      o"""meta.parentPageId != ancestorIdsParentFirst.head:
+    ${page.meta.parentPageId} and ${page.ancestorIdsParentFirst}, page id: ${page.meta.pageId}""")
+  }
+}
+
+
+
+/** A page that does not know where it's located (it doesn't know its URL or ancestor ids).
   */
 case class PageNoPath(parts: PageParts, meta: PageMeta)
   extends HasPageMeta {
