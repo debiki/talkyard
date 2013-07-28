@@ -109,15 +109,24 @@ class TenantDao(protected val tenantDbDao: ChargingTenantDbDao)
    */
   final def savePageActionsGenNotfs(pageReq: PageRequest[_], actions: List[PostActionDtoOld])
         : (PageNoPath, Seq[PostActionDtoOld]) = {
-    savePageActionsGenNotfsImpl(PageNoPath(pageReq.page_!, pageReq.pageMeta_!), actions)
+    savePageActionsGenNotfsImpl(pageReq.pageNoPath_!, actions)
   }
 
 
-  final def savePageActionsGenNotfs(page: PageParts, actions: List[PostActionDtoOld])
+  final def savePageActionsGenNotfs(
+        pageId: PageId, actions: List[PostActionDtoOld], authors: People)
         : (PageNoPath, Seq[PostActionDtoOld]) = {
+
+    val pageNoAuthor = loadPage(pageId) getOrElse throwBadReq(
+      "DwE6Xf80", s"Page not found, id: `$pageId'; could not do all changes")
+    val page = pageNoAuthor ++ authors
+
     val pageMeta = tenantDbDao.loadPageMeta(page.id) getOrElse
       throwNotFound("DwE115Xf3", s"Found no meta for page ${page.id}")
-    savePageActionsGenNotfsImpl(PageNoPath(page, pageMeta), actions)
+
+    val ancestorPageIds = loadAncestorIdsParentFirst(pageId)
+
+    savePageActionsGenNotfsImpl(PageNoPath(page, ancestorPageIds, pageMeta), actions)
   }
 
 

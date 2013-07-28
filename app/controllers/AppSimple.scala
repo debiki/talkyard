@@ -118,11 +118,8 @@ object AppSimple extends mvc.Controller {
     var pagesAndPatchSpecs = List[(PageParts, List[PostPatchSpec])]()
 
     actionsByPageId foreach { case (pageId, actions) =>
-      val pageWithoutMe = apiReq.dao.loadPage(pageId) getOrElse throwNotFound(
-        "DwE6Xf80", s"Page not found, id: `$pageId'; could not do all changes")
-      val page = pageWithoutMe ++ apiReq.meAsPeople_!
-
-      val (pageWithNewActions, _) = apiReq.dao.savePageActionsGenNotfs(page, actions)
+      val (pageWithNewActions, _) =
+        apiReq.dao.savePageActionsGenNotfs(pageId, actions, apiReq.meAsPeople_!)
 
       val patchSpecs = actions.map(a => PostPatchSpec(a.postId, wholeThread = true))
       pagesAndPatchSpecs ::= (pageWithNewActions.parts, patchSpecs)

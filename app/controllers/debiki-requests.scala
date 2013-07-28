@@ -399,6 +399,7 @@ case class PageRequest[A](
   lazy val page_! : PageParts =
     page_? getOrElse throwNotFound("DwE43XWY", "Page not found, id: "+ pageId)
 
+  def pageNoPath_! = PageNoPath(page_!, ancestorIdsParentFirst_!, pageMeta_!)
 
   lazy val pageDesiredVersionWithDummies_! : PageParts = {
     DummyPage.addMissingTitleBodyConfigTo(

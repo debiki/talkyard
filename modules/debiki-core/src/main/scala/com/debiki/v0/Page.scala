@@ -23,7 +23,12 @@ import Prelude._
 
 
 trait HasPageMeta {
-  self: { def meta: PageMeta } =>
+  self: {
+    def meta: PageMeta
+    def ancestorIdsParentFirst: List[PageId]
+  } =>
+
+  require(meta.parentPageId == ancestorIdsParentFirst.headOption)
 
   def id = meta.pageId
   def role = meta.pageRole
@@ -111,7 +116,7 @@ case class Page(
       meta = meta.copy(parentPageId = newAncestorIdsParentFirst.headOption),
       ancestorIdsParentFirst = newAncestorIdsParentFirst)
 
-  def withoutPath = PageNoPath(parts, meta)
+  def withoutPath = PageNoPath(parts, ancestorIdsParentFirst, meta)
 }
 
 
@@ -148,7 +153,7 @@ object requireMetaMatchesPaths {
 
 /** A page that does not know where it's located (it doesn't know its URL or ancestor ids).
   */
-case class PageNoPath(parts: PageParts, meta: PageMeta)
+case class PageNoPath(parts: PageParts, ancestorIdsParentFirst: List[PageId], meta: PageMeta)
   extends HasPageMeta {
 
   def +(user: User): PageNoPath =

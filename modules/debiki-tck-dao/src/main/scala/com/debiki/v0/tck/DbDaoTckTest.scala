@@ -423,7 +423,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
         PageRole.Generic, defaultPagePath, debateNoId, publishDirectly = true,
         author = loginGrant.user))
       val actions = page.parts
-      testPage = PageNoPath(page.parts, page.meta)
+      testPage = page.withoutPath
       actions.postCount must_== 1
       actions.guid.length must be_>(1)  // not = '?'
       actions must havePostLike(ex1_rootPost)

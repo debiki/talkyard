@@ -70,11 +70,7 @@ object AppReview extends mvc.Controller {
       }
 
     reviewsByPageId foreach { case (pageId, reviews) =>
-      val pageWithoutMe = apiReq.dao.loadPage(pageId) getOrElse throwBadReq(
-        "DwE93JQ3", "Page not found: "+ pageId +", only some reviews saved")
-      val page = pageWithoutMe ++ apiReq.meAsPeople_!
-
-      apiReq.dao.savePageActionsGenNotfs(page, reviews)
+      apiReq.dao.savePageActionsGenNotfs(pageId, reviews, apiReq.meAsPeople_!)
     }
 
     Ok

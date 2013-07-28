@@ -306,7 +306,8 @@ object AppCreateWebsite extends mvc.Controller {
 
     // Set homepage title.
     val title = PostActionDto.forNewTitleBySystem(text = DefaultHomepageTitle, creationDati)
-    newWebsiteDao.savePageActionsGenNotfsImpl(PageNoPath(emptyPage, pageMeta), List(title))
+    newWebsiteDao.savePageActionsGenNotfsImpl(
+      PageNoPath(emptyPage, ancestorIdsParentFirst = Nil, pageMeta), List(title))
   }
 
 
