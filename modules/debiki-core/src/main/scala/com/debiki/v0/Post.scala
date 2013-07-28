@@ -17,8 +17,9 @@
 
 package com.debiki.v0
 
-import java.{util => ju}
 import collection.{immutable => imm, mutable => mut}
+import java.{util => ju}
+import play.api.libs.json._
 import Prelude._
 import PageParts._
 import FlagReason.FlagReason
@@ -642,7 +643,7 @@ case class Post(
   }
 
 
-  def toJsonString: String = Protocols.postToJsonString(this)
+  def toJson: JsObject = Protocols.postToJson(this)
 
 }
 
@@ -650,7 +651,7 @@ case class Post(
 
 object Post {
 
-  def fromJsonString(jsonString: String) = Protocols.jsonStringToPost(jsonString)
+  def fromJson(json: JsValue) = Protocols.jsonToPost(json)
 
 }
 

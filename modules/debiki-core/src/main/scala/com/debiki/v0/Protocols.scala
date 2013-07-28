@@ -36,7 +36,7 @@ private[v0]
 object Protocols {
 
 
-  def postToJsonString(post: Post): String = {
+  def postToJson(post: Post): JsObject = {
 
     def toDateStringOrNull(anyDate: Option[ju.Date]): JsValue =
       anyDate.map(date => JsString(toIso8601T(date))) getOrElse JsNull
@@ -100,14 +100,13 @@ object Protocols {
       "numUndeleteTreeVotesPro" -> post.numUndeleteTreeVotesPro,
       "numUndeleteTreeVotesCon" -> post.numUndeleteTreeVotesCon)
 
-    json.toString
+    json
   }
 
 
-  def jsonStringToPost(jsonString: String): Post = {
+  def jsonToPost(json: JsValue): Post = {
 
     import play.api.libs.json.Reads.IsoDateReads
-    val json = play.api.libs.json.Json.parse(jsonString)
 
     val payload = PAP.CreatePost(
       parentPostId = (json \ "parentPostId").as[ActionId],
