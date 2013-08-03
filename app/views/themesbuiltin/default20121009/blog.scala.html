@@ -34,7 +34,7 @@
   val blogPosts = tpi.listNewestChildPages()
   if (blogPosts.nonEmpty)
     blogPosts
-  else if (tpi.hasChildPages) Seq(debiki.TinyTemplateProgrammingInterface.Page(
+  else if (tpi.hasChildPages) Seq(debiki.InternalPageTpi.Page(
     id = "",
     path = "",
     title = "Unpublished Blog Post",
@@ -50,7 +50,7 @@
       </ol>
     </div>
     """))
-  else Seq(debiki.TinyTemplateProgrammingInterface.Page(
+  else Seq(debiki.InternalPageTpi.Page(
     id = "",
     path = "",
     title = "Example Blog Post",

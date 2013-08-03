@@ -35,7 +35,7 @@ object InternalTemplateProgrammingInterface {
 }
 
 
-object TinyTemplateProgrammingInterface {
+object InternalPageTpi {
 
 
   case class Page(
@@ -283,10 +283,9 @@ class SiteTpi protected (protected val debikiRequest: DebikiRequest[_])
  * Such stuff is placed in TemplateProgrammingInterface instead
  * (because that stuff has some more dependencies).
  */
-class TinyTemplateProgrammingInterface protected (protected val _pageReq: PageRequest[_])
-  extends SiteTpi(_pageReq) {
+class InternalPageTpi protected (protected val _pageReq: PageRequest[_]) extends SiteTpi(_pageReq) {
 
-  import debiki.{TinyTemplateProgrammingInterface => tpi}
+  import debiki.{InternalPageTpi => tpi}
 
   override def anyCurrentPageId = Some(pageId)
   def pageId = _pageReq.pageId_!
@@ -455,10 +454,10 @@ class TinyTemplateProgrammingInterface protected (protected val _pageReq: PageRe
 class TemplateProgrammingInterface(
   private val pageReq: PageRequest[_],
   private val tagsToAppendToBody: xml.NodeSeq)
-  extends TinyTemplateProgrammingInterface(pageReq) {
+  extends InternalPageTpi(pageReq) {
 
-  import debiki.{TinyTemplateProgrammingInterface => tpi}
-  import TinyTemplateProgrammingInterface.{Page => _, _}
+  import debiki.{InternalPageTpi => tpi}
+  import InternalPageTpi.{Page => _, _}
 
   var renderPageSettings: Option[RenderPageSettings] = None
 
