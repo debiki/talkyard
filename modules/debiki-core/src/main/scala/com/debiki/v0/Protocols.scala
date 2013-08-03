@@ -46,7 +46,7 @@ object Protocols {
 
     val json = Json.obj(
       "pageId" -> post.page.id,
-      "id" -> post.id,
+      "postId" -> post.id,
       "createdAt" -> toIso8601T(post.creationDati),
       "parentPostId" -> post.parentId,
       "currentText" -> post.currentText,
@@ -115,7 +115,7 @@ object Protocols {
       approval = (json \ "anyDirectApproval").asOpt[String].map(Approval.parse _),
       where = (json \ "where").asOpt[String])
 
-    val id = (json \ "id").as[ActionId]
+    val id = (json \ "postId").as[ActionId]
 
     val creationPostActionDto = PostActionDto[PAP.CreatePost](
       id = id,
