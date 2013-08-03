@@ -20,6 +20,7 @@ package com.debiki.v0
 import com.debiki.v0.Prelude._
 import com.google.{common => guava}
 import java.{util => ju}
+import scala.concurrent.Future
 import DbDao._
 import EmailNotfPrefs.EmailNotfPrefs
 
@@ -275,7 +276,7 @@ abstract class TenantDbDao {
 
   // ----- Full text search
 
-  def fullTextSearch(phrase: String, anyRootPageId: Option[String]): FullTextSearchResult
+  def fullTextSearch(phrase: String, anyRootPageId: Option[String]): Future[FullTextSearchResult]
 
 }
 
@@ -683,7 +684,8 @@ class ChargingTenantDbDao(
 
   // ----- Full text search
 
-  def fullTextSearch(phrase: String, anyRootPageId: Option[String]): FullTextSearchResult = {
+  def fullTextSearch(phrase: String, anyRootPageId: Option[String])
+        : Future[FullTextSearchResult] = {
     _chargeForOneReadReq() // should charge much more?
     _spi.fullTextSearch(phrase, anyRootPageId)
   }

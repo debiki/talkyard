@@ -21,6 +21,7 @@ import com.debiki.v0._
 import controllers._
 import debiki._
 import java.{util => ju}
+import scala.concurrent.Future
 import DebikiHttp._
 import Prelude._
 
@@ -175,7 +176,7 @@ class TenantDao(protected val tenantDbDao: ChargingTenantDbDao)
 
   // ----- Full text search
 
-  def fullTextSearch(phrase: String, anyRootPageId: Option[String]): FullTextSearchResult =
+  def fullTextSearch(phrase: String, anyRootPageId: Option[String]): Future[FullTextSearchResult] =
     tenantDbDao.fullTextSearch(phrase, anyRootPageId)
 
 

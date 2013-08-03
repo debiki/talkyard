@@ -59,20 +59,25 @@ object FullTextSearch extends mvc.Controller {
   private def searchImpl(phrase: String, anyRootPageId: Option[String],
         apiReq:  DebikiRequest[_]) = {
 
-    val result = apiReq.dao.fullTextSearch(phrase, anyRootPageId)
+    import scala.concurrent.ExecutionContext.Implicits.global
 
-    // For now:
-    val html = <div>{
-      for (hit <- result.hits) yield {
-        <p>
-          Page: {hit.post.page.id}<br/>
-          Post: {hit.post.id}<br/>
-          Text: <i>{hit.post.approvedText.getOrElse("")}</i><br/>
-        </p>
-      }
-    }</div>
+    val futureSearchResult = apiReq.dao.fullTextSearch(phrase, anyRootPageId)
+    val futureResponse = futureSearchResult map { result =>
+      // For now:
+      val html = <div>{
+        for (hit <- result.hits) yield {
+          <p>
+            Page: {hit.post.page.id}<br/>
+            Post: {hit.post.id}<br/>
+            Text: <i>{hit.post.approvedText.getOrElse("")}</i><br/>
+          </p>
+        }
+      }</div>
 
-    Utils.OkHtmlBody(html)
+      Utils.OkHtmlBody(html)
+    }
+
+    mvc.AsyncResult(futureResponse)
   }
 
 }
