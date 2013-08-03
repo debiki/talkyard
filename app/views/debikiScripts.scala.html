@@ -15,12 +15,15 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *@
 
-@(pageId: String, minMaxJs: String, minMaxCss: String)
+@(anyPageId: Option[String], minMaxJs: String, minMaxCss: String)
 
 @asset(file: String) = @{
   routes.Assets.at(path = "/public/res", file)
 }
 
+@pageIdQuotedOrUndefined = @{
+  anyPageId.map(id => s"'$id'") getOrElse "undefined"
+}
 
 @* Concerning when/how to use a CDN for Modernizr, see:
 http://www.modernizr.com/news/modernizr-and-cdns
@@ -47,9 +50,13 @@ See: http://stackoverflow.com/questions/1014203/best-way-to-use-googles-hosted-j
 *@
 <script>
   var debiki = $.extend(true, {
-    getPageId: function() { return '@pageId'; },
+    getPageId: function() { return @Html(pageIdQuotedOrUndefined); },
     v0: { util: {} },
-    internal: { $: jQuery, pageId: '@pageId', assetsUrlPathStart: '@asset("")' }
+    internal: {
+      $: jQuery,
+      pageId: @Html(pageIdQuotedOrUndefined),
+      assetsUrlPathStart: '@asset("")'
+    }
   }, debiki);
   @* COULD move to debiki.internal instead! Now relying on &lt;script type=js/x-debiki-config&gt;*@
   debiki.scriptLoad = $.Deferred();

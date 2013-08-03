@@ -19,7 +19,7 @@ package debiki
 
 import com.debiki.v0
 import com.debiki.v0._
-import controllers.{PageRequest, SiteAssetBundles, routes}
+import controllers.{DebikiRequest, PageRequest, SiteAssetBundles, routes}
 import debiki.dao._
 import java.{util => ju}
 import play.{api => p}
@@ -36,9 +36,6 @@ object InternalTemplateProgrammingInterface {
 
 
 object TinyTemplateProgrammingInterface {
-
-  def apply(pageReq: PageRequest[_]): TinyTemplateProgrammingInterface =
-    new TinyTemplateProgrammingInterface(pageReq)
 
 
   case class Page(
@@ -145,74 +142,87 @@ class InternalTemplateProgrammingInterface protected (
 
 
   def websiteConfigValue(confValName: String, or: => String = ""): String =
-    _websiteConfigValueOpt(confValName) getOrElse or
+    anyWebsiteConfigValue(confValName) getOrElse or
 
 
-  protected def _websiteConfigValueOpt(confValName: String): Option[String] =
+  protected def anyWebsiteConfigValue(confValName: String): Option[String] =
     dao.loadWebsiteConfig().getText(confValName)
 
 }
 
 
-/**
- * Used by both Scala templates (via TemplateProgrammingInterface
- * which inherits it) and HTTP interface controllers.
- *
- * Does not provide any functionality for rendering a whole page.
- * Such stuff is placed in TemplateProgrammingInterface instead
- * (because that stuff has some more dependencies).
- */
-class TinyTemplateProgrammingInterface protected (
-  protected val _pageReq: PageRequest[_])
-  extends InternalTemplateProgrammingInterface(_pageReq.dao) {
 
-  import debiki.{TinyTemplateProgrammingInterface => tpi}
+/** The Site Template Programming Interface is used when rendering stuff that
+  * is specific to a certain website, but does not depend on which page is being
+  * viewed.
+  *
+  * The SiteTpi is currently used when rendering generic HTML that wraps all
+  * page contents — e.g. when rendering the dashbar and the top navbar.
+  * And also for the search results page.
+  *
+  * There is also a Page Template Programming Interface which is used
+  * when rendering e.g. blog and forum pages.
+  */
+class SiteTpi protected (protected val debikiRequest: DebikiRequest[_])
+  extends InternalTemplateProgrammingInterface(debikiRequest.dao) {
 
-  def pageId = _pageReq.pageId_!
-  def pageRole = _pageReq.pageRole_!
-  def childPageRole = pageRole.childRole
+  def isLoggedIn = debikiRequest.loginId isDefined
+  def isOwner = debikiRequest.user.map(_.isOwner) == Some(true)
+  def isAdmin = debikiRequest.user.map(_.isAdmin) == Some(true)
+  def isAuthenticated = debikiRequest.user.map(_.isAuthenticated) == Some(true)
+  def userDisplayName = debikiRequest.user.map(_.displayName) getOrElse ""
 
-  def isLoggedIn = _pageReq.loginId isDefined
-  def isOwner = _pageReq.user.map(_.isOwner) == Some(true)
-  def isAdmin = _pageReq.user.map(_.isAdmin) == Some(true)
-  def isAuthenticated = _pageReq.user.map(_.isAuthenticated) == Some(true)
-  def userDisplayName = _pageReq.user.map(_.displayName) getOrElse ""
+  def debikiMeta = xml.Unparsed(views.html.debikiMeta().body)
 
-  def currentFolder = PathRanges(folders = Seq(_pageReq.pagePath.folder))
-  def currentTree = PathRanges(trees = Seq(_pageReq.pagePath.folder))
+  def anyCurrentPageId: Option[PageId] = None
+
+  /** Classes for the <html> tag. */
+  val debikiHtmlTagClasses =
+    "DW dw-pri dw-ui-simple dw-render-actions-pending "
+
+  def debikiDashbar = xml.Unparsed(views.html.dashbar().body)
+
+  def loginLinkAndUserName =
+    HtmlPageSerializer.loginInfo(debikiRequest.user.map(_.displayName))
 
 
-  /**
-   * A website or page config value, and page specific values take precedence.
+  import TemplateProgrammingInterface._
+
+  def debikiStyles = xml.Unparsed(
+    views.html.debikiStyles(minMaxJs, minMaxCss).body)
+
+  def debikiScripts = xml.Unparsed(
+    views.html.debikiScripts(anyCurrentPageId, minMaxJs, minMaxCss).body)
+
+
+  /** A website or page config value, and page specific values take precedence.
    */
-  def configValueOpt(confValName: String, pageId: Option[String] = None): Option[String] =
-    _pageConfigValueOpt(confValName, pageId) orElse
-      _websiteConfigValueOpt(confValName)
+  def anyConfigValue(confValName: String, pageId: Option[String] = None): Option[String] =
+    anyPageConfigValue(confValName, pageId) orElse
+      anyWebsiteConfigValue(confValName)
 
 
-  def configValue(confValName: String, pageId: Option[String] = None, or: String = "")
-        : String =
-    configValueOpt(confValName, pageId) getOrElse or
+  def configValue(confValName: String, pageId: Option[String] = None, or: String = ""): String =
+    anyConfigValue(confValName, pageId) getOrElse or
 
 
-
-  /**
-   * Loads page specific data, e.g. which template to use (if we're not
-   * supposed to use the default template for the folder in which the page
-   * is placed) and perhaps page html keywords/title/description.
-   *
-   * SHOULD cache the result, otherwise we'll have to parse YAML
-   * each time a page is viewed.
-   */
+  /** Loads page specific data, e.g. which template to use (if we're not
+    * supposed to use the default template for the folder in which the page
+    * is placed) and perhaps page html keywords/title/description.
+    *
+    * SHOULD cache the result, otherwise we'll have to parse YAML
+    * each time a page is viewed.
+    */
   def pageConfigValue(confValName: String, pageId: Option[String] = None, or: String = "")
         : String = {
-    _pageConfigValueOpt(confValName, pageId) getOrElse or
+    anyPageConfigValue(confValName, pageId) getOrElse or
   }
 
 
-  private def _pageConfigValueOpt(confValName: String, pageId: Option[String])
-        : Option[String] = {
-    val thePageId = pageId orElse _pageReq.pageId getOrDie "DwE83ZI78"
+  private def anyPageConfigValue(confValName: String, pageId: Option[String]): Option[String] = {
+    val thePageId = pageId orElse anyCurrentPageId getOrElse {
+      return None
+    }
     try {
       dao.loadPageConfigMap(thePageId).get(confValName) match {
         case None => None
@@ -226,6 +236,65 @@ class TinyTemplateProgrammingInterface protected (
           "DwE63D8", s"Error loading page config value '$confValName': ${ex.getMessage}")
     }
   }
+
+
+  def stylesheetBundle(bundleName: String): xml.NodeSeq = {
+
+    val (nameNoSuffix, suffix) = bundleName match {
+      case AssetBundleNameRegex(nameNoSuffix, suffix) =>
+        (nameNoSuffix, suffix)
+      case _ =>
+        throw TemplateRenderer.BadTemplateException(
+          "DwE13BKf8", o"""Invalid asset bundle name: '$bundleName'. Only names
+          like 'some-bundle-name.css' and 'some-scripts.js' are allowed.""")
+    }
+
+    try {
+      val version = dao.loadAssetBundleVersion(nameNoSuffix, suffix)
+      val fileName = assetBundleFileName(nameNoSuffix, version, suffix)
+        <link rel="stylesheet" href={ routes.SiteAssetBundles.at(fileName).url }/>
+    }
+    catch {
+      case ex: DebikiException =>
+        // The bundle is broken somehow. Don't fail the whole page because of this?
+        // E.g. search engines should work fine although the bundle is broken.
+        // Instead, indicate to designers/developers that it's broken, via
+        // a Javascript console log message.
+        val messEscaped = ex.getMessage.replaceAllLiterally("'", """\'""")
+        <script>{o"""throw new Error(
+          'Asset-bundle \'$bundleName\' is broken and was therefore not included
+           on the page. Details: $messEscaped');"""
+          }</script>
+    }
+  }
+
+
+  def debikiAppendToBodyTags: xml.NodeSeq = Nil
+
+}
+
+
+
+/**
+ * Used by both Scala templates (via TemplateProgrammingInterface
+ * which inherits it) and HTTP interface controllers.
+ *
+ * Does not provide any functionality for rendering a whole page.
+ * Such stuff is placed in TemplateProgrammingInterface instead
+ * (because that stuff has some more dependencies).
+ */
+class TinyTemplateProgrammingInterface protected (protected val _pageReq: PageRequest[_])
+  extends SiteTpi(_pageReq) {
+
+  import debiki.{TinyTemplateProgrammingInterface => tpi}
+
+  override def anyCurrentPageId = Some(pageId)
+  def pageId = _pageReq.pageId_!
+  def pageRole = _pageReq.pageRole_!
+  def childPageRole = pageRole.childRole
+
+  def currentFolder = PathRanges(folders = Seq(_pageReq.pagePath.folder))
+  def currentTree = PathRanges(trees = Seq(_pageReq.pagePath.folder))
 
 
   def listNewestPages(pathRanges: PathRanges): Seq[tpi.Page] = {
@@ -390,7 +459,6 @@ class TemplateProgrammingInterface(
 
   import debiki.{TinyTemplateProgrammingInterface => tpi}
   import TinyTemplateProgrammingInterface.{Page => _, _}
-  import TemplateProgrammingInterface._
 
   var renderPageSettings: Option[RenderPageSettings] = None
 
@@ -403,16 +471,7 @@ class TemplateProgrammingInterface(
       })
 
 
-  def debikiMeta = xml.Unparsed(views.html.debikiMeta().body)
-
-  def debikiStyles = xml.Unparsed(
-    views.html.debikiStyles(minMaxJs, minMaxCss).body)
-
-  def debikiScripts = xml.Unparsed(
-    views.html.debikiScripts(pageId, minMaxJs, minMaxCss).body)
-
-
-  def debikiAppendToBodyTags: xml.NodeSeq = {
+  override def debikiAppendToBodyTags: xml.NodeSeq = {
     // The dialog templates includes the user name and cannot currently be cached.
     val dialogTemplates: xml.NodeSeq = {
       val templateHtmlNodes = HtmlForms(pageReq.xsrfToken.value,
@@ -421,20 +480,6 @@ class TemplateProgrammingInterface(
     }
     dialogTemplates ++ tagsToAppendToBody
   }
-
-
-  val debikiHtmlTagClasses =
-    "DW "+
-    "dw-pri "+
-    "dw-ui-simple "+
-    "dw-render-actions-pending "
-
-
-  def debikiDashbar = xml.Unparsed(views.html.dashbar(this).body)
-
-
-  def loginLinkAndUserName =
-    HtmlPageSerializer.loginInfo(_pageReq.user.map(_.displayName))
 
 
   def page(contents: => play.api.templates.Html): xml.NodeSeq = page()(contents)
@@ -496,44 +541,13 @@ class TemplateProgrammingInterface(
    * Use in templates, e.g. like so: `@if(shall("show-title")) { @title }`
    */
   def shall(confValName: String, default: Boolean = false): Boolean =
-    configValueOpt(confValName).getOrElse(default) match {
+    anyConfigValue(confValName).getOrElse(default) match {
       case b: Boolean => b
       case s: String => s.toLowerCase == "true"
       case x => throw TemplateRenderer.PageConfigException(
         "DwE1W840", s"""Don't know how to convert config value `$confValName' = `$x',
         which is a ${classNameOf(x)}, to a Boolean""")
     }
-
-
-  def stylesheetBundle(bundleName: String): xml.NodeSeq = {
-
-    val (nameNoSuffix, suffix) = bundleName match {
-      case AssetBundleNameRegex(nameNoSuffix, suffix) =>
-        (nameNoSuffix, suffix)
-      case _ =>
-        throw TemplateRenderer.BadTemplateException(
-          "DwE13BKf8", o"""Invalid asset bundle name: '$bundleName'. Only names
-          like 'some-bundle-name.css' and 'some-scripts.js' are allowed.""")
-    }
-
-    try {
-      val version = dao.loadAssetBundleVersion(nameNoSuffix, suffix)
-      val fileName = assetBundleFileName(nameNoSuffix, version, suffix)
-      <link rel="stylesheet" href={ routes.SiteAssetBundles.at(fileName).url }/>
-    }
-    catch {
-      case ex: DebikiException =>
-        // The bundle is broken somehow. Don't fail the whole page because of this?
-        // E.g. search engines should work fine although the bundle is broken.
-        // Instead, indicate to designers/developers that it's broken, via
-        // a Javascript console log message.
-        val messEscaped = ex.getMessage.replaceAllLiterally("'", """\'""")
-        <script>{o"""throw new Error(
-          'Asset-bundle \'$bundleName\' is broken and was therefore not included
-           on the page. Details: $messEscaped');"""
-        }</script>
-    }
-  }
 
 }
 
