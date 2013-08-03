@@ -48,13 +48,13 @@ object ApiActions {
 
   type JsonPostRequest = ApiRequest[JsValue]
 
-  def GetAction(f: GetRequest => PlainResult) =
+  def GetAction(f: GetRequest => Result) =
     _PlainApiAction(BodyParsers.parse.empty)(f)
 
 
   def JsonOrFormDataPostAction
         (maxBytes: Int)
-        (f: ApiRequest[JsonOrFormDataBody] => PlainResult) =
+        (f: ApiRequest[JsonOrFormDataBody] => Result) =
     _PlainApiAction[JsonOrFormDataBody](
       JsonOrFormDataBody.parser(maxBytes = maxBytes))(f)
 
@@ -64,7 +64,7 @@ object ApiActions {
    */
   def PostFormDataAction
         (maxUrlEncFormBytes: Int)
-        (f: FormDataPostRequest => PlainResult) =
+        (f: FormDataPostRequest => Result) =
     _PlainApiAction[Map[String, Seq[String]]](
       BodyParsers.parse.urlFormEncoded(maxLength = maxUrlEncFormBytes))(f)
 
@@ -76,27 +76,20 @@ object ApiActions {
    */
   def PostJsonAction
         (maxLength: Int)
-        (f: JsonPostRequest => PlainResult) =
+        (f: JsonPostRequest => Result) =
     _PlainApiAction[JsValue](
       BodyParsers.parse.json(maxLength = maxLength))(f)
 
 
   private def _PlainApiAction[A]
         (parser: BodyParser[A])
-        (f: ApiRequest[A] => PlainResult) =
+        (f: ApiRequest[A] => Result) =
       _ApiActionImpl[A](parser)(f)
-
-
-  // Currently not possible because CheckSidAction wants a PlainResult.
-  /* def AsyncApiAction[A]
-        (parser: BodyParser[A])
-        (f: ApiRequest[A] => AsyncResult) =
-    _ApiActionImpl[A, AsyncResult](parser)(f) */
 
 
   private def _ApiActionImpl[A]
         (parser: BodyParser[A])
-        (f: ApiRequest[A] => PlainResult) =
+        (f: ApiRequest[A] => Result) =
     SafeActions.CheckSidAction[A](parser) { (sidOk, xsrfOk, request) =>
 
       val tenantId = DebikiHttp.lookupTenantIdOrThrow(request, Globals.systemDao)

@@ -39,7 +39,7 @@ object SafeActions {
    * or the session id is invalid.
    */
   def CheckSidActionNoBody
-        (f: (SidStatus, XsrfOk, Request[Option[Any]]) => PlainResult) =
+        (f: (SidStatus, XsrfOk, Request[Option[Any]]) => Result) =
     CheckSidAction(BodyParsers.parse.empty)(f)
 
 
@@ -57,11 +57,17 @@ object SafeActions {
   // COULD rename to CheckSidAndXsrfAction?
   def CheckSidAction[A]
         (parser: BodyParser[A], maySetCookies: Boolean = true)
-        (f: (SidStatus, XsrfOk, Request[A]) => PlainResult) =
+        (f: (SidStatus, XsrfOk, Request[A]) => Result) =
     ExceptionAction[A](parser) { request =>
+
       val (sidStatus, xsrfOk, newCookies) =
-         DebikiSecurity.checkSidAndXsrfToken(
-           request, maySetCookies = maySetCookies)
+         DebikiSecurity.checkSidAndXsrfToken(request, maySetCookies = maySetCookies)
+
+      // Parts of `f` might be executed asynchronously. However any LoginNotFoundException
+      // should happen before the async parts, because access control should be done
+      // before any async computations are started. So I don't try to recover
+      // any AsyncResult(future-result-that-might-be-a-failure) here.
+
       val resultOldCookies = try {
         f(sidStatus, xsrfOk, request)
       } catch {
@@ -75,12 +81,14 @@ object SafeActions {
                "a new id, but you will probably need to login again.)")
              .discardingCookies(DiscardingCookie("dwCoSid")))
       }
+
       val resultOkSid =
         if (newCookies isEmpty) resultOldCookies
         else {
           assert(maySetCookies)
           resultOldCookies.withCookies(newCookies: _*)
         }
+
       resultOkSid
     }
 
@@ -92,12 +100,28 @@ object SafeActions {
    */
   def ExceptionAction[A](parser: BodyParser[A])(f: Request[A] => Result) =
         mvc.Action[A](parser) { request =>
-    try {
-      f(request)
-    } catch {
+
+    def exceptionRecoverer: PartialFunction[Throwable, PlainResult] = {
       case DebikiHttp.ResultException(result) => result
       case ex: play.api.libs.json.JsResultException =>
         Results.BadRequest(s"Bad JSON: $ex [error DwE70KX3]")
+    }
+
+    // An exception might be thrown before any async computation is started,
+    // or whilst any async computation happens. So check for any exception twice:
+
+    val perhapsAsyncResult = try {
+      f(request)
+    }
+    catch exceptionRecoverer
+
+    import scala.concurrent.ExecutionContext.Implicits.global
+
+    perhapsAsyncResult match {
+      case AsyncResult(futureResultMaybeException) =>
+        val futureResult = futureResultMaybeException recover exceptionRecoverer
+        AsyncResult(futureResult)
+      case x => x
     }
   }
 
