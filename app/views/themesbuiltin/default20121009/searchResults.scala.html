@@ -35,8 +35,11 @@
 @searchResultsHtml = @{
   <div>{
     for (hit <- searchResult.hits) yield {
+      val pageId = hit.post.page.id
+      val anyPageMeta = searchResult.pageMetaByPageId.get(pageId)
+      val pageTitle = anyPageMeta.flatMap(_.cachedTitle) getOrElse "(Unnamed page)"
       <h3 class="search-result-page-title">
-        <a href={s"/-${hit.post.page.id}"}>Page Title</a>
+        <a href={s"/-$pageId"}>{pageTitle}</a>
       </h3>
       <em>{ foundWhere(hit) }:</em>
       <p class="search-result-post-text">

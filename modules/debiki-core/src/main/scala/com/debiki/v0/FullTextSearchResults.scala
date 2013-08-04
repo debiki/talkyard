@@ -7,12 +7,10 @@ package com.debiki.v0
 import java.{util => ju}
 
 
-case class FullTextSearchResult(hits: Seq[FullTextSearchHit])
+case class FullTextSearchResult(
+  hits: Seq[FullTextSearchHit],
+  pageMetaByPageId: Map[PageId, PageMeta])
 
 
-case class FullTextSearchHit(post: Post)
-  /*
-  authorName: String,
-  highlightedHits: String, ??
-  relevancy: Float) */
+case class FullTextSearchHit(post: Post, score: Float)
 
