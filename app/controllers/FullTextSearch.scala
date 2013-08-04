@@ -76,7 +76,7 @@ object FullTextSearch extends mvc.Controller {
       val siteTpi = debiki.SiteTpi(apiReq)
       val theme = TemplateRenderer.getThemeName(siteTpi)
       val htmlStr = TemplateRenderer.renderThemeTemplate(
-        theme, SearchResultsTemplate, List(siteTpi, searchResult))
+        theme, SearchResultsTemplate, List(siteTpi, phrase, searchResult))
       Ok(htmlStr) as HTML
     }
 

@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *@
 
-@(tpi: debiki.SiteTpi, searchResult: com.debiki.v0.FullTextSearchResult)
+@(tpi: debiki.SiteTpi, searchPhrase: String, searchResult: com.debiki.v0.FullTextSearchResult)
 
 @import com.debiki.v0._
 
@@ -44,7 +44,7 @@
       <em>{ foundWhere(hit) }:</em>
       <p class="search-result-post-text">
         <a href={s"/-${hit.post.page.id}#post-${hit.post.id}"}>{
-          hit.highlights mkString " ... "
+          xml.Unparsed(hit.safeHighlightsHtml mkString " <b>...</b> ")
         }</a>
       </p>
     }
@@ -55,6 +55,9 @@
   <!-- default20121009/searchResults.scala.html -->
 
   <h1>Search Results</h1>
+
+  <br>
+  <p>For: <b>@searchPhrase</b></p>
 
   @searchResultsHtml
 }
