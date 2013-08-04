@@ -12,5 +12,8 @@ case class FullTextSearchResult(
   pageMetaByPageId: Map[PageId, PageMeta])
 
 
-case class FullTextSearchHit(post: Post, score: Float)
+case class FullTextSearchHit(
+  post: Post,
+  score: Float,
+  highlights: List[String])
 

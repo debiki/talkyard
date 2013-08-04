@@ -43,9 +43,9 @@
       </h3>
       <em>{ foundWhere(hit) }:</em>
       <p class="search-result-post-text">
-        <a href={s"/-${hit.post.page.id}#post-${hit.post.id}"}>
-          {hit.post.approvedText.getOrElse("")}
-        </a>
+        <a href={s"/-${hit.post.page.id}#post-${hit.post.id}"}>{
+          hit.highlights mkString " ... "
+        }</a>
       </p>
     }
   }</div>
