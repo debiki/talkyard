@@ -16,11 +16,19 @@
  *@
 
 
-@(tpi: debiki.TemplateProgrammingInterface, id: String, placeholderText: String)
+@(tpi: debiki.TemplateProgrammingInterface, id: String, placeholderText: String,
+  sectionId: Option[String])
 
+@actionUrlPath = @{
+  sectionId match {
+    case None => routes.FullTextSearch.searchWholeSite
+    case Some(id) => routes.FullTextSearch.searchSiteSection(id)
+  }
+}
 
-<form class="debiki-search-form form-search"
-      action="@routes.FullTextSearch.searchWholeSite"
+<form id="@id"
+      class="debiki-search-form form-search"
+      action="@actionUrlPath"
       accept-charset="UTF-8"
       method="post">
 
@@ -31,7 +39,10 @@
          class="input-medium search-query"
          placeholder="@placeholderText">
 
+  @* Looks better without any "Search" button. People understand they're to click Enter?
+  I wonder, however, will the the placeholder text be read aloud for blind people?
   <button type="submit" class="btn">Search</button>
+  *@
 
 </form>
 

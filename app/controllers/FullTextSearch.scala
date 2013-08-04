@@ -18,6 +18,7 @@
 package controllers
 
 import com.debiki.v0._
+import debiki.TemplateRenderer
 import java.{util => ju}
 import play.api._
 import ApiActions._
@@ -31,6 +32,7 @@ object FullTextSearch extends mvc.Controller {
 
   private val SearchPhraseFieldName = "searchPhrase"
 
+  private val SearchResultsTemplate = "searchResults"
 
   def searchWholeSiteFor(phrase: String) = GetAction { apiReq =>
     searchImpl(phrase, anyRootPageId = None, apiReq)
@@ -62,19 +64,20 @@ object FullTextSearch extends mvc.Controller {
     import scala.concurrent.ExecutionContext.Implicits.global
 
     val futureSearchResult = apiReq.dao.fullTextSearch(phrase, anyRootPageId)
-    val futureResponse = futureSearchResult map { result =>
-      // For now:
-      val html = <div>{
-        for (hit <- result.hits) yield {
-          <p>
-            Page: {hit.post.page.id}<br/>
-            Post: {hit.post.id}<br/>
-            Text: <i>{hit.post.approvedText.getOrElse("")}</i><br/>
-          </p>
-        }
-      }</div>
+    val futureResponse = futureSearchResult map { searchResult =>
 
-      Utils.OkHtmlBody(html)
+      // Could group results by page id? But also need to take hit scores into account.
+      //val hitsByPageId: Map[PageId, Seq[FullTextSearchHit]] =
+      //  searchResult.hits.groupBy(hit => hit.post.page.id)
+      //val hitsAndPages = hitsByPageId.toList sortBy { (pageId, hit) =>
+      //  max score? So best hit always appear first?
+      //}
+
+      val siteTpi = debiki.SiteTpi(apiReq)
+      val theme = TemplateRenderer.getThemeName(siteTpi)
+      val htmlStr = TemplateRenderer.renderThemeTemplate(
+        theme, SearchResultsTemplate, List(siteTpi, searchResult))
+      Ok(htmlStr) as HTML
     }
 
     mvc.AsyncResult(futureResponse)

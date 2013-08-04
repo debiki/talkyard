@@ -152,6 +152,13 @@ class InternalTemplateProgrammingInterface protected (
 
 
 
+object SiteTpi {
+
+  def apply(request: DebikiRequest[_]) = new SiteTpi(request)
+
+}
+
+
 /** The Site Template Programming Interface is used when rendering stuff that
   * is specific to a certain website, but does not depend on which page is being
   * viewed.
@@ -163,7 +170,7 @@ class InternalTemplateProgrammingInterface protected (
   * There is also a Page Template Programming Interface which is used
   * when rendering e.g. blog and forum pages.
   */
-class SiteTpi protected (protected val debikiRequest: DebikiRequest[_])
+class SiteTpi protected (val debikiRequest: DebikiRequest[_])
   extends InternalTemplateProgrammingInterface(debikiRequest.dao) {
 
   def isLoggedIn = debikiRequest.loginId isDefined
@@ -510,6 +517,12 @@ class TemplateProgrammingInterface(
       xml.Unparsed(contents.body)
     }
   }
+
+
+  /** Example: if this is a forum topic  in a forum  in a forum group,
+    * this function would return the id of the forum group (that'd be the "root" section).
+    */
+  def anyRootSectionPageId: Option[PageId] = _pageReq.ancestorIdsParentFirst_!.lastOption
 
 
   def pageMeta = dao.renderPageMeta(pageReq)

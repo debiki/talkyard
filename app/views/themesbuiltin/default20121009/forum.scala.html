@@ -27,6 +27,9 @@
 @wrapper(tpi) {
   <!-- default20121009/forum.scala.html -->
 
+  @views.html.searchForm(tpi, id = "forum-search", placeholderText = "Search whole forum",
+    sectionId = tpi.anyRootSectionPageId)
+
   @parentForumsList(tpi)
 
     @tpi.page(showAuthorAndDate = false, showBody = false, showComments = false) {
