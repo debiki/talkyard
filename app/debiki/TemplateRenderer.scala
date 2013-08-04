@@ -77,20 +77,7 @@ object TemplateRenderer {
 
 
 
-    val theme = {
-      val themeUnsafe = tpi.websiteConfigValue("theme") orIfEmpty DefaultThemeName
-      // People place themes in file system dirs, so allow them to use "/" when
-      // specifying in which directory the theme is located? This is more user friendly
-      // than forcing them to use Javas package delimiter, '.'? But we need to convert to '.'
-      // now so we can look up the Scala package + class.
-      val themeNoDelims = themeUnsafe.replace('/', '.')
-      // Don't allow anyone to use the www.debiki.com template:
-      if (themeNoDelims == "wwwdebikicom" && !pageReq.host.endsWith("debiki.com")
-          && !pageReq.host.startsWith("localhost:"))
-        DefaultThemeName
-      else
-        themeNoDelims
-    }
+    val theme = getThemeName(tpi)
 
     val template = tpi.pageConfigValue("template") orIfEmpty {
       pageReq.pageRole_! match {
@@ -106,12 +93,27 @@ object TemplateRenderer {
       }
     }
 
-    renderThemeTemplate(theme, template, tpi)
+    renderThemeTemplate(theme, template, tpi::Nil)
   }
 
 
-  private def renderThemeTemplate(theme: String, template: String,
-        tpi: TemplateProgrammingInterface): String = {
+  def getThemeName(tpi: SiteTpi): String = {
+    val themeUnsafe = tpi.websiteConfigValue("theme") orIfEmpty DefaultThemeName
+    // People place themes in file system dirs, so allow them to use "/" when
+    // specifying in which directory the theme is located? This is more user friendly
+    // than forcing them to use Javas package delimiter, '.'? But we need to convert to '.'
+    // now so we can look up the Scala package + class.
+    val themeNoDelims = themeUnsafe.replace('/', '.')
+    // Don't allow anyone to use the www.debiki.com template:
+    if (themeNoDelims == "wwwdebikicom" && !tpi.debikiRequest.host.endsWith("debiki.com")
+        && !tpi.debikiRequest.host.startsWith("localhost:"))
+      DefaultThemeName
+    else
+      themeNoDelims
+  }
+
+
+  def renderThemeTemplate(theme: String, template: String, arguments: Seq[AnyRef]): String = {
 
     // Search one of two folders for the theme file, either themes/ or themesbuiltin/:
     // a few built-in default themes are located in app/views/themesbuiltin/,
@@ -125,8 +127,8 @@ object TemplateRenderer {
     try {
       val viewClass : Class[_] = Play.current.classloader.loadClass(viewClassName)
       val renderMethod: jl.reflect.Method = viewClass.getDeclaredMethod(
-        "apply", classOf[TemplateProgrammingInterface])
-      val result = renderMethod.invoke(viewClass, tpi)
+        "apply", arguments.map(_.getClass): _*)
+      val result = renderMethod.invoke(viewClass, arguments: _*)
       val htmlText = result.asInstanceOf[templates.Html].body
       htmlText
     }
@@ -137,7 +139,8 @@ object TemplateRenderer {
       case ex: jl.NoSuchMethodException =>
         throw new PageConfigException(
           "DwE68St8", o"""Template `$template', theme: `$theme', is broken.
-          Does it not start with `@(tpi: TemplateProgrammingInterface)'?""")
+          The method declaration at the top of the file, e.g.
+          `@(tpi: TemplateProgrammingInterface)', is probably incorrect.""")
       case wrappingException: jl.reflect.InvocationTargetException =>
         val originalException = wrappingException.getCause
         throw originalException
