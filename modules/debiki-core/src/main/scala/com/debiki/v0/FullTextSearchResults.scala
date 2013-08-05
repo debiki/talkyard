@@ -9,7 +9,16 @@ import java.{util => ju}
 
 case class FullTextSearchResult(
   hits: Seq[FullTextSearchHit],
-  pageMetaByPageId: Map[PageId, PageMeta])
+  pageMetaByPageId: Map[PageId, PageMeta]) {
+
+  def isEmpty = hits.isEmpty
+
+}
+
+
+object FullTextSearchResult {
+  val empty = FullTextSearchResult(Nil, Map.empty)
+}
 
 
 /**
