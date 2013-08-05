@@ -38,13 +38,13 @@ class QuotaManager(
   val freeDollarsToEachNewSite: Float,
   val unitTestTicker: Option[ggb.Ticker] = None) {
 
-  def _dao = systemDao
+  private def _dao = systemDao
 
-  val log = play.api.Logger("app.quota")
+  private val log = play.api.Logger("app.quota")
 
-  def MaxCacheItemAgeSeconds = 20  // for now
+  private def MaxCacheItemAgeSeconds = 20  // for now
 
-  case class CacheKeyAddition(consumer: QuotaConsumer, when: ju.Date)
+  private case class CacheKeyAddition(consumer: QuotaConsumer, when: ju.Date)
 
 
   /**
@@ -52,7 +52,7 @@ class QuotaManager(
    * and periodically removes old items from the cache and writes the
    * accumulated quota and resource usage to database.
    */
-  object CacheFlusher extends akka.actor.Actor {
+  private object CacheFlusher extends akka.actor.Actor {
 
     private var _cacheKeyAdditions = mut.Queue[CacheKeyAddition]()
 
@@ -76,7 +76,7 @@ class QuotaManager(
   }
 
 
-  val CacheFlusherRef = Akka.system.actorOf(akka.actor.Props(CacheFlusher),
+  private val CacheFlusherRef = Akka.system.actorOf(akka.actor.Props(CacheFlusher),
      name = s"CacheFlusher-${jl.System.identityHashCode(this)}")
 
 
