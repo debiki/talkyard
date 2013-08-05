@@ -16,8 +16,9 @@
  *@
 
 
-@(tpi: debiki.TemplateProgrammingInterface, id: String, placeholderText: String,
-  sectionId: Option[String])
+@(tpi: debiki.SiteTpi, id: String,
+  oldSearchPhrase: Option[String] = None, placeholderText: String ="",
+  sectionId: Option[String] = None, autofocus: Boolean = false)
 
 @actionUrlPath = @{
   sectionId match {
@@ -34,10 +35,14 @@
 
   @hiddenXsrfTokenInput(tpi)
 
+  Search:
   <input type="text"
          name="searchPhrase"
          class="input-medium search-query"
-         placeholder="@placeholderText">
+         placeholder="@placeholderText"
+         value="@{ oldSearchPhrase getOrElse ""}"
+         tabindex="1"
+         @Html(if (autofocus) "autofocus" else "")>
 
   @* Looks better without any "Search" button. People understand they're to click Enter?
   I wonder, however, will the the placeholder text be read aloud for blind people?

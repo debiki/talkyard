@@ -15,7 +15,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *@
 
-@(tpi: debiki.SiteTpi, searchPhrase: String, searchResult: com.debiki.v0.FullTextSearchResult)
+@(tpi: debiki.SiteTpi, anySectionId: Option[String], searchPhrase: String,
+  searchResult: com.debiki.v0.FullTextSearchResult)
 
 @import com.debiki.v0._
 
@@ -33,11 +34,14 @@
 @* Add later:   , by { hit.post.user_!.displayName }:</em>   *@
 
 @searchResultsHtml = @{
-  <div>{
+  if (searchResult.isEmpty) <p>I found nothing.</p>
+  else <div>{
     // This groups hits by page; the best hit is listed first.
 
     val pageMetaAndHits: Seq[(Option[PageMeta], Seq[FullTextSearchHit])] =
       SearchResultsTemplateCode.groupHitsByPageDescScore(searchResult)
+
+    var tabindex = 1 // this (1) starts on 2. (The search phrase field has id 1.)
 
     for {
       (anyPageMeta, hits) <- pageMetaAndHits
@@ -47,13 +51,15 @@
     yield {
       val pageId = pageMeta.pageId
       val pageTitle = pageMeta.cachedTitle getOrElse "(Unnamed or deleted page?)"
+      tabindex += 1
       <h3 class="search-result-page-title">
-        <a href={s"/-$pageId"}>{pageTitle}</a>
+        <a href={s"/-$pageId"} tabindex={tabindex.toString}>{pageTitle}</a>
       </h3> ++
       (for (hit <- hits) yield {
+        tabindex += 1
         <em>{ foundWhere(hit) }:</em>
         <p class="search-result-post-text">
-          <a href={s"/-$pageId#post-${hit.post.id}"}>{
+          <a href={s"/-$pageId#post-${hit.post.id}"} tabindex={tabindex.toString}>{
             xml.Unparsed(hit.safeHighlightsHtml mkString " <b>...</b> ")
           }</a>
         </p>
@@ -68,8 +74,11 @@
   <h1>Search Results</h1>
 
   <br>
-  <p>For: <b>@searchPhrase</b></p>
+  <br>
+  @views.html.searchForm(tpi, id = "search-again", oldSearchPhrase = Some(searchPhrase),
+    sectionId = anySectionId, autofocus = true)
 
+  <br>
   @searchResultsHtml
 }
 

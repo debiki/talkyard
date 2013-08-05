@@ -193,6 +193,9 @@ class SiteTpi protected (val debikiRequest: DebikiRequest[_])
     HtmlPageSerializer.loginInfo(debikiRequest.user.map(_.displayName))
 
 
+  def xsrfToken: String = debikiRequest.xsrfToken.value
+
+
   import TemplateProgrammingInterface._
 
   def debikiStyles = xml.Unparsed(
@@ -544,9 +547,6 @@ class TemplateProgrammingInterface(
 
 
   def bodyAndComments = renderedPage.bodyAndComments
-
-
-  def xsrfToken: String = pageReq.xsrfToken.value
 
 
   /**
