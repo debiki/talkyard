@@ -19,6 +19,7 @@
 
 @import com.debiki.v0._
 
+
 @foundWhere(hit: FullTextSearchHit) = @{
   hit.post.id match {
     case PageParts.TitleId => "In the title"
@@ -29,24 +30,34 @@
 }
 
 
-
 @* Add later:   , by { hit.post.user_!.displayName }:</em>   *@
 
 @searchResultsHtml = @{
   <div>{
-    for (hit <- searchResult.hits) yield {
-      val pageId = hit.post.page.id
-      val anyPageMeta = searchResult.pageMetaByPageId.get(pageId)
-      val pageTitle = anyPageMeta.flatMap(_.cachedTitle) getOrElse "(Unnamed page)"
+    // This groups hits by page; the best hit is listed first.
+
+    val pageMetaAndHits: Seq[(Option[PageMeta], Seq[FullTextSearchHit])] =
+      SearchResultsTemplateCode.groupHitsByPageDescScore(searchResult)
+
+    for {
+      (anyPageMeta, hits) <- pageMetaAndHits
+      if anyPageMeta.nonEmpty && hits.nonEmpty
+      pageMeta = anyPageMeta.get
+    }
+    yield {
+      val pageId = pageMeta.pageId
+      val pageTitle = pageMeta.cachedTitle getOrElse "(Unnamed or deleted page?)"
       <h3 class="search-result-page-title">
         <a href={s"/-$pageId"}>{pageTitle}</a>
-      </h3>
-      <em>{ foundWhere(hit) }:</em>
-      <p class="search-result-post-text">
-        <a href={s"/-${hit.post.page.id}#post-${hit.post.id}"}>{
-          xml.Unparsed(hit.safeHighlightsHtml mkString " <b>...</b> ")
-        }</a>
-      </p>
+      </h3> ++
+      (for (hit <- hits) yield {
+        <em>{ foundWhere(hit) }:</em>
+        <p class="search-result-post-text">
+          <a href={s"/-$pageId#post-${hit.post.id}"}>{
+            xml.Unparsed(hit.safeHighlightsHtml mkString " <b>...</b> ")
+          }</a>
+        </p>
+      })
     }
   }</div>
 }

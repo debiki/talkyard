@@ -34,6 +34,7 @@ object FullTextSearch extends mvc.Controller {
 
   private val SearchResultsTemplate = "searchResults"
 
+
   def searchWholeSiteFor(phrase: String) = GetAction { apiReq =>
     searchImpl(phrase, anyRootPageId = None, apiReq)
   }
@@ -65,14 +66,6 @@ object FullTextSearch extends mvc.Controller {
 
     val futureSearchResult = apiReq.dao.fullTextSearch(phrase, anyRootPageId)
     val futureResponse = futureSearchResult map { searchResult =>
-
-      // Could group results by page id? But also need to take hit scores into account.
-      //val hitsByPageId: Map[PageId, Seq[FullTextSearchHit]] =
-      //  searchResult.hits.groupBy(hit => hit.post.page.id)
-      //val hitsAndPages = hitsByPageId.toList sortBy { (pageId, hit) =>
-      //  max score? So best hit always appear first?
-      //}
-
       val siteTpi = debiki.SiteTpi(apiReq)
       val theme = TemplateRenderer.getThemeName(siteTpi)
       val htmlStr = TemplateRenderer.renderThemeTemplate(
