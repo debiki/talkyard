@@ -124,18 +124,10 @@ object TemplateRenderer {
       if (theme startsWith BuiltinThemesPrefix) s"views.html.themes$theme.$template"
       else s"views.html.themes.$theme.$template"
 
-    // Find param types, but change Some and None to Option, because anyOption.getClass
-    // otherwise results in Some or None, not Option, and then getDeclaredMethod() (below)
-    // won't find the method.
-    val paramTypes = arguments.map(_ match {
-      case None => classOf[Option[_]]
-      case _: Some[_] => classOf[Option[_]]
-      case x => x.getClass
-    })
-
     try {
       val viewClass : Class[_] = Play.current.classloader.loadClass(viewClassName)
-      val renderMethod: jl.reflect.Method = viewClass.getDeclaredMethod("apply", paramTypes: _*)
+      val renderMethod: jl.reflect.Method =
+        viewClass.getMethods.find(_.getName == "apply") getOrDie "DwE74hG0X3"
       val result = renderMethod.invoke(viewClass, arguments: _*)
       val htmlText = result.asInstanceOf[templates.Html].body
       htmlText
@@ -148,8 +140,9 @@ object TemplateRenderer {
         throw new PageConfigException(
           "DwE68St8", o"""Template '$template.scala.html' in theme '$theme' is broken.
           The method declaration at the top of the file (that is,
-          the "@(....) line) is probably incorrect. I got these parameter types:
-           ${paramTypes}, please compare them to the signature of the template.""")
+          the "@(....) line) is probably incorrect? I got these parameter types:
+           ${arguments.map(_.getClass.getSimpleName)}; please compare them to the
+           signature of the template (that is, the "@(...)" line).""")
       case wrappingException: jl.reflect.InvocationTargetException =>
         val originalException = wrappingException.getCause
         throw originalException
