@@ -833,8 +833,8 @@ it works everywhere, even if it works fine for you. */
   display: inline;
 }
 
-.dw-pri form input[type='text'],
-.dw-pri form textarea {
+.DW .dw-page form input[type='text'],
+.DW .dw-page form textarea {
   font-family: Verdana, sans-serif; /* the font .dw-post .dw-text uses */
   margin-top: 0.7em;
 }
@@ -1801,5 +1801,31 @@ img.debiki-0-inline {
   width: auto;
 }
 
-/* vim: fdm=marker et ts=2 sw=2 tw=80 fo=tcqwn list
+
+/* Things to move to app/views/themesbuiltin/default20121009/-somewhere-
+==========================*/
+
+#forum-search {
+  float: right;
+  z-index: 1;
+  position: relative;
+}
+
+#forum-search input[type='text'] {
+  width: 180px;
+}
+
+#forum-search input[type='text']:focus {
+  width: 320px;
+}
+
+.search-result-page-title {
+}
+
+.search-result-post-text a {
+  color: black !important;
+}
+
+
+/* vim: set fdm=marker et ts=2 sw=2 tw=80 fo=tcqwn list
  */
