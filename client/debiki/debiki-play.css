@@ -940,6 +940,11 @@ key presses).*/
   margin-top: 1em;
 }
 
+.dw-a-login,
+.dw-a-logout {
+  white-space: nowrap;
+}
+
 .dw-a-login {
   font-size: 200%;
   margin-left: 10px;
