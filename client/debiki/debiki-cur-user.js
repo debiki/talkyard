@@ -114,6 +114,12 @@ d.i.makeCurUser = function() {
    * invokations happens asynchronously.
    */
   function loadAndHandleUserPageData() {
+    // Do nothing if this isn't a normal page. For example, perhaps
+    // this is the search results listing page. There's no user
+    // specific data related to that page.
+    if (!d.i.pageId)
+      return;
+
     // Avoid a roundtrip by using any json data already inlined on the page.
     // Then delete it because it's only valid on page load.
     var hiddenUserDataTag = $('.dw-user-page-data');

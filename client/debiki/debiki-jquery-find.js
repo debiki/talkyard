@@ -51,6 +51,12 @@ $.fn.dwPostId = function() {
  */
 $.fn.dwPageMeta = function() {
   var $page = this.closest('.dw-page');
+
+  // If this is e.g. the search results page, then there's no page meta,
+  // so leave all fields undefined.
+  if (!$page.length)
+    return {};
+
   return {
     pageId: $page.attr('id').substr(5, 999), // drops initial "page-"
     pagePath: $page.data('page_path'),
