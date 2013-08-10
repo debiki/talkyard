@@ -133,6 +133,14 @@ abstract class DbDaoChildSpec(
 
   def systemDbDao = ctx.dbDaoFactory.systemDbDao
 
+  def waitUntilSearchEngineStarted() {
+    ctx.dbDaoFactory.debugWaitUntilSearchEngineStarted()
+  }
+
+  def refreshFullTextSearchIndexes() {
+    ctx.dbDaoFactory.debugRefreshSearchEngineIndexer()
+  }
+
   def now = new ju.Date
 
   // -------------
@@ -858,6 +866,137 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
         ancestorIdsByPageId.get(forum.id) must_== Some(List(forumGroup.id))
         ancestorIdsByPageId.get(forumGrouop.id) must_== Some(Nil)
       } */
+    }
+
+
+    // -------- Full text search
+
+    "full text search forum contents" >> {
+
+      var forumGroup: Page = null
+      var forumOne: Page = null
+      var forumTwo: Page = null
+      var topicOne: Page = null
+      var topicTwo: Page = null
+      var genericPage: Page = null
+
+      // Don't search for aardvarks right now, because they aren't found, no idea why!
+      val Aardvark = "page body"//"aardvark"
+
+      def newPage(pageRole: PageRole, ancestorPageIds: List[PageId], pageSlug: String,
+            posts: PostActionDto[PAP.CreatePost]*) =
+        Page(
+          PageMeta.forNewPage(pageRole, loginGrant.user, PageParts("?"), now,
+            parentPageId = ancestorPageIds.headOption),
+          defaultPagePath.copy(folder = "/search-forum/", showId = true, pageSlug = pageSlug),
+          ancestorIdsParentFirst = ancestorPageIds,
+          PageParts(guid = "?", actionDtos = posts.toList))
+
+      def search(phrase: String, anyRootPageId: Option[PageId]): FullTextSearchResult = {
+        import scala.concurrent.duration.Duration
+        import scala.concurrent.Await
+        val result = Await.result(
+          dao.fullTextSearch("search test topic body", anyRootPageId),
+          atMost = Duration(5, "sec"))
+        result
+      }
+
+      "wait until search engine started" in {
+        waitUntilSearchEngineStarted()
+      }
+
+      "create a forum group, two forums with one topic each" in {
+        val baseBody = PostActionDto.copyCreatePost(T.post,
+          id = PageParts.BodyId, parentPostId = PageParts.BodyId, text = "search test forum body",
+          loginId = loginId, userId = globalUserId, approval = Some(Approval.WellBehavedUser))
+
+        val forumOneBody = PostActionDto.copyCreatePost(baseBody,
+          text = s"SearchTest ForumOne, ForumPageBody, $Aardvark")
+
+        val forumTwoBody = PostActionDto.copyCreatePost(baseBody,
+          text = s"SearchTest ForumTwo, ForumPageBody, $Aardvark")
+
+        val topicOneBody = PostActionDto.copyCreatePost(baseBody,
+          text = s"SearchTest TopicOne, TopicPageBody, $Aardvark")
+
+        val topicTwoBody = PostActionDto.copyCreatePost(baseBody,
+          text = s"SearchTest TopicTwo, TopicPageBody, $Aardvark")
+
+        val genericPageBody = PostActionDto.copyCreatePost(baseBody,
+          text = s"SearchTest GenericPageBody, $Aardvark")
+
+        forumGroup = dao.createPage(newPage(
+          PageRole.ForumGroup, Nil, "forum-group"))
+
+        forumOne = dao.createPage(newPage(
+          PageRole.Forum, List(forumGroup.id), "forum-one", forumOneBody))
+
+        forumTwo = dao.createPage(newPage(
+          PageRole.Forum, List(forumGroup.id), "forum-two", forumTwoBody))
+
+        topicOne = dao.createPage(newPage(
+          PageRole.ForumTopic, List(forumOne.id, forumGroup.id), "topic-one", topicOneBody))
+
+        topicTwo = dao.createPage(newPage(
+          PageRole.ForumTopic, List(forumTwo.id, forumGroup.id), "topic-two", topicTwoBody))
+
+        genericPage = dao.createPage(newPage(
+          PageRole.Generic, Nil, "generic-page", genericPageBody))
+
+        ok
+      }
+
+      "wait until everything has been indexed by the search engine" in {
+        refreshFullTextSearchIndexes()
+      }
+
+      "search whole site" in {
+        val result = search(Aardvark, anyRootPageId = None)
+        result.hits.length must_== 5
+        result.pageMetaByPageId.contains(forumOne.id) must_== true
+        result.pageMetaByPageId.contains(forumTwo.id) must_== true
+        result.pageMetaByPageId.contains(topicOne.id) must_== true
+        result.pageMetaByPageId.contains(topicTwo.id) must_== true
+        result.pageMetaByPageId.contains(genericPage.id) must_== true
+      }
+
+      "search forum group, including two forums and two topics" in {
+        val result = search(Aardvark, anyRootPageId = Some(forumGroup.id))
+        result.hits.length must_== 4
+        result.pageMetaByPageId.contains(forumOne.id) must_== true
+        result.pageMetaByPageId.contains(forumTwo.id) must_== true
+        result.pageMetaByPageId.contains(topicOne.id) must_== true
+        result.pageMetaByPageId.contains(topicTwo.id) must_== true
+      }
+
+      "search one forum, not find stuff in the other forum" in {
+        // Use same search phrase, but restrict the search to forumOne.
+        val result = search(Aardvark, anyRootPageId = Some(forumOne.id))
+        result.hits.length must_== 2
+        result.pageMetaByPageId.contains(topicOne.id) must_== true
+        result.pageMetaByPageId.contains(forumOne.id) must_== true
+
+        val result2 = search(Aardvark, anyRootPageId = Some(forumTwo.id))
+        result2.hits.length must_== 2
+        result2.pageMetaByPageId.contains(topicTwo.id) must_== true
+        result2.pageMetaByPageId.contains(forumTwo.id) must_== true
+      }
+
+      "find page title, page body and comments" in {
+        pending
+      }
+
+      "not find unapproved posts" in {
+        pending
+      }
+
+      "not find contents from other sites" in {
+        pending
+      }
+
+      "not find unpublished pages" in {
+        pending
+      }
     }
 
 

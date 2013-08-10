@@ -44,6 +44,13 @@ abstract class DbDaoFactory {
   def systemDbDao: SystemDbDao
   def newTenantDbDao(quotaConsumers: QuotaConsumers): TenantDbDao
   def shutdown()
+
+  /** Helpful when writing unit test: waits e.g. for ElasticSearch to enter yellow status. */
+  def debugWaitUntilSearchEngineStarted() {}
+
+  /** Helpful when writing unit test: waits until ElasticSearch is done indexing stuff. */
+  def debugRefreshSearchEngineIndexer() {}
+
 }
 
 
