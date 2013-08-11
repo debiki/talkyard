@@ -23,7 +23,8 @@ function read_config_value {
   # Local values override the default ones (which are checked into the Git repo).
   # A row looks like so:
   #   some.config.key="some-config-value"
-  cat conf/test-evolutions-local.conf conf/test-evolutions.conf \
+  cat conf/local/test-evolutions.conf \
+      conf/test-evolutions.conf \
       | grep "$1" \
       | head -n1 \
       | sed -r 's/^[a-z.]+="?([^"]+)"?$/\1/'
@@ -83,5 +84,5 @@ scripts/play-2.1.1.sh \
 
 # ===== Run database related tests.
 
-scripts/play -Dconfig.file=conf/test-evolutions.conf "project debiki-dao-pgsql" "test"
+./play -Dconfig.file=conf/test-evolutions.conf "project debiki-dao-pgsql" "test"
 
