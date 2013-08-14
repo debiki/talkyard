@@ -20,9 +20,29 @@ var d = { i: debiki.internal, u: debiki.v0.util };
 var $ = d.i.$;
 
 
-d.i.showLoginSimple = function() {
+d.i.showLoginSubmitDialog = function() {
+  showLoginSimple('Submit');
+};
+
+
+function showLoginSimple(mode) {
   initLoginSimple();
-  $('#dw-fs-lgi-simple').dialog('open');  // BUG Tag absent unless…
+  var $dialog = $('#dw-fs-lgi-simple');
+
+  // If the user is logging in to submit a comment, use button title
+  // 'Login & Submit', otherwise 'Login' only.
+  var $guestLoginBtnText = $('#dw-f-lgi-spl-submit .ui-button-text');
+  var $openidDialogBtnText = $dialog.find('.dw-a-login-openid .ui-button-text');
+  if (mode === 'Submit') {
+    $guestLoginBtnText.text('Login and Submit');
+    $openidDialogBtnText.text('Login and Submit');
+  }
+  else {
+    $guestLoginBtnText.text('Login');
+    $openidDialogBtnText.text('Login');
+  }
+
+  $dialog.dialog('open');  // BUG Tag absent unless…
           //… a debate is shown, so the dw-hidden-templates included.
   // Preload OpenID resources, in case user clicks OpenID login button.
   d.i.loadOpenIdResources();
@@ -95,7 +115,7 @@ function initLoginSimple() {
 
 
 $(function() {
-  $('#dw-a-login').click(d.i.showLoginSimple);
+  $('#dw-a-login').click(showLoginSimple);
 });
 
 
