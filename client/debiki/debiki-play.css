@@ -781,16 +781,13 @@ until they've been moved into the .dw-bd-blk > .dw-i-ts. */
 }
 
 .ui-dialog .dw-fs form {
-  background-color: #fbf7f2;
-  border: 1px solid #f7f3ed; /* almost background color */
   margin: 0 25px 0 8px;
   padding-top: 0.4em; /* smaller than 1em from above `.dw-fs form` */
 }
 
-/* jQuery UI dialogs have forms inside. Set the dialog bg color
-to the forms bg color. */
+/* Remove any border above jQuery UI dialog buttons. */
 .dw-pri .ui-dialog-buttonpane {
-  background-color: #fbf7f2;
+  border-top: none;
 }
 
 /* Float drop fix. Was needed by #dw-fs-openid-login or #dw-fs-lgi-simple.

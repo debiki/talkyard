@@ -191,7 +191,7 @@ module.exports = function(grunt) {
        },
        files: {
         'public/res/combined-debiki.css': [
-            'public/res/jquery-ui/jquery-ui-1.8.16.custom.css',
+            'public/res/jquery-ui/jquery-ui-1.9.2.custom.css',
             'client/debiki/debiki.css',
             'client/debiki/debiki-play.css'],
 
