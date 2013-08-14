@@ -224,17 +224,6 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
       testContextBuilder.buildTestContext(EmptyTables, defSchemaVersion))
   }
 
-  "A v0.DAO in an empty 0.0.2 repo" should {
-    "find version 0.0.2" in {
-      systemDbDao.checkRepoVersion() must_== Some("0.0.2")
-    }
-  }
-
-  step {
-    setNewTestContext(
-      testContextBuilder.buildTestContext(EmptyTables, defSchemaVersion))
-  }
-
   // COULD split into: 3 tests:
   // Login tests: IdentitySimle, IdentityOpenId.
   // Page tests: create page, reply, update.
