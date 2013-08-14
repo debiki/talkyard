@@ -23,14 +23,14 @@ import org.scalatest.matchers.MustMatchers
 import org.scalatest.selenium.WebBrowser
 import org.scalatest.concurrent.{Eventually, ScaledTimeSpans}
 import org.scalatest.time.{Span, Seconds, Millis}
-import test.FailsOneCancelRemaining
+import test.CancelAllOnFirstFailure
 
 
 /**
  * A specification for browser end-to-end/integration tests.
  */
 abstract class DebikiBrowserSpec extends FreeSpec with WebBrowser
-  with FailsOneCancelRemaining with BeforeAndAfterAll
+  with CancelAllOnFirstFailure with BeforeAndAfterAll
   with Eventually with ScaledTimeSpans
   with MustMatchers
   with StuffCreator with StuffTestClicker {

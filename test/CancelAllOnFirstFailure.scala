@@ -24,10 +24,9 @@ import scala.util.control.NonFatal
 
 
 /**
- * If one test fails, then this traits lets all other tests fail, with
- * status pending. (They're pending the fix of the failed test.)
+ * If one test fails, this traits cancels all remaining tests.
  */
-trait FailsOneCancelRemaining extends SuiteMixin {
+trait CancelAllOnFirstFailure extends SuiteMixin {
   self: Suite =>
 
   private var anyFailure = false
@@ -48,4 +47,3 @@ trait FailsOneCancelRemaining extends SuiteMixin {
     }
   }
 }
-
