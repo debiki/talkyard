@@ -17,8 +17,8 @@
 
 package controllers
 
-import com.debiki.v0._
-import com.debiki.v0.{PostActionPayload => PAP}
+import com.debiki.core._
+import com.debiki.core.{PostActionPayload => PAP}
 import debiki._
 import debiki.DebikiHttp._
 import java.{util => ju}

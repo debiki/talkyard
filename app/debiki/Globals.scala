@@ -17,9 +17,11 @@
 
 package debiki
 
-import com.debiki.v0._
-import com.debiki.v0.Prelude._
-import com.debiki.v0.QuotaConsumers
+import com.debiki.core._
+import com.debiki.core.Prelude._
+import com.debiki.core.QuotaConsumers
+import com.debiki.dao.rdb.{RelDbDaoFactory, RelDb}
+import debiki.dao.{SystemDao, TenantDao, CachingTenantDaoFactory, CachingSystemDao}
 //import com.twitter.ostrich.stats.Stats
 //import com.twitter.ostrich.{admin => toa}
 import play.api._
@@ -27,7 +29,6 @@ import play.api.mvc._
 import play.{api => p}
 import play.api.Play
 import play.api.Play.current
-import debiki.dao.{SystemDao, TenantDao, CachingTenantDaoFactory, CachingSystemDao}
 
 
 object Globals extends Globals

@@ -20,8 +20,8 @@ package test.e2e
 import org.scalatest.{Suite, Suites, BeforeAndAfterAll}
 import play.api.{test => pt}
 import pt.Helpers.testServerPort
-import com.debiki.v0._
-import com.debiki.v0.Prelude._
+import com.debiki.core._
+import com.debiki.core.Prelude._
 
 
 /**

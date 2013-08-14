@@ -17,7 +17,7 @@
 
 package views
 
-import com.debiki.v0._
+import com.debiki.core._
 import debiki.dao.TenantDao
 import java.{util => ju}
 import Prelude._

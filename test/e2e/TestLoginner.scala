@@ -17,7 +17,7 @@
 
 package test.e2e
 
-import com.debiki.v0.Prelude._
+import com.debiki.core.Prelude._
 import java.{util => ju}
 import org.openqa.selenium
 
@@ -60,7 +60,7 @@ trait TestLoginner {
     * However, does this via direct database calls; does not use Selenium / ScalaTest.
     */
   def cheatLoginAsAdmin() {
-    import com.debiki.{v0 => d}
+    import com.debiki.{core => d}
 
     val login = d.Login(id = "?", prevLoginId = None, ip = "1.1.1.1", date = new ju.Date,
         identityId = "?i")
@@ -81,7 +81,7 @@ trait TestLoginner {
     }
 
     // Update the browser: set cookies.
-    val (_, _, sidAndXsrfCookies) = d.Xsrf.newSidAndXsrf(Some(loginGrant))
+    val (_, _, sidAndXsrfCookies) = debiki.Xsrf.newSidAndXsrf(Some(loginGrant))
     val userConfigCookie = controllers.AppConfigUser.userConfigCookie(loginGrant)
     for (cookie <- userConfigCookie :: sidAndXsrfCookies)
       add.cookie(cookie.name, cookie.value)

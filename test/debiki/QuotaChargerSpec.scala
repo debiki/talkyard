@@ -17,7 +17,7 @@
 
 package debiki
 
-import com.debiki.v0._
+import com.debiki.core._
 import controllers.{AppCreatePage, AppCreateWebsite}
 import debiki.dao.TenantDao
 import java.{util => ju}

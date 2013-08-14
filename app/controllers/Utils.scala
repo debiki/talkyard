@@ -17,8 +17,8 @@
 
 package controllers
 
-import com.debiki.v0._
-import com.debiki.v0.{liftweb => lw}
+import com.debiki.core._
+import com.debiki.core.{liftweb => lw}
 import debiki._
 import debiki.DebikiHttp._
 import debiki.dao.TenantDao

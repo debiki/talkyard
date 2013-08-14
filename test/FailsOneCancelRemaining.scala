@@ -17,10 +17,10 @@
 
 package test
 
+import com.debiki.core.Prelude._
 import org.scalatest.{Suite, SuiteMixin}
 import org.scalatest.exceptions.TestPendingException
 import scala.util.control.NonFatal
-import com.debiki.v0.Prelude._
 
 
 /**

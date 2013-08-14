@@ -17,7 +17,7 @@
 
 package controllers
 
-import com.debiki.v0._
+import com.debiki.core._
 import debiki.DebikiHttp._
 import play.api._
 import play.api.libs.json._

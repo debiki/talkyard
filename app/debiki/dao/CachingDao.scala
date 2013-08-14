@@ -17,7 +17,7 @@
 
 package debiki.dao
 
-import com.debiki.v0._
+import com.debiki.core._
 import play.api.{cache => pc}
 import play.api.Play.current
 import scala.reflect.ClassTag

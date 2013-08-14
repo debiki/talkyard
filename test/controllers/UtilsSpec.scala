@@ -17,9 +17,9 @@
 
 package controllers
 
+import com.debiki.core._
+import com.debiki.core
 import org.specs2.mutable._
-import com.debiki.v0._
-import com.debiki.v0
 
 
 class UtilsSpec extends Specification {

@@ -17,14 +17,14 @@
 
 package test.e2e
 
-import com.debiki.v0.Prelude._
-import com.debiki.v0._
+import com.debiki.core._
+import com.debiki.core.Prelude._
+import com.debiki.core.{PostActionPayload => PAP}
 import debiki.Globals
 import java.{util => ju}
 import org.scalatest.Assertions
 import org.scalatest.selenium.WebBrowser
 import play.api.test.Helpers.testServerPort
-import com.debiki.v0.{PostActionPayload => PAP}
 import PageParts.UnassignedId
 
 

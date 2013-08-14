@@ -17,8 +17,8 @@
 
 package test.e2e
 
-import com.debiki.v0.{PageParts, PageRole}
-import com.debiki.v0.Prelude._
+import com.debiki.core.{PageParts, PageRole}
+import com.debiki.core.Prelude._
 import java.{lang => jl}
 import org.scalatest.DoNotDiscover
 

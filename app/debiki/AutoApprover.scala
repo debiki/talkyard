@@ -17,7 +17,7 @@
 
 package debiki
 
-import com.debiki.v0._
+import com.debiki.core._
 import controllers._
 import DebikiHttp._
 import Prelude._

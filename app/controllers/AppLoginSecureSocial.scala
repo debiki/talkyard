@@ -25,7 +25,7 @@
 
 package controllers
 
-import com.debiki.v0.Prelude._
+import com.debiki.core.Prelude._
 import debiki.DebikiHttp._
 import play.api._
 import i18n.Messages

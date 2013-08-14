@@ -16,9 +16,9 @@
  */
 package debiki
 
+import com.debiki.core.Prelude._
 import play.api.Play
 import play.api.Play.current
-import com.debiki.v0.Prelude._
 
 
 

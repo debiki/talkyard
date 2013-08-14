@@ -17,7 +17,7 @@
 
 package views.html.themesbuiltin.default20121009
 
-import com.debiki.v0._
+import com.debiki.core._
 
 
 /** Support code for searchResults.scala.html.

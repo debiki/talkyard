@@ -17,7 +17,7 @@
 
 package debiki
 
-import com.debiki.v0._
+import com.debiki.core._
 import controllers.PageRequest
 import java.{util => ju, lang => jl}
 import play.api._

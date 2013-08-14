@@ -19,8 +19,8 @@ package test.e2e
 
 import org.scalatest.time.{Span, Seconds}
 import org.scalatest.DoNotDiscover
-import com.debiki.v0.Prelude._
-import com.debiki.v0._
+import com.debiki.core._
+import com.debiki.core.Prelude._
 
 
 /**

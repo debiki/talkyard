@@ -17,7 +17,7 @@
 
 package debiki
 
-import com.debiki.v0._
+import com.debiki.core._
 import debiki._
 import debiki.DebikiHttp._
 import debiki.dao.TenantDao

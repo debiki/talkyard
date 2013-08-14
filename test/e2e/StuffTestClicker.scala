@@ -17,13 +17,13 @@
 
 package test.e2e
 
+import com.debiki.core.PageRole
+import com.debiki.core.Prelude._
+import com.debiki.core.ActionId
 import org.openqa.selenium.Keys
 import org.openqa.selenium.interactions.Actions
-import com.debiki.v0.PageRole
-import play.api.test.Helpers.testServerPort
-import com.debiki.v0.Prelude._
-import com.debiki.v0.ActionId
 import org.scalatest.time.{Seconds, Span}
+import play.api.test.Helpers.testServerPort
 
 
 /**

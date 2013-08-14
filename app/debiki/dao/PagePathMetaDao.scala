@@ -17,7 +17,7 @@
 
 package debiki.dao
 
-import com.debiki.v0._
+import com.debiki.core._
 import java.{util => ju}
 import Prelude._
 

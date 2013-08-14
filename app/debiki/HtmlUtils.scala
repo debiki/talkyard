@@ -17,7 +17,7 @@
 
 package debiki
 
-import com.debiki.v0.Prelude._
+import com.debiki.core.Prelude._
 import java.{util => ju}
 import xml.NodeSeq
 

@@ -17,7 +17,7 @@
 
 package debiki.dao
 
-import com.debiki.v0._
+import com.debiki.core._
 import controllers._
 import debiki._
 import java.{util => ju}

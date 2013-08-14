@@ -18,7 +18,7 @@
 
 package debiki.dao
 
-import com.debiki.v0._
+import com.debiki.core._
 import java.{util => ju}
 import play.api.Play
 import play.api.Play.current

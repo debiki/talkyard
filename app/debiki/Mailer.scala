@@ -19,18 +19,18 @@ package debiki
 
 import akka.actor._
 import akka.actor.Actor._
-import scala.concurrent.duration._
 import com.amazonaws.AmazonClientException
 import com.amazonaws.auth.BasicAWSCredentials
 import com.amazonaws.services.simpleemail._
 import com.amazonaws.services.simpleemail.model._
-import com.debiki.v0._
+import com.debiki.core._
 import debiki.dao.TenantDaoFactory
 import java.{util => ju}
 import play.api._
 import play.api.libs.iteratee._
 import play.api.libs.concurrent._
 import play.api.Play.current
+import scala.concurrent.duration._
 import Prelude._
 
 

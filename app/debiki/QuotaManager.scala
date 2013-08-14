@@ -17,8 +17,8 @@
 
 package debiki
 
-import com.debiki.v0._
-import com.debiki.v0.Prelude._
+import com.debiki.core._
+import com.debiki.core.Prelude._
 import com.google.common.{cache => ggc}
 import com.google.common.{base => ggb}
 import debiki.dao.SystemDao

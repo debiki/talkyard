@@ -17,8 +17,8 @@
 
 package controllers
 
+import com.debiki.core._
 import org.specs2.mutable._
-import com.debiki.v0._
 
 
 class AppCreateWebsiteSpec extends Specification {

@@ -17,8 +17,8 @@
 
 package debiki
 
-import com.debiki.v0._
-import com.debiki.v0.Prelude._
+import com.debiki.core._
+import com.debiki.core.Prelude._
 import org.specs2.mutable._
 import java.{util => ju}
 

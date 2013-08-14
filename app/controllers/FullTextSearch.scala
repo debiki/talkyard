@@ -17,7 +17,7 @@
 
 package controllers
 
-import com.debiki.v0._
+import com.debiki.core._
 import debiki.TemplateRenderer
 import java.{util => ju}
 import play.api._

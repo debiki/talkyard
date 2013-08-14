@@ -17,12 +17,12 @@
 
 package debiki
 
-import com.debiki.v0.Prelude._
-import org.yaml.{snakeyaml => y}
-import y.{constructor => yc, nodes => yn}
-import scala.collection.{mutable => mut}
+import com.debiki.core.DebikiException
+import com.debiki.core.Prelude._
 import java.{io => jio, util => ju, lang => jl}
-import com.debiki.v0.DebikiException
+import org.yaml.{snakeyaml => y}
+import scala.collection.{mutable => mut}
+import y.{constructor => yc, nodes => yn}
 
 
 object DebikiYaml {

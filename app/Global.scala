@@ -15,8 +15,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-import com.debiki.v0._
-import com.debiki.v0.Prelude._
+import com.debiki.core._
+import com.debiki.core.Prelude._
 //import com.twitter.ostrich.stats.Stats
 //import com.twitter.ostrich.{admin => toa}
 import controllers.Utils.parseIntOrThrowBadReq

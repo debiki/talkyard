@@ -1,0 +1,320 @@
+/**
+ * Copyright (C) 2011-2013 Kaj Magnus Lindberg (born 1979)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+package com.debiki.core
+
+import _root_.java.{util => ju, io => jio}
+import Prelude._
+import PagePath._
+
+
+/**
+ * Identifies a page, by id or by path, and knows the path
+ * component in the URL to the page.
+ *
+ * (Cannot split into separate case classes for pages and folders?
+ * /some/path/  might refer to a folder *or* a page -- the index page.)
+ *
+ * COULD split PagePath into PathLookup (which allows relative paths)
+ * and PathResolved (which does not allow relative paths)?
+ * Perhaps Path could have subclasses PagePath and FolderPath?
+ * PathLookup would have an idOpt: Option[String],
+ * but ResolvedPagePath (?) would have an id: String  and showId: Boolean.
+ * (And PagePath could be an alias for ResolvedPagePath?)
+ * ResolvedPath would be a class, PagePath and FolderPath case classes.
+ * ((PathLookup could have a scheme and host name included?
+ * But the ResolvedPath would have a tenant-id instead.
+ * Or perhaps tenantId should not be part of the PagePath?
+ * "Path" implies host name & tenant-id does not belong here?))
+ */
+case class PagePath(  // COULD move to debate.scala.  Rename to RequestPath?
+  tenantId: String,  // COULD be a Dao(parameter) instead?
+  // This is either the page's parent folder, or, if no page was specified,
+  // the actual target of the path.
+  folder: String,
+  pageId: Option[String], // COULD break out PageLookup, so would never be None
+  showId: Boolean,
+  pageSlug: String
+){
+  require(tenantId.nonEmpty, "DwE73BU8")
+  require(pageId != Some("?"), "DwE16Is3")
+  require(pageId != Some(""), "DwE0Bj35")
+
+  if (!folder.startsWith("/"))
+    throw PagePathException(
+      "DwE83RIK2", s"Folder does not start with '/': `$folder'")
+
+  if (!folder.endsWith("/"))
+    throw PagePathException(
+      "DwE6IIJQ2", s"Folder does not end with '/': `$folder'")
+
+  if (folder.contains("/-"))
+    throw PagePathException("DwE7Ib3", s"Folder name starts with '-': `$folder'")
+
+  if ((folder intersect _BadPunctFolder).nonEmpty)
+    throw PagePathException(
+      "DwE38IQ2", s"Bad punctuation chars in this folder: `$folder'")
+
+  if (_AnyWhitespaceRegex matches folder)
+    throw PagePathException(
+      "DwE9IJb2", s"Folder contains whitespace: `$folder'")
+
+  if (pageSlug startsWith "-")
+    throw PagePathException("DwE2Yb35", s"Page slug starts with '-' `$pageSlug'")
+
+  if (pageSlug startsWith ".")
+    throw PagePathException("DwE5IF01", s"Page slug starts with '.': `$pageSlug'")
+
+  if ((pageSlug intersect _BadPunctSlug).nonEmpty)
+    throw PagePathException(
+      "DwE093KG12", s"Bad punctuation chars in this page slug: `$pageSlug'")
+
+  if (_AnyWhitespaceRegex matches pageSlug)
+    throw PagePathException(
+      "DwE37ZQU2", s"Page slug contains whitespace: `$pageSlug'")
+
+
+  def path: String =
+    if (showId) {
+      val g = pageId.getOrElse(assErr( //Break out GuidLookup so cannot happen?
+        "DwE23r124", "ID unknown."))
+      if (pageSlug isEmpty) folder +"-"+ g
+      else folder +"-"+ g +"-"+ pageSlug
+    } else {
+      folder + pageSlug
+    }
+
+
+  def suffix: String = (pageSlug lastIndexOf '.') match {
+    case -1 => ""
+    case lastDot => pageSlug.substring(lastDot + 1)
+  }
+
+
+  def slugOrIdOrQustnMark =
+    if (pageSlug nonEmpty) pageSlug else pageId.map("-"+ _) getOrElse "?"
+
+
+  def isScriptOrStyle = pageSlug.endsWith(".js") || pageSlug.endsWith(".css")
+
+  def isConfigPage = pageSlug.endsWith(".yaml") || pageSlug.endsWith(".conf")
+
+
+  /**
+   * Pages and folders that start with '_' are visible to admins only.
+   *
+   * For example, config pages, e.g. '_website-config.yaml', and any
+   * '/_old/' folder. I chose '_' not '.', because if there will ever
+   * be a file based DbDao, it will probably consider files that
+   * start with '.' OS or tooling specific files, e.g. '.git' or '.gitignore',
+   * if the filesystem DbDao is placed in a Git repo. (And such files
+   * shouldn't be served to the browser.)
+   */
+  def isHiddenPage =
+    pageSlug.startsWith("_") ||
+    folder.contains("/_")
+
+
+  // COULD rename to isIndexPageOrFolder (it's never a "FolderPage")
+  /** True iff path ends with a `/'. Then this is a path to a  folder or
+   *  a folder's index page (which is a page with an empty slug and !showId).
+   */
+  def isFolderOrIndexPage = pageSlug.isEmpty && !showId
+
+
+  // Bad name: When asking for an index page, pageId is unknown and therefore
+  // set to None, but this doesn't mean the PagePath is to a folder.
+  // Solution?: Split PagePath in 2 classes: PathLookup and Path?
+  // Whether or not Path is to a folder or a page would always be known.
+  def isFolder = isFolderOrIndexPage && pageId.isEmpty
+
+
+  def parentFolder: Option[PagePath] = {  // COULD rename: parentFolderPagePath
+    if (!isFolder)
+      return Some(copy(pageSlug = "", showId = false, pageId = None))
+    if (folder == "/")
+      return None
+    // Drop "last-folder/" from "/some/path/last-folder/".
+    val grandparent = folder.dropRight(1).dropRightWhile(_ != '/')
+    Some(copy(
+      folder = grandparent, pageSlug = "", showId = false, pageId = None))
+  }
+
+
+  def sitePageId: Option[SitePageId] =
+    pageId map (SitePageId(tenantId, _))
+
+}
+
+
+
+case class PagePathException(errorCode: String,  message: String)
+  extends IllegalArgumentException(message +" [error "+ errorCode +"]")
+
+
+
+object PagePath {
+
+  private def _throw(errCode: String,  message: String) =
+    throw new PagePathException(errCode, message)
+
+
+  /**
+   * Throws IllegalArgumentException if the path is not okay, or
+   * if it needs to be corrected.
+   */
+  def checkPath(tenantId: String = "x", folder: String = "/",
+        pageId: Option[String] = None, pageSlug: String = "") {
+    // Construct a PagePath, serialize it
+    // and verify that the string can be parsed.
+    val path = PagePath(tenantId, folder, pageId, false, pageSlug)
+    fromUrlPath(path.tenantId, path.path) match {
+      case Parsed.Good(_) => ()
+      case Parsed.Corrected(_) => _throw("DwE091IJ5", "Bad page path")
+      case Parsed.Bad(error) => _throw("DwE56Ih5", "Bad page path: "+ error)
+    }
+  }
+
+
+  sealed abstract class Parsed
+  object Parsed {
+    case class Good(value: PagePath) extends Parsed
+    case class Corrected(path: String) extends Parsed
+    case class Bad(error: String) extends Parsed
+  }
+
+  /**
+   * Parses the path part of a URL into a PagePath.
+   *
+   * URL path examples:
+   * - (server)/fold/ers/-pageId-page-name
+   * - (server)/fold/ers/page-name (here, the pageId is not shown in the path).
+   */
+  def fromUrlPath(tenantId: String, path: String): PagePath.Parsed = {
+    assert(path.head == '/')
+    val lastSlash = path.lastIndexOf('/')
+    val (folder, pageIdSlug) =
+      if (lastSlash != -1) path.splitAt(lastSlash + 1)
+      else (path, "")
+    assert(folder.head == '/' && folder.last == '/')
+    assert(!pageIdSlug.contains('/'))
+
+    // Check for bad folder paths.
+    folder match {
+      case _BadTrailingSlashRegex() =>
+        // Drop the trailing slash, to find the correct path.
+        assErrIf3(pageIdSlug.nonEmpty,
+          "DwE9020R3", "Page slug not empty: "+ pageIdSlug)
+        val folderAndPageIdName = path.dropRight(1)
+        return Parsed.Corrected(folderAndPageIdName)
+      case _BadHyphenRegex() =>
+        return Parsed.Bad("Hyphen in folder path")
+      case _ =>
+      // Fine
+    }
+
+    val (pageIdStr, pageSlug) = pageIdSlug match {
+      case "" => ("", "")
+      case _PageGuidAndSlugRegex(guid, name) => (guid, name)
+      case _PageGuidRegex(guid) => (guid, "")  // can result in an empty guid
+      case _PageSlugRegex(name) => ("", name)
+      case _BadIdPerhapsOkSlug(id) => return Parsed.Bad("Bad page id: "+ id)
+      case _OkIdBadSlug(_, slug) => return Parsed.Bad("Bad page slug: "+ slug)
+      case _ => return Parsed.Bad("Bad page id or slug")
+    }
+    val (pageId, showId) =
+      if (pageIdStr isEmpty) (None, false)
+      else (Some(pageIdStr), true)
+
+    val pagePath = PagePath(tenantId = tenantId, folder = folder,
+      pageId = pageId, showId = showId, pageSlug = pageSlug)
+    Parsed.Good(pagePath)
+  }
+
+  // All punctuation chars:     """!"#$%&'()*+,-./:;<=>?@[\]^_`{|}~"""
+  private val _BadPunctSlug =   """!"#$%&'()*+,/:;<=>?@[\]^`{|}~""" // -._ ok
+  private val _BadPunctFolder = """!"#$%&'()*+,.:;<=>?@[\]^`{|}~""" // -/_ OK...
+  // ... Concerning disallowing '.' in folders: Perhaps '.' will mean
+  // something magic, in the future. For example, if using a file based DbDao,
+  // perhaps '/.folder/' could be a Git repo?! (/.git/) Then, better
+  // ignore folders & files starting with '.', so /.git/ isn't served to
+  // the browser.
+
+  // If a folder ends with .../-something/, then `something' is in fact
+  // a page guid and slug. The trailing slash should be removed.
+  private val _BadTrailingSlashRegex = """.*/-[^/]+/""".r
+
+  // Hyphens are not allowed in the folder path, because a hyphen means
+  // that a page guid follows. For example: /-folder/page  (invalid path)
+  private val _BadHyphenRegex = """.*/-.*""".r
+
+  private val _AnyWhitespaceRegex = """.*\s.*""".r
+
+  // Note: PageGuidPtrn:
+  //  - The initial "-" is not part of the guid
+  //  - An empty guid means the guid is not yet known, which is the
+  //    case when you use this URL to request that a page be created
+  //    and that a guid be generated:  /parent/-?create
+  //      COULD: don't allow empty guids no more, not needed since
+  //      creating pages like so now: /folder/?createpage
+  // PageSlugPtrn:
+  //  - PageSlugPtrn: "*+~" have special meanings
+  //
+  private val _PageGuidPtrn = "-([a-z0-9_]*)"  // empty guid ok, read above
+  private val _PageSlugPtrn = "([^-*+~][^*+~]*)"
+  private val _PageGuidAndSlugRegex = (_PageGuidPtrn +"-"+ _PageSlugPtrn).r
+  private val _PageGuidRegex = _PageGuidPtrn.r
+  private val _PageSlugRegex = _PageSlugPtrn.r
+  private val _BadIdPerhapsOkSlug = "-([a-z0-9]*[^a-z0-9-]+[^-]*)-.*".r
+  // Catches corrupt page names iff used *after* PageGuidAndSlugRegex.
+  // (Broken and effectively not in use??)
+  private val _OkIdBadSlug = (_PageGuidPtrn +"-(.*[^a-z0-9_].*)").r
+
+}
+
+
+case class PathRanges(
+  folders: Seq[String] = Nil,
+  trees: Seq[String] = Nil,
+  pageIds: Seq[String] = Nil) {
+
+  folders map (_checkIsFolder _)
+  trees map (_checkIsFolder _)
+
+  private def _checkIsFolder(path: String) {
+    assErrIf(!path.startsWith("/"), "DwE83JGF7")
+    assErrIf(!path.endsWith("/"), "DwE90kX2")
+  }
+}
+
+
+object PathRanges {
+  val Anywhere = PathRanges(trees = Seq("/"))
+}
+
+
+/**
+ * If not the full page path is needed, but only website and page ids.
+ */
+case class SitePageId(siteId: String, pageId: String)
+
+
+/**
+ * An URL path, relative a certain site.
+ */
+case class SitePath(siteId: String, path: String)
+

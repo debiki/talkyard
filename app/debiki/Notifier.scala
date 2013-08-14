@@ -18,7 +18,7 @@
 package debiki
 
 import akka.actor._
-import com.debiki.v0._
+import com.debiki.core._
 import debiki.dao.{SystemDao, TenantDao, TenantDaoFactory}
 import java.{util => ju}
 import play.api.libs.concurrent._

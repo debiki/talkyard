@@ -17,8 +17,9 @@
 
 package controllers
 
-import com.debiki.v0
-import com.debiki.v0._
+import com.debiki.core
+import com.debiki.core._
+import com.debiki.core.{PostActionPayload => PAP}
 import controllers.Utils.OkSafeJson
 import debiki._
 import debiki.DebikiHttp._
@@ -30,7 +31,6 @@ import PageActions._
 import Prelude._
 import Utils.{OkHtml, OkHtmlBody}
 import BrowserPagePatcher.PostPatchSpec
-import v0.{PostActionPayload => PAP}
 
 
 object AppReply extends mvc.Controller {

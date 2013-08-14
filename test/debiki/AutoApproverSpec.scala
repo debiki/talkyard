@@ -18,14 +18,14 @@
 package debiki
 
 import controllers._
-import com.debiki.v0._
+import com.debiki.core._
+import com.debiki.core.{PostActionPayload => PAP}
 import debiki.dao.TenantDao
 import java.{util => ju}
 import org.specs2.mutable._
 import org.specs2.mock._
 import Prelude._
 import play.api.mvc.Request
-import com.debiki.v0.{PostActionPayload => PAP}
 
 
 class AutoApproverSpec extends Specification with Mockito {

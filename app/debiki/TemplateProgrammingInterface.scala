@@ -17,8 +17,8 @@
 
 package debiki
 
-import com.debiki.v0
-import com.debiki.v0._
+import com.debiki.core
+import com.debiki.core._
 import controllers.{DebikiRequest, PageRequest, SiteAssetBundles, routes}
 import debiki.dao._
 import java.{util => ju}
@@ -71,7 +71,7 @@ object InternalPageTpi {
 
 
   object Page {
-    def apply(page: v0.Page, host: String): Page = Page(
+    def apply(page: core.Page, host: String): Page = Page(
       id = page.id,
       path = page.path.path,
       title = titleOf(page),
@@ -79,11 +79,11 @@ object InternalPageTpi {
       pubDati = page.meta.pubDati,
       safeBodyHtml = bodyOf(page, host))
 
-    private def titleOf(page: v0.Page): String =
+    private def titleOf(page: core.Page): String =
       // Currently HtmlPageSerializer ignores the `.markup` for a title Post.
       page.parts.approvedTitleTextOrNoTitle
 
-    private def bodyOf(page: v0.Page, host: String): String =
+    private def bodyOf(page: core.Page, host: String): String =
       page.parts.body.map(
         HtmlPageSerializer.markupTextOf(_, host)).getOrElse("")
   }

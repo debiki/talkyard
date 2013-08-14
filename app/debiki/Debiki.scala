@@ -17,7 +17,7 @@
 
 package debiki
 
-import com.debiki.v0.Prelude._
+import com.debiki.core.Prelude._
 import play.{api => p}
 import play.api.Play
 import play.api.Play.current

@@ -17,7 +17,7 @@
 
 package debiki
 
-import com.debiki.v0._
+import com.debiki.core._
 import java.{util => ju, io => jio}
 import scala.collection.JavaConversions._
 import _root_.scala.xml.{NodeSeq, Node, Elem, Text, XML, Attribute}

@@ -17,9 +17,9 @@
 
 package test.e2e
 
-import com.debiki.v0.Prelude._
-import com.debiki.v0.PageParts
-import com.debiki.v0.PageRole
+import com.debiki.core.Prelude._
+import com.debiki.core.PageParts
+import com.debiki.core.PageRole
 import org.scalatest.DoNotDiscover
 
 

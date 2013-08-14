@@ -15,9 +15,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.debiki.v0
+package debiki
 
-import com.debiki.v0.Prelude._
+import com.debiki.core._
+import com.debiki.core.Prelude._
 import controllers.JsonOrFormDataBody
 import debiki.DebikiHttp._
 import java.{util => ju, io => jio}

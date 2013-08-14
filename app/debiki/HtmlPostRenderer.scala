@@ -17,7 +17,7 @@
 
 package debiki
 
-import com.debiki.v0._
+import com.debiki.core._
 //import com.twitter.ostrich.stats.Stats
 import java.{util => ju, io => jio}
 import scala.collection.JavaConversions._
