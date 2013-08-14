@@ -285,6 +285,11 @@ abstract class TenantDbDao {
 
   def fullTextSearch(phrase: String, anyRootPageId: Option[String]): Future[FullTextSearchResult]
 
+  /** Unindexes everything on some pages. Intended for test suites only.
+    * Returns the number of *posts* that were unindexed.
+    */
+  def debugUnindexPosts(pageAndPostIds: PagePostId*)
+
 }
 
 
@@ -697,6 +702,10 @@ class ChargingTenantDbDao(
     _spi.fullTextSearch(phrase, anyRootPageId)
   }
 
+  def debugUnindexPosts(pageAndPostIds: PagePostId*) {
+    // Charge nothing; this is for test suites only.
+    _spi.debugUnindexPosts(pageAndPostIds: _*)
+  }
 }
 
 

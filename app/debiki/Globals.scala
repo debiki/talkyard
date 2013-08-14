@@ -53,7 +53,7 @@ class Globals {
     //  ${boneDataSource.getJdbcUrl} as user ${boneDataSource.getUsername}.""")
 
     db
-  })
+  }, play.api.libs.concurrent.Akka.system)
 
 
   def systemDao: SystemDao = new CachingSystemDao(dbDaoFactory.systemDbDao)

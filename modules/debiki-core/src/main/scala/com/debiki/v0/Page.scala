@@ -331,4 +331,5 @@ object PageStatus {
 }
 
 
+case class PagePostId(pageId: PageId, postId: PostId)
 

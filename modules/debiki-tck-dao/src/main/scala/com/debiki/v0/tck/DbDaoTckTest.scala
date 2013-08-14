@@ -17,12 +17,13 @@
 
 package com.debiki.v0.tck
 
-import scala.collection.{mutable => mut}
 import com.debiki.v0
 import com.debiki.v0._
 import com.debiki.v0.Prelude._
-import org.specs2.mutable._
 import java.{util => ju}
+import org.specs2.mutable._
+import scala.collection.{mutable => mut}
+import scala.util.control.Breaks._
 import DebikiSpecs._
 import DbDaoTckTest._
 import v0.DbDao._
@@ -996,6 +997,43 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
 
       "not find unpublished pages" in {
         pending
+      }
+
+      "automatically index posts that need to be indexed, in the background" in {
+        // Unindex the posts, verify they are not found when searching, then wait
+        // for a while until the server automatically indexes them in the background.
+
+        // 1. Sometimes the server will happen to reindex the un-indexed posts
+        // just after they were unindexed. Then we unindex them again, and again
+        // try to verify that they aren't found. Hence the first while loop.
+        // 2. It usually takes a while before the server has indexed them,
+        // hence the second while loop.
+
+        breakable {
+          while (true) {
+            dao.debugUnindexPosts(
+              PagePostId(forumOne.id, PageParts.BodyId),
+              PagePostId(topicOne.id, PageParts.BodyId))
+
+            val result = search(Aardvark, anyRootPageId = Some(forumOne.id))
+            val gone = result.hits.isEmpty
+            if (gone)
+              break
+          }
+        }
+
+        // Now the posts are not indexed. Wait until some background
+        // process indexes them again.
+        breakable {
+          while (true) {
+            val result = search(Aardvark, anyRootPageId = Some(forumOne.id))
+            if (result.hits.length == 2) {
+              result.pageMetaByPageId.contains(topicOne.id) must_== true
+              result.pageMetaByPageId.contains(forumOne.id) must_== true
+              break
+            }
+          }
+        }
       }
     }
 

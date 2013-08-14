@@ -22,7 +22,15 @@ package object v0 {
 
   type ActionId = Int
 
+  type PostId = ActionId
+
   type PageId = String
+
+  type SiteId = String
+
+  type LoginId = String
+
+  type RoleId = String
 
 }
 
