@@ -17,6 +17,7 @@
 
 package controllers
 
+import actions.SafeActions._
 import com.debiki.core._
 import debiki._
 import debiki.DebikiHttp._
@@ -26,7 +27,6 @@ import play.api.data._
 import play.api.mvc.BodyParsers.parse
 import play.api.data.Forms._
 import play.api.mvc.{Action => _, _}
-import SafeActions._
 import Prelude._
 import Utils.{OkHtml}
 

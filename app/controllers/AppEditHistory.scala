@@ -17,13 +17,13 @@
 
 package controllers
 
+import actions.PageActions._
 import com.debiki.core._
+import com.debiki.core.Prelude._
 import debiki._
 import debiki.DebikiHttp._
 import play.api._
 import play.api.mvc.{Action => _}
-import PageActions._
-import Prelude._
 import Utils.{OkHtml}
 import Utils.parseIntOrThrowBadReq
 

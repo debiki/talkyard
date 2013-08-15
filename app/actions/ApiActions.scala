@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package controllers
+package actions
 
 import com.debiki.core._
 import debiki._
@@ -25,6 +25,7 @@ import play.api._
 import play.api.libs.json.JsValue
 import play.api.mvc.{Action => _, _}
 import Prelude._
+import controllers.{Utils, JsonOrFormDataBody, ApiRequest}
 
 
 /** Play Framework Actions for requests to Debiki's HTTP API.

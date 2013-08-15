@@ -17,6 +17,7 @@
 
 package controllers
 
+import actions.SafeActions._
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki._
@@ -24,7 +25,6 @@ import debiki.DebikiHttp._
 import java.{util => ju}
 import play.api._
 import play.api.mvc.{Action => _, _}
-import SafeActions._
 import Utils.{OkHtml}
 
 

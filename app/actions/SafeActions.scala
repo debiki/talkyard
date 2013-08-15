@@ -15,9 +15,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package controllers
+package actions
 
 import com.debiki.core._
+import controllers.Utils
 import debiki._
 import debiki.DebikiHttp._
 import java.{util => ju}

@@ -17,6 +17,7 @@
 
 package controllers
 
+import actions.ApiActions._
 import com.debiki.core._
 import com.debiki.core.{PostActionPayload => PAP}
 import debiki._
@@ -24,7 +25,6 @@ import debiki.DebikiHttp._
 import java.{util => ju}
 import play.api._
 import play.api.libs.json._
-import ApiActions._
 import Prelude._
 import Utils.OkSafeJson
 import Utils.ValidationImplicits._

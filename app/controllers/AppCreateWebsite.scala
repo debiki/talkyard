@@ -17,7 +17,10 @@
 
 package controllers
 
+import actions.ApiActions._
+import actions.SafeActions._
 import com.debiki.core._
+import com.debiki.core.Prelude._
 import debiki._
 import debiki.DebikiHttp._
 import debiki.dao.{SiteDao, ConfigValueDao}
@@ -25,9 +28,6 @@ import java.{util => ju}
 import play.api._
 import play.api.mvc.{Action => _, _}
 import play.api.Play.current
-import ApiActions._
-import SafeActions._
-import Prelude._
 import Utils.ValidationImplicits._
 
 

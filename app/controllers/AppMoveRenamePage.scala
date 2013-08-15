@@ -17,14 +17,14 @@
 
 package controllers
 
+import actions.ApiActions._
+import actions.PageActions._
 import com.debiki.core._
 import debiki._
 import debiki.DebikiHttp._
 import play.api._
 import play.api.mvc.{Action => _}
 import play.api.libs.json.Json.toJson
-import PageActions._
-import ApiActions._
 import Prelude._
 import Utils.OkSafeJson
 import Utils.ValidationImplicits._

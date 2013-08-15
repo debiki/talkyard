@@ -17,6 +17,8 @@
 
 package controllers
 
+import actions.ApiActions._
+import actions.PageActions._
 import com.debiki.core
 import com.debiki.core._
 import com.debiki.core.{PostActionPayload => PAP}
@@ -28,8 +30,6 @@ import play.api.data._
 import play.api.data.Forms._
 import play.api.mvc.{Action => _, _}
 import scala.collection.{mutable => mut}
-import PageActions._
-import ApiActions._
 import Prelude._
 import Utils.{OkSafeJson, OkHtml, Passhasher, parseIntOrThrowBadReq}
 

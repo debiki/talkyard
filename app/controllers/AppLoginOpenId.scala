@@ -17,6 +17,7 @@
 
 package controllers
 
+import actions.PageActions._
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import com.debiki.core.EmailNotfPrefs.EmailNotfPrefs
@@ -33,7 +34,6 @@ import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.{Success, Failure}
 import scala.util.control.NonFatal
-import PageActions._
 import Utils.ValidationImplicits._
 
 

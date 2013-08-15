@@ -17,12 +17,12 @@
 
 package controllers
 
+import actions.ApiActions._
 import com.debiki.core._
 import debiki._
 import debiki.DebikiHttp._
 import java.{util => ju}
 import play.api._
-import ApiActions._
 import Prelude._
 
 

@@ -17,6 +17,7 @@
 
 package controllers
 
+import actions.PageActions._
 import com.debiki.core._
 import com.debiki.core.{liftweb => lw}
 import debiki._
@@ -28,8 +29,8 @@ import play.api.data._
 import play.api.data.Forms._
 import play.api.libs.json.JsValue
 import play.api.mvc.{Action => _, _}
-import PageActions._
 import Prelude._
+
 
 object Utils extends Results with http.ContentTypes {
 

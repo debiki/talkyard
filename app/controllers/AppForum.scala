@@ -17,7 +17,9 @@
 
 package controllers
 
+import actions.ApiActions._
 import com.debiki.core._
+import com.debiki.core.Prelude._
 import debiki._
 import debiki.DebikiHttp._
 import play.api._
@@ -26,9 +28,6 @@ import play.api.data._
 import play.api.data.Forms._
 import play.api.mvc.{Action => _, _}
 import scala.collection.{mutable => mut}
-import PageActions._
-import ApiActions._
-import Prelude._
 import Utils.{OkHtml, Passhasher}
 
 
