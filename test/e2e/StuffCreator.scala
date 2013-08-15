@@ -59,7 +59,7 @@ trait StuffCreator {
   }
 
 
-  lazy val firstSiteDao = Globals.tenantDao(firstSiteId, "127.0.0.1")
+  lazy val firstSiteDao = Globals.siteDao(firstSiteId, "127.0.0.1")
 
 
   /**

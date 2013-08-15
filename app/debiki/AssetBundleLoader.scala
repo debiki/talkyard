@@ -18,9 +18,8 @@
 package debiki
 
 import com.debiki.core._
-import debiki._
 import debiki.DebikiHttp._
-import debiki.dao.TenantDao
+import debiki.dao.SiteDao
 import java.{util => ju}
 import play.api.Play
 import play.api.Play.current
@@ -71,7 +70,7 @@ object AssetBundleAndDependencies {
   * If you cache the result, you might want to consider race conditions
   * — have a look at CachingAssetBundleDao.loadBundleAndDependencies().
   */
-case class AssetBundleLoader(bundleNameNoSuffix: String,  bundleSuffix: String, dao: TenantDao) {
+case class AssetBundleLoader(bundleNameNoSuffix: String,  bundleSuffix: String, dao: SiteDao) {
 
   val bundleName = s"$bundleNameNoSuffix.$bundleSuffix"
 
@@ -192,7 +191,7 @@ case class AssetBundleLoader(bundleNameNoSuffix: String,  bundleSuffix: String, 
           assetUrls flatMap { case AssetBundleItem(assetUrl, isOptional) =>
       import UrlToPagePathResolver.Result
       UrlToPagePathResolver.resolveUrl(assetUrl, dao,
-          baseSiteId = dao.tenantId, baseFolder = "/themes/local/") match {
+          baseSiteId = dao.siteId, baseFolder = "/themes/local/") match {
         case Result.BadUrl(errorMessage) =>
           die("DwE3bK31", o"""$itsEntryPrefix lists an invalid URL: $assetUrl,
              error: $errorMessage""")

@@ -21,7 +21,7 @@ import com.debiki.core._
 import com.debiki.core.{liftweb => lw}
 import debiki._
 import debiki.DebikiHttp._
-import debiki.dao.TenantDao
+import debiki.dao.SiteDao
 import java.{util => ju}
 import play.api._
 import play.api.data._
@@ -153,7 +153,7 @@ object Utils extends Results with http.ContentTypes {
    * I've connected the server to another backend, or access many backends
    * via the same hostname but different ports).
    */
-  def loadIdentityAndUserOrThrow(sid: SidStatus, dao: TenantDao)
+  def loadIdentityAndUserOrThrow(sid: SidStatus, dao: SiteDao)
         : (Option[Identity], Option[User]) = {
     val identityAndUser = sid.loginId match {
       case None => (None, None)
@@ -172,7 +172,7 @@ object Utils extends Results with http.ContentTypes {
               // the wrong login-id and user-id to the server.
               Logger.warn(
                 s"DAO loaded wrong user, session: $sid, role: $user [error DwE9kD4]")
-              throw LoginNotFoundException(dao.tenantId, loginId)
+              throw LoginNotFoundException(dao.siteId, loginId)
             }
           case None =>
             // This might happen 1) if the server connected to a new database
@@ -180,7 +180,7 @@ object Utils extends Results with http.ContentTypes {
             // created), or 2) during testing, when I sometimes manually
             // delete stuff from the database (including login entries).
             Logger.warn("DAO did not load user [error DwE01521ku35]")
-            throw LoginNotFoundException(dao.tenantId, loginId)
+            throw LoginNotFoundException(dao.siteId, loginId)
         }
     }
     identityAndUser

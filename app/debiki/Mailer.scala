@@ -24,7 +24,7 @@ import com.amazonaws.auth.BasicAWSCredentials
 import com.amazonaws.services.simpleemail._
 import com.amazonaws.services.simpleemail.model._
 import com.debiki.core._
-import debiki.dao.TenantDaoFactory
+import debiki.dao.SiteDaoFactory
 import java.{util => ju}
 import play.api._
 import play.api.libs.iteratee._
@@ -44,7 +44,7 @@ object Mailer {
    * doesn't accidentally forget forever to send some emails.
    * (Also se Notifier.scala)
    */
-  def startNewActor(daoFactory: TenantDaoFactory): ActorRef = {
+  def startNewActor(daoFactory: SiteDaoFactory): ActorRef = {
     val actorRef = Akka.system.actorOf(
       Props(new Mailer(daoFactory)), name = s"MailerActor-$testInstanceCounter")
     testInstanceCounter += 1
@@ -73,7 +73,7 @@ object Mailer {
  * possible to get back AWS' email guid from Apache Common email lib, or is it?
  * (That guid can be used to track bounces etcetera I think.)
  */
-class Mailer(val daoFactory: TenantDaoFactory) extends Actor {
+class Mailer(val daoFactory: SiteDaoFactory) extends Actor {
 
 
   val logger = play.api.Logger("app.mailer")
@@ -131,7 +131,7 @@ class Mailer(val daoFactory: TenantDaoFactory) extends Actor {
         email
     }
 
-    val tenantDao = daoFactory.newTenantDao(
+    val tenantDao = daoFactory.newSiteDao(
       QuotaConsumers(tenantId = tenantId))
 
     tenantDao.updateSentEmail(emailSentOrFailed)

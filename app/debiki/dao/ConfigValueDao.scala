@@ -33,12 +33,12 @@ import Prelude._
  * like so: `extend: http://other-server/themes/some-theme/theme.conf`, recursively.
  */
 trait ConfigValueDao {
-  self: TenantDao =>
+  self: SiteDao =>
 
   import ConfigValueDao._
 
   def loadPageConfigMap(pageId: String): Map[String, Any] =
-    loadConfigMap(SitePageId(tenantId, pageId), configPostId = PageParts.ConfigPostId)
+    loadConfigMap(SitePageId(siteId, pageId), configPostId = PageParts.ConfigPostId)
 
 
   /**
@@ -70,7 +70,7 @@ trait ConfigValueDao {
   private def loadWebsiteConfigLeaf(url: String): WebsiteConfigLeaf = {
     import UrlToPagePathResolver.Result
     UrlToPagePathResolver.resolveUrl(
-        url, this, baseSiteId = tenantId, baseFolder = "/") match {
+        url, this, baseSiteId = siteId, baseFolder = "/") match {
       case Result.HostNotFound(host) =>
         throw WebsiteConfigException("DwE4Dc30", s"Host not found, url: `$url'")
       case Result.PageNotFound =>
@@ -128,7 +128,7 @@ object ConfigValueDao {
 
 
 trait CachingConfigValueDao extends ConfigValueDao {
-  self: TenantDao with CachingDao =>
+  self: SiteDao with CachingDao =>
 
 
   onPageSaved { sitePageId =>

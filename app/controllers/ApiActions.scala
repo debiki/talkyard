@@ -94,7 +94,7 @@ object ApiActions {
 
       val tenantId = DebikiHttp.lookupTenantIdOrThrow(request, Globals.systemDao)
 
-      val dao = Globals.tenantDao(tenantId = tenantId,
+      val dao = Globals.siteDao(siteId = tenantId,
          ip = request.remoteAddress, sidOk.roleId)
 
       val (identity, user) = Utils.loadIdentityAndUserOrThrow(sidOk, dao)

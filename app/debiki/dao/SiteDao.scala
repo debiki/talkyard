@@ -26,37 +26,40 @@ import DebikiHttp._
 import Prelude._
 
 
-abstract class TenantDaoFactory {
-  def newTenantDao(quotaConsumers: QuotaConsumers): TenantDao
+abstract class SiteDaoFactory {
+  def newSiteDao(quotaConsumers: QuotaConsumers): SiteDao
 }
 
 
 
-object TenantDaoFactory {
+object SiteDaoFactory {
 
-  /**
-   * Creates a non-caching TenantDaoFactory.
-   */
+  /** Creates a non-caching SiteDaoFactory.
+    */
   def apply(dbDaoFactory: DbDaoFactory, quotaCharger: QuotaCharger)
-        = new TenantDaoFactory {
+        = new SiteDaoFactory {
     private val _dbDaoFactory = dbDaoFactory
     private val _quotaCharger = quotaCharger
 
-    def newTenantDao(quotaConsumers: QuotaConsumers): TenantDao = {
-      val tenantDbDao = _dbDaoFactory.newSiteDbDao(quotaConsumers)
-      val chargingDbDao = new ChargingTenantDbDao(tenantDbDao, _quotaCharger)
-      new TenantDao(chargingDbDao)
+    def newSiteDao(quotaConsumers: QuotaConsumers): SiteDao = {
+      val siteDbDao = _dbDaoFactory.newSiteDbDao(quotaConsumers)
+      val chargingDbDao = new ChargingSiteDbDao(siteDbDao, _quotaCharger)
+      new SiteDao(chargingDbDao)
     }
   }
+
 }
 
 
 
-/** Delegates most requests to SiteDbDao. However, hides some
+/** A data access object for site specific data. Data could be loaded
+  * from database, or fetched from some in-memory cache.
+  *
+  * Delegates most requests to SiteDbDao. However, hides some
   * SiteDbDao methods, because calling them directly would mess up
-  * the cache in TenantDao's subclass CachingTenantDao.
+  * the cache in SiteDao's subclass CachingSiteDao.
   */
-class TenantDao(protected val tenantDbDao: ChargingTenantDbDao)
+class SiteDao(protected val siteDbDao: ChargingSiteDbDao)
   extends AnyRef
   with AssetBundleDao
   with ConfigValueDao
@@ -65,39 +68,36 @@ class TenantDao(protected val tenantDbDao: ChargingTenantDbDao)
   with RenderedPageHtmlDao
   with UserDao {
 
-  def quotaConsumers = tenantDbDao.quotaConsumers
+  def quotaConsumers = siteDbDao.quotaConsumers
 
 
   // ----- Tenant
 
-  def siteId = tenantDbDao.siteId
+  def siteId = siteDbDao.siteId
 
-  //@deprecated("use siteId instead", "now") -- gah, terrible many warnings!
-  def tenantId: String = tenantDbDao.siteId
-
-  def loadTenant(): Tenant = tenantDbDao.loadTenant()
+  def loadTenant(): Tenant = siteDbDao.loadTenant()
 
   def createWebsite(name: String, address: String, ownerIp: String,
         ownerLoginId: String, ownerIdentity: IdentityOpenId, ownerRole: User)
         : Option[(Tenant, User)] =
-    tenantDbDao.createWebsite(name = name, address = address, ownerIp = ownerIp,
+    siteDbDao.createWebsite(name = name, address = address, ownerIp = ownerIp,
       ownerLoginId = ownerLoginId, ownerIdentity = ownerIdentity,
       ownerRole = ownerRole)
 
-  def addTenantHost(host: TenantHost) = tenantDbDao.addTenantHost(host)
+  def addTenantHost(host: TenantHost) = siteDbDao.addTenantHost(host)
 
   def lookupOtherTenant(scheme: String, host: String): TenantLookup =
-    tenantDbDao.lookupOtherTenant(scheme, host)
+    siteDbDao.lookupOtherTenant(scheme, host)
 
 
   // ----- Pages
 
-  def createPage(page: Page): Page = tenantDbDao.createPage(page)
+  def createPage(page: Page): Page = siteDbDao.createPage(page)
 
   def listChildPages(parentPageId: String, sortBy: PageSortOrder,
         limit: Int, offset: Int = 0, filterPageRole: Option[PageRole] = None)
         : Seq[PagePathAndMeta] =
-    tenantDbDao.listChildPages(
+    siteDbDao.listChildPages(
         parentPageId, sortBy, limit = limit, offset = offset, filterPageRole)
 
 
@@ -121,7 +121,7 @@ class TenantDao(protected val tenantDbDao: ChargingTenantDbDao)
       "DwE6Xf80", s"Page not found, id: `$pageId'; could not do all changes")
     val page = pageNoAuthor ++ authors
 
-    val pageMeta = tenantDbDao.loadPageMeta(page.id) getOrElse
+    val pageMeta = siteDbDao.loadPageMeta(page.id) getOrElse
       throwNotFound("DwE115Xf3", s"Found no meta for page ${page.id}")
 
     val ancestorPageIds = loadAncestorIdsParentFirst(pageId)
@@ -140,43 +140,43 @@ class TenantDao(protected val tenantDbDao: ChargingTenantDbDao)
     // and lots of other similar tests.
 
     val (pageWithNewActions, actionsWithId) =
-      tenantDbDao.savePageActions(page, actions)
+      siteDbDao.savePageActions(page, actions)
 
     (pageWithNewActions, actionsWithId)
   }
 
 
   def loadPage(debateId: String): Option[PageParts] =
-    tenantDbDao.loadPage(debateId)
+    siteDbDao.loadPage(debateId)
 
   def loadPageAnyTenant(sitePageId: SitePageId): Option[PageParts] =
     loadPageAnyTenant(tenantId = sitePageId.siteId, pageId = sitePageId.pageId)
 
   def loadPageAnyTenant(tenantId: String, pageId: String): Option[PageParts] =
-    tenantDbDao.loadPage(pageId, tenantId = Some(tenantId))
+    siteDbDao.loadPage(pageId, tenantId = Some(tenantId))
 
   /**
    * Loads articles (title + body) e.g. for inclusion on a blog post list page.
    */
   def loadPageBodiesTitles(pageIds: Seq[String]): Map[String, PageParts] =
-    tenantDbDao.loadPageBodiesTitles(pageIds)
+    siteDbDao.loadPageBodiesTitles(pageIds)
 
   def loadPostsRecentlyActive(limit: Int): (Seq[Post], People) =
-    tenantDbDao.loadPostsRecentlyActive(limit, offset = 0)
+    siteDbDao.loadPostsRecentlyActive(limit, offset = 0)
 
   def loadRecentActionExcerpts(
         fromIp: Option[String] = None,
         byIdentity: Option[String] = None,
         pathRanges: PathRanges = PathRanges.Anywhere,
         limit: Int): (Seq[PostActionOld], People) =
-    tenantDbDao.loadRecentActionExcerpts(fromIp = fromIp,
+    siteDbDao.loadRecentActionExcerpts(fromIp = fromIp,
       byIdentity = byIdentity, pathRanges = pathRanges, limit = limit)
 
 
   // ----- Full text search
 
   def fullTextSearch(phrase: String, anyRootPageId: Option[String]): Future[FullTextSearchResult] =
-    tenantDbDao.fullTextSearch(phrase, anyRootPageId)
+    siteDbDao.fullTextSearch(phrase, anyRootPageId)
 
 
   // ----- List stuff
@@ -187,38 +187,38 @@ class TenantDao(protected val tenantDbDao: ChargingTenantDbDao)
         sortBy: PageSortOrder,
         limit: Int,
         offset: Int): Seq[PagePathAndMeta] =
-    tenantDbDao.listPagePaths(pageRanges, include, sortBy, limit, offset)
+    siteDbDao.listPagePaths(pageRanges, include, sortBy, limit, offset)
 
 
   // ----- Notifications
 
   def saveNotfs(notfs: Seq[NotfOfPageAction]) =
-    tenantDbDao.saveNotfs(notfs)
+    siteDbDao.saveNotfs(notfs)
 
   def loadNotfsForRole(roleId: String): Seq[NotfOfPageAction] =
-    tenantDbDao.loadNotfsForRole(roleId)
+    siteDbDao.loadNotfsForRole(roleId)
 
   def loadNotfByEmailId(emailId: String): Option[NotfOfPageAction] =
-    tenantDbDao.loadNotfByEmailId(emailId)
+    siteDbDao.loadNotfByEmailId(emailId)
 
   def skipEmailForNotfs(notfs: Seq[NotfOfPageAction], debug: String): Unit =
-    tenantDbDao.skipEmailForNotfs(notfs, debug)
+    siteDbDao.skipEmailForNotfs(notfs, debug)
 
 
   // ----- Emails
 
   def saveUnsentEmail(email: Email): Unit =
-    tenantDbDao.saveUnsentEmail(email)
+    siteDbDao.saveUnsentEmail(email)
 
   def saveUnsentEmailConnectToNotfs(email: Email,
         notfs: Seq[NotfOfPageAction]): Unit =
-    tenantDbDao.saveUnsentEmailConnectToNotfs(email, notfs)
+    siteDbDao.saveUnsentEmailConnectToNotfs(email, notfs)
 
   def updateSentEmail(email: Email): Unit =
-    tenantDbDao.updateSentEmail(email)
+    siteDbDao.updateSentEmail(email)
 
   def loadEmailById(emailId: String): Option[Email] =
-    tenantDbDao.loadEmailById(emailId)
+    siteDbDao.loadEmailById(emailId)
 
 }
 

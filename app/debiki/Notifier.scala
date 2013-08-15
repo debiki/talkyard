@@ -19,7 +19,7 @@ package debiki
 
 import akka.actor._
 import com.debiki.core._
-import debiki.dao.{SystemDao, TenantDao, TenantDaoFactory}
+import debiki.dao.{SystemDao, SiteDao, SiteDaoFactory}
 import java.{util => ju}
 import play.api.libs.concurrent._
 import play.api.Play.current
@@ -38,10 +38,10 @@ object Notifier {
    * doesn't accidentally forget forever to send some notifications.
    * (Also se object Mailer.)
    */
-  def startNewActor(systemDao: SystemDao, tenantDaoFactory: TenantDaoFactory)
+  def startNewActor(systemDao: SystemDao, siteDaoFactory: SiteDaoFactory)
         : ActorRef = {
     val actorRef = Akka.system.actorOf(Props(
-      new Notifier(systemDao, tenantDaoFactory)),
+      new Notifier(systemDao, siteDaoFactory)),
       name = s"NotifierActor-$testInstanceCounter")
     Akka.system.scheduler.schedule(0 seconds, 20 seconds, actorRef, "SendNotfs")
     testInstanceCounter += 1
@@ -65,7 +65,7 @@ object Notifier {
  *
  * Thread safe.
  */
-class Notifier(val systemDao: SystemDao, val tenantDaoFactory: TenantDaoFactory)
+class Notifier(val systemDao: SystemDao, val siteDaoFactory: SiteDaoFactory)
   extends Actor {
 
 
@@ -96,15 +96,15 @@ class Notifier(val systemDao: SystemDao, val tenantDaoFactory: TenantDaoFactory)
     }{
       logger.debug("Considering "+ userNotfs.size +" notfs to user "+ userId)
 
-      val tenantDao = tenantDaoFactory.newTenantDao(
+      val siteDao = siteDaoFactory.newSiteDao(
          QuotaConsumers(tenantId = tenantId))
-      val tenant = tenantDao.loadTenant()
+      val tenant = siteDao.loadTenant()
       val userOpt = notfsToMail.usersByTenantAndId.get(tenantId -> userId)
 
       // Send email, or remember why we didn't.
       val problemOpt = (tenant.chost, userOpt.map(_.emailNotfPrefs)) match {
         case (Some(chost), Some(EmailNotfPrefs.Receive)) =>
-          constructAndSendEmail(tenantDao, chost, userOpt.get, userNotfs)
+          constructAndSendEmail(siteDao, chost, userOpt.get, userNotfs)
           None
         case (None, _) =>
           val problem = "No chost for tenant id: "+ tenantId
@@ -120,14 +120,14 @@ class Notifier(val systemDao: SystemDao, val tenantDaoFactory: TenantDaoFactory)
 
       // If we decided not to send the email, remember not to try again.
       problemOpt foreach { problem =>
-        tenantDao.skipEmailForNotfs(userNotfs,
+        siteDao.skipEmailForNotfs(userNotfs,
            debug = "Email skipped: "+ problem)
       }
     }
   }
 
 
-  private def constructAndSendEmail(tenantDao: TenantDao, chost: TenantHost,
+  private def constructAndSendEmail(siteDao: SiteDao, chost: TenantHost,
         user: User, userNotfs: Seq[NotfOfPageAction]) {
     // Save the email in the db, before sending it, so even if the server
     // crashes it'll always be found, should the receiver attempt to
@@ -135,19 +135,19 @@ class Notifier(val systemDao: SystemDao, val tenantDaoFactory: TenantDaoFactory)
     // might crash inbetween and it wouldn't be possible to unsubscribe.)
     val origin =
       (chost.https.required ? "https://" | "http://") + chost.address
-    val email = constructEmail(tenantDao, origin, user, userNotfs) getOrElse {
+    val email = constructEmail(siteDao, origin, user, userNotfs) getOrElse {
       logger.debug(o"""Not sending any email to ${user.displayName} because the page
         or the comment is gone or not approved or something like that.""")
       return
     }
-    tenantDao.saveUnsentEmailConnectToNotfs(email, userNotfs)
+    siteDao.saveUnsentEmailConnectToNotfs(email, userNotfs)
 
     logger.debug("About to send email to "+ email.sentTo)
-    Globals.sendEmail(email, tenantDao.tenantId)
+    Globals.sendEmail(email, siteDao.siteId)
   }
 
 
-  private def constructEmail(dao: TenantDao, origin: String, user: User,
+  private def constructEmail(dao: SiteDao, origin: String, user: User,
         notfs: Seq[NotfOfPageAction]): Option[Email] = {
 
     val subject: String =

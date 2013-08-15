@@ -20,7 +20,7 @@ package debiki
 import controllers._
 import com.debiki.core._
 import com.debiki.core.{PostActionPayload => PAP}
-import debiki.dao.TenantDao
+import debiki.dao.SiteDao
 import java.{util => ju}
 import org.specs2.mutable._
 import org.specs2.mock._
@@ -103,7 +103,7 @@ class AutoApproverSpec extends Specification with Mockito {
      pageSlug = "page-slug")
 
 
-  def pageReq(user: User, identity: Identity)(dao: TenantDao) =
+  def pageReq(user: User, identity: Identity)(dao: SiteDao) =
     PageRequest[Unit](
       sid = null,
       xsrfToken = null,
@@ -206,8 +206,8 @@ class AutoApproverSpec extends Specification with Mockito {
       if (actionDtos nonEmpty) peopleNoLogins + login
       else People.None
 
-    val daoMock = mock[TenantDao]
-    daoMock.tenantId returns TenantId
+    val daoMock = mock[SiteDao]
+    daoMock.siteId returns TenantId
     daoMock.quotaConsumers returns quotaConsumers
 
     daoMock.loadRecentActionExcerpts(

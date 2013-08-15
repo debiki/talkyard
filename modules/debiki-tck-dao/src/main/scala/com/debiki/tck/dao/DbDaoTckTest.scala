@@ -2283,7 +2283,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
     // -------- Move many pages
 
     /*
-    RelDbTenantDao._movePages throws:
+    RdbSiteDao._movePages throws:
         unimplemented("Moving pages and updating DW1_PAGE_PATHS.CANONICAL")
 
     "move many pages" >> {

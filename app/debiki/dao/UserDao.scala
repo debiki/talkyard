@@ -24,57 +24,57 @@ import EmailNotfPrefs.EmailNotfPrefs
 
 
 trait UserDao {
-  self: TenantDao =>
+  self: SiteDao =>
 
 
   def saveLogin(loginReq: LoginRequest): LoginGrant =
-    tenantDbDao.saveLogin(loginReq)
+    siteDbDao.saveLogin(loginReq)
 
 
   def saveLogout(loginId: String, logoutIp: String) =
-    tenantDbDao.saveLogout(loginId, logoutIp)
+    siteDbDao.saveLogout(loginId, logoutIp)
 
 
   def loadIdtyAndUser(forLoginId: String): Option[(Identity, User)] =
-    tenantDbDao.loadIdtyAndUser(forLoginId)
+    siteDbDao.loadIdtyAndUser(forLoginId)
 
 
   def loadIdtyDetailsAndUser(forLoginId: String = null,
         forIdentity: Identity = null): Option[(Identity, User)] =
     // Don't cache this, because this function is rarely called
     // — currently only when creating new website.
-    tenantDbDao.loadIdtyDetailsAndUser(forLoginId = forLoginId,
+    siteDbDao.loadIdtyDetailsAndUser(forLoginId = forLoginId,
       forIdentity = forIdentity)
 
 
   def loadPermsOnPage(reqInfo: RequestInfo): PermsOnPage =
     // Currently this results in no database request; there's nothing to cache.
-    tenantDbDao.loadPermsOnPage(reqInfo)
+    siteDbDao.loadPermsOnPage(reqInfo)
 
 
   def configRole(loginId: String, ctime: ju.Date, roleId: String,
         emailNotfPrefs: Option[EmailNotfPrefs] = None, isAdmin: Option[Boolean] = None,
         isOwner: Option[Boolean] = None) =
-    tenantDbDao.configRole(loginId = loginId, ctime = ctime,
+    siteDbDao.configRole(loginId = loginId, ctime = ctime,
       roleId = roleId, emailNotfPrefs = emailNotfPrefs, isAdmin = isAdmin, isOwner = isOwner)
 
 
   def configIdtySimple(loginId: String, ctime: ju.Date,
         emailAddr: String, emailNotfPrefs: EmailNotfPrefs) =
-    tenantDbDao.configIdtySimple(loginId = loginId, ctime = ctime,
+    siteDbDao.configIdtySimple(loginId = loginId, ctime = ctime,
       emailAddr = emailAddr,
       emailNotfPrefs = emailNotfPrefs)
 
 
   def listUsers(userQuery: UserQuery): Seq[(User, Seq[String])] =
-    tenantDbDao.listUsers(userQuery)
+    siteDbDao.listUsers(userQuery)
 
 }
 
 
 
 trait CachingUserDao extends UserDao {
-  self: CachingTenantDao =>
+  self: CachingSiteDao =>
 
 
   override def saveLogin(loginReq: LoginRequest): LoginGrant = {
@@ -119,7 +119,7 @@ trait CachingUserDao extends UserDao {
   }
 
 
-  private def key(loginId: String) = s"$tenantId|$loginId|UserByLoginId"
+  private def key(loginId: String) = s"$siteId|$loginId|UserByLoginId"
 
 }
 

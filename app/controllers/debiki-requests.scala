@@ -20,7 +20,7 @@ package controllers
 import com.debiki.core._
 import debiki._
 import debiki.DebikiHttp._
-import debiki.dao.TenantDao
+import debiki.dao.SiteDao
 import java.{util => ju}
 import play.api._
 import play.api.mvc.{Action => _, _}
@@ -38,7 +38,7 @@ abstract class DebikiRequest[A] {
   def xsrfToken: XsrfOk
   def identity: Option[Identity]
   def user: Option[User]
-  def dao: TenantDao
+  def dao: SiteDao
   def request: Request[A]
 
   illArgIf(dao.quotaConsumers.tenantId != tenantId,
@@ -53,7 +53,7 @@ abstract class DebikiRequest[A] {
   private def debugDiff =
     s"quota consumers: ${dao.quotaConsumers}, tenant/ip/role: $tenantId/$ip/$user"
 
-  def tenantId = dao.tenantId
+  def tenantId = dao.siteId
 
   def loginId: Option[String] = sid.loginId
 
@@ -139,7 +139,7 @@ case class ApiRequest[A](
   xsrfToken: XsrfOk,
   identity: Option[Identity],
   user: Option[User],
-  dao: TenantDao,
+  dao: SiteDao,
   request: Request[A]) extends DebikiRequest[A] {
 }
 
@@ -292,7 +292,7 @@ case class PageRequest[A](
   /** If the requested page does not exist, pagePath.pageId is empty. */
   pagePath: PagePath,
   permsOnPage: PermsOnPage,
-  dao: TenantDao,
+  dao: SiteDao,
   request: Request[A])
   (private val _preloadedPageMeta: Option[PageMeta] = None,
   private val _preloadedActions: Option[PageParts] = None,

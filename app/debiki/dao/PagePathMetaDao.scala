@@ -23,44 +23,45 @@ import Prelude._
 
 
 trait PagePathMetaDao {
-  self: TenantDao =>
+  self: SiteDao =>
 
   /*
   def movePages(pageIds: Seq[String], fromFolder: String, toFolder: String) =
-    tenantDbDao.movePages(pageIds, fromFolder = fromFolder, toFolder = toFolder)
+    siteDbDao.movePages(pageIds, fromFolder = fromFolder, toFolder = toFolder)
     */
 
 
   def moveRenamePage(pageId: String, newFolder: Option[String] = None,
         showId: Option[Boolean] = None, newSlug: Option[String] = None)
         : PagePath =
-    tenantDbDao.moveRenamePage(pageId = pageId, newFolder = newFolder,
+    siteDbDao.moveRenamePage(pageId = pageId, newFolder = newFolder,
       showId = showId, newSlug = newSlug)
 
 
   def movePageToItsPreviousLocation(pagePath: PagePath): Option[PagePath] = {
-    tenantDbDao.movePageToItsPreviousLocation(pagePath)
+    siteDbDao.movePageToItsPreviousLocation(pagePath)
   }
 
 
   def checkPagePath(pathToCheck: PagePath): Option[PagePath] =
-    tenantDbDao.checkPagePath(pathToCheck)
+    siteDbDao.checkPagePath(pathToCheck)
 
 
   def lookupPagePath(pageId: String): Option[PagePath] =
-    tenantDbDao.lookupPagePath(pageId = pageId)
+    siteDbDao.lookupPagePath(pageId = pageId)
 
 
   def lookupPagePathAndRedirects(pageId: String): List[PagePath] =
-    tenantDbDao.lookupPagePathAndRedirects(pageId)
+    siteDbDao.lookupPagePathAndRedirects(pageId)
 
 
   def loadPageMeta(pageId: String): Option[PageMeta] =
-    tenantDbDao.loadPageMeta(pageId)
+    siteDbDao.loadPageMeta(pageId)
 
 
+  // COULD cache !!
   def loadAncestorIdsParentFirst(pageId: PageId): List[PageId] =
-    tenantDbDao.loadAncestorIdsParentFirst(pageId)
+    siteDbDao.loadAncestorIdsParentFirst(pageId)
 
 
   def loadPageMetaAndPath(pageId: String): Option[PagePathAndMeta] = {
@@ -75,7 +76,7 @@ trait PagePathMetaDao {
 
 
   def updatePageMeta(meta: PageMeta, old: PageMeta) =
-    tenantDbDao.updatePageMeta(meta, old = old)
+    siteDbDao.updatePageMeta(meta, old = old)
 
 
   /**
@@ -101,7 +102,7 @@ trait PagePathMetaDao {
 
 
 trait CachingPagePathMetaDao extends PagePathMetaDao {
-  self: CachingTenantDao =>
+  self: CachingSiteDao =>
 
 
   /*
@@ -132,7 +133,7 @@ trait CachingPagePathMetaDao extends PagePathMetaDao {
 
 
   override def movePageToItsPreviousLocation(pagePath: PagePath): Option[PagePath] = {
-    require(pagePath.tenantId == tenantId)
+    require(pagePath.tenantId == siteId)
     val restoredPath = super.movePageToItsPreviousLocation(pagePath)
     restoredPath foreach { path =>
       _removeCachedPathsTo(path.pageId.get)
@@ -216,11 +217,11 @@ trait CachingPagePathMetaDao extends PagePathMetaDao {
 
 
   private def _pathByPageIdKey(pageId: String) =
-    s"$tenantId|$pageId|PagePathById"
+    s"$siteId|$pageId|PagePathById"
 
 
   private def pageMetaByIdKey(pageId: String) =
-    s"$tenantId|$pageId|PageMetaById"
+    s"$siteId|$pageId|PageMetaById"
 
 }
 

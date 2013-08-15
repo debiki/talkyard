@@ -30,7 +30,7 @@ import SiteAssetBundles.{AssetBundleNameRegex, assetBundleFileName}
 
 object InternalTemplateProgrammingInterface {
 
-  def apply(dao: TenantDao) = new InternalTemplateProgrammingInterface(dao)
+  def apply(dao: SiteDao) = new InternalTemplateProgrammingInterface(dao)
 
 }
 
@@ -138,7 +138,7 @@ object TemplateProgrammingInterface {
  * Used by internal templates, e.g. /-/create-website/choose-name.
  */
 class InternalTemplateProgrammingInterface protected (
-  protected val dao: TenantDao) {
+  protected val dao: SiteDao) {
 
 
   def websiteConfigValue(confValName: String, or: => String = ""): String =

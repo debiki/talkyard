@@ -20,7 +20,7 @@ package controllers
 import com.debiki.core._
 import debiki._
 import debiki.DebikiHttp._
-import debiki.dao.TenantDao
+import debiki.dao.SiteDao
 import java.{util => ju}
 import play.api._
 import play.api.mvc.{Action => _, _}
@@ -158,7 +158,7 @@ object PageActions {
     if (!pathIn.isFolderOrIndexPage)
       throwBadReq("DwE903XH3", s"Call on folders only, not pages: ${request.uri}")
 
-    val dao = Globals.tenantDao(tenantId = pathIn.tenantId,
+    val dao = Globals.siteDao(siteId = pathIn.tenantId,
       ip = request.remoteAddress, sidStatus.roleId)
 
     val (identity, user) = Utils.loadIdentityAndUserOrThrow(sidStatus, dao)
@@ -201,7 +201,7 @@ object PageActions {
    */
   def CheckPathActionNoBody
         (pathIn: PagePath)
-        (f: (SidStatus, XsrfOk, Option[PagePath], TenantDao,
+        (f: (SidStatus, XsrfOk, Option[PagePath], SiteDao,
            Request[Option[Any]]) => PlainResult) =
     CheckPathAction(BodyParsers.parse.empty)(pathIn)(f)
 
@@ -209,11 +209,11 @@ object PageActions {
   def CheckPathAction[A]
         (parser: BodyParser[A])
         (pathIn: PagePath, maySetCookies: Boolean = true, fixPath: Boolean = true)
-        (f: (SidStatus, XsrfOk, Option[PagePath], TenantDao, Request[A]) =>
+        (f: (SidStatus, XsrfOk, Option[PagePath], SiteDao, Request[A]) =>
            PlainResult) =
     SafeActions.CheckSidAction[A](parser, maySetCookies = maySetCookies) {
         (sidStatus, xsrfOk, request) =>
-      val dao = Globals.tenantDao(tenantId = pathIn.tenantId,
+      val dao = Globals.siteDao(siteId = pathIn.tenantId,
          ip = request.remoteAddress, sidStatus.roleId)
       dao.checkPagePath(pathIn) match {
         case Some(correct: PagePath) =>

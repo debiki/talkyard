@@ -67,7 +67,7 @@ object AppLoginGuest extends mvc.Controller {
       identity = IdentitySimple(id = "?i", userId = "?", name = name,
         email = email, location = "", website = url))
 
-    val loginGrant = Globals.tenantDao(tenantId, ip = addr).saveLogin(loginReq)
+    val loginGrant = Globals.siteDao(tenantId, ip = addr).saveLogin(loginReq)
 
     val (_, _, sidAndXsrfCookies) = Xsrf.newSidAndXsrf(Some(loginGrant))
     val userConfigCookie = AppConfigUser.userConfigCookie(loginGrant)

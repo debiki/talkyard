@@ -57,7 +57,7 @@ object AppMoveRenamePage extends mvc.Controller {
     val toFolder: String = pageReq.body.getOrThrowBadReq("toFolder")
 
     // Ooops, now broken, after I've added DW1_PAGE_PATHS.CANONICAL.
-    // (_movePages in RelDbTenantDao throws method-not-supported)
+    // (_movePages in RdbSiteDao throws method-not-supported)
     pageReq.dao.movePages(pageIds, fromFolder = fromFolder, toFolder = toFolder)
     Ok
   } */

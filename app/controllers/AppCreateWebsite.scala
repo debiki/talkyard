@@ -20,7 +20,7 @@ package controllers
 import com.debiki.core._
 import debiki._
 import debiki.DebikiHttp._
-import debiki.dao.{TenantDao, ConfigValueDao}
+import debiki.dao.{SiteDao, ConfigValueDao}
 import java.{util => ju}
 import play.api._
 import play.api.mvc.{Action => _, _}
@@ -44,7 +44,7 @@ object AppCreateWebsite extends mvc.Controller {
   }
 
 
-  def newWebsiteAddr(websiteName: String, dao: TenantDao): String = {
+  def newWebsiteAddr(websiteName: String, dao: SiteDao): String = {
     def die = throwForbidden(
       "DwE30SC3", "You may not create a new website from this website")
     val siteConfig = dao.loadWebsiteConfig()
@@ -169,7 +169,7 @@ object AppCreateWebsite extends mvc.Controller {
 
 
   def createWebsite(
-        dao: TenantDao,
+        dao: SiteDao,
         creationDati: ju.Date,
         name: String,
         host: String,
@@ -189,8 +189,8 @@ object AppCreateWebsite extends mvc.Controller {
         // COULD try to do this in the same transaction as `createWebsite`?
         // -- This whole function could be rewritten/replaced to/with
         //      CreateSiteSystemDaoMixin.createSiteImpl() ?  in debiki-dao-pgsql
-        val newWebsiteDao = Globals.tenantDao(
-          tenantId = website.id, ip = ownerIp, roleId = None)
+        val newWebsiteDao = Globals.siteDao(
+          siteId = website.id, ip = ownerIp, roleId = None)
 
         val email = _makeNewWebsiteEmail(website, ownerAtNewSite)
         newWebsiteDao.saveUnsentEmail(email)
@@ -288,12 +288,12 @@ object AppCreateWebsite extends mvc.Controller {
    * If they make another page to the homepage, the default homepage
    * is automatically moved from / to /_old/default-homepage.
    */
-  private def createHomepage(newWebsiteDao: TenantDao, creationDati: ju.Date) {
+  private def createHomepage(newWebsiteDao: SiteDao, creationDati: ju.Date) {
     val pageId = AppCreatePage.generateNewPageId()
     val emptyPage = PageParts(pageId, SystemUser.Person)
     val pageMeta = PageMeta.forNewPage(
       PageRole.Generic, SystemUser.User, emptyPage, creationDati, publishDirectly = true)
-    val oldPath = PagePath(newWebsiteDao.tenantId, folder = "/_old/",
+    val oldPath = PagePath(newWebsiteDao.siteId, folder = "/_old/",
       pageId = Some(pageId), showId = false, pageSlug = "default-homepage")
 
     // First create the homepage at '/_old/default-homepage'.

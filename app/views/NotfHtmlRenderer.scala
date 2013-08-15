@@ -18,7 +18,7 @@
 package views
 
 import com.debiki.core._
-import debiki.dao.TenantDao
+import debiki.dao.SiteDao
 import java.{util => ju}
 import Prelude._
 import scala.xml.{NodeSeq, Text}
@@ -41,7 +41,7 @@ import scala.xml.{NodeSeq, Text}
  * COULD remove columns from DW1_NOTFS_PAGE_ACTIONS because now I'm
  * loading the page + comment from here anyway!
  */
-case class NotfHtmlRenderer(siteDao: TenantDao, origin: String) {
+case class NotfHtmlRenderer(siteDao: SiteDao, origin: String) {
 
   import NotfOfPageAction.Type._
 

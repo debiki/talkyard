@@ -44,7 +44,7 @@ case class PageSummary(
 
 
 trait PageSummaryDao {
-  self: TenantDao =>
+  self: SiteDao =>
 
   val ExcerptLength = 500
 
@@ -130,7 +130,7 @@ trait PageSummaryDao {
 
 
 trait CachingPageSummaryDao extends PageSummaryDao {
-  self: TenantDao with CachingDao =>
+  self: SiteDao with CachingDao =>
 
   onPageSaved { sitePageId =>
     removeFromCache(cacheKey(sitePageId))
@@ -161,12 +161,12 @@ trait CachingPageSummaryDao extends PageSummaryDao {
   }
 
 
-  private def cacheKey(pageId: String, siteId: String = null): String =
-    s"$pageId|${if (siteId ne null) siteId else tenantId}|PageSummary"
+  private def cacheKey(pageId: String, otherSiteId: String = null): String =
+    s"$pageId|${if (otherSiteId ne null) otherSiteId else siteId}|PageSummary"
 
 
   private def cacheKey(sitePageId: SitePageId): String =
-    cacheKey(siteId = sitePageId.siteId, pageId = sitePageId.pageId)
+    cacheKey(otherSiteId = sitePageId.siteId, pageId = sitePageId.pageId)
 
 }
 

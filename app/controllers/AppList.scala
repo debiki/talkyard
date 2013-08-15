@@ -181,7 +181,7 @@ object AppList extends mvc.Controller {
           "postTextLengthLimit" -> JsNumber(PostTextLengthLimit),
           // This limit is only approximate, if you list pages both
           // by folder path and by page id. see
-          //   RelDbTenantDao.loadRecentActionExcerpts(),
+          //   RdbSiteDao.loadRecentActionExcerpts(),
           // which does a `(select ... limit ...) union (select ... limit ...)`.
           "actionCountApproxLimit" -> JsNumber(ActionCountLimit))))
     }

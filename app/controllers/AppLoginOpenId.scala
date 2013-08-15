@@ -216,7 +216,7 @@ object AppLoginOpenId extends mvc.Controller {
         country = countryOpt getOrElse ""))
 
     val loginGrant =
-       Globals.tenantDao(tenantId, ip = addr).saveLogin(loginReq)
+       Globals.siteDao(tenantId, ip = addr).saveLogin(loginReq)
 
     // ----- Reply, with session cookies
 

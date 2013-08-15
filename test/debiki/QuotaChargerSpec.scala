@@ -19,7 +19,7 @@ package debiki
 
 import com.debiki.core._
 import controllers.{AppCreatePage, AppCreateWebsite}
-import debiki.dao.TenantDao
+import debiki.dao.SiteDao
 import java.{util => ju}
 import org.scalatest.{Suite, Suites, BeforeAndAfterAll, FreeSpec, Status}
 import org.scalatest.matchers.MustMatchers
@@ -185,7 +185,7 @@ abstract class QuotaChargerSpec extends RichFreeSpec with MustMatchers
           for (i <- 1 to numSites)
           yield {
             val site = createSite(fromIp = nextIp())
-            val guestDao = testGlobals.tenantDao(site.id, fixIp)
+            val guestDao = testGlobals.siteDao(site.id, fixIp)
             val guestLoginGrant = loginNewGuestUser("GuestTest", SiteAndIp(site.id, fixIp))
             (site, guestLoginGrant, guestDao)
           }
@@ -302,16 +302,16 @@ abstract class QuotaChargerSpec extends RichFreeSpec with MustMatchers
   }
 
 
-  def tenantDao(siteId: String, ip: String): TenantDao =
+  def tenantDao(siteId: String, ip: String): SiteDao =
     tenantDao(SiteAndIp(siteId, ip), None)
 
 
-  def tenantDao(siteId: String, ip: String, roleId: Option[String]): TenantDao =
+  def tenantDao(siteId: String, ip: String, roleId: Option[String]): SiteDao =
     tenantDao(SiteAndIp(siteId, ip), roleId)
 
 
-  def tenantDao(siteAndIp: SiteAndIp, roleId: Option[String] = None): TenantDao =
-    testGlobals.tenantDao(siteAndIp.siteId, ip = siteAndIp.ip, roleId = roleId)
+  def tenantDao(siteAndIp: SiteAndIp, roleId: Option[String] = None): SiteDao =
+    testGlobals.siteDao(siteAndIp.siteId, ip = siteAndIp.ip, roleId = roleId)
 
 
   def createSite(fromIp: String): Tenant =
@@ -383,7 +383,7 @@ abstract class QuotaChargerSpec extends RichFreeSpec with MustMatchers
   }
 
 
-  def createPage(loginId: String, author: User, dao: TenantDao) = {
+  def createPage(loginId: String, author: User, dao: SiteDao) = {
     val creationDati = new ju.Date
     val pageId = AppCreatePage.generateNewPageId()
     val pageRole = PageRole.Generic

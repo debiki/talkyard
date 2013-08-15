@@ -21,7 +21,7 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import com.debiki.core.QuotaConsumers
 import com.debiki.dao.rdb.{RdbDaoFactory, Rdb}
-import debiki.dao.{SystemDao, TenantDao, CachingTenantDaoFactory, CachingSystemDao}
+import debiki.dao.{SystemDao, SiteDao, CachingSiteDaoFactory, CachingSystemDao}
 //import com.twitter.ostrich.stats.Stats
 //import com.twitter.ostrich.{admin => toa}
 import play.api._
@@ -69,20 +69,20 @@ class Globals {
   quotaManager.scheduleCleanups()
 
 
-  private val tenantDaoFactory = new CachingTenantDaoFactory(dbDaoFactory,
+  private val siteDaoFactory = new CachingSiteDaoFactory(dbDaoFactory,
     quotaManager.QuotaChargerImpl /*, cache-config */)
 
 
-  def tenantDao(tenantId: String, ip: String, roleId: Option[String] = None): TenantDao =
-    tenantDaoFactory.newTenantDao(
-      QuotaConsumers(ip = Some(ip), tenantId = tenantId, roleId = roleId))
+  def siteDao(siteId: SiteId, ip: String, roleId: Option[RoleId] = None): SiteDao =
+    siteDaoFactory.newSiteDao(
+      QuotaConsumers(ip = Some(ip), tenantId = siteId, roleId = roleId))
 
 
-  private val mailerActorRef = Mailer.startNewActor(tenantDaoFactory)
+  private val mailerActorRef = Mailer.startNewActor(siteDaoFactory)
 
 
   private val notifierActorRef =
-    Notifier.startNewActor(systemDao, tenantDaoFactory)
+    Notifier.startNewActor(systemDao, siteDaoFactory)
 
 
   def sendEmail(email: Email, websiteId: String) {

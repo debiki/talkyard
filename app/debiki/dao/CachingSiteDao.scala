@@ -26,24 +26,25 @@ import play.api.Play.current
 import Prelude._
 
 
-
-class CachingTenantDaoFactory(
+/** Builds site specific data access objects that cache stuff in-memory.
+  */
+class CachingSiteDaoFactory(
   private val _dbDaoFactory: DbDaoFactory,
   private val _quotaCharger: QuotaCharger
   /* _cacheConfig: CacheConfig */)
-  extends TenantDaoFactory {
+  extends SiteDaoFactory {
 
-  def newTenantDao(quotaConsumers: QuotaConsumers): TenantDao = {
+  def newSiteDao(quotaConsumers: QuotaConsumers): SiteDao = {
     val dbDao = _dbDaoFactory.newSiteDbDao(quotaConsumers)
-    val chargingDbDao = new ChargingTenantDbDao(dbDao, _quotaCharger)
-    new CachingTenantDao(chargingDbDao)
+    val chargingDbDao = new ChargingSiteDbDao(dbDao, _quotaCharger)
+    new CachingSiteDao(chargingDbDao)
   }
 
 }
 
 
-class CachingTenantDao(tenantDbDao: ChargingTenantDbDao)
-  extends TenantDao(tenantDbDao)
+class CachingSiteDao(siteDbDao: ChargingSiteDbDao)
+  extends SiteDao(siteDbDao)
   with CachingDao
   with CachingAssetBundleDao
   with CachingConfigValueDao
@@ -54,7 +55,7 @@ class CachingTenantDao(tenantDbDao: ChargingTenantDbDao)
 
 
   override def createPage(page: Page): Page = {
-    val pageWithIds = tenantDbDao.createPage(page)
+    val pageWithIds = siteDbDao.createPage(page)
     firePageCreated(pageWithIds)
     pageWithIds
   }
@@ -78,7 +79,7 @@ class CachingTenantDao(tenantDbDao: ChargingTenantDbDao)
     // -of-that relationships? For now:
     uncachePageMeta(page.id)
     // ... Like so perhaps? Each module registers change listeners?
-    firePageSaved(SitePageId(siteId = tenantId, pageId = page.id))
+    firePageSaved(SitePageId(siteId = siteId, pageId = page.id))
 
     // if (is _site.conf || is any stylesheet or script)
     // then clear all asset bundle related caches. For ... all websites, for now??
@@ -131,7 +132,7 @@ class CachingTenantDao(tenantDbDao: ChargingTenantDbDao)
       })
 
 
-  def _pageActionsKey(pageId: String): String = s"$pageId|$tenantId|PageActions"
+  def _pageActionsKey(pageId: String): String = s"$pageId|$siteId|PageActions"
 
 }
 

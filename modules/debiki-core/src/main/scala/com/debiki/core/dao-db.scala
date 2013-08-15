@@ -379,7 +379,7 @@ abstract class SystemDbDao {
  * then it could be moved to debiki-server, and the config classes
  * would be placed here in debiki-core?))
  */
-class ChargingTenantDbDao(
+class ChargingSiteDbDao(
   private val _spi: SiteDbDao,
   protected val _quotaCharger: QuotaCharger)
   extends SiteDbDao {
@@ -406,7 +406,7 @@ class ChargingTenantDbDao(
         mayPilfer = mayPilfer)
 
 
-  // ----- Tenant
+  // ----- Website (formerly "tenant")
 
   def siteId: SiteId = _spi.siteId
 

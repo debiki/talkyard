@@ -42,7 +42,7 @@ case class RenderedPage(
 
 
 trait RenderedPageHtmlDao {
-  self: TenantDao =>
+  self: SiteDao =>
 
 
   def renderTemplate(pageReq: PageRequest[_], appendToBody: NodeSeq = Nil)
@@ -102,7 +102,7 @@ trait RenderedPageHtmlDao {
 
 
 trait CachingRenderedPageHtmlDao extends RenderedPageHtmlDao {
-  self: CachingTenantDao =>
+  self: CachingSiteDao =>
 
 
   override def renderPage(pageReq: PageRequest[_], renderSettings: RenderPageSettings)
@@ -171,10 +171,10 @@ trait CachingRenderedPageHtmlDao extends RenderedPageHtmlDao {
 
 
   private def _pageHtmlKey(pageId: String, origin: String) =
-    s"$pageId|$tenantId|$origin|PageHtml"
+    s"$pageId|$siteId|$origin|PageHtml"
 
 
-  private def originsKey: String = s"$tenantId|PossibleOrigins"
+  private def originsKey: String = s"$siteId|PossibleOrigins"
 
 }
 

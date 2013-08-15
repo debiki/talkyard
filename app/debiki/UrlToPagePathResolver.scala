@@ -18,7 +18,7 @@
 package debiki
 
 import com.debiki.core._
-import debiki.dao.TenantDao
+import debiki.dao.SiteDao
 import java.{util => ju}
 import Prelude._
 
@@ -48,7 +48,7 @@ object UrlToPagePathResolver {
    *
    * Throws Not Found if a host cannot be resolved to a tenant id.
    */
-  def resolveUrl(url: String, dao: TenantDao, baseSiteId: String, baseFolder: String)
+  def resolveUrl(url: String, dao: SiteDao, baseSiteId: String, baseFolder: String)
         : Result = {
 
     // Parse URL, resolve host name to tenant id.

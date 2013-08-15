@@ -28,7 +28,7 @@ case class AssetBundle(body: String, version: String)
 
 
 trait AssetBundleDao {
-  self: TenantDao =>
+  self: SiteDao =>
 
 
   final def loadAssetBundleVersion(
@@ -51,7 +51,7 @@ trait AssetBundleDao {
 
 
 trait CachingAssetBundleDao extends AssetBundleDao {
-  self: TenantDao with CachingDao =>
+  self: SiteDao with CachingDao =>
 
   onPageCreated { page =>
     tryUncacheAll(
@@ -80,7 +80,7 @@ trait CachingAssetBundleDao extends AssetBundleDao {
   protected override def loadBundleAndDependencies(nameNoSuffix: String, suffix: String)
       : AssetBundleAndDependencies = {
     val bundleName = s"$nameNoSuffix.$suffix"
-    val bundleKey = makeBundleKey(bundleName, tenantId = tenantId)
+    val bundleKey = makeBundleKey(bundleName, tenantId = siteId)
     val cachedBundleAndDeps = lookupInCache[AssetBundleAndDependencies](bundleKey)
     if (cachedBundleAndDeps.isDefined)
       return cachedBundleAndDeps.get
