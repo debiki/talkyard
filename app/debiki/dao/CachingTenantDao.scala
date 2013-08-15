@@ -34,7 +34,7 @@ class CachingTenantDaoFactory(
   extends TenantDaoFactory {
 
   def newTenantDao(quotaConsumers: QuotaConsumers): TenantDao = {
-    val dbDao = _dbDaoFactory.newTenantDbDao(quotaConsumers)
+    val dbDao = _dbDaoFactory.newSiteDbDao(quotaConsumers)
     val chargingDbDao = new ChargingTenantDbDao(dbDao, _quotaCharger)
     new CachingTenantDao(chargingDbDao)
   }

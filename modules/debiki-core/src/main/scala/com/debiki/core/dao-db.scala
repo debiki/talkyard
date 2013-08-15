@@ -42,7 +42,7 @@ import Prelude._
   */
 abstract class DbDaoFactory {
   def systemDbDao: SystemDbDao
-  def newTenantDbDao(quotaConsumers: QuotaConsumers): TenantDbDao
+  def newSiteDbDao(quotaConsumers: QuotaConsumers): SiteDbDao
   def shutdown()
 
   /** Helpful when writing unit test: waits e.g. for ElasticSearch to enter yellow status. */
@@ -56,24 +56,21 @@ abstract class DbDaoFactory {
 
 
 /**
- * Debiki's database Data Access Object (DAO).
+ * Debiki's database Data Access Object (DAO), for site specific data.
  *
  * It's named "DbDao" not simply "Dao" because there are other kinds
  * of DAO:s, e.g. a cache DAO that reads stuff from the database, and
  * constructs objects and caches them in-memory / on disk. Perhaps there
  * could be a web service DAO as well.
  */
-abstract class TenantDbDao {
+abstract class SiteDbDao {
 
   def quotaConsumers: QuotaConsumers
 
 
-  // ----- Websites (a.k.a. tenants)
+  // ----- Websites (formerly "tenants")
 
   def siteId: String
-
-  @deprecated("use siteId instead", "now")
-  def tenantId: String
 
   /**
    * Loads the tenant for this dao.
@@ -307,7 +304,7 @@ abstract class SystemDbDao {
   /**
    * Creates the very first tenant, assigns it an id and and returns it.
    *
-   * It's different from TenantDbDao.createWebsite(), because there cannot be
+   * It's different from SiteDbDao.createWebsite(), because there cannot be
    * any creator of this tenant, because there are not yet any users or roles
    * (since there are on other tenants).
    */
@@ -373,7 +370,7 @@ abstract class SystemDbDao {
  * With NoSQL databases, there's no transaction to roll back, so
  * one must verify quota ok before writing anything.
  *
- * (It delegates database requests to a TenantDbDao implementation.)
+ * (It delegates database requests to a SiteDbDao implementation.)
  *
  * ((Place in which module? debiki-core, -server or -dao-pgsql?  If I'll create
  * new similar classes for other db backends (e.g. Cassandra), then it
@@ -383,9 +380,9 @@ abstract class SystemDbDao {
  * would be placed here in debiki-core?))
  */
 class ChargingTenantDbDao(
-  private val _spi: TenantDbDao,
+  private val _spi: SiteDbDao,
   protected val _quotaCharger: QuotaCharger)
-  extends TenantDbDao {
+  extends SiteDbDao {
 
   import com.debiki.core.{ResourceUse => ResUsg}
 
@@ -411,10 +408,7 @@ class ChargingTenantDbDao(
 
   // ----- Tenant
 
-  def siteId: String = _spi.siteId
-
-  //@deprecated("use siteId instead", "now") -- gah, terrible many warnings!
-  def tenantId: String = _spi.siteId
+  def siteId: SiteId = _spi.siteId
 
   def loadTenant(): Tenant = {
     _chargeForOneReadReq()

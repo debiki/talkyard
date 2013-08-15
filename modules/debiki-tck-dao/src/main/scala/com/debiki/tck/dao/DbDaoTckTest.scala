@@ -130,7 +130,7 @@ abstract class DbDaoChildSpec(
   }
 
   def newTenantDbDao(quotaConsumers: QuotaConsumers) =
-    ctx.dbDaoFactory.newTenantDbDao(quotaConsumers)
+    ctx.dbDaoFactory.newSiteDbDao(quotaConsumers)
 
   def systemDbDao = ctx.dbDaoFactory.systemDbDao
 

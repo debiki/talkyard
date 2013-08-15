@@ -20,7 +20,7 @@ package debiki
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import com.debiki.core.QuotaConsumers
-import com.debiki.dao.rdb.{RelDbDaoFactory, RelDb}
+import com.debiki.dao.rdb.{RdbDaoFactory, Rdb}
 import debiki.dao.{SystemDao, TenantDao, CachingTenantDaoFactory, CachingSystemDao}
 //import com.twitter.ostrich.stats.Stats
 //import com.twitter.ostrich.{admin => toa}
@@ -42,11 +42,11 @@ object Globals extends Globals
 class Globals {
 
 
-  private val dbDaoFactory = new RelDbDaoFactory({
+  private val dbDaoFactory = new RdbDaoFactory({
     //val dataSourceName = if (Play.isTest) "test" else "default"
     //val dataSource = p.db.DB.getDataSource(dataSourceName)
     val dataSource = Debiki.getPostgreSqlDataSource()
-    val db = new RelDb(dataSource)
+    val db = new Rdb(dataSource)
 
     // Log which database we've connected to.
     //val boneDataSource = dataSource.asInstanceOf[com.jolbox.bonecp.BoneCPDataSource]

@@ -43,7 +43,7 @@ object TenantDaoFactory {
     private val _quotaCharger = quotaCharger
 
     def newTenantDao(quotaConsumers: QuotaConsumers): TenantDao = {
-      val tenantDbDao = _dbDaoFactory.newTenantDbDao(quotaConsumers)
+      val tenantDbDao = _dbDaoFactory.newSiteDbDao(quotaConsumers)
       val chargingDbDao = new ChargingTenantDbDao(tenantDbDao, _quotaCharger)
       new TenantDao(chargingDbDao)
     }
@@ -52,11 +52,10 @@ object TenantDaoFactory {
 
 
 
-/**
- * Delegates most requests to TenantDbDao. However, hides some
- * TenantDbDao methods, because calling them directly would mess up
- * the cache in TenantDao's subclass CachingTenantDao.
- */
+/** Delegates most requests to SiteDbDao. However, hides some
+  * SiteDbDao methods, because calling them directly would mess up
+  * the cache in TenantDao's subclass CachingTenantDao.
+  */
 class TenantDao(protected val tenantDbDao: ChargingTenantDbDao)
   extends AnyRef
   with AssetBundleDao
@@ -74,7 +73,7 @@ class TenantDao(protected val tenantDbDao: ChargingTenantDbDao)
   def siteId = tenantDbDao.siteId
 
   //@deprecated("use siteId instead", "now") -- gah, terrible many warnings!
-  def tenantId: String = tenantDbDao.tenantId
+  def tenantId: String = tenantDbDao.siteId
 
   def loadTenant(): Tenant = tenantDbDao.loadTenant()
 
