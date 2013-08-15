@@ -33,8 +33,8 @@ object ApplicationBuild extends Build {
     (Project("debiki-tck-dao", file("modules/debiki-tck-dao"))
     dependsOn(debikiCore ))
 
-  lazy val debikiDaoPgsql =
-    (Project("debiki-dao-pgsql", file("modules/debiki-dao-pgsql"))
+  lazy val debikiDaoRdb =
+    (Project("debiki-dao-rdb", file("modules/debiki-dao-pgsql"))
     dependsOn(debikiCore, debikiTckDao % "test"))
 
 
@@ -60,7 +60,7 @@ object ApplicationBuild extends Build {
 
   val appDependencies = Seq(
     // This (JDBC and PostgerSQL) makes the database evolutions script in
-    // debiki-dao-pgsql work. Otherwise not needed.
+    // debiki-dao-rdb work. Otherwise not needed.
     jdbc,
     // There's a PostgreSQL 903 build number too but it's not in the Maven repos.
     // PostgreSQL 9.2 drivers are also not in the Maven repos (as of May 2013).
@@ -99,7 +99,7 @@ object ApplicationBuild extends Build {
     ).settings(
       mainSettings: _*
     ).dependsOn(
-      debikiCore, debikiDaoPgsql, secureSocial
+      debikiCore, debikiDaoRdb, secureSocial
     ).aggregate(
       secureSocial
     )
