@@ -19,11 +19,11 @@ package debiki
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
-import controllers.JsonOrFormDataBody
 import debiki.DebikiHttp._
 import java.{util => ju, io => jio}
 import play.api.mvc.Cookie
 import play.api.Logger
+import requests.JsonOrFormDataBody
 import scala.xml.{Text, Node, NodeSeq}
 import DebikiSecurity._
 

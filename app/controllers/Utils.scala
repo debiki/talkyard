@@ -20,6 +20,7 @@ package controllers
 import actions.PageActions._
 import com.debiki.core._
 import com.debiki.core.{liftweb => lw}
+import com.debiki.core.Prelude._
 import debiki._
 import debiki.DebikiHttp._
 import debiki.dao.SiteDao
@@ -29,7 +30,7 @@ import play.api.data._
 import play.api.data.Forms._
 import play.api.libs.json.JsValue
 import play.api.mvc.{Action => _, _}
-import Prelude._
+import requests._
 
 
 object Utils extends Results with http.ContentTypes {

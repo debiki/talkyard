@@ -22,6 +22,7 @@ import com.debiki.core._
 import debiki.TemplateRenderer
 import java.{util => ju}
 import play.api._
+import requests._
 import Prelude._
 
 

@@ -15,9 +15,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package controllers
+package requests
 
 import com.debiki.core._
+import controllers.Utils.parseIntOrThrowBadReq
+import controllers.Utils.ValidationImplicits._
 import debiki._
 import debiki.DebikiHttp._
 import debiki.dao.SiteDao
@@ -25,8 +27,6 @@ import java.{util => ju}
 import play.api._
 import play.api.mvc.{Action => _, _}
 import Prelude._
-import Utils.ValidationImplicits._
-import Utils.parseIntOrThrowBadReq
 import DbDao.PathClashException
 
 

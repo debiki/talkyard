@@ -19,7 +19,6 @@ package debiki
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
-import controllers.PageRequest
 import controllers.Utils.{OkHtml, ForbiddenHtml, BadReqHtml}
 import debiki.dao.SystemDao
 import java.{net => jn}

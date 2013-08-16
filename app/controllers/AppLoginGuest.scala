@@ -17,7 +17,6 @@
 
 package controllers
 
-import actions.PageActions._
 import actions.SafeActions._
 import com.debiki.core._
 import com.debiki.core.Prelude._
@@ -26,6 +25,7 @@ import debiki.DebikiHttp._
 import java.{util => ju}
 import play.api._
 import play.api.mvc.{Action => _, _}
+import requests.PageRequest
 
 
 object AppLoginGuest extends mvc.Controller {

@@ -18,11 +18,11 @@
 package debiki.dao
 
 import com.debiki.core._
-import controllers._
+import com.debiki.core.Prelude._
 import debiki._
 import java.{util => ju}
 import scala.xml.NodeSeq
-import Prelude._
+import requests._
 
 
 

@@ -20,6 +20,7 @@ package controllers
 import actions.ApiActions._
 import actions.PageActions._
 import com.debiki.core._
+import com.debiki.core.Prelude._
 import debiki._
 import java.{util => ju, io => jio}
 import play.api._
@@ -27,8 +28,8 @@ import play.api.Play.current
 import play.api.mvc.{Action => _, _}
 import play.api.libs.json.Json.toJson
 import play.api.libs.json._
+import requests._
 import DebikiHttp._
-import Prelude._
 import Utils.ValidationImplicits._
 import Utils.{OkHtml, OkXml}
 

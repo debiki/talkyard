@@ -28,6 +28,7 @@ import play.api._
 import play.api.libs.json._
 import play.api.libs.json.Json.toJson
 import play.api.mvc.{Action => _, _}
+import requests.DebikiRequest
 import xml.{Node, NodeSeq}
 import DebikiHttp._
 import Utils.ValidationImplicits._

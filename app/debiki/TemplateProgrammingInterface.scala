@@ -19,12 +19,13 @@ package debiki
 
 import com.debiki.core
 import com.debiki.core._
-import controllers.{DebikiRequest, PageRequest, SiteAssetBundles, routes}
+import com.debiki.core.Prelude._
+import controllers.{SiteAssetBundles, routes}
 import debiki.dao._
 import java.{util => ju}
 import play.{api => p}
 import play.api.Play.current
-import Prelude._
+import requests.{DebikiRequest, PageRequest}
 import SiteAssetBundles.{AssetBundleNameRegex, assetBundleFileName}
 
 

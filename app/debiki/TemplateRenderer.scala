@@ -18,10 +18,10 @@
 package debiki
 
 import com.debiki.core._
-import controllers.PageRequest
+import com.debiki.core.Prelude._
 import java.{util => ju, lang => jl}
 import play.api._
-import Prelude._
+import requests.PageRequest
 
 
 object TemplateRenderer {

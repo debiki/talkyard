@@ -19,10 +19,10 @@ package debiki
 
 import com.debiki.core._
 import com.debiki.core.{liftweb => lw}
-import controllers._
 import play.api.{mvc => pm}
 import play.api.libs.json._
 import play.api.libs.json.Json.toJson
+import requests._
 import DebikiHttp._
 import Prelude._
 import HtmlPageSerializer.SerializedSingleThread

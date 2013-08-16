@@ -18,8 +18,8 @@
 package controllers
 
 import actions.PageActions._
-import com.debiki.core
 import com.debiki.core._
+import com.debiki.core.Prelude._
 import com.debiki.core.{PostActionPayload => PAP}
 import controllers.Utils.OkSafeJson
 import debiki._
@@ -28,7 +28,7 @@ import play.api._
 import play.api.data._
 import play.api.data.Forms._
 import play.api.mvc.{Action => _, _}
-import Prelude._
+import requests.PageRequest
 import Utils.{OkHtml, OkHtmlBody}
 import BrowserPagePatcher.PostPatchSpec
 

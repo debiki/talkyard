@@ -17,15 +17,15 @@
 
 package debiki
 
-import controllers._
 import com.debiki.core._
+import com.debiki.core.Prelude._
 import com.debiki.core.{PostActionPayload => PAP}
 import debiki.dao.SiteDao
 import java.{util => ju}
 import org.specs2.mutable._
 import org.specs2.mock._
-import Prelude._
 import play.api.mvc.Request
+import requests.PageRequest
 
 
 class AutoApproverSpec extends Specification with Mockito {

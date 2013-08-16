@@ -18,10 +18,10 @@
 package debiki.dao
 
 import com.debiki.core._
-import controllers._
 import debiki._
 import java.{util => ju}
 import scala.concurrent.Future
+import requests._
 import DebikiHttp._
 import Prelude._
 

@@ -26,6 +26,7 @@ import play.api._
 import play.api.{mvc => pm}
 import play.api.libs.json._
 import play.api.libs.json.Json.toJson
+import requests._
 import Utils._
 import Utils.ValidationImplicits._
 import DbDao.PathClashException

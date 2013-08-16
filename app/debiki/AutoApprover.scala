@@ -18,7 +18,7 @@
 package debiki
 
 import com.debiki.core._
-import controllers._
+import requests.PageRequest
 import DebikiHttp._
 import Prelude._
 

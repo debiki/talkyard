@@ -24,6 +24,7 @@ import debiki._
 import debiki.DebikiHttp._
 import play.api._
 import play.api.mvc.{Action => _}
+import requests._
 import Utils.{OkHtml}
 import Utils.parseIntOrThrowBadReq
 

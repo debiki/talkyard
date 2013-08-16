@@ -18,14 +18,15 @@
 package actions
 
 import com.debiki.core._
+import com.debiki.core.Prelude._
 import debiki._
 import debiki.DebikiHttp._
 import java.{util => ju}
 import play.api._
 import play.api.libs.json.JsValue
 import play.api.mvc.{Action => _, _}
-import Prelude._
-import controllers.{Utils, JsonOrFormDataBody, ApiRequest}
+import requests._
+import controllers.Utils
 
 
 /** Play Framework Actions for requests to Debiki's HTTP API.
