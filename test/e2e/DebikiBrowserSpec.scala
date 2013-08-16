@@ -17,6 +17,7 @@
 
 package test.e2e
 
+import com.debiki.core.Prelude._
 import org.openqa.selenium.WebDriver
 import org.scalatest.{BeforeAndAfterAll, FreeSpec}
 import org.scalatest.matchers.MustMatchers
@@ -45,6 +46,12 @@ abstract class DebikiBrowserSpec extends FreeSpec with WebBrowser
 
 
   override def beforeAll() {
+    // It's terribly annoying not knowing which test is currently being run.
+    println(i"""
+      |-----------------------------------------------
+      | Running E2E test: ${classNameOf(this)}
+      |-----------------------------------------------""")
+
     _webDriver = ChromeDriverFactory.createDriver()
   }
 
