@@ -78,6 +78,11 @@ class EditActivitySpec extends DebikiBrowserSpec
   var postId_ad4 = PageParts.NoId
   var postId_ad5 = PageParts.NoId
 
+  def allPostIds = List(
+    postId_gu1, postId_gu2, postId_gu3,
+    postId_gm1, postId_gm2, postId_gm3,
+    postId_ad1, postId_ad2, postId_ad3, postId_ad4, postId_ad5)
+
 
   "One can leave and accept improvement suggestions:" - {
 
@@ -145,17 +150,9 @@ class EditActivitySpec extends DebikiBrowserSpec
         isPostApproved(postId_ad5) must be === true
       }
 
-      "not show unapproved comments" in {
+      "admin sees all comments, including unapproved comments" in {
         reloadPage()
-
-        findPost(postId_gu1) must be ('defined) // prel approved
-        findPost(postId_gu2) must be ('defined)
-        findPost(postId_gu3) must be ('empty)   // only first two comments are prel approved
-        findPost(postId_gm1) must be ('empty)
-        findPost(postId_gm2) must be ('empty)
-        findPost(postId_gm3) must be ('empty)
-
-        for (postId <- List(postId_ad1, postId_ad2, postId_ad3, postId_ad4, postId_ad5))
+        for (postId <- allPostIds)
           findPost(postId) must be ('defined)
       }
     }
