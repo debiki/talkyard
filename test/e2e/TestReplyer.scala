@@ -116,7 +116,7 @@ trait TestReplyer {
 
   def clickPostReply() {
     eventually {
-      click on cssSelector(".dw-fi-submit")
+      click on cssSelector(".dw-page .dw-fs-re .dw-fi-submit")
     }
   }
 
