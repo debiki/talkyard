@@ -19,7 +19,7 @@ package test.e2e
 
 import com.debiki.core.PageRole
 import com.debiki.core.Prelude._
-import com.debiki.core.ActionId
+import com.debiki.core.{ActionId, PostId}
 import org.openqa.selenium.Keys
 import org.openqa.selenium.interactions.Actions
 import org.scalatest.time.{Seconds, Span}
@@ -229,6 +229,11 @@ trait StuffTestClicker {
 
   def isPostApproved(postId: ActionId): Boolean = {
     find(cssSelector(s"#post-$postId .dw-p-pending-mod")).isEmpty
+  }
+
+
+  def isPostDeleted(postId: PostId): Boolean = {
+    find(cssSelector(s"#post-$postId.dw-p-dl")).nonEmpty
   }
 
 

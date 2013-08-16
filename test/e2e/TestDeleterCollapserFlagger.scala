@@ -59,9 +59,8 @@ trait TestDeleterCollapserFlagger {
     // Submit form.
     click on cssSelector("#dw-f-dl .dw-fi-submit")
 
-    // Wait for "You have deleted it [...]" message.
     eventually {
-      click on "dw-dlg-rsp-ok"
+      isPostDeleted(postId) must be === true
     }
   }
 
