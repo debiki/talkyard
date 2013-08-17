@@ -21,7 +21,7 @@ import com.debiki.core._
 import controllers.{AppCreatePage, AppCreateWebsite}
 import debiki.dao.SiteDao
 import java.{util => ju}
-import org.scalatest.{Suite, Suites, BeforeAndAfterAll, FreeSpec, Status}
+import org.scalatest._
 import org.scalatest.matchers.MustMatchers
 import play.api.{test => pt}
 import pt.Helpers.testServerPort
@@ -31,10 +31,12 @@ import Prelude._
 
 
 
-trait RunningServerMixin extends BeforeAndAfterAll {
+abstract class RunningServerSpec(additionalConfiguration: Map[String, _ <: Any] = Map.empty)
+  extends FreeSpec with BeforeAndAfterAll {
   self: Suite =>
 
-  lazy val testServer = pt.TestServer(testServerPort, pt.FakeApplication())
+  lazy val testServer = pt.TestServer(testServerPort,
+    pt.FakeApplication(additionalConfiguration = additionalConfiguration))
 
   protected def emptyDatabaseBeforeAll = true
 
@@ -83,15 +85,11 @@ class QuotaChargerSpecRunner extends Suites(new QuotaChargerSpec {})
 /** Tests the quota charger.
   */
 @DoNotDiscover
-class QuotaChargerSpec extends RichFreeSpec with MustMatchers
-  with RunningServerMixin {
+class QuotaChargerSpec
+  extends RunningServerSpec(Map("new.site.freeDollars" -> 1))
+  with RichFreeSpec with MustMatchers {
 
-
-  lazy val testGlobals = new debiki.Globals {
-    // By default, the test configuration grants very much quota.
-    // Let's grant $1 only, so we'll actually run out of quota sometimes.
-    override def freeDollarsToEachNewSite = 1f
-  }
+  import Globals.siteDao
 
 
   "QuotaCharger can" - {
@@ -183,7 +181,7 @@ class QuotaChargerSpec extends RichFreeSpec with MustMatchers
           for (i <- 1 to numSites)
           yield {
             val site = createSite(fromIp = nextIp())
-            val guestDao = testGlobals.siteDao(site.id, fixIp)
+            val guestDao = siteDao(site.id, fixIp)
             val guestLoginGrant = loginNewGuestUser("GuestTest", SiteAndIp(site.id, fixIp))
             (site, guestLoginGrant, guestDao)
           }
@@ -309,7 +307,7 @@ class QuotaChargerSpec extends RichFreeSpec with MustMatchers
 
 
   def tenantDao(siteAndIp: SiteAndIp, roleId: Option[String] = None): SiteDao =
-    testGlobals.siteDao(siteAndIp.siteId, ip = siteAndIp.ip, roleId = roleId)
+    siteDao(siteAndIp.siteId, ip = siteAndIp.ip, roleId = roleId)
 
 
   def createSite(fromIp: String): Tenant =

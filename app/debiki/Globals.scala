@@ -59,9 +59,11 @@ class Globals {
   def systemDao: SystemDao = new CachingSystemDao(dbDaoFactory.systemDbDao)
 
 
-  // Don't run out of quota when running e2e tests.
-  // COULD change to config value (when not test, i.e. make 1.0 configable, not 1000.0).
-  protected def freeDollarsToEachNewSite: Float = if (Play.isTest) 1000.0f else 1.0f
+  private def freeDollarsToEachNewSite: Float =
+    Play.configuration.getDouble("new.site.freeDollars")map(_.toFloat) getOrElse {
+      // Don't run out of quota when running e2e tests.
+      if (Play.isTest) 1000.0f else 1.0f
+    }
 
 
   private val quotaManager =
