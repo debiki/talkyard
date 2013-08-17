@@ -125,6 +125,8 @@ trait TestLoginner {
     // and apparently it's impossible to catch the NoSuchWindowException
     // below — the test suite instead hangs forever, no idea why. So comment out
     // this instead, and everything works fine.
+    // Update: This approve-permissions dialog is apparently shown only
+    // sometimes, fairly infrequently.
     /*
     eventually {
       try {

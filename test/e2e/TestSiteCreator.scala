@@ -74,20 +74,26 @@ trait TestSiteCreator extends TestLoginner {
     "click login link on welcome owner page" in {
       // We should now be on page /-/new-website/welcome-owner.
       // There should be only one link, which takes you to /-/admin/.
-      assert(pageSource contains "Website created")
+      eventually {
+        assert(pageSource contains "Website created")
+      }
       click on cssSelector("a")
     }
 
     "login to admin dashboard" in {
       clickLoginWithGmailOpenId()
-      assert(pageSource contains "Welcome to your new website")
+      eventually {
+        assert(pageSource contains "Welcome to your new website")
+      }
       webDriver.getCurrentUrl() must be === originOf(newSiteName) + "/-/admin/"
     }
   }
 
 
   def clickLoginWithGmailOpenId(approvePermissions: Boolean = true) {
-    click on cssSelector("a.login-link-google")
+    eventually {
+      click on cssSelector("a.login-link-google")
+    }
     fillInGoogleCredentials(approvePermissions)
   }
 
