@@ -18,12 +18,9 @@
 package debiki.dao
 
 import com.debiki.core._
-import debiki._
+import com.debiki.core.Prelude._
 import java.{util => ju}
 import play.{api => p}
-import play.api.{cache => pc}
-import play.api.Play.current
-import Prelude._
 
 
 /** Builds site specific data access objects that cache stuff in-memory.
@@ -118,7 +115,7 @@ class CachingSiteDao(siteDbDao: ChargingSiteDbDao)
         // the page from the database.
         replaced = _cache.cache.replace(key, oldPage, newPage)
     */
-    pc.Cache.remove(_pageActionsKey(page.id))
+    removeFromCache(_pageActionsKey(page.id))
     // ------ /Page action cache
 
    newPageAndActionsWithId

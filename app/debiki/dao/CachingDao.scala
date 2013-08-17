@@ -18,8 +18,6 @@
 package debiki.dao
 
 import com.debiki.core._
-import play.api.{cache => pc}
-import play.api.Play.current
 import scala.reflect.ClassTag
 import Prelude._
 
@@ -89,7 +87,9 @@ trait CachingDao extends CacheEvents {
         : Option[A] = {
     debugCheckKey(key)
 
-    pc.Cache.get(key) match {
+    // (See class EhCachePlugin in play/api/cache/Cache.scala, for how Play Framework
+    // does with `getObjectValue`. Namely exactly as on the next line.)
+    Option(ehcache.get(key)).map(_.getObjectValue) match {
       case someValue @ Some(value) =>
         if (!(classTag.runtimeClass.isInstance(value)))
           throwNoSuchElem("DwE8ZX02", s"""Found a ${classNameOf(value)},
@@ -105,21 +105,21 @@ trait CachingDao extends CacheEvents {
         // – In case some other thread just inserted another value,
         // overwrite it, because `newValue` is probably more recent.
         // – For now, don't store info on cache misses.
-        newValueOpt foreach(newValue => pc.Cache.set(key, newValue, expiration))
+        newValueOpt foreach(newValue => putInCache(key, newValue, expiration))
         newValueOpt
     }
   }
 
 
-  def putInCache[A](key: String, value: A) {
+  def putInCache[A](key: String, value: A, expiration: Int = 0) {
     debugCheckKey(key)
-    pc.Cache.set(key, value)
+    ehcache.put(cacheElem(key, value, expiration))
   }
 
 
-  def putInCacheIfAbsent[A](key: String, value: A): Boolean = {
+  def putInCacheIfAbsent[A](key: String, value: A, expiration: Int = 0): Boolean = {
     debugCheckKey(key)
-    val anyOldElem = ehcache.putIfAbsent(cacheElem(key, value))
+    val anyOldElem = ehcache.putIfAbsent(cacheElem(key, value, expiration))
     val wasInserted = anyOldElem eq null
     wasInserted
   }
@@ -136,7 +136,7 @@ trait CachingDao extends CacheEvents {
 
   def removeFromCache(key: String) {
     debugCheckKey(key)
-    pc.Cache.remove(key)
+    ehcache.remove(key)
   }
 
 
@@ -149,17 +149,25 @@ trait CachingDao extends CacheEvents {
   }
 
 
-  private def ehcache: net.sf.ehcache.Cache =
+  /** An EhCache instance. Right now, all caches use the same instance, could change that.
+    * However doesn't matter? Won't have 2 applications running in the same JVM.
+    * I suppose/guess it's good w.r.t. performance to have only 1 EhCache instance?
+    * So might as well reuse Play's?
+    *
+    * In class EhCachePlugin in play/api/cache/Cache.scala you'll see how Play
+    * creates its per-application cache, namely exactly like below.
+    */
+  private val ehcache: net.sf.ehcache.Cache =
       net.sf.ehcache.CacheManager.create().getCache("play")
 
 
-  private def cacheElem(key: String, value: Any) = {
+  private def cacheElem(key: String, value: Any, expiration: Int = 0) = {
     val elem = new net.sf.ehcache.Element(key, value)
-    // For now, cache forever. These two lines is how Play Framework
-    // specifies that `elem` is to be cached forever. By default, EHCache
-    // otherwise removes the elem after a few seconds or minutes.
-    elem.setEternal(true)
-    elem.setTimeToLive(0)
+    // This is what Play Framework does, see class  EhCachePlugin
+    // in play/api/cache/Cache.scala. Without this code, I think EHCache removes
+    // the elem after a few seconds or minutes.
+    if (expiration == 0) elem.setEternal(true)
+    elem.setTimeToLive(expiration)
     elem
   }
 
