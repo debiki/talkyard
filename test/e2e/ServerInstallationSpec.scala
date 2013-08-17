@@ -97,8 +97,9 @@ abstract class ServerInstallationSpec extends DebikiBrowserSpec with TestLoginne
     }
 
     "follow link to the admin dashboard" in {
-      click on cssSelector("a[href*='/-/admin/']")
-      java.lang.Thread.sleep(7200*1000)
+      eventually {
+        click on cssSelector("a[href*='/-/admin/']")
+      }
     }
 
   }
