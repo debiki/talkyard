@@ -23,6 +23,20 @@ import org.openqa.selenium.Keys
 import org.openqa.selenium.interactions.Actions
 import org.scalatest.time.{Seconds, Span}
 import play.api.test.Helpers.testServerPort
+import TestSiteCreator._
+
+
+
+object TestSiteCreator {
+
+  /** Sometimes I don't empty the database different specs, so it's best
+    * to never reuse a website id — otherwise there'll be "website already created"
+    * errors.
+    */
+  private var nextWebsiteId = 0
+
+}
+
 
 
 /** Creates test sites, via /-/new-website/...
@@ -30,7 +44,6 @@ import play.api.test.Helpers.testServerPort
 trait TestSiteCreator extends TestLoginner {
   self: DebikiBrowserSpec =>
 
-  private var nextWebsiteId = 0
   private var knownWindowHandles = Set[String]()
 
 
