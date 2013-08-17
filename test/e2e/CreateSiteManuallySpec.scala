@@ -30,21 +30,13 @@ import org.scalatest.Suites
  *  (new test.e2e.CreateSiteManuallySpecRunner {}).execute()
  */
 @DoNotDiscover
-class CreateSiteManuallySpecRunner extends Suites(
-  new CreateSiteManuallySpec {})
+class CreateSiteManuallySpecRunner extends Suites(new CreateSiteManuallySpec)
   with ChromeSuiteMixin
 
 
-/**
- * Opens the site creation page, and waits for you to test stuff manually,
- * untill you kill the server.
- *
- * You can login as debiki.tester@gmail.com with email:
- *   debiki.tester@gmail.com
- * and password:
- *   ZKFIREK90krI38bk3WK1r0
- * (See clickLoginWithGmailOpenId() in StuffTestClicker.)
- */
+/** Opens the site creation page, and waits for you to test stuff manually,
+  * until you kill the server, or one year has passed.
+  */
 @DoNotDiscover
 class CreateSiteManuallySpec extends DebikiBrowserSpec with TestSiteCreator {
 
@@ -70,8 +62,7 @@ class CreateSiteManuallySpec extends DebikiBrowserSpec with TestSiteCreator {
  *  test-only test.e2e.BuildSiteManuallySpecRunner
  */
 @DoNotDiscover
-class BuildSiteManuallySpecRunner extends Suites(
-  new BuildSiteManuallySpec {})
+class BuildSiteManuallySpecRunner extends Suites(new BuildSiteManuallySpec)
 with ChromeSuiteMixin
 
 
@@ -111,7 +102,7 @@ class BuildSiteManuallySpec extends DebikiBrowserSpec with TestSiteCreator {
  *  test-only test.e2e.ContinueManualTestsRunner
  */
 @DoNotDiscover
-class ContinueManualTestsRunner extends Suites(new ContinueManualTests {})
+class ContinueManualTestsRunner extends Suites(new ContinueManualTests)
     with ChromeSuiteMixin {
   override val emptyDatabaseBeforeAll = false
 }
