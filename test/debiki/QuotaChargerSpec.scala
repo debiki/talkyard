@@ -80,12 +80,10 @@ class QuotaChargerSpecRunner extends Suites(new QuotaChargerSpec {})
 
 
 
-/**
- * Tests the quota charger.
- */
-// From ScalaTest 2.0-M5 and above, use this: `@DoNotDiscover`
-// instead of `abstract`.
-abstract class QuotaChargerSpec extends RichFreeSpec with MustMatchers
+/** Tests the quota charger.
+  */
+@DoNotDiscover
+class QuotaChargerSpec extends RichFreeSpec with MustMatchers
   with RunningServerMixin {
 
 

@@ -18,7 +18,7 @@
 package test
 
 import com.debiki.core.Prelude._
-import org.scalatest.{Suite, SuiteMixin}
+import org.scalatest.{Suite, SuiteMixin, Outcome}
 import org.scalatest.exceptions.TestPendingException
 import scala.util.control.NonFatal
 
@@ -31,7 +31,7 @@ trait CancelAllOnFirstFailure extends SuiteMixin {
 
   private var anyFailure = false
 
-  abstract override def withFixture(test: NoArgTest) {
+  abstract override def withFixture(test: NoArgTest): Outcome = {
     if (anyFailure) {
       cancel
     }
