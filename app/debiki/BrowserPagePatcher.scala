@@ -49,7 +49,10 @@ object BrowserPagePatcher {
   * Shows unapproved comments and edits written by the current user, unless
   * s/he is a moderator or admin, in which case all unapproved things are shown.
   */
-case class BrowserPagePatcher(request: DebikiRequest[_], showAllUnapproved: Boolean = false) {
+case class BrowserPagePatcher(
+  request: DebikiRequest[_],
+  showAllUnapproved: Boolean = false,
+  showStubsForDeleted: Boolean = false) {
 
   implicit private val logger = play.api.Logger(this.getClass)
 
@@ -116,7 +119,8 @@ case class BrowserPagePatcher(request: DebikiRequest[_], showAllUnapproved: Bool
     }
 
     val serializer = HtmlPageSerializer(
-      page, PageTrust(page), pageRoot, request.host, showUnapproved = showUnapproved)
+      page, PageTrust(page), pageRoot, request.host, showUnapproved = showUnapproved,
+      showStubsForDeleted = showStubsForDeleted)
 
     var threadPatches = List[JsPatch]()
     var postPatches = List[JsPatch]()
@@ -125,7 +129,8 @@ case class BrowserPagePatcher(request: DebikiRequest[_], showAllUnapproved: Bool
       val post = page.getPost(postId) getOrElse logAndThrowInternalError(
          "DwE573R2", s"Post not found, id: $postId, page: ${page.id}")
       if (wholeThread) {
-        // If the post has been deleted, this `foreach` won't happen.
+        // If the post has been deleted and `!showStubsForDeleted`. renderSingleThread()
+        // might return nothing.
         serializer.renderSingleThread(postId) foreach { serializedThread =>
           threadPatches ::= _jsonForThread(post, serializedThread)
         }

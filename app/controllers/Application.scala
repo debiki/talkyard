@@ -119,7 +119,9 @@ object Application extends mvc.Controller {
     val (page, _) =
       pageReq.dao.savePageActionsGenNotfs(pageReq, deletion::Nil)
 
-    val json = BrowserPagePatcher(pageReq).jsonForThreadsAndPosts(
+    // Even if deleting the whole tree, show a brief stub in place of the deleted stuff:
+    // "Thread deleted by ...". It'll be gone if you reload the page.
+    val json = BrowserPagePatcher(pageReq, showStubsForDeleted = true).jsonForThreadsAndPosts(
       page.parts, BrowserPagePatcher.PostPatchSpec(postId, wholeThread = wholeTree))
 
     Utils.OkSafeJson(json)

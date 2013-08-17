@@ -281,7 +281,8 @@ case class HtmlPageSerializer(
   pageRoot: PageRoot,
   hostAndPort: String,
   nofollowArticle: Boolean = true,
-  showUnapproved: ShowUnapproved = ShowUnapproved.None) {
+  showUnapproved: ShowUnapproved = ShowUnapproved.None,
+  showStubsForDeleted: Boolean = false) {
 
   import HtmlPageSerializer._
 
@@ -388,8 +389,8 @@ case class HtmlPageSerializer(
     var threads: NodeSeq = Nil
     for {
       post <- _sortPostsDescFitness(posts)
-      if !post.isTreeDeleted
-      if !(post.isPostDeleted && post.replies.isEmpty)
+      if !post.isTreeDeleted || showStubsForDeleted
+      if !(post.isPostDeleted && post.replies.isEmpty) || showStubsForDeleted
       if showUnapproved.shallShow(post)
     } {
       val thread = renderThread(post, depth, parentHorizontal, uncollapseFirst)
