@@ -27,15 +27,16 @@ import com.debiki.core.Prelude._
  * Runs the ForumSpec suite, in SBT:  test-only test.e2e.ForumSpecRunner
  */
 @DoNotDiscover
-class ForumSpecRunner extends org.scalatest.Suites(new ForumSpec {})
+class ForumSpecRunner extends org.scalatest.Suites(ForumSpec)
 with ChromeSuiteMixin
 
 
 /**
  * Tests creation of new forum topics.
  */
+@test.tags.EndToEndTest
 @DoNotDiscover
-abstract class ForumSpec extends DebikiBrowserSpec with TestEditor {
+object ForumSpec extends DebikiBrowserSpec with TestEditor {
 
   var forumWindow: WindowTarget = null
 

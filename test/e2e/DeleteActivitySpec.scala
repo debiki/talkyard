@@ -26,7 +26,7 @@ import org.scalatest.DoNotDiscover
 /** Runs the DeleteActivitySpec suite, in SBT:  test-only test.e2e.DeleteActivitySpecRunner
   */
 @DoNotDiscover
-class DeleteActivitySpecRunner extends org.scalatest.Suites(new DeleteActivitySpec {})
+class DeleteActivitySpecRunner extends org.scalatest.Suites(DeleteActivitySpec)
 with ChromeSuiteMixin
 
 
@@ -41,8 +41,9 @@ with ChromeSuiteMixin
   * Then deletes #ad1 and #ad2, and tests that they plus #ad3 are gone,
   * but that #ad4 is still visible.
   */
+@test.tags.EndToEndTest
 @DoNotDiscover
-class DeleteActivitySpec extends DebikiBrowserSpec with TestReplyer with TestLoginner
+object DeleteActivitySpec extends DebikiBrowserSpec  with TestReplyer with TestLoginner
   with TestDeleterCollapserFlagger {
 
   lazy val testPage = createTestPage(PageRole.Generic,

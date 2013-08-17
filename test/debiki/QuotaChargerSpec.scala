@@ -85,6 +85,7 @@ class QuotaChargerSpecRunner extends Suites(new QuotaChargerSpec {})
 /** Tests the quota charger.
   */
 @DoNotDiscover
+@test.tags.SlowTest
 class QuotaChargerSpec
   extends RunningServerSpec(Map("new.site.freeDollars" -> 1))
   with RichFreeSpec with MustMatchers {

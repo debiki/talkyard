@@ -17,11 +17,9 @@
 
 package test.e2e
 
-import org.scalatest.{Suite, Suites, BeforeAndAfterAll}
+import org.scalatest._
 import play.api.{test => pt}
 import pt.Helpers.testServerPort
-import com.debiki.core._
-import com.debiki.core.Prelude._
 
 
 /**
@@ -53,13 +51,16 @@ trait ChromeSuiteMixin extends BeforeAndAfterAll {
 
 /**
  * Runs all end to end tests. Empties the database and restarts the browser
- * before each specification.
+ * once before all tests are run. (Each test usually creates a new
+ * site, so there's no need to empty the database inbetween each test.)
  */
+@test.tags.EndToEndTest
 class EndToEndSuite extends Suites(
-  new CreateSiteSpec {},
-  new AdminDashboardSpec {},
-  new AnonLoginSpec {},
-  new ForumSpec {},
-  new StyleSiteSpecSpec {})
+  CreateSiteSpec,
+  DeleteActivitySpec,
+  AdminDashboardSpec,
+  AnonLoginSpec,
+  ForumSpec,
+  StyleSiteSpecSpec)
   with ChromeSuiteMixin
 

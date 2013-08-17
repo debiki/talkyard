@@ -30,8 +30,7 @@ import org.scalatest.DoNotDiscover
  *  (new test.e2e.CreateSiteSpecRunner {}).execute()
  */
 @DoNotDiscover
-class CreateSiteSpecRunner extends org.scalatest.Suites(
-  new CreateSiteSpec {})
+class CreateSiteSpecRunner extends org.scalatest.Suites(CreateSiteSpec)
   with ChromeSuiteMixin
 
 
@@ -41,8 +40,9 @@ class CreateSiteSpecRunner extends org.scalatest.Suites(
  * Among other things, logs in as debiki.tester@gmail.com and creates
  * test-site and test-site-2.
  */
+@test.tags.EndToEndTest
 @DoNotDiscover
-abstract class CreateSiteSpec extends DebikiBrowserSpec with TestSiteCreator {
+object CreateSiteSpec extends DebikiBrowserSpec with TestSiteCreator {
 
   val firstSiteName = nextSiteName()
   val secondSiteName = nextSiteName()

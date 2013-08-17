@@ -30,16 +30,16 @@ import controllers.AppInstall
   *  (new test.e2e.ServerInstallationSpecRunner {}).execute()
   */
 @DoNotDiscover
-class ServerInstallationSpecRunner extends org.scalatest.Suites(
-  new ServerInstallationSpec {})
+class ServerInstallationSpecRunner extends org.scalatest.Suites(ServerInstallationSpec)
   with ChromeSuiteMixin
 
 
 /** Tests creation of the very first site and its owner account,
   * that is, server "installation".
   */
+@test.tags.EndToEndTest
 @DoNotDiscover
-abstract class ServerInstallationSpec extends DebikiBrowserSpec with TestLoginner {
+object ServerInstallationSpec extends DebikiBrowserSpec with TestLoginner {
 
   import play.api.test.Helpers.testServerPort
 

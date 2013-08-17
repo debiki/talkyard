@@ -28,7 +28,7 @@ import org.scalatest.DoNotDiscover
  * Runs the AnonLoginSpec suite, in SBT:  test-only test.e2e.AnonLoginSpecRunner
  */
 @DoNotDiscover
-class AnonLoginSpecRunner extends org.scalatest.Suites(new AnonLoginSpec {})
+class AnonLoginSpecRunner extends org.scalatest.Suites(AnonLoginSpec)
 with ChromeSuiteMixin
 
 
@@ -37,8 +37,9 @@ with ChromeSuiteMixin
  * when submitting, 2) by clicking Rate and logging in when rating,
  * and 3) via the "Log in" link,
  */
+@test.tags.EndToEndTest
 @DoNotDiscover
-class AnonLoginSpec extends DebikiBrowserSpec with TestReplyer with TestLoginner {
+object AnonLoginSpec extends DebikiBrowserSpec with TestReplyer with TestLoginner {
 
   lazy val testPage = createTestPage(PageRole.Generic,
       title = "Test Page Title 27KV09", body = Some("Test page text 953Ih31."))

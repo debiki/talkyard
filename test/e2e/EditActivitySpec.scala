@@ -30,7 +30,7 @@ import org.openqa.selenium.By
 /** Runs the EditActivitySpec suite, in SBT:  test-only test.e2e.EditActivitySpecRunner
   */
 @DoNotDiscover
-class EditActivitySpecRunner extends org.scalatest.Suites(new EditActivitySpec {})
+class EditActivitySpecRunner extends org.scalatest.Suites(EditActivitySpec)
 with ChromeSuiteMixin
 
 
@@ -57,8 +57,9 @@ with ChromeSuiteMixin
   * The admin reloads the page and verifies the correct versions
   * of everything is shown.
   */
+@test.tags.EndToEndTest
 @DoNotDiscover
-class EditActivitySpec extends DebikiBrowserSpec
+object EditActivitySpec extends DebikiBrowserSpec
   with TestReplyer with TestLoginner with TestEditor {
 
   lazy val testPage = createTestPage(PageRole.Generic,

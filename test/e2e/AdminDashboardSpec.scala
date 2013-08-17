@@ -31,16 +31,16 @@ import org.scalatest.DoNotDiscover
  *  (new test.e2e.AdminDashboardRunner {}).execute()
  */
 @DoNotDiscover
-class AdminDashboardRunner extends org.scalatest.Suites(
-  new AdminDashboardSpec {})
+class AdminDashboardRunner extends org.scalatest.Suites(AdminDashboardSpec)
   with ChromeSuiteMixin
 
 
 /**
  * Tests the admin ashboard, /-/admin/.
  */
+@test.tags.EndToEndTest
 @DoNotDiscover
-abstract class AdminDashboardSpec extends DebikiBrowserSpec
+object AdminDashboardSpec extends DebikiBrowserSpec
   with TestSiteCreator with TestEditor {
 
   val EditedHomepageTitle = "Edited Homepage Title"

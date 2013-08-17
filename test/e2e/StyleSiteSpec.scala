@@ -31,8 +31,7 @@ import org.scalatest.DoNotDiscover
  *  (new test.e2e.StyleSiteSpecRunner {}).execute()
  */
 @DoNotDiscover
-class StyleSiteSpecRunner extends org.scalatest.Suites(
-  new StyleSiteSpecSpec {})
+class StyleSiteSpecRunner extends org.scalatest.Suites(StyleSiteSpecSpec)
   with ChromeSuiteMixin
 
 
@@ -41,8 +40,9 @@ class StyleSiteSpecRunner extends org.scalatest.Suites(
  * are refreshed when things have been edited. That is, tests that there's
  * no stale stuff in any cache.
  */
+@test.tags.EndToEndTest
 @DoNotDiscover
-abstract class StyleSiteSpecSpec extends DebikiBrowserSpec
+object StyleSiteSpecSpec extends DebikiBrowserSpec
   with TestSiteCreator with TestEditor {
 
 
