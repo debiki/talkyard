@@ -19,13 +19,12 @@ package debiki
 
 import akka.actor._
 import com.debiki.core._
+import com.debiki.core.Prelude._
 import debiki.dao.{SystemDao, SiteDao, SiteDaoFactory}
 import java.{util => ju}
 import play.api.libs.concurrent._
-import play.api.Play.current
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext.Implicits.global
-import Prelude._
 
 
 
@@ -38,12 +37,12 @@ object Notifier {
    * doesn't accidentally forget forever to send some notifications.
    * (Also se object Mailer.)
    */
-  def startNewActor(systemDao: SystemDao, siteDaoFactory: SiteDaoFactory)
+  def startNewActor(actorSystem: ActorSystem, systemDao: SystemDao, siteDaoFactory: SiteDaoFactory)
         : ActorRef = {
-    val actorRef = Akka.system.actorOf(Props(
+    val actorRef = actorSystem.actorOf(Props(
       new Notifier(systemDao, siteDaoFactory)),
       name = s"NotifierActor-$testInstanceCounter")
-    Akka.system.scheduler.schedule(0 seconds, 20 seconds, actorRef, "SendNotfs")
+    actorSystem.scheduler.schedule(0 seconds, 20 seconds, actorRef, "SendNotfs")
     testInstanceCounter += 1
     actorRef
   }

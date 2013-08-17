@@ -24,16 +24,14 @@ import com.google.common.{base => ggb}
 import debiki.dao.SystemDao
 import java.{util => ju, lang => jl}
 import java.util.{concurrent => juc}
-import play.api.libs.concurrent.Akka
-import play.api.Play.current
 import scala.collection.{mutable => mut}
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext.Implicits.global
 import QuotaManager._
-import resource.Resource
 
 
 class QuotaManager(
+  val actorSystem: akka.actor.ActorSystem,
   val systemDao: SystemDao,
   val freeDollarsToEachNewSite: Float,
   val unitTestTicker: Option[ggb.Ticker] = None) {
@@ -76,7 +74,7 @@ class QuotaManager(
   }
 
 
-  private val CacheFlusherRef = Akka.system.actorOf(akka.actor.Props(CacheFlusher),
+  private val CacheFlusherRef = actorSystem.actorOf(akka.actor.Props(CacheFlusher),
      name = s"CacheFlusher-${jl.System.identityHashCode(this)}")
 
 
@@ -84,7 +82,7 @@ class QuotaManager(
    * Schedules removal of old cache items.
    */
   def scheduleCleanups() {
-    Akka.system.scheduler.schedule(20 seconds, 20 seconds, CacheFlusherRef,
+    actorSystem.scheduler.schedule(20 seconds, 20 seconds, CacheFlusherRef,
        "FlushOldToDb")
   }
 

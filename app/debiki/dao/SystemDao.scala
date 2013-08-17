@@ -19,10 +19,8 @@
 package debiki.dao
 
 import com.debiki.core._
+import com.debiki.core.Prelude._
 import java.{util => ju}
-import play.api.Play
-import play.api.Play.current
-import Prelude._
 
 
 /**
@@ -71,7 +69,6 @@ class SystemDao(protected val systemDbDao: SystemDbDao) {
   // ----- Testing
 
   def emptyDatabase() {
-    require(Play.isTest)
     systemDbDao.emptyDatabase()
   }
 

@@ -26,11 +26,6 @@ import com.amazonaws.services.simpleemail.model._
 import com.debiki.core._
 import debiki.dao.SiteDaoFactory
 import java.{util => ju}
-import play.api._
-import play.api.libs.iteratee._
-import play.api.libs.concurrent._
-import play.api.Play.current
-import scala.concurrent.duration._
 import Prelude._
 
 
@@ -44,8 +39,8 @@ object Mailer {
    * doesn't accidentally forget forever to send some emails.
    * (Also se Notifier.scala)
    */
-  def startNewActor(daoFactory: SiteDaoFactory): ActorRef = {
-    val actorRef = Akka.system.actorOf(
+  def startNewActor(actorSystem: ActorSystem, daoFactory: SiteDaoFactory): ActorRef = {
+    val actorRef = actorSystem.actorOf(
       Props(new Mailer(daoFactory)), name = s"MailerActor-$testInstanceCounter")
     testInstanceCounter += 1
     actorRef

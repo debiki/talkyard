@@ -24,9 +24,8 @@ import com.debiki.dao.rdb.{RdbDaoFactory, Rdb}
 import debiki.dao.{SystemDao, SiteDao, CachingSiteDaoFactory, CachingSystemDao}
 //import com.twitter.ostrich.stats.Stats
 //import com.twitter.ostrich.{admin => toa}
-import play.api._
-import play.api.mvc._
 import play.{api => p}
+import play.api.libs.concurrent.Akka
 import play.api.Play
 import play.api.Play.current
 
@@ -54,7 +53,7 @@ class Globals {
     //  ${boneDataSource.getJdbcUrl} as user ${boneDataSource.getUsername}.""")
 
     db
-  }, play.api.libs.concurrent.Akka.system)
+  }, Akka.system, Play.isTest)
 
 
   def systemDao: SystemDao = new CachingSystemDao(dbDaoFactory.systemDbDao)
@@ -65,7 +64,8 @@ class Globals {
   protected def freeDollarsToEachNewSite: Float = if (Play.isTest) 1000.0f else 1.0f
 
 
-  private val quotaManager = new QuotaManager(systemDao, freeDollarsToEachNewSite)
+  private val quotaManager =
+    new QuotaManager(Akka.system, systemDao, freeDollarsToEachNewSite)
   quotaManager.scheduleCleanups()
 
 
@@ -78,11 +78,12 @@ class Globals {
       QuotaConsumers(ip = Some(ip), tenantId = siteId, roleId = roleId))
 
 
-  private val mailerActorRef = Mailer.startNewActor(siteDaoFactory)
+  private val mailerActorRef =
+    Mailer.startNewActor(Akka.system, siteDaoFactory)
 
 
   private val notifierActorRef =
-    Notifier.startNewActor(systemDao, siteDaoFactory)
+    Notifier.startNewActor(Akka.system, systemDao, siteDaoFactory)
 
 
   def sendEmail(email: Email, websiteId: String) {
@@ -97,7 +98,7 @@ class Globals {
    */
 
 
-  def onServerStartup(app: Application) {
+  def onServerStartup(app: p.Application) {
     //Debiki.SystemDao
 
     // For now, disable in dev mode — because of the port conflict that
@@ -110,8 +111,8 @@ class Globals {
   }
 
 
-  def onServerShutdown(app: Application) {
-    Logger.info("Shutting down, gracefully...")
+  def onServerShutdown(app: p.Application) {
+    p.Logger.info("Shutting down, gracefully...")
     dbDaoFactory.shutdown()
 
     //_ostrichAdminService.shutdown()
