@@ -24,6 +24,7 @@ import com.debiki.core.Prelude._
 import com.debiki.core.{PostActionPayload => PAP}
 import java.{util => ju}
 import org.specs2.mutable._
+import org.specs2.matcher.ThrownMessages
 import scala.collection.{mutable => mut}
 import scala.util.control.Breaks._
 import DebikiSpecs._
@@ -116,7 +117,7 @@ abstract class DbDaoTckTest(builder: TestContextBuilder)
 abstract class DbDaoChildSpec(
   builder: TestContextBuilder,
   val defSchemaVersion: String)
-  extends Specification {
+  extends Specification with ThrownMessages {
 
   sequential
 
@@ -219,6 +220,9 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
   val T = Templates
 
   step {
+    // It takes so terribly long to compile this huge file, so it's interesting
+    // to know when:
+    println("***** Starting tests *****")
     setNewTestContext(
       testContextBuilder.buildTestContext(EmptyTables, defSchemaVersion))
   }
@@ -868,9 +872,24 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
       var topicOne: Page = null
       var topicTwo: Page = null
       var genericPage: Page = null
+      var forumWithHtml: Page = null
 
-      // Don't search for aardvarks right now, because they aren't found, no idea why!
-      val Aardvark = "page body"//"aardvark"
+      val Aardvark = "aardvark"
+
+      // Keep these four values in sync.
+      val HtmlText = i"""
+        |green grass
+        |<small>tiny tools</small>
+        |<img src="http://server/address">
+        |crazy cat sleeps on mat
+        |<mark>running mammoths</mark>
+        |ignore &amp;"""
+      val HtmlTagsAndAttributes = Seq(
+        "small", "img", "src", "http", "server", "address", "mark", "amp")
+      val HtmlExactPhrasesToFind = Seq(
+        "green grass", "tiny tools", "crazy cats", "mammoths", "ignore")
+      val HtmlInexactPhrasesToFind = Seq(
+        "tool", "cats", "mats", "run", "runs", "mammoth", "ignores","ignoring", "ignored")
 
       def newPage(pageRole: PageRole, ancestorPageIds: List[PageId], pageSlug: String,
             posts: PostActionDto[PAP.CreatePost]*) =
@@ -885,7 +904,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
         import scala.concurrent.duration.Duration
         import scala.concurrent.Await
         val result = Await.result(
-          dao.fullTextSearch("search test topic body", anyRootPageId),
+          dao.fullTextSearch(phrase, anyRootPageId),
           atMost = Duration(5, "sec"))
         result
       }
@@ -914,6 +933,9 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
         val genericPageBody = PostActionDto.copyCreatePost(baseBody,
           text = s"SearchTest GenericPageBody, $Aardvark")
 
+        val htmlForumBody = PostActionDto.copyCreatePost(baseBody,
+          text = HtmlText)
+
         forumGroup = dao.createPage(newPage(
           PageRole.ForumGroup, Nil, "forum-group"))
 
@@ -932,11 +954,15 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
         genericPage = dao.createPage(newPage(
           PageRole.Generic, Nil, "generic-page", genericPageBody))
 
+        forumWithHtml = dao.createPage(newPage(
+          PageRole.Forum, Nil, "forum-with-html", htmlForumBody))
+
         ok
       }
 
       "wait until everything has been indexed by the search engine" in {
         refreshFullTextSearchIndexes()
+        ok
       }
 
       "search whole site" in {
@@ -985,6 +1011,36 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
 
       "not find unpublished pages" in {
         pending
+      }
+
+      def testSearchHtml(phrases: Seq[String], shallFind: Boolean) = {
+        for (phrase <- phrases) {
+          val result = search(phrase, anyRootPageId = Some(forumWithHtml.id))
+          def die(numHits: Int, key: Int): Nothing =
+            fail(s"Got $numHits hits, should have been $key, for search phrase: ``$phrase''")
+          if (shallFind) {
+            if (result.hits.length != 1)
+              die(result.hits.length, 1)
+            result.hits(0).post.page.id must_== forumWithHtml.id
+          }
+          else {
+            if (result.hits.length != 0)
+              die(result.hits.length, 0)
+          }
+        }
+        ok
+      }
+
+      "find exactly matching words in HTML text" in {
+        testSearchHtml(HtmlExactPhrasesToFind, shallFind = true)
+      }
+
+      "find somewhat matching words in HTML text" in {
+        testSearchHtml(HtmlInexactPhrasesToFind, shallFind = true)
+      }
+
+      "not find HTML tags and attributes" in {
+        testSearchHtml(HtmlTagsAndAttributes, shallFind = false)
       }
 
       "automatically index posts that need to be indexed, in the background" in {
