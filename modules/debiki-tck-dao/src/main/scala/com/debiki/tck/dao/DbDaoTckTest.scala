@@ -1014,20 +1014,24 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
       }
 
       def testSearchHtml(phrases: Seq[String], shallFind: Boolean) = {
+        var errors = Vector[(String, Seq[PageId])]()
         for (phrase <- phrases) {
           val result = search(phrase, anyRootPageId = Some(forumWithHtml.id))
-          def die(numHits: Int, key: Int): Nothing =
-            fail(s"Got $numHits hits, should have been $key, for search phrase: ``$phrase''")
-          if (shallFind) {
-            if (result.hits.length != 1)
-              die(result.hits.length, 1)
-            result.hits(0).post.page.id must_== forumWithHtml.id
-          }
-          else {
-            if (result.hits.length != 0)
-              die(result.hits.length, 0)
-          }
+          def pageIds = result.hits.map(_.post.page.id)
+          val ok =
+            if (shallFind) result.hits.length == 1 && pageIds.head == forumWithHtml.id
+            else result.hits.length == 0
+          if (!ok)
+            errors :+= ((phrase, pageIds))
         }
+
+        if (errors.nonEmpty) {
+          val errMess = errors map { case (phrase, pageIds) =>
+            s"Found phrase ``$phrase'' on these pages: ${pageIds mkString ","}."
+          } mkString "\n"
+          fail(s"$errMess\nShould have been found on ${if (shallFind) 1 else 0} pages only.")
+        }
+
         ok
       }
 
