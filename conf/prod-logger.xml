@@ -28,6 +28,7 @@
   <logger name="application" level="INFO" />
   <logger name="app" level="INFO" />
   <logger name="app.installation.password" level="INFO" />
+  <logger name="org.elasticsearch" level="INFO" />
 
   <root level="WARN">
     <appender-ref ref="FILE_ALL"/>

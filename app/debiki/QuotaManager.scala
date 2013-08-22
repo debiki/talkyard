@@ -190,7 +190,7 @@ class QuotaManager(
     CacheFlusherRef ! CacheKeyAddition(key, timeNow)
     val state = _CachedQuotaState(mtime = timeNow, quotaStateOrig = quotaState,
        foundInDb = quotaStateInDb.nonEmpty)
-    log.debug("Loaded: "+ key +" —> "+ state)
+    log.trace("Loaded: "+ key +" —> "+ state)
     state
   }
 
@@ -212,7 +212,7 @@ class QuotaManager(
        initialDailyFreeload = cached.quotaStateOrig.quotaDailyFreeload,
        foundInDb = cached.foundInDb)
 
-    log.debug("Saving: "+ consumer +" —> "+ quotaDelta)
+    log.trace("Saving: "+ consumer +" —> "+ quotaDelta)
     _dao.useMoreQuotaUpdateLimits(Map(consumer -> quotaDelta))
   }
 
