@@ -53,10 +53,14 @@ class Globals {
     //  ${boneDataSource.getJdbcUrl} as user ${boneDataSource.getUsername}.""")
 
     db
-  }, Akka.system, Play.isTest)
+  }, Akka.system, anyFullTextSearchDbPath, Play.isTest)
 
 
   def systemDao: SystemDao = new CachingSystemDao(dbDaoFactory.systemDbDao)
+
+
+  private def anyFullTextSearchDbPath =
+    Play.configuration.getString("fullTextSearchDb.dataPath")
 
 
   private def freeDollarsToEachNewSite: Float =
