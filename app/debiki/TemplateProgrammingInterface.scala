@@ -526,7 +526,12 @@ class TemplateProgrammingInterface(
   /** Example: if this is a forum topic  in a forum  in a forum group,
     * this function would return the id of the forum group (that'd be the "root" section).
     */
-  def anyRootSectionPageId: Option[PageId] = _pageReq.ancestorIdsParentFirst_!.lastOption
+  def anyRootSectionPageId: Option[PageId] =
+    _pageReq.ancestorIdsParentFirst_!.lastOption orElse {
+      // If this page itself is a section, its id is the root section id.
+      val isSection = pageRole.childRole.isDefined
+      if (isSection) Some(pageId) else None
+    }
 
 
   def pageMeta = dao.renderPageMeta(pageReq)
