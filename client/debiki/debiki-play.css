@@ -383,12 +383,12 @@ each other. I should rewrite, and try to avoid float:left? [8DbF3]
 }
 
 .dw-as {
-  margin: 0 0 9px 28px;
+  margin: -6px 0 6px 28px;
   /* Use padding-top not margin-top here, or there'll be a tiny space between
   the post and the .dw-as, which triggers a certain $thread.mouseleave() in
   debiki.js which, for inline actions, hides the action menu — just before
   you're able to click any action. */
-  padding-top: 4px;
+  padding: 5px 0 8px;
   position: relative; /* for position: absolute 'Click this...' tips, inside */
 }
 
@@ -492,11 +492,14 @@ so set max-width and line height. */
   display: none;
 }
 
-/* Prevent collapsed posts from appearing too close to any post just below,
-by making the actions <div> at least this tall. (It's empty, currently
-if the post is collapsed or deleted.) */
 .dw-p-as {
+  /* Prevent collapsed posts from appearing too close to any post just below,
+  by making the actions <div> at least this tall. (It's empty, currently
+  if the post is collapsed or deleted.) */
   min-height: 17px;
+  /* Draw actions above arrows. */
+  z-index: 2;
+  background: white;
 }
 
 /* The `More...' link under the Reply button confuses test users.
@@ -1829,5 +1832,4 @@ img.debiki-0-inline {
 }
 
 
-/* vim: set fdm=marker et ts=2 sw=2 tw=80 fo=tcqwn list
- */
+/* vim: set fdm=marker et ts=2 sw=2 tw=80 fo=tcqwn list :*/

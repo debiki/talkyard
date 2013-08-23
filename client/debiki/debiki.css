@@ -137,6 +137,16 @@ and two folded threads would overlap, unless: */
   margin: 8px 0 0 5px;
 }
 
+.dw-t.dw-t-exactly-one-reply {
+  /* This makes it clear where all replies to a certain comment has ended. */
+  margin-bottom: 20px;
+}
+
+.dw-t-exactly-one-reply > .dw-p-as {
+  /* This places threads closer to each other, when using flat layout. */
+  margin-bottom: -7px;
+}
+
 .dw-depth-0.dw-t {
   /* Without this, SVG arrows are cropped a bit to the right. Why? [8DbF3] */
   float: left;
@@ -425,12 +435,12 @@ JavaScript. Then I can still place all CSS stuff in this file. */
 .dw-arw-vt-line-to-sibling-2 {
   height: 100%;
   width: 3px;
-  left: -37px;
+  left: -12px;
 }
 
 .dw-arw-vt-line-to-sibling-1 {
-  top: -60px;
-  height: 60px;
+  top: -34px;
+  height: 34px;
 }
 
 .dw-arw-hz-line-to-this,
@@ -452,17 +462,17 @@ JavaScript. Then I can still place all CSS stuff in this file. */
 /*.dw-svg-fake-vcurve-short { */
 .dw-arw-vt-curve-to-this {
   background-color: transparent;
-  background: url(img/arrows-etcetera-gray.png) no-repeat 0 -225px;
+  background: url(img/arrows-etcetera-gray.png) no-repeat 0 -250px;
   position: absolute;
-  top: -60px;
-  left: -44px;
-  height: 59px;
+  top: -30px;
+  left: -25px;
+  height: 43px;
   width: 39px;
 }
 
 /* The last reply isn't indented. */
 .dw-res > li:last-child > .dw-arw-vt-curve-to-this {
-  left: 3px;
+  left: 28px;
   top: -50px;
   width: 18px;
   background: url(img/arrows-etcetera-gray.png) no-repeat -57px -79px;
@@ -487,7 +497,7 @@ JavaScript. Then I can still place all CSS stuff in this file. */
   /* Hide parts of the end of the horizontal or vertical line that spans
   all child threads, by placing this arrow's background on top.
   (The rest of the line is hiddenb by .dw-arw-vt-hide-line-from-parent
-  and certain .dw-svg-fake-harrow:s.) */
+  and certain .dw-svg-fake-harrow:s.) Ooops it's been removed! rewrote. */
   z-index: 2;
 }
 

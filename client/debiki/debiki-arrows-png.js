@@ -89,6 +89,14 @@ function drawHzArrowsToReplies($thread) {
 function clearAndRedrawArrowsVertically($thread) {
   var $childThreads = $thread.find('> .dw-res > .dw-t');
 
+  $thread.removeClass('dw-t-exactly-one-reply');
+  if ($childThreads.length === 1) {
+    // We're inside a thread that does't branch. It's rendered
+    // as a flat thread, without any arrows, so add a CSS class
+    // that reduces the space between replies.
+    $thread.addClass('dw-t-exactly-one-reply');
+  }
+
   // Single replies are placed directly below their parent,
   // as if using a flat layout (rather than a threaded layout).
   // Then, need draw no arrows; people are used to flat layouts.
