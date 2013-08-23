@@ -175,7 +175,7 @@ and two folded threads would overlap, unless: */
 
 .dw-hor > .dw-res > li {
   display: table-cell;
-  padding: 19px 0 10px 45px;
+  padding: 19px 0 10px 28px;
   vertical-align: top; /* or Reply form pushes other <li>s down
                         which offsets PNG arrows incorrectly */
 }
@@ -185,7 +185,7 @@ and two folded threads would overlap, unless: */
 }
 
 .dw-hor > .dw-res > li > .dw-t {
-  padding: 0 27px 0 0;
+  padding: 0 48px 0 0;
   margin: 0;
 }
 
