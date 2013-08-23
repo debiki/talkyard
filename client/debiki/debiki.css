@@ -108,8 +108,9 @@ and two folded threads would overlap, unless: */
 /* This verbose code works also in IE 7: */
 .dw-zd.dw-t > * { display: none; }
 .dw-zd.dw-t > .dw-z,
-.dw-zd.dw-t > .dw-arw { display: block; } /* show arrows pointing *to* thread */
-.dw-zd.dw-t > .dw-svg-fake-varrow { display: none; }
+/* Still show arrows to folded thread and siblings. */
+.dw-zd.dw-t > .dw-arw { display: block; }
+
 
 
 /* --- Folded replies --- */
@@ -409,33 +410,47 @@ JavaScript. Then I can still place all CSS stuff in this file. */
 
 /* --- PNG arrows --- */
 
-.dw-svg-fake-varrow,
-.dw-svg-fake-harrow {
+.dw-arw-hz-line-to-this,
+.dw-arw-hz-line-to-sibling,
+.dw-arw-vt-line-to-sibling-1,
+.dw-arw-vt-line-to-sibling-2 {
+/* .dw-svg-fake-varrow,
+.dw-svg-fake-harrow { */
   background-color: #ddd;
   position: absolute;
   z-index: 1;
 }
 
-.dw-svg-fake-harrow {
-  height: 3px;
-  width: 100%;
-  top: 44px;
-}
-
-.dw-t > .dw-svg-fake-harrow {
-  top: -62px;
-  background-color: white;
-  display: block;
-  height: 10px;
-}
-
-.dw-svg-fake-varrow {
+.dw-arw-vt-line-to-sibling-1,
+.dw-arw-vt-line-to-sibling-2 {
   height: 100%;
   width: 3px;
-  left: 3px;
+  left: -37px;
 }
 
-.dw-svg-fake-vcurve-short {
+.dw-arw-vt-line-to-sibling-1 {
+  top: -60px;
+  height: 60px;
+}
+
+.dw-arw-hz-line-to-this,
+.dw-arw-hz-line-to-sibling {
+  top: -58px;
+  height: 3px;
+}
+
+.dw-arw-hz-line-to-this {
+  left: -50px;
+  width: 50px;
+}
+
+.dw-arw-hz-line-to-sibling {
+  left: 0;
+  width: 100%;
+}
+
+/*.dw-svg-fake-vcurve-short { */
+.dw-arw-vt-curve-to-this {
   background-color: transparent;
   background: url(img/arrows-etcetera-gray.png) no-repeat 0 -225px;
   position: absolute;
@@ -446,7 +461,7 @@ JavaScript. Then I can still place all CSS stuff in this file. */
 }
 
 /* The last reply isn't indented. */
-.dw-res > li:last-child > .dw-svg-fake-vcurve-short {
+.dw-res > li:last-child > .dw-arw-vt-curve-to-this {
   left: 3px;
   top: -50px;
   width: 18px;
@@ -455,7 +470,7 @@ JavaScript. Then I can still place all CSS stuff in this file. */
 
 /* Tweak offset for arrows to collapsed replies (there's no .dw-t
  that "adjusts" the offset) */
-.dw-res.dw-zd .dw-svg-fake-vcurve-short {
+.dw-res.dw-zd .dw-arw-vt-curve-to-this {
   left: -39px;
   top: -50px;
   z-index: 2; /* hide vertical arrow — there're no more replies below;
@@ -467,27 +482,27 @@ JavaScript. Then I can still place all CSS stuff in this file. */
 }
 
 
-.dw-hor > .dw-res > li:last-child > .dw-t > .dw-svg-fake-hcurve,
-.dw-res > .dw-t:last-child > .dw-svg-fake-vcurve-short {
+.dw-hor > .dw-res > li:last-child > .dw-t > .dw-arw-hz-curve-to-this,
+.dw-res > .dw-t:last-child > .dw-arw-vt-curve-to-this {
   /* Hide parts of the end of the horizontal or vertical line that spans
   all child threads, by placing this arrow's background on top.
-  (The rest of the line is hiddenb by .dw-svg-fake-varrow-hider-left
+  (The rest of the line is hiddenb by .dw-arw-vt-hide-line-from-parent
   and certain .dw-svg-fake-harrow:s.) */
   z-index: 2;
 }
 
-.dw-svg-fake-hcurve,
-.dw-svg-fake-hcurve-start {
+.dw-arw-hz-curve-to-this,
+.dw-arw-hz-branch-to-reply-btn {
   background: transparent url(img/arrows-etcetera-gray.png) no-repeat 0 0;
   position: absolute;
   top: -60px;
-  left: -24px;
+  left: -30px;
   height: 34px;
   width: 61px;
 }
 
-.dw-svg-fake-hcurve-start,
-.dw-svg-fake-hcurve-start-solo {
+.dw-arw-hz-branch-to-reply-btn,
+.dw-arw-hz-curve-to-reply-btn {
   background: url(img/arrows-etcetera-gray.png) no-repeat 0 -79px;
   position: absolute;
   top: 7px;
@@ -497,35 +512,10 @@ JavaScript. Then I can still place all CSS stuff in this file. */
   z-index: 2;
 }
 
-.dw-svg-fake-hcurve-start-solo {
+.dw-arw-hz-curve-to-reply-btn {
   background: url(img/arrows-etcetera-gray.png) no-repeat 0 -152px;
   height: 72px;
   width: 38px;
-}
-
-/*
-.dw-svg-fake-arrow-hider {
-  z-index: 2; /* hides the varrow or harrow */
-
-
-.dw-svg-fake-varrow-hider-hi,
-.dw-svg-fake-varrow-hider-left {
-  background-color: white;
-  position: absolute;
-  height: 35px;
-  width: 15px; /* the curve images are fairly wide */
-  z-index: 2;
-}
-
-.dw-svg-fake-varrow-hider-left {
-  bottom: 0px;
-  height: 100%;
-  left: -45px;
-}
-
-/* The last reply isn't indented. */
-.dw-res > li:last-child > .dw-svg-fake-varrow-hider-left {
-  left: -5px;
 }
 
 

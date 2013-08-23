@@ -92,7 +92,9 @@ function $initStep2() {
 function $initStep3() {
   // $initPostSvg takes rather long (190 ms on my 6 core 2.8 GHz AMD, for
   // 100 posts), and  need not be done until just before SVG is drawn.
-  d.i.SVG.$initPostSvg.apply(this);
+
+  //d.i.SVG.$initPostSvg.apply(this);
+  d.i.SVG.$clearAndRedrawArrows.apply(this);
 };
 
 
@@ -294,7 +296,10 @@ function renderPageEtc() {
   // arrows might be offset incorrectly.
   // Actually, drawing SVG takes long, so wait for a while,
   // don't do it on page load.
-  steps.push(d.i.SVG.initRootDrawArrows);
+  //steps.push(d.i.SVG.initRootDrawArrows);
+  /*steps.push(function() {
+    $posts.each(d.i.SVG.$clearAndRedrawArrows);
+  }); */
 
   steps.push(d.i.scrollToUrlAnchorPost);
 

@@ -15,169 +15,172 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+/**
+ * This file contains an arrow drawer that is used if there's no SVG support.
+ * Well, currently it's always used, actually, because it was too
+ * tedious to keep the SVG arrows version up-to-date, and performance
+ * is much better with this border & PNG arrows drawer.
+ *
+ * (There's a certain SVG Web library, with a Flash renderer
+ * but it seems far too slow when resizing the Flash screen to e.g.
+ * 2000x2000 pixels. And scrolldrag stops working (no idea why). Seems easier
+ * to add these images of arrows instead.)
+ */
+
+
+var d = { i: debiki.internal, u: debiki.v0.util };
+var $ = d.i.$;
+
+
+function $clearAndRedrawArrows() {
+  var $thread = $(this).closest('.dw-t');
+  if ($thread.is('.dw-hor.dw-depth-0')) {
+    clearAndRedrawArrowsHorizontally($thread);
+  }
+  else {
+    clearAndRedrawArrowsVertically($thread);
+  }
+};
+
+
+function clearAndRedrawArrowsHorizontally($thread) {
+  $thread.find('> .dw-t-vspace > .dw-arw-hz').remove();
+  $thread.find('> .dw-res > li > .dw-arw-hz').remove();
+  drawHzArrowToReplyButton($thread);
+  drawHzArrowsToReplies($thread);
+};
+
+
+function drawHzArrowToReplyButton($thread) {
+  var arrowHtml;
+  var numChildren = $thread.find('> .dw-res > li').length;
+  if (numChildren == 1) {
+    // Use solo arrow.
+    arrowHtml = '<div class="dw-arw-hz dw-arw-hz-curve-to-reply-btn"></div>';
+  }
+  else {
+    // Use branching arrow (it branches out to the replies).
+    arrowHtml = '<div class="dw-arw-hz dw-arw-hz-branch-to-reply-btn"></div>';
+  }
+  $thread.find('> .dw-t-vspace').prepend(arrowHtml);
+};
+
+
+function drawHzArrowsToReplies($thread) {
+  var $childThreads = $thread.find('.dw-res > li > .dw-t');
+  $childThreads.each(function() {
+    $childThread = $(this);
+
+    // Draw arrow to child thread.
+    $childThread.prepend(
+      '<div class="dw-arw dw-arw-hz-line-to-this"></div>' +
+      '<div class="dw-arw dw-arw-hz-curve-to-this"></div>');
+
+    // Draw line above child thread, to next thread.
+    var $listItem = $childThread.parent();
+    if (!$listItem.is(':last-child')) {
+      $childThread.prepend(
+        '<div class="dw-arw dw-arw-hz-line-to-sibling"></div>');
+    }
+  });
+};
+
+
+function clearAndRedrawArrowsVertically($thread) {
+  var $childThreads = $thread.find('> .dw-res > .dw-t');
+
+  // Single replies are placed directly below their parent,
+  // as if using a flat layout (rather than a threaded layout).
+  // Then, need draw no arrows; people are used to flat layouts.
+  //
+  // This is how it looks:
+  //
+  //
+  // Explanation                                 Illustration
+  // -----------                                 ------------
+  //
+  // A parent comment with only one reply,       +-----—-———————----+
+  // "child comment".                            |parent comment    |
+  //                                             |text…             |
+  //                                             +------------------+
+  //
+  // The child comment. I hope no arrow          +-----—------------+
+  // is needed here, because it should be        |the only child    |
+  // obvious that the child replies to the       |comment text…     |
+  // parent comment.                             +------------------+
+
+  if ($childThreads.length <= 1)
+    return;
+
+  // Let me explain how I draw arrows to each $childThread:
+  //
+  //
+  // Explanation                                 Illustration
+  // -----------                                 ------------
+  //
+  // A parent comment with 3 replies.            +-----—-———————----+
+  //                                             |parent comment    |
+  //                                             |text…             |
+  //                                         __  +------------------+
+  // This part >--------->---------->-------/    |
+  // is "dw-arw-vt-line-to-sibling-1"       \    |
+  //                                         \_  |
+  // This line >----------->------->----->   /   |`-> +-----—-------+
+  // is "dw-arw-vt-curve-to-this"           /    |    |child comment|
+  //                                       /     |    |text…        |
+  // This part >---------->-------->------/----  |    +-------------+
+  // is "dw-arw-vt-line-to-sibling-2"       /    |
+  //                                       /     |
+  // And here is >---------->-------->----/----  |`-> +-----------—-+
+  // is "dw-arw-vt-line-to-sibling-1",           |    |child comment|
+  // again.                                      |    |text…        |
+  //                                             |    +-------------+
+  //                                             \
+  // This very last line to the :last-child -->   v
+  // is "dw-arw-vt-curve-to-this", again.        +-----—------------+
+  //                                             |:last-child       |
+  //                                             |comment text…     |
+  //                                             +------------------+
+
+  $childThreads.each(function() {
+    $childThread = $(this);
+
+    //                             \
+    // Draw the `-> part:  (or the  v  part, it's the same image)
+    $childThread.prepend(
+      '<div class="dw-arw dw-arw-vt-curve-to-this"></div>');
+
+    //          |
+    // Draw the | parts:
+    var isLastChild = $childThread.is(':last-child');
+    if (!isLastChild) {
+      $childThread.prepend(
+        '<div class="dw-arw dw-arw-vt-line-to-sibling-1"></div>' +
+        '<div class="dw-arw dw-arw-vt-line-to-sibling-2"></div>');
+    }
+  });
+};
+
+
+function $highlightOn() {
+  // COULD replace arrow image with a highlighted version
+};
+
+
+function $highlightOff() {
+  // COULD replace arrow image with a highlighted version
+};
+
 
 debiki.internal.makeFakeDrawer = function($) {
-  // No SVG support. There's a certain SVG Web library, with a Flash renderer
-  // but it seems far too slow when resizing the Flash screen to e.g.
-  // 2000x2000 pixels. And scrolldrag stops working (no idea why). Seems easier
-  // to add these images of arrows instead.
-
-  function initialize() {
-    $drawTree.call($('.dw-t.dw-depth-0'));
-  };
-
-  function $drawTree() {
-
-    var $startThread = $(this);
-
-    // Vertical layout
-    // ---------------
-
-    // Find threads with child threads and threads with replies collapsed,
-    // and draw vertical lines towards those children / collapsed replies.
-    var $meIfVerticalParent = $startThread.filter(':not(.dw-depth-0)');
-    $startThread.find('.dw-t').add($meIfVerticalParent)
-        .has('.dw-t, .dw-res.dw-zd').each(function() {
-      $(this).prepend("<div class='dw-arw dw-svg-fake-varrow'/>");
-      $(this).prepend("<div class='dw-arw dw-svg-fake-varrow-hider-hi'/>");
-    });
-
-    //        \
-    // Draw a  `->  arrow to child threads and collapsed replies.
-
-    // Find child threads laid out vertically: depth > 1. (COULD use .dw-hor
-    // instead?)
-    var $childSearchStart =
-      $startThread.closest('.dw-depth-1').length ?
-        $startThread : $startThread.find('.dw-depth-1');
-
-    var $childThreads = $childSearchStart.find('.dw-t:not(.dw-i-t)');
-    var $collapsedReplies = $childSearchStart.find('.dw-res.dw-zd > li');
-
-    // Include $startThread, unless it's laid out horizontally (depth <= 1)
-    var $meIfVerticalChild = $startThread.filter(
-        ':not(.dw-depth-0, .dw-depth-1, .dw-i-t)');
-    $childThreads = $childThreads.add($meIfVerticalChild);
-
-
-    $childThreads.add($collapsedReplies).each(function() {
-      $(this).prepend('<div class="dw-arw dw-svg-fake-vcurve-short"/>');
-    });
-
-    // For each last child, then just below the `-> we just added,
-    // the vertical line from which `-> originates continues downwards.
-    // If, however, there are no further replies below, then hide it.
-    $childThreads.filter(':last-child').each(function() {
-      var $thread = $(this);
-      if (!$thread.find('.dw-res > li').length)
-        $thread.prepend("<div class='dw-arw dw-svg-fake-varrow-hider-left'/>");
-    });
-
-    // BUG: If adding new reply, and it's the parent's first reply, the parent
-    // thread currently has no vertical line pointing downwards to the replies.
-    // COULD add such a line. (Currently only the \   line to the reply
-    // is added, above.)                           `->
-
-    // BUG: If adding new reply, and it's *not* the parent's first reply,
-    // another earlier reply is the last one, and it has a 
-    // dw-svg-fake-varrow-hider-left, which hides part of the vertical line
-    // to this new reply.
-
-    // COULD fix: Inline threads:  .dw-t:not(.dw-hor) > .dw-i-ts > .dw-i-t
-    // COULD fix: First one: .dw-t:not(.dw-hor) > .dw-i-ts > .dw-i-t:first-child
-    // COULD fix: Root post's inline threads:  .dw-t.dw-hor > .dw-i-ts > .dw-i-t
-  }
-
-  // Horizontal layout
-  // -----------------
-
-  // Points on the Reply button, and continues eastwards, spans all replies.
-  var replyBtnBranchingArrow =
-      '<div class="dw-arw dw-svg-fake-hcurve-start"/>' + // branches out
-      '<div class="dw-arw dw-svg-fake-harrow"></div>';  // extends branch
-
-  var horizListItemEndArrow =
-      '<div class="dw-arw dw-svg-fake-hcurve"/>';
-
-  // Draw arrows to reply button and child threads, and remove any
-  // previous-sibling or parent-thread vertical-arrow-hider.
-  function $initPostSvg() {
-    var $post = $(this).filter('.dw-p').dwBugIfEmpty('DwE2KR3');
-    var $thread = $post.closest('.dw-t');
-    var $parentThread = $thread.parent().closest('.dw-t');
-
-    // If this is a newly added thread:
-    // If any previous-sibling or parent-thread had no children or
-    // siblings below, then it has a hide-horizontal-arrow tag.
-    // Remove it, so the horizontal arrow to this post is shown.
-    var $prevSibling = $thread.prev();
-    $prevSibling.add($parentThread).children(
-        '.dw-svg-fake-varrow-hider-left').remove();
-    if ($parentThread.filter(':not(.dw-hor)').length &&
-        !$parentThread.children('.dw-svg-fake-varrow').length) {
-      $parentThread.prepend("<div class='dw-arw dw-svg-fake-varrow'/>");
-    }
-
-    // Draw arrow to reply button, i this is a horizontally laid out thread
-    // (with an always visible Reply button).
-    if ($thread.is('.dw-hor')) {
-      var childCount = $thread.find('.dw-res > li').length;
-      var arrowsHtml = childCount === 1 ?
-          '<div class="dw-arw dw-svg-fake-hcurve-start-solo"/>' :
-          replyBtnBranchingArrow;
-      $thread.children('.dw-t-vspace').append(arrowsHtml);
-    }
-
-    // Draw arrow to this thread from any horizontally laid out parent thread.
-    if ($parentThread.is('.dw-hor')) {
-      // There's a horizontal line above that spans this thread and all
-      // siblings; make the line branch out to this thread.
-      $thread.prepend(horizListItemEndArrow);
-
-      // If this is the last child thread, hide the tail of the horizontal
-      // line (since there's nothing more to the right).
-      var $listItem = $thread.parent().dwCheckIs('li', 'DwE90dk2');
-      if ($listItem.is(':last-child')) {
-        // CSS makes these <div>s actually hide the line.
-        $thread.prepend('<div class="dw-svg-fake-harrow"></div>');
-      }
-    } else {
-      // vertical arrow, already handled above.
-      // COULD fix: Not handled above, for *new* threads, no arrows to them :(
-      // BUG arrows should be drawn here, for replies to inline threads.
-    }
-  }
-
-  // COULD rename to $animateParentsAndTree? Need do nothing.
-  function $drawParentsAndTree() {
-  }
-
-  function $drawParents() {
-    // Need do nothing, because the browser resize horizontal/vertical
-    // "arrows" automatically (they are colored borders actually).
-  }
-
-  function $drawPost() {
-    // COULD fix: If any SVG native support: draw arrows to inline threads?
-    // Or implement via fake .png arrows?
-    // COULD draw arrows to new vertical replies
-  }
-
-  function $highlightOn() {
-    // COULD replace arrow image with a highlighted version
-  }
-
-  function $highlightOff() {
-    // COULD replace arrow image with a highlighted version
-  }
-
   return {
-    initRootDrawArrows: initialize,
-    $initPostSvg: $initPostSvg,
-    $drawPost: $drawPost,
-    $drawTree: $drawTree,
-    $drawParents: $drawParents,
-    $drawParentsAndTree: $drawParentsAndTree,
+    $clearAndRedrawArrows: $clearAndRedrawArrows,
+    initRootDrawArrows: function() {},
+    $initPostSvg: function() {},
+    $drawPost: function() {},
+    $drawTree: function() {},
+    $drawParents: function() {},
+    $drawParentsAndTree: function() {},
     drawEverything: function() {},
     $highlightOn: $highlightOn,
     $highlightOff: $highlightOff
