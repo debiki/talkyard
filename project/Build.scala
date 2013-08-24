@@ -82,7 +82,14 @@ object ApplicationBuild extends Build {
     "org.yaml" % "snakeyaml" % "1.11",
     "org.mockito" % "mockito-all" % "1.9.0" % "test", // I use Mockito with Specs2...
     "org.scalatest" % "scalatest_2.10" % "2.0.RC1-SNAP4" % "test", // but prefer ScalaTest
-    "org.scala-lang" % "scala-actors" % "2.10.1" % "test" // needed by ScalaTest
+    "org.scala-lang" % "scala-actors" % "2.10.1" % "test", // needed by ScalaTest
+    // Use a recent Selenium driver, otherwise it won't work with the version of Firefox,
+    // that your OS has probably upgraded to some days/months ago.
+    // See: http://stackoverflow.com/a/13049150/694469
+    // And see: https://groups.google.com/d/msg/play-framework/EmP9v10fH9Q/dz4k_qXlpFQJ
+    // (I also got the """org.openqa.selenium.firefox.NotConnectedException: Unable
+    // to connect to host 127.0.0.1 on port 7055 """ error.)
+    "org.seleniumhq.selenium" % "selenium-java" % "2.35.0"
   )
 
 
