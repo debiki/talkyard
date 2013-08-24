@@ -17,25 +17,58 @@
 
 package test.e2e.code
 
+import com.debiki.core.Prelude._
 import org.scalatest._
 import play.api.{test => pt}
 import play.api.test.Helpers.testServerPort
+import play.{api => p}
+import play.api.Play
 
 
 /** Starts a Debiki server and a certain Google Chrome Driver Service
   * and empties the database.
+  *
+  * What about using a FireFox driver if no path to the chrome driver has been
+  * specified? And an IE driver if both Chrome and FF absent?
   */
 trait StartServerAndChromeDriverFactory extends BeforeAndAfterAll {
   self: Suite =>
+
+  val DriverConfigValueName = "test.chromeDriverPath"
 
   lazy val testServer = pt.TestServer(testServerPort, pt.FakeApplication())
 
   protected def emptyDatabaseBeforeAll = true
 
 
+  private def getChromeDriverPath(app: p.Application): String =
+    Play.configuration(app).getString(DriverConfigValueName) getOrElse sys.error(i"""
+      |Path to Chrome Driver not configured.
+      |***********************************************************************
+      |Please download ChromeDriver from here:
+      |  https://code.google.com/p/chromedriver/downloads/list
+      |and unzip the binary and place it somewhere.
+      |
+      |Then update conf/local/dev-test.conf, add this line:
+      |$DriverConfigValueName: <path-to-the-chrome-driver-you-just-unzipped>
+      |
+      |Read more about what the Chrome Driver is and why you need it here:
+      |  https://code.google.com/p/selenium/wiki/ChromeDriver
+      |(You need it to run End-to-End tests in Chrome: the driver talks to
+      |Chrome and tells Chrome what to do next.)
+      |
+      |*Tips*: You probably need to restart SBT/Play, or there'll be some
+      |ElasticSearch port-already-in-use error, because the test suite died
+      |abruptly whilst the server was already running, and then the server
+      |never got time to close ElasticSearch and release the HTTP port.
+      |***********************************************************************
+      |""")
+
+
   override def beforeAll() {
-    ChromeDriverFactory.start()
     testServer.start()
+    val chromeDriverPath = getChromeDriverPath(testServer.application)
+    ChromeDriverFactory.start(chromeDriverPath)
     if (emptyDatabaseBeforeAll)
       debiki.Globals.systemDao.emptyDatabase()
   }

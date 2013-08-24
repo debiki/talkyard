@@ -17,6 +17,7 @@
 
 package test.e2e.code
 
+import com.debiki.core.Prelude._
 import java.{io => jio}
 import org.openqa.selenium.chrome.ChromeDriverService
 import org.openqa.selenium.remote.DesiredCapabilities
@@ -24,41 +25,36 @@ import org.openqa.selenium.remote.RemoteWebDriver
 import org.openqa.selenium.WebDriver
 
 
-/**
- * Starts the Chrome browser, that is, knows where the ChromeDriver
- * is located, starts it and creates a WebDriver.
- */
+/** The Chrome Driver Service builds Chrome Drivers, which controls the Chrome browser.
+  * A certain binary executable file is needed for this to work, namely a program
+  * that talks with Chrome browsers.
+  * For more information, see http://code.google.com/p/selenium/wiki/ChromeDriver.
+  * Download the the driver here: http://code.google.com/p/chromedriver/downloads/list
+  */
 object ChromeDriverFactory {
 
-  // This driver executable controls the Chrome browser.
-  // For more information, see http://code.google.com/p/selenium/wiki/ChromeDriver.
-  // Download the the driver here: http://code.google.com/p/chromedriver/downloads/list
-  // For now:
-  private val ChromeDriverPath = "/mnt/tmp/dev/chromedriver_linux64_23.0.1240.0"
-  // COULD assume it's located in ./tmp/? And have the caller use a Firefox driver
-  // if not available, and an IE driver if both Chrome and FF absent?
+  private var anyService: Option[ChromeDriverService] = None
 
-  private lazy val service: ChromeDriverService = {
-    val service = new ChromeDriverService.Builder()
-      .usingDriverExecutable(new jio.File(ChromeDriverPath))
+
+  def start(chromeDriverPath: String) {
+    require(anyService.isEmpty, s"${classNameOf(this)} already started")
+    anyService = Some(new ChromeDriverService.Builder()
+      .usingDriverExecutable(new jio.File(chromeDriverPath))
       .usingAnyFreePort()
-      .build()
-    service
+      .build())
+    anyService foreach { _.start() }
   }
 
-  def start() {
-    service.start()
-  }
 
   def stop() {
-    service.stop()
+    anyService foreach { _.stop() }
   }
 
-  def createDriver(): WebDriver = new RemoteWebDriver(
-    service.getUrl(), DesiredCapabilities.chrome())
 
-  // Where call `driver.quit()`? @After in Google's example:
-  //   http://code.google.com/p/selenium/wiki/ChromeDriver
+  def createDriver(): WebDriver = {
+    val service = anyService getOrElse sys.error(s"${classNameOf(this)} has not been started")
+    new RemoteWebDriver(service.getUrl(), DesiredCapabilities.chrome())
+  }
 
 }
 
