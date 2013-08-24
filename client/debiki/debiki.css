@@ -70,18 +70,24 @@
 
 /* Show a collapse-thread symbol in (before) the .dw-z <div>. */
 
-.dw-z:before {
+/* For now, only show collapse "button" for whole columns,
+because they're so ugly, and don't work on mobile anyway. I'll
+have to figure something else out later.
+ — No, skip them completely for now, since I've not implemented folding
+of columns anyway. */
+/*
+.dw-t.dw-depth-1 > .dw-z:before {
   /* ↕ is "Up down arrow", 8597,
   There's also: ↥ "Upwards arrow from bar",
   http://shapecatcher.com/unicode/info/8613, but that's the wrong
-  direction (sometimes) */
+  direction (sometimes) * /
   content: "↕";
   background: white;
-  /* Align with uncollapsed replies: 16 + 8 = 24, looks ok */
+  /* Align with uncollapsed replies: 16 + 8 = 24, looks ok * /
   display: inline-block;
   width: 16px;
   margin-right: 8px;
-}
+}*/
 
 .dw-p .dw-z:before {
   /* Show no collapse-thread symbol inside *posts* however. */
@@ -102,6 +108,8 @@
 and two folded threads would overlap, unless: */
 .dw-zd.dw-t > .dw-z {
   position: relative !important; /* cancel position: absolute */
+  margin-bottom: 30px;
+  margin-left: 25px;
 }
 
 /* For a folded thread, only the open link (.dw-z) is visible. */
