@@ -34,7 +34,7 @@ import play.api.Play
 trait StartServerAndChromeDriverFactory extends BeforeAndAfterAll {
   self: Suite =>
 
-  val DriverConfigValueName = "test.chromeDriverPath"
+  val DriverConfigValueName = "test.e2e.chrome.driverPath"
 
   lazy val testServer = pt.TestServer(testServerPort, pt.FakeApplication())
 
