@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package test.e2e
+package test.e2e.code
 
 import com.debiki.core.ActionId
 import com.debiki.core.Prelude._

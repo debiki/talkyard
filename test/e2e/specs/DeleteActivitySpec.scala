@@ -15,19 +15,20 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package test.e2e
+package test.e2e.specs
 
 import com.debiki.core.Prelude._
 import com.debiki.core.PageParts
 import com.debiki.core.PageRole
 import org.scalatest.DoNotDiscover
+import test.e2e.code._
 
 
 /** Runs the DeleteActivitySpec suite, in SBT:  test-only test.e2e.DeleteActivitySpecRunner
   */
 @DoNotDiscover
 class DeleteActivitySpecRunner extends org.scalatest.Suites(DeleteActivitySpec)
-with ChromeSuiteMixin
+with StartServerAndChromeDriverFactory
 
 
 /** Tests that comments can be deleted.

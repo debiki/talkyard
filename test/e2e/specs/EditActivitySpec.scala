@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package test.e2e
+package test.e2e.specs
 
 import com.debiki.core.ActionId
 import com.debiki.core.Prelude._
@@ -25,13 +25,14 @@ import org.openqa.selenium.interactions.Actions
 import org.scalatest.time.{Span, Seconds}
 import org.scalatest.DoNotDiscover
 import org.openqa.selenium.By
+import test.e2e.code._
 
 
 /** Runs the EditActivitySpec suite, in SBT:  test-only test.e2e.EditActivitySpecRunner
   */
 @DoNotDiscover
 class EditActivitySpecRunner extends org.scalatest.Suites(EditActivitySpec)
-with ChromeSuiteMixin
+with StartServerAndChromeDriverFactory
 
 
 /** Tests edit suggestions, applications and approvals, and that the

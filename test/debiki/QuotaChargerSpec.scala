@@ -26,7 +26,7 @@ import org.scalatest.matchers.MustMatchers
 import play.api.{test => pt}
 import pt.Helpers.testServerPort
 import scala.reflect.{ClassTag, classTag}
-import test.e2e.StuffCreator
+import test.e2e.code.StuffCreator
 import Prelude._
 
 

@@ -15,12 +15,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package test.e2e
+package test.e2e.specs
 
 import com.debiki.core.{PageParts, PageRole}
 import com.debiki.core.Prelude._
 import java.{lang => jl}
 import org.scalatest.DoNotDiscover
+import test.e2e.code._
 
 
 /**
@@ -32,7 +33,7 @@ import org.scalatest.DoNotDiscover
  */
 @DoNotDiscover
 class StyleSiteSpecRunner extends org.scalatest.Suites(StyleSiteSpecSpec)
-  with ChromeSuiteMixin
+  with StartServerAndChromeDriverFactory
 
 
 /**

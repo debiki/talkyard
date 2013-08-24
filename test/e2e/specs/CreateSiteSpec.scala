@@ -15,11 +15,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package test.e2e
+package test.e2e.specs
 
 import com.debiki.core.Prelude._
 import org.scalatest.time.{Span, Seconds}
 import org.scalatest.DoNotDiscover
+import test.e2e.code._
 
 
 /**
@@ -31,7 +32,7 @@ import org.scalatest.DoNotDiscover
  */
 @DoNotDiscover
 class CreateSiteSpecRunner extends org.scalatest.Suites(CreateSiteSpec)
-  with ChromeSuiteMixin
+  with StartServerAndChromeDriverFactory
 
 
 /**

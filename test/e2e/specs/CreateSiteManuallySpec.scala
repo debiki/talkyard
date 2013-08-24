@@ -15,11 +15,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package test.e2e
+package test.e2e.specs
 
 import com.debiki.core.Prelude._
 import org.scalatest.DoNotDiscover
 import org.scalatest.Suites
+import test.e2e.code._
 
 
 /**
@@ -31,7 +32,7 @@ import org.scalatest.Suites
  */
 @DoNotDiscover
 class CreateSiteManuallySpecRunner extends Suites(new CreateSiteManuallySpec)
-  with ChromeSuiteMixin
+  with StartServerAndChromeDriverFactory
 
 
 /** Opens the site creation page, and waits for you to test stuff manually,
@@ -63,7 +64,7 @@ class CreateSiteManuallySpec extends DebikiBrowserSpec with TestSiteCreator {
  */
 @DoNotDiscover
 class BuildSiteManuallySpecRunner extends Suites(new BuildSiteManuallySpec)
-with ChromeSuiteMixin
+with StartServerAndChromeDriverFactory
 
 
 /**
@@ -103,7 +104,7 @@ class BuildSiteManuallySpec extends DebikiBrowserSpec with TestSiteCreator {
  */
 @DoNotDiscover
 class ContinueManualTestsRunner extends Suites(new ContinueManualTests)
-    with ChromeSuiteMixin {
+    with StartServerAndChromeDriverFactory {
   override val emptyDatabaseBeforeAll = false
 }
 

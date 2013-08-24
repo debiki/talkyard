@@ -15,25 +15,36 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package test.e2e
+package test.e2e.code
 
 import org.scalatest._
-import test.e2e.code.StartServerAndChromeDriverFactory
-import test.e2e.specs._
+import play.api.{test => pt}
+import play.api.test.Helpers.testServerPort
 
 
-/**
- * Runs all end to end tests. Empties the database and restarts the browser
- * once before all tests are run. (Each test usually creates a new
- * site, so there's no need to empty the database inbetween each test.)
- */
-@test.tags.EndToEndTest
-class EndToEndSuite extends Suites(
-  CreateSiteSpec,
-  DeleteActivitySpec,
-  AdminDashboardSpec,
-  AnonLoginSpec,
-  ForumSpec,
-  StyleSiteSpecSpec)
-  with StartServerAndChromeDriverFactory
+/** Starts a Debiki server and a certain Google Chrome Driver Service
+  * and empties the database.
+  */
+trait StartServerAndChromeDriverFactory extends BeforeAndAfterAll {
+  self: Suite =>
+
+  lazy val testServer = pt.TestServer(testServerPort, pt.FakeApplication())
+
+  protected def emptyDatabaseBeforeAll = true
+
+
+  override def beforeAll() {
+    ChromeDriverFactory.start()
+    testServer.start()
+    if (emptyDatabaseBeforeAll)
+      debiki.Globals.systemDao.emptyDatabase()
+  }
+
+
+  override def afterAll() {
+    testServer.stop()
+    ChromeDriverFactory.stop()
+  }
+
+}
 
