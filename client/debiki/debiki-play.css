@@ -125,6 +125,19 @@ html.js body.dw-render-actions-pending .dw-as {
   clear: both;
 }
 
+/* For horizontal reply forms: An arrow to any replies to the right. */
+li.dw-fs-re:not(:last-child) .dw-arw-hz-line-to-sibling {
+  top: -39.5px;
+}
+/* But only show that arrow if horizontal layout ... */
+.dw-t:not(.dw-hor) > .dw-res > .dw-fs-re .dw-arw {
+  display: none;
+}
+/* ... and if there're replies to the right */
+li.dw-fs-re:last-child .dw-arw-hz-line-to-sibling {
+  display: none;
+}
+
 
 
 /* === Cropped and resized posts === */

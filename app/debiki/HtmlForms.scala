@@ -363,6 +363,7 @@ class HtmlForms(xsrfToken: String, val pageRoot: PageRoot, val permsOnPage: Perm
       if (replyToPostId == PageParts.NoId) "" else replyToPostId.toString
     val submitButtonText = "Post as ..." // COULD read user name from `config'
       <li class='dw-fs dw-fs-re'>
+        <div class="dw-arw dw-arw-hz-line-to-sibling"></div>
         <form
             action={config.replyAction +"="+ replyToPostIdStr + _viewRoot}
             accept-charset='UTF-8'

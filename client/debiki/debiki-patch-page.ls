@@ -75,20 +75,12 @@ patchThreadWith = (threadPatch, { onPage, result }) ->
     d.i.$initPostAndParentThread.apply this
     d.i.showAllowedActionsOnly this
 
-  drawArrows = ->
-    # Really both $drawTree, and $drawParents for each child post??
-    # (Not $drawPost; $newThread might have child threads.)
-    $newThread.each d.i.SVG.$drawTree
-
-    # 1. Draw arrows after post has been inited, because initing it
-    # might change its size.
-    # 2. If some parent is an inline post, *its* parent might need to be
-    # redrawn. So redraw all parents.
-    $newThread.dwFindPosts!.each d.i.SVG.$drawParents
-
   # Don't draw arrows until all posts have gotten their final position.
   # (The caller might remove a horizontal reply button, and show it again,
-  # later, and the arrows might be drawn incorrectly if drawn inbetween.)
+  # later, and the arrows might be drawn incorrectly if drawn too early.)
+  drawArrows = ->
+    # It's the parent thread's responsibility to draw arrows to its children.
+    $newThread.parent!closest('.dw-t').each d.i.SVG.$clearAndRedrawArrows
   setTimeout drawArrows, 0
 
   result.patchedThreads.push $newThread
@@ -119,8 +111,7 @@ patchPostWith = (postPatch, { onPage, result }) ->
     $newPost.each d.i.$initPost
 
     $newThread = $newPost.dwClosestThread!
-    $newThread.each d.i.SVG.$drawTree
-    $newThread.dwFindPosts!.each d.i.SVG.$drawParents
+    $newThread.each d.i.SVG.$clearAndRedrawArrows
 
   $oldActions.replaceWith $newActions
 

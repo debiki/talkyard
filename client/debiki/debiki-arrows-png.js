@@ -44,8 +44,8 @@ function $clearAndRedrawArrows() {
 
 
 function clearAndRedrawArrowsHorizontally($thread) {
-  $thread.find('> .dw-t-vspace > .dw-arw-hz').remove();
-  $thread.find('> .dw-res > li > .dw-arw-hz').remove();
+  $thread.find('> .dw-t-vspace > .dw-arw').remove();
+  $thread.find('> .dw-res > li > .dw-t > .dw-arw').remove();
   drawHzArrowToReplyButton($thread);
   drawHzArrowsToReplies($thread);
 };
@@ -56,11 +56,11 @@ function drawHzArrowToReplyButton($thread) {
   var numChildren = $thread.find('> .dw-res > li').length;
   if (numChildren == 1) {
     // Use solo arrow.
-    arrowHtml = '<div class="dw-arw-hz dw-arw-hz-curve-to-reply-btn"></div>';
+    arrowHtml = '<div class="dw-arw dw-arw-hz-curve-to-reply-btn"></div>';
   }
   else {
     // Use branching arrow (it branches out to the replies).
-    arrowHtml = '<div class="dw-arw-hz dw-arw-hz-branch-to-reply-btn"></div>';
+    arrowHtml = '<div class="dw-arw dw-arw-hz-branch-to-reply-btn"></div>';
   }
   $thread.find('> .dw-t-vspace').prepend(arrowHtml);
 };
@@ -105,6 +105,11 @@ function clearAndRedrawArrowsVertically($thread) {
     // that reduces the space between replies.
     $thread.addClass('dw-t-exactly-one-reply');
   }
+
+  // Remove old threads.
+  $childThreads.children('.dw-arw').remove();
+
+  // Add new threads, if needed: (the rest of this function)
 
   // Single replies are placed directly below their parent,
   // as if using a flat layout (rather than a threaded layout).
