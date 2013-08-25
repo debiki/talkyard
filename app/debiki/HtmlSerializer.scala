@@ -362,7 +362,7 @@ case class HtmlPageSerializer(
   /** Sorts threads so 1) the interesting ones appear first, and
     * 2) new posts appear before old, if they're equally interesting.
     *
-    * Re placing newest posts first: This is good, since the original
+    * Re placing newest posts first: This is good (?), since the original
     * layout won't be affected much, instead new replies will be inserted
     * between the old posts, and indented. Rather than shuffing everything
     * around. Example:
@@ -377,28 +377,40 @@ case class HtmlPageSerializer(
     * when sorting by newest-first, insteade, the new reply is simply
     * "inserted". Also, usually new replies are more up-to-date, and it's
     * reasonable to assume that they tend to be more interesting?
+    *
+    * ...Ooops, Javascript always places oldest first. So do taht here too,
+    * until I've changed the Javascript code?
     */
   private def sortPostsDescFitness(posts: List[Post]): List[Post] = {
     // COULD sort by *subthread* ratings instead (but not by rating of
     // deleted comment, since it's not visible).
     // Could skip sorting inline posts, since sorted by position later
     // anyway, in javascript. But if javascript disabled?
-    posts sortBy {
-      // Newest posts first.
-      // (Please note that this sort order is overridden by the later passes)
-      p => -p.creationDati.getTime
-    } sortBy { p =>
-      // Place interesting posts first.
-      -pageStats.ratingStatsFor(p.id).fitnessDefaultTags.lowerLimit
-    } sortBy { p =>
+    def sortFn(a: Post, b: Post): Boolean = {
+      // (Place pinned posts first. ... no, functionality removed.)
+
       // Place deleted posts last; they're rather uninteresting?
-      // Sort by num replies to the deleted comment.
-      if (p.isDeletedSomehow) -p.replyCount else Int.MinValue
-    } /*
-    sortBy { p =>
-      // Place pinned posts first.
-      p.meta.fixedPos.getOrElse(Int.MaxValue)
-    }*/
+      if (!a.isDeletedSomehow && b.isDeletedSomehow)
+        return true
+      if (a.isDeletedSomehow && !b.isDeletedSomehow)
+        return false
+
+      // Place interesting posts first.
+      val fitnessA = pageStats.ratingStatsFor(a.id).fitnessDefaultTags.lowerLimit
+      val fitnessB = pageStats.ratingStatsFor(b.id).fitnessDefaultTags.lowerLimit
+      if (fitnessA > fitnessB)
+        return true
+      if (fitnessA < fitnessB)
+        return false
+
+      // Newest posts first. No, last
+      if (a.id < b.id)
+        return true
+
+      return false
+    }
+
+    posts.sortWith(sortFn)
   }
 
 
