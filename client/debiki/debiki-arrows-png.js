@@ -67,7 +67,7 @@ function drawHzArrowToReplyButton($thread) {
 
 
 function drawHzArrowsToReplies($thread) {
-  var $childThreads = $thread.find('.dw-res > li > .dw-t');
+  var $childThreads = $thread.find('> .dw-res > li > .dw-t');
   $childThreads.each(function() {
     $childThread = $(this);
 
