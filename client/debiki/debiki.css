@@ -205,7 +205,7 @@ and two folded threads would overlap, unless: */
 
 .dw-hor > .dw-res > li {
   display: table-cell;
-  padding: 19px 0 10px 28px;
+  padding: 19px 0 10px 59px;
   vertical-align: top; /* or Reply form pushes other <li>s down
                         which offsets PNG arrows incorrectly */
 }
@@ -215,7 +215,7 @@ and two folded threads would overlap, unless: */
 }
 
 .dw-hor > .dw-res > li > .dw-t {
-  padding: 0 48px 0 0;
+  padding: 0 17px 0 0;
   margin: 0;
 }
 
@@ -480,8 +480,8 @@ JavaScript. Then I can still place all CSS stuff in this file. */
 }
 
 .dw-arw-hz-line-to-this {
-  left: -50px;
-  width: 50px;
+  left: -60px;
+  width: 60px;
 }
 
 .dw-arw-hz-line-to-sibling {
