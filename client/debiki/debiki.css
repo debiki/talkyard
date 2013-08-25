@@ -104,12 +104,17 @@ of columns anyway. */
   position: absolute !important; /* or set to relative by :not(svg) [31Ik53] */
 }
 
+.dw-zd.dw-t {
+  margin-top: 4px; /* instead of .dw-t's 8px, otherwise harder to understand
+                      that it replies to the comment jus above. */
+}
+
 /* When a thread is folded, there's nothing in it that occupies any space,
 and two folded threads would overlap, unless: */
 .dw-zd.dw-t > .dw-z,
 .dw-zd.dw-res > li > .dw-z {
   position: relative !important; /* cancel position: absolute */
-  margin-bottom: 38px;
+  margin-bottom: 42px;
   margin-left: 25px;
   display: block; /* don't hide the .dw-z, only hide everything else */
 }
@@ -125,7 +130,11 @@ and two folded threads would overlap, unless: */
 /* --- Folded replies --- */
 
 .dw-res.dw-zd > li {
-  margin: 4px 0 0 10px;
+  margin: 0 0 0 14px;
+}
+
+.dw-zd.dw-res {
+  padding-top: 0 !important; /* place closer to the comment they reply to */
 }
 
 
