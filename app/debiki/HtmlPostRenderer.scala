@@ -144,12 +144,12 @@ case class HtmlPostRenderer(
 object HtmlPostRenderer {
 
 
-  def renderDeletedTree(post: Post): RenderedPost = {
+  private def renderDeletedTree(post: Post): RenderedPost = {
     renderDeletedComment(post, wholeTree = true)
   }
 
 
-  def renderDeletedComment(post: Post, wholeTree: Boolean = false): RenderedPost = {
+  private def renderDeletedComment(post: Post, wholeTree: Boolean = false): RenderedPost = {
     val deleterUserId =
       if (wholeTree) post.treeDeleterUserId.get
       else post.postDeleterUserId.get
@@ -175,7 +175,7 @@ object HtmlPostRenderer {
   }
 
 
-  def renderCollapsedTree(post: Post): RenderedPost = {
+  private def renderCollapsedTree(post: Post): RenderedPost = {
     // Include the post id, so Javascript finds the post and inits action links,
     // e.g. links that uncollapses the thread.
     RenderedPost(<div id={htmlIdOf(post)} class="dw-p"></div>,
@@ -183,7 +183,7 @@ object HtmlPostRenderer {
   }
 
 
-  def renderCollapsedComment(post: Post): RenderedPost = {
+  private def renderCollapsedComment(post: Post): RenderedPost = {
     val html =
       <div id={htmlIdOf(post)} class="dw-p dw-zd">
         <a class="dw-z">Click to show this comment</a>
@@ -356,7 +356,7 @@ object HtmlPostRenderer {
   }
 
 
-  def renderPageTitle(titlePost: Post, showUnapproved: ShowUnapproved): Node = {
+  private def renderPageTitle(titlePost: Post, showUnapproved: ShowUnapproved): Node = {
     // The title is a post, itself.
     // Therefore this XML is almost identical to the XML
     // for the post that this title entitles.
@@ -378,13 +378,13 @@ object HtmlPostRenderer {
   }
 
 
-  def htmlIdOf(post: Post) = s"post-${post.id}"
+  private def htmlIdOf(post: Post) = s"post-${post.id}"
 
 
-  def _linkTo(user: User) = HtmlPageSerializer.linkTo(user)
+  private def _linkTo(user: User) = HtmlPageSerializer.linkTo(user)
 
 
-  def renderPostBody(post: Post, hostAndPort: String, nofollowArticle: Boolean,
+  private def renderPostBody(post: Post, hostAndPort: String, nofollowArticle: Boolean,
         showUnapproved: ShowUnapproved): RenderedPostBody = {
     val cssArtclBody = if (post.id != PageParts.BodyId) "" else " dw-ar-p-bd"
     val isBodyOrArtclQstn = post.id == PageParts.BodyId // || post.meta.isArticleQuestion
@@ -418,7 +418,7 @@ object HtmlPostRenderer {
   }
 
 
-  def renderActionLinks(post: Post): Elem = {
+  private def renderActionLinks(post: Post): Elem = {
 
     var moreActionLinks: NodeSeq = Nil
     var suggestionsOld: NodeSeq = Nil
@@ -542,7 +542,7 @@ object HtmlPostRenderer {
   }
 
 
-  def renderActionsForCollapsed(post: Post): Elem = {
+  private def renderActionsForCollapsed(post: Post): Elem = {
     // Only show suggestions — don't show actions until the reader has
     // opened the comment and had a chance to read it.
     <div class="dw-p-as dw-as">
@@ -551,12 +551,12 @@ object HtmlPostRenderer {
   }
 
 
-  def renderActionsForDeleted(post: Post): Elem = {
+  private def renderActionsForDeleted(post: Post): Elem = {
     <div class="dw-p-as dw-as"></div> // for now
   }
 
 
-  def renderUncollapseSuggestions(post: Post): NodeSeq = {
+  private def renderUncollapseSuggestions(post: Post): NodeSeq = {
     var suggestions: NodeSeq = Nil
     if (post.isTreeCollapsed) {
       if (post.numUncollapseTreeVotesPro > 0)
@@ -580,7 +580,7 @@ object HtmlPostRenderer {
   }
 
 
-  def makePendingApprovalText(post: Post): NodeSeq = {
+  private def makePendingApprovalText(post: Post): NodeSeq = {
     if (post.currentVersionApproved)
       return Nil
 
