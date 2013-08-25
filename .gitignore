@@ -25,7 +25,7 @@ core
 
 # Ignore softlinks to the Play installation directory, e.g. scripts/play-2.1.sh,
 # and scripts that shouldn't be checked in.
-scripts/play-2.*.sh
+scripts/play-2.*
 
 # NPM packages folder.
 node_modules/
