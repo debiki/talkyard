@@ -1,1 +1,1 @@
-../../modules/debiki-dao-pgsql/evolutions
+../../modules/debiki-dao-rdb/evolutions/
