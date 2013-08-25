@@ -305,6 +305,12 @@ object PostActionPayload {
   case object CollapseTree extends CollapseSomething
 
 
+  /** Closes a thread. It'll be tucked away under a Closed Threads section,
+    * and perhaps not shown when rendering page.
+    */
+  case object CloseTree extends PostActionPayload
+
+
   /** Deletes a single comment.
     */
   case object DeletePost extends PostActionPayload

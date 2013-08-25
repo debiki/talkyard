@@ -48,6 +48,11 @@ object AppSimple extends mvc.Controller {
   }
 
 
+  def closeTree = PostJsonAction(maxLength = 5000) { apiReq =>
+    closeOrReopenTree(apiReq, PostActionPayload.CloseTree)
+  }
+
+
   def loadThreads =
     loadThreadsOrPosts { (page, postIds) =>
       postIds.map(PostPatchSpec(_, wholeThread = true))

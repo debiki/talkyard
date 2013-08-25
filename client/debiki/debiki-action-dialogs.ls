@@ -29,6 +29,7 @@ d.i.$showActionDialog = !(whichDialog, event) -->
   $dialog = switch whichDialog
     | 'CollapseTree' \
       'CollapsePost' => newCollapseDialog whichDialog
+    | 'CloseTree' => newCloseTreeDialog!
     | _ => die 'DwE8GA1'
 
   # Pass data to dialog via shared variable `targetPostId`.
@@ -62,20 +63,7 @@ function newCollapseDialog (whichDialog)
     $dialog.dialog 'close'
 
   $dialog.find('.dw-f-collapse-yes').button!click ->
-    submit conf.url
-
-  function submit (apiFunction)
-    data = [{ pageId: d.i.pageId, actionId: targetPostId }]
-    d.u.postJson { url: apiFunction, data }
-        .fail d.i.showServerResponseDialog
-        .done !(newDebateHtml) ->
-          result = d.i.patchPage newDebateHtml
-          result.patchedThreads[0].dwScrollIntoView!
-        .always !->
-          $dialog.dialog 'close'
-
-    # Prevent browser's built-in action.
-    false
+    submit $dialog, conf.url
 
   $dialog
 
@@ -97,6 +85,52 @@ function collapseDialogHtml (conf)
     </div>
     """)
 
+
+
+function newCloseTreeDialog
+
+  $dialog = closeTreeDialogHtml!
+  $dialog.dialog $.extend({}, d.i.jQueryDialogDestroy)
+
+  $dialog.find('.dw-fi-cancel').button!click !->
+    $dialog.dialog 'close'
+
+  $dialog.find('.dw-f-close-yes').button!click ->
+    submit $dialog, '/-/close-tree'
+
+  $dialog
+
+
+
+function closeTreeDialogHtml()
+  $("""
+    <div title="Close?">
+      <p><small>
+        When you close something, it's tucked away under a
+        Closed Threads section. Do this if something is no longer
+        of relevance, e.g. a comment about a bug that has been fixed.
+      </small></p>
+      <form id="dw-f-close">
+        <input type="submit" class="dw-f-close-yes" value="Yes, close"/>
+        <input type="button" class="dw-fi-cancel" value="Cancel"/>
+      </form>
+    </div>
+    """)
+
+
+
+function submit($dialog, apiFunction)
+  data = [{ pageId: d.i.pageId, actionId: targetPostId }]
+  d.u.postJson { url: apiFunction, data }
+      .fail d.i.showServerResponseDialog
+      .done !(newDebateHtml) ->
+        result = d.i.patchPage newDebateHtml
+        result.patchedThreads[0].dwScrollIntoView!
+      .always !->
+        $dialog.dialog 'close'
+
+  # Prevent browser's built-in action.
+  false
 
 
 # vim: fdm=marker et ts=2 sw=2 tw=80 fo=tcqwn list

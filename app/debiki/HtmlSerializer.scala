@@ -305,7 +305,10 @@ case class HtmlPageSerializer(
       if (html.isEmpty)
         return None
       assert(html.length == 1)
-      val siblingsSorted = _sortPostsDescFitness(post.siblingsAndMe)
+      // Closed posts are placed below a "Closed threads" header, therefore,
+      // if `post` is open, skip closed siblings.
+      val relevantSiblings = post.siblingsAndMe.filter(_.isTreeClosed == post.isTreeClosed)
+      val siblingsSorted = sortPostsDescFitness(relevantSiblings)
       var prevSibling: Option[Post] = None
       siblingsSorted.takeWhile(_.id != postId).foreach { sibling =>
         prevSibling = Some(sibling)
@@ -356,7 +359,7 @@ case class HtmlPageSerializer(
   }
 
 
-  private def _sortPostsDescFitness(posts: List[Post]): List[Post] = {
+  private def sortPostsDescFitness(posts: List[Post]): List[Post] = {
     // Sort by: 1) Fixed position, 2) deleted? (see below)
     // 3) fitness, descending, 4) time, ascending.
     // Concerning deleted posts: Place them last, since they're rather
@@ -386,18 +389,44 @@ case class HtmlPageSerializer(
     // COULD change this to a bredth first search for the 100 most interesting
     // comments, and rename this function to `findSomeInterestingComments'.
 
-    var threads: NodeSeq = Nil
-    for {
-      post <- _sortPostsDescFitness(posts)
-      if !post.isTreeDeleted || showStubsForDeleted
-      if !(post.isPostDeleted && post.replies.isEmpty) || showStubsForDeleted
-      if showUnapproved.shallShow(post)
-    } {
-      val thread = renderThread(post, depth, parentHorizontal, uncollapseFirst)
-      threads ++= thread
+    def renderImpl(posts: List[Post], depth: Int, parentHorizontal: Boolean): NodeSeq = {
+      var threadNodes: NodeSeq = Nil
+      for {
+        post <- sortPostsDescFitness(posts)
+        if !post.isTreeDeleted || showStubsForDeleted
+        if !(post.isPostDeleted && post.replies.isEmpty) || showStubsForDeleted
+        if showUnapproved.shallShow(post)
+      } {
+        val thread = renderThread(post, depth, parentHorizontal, uncollapseFirst)
+        threadNodes ++= thread
+      }
+      threadNodes
     }
 
-    threads
+    val (openPosts, closedPosts) = posts.partition(!_.isTreeClosed)
+
+    val openThreadNodes = renderImpl(openPosts, depth, parentHorizontal)
+
+    // Closed threads are always rendered in a column, with a header "Closed threads" above.
+    val closedThreadNodes = renderImpl(closedPosts, depth + 1, parentHorizontal = false)
+
+    var allNodes = openThreadNodes
+    if (closedThreadNodes.nonEmpty) {
+      val header = (depth == 1) ? <h3>Closed threads</h3> | <h4>Closed threads:</h4>
+      allNodes ++=
+        <li>
+          <div class={s"dw-t dw-t-closed dw-depth-$depth"}>
+            <div class="dw-p">
+              { header }
+            </div>
+            <ol class="dw-res">
+              { closedThreadNodes }
+            </ol>
+          </div>
+        </li>
+    }
+
+    allNodes
   }
 
 
@@ -468,6 +497,9 @@ case class HtmlPageSerializer(
       // else if the-computer-thinks-the-comment-is-off-topic-and-that-
       // -replies-therefore-should-be-hidden,
       // then: renderCollapsedReplies(replies)
+      else if (post.isTreeClosed) {
+        renderCollapsedReplies(replies)
+      }
       else <ol class='dw-res'>
         { myActionsIfHorizontalLayout }
         { renderThreads(depth + 1, replies, parentHorizontal = horizontal) }

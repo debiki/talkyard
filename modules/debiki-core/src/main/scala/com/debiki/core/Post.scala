@@ -558,9 +558,14 @@ case class Post(
   def treeCollapsedAt: Option[ju.Date] =
     findLastAction(PAP.CollapseTree).map(_.creationDati) orElse state.treeCollapsedAt
 
+  def treeClosedAt: Option[ju.Date] =
+    findLastAction(PAP.CloseTree).map(_.creationDati) orElse state.treeClosedAt
+
   def isPostCollapsed: Boolean = postCollapsedAt.nonEmpty
   def isTreeCollapsed: Boolean = treeCollapsedAt.nonEmpty
   def isCollapsedSomehow: Boolean = isPostCollapsed || isTreeCollapsed
+
+  def isTreeClosed: Boolean = treeClosedAt.nonEmpty
 
 
   private def postDeletion: Option[PostAction[PAP.DeletePost.type]] =

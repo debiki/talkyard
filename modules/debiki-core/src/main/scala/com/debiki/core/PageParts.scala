@@ -219,6 +219,7 @@ abstract class PostActionsWrapper { self: PageParts =>
         case _: PAP.ReviewPost => addActionByTargetId(action.postId)
         case PAP.CollapsePost => addActionByTargetId(action.postId)
         case PAP.CollapseTree => addActionByTargetId(action.postId)
+        case PAP.CloseTree => addActionByTargetId(action.postId)
         case PAP.DeletePost => addActionByTargetId(action.postId)
         case PAP.DeleteTree => addActionByTargetId(action.postId)
         case PAP.Undo(targetActionId) => addActionByTargetId(targetActionId)

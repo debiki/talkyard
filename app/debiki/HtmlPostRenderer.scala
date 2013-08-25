@@ -484,6 +484,13 @@ object HtmlPostRenderer {
     if (post.isPostCollapsed && post.numUncollapsePostVotesPro == 0)
       moreActionLinks ++= <a class="dw-a dw-a-uncollapse-post">Uncollapse post</a>
 
+    // ----- Close links
+
+    if (post.isTreeClosed)
+      moreActionLinks ++= <a class="dw-a dw-a-reopen-tree">Reopen</a>
+    else
+      moreActionLinks ++= <a class="dw-a dw-a-close-tree">Close</a>
+
     // ----- Move links
 
     // ? <a class="dw-a dw-a-move">Move</a>
