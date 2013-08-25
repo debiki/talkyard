@@ -19,7 +19,7 @@ resolvers ++= Seq("snapshots" at "http://oss.sonatype.org/content/repositories/s
                     "releases"  at "http://oss.sonatype.org/content/repositories/releases")
 
 // Use the Play sbt plugin for Play projects
-addSbtPlugin("play" % "sbt-plugin" % "2.1.1")
+addSbtPlugin("play" % "sbt-plugin" % "2.1.3")
 
 
 // The SBT-Idea plugin, https://github.com/mpeltonen/sbt-idea
@@ -28,6 +28,8 @@ resolvers += "sbt-idea-repo" at "http://mpeltonen.github.com/maven/"
 
 // libraryDependencies += "com.github.mpeltonen" %% "sbt-idea" % "0.10.0"
 addSbtPlugin("com.github.mpeltonen" % "sbt-idea" % "1.1.0-M2-TYPESAFE")
+//addSbtPlugin("com.github.mpeltonen" % "sbt-idea" % "1.1.0")
+//addSbtPlugin("com.github.mpeltonen" % "sbt-idea" % "1.5.1")
 
 
 // Eclipse project files
