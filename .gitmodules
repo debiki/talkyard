@@ -1,9 +1,6 @@
 [submodule "modules/debiki-dao-pgsql"]
 	path = modules/debiki-dao-pgsql
 	url = ../debiki-dao-rdb.git
-[submodule "modules/debiki-dao-rdb"]
-	path = modules/debiki-dao-rdb
-	url = ../debiki-dao-rdb.git
 [submodule "modules/twitter-bootstrap"]
 	path = modules/twitter-bootstrap
 	url = https://github.com/twitter/bootstrap.git
