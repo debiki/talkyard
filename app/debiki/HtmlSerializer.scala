@@ -359,16 +359,34 @@ case class HtmlPageSerializer(
   }
 
 
+  /** Sorts threads so 1) the interesting ones appear first, and
+    * 2) new posts appear before old, if they're equally interesting.
+    *
+    * Re placing newest posts first: This is good, since the original
+    * layout won't be affected much, instead new replies will be inserted
+    * between the old posts, and indented. Rather than shuffing everything
+    * around. Example:
+    *                                     Newest first:    Oldest first:
+    *                                     ------------     -------------
+    *  [comment]  --> someone posts  -->  [comment]        [comment]
+    *  [reply]      posts a new reply         [new-reply]      [reply]
+    *  [reply2]                           [reply]              [reply2]
+    *                                     [reply2]         [new-reply]
+    *
+    * Note that [reply] and [reply2] don't change their position,
+    * when sorting by newest-first, insteade, the new reply is simply
+    * "inserted". Also, usually new replies are more up-to-date, and it's
+    * reasonable to assume that they tend to be more interesting?
+    */
   private def sortPostsDescFitness(posts: List[Post]): List[Post] = {
     // COULD sort by *subthread* ratings instead (but not by rating of
     // deleted comment, since it's not visible).
     // Could skip sorting inline posts, since sorted by position later
     // anyway, in javascript. But if javascript disabled?
-
     posts sortBy {
-      // Place the oldest posts first. (Please note that this sort order
-      // is overridden by the later passes!)
-      p => p.creationDati.getTime
+      // Newest posts first.
+      // (Please note that this sort order is overridden by the later passes)
+      p => -p.creationDati.getTime
     } sortBy { p =>
       // Place interesting posts first.
       -pageStats.ratingStatsFor(p.id).fitnessDefaultTags.lowerLimit
