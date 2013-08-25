@@ -87,10 +87,19 @@ function drawHzArrowsToReplies($thread) {
 
 
 function clearAndRedrawArrowsVertically($thread) {
+
+  // (Always draw arrow from "Closed Threads" header to the closed
+  // threads, even if there's only one. I think it's then easier to
+  // understand that the closed threads are actually replies to
+  // the original post.)
+  var thisIsHzClosedSection =
+    $thread.is('.dw-t-closed') &&
+    $thread.parent().closest('.dw-t').is('.dw-hor');
+
   var $childThreads = $thread.find('> .dw-res > .dw-t');
 
   $thread.removeClass('dw-t-exactly-one-reply');
-  if ($childThreads.length === 1) {
+  if ($childThreads.length === 1 && !thisIsHzClosedSection) {
     // We're inside a thread that does't branch. It's rendered
     // as a flat thread, without any arrows, so add a CSS class
     // that reduces the space between replies.
@@ -117,7 +126,7 @@ function clearAndRedrawArrowsVertically($thread) {
   // obvious that the child replies to the       |comment text…     |
   // parent comment.                             +------------------+
 
-  if ($childThreads.length <= 1)
+  if ($childThreads.length <= 1 && !thisIsHzClosedSection)
     return;
 
   // Let me explain how I draw arrows to each $childThread:

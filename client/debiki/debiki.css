@@ -142,11 +142,12 @@ and two folded threads would overlap, unless: */
 
 .dw-t-closed > .dw-p {
   margin-bottom: 30px;
-  padding-bottom: 15px;
+  padding-bottom: 33px;
 }
 
 .dw-t-closed:not(.dw-depth-1) > .dw-p {
-  margin-bottom: 10px;
+  margin-bottom: 0px;
+  padding-bottom: 18px;
 }
 
 .dw-t-closed > .dw-p > h3,
