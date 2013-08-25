@@ -34,7 +34,7 @@ object ApplicationBuild extends Build {
     dependsOn(debikiCore ))
 
   lazy val debikiDaoRdb =
-    (Project("debiki-dao-rdb", file("modules/debiki-dao-pgsql"))
+    (Project("debiki-dao-rdb", file("modules/debiki-dao-rdb"))
     dependsOn(debikiCore, debikiTckDao % "test"))
 
 

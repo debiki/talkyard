@@ -16,3 +16,6 @@
 [submodule "modules/codemirror"]
 	path = modules/codemirror
 	url = https://github.com/marijnh/CodeMirror.git
+[submodule "modules/debiki-dao-rdb"]
+	path = modules/debiki-dao-rdb
+	url = ../debiki-dao-rdb.git
