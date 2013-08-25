@@ -105,7 +105,7 @@ of columns anyway. */
 }
 
 .dw-zd.dw-t {
-  margin-top: 4px; /* instead of .dw-t's 8px, otherwise harder to understand
+  margin-top: 0px; /* instead of .dw-t's 8px, otherwise harder to understand
                       that it replies to the comment jus above. */
 }
 
