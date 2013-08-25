@@ -360,19 +360,27 @@ case class HtmlPageSerializer(
 
 
   private def sortPostsDescFitness(posts: List[Post]): List[Post] = {
-    // Sort by: 1) Fixed position, 2) deleted? (see below)
-    // 3) fitness, descending, 4) time, ascending.
-    // Concerning deleted posts: Place them last, since they're rather
-    // uninteresting. Sort by num replies (to the deleted comment).
     // COULD sort by *subthread* ratings instead (but not by rating of
     // deleted comment, since it's not visible).
     // Could skip sorting inline posts, since sorted by position later
     // anyway, in javascript. But if javascript disabled?
-    posts.sortBy(p => p.creationDati.getTime) // the oldest first
-      .sortBy(p => -pageStats.ratingStatsFor(p.id)
-          .fitnessDefaultTags.lowerLimit)
-      .sortBy(p => if (p.isDeletedSomehow) -p.replyCount else Int.MinValue)
-      // .sortBy(p => p.meta.fixedPos.getOrElse(Int.MaxValue))
+
+    posts sortBy {
+      // Place the oldest posts first. (Please note that this sort order
+      // is overridden by the later passes!)
+      p => p.creationDati.getTime
+    } sortBy { p =>
+      // Place interesting posts first.
+      -pageStats.ratingStatsFor(p.id).fitnessDefaultTags.lowerLimit
+    } sortBy { p =>
+      // Place deleted posts last; they're rather uninteresting?
+      // Sort by num replies to the deleted comment.
+      if (p.isDeletedSomehow) -p.replyCount else Int.MinValue
+    } /*
+    sortBy { p =>
+      // Place pinned posts first.
+      p.meta.fixedPos.getOrElse(Int.MaxValue)
+    }*/
   }
 
 
