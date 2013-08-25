@@ -19,7 +19,7 @@
   <logger name="application" level="DEBUG" />
   <logger name="app" level="DEBUG" />
   <logger name="app.installation.password" level="INFO" />
-  <logger name="org.elasticsearch" level="INFO" />
+  <logger name="org.elasticsearch" level="DEBUG" />
 
   <root level="WARN">
     <appender-ref ref="STDOUT" />
