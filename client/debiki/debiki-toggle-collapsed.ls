@@ -29,7 +29,7 @@ d.i.$toggleCollapsed = ->
   else if $parent.is('.dw-p')
     uncollapsePost $parent
   else if $parent.parent!.is('.dw-res')
-    uncollapseReplies $parent.closest '.dw-t'
+    uncollapseReplies $parent.closest('.dw-t')
   false # don't follow any <a> link
 
 
@@ -54,7 +54,7 @@ d.i.$toggleCollapsed = ->
       $thread.removeClass 'dw-zd'
       $foldLink.text ''
     else
-      loadAndInsertThread $thread
+      d.i.loadAndInsertTree $thread.dwPostId!
   else
     # Fold thread.
     postCount = $thread.find('.dw-p').length
@@ -66,7 +66,7 @@ d.i.$toggleCollapsed = ->
 
 
 !function uncollapsePost ($post)
-  loadAndInsert $post, { url: '/-/load-posts' }
+  d.i.loadAndInsertPost $post.dwPostId!
 
 
 
@@ -74,28 +74,7 @@ d.i.$toggleCollapsed = ->
   # Fist remove the un-collapse button.
   $replies = $thread.children('.dw-res.dw-zd').dwBugIfEmpty('DwE3BKw8')
   $replies.removeClass('dw-zd').children('li').remove!
-  loadAndInsert $thread, { url: '/-/load-replies' }
-
-
-
-!function loadAndInsertThread ($thread)
-  loadAndInsert $thread, { url: '/-/load-threads' }
-
-
-/**
- * Loads and inserts $what, which should be a thread or a post.
- */
-!function loadAndInsert ($what, { url })
-  postId =
-    if $what.is '.dw-p' => $what.dwPostId!
-    else $what.dwChildPost!dwPostId!
-  data = [{ pageId: d.i.pageId, actionId: postId }]
-  d.u.postJson { url, data }
-      .fail d.i.showServerResponseDialog
-      .done !(patches) ->
-        result = d.i.patchPage patches
-        (result.patchedThreads[0] || result.patchedPosts[0])
-            .dwScrollIntoView!
+  d.i.loadAndInsertReplies $thread.dwPostId!
 
 
 

@@ -37,15 +37,15 @@ import BrowserPagePatcher.PostPatchSpec
 object PagePartsLoader extends mvc.Controller {
 
 
-  def loadThreads =
+  def loadTrees =
     loadThreadsOrPosts { (page, postIds) =>
-      postIds.map(PostPatchSpec(_, wholeThread = true))
+      postIds.map(PostPatchSpec(_, wholeTree = true))
     }
 
 
   def loadPosts =
     loadThreadsOrPosts { (page, postIds) =>
-      postIds.map(PostPatchSpec(_, wholeThread = false))
+      postIds.map(PostPatchSpec(_, wholeTree = false))
     }
 
 
@@ -53,10 +53,36 @@ object PagePartsLoader extends mvc.Controller {
     loadThreadsOrPosts { (page, postIds) =>
       val posts = postIds map { postId => page.getPost_!(postId) }
       val patchSpecs = posts.foldLeft(Nil: List[PostPatchSpec]) { (specs, post) =>
-        post.replies.map(reply => PostPatchSpec(reply.id, wholeThread = true)) ::: specs
+        post.replies.map(reply => PostPatchSpec(reply.id, wholeTree = true)) ::: specs
       }
       patchSpecs
     }
+
+
+  /** For each post id, loads all posts from the Original Post down to post id,
+    * and also loads the tree starting at the post id.
+    *
+    * This is useful if a user navigates to http://server/-pageId/#post-X
+    * but post-X isn't loaded when the page is loaded, because there are very
+    * many posts, so only the most interesting ones are loaded.
+    * Then the browse makes a request to loadThreadsAndTrees for post id X,
+    * and the server replies with everything the browser needs to show post X,
+    * including some replies to post X.
+    */
+  def loadThreadsAndTrees = loadThreadsOrPosts { (page, postIds) =>
+    val treePatchSpecs = postIds.map(PostPatchSpec(_, wholeTree = true))
+    var threadPatchSpecs: List[PostPatchSpec] = Nil
+    postIds foreach { postId =>
+      // `startPost` is included in `treeSpatchSpecs` already; ignore it here.
+      val startPost = page.getPost(postId)
+      var nextParent = startPost.flatMap(_.parentPost)
+      while (nextParent.isDefined) {
+        threadPatchSpecs ::= PostPatchSpec(nextParent.get.id, wholeTree = false)
+        nextParent = nextParent.get.parentPost
+      }
+    }
+    treePatchSpecs ::: threadPatchSpecs
+  }
 
 
   private def loadThreadsOrPosts(

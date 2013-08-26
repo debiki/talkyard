@@ -76,7 +76,7 @@ object AppReply extends mvc.Controller {
       pageReq.dao.savePageActionsGenNotfs(pageReq, postNoId::Nil)
 
     if (pageReq.isAjax) {
-      val patchSpec = PostPatchSpec(postWithId.id, wholeThread = true)
+      val patchSpec = PostPatchSpec(postWithId.id, wholeTree = true)
       OkSafeJson(
         BrowserPagePatcher(pageReq).jsonForThreadsAndPosts(pageWithNewPost.parts, patchSpec))
     }

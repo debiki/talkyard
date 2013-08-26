@@ -58,6 +58,7 @@ module.exports = function(grunt) {
       'target/client/debiki/debiki-jquery-find.js',
       'target/client/debiki/debiki-keyboard-shortcuts.js', //
       'target/client/debiki/debiki-layout.js',
+      'target/client/debiki/debiki-load-page-parts.js',
       'target/client/debiki/debiki-login-guest.js',
       'target/client/debiki/debiki-login.js',
       'target/client/debiki/debiki-login-openid.js',
@@ -113,6 +114,7 @@ module.exports = function(grunt) {
       'target/client/debiki/debiki-jquery-dialogs.js',
       'target/client/debiki/debiki-jquery-find.js',
       'target/client/debiki/debiki-layout.js',
+      'target/client/debiki/debiki-load-page-parts.js',
       'target/client/debiki/debiki-login-guest.js',
       'target/client/debiki/debiki-login.js',
       'target/client/debiki/debiki-login-openid.js',

@@ -89,12 +89,32 @@ d.i.showAndHighlightPost = function($post, options) {
 };
 
 
+d.i.ensureAnyAnchorPostLoaded = function(callback) {
+  var anchorPostId = anyAnchorPostId();
+  if (!anchorPostId)
+    return;
+  var $post = d.i.findPost$(anchorPostId);
+  if (!$post.length) {
+    d.i.loadAndInsertThreadAndTree(anchorPostId, callback);
+  }
+}
+
+
 d.i.scrollToUrlAnchorPost = function() {
+  if (!anyAnchorPostId())
+    return;
+
   var $anchorPost = $(location.hash).filter('.dw-p');
   if (!$anchorPost.length) return;
   d.i.showAndHighlightPost($anchorPost, { marginRight: 200, marginBottom: 300 });
   $anchorPost.parent().addClass('dw-m-t-new');  // outlines it
 };
+
+
+function anyAnchorPostId() {
+  var hashIsPostId = /post-\d+/.test(location.hash);
+  return hashIsPostId ? location.hash.substr(6, 999) : undefined;
+}
 
 
 })();

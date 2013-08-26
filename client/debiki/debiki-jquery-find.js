@@ -40,8 +40,9 @@ d.i.findPostHeader$ = function(postId) {
 
 
 $.fn.dwPostId = function() {
+  var $post = this.is('.dw-t') ? this.children('.dw-p') : this;
   // Drop initial "post-".
-  return this.dwCheckIs('.dw-p').attr('id').substr(5, 999);
+  return $post.dwCheckIs('.dw-p').attr('id').substr(5, 999);
 };
 
 

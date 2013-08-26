@@ -122,7 +122,7 @@ object Application extends mvc.Controller {
     // Even if deleting the whole tree, show a brief stub in place of the deleted stuff:
     // "Thread deleted by ...". It'll be gone if you reload the page.
     val json = BrowserPagePatcher(pageReq, showStubsForDeleted = true).jsonForThreadsAndPosts(
-      page.parts, BrowserPagePatcher.PostPatchSpec(postId, wholeThread = wholeTree))
+      page.parts, BrowserPagePatcher.PostPatchSpec(postId, wholeTree = wholeTree))
 
     Utils.OkSafeJson(json)
   }

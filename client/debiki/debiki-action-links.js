@@ -52,7 +52,7 @@ function bindActionLinksImpl(anyPost, bindFoldLinks) {
     var $thread = $actions.parent();
     if (bindFoldLinks) {
       $collapses = $thread.children('.dw-z');
-      $collapses.add($thread.find(collapseSelectors));
+      $collapses = $collapses.add($thread.find(collapseSelectors));
     }
     else {
       $collapses = $();

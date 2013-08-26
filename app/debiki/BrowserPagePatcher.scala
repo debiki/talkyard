@@ -32,7 +32,7 @@ import BrowserPagePatcher._
 
 object BrowserPagePatcher {
 
-  case class PostPatchSpec(id: ActionId, wholeThread: Boolean)
+  case class PostPatchSpec(id: ActionId, wholeTree: Boolean)
 
   type JsPatch = Map[String, JsValue]
 
@@ -66,7 +66,7 @@ case class BrowserPagePatcher(
 
 
   def jsonForThreadPatches(page: PageParts, threadIds: Seq[ActionId]): List[JsPatch] = {
-    val threadSpecs = threadIds.map(id => PostPatchSpec(id, wholeThread = true))
+    val threadSpecs = threadIds.map(id => PostPatchSpec(id, wholeTree = true))
     val (threadPatches, _) = makeThreadAndPostPatchesSinglePage(page, threadSpecs)
     threadPatches
   }

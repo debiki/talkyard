@@ -78,7 +78,7 @@ object AppSimple extends mvc.Controller {
       val (pageWithNewActions, _) =
         apiReq.dao.savePageActionsGenNotfs(pageId, actions, apiReq.meAsPeople_!)
 
-      val patchSpecs = actions.map(a => PostPatchSpec(a.postId, wholeThread = true))
+      val patchSpecs = actions.map(a => PostPatchSpec(a.postId, wholeTree = true))
       pagesAndPatchSpecs ::= (pageWithNewActions.parts, patchSpecs)
     }
 

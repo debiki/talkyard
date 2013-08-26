@@ -301,7 +301,13 @@ function renderPageEtc() {
     $posts.each(d.i.SVG.$clearAndRedrawArrows);
   }); */
 
-  steps.push(d.i.scrollToUrlAnchorPost);
+  // If #post-X is specified in the URL, ensure all posts leading up to
+  // and including X have been loaded. Then scroll to X.
+  steps.push(function() {
+    d.i.ensureAnyAnchorPostLoaded(function() {
+      d.i.scrollToUrlAnchorPost();
+    });
+  });
 
   // Disable for now, I'll rewrite it to consider timestamps.
   //steps.push(d.i.startNextUnreadPostCycler);
