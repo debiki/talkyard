@@ -94,6 +94,8 @@ function $initStep3() {
   // 100 posts), and  need not be done until just before SVG is drawn.
 
   //d.i.SVG.$initPostSvg.apply(this);
+
+  // not neeed! when patching
   d.i.SVG.$clearAndRedrawArrows.apply(this);
 };
 
