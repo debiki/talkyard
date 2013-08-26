@@ -36,8 +36,13 @@ import Utils.{OkHtml, OkXml}
 
 
 /** Shows pages and individual posts.
+  *
+  * Also loads the users permissions on the page, and info on which
+  * comments the user has authored or rated, and also loads the user's
+  * comments that are pending approval — although such unapproved comments
+  * aren't loaded, when other people view the page.
   */
-object AppViewPosts extends mvc.Controller {
+object PageViewer extends mvc.Controller {
 
 
   def showActionLinks(pathIn: PagePath, postId: ActionId) =

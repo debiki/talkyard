@@ -92,9 +92,9 @@ POST  /-/collapse-post          controllers.AppSimple.collapsePost
 POST  /-/collapse-tree          controllers.AppSimple.collapseTree
 POST  /-/close-tree             controllers.AppSimple.closeTree
 #POST  /-/reopen-tree            controllers.AppSimple.reopenTree
-POST  /-/load-threads           controllers.AppSimple.loadThreads
-POST  /-/load-posts             controllers.AppSimple.loadPosts
-POST  /-/load-replies           controllers.AppSimple.loadReplies
+POST  /-/load-threads           controllers.PagePartsLoader.loadThreads
+POST  /-/load-posts             controllers.PagePartsLoader.loadPosts
+POST  /-/load-replies           controllers.PagePartsLoader.loadReplies
 GET   /-/list-pages             controllers.AppList.listPages
 GET   /-/list-users             controllers.AppList.listUsers
 POST  /-/change-page-meta       controllers.AppChangePageMeta.changeMeta

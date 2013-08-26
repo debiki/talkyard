@@ -144,7 +144,7 @@ object AppCreatePage extends mvc.Controller {
 
     val userPageDataJson =
       if (pageReq.user.isEmpty) ""
-      else AppViewPosts.buildUserPageDataJson(pageReq)
+      else PageViewer.buildUserPageDataJson(pageReq)
 
     // If not logged in, then include an empty Yaml tag, so the browser
     // notices that it got that elem, and won't call GET ?page-info.

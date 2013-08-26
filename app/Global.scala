@@ -113,7 +113,7 @@ object Global extends GlobalSettings {
       case ("edit", GET) =>
         AppEdit.showEditForm(pagePath, postId = mainFunValAsInt_!)
       case ("view", GET) =>
-        AppViewPosts.viewPost(pagePath)
+        PageViewer.viewPost(pagePath)
       case ("reply", GET) =>
         AppReply.showForm(pagePath, postId = mainFunValAsInt_!)
       case ("reply", POST) =>
@@ -157,9 +157,9 @@ object Global extends GlobalSettings {
       case ("feed", GET) =>
         App.feed(pagePath)
       case ("act", GET) =>
-        AppViewPosts.showActionLinks(pagePath, postId = mainFunValAsInt_!)
+        PageViewer.showActionLinks(pagePath, postId = mainFunValAsInt_!)
       case ("page-info", GET) =>
-        AppViewPosts.showPageInfo(pagePath)
+        PageViewer.showPageInfo(pagePath)
       case ("config-user", GET) =>
         AppConfigUser.showForm(pagePath, userId = mainFunVal_!)
       case ("config-user", POST) =>
@@ -171,7 +171,7 @@ object Global extends GlobalSettings {
       // If no main function specified:
       case ("", GET) =>
         // CSS and JS are served via asset bundles, so they can be cached forever.
-        AppViewPosts.viewPost(pagePath)
+        PageViewer.viewPost(pagePath)
       // If invalid function specified:
       case (fun, met) => throwBadReq(
         "DwEQ435", s"Bad method or query string: `$met' `?$fun'")
