@@ -132,9 +132,29 @@ object PageParts {
     * So 10 000 000 should be reasonably safe?
     */
   def nextRandomActionId =
-    10*1000*1000 + (math.random * (Int.MaxValue - 10*1000*1000)).toInt
+    MaxNumPostsPerPage + (math.random * (Int.MaxValue - MaxNumPostsPerPage)).toInt
+
+  val MaxNumPostsPerPage = 10*1000*1000
+
+
+  // Doesn't currently work, because there are old ids that breaks this rule:
+  //def isPostId(id: PostId) = id < MaxNumPostsPerPage
+
+
+  /** Returns true iff a post with id a might be an ancestor of b. Useful if
+    * sorting posts so parents appear before children.
+    */
+  def canBeAncestorOf(a: PostId, b: PostId): Boolean = {
+    // Could:  require(isPostId(a) && isPostId(b))
+    if (isArticleOrConfigPostId(a))
+      return !isArticleOrConfigPostId(b)
+    else if (isArticleOrConfigPostId(b))
+      return false
+    a < b
+  }
 
 }
+
 
 
 /** Wraps PostActionDto:s in PostActions and groups them by post id.

@@ -23,6 +23,7 @@ import play.api.{mvc => pm}
 import play.api.libs.json._
 import play.api.libs.json.Json.toJson
 import requests._
+import scala.collection.{mutable => mut}
 import DebikiHttp._
 import Prelude._
 import HtmlPageSerializer.SerializedSingleThread
@@ -32,7 +33,37 @@ import BrowserPagePatcher._
 
 object BrowserPagePatcher {
 
-  case class PostPatchSpec(id: ActionId, wholeTree: Boolean)
+  case class TreePatchSpec(
+    id: PostId,
+    wholeTree: Boolean,
+    uncollapse: Boolean = false) {
+
+    def mergeWith(otherSpec: TreePatchSpec) = {
+      require(otherSpec.id == id)
+      copy(
+        wholeTree = wholeTree || otherSpec.wholeTree,
+        uncollapse = uncollapse || otherSpec.uncollapse)
+    }
+  }
+
+
+  /** Merges duplicates and sorts by parent-post-before-child-post (ancestors first).
+    */
+  def sortAndMerge(patchSpecs: Seq[TreePatchSpec]): Seq[TreePatchSpec] = {
+    val patchesById = mut.Map[PostId, TreePatchSpec]()
+    for (curSpec <- patchSpecs) {
+      val anyDuplicate = patchesById.get(curSpec.id)
+      val specToUse = anyDuplicate match {
+        case None => curSpec
+        case Some(duplicate) => duplicate.mergeWith(curSpec)
+      }
+      patchesById(specToUse.id) = specToUse
+    }
+    patchesById.values.toVector sortWith { (a, b) =>
+      PageParts.canBeAncestorOf(a.id, b.id)
+    }
+  }
+
 
   type JsPatch = Map[String, JsValue]
 
@@ -61,57 +92,54 @@ case class BrowserPagePatcher(
     else ShowUnapproved.WrittenByUser(request.user_!.id)
 
 
-  type JsPatchesByPageId = Map[String, List[JsPatch]]
-  def newJsPatchesByPageId() = Map[String, List[JsPatch]]()
+  // ========== JSON for threads
 
 
-  def jsonForThreadPatches(page: PageParts, threadIds: Seq[ActionId]): List[JsPatch] = {
-    val threadSpecs = threadIds.map(id => PostPatchSpec(id, wholeTree = true))
-    val (threadPatches, _) = makeThreadAndPostPatchesSinglePage(page, threadSpecs)
+  type JsPatchesByPageId = Map[String, Seq[JsPatch]]
+  def newJsPatchesByPageId() = Map[String, Vector[JsPatch]]()
+
+
+  def jsonForTreePatches(page: PageParts, threadIds: Seq[ActionId]): Vector[JsPatch] = {
+    val threadSpecs = threadIds.map(id => TreePatchSpec(id, wholeTree = true))
+    val threadPatches = makeTreePatchesSinglePage(page, threadSpecs)
     threadPatches
   }
 
 
-  def jsonForThreadsAndPosts(page: PageParts, patchSpecs: PostPatchSpec*): JsValue = {
-    jsonForThreadsAndPosts(List((page, patchSpecs.toList)))
+  def jsonForTrees(page: PageParts, patchSpecs: TreePatchSpec*): JsValue = {
+    jsonForTrees(List((page, patchSpecs.toList)))
   }
 
 
-  def jsonForThreadsAndPosts(pagesAndPatchSpecs: List[(PageParts, List[PostPatchSpec])])
-        : JsValue = {
-    val (threadPatchesByPageId, postPatchesByPageId) =
-      jsonForThreadsAndPostsImpl(pagesAndPatchSpecs)
+  def jsonForTrees(pagesAndPatchSpecs: List[(PageParts, List[TreePatchSpec])]): JsValue = {
+    val threadPatchesByPageId = jsonForTreesImpl(pagesAndPatchSpecs)
     toJson(Map(
-      "threadsByPageId" -> threadPatchesByPageId,
-      "postsByPageId" -> postPatchesByPageId))
+      "threadsByPageId" -> threadPatchesByPageId))
   }
 
 
-  private def jsonForThreadsAndPostsImpl(
-        pagesAndPatchSpecs: List[(PageParts,  List[PostPatchSpec])])
-        : (JsPatchesByPageId, JsPatchesByPageId) = {
+  private def jsonForTreesImpl(pagesAndPatchSpecs: List[(PageParts,  List[TreePatchSpec])])
+        : JsPatchesByPageId = {
 
     var threadPatchesByPageId = newJsPatchesByPageId()
-    var postPatchesByPageId = newJsPatchesByPageId()
 
     for ((page, patchSpecs) <- pagesAndPatchSpecs) {
 
-      val (threadPatchesOnCurPage, postPatchesOnCurPage) =
-        makeThreadAndPostPatchesSinglePage(page, patchSpecs)
-
+      val threadPatchesOnCurPage = makeTreePatchesSinglePage(page, patchSpecs)
       threadPatchesByPageId += page.id -> threadPatchesOnCurPage
-      postPatchesByPageId += page.id -> postPatchesOnCurPage
     }
 
-    (threadPatchesByPageId, postPatchesByPageId)
+    threadPatchesByPageId
   }
 
 
   /** COULD fix: Currently includes a thread T twice, if patchSpecs mentions
     * both T and one of its ancestors.
     */
-  private def makeThreadAndPostPatchesSinglePage(page: PageParts, patchSpecs: Seq[PostPatchSpec])
-        : (List[JsPatch],  List[JsPatch]) = {
+  private def makeTreePatchesSinglePage(page: PageParts,
+        patchSpecsDuplicatedUnsorted: Seq[TreePatchSpec]): Vector[JsPatch] = {
+
+    val patchSpecs = sortAndMerge(patchSpecsDuplicatedUnsorted)
 
     val pageRoot = request match {
       case p: PageRequest[_] => p.pageRoot
@@ -122,40 +150,21 @@ case class BrowserPagePatcher(
       page, PageTrust(page), pageRoot, request.host, showUnapproved = showUnapproved,
       showStubsForDeleted = showStubsForDeleted)
 
-    var threadPatches = List[JsPatch]()
-    var postPatches = List[JsPatch]()
+    var threadPatches = Vector[JsPatch]()
 
-    for (PostPatchSpec(postId, wholeThread) <- patchSpecs) {
+    for (TreePatchSpec(postId, wholeThread, uncollapse) <- patchSpecs) {
       val post = page.getPost(postId) getOrElse logAndThrowInternalError(
          "DwE573R2", s"Post not found, id: $postId, page: ${page.id}")
-      if (wholeThread) {
-        // If the post has been deleted and `!showStubsForDeleted`. renderSingleThread()
-        // might return nothing.
-        serializer.renderSingleThread(postId) foreach { serializedThread =>
-          threadPatches ::= _jsonForThread(post, serializedThread)
-        }
-      }
-      else {
-        postPatches ::= jsonForPost(post)
+      // If the post has been deleted and `!showStubsForDeleted`. renderSingleThread()
+      // might return nothing.
+      // SHOULD consider `wholeTread` and render only `postId` + collapsed children, if false,
+      // and rename `wholeThread` to... what? also.
+      serializer.renderSingleThread(postId) foreach { serializedThread =>
+        threadPatches :+= _jsonForThread(post, serializedThread)
       }
     }
 
-    (threadPatches, postPatches)
-  }
-
-
-  def jsonForMyEditedPosts(editIdsAndPages: List[(List[ActionId], PageParts)]): JsValue = {
-
-    var patchesByPageId = newJsPatchesByPageId()
-
-    for ((editIds: List[ActionId], page: PageParts) <- editIdsAndPages) {
-      val patchesOnCurPage = for (editId <- editIds) yield {
-        _jsonForEditedPost(editId, page)
-      }
-      patchesByPageId += page.pageId -> patchesOnCurPage
-    }
-
-    toJson(Map("postsByPageId" -> patchesByPageId))
+    threadPatches
   }
 
 
@@ -177,6 +186,37 @@ case class BrowserPagePatcher(
     }
 
     data
+  }
+
+
+  // ========== JSON for posts and edits
+
+
+  def jsonForPosts(postIdsAndPages: Seq[(Seq[PostId], PageParts)]): JsValue = {
+    jsonForPostsImpl(postIdsAndPages, jsonForEdits = false)
+  }
+
+
+  def jsonForMyEditedPosts(editIdsAndPages: List[(List[ActionId], PageParts)]): JsValue = {
+    jsonForPostsImpl(editIdsAndPages, jsonForEdits = true)
+  }
+
+
+  private def jsonForPostsImpl(
+        idsAndPages: Seq[(Seq[ActionId], PageParts)], jsonForEdits: Boolean): JsValue = {
+    var patchesByPageId = newJsPatchesByPageId()
+
+    for ((ids: Seq[ActionId], page: PageParts) <- idsAndPages) {
+      val patchesOnCurPage = for (id <- ids) yield {
+        if (jsonForEdits)
+          _jsonForEditedPost(id, page)
+        else
+          jsonForPost(page.getPost_!(id))
+      }
+      patchesByPageId += page.pageId -> patchesOnCurPage.toVector
+    }
+
+    toJson(Map("postsByPageId" -> patchesByPageId))
   }
 
 

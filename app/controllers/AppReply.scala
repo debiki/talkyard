@@ -30,7 +30,7 @@ import play.api.data.Forms._
 import play.api.mvc.{Action => _, _}
 import requests.PageRequest
 import Utils.{OkHtml, OkHtmlBody}
-import BrowserPagePatcher.PostPatchSpec
+import BrowserPagePatcher.TreePatchSpec
 
 
 object AppReply extends mvc.Controller {
@@ -76,9 +76,9 @@ object AppReply extends mvc.Controller {
       pageReq.dao.savePageActionsGenNotfs(pageReq, postNoId::Nil)
 
     if (pageReq.isAjax) {
-      val patchSpec = PostPatchSpec(postWithId.id, wholeTree = true)
+      val patchSpec = TreePatchSpec(postWithId.id, wholeTree = true)
       OkSafeJson(
-        BrowserPagePatcher(pageReq).jsonForThreadsAndPosts(pageWithNewPost.parts, patchSpec))
+        BrowserPagePatcher(pageReq).jsonForTrees(pageWithNewPost.parts, patchSpec))
     }
     else {
       _showHtmlResultPage(pageReq, postWithId)

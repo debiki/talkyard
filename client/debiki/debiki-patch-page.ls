@@ -69,7 +69,15 @@ patchThreadWith = (threadPatch, { onPage, result }) ->
       appendThread $newThread, to: $parentThread
     $newThread.addClass 'dw-m-t-new'
   else
-    replaceOldWith $newThread, onPage: pageId
+    # For now, don't overwrite existing threads, if they've already
+    # been loaded. If overwriting, there'd be troubles e.g. if the user
+    # has started replying to a successor post.
+    $oldThread = $('#' + $newThread.attr 'id')
+    if $oldThread.find('.dw-p-bd').length == 0
+      # No post body present. Old thread thus not yet loaded? Replace it.
+      replaceOldWith $newThread, onPage: pageId
+    else
+      return
 
   $newThread.dwFindPosts!each !->
     d.i.$initPostAndParentThread.apply this

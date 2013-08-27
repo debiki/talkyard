@@ -116,8 +116,8 @@ object PageViewer extends mvc.Controller {
     // on ancestor post ids, so the browser knows where to insert the html.
     val postsOfInterest = if (my.isAdmin) page.getAllPosts else page.postsByUser(my.id)
     val pendingPosts = postsOfInterest.filter(!_.currentVersionReviewed)
-    val pendingPostsJsPatches: List[BrowserPagePatcher.JsPatch] =
-      BrowserPagePatcher(pageReq).jsonForThreadPatches(page, pendingPosts.map(_.id))
+    val pendingPostsJsPatches: Seq[BrowserPagePatcher.JsPatch] =
+      BrowserPagePatcher(pageReq).jsonForTreePatches(page, pendingPosts.map(_.id))
 
     // (COULD include HTML for any notifications to the user.
     // Not really related to the current page only though.)

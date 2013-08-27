@@ -25,7 +25,7 @@ import debiki.DebikiHttp._
 import java.{util => ju}
 import play.api._
 import Prelude._
-import BrowserPagePatcher.PostPatchSpec
+import BrowserPagePatcher.TreePatchSpec
 
 
 
@@ -38,22 +38,37 @@ object PagePartsLoader extends mvc.Controller {
 
 
   def loadTrees =
-    loadThreadsOrPosts { (page, postIds) =>
-      postIds.map(PostPatchSpec(_, wholeTree = true))
+    loadTreesImpl { (page, postIds) =>
+      postIds.map(TreePatchSpec(_, wholeTree = true))
     }
 
 
-  def loadPosts =
-    loadThreadsOrPosts { (page, postIds) =>
-      postIds.map(PostPatchSpec(_, wholeTree = false))
+  def loadPosts = PostJsonAction(maxLength = 5000) { apiReq =>
+    SECURITY // What about access control?! Page ids generally unknown however, but
+    // should really fix anyway.
+    // Ensure I fix `loadThreads` at the same time.
+
+    val pageActionIds = apiReq.body.as[List[Map[String, String]]]
+    val postIdsByPage: Map[PageId, List[PostId]] =
+      Utils.parsePageActionIds(pageActionIds)(identity)
+
+    var postIdsAndPages = Vector[(Seq[PostId], PageParts)]()
+
+    postIdsByPage map { case (pageId, postIds) =>
+      val page = apiReq.dao.loadPage(pageId) getOrElse throwNotFound(
+        "DwE30EU5", s"Page not found, id: `$pageId'; could not load all posts")
+      postIdsAndPages :+= (postIds, page)
     }
+
+    OkSafeJson(BrowserPagePatcher(apiReq).jsonForPosts(postIdsAndPages))
+  }
 
 
   def loadReplies =
-    loadThreadsOrPosts { (page, postIds) =>
+    loadTreesImpl { (page, postIds) =>
       val posts = postIds map { postId => page.getPost_!(postId) }
-      val patchSpecs = posts.foldLeft(Nil: List[PostPatchSpec]) { (specs, post) =>
-        post.replies.map(reply => PostPatchSpec(reply.id, wholeTree = true)) ::: specs
+      val patchSpecs = posts.foldLeft(Nil: List[TreePatchSpec]) { (specs, post) =>
+        post.replies.map(reply => TreePatchSpec(reply.id, wholeTree = true)) ::: specs
       }
       patchSpecs
     }
@@ -69,15 +84,15 @@ object PagePartsLoader extends mvc.Controller {
     * and the server replies with everything the browser needs to show post X,
     * including some replies to post X.
     */
-  def loadThreadsAndTrees = loadThreadsOrPosts { (page, postIds) =>
-    val treePatchSpecs = postIds.map(PostPatchSpec(_, wholeTree = true))
-    var threadPatchSpecs: List[PostPatchSpec] = Nil
+  def loadThreadsAndTrees = loadTreesImpl { (page, postIds) =>
+    val treePatchSpecs = postIds.map(TreePatchSpec(_, wholeTree = true))
+    var threadPatchSpecs: List[TreePatchSpec] = Nil
     postIds foreach { postId =>
       // `startPost` is included in `treeSpatchSpecs` already; ignore it here.
       val startPost = page.getPost(postId)
       var nextParent = startPost.flatMap(_.parentPost)
       while (nextParent.isDefined) {
-        threadPatchSpecs ::= PostPatchSpec(nextParent.get.id, wholeTree = false)
+        threadPatchSpecs ::= TreePatchSpec(nextParent.get.id, wholeTree = false)
         nextParent = nextParent.get.parentPost
       }
     }
@@ -85,19 +100,19 @@ object PagePartsLoader extends mvc.Controller {
   }
 
 
-  private def loadThreadsOrPosts(
-        loadWhatFn: (PageParts, List[PostId]) => List[PostPatchSpec]) =
+  private def loadTreesImpl(loadWhatFn: (PageParts, List[PostId]) => List[TreePatchSpec]) =
       PostJsonAction(maxLength = 5000) { apiReq =>
 
     SECURITY // What about access control?! Page ids generally unknown however, but
     // should really fix anyway.
+    // Ensure I fix `loadPosts` at the same time.
 
     val pageActionIds = apiReq.body.as[List[Map[String, String]]]
 
     val postIdsByPage: Map[PageId, List[PostId]] =
       Utils.parsePageActionIds(pageActionIds)(identity)
 
-    var pagesAndPatchSpecs = List[(PageParts, List[PostPatchSpec])]()
+    var pagesAndPatchSpecs = List[(PageParts, List[TreePatchSpec])]()
 
     postIdsByPage foreach { case (pageId, postIds) =>
       val page = apiReq.dao.loadPage(pageId) getOrElse throwNotFound(
@@ -107,7 +122,7 @@ object PagePartsLoader extends mvc.Controller {
     }
 
     OkSafeJson(
-      BrowserPagePatcher(apiReq).jsonForThreadsAndPosts(pagesAndPatchSpecs))
+      BrowserPagePatcher(apiReq).jsonForTrees(pagesAndPatchSpecs))
   }
 
 }

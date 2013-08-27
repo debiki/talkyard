@@ -28,7 +28,7 @@ import debiki.dao.ConfigValueDao
 import java.{util => ju}
 import play.api._
 import play.api.libs.json._
-import BrowserPagePatcher.PostPatchSpec
+
 
 
 /** Handles the initial setup of a server: creates the very first website

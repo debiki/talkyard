@@ -27,7 +27,7 @@ import play.api._
 import play.api.libs.json._
 import Prelude._
 import Utils.ValidationImplicits._
-import BrowserPagePatcher.PostPatchSpec
+import BrowserPagePatcher.TreePatchSpec
 
 
 /** Handles simple actions like closing and collapsing trees and posts.
@@ -72,18 +72,18 @@ object AppSimple extends mvc.Controller {
         loginId = apiReq.loginId_!, userId = apiReq.user_!.id, newIp = None)
     }
 
-    var pagesAndPatchSpecs = List[(PageParts, List[PostPatchSpec])]()
+    var pagesAndPatchSpecs = List[(PageParts, List[TreePatchSpec])]()
 
     actionsByPageId foreach { case (pageId, actions) =>
       val (pageWithNewActions, _) =
         apiReq.dao.savePageActionsGenNotfs(pageId, actions, apiReq.meAsPeople_!)
 
-      val patchSpecs = actions.map(a => PostPatchSpec(a.postId, wholeTree = true))
+      val patchSpecs = actions.map(a => TreePatchSpec(a.postId, wholeTree = true))
       pagesAndPatchSpecs ::= (pageWithNewActions.parts, patchSpecs)
     }
 
     OkSafeJson(
-      BrowserPagePatcher(apiReq).jsonForThreadsAndPosts(pagesAndPatchSpecs))
+      BrowserPagePatcher(apiReq).jsonForTrees(pagesAndPatchSpecs))
   }
 
 }
