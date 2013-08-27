@@ -18,9 +18,10 @@
 package com.debiki.core
 
 import java.{util => ju}
-import collection.{immutable => imm, mutable => mut}
 import com.debiki.core.{PostActionPayload => PAP}
 import com.debiki.core.PostActionPayload.EditPost
+import scala.{collection => col}
+import scala.collection.{immutable => imm, mutable => mut}
 import Prelude._
 import PageParts._
 
@@ -64,7 +65,7 @@ object PageParts {
   }
 
 
-  def fromActions(guid: String, people: People, actions: List[AnyRef]): PageParts =
+  def fromActions(guid: PageId, people: People, actions: List[AnyRef]): PageParts =
     PageParts(guid, people) ++ actions
 
 
@@ -249,7 +250,7 @@ abstract class PostActionsWrapper { self: PageParts =>
   * @param actionDtos The actions that build up the page.
   */
 case class PageParts (
-  guid: String,  // COULD rename to pageId?
+  guid: PageId,  // COULD rename to pageId?
   people: People = People.None,
   ratings: List[Rating] = Nil,
   editApps: List[EditApp] = Nil,
@@ -273,9 +274,9 @@ case class PageParts (
   // Fixed (soon). Rewrite to PostActionDto and use PostActionsWrapper.
 
 
-  lazy val (postsByParentId: Map[ActionId, List[Post]]) = {
+  lazy val (postsByParentId: Map[PostId, List[Post]]) = {
     // Sort posts by parent id.
-    var postMap = mut.Map[ActionId, mut.Set[Post]]()
+    var postMap = mut.Map[PostId, mut.Set[Post]]()
     for (post <- getAllPosts) {
       def addNewSet() = {
         val set = mut.Set[Post]()
@@ -285,12 +286,12 @@ case class PageParts (
       postMap.getOrElse(post.parentId, addNewSet()) += post
     }
     // Copy to immutable versions.
-    def buildImmMap(mutMap: mut.Map[ActionId, mut.Set[Post]]): Map[ActionId, List[Post]] = {
+    def buildImmMap(mutMap: mut.Map[PostId, mut.Set[Post]]): Map[PostId, List[Post]] = {
       // COULD sort the list in ascenting ctime order?
       // Then list.head would be e.g. the oldest title -- other code
       // assume posts ase sorted in this way?
       // See Post.templatePost, titlePost.
-      Map[ActionId, List[Post]](
+      Map[PostId, List[Post]](
         (for ((parentId, postsSet) <- mutMap)
         yield (parentId, postsSet.toList // <-- sort this list by ctime asc?
               )).toList: _*).withDefaultValue(Nil)
@@ -301,15 +302,15 @@ case class PageParts (
 
 
   private class _RatingsOnActionImpl extends RatingsOnAction {
-    val _mostRecentByUserId = mut.Map[String, Rating]()
-    val _mostRecentByNonAuLoginId = mut.Map[String, Rating]()
+    val _mostRecentByUserId = mut.Map[UserId, Rating]()
+    val _mostRecentByNonAuLoginId = mut.Map[LoginId, Rating]()
     val _allRecentByNonAuIp =
       mut.Map[String, List[Rating]]().withDefaultValue(Nil)
 
-    override def mostRecentByUserId: collection.Map[String, Rating] =
+    override def mostRecentByUserId: collection.Map[UserId, Rating] =
       _mostRecentByUserId
 
-    override lazy val mostRecentByNonAuLoginId: collection.Map[String, Rating] =
+    override lazy val mostRecentByNonAuLoginId: collection.Map[LoginId, Rating] =
       _mostRecentByNonAuLoginId
 
     override lazy val allRecentByNonAuIp: collection.Map[String, List[Rating]] =
@@ -328,8 +329,7 @@ case class PageParts (
   }
 
   // Analyze ratings, per action.
-  // (Never change this mut.Map once it's been constructed.)
-  private lazy val _ratingsByActionId: mut.Map[ActionId, _RatingsOnActionImpl] = {
+  private lazy val _ratingsByActionId: col.Map[ActionId, _RatingsOnActionImpl] = {
     val mutRatsByPostId =
       mut.Map[ActionId, _RatingsOnActionImpl]()
 
@@ -428,7 +428,7 @@ case class PageParts (
   def ratingsByActionId(actionId: ActionId): Option[RatingsOnAction] =
     _ratingsByActionId.get(actionId)
 
-  def ratingsByUser(withId: String): Seq[Rating] =
+  def ratingsByUser(withId: UserId): Seq[Rating] =
     ratings.filter(smart(_).identity.map(_.userId) == Some(withId))
 
 
@@ -449,11 +449,11 @@ case class PageParts (
 
   def postCount = getAllPosts.length
 
-  def getPost_!(postId: ActionId): Post =
+  def getPost_!(postId: PostId): Post =
     getPost(postId).getOrElse(runErr(
       "DwE3kR49", s"Post `$postId' not found on page `$id'"))
 
-  def postsByUser(withId: String): Seq[Post] = {
+  def postsByUser(withId: UserId): Seq[Post] = {
     getAllPosts.filter(_.userId == withId)
   }
 
@@ -467,7 +467,7 @@ case class PageParts (
     var numVisible = 0
     var numPendingReview = 0
     var lastDati: Option[ju.Date] = None
-    var posterUserIds = mut.Set[String]()
+    var posterUserIds = mut.Set[UserId]()
     for (post <- getAllPosts) {
       // Minor BUG: I think this won't ignore posts whose whole ancestor tree has been deleted.
       if (post.isDeletedSomehow) numDeleted += 1
@@ -493,11 +493,11 @@ case class PageParts (
 
   // -------- Replies
 
-  def repliesTo(id: ActionId): List[Post] =
+  def repliesTo(id: PostId): List[Post] =
     // Filter out title, body config post. (Parent id = its own id)
     postsByParentId.getOrElse(id, Nil).filterNot(_.id == id)
 
-  def successorsTo(postId: ActionId): List[Post] = {
+  def successorsTo(postId: PostId): List[Post] = {
     val res = repliesTo(postId)
     res.flatMap(r => successorsTo(r.id)) ::: res
   }
@@ -528,12 +528,12 @@ case class PageParts (
     //})
   }
 
-  private lazy val editAppsByPostId: imm.Map[ActionId, List[EditApp]] =
+  private lazy val editAppsByPostId: imm.Map[PostId, List[EditApp]] =
     editApps.groupBy(ea => getPatch_!(ea.editId).postId)
 
   /** Edits applied to the specified post, sorted by most-recent first.
    */
-  def editAppsTo(postId: ActionId): List[EditApp] =
+  def editAppsTo(postId: PostId): List[EditApp] =
     // The list is probably already sorted, since new EditApp:s are
     // prefixed to the editApps list.
     editAppsByPostId.getOrElse(postId, Nil).sortBy(- _.ctime.getTime)
@@ -703,7 +703,7 @@ case class PageParts (
  */
 sealed abstract class PageRoot {
   // COULD rename to `id`? Why did I call it `subId`?
-  def subId: ActionId
+  def subId: PostId
   // Why did I name it "...OrCreate..."?
   def findOrCreatePostIn(page: PageParts): Option[Post]
   def findChildrenIn(page: PageParts): List[Post]
@@ -718,7 +718,7 @@ object PageRoot {
   val TheBody = Real(PageParts.BodyId)
 
   /** A real post, e.g. the page body post. */
-  case class Real(subId: ActionId) extends PageRoot {
+  case class Real(subId: PostId) extends PageRoot {
     def findOrCreatePostIn(page: PageParts): Option[Post] = page.getPost(subId)
     def findChildrenIn(page: PageParts): List[Post] = page.repliesTo(subId)
   }
@@ -730,7 +730,7 @@ object PageRoot {
   // the page?
 
   // No longer needed; was used in the past when post ids were strigns. Ok remove.
-  def apply(id: ActionId) = Real(id)
+  def apply(id: PostId) = Real(id)
 
 }
 

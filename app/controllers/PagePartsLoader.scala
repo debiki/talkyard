@@ -86,7 +86,7 @@ object PagePartsLoader extends mvc.Controller {
 
 
   private def loadThreadsOrPosts(
-        loadWhatFn: (PageParts, List[ActionId]) => List[PostPatchSpec]) =
+        loadWhatFn: (PageParts, List[PostId]) => List[PostPatchSpec]) =
       PostJsonAction(maxLength = 5000) { apiReq =>
 
     SECURITY // What about access control?! Page ids generally unknown however, but
@@ -94,12 +94,12 @@ object PagePartsLoader extends mvc.Controller {
 
     val pageActionIds = apiReq.body.as[List[Map[String, String]]]
 
-    val actionsByPageId: Map[String, List[ActionId]] =
+    val postIdsByPage: Map[PageId, List[PostId]] =
       Utils.parsePageActionIds(pageActionIds)(identity)
 
     var pagesAndPatchSpecs = List[(PageParts, List[PostPatchSpec])]()
 
-    actionsByPageId foreach { case (pageId, postIds) =>
+    postIdsByPage foreach { case (pageId, postIds) =>
       val page = apiReq.dao.loadPage(pageId) getOrElse throwNotFound(
         "DwE80Bw2", s"Page not found, id: `$pageId'; could not do all changes")
       val postIdsToLoad = loadWhatFn(page, postIds)

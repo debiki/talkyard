@@ -30,6 +30,8 @@ package object core {
 
   type LoginId = String
 
+  type UserId = String
+
   type RoleId = String
 
 }
