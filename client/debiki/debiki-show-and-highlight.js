@@ -97,6 +97,9 @@ d.i.ensureAnyAnchorPostLoaded = function(callback) {
   if (!$post.length) {
     d.i.loadAndInsertThreadAndTree(anchorPostId, callback);
   }
+  else {
+    callback();
+  }
 }
 
 
