@@ -26,14 +26,17 @@ import test.e2e.specs._
  * Runs all end to end tests. Empties the database and restarts the browser
  * once before all tests are run. (Each test usually creates a new
  * site, so there's no need to empty the database inbetween each test.)
+ *
+ * In SBT:  test-only test.e2e.EndToEndSuite
+ * In test:console:  (new test.e2e.EndToEndSuite).execute()
  */
 @test.tags.EndToEndTest
 class EndToEndSuite extends Suites(
-  CreateSiteSpec,
-  DeleteActivitySpec,
-  AdminDashboardSpec,
-  AnonLoginSpec,
-  ForumSpec,
-  StyleSiteSpecSpec)
+  new CreateSiteSpec,
+  new DeleteActivitySpec,
+  new AdminDashboardSpec,
+  new AnonLoginSpec,
+  new ForumSpec,
+  new StyleSiteSpecSpec)
   with StartServerAndChromeDriverFactory
 

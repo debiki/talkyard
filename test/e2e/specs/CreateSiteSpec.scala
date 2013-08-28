@@ -23,15 +23,12 @@ import org.scalatest.DoNotDiscover
 import test.e2e.code._
 
 
-/**
- * Runs the CreateSiteSpec suite
- * in SBT:
- *  test-only test.e2e.CreateSiteSpecRunner
- * in SBT's test:console:
- *  (new test.e2e.CreateSiteSpecRunner {}).execute()
- */
+/** Runs the CreateSiteSpec suite.
+  * In Play:   test-only test.e2e.specs.CreateSiteSpecRunner
+  * In test:console:  (new test.e2e.specs.CreateSiteSpecRunner).execute()
+  */
 @DoNotDiscover
-class CreateSiteSpecRunner extends org.scalatest.Suites(CreateSiteSpec)
+class CreateSiteSpecRunner extends org.scalatest.Suites(new CreateSiteSpec)
   with StartServerAndChromeDriverFactory
 
 
@@ -43,7 +40,7 @@ class CreateSiteSpecRunner extends org.scalatest.Suites(CreateSiteSpec)
  */
 @test.tags.EndToEndTest
 @DoNotDiscover
-object CreateSiteSpec extends DebikiBrowserSpec with TestSiteCreator {
+class CreateSiteSpec extends DebikiBrowserSpec with TestSiteCreator {
 
   val firstSiteName = nextSiteName()
   val secondSiteName = nextSiteName()

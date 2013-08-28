@@ -17,6 +17,8 @@
 
 package debiki
 
+import akka.actor._
+import akka.pattern.gracefulStop
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import com.debiki.core.QuotaConsumers
@@ -24,13 +26,17 @@ import com.debiki.dao.rdb.{RdbDaoFactory, Rdb}
 import debiki.dao.{SystemDao, SiteDao, CachingSiteDaoFactory, CachingSystemDao}
 //import com.twitter.ostrich.stats.Stats
 //import com.twitter.ostrich.{admin => toa}
+import java.{lang => jl}
 import play.{api => p}
 import play.api.libs.concurrent.Akka
 import play.api.Play
 import play.api.Play.current
+import scala.concurrent.duration._
+import scala.concurrent.Await
 
 
 object Globals extends Globals
+
 
 
 /** App server startup and shutdown hooks, plus global stuff like
@@ -41,59 +47,24 @@ object Globals extends Globals
 class Globals {
 
 
-  private val dbDaoFactory = new RdbDaoFactory({
-    //val dataSourceName = if (Play.isTest) "test" else "default"
-    //val dataSource = p.db.DB.getDataSource(dataSourceName)
-    val dataSource = Debiki.getPostgreSqlDataSource()
-    val db = new Rdb(dataSource)
+  private var _state: State = null
 
-    // Log which database we've connected to.
-    //val boneDataSource = dataSource.asInstanceOf[com.jolbox.bonecp.BoneCPDataSource]
-    //p.Logger.info(o"""Connected to database:
-    //  ${boneDataSource.getJdbcUrl} as user ${boneDataSource.getUsername}.""")
-
-    db
-  }, Akka.system, anyFullTextSearchDbPath, Play.isTest)
+  private def state: State = {
+    assert(_state ne null, "No Globals.State created, please call onServerStartup()")
+    _state
+  }
 
 
-  def systemDao: SystemDao = new CachingSystemDao(dbDaoFactory.systemDbDao)
-
-
-  private def anyFullTextSearchDbPath =
-    Play.configuration.getString("fullTextSearchDb.dataPath")
-
-
-  private def freeDollarsToEachNewSite: Float =
-    Play.configuration.getDouble("new.site.freeDollars")map(_.toFloat) getOrElse {
-      // Don't run out of quota when running e2e tests.
-      if (Play.isTest) 1000.0f else 1.0f
-    }
-
-
-  private val quotaManager =
-    new QuotaManager(Akka.system, systemDao, freeDollarsToEachNewSite)
-  quotaManager.scheduleCleanups()
-
-
-  private val siteDaoFactory = new CachingSiteDaoFactory(dbDaoFactory,
-    quotaManager.QuotaChargerImpl /*, cache-config */)
+  def systemDao = state.systemDao
 
 
   def siteDao(siteId: SiteId, ip: String, roleId: Option[RoleId] = None): SiteDao =
-    siteDaoFactory.newSiteDao(
+    state.siteDaoFactory.newSiteDao(
       QuotaConsumers(ip = Some(ip), tenantId = siteId, roleId = roleId))
 
 
-  private val mailerActorRef =
-    Mailer.startNewActor(Akka.system, siteDaoFactory)
-
-
-  private val notifierActorRef =
-    Notifier.startNewActor(Akka.system, systemDao, siteDaoFactory)
-
-
   def sendEmail(email: Email, websiteId: String) {
-    mailerActorRef ! (email, websiteId)
+    state.mailerActorRef ! (email, websiteId)
   }
 
 
@@ -105,7 +76,12 @@ class Globals {
 
 
   def onServerStartup(app: p.Application) {
-    //Debiki.SystemDao
+    if (_state ne null)
+      throw new jl.IllegalStateException(o"""Server already running, was it not properly
+        shut down last time? Please hit CTRL+C to kill it. [DwE83KJ9]""")
+
+    _state = new State
+    state.quotaManager.scheduleCleanups()
 
     // For now, disable in dev mode — because of the port conflict that
     // causes an error on reload and restart, see below (search for "conflict").
@@ -118,8 +94,17 @@ class Globals {
 
 
   def onServerShutdown(app: p.Application) {
+    // Play.start() first calls Play.stop(), so:
+    if (_state eq null)
+      return
+
     p.Logger.info("Shutting down, gracefully...")
-    dbDaoFactory.shutdown()
+    // Shutdown the notifier before the mailer, so no notifications are lost
+    // because there was no mailer that could send them.
+    shutdownActorAndWait(state.notifierActorRef)
+    shutdownActorAndWait(state.mailerActorRef)
+    state.dbDaoFactory.shutdown()
+    _state = null
 
     //_ostrichAdminService.shutdown()
 
@@ -131,6 +116,54 @@ class Globals {
     // automatically shutdown when the application restart. You can access it
     // in:  play.api.libs.Akka.system"
 
+  }
+
+
+  private def shutdownActorAndWait(actorRef: ActorRef): Boolean = {
+    val future = gracefulStop(actorRef, state.ShutdownTimeout)(Akka.system)
+    val stopped = Await.result(future, state.ShutdownTimeout)
+    stopped
+  }
+
+
+  private class State {
+
+    val ShutdownTimeout = 30 seconds
+
+    val dbDaoFactory = new RdbDaoFactory(
+      makeDataSource(), Akka.system, anyFullTextSearchDbPath, Play.isTest)
+
+    val quotaManager = new QuotaManager(Akka.system, systemDao, freeDollarsToEachNewSite)
+
+    val siteDaoFactory = new CachingSiteDaoFactory(dbDaoFactory, quotaManager.QuotaChargerImpl)
+
+    val mailerActorRef = Mailer.startNewActor(Akka.system, siteDaoFactory)
+
+    val notifierActorRef = Notifier.startNewActor(Akka.system, systemDao, siteDaoFactory)
+
+    def systemDao: SystemDao = new CachingSystemDao(dbDaoFactory.systemDbDao)
+
+    private def anyFullTextSearchDbPath =
+      Play.configuration.getString("fullTextSearchDb.dataPath")
+
+    private def freeDollarsToEachNewSite: Float =
+      Play.configuration.getDouble("new.site.freeDollars")map(_.toFloat) getOrElse {
+        // Don't run out of quota when running e2e tests.
+        if (Play.isTest) 1000.0f else 1.0f
+      }
+
+    private def makeDataSource() = {
+      //val dataSourceName = if (Play.isTest) "test" else "default"
+      //val dataSource = p.db.DB.getDataSource(dataSourceName)
+      val dataSource = Debiki.getPostgreSqlDataSource()
+      val db = new Rdb(dataSource)
+
+      // Log which database we've connected to.
+      //val boneDataSource = dataSource.asInstanceOf[com.jolbox.bonecp.BoneCPDataSource]
+      //p.Logger.info(o"""Connected to database:
+      //  ${boneDataSource.getJdbcUrl} as user ${boneDataSource.getUsername}.""")
+      db
+    }
   }
 
 }

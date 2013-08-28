@@ -25,11 +25,12 @@ import org.scalatest.DoNotDiscover
 import test.e2e.code._
 
 
-/**
- * Runs the AnonLoginSpec suite, in SBT:  test-only test.e2e.AnonLoginSpecRunner
- */
+/** Runs the AnonLoginSpec suite
+  * in SBT:  test-only test.e2e.specs.AnonLoginSpecRunner
+  * In test:console:  (new test.e2e.specs.AnonLoginSpecRunner).execute()
+  */
 @DoNotDiscover
-class AnonLoginSpecRunner extends org.scalatest.Suites(AnonLoginSpec)
+class AnonLoginSpecRunner extends org.scalatest.Suites(new AnonLoginSpec)
 with StartServerAndChromeDriverFactory
 
 
@@ -40,7 +41,7 @@ with StartServerAndChromeDriverFactory
  */
 @test.tags.EndToEndTest
 @DoNotDiscover
-object AnonLoginSpec extends DebikiBrowserSpec with TestReplyer with TestLoginner {
+class AnonLoginSpec extends DebikiBrowserSpec with TestReplyer with TestLoginner {
 
   lazy val testPage = createTestPage(PageRole.Generic,
       title = "Test Page Title 27KV09", body = Some("Test page text 953Ih31."))

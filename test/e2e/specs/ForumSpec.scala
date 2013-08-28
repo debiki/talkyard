@@ -24,11 +24,12 @@ import org.scalatest.DoNotDiscover
 import test.e2e.code._
 
 
-/**
- * Runs the ForumSpec suite, in SBT:  test-only test.e2e.ForumSpecRunner
- */
+/** Runs the ForumSpec suite,
+  * in SBT:  test-only test.e2e.specs.ForumSpecRunner
+  * in test:console:  (new test.e2.specs.ForumSpecRunner).execute()
+  */
 @DoNotDiscover
-class ForumSpecRunner extends org.scalatest.Suites(ForumSpec)
+class ForumSpecRunner extends org.scalatest.Suites(new ForumSpec)
 with StartServerAndChromeDriverFactory
 
 
@@ -37,7 +38,7 @@ with StartServerAndChromeDriverFactory
  */
 @test.tags.EndToEndTest
 @DoNotDiscover
-object ForumSpec extends DebikiBrowserSpec with TestEditor {
+class ForumSpec extends DebikiBrowserSpec with TestEditor {
 
   var forumWindow: WindowTarget = null
 

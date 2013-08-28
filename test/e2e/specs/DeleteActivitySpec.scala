@@ -24,10 +24,12 @@ import org.scalatest.DoNotDiscover
 import test.e2e.code._
 
 
-/** Runs the DeleteActivitySpec suite, in SBT:  test-only test.e2e.DeleteActivitySpecRunner
+/** Runs the DeleteActivitySpec suite
+  * in SBT:  test-only test.e2e.specs.DeleteActivitySpecRunner
+  * in test:console:  (new test.e2e.specs.DeleteActivitySpecRunner).execute()
   */
 @DoNotDiscover
-class DeleteActivitySpecRunner extends org.scalatest.Suites(DeleteActivitySpec)
+class DeleteActivitySpecRunner extends org.scalatest.Suites(new DeleteActivitySpec)
 with StartServerAndChromeDriverFactory
 
 
@@ -44,7 +46,7 @@ with StartServerAndChromeDriverFactory
   */
 @test.tags.EndToEndTest
 @DoNotDiscover
-object DeleteActivitySpec extends DebikiBrowserSpec  with TestReplyer with TestLoginner
+class DeleteActivitySpec extends DebikiBrowserSpec with TestReplyer with TestLoginner
   with TestDeleterCollapserFlagger {
 
   lazy val testPage = createTestPage(PageRole.Generic,

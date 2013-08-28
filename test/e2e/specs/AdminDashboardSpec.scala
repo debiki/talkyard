@@ -26,13 +26,11 @@ import test.e2e.code._
 
 /**
  * Runs the CreateSiteSpec suite
- * in SBT:
- *  test-only test.e2e.AdminDashboardRunner
- * in SBT's test:console:
- *  (new test.e2e.AdminDashboardRunner {}).execute()
+ * in SBT:  test-only test.e2e.specs.AdminDashboardRunner
+ * in test:console:  (new test.e2e.specs.AdminDashboardRunner).execute()
  */
 @DoNotDiscover
-class AdminDashboardRunner extends org.scalatest.Suites(AdminDashboardSpec)
+class AdminDashboardRunner extends org.scalatest.Suites(new AdminDashboardSpec)
   with StartServerAndChromeDriverFactory
 
 
@@ -41,7 +39,7 @@ class AdminDashboardRunner extends org.scalatest.Suites(AdminDashboardSpec)
  */
 @test.tags.EndToEndTest
 @DoNotDiscover
-object AdminDashboardSpec extends DebikiBrowserSpec
+class AdminDashboardSpec extends DebikiBrowserSpec
   with TestSiteCreator with TestEditor {
 
   val EditedHomepageTitle = "Edited Homepage Title"

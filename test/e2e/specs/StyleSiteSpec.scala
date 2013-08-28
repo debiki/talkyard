@@ -24,15 +24,12 @@ import org.scalatest.DoNotDiscover
 import test.e2e.code._
 
 
-/**
- * Runs the StyleSiteSpec suite
- * in SBT:
- *  test-only test.e2e.StyleSiteSpecRunner
- * in SBT's test:console:
- *  (new test.e2e.StyleSiteSpecRunner {}).execute()
- */
+/** Runs the StyleSiteSpec suite,
+  * in SBT:  test-only test.e2e.specs.StyleSiteSpecRunner
+  * in test:console:  (new test.e2e.specs.StyleSiteSpecRunner).execute()
+  */
 @DoNotDiscover
-class StyleSiteSpecRunner extends org.scalatest.Suites(StyleSiteSpecSpec)
+class StyleSiteSpecRunner extends org.scalatest.Suites(new StyleSiteSpecSpec)
   with StartServerAndChromeDriverFactory
 
 
@@ -43,7 +40,7 @@ class StyleSiteSpecRunner extends org.scalatest.Suites(StyleSiteSpecSpec)
  */
 @test.tags.EndToEndTest
 @DoNotDiscover
-object StyleSiteSpecSpec extends DebikiBrowserSpec
+class StyleSiteSpecSpec extends DebikiBrowserSpec
   with TestSiteCreator with TestEditor {
 
 

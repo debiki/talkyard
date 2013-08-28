@@ -25,13 +25,11 @@ import test.e2e.code._
 
 
 /** Runs the ServerInstallationSpec suite
-  * in SBT:
-  *  test-only test.e2e.ServerInstallationSpecRunner
-  * in SBT's test:console:
-  *  (new test.e2e.ServerInstallationSpecRunner {}).execute()
+  * in SBT:  test-only test.e2e.specs.ServerInstallationSpecRunner
+  * in test:console:  (new test.e2e.specs.ServerInstallationSpecRunner).execute()
   */
 @DoNotDiscover
-class ServerInstallationSpecRunner extends org.scalatest.Suites(ServerInstallationSpec)
+class ServerInstallationSpecRunner extends org.scalatest.Suites(new ServerInstallationSpec)
   with StartServerAndChromeDriverFactory
 
 
@@ -40,7 +38,7 @@ class ServerInstallationSpecRunner extends org.scalatest.Suites(ServerInstallati
   */
 @test.tags.EndToEndTest
 @DoNotDiscover
-object ServerInstallationSpec extends DebikiBrowserSpec with TestLoginner {
+class ServerInstallationSpec extends DebikiBrowserSpec with TestLoginner {
 
   import play.api.test.Helpers.testServerPort
 

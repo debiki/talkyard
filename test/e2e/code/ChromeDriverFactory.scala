@@ -48,6 +48,7 @@ object ChromeDriverFactory {
 
   def stop() {
     anyService foreach { _.stop() }
+    anyService = None
   }
 
 

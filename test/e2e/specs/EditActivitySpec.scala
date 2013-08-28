@@ -28,10 +28,12 @@ import org.openqa.selenium.By
 import test.e2e.code._
 
 
-/** Runs the EditActivitySpec suite, in SBT:  test-only test.e2e.EditActivitySpecRunner
+/** Runs the EditActivitySpec suite,
+  * in SBT:  test-only test.e2e.specs.EditActivitySpecRunner
+  * in test:console:  (new test.e2.specs.EditActivitySpecRunner).execute()
   */
 @DoNotDiscover
-class EditActivitySpecRunner extends org.scalatest.Suites(EditActivitySpec)
+class EditActivitySpecRunner extends org.scalatest.Suites(new EditActivitySpec)
 with StartServerAndChromeDriverFactory
 
 
@@ -60,7 +62,7 @@ with StartServerAndChromeDriverFactory
   */
 @test.tags.EndToEndTest
 @DoNotDiscover
-object EditActivitySpec extends DebikiBrowserSpec
+class EditActivitySpec extends DebikiBrowserSpec
   with TestReplyer with TestLoginner with TestEditor {
 
   lazy val testPage = createTestPage(PageRole.Generic,
