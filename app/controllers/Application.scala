@@ -105,6 +105,9 @@ object Application extends mvc.Controller {
     if (!isAuthor && !pageReq.permsOnPage.deleteAnyReply)
       throwForbidden("DwE0523k1250", "You may not delete that comment")
 
+    if (post.isDeletedSomehow)
+      throwForbidden("DwE7Hf038", "Comment already deleted")
+
     if (wholeTree && !pageReq.permsOnPage.deleteAnyReply) {
       // Deny operation, even if there are 0 replies, because another JVM thread
       // might create a reply at any time.
