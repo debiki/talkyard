@@ -19,9 +19,9 @@ package test.e2e.code
 
 import com.debiki.core.Prelude._
 import java.{io => jio}
+import org.openqa.selenium.chrome.ChromeDriver
 import org.openqa.selenium.chrome.ChromeDriverService
-import org.openqa.selenium.remote.DesiredCapabilities
-import org.openqa.selenium.remote.RemoteWebDriver
+import org.openqa.selenium.chrome.ChromeOptions
 import org.openqa.selenium.WebDriver
 
 
@@ -55,7 +55,13 @@ object ChromeDriverFactory {
 
   def createDriver(): WebDriver = {
     val service = anyService getOrElse sys.error(s"${classNameOf(this)} has not been started")
-    new RemoteWebDriver(service.getUrl(), DesiredCapabilities.chrome())
+    val chromeOptions = new ChromeOptions
+    /* This makes Chrome remember breakpoint accross test browser restarts. :-)
+    chromeOptions.addArguments(
+      "--user-data-dir=/tmp/kajmagnus-chrome-driver-data-dir")
+    */
+    new ChromeDriver(service, chromeOptions)
+
   }
 
 }
