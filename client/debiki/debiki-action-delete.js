@@ -56,7 +56,7 @@ function initDeleteForm() {
               .find('input:checked')
                 .prop('checked', false).button('refresh');
 
-          var result = d.i.patchPage(json);
+          var result = d.i.patchPage(json, { overwriteTrees: true });
         })
         .fail(d.i.showServerResponseDialog);
     return false;

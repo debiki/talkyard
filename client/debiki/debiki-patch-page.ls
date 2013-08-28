@@ -35,13 +35,13 @@ debiki.onPagePatched = !(callback) ->
  * Returns and object with info on what
  * was patched.
  */
-d.i.patchPage = (patches) ->
+d.i.patchPage = (patches, { overwriteTrees } = {} ) ->
   result = patchedThreads: [], patchedPosts: []
 
   for pageId, threadPatches of patches.threadsByPageId || {}
     if pageId is d.i.pageId
       for patch in threadPatches
-        patchThreadWith patch, { onPage: pageId, result }
+        patchThreadWith patch, { onPage: pageId, result, overwriteTrees }
 
   for pageId, postPatches of patches.postsByPageId || {}
     if pageId is d.i.pageId
@@ -55,7 +55,7 @@ d.i.patchPage = (patches) ->
 
 
 
-patchThreadWith = (threadPatch, { onPage, result }) ->
+patchThreadWith = (threadPatch, { onPage, result, overwriteTrees }) ->
   pageId = onPage
   isNewThread = ! $('#post-' + threadPatch.id).length
   $newThread = $ threadPatch.html
@@ -73,7 +73,7 @@ patchThreadWith = (threadPatch, { onPage, result }) ->
     # been loaded. If overwriting, there'd be troubles e.g. if the user
     # has started replying to a successor post.
     $oldThread = $('#' + $newThread.attr 'id')
-    if $oldThread.find('.dw-p-bd').length == 0
+    if $oldThread.find('.dw-p-bd').length == 0 || overwriteTrees
       # No post body present. Old thread thus not yet loaded? Replace it.
       replaceOldWith $newThread, onPage: pageId
     else

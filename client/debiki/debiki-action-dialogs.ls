@@ -124,7 +124,7 @@ function submit($dialog, apiFunction)
   d.u.postJson { url: apiFunction, data }
       .fail d.i.showServerResponseDialog
       .done !(newDebateHtml) ->
-        result = d.i.patchPage newDebateHtml
+        result = d.i.patchPage newDebateHtml, overwriteTrees: true
         result.patchedThreads[0].dwScrollIntoView!
       .always !->
         $dialog.dialog 'close'
