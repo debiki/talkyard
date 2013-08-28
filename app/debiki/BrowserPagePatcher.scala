@@ -88,8 +88,11 @@ case class BrowserPagePatcher(
   implicit private val logger = play.api.Logger(this.getClass)
 
   private val showUnapproved: ShowUnapproved =
-    if (showAllUnapproved || request.user_!.isAdmin) ShowUnapproved.All
-    else ShowUnapproved.WrittenByUser(request.user_!.id)
+    if (showAllUnapproved || request.user.map(_.isAdmin) == Some(true)) ShowUnapproved.All
+    else request.user match {
+      case None => ShowUnapproved.None
+      case Some(user) => ShowUnapproved.WrittenByUser(user.id)
+    }
 
 
   // ========== JSON for threads
