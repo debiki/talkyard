@@ -17,12 +17,7 @@
 
 package test.e2e.code
 
-import com.debiki.core.PageRole
 import com.debiki.core.Prelude._
-import org.openqa.selenium.Keys
-import org.openqa.selenium.interactions.Actions
-import org.scalatest.time.{Seconds, Span}
-import play.api.test.Helpers.testServerPort
 import TestSiteCreator._
 
 
@@ -51,7 +46,7 @@ trait TestSiteCreator extends TestLoginner {
 
 
   def createWebsiteChooseNamePage = new Page {
-    val url = s"$firstSiteOrigin/-/new-website/choose-name"
+    val url = s"http://$newSiteDomain/-/new-website/choose-name"
   }
 
 
@@ -112,7 +107,7 @@ trait TestSiteCreator extends TestLoginner {
 
 
   def originOf(newSiteName: String) =
-    s"http://$newSiteName.localhost:$testServerPort"
+    s"http://$newSiteName.$newSiteDomain"
 
 }
 

@@ -33,7 +33,24 @@ import PageParts.UnassignedId
  */
 trait StuffCreator {
 
-  def firstSiteHost = s"localhost:$testServerPort"
+
+  /** A test site that's used for most tests. Do not use "localhost" because
+    * Chrome silently refuses to set cookies for "localhost", causing tests
+    * to fail later on with weird errors, like "not logged in".
+    */
+  def firstSiteHost = s"127.0.0.1:$testServerPort"
+
+
+  /** The parent domain of new sites.
+    *
+    * When testing the creation of new sites, "localhost" must (?) be used,
+    * not 127.0.0.1, so the new site address can be set to "test-site-1.localhost",
+    * rather than "test-site-1.127.0.0.1". (Also see 'firstSiteHost' above.)
+    */
+  def newSiteDomain = {
+    firstSiteOrigin // tempoarary fix to ensure site created in database
+    s"localhost:$testServerPort"
+  }
 
 
   val DefaultBackgroundColor = "rgba(255, 248, 220, 1)" // that's cornsilk
@@ -103,12 +120,16 @@ trait StuffCreator {
       val pagesToCreate = Nil
     })
 
+    // Make the site accessible via "localhost": (in addition to 127.0.0.1)
+    firstSiteDao.addTenantHost(
+      TenantHost(newSiteDomain, TenantHost.RoleDuplicate, TenantHost.HttpsNone))
+
     // Create ./themes/example/theme.conf and ./themes/example/theme.css,
     // referred to by the new site config page.
     createCodePage(firstSiteId, "/themes/example/", "theme.conf", i"""
       |asset-bundles:
       |  styles.css:
-      |    - http://$firstSiteHost/themes/example/theme.css
+      |    - http://$newSiteDomain/themes/example/theme.css
       |    - /themes/local/theme.css, optional
       |""")
 
@@ -119,11 +140,11 @@ trait StuffCreator {
       |""")
 
     createCodePage(firstSiteId, "/", "_site.conf", i"""
-          |new-site-domain: $firstSiteHost
+          |new-site-domain: $newSiteDomain
           |new-site-terms-of-use: /hosting/terms-of-service
           |new-site-privacy-policy: /hosting/privacy-policy
           |new-site-config-page-text: |
-          |  extend: http://$firstSiteHost/themes/example/theme.conf
+          |  extend: http://$newSiteDomain/themes/example/theme.conf
           |""")
 
     (firstSite.id, "http://" + firstSiteHost)
@@ -170,7 +191,7 @@ trait StuffCreator {
       assErr("DwE381kK0", "Error loading page with people"))
 
     new TestPage(
-      url = firstSiteHost + pageStuffNoPeople.path.path,
+      url = "http://" + firstSiteHost + pageStuffNoPeople.path.path,
       id = pageStuffNoPeople.path.pageId.get)
   }
 

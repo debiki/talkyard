@@ -251,7 +251,8 @@ object AppCreateWebsite extends mvc.Controller {
   private def _throwIfMayNotCreateWebsite(request: ApiRequest[_],
         newWebsiteAddr: Option[String] = None) {
     if (request.host != "www.debiki.com" &&
-        !request.host.contains("localhost:"))
+        !request.host.contains("localhost:") &&
+        !request.host.contains("127.0.0.1:"))
       throwForbidden(
         "DwE093AQ2", "You cannot create a new website via that website")
 
