@@ -17,8 +17,7 @@
 
 package test.e2e.code
 
-import com.debiki.core.PageRole
-import com.debiki.core.ActionId
+import com.debiki.core.{ActionId, PostId}
 import com.debiki.core.Prelude._
 import org.scalatest.time.{Seconds, Span}
 import org.openqa.selenium.Keys
@@ -105,25 +104,9 @@ trait TestEditor {
 
     info(s"edit text to: ``$prettyNewText''")
 
-    // Wait for network request that loads editor data.
-    // Then focus editor and send keys.
-    // ((It doesn't seem possible to click on CodeMirror. But using `sendKeys`
-    // directly works. Alternatively, executing this JS string:
-    //   driver.asInstanceOf[JavascriptExecutor].executeScript(
-    //      """window.editor.setValue("Hello");""")
-    // is also supposed to work, see e.g.:
-    //   https://groups.google.com/forum/?fromgroups=#!topic/webdriver/Rhm-NZRBgXY ))
+    // Wait for network request that loads editor data. Then type text.
     eventually {
-      findEditorTextareaFor(postId).map(_.underlying) match {
-        case None =>
-          // Try again later; editor loaded via Ajax request.
-          fail()
-        case Some(textarea) =>
-          // Select all current text.
-          textarea.sendKeys(Keys.chord(Keys.SHIFT, Keys.CONTROL, Keys.END))
-          // Overwrite selected text.
-          textarea.sendKeys(newText)
-      }
+      setTextInEditor(newText, postId = postId)
     }
 
     info("click preview, then submit")
@@ -152,8 +135,45 @@ trait TestEditor {
 
 
   private def findEditorTextareaFor(postId: ActionId): Option[Element] = {
-    find(cssSelector(s"#post-$postId .CodeMirror textarea")) orElse
-      find(cssSelector(s"#post-$postId .dw-e-tab textarea"))
+    findCodeMirrorEditorTextarea(postId) orElse findStandardEditorTextarea(postId)
+  }
+
+
+  private def findCodeMirrorEditorTextarea(postId: ActionId): Option[Element] = {
+    find(cssSelector(s"#post-$postId .CodeMirror textarea"))
+  }
+
+
+  private def findStandardEditorTextarea(postId: ActionId): Option[Element] = {
+    find(cssSelector(s"#post-$postId .dw-e-tab textarea"))
+  }
+
+
+  private def setTextInEditor(newText: String, postId: PostId) {
+    // First try with any CodeMirror editor saved as
+    //    debiki.internal.debugCodeMirrorEditor
+    // but only if CodeMirror is open, or we might accidentally use some *old* instance.
+    if (findCodeMirrorEditorTextarea(postId).isDefined) {
+      // We cannot `sendKeys` to the `textarea` in CodeMirror — it's not visible.
+      // However we need to escape " and \n in the `newText` Javascript string.
+      val escapedText =
+        newText.replaceAllLiterally("\"", "\\\"").replaceAllLiterally("\n", "\\n")
+      executeScript(i"""
+          debiki.internal.debugCodeMirrorEditor.setValue("$escapedText");
+          """)
+      return
+    }
+
+    // And if there is no CodeMirror instance, we're probably editing a vanilla <textarea>.
+    findStandardEditorTextarea(postId).map(_.underlying) match {
+      case Some(textarea) =>
+        // Select all current text.
+        textarea.sendKeys(Keys.chord(Keys.SHIFT, Keys.CONTROL, Keys.END))
+        // Overwrite selected text.
+        textarea.sendKeys(newText)
+      case None =>
+        fail()
+    }
   }
 
 

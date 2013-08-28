@@ -194,6 +194,9 @@ function _$showEditFormImpl() {
         // showTrailingSpace: true,
         tabMode: "indent"
       });
+
+      // For Selenium E2E tests.
+      d.i.debugCodeMirrorEditor = codeMirrorEditor;
     }
 
     // Always activate the editor on mouse/touch clicks on the tab.
