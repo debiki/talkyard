@@ -40,6 +40,7 @@ object ChromeDriverFactory {
     require(anyService.isEmpty, s"${classNameOf(this)} already started")
     anyService = Some(new ChromeDriverService.Builder()
       .usingDriverExecutable(new jio.File(chromeDriverPath))
+      .withLogFile(new jio.File("logs/chromedriver.log"))
       .usingAnyFreePort()
       .build())
     anyService foreach { _.start() }
