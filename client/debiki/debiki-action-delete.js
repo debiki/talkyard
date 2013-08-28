@@ -48,13 +48,11 @@ function initDeleteForm() {
   $form.submit(function() {
     $.post($form.attr("action"), $form.serialize(), 'html')
         .done(function(json) {
-          $parent.dialog('close');
           // Don't show already submitted deletion reason,
           // if reopening form, and clear the delete-all-replies
           // checkbox.
-          $form.find('textarea').val('').end()
-              .find('input:checked')
-                .prop('checked', false).button('refresh');
+          $parent.dialog('close');
+          $form.find('input:checked').prop('checked', false);
 
           var result = d.i.patchPage(json, { overwriteTrees: true });
         })
