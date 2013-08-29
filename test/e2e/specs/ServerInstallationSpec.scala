@@ -24,17 +24,24 @@ import org.scalatest.DoNotDiscover
 import test.e2e.code._
 
 
+
 /** Runs the ServerInstallationSpec suite
   * in SBT:  test-only test.e2e.specs.ServerInstallationSpecRunner
   * in test:console:  (new test.e2e.specs.ServerInstallationSpecRunner).execute()
+  *
+  * Is discovered — ServerInstallationSpec needs to run alone.
   */
-@DoNotDiscover
 class ServerInstallationSpecRunner extends org.scalatest.Suites(new ServerInstallationSpec)
   with StartServerAndChromeDriverFactory
 
 
+
 /** Tests creation of the very first site and its owner account,
   * that is, server "installation".
+  *
+  * This test cannot be included in test.e2e.EndToEndSuite, because it assumes that
+  * no 'localhost' site exists and creates one, and the tests in EndToEndSuite also
+  * does that.
   */
 @test.tags.EndToEndTest
 @DoNotDiscover
@@ -51,9 +58,12 @@ class ServerInstallationSpec extends DebikiBrowserSpec with TestLoginner {
     }
 
     "go to the install page" in {
-      go to (new Page {
+      go to new Page {
+        // (Don't use StuffCreator.newSiteDomain here, because newSiteDomain isn't
+        // supposed to exist at this time. We're actually testing the creation of
+        // newSiteDomain.)
         val url = s"http://localhost:$testServerPort/-/install/"
-      })
+      }
     }
 
     "find the create-first-site page" in {
