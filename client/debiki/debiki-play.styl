@@ -1,3 +1,30 @@
+/*!
+ * Copyright (C) 2010-2013 Kaj Magnus Lindberg (born 1979)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+// Styles specific to Debiki's Play Framework application.
+
+
+
+// Standard tags
+//===========================
+
+
+// ------ IE 6, 7 and 8 non-comopatibility
+
 .debiki-show-if-lte-ie7,
 .debiki-show-if-lte-ie8
   display: none
@@ -18,6 +45,9 @@ body.dw-ua-lte-ie7 .debiki-show-unless-lte-ie7,
 body.dw-ua-lte-ie8 .debiki-show-unless-lte-ie8
   display: none
 
+
+// ------ Standard elems
+
 ins
   text-decoration: none
   background: #9f9
@@ -26,11 +56,18 @@ del
   text-decoration: line-through
   background: #ffd0d0
 
+// Use larger font when editing page title.
 .dw-pri .dw-p-ttl > .dw-f-e textarea
   font-size: 26px
 
 .dw-ar-p
   padding-bottom: 0.8em
+
+
+
+// Dashbar
+//===========================
+
 
 #debiki-dashbar
   background: black
@@ -55,43 +92,91 @@ del
   background: #888
   color: #fff
 
+// Hide reply button until a page body has been written.
 .dw-t.dw-dummy > .dw-res,
 .dw-t.dw-dummy > .dw-t-vspace
   display: none
 
+
+
+// Page rendering
+//===========================
+
+
+// Hide ugly React action links until they've been converted to
+// beautiful Reply, Rate etcetera links.
 html.js.dw-render-actions-pending .dw-as,
 html.js body.dw-render-actions-pending .dw-as
   visibility: hidden
 
-#dw-t-65501
+
+// Page title
+//---------------------------
+
+
+#dw-t-65501    // the page title post has id 65501
+  // Don't float title, or body will appear to the right of the title,
+  // rather than below it.
+  // There're no SVG arrows that can be cropped, see above, [8DbF3].
   float: none
 
+
+
+// Posts
+//---------------------------
+
+
+// Hide the reply form resize handle unless hovering the form.
 .dw-fs-re .ui-resizable-se
   visibility: hidden
 
 .dw-fs-re:hover .ui-resizable-se
   visibility: visible
 
+// Prevent the edit form from getting as wide as the page.
 .dw-depth-0 > .dw-p > .dw-f-e .dw-e-tabs
   float: left
   clear: both
 
+// For horizontal reply forms: An arrow to any replies to the right...
 li.dw-fs-re:not(:last-child) .dw-arw-hz-line-to-sibling
   top: -39.5px
 
+// ... But only show that arrow if horizontal layout ...
 .dw-t:not(.dw-hor) > .dw-res > .dw-fs-re .dw-arw
   display: none
 
+// ... and if there're replies to the right.
 li.dw-fs-re:last-child .dw-arw-hz-line-to-sibling
   display: none
+
+
+
+// Cropped and resized posts
+//---------------------------
+
 
 .dw-p.dw-x-s > .dw-p-bd,
 .dw-p.dw-x-s > .dw-p-hd
   max-height: 4em
+  // The max-height of a truncated .dw-p-bd is 4em, but if floating
+  //elements are present inside the -p-bd (e.g. inline reply threads)
+  //its height might grow to e.g. 2000 px. Then at least Chrome places the
+  //truncation mark far away, so the parent .dw-p grows to e.g. 2000 px.
+  //By hiding overflow, the truncation mark won't be pushed down by other
+  //tags inside the .dw-p-bd, and the parent .dw-p won't be larger than
+  //what it's supposed to be (i.e. roughly 4em + 4em).
+  //overflow: hidden;  -- no, doesn't work well: in some unfathomable
+  //weird way, the inline thread disappear upwards, but space is reserved for
+  //them below, as if I had added `relative: -2000px' (which I have not).
 
 .dw-p.dw-x-s
+  // Since `overflow: hidden' on .dw-p-bd doesn't work well (see the
+  // long comment above), restrict max-height of the .dw-p instead (again
+  // see the long comment above, for info on why this is done).
   max-height: 8em
 
+// Don't truncate the root post. (`:not()` isn't supported in <= IE8.)
 .dw-depth-0 > .dw-p.dw-x-s,
 .dw-depth-0 > .dw-p.dw-x-s > .dw-p-bd,
 .dw-depth-0 > .dw-p.dw-x-s > .dw-p-hd
@@ -102,7 +187,7 @@ li.dw-fs-re:last-child .dw-arw-hz-line-to-sibling
   position: absolute
   bottom: 0px
   right: -3px
-  padding: 4px 25px 0 10px
+  padding: 4px 25px 0 10px // there's a resizable-se grip to the right
   height: 17px
   background: white
   font-style: italic
@@ -113,47 +198,78 @@ li.dw-fs-re:last-child .dw-arw-hz-line-to-sibling
   background-color: #fdc
   color: #363636
 
+// Indicate which borders the user has resized.
 .dw-p-rez-e
   border-right: 1px solid #888
-  padding-right: 3px
+  padding-right: 3px // or text to close to the border
+  // This post might extend over [a thread to the right], since
+  // it has been resized eastwards. So as not to draw this post and
+  // [the post to the right] over each other, let this post hide
+  // [the post to the right] by specifying a higher z-index.
   z-index: 11
 
 .dw-p-rez-e:hover
-  z-index: 12
+  z-index: 12 // or resized thread might be merged with each other
 
 .dw-p-rez-s
   border-bottom: 1px solid #888
+  // padding-bottom: 3px; -- pointless: because of overflow, text might
+  //                      end up immediately next to the border anyway
+
+
+
+// Hide interactions
+//---------------------------
+
 
 .dw-a-show-interactions
   color: #3872AB !important
   visibility: visible !important
   font-size: 10px
 
+// Sync these selectors with showCommentsOnClick in debiki.js.
 .dw-hide-interactions .dw-ar-t > .dw-res,
 .dw-hide-interactions .dw-ar-t > .dw-p > .dw-p-bd > .dw-p-bd-blk .dw-i-m-start,
 .dw-hide-interactions .dw-ar-t > .dw-p > .dw-p-bd > .dw-i-ts,
 .dw-hide-interactions .dw-debate svg
   display: none
 
+
+
+// Comments
+//---------------------------
+
+// Make the column separator at least this high. But don't do this for
+// .dw-fs because forms are folded/slided out, i.e. shrinked to zero height.
 .dw-p-as-hz,
 .dw-depth-1:not(.dw-i-t)
   min-height: 100px
 
+// Add some whitespace above replies, when laid out horizontally,
+// so there's some space for the SVG arrows.
 .DW.DW .dw-hor:not(.dw-depth-0) > .dw-res
   margin-top: 35px
 
 .dw-hor:not(.dw-depth-0) > .dw-p-as-hz
-  margin-top: 48px
+  margin-top: 48px // aligns with the .dw-p:s to the right, which
+                   // have some padding
 
+// But show the whole article (or <pre>s with very long lines
+// might be cropped).
 .dw-ar-p
   overflow: visible
 
+// Deleted posts appear as just a single text line,
+// looks better if they appear close to the fold link.
 .dw-p-dl
   margin-left: 23px
 
+// If the thread has been deleted, there's no fold/unfold button to the left.
 .dw-t-dl > .dw-p
   margin-left: 0
 
+// Don't pad the root post and titles (titles are already indented since
+// they're placed inside another post already).
 .dw-ar-p-hd,
 .dw-depth-0 > .dw-p > .dw-p-bd,
 .dw-p-ttl,
@@ -162,20 +278,24 @@ li.dw-fs-re:last-child .dw-arw-hz-line-to-sibling
   padding-left: 0
 
 .dw-p-dl > .dw-p-hd
-  margin-bottom: 24px
+  margin-bottom: 24px // for now — there're currently no spacy hidden
+                      //  action links below deleted posts
   font-style: italic
   background-color: transparent
 
+// Users with links to more info, e.g. website or blog
 .dw-pri a.dw-p-by,
 .dw-pri a.dw-p-e-by
-  color: #369
+  color: #369 // same as reddit
   font-weight: bold
 
+// Users with no links to more info
 span.dw-p-by,
 span.dw-p-e-by
   color: #555
   font-weight: bold
 
+// Make authorship info easy to read
 :not(.dw-p-hd-e) > .dw-p-by
   font-size: 11px
   margin-right: 0.9ex
@@ -185,11 +305,15 @@ span.dw-p-e-by
   padding-left: 2px
   padding-right: 2px
 
+// Permalinks
 .dw-p-link
   float: right
   font-family: monospace
   padding: 2px 3px 2px 4px
 
+// For the *article* itself, make author and post date info less conspicuous,
+// or it steals attention from the page title. (But don't do this for any root
+// post, only for the article.)
 .dw-ar-p-hd
   border: none
   background-color: transparent
@@ -203,59 +327,87 @@ span.dw-p-e-by
 .dw-ar-p-hd > .dw-p-by
   color: #396D99
 
+// Un-indent any root post, by hiding the collapse button.
+// (Why would one want to hide the root post?)
 .dw-depth-0 > .dw-z
   display: none
 
 .dw-depth-0 > .dw-p
   margin-left: 0
+  //float: left; // or the header will be as wide as the root thread
+  //                fix the header instead? I need to fix it anayway
 
 :not(.dw-hor) > .dw-p > .dw-p-bd > .dw-p-bd-blk
+  // Cancel .dw-p-bd 3px padding-left:, because the .dw-p-bd-blk is
+  // 100% wide though, and without padding-right, text might be cropped.
   padding-right: 3px
+  // Adjus max comment width: don't span whole screen even if
+  // .post.cropped-e is removed.
   max-width: 40em
 
+// Cancel .dw-p-bd-blk max width for code pages, and for the page config post.
 [data-page_role='Code'] .dw-hor > .dw-p > .dw-p-bd > .dw-p-bd-blk,
 [data-page_role='Code'] .dw-hor > .dw-p > .dw-f-e > .dw-e-tabs > .dw-e-tab > .dw-p-bd-blk,
 #post-65503 > .dw-p-bd > .dw-p-bd-blk,
 #post-65503 > .dw-f-e > .dw-e-tabs > .dw-e-tab > .dw-p-bd-blk
   max-width: none
 
+// Cancel Twitter Bootsrap wrapping of <pre>
 .dw-hor > .dw-p > .dw-p-bd > .dw-p-bd-blk > pre
   white-space: pre
   word-wrap: normal
 
 .dw-p-diff
-  line-height: normal
+  line-height: normal // or becomes 120% so -diff lines lines overlap
 
+// Don't place the body too close to the title. But cannot add margin to the
+// title — that'd push away the .dw-p-hd away. So add to the -bd instead.
+// <h2> should have a fairly large margin-top (because it's a h2), so skip it.
+// — The reason all this is needed is that the elems
+// float:left, which makes margins add to each other, instead of overlapping
+// each other. I should rewrite, and try to avoid float:left? [8DbF3]
+// (skip old IE)
+// [8K3U5]
 .dw-ar-t > .dw-p > .dw-p-bd > .dw-p-bd-blk > :first-child:not(h2)
   margin-top: 26px
 
+// Make inline threads compact.
 .dw-i-t > .dw-p > .dw-p-bd,
 .dw-i-t > .dw-p > .dw-p-diff
   padding-top: 1px
 
-.dw-i-t > .dw-p > *  > .dw-p-bd-blk
+.dw-i-t > .dw-p > * /*.dw-p-bd or -diff*/ > .dw-p-bd-blk
   padding: 0
   margin: 0
 
-.dw-i-t > .dw-p > *  > .dw-p-bd-blk ~ .dw-p-bd-blk
+.dw-i-t > .dw-p > * /*.dw-p-bd or -diff*/ > .dw-p-bd-blk ~ .dw-p-bd-blk
   margin-top: 0.6em
 
 .dw-p:hover
+  // If the post is beeing up-sized, its up-sized parts might be hidden
+  // by another thread, because its z-index has not yet been set to 11
+  // by the adding of class dw-p-rez-e. Therefore:
   z-index: 10
 
 .dw-as
   margin: -6px 0 6px 28px
+  // Use padding-top not margin-top here, or there'll be a tiny space between
+  // the post and the .dw-as, which triggers a certain $thread.mouseleave() in
+  // debiki.js which, for inline actions, hides the action menu — just before
+  // you're able to click any action.
   padding: 5px 0 8px
-  position: relative
+  position: relative // for position: absolute 'Click this...' tips, inside
 
 .dw-p-as-hz
-  position: relative
+  position: relative // curve image placed relative
   padding-right: 20px
   margin: 10px 16px 0 12px
 
+// The reply button text can be customized, so it might be rather wide,
+// so set max-width and line height.
 .dw-p-as-hz > .dw-a-reply
   max-width: 8em
-  display: inline-block
+  display: inline-block // or max-width has no effect
   line-height: 120%
 
 .dw-a
@@ -278,15 +430,19 @@ span.dw-p-e-by
   color: hsl(210, 51%, 45%)
 
 .dw-a-color-primary
-  color: hsl(210, 51%, 45%) !important
+  color: hsl(210, 51%, 45%) !important // the color for most common actions
+  //                                     (should be a Stylus/LESS variable)
 
 .dw-p-as-more
-  display: none
+  display: none // shown on .dw-a-more click
 
+//  Avoid float drop; tese are the last visible float-left actions.
+// (See app/debiki/HtmlPostRenderer.scala [bkfK20qE9])
 .dw-p-as-more,
 .dw-a-delete
   margin-right: 0
 
+// Make the reply and rate links easy to notice.
 .dw-t > .dw-as > .dw-a-reply,
 .dw-t > .dw-as > .dw-a-rate
   font-weight: bold
@@ -300,10 +456,12 @@ span.dw-p-e-by
   color: #888
 
 .DW .dw-t > .dw-as > .dw-a.dw-a-pending-review
+  // Show these pending-suggestion links, even when not hovering posts,
+  // so people are encouraged to consider each other's suggestions.
   visibility: visible
 
 .dw-a:hover
-  color: #c77405
+  color: #c77405 // jQuery UI's ui-state-hover color
   text-decoration: underline
 
 .dw-p-as-hz > .dw-a.dw-a-reply
@@ -320,21 +478,34 @@ span.dw-p-e-by
 .dw-p-as-hz > .dw-a:not(.dw-a-reply):hover
   color: hsl(211, 30%, 40%)
 
+// For now...
 .dw-p-as-hz > .dw-a-more,
 .dw-p-as-hz > .dw-a-rate
   display: none
 
 .dw-p-as
+  // Prevent collapsed posts from appearing too close to any post just below,
+  // by making the actions <div> at least this tall. (It's empty, currently
+  // if the post is collapsed or deleted.)
   min-height: 17px
+  // Draw actions above arrows.
   z-index: 2
   background: white
 
+// The `More...' link under the Reply button confuses test users.
+// Show a cogwheel next to the title instead. For now, hide `More...'.
 .dw-u-is-admin .dw-p-as-hz > .dw-a.dw-a-more
   visibility: visible
-  opacity: 0.65
+  opacity: 0.65 // the reply link is the important one
 
 body.dw-u-ui-simple .dw-a-edit
   display: none !important
+
+
+
+// Post info
+//---------------------------
+
 
 .dw-p-pending-mod
   margin-bottom: 5px
@@ -342,6 +513,9 @@ body.dw-u-ui-simple .dw-a-edit
   font-weight: bold
 
 .dw-p-hd .dw-p-at
+  // javascript shows e.g. '7 days ago' instead of the .dw-p-at ISO dates.
+  // Hiding the dates with jQuery.hide() at page loat time takes long,
+  // so better hide here. COULD use another stylesheet if javascript disabled.
   display: none
 
 .dw-p-flgs-top,
@@ -358,7 +532,7 @@ body.dw-u-ui-simple .dw-a-edit
 
 .dw-p-flgs-all,
 .dw-p-r-all
-  display: none
+  display: none // shown on .dw-p-hd click
 
 .dw-flgs,
 .dw-flgs li,
@@ -371,6 +545,7 @@ body.dw-u-ui-simple .dw-a-edit
   margin-left: 0.5ex
 
 .dw-p-hd .dw-rs .dw-r-tag
+  //font-size: 85%
 
 .dw-p-hd .dw-r-count,
 .dw-p-hd .dw-r-tag-frac-min,
@@ -378,27 +553,50 @@ body.dw-u-ui-simple .dw-a-edit
 .dw-p-hd .dw-r-valsum-max
   margin-left: 3px
   font-weight: bold
-  display: none
+  display: none // it's for debugging mostly; makes non-developers confused
 
 .dw-p-hd .dw-rs .dw-r-tag-frac
   font-size: 90%
   position: relative
   left: -2px
 
+
+
+// Posts that are part of the article
+//---------------------------
+
+// - Author info not shown — because it's already shown, at the top
+//    of the article (page).
+// - The [-] (fold) button is removed, and the post is unindented
+//    (left-margin: 0), because you should not be able to hide/fold the
+//    article itself.
+
 .dw-t.dw-p-art-qst > .dw-z,
 .dw-t.dw-p-art-qst > .dw-p > .dw-p-hd
   display: none !important
 
 .dw-t.dw-p-art-qst > .dw-p
-  margin-left: 5px
+  margin-left: 5px // moves it upwards, so it appears slightly above the SVG arrow
+  //          that presumably points to it, at its left side
   top: -9px
   position: relative
 
-.dw-i-m-start.ui-icon
-  display: inline-block
-  position: relative
-  margin-left: 5px
 
+
+// Inline replies
+//===========================
+
+
+// Inline mark icons
+//---------------------------
+
+.dw-i-m-start.ui-icon
+  display: inline-block // otherwise display:block, and a new paragraph
+  position: relative
+  margin-left: 5px // move away from the word to the left,
+  //                   hmm, this assumes a left-to-right language. LTR RTL
+
+// Remove white space around the inline marks.
 .dw-i-m-start.ui-icon-arrow-1-e
   width: 6px
   top: 3px
@@ -407,67 +605,95 @@ body.dw-u-ui-simple .dw-a-edit
 
 .dw-i-m-start.ui-icon-arrow-1-s
   width: 8px
-  height: 13px
+  height: 13px // don't push next line away; smallest font-size 13px?
   top: -1px
   background-position: -70px -36px
 
 .dw-i-m-start.ui-icon-arrow-1-s
 
+
+
+// Inline threads
+//---------------------------
+
+// Avoid a flash of incorrectly placed inline threads: don't show them
+// until they've been moved into the .dw-bd-blk > .dw-i-ts.
 .dw-res > .dw-i-t
   display: none
 
 .dw-hor > .dw-p > .dw-p-bd > .dw-i-ts
   float: left
-  margin-left: 120px
+  margin-left: 120px // arrows from inline-marks to -threads drawn here
 
+// Stack inline posts vertically.
 .dw-p-bd .dw-i-t
   float: left
   clear: left
 
+// For vertical layout, place inline threads below the .dw-p-bd-blk, indented.
+// (With horizontal layout, they're placed to the right of the post.)
 .dw-t:not(.dw-hor) > .dw-p > .dw-p-bd > .dw-i-ts
   float: left
   clear: left
 
 .dw-t:not(.dw-hor) > .dw-p > .dw-p-bd > .dw-i-ts > .dw-i-t
-  margin-left: 70px
+  margin-left: 70px // indents, and leaves space for SVG/fake arrows
 
+// Make inline comments less conspicuous.
 .dw-i-t
   color: #444
   font-size: 95%
 
 .dw-i-t > .dw-a
-  margin-bottom: 0px
+  margin-bottom: 0px // don't push next inline thread away
 
 .dw-p-bd-blk
   margin: 0
   float: left
   clear: left
 
+// Adjust inline-replies to the root post.
 .dw-hor > .dw-p > .dw-p-bd > .dw-p-bd-blk + .dw-i-t
-  margin-left: 4em
+  margin-left: 4em // move away from the root post text
+
+
+// Highlighting
+//---------------------------
 
 .dw-i-m-start.dw-highlight
   outline: solid medium #f0a005
   background-color: yellow
 
+
+// Hidden templates
+//---------------------------
+
 #dw-hidden-templates
   display: none
 
-.dw-pri.dw-pri .dw-as-inline
+
+// Inline action menu
+//---------------------------
+
+.dw-pri.dw-pri .dw-as-inline // prio, so overrides :not(svg) [31Ik53]
   position: absolute
   z-index: 20
 
 .dw-as-inline li
-  margin: 0
+  margin: 0 // or margin from `dw-p-bd li' applied
   float: left
   list-style-type: none
 
 .dw-as-inline .ui-button
-  margin-right: 0
+  margin-right: 0 // or space between inline action menu buttons
+
+
+// Edit suggestions  -— old not in use?
+//---------------------------
 
 .dw-e-sgs
   border-top: dotted 1px #aaa
-  clear: both
+  clear: both // or action links push contents rightwards
   font-size: 85%
   line-height: 100%
   color: #444
@@ -491,88 +717,126 @@ body.dw-u-ui-simple .dw-a-edit
 
 .dw-e-sg .dw-e-text,
 .dw-e-sg .dw-e-rslt
-  display: none
+  display: none // text used by javascript diff algorithm
 
 .dw-e-sg .dw-e-desc
 
 .dw-e-sg .dw-e-by
-  color: #3872ab
+  color: #3872ab // same as action links
 
 .dw-e-sg .dw-e-at
 
+
+
+// Forms
+//===========================
+
+
 .dw-fs
-  margin: 10px 0 20px 5px
-  position: relative
+  margin: 10px 0 20px 5px // 5px, like .dw-t
+  position: relative // e.g. 'Submitting ...' with position: absolute inside
 
 .dw-f
-  position: relative
+  position: relative // shouldn't use both .dw-fs and .dw-f though!
 
+// Reduce distance between a form and any parent jQuery UI dialog buttons.
 .ui-dialog > .dw-fs
-  margin-bottom: 11px
+  margin-bottom: 11px // 20px (from just above) too much
 
 .dw-hor > .dw-res > .dw-fs
   margin: 0
   padding-right: 19px
-  padding-left: 0
+  padding-left: 0 // nothing to the left
 
 .dw-fs form
-  z-index: 1100
+  z-index: 1100 // place above column resize handle...
+  //              ... hmm but it has z-index: 1 only [0QKxg2]
   position: relative
   padding: 1em
-  margin-left: 10px
+  margin-left: 10px // move away from any vertical arrow
+  // My Firifox 3.6 draws outlines very incorrectly for the Rating form,
+  // (but correctly for Reply and Edit), use borders instead.
+  // outline: #83c5df solid thick;
 
 .ui-dialog .dw-fs form
   margin: 0 25px 0 8px
-  padding-top: 0.4em
+  padding-top: 0.4em // smaller than 1em from above `.dw-fs form`
 
+// Remove any border above jQuery UI dialog buttons.
 .dw-pri .ui-dialog-buttonpane
   border-top: none
 
+// Float drop fix. Was needed by #dw-fs-openid-login or #dw-fs-lgi-simple.
+// Now *sometimeis* needed by #dw-fs-flg, or some radio button float
+// drops and scrollbars appear. Sometimes? Yes, in Chrome `14.0.835.186'
+// on my KDE computer — but not in Chrome `14.0.835.186 beta' on my
+// Gnome computer. Perhaps better keep this fix, since hard to know if
+// it works everywhere, even if it works fine for you.
 .dw-fs.ui-dialog-content
+  // margin: 20px 0 0; // cancel .dw-fs too wide margin
+  // padding: 0 !important; // cancel jQuery UI's inline style
   width: 100% !important
 
 .dw-fs.ui-dialog-content > form
-  border: none
-  z-index: auto
+  border: none // the buttonpane is outside, same color as form
+  // Cancel z-index:1100 rule, otherwise the <form> would be placed
+  // lower than the jQuery UI dialog itself, and jQuery would stop clicks.
+  z-index: auto // cancel rule
 
 .dw-fs small
   font-size: 70%
 
 .dw-fs form label
   margin-top: 1ex
-  display: inline-block
+  display: inline-block // or margin has no effect
 
 .dw-f input, .dw-f select, .dw-f textarea,
-.dw-fs input, .dw-fs select, .dw-fs textarea
-  display: block
+.dw-fs input, .dw-fs select, .dw-fs textarea // COULD use only dw-f not -fs
+  display: block // This also ditches any descender space...
+  // ...The descender space below the textarea would otherwise cause
+  // overflow — a terrible vertical scrollbar would appear, in those
+  // cases where I've attempted to fit it exactly inside its parent.
 
 .dw-fs input[type='checkbox']
   display: inline
 
 .DW .dw-page form input[type='text'],
 .DW .dw-page form textarea
-  font-family: Verdana, sans-serif
+  font-family: Verdana, sans-serif // the font .dw-post .dw-text uses
   margin-top: 0.7em
 
 .dw-pri form textarea
   width: 100%
-  resize: none
-  padding-right: 0px
-  padding-bottom: 0px
-  border-color: #aaa
+  resize: none // disable Chrome's default-resizable (and
+  //              make the accordion resizable instead)
+  padding-right: 0px  // else 97% (above) often too large, so...
+  padding-bottom: 0px // ...scrollbars appear
+  border-color: #aaa // default black is too sharp
 
+// IE 7 bugfix, root thread reply textarea otherwise 2000 or 20000px wide.
 .dw-hor > .dw-res > .dw-fs-re textarea
   max-width: 440px
 
+// CodeMirror problem fix — don't change the height of CodeMirror's
+// internal <textarea>, or CodeMirror won't work (it'll ignore most
+// key presses)
 .CodeMirror textarea
   height: auto !important
 
+// The default seems to be 10px wich is almost unreadable.
 .CodeMirror
   font-size: 13px
 
+// Make CodeMirror auto-resize its height.
+// (Works also without .dw-prio -- although CodeMirror specifies 300px
+// *later*. Weird.)
 .DW .CodeMirror
   height: auto
+  // overflow-y: hidden;
+  // overflow-x: auto;
+  // width: 100%;
 
+// Show tabs.
 .cm-tab:after
   content: "\21e5"
   display: inline-block
@@ -583,7 +847,7 @@ body.dw-u-ui-simple .dw-a-edit
   color: #aaa
 
 .dw-name-or-alias
-  float: left
+  float: left // COULD avoid floating everything?
   clear: both
   margin-top: 1.8em
 
@@ -596,6 +860,12 @@ body.dw-u-ui-simple .dw-a-edit
   position: absolute
   padding: 1em 2em
 
+
+
+// Login dialog
+//---------------------------
+
+// Assume user logged out
 #dw-u-info,
 #dw-a-logout
   display: none
@@ -606,6 +876,10 @@ body.dw-u-ui-simple .dw-a-edit
   margin: 10px 0
 
 #dw-fs-lgi-simple
+  // Use whole parent jQuery UI dialog, else scrollbars tend to appear.
+  // jQuery UI seems to change the width to `auto'.
+  //width: 100% !important;
+  //overflow: visible; // or north-south scrollbar appears in Chrome
 
 .dw-lgi-openid
   padding: 0 30px 0 0
@@ -613,7 +887,7 @@ body.dw-u-ui-simple .dw-a-edit
   height: 105px
   width: 125px
   position: absolute
-  left: 0
+  left: 0 // or IE 7 places it far to the right
 
 .dw-lgi-openid-info
   margin: 1em 0
@@ -636,7 +910,7 @@ body.dw-u-ui-simple .dw-a-edit
 .dw-lgi-or-wrap
   position: absolute
   height: 100%
-  left: 190px
+  left: 190px // 50px + 140px, see .dw-lgi-openid
   background-color: #FBF7F2
   border-right: 1px solid #ccc
 
@@ -658,11 +932,17 @@ body.dw-u-ui-simple .dw-a-edit
   margin-top: 0.7em
 
 .dw-lgi-simple input
-  margin-top: 3px !important
+  margin-top: 3px !important // COULD remove my own conflicting rule
   width: 200px
 
 #dw-fi-lgi-url-lbl
   margin-top: 1.3ex
+
+
+
+// Email notification preferences
+//===========================
+
 
 #dw-f-eml-prf .dw-submit-set
   float: none
@@ -676,8 +956,14 @@ body.dw-u-ui-simple .dw-a-edit
 #dw-fi-eml-prf-submit-email
   margin-top: 1.3em
 
+
+
+// Reply
+//===========================
+
+
 .dw-res > .dw-fs-re
-  position: relative
+  position: relative // vertical png arrow positioned relative this
 
 .dw-fs-re > form
   min-width: 210px
@@ -685,6 +971,7 @@ body.dw-u-ui-simple .dw-a-edit
   margin-top: 0
 
 .dw-hor > .dw-res > .dw-fs-re > form
+  // There's nothing to the left.
   margin-left: 0
   padding-left: 0
 
@@ -692,23 +979,26 @@ body.dw-u-ui-simple .dw-a-edit
   display: inline-block
   margin-right: 0.4em
   margin-top: 0 !important
-  float: none
-  width: auto
+  float: none // cancel Twitter Bootstrap's float: left
+  width: auto // cancel Twitter Bootstrap's width: NNNpx
 
 .dw-fs-re textarea
+  // need to disable Chrome's default-resizing-of-textarea,
+  // because the parent <form> (which is also resizable)
+  // isn't resized when the textarea is resized.
   resize: none
 
 .dw-fs-re textarea:focus
-  border: 1px solid #91cdff
+  border: 1px solid #91cdff // the .dw-keyrecvr color
   outline: 1px solid #91cdff
 
 .dw-user-contrib-license
-  float: left
+  float: left // COULD? stop floating everything in the <form>s
   clear: both
   color: #666
   font-size: 75%
   margin: 9px 0 0
-  max-width: 34em
+  max-width: 34em // or license text makes reply-thread very wide
 
 .dw-pri .dw-user-contrib-license a
   color: #99a
@@ -718,11 +1008,17 @@ body.dw-u-ui-simple .dw-a-edit
   bottom: 95px
   left: 40px
 
+
+
+// Rate
+//===========================
+
+
 .dw-fs-r
   margin: 0 0 30px 20px
 
 .dw-f-r
-  min-width: 250px
+  min-width: 250px // at least 2 rat-tag-set:s wide
 
 .dw-fs-r .dw-r-tag-set
   float: left
@@ -733,12 +1029,13 @@ body.dw-u-ui-simple .dw-a-edit
 
 .dw-fs-r .dw-show-more-r-tags
   margin-top: 1em
-  float: left
+  float: left // otherwise margin-top has no effect, why not?
   clear: both
   font-size: 85%
 
+// Stack more-rating-tags horizontally.
 .dw-fs-r .dw-more-r-tags
-  display: none
+  display: none // shown on .dw-show-more-r-tags click
   clear: both
   margin-top: 1em
   max-width: none
@@ -759,12 +1056,31 @@ body.dw-u-ui-simple .dw-a-edit
   bottom: 23px
   left: 40px
 
+
+
+// Flags
+//===========================
+
+
 .dw-f-flg-rsns
   margin: 0.5ex 0 1em
 
-#dw-e-sgs
-  overflow: hidden
 
+
+// Edits dialog
+//===========================
+
+
+// Dialog background made white by javascript.
+
+//.ui-tabs-nav > li
+//  background-color: transparent;
+//
+
+#dw-e-sgs
+  overflow: hidden // child height is 100%, so border exdends downw
+
+// The dialog is 1000 px wide, see debiki.js: $showEditsDialog()
 #dw-e-sgss,
 #dw-e-sgs-diff,
 #dw-e-sgs-save-diff,
@@ -774,7 +1090,7 @@ body.dw-u-ui-simple .dw-a-edit
   margin-top: 10px
   min-height: 5em
   border-left: 1px solid #DDD
-  height: 100%
+  height: 100% // make border exdend downwards
 
 #dw-e-sgss
   padding-left: 0
@@ -786,7 +1102,7 @@ body.dw-u-ui-simple .dw-a-edit
 
 #dw-e-sgs-save-diff
   width: 290px
-  display: none
+  display: none // for now
 
 #dw-e-sgs-prvw
   padding-right: 0
@@ -805,7 +1121,7 @@ body.dw-u-ui-simple .dw-a-edit
   margin: 7px 0px 3px 0px
 
 #dw-e-sgs .dw-e-sg .dw-as .ui-button-text
-  padding: .15em 1ex
+  padding: .15em 1ex // or a relatively huge button
 
 #dw-e-sgs-diff-text
   margin-top: 5px
@@ -817,8 +1133,16 @@ body.dw-u-ui-simple .dw-a-edit
   padding: 0.7ex
   background: white
 
+
+
+// Edit form
+//===========================
+
+// (Some properties defined elsewhere, search for dw-e-tab.)
+
+
 .dw-pri .dw-f-e .dw-e-tabs,
-.dw-pri .dw-f-e .ui-widget-header, 
+.dw-pri .dw-f-e .ui-widget-header, // not needed, done in jQuery UI integr.
 .dw-pri .dw-f-e.ui-widget-content
   background: transparent
   border: none
@@ -834,9 +1158,10 @@ body.dw-u-ui-simple .dw-a-edit
   border: 1px solid hsl(0, 0%, 50%)
   padding: 3px 15px
   margin: 5px 0 10px 3px
-  float: left
+  float: left // or wills whole screen
   clear: both
 
+// Hide help text for comments; show only for page body.
 :not(.dw-hor) > .dw-p > .dw-f-e .dw-f-e-help-show
   display: none
 
@@ -848,15 +1173,23 @@ body.dw-u-ui-simple .dw-a-edit
   overflow: auto
   padding: 0
 
+// ... the textarea is outlined on :focus — add paddding so outline visible.
 .dw-pri .dw-f-e .dw-e-tab-edit
   padding: 1px
 
+// ... change padding for root post preview // and fix a bug
 .dw-depth-0 > .dw-p > .dw-f-e .dw-e-tab-prvw
   padding: 1em
 
+// ... for other previews, place some padding on the -bd-blk (!)
+// not the -e-tab-prvw, because otherwise the panel becomes too wide
+// and its right part is cut of by the parent thread (which has
+// visibility:hidden) — some jQuery UI weird internal stuff?
 .dw-e-tab-prvw > .dw-p-bd-blk
-  padding: 1ex
+  padding: 1ex  // don't place directly on the .dw-e-tab-prvw
 
+// The root post has no width restriction on .dw-e-tabs,
+// since it's not placed inside a thread (which has a certain width).
 .dw-depth-0 > .dw-p > .dw-f-e .dw-e-tabs > .dw-e-tab-edit,
 .dw-depth-0 > .dw-p > .dw-f-e .dw-e-tabs > .dw-e-tab-diff
   width: 800px
@@ -865,21 +1198,23 @@ body.dw-u-ui-simple .dw-a-edit
   height: 100%
   margin: 0
   padding: 0
-  border: none
-  outline-offset: 0px
+  border: none // would cause overflow, scrollbars would appear in tab panel
+  outline-offset: 0px // Chrome defualts to -2px
 
+// Indicate focus.
 .dw-pri .dw-f-e .dw-e-tab-edit textarea:focus
-  outline: 1px solid #91cdff
+  outline: 1px solid #91cdff // the .dw-keyrecvr color
 
+// Indicate keyboard shortcut target.
 .dw-pri.dw-pri .dw-keyrecvr .dw-e-tab
   border: 1px solid #91cdff
 
 .dw-f-e-inf-save,
-.dw-f-e .dw-f-e-sugg-info
+.dw-f-e .dw-f-e-sugg-info // COULD rename to .dw-f-e-inf-sg?
   margin-top: 1em
   padding: 6px
   max-width: 32em
-  float: left
+  float: left // or margin-top has no effect
   clear: both
   background-color: #FFEFC6
 
@@ -890,8 +1225,11 @@ body.dw-u-ui-simple .dw-a-edit
 
 .dw-f-e-inf-save
   display: none
-  float: none
+  float: none // or it floats to the left of the edit tabs
 
+// Place the stubmit buttons close to the edit form, away from
+// replies/arrows below, so it's easy to see what they are
+// related to.
 .dw-f-e .dw-submit-set
   margin-top: 0.5em
   margin-bottom: 1em
@@ -902,22 +1240,28 @@ body.dw-u-ui-simple .dw-a-edit
   bottom: 80px
   left: 60px
 
-.dw-fs-e
+
+
+// Edit history / suggestions -— old not in use?
+//===========================
+
+
+.dw-fs-e // currently almost identical to <form>
   position: relative
   z-index: 1100
 
 .dw-fs-e form
   margin: 1em 0
-  float: none
-  clear: both
+  float: none // or won't be wide enough to fill up parent
+  clear: both // or show-form buttons appear to the left
 
 .dw-depth-0 .dw-fs-e
-  clear: both
+  clear: both // or placed to the right of the action links
 
 .dw-fs-e > a
   margin: 0.8em 0
-  float: left
-  clear: both
+  float: left // or 100% wide when sliding up/down, weird
+  clear: both // or stacked horiz. when forms sliding up/down
 
 .dw-fs-e form:first-of-type,
 .dw-fs-e > a:first-of-type
@@ -927,11 +1271,12 @@ body.dw-u-ui-simple .dw-a-edit
   margin-top: 0.75em
 
 .dw-fs-e .ui-accordion-content
-  padding: 0.7em 0.2em 0 0.6em !important
-  background: #f2f2f2
+  padding: 0.7em 0.2em 0 0.6em !important // otherwise too much padding
+  background: #f2f2f2 // jQuery UI's default bg is somewhat obtrusive
   border: 1px solid #BBB
 
 .dw-fs-e .ui-accordion-content p
+  // Use same font/size as .dw-debate
   font-family: Verdana, sans-serif
   font-size: 93%
   line-height: 110%
@@ -955,8 +1300,16 @@ body.dw-u-ui-simple .dw-a-edit
   font-style: italic
   font-size: 85%
 
+
+// Delete comment form
+//---------------------------
+
 #dw-fi-dl-tree
   margin: 1em 0 0
+
+
+// Create page form
+//---------------------------
 
 .dw-f-cr
   margin: 60px 0 30px
@@ -965,20 +1318,34 @@ body.dw-u-ui-simple .dw-a-edit
   margin-top: 30px
 
 .dw-f-cr ul > li
-  list-style-type: disc
+  list-style-type: disc // the page creation info list
 
+
+
+// Marks
+//===========================
+
+
+// Outline all posts in a new thread.
 .dw-m-t-new > .dw-p > .dw-p-hd
+  // border: 1px solid black  // no, ugly
 
 .dw-m-p-edited
   border: 3px solid #f1cdbc
 
+
+
+// Notifications
+//===========================
+
+
 .dw-dlg-rsp
-  height: auto !important
+  height: auto !important // or jQuery UI [1.8.16] sets 38px and scrollbars appear
 
 form .dw-ntf
-  float: left
+  float: left // or floating stuff might end up floating inside the .dw-ntf
   clear: both
-  margin-bottom: 10px
+  margin-bottom: 10px // or might overlap with resize form southeast handle
 
 .dw-ntf
   font-family: monospace
@@ -989,11 +1356,11 @@ form .dw-ntf
 
 .dw-ntf .ui-dialog-titlebar-close
   float: right
-  height: 20px
+  height: 20px // easier to click, if 20px instead of default 16px
   width: 20px
 
 .dw-ntf .dw-ntf-bd
-  margin-left: 20px
+  margin-left: 20px // no text below the notification icon
 
 .dw-ntf-sts
 
@@ -1008,6 +1375,13 @@ form .dw-ntf
   font-style: italic
   text-decoration: underline
 
+
+
+// Tips
+//===========================
+
+
+// A tips on how replies are sorted, in the horizontal layout
 #dw-tps-sort-order
   position: absolute
   top: -210px
@@ -1033,6 +1407,15 @@ form .dw-ntf
   text-align: center
   vertical-align: middle
 
+
+
+// Inbox
+//===========================
+
+// COULD get rid of #sidebar selector somehow — make selectors in
+// debiki-lift.css less inclusive?
+
+
 #sidebar .dw-ibx
   margin-top: 2.2em
   color: #777
@@ -1051,21 +1434,40 @@ form .dw-ntf
   font-size: 90%
   color: #666
 
+
+
+// Miscellaneous
+//===========================
+
+
 .dw-user-page-data
   display: none
 
-.dw-fs:after,
-.dw-fs form:after,
 
-.dw-f.dw-f-e:after
+// Clearfix
+//---------------------------
+
+.dw-fs:after,       // Contents might float
+.dw-fs form:after,  // Contents might float
+.dw-f.dw-f-e:after  // I suppose some edit form child floats left?
+  // Copied from jquery-ui-1.8.16.custom.css.
   content: "."
   display: block
   height: 0
   clear: both
   visibility: hidden
 
+
+
+// jQuery UI integration
+//===========================
+
+// Here's a color blender: http://websitetips.com/colortools/colorblender/
+
+
+// Same color as the ui-buttons
 .dw-ui-state-default-color
-  color: #1c80c4
+  color: #1c80c4   //1c94c4
 
 .dw-ui-state-default-color-bright
   color: #83c5df
@@ -1076,9 +1478,11 @@ form .dw-ntf
 .dw-ui-state-default-color-brightest
   color: #eaf5fa
 
+// Same font
 .dw-ui-widget-font
   font-family: 'Trebuchet MS', Tahoma, Verdana, Arial, sans-serif
 
+// Remove tab navigation background color and border.
 .dw-pri .ui-tabs .ui-tabs-nav
   background: transparent
   border: none
@@ -1086,6 +1490,7 @@ form .dw-ntf
 .dw-pri .ui-tabs .ui-tabs-panel
   border: 1px solid #BBB
 
+// Tabs placed below their content, see: jqueryui.com/demos/tabs/#bottom
 .dw-ui-tabs-bottom
   position: relative
 
@@ -1102,55 +1507,102 @@ form .dw-ntf
 
 .dw-ui-tabs-bottom > .ui-tabs-nav li
   margin-top: -2px !important
-  margin-bottom: 3px !important
+  margin-bottom: 3px !important  // [debiki] changed from 1px to 3px
   border-bottom-width: 1px
   border-top: 2px transparent
 
 .dw-ui-tabs-bottom > .ui-tabs-nav > .ui-tabs-selected
   margin-top: -2px !important
 
+// ... My additional fixes
 .dw-ui-tabs-bottom > .ui-tabs-panel
-  margin-bottom: 29px
-  z-index: 1
-  position: relative
-  background: white !important
+  margin-bottom: 29px // push the tab naw downwards
+  z-index: 1 // place above, and hide, tab nav button upper borders
+  position: relative // or z-index ignored
+  background: white !important // or won't hide tab nav button upper borders
+
+// ... Make the selected tab nav button's upper border hide the tab panels
+// lower border, so there's effectively no border (since background is white)
+// between the active tab and the tab panel */
+// /* Skip this, the white border overlaps the scrollbar.
+// And on focus, the tab <li> is outlined (which is fairly nice actualy),
+// so there's a border regardless. */
+//  .dw-ui-tabs-bottom > .ui-tabs-nav > li.ui-tabs-selected {
+//    border-top: 2px white; // same as background color
+//    z-index: 2; // place above panel (hides the panel border)
+// }
 
 .dw-pri .dw-ui-tabs-bottom .ui-tabs-nav li
-  border-bottom: 1px solid !important
+  border-bottom: 1px solid !important // cancel hiding of bottom border
 
+// ... Don't let other CSS override font size etcetera, that'd affect the
+// tap height — they might overlap with the tab panel, or there might be a glap.
+// Alternatively, COULD config jQuery UI with #dw-pri (instead of .dw-pri),
+// then other CSS wouldn't override jQuery UI so easily.
 .dw-pri.dw-pri .ui-tabs-nav li a
   font-family: Trebuchet MS, Tahoma, Verdana, Arial, sans-serif
   font-size: 13px
   line-height: 17px
 
-.dw-pri .ui-widget.ui-widget-content
-  font-family: Verdana, sans-serif
-  font-size: 100%
+// ... Remove "outline border" between active tab and panel
+// — no keep it, it's nice to have
+//.dw-pri.dw-pri .ui-tabs-nav li.ui-tabs-selected a {
+//  outline: none; // or .ui-state-focus on parent <li> —> outline
 
+// Undo settings to .dw-pri .ui-widget, when they affect contents
+// inside widgets, rather than buttons and tabs.
+.dw-pri .ui-widget.ui-widget-content
+  font-family: Verdana, sans-serif // same as for .dw-debate
+  font-size: 100% // jQuery UI sets .dw-pri .ui-widget to 1.1em
+
+// Undo settings to .dw-pri .ui-widget textarea
 .dw-pri .ui-widget textarea
   font-family: Verdana, sans-serif
-  font-size: 100%
+  font-size: 100% // else jQuery UI sets 1em
 
+// Undo link colors
 .dw-pri .ui-widget-content a
-  color: #00c
+  color: #00c  // same as a:link
 
+// Makes a jQuery-UI-button():ized <a> tag look more like a link
 .dw-ui-state-default-linkified
   border: none !important
   background: none !important
 
+// Make accordions smaller; jQuery UI padds a little bit too much?
 .dw-pri .ui-accordion .ui-accordion-header a
   padding: 0.2em 0.2em 0.2em 0.7em
 
+// jQuery UI bug fix: in the jQuery-auto-generated file, ".debiki"
+// is missing (on the next line).
 .dw-pri input.ui-button
   padding: .4em 1em
 
+
+
+// AngularJS
+//===========================
+
+// See: http://docs.angularjs.org/api/ng.directive:ngCloak
 [ng\:cloak], [ng-cloak], .ng-cloak
   display: none !important
 
+
+
+// Twitter Bootstrap
+//===========================
+
+// Cancel .icon 14px width — I'm using Fontello's icons, instead of Twitter's.
+// There are some other icon styles that Bootstrap applies and that could be
+// cancelled here — what should be done, in fact, is to build Bootstrap
+// and comment out:  @import "./bootstrap/less/sprites.less
+// see http://drupal.org/node/1949992
 .DW [class^="icon-"],
 .DW [class*=" icon-"]
   width: auto
 
+// From http://twitter.github.com/bootstrap/assets/css/bootstrap.css,
+// 2012-03-21, v.2.0.2.
 .tooltip
   position: absolute
   z-index: 1020
@@ -1227,11 +1679,20 @@ form .dw-ntf
   width: 0
   height: 0
 
+// [kajmagnus@debiki] Workarounds.
 .tooltip
+  // Otherwise Chrome makes it very thin, when outside browser window,
+  // so the tip arrow gets offset incorrectly:
   width: 500px
 
+
+
+// SVG
+//===========================
+
+
 #dw-t-root
-  overflow: hidden
+  overflow: hidden // hides the excessively wide <svg> elems, see above
 
 .dw-flip-hz
   -moz-transform: scaleX(-1)
@@ -1241,6 +1702,11 @@ form .dw-ntf
   filter: FlipH
   -ms-filter: "FlipH"
 
+
+
+// Public API
+//===========================
+
 .debiki-0-reply-button-text
   display: none
 
@@ -1248,6 +1714,12 @@ img.debiki-0-inline
   display: inline
   margin: 0
   width: auto
+
+
+
+// Things to move to app/views/themesbuiltin/default20121009/-somewhere-
+//===========================
+
 
 #forum-search
   float: right
@@ -1265,3 +1737,6 @@ img.debiki-0-inline
 .search-result-post-text a
   color: black !important
 
+
+
+// vim: fdm=marker et ts=2 sw=2 tw=100 fo=tcqwn list
