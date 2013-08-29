@@ -218,9 +218,9 @@ module.exports = function(grunt) {
        },
        files: {
         'public/res/admin.css': [
-            'client/admin/admin-theme.css',
-            'client/spa/admin/css/admin-page.css',
-            'client/spa/debiki-spa-common.css'],
+            'client/admin/styles/admin-theme.css',
+            'client/admin/styles/admin-page.css',
+            'client/shared/styles/debiki-shared.css'],
 
         'public/res/combined-debiki-desktop.js':
             debikiDesktopFiles,
@@ -243,17 +243,17 @@ module.exports = function(grunt) {
             'target/client/debiki/debiki-diff-match-patch.js',
             'target/client/debiki/debiki-page-path.js',
             // Include the module first; it's needed by modal-dialog.js.
-            'target/client/spa/admin/js/module-and-services.js',
-            'target/client/spa/admin/js/*.js'],
+            'target/client/admin/scripts/module-and-services.js',
+            'target/client/admin/scripts/*.js'],
 
         'public/res/debiki-spa-install-first-site.js': [
-            'target/client/spa/install/install-ng-app.js'],
+            'target/client/install/scripts/install-ng-app.js'],
 
         'public/res/debiki-spa-new-website-choose-owner.js': [
-            'target/client/spa/js/new-website-choose-owner.js'],
+            'target/client/new-site/scripts/new-website-choose-owner.js'],
 
         'public/res/debiki-spa-new-website-choose-name.js': [
-            'target/client/spa/js/new-website-choose-name.js'],
+            'target/client/new-site/scripts/new-website-choose-name.js'],
 
         'public/res/debiki-dashbar.js': [
             'target/client/debiki/debiki-dashbar.js'],
