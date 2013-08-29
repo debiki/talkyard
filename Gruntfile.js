@@ -26,7 +26,6 @@ module.exports = function(grunt) {
   grunt.loadNpmTasks('grunt-contrib-watch');
   grunt.loadNpmTasks('grunt-contrib-uglify');
   grunt.loadNpmTasks('grunt-contrib-stylus');
-  //grunt.loadNpmTasks('grunt-contrib-cssmin');
 
   var debikiDesktopFiles = [
       'client/vendor/bootstrap-tooltip.js', //
@@ -140,6 +139,11 @@ module.exports = function(grunt) {
       'target/client/debiki/debiki-create-page.js',
       'target/client/debiki/debiki.js']
 
+  var stylusFiles = [
+      'public/res/jquery-ui/jquery-ui-1.9.2.custom.css',
+      'client/debiki/debiki.styl',
+      'client/debiki/debiki-play.styl'];
+
   grunt.initConfig({
     pkg: '<json:package.json>',
     livescript: {
@@ -159,17 +163,22 @@ module.exports = function(grunt) {
       }
     },
     stylus: {
-      server: {
+      serverMax: {
         options: {
-          compress: false, // for now
+          compress: false,
           linenos: true,
           firebug: true
         },
         files: {
-          'public/res/combined-debiki.css': [
-            'public/res/jquery-ui/jquery-ui-1.9.2.custom.css',
-            'client/debiki/debiki.styl',
-            'client/debiki/debiki-play.styl']
+          'public/res/combined-debiki.css': stylusFiles
+        }
+      },
+      serverMin: {
+        options: {
+          compress: true
+        },
+        files: {
+          'public/res/combined-debiki.min.css': stylusFiles
         }
       }
     },
@@ -208,11 +217,6 @@ module.exports = function(grunt) {
           "/*=== Next file: ===============================================*/\n"
        },
        files: {
-        // The `cssmin` plugin is broken (see below, search for `cssmin`)
-        // so right now simply copy the complete CSS file.
-        'public/res/combined-debiki.min.css': [
-          'public/res/combined-debiki.css'],
-
         'public/res/admin.css': [
             'client/admin/admin-theme.css',
             'client/spa/admin/css/admin-page.css',
@@ -338,24 +342,6 @@ module.exports = function(grunt) {
         ext: '.min.js',
       }
     },
-    // This results in malfunctioning CSS?
-    // Try grunt-csso instead? Or CSSTidy?
-    // And a """Warning: Object #<Object> has no method 'expandFiles'
-    // Use --force to continue.""" error, as of Grunt v0.4.1 (May 2013),
-    // see <https://github.com/gruntjs/grunt/wiki/Configuring-tasks
-    //        #building-the-files-object-dynamically>
-    // for info on how to perhaps fix that error.
-    // Therefore, for now, only `combine:` but don't `minify:`.
-    // Ooops, both `combine` and `compress` strips my `.DW [class*=" icon-"]`
-    // rules! Comment out this weird plugin ("grunt-contrib-cssmin": "~0.6.0".)
-    /*cssmin: {
-      compress: {
-        files: {
-          'public/res/combined-debiki.min.css': [
-            'public/res/combined-debiki.css']
-        }
-      }
-    },*/
     watch: {
       options: {
         interrupt: true
@@ -376,7 +362,7 @@ module.exports = function(grunt) {
     }
   });
 
-  grunt.registerTask('default', ['livescript', 'wrap', 'stylus', 'concat', 'uglify']);//, 'cssmin']);
+  grunt.registerTask('default', ['livescript', 'wrap', 'stylus', 'concat', 'uglify']);
 
 };
 
