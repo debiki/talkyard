@@ -25,6 +25,7 @@ module.exports = function(grunt) {
   grunt.loadNpmTasks('grunt-contrib-concat');
   grunt.loadNpmTasks('grunt-contrib-watch');
   grunt.loadNpmTasks('grunt-contrib-uglify');
+  grunt.loadNpmTasks('grunt-contrib-stylus');
   //grunt.loadNpmTasks('grunt-contrib-cssmin');
 
   var debikiDesktopFiles = [
@@ -157,6 +158,21 @@ module.exports = function(grunt) {
         }]
       }
     },
+    stylus: {
+      server: {
+        options: {
+          compress: false, // for now
+          linenos: true,
+          firebug: true
+        },
+        files: {
+          'public/res/combined-debiki.css': [
+            'public/res/jquery-ui/jquery-ui-1.9.2.custom.css',
+            'client/debiki/debiki.styl',
+            'client/debiki/debiki-play.styl']
+        }
+      }
+    },
     wrap: {
       server_javascript: {
         src: 'client/**/*.js',
@@ -192,11 +208,6 @@ module.exports = function(grunt) {
           "/*=== Next file: ===============================================*/\n"
        },
        files: {
-        'public/res/combined-debiki.css': [
-            'public/res/jquery-ui/jquery-ui-1.9.2.custom.css',
-            'client/debiki/debiki.css',
-            'client/debiki/debiki-play.css'],
-
         // The `cssmin` plugin is broken (see below, search for `cssmin`)
         // so right now simply copy the complete CSS file.
         'public/res/combined-debiki.min.css': [
@@ -365,7 +376,7 @@ module.exports = function(grunt) {
     }
   });
 
-  grunt.registerTask('default', ['livescript', 'wrap', 'concat', 'uglify']);//, 'cssmin']);
+  grunt.registerTask('default', ['livescript', 'wrap', 'stylus', 'concat', 'uglify']);//, 'cssmin']);
 
 };
 
