@@ -1,0 +1,322 @@
+.dw-debate
+  position: relative
+
+.dw-page a
+  cursor: pointer
+
+.dw-depth-1 .dw-t
+  padding-left: 0
+  border-top: none
+
+.DW.DW .dw-res > li
+  list-style-type: none
+
+.DW.DW .dw-res
+  margin: 0
+  padding: 0
+  line-height: normal
+
+.DW .dw-z
+  color: #777
+  font-size: 13px
+  font-family: Verdana
+  text-decoration: none
+  z-index: 3
+  left: 2px
+  top: -1px
+
+.DW .dw-z:hover
+  color: #c77405
+
+.dw-z:hover:before
+  background: hsl(34, 95%, 89%)
+
+.dw-p .dw-z:before
+  content: none
+
+.dw-t:not(.dw-zd) > .dw-z
+  text-decoration: none
+
+.dw-t > .dw-z
+  position: absolute !important
+
+.dw-zd.dw-t
+  margin-top: 0px
+
+.dw-zd.dw-t > .dw-z,
+.dw-zd.dw-res > li > .dw-z
+  position: relative !important
+  margin-bottom: 42px
+  margin-left: 25px
+  display: block
+
+.dw-zd.dw-t > *
+  display: none
+
+.dw-zd.dw-t > .dw-arw
+  display: block
+
+.dw-res.dw-zd > li
+  margin: 0 0 0 14px
+
+.dw-zd.dw-res
+  padding-top: 0 !important
+
+.dw-t-closed > .dw-p
+  margin-bottom: 30px
+  padding-bottom: 33px
+
+.dw-t-closed:not(.dw-depth-1) > .dw-p
+  margin-bottom: 0px
+  padding-bottom: 18px
+
+.dw-t-closed > .dw-p > h3,
+.dw-t-closed > .dw-p > h4
+  margin: 0
+  padding: 0
+
+.dw-t
+  position: relative
+  margin: 8px 0 0 5px
+
+.dw-t.dw-t-exactly-one-reply
+  margin-bottom: 20px
+
+.dw-t-exactly-one-reply > .dw-p-as
+  margin-bottom: -7px
+
+.dw-depth-0.dw-t
+  float: left
+  margin: 0
+  padding: 0
+
+.dw-depth-1
+  width: 25em
+
+.DW.DW .dw-hor > .dw-res > li > .dw-t > .ui-resizable-e
+  border-right: 1px dashed transparent
+
+.DW.DW .dw-hor > .dw-res > li:hover > .dw-t > .ui-resizable-e
+  border-right-color: lightgray
+
+.dw-hor > .dw-res
+  display: table-row
+
+.dw-hor > .dw-res > li
+  display: table-cell
+  padding: 19px 0 10px 59px
+  vertical-align: top
+
+.dw-hor > .dw-res > li:first-child
+  padding-left: 0
+
+.dw-hor > .dw-res > li > .dw-t
+  padding: 0 17px 0 0
+  margin: 0
+
+.dw-t-vspace
+  height: 84px
+  position: relative
+
+.dw-depth-1:not(.dw-hor) .dw-t
+  float: none
+  clear: both
+
+.DW.DW .dw-depth-1 .dw-res
+  margin: 0 0 0 35px
+  padding-top: 3px
+
+.DW.DW .dw-depth-1 .dw-res > li:last-child
+  margin-left: -35px
+
+.dw-p
+  margin-left: 25px
+  background-color: white
+
+.dw-p-hd,
+.dw-p.dw-zd
+  padding-left: 3px
+  font-size: 10px
+  color: #141414
+  background-color: #f4f4f4
+  border: 1px solid #ededed
+  border-left: none
+  border-right: none
+  line-height: 15px
+
+.dw-p-bd,
+.dw-p-diff
+  padding: 6px 1px 0 3px
+  position: relative
+  background-color: white
+  min-width: 5em
+
+.dw-tps
+  margin: 1.3em 0 1.5em
+  background-color: #ffe6a5
+  padding: 1ex 2ex
+  z-index: 999
+  cursor: pointer
+  box-shadow: 3px 3px 5px #888
+
+.dw-tps strong
+  color: green
+  font-weight: bold
+
+.dw-tps small
+  color: #555
+  font-size: 80%
+
+.dw-tps p:not(:first-of-type)
+  margin-top: 1ex
+
+.dw-tps-close
+  color: #555
+  text-align: right
+  font-size: 85%
+
+#dw-tps-utterscroll
+  display: none
+  position: fixed
+  z-index: 999
+  padding: 3.7ex 2.7ex 1.2ex
+
+.debiki.dw-debate:after,
+
+.dw-t.dw-hor > .dw-p:after,
+
+.dw-t:after,
+
+.dw-p-bd:after
+  content: "."
+  display: block
+  height: 0
+  clear: both
+  visibility: hidden
+
+.dw-pri .ui-resizable-se
+  height: 17px
+  width: 17px
+  background-position: -80px -222px
+  background-color: white
+
+.dw-pri .ui-resizable-n,
+.dw-pri .ui-resizable-s
+  height: 10px
+  z-index: 1000
+
+.dw-pri .ui-resizable-s
+  bottom: 0
+
+.dw-pri .ui-resizable-e,
+.dw-pri .ui-resizable-w
+  width: 13px
+  z-index: 1000
+
+.dw-pri .ui-resizable-e
+  right: 0
+
+.dw-depth-1 > .ui-resizable-handle
+  z-index: 1
+
+.dw-p-bd.dw-svg-parent
+  --z-index: 1
+
+.dw-t svg
+  position: absolute
+  top: 0
+  left: 0
+  height: 100%
+  width: 100%
+
+.dw-svg-parent > :not(svg)
+  z-index: 2
+  position: relative
+
+.dw-t svg path
+  fill: none
+  stroke: #dbdbdb
+  stroke-width: 3
+
+.dw-arw-hz-line-to-this,
+.dw-arw-hz-line-to-sibling,
+.dw-arw-vt-line-to-sibling-1,
+.dw-arw-vt-line-to-sibling-2
+  background-color: #ddd
+  position: absolute
+  z-index: 1
+
+.dw-arw-vt-line-to-sibling-1,
+.dw-arw-vt-line-to-sibling-2
+  height: 100%
+  width: 3px
+  left: -12px
+
+.dw-arw-vt-line-to-sibling-1
+  top: -34px
+  height: 34px
+
+.dw-arw-hz-line-to-this,
+.dw-arw-hz-line-to-sibling
+  top: -58px
+  height: 3px
+
+.dw-arw-hz-line-to-this
+  left: -60px
+  width: 60px
+
+.dw-arw-hz-line-to-sibling
+  left: 0
+  width: 100%
+
+.dw-arw-vt-curve-to-this
+  background-color: transparent
+  background: url(img/arrows-etcetera-gray.png) no-repeat 0 -250px
+  position: absolute
+  top: -30px
+  left: -25px
+  height: 43px
+  width: 39px
+
+.dw-res > li:last-child > .dw-arw-vt-curve-to-this
+  left: 28px
+  top: -50px
+  width: 18px
+  background: url(img/arrows-etcetera-gray.png) no-repeat -57px -79px
+
+.dw-res.dw-zd .dw-arw-vt-curve-to-this
+  left: -39px
+  top: -50px
+  z-index: 2
+
+.dw-res.dw-zd
+  position: relative
+
+.dw-hor > .dw-res > li:last-child > .dw-t > .dw-arw-hz-curve-to-this,
+.dw-res > .dw-t:last-child > .dw-arw-vt-curve-to-this
+  z-index: 2
+
+.dw-arw-hz-curve-to-this,
+.dw-arw-hz-branch-to-reply-btn
+  background: transparent url(img/arrows-etcetera-gray.png) no-repeat 0 0
+  position: absolute
+  top: -60px
+  left: -30px
+  height: 34px
+  width: 61px
+
+.dw-arw-hz-branch-to-reply-btn,
+.dw-arw-hz-curve-to-reply-btn
+  background: url(img/arrows-etcetera-gray.png) no-repeat 0 -79px
+  position: absolute
+  top: 7px
+  left: 0px
+  height: 72px
+  width: 57px
+  z-index: 2
+
+.dw-arw-hz-curve-to-reply-btn
+  background: url(img/arrows-etcetera-gray.png) no-repeat 0 -152px
+  height: 72px
+  width: 38px
+
