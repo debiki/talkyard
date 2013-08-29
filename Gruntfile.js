@@ -28,14 +28,14 @@ module.exports = function(grunt) {
   grunt.loadNpmTasks('grunt-contrib-stylus');
 
   var debikiDesktopFiles = [
-      'client/vendor/bootstrap-tooltip.js', //
-      'client/vendor/diff_match_patch.js',
-      'client/vendor/html-sanitizer-bundle.js',
-      'client/vendor/jquery-cookie.js',
-      'client/vendor/jquery-scrollable.js', //
-      'client/vendor/livescript/prelude-browser.js',
-      'client/vendor/popuplib.js',
-      'client/vendor/waypoints.js',
+      'client/third-party/bootstrap-tooltip.js', //
+      'client/third-party/diff_match_patch.js',
+      'client/third-party/html-sanitizer-bundle.js',
+      'client/third-party/jquery-cookie.js',
+      'client/third-party/jquery-scrollable.js', //
+      'client/third-party/livescript/prelude-browser.js',
+      'client/third-party/popuplib.js',
+      'client/third-party/waypoints.js',
       'client/debiki/tagdog.js',
       'target/client/debiki/bootstrap-angularjs.js',
       'target/client/debiki/debiki-action-delete.js',
@@ -86,12 +86,12 @@ module.exports = function(grunt) {
       'target/client/debiki/debiki.js']
 
   var debikiTouchFiles = [
-      'client/vendor/diff_match_patch.js',
-      'client/vendor/html-sanitizer-bundle.js',
-      'client/vendor/jquery-cookie.js',
-      'client/vendor/livescript/prelude-browser.js',
-      'client/vendor/popuplib.js',
-      'client/vendor/waypoints.js',
+      'client/third-party/diff_match_patch.js',
+      'client/third-party/html-sanitizer-bundle.js',
+      'client/third-party/jquery-cookie.js',
+      'client/third-party/livescript/prelude-browser.js',
+      'client/third-party/popuplib.js',
+      'client/third-party/waypoints.js',
       'client/debiki/tagdog.js',
       'target/client/debiki/android-zoom-bug-workaround.js', //
       'target/client/debiki/bootstrap-angularjs.js',
@@ -229,17 +229,17 @@ module.exports = function(grunt) {
             debikiTouchFiles,
 
         'public/res/debiki-spa-common.js': [
-            'target/client/vendor/livescript/prelude-browser-min.js',
-            'target/client/vendor/bootstrap-tooltip.js', // -popup.js dependee
-            'target/client/vendor/bootstrap-*.js',
-            'target/client/vendor/angular-ui/module.js',
-            'target/client/vendor/angular-ui/directives/jq/jq.js',
-            'target/client/vendor/angular-ui/directives/modal/modal.js',
+            'target/client/third-party/livescript/prelude-browser-min.js',
+            'target/client/third-party/bootstrap-tooltip.js', // -popup.js dependee
+            'target/client/third-party/bootstrap-*.js',
+            'target/client/third-party/angular-ui/module.js',
+            'target/client/third-party/angular-ui/directives/jq/jq.js',
+            'target/client/third-party/angular-ui/directives/modal/modal.js',
             'target/client/debiki/debiki-util.js',
             'target/client/spa/js/angular-util.js'],
 
         'public/res/debiki-spa-admin.js': [
-            'client/vendor/diff_match_patch.js',
+            'client/third-party/diff_match_patch.js',
             'target/client/debiki/debiki-diff-match-patch.js',
             'target/client/debiki/debiki-page-path.js',
             // Include the module first; it's needed by modal-dialog.js.
