@@ -225,7 +225,10 @@ class AdminDashboardSpec extends DebikiBrowserSpec
       }
 
       "find blog post title on blog main page" in {
-        pageSource must include(BlogPostTitle)
+        // Wait until page loaded.
+        eventually {
+          pageSource must include(BlogPostTitle)
+        }
       }
 
       "on dashboard page" - {
