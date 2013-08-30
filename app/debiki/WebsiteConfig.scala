@@ -72,9 +72,7 @@ case class WebsiteConfig(configLeaves: Seq[WebsiteConfigLeaf]) {
   def listAssetBundleUrls(bundleNameSuffix: String): Seq[AssetBundleItem] = {
     for (leaf <- configLeaves; bundles <- leaf.listAssetBundleUrls(bundleNameSuffix))
       return bundles
-
-    throw new WebsiteConfigException(
-      "DwE37BKf4", s"No assets-bundle defined with name: `$bundleNameSuffix'")
+    Nil
   }
 
 }

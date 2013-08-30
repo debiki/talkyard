@@ -74,13 +74,14 @@ case class AssetBundleLoader(bundleNameNoSuffix: String,  bundleSuffix: String, 
 
   val bundleName = s"$bundleNameNoSuffix.$bundleSuffix"
 
-  /**
-   * Loads and concatenates the contents of the files in an asset bundle.
-   */
+  /** Loads and concatenates the contents of the files in an asset bundle.
+    * Throws a DebikiException if no bundle data at all is found (neither
+    * in the file system, nor in the database).
+    */
   def loadAssetBundle(): AssetBundleAndDependencies = {
 
     val fileBundleText = loadBundleFromJarFiles()
-    val databaseBundleData = loadBundleFromDatabase()
+    val databaseBundleData = loadBundleFromDatabase(dieUnlessFound = fileBundleText.isEmpty)
 
     val bundleText = fileBundleText + "\n" + databaseBundleData.text
     val sha1sum = hashSha1Base64UrlSafe(bundleText)
@@ -118,7 +119,7 @@ case class AssetBundleLoader(bundleNameNoSuffix: String,  bundleSuffix: String, 
   }
 
 
-  private def loadBundleFromDatabase(): DatabaseBundleData = {
+  private def loadBundleFromDatabase(dieUnlessFound: Boolean): DatabaseBundleData = {
     def die(exception: DebikiException) =
       throw DebikiException(
         "DwE9b3HK1", o"""Cannot serve '$bundleNameNoSuffix.<version>.$bundleSuffix':
@@ -130,6 +131,13 @@ case class AssetBundleLoader(bundleNameNoSuffix: String,  bundleSuffix: String, 
       catch {
         case ex: DebikiException => die(ex)
       }
+
+    if (assetPaths.isEmpty && missingOptAssetPaths.isEmpty) {
+      if (dieUnlessFound)
+        throw new WebsiteConfigException(
+          "DwE37BKf4", s"No asset bundle defined with name: `$bundleName'")
+      return DatabaseBundleData("", Nil, Nil, Nil)
+    }
 
     // Load the JS/CSS pages that are to be bundled.
     val assetPathsAndPages: Seq[(PagePath, Option[PageParts])] = assetPaths map { path =>
