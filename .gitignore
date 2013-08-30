@@ -37,6 +37,7 @@ public/res/debiki-spa-*
 public/res/debiki-dashbar*
 public/res/debiki-pagedown*
 public/res/admin.css
+public/res/admin.min.css
 public/res/codemirror-*
 public/themes/*
 

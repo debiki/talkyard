@@ -27,6 +27,15 @@ module.exports = function(grunt) {
   grunt.loadNpmTasks('grunt-contrib-uglify');
   grunt.loadNpmTasks('grunt-contrib-stylus');
 
+  var copyrightAndLicenseBanner =
+      "/*!\n" +
+      " * This file is copyrighted and licensed under the AGPL license.\n" +
+      " * Some parts of it might be licensed under more permissive\n" +
+      " * licenses, e.g. MIT or Apache 2. Find the source code and\n" +
+      " * exact details here:\n" +
+      " *   https://github.com/debiki/debiki-server\n" +
+      " */\n";
+
   var debikiDesktopFiles = [
       'client/third-party/bootstrap-tooltip.js', //
       'client/third-party/diff_match_patch.js',
@@ -144,6 +153,11 @@ module.exports = function(grunt) {
       'client/debiki/debiki.styl',
       'client/debiki/debiki-play.styl'];
 
+  var stylusAdminFiles = [
+      'client/admin/styles/admin-theme.styl',
+      'client/admin/styles/admin-page.styl',
+      'client/shared/styles/debiki-shared.styl'];
+
   grunt.initConfig({
     pkg: '<json:package.json>',
     livescript: {
@@ -170,15 +184,18 @@ module.exports = function(grunt) {
           firebug: true
         },
         files: {
-          'public/res/combined-debiki.css': stylusFiles
+          'public/res/combined-debiki.css': stylusFiles,
+          'public/res/admin.css': stylusAdminFiles
         }
       },
       serverMin: {
         options: {
-          compress: true
+          compress: true,
+          banner: copyrightAndLicenseBanner
         },
         files: {
-          'public/res/combined-debiki.min.css': stylusFiles
+          'public/res/combined-debiki.min.css': stylusFiles,
+          'public/res/admin.min.css': stylusAdminFiles
         }
       }
     },
@@ -198,13 +215,8 @@ module.exports = function(grunt) {
        options: {
         // See https://npmjs.org/package/grunt-contrib-concat
         banner:
-          "/*!\n" +
-          " * This file is copyrighted and licensed under the AGPL license.\n" +
-          " * Some parts of it might be licensed under more permissive\n" +
-          " * licenses, e.g. MIT or Apache 2. Find the source code and\n" +
-          " * exact details here:\n" +
-          " *   https://github.com/debiki/debiki-server\n" +
-          " *//*\n" +
+          copyrightAndLicenseBanner +
+          "/*\n" +
           " * This file is a concatenation of many different files.\n" +
           " * Each such file has its own copyright notices. Some parts\n" +
           " * are released under other more permissive licenses\n" +
@@ -217,11 +229,6 @@ module.exports = function(grunt) {
           "/*=== Next file: ===============================================*/\n"
        },
        files: {
-        'public/res/admin.css': [
-            'client/admin/styles/admin-theme.css',
-            'client/admin/styles/admin-page.css',
-            'client/shared/styles/debiki-shared.css'],
-
         'public/res/combined-debiki-desktop.js':
             debikiDesktopFiles,
 
