@@ -728,6 +728,24 @@ body.dw-u-ui-simple .dw-a-edit
 
 
 
+// Full screen dialogs
+//===========================
+
+// See d.i.jQueryDialogFullScreenDestroy in debiki-jquery-dialogs.js.
+
+.DW .dw-dlg-fullscreen
+  position: fixed !important
+  top: 0 !important
+  left: 0 !important
+  width: 100% !important
+  height: 100% !important
+  overflow: auto !important
+
+.DW body.dw-fullscreen-dialog-mode > *
+  display: none
+
+
+
 // Forms
 //===========================
 
@@ -1094,19 +1112,15 @@ body.dw-u-ui-simple .dw-a-edit
 
 #dw-e-sgss
   padding-left: 0
-  width: 220px
   border-left: none
 
-#dw-e-sgs-diff
-  width: 290px
+//#dw-e-sgs-diff
 
 #dw-e-sgs-save-diff
-  width: 290px
   display: none // for now
 
 #dw-e-sgs-prvw
   padding-right: 0
-  width: 380px
 
 #dw-e-sgs-org-src
   display: none
@@ -1133,6 +1147,9 @@ body.dw-u-ui-simple .dw-a-edit
   padding: 0.7ex
   background: white
 
+#dw-e-sgs .dw-submit-set
+  float: none
+  text-align: center
 
 
 // Edit form

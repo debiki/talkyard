@@ -99,6 +99,30 @@ d.i.jQueryDialogDestroy = $.extend({}, d.i.jQueryDialogDefault, {
 });
 
 
+var scrollXBeforeFullscreen = -1;
+var scrollYBeforeFullscreen = -1;
+
+/**
+ * Opens a full screen dialog, by hiding everything ('body > *') except
+ * for the dialog, and specifying width & height 100%.
+ * Restores the original window.scrollX and scrollY on close.
+ */
+d.i.jQueryDialogFullScreenDestroy = $.extend({}, d.i.jQueryDialogDestroy, {
+  open: function(event, ui) {
+    scrollXBeforeFullscreen = window.scrollX;
+    scrollYBeforeFullscreen = window.scrollY;
+    $(this).parent().addClass('dw-dlg-fullscreen');
+    $('body').addClass('dw-fullscreen-dialog-mode');
+    d.i.jQueryDialogDestroy.open.call(this, event, ui);
+  },
+  close: function(event, ui) {
+    $('body').removeClass('dw-fullscreen-dialog-mode');
+    window.scrollTo(scrollXBeforeFullscreen, scrollYBeforeFullscreen);
+    d.i.jQueryDialogDestroy.close.call(this, event, ui);
+  }
+});
+
+
 /**
  * Has no close button and doesn't close on Esc key.
  * Use if the user must click e.g. an OK button to close the dealog,
