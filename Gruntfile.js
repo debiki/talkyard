@@ -353,16 +353,12 @@ module.exports = function(grunt) {
       options: {
         interrupt: true
       },
-      serverScripts: {
+      server: {
         files: [
             'client/**/*.js',
-            'client/**/*.ls'],
-        tasks: ['default']
-      },
-      serverStyles: {
-        files: [
+            'client/**/*.ls',
             'client/**/*.styl'],
-        tasks: ['stylus']
+        tasks: ['default']
       },
       themes: {
         files: [
@@ -373,7 +369,8 @@ module.exports = function(grunt) {
     }
   });
 
-  grunt.registerTask('default', ['livescript', 'wrap', 'stylus', 'concat', 'uglify']);
+  grunt.registerTask('default', ['livescript', 'wrap', 'stylus', 'concat']);
+  grunt.registerTask('release', ['livescript', 'wrap', 'stylus', 'concat', 'uglify']);
 
 };
 

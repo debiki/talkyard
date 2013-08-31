@@ -115,7 +115,7 @@ object ApplicationBuild extends Build {
   def mainSettings = List(
     scalaVersion := "2.10.1",
     compileRhinoTask := { "make compile_javascript"! },
-    compileJsAndCss := { "grunt"! },
+    compileJsAndCss := { "grunt release"! },
 
     // Make Grunt bundle JS files and CSS automatically.
     playOnStarted += startGruntTask,
