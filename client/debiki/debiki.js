@@ -320,6 +320,10 @@ function renderPageEtc() {
     d.i.startReadingProgresMonitor();
   });
 
+  steps.push(function() {
+    d.i.initMinimap($posts);
+  });
+
   function runNextStep() {
     steps[0]();
     steps.shift();
