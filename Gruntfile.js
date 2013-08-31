@@ -353,12 +353,16 @@ module.exports = function(grunt) {
       options: {
         interrupt: true
       },
-      server: {
+      serverScripts: {
         files: [
             'client/**/*.js',
-            'client/**/*.ls',
-            'client/**/*.css'],
+            'client/**/*.ls'],
         tasks: ['default']
+      },
+      serverStyles: {
+        files: [
+            'client/**/*.styl'],
+        tasks: ['stylus']
       },
       themes: {
         files: [
