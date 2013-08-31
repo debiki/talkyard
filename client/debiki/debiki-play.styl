@@ -692,20 +692,18 @@ body.dw-u-ui-simple .dw-a-edit
 //---------------------------
 
 .dw-e-sgs
-  border-top: dotted 1px #aaa
-  clear: both // or action links push contents rightwards
   font-size: 85%
-  line-height: 100%
-  color: #444
-  margin: 0 0 25px 40px
 
 .dw-e-sg
   border-bottom: dotted 1px #ccc
   padding: 7px 0 2px 0
   margin: 0 0 0 0
 
-.dw-e-sg:hover
-  background-color: #e5e5e5
+  &:last-child
+    border-bottom: none
+
+  &:hover
+    background-color: #e5e5e5
 
 .dw-e-sg-vs
   float: left
@@ -1100,17 +1098,8 @@ body.dw-u-ui-simple .dw-a-edit
 #dw-e-sgs
   overflow: hidden // child height is 100%, so border exdends downw
 
-// The dialog is 1000 px wide, see debiki.js: $showEditsDialog()
-#dw-e-sgss,
-#dw-e-sgs-diff,
-#dw-e-sgs-save-diff,
-#dw-e-sgs-prvw
-  float: left
-  padding: 3px 18px 0
-  margin-top: 10px
-  min-height: 5em
-  border-left: 1px solid #DDD
-  height: 100% // make border exdend downwards
+#dw-e-sgs > .row
+  margin-left: 0 // cancel Bootstrap's -15px
 
 #dw-e-sgss
   padding-left: 0
@@ -1139,15 +1128,9 @@ body.dw-u-ui-simple .dw-a-edit
 #dw-e-sgs .dw-e-sg .dw-as .ui-button-text
   padding: .15em 1ex // or a relatively huge button
 
-#dw-e-sgs-diff-text
-  margin-top: 5px
-  padding: 0.7ex
-  background: white
-
+#dw-e-sgs-diff-text,
 #dw-e-sgs-prvw-html
-  margin-top: 5px
-  padding: 0.7ex
-  background: white
+  background: hsl(0, 0%, 94%)
 
 #dw-e-sgs .dw-submit-set
   float: none

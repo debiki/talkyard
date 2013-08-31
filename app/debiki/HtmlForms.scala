@@ -554,13 +554,13 @@ class HtmlForms(xsrfToken: String, val pageRoot: PageRoot, val permsOnPage: Perm
       { _xsrfToken }
       <div class="row">
         <div id='dw-e-sgss' class="col-md-2">
-          <div>Improvement suggestions:</div>
+          <h3>Improvement suggestions:</h3>
           <div id='dw-e-sgs-pending'>
             <ol class='dw-e-sgs'>{
               for (edit <- pending) yield xmlFor(edit)
             }</ol>
           </div>
-          <div>Improvements already applied:</div>
+          <h3>Improvements already applied:</h3>
           <div id='dw-e-sgs-applied'>
             <ol class='dw-e-sgs'>{
               for (editApplied <- applied) yield xmlFor(editApplied)
@@ -571,17 +571,17 @@ class HtmlForms(xsrfToken: String, val pageRoot: PageRoot, val permsOnPage: Perm
           <pre id='dw-e-sgs-org-src'>{nipo.textInitially}</pre>
         </div>
         <div id='dw-e-sgs-diff' class="col-md-3">{/* COULD rename to -imp-diff */}
-          <div>This improvement:</div>
+          <h3>This improvement:</h3>
           <div id='dw-e-sgs-diff-text'>
           </div>
         </div>
         <div id='dw-e-sgs-save-diff'>
-          <div>Changes to save:</div>
+          <h3>Changes to save:</h3>
           <div id='dw-e-sgs-save-diff-text'>
           </div>
         </div>
         <div id='dw-e-sgs-prvw' class="col-md-7">
-          <div>Preview:</div>
+          <h3>Preview:</h3>
           <div class={"dw-p-bd"+ cssArtclBody}>
             <div id='dw-e-sgs-prvw-html' class='dw-p-bd-blk'/>
           </div>
