@@ -61,31 +61,27 @@ PrettyListItem =
       | _ => '(Unnamed page)'
 
 
-  prettyRole: ->
-    switch @role
-      | 'Generic' => 'Page'
-      | 'Code' => 'Code'
-      | 'Blog' => 'Blog'
-      | 'BlogPost' => 'Blog post'
-      | 'ForumGroup' => 'Forum group'
-      | 'Forum' => 'Forum'
-      | 'ForumTopic' => 'Forum topic'
-      | 'Wiki' => 'Wiki'
-      | 'WikiPage' => 'Wiki page'
-      | _ => ''
-
-
-  prettyRoleTooltip: ->
-    switch @role
-      | 'Blog' => 'Lists blog posts.'
-      | 'ForumGroup' => 'Groups forums and forum groups.'
-      | 'Forum' => 'Lists forum topics.'
-      | _ => ''
-
-
   prettyStatus: ->
-    if @isPrivate! => 'Private'
-    else @status
+    if @isPrivate! => 'private'
+    else if @status == 'Published' => ''
+    else @status.toLowerCase()
+
+
+  prettyStatusRole: ->
+    status = @prettyStatus()
+    # Don't show role for obvious things, e.g. a page inside a
+    # blog is a blog post, and a page in a forum is a forum topic.
+    role =
+      switch @role
+      | 'Code' => 'code page'
+      | 'Blog' => 'blog'
+      | 'ForumGroup' => 'forum group'
+      | 'Forum' => 'forum'
+      | 'Wiki' => 'wiki'
+      | _ => ''
+    statusRole = "#status #role".trim()
+    if statusRole == '' => void
+    else statusRole
 
 
   isPrivate: ->

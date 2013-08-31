@@ -68,11 +68,13 @@ h1
   white-space: nowrap
   font-style: italic
 
+/*
 [ui-jq=tooltip]
   // Make the tag shrink to fit only the contained text,
   // so the tooltip points on the text (and not on whitespace
   // *after* the text, in a <tr><td> that's mostly empty.)
   float: left
+*/
 
 // Don't lett Debiki's other styles affect Bootstrap's tooltip text
 .tooltip
@@ -93,6 +95,15 @@ h1
 
 #page-table td.page-title
   color: hsl(211, 35%, 30%)
+
+#page-table .page-status-role
+  color: hsl(211, 0, 30%)
+  margin-left: 1em
+  &:before
+    content: "("
+  &:after
+    content: ")"
+
 
 #page-table tr:not(.page-depth-0) td
   border-top: none
