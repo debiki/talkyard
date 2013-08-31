@@ -19,10 +19,10 @@ d = i: debiki.internal, u: debiki.v0.util
 $ = d.i.$;
 
 
-DebikiPageModule = angular.module('DebikiPageModule', [])
+DebikiDashbarModule = angular.module('DebikiDashbarModule', [])
 
 
-DebikiPageModule.directive 'dwDashbar', ['$http', dwDashbar]
+DebikiDashbarModule.directive 'dwDashbar', ['$http', dwDashbar]
 
 
 function dwDashbar ($http)

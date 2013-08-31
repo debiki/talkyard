@@ -25,29 +25,27 @@ angularStartup = void
 /**
  * Starts AngularJS and initizlizes the root scope.
  *
- * Not called until really needed, for performance reasons (so mobile
- * phones don't need to download and parse the AngularJS lib, and
- * run the page through Angular's template engine).
+ * Not called until after a while.
+ *
+ * Not implemented:
+ * Not called until after certain Javascript has extracted some data
+ * from the HTML that is used to initialize AngularJS, in addition
+ * to some more JSON from the server. — By includin some data
+ * in the HTML, I think it's possible to make search engines
+ * happy, because they get their HTML, and at the same time make
+ * AngularJS happy, becaues after having extracted the appropriate
+ * Javascript objects from the HTML, Angular gets its Javascript
+ * objects.
  */
 bootstrapAngularJs = !->
   if angularStartup => return
   angularStartup := $.Deferred!
 
-  cdnDir = 'https://ajax.googleapis.com/ajax/libs/angularjs/1.0.1/'
-
-  bootstrapAngular = !->
-    # See http://docs.angularjs.org/guide/bootstrap, "Manual Initialization".
-    angular.element(document).ready !->
-      angular.bootstrap document, ['DebikiPageModule']
-      initRootScope!
-      angularStartup.resolve!
-
-  Modernizr.load(
-    both: [
-      cdnDir + 'angular.min.js',
-      cdnDir + 'angular-sanitize.min.js',
-      d.i.assetsUrlPathStart + 'debiki-dashbar.js']
-    complete: bootstrapAngular)
+  # See http://docs.angularjs.org/guide/bootstrap, "Manual Initialization".
+  angular.element(document).ready !->
+    angular.bootstrap document, ['DebikiPageModule']
+    initRootScope!
+    angularStartup.resolve!
 
 
 

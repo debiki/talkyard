@@ -57,6 +57,7 @@ module.exports = function(grunt) {
       'target/client/debiki/debiki-actions-inline.js',
       'target/client/debiki/debiki-arrows-png.js',
       'target/client/debiki/debiki-arrows-svg.js',
+      'target/client/debiki/debiki-dashbar.js',
       'target/client/debiki/debiki-cur-user.js',
       'target/client/debiki/debiki-diff-match-patch.js',
       'target/client/debiki/debiki-edit-history.js',
@@ -76,6 +77,7 @@ module.exports = function(grunt) {
       'target/client/debiki/debiki-merge-changes.js',
       'target/client/debiki/debiki-minimap.js',
       'target/client/debiki/debiki-monitor-reading-progress.js',
+      'target/client/debiki/debiki-page-module.js',
       'target/client/debiki/debiki-patch-page.js',
       'target/client/debiki/debiki-post-header.js',
       'target/client/debiki/debiki-resize.js',
@@ -115,6 +117,7 @@ module.exports = function(grunt) {
       'target/client/debiki/debiki-actions-inline.js',
       'target/client/debiki/debiki-arrows-png.js',
       'target/client/debiki/debiki-arrows-svg.js',
+      'target/client/debiki/debiki-dashbar.js',
       'target/client/debiki/debiki-cur-user.js',
       'target/client/debiki/debiki-diff-match-patch.js',
       'target/client/debiki/debiki-edit-history.js',
@@ -133,6 +136,7 @@ module.exports = function(grunt) {
       'target/client/debiki/debiki-merge-changes.js',
       'target/client/debiki/debiki-minimap.js',
       'target/client/debiki/debiki-monitor-reading-progress.js',
+      'target/client/debiki/debiki-page-module.js',
       'target/client/debiki/debiki-patch-page.js',
       'target/client/debiki/debiki-post-header.js',
       'target/client/debiki/debiki-resize.js',
@@ -263,9 +267,6 @@ module.exports = function(grunt) {
 
         'public/res/debiki-spa-new-website-choose-name.js': [
             'target/client/new-site/scripts/new-website-choose-name.js'],
-
-        'public/res/debiki-dashbar.js': [
-            'target/client/debiki/debiki-dashbar.js'],
 
         // Warning: Duplicated rule. A corresponding rule is also present
         // in the Makefile. Keep in sync.
