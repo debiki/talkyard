@@ -28,11 +28,17 @@ d = i: debiki.internal, u: debiki.v0.util
 $ = d.i.$;
 
 
+
 # `numComments` relied on below doesn't yet exist, so for now:
 # (and don't count page title and body)
 if $('.dw-p').length - 2 <= 5
   return
 
+
+# If the minimap won't work anyway, never create it (leave the parent
+# <div dw-minimap> empty).
+if !Modernizr.canvas || !Modernizr.csspositionfixed
+  return
 
 
 DebikiPageModule = angular.module 'DebikiPageModule'
