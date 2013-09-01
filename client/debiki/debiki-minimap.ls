@@ -48,7 +48,7 @@ function dwMinimap ($http)
     <canvas
       id="dw-minimap"
       xng-show="numComments > 0"
-      ui-scrollfix
+      ui-scrollfix2d
       width="#minimapWidth"
       height="#minimapHeight">
     </canvas>

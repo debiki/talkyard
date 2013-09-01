@@ -37,7 +37,6 @@ module.exports = function(grunt) {
       " */\n";
 
   var debikiDesktopFiles = [
-      'client/third-party/angular-ui/scrollfix/scrollfix.js',
       'client/third-party/bootstrap-tooltip.js', //
       'client/third-party/diff_match_patch.js',
       'client/third-party/html-sanitizer-bundle.js',
@@ -46,6 +45,7 @@ module.exports = function(grunt) {
       'client/third-party/livescript/prelude-browser.js',
       'client/third-party/popuplib.js',
       'client/third-party/waypoints.js',
+      'client/debiki/scrollfix2d.js',
       'client/debiki/tagdog.js',
       'target/client/debiki/debiki-page-module.js',
       'target/client/debiki/bootstrap-angularjs.js',
@@ -99,13 +99,13 @@ module.exports = function(grunt) {
       'target/client/debiki/debiki.js']
 
   var debikiTouchFiles = [
-      'client/third-party/angular-ui/scrollfix/scrollfix.js',
       'client/third-party/diff_match_patch.js',
       'client/third-party/html-sanitizer-bundle.js',
       'client/third-party/jquery-cookie.js',
       'client/third-party/livescript/prelude-browser.js',
       'client/third-party/popuplib.js',
       'client/third-party/waypoints.js',
+      'client/debiki/scrollfix2d.js',
       'client/debiki/tagdog.js',
       'target/client/debiki/debiki-page-module.js',
       'target/client/debiki/android-zoom-bug-workaround.js', //
