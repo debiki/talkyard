@@ -19,8 +19,11 @@ d = i: debiki.internal, u: debiki.v0.util
 $ = d.i.$;
 
 
+# The ui.* module is Angular's UI Utils,
+#   http://angular-ui.github.io/ui-utils/
+
 DebikiPageModule =
-  angular.module('DebikiPageModule', ['DebikiDashbarModule'])
+  angular.module('DebikiPageModule', ['DebikiDashbarModule', 'ui.scrollfix'])
 
 
 

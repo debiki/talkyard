@@ -17,12 +17,15 @@
 
 
 #dw-minimap
-  position: fixed
-  top: 0
+  position: absolute
+  top: 90px
   right: 0
   //width: 200px
   //height: 150px
   border: 1px solid black
   z-index: 1000  // not above dialogs
 
+  &.ui-scrollfix
+    position: fixed
+    top: 0
 

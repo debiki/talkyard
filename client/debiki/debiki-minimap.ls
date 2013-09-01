@@ -15,39 +15,60 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+/* This AngularJS directive shows a minimap in which the article and all
+ * comments are shown. The boundaries of the viewport are outlined too.
+ * If you click and drag in the minimap, you'll scroll the viewport.
+ *
+ * Regrettably this code doesn't totally followed AngularJS best practises,
+ * e.g. I'm using `document` directly.
+ */
+
+
 d = i: debiki.internal, u: debiki.v0.util
 $ = d.i.$;
 
 
+DebikiPageModule = angular.module 'DebikiPageModule'
 
-d.i.initMinimap = !($posts) ->
 
-  winWidth = window.innerWidth
-  aspectRatio = document.width / document.height
-  minimapWidth = min(600, document.width / 15)
-  minimapHeight = minimapWidth / aspectRatio
+DebikiPageModule.directive 'dwMinimap', [dwMinimap]
 
-  minimap = $("""
-    <canvas id="dw-minimap" width="#minimapWidth" height="#minimapHeight">
+
+
+# for now
+winWidth = window.innerWidth
+aspectRatio = document.width / (Math.max document.height, 1)
+minimapWidth = Math.min(500, document.width / 20)
+minimapHeight = minimapWidth / aspectRatio
+
+
+function dwMinimap ($http)
+  template: """
+    <canvas
+      id="dw-minimap"
+      xng-show="numComments > 0"
+      ui-scrollfix
+      width="#minimapWidth"
+      height="#minimapHeight">
     </canvas>
-    """)[0]
+    """
 
-  $('body').prepend minimap
+  link: !(scope, elem, attrs) ->
+    canvas = elem.children('canvas')[0]
+    context = canvas.getContext '2d'
+    context.fillStyle = '#999900'
 
-  context = minimap.getContext '2d'
-  context.fillStyle = '#999900'
-
-  # The article's .dw-p is very wide; use .dw-p-bd-blk instead.
-  $posts.find('.dw-p-bd-blk').each !(index) ->
-    bodyBlock = $(this)
-    offset = bodyBlock.offset!
-    height = bodyBlock.height!
-    width = bodyBlock.width!
-    x = minimapWidth * offset.left / document.width
-    w = minimapWidth * width / document.width
-    y = minimapHeight * offset.top / document.height
-    h = minimapHeight * height / document.height
-    context.fillRect(x, y, w, h)
+    # The article's .dw-p is very wide; use .dw-p-bd-blk instead.
+    $('.dw-p-bd-blk').each !(index) ->
+      bodyBlock = $(this)
+      offset = bodyBlock.offset!
+      height = bodyBlock.height!
+      width = bodyBlock.width!
+      x = minimapWidth * offset.left / document.width
+      w = minimapWidth * width / document.width
+      y = minimapHeight * offset.top / document.height
+      h = minimapHeight * height / document.height
+      context.fillRect(x, y, w, h)
 
 
 

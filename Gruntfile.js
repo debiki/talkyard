@@ -37,6 +37,7 @@ module.exports = function(grunt) {
       " */\n";
 
   var debikiDesktopFiles = [
+      'client/third-party/angular-ui/scrollfix/scrollfix.js',
       'client/third-party/bootstrap-tooltip.js', //
       'client/third-party/diff_match_patch.js',
       'client/third-party/html-sanitizer-bundle.js',
@@ -46,6 +47,7 @@ module.exports = function(grunt) {
       'client/third-party/popuplib.js',
       'client/third-party/waypoints.js',
       'client/debiki/tagdog.js',
+      'target/client/debiki/debiki-page-module.js',
       'target/client/debiki/bootstrap-angularjs.js',
       'target/client/debiki/debiki-action-delete.js',
       'target/client/debiki/debiki-action-dialogs.js',
@@ -77,7 +79,6 @@ module.exports = function(grunt) {
       'target/client/debiki/debiki-merge-changes.js',
       'target/client/debiki/debiki-minimap.js',
       'target/client/debiki/debiki-monitor-reading-progress.js',
-      'target/client/debiki/debiki-page-module.js',
       'target/client/debiki/debiki-patch-page.js',
       'target/client/debiki/debiki-post-header.js',
       'target/client/debiki/debiki-resize.js',
@@ -98,6 +99,7 @@ module.exports = function(grunt) {
       'target/client/debiki/debiki.js']
 
   var debikiTouchFiles = [
+      'client/third-party/angular-ui/scrollfix/scrollfix.js',
       'client/third-party/diff_match_patch.js',
       'client/third-party/html-sanitizer-bundle.js',
       'client/third-party/jquery-cookie.js',
@@ -105,6 +107,7 @@ module.exports = function(grunt) {
       'client/third-party/popuplib.js',
       'client/third-party/waypoints.js',
       'client/debiki/tagdog.js',
+      'target/client/debiki/debiki-page-module.js',
       'target/client/debiki/android-zoom-bug-workaround.js', //
       'target/client/debiki/bootstrap-angularjs.js',
       'target/client/debiki/debiki-action-delete.js',
@@ -136,7 +139,6 @@ module.exports = function(grunt) {
       'target/client/debiki/debiki-merge-changes.js',
       'target/client/debiki/debiki-minimap.js',
       'target/client/debiki/debiki-monitor-reading-progress.js',
-      'target/client/debiki/debiki-page-module.js',
       'target/client/debiki/debiki-patch-page.js',
       'target/client/debiki/debiki-post-header.js',
       'target/client/debiki/debiki-resize.js',
