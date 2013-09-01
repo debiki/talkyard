@@ -320,6 +320,11 @@ function renderPageEtc() {
     d.i.startReadingProgresMonitor();
   });
 
+  steps.push(function() {
+    // Start AngularJS
+    d.i.angularApply(function() {});
+  });
+
   function runNextStep() {
     steps[0]();
     steps.shift();
