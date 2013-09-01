@@ -42,6 +42,7 @@ minimapWidth = Math.min(500, document.width / 20)
 minimapHeight = minimapWidth / aspectRatio
 
 
+
 function dwMinimap ($http)
   template: """
     <canvas
@@ -56,7 +57,7 @@ function dwMinimap ($http)
   link: !(scope, elem, attrs) ->
     canvas = elem.children('canvas')[0]
     context = canvas.getContext '2d'
-    context.fillStyle = '#999900'
+    context.fillStyle = '#666'
 
     # The article's .dw-p is very wide; use .dw-p-bd-blk instead.
     $('.dw-p-bd-blk').each !(index) ->
@@ -68,7 +69,29 @@ function dwMinimap ($http)
       w = minimapWidth * width / document.width
       y = minimapHeight * offset.top / document.height
       h = minimapHeight * height / document.height
+      # Make very short comments visiible by setting min size.
+      w = Math.max 3, w
+      h = Math.max 1, h
       context.fillRect(x, y, w, h)
+
+    cachedMinimap = context.getImageData(0, 0, minimapWidth, minimapHeight)
+
+    angular.element(window).on 'scroll', !->
+      context.clearRect(0, 0, minimapWidth, minimapHeight)
+      context.putImageData(cachedMinimap, 0, 0)
+      drawViewport(context, minimapWidth, minimapHeight)
+
+
+
+!function drawViewport(context, minimapWidth, minimapHeight)
+  x = minimapWidth * window.scrollX / document.width
+  w = minimapWidth * window.innerWidth / document.width
+  y = minimapHeight * window.scrollY / document.height
+  h = minimapHeight * window.innerHeight / document.height
+
+  context.beginPath()
+  context.rect(x, y, w, h)
+  context.stroke()
 
 
 
