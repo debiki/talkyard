@@ -3,7 +3,7 @@
 	url = https://github.com/twbs/bootstrap.git
 [submodule "modules/angular-ui"]
 	path = modules/angular-ui
-	url = https://github.com/angular-ui/angular-ui.git
+	url = https://github.com/angular-ui/ui-utils.git
 [submodule "modules/pagedown"]
 	path = modules/pagedown
 	url = https://github.com/ujifgc/pagedown.git
