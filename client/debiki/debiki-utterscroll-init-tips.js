@@ -44,7 +44,7 @@ d.i.initUtterscrollAndTips = function() {
   var $utterscrollTips;
   debiki.Utterscroll.enable({
     scrollstoppers: '.CodeMirror,'+
-        ' .ui-draggable, .ui-resizable-handle, .dw-p-hd',
+        ' .ui-draggable, .ui-resizable-handle, .dw-p-hd, #dw-minimap',
     onMousedownOnWinHztlScrollbar: function() {
       if (hasUtterscrolled || $utterscrollTips)
         return;

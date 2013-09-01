@@ -31,7 +31,7 @@ $ = d.i.$;
 DebikiPageModule = angular.module 'DebikiPageModule'
 
 
-DebikiPageModule.directive 'dwMinimap', [dwMinimap]
+DebikiPageModule.directive 'dwMinimap', ['$window', dwMinimap]
 
 
 
@@ -42,15 +42,15 @@ minimapWidth = Math.min(500, document.width / 20)
 minimapHeight = minimapWidth / aspectRatio
 
 
-
-function dwMinimap ($http)
+function dwMinimap ($window)
   template: """
     <canvas
       id="dw-minimap"
-      xng-show="numComments > 0"
+      xx-ng-show="numComments > 0"
       ui-scrollfix2d
       width="#minimapWidth"
-      height="#minimapHeight">
+      height="#minimapHeight"
+      ng-mousedown="startScrolling($event)">
     </canvas>
     """
 
@@ -60,26 +60,58 @@ function dwMinimap ($http)
     context.fillStyle = '#666'
 
     # The article's .dw-p is very wide; use .dw-p-bd-blk instead.
-    $('.dw-p-bd-blk').each !(index) ->
-      bodyBlock = $(this)
-      offset = bodyBlock.offset!
-      height = bodyBlock.height!
-      width = bodyBlock.width!
-      x = minimapWidth * offset.left / document.width
-      w = minimapWidth * width / document.width
-      y = minimapHeight * offset.top / document.height
-      h = minimapHeight * height / document.height
-      # Make very short comments visiible by setting min size.
-      w = Math.max 3, w
-      h = Math.max 1, h
-      context.fillRect(x, y, w, h)
+    $('.dw-p-bd-blk').each !->
+      drawPost($(this), context, minimapWidth, minimapHeight)
 
     cachedMinimap = context.getImageData(0, 0, minimapWidth, minimapHeight)
 
-    angular.element(window).on 'scroll', !->
+    angular.element($window).on 'scroll', !->
       context.clearRect(0, 0, minimapWidth, minimapHeight)
       context.putImageData(cachedMinimap, 0, 0)
       drawViewport(context, minimapWidth, minimapHeight)
+
+    isScrolling = false
+
+    preventDefault = -> false
+
+    scope.startScrolling = ($event) ->
+      isScrolling := true
+      $(window).on('mousemove', scope.scroll)
+      $(window).on('mouseup', scope.stopScrolling)
+      $(window).on('mouseleave', scope.stopScrolling)
+      scope.scroll($event)
+
+    scope.stopScrolling = ($event) ->
+      $event.preventDefault()
+      isScrolling := false
+      $(window).off('mousemove', scope.scroll)
+      $(window).off('mouseup', scope.stopScrolling)
+      $(window).off('mouseleave', scope.stopScrolling)
+
+    scope.scroll = ($event) ->
+      if !isScrolling => return
+      $event.preventDefault()
+      canvasOffset = $(canvas).offset!
+      docPosClickedX = ($event.pageX - canvasOffset.left) / minimapWidth * document.width
+      docPosClickedY = ($event.pageY - canvasOffset.top) / minimapHeight * document.height
+      newDocCornerX = docPosClickedX - window.innerWidth / 2
+      newDocCornerY = docPosClickedY - window.innerHeight / 2
+      window.scrollTo(newDocCornerX, newDocCornerY)
+
+
+
+!function drawPost(bodyBlock, context, minimapWidth, minimapHeight)
+  offset = bodyBlock.offset!
+  height = bodyBlock.height!
+  width = bodyBlock.width!
+  x = minimapWidth * offset.left / document.width
+  w = minimapWidth * width / document.width
+  y = minimapHeight * offset.top / document.height
+  h = minimapHeight * height / document.height
+  # Make very short comments visiible by setting min size.
+  w = Math.max 3, w
+  h = Math.max 1, h
+  context.fillRect(x, y, w, h)
 
 
 
