@@ -68,8 +68,8 @@ function dwMinimap ($window)
     """
 
   link: !(scope, elem, attrs) ->
-    canvas = elem.children('canvas')[0]
-    context = canvas.getContext '2d'
+    canvas = elem.children('canvas')
+    context = canvas[0].getContext '2d'
     context.fillStyle = '#666'
 
     # The article's .dw-p is very wide; use .dw-p-bd-blk instead.
@@ -78,7 +78,7 @@ function dwMinimap ($window)
 
     cachedMinimap = context.getImageData(0, 0, minimapWidth, minimapHeight)
 
-    angular.element($window).on 'scroll', !->
+    angular.element($window).bind 'scroll', !->
       context.clearRect(0, 0, minimapWidth, minimapHeight)
       context.putImageData(cachedMinimap, 0, 0)
       drawViewport(context, minimapWidth, minimapHeight)
@@ -102,9 +102,19 @@ function dwMinimap ($window)
       $(window).off('mouseleave', scope.stopScrolling)
 
     scope.scroll = ($event) ->
-      if !isScrolling => return
+      # The minimap is hidden when it's not scrollfixed in the upper left
+      # corner, because when it's not scrollfixed, it moves when you scroll,
+      # wich distorts your scrolling.
+      if !canvas.hasClass('ui-scrollfix')
+        scope.stopScrolling($event)
+        # Scroll to 0,0 because it's confusing if the navbar doesn't appear
+        # when the minimap suddenly vanishes and everything stops. Feels better
+        # to be back where one started.
+        $window.scrollTo(0, 0)
+      if !isScrolling
+        return
       $event.preventDefault()
-      canvasOffset = $(canvas).offset!
+      canvasOffset = canvas.offset!
       docPosClickedX = ($event.pageX - canvasOffset.left) / minimapWidth * document.width
       docPosClickedY = ($event.pageY - canvasOffset.top) / minimapHeight * document.height
       newDocCornerX = docPosClickedX - window.innerWidth / 2
