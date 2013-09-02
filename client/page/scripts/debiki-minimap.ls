@@ -19,8 +19,9 @@
  * comments are shown. The boundaries of the viewport are outlined too.
  * If you click and drag in the minimap, you'll scroll the viewport.
  *
- * Regrettably this code doesn't totally followed AngularJS best practises,
- * e.g. I'm using `document` directly.
+ * Regrettably this code probably doesn't totally followed AngularJS best
+ * practises, for example, it uses jQuery(window) rather than getting
+ * the window as a service.
  */
 
 
@@ -44,18 +45,20 @@ if !Modernizr.canvas || !Modernizr.csspositionfixed
 DebikiPageModule = angular.module 'DebikiPageModule'
 
 
-DebikiPageModule.directive 'dwMinimap', ['$window', dwMinimap]
+DebikiPageModule.directive 'dwMinimap', [dwMinimap]
 
 
+$document = $(document)
+$window = $(window)
 
 # for now
-winWidth = window.innerWidth
-aspectRatio = document.width / (Math.max document.height, 1)
-minimapWidth = Math.min(500, document.width / 20)
+maxMinimapWidth = Math.min($window.width! / 3, 500)
+aspectRatio = $document.width! / (Math.max $document.height!, 1)
+minimapWidth = Math.min(maxMinimapWidth, $document.width! / 20)
 minimapHeight = minimapWidth / aspectRatio
 
 
-function dwMinimap ($window)
+function dwMinimap
   template: """
     <canvas
       id="dw-minimap"
@@ -89,17 +92,17 @@ function dwMinimap ($window)
 
     scope.startScrolling = ($event) ->
       isScrolling := true
-      $(window).on('mousemove', scope.scroll)
-      $(window).on('mouseup', scope.stopScrolling)
-      $(window).on('mouseleave', scope.stopScrolling)
+      $window.on('mousemove', scope.scroll)
+      $window.on('mouseup', scope.stopScrolling)
+      $window.on('mouseleave', scope.stopScrolling)
       scope.scroll($event)
 
     scope.stopScrolling = ($event) ->
       $event.preventDefault()
       isScrolling := false
-      $(window).off('mousemove', scope.scroll)
-      $(window).off('mouseup', scope.stopScrolling)
-      $(window).off('mouseleave', scope.stopScrolling)
+      $window.off('mousemove', scope.scroll)
+      $window.off('mouseup', scope.stopScrolling)
+      $window.off('mouseleave', scope.stopScrolling)
 
     scope.scroll = ($event) ->
       # The minimap is hidden when it's not scrollfixed in the upper left
@@ -110,16 +113,16 @@ function dwMinimap ($window)
         # Scroll to 0,0 because it's confusing if the navbar doesn't appear
         # when the minimap suddenly vanishes and everything stops. Feels better
         # to be back where one started.
-        $window.scrollTo(0, 0)
+        $window[0].scrollTo(0, 0)
       if !isScrolling
         return
       $event.preventDefault()
       canvasOffset = canvas.offset!
-      docPosClickedX = ($event.pageX - canvasOffset.left) / minimapWidth * document.width
-      docPosClickedY = ($event.pageY - canvasOffset.top) / minimapHeight * document.height
-      newDocCornerX = docPosClickedX - window.innerWidth / 2
-      newDocCornerY = docPosClickedY - window.innerHeight / 2
-      window.scrollTo(newDocCornerX, newDocCornerY)
+      docPosClickedX = ($event.pageX - canvasOffset.left) / minimapWidth * $document.width!
+      docPosClickedY = ($event.pageY - canvasOffset.top) / minimapHeight * $document.height!
+      newDocCornerX = docPosClickedX - $window.width! / 2
+      newDocCornerY = docPosClickedY - $window.height! / 2
+      $window[0].scrollTo(newDocCornerX, newDocCornerY)
 
 
 
@@ -127,10 +130,10 @@ function dwMinimap ($window)
   offset = bodyBlock.offset!
   height = bodyBlock.height!
   width = bodyBlock.width!
-  x = minimapWidth * offset.left / document.width
-  w = minimapWidth * width / document.width
-  y = minimapHeight * offset.top / document.height
-  h = minimapHeight * height / document.height
+  x = minimapWidth * offset.left / $document.width!
+  w = minimapWidth * width / $document.width!
+  y = minimapHeight * offset.top / $document.height!
+  h = minimapHeight * height / $document.height!
   # Make very short comments visiible by setting min size.
   w = Math.max 3, w
   h = Math.max 1, h
@@ -139,10 +142,10 @@ function dwMinimap ($window)
 
 
 !function drawViewport(context, minimapWidth, minimapHeight)
-  x = minimapWidth * window.scrollX / document.width
-  w = minimapWidth * window.innerWidth / document.width
-  y = minimapHeight * window.scrollY / document.height
-  h = minimapHeight * window.innerHeight / document.height
+  x = minimapWidth * $window.scrollLeft! / $document.width!
+  w = minimapWidth * $window.width! / $document.width!
+  y = minimapHeight * $window.scrollTop! / $document.height!
+  h = minimapHeight * $window.height! / $document.height!
 
   context.beginPath()
   context.rect(x, y, w, h)
@@ -150,4 +153,4 @@ function dwMinimap ($window)
 
 
 
-# vim: fdm=marker et ts=2 sw=2 tw=80 fo=tcqwn list
+# vim: fdm=marker et ts=2 sw=2 fo=tcqwn list
