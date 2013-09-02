@@ -256,7 +256,7 @@ function renderPageEtc() {
   // disabled. But people who know what javascript is and disable it,
   // probably don't use IE 6 and 7? So this'll be fine for now.)
   var $body =  $('body');
-  if ($.browser.msie) {
+  if ($.browser.msie && $.browser.version.length == 1) {
     if ($.browser.version < '8') $body.addClass('dw-ua-lte-ie7');
     if ($.browser.version < '9') $body.addClass('dw-ua-lte-ie8');
   }
