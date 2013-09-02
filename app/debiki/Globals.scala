@@ -131,7 +131,8 @@ class Globals {
     val ShutdownTimeout = 30 seconds
 
     val dbDaoFactory = new RdbDaoFactory(
-      makeDataSource(), Akka.system, anyFullTextSearchDbPath, Play.isTest)
+      makeDataSource(), Akka.system, anyFullTextSearchDbPath, Play.isTest,
+      fastStartSkipSearch = fastStartSkipSearch)
 
     val quotaManager = new QuotaManager(Akka.system, systemDao, freeDollarsToEachNewSite)
 
@@ -142,6 +143,9 @@ class Globals {
     val notifierActorRef = Notifier.startNewActor(Akka.system, systemDao, siteDaoFactory)
 
     def systemDao: SystemDao = new CachingSystemDao(dbDaoFactory.systemDbDao)
+
+    private def fastStartSkipSearch =
+      Play.configuration.getBoolean("crazyFastStartSkipSearch") getOrElse false
 
     private def anyFullTextSearchDbPath =
       Play.configuration.getString("fullTextSearchDb.dataPath")
