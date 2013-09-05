@@ -31,20 +31,24 @@ angular.module('AdminModule').directive 'dwModalDialog', ->
   restrict: 'A',
 
   template: '''
-    <div ui-modal class="fade"
+    <div ui-modal class="modal fade"
         id="errorMessageModal"
         ng-model="errorMessageModalShown">
-      <div class="modal-header">
-        <h1>{{ errorMessageModalTitleText }}</h1>
-      </div>
-      <div class="modal-body"
-          style="white-space: pre-wrap; font-family: monospace;"
-        >{{ errorMessageModalBodyText }}
-      </div>
-      <div class="modal-footer">
-        <a class="btn" ng-click="errorMessageModalShown=false">
-          Okay
-        </a>
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h1>{{ errorMessageModalTitleText }}</h1>
+          </div>
+          <div class="modal-body"
+              style="white-space: pre-wrap; font-family: monospace;"
+            >{{ errorMessageModalBodyText }}
+          </div>
+          <div class="modal-footer">
+            <a class="btn" ng-click="errorMessageModalShown=false">
+              Okay
+            </a>
+          </div>
+        </div>
       </div>
     </div>
     '''

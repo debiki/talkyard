@@ -64,14 +64,14 @@
         <div class="tab-content">
           <div ng-controller='ActionListCtrl' class='tab-pane' id='events-tab'>
             <div class='selection-related-btns'>
-              <!--<a id='btn-view-post' class='btn' ng-show='oneRowChecked'>View</a>-->
-              <a id='btn-approve-post' class='btn' ng-show='manyRowsChecked'>Approve</a>
-              <a id='btn-reject-post' class='btn' ng-show='manyRowsChecked'>Reject</a>
-              <!-- <a class='btn'>Edit</a>
-              <a class='btn'>Subscribe</a>
-              <a class='btn'>!Spam</a>
-              <a class='btn'>#Delete</a>
-              <a class='btn'>Sort</a> -->
+              <!--<a id='btn-view-post' class='btn btn-default' ng-show='oneRowChecked'>View</a>-->
+              <a id='btn-approve-post' class='btn btn-default' ng-show='manyRowsChecked'>Approve</a>
+              <a id='btn-reject-post' class='btn btn-default' ng-show='manyRowsChecked'>Reject</a>
+              <!-- <a class='btn btn-default'>Edit</a>
+              <a class='btn btn-default'>Subscribe</a>
+              <a class='btn btn-default'>!Spam</a>
+              <a class='btn btn-default'>#Delete</a>
+              <a class='btn btn-default'>Sort</a> -->
             </div>
             <p ng-show="!actionList.length">No activity thus far.</p>
             <table class='table -table-bordered -table-striped'
@@ -162,7 +162,7 @@
             <div class='selection-related-btns'>
 
               <div id='create-page-dropdown' class='dropdown' ng-show='nothingSelected'>
-                <a class='btn dropdown-toggle' data-toggle='dropdown' href='#'>Create ...</a>
+                <a class='btn btn-default dropdown-toggle' data-toggle='dropdown' href='#'>Create ...</a>
                 <ul class='dropdown-menu' role='menu' data-todo-aria-labelledby='drop5'>
                   <li><a ng-click='createDraftPage("InfoPage")' id='create-info-page' tabindex='-1' href='#'>New Info Page</a></li>
                   <li class='divider'></li>
@@ -181,7 +181,7 @@
 
               <!--
               Not needed? Because the default homepage title says "click to edit".
-              <a id='view-page-btn' class='btn' ng-click='viewSelectedPage()' ng-show='onlySelectedOnePage'>View / Edit</a>
+              <a id='view-page-btn' class='btn btn-default' ng-click='viewSelectedPage()' ng-show='onlySelectedOnePage'>View / Edit</a>
               -->
 
               @* Currently broken somehow. Should probably me merged into the Change URL
@@ -190,7 +190,7 @@
               should only be shown to "advanced" users?)
               <div id='move-page-btn' class='dropdown'
                   ng-show='onlySelectedOnePage'>
-                <a class='btn dropdown-toggle' id='move-page-dropdown-btn' data-toggle='dropdown' href='#' role='button'
+                <a class='btn btn-default dropdown-toggle' id='move-page-dropdown-btn' data-toggle='dropdown' href='#' role='button'
                       ng-click='movePageForm.newFolder = selectedPage().folderPath()'>Move</a>
                   <form name='movePageForm' class='dropdown-menu' role='menu' aria-labelledby='move-page-dropdown-btn'
                       ng-submit='moveSelectedPageTo(movePageForm.newFolder)'>
@@ -202,7 +202,7 @@
                   <p ng-show='movePageForm.newFolderInput.$error.pattern'>
                     Enter a value like: <i>/some/folder/</i>
                   </p>
-                  <input type='submit' class='btn' value='Move page'
+                  <input type='submit' class='btn btn-default' value='Move page'
                       ng-disabled='movePageForm.$invalid'>
                 </form>
               </div>
@@ -210,7 +210,7 @@
 
               <div id='rename-page-btn' class='dropdown'
                   ng-show='onlySelectedOnePage'>
-                <a class='btn dropdown-toggle' id='rename-page-dropdown-btn' data-toggle='dropdown' href='#' role='button'
+                <a class='btn btn-default dropdown-toggle' id='rename-page-dropdown-btn' data-toggle='dropdown' href='#' role='button'
                       ng-click='renamePageForm.newSlug = selectedPage().slug()'>Change URL</a>
                   <form name='renamePageForm' class='dropdown-menu' role='menu' aria-labelledby='rename-page-dropdown-btn'
                     ng-submit='renameSelectedPageTo({ newSlug: renamePageForm.newSlug, newTitle: renamePageForm.newTitle })'>
@@ -235,31 +235,31 @@
                     Enter something like: <i>some-page-slug</i>
                   </p>
 
-                  <input type='submit' class='btn' value='Rename'
+                  <input type='submit' class='btn btn-default' value='Rename'
                       ng-disabled='renamePageForm.$invalid'>
                 </form>
               </div>
 
-              <a id='publish-page-btn' class='btn'
+              <a id='publish-page-btn' class='btn btn-default'
                   ng-click="changePageStatus('Published')"
                   ng-show='onlySelectedDrafts'>
                   Publish
               </a>
 
-              <a id='unpublish-page-btn' class='btn'
+              <a id='unpublish-page-btn' class='btn btn-default'
                   ng-click="changePageStatus('Draft')"
                   ng-show='onlySelectedPubldPages'>
                 Unpublish
               </a>
 
               <!-- Currently forum groups cannot be wrapped, see class PageRole in PageMeta.scala -->
-              <a id='create-wrapping-forum-group-btn' class='btn'
+              <a id='create-wrapping-forum-group-btn' class='btn btn-default'
                   ng-click='createWrappingForumGroup()'
                   ng-show='onlySelectedOneForum'>
                   Create forum group that wraps selected forum
               </a>
 
-              <a id='create-subforum-btn' class='btn'
+              <a id='create-subforum-btn' class='btn btn-default'
                   ng-click='createSubforum()'
                   ng-show='onlySelectedOneForumGroup'>
                   Create subforum
@@ -267,14 +267,14 @@
 
               <div id='use-as-homepage-btn' class='dropdown'
                   ng-show='onlySelectedOnePage && !homepageSelected'>
-                <a class='btn dropdown-toggle' id='use-as-homepage-dropdown-btn' data-toggle='dropdown' href='#' role='button'>Use as Homepage</a>
+                <a class='btn btn-default dropdown-toggle' id='use-as-homepage-dropdown-btn' data-toggle='dropdown' href='#' role='button'>Use as Homepage</a>
                   <form name='useAsHomepageForm' class='dropdown-menu' role='menu' aria-labelledby='use-as-homepage-dropdown-btn'
                       ng-submit='changeHomepageToSelectedPage()'>
                     <p>Change homepage to <em>{{ anySelectedPageTitle() }}</em>?</p>
                     <!-- COULD clarify:
                     <p>The current homepage will be available here: (URL to previous page path to current homepage)</p>
                     -->
-                    <input type='submit' class='btn' value='Yes, do it'>
+                    <input type='submit' class='btn btn-default' value='Yes, do it'>
                     <!--
                     Currently this actually *submits* the form, why??
                     <button class='btn'
@@ -335,11 +335,11 @@
           <div ng-controller='UserListCtrl' class='tab-pane' id='users-tab'>
             <!--
             <div>
-              <a class='btn'>Contact</a>
-              <a class='btn'>Subscribe</a>
-              <a class='btn'>Rename</a>
-              <a class='btn'>Block</a>
-              <a class='btn'>Sort</a>
+              <a class='btn btn-default'>Contact</a>
+              <a class='btn btn-default'>Subscribe</a>
+              <a class='btn btn-default'>Rename</a>
+              <a class='btn btn-default'>Block</a>
+              <a class='btn btn-default'>Sort</a>
             </div>
             -->
 
