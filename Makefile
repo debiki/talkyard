@@ -22,8 +22,7 @@ help:
 
 compile_javascript: \
 		${CLASSDIR}HtmlSanitizerJsImpl.class \
-		${CLASSDIR}PagedownJsImpl.class \
-		silly_copy_to_sbt_classdir
+		${CLASSDIR}PagedownJsImpl.class
 
 
 # Compile Javascript files.
@@ -38,6 +37,8 @@ ${CLASSDIR}HtmlSanitizerJsImpl.class: ${CLASSDIR}HtmlSanitizerJs.class ${RHINOJA
 	  -d ${DESTDIR} \
 	  -o HtmlSanitizerJsImpl \
 	  ${HTML_SANITIZER_JS}
+	# Ensure compiled files are included in generated JARs.
+	cp -a ${DESTDIR}compiledjs ${SBT_CLASSDIR_ROOT}
 
 ${CLASSDIR}PagedownJsImpl.class: ${CLASSDIR}PagedownJs.class ${RHINOJAR} ${PAGEDOWN_JS}
 	java -cp ${RHINOJAR}:${DESTDIR} \
@@ -48,6 +49,8 @@ ${CLASSDIR}PagedownJsImpl.class: ${CLASSDIR}PagedownJs.class ${RHINOJAR} ${PAGED
 	  -d ${DESTDIR} \
 	  -o PagedownJsImpl \
 	  ${PAGEDOWN_JS}
+	# Ensure compiled files are included in generated JARs.
+	cp -a ${DESTDIR}compiledjs ${SBT_CLASSDIR_ROOT}
 
 # Warning: Duplicated rule. A corresponding rule is also present in the Gruntfile. Keep in sync.
 ${PAGEDOWN_JS}: modules/pagedown/Markdown.Converter.js client/compiledjs/PagedownJavaInterface.js
@@ -74,15 +77,8 @@ ${CLASSDIR}PagedownJs.class: app/compiledjs/PagedownJs.java
 	javac $< -d ${DESTDIR}
 
 
-# Ensure compiled files are included in generated JARs.
 # ------------------------------------
 
-silly_copy_to_sbt_classdir: \
-		${CLASSDIR}HtmlSanitizerJsImpl.class \
-		${CLASSDIR}PagedownJsImpl.class
-	cp -a ${DESTDIR}compiledjs ${SBT_CLASSDIR_ROOT}
-
-# ------------------------------------
 
 cleanjs:
 	rm -f ${CLASSDIR}PagedownJs.class ${CLASSDIR}HtmlSanitizerJs.class
