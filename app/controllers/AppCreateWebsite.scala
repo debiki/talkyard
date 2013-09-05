@@ -60,7 +60,7 @@ object AppCreateWebsite extends mvc.Controller {
     _throwIfMayNotCreateWebsite(request)
 
     val tpi = InternalTemplateProgrammingInterface(request.dao)
-    Ok(views.html.createWebsiteChooseName(tpi,
+    Ok(views.html.createsite.chooseName(tpi,
       xsrfToken = request.xsrfToken.value))
   }
 
@@ -162,7 +162,7 @@ object AppCreateWebsite extends mvc.Controller {
       case Some(site) =>
         Redirect(s"http://$websiteAddr${routes.AppCreateWebsite.welcomeOwner.url}")
       case None =>
-        Ok(views.html.createWebsiteFailNotFirst())
+        Ok(views.html.createsite.failNotFirst())
     }
 
     result.withSession(request.session - "website-name")
@@ -222,7 +222,7 @@ object AppCreateWebsite extends mvc.Controller {
     // Then, if the URL token is valid, auto-login the user
     // because s/he is the owner and this'll work *once* only. (Assuming
     // we're using HTTPS (which we aren't), i.e. no man in the middle attack.)
-    Ok(views.html.createWebsiteWelcomeOwner())
+    Ok(views.html.createsite.welcomeOwner())
   }
 
 
@@ -241,7 +241,7 @@ object AppCreateWebsite extends mvc.Controller {
 
   private def _makeNewWebsiteEmail(website: Tenant, owner: User): Email = {
     val address = website.chost_!.address
-    val message = views.html.createWebsiteWelcomeEmail(address).body
+    val message = views.html.createsite.welcomeEmail(address).body
     Email(sendTo = owner.email,
       subject = s"New Debiki website created, here: http://$address",
       bodyHtmlText = message)
