@@ -6,7 +6,7 @@
 
 DESTDIR=target/scala-2.10/compiledjs-classes/
 CLASSDIR=${DESTDIR}compiledjs/
-HTML_SANITIZER_JS=client/vendor/html-sanitizer-bundle.js
+HTML_SANITIZER_JS=client/third-party/html-sanitizer-bundle.js
 PAGEDOWN_JS=public/res/debiki-pagedown.js
 # RHINOJAR=target/js-1.7R2.jar
 RHINOJAR=target/rhino1_7R2/js.jar
