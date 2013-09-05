@@ -73,7 +73,9 @@ bug = d.u.die2
     | 'New' => escapeHtml post.unapprovedText
     | 'NewPrelApproved' \
       'Approved' => escapeHtml post.approvedText
-    | 'Rejected' => escapeHtml post.unapprovedText
+    | 'Rejected' =>
+        # Sometimes `unapprovedText` is undefined, nevertheless the post was rejected.
+        escapeHtml post.unapprovedText || post.approvedText
     | 'EditsRejected' \
       'EditsPrelApproved' \
       'NewEdits' => htmlDiff()
