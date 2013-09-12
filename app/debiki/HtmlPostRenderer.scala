@@ -511,24 +511,27 @@ object HtmlPostRenderer {
       moreActionLinks ++= <a class="dw-a dw-a-delete icon-trash">Delete</a>
 
 
+    def moreDropdown =
+      // Ooops, ▾ doesn't work on my mobile; it's replaced by a square. Low prio.
+      <span class="dropdown">
+        <a data-toggle="dropdown" data-target="#">More ▾</a>
+        <div class="dropdown-menu dw-p-as-more">
+          { moreActionLinks }
+        </div>
+      </span>
+
     val renderActionsVertically = post.id == PageParts.BodyId // for now
     if (renderActionsVertically) {
       <div class="dw-p-as dw-as dw-p-as-hz">
         { replyLink }
         { rateLink }
-        <a class="dw-a dw-a-more">More...</a>
-        <span class="dw-p-as-more">
-          { moreActionLinks }
-        </span>
+        { moreDropdown }
         { suggestionsNew }
         { suggestionsOld }
       </div>
     }
     else {
-      // 1) Re the order of these links, see [bkfK20qE9] in debiki-play.css — there
-      // are some selectors that assume the More... and Delete actions are the last
-      // visible float-left-actions. (So don't move More... and `deleteLink`.)
-      // 2) The suggestions float right. New not-yet-decided-on suggestions are always
+      // The suggestions float right. New not-yet-decided-on suggestions are always
       // visible, and are hence placed to the very right (they need to appear first in
       // the list below). Old suggestions are only shown when you hover the post with
       // the mouse (so as not to clutter the GUI) (ignore touch devices for now),
@@ -540,14 +543,10 @@ object HtmlPostRenderer {
         {/* --- The rest float left --- */}
         { replyLink }
         { rateLink }
-        <a class="dw-a dw-a-more">More...</a>
-        <span class="dw-p-as-more">
-          { moreActionLinks }
-        </span>
+        { moreDropdown }
       </div>
     }
   }
-
 
   private def renderActionsForCollapsed(post: Post): Elem = {
     // Only show suggestions — don't show actions until the reader has

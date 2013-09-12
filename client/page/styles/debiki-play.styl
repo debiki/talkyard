@@ -426,6 +426,10 @@ span.dw-p-e-by
   display: inline-block
   margin-right: 12px
 
+.DW.DW .dw-p-as-more > .dw-a
+  display: block
+  margin: 8px 10px 14px 12px
+
 #dw-p-as-shown a
   color: hsl(210, 51%, 45%)
 
@@ -433,14 +437,6 @@ span.dw-p-e-by
   color: hsl(210, 51%, 45%) !important // the color for most common actions
   //                                     (should be a Stylus/LESS variable)
 
-.dw-p-as-more
-  display: none // shown on .dw-a-more click
-
-//  Avoid float drop; tese are the last visible float-left actions.
-// (See app/debiki/HtmlPostRenderer.scala [bkfK20qE9])
-.dw-p-as-more,
-.dw-a-delete
-  margin-right: 0
 
 // Make the reply and rate links easy to notice.
 .dw-t > .dw-as > .dw-a-reply,
@@ -479,8 +475,8 @@ span.dw-p-e-by
   color: hsl(211, 30%, 40%)
 
 // For now...
-.dw-p-as-hz > .dw-a-more,
-.dw-p-as-hz > .dw-a-rate
+.dw-p-as-hz > .dropdown,  // hide the More actions dropdown; it confuses testers
+.dw-p-as-hz > .dw-a-rate  // and one shouldn't be able to rate the article.
   display: none
 
 .dw-p-as
@@ -488,15 +484,10 @@ span.dw-p-e-by
   // by making the actions <div> at least this tall. (It's empty, currently
   // if the post is collapsed or deleted.)
   min-height: 17px
-  // Draw actions above arrows.
-  z-index: 2
+  // Draw actions above arrows, and above replies, so the More actions
+  // dropdown menu is drawn above "Click to show this thread" texts.
+  z-index: 4
   background: white
-
-// The `More...' link under the Reply button confuses test users.
-// Show a cogwheel next to the title instead. For now, hide `More...'.
-.dw-u-is-admin .dw-p-as-hz > .dw-a.dw-a-more
-  visibility: visible
-  opacity: 0.65 // the reply link is the important one
 
 body.dw-u-ui-simple .dw-a-edit
   display: none !important

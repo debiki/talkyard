@@ -71,15 +71,11 @@ function bindActionLinksImpl(anyPost, bindFoldLinks) {
   // reply/rate/edit links becomes virtually unclickable (if event
   // delegation is used instead).
 
+  // Actions that are always shown:
   $actions.children('.dw-a-reply').click(d.i.$showReplyForm);
   $actions.children('.dw-a-rate').click(d.i.$showRatingForm);
-  $actions.children('.dw-a-more').click(function(event) {
-    event.preventDefault();
-    $(this).closest('.dw-p-as').find('.dw-p-as-more')
-        .show()
-        .end().end().remove();
-  });
 
+  // Actions shown on More dropdown click:
   $actions.find('.dw-a-edit').click(d.i.$showEditsDialog);
   $actions.find('.dw-a-flag').click(d.i.$showFlagForm);
   $actions.find('.dw-a-delete').click(d.i.$showDeleteForm);
