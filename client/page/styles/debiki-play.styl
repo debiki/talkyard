@@ -426,6 +426,12 @@ span.dw-p-e-by
   display: inline-block
   margin-right: 12px
 
+// Show a ▾ icon after "More" text, same as class .icon-down-dir, but :after.
+// Don't use "▾" directly though; it breaks on my mobile.
+.dw-as-more:after
+  content: " \e80f"
+  font-family: "fontello"
+
 .DW.DW .dw-p-as-more > .dw-a
   display: block
   margin: 8px 10px 14px 12px

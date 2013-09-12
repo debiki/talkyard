@@ -512,9 +512,8 @@ object HtmlPostRenderer {
 
 
     def moreDropdown =
-      // Ooops, ▾ doesn't work on my mobile; it's replaced by a square. Low prio.
       <span class="dropdown">
-        <a data-toggle="dropdown" data-target="#">More ▾</a>
+        <a class="dw-as-more" data-toggle="dropdown" data-target="#">More</a>
         <div class="dropdown-menu dw-p-as-more">
           { moreActionLinks }
         </div>
