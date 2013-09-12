@@ -489,7 +489,7 @@ object HtmlPostRenderer {
     if (post.isTreeClosed)
       moreActionLinks ++= <a class="dw-a dw-a-reopen-tree">Reopen</a>
     else
-      moreActionLinks ++= <a class="dw-a dw-a-close-tree">Close</a>
+      moreActionLinks ++= <a class="dw-a dw-a-close-tree icon-archive">Close</a>
 
     // ----- Move links
 
