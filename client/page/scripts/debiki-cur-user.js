@@ -305,7 +305,8 @@ d.i.showAllowedActionsOnly = function(anyRootPost) {
   showHideActionLinks(
       'collapseThings',
         '.dw-a-collapse-tree, .dw-a-collapse-post, ' +
-        '.dw-a-uncollapse-tree, .dw-a-uncollapse-post');
+        '.dw-a-uncollapse-tree, .dw-a-uncollapse-post,' +
+        '.dw-a-close-tree');
   showHideActionLinks(
       'deleteAnyReply', '.dw-a-delete, .dw-a-undelete');
 }
