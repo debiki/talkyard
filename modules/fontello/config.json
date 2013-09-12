@@ -1,217 +1,110 @@
 {
   "name": "",
+  "css_prefix_text": "icon-",
+  "css_use_suffix": false,
+  "hinting": true,
   "glyphs": [
     {
-      "search": [
-        "yahoo"
-      ],
-      "code": 89,
-      "uid": "aa86b5f7dd6d1087f35cbed951970cd1",
-      "css": "yahoo",
-      "orig_css": "yahoo",
-      "orig_code": 89,
-      "src": "zocial",
-      "from": 89
-    },
-    {
-      "search": [
-        "openid"
-      ],
-      "code": 111,
-      "uid": "1cf32a32df11230cd182b593752304b4",
-      "css": "openid",
-      "orig_css": "openid",
-      "orig_code": 111,
-      "src": "zocial",
-      "from": 111
-    },
-    {
-      "search": [
-        "flag"
-      ],
-      "code": 59392,
-      "from": 9873,
       "uid": "57a0ac800df728aad61a7cf9e12f5fef",
       "css": "flag",
-      "orig_css": "flag",
-      "orig_code": 59392,
+      "code": 59392,
       "src": "fontawesome"
     },
     {
-      "search": [
-        "flight",
-        "plane",
-        "airplane"
-      ],
-      "code": 59396,
-      "from": 9992,
-      "uid": "297fe6c2ef08198b03d706ba52f51b7f",
-      "css": "move",
-      "orig_css": "flight",
-      "orig_code": 59396,
+      "uid": "acf41aa4018e58d49525665469e35665",
+      "css": "upvote",
+      "code": 59393,
       "src": "fontawesome"
     },
     {
-      "search": [
-        "mail",
-        "email"
-      ],
-      "code": 9993,
-      "from": 9993,
-      "uid": "bf882b30900da12fca090d9796bc3030",
-      "css": "mail",
-      "orig_css": "mail",
-      "orig_code": 9993,
+      "uid": "7533e68038fc6d520ede7a7ffa0a2f64",
+      "css": "downvote",
+      "code": 59394,
       "src": "fontawesome"
     },
     {
-      "search": [
-        "pencil",
-        "write",
-        "reply",
-        "edit"
-      ],
-      "code": 59405,
-      "from": 9998,
+      "uid": "f48ae54adfb27d8ada53d0fd9e34ee10",
+      "css": "trash",
+      "code": 59398,
+      "src": "fontawesome"
+    },
+    {
+      "uid": "2d6150442079cbda7df64522dc24f482",
+      "css": "down-dir",
+      "code": 59407,
+      "src": "fontawesome"
+    },
+    {
+      "uid": "f9c3205df26e7778abac86183aefdc99",
+      "css": "ccw",
+      "code": 10226,
+      "src": "fontawesome"
+    },
+    {
+      "uid": "8e04c98c8f5ca0a035776e3001ad2638",
+      "css": "facebook",
+      "code": 61594,
+      "src": "fontawesome"
+    },
+    {
+      "uid": "b8d0c7d76e87b94882329a88e8e43d3d",
+      "css": "google-plus",
+      "code": 61653,
+      "src": "fontawesome"
+    },
+    {
+      "uid": "e9107949dd6c9e8ab2b29ae07156e38c",
+      "css": "linkedin",
+      "code": 61665,
+      "src": "fontawesome"
+    },
+    {
+      "uid": "96ea1be71f597a5bdfc8f791ada4f651",
+      "css": "archive",
+      "code": 59408,
+      "src": "entypo"
+    },
+    {
+      "uid": "d090355c31f497b61d676416c1fd39fb",
+      "css": "twitter",
+      "code": 62217,
+      "src": "entypo"
+    },
+    {
+      "uid": "794d73c3a5fcf710265679700e470578",
+      "css": "pin",
+      "code": 59403,
+      "src": "iconic"
+    },
+    {
+      "uid": "2dabd0ee753bedbc9c1c52990d204403",
+      "css": "collapse",
+      "code": 128228,
+      "src": "iconic"
+    },
+    {
       "uid": "587bjlxppui6u4japooa2foe58rsvicp",
       "css": "edit",
-      "orig_css": "pencil",
-      "orig_code": 59405,
+      "code": 59405,
       "src": "modernpics"
     },
     {
-      "search": [
-        "settings",
-        "cog",
-        "gear"
-      ],
-      "code": 39041,
       "uid": "7336247ba3db350dec8d6c0a47cef966",
       "css": "settings",
-      "orig_css": "cog",
-      "orig_code": 39041,
-      "src": "mfglabs",
-      "from": 39041
+      "code": 39041,
+      "src": "mfglabs"
     },
     {
-      "search": [
-        "trash",
-        "delete"
-      ],
-      "code": 59398,
-      "from": 59177,
-      "uid": "f48ae54adfb27d8ada53d0fd9e34ee10",
-      "css": "trash",
-      "orig_css": "trash",
-      "orig_code": 59398,
-      "src": "fontawesome"
+      "uid": "aa86b5f7dd6d1087f35cbed951970cd1",
+      "css": "yahoo",
+      "code": 89,
+      "src": "zocial"
     },
     {
-      "search": [
-        "arrow",
-        "down"
-      ],
-      "code": 61444,
-      "uid": "d9be617b7f2fe7843118ca2d3a1b8cca",
-      "css": "more",
-      "orig_css": "down-open",
-      "orig_code": 61444,
-      "src": "mfglabs",
-      "from": 61444
-    },
-    {
-      "search": [
-        "facebook"
-      ],
-      "code": 61594,
-      "uid": "8e04c98c8f5ca0a035776e3001ad2638",
-      "css": "facebook",
-      "orig_css": "facebook",
-      "orig_code": 61594,
-      "src": "fontawesome",
-      "from": 61594
-    },
-    {
-      "search": [
-        "google",
-        "plus"
-      ],
-      "code": 61653,
-      "uid": "b8d0c7d76e87b94882329a88e8e43d3d",
-      "css": "google-plus",
-      "orig_css": "gplus",
-      "orig_code": 61653,
-      "src": "fontawesome",
-      "from": 61653
-    },
-    {
-      "search": [
-        "linkedin"
-      ],
-      "code": 61665,
-      "uid": "e9107949dd6c9e8ab2b29ae07156e38c",
-      "css": "linkedin",
-      "orig_css": "linkedin",
-      "orig_code": 61665,
-      "src": "fontawesome",
-      "from": 61665
-    },
-    {
-      "search": [
-        "twitter",
-        "social",
-        "logo"
-      ],
-      "code": 62217,
-      "uid": "d090355c31f497b61d676416c1fd39fb",
-      "css": "twitter",
-      "orig_css": "twitter",
-      "orig_code": 62217,
-      "src": "entypo",
-      "from": 62217
-    },
-    {
-      "search": [
-        "thumbs",
-        "up",
-        "like",
-        "vote"
-      ],
-      "code": 59393,
-      "from": 128077,
-      "uid": "acf41aa4018e58d49525665469e35665",
-      "css": "upvote",
-      "orig_css": "thumbs-up",
-      "orig_code": 59393,
-      "src": "fontawesome"
-    },
-    {
-      "search": [
-        "thumbs",
-        "down",
-        "unlike",
-        "vote"
-      ],
-      "code": 59394,
-      "from": 128078,
-      "uid": "7533e68038fc6d520ede7a7ffa0a2f64",
-      "css": "downvote",
-      "orig_css": "thumbs-down",
-      "orig_code": 59394,
-      "src": "fontawesome"
-    },
-    {
-      "search": [
-        "upload"
-      ],
-      "code": 128228,
-      "uid": "2dabd0ee753bedbc9c1c52990d204403",
-      "file": "upload",
-      "css": "collapse",
-      "orig_css": "upload",
-      "orig_code": 128228,
-      "src": "iconic",
-      "from": 128228
+      "uid": "1cf32a32df11230cd182b593752304b4",
+      "css": "openid",
+      "code": 111,
+      "src": "zocial"
     }
   ]
 }

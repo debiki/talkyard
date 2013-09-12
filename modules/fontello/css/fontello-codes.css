@@ -1,19 +1,20 @@
 @charset "UTF-8";
 
-
+ 
 .icon-yahoo:before { content: '\59'; } /* 'Y' */
 .icon-openid:before { content: '\6f'; } /* 'o' */
+.icon-down-dir:before { content: '\e80f'; } /* '' */
 .icon-flag:before { content: '\e800'; } /* '' */
-.icon-move:before { content: '\e804'; } /* '' */
-.icon-mail:before { content: '\2709'; } /* '✉' */
 .icon-edit:before { content: '\e80d'; } /* '' */
+.icon-ccw:before { content: '\27f2'; } /* '⟲' */
 .icon-settings:before { content: '\9881'; } /* '颁' */
 .icon-trash:before { content: '\e806'; } /* '' */
-.icon-more:before { content: '\f004'; } /* '' */
+.icon-archive:before { content: '\e810'; } /* '' */
 .icon-facebook:before { content: '\f09a'; } /* '' */
 .icon-google-plus:before { content: '\f0d5'; } /* '' */
 .icon-linkedin:before { content: '\f0e1'; } /* '' */
 .icon-twitter:before { content: '\f309'; } /* '' */
 .icon-upvote:before { content: '\e801'; } /* '' */
 .icon-downvote:before { content: '\e802'; } /* '' */
+.icon-pin:before { content: '\e80b'; } /* '' */
 .icon-collapse:before { content: '📤'; } /* '\1f4e4' */
