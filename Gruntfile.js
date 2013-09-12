@@ -37,7 +37,7 @@ module.exports = function(grunt) {
       " */\n";
 
   var debikiDesktopFiles = [
-      'client/third-party/bootstrap-tooltip.js', //
+      'client/third-party/bootstrap/tooltip.js', //
       'client/third-party/diff_match_patch.js',
       'client/third-party/html-sanitizer-bundle.js',
       'client/third-party/jquery-cookie.js',
@@ -247,8 +247,8 @@ module.exports = function(grunt) {
 
         'public/res/debiki-spa-common.js': [
             'target/client/third-party/livescript/prelude-browser-min.js',
-            'target/client/third-party/bootstrap-tooltip.js', // -popup.js dependee
-            'target/client/third-party/bootstrap-*.js',
+            'target/client/third-party/bootstrap/tooltip.js', // -popup.js dependee
+            'target/client/third-party/bootstrap/*.js',
             'target/client/third-party/angular-ui/module.js',
             'target/client/third-party/angular-ui/directives/jq/jq.js',
             'target/client/third-party/angular-ui/directives/modal/modal.js',
