@@ -449,6 +449,10 @@ object HtmlPostRenderer {
 
     moreActionLinks ++= <a class="dw-a dw-a-flag icon-flag">Report</a>
 
+    // ----- Pin link
+
+    moreActionLinks ++= <a class="dw-a dw-a-pin icon-pin">Pin</a>
+
     // ----- Edit suggestions
 
     if (post.numPendingEditSuggestions > 0)

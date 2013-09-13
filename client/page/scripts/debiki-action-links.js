@@ -82,6 +82,7 @@ function bindActionLinksImpl(anyPost, bindFoldLinks) {
   $actions.find('.dw-a-collapse-post').click(d.i.$showActionDialog('CollapsePost'));
   $actions.find('.dw-a-collapse-tree').click(d.i.$showActionDialog('CollapseTree'));
   $actions.find('.dw-a-close-tree').click(d.i.$showActionDialog('CloseTree'));
+  $actions.find('.dw-a-pin').click(d.i.$showActionDialog('PinTree'));
 
   $actions.find('.dw-a-flag-suggs').click(showNotImplMessage);
 

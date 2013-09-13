@@ -20,7 +20,8 @@ d = i: debiki.internal, u: debiki.v0.util
 $ = d.i.$;
 
 
-targetPostId = ''
+postId = 0
+pageId = d.i.pageId
 
 
 d.i.$showActionDialog = !(whichDialog, event) -->
@@ -29,19 +30,23 @@ d.i.$showActionDialog = !(whichDialog, event) -->
   $dialog = switch whichDialog
     | 'CollapseTree' \
       'CollapsePost' => newCollapseDialog whichDialog
-    | 'CloseTree' => newCloseTreeDialog!
+    | 'CloseTree' => newCloseTreeDialog()
+    | 'PinTree' => newPinTreeDialog()
     | _ => die 'DwE8GA1'
 
-  # Pass data to dialog via shared variable `targetPostId`.
+  # Pass data to dialog via shared variable `postId`.
   $thread = $(this).closest '.dw-t'
   $post = $thread.children '.dw-p'
-  targetPostId := $post.dwPostId!
+  postId := parseInt $post.dwPostId!
 
   $dialog.dialog('open')
 
     #parent().position({
     #my: 'center top', at: 'center bottom', of: $post, offset: '0 40'});
 
+
+
+# =============== Collapse post / tree
 
 
 function newCollapseDialog (whichDialog)
@@ -63,7 +68,7 @@ function newCollapseDialog (whichDialog)
     $dialog.dialog 'close'
 
   $dialog.find('.dw-f-collapse-yes').button!click ->
-    submit $dialog, conf.url
+    submit $dialog, conf.url, [{ pageId, actionId: '' + postId }]
 
   $dialog
 
@@ -87,6 +92,9 @@ function collapseDialogHtml (conf)
 
 
 
+# =============== Close tree
+
+
 function newCloseTreeDialog
 
   $dialog = closeTreeDialogHtml!
@@ -96,7 +104,7 @@ function newCloseTreeDialog
     $dialog.dialog 'close'
 
   $dialog.find('.dw-f-close-yes').button!click ->
-    submit $dialog, '/-/close-tree'
+    submit $dialog, '/-/close-tree', [{ pageId, actionId: '' + postId }]
 
   $dialog
 
@@ -119,8 +127,56 @@ function closeTreeDialogHtml()
 
 
 
-function submit($dialog, apiFunction)
-  data = [{ pageId: d.i.pageId, actionId: targetPostId }]
+# =============== Pin post
+
+
+function newPinTreeDialog
+
+  $dialog = pinTreeDialogHtml()
+  $dialog.dialog d.i.newModalDialogSettings()
+
+  $dialog.find('.dw-fi-cancel').click !->
+    $dialog.dialog 'close'
+
+  $dialog.find('input[type=submit]').click ->
+    position = parseInt $dialog.find('input[type=text]').val()
+    if isNaN(position) => return false
+    submit $dialog, '/-/pin-at-position', [{ pageId, postId, position }]
+
+  $dialog
+
+
+
+function pinTreeDialogHtml
+  $("""
+    <div title="Pin comment at position?">
+      <p>
+        If you pin the comment at position 1, it will be placed first.
+      </p>
+      <form id="dw-f-pin-pos">
+        <div>
+          <span>Pin at position:</span>
+          <input type="text" name="position" value="1">
+        </div>
+        <div class="dw-submit-set">
+          <input type="submit" class="btn btn-default" value="Pin it">
+          <input type="button" class="btn btn-default dw-fi-cancel" value="Cancel">
+        </div>
+      </form>
+    </div>
+    """)
+
+
+# """If you pin upvotes to the comment, it will be listed before other
+# comments, unless the other comments get even more upvotes.
+# Alternatively, you can pin downvotes instead, e.g. -5."""
+
+
+
+# =============== Submit dialog
+
+
+function submit($dialog, apiFunction, data)
   d.u.postJson { url: apiFunction, data }
       .fail d.i.showServerResponseDialog
       .done !(newDebateHtml) ->
