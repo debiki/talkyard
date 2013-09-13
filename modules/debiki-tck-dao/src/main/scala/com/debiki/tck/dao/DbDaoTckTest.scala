@@ -1233,6 +1233,50 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
     }
 
 
+    // -------- Pin posts and votes
+
+
+    "Pin posts and votes" >> {
+
+      "Pin post at position" in {
+        val position = 6789
+        var savedPin: PostActionDto[_] = null
+        val payload = PAP.PinPostAtPosition(position)
+        val action = PostActionDto[PAP.PinPostAtPosition](
+          id = PageParts.UnassignedId,
+          creationDati = new ju.Date,
+          payload = payload,
+          postId = ex1_rootPost.id,
+          loginId = loginId,
+          userId = globalUserId,
+          newIp = None)
+
+        dao.savePageActions(testPage, List(action)) must beLike {
+          case (_, List(pinAction: PostActionDto[_])) =>
+            savedPin = pinAction
+            ok
+        }
+
+        dao.loadPage(testPage.id) must beLike {
+          case Some(page: PageParts) =>
+            val pinAction =
+              page.actionDtos.find(_.payload.isInstanceOf[PAP.PinPostAtPosition])
+              .getOrElse(fail("No PinPostAtPosition found"))
+              .asInstanceOf[PostActionDto[PAP.PinPostAtPosition]]
+            pinAction.postId must_== ex1_rootPost.id
+            pinAction.payload.position must_== position
+            val pinnedPost = page.getPost_!(ex1_rootPost.id)
+            pinnedPost.pinnedPosition must_== Some(position)
+            ok
+        }
+      }
+
+      "Pin votes to post" in {
+        failure
+      }.pendingUntilFixed()
+    }
+
+
     // -------- Edit posts
 
 
