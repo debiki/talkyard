@@ -240,6 +240,10 @@ object HtmlPostRenderer {
       if (PageParts.isArticleOrConfigPostId(post.id)) scala.xml.Null
       else <a class="dw-p-link">#{post.id}</a>
 
+    val anyPin =
+      if (post.pinnedPosition.isEmpty) scala.xml.Null
+      else <a class="dw-p-pin icon-pin"></a>
+
     val cssArticlePostHeader =
       if (post.id == PageParts.BodyId) " dw-ar-p-hd"
       else ""
@@ -247,7 +251,7 @@ object HtmlPostRenderer {
     val commentHtml =
       <div class={"dw-p-hd" + cssArticlePostHeader}>
         By { _linkTo(author)}{ dateAbbr(post.creationDati, "dw-p-at")
-        }{ permalink }{ flagsTop }{ ratingTagsTop }{ editInfo }{ flagsDetails
+        }{ anyPin }{ permalink }{ flagsTop }{ ratingTagsTop }{ editInfo }{ flagsDetails
         }{ ratingTagsDetails }
       </div>
 

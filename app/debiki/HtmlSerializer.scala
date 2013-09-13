@@ -387,7 +387,17 @@ case class HtmlPageSerializer(
     // Could skip sorting inline posts, since sorted by position later
     // anyway, in javascript. But if javascript disabled?
     def sortFn(a: Post, b: Post): Boolean = {
-      // (Place pinned posts first. ... no, functionality removed.)
+      if (a.pinnedPosition.isDefined || b.pinnedPosition.isDefined) {
+        // 1 means place first, 2 means place first but one, and so on.
+        // -1 means place last, -2 means last but one, and so on.
+        val aPos = a.pinnedPosition.getOrElse(0)
+        val bPos = b.pinnedPosition.getOrElse(0)
+        assert(aPos != 0 || bPos != 0)
+        if (aPos == 0) return bPos < 0
+        if (bPos == 0) return aPos > 0
+        if (aPos * bPos < 0) return aPos > 0
+        return aPos < bPos
+      }
 
       // Place deleted posts last; they're rather uninteresting?
       if (!a.isDeletedSomehow && b.isDeletedSomehow)
