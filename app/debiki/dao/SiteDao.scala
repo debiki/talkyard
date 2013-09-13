@@ -107,14 +107,14 @@ class SiteDao(protected val siteDbDao: ChargingSiteDbDao)
    * Saves page actions and places messages in users' inboxes, as needed.
    * Returns the page including new actions, and the actions, but with ids assigned.
    */
-  final def savePageActionsGenNotfs(pageReq: PageRequest[_], actions: List[PostActionDtoOld])
+  final def savePageActionsGenNotfs(pageReq: PageRequest[_], actions: Seq[PostActionDtoOld])
         : (PageNoPath, Seq[PostActionDtoOld]) = {
     savePageActionsGenNotfsImpl(pageReq.pageNoPath_!, actions)
   }
 
 
   final def savePageActionsGenNotfs(
-        pageId: PageId, actions: List[PostActionDtoOld], authors: People)
+        pageId: PageId, actions: Seq[PostActionDtoOld], authors: People)
         : (PageNoPath, Seq[PostActionDtoOld]) = {
 
     val pageNoAuthor = loadPage(pageId) getOrElse throwBadReq(
@@ -130,7 +130,7 @@ class SiteDao(protected val siteDbDao: ChargingSiteDbDao)
   }
 
 
-  def savePageActionsGenNotfsImpl(page: PageNoPath, actions: List[PostActionDtoOld])
+  def savePageActionsGenNotfsImpl(page: PageNoPath, actions: Seq[PostActionDtoOld])
         : (PageNoPath, Seq[PostActionDtoOld]) = {
     if (actions isEmpty)
       return (page, Nil)
@@ -140,7 +140,7 @@ class SiteDao(protected val siteDbDao: ChargingSiteDbDao)
     // and lots of other similar tests.
 
     val (pageWithNewActions, actionsWithId) =
-      siteDbDao.savePageActions(page, actions)
+      siteDbDao.savePageActions(page, actions.toList)
 
     (pageWithNewActions, actionsWithId)
   }

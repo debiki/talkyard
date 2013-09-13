@@ -58,7 +58,7 @@ class CachingSiteDao(siteDbDao: ChargingSiteDbDao)
   }
 
 
-  override def savePageActionsGenNotfsImpl(page: PageNoPath, actions: List[PostActionDtoOld])
+  override def savePageActionsGenNotfsImpl(page: PageNoPath, actions: Seq[PostActionDtoOld])
         : (PageNoPath, Seq[PostActionDtoOld]) = {
 
     if (actions isEmpty)
