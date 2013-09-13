@@ -44,6 +44,9 @@ object Protocols {
     def getTextOrNull(anyText: Option[String]): JsValue =
       anyText.map(JsString(_)) getOrElse JsNull
 
+    def getNumberOrNull(anyNumber: Option[Int]): JsValue =
+      anyNumber.map(JsNumber(_)) getOrElse JsNull
+
     val json = Json.obj(
       "pageId" -> post.page.id,
       "postId" -> post.id,
@@ -67,6 +70,7 @@ object Protocols {
       "lastEditAppliedAt" -> toDateStringOrNull(post.lastEditAppliedAt),
       "lastEditRevertedAt" -> toDateStringOrNull(post.lastEditRevertedAt),
       "lastEditorId" -> getTextOrNull(post.lastEditorId),
+      "pinnedPosition" -> getNumberOrNull(post.pinnedPosition),
       "postCollapsedAt" -> toDateStringOrNull(post.postCollapsedAt),
       "treeCollapsedAt" -> toDateStringOrNull(post.treeCollapsedAt),
       "treeClosedAt" -> toDateStringOrNull(post.treeClosedAt),
@@ -163,6 +167,7 @@ object Protocols {
       lastEditAppliedAt           = (json \ "lastEditAppliedAt").asOpt[ju.Date],
       lastEditRevertedAt          = (json \ "lastEditRevertedAt").asOpt[ju.Date],
       lastEditorId                = (json \ "lastEditorId").asOpt[String],
+      pinnedPosition              = (json \ "pinnedPosition").asOpt[Int],
       postCollapsedAt             = (json \ "postCollapsedAt").asOpt[ju.Date],
       treeCollapsedAt             = (json \ "treeCollapsedAt").asOpt[ju.Date],
       treeClosedAt                = (json \ "treeClosedAt").asOpt[ju.Date],

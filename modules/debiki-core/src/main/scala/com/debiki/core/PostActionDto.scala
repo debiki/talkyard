@@ -290,6 +290,39 @@ object PostActionPayload {
   val ManuallyApprovePost = ReviewPost(Some(Approval.Manual))
 
 
+  /** Pins a post at e.g. position 3. This pushes any other posts already pinned
+    * at e.g. positions 3, 4, and 5 one step to the right, to positions 4, 5 and 6.
+    * So after a while, the effective position of a pinned post might have changed
+    * from X to X + Y where Y is the number of new posts pinned at or before X.
+    * The effective position of a post is computed lazily when the page is rendered.
+    *
+    * @param position 1 means place first, 2 means place first but one, and so on.
+    *   -1 means place last, -2 means last but one, and so on.
+    */
+  case class PinPostAtPosition(position: Int) extends PostActionPayload {
+    illArgIf(position == 0, "DwE25FK8")
+  }
+
+
+  /** Gives extra votes to a post. A negative value means downvotes. Can be used
+    * to promote or demote things the admin / moderator likes or dislikes.
+    * However, a pushpin icon shows that the post has been pinned. So one
+    * cannot use this functionality to fool other people into believing a post is
+    * more (or less) popular that what it actually is.
+    *  Concerning pinning downvotes, if you think that's unfair, because the
+    * post will be moved away and fewer people will see it and read it (and notice it's
+    * pinned): well, the moderator can *delete* it as well. It's more "fair" and
+    * more honest to pin visible downvotes, than to outright delete the whole
+    * comment/thread?
+    *//*
+  case class PinVotesToPost(extraVotes: Int) extends PostActionPayload {
+    illArgIf(extraVotes == 0, "DwE71Fb0")
+  }*/
+
+
+  ///case object UnpinPost extends PostActionPayload
+
+
   class CollapseSomething extends PostActionPayload
 
 

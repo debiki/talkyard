@@ -141,6 +141,17 @@ case class Post(
   def numUncollapsesToReview = state.numUncollapsesToReview + 0
 
 
+  def pinnedPosition: Option[Int] = {
+    val pinActions = actions.filter(_.payload.isInstanceOf[PAP.PinPostAtPosition])
+    if (pinActions.isEmpty)
+      return state.pinnedPosition
+    // This needs to be replaced by a pin position calculator:
+    val mostRecentPinAction = pinActions.maxBy(_.creationDati)
+    val pinPayload = mostRecentPinAction.payload.asInstanceOf[PAP.PinPostAtPosition]
+    Some(pinPayload.position)
+  }
+
+
   /**
    * Applies all edits and returns the resulting text and markup.
    *

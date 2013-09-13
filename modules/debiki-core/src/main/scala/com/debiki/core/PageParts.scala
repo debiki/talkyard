@@ -238,6 +238,7 @@ abstract class PostActionsWrapper { self: PageParts =>
         case _: PAP.CreatePost => // doesn't affect any post; creates a new one
         case _: PAP.EditPost => addActionByTargetId(action.postId)
         case _: PAP.ReviewPost => addActionByTargetId(action.postId)
+        case _: PAP.PinPostAtPosition => addActionByTargetId(action.postId)
         case PAP.CollapsePost => addActionByTargetId(action.postId)
         case PAP.CollapseTree => addActionByTargetId(action.postId)
         case PAP.CloseTree => addActionByTargetId(action.postId)
