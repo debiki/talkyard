@@ -52,7 +52,7 @@ sealed abstract class Perms
 
 object PermsOnPage {
 
-  val All = PermsOnPage(true, true, true, true, true, true, true, true, true, true)
+  val All = PermsOnPage(true, true, true, true, true, true, true, true, true, true, true)
 
   val Wiki = PermsOnPage(
     accessPage = true,
@@ -60,6 +60,7 @@ object PermsOnPage {
     editPage = true,
     editAnyReply = true,
     editUnauReply = true,
+    pinReplies = true,
     collapseThings = true
   )
 
@@ -96,6 +97,9 @@ case class PermsOnPage(
 
   /** Edit unauthenticated users' replies. */
   val editUnauReply: Boolean = false,
+
+  /** Pin a comment so it's shown first, or pin e.g. +5 votes to a comment. */
+  val pinReplies: Boolean = false,
 
   val collapseThings: Boolean = false,
 
