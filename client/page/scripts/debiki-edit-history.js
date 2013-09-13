@@ -56,9 +56,7 @@ function showEditsDialogImpl($post) {
       $saveBtn.hide();
     }
 
-    // Use jQueryDialog...Destroy so ids won't clash, should a new form
-    // be loaded later.
-    $editDlg.dialog($.extend({}, d.i.jQueryDialogFullScreenDestroy));
+    $editDlg.dialog(d.i.newModalDialogSettings({ fullscreen: true }));
 
     initSuggestions($editDlg); // later:? .find('#dw-e-tb-sgs'));
     // For now, open directly, discard on close and

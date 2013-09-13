@@ -102,25 +102,43 @@ d.i.jQueryDialogDestroy = $.extend({}, d.i.jQueryDialogDefault, {
 var scrollXBeforeFullscreen = -1;
 var scrollYBeforeFullscreen = -1;
 
+
 /**
- * Opens a full screen dialog, by hiding everything ('body > *') except
+ * If the display size is small, or if you specify `options.fullscreen`,
+ * makes a full screen dialog, by hiding everything ('body > *') except
  * for the dialog, and specifying width & height 100%.
  * Restores the original window.scrollX and scrollY on close.
+ *
+ * The dialog is destroyed and removed on close.
  */
-d.i.jQueryDialogFullScreenDestroy = $.extend({}, d.i.jQueryDialogDestroy, {
-  open: function(event, ui) {
-    scrollXBeforeFullscreen = window.scrollX;
-    scrollYBeforeFullscreen = window.scrollY;
-    $(this).parent().addClass('dw-dlg-fullscreen');
-    $('body').addClass('dw-fullscreen-dialog-mode');
-    d.i.jQueryDialogDestroy.open.call(this, event, ui);
-  },
-  close: function(event, ui) {
-    $('body').removeClass('dw-fullscreen-dialog-mode');
-    window.scrollTo(scrollXBeforeFullscreen, scrollYBeforeFullscreen);
-    d.i.jQueryDialogDestroy.close.call(this, event, ui);
+d.i.newModalDialogSettings = function(options) {
+  options = options || {};
+  var fullscreen = options.fullscreen;
+  if (fullscreen === undefined) {
+    var $window = $(window);
+    fullscreen = $window.width() < 500 || $window.height() < 500;
   }
-});
+
+  var dialogSettings = $.extend({}, d.i.jQueryDialogDestroy, {
+    open: function(event, ui) {
+      if (fullscreen) {
+        scrollXBeforeFullscreen = window.scrollX;
+        scrollYBeforeFullscreen = window.scrollY;
+        $(this).parent().addClass('dw-dlg-fullscreen');
+        $('body').addClass('dw-fullscreen-dialog-mode');
+      }
+      d.i.jQueryDialogDestroy.open.call(this, event, ui);
+    },
+    close: function(event, ui) {
+      if (fullscreen) {
+        $('body').removeClass('dw-fullscreen-dialog-mode');
+        window.scrollTo(scrollXBeforeFullscreen, scrollYBeforeFullscreen);
+      }
+      d.i.jQueryDialogDestroy.close.call(this, event, ui);
+    }
+  });
+  return dialogSettings;
+};
 
 
 /**
