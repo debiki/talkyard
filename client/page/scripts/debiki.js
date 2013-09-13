@@ -314,6 +314,44 @@ function renderPageEtc() {
   // Disable for now, I'll rewrite it to consider timestamps.
   //steps.push(d.i.startNextUnreadPostCycler);
 
+  // This should be done each time a thread is inited, but for now, simply:
+  steps.push(function() {
+    var sharedSettings = {
+      placeholder: "ui-state-highlight",
+      handle: ".dw-p-pin",
+      // revert: true,
+      scrollSpeed: 30,  // = default x 1.5
+      'z-index': 2000,  // instead of default 1000, which would be below Debiki's <forms>
+      tolerance: 'pointer',
+      delay: 200,
+      forcePlaceholderSize: true
+    };
+
+    var horizontalSettings = $.extend({}, sharedSettings, {
+      items: "> li:has(> .dw-t > .dw-p > .dw-p-hd > .dw-p-pin)",
+      axis: "x",
+      start: function(e, ui) {
+        // Make the placeholder as wide as the element being sorted. But this won't work:
+        //  ui.placeholder.width(ui.helper.outerWidth());
+        // because horizontal layout uses display: table-cell, so width is igored.
+        // Instead, add a dummy elem inside the placeholder, with the desired width:
+        var width = ui.helper.outerWidth();
+        ui.placeholder.append('<div style="width: '+width+'px"></div>');
+      }
+    });
+
+    var verticalSettings = $.extend({}, sharedSettings, {
+      items: "> li:has(> .dw-p > .dw-p-hd > .dw-p-pin)",
+      axis: "y"
+    });
+
+    // Horizontal threads:
+    $('.dw-res:has(> li > .dw-t > .dw-p > .dw-p-hd > .dw-p-pin)').sortable(horizontalSettings);
+
+    // Vertical threads:
+    $('.dw-res:has(> li > .dw-p > .dw-p-hd > .dw-p-pin)').sortable(verticalSettings);
+  });
+
   steps.push(function() {
     debiki.scriptLoad.resolve();
     runSiteConfigScripts();
