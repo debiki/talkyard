@@ -35,7 +35,7 @@ d.i.$showRatingForm = function(event) {
   var $rateAction = $thread.find(' > .dw-p-as > .dw-a-rate');
   var $submitBtn = $rateForm.find('input[type="submit"]');
   var $cancelBtn = $rateForm.find('input.dw-fi-cancel');
-  var postId = $post.dwPostId();
+  var postId = $post.dwPostIdStr();
 
   // The rating-value inputs are labeled checkboxes. Hence they
   // have ids --- which right now remain the same as the ids

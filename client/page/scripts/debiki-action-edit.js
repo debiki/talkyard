@@ -76,7 +76,7 @@ d.i.$showEditForm = function(event) {
 function _$showEditFormImpl() {
   var $post = $(this);
   var $postBody = $post.children('.dw-p-bd');
-  var postId = $post.dwPostId();
+  var postId = $post.dwPostIdStr();
   var isRootPost = $post.parent().is('.dw-depth-0');
   var pageMeta = $post.dwPageMeta();
 

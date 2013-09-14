@@ -37,7 +37,7 @@ d.i.$showActionDialog = !(whichDialog, event) -->
   # Pass data to dialog via shared variable `postId`.
   $thread = $(this).closest '.dw-t'
   $post = $thread.children '.dw-p'
-  postId := parseInt $post.dwPostId!
+  postId := parseInt $post.dwPostIdStr!
 
   $dialog.dialog('open')
 

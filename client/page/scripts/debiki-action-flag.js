@@ -97,7 +97,7 @@ d.i.$showFlagForm = function(event) {
   var $i = $(this);
   var $t = $i.closest('.dw-t');
   var $post = $t.children('.dw-p');
-  var postId = $post.dwPostId();
+  var postId = $post.dwPostIdStr();
   var $flagForm = $('#dw-f-flg');
   $flagForm
       .attr('action', '?flag='+ postId)

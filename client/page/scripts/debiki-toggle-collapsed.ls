@@ -54,7 +54,7 @@ d.i.$toggleCollapsed = ->
       $thread.removeClass 'dw-zd'
       $foldLink.text ''
     else
-      d.i.loadAndInsertTree $thread.dwPostId!
+      d.i.loadAndInsertTree $thread.dwPostIdStr!
   else
     # Fold thread.
     postCount = $thread.find('.dw-p').length
@@ -66,7 +66,7 @@ d.i.$toggleCollapsed = ->
 
 
 !function uncollapsePost ($post)
-  d.i.loadAndInsertPost $post.dwPostId!
+  d.i.loadAndInsertPost $post.dwPostIdStr!
 
 
 
@@ -77,7 +77,7 @@ d.i.$toggleCollapsed = ->
   # Remove "Click to show threads" message, but don't remove any already
   # loaded threads.
   $replies.children('li').filter(':not(.dw-t)').remove!
-  d.i.loadAndInsertReplies $thread.dwPostId!
+  d.i.loadAndInsertReplies $thread.dwPostIdStr!
 
 
 

@@ -79,7 +79,7 @@ d.i.startReadingProgresMonitor = !->
     if !$postBody.length || !isInViewport($postBody)
       return
 
-    postId = $post.dwPostId!
+    postId = $post.dwPostIdStr!
 
     postsVisibleThisTick[postId] = true
 

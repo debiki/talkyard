@@ -31,7 +31,7 @@ d.i.$showEditsDialog = function() {
 function showEditsDialogImpl($post) {
   var $thread = $post.closest('.dw-t');
   var $postBody = $post.children('.dw-p-bd');
-  var postId = $post.dwPostId();
+  var postId = $post.dwPostIdStr();
 
   $.get('?viewedits='+ postId +'&view='+ d.i.rootPostId, 'text')
       .fail(d.i.showServerResponseDialog)

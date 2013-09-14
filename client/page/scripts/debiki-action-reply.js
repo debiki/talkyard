@@ -30,7 +30,7 @@ d.i.$showReplyForm = function(event, opt_where) {
   var $thread = $(this).closest('.dw-t');
   var $replyAction = $thread.find('> .dw-p-as > .dw-a-reply');
   var $post = $thread.children('.dw-p');
-  var postId = $post.dwPostId();
+  var postId = $post.dwPostIdStr();
   var horizLayout = $thread.is('.dw-hor');
   var replyCountBefore = $thread.find('> .dw-res > .dw-t').length;
 
@@ -96,7 +96,7 @@ d.i.$showReplyForm = function(event, opt_where) {
           var result = d.i.patchPage(newDebateHtml);
           var $myNewPost = result.patchedThreads[0].children('.dw-p');
           d.u.bugIf($myNewPost.length !== 1, 'DwE3TW39');
-          d.i.markMyPost($myNewPost.dwPostId());
+          d.i.markMyPost($myNewPost.dwPostIdStr());
           // Any horizontal reply button has been hidden.
           $anyHorizReplyBtn.show();
 

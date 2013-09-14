@@ -61,7 +61,7 @@ d.i.startNextUnreadPostCycler = !->
   $posts = $('.dw-p').not('#post-1, #post-2, #post-3')
   $posts.each !->
     $post = $ this
-    symbol = postsReadMem[$post.dwPostId!]
+    symbol = postsReadMem[$post.dwPostIdStr!]
     markPostVisually $post, symbol
 
   # Mark posts read, when scrolled outside the viewport.
@@ -95,7 +95,7 @@ d.i.startNextUnreadPostCycler = !->
         | _ => postManuallyUnreadSymbol
 
   function setNewMark ($post, deriveSymbolFn)
-    postId = $post.dwPostId!
+    postId = $post.dwPostIdStr!
     curSymbol = postsReadMem[postId]
     newSymbol = deriveSymbolFn(curSymbol)
     return unless newSymbol

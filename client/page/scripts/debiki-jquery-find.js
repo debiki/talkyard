@@ -39,10 +39,16 @@ d.i.findPostHeader$ = function(postId) {
 };
 
 
-$.fn.dwPostId = function() {
+// Depreacted, use dwPostId() instead.
+$.fn.dwPostIdStr = function() {
   var $post = this.is('.dw-t') ? this.children('.dw-p') : this;
   // Drop initial "post-".
   return $post.dwCheckIs('.dw-p').attr('id').substr(5, 999);
+};
+
+
+$.fn.dwPostId = function() {
+  return parseInt(this.dwPostIdStr());
 };
 
 
@@ -144,7 +150,7 @@ $.fn.dwIsArticlePost = function() {
 
 $.fn.dwIsReply = function() {
   // 1 char IDs are reserved (1 is page body, 2 title, 3 template).
-  var id = this.dwPostId();
+  var id = this.dwPostIdStr();
   return id.length > 1;
 };
 
