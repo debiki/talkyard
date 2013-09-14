@@ -32,6 +32,24 @@ d.i.makePinsDragsortable = !->
 
 
 
+initialPosition = 0
+
+function findPositionOf(item)
+  listItem = item.closest 'li'
+  siblingsAndItem = listItem.parent!children 'li'
+  index = 0
+  for elem in siblingsAndItem
+    # Ignore any dragsort target placeholder, and horizontal reply button.
+    if $(elem).is('.dw-t') || $(elem).is('li:has(> .dw-t)')
+      index += 1
+      if elem == listItem[0]
+        break
+
+  d.u.bugIf index == 0, 'DwE2CG10'
+  index
+
+
+
 sharedSettings =
   placeholder: 'ui-state-highlight'
   # revert: true
@@ -42,6 +60,10 @@ sharedSettings =
   forcePlaceholderSize: true
   beforeStop: !(e, ui) ->
     ui.helper.children('.dw-dragsort-shadow').remove()
+  stop: !(e, ui) ->
+    newPosition = findPositionOf ui.item
+    if newPosition != initialPosition
+      changePinnedPositionOf ui.item, newPosition
 
 
 
@@ -53,6 +75,7 @@ verticalSettings = $.extend {}, sharedSettings,
   axis: 'y'
   start: !(e, ui) ->
     ui.helper.append('<div class="dw-dragsort-shadow dw-dragsort-pin-vt"></div>')
+    initialPosition := findPositionOf ui.item
 
 
 
@@ -70,6 +93,14 @@ horizontalSettings = $.extend {}, sharedSettings,
     # Instead, add a dummy elem inside the placeholder, with the desired width:
     width = ui.helper.outerWidth!
     ui.placeholder.append("<div style='width:#{width}px'></div>")
+
+
+
+function changePinnedPositionOf(item, newPosition)
+  postId = item.find('> .dw-t > .dw-p, > .dw-p').dwPostId!
+  data = [{ pageId: d.i.pageId, postId, position: newPosition }]
+  d.u.postJson { url:  '/-/pin-at-position', data }
+      .fail d.i.showServerResponseDialog
 
 
 
