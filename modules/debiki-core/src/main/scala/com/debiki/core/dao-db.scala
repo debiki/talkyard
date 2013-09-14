@@ -240,7 +240,7 @@ abstract class SiteDbDao {
   def loadIdtyDetailsAndUser(forLoginId: String = null,
         forIdentity: Identity = null): Option[(Identity, User)]
 
-  def loadPermsOnPage(reqInfo: RequestInfo): PermsOnPage
+  def loadPermsOnPage(reqInfo: PermsOnPageQuery): PermsOnPage
 
   def listUsers(userQuery: UserQuery): Seq[(User, Seq[String])]
 
@@ -607,7 +607,7 @@ class ChargingSiteDbDao(
         forIdentity = forIdentity)
   }
 
-  def loadPermsOnPage(reqInfo: RequestInfo): PermsOnPage = {
+  def loadPermsOnPage(reqInfo: PermsOnPageQuery): PermsOnPage = {
     _chargeForOneReadReq()
     _spi.loadPermsOnPage(reqInfo)
   }

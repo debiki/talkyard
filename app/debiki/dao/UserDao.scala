@@ -47,7 +47,7 @@ trait UserDao {
       forIdentity = forIdentity)
 
 
-  def loadPermsOnPage(reqInfo: RequestInfo): PermsOnPage =
+  def loadPermsOnPage(reqInfo: PermsOnPageQuery): PermsOnPage =
     // Currently this results in no database request; there's nothing to cache.
     siteDbDao.loadPermsOnPage(reqInfo)
 

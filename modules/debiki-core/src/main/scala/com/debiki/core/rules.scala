@@ -23,7 +23,7 @@ import Prelude._
 /** Info on the request and requester.
  *  Sometimes only the ip is known (but there's no Login/Identity/User).
  */
-case class RequestInfo(
+case class PermsOnPageQuery(
   tenantId: String,
   ip: String,
   loginId: Option[String],

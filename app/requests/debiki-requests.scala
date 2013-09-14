@@ -194,7 +194,7 @@ object PageRequest {
       throwNotFound("DwE42Im0", s"Page not found, id: ${pagePath.pageId.get}")
 
     // Dupl code, see PageActions.CheckPathAction
-    val permsReq = RequestInfo(  // COULD RENAME! to PermsOnPageRequest
+    val permsReq = PermsOnPageQuery(
       tenantId = apiRequest.tenantId,
       ip = apiRequest.ip,
       loginId = apiRequest.sid.loginId,

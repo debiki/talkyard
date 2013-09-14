@@ -38,10 +38,6 @@ import controllers.Utils
  */
 object PageActions {
 
-  // ((Old non-obsolete comment from PageRequest.scala:
-  // COULD rename RequestInfo to PermsOnPageRequest,
-  // and use PageRequest instead. ))
-
   /**
    * A PageRequest with no post data.
    */
@@ -120,7 +116,7 @@ object PageActions {
     val (identity, user) = Utils.loadIdentityAndUserOrThrow(sidStatus, dao)
 
     // Load permissions.
-    val permsReq = RequestInfo(  // COULD RENAME! to PermsOnPageRequest
+    val permsReq = PermsOnPageQuery(
       tenantId = tenantId,
       ip = request.remoteAddress,
       loginId = sidStatus.loginId,
@@ -166,7 +162,7 @@ object PageActions {
     val (identity, user) = Utils.loadIdentityAndUserOrThrow(sidStatus, dao)
 
     // Load permissions.
-    val permsReq = RequestInfo(  // COULD RENAME! to PermsOnPageRequest
+    val permsReq = PermsOnPageQuery(
       tenantId = pathIn.tenantId,
       ip = request.remoteAddress,
       loginId = sidStatus.loginId,
