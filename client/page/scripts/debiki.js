@@ -314,53 +314,8 @@ function renderPageEtc() {
   // Disable for now, I'll rewrite it to consider timestamps.
   //steps.push(d.i.startNextUnreadPostCycler);
 
-  // This should be done each time a thread is inited, but for now, simply:
   steps.push(function() {
-    var sharedSettings = {
-      placeholder: "ui-state-highlight",
-      // revert: true,
-      scrollSpeed: 30,  // = default x 1.5
-      'z-index': 2000,  // instead of default 1000, which would be below Debiki's <forms>
-      tolerance: 'pointer',
-      delay: 200,
-      forcePlaceholderSize: true,
-      stop: function(e, ui) {
-        // ui.item was the ui.helper, so remove is-being-dragsorted indications:
-        ui.item.children('.dw-dragsort-shadow').remove();
-      }
-    };
-
-    var verticalHandle = '> .dw-p > .dw-p-hd > .dw-p-pin';
-    var verticalSettings = $.extend({}, sharedSettings, {
-      items: '> li:has('+verticalHandle+')',
-      handle: verticalHandle,
-      axis: "y",
-      start: function(e, ui) {
-        ui.helper.append('<div class="dw-dragsort-shadow dw-dragsort-pin-vt"></div>');
-      }
-    });
-
-    var horizontalHandle = '> .dw-t ' + verticalHandle;
-    var horizontalSettings = $.extend({}, sharedSettings, {
-      items: '> li:has('+horizontalHandle+')',
-      handle: horizontalHandle,
-      axis: "x",
-      start: function(e, ui) {
-        ui.helper.append('<div class="dw-dragsort-shadow"></div>');
-        // Make the placeholder as wide as the element being sorted. But this won't work:
-        //  ui.placeholder.width(ui.helper.outerWidth());
-        // because horizontal layout uses display: table-cell, so width is igored.
-        // Instead, add a dummy elem inside the placeholder, with the desired width:
-        var width = ui.helper.outerWidth();
-        ui.placeholder.append('<div style="width: '+width+'px"></div>');
-      }
-    });
-
-    // Horizontal threads:
-    $('.dw-res:has(> li '+horizontalHandle+')').sortable(horizontalSettings);
-
-    // Vertical threads:
-    $('.dw-res:has(> li '+verticalHandle+')').sortable(verticalSettings);
+    d.i.makePinsDragsortable();
   });
 
   steps.push(function() {
