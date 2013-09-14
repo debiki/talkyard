@@ -38,6 +38,12 @@ class AutoApproverSpec extends Specification with Mockito {
   def later(seconds: Int) = new ju.Date(0 + seconds * 1000)
 
 
+  val PageCreator = User(
+    id = "-pageCreator",
+    displayName = "Page Creator",
+    email = "page-creator.email@.com",
+    emailNotfPrefs = null)
+
   val guestUser = User(
     id = "-guestid",
     displayName = "Guest Name",
@@ -103,6 +109,15 @@ class AutoApproverSpec extends Specification with Mockito {
      pageSlug = "page-slug")
 
 
+  def pageMeta = PageMeta.forNewPage(
+    pageRole = PageRole.Generic,
+    author = PageCreator,
+    parts = PageParts(PageId),
+    creationDati = new ju.Date,
+    parentPageId = None,
+    publishDirectly = true).copy(pageExists = true)
+
+
   def pageReq(user: User, identity: Identity)(dao: SiteDao) =
     PageRequest[Unit](
       sid = null,
@@ -111,6 +126,7 @@ class AutoApproverSpec extends Specification with Mockito {
       user = Some(user),
       pageExists = true,
       pagePath = pagePath,
+      pageMeta = Some(pageMeta),
       permsOnPage = PermsOnPage.All,
       dao = dao,
       request = PlayReq)()

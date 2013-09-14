@@ -193,6 +193,10 @@ object PageRequest {
     if (!pageExists && pageMustExist)
       throwNotFound("DwE42Im0", s"Page not found, id: ${pagePath.pageId.get}")
 
+    val anyPageMeta = okPath.pageId.flatMap(apiRequest.dao.loadPageMeta(_))
+    if (pageExists && anyPageMeta.isEmpty)
+      throwNotFound("DwE56Jb0", s"No page meta found, page id: ${pagePath.pageId.get}")
+
     // Dupl code, see PageActions.CheckPathAction
     val permsReq = PermsOnPageQuery(
       tenantId = apiRequest.tenantId,
@@ -200,7 +204,8 @@ object PageRequest {
       loginId = apiRequest.sid.loginId,
       identity = apiRequest.identity,
       user = apiRequest.user,
-      pagePath = okPath)
+      pagePath = okPath,
+      pageMeta = anyPageMeta)
 
     val permsOnPage = apiRequest.dao.loadPermsOnPage(permsReq)
     if (!permsOnPage.accessPage)
@@ -213,6 +218,7 @@ object PageRequest {
       user = apiRequest.user,
       pageExists = pageExists,
       pagePath = okPath,
+      pageMeta = anyPageMeta,
       permsOnPage = permsOnPage,
       dao = apiRequest.dao,
       request = apiRequest.request)()
@@ -291,49 +297,56 @@ case class PageRequest[A](
   // userMemships: List[String],
   /** If the requested page does not exist, pagePath.pageId is empty. */
   pagePath: PagePath,
+  pageMeta: Option[PageMeta],
   permsOnPage: PermsOnPage,
   dao: SiteDao,
   request: Request[A])
-  (private val _preloadedPageMeta: Option[PageMeta] = None,
-  private val _preloadedActions: Option[PageParts] = None,
+  (private val _preloadedActions: Option[PageParts] = None,
   private val _preloadedAncestorIds: Option[List[PageId]] = None,
   private val addMeToPage: Boolean = false)
   extends DebikiRequest[A] {
 
   require(pagePath.tenantId == tenantId) //COULD remove tenantId from pagePath
   require(!pageExists || pagePath.pageId.isDefined)
+  require(!pageExists || pageMeta.isDefined)
+
+  pageMeta foreach { meta =>
+    require(meta.pageExists == pageExists)
+    require(Some(meta.pageId) == pagePath.pageId)
+    _preloadedAncestorIds foreach { ids =>
+      illArgIf(ids.headOption != meta.parentPageId, "DwE7GWh1")
+    }
+  }
 
 
   def copyWithPreloadedPage(page: Page, pageExists: Boolean)
         : PageRequest[A] = {
-    copy(pageExists = pageExists, pagePath = page.path)(
-      Some(page.meta), Some(page.parts), Some(page.ancestorIdsParentFirst), addMeToPage = false)
+    copy(pageExists = pageExists, pagePath = page.path, pageMeta = Some(page.meta))(
+      Some(page.parts), Some(page.ancestorIdsParentFirst), addMeToPage = false)
   }
-
 
   /**
    * Adds meta info for a request for a non-existing page, that is, a page
    * that is to be created, presumably.
    */
-  def copyWithPreloadedMeta(pageMeta: PageMeta): PageRequest[A] = {
+  def copyWithPreloadedMeta(newMeta: PageMeta): PageRequest[A] = {
     require(pageExists == false)
-    require(pageMeta.pageExists == false)
-    require(Some(pageMeta.pageId) == pagePath.pageId)
-    require(_preloadedAncestorIds.map(_.headOption == pageMeta.parentPageId) != Some(false))
+    require(newMeta.pageExists == false)
+    require(Some(newMeta.pageId) == pagePath.pageId)
+    require(_preloadedAncestorIds.map(_.headOption == newMeta.parentPageId) != Some(false))
     assert(addMeToPage == false) // see copyWithPreloadedPage() below
-    copy()(Some(pageMeta), _preloadedActions, _preloadedAncestorIds, addMeToPage = false)
+    copy(pageMeta = Some(newMeta))(_preloadedActions, _preloadedAncestorIds, addMeToPage = false)
   }
 
 
   def copyWithPreloadedActions(pageActions: PageParts): PageRequest[A] = {
     require(pageExists == false)
-    _preloadedPageMeta.foreach { meta =>
+    pageMeta foreach { meta =>
       require(meta.pageId == pageActions.pageId)
     }
     require(Some(pageActions.pageId) == pagePath.pageId)
     assert(addMeToPage == false) // or user should be added to `pageActions`
-    copy(pageExists = pageExists)(_preloadedPageMeta, Some(pageActions), _preloadedAncestorIds,
-        addMeToPage = false)
+    copy()(Some(pageActions), _preloadedAncestorIds, addMeToPage = false)
   }
 
 
@@ -352,10 +365,10 @@ case class PageRequest[A](
     if (loginId.isEmpty || !pageExists) this
     else {
       if (_preloadedActions isDefined)
-        copy()(_preloadedPageMeta, _preloadedActions.map(_ ++ anyMeAsPeople),
+        copy()(_preloadedActions.map(_ ++ anyMeAsPeople),
           _preloadedAncestorIds, addMeToPage = false)
       else
-        copy()(_preloadedPageMeta, None, _preloadedAncestorIds, addMeToPage = true)
+        copy()(None, _preloadedAncestorIds, addMeToPage = true)
     }
 
 
@@ -440,22 +453,8 @@ case class PageRequest[A](
 
   def parentPageId_! : Option[String] = pageMeta_!.parentPageId
 
-
-  /**
-   * Gets/loads page meta data from cache/database, or throws 404 Not Found.
-   */
-  lazy val pageMeta_! : PageMeta = {
-    _preloadedPageMeta getOrElse {
-      if (pageExists) {
-        pageId.flatMap(dao.loadPageMeta _) getOrElse throwNotFound(
-          "DwE0FET3", s"No meta data found in database for page id: `$pageId'")
-      }
-      else {
-        throwNotFound("DwE7Rd32", s"No page meta found for page id: `$pageId'")
-      }
-    }
-  }
-
+  def pageMeta_! = pageMeta getOrElse throwNotFound(
+    "DwE3ES58", s"No page meta found, page id: $pageId")
 
   lazy val ancestorIdsParentFirst_! : List[PageId] =
     _preloadedAncestorIds getOrElse dao.loadAncestorIdsParentFirst(pageId_!)

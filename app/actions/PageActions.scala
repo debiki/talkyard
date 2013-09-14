@@ -114,6 +114,11 @@ object PageActions {
     val tenantId = pathIn.tenantId
     val pagePath = pathOkOpt.getOrElse(pathIn)
     val (identity, user) = Utils.loadIdentityAndUserOrThrow(sidStatus, dao)
+    val pageExists = pathOkOpt.isDefined
+
+    val anyPageMeta = pagePath.pageId.flatMap(dao.loadPageMeta(_))
+    if (pageExists && anyPageMeta.isEmpty)
+      throwNotFound("DwE2WEb8", s"No page meta found, page id: ${pagePath.pageId.get}")
 
     // Load permissions.
     val permsReq = PermsOnPageQuery(
@@ -122,7 +127,8 @@ object PageActions {
       loginId = sidStatus.loginId,
       identity = identity,
       user = user,
-      pagePath = pagePath)
+      pagePath = pagePath,
+      pageMeta = anyPageMeta)
 
     val permsOnPage = dao.loadPermsOnPage(permsReq)
     if (!permsOnPage.accessPage)
@@ -134,8 +140,9 @@ object PageActions {
       xsrfToken = xsrfOk,
       identity = identity,
       user = user,
-      pageExists = pathOkOpt.isDefined,
+      pageExists = pageExists,
       pagePath = pagePath,
+      pageMeta = anyPageMeta,
       permsOnPage = permsOnPage,
       dao = dao,
       request = request)()
@@ -168,7 +175,8 @@ object PageActions {
       loginId = sidStatus.loginId,
       identity = identity,
       user = user,
-      pagePath = pathIn)
+      pagePath = pathIn,
+      pageMeta = None)
 
     val permsOnPage = dao.loadPermsOnPage(permsReq)
     if (!permsOnPage.accessPage)
@@ -182,6 +190,7 @@ object PageActions {
       user = user,
       pageExists = false,
       pagePath = pathIn,
+      pageMeta = None,
       permsOnPage = permsOnPage,
       dao = dao,
       request = request)()

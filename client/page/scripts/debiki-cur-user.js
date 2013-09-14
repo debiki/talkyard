@@ -309,8 +309,8 @@ d.i.showAllowedActionsOnly = function(anyRootPost) {
         '.dw-a-close-tree');
   showHideActionLinks(
       'deleteAnyReply', '.dw-a-delete, .dw-a-undelete');
-  //showHideActionLinks(
-  //    'pinReplies', '.dw-a-pin');
+  showHideActionLinks(
+      'pinReplies', '.dw-a-pin');
 }
 
 

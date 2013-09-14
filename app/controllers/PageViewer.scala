@@ -89,16 +89,17 @@ object PageViewer extends mvc.Controller {
 
     // List permissions.
     val permsMap = Map(
-      "accessPage" -> perms.accessPage.toString,
-      "createPage" -> perms.createPage.toString,
-      "moveRenamePage" -> perms.moveRenamePage.toString,
-      "hidePageIdInUrl" -> perms.hidePageIdInUrl.toString,
-      "editPageTemplate" -> perms.editPageTemplate.toString,
-      "editPage" -> perms.editPage.toString,
-      "editAnyReply" -> perms.editAnyReply.toString,
-      "editGuestReply" -> perms.editUnauReply.toString,
-      "collapseThings" -> perms.collapseThings.toString,
-      "deleteAnyReply" -> perms.deleteAnyReply.toString)
+      "accessPage" -> JsBoolean(perms.accessPage),
+      "createPage" -> JsBoolean(perms.createPage),
+      "moveRenamePage" -> JsBoolean(perms.moveRenamePage),
+      "hidePageIdInUrl" -> JsBoolean(perms.hidePageIdInUrl),
+      "editPageTemplate" -> JsBoolean(perms.editPageTemplate),
+      "editPage" -> JsBoolean(perms.editPage),
+      "editAnyReply" -> JsBoolean(perms.editAnyReply),
+      "editGuestReply" -> JsBoolean(perms.editUnauReply),
+      "collapseThings" -> JsBoolean(perms.collapseThings),
+      "deleteAnyReply" -> JsBoolean(perms.deleteAnyReply),
+      "pinReplies" -> JsBoolean(perms.pinReplies))
 
     // List posts by this user, so they can be highlighted.
     val ownPostsIdsList = page.postsByUser(withId = my.id).map(_.id)

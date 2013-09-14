@@ -31,9 +31,13 @@ case class PermsOnPageQuery(
   user: Option[User],
   /** Ids of groups to which the requester belongs. */
   // userMemships: List[String],
-  pagePath: PagePath
+  pagePath: PagePath,
+  pageMeta: Option[PageMeta]
 ){
   require(pagePath.tenantId == tenantId) // COULD remove tenantId from pagePath
+  for (meta <- pageMeta; pageId <- pagePath.pageId) {
+    require(meta.pageId == pageId)
+  }
 }
 
 
