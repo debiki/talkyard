@@ -521,7 +521,7 @@ object HtmlPostRenderer {
 
     def moreDropdown =
       <span class="dropdown">
-        <a class="dw-as-more" data-toggle="dropdown" data-target="#">More</a>
+        <a class="dw-a-more" data-toggle="dropdown" data-target="#">More</a>
         <div class="dropdown-menu dw-p-as-more">
           { moreActionLinks }
         </div>
