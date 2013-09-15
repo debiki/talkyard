@@ -21,7 +21,7 @@ RUNNING_PID
 .settings/
 
 # Ignore core dump file.
-core
+/core
 
 # Ignore softlinks to the Play installation directory, e.g. scripts/play-2.1.sh,
 # and scripts that shouldn't be checked in.
