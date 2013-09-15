@@ -20,33 +20,80 @@ d = i: debiki.internal, u: debiki.v0.util
 $ = d.i.$
 
 
+initialPosition = 0
+
+verticalHandle = '> .dw-p > .dw-p-hd > .dw-p-pin'
+horizontalHandle = "> .dw-t #verticalHandle"
+
+verticallySortablePinsSelector = ".dw-res:has(> li #verticalHandle)"
+horizontallySortablePinsSelector = ".dw-res:has(> li #horizontalHandle)"
+
+
 
 d.i.makePinsDragsortable = !->
   if Modernizr.touch
     return
-
   # Vertical threads:
-  $(".dw-res:has(> li #verticalHandle)").sortable(verticalSettings)
+  $(verticallySortablePinsSelector).sortable(verticalSettings)
   # Horizontal threads:
-  $(".dw-res:has(> li #horizontalHandle)").sortable(horizontalSettings)
+  $(horizontallySortablePinsSelector).sortable(horizontalSettings)
 
 
 
-initialPosition = 0
+d.i.destroyAndRecreateSortablePins = !->
+  post = $(this)
+  list = post.closest '.dw-res'
+  if list.is '.ui-sortable'
+    list.sortable 'destroy'
+  if list.is verticallySortablePinsSelector
+    list.sortable verticalSettings
+  else if list.is horizontallySortablePinsSelector
+    list.sortable horizontalSettings
+
+
+
+d.i.updatePinnedPosition = !(postId, newPosition) ->
+  post = d.i.findPost$ postId
+  listItem = post.closest 'li'
+  list = listItem.parent!
+  listItem.remove!
+  siblings = list.children 'li'
+  index = 0
+  inserted = false
+
+  for elem in siblings
+    if listItemIsForPinnedPost(elem)
+      index += 1
+      if index == newPosition
+        listItem.insertBefore elem
+        inserted = true
+
+  if !inserted
+    list.append listItem
+
+
+
 
 function findPositionOf(item)
   listItem = item.closest 'li'
   siblingsAndItem = listItem.parent!children 'li'
   index = 0
   for elem in siblingsAndItem
-    # Ignore any dragsort target placeholder, and horizontal reply button.
-    if $(elem).is('.dw-t') || $(elem).is('li:has(> .dw-t)')
+    if listItemIsForPinnedPost(elem)
       index += 1
       if elem == listItem[0]
         break
 
   d.u.bugIf index == 0, 'DwE2CG10'
   index
+
+
+
+function listItemIsForPinnedPost(elem)
+  # Ignore any dragsort target placeholder, and horizontal reply button,
+  # and non-pinned posts. This works for both vertical and horizontal threads:
+  $(elem).find(verticalHandle).length > 0 ||
+      $(elem).find(horizontalHandle).length > 0
 
 
 
@@ -63,11 +110,11 @@ sharedSettings =
   stop: !(e, ui) ->
     newPosition = findPositionOf ui.item
     if newPosition != initialPosition
-      changePinnedPositionOf ui.item, newPosition
+      tellServerChangePinnedPos ui.item, newPosition
+      parentThread = ui.item.parent!closest '.dw-t'
+      d.i.SVG.$clearAndRedrawArrows.apply parentThread
 
 
-
-verticalHandle = '> .dw-p > .dw-p-hd > .dw-p-pin'
 
 verticalSettings = $.extend {}, sharedSettings,
   items: "> li:has(#verticalHandle)"
@@ -78,8 +125,6 @@ verticalSettings = $.extend {}, sharedSettings,
     initialPosition := findPositionOf ui.item
 
 
-
-horizontalHandle = "> .dw-t #verticalHandle"
 
 horizontalSettings = $.extend {}, sharedSettings,
   items: "> li:has(#horizontalHandle)"
@@ -96,7 +141,7 @@ horizontalSettings = $.extend {}, sharedSettings,
 
 
 
-function changePinnedPositionOf(item, newPosition)
+function tellServerChangePinnedPos(item, newPosition)
   postId = item.find('> .dw-t > .dw-p, > .dw-p').dwPostId!
   data = [{ pageId: d.i.pageId, postId, position: newPosition }]
   d.u.postJson { url:  '/-/pin-at-position', data }

@@ -140,8 +140,26 @@ function newPinTreeDialog
 
   $dialog.find('input[type=submit]').click ->
     position = parseInt $dialog.find('input[type=text]').val()
-    if isNaN(position) => return false
-    submit $dialog, '/-/pin-at-position', [{ pageId, postId, position }]
+    if isNaN(position) || position <= 0 => return false
+
+    data = [{ pageId, postId, position }]
+    d.u.postJson { url: '/-/pin-at-position', data }
+        .fail d.i.showServerResponseDialog
+        .done updatePositionAddPin
+        .always !-> $dialog.dialog 'close'
+
+    !function updatePositionAddPin
+      d.i.updatePinnedPosition postId, position
+      post = d.i.findPost$ postId
+      post.find('> .dw-p-hd > .dw-p-link').before '<a class="dw-p-pin icon-pin"></a>'
+      thread = post.closest '.dw-t'
+      parentThread = thread.parent!closest '.dw-t'
+      d.i.SVG.$clearAndRedrawArrows.apply parentThread
+      d.i.destroyAndRecreateSortablePins.apply post
+      post.dwScrollToThenHighlight(post)
+
+    # Prevent browser's built-in action.
+    false
 
   $dialog
 

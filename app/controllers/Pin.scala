@@ -56,12 +56,11 @@ object Pin extends mvc.Controller {
         throwForbidden("DwE95Xf2", "Insufficient permissions to pin post")
        */
 
-      val (pageWithNewActions, _) =
-        apiReq.dao.savePageActionsGenNotfs(pageId, actions, apiReq.meAsPeople_!)
+      apiReq.dao.savePageActionsGenNotfs(pageId, actions, apiReq.meAsPeople_!)
     }
 
-    OkSafeJson(play.api.libs.json.JsString("boooo"))
-      //BrowserPagePatcher(apiReq).jsonForNewSortOrder(pinDataByPageId))
+    // The client already knows where to place the pinned post, so simply:
+    Ok
   }
 
 }

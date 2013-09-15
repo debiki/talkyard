@@ -74,6 +74,7 @@ d.i.$initPostAndParentThread = function() {
 d.i.$initPost = function() {
   $initStep2.apply(this);
   $initStep3.apply(this);
+  d.i.destroyAndRecreateSortablePins.apply(this);
 };
 
 
