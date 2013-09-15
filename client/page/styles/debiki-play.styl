@@ -1488,15 +1488,16 @@ form .dw-ntf
 // Clearfix
 //---------------------------
 
-.dw-fs:after,       // Contents might float
-.dw-fs form:after,  // Contents might float
-.dw-f.dw-f-e:after  // I suppose some edit form child floats left?
-  // Copied from jquery-ui-1.8.16.custom.css.
-  content: "."
-  display: block
-  height: 0
-  clear: both
-  visibility: hidden
+.dw-fs,       // Contents might float
+.dw-fs form,  // Contents might float
+.dw-f.dw-f-e  // I suppose some edit form child floats left?
+  // Copied from Bootstrap 3.0.0's less/mixin.less.
+  &:before, &:after
+    content: " "
+    display: table
+
+  &:after
+    clear: both;
 
 
 
