@@ -18,7 +18,9 @@
 package debiki.dao
 
 import com.debiki.core._
+import debiki.DebikiHttp.throwNotFound
 import java.{util => ju}
+import requests.ApiRequest
 import Prelude._
 import EmailNotfPrefs.EmailNotfPrefs
 
@@ -50,6 +52,22 @@ trait UserDao {
   def loadPermsOnPage(reqInfo: PermsOnPageQuery): PermsOnPage =
     // Currently this results in no database request; there's nothing to cache.
     siteDbDao.loadPermsOnPage(reqInfo)
+
+
+  def loadPermsOnPage(request: ApiRequest[_], pageId: PageId): PermsOnPage = {
+    val pageMeta = loadPageMeta(pageId)
+    val pagePath = lookupPagePath(pageId) getOrElse throwNotFound(
+      "DwE74BK0", s"No page path found to page id: $pageId")
+
+    siteDbDao.loadPermsOnPage(PermsOnPageQuery(
+      tenantId = request.tenantId,
+      ip = request.ip,
+      loginId = request.loginId,
+      identity = request.identity,
+      user = request.user,
+      pagePath = pagePath,
+      pageMeta = pageMeta))
+  }
 
 
   def configRole(loginId: String, ctime: ju.Date, roleId: String,

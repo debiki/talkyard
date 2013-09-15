@@ -49,12 +49,9 @@ object Pin extends mvc.Controller {
       }
 
     pageIdsAndActions.groupedByPageId foreach { case (pageId, actions) =>
-
-      /*
       val permsOnPage = apiReq.dao.loadPermsOnPage(apiReq, pageId)
       if (!permsOnPage.pinReplies)
         throwForbidden("DwE95Xf2", "Insufficient permissions to pin post")
-       */
 
       apiReq.dao.savePageActionsGenNotfs(pageId, actions, apiReq.meAsPeople_!)
     }
