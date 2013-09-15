@@ -56,17 +56,21 @@ d.i.updatePinnedPosition = !(postId, newPosition) ->
   post = d.i.findPost$ postId
   listItem = post.closest 'li'
   list = listItem.parent!
-  listItem.remove!
+  # listItem.remove() — no, destroys all jQuery UI sortables inside listItem!
+  # Instead, add an extra if statement below that skips listItem.
   siblings = list.children 'li'
   index = 0
   inserted = false
 
   for elem in siblings
+    if elem == listItem[0]
+      continue
     if listItemIsForPinnedPost(elem)
       index += 1
       if index == newPosition
         listItem.insertBefore elem
         inserted = true
+        break
 
   if !inserted
     list.append listItem

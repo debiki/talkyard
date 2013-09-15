@@ -151,11 +151,16 @@ function newPinTreeDialog
     !function updatePositionAddPin
       d.i.updatePinnedPosition postId, position
       post = d.i.findPost$ postId
-      post.find('> .dw-p-hd > .dw-p-link').before '<a class="dw-p-pin icon-pin"></a>'
+
+      header = post.children '.dw-p-hd'
+      if header.children('.dw-p-pin').length == 0
+        header.children('.dw-p-link').before '<a class="dw-p-pin icon-pin"></a>'
+        d.i.destroyAndRecreateSortablePins.apply post
+
       thread = post.closest '.dw-t'
       parentThread = thread.parent!closest '.dw-t'
       d.i.SVG.$clearAndRedrawArrows.apply parentThread
-      d.i.destroyAndRecreateSortablePins.apply post
+
       post.dwScrollToThenHighlight(post)
 
     # Prevent browser's built-in action.
