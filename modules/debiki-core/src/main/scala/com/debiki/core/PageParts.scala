@@ -289,6 +289,10 @@ case class PageParts (
      flags:::editApps:::ratings:::actionDtos
 
 
+  lazy val actionsByTimeAsc =
+    actionDtos.toVector.sortBy(_.creationDati.getTime)
+
+
   // Try to remove/rewrite? Doesn't return e.g Post or Patch.
   def smart(action: PostActionDtoOld) = new PostActionOld(this, action)
   // ^ For the love of god, I have to rename this crap, this file is a mess.
@@ -392,6 +396,25 @@ case class PageParts (
 
     mutRatsByPostId
   }
+
+
+  private lazy val pinnedPositionCalcer = {
+    val calcer = new PinnedPositionCalcer
+    for (action <- actionsByTimeAsc)
+      action.payload match {
+        case pinPost: PAP.PinPostAtPosition =>
+          val anyPost = getPost(action.postId)
+          anyPost foreach { post =>
+            calcer.pinPost(post, pinPost.position)
+          }
+        case _ =>
+      }
+    calcer
+  }
+
+
+  def getPinnedPositionOf(post: Post): Option[Int] =
+    pinnedPositionCalcer.effectivePositionOf(post)
 
 
   /** The guid prefixed with a dash.
