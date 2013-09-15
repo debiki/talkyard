@@ -24,7 +24,6 @@ GET   /-/login                  controllers.AppLogin.showLoginForm
 GET   /-/login                  controllers.AppLogin.showLoginFormReturnTo(returnToUrl)
 GET   /-/login/:provider        controllers.AppLogin.loginWith(provider, returnToUrl)
 POST  /-/login                  controllers.AppLogin.loginWithPostData(returnToUrl = "")
-GET   /-/logout                 controllers.AppLogin.showLogoutForm
 POST  /-/logout                 controllers.AppLogin.logout
 
 GET   /-/api/login-simple       controllers.AppLoginGuest.loginGuest

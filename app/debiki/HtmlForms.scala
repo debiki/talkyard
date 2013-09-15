@@ -155,7 +155,6 @@ class HtmlForms(xsrfToken: String, val pageRoot: PageRoot, val permsOnPage: Perm
     loginFormOpenId ++
     loginOkForm() ++
     loginFailedForm() ++
-    logoutForm ++
     emailNotfPrefsForm
 
 
@@ -293,19 +292,6 @@ class HtmlForms(xsrfToken: String, val pageRoot: PageRoot, val permsOnPage: Perm
           </p>
           <div class='dw-submit-set'>
             <input class='dw-fi-submit' type='submit' value='OK'/>
-          </div>
-        </form>
-      </div>
-
-  def logoutForm =
-      <div class='dw-fs' id='dw-fs-lgo' title='Log out'>
-        <form action={config.logoutAction} method='post'>
-          { _xsrfToken }
-          <p>Are you sure?</p>
-          <div class='dw-submit-set'>
-            <input class='dw-fi-cancel' type='button' value='Cancel'/>
-            <input id='dw-f-lgo-submit' class='dw-fi-submit' type='submit'
-                   value='Log out'/>
           </div>
         </form>
       </div>

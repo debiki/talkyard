@@ -83,46 +83,15 @@ object AppLogin extends mvc.Controller {
   }
 
 
-  def showLogoutForm = ExceptionActionNoBody { implicit request =>
-    OkHtml(
-      <form action='' method='POST'>
-        Really log out?
-        <input type='submit' value='Yes'/>
-      </form>)
-  }
-
-
   /**
    * Clears login related cookies and OpenID and OpenAuth stuff.
    */
-  // --- later, when is ?logout: -------
-  // CheckSidAndPathAction(parse.urlFormEncoded(maxLength = 100)) {
-  //  (sidOk, xsrfOk, pagePath, request) =>
-  // -----------------------------------
   def logout = mvc.Action(parse.empty) { request =>
-      /*
-      val sidCookieVal = LiftUtil.decodeCookie("dwCoSid")
-      val sid = sidCookieVal.map(Sid.checkSid(_)) openOr SidAbsent
-      sid.loginId foreach { loginId =>
-        try {
-          Boot.dao.saveLogout(loginId, logoutIp = req.remoteAddr)
-        } catch {
-          case e: Throwable => logger.warn(
-            "Error writing logout to database: "+ e.getMessage +
-               " [error DwE35k0sk2i6]")  // COULD LOG stack trace?
-          // Continue logging out anyway.
-        }
-      }
-      */
-
-      OkHtml(
-        <p>
-          You have been logged out. Return to last page? (Not implemented)
-          <a href=''>Okay</a>
-        </p>)
-        // keep the xsrf cookie, so login dialog works?
-        .discardingCookies(DiscardingCookie("dwCoSid"),
-            DiscardingCookie(AppConfigUser.ConfigCookie))
-    }
+    // COULD save logout timestamp to database.
+    // Keep the xsrf cookie, so login dialog works:
+    Ok.discardingCookies(
+      DiscardingCookie("dwCoSid"),
+      DiscardingCookie(AppConfigUser.ConfigCookie))
+  }
 
 }
