@@ -40,16 +40,6 @@ import Utils.{OkHtml}
 object AppLogin extends mvc.Controller {
 
 
-  def showLoginForm() = showLoginFormReturnTo("")
-
-
-  def showLoginFormReturnTo(returnToUrl: String) = CheckSidActionNoBody {
-        (sidOk, xsrfOk, request) =>
-    Ok(views.html.login(xsrfToken = xsrfOk.value, returnToUrl = returnToUrl,
-      title = "Login", message = request.flash.get("WhyLogin")))
-  }
-
-
   def loginWith(provider: String, returnToUrl: String) = ExceptionActionNoBody {
         implicit reqest =>
     asyncLogin(provider = provider, returnToUrl = returnToUrl)

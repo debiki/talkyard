@@ -25,7 +25,9 @@ import java.{net => jn}
 import play.api._
 import play.api.http.ContentTypes._
 import play.api.mvc.{Action => _, _}
+import requests.DebikiRequest
 import xml.{NodeSeq}
+
 
 /**
  * HTTP utilities.
@@ -141,6 +143,9 @@ object DebikiHttp {
 
 
   // ----- Tenant ID lookup
+
+  def lookupTenantIdOrThrow(request: DebikiRequest[_], systemDao: SystemDao): String =
+    lookupTenantIdOrThrow(request.request, systemDao)
 
   def lookupTenantIdOrThrow(request: RequestHeader, systemDao: SystemDao)
         : String = {

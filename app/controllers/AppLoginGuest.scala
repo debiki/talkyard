@@ -17,7 +17,6 @@
 
 package controllers
 
-import actions.SafeActions._
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki._
@@ -26,20 +25,20 @@ import java.{util => ju}
 import play.api._
 import play.api.mvc.{Action => _, _}
 import requests.PageRequest
+import actions.ApiActions.PostJsonAction
+import play.api.libs.json.JsObject
 
 
+/** Logs in guest users.
+  */
 object AppLoginGuest extends mvc.Controller {
 
 
-  def loginGuest = CheckSidAction(parse.urlFormEncoded(maxLength = 200)) {
-        (sidStatus, xsrfOk, request) =>
-
-    def getOrDie(paramName: String, errCode: String): String =
-      request.body.getOrElse(paramName, DebikiHttp.throwBadReq(errCode)).head
-
-    val name = getOrDie("dw-fi-lgi-name", "DwE0k31c5")
-    val email = getOrDie("dw-fi-lgi-email", "DwE8k3i30")
-    val url = getOrDie("dw-fi-lgi-url", "DwE64kC21")
+  def loginGuest = PostJsonAction(maxLength = 1000) { request =>
+    val json = request.body.as[JsObject]
+    val name = (json \ "name").as[String]
+    val email = (json \ "email").as[String]
+    val url = (json \ "url").as[String]
 
     def failLogin(errCode: String, summary: String, details: String) =
       throwForbiddenDialog(errCode, "Login Failed", summary, details)
@@ -58,11 +57,11 @@ object AppLoginGuest extends mvc.Controller {
       failLogin("DwE734krsn215", "Weird URL.",
         "Please specify a website address with no weird characters.")
 
-    val addr = request.remoteAddress
+    val addr = request.ip
     val tenantId = DebikiHttp.lookupTenantIdOrThrow(request, Globals.systemDao)
 
     val loginReq = LoginRequest(
-      login = Login(id = "?", prevLoginId = sidStatus.loginId,
+      login = Login(id = "?", prevLoginId = request.sid.loginId,
         ip = addr, date = new ju.Date, identityId = "?i"),
       identity = IdentitySimple(id = "?i", userId = "?", name = name,
         email = email, location = "", website = url))
@@ -75,9 +74,7 @@ object AppLoginGuest extends mvc.Controller {
     // Could include a <a href=last-page>Okay</a> link, see the
     // Logout dialog below. Only needed if javascript disabled though,
     // otherwise a javascript welcome dialog is shown instead.
-    OkDialogResult("Welcome", "", // (empty summary)   // i18n
-      "You have been logged in, welcome "+ loginGrant.displayName +"!").
-       withCookies(userConfigCookie::sidAndXsrfCookies: _*)
+    Ok.withCookies(userConfigCookie::sidAndXsrfCookies: _*)
   }
 
 

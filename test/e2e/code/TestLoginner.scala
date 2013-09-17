@@ -224,7 +224,7 @@ trait TestLoginner {
 
   private def loginLink = "dw-a-login"
   private def logoutLink = "dw-a-logout"
-  private def logoutSubmit = "dw-f-lgo-submit"
+  private def logoutSubmit = cssSelector("#dw-fs-lgo input[type=submit]")
 
   def noEmailBtn = cssSelector("label[for='dw-fi-eml-prf-rcv-no']")
   def yesEmailBtn = cssSelector("label[for='dw-fi-eml-prf-rcv-yes']")
