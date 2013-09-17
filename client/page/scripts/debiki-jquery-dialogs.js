@@ -112,14 +112,14 @@ var scrollYBeforeFullscreen = -1;
  * The dialog is destroyed and removed on close.
  */
 d.i.newModalDialogSettings = function(options) {
-  options = options || {};
-  var fullscreen = options.fullscreen;
+  var settings = options || {};
+  var fullscreen = settings.fullscreen;
+  settings.width = settings.width || d.i.jQueryDialogDefault.width;
   if (fullscreen === undefined) {
-    var $window = $(window);
-    fullscreen = $window.width() < 500 || $window.height() < 500;
+    fullscreen = $(window).width() < settings.width + 80;
   }
 
-  var dialogSettings = $.extend({}, d.i.jQueryDialogDestroy, {
+  var allSettings = $.extend({}, d.i.jQueryDialogDefault, settings, {
     open: function(event, ui) {
       if (fullscreen) {
         scrollXBeforeFullscreen = window.scrollX;
@@ -127,17 +127,18 @@ d.i.newModalDialogSettings = function(options) {
         $(this).parent().addClass('dw-dlg-fullscreen');
         $('body').addClass('dw-fullscreen-dialog-mode');
       }
-      d.i.jQueryDialogDestroy.open.call(this, event, ui);
     },
     close: function(event, ui) {
       if (fullscreen) {
         $('body').removeClass('dw-fullscreen-dialog-mode');
         window.scrollTo(scrollXBeforeFullscreen, scrollYBeforeFullscreen);
       }
-      d.i.jQueryDialogDestroy.close.call(this, event, ui);
+      $(this).dialog('destroy');
+      $(this).remove();
     }
   });
-  return dialogSettings;
+
+  return allSettings;
 };
 
 
