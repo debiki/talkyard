@@ -149,7 +149,6 @@ class HtmlForms(xsrfToken: String, val pageRoot: PageRoot, val permsOnPage: Perm
 
 
   def loginForms =
-    loginFormOpenId ++
     loginOkForm() ++
     loginFailedForm() ++
     emailNotfPrefsForm
@@ -180,36 +179,6 @@ class HtmlForms(xsrfToken: String, val pageRoot: PageRoot, val permsOnPage: Perm
     </form>
   }
 
-
-  /**
-   *  The login form below is based on this JavaScript OpenID Selector
-   *  example file:
-   *    debiki-core/src/main/resources/toserve/lib/openid-selector/demo.html
-   */
-  def loginFormOpenId =
-      <div class='dw-fs' id='dw-fs-openid-login'
-            title="Sign In or Create New Account">
-        <form action={config.loginActionOpenId} method='post' id='openid_form'>
-          { _xsrfToken }
-          <input type='hidden' name='action' value='verify' />
-          <div id='openid_choice'>
-            <p>Please click your account provider:</p>
-            <div id='openid_btns'></div>
-          </div>
-          <div id='openid_input_area'>
-            <input id='openid_identifier' name='openid_identifier' type='text'
-                value='http://' />
-            <input id='openid_submit' type='submit' value='Sign-In'/>
-          </div>
-          <noscript>
-            <p>OpenID is a service that allows you to log-on to many different
-            websites using a single indentity. Find out
-            <a href='http://openid.net/what/'>more about OpenID</a>
-            and <a href='http://openid.net/get/'>how to get an OpenID enabled
-            account</a>.</p>
-          </noscript>
-        </form>
-      </div>
 
   def loginOkForm(name: String = "Anonymous") =
       <div class='dw-fs' id='dw-fs-lgi-ok' title='Welcome'>

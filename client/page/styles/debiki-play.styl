@@ -744,6 +744,10 @@ body.dw-u-ui-simple .dw-a-edit
   height: 100% !important
   overflow: auto !important
 
+  .dw-fs.ui-dialog-content
+    // jQuery UI might prefer to set a height and show scrollbars, so:
+    height: auto !important
+
 .DW body.dw-fullscreen-dialog-mode > *
   display: none
 

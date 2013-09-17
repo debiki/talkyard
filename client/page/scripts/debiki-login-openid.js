@@ -54,9 +54,8 @@ d.i.loadOpenIdResources = (function() {
 
 
 function initLoginOpenId() {
-  var $openid = $('#dw-fs-openid-login');
-  if ($openid.is('.ui-dialog-content'))
-    return; // already inited
+  var $openid = d.i.newOpenidLoginDialog();
+  $('body').append($openid); // so the Javascript OpenID selector finds certain elems
 
   openid.img_path = d.i.assetsUrlPathStart + 'openid-selector/images/';
   openid.submitInPopup = submitLoginInPopup;
@@ -64,10 +63,8 @@ function initLoginOpenId() {
   // — COULD remove cookie on logout?
   openid.init('openid_identifier');
 
-  // Use jQueryDialogReset, so OpenID cleared on close,
-  // in case this is a public computer?
-  $openid.dialog($.extend({}, d.i.jQueryDialogReset, {
-    width: 670,
+  $openid.dialog(d.i.newModalDialogSettings({
+    width: 660, // there are many large buttons; this wide width avoids float drop
     height: 410, // (incl. extra space for 'Enter your OpenID' input field)
     // Place above guest login dialog.
     zIndex: d.i.jQueryDialogDefault.zIndex + 10,

@@ -5,9 +5,11 @@
 	This code is licensed under the New BSD License.
 */
 
+/*
 #openid_form {
-	width: 580px;
-}
+	width: 580px; -- no, not mobile friendly. Let
+		my `newOpenidLoginDialog` set width instead.
+} */
 
 #openid_form legend {
 	font-weight: bold;
