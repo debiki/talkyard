@@ -34,5 +34,9 @@ package object core {
 
   type RoleId = String
 
+  type IdentityId = String
+
+  type IpAddress = String
+
 }
 

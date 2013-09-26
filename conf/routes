@@ -97,6 +97,8 @@ GET   /-/list-pages             controllers.AppList.listPages
 GET   /-/list-users             controllers.AppList.listUsers
 POST  /-/change-page-meta       controllers.AppChangePageMeta.changeMeta
 
+GET   /-/debug/testAutoApprove  controllers.Debug.testAutoApprove(ipAddress, identityId)
+
 GET   /-/site/*file             controllers.SiteAssetBundles.at(file)
 
 # Don't change the URL on the next line. The /-/assets/<version-number>/ is

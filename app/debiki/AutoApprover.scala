@@ -18,7 +18,8 @@
 package debiki
 
 import com.debiki.core._
-import requests.PageRequest
+import debiki.dao.SiteDao
+import requests.{PageRequest, DebikiRequest}
 import DebikiHttp._
 import Prelude._
 
@@ -29,7 +30,11 @@ import Prelude._
  */
 object AutoApprover {
 
-  private[debiki] val RecentActionsLimit = 20
+  // Minor BUG: If a user just made 30 edits in a row, only those edits will be loaded
+  // by RdbSiteDao — no posts will be loaded, and neither any approvals of any posts.
+  // The computer might therefore "forget" that the user should in fact be  WellBehaved-
+  // auto-approved — then, a moderator needs to approve the user manually, again.
+  private[debiki] val RecentActionsLimit = 30
 
 
   private def calcMaxNumPendingComments(numCommentsManuallyApproved: Int) =
@@ -103,20 +108,29 @@ object AutoApprover {
     if (pageReq.user_!.isAdmin)
       Some(Approval.AuthoritativeUser)
     else {
-      val history = loadUserHistory(pageReq)
-      checkUserHistoryPerhapsApprove(history)
+      perhapsApproveImpl(pageReq.dao, ip = pageReq.ip, identityId = pageReq.identity_!.id)
     }
   }
 
 
-  private def loadUserHistory(pageReq: PageRequest[_]): List[PostActionOld] = {
+  /** Exposed to simplify debugging via controllers.Debug.
+    */
+  def perhapsApproveImpl(dao: SiteDao, ip: IpAddress, identityId: IdentityId)
+        : Option[Approval] = {
+    val history = loadUserHistory(dao, ip, identityId = identityId)
+    checkUserHistoryPerhapsApprove(history)
+  }
+
+
+  /** Ought to load a user's history, not an identity's history?
+    */
+  private def loadUserHistory(dao: SiteDao, ip: IpAddress, identityId: IdentityId)
+        : List[PostActionOld] = {
     val (actionsFromIp, peopleFromIp) =
-      pageReq.dao.loadRecentActionExcerpts(
-        fromIp = Some(pageReq.ip), limit = RecentActionsLimit)
+      dao.loadRecentActionExcerpts(fromIp = Some(ip), limit = RecentActionsLimit)
 
     val (actionsByIdentity, peopleForIdty) =
-      pageReq.dao.loadRecentActionExcerpts(
-        byIdentity = Some(pageReq.identity_!.id), limit = RecentActionsLimit)
+      dao.loadRecentActionExcerpts(byIdentity = Some(identityId), limit = RecentActionsLimit)
 
     // lazy val actionsByGuestsWithSameEmail =
     // -- or??: lazy val actionsByAnyoneWithSameEmail =
