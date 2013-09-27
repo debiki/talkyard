@@ -19,3 +19,6 @@
 [submodule "modules/debiki-dao-rdb"]
 	path = modules/debiki-dao-rdb
 	url = ../debiki-dao-rdb.git
+[submodule "modules/debiki-bootstrap"]
+	path = modules/debiki-bootstrap
+	url = git@github.com:debiki/debiki-bootstrap-stylus.git
