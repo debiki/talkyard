@@ -225,8 +225,12 @@ class AdminDashboardSpec extends DebikiBrowserSpec
       }
 
       "find blog post title on blog main page" in {
-        // Wait until page loaded.
+        // Wait until page loaded, but reload it if we got here too fast after
+        // having clicked Puplish above.
         eventually {
+          if (pageSource.indexOf(BlogPostTitle) == -1) {
+            reloadPage()
+          }
           pageSource must include(BlogPostTitle)
         }
       }
