@@ -62,18 +62,29 @@ d.i.updatePinnedPosition = !(postId, newPosition) ->
   index = 0
   inserted = false
 
+  # If there aren't already newPosition pinned posts, then insert postId
+  # after the lastInsertAfterElem.
+  lastInsertAfterElem = void
+
   for elem in siblings
     if elem == listItem[0]
       continue
+    if listItemIsForReplyBtn(elem)
+      lastInsertAfterElem = elem
+      continue
     if listItemIsForPinnedPost(elem)
       index += 1
+      lastInsertAfterElem = elem
       if index == newPosition
         listItem.insertBefore elem
         inserted = true
         break
 
   if !inserted
-    list.append listItem
+    if lastInsertAfterElem
+      listItem.insertAfter lastInsertAfterElem
+    else
+      list.prepend listItem
 
 
 
@@ -90,6 +101,11 @@ function findPositionOf(item)
 
   d.u.bugIf index == 0, 'DwE2CG10'
   index
+
+
+
+function listItemIsForReplyBtn(elem)
+  $(elem).is '.dw-p-as-hz'
 
 
 
