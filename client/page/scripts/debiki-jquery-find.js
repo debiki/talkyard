@@ -69,11 +69,12 @@ $.fn.dwPageMeta = function() {
     pagePath: $page.data('page_path'),
     pageRole: $page.data('page_role'),
     pageStatus: $page.data('page_status'),
-    // Re `'' +`: this ensures the id is not parsed as a number (in case there
+    // Re `attr(..)`: this ensures the id is not parsed as a number (in case there
     // happens to be no chars in the id) because if it is, then there'll
     // be lots of trouble in the future, for example, the id might be posted as a
     // JSON integer back to the server, which would complain.
-    parentPageId: '' + $page.data('parent_page_id'),
+    // This doesn't work: '' + $page.data(..) — it would drop any leading '0'.
+    parentPageId: $page.attr('data-parent_page_id'),
     pageExists: $page.data('page_exists')
   };
 };
