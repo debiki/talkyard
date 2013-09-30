@@ -61,6 +61,14 @@ class PinnedPositionCalcerSpec extends FreeSpec with ShouldMatchers {
       calcer.effectivePositionOf(post) shouldBe Some(1)
     }
 
+    "Derive position 1 when single post pinned at position 1 and then 1 again" in {
+      val calcer = new PinnedPositionCalcer
+      val post = PageWithOneReply.getPost(RawReplyA.id) getOrElse fail()
+      calcer.pinPost(post, 1)
+      calcer.pinPost(post, 1)
+      calcer.effectivePositionOf(post) shouldBe Some(1)
+    }
+
     "Derive positions 1 and 2 when two posts pinned at 1 and 2" in {
       val calcer = new PinnedPositionCalcer
       val postA = PageWithManyReplies.getPost(RawReplyA.id) getOrElse fail()

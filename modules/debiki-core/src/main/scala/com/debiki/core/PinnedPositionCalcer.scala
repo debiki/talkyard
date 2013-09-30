@@ -57,6 +57,7 @@ class PinnedPositionCalcer {
 
     var entry = pinnedPosts
 
+    // Remove `post` from pinnedPost, if present.
     while (entry.next != entry) {
       if (entry.elem == post) {
         entry.remove()
@@ -68,11 +69,12 @@ class PinnedPositionCalcer {
       entry = entry.next
     }
 
+    // Insert `post` into pinnedPost, at the correct position.
     val zeroBasedPosition = position - 1
     val length = pinnedPosts.size
-
     if (zeroBasedPosition >= length) {
-      pinnedPosts.append(DoubleLinkedList(post))
+      pinnedPosts = pinnedPosts.append(DoubleLinkedList(post))
+      pinnedPostsByParent(post.parentId) = pinnedPosts
     }
     else {
       entry = pinnedPosts
