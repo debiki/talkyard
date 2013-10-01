@@ -18,130 +18,15 @@
 package requests
 
 import com.debiki.core._
+import com.debiki.core.Prelude._
 import controllers.Utils.parseIntOrThrowBadReq
 import controllers.Utils.ValidationImplicits._
 import debiki._
 import debiki.DebikiHttp._
 import debiki.dao.SiteDao
 import java.{util => ju}
-import play.api._
 import play.api.mvc.{Action => _, _}
-import Prelude._
 import DbDao.PathClashException
-
-
-/**
- */
-abstract class DebikiRequest[A] {
-
-  def sid: SidStatus
-  def xsrfToken: XsrfOk
-  def identity: Option[Identity]
-  def user: Option[User]
-  def dao: SiteDao
-  def request: Request[A]
-
-  illArgIf(dao.quotaConsumers.tenantId != tenantId,
-    "DwE6IW1B3", s"Quota consumer tenant id differs from request tenant id; $debugDiff")
-
-  illArgIf(dao.quotaConsumers.ip != Some(ip),
-    "DwE94BK21", s"Quota consumer IP differs from request IP; $debugDiff")
-
-  illArgIf(dao.quotaConsumers.roleId != user.filter(_.isAuthenticated).map(_.id),
-    "DwE03BK44", s"Quota consumer role id differs from request role id; $debugDiff")
-
-  private def debugDiff =
-    s"quota consumers: ${dao.quotaConsumers}, tenant/ip/role: $tenantId/$ip/$user"
-
-  def tenantId = dao.siteId
-
-  def loginId: Option[String] = sid.loginId
-
-  /**
-   * The login id of the user making the request. Throws 403 Forbidden
-   * if not logged in (shouldn't happen normally).
-   */
-  def loginId_! : String =
-    loginId getOrElse throwForbidden("DwE03kRG4", "Not logged in")
-
-  def user_! : User =
-    user getOrElse throwForbidden("DwE86Wb7", "Not logged in")
-
-  def identity_! : Identity =
-    identity getOrElse throwForbidden("DwE7PGJ2", "Not logged in")
-
-  def anyMeAsPeople: People =
-    if (loginId isEmpty) People()
-    else People() + _fakeLogin + identity_! + user_!
-
-  def meAsPeople_! : People = People() + _fakeLogin + identity_! + user_!
-
-  protected def _fakeLogin = Login(
-    id = loginId_!, prevLoginId = None, ip = request.remoteAddress,
-    date = ctime, identityId = identity_!.id)
-
-  /**
-   * The display name of the user making the request. Throws 403 Forbidden
-   * if not available, i.e. if not logged in (shouldn't happen normally).
-   */
-  def displayName_! : String =
-    sid.displayName getOrElse throwForbidden("DwE97Ik3", "Not logged in")
-
-  def session: mvc.Session = request.session
-
-  def ip = request.remoteAddress
-
-  /**
-   * The end user's IP address, *iff* it differs from the login address.
-   */
-  def newIp: Option[String] = None  // None always, for now
-
-  /**
-   * Approximately when the server started serving this request.
-   */
-  lazy val ctime: ju.Date = new ju.Date
-
-  /**
-   * The scheme, host and port specified in the request.
-   *
-   * For now, the scheme is hardcoded to http.
-   */
-  def origin: String = "http://"+ request.host
-
-  def host = request.host
-
-  def uri = request.uri
-
-  def queryString = request.queryString
-
-  def rawQueryString = request.rawQueryString
-
-  def body = request.body
-
-  def headers = request.headers
-
-  def isAjax = DebikiHttp.isAjax(request)
-
-  def isHttpPostRequest = request.method == "POST"
-
-  def httpVersion = request.version
-
-  def quotaConsumers = dao.quotaConsumers
-
-}
-
-
-/**
- * A request that's not related to any particular page.
- */
-case class ApiRequest[A](
-  sid: SidStatus,
-  xsrfToken: XsrfOk,
-  identity: Option[Identity],
-  user: Option[User],
-  dao: SiteDao,
-  request: Request[A]) extends DebikiRequest[A] {
-}
 
 
 
