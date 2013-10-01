@@ -104,8 +104,12 @@ object AppCreatePage extends mvc.Controller {
     if (passhashGiven != correctPasshash)
       throwForbidden("DwE7Gp0W2", "Bad passhash")
 
-    // Create a PageRequest for the new page (and be sure to use `pageId`
+    // Create a PageRequest for the new page, in case there is already a page at
+    // the desired location of the new page — then either the new page cannot be
+    // created, or it has already been created. (And be sure to use `pageId`
     // so people cannot /specify/any/-pageId).
+    // BUG: Race condition: What if another new page is created at the desired
+    // location just after we've verified that there is no such page.
     val pageReq = {
       val newPagePath = newPagePathFromUrl(pageReqOrig, pageId)
       val request =
