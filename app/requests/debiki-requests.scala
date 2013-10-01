@@ -206,9 +206,12 @@ case class PageRequest[A](
 
   def copyWithPreloadedPage(page: Page, pageExists: Boolean)
         : PageRequest[A] = {
-    copy(pageExists = pageExists, pagePath = page.path, pageMeta = Some(page.meta))(
+    val copyWithOldPerms = copy(
+      pageExists = pageExists, pagePath = page.path, pageMeta = Some(page.meta))(
       Some(page.parts), Some(page.ancestorIdsParentFirst), addMeToPage = false)
+    copyWithOldPerms.copyWithUpdatedPermissions()
   }
+
 
   /**
    * Adds meta info for a request for a non-existing page, that is, a page
@@ -220,7 +223,22 @@ case class PageRequest[A](
     require(Some(newMeta.pageId) == pagePath.pageId)
     require(_preloadedAncestorIds.map(_.headOption == newMeta.parentPageId) != Some(false))
     assert(addMeToPage == false) // see copyWithPreloadedPage() below
-    copy(pageMeta = Some(newMeta))(_preloadedActions, _preloadedAncestorIds, addMeToPage = false)
+    val copyWithOldPerms = copy(pageMeta = Some(newMeta))(
+      _preloadedActions, _preloadedAncestorIds, addMeToPage = false)
+    copyWithOldPerms.copyWithUpdatedPermissions()
+  }
+
+
+  private def copyWithUpdatedPermissions(): PageRequest[A] = {
+    val newPerms = dao.loadPermsOnPage(PermsOnPageQuery(
+      tenantId = tenantId,
+      ip = request.remoteAddress,
+      loginId = sid.loginId,
+      identity = identity,
+      user = user,
+      pagePath = pagePath,
+      pageMeta = pageMeta))
+    copy(permsOnPage = newPerms)(_preloadedActions, _preloadedAncestorIds, addMeToPage)
   }
 
 
