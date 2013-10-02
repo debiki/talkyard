@@ -39,6 +39,17 @@ d.i.findPostHeader$ = function(postId) {
 };
 
 
+/**
+ * Returns the post associated with the current node, if the current
+ * node is either a thread list item (li.dw-t) or a <li> that wraps a thread.
+ * (For replies laid out horizontally, the .dw-t is a child of the <li>,
+ * because of CSS  styling issues.)
+ */
+$.fn.dwGetPost = function() {
+  return this.find('> .dw-p, > .dw-t > .dw-p');
+};
+
+
 // Depreacted, use dwPostId() instead.
 $.fn.dwPostIdStr = function() {
   var $post = this.is('.dw-t') ? this.children('.dw-p') : this;

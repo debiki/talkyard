@@ -162,7 +162,7 @@ case class BrowserPagePatcher(
       // might return nothing.
       // SHOULD consider `wholeTread` and render only `postId` + collapsed children, if false,
       // and rename `wholeThread` to... what? also.
-      serializer.renderSingleThread(postId) foreach { serializedThread =>
+      serializer.renderSingleThread(postId, pageRoot) foreach { serializedThread =>
         threadPatches :+= _jsonForThread(post, serializedThread)
       }
     }

@@ -47,9 +47,18 @@ d.i.windowOpeners = (function() {
 // HTML generation code assumes this, too. See Debiki for Developers, #7bZG31.
 d.i.DEBIKI_TABINDEX_DIALOG_MAX = 109;
 
-d.i.rootPostId = $('.dw-depth-0');
-d.i.rootPostId = d.i.rootPostId.length ?
-    d.i.rootPostId.attr('id').substr(5) : undefined; // drops initial `dw-t-'
+d.i.rootPostId = (function() {
+  // The root post has depth 0. However both the title and the article have
+  // depth 0, if they're present. Prefer to use the article as root post if present,
+  // so replies will be laid out horizontally. Otherwise simply choose nodes[0].
+  var nodes = $('.dw-depth-0');
+  var anyArticle = nodes.filter('.dw-ar-t');
+  var rootPostNode = anyArticle.length == 1 ? anyArticle : $(nodes[0]);
+  var id = rootPostNode.length ?
+      rootPostNode.attr('id').substr(5) : undefined; // drops initial `dw-t-'
+  return id;
+})();
+
 
 d.i.Me = d.i.makeCurUser();
 
