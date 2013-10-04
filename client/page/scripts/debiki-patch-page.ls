@@ -69,6 +69,10 @@ patchThreadWith = (threadPatch, { onPage, result, overwriteTrees }) ->
       appendThread $newThread, to: $parentThread
     $newThread.addClass 'dw-m-t-new'
   else
+    # If thread wrapped in <li>:
+    if not $newThread.is '.dw-t'
+      $newThread = $newThread.children '.dw-t'
+
     # For now, don't overwrite existing threads, if they've already
     # been loaded. If overwriting, there'd be troubles e.g. if the user
     # has started replying to a successor post.
