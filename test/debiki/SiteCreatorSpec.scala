@@ -15,18 +15,18 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package controllers
+package debiki
 
 import com.debiki.core._
 import org.specs2.mutable._
 
 
-class AppCreateWebsiteSpec extends Specification {
+class SiteCreatorSpec extends Specification {
 
 
-  "AppCreateWebsite.isOkayWebsiteName" can {
+  "SiteCreator.isOkayWebsiteName" can {
 
-    import AppCreateWebsite.isOkayWebsiteName
+    import SiteCreator.isOkayWebsiteName
 
     "allow: 'nicename', 'nice-name' and 'very-nice-name'" >> {
       isOkayWebsiteName("nicename") must beTrue

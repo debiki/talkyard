@@ -325,7 +325,8 @@ class QuotaChargerSpec
     val loginGrant = loginNewOpenIdUser(
       s"Site${nextSiteNo}Owner", SiteAndIp(stuffCreator.firstSiteId, fromIp))
     val siteName = s"quota-charger-site-$nextSiteNo"
-    val anyNewSiteAndOwner: Option[(Tenant, User)] = AppCreateWebsite.createWebsite(
+    val anyNewSiteAndOwner: Option[(Tenant, User)] = SiteCreator.createWebsite(
+      SiteCreator.NewSiteType.SimpleSite,
       dao = stuffCreator.firstSiteDao,
       creationDati = loginGrant.login.date,
       name = siteName,

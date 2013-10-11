@@ -23,7 +23,7 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki._
 import debiki.DebikiHttp._
-import debiki.dao.{SiteDao, ConfigValueDao}
+import debiki.dao.SiteDao
 import java.{util => ju}
 import play.api._
 import play.api.mvc.{Action => _, _}
@@ -39,19 +39,13 @@ object AppCreateWebsite extends mvc.Controller {
   val log = play.api.Logger("app.create-site")
 
 
-  object ConfValNames {
-    val NewSiteConfigText = "new-site-config-page-text"
-    val NewSiteDomain = "new-site-domain"
-  }
-
-
   def newWebsiteAddr(websiteName: String, dao: SiteDao): String = {
     def die = throwForbidden(
       "DwE30SC3", "You may not create a new website from this website")
     val siteConfig = dao.loadWebsiteConfig()
-    val domain = siteConfig.getText(ConfValNames.NewSiteDomain) getOrElse die
+    val domain = siteConfig.getText(SiteCreator.ConfValNames.NewSiteDomain) getOrElse die
     // Ensure other required config values are present too (fail fast).
-    siteConfig.getText(ConfValNames.NewSiteConfigText) getOrElse die
+    siteConfig.getText(SiteCreator.ConfValNames.NewSiteConfigText) getOrElse die
     s"$websiteName.$domain"
   }
 
@@ -91,7 +85,7 @@ object AppCreateWebsite extends mvc.Controller {
       request.body.getEmptyAsNone("websiteNameInp") getOrElse
         throwBadReq("DwE01kI72", "Please specify a name for your new website")
 
-    if (!isOkayWebsiteName(newWebsiteName))
+    if (!SiteCreator.isOkayWebsiteName(newWebsiteName))
       throwForbidden("DwE390IR3", "Bad website name. (The name must be "+
         "at least 6 characters long, not be too long, contain only "+
         "lowercase a-z, 0-9 and hyphens ('-').)")
@@ -168,15 +162,14 @@ object AppCreateWebsite extends mvc.Controller {
       address: $websiteAddr, on behalf of: $user""")
 
 
-    // Should call SiteCreator.createSite(....) ?
-
     // SECURITY should whitelist allowed OpenID and OAuth providers.
 
     // Require OpenID or OAuth (todo) or password (todo) login.
     val idtyOpenId = identity.asInstanceOf[IdentityOpenId]
 
     val result =
-      createWebsite(
+      SiteCreator.createWebsite(
+        newSiteType,
         request.dao,
         request.ctime,
         name = newWebsiteName,
@@ -195,52 +188,6 @@ object AppCreateWebsite extends mvc.Controller {
   }
 
 
-  def createWebsite(
-        dao: SiteDao,
-        creationDati: ju.Date,
-        name: String,
-        host: String,
-        ownerIp: String,
-        ownerLoginId: String,
-        ownerIdentity: IdentityOpenId,
-        ownerRole: User): Option[(Tenant, User)] = {
-
-    // CreateWebsite throws error if one creates too many websites
-    // from the same IP.
-    val newSiteAndOwner = dao.createWebsite(
-       name = name, address = host, ownerIp = ownerIp, ownerLoginId = ownerLoginId,
-       ownerIdentity = ownerIdentity, ownerRole = ownerRole)
-
-    newSiteAndOwner match {
-      case Some((website, ownerAtNewSite)) =>
-        // COULD try to do this in the same transaction as `createWebsite`?
-        // -- This whole function could be rewritten/replaced to/with
-        //      CreateSiteSystemDaoMixin.createSiteImpl() ?  in debiki-dao-pgsql
-        val newWebsiteDao = Globals.siteDao(
-          siteId = website.id, ip = ownerIp, roleId = None)
-
-        val email = _makeNewWebsiteEmail(website, ownerAtNewSite)
-        newWebsiteDao.saveUnsentEmail(email)
-
-        Globals.sendEmail(email, website.id)
-
-        val newSiteConfigText = dao.loadWebsiteConfig().getText(
-          ConfValNames.NewSiteConfigText) getOrDie "DwE74Vf9"
-
-        newWebsiteDao.createPage(makeConfigPage(
-          newSiteConfigText, siteId = website.id, creationDati = creationDati,
-          path = s"/${ConfigValueDao.WebsiteConfigPageSlug}"))
-
-        createHomepage(newWebsiteDao, creationDati = creationDati)
-
-        newSiteAndOwner
-
-      case None =>
-        None
-    }
-  }
-
-
   def welcomeOwner() = CheckSidActionNoBody { (sidOk, xsrfOk, request) =>
     // SHOULD log in user, so s/he can create pages or choose a template.
     // Like so? Pass a magic token in the URL, which is valid for 1 minute,
@@ -249,28 +196,6 @@ object AppCreateWebsite extends mvc.Controller {
     // because s/he is the owner and this'll work *once* only. (Assuming
     // we're using HTTPS (which we aren't), i.e. no man in the middle attack.)
     Ok(views.html.createsite.welcomeOwner())
-  }
-
-
-  /**
-   * Must be a valid host namme, not too long or too short (less than 6 chars),
-   * no '.' and no leading or trailing '-'. See test suite in
-   * AppCreateWebsiteSpec.
-   */
-  def isOkayWebsiteName(name: String): Boolean = {
-    _OkWebsiteNameRegex matches name
-  }
-
-
-  private val _OkWebsiteNameRegex = """[a-z][a-z0-9\-]{4,38}[a-z0-9]""".r
-
-
-  private def _makeNewWebsiteEmail(website: Tenant, owner: User): Email = {
-    val address = website.chost_!.address
-    val message = views.html.createsite.welcomeEmail(address).body
-    Email(sendTo = owner.email,
-      subject = s"New Debiki website created, here: http://$address",
-      bodyHtmlText = message)
   }
 
 
@@ -289,64 +214,11 @@ object AppCreateWebsite extends mvc.Controller {
   }
 
 
-  def makeConfigPage(text: String, siteId: String, creationDati: ju.Date, path: String): Page = {
-    val pageId = AppCreatePage.generateNewPageId()
-    val pageBody = PostActionDto.forNewPageBodyBySystem(
-      text, creationDati, PageRole.Code)
-    val actions = PageParts(pageId, SystemUser.Person, actionDtos = List(pageBody))
-    val parsedPagePath = PagePath.fromUrlPath(siteId, path = path) match {
-      case PagePath.Parsed.Good(pagePath) if !pagePath.showId => pagePath
-      case x => assErr("DwE7Bfh2", s"Bad hardcoded config page path: $path")
-    }
-    Page(
-      PageMeta.forNewPage(
-        PageRole.Code, SystemUser.User, actions, creationDati, publishDirectly = true),
-      PagePath(siteId, folder = parsedPagePath.folder,
-        pageId = Some(pageId), showId = false, pageSlug = parsedPagePath.pageSlug),
-      ancestorIdsParentFirst = Nil,
-      actions)
-  }
-
-
-  /**
-   * Creates an empty page at /, with PageRole.Homepage, so I don't need
-   * to tell users how to create a homepage. Instead, I create a default
-   * empty homepage, and add a "Use this page as homepage" button,
-   * so they can easily switch homepage.
-   * If they make another page to the homepage, the default homepage
-   * is automatically moved from / to /_old/default-homepage.
-   */
-  private def createHomepage(newWebsiteDao: SiteDao, creationDati: ju.Date) {
-    val pageId = AppCreatePage.generateNewPageId()
-    val emptyPage = PageParts(pageId, SystemUser.Person)
-    val pageMeta = PageMeta.forNewPage(
-      PageRole.Generic, SystemUser.User, emptyPage, creationDati, publishDirectly = true)
-    val oldPath = PagePath(newWebsiteDao.siteId, folder = "/_old/",
-      pageId = Some(pageId), showId = false, pageSlug = "default-homepage")
-
-    // First create the homepage at '/_old/default-homepage'.
-    // Then change its location to '/'. If the admin later on lets
-    // another page be the homepage, then '/' would be overwritten by the
-    // new homepage. The old path to the oridinal homepage will then be
-    // activated again.
-    newWebsiteDao.createPage(Page(pageMeta, oldPath, ancestorIdsParentFirst = Nil, emptyPage))
-    newWebsiteDao.moveRenamePage(pageId, newFolder = Some("/"), newSlug = Some(""))
-
-    // Set homepage title.
-    val title = PostActionDto.forNewTitleBySystem(text = DefaultHomepageTitle, creationDati)
-    newWebsiteDao.savePageActionsGenNotfsImpl(
-      PageNoPath(emptyPage, ancestorIdsParentFirst = Nil, pageMeta), List(title))
-  }
-
-
   private def parseSiteTypeOrThrow(siteType: String) = siteType match {
     case "NewForum" => debiki.SiteCreator.NewSiteType.Forum
     case "NewBlog" => debiki.SiteCreator.NewSiteType.Blog
     case "NewSimpleSite" => debiki.SiteCreator.NewSiteType.SimpleSite
     case _ => throwBadReq("DwE38ZfR3", s"Bad site type: $siteType")
   }
-
-
-  val DefaultHomepageTitle = "Default Homepage (click to edit)"
 
 }

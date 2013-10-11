@@ -28,7 +28,7 @@ import test.e2e.code._
  * in SBT:
  *  test-only test.e2e.CreateSiteManuallySpecRunner
  * in SBT's test:console:
- *  (new test.e2e.CreateSiteManuallySpecRunner {}).execute()
+ *  (new test.e2e.specs.CreateSiteManuallySpecRunner {}).execute()
  */
 @DoNotDiscover
 class CreateSiteManuallySpecRunner extends Suites(new CreateSiteManuallySpec)

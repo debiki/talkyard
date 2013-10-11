@@ -129,11 +129,11 @@ object AppInstall extends mvc.Controller {
   private def doCreateFirstSite(request: mvc.Request[JsValue]) {
     val now = new ju.Date()
 
-    val siteConfigPage = AppCreateWebsite.makeConfigPage(
+    val siteConfigPage = SiteCreator.makeConfigPage(
       text = views.txt.install.firstSiteConfigPageText(DefaultThemeConfigPath).body,
       path = s"/${ConfigValueDao.WebsiteConfigPageSlug}", siteId = "?", creationDati = now)
 
-    val defaultThemeConfigPage = AppCreateWebsite.makeConfigPage(
+    val defaultThemeConfigPage = SiteCreator.makeConfigPage(
       text = views.txt.install.defaultThemeConfigPageText().body,
       path = DefaultThemeConfigPath, siteId = "?", creationDati = now)
 
