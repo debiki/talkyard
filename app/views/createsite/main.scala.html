@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *@
 
-@(title: String, css: String = "", jsFile: String = null,
+@(title: String, css: String = "", jsFile: String = null, jsCode: String = null,
     ngAppName: String = null)(content: Html)
 
 @import play.api.Play.current
@@ -38,6 +38,11 @@
   } else Nil
 }
 
+@anyCodeTag = @{
+  if (jsCode ne null) {
+    <script>{ jsCode }</script>
+  } else Nil
+}
 
 @asset(file: String) = @{
   routes.Assets.at(path = "/public/res", file)
@@ -61,6 +66,7 @@
 </script>
 @ngScriptTags
 @optScriptTag
+@anyCodeTag
 </head>
 <body>
 <div class="container" style="padding-top:30px">

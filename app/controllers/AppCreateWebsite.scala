@@ -56,6 +56,25 @@ object AppCreateWebsite extends mvc.Controller {
   }
 
 
+  def showSiteTypeForm() = GetAction { request =>
+    _throwIfMayNotCreateWebsite(request)
+    val tpi = InternalTemplateProgrammingInterface(request.dao)
+    Ok(views.html.createsite.chooseType(tpi, xsrfToken = request.xsrfToken.value))
+  }
+
+
+  def handleSiteTypeForm() = JsonOrFormDataPostAction(maxBytes = 100) { request =>
+    val siteType =
+      request.body.getEmptyAsNone("siteType") getOrElse
+        throwBadReq("DwE73Gb81", "Please specify site type")
+    // Check that type can be parsed.
+    parseSiteTypeOrThrow(siteType)
+    Redirect(routes.AppCreateWebsite.showWebsiteNameForm.url)
+      .withSession(
+        request.session + ("dwCoSiteType" -> siteType))
+  }
+
+
   def showWebsiteNameForm() = GetAction { request =>
     _throwIfMayNotCreateWebsite(request)
 
@@ -133,6 +152,10 @@ object AppCreateWebsite extends mvc.Controller {
       //  xsrfToken = xsrfOk.value))
     }
 
+    val newSiteType = parseSiteTypeOrThrow(
+      request.session.get("dwCoSiteType") getOrElse throwForbidden(
+        "DwE5BJh95", "No dwCoSiteType cookie"))
+
     val newWebsiteName = request.session.get("website-name") getOrElse {
       throwForbidden("DwE091EQ7", "No website-name cookie")
     }
@@ -141,8 +164,11 @@ object AppCreateWebsite extends mvc.Controller {
 
     _throwIfMayNotCreateWebsite(request, newWebsiteAddr = Some(websiteAddr))
 
-    log.info("Creating website, name: "+ newWebsiteName +
-       ", address: "+ websiteAddr +", on behalf of: "+ user)
+    log.info(o"""Creating website, name: $newWebsiteName, type: $newSiteType,
+      address: $websiteAddr, on behalf of: $user""")
+
+
+    // Should call SiteCreator.createSite(....) ?
 
     // SECURITY should whitelist allowed OpenID and OAuth providers.
 
@@ -310,6 +336,14 @@ object AppCreateWebsite extends mvc.Controller {
     val title = PostActionDto.forNewTitleBySystem(text = DefaultHomepageTitle, creationDati)
     newWebsiteDao.savePageActionsGenNotfsImpl(
       PageNoPath(emptyPage, ancestorIdsParentFirst = Nil, pageMeta), List(title))
+  }
+
+
+  private def parseSiteTypeOrThrow(siteType: String) = siteType match {
+    case "NewForum" => debiki.SiteCreator.NewSiteType.Forum
+    case "NewBlog" => debiki.SiteCreator.NewSiteType.Blog
+    case "NewSimpleSite" => debiki.SiteCreator.NewSiteType.SimpleSite
+    case _ => throwBadReq("DwE38ZfR3", s"Bad site type: $siteType")
   }
 
 
