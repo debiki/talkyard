@@ -52,8 +52,7 @@ object SiteCreator {
 
 
   /** Must be a valid host namme, not too long or too short (less than 6 chars),
-    * no '.' and no leading or trailing '-'. See test suite in
-    * AppCreateWebsiteSpec.
+    * no '.' and no leading or trailing '-'. See test suite in SiteCreatorSpec.
     */
   def isOkayWebsiteName(name: String): Boolean = {
     _OkWebsiteNameRegex matches name

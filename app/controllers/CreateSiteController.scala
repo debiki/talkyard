@@ -34,7 +34,7 @@ import Utils.ValidationImplicits._
 
 /** Creates new websites, including a homepage and a _site.conf page.
   */
-object AppCreateWebsite extends mvc.Controller {
+object CreateSiteController extends mvc.Controller {
 
   val log = play.api.Logger("app.create-site")
 
@@ -63,7 +63,7 @@ object AppCreateWebsite extends mvc.Controller {
         throwBadReq("DwE73Gb81", "Please specify site type")
     // Check that type can be parsed.
     parseSiteTypeOrThrow(siteType)
-    Redirect(routes.AppCreateWebsite.showWebsiteNameForm.url)
+    Redirect(routes.CreateSiteController.showWebsiteNameForm.url)
       .withSession(
         request.session + ("dwCoSiteType" -> siteType))
   }
@@ -100,7 +100,7 @@ object AppCreateWebsite extends mvc.Controller {
     // *Preliminarily* test if it's possible & allowed to create the website.
     _throwIfMayNotCreateWebsite(request, newWebsiteAddr = Some(websiteAddr))
 
-    Redirect(routes.AppCreateWebsite.showWebsiteOwnerForm.url)
+    Redirect(routes.CreateSiteController.showWebsiteOwnerForm.url)
        .withSession(
           request.session + ("website-name" -> newWebsiteName))
   }
@@ -109,7 +109,7 @@ object AppCreateWebsite extends mvc.Controller {
   def showWebsiteOwnerForm() = CheckSidActionNoBody {
         (sidOk, xsrfOk, request) =>
     Ok(views.html.login(xsrfToken = xsrfOk.value,
-      returnToUrl = routes.AppCreateWebsite.tryCreateWebsite.url,
+      returnToUrl = routes.CreateSiteController.tryCreateWebsite.url,
       title = "Choose Website Owner Account",
       providerLoginMessage = "It will become the owner of the new website.",
       showCreateAccountOption = true))
@@ -179,7 +179,7 @@ object AppCreateWebsite extends mvc.Controller {
         ownerIdentity = idtyOpenId,
         ownerRole = user) match {
       case Some(site) =>
-        Redirect(s"http://$websiteAddr${routes.AppCreateWebsite.welcomeOwner.url}")
+        Redirect(s"http://$websiteAddr${routes.CreateSiteController.welcomeOwner.url}")
       case None =>
         Ok(views.html.createsite.failNotFirst())
     }

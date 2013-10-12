@@ -18,7 +18,7 @@
 package debiki
 
 import com.debiki.core._
-import controllers.{AppCreatePage, AppCreateWebsite}
+import controllers.{AppCreatePage, CreateSiteController}
 import debiki.dao.SiteDao
 import java.{util => ju}
 import org.scalatest._

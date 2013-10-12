@@ -69,13 +69,13 @@ GET   /-/install/                   controllers.AppInstall.viewInstallationPage
 POST  /-/install/create-first-site  controllers.AppInstall.createFirstSite
 GET   /-/install/create-first-owner controllers.AppInstall.createFirstSiteOwner(password)
 
-GET   /-/new-website/choose-type   controllers.AppCreateWebsite.showSiteTypeForm
-POST  /-/new-website/choose-type   controllers.AppCreateWebsite.handleSiteTypeForm
-GET   /-/new-website/choose-name   controllers.AppCreateWebsite.showWebsiteNameForm
-POST  /-/new-website/choose-name   controllers.AppCreateWebsite.handleWebsiteNameForm
-GET   /-/new-website/choose-owner  controllers.AppCreateWebsite.showWebsiteOwnerForm
-GET   /-/new-website/create        controllers.AppCreateWebsite.tryCreateWebsite
-GET   /-/new-website/welcome-owner controllers.AppCreateWebsite.welcomeOwner
+GET   /-/create-site/choose-type    controllers.CreateSiteController.showSiteTypeForm
+POST  /-/create-site/choose-type    controllers.CreateSiteController.handleSiteTypeForm
+GET   /-/create-site/choose-name    controllers.CreateSiteController.showWebsiteNameForm
+POST  /-/create-site/choose-name    controllers.CreateSiteController.handleWebsiteNameForm
+GET   /-/create-site/choose-owner   controllers.CreateSiteController.showWebsiteOwnerForm
+GET   /-/create-site/create         controllers.CreateSiteController.tryCreateWebsite
+GET   /-/create-site/welcome-owner  controllers.CreateSiteController.welcomeOwner
 
 GET   /-/admin/                 controllers.Application.viewAdminPage
 
