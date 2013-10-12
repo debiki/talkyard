@@ -49,7 +49,11 @@ class CreateSiteSpec extends DebikiBrowserSpec with TestSiteCreator {
   "A user with a browser can" - {
 
     "go to site creation page" in {
-      go to createWebsiteChooseNamePage
+      go to createWebsiteChooseTypePage
+    }
+
+    "choose site type: a simple website" in {
+      clickChooseSiteTypeSimpleSite()
     }
 
     "not have an invalid name accepted" in {
@@ -91,7 +95,7 @@ class CreateSiteSpec extends DebikiBrowserSpec with TestSiteCreator {
       clickLoginWithGmailOpenId()
     }
 
-    s"goto admin page of $firstSiteName" - {
+    s"goto admin page of $firstSiteName" in {
       clickWelcomeLoginToDashboard(firstSiteName)
     }
 
@@ -99,8 +103,9 @@ class CreateSiteSpec extends DebikiBrowserSpec with TestSiteCreator {
       eventuallyFindHomepageAndCofigPage()
     }
 
-    "return to site creation page" in {
-      go to createWebsiteChooseNamePage
+    "return to site creation page, choose site type: simple site, again" in {
+      go to createWebsiteChooseTypePage
+      clickChooseSiteTypeSimpleSite()
     }
 
     "not create another site with the same address" in {
@@ -119,11 +124,11 @@ class CreateSiteSpec extends DebikiBrowserSpec with TestSiteCreator {
       click on partialLinkText("Okay")
     }
 
-    s"create $secondSiteName" - {
-      clickCreateSite(secondSiteName, alreadyOnNewWebsitePage = true)
+    s"create $secondSiteName" in {
+      clickCreateSite(secondSiteName)
     }
 
-    s"login with Gmail again, goto admin page of $secondSiteName" - {
+    s"login with Gmail again, goto admin page of $secondSiteName" in {
       clickWelcomeLoginToDashboard(secondSiteName)
     }
 

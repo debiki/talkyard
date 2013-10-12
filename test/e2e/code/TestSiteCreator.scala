@@ -45,8 +45,8 @@ trait TestSiteCreator extends TestLoginner {
   val DefaultHomepageTitle = "Default Homepage"
 
 
-  def createWebsiteChooseNamePage = new Page {
-    val url = s"http://$newSiteDomain/-/new-website/choose-name"
+  def createWebsiteChooseTypePage = new Page {
+    val url = s"http://$newSiteDomain/-/new-website/choose-type"
   }
 
 
@@ -56,45 +56,52 @@ trait TestSiteCreator extends TestLoginner {
   }
 
 
-  def clickCreateSite(
-        siteName: String = null, alreadyOnNewWebsitePage: Boolean = false): String = {
+  def clickCreateSite(siteName: String = null): String = {
     val name =
       if (siteName ne null) siteName
       else nextSiteName()
 
-    s"create site $name" in {
-      if (!alreadyOnNewWebsitePage)
-        go to createWebsiteChooseNamePage
+    info("create site $name")
 
-      click on "website-name"
-      enter(name)
-      click on "accepts-terms"
-      click on cssSelector("input[type=submit]")
+    go to createWebsiteChooseTypePage
+    clickChooseSiteTypeSimpleSite()
 
-      clickLoginWithGmailOpenId()
-    }
+    click on "website-name"
+    enter(name)
+    click on "accepts-terms"
+    click on cssSelector("input[type=submit]")
+
+    clickLoginWithGmailOpenId()
 
     name
   }
 
 
-  def clickWelcomeLoginToDashboard(newSiteName: String) {
-    "click login link on welcome owner page" in {
-      // We should now be on page /-/new-website/welcome-owner.
-      // There should be only one link, which takes you to /-/admin/.
-      eventually {
-        assert(pageSource contains "Website created")
-      }
-      click on cssSelector("a")
+  def clickChooseSiteTypeSimpleSite() {
+    click on id("site-type")
+    click on id("new-simple-site")
+    click on cssSelector("input[type=submit]")
+    eventually {
+      find("website-name") must be ('defined)
     }
+  }
 
-    "login to admin dashboard" in {
-      clickLoginWithGmailOpenId()
-      eventually {
-        assert(pageSource contains "Welcome to your new website")
-      }
-      webDriver.getCurrentUrl() must be === originOf(newSiteName) + "/-/admin/"
+
+  def clickWelcomeLoginToDashboard(newSiteName: String) {
+    info("click login link on welcome owner page")
+    // We should now be on page /-/new-website/welcome-owner.
+    // There should be only one link, which takes you to /-/admin/.
+    eventually {
+      assert(pageSource contains "Website created")
     }
+    click on cssSelector("a")
+
+    info("login to admin dashboard")
+    clickLoginWithGmailOpenId()
+    eventually {
+      assert(pageSource contains "Welcome to your new website")
+    }
+    webDriver.getCurrentUrl() must be === originOf(newSiteName) + "/-/admin/"
   }
 
 

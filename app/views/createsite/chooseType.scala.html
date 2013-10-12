@@ -51,11 +51,11 @@
           action="@routes.AppCreateWebsite.handleSiteTypeForm">
       <input name='dw-fi-xsrf' type='hidden' value='@xsrfToken'>
 
-      <label for="siteType">What do you want to create?</label>
-      <select id="siteType" name="siteType">
-        <option value="NewForum" default>A forum</option>
-        <option value="NewBlog">A blog</option>
-        <option value="NewSimpleSite">A simple website</option>
+      <label for="site-type">What do you want to create?</label>
+      <select id="site-type" name="siteType">
+        <option id="new-forum" value="NewForum" default>A forum</option>
+        <option id="new-blog" value="NewBlog">A blog</option>
+        <option id="new-simple-site" value="NewSimpleSite">A simple website</option>
       </select>
 
       <p>You can change your mind later.</p>

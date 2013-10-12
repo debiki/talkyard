@@ -44,7 +44,7 @@ class CreateSiteManuallySpec extends DebikiBrowserSpec with TestSiteCreator {
   "A human can" - {
 
     "go to site creation page" in {
-      go to createWebsiteChooseNamePage
+      go to createWebsiteChooseTypePage
     }
 
     "do whatever s/he wants to do" in {
@@ -78,11 +78,11 @@ class BuildSiteManuallySpec extends DebikiBrowserSpec with TestSiteCreator {
 
   "A human can" - {
 
-    "create new site" - {
+    "create new site" in {
       clickCreateSite(siteName)
     }
 
-    "login and goto admin page" - {
+    "login and goto admin page" in {
       clickWelcomeLoginToDashboard(siteName)
     }
 

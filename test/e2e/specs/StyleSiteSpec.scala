@@ -56,10 +56,10 @@ class StyleSiteSpecSpec extends DebikiBrowserSpec
   "One can style a website" - {
 
 
-    "create new site and goto dashboard" - {
+    "create new site and goto dashboard" in {
       val siteName = clickCreateSite()
       clickWelcomeLoginToDashboard(siteName)
-      "boo" in { dashboardWindow = window(webDriver.getWindowHandle) }
+      dashboardWindow = window(webDriver.getWindowHandle)
     }
 
 

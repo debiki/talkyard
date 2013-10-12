@@ -52,7 +52,7 @@ class AdminDashboardSpec extends DebikiBrowserSpec
   "Via the admin dashboarad, one can create and edit pages" - {
 
 
-    "create new site" - {
+    "create new site" in {
       siteName = clickCreateSite()
     }
 
