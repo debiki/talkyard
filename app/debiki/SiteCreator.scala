@@ -77,37 +77,41 @@ object SiteCreator {
 
     // CreateWebsite throws error if one creates too many websites
     // from the same IP.
-    val newSiteAndOwner = dao.createWebsite(
-      name = name, address = host, ownerIp = ownerIp, ownerLoginId = ownerLoginId,
-      ownerIdentity = ownerIdentity, ownerRole = ownerRole)
-
-    newSiteAndOwner match {
-      case Some((website, ownerAtNewSite)) =>
-        // COULD try to do this in the same transaction as `createWebsite`?
-        // -- This whole function could be rewritten/replaced to/with
-        //      CreateSiteSystemDaoMixin.createSiteImpl() ?  in debiki-dao-pgsql
-        val newWebsiteDao = Globals.siteDao(
-          siteId = website.id, ip = ownerIp, roleId = None)
-
-        val email = makeNewWebsiteEmail(website, ownerAtNewSite)
-        newWebsiteDao.saveUnsentEmail(email)
-
-        Globals.sendEmail(email, website.id)
-
-        val newSiteConfigText = dao.loadWebsiteConfig().getText(
-          ConfValNames.NewSiteConfigText) getOrDie "DwE74Vf9"
-
-        newWebsiteDao.createPage(makeConfigPage(
-          newSiteConfigText, siteId = website.id, creationDati = creationDati,
-          path = s"/${ConfigValueDao.WebsiteConfigPageSlug}"))
-
-        createHomepage(newWebsiteDao, creationDati = creationDati)
-
-        newSiteAndOwner
-
-      case None =>
-        None
+    val (website, ownerAtNewSite) =
+      dao.createWebsite(
+        name = name, address = host, ownerIp = ownerIp, ownerLoginId = ownerLoginId,
+        ownerIdentity = ownerIdentity, ownerRole = ownerRole) getOrElse {
+      return None
     }
+
+    // COULD try to do this in the same transaction as `createWebsite`?
+    // -- This whole function could be rewritten/replaced to/with
+    //      CreateSiteSystemDaoMixin.createSiteImpl() ?  in debiki-dao-pgsql
+    val newWebsiteDao = Globals.siteDao(
+      siteId = website.id, ip = ownerIp, roleId = None)
+
+    val email = makeNewWebsiteEmail(website, ownerAtNewSite)
+    newWebsiteDao.saveUnsentEmail(email)
+
+    Globals.sendEmail(email, website.id)
+
+    val newSiteConfigText = dao.loadWebsiteConfig().getText(
+      ConfValNames.NewSiteConfigText) getOrDie "DwE74Vf9"
+
+    newWebsiteDao.createPage(makeConfigPage(
+      newSiteConfigText, siteId = website.id, creationDati = creationDati,
+      path = s"/${ConfigValueDao.WebsiteConfigPageSlug}"))
+
+    siteType match {
+      case NewSiteType.Forum =>
+        createBlogOrForum(newWebsiteDao, PageRole.Forum, creationDati)
+      case NewSiteType.Blog =>
+        createBlogOrForum(newWebsiteDao, PageRole.Blog, creationDati)
+      case NewSiteType.SimpleSite =>
+        createHomepage(newWebsiteDao, creationDati = creationDati)
+    }
+
+    Some((website, ownerAtNewSite))
   }
 
 
@@ -137,6 +141,20 @@ object SiteCreator {
         pageId = Some(pageId), showId = false, pageSlug = parsedPagePath.pageSlug),
       ancestorIdsParentFirst = Nil,
       actions)
+  }
+
+
+  /** Creates a blog or a forum, located at http://serveraddress/, that is,
+    * the blog or forum becomes the homepage.
+    */
+  private def createBlogOrForum(newSiteDao: SiteDao, pageRole: PageRole, createdAt: ju.Date) {
+    val pageId = AppCreatePage.generateNewPageId()
+    val emptyPage = PageParts(pageId, SystemUser.Person)
+    val pageMeta = PageMeta.forNewPage(
+      pageRole, SystemUser.User, emptyPage, createdAt, publishDirectly = true)
+    val pagePath = PagePath(newSiteDao.siteId, folder = "/",
+      pageId = Some(pageId), showId = false, pageSlug = "")
+    newSiteDao.createPage(Page(pageMeta, pagePath, ancestorIdsParentFirst = Nil, emptyPage))
   }
 
 
