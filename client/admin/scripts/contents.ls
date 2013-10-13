@@ -475,6 +475,7 @@ class PageListItem extends ListItem
 
   loadAndListPages = !->
     adminService.listAllPages !(pagesById) ->
+      removeConfigPage pagesById
       listMorePagesDeriveFolders <|
           [PageListItem(page) for id, page of pagesById]
 
@@ -513,6 +514,18 @@ class PageListItem extends ListItem
   redrawPageList = !->
     sortItemsInPlace $scope.listItems
     $scope.updateSelections!
+
+
+  /**
+   * Removes the website config page from the list of pages, because it's
+   * complicated and confusing.
+   */
+  removeConfigPage = !(pagesById) ->
+    configPageId = ''
+    for pageId, page of pagesById
+      if page.path == '/_site.conf'
+        configPageId = page.id
+    delete pagesById[configPageId]
 
 
   /**
