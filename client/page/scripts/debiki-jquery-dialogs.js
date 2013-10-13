@@ -126,6 +126,7 @@ d.i.newModalDialogSettings = function(options) {
         scrollYBeforeFullscreen = window.scrollY;
         $(this).parent().addClass('dw-dlg-fullscreen');
         $('body').addClass('dw-fullscreen-dialog-mode');
+        window.scrollTo(0, 0);
       }
     },
     close: function(event, ui) {
