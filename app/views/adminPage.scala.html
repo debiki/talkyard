@@ -63,6 +63,7 @@
 
         <div class="tab-content">
           <div ng-controller='ActionListCtrl' class='tab-pane' id='events-tab'>
+            @*
             <div class='selection-related-btns'>
               <!--<a id='btn-view-post' class='btn btn-default' ng-show='oneRowChecked'>View</a>-->
               <a id='btn-approve-post' class='btn btn-default' ng-show='manyRowsChecked'>Approve</a>
@@ -73,17 +74,19 @@
               <a class='btn btn-default'>#Delete</a>
               <a class='btn btn-default'>Sort</a> -->
             </div>
+            *@
             <p ng-show="!actionList.length">No activity thus far.</p>
             <table class='table -table-bordered -table-striped'
                  ng-show="actionList.length">
               <thead>
                 <tr>
+                  @*
                   <th class='row-selector'><!-- dupl code! -->
                     <label>
                       <input type='checkbox' ng-change='toggleAllChecked()'
                       ng-model='allSelected'>
                     </label>
-                  </th>
+                  </th> *@
                   <th>Activity</th>
                   <th>Author</th>
                   <th>Date</th>
@@ -92,12 +95,13 @@
               </thead>
               <tbody>
                 <tr ng-repeat='action in actionList'>
+                  @*
                   <td class='row-selector'><!-- dupl code! -->
                     <label>
                       <input type='checkbox' ng-model='action.selected'
                           ng-click='onRowCheckedChange()'>
                     </label>
-                  </td>
+                  </td> *@
                   <td class='action-what'>
                     <div>
                       <a class='action-description' href='{{action.url}}'>{{action.description}}</a>
@@ -140,6 +144,8 @@
 
           <div ng-controller='PathsCtrl' class='tab-pane active' id='pages-tab'>
 
+            @* This help text isn't needed any more, after I added /-/create-site/choose-type
+            which creates e.g. a forum automatically.
             <div id="help-welcome-create-blog" class="help-tips"
                 ng-show="!pageStats.blogOrForumExists">
               <p>Welcome to your new website!</p>
@@ -158,6 +164,7 @@
                 </li>
               </ol>
             </div>
+            *@
 
             <div class='selection-related-btns'>
 
@@ -319,7 +326,7 @@
                       </label>
                     </td>
                     <td class='page-title'>
-                      <a href="{{ page.path }}" target="_blank" ng-bind-html="page.prettyTitle()"></a>
+                      <a href="{{ page.path }}" ng-bind-html="page.prettyTitle()"></a>
                       <span class="page-status-role"
                         ng-show="page.prettyStatusRole()">{{ page.prettyStatusRole() }}</span>
                       <span class="page-notfs">{{ page.stringifyOtherMarks() }}</span>
@@ -356,7 +363,6 @@
                   <th>Name</th>
                   <th>Email</th>
                   <th>Location</th>
-                  <th>Logs in with</th>
                   <!-- Takes too long to lookup. Move to separate user tab.
                   <th>IPs</th>
                   <th>First Login</th>
@@ -374,14 +380,13 @@
                     </label>
                   </td>
 
-                  <td><a target='_blank' href='#'>{{user.displayName}}</a></td>
-                  <td><a target='_blank'>{{user.email || ''}}</a></td>
-                  <td><a target='_blank'>{{user.country || user.location}}</a></td>
-                  <td><a target='_blank'>(todo)</a></td>
+                  <td><a href='#'>{{user.displayName}}</a></td>
+                  <td><a>{{user.email || ''}}</a></td>
+                  <td><a>{{user.country || user.location}}</a></td>
                   <!--
-                  <td><a target='_blank'>?.?.?.?</a></td>
-                  <td><a target='_blank'>{{user.ctime.replace('T', ' ')}}</a></td>
-                  <td><a target='_blank'>{{user.lastLoginTime.replace('T', ' ')}}</a></td>
+                  <td><a>?.?.?.?</a></td>
+                  <td><a>{{user.ctime.replace('T', ' ')}}</a></td>
+                  <td><a>{{user.lastLoginTime.replace('T', ' ')}}</a></td>
                   -->
                 </tr>
               </tbody>
