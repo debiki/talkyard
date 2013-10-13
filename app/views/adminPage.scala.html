@@ -134,10 +134,19 @@
                     </div>
                     <span class='action-path'>{{action.pagePath}}</span>
                   </td>
-                  <td><a target='_blank' href='#!/user/{{action.authorId}}'>{{action.authorDisplayName}}</a></td>
+                  <td><a href='#!/user/{{action.authorId}}'>{{action.authorDisplayName}}</a></td>
                   <td>{{action.cdati.replace('T', ' ')}}</td>
-                  <td class='post-text' ng-bind-html="postTextOrDiff(action)"></td>
+                  <td class='post-text'
+                      @* ng-if="!smallScreen" TODO when AngularJS 1.2 released *@
+                      ng-bind-html="postTextOrDiff(action)"></td>
                 </tr>
+                @* Place the text on a separate row, if narrow screen.
+                  TODO when AngularJS 1.2 released, use ng-repeat-start/end
+                <tr class='post-text'
+                    ng-if="smallScreen"
+                    ng-bind-html="postTextOrDiff(action)">
+                 </tr>
+                 *@
               </tbody>
             </table>
           </div>

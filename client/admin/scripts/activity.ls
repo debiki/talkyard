@@ -26,6 +26,8 @@ bug = d.u.die2
 
   d.i.mixinInfoListCommon $scope, 'actionList'
 
+  $scope.smallScreen = deviceScreenIsSmall!
+
   doInlineAction = (adminServiceFn, actionRows, doneMessage) ->
     for row in actionRows
       row <<< inlineBtnToggledAllOff!
@@ -194,6 +196,12 @@ function inlineBtnTogglersForPost(post)
       showNewFlagsLink,
       showOldFlagsLink }
     else {}
+
+
+
+function deviceScreenIsSmall
+  win = $(window)
+  max(win.width!, win.height!) < 600
 
 
 
