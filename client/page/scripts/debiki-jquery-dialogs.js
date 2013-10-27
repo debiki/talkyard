@@ -127,6 +127,19 @@ d.i.newModalDialogSettings = function(options) {
         $(this).parent().addClass('dw-dlg-fullscreen');
         $('body').addClass('dw-fullscreen-dialog-mode');
         window.scrollTo(0, 0);
+
+        // Workaround for position:static problem. If $(this).parent() has
+        // position:static, most elems become non-interactible, e.g. text
+        // cannot be typed in <form> <input>s. No idea why! Some elems, namely
+        // link buttons, remain clickable however. — Work aroind this weird
+        // issue, by using position: absolute instead of static. However, then
+        // we need to set the height of the <body>, otherwise it won't be
+        // possible to scroll downwards, on mobile phones (in case the dialog
+        // is tall), since body.height would otherwise be 0, if there was
+        // only a position:absolute elem.
+        var height = $(this).parent().height();
+        $('body').height(height + 10);
+        $(this).parent().css({ position: 'absolute' });
       }
     },
     close: function(event, ui) {
@@ -136,6 +149,9 @@ d.i.newModalDialogSettings = function(options) {
       }
       $(this).dialog('destroy');
       $(this).remove();
+
+      // Cancel above-mentioned position:static problem workaround.
+      $('body').css({ height: '' });
     }
   });
 
