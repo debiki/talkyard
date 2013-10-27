@@ -126,13 +126,26 @@ function clearAndRedrawArrowsVertically($thread) {
   //                                             |text…             |
   //                                             +------------------+
   //
+  // This arrow is shown only sometimes, namely  \
+  // if whole page uses single column layout.     v
+  //
   // The child comment. I hope no arrow          +-----—------------+
-  // is needed here, because it should be        |the only child    |
+  // is needed above, because it should be       |the only child    |
   // obvious that the child replies to the       |comment text…     |
   // parent comment.                             +------------------+
 
-  if ($childThreads.length <= 1 && !thisIsHzClosedSection)
+  if ($childThreads.length == 0)
     return;
+
+  if ($childThreads.length == 1 && !thisIsHzClosedSection) {
+    // However, sometimes the child comment illustrated above is
+    // indented, namely if we're using a single column layout
+    // for the whole page. Then we need this arrow: (it's hidden by
+    // CSS if not needed). Also see [90kfHW2] in debiki.styl.
+    $($childThreads[0]).prepend(
+      '<div class="dw-arw dw-arw-vt-curve-to-this"></div>');
+    return;
+  }
 
   // Let me explain how I draw arrows to each $childThread:
   //
