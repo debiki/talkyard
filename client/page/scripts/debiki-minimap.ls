@@ -36,6 +36,11 @@ if $('.dw-p').length - 2 <= 5
   return
 
 
+# The minimap is somewhat pointless when using single column (1D) layout.
+if d.i.singleColumnLayout
+  return
+
+
 # If the minimap won't work anyway, never create it (leave the parent
 # <div dw-minimap> empty).
 if !Modernizr.canvas || !Modernizr.csspositionfixed

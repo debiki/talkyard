@@ -58,7 +58,8 @@ See: http://stackoverflow.com/questions/1014203/best-way-to-use-googles-hosted-j
     internal: {
       $: jQuery,
       pageId: @Html(pageIdQuotedOrUndefined),
-      assetsUrlPathStart: '@asset("")'
+      assetsUrlPathStart: '@asset("")',
+      singleColumnLayout: Math.max(jQuery(window).width(), jQuery(window).height()) < 1000
     }
   }, debiki);
   @* COULD move to debiki.internal instead! Now relying on &lt;script type=js/x-debiki-config&gt;*@
