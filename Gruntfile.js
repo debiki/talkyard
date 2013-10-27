@@ -114,7 +114,6 @@ module.exports = function(grunt) {
       'client/util/scripts/scrollfix2d.js',
       'client/page/scripts/tagdog.js',
       'target/client/page/scripts/debiki-page-module.js',
-      'target/client/page/scripts/android-zoom-bug-workaround.js', //
       'target/client/page/scripts/bootstrap-angularjs.js',
       'target/client/page/scripts/debiki-action-delete.js',
       'target/client/page/scripts/debiki-action-dialogs.js',
