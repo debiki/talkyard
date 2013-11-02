@@ -17,7 +17,7 @@
 package services
 
 import play.api.{Logger, Application}
-import securesocial.core.{Identity, UserServicePlugin, UserId}
+import securesocial.core.{Identity, UserServicePlugin, IdentityId}
 import securesocial.core.providers.Token
 
 
@@ -31,25 +31,26 @@ class InMemoryUserService(application: Application) extends UserServicePlugin(ap
   private var users = Map[String, Identity]()
   private var tokens = Map[String, Token]()
 
-  def find(id: UserId): Option[Identity] = {
+  def find(id: IdentityId): Option[Identity] = {
     if ( Logger.isDebugEnabled ) {
       Logger.debug("users = %s".format(users))
     }
-    users.get(id.id + id.providerId)
+    users.get(id.userId + id.providerId)
   }
 
   def findByEmailAndProvider(email: String, providerId: String): Option[Identity] = {
     if ( Logger.isDebugEnabled ) {
       Logger.debug("users = %s".format(users))
     }
-    users.values.find( u => u.email.map( e => e == email && u.id.providerId == providerId).getOrElse(false))
+    users.values.find( u =>
+      u.email.map( e => e == email && u.identityId.providerId == providerId).getOrElse(false))
   }
 
   def save(user: Identity): Identity = {
-    users = users + (user.id.id + user.id.providerId -> user)
+    users = users + (user.identityId.userId + user.identityId.providerId -> user)
     // this sample returns the same user object, but you could return an instance of your own class
     // here as long as it implements the Identity trait. This will allow you to use your own class in the protected
-    // actions and event callbacks. The same goes for the find(id: UserId) method.
+    // actions and event callbacks. The same goes for the find(id: IdentityId) method.
     user
   }
 
