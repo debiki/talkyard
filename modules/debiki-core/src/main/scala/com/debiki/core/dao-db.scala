@@ -100,7 +100,7 @@ abstract class SiteDbDao {
    * Also, if the Identity does not already exist in the db, assigns it an ID
    * and saves it.
    */
-  def saveLogin(loginReq: LoginRequest): LoginGrant
+  def saveLogin(loginNoId: Login, identity: Identity): LoginGrant
 
   /**
    * Updates the specified login with logout IP and timestamp.
@@ -452,21 +452,21 @@ class ChargingSiteDbDao(
 
   // ----- Login, logout
 
-  def saveLogin(loginReq: LoginRequest): LoginGrant = {
+  def saveLogin(loginNoId: Login, identity: Identity): LoginGrant = {
     // Allow people to login via email and unsubscribe, even if over quota.
-    val mayPilfer = loginReq.identity.isInstanceOf[IdentityEmailId]
+    val mayPilfer = identity.isInstanceOf[IdentityEmailId]
 
     // If we don't ensure there's enough quota for the db transaction,
     // Mallory could call saveLogin, when almost out of quota, and
     // saveLogin would write to the db and then rollback, when over quota
     // -- a DoS attack would be possible.
-    _ensureHasQuotaFor(ResUsg.forStoring(login = loginReq.login,
-       identity = loginReq.identity), mayPilfer = mayPilfer)
+    _ensureHasQuotaFor(ResUsg.forStoring(login = loginNoId,
+       identity = identity), mayPilfer = mayPilfer)
 
-    val loginGrant = _spi.saveLogin(loginReq)
+    val loginGrant = _spi.saveLogin(loginNoId, identity)
 
-    val resUsg = ResUsg.forStoring(login = loginReq.login,
-       identity = loginGrant.isNewIdentity ? loginReq.identity | null,
+    val resUsg = ResUsg.forStoring(login = loginGrant.login,
+       identity = loginGrant.isNewIdentity ? loginGrant.identity | null,
        user = loginGrant.isNewRole ? loginGrant.user | null)
 
     _chargeFor(resUsg, mayPilfer = mayPilfer)

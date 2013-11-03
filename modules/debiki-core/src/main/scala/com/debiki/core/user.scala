@@ -356,21 +356,6 @@ object IdentityOpenId {
 }
 
 
-case class LoginRequest(login: Login, identity: Identity) {
-  require(login.id startsWith "?")
-  require(login.identityId == identity.id)
-
-  // Only when you login via email, the identity id is already known
-  // (and is the email id).
-  if (identity.isInstanceOf[IdentityEmailId])
-    require(!identity.id.startsWith("?"))
-  else require(identity.id startsWith "?")
-
-  // The user id is not known before you have logged in.
-  require(identity.userId startsWith "?")
-}
-
-
 case class LoginGrant(
    login: Login,
    identity: Identity,

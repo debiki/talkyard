@@ -29,8 +29,8 @@ trait UserDao {
   self: SiteDao =>
 
 
-  def saveLogin(loginReq: LoginRequest): LoginGrant =
-    siteDbDao.saveLogin(loginReq)
+  def saveLogin(loginNoId: Login, identity: Identity): LoginGrant =
+    siteDbDao.saveLogin(loginNoId, identity)
 
 
   def saveLogout(loginId: String, logoutIp: String) =
@@ -95,8 +95,8 @@ trait CachingUserDao extends UserDao {
   self: CachingSiteDao =>
 
 
-  override def saveLogin(loginReq: LoginRequest): LoginGrant = {
-    val loginGrant = super.saveLogin(loginReq)
+  override def saveLogin(loginNoId: Login, identity: Identity): LoginGrant = {
+    val loginGrant = super.saveLogin(loginNoId, identity)
     putInCache(
       key(loginGrant.login.id),
       (loginGrant.identity, loginGrant.user))
