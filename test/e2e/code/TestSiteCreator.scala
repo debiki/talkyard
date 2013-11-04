@@ -34,7 +34,7 @@ object TestSiteCreator {
 
 
 
-/** Creates test sites, via /-/new-website/...
+/** Creates test sites, via /-/create-site/...
   */
 trait TestSiteCreator extends TestLoginner {
   self: DebikiBrowserSpec =>
@@ -46,7 +46,7 @@ trait TestSiteCreator extends TestLoginner {
 
 
   def createWebsiteChooseTypePage = new Page {
-    val url = s"http://$newSiteDomain/-/new-website/choose-type"
+    val url = s"http://$newSiteDomain/-/create-site/choose-type"
   }
 
 
@@ -89,7 +89,7 @@ trait TestSiteCreator extends TestLoginner {
 
   def clickWelcomeLoginToDashboard(newSiteName: String) {
     info("click login link on welcome owner page")
-    // We should now be on page /-/new-website/welcome-owner.
+    // We should now be on page /-/create-site/welcome-owner.
     // There should be only one link, which takes you to /-/admin/.
     eventually {
       assert(pageSource contains "Website created")
@@ -99,7 +99,7 @@ trait TestSiteCreator extends TestLoginner {
     info("login to admin dashboard")
     clickLoginWithGmailOpenId()
     eventually {
-      assert(pageSource contains "Welcome to your new website")
+      assert(pageSource contains "Admin Page")
     }
     webDriver.getCurrentUrl() must be === originOf(newSiteName) + "/-/admin/"
   }

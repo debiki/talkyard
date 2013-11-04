@@ -98,11 +98,22 @@ trait StuffTestClicker {
   }
 
 
-  def openAndSwitchToFirstPage(pageTitle: String): WindowTarget = {
+  def openAndSwitchToFirstPage(pageTitle: String, newTab: Boolean = false): WindowTarget = {
     // The Admin SPA does a network request to get a page listing.
     eventually {
-      // Clicking the link opens a new browser tab.
-      click on partialLinkText(pageTitle)
+      if (!newTab) {
+        click on partialLinkText(pageTitle)
+      }
+      else {
+        // In Firefox and Chrome, control-clicking apparently opens link in new tab.
+        val elem = find(partialLinkText(pageTitle)) getOrElse fail()
+        (new Actions(webDriver))
+          .moveToElement(elem.underlying)
+          .keyDown(Keys.CONTROL)
+          .click()
+          .keyUp(Keys.CONTROL)
+          .perform()
+      }
     }
     val window = switchToNewlyOpenedWindow()
     waitForDashbar()

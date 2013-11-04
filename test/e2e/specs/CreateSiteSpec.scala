@@ -80,7 +80,7 @@ class CreateSiteSpec extends DebikiBrowserSpec with TestSiteCreator {
 
     "submit site name" in {
       click on cssSelector("input[type=submit]")
-      // We should now be taken to page /-/new-website/choose-owner.
+      // We should now be taken to page /-/create-site/choose-owner.
     }
 
     "login with Gmail OpenID, but deny permissions" in {
@@ -148,11 +148,12 @@ class CreateSiteSpec extends DebikiBrowserSpec with TestSiteCreator {
           case Some(elem) => elem.text must include("Homepage")
           case None => fail("No homepage link found")
         }
+        /*
         find(cssSelector("tr.page-role-Code > td a[href*='_site.conf']"))
             match {
           case Some(elem) => elem.text must include("configuration")
           case None => fail("No website config page link found")
-        }
+        } */
       }
     }
   }

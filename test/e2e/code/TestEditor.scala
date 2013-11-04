@@ -126,9 +126,9 @@ trait TestEditor {
       isPostApproved(postId) must be === false
     }
     else eventually {
+      val anyTextInHtml = find(cssSelector(s"#post-$postId .dw-p-bd")).map(_.text)
       val isTextCorrectlyUpdated =
-        find(cssSelector(s"#post-$postId .dw-p-bd")).map(_.text) ==
-          Some(stripStartEndBlanks(newText))
+         anyTextInHtml.map(stripStartEndBlanks(_)) == Some(stripStartEndBlanks(newText))
       isTextCorrectlyUpdated must be === true
     }
   }

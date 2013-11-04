@@ -67,7 +67,12 @@ class AdminDashboardSpec extends DebikiBrowserSpec
     "edit homepage" - {
 
       "open homepage" in {
-        openAndSwitchToFirstPage(DefaultHomepageTitle)
+        eventually {
+          click on partialLinkText(DefaultHomepageTitle)
+        }
+        eventually {
+          pageSource.contains("Homepage") must be === true
+        }
       }
 
       "edit homepage title" in {
@@ -91,10 +96,8 @@ class AdminDashboardSpec extends DebikiBrowserSpec
         pending
       }
 
-      "return to dashboard tab, find edited homepage title" in {
-        close()
-        switch to dashboardWindow
-        pending // title currently not updated in page list :-(
+      "return to dashboard tab" in {
+        goBack()
       }
     }
 
@@ -126,7 +129,9 @@ class AdminDashboardSpec extends DebikiBrowserSpec
 
         "back in the dashboard, there must be no new page listed" in {
           // Only the homepage and _site.conf (2 pages) must be listed.
-          findAll(cssSelector("#page-table > tbody > tr")).length must be === 2
+          // — No, I just hid _site.conf, so only 1 page.
+          reloadPage()
+          findAll(cssSelector("#page-table > tbody > tr")).length must be === 1
         }
       }
     }
@@ -214,7 +219,6 @@ class AdminDashboardSpec extends DebikiBrowserSpec
         }
         click on "publish-page-btn"
         click on cssSelector("a[href='/blog/']")
-        switchToNewlyOpenedWindow()
 
         /*
         click on linkText("Unpublished Blog Post") — but link is dead
