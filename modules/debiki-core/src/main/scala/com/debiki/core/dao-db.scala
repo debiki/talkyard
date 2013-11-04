@@ -100,7 +100,7 @@ abstract class SiteDbDao {
    * Also, if the Identity does not already exist in the db, assigns it an ID
    * and saves it.
    */
-  def saveLogin(loginNoId: Login, identity: Identity): LoginGrant
+  def saveLogin(loginAttempt: LoginAttempt): LoginGrant
 
   /**
    * Updates the specified login with logout IP and timestamp.
@@ -238,7 +238,7 @@ abstract class SiteDbDao {
    * Also loads details like OpenID local identifier, endpoint and version info.
    */
   def loadIdtyDetailsAndUser(forLoginId: String = null,
-        forIdentity: Identity = null): Option[(Identity, User)]
+        forOpenIdDetails: OpenIdDetails = null): Option[(Identity, User)]
 
   def loadPermsOnPage(reqInfo: PermsOnPageQuery): PermsOnPage
 
@@ -452,18 +452,17 @@ class ChargingSiteDbDao(
 
   // ----- Login, logout
 
-  def saveLogin(loginNoId: Login, identity: Identity): LoginGrant = {
+  def saveLogin(loginAttempt: LoginAttempt): LoginGrant = {
     // Allow people to login via email and unsubscribe, even if over quota.
-    val mayPilfer = identity.isInstanceOf[IdentityEmailId]
+    val mayPilfer = loginAttempt.isInstanceOf[EmailLoginAttempt]
 
     // If we don't ensure there's enough quota for the db transaction,
     // Mallory could call saveLogin, when almost out of quota, and
     // saveLogin would write to the db and then rollback, when over quota
     // -- a DoS attack would be possible.
-    _ensureHasQuotaFor(ResUsg.forStoring(login = loginNoId,
-       identity = identity), mayPilfer = mayPilfer)
+    _ensureHasQuotaFor(ResUsg.forStoring(loginAttempt), mayPilfer = mayPilfer)
 
-    val loginGrant = _spi.saveLogin(loginNoId, identity)
+    val loginGrant = _spi.saveLogin(loginAttempt)
 
     val resUsg = ResUsg.forStoring(login = loginGrant.login,
        identity = loginGrant.isNewIdentity ? loginGrant.identity | null,
@@ -601,10 +600,10 @@ class ChargingSiteDbDao(
   }
 
   def loadIdtyDetailsAndUser(forLoginId: String = null,
-        forIdentity: Identity = null): Option[(Identity, User)] = {
+        forOpenIdDetails: OpenIdDetails = null): Option[(Identity, User)] = {
     _chargeForOneReadReq()
     _spi.loadIdtyDetailsAndUser(forLoginId = forLoginId,
-        forIdentity = forIdentity)
+      forOpenIdDetails = forOpenIdDetails)
   }
 
   def loadPermsOnPage(reqInfo: PermsOnPageQuery): PermsOnPage = {

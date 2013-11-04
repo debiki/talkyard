@@ -143,6 +143,16 @@ case class ResourceUse(
 
 object ResourceUse {
 
+  def forStoring(loginAttempt: LoginAttempt): ResourceUse = {
+    // Could check login type, but for now simply overestimate:
+    ResourceUse(
+      numLogins = 1,
+      numIdsUnau = 1,
+      numIdsAu = 1,
+      numRoles = 1)
+  }
+
+
   def forStoring(
      login: Login = null,
      identity: Identity = null,

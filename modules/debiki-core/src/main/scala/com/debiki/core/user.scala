@@ -99,18 +99,11 @@ class NiLo(people: People, val login: Login) {
 
   def user: Option[User] = people.user(identity_!.userId)
   def user_! : User = people.user_!(identity_!.userId)
-  def identity_! : Identity = people.identity_!(login.identityId)
+  def identity_! : Identity = people.identity_!(login.identityRef.identityId)
 
-  def displayName: String = {
-    // (Somewhat dupl code: this also done in LoginGrant.displayName.)
-    var n = user_!.displayName
-    if (n nonEmpty) n else identity_!.displayName
-  }
+  def displayName = user_!.displayName
+  def email = user_!.email
 
-  def email: String = {
-    var e = user_!.email
-    if (e nonEmpty) e else identity_!.email
-  }
 }
 
 
@@ -182,8 +175,8 @@ case object User {
 
 /* Could use:
 sealed abstract class UserId
-case class UserUnauId(String) extends UserId
-case class UserRoleId(String) extends UserId
+case class GuestId(String) extends UserId
+case class RoleId(String) extends UserId
 -- instead of setting User.id to "-<some-id>" for IdentitySimple,
   and "<some-id>" for Role:s.
 */
@@ -231,15 +224,70 @@ object EmailNotfPrefs extends Enumeration {
 }
 
 
+sealed abstract class LoginAttempt {
+  def ip: String
+  def date: ju.Date
+  def prevLoginId: Option[LoginId]
+}
+
+
+case class GuestLoginAttempt(
+  ip: String,
+  date: ju.Date,
+  prevLoginId: Option[LoginId],
+  name: String,
+  email: String = "",
+  location: String = "",
+  website: String = "") extends LoginAttempt
+
+
+case class EmailLoginAttempt(
+  ip: String,
+  date: ju.Date,
+  emailId: String) extends LoginAttempt {
+  def prevLoginId = None
+}
+
+
+case class OpenIdLoginAttempt(
+  ip: String,
+  date: ju.Date,
+  prevLoginId: Option[LoginId],
+  openIdDetails: OpenIdDetails) extends LoginAttempt {
+}
+
+
 case class Login(
   id: String,
   prevLoginId: Option[String],
   ip: String,
   date: ju.Date,
-  identityId: String // COULD rename to `identity`, which would be an instance
-                     // of one of IdentityId, GuestId, EmailId.
-){
+  identityRef: IdentityRef) {
   checkId(id, "DwE093jxh12")
+}
+
+
+object Login {
+
+  def fromLoginAttempt(loginAttempt: LoginAttempt, loginId: LoginId, identityRef: IdentityRef) =
+    Login(
+      loginId,
+      loginAttempt.prevLoginId,
+      ip = loginAttempt.ip,
+      date = loginAttempt.date,
+      identityRef = identityRef)
+}
+
+
+sealed abstract class IdentityRef {
+  def identityId: IdentityId
+  checkId(identityId, "DwE56CWf8")
+}
+
+object IdentityRef {
+  case class Email(identityId: IdentityId) extends IdentityRef
+  case class Guest(identityId: IdentityId) extends IdentityRef
+  case class Role(identityId: IdentityId) extends IdentityRef
 }
 
 
@@ -269,9 +317,7 @@ sealed abstract class Identity {
    */
   def id: String
   def userId: String
-  def displayName: String
-  /** E.g. Twitter identities have no email? */
-  def email: String  // COULD change to Option[String]!
+  def reference: IdentityRef = IdentityRef.Role(id)
 
   checkId(id, "DwE02krc3g")
   checkId(userId, "DwE864rsk215")
@@ -301,6 +347,8 @@ case class IdentityEmailId(
 
   def displayName = notf.map(_.recipientUserDispName) getOrElse "?"
   def email = emailSent.map(_.sentTo) getOrElse "?"
+
+  override def reference: IdentityRef = IdentityRef.Email(id)
 }
 
 
@@ -318,12 +366,21 @@ case class IdentitySimple(
   // Cannot check for e.g. weird name or email. That could prevent
   // loading of data from database, after changing the weirdness rules.
   // Don't:  require(! (User nameIsWeird name))
+
+  override def reference: IdentityRef = IdentityRef.Guest(id)
 }
 
 
 case class IdentityOpenId(
   id: String,
   override val userId: String,
+  openIdDetails: OpenIdDetails) extends Identity {
+
+  def displayName = openIdDetails.firstName
+}
+
+
+case class OpenIdDetails(
   oidEndpoint: String,
   oidVersion: String,
   oidRealm: String,  // perhaps need not load from db?
@@ -337,10 +394,10 @@ case class IdentityOpenId(
   oidOpLocalId: String,
   firstName: String,
   email: String,
-  country: String
-) extends Identity {
-  def displayName = firstName
+  country: String) {
+
   def isGoogleLogin = oidEndpoint == IdentityOpenId.GoogleEndpoint
+
 }
 
 
@@ -366,20 +423,12 @@ case class LoginGrant(
   require(!login.id.contains('?'))
   require(!identity.id.contains('?'))
   require(!user.id.contains('?'))
-  require(login.identityId == identity.id)
+  require(login.identityRef.identityId == identity.id)
   require(identity.userId == user.id)
   require(!isNewRole || isNewIdentity)
 
-  def displayName: String = {
-    // (Somewhat dupl code: this also done in NiLo.displayName.)
-    if (user.displayName nonEmpty) user.displayName
-    else identity.displayName
-  }
-
-  def email: String = {
-    if (user.email nonEmpty) user.email
-    else identity.email
-  }
+  def displayName: String = user.displayName
+  def email: String = user.email
 }
 
 
@@ -403,7 +452,7 @@ object SystemUser {
 
   val Login = core.Login(
     id = "1", prevLoginId = None, ip = "127.0.0.1",
-    date = new ju.Date(0), identityId = Identity.id)
+    date = new ju.Date(0), identityRef = IdentityRef.Role(Identity.id))
 
   val Person = People(List(Login), List(Identity), List(User))
 

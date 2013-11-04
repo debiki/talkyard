@@ -69,7 +69,7 @@ object DummyPage {
 
 
   val DummyAuthorLogin = Login(id = "1", prevLoginId = None, ip = "?.?.?.?",
-    date = new ju.Date, identityId = DummyAuthorIdty.id)
+    date = new ju.Date, DummyAuthorIdty.reference)
 
 
   val DummyAuthor = People(

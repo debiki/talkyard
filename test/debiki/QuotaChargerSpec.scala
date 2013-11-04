@@ -349,35 +349,23 @@ class QuotaChargerSpec
 
   def loginNewOpenIdUser(namePrefix: String, siteAndIp: SiteAndIp): LoginGrant = {
     nextOpenIdUserNo += 1
-    val identity = IdentityOpenId(id = "?i", userId = "?",
+    val loginAttempt = OpenIdLoginAttempt(prevLoginId = None, ip = siteAndIp.ip, date = new ju.Date,
+      openIdDetails = OpenIdDetails(
       oidEndpoint = "provider.example.com/endpoint", oidVersion = "2",
       oidRealm = "example.com", oidClaimedId = s"claimed-id-$nextOpenIdUserNo.example.com",
       oidOpLocalId = s"provider.example.com/local/id/$nextOpenIdUserNo",
       firstName = s"$namePrefix-OpenIdUser$nextOpenIdUserNo",
-      email = s"openid-user-$nextOpenIdUserNo@example.com", country = "Sweden")
-    loginNewUser(namePrefix, siteAndIp, identity)
+      email = s"openid-user-$nextOpenIdUserNo@example.com", country = "Sweden"))
+    tenantDao(siteAndIp).saveLogin(loginAttempt)
   }
 
 
   def loginNewGuestUser(namePrefix: String, siteAndIp: SiteAndIp): LoginGrant = {
     nextGuestUserNo += 1
-    val identity = IdentitySimple(id = "?i", userId = "?",
+    val loginAttempt = GuestLoginAttempt(prevLoginId = None, ip = siteAndIp.ip, date = new ju.Date,
         name = s"$namePrefix-GuestUser$nextGuestUserNo",
         email = s"guest-email-$nextGuestUserNo@example.com", location = "", website = "")
-    loginNewUser(namePrefix, siteAndIp, identity)
-  }
-
-
-  def loginNewUser(namePrefix: String, siteAndIp: SiteAndIp, identity: Identity)
-        : LoginGrant = {
-    val loginNoId = Login(
-      id = "?",
-      prevLoginId = None,
-      ip = siteAndIp.ip,
-      date = new ju.Date(), identityId = "?i")
-
-    val loginReq = LoginRequest(loginNoId, identity)
-    tenantDao(siteAndIp).saveLogin(loginReq)
+    tenantDao(siteAndIp).saveLogin(loginAttempt)
   }
 
 

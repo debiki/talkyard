@@ -196,12 +196,11 @@ object AppLoginOpenId extends mvc.Controller {
 
     // ----- Save login in database
 
-    val loginReq = LoginRequest(
-      Login(id = "?", prevLoginId = prevSid.loginId,
-        ip = addr, date = new ju.Date,
-        identityId = "?i"),
-      IdentityOpenId(id = "?i",
-        userId = "?",
+    val loginAttempt = OpenIdLoginAttempt(
+      ip = addr,
+      date = new ju.Date,
+      prevLoginId = prevSid.loginId,
+      OpenIdDetails(
         oidEndpoint = oidEndpoint,
         oidVersion = oidVersion,
         oidRealm = oidRealm,
@@ -215,8 +214,7 @@ object AppLoginOpenId extends mvc.Controller {
         email = emailOpt getOrElse "",
         country = countryOpt getOrElse ""))
 
-    val loginGrant =
-       Globals.siteDao(tenantId, ip = addr).saveLogin(loginReq)
+    val loginGrant = Globals.siteDao(tenantId, ip = addr).saveLogin(loginAttempt)
 
     // ----- Reply, with session cookies
 
