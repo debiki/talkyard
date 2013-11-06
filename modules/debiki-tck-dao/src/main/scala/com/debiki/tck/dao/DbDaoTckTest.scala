@@ -196,21 +196,28 @@ class DaoSpecEmptySchema(b: TestContextBuilder) extends DbDaoChildSpec(b, "0") {
 
 
 object Templates {
-  val login = Login(id = "?", prevLoginId = None, ip = "1.1.1.1",
-    date = new ju.Date, identityId = "?i")
-  val identitySimple = IdentitySimple(id = "?i", userId = "?",
+
+  val guestLoginAttempt = GuestLoginAttempt(
+    ip = "1.1.1.1", date = new ju.Date, prevLoginId = None,
     name = "Målligan", email = "no@email.no", location = "", website = "")
-  val identityOpenId = IdentityOpenId(id = "?i", userId = "?",
-    oidEndpoint = "provider.com/endpoint", oidVersion = "2",
-    oidRealm = "example.com", oidClaimedId = "claimed-id.com",
-    oidOpLocalId = "provider.com/local/id",
-    firstName = "Laban", email = "oid@email.hmm", country = "Sweden")
+
+  val openIdLoginAttempt = OpenIdLoginAttempt(
+    ip = "1.1.1.1", date = new ju.Date, prevLoginId = None,
+    OpenIdDetails(
+      oidEndpoint = "provider.com/endpoint", oidVersion = "2",
+      oidRealm = "example.com", oidClaimedId = "claimed-id.com",
+      oidOpLocalId = "provider.com/local/id",
+      firstName = "Laban", email = "oid@email.hmm", country = "Sweden"))
+
   val post = PostActionDto.forNewPost(id = UnassignedId, creationDati = new ju.Date,
     loginId = "?", userId = "?", newIp = None,  parentPostId = PageParts.BodyId,
     text = "", markup = "para", approval = None)
+
   val rating = Rating(id = UnassignedId, postId = PageParts.BodyId, loginId = "?",
     userId = "?", newIp = None, ctime = new ju.Date, tags = Nil)
 }
+
+
 
 class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
     extends DbDaoChildSpec(testContextBuilder, "0.0.2") {
@@ -228,7 +235,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
   }
 
   // COULD split into: 3 tests:
-  // Login tests: IdentitySimle, IdentityOpenId.
+  // Login tests: guestLoginAttempt, openIdLoginAttempt.
   // Page tests: create page, reply, update.
   // Path tests: lookup GUID, handle missing/superfluous slash.
 
@@ -310,8 +317,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
     }
 
     "save an IdentitySimple login" in {
-      val loginReq = LoginRequest(T.login, T.identitySimple)
-      loginGrant = dao.saveLogin(loginReq)
+      loginGrant = dao.saveLogin(T.guestLoginAttempt)
       loginGrant.login.id must_!= "?"
       loginGrant.user must matchUser(
           displayName = "Målligan", email = "no@email.no")
@@ -326,17 +332,15 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
     lazy val globalUserId = loginGrant.user.id
 
     "reuse the IdentitySimple and User" in {
-      val loginReq = LoginRequest(T.login.copy(date = new ju.Date),
-                            T.identitySimple)  // same identity
+      val loginReq = T.guestLoginAttempt.copy(date = new ju.Date) // same guest
       var grant = dao.saveLogin(loginReq)
       grant.login.id must_!= loginGrant.login.id  // new login id
-      grant.identity must_== loginGrant.identity  // same identity
+      grant.identity must_== loginGrant.identity  // same identity, since same guest data
       grant.user must matchUser(loginGrant.user)  // same user
     }
 
     "create a new dummy User for an IdentitySimple with different website" in {
-      val loginReq = LoginRequest(T.login.copy(date = new ju.Date),
-          T.identitySimple.copy(website = "weirdplace"))
+      val loginReq = T.guestLoginAttempt.copy(date = new ju.Date, website = "weirdplace")
       var grant = dao.saveLogin(loginReq)
       grant.login.id must_!= loginGrant.login.id  // new login id
       // New identity because website changed.  COULD: create matchIdentity()
@@ -354,9 +358,8 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
     //}
 
     "create a new User for an IdentitySimple with different email" in {
-      val loginReq = LoginRequest(T.login.copy(date = new ju.Date),
-        T.identitySimple.copy(email = "other@email.yes"))
-      var grant = dao.saveLogin(loginReq)
+      val loginAttempt = T.guestLoginAttempt.copy(date = new ju.Date, email = "other@email.yes")
+      var grant = dao.saveLogin(loginAttempt)
       grant.login.id must_!= loginGrant.login.id  // new login id
       // New identity because email changed.
       val si = grant.identity.asInstanceOf[IdentitySimple]
@@ -371,9 +374,8 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
      }
 
     "create a new User for an IdentitySimple with different name" in {
-      val loginReq = LoginRequest(T.login.copy(date = new ju.Date),
-        T.identitySimple.copy(name = "Spöket Laban"))
-      var grant = dao.saveLogin(loginReq)
+      val loginAttempt = T.guestLoginAttempt.copy(date = new ju.Date, name = "Spöket Laban")
+      var grant = dao.saveLogin(loginAttempt)
       grant.login.id must_!= loginGrant.login.id  // new login id
       // New identity because name changed.
       val si = grant.identity.asInstanceOf[IdentitySimple]
@@ -453,7 +455,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
           d.people.nilo(ex1_rootPost.loginId) must beLike {
             case Some(n: NiLo) =>  // COULD make separate NiLo test?
               n.login.id must_== ex1_rootPost.loginId
-              n.login.identityId must_== n.identity_!.id
+              n.login.identityRef.identityId must_== n.identity_!.id
               n.identity_!.userId must_== n.user_!.id
               n.user_! must matchUser(displayName = "Målligan",
                                       email = "no@email.no")
@@ -1239,7 +1241,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
     "Pin posts and votes" >> {
 
       "Pin post at position" in {
-        val position = 6789
+        val position = 1
         var savedPin: PostActionDto[_] = null
         val payload = PAP.PinPostAtPosition(position)
         val action = PostActionDto[PAP.PinPostAtPosition](
@@ -1475,11 +1477,12 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
     // -------- OpenID login
 
     var exOpenId_loginReq: LoginGrant = null
+    var exOpenId_loginReq_openIdIdentity: IdentityOpenId = null
     def exOpenId_loginGrant: LoginGrant = exOpenId_loginReq  // correct name
     var exOpenId_userIds = mut.Set[String]()
     "save a new OpenID login and create a user" in {
-      val loginReq = LoginRequest(T.login, T.identityOpenId)
-      exOpenId_loginReq = dao.saveLogin(loginReq)
+      exOpenId_loginReq = dao.saveLogin(T.openIdLoginAttempt)
+      exOpenId_loginReq_openIdIdentity = exOpenId_loginReq.identity.asInstanceOf[IdentityOpenId]
       for (id <- exOpenId_loginReq.login.id ::
                   exOpenId_loginReq.identity.id ::
                   exOpenId_loginReq.user.id :: Nil) {
@@ -1492,14 +1495,12 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
         // start with "-":
         id must not startWith("-")
       }
-      exOpenId_loginReq.identity.id must_==  exOpenId_loginReq.login.identityId
+      exOpenId_loginReq.identity.id must_==  exOpenId_loginReq.login.identityRef.identityId
       exOpenId_loginReq.user.id must_== exOpenId_loginReq.identity.userId
       exOpenId_loginReq.user must matchUser(
-          displayName = T.identityOpenId.firstName,
-          email = T.identityOpenId.email,
-          // Country info not available for all identity types and currently
-          // not copied from a new Identity to the related new User.
-          country = "", // T.identityOpenId.country,
+          displayName = T.openIdLoginAttempt.openIdDetails.firstName,
+          email = T.openIdLoginAttempt.openIdDetails.email,
+          country = T.openIdLoginAttempt.openIdDetails.country,
           website = "",
           isSuperAdmin = Boolean.box(false))
       exOpenId_userIds += exOpenId_loginReq.user.id
@@ -1509,13 +1510,11 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
     "list OpenID user" in {
       val openIdEntry = dao.listUsers(UserQuery()).find(_._2 != List("Guest"))
       openIdEntry must_== Some(
-        (exOpenId_loginGrant.user, List(T.identityOpenId.oidEndpoint)))
+        (exOpenId_loginGrant.user, List(T.openIdLoginAttempt.openIdDetails.oidEndpoint)))
     }
 
     "reuse the IdentityOpenId and User just created" in {
-      val loginReq = LoginRequest(T.login.copy(date = new ju.Date),
-          T.identityOpenId)
-      val grant = dao.saveLogin(loginReq)
+      val grant = dao.saveLogin(T.openIdLoginAttempt.copy(date = new ju.Date))
       grant.login.id must_!= exOpenId_loginReq.login.id
       grant.identity must_== exOpenId_loginReq.identity
       // The very same user should have been found.
@@ -1527,12 +1526,14 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
     "update the IdentityOpenId, if attributes (country) changed" in {
       // Change the country attribute. The Dao should automatically save the
       // new value to the database, and use it henceforth.
-      val loginReq = LoginRequest(T.login.copy(date = new ju.Date),
-          T.identityOpenId.copy(country = "Norway"))
-      val grant = dao.saveLogin(loginReq)
+      val loginAttempt = T.openIdLoginAttempt.copy(
+        date = new ju.Date,
+        openIdDetails = T.openIdLoginAttempt.openIdDetails.copy(country = "Norway"))
+      val grant = dao.saveLogin(loginAttempt)
       grant.login.id must_!= exOpenId_loginReq.login.id
-      grant.identity must_== exOpenId_loginReq.identity.
-          asInstanceOf[IdentityOpenId].copy(country = "Norway")
+      grant.identity must_== exOpenId_loginReq_openIdIdentity.copy(
+        openIdDetails =
+          exOpenId_loginReq_openIdIdentity.openIdDetails.copy(country = "Norway"))
       // The user shouldn't have been changed, only the OpenID identity attrs.
       grant.user must matchUser(exOpenId_loginReq.user)
     }
@@ -1540,14 +1541,16 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
     //"have exactly one user" in {  // or, 3? there're 2 IdentitySimple users?
     //}
 
+    var exOpenId_loginAttempt_2: OpenIdLoginAttempt = null
     var exOpenId_loginGrant_2: LoginGrant = null
 
     // COULD test w/ new tenant but same claimed_ID, should also result in
     // a new User. So you can customize your user, per tenant.
     "create new IdentityOpenId and User for a new claimed_id" in {
-      val loginReq = LoginRequest(T.login.copy(date = new ju.Date),
-        T.identityOpenId.copy(oidClaimedId = "something.else.com"))
-      val grant = dao.saveLogin(loginReq)
+      exOpenId_loginAttempt_2 = T.openIdLoginAttempt.copy(
+        date = new ju.Date,
+        openIdDetails = T.openIdLoginAttempt.openIdDetails.copy(oidClaimedId = "sth.else.com"))
+      val grant = dao.saveLogin(exOpenId_loginAttempt_2)
       grant.login.id must_!= exOpenId_loginReq.login.id
       // A new id to a new user, but otherwise identical.
       grant.user.id must_!= exOpenId_loginReq.user.id
@@ -1560,13 +1563,14 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
     var exGmailLoginGrant: LoginGrant = null
 
     "create new IdentityOpenId and User for a new claimed_id, Gmail addr" in {
-      val loginReq = LoginRequest(T.login.copy(date = new ju.Date),
-        T.identityOpenId.copy(
+      val loginAttempt = T.openIdLoginAttempt.copy(
+        date = new ju.Date,
+        openIdDetails = T.openIdLoginAttempt.openIdDetails.copy(
           oidEndpoint = IdentityOpenId.GoogleEndpoint,
           oidRealm = "some.realm.com",
           oidClaimedId = "google.claimed.id",
           email = "example@gmail.com"))
-      exGmailLoginGrant = dao.saveLogin(loginReq)
+      exGmailLoginGrant = dao.saveLogin(loginAttempt)
       val grant = exGmailLoginGrant
       exOpenId_userIds.contains(grant.user.id) must_== false
       exOpenId_userIds += grant.user.id
@@ -1586,7 +1590,8 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
       // (Use _2 because the first one has had its country modified)
       val oidSaved = exOpenId_loginGrant_2.identity.asInstanceOf[IdentityOpenId]
       val partialIdentity = oidSaved.copy(id = "?", userId = "?")
-      dao.loadIdtyDetailsAndUser(forIdentity = partialIdentity) must beLike {
+      dao.loadIdtyDetailsAndUser(
+          forOpenIdDetails = exOpenId_loginAttempt_2.openIdDetails) must beLike {
         case Some((identity, user)) =>
           identity must_== exOpenId_loginGrant_2.identity
           user must_== exOpenId_loginGrant_2.user
@@ -1594,12 +1599,12 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
     }
 
     "lookup OpenID identity, by email, for Gmail" in {
-      val partialIdentity = IdentityOpenId(
-         id = "?", userId = "?", oidEndpoint = IdentityOpenId.GoogleEndpoint,
+      val openIdDetails = OpenIdDetails(
+         oidEndpoint = IdentityOpenId.GoogleEndpoint,
          oidVersion = "?", oidRealm = "?", oidClaimedId = "?",
          oidOpLocalId = "?", firstName = "?", email = "example@gmail.com",
          country = "?")
-      dao.loadIdtyDetailsAndUser(forIdentity = partialIdentity) must beLike {
+      dao.loadIdtyDetailsAndUser(forOpenIdDetails = openIdDetails) must beLike {
         case Some((identity, user)) =>
           identity must_== exGmailLoginGrant.identity
           user must_== exGmailLoginGrant.user
@@ -1611,9 +1616,9 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
 
     /*
     "create a new user, for a new tenant (but same claimed_id)" in {
-      val loginReq = LoginRequest(T.login.copy(date = new ju.Date),
+      val loginAttempt = LoginAttempt(T.openIdLoginAttempt.copy(date = new ju.Date))
                               T.identityOpenId)
-      val grant = dao.saveLogin("some-other-tenant-id", loginReq)
+      val grant = dao.saveLogin("some-other-tenant-id", loginAttempt)
       grant.login.id must_!= exOpenId_loginReq.login.id
       grant.user must beLike {
         case None => false
@@ -1646,17 +1651,17 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
           d.people.nilo(exOpenId_loginReq.login.id) must beLike {
             case Some(n: NiLo) =>  // COULD make separate NiLo test?
               n.login.id must_== exOpenId_loginReq.login.id
-              n.login.identityId must_== n.identity_!.id
+              n.login.identityRef.identityId must_== n.identity_!.id
               // The OpenID country attr was changed from Sweden to Norway.
-              n.identity_! must_== exOpenId_loginReq.identity.
-                  asInstanceOf[IdentityOpenId].copy(country = "Norway",
+              val openIdIdentity = exOpenId_loginReq.identity.asInstanceOf[IdentityOpenId]
+              val loadedDetails = openIdIdentity.openIdDetails.copy(country = "Norway",
                       // When a page is loaded, uninteresting OpenID details
                       // are not loaded, to save bandwidth. Instead they
                       // are set to "?".
                       oidEndpoint = "?", oidVersion = "?", oidRealm = "?",
                       oidClaimedId = "?", oidOpLocalId = "?")
-              n.identity_!.asInstanceOf[IdentityOpenId].firstName must_==
-                                                                      "Laban"
+              n.identity_! must_== openIdIdentity.copy(openIdDetails = loadedDetails)
+              n.identity_!.asInstanceOf[IdentityOpenId].openIdDetails.firstName must_== "Laban"
               n.identity_!.userId must_== n.user_!.id
               // Identity data no longer copied to User.
               //n.user_! must matchUser(displayName = "Laban",
@@ -1675,8 +1680,8 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
     var emailEx_OpenIdUser: User = null
 
     "by default send no email to a new IdentitySimple" in {
-      val loginReq = LoginRequest(T.login.copy(date = new ju.Date),
-        T.identitySimple.copy(email = emailEx_email, name = "Imail"))
+      val loginReq = T.guestLoginAttempt.copy(
+        date = new ju.Date, email = emailEx_email, name = "Imail")
       val grant = dao.saveLogin(loginReq)
       val Some((idty, user)) = dao.loadIdtyAndUser(forLoginId = grant.login.id)
       user.emailNotfPrefs must_== EmailNotfPrefs.Unspecified
@@ -1827,10 +1832,8 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
 
     def testLoginViaEmail(emailId: String, emailSentOk: Email)
           : LoginGrant  = {
-      val loginNoId = Login(id = "?", prevLoginId = None, ip = "?.?.?.?",
-         date = now, identityId = emailId)
-      val loginReq = LoginRequest(loginNoId, IdentityEmailId(emailId))
-      val loginGrant = dao.saveLogin(loginReq)
+      val loginAttempt = EmailLoginAttempt(ip = "?.?.?.?", date = now, emailId = emailId)
+      val loginGrant = dao.saveLogin(loginAttempt)
       lazy val emailIdty = loginGrant.identity.asInstanceOf[IdentityEmailId]
       emailIdty.email must_== emailSentOk.sentTo
       emailIdty.notf.flatMap(_.emailId) must_== Some(emailSentOk.id)
