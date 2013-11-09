@@ -19,6 +19,7 @@ package com.debiki.core
 
 import com.google.{common => guava}
 import java.{util => ju}
+import org.mindrot.jbcrypt.BCrypt
 import scala.concurrent.Future
 import DbDao._
 import EmailNotfPrefs.EmailNotfPrefs
@@ -748,6 +749,16 @@ object DbDao {
   private def prettyDetails(anyDetails: Option[String]) = anyDetails match {
     case None => ""
     case Some(message) => s", details: $message"
+  }
+
+  // Perhaps this should be moved to debiki-server, so the database didn't have this
+  // dependency on the password hashing algorithm?
+  def checkPassword(plainTextPassword: String, hash: String) =
+    BCrypt.checkpw(plainTextPassword, hash)
+
+  def saltAndHashPassword(plainTextPassword: String): String = {
+    val logRounds = 13 // for now. 10 is the default.
+    BCrypt.hashpw(plainTextPassword, BCrypt.gensalt(logRounds))
   }
 
 }
