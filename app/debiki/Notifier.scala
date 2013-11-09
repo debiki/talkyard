@@ -153,8 +153,8 @@ class Notifier(val systemDao: SystemDao, val siteDaoFactory: SiteDaoFactory)
       if (notfs.size == 1) "You have a reply, to one of your comments"
       else "You have replies, to comments of yours"
 
-    val email = Email(sendTo = user.email, subject = subject,
-      bodyHtmlText = "?")
+    val email = Email(EmailType.Notification, sendTo = user.email, subject = subject,
+      bodyHtmlText = (emailId: String) => "?")
 
     val contents = views.NotfHtmlRenderer(dao, origin).render(notfs)
     if (contents isEmpty)

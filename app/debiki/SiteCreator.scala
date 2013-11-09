@@ -117,9 +117,9 @@ object SiteCreator {
   private def makeNewWebsiteEmail(website: Tenant, owner: User): Email = {
     val address = website.chost_!.address
     val message = views.html.createsite.welcomeEmail(address).body
-    Email(sendTo = owner.email,
+    Email(EmailType.Notification, sendTo = owner.email,
       subject = s"New Debiki website created, here: http://$address",
-      bodyHtmlText = message)
+      bodyHtmlText = (emailId) => message)
   }
 
 

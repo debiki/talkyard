@@ -1848,8 +1848,10 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
 
       lazy val emailToSend = Email(
         id = emailId,
+        tyype = EmailType.Notification,
         sentTo = "test@example.com",
         sentOn = None,
+        createdAt = new ju.Date(),
         subject = "Test Subject",
         bodyHtmlText = "<i>Test content.</i>",
         providerEmailId = None)
@@ -1951,8 +1953,10 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
 
       lazy val emailToSend = Email(
         id = emailId,
+        tyype = EmailType.Notification,
         sentTo = "test@example.com",
         sentOn = None,
+        createdAt = new ju.Date(),
         subject = "Test Subject",
         bodyHtmlText = "<i>Test content.</i>",
         providerEmailId = None)
