@@ -100,14 +100,21 @@ class Mailer(val daoFactory: SiteDaoFactory) extends Actor {
 
   private def _sendEmail(emailToSend: Email, tenantId: String) {
 
+    val tenantDao = daoFactory.newSiteDao(QuotaConsumers(tenantId = tenantId))
+    val now = Some(new ju.Date)
+
+    logger.debug(s"Sending email: $emailToSend")
+
     // I often use @example.com, or simply @ex.com, when posting test comments
     // — don't send those emails, to keep down the bounce rate.
     if (emailToSend.sentTo.endsWith("example.com") ||
-        emailToSend.sentTo.endsWith("ex.com"))
+        emailToSend.sentTo.endsWith("ex.com")) {
+      // Pretend it's been sent.
+      tenantDao.updateSentEmail(emailToSend.copy(sentOn = now))
       return
+    }
 
     val awsSendReq = _makeAwsSendReq(emailToSend)
-    val now = Some(new ju.Date)
     val emailSentOrFailed = _tellAwsToSendEmail(awsSendReq) match {
       case Right(awsEmailId) =>
         val email = emailToSend.copy(sentOn = now,
@@ -125,9 +132,6 @@ class Mailer(val daoFactory: SiteDaoFactory) extends Actor {
         logger.warn("Error sending email: "+ email)
         email
     }
-
-    val tenantDao = daoFactory.newSiteDao(
-      QuotaConsumers(tenantId = tenantId))
 
     tenantDao.updateSentEmail(emailSentOrFailed)
   }
