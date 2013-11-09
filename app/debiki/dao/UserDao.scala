@@ -29,6 +29,10 @@ trait UserDao {
   self: SiteDao =>
 
 
+  def createPasswordIdentityAndRole(identity: PasswordIdentity, user: User): (Identity, User) =
+    siteDbDao.createPasswordIdentityAndRole(identity, user)
+
+
   def saveLogin(loginAttempt: LoginAttempt): LoginGrant =
     siteDbDao.saveLogin(loginAttempt)
 
@@ -42,11 +46,12 @@ trait UserDao {
 
 
   def loadIdtyDetailsAndUser(forLoginId: String = null,
-        forOpenIdDetails: OpenIdDetails = null): Option[(Identity, User)] =
+        forOpenIdDetails: OpenIdDetails = null,
+        forEmailAddr: String = null): Option[(Identity, User)] =
     // Don't cache this, because this function is rarely called
     // — currently only when creating new website.
     siteDbDao.loadIdtyDetailsAndUser(forLoginId = forLoginId,
-      forOpenIdDetails = forOpenIdDetails)
+      forOpenIdDetails = forOpenIdDetails, forEmailAddr = forEmailAddr)
 
 
   def loadPermsOnPage(reqInfo: PermsOnPageQuery): PermsOnPage =

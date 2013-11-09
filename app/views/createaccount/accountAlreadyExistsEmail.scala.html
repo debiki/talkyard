@@ -1,0 +1,12 @@
+@(userName: String, emailAddress: String, siteAddress: String)
+
+Dear @userName,
+
+You attempted to create a new account at <a href="@siteAddress">@siteAddress</a>,
+but you already have an account there, with email address <tt>@emailAddress</tt>.
+If you don't remember your password, you can
+<a href="@siteAddress@routes.ResetPasswordController.showResetPasswordPage">
+  reset it here.</a>
+
+Kind regards,
+Debiki

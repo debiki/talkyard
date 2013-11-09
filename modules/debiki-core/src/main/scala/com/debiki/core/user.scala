@@ -241,6 +241,15 @@ case class GuestLoginAttempt(
   website: String = "") extends LoginAttempt
 
 
+case class PasswordLoginAttempt(
+  ip: String,
+  date: ju.Date,
+  prevLoginId: Option[LoginId],
+  email: String,
+  password: String) extends LoginAttempt {
+}
+
+
 case class EmailLoginAttempt(
   ip: String,
   date: ju.Date,
@@ -368,6 +377,16 @@ case class IdentitySimple(
   // Don't:  require(! (User nameIsWeird name))
 
   override def reference: IdentityRef = IdentityRef.Guest(id)
+}
+
+
+case class PasswordIdentity(
+  id: IdentityId,
+  override val userId: UserId,
+  email: String = "",
+  passwordSaltHash: String) extends Identity {
+
+  override def reference = IdentityRef.Role(id)
 }
 
 

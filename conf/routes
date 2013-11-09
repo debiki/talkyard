@@ -69,6 +69,16 @@ GET   /-/install/                   controllers.AppInstall.viewInstallationPage
 POST  /-/install/create-first-site  controllers.AppInstall.createFirstSite
 GET   /-/install/create-first-owner controllers.AppInstall.createFirstSiteOwner(password)
 
+GET   /-/create-account/specify-email-address/:returnToUrl  controllers.CreateAccountController.showCreateAccountPage(returnToUrl)
+POST  /-/create-account/specify-email-address/:returnToUrl  controllers.CreateAccountController.handleEmailAddress(returnToUrl)
+GET   /-/create-account/user-details/:emailId/:returnToUrl  controllers.CreateAccountController.showUserDetailsPage(emailId, returnToUrl)
+POST  /-/create-account/user-details/:emailId/:returnToUrl  controllers.CreateAccountController.handleUserDetails(emailId, returnToUrl)
+GET   /-/create-account/welcome/:returnToUrl                controllers.CreateAccountController.showWelcomePage(returnToUrl)
+
+GET   /-/reset-password             controllers.ResetPasswordController.showResetPasswordPage
+POST  /-/reset-password             controllers.ResetPasswordController.handleResetPasswordForm
+GET   /-/reset-password/:emailId    controllers.ResetPasswordController.handleResetPasswordLink(emailId)
+
 GET   /-/create-site/choose-type    controllers.CreateSiteController.showSiteTypeForm
 POST  /-/create-site/choose-type    controllers.CreateSiteController.handleSiteTypeForm
 GET   /-/create-site/choose-name    controllers.CreateSiteController.showWebsiteNameForm

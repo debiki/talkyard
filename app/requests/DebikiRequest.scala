@@ -51,6 +51,7 @@ abstract class DebikiRequest[A] {
     s"quota consumers: ${dao.quotaConsumers}, tenant/ip/role: $tenantId/$ip/$user"
 
   def tenantId = dao.siteId
+  def siteId = dao.siteId
 
   def loginId: Option[String] = sid.loginId
 

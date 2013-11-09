@@ -233,13 +233,17 @@ abstract class SiteDbDao {
 
   // ----- Users and permissions
 
+  def createPasswordIdentityAndRole(identity: PasswordIdentity, user: User)
+        : (PasswordIdentity, User)
+
   def loadIdtyAndUser(forLoginId: String): Option[(Identity, User)]
 
   /**
    * Also loads details like OpenID local identifier, endpoint and version info.
    */
   def loadIdtyDetailsAndUser(forLoginId: String = null,
-        forOpenIdDetails: OpenIdDetails = null): Option[(Identity, User)]
+        forOpenIdDetails: OpenIdDetails = null,
+        forEmailAddr: String = null): Option[(Identity, User)]
 
   def loadPermsOnPage(reqInfo: PermsOnPageQuery): PermsOnPage
 
@@ -595,16 +599,24 @@ class ChargingSiteDbDao(
 
   // ----- Users and permissions
 
+  def createPasswordIdentityAndRole(identity: PasswordIdentity, user: User)
+        : (PasswordIdentity, User) = {
+    val resUsg = ResourceUse(numIdsAu = 1, numRoles = 1)
+    _chargeFor(resUsg, mayPilfer = false)
+    _spi.createPasswordIdentityAndRole(identity, user)
+  }
+
   def loadIdtyAndUser(forLoginId: String): Option[(Identity, User)] = {
     _chargeForOneReadReq()
     _spi.loadIdtyAndUser(forLoginId)
   }
 
   def loadIdtyDetailsAndUser(forLoginId: String = null,
-        forOpenIdDetails: OpenIdDetails = null): Option[(Identity, User)] = {
+        forOpenIdDetails: OpenIdDetails = null,
+        forEmailAddr: String = null): Option[(Identity, User)] = {
     _chargeForOneReadReq()
     _spi.loadIdtyDetailsAndUser(forLoginId = forLoginId,
-      forOpenIdDetails = forOpenIdDetails)
+      forOpenIdDetails = forOpenIdDetails, forEmailAddr = forEmailAddr)
   }
 
   def loadPermsOnPage(reqInfo: PermsOnPageQuery): PermsOnPage = {
@@ -712,6 +724,11 @@ object DbDao {
 
   case class EmailNotFoundException(emailId: String)
     extends RuntimeException("No email with id: "+ emailId)
+
+  case class IdentityNotFoundException(message: String)
+    extends RuntimeException(message)
+
+  case object BadPasswordException extends RuntimeException("Bad password")
 
   class PageNotFoundException(message: String) extends RuntimeException(message)
 

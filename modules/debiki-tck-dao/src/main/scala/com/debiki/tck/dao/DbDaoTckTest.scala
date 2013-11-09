@@ -22,6 +22,7 @@ import com.debiki.core._
 import com.debiki.core.DbDao._
 import com.debiki.core.Prelude._
 import com.debiki.core.{PostActionPayload => PAP}
+import com.debiki.core.EmailNotfPrefs.EmailNotfPrefs
 import java.{util => ju}
 import org.specs2.mutable._
 import org.specs2.matcher.ThrownMessages
@@ -1669,6 +1670,52 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
           }
       }
     }
+
+
+    // -------- Password identities
+
+    "create PasswordIdentity and User" >> {
+
+      val theEmail = "psdw-test@ex.com"
+      val thePassword = "ThePassword"
+      val theHash = DbDao.saltAndHashPassword(thePassword)
+
+      val identityNoId = PasswordIdentity(
+        id = "?", userId = "?", email = theEmail, passwordSaltHash = theHash)
+      val userNoId = User(
+        id = "?", displayName = "PasswordUser", email = theEmail,
+        emailNotfPrefs = EmailNotfPrefs.Receive)
+
+      var theIdentity: PasswordIdentity = null
+      var theUser: User = null
+      var loginGrant: LoginGrant = null
+
+      "create" in {
+        val (identity, user) = dao.createPasswordIdentityAndRole(identityNoId, userNoId)
+        theIdentity = identity
+        theUser = user
+        ok
+      }
+
+      "login" in {
+        loginGrant = dao.saveLogin(PasswordLoginAttempt(
+          ip = "1.2.3.4", date = new ju.Date(), prevLoginId = None,
+          email = theUser.email, password = thePassword))
+        loginGrant.user must_== theUser
+        loginGrant.identity must_== theIdentity
+        ok
+      }
+
+      "load" in {
+        dao.loadIdtyDetailsAndUser(forEmailAddr = theEmail) match {
+          case Some((identityLoaded, userLoaded)) =>
+            identityLoaded must_== theIdentity
+            userLoaded must_== theUser
+        }
+        ok
+      }
+    }
+
 
     // -------- Email
 
