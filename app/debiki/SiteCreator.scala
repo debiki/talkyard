@@ -69,7 +69,7 @@ object SiteCreator {
         host: String,
         ownerIp: String,
         ownerLoginId: String,
-        ownerIdentity: IdentityOpenId,
+        ownerIdentity: Identity,
         ownerRole: User): Option[(Tenant, User)] = {
 
     require(isOkayWebsiteName(name))

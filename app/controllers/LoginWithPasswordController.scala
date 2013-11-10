@@ -26,7 +26,7 @@ import java.{util => ju}
 import play.api._
 import play.api.mvc.{Action => _, _}
 import requests.ApiRequest
-import actions.ApiActions.PostJsonAction
+import actions.ApiActions.JsonOrFormDataPostAction
 import play.api.libs.json.JsObject
 
 
@@ -36,10 +36,10 @@ import play.api.libs.json.JsObject
 object LoginWithPasswordController extends mvc.Controller {
 
 
-  def login = PostJsonAction(maxLength = 1000) { request =>
-    val json = request.body.as[JsObject]
-    val email = (json \ "email").as[String]
-    val password = (json \ "password").as[String]
+  def login = JsonOrFormDataPostAction(maxBytes = 1000) { request =>
+    val email = request.body.getOrThrowBadReq("email")
+    val password = request.body.getOrThrowBadReq("password")
+    val returnToUrl = request.body.getOrThrowBadReq("returnToUrl")
 
     val siteId = DebikiHttp.lookupTenantIdOrThrow(request, Globals.systemDao)
     val dao = Globals.siteDao(siteId, ip = request.ip)
@@ -49,7 +49,7 @@ object LoginWithPasswordController extends mvc.Controller {
     // Could include a <a href=last-page>Okay</a> link, see the
     // Logout dialog below. Only needed if javascript disabled though,
     // otherwise a javascript welcome dialog is shown instead.
-    Ok.withCookies(cookies: _*)
+    Redirect(returnToUrl).withCookies(cookies: _*)
   }
 
 

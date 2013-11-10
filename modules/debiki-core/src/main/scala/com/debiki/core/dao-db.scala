@@ -85,7 +85,7 @@ abstract class SiteDbDao {
    * (e.g. from the same IP).
    */
   def createWebsite(name: String, address: String, ownerIp: String,
-        ownerLoginId: String, ownerIdentity: IdentityOpenId, ownerRole: User)
+        ownerLoginId: String, ownerIdentity: Identity, ownerRole: User)
         : Option[(Tenant, User)]
 
   def addTenantHost(host: TenantHost)
@@ -427,7 +427,7 @@ class ChargingSiteDbDao(
    * the new website is being created.
    */
   def createWebsite(name: String, address: String, ownerIp: String,
-        ownerLoginId: String, ownerIdentity: IdentityOpenId, ownerRole: User)
+        ownerLoginId: String, ownerIdentity: Identity, ownerRole: User)
         : Option[(Tenant, User)] = {
 
     // SHOULD consume IP quota — but not tenant quota!? — when generating

@@ -114,29 +114,27 @@ h1 {
     </p>
 
     <div class="clearfix">
-      <form action="http://localhost:9000/-/ss/authenticate/userpass"
+      <form action="@routes.LoginWithPasswordController.login"
             class="form" autocomplete="off" method="POST">
-        <fieldset>
-          <div class="control-group  " id="username_field">
-            <label class="control-label" for="username">Email</label>
-            <div class="controls">
-              <input type="text" id="username" name="username" value="" class="input-xlarge">
-            </div>
-          </div>
 
-          <div class="control-group  " id="password_field">
-            <label class="control-label" for="password">Password</label>
-            <div class="controls">
-              <input type="password" id="password" name="password" class="input-xlarge">
-            </div>
-          </div>
+        <input type='hidden' name='dw-fi-xsrf' value='@xsrfToken'>
+        <input type='hidden' name='returnToUrl' value='@returnToUrl'>
 
-          <button type="submit" class="btn btn-default">Login</button>
+        <label for="email">Email:</label>
+        <input type="text" id="email" name="email" value="" class="input-xlarge">
 
-          <p>
-            <a href="/-/ss/reset">Did you forget your password?</a>
-          </p>
-        </fieldset>
+        <label for="password">Password:</label>
+        <input type="password" id="password" name="password" class="input-xlarge">
+
+        <br>
+        <br>
+        <button type="submit" class="btn btn-default">Login</button>
+
+        <br>
+        <br>
+        <a href="@routes.ResetPasswordController.showResetPasswordPage">
+          Did you forget your password?
+        </a>
       </form>
 
     </div>
