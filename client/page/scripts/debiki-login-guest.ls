@@ -22,15 +22,14 @@ $ = d.i.$;
 
 
 d.i.showLoginSubmitDialog = !->
-  showLoginSimple 'Submit'
+  showLoginDialog 'Submit'
 
 
 
-!function showLoginSimple(mode)
+!function showLoginDialog(mode)
 
-  dialog = loginGuestDialogHtml()
-  dialog.dialog d.i.newModalDialogSettings({ width: 430 })
-  dialog.find('#dw-lgi-accordion').collapse()
+  dialog = loginDialogHtml()
+  dialog.dialog d.i.newModalDialogSettings({ width: 413 })
   passwordLoginForm = dialog.find('#dw-lgi-pswd')
 
   tweakButtonTitles dialog, mode
@@ -54,6 +53,12 @@ d.i.showLoginSubmitDialog = !->
       .always !-> dialog.dialog 'close'
     false
 
+
+  dialog.find('a#dw-lgi-google').click ->
+    openid.signin('google')
+    false
+
+  /*
   passwordLoginForm.find('#dw-lgi-pswd-submit').click ->
     data =
       email: passwordLoginForm.find('input[name=email]').val!
@@ -63,6 +68,7 @@ d.i.showLoginSubmitDialog = !->
       .done loginAndContinue
       .always !-> dialog.dialog 'close'
     false
+    */
 
   !function loginAndContinue(data)
     d.i.Me.fireLogin()
@@ -120,116 +126,40 @@ d.i.showLoginSubmitDialog = !->
 
 
 
-/**
- * (Old obsolete comment from year 2011: (Android bug gone now?)
- * """Don't initially focus a text input -- that'd cause Android to auto
- * zoom that input, which triggers certain Android bugs and my workarounds,
- * but the workarounds results in the dialog title appearing off screen,
- * so better not trigger the-bug-and-the-workarounds on dialog open.
- * See debiki.js: resetMobileZoom() and jQueryDialogDefault.open.""")
- */
-# I have no idea why, but if I wrap the below "forms" in an actual <form>, then
-# everything in the <form> becomes frozen, cannot be interacted with, for example
-# you cannot type into the inputs. So don't use any <form> tags. We're posting
-# JSON anyway, not form-data.
-function loginGuestDialogHtml
+function loginDialogHtml
   $('''
     <div class="dw-fs" title="Who are you?" id="dw-lgi">
-    <div class="panel-group" id="dw-lgi-accordion">
+      <a id="dw-lgi-guest" class="btn btn-default" tabindex="101">Login as Guest</a>
+      <a id="dw-lgi-pswd" class="btn btn-default" tabindex="102">Login with Email and Password</a>
 
-    <div class="panel panel-default">
-      <div class="panel-heading">
-        <h4 class="panel-title">
-          <a data-toggle="collapse" data-parent="#dw-lgi-accordion" href="#dw-lgi-guest">
-            Login as Guest
-          </a>
-        </h4>
+      <p id="dw-lgi-or-login-using">Or login using your account (if any) at:</p>
+      <div id="dw-lgi-other-sites">
+        <a id="dw-lgi-google" class="btn btn-default" tabindex="103">
+          <span class="icon-google-plus"></span>Google
+        </a>
+        <a id="dw-lgi-facebook" class="btn btn-default" tabindex="104">
+          <span class="icon-facebook"></span>
+          Facebook
+        </a>
+        <a id="dw-lgi-yahoo" class="btn btn-default" tabindex="105">
+          <span class="icon-yahoo"></span>
+          Yahoo!
+        </a>
       </div>
-      <div id="dw-lgi-guest" class="panel-collapse collapse">
-        <div class="panel-body">
 
-          <div class="form-group">
-            <label for="dw-fi-lgi-name">Enter your name:</label><br>
-            <input id="dw-fi-lgi-name" type="text" size="30" maxlength="100" name="dw-fi-lgi-name" value="Anonymous" tabindex="102">
-          </div>
-          <div class="form-group">
-            <label for="dw-fi-lgi-email">Email: (optional, not shown)</label><br>
-            <input id="dw-fi-lgi-email" type="text" size="30" maxlength="100" name="dw-fi-lgi-email" value="" tabindex="103">
-          </div>
-          <div class="form-group">
-            <label for="dw-fi-lgi-url" id="dw-fi-lgi-url-lbl">Website: (optional)</label><br>
-            <input id="dw-fi-lgi-url" type="text" size="30" maxlength="200" name="dw-fi-lgi-url" value="" tabindex="104">
-          </div>
-          <br>
-          <div>
-            <input id="dw-f-lgi-spl-submit" class="btn btn-default" type="submit" value="Login" tabindex="105">
-          </div>
+      <a id="dw-lgi-more" class="dw-a-login-openid btn btn-default" tabindex="106">
+        <span class="icon-openid"></span>
+        More options...
+      </a>
 
-        </div>
-      </div>
-    </div>
-
-    <div class="panel panel-default">
-      <div class="panel-heading">
-        <h4 class="panel-title">
-          <a data-toggle="collapse" data-parent="#dw-lgi-accordion" href="#dw-lgi-pswd">
-            Login with Email and Password
-          </a>
-        </h4>
-      </div>
-      <div id="dw-lgi-pswd" class="panel-collapse collapse">
-        <div class="panel-body">
-
-          <div class="form-group">
-            <label for="dw-lgi-pswd-email">Email:</label><br>
-            <input type="text" id="dw-lgi-pswd-email" name="email" value="" class="input-xlarge">
-          </div>
-
-          <div class="form-group">
-            <label for="dw-lgi-pswd-password">Password:</label><br>
-            <input type="password" id="dw-lgi-pswd-password" name="password" class="input-xlarge">
-          </div>
-
-          <br>
-          <button type="submit" id="dw-lgi-pswd-submit" class="btn btn-default">Login</button>
-
-          <br>
-          <a href="/-/reset-password" target="_blank">Did you forget your password?</a>
-
-        </div>
-      </div>
-    </div>
-
-    <p id="dw-lgi-or-login-using">Or login using your account (if any) at:</p>
-    <h4 id="dw-lgi-other-sites">
-      <a>Google</a> <a>Facebook</a> <a>Yahoo!</a>
-    </h4>
-
-    <div class="panel panel-default">
-      <div class="panel-heading">
-        <h4 class="panel-title">
-          <a data-toggle="collapse" data-parent="#dw-lgi-accordion" href="#dw-lgi-more">
-            More options...
-          </a>
-        </h4>
-      </div>
-      <div id="dw-lgi-more" class="panel-collapse collapse">
-        <div class="panel-body">
-          (OpenID stuf ...)
-        </div>
-      </div>
-    </div>
-
-    </div>
-
-    <input class="btn btn-default dw-fi-cancel" type="button" value="Cancel" tabindex="106">
+      <input class="btn btn-default dw-fi-cancel" type="button" value="Cancel" tabindex="107">
     </div>
     ''')
 
 
 
 $(!->
-  $('#dw-a-login').click showLoginSimple)
+  $('#dw-a-login').click showLoginDialog)
 
 
 
