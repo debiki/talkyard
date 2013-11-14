@@ -39,17 +39,19 @@ object LoginWithPasswordController extends mvc.Controller {
   def login = JsonOrFormDataPostAction(maxBytes = 1000) { request =>
     val email = request.body.getOrThrowBadReq("email")
     val password = request.body.getOrThrowBadReq("password")
-    val returnToUrl = request.body.getOrThrowBadReq("returnToUrl")
+    val anyReturnToUrl = request.body.getFirst("returnToUrl")
 
     val siteId = DebikiHttp.lookupTenantIdOrThrow(request, Globals.systemDao)
     val dao = Globals.siteDao(siteId, ip = request.ip)
 
     val cookies = doLogin(request, dao, email, password)
 
-    // Could include a <a href=last-page>Okay</a> link, see the
-    // Logout dialog below. Only needed if javascript disabled though,
-    // otherwise a javascript welcome dialog is shown instead.
-    Redirect(returnToUrl).withCookies(cookies: _*)
+    val response = anyReturnToUrl match {
+      case None => Ok
+      case Some(url) => Redirect(url)
+    }
+
+    response.withCookies(cookies: _*)
   }
 
 

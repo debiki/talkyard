@@ -895,18 +895,31 @@ body.dw-u-ui-simple .dw-a-edit
 #dw-a-logout
   display: none
 
-.dw-lgi
-  float: left
-  clear: both
-  margin: 10px 0
+#dw-lgi.ui-dialog-content
+  padding: 1.5em 2.7em 1em 2em
 
-/*
-//#dw-fs-lgi-simple
-  // Use whole parent jQuery UI dialog, else scrollbars tend to appear.
-  // jQuery UI seems to change the width to `auto'.
-  //width: 100% !important;
-  //overflow: visible; // or north-south scrollbar appears in Chrome
-*/
+#dw-lgi .panel-default
+  border-color: hsl(0, 0%, 77%)
+
+#dw-lgi .panel-heading
+  background-color: hsl(0, 0%, 98%)
+
+#dw-lgi .panel-group .panel-heading + .panel-collapse .panel-body
+  border-top: 1px solid hsl(0, 0%, 97%)
+
+#dw-lgi .dw-fi-cancel
+  float: right
+  margin-top: 2em
+
+#dw-lgi-or-login-using
+  margin-top: 2em
+  margin-left: 12px
+
+#dw-lgi-other-sites
+  margin: 16px 0 40px 12px
+
+#dw-lgi-other-sites a
+  margin-right: 1.5em
 
 .dw-lgi-openid
   padding: 0 30px 0 0

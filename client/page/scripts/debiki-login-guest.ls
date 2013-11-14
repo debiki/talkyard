@@ -29,7 +29,9 @@ d.i.showLoginSubmitDialog = !->
 !function showLoginSimple(mode)
 
   dialog = loginGuestDialogHtml()
-  dialog.dialog d.i.newModalDialogSettings({ width: 500 })
+  dialog.dialog d.i.newModalDialogSettings({ width: 430 })
+  dialog.find('#dw-lgi-accordion').collapse()
+  passwordLoginForm = dialog.find('#dw-lgi-pswd')
 
   tweakButtonTitles dialog, mode
 
@@ -41,12 +43,22 @@ d.i.showLoginSubmitDialog = !->
     dialog.dialog 'close'
     false
 
-  dialog.find('input[type=submit]').click ->
+  dialog.find('#dw-f-lgi-spl-submit').click ->
     data =
       name: dialog.find('#dw-fi-lgi-name').val!
       email: dialog.find('#dw-fi-lgi-email').val!
       url: dialog.find('#dw-fi-lgi-url').val!
     d.u.postJson { url: '/-/login-guest', data }
+      .fail d.i.showServerResponseDialog
+      .done loginAndContinue
+      .always !-> dialog.dialog 'close'
+    false
+
+  passwordLoginForm.find('#dw-lgi-pswd-submit').click ->
+    data =
+      email: passwordLoginForm.find('input[name=email]').val!
+      password: passwordLoginForm.find('input[name=password]').val!
+    d.u.postJson { url: '/-/login-password', data }
       .fail d.i.showServerResponseDialog
       .done loginAndContinue
       .always !-> dialog.dialog 'close'
@@ -116,30 +128,26 @@ d.i.showLoginSubmitDialog = !->
  * so better not trigger the-bug-and-the-workarounds on dialog open.
  * See debiki.js: resetMobileZoom() and jQueryDialogDefault.open.""")
  */
+# I have no idea why, but if I wrap the below "forms" in an actual <form>, then
+# everything in the <form> becomes frozen, cannot be interacted with, for example
+# you cannot type into the inputs. So don't use any <form> tags. We're posting
+# JSON anyway, not form-data.
 function loginGuestDialogHtml
   $('''
-    <div class="dw-fs" title="Who are you?" id="dw-fs-lgi-simple">
-    <form class="dw-f">
-      <div class="row">
+    <div class="dw-fs" title="Who are you?" id="dw-lgi">
+    <div class="panel-group" id="dw-lgi-accordion">
 
-        <div class="col-sm-5">
-          <div class="form-group">
-            <p>Login with Gmail, OpenID, Yahoo, etcetera:</p>
-            <a class="dw-a dw-a-login-openid btn btn-default" tabindex="101">Log in</a>
-          </div>
-          <p>
-            <small>
-            In the future, logging in will enable functionality
-            not available for guest login.
-            </small>
-          </p>
-        </div>
+    <div class="panel panel-default">
+      <div class="panel-heading">
+        <h4 class="panel-title">
+          <a data-toggle="collapse" data-parent="#dw-lgi-accordion" href="#dw-lgi-guest">
+            Login as Guest
+          </a>
+        </h4>
+      </div>
+      <div id="dw-lgi-guest" class="panel-collapse collapse">
+        <div class="panel-body">
 
-        <br class="visible-xs">
-        <br class="visible-xs">
-
-        <div class="col-sm-5 col-sm-offset-1">
-          <p>Alternatively, login as guest:</p>
           <div class="form-group">
             <label for="dw-fi-lgi-name">Enter your name:</label><br>
             <input id="dw-fi-lgi-name" type="text" size="30" maxlength="100" name="dw-fi-lgi-name" value="Anonymous" tabindex="102">
@@ -155,12 +163,66 @@ function loginGuestDialogHtml
           <br>
           <div>
             <input id="dw-f-lgi-spl-submit" class="btn btn-default" type="submit" value="Login" tabindex="105">
-            <input class="btn btn-default dw-fi-cancel" type="button" value="Cancel" tabindex="106">
           </div>
-        </div>
 
+        </div>
       </div>
-    </form>
+    </div>
+
+    <div class="panel panel-default">
+      <div class="panel-heading">
+        <h4 class="panel-title">
+          <a data-toggle="collapse" data-parent="#dw-lgi-accordion" href="#dw-lgi-pswd">
+            Login with Email and Password
+          </a>
+        </h4>
+      </div>
+      <div id="dw-lgi-pswd" class="panel-collapse collapse">
+        <div class="panel-body">
+
+          <div class="form-group">
+            <label for="dw-lgi-pswd-email">Email:</label><br>
+            <input type="text" id="dw-lgi-pswd-email" name="email" value="" class="input-xlarge">
+          </div>
+
+          <div class="form-group">
+            <label for="dw-lgi-pswd-password">Password:</label><br>
+            <input type="password" id="dw-lgi-pswd-password" name="password" class="input-xlarge">
+          </div>
+
+          <br>
+          <button type="submit" id="dw-lgi-pswd-submit" class="btn btn-default">Login</button>
+
+          <br>
+          <a href="/-/reset-password" target="_blank">Did you forget your password?</a>
+
+        </div>
+      </div>
+    </div>
+
+    <p id="dw-lgi-or-login-using">Or login using your account (if any) at:</p>
+    <h4 id="dw-lgi-other-sites">
+      <a>Google</a> <a>Facebook</a> <a>Yahoo!</a>
+    </h4>
+
+    <div class="panel panel-default">
+      <div class="panel-heading">
+        <h4 class="panel-title">
+          <a data-toggle="collapse" data-parent="#dw-lgi-accordion" href="#dw-lgi-more">
+            More options...
+          </a>
+        </h4>
+      </div>
+      <div id="dw-lgi-more" class="panel-collapse collapse">
+        <div class="panel-body">
+          (OpenID stuf ...)
+        </div>
+      </div>
+    </div>
+
+    </div>
+
+    <input class="btn btn-default dw-fi-cancel" type="button" value="Cancel" tabindex="106">
     </div>
     ''')
 
