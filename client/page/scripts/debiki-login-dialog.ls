@@ -1,5 +1,5 @@
-/* Shows a logout dialog.
- * Copyright (C) 2012-2012 Kaj Magnus Lindberg (born 1979)
+/* Shows a login dialog.
+ * Copyright (C) 2012-2013 Kaj Magnus Lindberg (born 1979)
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -30,11 +30,18 @@ d.i.showLoginSubmitDialog = !->
 
   dialog = loginDialogHtml()
   dialog.dialog d.i.newModalDialogSettings({ width: 413 })
-  passwordLoginForm = dialog.find('#dw-lgi-pswd')
 
   tweakButtonTitles dialog, mode
 
-  dialog.find('.dw-a-login-openid').click ->
+  dialog.find('#dw-lgi-guest').click ->
+    d.i.showGuestLoginDialog(mode, loginAndContinue)
+    false
+
+  dialog.find('#dw-lgi-pswd').click ->
+    d.i.showPasswordLoginDialog(mode, loginAndContinue)
+    false
+
+  dialog.find('#dw-lgi-more').click ->
     d.i.showLoginOpenId()
     false
 
@@ -42,25 +49,11 @@ d.i.showLoginSubmitDialog = !->
     dialog.dialog 'close'
     false
 
-  dialog.find('#dw-f-lgi-spl-submit').click ->
-    data =
-      name: dialog.find('#dw-fi-lgi-name').val!
-      email: dialog.find('#dw-fi-lgi-email').val!
-      url: dialog.find('#dw-fi-lgi-url').val!
-    d.u.postJson { url: '/-/login-guest', data }
-      .fail d.i.showServerResponseDialog
-      .done loginAndContinue
-      .always !-> dialog.dialog 'close'
-    false
-
-
   dialog.find('a#dw-lgi-google').click ->
     loginGoogleYahoo("https://www.google.com/accounts/o8/id")
 
-
   dialog.find('a#dw-lgi-yahoo').click ->
     loginGoogleYahoo("http://me.yahoo.com/")
-
 
   /**
    * Logs in at Google or Yahoo by submitting an OpenID login form in a popup.
@@ -76,19 +69,6 @@ d.i.showLoginSubmitDialog = !->
     form.submit()
     false
 
-
-  /*
-  passwordLoginForm.find('#dw-lgi-pswd-submit').click ->
-    data =
-      email: passwordLoginForm.find('input[name=email]').val!
-      password: passwordLoginForm.find('input[name=password]').val!
-    d.u.postJson { url: '/-/login-password', data }
-      .fail d.i.showServerResponseDialog
-      .done loginAndContinue
-      .always !-> dialog.dialog 'close'
-    false
-    */
-
   !function loginAndContinue(data)
     d.i.Me.fireLogin()
     # Show response dialog, and continue with whatever caused
@@ -101,6 +81,7 @@ d.i.showLoginSubmitDialog = !->
     # But the viewport will still be dimmed, because the welcome
     # dialog is modal. So don't continueAnySubmission until
     # the user has closed the response dialog. }}}
+    dialog.dialog('close')
     showLoggedInDialog(d.i.continueAnySubmission)
 
   # Preload OpenID resources, in case user clicks OpenID login button.
@@ -114,7 +95,7 @@ d.i.showLoginSubmitDialog = !->
   # If the user is logging in to submit a comment, use button title
   # 'Login & Submit', otherwise 'Login' only.
   guestLoginBtn = $('#dw-f-lgi-spl-submit')
-  openidDialogLink = dialog.find('.dw-a-login-openid')
+  openidDialogLink = dialog.find('#dw-lgi-more')
   if mode == 'Submit'
     guestLoginBtn.val 'Login and Submit'
     openidDialogLink.text 'Login and Submit'
@@ -166,7 +147,7 @@ function loginDialogHtml
         </a>
       </div>
 
-      <a id="dw-lgi-more" class="dw-a-login-openid btn btn-default" tabindex="106">
+      <a id="dw-lgi-more" class="btn btn-default" tabindex="106">
         <span class="icon-openid"></span>
         More options...
       </a>
