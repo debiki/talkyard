@@ -59,6 +59,10 @@ function initLoginOpenId() {
 
   openid.img_path = d.i.assetsUrlPathStart + 'openid-selector/images/';
   openid.submitInPopup = d.i.submitLoginInPopup;
+  openid.signin_text =
+      '<span class="dw-login-to-submit">Login and submit</span>' +
+      '<span class="dw-login-to-post-comment">Login and post comment</span>' +
+      '<span class="dw-login-to-login">Login</span>';
 
   $openid.dialog(d.i.newModalDialogSettings({
     width: 540, // avoids float drop; there are some large buttons

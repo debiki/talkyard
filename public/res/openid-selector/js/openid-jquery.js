@@ -203,8 +203,8 @@ openid = {
 			value = 'http://';
 			style = 'background: #FFF url(' + this.img_path + 'openid-inputicon.gif) no-repeat scroll 0 50%; padding-left:18px;';
 		}
-		html += '<input id="' + id + '" type="text" style="' + style + '" name="' + id + '" value="' + value + '" />'
-				+ '<input id="openid_submit" type="submit" value="' + this.signin_text + '"/>';
+		html += '<input id="' + id + '" class="form-control" type="text" style="' + style + '" name="' + id + '" value="' + value + '"/>'
+				+ '<button id="openid_submit" class="btn btn-default" type="submit">' + this.signin_text + '</button>';
 		input_area.empty();
 		input_area.append(html);
 		$('#' + id).focus();
