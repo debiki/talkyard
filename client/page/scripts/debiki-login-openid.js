@@ -61,7 +61,7 @@ function initLoginOpenId() {
   openid.submitInPopup = d.i.submitLoginInPopup;
 
   $openid.dialog(d.i.newModalDialogSettings({
-    width: 660, // there are many large buttons; this wide width avoids float drop
+    width: 540, // avoids float drop; there are some large buttons
     height: 410, // (incl. extra space for 'Enter your OpenID' input field)
     // Place above guest login dialog.
     zIndex: d.i.jQueryDialogDefault.zIndex + 10,

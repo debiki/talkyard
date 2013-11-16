@@ -966,6 +966,17 @@ body.dw-login-to-login .dw-login-to-login
 // ---
 
 
+// Hide Google and Yahoo login buttons in OpenID dialog; they're available via direct links
+// instead, from the main login dialog.
+.google.openid_large_btn,
+.google_profile.openid_small_btn,
+.yahoo.openid_large_btn
+  display: none
+
+// Avoid float drop: remove pointless margin.
+#openid_form
+  margin-right: 0
+  padding-right: 0
 
 
 // Email notification preferences
