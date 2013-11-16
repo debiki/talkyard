@@ -59,9 +59,6 @@ function initLoginOpenId() {
 
   openid.img_path = d.i.assetsUrlPathStart + 'openid-selector/images/';
   openid.submitInPopup = d.i.submitLoginInPopup;
-  // Keep default openid.cookie_expires, 1000 days
-  // — COULD remove cookie on logout?
-  openid.init('openid_identifier');
 
   $openid.dialog(d.i.newModalDialogSettings({
     width: 660, // there are many large buttons; this wide width avoids float drop
@@ -74,6 +71,11 @@ function initLoginOpenId() {
       }
     }
   }));
+
+  // Call `init` *after* $().dialog(), otherwise the dialog will be displayed at the end
+  // of the document.body, sometimes causing the viewport to move to the very bottom.
+  // (Keep default openid.cookie_expires, 1000 days — COULD remove cookie on logout?)
+  openid.init('openid_identifier');
 };
 
 
@@ -181,4 +183,4 @@ d.i.submitLoginInPopup = function($openidLoginForm) {
 // openid.ext1.value.country=SE
 // }}}
 
-// vim: fdm=marker et ts=2 sw=2 tw=80 fo=tcqwn list
+// vim: fdm=marker et ts=2 sw=2 fo=tcqwn list
