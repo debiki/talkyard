@@ -58,7 +58,7 @@ function initLoginOpenId() {
   $('body').append($openid); // so the Javascript OpenID selector finds certain elems
 
   openid.img_path = d.i.assetsUrlPathStart + 'openid-selector/images/';
-  openid.submitInPopup = submitLoginInPopup;
+  openid.submitInPopup = d.i.submitLoginInPopup;
   // Keep default openid.cookie_expires, 1000 days
   // — COULD remove cookie on logout?
   openid.init('openid_identifier');
@@ -79,7 +79,7 @@ function initLoginOpenId() {
 
 // Submits an OpenID login <form> in a popup. Dims the window and
 // listens for the popup to close.
-function submitLoginInPopup($openidLoginForm) {
+d.i.submitLoginInPopup = function($openidLoginForm) {
   // Based on popupManager.createPopupOpener, from popuplib.js.
 
   var width = 450;
@@ -135,7 +135,7 @@ function submitLoginInPopup($openidLoginForm) {
 
       // Warning: Somewhat dupl code, compare w initLoginSimple.
       $('#dw-fs-openid-login').dialog('close');
-      $('#dw-fs-lgi-simple').dialog('close');
+      $('#dw-lgi').dialog('close');
       d.i.Me.fireLogin();
       d.i.showLoginOkay(d.i.continueAnySubmission);
       return;

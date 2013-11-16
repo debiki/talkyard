@@ -55,8 +55,27 @@ d.i.showLoginSubmitDialog = !->
 
 
   dialog.find('a#dw-lgi-google').click ->
-    openid.signin('google')
+    loginGoogleYahoo("https://www.google.com/accounts/o8/id")
+
+
+  dialog.find('a#dw-lgi-yahoo').click ->
+    loginGoogleYahoo("http://me.yahoo.com/")
+
+
+  /**
+   * Logs in at Google or Yahoo by submitting an OpenID login form in a popup.
+   */
+  function loginGoogleYahoo(openidIdentifier)
+    form = $("""
+      <form action="/-/api/login-openid" method="POST">
+        <input type="text" name="openid_identifier" value="#openidIdentifier">
+      </form>
+      """)
+    # could rename to "createOpenIdLoginPopupFor(form)"
+    d.i.submitLoginInPopup(form)
+    form.submit()
     false
+
 
   /*
   passwordLoginForm.find('#dw-lgi-pswd-submit').click ->
