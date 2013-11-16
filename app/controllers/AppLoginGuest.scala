@@ -60,13 +60,16 @@ object AppLoginGuest extends mvc.Controller {
     val addr = request.ip
     val tenantId = DebikiHttp.lookupTenantIdOrThrow(request, Globals.systemDao)
 
-    val loginReq = LoginRequest(
-      login = Login(id = "?", prevLoginId = request.sid.loginId,
-        ip = addr, date = new ju.Date, identityId = "?i"),
-      identity = IdentitySimple(id = "?i", userId = "?", name = name,
-        email = email, location = "", website = url))
+    val loginAttempt = GuestLoginAttempt(
+      ip = addr,
+      date = new ju.Date,
+      prevLoginId = request.sid.loginId,
+      name = name,
+      email = email,
+      location = "",
+      website = url)
 
-    val loginGrant = Globals.siteDao(tenantId, ip = addr).saveLogin(loginReq)
+    val loginGrant = Globals.siteDao(tenantId, ip = addr).saveLogin(loginAttempt)
 
     val (_, _, sidAndXsrfCookies) = Xsrf.newSidAndXsrf(Some(loginGrant))
     val userConfigCookie = AppConfigUser.userConfigCookie(loginGrant)
@@ -89,13 +92,18 @@ object AppLoginGuest extends mvc.Controller {
       throwForbiddenDialog("DwE7PUX2", "No Email", "",
         "No email address specified")
 
-    val loginReq = LoginRequest(
-       login = Login(id = "?", prevLoginId = loginId,
-          ip = pageReq.ip, date = pageReq.ctime, identityId = "?i"),
-       identity = identity_!.asInstanceOf[IdentitySimple].copy(
-          id = "?i", userId = "?", email = newEmailAddr))
+    val guestIdentity = identity_!.asInstanceOf[IdentitySimple]
 
-    val loginGrant = pageReq.dao.saveLogin(loginReq)
+    val loginAttempt = GuestLoginAttempt(
+      ip = pageReq.ip,
+      date = pageReq.ctime,
+      prevLoginId = loginId,
+      name = guestIdentity.name,
+      email = newEmailAddr,
+      location = guestIdentity.location,
+      website = guestIdentity.website)
+
+    val loginGrant = pageReq.dao.saveLogin(loginAttempt)
     val (_, _, sidAndXsrfCookies) = Xsrf.newSidAndXsrf(Some(loginGrant))
 
     (loginGrant, sidAndXsrfCookies)

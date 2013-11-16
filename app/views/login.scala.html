@@ -30,12 +30,7 @@ h1 {
 
 @messageTag = @{
   if (message nonEmpty)
-    <p class="why-login">{
-      message.get + (
-        if (!showCreateAccountOption) " Click your account provider:"
-        else "" // What-to-do info is shown below Either ... Or ... headers.
-      )
-    }</p>
+    <p class="why-login">{ message.get }</p>
   else Nil
 }
 
@@ -49,18 +44,21 @@ h1 {
 
   <div class='row'>
 
-  <div class='span5'>
+  <div class='span6'>
 
-    @if(showCreateAccountOption) {
     <h2>Either:</h2>
-    <p>If you already have an account on one of the sites below,
-      then click that site, to log in with your account here.
-      @providerLoginMessage
-      <!-- <small>I think this is very secure, if you use Gmail's 2-step
-      verification, or Facebook's Login Approvals. Concerning Yahoo, you
-      could make use of their login seals. -->
-    </p>
-    }
+      <p>
+        @if(showCreateAccountOption) {
+          If you already have an account on one of the sites below,
+          then click that site, to log in with your account here.
+          @providerLoginMessage
+          <!-- <small>I think this is very secure, if you use Gmail's 2-step
+          verification, or Facebook's Login Approvals. Concerning Yahoo, you
+          could make use of their login seals. -->
+        } else {
+          Click your account provider:
+        }
+      </p>
 
     <ul class='login-links'>
       <li>
@@ -102,84 +100,45 @@ h1 {
     </ul>
   </div>
 
-  @if(showCreateAccountOption) {
-  <div class='span5'>
+  <div class='span6'>
     <h2>Or:</h2>
+
     <p>
-      <a target="_blank" href="https://accounts.google.com/SignUp?service=mail">
-        Create a new Google account</a>.
-      Then return to this page and login with it.
+      @if(showCreateAccountOption) {
+        <a href="@routes.CreateAccountController.showCreateAccountPage(returnToUrl)">
+        Create a new account at this site.</a>
+        Or login using your existing account, if any:
+      } else {
+        Login using your existing account at this site, if any:
+      }
     </p>
 
-    @* (This info is pointless? People who don't know won't care and those who
-    know already know.)
-    <p>
-      (We suggest a Google account, because are very secure if you enable two step
-      verification. Tips: You can configure Gmail to forward any emails to any
-      existing account of yours.)
-    </p>  *@
+    <div class="clearfix">
+      <form action="@routes.LoginWithPasswordController.login"
+            class="form" autocomplete="off" method="POST">
 
-    <!--
-    <p>Do not reuse any of your existing passwords — instead, make up a new one.
-      <small>In the future, this page will be served over HTTPS.</small>
-    </p>
+        <input type='hidden' name='dw-fi-xsrf' value='@xsrfToken'>
+        <input type='hidden' name='returnToUrl' value='@returnToUrl'>
 
-    <ul class="nav nav-tabs" id="myTab">
-      <li class="active">
-        <a href="#log-in-at-debiki" data-toggle="tab">Log in</a>
-      </li>
-      <li>
-        <a href="#create-debiki-account" data-toggle="tab">Create account</a>
-      </li>
-    </ul>
+        <label for="email">Email:</label>
+        <input type="text" id="email" name="email" value="" class="input-xlarge">
 
-    <div class="tab-content">
-      <div class="tab-pane active" id="log-in-at-debiki">
-        <form accept-charset='UTF-8' method='post'>
-          <label for='username'>Email:</label>
-          <input class='disabled' type='text' name='username' id='username'
-                 disabled>
+        <label for="password">Password:</label>
+        <input type="password" id="password" name="password" class="input-xlarge">
 
-          <label for='password'>Password:</label>
-          <input class='disabled' type='password' id='password' name='password'
-                 disabled>
+        <br>
+        <br>
+        <button type="submit" class="btn btn-default">Login</button>
 
-          <input name='dw-fi-xsrf' type='hidden' value='@xsrfToken'>
-          <div>
-            <input type='submit' value='Login'>
-          </div>
-        </form>
+        <br>
+        <br>
+        <a href="@routes.ResetPasswordController.showResetPasswordPage">
+          Did you forget your password?
+        </a>
+      </form>
 
-      </div>
-      <div class="tab-pane" id="create-debiki-account">
-
-        <form accept-charset='UTF-8' method='post'>
-          <label for='username'>Email:</label>
-          <input class='disabled' type='text' name='email' id='email'
-                 disabled>
-
-          <label for='username'>Verify email:</label>
-          <input class='disabled' type='text' name='email-verify' id='email-verify'
-                 disabled>
-
-          <label for='password'>Password:</label>
-          <input class='disabled' type='password' id='password' name='password'
-                 disabled>
-
-          <label for='password'>Verify password:</label>
-          <input class='disabled' type='password' id='password-verify' name='password-verify'
-                 disabled>
-
-          <input name='dw-fi-xsrf' type='hidden' value='@xsrfToken'>
-          <div>
-            <input type='submit' value='Create new owner account'>
-          </div>
-        </form>
-
-      </div>
-      -->
+    </div>
   </div>
-  }
 
   </div>
   </div>

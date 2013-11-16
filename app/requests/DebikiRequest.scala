@@ -51,6 +51,7 @@ abstract class DebikiRequest[A] {
     s"quota consumers: ${dao.quotaConsumers}, tenant/ip/role: $tenantId/$ip/$user"
 
   def tenantId = dao.siteId
+  def siteId = dao.siteId
 
   def loginId: Option[String] = sid.loginId
 
@@ -69,13 +70,9 @@ abstract class DebikiRequest[A] {
 
   def anyMeAsPeople: People =
     if (loginId isEmpty) People()
-    else People() + _fakeLogin + identity_! + user_!
+    else People() + user_!
 
-  def meAsPeople_! : People = People() + _fakeLogin + identity_! + user_!
-
-  protected def _fakeLogin = Login(
-    id = loginId_!, prevLoginId = None, ip = request.remoteAddress,
-    date = ctime, identityId = identity_!.id)
+  def meAsPeople_! : People = People() + user_!
 
   /**
    * The display name of the user making the request. Throws 403 Forbidden

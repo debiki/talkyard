@@ -19,6 +19,7 @@ package com.debiki.core
 
 import com.google.{common => guava}
 import java.{util => ju}
+import org.mindrot.jbcrypt.BCrypt
 import scala.concurrent.Future
 import DbDao._
 import EmailNotfPrefs.EmailNotfPrefs
@@ -84,7 +85,7 @@ abstract class SiteDbDao {
    * (e.g. from the same IP).
    */
   def createWebsite(name: String, address: String, ownerIp: String,
-        ownerLoginId: String, ownerIdentity: IdentityOpenId, ownerRole: User)
+        ownerLoginId: String, ownerIdentity: Identity, ownerRole: User)
         : Option[(Tenant, User)]
 
   def addTenantHost(host: TenantHost)
@@ -100,7 +101,7 @@ abstract class SiteDbDao {
    * Also, if the Identity does not already exist in the db, assigns it an ID
    * and saves it.
    */
-  def saveLogin(loginReq: LoginRequest): LoginGrant
+  def saveLogin(loginAttempt: LoginAttempt): LoginGrant
 
   /**
    * Updates the specified login with logout IP and timestamp.
@@ -232,13 +233,17 @@ abstract class SiteDbDao {
 
   // ----- Users and permissions
 
+  def createPasswordIdentityAndRole(identity: PasswordIdentity, user: User)
+        : (PasswordIdentity, User)
+
   def loadIdtyAndUser(forLoginId: String): Option[(Identity, User)]
 
   /**
    * Also loads details like OpenID local identifier, endpoint and version info.
    */
   def loadIdtyDetailsAndUser(forLoginId: String = null,
-        forIdentity: Identity = null): Option[(Identity, User)]
+        forOpenIdDetails: OpenIdDetails = null,
+        forEmailAddr: String = null): Option[(Identity, User)]
 
   def loadPermsOnPage(reqInfo: PermsOnPageQuery): PermsOnPage
 
@@ -422,7 +427,7 @@ class ChargingSiteDbDao(
    * the new website is being created.
    */
   def createWebsite(name: String, address: String, ownerIp: String,
-        ownerLoginId: String, ownerIdentity: IdentityOpenId, ownerRole: User)
+        ownerLoginId: String, ownerIdentity: Identity, ownerRole: User)
         : Option[(Tenant, User)] = {
 
     // SHOULD consume IP quota — but not tenant quota!? — when generating
@@ -452,21 +457,20 @@ class ChargingSiteDbDao(
 
   // ----- Login, logout
 
-  def saveLogin(loginReq: LoginRequest): LoginGrant = {
+  def saveLogin(loginAttempt: LoginAttempt): LoginGrant = {
     // Allow people to login via email and unsubscribe, even if over quota.
-    val mayPilfer = loginReq.identity.isInstanceOf[IdentityEmailId]
+    val mayPilfer = loginAttempt.isInstanceOf[EmailLoginAttempt]
 
     // If we don't ensure there's enough quota for the db transaction,
     // Mallory could call saveLogin, when almost out of quota, and
     // saveLogin would write to the db and then rollback, when over quota
     // -- a DoS attack would be possible.
-    _ensureHasQuotaFor(ResUsg.forStoring(login = loginReq.login,
-       identity = loginReq.identity), mayPilfer = mayPilfer)
+    _ensureHasQuotaFor(ResUsg.forStoring(loginAttempt), mayPilfer = mayPilfer)
 
-    val loginGrant = _spi.saveLogin(loginReq)
+    val loginGrant = _spi.saveLogin(loginAttempt)
 
-    val resUsg = ResUsg.forStoring(login = loginReq.login,
-       identity = loginGrant.isNewIdentity ? loginReq.identity | null,
+    val resUsg = ResUsg.forStoring(login = loginGrant.login,
+       identity = loginGrant.isNewIdentity ? loginGrant.identity | null,
        user = loginGrant.isNewRole ? loginGrant.user | null)
 
     _chargeFor(resUsg, mayPilfer = mayPilfer)
@@ -595,16 +599,24 @@ class ChargingSiteDbDao(
 
   // ----- Users and permissions
 
+  def createPasswordIdentityAndRole(identity: PasswordIdentity, user: User)
+        : (PasswordIdentity, User) = {
+    val resUsg = ResourceUse(numIdsAu = 1, numRoles = 1)
+    _chargeFor(resUsg, mayPilfer = false)
+    _spi.createPasswordIdentityAndRole(identity, user)
+  }
+
   def loadIdtyAndUser(forLoginId: String): Option[(Identity, User)] = {
     _chargeForOneReadReq()
     _spi.loadIdtyAndUser(forLoginId)
   }
 
   def loadIdtyDetailsAndUser(forLoginId: String = null,
-        forIdentity: Identity = null): Option[(Identity, User)] = {
+        forOpenIdDetails: OpenIdDetails = null,
+        forEmailAddr: String = null): Option[(Identity, User)] = {
     _chargeForOneReadReq()
     _spi.loadIdtyDetailsAndUser(forLoginId = forLoginId,
-        forIdentity = forIdentity)
+      forOpenIdDetails = forOpenIdDetails, forEmailAddr = forEmailAddr)
   }
 
   def loadPermsOnPage(reqInfo: PermsOnPageQuery): PermsOnPage = {
@@ -713,6 +725,11 @@ object DbDao {
   case class EmailNotFoundException(emailId: String)
     extends RuntimeException("No email with id: "+ emailId)
 
+  case class IdentityNotFoundException(message: String)
+    extends RuntimeException(message)
+
+  case object BadPasswordException extends RuntimeException("Bad password")
+
   class PageNotFoundException(message: String) extends RuntimeException(message)
 
   case class PageNotFoundByIdException(
@@ -749,6 +766,16 @@ object DbDao {
   private def prettyDetails(anyDetails: Option[String]) = anyDetails match {
     case None => ""
     case Some(message) => s", details: $message"
+  }
+
+  // Perhaps this should be moved to debiki-server, so the database didn't have this
+  // dependency on the password hashing algorithm?
+  def checkPassword(plainTextPassword: String, hash: String) =
+    BCrypt.checkpw(plainTextPassword, hash)
+
+  def saltAndHashPassword(plainTextPassword: String): String = {
+    val logRounds = 13 // for now. 10 is the default.
+    BCrypt.hashpw(plainTextPassword, BCrypt.gensalt(logRounds))
   }
 
 }

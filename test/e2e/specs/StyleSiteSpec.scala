@@ -65,7 +65,7 @@ class StyleSiteSpecSpec extends DebikiBrowserSpec
 
     "check homepage background color" - {
       "open homepage" in {
-        homepageWindow = openAndSwitchToFirstPage(DefaultHomepageTitle)
+        homepageWindow = openAndSwitchToFirstPage(DefaultHomepageTitle, newTab = true)
       }
 
       s"find the background painted in $DefaultBackgroundColor" in {

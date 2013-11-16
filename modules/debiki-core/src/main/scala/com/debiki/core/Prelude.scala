@@ -139,6 +139,12 @@ object Prelude {
   def illArgErrIf3(condition: Boolean, errorCode: String, problem: => String) =
     if (condition) illArgErr(errorCode, problem)
 
+  def throwBadDatabaseData(errorCode: String, problem: => String) =
+    throw new BadDatabaseDataException(formatErrorMessage(errorCode, problem))
+
+  class BadDatabaseDataException(message: String) extends RuntimeException(message)
+
+
   /** Converts {@code text} to a single line printable ASCII, not very long,
    *  so it can be included in an error message even if it is end user defined
    *  (i.e. possible destructive were it not made safe).

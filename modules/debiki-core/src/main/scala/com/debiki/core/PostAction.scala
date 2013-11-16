@@ -101,8 +101,8 @@ class PostActionOld(val debate: PageParts, val action: PostActionDtoOld) {
   def login_! : Login = login.getOrElse(runErr(
      "DwE6gG32", s"No login with id `${action.loginId}' for action $id"))
   def identity: Option[Identity] = login.flatMap(l =>
-                                    debate.people.identity(l.identityId))
-  def identity_! : Identity = debate.people.identity_!(login_!.identityId)
+                                    debate.people.identity(l.identityRef.identityId))
+  def identity_! : Identity = debate.people.identity_!(login_!.identityRef.identityId)
   def userId = {
     // Temporary (?) debug test: (I just introduced `userId`)
     identity foreach { i => assErrIf(i.userId != action.userId, "DwE43KbX6") }

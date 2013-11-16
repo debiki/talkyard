@@ -58,13 +58,14 @@ function initLoginOpenId() {
   $('body').append($openid); // so the Javascript OpenID selector finds certain elems
 
   openid.img_path = d.i.assetsUrlPathStart + 'openid-selector/images/';
-  openid.submitInPopup = submitLoginInPopup;
-  // Keep default openid.cookie_expires, 1000 days
-  // — COULD remove cookie on logout?
-  openid.init('openid_identifier');
+  openid.submitInPopup = d.i.submitLoginInPopup;
+  openid.signin_text =
+      '<span class="dw-login-to-submit">Login and submit</span>' +
+      '<span class="dw-login-to-post-comment">Login and post comment</span>' +
+      '<span class="dw-login-to-login">Login</span>';
 
   $openid.dialog(d.i.newModalDialogSettings({
-    width: 660, // there are many large buttons; this wide width avoids float drop
+    width: 540, // avoids float drop; there are some large buttons
     height: 410, // (incl. extra space for 'Enter your OpenID' input field)
     // Place above guest login dialog.
     zIndex: d.i.jQueryDialogDefault.zIndex + 10,
@@ -74,12 +75,17 @@ function initLoginOpenId() {
       }
     }
   }));
+
+  // Call `init` *after* $().dialog(), otherwise the dialog will be displayed at the end
+  // of the document.body, sometimes causing the viewport to move to the very bottom.
+  // (Keep default openid.cookie_expires, 1000 days — COULD remove cookie on logout?)
+  openid.init('openid_identifier');
 };
 
 
 // Submits an OpenID login <form> in a popup. Dims the window and
 // listens for the popup to close.
-function submitLoginInPopup($openidLoginForm) {
+d.i.submitLoginInPopup = function($openidLoginForm) {
   // Based on popupManager.createPopupOpener, from popuplib.js.
 
   var width = 450;
@@ -135,7 +141,7 @@ function submitLoginInPopup($openidLoginForm) {
 
       // Warning: Somewhat dupl code, compare w initLoginSimple.
       $('#dw-fs-openid-login').dialog('close');
-      $('#dw-fs-lgi-simple').dialog('close');
+      $('#dw-lgi').dialog('close');
       d.i.Me.fireLogin();
       d.i.showLoginOkay(d.i.continueAnySubmission);
       return;
@@ -181,4 +187,4 @@ function submitLoginInPopup($openidLoginForm) {
 // openid.ext1.value.country=SE
 // }}}
 
-// vim: fdm=marker et ts=2 sw=2 tw=80 fo=tcqwn list
+// vim: fdm=marker et ts=2 sw=2 fo=tcqwn list

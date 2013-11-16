@@ -395,7 +395,7 @@ object AppEdit extends mvc.Controller {
   def mayEdit(user: Option[User], post: Post, perms: PermsOnPage)
         : (Boolean, String) = {
 
-    def isOwnPost = user.map(_.id) == Some(post.identity_!.userId)
+    def isOwnPost = user.map(_.id) == Some(post.userId)
     def isPage = post.id == PageParts.BodyId || post.id == PageParts.TitleId
 
     if (post.id == PageParts.ConfigPostId && !perms.editPageTemplate)

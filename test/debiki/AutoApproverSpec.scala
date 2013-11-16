@@ -76,14 +76,15 @@ class AutoApproverSpec extends Specification with Mockito {
   val openidIdty = IdentityOpenId(
     id = "oididtyid",
     userId = openidUser.id,
-    oidEndpoint = "",
-    oidVersion = "",
-    oidRealm = "",
-    oidClaimedId = "",
-    oidOpLocalId = "",
-    firstName = openidUser.displayName,
-    email = openidUser.email,
-    country = openidUser.country)
+    OpenIdDetails(
+      oidEndpoint = "",
+      oidVersion = "",
+      oidRealm = "",
+      oidClaimedId = "",
+      oidOpLocalId = "",
+      firstName = openidUser.displayName,
+      email = openidUser.email,
+      country = openidUser.country))
 
 
   val PlayReq = new Request[Unit] {
@@ -204,9 +205,9 @@ class AutoApproverSpec extends Specification with Mockito {
 
   val (guestLogin, openidLogin) = {
     val login = Login(id = testUserLoginId, ip = Ip, prevLoginId = None,
-       date = startDati, identityId = "?")
-    (login.copy(identityId = guestIdty.id),
-      login.copy(identityId = openidIdty.id))
+       date = startDati, identityRef = null)
+    (login.copy(identityRef = guestIdty.reference),
+      login.copy(identityRef = openidIdty.reference))
   }
 
 

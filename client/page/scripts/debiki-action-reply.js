@@ -77,7 +77,7 @@ d.i.$showReplyForm = function(event, opt_where) {
     }
     setSubmitBtnTitle(null, d.i.Me.getName());
     $submitBtn.each(d.i.$loginSubmitOnClick(setSubmitBtnTitle,
-          { askAboutEmailNotfs: true }));
+          { askAboutEmailNotfs: true, mode: 'SubmitComment' }));
 
     // Ajax-post reply on submit.
     $replyForm.submit(function() {

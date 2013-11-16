@@ -84,16 +84,13 @@ trait StuffCreator {
    */
   private lazy val (loginGrant: LoginGrant, postTemplate: PostActionDto[PAP.CreatePost]) = {
 
-    val login = Login(id = "?", prevLoginId = None, ip = "1.1.1.1",
-      date = new ju.Date, identityId = "?i")
-
-    val identity = IdentityOpenId(id = "?i",
-      userId = "?", oidEndpoint = "http://test-endpoint.com", oidVersion = "", oidRealm = "",
+    val loginAttempt = OpenIdLoginAttempt(prevLoginId = None, ip = "1.1.1.1",
+      date = new ju.Date, openIdDetails = OpenIdDetails(
+      oidEndpoint = "http://test-endpoint.com", oidVersion = "", oidRealm = "",
       oidClaimedId = "StuffCreatorClaimedId", oidOpLocalId = "StuffCreatorLocalId",
-      firstName = "Stuff-Creator", email = "stuff-creator@example.com", country = "")
+      firstName = "Stuff-Creator", email = "stuff-creator@example.com", country = ""))
 
-    val loginReq = LoginRequest(login, identity)
-    val loginGrant = firstSiteDao.saveLogin(loginReq)
+    val loginGrant = firstSiteDao.saveLogin(loginAttempt)
 
     val postTemplate = PostActionDto.forNewPost(
       id = UnassignedId, parentPostId = PageParts.BodyId, creationDati = new ju.Date,

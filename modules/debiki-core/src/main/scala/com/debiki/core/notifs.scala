@@ -93,15 +93,23 @@ case class NotfsToMail(
 
 object Email {
 
-  def apply(sendTo: String, subject: String, bodyHtmlText: String): Email =
+  def apply(
+        tyype: EmailType,
+        sendTo: String,
+        subject: String,
+        bodyHtmlText: (String) => String): Email = {
+    val emailId = _generateId()
     Email(
-      id = _generateId(),
+      id = emailId,
+      tyype = tyype,
       sentTo = sendTo,
       sentOn = None,
+      createdAt = new ju.Date(),
       subject = subject,
-      bodyHtmlText = bodyHtmlText,
+      bodyHtmlText = bodyHtmlText(emailId),
       providerEmailId = None,
       failureText = None)
+  }
 
   /**
    * The email id should be a random value, so it cannot be guessed,
@@ -113,13 +121,19 @@ object Email {
 
 case class Email(
   id: String,
+  tyype: EmailType,
   sentTo: String,
   sentOn: Option[ju.Date],
+  createdAt: ju.Date,
   subject: String,
   bodyHtmlText: String,
   providerEmailId: Option[String],
   failureText: Option[String] = None)
 
 
-// vim: fdm=marker et ts=2 sw=2 tw=80 fo=tcqwn list
-
+sealed abstract class EmailType
+object EmailType {
+  case object Notification extends EmailType
+  case object CreateAccount extends EmailType
+  case object ResetPassword extends EmailType
+}

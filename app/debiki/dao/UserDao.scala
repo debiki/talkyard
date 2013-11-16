@@ -29,8 +29,12 @@ trait UserDao {
   self: SiteDao =>
 
 
-  def saveLogin(loginReq: LoginRequest): LoginGrant =
-    siteDbDao.saveLogin(loginReq)
+  def createPasswordIdentityAndRole(identity: PasswordIdentity, user: User): (Identity, User) =
+    siteDbDao.createPasswordIdentityAndRole(identity, user)
+
+
+  def saveLogin(loginAttempt: LoginAttempt): LoginGrant =
+    siteDbDao.saveLogin(loginAttempt)
 
 
   def saveLogout(loginId: String, logoutIp: String) =
@@ -42,11 +46,12 @@ trait UserDao {
 
 
   def loadIdtyDetailsAndUser(forLoginId: String = null,
-        forIdentity: Identity = null): Option[(Identity, User)] =
+        forOpenIdDetails: OpenIdDetails = null,
+        forEmailAddr: String = null): Option[(Identity, User)] =
     // Don't cache this, because this function is rarely called
     // — currently only when creating new website.
     siteDbDao.loadIdtyDetailsAndUser(forLoginId = forLoginId,
-      forIdentity = forIdentity)
+      forOpenIdDetails = forOpenIdDetails, forEmailAddr = forEmailAddr)
 
 
   def loadPermsOnPage(reqInfo: PermsOnPageQuery): PermsOnPage =
@@ -95,8 +100,8 @@ trait CachingUserDao extends UserDao {
   self: CachingSiteDao =>
 
 
-  override def saveLogin(loginReq: LoginRequest): LoginGrant = {
-    val loginGrant = super.saveLogin(loginReq)
+  override def saveLogin(loginAttempt: LoginAttempt): LoginGrant = {
+    val loginGrant = super.saveLogin(loginAttempt)
     putInCache(
       key(loginGrant.login.id),
       (loginGrant.identity, loginGrant.user))

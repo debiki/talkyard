@@ -17,6 +17,7 @@
 
 package test.e2e.code
 
+import com.debiki.core._
 import com.debiki.core.Prelude._
 import java.{util => ju}
 import org.openqa.selenium
@@ -62,17 +63,14 @@ trait TestLoginner {
   def cheatLoginAsAdmin() {
     import com.debiki.{core => d}
 
-    val login = d.Login(id = "?", prevLoginId = None, ip = "1.1.1.1", date = new ju.Date,
-        identityId = "?i")
-
-    val identity = d.IdentityOpenId(id = "?i",
-      userId = "?", oidEndpoint = "http://test-endpoint.com", oidVersion = "",
+    val loginAttempt = OpenIdLoginAttempt(prevLoginId = None, ip = "1.1.1.1", date = new ju.Date,
+      openIdDetails = OpenIdDetails(
+      oidEndpoint = "http://test-endpoint.com", oidVersion = "",
       oidRealm = "", oidClaimedId = "TestAdminClaimedId", oidOpLocalId = "TestAdminLocalId",
-      firstName = "TestAdmin", email = "test-admin@example.com", country = "")
+      firstName = "TestAdmin", email = "test-admin@example.com", country = ""))
 
-    val loginReq = d.LoginRequest(login, identity)
     val dao = debiki.Globals.siteDao(firstSiteId, ip = "1.1.1.1")
-    val loginGrant = dao.saveLogin(loginReq)
+    val loginGrant = dao.saveLogin(loginAttempt)
 
     if (!adminMadeAdmin) {
       adminMadeAdmin = true

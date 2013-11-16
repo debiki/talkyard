@@ -82,9 +82,7 @@ object AppConfigUser extends mvc.Controller {
         // this interface.)
         if (user.email.nonEmpty && user.email != emailOpt.get)
           throwBadReq("DwE8RkL3", "Email differs from user.email")
-        if (identity.email.nonEmpty && identity.email != emailOpt.get)
-          throwBadReq("DwE09IZ8", "Email differs from identity.email")
-        if (user.email.isEmpty && identity.email.isEmpty)
+        if (user.email.isEmpty)
           emailOpt
         else
           None
@@ -172,7 +170,7 @@ object AppConfigUser extends mvc.Controller {
 
 
   def userConfigCookie(identity: Identity, user: User): mvc.Cookie = {
-    val email = user.email.nonEmpty ? user.email | identity.email
+    val email = user.email
     val emailPrefs =
       if (user.emailNotfPrefs == EmailNotfPrefs.Unspecified) ""
       else ConfigCookieEmailNotfs + emailPrefsToChar(user.emailNotfPrefs)

@@ -79,13 +79,13 @@ object AppUnsubscribe extends mvc.Controller {
         implicit request =>
 
     // Login.
-    val loginNoId = Login(id = "?", prevLoginId = None,
-       ip = request.remoteAddress, date = new ju.Date, identityId = emailId)
-    val loginReq = LoginRequest(loginNoId, IdentityEmailId(emailId))
+    val loginAttempt = EmailLoginAttempt(
+       ip = request.remoteAddress, date = new ju.Date, emailId = emailId)
+
     val dao = Globals.siteDao(tenantId, ip = request.remoteAddress)
 
     val loginGrant =
-      try dao.saveLogin(loginReq)
+      try dao.saveLogin(loginAttempt)
       catch {
         case ex: DbDao.EmailNotFoundException =>
           throwForbidden("DwE530KI37", "Email not found")
