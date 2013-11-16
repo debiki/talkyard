@@ -21,24 +21,28 @@ $ = d.i.$;
 
 
 
-d.i.showLoginSubmitDialog = !->
-  showLoginDialog 'Submit'
+d.i.showLoginSubmitDialog = !(anyMode) ->
+  showLoginDialog (anyMode || 'SubmitGeneric')
 
 
 
 !function showLoginDialog(mode)
 
+  doingWhatClass = switch mode
+  | 'SubmitGeneric' => 'dw-login-to-submit'
+  | 'SubmitComment' => 'dw-login-to-post-comment'
+  | _ => 'dw-login-to-login'
+  $('body').addClass(doingWhatClass)
+
   dialog = loginDialogHtml()
   dialog.dialog d.i.newModalDialogSettings({ width: 413 })
 
-  tweakButtonTitles dialog, mode
-
   dialog.find('#dw-lgi-guest').click ->
-    d.i.showGuestLoginDialog(mode, loginAndContinue)
+    d.i.showGuestLoginDialog(loginAndContinue)
     false
 
   dialog.find('#dw-lgi-pswd').click ->
-    d.i.showPasswordLoginDialog(mode, loginAndContinue)
+    d.i.showPasswordLoginDialog(loginAndContinue)
     false
 
   dialog.find('#dw-lgi-more').click ->
@@ -46,7 +50,7 @@ d.i.showLoginSubmitDialog = !->
     false
 
   dialog.find('.dw-fi-cancel').click ->
-    dialog.dialog 'close'
+    close()
     false
 
   dialog.find('a#dw-lgi-google').click ->
@@ -81,27 +85,17 @@ d.i.showLoginSubmitDialog = !->
     # But the viewport will still be dimmed, because the welcome
     # dialog is modal. So don't continueAnySubmission until
     # the user has closed the response dialog. }}}
-    dialog.dialog('close')
+    close()
     showLoggedInDialog(d.i.continueAnySubmission)
+
+  !function close
+    dialog.dialog('close')
+    $('body').removeClass(doingWhatClass)
 
   # Preload OpenID resources, in case user clicks OpenID login button.
   d.i.loadOpenIdResources()
 
   dialog.dialog 'open'
-
-
-
-!function tweakButtonTitles(dialog, mode)
-  # If the user is logging in to submit a comment, use button title
-  # 'Login & Submit', otherwise 'Login' only.
-  guestLoginBtn = $('#dw-f-lgi-spl-submit')
-  openidDialogLink = dialog.find('#dw-lgi-more')
-  if mode == 'Submit'
-    guestLoginBtn.val 'Login and Submit'
-    openidDialogLink.text 'Login and Submit'
-  else
-    guestLoginBtn.val 'Login'
-    openidDialogLink.text 'Login'
 
 
 
@@ -132,7 +126,9 @@ function loginDialogHtml
       <a id="dw-lgi-guest" class="btn btn-default" tabindex="101">Login as Guest</a>
       <a id="dw-lgi-pswd" class="btn btn-default" tabindex="102">Login with Email and Password</a>
 
-      <p id="dw-lgi-or-login-using">Or login using your account (if any) at:</p>
+      <p id="dw-lgi-or-login-using">
+        Or login<span class="dw-login-to-post-comment">, and post your comment,</span>
+        using your account (if any) at:</p>
       <div id="dw-lgi-other-sites">
         <a id="dw-lgi-google" class="btn btn-default" tabindex="103">
           <span class="icon-google-plus"></span>Google
@@ -147,10 +143,7 @@ function loginDialogHtml
         </a>
       </div>
 
-      <a id="dw-lgi-more" class="btn btn-default" tabindex="106">
-        <span class="icon-openid"></span>
-        More options...
-      </a>
+      <a id="dw-lgi-more" class="btn btn-default" tabindex="106">More options...</a>
 
       <input class="btn btn-default dw-fi-cancel" type="button" value="Cancel" tabindex="107">
     </div>

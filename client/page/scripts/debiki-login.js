@@ -36,6 +36,13 @@ var loginOnClickBtnClicked = null;
 var continueLoginAskAboutEmail = false;
 
 
+/**
+ * `data` can be:
+ * {
+ *    askAboutEmailNotfs: true/false -- optional
+ *    mode: 'SubmitComment' -- optional, influences button titles in login dialogs
+ * }
+ */
 d.i.$loginSubmitOnClick = function(loginEventHandler, data) {
   return function() {
     var $i = $(this);
@@ -60,7 +67,7 @@ d.i.$loginThenSubmit = function(event) {
     // global callback-to-invoke-state is needed anyway.
     // Better move login stuff to a separate module (with a module
     // local "global" callback state).}}}
-    d.i.showLoginSubmitDialog();
+    d.i.showLoginSubmitDialog(event.data.mode);
   } else {
     d.i.continueAnySubmission();
   }

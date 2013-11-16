@@ -21,12 +21,10 @@ $ = d.i.$;
 
 
 
-d.i.showPasswordLoginDialog = !(mode, loginAndContinue) ->
+d.i.showPasswordLoginDialog = !(loginAndContinue) ->
 
   dialog = passwordLoginDialogHtml()
   dialog.dialog d.i.newModalDialogSettings({ width: 350 })
-
-  #tweakButtonTitles dialog, mode
 
   dialog.find('#dw-lgi-pswd-submit').click ->
     data =
@@ -61,7 +59,11 @@ function passwordLoginDialogHtml
       </div>
 
       <br>
-      <button type="submit" id="dw-lgi-pswd-submit" class="btn btn-default" tabindex="130">Login</button>
+      <button type="submit" id="dw-lgi-pswd-submit" class="btn btn-default" tabindex="130">
+        <span class="dw-login-to-submit">Login and submit</span>
+        <span class="dw-login-to-post-comment">Login and post comment</span>
+        <span class="dw-login-to-login">Login</span>
+      </button>
       <input class="btn btn-default dw-fi-cancel" type="button" value="Cancel" tabindex="140">
 
       <br>

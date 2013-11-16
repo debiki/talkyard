@@ -21,12 +21,10 @@ $ = d.i.$;
 
 
 
-d.i.showGuestLoginDialog = !(mode, loginAndContinue) ->
+d.i.showGuestLoginDialog = !(loginAndContinue) ->
 
   dialog = guestLoginDialogHtml()
   dialog.dialog d.i.newModalDialogSettings({ width: 350 })
-
-  #tweakButtonTitles dialog, mode
 
   dialog.find('#dw-lgi-guest-submit').click ->
     data =
@@ -67,8 +65,11 @@ function guestLoginDialogHtml
       </div>
       <br>
       <div>
-        <input id="dw-lgi-guest-submit" class="btn btn-default" type="submit"
-            value="Login" tabindex="140">
+        <button id="dw-lgi-guest-submit" class="btn btn-default" type="submit" tabindex="140">
+          <span class="dw-login-to-submit">Login and submit</span>
+          <span class="dw-login-to-post-comment">Login and post comment</span>
+          <span class="dw-login-to-login">Login</span>
+        </button>
         <input class="btn btn-default dw-fi-cancel" type="button" value="Cancel" tabindex="150">
       </div>
     </div>
