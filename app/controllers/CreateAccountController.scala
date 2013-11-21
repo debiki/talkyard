@@ -57,14 +57,16 @@ object CreateAccountController extends mvc.Controller {
         // Send account reminder email. But don't otherwise indicate that account exist
         // (doing that would be a security issue: would encourage brute force password
         // breaking attempts).
-        Email(EmailType.Notification, sendTo = emailAddress, subject = "Your Account",
+        Email(EmailType.Notification, sendTo = emailAddress, toUserId = Some(user.id),
+          subject = "Your Account",
           bodyHtmlText = (emailId: String) => {
             views.html.createaccount.accountAlreadyExistsEmail(
                 user.displayName, emailAddress = emailAddress, siteAddress = request.host).body
           })
       case None =>
         // Send create account email.
-        Email(EmailType.CreateAccount, sendTo = emailAddress, subject = "Create Account",
+        Email(EmailType.CreateAccount, sendTo = emailAddress, toUserId = None,
+          subject = "Create Account",
           bodyHtmlText = (emailId: String) => {
             views.html.createaccount.createAccountLinkEmail(
                 siteAddress = request.host, emailId = emailId, returnToUrl = returnToUrl,

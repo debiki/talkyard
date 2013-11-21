@@ -96,6 +96,7 @@ object Email {
   def apply(
         tyype: EmailType,
         sendTo: String,
+        toUserId: Option[UserId],
         subject: String,
         bodyHtmlText: (String) => String): Email = {
     val emailId = _generateId()
@@ -103,6 +104,7 @@ object Email {
       id = emailId,
       tyype = tyype,
       sentTo = sendTo,
+      toUserId = toUserId,
       sentOn = None,
       createdAt = new ju.Date(),
       subject = subject,
@@ -123,12 +125,25 @@ case class Email(
   id: String,
   tyype: EmailType,
   sentTo: String,
+  toUserId: Option[UserId],
   sentOn: Option[ju.Date],
   createdAt: ju.Date,
   subject: String,
   bodyHtmlText: String,
   providerEmailId: Option[String],
-  failureText: Option[String] = None)
+  failureText: Option[String] = None) {
+
+  require(toUserId.isEmpty == (tyype == EmailType.CreateAccount),
+    s"Email with id `$id' has/hasn't any toUserId [DwE4GEF0]")
+
+  def toGuestId: Option[String] =
+    if (toUserId.nonEmpty && toUserId.get.startsWith("-")) Some(toUserId.get drop 1)
+    else None
+
+  def toRoleId: Option[String] =
+    if (toUserId.nonEmpty && !toUserId.get.startsWith("-")) Some(toUserId.get)
+    else None
+}
 
 
 sealed abstract class EmailType

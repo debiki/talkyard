@@ -63,6 +63,7 @@ object ResetPasswordController extends mvc.Controller {
     val email = Email(
       EmailType.ResetPassword,
       sendTo = emailAddress,
+      toUserId = Some(user.id),
       subject = "Reset Password",
       bodyHtmlText = (emailId: String) => {
         views.html.resetpassword.resetPasswordEmail(

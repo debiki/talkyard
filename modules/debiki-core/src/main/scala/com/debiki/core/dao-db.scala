@@ -725,6 +725,9 @@ object DbDao {
   case class EmailNotFoundException(emailId: String)
     extends RuntimeException("No email with id: "+ emailId)
 
+  case class BadEmailTypeException(emailId: String)
+    extends RuntimeException(s"Email with id $emailId has no recipient user id")
+
   case class IdentityNotFoundException(message: String)
     extends RuntimeException(message)
 
