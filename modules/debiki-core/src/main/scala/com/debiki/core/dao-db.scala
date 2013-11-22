@@ -236,6 +236,10 @@ abstract class SiteDbDao {
   def createPasswordIdentityAndRole(identity: PasswordIdentity, user: User)
         : (PasswordIdentity, User)
 
+  /** Returns true if the identity was found (and the password thus changed).
+    */
+  def changePassword(identity: PasswordIdentity, newPasswordSaltHash: String): Boolean
+
   def loadIdtyAndUser(forLoginId: String): Option[(Identity, User)]
 
   /**
@@ -397,7 +401,9 @@ class ChargingSiteDbDao(
   def quotaConsumers: QuotaConsumers = _spi.quotaConsumers
 
   private def _chargeForOneReadReq() = _chargeFor(ResUsg(numDbReqsRead = 1))
-  private def _chargeForOneWriteReq() = _chargeFor(ResUsg(numDbReqsWrite = 1))
+
+  private def _chargeForOneWriteReq(mayPilfer: Boolean = false) =
+    _chargeFor(ResUsg(numDbReqsWrite = 1), mayPilfer = mayPilfer)
 
   private def _chargeFor(resourceUsage: ResourceUse,
         mayPilfer: Boolean = false): Unit = {
@@ -606,6 +612,11 @@ class ChargingSiteDbDao(
     _spi.createPasswordIdentityAndRole(identity, user)
   }
 
+  def changePassword(identity: PasswordIdentity, newPasswordSaltHash: String): Boolean = {
+    _chargeForOneWriteReq(mayPilfer = true)
+    _spi.changePassword(identity, newPasswordSaltHash)
+  }
+
   def loadIdtyAndUser(forLoginId: String): Option[(Identity, User)] = {
     _chargeForOneReadReq()
     _spi.loadIdtyAndUser(forLoginId)
@@ -724,6 +735,9 @@ object DbDao {
 
   case class EmailNotFoundException(emailId: String)
     extends RuntimeException("No email with id: "+ emailId)
+
+  case class BadEmailTypeException(emailId: String)
+    extends RuntimeException(s"Email with id $emailId has no recipient user id")
 
   case class IdentityNotFoundException(message: String)
     extends RuntimeException(message)

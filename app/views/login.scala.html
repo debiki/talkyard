@@ -26,6 +26,10 @@ h1 {
   margin-bottom: 0.8em;
 }
 
+#create-account {
+  text-decoration: underline;
+}
+
 """)}
 
 @messageTag = @{
@@ -105,7 +109,7 @@ h1 {
 
     <p>
       @if(showCreateAccountOption) {
-        <a href="@routes.CreateAccountController.showCreateAccountPage(returnToUrl)">
+        <a id="create-account" href="@routes.CreateAccountController.showCreateAccountPage(returnToUrl)">
         Create a new account at this site.</a>
         Or login using your existing account, if any:
       } else {
@@ -132,7 +136,7 @@ h1 {
 
         <br>
         <br>
-        <a href="@routes.ResetPasswordController.showResetPasswordPage">
+        <a href="@routes.ResetPasswordController.showResetPasswordPage" target="_blank">
           Did you forget your password?
         </a>
       </form>

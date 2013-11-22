@@ -342,20 +342,14 @@ sealed abstract class Identity {
  * @param userId The user that received the email. Not known before
  *  login (is "?").
  * @param emailSent Not known before login (is `None`)
- * @param notf Not known before login (is `None`)
  */
 case class IdentityEmailId(
   id: String,
   userId: String = "?",
-  emailSent: Option[Email] = None,
-  notf: Option[NotfOfPageAction] = None
+  emailSent: Option[Email] = None
 ) extends Identity {
   // Either only email id known, or all info known.
   require((userId startsWith "?") == emailSent.isEmpty)
-  require(emailSent.isDefined == notf.isDefined)
-
-  def displayName = notf.map(_.recipientUserDispName) getOrElse "?"
-  def email = emailSent.map(_.sentTo) getOrElse "?"
 
   override def reference: IdentityRef = IdentityRef.Email(id)
 }

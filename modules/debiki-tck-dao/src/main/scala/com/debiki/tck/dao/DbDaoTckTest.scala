@@ -1678,7 +1678,9 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
 
       val theEmail = "psdw-test@ex.com"
       val thePassword = "ThePassword"
+      val theNewPassword = "TheNewPswd"
       val theHash = DbDao.saltAndHashPassword(thePassword)
+      val theNewHash = DbDao.saltAndHashPassword(theNewPassword)
 
       val identityNoId = PasswordIdentity(
         id = "?", userId = "?", email = theEmail, passwordSaltHash = theHash)
@@ -1711,7 +1713,25 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
           case Some((identityLoaded, userLoaded)) =>
             identityLoaded must_== theIdentity
             userLoaded must_== theUser
+          case _ => fail(s"Email identity not found")
         }
+        ok
+      }
+
+      "change password" in {
+        val passwordWasChanged = dao.changePassword(theIdentity, newPasswordSaltHash = theNewHash)
+        passwordWasChanged must_== true
+        ok
+      }
+
+      "login with new password" in {
+        val newLoginGrant = dao.saveLogin(PasswordLoginAttempt(
+          ip = "1.2.3.4", date = new ju.Date(), prevLoginId = None,
+          email = theUser.email, password = theNewPassword))
+        newLoginGrant.user must_== theUser
+        newLoginGrant.identity.userId must_== theIdentity.userId
+        newLoginGrant.identity.reference must_== theIdentity.reference
+        newLoginGrant.identity.asInstanceOf[PasswordIdentity].passwordSaltHash must_== theNewHash
         ok
       }
     }
@@ -1882,9 +1902,10 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
       val loginAttempt = EmailLoginAttempt(ip = "?.?.?.?", date = now, emailId = emailId)
       val loginGrant = dao.saveLogin(loginAttempt)
       lazy val emailIdty = loginGrant.identity.asInstanceOf[IdentityEmailId]
-      emailIdty.email must_== emailSentOk.sentTo
-      emailIdty.notf.flatMap(_.emailId) must_== Some(emailSentOk.id)
-      emailIdty.notf.map(_.recipientUserId) must_== Some(loginGrant.user.id)
+      Some(loginGrant.user.id) must_== emailSentOk.toUserId
+      emailIdty.emailSent.map(_.sentTo) must_== Some(emailSentOk.sentTo)
+      emailIdty.emailSent.map(_.toUserId) must_== Some(emailSentOk.toUserId)
+      emailIdty.emailSent.map(_.tyype) must_== Some(emailSentOk.tyype)
       loginGrant
     }
 
@@ -1897,6 +1918,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
         id = emailId,
         tyype = EmailType.Notification,
         sentTo = "test@example.com",
+        toUserId = Some(unauUserNotfSaved.recipientUserId),
         sentOn = None,
         createdAt = new ju.Date(),
         subject = "Test Subject",
@@ -2002,6 +2024,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
         id = emailId,
         tyype = EmailType.Notification,
         sentTo = "test@example.com",
+        toUserId = Some(auUser.id),
         sentOn = None,
         createdAt = new ju.Date(),
         subject = "Test Subject",
@@ -2045,6 +2068,56 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
       }
 
       // COULD verify email prefs changed to DontReceive?
+    }
+
+
+    "login by email id" >> {
+
+      lazy val theGuestId = loginGrant.user.id
+      lazy val theRoleId = exOpenId_loginGrant.user.id
+
+      lazy val emailToSendToGuest = Email(
+        id = "3kU001",
+        tyype = EmailType.Notification,
+        sentTo = "test@example.com",
+        toUserId = Some(theGuestId),
+        sentOn = None,
+        createdAt = new ju.Date(),
+        subject = "Test Subject",
+        bodyHtmlText = "<i>Test content.</i>",
+        providerEmailId = None)
+
+      lazy val emailToSendToRole =
+        emailToSendToGuest.copy(id = "3kU002", toUserId = Some(theRoleId))
+
+      "save and send an email to a guest" in {
+        dao.saveUnsentEmail(emailToSendToGuest)
+        dao.updateSentEmail(emailToSendToGuest)
+        ok
+      }
+
+      "login as guest by email id" in {
+        val loginAttempt = EmailLoginAttempt(
+          ip = "1.2.3.4", date = now, emailId = emailToSendToGuest.id)
+        val loginGrant = dao.saveLogin(loginAttempt)
+        loginGrant.user.id must_== theGuestId
+        ok
+      }
+
+      "save and send an email to a role" in {
+        dao.saveUnsentEmail(emailToSendToRole)
+        dao.updateSentEmail(emailToSendToRole)
+        ok
+      }
+
+      "login as role by email id" in {
+        val loginAttempt = EmailLoginAttempt(
+          ip = "1.2.3.4", date = now, emailId = emailToSendToRole.id)
+        val loginGrant = dao.saveLogin(loginAttempt)
+        loginGrant.user.id must_== theRoleId
+        ok
+      }
+
     }
 
 

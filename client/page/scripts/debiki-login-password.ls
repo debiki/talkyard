@@ -67,7 +67,9 @@ function passwordLoginDialogHtml
       <input class="btn btn-default dw-fi-cancel" type="button" value="Cancel" tabindex="140">
 
       <br>
-      <a href="/-/reset-password" target="_blank" class="dw-reset-pswd" tabindex="150">Did you forget your password?</a>
+      <a href="/-/reset-password/specify-email" target="_blank" class="dw-reset-pswd" tabindex="150">
+        Did you forget your password?
+      </a>
 
     </div>
     ''')

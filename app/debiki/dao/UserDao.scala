@@ -33,6 +33,10 @@ trait UserDao {
     siteDbDao.createPasswordIdentityAndRole(identity, user)
 
 
+  def changePassword(identity: PasswordIdentity, newPasswordSaltHash: String): Boolean =
+    siteDbDao.changePassword(identity, newPasswordSaltHash)
+
+
   def saveLogin(loginAttempt: LoginAttempt): LoginGrant =
     siteDbDao.saveLogin(loginAttempt)
 

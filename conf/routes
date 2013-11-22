@@ -76,9 +76,12 @@ GET   /-/create-account/user-details/:emailId/:returnToUrl  controllers.CreateAc
 POST  /-/create-account/user-details/:emailId/:returnToUrl  controllers.CreateAccountController.handleUserDetails(emailId, returnToUrl)
 GET   /-/create-account/welcome/:returnToUrl                controllers.CreateAccountController.showWelcomePage(returnToUrl)
 
-GET   /-/reset-password             controllers.ResetPasswordController.showResetPasswordPage
-POST  /-/reset-password             controllers.ResetPasswordController.handleResetPasswordForm
-GET   /-/reset-password/:emailId    controllers.ResetPasswordController.handleResetPasswordLink(emailId)
+GET   /-/reset-password/specify-email    controllers.ResetPasswordController.showResetPasswordPage
+POST  /-/reset-password/specify-email    controllers.ResetPasswordController.handleResetPasswordForm
+GET   /-/reset-password/email-sent       controllers.ResetPasswordController.showEmailSentPage
+GET   /-/reset-password/choose-password/:resetPasswordEmailId  controllers.ResetPasswordController.showChooseNewPasswordPage(resetPasswordEmailId)
+POST  /-/reset-password/choose-password/:resetPasswordEmailId  controllers.ResetPasswordController.handleNewPasswordForm(resetPasswordEmailId)
+GET   /-/reset-password/password-changed controllers.ResetPasswordController.showPasswordChangedPage
 
 GET   /-/create-site/choose-owner   controllers.CreateSiteController.showWebsiteOwnerForm
 GET   /-/create-site/choose-type    controllers.CreateSiteController.showSiteTypeForm
