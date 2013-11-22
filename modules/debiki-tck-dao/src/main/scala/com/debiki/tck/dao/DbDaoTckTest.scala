@@ -1678,7 +1678,9 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
 
       val theEmail = "psdw-test@ex.com"
       val thePassword = "ThePassword"
+      val theNewPassword = "TheNewPswd"
       val theHash = DbDao.saltAndHashPassword(thePassword)
+      val theNewHash = DbDao.saltAndHashPassword(theNewPassword)
 
       val identityNoId = PasswordIdentity(
         id = "?", userId = "?", email = theEmail, passwordSaltHash = theHash)
@@ -1711,7 +1713,25 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
           case Some((identityLoaded, userLoaded)) =>
             identityLoaded must_== theIdentity
             userLoaded must_== theUser
+          case _ => fail(s"Email identity not found")
         }
+        ok
+      }
+
+      "change password" in {
+        val passwordWasChanged = dao.changePassword(theIdentity, newPasswordSaltHash = theNewHash)
+        passwordWasChanged must_== true
+        ok
+      }
+
+      "login with new password" in {
+        val newLoginGrant = dao.saveLogin(PasswordLoginAttempt(
+          ip = "1.2.3.4", date = new ju.Date(), prevLoginId = None,
+          email = theUser.email, password = theNewPassword))
+        newLoginGrant.user must_== theUser
+        newLoginGrant.identity.userId must_== theIdentity.userId
+        newLoginGrant.identity.reference must_== theIdentity.reference
+        newLoginGrant.identity.asInstanceOf[PasswordIdentity].passwordSaltHash must_== theNewHash
         ok
       }
     }

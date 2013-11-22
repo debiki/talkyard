@@ -83,17 +83,7 @@ object ResetPasswordController extends mvc.Controller {
 
 
   def showChooseNewPasswordPage(resetPasswordEmailId: String) = GetAction { request =>
-
-    val loginAttempt = EmailLoginAttempt(
-      ip = request.ip, date = new ju.Date, emailId = resetPasswordEmailId)
-
-    val loginGrant =
-      try request.dao.saveLogin(loginAttempt)
-      catch {
-        case ex: DbDao.EmailNotFoundException =>
-          throwForbidden("DwE7PWE7", "Email not found")
-      }
-
+    loginByEmailOrThrow(resetPasswordEmailId, request)
     Ok(views.html.resetpassword.chooseNewPassword(
       xsrfToken = request.xsrfToken.value,
       anyResetPasswordEmailId = resetPasswordEmailId))
@@ -103,13 +93,48 @@ object ResetPasswordController extends mvc.Controller {
   def handleNewPasswordForm(anyResetPasswordEmailId: String) =
         JsonOrFormDataPostAction(maxBytes = 100) { request =>
     val newPassword = request.body.getOrThrowBadReq("newPassword")
-    // ... change password ...
+    val newPasswordAgain = request.body.getOrThrowBadReq("newPasswordAgain")
+    if (newPassword != newPasswordAgain)
+      throwBadReq("DwE2MJ0", "You specified two different passwords; please go back and try again")
+
+    val loginGrant = loginByEmailOrThrow(anyResetPasswordEmailId, request)
+    val emailIdentity = loginGrant.identity.asInstanceOf[IdentityEmailId]
+    val emailAddress = emailIdentity.emailSent.map(_.sentTo) getOrElse assErr("DwE72DM0")
+    val identity2 = request.dao.loadIdtyDetailsAndUser(forEmailAddr = emailAddress) match {
+      case Some((id, user)) => id
+      case None =>
+        // The password identity was present when we started this reset-password wizard.
+        throwForbidden( //logAndThrowForbidden(
+          "DwE22RV6", s"Password identity gone, email address: `$emailAddress', user deleted?")
+    }
+
+    val passwordIdentity = identity2.asInstanceOf[PasswordIdentity]
+
+    // Perhaps change to `dao.changePasswordIdentitysPassword(emailAddress, newSaltHash)`?
+    request.dao.changePassword(
+      passwordIdentity, newPasswordSaltHash = DbDao.saltAndHashPassword(newPassword))
+
     Ok(views.html.resetpassword.passwordHasBeenChanged())
   }
 
 
   def showPasswordChangedPage = GetAction { request =>
     Ok(views.html.resetpassword.passwordHasBeenChanged())
+  }
+
+
+  private def loginByEmailOrThrow(resetPasswordEmailId: String, request: ApiRequest[_])
+        : LoginGrant = {
+    val loginAttempt = EmailLoginAttempt(
+      ip = request.ip, date = new ju.Date, emailId = resetPasswordEmailId)
+    // TODO: Check email type !
+    val loginGrant =
+      try request.dao.saveLogin(loginAttempt)
+      catch {
+        case ex: DbDao.EmailNotFoundException =>
+          throwForbidden("DwE7PWE7", "Email not found")
+      }
+    loginGrant
   }
 
 }
