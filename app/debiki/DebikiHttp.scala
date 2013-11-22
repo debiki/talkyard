@@ -123,6 +123,18 @@ object DebikiHttp {
     throwInternalError(errCode, message)
   }
 
+  def logAndThrowForbidden(errCode: String, message: String = "")
+        (implicit logger: play.api.Logger) = {
+    logger.warn("Forbidden: "+ message +" ["+ errCode +"]")
+    throwForbidden(errCode, message)
+  }
+
+  def logAndThrowBadReq(errCode: String, message: String = "")
+        (implicit logger: play.api.Logger) = {
+    logger.warn("Bad request: "+ message +" ["+ errCode +"]")
+    throwBadReq(errCode, message)
+  }
+
   def throwInternalError(errCode: String, message: String = "") =
     throw ResultException(InternalErrorResult(errCode, message))
 

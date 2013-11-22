@@ -77,6 +77,7 @@ object CreateAccountController extends mvc.Controller {
     request.dao.saveUnsentEmail(email)
     Globals.sendEmail(email, request.dao.siteId)
 
+    // Ooops ought to redirect, then get, so reloading the page becomes harmless?
     Ok(views.html.createaccount.registrationEmailSent())
   }
 
