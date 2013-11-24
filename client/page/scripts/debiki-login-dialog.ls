@@ -68,8 +68,7 @@ d.i.showLoginSubmitDialog = !(anyMode) ->
         <input type="text" name="openid_identifier" value="#openidIdentifier">
       </form>
       """)
-    # could rename to "createOpenIdLoginPopupFor(form)"
-    d.i.submitLoginInPopup(form)
+    d.i.createOpenIdLoginPopup(form)
     form.submit()
     false
 

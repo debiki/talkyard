@@ -15,7 +15,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-(function() {
 
 var d = { i: debiki.internal, u: debiki.v0.util };
 var $ = d.i.$;
@@ -58,7 +57,7 @@ function initLoginOpenId() {
   $('body').append($openid); // so the Javascript OpenID selector finds certain elems
 
   openid.img_path = d.i.assetsUrlPathStart + 'openid-selector/images/';
-  openid.submitInPopup = d.i.submitLoginInPopup;
+  openid.submitInPopup = d.i.createOpenIdLoginPopup;
   openid.signin_text =
       '<span class="dw-login-to-submit">Login and submit</span>' +
       '<span class="dw-login-to-post-comment">Login and post comment</span>' +
@@ -83,84 +82,15 @@ function initLoginOpenId() {
 };
 
 
-// Submits an OpenID login <form> in a popup. Dims the window and
-// listens for the popup to close.
-d.i.submitLoginInPopup = function($openidLoginForm) {
-  // Based on popupManager.createPopupOpener, from popuplib.js.
-
-  var width = 450;
-  var height = 500;
-  var coordinates = popupManager.getCenteredCoords(width, height);
-
-  // Here is described how to configure the popup window:
-  // http://svn.openid.net/repos/specifications/user_interface/1.0/trunk
-  //    /openid-user-interface-extension-1_0.html
-  var popupWindow = window.open('', 'LoginPopup',
-      'width='+ width +',height='+ height +
-      ',status=1,location=1,resizable=yes'+
-      ',left='+ coordinates[0] +',top='+ coordinates[1]);
-
-  // A check to perform at each execution of the timed loop. It also triggers
-  // the action that follows the closing of the popup
-  var waitCallback = window.setInterval(waitForPopupClose, 80);
-  function waitForPopupClose() {
-    if (popupWindow && !popupWindow.closed) return;
-    popupWindow = null;
-    var darkCover = window.document.getElementById(
-        window.popupManager.constants['darkCover']);
-    if (darkCover) {
-      darkCover.style.visibility = 'hidden';
-    }
-    if (d.i.handleLoginResponse !== null) {
-      d.i.handleLoginResponse({status: 'LoginFailed'});
-    }
-    if (waitCallback !== null) {
-      window.clearInterval(waitCallback);
-      waitCallback = null;
-    }
-  }
-
-  // This callback is called from the return_to page:
-  d.i.handleLoginResponse = function(result) {
-    d.i.handleLoginResponse = null;
-    var errorMsg;
-    if (/openid\.mode=cancel/.test(result.queryString)) {
-      // This seems to happen if the user clicked No Thanks in some
-      // login dialog; when I click "No thanks", Google says:
-      // "openid.mode=cancel&
-      //  openid.ns=http%3A%2F%2Fspecs.openid.net%2Fauth%2F2.0"
-      errorMsg = 'You cancelled the login process? [error DwE89GwJm43]';
-    } else if (result.status === 'LoginFailed') {
-      // User closed popup window?
-      errorMsg = 'You closed the login window? [error DwE5k33rs83k0]';
-    } else if (result.status !== 'LoginOk') {
-      errorMsg = 'Unknown login problem [error DwE3kirsrts12d]';
-    } else {
-      // Login OK.
-      // (Find queryString example at the end of this file.)
-
-      // Warning: Somewhat dupl code, compare w initLoginSimple.
-      $('#dw-fs-openid-login').dialog('close');
-      $('#dw-lgi').dialog('close');
-      d.i.Me.fireLogin();
-      d.i.showLoginOkay(d.i.continueAnySubmission);
-      return;
-    }
-
-    d.i.showLoginFailed(errorMsg);
-  }
-
-  // COULD dim the main win, open a modal dialog: "Waiting for you to log in",
-  // and a Cancel button, which closes the popup window.
-  // — Then the user can continue also if the popup gets lost (perhaps
-  // lots of windows open).
-
+/**
+ * Submits an OpenID login <form> in a popup.
+ */
+d.i.createOpenIdLoginPopup = function($openidLoginForm) {
+  var windowName = d.i.createLoginPopup();
   // Make the default submit action submit the login form in the popup window.
-  $openidLoginForm.attr('target', 'LoginPopup');
+  $openidLoginForm.attr('target', windowName);
 };
 
-
-})();
 
 
 // {{{ The result.queryString in handleLoginResponse() is e.g. …
