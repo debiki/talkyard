@@ -25,34 +25,24 @@
 
 package controllers
 
+import actions.ApiActions.GetAction
+import actions.ApiActions.GetRequest
+import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki.DebikiHttp._
 import play.api._
 import i18n.Messages
 import play.api.mvc.{Action => _, _}
 import play.api.Play.current
+import requests.ApiRequest
 import securesocial.core._
 import securesocial.controllers.TemplatesPlugin
 import securesocial.core.providers.utils.RoutesHelper
 
 
-object AppLoginSecureSocial extends mvc.Controller {
-
-  import securesocial.controllers.ProviderController.toUrl
+object LoginWithSecureSocialController extends mvc.Controller {
 
   val Logger = play.api.Logger("app.securesocial")
-
-
-  /**
-   * Renders a not authorized page if the Authorization object passed to the action
-   * does not allow execution.
-   *
-   * @see Authorization
-   */
-  def notAuthorized() = mvc.Action { implicit request =>
-    import com.typesafe.plugin._
-    Forbidden(use[TemplatesPlugin].getNotAuthorizedPage)
-  }
 
   /**
    * The authentication flow for all providers starts here.
@@ -64,21 +54,25 @@ object AppLoginSecureSocial extends mvc.Controller {
 
 
   // Not async? This blocks a thread?
-  private def handleAuth(provider: String) = mvc.Action { implicit request =>
+  private def handleAuth(provider: String) = GetAction { request =>
     Registry.providers.get(provider) match {
       case Some(p) => {
         try {
-          p.authenticate().fold( result => result , {
-            user => completeAuthentication(user, session)
+          p.authenticate()(request.request).fold( result => result , {
+            ssid: securesocial.core.Identity =>
+              val ssUser = ssid.asInstanceOf[securesocial.core.SocialUser]
+              completeAuthentication(ssUser, request)
           })
         } catch {
           case ex: AccessDeniedException => {
-            Redirect(RoutesHelper.login()).flashing("error" -> Messages("securesocial.login.accessDenied"))
+            //throwForbidden("DwE830ES2", "Access denied")
+            Redirect("/")
           }
 
           case other: Throwable => {
             Logger.error("Unable to log user in. An exception was thrown", other)
-            Redirect(RoutesHelper.login()).flashing("error" -> Messages("securesocial.login.errorLoggingIn"))
+            //throwForbidden("DwE7ZCW4", "Unable to login. Exception thrown.")
+            Redirect("/")
           }
         }
       }
@@ -88,24 +82,27 @@ object AppLoginSecureSocial extends mvc.Controller {
   }
 
 
-  private def completeAuthentication(user: Identity, session: Session)(
-        implicit request: RequestHeader): PlainResult = {
-    if ( Logger.isDebugEnabled ) {
-      Logger.debug("[securesocial] user logged in : [" + user + "]")
-    }
-    val withSession = Events.fire(new LoginEvent(user)).getOrElse(session)
-    Authenticator.create(user) match {
-      case Right(authenticator) => {
-        Redirect(toUrl).withSession(withSession -
-          SecureSocial.OriginalUrlKey -
-          IdentityProvider.SessionId -
-          OAuth1Provider.CacheKey).withCookies(authenticator.toCookie)
-      }
-      case Left(error) => {
-        // improve this
-        throw new RuntimeException("Error creating authenticator")
-      }
-    }
+  private def completeAuthentication(secureSocialCoreUser: securesocial.core.SocialUser,
+        request: GetRequest): PlainResult = {
+
+    Logger.debug(s"User logged in : [$secureSocialCoreUser]")
+
+    val siteId = debiki.DebikiHttp.lookupTenantIdOrThrow(request, debiki.Globals.systemDao)
+    val dao = debiki.Globals.siteDao(siteId, ip = request.ip)
+
+    val loginAttempt = SecureSocialLoginAttempt(
+      ip = request.ip,
+      date = request.ctime,
+      prevLoginId = request.loginId,
+      secureSocialCoreUser)
+
+    val loginGrant: LoginGrant = dao.saveLogin(loginAttempt)
+
+    val (_, _, sidAndXsrfCookies) = debiki.Xsrf.newSidAndXsrf(Some(loginGrant))
+    val userConfigCookie = AppConfigUser.userConfigCookie(loginGrant)
+    val cookies = userConfigCookie::sidAndXsrfCookies
+
+    Redirect("/").withCookies(cookies: _*)
   }
 
 }

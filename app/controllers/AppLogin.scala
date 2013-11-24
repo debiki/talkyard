@@ -68,7 +68,7 @@ object AppLogin extends mvc.Controller {
         _loginWithOpenId(IdentityOpenId.ProviderIdentifier.Yahoo)
       case x =>
         unimplemented("Logging in with SecureSocial from here")
-        // Or forward to AppLoginSecureSocial.handleAuth in some manner?
+        // Or forward to LoginWithSecureSocialController.handleAuth in some manner?
     }
   }
 
