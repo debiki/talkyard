@@ -1,5 +1,5 @@
 /**
- * - Parts Copyright (C) 2013 Kaj Magnus Lindberg (born 1979)
+ * - Copyright (C) 2013 Kaj Magnus Lindberg (born 1979)
  *
  * - Parts Copyright 2012 Jorge Aliss (jaliss at gmail dot com) - twitter: @jaliss
  *
@@ -40,21 +40,34 @@ import securesocial.controllers.TemplatesPlugin
 import securesocial.core.providers.utils.RoutesHelper
 
 
+/** OpenAuth 1 and 2 login, provided by SecureSocial. E.g. for Facebook and Twitter.
+  */
 object LoginWithSecureSocialController extends mvc.Controller {
 
   val Logger = play.api.Logger("app.securesocial")
 
-  /**
-   * The authentication flow for all providers starts here.
-   *
-   * @param provider The id of the provider that needs to handle the call
+  private val ReturnToUrlCookieName = "dwCoReturnToUrl"
+
+
+  /** The authentication flow starts here.
    */
+  def startAuthentication(provider: String, returnToUrl: String) = GetAction { request =>
+    val theReply = handleAuthImpl(provider)(request)
+    theReply.withCookies(Cookie(name = ReturnToUrlCookieName, value = returnToUrl))
+  }
+
+
+  /** OAuth callbacks. SecureSocial assumes these method names; cannot rename them.
+    */
   def authenticate(provider: String) = handleAuth(provider)
   def authenticateByPost(provider: String) = handleAuth(provider)
 
-
-  // Not async? This blocks a thread?
   private def handleAuth(provider: String) = GetAction { request =>
+    handleAuthImpl(provider)(request)
+  }
+
+
+  private def handleAuthImpl(provider: String)(request: GetRequest) = {
     Registry.providers.get(provider) match {
       case Some(p) => {
         try {
@@ -63,16 +76,14 @@ object LoginWithSecureSocialController extends mvc.Controller {
               val ssUser = ssid.asInstanceOf[securesocial.core.SocialUser]
               completeAuthentication(ssUser, request)
           })
-        } catch {
+        }
+        catch {
           case ex: AccessDeniedException => {
-            //throwForbidden("DwE830ES2", "Access denied")
-            Redirect("/")
+            throwForbidden("DwE830ES2", "Access denied")
           }
-
           case other: Throwable => {
             Logger.error("Unable to log user in. An exception was thrown", other)
-            //throwForbidden("DwE7ZCW4", "Unable to login. Exception thrown.")
-            Redirect("/")
+            throwInternalError("DwE7ZCW4", "Unable to login: internal error.")
           }
         }
       }
@@ -100,9 +111,14 @@ object LoginWithSecureSocialController extends mvc.Controller {
 
     val (_, _, sidAndXsrfCookies) = debiki.Xsrf.newSidAndXsrf(Some(loginGrant))
     val userConfigCookie = AppConfigUser.userConfigCookie(loginGrant)
-    val cookies = userConfigCookie::sidAndXsrfCookies
+    val newSessionCookies = userConfigCookie::sidAndXsrfCookies
 
-    Redirect("/").withCookies(cookies: _*)
+    val returnToUrlCookie = request.request.cookies.get(ReturnToUrlCookieName).getOrElse(
+      throwBadReq("DwE62HDX0", s"No $ReturnToUrlCookieName cookie"))
+
+    Redirect(returnToUrlCookie.value)
+      .discardingCookies(DiscardingCookie(ReturnToUrlCookieName))
+      .withCookies(newSessionCookies: _*)
   }
 
 }

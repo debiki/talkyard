@@ -20,7 +20,7 @@ var d = { i: debiki.internal, u: debiki.v0.util };
 var $ = d.i.$;
 
 
-d.i.createLoginPopup = function() {
+d.i.createLoginPopup = function(anyUrl) {
   // Based on popupManager.createPopupOpener, from popuplib.js.
 
   var width = 450;
@@ -31,7 +31,7 @@ d.i.createLoginPopup = function() {
   // Here is described how to configure the popup window:
   // http://svn.openid.net/repos/specifications/user_interface/1.0/trunk
   //    /openid-user-interface-extension-1_0.html
-  var popupWindow = window.open('', windowName,
+  var popupWindow = window.open(anyUrl || '', windowName,
       'width='+ width +',height='+ height +
       ',status=1,location=1,resizable=yes'+
       ',left='+ coordinates[0] +',top='+ coordinates[1]);

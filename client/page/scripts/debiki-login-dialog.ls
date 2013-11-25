@@ -59,6 +59,9 @@ d.i.showLoginSubmitDialog = !(anyMode) ->
   dialog.find('a#dw-lgi-yahoo').click ->
     loginGoogleYahoo("http://me.yahoo.com/")
 
+  dialog.find('a#dw-lgi-facebook').click ->
+    openSecureSocialLoginWindow("/-/login-securesocial/facebook")
+
   /**
    * Logs in at Google or Yahoo by submitting an OpenID login form in a popup.
    */
@@ -71,6 +74,9 @@ d.i.showLoginSubmitDialog = !(anyMode) ->
     d.i.createOpenIdLoginPopup(form)
     form.submit()
     false
+
+  function openSecureSocialLoginWindow(url)
+    d.i.createLoginPopup(url + '?returnToUrl=/dev/')  # just testing
 
   !function loginAndContinue(data)
     d.i.Me.fireLogin()
