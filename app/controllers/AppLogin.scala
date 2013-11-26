@@ -32,8 +32,8 @@ import Utils.{OkHtml}
  * Handles login; delegates to AppLoginGuest/OpenId and (?) -OAuth.
  *
  * Usage:
- * You could use views.html.login to how a login page in place of the
- * page that requires login. Then, views.html.login will post to
+ * You could use views.html.login.loginPage to how a login page in place of the
+ * page that requires login. Then, views.html.login.loginPage will post to
  * this class, AppLogin, which will eventually redirect back to the
  * returnToUrl.
  */

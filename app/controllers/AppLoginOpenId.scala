@@ -50,7 +50,7 @@ object AppLoginOpenId extends mvc.Controller {
 
 
   def loginGet = mvc.Action {
-    Ok(views.html.loginOpenid())
+    Ok(views.html.login.loginOpenid())
   }
 
 
@@ -223,7 +223,7 @@ object AppLoginOpenId extends mvc.Controller {
 
     val result = returnToUrl match {
       case "" =>
-        Ok(views.html.loginOpenidCallback("LoginOk",
+        Ok(views.html.login.loginPopupCallback("LoginOk",
           s"You have been logged in, welcome ${loginGrant.displayName}!",
           anyReturnToUrl = None))
       case url =>
@@ -261,7 +261,7 @@ object AppLoginOpenId extends mvc.Controller {
     // COULD fix status code handling: "LoginFailed" results in debiki.js
     // informing the user that "You closed the login window?" (which is
     // incorrect).
-    Ok(views.html.loginOpenidCallback(
+    Ok(views.html.login.loginPopupCallback(
       "LoginFailed", mess + " [error DwE3903r32]", anyReturnToUrl))
     //Redirect(routes.AppAuth.loginOpenidGet).flashing(
     //  "OpenID login failure" -> t.toString)

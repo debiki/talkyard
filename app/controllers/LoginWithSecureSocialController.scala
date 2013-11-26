@@ -127,8 +127,8 @@ object LoginWithSecureSocialController extends mvc.Controller {
       case Some(returnToUrlCookie) =>
         Redirect(returnToUrlCookie.value).discardingCookies(DiscardingCookie(ReturnToUrlCookieName))
       case None =>
-        // We're logging in in a popup. COULD rename loginOpenidCallback to loginPopupCallback.
-        Ok(views.html.loginOpenidCallback("LoginOk",
+        // We're logging in in a popup.
+        Ok(views.html.login.loginPopupCallback("LoginOk",
           s"You have been logged in, welcome ${loginGrant.displayName}!",
           anyReturnToUrl = None))
     }

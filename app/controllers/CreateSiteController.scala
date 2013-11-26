@@ -51,7 +51,7 @@ object CreateSiteController extends mvc.Controller {
 
 
   def showWebsiteOwnerForm() = CheckSidActionNoBody { (sidOk, xsrfOk, request) =>
-    Ok(views.html.login(xsrfToken = xsrfOk.value,
+    Ok(views.html.login.loginPage(xsrfToken = xsrfOk.value,
       returnToUrl = routes.CreateSiteController.showSiteTypeForm.url,
       title = "Choose Website Owner Account",
       providerLoginMessage = "It will become the owner of the new website.",
