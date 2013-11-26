@@ -54,18 +54,25 @@ object AppLogin extends mvc.Controller {
 
 
   def asyncLogin(provider: String, returnToUrl: String)
-        (implicit request: Request[_]): Result = {
+        (implicit request: Request[Option[Any]]): Result = {
 
-    def _loginWithOpenId(identifier: String): AsyncResult = {
+    def loginWithOpenId(identifier: String): AsyncResult = {
       AppLoginOpenId.asyncLogin(openIdIdentifier = identifier,
-        returnToUrl = returnToUrl)
+        returnToUrl = returnToUrl)(request)
+    }
+
+    def loginWithSecureSocial(provider: String): Result = {
+      LoginWithSecureSocialController.startAuthentication(
+        provider, returnToUrl = returnToUrl)(request)
     }
 
     provider match {
       case "google" =>
-        _loginWithOpenId(IdentityOpenId.ProviderIdentifier.Google)
+        loginWithOpenId(IdentityOpenId.ProviderIdentifier.Google)
       case "yahoo" =>
-        _loginWithOpenId(IdentityOpenId.ProviderIdentifier.Yahoo)
+        loginWithOpenId(IdentityOpenId.ProviderIdentifier.Yahoo)
+      case "facebook" =>
+        loginWithSecureSocial(securesocial.core.providers.FacebookProvider.Facebook)
       case x =>
         unimplemented("Logging in with SecureSocial from here")
         // Or forward to LoginWithSecureSocialController.handleAuth in some manner?
