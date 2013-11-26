@@ -49,11 +49,21 @@ object LoginWithSecureSocialController extends mvc.Controller {
   private val ReturnToUrlCookieName = "dwCoReturnToUrl"
 
 
-  /** The authentication flow starts here.
-   */
+  /** The authentication flow starts here, if it happens in the main window and you
+    * thus have a page you want to return to afterwards.
+    */
   def startAuthentication(provider: String, returnToUrl: String) = GetAction { request =>
     val theReply = handleAuthImpl(provider)(request)
     theReply.withCookies(Cookie(name = ReturnToUrlCookieName, value = returnToUrl))
+  }
+
+
+  /** The authentication starts here if it happens in a popup. Then, afterwards,
+    * the popup window will be sent some Javascript that tells the popup opener
+    * what has happened (i.e. that the user logged in).
+    */
+  def startAuthenticationInPopupWindow(provider: String) = GetAction { request =>
+    handleAuthImpl(provider)(request)
   }
 
 
@@ -113,12 +123,17 @@ object LoginWithSecureSocialController extends mvc.Controller {
     val userConfigCookie = AppConfigUser.userConfigCookie(loginGrant)
     val newSessionCookies = userConfigCookie::sidAndXsrfCookies
 
-    val returnToUrlCookie = request.request.cookies.get(ReturnToUrlCookieName).getOrElse(
-      throwBadReq("DwE62HDX0", s"No $ReturnToUrlCookieName cookie"))
+    val response = request.request.cookies.get(ReturnToUrlCookieName) match {
+      case Some(returnToUrlCookie) =>
+        Redirect(returnToUrlCookie.value).discardingCookies(DiscardingCookie(ReturnToUrlCookieName))
+      case None =>
+        // We're logging in in a popup. COULD rename loginOpenidCallback to loginPopupCallback.
+        Ok(views.html.loginOpenidCallback("LoginOk",
+          s"You have been logged in, welcome ${loginGrant.displayName}!",
+          anyReturnToUrl = None))
+    }
 
-    Redirect(returnToUrlCookie.value)
-      .discardingCookies(DiscardingCookie(ReturnToUrlCookieName))
-      .withCookies(newSessionCookies: _*)
+    response.withCookies(newSessionCookies: _*)
   }
 
 }
