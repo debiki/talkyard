@@ -195,7 +195,7 @@ object Application extends mvc.Controller {
 
   def viewAdminPage() = GetAction { apiReq =>
     if (apiReq.user.map(_.isAdmin) != Some(true))
-      Ok(views.html.login(xsrfToken = apiReq.xsrfToken.value,
+      Ok(views.html.login.loginPage(xsrfToken = apiReq.xsrfToken.value,
         returnToUrl = apiReq.uri, title = "Login", message = Some(
           "Login as administrator to access this page.")))
     else

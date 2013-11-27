@@ -1672,7 +1672,142 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
     }
 
 
+    // -------- SecureSocial identities
+
+
+    "Login with a SecureSocialIdentity, create associated User" >> {
+
+      val theFirstName = "SecureSocialFirstName1"
+      val theEmail = "securesocial-user@ex.com"
+
+      val theChangedFirstName = "NewSecureSocialFirstName1"
+      val theChangedEmail = "changed-securesocial-user@ex.com"
+
+      val theSecureSocialIdentityId = securesocial.core.IdentityId("userId", "providerId")
+
+      val the2ndEmail = "the-2nd-securesocial-user@ex.com"
+      val the2ndSecureSocialIdentityId = theSecureSocialIdentityId.copy(userId = "newUserId")
+
+      val the3rdEmail = "the-3rd-securesocial-user@ex.com"
+      val the3rdSecureSocialIdentityId = theSecureSocialIdentityId.copy(providerId = "newPrvdrId")
+
+      val theSecureSocialCoreUser = securesocial.core.SocialUser(
+        theSecureSocialIdentityId,
+        firstName = theFirstName,
+        lastName = "SecureSocialLastName",
+        fullName = "SecureSocialFirstName SecureSocialLastName",
+        email = Some(theEmail),
+        avatarUrl = Some("http://avatar.url"),
+        authMethod = securesocial.core.AuthenticationMethod.OAuth2)
+
+      val theChangedSecureSocialUser = theSecureSocialCoreUser.copy(
+        firstName = theChangedFirstName, email = Some(theChangedEmail))
+
+      val the2ndSecureSocialUser = theSecureSocialCoreUser.copy(
+        the2ndSecureSocialIdentityId, email = Some(the2ndEmail))
+
+      val the3rdSecureSocialUser = theSecureSocialCoreUser.copy(
+        the3rdSecureSocialIdentityId, email = Some(the3rdEmail))
+
+      val theFirstLoginAttempt = SecureSocialLoginAttempt(
+        ip = "1.2.3.4", date = now, prevLoginId = None, theSecureSocialCoreUser)
+
+      var theUser: User = null
+      var theFirstLoginGrant: LoginGrant = null
+      var theChangedLoginGrant: LoginGrant = null
+      var the2ndUsersLoginGrant: LoginGrant = null
+      var the3rdUsersLoginGrant: LoginGrant = null
+
+      "create" in {
+        theFirstLoginGrant = dao.saveLogin(theFirstLoginAttempt)
+        val theIdentity = theFirstLoginGrant.identity.asInstanceOf[SecureSocialIdentity]
+        theIdentity.secureSocialCoreUser must_== theSecureSocialCoreUser
+        theUser = theFirstLoginGrant.user
+        theUser.displayName must_== theSecureSocialCoreUser.firstName
+        Some(theUser.email) must_== theSecureSocialCoreUser.email
+        ok
+      }
+
+      "list SecureSocial user" in {
+        pending // see same test but OpenID, above
+      }
+
+      "reuse the SecureSocialIdentity and User just created" in {
+        val loginGrant = dao.saveLogin(theFirstLoginAttempt.copy(date = new ju.Date))
+        loginGrant.login.id must_!= theFirstLoginGrant.login.id
+        loginGrant.identity must_== theFirstLoginGrant.identity
+        loginGrant.user must_== theFirstLoginGrant.user
+        ok
+      }
+
+      "update the SecureSocialIdentity, if attributes changed" in {
+        val loginAttempt = theFirstLoginAttempt.copy(
+          secureSocialCoreUser = theChangedSecureSocialUser)
+        theChangedLoginGrant = dao.saveLogin(loginAttempt)
+        theChangedLoginGrant.login.id must_!= theFirstLoginGrant.login.id
+        theChangedLoginGrant.user must_== theFirstLoginGrant.user
+        val ssIdentity = theChangedLoginGrant.identity.asInstanceOf[SecureSocialIdentity]
+        ssIdentity.id must_== theFirstLoginGrant.identity.id
+        ssIdentity.userId must_== theUser.id
+        ssIdentity.secureSocialCoreUser.copy(
+            firstName = theChangedFirstName, email = Some(theChangedEmail)) must_==
+          theChangedSecureSocialUser
+        ok
+      }
+
+      "create new SecureSocialIdentity and User for a new provider user id" in {
+        the2ndUsersLoginGrant = dao.saveLogin(
+          theFirstLoginAttempt.copy(secureSocialCoreUser = the2ndSecureSocialUser))
+
+        val loginGrant = the2ndUsersLoginGrant
+        loginGrant.login.id must_!= theFirstLoginGrant.login.id
+        loginGrant.login.id must_!= theChangedLoginGrant.login.id
+
+        val ssIdentity = loginGrant.identity.asInstanceOf[SecureSocialIdentity]
+        ssIdentity.id must_!= theFirstLoginGrant.identity.id
+        ssIdentity.secureSocialCoreUser must_== the2ndSecureSocialUser
+
+        loginGrant.user must_== theChangedLoginGrant.user.copy(
+          id = loginGrant.user.id, email = the2ndEmail)
+        ok
+      }
+
+      "create new SecureSocialIdentity and User for a new provider id, same user id" in {
+        the3rdUsersLoginGrant = dao.saveLogin(
+          theFirstLoginAttempt.copy(secureSocialCoreUser = the3rdSecureSocialUser))
+
+        val loginGrant = the3rdUsersLoginGrant
+        loginGrant.login.id must_!= theFirstLoginGrant.login.id
+        loginGrant.login.id must_!= theChangedLoginGrant.login.id
+        loginGrant.login.id must_!= the2ndUsersLoginGrant.login.id
+
+        val ssIdentity = loginGrant.identity.asInstanceOf[SecureSocialIdentity]
+        ssIdentity.id must_!= theFirstLoginGrant.identity.id
+        ssIdentity.id must_!= the2ndUsersLoginGrant.identity.id
+        ssIdentity.secureSocialCoreUser must_== the3rdSecureSocialUser
+
+        loginGrant.user.id must_!= theFirstLoginGrant.user.id
+        loginGrant.user.id must_!= the2ndUsersLoginGrant.user.id
+        loginGrant.user must_== theChangedLoginGrant.user.copy(
+          id = loginGrant.user.id, email = the3rdEmail)
+        ok
+      }
+
+      // Lookup by provider + user id already tested implicitly, when logging in with
+      // existing identity, above.
+      "lookup a SecureSocialIdentity, by login id" in {
+        dao.loadIdtyDetailsAndUser(forLoginId = theChangedLoginGrant.login.id) must beLike {
+          case Some((identity, user)) =>
+            identity must_== theChangedLoginGrant.identity
+            user must_== theChangedLoginGrant.user
+        }
+        ok
+      }
+    }
+
+
     // -------- Password identities
+
 
     "create PasswordIdentity and User" >> {
 

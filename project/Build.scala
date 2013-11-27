@@ -28,6 +28,7 @@ object ApplicationBuild extends Build {
 
   lazy val debikiCore =
     Project("debiki-core", file("modules/debiki-core"))
+    .dependsOn(secureSocial) // only class securesocial.core.Identity
 
   lazy val debikiTckDao =
     (Project("debiki-tck-dao", file("modules/debiki-tck-dao"))

@@ -70,7 +70,7 @@ object AppInstall extends mvc.Controller {
         val xsrfToken = nextRandomString() take 20
         val xsrfCookie = urlEncodeCookie(DebikiSecurity.XsrfCookieName, xsrfToken)
 
-        Ok(views.html.login(xsrfToken = xsrfToken,
+        Ok(views.html.login.loginPage(xsrfToken = xsrfToken,
           returnToUrl = routes.AppInstall.createFirstSiteOwner(firstSiteOwnerPassword).url,
           showCreateAccountOption = true,
           title = "Installation",

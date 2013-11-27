@@ -51,7 +51,7 @@ object CreateSiteController extends mvc.Controller {
 
 
   def showWebsiteOwnerForm() = CheckSidActionNoBody { (sidOk, xsrfOk, request) =>
-    Ok(views.html.login(xsrfToken = xsrfOk.value,
+    Ok(views.html.login.loginPage(xsrfToken = xsrfOk.value,
       returnToUrl = routes.CreateSiteController.showSiteTypeForm.url,
       title = "Choose Website Owner Account",
       providerLoginMessage = "It will become the owner of the new website.",
@@ -163,12 +163,8 @@ object CreateSiteController extends mvc.Controller {
 
     // SECURITY should whitelist allowed OpenID and OAuth providers.
 
-    // Require OpenID or OAuth (todo) or password (todo) login.
-    identity match {
-      case _: IdentityOpenId => // ok
-      case _: PasswordIdentity => // ok
-      case x => throwForbidden("DwE4GEI2", s"Bad identity type: ${classNameOf(x)}")
-    }
+    if (identity.isInstanceOf[IdentitySimple])
+      throwForbidden("DwE4GEI2", "Guests may not create websites.")
 
     val result =
       SiteCreator.createWebsite(

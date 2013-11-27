@@ -32,8 +32,8 @@ import Utils.{OkHtml}
  * Handles login; delegates to AppLoginGuest/OpenId and (?) -OAuth.
  *
  * Usage:
- * You could use views.html.login to how a login page in place of the
- * page that requires login. Then, views.html.login will post to
+ * You could use views.html.login.loginPage to how a login page in place of the
+ * page that requires login. Then, views.html.login.loginPage will post to
  * this class, AppLogin, which will eventually redirect back to the
  * returnToUrl.
  */
@@ -54,21 +54,28 @@ object AppLogin extends mvc.Controller {
 
 
   def asyncLogin(provider: String, returnToUrl: String)
-        (implicit request: Request[_]): Result = {
+        (implicit request: Request[Option[Any]]): Result = {
 
-    def _loginWithOpenId(identifier: String): AsyncResult = {
+    def loginWithOpenId(identifier: String): AsyncResult = {
       AppLoginOpenId.asyncLogin(openIdIdentifier = identifier,
-        returnToUrl = returnToUrl)
+        returnToUrl = returnToUrl)(request)
+    }
+
+    def loginWithSecureSocial(provider: String): Result = {
+      LoginWithSecureSocialController.startAuthentication(
+        provider, returnToUrl = returnToUrl)(request)
     }
 
     provider match {
       case "google" =>
-        _loginWithOpenId(IdentityOpenId.ProviderIdentifier.Google)
+        loginWithOpenId(IdentityOpenId.ProviderIdentifier.Google)
       case "yahoo" =>
-        _loginWithOpenId(IdentityOpenId.ProviderIdentifier.Yahoo)
+        loginWithOpenId(IdentityOpenId.ProviderIdentifier.Yahoo)
+      case "facebook" =>
+        loginWithSecureSocial(securesocial.core.providers.FacebookProvider.Facebook)
       case x =>
         unimplemented("Logging in with SecureSocial from here")
-        // Or forward to AppLoginSecureSocial.handleAuth in some manner?
+        // Or forward to LoginWithSecureSocialController.handleAuth in some manner?
     }
   }
 
