@@ -87,39 +87,40 @@ d.i.$showReplyForm = function(event, opt_where) {
     $.post('?reply='+ postId +'&view='+ d.i.rootPostId,
         $replyForm.serialize(), 'json')
       .fail(d.i.showErrorEnableInputs($replyForm))
-      .done(function(newDebateHtml) {
-        // The server has replied. Merge in the data from the server
-        // (i.e. the new post) in the debate.
-        // Remove the reply form first — if you do it afterwards,
-        // a .dw-t:last-child might fail (be false), because the form
-        // would be the last child, resulting in a superfluous
-        // dw-svg-fake-harrow.
-        d.i.removeInstantly($replyFormParent);
-        $replyAction.dwActionLinkEnable();
-        var result = d.i.patchPage(newDebateHtml);
-        var $myNewPost = result.patchedThreads[0].dwGetPost();
-        d.u.bugIf($myNewPost.length !== 1, 'DwE3TW39');
-        d.i.markMyPost($myNewPost.dwPostIdStr());
-        // Any horizontal reply button has been hidden.
-        $anyHorizReplyBtn.show();
-
-        // Don't show sort order tips instantly, because if
-        // the new comment and the tips appear at the same time,
-        // the user will be confused? S/he won't know where to look?
-        // So wait a few seconds.
-        // Don't show sort order tips if there are few replies,
-        // then nothing is really being sorted anyway.
-        var showSortTips = horizLayout && replyCountBefore >= 2;
-        if (showSortTips) showSortOrderTipsLater($myNewPost, 2050);
-
-        d.i.showAndHighlightPost($myNewPost,
-            { marginRight: 300, marginBottom: 300 });
-        d.i.$showActions.apply($myNewPost);
-      });
-
+      .done(onCommentSaved);
     d.i.disableSubmittedForm($replyForm);
     return false;
   });
+
+  function onCommentSaved(newDebateHtml) {
+    // The server has replied. Merge in the data from the server
+    // (i.e. the new post) in the debate.
+    // Remove the reply form first — if you do it afterwards,
+    // a .dw-t:last-child might fail (be false), because the form
+    // would be the last child, resulting in a superfluous
+    // dw-svg-fake-harrow.
+    d.i.removeInstantly($replyFormParent);
+    $replyAction.dwActionLinkEnable();
+    var result = d.i.patchPage(newDebateHtml);
+    var $myNewPost = result.patchedThreads[0].dwGetPost();
+    d.u.bugIf($myNewPost.length !== 1, 'DwE3TW39');
+    d.i.markMyPost($myNewPost.dwPostIdStr());
+    // Any horizontal reply button has been hidden.
+    $anyHorizReplyBtn.show();
+
+    // Don't show sort order tips instantly, because if
+    // the new comment and the tips appear at the same time,
+    // the user will be confused? S/he won't know where to look?
+    // So wait a few seconds.
+    // Don't show sort order tips if there are few replies,
+    // then nothing is really being sorted anyway.
+    var showSortTips = horizLayout && replyCountBefore >= 2;
+    if (showSortTips) showSortOrderTipsLater($myNewPost, 2050);
+
+    d.i.showAndHighlightPost($myNewPost,
+        { marginRight: 300, marginBottom: 300 });
+    d.i.$showActions.apply($myNewPost);
+  };
 
   // Fancy fancy
   $replyForm.find('.dw-submit-set input').button();
