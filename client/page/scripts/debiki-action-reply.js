@@ -51,9 +51,14 @@ d.i.$showReplyForm = function(event, opt_where) {
 
   (function() { // in the past, loaded reply form here
 
-    var $replyFormParent = $('#dw-hidden-templates .dw-fs-re').clone(true);
+    var $replyFormParent = d.i.newReplyFormHtml();
     var $replyForm = $replyFormParent.children('form');
+
+    // Set XSRF token.
+    $replyForm.find('input[name="dw-fi-xsrf"]').val($.cookie('XSRF-TOKEN'));
+
     d.u.makeIdsUniqueUpdateLabels($replyForm);
+
     $replyForm.resizable({
         alsoResize: $replyForm.find('textarea'),
         resize: function() {

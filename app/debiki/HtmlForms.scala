@@ -43,13 +43,6 @@ object HtmlForms {
 
   val XsrfInpName = "dw-fi-xsrf"
 
-  object Reply {
-    object InputNames {
-      val Text = "dw-fi-reply-text"
-      val Where = "dw-fi-reply-where"
-    }
-  }
-
   object Rating {
     object InputNames {
       val Tag = "dw-fi-r-tag"
@@ -120,7 +113,6 @@ class HtmlForms(xsrfToken: String, val pageRoot: PageRoot, val permsOnPage: Perm
     // If a form action is the empty string, the browser POSTS to the current
     // page, says the URI spec: http://www.apps.ietf.org/rfc/rfc3986.html#sec-5.4
     // COULD rename replyAction -> replyUrl (or reactUrl -> reactAction).
-    val replyAction = "?reply"
     val rateAction = "?rate"
     val flagAction = "?flag"
 
@@ -138,7 +130,6 @@ class HtmlForms(xsrfToken: String, val pageRoot: PageRoot, val permsOnPage: Perm
   def dialogTemplates = {
     <div id="dw-hidden-templates">
     { loginForms ++
-      replyForm(PageParts.NoId, text = "") ++
       ratingForm ++
       flagForm ++
       deleteForm(None) ++
@@ -250,35 +241,6 @@ class HtmlForms(xsrfToken: String, val pageRoot: PageRoot, val permsOnPage: Perm
      <li><a href={"?flag="  + pid + _viewRoot}>Report spam or abuse</a></li>
      <li><a href={"?delete="+ pid + _viewRoot}>Delete</a></li>
     </ul>
-  }
-
-
-  def replyForm(replyToPostId: ActionId, text: String) = {
-      import Reply.{InputNames => Inp}
-    val replyToPostIdStr =
-      if (replyToPostId == PageParts.NoId) "" else replyToPostId.toString
-    val submitButtonText = "Post as ..." // COULD read user name from `config'
-      <li class='dw-fs dw-fs-re'>
-        <div class="dw-arw dw-arw-hz-line-to-sibling"></div>
-        <form
-            action={config.replyAction +"="+ replyToPostIdStr + _viewRoot}
-            accept-charset='UTF-8'
-            method='post'>
-          { _xsrfToken }
-          {/* timeWaistWarning("reply", "is") */}
-          <input type='hidden' id={Inp.Where} name={Inp.Where} value='' />
-          <div>
-            <label for={Inp.Text}>Your reply:</label><br/>
-            <textarea id={Inp.Text} name={Inp.Text} rows='13'
-              cols='38'>{text}</textarea>
-          </div>
-          { termsAgreement("Post as ...") }
-          <div class='dw-submit-set'>
-            <input class='dw-fi-cancel' type='button' value='Cancel'/>
-            <input class='dw-fi-submit' type='submit' value={submitButtonText}/>
-          </div>
-        </form>
-      </li>
   }
 
 

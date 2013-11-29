@@ -33,17 +33,9 @@ import Utils.{OkHtml, OkHtmlBody}
 import BrowserPagePatcher.TreePatchSpec
 
 
+/** Handles reply form submissions.
+  */
 object AppReply extends mvc.Controller {
-
-
-  def showForm(pathIn: PagePath, postId: ActionId) = PageGetAction(pathIn) {
-      pageReq: PageGetRequest =>
-
-    val replyForm: xml.NodeSeq =
-      Utils.formHtml(pageReq).replyForm(replyToPostId = postId, text = "")
-
-    OkHtml(replyForm)
-  }
 
 
   def handleForm(pathIn: PagePath, postId: ActionId)
@@ -51,7 +43,6 @@ object AppReply extends mvc.Controller {
       pageReqNoMeOnPage: PagePostRequest =>
 
     import Utils.ValidationImplicits._
-    import HtmlForms.Reply.{InputNames => Inp}
 
     val pageReq = pageReqNoMeOnPage.copyWithMeOnPage_!
     if (pageReq.oldPageVersion.isDefined)
@@ -60,9 +51,9 @@ object AppReply extends mvc.Controller {
     if (pageReq.page_!.getPost(postId) isEmpty)
       throwBadReq("DwEe8HD36", s"Cannot reply to post `$postId'; it does not exist")
 
-    val text = pageReq.getEmptyAsNone(Inp.Text) getOrElse
+    val text = pageReq.getEmptyAsNone("dw-fi-reply-text") getOrElse
       throwBadReq("DwE93k21", "Empty reply")
-    val whereOpt = pageReq.getEmptyAsNone(Inp.Where)
+    val whereOpt = pageReq.getEmptyAsNone("dw-fi-reply-where")
 
     val approval = AutoApprover.perhapsApprove(pageReq)
 
