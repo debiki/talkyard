@@ -161,11 +161,17 @@ d.u.buildTagFindId = function(html, id) {
 
 (function() {
   $.fn.dwDisable = function() {
-    return _dwEnableDisableImpl(this, true);
+    this.each(function() {
+      _dwEnableDisableImpl($(this), true);
+    });
+    return this;
   };
 
   $.fn.dwEnable = function() {
-    return _dwEnableDisableImpl(this, false);
+    this.each(function() {
+      _dwEnableDisableImpl($(this), false);
+    });
+    return this;
   };
 
   function _dwEnableDisableImpl(self, disabled) {
