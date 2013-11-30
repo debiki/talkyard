@@ -86,6 +86,10 @@ d.i.disableSubmittedForm = function($form) {
 // and attempt to submit again).
 d.i.showErrorEnableInputs = function($form) {
   return function(jqXHR, errorType, httpStatusText) {
+    // If we're using JSONP, we might have gotten no arguments at all, because on failure
+    // the server cannot reply, since we're communicating via <script> tags. So:
+    jqXHR = jqXHR || {};
+
     var $submitBtns = $form.find('.dw-submit-set');
     var $thread = $form.closest('.dw-t');
     var err = jqXHR.status ? (jqXHR.status +' '+ httpStatusText) : 'Error'
