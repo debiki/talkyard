@@ -69,6 +69,7 @@ module.exports = function(grunt) {
       'target/client/page/scripts/debiki-form-anims.js',
       'target/client/page/scripts/debiki-http-dialogs.js',
       'target/client/page/scripts/debiki-inline-threads.js',
+      'target/client/page/scripts/debiki-iframe.js',
       'target/client/page/scripts/debiki-jquery-dialogs.js',
       'target/client/page/scripts/debiki-jquery-find.js',
       'target/client/page/scripts/debiki-keyboard-shortcuts.js', //
@@ -137,6 +138,7 @@ module.exports = function(grunt) {
       'target/client/page/scripts/debiki-form-anims.js',
       'target/client/page/scripts/debiki-http-dialogs.js',
       'target/client/page/scripts/debiki-inline-threads.js',
+      'target/client/page/scripts/debiki-iframe.js',
       'target/client/page/scripts/debiki-jquery-dialogs.js',
       'target/client/page/scripts/debiki-jquery-find.js',
       'target/client/page/scripts/debiki-layout.js',
