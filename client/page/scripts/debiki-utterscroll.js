@@ -450,6 +450,20 @@ debiki.Utterscroll = (function(options) {
     };
   };
 
+  var origOnMouseMove = document.onmousemove;
+  var origOnMouseUp = document.onmouseup;
+  document.onmousemove = function(event) {
+    window.parent.postMessage(['onMouseMove', cloneEvent(event)], '*');
+    if (origOnMouseMove)
+      origOnMouseMove(event);
+  }
+
+  document.onmouseup = function(event) {
+    window.parent.postMessage(['stopUtterscrolling', cloneEvent(event)], '*');
+    if (origOnMouseUp)
+      origOnMouseUp(event);
+  }
+
   var api = {
     enable: function(options) {
       enabled = true;

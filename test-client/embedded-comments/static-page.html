@@ -46,6 +46,7 @@
       case 'startUtterscrolling':
         debiki.Utterscroll.startScrolling(eventData);
         break;
+      case 'onMouseMove':
       case 'doUtterscroll':
         console.log('iframe message: utterscroll ' + JSON.stringify(eventData));
         debiki.Utterscroll.doScroll(eventData);

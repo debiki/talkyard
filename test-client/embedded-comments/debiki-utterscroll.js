@@ -356,6 +356,17 @@ debiki.Utterscroll = (function(options) {
 
 
   function doScroll(event) {
+
+    // The iframe sends mouse move events always, it doesn't know if the parent
+    // frame is scrolling or not.
+    if (!startPos)
+      return;
+
+    // If we start scrolling in the iframe, then we knw that what the iframe
+    // wants to do, is to scroll the whole window.
+    if (!$elemToScroll)
+      $elemToScroll = $(window);
+
     // Find movement since mousedown, and since last scroll step.
     var distTotal = {
       x: Math.abs(event.screenX - startPos.x),
@@ -365,9 +376,6 @@ debiki.Utterscroll = (function(options) {
       x: event.screenX - lastPos.x,
       y: event.screenY - lastPos.y
     };
-
-    if (!$elemToScroll)
-      $elemToScroll = $(window);
 
     // Sometimes we should scroll in one direction only.
     if ($elemToScroll[0] === window) {
