@@ -42,6 +42,14 @@
       case 'setIframeSize':
         setIframeSize(findIframeThatSent(event), eventData);
         break;
+      case 'utterscroll':
+        console.log('iframe message: utterscroll ' + JSON.stringify(eventData));
+        var $elemToScroll = $(window);
+        var scrollX = $elemToScroll.scrollLeft() - eventData.dx;
+        var scrollY = $elemToScroll.scrollTop() - eventData.dy;
+        $elemToScroll.scrollLeft(scrollX);
+        $elemToScroll.scrollTop(scrollY);
+        break;
     }
   };
 

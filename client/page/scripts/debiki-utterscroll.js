@@ -317,8 +317,8 @@ debiki.Utterscroll = (function(options) {
     else {
       var d = document;
       mouseOffs = {
-        x: event.clientX + d.body.scrollLeft + d.documentElement.scrollLeft,
-        y: event.clientY + d.body.scrollTop + d.documentElement.scrollTop
+        x: event.screenX + d.body.scrollLeft + d.documentElement.scrollLeft,
+        y: event.screenY + d.body.scrollTop + d.documentElement.scrollTop
       };
     }
 
@@ -348,8 +348,8 @@ debiki.Utterscroll = (function(options) {
     $(document.body).css('cursor', 'move');
 
     // Y is the distance to the top.
-    startPos = { x: event.clientX, y: event.clientY };
-    lastPos = { x: event.clientX, y: event.clientY }; 
+    startPos = { x: event.screenX, y: event.screenY };
+    lastPos = { x: event.screenX, y: event.screenY }; 
 
     return false;
   };
@@ -358,12 +358,12 @@ debiki.Utterscroll = (function(options) {
   function doScroll(event) {
     // Find movement since mousedown, and since last scroll step.
     var distTotal = {
-      x: Math.abs(event.clientX - startPos.x),
-      y: Math.abs(event.clientY - startPos.y)
+      x: Math.abs(event.screenX - startPos.x),
+      y: Math.abs(event.screenY - startPos.y)
     };
     var distNow = {
-      x: event.clientX - lastPos.x,
-      y: event.clientY - lastPos.y
+      x: event.screenX - lastPos.x,
+      y: event.screenY - lastPos.y
     };
 
     // Sometimes we should scroll in one direction only.
@@ -416,12 +416,13 @@ debiki.Utterscroll = (function(options) {
       ' rslt: '+ distNow.x +', '+ distNow.y);
     */
 
-    $elemToScroll.scrollLeft($elemToScroll.scrollLeft() - distNow.x);
-    $elemToScroll.scrollTop($elemToScroll.scrollTop() - distNow.y);
+    window.parent.postMessage(['utterscroll', { dx: distNow.x, dy: distNow.y }], '*');
+    //$elemToScroll.scrollLeft($elemToScroll.scrollLeft() - distNow.x);
+    //$elemToScroll.scrollTop($elemToScroll.scrollTop() - distNow.y);
 
     lastPos = {
-      x: event.clientX,
-      y: event.clientY
+      x: event.screenX,
+      y: event.screenY
     };
 
     return false;
