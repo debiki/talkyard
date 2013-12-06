@@ -32,6 +32,7 @@
 
   addEventListener('message', onMessage, false);
 
+
   function onMessage(envent) {
     var eventName = event.data[0];
     var eventData = event.data[1];
@@ -42,13 +43,15 @@
       case 'setIframeSize':
         setIframeSize(findIframeThatSent(event), eventData);
         break;
-      case 'utterscroll':
+      case 'startUtterscrolling':
+        debiki.Utterscroll.startScrolling(eventData);
+        break;
+      case 'doUtterscroll':
         console.log('iframe message: utterscroll ' + JSON.stringify(eventData));
-        var $elemToScroll = $(window);
-        var scrollX = $elemToScroll.scrollLeft() - eventData.dx;
-        var scrollY = $elemToScroll.scrollTop() - eventData.dy;
-        $elemToScroll.scrollLeft(scrollX);
-        $elemToScroll.scrollTop(scrollY);
+        debiki.Utterscroll.doScroll(eventData);
+        break;
+      case 'stopUtterscrolling':
+        debiki.Utterscroll.stopScrolling(eventData);
         break;
     }
   };

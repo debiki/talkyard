@@ -351,6 +351,7 @@ debiki.Utterscroll = (function(options) {
     startPos = { x: event.screenX, y: event.screenY };
     lastPos = { x: event.screenX, y: event.screenY }; 
 
+    window.parent.postMessage(['startUtterscrolling', cloneEvent(event)], '*');
     return false;
   };
 
@@ -416,7 +417,7 @@ debiki.Utterscroll = (function(options) {
       ' rslt: '+ distNow.x +', '+ distNow.y);
     */
 
-    window.parent.postMessage(['utterscroll', { dx: distNow.x, dy: distNow.y }], '*');
+    window.parent.postMessage(['doUtterscroll', cloneEvent(event)], '*');
     //$elemToScroll.scrollLeft($elemToScroll.scrollLeft() - distNow.x);
     //$elemToScroll.scrollTop($elemToScroll.scrollTop() - distNow.y);
 
@@ -436,9 +437,18 @@ debiki.Utterscroll = (function(options) {
     $(document.body).css('cursor', '');  // cancel 'move' cursor
     $.event.remove(document, 'mousemove', doScroll);
     $.event.remove(document, 'mouseup', stopScroll);
+    window.parent.postMessage(['stopUtterscrolling', cloneEvent(event)], '*');
     return false;
   };
 
+
+  function cloneEvent(event) {
+    // This is all Utterscroll in this <iframe>'s parent window needs.
+    return {
+      screenX: event.screenX,
+      screenY: event.screenY
+    };
+  };
 
   var api = {
     enable: function(options) {
