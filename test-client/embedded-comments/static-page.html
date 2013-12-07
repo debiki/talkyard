@@ -4,14 +4,11 @@
 
   <script src="http://ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
   <script src='http://modernizr.com/downloads/modernizr-latest.js'></script>
-  <script src='./jquery-scrollable.js'></script>
-  <script type="text/javascript">
-    jQuery(function($) {
-      if (!Modernizr.touch) { // if not a smartphone
-        debiki.Utterscroll.enable();
-      }
-    });
+
+  <script>
+    var debikiSettings = {};
   </script>
+  <script src='http://localhost:9000/-/res/embedded-comments.js' defer></script>
 
 </head>
 <body>
@@ -19,67 +16,10 @@
   <p>Page contents part 1</p>
   <!--<iframe class="debiki-embedded-comments" seamless="seamless" src="http://localhost:9000/forum/-48yh2-new-forum-topic"></iframe>-->
   <iframe class="debiki-embedded-comments" seamless="seamless" src="http://localhost:9000/forum/-913b5-new-forum-topic"></iframe>
+  <!--<iframe class="debiki-embedded-comments" src="http://localhost:9000/-/embedded-comments/123456789" seamless></iframe>-->
 
-  <!--
-  <div id="page-84472" class="debiki dw-debate dw-page" data-page_exists="true" data-page_path="/forum/-48yh2-new-forum-topic" data-page_role="ForumTopic" data-page_status="Published" data-parent_page_id="1d8z5">
-	  -->
-  <!-- <p>Page contents part 2</p>
-  <div class="debiki-embedded-comments" id="48yh2"></div>
-  </div>
-  -->
 </div>
 
-<script>
-
-  addEventListener('message', onMessage, false);
-
-  $('.debiki-embedded-comments').width($(window).width());
-
-  function onMessage(envent) {
-    var eventName = event.data[0];
-    var eventData = event.data[1];
-    switch (eventName) {
-      case 'iframeInited':
-        setIframeBaseAddress(findIframeThatSent(event));
-        break;
-      case 'setIframeSize':
-        setIframeSize(findIframeThatSent(event), eventData);
-        break;
-      case 'startUtterscrolling':
-        debiki.Utterscroll.startScrolling(eventData);
-        break;
-      case 'onMouseMove':
-      case 'doUtterscroll':
-        debiki.Utterscroll.doScroll(eventData);
-        break;
-      case 'stopUtterscrolling':
-        debiki.Utterscroll.stopScrolling(eventData);
-        break;
-    }
-  };
-
-  function setIframeBaseAddress(iframe) {
-    iframe.contentWindow.postMessage(['setBaseAddress', window.location.href], '*');
-  };
-
-  function setIframeSize(iframe, dimensions) {
-    $(iframe).width(dimensions.width);
-    $(iframe).height(dimensions.height);
-  };
-
-  function findIframeThatSent(event) {
-    // See http://stackoverflow.com/a/18267415/694469
-    var iframes = document.getElementsByClassName('debiki-embedded-comments');
-    for (var i = 0; i < iframes.length; ++i) {
-      var iframe = iframes[i];
-      if (iframe.contentWindow === event.source)
-        return iframe;
-    }
-  };
-
-</script>
-
-<script src='./debiki-utterscroll.js'></script>
 </body>
 </html>
 

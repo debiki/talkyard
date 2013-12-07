@@ -175,6 +175,13 @@ module.exports = function(grunt) {
       'target/client/page/scripts/debiki-create-page.js',
       'target/client/page/scripts/debiki.js']
 
+  // For both touch devices and desktops.
+  var debikiEmbeddedCommentsFiles = [
+      'client/third-party/jquery-scrollable.js',
+      'target/client/embedded-comments/scripts/debiki-utterscroll-iframe-parent.js',
+      'target/client/embedded-comments/scripts/iframe-parent.js',
+      'target/client/page/scripts/debiki-utterscroll-init-tips.js'];
+
   var stylusFiles = [
       'public/res/jquery-ui/jquery-ui-1.9.2.custom.css',
       'client/page/styles/debiki.styl',
@@ -261,6 +268,9 @@ module.exports = function(grunt) {
 
         'public/res/combined-debiki-touch.js':
             debikiTouchFiles,
+
+        'public/res/embedded-comments.js':
+            debikiEmbeddedCommentsFiles,
 
         'public/res/debiki-spa-common.js': [
             'target/client/third-party/livescript/prelude-browser-min.js',
