@@ -203,7 +203,11 @@ class SiteTpi protected (val debikiRequest: DebikiRequest[_])
     views.html.debikiStyles(minMaxJs, minMaxCss).body)
 
   def debikiScripts = xml.Unparsed(
-    views.html.debikiScripts(anyCurrentPageId, minMaxJs, minMaxCss).body)
+    views.html.debikiScripts(
+      anyPageId = anyCurrentPageId,
+      serverAddress = debikiRequest.request.host,
+      minMaxJs = minMaxJs,
+      minMaxCss = minMaxCss).body)
 
 
   /** A website or page config value, and page specific values take precedence.

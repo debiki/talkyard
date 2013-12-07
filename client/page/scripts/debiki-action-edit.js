@@ -87,6 +87,7 @@ function _$showEditFormImpl() {
     // (The page path is needed if the page doesn't exist, so the server has
     // some way to find out which PermsOnPage to show.)
     var url =
+        d.i.serverOrigin +
         '/-/edit?pageId='+ pageMeta.pageId +
         '&pagePath='+ pageMeta.pagePath +
         '&postId='+ postId +
@@ -380,7 +381,7 @@ function _$showEditFormImpl() {
         }]
       };
 
-      d.u.postJson({ url: '/-/edit', data: jsonObj })
+      d.u.postJson({ url: d.i.serverOrigin + '/-/edit', data: jsonObj })
           .fail(d.i.showErrorEnableInputs($editForm))
           .done(function(newDebateHtml) {
 
