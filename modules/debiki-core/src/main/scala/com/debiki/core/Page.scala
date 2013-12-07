@@ -270,6 +270,8 @@ object PageRole {
     override val parentRole = Some(Blog)
   }
 
+  // Ooops, ForumGroup + Forum + ForumTopic feels over complicated. Should
+  // remove ForumGroup and keep only Forum and ForumTopic.
   case object ForumGroup extends PageRole {
     // BUG, childRole should include ForumGroup itself.
     override val childRole = Some(Forum)
@@ -292,12 +294,12 @@ object PageRole {
     override val parentRole = Some(WikiMainPage)
   }
 
-  case object EmbeddedDiscussions extends PageRole {
-    override val childRole = Some(EmbeddedDiscussion)
+  case object EmbeddedForum extends PageRole {
+    override val childRole = Some(EmbeddedTopic)
   }
 
-  case object EmbeddedDiscussion extends PageRole {
-    override val parentRole = Some(EmbeddedDiscussions)
+  case object EmbeddedTopic extends PageRole {
+    override val parentRole = Some(EmbeddedForum)
   }
 
   // Hmm, regrettably this breaks should I rename any case object.
@@ -306,7 +308,7 @@ object PageRole {
     Generic, Blog, BlogPost,
     ForumGroup, Forum, ForumTopic,
     WikiMainPage, WikiPage,
-    EmbeddedDiscussions, EmbeddedDiscussion,
+    EmbeddedForum, EmbeddedTopic,
     Code).map(x => (x, x.toString))
 
   def parse(pageRoleString: String): PageRole =
