@@ -57,6 +57,7 @@ See: http://stackoverflow.com/questions/1014203/best-way-to-use-googles-hosted-j
     v0: { util: {} },
     internal: {
       $: jQuery,
+      isInIframe: self !== top,
       pageId: @Html(pageIdQuotedOrUndefined),
       assetsUrlPathStart: '@asset("")',
       singleColumnLayout: Math.max(jQuery(window).width(), jQuery(window).height()) < 1000

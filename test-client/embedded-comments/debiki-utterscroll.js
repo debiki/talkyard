@@ -1,4 +1,4 @@
-/* Debiki Utterscroll — dragscroll everywhere
+/* Debiki Utterscroll — dragscroll everywhere, tweaked for <iframe> parent.
  * http://www.debiki.com/dev/utterscroll
  *
  * Copyright (c) 2012 - 2013 Kaj Magnus Lindberg (born 1979)
@@ -477,6 +477,8 @@ debiki.Utterscroll = (function(options) {
       return !!startPos;
     },
 
+    // These are invoked directly if scrolling starts from an iframe mousedown-drag,
+    // or if scrolling continues or stops inside the iframe.
     startScrolling: startScroll,
     doScroll: doScroll,
     stopScrolling: stopScroll

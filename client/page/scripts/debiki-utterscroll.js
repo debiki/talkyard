@@ -1,4 +1,4 @@
-/* Debiki Utterscroll — dragscroll everywhere
+/* Debiki Utterscroll — dragscroll everywhere, adjusted to run in an <iframe> too.
  * http://www.debiki.com/dev/utterscroll
  *
  * Copyright (c) 2012 - 2013 Kaj Magnus Lindberg (born 1979)
@@ -21,7 +21,8 @@
   (function($){
 //----------------------------------------
 
-if (!window.debiki) window.debiki = {};
+var d = { i: debiki.internal, u: debiki.v0.util };
+
 if (!debiki.Utterscroll) debiki.Utterscroll = {};
 
 
@@ -351,7 +352,9 @@ debiki.Utterscroll = (function(options) {
     startPos = { x: event.screenX, y: event.screenY };
     lastPos = { x: event.screenX, y: event.screenY }; 
 
-    window.parent.postMessage(['startUtterscrolling', cloneEvent(event)], '*');
+    if (d.i.isInIframe)
+      window.parent.postMessage(['startUtterscrolling', cloneEvent(event)], '*');
+
     return false;
   };
 
@@ -417,9 +420,13 @@ debiki.Utterscroll = (function(options) {
       ' rslt: '+ distNow.x +', '+ distNow.y);
     */
 
-    window.parent.postMessage(['doUtterscroll', cloneEvent(event)], '*');
-    //$elemToScroll.scrollLeft($elemToScroll.scrollLeft() - distNow.x);
-    //$elemToScroll.scrollTop($elemToScroll.scrollTop() - distNow.y);
+    if (d.i.isInIframe) {
+      window.parent.postMessage(['doUtterscroll', cloneEvent(event)], '*');
+    }
+    else {
+      $elemToScroll.scrollLeft($elemToScroll.scrollLeft() - distNow.x);
+      $elemToScroll.scrollTop($elemToScroll.scrollTop() - distNow.y);
+    }
 
     lastPos = {
       x: event.screenX,
@@ -437,7 +444,10 @@ debiki.Utterscroll = (function(options) {
     $(document.body).css('cursor', '');  // cancel 'move' cursor
     $.event.remove(document, 'mousemove', doScroll);
     $.event.remove(document, 'mouseup', stopScroll);
-    window.parent.postMessage(['stopUtterscrolling', cloneEvent(event)], '*');
+
+    if (d.i.isInIframe)
+      window.parent.postMessage(['stopUtterscrolling', cloneEvent(event)], '*');
+
     return false;
   };
 
@@ -450,19 +460,28 @@ debiki.Utterscroll = (function(options) {
     };
   };
 
-  var origOnMouseMove = document.onmousemove;
-  var origOnMouseUp = document.onmouseup;
-  document.onmousemove = function(event) {
-    window.parent.postMessage(['onMouseMove', cloneEvent(event)], '*');
-    if (origOnMouseMove)
-      origOnMouseMove(event);
+
+  // If any iframe parent starts utterscrolling, help it continue scrolling when
+  // the mouse is over the iframe, by posting these events to the parent that it
+  // can use instead of e.g. the onmousemove event (which goes to the iframe
+  // only).
+  if (d.i.isInIframe) {
+    var origOnMouseMove = document.onmousemove;
+    var origOnMouseUp = document.onmouseup;
+
+    document.onmousemove = function(event) {
+      window.parent.postMessage(['onMouseMove', cloneEvent(event)], '*');
+      if (origOnMouseMove)
+        origOnMouseMove(event);
+    }
+
+    document.onmouseup = function(event) {
+      window.parent.postMessage(['stopUtterscrolling', cloneEvent(event)], '*');
+      if (origOnMouseUp)
+        origOnMouseUp(event);
+    }
   }
 
-  document.onmouseup = function(event) {
-    window.parent.postMessage(['stopUtterscrolling', cloneEvent(event)], '*');
-    if (origOnMouseUp)
-      origOnMouseUp(event);
-  }
 
   var api = {
     enable: function(options) {
