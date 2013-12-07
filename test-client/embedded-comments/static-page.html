@@ -33,6 +33,7 @@
 
   addEventListener('message', onMessage, false);
 
+  $('.debiki-embedded-comments').width($(window).width());
 
   function onMessage(envent) {
     var eventName = event.data[0];
