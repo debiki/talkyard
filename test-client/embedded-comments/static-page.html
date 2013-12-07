@@ -38,7 +38,7 @@
     var eventData = event.data[1];
     switch (eventName) {
       case 'iframeInited':
-        setBaseAddress(findIframeThatSent(event));
+        setIframeBaseAddress(findIframeThatSent(event));
         break;
       case 'setIframeSize':
         setIframeSize(findIframeThatSent(event), eventData);
@@ -48,7 +48,6 @@
         break;
       case 'onMouseMove':
       case 'doUtterscroll':
-        console.log('iframe message: utterscroll ' + JSON.stringify(eventData));
         debiki.Utterscroll.doScroll(eventData);
         break;
       case 'stopUtterscrolling':
@@ -57,7 +56,7 @@
     }
   };
 
-  function setBaseAddress(iframe) {
+  function setIframeBaseAddress(iframe) {
     iframe.contentWindow.postMessage(['setBaseAddress', window.location.href], '*');
   };
 
