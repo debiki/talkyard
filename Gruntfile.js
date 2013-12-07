@@ -39,6 +39,7 @@ module.exports = function(grunt) {
   var debikiDesktopFiles = [
       'client/third-party/bootstrap/tooltip.js', //
       'client/third-party/bootstrap/dropdown.js',
+      'client/third-party/bootstrap/tab.js',
       'client/third-party/diff_match_patch.js',
       'client/third-party/html-sanitizer-bundle.js',
       'client/third-party/jquery-cookie.js',
@@ -109,6 +110,7 @@ module.exports = function(grunt) {
 
   var debikiTouchFiles = [
       'client/third-party/bootstrap/dropdown.js',
+      'client/third-party/bootstrap/tab.js',
       'client/third-party/diff_match_patch.js',
       'client/third-party/html-sanitizer-bundle.js',
       'client/third-party/jquery-cookie.js',
