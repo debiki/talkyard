@@ -19,7 +19,7 @@ var d = { i: debiki.internal, u: debiki.v0.util };
 var $ = d.i.$;
 
 
-if (!window.parent)
+if (!d.i.isInIframe)
   return;
 
 
@@ -27,12 +27,7 @@ addEventListener('message', onMessage, false);
 
 window.parent.postMessage(['iframeInited', ''], '*');
 
-setTimeout(function() {
-window.parent.postMessage(['setIframeSize', {
-  width: $(document).width() + 100,
-  height: $(document).height() + 100
-}], '*');
-}, 3000);
+syncDocSizeWithIframeSize();
 
 
 function onMessage(envent) {
@@ -50,6 +45,36 @@ function onMessage(envent) {
 function addBaseElem(address) {
   var baseElem = $('<base href="' + address + '" target="_parent">');
   $('head').append(baseElem);
+};
+
+
+/**
+ * Polls the document size and tells the parent window to resize this <iframe> if needed,
+ * to avoid scrollbars.
+ */
+function syncDocSizeWithIframeSize() {
+  var lastWidth = 0;
+  var lastHeight = 0;
+  setInterval(pollAndSyncSize, 100);
+
+  function pollAndSyncSize() {
+    var currentWidth = $(document).width();
+    var currentHeight = $(document).height();
+    if (lastWidth === currentWidth && lastHeight === currentHeight)
+      return;
+
+    // Add some margin.
+    currentWidth += 80;
+    currentHeight += 80;
+
+    lastWidth = currentWidth;
+    lastHeight = currentHeight;
+
+    window.parent.postMessage(['setIframeSize', {
+      width: currentWidth,
+      height: currentHeight
+    }], '*');
+  };
 };
 
 
