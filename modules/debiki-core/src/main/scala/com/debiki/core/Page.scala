@@ -292,12 +292,22 @@ object PageRole {
     override val parentRole = Some(WikiMainPage)
   }
 
+  case object EmbeddedDiscussions extends PageRole {
+    override val childRole = Some(EmbeddedDiscussion)
+  }
+
+  case object EmbeddedDiscussion extends PageRole {
+    override val parentRole = Some(EmbeddedDiscussions)
+  }
+
   // Hmm, regrettably this breaks should I rename any case object.
   // Perhaps use a match ... case list instead?
   private val _PageRoleLookup = Vector(
     Generic, Blog, BlogPost,
     ForumGroup, Forum, ForumTopic,
-    WikiMainPage, WikiPage, Code).map(x => (x, x.toString))
+    WikiMainPage, WikiPage,
+    EmbeddedDiscussions, EmbeddedDiscussion,
+    Code).map(x => (x, x.toString))
 
   def parse(pageRoleString: String): PageRole =
     _PageRoleLookup.find(_._2 == pageRoleString).map(_._1).getOrElse(
