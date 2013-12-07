@@ -206,6 +206,7 @@ class SiteTpi protected (val debikiRequest: DebikiRequest[_])
     views.html.debikiScripts(
       anyPageId = anyCurrentPageId,
       serverAddress = debikiRequest.request.host,
+      pageUriPath = debikiRequest.request.path,
       minMaxJs = minMaxJs,
       minMaxCss = minMaxCss).body)
 

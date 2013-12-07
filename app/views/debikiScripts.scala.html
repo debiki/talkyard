@@ -15,7 +15,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *@
 
-@(anyPageId: Option[String], serverAddress: String, minMaxJs: String, minMaxCss: String)
+@(anyPageId: Option[String], serverAddress: String, pageUriPath: String,
+  minMaxJs: String, minMaxCss: String)
 
 @asset(file: String) = @{
   routes.Assets.at(path = "/public/res", file)
@@ -59,6 +60,7 @@ See: http://stackoverflow.com/questions/1014203/best-way-to-use-googles-hosted-j
       $: jQuery,
       isInIframe: self !== top,
       serverOrigin: 'http://@serverAddress',
+      pageUri: 'http://@serverAddress@pageUriPath',
       pageId: @Html(pageIdQuotedOrUndefined),
       assetsUrlPathStart: 'http://@serverAddress@asset("")',
       singleColumnLayout: Math.max(jQuery(window).width(), jQuery(window).height()) < 1000

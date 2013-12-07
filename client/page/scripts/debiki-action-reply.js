@@ -84,7 +84,7 @@ d.i.$showReplyForm = function(event, opt_where) {
 
   // Ajax-post reply on submit.
   $replyForm.submit(function() {
-    $.post('?reply='+ postId +'&view='+ d.i.rootPostId,
+    $.post(d.i.pageUri + '?reply='+ postId +'&view='+ d.i.rootPostId,
         $replyForm.serialize(), 'json')
       .fail(d.i.showErrorEnableInputs($replyForm))
       .done(onCommentSaved);
