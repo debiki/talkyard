@@ -327,7 +327,7 @@ case class HtmlPageSerializer(
    * appended at the end of the server's reply (in a special <div>), and
    * client side Javascript update the page with user specific stuff.
    */
-  def renderBodyAndComments(showComments: Boolean): NodeSeq = {
+  def renderBodyAndComments(showBody: Boolean, showComments: Boolean): NodeSeq = {
         // = Stats.time("renderBodyAndComments") {
 
     val cssArtclThread =
@@ -346,7 +346,14 @@ case class HtmlPageSerializer(
            class={"dw-t"+ cssArtclThread + cssDummy +" dw-depth-0 dw-hor"}>
       {
         val renderedRoot = postRenderer.renderPost(rootPost.id)
-        renderedRoot.headAndBodyHtml ++
+        val anyBodyHtml =
+          if (showBody)
+            renderedRoot.headAndBodyHtml
+          else
+            // Include an empty placeholder so arrows to child threads are drawn.
+            <div class="dw-p"></div>
+
+        anyBodyHtml ++
         ifThen(showComments, {
           <div class='dw-t-vspace'/>
           <ol class='dw-res'>

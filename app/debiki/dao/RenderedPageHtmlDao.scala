@@ -84,7 +84,8 @@ trait RenderedPageHtmlDao {
     val pageBodyAndComments =
       if (!renderSettings.showBody && !renderSettings.showComments) Nil
       else {
-        renderer.renderBodyAndComments(showComments = renderSettings.showComments) map {
+        renderer.renderBodyAndComments(
+            showBody = renderSettings.showBody, showComments = renderSettings.showComments) map {
           html =>
             xml.Unparsed(liftweb.Html5.toString(html))
           }
