@@ -57,18 +57,19 @@ object DummyPage {
   }
 
 
-  // COULD have Dao require that user/idty/login id never be "1".
+  // COULD have Dao require that user/idty/login id never be "2".
+  // (Id "1" is the SystemUser, in debiki-core user.scala.)
 
-  val DummyAuthorUser = User(id = "1", displayName = "(dummy author)",
+  val DummyAuthorUser = User(id = "2", displayName = "(dummy author)",
     email = "", emailNotfPrefs = EmailNotfPrefs.DontReceive, country = "",
     website = "", isAdmin = false, isOwner = false)
 
 
-  val DummyAuthorIdty = IdentitySimple(id = "1", userId = DummyAuthorUser.id,
+  val DummyAuthorIdty = IdentitySimple(id = "2", userId = DummyAuthorUser.id,
     name = "(dummy author)", email = "", location = "", website = "")
 
 
-  val DummyAuthorLogin = Login(id = "1", prevLoginId = None, ip = "?.?.?.?",
+  val DummyAuthorLogin = Login(id = "2", prevLoginId = None, ip = "?.?.?.?",
     date = new ju.Date, DummyAuthorIdty.reference)
 
 
