@@ -343,13 +343,13 @@ case class PageRequest[A](
    * By default, the page body is used. The root is specified in the
    * query string, like so: ?view=rootPostId  or ?edit=....&view=rootPostId
    */
-  lazy val pageRoot: PageRoot =
+  lazy val pageRoot: AnyPageRoot =
     request.queryString.get("view").map(rootPosts => rootPosts.size match {
-      case 1 => PageRoot(parseIntOrThrowBadReq(rootPosts.head))
+      case 1 => AnyPageRoot(parseIntOrThrowBadReq(rootPosts.head))
       // It seems this cannot hapen with Play Framework:
       case 0 => assErr("DwE03kI8", "Query string param with no value")
       case _ => throwBadReq("DwE0k35", "Too many `view' query params")
-    }) getOrElse PageRoot.TheBody
+    }) getOrElse AnyPageRoot.TheBody
 
 
   def pageRole_! : PageRole = pageMeta_!.pageRole

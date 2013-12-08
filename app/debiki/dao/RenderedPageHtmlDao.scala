@@ -111,7 +111,7 @@ trait CachingRenderedPageHtmlDao extends RenderedPageHtmlDao {
     // Bypass the cache if the page doesn't yet exist (it's being created),
     // because in the past there was some error because non-existing pages
     // had no ids (so feels safer to bypass).
-    if (pageReq.pageExists && pageReq.pageRoot == PageRoot.Real(PageParts.BodyId) &&
+    if (pageReq.pageExists && pageReq.pageRoot == AnyPageRoot.Real(PageParts.BodyId) &&
         pageReq.oldPageVersion.isEmpty) {
       val key = _pageHtmlKey(pageReq.pageId_!, origin = pageReq.host)
       lookupInCache(key, orCacheAndReturn = {

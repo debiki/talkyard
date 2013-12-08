@@ -745,7 +745,7 @@ case class PageParts (
  * sending updates of a page back to the browser (only posts below the
  * root post would be sent).
  */
-sealed abstract class PageRoot {
+sealed abstract class AnyPageRoot {
   // COULD rename to `id`? Why did I call it `subId`?
   def subId: PostId
   // Why did I name it "...OrCreate..."?
@@ -757,12 +757,12 @@ sealed abstract class PageRoot {
 
 
 // No longer needed? Was used in the past when post ids were strigns. Ok remove.
-object PageRoot {
+object AnyPageRoot {
 
   val TheBody = Real(PageParts.BodyId)
 
   /** A real post, e.g. the page body post. */
-  case class Real(subId: PostId) extends PageRoot {
+  case class Real(subId: PostId) extends AnyPageRoot {
     def findOrCreatePostIn(page: PageParts): Option[Post] = page.getPost(subId)
     def findChildrenIn(page: PageParts): List[Post] = page.repliesTo(subId)
   }

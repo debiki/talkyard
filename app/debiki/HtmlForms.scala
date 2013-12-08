@@ -38,7 +38,7 @@ import HtmlUtils._
  */
 object HtmlForms {
 
-  def apply(xsrfToken: String, pageRoot: PageRoot, permsOnPage: PermsOnPage) =
+  def apply(xsrfToken: String, pageRoot: AnyPageRoot, permsOnPage: PermsOnPage) =
     new HtmlForms(xsrfToken, pageRoot, permsOnPage)
 
   val XsrfInpName = "dw-fi-xsrf"
@@ -100,7 +100,7 @@ object HtmlForms {
 }
 
 
-class HtmlForms(xsrfToken: String, val pageRoot: PageRoot, val permsOnPage: PermsOnPage) {
+class HtmlForms(xsrfToken: String, val pageRoot: AnyPageRoot, val permsOnPage: PermsOnPage) {
 
   import HtmlForms._
   import HtmlPageSerializer._

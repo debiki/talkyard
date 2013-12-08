@@ -106,7 +106,7 @@ object Utils extends Results with http.ContentTypes {
     HtmlForms(pageReq.xsrfToken.value, pageReq.pageRoot, pageReq.permsOnPage)
 
 
-  def queryStringAndHashToView(pageRoot: PageRoot, pageVersion: Option[ju.Date],
+  def queryStringAndHashToView(pageRoot: AnyPageRoot, pageVersion: Option[ju.Date],
         actionId: Option[ActionId] = None, forceQuery: Boolean = false)
         : String = {
     var params = List[String]()

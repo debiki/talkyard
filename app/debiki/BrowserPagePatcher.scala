@@ -146,7 +146,7 @@ case class BrowserPagePatcher(
 
     val pageRoot = request match {
       case p: PageRequest[_] => p.pageRoot
-      case _ => PageRoot.TheBody
+      case _ => AnyPageRoot.TheBody
     }
 
     val serializer = HtmlPageSerializer(

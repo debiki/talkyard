@@ -278,7 +278,7 @@ object HtmlPageSerializer {
 case class HtmlPageSerializer(
   page : PageParts,
   pageTrust: PageTrust,
-  pageRoot: PageRoot,
+  pageRoot: AnyPageRoot,
   hostAndPort: String,
   nofollowArticle: Boolean = true,
   showUnapproved: ShowUnapproved = ShowUnapproved.None,
@@ -297,7 +297,7 @@ case class HtmlPageSerializer(
       showUnapproved = showUnapproved)
 
 
-  def renderSingleThread(postId: PostId, pageRoot: PageRoot = PageRoot.TheBody)
+  def renderSingleThread(postId: PostId, pageRoot: AnyPageRoot = AnyPageRoot.TheBody)
         : Option[SerializedSingleThread] = {
     page.getPost(postId) map { post =>
       val parentHorizontal = post.parentId == pageRoot.subId
