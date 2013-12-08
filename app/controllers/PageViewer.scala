@@ -52,8 +52,12 @@ object PageViewer extends mvc.Controller {
     }
 
 
-  def viewPost(pathIn: PagePath) = PageGetAction(pathIn) {
-        pageReq =>
+  def viewPost(pathIn: PagePath) = PageGetAction(pathIn) { pageReq =>
+    viewPostImpl(pageReq)
+  }
+
+
+  def viewPostImpl(pageReq: PageGetRequest) = {
     val userPageDataJson = pageReq.user.isEmpty ? "" | buildUserPageDataJson(pageReq)
     // If not logged in, then include an empty Yaml tag, so the browser
     // notices that it got that elem, and won't call GET ?page-info.
