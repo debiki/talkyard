@@ -345,11 +345,11 @@ case class PageRequest[A](
    */
   lazy val pageRoot: AnyPageRoot =
     request.queryString.get("view").map(rootPosts => rootPosts.size match {
-      case 1 => AnyPageRoot(parseIntOrThrowBadReq(rootPosts.head))
+      case 1 => Some(parseIntOrThrowBadReq(rootPosts.head))
       // It seems this cannot hapen with Play Framework:
       case 0 => assErr("DwE03kI8", "Query string param with no value")
       case _ => throwBadReq("DwE0k35", "Too many `view' query params")
-    }) getOrElse AnyPageRoot.TheBody
+    }) getOrElse DefaultPageRoot
 
 
   def pageRole_! : PageRole = pageMeta_!.pageRole

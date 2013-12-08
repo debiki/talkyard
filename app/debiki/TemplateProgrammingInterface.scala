@@ -507,8 +507,9 @@ class TemplateProgrammingInterface(
     showComments: Boolean = !isHomepage)(
     contents: => play.api.templates.Html): xml.NodeSeq = {
 
+    val viewsPageConfigPost = pageReq.pageRoot == Some(PageParts.ConfigPostId)
     renderPageSettings =
-      if (pageReq.pageRoot.isPageConfigPost || pageReq.pagePath.isConfigPage) {
+      if (viewsPageConfigPost || pageReq.pagePath.isConfigPage) {
         // Don't load any config values in case the config post/page is corrupt — otherwise
         // it wouldn't be possible to edit the config file and fix the errors.
         Some(RenderPageSettings(

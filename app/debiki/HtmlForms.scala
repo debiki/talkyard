@@ -148,10 +148,10 @@ class HtmlForms(xsrfToken: String, val pageRoot: AnyPageRoot, val permsOnPage: P
   /** A query string param that remembers which part of a page we are
    *  currently viewing.
    */
-  private def _viewRoot = {
-    // The page body is the default, need not be specified.
-    if (pageRoot.subId == PageParts.BodyId) ""
-    else "&view="+ pageRoot.subId
+  private def _viewRoot = pageRoot match {
+    case DefaultPageRoot => "" // The page body is the default, need not be specified.
+    case Some(commentId) => s"&view=$commentId"
+    case None => ???
   }
 
 

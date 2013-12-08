@@ -297,10 +297,10 @@ case class HtmlPageSerializer(
       showUnapproved = showUnapproved)
 
 
-  def renderSingleThread(postId: PostId, pageRoot: AnyPageRoot = AnyPageRoot.TheBody)
+  def renderSingleThread(postId: PostId, pageRoot: AnyPageRoot = Some(PageParts.BodyId))
         : Option[SerializedSingleThread] = {
     page.getPost(postId) map { post =>
-      val parentHorizontal = post.parentId == pageRoot.subId
+      val parentHorizontal = Some(post.parentId) == pageRoot
       val html = renderThreads(depth = post.depth, posts = post::Nil,
         parentHorizontal = parentHorizontal, uncollapseFirst = true)
       // The post might have been deleted.
@@ -328,15 +328,24 @@ case class HtmlPageSerializer(
    * client side Javascript update the page with user specific stuff.
    */
   def renderBodyAndComments(showBody: Boolean, showComments: Boolean): NodeSeq = {
-        // = Stats.time("renderBodyAndComments") {
+    pageRoot match {
+      case Some(postId) =>
+        renderBodyAndCommentsImpl(showBody, showComments = showComments, rootPostId = postId)
+      case None =>
+        renderTopLevelPosts()
+    }
+  }
 
+
+  private def renderBodyAndCommentsImpl(
+        showBody: Boolean, showComments: Boolean, rootPostId: PostId): NodeSeq = {
     val cssArtclThread =
-      if (pageRoot.subId == PageParts.BodyId) " dw-ar-t" else ""
+      if (rootPostId == PageParts.BodyId) " dw-ar-t" else ""
 
-    val rootPostsReplies = pageRoot.findChildrenIn(page)
+    val rootPostsReplies = page.repliesTo(rootPostId)
 
-    val rootPost: Post = pageRoot.findOrCreatePostIn(page) getOrElse
-       throwNotFound("DwE0PJ404", "Post not found: "+ pageRoot.subId)
+    val rootPost: Post = page.getPost(rootPostId) getOrElse
+       throwNotFound("DwE0PJ404", "Post not found: "+ rootPostId)
 
     val cssDummy =
       if (rootPost.user_!.id == DummyPage.DummyAuthorUser.id) " dw-dummy" else ""
@@ -365,6 +374,11 @@ case class HtmlPageSerializer(
       </div>
 
     bodyAndComments
+  }
+
+
+  private def renderTopLevelPosts(): NodeSeq = {
+    ???
   }
 
 
@@ -498,7 +512,7 @@ case class HtmlPageSerializer(
     val replies = post.replies
     val isTitle = post.id == PageParts.TitleId
     val isRootOrArtclQstn =
-          post.id == pageRoot.subId // || post.meta.isArticleQuestion
+          Some(post.id) == pageRoot // || post.meta.isArticleQuestion
 
     // Layout replies horizontally, if this is an inline reply to
     // the root post, i.e. depth is 1 -- because then there's unused space

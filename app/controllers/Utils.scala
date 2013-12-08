@@ -111,8 +111,17 @@ object Utils extends Results with http.ContentTypes {
         : String = {
     var params = List[String]()
     if (pageVersion.isDefined) params ::= s"version=${toIso8601T(pageVersion.get)}"
-    if (pageRoot.isDefault && params.nonEmpty) params ::= "?view"
-    else if (!pageRoot.isDefault) params ::= "?view=" + pageRoot.subId
+
+    pageRoot match {
+      case None =>
+        ???
+      case DefaultPageRoot =>
+         if (params.nonEmpty)
+           params ::= "?view"
+      case Some(commentId) =>
+        params ::= "?view=" + commentId
+    }
+
     var queryString = params.mkString("&")
     if (queryString.isEmpty && forceQuery) queryString = "?"
     val hash = actionId.map("#post-"+ _) getOrElse ""
