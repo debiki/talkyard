@@ -382,7 +382,7 @@ case class HtmlPageSerializer(
   private def renderTopLevelPosts(): NodeSeq = {
     val topLevelPosts = Nil//page.topLevelPostsExceptConfigPosts
     val html =
-      <div id="dw-t-65502" class={"dw-t dw-depth-0 dw-hor"}>
+      <div class="dw-t dw-depth-0 dw-hor">
         {/* Include an empty div.dw-p, so arrows to top level posts are drawn. */}
         <div class="dw-p"></div>
         <div class='dw-t-vspace'/>
