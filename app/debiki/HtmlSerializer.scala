@@ -331,8 +331,10 @@ case class HtmlPageSerializer(
     pageRoot match {
       case Some(postId) =>
         renderBodyAndCommentsImpl(showBody, showComments = showComments, rootPostId = postId)
-      case None =>
+      case None if showComments =>
         renderTopLevelPosts()
+      case None if !showComments =>
+        assErr("DwE44GPk3", "Would never show anything")
     }
   }
 
@@ -378,7 +380,20 @@ case class HtmlPageSerializer(
 
 
   private def renderTopLevelPosts(): NodeSeq = {
-    ???
+    val topLevelPosts = Nil//page.topLevelPostsExceptConfigPosts
+    val html =
+      <div id="dw-t-65502" class={"dw-t dw-depth-0 dw-hor"}>
+        {/* Include an empty div.dw-p, so arrows to top level posts are drawn. */}
+        <div class="dw-p"></div>
+        <div class='dw-t-vspace'/>
+        <ol class='dw-res'>
+          <li class="dw-p-as dw-as dw-p-as-hz">
+            <a class="dw-a dw-a-reply">Reply</a>
+          </li>
+          { renderThreads(1, topLevelPosts, parentHorizontal = true) }
+        </ol>
+      </div>
+    html
   }
 
 

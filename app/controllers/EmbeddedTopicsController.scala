@@ -76,35 +76,14 @@ object EmbeddedTopicsController extends mvc.Controller {
 
     val ancestorIds = List(forumId)
 
-    // Workaround: The article reply button will be hidden unless there's a page body, so
-    // include a page body, although we don't want anyone (showBody is set to false by
-    // the embeddedTopic.scala.html template). (Details: DummyPage would add a dummy page
-    // body with a certain dummy author, and then HtmlSerializer would add a CSS class
-    // dw-dummy that hides the reply button.)
-    // Alternatively/better?: Could change HtmlSerializer.renderBodyAndComments so that it
-    // includes a Reply button if showComments = true, showBody = false, even if there is
-    // no page body.
-    val pagePartsInclAuthor = PageParts(topicId, actionDtos = List(emptyPageBody)) + author
-
-    val pageReqNewPage = pageReq.copyWithPreloadedPage(
-      Page(newTopicMeta, topicPagePath, ancestorIds, pagePartsInclAuthor),
+    val pageReqNewPageBadRoot = pageReq.copyWithPreloadedPage(
+      Page(newTopicMeta, topicPagePath, ancestorIds, PageParts(topicId)),
       pageExists = false)
+
+    // Include all top level comments, by specifying no particular root comment.
+    val pageReqNewPage = pageReqNewPageBadRoot.copyWithNewPageRoot(None)
 
     PageViewer.viewPostImpl(pageReqNewPage)
   }
-
-
-  private val emptyPageBody = PostActionDto(
-    id = PageParts.BodyId,
-    postId = PageParts.BodyId,
-    creationDati = new ju.Date,
-    loginId = SystemUser.Login.id,
-    userId = SystemUser.User.id,
-    newIp = None,
-    payload = PostActionPayload.CreatePost(
-      parentPostId = PageParts.BodyId,
-      text = "",
-      markup = Markup.DefaultForComments.id,
-      approval = Some(Approval.AuthoritativeUser)))
 
 }

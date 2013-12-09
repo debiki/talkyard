@@ -188,7 +188,8 @@ case class PageRequest[A](
   request: Request[A])
   (private val _preloadedActions: Option[PageParts] = None,
   private val _preloadedAncestorIds: Option[List[PageId]] = None,
-  private val addMeToPage: Boolean = false)
+  private val addMeToPage: Boolean = false,
+  private val pageRootOverride: Option[AnyPageRoot] = None)
   extends DebikiRequest[A] {
 
   require(pagePath.tenantId == tenantId) //COULD remove tenantId from pagePath
@@ -208,7 +209,7 @@ case class PageRequest[A](
         : PageRequest[A] = {
     val copyWithOldPerms = copy(
       pageExists = pageExists, pagePath = page.path, pageMeta = Some(page.meta))(
-      Some(page.parts), Some(page.ancestorIdsParentFirst), addMeToPage = false)
+      Some(page.parts), Some(page.ancestorIdsParentFirst), addMeToPage = false, pageRootOverride)
     copyWithOldPerms.copyWithUpdatedPermissions()
   }
 
@@ -224,7 +225,7 @@ case class PageRequest[A](
     require(_preloadedAncestorIds.map(_.headOption == newMeta.parentPageId) != Some(false))
     assert(addMeToPage == false) // see copyWithPreloadedPage() below
     val copyWithOldPerms = copy(pageMeta = Some(newMeta))(
-      _preloadedActions, _preloadedAncestorIds, addMeToPage = false)
+      _preloadedActions, _preloadedAncestorIds, addMeToPage = false, pageRootOverride)
     copyWithOldPerms.copyWithUpdatedPermissions()
   }
 
@@ -238,7 +239,8 @@ case class PageRequest[A](
       user = user,
       pagePath = pagePath,
       pageMeta = pageMeta))
-    copy(permsOnPage = newPerms)(_preloadedActions, _preloadedAncestorIds, addMeToPage)
+    copy(permsOnPage = newPerms)(
+      _preloadedActions, _preloadedAncestorIds, addMeToPage, pageRootOverride)
   }
 
 
@@ -249,7 +251,7 @@ case class PageRequest[A](
     }
     require(Some(pageActions.pageId) == pagePath.pageId)
     assert(addMeToPage == false) // or user should be added to `pageActions`
-    copy()(Some(pageActions), _preloadedAncestorIds, addMeToPage = false)
+    copy()(Some(pageActions), _preloadedAncestorIds, addMeToPage = false, pageRootOverride)
   }
 
 
@@ -269,15 +271,19 @@ case class PageRequest[A](
     else {
       if (_preloadedActions isDefined)
         copy()(_preloadedActions.map(_ ++ anyMeAsPeople),
-          _preloadedAncestorIds, addMeToPage = false)
+          _preloadedAncestorIds, addMeToPage = false, pageRootOverride)
       else
-        copy()(None, _preloadedAncestorIds, addMeToPage = true)
+        copy()(None, _preloadedAncestorIds, addMeToPage = true, pageRootOverride)
     }
 
 
   def copyWithMeOnPage_! : PageRequest[A] =
     if (loginId.isEmpty) throwForbidden("DwE403BZ39", "Not logged in")
     else copyWithAnyMeOnPage
+
+
+  def copyWithNewPageRoot(newRoot: AnyPageRoot) =
+    copy()(_preloadedActions, _preloadedAncestorIds, addMeToPage, pageRootOverride = Some(newRoot))
 
 
   def pageId: Option[String] = pagePath.pageId
@@ -344,12 +350,13 @@ case class PageRequest[A](
    * query string, like so: ?view=rootPostId  or ?edit=....&view=rootPostId
    */
   lazy val pageRoot: AnyPageRoot =
+    pageRootOverride.getOrElse(
     request.queryString.get("view").map(rootPosts => rootPosts.size match {
       case 1 => Some(parseIntOrThrowBadReq(rootPosts.head))
       // It seems this cannot hapen with Play Framework:
       case 0 => assErr("DwE03kI8", "Query string param with no value")
       case _ => throwBadReq("DwE0k35", "Too many `view' query params")
-    }) getOrElse DefaultPageRoot
+    }) getOrElse DefaultPageRoot)
 
 
   def pageRole_! : PageRole = pageMeta_!.pageRole

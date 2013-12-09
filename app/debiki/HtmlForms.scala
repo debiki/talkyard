@@ -151,7 +151,7 @@ class HtmlForms(xsrfToken: String, val pageRoot: AnyPageRoot, val permsOnPage: P
   private def _viewRoot = pageRoot match {
     case DefaultPageRoot => "" // The page body is the default, need not be specified.
     case Some(commentId) => s"&view=$commentId"
-    case None => ???
+    case None => "&view=todo-DwE80IWk5" // This isn't in use right now, could fix later
   }
 
 
