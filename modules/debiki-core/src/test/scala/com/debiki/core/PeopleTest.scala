@@ -28,7 +28,7 @@ trait PeopleTestUtils {
     val idty = IdentitySimple(idBase + "Idty",
       userId = user.id, name = user.displayName)
     val login = Login(idBase + "Login",
-      None, "1.2.3.4", new ju.Date(11000), idty.id)
+      None, "1.2.3.4", new ju.Date(11000), IdentityRef.Guest(idty.id))
     (user, idty, login)
   }
 
