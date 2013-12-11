@@ -300,7 +300,7 @@ case class HtmlPageSerializer(
   def renderSingleThread(postId: PostId, pageRoot: AnyPageRoot = Some(PageParts.BodyId))
         : Option[SerializedSingleThread] = {
     page.getPost(postId) map { post =>
-      val parentHorizontal = Some(post.parentId) == pageRoot
+      val parentHorizontal = post.parentId == pageRoot // ok if pageRoot == None
       val html = renderThreads(depth = post.depth, posts = post::Nil,
         parentHorizontal = parentHorizontal, uncollapseFirst = true)
       // The post might have been deleted.

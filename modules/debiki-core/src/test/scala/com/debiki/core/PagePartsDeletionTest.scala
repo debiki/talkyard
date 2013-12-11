@@ -45,14 +45,14 @@ class PagePartsDeletionTest extends FreeSpec with MustMatchers {
 
   val gp = PostActionDto.forNewPost(1001, creationDati = time(100),
     loginId = SystemUser.Login.id, userId = SystemUser.User.id, newIp = None,
-    parentPostId = 1001, text = "gp-text", markup = Markup.DefaultForComments.id,
+    parentPostId = None, text = "gp-text", markup = Markup.DefaultForComments.id,
     approval = Some(Approval.AuthoritativeUser))
 
-  val p = copyCreatePost(gp, id = nextId(), parentPostId = gp.id, text = "p-text")
-  val c = copyCreatePost(gp, id = nextId(), parentPostId = p.id, text = "c-text")
+  val p = copyCreatePost(gp, id = nextId(), parentPostId = Some(gp.id), text = "p-text")
+  val c = copyCreatePost(gp, id = nextId(), parentPostId = Some(p.id), text = "c-text")
 
-  val d = copyCreatePost(gp, id = nextId(), parentPostId = gp.id, text = "d-text")
-  val e = copyCreatePost(gp, id = nextId(), parentPostId = gp.id, text = "e-text")
+  val d = copyCreatePost(gp, id = nextId(), parentPostId = Some(gp.id), text = "d-text")
+  val e = copyCreatePost(gp, id = nextId(), parentPostId = Some(gp.id), text = "e-text")
 
   val delete_p_tree = PostActionDto(
     nextId(), creationDati = time(101), postId = p.id,

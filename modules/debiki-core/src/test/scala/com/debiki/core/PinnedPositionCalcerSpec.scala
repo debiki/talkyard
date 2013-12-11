@@ -26,13 +26,13 @@ class PinnedPositionCalcerSpec extends FreeSpec with ShouldMatchers {
 
   val PostSkeleton = PostTestValues.postSkeleton
 
-  val Body = copyCreatePost(PostSkeleton, id = PageParts.BodyId, parentPostId = PageParts.BodyId)
-  val RawReplyA = copyCreatePost(PostSkeleton, id = 102, parentPostId = Body.id)
-  val RawReplyB = copyCreatePost(PostSkeleton, id = 103, parentPostId = Body.id)
-  val RawReplyC = copyCreatePost(PostSkeleton, id = 104, parentPostId = Body.id)
-  val RawReplyD = copyCreatePost(PostSkeleton, id = 105, parentPostId = Body.id)
-  val RawReplyE = copyCreatePost(PostSkeleton, id = 106, parentPostId = Body.id)
-  val RawReplyF = copyCreatePost(PostSkeleton, id = 107, parentPostId = Body.id)
+  val Body = copyCreatePost(PostSkeleton, id = PageParts.BodyId, parentPostId = None)
+  val RawReplyA = copyCreatePost(PostSkeleton, id = 102, parentPostId = Some(Body.id))
+  val RawReplyB = copyCreatePost(PostSkeleton, id = 103, parentPostId = Some(Body.id))
+  val RawReplyC = copyCreatePost(PostSkeleton, id = 104, parentPostId = Some(Body.id))
+  val RawReplyD = copyCreatePost(PostSkeleton, id = 105, parentPostId = Some(Body.id))
+  val RawReplyE = copyCreatePost(PostSkeleton, id = 106, parentPostId = Some(Body.id))
+  val RawReplyF = copyCreatePost(PostSkeleton, id = 107, parentPostId = Some(Body.id))
 
   val PageWithBody = PageParts("a") + Body
   val PageWithOneReply = PageWithBody + RawReplyA

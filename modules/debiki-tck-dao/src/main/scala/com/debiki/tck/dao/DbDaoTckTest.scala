@@ -211,7 +211,7 @@ object Templates {
       firstName = "Laban", email = "oid@email.hmm", country = "Sweden"))
 
   val post = PostActionDto.forNewPost(id = UnassignedId, creationDati = new ju.Date,
-    loginId = "?", userId = "?", newIp = None,  parentPostId = PageParts.BodyId,
+    loginId = "?", userId = "?", newIp = None,  parentPostId = Some(PageParts.BodyId),
     text = "", markup = "para", approval = None)
 
   val rating = Rating(id = UnassignedId, postId = PageParts.BodyId, loginId = "?",
@@ -304,7 +304,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
 
     "throw error for an invalid login id" in {
       val debateBadLogin = PageParts(guid = "?", actionDtos =
-          PostActionDto.copyCreatePost(T.post, id = PageParts.BodyId,
+          PostActionDto.copyCreatePost(T.post, id = PageParts.BodyId, parentPostId = None,
             loginId = "99999", userId = "99999")::Nil) // bad ids
       //SLog.info("Expecting ORA-02291: integrity constraint log message ------")
       dao.createPage(Page.newPage(
@@ -419,7 +419,8 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
     // -------- Page creation
 
     lazy val ex1_rootPost = PostActionDto.copyCreatePost(T.post,
-      id = PageParts.BodyId, loginId = loginId, userId = globalUserId, text = ex1_postText)
+      id = PageParts.BodyId, parentPostId = None,
+      loginId = loginId, userId = globalUserId, text = ex1_postText)
 
     "create a debate with a root post" in {
       val debateNoId = PageParts(guid = "?", actionDtos = ex1_rootPost::Nil)
@@ -918,7 +919,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
 
       "create a forum group, two forums with one topic each" in {
         val baseBody = PostActionDto.copyCreatePost(T.post,
-          id = PageParts.BodyId, parentPostId = PageParts.BodyId, text = "search test forum body",
+          id = PageParts.BodyId, parentPostId = None, text = "search test forum body",
           loginId = loginId, userId = globalUserId, approval = Some(Approval.WellBehavedUser))
 
         val forumOneBody = PostActionDto.copyCreatePost(baseBody,
@@ -1127,7 +1128,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
     // -------- Page actions
 
     lazy val ex2_emptyPost = PostActionDto.copyCreatePost(T.post,
-      parentPostId = PageParts.BodyId, text = "", loginId = loginId, userId = globalUserId)
+      parentPostId = Some(PageParts.BodyId), text = "", loginId = loginId, userId = globalUserId)
     var ex2_id = PageParts.NoId
     "save an empty root post child post" in {
       testPage += loginGrant.user
@@ -1289,7 +1290,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
     "create a post to edit" >> {
       // Make post creation action
       lazy val postNoId = PostActionDto.copyCreatePost(T.post,
-        parentPostId = PageParts.BodyId, text = "Initial text",
+        parentPostId = Some(PageParts.BodyId), text = "Initial text",
         loginId = loginId, userId = globalUserId, markup = "dmd0")
 
       var post: PostActionDto[PAP.CreatePost] = null
@@ -1635,7 +1636,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
       // Save a post, using the OpenID login. Load the page and verify
       // the OpenID identity and user were loaded with the page.
       val newPost = PostActionDto.copyCreatePost(T.post,
-        parentPostId = PageParts.BodyId, text = "",
+        parentPostId = Some(PageParts.BodyId), text = "",
         loginId = exOpenId_loginGrant.login.id,
         userId = exOpenId_loginGrant.user.id)
       var postId = PageParts.NoId
@@ -1940,7 +1941,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
       eventType = NotfOfPageAction.Type.PersonalReply,
       eventActionId = ex2_id,
       triggerActionId = ex2_id,
-      recipientActionId = ex2_emptyPost.payload.parentPostId,
+      recipientActionId = ex2_emptyPost.payload.parentPostId.getOrDie("DwE75UF2"),
       recipientUserDispName = "RecipientUser",
       eventUserDispName = "EventUser",
       triggerUserDispName = None,

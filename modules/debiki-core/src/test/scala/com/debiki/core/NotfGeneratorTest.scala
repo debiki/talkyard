@@ -35,7 +35,7 @@ trait NotfGeneratorTestValues {
 
   val rawBody = copyCreatePost(PostTestValues.postSkeleton,
     id = PageParts.BodyId, loginId = bodyAuthorLogin.id, userId = bodyAuthor.id,
-    parentPostId = PageParts.BodyId)
+    parentPostId = None)
 
   val rawBodyPrelApproved = copyCreatePost(rawBody, approval = Some(Approval.Preliminary))
   val rawBodyWellBehavedAprvd = copyCreatePost(rawBody, approval = Some(Approval.WellBehavedUser))
@@ -49,14 +49,12 @@ trait NotfGeneratorTestValues {
   val rejectionOfBody = copyReviewPost(approvalOfBody, id = 3, approval = None)
 
   val rawReply = copyCreatePost(PostTestValues.postSkeleton,
-    id = 11, loginId = replyAuthorLogin.id, userId = replyAuthor.id, parentPostId = rawBody.id)
+    id = 11, loginId = replyAuthorLogin.id, userId = replyAuthor.id,
+    parentPostId = Some(rawBody.id))
 
-  val rawReplyPrelApproved = rawReply.copy(payload = rawBody.payload.copy(
-    approval = Some(Approval.Preliminary)))
-  val rawReplyWellBehavedApproved = rawReply.copy(payload = rawBody.payload.copy(
-    approval = Some(Approval.WellBehavedUser)))
-  val rawReplyAuthzApproved = rawReply.copy(payload = rawBody.payload.copy(
-    approval = Some(Approval.AuthoritativeUser)))
+  val rawReplyPrelApproved = copyCreatePost(rawReply, approval = Some(Approval.Preliminary))
+  val rawReplyWellBehvdAprvd = copyCreatePost(rawReply, approval = Some(Approval.WellBehavedUser))
+  val rawReplyAuthzApproved = copyCreatePost(rawReply, approval = Some(Approval.AuthoritativeUser))
 
   val approvalOfReply =
     PostActionDto.toReviewPost(12, postId = rawReply.id, loginId = reviewerLogin.id,
@@ -130,7 +128,7 @@ class NotfGeneratorTest extends Specification with NotfGeneratorTestValues {
             triggerAction = reply)
       }
       test(rawReplyAuthzApproved)
-      test(rawReplyWellBehavedApproved)
+      test(rawReplyWellBehvdAprvd)
     }
 
     "generate no notf for a rejected reply" in {
@@ -162,7 +160,7 @@ class NotfGeneratorTest extends Specification with NotfGeneratorTestValues {
     "generate no notfs if well-behaved-user approval upheld" in {
       // This cannot really happen: moderators aren't asked to review comments by
       // well-behaved users. But include this test anyway.
-      val page = PageWithApprovedBody + rawReplyWellBehavedApproved
+      val page = PageWithApprovedBody + rawReplyWellBehvdAprvd
       val notfs = genNotfs(bodyAuthor, page, approvalOfReply)
       notfs.length must_== 0
     }

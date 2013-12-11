@@ -58,7 +58,7 @@ object Util {
 
   val post = PostActionDto(
     id = 1001, postId = 1001, creationDati = new ju.Date, loginId = "?", userId = "?",
-    newIp = None, payload = PostActionPayload.CreatePost(parentPostId = 1000,
+    newIp = None, payload = PostActionPayload.CreatePost(parentPostId = Some(1000),
       text = "test", markup = "", approval = Some(Approval.WellBehavedUser)))
 
   val debate = PageParts("test", actionDtos = post::Nil)

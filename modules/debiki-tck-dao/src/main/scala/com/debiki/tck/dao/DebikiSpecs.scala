@@ -63,7 +63,7 @@ object DebikiSpecs {
   def havePostLike(
         post: PostActionDto[PostActionPayload.CreatePost] = null,
         id: ActionId = PageParts.NoId,
-        parent: ActionId = PageParts.NoId,
+        parent: Option[PostId] = null,
         ctime: ju.Date = null,
         loginId: String = null,
         newIp: String = null,
@@ -88,7 +88,7 @@ object DebikiSpecs {
   def matchPost(  // COULD write unit test for this one!
         post: PostActionDto[PostActionPayload.CreatePost] = null,
         id: ActionId = PageParts.NoId,
-        parent: ActionId = PageParts.NoId,
+        parent: Option[PostId] = null,
         ctime: ju.Date = null,
         loginId: String = null,
         newIp: String = null,
@@ -108,7 +108,7 @@ object DebikiSpecs {
         leftPost: PostActionDto[PostActionPayload.CreatePost],
         post: PostActionDto[PostActionPayload.CreatePost],
         id: ActionId,
-        parent: ActionId,
+        parent: Option[ActionId],
         ctime: ju.Date,
         loginId: String,
         newIp: String,
@@ -118,7 +118,7 @@ object DebikiSpecs {
     val testId = _testId(leftPost, post) _
     var errs =
       testId("id", id, _.id) :::
-        testId("parent", parent, _.payload.parentPostId) :::
+        test("parent", parent, _.payload.parentPostId) :::
         test("ctime", ctime, _.creationDati) :::
         test("loginId", loginId, _.loginId) :::
         test("newIp", newIp, _.newIp) :::

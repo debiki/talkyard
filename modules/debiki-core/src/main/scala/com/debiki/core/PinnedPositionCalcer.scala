@@ -49,9 +49,9 @@ class PinnedPositionCalcer {
   def pinPost(post: Post, position: Int) {
     require(position > 0)
 
-    var pinnedPosts = pinnedPostsByParent.get(post.parentId) getOrElse {
+    var pinnedPosts = pinnedPostsByParent.get(post.parentIdOrNoId) getOrElse {
       val list = DoubleLinkedList[Post](post)
-      pinnedPostsByParent(post.parentId) = list
+      pinnedPostsByParent(post.parentIdOrNoId) = list
       return
     }
 
@@ -63,7 +63,7 @@ class PinnedPositionCalcer {
         entry.remove()
         if (entry eq pinnedPosts) {
           pinnedPosts = entry.next
-          pinnedPostsByParent(post.parentId) = entry.next
+          pinnedPostsByParent(post.parentIdOrNoId) = entry.next
         }
       }
       entry = entry.next
@@ -74,7 +74,7 @@ class PinnedPositionCalcer {
     val length = pinnedPosts.size
     if (zeroBasedPosition >= length) {
       pinnedPosts = pinnedPosts.append(DoubleLinkedList(post))
-      pinnedPostsByParent(post.parentId) = pinnedPosts
+      pinnedPostsByParent(post.parentIdOrNoId) = pinnedPosts
     }
     else {
       entry = pinnedPosts
@@ -89,14 +89,14 @@ class PinnedPositionCalcer {
       else {
         val newList = DoubleLinkedList(post)
         newList.insert(pinnedPosts)
-        pinnedPostsByParent(post.parentId) = newList
+        pinnedPostsByParent(post.parentIdOrNoId) = newList
       }
     }
   }
 
 
   def effectivePositionOf(post: Post): Option[Int] = {
-    val pinnedPosts = pinnedPostsByParent.get(post.parentId) getOrElse {
+    val pinnedPosts = pinnedPostsByParent.get(post.parentIdOrNoId) getOrElse {
       return None
     }
     val position = pinnedPosts.indexOf(post)

@@ -154,18 +154,18 @@ class AutoApproverSpec extends Specification with Mockito {
   val testUserReplyAId = 2
   def testUserReplyA(implicit testUserId: String) =
     PostActionDto.copyCreatePost(testUserPageBody, id = testUserReplyAId,
-      parentPostId = testUserPageBody.id)
+      parentPostId = Some(testUserPageBody.id))
 
   val testUserReplyBId = 3
   def testUserReplyB(implicit testUserId: String) =
     PostActionDto.copyCreatePost(testUserPageBody, id = testUserReplyBId,
-      parentPostId = testUserPageBody.id)
+      parentPostId = Some(testUserPageBody.id))
 
   def manyTestUserReplies(num: Int)(implicit testUserId: String)
         : List[PostActionDto[PAP.CreatePost]] =
     (101 to (100 + num)).toList map { postId =>
       PostActionDto.copyCreatePost(testUserPageBody, id = postId,
-        parentPostId = testUserPageBody.id)
+        parentPostId = Some(testUserPageBody.id))
     }
 
 

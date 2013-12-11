@@ -70,7 +70,7 @@ object AppReply extends mvc.Controller {
     val postNoId = PostActionDto(id = PageParts.UnassignedId, postId = PageParts.UnassignedId,
       creationDati = pageReq.ctime, loginId = pageReq.loginId_!, userId = pageReq.user_!.id,
       newIp = pageReq.newIp, payload = PAP.CreatePost(
-        parentPostId = postIdToReplyTo, text = text, markup = Markup.DefaultForComments.id,
+        parentPostId = Some(postIdToReplyTo), text = text, markup = Markup.DefaultForComments.id,
         where = whereOpt, approval = approval))
 
     val (pageWithNewPost, List(postWithId: PostActionDto[PAP.CreatePost])) =

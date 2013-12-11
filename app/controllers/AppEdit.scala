@@ -501,16 +501,12 @@ object AppEdit extends mvc.Controller {
       else if (postId == PageParts.BodyId) Markup.defaultForPageBody(pageReq.pageRole_!)
       else Markup.DefaultForComments
 
-    // 1. (A page body, title or template is its own parent.
-    // Dupl knowledge! see AppCreatePage.handleForm.)
-    // 2. The post will be auto approved implicitly, if the Edit is
-    // auto approved.
+    // The post will be auto approved implicitly, if the Edit is auto approved.
     PostActionDto(
       id = postId, postId = postId, creationDati = pageReq.ctime,
       loginId = authorIds.loginId, userId = authorIds.userId, newIp = pageReq.newIp,
       payload = PAP.CreatePost(
-        parentPostId = postId, text = "",
-        markup = markup.id, where = None, approval = None))
+        parentPostId = None, text = "", markup = markup.id, where = None, approval = None))
   }
 
 }

@@ -108,7 +108,11 @@ object PageParts {
         postId = rmpd(a.postId))
       case a: PostActionDto[_] =>
         val rmpdPaylad = a.payload match {
-          case c: PAP.CreatePost => c.copy(parentPostId = rmpd(c.parentPostId))
+          case c: PAP.CreatePost =>
+            c.parentPostId match {
+              case None => c
+              case Some(parentPostId) => c.copy(parentPostId = Some(rmpd(parentPostId)))
+            }
           case d: PAP.Delete => d.copy(targetActionId = rmpd(d.targetActionId))
           case u: PAP.Undo => u.copy(targetActionId = rmpd(u.targetActionId))
           case x => x
@@ -300,15 +304,15 @@ case class PageParts (
 
 
   lazy val (postsByParentId: Map[PostId, List[Post]]) = {
-    // Sort posts by parent id.
+    // Sort posts by parent id, use PageParts.NoId if there's no parent.
     var postMap = mut.Map[PostId, mut.Set[Post]]()
     for (post <- getAllPosts) {
       def addNewSet() = {
         val set = mut.Set[Post]()
-        postMap.put(post.parentId, set)
+        postMap.put(post.parentIdOrNoId, set)
         set
       }
-      postMap.getOrElse(post.parentId, addNewSet()) += post
+      postMap.getOrElse(post.parentIdOrNoId, addNewSet()) += post
     }
     // Copy to immutable versions.
     def buildImmMap(mutMap: mut.Map[PostId, mut.Set[Post]]): Map[PostId, List[Post]] = {

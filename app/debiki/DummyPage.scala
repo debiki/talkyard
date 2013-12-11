@@ -85,7 +85,7 @@ object DummyPage {
     userId = DummyAuthorUser.id,
     newIp = None,
     payload = PostActionPayload.CreatePost(
-      parentPostId = PageParts.TitleId,
+      parentPostId = None,
       text = texts.noTitleText,
       markup = Markup.DefaultForPageTitle.id,
       approval = Some(Approval.Preliminary)))
@@ -95,7 +95,7 @@ object DummyPage {
     val prototype = dummyTitle(texts)
     prototype.copy(id = PageParts.BodyId, postId = PageParts.BodyId,
       payload = prototype.payload.copy(
-        parentPostId = PageParts.BodyId,
+        parentPostId = None,
         text = texts.noBodyText,
         markup = Markup.defaultForPageBody(pageRole).id))
   }
@@ -105,7 +105,7 @@ object DummyPage {
     val prototype = dummyTitle(texts)
     prototype.copy(id = PageParts.ConfigPostId, postId = PageParts.ConfigPostId,
       payload = prototype.payload.copy(
-        parentPostId = PageParts.ConfigPostId,
+        parentPostId = None,
         text = texts.configText,
         markup = Markup.Code.id))
   }
