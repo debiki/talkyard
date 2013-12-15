@@ -17,7 +17,7 @@
 
 package controllers
 
-import actions.PageActions._
+import actions.ApiActions.PostJsonAction
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import com.debiki.core.{PostActionPayload => PAP}
@@ -28,25 +28,38 @@ import play.api._
 import play.api.data._
 import play.api.data.Forms._
 import play.api.mvc.{Action => _, _}
-import requests.PageRequest
+import requests.{DebikiRequest, PageRequest}
+import actions.ApiActions.JsonPostRequest
 import Utils.{OkHtml, OkHtmlBody}
 import BrowserPagePatcher.TreePatchSpec
 
 
-/** Handles reply form submissions.
+/** Handles reply form submissions. Lazily creates pages for embedded discussions
+  * — such pages aren't created until the very first reply is posted.
   */
 object AppReply extends mvc.Controller {
 
 
-  def handleForm(pathIn: PagePath, postId: ActionId)
-        = PagePostAction(MaxPostSize)(pathIn) {
-      pageReq: PagePostRequest =>
+  def handleReply = PostJsonAction(maxLength = MaxPostSize) { request: JsonPostRequest =>
+    val body = request.body
+    val pageId = (body \ "pageId").as[PageId]
+    val anyParentPageId = (body \ "parentPageId").asOpt[PageId]
+    val postId = (body \ "postId").as[PostId]
+    val text = (body \ "text").as[String]
+    val wherePerhapsEmpty = (body \ "where").asOpt[String]
+    val whereOpt = if (wherePerhapsEmpty == Some("")) None else wherePerhapsEmpty
 
-    import Utils.ValidationImplicits._
-
-    val text = pageReq.getEmptyAsNone("dw-fi-reply-text") getOrElse
-      throwBadReq("DwE93k21", "Empty reply")
-    val whereOpt = pageReq.getEmptyAsNone("dw-fi-reply-where")
+    // Construct a request that concerns the specified page. Create the page
+    // lazily if it's supposed to be a discussion embedded on a static HTML page.
+    val pageReq = PageRequest.forPageThatExists(request, pageId = pageId) match {
+      case Some(req) => req
+      case None =>
+        val parentPageId = anyParentPageId getOrElse throwNotFound(
+          "DwE7GU38", s"Page `$pageId' does not exist")
+        val page = tryCreateEmbeddedCommentsPage(request, parentPageId, pageId = pageId)
+          .getOrElse(throwNotFound("Dw2XEG60", s"Page `$pageId' does not exist"))
+        PageRequest.forPageThatExists(request, pageId = page.id) getOrDie "DwE77PJE0"
+    }
 
     val json = saveReply(pageReq, replyTo = postId, text, whereOpt)
     OkSafeJson(json)
@@ -62,6 +75,7 @@ object AppReply extends mvc.Controller {
     if (pageReq.oldPageVersion.isDefined)
       throwBadReq("DwE72XS8", "Can only reply to latest page version")
 
+    // Todo: Do allow no parent post, if it's an embedded forum topic.
     if (pageReq.page_!.getPost(postIdToReplyTo) isEmpty)
       throwBadReq("DwEe8HD36", s"Cannot reply to post `$postIdToReplyTo'; it does not exist")
 
@@ -78,6 +92,38 @@ object AppReply extends mvc.Controller {
 
     val patchSpec = TreePatchSpec(postWithId.id, wholeTree = true)
     BrowserPagePatcher(pageReq).jsonForTrees(pageWithNewPost.parts, patchSpec)
+  }
+
+
+  private def tryCreateEmbeddedCommentsPage(
+        request: DebikiRequest[_], parentPageId: PageId, pageId: PageId): Option[Page] = {
+
+    val parentMetaAndPath = request.dao.loadPageMetaAndPath(parentPageId) getOrElse {
+      return None
+    }
+
+    UNTESTED
+    ??? // now I'll remember to test
+
+    if (parentMetaAndPath.meta.pageRole != PageRole.EmbeddedForum)
+      return None
+
+    val topicPagePath = PagePath(
+      request.siteId,
+      folder = s"${parentMetaAndPath.path.path}/",
+      pageId = Some(pageId),
+      showId = true,
+      pageSlug = "")
+
+    val pageToCreate = Page.newPage(
+      PageRole.EmbeddedForum,
+      topicPagePath,
+      PageParts(pageId),
+      publishDirectly = true,
+      author = SystemUser.User)
+
+    val newPage = request.dao.createPage(pageToCreate)
+    Some(newPage)
   }
 
 }

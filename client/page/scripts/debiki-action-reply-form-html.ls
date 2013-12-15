@@ -20,17 +20,11 @@ d = i: debiki.internal, u: debiki.v0.util
 $ = d.i.$;
 
 
-/**
- *  The login form below is based on this JavaScript OpenID Selector
- *  example file:
- *    debiki-core/src/main/resources/toserve/lib/openid-selector/demo.html
- */
 d.i.newReplyFormHtml = ->
   $('''
   <li class="dw-fs dw-fs-re">
     <div class="dw-arw dw-arw-hz-line-to-sibling"></div>
     <form>
-      <input type="hidden" class="dw-fi-xsrf" name="dw-fi-xsrf" value="">
       <input type="hidden" id="dw-fi-reply-where" name="dw-fi-reply-where" value="" />
       <div>
         <label for="dw-fi-reply-text">Your reply:</label><br/>

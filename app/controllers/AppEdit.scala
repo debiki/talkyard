@@ -234,7 +234,9 @@ object AppEdit extends mvc.Controller {
 
       val (pageReqPerhapsNoMe, anyNewPageApproval) = pageReqsById.get(pageId) match {
         case None =>
-          (PageRequest.forPageThatExists(request, pageId), None)
+          val req = PageRequest.forPageThatExists(request, pageId) getOrElse throwBadReq(
+            "DwE47ZI2", s"Page `$pageId' does not exist")
+          (req, None)
         case Some((pageReq, newPageApproval)) =>
           // We just created the page. Reuse the PageRequest that was used
           // when we created it.

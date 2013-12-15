@@ -142,15 +142,17 @@ object PageRequest {
   }
 
 
-  def forPageThatExists[A](apiRequest: DebikiRequest[A], pageId: String) : PageRequest[A] = {
+  /** Returns None if the page doesn't exist.
+    */
+  def forPageThatExists[A](apiRequest: DebikiRequest[A], pageId: String): Option[PageRequest[A]] = {
     // COULD try to remove either `lookupPagePath` on the next line, or
     // remove `checkPagePath` in PageRequest.apply(..) above.
-    val pagePath = apiRequest.dao.lookupPagePath(pageId) match {
-      case Some(path) => path
+    apiRequest.dao.lookupPagePath(pageId) match {
+      case Some(pagePath) =>
+        Some(PageRequest(apiRequest, pagePath, pageMustExist = true, fixBadPath = true))
       case None =>
-        throwBadReq("DwE47ZI2", s"Page `$pageId' does not exist")
+        None
     }
-    PageRequest(apiRequest, pagePath, pageMustExist = true, fixBadPath = true)
   }
 
 

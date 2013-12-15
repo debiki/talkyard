@@ -20,6 +20,8 @@
 var d = { i: debiki.internal, u: debiki.v0.util };
 var $ = d.i.$;
 
+var NO_ID = 0;
+
 
 // Shows a reply form, either below the relevant post, or inside it,
 // if the reply is an inline comment -- whichever is the case is determined
@@ -30,7 +32,16 @@ d.i.$showReplyForm = function(event, opt_where) {
   var $thread = $(this).closest('.dw-t');
   var $replyAction = $thread.find('> .dw-p-as > .dw-a-reply');
   var $post = $thread.children('.dw-p');
-  var postId = $post.dwPostIdStr();
+  var anyParentPageId = $post.dwPageMeta().parentPageId;
+
+  // If this is an embedded page, there's a dummy .dw-p that represents the
+  // article in the embedding page an is needed for arrows and the article reply
+  // button to appear. It doesn't really exist though and has no id — use NO_ID
+  // in that case.
+  $post = $post.filter('[id]');
+  var postIdStr = $post.length ? $post.dwPostIdStr() : NO_ID;
+  var postId = parseInt(postIdStr);
+
   var horizLayout = $thread.is('.dw-hor');
   var replyCountBefore = $thread.find('> .dw-res > .dw-t').length;
 
@@ -51,9 +62,6 @@ d.i.$showReplyForm = function(event, opt_where) {
 
   var $replyFormParent = d.i.newReplyFormHtml();
   var $replyForm = $replyFormParent.children('form');
-
-  // Set XSRF token.
-  $replyForm.find('input[name="dw-fi-xsrf"]').val($.cookie('XSRF-TOKEN'));
 
   d.u.makeIdsUniqueUpdateLabels($replyForm);
 
@@ -82,12 +90,19 @@ d.i.$showReplyForm = function(event, opt_where) {
   $submitBtn.each(d.i.$loginSubmitOnClick(setSubmitBtnTitle,
         { askAboutEmailNotfs: true, mode: 'SubmitComment' }));
 
-  // Ajax-post reply on submit.
   $replyForm.submit(function() {
-    $.post(d.i.pageUri + '?reply='+ postId +'&view='+ d.i.rootPostId,
-        $replyForm.serialize(), 'json')
-      .fail(d.i.showErrorEnableInputs($replyForm))
-      .done(onCommentSaved);
+    d.u.postJson({
+        url: d.i.serverOrigin + '/-/reply',
+        data: {
+          pageId: d.i.pageId,
+          parentPageId: anyParentPageId,
+          postId: postId,
+          text: $replyForm.find('[name="dw-fi-reply-text"]').val()
+          // where: ...
+        },
+        error: d.i.showErrorEnableInputs($replyForm),
+        success: onCommentSaved
+      });
     d.i.disableSubmittedForm($replyForm);
     return false;
   });
