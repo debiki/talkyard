@@ -26,7 +26,7 @@ import test.e2e.code._
 
 /** Runs the ForumSpec suite,
   * in SBT:  test-only test.e2e.specs.ForumSpecRunner
-  * in test:console:  (new test.e2.specs.ForumSpecRunner).execute()
+  * in test:console:  (new test.e2e.specs.ForumSpecRunner).execute()
   */
 @DoNotDiscover
 class ForumSpecRunner extends org.scalatest.Suites(new ForumSpec)
@@ -38,7 +38,7 @@ with StartServerAndChromeDriverFactory
  */
 @test.tags.EndToEndTest
 @DoNotDiscover
-class ForumSpec extends DebikiBrowserSpec with TestEditor {
+class ForumSpec extends DebikiBrowserSpec with TestEditor with TestLoginner {
 
   var forumWindow: WindowTarget = null
 
@@ -119,19 +119,9 @@ class ForumSpec extends DebikiBrowserSpec with TestEditor {
   private def createForumTopic(loginName: Option[String] = None): WindowTarget = {
     click on cssSelector(".dw-a-new-forum-topic")
     loginName foreach { name =>
-      clickLoginGuestDummyEmail(name)
+      submitGuestLoginNoEmailQuestion(name, email = "no-email@example.com")
     }
     window(webDriver.getWindowHandle)
-  }
-
-
-  private def clickLoginGuestDummyEmail(name: String) {
-    eventually { click on "dw-fi-lgi-name" }
-    enter(name)
-    click on "dw-fi-lgi-email"
-    enter("no-email@example.com")
-    click on "dw-f-lgi-spl-submit"
-    eventually { click on "dw-dlg-rsp-ok" }
   }
 
 }
