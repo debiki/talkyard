@@ -30,7 +30,7 @@ import test.e2e.code._
 
 /** Runs the EditActivitySpec suite,
   * in SBT:  test-only test.e2e.specs.PinPostSpecRunner
-  * in test:console:  (new test.e2.specs.PinPostSpecRunner).execute()
+  * in test:console:  (new test.e2e.specs.PinPostSpecRunner).execute()
   */
 class PinPostSpecRunner extends org.scalatest.Suites(new PinPostSpec)
 with StartServerAndChromeDriverFactory

@@ -45,6 +45,10 @@ d.i.showGuestLoginDialog = !(loginAndContinue) ->
 
 
 
+/**
+ * The email field should be type="email" but ScalaTest doesn't currently
+ * support that, so use type="text" for now :-(
+ */
 function guestLoginDialogHtml
   $('''
     <div class="dw-fs" id="dw-lgi-guest-dlg" title="Login as Guest">
@@ -55,7 +59,7 @@ function guestLoginDialogHtml
       </div>
       <div class="form-group">
         <label for="dw-fi-lgi-email">Email: (optional, not shown)</label><br>
-        <input id="dw-fi-lgi-email" type="email" size="30" maxlength="100"
+        <input id="dw-fi-lgi-email" type="text" size="30" maxlength="100"
             name="dw-fi-lgi-email" value="" tabindex="120" class="form-control">
       </div>
       <div class="form-group">

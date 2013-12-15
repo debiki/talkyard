@@ -67,7 +67,7 @@ d.i.$loginThenSubmit = function(event) {
     // global callback-to-invoke-state is needed anyway.
     // Better move login stuff to a separate module (with a module
     // local "global" callback state).}}}
-    d.i.showLoginSubmitDialog(event.data.mode);
+    d.i.showLoginSubmitDialog(event.data ? event.data.mode : undefined);
   } else {
     d.i.continueAnySubmission();
   }

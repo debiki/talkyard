@@ -30,7 +30,7 @@ import test.e2e.code._
 
 /** Runs the EditActivitySpec suite,
   * in SBT:  test-only test.e2e.specs.EditActivitySpecRunner
-  * in test:console:  (new test.e2.specs.EditActivitySpecRunner).execute()
+  * in test:console:  (new test.e2e.specs.EditActivitySpecRunner).execute()
   */
 @DoNotDiscover
 class EditActivitySpecRunner extends org.scalatest.Suites(new EditActivitySpec)

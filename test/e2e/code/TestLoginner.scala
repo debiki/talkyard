@@ -44,8 +44,7 @@ trait TestLoginner {
 
   def loginAsGmailUser() {
     click on loginLink
-    eventually { click on cssSelector(".dw-a-login-openid") }
-    eventually { click on cssSelector("#openid_btns .google") }
+    eventually { click on "dw-lgi-google" }
     // Switch to OpenID popup window.
     val originalWindow = webDriver.getWindowHandle()
     switchToNewlyOpenedWindow()
@@ -154,13 +153,19 @@ trait TestLoginner {
     * about email notifications.
     */
   def submitGuestLoginNoEmailQuestion(name: String, email: String = "") {
+    // Open guest login dialog.
+    eventually { click on "dw-lgi-guest" }
+
+    // Fill in details.
     eventually { click on "dw-fi-lgi-name" }
     enter(name)
     if (email.nonEmpty) {
       click on "dw-fi-lgi-email"
       enter(email)
     }
-    click on "dw-f-lgi-spl-submit"
+
+    // Submit.
+    click on "dw-lgi-guest-submit"
     eventually { click on "dw-dlg-rsp-ok" }
   }
 

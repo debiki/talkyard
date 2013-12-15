@@ -52,6 +52,19 @@ class CreateSiteSpec extends DebikiBrowserSpec with TestSiteCreator {
       go to createWebsiteChooseTypePage
     }
 
+    "login with Gmail OpenID, but deny permissions" in {
+      // This opens an Authentication failed, Unknown error page.
+      // Instead, should show the login page again, and a message
+      // that one needs to click the approval button?
+      //loginWithGmailOpenId(approvePermissions = false)
+      pending
+    }
+
+    s"login with Gmail OpenID" in {
+      clickLoginWithGmailOpenId()
+    }
+
+
     "choose site type: a simple website" in {
       clickChooseSiteTypeSimpleSite()
     }
@@ -83,18 +96,6 @@ class CreateSiteSpec extends DebikiBrowserSpec with TestSiteCreator {
       // We should now be taken to page /-/create-site/choose-owner.
     }
 
-    "login with Gmail OpenID, but deny permissions" in {
-      // This opens an Authentication failed, Unknown error page.
-      // Instead, should show the login page again, and a message
-      // that one needs to click the approval button?
-      //loginWithGmailOpenId(approvePermissions = false)
-      pending
-    }
-
-    s"login with Gmail OpenID" in {
-      clickLoginWithGmailOpenId()
-    }
-
     s"goto admin page of $firstSiteName" in {
       clickWelcomeLoginToDashboard(firstSiteName)
     }
@@ -105,6 +106,10 @@ class CreateSiteSpec extends DebikiBrowserSpec with TestSiteCreator {
 
     "return to site creation page, choose site type: simple site, again" in {
       go to createWebsiteChooseTypePage
+    }
+
+    "login again, choose site type" in {
+      clickLoginWithGmailOpenId()
       clickChooseSiteTypeSimpleSite()
     }
 
@@ -114,11 +119,7 @@ class CreateSiteSpec extends DebikiBrowserSpec with TestSiteCreator {
       click on "accepts-terms"
       click on cssSelector("input[type=submit]")
 
-      // COULD fix: Regrettably, the server won't notice that the name is taken
-      // until you've logged in.
-      clickLoginWithGmailOpenId()
-
-      // Now an error pags should load. Click a certain try again link
+      // Now an error page should load. Click a certain try again link
       // (there's only one link?)
       assert(pageSource contains "You need to choose another name")
       click on partialLinkText("Okay")
