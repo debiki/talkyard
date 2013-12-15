@@ -224,6 +224,9 @@ trait StuffTestClicker {
       jQuery('#post-$postId').parent().find('> .dw-p-as').trigger('mouseenter');
       """)
 
+    // TODO: Wait until element actually visible?
+    // There was an ElementNotVisibleException in TestRater.rateComment.
+
     // More details on how I failed to trigger the on hover event. This didn't work:
     //   val mouse = (webDriver.asInstanceOf[HasInputDevices]).getMouse
     //   val hoverItem: Locatable = moreLink.underlying.asInstanceOf[Locatable]

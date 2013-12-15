@@ -32,6 +32,11 @@ trait TestRater {
 
 
   def rateComment(postId: PostId, rating: String) {
+    // 1. There was an ElementNotVisibleException somewhere in this method,
+    // but the stack trace was cropped, so don't no where.
+    // Could it have been the action links in clickRateAction() { showActionLinks() ... } ?
+    // 2. There was an error: """WebElement '.dw-page .dw-fs-r .dw-fi-submit' not found"""
+    // — how is that possible?? when the rating tags are present!
     clickRateAction(postId)
     eventually { clickRatingTag(rating) }
     clickSubmit()
