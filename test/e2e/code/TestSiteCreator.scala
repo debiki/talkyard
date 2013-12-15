@@ -46,7 +46,7 @@ trait TestSiteCreator extends TestLoginner {
 
 
   def createWebsiteChooseTypePage = new Page {
-    val url = s"http://$newSiteDomain/-/create-site/choose-type"
+    val url = s"http://$newSiteDomain/-/create-site/choose-owner"
   }
 
 
@@ -64,14 +64,15 @@ trait TestSiteCreator extends TestLoginner {
     info("create site $name")
 
     go to createWebsiteChooseTypePage
+
+    clickLoginWithGmailOpenId()
+
     clickChooseSiteTypeSimpleSite()
 
     click on "website-name"
     enter(name)
     click on "accepts-terms"
     click on cssSelector("input[type=submit]")
-
-    clickLoginWithGmailOpenId()
 
     name
   }
