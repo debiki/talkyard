@@ -33,7 +33,7 @@ trait TestRater {
 
   def rateComment(postId: PostId, rating: String) {
     clickRateAction(postId)
-    clickRatingTag(rating)
+    eventually { clickRatingTag(rating) }
     clickSubmit()
   }
 
@@ -47,11 +47,20 @@ trait TestRater {
 
 
   private def clickRatingTag(rating: String) {
+    assert(!rating.contains("\""))
+    val query = i"""
+      |//div[contains(concat(" ", @class, " "), " dw-fs-r ")]
+      |//div[contains(concat(" ", @class, " "), " dw-r-tag-set ")]
+      |//span[contains(concat(" ", @class, " "), " ui-button-text ") and text()="$rating"]
+      |"""
+    val anyRatingTag = find(xpath(query))
+    val ratingTag = anyRatingTag getOrElse fail(s"No rating tag with text: `$rating'")
+    click on ratingTag
   }
 
 
   private def clickSubmit() {
-    click on cssSelector(".dw-page .dw-fs-ra .dw-fi-submit")
+    click on cssSelector(".dw-page .dw-fs-r .dw-fi-submit")
   }
 
 }
