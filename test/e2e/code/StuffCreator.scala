@@ -93,7 +93,7 @@ trait StuffCreator {
     val loginGrant = firstSiteDao.saveLogin(loginAttempt)
 
     val postTemplate = PostActionDto.forNewPost(
-      id = UnassignedId, parentPostId = Some(PageParts.BodyId), creationDati = new ju.Date,
+      id = UnassignedId, parentPostId = None, creationDati = new ju.Date,
       loginId = loginGrant.login.id, userId = loginGrant.user.id,
       newIp = None, text = "", markup = "para",
       approval = Some(Approval.AuthoritativeUser))
@@ -171,7 +171,7 @@ trait StuffCreator {
         body: Option[String]): TestPage = {
 
     val titlePost = PostActionDto.copyCreatePost(postTemplate,
-      id = PageParts.TitleId, parentPostId = None, text = title)
+      id = PageParts.TitleId, text = title)
 
     val bodyPost = body map { text =>
       PostActionDto.copyCreatePost(postTemplate, id = PageParts.BodyId, text = text)
