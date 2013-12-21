@@ -68,6 +68,17 @@ class Globals {
   }
 
 
+  /** If a HTTP request specifies a hostname like "<id>.<siteByIdDomain>" then the
+    * site is looked up directly by id. This is useful for embedded comment sites,
+    * since their address isn't important, and if we always access them via site id,
+    * we don't need to ask the side admin to come up with any site address.
+    * Example value: "id.debiki.net".
+    * Default value: "id.localhost:9000".
+    * Usage in browser URL: "123.id.localhost:9000" where 123 is the site id.
+    */
+  def siteByIdDomain: String = state.siteByIdDomain
+
+
   /** The Twitter Ostrich admin service, listens on port 9100. */
   /*
   private val _ostrichAdminService = new toa.AdminHttpService(9100, 20, Stats,
@@ -155,6 +166,9 @@ class Globals {
         // Don't run out of quota when running e2e tests.
         if (Play.isTest) 1000.0f else 1.0f
       }
+
+    val siteByIdDomain: String =
+      Play.configuration.getString("debiki.siteByIdDomain") getOrElse "id.localhost:9000"
 
     private def makeDataSource() = {
       //val dataSourceName = if (Play.isTest) "test" else "default"

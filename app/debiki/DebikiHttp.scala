@@ -162,7 +162,25 @@ object DebikiHttp {
   def lookupTenantIdOrThrow(request: RequestHeader, systemDao: SystemDao)
         : String = {
 
-    val tenantId = systemDao.lookupTenant(scheme = "http", // for now
+    // Do this:
+    // - If the hostname is like: <site-id>.<siteByIdDomain>, e.g. 3.id.debiki.net if
+    //   "id.debiki.net" == Globals.siteByIdDomain, then we have the site id already. Then
+    //   1) verify that it's correct, and 2) if theres' any canonical address for the
+    //   site, and if so include a <link rel='canonical'> to that address (not implemented).
+    // - If the hostname is <whatever> then lookup site id by hostname.
+
+    val tenantId = if (request.host endsWith Globals.siteByIdDomain) {
+      val id = request.host.replaceAllLiterally(Globals.siteByIdDomain, "") dropRight 1 // drop '.'
+      systemDao.loadSite(id) match {
+        case None =>
+          throwNotFound("DwE72SF6", s"No site with id `$id'")
+        case Some(site) =>
+          if (site.hosts.find(_.role == TenantHost.RoleCanonical).isDefined)
+            Logger.warn("Should <link rel='canonical'> to the canonical address [DwE1U80]")
+      }
+      id
+    }
+    else systemDao.lookupTenant(scheme = "http", // for now
          host = request.host) match {
       case found: FoundChost =>
         found.tenantId
