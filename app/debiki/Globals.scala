@@ -33,6 +33,7 @@ import play.api.Play
 import play.api.Play.current
 import scala.concurrent.duration._
 import scala.concurrent.Await
+import scala.util.matching.Regex
 
 
 object Globals extends Globals
@@ -68,15 +69,14 @@ class Globals {
   }
 
 
-  /** If a HTTP request specifies a hostname like "<id>.<siteByIdDomain>" then the
-    * site is looked up directly by id. This is useful for embedded comment sites,
-    * since their address isn't important, and if we always access them via site id,
-    * we don't need to ask the side admin to come up with any site address.
-    * Example value: "id.debiki.net".
-    * Default value: "id.localhost:9000".
-    * Usage in browser URL: "123.id.localhost:9000" where 123 is the site id.
+  def baseDomain: String = state.baseDomain
+
+
+  /** If a hostname matches this pattern, the site id can be extracted directly from the url.
     */
-  def siteByIdDomain: String = state.siteByIdDomain
+  def siteByIdHostnameRegex = state.siteByIdHostnameRegex
+
+  def SiteByIdHostnamePrefix = "site-"
 
 
   /** The Twitter Ostrich admin service, listens on port 9100. */
@@ -167,8 +167,14 @@ class Globals {
         if (Play.isTest) 1000.0f else 1.0f
       }
 
-    val siteByIdDomain: String =
-      Play.configuration.getString("debiki.siteByIdDomain") getOrElse "id.localhost:9000"
+    val baseDomain: String =
+      Play.configuration.getString("debiki.baseDomain") getOrElse "localhost:9000"
+
+    // The hostname must be directly below the base domain, otherwise
+    // wildcard HTTPS certificates won't work: they cover 1 level below the
+    // base domain only, e.g. host.example.com but not sub.host.example.com,
+    // if the cert was issued for *.example.com.
+    val siteByIdHostnameRegex: Regex = s"""^$SiteByIdHostnamePrefix(.*)\\.$baseDomain""".r
 
     private def makeDataSource() = {
       //val dataSourceName = if (Play.isTest) "test" else "default"

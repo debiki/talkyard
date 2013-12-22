@@ -44,7 +44,7 @@ import Utils.ValidationImplicits._
 object CreateEmbeddedSiteController extends mvc.Controller {
 
   def hostnameToEmbeddedSite(siteId: SiteId) =
-    siteId + "." + debiki.Globals.siteByIdDomain
+    Globals.SiteByIdHostnamePrefix + siteId + "." + Globals.baseDomain
 
   def adminUrlForEmbeddedSite(siteId: SiteId): String =
     s"http://${hostnameToEmbeddedSite(siteId)}${routes.Application.viewAdminPage.url}"
@@ -148,8 +148,8 @@ object CreateEmbeddedSiteController extends mvc.Controller {
           "DwE33IR0", o"""Embedded site names shouldn't cause primary/unique key conflicts;
            they have no names""")
 
-    val byIdAddress = site.id + "." + Globals.siteByIdDomain
-    Redirect(s"http://$byIdAddress${routes.CreateEmbeddedSiteController.welcomeOwner.url}")
+    val hostname = hostnameToEmbeddedSite(site.id)
+    Redirect(s"http://$hostname${routes.CreateEmbeddedSiteController.welcomeOwner.url}")
       .withSession(request.session - "embeddingSiteUrl")
   }
 
