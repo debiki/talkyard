@@ -79,6 +79,7 @@ GET   /-/create-embedded-site/welcome-owner                   controllers.Create
 
 GET   /-/admin/                 controllers.Application.viewAdminPage
 
+POST  /-/configure-user         controllers.AppConfigUser.handleConfiguration()
 POST  /-/reply                  controllers.AppReply.handleReply
 GET   /-/edit                   controllers.AppEdit.showEditFormAnyPage(pageId, pagePath, pageRole, postId)
 POST  /-/edit                   controllers.AppEdit.edit

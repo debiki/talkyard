@@ -132,10 +132,24 @@ var configEmailPerhapsRelogin = (function() {
         // if you use an unauthenticated identity — because the email is
         // part of that identity. We need to know if a login happens.
         var loginIdBefore = d.i.Me.getLoginId();
+        var beNotifiedViaEmailOfReplies =
+            $form.find('#dw-fi-eml-prf-rcv-yes').attr('checked') === 'checked';
+        var emailAddress = $form.find('input[name="dw-fi-eml-prf-adr"]').val();
+        if (emailAddress === "") emailAddress = undefined;
 
-        $.post($form.attr('action'), $form.serialize(), 'html')
-            .done(function(responseHtml) {
-
+        d.u.postJson({
+            url: d.i.serverOrigin + '/-/configure-user',
+            data: {
+              userId: d.i.Me.getUserId(),
+              beNotifiedViaEmailOfReplies: beNotifiedViaEmailOfReplies,
+              emailAddress: emailAddress
+            },
+            error: function(jqXhrOrHtml, errorType, httpStatusText) {
+              d.i.showServerResponseDialog(
+                  jqXhrOrHtml, errorType, httpStatusText);
+              dialogStatus.reject();
+            },
+            success: function(responseHtml) {
               // Fire login event, to update xsrf tokens, if the server
               // created a new login session (because we changed email addr).
               d.i.Me.fireLoginIfNewSession(loginIdBefore);
@@ -149,12 +163,9 @@ var configEmailPerhapsRelogin = (function() {
 
               $form.dialog('close');
               // (Ignore responseHtml; it's empty, or a Welcome message.)
-            })
-            .fail(function(jqXhrOrHtml, errorType, httpStatusText) {
-              d.i.showServerResponseDialog(
-                  jqXhrOrHtml, errorType, httpStatusText);
-              dialogStatus.reject();
-            })
+            }
+          });
+
         return false;
       });
     }

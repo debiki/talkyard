@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2012 Kaj Magnus Lindberg (born 1979)
+ * Copyright (C) 2012-2013 Kaj Magnus Lindberg (born 1979)
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -25,12 +25,9 @@ import controllers.Utils.OkSafeJson
 import debiki._
 import debiki.DebikiHttp._
 import play.api._
-import play.api.data._
-import play.api.data.Forms._
 import play.api.mvc.{Action => _, _}
 import requests.{DebikiRequest, PageRequest}
 import actions.ApiActions.JsonPostRequest
-import Utils.{OkHtml, OkHtmlBody}
 import BrowserPagePatcher.TreePatchSpec
 
 
@@ -43,7 +40,7 @@ object AppReply extends mvc.Controller {
   def handleReply = PostJsonAction(maxLength = MaxPostSize) { request: JsonPostRequest =>
     val body = request.body
     val pageId = (body \ "pageId").as[PageId]
-    val anyParentPageId = (body \ "parentPageId").asOpt[PageId]
+    //val anyParentPageId = (body \ "parentPageId").asOpt[PageId]
     val postId = (body \ "postId").as[PostId]
     val text = (body \ "text").as[String]
     val wherePerhapsEmpty = (body \ "where").asOpt[String]
@@ -54,8 +51,6 @@ object AppReply extends mvc.Controller {
     val pageReq = PageRequest.forPageThatExists(request, pageId = pageId) match {
       case Some(req) => req
       case None =>
-        val parentPageId = anyParentPageId getOrElse throwNotFound(
-          "DwE7GU38", s"Page `$pageId' does not exist")
         val page = tryCreateEmbeddedCommentsPage(request, pageId)
           .getOrElse(throwNotFound("Dw2XEG60", s"Page `$pageId' does not exist"))
         PageRequest.forPageThatExists(request, pageId = page.id) getOrDie "DwE77PJE0"

@@ -24,7 +24,7 @@ import debiki.DebikiHttp._
 import java.{util => ju}
 import play.api._
 import play.api.mvc.{Action => _, _}
-import requests.PageRequest
+import requests.DebikiRequest
 import actions.ApiActions.PostJsonAction
 import play.api.libs.json.JsObject
 
@@ -81,7 +81,7 @@ object AppLoginGuest extends mvc.Controller {
   }
 
 
-  def loginGuestAgainWithNewEmail(pageReq: PageRequest[_],
+  def loginGuestAgainWithNewEmail(pageReq: DebikiRequest[_],
         newEmailAddr: String): (LoginGrant, Seq[Cookie]) = {
     import pageReq._
 
