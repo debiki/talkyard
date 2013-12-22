@@ -68,7 +68,7 @@ object SiteCreator {
         creationDati: ju.Date,
         name: Option[String],
         host: Option[String],
-        embeddingSiteAddress: Option[String],
+        embeddingSiteUrl: Option[String],
         ownerIp: String,
         ownerLoginId: String,
         ownerIdentity: Identity,
@@ -80,7 +80,7 @@ object SiteCreator {
     // from the same IP.
     val (website, ownerAtNewSite) =
       dao.createWebsite(
-        name = name, address = host, embeddingSiteAddress = embeddingSiteAddress,
+        name = name, address = host, embeddingSiteUrl = embeddingSiteUrl,
         ownerIp = ownerIp, ownerLoginId = ownerLoginId,
         ownerIdentity = ownerIdentity, ownerRole = ownerRole) getOrElse {
       return None
@@ -124,7 +124,7 @@ object SiteCreator {
       case NewSiteType.EmbeddedComments =>
         val body = views.html.createembeddedsite.welcomeEmail(website).body
         val subject = o"""Embedded comments enabled for
-          http://${website.embeddingSiteAddress getOrDie "DwE45GH0"}"""
+          http://${website.embeddingSiteUrl getOrDie "DwE45GH0"}"""
         (body, subject)
       case _ =>
         val address = website.chost_!.address

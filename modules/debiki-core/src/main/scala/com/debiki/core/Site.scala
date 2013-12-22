@@ -28,7 +28,7 @@ case class Tenant(
   creatorTenantId: String,
   creatorLoginId: String,
   creatorRoleId: String,
-  embeddingSiteAddress: Option[String],
+  embeddingSiteUrl: Option[String],
   hosts: List[TenantHost]
 ){
   // Reqiure at most 1 canonical host.

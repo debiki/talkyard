@@ -57,24 +57,24 @@ object CreateEmbeddedSiteController extends mvc.Controller {
 
   def showSiteOwnerForm() = CheckSidActionNoBody { (sidOk, xsrfOk, request) =>
     Ok(views.html.login.loginPage(xsrfToken = xsrfOk.value,
-      returnToUrl = routes.CreateEmbeddedSiteController.showEmbeddingSiteAddressForm.url,
+      returnToUrl = routes.CreateEmbeddedSiteController.showEmbeddingSiteUrlForm.url,
       title = "Choose Website Owner Account",
       providerLoginMessage = "It will become the owner of the embedded discussions.",
       showCreateAccountOption = true))
   }
 
 
-  def showEmbeddingSiteAddressForm() = GetAction { request =>
+  def showEmbeddingSiteUrlForm() = GetAction { request =>
     val tpi = InternalTemplateProgrammingInterface(request.dao)
-    Ok(views.html.createembeddedsite.specifyEmbeddingSiteAddress(
+    Ok(views.html.createembeddedsite.specifyEmbeddingSiteUrl(
       tpi, xsrfToken = request.xsrfToken.value))
   }
 
 
-  def handleEmbeddingSiteAddressForm() = JsonOrFormDataPostAction(maxBytes = 100) { request =>
+  def handleEmbeddingSiteUrlForm() = JsonOrFormDataPostAction(maxBytes = 100) { request =>
 
-    val embeddingSiteAddress =
-      request.body.getEmptyAsNone("embeddingSiteAddress") getOrElse
+    val embeddingSiteUrl =
+      request.body.getEmptyAsNone("embeddingSiteUrl") getOrElse
         throwBadReq("DwE44SEG5", o"""Please specify the address of the website on which you
           want to enable embedded commens""")
 
@@ -84,7 +84,7 @@ object CreateEmbeddedSiteController extends mvc.Controller {
 
     Redirect(routes.CreateEmbeddedSiteController.tryCreateEmbeddedSite.url)
        .withSession(
-          request.session + ("embeddingSiteAddress" -> embeddingSiteAddress))
+          request.session + ("embeddingSiteUrl" -> embeddingSiteUrl))
   }
 
 
@@ -118,13 +118,13 @@ object CreateEmbeddedSiteController extends mvc.Controller {
       //  xsrfToken = xsrfOk.value))
     }
 
-    val embeddingSiteAddress = request.session.get("embeddingSiteAddress") getOrElse {
-      throwForbidden("DwE85FK57", "No embeddingSiteAddress cookie")
+    val embeddingSiteUrl = request.session.get("embeddingSiteUrl") getOrElse {
+      throwForbidden("DwE85FK57", "No embeddingSiteUrl cookie")
     }
 
     CreateSiteController._throwIfMayNotCreateWebsite(request)
 
-    logger.info(o"""Creating embedded site, embedding site: $embeddingSiteAddress,
+    logger.info(o"""Creating embedded site, embedding site: $embeddingSiteUrl,
       on behalf of: $user""")
 
 
@@ -140,7 +140,7 @@ object CreateEmbeddedSiteController extends mvc.Controller {
         request.ctime,
         name = None,
         host = None,
-        embeddingSiteAddress = Some(embeddingSiteAddress),
+        embeddingSiteUrl = Some(embeddingSiteUrl),
         ownerIp = request.ip,
         ownerLoginId = loginId,
         ownerIdentity = identity,
@@ -150,7 +150,7 @@ object CreateEmbeddedSiteController extends mvc.Controller {
 
     val byIdAddress = site.id + "." + Globals.siteByIdDomain
     Redirect(s"http://$byIdAddress${routes.CreateEmbeddedSiteController.welcomeOwner.url}")
-      .withSession(request.session - "embeddingSiteAddress")
+      .withSession(request.session - "embeddingSiteUrl")
   }
 
 

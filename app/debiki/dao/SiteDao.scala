@@ -81,11 +81,11 @@ class SiteDao(protected val siteDbDao: ChargingSiteDbDao)
   def loadTenant(): Tenant = siteDbDao.loadTenant()
 
   def createWebsite(name: Option[String], address: Option[String],
-        embeddingSiteAddress: Option[String], ownerIp: String,
+        embeddingSiteUrl: Option[String], ownerIp: String,
         ownerLoginId: String, ownerIdentity: Identity, ownerRole: User)
         : Option[(Tenant, User)] =
     siteDbDao.createWebsite(name = name, address = address,
-      embeddingSiteAddress, ownerIp = ownerIp,
+      embeddingSiteUrl, ownerIp = ownerIp,
       ownerLoginId = ownerLoginId, ownerIdentity = ownerIdentity,
       ownerRole = ownerRole)
 

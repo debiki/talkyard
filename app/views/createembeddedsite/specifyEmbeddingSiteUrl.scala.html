@@ -28,7 +28,7 @@
 
   label { margin-bottom: 1em; }
 
-  input#embeddingSiteAddress {
+  input#embeddingSiteUrl {
     font-family: monospace;
   }
 
@@ -67,19 +67,19 @@
 
     <h1>Site Address</h1>
 
-    <form accept-charset='UTF-8' method='post' name="specifyHostnameForm"
-          action="@routes.CreateEmbeddedSiteController.handleEmbeddingSiteAddressForm">
+    <form accept-charset='UTF-8' method='post' name="embeddingSiteUrlForm"
+          action="@routes.CreateEmbeddedSiteController.handleEmbeddingSiteUrlForm">
       <input name='dw-fi-xsrf' type='hidden' value='@xsrfToken'>
 
-      <label for='embeddingSiteAddress'>Enter the address of the site on which you want to
+      <label for='embeddingSiteUrl'>Enter the address of the site on which you want to
         enable embedded comments:</label>
-      <input type='text' id='embeddingSiteAddress' name='embeddingSiteAddress' required>
+      <input type='text' id='embeddingSiteUrl' name='embeddingSiteUrl' required>
 
       @views.html.createsite.termsOfService(tpi)
 
       <div>
         <input class="btn" type="submit" value="Next"
-            ng-disabled="specifyHostnameForm.$invalid">
+            ng-disabled="embeddingSiteUrlForm.$invalid">
       </div>
     </form>
 

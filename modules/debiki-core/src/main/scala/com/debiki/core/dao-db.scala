@@ -85,7 +85,7 @@ abstract class SiteDbDao {
    * (e.g. from the same IP).
    */
   def createWebsite(name: Option[String], address: Option[String],
-        embeddingSiteAddress: Option[String], ownerIp: String,
+        embeddingSiteUrl: Option[String], ownerIp: String,
         ownerLoginId: String, ownerIdentity: Identity, ownerRole: User)
         : Option[(Tenant, User)]
 
@@ -437,7 +437,7 @@ class ChargingSiteDbDao(
    * the new website is being created.
    */
   def createWebsite(name: Option[String], address: Option[String],
-        embeddingSiteAddress: Option[String], ownerIp: String,
+        embeddingSiteUrl: Option[String], ownerIp: String,
         ownerLoginId: String, ownerIdentity: Identity, ownerRole: User)
         : Option[(Tenant, User)] = {
 
@@ -450,7 +450,7 @@ class ChargingSiteDbDao(
     _chargeForOneWriteReq()
 
     _spi.createWebsite(name = name, address = address,
-       embeddingSiteAddress, ownerIp = ownerIp,
+       embeddingSiteUrl, ownerIp = ownerIp,
        ownerLoginId = ownerLoginId, ownerIdentity = ownerIdentity,
        ownerRole = ownerRole)
   }

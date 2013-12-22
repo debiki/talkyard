@@ -178,7 +178,7 @@ object CreateSiteController extends mvc.Controller {
         request.ctime,
         name = Some(newWebsiteName),
         host = Some(websiteAddr),
-        embeddingSiteAddress = None,
+        embeddingSiteUrl = None,
         ownerIp = request.ip,
         ownerLoginId = loginId,
         ownerIdentity = identity,

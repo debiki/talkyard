@@ -21,10 +21,10 @@
 @import debiki.HtmlUtils.link
 @import play.api.Play.current
 
-@embeddingSiteAddress = @{ site.embeddingSiteAddress.get }
+@embeddingSiteUrl = @{ site.embeddingSiteUrl.get }
 @adminUrl = @{ CreateEmbeddedSiteController.adminUrlForEmbeddedSite(site.id) }
 
-<p>Embedded comments have been setup for your website at @embeddingSiteAddress.
+<p>Embedded comments have been setup for your website at @embeddingSiteUrl.
   You can log in as administrator here:</p>
 
 <p>@link(adminUrl)</p>
