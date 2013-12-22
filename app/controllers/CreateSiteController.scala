@@ -39,6 +39,11 @@ object CreateSiteController extends mvc.Controller {
   val log = play.api.Logger("app.create-site")
 
 
+  def start = mvc.Action { request =>
+    Redirect(routes.CreateSiteController.showWebsiteOwnerForm.url)
+  }
+
+
   def newWebsiteAddr(websiteName: String, dao: SiteDao): String = {
     def die = throwForbidden(
       "DwE30SC3", "You may not create a new website from this website")
