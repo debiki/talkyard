@@ -271,7 +271,10 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
         val pagesToCreate = Nil
       })
       defaultTenantId = tenant.id
-      tenant.name must_== "Test"
+      tenant.name must_== Some("Test")
+      tenant.embeddingSiteAddress must_== None
+      tenant.hosts.headOption.map(_.address) must_== Some("test.ex.com")
+      tenant.hosts.length must_== 1
       tenant.id must_!= ""
     }
 
@@ -289,7 +292,8 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
       tenants must beLike {
         case List(tenant) =>
           tenant.id must_== defaultTenantId
-          tenant.name must_== "Test"
+          tenant.name must_== Some("Test")
+          tenant.embeddingSiteAddress must_== None
           tenant.hosts must_== List(TenantHost(
              "test.ex.com", TenantHost.RoleCanonical, TenantHost.HttpsNone))
         case x => failure(s"Found wrong tenants: $x")
@@ -2737,7 +2741,16 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
 
       def createWebsite(suffix: String): Option[(Tenant, User)] = {
         dao.createWebsite(
-          name = "website-"+ suffix, address = "website-"+ suffix +".ex.com",
+          name = Some("website-"+ suffix), address = Some("website-"+ suffix +".ex.com"),
+          embeddingSiteAddress = None,
+          ownerIp = creatorLogin.ip, ownerLoginId = creatorLogin.id,
+          ownerIdentity = creatorIdentity, ownerRole = creatorRole)
+      }
+
+      def createEmbeddedSite(embeddingSiteAddress: String): Option[(Tenant, User)] = {
+        dao.createWebsite(
+          name = None, address = None,
+          embeddingSiteAddress = Some(embeddingSiteAddress),
           ownerIp = creatorLogin.ip, ownerLoginId = creatorLogin.id,
           ownerIdentity = creatorIdentity, ownerRole = creatorRole)
       }
@@ -2759,6 +2772,20 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
           case List(websiteInDb) =>
             websiteInDb must_== newWebsiteOpt.copy(hosts = List(newHost))
         }
+      }
+
+      "create embedded sites, find it by id" in {
+        val embeddingSiteAddress = "embedding.exmple.com"
+        createEmbeddedSite(embeddingSiteAddress) must beLike {
+          case Some((site, user)) =>
+            systemDbDao.loadSite(site.id) must beLike {
+              case Some(site) =>
+                site.name must_== None
+                site.hosts.length must_== 0
+                site.embeddingSiteAddress must_== Some(embeddingSiteAddress)
+          }
+        }
+        ok
       }
 
       "not create too many websites from the same IP" in {

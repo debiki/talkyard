@@ -176,8 +176,9 @@ object CreateSiteController extends mvc.Controller {
         newSiteType,
         request.dao,
         request.ctime,
-        name = newWebsiteName,
-        host = websiteAddr,
+        name = Some(newWebsiteName),
+        host = Some(websiteAddr),
+        embeddingSiteAddress = None,
         ownerIp = request.ip,
         ownerLoginId = loginId,
         ownerIdentity = identity,
@@ -203,7 +204,7 @@ object CreateSiteController extends mvc.Controller {
   }
 
 
-  private def _throwIfMayNotCreateWebsite(request: ApiRequest[_],
+  def _throwIfMayNotCreateWebsite(request: ApiRequest[_],
         newWebsiteAddr: Option[String] = None) {
     if (request.host != "www.debiki.com" &&
         !request.host.contains("localhost:") &&
