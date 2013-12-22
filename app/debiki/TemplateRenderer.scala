@@ -87,8 +87,7 @@ object TemplateRenderer {
         case PageRole.Forum => "forum"
         case PageRole.ForumTopic => "forumTopic"
         case PageRole.Code => "codePage"
-        case PageRole.EmbeddedForum => "blogPost" // for now
-        case PageRole.EmbeddedTopic => "embeddedTopic"
+        case PageRole.EmbeddedComments => "embeddedComments"
         case _ =>
         // A blog post template works well for most pages?
         "blogPost"

@@ -34,18 +34,18 @@ import requests.PageRequest
 object EmbeddedTopicsController extends mvc.Controller {
 
 
-  def showTopic(forumId: PageId, topicId: PageId) = GetAction { request =>
-    /*
-    val forumPathAndMeta: PagePathAndMeta = request.dao.loadEmbeddedForumMeta(forumId)
-    val topicMeta: PageMeta = request.dao.loadEmbeddedTopicMeta(topicId)
+  def isRequestFromEmbeddingUrl(request: mvc.RequestHeader, embeddingUrl: Option[String]): Boolean =
+    isReferrerFromEmbeddingUrl(request.headers.get("referer").headOption, embeddingUrl)
 
-    if (topicMeta.parentForumId != forumMeta.pageId)
-      throwForbidden("DwE7GEf0", s"Topic `$topicId' is not part of forum `$forumId'")
-    */
+  def isReferrerFromEmbeddingUrl(referrer: Option[String], embeddingUrl: Option[String]): Boolean =
+    embeddingUrl.nonEmpty // for now. COULD implement if people post comments to the wrong site
+
+
+  def showTopic(topicId: PageId) = GetAction { request =>
 
     val topicPagePath = PagePath(
       tenantId = request.siteId,
-      folder = "/embedded-forum-test/", // forumPathAndMeta.folder,
+      folder = "/",
       pageId = Some(topicId),
       showId = true,
       pageSlug = "")
@@ -57,27 +57,25 @@ object EmbeddedTopicsController extends mvc.Controller {
       PageViewer.viewPostImpl(pageReq)
     }
     else {
-      showNonExistingPage(pageReq, forumId, topicPagePath)
+      showNonExistingPage(pageReq, topicPagePath)
     }
   }
 
 
-  def showNonExistingPage(pageReq: PageGetRequest, forumId: PageId, topicPagePath: PagePath) = {
+  def showNonExistingPage(pageReq: PageGetRequest, topicPagePath: PagePath) = {
     val author = SystemUser.User
     val topicId = topicPagePath.pageId.get
 
     val newTopicMeta = PageMeta.forNewPage(
-      PageRole.EmbeddedTopic,
+      PageRole.EmbeddedComments,
       author = author,
       parts = PageParts(topicId),
       creationDati = new ju.Date,
-      parentPageId = Some(forumId),
+      parentPageId = None,
       publishDirectly = true)
 
-    val ancestorIds = List(forumId)
-
     val pageReqNewPageBadRoot = pageReq.copyWithPreloadedPage(
-      Page(newTopicMeta, topicPagePath, ancestorIds, PageParts(topicId)),
+      Page(newTopicMeta, topicPagePath, ancestorIdsParentFirst = Nil, PageParts(topicId)),
       pageExists = false)
 
     // Include all top level comments, by specifying no particular root comment.
@@ -85,5 +83,18 @@ object EmbeddedTopicsController extends mvc.Controller {
 
     PageViewer.viewPostImpl(pageReqNewPage)
   }
+
+
+  /*
+  def showTopic(forumId: PageId, topicId: PageId) = GetAction { request =>
+    val forumPathAndMeta: PagePathAndMeta = request.dao.loadEmbeddedForumMeta(forumId)
+    val topicMeta: PageMeta = request.dao.loadEmbeddedTopicMeta(topicId)
+
+    if (topicMeta.parentForumId != forumMeta.pageId)
+      throwForbidden("DwE7GEf0", s"Topic `$topicId' is not part of forum `$forumId'")
+
+    // and then:
+    ???
+  } */
 
 }

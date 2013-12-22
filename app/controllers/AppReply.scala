@@ -56,7 +56,7 @@ object AppReply extends mvc.Controller {
       case None =>
         val parentPageId = anyParentPageId getOrElse throwNotFound(
           "DwE7GU38", s"Page `$pageId' does not exist")
-        val page = tryCreateEmbeddedCommentsPage(request, parentPageId, pageId = pageId)
+        val page = tryCreateEmbeddedCommentsPage(request, pageId)
           .getOrElse(throwNotFound("Dw2XEG60", s"Page `$pageId' does not exist"))
         PageRequest.forPageThatExists(request, pageId = page.id) getOrDie "DwE77PJE0"
     }
@@ -96,27 +96,24 @@ object AppReply extends mvc.Controller {
 
 
   private def tryCreateEmbeddedCommentsPage(
-        request: DebikiRequest[_], parentPageId: PageId, pageId: PageId): Option[Page] = {
+        request: DebikiRequest[_], pageId: PageId): Option[Page] = {
 
-    val parentMetaAndPath = request.dao.loadPageMetaAndPath(parentPageId) getOrElse {
-      return None
-    }
+    val site = request.dao.loadSite()
+    val shallCreateEmbeddedTopic = EmbeddedTopicsController.isRequestFromEmbeddingUrl(
+      request.request, site.embeddingSiteUrl)
 
-    UNTESTED
-    ??? // now I'll remember to test
-
-    if (parentMetaAndPath.meta.pageRole != PageRole.EmbeddedForum)
+    if (!shallCreateEmbeddedTopic)
       return None
 
     val topicPagePath = PagePath(
       request.siteId,
-      folder = s"${parentMetaAndPath.path.path}/",
+      folder = "/",
       pageId = Some(pageId),
       showId = true,
       pageSlug = "")
 
     val pageToCreate = Page.newPage(
-      PageRole.EmbeddedForum,
+      PageRole.EmbeddedComments,
       topicPagePath,
       PageParts(pageId),
       publishDirectly = true,
