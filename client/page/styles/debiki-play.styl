@@ -92,11 +92,18 @@ del
   background: #888
   color: #fff
 
-// Hide reply button until a page body has been written.
-.dw-t.dw-dummy > .dw-res,
-.dw-t.dw-dummy > .dw-t-vspace
-  display: none
+// Hide reply button until a page body has been written. Unless it's an embedded
+// comments page, then there'll never be any page body, only comments.
+.dw-t.dw-dummy
+  > .dw-res,
+  > .dw-t-vspace
+    display: none
 
+.dw-page[data-page_role="EmbeddedComments"]
+  .dw-t.dw-dummy
+    > .dw-res,
+    > .dw-t-vspace
+      display: block
 
 
 // Page rendering
