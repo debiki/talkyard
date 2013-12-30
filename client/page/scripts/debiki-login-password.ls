@@ -30,7 +30,7 @@ d.i.showPasswordLoginDialog = !(loginAndContinue) ->
     data =
       email: dialog.find('input[name=email]').val!
       password: dialog.find('input[name=password]').val!
-    d.u.postJson { url: '/-/login-password', data }
+    d.u.postJson { url: "#{d.i.serverOrigin}/-/login-password", data }
       .fail d.i.showServerResponseDialog
       .done loginAndContinue
       .always !-> dialog.dialog 'close'

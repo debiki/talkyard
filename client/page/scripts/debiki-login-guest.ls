@@ -31,7 +31,7 @@ d.i.showGuestLoginDialog = !(loginAndContinue) ->
       name: dialog.find('#dw-fi-lgi-name').val!
       email: dialog.find('#dw-fi-lgi-email').val!
       url: dialog.find('#dw-fi-lgi-url').val!
-    d.u.postJson { url: '/-/login-guest', data }
+    d.u.postJson { url: "#{d.i.serverOrigin}/-/login-guest", data }
       .fail d.i.showServerResponseDialog
       .done loginAndContinue
       .always !-> dialog.dialog 'close'

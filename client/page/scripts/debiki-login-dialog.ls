@@ -67,7 +67,7 @@ d.i.showLoginSubmitDialog = !(anyMode) ->
    */
   function loginGoogleYahoo(openidIdentifier)
     form = $("""
-      <form action="/-/api/login-openid" method="POST">
+      <form action="#{d.i.serverOrigin}/-/api/login-openid" method="POST">
         <input type="text" name="openid_identifier" value="#openidIdentifier">
       </form>
       """)
@@ -76,7 +76,7 @@ d.i.showLoginSubmitDialog = !(anyMode) ->
     false
 
   function openSecureSocialLoginWindow(provider)
-    d.i.createLoginPopup("/-/login-securesocial-popup/#provider")
+    d.i.createLoginPopup("#{d.i.serverOrigin}/-/login-securesocial-popup/#provider")
 
   !function loginAndContinue(data)
     d.i.Me.fireLogin()
