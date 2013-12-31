@@ -54,7 +54,7 @@ function logoutDialogHtml
 
 
 $(!->
-  $('#dw-a-logout').click showLogoutDialog)
+  $('.dw-a-logout').click showLogoutDialog)
 
 
 

@@ -157,7 +157,7 @@ function loginDialogHtml
 
 
 $(!->
-  $('#dw-a-login').click showLoginDialog)
+  $('.dw-a-login').click showLoginDialog)
 
 
 

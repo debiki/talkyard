@@ -224,12 +224,12 @@ object HtmlPageSerializer {
   /** XML for the user name and login/out links.
    */
   def loginInfo(userName: Option[String]): NodeSeq = {
-    <span id='dw-u-info'>
+    <span class='dw-u-info'>
       <span class='dw-u-name'>{userName.getOrElse("")}</span>
     </span>
     <span class='dw-u-lgi-lgo'>
-      <a id='dw-a-login'>Log in</a>
-      <a id='dw-a-logout'>Log out</a>
+      <a class='dw-a-login'>Login</a>
+      <a class='dw-a-logout'>Logout</a>
     </span>
   }
 
@@ -366,6 +366,7 @@ case class HtmlPageSerializer(
 
         anyBodyHtml ++
         ifThen(showComments, {
+          makeCommentsToolbar() ++
           <div class='dw-t-vspace'/>
           <ol class='dw-res'>
             { renderedRoot.actionsHtml.copy(label = "li") }
@@ -376,6 +377,14 @@ case class HtmlPageSerializer(
       </div>
 
     bodyAndComments
+  }
+
+
+  private def makeCommentsToolbar(): NodeSeq = {
+    <div class="dw-cmts-tlbr">
+      <span class="dw-cmts-count">{ page.getAllPosts.length } comments</span>
+      { HtmlPageSerializer.loginInfo(userName = None) /* name updated via Javascript */ }
+    </div>
   }
 
 

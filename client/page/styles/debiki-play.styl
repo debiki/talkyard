@@ -899,8 +899,8 @@ body.dw-u-ui-simple .dw-a-edit
 
 
 // Assume user logged out
-#dw-u-info,
-#dw-a-logout
+.dw-u-info,
+.dw-a-logout
   display: none
 
 #dw-lgi.ui-dialog-content
@@ -945,14 +945,30 @@ body.dw-u-ui-simple .dw-a-edit
   position: absolute
   left: 0 // or IE 7 places it far to the right
 
-.dw-a-login,
-.dw-a-logout
-  white-space: nowrap
-
 .dw-a-login
-  font-size: 200%
   margin-left: 10px
   color: #3872AB
+
+
+.dw-cmts-tlbr
+
+  margin-top: 1.5em
+
+  .dw-cmts-count
+    font-size: 17px
+    margin-right: 1em
+
+  .dw-u-lgi-lgo
+    display: inline // not block, which the topbar often sets
+
+  .dw-u-name,
+  .dw-a-login,
+  .dw-a-logout
+    color: hsl(0, 0%, 43%)
+
+  .dw-a-logout
+    margin-left: 1em
+
 
 #dw-lgi-pswd .dw-reset-pswd
   display: block
