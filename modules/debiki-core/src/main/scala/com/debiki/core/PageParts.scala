@@ -479,6 +479,19 @@ case class PageParts (
   def ratingsByUser(withId: UserId): Seq[Rating] =
     ratings.filter(smart(_).identity.map(_.userId) == Some(withId))
 
+  /** Lists all rating tags user 'userId' has assigned to each post s/he has rated.
+    */
+  def ratingTagsByPostId(userId: UserId): Map[PostId, Seq[String]] = {
+    var ratingsMap = Map[PostId, Seq[String]]()
+    // Place old ratings first so they'll be overwritten by more recent ratings of the same post,
+    // since that's the effect of rating something many times.
+    val ratingsOldFirst = ratingsByUser(withId = userId).sortBy(_.ctime.getTime)
+    for (rating <- ratingsOldFirst) {
+      ratingsMap += rating.postId -> rating.tags
+    }
+    ratingsMap
+  }
+
 
   // ====== Older stuff below (everything in use though!) ======
 

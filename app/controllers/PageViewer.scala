@@ -109,11 +109,9 @@ object PageViewer extends mvc.Controller {
 
     // List the user's ratings so they can be highlighted so the user
     // won't rate the same post again and again and again each day.
-    // COULD list only the very last rating per post (currently all old
-    // overwritten ratings are included).
-    var ownRatingsMap = Map[String, JsValue]()
-    for (rating <- page.ratingsByUser(withId = my.id)) {
-      ownRatingsMap += rating.postId.toString -> toJson(rating.tags)
+    val ownRatingsMap = page.ratingTagsByPostId(userId = my.id)
+    val ownRatingsJsonMap = ownRatingsMap map { case (postId, tags) =>
+      postId.toString -> toJson(tags)
     }
 
     // Generate html for any posts-by-this-user that are pending approval. Plus info
@@ -130,7 +128,7 @@ object PageViewer extends mvc.Controller {
     val json = toJson(Map(
       "permsOnPage" -> toJson(permsMap),
       "authorOf" -> toJson(ownPostsIdsList),
-      "ratings" -> toJson(ownRatingsMap),
+      "ratings" -> toJson(ownRatingsJsonMap),
       // Suddenly using a by-page-id map is a bit weird, but what debiki-patch-page.ls
       // currently expects. Could map *everything* in the page id instead?
       // (Background: This is supposed to work on e.g. pages that lists many blog posts,
