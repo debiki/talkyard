@@ -110,12 +110,6 @@ class HtmlForms(xsrfToken: String, val pageRoot: AnyPageRoot, val permsOnPage: P
 
     val termsOfUseUrl = "/terms-of-use"
 
-    // If a form action is the empty string, the browser POSTS to the current
-    // page, says the URI spec: http://www.apps.ietf.org/rfc/rfc3986.html#sec-5.4
-    // COULD rename replyAction -> replyUrl (or reactUrl -> reactAction).
-    val rateAction = "?rate"
-    val flagAction = "?flag"
-
     val loginActionOpenId = "/-/api/login-openid"
     val loginOkAction = ""
     val loginFailedAction = ""
@@ -246,11 +240,7 @@ class HtmlForms(xsrfToken: String, val pageRoot: AnyPageRoot, val permsOnPage: P
 
   def ratingForm =
       <div class='dw-fs dw-fs-r'>
-        <form
-            action={config.rateAction + _viewRoot}
-            accept-charset='UTF-8'
-            method='post'
-            class='dw-f dw-f-r'>
+        <form class='dw-f dw-f-r'>
           { _xsrfToken }
           <p class='dw-inf dw-f-r-inf-many'>
             You can select many rating tags.
@@ -304,8 +294,7 @@ class HtmlForms(xsrfToken: String, val pageRoot: AnyPageRoot, val permsOnPage: P
   def flagForm = {
     import FlagForm.{InputNames => Inp}
     <div class='dw-fs' title='Report Comment'>
-      <form id='dw-f-flg' action={config.flagAction + _viewRoot}
-            accept-charset='UTF-8' method='post'>
+      <form class='dw-f-flg'>
         { _xsrfToken }
         <div class='dw-f-flg-rsns'>{
           def input(idSuffix: String, r: FlagReason) = {
