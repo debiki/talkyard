@@ -54,7 +54,7 @@ function createThisPageUnlessExists (onSuccess)
   pageMeta.newPageApproval = d.i.parseApprovalInPageUrl!
   newPageData = createPagesUnlessExist: [pageMeta]
 
-  d.u.postJson url: '/-/edit', data: newPageData
+  d.u.postJson url: "#{d.i.serverOrigin}/-/edit", data: newPageData
       .fail d.i.showServerResponseDialog
       .done !(newDebateHtml) ->
         # Tell any AngularJS parts of the page (e.g. the admin dashbar)

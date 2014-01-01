@@ -54,11 +54,11 @@ function newCollapseDialog (whichDialog)
     | 'CollapsePost' =>
         title: 'Collapse Comment?'
         details: 'Collapse this comment? (Not any replies, only the comment)'
-        url: '/-/collapse-post'
+        url: "#{d.i.serverOrigin}/-/collapse-post"
     | 'CollapseTree' =>
         title: 'Collapse Thread?'
         details: 'Collapse this comment and all replies?'
-        url: '/-/collapse-tree'
+        url: "#{d.i.serverOrigin}/-/collapse-tree"
     | _ => die 'DwE7BE8'
 
   $dialog = collapseDialogHtml conf
@@ -104,7 +104,7 @@ function newCloseTreeDialog
     $dialog.dialog 'close'
 
   $dialog.find('.dw-f-close-yes').button!click ->
-    submit $dialog, '/-/close-tree', [{ pageId, actionId: '' + postId }]
+    submit $dialog, "#{d.i.serverOrigin}/-/close-tree", [{ pageId, actionId: '' + postId }]
 
   $dialog
 
@@ -143,7 +143,7 @@ function newPinTreeDialog
     if isNaN(position) || position <= 0 => return false
 
     data = [{ pageId, postId, position }]
-    d.u.postJson { url: '/-/pin-at-position', data }
+    d.u.postJson { url: "#{d.i.serverOrigin}/-/pin-at-position", data }
         .fail d.i.showServerResponseDialog
         .done updatePositionAddPin
         .always !-> $dialog.dialog 'close'

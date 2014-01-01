@@ -22,19 +22,19 @@ $ = d.i.$;
 
 
 d.i.loadAndInsertPost = !(postId) ->
-  loadAndInsert postId, '/-/load-posts'
+  loadAndInsert postId, "#{d.i.serverOrigin}/-/load-posts"
 
 
 d.i.loadAndInsertThreadAndTree = !(postId, anyCallback) ->
-  loadAndInsert postId, '/-/load-threads-and-trees', anyCallback
+  loadAndInsert postId, "#{d.i.serverOrigin}/-/load-threads-and-trees", anyCallback
 
 
 d.i.loadAndInsertTree = !(postId) ->
-  loadAndInsert postId, '/-/load-trees'
+  loadAndInsert postId, "#{d.i.serverOrigin}/-/load-trees"
 
 
 d.i.loadAndInsertReplies = !(postId) ->
-  loadAndInsert postId, '/-/load-replies'
+  loadAndInsert postId, "#{d.i.serverOrigin}/-/load-replies"
 
 
 

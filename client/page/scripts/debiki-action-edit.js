@@ -80,8 +80,8 @@ function _$showEditFormImpl() {
     // (The page path is needed if the page doesn't exist, so the server has
     // some way to find out which PermsOnPage to show.)
     var url =
-        d.i.serverOrigin +
-        '/-/edit?pageId='+ pageMeta.pageId +
+        d.i.serverOrigin + '/-/edit' +
+        '?pageId='+ pageMeta.pageId +
         '&pagePath='+ pageMeta.pagePath +
         '&postId='+ postId +
         '&pageRole=' + pageMeta.pageRole;

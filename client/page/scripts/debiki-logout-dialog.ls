@@ -29,7 +29,7 @@ function showLogoutDialog
     $dialog.dialog 'close'
 
   $dialog.find('input[type=submit]').click ->
-    d.u.postJson { url: '/-/logout' }
+    d.u.postJson { url: "#{d.i.serverOrigin}/-/logout" }
       .fail d.i.showServerResponseDialog
       .done !-> d.i.Me.fireLogout()
       .always !-> $dialog.dialog 'close'
