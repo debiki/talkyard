@@ -382,7 +382,7 @@ case class HtmlPageSerializer(
 
   private def makeCommentsToolbar(): NodeSeq = {
     <div class="dw-cmts-tlbr">
-      <span class="dw-cmts-count">{ page.getAllPosts.length } comments</span>
+      <span class="dw-cmts-count">{ page.commentCount } comments</span>
       { HtmlPageSerializer.loginInfo(userName = None) /* name updated via Javascript */ }
     </div>
   }

@@ -497,6 +497,10 @@ case class PageParts (
 
   def postCount = getAllPosts.length
 
+  def commentCount = getAllPosts.filterNot(post => {
+    PageParts.isArticleOrConfigPostId(post.id)
+  }).length
+
   def getPost_!(postId: PostId): Post =
     getPost(postId).getOrElse(runErr(
       "DwE3kR49", s"Post `$postId' not found on page `$id'"))
