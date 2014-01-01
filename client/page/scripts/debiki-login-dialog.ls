@@ -53,13 +53,13 @@ d.i.showLoginSubmitDialog = !(anyMode) ->
     close()
     false
 
-  dialog.find('a#dw-lgi-google').click ->
+  dialog.find('#dw-lgi-google').click ->
     loginGoogleYahoo("https://www.google.com/accounts/o8/id")
 
-  dialog.find('a#dw-lgi-yahoo').click ->
+  dialog.find('#dw-lgi-yahoo').click ->
     loginGoogleYahoo("http://me.yahoo.com/")
 
-  dialog.find('a#dw-lgi-facebook').click ->
+  dialog.find('#dw-lgi-facebook').click ->
     openSecureSocialLoginWindow('facebook')
 
   /**
