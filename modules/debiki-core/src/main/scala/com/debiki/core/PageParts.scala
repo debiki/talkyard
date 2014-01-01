@@ -538,6 +538,11 @@ case class PageParts (
     (posterUserIds.size, numDeleted, numVisible, numPendingReview, lastDati)
   }
 
+  def topLevelComments: Seq[Post] =
+    postsByParentId.get(PageParts.NoId).map(_ filterNot { post =>
+      PageParts.isArticleOrConfigPostId(post.id)
+    }) getOrElse Nil
+
 
   // -------- Replies
 

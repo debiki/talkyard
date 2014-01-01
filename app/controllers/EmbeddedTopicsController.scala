@@ -50,19 +50,22 @@ object EmbeddedTopicsController extends mvc.Controller {
       showId = true,
       pageSlug = "")
 
-    val pageReq = PageRequest.forPageThatMightExist(
+    val pageReqDefaultRoot: PageGetRequest = PageRequest.forPageThatMightExist(
       request, pagePathStr = topicPagePath.path, pageId = topicId)
 
-    if (pageReq.pageExists) {
-      PageViewer.viewPostImpl(pageReq)
+    // Include all top level comments, by specifying no particular root comment.
+    val pageReqNoRoot = pageReqDefaultRoot.copyWithNewPageRoot(None)
+
+    if (pageReqNoRoot.pageExists) {
+      PageViewer.viewPostImpl(pageReqNoRoot)
     }
     else {
-      showNonExistingPage(pageReq, topicPagePath)
+      showNonExistingPage(pageReqNoRoot, topicPagePath)
     }
   }
 
 
-  def showNonExistingPage(pageReq: PageGetRequest, topicPagePath: PagePath) = {
+  def showNonExistingPage(pageReqNoPage: PageGetRequest, topicPagePath: PagePath) = {
     val author = SystemUser.User
     val topicId = topicPagePath.pageId.get
 
@@ -74,14 +77,11 @@ object EmbeddedTopicsController extends mvc.Controller {
       parentPageId = None,
       publishDirectly = true)
 
-    val pageReqNewPageBadRoot = pageReq.copyWithPreloadedPage(
+    val pageReq = pageReqNoPage.copyWithPreloadedPage(
       Page(newTopicMeta, topicPagePath, ancestorIdsParentFirst = Nil, PageParts(topicId)),
       pageExists = false)
 
-    // Include all top level comments, by specifying no particular root comment.
-    val pageReqNewPage = pageReqNewPageBadRoot.copyWithNewPageRoot(None)
-
-    PageViewer.viewPostImpl(pageReqNewPage)
+    PageViewer.viewPostImpl(pageReq)
   }
 
 

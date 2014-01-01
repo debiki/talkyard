@@ -284,7 +284,7 @@ case class PageRequest[A](
     else copyWithAnyMeOnPage
 
 
-  def copyWithNewPageRoot(newRoot: AnyPageRoot) =
+  def copyWithNewPageRoot(newRoot: AnyPageRoot): PageRequest[A] =
     copy()(_preloadedActions, _preloadedAncestorIds, addMeToPage, pageRootOverride = Some(newRoot))
 
 

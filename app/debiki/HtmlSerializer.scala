@@ -389,7 +389,7 @@ case class HtmlPageSerializer(
 
 
   private def renderTopLevelPosts(): NodeSeq = {
-    val topLevelPosts = Nil//page.topLevelPostsExceptConfigPosts
+    val topLevelComments = page.topLevelComments
     val html =
       <div class="dw-t dw-depth-0 dw-hor">
         {/* Include an empty div.dw-p, so arrows to top level posts are drawn. */}
@@ -399,7 +399,7 @@ case class HtmlPageSerializer(
           <li class="dw-p-as dw-as dw-p-as-hz">
             <a class="dw-a dw-a-reply">Reply</a>
           </li>
-          { renderThreads(1, topLevelPosts, parentHorizontal = true) }
+          { renderThreads(1, topLevelComments, parentHorizontal = true) }
         </ol>
       </div>
     html
@@ -428,7 +428,7 @@ case class HtmlPageSerializer(
     * ...Ooops, Javascript always places oldest first. So do taht here too,
     * until I've changed the Javascript code?
     */
-  private def sortPostsDescFitness(posts: List[Post]): List[Post] = {
+  private def sortPostsDescFitness(posts: Seq[Post]): Seq[Post] = {
     // COULD sort by *subthread* ratings instead (but not by rating of
     // deleted comment, since it's not visible).
     // Could skip sorting inline posts, since sorted by position later
@@ -473,7 +473,7 @@ case class HtmlPageSerializer(
 
   private def renderThreads(
     depth: Int,
-    posts: List[Post],
+    posts: Seq[Post],
     parentHorizontal: Boolean,
     uncollapseFirst: Boolean = false): NodeSeq = {
 
@@ -484,7 +484,7 @@ case class HtmlPageSerializer(
     // COULD change this to a bredth first search for the 100 most interesting
     // comments, and rename this function to `findSomeInterestingComments'.
 
-    def renderImpl(posts: List[Post], depth: Int, parentHorizontal: Boolean): NodeSeq = {
+    def renderImpl(posts: Seq[Post], depth: Int, parentHorizontal: Boolean): NodeSeq = {
       var threadNodes: NodeSeq = Nil
       for {
         post <- sortPostsDescFitness(posts)
