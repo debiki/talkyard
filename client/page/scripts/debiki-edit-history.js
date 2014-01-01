@@ -32,8 +32,9 @@ function showEditsDialogImpl($post) {
   var $thread = $post.closest('.dw-t');
   var $postBody = $post.children('.dw-p-bd');
   var postId = $post.dwPostIdStr();
+  var url = d.i.serverOrigin + '/-/improvements?pageId=' + d.i.pageId + '&postId=' + postId;
 
-  $.get('?viewedits='+ postId +'&view='+ d.i.rootPostId, 'text')
+  $.get(url, 'text')
       .fail(d.i.showServerResponseDialog)
       .done(function(editsHtml) {
     var $editDlg = $(editsHtml).filter('form#dw-e-sgs'); // filter out text node
@@ -160,12 +161,16 @@ function showEditsDialogImpl($post) {
 
     $form.submit(function() {
       var postData = $form.serialize();
-      $.post($form.attr('action'), postData, 'html')
+      var url = d.i.serverOrigin + '/-/improve?pageId=' + d.i.pageId;
+      $.post(url, postData, 'json')
           .fail(d.i.showServerResponseDialog)
-          .done(function(recentChangesHtml) {
-        d.i.mergeChangesIntoPage(recentChangesHtml);
-        $form.dialog('close');
-      });
+          .done(onImprovementsSaved);
+
+      function onImprovementsSaved(editedPostJson) {
+        d.i.patchPage(editedPostJson);
+        // Dialog already closed, search for "dialog('close')" in this file.
+      };
+
       return false;
     });
   }

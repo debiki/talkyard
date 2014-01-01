@@ -116,10 +116,6 @@ object Global extends GlobalSettings {
         PageViewer.viewPost(pagePath)
       case ("delete", POST) =>
         App.handleDeleteForm(pagePath, postId = mainFunValAsInt_!)
-      case ("viewedits", GET) =>
-        AppEditHistory.showForm(pagePath, postId = mainFunValAsInt_!)
-      case ("applyedits", POST) =>
-        AppEditHistory.handleForm(pagePath)
       case ("get-view-new-page-url", GET) =>
         AppCreatePage.getViewNewPageUrl(pagePath)
       case ("view-new-page", GET) =>

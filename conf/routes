@@ -86,6 +86,8 @@ POST  /-/rate                   controllers.Application.rate
 POST  /-/flag                   controllers.Application.flag
 GET   /-/edit                   controllers.AppEdit.showEditFormAnyPage(pageId, pagePath, pageRole, postId)
 POST  /-/edit                   controllers.AppEdit.edit
+GET   /-/improvements           controllers.AppEditHistory.showForm(pageId, postId)
+POST  /-/improve                controllers.AppEditHistory.handleForm(pageId)
 POST  /-/pin-at-position        controllers.Pin.pinAtPosition
 POST  /-/wrap-forums-in-group   controllers.AppForum.wrapForumsInNewGroup
 #POST /-/move-pages             controllers.AppMoveRenamePage.movePages

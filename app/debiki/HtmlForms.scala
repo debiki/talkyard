@@ -396,7 +396,7 @@ class HtmlForms(xsrfToken: String, val pageRoot: AnyPageRoot, val permsOnPage: P
     val cssMayEdit = if (mayEdit) "dw-e-sgs-may-edit" else ""
     val cssArtclBody = if (nipo.id == PageParts.BodyId) " dw-ar-p-bd" else ""
 
-    <form id='dw-e-sgs' action={"?applyedits"+ _viewRoot}
+    <form id='dw-e-sgs'
           class={cssMayEdit} title='Improvements'>
       { _xsrfToken }
       <div class="row">
