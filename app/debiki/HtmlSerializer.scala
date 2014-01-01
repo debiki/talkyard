@@ -394,6 +394,7 @@ case class HtmlPageSerializer(
       <div class="dw-t dw-depth-0 dw-hor">
         {/* Include an empty div.dw-p, so arrows to top level posts are drawn. */}
         <div class="dw-p"></div>
+        { makeCommentsToolbar() }
         <div class='dw-t-vspace'/>
         <ol class='dw-res'>
           <li class="dw-p-as dw-as dw-p-as-hz">
