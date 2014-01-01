@@ -35,7 +35,7 @@ d.i.$showRatingForm = function(event) {
   var $rateAction = $thread.find(' > .dw-p-as > .dw-a-rate');
   var $submitBtn = $rateForm.find('input[type="submit"]');
   var $cancelBtn = $rateForm.find('input.dw-fi-cancel');
-  var postId = $post.dwPostIdStr();
+  var postId = $post.dwPostId();
 
   // The rating-value inputs are labeled checkboxes. Hence they
   // have ids --- which right now remain the same as the ids
@@ -70,13 +70,23 @@ d.i.$showRatingForm = function(event) {
       return $(this).val().toLowerCase();
     }).get();
 
-    $.post('?rate='+ postId +'&view='+ d.i.rootPostId, $rateForm.serialize(),
-        'html')
-        .done(function(recentChangesHtml) {
+    d.u.postJson({
+        url: d.i.serverOrigin + '/-/rate',
+        data: {
+          pageId: d.i.pageId,
+          postId: postId,
+          ratingTags: ratedTags
+        },
+        error: d.i.showErrorEnableInputs($formParent),
+        success: onRatingSaved
+      });
+
+    function onRatingSaved(ratingsPatchJson) {
       d.i.slideAwayRemove($formParent);
       $rateAction.dwActionLinkEnable();
-      d.i.mergeChangesIntoPage(recentChangesHtml);
+      var result = d.i.patchPage(ratingsPatchJson);
       var $ratings = d.i.showMyRatings(postId, ratedTags);
+
       // Minor bug: On my Android phone, when I rate a post at the very
       // bottom of the page, then, since the `slideAwayRemove` animation
       // plays at the same time as the below `dwScrollToThenHighlight`
@@ -84,7 +94,7 @@ d.i.$showRatingForm = function(event) {
       // the ratings won't be properly scrolled into view.
       $post.dwPostFindHeader().dwScrollToThenHighlight($ratings);
       $post.each(d.i.SVG.$drawParentsAndTree);
-    });
+    };
 
     d.i.disableSubmittedForm($rateForm);
     return false;

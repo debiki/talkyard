@@ -114,8 +114,6 @@ object Global extends GlobalSettings {
         AppEdit.showEditForm(pagePath, postId = mainFunValAsInt_!)
       case ("view", GET) =>
         PageViewer.viewPost(pagePath)
-      case ("rate", POST) =>
-        App.handleRateForm(pagePath, postId = mainFunValAsInt_!)
       case ("flag", POST) =>
         App.handleFlagForm(pagePath, postId = mainFunValAsInt_!)
       case ("delete", POST) =>

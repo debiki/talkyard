@@ -195,6 +195,9 @@ case class BrowserPagePatcher(
   // ========== JSON for posts and edits
 
 
+  def jsonForPost(postId: PostId, page: PageParts): JsValue =
+    jsonForPosts(Seq((Seq(postId), page)))
+
   def jsonForPosts(postIdsAndPages: Seq[(Seq[PostId], PageParts)]): JsValue = {
     jsonForPostsImpl(postIdsAndPages, jsonForEdits = false)
   }

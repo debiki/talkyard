@@ -21,11 +21,13 @@ import actions.ApiActions._
 import actions.PageActions._
 import com.debiki.core._
 import com.debiki.core.Prelude._
+import controllers.Utils.OkSafeJson
 import debiki._
 import java.{util => ju, io => jio}
 import play.api._
 import play.api.mvc.{Action => _, _}
 import play.api.Play.current
+import requests.PageRequest
 import DebikiHttp._
 import Utils.ValidationImplicits._
 import Utils.{OkHtml, OkXml}
@@ -37,21 +39,28 @@ import Utils.{OkHtml, OkXml}
 object Application extends mvc.Controller {
 
 
-  def handleRateForm(pathIn: PagePath, postId: ActionId)
-        = PagePostAction(maxUrlEncFormBytes = 1000)(pathIn) { pageReq =>
+  def rate = PostJsonAction(maxLength = 1000) { request =>
+    val body = request.body
+    val pageId = (body \ "pageId").as[PageId]
+    val postId = (body \ "postId").as[PostId]
+    val ratingTags = (body \ "ratingTags").as[List[String]]
 
-    val ratingTags =
-      pageReq.listSkipEmpty(HtmlForms.Rating.InputNames.Tag)
-      .ifEmpty(throwBadReq("DwE84Ef6", "No rating tags"))
+    if (ratingTags.isEmpty)
+      throwBadReq("DwE84Ef6", "No rating tags")
 
     val rating = Rating(
-      id = PageParts.UnassignedId, postId = postId, ctime = pageReq.ctime,
-      loginId = pageReq.loginId_!, userId = pageReq.user_!.id, newIp = pageReq.newIp,
-      // COULD use a Seq not a List, and get rid of the conversion
+      id = PageParts.UnassignedId, postId = postId, ctime = request.ctime,
+      loginId = request.loginId_!, userId = request.user_!.id, newIp = request.newIp,
       tags = ratingTags.toList)
 
-    pageReq.dao.savePageActionsGenNotfs(pageReq, rating::Nil)
-    Utils.renderOrRedirect(pageReq)
+    val pageReq = PageRequest.forPageThatExists(request, pageId) getOrElse throwNotFound(
+      "DwE59DK9", s"Page `$pageId' not found")
+
+    val (updatedPage, _) =
+      pageReq.dao.savePageActionsGenNotfs(pageReq, rating::Nil)
+
+    val json = BrowserPagePatcher(pageReq).jsonForPost(postId, updatedPage.parts)
+    OkSafeJson(json)
   }
 
 

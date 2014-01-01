@@ -82,6 +82,7 @@ GET   /-/admin/                 controllers.Application.viewAdminPage
 POST  /-/configure-user         controllers.AppConfigUser.handleConfiguration()
 GET   /-/load-my-page-activity  controllers.PageViewer.loadMyPageActivity(pageId)
 POST  /-/reply                  controllers.AppReply.handleReply
+POST  /-/rate                   controllers.Application.rate
 GET   /-/edit                   controllers.AppEdit.showEditFormAnyPage(pageId, pagePath, pageRole, postId)
 POST  /-/edit                   controllers.AppEdit.edit
 POST  /-/pin-at-position        controllers.Pin.pinAtPosition
