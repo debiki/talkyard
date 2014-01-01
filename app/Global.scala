@@ -154,8 +154,6 @@ object Global extends GlobalSettings {
         App.feed(pagePath)
       case ("act", GET) =>
         PageViewer.showActionLinks(pagePath, postId = mainFunValAsInt_!)
-      case ("page-info", GET) =>
-        PageViewer.showPageInfo(pagePath)
       case ("unsubscribe", GET) =>
         AppUnsubscribe.showForm(tenantId)
       case ("unsubscribe", POST) =>

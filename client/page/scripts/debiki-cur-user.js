@@ -131,7 +131,8 @@ d.i.makeCurUser = function() {
       // Query the server.
       // On failure, do what? Post error to non existing server error
       // reporting interface?
-      $.get('?page-info&user=me', 'text')
+      var url = d.i.serverOrigin + '/-/load-my-page-activity?pageId=' + d.i.pageId;
+      $.get(url, 'text')
           .fail(d.i.showServerResponseDialog)  // for now
           .done(function(jsonData) {
         handleUserPageData(jsonData);

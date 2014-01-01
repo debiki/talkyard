@@ -69,7 +69,7 @@ object PageViewer extends mvc.Controller {
 
 
   /**
-   * Lists e.g. all posts and ratings by a certain user, on a page.
+   * Lists e.g. all posts and ratings by the current user, on a page.
    *
    * Initially, on page load, all (?) this info is already implicitly included
    * in the html sent by the server, e.g. the user's own posts are highlighted.
@@ -77,10 +77,9 @@ object PageViewer extends mvc.Controller {
    * so we need a way for the browser to fetch authorship info
    * dynamically.
    */
-  // COULD rename to listUserPageData?
-  def showPageInfo(pathIn: PagePath) = PageGetAction(pathIn) { pageReq =>
-    if (!pageReq.request.rawQueryString.contains("&user=me"))
-      throwBadReq("DwE0GdZ22", "Right now you need to specify ``&user=me''.")
+  def loadMyPageActivity(pageId: PageId) = GetAction { request =>
+    val pageReq = PageRequest.forPageThatExists(request, pageId) getOrElse throwNotFound(
+      "DwE404FL9", s"Page `$pageId' not found")
     val json = buildUserPageDataJson(pageReq)
     Ok(json)
   }
