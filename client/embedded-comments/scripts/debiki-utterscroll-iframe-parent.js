@@ -367,6 +367,17 @@ debiki.Utterscroll = (function(options) {
     if (!$elemToScroll)
       $elemToScroll = $(window);
 
+    // <iframe> FireFox issue workaround: (FF version 26 on Ubuntu Linux at least)
+    // Sometimes the mouseup event never happens, if Debiki runs in an <iframe>.
+    // Neither in the <iframe> nor in the parent window. Therefore, detect if the mouse
+    // button has actually been released and we should stop scrolling, like so:
+    // (And reproduce the issue by opening Firebug, and dragscrolling so the
+    // mouse enters the Firebug window, then release the mouse and move the
+    // mouse back over the html window. Now you'll still be scrolling although
+    // you've released the mouse button.)
+    if (event.buttons === 0)
+      return stopScroll(event);
+
     // Find movement since mousedown, and since last scroll step.
     var distTotal = {
       x: Math.abs(event.screenX - startPos.x),
