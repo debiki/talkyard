@@ -128,27 +128,27 @@ d.i.showLoginSubmitDialog = !(anyMode) ->
 function loginDialogHtml
   $('''
     <div class="dw-fs" title="Who are you?" id="dw-lgi">
-      <a id="dw-lgi-guest" class="btn btn-default" tabindex="101">Login as Guest</a>
-      <a id="dw-lgi-pswd" class="btn btn-default" tabindex="102">Login with Email and Password</a>
+      <span id="dw-lgi-guest" class="btn btn-default" tabindex="101">Login as Guest</span>
+      <span id="dw-lgi-pswd" class="btn btn-default" tabindex="102">Login with Email and Password</span>
 
       <p id="dw-lgi-or-login-using">
         Or login<span class="dw-login-to-post-comment">, and post your comment,</span>
         using your account (if any) at:</p>
       <div id="dw-lgi-other-sites">
-        <a id="dw-lgi-google" class="btn btn-default" tabindex="103">
+        <span id="dw-lgi-google" class="btn btn-default" tabindex="103">
           <span class="icon-google-plus"></span>Google
-        </a>
-        <a id="dw-lgi-facebook" class="btn btn-default" tabindex="104">
+        </span>
+        <span id="dw-lgi-facebook" class="btn btn-default" tabindex="104">
           <span class="icon-facebook"></span>
           Facebook
-        </a>
-        <a id="dw-lgi-yahoo" class="btn btn-default" tabindex="105">
+        </span>
+        <span id="dw-lgi-yahoo" class="btn btn-default" tabindex="105">
           <span class="icon-yahoo"></span>
           Yahoo!
-        </a>
+        </span>
       </div>
 
-      <a id="dw-lgi-more" class="btn btn-default" tabindex="106">More options...</a>
+      <span id="dw-lgi-more" class="btn btn-default" tabindex="106">More options...</span>
 
       <input class="btn btn-default dw-fi-cancel" type="button" value="Cancel" tabindex="107">
     </div>

@@ -228,8 +228,8 @@ object HtmlPageSerializer {
       <span class='dw-u-name'>{userName.getOrElse("")}</span>
     </span>
     <span class='dw-u-lgi-lgo'>
-      <a class='dw-a-login'>Login</a>
-      <a class='dw-a-logout'>Logout</a>
+      <span class='dw-a-login'>Login</span>
+      <span class='dw-a-logout'>Logout</span>
     </span>
   }
 
