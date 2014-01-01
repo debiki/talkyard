@@ -23,7 +23,9 @@ window.debiki.v0 = { util: {} };
 
 addEventListener('message', onMessage, false);
 
-$('.debiki-embedded-comments').width($(window).width());
+$('.debiki-embedded-comments')
+  .width($(window).width())
+  .css('border', 'none');
 
 
 jQuery(function($) {
