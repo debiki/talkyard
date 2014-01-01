@@ -33,7 +33,7 @@ jQuery(function($) {
 });
 
 
-function onMessage(envent) {
+function onMessage(event) {
   var eventName = event.data[0];
   var eventData = event.data[1];
   switch (eventName) {

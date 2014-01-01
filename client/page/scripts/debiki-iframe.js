@@ -30,7 +30,7 @@ window.parent.postMessage(['iframeInited', ''], '*');
 syncDocSizeWithIframeSize();
 
 
-function onMessage(envent) {
+function onMessage(event) {
   var eventName = event.data[0];
   var eventData = event.data[1];
 
