@@ -383,9 +383,7 @@ function _$showEditFormImpl() {
         // until after zoom or resize.)
         $post.closest('.dw-t').removeClass('dw-dummy');
 
-        // If the edit was a *suggestion* only, the post body has not been
-        // changed. Unless we make it visible again, it'll remain hidden
-        // because mergeChangesIntoPage() ignores it (since it hasn't changed).
+        // Is this needed nowadays? Or is the hole post replaced always?
         $postBody.show();
 
         // This destroys $post, $postBody etcetera...
