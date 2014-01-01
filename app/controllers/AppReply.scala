@@ -70,16 +70,30 @@ object AppReply extends mvc.Controller {
     if (pageReq.oldPageVersion.isDefined)
       throwBadReq("DwE72XS8", "Can only reply to latest page version")
 
-    // Todo: Do allow no parent post, if it's an embedded forum topic.
-    if (pageReq.page_!.getPost(postIdToReplyTo) isEmpty)
-      throwBadReq("DwEe8HD36", s"Cannot reply to post `$postIdToReplyTo'; it does not exist")
+    val anyPostIdToReplyTo =
+      if (postIdToReplyTo == PageParts.NoId) {
+        if (pageReq.pageRole_! == PageRole.EmbeddedComments) {
+          // There is no page body. Allow new comment threads with no parent post.
+          None
+        }
+        else {
+          throwBadReq(
+            "DwE260G8", "This is not an embedded discussion; must reply to an existing post")
+        }
+      }
+      else if (pageReq.page_!.getPost(postIdToReplyTo).isDefined) {
+        Some(postIdToReplyTo)
+      }
+      else {
+        throwBadReq("DwEe8HD36", s"Cannot reply to post `$postIdToReplyTo'; it does not exist")
+      }
 
     val approval = AutoApprover.perhapsApprove(pageReq)
 
     val postNoId = PostActionDto(id = PageParts.UnassignedId, postId = PageParts.UnassignedId,
       creationDati = pageReq.ctime, loginId = pageReq.loginId_!, userId = pageReq.user_!.id,
       newIp = pageReq.newIp, payload = PAP.CreatePost(
-        parentPostId = Some(postIdToReplyTo), text = text, markup = Markup.DefaultForComments.id,
+        parentPostId = anyPostIdToReplyTo, text = text, markup = Markup.DefaultForComments.id,
         where = whereOpt, approval = approval))
 
     val (pageWithNewPost, List(postWithId: PostActionDto[PAP.CreatePost])) =
