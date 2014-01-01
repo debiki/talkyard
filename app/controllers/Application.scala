@@ -39,7 +39,7 @@ import Utils.{OkHtml, OkXml}
 object Application extends mvc.Controller {
 
 
-  def rate = PostJsonAction(maxLength = 1000) { request =>
+  def rate = PostJsonAction(maxLength = 200) { request =>
     val body = request.body
     val pageId = (body \ "pageId").as[PageId]
     val postId = (body \ "postId").as[PostId]
@@ -64,23 +64,22 @@ object Application extends mvc.Controller {
   }
 
 
-  def handleFlagForm(pathIn: PagePath, postId: ActionId)
-        = PagePostAction(MaxDetailsSize)(pathIn) { pageReq =>
+  def flag = PostJsonAction(maxLength = 2000) { request =>
+    val body = request.body
+    val pageId = (body \ "pageId").as[PageId]
+    val postId = (body \ "postId").as[PostId]
+    val reasonStr = (body \ "reason").as[String]
+    val details = (body \ "details").as[String]
 
-    import HtmlForms.FlagForm.{InputNames => Inp}
-
-    val reasonStr = pageReq.getEmptyAsNone(Inp.Reason) getOrElse
-      throwBadReq("DwE1203hk10", "Please select a reason")
     val reason = try { FlagReason withName reasonStr }
       catch {
         case _: NoSuchElementException =>
           throwBadReq("DwE93Kf3", "Invalid reason")
       }
-    val details = pageReq.getNoneAsEmpty(Inp.Details)
 
     val flag = Flag(id = PageParts.UnassignedId, postId = postId,
-      loginId = pageReq.loginId_!, userId = pageReq.user_!.id, newIp = pageReq.newIp,
-      ctime = pageReq.ctime, reason = reason, details = details)
+      loginId = request.loginId_!, userId = request.user_!.id, newIp = request.newIp,
+      ctime = request.ctime, reason = reason, details = details)
 
     // Cancel any preliminary approval, sice post has been flagged.
     /*
@@ -91,12 +90,14 @@ object Application extends mvc.Controller {
         PostActionDto.forCancellationOfPrelApproval
       } */
 
-    pageReq.dao.savePageActionsGenNotfs(pageReq, flag::Nil) // anyPrelApprovalCancellation)
+    val pageReq = PageRequest.forPageThatExists(request, pageId) getOrElse throwNotFound(
+      "DwE739W2", s"Page `$pageId' not found")
 
-    // COULD include the page html, so Javascript can update the browser.
-    OkDialogResult("Thanks", "", // (empty summary)
-      "You have reported it. Someone will review it and"+
-      " perhaps delete it or remove parts of it.")
+    val (updatedPage, _) =
+      request.dao.savePageActionsGenNotfs(pageReq, flag::Nil) // anyPrelApprovalCancellation)
+
+    val json = BrowserPagePatcher(pageReq).jsonForPost(postId, updatedPage.parts)
+    OkSafeJson(json)
   }
 
 
