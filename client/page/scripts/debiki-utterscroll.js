@@ -513,7 +513,6 @@ debiki.Utterscroll = (function(options) {
     };
   };
 
-
   // If any iframe parent starts utterscrolling, help it continue scrolling when
   // the mouse is over the iframe, by posting these events to the parent that it
   // can use instead of e.g. the onmousemove event (which goes to the iframe
@@ -525,13 +524,16 @@ debiki.Utterscroll = (function(options) {
     document.onmousemove = function(event) {
       window.parent.postMessage(['onMouseMove', cloneEvent(event)], '*');
       if (origOnMouseMove)
-        origOnMouseMove(event);
+        return origOnMouseMove(event);
     }
 
     document.onmouseup = function(event) {
-      window.parent.postMessage(['stopUtterscrolling', cloneEvent(event)], '*');
+      var returnValue = undefined;
       if (origOnMouseUp)
-        origOnMouseUp(event);
+        returnValue = origOnMouseUp(event);
+
+      window.parent.postMessage(['stopUtterscrolling', cloneEvent(event)], '*');
+      return returnValue;
     }
   }
 
