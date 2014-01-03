@@ -98,7 +98,6 @@ debiki.Utterscroll = (function(options) {
    * missed, and, if so, starts scrolling.
    */
   function checkIfMissedMousedown(event) {
-    var returnValue = undefined;
     if (lastButtons === 0 && event.buttons === 1 && !mousedownNoticed) {
       // There was a mousedown that we never noticed, because of some browser
       // bug/issue probably related to <iframe>s. So fake a click and perhaps
@@ -109,9 +108,9 @@ debiki.Utterscroll = (function(options) {
       // We don't know where the mouse was when it was clicked. However since
       // the mousedown event was lost, no text selection has started? And it's
       // better to start scrolling, as far as I've experienced.
-      returnValue = startScroll(event);
+      startScroll(event);
+      return false;
     }
-    return returnValue;
   };
 
 
