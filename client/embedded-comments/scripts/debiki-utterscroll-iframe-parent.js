@@ -81,9 +81,42 @@ debiki.Utterscroll = (function(options) {
       .appendTo(document.body);
 
   $(document).mousedown(startScrollPerhaps);
+  $(document).mousemove(checkIfMissedMousedown);
+
+  var lastButtons = 0;
+  var mousedownNoticed = false;
+
+
+  /**
+   * Firefox bug workaround.
+   *
+   * When Debiki Utterscroll is used both in an <iframe> and in the parent
+   * window, and cooperates via postMessage, then mousedown and mouseup events
+   * are sometimes lost, in Firefox 26 (and Kubuntu Linux) at least.
+   * This function checks `event.buttons` to find out if a mousedown event was
+   * missed, and, if so, starts scrolling.
+   */
+  function checkIfMissedMousedown(event) {
+    var returnValue = undefined;
+    if (lastButtons === 0 && event.buttons === 1 && !mousedownNoticed) {
+      // There was a mousedown that we never noticed, because of some browser
+      // bug/issue probably related to <iframe>s. So fake a click and perhaps
+      // start scrolling.
+      lastButtons = event.buttons;
+      event.which = 1;
+      debug('Mousedown event missed, calling startScroll(event)');
+      // We don't know where the mouse was when it was clicked. However since
+      // the mousedown event was lost, no text selection has started? And it's
+      // better to start scrolling, as far as I've experienced.
+      returnValue = startScroll(event);
+    }
+    return returnValue;
+  };
 
 
   function startScrollPerhaps(event) {
+    mousedownNoticed = true;
+
     if (!enabled)
       return;
 
@@ -454,6 +487,8 @@ debiki.Utterscroll = (function(options) {
     $elemToScroll = undefined;
     startPos = undefined;
     lastPos = undefined;
+    lastButtons = 0;
+    mousedownNoticed = false;
     $(document.body).css('cursor', '');  // cancel 'move' cursor
     $.event.remove(document, 'mousemove', doScroll);
     $.event.remove(document, 'mouseup', stopScroll);
