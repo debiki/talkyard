@@ -49,7 +49,7 @@ debiki.Utterscroll = (function(options) {
   // the dev tools window is open. Use this safe wrapper instead of
   // console.log. (COULD make separate Prod and Dev builds, filter out logging)
   var debug = (typeof console === 'undefined' || !console.debug) ?
-      function() {} : function() { console.debug.apply(console, arguments); };
+      function() {} : function(m) { console.debug('[iframe parent] ' + m); };
 
   var defaults = {
     defaultScrollstoppers: 'a, area, button, command, input, keygen, label,'+
@@ -395,7 +395,7 @@ debiki.Utterscroll = (function(options) {
     if (!startPos)
       return;
 
-    // If we start scrolling in the iframe, then we knw that what the iframe
+    // If we start scrolling in the iframe, then we know that what the iframe
     // wants to do, is to scroll the whole window.
     if (!$elemToScroll)
       $elemToScroll = $(window);
@@ -404,10 +404,11 @@ debiki.Utterscroll = (function(options) {
     // Sometimes the mouseup event never happens, if Debiki runs in an <iframe>.
     // Neither in the <iframe> nor in the parent window. Therefore, detect if the mouse
     // button has actually been released and we should stop scrolling, like so:
-    // (And reproduce the issue by opening Firebug, and dragscrolling so the
+    // (And reproduce the issue by opening a HTML page with Debiki embedded
+    // comments in Firefox, then open Firebug, and dragscrolling so the
     // mouse enters the Firebug window, then release the mouse and move the
     // mouse back over the html window. Now you'll still be scrolling although
-    // you've released the mouse button.)
+    // you've released the mouse button — were it not for this workaround.)
     if (event.buttons === 0)
       return stopScroll(event);
 
