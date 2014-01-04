@@ -402,7 +402,7 @@ debiki.Utterscroll = (function(options) {
     // mouse enters the Firebug window, then release the mouse and move the
     // mouse back over the html window. Now you'll still be scrolling although
     // you've released the mouse button — were it not for this workaround.)
-    if (event.buttons === 0)
+    if ($.browser && $.browser.mozilla && event.buttons === 0)
       return stopScroll(event);
 
     if (d.i.isInIframe) {
