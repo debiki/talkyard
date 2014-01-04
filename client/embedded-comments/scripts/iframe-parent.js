@@ -44,8 +44,12 @@ var debikiServerOrigin = (function() {
 })();
 
 
-// Add `src` and `seamless` attributs to Debiki embedded comments <iframe>s.
+// Hide Debiki embedded comments iframes until they've been loaded,
+// show "Loading comments..." message instead.
+// Also add `src` and `seamless` attributs to Debiki embedded comments <iframe>s.
 $('.debiki-embedded-comments')
+  .hide()
+  .before($('<p class="debiki-loading-comments-message">Loading comments...</p>'))
   .width($(window).width())
   .css('border', 'none')
   .attr('seamless', 'seamless')
@@ -76,7 +80,13 @@ function onMessage(event) {
       setIframeBaseAddress(findIframeThatSent(event));
       break;
     case 'setIframeSize':
-      setIframeSize(findIframeThatSent(event), eventData);
+      var iframe = $(findIframeThatSent(event));
+      iframe.show();
+      setIframeSize(iframe, eventData);
+      // Remove "loadin comments" message.
+      // This currently removes that message for all <iframes> if there're more
+      // than one. Doesn't matter much.
+      iframe.parent().children('.debiki-loading-comments-message').remove();
       break;
     case 'startUtterscrolling':
       debiki.Utterscroll.startScrolling(eventData);
