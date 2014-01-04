@@ -53,8 +53,10 @@ $('.debiki-embedded-comments').each(function() {
   var iframePath = '/-/embed/comments/' + pageId;
   var iframeUrl = debikiServerOrigin + iframePath;
 
+  // Don't `hide()` the iframe, then FireFox acts as if it doesn't exist: FireFox receives
+  // no messages at all from it.
   iframe
-    .hide()
+    .height(0) // don't `hide()`
     .width($(window).width())
     .css('border', 'none')
     .attr('seamless', 'seamless')
@@ -84,7 +86,6 @@ function onMessage(event) {
       break;
     case 'setIframeSize':
       var iframe = $(findIframeThatSent(event));
-      iframe.show();
       setIframeSize(iframe, eventData);
       // Remove "loading comments" message.
       iframe.parent().children(':not(iframe)').remove();
