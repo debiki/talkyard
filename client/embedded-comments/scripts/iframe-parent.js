@@ -23,11 +23,25 @@ window.debiki.v0 = { util: {} };
 
 addEventListener('message', onMessage, false);
 
+
+// Add `src` and `seamless` attributs to Debiki embedded comments <iframe>s.
 $('.debiki-embedded-comments')
   .width($(window).width())
-  .css('border', 'none');
+  .css('border', 'none')
+  .attr('seamless', 'seamless')
+  .each(function() {
+    var iframe = $(this);
+    var pageId = iframe.attr('data-topic-id');
+    var iframeOrigin = 'http://site-81.localhost:9000'; // for now, testing
+    var iframePath = '/-/embed/comments/' + pageId;
+    var iframeUrl = iframeOrigin + iframePath;
+    iframe.attr('src', iframeUrl);
+  });
 
 
+// Enable Utterscroll in parent window.
+// Once the iframe has been loaded, Utterscroll will run in the iframe too,
+// and the two Utterscroll instances will cooperate via `window.postMessage`.
 jQuery(function($) {
   if (!Modernizr.touch) { // if not a smartphone
     debiki.Utterscroll.enable();
