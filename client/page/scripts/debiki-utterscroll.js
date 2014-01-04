@@ -82,9 +82,41 @@ debiki.Utterscroll = (function(options) {
       .appendTo(document.body);
 
   $(document).mousedown(startScrollPerhaps);
+  $(document).mousemove(checkIfMissedMousedown);
+
+  var lastButtons = 0;
+  var mousedownNoticed = false;
+
+
+  /**
+   * Firefox bug workaround.
+   *
+   * When Debiki Utterscroll is used both in an <iframe> and in the parent
+   * window, and cooperates via postMessage, then mousedown and mouseup events
+   * are sometimes lost, in Firefox 26 (and Kubuntu Linux) at least.
+   * This function checks `event.buttons` to find out if a mousedown event was
+   * missed, and, if so, starts scrolling.
+   */
+  function checkIfMissedMousedown(event) {
+    if (lastButtons === 0 && event.buttons === 1 && !mousedownNoticed) {
+      // There was a mousedown that we never noticed, because of some browser
+      // bug/issue probably related to <iframe>s. So fake a click and perhaps
+      // start scrolling.
+      lastButtons = event.buttons;
+      event.which = 1;
+      debug('Mousedown event missed, calling startScroll(event)');
+      // We don't know where the mouse was when it was clicked. However since
+      // the mousedown event was lost, no text selection has started? And it's
+      // better to start scrolling, as far as I've experienced.
+      startScroll(event);
+      return false;
+    }
+  };
 
 
   function startScrollPerhaps(event) {
+    mousedownNoticed = true;
+
     if (!enabled)
       return;
 
@@ -350,7 +382,7 @@ debiki.Utterscroll = (function(options) {
 
     // Y is the distance to the top.
     startPos = { x: event.screenX, y: event.screenY };
-    lastPos = { x: event.screenX, y: event.screenY }; 
+    lastPos = { x: event.screenX, y: event.screenY };
 
     if (d.i.isInIframe)
       window.parent.postMessage(['startUtterscrolling', cloneEvent(event)], '*');
@@ -360,17 +392,23 @@ debiki.Utterscroll = (function(options) {
 
 
   function doScroll(event) {
-
     // <iframe> FireFox issue workaround: (FF version 26 on Ubuntu Linux at least)
     // Sometimes the mouseup event never happens, if Debiki runs in an <iframe>.
     // Neither in the <iframe> nor in the parent window. Therefore, detect if the mouse
     // button has actually been released and we should stop scrolling, like so:
-    // (And reproduce the issue by opening Firebug, and dragscrolling so the
+    // (And reproduce the issue by opening a HTML page with Debiki embedded
+    // comments in Firefox, then open Firebug, and dragscrolling so the
     // mouse enters the Firebug window, then release the mouse and move the
     // mouse back over the html window. Now you'll still be scrolling although
-    // you've released the mouse button.)
+    // you've released the mouse button — were it not for this workaround.)
     if (event.buttons === 0)
       return stopScroll(event);
+
+    if (d.i.isInIframe) {
+      // Message to parent sent by other `document.onmousemove`, see the end of
+      // this file.
+      return;
+    }
 
     // Find movement since mousedown, and since last scroll step.
     var distTotal = {
@@ -453,6 +491,8 @@ debiki.Utterscroll = (function(options) {
     $elemToScroll = undefined;
     startPos = undefined;
     lastPos = undefined;
+    lastButtons = 0;
+    mousedownNoticed = false;
     $(document.body).css('cursor', '');  // cancel 'move' cursor
     $.event.remove(document, 'mousemove', doScroll);
     $.event.remove(document, 'mouseup', stopScroll);
@@ -472,7 +512,6 @@ debiki.Utterscroll = (function(options) {
     };
   };
 
-
   // If any iframe parent starts utterscrolling, help it continue scrolling when
   // the mouse is over the iframe, by posting these events to the parent that it
   // can use instead of e.g. the onmousemove event (which goes to the iframe
@@ -484,13 +523,16 @@ debiki.Utterscroll = (function(options) {
     document.onmousemove = function(event) {
       window.parent.postMessage(['onMouseMove', cloneEvent(event)], '*');
       if (origOnMouseMove)
-        origOnMouseMove(event);
+        return origOnMouseMove(event);
     }
 
     document.onmouseup = function(event) {
-      window.parent.postMessage(['stopUtterscrolling', cloneEvent(event)], '*');
+      var returnValue = undefined;
       if (origOnMouseUp)
-        origOnMouseUp(event);
+        returnValue = origOnMouseUp(event);
+
+      window.parent.postMessage(['stopUtterscrolling', cloneEvent(event)], '*');
+      return returnValue;
     }
   }
 
