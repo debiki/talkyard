@@ -25,14 +25,26 @@ if (!d.i.isInIframe)
 
 addEventListener('message', onMessage, false);
 
-window.parent.postMessage(['iframeInited', ''], '*');
+window.parent.postMessage('["iframeInited", {}]', '*');
 
 syncDocSizeWithIframeSize();
 
 
 function onMessage(event) {
-  var eventName = event.data[0];
-  var eventData = event.data[1];
+
+  // The message is a "[eventName, eventData]" string because IE <= 9 doesn't support
+  // sending objects.
+  var eventName;
+  var eventData;
+  try {
+    var json = JSON.parse(event.data);
+    eventName = json[0];
+    eventData = json[1];
+  }
+  catch (error) {
+    // This isn't a message from Debiki.
+    return;
+  }
 
   switch (eventName) {
     case 'setBaseAddress':
@@ -70,10 +82,14 @@ function syncDocSizeWithIframeSize() {
     lastWidth = currentWidth;
     lastHeight = currentHeight;
 
-    window.parent.postMessage(['setIframeSize', {
-      width: currentWidth,
-      height: currentHeight
-    }], '*');
+    var message = JSON.stringify([
+      'setIframeSize', {
+        width: currentWidth,
+        height: currentHeight
+      }
+    ]);
+
+    window.parent.postMessage(message, '*');
   };
 };
 
