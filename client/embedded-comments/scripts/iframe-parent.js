@@ -1,5 +1,5 @@
 /* Makes Debiki work in a child iframe.
- * Copyright (C) 2010 - 2012 Kaj Magnus Lindberg (born 1979)
+ * Copyright (C) 2013-2014 Kaj Magnus Lindberg (born 1979)
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -23,11 +23,44 @@ window.debiki.v0 = { util: {} };
 
 addEventListener('message', onMessage, false);
 
+
+// Find Debiki server origin, by extracting origin of the debiki-embedded-comments.js script.
+// Then the website admin won't need to repeat the site id or address anywhere.
+var debikiServerOrigin = (function() {
+  var origin;
+  $('script').each(function() {
+    script = $(this);
+    var srcAttr = script.attr('src');
+    var isEmbeddedCommentsScript = srcAttr.search(/\/-\/debiki-embedded-comments.js/) !== -1;
+    if (isEmbeddedCommentsScript) {
+      origin = srcAttr.match(/^[^/]*\/\/[^/]+/)[0];
+    }
+  });
+  if (!origin && console.error) {
+    console.error(
+      'Error extracting Debiki server origin, is there no "/-/debiki-embedded-comments.js" script?');
+  }
+  return origin;
+})();
+
+
+// Add `src` and `seamless` attributs to Debiki embedded comments <iframe>s.
 $('.debiki-embedded-comments')
   .width($(window).width())
-  .css('border', 'none');
+  .css('border', 'none')
+  .attr('seamless', 'seamless')
+  .each(function() {
+    var iframe = $(this);
+    var pageId = iframe.attr('data-topic-id');
+    var iframePath = '/-/embed/comments/' + pageId;
+    var iframeUrl = debikiServerOrigin + iframePath;
+    iframe.attr('src', iframeUrl);
+  });
 
 
+// Enable Utterscroll in parent window.
+// Once the iframe has been loaded, Utterscroll will run in the iframe too,
+// and the two Utterscroll instances will cooperate via `window.postMessage`.
 jQuery(function($) {
   if (!Modernizr.touch) { // if not a smartphone
     debiki.Utterscroll.enable();
@@ -81,4 +114,4 @@ function findIframeThatSent(event) {
 };
 
 
-// vim: fdm=marker et ts=2 sw=2 tw=80 fo=tcqwn list
+// vim: fdm=marker et ts=2 sw=2 fo=tcqwn list

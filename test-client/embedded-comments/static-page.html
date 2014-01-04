@@ -1,16 +1,11 @@
 <html></html>
 <head>
   <title>Static Page Example</title>
-
   <script src="http://ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
-  <script src='http://modernizr.com/downloads/modernizr-latest.js'></script>
-
-  <script>
-    var debikiSettings = {};
-  </script>
-  <script src='http://localhost:9000/-/res/embedded-comments.js' defer></script>
-
+  <script src="//cdnjs.cloudflare.com/ajax/libs/modernizr/2.7.1/modernizr.min.js"></script>
+  <script src="http://site-81.localhost:9000/-/debiki-embedded-comments.js" async></script>
 </head>
+
 <body>
 <div class="container" style="padding-top:30px">
   <p>Page contents part 1</p>
@@ -34,7 +29,7 @@
   <p>Text text text</p>
   <p>Text text text</p>
   <p>Text text text</p>
-  <iframe class="debiki-embedded-comments" src="http://site-81.localhost:9000/-/embed/comments/1234" seamless></iframe>
+  <iframe class="debiki-embedded-comments" data-topic-id="1234"></iframe>
   <p>Page contents part 3</p>
   <p>Text text text</p>
   <p>Text text text</p>
