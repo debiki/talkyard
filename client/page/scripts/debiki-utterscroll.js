@@ -452,12 +452,12 @@ debiki.Utterscroll = (function(options) {
     var mul;
     if (distTotal.x > 9){
       mul = Math.log((distTotal.x - 9) / 3);
-      if (mul > 1.7 && $.browser.opera) mul = 1.7;  // see comment above
+      if (mul > 1.7 && $.browser && $.browser.opera) mul = 1.7;  // see comment above
       if (mul > 1) distNow.x *= mul;
     }
     if (distTotal.y > 5){
       mul = Math.log((distTotal.y - 5) / 2);
-      if (mul > 1.3 && $.browser.opera) mul = 1.3;
+      if (mul > 1.3 && $.browser && $.browser.opera) mul = 1.3;
       if (mul > 1) distNow.y *= mul;
     }
 
