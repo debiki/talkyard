@@ -44,22 +44,25 @@ var debikiServerOrigin = (function() {
 })();
 
 
-// Hide Debiki embedded comments iframes until they've been loaded,
-// show "Loading comments..." message instead.
-// Also add `src` and `seamless` attributs to Debiki embedded comments <iframe>s.
-$('.debiki-embedded-comments')
-  .hide()
-  .before($('<p class="debiki-loading-comments-message">Loading comments...</p>'))
-  .width($(window).width())
-  .css('border', 'none')
-  .attr('seamless', 'seamless')
-  .each(function() {
-    var iframe = $(this);
-    var pageId = iframe.attr('data-topic-id');
-    var iframePath = '/-/embed/comments/' + pageId;
-    var iframeUrl = debikiServerOrigin + iframePath;
-    iframe.attr('src', iframeUrl);
-  });
+// Create <iframes> for Debiki embedded comments.
+// Show a "Loading comments..." message until they've been loaded.
+$('.debiki-embedded-comments').each(function() {
+  var wrapper = $(this);
+  var pageId = wrapper.attr('data-topic-id');
+  var iframe = $('<iframe></iframe>');
+  var iframePath = '/-/embed/comments/' + pageId;
+  var iframeUrl = debikiServerOrigin + iframePath;
+
+  iframe
+    .hide()
+    .width($(window).width())
+    .css('border', 'none')
+    .attr('seamless', 'seamless')
+    .attr('src', iframeUrl);
+
+  wrapper.append(iframe);
+  wrapper.append($('<p>Loading comments...</p>'));
+});
 
 
 // Enable Utterscroll in parent window.
@@ -83,10 +86,8 @@ function onMessage(event) {
       var iframe = $(findIframeThatSent(event));
       iframe.show();
       setIframeSize(iframe, eventData);
-      // Remove "loadin comments" message.
-      // This currently removes that message for all <iframes> if there're more
-      // than one. Doesn't matter much.
-      iframe.parent().children('.debiki-loading-comments-message').remove();
+      // Remove "loading comments" message.
+      iframe.parent().children(':not(iframe)').remove();
       break;
     case 'startUtterscrolling':
       debiki.Utterscroll.startScrolling(eventData);
@@ -115,7 +116,7 @@ function setIframeSize(iframe, dimensions) {
 
 function findIframeThatSent(event) {
   // See http://stackoverflow.com/a/18267415/694469
-  var iframes = document.getElementsByClassName('debiki-embedded-comments');
+  var iframes = $('.debiki-embedded-comments iframe');
   for (var i = 0; i < iframes.length; ++i) {
     var iframe = iframes[i];
     if (iframe.contentWindow === event.source)
