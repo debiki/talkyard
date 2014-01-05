@@ -88,11 +88,33 @@ object SafeActions {
         if (newCookies isEmpty) resultOldCookies
         else {
           assert(maySetCookies)
-          resultOldCookies.withCookies(newCookies: _*)
+          resultOldCookies
+            .withCookies(newCookies: _*)
+            .withHeaders(MakeInternetExplorerSaveIframeCookiesHeader)
         }
 
       resultOkSid
     }
+
+
+  /** IE9 blocks cookies in iframes unless the site in the iframe clarifies its
+    * in a P3P header (Platform for Privacy Preferences). (But Debiki's embedded comments
+    * needs to work in iframes.) See:
+    * - http://stackoverflow.com/questions/389456/cookie-blocked-not-saved-in-iframe-in-internet-explorer
+    * - http://stackoverflow.com/questions/7712327/any-recommendation-for-p3p-policy-editor
+    * - http://stackoverflow.com/a/16475093/694469
+    * - http://www.w3.org/P3P/details.html (don't read it! :-P simply use the below workaround
+    *     instead)
+    *
+    * Apparently the policy is legally binding, but I'm not a lawyer so I don't want to construct
+    * any policy. Also, the policy would vary from site to site, in case Debiki is installed
+    * by other people than me. So it ought to be customizable. Fortunately, the P3P standard
+    * is dying and abandoned. So work around the dead standard by including a dummy header,
+    * that makes IE9 happy. Write it as a single word, so IE doesn't think that e.g.
+    * "is" or "not" actually means something.
+    */
+  private def MakeInternetExplorerSaveIframeCookiesHeader =
+    "P3P" -> """CP="This_is_not_a_privacy_policy""""
 
 
   /**

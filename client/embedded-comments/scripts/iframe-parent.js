@@ -78,8 +78,21 @@ jQuery(function($) {
 
 
 function onMessage(event) {
-  var eventName = event.data[0];
-  var eventData = event.data[1];
+
+  // The message is a "[eventName, eventData]" string because IE <= 9 doesn't support
+  // sending objects.
+  var eventName;
+  var eventData;
+  try {
+    var json = JSON.parse(event.data);
+    eventName = json[0];
+    eventData = json[1];
+  }
+  catch (error) {
+    // This isn't a message from Debiki.
+    return;
+  }
+
   switch (eventName) {
     case 'iframeInited':
       setIframeBaseAddress(findIframeThatSent(event));

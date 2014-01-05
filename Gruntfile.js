@@ -44,6 +44,7 @@ module.exports = function(grunt) {
       'client/third-party/html-sanitizer-bundle.js',
       'client/third-party/jquery-cookie.js',
       'client/third-party/jquery-scrollable.js', //
+      'client/third-party/jquery.browser.js', //
       'client/third-party/livescript/prelude-browser.js',
       'client/third-party/popuplib.js',
       'client/third-party/waypoints.js',
@@ -178,6 +179,7 @@ module.exports = function(grunt) {
   // For both touch devices and desktops.
   var debikiEmbeddedCommentsFiles = [
       'client/third-party/jquery-scrollable.js',
+      'client/third-party/jquery.browser.js',
       'target/client/embedded-comments/scripts/debiki-utterscroll-iframe-parent.js',
       'target/client/embedded-comments/scripts/iframe-parent.js',
       'target/client/page/scripts/debiki-utterscroll-init-tips.js'];
