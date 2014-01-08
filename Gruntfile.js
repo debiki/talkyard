@@ -177,6 +177,16 @@ module.exports = function(grunt) {
       'target/client/page/scripts/debiki.js']
 
   // For both touch devices and desktops.
+  var loginPopupFiles = [
+      'target/client/page/scripts/debiki-jquery-dialogs.js',
+      'target/client/page/scripts/debiki-login-dialog.js',
+      'target/client/page/scripts/debiki-login-guest.js',
+      'target/client/page/scripts/debiki-login-password.js',
+      'target/client/page/scripts/debiki-login-popup.js',
+      'target/client/page/scripts/debiki-login-openid.js',
+      'target/client/page/scripts/debiki-login-openid-dialog-html.js'];
+
+  // For both touch devices and desktops.
   var debikiEmbeddedCommentsFiles = [
       'client/third-party/jquery-scrollable.js',
       'client/third-party/jquery.browser.js',
@@ -273,6 +283,9 @@ module.exports = function(grunt) {
 
         'public/res/embedded-comments.js':
             debikiEmbeddedCommentsFiles,
+
+        'public/res/login-popup.js':
+            loginPopupFiles,
 
         'public/res/debiki-spa-common.js': [
             'target/client/third-party/livescript/prelude-browser-min.js',

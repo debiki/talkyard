@@ -27,6 +27,9 @@ d.i.showLoginSubmitDialog = !(anyMode) ->
 
 
 !function showLoginDialog(mode)
+  if d.i.isInIframe
+    d.i.createLoginPopup("#{d.i.serverOrigin}/-/login-popup?mode=#mode")
+    return
 
   doingWhatClass = switch mode
   | 'SubmitGeneric' => 'dw-login-to-submit'
@@ -71,7 +74,11 @@ d.i.showLoginSubmitDialog = !(anyMode) ->
         <input type="text" name="openid_identifier" value="#openidIdentifier">
       </form>
       """)
-    d.i.createOpenIdLoginPopup(form)
+    # Submit form in a new popup window, unless we alreaady are in a popup window.
+    if d.i.isInLoginPopup
+      $('body').append(form)
+    else
+      d.i.createOpenIdLoginPopup(form)
     form.submit()
     false
 
@@ -94,8 +101,11 @@ d.i.showLoginSubmitDialog = !(anyMode) ->
     showLoggedInDialog(d.i.continueAnySubmission)
 
   !function close
-    dialog.dialog('close')
-    $('body').removeClass(doingWhatClass)
+    if d.i.isInLoginPopup
+      window.close()
+    else
+      dialog.dialog('close')
+      $('body').removeClass(doingWhatClass)
 
   # Preload OpenID resources, in case user clicks OpenID login button.
   d.i.loadOpenIdResources()
@@ -157,7 +167,7 @@ function loginDialogHtml
 
 
 $(!->
-  $('.dw-a-login').click showLoginDialog)
+  $('.dw-a-login').click !-> showLoginDialog('SubmitGeneric'))
 
 
 
