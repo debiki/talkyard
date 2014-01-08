@@ -63,18 +63,7 @@
     debiki.internal.showLoginSubmitDialog('@mode');
   </script>
 
-  @* Weinre. Make this page a Weinre debug target. Try both `localhost` and the Android
-   * emulator's 10.0.2.2 address that resolves to localhost (where the emulator is running).
-   * Assume Weinre runs on port 8090 because usually I run Node.js' http-server on 8080
-   * (which otherwise is Weinre's default port). Start Weinre like so:
-   *   $ weinre --httpPort 8090 --boundHost -all-
-   * And install Weinre via Node.js npm package manager.
-   *@
-  @*
-  <!-- Weinre. -->
-  <script src="http://10.0.2.2:8090/target/target-script-min.js#anonymous"></script>
-  <script src="http://localhost:8090/target/target-script-min.js#anonymous"></script>
-  *@
+  @views.html.anyWeinreScript()
 </body>
 </html>
 
