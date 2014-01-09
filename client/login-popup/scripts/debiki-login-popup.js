@@ -56,7 +56,8 @@ d.i.createLoginPopup = function(anyUrl) {
     }
   }
 
-  // This callback is called from the return_to page:
+  // This callback is called from the return_to page, or by `loginAndContinue`
+  // in debiki-login-dialog.ls in a login popup window, see [509KEF31].
   d.i.handleLoginResponse = function(result) {
     d.i.handleLoginResponse = null;
     var errorMsg;

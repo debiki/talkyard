@@ -223,6 +223,7 @@ object AppLoginOpenId extends mvc.Controller {
 
     val result = returnToUrl match {
       case "" =>
+        // Also see debiki-login-dialog.ls, search for [509KEF31].
         Ok(views.html.login.loginPopupCallback("LoginOk",
           s"You have been logged in, welcome ${loginGrant.displayName}!",
           anyReturnToUrl = None))

@@ -107,7 +107,8 @@ module.exports = function(grunt) {
       'target/client/page/scripts/debiki-forum.js',
       'target/client/page/scripts/debiki-page-path.js',
       'target/client/page/scripts/debiki-create-page.js',
-      'target/client/page/scripts/debiki.js']
+      'target/client/page/scripts/debiki.js',
+      'target/client/util/scripts/debiki-utils.js']
 
   var debikiTouchFiles = [
       'client/third-party/bootstrap/dropdown.js',
@@ -174,11 +175,14 @@ module.exports = function(grunt) {
       'target/client/page/scripts/debiki-forum.js',
       'target/client/page/scripts/debiki-page-path.js',
       'target/client/page/scripts/debiki-create-page.js',
-      'target/client/page/scripts/debiki.js']
+      'target/client/page/scripts/debiki.js',
+      'target/client/util/scripts/debiki-utils.js']
 
   // For both touch devices and desktops.
   var loginPopupFiles = [
+      'client/third-party/jquery-cookie.js',
       'target/client/util/scripts/debiki-jquery-dialogs.js',
+      'target/client/util/scripts/debiki-utils.js',
       'target/client/login-popup/scripts/debiki-login-dialog.js',
       'target/client/login-popup/scripts/debiki-login-guest.js',
       'target/client/login-popup/scripts/debiki-login-password.js',

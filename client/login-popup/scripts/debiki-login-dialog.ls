@@ -89,6 +89,14 @@ d.i.showLoginSubmitDialog = !(anyMode) ->
     d.i.createLoginPopup("#{d.i.serverOrigin}/-/login-securesocial-popup/#provider")
 
   !function loginAndContinue(data)
+    if d.i.isInLoginPopup
+      # (Also see AppLoginOpenId, search for [509KEF31].)
+      window.opener.debiki.internal.handleLoginResponse(status: 'LoginOk')
+      # This is a login popup, so we're now closing the whole popup window.
+      close()
+
+    # This happens only if we're not in a login popup, but a jQuery UI dialog:
+
     d.i.Me.fireLogin()
     # Show response dialog, and continue with whatever caused
     # the login to happen.
