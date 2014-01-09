@@ -22,7 +22,7 @@ $ = d.i.$;
 
 
 d.i.showLoginSubmitDialog = !(anyMode) ->
-  showLoginDialog (anyMode || 'SubmitGeneric')
+  showLoginDialog (anyMode || 'LoginToSubmit')
 
 
 
@@ -32,8 +32,9 @@ d.i.showLoginSubmitDialog = !(anyMode) ->
     return
 
   doingWhatClass = switch mode
-  | 'SubmitGeneric' => 'dw-login-to-submit'
-  | 'SubmitComment' => 'dw-login-to-post-comment'
+  | 'LoginToSubmit' => 'dw-login-to-submit'
+  | 'LoginToComment' => 'dw-login-to-post-comment'
+  | 'LoginToLogin' => 'dw-login-to-login'
   | _ => 'dw-login-to-login'
   $('body').addClass(doingWhatClass)
 
@@ -167,7 +168,7 @@ function loginDialogHtml
 
 
 $(!->
-  $('.dw-a-login').click !-> showLoginDialog('SubmitGeneric'))
+  $('.dw-a-login').click !-> showLoginDialog('LoginToLogin'))
 
 
 

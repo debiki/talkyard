@@ -88,7 +88,7 @@ d.i.$showReplyForm = function(event, opt_where) {
   }
   setSubmitBtnTitle(null, d.i.Me.getName());
   $submitBtn.each(d.i.$loginSubmitOnClick(setSubmitBtnTitle,
-        { askAboutEmailNotfs: true, mode: 'SubmitComment' }));
+        { askAboutEmailNotfs: true, mode: 'LoginToComment' }));
 
   $replyForm.submit(function() {
     d.u.postJson({

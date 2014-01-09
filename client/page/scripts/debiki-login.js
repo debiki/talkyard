@@ -40,7 +40,9 @@ var continueLoginAskAboutEmail = false;
  * `data` can be:
  * {
  *    askAboutEmailNotfs: true/false -- optional
- *    mode: 'SubmitComment' -- optional, influences button titles in login dialogs
+ *    mode:
+ *      One of 'LoginToComment', 'LoginToLogin' and 'LoginToSubmit'.
+ *      Optional, influences button titles in login dialogs.
  * }
  */
 d.i.$loginSubmitOnClick = function(loginEventHandler, data) {
