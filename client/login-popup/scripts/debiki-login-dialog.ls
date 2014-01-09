@@ -39,7 +39,9 @@ d.i.showLoginSubmitDialog = !(anyMode) ->
   $('body').addClass(doingWhatClass)
 
   dialog = loginDialogHtml()
-  dialog.dialog d.i.newModalDialogSettings({ width: 413 })
+  dialog.dialog d.i.newModalDialogSettings(
+    width: 413
+    closeOnEscape: !d.i.isInLoginPopup)
 
   dialog.find('#dw-lgi-guest').click ->
     d.i.showGuestLoginDialog(loginAndContinue)
