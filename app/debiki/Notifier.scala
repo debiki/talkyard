@@ -101,8 +101,13 @@ class Notifier(val systemDao: SystemDao, val siteDaoFactory: SiteDaoFactory)
       val userOpt = notfsToMail.usersByTenantAndId.get(tenantId -> userId)
 
       // Send email, or remember why we didn't.
+      // If email notification preferences haven't been specified, assume the user
+      // wants to be notified of replies. I think most people want that? And if they
+      // don't, there's an unsubscription link in the email.
       val problemOpt = (tenant.chost, userOpt.map(_.emailNotfPrefs)) match {
-        case (Some(chost), Some(EmailNotfPrefs.Receive)) =>
+        case (Some(chost), Some(preference))
+          if preference == EmailNotfPrefs.Receive ||
+            preference == EmailNotfPrefs.Unspecified =>
           constructAndSendEmail(siteDao, chost, userOpt.get, userNotfs)
           None
         case (None, _) =>
