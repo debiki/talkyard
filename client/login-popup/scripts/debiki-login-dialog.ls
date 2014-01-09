@@ -22,11 +22,11 @@ $ = d.i.$;
 
 
 d.i.showLoginSubmitDialog = !(anyMode) ->
-  showLoginDialog (anyMode || 'LoginToSubmit')
+  d.i.showLoginDialog (anyMode || 'LoginToSubmit')
 
 
 
-!function showLoginDialog(mode)
+d.i.showLoginDialog = function(mode)
   if d.i.isInIframe
     d.i.createLoginPopup("#{d.i.serverOrigin}/-/login-popup?mode=#mode")
     return
@@ -175,10 +175,6 @@ function loginDialogHtml
     </div>
     ''')
 
-
-
-$(!->
-  $('.dw-a-login').click !-> showLoginDialog('LoginToLogin'))
 
 
 

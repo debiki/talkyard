@@ -80,7 +80,7 @@ d.i.createLoginPopup = function(anyUrl) {
       $('#dw-fs-openid-login').dialog('close');
       $('#dw-lgi').dialog('close');
       d.i.Me.fireLogin();
-      d.i.showLoginOkay(d.i.continueAnySubmission);
+      d.i.continueAnySubmission();
       return;
     }
 

@@ -78,13 +78,6 @@ d.i.continueAnySubmission = function() {
 };
 
 
-d.i.showLoginOkay = function(opt_continue) {
-  initLoginResultForms(opt_continue);
-  $('#dw-fs-lgi-ok-name').text(d.i.Me.getName());
-  $('#dw-fs-lgi-ok').dialog('open');
-};
-
-
 d.i.showLoginFailed = function(errorMessage) {
   initLoginResultForms();
   $('#dw-fs-lgi-failed-errmsg').text(errorMessage);
@@ -116,6 +109,18 @@ var initLoginResultForms = (function() {
   }
 })();
 
+
+$(function() {
+  $('.dw-a-login').click(function() {
+    d.i.showLoginDialog('LoginToLogin');
+  });
+
+  $('.dw-a-logout').click(function() {
+    d.u.postJson({ url: d.i.serverOrigin + '/-/logout' })
+      .fail(d.i.showServerResponseDialog)
+      .done(d.i.Me.fireLogout)
+  });
+});
 
 
 // vim: fdm=marker et ts=2 sw=2 fo=tcqwn list
