@@ -86,7 +86,11 @@ d.i.showLoginDialog = function(mode)
     false
 
   function openSecureSocialLoginWindow(provider)
-    d.i.createLoginPopup("#{d.i.serverOrigin}/-/login-securesocial-popup/#provider")
+    url = "#{d.i.serverOrigin}/-/login-securesocial-popup/#provider"
+    if d.i.isInLoginPopup
+      window.location = url
+    else
+      d.i.createLoginPopup(url)
 
   !function loginAndContinue(data)
     if d.i.isInLoginPopup
