@@ -67,8 +67,8 @@ d.i.createLoginPopup = function(anyUrl) {
       //  openid.ns=http%3A%2F%2Fspecs.openid.net%2Fauth%2F2.0"
       errorMsg = 'You cancelled the login process? [error DwE89GwJm43]';
     } else if (result.status === 'LoginFailed') {
-      // User closed popup window?
-      errorMsg = 'You closed the login window? [error DwE5k33rs83k0]';
+      console.debug('User closed popup window?');
+      return;
     } else if (result.status !== 'LoginOk') {
       errorMsg = 'Unknown login problem [error DwE3kirsrts12d]';
     } else {
