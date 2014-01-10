@@ -72,19 +72,18 @@ module.exports = function(grunt) {
       'target/client/page/scripts/debiki-http-dialogs.js',
       'target/client/page/scripts/debiki-inline-threads.js',
       'target/client/page/scripts/debiki-iframe.js',
-      'target/client/page/scripts/debiki-jquery-dialogs.js',
+      'target/client/util/scripts/debiki-jquery-dialogs.js',
       'target/client/page/scripts/debiki-jquery-find.js',
       'target/client/page/scripts/debiki-keyboard-shortcuts.js', //
       'target/client/page/scripts/debiki-layout.js',
       'target/client/page/scripts/debiki-load-page-parts.js',
-      'target/client/page/scripts/debiki-login-dialog.js',
-      'target/client/page/scripts/debiki-login-guest.js',
-      'target/client/page/scripts/debiki-login-password.js',
-      'target/client/page/scripts/debiki-login-popup.js',
       'target/client/page/scripts/debiki-login.js',
-      'target/client/page/scripts/debiki-login-openid.js',
-      'target/client/page/scripts/debiki-login-openid-dialog-html.js',
-      'target/client/page/scripts/debiki-logout-dialog.js',
+      'target/client/page/scripts/debiki-login-popup.js',
+      'target/client/login-popup/scripts/debiki-login-dialog.js',
+      'target/client/login-popup/scripts/debiki-login-guest.js',
+      'target/client/login-popup/scripts/debiki-login-password.js',
+      'target/client/login-popup/scripts/debiki-login-openid.js',
+      'target/client/login-popup/scripts/debiki-login-openid-dialog-html.js',
       'target/client/page/scripts/debiki-markup.js',
       'target/client/page/scripts/debiki-merge-changes.js',
       'target/client/page/scripts/debiki-minimap.js',
@@ -107,7 +106,8 @@ module.exports = function(grunt) {
       'target/client/page/scripts/debiki-forum.js',
       'target/client/page/scripts/debiki-page-path.js',
       'target/client/page/scripts/debiki-create-page.js',
-      'target/client/page/scripts/debiki.js']
+      'target/client/page/scripts/debiki.js',
+      'target/client/util/scripts/debiki-utils.js']
 
   var debikiTouchFiles = [
       'client/third-party/bootstrap/dropdown.js',
@@ -142,18 +142,17 @@ module.exports = function(grunt) {
       'target/client/page/scripts/debiki-http-dialogs.js',
       'target/client/page/scripts/debiki-inline-threads.js',
       'target/client/page/scripts/debiki-iframe.js',
-      'target/client/page/scripts/debiki-jquery-dialogs.js',
+      'target/client/util/scripts/debiki-jquery-dialogs.js',
       'target/client/page/scripts/debiki-jquery-find.js',
       'target/client/page/scripts/debiki-layout.js',
       'target/client/page/scripts/debiki-load-page-parts.js',
-      'target/client/page/scripts/debiki-login-dialog.js',
-      'target/client/page/scripts/debiki-login-guest.js',
-      'target/client/page/scripts/debiki-login-password.js',
-      'target/client/page/scripts/debiki-login-popup.js',
       'target/client/page/scripts/debiki-login.js',
-      'target/client/page/scripts/debiki-login-openid.js',
-      'target/client/page/scripts/debiki-login-openid-dialog-html.js',
-      'target/client/page/scripts/debiki-logout-dialog.js',
+      'target/client/page/scripts/debiki-login-popup.js',
+      'target/client/login-popup/scripts/debiki-login-dialog.js',
+      'target/client/login-popup/scripts/debiki-login-guest.js',
+      'target/client/login-popup/scripts/debiki-login-password.js',
+      'target/client/login-popup/scripts/debiki-login-openid.js',
+      'target/client/login-popup/scripts/debiki-login-openid-dialog-html.js',
       'target/client/page/scripts/debiki-markup.js',
       'target/client/page/scripts/debiki-merge-changes.js',
       'target/client/page/scripts/debiki-minimap.js',
@@ -174,7 +173,19 @@ module.exports = function(grunt) {
       'target/client/page/scripts/debiki-forum.js',
       'target/client/page/scripts/debiki-page-path.js',
       'target/client/page/scripts/debiki-create-page.js',
-      'target/client/page/scripts/debiki.js']
+      'target/client/page/scripts/debiki.js',
+      'target/client/util/scripts/debiki-utils.js']
+
+  // For both touch devices and desktops.
+  var loginPopupFiles = [
+      'client/third-party/jquery-cookie.js',
+      'target/client/util/scripts/debiki-jquery-dialogs.js',
+      'target/client/util/scripts/debiki-utils.js',
+      'target/client/login-popup/scripts/debiki-login-dialog.js',
+      'target/client/login-popup/scripts/debiki-login-guest.js',
+      'target/client/login-popup/scripts/debiki-login-password.js',
+      'target/client/login-popup/scripts/debiki-login-openid.js',
+      'target/client/login-popup/scripts/debiki-login-openid-dialog-html.js'];
 
   // For both touch devices and desktops.
   var debikiEmbeddedCommentsFiles = [
@@ -273,6 +284,9 @@ module.exports = function(grunt) {
 
         'public/res/embedded-comments.js':
             debikiEmbeddedCommentsFiles,
+
+        'public/res/login-popup.js':
+            loginPopupFiles,
 
         'public/res/debiki-spa-common.js': [
             'target/client/third-party/livescript/prelude-browser-min.js',

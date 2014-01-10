@@ -21,8 +21,6 @@
  * (Find guest login and OpenID login dialogs in other files.)
  */
 
-(function() {
-
 var d = { i: debiki.internal, u: debiki.v0.util };
 var $ = d.i.$;
 
@@ -31,24 +29,17 @@ var $ = d.i.$;
 // was clicked when a login dialog is shown.
 var loginOnClickBtnClicked = null;
 
-// True iff the user is to be asked whether or not s/he wants to be
-// notified via email e.g. of replies.
-var continueLoginAskAboutEmail = false;
-
 
 /**
- * `data` can be:
- * {
- *    askAboutEmailNotfs: true/false -- optional
- *    mode: 'SubmitComment' -- optional, influences button titles in login dialogs
- * }
+ * `anyLoginReason` is optional and influences button titles in login dialogs.
+ * It can one of 'LoginToComment', 'LoginToLogin' and 'LoginToSubmit'.
  */
-d.i.$loginSubmitOnClick = function(loginEventHandler, data) {
+d.i.$loginSubmitOnClick = function(loginEventHandler, anyLoginReason) {
   return function() {
     var $i = $(this);
     $i.addClass('dw-loginsubmit-on-click');
     !loginEventHandler || $i.bind('dwEvLoggedInOut', loginEventHandler);
-    $i.on('click', null, data, d.i.$loginThenSubmit)
+    $i.on('click', null, { mode: anyLoginReason }, d.i.$loginThenSubmit)
   };
 };
 
@@ -58,7 +49,6 @@ d.i.$loginSubmitOnClick = function(loginEventHandler, data) {
 // continueAnySubmission(). If already logged in, submits immediately.
 d.i.$loginThenSubmit = function(event) {
   loginOnClickBtnClicked = this;
-  continueLoginAskAboutEmail = event.data && event.data.askAboutEmailNotfs;
   if (!d.i.Me.isLoggedIn()) {
     // Will call continueAnySubmission(), after login.
     // {{{ Hmm, could add a `continue' callback to showLogin() instead!?
@@ -80,131 +70,11 @@ d.i.$loginThenSubmit = function(event) {
  * user having to log in.
  */
 d.i.continueAnySubmission = function() {
-  // Configure email notification prefs, unless already done.
-  // (This is useful e.g. if the user submits a reply but hasn't
-  // specified her email prefs. We want her to subscribe to
-  // email notfs, and right now her motivation is at its peak?)
-  var emailQuestion = $.Deferred().resolve();
-  if (continueLoginAskAboutEmail) {
-    continueLoginAskAboutEmail = false;
-    if (!d.i.Me.getEmailNotfPrefs()) {
-      emailQuestion = configEmailPerhapsRelogin();
-    }
-  }
-
   // If the login was initiated via a click on a
   // .dw-loginsubmit-on-click button, continue the submission
   // process that button is supposed to start.
-  emailQuestion.done(function() {
-    $(loginOnClickBtnClicked).closest('form').submit();
-  }).always(function() {
-    loginOnClickBtnClicked = null;
-  });
-};
-
-
-var configEmailPerhapsRelogin = (function() {
-  var dialogStatus;
-
-  return function() {
-    dialogStatus = $.Deferred();
-
-    var $form = $('#dw-f-eml-prf');
-    var $emailAddrDiv = $form.find('.dw-f-eml-prf-adr');
-    var $dontRecvBtn = $form.find('#dw-fi-eml-prf-rcv-no');
-    var $yesRecvBtn = $form.find('#dw-fi-eml-prf-rcv-yes');
-
-    // Init dialog, do once only.
-    if (!$form.parent().is('.ui-dialog')) {
-      $form.dialog($.extend({}, d.i.jQueryDialogReset));
-      $('#dw-f-eml-prf').find('input[type="radio"], input[type="submit"]')
-          .button();
-
-      // Always submit form on No click.
-      // (However, on Yes click, we submit the form directly only
-      // if email known — otherwise we show an email input field.)
-      $dontRecvBtn.click(submitForm);
-
-      $form.submit(function() {
-        $yesRecvBtn.button('enable'); // or value not posted
-
-        // When you change your email address, this triggers a re-login,
-        // if you use an unauthenticated identity — because the email is
-        // part of that identity. We need to know if a login happens.
-        var loginIdBefore = d.i.Me.getLoginId();
-        var beNotifiedViaEmailOfReplies =
-            $form.find('#dw-fi-eml-prf-rcv-yes').attr('checked') === 'checked';
-        var emailAddress = $form.find('input[name="dw-fi-eml-prf-adr"]').val();
-        if (emailAddress === "") emailAddress = undefined;
-
-        d.u.postJson({
-            url: d.i.serverOrigin + '/-/configure-user',
-            data: {
-              userId: d.i.Me.getUserId(),
-              beNotifiedViaEmailOfReplies: beNotifiedViaEmailOfReplies,
-              emailAddress: emailAddress
-            },
-            error: function(jqXhrOrHtml, errorType, httpStatusText) {
-              d.i.showServerResponseDialog(
-                  jqXhrOrHtml, errorType, httpStatusText);
-              dialogStatus.reject();
-            },
-            success: function(responseHtml) {
-              // Fire login event, to update xsrf tokens, if the server
-              // created a new login session (because we changed email addr).
-              d.i.Me.fireLoginIfNewSession(loginIdBefore);
-
-              // Delay dialogStatus.resolve() so any new XSRF token has been
-              // applied before, via jQuery ajaxSetup.complete.
-              // Temporary (?) fix of [bug#9kie35].
-              setTimeout(function() {
-                dialogStatus.resolve();
-              }, 1);
-
-              $form.dialog('close');
-              // (Ignore responseHtml; it's empty, or a Welcome message.)
-            }
-          });
-
-        return false;
-      });
-    }
-
-    // Now, hide email input, if email addr already specified,
-    // and submit directly on Yes/No click.
-
-    function submitForm() {
-      $form.submit();
-      return false;
-    };
-
-    function showEmailAddrInp() {
-      $emailAddrDiv.show();
-      $yesRecvBtn.button('disable');
-    };
-
-    $emailAddrDiv.hide();
-    $yesRecvBtn.button('enable');
-
-    $yesRecvBtn.off('click');
-    if (d.i.Me.isEmailKnown()) {
-      // Submit directly; need not ask for email addr.
-      $yesRecvBtn.click(submitForm);
-    } else {
-      // Ask for email addr; submit via Done button.
-      $yesRecvBtn.click(showEmailAddrInp);
-    }
-
-    $form.dialog('open');
-    return dialogStatus;
-  };
-})();
-
-
-d.i.showLoginOkay = function(opt_continue) {
-  initLoginResultForms(opt_continue);
-  $('#dw-fs-lgi-ok-name').text(d.i.Me.getName());
-  $('#dw-fs-lgi-ok').dialog('open');
+  $(loginOnClickBtnClicked).closest('form').submit();
+  loginOnClickBtnClicked = null;
 };
 
 
@@ -240,6 +110,17 @@ var initLoginResultForms = (function() {
 })();
 
 
-})();
+$(function() {
+  $('.dw-a-login').click(function() {
+    d.i.showLoginDialog('LoginToLogin');
+  });
 
-// vim: fdm=marker et ts=2 sw=2 tw=80 fo=tcqwn list
+  $('.dw-a-logout').click(function() {
+    d.u.postJson({ url: d.i.serverOrigin + '/-/logout' })
+      .fail(d.i.showServerResponseDialog)
+      .done(d.i.Me.fireLogout)
+  });
+});
+
+
+// vim: fdm=marker et ts=2 sw=2 fo=tcqwn list

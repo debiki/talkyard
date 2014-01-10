@@ -20,6 +20,7 @@
 # dependency ? see:
 #   https://groups.google.com/forum/?fromgroups=#!topic/play-framework/cVqBvywCs4k
 
+GET   /-/login-popup            controllers.LoginPopupController.showLoginPopup(mode)
 GET   /-/login/:provider        controllers.AppLogin.loginWith(provider, returnToUrl)
 POST  /-/login                  controllers.AppLogin.loginWithPostData(returnToUrl = "")
 POST  /-/logout                 controllers.AppLogin.logout

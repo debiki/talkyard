@@ -755,7 +755,9 @@ body.dw-u-ui-simple .dw-a-edit
     // jQuery UI might prefer to set a height and show scrollbars, so:
     height: auto !important
 
-.DW body.dw-fullscreen-dialog-mode > *
+// Re `:not(.ui-widget-overlay)`: show overlays also in fullscreen dialog mode,
+// because some nested dialogs might open in non-fullscreen mode.
+.DW body.dw-fullscreen-dialog-mode > :not(.ui-widget-overlay)
   display: none
 
 
@@ -898,13 +900,22 @@ body.dw-u-ui-simple .dw-a-edit
 //===========================
 
 
+// This avoids scrollbars in the login popup. Otherwise there's some padding-top
+// and -bottom, which surprisingly (?) results in scrollbars but only in the
+// login popup, not on "normal" pages.
+.DW .ui-dialog .ui-dialog-content
+  padding-top: 0
+  padding-bottom: 0
+  margin: 1.2em 0 1.5em
+
+
 // Assume user logged out
 .dw-u-info,
 .dw-a-logout
   display: none
 
 #dw-lgi.ui-dialog-content
-  padding: 1.5em 2.7em 1em 2em
+  padding: 0 2.7em 0 2em
 
 #dw-lgi-guest,
 #dw-lgi-pswd,

@@ -22,20 +22,26 @@ $ = d.i.$;
 
 
 d.i.showLoginSubmitDialog = !(anyMode) ->
-  showLoginDialog (anyMode || 'SubmitGeneric')
+  d.i.showLoginDialog (anyMode || 'LoginToSubmit')
 
 
 
-!function showLoginDialog(mode)
+d.i.showLoginDialog = function(mode)
+  if d.i.isInIframe
+    d.i.createLoginPopup("#{d.i.serverOrigin}/-/login-popup?mode=#mode")
+    return
 
   doingWhatClass = switch mode
-  | 'SubmitGeneric' => 'dw-login-to-submit'
-  | 'SubmitComment' => 'dw-login-to-post-comment'
+  | 'LoginToSubmit' => 'dw-login-to-submit'
+  | 'LoginToComment' => 'dw-login-to-post-comment'
+  | 'LoginToLogin' => 'dw-login-to-login'
   | _ => 'dw-login-to-login'
   $('body').addClass(doingWhatClass)
 
   dialog = loginDialogHtml()
-  dialog.dialog d.i.newModalDialogSettings({ width: 413 })
+  dialog.dialog d.i.newModalDialogSettings(
+    width: 413
+    closeOnEscape: !d.i.isInLoginPopup)
 
   dialog.find('#dw-lgi-guest').click ->
     d.i.showGuestLoginDialog(loginAndContinue)
@@ -71,14 +77,30 @@ d.i.showLoginSubmitDialog = !(anyMode) ->
         <input type="text" name="openid_identifier" value="#openidIdentifier">
       </form>
       """)
-    d.i.createOpenIdLoginPopup(form)
+    # Submit form in a new popup window, unless we alreaady are in a popup window.
+    if d.i.isInLoginPopup
+      $('body').append(form)
+    else
+      d.i.createOpenIdLoginPopup(form)
     form.submit()
     false
 
   function openSecureSocialLoginWindow(provider)
-    d.i.createLoginPopup("#{d.i.serverOrigin}/-/login-securesocial-popup/#provider")
+    url = "#{d.i.serverOrigin}/-/login-securesocial-popup/#provider"
+    if d.i.isInLoginPopup
+      window.location = url
+    else
+      d.i.createLoginPopup(url)
 
   !function loginAndContinue(data)
+    if d.i.isInLoginPopup
+      # (Also see AppLoginOpenId, search for [509KEF31].)
+      window.opener.debiki.internal.handleLoginResponse(status: 'LoginOk')
+      # This is a login popup, so we're now closing the whole popup window.
+      close()
+
+    # This happens only if we're not in a login popup, but a jQuery UI dialog:
+
     d.i.Me.fireLogin()
     # Show response dialog, and continue with whatever caused
     # the login to happen.
@@ -94,8 +116,11 @@ d.i.showLoginSubmitDialog = !(anyMode) ->
     showLoggedInDialog(d.i.continueAnySubmission)
 
   !function close
-    dialog.dialog('close')
-    $('body').removeClass(doingWhatClass)
+    if d.i.isInLoginPopup
+      window.close()
+    else
+      dialog.dialog('close')
+      $('body').removeClass(doingWhatClass)
 
   # Preload OpenID resources, in case user clicks OpenID login button.
   d.i.loadOpenIdResources()
@@ -154,10 +179,6 @@ function loginDialogHtml
     </div>
     ''')
 
-
-
-$(!->
-  $('.dw-a-login').click showLoginDialog)
 
 
 

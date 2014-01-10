@@ -56,7 +56,8 @@ d.i.createLoginPopup = function(anyUrl) {
     }
   }
 
-  // This callback is called from the return_to page:
+  // This callback is called from the return_to page, or by `loginAndContinue`
+  // in debiki-login-dialog.ls in a login popup window, see [509KEF31].
   d.i.handleLoginResponse = function(result) {
     d.i.handleLoginResponse = null;
     var errorMsg;
@@ -67,8 +68,8 @@ d.i.createLoginPopup = function(anyUrl) {
       //  openid.ns=http%3A%2F%2Fspecs.openid.net%2Fauth%2F2.0"
       errorMsg = 'You cancelled the login process? [error DwE89GwJm43]';
     } else if (result.status === 'LoginFailed') {
-      // User closed popup window?
-      errorMsg = 'You closed the login window? [error DwE5k33rs83k0]';
+      console.debug('User closed popup window?');
+      return;
     } else if (result.status !== 'LoginOk') {
       errorMsg = 'Unknown login problem [error DwE3kirsrts12d]';
     } else {
@@ -79,7 +80,7 @@ d.i.createLoginPopup = function(anyUrl) {
       $('#dw-fs-openid-login').dialog('close');
       $('#dw-lgi').dialog('close');
       d.i.Me.fireLogin();
-      d.i.showLoginOkay(d.i.continueAnySubmission);
+      d.i.continueAnySubmission();
       return;
     }
 
