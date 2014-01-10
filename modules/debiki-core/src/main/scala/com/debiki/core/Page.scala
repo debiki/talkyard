@@ -67,14 +67,16 @@ object Page {
         path: PagePath,
         parts: PageParts,
         publishDirectly: Boolean = false,
-        author: User): Page = {
+        author: User,
+        url: Option[String] = None): Page = {
     val partsInclAuthor = parts + author
     val meta = PageMeta.forNewPage(
       pageRole,
       author,
       parts = partsInclAuthor,
       creationDati = parts.oldestDati getOrElse new ju.Date,
-      publishDirectly = publishDirectly)
+      publishDirectly = publishDirectly,
+      url = url)
     Page(meta, path, ancestorIdsParentFirst = Nil, partsInclAuthor)
   }
 
@@ -174,6 +176,7 @@ object PageMeta {
         parts: PageParts,
         creationDati: ju.Date = new ju.Date,
         parentPageId: Option[String] = None,
+        url: Option[String] = None,
         publishDirectly: Boolean = false) =
     PageMeta(
       pageId = parts.pageId,
@@ -182,6 +185,7 @@ object PageMeta {
       modDati = creationDati,
       pubDati = if (publishDirectly) Some(creationDati) else None,
       parentPageId = parentPageId,
+      url = url,
       pageExists = false,
       cachedTitle = parts.maybeUnapprovedTitleText,
       cachedAuthorDispName = author.displayName,
@@ -222,7 +226,28 @@ object PageMeta {
 }
 
 
-
+/** @param pageId
+  * @param pageRole
+  * @param creationDati
+  * @param modDati
+  * @param pubDati
+  * @param sgfntModDati
+  * @param parentPageId
+  * @param url The canonical URL to the page, useful when linking to the page.
+  *            Currently only needed and used for embedded comments, and then it
+  *            is the URL of the embedding page.
+  * @param pageExists
+  * @param cachedTitle
+  * @param cachedAuthorDispName
+  * @param cachedAuthorUserId
+  * @param cachedNumPosters
+  * @param cachedNumActions
+  * @param cachedNumPostsDeleted
+  * @param cachedNumRepliesVisible
+  * @param cachedNumPostsToReview
+  * @param cachedNumChildPages
+  * @param cachedLastVisiblePostDati
+  */
 case class PageMeta(
   pageId: String,
   pageRole: PageRole,
@@ -231,6 +256,7 @@ case class PageMeta(
   pubDati: Option[ju.Date] = None,
   sgfntModDati: Option[ju.Date] = None,
   parentPageId: Option[String] = None,
+  url: Option[String],
   pageExists: Boolean = true,
   cachedTitle: Option[String] = None,
   cachedAuthorDispName: String,
