@@ -41,16 +41,34 @@ import scala.xml.{NodeSeq, Text}
  * COULD remove columns from DW1_NOTFS_PAGE_ACTIONS because now I'm
  * loading the page + comment from here anyway!
  */
-case class NotfHtmlRenderer(siteDao: SiteDao, origin: String) {
+case class NotfHtmlRenderer(siteDao: SiteDao, anyOrigin: Option[String]) {
 
   import NotfOfPageAction.Type._
 
 
-  private def pageUrl(notf: NotfOfPageAction) =
-    s"$origin/-${notf.pageId}"
+  private def pageUrl(notf: NotfOfPageAction): Option[String] =
+    anyOrigin map { origin =>
+      s"$origin/-${notf.pageId}"
+    }
 
-  private def postUrl(notf: NotfOfPageAction) =
-    s"${pageUrl(notf)}#post-${notf.eventActionId}"
+
+  private def pageName(pageMeta: PageMeta): String =
+    pageMeta.cachedTitle.orElse(pageMeta.url) getOrElse "(unnamed page)"
+
+
+  private def postUrl(pageMeta: PageMeta, notf: NotfOfPageAction): Option[String] =
+    pageMeta.url match {
+      case Some(url) =>
+        // Include both topic and comment id, because it's possible to embed
+        // many different discussions (topics) on the same page.
+        Some(s"$url#debiki-topic-${pageMeta.pageId}-comment-${notf.eventActionId}")
+      case None =>
+        // The page is hosted by Debiki so its url uniquely identifies the topic.
+        anyOrigin map { origin =>
+          val pageUrl = s"$origin/-${notf.pageId}"
+          s"$pageUrl#post-${notf.eventActionId}"
+        }
+    }
 
 
   def render(notfs: Seq[NotfOfPageAction]): NodeSeq = {
@@ -71,6 +89,9 @@ case class NotfHtmlRenderer(siteDao: SiteDao, origin: String) {
     val page = siteDao.loadPage(notf.pageId) getOrElse {
       return Nil
     }
+    val pageMeta = siteDao.loadPageMeta(notf.pageId) getOrElse {
+      return Nil
+    }
     val post = page.getPost(notf.eventActionId) getOrElse {
       return Nil
     }
@@ -80,6 +101,12 @@ case class NotfHtmlRenderer(siteDao: SiteDao, origin: String) {
 
     val date = toIso8601Day(post.creationDati)
 
+    val url = postUrl(pageMeta, notf) getOrElse {
+      // Not an embedded discussion, and the site has no canonical host, so we
+      // cannot construct any address.
+      return Nil
+    }
+
     // Don't include HTML right now. I do sanitize the HTML, but nevertheless
     // I'm a bit worried that there's any bug that results in XSS attacks,
     // which would then target the user's email account (!).
@@ -87,7 +114,7 @@ case class NotfHtmlRenderer(siteDao: SiteDao, origin: String) {
     val html = Text(markupSource)
 
     <p>
-      You have a reply, <a href={postUrl(notf)}>here</a>, on page <i>{notf.pageTitle}</i>,<br/>
+      You have a reply, <a href={url}>here</a>, on page <i>{pageName(pageMeta)}</i>,<br/>
       written by <i>{notf.eventUserDispName}</i>. On {date}, he or she wrote:
     </p>
     <blockquote>{html}</blockquote>
@@ -96,9 +123,17 @@ case class NotfHtmlRenderer(siteDao: SiteDao, origin: String) {
 
   private def myPostApproved(notf: NotfOfPageAction): NodeSeq = {
     assert(notf.eventType == MyPostApproved)
+    val pageMeta = siteDao.loadPageMeta(notf.pageId) getOrElse {
+      return Nil
+    }
+    val url = postUrl(pageMeta, notf) getOrElse {
+      // Not an embedded discussion, and the site has no canonical host, so we
+      // cannot construct any address.
+      return Nil
+    }
     <p>
-      <a href={postUrl(notf)}>Your post</a> has been approved,<br/>
-      on page <i>{notf.pageTitle}</i>.
+      <a href={url}>Your post</a> has been approved,<br/>
+      on page <i>{pageName(pageMeta)}</i>.
     </p>
   }
 

@@ -78,6 +78,8 @@ class Globals {
 
   def SiteByIdHostnamePrefix = "site-"
 
+  def siteByIdOrigin(siteId: String) = s"http://$SiteByIdHostnamePrefix$siteId.$baseDomain"
+
 
   /** The Twitter Ostrich admin service, listens on port 9100. */
   /*
