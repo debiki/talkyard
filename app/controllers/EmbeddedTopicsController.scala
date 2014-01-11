@@ -34,10 +34,7 @@ import requests.PageRequest
 object EmbeddedTopicsController extends mvc.Controller {
 
 
-  def isRequestFromEmbeddingUrl(request: mvc.RequestHeader, embeddingUrl: Option[String]): Boolean =
-    isReferrerFromEmbeddingUrl(request.headers.get("referer").headOption, embeddingUrl)
-
-  def isReferrerFromEmbeddingUrl(referrer: Option[String], embeddingUrl: Option[String]): Boolean =
+  def isUrlFromEmbeddingUrl(anyPageUrl: String, embeddingUrl: Option[String]): Boolean =
     embeddingUrl.nonEmpty // for now. COULD implement if people post comments to the wrong site
 
 

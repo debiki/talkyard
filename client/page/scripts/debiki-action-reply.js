@@ -95,6 +95,7 @@ d.i.$showReplyForm = function(event, opt_where) {
         data: {
           pageId: d.i.pageId,
           parentPageId: anyParentPageId,
+          pageUrl: d.i.iframeBaseUrl || undefined,
           postId: postId,
           text: $replyForm.find('[name="dw-fi-reply-text"]').val()
           // where: ...

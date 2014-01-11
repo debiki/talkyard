@@ -48,6 +48,7 @@ function onMessage(event) {
 
   switch (eventName) {
     case 'setBaseAddress':
+      d.i.iframeBaseUrl = eventData;
       addBaseElem(eventData);
       break;
   }
