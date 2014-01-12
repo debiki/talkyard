@@ -300,11 +300,13 @@ case class HtmlPageSerializer(
   def renderSingleThread(postId: PostId, pageRoot: AnyPageRoot = Some(PageParts.BodyId))
         : Option[SerializedSingleThread] = {
     page.getPost(postId) map { post =>
-      // These posts are laid out horizonotally:
-      // - Replies to the article he article
-      // - Top level embedded comments (parentId is None), which reply to the embedding page
+      // These posts are laid out horizontally:
+      // - Replies to the article
+      // - Top level embedded comments, then parentId is None (they reply to the embedding page)
       val parentHorizontal =
-        post.parentId.map(PageParts.isArticleOrConfigPostId(_)) != Some(false)
+        post.parentId.map(PageParts.isArticleOrConfigPostId(_)) == Some(true) ||
+        (post.parentId.isEmpty && !PageParts.isArticleOrConfigPostId(postId))
+
       val html = renderThreads(depth = post.depth, posts = post::Nil,
         parentHorizontal = parentHorizontal, uncollapseFirst = true)
       // The post might have been deleted.
