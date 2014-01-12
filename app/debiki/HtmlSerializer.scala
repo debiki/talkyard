@@ -307,7 +307,7 @@ case class HtmlPageSerializer(
         post.parentId.map(PageParts.isArticleOrConfigPostId(_)) == Some(true) ||
         (post.parentId.isEmpty && !PageParts.isArticleOrConfigPostId(postId))
 
-      val html = renderThreads(depth = post.depth, posts = post::Nil,
+      val html = renderThreads(posts = post::Nil,
         parentHorizontal = parentHorizontal, uncollapseFirst = true)
       // The post might have been deleted.
       if (html.isEmpty)
@@ -376,7 +376,7 @@ case class HtmlPageSerializer(
           <div class='dw-t-vspace'/>
           <ol class='dw-res'>
             { renderedRoot.actionsHtml.copy(label = "li") }
-            { renderThreads(1, rootPostsReplies, parentHorizontal = true) }
+            { renderThreads(rootPostsReplies, parentHorizontal = true) }
           </ol>
         })
       }
@@ -406,7 +406,7 @@ case class HtmlPageSerializer(
           <li class="dw-p-as dw-as dw-p-as-hz">
             <a class="dw-a dw-a-reply">Reply</a>
           </li>
-          { renderThreads(1, topLevelComments, parentHorizontal = true) }
+          { renderThreads(topLevelComments, parentHorizontal = true) }
         </ol>
       </div>
     html
@@ -479,7 +479,6 @@ case class HtmlPageSerializer(
 
 
   private def renderThreads(
-    depth: Int,
     posts: Seq[Post],
     parentHorizontal: Boolean,
     uncollapseFirst: Boolean = false): NodeSeq = {
@@ -491,7 +490,7 @@ case class HtmlPageSerializer(
     // COULD change this to a bredth first search for the 100 most interesting
     // comments, and rename this function to `findSomeInterestingComments'.
 
-    def renderImpl(posts: Seq[Post], depth: Int, parentHorizontal: Boolean): NodeSeq = {
+    def renderImpl(posts: Seq[Post], parentHorizontal: Boolean): NodeSeq = {
       var threadNodes: NodeSeq = Nil
       for {
         post <- sortPostsDescFitness(posts)
@@ -499,7 +498,7 @@ case class HtmlPageSerializer(
         if !(post.isPostDeleted && post.replies.isEmpty) || showStubsForDeleted
         if showUnapproved.shallShow(post)
       } {
-        val thread = renderThread(post, depth, parentHorizontal, uncollapseFirst)
+        val thread = renderThread(post, parentHorizontal, uncollapseFirst)
         threadNodes ++= thread
       }
       threadNodes
@@ -507,19 +506,18 @@ case class HtmlPageSerializer(
 
     val (openPosts, closedPosts) = posts.partition(!_.isTreeClosed)
 
-    val openThreadNodes = renderImpl(openPosts, depth, parentHorizontal)
+    val openThreadNodes = renderImpl(openPosts, parentHorizontal)
 
     // Closed threads are always rendered in a column, with a header "Closed threads" above.
-    val closedThreadNodes = renderImpl(closedPosts, depth + 1, parentHorizontal = false)
+    val closedThreadNodes = renderImpl(closedPosts, parentHorizontal = false)
 
     var allNodes = openThreadNodes
     if (closedThreadNodes.nonEmpty) {
-      val header = (depth == 1) ? <h3>Closed threads</h3> | <h4>Closed threads:</h4>
       allNodes ++=
         <li>
           <div class="dw-t dw-t-closed">
             <div class="dw-p">
-              { header }
+              <h3>Closed threads</h3>
             </div>
             <ol class="dw-res">
               { closedThreadNodes }
@@ -532,12 +530,12 @@ case class HtmlPageSerializer(
   }
 
 
-  private def renderThread(post: Post, depth: Int, parentHorizontal: Boolean,
+  private def renderThread(post: Post, parentHorizontal: Boolean,
       uncollapseFirst: Boolean) = {
 
     val cssThreadId = "dw-t-"+ post.id
     val isInlineThread = post.where.isDefined
-    val isInlineNonRootChild = isInlineThread && depth >= 2
+    //val isInlineNonRootChild = isInlineThread && depth >= 2
     val cssInlineThread = if (isInlineThread) " dw-i-t" else ""
     val replies = post.replies
     val isTitle = post.id == PageParts.TitleId
@@ -549,7 +547,7 @@ case class HtmlPageSerializer(
     // to the right. However, the horizontal layout results in a higher
     // thread if there's only one reply. So only do this if there's more
     // than one reply.
-    val horizontal = (post.where.isDefined && depth == 1 && replies.length > 1) ||
+    val horizontal = // (post.where.isDefined && depth == 1 && replies.length > 1) ||
                     isRootOrArtclQstn
     val cssThreadDeleted = if (post.isTreeDeleted) " dw-t-dl" else ""
     val cssArticleQuestion = if (isRootOrArtclQstn) " dw-p-art-qst" else ""
@@ -577,7 +575,8 @@ case class HtmlPageSerializer(
       val shallFoldPost =
         !uncollapseFirst && (
         (postFitness.upperLimit < 0.5f && postFitness.observedMean < 0.333f) ||
-          isInlineNonRootChild || post.isTreeCollapsed)
+          // isInlineNonRootChild ||
+          post.isTreeCollapsed)
 
       if (shallFoldPost)
         (" dw-zd", "Click to show this thread" +
@@ -603,7 +602,7 @@ case class HtmlPageSerializer(
       }
       else <ol class='dw-res'>
         { myActionsIfHorizontalLayout }
-        { renderThreads(depth + 1, replies, parentHorizontal = horizontal) }
+        { renderThreads(replies, parentHorizontal = horizontal) }
       </ol>
     }
 
