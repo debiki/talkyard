@@ -291,6 +291,11 @@ function renderPageEtc() {
   var steps = [];
 
   steps.push(function() {
+    // Add '.dw-depth-NNN' class. (dwDepth() does that.)
+    $posts.each(function() {
+      $(this).dwDepth();
+    });
+
     d.i.layoutThreads();
     initStep1();
     $('html').removeClass('dw-render-actions-pending');

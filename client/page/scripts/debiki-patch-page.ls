@@ -156,6 +156,7 @@ insertThread = ($thread, { after }) ->
     # display: table-cell).
     $pervSibling = $pervSibling.parent!
   $pervSibling.after $thread
+  updateDepths($thread)
 
 
 
@@ -166,12 +167,28 @@ appendThread = !($thread, { to }) ->
     # This is the first child thread; create empty child thread list.
     $childList = $("<ol class='dw-res'/>").appendTo $parent
   $thread.appendTo $childList
+  updateDepths($thread)
 
 
 replaceOldWith = ($new, { onPage }) ->
   # WOULD verify that $new is located `onPage`, if in the future it'll be
   # possible to edit e.g. blog posts from a blog post list page.
   $('#' + $new.attr 'id').replaceWith $new
+  updateDepths($new)
+
+
+
+!function updateDepths(postOrThreadOrListItem)
+  if postOrThreadOrListItem.is('li:not(.dw-t)')
+    # The thread is laid out horizontally and is thus wrapped in an <li>.
+    thread = postOrThreadOrListItem.children('.dw-t')
+  else
+    # The thread is laid out vertically.
+    thread = postOrThreadOrListItem.closest('.dw-t')
+  # dwDepth calculates and caches the depth in a CSS class.
+  thread.dwDepth!
+  thread.find('.dw-t').each !->
+    $(this).dwDepth!
 
 
 # vim: fdm=marker et ts=2 sw=2 tw=80 fo=tcqwn list

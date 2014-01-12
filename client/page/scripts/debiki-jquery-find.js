@@ -64,6 +64,44 @@ $.fn.dwPostId = function() {
 
 
 /**
+ * Calculataes how deeply nested a thread is, in comparison to the start
+ * of the disuccion on the current page (which might not be the article,
+ * in case a link to some reply has been followed so that reply is the first
+ * post of the rendered page).
+ *
+ * Caches the depth in CSS class 'dw-depth-NNN' where NNN is the depth.
+ * This class is used when styling with other CSS.
+ *
+ * These calculations cannot currently be done server side, because the server
+ * don't always know which comment the browser uses as root post, and can
+ * therefore not derive the relative distance from the root to each other
+ * post.
+ */
+$.fn.dwDepth = function() {
+  var depth;
+  var thread = $(this).closest('.dw-t');
+  var cssAttr = thread.attr('class') || '';
+  var matchResult = cssAttr.match(/dw-depth-([0-9]+)/);
+  if (!matchResult) {
+    var parentThread = thread.parent().closest('.dw-t');
+    if (!parentThread.length) {
+      depth = 0;
+    }
+    else {
+      depth = parentThread.dwDepth() + 1;
+    }
+    thread.addClass('dw-depth-' + depth);
+  }
+  else {
+    var depthStr = matchResult[1];
+    depth = parseInt(depthStr);
+  }
+
+  return depth;
+};
+
+
+/**
  * Returns info on the page in which $(whatever) is located.
  * (There might be more than one Debiki page included on a single browser page.)
  */

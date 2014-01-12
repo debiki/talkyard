@@ -358,7 +358,7 @@ case class HtmlPageSerializer(
 
     val bodyAndComments =
       <div id={"dw-t-"+ rootPost.id}
-           class={"dw-t"+ cssArtclThread + cssDummy +" dw-depth-0 dw-hor"}>
+           class={"dw-t"+ cssArtclThread + cssDummy +" dw-hor"}>
       {
         val renderedRoot = postRenderer.renderPost(rootPost.id)
         val anyBodyHtml =
@@ -395,7 +395,7 @@ case class HtmlPageSerializer(
   private def renderTopLevelPosts(): NodeSeq = {
     val topLevelComments = page.topLevelComments
     val html =
-      <div class="dw-t dw-depth-0 dw-hor">
+      <div class="dw-t dw-hor">
         {/* Include an empty div.dw-p, so arrows to top level posts are drawn. */}
         <div class="dw-p"></div>
         { makeCommentsToolbar() }
@@ -515,7 +515,7 @@ case class HtmlPageSerializer(
       val header = (depth == 1) ? <h3>Closed threads</h3> | <h4>Closed threads:</h4>
       allNodes ++=
         <li>
-          <div class={s"dw-t dw-t-closed dw-depth-$depth"}>
+          <div class="dw-t dw-t-closed">
             <div class="dw-p">
               { header }
             </div>
@@ -534,7 +534,6 @@ case class HtmlPageSerializer(
       uncollapseFirst: Boolean) = {
 
     val cssThreadId = "dw-t-"+ post.id
-    val cssDepth = "dw-depth-"+ depth
     val isInlineThread = post.where.isDefined
     val isInlineNonRootChild = isInlineThread && depth >= 2
     val cssInlineThread = if (isInlineThread) " dw-i-t" else ""
@@ -608,7 +607,7 @@ case class HtmlPageSerializer(
 
     var thread = {
       val cssHoriz = if (horizontal) " dw-hor" else ""
-      <li id={cssThreadId} class={"dw-t "+ cssDepth + cssInlineThread +
+      <li id={cssThreadId} class={"dw-t "+ cssInlineThread +
              cssFolded + cssHoriz + cssThreadDeleted + cssArticleQuestion}>{
         foldLink ++
         renderedComment.headAndBodyHtml ++
