@@ -185,7 +185,7 @@ object PageMeta {
       modDati = creationDati,
       pubDati = if (publishDirectly) Some(creationDati) else None,
       parentPageId = parentPageId,
-      url = url,
+      embeddingPageUrl = url,
       pageExists = false,
       cachedTitle = parts.maybeUnapprovedTitleText,
       cachedAuthorDispName = author.displayName,
@@ -233,7 +233,7 @@ object PageMeta {
   * @param pubDati
   * @param sgfntModDati
   * @param parentPageId
-  * @param url The canonical URL to the page, useful when linking to the page.
+  * @param embeddingPageUrl The canonical URL to the page, useful when linking to the page.
   *            Currently only needed and used for embedded comments, and then it
   *            is the URL of the embedding page.
   * @param pageExists
@@ -256,7 +256,7 @@ case class PageMeta(
   pubDati: Option[ju.Date] = None,
   sgfntModDati: Option[ju.Date] = None,
   parentPageId: Option[String] = None,
-  url: Option[String],
+  embeddingPageUrl: Option[String],
   pageExists: Boolean = true,
   cachedTitle: Option[String] = None,
   cachedAuthorDispName: String,

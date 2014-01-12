@@ -53,11 +53,11 @@ case class NotfHtmlRenderer(siteDao: SiteDao, anyOrigin: Option[String]) {
 
 
   private def pageName(pageMeta: PageMeta): String =
-    pageMeta.cachedTitle.orElse(pageMeta.url) getOrElse "(unnamed page)"
+    pageMeta.cachedTitle.orElse(pageMeta.embeddingPageUrl) getOrElse "(unnamed page)"
 
 
   private def postUrl(pageMeta: PageMeta, notf: NotfOfPageAction): Option[String] =
-    pageMeta.url match {
+    pageMeta.embeddingPageUrl match {
       case Some(url) =>
         // Include both topic and comment id, because it's possible to embed
         // many different discussions (topics) on the same page.
