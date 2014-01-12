@@ -41,6 +41,7 @@ object AppReply extends mvc.Controller {
     val body = request.body
     val pageId = (body \ "pageId").as[PageId]
     //val anyParentPageId = (body \ "parentPageId").asOpt[PageId]
+    val anyPageUrl = (body \ "pageUrl").asOpt[String]
     val postId = (body \ "postId").as[PostId]
     val text = (body \ "text").as[String]
     val wherePerhapsEmpty = (body \ "where").asOpt[String]
@@ -51,7 +52,7 @@ object AppReply extends mvc.Controller {
     val pageReq = PageRequest.forPageThatExists(request, pageId = pageId) match {
       case Some(req) => req
       case None =>
-        val page = tryCreateEmbeddedCommentsPage(request, pageId)
+        val page = tryCreateEmbeddedCommentsPage(request, pageId, anyPageUrl)
           .getOrElse(throwNotFound("Dw2XEG60", s"Page `$pageId' does not exist"))
         PageRequest.forPageThatExists(request, pageId = page.id) getOrDie "DwE77PJE0"
     }
@@ -105,11 +106,14 @@ object AppReply extends mvc.Controller {
 
 
   private def tryCreateEmbeddedCommentsPage(
-        request: DebikiRequest[_], pageId: PageId): Option[Page] = {
+        request: DebikiRequest[_], pageId: PageId, anyPageUrl: Option[String]): Option[Page] = {
+
+    if (anyPageUrl.isEmpty)
+      throwBadReq("Cannot create embedded page: embedding page URL unknown")
 
     val site = request.dao.loadSite()
-    val shallCreateEmbeddedTopic = EmbeddedTopicsController.isRequestFromEmbeddingUrl(
-      request.request, site.embeddingSiteUrl)
+    val shallCreateEmbeddedTopic = EmbeddedTopicsController.isUrlFromEmbeddingUrl(
+      anyPageUrl.get, site.embeddingSiteUrl)
 
     if (!shallCreateEmbeddedTopic)
       return None
@@ -126,7 +130,8 @@ object AppReply extends mvc.Controller {
       topicPagePath,
       PageParts(pageId),
       publishDirectly = true,
-      author = SystemUser.User)
+      author = SystemUser.User,
+      url = anyPageUrl)
 
     val newPage = request.dao.createPage(pageToCreate)
     Some(newPage)

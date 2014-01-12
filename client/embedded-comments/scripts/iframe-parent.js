@@ -118,7 +118,8 @@ function onMessage(event) {
 
 
 function setIframeBaseAddress(iframe) {
-  iframe.contentWindow.postMessage(['setBaseAddress', window.location.href], '*');
+  iframe.contentWindow.postMessage(
+      JSON.stringify(['setBaseAddress', window.location.href]), '*');
 };
 
 

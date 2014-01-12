@@ -547,10 +547,12 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
 
       var blogMainPageId = "?"
       var blogArticleId = "?"
+      val blogUrl = "http://blog.example.com"
 
       "create a Blog" in {
         val pageNoId = Page(
-          PageMeta.forNewPage(PageRole.Blog, loginGrant.user, PageParts("?"), now),
+          PageMeta.forNewPage(
+            PageRole.Blog, loginGrant.user, PageParts("?"), now, url = Some(blogUrl)),
           defaultPagePath.copy(
             showId = true, pageSlug = "role-test-blog-main"),
           ancestorIdsParentFirst = Nil,
@@ -562,6 +564,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
         page.meta.pageExists must_== true
         page.meta.pageRole must_== PageRole.Blog
         page.meta.parentPageId must_== None
+        page.meta.embeddingPageUrl must_== Some(blogUrl)
         page.meta.pubDati must_== None
 
         val actions = page.parts
@@ -576,6 +579,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
             pageMeta.pageExists must_== true
             pageMeta.pageRole must_== PageRole.Blog
             pageMeta.parentPageId must_== None
+            pageMeta.embeddingPageUrl must_== Some(blogUrl)
             pageMeta.pageId must_== blogMainPageId
             pageMeta.pubDati must_== None
             pageMeta.cachedNumChildPages must_== 0
@@ -612,6 +616,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
           case Some(pageMeta: PageMeta) => {
             pageMeta.pageRole must_== PageRole.BlogPost
             pageMeta.parentPageId must_== Some(blogMainPageId)
+            pageMeta.embeddingPageUrl must_== None
             pageMeta.pageId must_== blogArticleId
             pageMeta.pubDati must_== None
           }
@@ -678,6 +683,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
           blogArticleMeta.modDati.getTime + 1000 * 3600 * 24)
         val newMeta = blogArticleMeta.copy(
           parentPageId = None,
+          embeddingPageUrl = Some("http://new-blog-post-url.example.com"),
           modDati = nextDay,
           pubDati = Some(nextDay),
           // Use stupid incorrect values here, just for testing.
