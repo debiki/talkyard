@@ -116,6 +116,15 @@ html.js.dw-render-actions-pending .dw-as,
 html.js body.dw-render-actions-pending .dw-as
   visibility: hidden
 
+// hide non-root posts until depth derived
+.dw-t:not([class*="dw-depth-"])
+  display: none
+
+// But always show the article and title
+.dw-t.dw-ar-t
+.dw-t#dw-t-65501
+  display: block
+
 
 // Page title
 //---------------------------
