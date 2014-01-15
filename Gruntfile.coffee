@@ -1,50 +1,59 @@
-/* Build file for client scripts and styles. See http://gruntjs.com/
- * Copyright (C) 2012-2013 Kaj Magnus Lindberg (born 1979)
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as
- * published by the Free Software Foundation, either version 3 of the
- * License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
- *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- */
+###
+Build file for client scripts and styles. See http://gruntjs.com/
+Copyright (C) 2012-2013 Kaj Magnus Lindberg (born 1979)
 
-// COULD compile certain coffeescript files in test/ and test-client/
-// or translate it to LiveScript.
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as
+published by the Free Software Foundation, either version 3 of the
+License, or (at your option) any later version.
 
-module.exports = function(grunt) {
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Affero General Public License for more details.
 
-  grunt.loadNpmTasks('grunt-livescript');
-  grunt.loadNpmTasks('grunt-wrap');
-  grunt.loadNpmTasks('grunt-contrib-concat');
-  grunt.loadNpmTasks('grunt-contrib-watch');
-  grunt.loadNpmTasks('grunt-contrib-uglify');
-  grunt.loadNpmTasks('grunt-contrib-stylus');
+You should have received a copy of the GNU Affero General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+###
 
-  var copyrightAndLicenseBanner =
-      "/*!\n" +
-      " * This file is copyrighted and licensed under the AGPL license.\n" +
-      " * Some parts of it might be licensed under more permissive\n" +
-      " * licenses, e.g. MIT or Apache 2. Find the source code and\n" +
-      " * exact details here:\n" +
-      " *   https://github.com/debiki/debiki-server\n" +
-      " */\n";
 
-  var debikiDesktopFiles = [
-      'client/third-party/bootstrap/tooltip.js', //
+module.exports = (grunt) ->
+
+  grunt.loadNpmTasks('grunt-livescript')
+  grunt.loadNpmTasks('grunt-wrap')
+  grunt.loadNpmTasks('grunt-contrib-concat')
+  grunt.loadNpmTasks('grunt-contrib-watch')
+  grunt.loadNpmTasks('grunt-contrib-uglify')
+  grunt.loadNpmTasks('grunt-contrib-stylus')
+
+  copyrightAndLicenseBanner = """
+      /*!
+       * This file is copyrighted and licensed under the AGPL license.
+       * Some parts of it might be licensed under more permissive
+       * licenses, e.g. MIT or Apache 2. Find the source code and
+       * exact details here:
+       *   https://github.com/debiki/debiki-server
+       */
+      """
+
+  thisIsAConcatenation = """
+      /*
+       * This file is a concatenation of many different files.
+       * Each such file has its own copyright notices. Some parts
+       * are released under other more permissive licenses
+       * than the AGPL. Files are separated by a '======' line.
+       */
+      """
+
+  debikiDesktopFiles = [
+      'client/third-party/bootstrap/tooltip.js', #
       'client/third-party/bootstrap/dropdown.js',
       'client/third-party/bootstrap/tab.js',
       'client/third-party/diff_match_patch.js',
       'client/third-party/html-sanitizer-bundle.js',
       'client/third-party/jquery-cookie.js',
-      'client/third-party/jquery-scrollable.js', //
-      'client/third-party/jquery.browser.js', //
+      'client/third-party/jquery-scrollable.js', #
+      'client/third-party/jquery.browser.js', #
       'client/third-party/livescript/prelude-browser.js',
       'client/third-party/popuplib.js',
       'client/third-party/waypoints.js',
@@ -74,7 +83,7 @@ module.exports = function(grunt) {
       'target/client/page/scripts/debiki-iframe.js',
       'target/client/util/scripts/debiki-jquery-dialogs.js',
       'target/client/page/scripts/debiki-jquery-find.js',
-      'target/client/page/scripts/debiki-keyboard-shortcuts.js', //
+      'target/client/page/scripts/debiki-keyboard-shortcuts.js', #
       'target/client/page/scripts/debiki-layout.js',
       'target/client/page/scripts/debiki-load-page-parts.js',
       'target/client/page/scripts/debiki-login.js',
@@ -97,19 +106,19 @@ module.exports = function(grunt) {
       'target/client/page/scripts/debiki-show-interactions.js',
       'target/client/page/scripts/debiki-show-location-in-nav.js',
       'target/client/page/scripts/debiki-toggle-collapsed.js',
-      //'target/client/page/scripts/debiki-unread.js',
+      #'target/client/page/scripts/debiki-unread.js',
       'target/client/page/scripts/debiki-util.js',
       'target/client/page/scripts/debiki-util-browser.js',
       'target/client/page/scripts/debiki-util-play.js',
-      'target/client/page/scripts/debiki-utterscroll-init-tips.js',//
-      'client/page/scripts/debiki-utterscroll.js',//
+      'target/client/page/scripts/debiki-utterscroll-init-tips.js',#
+      'client/page/scripts/debiki-utterscroll.js',#
       'target/client/page/scripts/debiki-forum.js',
       'target/client/page/scripts/debiki-page-path.js',
       'target/client/page/scripts/debiki-create-page.js',
       'target/client/page/scripts/debiki.js',
       'target/client/util/scripts/debiki-utils.js']
 
-  var debikiTouchFiles = [
+  debikiTouchFiles = [
       'client/third-party/bootstrap/dropdown.js',
       'client/third-party/bootstrap/tab.js',
       'client/third-party/diff_match_patch.js',
@@ -166,7 +175,7 @@ module.exports = function(grunt) {
       'target/client/page/scripts/debiki-show-interactions.js',
       'target/client/page/scripts/debiki-show-location-in-nav.js',
       'target/client/page/scripts/debiki-toggle-collapsed.js',
-      //'target/client/page/scripts/debiki-unread.js',
+      #'target/client/page/scripts/debiki-unread.js',
       'target/client/page/scripts/debiki-util.js',
       'target/client/page/scripts/debiki-util-browser.js',
       'target/client/page/scripts/debiki-util-play.js',
@@ -176,8 +185,8 @@ module.exports = function(grunt) {
       'target/client/page/scripts/debiki.js',
       'target/client/util/scripts/debiki-utils.js']
 
-  // For both touch devices and desktops.
-  var loginPopupFiles = [
+  # For both touch devices and desktops.
+  loginPopupFiles = [
       'client/third-party/jquery-cookie.js',
       'target/client/util/scripts/debiki-jquery-dialogs.js',
       'target/client/util/scripts/debiki-utils.js',
@@ -185,36 +194,36 @@ module.exports = function(grunt) {
       'target/client/login-popup/scripts/debiki-login-guest.js',
       'target/client/login-popup/scripts/debiki-login-password.js',
       'target/client/login-popup/scripts/debiki-login-openid.js',
-      'target/client/login-popup/scripts/debiki-login-openid-dialog-html.js'];
+      'target/client/login-popup/scripts/debiki-login-openid-dialog-html.js']
 
-  // For both touch devices and desktops.
-  var debikiEmbeddedCommentsFiles = [
+  # For both touch devices and desktops.
+  debikiEmbeddedCommentsFiles = [
       'client/third-party/jquery-scrollable.js',
       'client/third-party/jquery.browser.js',
       'target/client/embedded-comments/scripts/debiki-utterscroll-iframe-parent.js',
       'target/client/embedded-comments/scripts/iframe-parent.js',
-      'target/client/page/scripts/debiki-utterscroll-init-tips.js'];
+      'target/client/page/scripts/debiki-utterscroll-init-tips.js']
 
-  var stylusFiles = [
+  stylusFiles = [
       'public/res/jquery-ui/jquery-ui-1.9.2.custom.css',
       'client/page/styles/debiki.styl',
-      'client/page/styles/debiki-play.styl'];
+      'client/page/styles/debiki-play.styl']
 
-  var stylusAdminFiles = [
+  stylusAdminFiles = [
       'client/admin/styles/admin-theme.styl',
       'client/admin/styles/admin-page.styl',
-      'client/util/styles/debiki-shared.styl'];
+      'client/util/styles/debiki-shared.styl']
 
   grunt.initConfig({
     pkg: '<json:package.json>',
     livescript: {
       options: {
-        // See <https://github.com/DavidSouther/grunt-livescript/blob/master/
-        //        tasks/livescript.js>
+        # See <https://github.com/DavidSouther/grunt-livescript/blob/master/
+        #        tasks/livescript.js>
       },
       server: {
         files: [{
-          // Transpiled files will appear in target/client/**/*.js.
+          # Transpiled files will appear in target/client/**/*.js.
           expand: true,
           cwd: 'client/',
           src: '**/*.ls',
@@ -249,10 +258,10 @@ module.exports = function(grunt) {
     wrap: {
       server_javascript: {
         src: 'client/**/*.js',
-        // Files will appear in target/client/**/*.js — apparently, 
-        // the whole `src` path is appendet to `dest` (unlike the
-        // `livescript` task above, which only appends the `/**/*.ls`
-        // path to the destination path).
+        # Files will appear in target/client/**/*.js — apparently, 
+        # the whole `src` path is appendet to `dest` (unlike the
+        # `livescript` task above, which only appends the `/**/*.ls`
+        # path to the destination path).
         dest: 'target/',
         wrapper: ['(function() {\n', '\n}).call(this);']
       }
@@ -260,37 +269,35 @@ module.exports = function(grunt) {
     concat: {
       server: {
        options: {
-        // See https://npmjs.org/package/grunt-contrib-concat
-        banner:
-          copyrightAndLicenseBanner +
-          "/*\n" +
-          " * This file is a concatenation of many different files.\n" +
-          " * Each such file has its own copyright notices. Some parts\n" +
-          " * are released under other more permissive licenses\n" +
-          " * than the AGPL. Files are separated by a '======' line.\n" +
-          " */\n" +
-          "\n" +
-          "/*=== The first file: ==========================================*/\n",
-        separator:
-          "\n" +
-          "/*=== Next file: ===============================================*/\n"
+        # See https://npmjs.org/package/grunt-contrib-concat
+        banner: """
+          #{copyrightAndLicenseBanner}
+          #{thisIsAConcatenation}
+
+          /*=== The first file: ==========================================*/
+
+
+          """
+        separator: """
+
+
+          /*=== Next file: ===============================================*/
+
+
+          """
        },
        files: {
-        'public/res/combined-debiki-desktop.js':
-            debikiDesktopFiles,
+        'public/res/combined-debiki-desktop.js': debikiDesktopFiles
 
-        'public/res/combined-debiki-touch.js':
-            debikiTouchFiles,
+        'public/res/combined-debiki-touch.js': debikiTouchFiles
 
-        'public/res/embedded-comments.js':
-            debikiEmbeddedCommentsFiles,
+        'public/res/embedded-comments.js': debikiEmbeddedCommentsFiles
 
-        'public/res/login-popup.js':
-            loginPopupFiles,
+        'public/res/login-popup.js': loginPopupFiles
 
         'public/res/debiki-spa-common.js': [
             'target/client/third-party/livescript/prelude-browser-min.js',
-            'target/client/third-party/bootstrap/tooltip.js', // -popup.js dependee
+            'target/client/third-party/bootstrap/tooltip.js', # -popup.js dependee
             'target/client/third-party/bootstrap/*.js',
             'target/client/third-party/angular-ui/module.js',
             'target/client/third-party/angular-ui/directives/jq/jq.js',
@@ -301,7 +308,7 @@ module.exports = function(grunt) {
             'client/third-party/diff_match_patch.js',
             'target/client/page/scripts/debiki-diff-match-patch.js',
             'target/client/page/scripts/debiki-page-path.js',
-            // Include the module first; it's needed by modal-dialog.js.
+            # Include the module first; it's needed by modal-dialog.js.
             'target/client/admin/scripts/module-and-services.js',
             'target/client/admin/scripts/*.js'],
 
@@ -314,8 +321,8 @@ module.exports = function(grunt) {
         'public/res/debiki-spa-new-website-choose-name.js': [
             'target/client/new-site/scripts/new-website-choose-name.js'],
 
-        // Warning: Duplicated rule. A corresponding rule is also present
-        // in the Makefile. Keep in sync.
+        # Warning: Duplicated rule. A corresponding rule is also present
+        # in the Makefile. Keep in sync.
         'public/res/debiki-pagedown.js': [
           'modules/pagedown/Markdown.Converter.js',
           'client/compiledjs/PagedownJavaInterface.js'],
@@ -323,16 +330,16 @@ module.exports = function(grunt) {
       },
       editor: {
         options: {
-          banner:
-            "/*!\n" +
-            " * Copyright (C) 2013 Marijn Haverbeke <marijnh@gmail.com>\n" +
-            " * Source code available under the MIT license, see:\n" +
-            " *   http://github.com/marijnh/CodeMirror\n" +
-            " *\n" +
-            " * Parts Copyright (C) 2013 Kaj Magnus Lindberg\n" +
-            " * (a certain codemirror-show-markdown-line-breaks addon only)\n" +
-            " */\n" +
-            "\n",
+          banner: """
+            /*!
+             * Copyright (C) 2013 Marijn Haverbeke <marijnh@gmail.com>\
+             * Source code available under the MIT license, see:
+             *   http://github.com/marijnh/CodeMirror
+             *
+             * Parts Copyright (C) 2013 Kaj Magnus Lindberg
+             * (a certain codemirror-show-markdown-line-breaks addon only)
+             */
+            """
         },
         files: {
           'public/res/codemirror-3-13-custom.js': [
@@ -347,48 +354,47 @@ module.exports = function(grunt) {
             'client/third-party/codemirror/addon/search/search.js',
             'client/third-party/codemirror/addon/search/searchcursor.js',
             'client/third-party/codemirror/addon/edit/matchbrackets.js',
-            // No:
-            //'client/third-party/codemirror/addon/edit/trailingspace.js',
-            // Instead:
+            # No:
+            #'client/third-party/codemirror/addon/edit/trailingspace.js',
+            # Instead:
             'client/third-party/codemirror-show-markdown-line-breaks.js',
           ],
           'public/res/codemirror-3-13-custom.css': [
             'client/third-party/codemirror/lib/codemirror.css',
-            'client/third-party/codemirror/addon/dialog/dialog.css', // for the search dialog
+            'client/third-party/codemirror/addon/dialog/dialog.css', # for the search dialog
             'client/third-party/codemirror-show-markdown-line-breaks.css',
           ],
         }
       },
-      // Finds theme specific files in app/views/themes/<themeName>/<bundleName>/*.css
-      // and concatenates them to public/themes/<themeName>/<bundleName>
-      // and <bundleName> must currently be 'styles.css'.
+      # Finds theme specific files in app/views/themes/<themeName>/<bundleName>/*.css
+      # and concatenates them to public/themes/<themeName>/<bundleName>
+      # and <bundleName> must currently be 'styles.css'.
       themes: {
         files: [{
           expand: true,
           cwd: 'app/views/themes/',
           src: '*/styles.css/*.css',
           dest: 'public/themes/',
-          rename: function(dest, src) {
-            // `dest` is:  public/themes/
-            // `src` is:  <themeName>/<bundleName>/<fileName>
-            grunt.verbose.writeln('Placing source file: ' + src);
-            var matchesArray = src.match(
-                //<theme name>   <bundle name>  <file name>
-                //e.g. ex_theme e.g. styles.css e.g. some-file.css
-                /^([a-z0-9_]+)\/([a-z0-9_.]+)\/[a-z0-9_.-]+$/);
-            var themeName = matchesArray[1];
-            var bundleName = matchesArray[2];
-            grunt.verbose.writeln('in theme/bundle: ' + themeName + '/' + bundleName);
-            return dest + themeName + '/' + bundleName;
-          }
+          rename: (dest, src) ->
+            # `dest` is:  public/themes/
+            # `src` is:  <themeName>/<bundleName>/<fileName>
+            grunt.verbose.writeln('Placing source file: ' + src)
+            matchesArray = src.match(
+                #<theme name>   <bundle name>  <file name>
+                #e.g. ex_theme e.g. styles.css e.g. some-file.css
+                /^([a-z0-9_]+)\/([a-z0-9_.]+)\/[a-z0-9_.-]+$/)
+            themeName = matchesArray[1]
+            bundleName = matchesArray[2]
+            grunt.verbose.writeln('in theme/bundle: ' + themeName + '/' + bundleName)
+            dest + themeName + '/' + bundleName
         }]
       }
     },
     uglify: {
-      // Minifies ./public/res/*.js to *.min.js in the same directory.
+      # Minifies ./public/res/*.js to *.min.js in the same directory.
       server: {
         options: {
-          // Preserves bang comments: /*!  ... */ added by the 'concat' target.
+          # Preserves bang comments: /*!  ... */ added by the 'concat' target.
           preserveComments: 'some'
         },
         expand: true,
@@ -413,14 +419,13 @@ module.exports = function(grunt) {
         files: [
             'app/views/themes/**/*.js',
             'app/views/themes/**/*.css']
-        // tasks: ['???'],
+        # tasks: ['???'],
       }
     }
-  });
+  })
 
-  grunt.registerTask('default', ['livescript', 'wrap', 'stylus', 'concat']);
-  grunt.registerTask('release', ['livescript', 'wrap', 'stylus', 'concat', 'uglify']);
+  grunt.registerTask('default', ['livescript', 'wrap', 'stylus', 'concat'])
+  grunt.registerTask('release', ['livescript', 'wrap', 'stylus', 'concat', 'uglify'])
 
-};
 
-// vim: et ts=2 sw=2 list
+# vim: et ts=2 sw=2 list
