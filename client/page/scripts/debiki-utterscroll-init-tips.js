@@ -16,8 +16,6 @@
  */
 
 
-(function() {
-
 var d = { i: debiki.internal, u: debiki.v0.util };
 var $ = d.i.$;
 
@@ -66,7 +64,5 @@ d.i.initUtterscrollAndTips = function() {
   });
 };
 
-
-})();
 
 // vim: fdm=marker et ts=2 sw=2 tw=80 fo=tcqwn list

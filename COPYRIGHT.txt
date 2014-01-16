@@ -122,6 +122,12 @@ Javascript and CSS:
     The MIT license
     https://github.com/gabceb/jquery-browser-plugin
 
+  - LazyLoad
+    A minified version is inlined in Gruntfile.coffee.
+    Copyright (c) 2011 Ryan Grove <ryan@wonko.com>
+    The MIT license
+    https://github.com/rgrove/lazyload/
+
 Javascript and Java:
 
   - google-diff-match-patch
