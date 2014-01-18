@@ -48,9 +48,13 @@ var debikiServerOrigin = (function() {
 // Show a "Loading comments..." message until they've been loaded.
 $('.debiki-embedded-comments').each(function() {
   var wrapper = $(this);
-  var pageId = wrapper.attr('data-topic-id');
+  var topicIdOrUrl = wrapper.attr('data-topic');
+  if (!topicIdOrUrl) {
+    // Don't include the hash fragment.
+    topicIdOrUrl = window.location.origin + window.location.pathname + window.location.search;
+  }
   var iframe = $('<iframe></iframe>');
-  var iframePath = '/-/embed/comments/' + pageId;
+  var iframePath = '/-/embedded/comments?topicIdOrUrl=' + topicIdOrUrl;
   var iframeUrl = debikiServerOrigin + iframePath;
 
   // Don't `hide()` the iframe, then FireFox acts as if it doesn't exist: FireFox receives

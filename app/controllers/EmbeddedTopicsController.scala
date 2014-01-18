@@ -26,7 +26,7 @@ import debiki.DebikiHttp._
 import java.{util => ju}
 import play.api._
 import play.api.mvc.{Action => _, _}
-import requests.PageRequest
+import requests.{DebikiRequest, PageRequest}
 
 
 /** Resets the password of a PasswordIdentity, in case the user forgot it.
@@ -34,11 +34,39 @@ import requests.PageRequest
 object EmbeddedTopicsController extends mvc.Controller {
 
 
+  private val UrlRegex = "^https?://([^#]+)".r
+  private val IdRegex = "^([a-z0-9_]+)$".r
+
   def isUrlFromEmbeddingUrl(anyPageUrl: String, embeddingUrl: Option[String]): Boolean =
     embeddingUrl.nonEmpty // for now. COULD implement if people post comments to the wrong site
 
 
-  def showTopic(topicId: PageId) = GetAction { request =>
+  /** Derives the discussion id based on the url of the embedding site.
+    * This is done by taking the 16 first characters of a base 36 encoded SHA1 sum.
+    *
+    * Why the first 16? (1 - (10^10/(36^16))) ^ (10^10) = 0.9999878, see http://web2.0calc.com/,
+    * that is, if a website with 1 page per human (10e9 humans) adds Debiki's
+    * comment system, the probability of an id clash is roughly 1 / 100 000.
+    * ((Also, 16 is a good size, from an in-memory point of view? The underlying
+    * char array is padded to a multiple of 16 anyway, and (16*2 + 38) = 70,
+    * round up to 8 boundary -> 72, see:
+    *   http://www.javamex.com/tutorials/memory/string_memory_usage.shtml  ))
+    */
+  def deriveTopicIdFromAnyEmbeddingUrl(topicIdOrUrl: String): PageId = {
+    topicIdOrUrl match {
+      case UrlRegex(urlNoScheme) =>
+        hashSha1Base36DontPad(urlNoScheme) take 16
+      case IdRegex(id) =>
+        id
+      case _ =>
+        throwBadReq("DwE55FU03", s"Bad id or url: `$topicIdOrUrl'")
+    }
+  }
+
+
+  def showTopic(topicIdOrUrl: String) = GetAction { request =>
+
+    val topicId = deriveTopicIdFromAnyEmbeddingUrl(topicIdOrUrl)
 
     val topicPagePath = PagePath(
       tenantId = request.siteId,
@@ -62,7 +90,7 @@ object EmbeddedTopicsController extends mvc.Controller {
   }
 
 
-  def showNonExistingPage(pageReqNoPage: PageGetRequest, topicPagePath: PagePath) = {
+  private def showNonExistingPage(pageReqNoPage: PageGetRequest, topicPagePath: PagePath) = {
     val author = SystemUser.User
     val topicId = topicPagePath.pageId.get
 

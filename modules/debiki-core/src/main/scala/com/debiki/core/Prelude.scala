@@ -367,6 +367,20 @@ object Prelude {
   def hashSha1Base64UrlSafe(text: String): String =
     acb.Base64.encodeBase64URLSafeString(mdSha1.digest(text.getBytes("UTF-8")))
 
+  /** Calculates the SHA1 hash of 'text', returns it in base 36, but the length
+    * of the returned string varies because it is not padded with anything up to
+    * some certain length, for example:
+    * "17" hashes to "tt80woaa11w8brcde626s7nrqra0yk" (no leading '0' added) but
+    * "18" hashes to "ii62gl9o88mm89kwdfxgqcfi0xp8hts" (1 char longer).
+    */
+  def hashSha1Base36DontPad(text: String): String = {
+    val bytes = mdSha1.digest(text.getBytes("UTF-8"))
+    val bigint = new java.math.BigInteger(1, bytes)
+    // This drops leading 0, well okay.
+    val result = bigint.toString(36)
+    result
+  }
+
   // ------ Diff, match, patch
 
   def makePatch(from: String, to: String): String = {
