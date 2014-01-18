@@ -36,6 +36,11 @@ object ResetPasswordController extends mvc.Controller {
   val MaxResetPasswordEmailAgeInHours = 24
 
 
+  def start = mvc.Action { request =>
+    Redirect(routes.ResetPasswordController.showResetPasswordPage.url)
+  }
+
+
   def showResetPasswordPage = GetAction { request =>
     Ok(views.html.resetpassword.specifyEmailAddress(xsrfToken = request.xsrfToken.value))
   }
