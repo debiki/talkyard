@@ -47,8 +47,14 @@ object ResetPasswordController extends mvc.Controller {
 
     anyIdentityAndUser match {
       case Some((identity, user)) =>
-        Logger.info(s"Sending password reset email to: $emailAddress")
-        sendResetPasswordEmailTo(user, emailAddress, request)
+        identity match {
+          case _: PasswordIdentity =>
+            Logger.info(s"Sending password reset email to: $emailAddress")
+            sendResetPasswordEmailTo(user, emailAddress, request)
+          case _ =>
+            Logger.info(s"Sending no-password-to-reset email to: $emailAddress")
+            sendNoPasswordToResetEmail(user, emailAddress, request)
+        }
       case None =>
         // Don't tell the user that this account doesn't exist; that'd be a
         // security issue.
@@ -71,6 +77,24 @@ object ResetPasswordController extends mvc.Controller {
           emailId = emailId,
           siteAddress = request.host,
           expirationTimeInHours = MaxResetPasswordEmailAgeInHours).body
+      })
+    request.dao.saveUnsentEmail(email)
+    Globals.sendEmail(email, request.dao.siteId)
+  }
+
+
+  private def sendNoPasswordToResetEmail(
+        user: User, emailAddress: String, request: ApiRequest[_]) {
+    val email = Email(
+      EmailType.Notification,
+      sendTo = emailAddress,
+      toUserId = Some(user.id),
+      subject = "There is no password to reset",
+      bodyHtmlText = (emailId: String) => {
+        views.html.resetpassword.noPasswordToResetEmail(
+          userName = user.displayName,
+          emailAddress = emailAddress,
+          siteAddress = request.host).body
       })
     request.dao.saveUnsentEmail(email)
     Globals.sendEmail(email, request.dao.siteId)
@@ -106,6 +130,11 @@ object ResetPasswordController extends mvc.Controller {
         // The password identity was present when we started this reset-password wizard.
         throwForbidden( //logAndThrowForbidden(
           "DwE22RV6", s"Password identity gone, email address: `$emailAddress', user deleted?")
+    }
+
+    if (!identity2.isInstanceOf[PasswordIdentity]) {
+      // This cannot happen because `handleResetPasswordForm` checks the identity type.
+      assErr("DwE77903", "Attempting to reset password for a non-PasswordIdentity: " + identity2)
     }
 
     val passwordIdentity = identity2.asInstanceOf[PasswordIdentity]
