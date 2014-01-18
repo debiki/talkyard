@@ -78,6 +78,7 @@ GET   /-/create-embedded-site/specify-embedding-site-address  controllers.Create
 POST  /-/create-embedded-site/specify-embedding-site-address  controllers.CreateEmbeddedSiteController.handleEmbeddingSiteUrlForm
 GET   /-/create-embedded-site/create                          controllers.CreateEmbeddedSiteController.tryCreateEmbeddedSite
 GET   /-/create-embedded-site/welcome-owner                   controllers.CreateEmbeddedSiteController.welcomeOwner
+GET   /-/create-embedded-site/instructions                    controllers.CreateEmbeddedSiteController.embeddingSiteInstructionsPage
 
 GET   /-/admin/                 controllers.Application.viewAdminPage
 

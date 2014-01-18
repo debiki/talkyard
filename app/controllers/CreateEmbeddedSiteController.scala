@@ -160,4 +160,10 @@ object CreateEmbeddedSiteController extends mvc.Controller {
     Ok(views.html.createembeddedsite.welcomeOwner(site))
   }
 
+
+  def embeddingSiteInstructionsPage() = GetAction { request =>
+    val site = request.dao.loadSite()
+    Ok(views.html.createembeddedsite.embeddingSiteInstructionsPage(site))
+  }
+
 }

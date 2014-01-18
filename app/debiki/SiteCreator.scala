@@ -122,7 +122,7 @@ object SiteCreator {
   private def makeNewWebsiteEmail(website: Tenant, siteType: NewSiteType, owner: User): Email = {
     val (body, subject) = siteType match {
       case NewSiteType.EmbeddedComments =>
-        val body = views.html.createembeddedsite.welcomeEmail(website).body
+        val body = views.html.createembeddedsite.welcomeEmail(website, owner.displayName).body
         val subject = o"""Embedded comments enabled for
           http://${website.embeddingSiteUrl getOrDie "DwE45GH0"}"""
         (body, subject)
