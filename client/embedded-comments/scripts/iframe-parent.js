@@ -16,32 +16,10 @@
  */
 
 
-// Some files assume this has been defined:
-window.debiki. internal = {};
-window.debiki.v0 = { util: {} };
+var d = { i: debiki.internal };
 
 
 addEventListener('message', onMessage, false);
-
-
-// Find Debiki server origin, by extracting origin of the debiki-embedded-comments.js script.
-// Then the website admin won't need to repeat the site id or address anywhere.
-var debikiServerOrigin = (function() {
-  var origin;
-  $('script').each(function() {
-    script = $(this);
-    var srcAttr = script.attr('src');
-    var isEmbeddedCommentsScript = srcAttr.search(/\/-\/debiki-embedded-comments.js/) !== -1;
-    if (isEmbeddedCommentsScript) {
-      origin = srcAttr.match(/^[^/]*\/\/[^/]+/)[0];
-    }
-  });
-  if (!origin && console.error) {
-    console.error(
-      'Error extracting Debiki server origin, is there no "/-/debiki-embedded-comments.js" script?');
-  }
-  return origin;
-})();
 
 
 // Create <iframes> for Debiki embedded comments.
@@ -55,7 +33,7 @@ $('.debiki-embedded-comments').each(function() {
   }
   var iframe = $('<iframe></iframe>');
   var iframePath = '/-/embedded/comments?topicIdOrUrl=' + topicIdOrUrl;
-  var iframeUrl = debikiServerOrigin + iframePath;
+  var iframeUrl = d.i.debikiServerOrigin + iframePath;
 
   // Don't `hide()` the iframe, then FireFox acts as if it doesn't exist: FireFox receives
   // no messages at all from it.
@@ -76,7 +54,7 @@ $('.debiki-embedded-comments').each(function() {
 // and the two Utterscroll instances will cooperate via `window.postMessage`.
 jQuery(function($) {
   if (!Modernizr.touch) { // if not a smartphone
-    debiki.Utterscroll.enable();
+    d.i.initUtterscrollAndTips();
   }
 });
 
