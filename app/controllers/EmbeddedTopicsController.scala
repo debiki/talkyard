@@ -34,9 +34,6 @@ import requests.{DebikiRequest, PageRequest}
 object EmbeddedTopicsController extends mvc.Controller {
 
 
-  private val UrlRegex = "^https?://([^#]+)".r
-  private val IdRegex = "^([a-z0-9_]+)$".r
-
   def isUrlFromEmbeddingUrl(anyPageUrl: String, embeddingUrl: Option[String]): Boolean =
     embeddingUrl.nonEmpty // for now. COULD implement if people post comments to the wrong site
 
@@ -52,31 +49,52 @@ object EmbeddedTopicsController extends mvc.Controller {
     * round up to 8 boundary -> 72, see:
     *   http://www.javamex.com/tutorials/memory/string_memory_usage.shtml  ))
     */
-  def deriveTopicIdFromAnyEmbeddingUrl(topicIdOrUrl: String): PageId = {
-    topicIdOrUrl match {
-      case UrlRegex(urlNoScheme) =>
-        hashSha1Base36DontPad(urlNoScheme) take 16
-      case IdRegex(id) =>
-        id
-      case _ =>
-        throwBadReq("DwE55FU03", s"Bad id or url: `$topicIdOrUrl'")
-    }
+  def deriveTopicIdFromUrl(url: String): String = {
+
+    val urlNoScheme =
+      if (url startsWith "http://") url drop "http://".length
+      else if (url startsWith "https://") url drop "https://".length
+      else if (url startsWith "//") url drop 2
+      else url
+
+    val id =  hashSha1Base62DontPad(urlNoScheme) take 16
+    id
   }
 
 
-  def showTopic(topicIdOrUrl: String) = GetAction { request =>
+  def showTopic = GetAction { request =>
+    import controllers.Utils.ValidationImplicits._
+    val topicId = request.queryString.getNoneAsEmpty("topicId")
+    val topicUrl = request.queryString.getNoneAsEmpty("topicUrl")
 
-    val topicId = deriveTopicIdFromAnyEmbeddingUrl(topicIdOrUrl)
+    val theId =
+      if (topicId.length > 16) {
+        // Why would anyone manually specify such a long id? The id is a primary
+        // key and I don't want to waste too much storage space storing ids.
+        throwBadReq("DwE9053fHE3", s"Too long topic id: `$topicId'")
+      }
+      else if (topicId.nonEmpty) {
+        topicId
+      }
+      else if (topicUrl.nonEmpty) {
+        deriveTopicIdFromUrl(topicUrl)
+      }
+      else {
+        throwBadReq("DwE2594Fk9", "Neither topic id nor url specified")
+      }
+
+    if (!Page.isOkayId(theId))
+      throwBadReq("DwE77GJ12", s"Bad topic id: `$theId'")
 
     val topicPagePath = PagePath(
       tenantId = request.siteId,
       folder = "/",
-      pageId = Some(topicId),
+      pageId = Some(theId),
       showId = true,
       pageSlug = "")
 
     val pageReqDefaultRoot: PageGetRequest = PageRequest.forPageThatMightExist(
-      request, pagePathStr = topicPagePath.path, pageId = topicId)
+      request, pagePathStr = topicPagePath.path, pageId = theId)
 
     // Include all top level comments, by specifying no particular root comment.
     val pageReqNoRoot = pageReqDefaultRoot.copyWithNewPageRoot(None)

@@ -38,7 +38,7 @@ POST  /-/login-securesocial-clbk/:provider  controllers.LoginWithSecureSocialCon
 GET   /-/api/logout             controllers.AppLogin.logout
 POST  /-/api/logout             controllers.AppLogin.logout
 
-GET   /-/embedded/comments      controllers.EmbeddedTopicsController.showTopic(topicIdOrUrl)
+GET   /-/embedded-comments      controllers.EmbeddedTopicsController.showTopic
 
 POST  /-/search/site                        controllers.FullTextSearch.searchWholeSite()
 GET   /-/search/site/for/:phrase            controllers.FullTextSearch.searchWholeSiteFor(phrase)

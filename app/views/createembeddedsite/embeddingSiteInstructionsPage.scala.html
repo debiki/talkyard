@@ -49,7 +49,7 @@
       place this HTML where you want the comments to appear:</p>
 
 <pre>&lt;script src="@embeddedCommentsScriptUrl" async defer&gt;&lt;/script&gt;
-&lt;div class="debiki-embedded-comments" <span class="highlighted-topic-id">data-topic=""</span>&gt;
+&lt;div class="debiki-embedded-comments" <span class="highlighted-topic-id">data-topic-id=""</span>&gt;
   &lt;noscript&gt;Please enable Javascript to view comments.&lt;/noscript&gt;
   &lt;p class="powered-by-debiki"&gt;Comments powered by &lt;a href="http://www.debiki.com"&gt;Debiki&lt;/a&gt;.&lt;/p&gt;
 &lt;/div&gt;
@@ -60,10 +60,12 @@
     <p>Optionally, advanced configuration:</p>
     <ul>
       <li>
-        Specify a unique per page id in the <tt>data-topic</tt> attribute
+        Specify a unique per page id in the <tt>data-topic-id</tt> attribute
         (highlighted above). Then, if you ever move your page to another location,
-        the discussion with follow along. Example: <tt>data-topic="12345abcde"</tt>.
-        Be sure to use a different id for each page.
+        the discussion with follow along. Example: <tt>data-topic-id="1234abCD"</tt>.
+        Be sure to use a different id for each page. — Another alternative, if you
+        move your page, is to specify its original URL in a certain <tt>data-topic-url</tt>
+        attribute, for example: <tt>data-topic-url="http://my-blog.example.com/blog-post-123"</tt>.
       </li>
       <li>
         You can place the <tt>&lt;script&gt;</tt> tag in the <tt>&lt;head&gt;</tt> instead,

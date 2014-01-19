@@ -381,6 +381,30 @@ object Prelude {
     result
   }
 
+  def hashSha1Base62DontPad(text: String): String = {
+    val bytes = mdSha1.digest(text.getBytes("UTF-8"))
+    val bigint = new java.math.BigInteger(1, bytes)
+    val result = encodeInBase62(bigint)
+    result
+  }
+
+  private val Base62Alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
+
+  def encodeInBase62(number: BigInt): String = {
+    // Base 62 is > 5 but < 6 bits per char.
+    var result = new StringBuilder(capacity = number.bitCount / 5 + 1)
+    var left = number
+    do {
+      val remainder = (left % 62).toInt
+      left /= 62
+      val char = Base62Alphabet.charAt(remainder)
+      result += char
+    }
+    while (left > 0)
+    result.toString
+  }
+
+
   // ------ Diff, match, patch
 
   def makePatch(from: String, to: String): String = {

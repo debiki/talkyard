@@ -83,6 +83,13 @@ object Page {
   def newEmptyPage(pageRole: PageRole, path: PagePath, author: User) =
     newPage(pageRole, path, PageParts(guid = "?"), author = author)
 
+  def isOkayId(id: String): Boolean =
+    id forall { char =>
+      def isLower = 'a' <= char && char <= 'z'
+      def isUpper = 'A' <= char && char <= 'Z'
+      def isDigit = '0' <= char && char <= '9'
+      isDigit || isLower || isUpper || char == '_'
+    }
 }
 
 

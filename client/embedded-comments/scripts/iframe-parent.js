@@ -26,13 +26,16 @@ addEventListener('message', onMessage, false);
 // Show a "Loading comments..." message until they've been loaded.
 $('.debiki-embedded-comments').each(function() {
   var wrapper = $(this);
-  var topicIdOrUrl = wrapper.attr('data-topic');
-  if (!topicIdOrUrl) {
+  var topicId = wrapper.attr('data-topic-id');
+  var topicUrl = wrapper.attr('data-topic-url');
+  if (!topicUrl) {
     // Don't include the hash fragment.
-    topicIdOrUrl = window.location.origin + window.location.pathname + window.location.search;
+    topicUrl = window.location.origin + window.location.pathname + window.location.search;
   }
   var iframe = $('<iframe></iframe>');
-  var iframePath = '/-/embedded/comments?topicIdOrUrl=' + topicIdOrUrl;
+  var iframePath = topicId ?
+      '/-/embedded-comments?topicId=' + topicId :
+      '/-/embedded-comments?topicUrl=' + topicUrl;
   var iframeUrl = d.i.debikiServerOrigin + iframePath;
 
   // Don't `hide()` the iframe, then FireFox acts as if it doesn't exist: FireFox receives
