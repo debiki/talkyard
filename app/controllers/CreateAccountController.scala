@@ -58,7 +58,7 @@ object CreateAccountController extends mvc.Controller {
         // (doing that would be a security issue: would encourage brute force password
         // breaking attempts).
         Email(EmailType.Notification, sendTo = emailAddress, toUserId = Some(user.id),
-          subject = "Your Account",
+          subject = "You already have an account at " + request.host,
           bodyHtmlText = (emailId: String) => {
             views.html.createaccount.accountAlreadyExistsEmail(
                 user.displayName, emailAddress = emailAddress, siteAddress = request.host).body

@@ -36,18 +36,16 @@
 @views.html.createsite.main(Messages("securesocial.login.title"), css = css) {
   <div class='new-website-welcome-owner'>
 
-    <p>Embedded comments have been setup for your website at @embeddingUrl,
-      and we've sent you and email with login details and instructions, namely this:
+    <p>
+      Embedded comments have been setup for your website at <tt>@embeddingUrl</tt>.
     </p>
-
-    <p>You can log in to moderate the embedded comments here:</p>
-
-    <p>@link(adminUrl)</p>
 
     <p>
-      Embed comments by adding this HTML to your page:<br>
-      (todo ...)
+      We've sent you and email with instructions and login details, which you will
+      also find on the next page:
     </p>
+
+    <a href="@routes.CreateEmbeddedSiteController.embeddingSiteInstructionsPage()">Continue</a>
 
   </div>
 }

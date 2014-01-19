@@ -55,6 +55,7 @@ GET   /-/create-account/user-details/:emailId/:returnToUrl  controllers.CreateAc
 POST  /-/create-account/user-details/:emailId/:returnToUrl  controllers.CreateAccountController.handleUserDetails(emailId, returnToUrl)
 GET   /-/create-account/welcome/:returnToUrl                controllers.CreateAccountController.showWelcomePage(returnToUrl)
 
+GET   /-/reset-password                  controllers.ResetPasswordController.start
 GET   /-/reset-password/specify-email    controllers.ResetPasswordController.showResetPasswordPage
 POST  /-/reset-password/specify-email    controllers.ResetPasswordController.handleResetPasswordForm
 GET   /-/reset-password/email-sent       controllers.ResetPasswordController.showEmailSentPage
@@ -77,6 +78,7 @@ GET   /-/create-embedded-site/specify-embedding-site-address  controllers.Create
 POST  /-/create-embedded-site/specify-embedding-site-address  controllers.CreateEmbeddedSiteController.handleEmbeddingSiteUrlForm
 GET   /-/create-embedded-site/create                          controllers.CreateEmbeddedSiteController.tryCreateEmbeddedSite
 GET   /-/create-embedded-site/welcome-owner                   controllers.CreateEmbeddedSiteController.welcomeOwner
+GET   /-/create-embedded-site/instructions                    controllers.CreateEmbeddedSiteController.embeddingSiteInstructionsPage
 
 GET   /-/admin/                 controllers.Application.viewAdminPage
 
