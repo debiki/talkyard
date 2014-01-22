@@ -146,7 +146,7 @@ case class BrowserPagePatcher(
 
     val pageRoot = request match {
       case p: PageRequest[_] => p.pageRoot
-      case _ => PageRoot.TheBody
+      case _ => Some(PageParts.BodyId)
     }
 
     val serializer = HtmlPageSerializer(
@@ -194,6 +194,9 @@ case class BrowserPagePatcher(
 
   // ========== JSON for posts and edits
 
+
+  def jsonForPost(postId: PostId, page: PageParts): JsValue =
+    jsonForPosts(Seq((Seq(postId), page)))
 
   def jsonForPosts(postIdsAndPages: Seq[(Seq[PostId], PageParts)]): JsValue = {
     jsonForPostsImpl(postIdsAndPages, jsonForEdits = false)

@@ -95,30 +95,13 @@ class Notifier(val systemDao: SystemDao, val siteDaoFactory: SiteDaoFactory)
     }{
       logger.debug("Considering "+ userNotfs.size +" notfs to user "+ userId)
 
-      val siteDao = siteDaoFactory.newSiteDao(
-         QuotaConsumers(tenantId = tenantId))
-      val tenant = siteDao.loadTenant()
-      val userOpt = notfsToMail.usersByTenantAndId.get(tenantId -> userId)
+      val siteDao = siteDaoFactory.newSiteDao(QuotaConsumers(tenantId = tenantId))
+      val anyUser = notfsToMail.usersByTenantAndId.get(tenantId -> userId)
 
-      // Send email, or remember why we didn't.
-      val problemOpt = (tenant.chost, userOpt.map(_.emailNotfPrefs)) match {
-        case (Some(chost), Some(EmailNotfPrefs.Receive)) =>
-          constructAndSendEmail(siteDao, chost, userOpt.get, userNotfs)
-          None
-        case (None, _) =>
-          val problem = "No chost for tenant id: "+ tenantId
-          logger.warn("Skipping email to user id "+ userId +": "+ problem)
-          Some(problem)
-        case (_, None) =>
-          val problem = "User not found"
-          logger.warn("Skipping email to user id "+ userId +": "+ problem)
-          Some(problem)
-        case (_, Some(_)) =>
-          Some("User declines emails")
-      }
+      // Send email, or remember why we didn't and don't try again.
+      val anyProblem = trySendToSingleUser(userId, anyUser, userNotfs, siteDao)
 
-      // If we decided not to send the email, remember not to try again.
-      problemOpt foreach { problem =>
+      anyProblem foreach { problem =>
         siteDao.skipEmailForNotfs(userNotfs,
            debug = "Email skipped: "+ problem)
       }
@@ -126,15 +109,53 @@ class Notifier(val systemDao: SystemDao, val siteDaoFactory: SiteDaoFactory)
   }
 
 
-  private def constructAndSendEmail(siteDao: SiteDao, chost: TenantHost,
+  /** Tries to send an email with one or many notifications to a single user.
+    * Returns any issue that prevented the email from being sent.
+    */
+  private def trySendToSingleUser(userId: UserId, anyUser: Option[User],
+        notfs: Seq[NotfOfPageAction], siteDao: SiteDao): Option[String] = {
+
+    def logWarning(message: String) =
+      logger.warn(s"Skipping email to user id `$userId', site `${siteDao.siteId}': $message")
+
+    if (anyUser.isEmpty) {
+      logWarning("user not found")
+      return Some("User not found")
+    }
+
+    // If email notification preferences haven't been specified, assume the user
+    // wants to be notified of replies. I think most people want that? And if they
+    // don't, there's an unsubscription link in the email.
+    val user = anyUser.get
+    if (user.emailNotfPrefs != EmailNotfPrefs.Receive &&
+        user.emailNotfPrefs != EmailNotfPrefs.Unspecified) {
+      return Some("User declines emails")
+    }
+
+    val site = siteDao.loadSite()
+    if (site.chost.isEmpty && site.embeddingSiteUrl.isEmpty) {
+      val problem = "neither chost nor embedding site url specified"
+      logWarning(problem)
+      return Some(problem)
+    }
+
+    constructAndSendEmail(siteDao, site, user, notfs)
+    None
+  }
+
+
+  private def constructAndSendEmail(siteDao: SiteDao, site: Tenant,
         user: User, userNotfs: Seq[NotfOfPageAction]) {
     // Save the email in the db, before sending it, so even if the server
     // crashes it'll always be found, should the receiver attempt to
     // unsubscribe. (But if you first send it, then save it, the server
     // might crash inbetween and it wouldn't be possible to unsubscribe.)
-    val origin =
+
+    val anyOrigin = site.chost map { chost =>
       (chost.https.required ? "https://" | "http://") + chost.address
-    val email = constructEmail(siteDao, origin, user, userNotfs) getOrElse {
+    }
+
+    val email = constructEmail(siteDao, anyOrigin, user, userNotfs) getOrElse {
       logger.debug(o"""Not sending any email to ${user.displayName} because the page
         or the comment is gone or not approved or something like that.""")
       return
@@ -146,7 +167,7 @@ class Notifier(val systemDao: SystemDao, val siteDaoFactory: SiteDaoFactory)
   }
 
 
-  private def constructEmail(dao: SiteDao, origin: String, user: User,
+  private def constructEmail(dao: SiteDao, anyOrigin: Option[String], user: User,
         notfs: Seq[NotfOfPageAction]): Option[Email] = {
 
     val subject: String =
@@ -156,9 +177,14 @@ class Notifier(val systemDao: SystemDao, val siteDaoFactory: SiteDaoFactory)
     val email = Email(EmailType.Notification, sendTo = user.email, toUserId = Some(user.id),
       subject = subject, bodyHtmlText = (emailId: String) => "?")
 
-    val contents = views.NotfHtmlRenderer(dao, origin).render(notfs)
+    val contents = views.NotfHtmlRenderer(dao, anyOrigin).render(notfs)
     if (contents isEmpty)
       return None
+
+    // If this is an embedded discussion, there is no Debiki canonical host address to use.
+    // So use the site-by-id origin, e.g. http://site-123.debiki.com, which always works.
+    val unsubscriptionUrl =
+      s"${Globals.siteByIdOrigin(dao.siteId)}/?unsubscribe&email-id=${email.id}"
 
     val htmlContent =
       <div>
@@ -169,7 +195,7 @@ class Notifier(val systemDao: SystemDao, val siteDaoFactory: SiteDaoFactory)
           <a href="http://www.debiki.com">Debiki</a>
         </p>
         <p style='font-size: 80%; opacity: 0.65; margin-top: 2em;'>
-          <a href={origin +"/?unsubscribe&email-id="+ email.id}>Unsubscribe</a>
+          <a href={unsubscriptionUrl}>Unsubscribe</a>
         </p>
       </div>.toString
 

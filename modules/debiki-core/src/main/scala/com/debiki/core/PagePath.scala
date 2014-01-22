@@ -274,15 +274,15 @@ object PagePath {
   // PageSlugPtrn:
   //  - PageSlugPtrn: "*+~" have special meanings
   //
-  private val _PageGuidPtrn = "-([a-z0-9_]*)"  // empty guid ok, read above
+  private val _PageGuidPtrn = "-([a-zA-Z0-9_]*)"  // empty guid ok, read above
   private val _PageSlugPtrn = "([^-*+~][^*+~]*)"
   private val _PageGuidAndSlugRegex = (_PageGuidPtrn +"-"+ _PageSlugPtrn).r
   private val _PageGuidRegex = _PageGuidPtrn.r
   private val _PageSlugRegex = _PageSlugPtrn.r
-  private val _BadIdPerhapsOkSlug = "-([a-z0-9]*[^a-z0-9-]+[^-]*)-.*".r
+  private val _BadIdPerhapsOkSlug = "-([a-zA-Z0-9]*[^a-zA-Z0-9-]+[^-]*)-.*".r
   // Catches corrupt page names iff used *after* PageGuidAndSlugRegex.
   // (Broken and effectively not in use??)
-  private val _OkIdBadSlug = (_PageGuidPtrn +"-(.*[^a-z0-9_].*)").r
+  private val _OkIdBadSlug = (_PageGuidPtrn +"-(.*[^a-zA-Z0-9_].*)").r
 
 }
 

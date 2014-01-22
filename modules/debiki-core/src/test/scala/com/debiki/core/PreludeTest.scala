@@ -24,6 +24,27 @@ import Prelude._
 
 class PreludeTest extends Specification {
 
+  "hashSha1Base36DontPad" should {
+    "correctly hash some texts" in {
+      // You can verify these values by installing Ruby and:
+      // > require 'digest/sha1'
+      // > bytes = Digest::SHA1.digest("test")
+      // Digest.hexencode(bytes).to_i(16).to_s(36)
+      // See: http://stackoverflow.com/a/6247636/694469
+
+      hashSha1Base36DontPad("") must_== "phoiac9h4m842xq45sp7s6u21eteeq1"
+
+      // We don't pad with leading "0", so some hashes are shorter than others:
+      hashSha1Base36DontPad("17") must_== "tt80woaa11w8brcde626s7nrqra0yk"
+      hashSha1Base36DontPad("18") must_== "ii62gl9o88mm89kwdfxgqcfi0xp8hts"
+
+      hashSha1Base36DontPad("test") must_== "jrwjerxiekdtj9k82lg930wpkr6tq6r"
+
+      hashSha1Base36DontPad("a longer text \n with \t newline and tab") must_==
+        "btn0j4hnqo6vudh8ic2tpf6tabr3qks"
+    }
+  }
+
   "stripStartEndBlanks" should {
     "convert '' to ''" in { stripStartEndBlanks("") must_== "" }
     "convert ' ' to ''" in { stripStartEndBlanks(" ") must_== "" }

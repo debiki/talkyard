@@ -39,6 +39,11 @@ object CreateSiteController extends mvc.Controller {
   val log = play.api.Logger("app.create-site")
 
 
+  def start = mvc.Action { request =>
+    Redirect(routes.CreateSiteController.showWebsiteOwnerForm.url)
+  }
+
+
   def newWebsiteAddr(websiteName: String, dao: SiteDao): String = {
     def die = throwForbidden(
       "DwE30SC3", "You may not create a new website from this website")
@@ -171,8 +176,9 @@ object CreateSiteController extends mvc.Controller {
         newSiteType,
         request.dao,
         request.ctime,
-        name = newWebsiteName,
-        host = websiteAddr,
+        name = Some(newWebsiteName),
+        host = Some(websiteAddr),
+        embeddingSiteUrl = None,
         ownerIp = request.ip,
         ownerLoginId = loginId,
         ownerIdentity = identity,
@@ -198,7 +204,7 @@ object CreateSiteController extends mvc.Controller {
   }
 
 
-  private def _throwIfMayNotCreateWebsite(request: ApiRequest[_],
+  def _throwIfMayNotCreateWebsite(request: ApiRequest[_],
         newWebsiteAddr: Option[String] = None) {
     if (request.host != "www.debiki.com" &&
         !request.host.contains("localhost:") &&

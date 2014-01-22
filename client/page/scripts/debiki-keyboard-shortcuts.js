@@ -83,12 +83,15 @@ debiki.internal.initKeybdShortcuts = function($) {
     var editFormIf = $editForm.data("dwEditFormInterface");
 
     // Let Ctrl+S show the Save button and the Preview tab.
+    // Broken because I switched to Bootstaps' tabs for now, which doesn't have 
+    // any `$().tabs('select', ...) function.
+    /*
     if (whichChar === 'S' && onlyCtrlDown) {
       $editForm.tabs('select', debiki.internal.EditTabIdPreview);
       var $submitBtn = $editForm.find('input.dw-fi-submit');
       $submitBtn.focus(); // don't click, user should review changes
       return true;
-    }
+    } */
 
     // Let Ctrl+E activate the editor.
     if (whichChar === 'E' && onlyCtrlDown) {

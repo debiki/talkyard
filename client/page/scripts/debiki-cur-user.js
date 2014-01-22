@@ -127,15 +127,26 @@ d.i.makeCurUser = function() {
       handleUserPageData(hiddenUserDataTag.text());
       hiddenUserDataTag.hide().removeClass('dw-user-page-data');
     }
-    else {
+    else { // if (pageExists) {
+      // ... We currently don't know if the page exists. There's a data-page_exists
+      // attribute on the .dw-page <div> but it's not updated if an embedded
+      // comments page is lazily created. Therefore, for now, attempt to load
+      // user credentials always even if it'll fail.
+
       // Query the server.
-      // On failure, do what? Post error to non existing server error
-      // reporting interface?
-      $.get('?page-info&user=me', 'text')
-          .fail(d.i.showServerResponseDialog)  // for now
+      var url = d.i.serverOrigin + '/-/load-my-page-activity?pageId=' + d.i.pageId;
+      $.get(url, 'text')
+          .fail(showErrorIfPageExists)
           .done(function(jsonData) {
         handleUserPageData(jsonData);
       });
+
+      function showErrorIfPageExists() {
+        // This is a bit hacky but it'll go away when I've rewritten the client in Angular-Dart.
+        var pageExistsForSure = $('.dw-page[data-page_exists="true"]').length > 0;
+        if (pageExistsForSure)
+          d.i.showServerResponseDialog(arguments);
+      }
     }
 
     function handleUserPageData(jsonData) {
@@ -212,10 +223,10 @@ function fireLoginImpl(Me) {
   d.i.refreshFormXsrfTokens();
 
   Me.refreshProps();
-  $('#dw-u-info').show()
+  $('.dw-u-info').show()
       .find('.dw-u-name').text(Me.getName());
-  $('#dw-a-logout').show();
-  $('#dw-a-login').hide();
+  $('.dw-a-logout').show();
+  $('.dw-a-login').hide();
 
   // Let Post as ... and Save as ... buttons update themselves:
   // they'll replace '...' with the user name.
@@ -250,9 +261,9 @@ function fireLoginImpl(Me) {
 //  sanitize: unless `false', {name, email, website} will be sanitized.
 function fireLogoutImpl(Me) {
   Me.refreshProps();
-  $('#dw-u-info').hide();
-  $('#dw-a-logout').hide();
-  $('#dw-a-login').show();
+  $('.dw-u-info').hide();
+  $('.dw-a-logout').hide();
+  $('.dw-a-login').show();
 
   // Let `Post as <username>' etc buttons update themselves:
   // they'll replace <username> with `...'.
@@ -316,4 +327,4 @@ d.i.showAllowedActionsOnly = function(anyRootPost) {
 
 })();
 
-// vim: fdm=marker et ts=2 sw=2 tw=80 fo=tcqwn list
+// vim: fdm=marker et ts=2 sw=2 fo=tcqwn list

@@ -108,7 +108,11 @@ object PageParts {
         postId = rmpd(a.postId))
       case a: PostActionDto[_] =>
         val rmpdPaylad = a.payload match {
-          case c: PAP.CreatePost => c.copy(parentPostId = rmpd(c.parentPostId))
+          case c: PAP.CreatePost =>
+            c.parentPostId match {
+              case None => c
+              case Some(parentPostId) => c.copy(parentPostId = Some(rmpd(parentPostId)))
+            }
           case d: PAP.Delete => d.copy(targetActionId = rmpd(d.targetActionId))
           case u: PAP.Undo => u.copy(targetActionId = rmpd(u.targetActionId))
           case x => x
@@ -300,15 +304,15 @@ case class PageParts (
 
 
   lazy val (postsByParentId: Map[PostId, List[Post]]) = {
-    // Sort posts by parent id.
+    // Sort posts by parent id, use PageParts.NoId if there's no parent.
     var postMap = mut.Map[PostId, mut.Set[Post]]()
     for (post <- getAllPosts) {
       def addNewSet() = {
         val set = mut.Set[Post]()
-        postMap.put(post.parentId, set)
+        postMap.put(post.parentIdOrNoId, set)
         set
       }
-      postMap.getOrElse(post.parentId, addNewSet()) += post
+      postMap.getOrElse(post.parentIdOrNoId, addNewSet()) += post
     }
     // Copy to immutable versions.
     def buildImmMap(mutMap: mut.Map[PostId, mut.Set[Post]]): Map[PostId, List[Post]] = {
@@ -475,6 +479,19 @@ case class PageParts (
   def ratingsByUser(withId: UserId): Seq[Rating] =
     ratings.filter(smart(_).identity.map(_.userId) == Some(withId))
 
+  /** Lists all rating tags user 'userId' has assigned to each post s/he has rated.
+    */
+  def ratingTagsByPostId(userId: UserId): Map[PostId, Seq[String]] = {
+    var ratingsMap = Map[PostId, Seq[String]]()
+    // Place old ratings first so they'll be overwritten by more recent ratings of the same post,
+    // since that's the effect of rating something many times.
+    val ratingsOldFirst = ratingsByUser(withId = userId).sortBy(_.ctime.getTime)
+    for (rating <- ratingsOldFirst) {
+      ratingsMap += rating.postId -> rating.tags
+    }
+    ratingsMap
+  }
+
 
   // ====== Older stuff below (everything in use though!) ======
 
@@ -492,6 +509,10 @@ case class PageParts (
     getAllActions.filter(_.isInstanceOf[Post]).asInstanceOf[Seq[Post]]
 
   def postCount = getAllPosts.length
+
+  def commentCount = getAllPosts.filterNot(post => {
+    PageParts.isArticleOrConfigPostId(post.id)
+  }).length
 
   def getPost_!(postId: PostId): Post =
     getPost(postId).getOrElse(runErr(
@@ -533,6 +554,11 @@ case class PageParts (
     }
     (posterUserIds.size, numDeleted, numVisible, numPendingReview, lastDati)
   }
+
+  def topLevelComments: Seq[Post] =
+    postsByParentId.get(PageParts.NoId).map(_ filterNot { post =>
+      PageParts.isArticleOrConfigPostId(post.id)
+    }) getOrElse Nil
 
 
   // -------- Replies
@@ -739,44 +765,3 @@ case class PageParts (
 }
 
 
-
-/**
- * Which post to use as the root post, e.g. when viewing a page, or when
- * sending updates of a page back to the browser (only posts below the
- * root post would be sent).
- */
-sealed abstract class PageRoot {
-  // COULD rename to `id`? Why did I call it `subId`?
-  def subId: PostId
-  // Why did I name it "...OrCreate..."?
-  def findOrCreatePostIn(page: PageParts): Option[Post]
-  def findChildrenIn(page: PageParts): List[Post]
-  def isDefault: Boolean = subId == PageParts.BodyId
-  def isPageConfigPost: Boolean = subId == PageParts.ConfigPostId
-}
-
-
-// No longer needed? Was used in the past when post ids were strigns. Ok remove.
-object PageRoot {
-
-  val TheBody = Real(PageParts.BodyId)
-
-  /** A real post, e.g. the page body post. */
-  case class Real(subId: PostId) extends PageRoot {
-    def findOrCreatePostIn(page: PageParts): Option[Post] = page.getPost(subId)
-    def findChildrenIn(page: PageParts): List[Post] = page.repliesTo(subId)
-  }
-
-  // In the future, something like this:
-  // case class FlaggedPosts -- creates a virtual root post, with all
-  // posts-with-flags as its children.
-  // And lots of other virtual roots that provide whatever info on
-  // the page?
-
-  // No longer needed; was used in the past when post ids were strigns. Ok remove.
-  def apply(id: PostId) = Real(id)
-
-}
-
-
-// vim: fdm=marker et ts=2 sw=2 fo=tcqwn list

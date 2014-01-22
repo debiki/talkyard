@@ -48,6 +48,7 @@ object SiteCreator {
     case object Forum extends NewSiteType
     case object Blog extends NewSiteType
     case object SimpleSite extends NewSiteType
+    case object EmbeddedComments extends NewSiteType
   }
 
 
@@ -65,20 +66,22 @@ object SiteCreator {
         siteType: NewSiteType,
         dao: SiteDao,
         creationDati: ju.Date,
-        name: String,
-        host: String,
+        name: Option[String],
+        host: Option[String],
+        embeddingSiteUrl: Option[String],
         ownerIp: String,
         ownerLoginId: String,
         ownerIdentity: Identity,
         ownerRole: User): Option[(Tenant, User)] = {
 
-    require(isOkayWebsiteName(name))
+    name foreach { n => require(isOkayWebsiteName(n), "DwE18SHN6") }
 
     // CreateWebsite throws error if one creates too many websites
     // from the same IP.
     val (website, ownerAtNewSite) =
       dao.createWebsite(
-        name = name, address = host, ownerIp = ownerIp, ownerLoginId = ownerLoginId,
+        name = name, address = host, embeddingSiteUrl = embeddingSiteUrl,
+        ownerIp = ownerIp, ownerLoginId = ownerLoginId,
         ownerIdentity = ownerIdentity, ownerRole = ownerRole) getOrElse {
       return None
     }
@@ -89,7 +92,7 @@ object SiteCreator {
     val newWebsiteDao = Globals.siteDao(
       siteId = website.id, ip = ownerIp, roleId = None)
 
-    val email = makeNewWebsiteEmail(website, ownerAtNewSite)
+    val email = makeNewWebsiteEmail(website, siteType, ownerAtNewSite)
     newWebsiteDao.saveUnsentEmail(email)
 
     Globals.sendEmail(email, website.id)
@@ -102,6 +105,8 @@ object SiteCreator {
       path = s"/${ConfigValueDao.WebsiteConfigPageSlug}"))
 
     siteType match {
+      case NewSiteType.EmbeddedComments =>
+        // Need create nothing.
       case NewSiteType.Forum =>
         createBlogOrForum(newWebsiteDao, PageRole.Forum, creationDati)
       case NewSiteType.Blog =>
@@ -114,12 +119,21 @@ object SiteCreator {
   }
 
 
-  private def makeNewWebsiteEmail(website: Tenant, owner: User): Email = {
-    val address = website.chost_!.address
-    val message = views.html.createsite.welcomeEmail(address).body
+  private def makeNewWebsiteEmail(website: Tenant, siteType: NewSiteType, owner: User): Email = {
+    val (body, subject) = siteType match {
+      case NewSiteType.EmbeddedComments =>
+        val body = views.html.createembeddedsite.welcomeEmail(website, owner.displayName).body
+        val subject = o"""Embedded comments enabled for
+          http://${website.embeddingSiteUrl getOrDie "DwE45GH0"}"""
+        (body, subject)
+      case _ =>
+        val address = website.chost_!.address
+        val body = views.html.createsite.welcomeEmail(address).body
+        val subject = s"New Debiki website created: http://$address"
+        (body, subject)
+    }
     Email(EmailType.Notification, sendTo = owner.email, toUserId = Some(owner.id),
-      subject = s"New Debiki website created, here: http://$address",
-      bodyHtmlText = (emailId) => message)
+      subject = subject, bodyHtmlText = (emailId) => body)
   }
 
 

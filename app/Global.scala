@@ -114,18 +114,8 @@ object Global extends GlobalSettings {
         AppEdit.showEditForm(pagePath, postId = mainFunValAsInt_!)
       case ("view", GET) =>
         PageViewer.viewPost(pagePath)
-      case ("reply", POST) =>
-        AppReply.handleForm(pagePath, postId = mainFunValAsInt_!)
-      case ("rate", POST) =>
-        App.handleRateForm(pagePath, postId = mainFunValAsInt_!)
-      case ("flag", POST) =>
-        App.handleFlagForm(pagePath, postId = mainFunValAsInt_!)
       case ("delete", POST) =>
         App.handleDeleteForm(pagePath, postId = mainFunValAsInt_!)
-      case ("viewedits", GET) =>
-        AppEditHistory.showForm(pagePath, postId = mainFunValAsInt_!)
-      case ("applyedits", POST) =>
-        AppEditHistory.handleForm(pagePath)
       case ("get-view-new-page-url", GET) =>
         AppCreatePage.getViewNewPageUrl(pagePath)
       case ("view-new-page", GET) =>
@@ -156,12 +146,6 @@ object Global extends GlobalSettings {
         App.feed(pagePath)
       case ("act", GET) =>
         PageViewer.showActionLinks(pagePath, postId = mainFunValAsInt_!)
-      case ("page-info", GET) =>
-        PageViewer.showPageInfo(pagePath)
-      case ("config-user", GET) =>
-        AppConfigUser.showForm(pagePath, userId = mainFunVal_!)
-      case ("config-user", POST) =>
-        AppConfigUser.handleForm(pagePath, userId = mainFunVal_!)
       case ("unsubscribe", GET) =>
         AppUnsubscribe.showForm(tenantId)
       case ("unsubscribe", POST) =>

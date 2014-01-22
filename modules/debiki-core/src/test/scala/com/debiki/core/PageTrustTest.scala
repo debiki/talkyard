@@ -31,11 +31,11 @@ class PageTrustTest extends Specification {
   val GuestUser3 = User("-1003", "GuestUser3", "guest3@example.com", EmailNotfPrefs.Receive)
 
   val GuestLogin = Login("2001", prevLoginId = None, ip = "1.0.0.1", date = date(0),
-    identityId = "1101")
+    identityRef = IdentityRef.Guest("1101"))
   val GuestLogin2 = Login("2002", prevLoginId = None, ip = "1.0.0.2", date = date(1),
-    identityId = "1102")
+    identityRef = IdentityRef.Guest("1102"))
   val GuestLogin3 = Login("2003", prevLoginId = None, ip = "1.0.0.3", date = date(1),
-    identityId = "1103")
+    identityRef = IdentityRef.Guest("1103"))
 
   val body = PageTestValues.bodySkeletonAutoApproved.copy(
     userId = GuestUser.id, loginId = GuestLogin.id)

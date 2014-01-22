@@ -106,13 +106,22 @@ object Utils extends Results with http.ContentTypes {
     HtmlForms(pageReq.xsrfToken.value, pageReq.pageRoot, pageReq.permsOnPage)
 
 
-  def queryStringAndHashToView(pageRoot: PageRoot, pageVersion: Option[ju.Date],
+  def queryStringAndHashToView(pageRoot: AnyPageRoot, pageVersion: Option[ju.Date],
         actionId: Option[ActionId] = None, forceQuery: Boolean = false)
         : String = {
     var params = List[String]()
     if (pageVersion.isDefined) params ::= s"version=${toIso8601T(pageVersion.get)}"
-    if (pageRoot.isDefault && params.nonEmpty) params ::= "?view"
-    else if (!pageRoot.isDefault) params ::= "?view=" + pageRoot.subId
+
+    pageRoot match {
+      case None =>
+        ???
+      case DefaultPageRoot =>
+         if (params.nonEmpty)
+           params ::= "?view"
+      case Some(commentId) =>
+        params ::= "?view=" + commentId
+    }
+
     var queryString = params.mkString("&")
     if (queryString.isEmpty && forceQuery) queryString = "?"
     val hash = actionId.map("#post-"+ _) getOrElse ""

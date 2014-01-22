@@ -92,11 +92,18 @@ del
   background: #888
   color: #fff
 
-// Hide reply button until a page body has been written.
-.dw-t.dw-dummy > .dw-res,
-.dw-t.dw-dummy > .dw-t-vspace
-  display: none
+// Hide reply button until a page body has been written. Unless it's an embedded
+// comments page, then there'll never be any page body, only comments.
+.dw-t.dw-dummy
+  > .dw-res,
+  > .dw-t-vspace
+    display: none
 
+.dw-page[data-page_role="EmbeddedComments"]
+  .dw-t.dw-dummy
+    > .dw-res,
+    > .dw-t-vspace
+      display: block
 
 
 // Page rendering
@@ -108,6 +115,15 @@ del
 html.js.dw-render-actions-pending .dw-as,
 html.js body.dw-render-actions-pending .dw-as
   visibility: hidden
+
+// hide non-root posts until depth derived
+.dw-t:not([class*="dw-depth-"])
+  display: none
+
+// But always show the article and title
+.dw-t.dw-ar-t
+.dw-t#dw-t-65501
+  display: block
 
 
 // Page title
@@ -748,7 +764,9 @@ body.dw-u-ui-simple .dw-a-edit
     // jQuery UI might prefer to set a height and show scrollbars, so:
     height: auto !important
 
-.DW body.dw-fullscreen-dialog-mode > *
+// Re `:not(.ui-widget-overlay)`: show overlays also in fullscreen dialog mode,
+// because some nested dialogs might open in non-fullscreen mode.
+.DW body.dw-fullscreen-dialog-mode > :not(.ui-widget-overlay)
   display: none
 
 
@@ -891,13 +909,22 @@ body.dw-u-ui-simple .dw-a-edit
 //===========================
 
 
+// This avoids scrollbars in the login popup. Otherwise there's some padding-top
+// and -bottom, which surprisingly (?) results in scrollbars but only in the
+// login popup, not on "normal" pages.
+.DW .ui-dialog .ui-dialog-content
+  padding-top: 0
+  padding-bottom: 0
+  margin: 1.2em 0 1.5em
+
+
 // Assume user logged out
-#dw-u-info,
-#dw-a-logout
+.dw-u-info,
+.dw-a-logout
   display: none
 
 #dw-lgi.ui-dialog-content
-  padding: 1.5em 2.7em 1em 2em
+  padding: 0 2.7em 0 2em
 
 #dw-lgi-guest,
 #dw-lgi-pswd,
@@ -938,14 +965,34 @@ body.dw-u-ui-simple .dw-a-edit
   position: absolute
   left: 0 // or IE 7 places it far to the right
 
-.dw-a-login,
-.dw-a-logout
-  white-space: nowrap
-
 .dw-a-login
-  font-size: 200%
   margin-left: 10px
   color: #3872AB
+
+.dw-u-name,
+.dw-a-login,
+.dw-a-logout
+  cursor: pointer
+
+.dw-cmts-tlbr
+
+  margin-top: 1.5em
+
+  .dw-cmts-count
+    font-size: 17px
+    margin-right: 1em
+
+  .dw-u-lgi-lgo
+    display: inline // not block, which the topbar often sets
+
+  .dw-u-name,
+  .dw-a-login,
+  .dw-a-logout
+    color: hsl(0, 0%, 43%)
+
+  .dw-a-logout
+    margin-left: 1em
+
 
 #dw-lgi-pswd .dw-reset-pswd
   display: block
@@ -1124,10 +1171,6 @@ body.dw-login-to-login .dw-login-to-login
 
 // Dialog background made white by javascript.
 
-//.ui-tabs-nav > li
-//  background-color: transparent;
-//
-
 #dw-e-sgs
   overflow: hidden // child height is 100%, so border exdends downw
 
@@ -1174,6 +1217,24 @@ body.dw-login-to-login .dw-login-to-login
 //===========================
 
 // (Some properties defined elsewhere, search for dw-e-tab.)
+
+// Place navigation tabs below the tab contents:
+.tab-content.dw-nav-tabs-below
+
+.nav.nav-tabs.dw-nav-tabs-below
+  border-bottom: none
+  margin-top: -2px
+
+.nav-tabs.dw-nav-tabs-below > li
+  margin-left: 1em
+
+.nav-tabs.dw-nav-tabs-below > li:first-child
+  margin-left: 0
+
+.nav-tabs.dw-nav-tabs-below > li.active > a
+  border-top: 2px solid hsl(0, 100%, 100%)
+  border-bottom-color: hsl(0, 0%, 87%)  // Bootstrap's default border color [introduceVariable]
+  border-radius: 0 0 5px 5px
 
 
 .dw-pri .dw-f-e .dw-e-tabs,
@@ -1266,7 +1327,7 @@ body.dw-login-to-login .dw-login-to-login
 // replies/arrows below, so it's easy to see what they are
 // related to.
 .dw-f-e .dw-submit-set
-  margin-top: 0.5em
+  margin-top: 1.5em
   margin-bottom: 1em
   float: left
 
@@ -1540,72 +1601,6 @@ form .dw-ntf
 .dw-ui-widget-font
   font-family: 'Trebuchet MS', Tahoma, Verdana, Arial, sans-serif
 
-// Remove tab navigation background color and border.
-.dw-pri .ui-tabs .ui-tabs-nav
-  background: transparent
-  border: none
-
-.dw-pri .ui-tabs .ui-tabs-panel
-  border: 1px solid #BBB
-
-// Tabs placed below their content, see: jqueryui.com/demos/tabs/#bottom
-.dw-ui-tabs-bottom
-  position: relative
-
-.dw-ui-tabs-bottom > .ui-tabs-panel
-  height: 140px
-  overflow: auto
-
-.dw-pri .dw-ui-tabs-bottom > .ui-tabs-nav
-  position: absolute !important
-  left: 0
-  bottom: 0
-  right: 0
-  padding: 2px 2px 0
-
-.dw-ui-tabs-bottom > .ui-tabs-nav li
-  margin-top: -2px !important
-  margin-bottom: 3px !important  // [debiki] changed from 1px to 3px
-  border-bottom-width: 1px
-  border-top: 2px transparent
-
-.dw-ui-tabs-bottom > .ui-tabs-nav > .ui-tabs-selected
-  margin-top: -2px !important
-
-// ... My additional fixes
-.dw-ui-tabs-bottom > .ui-tabs-panel
-  margin-bottom: 29px // push the tab naw downwards
-  z-index: 1 // place above, and hide, tab nav button upper borders
-  position: relative // or z-index ignored
-  background: white !important // or won't hide tab nav button upper borders
-
-// ... Make the selected tab nav button's upper border hide the tab panels
-// lower border, so there's effectively no border (since background is white)
-// between the active tab and the tab panel */
-// /* Skip this, the white border overlaps the scrollbar.
-// And on focus, the tab <li> is outlined (which is fairly nice actualy),
-// so there's a border regardless. */
-//  .dw-ui-tabs-bottom > .ui-tabs-nav > li.ui-tabs-selected {
-//    border-top: 2px white; // same as background color
-//    z-index: 2; // place above panel (hides the panel border)
-// }
-
-.dw-pri .dw-ui-tabs-bottom .ui-tabs-nav li
-  border-bottom: 1px solid !important // cancel hiding of bottom border
-
-// ... Don't let other CSS override font size etcetera, that'd affect the
-// tap height — they might overlap with the tab panel, or there might be a glap.
-// Alternatively, COULD config jQuery UI with #dw-pri (instead of .dw-pri),
-// then other CSS wouldn't override jQuery UI so easily.
-.dw-pri.dw-pri .ui-tabs-nav li a
-  font-family: Trebuchet MS, Tahoma, Verdana, Arial, sans-serif
-  font-size: 13px
-  line-height: 17px
-
-// ... Remove "outline border" between active tab and panel
-// — no keep it, it's nice to have
-//.dw-pri.dw-pri .ui-tabs-nav li.ui-tabs-selected a {
-//  outline: none; // or .ui-state-focus on parent <li> —> outline
 
 // Undo settings to .dw-pri .ui-widget, when they affect contents
 // inside widgets, rather than buttons and tabs.

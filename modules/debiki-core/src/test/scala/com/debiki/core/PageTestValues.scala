@@ -43,7 +43,7 @@ trait PageTestValues {
       creationDati = new ju.Date(1000),
       loginId = "101", userId = "?", newIp = None,
       payload = PostActionPayload.CreatePost(
-        parentPostId = PageParts.BodyId,
+        parentPostId = None,
         text = textInitially,
         markup = "",
         approval = None))

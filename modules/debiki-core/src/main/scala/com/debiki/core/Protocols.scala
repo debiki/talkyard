@@ -51,7 +51,7 @@ object Protocols {
       "pageId" -> post.page.id,
       "postId" -> post.id,
       "createdAt" -> toIso8601T(post.creationDati),
-      "parentPostId" -> post.parentId,
+      "parentPostId" -> getNumberOrNull(post.parentId),
       "currentText" -> post.currentText,
       "currentMarkup" -> post.markup,
       "anyDirectApproval" -> getTextOrNull(post.directApproval.map(_.toString)),
@@ -114,7 +114,7 @@ object Protocols {
     import play.api.libs.json.Reads.IsoDateReads
 
     val payload = PAP.CreatePost(
-      parentPostId = (json \ "parentPostId").as[ActionId],
+      parentPostId = (json \ "parentPostId").asOpt[ActionId],
       text = (json \ "currentText").as[String],
       markup = (json \ "currentMarkup").as[String],
       approval = (json \ "anyDirectApproval").asOpt[String].map(Approval.parse _),

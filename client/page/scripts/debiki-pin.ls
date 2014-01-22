@@ -164,7 +164,7 @@ horizontalSettings = $.extend {}, sharedSettings,
 function tellServerChangePinnedPos(item, newPosition)
   postId = item.find('> .dw-t > .dw-p, > .dw-p').dwPostId!
   data = [{ pageId: d.i.pageId, postId, position: newPosition }]
-  d.u.postJson { url:  '/-/pin-at-position', data }
+  d.u.postJson { url:  "#{d.i.serverOrigin}/-/pin-at-position", data }
       .fail d.i.showServerResponseDialog
 
 

@@ -45,8 +45,8 @@ d.i.parentFolderOfPage = (path) ->
 
 
 
-noPageSlugReqex = //^([^?]*/)(-[a-z0-9]+-?)?(\?.*)?$//
-pageSlugReqex = //^([^?]*/)(-[a-z0-9]+-)?([^/?-][^?/]*)(\?.*)?$//
+noPageSlugReqex = //^([^?]*/)(-[a-zA-Z0-9]+-?)?(\?.*)?$//
+pageSlugReqex = //^([^?]*/)(-[a-zA-Z0-9]+-)?([^/?-][^?/]*)(\?.*)?$//
 
 
 
@@ -92,7 +92,7 @@ d.i.changePageSlugIn = (path, { to }) ->
 
 
 d.i.findPageIdIn = (path) ->
-  matches = path.match //^[^?]*/-([a-z0-9]+)(-[^/]*)?(\?.*)?$//
+  matches = path.match //^[^?]*/-([a-zA-Z0-9]+)(-[^/]*)?(\?.*)?$//
   if matches => matches[1]
   else null
 
@@ -104,7 +104,7 @@ d.i.findPageIdIn = (path) ->
  * finds any such page id.
  */
 d.i.findPageIdForNewPage = (path) ->
-  matches = path.match //^.*\?view-new-page=([a-z0-9]+).*$//
+  matches = path.match //^.*\?view-new-page=([a-zA-Z0-9]+).*$//
   if matches => matches[1]
   else null
 

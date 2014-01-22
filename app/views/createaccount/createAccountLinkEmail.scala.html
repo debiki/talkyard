@@ -1,11 +1,17 @@
 @(siteAddress: String, emailId: String, returnToUrl: String, expirationTimeInDays: Int)
 
-Hello,
+<div>
+<p>Hello,</p>
 
+<p>
 To create an account at <tt>@siteAddress</tt>, please follow
 <a href="http://@siteAddress@routes.CreateAccountController.showUserDetailsPage(emailId, returnToUrl)">
-  this link</a>.  (It expires in @{expirationTimeInDays - 1} days.)
+  this link</a>.  It expires in @{expirationTimeInDays - 1} days.
+</p>
 
-Kind regards,
+<p>
+Kind regards,<br>
 Debiki
+</p>
+</div>
 

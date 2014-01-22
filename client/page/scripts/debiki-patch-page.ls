@@ -63,10 +63,15 @@ patchThreadWith = (threadPatch, { onPage, result, overwriteTrees }) ->
   if isNewThread
     $prevThread = d.i.findThread$ threadPatch.prevThreadId
     $parentThread = d.i.findThread$ threadPatch.ancestorThreadIds[0]
+    isTopLevelComment = threadPatch.ancestorThreadIds.length === 0
     if $prevThread.length
       insertThread $newThread, after: $prevThread
     else if $parentThread.length
       appendThread $newThread, to: $parentThread
+    else if isTopLevelComment
+      appendThread $newThread, to: $('.dw-depth-0')
+    else
+      console.debug("Don't know where to place thread #{threadPatch.id}.")
     $newThread.addClass 'dw-m-t-new'
   else
     # If thread wrapped in <li>:
@@ -90,7 +95,7 @@ patchThreadWith = (threadPatch, { onPage, result, overwriteTrees }) ->
   # Don't draw arrows until all posts have gotten their final position.
   # (The caller might remove a horizontal reply button, and show it again,
   # later, and the arrows might be drawn incorrectly if drawn too early.)
-  drawArrows = ->
+  drawArrows = !->
     # It's the parent thread's responsibility to draw arrows to its children.
     $newThread.parent!closest('.dw-t').each d.i.SVG.$clearAndRedrawArrows
   setTimeout drawArrows, 0
@@ -151,22 +156,39 @@ insertThread = ($thread, { after }) ->
     # display: table-cell).
     $pervSibling = $pervSibling.parent!
   $pervSibling.after $thread
+  updateDepths($thread)
 
 
 
-appendThread = ($thread, { to }) ->
+appendThread = !($thread, { to }) ->
   $parent = to
   $childList = $parent.children '.dw-res'
   if !$childList.length
     # This is the first child thread; create empty child thread list.
     $childList = $("<ol class='dw-res'/>").appendTo $parent
   $thread.appendTo $childList
+  updateDepths($thread)
 
 
 replaceOldWith = ($new, { onPage }) ->
   # WOULD verify that $new is located `onPage`, if in the future it'll be
   # possible to edit e.g. blog posts from a blog post list page.
   $('#' + $new.attr 'id').replaceWith $new
+  updateDepths($new)
+
+
+
+!function updateDepths(postOrThreadOrListItem)
+  if postOrThreadOrListItem.is('li:not(.dw-t)')
+    # The thread is laid out horizontally and is thus wrapped in an <li>.
+    thread = postOrThreadOrListItem.children('.dw-t')
+  else
+    # The thread is laid out vertically.
+    thread = postOrThreadOrListItem.closest('.dw-t')
+  # dwDepth calculates and caches the depth in a CSS class.
+  thread.dwDepth!
+  thread.find('.dw-t').each !->
+    $(this).dwDepth!
 
 
 # vim: fdm=marker et ts=2 sw=2 tw=80 fo=tcqwn list

@@ -67,20 +67,29 @@ object Page {
         path: PagePath,
         parts: PageParts,
         publishDirectly: Boolean = false,
-        author: User): Page = {
+        author: User,
+        url: Option[String] = None): Page = {
     val partsInclAuthor = parts + author
     val meta = PageMeta.forNewPage(
       pageRole,
       author,
       parts = partsInclAuthor,
       creationDati = parts.oldestDati getOrElse new ju.Date,
-      publishDirectly = publishDirectly)
+      publishDirectly = publishDirectly,
+      url = url)
     Page(meta, path, ancestorIdsParentFirst = Nil, partsInclAuthor)
   }
 
   def newEmptyPage(pageRole: PageRole, path: PagePath, author: User) =
     newPage(pageRole, path, PageParts(guid = "?"), author = author)
 
+  def isOkayId(id: String): Boolean =
+    id forall { char =>
+      def isLower = 'a' <= char && char <= 'z'
+      def isUpper = 'A' <= char && char <= 'Z'
+      def isDigit = '0' <= char && char <= '9'
+      isDigit || isLower || isUpper || char == '_'
+    }
 }
 
 
@@ -174,6 +183,7 @@ object PageMeta {
         parts: PageParts,
         creationDati: ju.Date = new ju.Date,
         parentPageId: Option[String] = None,
+        url: Option[String] = None,
         publishDirectly: Boolean = false) =
     PageMeta(
       pageId = parts.pageId,
@@ -182,6 +192,7 @@ object PageMeta {
       modDati = creationDati,
       pubDati = if (publishDirectly) Some(creationDati) else None,
       parentPageId = parentPageId,
+      embeddingPageUrl = url,
       pageExists = false,
       cachedTitle = parts.maybeUnapprovedTitleText,
       cachedAuthorDispName = author.displayName,
@@ -222,7 +233,28 @@ object PageMeta {
 }
 
 
-
+/** @param pageId
+  * @param pageRole
+  * @param creationDati
+  * @param modDati
+  * @param pubDati
+  * @param sgfntModDati
+  * @param parentPageId
+  * @param embeddingPageUrl The canonical URL to the page, useful when linking to the page.
+  *            Currently only needed and used for embedded comments, and then it
+  *            is the URL of the embedding page.
+  * @param pageExists
+  * @param cachedTitle
+  * @param cachedAuthorDispName
+  * @param cachedAuthorUserId
+  * @param cachedNumPosters
+  * @param cachedNumActions
+  * @param cachedNumPostsDeleted
+  * @param cachedNumRepliesVisible
+  * @param cachedNumPostsToReview
+  * @param cachedNumChildPages
+  * @param cachedLastVisiblePostDati
+  */
 case class PageMeta(
   pageId: String,
   pageRole: PageRole,
@@ -231,6 +263,7 @@ case class PageMeta(
   pubDati: Option[ju.Date] = None,
   sgfntModDati: Option[ju.Date] = None,
   parentPageId: Option[String] = None,
+  embeddingPageUrl: Option[String],
   pageExists: Boolean = true,
   cachedTitle: Option[String] = None,
   cachedAuthorDispName: String,
@@ -262,6 +295,8 @@ object PageRole {
 
   case object Code extends PageRole
 
+  case object EmbeddedComments extends PageRole
+
   case object Blog extends PageRole {
     override val childRole = Some(BlogPost)
   }
@@ -270,6 +305,8 @@ object PageRole {
     override val parentRole = Some(Blog)
   }
 
+  // Ooops, ForumGroup + Forum + ForumTopic feels over complicated. Should
+  // remove ForumGroup and keep only Forum and ForumTopic.
   case object ForumGroup extends PageRole {
     // BUG, childRole should include ForumGroup itself.
     override val childRole = Some(Forum)
@@ -292,12 +329,14 @@ object PageRole {
     override val parentRole = Some(WikiMainPage)
   }
 
+
   // Hmm, regrettably this breaks should I rename any case object.
   // Perhaps use a match ... case list instead?
   private val _PageRoleLookup = Vector(
-    Generic, Blog, BlogPost,
+    Generic, EmbeddedComments, Blog, BlogPost,
     ForumGroup, Forum, ForumTopic,
-    WikiMainPage, WikiPage, Code).map(x => (x, x.toString))
+    WikiMainPage, WikiPage,
+    Code).map(x => (x, x.toString))
 
   def parse(pageRoleString: String): PageRole =
     _PageRoleLookup.find(_._2 == pageRoleString).map(_._1).getOrElse(

@@ -1,0 +1,90 @@
+@**
+ * Copyright (C) 2013 Kaj Magnus Lindberg (born 1979)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *@
+
+@(tpi: debiki.InternalTemplateProgrammingInterface, xsrfToken: String)
+
+
+@Tpi = @{ debiki.TemplateProgrammingInterface }
+@jsFile = @{ "/-/res/debiki-spa-new-website-choose-name." + Tpi.minMaxJs }
+
+
+@css = @{("""
+
+  h1 { margin-bottom: 1em; }
+
+  label { margin-bottom: 1em; }
+
+  input#embeddingSiteUrl {
+    font-family: monospace;
+  }
+
+  #accept-terms-inp-group {
+    margin-top: 20px;
+  }
+
+  input[name='accepts-terms'],
+  label[for='accepts-terms'] {
+    display: inline;
+  }
+
+  input#accepts-terms {
+    margin: 0;
+  }
+
+  input[type='submit'] {
+    margin: 2.3em 0 0 -1px;
+    min-width: 5em;
+    background: white;
+  }
+
+""")}
+
+
+@newWebsiteDomain = @{ tpi.websiteConfigValue("new-site-domain") }
+
+
+
+@* COULD use own AngularJS app, or rename it so it's clear that it's shared.
+ *@
+
+@views.html.createsite.main(Messages("securesocial.login.title"), css = css,
+    jsFile = jsFile, ngAppName = "NewWebsiteChooseName") {
+  <div>
+
+    <h1>Site Address</h1>
+
+    <form accept-charset='UTF-8' method='post' name="embeddingSiteUrlForm"
+          action="@routes.CreateEmbeddedSiteController.handleEmbeddingSiteUrlForm">
+      <input name='dw-fi-xsrf' type='hidden' value='@xsrfToken'>
+
+      <label for='embeddingSiteUrl'>Enter the address of the site on which you want to
+        enable embedded comments:</label>
+      <input type='text' id='embeddingSiteUrl' name='embeddingSiteUrl' required>
+
+      <p>Example: <tt>http://my-blog.example.com/</tt></p>
+
+      @views.html.createsite.termsOfService(tpi)
+
+      <div>
+        <input class="btn" type="submit" value="Next"
+            ng-disabled="embeddingSiteUrlForm.$invalid">
+      </div>
+    </form>
+
+  </div>
+}
+

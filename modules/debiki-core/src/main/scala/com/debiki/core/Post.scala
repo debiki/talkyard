@@ -54,11 +54,12 @@ case class Post(
   }
 
 
-  def parentId: ActionId = payload.parentPostId
+  def parentId: Option[PostId] = payload.parentPostId
 
-  def parentPost: Option[Post] =
-    if (parentId == id) None
-    else debate.getPost(parentId)
+  // Useul when grouping by parent id: all posts with no parent can be mapped to NoId (= 0).
+  def parentIdOrNoId: PostId = parentId.getOrElse(PageParts.NoId)
+
+  def parentPost: Option[Post] = parentId.flatMap(page.getPost(_))
 
 
   /** Ancestors, starting with the post closest to this post. */
@@ -536,11 +537,11 @@ case class Post(
   lazy val depth: Int = {
     var depth = 0
     var curId = id
-    var nextParent = page.getPost(parentId)
+    var nextParent = parentId.flatMap(page.getPost(_))
     while (nextParent.nonEmpty && nextParent.get.id != curId) {
       depth += 1
       curId = nextParent.get.id
-      nextParent = page.getPost(nextParent.get.parentId)
+      nextParent = nextParent.get.parentId.flatMap(page.getPost(_))
     }
     depth
   }
@@ -553,7 +554,8 @@ case class Post(
   def replies: List[Post] = debate.repliesTo(id)
 
 
-  def siblingsAndMe: List[Post] = debate.repliesTo(parentId)
+  // If there is no parent post, considers all other posts with no parents its siblings.
+  def siblingsAndMe: List[Post] = debate.repliesTo(parentIdOrNoId)
 
 
   def postCollapsedAt: Option[ju.Date] =

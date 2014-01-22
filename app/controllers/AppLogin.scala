@@ -29,7 +29,8 @@ import Utils.{OkHtml}
 
 
 /**
- * Handles login; delegates to AppLoginGuest/OpenId and (?) -OAuth.
+ * Handles login; delegates to: AppLoginGuest, AppLoginOpenId (they should be renamed)
+ * and LoginWithPasswordController and LoginWithSecureSocialController.
  *
  * Usage:
  * You could use views.html.login.loginPage to how a login page in place of the

@@ -38,7 +38,7 @@ import HtmlUtils._
  */
 object HtmlForms {
 
-  def apply(xsrfToken: String, pageRoot: PageRoot, permsOnPage: PermsOnPage) =
+  def apply(xsrfToken: String, pageRoot: AnyPageRoot, permsOnPage: PermsOnPage) =
     new HtmlForms(xsrfToken, pageRoot, permsOnPage)
 
   val XsrfInpName = "dw-fi-xsrf"
@@ -100,7 +100,7 @@ object HtmlForms {
 }
 
 
-class HtmlForms(xsrfToken: String, val pageRoot: PageRoot, val permsOnPage: PermsOnPage) {
+class HtmlForms(xsrfToken: String, val pageRoot: AnyPageRoot, val permsOnPage: PermsOnPage) {
 
   import HtmlForms._
   import HtmlPageSerializer._
@@ -109,12 +109,6 @@ class HtmlForms(xsrfToken: String, val pageRoot: PageRoot, val permsOnPage: Perm
     // It'd be better to use Play's revere routing, rather than these old weird constants.
 
     val termsOfUseUrl = "/terms-of-use"
-
-    // If a form action is the empty string, the browser POSTS to the current
-    // page, says the URI spec: http://www.apps.ietf.org/rfc/rfc3986.html#sec-5.4
-    // COULD rename replyAction -> replyUrl (or reactUrl -> reactAction).
-    val rateAction = "?rate"
-    val flagAction = "?flag"
 
     val loginActionOpenId = "/-/api/login-openid"
     val loginOkAction = ""
@@ -148,10 +142,10 @@ class HtmlForms(xsrfToken: String, val pageRoot: PageRoot, val permsOnPage: Perm
   /** A query string param that remembers which part of a page we are
    *  currently viewing.
    */
-  private def _viewRoot = {
-    // The page body is the default, need not be specified.
-    if (pageRoot.subId == PageParts.BodyId) ""
-    else "&view="+ pageRoot.subId
+  private def _viewRoot = pageRoot match {
+    case DefaultPageRoot => "" // The page body is the default, need not be specified.
+    case Some(commentId) => s"&view=$commentId"
+    case None => "&view=todo-DwE80IWk5" // This isn't in use right now, could fix later
   }
 
 
@@ -246,11 +240,7 @@ class HtmlForms(xsrfToken: String, val pageRoot: PageRoot, val permsOnPage: Perm
 
   def ratingForm =
       <div class='dw-fs dw-fs-r'>
-        <form
-            action={config.rateAction + _viewRoot}
-            accept-charset='UTF-8'
-            method='post'
-            class='dw-f dw-f-r'>
+        <form class='dw-f dw-f-r'>
           { _xsrfToken }
           <p class='dw-inf dw-f-r-inf-many'>
             You can select many rating tags.
@@ -304,8 +294,7 @@ class HtmlForms(xsrfToken: String, val pageRoot: PageRoot, val permsOnPage: Perm
   def flagForm = {
     import FlagForm.{InputNames => Inp}
     <div class='dw-fs' title='Report Comment'>
-      <form id='dw-f-flg' action={config.flagAction + _viewRoot}
-            accept-charset='UTF-8' method='post'>
+      <form class='dw-f-flg'>
         { _xsrfToken }
         <div class='dw-f-flg-rsns'>{
           def input(idSuffix: String, r: FlagReason) = {
@@ -407,7 +396,7 @@ class HtmlForms(xsrfToken: String, val pageRoot: PageRoot, val permsOnPage: Perm
     val cssMayEdit = if (mayEdit) "dw-e-sgs-may-edit" else ""
     val cssArtclBody = if (nipo.id == PageParts.BodyId) " dw-ar-p-bd" else ""
 
-    <form id='dw-e-sgs' action={"?applyedits"+ _viewRoot}
+    <form id='dw-e-sgs'
           class={cssMayEdit} title='Improvements'>
       { _xsrfToken }
       <div class="row">
@@ -484,28 +473,33 @@ class HtmlForms(xsrfToken: String, val pageRoot: PageRoot, val permsOnPage: Perm
         </select>
       </div>
       <div id='dw-e-tabs' class='dw-e-tabs'>
-        <ul>
+
+        <div class="tab-content dw-nav-tabs-below">
+          <div id='dw-e-tab-edit' class='tab-pane active dw-e-tab dw-e-tab-edit'>
+            <textarea id='dw-fi-edit-text' name={Inp.Text}
+                      rows={if (isForTitle) "2" else "7"} cols='38'>{ newText }</textarea>
+          </div>
+          <div id='dw-e-tab-prvw' class={"tab-pane dw-e-tab dw-e-tab-prvw dw-p-bd"+ cssArtclBody}>
+            <div class='dw-p-bd-blk'/>
+          </div>
+          <div id='dw-e-tab-diff' class='tab-pane dw-e-tab dw-e-tab-diff'></div>
+          { // In debiki.js, updateEditFormDiff() uses textarea.val()
+          // (i.e. newText) if there's no .dw-e-src-old tag.
+          if (postToEdit.currentText == newText) Nil
+          else <pre class='dw-e-src-old'>{postToEdit.currentText}</pre> }
+        </div>
+
+        {/* Place the edit/diff/preview tabs below the content, close to the Submit
+        button. Otherwise people (my father) tend not to notice the tabs,
+        if the edit form is tall (then there'd be lots of space & text
+        between the tabs and the submit & cancel button). */}
+        <ul class="nav nav-tabs dw-nav-tabs-below">
           <li><a href='#dw-e-tab-edit'>Edit</a></li>
           <li><a href='#dw-e-tab-diff'>Diff</a></li>
           <li><a href='#dw-e-tab-prvw'>Preview</a></li>
         </ul>
-        <div id='dw-e-tab-edit' class='dw-e-tab dw-e-tab-edit'>
-          <textarea id='dw-fi-edit-text' name={Inp.Text}
-                    rows={if (isForTitle) "2" else "7"} cols='38'>{
-            newText
-          }</textarea>
-        </div>
-        <div id='dw-e-tab-prvw'
-             class={"dw-e-tab dw-e-tab-prvw dw-p-bd"+ cssArtclBody}>
-          <div class='dw-p-bd-blk'/>
-        </div>
-        <div id='dw-e-tab-diff' class='dw-e-tab dw-e-tab-diff'>
-        </div>
-        { // In debiki.js, updateEditFormDiff() uses textarea.val()
-          // (i.e. newText) if there's no .dw-e-src-old tag.
-          if (postToEdit.currentText == newText) Nil
-          else <pre class='dw-e-src-old'>{postToEdit.currentText}</pre> }
       </div>
+
       { termsAgreement("Submit as ...") }
       <div class='dw-f-e-sugg-info'>You are submitting a
         <strong>suggestion</strong>.</div>

@@ -367,6 +367,7 @@ object Prelude {
   def hashSha1Base64UrlSafe(text: String): String =
     acb.Base64.encodeBase64URLSafeString(mdSha1.digest(text.getBytes("UTF-8")))
 
+
   // ------ Diff, match, patch
 
   def makePatch(from: String, to: String): String = {

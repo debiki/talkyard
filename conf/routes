@@ -20,6 +20,7 @@
 # dependency ? see:
 #   https://groups.google.com/forum/?fromgroups=#!topic/play-framework/cVqBvywCs4k
 
+GET   /-/login-popup            controllers.LoginPopupController.showLoginPopup(mode)
 GET   /-/login/:provider        controllers.AppLogin.loginWith(provider, returnToUrl)
 POST  /-/login                  controllers.AppLogin.loginWithPostData(returnToUrl = "")
 POST  /-/logout                 controllers.AppLogin.logout
@@ -37,6 +38,8 @@ POST  /-/login-securesocial-clbk/:provider  controllers.LoginWithSecureSocialCon
 GET   /-/api/logout             controllers.AppLogin.logout
 POST  /-/api/logout             controllers.AppLogin.logout
 
+GET   /-/embedded-comments      controllers.EmbeddedTopicsController.showTopic
+
 POST  /-/search/site                        controllers.FullTextSearch.searchWholeSite()
 GET   /-/search/site/for/:phrase            controllers.FullTextSearch.searchWholeSiteFor(phrase)
 POST  /-/search/section/:pageId             controllers.FullTextSearch.searchSiteSection(pageId)
@@ -52,6 +55,7 @@ GET   /-/create-account/user-details/:emailId/:returnToUrl  controllers.CreateAc
 POST  /-/create-account/user-details/:emailId/:returnToUrl  controllers.CreateAccountController.handleUserDetails(emailId, returnToUrl)
 GET   /-/create-account/welcome/:returnToUrl                controllers.CreateAccountController.showWelcomePage(returnToUrl)
 
+GET   /-/reset-password                  controllers.ResetPasswordController.start
 GET   /-/reset-password/specify-email    controllers.ResetPasswordController.showResetPasswordPage
 POST  /-/reset-password/specify-email    controllers.ResetPasswordController.handleResetPasswordForm
 GET   /-/reset-password/email-sent       controllers.ResetPasswordController.showEmailSentPage
@@ -59,6 +63,7 @@ GET   /-/reset-password/choose-password/:resetPasswordEmailId  controllers.Reset
 POST  /-/reset-password/choose-password/:resetPasswordEmailId  controllers.ResetPasswordController.handleNewPasswordForm(resetPasswordEmailId)
 GET   /-/reset-password/password-changed controllers.ResetPasswordController.showPasswordChangedPage
 
+GET   /-/create-site                controllers.CreateSiteController.start
 GET   /-/create-site/choose-owner   controllers.CreateSiteController.showWebsiteOwnerForm
 GET   /-/create-site/choose-type    controllers.CreateSiteController.showSiteTypeForm
 POST  /-/create-site/choose-type    controllers.CreateSiteController.handleSiteTypeForm
@@ -67,10 +72,25 @@ POST  /-/create-site/choose-name    controllers.CreateSiteController.handleWebsi
 GET   /-/create-site/create         controllers.CreateSiteController.tryCreateWebsite
 GET   /-/create-site/welcome-owner  controllers.CreateSiteController.welcomeOwner
 
+GET   /-/create-embedded-site                                 controllers.CreateEmbeddedSiteController.start
+GET   /-/create-embedded-site/choose-owner                    controllers.CreateEmbeddedSiteController.showSiteOwnerForm
+GET   /-/create-embedded-site/specify-embedding-site-address  controllers.CreateEmbeddedSiteController.showEmbeddingSiteUrlForm
+POST  /-/create-embedded-site/specify-embedding-site-address  controllers.CreateEmbeddedSiteController.handleEmbeddingSiteUrlForm
+GET   /-/create-embedded-site/create                          controllers.CreateEmbeddedSiteController.tryCreateEmbeddedSite
+GET   /-/create-embedded-site/welcome-owner                   controllers.CreateEmbeddedSiteController.welcomeOwner
+GET   /-/create-embedded-site/instructions                    controllers.CreateEmbeddedSiteController.embeddingSiteInstructionsPage
+
 GET   /-/admin/                 controllers.Application.viewAdminPage
 
+POST  /-/configure-user         controllers.AppConfigUser.handleConfiguration()
+GET   /-/load-my-page-activity  controllers.PageViewer.loadMyPageActivity(pageId)
+POST  /-/reply                  controllers.AppReply.handleReply
+POST  /-/rate                   controllers.Application.rate
+POST  /-/flag                   controllers.Application.flag
 GET   /-/edit                   controllers.AppEdit.showEditFormAnyPage(pageId, pagePath, pageRole, postId)
 POST  /-/edit                   controllers.AppEdit.edit
+GET   /-/improvements           controllers.AppEditHistory.showForm(pageId, postId)
+POST  /-/improve                controllers.AppEditHistory.handleForm(pageId)
 POST  /-/pin-at-position        controllers.Pin.pinAtPosition
 POST  /-/wrap-forums-in-group   controllers.AppForum.wrapForumsInNewGroup
 #POST /-/move-pages             controllers.AppMoveRenamePage.movePages
@@ -97,5 +117,7 @@ GET   /-/site/*file             controllers.SiteAssetBundles.at(file)
 # updated by the deployment script (asset fingerprinting).
 GET   /-/assets/39/*file         controllers.Assets.at(path = "/public/res", file)
 GET   /robots.txt               controllers.Assets.at(path = "/public", file = "robots.txt")
+GET   /-/debiki-embedded-comments.js   controllers.Assets.at(path = "/public/res", file = "embedded-comments.js")
+GET   /-/debiki-embedded-comments.css  controllers.Assets.at(path = "/public/res", file = "debiki-embedded-comments.css")
 GET   /-/*file                  controllers.Assets.at(path = "/public", file)
 GET   /favicon.ico              controllers.Assets.at(path = "/public/site/img", file = "favicon-test-2.ico")

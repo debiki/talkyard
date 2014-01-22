@@ -61,7 +61,7 @@ d.i.rootPostId = (function() {
   var nodes = $('.dw-depth-0');
   var anyArticle = nodes.filter('.dw-ar-t');
   var rootPostNode = anyArticle.length == 1 ? anyArticle : $(nodes[0]);
-  var id = rootPostNode.length ?
+  var id = rootPostNode.length && rootPostNode.attr('id') ?
       rootPostNode.attr('id').substr(5) : undefined; // drops initial `dw-t-'
   return id;
 })();
@@ -291,6 +291,11 @@ function renderPageEtc() {
   var steps = [];
 
   steps.push(function() {
+    // Add '.dw-depth-NNN' class. (dwDepth() does that.)
+    $posts.each(function() {
+      $(this).dwDepth();
+    });
+
     d.i.layoutThreads();
     initStep1();
     $('html').removeClass('dw-render-actions-pending');
@@ -377,13 +382,13 @@ function renderEmptyPage() {
 };
 
 
-if (!d.i.rootPostId) {
-  // Skip most of the rendering step, since there is no root post.
-  renderEmptyPage();
-  return;
+if ($('.dw-page').length) {
+  renderPageEtc();
 }
-
-renderPageEtc();
+else {
+  // Skip most of the rendering step, since there is no Debiki page present.
+  renderEmptyPage();
+}
 
 
 //----------------------------------------

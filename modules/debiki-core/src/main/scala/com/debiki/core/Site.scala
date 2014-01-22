@@ -23,11 +23,12 @@ package com.debiki.core
   */
 case class Tenant(
   id: String,
-  name: String,
+  name: Option[String],
   creatorIp: String,
   creatorTenantId: String,
   creatorLoginId: String,
   creatorRoleId: String,
+  embeddingSiteUrl: Option[String],
   hosts: List[TenantHost]
 ){
   // Reqiure at most 1 canonical host.

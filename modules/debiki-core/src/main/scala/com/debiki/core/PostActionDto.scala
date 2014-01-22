@@ -69,16 +69,20 @@ object PostActionDto {
       loginId: String,
       userId: String,
       newIp: Option[String],
-      parentPostId: ActionId,
+      parentPostId: Option[ActionId],
       text: String,
       markup: String,
       approval: Option[Approval],
-      where: Option[String] = None) =
+      where: Option[String] = None) = {
+    if (Some(id) == parentPostId)
+      assErr("DwE23GFf0")
+
     PostActionDto(
       id, creationDati, postId = id, loginId = loginId, userId = userId, newIp = newIp,
       payload = PAP.CreatePost(
         parentPostId = parentPostId, text = text,
         markup = markup, approval = approval, where = where))
+  }
 
 
   def forNewTitleBySystem(text: String, creationDati: ju.Date) =
@@ -94,14 +98,14 @@ object PostActionDto {
   def forNewTitle(text: String, creationDati: ju.Date,
                loginId: String, userId: String, approval: Option[Approval]) =
     forNewPost(PageParts.TitleId, creationDati, loginId = loginId, userId = userId,
-      newIp = None, parentPostId = PageParts.TitleId, text = text,
+      newIp = None, parentPostId = None, text = text,
       markup = Markup.DefaultForPageTitle.id, approval = approval)
 
 
   def forNewPageBody(text: String, creationDati: ju.Date, pageRole: PageRole,
                   loginId: String, userId: String, approval: Option[Approval]) =
     forNewPost(PageParts.BodyId, creationDati, loginId = loginId, userId = userId,
-      newIp = None, parentPostId = PageParts.BodyId, text = text,
+      newIp = None, parentPostId = None, text = text,
       markup = Markup.defaultForPageBody(pageRole).id, approval = approval)
 
 
@@ -112,11 +116,11 @@ object PostActionDto {
         loginId: String = null,
         userId: String = null,
         newIp: Option[String] = null,
-        parentPostId: ActionId = PageParts.NoId,
+        parentPostId: Option[PostId] = null,
         text: String = null,
         markup: String = null,
-        approval: Option[Approval] = null): PostActionDto[PAP.CreatePost] =
-    PostActionDto(
+        approval: Option[Approval] = null): PostActionDto[PAP.CreatePost] = {
+    val theCopy = PostActionDto(
       id = if (id != PageParts.NoId) id else old.id,
       postId = if (id != PageParts.NoId) id else old.id, // same as id
       creationDati =  if (creationDati ne null) creationDati else old.creationDati,
@@ -124,11 +128,16 @@ object PostActionDto {
       userId = if (userId ne null) userId else old.userId,
       newIp = if (newIp ne null) newIp else old.newIp,
       payload = PAP.CreatePost(
-        parentPostId =
-          if (parentPostId != PageParts.NoId) parentPostId else old.payload.parentPostId,
+        parentPostId = if (parentPostId ne null) parentPostId else old.payload.parentPostId,
         text = if (text ne null) text else old.payload.text,
         markup = if (markup ne null) markup else old.payload.markup,
         approval = if (approval ne null) approval else old.payload.approval))
+
+    if (Some(theCopy.id) == theCopy.payload.parentPostId)
+      assErr("DwE65DK2")
+
+    theCopy
+  }
 
 
   def toEditPost(
@@ -236,7 +245,7 @@ object PostActionPayload {
     *  generic comment that results in ?? arrows to e.g. 3 other comments ??
     */
   case class CreatePost(
-    parentPostId: ActionId,
+    parentPostId: Option[PostId],
     text: String,
     markup: String,
     approval: Option[Approval],

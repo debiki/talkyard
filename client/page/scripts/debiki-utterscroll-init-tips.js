@@ -16,8 +16,6 @@
  */
 
 
-(function() {
-
 var d = { i: debiki.internal, u: debiki.v0.util };
 var $ = d.i.$;
 
@@ -37,7 +35,9 @@ var tipsHtmlStr =
  * use the horizontal scrollbar.
  */
 d.i.initUtterscrollAndTips = function() {
-  d.u.bugIf(Modernizr.touch);
+  if (Modernizr.touch && console.error)
+    console.error('Utterscroll loaded on touch device');
+
   // Activate Utterscroll, and show tips if people use the window scrollbars,
   // hide it on utterscroll.
   var hasUtterscrolled = false;
@@ -66,7 +66,5 @@ d.i.initUtterscrollAndTips = function() {
   });
 };
 
-
-})();
 
 // vim: fdm=marker et ts=2 sw=2 tw=80 fo=tcqwn list

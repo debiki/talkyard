@@ -31,7 +31,7 @@ d.i.showGuestLoginDialog = !(loginAndContinue) ->
       name: dialog.find('#dw-fi-lgi-name').val!
       email: dialog.find('#dw-fi-lgi-email').val!
       url: dialog.find('#dw-fi-lgi-url').val!
-    d.u.postJson { url: '/-/login-guest', data }
+    d.u.postJson { url: "#{d.i.serverOrigin}/-/login-guest", data }
       .fail d.i.showServerResponseDialog
       .done loginAndContinue
       .always !-> dialog.dialog 'close'
@@ -53,17 +53,18 @@ function guestLoginDialogHtml
   $('''
     <div class="dw-fs" id="dw-lgi-guest-dlg" title="Login as Guest">
       <div class="form-group">
-        <label for="dw-fi-lgi-name">Enter your name:</label><br>
+        <label for="dw-fi-lgi-name">Enter your name</label><br>
         <input id="dw-fi-lgi-name" type="text" size="30" maxlength="100"
             name="dw-fi-lgi-name" value="Anonymous" tabindex="110" class="form-control">
       </div>
       <div class="form-group">
-        <label for="dw-fi-lgi-email">Email: (optional, not shown)</label><br>
+        <label for="dw-fi-lgi-email">Email (optional, not shown)</label><br>
+        <p>If you want to be notified of replies to your comments:</p>
         <input id="dw-fi-lgi-email" type="text" size="30" maxlength="100"
             name="dw-fi-lgi-email" value="" tabindex="120" class="form-control">
       </div>
       <div class="form-group">
-        <label for="dw-fi-lgi-url" id="dw-fi-lgi-url-lbl">Website: (optional)</label><br>
+        <label for="dw-fi-lgi-url" id="dw-fi-lgi-url-lbl">Website (optional)</label><br>
         <input id="dw-fi-lgi-url" type="text" size="30" maxlength="200"
             name="dw-fi-lgi-url" value="" tabindex="130" class="form-control">
       </div>

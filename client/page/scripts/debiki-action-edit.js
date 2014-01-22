@@ -22,13 +22,6 @@ var d = { i: debiki.internal, u: debiki.v0.util };
 var $ = d.i.$;
 
 
-d.i.EditTabIdEdit = 0;
-d.i.EditTabIdDiff = 1;
-d.i.EditTabIdPreview = 2;
-d.i.EditTabIdLast = d.i.EditTabIdPreview;
-d.i.EditTabCount = 3;
-
-
 var onEditPreviewCallbacks = [];
 debiki.onEditPreviewShown = function(callback) {
   onEditPreviewCallbacks.push(callback);
@@ -87,7 +80,8 @@ function _$showEditFormImpl() {
     // (The page path is needed if the page doesn't exist, so the server has
     // some way to find out which PermsOnPage to show.)
     var url =
-        '/-/edit?pageId='+ pageMeta.pageId +
+        d.i.serverOrigin + '/-/edit' +
+        '?pageId='+ pageMeta.pageId +
         '&pagePath='+ pageMeta.pagePath +
         '&postId='+ postId +
         '&pageRole=' + pageMeta.pageRole;
@@ -107,7 +101,7 @@ function _$showEditFormImpl() {
   // reuse the old hidden form, so any edits aren't lost.
   var $oldEditForm = $post.children('.dw-f-e');
   if ($oldEditForm.length) {
-    $oldEditForm.find('.dw-e-tabs').tabs('select' , d.i.EditTabIdEdit);
+    $oldEditForm.find('.dw-e-tabs a[href^="#dw-e-tab-edit"]').click();
     $oldEditForm.show();
     $postBody.hide();
     scrollPostIntoView();
@@ -125,7 +119,7 @@ function _$showEditFormImpl() {
     var $suggestOnlyHelp = $editForm.find('.dw-f-e-sugg-info');
 
     var $editTabs = $editForm.children('.dw-e-tabs');
-    var $tabPanelLinks = $editTabs.find('> ul > li > a');
+    var $tabPanelLinks = $editTabs.find('> ul.nav-tabs > li > a');
     var $editTabLink = $tabPanelLinks.filter('a[href^="#dw-e-tab-edit"]');
     var $diffTabLink = $tabPanelLinks.filter('a[href^="#dw-e-tab-diff"]');
     var $previewTabLink = $tabPanelLinks.filter('a[href^="#dw-e-tab-prvw"]');
@@ -220,7 +214,8 @@ function _$showEditFormImpl() {
     // the user clicks Enter on the editor *tab link*.
     $editTabLink.keydown(function(event) {
       if (event.which !== $.ui.keyCode.ENTER) return;
-      if ($editTabs.tabs('option', 'selected') !== d.i.EditTabIdEdit) {
+      if (!$editPanel.is(':visible')) {
+          //$editTabs.tabs('option', 'selected') !== d.i.EditTabIdEdit) {
         // Only activate the editor if the user clicks when the panel is
         // already  visible. Instead, let jQuery UI handle the click
         // — it will show the edit panel.
@@ -252,88 +247,85 @@ function _$showEditFormImpl() {
         140, $(window).height() - approxTitleAndBtnsHeight);
     var minPanelHeight = Math.max(140, $postBody.height() + 60);
     if (minPanelHeight > maxPanelHeight) minPanelHeight = maxPanelHeight;
+    var lastHeight = null;
 
-    // Place the edit/diff/preview tabs below the content, close to the Submit
-    // button. Otherwise people (my father) tend not to notice the tabs,
-    // if the edit form is tall (then there'd be lots of space & text
-    // between the tabs and the submit & cancel button).
     // Clearfix the tabs, because .dw-p-bd makes the preview tab float left.
-    $editTabs.addClass('dw-ui-tabs-bottom ui-helper-clearfix').tabs({
-      selected: d.i.EditTabIdEdit,
-      show: function(event, ui) {
-        // Sync the edit panel <textarea> with any codeMirrorEditor,
-        // so the diff and preview tabs will work correctly.
-        if (codeMirrorEditor) codeMirrorEditor.save();
-        showIsSuggestionTips();
+    $editTabs.addClass('ui-helper-clearfix');
 
-        // Update the tab to be shown.
-        var $panel = $(ui.panel);
-        switch (ui.panel.id) {
-          case $editPanel.attr('id'):
-            $editTabLink.focus();
-            break;
-          case $diffPanel.attr('id'):
-            $diffTabLink.focus();
-            $(this).each($updateEditFormDiff);
-            break;
-          case $previewPanel.attr('id'):
-            $previewTabLink.focus();
-            $(this).each($updateEditFormPreview);
-            $.each(onEditPreviewCallbacks, function(index, callback) {
-              callback($previewPanel.attr('id'));
-            });
-            break;
-          default: d.u.die('[error DwE4krERS]');
-        };
+    $tabPanelLinks.click(function(e) {
+      e.preventDefault();
 
-        // Resize the root post dynamically, fix size of other posts.
-        // Then e.g. CodeMirror can make the root post editor taller
-        // dynamically, and the preview panel adjusts its size.
-        $panel.height('auto');
+      // Sync the edit panel <textarea> with any codeMirrorEditor,
+      // so the diff and preview tabs will work correctly.
+      if (codeMirrorEditor) codeMirrorEditor.save();
 
-        // But don't push the Submit/Cancel buttons of screen.
-        $panel.css('max-height', maxPanelHeight +'px');
+      showIsSuggestionTips();
 
-        // If CodeMirror isn't enabled and thus auto-resize the <textarea>,
-        // then resize it manually, so it's as tall as the other panels.
-        // {{{ Also don't shrink any panel
-        // because: (and old comment of mine follows)
-        //  "Don't reduce the form heigt, because if the form is at the
-        //  very bottom of the screen, everything would jump downwards
-        //  when the browser window shrinks."
-        //  [[later: Jump downwards, and vanish outside the browser window?
-        //  was that what happened?]]
-        // And: (another old hard to understand comment)
-        //  "jQuery UI shows the panels before the `show' event is triggered,
-        //  so unless the other panels are resized *before* one of them is
-        //  shown, that other panel might be smaller than the current one,
-        //  causing the window to shrink and everything to jump downwards
-        //  (if you're viewing the bottom of the page).
-        //  So change the height of all panels — then they won't shrink
-        //  later, when shown."  }}}
-        if (!codeMirrorEditor) {
-          if (minPanelHeight < $panel.height())
-            minPanelHeight = $panel.height();
-          else
-            $panels.height(minPanelHeight);
-        }
+      $(this).tab('show');
+
+      var tabPanelId = $(this).attr('href').substring(1, 999);
+      switch (tabPanelId) {
+        case $editPanel.attr('id'):
+          $editTabLink.focus();
+          break;
+        case $diffPanel.attr('id'):
+          $diffTabLink.focus();
+          $editForm.each($updateEditFormDiff);
+          break;
+        case $previewPanel.attr('id'):
+          $previewTabLink.focus();
+          $editForm.each($updateEditFormPreview);
+          $.each(onEditPreviewCallbacks, function(index, callback) {
+            callback($previewPanel.attr('id'));
+          });
+          break;
+        default: d.u.die('[error DwE4krERS]');
+      };
+
+      var $panel = $('#' + tabPanelId);
+
+      // Resize the root post dynamically, fix size of other posts.
+      // Then e.g. CodeMirror can make the root post editor taller
+      // dynamically, and the preview panel adjusts its size.
+      $panel.height('auto');
+
+      if (lastHeight && $panel.height() < lastHeight) {
+        $panel.height(lastHeight);
+      }
+      else {
+        lastHeight = $panel.height();
+      }
+
+      // But don't push the Submit/Cancel buttons of screen.
+      $panel.css('max-height', maxPanelHeight +'px');
+
+      // If CodeMirror isn't enabled and thus auto-resize the <textarea>,
+      // then resize it manually, so it's as tall as the other panels.
+      // {{{ Also don't shrink any panel
+      // because: (and old comment of mine follows)
+      //  "Don't reduce the form heigt, because if the form is at the
+      //  very bottom of the screen, everything would jump downwards
+      //  when the browser window shrinks."
+      //  [[later: Jump downwards, and vanish outside the browser window?
+      //  was that what happened?]]
+      // And: (another old hard to understand comment)
+      //  "jQuery UI shows the panels before the `show' event is triggered,
+      //  so unless the other panels are resized *before* one of them is
+      //  shown, that other panel might be smaller than the current one,
+      //  causing the window to shrink and everything to jump downwards
+      //  (if you're viewing the bottom of the page).
+      //  So change the height of all panels — then they won't shrink
+      //  later, when shown."  }}}
+      if (!codeMirrorEditor) {
+        if (minPanelHeight < $panel.height())
+          minPanelHeight = $panel.height();
+        else
+          $panels.height(minPanelHeight);
       }
     });
 
-    // Prevent tab float drop.
-    // If the $editForm is narrow, the tabs will float drop. Since they're
-    // placed below the form, they'll actually float drop *upwards*, and
-    // be hidden below the form. One way to avoid this, is making
-    // the .tabs-nav very wide. (This is a stupid fix — it'll break
-    // should you add perhaps two more tabs.)
-    var $tabsNav = $editTabs.children('.ui-tabs-nav');
-    $tabsNav.css('min-width', '300px');
-
-    // Flip rounded corner placement — because tabs placed below contents.
-    // (See jqueryui.com/demos/tabs/#bottom)
-    $tabsNav.children().andSelf()
-        .removeClass('ui-corner-all ui-corner-top')
-        .addClass('ui-corner-bottom');
+    // Initialize tab pane heights to suite the edit form.
+    $editTabLink.click();
 
     // Show help info.
     // It might not be obvious that you can scroll down and click a Save
@@ -380,7 +372,7 @@ function _$showEditFormImpl() {
         }]
       };
 
-      d.u.postJson({ url: '/-/edit', data: jsonObj })
+      d.u.postJson({ url: d.i.serverOrigin + '/-/edit', data: jsonObj })
           .fail(d.i.showErrorEnableInputs($editForm))
           .done(function(newDebateHtml) {
 
@@ -391,9 +383,7 @@ function _$showEditFormImpl() {
         // until after zoom or resize.)
         $post.closest('.dw-t').removeClass('dw-dummy');
 
-        // If the edit was a *suggestion* only, the post body has not been
-        // changed. Unless we make it visible again, it'll remain hidden
-        // because mergeChangesIntoPage() ignores it (since it hasn't changed).
+        // Is this needed nowadays? Or is the hole post replaced always?
         $postBody.show();
 
         // This destroys $post, $postBody etcetera...

@@ -211,7 +211,7 @@ object Templates {
       firstName = "Laban", email = "oid@email.hmm", country = "Sweden"))
 
   val post = PostActionDto.forNewPost(id = UnassignedId, creationDati = new ju.Date,
-    loginId = "?", userId = "?", newIp = None,  parentPostId = PageParts.BodyId,
+    loginId = "?", userId = "?", newIp = None,  parentPostId = Some(PageParts.BodyId),
     text = "", markup = "para", approval = None)
 
   val rating = Rating(id = UnassignedId, postId = PageParts.BodyId, loginId = "?",
@@ -271,7 +271,10 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
         val pagesToCreate = Nil
       })
       defaultTenantId = tenant.id
-      tenant.name must_== "Test"
+      tenant.name must_== Some("Test")
+      tenant.embeddingSiteUrl must_== None
+      tenant.hosts.headOption.map(_.address) must_== Some("test.ex.com")
+      tenant.hosts.length must_== 1
       tenant.id must_!= ""
     }
 
@@ -289,7 +292,8 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
       tenants must beLike {
         case List(tenant) =>
           tenant.id must_== defaultTenantId
-          tenant.name must_== "Test"
+          tenant.name must_== Some("Test")
+          tenant.embeddingSiteUrl must_== None
           tenant.hosts must_== List(TenantHost(
              "test.ex.com", TenantHost.RoleCanonical, TenantHost.HttpsNone))
         case x => failure(s"Found wrong tenants: $x")
@@ -304,7 +308,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
 
     "throw error for an invalid login id" in {
       val debateBadLogin = PageParts(guid = "?", actionDtos =
-          PostActionDto.copyCreatePost(T.post, id = PageParts.BodyId,
+          PostActionDto.copyCreatePost(T.post, id = PageParts.BodyId, parentPostId = None,
             loginId = "99999", userId = "99999")::Nil) // bad ids
       //SLog.info("Expecting ORA-02291: integrity constraint log message ------")
       dao.createPage(Page.newPage(
@@ -419,7 +423,8 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
     // -------- Page creation
 
     lazy val ex1_rootPost = PostActionDto.copyCreatePost(T.post,
-      id = PageParts.BodyId, loginId = loginId, userId = globalUserId, text = ex1_postText)
+      id = PageParts.BodyId, parentPostId = None,
+      loginId = loginId, userId = globalUserId, text = ex1_postText)
 
     "create a debate with a root post" in {
       val debateNoId = PageParts(guid = "?", actionDtos = ex1_rootPost::Nil)
@@ -542,10 +547,12 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
 
       var blogMainPageId = "?"
       var blogArticleId = "?"
+      val blogUrl = "http://blog.example.com"
 
       "create a Blog" in {
         val pageNoId = Page(
-          PageMeta.forNewPage(PageRole.Blog, loginGrant.user, PageParts("?"), now),
+          PageMeta.forNewPage(
+            PageRole.Blog, loginGrant.user, PageParts("?"), now, url = Some(blogUrl)),
           defaultPagePath.copy(
             showId = true, pageSlug = "role-test-blog-main"),
           ancestorIdsParentFirst = Nil,
@@ -557,6 +564,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
         page.meta.pageExists must_== true
         page.meta.pageRole must_== PageRole.Blog
         page.meta.parentPageId must_== None
+        page.meta.embeddingPageUrl must_== Some(blogUrl)
         page.meta.pubDati must_== None
 
         val actions = page.parts
@@ -571,6 +579,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
             pageMeta.pageExists must_== true
             pageMeta.pageRole must_== PageRole.Blog
             pageMeta.parentPageId must_== None
+            pageMeta.embeddingPageUrl must_== Some(blogUrl)
             pageMeta.pageId must_== blogMainPageId
             pageMeta.pubDati must_== None
             pageMeta.cachedNumChildPages must_== 0
@@ -607,6 +616,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
           case Some(pageMeta: PageMeta) => {
             pageMeta.pageRole must_== PageRole.BlogPost
             pageMeta.parentPageId must_== Some(blogMainPageId)
+            pageMeta.embeddingPageUrl must_== None
             pageMeta.pageId must_== blogArticleId
             pageMeta.pubDati must_== None
           }
@@ -673,6 +683,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
           blogArticleMeta.modDati.getTime + 1000 * 3600 * 24)
         val newMeta = blogArticleMeta.copy(
           parentPageId = None,
+          embeddingPageUrl = Some("http://new-blog-post-url.example.com"),
           modDati = nextDay,
           pubDati = Some(nextDay),
           // Use stupid incorrect values here, just for testing.
@@ -918,7 +929,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
 
       "create a forum group, two forums with one topic each" in {
         val baseBody = PostActionDto.copyCreatePost(T.post,
-          id = PageParts.BodyId, parentPostId = PageParts.BodyId, text = "search test forum body",
+          id = PageParts.BodyId, parentPostId = None, text = "search test forum body",
           loginId = loginId, userId = globalUserId, approval = Some(Approval.WellBehavedUser))
 
         val forumOneBody = PostActionDto.copyCreatePost(baseBody,
@@ -1127,7 +1138,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
     // -------- Page actions
 
     lazy val ex2_emptyPost = PostActionDto.copyCreatePost(T.post,
-      parentPostId = PageParts.BodyId, text = "", loginId = loginId, userId = globalUserId)
+      parentPostId = Some(PageParts.BodyId), text = "", loginId = loginId, userId = globalUserId)
     var ex2_id = PageParts.NoId
     "save an empty root post child post" in {
       testPage += loginGrant.user
@@ -1289,7 +1300,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
     "create a post to edit" >> {
       // Make post creation action
       lazy val postNoId = PostActionDto.copyCreatePost(T.post,
-        parentPostId = PageParts.BodyId, text = "Initial text",
+        parentPostId = Some(PageParts.BodyId), text = "Initial text",
         loginId = loginId, userId = globalUserId, markup = "dmd0")
 
       var post: PostActionDto[PAP.CreatePost] = null
@@ -1635,7 +1646,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
       // Save a post, using the OpenID login. Load the page and verify
       // the OpenID identity and user were loaded with the page.
       val newPost = PostActionDto.copyCreatePost(T.post,
-        parentPostId = PageParts.BodyId, text = "",
+        parentPostId = Some(PageParts.BodyId), text = "",
         loginId = exOpenId_loginGrant.login.id,
         userId = exOpenId_loginGrant.user.id)
       var postId = PageParts.NoId
@@ -1940,7 +1951,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
       eventType = NotfOfPageAction.Type.PersonalReply,
       eventActionId = ex2_id,
       triggerActionId = ex2_id,
-      recipientActionId = ex2_emptyPost.payload.parentPostId,
+      recipientActionId = ex2_emptyPost.payload.parentPostId.getOrDie("DwE75UF2"),
       recipientUserDispName = "RecipientUser",
       eventUserDispName = "EventUser",
       triggerUserDispName = None,
@@ -2736,7 +2747,16 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
 
       def createWebsite(suffix: String): Option[(Tenant, User)] = {
         dao.createWebsite(
-          name = "website-"+ suffix, address = "website-"+ suffix +".ex.com",
+          name = Some("website-"+ suffix), address = Some("website-"+ suffix +".ex.com"),
+          embeddingSiteUrl = None,
+          ownerIp = creatorLogin.ip, ownerLoginId = creatorLogin.id,
+          ownerIdentity = creatorIdentity, ownerRole = creatorRole)
+      }
+
+      def createEmbeddedSite(embeddingSiteUrl: String): Option[(Tenant, User)] = {
+        dao.createWebsite(
+          name = None, address = None,
+          embeddingSiteUrl = Some(embeddingSiteUrl),
           ownerIp = creatorLogin.ip, ownerLoginId = creatorLogin.id,
           ownerIdentity = creatorIdentity, ownerRole = creatorRole)
       }
@@ -2758,6 +2778,20 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
           case List(websiteInDb) =>
             websiteInDb must_== newWebsiteOpt.copy(hosts = List(newHost))
         }
+      }
+
+      "create embedded sites, find it by id" in {
+        val embeddingSiteUrl = "embedding.exmple.com"
+        createEmbeddedSite(embeddingSiteUrl) must beLike {
+          case Some((site, user)) =>
+            systemDbDao.loadSite(site.id) must beLike {
+              case Some(site) =>
+                site.name must_== None
+                site.hosts.length must_== 0
+                site.embeddingSiteUrl must_== Some(embeddingSiteUrl)
+          }
+        }
+        ok
       }
 
       "not create too many websites from the same IP" in {

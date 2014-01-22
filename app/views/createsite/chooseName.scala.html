@@ -121,16 +121,7 @@ the name to lowercase.
         reachable via e.g. <kbd>www.your-domain.com</kbd>).</small>
       </p>
 
-      <div id='accept-terms-inp-group'>
-      <label>
-        <input type='checkbox' id='accepts-terms' name='acceptTermsInp' value='yes' required
-               ng-model="acceptTerms">
-        I accept the <a href="@tpi.websiteConfigValue("new-site-terms-of-service")"
-            target="_blank">Terms of Service</a>
-        and the <a href="@tpi.websiteConfigValue("new-site-privacy-policy")"
-            target="_blank">Privacy Policy</a>.
-      </label>
-      </div>
+      @termsOfService(tpi)
 
       <p id="please-note">
         <b>Please note:</b> The software is unfinished — some really basic features<br>

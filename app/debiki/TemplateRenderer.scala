@@ -51,12 +51,12 @@ object TemplateRenderer {
 
     val tpi = new TemplateProgrammingInterface(pageReq, appendToBody)
 
-    if (pageReq.pageRoot.isPageConfigPost || pageReq.pagePath.isConfigPage) {
+    if (pageReq.pageRoot == Some(PageParts.ConfigPostId) || pageReq.pagePath.isConfigPage) {
       // Use a page that we know for sure is not broken, so it's possible
       // to fix errors. And do this before loading any config values,
       // since a config file might be corrupted (exception thrown).
-      return views.html.specialpages.template(
-        tpi, isPageSettings = pageReq.pageRoot.isPageConfigPost).body
+      val isPageSettings = pageReq.pageRoot == Some(PageParts.ConfigPostId)
+      return views.html.specialpages.template(tpi, isPageSettings).body
     }
 
     // Handle page config values.
@@ -87,6 +87,7 @@ object TemplateRenderer {
         case PageRole.Forum => "forum"
         case PageRole.ForumTopic => "forumTopic"
         case PageRole.Code => "codePage"
+        case PageRole.EmbeddedComments => "embeddedComments"
         case _ =>
         // A blog post template works well for most pages?
         "blogPost"

@@ -52,8 +52,12 @@ object PageViewer extends mvc.Controller {
     }
 
 
-  def viewPost(pathIn: PagePath) = PageGetAction(pathIn) {
-        pageReq =>
+  def viewPost(pathIn: PagePath) = PageGetAction(pathIn) { pageReq =>
+    viewPostImpl(pageReq)
+  }
+
+
+  def viewPostImpl(pageReq: PageGetRequest) = {
     val userPageDataJson = pageReq.user.isEmpty ? "" | buildUserPageDataJson(pageReq)
     // If not logged in, then include an empty Yaml tag, so the browser
     // notices that it got that elem, and won't call GET ?page-info.
@@ -65,7 +69,7 @@ object PageViewer extends mvc.Controller {
 
 
   /**
-   * Lists e.g. all posts and ratings by a certain user, on a page.
+   * Lists e.g. all posts and ratings by the current user, on a page.
    *
    * Initially, on page load, all (?) this info is already implicitly included
    * in the html sent by the server, e.g. the user's own posts are highlighted.
@@ -73,10 +77,9 @@ object PageViewer extends mvc.Controller {
    * so we need a way for the browser to fetch authorship info
    * dynamically.
    */
-  // COULD rename to listUserPageData?
-  def showPageInfo(pathIn: PagePath) = PageGetAction(pathIn) { pageReq =>
-    if (!pageReq.request.rawQueryString.contains("&user=me"))
-      throwBadReq("DwE0GdZ22", "Right now you need to specify ``&user=me''.")
+  def loadMyPageActivity(pageId: PageId) = GetAction { request =>
+    val pageReq = PageRequest.forPageThatExists(request, pageId) getOrElse throwNotFound(
+      "DwE404FL9", s"Page `$pageId' not found")
     val json = buildUserPageDataJson(pageReq)
     Ok(json)
   }
@@ -106,11 +109,9 @@ object PageViewer extends mvc.Controller {
 
     // List the user's ratings so they can be highlighted so the user
     // won't rate the same post again and again and again each day.
-    // COULD list only the very last rating per post (currently all old
-    // overwritten ratings are included).
-    var ownRatingsMap = Map[String, JsValue]()
-    for (rating <- page.ratingsByUser(withId = my.id)) {
-      ownRatingsMap += rating.postId.toString -> toJson(rating.tags)
+    val ownRatingsMap = page.ratingTagsByPostId(userId = my.id)
+    val ownRatingsJsonMap = ownRatingsMap map { case (postId, tags) =>
+      postId.toString -> toJson(tags)
     }
 
     // Generate html for any posts-by-this-user that are pending approval. Plus info
@@ -127,7 +128,7 @@ object PageViewer extends mvc.Controller {
     val json = toJson(Map(
       "permsOnPage" -> toJson(permsMap),
       "authorOf" -> toJson(ownPostsIdsList),
-      "ratings" -> toJson(ownRatingsMap),
+      "ratings" -> toJson(ownRatingsJsonMap),
       // Suddenly using a by-page-id map is a bit weird, but what debiki-patch-page.ls
       // currently expects. Could map *everything* in the page id instead?
       // (Background: This is supposed to work on e.g. pages that lists many blog posts,

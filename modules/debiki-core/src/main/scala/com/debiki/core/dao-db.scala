@@ -84,7 +84,8 @@ abstract class SiteDbDao {
    * Throws OverQuotaException if you've created too many websites already
    * (e.g. from the same IP).
    */
-  def createWebsite(name: String, address: String, ownerIp: String,
+  def createWebsite(name: Option[String], address: Option[String],
+        embeddingSiteUrl: Option[String], ownerIp: String,
         ownerLoginId: String, ownerIdentity: Identity, ownerRole: User)
         : Option[(Tenant, User)]
 
@@ -322,6 +323,9 @@ abstract class SystemDbDao {
   // COULD rename to loadWebsitesByIds
   def loadTenants(tenantIds: Seq[String]): Seq[Tenant]
 
+  def loadSite(siteId: String): Option[Tenant] =
+    loadTenants(Seq(siteId)).headOption
+
   // COULD rename to findWebsitesCanonicalHost
   def lookupTenant(scheme: String, host: String): TenantLookup
 
@@ -432,7 +436,8 @@ class ChargingSiteDbDao(
    * The new site owner is based on the owner's role at the site via which
    * the new website is being created.
    */
-  def createWebsite(name: String, address: String, ownerIp: String,
+  def createWebsite(name: Option[String], address: Option[String],
+        embeddingSiteUrl: Option[String], ownerIp: String,
         ownerLoginId: String, ownerIdentity: Identity, ownerRole: User)
         : Option[(Tenant, User)] = {
 
@@ -444,7 +449,8 @@ class ChargingSiteDbDao(
     // consumer. Then call the latter function, charge the IP only.
     _chargeForOneWriteReq()
 
-    _spi.createWebsite(name = name, address = address, ownerIp = ownerIp,
+    _spi.createWebsite(name = name, address = address,
+       embeddingSiteUrl, ownerIp = ownerIp,
        ownerLoginId = ownerLoginId, ownerIdentity = ownerIdentity,
        ownerRole = ownerRole)
   }

@@ -18,6 +18,7 @@
 package controllers
 
 import actions.PageActions._
+import actions.ApiActions.{GetAction, GetRequest, PostFormDataAction, FormDataPostRequest}
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki._
@@ -25,7 +26,7 @@ import debiki.DebikiHttp._
 import play.api._
 import play.api.mvc.{Action => _}
 import requests._
-import Utils.{OkHtml}
+import Utils.{OkSafeJson, OkHtml}
 import Utils.parseIntOrThrowBadReq
 
 
@@ -34,12 +35,15 @@ import Utils.parseIntOrThrowBadReq
 object AppEditHistory extends mvc.Controller {
 
 
-  def showForm(pathIn: PagePath, postId: ActionId)
-        = PageGetAction(pathIn) { pageReq: PageGetRequest =>
+  def showForm(pageId: PageId, postId: String) = GetAction { request: GetRequest =>
+
+    val pageReq = PageRequest.forPageThatExists(request, pageId) getOrElse throwNotFound(
+      "DwE12GU08", s"Page `$pageId' not found")
 
     val page = pageReq.page_!
-    val post = page.getPost(postId) getOrElse
-      throwForbidden("DwE9kIJ4", s"Post `$postId' not found")
+    val postIdInt = postId.toInt
+    val post = page.getPost(postIdInt) getOrElse
+      throwForbidden("DwE9kIJ4", s"Post `$postIdInt' not found")
 
     val (mayEdit, mayEditReason) =
       AppEdit.mayEdit(pageReq.user, post, pageReq.permsOnPage)
@@ -51,9 +55,11 @@ object AppEditHistory extends mvc.Controller {
   }
 
 
-  def handleForm(pathIn: PagePath)
-        = PagePostAction(MaxPostSize)(pathIn) {
-      pageReq: PagePostRequest =>
+  def handleForm(pageId: PageId) = PostFormDataAction(MaxPostSize) {
+        request: FormDataPostRequest =>
+
+    val pageReq = PageRequest.forPageThatExists(request, pageId) getOrElse throwNotFound(
+      "DwE77FFX0", s"Page `$pageId' not found")
 
     import Utils.ValidationImplicits._
 
@@ -76,8 +82,17 @@ object AppEditHistory extends mvc.Controller {
            safed(seqNoAppOrDel))
     }
     actions = actions.reverse
-    _applyAndUndoEdits(actions, pageReq)
-    Utils.renderOrRedirect(pageReq)
+
+    val (updatedPage, editApps) = _applyAndUndoEdits(actions, pageReq)
+    val postIds = editApps.map(_.postId).distinct
+
+    // Currently improvements are submitted for one post at a time.
+    assert(postIds.length <= 1, "DwE44BKZ3")
+    val postId = postIds.headOption getOrDie "DwE55EGf0"
+
+    OkSafeJson(
+      BrowserPagePatcher(request, showAllUnapproved = true)
+        .jsonForPost(postId, updatedPage.parts))
   }
 
 
@@ -89,7 +104,7 @@ object AppEditHistory extends mvc.Controller {
 
 
   private def _applyAndUndoEdits(changes: List[(HistoryEdit, ActionId)],
-        pageReq: PageRequest[_]) {
+        pageReq: PageRequest[_]): (PageNoPath, Seq[PostActionDtoOld]) = {
 
     val approval = AutoApprover.perhapsApprove(pageReq)
 

@@ -30,7 +30,7 @@ d.i.showPasswordLoginDialog = !(loginAndContinue) ->
     data =
       email: dialog.find('input[name=email]').val!
       password: dialog.find('input[name=password]').val!
-    d.u.postJson { url: '/-/login-password', data }
+    d.u.postJson { url: "#{d.i.serverOrigin}/-/login-password", data }
       .fail d.i.showServerResponseDialog
       .done loginAndContinue
       .always !-> dialog.dialog 'close'
@@ -45,7 +45,7 @@ d.i.showPasswordLoginDialog = !(loginAndContinue) ->
 
 
 function passwordLoginDialogHtml
-  $('''
+  $("""
     <div class="dw-fs" id="dw-lgi-pswd" title="Login with Email and Password">
 
       <div class="form-group">
@@ -67,12 +67,12 @@ function passwordLoginDialogHtml
       <input class="btn btn-default dw-fi-cancel" type="button" value="Cancel" tabindex="140">
 
       <br>
-      <a href="/-/reset-password/specify-email" target="_blank" class="dw-reset-pswd" tabindex="150">
+      <a href="#{d.i.serverOrigin}/-/reset-password/specify-email" target="_blank" class="dw-reset-pswd" tabindex="150">
         Did you forget your password?
       </a>
 
     </div>
-    ''')
+    """)
 
 
 

@@ -45,6 +45,9 @@ class SystemDao(protected val systemDbDao: SystemDbDao) {
   def loadTenants(tenantIds: Seq[String]): Seq[Tenant] =
     systemDbDao.loadTenants(tenantIds)
 
+  def loadSite(siteId: String): Option[Tenant] =
+    systemDbDao.loadTenants(Seq(siteId)).headOption
+
   // COULD rename to findWebsitesCanonicalHost
   def lookupTenant(scheme: String, host: String): TenantLookup =
     systemDbDao.lookupTenant(scheme, host)

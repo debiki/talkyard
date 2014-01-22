@@ -224,12 +224,12 @@ object HtmlPageSerializer {
   /** XML for the user name and login/out links.
    */
   def loginInfo(userName: Option[String]): NodeSeq = {
-    <span id='dw-u-info'>
+    <span class='dw-u-info'>
       <span class='dw-u-name'>{userName.getOrElse("")}</span>
     </span>
     <span class='dw-u-lgi-lgo'>
-      <a id='dw-a-login'>Log in</a>
-      <a id='dw-a-logout'>Log out</a>
+      <span class='dw-a-login'>Login</span>
+      <span class='dw-a-logout'>Logout</span>
     </span>
   }
 
@@ -278,7 +278,7 @@ object HtmlPageSerializer {
 case class HtmlPageSerializer(
   page : PageParts,
   pageTrust: PageTrust,
-  pageRoot: PageRoot,
+  pageRoot: AnyPageRoot,
   hostAndPort: String,
   nofollowArticle: Boolean = true,
   showUnapproved: ShowUnapproved = ShowUnapproved.None,
@@ -297,11 +297,17 @@ case class HtmlPageSerializer(
       showUnapproved = showUnapproved)
 
 
-  def renderSingleThread(postId: PostId, pageRoot: PageRoot = PageRoot.TheBody)
+  def renderSingleThread(postId: PostId, pageRoot: AnyPageRoot = Some(PageParts.BodyId))
         : Option[SerializedSingleThread] = {
     page.getPost(postId) map { post =>
-      val parentHorizontal = post.parentId == pageRoot.subId
-      val html = renderThreads(depth = post.depth, posts = post::Nil,
+      // These posts are laid out horizontally:
+      // - Replies to the article
+      // - Top level embedded comments, then parentId is None (they reply to the embedding page)
+      val parentHorizontal =
+        post.parentId.map(PageParts.isArticleOrConfigPostId(_)) == Some(true) ||
+        (post.parentId.isEmpty && !PageParts.isArticleOrConfigPostId(postId))
+
+      val html = renderThreads(posts = post::Nil,
         parentHorizontal = parentHorizontal, uncollapseFirst = true)
       // The post might have been deleted.
       if (html.isEmpty)
@@ -327,37 +333,83 @@ case class HtmlPageSerializer(
    * appended at the end of the server's reply (in a special <div>), and
    * client side Javascript update the page with user specific stuff.
    */
-  def renderBodyAndComments(showComments: Boolean): NodeSeq = {
-        // = Stats.time("renderBodyAndComments") {
+  def renderBodyAndComments(showBody: Boolean, showComments: Boolean): NodeSeq = {
+    pageRoot match {
+      case Some(postId) =>
+        renderBodyAndCommentsImpl(showBody, showComments = showComments, rootPostId = postId)
+      case None if showComments =>
+        renderTopLevelPosts()
+      case None if !showComments =>
+        assErr("DwE44GPk3", "Would never show anything")
+    }
+  }
 
+
+  private def renderBodyAndCommentsImpl(
+        showBody: Boolean, showComments: Boolean, rootPostId: PostId): NodeSeq = {
     val cssArtclThread =
-      if (pageRoot.subId == PageParts.BodyId) " dw-ar-t" else ""
+      if (rootPostId == PageParts.BodyId) " dw-ar-t" else ""
 
-    val rootPostsReplies = pageRoot.findChildrenIn(page)
+    val rootPostsReplies = page.repliesTo(rootPostId)
 
-    val rootPost: Post = pageRoot.findOrCreatePostIn(page) getOrElse
-       throwNotFound("DwE0PJ404", "Post not found: "+ pageRoot.subId)
+    val rootPost: Post = page.getPost(rootPostId) getOrElse
+       throwNotFound("DwE0PJ404", "Post not found: "+ rootPostId)
 
     val cssDummy =
       if (rootPost.user_!.id == DummyPage.DummyAuthorUser.id) " dw-dummy" else ""
 
     val bodyAndComments =
       <div id={"dw-t-"+ rootPost.id}
-           class={"dw-t"+ cssArtclThread + cssDummy +" dw-depth-0 dw-hor"}>
+           class={"dw-t"+ cssArtclThread + cssDummy +" dw-hor"}>
       {
         val renderedRoot = postRenderer.renderPost(rootPost.id)
-        renderedRoot.headAndBodyHtml ++
+        val anyBodyHtml =
+          if (showBody)
+            renderedRoot.headAndBodyHtml
+          else
+            // Include an empty placeholder so arrows to child threads are drawn.
+            <div class="dw-p"></div>
+
+        anyBodyHtml ++
         ifThen(showComments, {
+          makeCommentsToolbar() ++
           <div class='dw-t-vspace'/>
           <ol class='dw-res'>
             { renderedRoot.actionsHtml.copy(label = "li") }
-            { renderThreads(1, rootPostsReplies, parentHorizontal = true) }
+            { renderThreads(rootPostsReplies, parentHorizontal = true) }
           </ol>
         })
       }
       </div>
 
     bodyAndComments
+  }
+
+
+  private def makeCommentsToolbar(): NodeSeq = {
+    <div class="dw-cmts-tlbr">
+      <span class="dw-cmts-count">{ page.commentCount } comments</span>
+      { HtmlPageSerializer.loginInfo(userName = None) /* name updated via Javascript */ }
+    </div>
+  }
+
+
+  private def renderTopLevelPosts(): NodeSeq = {
+    val topLevelComments = page.topLevelComments
+    val html =
+      <div class="dw-t dw-hor">
+        {/* Include an empty div.dw-p, so arrows to top level posts are drawn. */}
+        <div class="dw-p"></div>
+        { makeCommentsToolbar() }
+        <div class='dw-t-vspace'/>
+        <ol class='dw-res'>
+          <li class="dw-p-as dw-as dw-p-as-hz">
+            <a class="dw-a dw-a-reply">Reply</a>
+          </li>
+          { renderThreads(topLevelComments, parentHorizontal = true) }
+        </ol>
+      </div>
+    html
   }
 
 
@@ -383,7 +435,7 @@ case class HtmlPageSerializer(
     * ...Ooops, Javascript always places oldest first. So do taht here too,
     * until I've changed the Javascript code?
     */
-  private def sortPostsDescFitness(posts: List[Post]): List[Post] = {
+  private def sortPostsDescFitness(posts: Seq[Post]): Seq[Post] = {
     // COULD sort by *subthread* ratings instead (but not by rating of
     // deleted comment, since it's not visible).
     // Could skip sorting inline posts, since sorted by position later
@@ -427,8 +479,7 @@ case class HtmlPageSerializer(
 
 
   private def renderThreads(
-    depth: Int,
-    posts: List[Post],
+    posts: Seq[Post],
     parentHorizontal: Boolean,
     uncollapseFirst: Boolean = false): NodeSeq = {
 
@@ -439,7 +490,7 @@ case class HtmlPageSerializer(
     // COULD change this to a bredth first search for the 100 most interesting
     // comments, and rename this function to `findSomeInterestingComments'.
 
-    def renderImpl(posts: List[Post], depth: Int, parentHorizontal: Boolean): NodeSeq = {
+    def renderImpl(posts: Seq[Post], parentHorizontal: Boolean): NodeSeq = {
       var threadNodes: NodeSeq = Nil
       for {
         post <- sortPostsDescFitness(posts)
@@ -447,7 +498,7 @@ case class HtmlPageSerializer(
         if !(post.isPostDeleted && post.replies.isEmpty) || showStubsForDeleted
         if showUnapproved.shallShow(post)
       } {
-        val thread = renderThread(post, depth, parentHorizontal, uncollapseFirst)
+        val thread = renderThread(post, parentHorizontal, uncollapseFirst)
         threadNodes ++= thread
       }
       threadNodes
@@ -455,19 +506,18 @@ case class HtmlPageSerializer(
 
     val (openPosts, closedPosts) = posts.partition(!_.isTreeClosed)
 
-    val openThreadNodes = renderImpl(openPosts, depth, parentHorizontal)
+    val openThreadNodes = renderImpl(openPosts, parentHorizontal)
 
     // Closed threads are always rendered in a column, with a header "Closed threads" above.
-    val closedThreadNodes = renderImpl(closedPosts, depth + 1, parentHorizontal = false)
+    val closedThreadNodes = renderImpl(closedPosts, parentHorizontal = false)
 
     var allNodes = openThreadNodes
     if (closedThreadNodes.nonEmpty) {
-      val header = (depth == 1) ? <h3>Closed threads</h3> | <h4>Closed threads:</h4>
       allNodes ++=
         <li>
-          <div class={s"dw-t dw-t-closed dw-depth-$depth"}>
+          <div class="dw-t dw-t-closed">
             <div class="dw-p">
-              { header }
+              <h3>Closed threads</h3>
             </div>
             <ol class="dw-res">
               { closedThreadNodes }
@@ -480,25 +530,24 @@ case class HtmlPageSerializer(
   }
 
 
-  private def renderThread(post: Post, depth: Int, parentHorizontal: Boolean,
+  private def renderThread(post: Post, parentHorizontal: Boolean,
       uncollapseFirst: Boolean) = {
 
     val cssThreadId = "dw-t-"+ post.id
-    val cssDepth = "dw-depth-"+ depth
     val isInlineThread = post.where.isDefined
-    val isInlineNonRootChild = isInlineThread && depth >= 2
+    //val isInlineNonRootChild = isInlineThread && depth >= 2
     val cssInlineThread = if (isInlineThread) " dw-i-t" else ""
     val replies = post.replies
     val isTitle = post.id == PageParts.TitleId
     val isRootOrArtclQstn =
-          post.id == pageRoot.subId // || post.meta.isArticleQuestion
+          Some(post.id) == pageRoot // || post.meta.isArticleQuestion
 
     // Layout replies horizontally, if this is an inline reply to
     // the root post, i.e. depth is 1 -- because then there's unused space
     // to the right. However, the horizontal layout results in a higher
     // thread if there's only one reply. So only do this if there's more
     // than one reply.
-    val horizontal = (post.where.isDefined && depth == 1 && replies.length > 1) ||
+    val horizontal = // (post.where.isDefined && depth == 1 && replies.length > 1) ||
                     isRootOrArtclQstn
     val cssThreadDeleted = if (post.isTreeDeleted) " dw-t-dl" else ""
     val cssArticleQuestion = if (isRootOrArtclQstn) " dw-p-art-qst" else ""
@@ -526,7 +575,8 @@ case class HtmlPageSerializer(
       val shallFoldPost =
         !uncollapseFirst && (
         (postFitness.upperLimit < 0.5f && postFitness.observedMean < 0.333f) ||
-          isInlineNonRootChild || post.isTreeCollapsed)
+          // isInlineNonRootChild ||
+          post.isTreeCollapsed)
 
       if (shallFoldPost)
         (" dw-zd", "Click to show this thread" +
@@ -552,13 +602,13 @@ case class HtmlPageSerializer(
       }
       else <ol class='dw-res'>
         { myActionsIfHorizontalLayout }
-        { renderThreads(depth + 1, replies, parentHorizontal = horizontal) }
+        { renderThreads(replies, parentHorizontal = horizontal) }
       </ol>
     }
 
     var thread = {
       val cssHoriz = if (horizontal) " dw-hor" else ""
-      <li id={cssThreadId} class={"dw-t "+ cssDepth + cssInlineThread +
+      <li id={cssThreadId} class={"dw-t "+ cssInlineThread +
              cssFolded + cssHoriz + cssThreadDeleted + cssArticleQuestion}>{
         foldLink ++
         renderedComment.headAndBodyHtml ++

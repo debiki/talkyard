@@ -203,7 +203,12 @@ class SiteTpi protected (val debikiRequest: DebikiRequest[_])
     views.html.debikiStyles(minMaxJs, minMaxCss).body)
 
   def debikiScripts = xml.Unparsed(
-    views.html.debikiScripts(anyCurrentPageId, minMaxJs, minMaxCss).body)
+    views.html.debikiScripts(
+      anyPageId = anyCurrentPageId,
+      serverAddress = debikiRequest.request.host,
+      pageUriPath = debikiRequest.request.path,
+      minMaxJs = minMaxJs,
+      minMaxCss = minMaxCss).body)
 
 
   /** A website or page config value, and page specific values take precedence.
@@ -502,8 +507,9 @@ class TemplateProgrammingInterface(
     showComments: Boolean = !isHomepage)(
     contents: => play.api.templates.Html): xml.NodeSeq = {
 
+    val viewsPageConfigPost = pageReq.pageRoot == Some(PageParts.ConfigPostId)
     renderPageSettings =
-      if (pageReq.pageRoot.isPageConfigPost || pageReq.pagePath.isConfigPage) {
+      if (viewsPageConfigPost || pageReq.pagePath.isConfigPage) {
         // Don't load any config values in case the config post/page is corrupt — otherwise
         // it wouldn't be possible to edit the config file and fix the errors.
         Some(RenderPageSettings(

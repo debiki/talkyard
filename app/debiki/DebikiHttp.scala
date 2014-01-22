@@ -156,32 +156,60 @@ object DebikiHttp {
 
   // ----- Tenant ID lookup
 
+  /** Looks up a site by hostname, or directly by id.
+    *
+    * By id: If a HTTP request specifies a hostname like "site-<id>.<baseDomain>",
+    * for example:  site-123.debiki.com,
+    * then the site is looked up directly by id. This is useful for embedded
+    * comment sites, since their address isn't important, and if we always access
+    * them via site id, we don't need to ask the side admin to come up with any
+    * site address.
+    */
   def lookupTenantIdOrThrow(request: DebikiRequest[_], systemDao: SystemDao): String =
     lookupTenantIdOrThrow(request.request, systemDao)
 
   def lookupTenantIdOrThrow(request: RequestHeader, systemDao: SystemDao)
         : String = {
 
-    val tenantId = systemDao.lookupTenant(scheme = "http", // for now
-         host = request.host) match {
-      case found: FoundChost =>
-        found.tenantId
-      case found: FoundAlias =>
-        found.role match {
-          case TenantHost.RoleRedirect =>
-            throwRedirect(found.canonicalHostUrl + request.path)
-          case TenantHost.RoleLink =>
-            unimplemented("<link rel='canonical'>")
-          case _ =>
-            // lookupTenant should have returned FoundChost instead
-            // of FoundAlias with RoleCanonical/Duplicate.
-            assErr("DwE01k5Bk08")
-      }
-      case FoundNothing =>
-        throwNotFound("DwEI5F2", "The specified host name maps to no tenant.")
+    // Do this:
+    // - If the hostname is like: site-<id>.<baseDomain>, e.g. site-123.debiki.com if
+    //   then we have the site id already. Then 1) verify that it's correct, and
+    //   2) if theres' any canonical address for the site, and if so include a
+    //   <link rel='canonical'> to that address (not implemented).
+    // - If the hostname is <whatever> then lookup site id by hostname.
+
+    val siteId = request.host match {
+      case debiki.Globals.siteByIdHostnameRegex(siteId) =>
+        systemDao.loadSite(siteId) match {
+          case None =>
+            throwNotFound("DwE72SF6", s"No site with id `$siteId'")
+          case Some(site) =>
+            if (site.hosts.find(_.role == TenantHost.RoleCanonical).isDefined)
+              Logger.warn("Should <link rel='canonical'> to the canonical address [DwE1U80]")
+        }
+        siteId
+      case _ =>
+        systemDao.lookupTenant(scheme = "http", // for now
+             host = request.host) match {
+          case found: FoundChost =>
+            found.tenantId
+          case found: FoundAlias =>
+            found.role match {
+              case TenantHost.RoleRedirect =>
+                throwRedirect(found.canonicalHostUrl + request.path)
+              case TenantHost.RoleLink =>
+                unimplemented("<link rel='canonical'>")
+              case _ =>
+                // lookupTenant should have returned FoundChost instead
+                // of FoundAlias with RoleCanonical/Duplicate.
+                assErr("DwE01k5Bk08")
+          }
+          case FoundNothing =>
+            throwNotFound("DwEI5F2", "The specified host name maps to no tenant.")
+        }
     }
 
-    tenantId
+    siteId
   }
 
 

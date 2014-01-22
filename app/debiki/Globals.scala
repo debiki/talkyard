@@ -33,6 +33,7 @@ import play.api.Play
 import play.api.Play.current
 import scala.concurrent.duration._
 import scala.concurrent.Await
+import scala.util.matching.Regex
 
 
 object Globals extends Globals
@@ -66,6 +67,18 @@ class Globals {
   def sendEmail(email: Email, websiteId: String) {
     state.mailerActorRef ! (email, websiteId)
   }
+
+
+  def baseDomain: String = state.baseDomain
+
+
+  /** If a hostname matches this pattern, the site id can be extracted directly from the url.
+    */
+  def siteByIdHostnameRegex = state.siteByIdHostnameRegex
+
+  def SiteByIdHostnamePrefix = "site-"
+
+  def siteByIdOrigin(siteId: String) = s"http://$SiteByIdHostnamePrefix$siteId.$baseDomain"
 
 
   /** The Twitter Ostrich admin service, listens on port 9100. */
@@ -155,6 +168,15 @@ class Globals {
         // Don't run out of quota when running e2e tests.
         if (Play.isTest) 1000.0f else 1.0f
       }
+
+    val baseDomain: String =
+      Play.configuration.getString("debiki.baseDomain") getOrElse "localhost:9000"
+
+    // The hostname must be directly below the base domain, otherwise
+    // wildcard HTTPS certificates won't work: they cover 1 level below the
+    // base domain only, e.g. host.example.com but not sub.host.example.com,
+    // if the cert was issued for *.example.com.
+    val siteByIdHostnameRegex: Regex = s"""^$SiteByIdHostnamePrefix(.*)\\.$baseDomain""".r
 
     private def makeDataSource() = {
       //val dataSourceName = if (Play.isTest) "test" else "default"

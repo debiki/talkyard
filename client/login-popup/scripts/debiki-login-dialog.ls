@@ -22,20 +22,26 @@ $ = d.i.$;
 
 
 d.i.showLoginSubmitDialog = !(anyMode) ->
-  showLoginDialog (anyMode || 'SubmitGeneric')
+  d.i.showLoginDialog (anyMode || 'LoginToSubmit')
 
 
 
-!function showLoginDialog(mode)
+d.i.showLoginDialog = function(mode)
+  if d.i.isInIframe
+    d.i.createLoginPopup("#{d.i.serverOrigin}/-/login-popup?mode=#mode")
+    return
 
   doingWhatClass = switch mode
-  | 'SubmitGeneric' => 'dw-login-to-submit'
-  | 'SubmitComment' => 'dw-login-to-post-comment'
+  | 'LoginToSubmit' => 'dw-login-to-submit'
+  | 'LoginToComment' => 'dw-login-to-post-comment'
+  | 'LoginToLogin' => 'dw-login-to-login'
   | _ => 'dw-login-to-login'
   $('body').addClass(doingWhatClass)
 
   dialog = loginDialogHtml()
-  dialog.dialog d.i.newModalDialogSettings({ width: 413 })
+  dialog.dialog d.i.newModalDialogSettings(
+    width: 413
+    closeOnEscape: !d.i.isInLoginPopup)
 
   dialog.find('#dw-lgi-guest').click ->
     d.i.showGuestLoginDialog(loginAndContinue)
@@ -53,13 +59,13 @@ d.i.showLoginSubmitDialog = !(anyMode) ->
     close()
     false
 
-  dialog.find('a#dw-lgi-google').click ->
+  dialog.find('#dw-lgi-google').click ->
     loginGoogleYahoo("https://www.google.com/accounts/o8/id")
 
-  dialog.find('a#dw-lgi-yahoo').click ->
+  dialog.find('#dw-lgi-yahoo').click ->
     loginGoogleYahoo("http://me.yahoo.com/")
 
-  dialog.find('a#dw-lgi-facebook').click ->
+  dialog.find('#dw-lgi-facebook').click ->
     openSecureSocialLoginWindow('facebook')
 
   /**
@@ -67,18 +73,34 @@ d.i.showLoginSubmitDialog = !(anyMode) ->
    */
   function loginGoogleYahoo(openidIdentifier)
     form = $("""
-      <form action="/-/api/login-openid" method="POST">
+      <form action="#{d.i.serverOrigin}/-/api/login-openid" method="POST">
         <input type="text" name="openid_identifier" value="#openidIdentifier">
       </form>
       """)
-    d.i.createOpenIdLoginPopup(form)
+    # Submit form in a new popup window, unless we alreaady are in a popup window.
+    if d.i.isInLoginPopup
+      $('body').append(form)
+    else
+      d.i.createOpenIdLoginPopup(form)
     form.submit()
     false
 
   function openSecureSocialLoginWindow(provider)
-    d.i.createLoginPopup("/-/login-securesocial-popup/#provider")
+    url = "#{d.i.serverOrigin}/-/login-securesocial-popup/#provider"
+    if d.i.isInLoginPopup
+      window.location = url
+    else
+      d.i.createLoginPopup(url)
 
   !function loginAndContinue(data)
+    if d.i.isInLoginPopup
+      # (Also see AppLoginOpenId, search for [509KEF31].)
+      window.opener.debiki.internal.handleLoginResponse(status: 'LoginOk')
+      # This is a login popup, so we're now closing the whole popup window.
+      close()
+
+    # This happens only if we're not in a login popup, but a jQuery UI dialog:
+
     d.i.Me.fireLogin()
     # Show response dialog, and continue with whatever caused
     # the login to happen.
@@ -94,8 +116,11 @@ d.i.showLoginSubmitDialog = !(anyMode) ->
     showLoggedInDialog(d.i.continueAnySubmission)
 
   !function close
-    dialog.dialog('close')
-    $('body').removeClass(doingWhatClass)
+    if d.i.isInLoginPopup
+      window.close()
+    else
+      dialog.dialog('close')
+      $('body').removeClass(doingWhatClass)
 
   # Preload OpenID resources, in case user clicks OpenID login button.
   d.i.loadOpenIdResources()
@@ -128,36 +153,32 @@ d.i.showLoginSubmitDialog = !(anyMode) ->
 function loginDialogHtml
   $('''
     <div class="dw-fs" title="Who are you?" id="dw-lgi">
-      <a id="dw-lgi-guest" class="btn btn-default" tabindex="101">Login as Guest</a>
-      <a id="dw-lgi-pswd" class="btn btn-default" tabindex="102">Login with Email and Password</a>
+      <span id="dw-lgi-guest" class="btn btn-default" tabindex="101">Login as Guest</span>
+      <span id="dw-lgi-pswd" class="btn btn-default" tabindex="102">Login with Email and Password</span>
 
       <p id="dw-lgi-or-login-using">
         Or login<span class="dw-login-to-post-comment">, and post your comment,</span>
         using your account (if any) at:</p>
       <div id="dw-lgi-other-sites">
-        <a id="dw-lgi-google" class="btn btn-default" tabindex="103">
+        <span id="dw-lgi-google" class="btn btn-default" tabindex="103">
           <span class="icon-google-plus"></span>Google
-        </a>
-        <a id="dw-lgi-facebook" class="btn btn-default" tabindex="104">
+        </span>
+        <span id="dw-lgi-facebook" class="btn btn-default" tabindex="104">
           <span class="icon-facebook"></span>
           Facebook
-        </a>
-        <a id="dw-lgi-yahoo" class="btn btn-default" tabindex="105">
+        </span>
+        <span id="dw-lgi-yahoo" class="btn btn-default" tabindex="105">
           <span class="icon-yahoo"></span>
           Yahoo!
-        </a>
+        </span>
       </div>
 
-      <a id="dw-lgi-more" class="btn btn-default" tabindex="106">More options...</a>
+      <span id="dw-lgi-more" class="btn btn-default" tabindex="106">More options...</span>
 
       <input class="btn btn-default dw-fi-cancel" type="button" value="Cancel" tabindex="107">
     </div>
     ''')
 
-
-
-$(!->
-  $('#dw-a-login').click showLoginDialog)
 
 
 

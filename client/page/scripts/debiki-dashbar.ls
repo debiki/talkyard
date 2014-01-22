@@ -28,8 +28,8 @@ DebikiDashbarModule.directive 'dwDashbar', ['$http', dwDashbar]
 function dwDashbar ($http)
   template: """
     <div ng-show="currentUser.isAuthenticated">
-      <a class="debiki-dashbar-logo" href="/-/admin/">
-        <img src="/-/img/logo-128x120.png">
+      <a class="debiki-dashbar-logo" href="#{d.i.serverOrigin}/-/admin/">
+        <img src="#{d.i.serverOrigin}/-/img/logo-128x120.png">
       </a>
       <span ng-show="!viewsPageConfigPost">
 
@@ -98,7 +98,7 @@ function dwDashbar ($http)
         return
       pageMeta = thisPageMeta scope
       newPageData = createPagesUnlessExist: [pageMeta]
-      $http.post '/-/edit', newPageData
+      $http.post "#{d.i.serverOrigin}/-/edit", newPageData
           .success !->
             scope.pageExists = true  # edits root scope? Or local scope?
             d.i.forEachOpenerCall 'onOpenedPageSavedCallbacks', [pageMeta]
@@ -107,7 +107,7 @@ function dwDashbar ($http)
     !function changePageMeta ({ newStatus })
       pageMeta = thisPageMeta scope
       $http.post(
-          '/-/change-page-meta',
+          "#{d.i.serverOrigin}/-/change-page-meta",
           [{ pageId: pageMeta.pageId, newStatus }])
         .success !->
           scope.pageStatus = newStatus

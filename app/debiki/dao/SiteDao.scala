@@ -75,12 +75,17 @@ class SiteDao(protected val siteDbDao: ChargingSiteDbDao)
 
   def siteId = siteDbDao.siteId
 
+  def loadSite(): Tenant = siteDbDao.loadTenant()
+
+  @deprecated("use loadSite() instead", "now")
   def loadTenant(): Tenant = siteDbDao.loadTenant()
 
-  def createWebsite(name: String, address: String, ownerIp: String,
+  def createWebsite(name: Option[String], address: Option[String],
+        embeddingSiteUrl: Option[String], ownerIp: String,
         ownerLoginId: String, ownerIdentity: Identity, ownerRole: User)
         : Option[(Tenant, User)] =
-    siteDbDao.createWebsite(name = name, address = address, ownerIp = ownerIp,
+    siteDbDao.createWebsite(name = name, address = address,
+      embeddingSiteUrl, ownerIp = ownerIp,
       ownerLoginId = ownerLoginId, ownerIdentity = ownerIdentity,
       ownerRole = ownerRole)
 

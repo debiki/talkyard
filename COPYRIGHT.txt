@@ -115,6 +115,19 @@ Javascript and CSS:
     MIT license
     http://yoxigen.com/yoxview/
 
+  - jQuery Browser Plugin
+    ./client/third-party/jquery.browser.js
+    Original code Copyright 2005, 2013 jQuery Foundation, Inc. and other contributors, http://jquery.org/license
+    Modifications Copyright 2013 Gabriel Cebrian, https://github.com/gabceb
+    The MIT license
+    https://github.com/gabceb/jquery-browser-plugin
+
+  - LazyLoad
+    A minified version is inlined in Gruntfile.coffee.
+    Copyright (c) 2011 Ryan Grove <ryan@wonko.com>
+    The MIT license
+    https://github.com/rgrove/lazyload/
+
 Javascript and Java:
 
   - google-diff-match-patch

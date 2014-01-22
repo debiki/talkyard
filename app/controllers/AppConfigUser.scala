@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2012 Kaj Magnus Lindberg (born 1979)
+ * Copyright (C) 2012-2013 Kaj Magnus Lindberg (born 1979)
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -18,12 +18,15 @@
 package controllers
 
 import actions.PageActions._
+import actions.ApiActions.PostJsonAction
+import actions.ApiActions.JsonPostRequest
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki._
 import debiki.DebikiHttp._
 import play.api._
 import play.api.mvc.{Action => _}
+import requests.DebikiRequest
 import Utils.ValidationImplicits._
 import EmailNotfPrefs.EmailNotfPrefs
 
@@ -32,70 +35,53 @@ import EmailNotfPrefs.EmailNotfPrefs
   */
 object AppConfigUser extends mvc.Controller {
 
-
   val ConfigCookie = "dwCoConf"
   val ConfigCookieEmailNotfs = "EmNt"
   val ConfigCookieEmailSpecd = "EmSp"
 
-  val FormPramEmailNotfs = "dw-fi-eml-prf-rcv"
-  val FormPramEmailAddr = "dw-fi-eml-prf-adr"
 
+  /**
+    * (It's not possible to choose the ForbiddenForever email preference via
+    * this endpoint. ForbiddenForever is only available via email login, that is,
+    * for the actual owner of the email address.)
+    */
+  def handleConfiguration = PostJsonAction(maxLength = 500) { request: JsonPostRequest =>
 
-  def showForm(pathIn: PagePath, userId: String)
-        = PageGetAction(pathIn) { pageReq: PageGetRequest =>
-    unimplemented
-  }
+    val body = request.body
+    val userId = (body \ "userId").as[UserId]
+    val user = request.user_!
+    val anyEmailAddress = (body \ "emailAddress").asOpt[String]
+    val beNotifiedViaEmailOfReplies = (body \ "beNotifiedViaEmailOfReplies").as[Boolean]
 
+    if (user.id != userId)
+      throwForbidden("DwE7733G0", "May configure oneself only")
 
-  def handleForm(pathIn: PagePath, userId: String)
-        = PagePostAction(500)(pathIn) { pageReq: PagePostRequest =>
-    val user = pageReq.user_!
-    val identity = pageReq.identity_!
-
-    // For now:
-    if (userId != "me")
-      throwBadParamValue("DwE09EF32", "user")
-
-    val emailNotfPrefs = pageReq.getEmptyAsNone(FormPramEmailNotfs) match {
-      case Some("yes") => EmailNotfPrefs.Receive
-      case Some("no") => EmailNotfPrefs.DontReceive
-      case Some(x) => throwBadParamValue("DwE09EF32", FormPramEmailNotfs)
-      case _ =>
-        // This happened only once when I clicked the No button in Firefox, therefore:
-        EmailNotfPrefs.DontReceive
-        // I don't know why no post data was received. I'd rather have Some("no")
-        // to be posted, and I would rather do:
-        //   throwParamMissing("DwE83IhB6", FormPramEmailNotfs)
-
-      // (There's no value that maps to ForbiddenForever. That functionality
-      // is only available via email login, that is, for the actual
-      // owner of the email address.)
-    }
-
-    val emailOpt = pageReq.getEmptyAsNone(FormPramEmailAddr)
+    val emailNotfPrefs =
+      if (beNotifiedViaEmailOfReplies) EmailNotfPrefs.Receive
+      else EmailNotfPrefs.DontReceive
 
     val newEmailAddr =
-      if (emailOpt.isEmpty) None
+      if (anyEmailAddress.isEmpty) None
       else {
         // For now, abort, if specified email differs from existing.
         // (You're currently not allowed to change your email via
         // this interface.)
-        if (user.email.nonEmpty && user.email != emailOpt.get)
+        if (user.email.nonEmpty && user.email != anyEmailAddress.get)
           throwBadReq("DwE8RkL3", "Email differs from user.email")
         if (user.email.isEmpty)
-          emailOpt
+          anyEmailAddress
         else
           None
       }
 
-    if (pageReq.user_!.isAuthenticated)
-      _configAuUserUpdCookies(pageReq, emailNotfPrefs, newEmailAddr)
+    if (user.isAuthenticated)
+      configRoleUpdCookies(request, emailNotfPrefs, newEmailAddr)
     else
-      _configUnauUserUpdCookies(pageReq, emailNotfPrefs, newEmailAddr)
+      configGuestUpdCookies(request, emailNotfPrefs, newEmailAddr)
   }
 
 
-  private def _configAuUserUpdCookies(pageReq: PagePostRequest,
+  private def configRoleUpdCookies(pageReq: DebikiRequest[_],
         emailNotfPrefs: EmailNotfPrefs, newEmailAddr: Option[String])
         : mvc.PlainResult = {
 
@@ -126,7 +112,7 @@ object AppConfigUser extends mvc.Controller {
   }
 
 
-  private def _configUnauUserUpdCookies(pageReq: PagePostRequest,
+  private def configGuestUpdCookies(pageReq: DebikiRequest[_],
         emailNotfPrefs: EmailNotfPrefs, newEmailAddr: Option[String])
         : mvc.PlainResult = {
     require(!pageReq.user_!.isAuthenticated)
