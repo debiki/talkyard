@@ -38,19 +38,6 @@ import controllers.Utils
  */
 object PageActions {
 
-  /**
-   * A PageRequest with no post data.
-   */
-  type PageGetRequest = PageRequest[Option[Any]]
-
-
-  /**
-   * A PageRequest with post data.
-   */
-  type PagePostRequest = PageRequest[Map[String, Seq[String]]]
-
-  type PagePostRequest2 = PageRequest[JsonOrFormDataBody]
-
 
   /**
    * Set `maySetCookies` to false if the response might be cached by

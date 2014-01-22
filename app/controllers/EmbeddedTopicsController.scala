@@ -18,7 +18,6 @@
 package controllers
 
 import actions.ApiActions._
-import actions.PageActions.PageGetRequest
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki._
@@ -26,7 +25,7 @@ import debiki.DebikiHttp._
 import java.{util => ju}
 import play.api._
 import play.api.mvc.{Action => _, _}
-import requests.{DebikiRequest, PageRequest}
+import requests.{PageGetRequest, PageRequest}
 
 
 /** Resets the password of a PasswordIdentity, in case the user forgot it.
