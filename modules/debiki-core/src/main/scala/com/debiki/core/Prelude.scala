@@ -367,43 +367,6 @@ object Prelude {
   def hashSha1Base64UrlSafe(text: String): String =
     acb.Base64.encodeBase64URLSafeString(mdSha1.digest(text.getBytes("UTF-8")))
 
-  /** Calculates the SHA1 hash of 'text', returns it in base 36, but the length
-    * of the returned string varies because it is not padded with anything up to
-    * some certain length, for example:
-    * "17" hashes to "tt80woaa11w8brcde626s7nrqra0yk" (no leading '0' added) but
-    * "18" hashes to "ii62gl9o88mm89kwdfxgqcfi0xp8hts" (1 char longer).
-    */
-  def hashSha1Base36DontPad(text: String): String = {
-    val bytes = mdSha1.digest(text.getBytes("UTF-8"))
-    val bigint = new java.math.BigInteger(1, bytes)
-    // This drops leading 0, well okay.
-    val result = bigint.toString(36)
-    result
-  }
-
-  def hashSha1Base62DontPad(text: String): String = {
-    val bytes = mdSha1.digest(text.getBytes("UTF-8"))
-    val bigint = new java.math.BigInteger(1, bytes)
-    val result = encodeInBase62(bigint)
-    result
-  }
-
-  private val Base62Alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
-
-  def encodeInBase62(number: BigInt): String = {
-    // Base 62 is > 5 but < 6 bits per char.
-    var result = new StringBuilder(capacity = number.bitCount / 5 + 1)
-    var left = number
-    do {
-      val remainder = (left % 62).toInt
-      left /= 62
-      val char = Base62Alphabet.charAt(remainder)
-      result += char
-    }
-    while (left > 0)
-    result.toString
-  }
-
 
   // ------ Diff, match, patch
 

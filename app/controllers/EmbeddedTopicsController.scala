@@ -39,7 +39,12 @@ object EmbeddedTopicsController extends mvc.Controller {
 
 
   /** Derives the discussion id based on the url of the embedding site.
-    * This is done by taking the 16 first characters of a base 36 encoded SHA1 sum.
+    * This is done by taking the 16 first characters of a base 64 encoded SHA1 sum,
+    * but with - and _ removed.
+    *
+    * How these ids are derived must never be changed, because then all old ids
+    * will become invalid. There's a test case for this function in
+    * test/controllers/EmbeddedTopicsControllerSpec.scala.
     *
     * Why the first 16? (1 - (10^10/(36^16))) ^ (10^10) = 0.9999878, see http://web2.0calc.com/,
     * that is, if a website with 1 page per human (10e9 humans) adds Debiki's
@@ -48,6 +53,8 @@ object EmbeddedTopicsController extends mvc.Controller {
     * char array is padded to a multiple of 16 anyway, and (16*2 + 38) = 70,
     * round up to 8 boundary -> 72, see:
     *   http://www.javamex.com/tutorials/memory/string_memory_usage.shtml  ))
+    * **Edit** Now I use 62 digits (= 64 - 2 chars) instead of 36 so the probability of an id
+    * collision is even lower.
     */
   def deriveTopicIdFromUrl(url: String): String = {
 
@@ -57,7 +64,22 @@ object EmbeddedTopicsController extends mvc.Controller {
       else if (url startsWith "//") url drop 2
       else url
 
-    val id =  hashSha1Base62DontPad(urlNoScheme) take 16
+    // On my computer:
+    // SHA1 + Base 64 encoding takes 4 microseconds.
+    // SHA1 + Base 62 encoding takes 3 times longer than SHA1 + Base64 (i.e 12 us).
+    // SHA1 + Base 64 + remove - and _ takes 1.5 times longer than SHA1 + Base64, but
+    // can be optimized to be as fast.
+    // So lets use SHA1 + Base 64 but remove - and _, because _ looks ugly and - is a
+    // magic character in Debiki's URLs (it terminates any id part of the url).
+    // Using mixed case should be fine (i.e. not base 36) because people cannot remember
+    // 16 chars anyway so they need to copy paste anyway.
+    val base64 = hashSha1Base64UrlSafe(urlNoScheme)
+    val withoutDashAndUnderscore =
+      if (base64.exists(ch => ch == '-' || ch == '_'))
+        base64.filterNot(ch => ch == '-' || ch == '_' || ch == '=')
+      else
+        base64
+    val id = withoutDashAndUnderscore take 16
     id
   }
 
