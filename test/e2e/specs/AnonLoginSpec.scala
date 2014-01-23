@@ -17,6 +17,7 @@
 
 package test.e2e.specs
 
+import com.debiki.core._
 import com.debiki.core.Prelude._
 import com.debiki.core.PageRole
 import org.openqa.selenium.interactions.Actions
@@ -58,22 +59,9 @@ class AnonLoginSpec extends DebikiBrowserSpec with TestReplyer with TestLoginner
       loginAndReplyAsAnon(name = s"Anon-${randomId()}")
     }
 
-    "login and reply as new Anon User, specify email directly" - {
+    "login and reply as new Anon User, specify email" - {
       val name = s"anon-${randomId()}"
       loginAndReplyAsAnon(name, email = s"$name@example.com")
-    }
-
-    "login and reply as new Anon User, specify email later" - {
-      // Place this test after the `specify email directly` test just above,
-      // to trigger bug#9kie35.
-      val name = s"anon-${randomId()}"
-      loginAndReplyAsAnon(name, email = s"$name@example.com", waitWithEmail = true)
-    }
-
-    "login and reply as new Anon User, specify email later, then change her mind" - {
-      val name = s"anon-${randomId()}"
-      loginAndReplyAsAnon(name, email = s"$name@example.com",
-        waitWithEmail = true, waitWithEmailThenCancel = true)
     }
 
     "login and reply as existing Anon User with no email" in {
@@ -89,12 +77,12 @@ class AnonLoginSpec extends DebikiBrowserSpec with TestReplyer with TestLoginner
     }
 
     "login and rate as new Anon User, specify no email" - {
-      loginAndRateAsAnon(name = nextName())
+      loginAndRateAsAnon(name = nextName(), postId = 1)
     }
 
     "login and rate as new Anon User, specify email" - {
       val name = nextName()
-      loginAndRateAsAnon(name, email = s"$name@example.com")
+      loginAndRateAsAnon(name, email = s"$name@example.com", postId = 1)
     }
 
     "login and rate as existing Anon User with no email" in {
@@ -111,11 +99,7 @@ class AnonLoginSpec extends DebikiBrowserSpec with TestReplyer with TestLoginner
   private def nextName() = s"Anon-${randomId()}"
 
 
-  private def loginAndReplyAsAnon(
-        name: String,
-        email: String = "",
-        waitWithEmail: Boolean = false,
-        waitWithEmailThenCancel: Boolean = false) {
+  private def loginAndReplyAsAnon(name: String, email: String = "") {
 
     val testText = s"ReplyAsAnon ${randomId()}"
 
@@ -136,7 +120,7 @@ class AnonLoginSpec extends DebikiBrowserSpec with TestReplyer with TestLoginner
     }
 
     "login and submit" in {
-      submitGuestLoginAnswerEmailQuestion(name, email, waitWithEmail, waitWithEmailThenCancel)
+      submitGuestLogin(name, email)
     }
 
     "view her new reply" in {
@@ -153,11 +137,7 @@ class AnonLoginSpec extends DebikiBrowserSpec with TestReplyer with TestLoginner
   }
 
 
-  private def loginAndRateAsAnon(
-        name: String,
-        email: String = "",
-        waitWithEmail: Boolean = false,
-        waitWithEmailThenCancel: Boolean = false) {
+  private def loginAndRateAsAnon(name: String, email: String = "", postId: PostId) {
 
     "logout if needed" in {
       logoutIfLoggedIn()
@@ -165,6 +145,7 @@ class AnonLoginSpec extends DebikiBrowserSpec with TestReplyer with TestLoginner
 
     "click Rate" in {
       eventually {
+        showActionLinks(postId)
         scrollIntoView(visibleRateLink)
         click on visibleRateLink
       }
@@ -190,7 +171,7 @@ class AnonLoginSpec extends DebikiBrowserSpec with TestReplyer with TestLoginner
     }
 
     "login and submit" in {
-      submitGuestLoginNoEmailQuestion(name, email)
+      submitGuestLogin(name, email)
     }
 
     "view her new rating" in {

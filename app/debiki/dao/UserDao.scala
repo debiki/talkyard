@@ -45,6 +45,10 @@ trait UserDao {
     siteDbDao.saveLogout(loginId, logoutIp)
 
 
+  def loadLogin(loginId: LoginId): Option[Login] =
+    siteDbDao.loadLogin(loginId)
+
+
   def loadIdtyAndUser(forLoginId: String): Option[(Identity, User)] =
     siteDbDao.loadIdtyAndUser(forLoginId)
 

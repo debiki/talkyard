@@ -25,7 +25,7 @@ import org.openqa.selenium
 
 /** Logs in as guest or a certain Gmail OpenID user or as admin.
   */
-trait TestLoginner {
+trait TestLoginner extends DebikiSelectors {
   self: DebikiBrowserSpec with StuffTestClicker =>
 
 
@@ -37,13 +37,13 @@ trait TestLoginner {
     * Specifies no email.
     */
   def loginAsGuest(name: String) {
-    click on loginLink
-    submitGuestLoginNoEmailQuestion(name)
+    click on aLoginLink
+    submitGuestLogin(name)
   }
 
 
   def loginAsGmailUser() {
-    click on loginLink
+    click on aLoginLink
     eventually { click on "dw-lgi-google" }
     // Switch to OpenID popup window.
     val originalWindow = webDriver.getWindowHandle()
@@ -149,10 +149,9 @@ trait TestLoginner {
   }
 
 
-  /** Fills in the guest login form, and assumes no question will be asked
-    * about email notifications.
+  /** Fills in the guest login form.
     */
-  def submitGuestLoginNoEmailQuestion(name: String, email: String = "") {
+  def submitGuestLogin(name: String, email: String = "") {
     // Open guest login dialog.
     eventually { click on "dw-lgi-guest" }
 
@@ -166,37 +165,8 @@ trait TestLoginner {
 
     // Submit.
     click on "dw-lgi-guest-submit"
-    eventually { click on "dw-dlg-rsp-ok" }
-  }
-
-
-  /** Fills in the guest login form, and clicks yes/no when asked about
-    * email notifications.
-    */
-  def submitGuestLoginAnswerEmailQuestion(
-        name: String,
-        email: String = "",
-        waitWithEmail: Boolean = false,
-        waitWithEmailThenCancel: Boolean = false) {
-
-    submitGuestLoginNoEmailQuestion(name, if (waitWithEmail) "" else email)
-
-    if (waitWithEmail) {
-      eventually { click on yesEmailBtn }
-      if (waitWithEmailThenCancel) {
-        click on noEmailBtn
-      }
-      else {
-        click on "dw-fi-eml-prf-adr"
-        enter(email)
-        click on emailPrefsubmitBtn
-      }
-    }
-    else if (email.nonEmpty) {
-      eventually { click on yesEmailBtn }
-    }
-    else {
-      eventually { click on noEmailBtn }
+    eventually {
+      click on "dw-dlg-rsp-ok"
     }
   }
 
@@ -207,13 +177,12 @@ trait TestLoginner {
 
 
   def logout(mustBeLoggedIn: Boolean = true) {
-    def isLoggedIn = find(logoutLink).map(_.isDisplayed) == Some(true)
+    def isLoggedIn = aLogoutLink.isDisplayed
     if (isLoggedIn) {
       eventually {
-        scrollIntoView(logoutLink)
-        click on logoutLink
+        scrollIntoView(aLogoutLink)
+        click on aLogoutLink
         //scrollIntoView(logoutSubmit)
-        click on logoutSubmit
       }
       eventually {
         isLoggedIn must be === false
@@ -225,13 +194,8 @@ trait TestLoginner {
   }
 
 
-  private def loginLink = "dw-a-login"
-  private def logoutLink = "dw-a-logout"
-  private def logoutSubmit = cssSelector("#dw-fs-lgo input[type=submit]")
-
-  def noEmailBtn = cssSelector("label[for='dw-fi-eml-prf-rcv-no']")
-  def yesEmailBtn = cssSelector("label[for='dw-fi-eml-prf-rcv-yes']")
-  def emailPrefsubmitBtn = "dw-fi-eml-prf-done"
+  private def aLoginLink = find(AnyLoginLink) getOrElse fail()
+  private def aLogoutLink = find(AnyLogoutLink) getOrElse fail()
 
 }
 

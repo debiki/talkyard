@@ -66,9 +66,10 @@ object Prelude {
   import java.lang.{UnsupportedOperationException => UOE}
 
   implicit class GetOrDie[A](val underlying: Option[A]) {
-    def getOrDie(errorCode: String): A = underlying.getOrElse(
+    def getOrDie(errorCode: String, message: String = ""): A = underlying.getOrElse(
       throw new ju.NoSuchElementException(
-        s"Element absent, `None.get` [error $errorCode]"))
+        if (message.nonEmpty) message
+        else s"Element absent, `None.get` [error $errorCode]"))
   }
 
   // Error codes should be formatted like so:

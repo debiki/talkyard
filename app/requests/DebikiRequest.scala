@@ -55,6 +55,12 @@ abstract class DebikiRequest[A] {
 
   def loginId: Option[String] = sid.loginId
 
+  def login: Option[Login] = loginId map { id: LoginId =>
+    dao.loadLogin(id).getOrDie("DwE55FU09", s"Login id `$id' missing")
+  }
+
+  def theLogin = login getOrElse throwForbidden("DwE53fhk90", "Not logged in")
+
   /**
    * The login id of the user making the request. Throws 403 Forbidden
    * if not logged in (shouldn't happen normally).

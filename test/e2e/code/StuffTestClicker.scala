@@ -30,7 +30,7 @@ import play.api.test.Helpers.testServerPort
  * Does stuff, e.g. logs in or edits a comment, by clicking on stuff
  * and sometimes typing stuff. All this stuff is done inside ScalaTest tests.
  */
-trait StuffTestClicker {
+trait StuffTestClicker extends DebikiSelectors {
   self: DebikiBrowserSpec =>
 
   private var knownWindowHandles = Set[String]()
@@ -142,9 +142,9 @@ trait StuffTestClicker {
   def gotoDiscussionPage(pageUrl: String) {
     go to (new Page { val url = pageUrl })
     // Consider the page loaded when login/out links appear.
-    eventually(Timeout(Span(10, Seconds))) {
-      val loginLinkWebElem = find(loginLink)
-      val logoutinkWebElem = find(logoutLink)
+    eventually {
+      val loginLinkWebElem = find(AnyLoginLink)
+      val logoutinkWebElem = find(AnyLogoutLink)
       assert(loginLinkWebElem.isDefined || logoutinkWebElem.isDefined)
     }
   }
@@ -221,7 +221,7 @@ trait StuffTestClicker {
     // clicked. Instead, fire the hover event "manually":
     // (I'll break out a reusable function... later on.)
     executeScript(i"""
-      jQuery('#post-$postId').parent().find('> .dw-p-as').trigger('mouseenter');
+      jQuery('#post-$postId').trigger('mouseenter');
       """)
 
     // TODO: Wait until element actually visible?
@@ -268,10 +268,6 @@ trait StuffTestClicker {
       s"//a[contains(concat(' ', @class, ' '), ' $actionLinkClass ')]"
     find(xpath(query))
   }
-
-
-  private def loginLink = "dw-a-login"
-  private def logoutLink = "dw-a-logout"
 
 }
 

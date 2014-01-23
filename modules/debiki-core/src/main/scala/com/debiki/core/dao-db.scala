@@ -109,6 +109,7 @@ abstract class SiteDbDao {
    */
   def saveLogout(loginId: String, logoutIp: String)
 
+  def loadLogin(loginId: LoginId): Option[Login]
 
   // ----- New pages, page meta
 
@@ -493,6 +494,11 @@ class ChargingSiteDbDao(
   def saveLogout(loginId: String, logoutIp: String) = {
     _chargeForOneWriteReq()
     _spi.saveLogout(loginId, logoutIp)
+  }
+
+  def loadLogin(loginId: LoginId): Option[Login] = {
+    _chargeForOneReadReq()
+    _spi.loadLogin(loginId)
   }
 
 

@@ -59,11 +59,6 @@ trait TestReplyer {
       // find("dw-fs-lgi-simple") foreach { _ =>
       // }
 
-      // Handle any email notifications question.
-      if (find("dw-f-eml-prf").map(_.isDisplayed) == Some(true)) {
-        click on noEmailBtn
-      }
-
       val postIdsNow = findAllPostIds
       val anyNewPostId = (postIdsNow -- postIdsBefore).headOption
       val newPostId = anyNewPostId getOrDie "Waiting for the new reply to appear..."

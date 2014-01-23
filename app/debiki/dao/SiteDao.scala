@@ -108,13 +108,24 @@ class SiteDao(protected val siteDbDao: ChargingSiteDbDao)
 
   // ----- Actions
 
-  /**
-   * Saves page actions and places messages in users' inboxes, as needed.
-   * Returns the page including new actions, and the actions, but with ids assigned.
-   */
+  /** Saves page actions and places messages in users' inboxes, as needed.
+    * Returns a pair with 1) the page including new actions plus the current user,
+    * and 2) the actions, but with ids assigned.
+    */
   final def savePageActionsGenNotfs(pageReq: PageRequest[_], actions: Seq[PostActionDtoOld])
         : (PageNoPath, Seq[PostActionDtoOld]) = {
-    savePageActionsGenNotfsImpl(pageReq.pageNoPath_!, actions)
+    val pagePartsNoAuthor = pageReq.pageNoPath_!.parts
+    // We're probably going to render parts of the page later, and then we need the
+    // user and the login, so add it to the page — they're otherwise absent if this
+    // is the user's first contribution to the page. (We need the login, because it
+    // knows the user's ip, which is needed when weighting post ratings.)
+    // Perhaps it'd be better if the ip was saved per post? Rather than per login.
+    // So this function didn't need to know that it has to add the login. That'd be simpler,
+    // but require somewhat more storage space.
+    val pageParts = pagePartsNoAuthor ++ pageReq.anyMeAsPeople +
+      pageReq.theLogin // <-- COULD remove if I ever make the ip part of the post
+    val page = PageNoPath(pageParts, pageReq.ancestorIdsParentFirst_!, pageReq.pageMeta_!)
+    savePageActionsGenNotfsImpl(page, actions)
   }
 
 

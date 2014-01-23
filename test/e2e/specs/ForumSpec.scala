@@ -119,7 +119,7 @@ class ForumSpec extends DebikiBrowserSpec with TestEditor with TestLoginner {
   private def createForumTopic(loginName: Option[String] = None): WindowTarget = {
     click on cssSelector(".dw-a-new-forum-topic")
     loginName foreach { name =>
-      submitGuestLoginNoEmailQuestion(name, email = "no-email@example.com")
+      submitGuestLogin(name, email = "no-email@example.com")
     }
     window(webDriver.getWindowHandle)
   }
