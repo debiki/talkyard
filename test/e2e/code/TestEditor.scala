@@ -27,7 +27,7 @@ import play.api.test.Helpers.testServerPort
 
 /** Clicks and edits articles and comments.
   */
-trait TestEditor {
+trait TestEditor extends org.scalatest.concurrent.PatienceConfiguration {
   self: DebikiBrowserSpec =>
 
 
@@ -91,7 +91,7 @@ trait TestEditor {
       // just after `moveToElement` (above) but before `click`? The dashbar pushes
       // elems downwards a bit, so we might click the wrong thing?)
       import org.scalatest.time.{Span, Seconds}
-      eventually(Timeout(Span(3, Seconds))) {
+      eventually(timeout(Span(3, Seconds))) {
         findEditorTextareaFor(postId) getOrElse fail()
       }
     }

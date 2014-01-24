@@ -50,9 +50,6 @@ trait TestLoginner extends DebikiSelectors {
     switchToNewlyOpenedWindow()
     fillInGoogleCredentials()
     webDriver.switchTo().window(originalWindow)
-    eventually {
-      click on "dw-f-lgi-ok-ok"
-    }
   }
 
 
