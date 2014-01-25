@@ -101,6 +101,15 @@ abstract class DeleteActivitySpecConstructor(iframe: Boolean)
     }
 
     "delete comment #ad1 and tree #ad2 -> #ad3, leave #ad4" in {
+      if (embeddedCommentsWindowAndFrame.isDefined) {
+        // Workaround. I don't know why, but in an iframe, the Delete button doesn't appear
+        // unless I reload the page. But it is visible directly when running in "full window"
+        // mode, and it should be. For now, do this workaround only for iframes:
+        reloadPageWaitForLoginLinks()
+      }
+
+      // This doesn't work when in an iframe, because I haven't yet converted `?delete`
+      // to `http://the-correct-origin/-/delete` + JSON.
       deleteSingleComment(postId_ad1)
       deleteCommentTree(postId_ad2)
     }
