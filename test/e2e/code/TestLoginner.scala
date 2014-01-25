@@ -78,8 +78,23 @@ trait TestLoginner extends DebikiSelectors {
     // Update the browser: set cookies.
     val (_, _, sidAndXsrfCookies) = debiki.Xsrf.newSidAndXsrf(Some(loginGrant))
     val userConfigCookie = controllers.AppConfigUser.userConfigCookie(loginGrant)
-    for (cookie <- userConfigCookie :: sidAndXsrfCookies)
-      add.cookie(cookie.name, cookie.value)
+    for (cookie <- userConfigCookie :: sidAndXsrfCookies) {
+      // Set cookie via Javascript: ...
+      executeScript(
+        s"debiki.internal.$$.cookie('${cookie.name}', '${cookie.value}', { path: '/' });")
+      // ... Because the preferred way to set cookies:
+      //   add.cookie(cookie.name, cookie.value)
+      // doesn't work when in an iframe, probably because add.cookie attempts to add
+      // the cookie to the wrong domain or isn't allowed to add it to the iframe's domain
+      // because it's different from the embedding domain.
+      // And all these attempts to set the domain results in:
+      //      org.openqa.selenium.InvalidCookieDomainException "invalid domain: ..."
+      //   - mycomputer   // that's the embedding domain
+      //   - .hello.mycomputer
+      //   - hello.mycomputer
+      //   - localhost
+      //   - .localhost
+    }
 
     // Redraw login related stuff and sync XSRF tokens.
     executeScript("debiki.internal.Me.fireLogin()")

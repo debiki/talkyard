@@ -254,7 +254,7 @@ trait StuffTestClicker extends DebikiSelectors {
 
   def findActionLink_!(postId: ActionId, actionLinkClass: String): Element = {
     findActionLink(postId, actionLinkClass) getOrDie
-        s"No $actionLinkClass link found for post $postId"
+        s"No $actionLinkClass link found for post $postId [DwE485EF0]"
   }
 
 

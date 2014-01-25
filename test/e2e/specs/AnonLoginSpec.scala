@@ -48,22 +48,19 @@ with StartServerAndChromeDriverFactory
 @test.tags.EndToEndTest
 @DoNotDiscover
 class AnonLoginSpec extends AnonLoginSpecConstructor(iframe = false) {
-
-  lazy val testPage = createTestPage(PageRole.Generic,
-    title = "Test Page Title 27KV09", body = Some("Test page text 953Ih31."))
-
+  lazy val testPageUrl = createTestPage(PageRole.Generic,
+    title = "Test Page Title 27KV09", body = Some("Test page text 953Ih31.")).url
 }
 
 
 @test.tags.EndToEndTest
 @DoNotDiscover
 class AnonLoginSpecForEmbeddedComments extends AnonLoginSpecConstructor(iframe = true) {
-
-  lazy val testPage = {
+  lazy val testPageUrl = {
     ensureFirstSiteCreated()
-    new TestPage(url = "http://mycomputer:8080/embeds-localhost-topic-id-1001.html", id = "???")
+    rememberEmbeddedCommentsIframe()
+    "http://mycomputer:8080/embeds-localhost-topic-id-1001.html"
   }
-
 }
 
 
@@ -75,20 +72,14 @@ class AnonLoginSpecForEmbeddedComments extends AnonLoginSpecConstructor(iframe =
 abstract class AnonLoginSpecConstructor(val iframe: Boolean)
   extends DebikiBrowserSpec with TestReplyer with TestLoginner {
 
-  def testPage: TestPage
+  def testPageUrl: String
 
   def randomId() = nextRandomString() take 5
 
   "Anon user with a browser can" - {
 
-    if (iframe) {
-      "remember embedded comments window handle and frame no" in {
-        embeddedCommentsWindowAndFrame = Some((webDriver.getWindowHandle(), 0))
-      }
-    }
-
     "open a test page" in {
-      gotoDiscussionPage(testPage.url)
+      gotoDiscussionPage(testPageUrl)
     }
 
     "login and reply as new Anon User, specify no email" - {

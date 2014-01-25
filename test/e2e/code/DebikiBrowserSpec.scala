@@ -67,6 +67,10 @@ abstract class DebikiBrowserSpec extends FreeSpec with WebBrowser
     */
   var embeddedCommentsWindowAndFrame: Option[(String, Int)] = None
 
+  def rememberEmbeddedCommentsIframe(number: Int = 0) {
+    embeddedCommentsWindowAndFrame = Some((webDriver.getWindowHandle(), number))
+  }
+
   def switchToAnyEmbeddedCommentsIframe() {
     embeddedCommentsWindowAndFrame foreach { case (iframeWindowHandle, iframeNo) =>
       webDriver.switchTo().window(iframeWindowHandle)

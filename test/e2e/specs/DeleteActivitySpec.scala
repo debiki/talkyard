@@ -32,6 +32,33 @@ import test.e2e.code._
 class DeleteActivitySpecRunner extends org.scalatest.Suites(new DeleteActivitySpec)
 with StartServerAndChromeDriverFactory
 
+/** Runs the DeleteActivitySpecForEmbeddedComments suite
+  * in SBT:  test-only test.e2e.specs.DeleteActivitySpecForEmbeddedCommentsRunner
+  * in test:console:  (new test.e2e.specs.DeleteActivitySpecForEmbeddedCommentsRunner).execute()
+  */
+@DoNotDiscover
+class DeleteActivitySpecForEmbeddedCommentsRunner
+  extends org.scalatest.Suites(new DeleteActivitySpecForEmbeddedComments)
+  with StartServerAndChromeDriverFactory
+
+
+@test.tags.EndToEndTest
+@DoNotDiscover
+class DeleteActivitySpec extends DeleteActivitySpecConstructor(iframe = false) {
+  lazy val testPageUrl = createTestPage(PageRole.Generic,
+    title = "Delete Comments Test 053KRI", body = Some("Delete comments test 71QE05.")).url
+}
+
+@test.tags.EndToEndTest
+@DoNotDiscover
+class DeleteActivitySpecForEmbeddedComments extends DeleteActivitySpecConstructor(iframe = true) {
+  lazy val testPageUrl = {
+    ensureFirstSiteCreated()
+    rememberEmbeddedCommentsIframe()
+    "http://mycomputer:8080/embeds-localhost-topic-id-1002.html"
+  }
+}
+
 
 /** Tests that comments can be deleted.
   *
@@ -44,13 +71,10 @@ with StartServerAndChromeDriverFactory
   * Then deletes #ad1 and #ad2, and tests that they plus #ad3 are gone,
   * but that #ad4 is still visible.
   */
-@test.tags.EndToEndTest
-@DoNotDiscover
-class DeleteActivitySpec extends DebikiBrowserSpec with TestReplyer with TestLoginner
-  with TestDeleterCollapserFlagger {
+abstract class DeleteActivitySpecConstructor(iframe: Boolean)
+  extends DebikiBrowserSpec with TestReplyer with TestLoginner with TestDeleterCollapserFlagger {
 
-  lazy val testPage = createTestPage(PageRole.Generic,
-    title = "Delete Comments Test 053KRI", body = Some("Delete comments test 71QE05."))
+  def testPageUrl: String
 
   var postId_ad1 = PageParts.NoId
   var postId_ad2 = PageParts.NoId
@@ -61,7 +85,7 @@ class DeleteActivitySpec extends DebikiBrowserSpec with TestReplyer with TestLog
   "Comments and comment trees can be deleted:" - {
 
     "open a test page" in {
-      gotoDiscussionPage(testPage.url)
+      gotoDiscussionPage(testPageUrl)
     }
 
     "login as admin" in {
