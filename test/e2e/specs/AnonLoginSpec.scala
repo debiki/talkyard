@@ -35,21 +35,57 @@ class AnonLoginSpecRunner extends org.scalatest.Suites(new AnonLoginSpec)
 with StartServerAndChromeDriverFactory
 
 
+/** Runs the AnonLoginSpecForEmbeddedComments suite
+  * in SBT:  test-only test.e2e.specs.AnonLoginSpecForEmbeddedCommentsRunner
+  * In test:console:  (new test.e2e.specs.AnonLoginSpecForEmbeddedCommentsRunner).execute()
+  */
+@DoNotDiscover
+class AnonLoginSpecForEmbeddedCommentsRunner
+  extends org.scalatest.Suites(new AnonLoginSpecForEmbeddedComments)
+with StartServerAndChromeDriverFactory
+
+
+@test.tags.EndToEndTest
+@DoNotDiscover
+class AnonLoginSpec extends AnonLoginSpecConstructor(iframe = false) {
+
+  lazy val testPage = createTestPage(PageRole.Generic,
+    title = "Test Page Title 27KV09", body = Some("Test page text 953Ih31."))
+
+}
+
+
+@test.tags.EndToEndTest
+@DoNotDiscover
+class AnonLoginSpecForEmbeddedComments extends AnonLoginSpecConstructor(iframe = true) {
+
+  lazy val testPage = {
+    ensureFirstSiteCreated()
+    new TestPage(url = "http://mycomputer:8080/embeds-localhost-topic-id-1001.html", id = "???")
+  }
+
+}
+
+
 /**
  * Tests anonymous user login, 1) by clicking Reply and logging in
  * when submitting, 2) by clicking Rate and logging in when rating,
  * and 3) via the "Log in" link,
  */
-@test.tags.EndToEndTest
-@DoNotDiscover
-class AnonLoginSpec extends DebikiBrowserSpec with TestReplyer with TestLoginner {
+abstract class AnonLoginSpecConstructor(val iframe: Boolean)
+  extends DebikiBrowserSpec with TestReplyer with TestLoginner {
 
-  lazy val testPage = createTestPage(PageRole.Generic,
-      title = "Test Page Title 27KV09", body = Some("Test page text 953Ih31."))
+  def testPage: TestPage
 
   def randomId() = nextRandomString() take 5
 
   "Anon user with a browser can" - {
+
+    if (iframe) {
+      "remember embedded comments window handle and frame no" in {
+        embeddedCommentsWindowAndFrame = Some((webDriver.getWindowHandle(), 0))
+      }
+    }
 
     "open a test page" in {
       gotoDiscussionPage(testPage.url)

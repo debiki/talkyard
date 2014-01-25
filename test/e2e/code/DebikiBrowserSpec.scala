@@ -59,6 +59,25 @@ abstract class DebikiBrowserSpec extends FreeSpec with WebBrowser
     webDriver.quit()
   }
 
+
+  /** If the E2E tests are to be run in an embedded comments iframe, then
+    * this is the window handle of the main window, and the index of the iframe.
+    * It's a `var`, because there might be more than one iframe with
+    * embedded comments, and we might want to test all of them.
+    */
+  var embeddedCommentsWindowAndFrame: Option[(String, Int)] = None
+
+  def switchToAnyEmbeddedCommentsIframe() {
+    embeddedCommentsWindowAndFrame foreach { case (iframeWindowHandle, iframeNo) =>
+      webDriver.switchTo().window(iframeWindowHandle)
+      // Debiki's embedded comments iframe is created by Javascript and not available
+      // immediately.
+      eventually {
+        webDriver.switchTo().frame(iframeNo)
+      }
+    }
+  }
+
 }
 
 

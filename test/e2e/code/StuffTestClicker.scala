@@ -141,6 +141,7 @@ trait StuffTestClicker extends DebikiSelectors {
 
   def gotoDiscussionPage(pageUrl: String) {
     go to (new Page { val url = pageUrl })
+    switchToAnyEmbeddedCommentsIframe()
     // Consider the page loaded when login/out links appear.
     eventually {
       val loginLinkWebElem = find(AnyLoginLink)

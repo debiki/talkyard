@@ -56,6 +56,11 @@ trait StuffCreator {
   val DefaultBackgroundColor = "rgba(255, 248, 220, 1)" // that's cornsilk
 
 
+  def ensureFirstSiteCreated() {
+    firstSiteId
+  }
+
+
   /**
    * The id of website with origin http://localhost:test-server-port.
    * It's created lazily.
@@ -115,6 +120,8 @@ trait StuffCreator {
       val address = firstSiteHost
       val https = TenantHost.HttpsNone
       val pagesToCreate = Nil
+      // Some E2E tests create embedded discussions, but that requires an embedding site URL.
+      override val embeddingSiteUrl = Some("http://mycomputer:8080")
     })
 
     // Make the site accessible via "localhost": (in addition to 127.0.0.1)

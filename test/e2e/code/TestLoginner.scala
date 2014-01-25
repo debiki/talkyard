@@ -30,8 +30,9 @@ trait TestLoginner extends DebikiSelectors {
 
 
   private var firstGmailLogin = true
-
   private var adminMadeAdmin = false
+  private val LoginPopupWindowName = "LoginPopup"
+
 
   /** Clicks the login link at the top of the page and logs in.
     * Specifies no email.
@@ -149,6 +150,10 @@ trait TestLoginner extends DebikiSelectors {
   /** Fills in the guest login form.
     */
   def submitGuestLogin(name: String, email: String = "") {
+
+    if (embeddedCommentsWindowAndFrame.isDefined)
+      webDriver.switchTo().window(LoginPopupWindowName)
+
     // Open guest login dialog.
     eventually { click on "dw-lgi-guest" }
 
@@ -162,8 +167,14 @@ trait TestLoginner extends DebikiSelectors {
 
     // Submit.
     click on "dw-lgi-guest-submit"
-    eventually {
-      click on "dw-dlg-rsp-ok"
+
+    switchToAnyEmbeddedCommentsIframe()
+
+    // A certain confirmation dialog is currently not shown when logging in in a popup.
+    if (embeddedCommentsWindowAndFrame.isEmpty) {
+      eventually {
+        click on "dw-dlg-rsp-ok"
+      }
     }
   }
 
