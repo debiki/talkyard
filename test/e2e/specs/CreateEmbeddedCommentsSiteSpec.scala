@@ -254,12 +254,16 @@ abstract class CreateEmbeddedCommentsSiteSpecConstructor
     */
 
     "find empty page list" in {
+      // Test bug: It might be empty simply because the page list doesn't load that quickly.
       find(cssSelector("table.page-table tbody tr")) mustEqual None
+      pending
     }
 
     "find empty activity list" in {
+      // Test bug: It might be empty simply because the activity list doesn't load that quickly.
       click on linkText("Activity")
-      val bää = find(cssSelector("[ng-controller='ActionListCtrl'] tbody tr"))
+      find(cssSelector("[ng-controller='ActionListCtrl'] tbody tr")) mustEqual None
+      pending
     }
 
     "view empty discussion in embedding page" in {
