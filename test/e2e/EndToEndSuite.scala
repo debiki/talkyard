@@ -47,7 +47,7 @@ class EndToEndSuite extends Suites(
   * To start a server at mycomputer:8080:
   * - Edit your hosts file: /etc/hosts
   * - Install Node.js and http-server
-  * - CD to test-client/embedded-comments/
+  * - CD to test/resources/embedding-pages/
   * - Type http-server and hit enter
   *
   * I'll place all that in a script somehow in the future? (Except for
