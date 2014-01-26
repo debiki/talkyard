@@ -44,6 +44,9 @@ class EndToEndSuite extends Suites(
 /** Runs embedded comments end to end tests. Requires a server running
   * at mycomputer:8080 that shows a /static-page.html.
   *
+  * In SBT:  test-only test.e2e.EndToEndSuiteForEmbeddedComments
+  * In test:console:  (new test.e2e.EndToEndSuiteForEmbeddedComments).execute()
+  *
   * To start a server at mycomputer:8080:
   * - Edit your hosts file: /etc/hosts
   * - Install Node.js and http-server
@@ -54,8 +57,10 @@ class EndToEndSuite extends Suites(
   * installing Node and editing /etc/hosts perhaps.) Or should I start an
   * embedded Java server from within the test? Instead of relying on Node.js.
   */
+@test.tags.EndToEndTest
 class EndToEndSuiteForEmbeddedComments extends Suites(
-  new AnonLoginSpecForEmbeddedComments)
+  new AnonLoginSpecForEmbeddedComments,
+  new CreateEmbeddedCommentsSiteSpec)
 with StartServerAndChromeDriverFactory
 
 

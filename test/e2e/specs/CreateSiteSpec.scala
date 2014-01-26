@@ -84,6 +84,8 @@ class CreateSiteSpec extends DebikiBrowserSpec with TestSiteCreator {
     }
 
     "not allow site creation if there's no `new-website-domain' config value" in {
+      // Please sync this test with the same test in CreateEmbeddedCommentsSiteSpec.
+
       // Verify that clicking Submit results in:
       // 403 Forbidden, "... may not create website from this website ..."
       // Have to do this from another site; `localhost` allows website creation,

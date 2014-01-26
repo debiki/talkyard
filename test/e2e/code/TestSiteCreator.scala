@@ -50,6 +50,10 @@ trait TestSiteCreator extends TestLoginner {
   }
 
 
+  def createEmbeddedCommentsSiteStartPage = new Page {
+    val url = s"http://$newSiteDomain/-/create-embedded-site"
+  }
+
   def nextSiteName(): String = {
     nextWebsiteId += 1
     s"test-site-$nextWebsiteId"
