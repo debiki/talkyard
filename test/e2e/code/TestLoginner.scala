@@ -54,6 +54,15 @@ trait TestLoginner extends DebikiSelectors {
   }
 
 
+  def loginAsPasswordUser(email: String, password: String) {
+    eventually { click on "email" }
+    enter(email)
+    click on "password"
+    enter(password)
+    click on cssSelector("""[type="submit"]""")
+  }
+
+
   /** Creates an admin user, if not already done, and logs in as that user.
     * However, does this via direct database calls; does not use Selenium / ScalaTest.
     */
@@ -162,6 +171,63 @@ trait TestLoginner extends DebikiSelectors {
   }
 
 
+  def createNewPasswordAccount(
+        email: String,
+        password: String,
+        displayName: String,
+        country: String,
+        fullName: String) {
+
+    // Only these emails work with E2E tests, see Mailer.scala, search for "example.com".
+    assert(email endsWith "example.com")
+
+    info("creating and logging in with new password account")
+    click on "create-account"
+
+    eventually {
+      click on cssSelector("""input[name="emailAddress"]""")
+      enter(email)
+      click on cssSelector("""[type="submit"]""")
+    }
+
+    eventually {
+      val nextPageUrl = debiki.Mailer.EndToEndTest.getAndForgetMostRecentEmail() match {
+        case None =>
+          fail()
+        case Some(email: Email) =>
+          extractNextPageUrlFromNewAccountEmail(email)
+      }
+      go to nextPageUrl
+    }
+
+    eventually {
+      pageSource must include ("Fill In Your Details")
+
+      click on "displayName"
+      enter("Admins_display_name")
+
+      click on "fullName"
+      enter("Admins_full_name")
+
+      click on "country"
+      enter("Admins_country")
+
+      click on "password"
+      enter(password)
+
+      click on "passwordAgain"
+      enter(password)
+
+      click on cssSelector("""[type="submit"]""")
+    }
+
+    eventually {
+      pageSource must include ("Your account has been created")
+      click on partialLinkText("Click to continue")
+    }
+  }
+
+
   /** Fills in the guest login form.
     */
   def submitGuestLogin(name: String, email: String = "") {
@@ -213,6 +279,29 @@ trait TestLoginner extends DebikiSelectors {
     }
     else if (mustBeLoggedIn) {
       fail("Not logged in; must be logged in")
+    }
+  }
+
+
+  /** The email sent when creating a new account looks like so:
+    * {{{
+    * ... To create an account at <tt>localhost:19001</tt>, please follow
+    * <a href="http://localhost:19001/-/create-account/user-details/<email-id>/
+    *                  %2F-%2Fcreate-embedded-site%2Fspecify-embedding-site-address">
+    *   this link</a>. ....
+    * }}}
+    *
+    * This function extracts the url to click. "(?s)" below makes "." match newline.
+    */
+  private def extractNextPageUrlFromNewAccountEmail(email: Email) = {
+    val NextPageUrlRegex =
+      """(?s).* href="(https?://[^"]+/create-account/user-details/[^"]+)".*""".r
+    email.bodyHtmlText match {
+      case NextPageUrlRegex(url) =>
+        url
+      case _ =>
+        // This is an old email from another E2E test? Or the regex above is wrong.
+        fail()
     }
   }
 

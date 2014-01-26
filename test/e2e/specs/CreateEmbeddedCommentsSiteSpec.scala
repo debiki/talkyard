@@ -54,7 +54,16 @@ class CreateEmbeddedCommentsSiteNewPasswordAccountSpecRunner
 @DoNotDiscover
 class CreateEmbeddedCommentsSiteGmailLoginSpec
     extends CreateEmbeddedCommentsSiteSpecConstructor {
-  def login() {
+
+  def loginToCreateSite() {
+    login()
+  }
+
+  def loginToAdminPage() {
+    login()
+  }
+
+  private def login() {
     info("login with Gmail OpenID")
     clickLoginWithGmailOpenId()
   }
@@ -68,10 +77,23 @@ class CreateEmbeddedCommentsSiteGmailLoginSpec
 @DoNotDiscover
 class CreateEmbeddedCommentsSiteNewPasswordAccountSpec
   extends CreateEmbeddedCommentsSiteSpecConstructor {
-  def login() {
-    info("creating and logging in with new password account")
-    ???
+
+  val AdminsEmail = "admin@example.com"
+  val AdminsPassword = "Admins_password"
+
+  def loginToCreateSite() {
+    createNewPasswordAccount(
+      email = AdminsEmail,
+      password = AdminsPassword,
+      displayName = "Admins_display_name",
+      country = "Admins_country",
+      fullName = "Admins_full_name")
   }
+
+  def loginToAdminPage() {
+    loginAsPasswordUser(AdminsEmail, AdminsPassword)
+  }
+
 }
 
 
@@ -91,7 +113,10 @@ abstract class CreateEmbeddedCommentsSiteSpecConstructor
   extends DebikiBrowserSpec with TestSiteCreator with TestReplyer {
 
   /** Subclasses override and test both Gmail login, and create-password-account login. */
-  def login()
+  def loginToCreateSite()
+
+  /** Subclasses override and test both Gmail login, and login with password account. */
+  def loginToAdminPage()
 
   /** You need an entry '127.0.0.1 mycomputer' in your hosts file. */
   val EmbeddingSiteUrl = "http://mycomputer:8080"
@@ -111,7 +136,7 @@ abstract class CreateEmbeddedCommentsSiteSpecConstructor
     }
 
     "login" in {
-      login()
+      loginToCreateSite()
       eventually {
         find(EmbddingSiteUrlInputId) must not equal(None)
       }
@@ -170,7 +195,7 @@ abstract class CreateEmbeddedCommentsSiteSpecConstructor
     "go to admin page and login" in {
       val adminPageUrl = s"http://site-${embeddedSiteId.get}.${debiki.Globals.baseDomain}/-/admin/"
       click on cssSelector(s"a[href='$adminPageUrl']")
-      clickLoginWithGmailOpenId()
+      loginToAdminPage()
       eventually {
         pageSource must include ("Admin Page")
       }
