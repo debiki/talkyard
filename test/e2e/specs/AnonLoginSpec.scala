@@ -40,14 +40,33 @@ with StartServerAndChromeDriverFactory
   * In test:console:  (new test.e2e.specs.AnonLoginSpecForEmbeddedCommentsRunner).execute()
   */
 @DoNotDiscover
-class AnonLoginSpecForEmbeddedCommentsRunner
-  extends org.scalatest.Suites(new AnonLoginSpecForEmbeddedComments)
+class AnonLoginSpecForEmbeddedCommentsRunner_NothingPreLoaded
+  extends org.scalatest.Suites(new AnonLoginSpecForEmbeddedComments_NothingPreLoaded)
 with StartServerAndChromeDriverFactory
+
+
+/** Runs the AnonLoginSpecForEmbeddedComments suite, with various
+  * combinations of jQuery and Modernizr pre loaded by the static HTML
+  * page itself. Then Debiki isn't supposed to also load those libs.
+  *
+  * in SBT:
+  *   test-only test.e2e.specs.AnonLoginSpecForEmbeddedCommentsRunner_jQueryModernizrPreLoaded
+  * In test:console:
+  *   (new test.e2e.specs.AnonLoginSpecForEmbeddedCommentsRunner_jQueryModernizrPreLoaded).execute()
+  */
+@DoNotDiscover
+class AnonLoginSpecForEmbeddedCommentsRunner_jQueryModernizrPreLoaded
+  extends org.scalatest.Suites(
+    new AnonLoginSpecForEmbeddedComments_jQuery21PreLoaded,
+    new AnonLoginSpecForEmbeddedComments_Modernizr27PreLoaded,
+    new AnonLoginSpecForEmbeddedComments_jQuery21AndModernizr27PreLoaded,
+    new AnonLoginSpecForEmbeddedComments_jQuery17AndModernizr25PreLoaded)
+  with StartServerAndChromeDriverFactory
 
 
 @test.tags.EndToEndTest
 @DoNotDiscover
-class AnonLoginSpec extends AnonLoginSpecConstructor(iframe = false) {
+class AnonLoginSpec extends AnonLoginSpecConstructor(iframe = false, quick = false) {
   lazy val testPageUrl = createTestPage(PageRole.Generic,
     title = "Test Page Title 27KV09", body = Some("Test page text 953Ih31.")).url
 }
@@ -55,11 +74,41 @@ class AnonLoginSpec extends AnonLoginSpecConstructor(iframe = false) {
 
 @test.tags.EndToEndTest
 @DoNotDiscover
-class AnonLoginSpecForEmbeddedComments extends AnonLoginSpecConstructor(iframe = true) {
+class AnonLoginSpecForEmbeddedComments_NothingPreLoaded
+  extends AnonLoginSpecForEmbeddedComments(
+    "embeds-localhost-topic-id-1001.html", quick = false)
+
+@test.tags.EndToEndTest
+@DoNotDiscover
+class AnonLoginSpecForEmbeddedComments_jQuery21PreLoaded
+  extends AnonLoginSpecForEmbeddedComments(
+    "embeds-localhost-topic-id-1001-jquery-2.1-pre-loaded.html", quick = true)
+
+@test.tags.EndToEndTest
+@DoNotDiscover
+class AnonLoginSpecForEmbeddedComments_Modernizr27PreLoaded
+  extends AnonLoginSpecForEmbeddedComments(
+    "embeds-localhost-topic-id-1001-modernizr-2.7-pre-loaded.html", quick = true)
+
+@test.tags.EndToEndTest
+@DoNotDiscover
+class AnonLoginSpecForEmbeddedComments_jQuery21AndModernizr27PreLoaded
+  extends AnonLoginSpecForEmbeddedComments(
+    "embeds-localhost-topic-id-1001-jquery-2.1-and-modernizr-2.7-pre-loaded.html", quick = true)
+
+@test.tags.EndToEndTest
+@DoNotDiscover
+class AnonLoginSpecForEmbeddedComments_jQuery17AndModernizr25PreLoaded
+  extends AnonLoginSpecForEmbeddedComments(
+    "embeds-localhost-topic-id-1001-jquery-1.7-and-modernizr-2.5-pre-loaded.html", quick = true)
+
+
+class AnonLoginSpecForEmbeddedComments(val pageUrlPath: String, quick: Boolean)
+    extends AnonLoginSpecConstructor(iframe = true, quick = quick) {
   lazy val testPageUrl = {
     ensureFirstSiteCreated()
     rememberEmbeddedCommentsIframe()
-    "http://mycomputer:8080/embeds-localhost-topic-id-1001.html"
+    s"http://mycomputer:8080/$pageUrlPath"
   }
 }
 
@@ -69,7 +118,7 @@ class AnonLoginSpecForEmbeddedComments extends AnonLoginSpecConstructor(iframe =
  * when submitting, 2) by clicking Rate and logging in when rating,
  * and 3) via the "Log in" link,
  */
-abstract class AnonLoginSpecConstructor(val iframe: Boolean)
+abstract class AnonLoginSpecConstructor(val iframe: Boolean, val quick: Boolean)
   extends DebikiBrowserSpec with TestReplyer with TestLoginner {
 
   def testPageUrl: String
@@ -86,40 +135,41 @@ abstract class AnonLoginSpecConstructor(val iframe: Boolean)
       loginAndReplyAsAnon(name = s"Anon-${randomId()}")
     }
 
-    "login and reply as new Anon User, specify email" - {
-      val name = s"anon-${randomId()}"
-      loginAndReplyAsAnon(name, email = s"$name@example.com")
-    }
+    if (!quick) {
+      "login and reply as new Anon User, specify email" - {
+        val name = s"anon-${randomId()}"
+        loginAndReplyAsAnon(name, email = s"$name@example.com")
+      }
 
-    "login and reply as existing Anon User with no email" in {
-      pending
-    }
+      "login and reply as existing Anon User with no email" in {
+        pending
+      }
 
-    "login and reply as existing Anon User with email specified directly" in {
-      pending
-    }
+      "login and reply as existing Anon User with email specified directly" in {
+        pending
+      }
 
-    "login and reply as existing Anon User with email specified later" in {
-      pending
-    }
+      "login and reply as existing Anon User with email specified later" in {
+        pending
+      }
 
-    "login and rate as new Anon User, specify no email" - {
-      loginAndRateAsAnon(name = nextName(), postId = 1)
-    }
+      "login and rate as new Anon User, specify no email" - {
+        loginAndRateAsAnon(name = nextName(), postId = 1)
+      }
 
-    "login and rate as new Anon User, specify email" - {
-      val name = nextName()
-      loginAndRateAsAnon(name, email = s"$name@example.com", postId = 1)
-    }
+      "login and rate as new Anon User, specify email" - {
+        val name = nextName()
+        loginAndRateAsAnon(name, email = s"$name@example.com", postId = 1)
+      }
 
-    "login and rate as existing Anon User with no email" in {
-      pending
-    }
+      "login and rate as existing Anon User with no email" in {
+        pending
+      }
 
-    "login and rate as existing Anon User with email specified" in {
-      pending
+      "login and rate as existing Anon User with email specified" in {
+        pending
+      }
     }
-
   }
 
 
