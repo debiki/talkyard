@@ -48,6 +48,24 @@ class CreateEmbeddedCommentsSiteNewPasswordAccountSpecRunner
   with StartServerAndChromeDriverFactory
 
 
+/** Runs the CreateEmbeddedCommentsSiteSpec suite, with an admin that creates
+  * a new password account and logs in with it. It runs
+  * [[test.e2e.specs.CreateEmbeddedCommentsSiteNewPasswordAccountSpec]] first, because
+  * it creates a password account that we can reuse.
+  *
+  * In Play:
+  *   test-only test.e2e.specs.CreateEmbeddedCommentsSiteOldPasswordAccountSpecRunner
+  * In test:console:
+  *   (new test.e2e.specs.CreateEmbeddedCommentsSiteOldPasswordAccountSpecRunner).execute()
+  */
+@DoNotDiscover
+class CreateEmbeddedCommentsSiteOldPasswordAccountSpecRunner
+  extends org.scalatest.Suites(
+    new CreateEmbeddedCommentsSiteNewPasswordAccountSpec,
+    new CreateEmbeddedCommentsSiteOldPasswordAccountSpec)
+  with StartServerAndChromeDriverFactory
+
+
 /** Tests creation of an embedded comment site, logs in with Gmail.
   */
 @test.tags.EndToEndTest
@@ -94,6 +112,33 @@ class CreateEmbeddedCommentsSiteNewPasswordAccountSpec
     loginAsPasswordUser(AdminsEmail, AdminsPassword)
   }
 
+}
+
+
+/** Tests creation of an embedded comment site, creates and logs in with an old
+  * password account. Assumes that
+  * [[test.e2e.specs.CreateEmbeddedCommentsSiteNewPasswordAccountSpec]] has just
+  * been run and created a password account.
+  */
+@test.tags.EndToEndTest
+@DoNotDiscover
+class CreateEmbeddedCommentsSiteOldPasswordAccountSpec
+  extends CreateEmbeddedCommentsSiteSpecConstructor {
+
+  val AdminsEmail = "admin@example.com"
+  val AdminsPassword = "Admins_password"
+
+  def loginToCreateSite() {
+    login()
+  }
+
+  def loginToAdminPage() {
+    login()
+  }
+
+  def login() {
+    loginAsPasswordUser(AdminsEmail, AdminsPassword)
+  }
 }
 
 
