@@ -71,7 +71,7 @@ object CreateEmbeddedSiteController extends mvc.Controller {
   }
 
 
-  def handleEmbeddingSiteUrlForm() = JsonOrFormDataPostAction(maxBytes = 100) { request =>
+  def handleEmbeddingSiteUrlForm() = JsonOrFormDataPostAction(maxBytes = 200) { request =>
 
     val embeddingSiteUrl =
       request.body.getEmptyAsNone("embeddingSiteUrl") getOrElse

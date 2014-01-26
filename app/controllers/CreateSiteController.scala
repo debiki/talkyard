@@ -92,7 +92,7 @@ object CreateSiteController extends mvc.Controller {
   }
 
 
-  def handleWebsiteNameForm() = JsonOrFormDataPostAction(maxBytes = 100) {
+  def handleWebsiteNameForm() = JsonOrFormDataPostAction(maxBytes = 200) {
       request =>
 
     val newWebsiteName =
