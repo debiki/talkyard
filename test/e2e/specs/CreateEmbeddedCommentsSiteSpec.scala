@@ -18,39 +18,80 @@
 package test.e2e.specs
 
 import com.debiki.core.Prelude._
-import org.scalatest.time.{Span, Seconds}
 import org.scalatest.DoNotDiscover
 import test.e2e.code._
 
 
-/** Runs the CreateSiteSpec suite.
-  * In Play:   test-only test.e2e.specs.CreateEmbeddedCommentsSiteSpecRunner
-  * In test:console:  (new test.e2e.specs.CreateEmbeddedCommentsSiteSpecRunner).execute()
+/** Runs the CreateEmbeddedCommentsSiteSpec suite, with an admin that logs in
+  * with Gmail.
+  *
+  * In Play:   test-only test.e2e.specs.CreateEmbeddedCommentsSiteGmailLoginSpecRunner
+  * In test:console:  (new test.e2e.specs.CreateEmbeddedCommentsSiteGmailLoginSpecRunner).execute()
   */
 @DoNotDiscover
-class CreateEmbeddedCommentsSiteSpecRunner
-  extends org.scalatest.Suites(new CreateEmbeddedCommentsSiteSpec)
+class CreateEmbeddedCommentsSiteGmailLoginSpecRunner
+  extends org.scalatest.Suites(new CreateEmbeddedCommentsSiteGmailLoginSpec)
   with StartServerAndChromeDriverFactory
 
 
-/**
- * Tests website creation.
- *
- * Logs in as debiki.tester@gmail.com and creates an embedded comments site,
- * checks the admin dashboard and tests to add some comments to an embedded discussions.
- *
- * You need to add entries to your hosts file:
- *   127.0.0.1 mycomputer
- *   127.0.0.1 site-11.localhost
- *   127.0.0.1 site-12.localhost
- *   127.0.0.1 site-13.localhost
- *   ...perhaps some more or less.
- */
+/** Runs the CreateEmbeddedCommentsSiteSpec suite, with an admin that creates
+  * a new password account and logs in with it.
+  *
+  * In Play:
+  *   test-only test.e2e.specs.CreateEmbeddedCommentsSiteNewPasswordAccountSpecRunner
+  * In test:console:
+  *   (new test.e2e.specs.CreateEmbeddedCommentsSiteNewPasswordAccountSpecRunner).execute()
+  */
+@DoNotDiscover
+class CreateEmbeddedCommentsSiteNewPasswordAccountSpecRunner
+  extends org.scalatest.Suites(new CreateEmbeddedCommentsSiteNewPasswordAccountSpec)
+  with StartServerAndChromeDriverFactory
+
+
+/** Tests creation of an embedded comment site, logs in with Gmail.
+  */
 @test.tags.EndToEndTest
 @DoNotDiscover
-class CreateEmbeddedCommentsSiteSpec
+class CreateEmbeddedCommentsSiteGmailLoginSpec
+    extends CreateEmbeddedCommentsSiteSpecConstructor {
+  def login() {
+    info("login with Gmail OpenID")
+    clickLoginWithGmailOpenId()
+  }
+}
+
+
+/** Tests creation of an embedded comment site, creates and logs in with a new
+  * password account.
+  */
+@test.tags.EndToEndTest
+@DoNotDiscover
+class CreateEmbeddedCommentsSiteNewPasswordAccountSpec
+  extends CreateEmbeddedCommentsSiteSpecConstructor {
+  def login() {
+    info("creating and logging in with new password account")
+    ???
+  }
+}
+
+
+/** Tests creation of embedded comment sites.
+  *
+  * Logs in as debiki.tester@gmail.com and creates an embedded comments site,
+  * checks the admin dashboard and tests to add some comments to an embedded discussions.
+  *
+  * You need to add entries to your hosts file:
+  *   127.0.0.1 mycomputer
+  *   127.0.0.1 site-11.localhost
+  *   127.0.0.1 site-12.localhost
+  *   127.0.0.1 site-13.localhost
+  *   ...perhaps some more or less.
+  */
+abstract class CreateEmbeddedCommentsSiteSpecConstructor
   extends DebikiBrowserSpec with TestSiteCreator with TestReplyer {
 
+  /** Subclasses override and test both Gmail login, and create-password-account login. */
+  def login()
 
   /** You need an entry '127.0.0.1 mycomputer' in your hosts file. */
   val EmbeddingSiteUrl = "http://mycomputer:8080"
@@ -69,8 +110,8 @@ class CreateEmbeddedCommentsSiteSpec
       go to createEmbeddedCommentsSiteStartPage
     }
 
-    s"login with Gmail OpenID" in {
-      clickLoginWithGmailOpenId()
+    "login" in {
+      login()
       eventually {
         find(EmbddingSiteUrlInputId) must not equal(None)
       }

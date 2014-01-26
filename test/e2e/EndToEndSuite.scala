@@ -60,7 +60,8 @@ class EndToEndSuite extends Suites(
 @test.tags.EndToEndTest
 class EndToEndSuiteForEmbeddedComments extends Suites(
   new AnonLoginSpecForEmbeddedComments,
-  new CreateEmbeddedCommentsSiteSpec)
+  new CreateEmbeddedCommentsSiteGmailLoginSpec,
+  new CreateEmbeddedCommentsSiteNewPasswordAccountSpec)
 with StartServerAndChromeDriverFactory
 
 
