@@ -79,11 +79,11 @@ class BuildSiteManuallySpec extends DebikiBrowserSpec with TestSiteCreator {
   "A human can" - {
 
     "create new site" in {
-      clickCreateSite(clickLoginWithGmailOpenId, siteName)
+      clickCreateSite(loginWithGmailFullscreen, siteName)
     }
 
     "login and goto admin page" in {
-      clickWelcomeLoginToDashboard(clickLoginWithGmailOpenId, siteName)
+      clickWelcomeLoginToDashboard(loginWithGmailFullscreen, siteName)
     }
 
     "do whatever s/he wants to do" in {
@@ -119,7 +119,7 @@ class ContinueManualTests extends DebikiBrowserSpec with TestSiteCreator {
 
   "A browser can go to the dashboard of test-site-1" in {
     go to (originOf(nextSiteName()) + "/-/admin/")
-    clickLoginWithGmailOpenId()
+    loginWithGmailFullscreen()
   }
 
   "A human can stare at a computer monitor for one year" in {

@@ -34,16 +34,18 @@ trait TestLoginner extends DebikiSelectors {
   private val LoginPopupWindowName = "LoginPopup"
 
 
-  /** Clicks the login link at the top of the page and logs in.
+  /** Clicks some login link, so a login popup dialog opens; then logs in as guest.
     * Specifies no email.
     */
-  def loginAsGuest(name: String) {
+  def loginAsGuestInPopup(name: String) {
     click on aLoginLink
     submitGuestLogin(name)
   }
 
 
-  def loginAsGmailUser() {
+  /** Clicks some login link, so a login popup dialog opens; then logs in as a Gmail user.
+    */
+  def loginWithGmailInPopup() {
     click on aLoginLink
     eventually { click on "dw-lgi-google" }
     // Switch to OpenID popup window.
@@ -54,12 +56,31 @@ trait TestLoginner extends DebikiSelectors {
   }
 
 
-  def loginAsPasswordUser(email: String, password: String) {
+  /** Assumes we're on a full screen login page, and enters email and password and
+    * clicks the login submit button.
+    */
+  def loginWithPasswordFullscreen(email: String, password: String) {
     eventually { click on "email" }
     enter(email)
     click on "password"
     enter(password)
     click on cssSelector("""[type="submit"]""")
+  }
+
+
+  /** Assumes we're on a full screen login page, and clicks the Gmail login button
+    * and then logs in via Gmail OpenID.
+    */
+  def loginWithGmailFullscreen() {
+    loginWithGmailFullscreen(approvePermissions = true)
+  }
+
+
+  def loginWithGmailFullscreen(approvePermissions: Boolean) {
+    eventually {
+      click on cssSelector("a.login-link-google")
+    }
+    fillInGoogleCredentials(approvePermissions)
   }
 
 

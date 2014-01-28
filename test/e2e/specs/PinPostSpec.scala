@@ -73,13 +73,13 @@ class PinPostSpec extends DebikiBrowserSpec
     "add comments" - {
 
       s"login as guest, add comments: #gu1" in {
-        loginAsGuest(guestUserName)
+        loginAsGuestInPopup(guestUserName)
         postId_gu1 = replyToArticle("gu1-text")
       }
 
       "login as Gmail user, add comments: #gm1, #gm2, #gm3" in {
         logout()
-        loginAsGmailUser()
+        loginWithGmailInPopup()
         postId_gm2 = replyToArticle("gm2-text")
       }
 
@@ -111,7 +111,7 @@ class PinPostSpec extends DebikiBrowserSpec
 
       "login as author" in {
         logout()
-        loginAsGuest(guestUserName)
+        loginAsGuestInPopup(guestUserName)
       }
 
       s"" in {
@@ -137,7 +137,7 @@ class PinPostSpec extends DebikiBrowserSpec
 
       "login as Gmail user" in {
         logout()
-        loginAsGmailUser()
+        loginWithGmailInPopup()
       }
 
       "gmail user cannot drag-drop-sort pins" in {

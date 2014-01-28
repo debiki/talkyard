@@ -99,7 +99,7 @@ class EditActivitySpec extends DebikiBrowserSpec
     "let people add comments" - {
 
       s"login as guest, add comments: #gu1, #gu2, #gu3" in {
-        loginAsGuest(guestUserName)
+        loginAsGuestInPopup(guestUserName)
         postId_gu1 = replyToArticle("gu1-text")
         postId_gu2 = replyToComment(postId_gu1, "gu2-text")
         postId_gu3 = replyToComment(postId_gu2, "gu3-text")
@@ -127,7 +127,7 @@ class EditActivitySpec extends DebikiBrowserSpec
       }
 
       "login as Gmail user, add comments: #gm1, #gm2, #gm3" in {
-        loginAsGmailUser()
+        loginWithGmailInPopup()
         postId_gm1 = replyToArticle("gm1-text")
         postId_gm2 = replyToComment(postId_gm1, "gm2-text")
         postId_gm3 = replyToComment(postId_gm2, "gm3-text")
@@ -206,7 +206,7 @@ class EditActivitySpec extends DebikiBrowserSpec
 
       s"login as Guest, edit #gu1, #gm1, #ad1, #ad4" in {
         eventually { logout() }
-        loginAsGuest(guestUserName)
+        loginAsGuestInPopup(guestUserName)
         clickAndEdit(postId_gu1, "gu1-text, edited by guest")
         clickAndEdit(postId_gm1, "gm1-text, edited by guest", isSuggestion = true)
         clickAndEdit(postId_ad1, "ad1-text, edited by guest", isSuggestion = true)
@@ -215,7 +215,7 @@ class EditActivitySpec extends DebikiBrowserSpec
 
       s"login as Gmail user, edit #gu2, #gm2, #ad2, #ad5" in {
         logout()
-        loginAsGmailUser()
+        loginWithGmailInPopup()
         clickAndEdit(postId_gu2, "gu2-text, edited by Gmail user", isSuggestion = true)
         clickAndEdit(postId_gm2, "gm2-text, edited by Gmail user")
         clickAndEdit(postId_ad2, "ad2-text, edited by Gmail user", isSuggestion = true)
@@ -281,13 +281,13 @@ class EditActivitySpec extends DebikiBrowserSpec
 
       "Gmail user approves edits to #gm1" in {
         logout()
-        loginAsGmailUser()
+        loginWithGmailInPopup()
         approveEdits(postId_gm1)
       }
 
       "Guest user approves edits to #gu1" in {
         logout()
-        loginAsGuest(guestUserName)
+        loginAsGuestInPopup(guestUserName)
         approveEdits(postId_gu2)
       }
 

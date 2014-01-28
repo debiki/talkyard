@@ -61,7 +61,7 @@ class CreateSiteSpec_SimpleWebsite_GmailLogin extends CreateSiteSpecConstructor 
   def loginToAdminPage() = login()
   private def login() {
     info("login with Gmail OpenID")
-    clickLoginWithGmailOpenId()
+    loginWithGmailFullscreen()
   }
 }
 
@@ -85,7 +85,7 @@ class CreateSiteSpec_Blog_PasswordLogin extends CreateSiteSpecConstructor {
   }
 
   def loginToAdminPage() {
-    loginAsPasswordUser(AdminsEmail, password = AdminsPassword)
+    loginWithPasswordFullscreen(AdminsEmail, password = AdminsPassword)
   }
 }
 
@@ -109,7 +109,7 @@ class CreateSiteSpec_Forum_PasswordLogin extends CreateSiteSpecConstructor {
   }
 
   def loginToAdminPage() {
-    loginAsPasswordUser(AdminsEmail, password = AdminsPassword)
+    loginWithPasswordFullscreen(AdminsEmail, password = AdminsPassword)
   }
 }
 
@@ -122,7 +122,7 @@ class CreateSiteSpec_Forum_ReuseOldPasswordLogin extends CreateSiteSpecConstruct
   def loginToAdminPage() = login()
 
   private def login() {
-    loginAsPasswordUser(AdminsEmail, password = AdminsPassword)
+    loginWithPasswordFullscreen(AdminsEmail, password = AdminsPassword)
   }
 }
 

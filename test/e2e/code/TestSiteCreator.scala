@@ -118,19 +118,6 @@ trait TestSiteCreator extends TestLoginner {
   }
 
 
-  def clickLoginWithGmailOpenId() {
-    clickLoginWithGmailOpenId(approvePermissions = true)
-  }
-
-
-  def clickLoginWithGmailOpenId(approvePermissions: Boolean) {
-    eventually {
-      click on cssSelector("a.login-link-google")
-    }
-    fillInGoogleCredentials(approvePermissions)
-  }
-
-
   def originOf(newSiteName: String) =
     s"http://$newSiteName.$newSiteDomain"
 

@@ -83,7 +83,7 @@ class CreateEmbeddedCommentsSiteGmailLoginSpec
 
   private def login() {
     info("login with Gmail OpenID")
-    clickLoginWithGmailOpenId()
+    loginWithGmailFullscreen()
   }
 }
 
@@ -109,7 +109,7 @@ class CreateEmbeddedCommentsSiteNewPasswordAccountSpec
   }
 
   def loginToAdminPage() {
-    loginAsPasswordUser(AdminsEmail, AdminsPassword)
+    loginWithPasswordFullscreen(AdminsEmail, AdminsPassword)
   }
 
 }
@@ -137,7 +137,7 @@ class CreateEmbeddedCommentsSiteOldPasswordAccountSpec
   }
 
   def login() {
-    loginAsPasswordUser(AdminsEmail, AdminsPassword)
+    loginWithPasswordFullscreen(AdminsEmail, AdminsPassword)
   }
 }
 
@@ -282,7 +282,7 @@ abstract class CreateEmbeddedCommentsSiteSpecConstructor
 
     "add a reply, as guest" in {
       logoutIfLoggedIn()
-      loginAsGuest("TestGuest")
+      loginAsGuestInPopup("TestGuest")
       replyToComment(postId = 1, text = GuestReplyText)
     }
 
