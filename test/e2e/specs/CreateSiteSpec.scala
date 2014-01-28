@@ -24,6 +24,18 @@ import org.scalatest.Suites
 import test.e2e.code._
 
 
+/** Runs all create-site specs.
+  * In Play:  test-only test.e2e.specs.AllCreateSiteSpecsRunner
+  */
+@DoNotDiscover
+class AllCreateSiteSpecsRunner
+  extends Suites(
+    new CreateSiteSpec_SimpleWebsite_GmailLogin,
+    new CreateSiteSpec_Blog_PasswordLogin,
+    new CreateSiteSpec_Forum_PasswordLogin,
+    new CreateSiteSpec_Forum_ReuseOldPasswordLogin)
+  with StartServerAndChromeDriverFactory
+
 /** Runs the CreateSiteSpec suite and creates a simple website, using a Gmail account.
   * In Play:   test-only test.e2e.specs.CreateSiteSpecRunner_SimpleWebsite_GmailLogin
   * In test:console:  (new test.e2e.specs.CreateSiteSpecRunner_SimpleWebsite_GmailLogin).execute()
@@ -69,19 +81,12 @@ class CreateSiteSpec_SimpleWebsite_GmailLogin extends CreateSiteSpecConstructor 
 class CreateSiteSpec_Blog_PasswordLogin extends CreateSiteSpecConstructor {
   val AdminsEmail = "admin@example.com"
   val AdminsPassword = "Admins_password"
-  private var accountCreated = false
 
   // Warning: dupl code, see CreateSiteSpec_Forum_PasswordLogin. But I
   // inted to replace this one or that one with Facebook login instead,
   // then problem gone.
   def loginToCreateSite() {
-    if (!accountCreated) {
-      createNewPasswordAccount(AdminsEmail, password = AdminsPassword)
-      accountCreated = true
-    }
-    else {
-      loginToAdminPage()
-    }
+    createNewPasswordAccount(AdminsEmail, password = AdminsPassword)
   }
 
   def loginToAdminPage() {
@@ -99,13 +104,7 @@ class CreateSiteSpec_Forum_PasswordLogin extends CreateSiteSpecConstructor {
   // inted to replace this one or that one with Facebook login instead,
   // then problem gone.
   def loginToCreateSite() {
-    if (!accountCreated) {
-      createNewPasswordAccount(AdminsEmail, password = AdminsPassword)
-      accountCreated = true
-    }
-    else {
-      loginToAdminPage()
-    }
+    createNewPasswordAccount(AdminsEmail, password = AdminsPassword)
   }
 
   def loginToAdminPage() {
@@ -152,45 +151,18 @@ abstract class CreateSiteSpecConstructor extends DebikiBrowserSpec with TestSite
       go to createWebsiteChooseTypePage
     }
 
-    "login with Gmail OpenID, but deny permissions" in {
-      // This opens an Authentication failed, Unknown error page.
-      // Instead, should show the login page again, and a message
-      // that one needs to click the approval button?
-      //loginWithGmailOpenId(approvePermissions = false)
-      pending
-    }
-
     s"login" in {
       loginToCreateSite()
     }
 
-
     "choose site type: a simple website" in {
       clickChooseSiteTypeSimpleSite()
-    }
-
-    "not have an invalid name accepted" in {
-      pending
-    }
-
-    "not have name accepted unless terms accepted" in {
-      pending
     }
 
     "enter new website name and accept terms" in {
       click on "website-name"
       enter(firstSiteName)
       click on "accepts-terms"
-    }
-
-    "not allow site creation if there's no `new-website-domain' config value" in {
-      // Please sync this test with the same test in CreateEmbeddedCommentsSiteSpec.
-
-      // Verify that clicking Submit results in:
-      // 403 Forbidden, "... may not create website from this website ..."
-      // Have to do this from another site; `localhost` allows website creation,
-      // see StuffCreator.createFirstSite().
-      pending
     }
 
     "submit site name" in {
@@ -203,63 +175,9 @@ abstract class CreateSiteSpecConstructor extends DebikiBrowserSpec with TestSite
     }
 
     "find default homepage and website config page" in {
-      eventuallyFindHomepageAndCofigPage()
+      eventuallyFindHomepageAndConfigPage()
     }
 
-    "return to site creation page, choose site type: simple site, again" in {
-      go to createWebsiteChooseTypePage
-    }
-
-    "login again, choose site type" in {
-      loginToCreateSite()
-      clickChooseSiteTypeSimpleSite()
-    }
-
-    "not create another site with the same address" in {
-      click on "website-name"
-      enter(firstSiteName)
-      click on "accepts-terms"
-      click on cssSelector("input[type=submit]")
-
-      // Now an error page should load. Click a certain try again link
-      // (there's only one link?)
-      assert(pageSource contains "You need to choose another name")
-      click on partialLinkText("Okay")
-    }
-
-    s"create $secondSiteName" in {
-      clickCreateSite(loginToCreateSite, secondSiteName)
-      // oops don't use gmail login
-    }
-
-    s"login with Gmail again, goto admin page of $secondSiteName" in {
-      clickWelcomeLoginToDashboard(loginToAdminPage, secondSiteName)
-    }
-
-    "again find default homepage and website config page" in {
-      eventuallyFindHomepageAndCofigPage()
-    }
-
-    /*"create even more websites" - {
-      clickCreateSite("test-site-3")
-      clickCreateSite("test-site-4")
-      clickCreateSite("test-site-5")
-    } */
-
-    def eventuallyFindHomepageAndCofigPage() {
-      eventually {
-        find(cssSelector("tr.page-role-Generic > td a[href='/']")) match {
-          case Some(elem) => elem.text must include("Homepage")
-          case None => fail("No homepage link found")
-        }
-        /*
-        find(cssSelector("tr.page-role-Code > td a[href*='_site.conf']"))
-            match {
-          case Some(elem) => elem.text must include("configuration")
-          case None => fail("No website config page link found")
-        } */
-      }
-    }
   }
 
 }

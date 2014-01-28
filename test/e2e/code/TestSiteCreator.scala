@@ -118,6 +118,22 @@ trait TestSiteCreator extends TestLoginner {
   }
 
 
+  def eventuallyFindHomepageAndConfigPage() {
+    eventually {
+      find(cssSelector("tr.page-role-Generic > td a[href='/']")) match {
+        case Some(elem) => elem.text must include("Homepage")
+        case None => fail("No homepage link found")
+      }
+      /*
+      find(cssSelector("tr.page-role-Code > td a[href*='_site.conf']"))
+          match {
+        case Some(elem) => elem.text must include("configuration")
+        case None => fail("No website config page link found")
+      } */
+    }
+  }
+
+
   def originOf(newSiteName: String) =
     s"http://$newSiteName.$newSiteDomain"
 
