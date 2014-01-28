@@ -32,7 +32,10 @@ import test.e2e.specs._
  */
 @test.tags.EndToEndTest
 class EndToEndSuite extends Suites(
-  new CreateSiteSpec,
+  new CreateSiteSpec_SimpleWebsite_GmailLogin,
+  new CreateSiteSpec_Blog_PasswordLogin,
+  new CreateSiteSpec_Forum_PasswordLogin,
+  new CreateSiteSpec_Forum_ReuseOldPasswordLogin,
   new DeleteActivitySpec,
   new AdminDashboardSpec,
   new AnonLoginSpec,
@@ -65,7 +68,8 @@ class EndToEndSuiteForEmbeddedComments extends Suites(
   new AnonLoginSpecForEmbeddedComments_jQuery21AndModernizr27PreLoaded,
   new AnonLoginSpecForEmbeddedComments_jQuery17AndModernizr25PreLoaded,
   new CreateEmbeddedCommentsSiteGmailLoginSpec,
-  new CreateEmbeddedCommentsSiteNewPasswordAccountSpec)
+  new CreateEmbeddedCommentsSiteNewPasswordAccountSpec,
+  new CreateEmbeddedCommentsSiteOldPasswordAccountSpec)
 with StartServerAndChromeDriverFactory
 
 

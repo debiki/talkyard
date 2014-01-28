@@ -157,10 +157,8 @@ class CreateEmbeddedCommentsSiteOldPasswordAccountSpec
 abstract class CreateEmbeddedCommentsSiteSpecConstructor
   extends DebikiBrowserSpec with TestSiteCreator with TestReplyer {
 
-  /** Subclasses override and test both Gmail login, and create-password-account login. */
+  /** Subclasses override and test various login methods. */
   def loginToCreateSite()
-
-  /** Subclasses override and test both Gmail login, and login with password account. */
   def loginToAdminPage()
 
   /** You need an entry '127.0.0.1 mycomputer' in your hosts file. */

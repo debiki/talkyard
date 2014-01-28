@@ -20,16 +20,112 @@ package test.e2e.specs
 import com.debiki.core.Prelude._
 import org.scalatest.time.{Span, Seconds}
 import org.scalatest.DoNotDiscover
+import org.scalatest.Suites
 import test.e2e.code._
 
 
-/** Runs the CreateSiteSpec suite.
-  * In Play:   test-only test.e2e.specs.CreateSiteSpecRunner
-  * In test:console:  (new test.e2e.specs.CreateSiteSpecRunner).execute()
+/** Runs the CreateSiteSpec suite and creates a simple website, using a Gmail account.
+  * In Play:   test-only test.e2e.specs.CreateSiteSpecRunner_SimpleWebsite_GmailLogin
+  * In test:console:  (new test.e2e.specs.CreateSiteSpecRunner_SimpleWebsite_GmailLogin).execute()
   */
 @DoNotDiscover
-class CreateSiteSpecRunner extends org.scalatest.Suites(new CreateSiteSpec)
+class CreateSiteSpecRunner_SimpleWebsite_GmailLogin
+  extends Suites(new CreateSiteSpec_SimpleWebsite_GmailLogin)
   with StartServerAndChromeDriverFactory
+
+// test-only test.e2e.specs.CreateSiteSpecRunner_Blog_PasswordLogin
+@DoNotDiscover
+class CreateSiteSpecRunner_Blog_PasswordLogin
+  extends Suites(new CreateSiteSpec_Blog_PasswordLogin)
+  with StartServerAndChromeDriverFactory
+
+// test-only test.e2e.specs.CreateSiteSpecRunner_Forum_PasswordLogin
+@DoNotDiscover
+class CreateSiteSpecRunner_Forum_PasswordLogin
+  extends Suites(new CreateSiteSpec_Forum_PasswordLogin)
+  with StartServerAndChromeDriverFactory
+
+// test-only test.e2e.specs.CreateSiteSpecRunner_Forum_ReuseOldPasswordLogin
+@DoNotDiscover
+class CreateSiteSpecRunner_Forum_ReuseOldPasswordLogin
+  extends Suites(
+    new CreateSiteSpec_Forum_PasswordLogin,
+    new CreateSiteSpec_Forum_ReuseOldPasswordLogin)
+  with StartServerAndChromeDriverFactory
+
+
+
+@DoNotDiscover
+class CreateSiteSpec_SimpleWebsite_GmailLogin extends CreateSiteSpecConstructor {
+  def loginToCreateSite() = login()
+  def loginToAdminPage() = login()
+  private def login() {
+    info("login with Gmail OpenID")
+    clickLoginWithGmailOpenId()
+  }
+}
+
+@DoNotDiscover
+class CreateSiteSpec_Blog_PasswordLogin extends CreateSiteSpecConstructor {
+  val AdminsEmail = "admin@example.com"
+  val AdminsPassword = "Admins_password"
+  private var accountCreated = false
+
+  // Warning: dupl code, see CreateSiteSpec_Forum_PasswordLogin. But I
+  // inted to replace this one or that one with Facebook login instead,
+  // then problem gone.
+  def loginToCreateSite() {
+    if (!accountCreated) {
+      createNewPasswordAccount(AdminsEmail, password = AdminsPassword)
+      accountCreated = true
+    }
+    else {
+      loginToAdminPage()
+    }
+  }
+
+  def loginToAdminPage() {
+    loginAsPasswordUser(AdminsEmail, password = AdminsPassword)
+  }
+}
+
+@DoNotDiscover
+class CreateSiteSpec_Forum_PasswordLogin extends CreateSiteSpecConstructor {
+  val AdminsEmail = "another-admin@example.com"
+  val AdminsPassword = "Another_admins_password"
+  private var accountCreated = false
+
+  // Warning: dupl code, see CreateSiteSpec_Blog_PasswordLogin. But I
+  // inted to replace this one or that one with Facebook login instead,
+  // then problem gone.
+  def loginToCreateSite() {
+    if (!accountCreated) {
+      createNewPasswordAccount(AdminsEmail, password = AdminsPassword)
+      accountCreated = true
+    }
+    else {
+      loginToAdminPage()
+    }
+  }
+
+  def loginToAdminPage() {
+    loginAsPasswordUser(AdminsEmail, password = AdminsPassword)
+  }
+}
+
+@DoNotDiscover
+class CreateSiteSpec_Forum_ReuseOldPasswordLogin extends CreateSiteSpecConstructor {
+  val AdminsEmail = "another-admin@example.com"
+  val AdminsPassword = "Another_admins_password"
+
+  def loginToCreateSite() = login()
+  def loginToAdminPage() = login()
+
+  private def login() {
+    loginAsPasswordUser(AdminsEmail, password = AdminsPassword)
+  }
+}
+
 
 
 /**
@@ -40,7 +136,11 @@ class CreateSiteSpecRunner extends org.scalatest.Suites(new CreateSiteSpec)
  */
 @test.tags.EndToEndTest
 @DoNotDiscover
-class CreateSiteSpec extends DebikiBrowserSpec with TestSiteCreator {
+abstract class CreateSiteSpecConstructor extends DebikiBrowserSpec with TestSiteCreator {
+
+  /** Subclasses override and test various login methods. */
+  def loginToCreateSite()
+  def loginToAdminPage()
 
   val firstSiteName = nextSiteName()
   val secondSiteName = nextSiteName()
@@ -60,8 +160,8 @@ class CreateSiteSpec extends DebikiBrowserSpec with TestSiteCreator {
       pending
     }
 
-    s"login with Gmail OpenID" in {
-      clickLoginWithGmailOpenId()
+    s"login" in {
+      loginToCreateSite()
     }
 
 
@@ -99,7 +199,7 @@ class CreateSiteSpec extends DebikiBrowserSpec with TestSiteCreator {
     }
 
     s"goto admin page of $firstSiteName" in {
-      clickWelcomeLoginToDashboard(firstSiteName)
+      clickWelcomeLoginToDashboard(loginToAdminPage, firstSiteName)
     }
 
     "find default homepage and website config page" in {
@@ -111,7 +211,7 @@ class CreateSiteSpec extends DebikiBrowserSpec with TestSiteCreator {
     }
 
     "login again, choose site type" in {
-      clickLoginWithGmailOpenId()
+      loginToCreateSite()
       clickChooseSiteTypeSimpleSite()
     }
 
@@ -128,11 +228,12 @@ class CreateSiteSpec extends DebikiBrowserSpec with TestSiteCreator {
     }
 
     s"create $secondSiteName" in {
-      clickCreateSite(secondSiteName)
+      clickCreateSite(loginToCreateSite, secondSiteName)
+      // oops don't use gmail login
     }
 
     s"login with Gmail again, goto admin page of $secondSiteName" in {
-      clickWelcomeLoginToDashboard(secondSiteName)
+      clickWelcomeLoginToDashboard(loginToAdminPage, secondSiteName)
     }
 
     "again find default homepage and website config page" in {

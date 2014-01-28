@@ -174,9 +174,9 @@ trait TestLoginner extends DebikiSelectors {
   def createNewPasswordAccount(
         email: String,
         password: String,
-        displayName: String,
-        country: String,
-        fullName: String) {
+        displayName: String = "Display_Name",
+        country: String = "Country",
+        fullName: String = "Full_Name") {
 
     // Only these emails work with E2E tests, see Mailer.scala, search for "example.com".
     assert(email endsWith "example.com")

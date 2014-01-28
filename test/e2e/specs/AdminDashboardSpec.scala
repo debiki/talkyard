@@ -53,7 +53,7 @@ class AdminDashboardSpec extends DebikiBrowserSpec
 
 
     "create new site" in {
-      siteName = clickCreateSite()
+      siteName = clickCreateSite(clickLoginWithGmailOpenId)
     }
 
 

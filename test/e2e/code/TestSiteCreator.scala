@@ -60,7 +60,7 @@ trait TestSiteCreator extends TestLoginner {
   }
 
 
-  def clickCreateSite(siteName: String = null): String = {
+  def clickCreateSite(login: () => Unit, siteName: String = null): String = {
     val name =
       if (siteName ne null) siteName
       else nextSiteName()
@@ -68,9 +68,7 @@ trait TestSiteCreator extends TestLoginner {
     info("create site $name")
 
     go to createWebsiteChooseTypePage
-
-    clickLoginWithGmailOpenId()
-
+    login()
     clickChooseSiteTypeSimpleSite()
 
     click on "website-name"
@@ -92,25 +90,40 @@ trait TestSiteCreator extends TestLoginner {
   }
 
 
-  def clickWelcomeLoginToDashboard(newSiteName: String) {
-    info("click login link on welcome owner page")
+  def clickWelcomeLoginToDashboard(login: () => Unit, newSiteName: String) {
+    viewNewSiteWelcomePageAndContinue()
+    info("login to admin dashboard")
+    login()
+    verifyIsOnAdminPage(newSiteName)
+  }
+
+
+  private def viewNewSiteWelcomePageAndContinue() {
     // We should now be on page /-/create-site/welcome-owner.
     // There should be only one link, which takes you to /-/admin/.
+    info("view welcome owner page, click continue link")
     eventually {
       assert(pageSource contains "Website created")
     }
     click on cssSelector("a")
-
-    info("login to admin dashboard")
-    clickLoginWithGmailOpenId()
-    eventually {
-      assert(pageSource contains "Admin Page")
-    }
-    webDriver.getCurrentUrl() must be === originOf(newSiteName) + "/-/admin/"
   }
 
 
-  def clickLoginWithGmailOpenId(approvePermissions: Boolean = true) {
+  private def verifyIsOnAdminPage(newSiteName: String) {
+    info("get to the admin age")
+    eventually {
+      assert(pageSource contains "Admin Page")
+    }
+    webDriver.getCurrentUrl() must fullyMatch regex s"${originOf(newSiteName)}/-/admin/#?"
+  }
+
+
+  def clickLoginWithGmailOpenId() {
+    clickLoginWithGmailOpenId(approvePermissions = true)
+  }
+
+
+  def clickLoginWithGmailOpenId(approvePermissions: Boolean) {
     eventually {
       click on cssSelector("a.login-link-google")
     }
