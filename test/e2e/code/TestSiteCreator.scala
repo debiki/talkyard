@@ -98,7 +98,7 @@ trait TestSiteCreator extends TestLoginner {
   }
 
 
-  private def viewNewSiteWelcomePageAndContinue() {
+  def viewNewSiteWelcomePageAndContinue() {
     // We should now be on page /-/create-site/welcome-owner.
     // There should be only one link, which takes you to /-/admin/.
     info("view welcome owner page, click continue link")

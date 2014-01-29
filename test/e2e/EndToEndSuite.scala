@@ -36,6 +36,7 @@ class EndToEndSuite extends Suites(
   new CreateSiteSpec_Blog_PasswordLogin,
   new CreateSiteSpec_Forum_PasswordLogin,
   new CreateSiteSpec_Forum_ReuseOldPasswordLogin,
+  new PasswordSpec,
   new DeleteActivitySpec,
   new AdminDashboardSpec,
   new AnonLoginSpec,
