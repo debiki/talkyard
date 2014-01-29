@@ -24,7 +24,7 @@ import org.scalatest.Suites
 import test.e2e.code._
 
 
-/** Runs the CreateSiteSpec suite and creates a simple website, using a Gmail account.
+/** Runs the PasswordSpec.
   * In Play:   test-only test.e2e.specs.PasswordSpecRunner
   * In test:console:  (new test.e2e.specs.PasswordSpecRunner).execute()
   */
@@ -33,7 +33,7 @@ class PasswordSpecRunner extends Suites(new PasswordSpec) with StartServerAndChr
 
 
 /** This specification tests password related things:
-  * - Forgotten account, at create site page only.  (tests not implemented)
+  * - Forgotten account, at create site page only.
   * - Forgotten password, and
   * - Invalid password, here:
   *   - admin dashboard login page
@@ -93,7 +93,7 @@ class PasswordSpec extends DebikiBrowserSpec with TestSiteCreator {
           switchToNewlyOpenedWindow()
         }
 
-        "submit wrong email address, no recovery email sent" in {
+        "submit wrong email address" in {
           enterEmail("wrong-email-address@example.com")
           click on getSubmitButton
           endUpOnWeSentResetPasswordEmailPage()
@@ -152,6 +152,42 @@ class PasswordSpec extends DebikiBrowserSpec with TestSiteCreator {
           eventuallyFindHomepageAndConfigPage()
         }
       }
+
+      "get a you-alread-have-an-account reminder email" - {
+
+        "log out, go to create site page" in {
+          go to s"http://$siteName.${debiki.Globals.baseDomain}/-/api/logout"
+          go to s"http://${debiki.Globals.baseDomain}/-/create-site"
+          waitForLoginPageToLoad()
+        }
+
+        "attempt to create account with email for existing account" in {
+          click on "create-account"
+          eventually {
+            click on "emailAddress"
+            enter(AdminsEmail)
+            click on getSubmitButton
+          }
+        }
+
+        "see we-just-sent-you-a-registration message" in {
+          eventually {
+            pageSource must include ("We just sent you a registration email")
+          }
+        }
+
+        "get an you-already-have-an-account email reminder" in {
+          val email = eventually {
+            debiki.Mailer.EndToEndTest.getAndForgetMostRecentEmail() match {
+              case None => fail()
+              case Some(email: Email) => email
+            }
+          }
+          email.bodyHtmlText must include ("you already have an account there, with email address")
+          val address = extractEmailAddressFromBodyOf(email)
+          address mustEqual AdminsEmail
+        }
+      }
     }
 
   }
@@ -196,11 +232,21 @@ class PasswordSpec extends DebikiBrowserSpec with TestSiteCreator {
     val ResetPasswordUrlRegex =
       """(?s).* href="(https?://[^"]+/reset-password/choose-password/[^"]+)".*""".r
     email.bodyHtmlText match {
-      case ResetPasswordUrlRegex(url) =>
-        url
-      case _ =>
-        // This is an old email from another E2E test? Or the regex above is wrong.
-        fail()
+      case ResetPasswordUrlRegex(url) => url
+      case _ => fail()
+    }
+  }
+
+  /** Extracts the email for a users existing account from a you-already-have-an-account email.
+    */
+  private def extractEmailAddressFromBodyOf(email: Email): String = {
+    // The message is like:
+    //    | you already have an account there, with email address <tt>admin-9503@example.com</tt>
+    // "(?s)" below makes "." match newline.
+    val EmailAddressRegex = """(?s).*[^a-z]([a-z][0-9a-z.-]+@[0-9a-z.-]+[a-z]).*""".r
+    email.bodyHtmlText match {
+      case EmailAddressRegex(emailAddress) => emailAddress
+      case _ => fail()
     }
   }
 
