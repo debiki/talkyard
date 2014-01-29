@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013 Kaj Magnus Lindberg (born 1979)
+ * Copyright (C) 2013-2014 Kaj Magnus Lindberg (born 1979)
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -35,9 +35,10 @@ class CreateSiteCrazinessSpecRunner
 
 
 
-/** Creates some sites, but does weird things like attempting to create
-  * the same site twice (which is not allowed), or not clicking the
-  * accept-terms link, or specifying the wrong password when logging in.
+/** Creates some sites, but does weird things:
+  * - Specifies invalid site names, e.g. uppercase, with '.', too short name
+  * - Does not accept terms
+  * - Attempts to create same site twice
   */
 @DoNotDiscover
 class CreateSiteCrazinessSpec extends DebikiBrowserSpec with TestSiteCreator {
@@ -67,18 +68,80 @@ class CreateSiteCrazinessSpec extends DebikiBrowserSpec with TestSiteCreator {
       clickChooseSiteTypeSimpleSite()
     }
 
-    "not have an invalid name accepted" in {
-      pending
+    "new site terms must be de-selected by default" in {
+      getAcceptTermsCheckbox.isSelected must be === false
     }
+
+    "not accept invalid site names" - {
+
+      "accept terms, so won't affect test" in {
+        getAcceptTermsCheckbox.select()
+      }
+
+      "disallow empty name" in {
+        getSubmitButton.isEnabled must be === false
+        getSiteNameMessages.exists(_.isDisplayed) must be === false
+        click on getSubmitButton
+      }
+
+      def testDisallowsName(invalidName: String) {
+        click on SiteNameInput
+        enter("valid-name")
+        getSiteNameMessages.exists(_.isDisplayed) must be === false
+        getSubmitButton.isEnabled must be === true
+        click on SiteNameInput
+        enter(invalidName)
+        getSiteNameMessages.exists(_.isDisplayed) must be === true
+        getSubmitButton.isEnabled must be === false
+        click on getSubmitButton // should have no effect, it's disabled
+      }
+
+      val InvalidNameLeadingDash = "-invalid-"
+      val InvalidNameUppercase = "Uppercase-Name"
+      val InvalidNameWeirdChars = "abcdef-$%#-ghi"
+      val InvalidNameTooShort = "abcde"
+      val InvalidNameDot = "abcde.ghijk"
+
+      s"disallow invalid name: '$InvalidNameLeadingDash' (leading dash)" in {
+        testDisallowsName(InvalidNameLeadingDash)
+      }
+
+      s"disallow invalid name: '$InvalidNameUppercase' (uppercase)" in {
+        testDisallowsName(InvalidNameUppercase)
+      }
+
+      s"disallow invalid name: '$InvalidNameWeirdChars' (weird chars)" in {
+        testDisallowsName(InvalidNameWeirdChars)
+      }
+
+      s"disallow invalid name: '$InvalidNameTooShort' (it's too short)" in {
+        testDisallowsName(InvalidNameTooShort)
+      }
+
+      s"disallow invalid name: '$InvalidNameDot' (dot '.')" in {
+        testDisallowsName(InvalidNameDot)
+      }
+    }
+
+    "enter ok site name" in {
+      click on SiteNameInput
+      enter(firstSiteName)
+      getSiteNameMessages.exists(_.isDisplayed) must be === false
+    }
+
+    // ---- Not accepted site terms
 
     "not have name accepted unless terms accepted" in {
-      pending
+      getSubmitButton.isEnabled must be === true
+      getAcceptTermsCheckbox.clear()
+      getAcceptTermsCheckbox.isSelected must be === false
+      getSubmitButton.isEnabled must be === false
+      click on getSubmitButton
     }
 
-    "enter new website name and accept terms" in {
-      click on "website-name"
-      enter(firstSiteName)
-      click on "accepts-terms"
+    "accept terms" in {
+      getAcceptTermsCheckbox.select()
+      getSubmitButton.isEnabled must be === true
     }
 
     "not allow site creation if there's no `new-website-domain' config value" in {
@@ -92,53 +155,68 @@ class CreateSiteCrazinessSpec extends DebikiBrowserSpec with TestSiteCreator {
     }
 
     "submit site name" in {
-      click on cssSelector("input[type=submit]")
+      click on getSubmitButton
       // We should now be taken to page /-/create-site/choose-owner.
     }
 
-    s"goto admin page of $firstSiteName" in {
-      clickWelcomeLoginToDashboard(loginToAdminPage, firstSiteName)
+    "not create same site twice" - {
+      s"goto admin page of $firstSiteName" in {
+        clickWelcomeLoginToDashboard(loginToAdminPage, firstSiteName)
+      }
+
+      "find default homepage and website config page" in {
+        eventuallyFindHomepageAndConfigPage()
+      }
+
+      "return to site creation page, choose site type: simple site, again" in {
+        go to createWebsiteChooseTypePage
+      }
+
+      "login again, choose site type" in {
+        loginToAdminPage()
+        clickChooseSiteTypeSimpleSite()
+      }
+
+      "not create a site with the same address" in {
+        click on SiteNameInput
+        enter(firstSiteName)
+        click on getAcceptTermsCheckbox
+        click on getSubmitButton
+
+        // Now an error page should load. Click a certain try again link
+        // (there's only one link?)
+        assert(pageSource contains "You need to choose another name")
+        click on partialLinkText("Okay")
+      }
     }
 
-    "find default homepage and website config page" in {
-      eventuallyFindHomepageAndConfigPage()
+    "create another site with another address" - {
+      s"create $secondSiteName" in {
+        clickCreateSite(loginToAdminPage, secondSiteName)
+        // oops don't use gmail login
+      }
+
+      s"login with Gmail again, goto admin page of $secondSiteName" in {
+        clickWelcomeLoginToDashboard(loginToAdminPage, secondSiteName)
+      }
+
+      "again find default homepage and website config page" in {
+        eventuallyFindHomepageAndConfigPage()
+      }
     }
 
-    "return to site creation page, choose site type: simple site, again" in {
-      go to createWebsiteChooseTypePage
-    }
+  }
 
-    "login again, choose site type" in {
-      loginToAdminPage()
-      clickChooseSiteTypeSimpleSite()
-    }
+  def SiteNameInput = "website-name"
 
-    "not create another site with the same address" in {
-      click on "website-name"
-      enter(firstSiteName)
-      click on "accepts-terms"
-      click on cssSelector("input[type=submit]")
+  def getSiteNameMessages: Seq[Element] =
+    findAll(cssSelector(".alert-error")).toSeq
 
-      // Now an error page should load. Click a certain try again link
-      // (there's only one link?)
-      assert(pageSource contains "You need to choose another name")
-      click on partialLinkText("Okay")
-    }
+  def getSubmitButton: Element =
+    find(cssSelector("[type='submit']")) getOrElse fail()
 
-    s"create $secondSiteName" in {
-      clickCreateSite(loginToAdminPage, secondSiteName)
-      // oops don't use gmail login
-    }
-
-    s"login with Gmail again, goto admin page of $secondSiteName" in {
-      clickWelcomeLoginToDashboard(loginToAdminPage, secondSiteName)
-    }
-
-    "again find default homepage and website config page" in {
-      eventuallyFindHomepageAndConfigPage()
-    }
-
- }
+  def getAcceptTermsCheckbox: Checkbox =
+    checkbox("accepts-terms")
 
 }
 
