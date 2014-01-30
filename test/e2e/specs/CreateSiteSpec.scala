@@ -69,6 +69,7 @@ class CreateSiteSpecRunner_Forum_ReuseOldPasswordLogin
 
 @DoNotDiscover
 class CreateSiteSpec_SimpleWebsite_GmailLogin extends CreateSiteSpecConstructor {
+  val newSiteType = debiki.SiteCreator.NewSiteType.SimpleSite
   def loginToCreateSite() = login()
   def loginToAdminPage() = login()
   private def login() {
@@ -79,6 +80,8 @@ class CreateSiteSpec_SimpleWebsite_GmailLogin extends CreateSiteSpecConstructor 
 
 @DoNotDiscover
 class CreateSiteSpec_Blog_PasswordLogin extends CreateSiteSpecConstructor {
+  val newSiteType = debiki.SiteCreator.NewSiteType.Blog
+
   val AdminsEmail = "admin@example.com"
   val AdminsPassword = "Admins_password"
 
@@ -96,6 +99,8 @@ class CreateSiteSpec_Blog_PasswordLogin extends CreateSiteSpecConstructor {
 
 @DoNotDiscover
 class CreateSiteSpec_Forum_PasswordLogin extends CreateSiteSpecConstructor {
+  val newSiteType = debiki.SiteCreator.NewSiteType.Forum
+
   val AdminsEmail = "another-admin@example.com"
   val AdminsPassword = "Another_admins_password"
   private var accountCreated = false
@@ -114,6 +119,8 @@ class CreateSiteSpec_Forum_PasswordLogin extends CreateSiteSpecConstructor {
 
 @DoNotDiscover
 class CreateSiteSpec_Forum_ReuseOldPasswordLogin extends CreateSiteSpecConstructor {
+  val newSiteType = debiki.SiteCreator.NewSiteType.Forum
+
   val AdminsEmail = "another-admin@example.com"
   val AdminsPassword = "Another_admins_password"
 
@@ -137,12 +144,13 @@ class CreateSiteSpec_Forum_ReuseOldPasswordLogin extends CreateSiteSpecConstruct
 @DoNotDiscover
 abstract class CreateSiteSpecConstructor extends DebikiBrowserSpec with TestSiteCreator {
 
+  def newSiteType: debiki.SiteCreator.NewSiteType
+
   /** Subclasses override and test various login methods. */
   def loginToCreateSite()
   def loginToAdminPage()
 
-  val firstSiteName = nextSiteName()
-  val secondSiteName = nextSiteName()
+  val siteName = nextSiteName()
 
 
   "A user with a browser can" - {
@@ -151,31 +159,35 @@ abstract class CreateSiteSpecConstructor extends DebikiBrowserSpec with TestSite
       go to createWebsiteChooseTypePage
     }
 
-    s"login" in {
+    "login" in {
       loginToCreateSite()
     }
 
-    "choose site type: a simple website" in {
-      clickChooseSiteTypeSimpleSite()
+    s"submit site type" in {
+      info(s"choose site type: $newSiteType")
+      clickChooseSiteType(newSiteType)
     }
 
-    "enter new website name and accept terms" in {
+    s"submit site name: $siteName" in {
       click on "website-name"
-      enter(firstSiteName)
+      enter(siteName)
       click on "accepts-terms"
-    }
-
-    "submit site name" in {
       click on cssSelector("input[type=submit]")
-      // We should now be taken to page /-/create-site/choose-owner.
     }
 
-    s"goto admin page of $firstSiteName" in {
-      clickWelcomeLoginToDashboard(loginToAdminPage, firstSiteName)
+    s"goto admin page of $siteName" in {
+      clickWelcomeLoginToDashboard(loginToAdminPage, siteName)
     }
 
-    "find default homepage and website config page" in {
-      eventuallyFindHomepageAndConfigPage()
+    "find homepage" in {
+      newSiteType match {
+        case debiki.SiteCreator.NewSiteType.SimpleSite =>
+          findSimpleSiteHomepage()
+        case debiki.SiteCreator.NewSiteType.Blog =>
+          findBlogMainPage()
+        case debiki.SiteCreator.NewSiteType.Forum =>
+          findForumMainPage()
+      }
     }
 
   }

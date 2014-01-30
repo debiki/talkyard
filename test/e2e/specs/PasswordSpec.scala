@@ -58,7 +58,7 @@ class PasswordSpec extends DebikiBrowserSpec with TestSiteCreator {
   "A user with a browser can" - {
 
     s"create an account, $AdminsEmail, and a website, $siteName" in {
-      clickCreateSite(login = () => {
+      clickCreateSimpleWebsite(login = () => {
           createNewPasswordAccount(AdminsEmail, password = AdminsPassword)
         }, siteName = siteName)
     }
@@ -149,7 +149,7 @@ class PasswordSpec extends DebikiBrowserSpec with TestSiteCreator {
         }
 
         "find default homepage and website config page" in {
-          eventuallyFindHomepageAndConfigPage()
+          findSimpleSiteHomepage()
         }
       }
 

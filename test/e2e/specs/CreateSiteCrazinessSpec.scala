@@ -65,7 +65,7 @@ class CreateSiteCrazinessSpec extends DebikiBrowserSpec with TestSiteCreator {
     }
 
     "choose site type: a simple website" in {
-      clickChooseSiteTypeSimpleSite()
+      clickChooseSiteType(debiki.SiteCreator.NewSiteType.SimpleSite)
     }
 
     "new site terms must be de-selected by default" in {
@@ -165,7 +165,7 @@ class CreateSiteCrazinessSpec extends DebikiBrowserSpec with TestSiteCreator {
       }
 
       "find default homepage and website config page" in {
-        eventuallyFindHomepageAndConfigPage()
+        findSimpleSiteHomepage()
       }
 
       "return to site creation page, choose site type: simple site, again" in {
@@ -174,7 +174,7 @@ class CreateSiteCrazinessSpec extends DebikiBrowserSpec with TestSiteCreator {
 
       "login again, choose site type" in {
         loginToAdminPage()
-        clickChooseSiteTypeSimpleSite()
+        clickChooseSiteType(debiki.SiteCreator.NewSiteType.SimpleSite)
       }
 
       "not create a site with the same address" in {
@@ -192,7 +192,7 @@ class CreateSiteCrazinessSpec extends DebikiBrowserSpec with TestSiteCreator {
 
     "create another site with another address" - {
       s"create $secondSiteName" in {
-        clickCreateSite(loginToAdminPage, secondSiteName)
+        clickCreateSimpleWebsite(loginToAdminPage, secondSiteName)
         // oops don't use gmail login
       }
 
@@ -201,7 +201,7 @@ class CreateSiteCrazinessSpec extends DebikiBrowserSpec with TestSiteCreator {
       }
 
       "again find default homepage and website config page" in {
-        eventuallyFindHomepageAndConfigPage()
+        findSimpleSiteHomepage()
       }
     }
 

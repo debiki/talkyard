@@ -79,7 +79,7 @@ class BuildSiteManuallySpec extends DebikiBrowserSpec with TestSiteCreator {
   "A human can" - {
 
     "create new site" in {
-      clickCreateSite(loginWithGmailFullscreen, siteName)
+      clickCreateSimpleWebsite(loginWithGmailFullscreen, siteName)
     }
 
     "login and goto admin page" in {
