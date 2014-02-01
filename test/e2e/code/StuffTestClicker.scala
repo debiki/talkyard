@@ -249,6 +249,14 @@ trait StuffTestClicker extends DebikiSelectors {
   }
 
 
+  def clickShowMoreActions(postId: PostId) {
+    showActionLinks(postId)
+    val moreLink = findActionLink_!(postId, "dw-a-more")
+    scrollIntoView(moreLink)
+    click on moreLink
+  }
+
+
   def findPost(postId: ActionId): Option[Element] = {
     find(s"post-$postId")
   }
