@@ -53,6 +53,11 @@ bug = d.u.die2
       $scope.actionList = []
       for action in data.actions
         pagePath = adminService.getPageById(action.pageId)?.path || '(new page)'
+
+        # Ignore the site config page, it's confusing and dangerous.
+        if pagePath == '/_site.conf'
+          continue
+
         user = usersById[action.userId]
         actionWithDetails = {} <<< action
         actionWithDetails <<<
