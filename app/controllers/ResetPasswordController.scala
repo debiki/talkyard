@@ -46,7 +46,7 @@ object ResetPasswordController extends mvc.Controller {
   }
 
 
-  def handleResetPasswordForm = JsonOrFormDataPostAction(maxBytes = 100) { request =>
+  def handleResetPasswordForm = JsonOrFormDataPostAction(maxBytes = 200) { request =>
     val emailAddress = request.body.getOrThrowBadReq("email")
     val anyIdentityAndUser = request.dao.loadIdtyDetailsAndUser(forEmailAddr = emailAddress)
 
@@ -120,7 +120,7 @@ object ResetPasswordController extends mvc.Controller {
 
 
   def handleNewPasswordForm(anyResetPasswordEmailId: String) =
-        JsonOrFormDataPostAction(maxBytes = 100) { request =>
+        JsonOrFormDataPostAction(maxBytes = 200) { request =>
     val newPassword = request.body.getOrThrowBadReq("newPassword")
     val newPasswordAgain = request.body.getOrThrowBadReq("newPasswordAgain")
     if (newPassword != newPasswordAgain)

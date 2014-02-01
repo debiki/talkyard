@@ -30,19 +30,22 @@ trait TestLoginner extends DebikiSelectors {
 
 
   private var firstGmailLogin = true
-
   private var adminMadeAdmin = false
+  private val LoginPopupWindowName = "LoginPopup"
 
-  /** Clicks the login link at the top of the page and logs in.
+
+  /** Clicks some login link, so a login popup dialog opens; then logs in as guest.
     * Specifies no email.
     */
-  def loginAsGuest(name: String) {
+  def loginAsGuestInPopup(name: String) {
     click on aLoginLink
     submitGuestLogin(name)
   }
 
 
-  def loginAsGmailUser() {
+  /** Clicks some login link, so a login popup dialog opens; then logs in as a Gmail user.
+    */
+  def loginWithGmailInPopup() {
     click on aLoginLink
     eventually { click on "dw-lgi-google" }
     // Switch to OpenID popup window.
@@ -50,6 +53,34 @@ trait TestLoginner extends DebikiSelectors {
     switchToNewlyOpenedWindow()
     fillInGoogleCredentials()
     webDriver.switchTo().window(originalWindow)
+  }
+
+
+  /** Assumes we're on a full screen login page, and enters email and password and
+    * clicks the login submit button.
+    */
+  def loginWithPasswordFullscreen(email: String, password: String) {
+    eventually { click on "email" }
+    enter(email)
+    click on "password"
+    enter(password)
+    click on cssSelector("""[type="submit"]""")
+  }
+
+
+  /** Assumes we're on a full screen login page, and clicks the Gmail login button
+    * and then logs in via Gmail OpenID.
+    */
+  def loginWithGmailFullscreen() {
+    loginWithGmailFullscreen(approvePermissions = true)
+  }
+
+
+  def loginWithGmailFullscreen(approvePermissions: Boolean) {
+    eventually {
+      click on cssSelector("a.login-link-google")
+    }
+    fillInGoogleCredentials(approvePermissions)
   }
 
 
@@ -77,8 +108,23 @@ trait TestLoginner extends DebikiSelectors {
     // Update the browser: set cookies.
     val (_, _, sidAndXsrfCookies) = debiki.Xsrf.newSidAndXsrf(Some(loginGrant))
     val userConfigCookie = controllers.AppConfigUser.userConfigCookie(loginGrant)
-    for (cookie <- userConfigCookie :: sidAndXsrfCookies)
-      add.cookie(cookie.name, cookie.value)
+    for (cookie <- userConfigCookie :: sidAndXsrfCookies) {
+      // Set cookie via Javascript: ...
+      executeScript(
+        s"debiki.internal.$$.cookie('${cookie.name}', '${cookie.value}', { path: '/' });")
+      // ... Because the preferred way to set cookies:
+      //   add.cookie(cookie.name, cookie.value)
+      // doesn't work when in an iframe, probably because add.cookie attempts to add
+      // the cookie to the wrong domain or isn't allowed to add it to the iframe's domain
+      // because it's different from the embedding domain.
+      // And all these attempts to set the domain results in:
+      //      org.openqa.selenium.InvalidCookieDomainException "invalid domain: ..."
+      //   - mycomputer   // that's the embedding domain
+      //   - .hello.mycomputer
+      //   - hello.mycomputer
+      //   - localhost
+      //   - .localhost
+    }
 
     // Redraw login related stuff and sync XSRF tokens.
     executeScript("debiki.internal.Me.fireLogin()")
@@ -146,9 +192,70 @@ trait TestLoginner extends DebikiSelectors {
   }
 
 
+  def createNewPasswordAccount(
+        email: String,
+        password: String,
+        displayName: String = "Display_Name",
+        country: String = "Country",
+        fullName: String = "Full_Name") {
+
+    // Only these emails work with E2E tests, see Mailer.scala, search for "example.com".
+    assert(email endsWith "example.com")
+
+    info("creating and logging in with new password account")
+    click on "create-account"
+
+    eventually {
+      click on cssSelector("""input[name="emailAddress"]""")
+      enter(email)
+      click on cssSelector("""[type="submit"]""")
+    }
+
+    eventually {
+      val nextPageUrl = debiki.Mailer.EndToEndTest.getAndForgetMostRecentEmail() match {
+        case None =>
+          fail()
+        case Some(email: Email) =>
+          extractNextPageUrlFromNewAccountEmail(email)
+      }
+      go to nextPageUrl
+    }
+
+    eventually {
+      pageSource must include ("Fill In Your Details")
+
+      click on "displayName"
+      enter("Admins_display_name")
+
+      click on "fullName"
+      enter("Admins_full_name")
+
+      click on "country"
+      enter("Admins_country")
+
+      click on "password"
+      enter(password)
+
+      click on "passwordAgain"
+      enter(password)
+
+      click on cssSelector("""[type="submit"]""")
+    }
+
+    eventually {
+      pageSource must include ("Your account has been created")
+      click on partialLinkText("Click to continue")
+    }
+  }
+
+
   /** Fills in the guest login form.
     */
   def submitGuestLogin(name: String, email: String = "") {
+
+    if (embeddedCommentsWindowAndFrame.isDefined)
+      webDriver.switchTo().window(LoginPopupWindowName)
+
     // Open guest login dialog.
     eventually { click on "dw-lgi-guest" }
 
@@ -162,8 +269,14 @@ trait TestLoginner extends DebikiSelectors {
 
     // Submit.
     click on "dw-lgi-guest-submit"
-    eventually {
-      click on "dw-dlg-rsp-ok"
+
+    switchToAnyEmbeddedCommentsIframe()
+
+    // A certain confirmation dialog is currently not shown when logging in in a popup.
+    if (embeddedCommentsWindowAndFrame.isEmpty) {
+      eventually {
+        click on "dw-dlg-rsp-ok"
+      }
     }
   }
 
@@ -187,6 +300,29 @@ trait TestLoginner extends DebikiSelectors {
     }
     else if (mustBeLoggedIn) {
       fail("Not logged in; must be logged in")
+    }
+  }
+
+
+  /** The email sent when creating a new account looks like so:
+    * {{{
+    * ... To create an account at <tt>localhost:19001</tt>, please follow
+    * <a href="http://localhost:19001/-/create-account/user-details/<email-id>/
+    *                  %2F-%2Fcreate-embedded-site%2Fspecify-embedding-site-address">
+    *   this link</a>. ....
+    * }}}
+    *
+    * This function extracts the url to click. "(?s)" below makes "." match newline.
+    */
+  private def extractNextPageUrlFromNewAccountEmail(email: Email) = {
+    val NextPageUrlRegex =
+      """(?s).* href="(https?://[^"]+/create-account/user-details/[^"]+)".*""".r
+    email.bodyHtmlText match {
+      case NextPageUrlRegex(url) =>
+        url
+      case _ =>
+        // This is an old email from another E2E test? Or the regex above is wrong.
+        fail()
     }
   }
 

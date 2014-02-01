@@ -50,13 +50,17 @@ trait TestSiteCreator extends TestLoginner {
   }
 
 
+  def createEmbeddedCommentsSiteStartPage = new Page {
+    val url = s"http://$newSiteDomain/-/create-embedded-site"
+  }
+
   def nextSiteName(): String = {
     nextWebsiteId += 1
     s"test-site-$nextWebsiteId"
   }
 
 
-  def clickCreateSite(siteName: String = null): String = {
+  def clickCreateSimpleWebsite(login: () => Unit, siteName: String = null): String = {
     val name =
       if (siteName ne null) siteName
       else nextSiteName()
@@ -64,10 +68,8 @@ trait TestSiteCreator extends TestLoginner {
     info("create site $name")
 
     go to createWebsiteChooseTypePage
-
-    clickLoginWithGmailOpenId()
-
-    clickChooseSiteTypeSimpleSite()
+    login()
+    clickChooseSiteType(debiki.SiteCreator.NewSiteType.SimpleSite)
 
     click on "website-name"
     enter(name)
@@ -78,9 +80,17 @@ trait TestSiteCreator extends TestLoginner {
   }
 
 
-  def clickChooseSiteTypeSimpleSite() {
-    click on id("site-type")
-    click on id("new-simple-site")
+  def clickChooseSiteType(siteType: debiki.SiteCreator.NewSiteType) {
+    click on "site-type"
+    val siteTypeOptionId = siteType match {
+      case debiki.SiteCreator.NewSiteType.SimpleSite => "new-simple-site"
+      case debiki.SiteCreator.NewSiteType.Blog => "new-blog"
+      case debiki.SiteCreator.NewSiteType.Forum => "new-forum"
+      case debiki.SiteCreator.NewSiteType.EmbeddedComments =>
+        // This is tested elsewere, namely in CreateEmbeddedCommentsSiteSpec.scala.
+        assErr("DwE17wfh3", "Broken test")
+    }
+    click on siteTypeOptionId
     click on cssSelector("input[type=submit]")
     eventually {
       find("website-name") must be ('defined)
@@ -88,29 +98,57 @@ trait TestSiteCreator extends TestLoginner {
   }
 
 
-  def clickWelcomeLoginToDashboard(newSiteName: String) {
-    info("click login link on welcome owner page")
+  def clickWelcomeLoginToDashboard(login: () => Unit, newSiteName: String) {
+    viewNewSiteWelcomePageAndContinue()
+    info("login to admin dashboard")
+    login()
+    verifyIsOnAdminPage(newSiteName)
+  }
+
+
+  def viewNewSiteWelcomePageAndContinue() {
     // We should now be on page /-/create-site/welcome-owner.
     // There should be only one link, which takes you to /-/admin/.
+    info("view welcome owner page, click continue link")
     eventually {
       assert(pageSource contains "Website created")
     }
     click on cssSelector("a")
-
-    info("login to admin dashboard")
-    clickLoginWithGmailOpenId()
-    eventually {
-      assert(pageSource contains "Admin Page")
-    }
-    webDriver.getCurrentUrl() must be === originOf(newSiteName) + "/-/admin/"
   }
 
 
-  def clickLoginWithGmailOpenId(approvePermissions: Boolean = true) {
+  private def verifyIsOnAdminPage(newSiteName: String) {
+    info("get to the admin age")
     eventually {
-      click on cssSelector("a.login-link-google")
+      assert(pageSource contains "Admin Page")
     }
-    fillInGoogleCredentials(approvePermissions)
+    webDriver.getCurrentUrl() must fullyMatch regex s"${originOf(newSiteName)}/-/admin/#?"
+  }
+
+
+  def findSimpleSiteHomepage() {
+    findMainPage("Generic", linkText = "homepage", "No homepage link found")
+    //findMainPage("Code", linkText = "configuration", "No website config page link found")
+  }
+
+  def findBlogMainPage() {
+    findMainPage("Blog", linkText = "blog", "No blog main page link found")
+  }
+
+  def findForumMainPage() {
+    findMainPage("Forum", linkText = "forum", "No forum main page link ffound")
+  }
+
+
+  private def findMainPage(tyype: String, linkText: String, errorMessage: String) {
+    eventually {
+      find(cssSelector(s"tr.page-role-$tyype > td a[href='/']")) match {
+        case Some(elem) =>
+          elem.text.toLowerCase must include(linkText)
+        case None =>
+          fail(errorMessage)
+      }
+    }
   }
 
 

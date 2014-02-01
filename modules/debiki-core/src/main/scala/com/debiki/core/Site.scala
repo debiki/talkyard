@@ -119,6 +119,11 @@ abstract class FirstSiteData {
   def address: String
   def https: TenantHost.HttpsInfo
   def pagesToCreate: List[Page]
+
+  /** Some E2E tests rely on the first site allowing the creation of embedded
+    * discussions, so we need to be able to specify an embedding site URL.
+    */
+  def embeddingSiteUrl: Option[String] = None
 }
 
 

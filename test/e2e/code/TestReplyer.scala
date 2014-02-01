@@ -77,7 +77,19 @@ trait TestReplyer {
   /** Finds the ids of all posts (without the "post-" prefix).
     */
   private def findAllPostIds =
-    findAll(cssSelector(".dw-p")).flatMap(_.attribute("id").map(_.drop(5).toInt)).toSet
+    findAll(cssSelector(".dw-p")).flatMap({ post =>
+      // Embedded comment pages have an empty .dw-p, and for some reason Selenium or
+      // the browser believes it has an empty id attribute too, although Chrome's debug
+      // inspector doesn't show any id. So treat empty id as no id.
+      val anyIdAttr = post.attribute("id")
+      if (anyIdAttr == Some("")) {
+        None
+      }
+      else {
+        // Drop "post-".
+        anyIdAttr.map(_.drop(5).toInt)
+      }
+    }).toSet
 
 
   def clickArticleReplyLink() {

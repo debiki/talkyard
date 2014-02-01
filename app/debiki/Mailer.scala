@@ -49,6 +49,25 @@ object Mailer {
   // Not thread safe; only needed in integration tests.
   private var testInstanceCounter = 1
 
+
+  object EndToEndTest {
+
+    /** The most recent email sent to an @example.com address,
+      * made available her for end to end tests.
+      */
+    @volatile
+    var mostRecentEmailSent: Option[Email] = None
+
+    /** Returns the most recent email sent, and then forgets it, so it won't
+      * mess up subsequent E2E tests that shouldn't try to reuse it.
+      */
+    def getAndForgetMostRecentEmail(): Option[Email] = {
+      val email = mostRecentEmailSent
+      mostRecentEmailSent = None
+      email
+    }
+  }
+
 }
 
 
@@ -109,8 +128,10 @@ class Mailer(val daoFactory: SiteDaoFactory) extends Actor {
     // — don't send those emails, to keep down the bounce rate.
     if (emailToSend.sentTo.endsWith("example.com") ||
         emailToSend.sentTo.endsWith("ex.com")) {
-      // Pretend it's been sent.
-      tenantDao.updateSentEmail(emailToSend.copy(sentOn = now))
+      // Pretend it's been sent, and make it available for end-to-end tests.
+      val emailSent = emailToSend.copy(sentOn = now)
+      tenantDao.updateSentEmail(emailSent)
+      Mailer.EndToEndTest.mostRecentEmailSent = Some(emailSent)
       return
     }
 

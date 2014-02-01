@@ -71,7 +71,7 @@ object CreateSiteController extends mvc.Controller {
   }
 
 
-  def handleSiteTypeForm() = JsonOrFormDataPostAction(maxBytes = 100) { request =>
+  def handleSiteTypeForm() = JsonOrFormDataPostAction(maxBytes = 200) { request =>
     val siteType =
       request.body.getEmptyAsNone("siteType") getOrElse
         throwBadReq("DwE73Gb81", "Please specify site type")
@@ -92,7 +92,7 @@ object CreateSiteController extends mvc.Controller {
   }
 
 
-  def handleWebsiteNameForm() = JsonOrFormDataPostAction(maxBytes = 100) {
+  def handleWebsiteNameForm() = JsonOrFormDataPostAction(maxBytes = 200) {
       request =>
 
     val newWebsiteName =

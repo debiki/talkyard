@@ -141,7 +141,20 @@ trait StuffTestClicker extends DebikiSelectors {
 
   def gotoDiscussionPage(pageUrl: String) {
     go to (new Page { val url = pageUrl })
+    switchToAnyEmbeddedCommentsIframe()
     // Consider the page loaded when login/out links appear.
+    waitForLoginLinks()
+  }
+
+
+  def reloadPageWaitForLoginLinks() {
+    reloadPage()
+    switchToAnyEmbeddedCommentsIframe()
+    waitForLoginLinks()
+  }
+
+
+  private def waitForLoginLinks() {
     eventually {
       val loginLinkWebElem = find(AnyLoginLink)
       val logoutinkWebElem = find(AnyLogoutLink)
@@ -236,6 +249,14 @@ trait StuffTestClicker extends DebikiSelectors {
   }
 
 
+  def clickShowMoreActions(postId: PostId) {
+    showActionLinks(postId)
+    val moreLink = findActionLink_!(postId, "dw-a-more")
+    scrollIntoView(moreLink)
+    click on moreLink
+  }
+
+
   def findPost(postId: ActionId): Option[Element] = {
     find(s"post-$postId")
   }
@@ -253,7 +274,7 @@ trait StuffTestClicker extends DebikiSelectors {
 
   def findActionLink_!(postId: ActionId, actionLinkClass: String): Element = {
     findActionLink(postId, actionLinkClass) getOrDie
-        s"No $actionLinkClass link found for post $postId"
+        s"No $actionLinkClass link found for post $postId [DwE485EF0]"
   }
 
 

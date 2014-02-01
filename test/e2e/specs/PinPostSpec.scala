@@ -41,7 +41,7 @@ with StartServerAndChromeDriverFactory
 @test.tags.EndToEndTest
 @DoNotDiscover
 class PinPostSpec extends DebikiBrowserSpec
-  with TestReplyer with TestLoginner with TestRater {
+  with TestReplyer with TestLoginner with TestRater with TestPinner {
 
   lazy val testPage = createTestPage(PageRole.Generic,
     title = "Pin Posts Test 73kdEf0", body = Some("Pin posts test 6P8GK03."))
@@ -73,17 +73,17 @@ class PinPostSpec extends DebikiBrowserSpec
     "add comments" - {
 
       s"login as guest, add comments: #gu1" in {
-        loginAsGuest(guestUserName)
+        loginAsGuestInPopup(guestUserName)
         postId_gu1 = replyToArticle("gu1-text")
       }
 
-      "login as Gmail user, add comments: #gm1, #gm2, #gm3" in {
+      "login as Gmail user, add comments: #gm2" in {
         logout()
-        loginAsGmailUser()
+        loginWithGmailInPopup()
         postId_gm2 = replyToArticle("gm2-text")
       }
 
-      "login as admin, add comments: #ad1, #ad2, #ad3" in {
+      "login as admin, add comments: #ad3 - #ad7" in {
         logout()
         cheatLoginAsAdmin()
         postId_ad3 = replyToArticle("ad3-text")
@@ -93,10 +93,10 @@ class PinPostSpec extends DebikiBrowserSpec
         postId_ad7 = replyToComment(postId_gu1, "ad7-text")
       }
 
-      "rate #gu1 booring and #gm2 booring, #ad3 interesting" in {
+      "rate #gu1 boring and #gm2 boring, #ad3 interesting" in {
         rateComment(postId_gu1, BadRating)
-        rateComment(postId_gm2, BadRating)
-        rateComment(postId_ad3, GoodRating)
+        rateComment(postId_gm2, GoodRating)
+        rateComment(postId_ad3, BadRating)
       }
 
       "all comments sorted correctly after reload" in {
@@ -106,50 +106,84 @@ class PinPostSpec extends DebikiBrowserSpec
       }
     }
 
-
-    "page author can pin and dragsort posts" - {
-
-      "login as author" in {
-        logout()
-        loginAsGuest(guestUserName)
-      }
-
-      s"" in {
-      }
-    }
-
-
-    "moderators can pin and dragsort" - {
+    "moderators can pin posts" - {
 
       "login as admin" in {
         logout()
         cheatLoginAsAdmin()
       }
+
+      s"pin posts via menu" in {
+        pinCommentViaMenu(postId = postId_gu1, position = 1)
+        pinCommentViaMenu(postId = postId_ad3, position = 2)
+        pinCommentViaMenu(postId = postId_ad4, position = 3)
+
+        // This should make the posts appear in order ad5, ad6, ad7.
+        pinCommentViaMenu(postId = postId_ad7, position = 1)
+        pinCommentViaMenu(postId = postId_ad6, position = 1)
+        pinCommentViaMenu(postId = postId_ad5, position = 1)
+      }
+
+      "find the posts sorted correctly" in {
+        checkSortOrder()
+      }
+
+      "reload page, still find the posts sorted correctly" in {
+        reloadPage()
+        eventually {
+          // page loaded?
+          find(cssSelector("#post-1")) must be !== None
+        }
+        checkSortOrder()
+      }
+
+      def checkSortOrder() {
+        var correctSortOrder = List("post-1", "post-3", "post-4", "post-2")
+        var articleReplies = findAll(
+          cssSelector(".dw-depth-0 > .dw-res > li > .dw-t > .dw-p")).toList
+        var actualIds = articleReplies.map(_.attribute("id") getOrDie "DwE5903R8N1")
+        correctSortOrder mustEqual actualIds
+
+        correctSortOrder = List("post-5", "post-6", "post-7")
+        articleReplies = findAll(
+          cssSelector(s"#dw-t-${postId_gu1} > .dw-res > .dw-t > .dw-p")).toList
+        actualIds = articleReplies.map(_.attribute("id") getOrDie "DwE5903R8N1")
+        correctSortOrder mustEqual actualIds
+      }
     }
 
+    "page author can pin and dragsort posts" - {
 
-    "posts are correctly sorted" - {
+      "login as author" in {
+        logout()
+        loginAsGuestInPopup(guestUserName)
+      }
 
+      s"pin posts" in {
+        pending
+      }
+
+      "reload page, find them sorted correctly" in {
+        pending
+      }
     }
-
 
     "other users cannot pin and dragsort" - {
 
       "login as Gmail user" in {
         logout()
-        loginAsGmailUser()
+        loginWithGmailInPopup()
       }
 
       "gmail user cannot drag-drop-sort pins" in {
+        pending
       }
 
       "gmail user sees no Pin action menu item" in {
+        pending
       }
     }
 
-
-    "one can pin posts vertically too" - {
-    }
   }
 
 }

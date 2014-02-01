@@ -251,8 +251,11 @@ object AppLoginOpenId extends mvc.Controller {
         // This message is easier to understand than Play's built in message?
         "Login failed: You cancelled the login, by denying access?"
       case error: OpenIDError =>
-        Logger.warn(s"OpenID login failed: ${error.message}")
+        Logger.warn(s"OpenID login failed: ${error.message} [DwE58FU0]")
         s"Login failed: ${error.message}"
+      case x =>
+        Logger.warn(s"OpenID login failed, unknown error: ${x.toString} [DwE3FSh8]")
+        s"Login failed: ${x.toString}"
     }
 
     val anyReturnToUrl =

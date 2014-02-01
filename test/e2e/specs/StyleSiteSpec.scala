@@ -57,8 +57,8 @@ class StyleSiteSpecSpec extends DebikiBrowserSpec
 
 
     "create new site and goto dashboard" in {
-      val siteName = clickCreateSite()
-      clickWelcomeLoginToDashboard(siteName)
+      val siteName = clickCreateSimpleWebsite(loginWithGmailFullscreen)
+      clickWelcomeLoginToDashboard(loginWithGmailFullscreen, siteName)
       dashboardWindow = window(webDriver.getWindowHandle)
     }
 

@@ -45,7 +45,7 @@ object CreateAccountController extends mvc.Controller {
   }
 
 
-  def handleEmailAddress(returnToUrl: String) = JsonOrFormDataPostAction(maxBytes = 100) {
+  def handleEmailAddress(returnToUrl: String) = JsonOrFormDataPostAction(maxBytes = 200) {
         request =>
     throwIfMayNotCreateAccount(request)
 

@@ -170,7 +170,18 @@ class Globals {
       }
 
     val baseDomain: String =
-      Play.configuration.getString("debiki.baseDomain") getOrElse "localhost:9000"
+      Play.configuration.getString("debiki.baseDomain") getOrElse {
+        val listenPort =
+          if (!Play.isTest) {
+            System.getProperty("http.port", "9000")
+          }
+          else {
+            // Not on classpath: play.api.test.Helpers.testServerPort
+            // Instead, duplicate its implementation here:
+            System.getProperty("testserver.port", "19001")
+          }
+        s"localhost:$listenPort"
+      }
 
     // The hostname must be directly below the base domain, otherwise
     // wildcard HTTPS certificates won't work: they cover 1 level below the

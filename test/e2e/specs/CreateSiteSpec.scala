@@ -20,16 +20,118 @@ package test.e2e.specs
 import com.debiki.core.Prelude._
 import org.scalatest.time.{Span, Seconds}
 import org.scalatest.DoNotDiscover
+import org.scalatest.Suites
 import test.e2e.code._
 
 
-/** Runs the CreateSiteSpec suite.
-  * In Play:   test-only test.e2e.specs.CreateSiteSpecRunner
-  * In test:console:  (new test.e2e.specs.CreateSiteSpecRunner).execute()
+/** Runs all create-site specs.
+  * In Play:  test-only test.e2e.specs.AllCreateSiteSpecsRunner
   */
 @DoNotDiscover
-class CreateSiteSpecRunner extends org.scalatest.Suites(new CreateSiteSpec)
+class AllCreateSiteSpecsRunner
+  extends Suites(
+    new CreateSiteSpec_SimpleWebsite_GmailLogin,
+    new CreateSiteSpec_Blog_PasswordLogin,
+    new CreateSiteSpec_Forum_PasswordLogin,
+    new CreateSiteSpec_Forum_ReuseOldPasswordLogin)
   with StartServerAndChromeDriverFactory
+
+/** Runs the CreateSiteSpec suite and creates a simple website, using a Gmail account.
+  * In Play:   test-only test.e2e.specs.CreateSiteSpecRunner_SimpleWebsite_GmailLogin
+  * In test:console:  (new test.e2e.specs.CreateSiteSpecRunner_SimpleWebsite_GmailLogin).execute()
+  */
+@DoNotDiscover
+class CreateSiteSpecRunner_SimpleWebsite_GmailLogin
+  extends Suites(new CreateSiteSpec_SimpleWebsite_GmailLogin)
+  with StartServerAndChromeDriverFactory
+
+// test-only test.e2e.specs.CreateSiteSpecRunner_Blog_PasswordLogin
+@DoNotDiscover
+class CreateSiteSpecRunner_Blog_PasswordLogin
+  extends Suites(new CreateSiteSpec_Blog_PasswordLogin)
+  with StartServerAndChromeDriverFactory
+
+// test-only test.e2e.specs.CreateSiteSpecRunner_Forum_PasswordLogin
+@DoNotDiscover
+class CreateSiteSpecRunner_Forum_PasswordLogin
+  extends Suites(new CreateSiteSpec_Forum_PasswordLogin)
+  with StartServerAndChromeDriverFactory
+
+// test-only test.e2e.specs.CreateSiteSpecRunner_Forum_ReuseOldPasswordLogin
+@DoNotDiscover
+class CreateSiteSpecRunner_Forum_ReuseOldPasswordLogin
+  extends Suites(
+    new CreateSiteSpec_Forum_PasswordLogin,
+    new CreateSiteSpec_Forum_ReuseOldPasswordLogin)
+  with StartServerAndChromeDriverFactory
+
+
+
+@DoNotDiscover
+class CreateSiteSpec_SimpleWebsite_GmailLogin extends CreateSiteSpecConstructor {
+  val newSiteType = debiki.SiteCreator.NewSiteType.SimpleSite
+  def loginToCreateSite() = login()
+  def loginToAdminPage() = login()
+  private def login() {
+    info("login with Gmail OpenID")
+    loginWithGmailFullscreen()
+  }
+}
+
+@DoNotDiscover
+class CreateSiteSpec_Blog_PasswordLogin extends CreateSiteSpecConstructor {
+  val newSiteType = debiki.SiteCreator.NewSiteType.Blog
+
+  val AdminsEmail = "admin@example.com"
+  val AdminsPassword = "Admins_password"
+
+  // Warning: dupl code, see CreateSiteSpec_Forum_PasswordLogin. But I
+  // inted to replace this one or that one with Facebook login instead,
+  // then problem gone.
+  def loginToCreateSite() {
+    createNewPasswordAccount(AdminsEmail, password = AdminsPassword)
+  }
+
+  def loginToAdminPage() {
+    loginWithPasswordFullscreen(AdminsEmail, password = AdminsPassword)
+  }
+}
+
+@DoNotDiscover
+class CreateSiteSpec_Forum_PasswordLogin extends CreateSiteSpecConstructor {
+  val newSiteType = debiki.SiteCreator.NewSiteType.Forum
+
+  val AdminsEmail = "another-admin@example.com"
+  val AdminsPassword = "Another_admins_password"
+  private var accountCreated = false
+
+  // Warning: dupl code, see CreateSiteSpec_Blog_PasswordLogin. But I
+  // inted to replace this one or that one with Facebook login instead,
+  // then problem gone.
+  def loginToCreateSite() {
+    createNewPasswordAccount(AdminsEmail, password = AdminsPassword)
+  }
+
+  def loginToAdminPage() {
+    loginWithPasswordFullscreen(AdminsEmail, password = AdminsPassword)
+  }
+}
+
+@DoNotDiscover
+class CreateSiteSpec_Forum_ReuseOldPasswordLogin extends CreateSiteSpecConstructor {
+  val newSiteType = debiki.SiteCreator.NewSiteType.Forum
+
+  val AdminsEmail = "another-admin@example.com"
+  val AdminsPassword = "Another_admins_password"
+
+  def loginToCreateSite() = login()
+  def loginToAdminPage() = login()
+
+  private def login() {
+    loginWithPasswordFullscreen(AdminsEmail, password = AdminsPassword)
+  }
+}
+
 
 
 /**
@@ -40,10 +142,15 @@ class CreateSiteSpecRunner extends org.scalatest.Suites(new CreateSiteSpec)
  */
 @test.tags.EndToEndTest
 @DoNotDiscover
-class CreateSiteSpec extends DebikiBrowserSpec with TestSiteCreator {
+abstract class CreateSiteSpecConstructor extends DebikiBrowserSpec with TestSiteCreator {
 
-  val firstSiteName = nextSiteName()
-  val secondSiteName = nextSiteName()
+  def newSiteType: debiki.SiteCreator.NewSiteType
+
+  /** Subclasses override and test various login methods. */
+  def loginToCreateSite()
+  def loginToAdminPage()
+
+  val siteName = nextSiteName()
 
 
   "A user with a browser can" - {
@@ -52,111 +159,37 @@ class CreateSiteSpec extends DebikiBrowserSpec with TestSiteCreator {
       go to createWebsiteChooseTypePage
     }
 
-    "login with Gmail OpenID, but deny permissions" in {
-      // This opens an Authentication failed, Unknown error page.
-      // Instead, should show the login page again, and a message
-      // that one needs to click the approval button?
-      //loginWithGmailOpenId(approvePermissions = false)
-      pending
+    "login" in {
+      loginToCreateSite()
     }
 
-    s"login with Gmail OpenID" in {
-      clickLoginWithGmailOpenId()
+    s"submit site type" in {
+      info(s"choose site type: $newSiteType")
+      clickChooseSiteType(newSiteType)
     }
 
-
-    "choose site type: a simple website" in {
-      clickChooseSiteTypeSimpleSite()
-    }
-
-    "not have an invalid name accepted" in {
-      pending
-    }
-
-    "not have name accepted unless terms accepted" in {
-      pending
-    }
-
-    "enter new website name and accept terms" in {
+    s"submit site name: $siteName" in {
       click on "website-name"
-      enter(firstSiteName)
-      click on "accepts-terms"
-    }
-
-    "not allow site creation if there's no `new-website-domain' config value" in {
-      // Verify that clicking Submit results in:
-      // 403 Forbidden, "... may not create website from this website ..."
-      // Have to do this from another site; `localhost` allows website creation,
-      // see StuffCreator.createFirstSite().
-      pending
-    }
-
-    "submit site name" in {
-      click on cssSelector("input[type=submit]")
-      // We should now be taken to page /-/create-site/choose-owner.
-    }
-
-    s"goto admin page of $firstSiteName" in {
-      clickWelcomeLoginToDashboard(firstSiteName)
-    }
-
-    "find default homepage and website config page" in {
-      eventuallyFindHomepageAndCofigPage()
-    }
-
-    "return to site creation page, choose site type: simple site, again" in {
-      go to createWebsiteChooseTypePage
-    }
-
-    "login again, choose site type" in {
-      clickLoginWithGmailOpenId()
-      clickChooseSiteTypeSimpleSite()
-    }
-
-    "not create another site with the same address" in {
-      click on "website-name"
-      enter(firstSiteName)
+      enter(siteName)
       click on "accepts-terms"
       click on cssSelector("input[type=submit]")
-
-      // Now an error page should load. Click a certain try again link
-      // (there's only one link?)
-      assert(pageSource contains "You need to choose another name")
-      click on partialLinkText("Okay")
     }
 
-    s"create $secondSiteName" in {
-      clickCreateSite(secondSiteName)
+    s"goto admin page of $siteName" in {
+      clickWelcomeLoginToDashboard(loginToAdminPage, siteName)
     }
 
-    s"login with Gmail again, goto admin page of $secondSiteName" in {
-      clickWelcomeLoginToDashboard(secondSiteName)
-    }
-
-    "again find default homepage and website config page" in {
-      eventuallyFindHomepageAndCofigPage()
-    }
-
-    /*"create even more websites" - {
-      clickCreateSite("test-site-3")
-      clickCreateSite("test-site-4")
-      clickCreateSite("test-site-5")
-    } */
-
-    def eventuallyFindHomepageAndCofigPage() {
-      eventually {
-        find(cssSelector("tr.page-role-Generic > td a[href='/']")) match {
-          case Some(elem) => elem.text must include("Homepage")
-          case None => fail("No homepage link found")
-        }
-        /*
-        find(cssSelector("tr.page-role-Code > td a[href*='_site.conf']"))
-            match {
-          case Some(elem) => elem.text must include("configuration")
-          case None => fail("No website config page link found")
-        } */
+    "find homepage" in {
+      newSiteType match {
+        case debiki.SiteCreator.NewSiteType.SimpleSite =>
+          findSimpleSiteHomepage()
+        case debiki.SiteCreator.NewSiteType.Blog =>
+          findBlogMainPage()
+        case debiki.SiteCreator.NewSiteType.Forum =>
+          findForumMainPage()
       }
     }
+
   }
 
 }

@@ -53,13 +53,13 @@ class AdminDashboardSpec extends DebikiBrowserSpec
 
 
     "create new site" in {
-      siteName = clickCreateSite()
+      siteName = clickCreateSimpleWebsite(loginWithGmailFullscreen)
     }
 
 
     "go to admin dashboard, login as admin" in {
       click on partialLinkText("administration page")
-      clickLoginWithGmailOpenId()
+      loginWithGmailFullscreen()
       dashboardWindow = window(webDriver.getWindowHandle)
     }
 

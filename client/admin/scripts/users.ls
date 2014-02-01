@@ -42,7 +42,7 @@ class User
           for userData in json.users
             User(userData)
       onError: !->
-        alert 'DwE3BKI02' # should come up with something better...
+        console.log('Error listing users [DwE3BKI02]')
 
   ]
 

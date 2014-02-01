@@ -32,11 +32,45 @@ import test.e2e.specs._
  */
 @test.tags.EndToEndTest
 class EndToEndSuite extends Suites(
-  new CreateSiteSpec,
+  new CreateSiteSpec_SimpleWebsite_GmailLogin,
+  new CreateSiteSpec_Blog_PasswordLogin,
+  new CreateSiteSpec_Forum_PasswordLogin,
+  new CreateSiteSpec_Forum_ReuseOldPasswordLogin,
+  new PasswordSpec,
   new DeleteActivitySpec,
   new AdminDashboardSpec,
   new AnonLoginSpec,
   new ForumSpec,
   new StyleSiteSpecSpec)
   with StartServerAndChromeDriverFactory
+
+
+/** Runs embedded comments end to end tests. Requires a server running
+  * at mycomputer:8080 that shows a /static-page.html.
+  *
+  * In SBT:  test-only test.e2e.EndToEndSuiteForEmbeddedComments
+  * In test:console:  (new test.e2e.EndToEndSuiteForEmbeddedComments).execute()
+  *
+  * To start a server at mycomputer:8080:
+  * - Edit your hosts file: /etc/hosts
+  * - Install Node.js and http-server
+  * - CD to test/resources/embedding-pages/
+  * - Type http-server and hit enter
+  *
+  * I'll place all that in a script somehow in the future? (Except for
+  * installing Node and editing /etc/hosts perhaps.) Or should I start an
+  * embedded Java server from within the test? Instead of relying on Node.js.
+  */
+@test.tags.EndToEndTest
+class EndToEndSuiteForEmbeddedComments extends Suites(
+  new AnonLoginSpecForEmbeddedComments_NothingPreLoaded,
+  new AnonLoginSpecForEmbeddedComments_jQuery21PreLoaded,
+  new AnonLoginSpecForEmbeddedComments_Modernizr27PreLoaded,
+  new AnonLoginSpecForEmbeddedComments_jQuery21AndModernizr27PreLoaded,
+  new AnonLoginSpecForEmbeddedComments_jQuery17AndModernizr25PreLoaded,
+  new CreateEmbeddedCommentsSiteGmailLoginSpec,
+  new CreateEmbeddedCommentsSiteNewPasswordAccountSpec,
+  new CreateEmbeddedCommentsSiteOldPasswordAccountSpec)
+with StartServerAndChromeDriverFactory
+
 
