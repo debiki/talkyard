@@ -484,6 +484,7 @@ class PageListItem extends ListItem
   loadAndListPages = !->
     adminService.listAllPages !(pagesById) ->
       removeConfigPage pagesById
+      showComplicatedButtonsIfAnyNonEmbeddedPage pagesById
       listMorePagesDeriveFolders <|
           [PageListItem(page) for id, page of pagesById]
 
@@ -534,6 +535,22 @@ class PageListItem extends ListItem
       if page.path == '/_site.conf'
         configPageId = page.id
     delete pagesById[configPageId]
+
+
+  /**
+   * Reveals buttons related to forums and blogs, if there is any topic that
+   * is not an embedded discussion.
+   */
+  showComplicatedButtonsIfAnyNonEmbeddedPage = !(pagesById) ->
+    anyNonEmbeddedPage = false
+    for pageId, page of pagesById
+      if !page.embeddingPageUrl
+        anyNonEmbeddedPage = true
+        break
+    if anyNonEmbeddedPage
+      showButtons = !->
+        $('.hide-for-embedded-comments').removeClass('hide-for-embedded-comments')
+      setTimeout(showButtons, 1000)
 
 
   /**
