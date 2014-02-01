@@ -335,7 +335,7 @@
                       </label>
                     </td>
                     <td class='page-title'>
-                      <a href="{{ page.path }}" ng-bind-html="page.prettyTitle()"></a>
+                      <a href="{{ page.url() }}" ng-bind-html="page.prettyTitle()"></a>
                       <span class="page-status-role"
                         ng-show="page.prettyStatusRole()">{{ page.prettyStatusRole() }}</span>
                       <span class="page-notfs">{{ page.stringifyOtherMarks() }}</span>

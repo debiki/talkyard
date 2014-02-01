@@ -287,6 +287,9 @@ object AppList extends mvc.Controller {
     if (pageMeta.cachedTitle.isDefined)
       data += "title" -> JsString(pageMeta.cachedTitle.get)
 
+    if (pageMeta.embeddingPageUrl.isDefined)
+      data += "embeddingPageUrl" -> JsString(pageMeta.embeddingPageUrl.get)
+
     toJson(data)
   }
 

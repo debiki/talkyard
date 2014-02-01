@@ -32,6 +32,8 @@ PrettyListItem =
 
 
   prettyUrl: ->
+    if @embeddingPageUrl?.length
+      return '' # the URL is shown as title instead, for now
     # Remove any '?view-new-page=...&passhash=...' query string.
     prettyPath = @path.replace /\?.*/, ''
     if @path is '/' => '/ (homepage)'
@@ -42,6 +44,8 @@ PrettyListItem =
     if @title?.length => @title
     else if @path == '/_site.conf'
       "#{@path} (website configuration)"
+    else if @embeddingPageUrl
+      @embeddingPageUrl
     else switch @role
       | 'Code' => @path
       | 'Blog' =>
@@ -166,6 +170,10 @@ class PageListItem extends ListItem
   slug: -> d.i.findPageSlugIn @path
 
   folderPath: -> d.i.parentFolderOfPage @path
+
+  url: ->
+    if @embeddingPageUrl?.length then @embeddingPageUrl
+    else @path
 
   setPath: !({ newFolder, newSlug, showId }) ->
     if newSlug? && !newFolder? && !showId?
