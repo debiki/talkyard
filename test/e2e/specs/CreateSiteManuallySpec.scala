@@ -26,7 +26,7 @@ import test.e2e.code._
 /**
  * Runs the CreateSiteManuallySpec suite
  * in SBT:
- *  test-only test.e2e.CreateSiteManuallySpecRunner
+ *  test-only test.e2e.specs.CreateSiteManuallySpecRunner
  * in SBT's test:console:
  *  (new test.e2e.specs.CreateSiteManuallySpecRunner {}).execute()
  */
@@ -47,9 +47,8 @@ class CreateSiteManuallySpec extends DebikiBrowserSpec with TestSiteCreator {
       go to createWebsiteChooseTypePage
     }
 
-    "do whatever s/he wants to do" in {
-      // Wait one year, or until the human kills the server.
-      Thread.sleep(365 * 24 * 3600 * 1000)
+    "wait until browser closed" in {
+      waitUntilBrowserClosed()
     }
 
   }
@@ -60,7 +59,7 @@ class CreateSiteManuallySpec extends DebikiBrowserSpec with TestSiteCreator {
 
 /**
  * Runs the BuildSiteManuallySpec suite, in SBT:
- *  test-only test.e2e.BuildSiteManuallySpecRunner
+ *  test-only test.e2e.specs.BuildSiteManuallySpecRunner
  */
 @DoNotDiscover
 class BuildSiteManuallySpecRunner extends Suites(new BuildSiteManuallySpec)
@@ -86,9 +85,8 @@ class BuildSiteManuallySpec extends DebikiBrowserSpec with TestSiteCreator {
       clickWelcomeLoginToDashboard(loginWithGmailFullscreen, siteName)
     }
 
-    "do whatever s/he wants to do" in {
-      // Wait one year, or until the human kills the server.
-      Thread.sleep(365 * 24 * 3600 * 1000)
+    "wait until browser closed" in {
+      waitUntilBrowserClosed()
     }
 
   }
@@ -100,7 +98,7 @@ class BuildSiteManuallySpec extends DebikiBrowserSpec with TestSiteCreator {
 /**
  * Runs the ContinueManualTests suite
  * in SBT:
- *  test-only test.e2e.ContinueManualTestsRunner
+ *  test-only test.e2e.specs.ContinueManualTestsRunner
  */
 @DoNotDiscover
 class ContinueManualTestsRunner extends Suites(new ContinueManualTests)
@@ -122,8 +120,8 @@ class ContinueManualTests extends DebikiBrowserSpec with TestSiteCreator {
     loginWithGmailFullscreen()
   }
 
-  "A human can stare at a computer monitor for one year" in {
-    Thread.sleep(365 * 24 * 3600 * 1000)
+  "wait until browser closed" in {
+    waitUntilBrowserClosed()
   }
 
 }
