@@ -213,6 +213,9 @@ module.exports = (grunt) ->
   iframeParentStylusFiles = [
       'client/page/styles/tips.styl']
 
+  stylusAdminDartFiles = [
+      'client/admin-dart/styles/*.styl']
+
   stylusAdminFiles = [
       'client/admin/styles/admin-theme.styl',
       'client/admin/styles/admin-page.styl',
@@ -246,6 +249,7 @@ module.exports = (grunt) ->
         files: {
           'public/res/combined-debiki.css': stylusFiles,
           'public/res/debiki-embedded-comments.css': iframeParentStylusFiles,
+          'client/admin-dart/admin-dart/web/styles.css': stylusAdminDartFiles,
           'public/res/admin.css': stylusAdminFiles
         }
       },
@@ -257,6 +261,7 @@ module.exports = (grunt) ->
         files: {
           'public/res/combined-debiki.min.css': stylusFiles,
           'public/res/debiki-embedded-comments.min.css': iframeParentStylusFiles,
+          'client/admin-dart/admin-dart/web/styles.min.css': stylusAdminDartFiles,
           'public/res/admin.min.css': stylusAdminFiles
         }
       }
