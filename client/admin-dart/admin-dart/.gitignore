@@ -1,0 +1,14 @@
+packages/
+web/out/*
+build/
+.buildlog
+.project
+*.iml
+*.ipr
+*.iws
+.idea/
+*.dart.js
+*.js_
+*.js.deps
+*.js.map
+
