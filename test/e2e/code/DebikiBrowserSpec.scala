@@ -82,6 +82,35 @@ abstract class DebikiBrowserSpec extends FreeSpec with WebBrowser
     }
   }
 
+
+  /** Waits until a human closes the E2E test browser.
+    */
+  def waitUntilBrowserClosed() {
+    var closed = false
+    while (!closed) {
+      Thread.sleep(200)
+      try {
+        webDriver.getTitle()
+      }
+      catch {
+        case ex: org.openqa.selenium.WebDriverException =>
+          var devToolsOpened =
+            ex.getMessage.contains("disconnected") && ex.getMessage.contains("Inspector.detached")
+          // This weird exception message is thrown sometimes when I click-open Dev Tools:
+          devToolsOpened ||= ex.getMessage.contains("Cannot call method 'click' of null")
+          if (devToolsOpened) {
+            // Someone apparently opened Chrome Debugger Tools, fine.
+          }
+          else if (ex.getMessage.contains("chrome not reachable")) {
+            System.out.println("Stopping test, Chrome closed")
+            closed = true
+          }
+          else {
+            throw ex
+          }
+      }
+    }
+  }
 }
 
 

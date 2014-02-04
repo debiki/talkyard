@@ -175,7 +175,7 @@
             </div>
             *@
 
-            <div class='selection-related-btns'>
+            <div class='selection-related-btns hide-for-embedded-comments'>
 
               <div id='create-page-dropdown' class='dropdown' ng-show='nothingSelected'>
                 <a class='btn btn-default dropdown-toggle' data-toggle='dropdown' href='#'>Create ...</a>
@@ -310,7 +310,7 @@
               <table id="page-table" class="table">
                 <thead>
                   <tr>
-                    <th class='row-selector'><!-- dupl code! -->
+                    <th class='row-selector hide-for-embedded-comments'><!-- dupl code! -->
                       <!-- Why would one need to select all pages?
                       <label>
                         <input type='checkbox'
@@ -318,7 +318,7 @@
                             xxng-model='allSelected'>
                       </label> -->
                     </th>
-                    <th>Page Title</th>
+                    <th class="hide-for-embedded-comments">Page Title</th>
                     @* <th><div ui-jq="tooltip" title="A menu lists links to pages on the website.">Menu</div></th>  *@
                     <th>URL</th>
                   </tr>
@@ -326,7 +326,7 @@
                 <tbody>
                   <tr class="{{page.cssForRole()}} page-depth-{{ countParentsOf(page) }}"
                       ng-repeat="page in listItems">
-                    <td class='row-selector'><!-- dupl code! -->
+                    <td class='row-selector hide-for-embedded-comments'><!-- dupl code! -->
                       <label>
                         <input type='checkbox'
                             ng-model='page.included'
@@ -335,13 +335,13 @@
                       </label>
                     </td>
                     <td class='page-title'>
-                      <a href="{{ page.path }}" ng-bind-html="page.prettyTitle()"></a>
+                      <a href="{{ page.url() }}" ng-bind-html="page.prettyTitle()"></a>
                       <span class="page-status-role"
                         ng-show="page.prettyStatusRole()">{{ page.prettyStatusRole() }}</span>
                       <span class="page-notfs">{{ page.stringifyOtherMarks() }}</span>
                     </td>
                     @* <td><div data-original-title="{{ page.prettyMenuTooltip() }}" ui-jq="tooltip">{{ page.prettyMenu() }}</div></td> *@
-                    <td>{{ page.prettyUrl() }}</td>
+                    <td class="hide-for-embedded-comments">{{ page.prettyUrl() }}</td>
                   </tr>
                 </tbody>
               </table>

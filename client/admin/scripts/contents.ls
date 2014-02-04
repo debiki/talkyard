@@ -32,6 +32,8 @@ PrettyListItem =
 
 
   prettyUrl: ->
+    if @embeddingPageUrl?.length
+      return '' # the URL is shown as title instead, for now
     # Remove any '?view-new-page=...&passhash=...' query string.
     prettyPath = @path.replace /\?.*/, ''
     if @path is '/' => '/ (homepage)'
@@ -42,6 +44,8 @@ PrettyListItem =
     if @title?.length => @title
     else if @path == '/_site.conf'
       "#{@path} (website configuration)"
+    else if @embeddingPageUrl
+      @embeddingPageUrl
     else switch @role
       | 'Code' => @path
       | 'Blog' =>
@@ -166,6 +170,10 @@ class PageListItem extends ListItem
   slug: -> d.i.findPageSlugIn @path
 
   folderPath: -> d.i.parentFolderOfPage @path
+
+  url: ->
+    if @embeddingPageUrl?.length then @embeddingPageUrl
+    else @path
 
   setPath: !({ newFolder, newSlug, showId }) ->
     if newSlug? && !newFolder? && !showId?
@@ -476,6 +484,7 @@ class PageListItem extends ListItem
   loadAndListPages = !->
     adminService.listAllPages !(pagesById) ->
       removeConfigPage pagesById
+      showComplicatedButtonsIfAnyNonEmbeddedPage pagesById
       listMorePagesDeriveFolders <|
           [PageListItem(page) for id, page of pagesById]
 
@@ -526,6 +535,22 @@ class PageListItem extends ListItem
       if page.path == '/_site.conf'
         configPageId = page.id
     delete pagesById[configPageId]
+
+
+  /**
+   * Reveals buttons related to forums and blogs, if there is any topic that
+   * is not an embedded discussion.
+   */
+  showComplicatedButtonsIfAnyNonEmbeddedPage = !(pagesById) ->
+    anyNonEmbeddedPage = false
+    for pageId, page of pagesById
+      if !page.embeddingPageUrl
+        anyNonEmbeddedPage = true
+        break
+    if anyNonEmbeddedPage
+      showButtons = !->
+        $('.hide-for-embedded-comments').removeClass('hide-for-embedded-comments')
+      setTimeout(showButtons, 1000)
 
 
   /**

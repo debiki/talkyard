@@ -19,6 +19,7 @@ package test.e2e.specs
 
 import com.debiki.core.Prelude._
 import org.scalatest.DoNotDiscover
+import org.scalatest.Suites
 import test.e2e.code._
 
 
@@ -64,6 +65,17 @@ class CreateEmbeddedCommentsSiteOldPasswordAccountSpecRunner
     new CreateEmbeddedCommentsSiteNewPasswordAccountSpec,
     new CreateEmbeddedCommentsSiteOldPasswordAccountSpec)
   with StartServerAndChromeDriverFactory
+
+
+/** Runs the ContinueEmbeddSiteTestsManually suite.
+  * in SBT:
+  *  test-only test.e2e.specs.ContinueEmbeddSiteTestsManuallyRunner
+  */
+@DoNotDiscover
+class ContinueEmbeddSiteTestsManuallyRunner extends Suites(new ContinueEmbeddSiteTestsManually)
+with StartServerAndChromeDriverFactory {
+  override val emptyDatabaseBeforeAll = false
+}
 
 
 /** Tests creation of an embedded comment site, logs in with Gmail.
@@ -140,6 +152,26 @@ class CreateEmbeddedCommentsSiteOldPasswordAccountSpec
     loginWithPasswordFullscreen(AdminsEmail, AdminsPassword)
   }
 }
+
+
+/** Assumes you've just run a create-embedded-site E2E test, and
+  * logs in to the admin dashboard of that site (without emptying the
+  * database first, which all other E2E tests do).
+  */
+@DoNotDiscover
+class ContinueEmbeddSiteTestsManually extends DebikiBrowserSpec with TestLoginner {
+
+  "login to the dashboard of ebedded site 11" in {
+    go to ("http://site-11.localhost:19001/-/admin/")
+    loginWithPasswordFullscreen("admin@example.com", "Admins_password")
+  }
+
+  "wait until browser closed" in {
+    waitUntilBrowserClosed()
+  }
+
+}
+
 
 
 /** Tests creation of embedded comment sites.
