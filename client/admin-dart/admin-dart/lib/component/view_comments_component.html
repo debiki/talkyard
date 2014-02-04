@@ -1,0 +1,12 @@
+<div>
+  view_comments_component.html
+
+  <nav>
+    <ul id="post-list">
+      <li ng-repeat="post in ctrl.recentPosts">
+        {{ post.toJsonString() }}
+      </li>
+    </ul>
+  </nav>
+
+</div>

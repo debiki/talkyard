@@ -1,0 +1,12 @@
+<div>
+  view_topics_component.html
+
+  <nav>
+    <ul id="topic-list">
+      <li ng-repeat="topic in ctrl.allTopics">
+        <a href="http://localhost:9000/-{{topic.id}}">{{ topic.path }}</a>
+      </li>
+    </ul>
+  </nav>
+
+</div>

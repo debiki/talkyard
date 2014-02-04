@@ -5,15 +5,11 @@
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+
   <div debiki-admin>
-    <p>Hello</p>
-    <nav>
-      <ul id="topic-list">
-        <li ng-repeat="topic in ctrl.allTopics">
-          <a href="http://localhost:9000/-{{topic.id}}">{{ topic.path }}</a>
-        </li>
-      </ul>
-    </nav>
+    <a href="#/topics"><input type="button" value="Topics"></a><br/>
+    <a href="#/comments"><input type="button" value="Comments"></a><br/>
+    <ng-view></ng-view>
   </div>
 
   <script src="packages/shadow_dom/shadow_dom.min.js"></script>
