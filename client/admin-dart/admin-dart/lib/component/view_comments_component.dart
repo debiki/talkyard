@@ -2,7 +2,7 @@ library view_comments_component;
 
 import 'package:angular/angular.dart';
 
-// import '../service/post.dart';
+import '../service/post.dart';
 
 
 @NgComponent(
@@ -11,8 +11,8 @@ import 'package:angular/angular.dart';
     publishAs: 'ctrl')
 class ViewCommentsComponent {
 
-  //@NgOneWay('recent-comments')
-  //List<Post> recentComments;
+  @NgOneWay('recent-posts')
+  List<Post> recentPosts;
 
   ViewCommentsComponent(RouteProvider routeProvider) {
   }
