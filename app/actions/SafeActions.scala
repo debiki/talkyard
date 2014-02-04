@@ -24,6 +24,7 @@ import debiki._
 import debiki.DebikiHttp._
 import java.{util => ju}
 import play.api._
+import play.api.Play.current
 import play.api.mvc.{Action => _, _}
 import requests._
 
@@ -87,10 +88,14 @@ object SafeActions {
       val resultOkSid =
         if (newCookies isEmpty) resultOldCookies
         else {
+          var headers = Vector(MakeInternetExplorerSaveIframeCookiesHeader)
+          if (Play.isDev)
+            headers = headers ++ MakeDartDebuggingWorkHeaders
+
           assert(maySetCookies)
           resultOldCookies
             .withCookies(newCookies: _*)
-            .withHeaders(MakeInternetExplorerSaveIframeCookiesHeader)
+            .withHeaders(headers: _*)
         }
 
       resultOkSid
@@ -115,6 +120,16 @@ object SafeActions {
     */
   private def MakeInternetExplorerSaveIframeCookiesHeader =
     "P3P" -> """CP="This_is_not_a_privacy_policy""""
+
+
+  /** Dart launches its own server at localhost:3030, and and starts Chromium and
+    * connects to that server. We need to allow cross origin requests from pages
+    * pages served by that server and shown in Chromium, so that those pages can
+    * load data from Play and e.g. show a list of all pages.
+    */
+  private def MakeDartDebuggingWorkHeaders = Vector(
+    "Access-Control-Allow-Origin" -> "http://127.0.0.1:3030",
+    "Access-Control-Allow-Credentials" -> "true")
 
 
   /**

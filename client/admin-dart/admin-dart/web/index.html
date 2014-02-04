@@ -3,13 +3,17 @@
 <head>
   <title>Debiki Dashboard</title>
   <link rel="stylesheet" href="styles.css">
-  <link rel="stylesheet" href="/-/admin-styles.css">
 </head>
 <body>
   <div debiki-admin>
-    <p>Hello?</p>
-    <p>The test value is, indeed, here: {{testValue}}</p>
-    <input type="text" ng-model="testValue">
+    <p>Hello</p>
+    <nav>
+      <ul id="topic-list">
+        <li ng-repeat="topic in ctrl.allTopics">
+          <a href="http://localhost:9000/-{{topic.id}}">{{ topic.path }}</a>
+        </li>
+      </ul>
+    </nav>
   </div>
 
   <script src="packages/shadow_dom/shadow_dom.min.js"></script>
