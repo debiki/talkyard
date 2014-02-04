@@ -85,17 +85,13 @@ object SafeActions {
              .discardingCookies(DiscardingCookie("dwCoSid")))
       }
 
-      val resultOkSid =
+      var resultOkSid =
         if (newCookies isEmpty) resultOldCookies
         else {
-          var headers = Vector(MakeInternetExplorerSaveIframeCookiesHeader)
-          if (Play.isDev)
-            headers = headers ++ MakeDartDebuggingWorkHeaders
-
           assert(maySetCookies)
           resultOldCookies
             .withCookies(newCookies: _*)
-            .withHeaders(headers: _*)
+            .withHeaders(MakeInternetExplorerSaveIframeCookiesHeader)
         }
 
       resultOkSid
@@ -149,12 +145,15 @@ object SafeActions {
     // An exception might be thrown before any async computation is started,
     // or whilst any async computation happens. So check for any exception twice:
 
-    val perhapsAsyncResult = try {
+    var perhapsAsyncResult = try {
       f(request)
     }
     catch exceptionRecoverer
 
     import scala.concurrent.ExecutionContext.Implicits.global
+
+    if (Play.isDev)
+      perhapsAsyncResult = perhapsAsyncResult.withHeaders(MakeDartDebuggingWorkHeaders: _*)
 
     perhapsAsyncResult match {
       case AsyncResult(futureResultMaybeException) =>
