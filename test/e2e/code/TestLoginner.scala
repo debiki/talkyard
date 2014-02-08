@@ -53,6 +53,12 @@ trait TestLoginner extends DebikiSelectors {
     switchToNewlyOpenedWindow()
     fillInGoogleCredentials()
     webDriver.switchTo().window(originalWindow)
+    eventually {
+      // Wait until any modal dialog closed — sometimes we've already logged in
+      // with Gmail and then `fillInGoogleCredentials()` above completes immediately,
+      // before login has actually happened.
+      find(cssSelector(".ui-widget-overlay")) mustBe None
+    }
   }
 
 
