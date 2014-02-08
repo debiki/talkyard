@@ -249,8 +249,13 @@ class EditActivitySpec extends DebikiBrowserSpec
         checkCommentStatus(postId_gu2, CST.PrelApprovedComment)  // edited by gmail user
         checkCommentStatus(postId_gu3, CST.ApprovedComment)   // not edited
 
+        // This one has 1 suggestion by Gmail user.
         checkCommentStatus(postId_gm1, CST.ApprovedComment, numSuggestions = 1) // guest
-        checkCommentStatus(postId_gm2, CST.UnapprovedEdits)  // edited by author, gmail user
+
+        // This one was edited by its author, the gmail user, and it was auto-approved,
+        // well behaved user.
+        checkCommentStatus(postId_gm2, CST.ApprovedComment)
+
         checkCommentStatus(postId_gm3, CST.ApprovedComment)  // not edited
 
         // The guest and Gmail users have edited admin's comments 1, 2, 4, 5.
@@ -288,6 +293,11 @@ class EditActivitySpec extends DebikiBrowserSpec
       "Guest user approves edits to #gu1" in {
         logout()
         loginAsGuestInPopup(guestUserName)
+        // This currently changes the status of the post from prel-approved to approved,
+        // because Guest 2 has had other comments manually approved, so Guest 2 is
+        // considered a well behaved user and gets his/her changes auto approved —
+        // alhtough it's a guest! I guess this is too unsafe, since anyone can assume
+        // a guest's identity. Should combine with cookies too? [dh3903w15]
         approveEdits(postId_gu2)
       }
 
@@ -318,7 +328,10 @@ class EditActivitySpec extends DebikiBrowserSpec
         // Comment #gu2 is prel approved and there's a suggestion that the Guest has applied.
         // I don't care if the comment shows up as PrelApprovedComment or UnapprovedComment;
         // for now UnapprovedComment works however:
+        // Ooops see above [dh3903w15]. Currently the guest is considered well-behaved
+        // so this comment became auto-approved when the guest applied an edit suggestion.
         checkCommentStatus(postId_gu2, CST.UnapprovedComment) // prel aprvd, edited by gmail
+
         checkCommentStatus(postId_gu3, CST.ApprovedComment) // not edited
 
         checkCommentStatus(postId_gm1, CST.UnapprovedEdits) // guest's edits applied
