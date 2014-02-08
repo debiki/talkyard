@@ -127,6 +127,9 @@ d.i.showLoginDialog = function(mode)
 
   dialog.dialog 'open'
 
+  # Don't focus the ToS link, instead:
+  dialog.find('#dw-lgi-google').focus()
+
 
 
 !function showLoggedInDialog(opt_continue)
@@ -150,32 +153,45 @@ d.i.showLoginDialog = function(mode)
 
 
 
+/**
+ * For now, hardcode terms-of-service and privacy-policy links.
+ * Should they be customizable on a per site basis?
+ */
 function loginDialogHtml
   $('''
     <div class="dw-fs" title="Who are you?" id="dw-lgi">
-      <span id="dw-lgi-guest" class="btn btn-default" tabindex="101">Login as Guest</span>
-      <span id="dw-lgi-pswd" class="btn btn-default" tabindex="102">Login with Email and Password</span>
+
+      <p id="dw-lgi-tos">
+        By logging in, you agree to the
+        <a tabindex="101" href="http://www.debiki.com/hosting/terms-of-service">Terms of Service</a>
+        and the
+        <a tabindex="102" href="http://www.debiki.com/hosting/privacy-policy">Privacy Policy</a>.
+      </p>
 
       <p id="dw-lgi-or-login-using">
-        Or login<span class="dw-login-to-post-comment">, and post your comment,</span>
+        Login<span class="dw-login-to-post-comment">, and post your comment,</span>
         using your account (if any) at:</p>
       <div id="dw-lgi-other-sites">
-        <span id="dw-lgi-google" class="btn btn-default" tabindex="103">
+        <a id="dw-lgi-google" class="btn btn-default" tabindex="111">
           <span class="icon-google-plus"></span>Google
-        </span>
-        <span id="dw-lgi-facebook" class="btn btn-default" tabindex="104">
+        </a>
+        <a id="dw-lgi-facebook" class="btn btn-default" tabindex="112">
           <span class="icon-facebook"></span>
           Facebook
-        </span>
-        <span id="dw-lgi-yahoo" class="btn btn-default" tabindex="105">
+        </a>
+        <a id="dw-lgi-yahoo" class="btn btn-default" tabindex="113">
           <span class="icon-yahoo"></span>
           Yahoo!
-        </span>
+        </a>
       </div>
 
-      <span id="dw-lgi-more" class="btn btn-default" tabindex="106">More options...</span>
+      <p id="dw-lgi-or-login-using">Or, alternatively:</p>
 
-      <input class="btn btn-default dw-fi-cancel" type="button" value="Cancel" tabindex="107">
+      <a id="dw-lgi-guest" class="btn btn-default" tabindex="121">Login as Guest</a>
+      <a id="dw-lgi-pswd" class="btn btn-default" tabindex="122">Login with Email and Password</a>
+      <a id="dw-lgi-more" class="btn btn-default" tabindex="123">More login options...</a>
+
+      <input class="btn btn-default dw-fi-cancel" type="button" value="Cancel" tabindex="130">
     </div>
     ''')
 
