@@ -1,5 +1,9 @@
-<a href="http://www.debiki.com/">![Logo](http://www.debiki.com/-/img/logo-128x120.png) Debiki</a>
+Debiki Server
 =============================
+
+<!--
+<a href="http://www.debiki.com/">![Logo](http://www.debiki.com/-/img/logo-128x120.png) Debiki</a>
+-->
 
 Debiki is an open source (AGPL) discussion platform for forums, blogs
 and simple websites.
@@ -13,14 +17,8 @@ It intends to:
 
 - Help people better understand others with different points of view
 
-Read more at http://www.debiki.com/ and have a look at
-[this DEMO](http://www.debiki.com/demo/-71cs1-demo-page-1).
-
-A good alternative to Debiki could be [Discourse](http://www.discourse.org/) —
-it has a different focus: a "flattened, endlessly scrolling discussion" and it
-does not intend to show the most interesting comments first.  I think that
-Discourse is more like a combined forum + chat, and Debiki is more like a
-combined forum/blog + Question/Answers site.
+Read more at **http://www.debiki.com/** and have a look at
+[**this demo**](http://www.debiki.com/demo/-71cs1-demo-page-1).
 
 Debiki is under development and there is currently no stable version or simple
 installation instructions.
@@ -38,6 +36,10 @@ Instead, use this skeleton project for a Debiki site:
 That project includes a Vagrantfile so you can get started quickly.
 — When you checkout that project, you'll also checkout this project, as a
 submodule.
+
+**Note:** Unfortunately I haven't upgraded *debiki-site-seed* the last few months,
+so, right now, if you check it out, you'll find a really old version of *debiki-server*.
+Hopefully I'll update it soon. /2014-09-11
 
 
 
