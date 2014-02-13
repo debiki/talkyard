@@ -7,8 +7,59 @@
 <body>
 
   <div debiki-admin>
-    <a href="#/topics"><input type="button" value="Topics"></a><br/>
-    <a href="#/comments"><input type="button" value="Comments"></a><br/>
+    <div>
+      All:
+      <a href="#/"><input type="button" value="Dashboard"></a>
+      <a href="#/all-recent-topics"><input type="button" value="Topics"></a>
+      <a href="#/all-recent-comments"><input type="button" value="Comments"></a>
+      <a href="#/site-wide-settings"><input type="button" value="Settings"></a>
+    </div>
+
+    <div ng-if="ctrl.pages.length > 0">
+      Pages:
+      <a href="#/pages/topics"><input type="button" value="Pages"></a>
+      <a href="#/pages/recent-comments"><input type="button" value="Comments"></a>
+      <a href="#/pages/settings"><input type="button" value="Settings"></a>
+    </div>
+
+    <div ng-if="ctrl.blogs.length > 0">
+      Blogs:
+      <div ng-repeat="blog in ctrl.blogs">
+        {{blog.anyTitle}}:
+        <a href="#/blog/{{blog.id}}/">
+          <input type="button" value="Dashboard">
+        </a>
+        <a href="#/blog/{{blog.id}}/recent-comments">
+          <input type="button" value="Comments">
+        </a>
+        <a href="#/blog/{{blog.id}}/settings">
+          <input type="button" value="Settings">
+        </a>
+      </div>
+    </div>
+
+    <div ng-if="ctrl.forums.length > 0">
+      Forums:
+      <div ng-repeat="forum in ctrl.forums">
+        {{forum.anyTitle}}:
+        <a href="#/fourm/{{forum.id}}/">
+          <input type="button" value="Dashboard">
+        </a>
+        <a href="#/fourm/{{forum.id}}/recent-comments">
+          <input type="button" value="Comments">
+        </a>
+        <a href="#/fourm/{{forum.id}}/settings">
+          <input type="button" value="Settings">
+        </a>
+      </div>
+    </div>
+
+    <div ng-if="ctrl.embeddedTopics.length > 0">
+      Embedded topics:
+      <a href="#/embedded-topics/"><input type="button" value="Embedded Topics"></a>
+    </div>
+
+    <hr>
     <ng-view></ng-view>
   </div>
 
