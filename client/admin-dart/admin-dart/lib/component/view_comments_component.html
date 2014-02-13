@@ -3,7 +3,7 @@
 
   <nav>
     <ul id="post-list">
-      <li ng-repeat="post in ctrl.recentPosts">
+      <li ng-repeat="post in cmp.selectedRecentPosts">
         {{ post.toJsonString() }}
       </li>
     </ul>

@@ -15,6 +15,7 @@ class DebikiAdminController {
   DebikiAdminQueryService _queryService;
 
   Map<String, Topic> _topicsById = {};
+  get topicsById => _topicsById;
   get allTopics => _topicsById.values.toList();
 
   List<Topic> _forums = [];
