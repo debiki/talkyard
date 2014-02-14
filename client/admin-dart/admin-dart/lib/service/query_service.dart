@@ -4,8 +4,9 @@ import 'dart:async';
 import 'package:angular/angular.dart';
 import 'dart:convert';
 
-import 'topic.dart';
 import 'post.dart';
+import 'topic.dart';
+import 'user.dart';
 
 
 class DebikiAdminQueryService {
@@ -17,6 +18,7 @@ class DebikiAdminQueryService {
 
   Map<String, Topic> _topicsCache;
   List<Post> _recentPostsCache;
+  Map<String, User> _usersById;
 
   Http _http;
 
@@ -50,6 +52,11 @@ class DebikiAdminQueryService {
           Post post = new Post.fromJsonMap(postsJsonMap);
           _recentPostsCache.add(post);
         }
+        _usersById = new Map();
+        for (Map userJsonMap in json["users"]) {
+          User user = new User.fromJsonMap(userJsonMap);
+          _usersById[user.id] = user;
+        }
       });
   }
 
@@ -70,4 +77,14 @@ class DebikiAdminQueryService {
     }
     return new Future.value(_recentPostsCache);
   }
+
+  Future<Map<String, User>> getRecentUsersById() {
+    if (_usersById == null) {
+      return _loaded.then((_) {
+        return _usersById;
+      });
+    }
+    return new Future.value(_usersById);
+  }
+
 }

@@ -17,6 +17,19 @@ class Post {
   int numPendingFlags;
   int numPendingEditSuggestions;
 
+  get showNewFlagsLink => false;
+  get showOldFlagsLink => false;
+  get showViewSuggsLink => false;
+  get showRejectBtn => false;
+  get showDeleteBtn => false;
+  get approveBtnText => 'TODO(approveBtnText)';
+  get prettyFlags => 'TODO(prettyFlags)';
+  get description => 'TODO(description)';
+  get url => 'TODO(url)';
+  get textOrDiff => 'TODO(textOrDiff)';
+  get inlineMessage => 'TODO(inlineMessage)';
+  get pagePath => 'TODO(pagePath)';
+
   Post(this.id, this.type, this.pageId, this.loginId, this.userId,
       this.status, this.unapprovedText, this.approvedText,
       this.createdAt, this.numHandledFlags, this.numPendingFlags,

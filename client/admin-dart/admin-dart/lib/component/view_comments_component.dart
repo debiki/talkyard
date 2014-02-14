@@ -4,6 +4,7 @@ import 'package:angular/angular.dart';
 
 import '../service/post.dart';
 import '../service/topic.dart';
+import '../service/user.dart';
 import '../util.dart';
 
 
@@ -16,13 +17,16 @@ class ViewCommentsComponent {
   Scope _scope;
   RouteProvider _routeProvider;
 
-  @NgOneWay('all-recent-posts')
-  List<Post> allRecentPosts = [];
+  @NgOneWay('recent-posts')
+  List<Post> recentPosts = [];
+
+  @NgOneWay('recent-users')
+  Map<String, User> recentUsersById = {};
 
   List<Post> _selectedRecentPosts = [];
   List<Post> get selectedRecentPosts => _selectedRecentPosts;
 
-  @NgOneWay('all-topics-by-id')
+  @NgOneWay('topics-by-id')
   Map<String, Topic> allTopicsById = {};
 
   Map<String, Topic> _selectedTopicsById = new Map<String, Topic>();
@@ -32,6 +36,24 @@ class ViewCommentsComponent {
     _scope.$watchCollection('recentPosts', (newValue, oldValue) {
       _findActiveTopics();
     });
+  }
+
+  void approve(Post post) {
+
+  }
+
+  void reject(Post post) {
+
+  }
+
+  void delete(Post post) {
+
+  }
+
+  String displayNameOfAuthorOf(Post post) {
+    User anyUser = recentUsersById[post.userId];
+    if (anyUser == null) error('User not loaded [DwE44GKP90]');
+    return anyUser.displayName;
   }
 
   /**
@@ -93,7 +115,7 @@ class ViewCommentsComponent {
     print('Active topics ids: ${_selectedTopicsById.values.map((topic) => topic.id).toList()}');
 
     _selectedRecentPosts = [];
-    for (Post post in allRecentPosts) {
+    for (Post post in recentPosts) {
       if (_selectedTopicsById[post.pageId] != null) {
         _selectedRecentPosts.add(post);
       }

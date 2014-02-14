@@ -2,9 +2,10 @@ library debiki_admin_controller;
 
 import 'package:angular/angular.dart';
 
+import 'package:debiki_admin/service/post.dart';
 import 'package:debiki_admin/service/query_service.dart';
 import 'package:debiki_admin/service/topic.dart';
-import 'package:debiki_admin/service/post.dart';
+import 'package:debiki_admin/service/user.dart';
 
 
 @NgController(
@@ -33,6 +34,10 @@ class DebikiAdminController {
   List<Post> _recentPosts = new List();
   get recentPosts => _recentPosts;
 
+  Map<String, User> _recentUsersById = {};
+  get recentUsersById => _recentUsersById;
+  get recentUsers => _recentUsersById.values.toList();
+
   DebikiAdminController(DebikiAdminQueryService this._queryService) {
     _loadData();
   }
@@ -44,6 +49,9 @@ class DebikiAdminController {
     });
     _queryService.getRecentPosts().then((List<Post> posts) {
       this._recentPosts = posts;
+    });
+    _queryService.getRecentUsersById().then((Map<String, User> usersById) {
+      this._recentUsersById = usersById;
     });
   }
 
