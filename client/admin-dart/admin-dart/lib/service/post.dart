@@ -33,9 +33,9 @@ class Post {
   int numPendingFlags;
   int numPendingEditSuggestions;
 
-  bool showViewSuggsLink = false;
-  bool showRejectBtn = false;
-  bool showDeleteBtn = false;
+  bool hideViewSuggsLink = true;
+  bool hideRejectBtn = true;
+  bool hideDeleteBtn = true;
   String approveBtnText = '';
   get prettyFlags => 'TODO(prettyFlags)';
 
@@ -70,17 +70,17 @@ class Post {
       case 'NewPrelApproved':
       case 'EditsPrelApproved':
         approveBtnText = 'Okay';
-        showRejectBtn = true;
-        showViewSuggsLink = false;
+        hideRejectBtn = false;
+        hideViewSuggsLink = true;
         break;
       case 'New':
       case 'NewEdits':
         approveBtnText = 'Approve';
-        showRejectBtn = true;
-        showViewSuggsLink = false;
+        hideRejectBtn = false;
+        hideViewSuggsLink = true;
         break;
       default:
-        showViewSuggsLink = numPendingEditSuggestions > 0;
+        hideViewSuggsLink = numPendingEditSuggestions == 0;
         break;
     }
   }
@@ -117,8 +117,8 @@ class Post {
     return postPath;
   }
 
-  bool get showNewFlagsLink => numPendingFlags > 0;
-  bool get showOldFlagsLink => numHandledFlags > 0;
+  bool get hideNewFlagsLink => numPendingFlags == 0;
+  bool get hideOldFlagsLink => numHandledFlags == 0;
 
   String get description {
     var what;

@@ -2,7 +2,7 @@
   view_comments_component.html
 
   <nav>
-    <table class="table" ng-show="cmp.selectedRecentPosts">
+    <table class="table">
       <thead>
         <tr>
           <th>Activity</th>
@@ -18,14 +18,14 @@
             <div>
               <a class='action-description' href='{{post.url}}'>{{post.description}}</a>
 
-              <a class='inline-action new-flags-link' ng-show='post.showNewFlagsLink'>
+              <a class='inline-action new-flags-link' ng-hide='post.hideNewFlagsLink'>
                 {{post.numPendingFlags}} flags
               </a>
-              <a class='inline-action old-flags-link' ng-show='post.showOldFlagsLink'>
+              <a class='inline-action old-flags-link' ng-hide='post.hideOldFlagsLink'>
                 {{post.numHandledFlags}} old flags
               </a>
               <!-- Info to construct this HTML is currently not saved in DW1_POSTS:
-              <div class='inline-flags' ng-show='post.showFlagsLink'>
+              <div class='inline-flags' ng-hide='post.hideFlagsLink'>
                 <a class='inline-action flags-link'>
                   Flagged: {{post.prettyFlags}}
                 </a>
@@ -35,12 +35,12 @@
                 </span>
               </div> -->
 
-              <a class='inline-action approve-action' ng-click='cmp.approve(post)' ng-show='action.approveBtnText'>{{post.approveBtnText}}</a>
-              <a class='inline-action reject-action' ng-click='cmp.reject(post)' ng-show='action.showRejectBtn'>Reject</a>
+              <a class='inline-action approve-action' ng-click='cmp.approve(post)' ng-hide='post.approveBtnText.isEmpty'>{{post.approveBtnText}}</a>
+              <a class='inline-action reject-action' ng-click='cmp.reject(post)' ng-hide='post.hideRejectBtn'>Reject</a>
 
-              <a class='inline-action delete-action' ng-click='cmp.delete(post)' ng-show='action.showDeleteBtn'>Delete</a>
+              <a class='inline-action delete-action' ng-click='cmp.delete(post)' ng-hide='post.hideDeleteBtn'>Delete</a>
 
-              <a class='inline-action suggestions-link' ng-show='post.showViewSuggsLink'>{{post.numPendingEditSuggestions}} improvement suggestions</a>
+              <a class='inline-action suggestions-link' ng-hide='post.hideViewSuggsLink'>{{post.numPendingEditSuggestions}} improvement suggestions</a>
 
               <span class='inline-message'>{{post.inlineMessage}}</span>
             </div>

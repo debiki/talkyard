@@ -1,4 +1,4 @@
-library view_recipe_component;
+library view_topics_component;
 
 import 'package:angular/angular.dart';
 
