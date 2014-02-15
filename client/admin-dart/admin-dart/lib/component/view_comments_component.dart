@@ -1,8 +1,10 @@
 library view_comments_component;
 
+import 'dart:async';
 import 'package:angular/angular.dart';
 
 import '../service/post.dart';
+import '../service/query_service.dart';
 import '../service/topic.dart';
 import '../service/user.dart';
 import '../util.dart';
@@ -14,6 +16,8 @@ import '../util.dart';
     cssUrl: 'packages/debiki_admin/component/view_comments_component.css',
     publishAs: 'cmp')
 class ViewCommentsComponent {
+
+  DebikiAdminQueryService _queryService;
 
   Scope _scope;
   RouteProvider _routeProvider;
@@ -33,22 +37,33 @@ class ViewCommentsComponent {
   Map<String, Topic> _selectedTopicsById = new Map<String, Topic>();
   List<Topic> get selectedTopics => _selectedTopicsById.values.toList();
 
-  ViewCommentsComponent(Scope this._scope, RouteProvider this._routeProvider) {
+  ViewCommentsComponent(Scope this._scope, RouteProvider this._routeProvider,
+      DebikiAdminQueryService this._queryService) {
     _scope.$watchCollection('recentPosts', (newValue, oldValue) {
       _findActiveTopics();
     });
   }
 
   void approve(Post post) {
-
+    _doInlineAction(_queryService.approvePost, post, 'Approved.');
   }
 
   void reject(Post post) {
-
+    _doInlineAction(_queryService.rejectPost, post, 'Rejected.');
   }
 
   void delete(Post post) {
+    _doInlineAction(_queryService.deletePost, post, 'Deleted.');
+  }
 
+  void _doInlineAction(Future queryServiceFn(Post), Post post, String doneMessage) {
+    post.approveBtnText = '';
+    post.hideRejectBtn = true;
+    post.hideViewSuggsLink = true;
+    post.inlineMessage = 'Wait...';
+    queryServiceFn(post).then((_) {
+      post.inlineMessage = doneMessage;
+    });
   }
 
   /**

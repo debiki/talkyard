@@ -1,8 +1,9 @@
 library debiki_admin_query_service;
 
 import 'dart:async';
-import 'package:angular/angular.dart';
 import 'dart:convert';
+import 'dart:html';
+import 'package:angular/angular.dart';
 
 import 'debiki_data.dart';
 import 'post.dart';
@@ -14,6 +15,9 @@ class DebikiAdminQueryService {
 
   String _recentPostsUrl = "http://localhost:9000/?list-actions.json";
   String _pagesUrl = 'http://localhost:9000/-/list-pages?in-tree';
+  String _approvePostUrl = 'http://localhost:9000/-/approve';
+  String _rejectPostUrl = 'http://localhost:9000/-/reject';
+  String _deletePostUrl = 'http://localhost:9000/-/delete';
 
   Future _loaded;
 
@@ -65,6 +69,33 @@ class DebikiAdminQueryService {
       });
     }
     return new Future.value(_debikiData);
+  }
+
+  Future approvePost(Post post) {
+    return _http.request(
+        _approvePostUrl, withCredentials: true, method: 'POST',
+        requestHeaders: {
+          'Content-Type': 'application/json',
+          'X-XSRF-TOKEN': 'CorsFromDartEditor'
+        },
+        sendData: _postToJson(post));
+  }
+
+  Future rejectPost(Post post) {
+    /*
+  api.reject = !(actions, onSuccess) ->
+    $http.post '/-/reject', actionsToJsonObjs(actions)
+        .success onSuccess
+     */
+    return null;
+  }
+
+  Future deletePost(Post post) {
+    return null;
+  }
+
+  String _postToJson(Post post) {
+    return '[{ "pageId": "${post.pageId}", "actionId": "${post.id}" }]';
   }
 
 }

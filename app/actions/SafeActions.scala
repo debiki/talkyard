@@ -122,6 +122,7 @@ object SafeActions {
     * connects to that server. We need to allow cross origin requests from pages
     * pages served by that server and shown in Chromium, so that those pages can
     * load data from Play and e.g. show a list of all pages.
+    * [DartEditor]
     */
   private def MakeDartDebuggingWorkHeaders = Vector(
     "Access-Control-Allow-Origin" -> "http://127.0.0.1:3030",

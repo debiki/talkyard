@@ -39,8 +39,7 @@ class Post {
   String approveBtnText = '';
   get prettyFlags => 'TODO(prettyFlags)';
 
-  String _inlineMessage = '';
-  get inlineMessage => _inlineMessage;
+  String inlineMessage = '';
 
   String get pagePath {
     Topic topic = _debikiData.topicsById[pageId];

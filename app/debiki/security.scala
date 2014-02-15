@@ -22,7 +22,8 @@ import com.debiki.core.Prelude._
 import debiki.DebikiHttp._
 import java.{util => ju, io => jio}
 import play.api.mvc.Cookie
-import play.api.Logger
+import play.api.{Play, Logger}
+import play.api.Play.current
 import requests.JsonOrFormDataBody
 import scala.xml.{Text, Node, NodeSeq}
 import DebikiSecurity._
@@ -55,8 +56,14 @@ object DebikiSecurity {
     // (On POST requests, however, we check the xsrf form input value)
     val xsrfCookieValOpt = urlDecodeCookie(XsrfCookieName, request)
 
+    def isDartCorsPreflight = {
+      // In dev mode, allow what probably is a CORS Pre-Flight request from a page
+      // served by DartEditor's built-in server. [DartEditor]
+      request.method == "OPTIONS" && Play.isDev
+    }
+
     val sidXsrfNewCookies: (SidStatus, XsrfOk, List[Cookie]) =
-      if (request.method == "GET") {
+      if (request.method == "GET" || isDartCorsPreflight) {
         // Accept this request, and create new XSRF token if needed.
 
         if (!sidStatus.isOk && sidStatus != SidAbsent)
@@ -83,7 +90,10 @@ object DebikiSecurity {
       else {
         // Reject this request if the XSRF token is invalid,
         // or if the SID is corrupt (but not if simply absent).
-        assert(request.method == "POST")
+
+        if (request.method != "POST")
+          throwForbidden("DwE44FJ50", s"Bad request method: ${request.method}")
+
         assert(maySetCookies)
 
         // There must be an xsrf token in a certain header, or in a certain
@@ -105,7 +115,17 @@ object DebikiSecurity {
             throwForbidden("DwE0y321", "No XSRF token")
 
         val xsrfOk = {
-          val xsrfStatus = Xsrf.check(xsrfToken, xsrfCookieValOpt)
+          val xsrfStatus =
+            if (Play.isDev && xsrfToken == "CorsFromDartEditor") {
+              // DartEditor pages are served from a different port, so Dart cannot
+              // read the XSRF cookie and update the XSRF header properly. So
+              // accept the above dummy value from Dart applications. [DartEditor]
+              XsrfOk(xsrfToken)
+            }
+            else {
+              Xsrf.check(xsrfToken, xsrfCookieValOpt)
+            }
+
           if (!xsrfStatus.isOk) {
             // Create a new XSRF cookie so whatever-the-user-attempted
             // will work, should s/he try again.

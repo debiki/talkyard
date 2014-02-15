@@ -215,4 +215,22 @@ object Application extends mvc.Controller {
             httpOnly = false))
   }
 
+
+  /** When debugging Dart apps, they run on DartEditor's built in web server's
+    * port 3030, so we need to allow CORS requests from that origin to Debiki Server
+    * on port 9000. This method is part of making such requests of type POST possible:
+    * it handles the CORS preflight request. [DartEditor]
+    * Related reading: http://stackoverflow.com/a/8689332/694469
+    */
+  def handleDartEditorCorsPreflight(path: String) = GetAction { request =>
+    if (!Play.isDev)
+      throwForbidden("DwE7730F0", "CORS only allowed in development mode")
+
+    // Class SafeActions adds headers Access-Control-Allow-Origin and -Credentials.
+    Ok.withHeaders(
+      "Access-Control-Allow-Methods" -> "GET, POST, PUT, DELETE, HEAD",
+      "Access-Control-Allow-Headers" ->
+        request.headers.get("Access-Control-Request-Headers").getOrElse(""))
+  }
+
 }
