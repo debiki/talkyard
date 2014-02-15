@@ -50,12 +50,6 @@ class ViewCommentsComponent {
 
   }
 
-  String displayNameOfAuthorOf(Post post) {
-    User anyUser = recentUsersById[post.userId];
-    if (anyUser == null) error('User not loaded [DwE44GKP90]');
-    return anyUser.displayName;
-  }
-
   /**
    * Finds out which posts to show, depending on the current route,
    *

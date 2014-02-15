@@ -2,7 +2,13 @@ library Post;
 
 import 'dart:convert';
 
+import 'debiki_data.dart';
+import 'user.dart';
+
+
 class Post {
+
+  DebikiData _debikiData;
 
   int id;
   String type;
@@ -30,7 +36,12 @@ class Post {
   get inlineMessage => 'TODO(inlineMessage)';
   get pagePath => 'TODO(pagePath)';
 
-  Post(this.id, this.type, this.pageId, this.loginId, this.userId,
+  String get userDisplayName {
+    User user = _debikiData.usersById[userId];
+    return user != null ? user.displayName : '?';
+  }
+
+  Post(this._debikiData, this.id, this.type, this.pageId, this.loginId, this.userId,
       this.status, this.unapprovedText, this.approvedText,
       this.createdAt, this.numHandledFlags, this.numPendingFlags,
       this.numPendingEditSuggestions);
@@ -53,8 +64,8 @@ class Post {
     return JSON.encode(data);
   }
 
-  factory Post.fromJsonMap(Map json) {
-    return new Post(
+  factory Post.fromJsonMap(DebikiData debikiData, Map json) {
+    return new Post(debikiData,
         int.parse(json['id']), json['type'], json['pageId'], json['loginId'], json['userId'],
         json['status'], json['unapprovedText'], json['approvedText'],
         DateTime.parse(json['cdati']), json['numHandledFlags'], json['numPendingFlags'],

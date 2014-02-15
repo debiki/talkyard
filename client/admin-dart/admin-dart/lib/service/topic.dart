@@ -2,8 +2,13 @@ library Topic;
 
 import 'dart:convert';
 
+import 'debiki_data.dart';
+
 
 class Topic {
+
+  DebikiData _debikiData;
+
   String id;
   String path;
   String status;
@@ -12,7 +17,7 @@ class Topic {
   String anyTitle;
   String anyEmbeddingPageUrl;
 
-  Topic(this.id, this.path, this.status, this.role,
+  Topic(this._debikiData, this.id, this.path, this.status, this.role,
       this.anyParentPageId, this.anyTitle, this.anyEmbeddingPageUrl);
 
   String toJsonString() {
@@ -28,8 +33,8 @@ class Topic {
     return JSON.encode(data);
   }
 
-  factory Topic.fromJsonMap(Map json) {
-    return new Topic(json['id'], json['path'], json['status'],
+  factory Topic.fromJsonMap(DebikiData debikiData, Map json) {
+    return new Topic(debikiData, json['id'], json['path'], json['status'],
         new TopicRole.fromString(json['role']),
          json['parentPageId'], json['title'], json['embeddingPageUrl']);
   }

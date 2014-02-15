@@ -2,10 +2,9 @@ library debiki_admin_controller;
 
 import 'package:angular/angular.dart';
 
-import 'package:debiki_admin/service/post.dart';
+import 'package:debiki_admin/service/debiki_data.dart';
 import 'package:debiki_admin/service/query_service.dart';
 import 'package:debiki_admin/service/topic.dart';
-import 'package:debiki_admin/service/user.dart';
 
 
 @NgController(
@@ -15,9 +14,10 @@ class DebikiAdminController {
 
   DebikiAdminQueryService _queryService;
 
-  Map<String, Topic> _topicsById = {};
-  get topicsById => _topicsById;
-  get allTopics => _topicsById.values.toList();
+  DebikiData _debikiData = new DebikiData();
+
+  get topicsById => _debikiData.topicsById;
+  get allTopics => _debikiData.topicsById.values.toList();
 
   List<Topic> _forums = [];
   get forums => _forums;
@@ -31,27 +31,19 @@ class DebikiAdminController {
   List<Topic> _embeddedTopics = [];
   get embeddedTopics => _embeddedTopics;
 
-  List<Post> _recentPosts = new List();
-  get recentPosts => _recentPosts;
+  get recentPosts => _debikiData.recentPosts;
 
-  Map<String, User> _recentUsersById = {};
-  get recentUsersById => _recentUsersById;
-  get recentUsers => _recentUsersById.values.toList();
+  get recentUsersById => _debikiData.usersById;
+  get recentUsers => _debikiData.usersById.values.toList();
 
   DebikiAdminController(DebikiAdminQueryService this._queryService) {
     _loadData();
   }
 
   void _loadData() {
-    _queryService.getAllTopics().then((Map<String, Topic> topicsById) {
-      this._topicsById = topicsById;
+    _queryService.getDebikiData().then((DebikiData debikiData) {
+      this._debikiData = debikiData;
       _findContentSections(topicsById.values);
-    });
-    _queryService.getRecentPosts().then((List<Post> posts) {
-      this._recentPosts = posts;
-    });
-    _queryService.getRecentUsersById().then((Map<String, User> usersById) {
-      this._recentUsersById = usersById;
     });
   }
 
