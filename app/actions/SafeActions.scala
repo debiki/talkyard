@@ -124,8 +124,8 @@ object SafeActions {
     * load data from Play and e.g. show a list of all pages.
     * [DartEditor]
     */
-  private def MakeDartDebuggingWorkHeaders = Vector(
-    "Access-Control-Allow-Origin" -> "http://127.0.0.1:3030",
+  private def makeDartDebuggingWorkHeaders(request: Request[_]) = Vector(
+    "Access-Control-Allow-Origin" -> request.headers.get("Origin").getOrElse(""),
     "Access-Control-Allow-Credentials" -> "true")
 
 
@@ -154,7 +154,8 @@ object SafeActions {
     import scala.concurrent.ExecutionContext.Implicits.global
 
     if (Play.isDev)
-      perhapsAsyncResult = perhapsAsyncResult.withHeaders(MakeDartDebuggingWorkHeaders: _*)
+      perhapsAsyncResult =
+        perhapsAsyncResult.withHeaders(makeDartDebuggingWorkHeaders(request): _*)
 
     perhapsAsyncResult match {
       case AsyncResult(futureResultMaybeException) =>

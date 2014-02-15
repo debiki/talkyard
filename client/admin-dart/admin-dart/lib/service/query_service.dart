@@ -13,11 +13,16 @@ import 'user.dart';
 
 class DebikiAdminQueryService {
 
-  String _recentPostsUrl = "http://localhost:9000/?list-actions.json";
-  String _pagesUrl = 'http://localhost:9000/-/list-pages?in-tree';
-  String _approvePostUrl = 'http://localhost:9000/-/approve';
-  String _rejectPostUrl = 'http://localhost:9000/-/reject';
-  String _deletePostUrl = 'http://localhost:9000/-/delete';
+  String _realOrigin = window.location.origin;
+
+  /** Makes DartEditor connect to Play Framework on port 9000, when developing. */
+  String get _origin => _realOrigin.replaceAll('localhost:3030', 'localhost:9000');
+
+  String get _recentPostsUrl => '$_origin/?list-actions.json';
+  String get _pagesUrl => '$_origin/-/list-pages?in-tree';
+  String get _approvePostUrl => '$_origin/-/approve';
+  String get _rejectPostUrl => '$_origin/-/reject';
+  String get _deletePostUrl => '$_origin/-/delete';
 
   Future _loaded;
 
