@@ -17,7 +17,6 @@ class DebikiAdminController {
   DebikiData _debikiData = new DebikiData();
 
   get topicsById => _debikiData.topicsById;
-  get allTopics => _debikiData.topicsById.values.toList();
 
   List<Topic> _forums = [];
   get forums => _forums;

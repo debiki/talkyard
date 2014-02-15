@@ -22,7 +22,7 @@
 
     <div ng-if="ctrl.pages.length > 0">
       Pages:
-      <a href="#/pages/topics"><input type="button" value="Pages"></a>
+      <a href="#/pages/list"><input type="button" value="Pages"></a>
       <a href="#/pages/recent-comments"><input type="button" value="Comments"></a>
       <a href="#/pages/settings"><input type="button" value="Settings"></a>
     </div>
@@ -33,6 +33,9 @@
         {{blog.anyTitle}}:
         <a href="#/blog/{{blog.id}}/">
           <input type="button" value="Dashboard">
+        </a>
+        <a href="#/blog/{{blog.id}}/recent-posts">
+          <input type="button" value="Posts">
         </a>
         <a href="#/blog/{{blog.id}}/recent-comments">
           <input type="button" value="Comments">
@@ -49,6 +52,9 @@
         {{forum.anyTitle}}:
         <a href="#/fourm/{{forum.id}}/">
           <input type="button" value="Dashboard">
+        </a>
+        <a href="#/fourm/{{forum.id}}/recent-topics">
+          <input type="button" value="Topics">
         </a>
         <a href="#/fourm/{{forum.id}}/recent-comments">
           <input type="button" value="Comments">

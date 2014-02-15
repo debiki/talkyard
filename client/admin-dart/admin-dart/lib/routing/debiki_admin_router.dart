@@ -24,6 +24,10 @@ class DebikiAdminRouteInitializer implements RouteInitializer {
           path: '/pages/',
           mount: (Route route) => route
             ..addRoute(
+                name: 'pagesList',
+                path: 'list',
+                enter: view('view/pages/pages-list.html'))
+            ..addRoute(
                 name: 'pagesComments',
                 path: 'recent-comments',
                 enter: view('view/pages/recent-comments.html'))
@@ -40,6 +44,10 @@ class DebikiAdminRouteInitializer implements RouteInitializer {
           path: '/blog/:blogId/',
           mount: (Route route) => route
             ..addRoute(
+                name: 'blogPosts',
+                path: 'recent-posts',
+                enter: view('view/blog/recent-posts.html'))
+            ..addRoute(
                 name: 'blogComments',
                 path: 'recent-comments',
                 enter: view('view/blog/recent-comments.html'))
@@ -55,6 +63,10 @@ class DebikiAdminRouteInitializer implements RouteInitializer {
           name: 'forum',
           path: '/fourm/:forumId/',
           mount: (Route route) => route
+            ..addRoute(
+                name: 'forumTopics',
+                path: 'recent-topics',
+                enter: view('view/forum/recent-topics.html'))
             ..addRoute(
                 name: 'forumComments',
                 path: 'recent-comments',
