@@ -77,26 +77,25 @@ class DebikiAdminQueryService {
   }
 
   Future approvePost(Post post) {
+    return _doSomethingWithPost(post, _approvePostUrl);
+  }
+
+  Future rejectPost(Post post) {
+    return _doSomethingWithPost(post, _rejectPostUrl);
+  }
+
+  Future deletePost(Post post) {
+    error("Unimplemented [DwE254FGU9]");
+  }
+
+  Future _doSomethingWithPost(Post post, String actionUrl) {
     return _http.request(
-        _approvePostUrl, withCredentials: true, method: 'POST',
+        actionUrl, withCredentials: true, method: 'POST',
         requestHeaders: {
           'Content-Type': 'application/json',
           'X-XSRF-TOKEN': 'CorsFromDartEditor'
         },
         sendData: _postToJson(post));
-  }
-
-  Future rejectPost(Post post) {
-    /*
-  api.reject = !(actions, onSuccess) ->
-    $http.post '/-/reject', actionsToJsonObjs(actions)
-        .success onSuccess
-     */
-    return null;
-  }
-
-  Future deletePost(Post post) {
-    return null;
   }
 
   String _postToJson(Post post) {
