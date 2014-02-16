@@ -9,65 +9,47 @@
   <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="style.css">
 </head>
-<body id="details">
+<body id="details" ng-cloak>
 
-  <div debiki-admin>
-    <div>
-      All:
-      <a href="#/"><input type="button" value="Dashboard"></a>
-      <a href="#/all-recent-topics"><input type="button" value="Topics"></a>
-      <a href="#/all-recent-comments"><input type="button" value="Comments"></a>
-      <a href="#/site-wide-settings"><input type="button" value="Settings"></a>
+  <div debiki-admin class="container">
+    <div ng-if="ctrl.numDistinctContentSections > 1">
+      <h3>All contents</h3>
+      <a class="btn btn-default" href="#/">Dashboard</a>
+      <a class="btn btn-default" href="#/all-recent-topics">Contents</a>
+      <a class="btn btn-default" href="#/all-recent-comments">Comments</a>
+      <a class="btn btn-default" href="#/site-wide-settings">Settings</a>
     </div>
 
     <div ng-if="ctrl.pages.length > 0">
-      Pages:
-      <a href="#/pages/list"><input type="button" value="Pages"></a>
-      <a href="#/pages/recent-comments"><input type="button" value="Comments"></a>
-      <a href="#/pages/settings"><input type="button" value="Settings"></a>
+      <h3>Pages</h3>
+      <a class="btn btn-default" href="#/pages/list">Pages</a>
+      <a class="btn btn-default" href="#/pages/recent-comments">Comments</a>
+      <a class="btn btn-default" href="#/pages/settings">Settings</a>
     </div>
 
     <div ng-if="ctrl.blogs.length > 0">
-      Blogs:
       <div ng-repeat="blog in ctrl.blogs">
-        {{blog.anyTitle}}:
-        <a href="#/blog/{{blog.id}}/">
-          <input type="button" value="Dashboard">
-        </a>
-        <a href="#/blog/{{blog.id}}/recent-posts">
-          <input type="button" value="Posts">
-        </a>
-        <a href="#/blog/{{blog.id}}/recent-comments">
-          <input type="button" value="Comments">
-        </a>
-        <a href="#/blog/{{blog.id}}/settings">
-          <input type="button" value="Settings">
-        </a>
+        <h3>{{ blog.prettyTitle }}</h3>
+        <a class="btn btn-default" href="#/blog/{{blog.id}}/">Dashboard</a>
+        <a class="btn btn-default" href="#/blog/{{blog.id}}/recent-posts">Posts</a>
+        <a class="btn btn-default" href="#/blog/{{blog.id}}/recent-comments">Comments</a>
+        <a class="btn btn-default" href="#/blog/{{blog.id}}/settings">Settings</a>
       </div>
     </div>
 
     <div ng-if="ctrl.forums.length > 0">
-      Forums:
       <div ng-repeat="forum in ctrl.forums">
-        {{forum.anyTitle}}:
-        <a href="#/fourm/{{forum.id}}/">
-          <input type="button" value="Dashboard">
-        </a>
-        <a href="#/fourm/{{forum.id}}/recent-topics">
-          <input type="button" value="Topics">
-        </a>
-        <a href="#/fourm/{{forum.id}}/recent-comments">
-          <input type="button" value="Comments">
-        </a>
-        <a href="#/fourm/{{forum.id}}/settings">
-          <input type="button" value="Settings">
-        </a>
+        <h3>{{ forum.prettyTitle }}</h3>
+        <a class="btn btn-default" href="#/fourm/{{forum.id}}/">Dashboard</a>
+        <a class="btn btn-default" href="#/fourm/{{forum.id}}/recent-topics">Topics</a>
+        <a class="btn btn-default" href="#/fourm/{{forum.id}}/recent-comments">Comments</a>
+        <a class="btn btn-default" href="#/fourm/{{forum.id}}/settings">Settings</a>
       </div>
     </div>
 
     <div ng-if="ctrl.embeddedTopics.length > 0">
-      Embedded topics:
-      <a href="#/embedded-topics/"><input type="button" value="Embedded Topics"></a>
+      <h3>Embedded topics</h3>
+      <a class="btn btn-default" href="#/embedded-topics/">Embedded Topics</a>
     </div>
 
     <hr>

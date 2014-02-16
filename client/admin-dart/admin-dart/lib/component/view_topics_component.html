@@ -3,8 +3,8 @@
 
   <nav>
     <ul id="topic-list">
-      <li ng-repeat="topic in ctrl.selectedTopics">
-        <a href="http://localhost:9000/-{{topic.id}}">{{ topic.path }}</a>
+      <li ng-repeat="topic in cmp.selectedTopics">
+        <a href="{{ cmp.urlOf(topic) }}">{{ topic.prettyTitle }}</a>
       </li>
     </ul>
   </nav>

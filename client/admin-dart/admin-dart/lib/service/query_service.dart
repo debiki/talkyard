@@ -9,15 +9,12 @@ import 'debiki_data.dart';
 import 'post.dart';
 import 'topic.dart';
 import 'user.dart';
+import '../util.dart';
 
 
 class DebikiAdminQueryService {
 
-  String _realOrigin = window.location.origin;
-
-  /** Makes DartEditor connect to Play Framework on port 9000, when developing. */
-  String get _origin => _realOrigin.replaceAll('localhost:3030', 'localhost:9000');
-
+  String get _origin => debikiServerOrigin;
   String get _recentPostsUrl => '$_origin/?list-actions.json';
   String get _pagesUrl => '$_origin/-/list-pages?in-tree';
   String get _approvePostUrl => '$_origin/-/approve';

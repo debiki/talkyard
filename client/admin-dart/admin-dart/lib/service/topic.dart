@@ -39,6 +39,10 @@ class Topic {
          json['parentPageId'], json['title'], json['embeddingPageUrl']);
   }
 
+  String get prettyTitle {
+    if (anyTitle != null) return anyTitle;
+    return "(Unnamed page)";
+  }
 }
 
 
