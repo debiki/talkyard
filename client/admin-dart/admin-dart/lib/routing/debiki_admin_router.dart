@@ -80,6 +80,22 @@ class DebikiAdminRouteInitializer implements RouteInitializer {
                 path: '',
                 enter: view('view/forum/dashboard.html')))
       ..addRoute(
+          name: 'embeddedComments',
+          path: '/embedded-comments/',
+          mount: (Route route) => route
+            ..addRoute(
+                name: 'embeddedCommentsTopics',
+                path: 'recent-topics',
+                enter: view('view/embedded-comments/recent-topics.html'))
+            ..addRoute(
+                name: 'embeddedCommentsComments',
+                path: 'recent-comments',
+                enter: view('view/embedded-comments/recent-comments.html'))
+            ..addRoute(
+                name: 'embeddedCommentsSettings',
+                path: 'settings',
+                enter: view('view/embedded-comments/settings.html')))
+      ..addRoute(
           name: 'mainDashboard',
           path: '/',
           enter: view('view/main-dashboard.html'))

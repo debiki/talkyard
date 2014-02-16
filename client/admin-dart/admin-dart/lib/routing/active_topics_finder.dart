@@ -37,6 +37,9 @@ abstract class ActiveTopicsFinder {
     else if (routeProvider.routeName.contains('forum')) {
       anyBaseTopicId = routeProvider.parameters['forumId'];
     }
+    else if (routeProvider.routeName.contains('embeddedComments')) {
+      anyPageRole = TopicRole.EmbeddedComments;
+    }
     else {
       error('Bad route name: "${routeProvider.routeName}" [DwE97FE3]');
     }
