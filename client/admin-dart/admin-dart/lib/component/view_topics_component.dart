@@ -17,6 +17,12 @@ class ViewTopicsComponent extends ActiveTopicsFinder {
 
   DebikiAdminQueryService _queryService;
 
+  @NgAttr('title')
+  String title = 'Topics';
+
+  @NgOneWay('show-topic-titles')
+  bool showTopicTitles = true;
+
   Map<String, Topic> allTopicsById = {};
 
   Map<String, Topic> selectedTopicsById = {};
@@ -25,7 +31,12 @@ class ViewTopicsComponent extends ActiveTopicsFinder {
 
   RouteProvider routeProvider;
 
-  String urlOf(Topic topic) => '$debikiServerOrigin/-${topic.id}';
+  String urlOf(Topic topic) {
+    if (topic.anyEmbeddingPageUrl != null)
+      return topic.anyEmbeddingPageUrl;
+    else
+      return '$debikiServerOrigin/-${topic.id}';
+  }
 
   ViewTopicsComponent(RouteProvider this.routeProvider,
       DebikiAdminQueryService this._queryService) {

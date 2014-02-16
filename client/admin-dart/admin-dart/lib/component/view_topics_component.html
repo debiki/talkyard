@@ -1,12 +1,24 @@
-<div>
-  view_topics_component.html
 
-  <nav>
-    <ul id="topic-list">
-      <li ng-repeat="topic in cmp.selectedTopics">
-        <a href="{{ cmp.urlOf(topic) }}">{{ topic.prettyTitle }}</a>
-      </li>
-    </ul>
-  </nav>
+<h3>{{ cmp.title }}</h3>
 
+<div id='page-tree-container'>
+
+  <table id="page-table" class="table">
+    <thead>
+      <tr>
+        <th ng-if="cmp.showTopicTitles">Title</th>
+        <th>Link</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr ng-repeat="topic in cmp.selectedTopics">
+        <td ng-if="cmp.showTopicTitles" class="page-title">
+          <a>{{ topic.prettyTitle }}</a>
+        </td>
+        <td>
+          <a href="{{ cmp.urlOf(topic) }}">{{ cmp.urlOf(topic) }}</a>
+        </td>
+      </tr>
+    </tbody>
+  </table>
 </div>
