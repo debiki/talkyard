@@ -67,6 +67,9 @@ class DebikiAdminQueryService {
     if (!_dataLoaded) {
       return _loaded.then((_) {
         _dataLoaded = true;
+        print('Loaded num topics: ${_debikiData.topicsById.values.length}');
+        print('Loaded num posts: ${_debikiData.recentPosts.length}');
+        print('Loaded num users: ${_debikiData.usersById.values.length}');
         return _debikiData;
       });
     }

@@ -3,9 +3,10 @@ library view_comments_component;
 import 'dart:async';
 import 'package:angular/angular.dart';
 
+import 'package:debiki_admin/service/debiki_data.dart';
+import 'package:debiki_admin/service/query_service.dart';
 import '../routing/active_topics_finder.dart';
 import '../service/post.dart';
-import '../service/query_service.dart';
 import '../service/topic.dart';
 import '../service/user.dart';
 
@@ -22,16 +23,12 @@ class ViewCommentsComponent extends ActiveTopicsFinder {
   Scope _scope;
   RouteProvider routeProvider;
 
-  @NgOneWay('recent-posts')
-  List<Post> recentPosts = [];
-
-  @NgOneWay('recent-users')
-  Map<String, User> recentUsersById = {};
+  List<Post> _recentPosts = [];
+  Map<String, User> _recentUsersById = {};
 
   List<Post> _selectedRecentPosts = [];
   List<Post> get selectedRecentPosts => _selectedRecentPosts;
 
-  @NgOneWay('topics-by-id')
   Map<String, Topic> allTopicsById = {};
 
   Map<String, Topic> selectedTopicsById = new Map<String, Topic>();
@@ -39,11 +36,14 @@ class ViewCommentsComponent extends ActiveTopicsFinder {
 
   ViewCommentsComponent(Scope this._scope, RouteProvider this.routeProvider,
       DebikiAdminQueryService this._queryService) {
-    _scope.$watchCollection('recentPosts', (newValue, oldValue) {
+    _queryService.getDebikiData().then((DebikiData debikiData) {
+      allTopicsById = debikiData.topicsById;
+      _recentUsersById = debikiData.usersById;
+      _recentPosts = debikiData.recentPosts;
       findActiveTopics();
       // Filter away all comments that don't belong to one of the _selectedTopicsById.
       _selectedRecentPosts.clear();
-      for (Post post in recentPosts) {
+      for (Post post in _recentPosts) {
         if (selectedTopicsById[post.pageId] != null) {
           _selectedRecentPosts.add(post);
         }

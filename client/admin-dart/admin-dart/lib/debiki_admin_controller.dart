@@ -16,10 +16,11 @@ class DebikiAdminController {
 
   DebikiData _debikiData = new DebikiData();
 
-  get topicsById => _debikiData.topicsById;
+  Map<String, Topic> get topicsById => _debikiData.topicsById;
+  List<Topic> get allTopics => topicsById.values.toList();
 
   List<Topic> _forums = [];
-  get forums => _forums;
+  List<Topic> get forums => _forums;
 
   List<Topic> _blogs = [];
   get blogs => _blogs;
@@ -53,6 +54,12 @@ class DebikiAdminController {
     for (Topic topic in topics) {
       if (topic.role == TopicRole.Generic) {
         _pages.add(topic);
+        continue;
+      }
+
+      if (topic.role == TopicRole.Code) {
+        // For now, ignore it. Which means _site.conf is ignored right now, fine.
+        // _codePages.add(topic);
         continue;
       }
 
