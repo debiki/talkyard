@@ -48,7 +48,7 @@ object CreateSiteController extends mvc.Controller {
     def die = throwForbidden(
       "DwE30SC3", "You may not create a new website from this website")
     val siteConfig = dao.loadWebsiteConfig()
-    val domain = siteConfig.getText(SiteCreator.ConfValNames.NewSiteDomain) getOrElse die
+    val domain = Globals.baseDomain
     // Ensure other required config values are present too (fail fast).
     siteConfig.getText(SiteCreator.ConfValNames.NewSiteConfigText) getOrElse die
     s"$websiteName.$domain"
