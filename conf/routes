@@ -84,6 +84,7 @@ GET   /-/create-embedded-site/welcome-owner                   controllers.Create
 GET   /-/create-embedded-site/instructions                    controllers.CreateEmbeddedSiteController.embeddingSiteInstructionsPage
 
 GET   /-/admin/                 controllers.Application.viewAdminPage
+GET   /-/admin2                 controllers.Application.viewAdminPageDart
 
 POST  /-/configure-user         controllers.AppConfigUser.handleConfiguration()
 GET   /-/load-my-page-activity  controllers.PageViewer.loadMyPageActivity(pageId)

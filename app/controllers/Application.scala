@@ -203,6 +203,7 @@ object Application extends mvc.Controller {
   }
 
 
+  // Remove later, use only viewAdminPageDart (a bit below).
   def viewAdminPage() = GetAction { apiReq =>
     if (apiReq.user.map(_.isAdmin) != Some(true))
       Ok(views.html.login.loginPage(xsrfToken = apiReq.xsrfToken.value,
@@ -213,6 +214,28 @@ object Application extends mvc.Controller {
           mvc.Cookie(
             DebikiSecurity.XsrfCookieName, apiReq.xsrfToken.value,
             httpOnly = false))
+  }
+
+
+  def viewAdminPageDart() = GetAction { apiReq =>
+    if (apiReq.user.map(_.isAdmin) != Some(true)) {
+      val message =
+        apiReq.user match {
+          case None =>
+            "Login as administrator to access this page."
+          case Some(user) =>
+            o"""Login as administrator to access this page. You are logged in
+              as user ${user.displayName}, but that is not an administrator."""
+        }
+      Ok(views.html.login.loginPage(xsrfToken = apiReq.xsrfToken.value,
+        returnToUrl = apiReq.uri, title = "Login", message = Some(message)))
+    }
+    else {
+      TemporaryRedirect(routes.Assets.at("/public/res", "admin-dart-build/index.html").url)
+        .withCookies(mvc.Cookie(
+          DebikiSecurity.XsrfCookieName, apiReq.xsrfToken.value,
+          httpOnly = false))
+    }
   }
 
 
