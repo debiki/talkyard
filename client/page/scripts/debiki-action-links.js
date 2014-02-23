@@ -73,7 +73,9 @@ function bindActionLinksImpl(anyPost, bindFoldLinks) {
 
   // Actions that are always shown:
   $actions.children('.dw-a-reply').click(d.i.$showReplyForm);
-  $actions.children('.dw-a-rate').click(d.i.$showRatingForm);
+  $actions.children('.dw-a-like').click(d.i.$toggleVote('VoteLike'));
+  $actions.children('.dw-a-wrong').click(d.i.$toggleVote('VoteWrong'));
+  $actions.children('.dw-a-offtopic').click(d.i.$toggleVote('VoteOffTopic'));
 
   // Actions shown on More dropdown click:
   $actions.find('.dw-a-edit').click(d.i.$showEditsDialog);

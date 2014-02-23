@@ -43,12 +43,6 @@ object HtmlForms {
 
   val XsrfInpName = "dw-fi-xsrf"
 
-  object Rating {
-    object InputNames {
-      val Tag = "dw-fi-r-tag"
-    }
-  }
-
   object FlagForm {
     object InputNames {
       val Reason = "dw-fi-flg-reason"
@@ -124,7 +118,6 @@ class HtmlForms(xsrfToken: String, val pageRoot: AnyPageRoot, val permsOnPage: P
   def dialogTemplates = {
     <div id="dw-hidden-templates">
     { loginForms ++
-      ratingForm ++
       flagForm ++
       deleteForm(None) ++
       submittingFormInfoDiv ++
@@ -230,66 +223,12 @@ class HtmlForms(xsrfToken: String, val pageRoot: AnyPageRoot, val permsOnPage: P
     // COULD check permsOnPage.replyHidden/Visible etc.
     <ul>
      <li><a href={"?reply=" + pid + _viewRoot}>Reply to post</a></li>
-     <li><a href={"?rate="  + pid + _viewRoot}>Rate it</a></li>
      <li><a href={"?edit="  + pid + _viewRoot}>Suggest edit</a></li>
      <li><a href={"?flag="  + pid + _viewRoot}>Report spam or abuse</a></li>
      <li><a href={"?delete="+ pid + _viewRoot}>Delete</a></li>
     </ul>
   }
 
-
-  def ratingForm =
-      <div class='dw-fs dw-fs-r'>
-        <form class='dw-f dw-f-r'>
-          { _xsrfToken }
-          <p class='dw-inf dw-f-r-inf-many'>
-            You can select many rating tags.
-          </p>
-          <p class='dw-inf dw-f-r-inf-changing'>
-            You are <strong>changing</strong> your rating.
-          </p>
-          {
-            var boxCount = 1
-            def rateBox(value: String) = {
-              val name = Rating.InputNames.Tag
-              val id = name +"-"+ boxCount
-              boxCount += 1
-              <input id={id} type='checkbox' name={name} value={value} />
-              <label for={id}>{value}</label>
-            }
-            {/* Don't show *all* available values immediately -- that'd
-            be too many values, people can't keep them all in mind. Read this:
-            en.wikipedia.org/wiki/The_Magical_Number_Seven,_Plus_or_Minus_Two
-            although 3 - 5 items is probably much better than 7 - 9. */}
-            <div class='dw-f-r-tag-pane'>
-              {/* temporary layout hack */}
-              <div class='dw-r-tag-set dw-r-tag-set-1'>{
-                rateBox("interesting") ++
-                rateBox("funny") ++
-                rateBox("off-topic")
-              }</div>
-              <div class='dw-r-tag-set dw-r-tag-set-2'>{
-                rateBox("mediocre") ++
-                rateBox("faulty")
-              }</div>
-              {/* One can report (flag) a comment as spam, so there's
-              no need for a spam tag too. I don't think the troll tag is
-              really needed? "Stupid + Boring" would work instead?
-              Or flag as Offensive (if I add such a flag option).
-
-              <a class='dw-show-more-r-tags'>More...</a>
-              <div class='dw-r-tag-set dw-more-r-tags'>{
-                rateBox("spam") ++
-                rateBox("troll")
-              }</div>  */}
-              <div class='dw-submit-set'>
-                <input class='dw-fi-submit' type='submit' value='Submit'/>
-                <input class='dw-fi-cancel' type='button' value='Cancel'/>
-              </div>
-            </div>
-          }
-        </form>
-      </div>
 
   def flagForm = {
     import FlagForm.{InputNames => Inp}
@@ -554,7 +493,7 @@ class HtmlForms(xsrfToken: String, val pageRoot: AnyPageRoot, val permsOnPage: P
       Comments rated <i>interesting, funny</i>
       <span class="dw-tps-sort-order-arw dw-flip-hz"></span>
       <div class='dw-tps-sort-order-your-post'>
-        Your post has no ratings, and was therefore placed below.
+        Your post has not yet been voted on, and was therefore placed below.
       </div>
       <span class="dw-tps-sort-order-arw"></span>
       Comments rated <i>boring, stupid</i>

@@ -31,13 +31,11 @@ import HtmlPostRenderer._
 
 case class RenderedPost(
   headAndBodyHtml: Node,
-  actionsHtml: Elem,
-  topRatingsText: Option[String])
+  actionsHtml: Elem)
 
 
 case class RenderedPostHeader(
-  html: NodeSeq,
-  topRatingsText: Option[String])
+  html: NodeSeq)
 
 
 case class RenderedPostBody(
@@ -97,7 +95,7 @@ case class HtmlPostRenderer(
     }
     else if (post.id == PageParts.TitleId) {
       val titleHtml = renderPageTitle(post, showUnapproved)
-      RenderedPost(titleHtml, actionsHtml = <span></span>, topRatingsText = None)
+      RenderedPost(titleHtml, actionsHtml = <span></span>)
     }
     else {
       renderPostImpl(post, nofollowArticle)
@@ -109,7 +107,7 @@ case class HtmlPostRenderer(
     val postHeader =
       if (post.id == PageParts.BodyId) {
         // Body author and date info rendered separately, for the page body.
-        RenderedPostHeader(Nil, None)
+        RenderedPostHeader(Nil)
       }
       else {
         renderPostHeader(post, Some(pageStats))
@@ -133,8 +131,7 @@ case class HtmlPostRenderer(
         postBody.html
       }</div>
 
-    RenderedPost(commentHtml, actionsHtml = renderActionLinks(post),
-      topRatingsText = postHeader.topRatingsText)
+    RenderedPost(commentHtml, actionsHtml = renderActionLinks(post))
   }
 
 }
@@ -171,7 +168,7 @@ object HtmlPostRenderer {
             that opens the deleted post, incl. details, in a new browser tab?  */}
         </div>
       </div>
-    RenderedPost(html, actionsHtml = renderActionsForDeleted(post), topRatingsText = None)
+    RenderedPost(html, actionsHtml = renderActionsForDeleted(post))
   }
 
 
@@ -179,7 +176,7 @@ object HtmlPostRenderer {
     // Include the post id, so Javascript finds the post and inits action links,
     // e.g. links that uncollapses the thread.
     RenderedPost(<div id={htmlIdOf(post)} class="dw-p"></div>,
-      actionsHtml = renderActionsForCollapsed(post), None)
+      actionsHtml = renderActionsForCollapsed(post))
   }
 
 
@@ -188,20 +185,19 @@ object HtmlPostRenderer {
       <div id={htmlIdOf(post)} class="dw-p dw-zd">
         <a class="dw-z">Click to show this comment</a>
       </div>
-    RenderedPost(html, actionsHtml = renderActionsForCollapsed(post), topRatingsText = None)
+    RenderedPost(html, actionsHtml = renderActionsForCollapsed(post))
   }
 
 
-  /**
-   * Renders a .dw-p-hd tag reading:
-   *  "By (author) (date), improved by (editor)
-   *    Flagged (top flags) Rated (top ratings)"
-   * If anyPageStats is None, skips "Flagged ... Rated ..." statistics/info.
-   */
+  /** Renders a .dw-p-hd tag reading:
+    *  "By (author) (date), improved by (editor)
+    *    Flagged (top flags)"
+    * If anyPageStats is None, skips "Flagged ... " statistics/info.
+    */
   def renderPostHeader(post: Post, anyPageStats: Option[PageStats])
         : RenderedPostHeader = {
     if (post.loginId == DummyPage.DummyAuthorLogin.id)
-      return RenderedPostHeader(Nil, None)
+      return RenderedPostHeader(Nil)
 
     def page = post.debate
     val author = post.user_!
@@ -209,12 +205,6 @@ object HtmlPostRenderer {
     val (flagsTop: NodeSeq, flagsDetails: NodeSeq) =
       if (anyPageStats.isDefined) renderFlags(post)
       else (Nil: NodeSeq, Nil: NodeSeq)
-
-    val (topTagsAsText: Option[String],
-        ratingTagsTop: NodeSeq,
-        ratingTagsDetails: NodeSeq) =
-      if (anyPageStats.isDefined) renderRatings(post, anyPageStats.get)
-      else (None, Nil: NodeSeq, Nil: NodeSeq)
 
     val editInfo =
       // If closed: <span class='dw-p-re-cnt'>{count} replies</span>
@@ -251,11 +241,11 @@ object HtmlPostRenderer {
     val commentHtml =
       <div class={"dw-p-hd" + cssArticlePostHeader}>
         By { _linkTo(author)}{ dateAbbr(post.creationDati, "dw-p-at")
-        }{ anyPin }{ permalink }{ flagsTop }{ ratingTagsTop }{ editInfo }{ flagsDetails
-        }{ ratingTagsDetails }
+        }{ anyPin }{ permalink }{ flagsTop }{ editInfo }{ flagsDetails
+        }
       </div>
 
-    RenderedPostHeader(html = commentHtml, topRatingsText = topTagsAsText)
+    RenderedPostHeader(html = commentHtml)
   }
 
 
@@ -287,76 +277,6 @@ object HtmlPostRenderer {
       </div>
 
     (topFlags, allFlags)
-  }
-
-
-  private def renderRatings(post: Post, pageStats: PageStats) = {
-    val postRatingStats: PostRatingStats = pageStats.ratingStatsFor(post.id)
-    // Sort the rating tags by their observed fittingness, descending
-    // (the most popular tags first).
-    val tagStatsSorted = postRatingStats.tagStats.toList.sortBy(
-        -_._2.fitness.observedMean)
-    val topTags = if (tagStatsSorted isEmpty) Nil else {
-      // If there're any really popular tags ([the lower confidence limit on
-      // the probability that they're used] is > 0.4),
-      // show all those. Otherwise, show only the most popular tag(s).
-      // (Oops, need not be `max' -- they're sorted by the *measured* prob,
-      // not the lower conf limit -- well, hardly matters.)
-      val maxLowerConfLimit = tagStatsSorted.head._2.fitness.lowerLimit
-      val minLower = math.min(0.4, maxLowerConfLimit)
-      tagStatsSorted.takeWhile(_._2.fitness.lowerLimit >= minLower)
-    }
-
-    val topTagsAsText: Option[String] = {
-      def showRating(tagAndStats: Pair[String, TagStats]): String = {
-        val tagName = tagAndStats._1
-        val tagFitness = tagAndStats._2.fitness
-        // A rating tag like "important!!" means "really important", many
-        // people agree. And "important?" means "perhaps somewhat important",
-        // some people agree.
-        // COULD reduce font-size of ? to 85%, it's too conspicuous.
-        val mark =
-          if (tagFitness.lowerLimit > 0.9) "!!"
-          else if (tagFitness.lowerLimit > 0.7) "!"
-          else if (tagFitness.lowerLimit > 0.3) ""
-          else "?"
-        tagName + mark
-        // COULD reduce font size of mark to 85%, or it clutters the ratings.
-      }
-      if (topTags isEmpty) None
-      else Some(topTags.take(3).map(showRating(_)).mkString(", "))
-    }
-
-    val (ratingTagsTop: NodeSeq, ratingTagsDetails: NodeSeq) = {
-      val rats = tagStatsSorted
-      if (rats.isEmpty) (Nil: NodeSeq, Nil: NodeSeq)
-      else {
-        // List popular rating tags. Then all tags and their usage percents,
-        // but those details are shown only if one clicks the post header.
-        val topTagsAsHtml =
-          if (topTagsAsText isEmpty) Nil
-          else <span class='dw-p-r dw-p-r-top'>, rated <em>{
-            topTagsAsText.get}</em></span>
-
-        val tagDetails = <div class='dw-p-r-all'
-             data-mtime={toIso8601T(postRatingStats.lastRatingDate)}>{
-          postRatingStats.ratingCountUntrusty} ratings:
-          <ol class='dw-p-r dw-rs'>{
-          // Don't change whitespace, or `editInfo' perhaps won't
-          // be able to append a ',' with no whitespace in front.
-          for ((tagName: String, tagStats: TagStats) <- rats) yield
-          <li class="dw-r" data-stats={
-              ("lo: %.0f" format (100 * tagStats.fitness.lowerLimit)) +"%, "+
-              "sum: "+ tagStats.countWeighted}> {
-            tagName +" %.0f" format (
-               100 * tagStats.fitness.observedMean)}% </li>
-        }</ol></div>
-
-        (topTagsAsHtml, tagDetails)
-      }
-    }
-
-    (topTagsAsText, ratingTagsTop, ratingTagsDetails)
   }
 
 
@@ -430,11 +350,13 @@ object HtmlPostRenderer {
 
     // ----- Reply and rate links
 
-    val (replyLink, rateLink) = {
-      if (post.isDeletedSomehow) (Nil, Nil)
-      else (
-        <a class="dw-a dw-a-reply">Reply</a>,
-        <a class="dw-a dw-a-rate" title="Vote up or down">Like?</a>)
+    val replyAndVoteLinks = {
+      if (post.isDeletedSomehow) Nil
+      else
+        <a class="dw-a dw-a-reply icon-reply">Reply</a>
+        <a class="dw-a dw-a-like icon-heart" title="Like this">Like</a>
+        <a class="dw-a dw-a-wrong icon-warning" title="Click if you think this post is wrong">Wrong</a>
+        <a class="dw-a dw-a-offtopic icon-split" title="Click if you think this post is off-topic">Off-Topic</a>
     }
 
     // ----- Flag links
@@ -530,8 +452,7 @@ object HtmlPostRenderer {
     val renderActionsVertically = post.id == PageParts.BodyId // for now
     if (renderActionsVertically) {
       <div class="dw-p-as dw-as dw-p-as-hz">
-        { replyLink }
-        { rateLink }
+        { replyAndVoteLinks }
         { moreDropdown }
         { suggestionsNew }
         { suggestionsOld }
@@ -548,8 +469,7 @@ object HtmlPostRenderer {
         { suggestionsNew }
         { suggestionsOld }
         {/* --- The rest float left --- */}
-        { replyLink }
-        { rateLink }
+        { replyAndVoteLinks }
         { moreDropdown }
       </div>
     }

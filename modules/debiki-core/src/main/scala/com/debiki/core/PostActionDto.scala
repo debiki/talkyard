@@ -299,6 +299,17 @@ object PostActionPayload {
   val ManuallyApprovePost = ReviewPost(Some(Approval.Manual))
 
 
+  class Vote extends PostActionPayload
+
+  /** The user liked the post, e.g. because it's funny or informative. */
+  case object VoteLike extends Vote
+
+  /** The user e.g. thinks the comment has factual errors, or disagrees with it. */
+  case object VoteWrong extends Vote
+
+  case object VoteOffTopic extends Vote
+
+
   /** Pins a post at e.g. position 3. This pushes any other posts already pinned
     * at e.g. positions 3, 4, and 5 one step to the right, to positions 4, 5 and 6.
     * So after a while, the effective position of a pinned post might have changed
