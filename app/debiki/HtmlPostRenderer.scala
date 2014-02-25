@@ -222,8 +222,8 @@ object HtmlPostRenderer {
               // Edited by the author. Don't repeat his/her name.
               Nil
             })
-          }{dateAbbr(post.textLastEditedAt, "dw-p-at")}
-        </span>
+          }{dateAbbr(post.textLastEditedAt, "dw-p-at")
+        }</span>
       }
 
     val permalink =
@@ -238,11 +238,25 @@ object HtmlPostRenderer {
       if (post.id == PageParts.BodyId) " dw-ar-p-hd"
       else ""
 
+    val likeVotes = post.numLikeVotes match {
+      case 0 => ""
+      case 1 => ". 1 person likes this comment"
+      case x => s". $x people like this comment"
+    }
+
+    val thisComment = if (likeVotes.nonEmpty) "it" else "this comment"
+
+    val isWrongVotes = post.numWrongVotes match {
+      case 0 => ""
+      case 1 => s". 1 person thinks $thisComment is wrong"
+      case x => s". $x people think $thisComment is wrong"
+    }
+
     val commentHtml =
       <div class={"dw-p-hd" + cssArticlePostHeader}>
+        { anyPin }{ permalink }
         By { _linkTo(author)}{ dateAbbr(post.creationDati, "dw-p-at")
-        }{ anyPin }{ permalink }{ flagsTop }{ editInfo }{ flagsDetails
-        }
+        }{ flagsTop }{ editInfo }{ likeVotes }{ isWrongVotes }.{ flagsDetails }
       </div>
 
     RenderedPostHeader(html = commentHtml)
@@ -348,16 +362,21 @@ object HtmlPostRenderer {
     var suggestionsOld: NodeSeq = Nil
     var suggestionsNew: NodeSeq = Nil
 
-    // ----- Reply and rate links
+    // ----- Reply and Like and Wrong links
 
-    val replyAndVoteLinks = {
+    val replyLikeWrongLinks = {
       if (post.isDeletedSomehow) Nil
       else
         <a class="dw-a dw-a-reply icon-reply">Reply</a>
         <a class="dw-a dw-a-like icon-heart" title="Like this">Like</a>
         <a class="dw-a dw-a-wrong icon-warning" title="Click if you think this post is wrong">Wrong</a>
-        <a class="dw-a dw-a-offtopic icon-split" title="Click if you think this post is off-topic">Off-Topic</a>
     }
+
+    // ----- Off-topic link
+
+    moreActionLinks ++=
+      <a class="dw-a dw-a-offtopic icon-split" title="Click if you think this post is off-topic"
+        >Off-Topic</a>
 
     // ----- Flag links
 
@@ -452,7 +471,7 @@ object HtmlPostRenderer {
     val renderActionsVertically = post.id == PageParts.BodyId // for now
     if (renderActionsVertically) {
       <div class="dw-p-as dw-as dw-p-as-hz">
-        { replyAndVoteLinks }
+        { replyLikeWrongLinks }
         { moreDropdown }
         { suggestionsNew }
         { suggestionsOld }
@@ -469,7 +488,7 @@ object HtmlPostRenderer {
         { suggestionsNew }
         { suggestionsOld }
         {/* --- The rest float left --- */}
-        { replyAndVoteLinks }
+        { replyLikeWrongLinks }
         { moreDropdown }
       </div>
     }

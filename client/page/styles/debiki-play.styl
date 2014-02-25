@@ -325,7 +325,11 @@ span.dw-p-e-by
 .dw-p-link
   float: right
   font-family: monospace
-  padding: 2px 3px 2px 4px
+  // Don't add top/bottom padding, that causes text below to wrap too early.
+  // Instead, set `top: 1px`.
+  padding: 0 3px 0 5px
+  position: relative
+  top: 1px
 
 // For the *article* itself, make author and post date info less conspicuous,
 // or it steals attention from the page title. (But don't do this for any root
@@ -445,7 +449,10 @@ span.dw-p-e-by
 
 .DW .dw-t > .dw-as .dw-a
   display: inline-block
-  margin-right: 12px
+  margin-right: 16px
+
+.DW .dw-t > .dw-p-as .dw-a-like
+  margin-right: 6px
 
 // Show a ▾ icon after "More" text, same as class .icon-down-dir, but :after.
 // Don't use "▾" directly though; it breaks on my mobile.
@@ -575,6 +582,10 @@ body.dw-u-ui-simple .dw-a-edit
   position: relative
   left: -2px
 
+
+.dw-p-hd
+  abbr
+    border-color: #999
 
 .dw-p-hd
   .dw-p-pin
