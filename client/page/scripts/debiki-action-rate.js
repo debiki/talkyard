@@ -21,15 +21,13 @@ var $ = d.i.$;
 
 d.i.$toggleVote = function(voteType) {
   return function(event) {
-    toggleVoteImpl(voteType);
+    toggleVoteImpl($(this), voteType);
     return false;
   }
 };
 
 
-// UNIMPLEMENTED
-function toggleVoteImpl(voteType) {
-  var voteBtn = $(this);
+function toggleVoteImpl(voteBtn, voteType) {
   var thread = voteBtn.closest('.dw-t');
   var post = thread.children('.dw-p');
   var postId = post.dwPostId();
@@ -49,11 +47,11 @@ function toggleVoteImpl(voteType) {
   }
 
   var action;
-  if (not-already-voted) {
-    action = 'CreateVote';
+  if (d.i.Me.getVotes(postId).indexOf(voteType) !== -1) {
+    action = 'DeleteVote';
   }
   else {
-    action = 'DeleteVote';
+    action = 'CreateVote';
   }
 
   d.u.postJson({
@@ -69,8 +67,13 @@ function toggleVoteImpl(voteType) {
     });
 
   function onVoteToggled(pagePatchJson) {
-    var result = d.i.patchPage(pagePatchJson);
-    var $ratings = d.i.showMyRatings(postId, ratedTags);
+    d.i.patchPage(pagePatchJson, { replacePostHeadsOnly: true });
+    if (action == 'CreateVote') {
+      voteBtn.addClass('dw-my-vote');
+    }
+    else {
+      voteBtn.removeClass('dw-my-vote');
+    }
     //post.each(d.i.SVG.$drawParentsAndTree); -- why would this be needed?
   };
 };

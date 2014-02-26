@@ -452,7 +452,11 @@ span.dw-p-e-by
   margin-right: 16px
 
 .DW .dw-t > .dw-p-as .dw-a-like
-  margin-right: 6px
+  margin-right: 5px
+
+// Highlight the heart or warning symbol if the user has voted Like or Wrong.
+.dw-a.dw-my-vote:before
+  color: hsl(8, 100%, 60%)  // red-red-orange-red
 
 // Show a ▾ icon after "More" text, same as class .icon-down-dir, but :after.
 // Don't use "▾" directly though; it breaks on my mobile.
