@@ -469,6 +469,40 @@ case class PageParts (
   def pageConfigPost: Option[Post] = getPost(PageParts.ConfigPostId)
 
 
+  // -------- Votes
+
+  /** Returns a map postId => UserPostVotes, with all votes by user userId.
+    */
+  def userVotesMap(userId: UserId): Map[PostId, UserPostVotes] = {
+    val voteBitsByPostId = mut.HashMap[PostId, Int]()
+    for {
+      action <- actionDtos
+      if action.payload.isInstanceOf[PAP.Vote]
+      if action.userId == userId
+    } {
+      val bits = action.payload match {
+        case PAP.VoteLike => 1
+        case PAP.VoteWrong => 2
+        case PAP.VoteOffTopic => 4
+      }
+      var voteBits = voteBitsByPostId.getOrElseUpdate(action.postId, 0)
+      voteBits |= bits
+      assert(voteBits <= 7)
+      voteBitsByPostId.put(action.postId, voteBits)
+    }
+
+    val postIdsAndVotes = voteBitsByPostId.toVector map { case (key: PostId, voteBits: Int) =>
+      val votes = UserPostVotes(
+        votedLike = (voteBits & 1) == 1,
+        votedWrong = (voteBits & 2) == 2,
+        votedOffTopic = (voteBits & 4) == 4)
+      (key, votes)
+    }
+
+    Map(postIdsAndVotes: _*)
+  }
+
+
   // -------- Ratings
 
   private lazy val ratingsById: imm.Map[ActionId, Rating] =
@@ -767,4 +801,9 @@ case class PageParts (
 
 }
 
+
+case class UserPostVotes(
+  votedLike: Boolean,
+  votedWrong: Boolean,
+  votedOffTopic: Boolean)
 
