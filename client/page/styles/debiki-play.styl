@@ -135,6 +135,8 @@ html.js body.dw-render-actions-pending .dw-as
   // rather than below it.
   // There're no SVG arrows that can be cropped, see above, [8DbF3].
   float: none
+  // Left align the title.
+  margin-left: 0
 
 
 
@@ -427,6 +429,7 @@ span.dw-p-e-by
   position: relative // curve image placed relative
   padding-right: 20px
   margin: 10px 16px 0 12px
+  max-width: 45px; // or "Reply" text pushes thread columns rightwards
 
 // The reply button text can be customized, so it might be rather wide,
 // so set max-width and line height.
@@ -434,6 +437,7 @@ span.dw-p-e-by
   max-width: 8em
   display: inline-block // or max-width has no effect
   line-height: 120%
+  white-space: nowrap // or word wrap after reply icon, before "Reply" text
 
 .dw-a
   text-decoration: none
