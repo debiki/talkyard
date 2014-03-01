@@ -244,19 +244,27 @@ object HtmlPostRenderer {
       case x => s". $x people like this comment"
     }
 
-    val thisComment = if (likeVotes.nonEmpty) "it" else "this comment"
+    var thisComment = if (likeVotes.nonEmpty) "it" else "this comment"
 
     val isWrongVotes = post.numWrongVotes match {
       case 0 => ""
-      case 1 => s". 1 person thinks $thisComment is wrong"
-      case x => s". $x people think $thisComment is wrong"
+      case 1 => s". 1 ${if (likeVotes.nonEmpty) "" else "person"} thinks $thisComment is wrong"
+      case x => s". $x ${if (likeVotes.nonEmpty) "" else "people"} think $thisComment is wrong"
+    }
+
+    if (isWrongVotes.nonEmpty) thisComment = "it"
+
+    val offTopicVotes = post.numOffTopicVotes match {
+      case 0 => ""
+      case 1 => s". 1 person thinks $thisComment is off-topic"
+      case x => s". $x people think $thisComment is off-topic"
     }
 
     val commentHtml =
       <div class={"dw-p-hd" + cssArticlePostHeader}>
         { anyPin }{ permalink }
         By { _linkTo(author)}{ dateAbbr(post.creationDati, "dw-p-at")
-        }{ flagsTop }{ editInfo }{ likeVotes }{ isWrongVotes }.{ flagsDetails }
+        }{ flagsTop }{ editInfo }{ likeVotes }{ isWrongVotes }{ offTopicVotes }.{ flagsDetails }
       </div>
 
     RenderedPostHeader(html = commentHtml)
