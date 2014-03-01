@@ -299,6 +299,17 @@ object PostActionPayload {
   val ManuallyApprovePost = ReviewPost(Some(Approval.Manual))
 
 
+  class Vote extends PostActionPayload
+
+  /** The user liked the post, e.g. because it's funny or informative. */
+  case object VoteLike extends Vote
+
+  /** The user e.g. thinks the comment has factual errors, or disagrees with it. */
+  case object VoteWrong extends Vote
+
+  case object VoteOffTopic extends Vote
+
+
   /** Pins a post at e.g. position 3. This pushes any other posts already pinned
     * at e.g. positions 3, 4, and 5 one step to the right, to positions 4, 5 and 6.
     * So after a while, the effective position of a pinned post might have changed
@@ -414,55 +425,6 @@ sealed abstract class PostActionDtoOld {
   def anyGuestId = if (userId.headOption == Some('-')) Some(userId drop 1) else None
   def anyRoleId =  if (userId.headOption == Some('-')) None else Some(userId)
 
-}
-
-
-
-/** Classifies an action, e.g. tags a Post as being "interesting" and "funny".
- *
- *  If you rate an action many times, only the last rating counts.
- *  - For an authenticated user, his/her most recent rating counts.
- *  - For other users, the most recent rating for the login id / session id
- *    counts.
- *  - Could let different non-authenticated sessions with the same
- *    user name, ip and email overwrite each other's ratings.
- *    But I might as well ask them to login instead? Saves my time, and CPU.
- */
-case class Rating (
-  id: ActionId,
-  postId: ActionId,
-  loginId: String,
-  userId: String,
-  newIp: Option[String],
-  ctime: ju.Date,
-  tags: List[String]
-) extends PostActionDtoOld
-
-
-
-/** Info on all ratings on a certain action, grouped and sorted in
- *  various manners.
- */
-abstract class RatingsOnAction {
-
-  /** The most recent rating, by authenticated users. */
-  def mostRecentByUserId: collection.Map[String, Rating]
-
-  /** The most recent rating, by non authenticated users. */
-  // COULD rename to ...ByGuestId
-  def mostRecentByNonAuLoginId: collection.Map[String, Rating]
-
-  /** The most recent ratings, for all non authenticated users,
-   *  grouped by IP address.
-   */
-  // COULD rename to ...ByIdtyId
-  def allRecentByNonAuIp: collection.Map[String, List[Rating]]
-
-  /** The most recent version of the specified rating.
-   *  When you rate an action a second time, the most recent rating
-   *  overwrites the older one.
-   */
-  def curVersionOf(rating: Rating): Rating
 }
 
 

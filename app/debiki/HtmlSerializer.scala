@@ -460,8 +460,14 @@ case class HtmlPageSerializer(
         return false
 
       // Place interesting posts first.
-      val fitnessA = pageStats.ratingStatsFor(a.id).fitnessDefaultTags.lowerLimit
-      val fitnessB = pageStats.ratingStatsFor(b.id).fitnessDefaultTags.lowerLimit
+      // ---- In the future, perhaps something like this again, when I'm taking into
+      // account how many people have viewed the post:
+      //val fitnessA = pageStats.ratingStatsFor(a.id).fitnessDefaultTags.lowerLimit
+      //val fitnessB = pageStats.ratingStatsFor(b.id).fitnessDefaultTags.lowerLimit
+      // ---- But for now: ------
+      val fitnessA = a.numLikeVotes
+      val fitnessB = b.numLikeVotes
+      // ------------------------
       if (fitnessA > fitnessB)
         return true
       if (fitnessA < fitnessB)
@@ -579,8 +585,7 @@ case class HtmlPageSerializer(
           post.isTreeCollapsed)
 
       if (shallFoldPost)
-        (" dw-zd", "Click to show this thread" +
-           renderedComment.topRatingsText.map(", rated "+ _).getOrElse(""))
+        (" dw-zd", "Click to show this thread")
       else
         ("", "")
     }

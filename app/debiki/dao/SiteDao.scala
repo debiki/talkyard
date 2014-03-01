@@ -162,6 +162,11 @@ class SiteDao(protected val siteDbDao: ChargingSiteDbDao)
   }
 
 
+  def deleteVote(userId: UserId, pageId: PageId, postId: PostId, voteType: PostActionPayload.Vote) {
+    siteDbDao.deleteVote(userId, pageId, postId, voteType)
+  }
+
+
   def loadPage(debateId: String): Option[PageParts] =
     siteDbDao.loadPage(debateId)
 

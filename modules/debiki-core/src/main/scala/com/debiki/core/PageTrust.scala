@@ -65,6 +65,7 @@ case class PageTrust(page: PageParts) {
    *  ... now at least they'd need to create a new OpenID account. This'll do
    *  for now.
    */
+  /*
   def trustinessOf(ratingDto: Rating): Float = {
     val otherRatsSameActn: RatingsOnAction =
       page.ratingsByActionId(ratingDto.postId) getOrElse {
@@ -106,6 +107,7 @@ case class PageTrust(page: PageParts) {
     if (ipCount == 0) { assert(false); return 0f }
     trust / ipCount
   }
+  */
 
 }
 

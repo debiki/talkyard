@@ -214,8 +214,6 @@ object Templates {
     loginId = "?", userId = "?", newIp = None,  parentPostId = Some(PageParts.BodyId),
     text = "", markup = "para", approval = None)
 
-  val rating = Rating(id = UnassignedId, postId = PageParts.BodyId, loginId = "?",
-    userId = "?", newIp = None, ctime = new ju.Date, tags = Nil)
 }
 
 
@@ -1157,6 +1155,14 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
       }
     }
 
+    "vote on a post" in {
+
+    }
+
+    /*
+    val rating = Rating(id = UnassignedId, postId = PageParts.BodyId, loginId = "?",
+      userId = "?", newIp = None, ctime = new ju.Date, tags = Nil)
+
     var ex3_ratingId = PageParts.NoId
     lazy val ex3_rating = T.rating.copy(loginId = loginId, userId = globalUserId,
       postId = PageParts.BodyId,  tags = "Interesting"::"Funny"::Nil)  // 2 tags
@@ -1213,6 +1219,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
         }
       }
     }
+    */
 
 
     // -------- Save approvals and rejections

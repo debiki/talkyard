@@ -85,7 +85,7 @@ GET   /-/admin/                 controllers.Application.viewAdminPage
 POST  /-/configure-user         controllers.AppConfigUser.handleConfiguration()
 GET   /-/load-my-page-activity  controllers.PageViewer.loadMyPageActivity(pageId)
 POST  /-/reply                  controllers.AppReply.handleReply
-POST  /-/rate                   controllers.Application.rate
+POST  /-/vote                   controllers.VoteController.handleVotes
 POST  /-/flag                   controllers.Application.flag
 GET   /-/edit                   controllers.AppEdit.showEditFormAnyPage(pageId, pagePath, pageRole, postId)
 POST  /-/edit                   controllers.AppEdit.edit
