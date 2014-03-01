@@ -429,55 +429,6 @@ sealed abstract class PostActionDtoOld {
 
 
 
-/** Classifies an action, e.g. tags a Post as being "interesting" and "funny".
- *
- *  If you rate an action many times, only the last rating counts.
- *  - For an authenticated user, his/her most recent rating counts.
- *  - For other users, the most recent rating for the login id / session id
- *    counts.
- *  - Could let different non-authenticated sessions with the same
- *    user name, ip and email overwrite each other's ratings.
- *    But I might as well ask them to login instead? Saves my time, and CPU.
- */
-case class Rating (
-  id: ActionId,
-  postId: ActionId,
-  loginId: String,
-  userId: String,
-  newIp: Option[String],
-  ctime: ju.Date,
-  tags: List[String]
-) extends PostActionDtoOld
-
-
-
-/** Info on all ratings on a certain action, grouped and sorted in
- *  various manners.
- */
-abstract class RatingsOnAction {
-
-  /** The most recent rating, by authenticated users. */
-  def mostRecentByUserId: collection.Map[String, Rating]
-
-  /** The most recent rating, by non authenticated users. */
-  // COULD rename to ...ByGuestId
-  def mostRecentByNonAuLoginId: collection.Map[String, Rating]
-
-  /** The most recent ratings, for all non authenticated users,
-   *  grouped by IP address.
-   */
-  // COULD rename to ...ByIdtyId
-  def allRecentByNonAuIp: collection.Map[String, List[Rating]]
-
-  /** The most recent version of the specified rating.
-   *  When you rate an action a second time, the most recent rating
-   *  overwrites the older one.
-   */
-  def curVersionOf(rating: Rating): Rating
-}
-
-
-
 object FlagReason extends Enumeration {
   type FlagReason = Value
   val Spam, Illegal, /* Copyright Violation */ CopyVio, Other = Value
