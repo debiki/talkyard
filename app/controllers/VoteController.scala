@@ -62,7 +62,7 @@ object VoteController extends mvc.Controller {
 
     val (pageReq, pageParts) =
       if (delete) {
-        ??? // request.dao.deleteVote(request.user_!.id, pageId, postId, voteType)
+        request.dao.deleteVote(request.user_!.id, pageId, postId, voteType)
 
         val pageReq = PageRequest.forPageThatExists(request, pageId) getOrElse throwNotFound(
           "DwE22PF1", s"Page `$pageId' not found")

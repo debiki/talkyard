@@ -47,7 +47,7 @@ function toggleVoteImpl(voteBtn, voteType) {
   }
 
   var action;
-  if (d.i.Me.getVotes(postId).indexOf(voteType) !== -1) {
+  if (voteBtn.is('.dw-my-vote')) {
     action = 'DeleteVote';
   }
   else {

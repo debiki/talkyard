@@ -205,9 +205,6 @@ d.i.makeCurUser = function() {
     },
     getEmailNotfPrefs: function() { return emailPrefs; },
     isEmailKnown: function() { return emailSpecified; },
-
-    // Returns an array with a combination of: 'VoteLike', 'VoteWrong', 'VoteOffTopic'.
-    getVotes: function(postId) { return []; }  // for now
   };
 
   return api;
