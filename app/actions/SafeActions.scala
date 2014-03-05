@@ -41,7 +41,7 @@ object SafeActions {
    * or the session id is invalid.
    */
   def CheckSidActionNoBody
-        (f: (SidStatus, XsrfOk, Request[Option[Any]]) => Result) =
+        (f: (SidStatus, XsrfOk, Option[BrowserId], Request[Option[Any]]) => Result) =
     CheckSidAction(BodyParsers.parse.empty)(f)
 
 
@@ -55,15 +55,19 @@ object SafeActions {
    * doesn't map to any login entry.
    *
    * @param f The SidStatus passed to `f` is either SidAbsent or a SidOk.
+   * @param maySetCookies Set to false for JS and CSS so the replies can be cached by servers.
    */
   // COULD rename to CheckSidAndXsrfAction?
   def CheckSidAction[A]
         (parser: BodyParser[A], maySetCookies: Boolean = true)
-        (f: (SidStatus, XsrfOk, Request[A]) => Result) =
+        (f: (SidStatus, XsrfOk, Option[BrowserId], Request[A]) => Result) =
     ExceptionAction[A](parser) { request =>
 
       val (sidStatus, xsrfOk, newCookies) =
          DebikiSecurity.checkSidAndXsrfToken(request, maySetCookies = maySetCookies)
+
+      val (anyBrowserId, moreNewCookies) =
+        BrowserId.checkBrowserId(request, maySetCookies = maySetCookies)
 
       // Parts of `f` might be executed asynchronously. However any LoginNotFoundException
       // should happen before the async parts, because access control should be done
@@ -71,7 +75,7 @@ object SafeActions {
       // any AsyncResult(future-result-that-might-be-a-failure) here.
 
       val resultOldCookies = try {
-        f(sidStatus, xsrfOk, request)
+        f(sidStatus, xsrfOk, anyBrowserId, request)
       } catch {
         case e: Utils.LoginNotFoundException =>
           // This might happen if I manually deleted stuff from the
@@ -85,11 +89,11 @@ object SafeActions {
       }
 
       val resultOkSid =
-        if (newCookies isEmpty) resultOldCookies
+        if (newCookies.isEmpty && moreNewCookies.isEmpty) resultOldCookies
         else {
           assert(maySetCookies)
           resultOldCookies
-            .withCookies(newCookies: _*)
+            .withCookies((newCookies ::: moreNewCookies): _*)
             .withHeaders(MakeInternetExplorerSaveIframeCookiesHeader)
         }
 

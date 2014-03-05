@@ -146,8 +146,7 @@ object AppEditHistory extends mvc.Controller {
         case HistoryEdit.ApplyEdit =>
           EditApp(  // COULD rename to Appl
             id = PageParts.UnassignedId - sno, editId = actionId, postId = postAffected.id,
-            loginId = pageReq.loginId_!, userId = pageReq.user_!.id,
-            newIp = pageReq.newIp,
+            userIdData = pageReq.userIdData,
             ctime = pageReq.ctime, result = "(Could apply diff)",
             approval = approval)
         case HistoryEdit.DeleteEditApp =>

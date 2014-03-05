@@ -213,8 +213,11 @@ object AppList extends mvc.Controller {
       "pageId" -> JsString(action.page.id),
       "type" -> JsString(classNameOf(action)),
       "userId" -> JsString(action.user_!.id),
-      "loginId" -> JsString(action.loginId),
       "cdati" -> JsString(toIso8601T(action.creationDati)))
+
+    action.loginId foreach { id =>
+      data += "loginId" -> JsString(id)
+    }
 
     action match {
       case post: Post =>

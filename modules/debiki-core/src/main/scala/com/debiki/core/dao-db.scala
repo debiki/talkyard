@@ -190,8 +190,11 @@ abstract class SiteDbDao {
   def savePageActions[T <: PostActionDtoOld](
         page: PageNoPath, actions: List[T]): (PageNoPath, List[T])
 
-  def deleteVote(userId: UserId, pageId: PageId, postId: PostId, voteType: PostActionPayload.Vote)
-
+  /** Deletes a vote. If there's a user id, deletes the vote by user id (guest or role),
+    * Otherwise by browser id cookie.
+    */
+  def deleteVote(userIdData: UserIdData, pageId: PageId, postId: PostId,
+        voteType: PostActionPayload.Vote)
 
   /**
    * Loads another tenant's page, if tenantId is specified.
@@ -592,9 +595,10 @@ class ChargingSiteDbDao(
     _spi.savePageActions(page, actions)
   }
 
-  def deleteVote(userId: UserId, pageId: PageId, postId: PostId, voteType: PostActionPayload.Vote) {
+  def deleteVote(userIdData: UserIdData, pageId: PageId, postId: PostId,
+        voteType: PostActionPayload.Vote) {
     _chargeForOneWriteReq()
-    _spi.deleteVote(userId, pageId, postId, voteType)
+    _spi.deleteVote(userIdData, pageId, postId, voteType)
   }
 
   def loadPage(debateId: String, tenantId: Option[String]): Option[PageParts] = {

@@ -56,6 +56,7 @@ object Util {
     (p2 - z10 * root, p2 + z10 * root)
   }
 
+  /*
   val post = PostActionDto(
     id = 1001, postId = 1001, creationDati = new ju.Date, loginId = "?", userId = "?",
     newIp = None, payload = PostActionPayload.CreatePost(parentPostId = Some(1000),
@@ -70,7 +71,7 @@ object Util {
   val rating_stupid =
         Rating(id = 1003, postId = post.id, loginId = "?", userId = "?", ctime = new ju.Date,
                newIp = None, tags = List("stupid"))
-
+  */
 }
 
 

@@ -66,7 +66,7 @@ object DebikiSpecs {
         parent: Option[PostId] = null,
         ctime: ju.Date = null,
         loginId: String = null,
-        newIp: String = null,
+        ip: String = null,
         text: String = null,
         where: Option[String] = null) = new Matcher[PageParts] {
     def apply[S <: PageParts](expectable: Expectable[S]) = {
@@ -77,7 +77,7 @@ object DebikiSpecs {
       left.getPost(id2) match {
         case Some(leftPost: Post) =>
           result(_matchPostImpl(
-              leftPost.actionDto, post, id, parent, ctime, loginId, newIp, text, where),
+              leftPost.actionDto, post, id, parent, ctime, loginId, ip, text, where),
             expectable)
         case None =>
           result(false, "", "Post missing, id: "+ id2, expectable)
@@ -91,7 +91,7 @@ object DebikiSpecs {
         parent: Option[PostId] = null,
         ctime: ju.Date = null,
         loginId: String = null,
-        newIp: String = null,
+        ip: String = null,
         text: String = null,
         where: Option[String] = null) =
           new Matcher[PostActionDto[PostActionPayload.CreatePost]] {
@@ -99,7 +99,7 @@ object DebikiSpecs {
           expectable: Expectable[S]) = {
       val left = expectable.value
       result(_matchPostImpl(
-          left, post, id, parent, ctime, loginId, newIp, text, where),
+          left, post, id, parent, ctime, loginId, ip, text, where),
         expectable)
     }
   }
@@ -111,7 +111,7 @@ object DebikiSpecs {
         parent: Option[ActionId],
         ctime: ju.Date,
         loginId: String,
-        newIp: String,
+        ip: String,
         text: String,
         where: Option[String]): (Boolean, String, String) = {
     val test = _test(leftPost, post) _
@@ -121,7 +121,7 @@ object DebikiSpecs {
         test("parent", parent, _.payload.parentPostId) :::
         test("ctime", ctime, _.creationDati) :::
         test("loginId", loginId, _.loginId) :::
-        test("newIp", newIp, _.newIp) :::
+        test("ip", ip, _.ip) :::
         test("text", text, _.payload.text) :::
         test("where", where, _.payload.where) ::: Nil
     (errs isEmpty, "OK", errs.mkString(", and "))

@@ -53,7 +53,7 @@ object Application extends mvc.Controller {
       }
 
     val flag = Flag(id = PageParts.UnassignedId, postId = postId,
-      loginId = request.loginId_!, userId = request.user_!.id, newIp = request.newIp,
+      userIdData = request.userIdData,
       ctime = request.ctime, reason = reason, details = details)
 
     // Cancel any preliminary approval, sice post has been flagged.
@@ -100,8 +100,8 @@ object Application extends mvc.Controller {
     }
 
     val deletion = PostActionDto.toDeletePost(andReplies = wholeTree,
-      id = PageParts.UnassignedId, postIdToDelete = postId, loginId = pageReq.loginId_!,
-      userId = pageReq.user_!.id, newIp = pageReq.newIp,
+      id = PageParts.UnassignedId, postIdToDelete = postId,
+      userIdData = pageReq.userIdData,
       createdAt = pageReq.ctime)
 
     val (page, _) =
