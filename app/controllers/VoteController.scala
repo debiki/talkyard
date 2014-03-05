@@ -73,6 +73,7 @@ object VoteController extends mvc.Controller {
         // COULD consider doing this by browser cookie id and/or ip and/or fingerprint,
         // so it's not possible to vote many times from many accounts on one single
         // computer?
+        // COULD move this to RdbSiteDao? So it'll be easier to test, won't need Selenium?
         request.dao.deleteVote(request.userIdData, pageId, postId, voteType)
 
         // Now create the vote.
