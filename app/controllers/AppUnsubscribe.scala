@@ -27,6 +27,7 @@ import play.api.data._
 import play.api.mvc.BodyParsers.parse
 import play.api.data.Forms._
 import play.api.mvc.{Action => _, _}
+import requests.realOrFakeIpOf
 import Prelude._
 import Utils.{OkHtml}
 
@@ -80,9 +81,9 @@ object AppUnsubscribe extends mvc.Controller {
 
     // Login.
     val loginAttempt = EmailLoginAttempt(
-       ip = request.remoteAddress, date = new ju.Date, emailId = emailId)
+       ip = realOrFakeIpOf(request), date = new ju.Date, emailId = emailId)
 
-    val dao = Globals.siteDao(tenantId, ip = request.remoteAddress)
+    val dao = Globals.siteDao(tenantId, ip = realOrFakeIpOf(request))
 
     val loginGrant =
       try dao.saveLogin(loginAttempt)

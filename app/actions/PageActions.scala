@@ -93,7 +93,7 @@ object PageActions {
         (f: PageRequest[A] => PlainResult)
         = CheckPathAction[A](parser)(
             pathIn, maySetCookies = maySetCookies, fixPath = fixPath) {
-      (sidStatus, xsrfOk, pathOkOpt, dao, request) =>
+      (sidStatus, xsrfOk, browserId, pathOkOpt, dao, request) =>
 
     if (pathOkOpt.isEmpty && pageMustExist)
       throwNotFound("DwE0404", "Page not found")
@@ -110,7 +110,7 @@ object PageActions {
     // Load permissions.
     val permsReq = PermsOnPageQuery(
       tenantId = tenantId,
-      ip = request.remoteAddress,
+      ip = realOrFakeIpOf(request),
       loginId = sidStatus.loginId,
       identity = identity,
       user = user,
@@ -125,6 +125,7 @@ object PageActions {
     val pageReq = PageRequest[A](
       sid = sidStatus,
       xsrfToken = xsrfOk,
+      browserId = browserId,
       identity = identity,
       user = user,
       pageExists = pageExists,
@@ -145,20 +146,20 @@ object PageActions {
         (pathIn: PagePath)
         (f: PageRequest[A] => PlainResult)
     = SafeActions.CheckSidAction[A](parser, maySetCookies = true) {
-        (sidStatus, xsrfOk, request) =>
+        (sidStatus, xsrfOk, browserId, request) =>
 
     if (!pathIn.isFolderOrIndexPage)
       throwBadReq("DwE903XH3", s"Call on folders only, not pages: ${request.uri}")
 
     val dao = Globals.siteDao(siteId = pathIn.tenantId,
-      ip = request.remoteAddress, sidStatus.roleId)
+      ip = realOrFakeIpOf(request), sidStatus.roleId)
 
     val (identity, user) = Utils.loadIdentityAndUserOrThrow(sidStatus, dao)
 
     // Load permissions.
     val permsReq = PermsOnPageQuery(
       tenantId = pathIn.tenantId,
-      ip = request.remoteAddress,
+      ip = realOrFakeIpOf(request),
       loginId = sidStatus.loginId,
       identity = identity,
       user = user,
@@ -173,6 +174,7 @@ object PageActions {
     val pageReq = PageRequest[A](
       sid = sidStatus,
       xsrfToken = xsrfOk,
+      browserId = browserId,
       identity = identity,
       user = user,
       pageExists = false,
@@ -195,7 +197,7 @@ object PageActions {
    */
   def CheckPathActionNoBody
         (pathIn: PagePath)
-        (f: (SidStatus, XsrfOk, Option[PagePath], SiteDao,
+        (f: (SidStatus, XsrfOk, Option[BrowserId], Option[PagePath], SiteDao,
            Request[Option[Any]]) => PlainResult) =
     CheckPathAction(BodyParsers.parse.empty)(pathIn)(f)
 
@@ -203,22 +205,22 @@ object PageActions {
   def CheckPathAction[A]
         (parser: BodyParser[A])
         (pathIn: PagePath, maySetCookies: Boolean = true, fixPath: Boolean = true)
-        (f: (SidStatus, XsrfOk, Option[PagePath], SiteDao, Request[A]) =>
+        (f: (SidStatus, XsrfOk, Option[BrowserId], Option[PagePath], SiteDao, Request[A]) =>
            PlainResult) =
     SafeActions.CheckSidAction[A](parser, maySetCookies = maySetCookies) {
-        (sidStatus, xsrfOk, request) =>
+        (sidStatus, xsrfOk, browserId, request) =>
       val dao = Globals.siteDao(siteId = pathIn.tenantId,
-         ip = request.remoteAddress, sidStatus.roleId)
+         ip = realOrFakeIpOf(request), sidStatus.roleId)
       dao.checkPagePath(pathIn) match {
         case Some(correct: PagePath) =>
           if (correct.path == pathIn.path) {
-            f(sidStatus, xsrfOk, Some(correct), dao, request)
+            f(sidStatus, xsrfOk, browserId, Some(correct), dao, request)
           } else if (!fixPath) {
-            f(sidStatus, xsrfOk, None, dao, request)
+            f(sidStatus, xsrfOk, browserId, None, dao, request)
           } else {
             Results.MovedPermanently(correct.path)
           }
-        case None => f(sidStatus, xsrfOk, None, dao, request)
+        case None => f(sidStatus, xsrfOk, browserId, None, dao, request)
       }
     }
 

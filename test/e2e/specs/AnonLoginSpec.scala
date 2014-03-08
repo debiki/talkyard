@@ -66,7 +66,7 @@ class AnonLoginSpecForEmbeddedCommentsRunner_jQueryModernizrPreLoaded
 
 @test.tags.EndToEndTest
 @DoNotDiscover
-class AnonLoginSpec extends AnonLoginSpecConstructor(iframe = false, quick = false) {
+class AnonLoginSpec extends AnonLoginSpecConstructor(quick = false) {
   lazy val testPageUrl = createTestPage(PageRole.Generic,
     title = "Test Page Title 27KV09", body = Some("Test page text 953Ih31.")).url
 }
@@ -104,7 +104,7 @@ class AnonLoginSpecForEmbeddedComments_jQuery17AndModernizr25PreLoaded
 
 
 class AnonLoginSpecForEmbeddedComments(val pageUrlPath: String, quick: Boolean)
-    extends AnonLoginSpecConstructor(iframe = true, quick = quick) {
+    extends AnonLoginSpecConstructor(quick = quick) {
   lazy val testPageUrl = {
     ensureFirstSiteCreated()
     rememberEmbeddedCommentsIframe()
@@ -118,7 +118,7 @@ class AnonLoginSpecForEmbeddedComments(val pageUrlPath: String, quick: Boolean)
  * when submitting, 2) by clicking Rate and logging in when rating,
  * and 3) via the "Log in" link,
  */
-abstract class AnonLoginSpecConstructor(val iframe: Boolean, val quick: Boolean)
+abstract class AnonLoginSpecConstructor(val quick: Boolean)
   extends DebikiBrowserSpec with TestReplyer with TestLoginner {
 
   def testPageUrl: String
@@ -128,7 +128,7 @@ abstract class AnonLoginSpecConstructor(val iframe: Boolean, val quick: Boolean)
   "Anon user with a browser can" - {
 
     "open a test page" in {
-      gotoDiscussionPage(testPageUrl)
+      gotoDiscussionPageAndFakeNewIp(testPageUrl)
     }
 
     "login and reply as new Anon User, specify no email" - {
@@ -152,28 +152,8 @@ abstract class AnonLoginSpecConstructor(val iframe: Boolean, val quick: Boolean)
       "login and reply as existing Anon User with email specified later" in {
         pending
       }
-
-      "login and rate as new Anon User, specify no email" - {
-        loginAndRateAsAnon(name = nextName(), postId = 1)
-      }
-
-      "login and rate as new Anon User, specify email" - {
-        val name = nextName()
-        loginAndRateAsAnon(name, email = s"$name@example.com", postId = 1)
-      }
-
-      "login and rate as existing Anon User with no email" in {
-        pending
-      }
-
-      "login and rate as existing Anon User with email specified" in {
-        pending
-      }
     }
   }
-
-
-  private def nextName() = s"Anon-${randomId()}"
 
 
   private def loginAndReplyAsAnon(name: String, email: String = "") {
@@ -212,62 +192,6 @@ abstract class AnonLoginSpecConstructor(val iframe: Boolean, val quick: Boolean)
       logout()
     }
   }
-
-
-  private def loginAndRateAsAnon(name: String, email: String = "", postId: PostId) {
-
-    "logout if needed" in {
-      logoutIfLoggedIn()
-    }
-
-    "click Rate" in {
-      eventually {
-        showActionLinks(postId)
-        scrollIntoView(visibleRateLink)
-        click on visibleRateLink
-      }
-    }
-
-    "select any rating tag" in {
-      // Clicking the rate link (which we just did) opens a form, which automatically
-      // scrolls into view. However, whilst it scrolls into view, clicking a
-      // rating tag works, from Selenium's point of view, but the click does not
-      // toggle the rating tag selected — so the submit button won't be enabled.
-      // Therefore, click any rating tag again and again until eventually
-      // the Submit button becomes enabled.
-      eventually {
-        click on anyRatingTag
-        find(cssSelector(".dw-fi-submit")).map(_.isEnabled) must be === Some(true)
-      }
-    }
-
-    "click Post as ..." in {
-      eventually {
-        click on cssSelector(".dw-fi-submit")
-      }
-    }
-
-    "login and submit" in {
-      submitGuestLogin(name, email)
-    }
-
-    "view her new rating" in {
-      eventually {
-        // Currently we're rating the same post over and over again,
-        // so there'll be only 1 rating.
-        val allRatingsByMe = findAll(cssSelector(".dw-p-r-by-me"))
-        allRatingsByMe.length must be === 1
-      }
-    }
-
-    "logout" in {
-      logout()
-    }
-  }
-
-
-  def visibleRateLink = cssSelector("#dw-p-as-shown .dw-a-rate")
-  def anyRatingTag = cssSelector(".dw-r-tag-set > .ui-button > .ui-button-text")
 
 }
 

@@ -24,6 +24,7 @@ import java.{util => ju, io => jio}
 import play.api.mvc.Cookie
 import play.api.Logger
 import requests.JsonOrFormDataBody
+import requests.realOrFakeIpOf
 import scala.xml.{Text, Node, NodeSeq}
 import DebikiSecurity._
 
@@ -60,8 +61,7 @@ object DebikiSecurity {
         // Accept this request, and create new XSRF token if needed.
 
         if (!sidStatus.isOk && sidStatus != SidAbsent)
-          Logger.warn("Bad SID: "+ sidStatus +", from IP: "+
-             request.remoteAddress)
+          Logger.warn(s"Bad SID: $sidStatus, from IP: ${realOrFakeIpOf(request)}")
 
         val (xsrfOk: XsrfOk, anyNewXsrfCookie: List[Cookie]) =
           if (xsrfCookieValOpt.isDefined) {

@@ -44,7 +44,7 @@ object Pin extends mvc.Controller {
         val payload = PAP.PinPostAtPosition(position)
         val action = PostActionDto(
           PageParts.UnassignedId, apiReq.ctime, payload, postId = postId,
-          loginId = apiReq.loginId_!, userId = apiReq.user_!.id, newIp = None)
+          userIdData = apiReq.userIdData)
         (pageId, action)
       }
 

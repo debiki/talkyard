@@ -55,7 +55,7 @@ object CreateEmbeddedSiteController extends mvc.Controller {
   }
 
 
-  def showSiteOwnerForm() = CheckSidActionNoBody { (sidOk, xsrfOk, request) =>
+  def showSiteOwnerForm() = CheckSidActionNoBody { (sidOk, xsrfOk, browserId, request) =>
     Ok(views.html.login.loginPage(xsrfToken = xsrfOk.value,
       returnToUrl = routes.CreateEmbeddedSiteController.showEmbeddingSiteUrlForm.url,
       title = "Choose Website Owner Account",

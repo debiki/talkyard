@@ -99,6 +99,7 @@ object PageRequest {
     PageRequest[A](
       sid = apiRequest.sid,
       xsrfToken = apiRequest.xsrfToken,
+      browserId = apiRequest.browserId,
       identity = apiRequest.identity,
       user = apiRequest.user,
       pageExists = pageExists,
@@ -177,6 +178,7 @@ object PageRequest {
 case class PageRequest[A](
   sid: SidStatus,
   xsrfToken: XsrfOk,
+  browserId: Option[BrowserId],
   identity: Option[Identity],
   user: Option[User],
   pageExists: Boolean,

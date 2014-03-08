@@ -43,17 +43,6 @@ case class People(
     users = people.users ::: users)
 
 
-  /**
-   * Returns a NiLo with info on the author of the post.
-   */
-  def authorOf_!(action: PostActionDtoOld): NiLo = {  // COULD rename to loginFor?
-                                         // or return a User?
-    new NiLo(this, login_!(action.loginId))
-  }
-
-  def loginFor_!(action: PostActionOld): NiLo =
-    new NiLo(this, login_!(action.loginId))
-
   def nilo(loginId: String): Option[NiLo] =
     login(loginId).map(new NiLo(this, _))
 
@@ -63,8 +52,7 @@ case class People(
   // -------- Logins
 
   def login(id: String): Option[Login] =
-    if (id == SystemUser.Login.id) Some(SystemUser.Login)
-    else logins.find(_.id == id)  // COULD optimize
+    logins.find(_.id == id)  // COULD optimize
 
   def login_!(id: String): Login =
     login(id) getOrElse runErr("DwE8K3520z23", s"Login not found: $id")
@@ -73,8 +61,7 @@ case class People(
   // -------- Identities
 
   def identity(id: String): Option[Identity] =
-    if (id == SystemUser.Identity.id) Some(SystemUser.Identity)
-    else identities.find(_.id == id)  // COULD optimize
+    identities.find(_.id == id)  // COULD optimize
 
   def identity_!(id: String): Identity = identity(id) getOrElse runErr(
     "DwE021kr3k09", "Identity not found: "+ safed(id))
@@ -105,6 +92,41 @@ class NiLo(people: People, val login: Login) {
   def email = user_!.email
 
 }
+
+
+
+case object UserIdData {
+
+  /** For test suites. */
+  def newTest(loginId: LoginId, userId: UserId, ip: String = "111.112.113.114") =
+    UserIdData(Some(loginId), userId, ip, browserIdCookie = None, browserFingerprint = 0)
+
+}
+
+
+case class UserIdData(
+  loginId: Option[LoginId],
+  userId: UserId,
+  ip: String,
+  browserIdCookie: Option[String],
+  browserFingerprint: Int) {
+
+  require(userId.nonEmpty, "DwE182WH9")
+  require(ip.nonEmpty, "DwE6G9F0")
+  require(browserIdCookie.map(_.isEmpty) != Some(true), "DwE3GJ79")
+
+  def anyGuestId: Option[String] =
+    if (userId.startsWith("-")) Some(userId drop 1) else None
+
+  def anyRoleId: Option[String] =
+    if (userId.startsWith("-")) None else Some(userId)
+
+  def isAnonymousUser = ip == "0.0.0.0"
+  def isUnknownUser = userId == UnknownUser.Id
+  def isSystemUser = userId == SystemUser.User.id
+
+}
+
 
 
 case object User {
@@ -471,6 +493,20 @@ case class LoginGrant(
 }
 
 
+/** A user that voted on a comment but was not logged in.
+  */
+object UnknownUser {
+
+  /** "-" means it's not a role, it's a guest. "3" is the next number after the
+    * first two magic id, which are "1" for the system user and "2" for the dummy
+    * author user (see DummyPage.scala).
+    */
+  val Id = "-3"
+
+}
+
+
+
 /**
  * Used when things are inserted automatically into the database,
  * e.g. an automatically generated default homepage, for a new website.
@@ -479,21 +515,19 @@ object SystemUser {
 
   import com.debiki.core
 
+  val Ip = "SystemUserIp"
+
   val User = core.User(id = "1", displayName = "System", email = "",
     emailNotfPrefs = EmailNotfPrefs.DontReceive, isAdmin = true)
 
-  val Identity = new core.Identity {
-    val id = "1"
-    val userId = User.id
-    val displayName = User.displayName
-    def email = User.email
-  }
+  val Person = People(Nil, Nil, List(User))
 
-  val Login = core.Login(
-    id = "1", prevLoginId = None, ip = "127.0.0.1",
-    date = new ju.Date(0), identityRef = IdentityRef.Role(Identity.id))
-
-  val Person = People(List(Login), List(Identity), List(User))
+  val UserIdData = core.UserIdData(
+    loginId = None,
+    userId = SystemUser.User.id,
+    ip = Ip,
+    browserIdCookie = None,
+    browserFingerprint = 0)
 
 }
 

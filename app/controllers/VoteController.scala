@@ -62,16 +62,23 @@ object VoteController extends mvc.Controller {
 
     val (pageReq, pageParts) =
       if (delete) {
-        request.dao.deleteVote(request.user_!.id, pageId, postId, voteType)
+        request.dao.deleteVote(request.userIdData, pageId, postId, voteType)
 
         val pageReq = PageRequest.forPageThatExists(request, pageId) getOrElse throwNotFound(
           "DwE22PF1", s"Page `$pageId' not found")
         (pageReq, pageReq.page_!)
       }
       else {
+        // Prevent the user from voting many times by deleting any existing vote.
+        // COULD consider doing this by browser cookie id and/or ip and/or fingerprint,
+        // so it's not possible to vote many times from many accounts on one single
+        // computer?
+        // COULD move this to RdbSiteDao? So it'll be easier to test, won't need Selenium?
+        request.dao.deleteVote(request.userIdData, pageId, postId, voteType)
+
+        // Now create the vote.
         val vote = PostActionDto(id = PageParts.UnassignedId, postId = postId,
-          creationDati = request.ctime, loginId = request.loginId_!, userId = request.user_!.id,
-          newIp = request.newIp, payload = voteType)
+          creationDati = request.ctime, userIdData = request.userIdData, payload = voteType)
         val pageReq = PageRequest.forPageThatExists(request, pageId) getOrElse throwNotFound(
           "DwE48FK9", s"Page `$pageId' not found")
 

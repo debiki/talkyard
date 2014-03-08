@@ -91,7 +91,7 @@ d.i.makeCurUser = function() {
    */
   function clearMyPageInfo() {
     $('.dw-p-by-me').removeClass('dw-p-by-me');
-    $('.dw-p-r-by-me').remove();
+    $('.dw-my-vote').removeClass('dw-my-vote');
     setPermsOnPage({});
   }
 
@@ -159,7 +159,7 @@ d.i.makeCurUser = function() {
     }
 
     function markMyActions(actions) {
-      $('.dw-a.dw-my-vote').removeClass('dw-my-vote');
+      $('.dw-my-vote').removeClass('dw-my-vote');
       if (actions.ratings) $.each(actions.ratings, showMyRatings);
       if (actions.authorOf) $.each(actions.authorOf, function(ix, postId) {
         d.i.markMyPost(postId);

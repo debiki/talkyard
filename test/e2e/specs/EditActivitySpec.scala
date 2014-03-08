@@ -92,7 +92,7 @@ class EditActivitySpec extends DebikiBrowserSpec
 
 
     "open a test page" in {
-      gotoDiscussionPage(testPage.url)
+      gotoDiscussionPageAndFakeNewIp(testPage.url)
     }
 
 

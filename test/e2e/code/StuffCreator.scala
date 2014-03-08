@@ -99,8 +99,8 @@ trait StuffCreator {
 
     val postTemplate = PostActionDto.forNewPost(
       id = UnassignedId, parentPostId = None, creationDati = new ju.Date,
-      loginId = loginGrant.login.id, userId = loginGrant.user.id,
-      newIp = None, text = "", markup = "para",
+      userIdData = UserIdData.newTest(loginId = loginGrant.login.id, userId = loginGrant.user.id),
+      text = "", markup = "para",
       approval = Some(Approval.AuthoritativeUser))
 
     (loginGrant, postTemplate)

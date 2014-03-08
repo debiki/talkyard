@@ -33,7 +33,7 @@ trait PostTestValues {
 
   val postSkeleton =
     PostActionDto(id = 101, postId = 101, creationDati = new ju.Date(1000),
-      loginId = "101", userId = "?", newIp = None,
+      userIdData = UserIdData.newTest("101", userId = "?"),
       payload = PostActionPayload.CreatePost(
         parentPostId = None,
         text = "text-text-text",

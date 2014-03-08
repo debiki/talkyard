@@ -72,6 +72,13 @@ object DummyPage {
   val DummyAuthorLogin = Login(id = "2", prevLoginId = None, ip = "?.?.?.?",
     date = new ju.Date, DummyAuthorIdty.reference)
 
+  val DummyAuthorIdData = UserIdData(
+    loginId = Some(DummyAuthorLogin.id),
+    userId = DummyAuthorUser.id,
+    ip = DummyAuthorLogin.ip,
+    browserIdCookie = None,
+    browserFingerprint = 0)
+
 
   val DummyAuthor = People(
     List(DummyAuthorLogin), List(DummyAuthorIdty), List(DummyAuthorUser))
@@ -81,9 +88,7 @@ object DummyPage {
     id = PageParts.TitleId,
     postId = PageParts.TitleId,
     creationDati = new ju.Date,
-    loginId = DummyAuthorLogin.id,
-    userId = DummyAuthorUser.id,
-    newIp = None,
+    userIdData = DummyAuthorIdData,
     payload = PostActionPayload.CreatePost(
       parentPostId = None,
       text = texts.noTitleText,

@@ -239,25 +239,31 @@ object HtmlPostRenderer {
       else ""
 
     val likeVotes = post.numLikeVotes match {
-      case 0 => ""
-      case 1 => ". 1 person likes this comment"
-      case x => s". $x people like this comment"
+      case 0 => scala.xml.Null
+      case 1 => <x>. <a class="dw-num-likes">1 person</a> likes this comment</x>.child
+      case x => <x>. <a class="dw-num-likes">{x} people</a> like this comment</x>.child
     }
 
     var thisComment = if (likeVotes.nonEmpty) "it" else "this comment"
 
     val isWrongVotes = post.numWrongVotes match {
-      case 0 => ""
-      case 1 => s". 1 ${if (likeVotes.nonEmpty) "" else "person"} thinks $thisComment is wrong"
-      case x => s". $x ${if (likeVotes.nonEmpty) "" else "people"} think $thisComment is wrong"
+      case 0 => scala.xml.Null
+      case 1 =>
+        <x>. <a class="dw-num-wrongs">1 {if (likeVotes.nonEmpty) "" else "person"}</a
+          > thinks {thisComment} is wrong</x>.child
+      case x =>
+        <x>. <a class="dw-num-wrongs">{x} {if (likeVotes.nonEmpty) "" else "people"}</a
+          >think {thisComment} is wrong</x>.child
     }
 
     if (isWrongVotes.nonEmpty) thisComment = "it"
 
     val offTopicVotes = post.numOffTopicVotes match {
       case 0 => ""
-      case 1 => s". 1 person thinks $thisComment is off-topic"
-      case x => s". $x people think $thisComment is off-topic"
+      case 1 =>
+        <x>. <a class="dw-num-offtopics">1 person</a> thinks {thisComment} is off-topic</x>.child
+      case x =>
+        <x>. <a class="dw-num-offtopics">{x} people</a> think {thisComment} is off-topic</x>.child
     }
 
     val commentHtml =

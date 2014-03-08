@@ -211,7 +211,8 @@ object Templates {
       firstName = "Laban", email = "oid@email.hmm", country = "Sweden"))
 
   val post = PostActionDto.forNewPost(id = UnassignedId, creationDati = new ju.Date,
-    loginId = "?", userId = "?", newIp = None,  parentPostId = Some(PageParts.BodyId),
+    userIdData = UserIdData.newTest(loginId = "?", userId = "?"),
+    parentPostId = Some(PageParts.BodyId),
     text = "", markup = "para", approval = None)
 
 }
@@ -456,9 +457,9 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
     "find the debate and the login and user again" in {
       dao.loadPage(testPage.id) must beLike {
         case Some(d: PageParts) => {
-          d.people.nilo(ex1_rootPost.loginId) must beLike {
+          d.people.nilo(ex1_rootPost.loginId getOrDie "DwE986fJF3") must beLike {
             case Some(n: NiLo) =>  // COULD make separate NiLo test?
-              n.login.id must_== ex1_rootPost.loginId
+              Some(n.login.id) must_== ex1_rootPost.loginId
               n.login.identityRef.identityId must_== n.identity_!.id
               n.identity_!.userId must_== n.user_!.id
               n.user_! must matchUser(displayName = "Målligan",
@@ -1155,71 +1156,49 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
       }
     }
 
-    "vote on a post" in {
+    "vote on a post" >> {
 
-    }
+      lazy val LikeVote = PostActionDto(UnassignedId, new ju.Date, postId = PageParts.BodyId,
+        userIdData = UserIdData.newTest(loginId, userId = globalUserId), payload = PAP.VoteLike)
+      lazy val WrongVote = LikeVote.copy(payload = PAP.VoteWrong)
+      lazy val OffTopicVote = LikeVote.copy(payload = PAP.VoteOffTopic)
 
-    /*
-    val rating = Rating(id = UnassignedId, postId = PageParts.BodyId, loginId = "?",
-      userId = "?", newIp = None, ctime = new ju.Date, tags = Nil)
-
-    var ex3_ratingId = PageParts.NoId
-    lazy val ex3_rating = T.rating.copy(loginId = loginId, userId = globalUserId,
-      postId = PageParts.BodyId,  tags = "Interesting"::"Funny"::Nil)  // 2 tags
-    "save a post rating, with 2 tags" in {
-      dao.savePageActions(testPage, List(ex3_rating)) must beLike {
-        case (_, List(r: Rating)) =>
-          ex3_ratingId = r.id
-          r must matchRating(ex3_rating, id = ex3_ratingId,
-            loginId = loginId, userId = globalUserId)
+      "save and load a Like vote" in {
+        saveAndLoadVote(LikeVote)
+        ok
       }
-    }
 
-    "find the rating again" in {
-      dao.loadPage(testPage.id) must beLike {
-        case Some(d: PageParts) => {
-          d must haveRatingLike(ex3_rating, id = ex3_ratingId)
+      "save and load a Wrong vote" in {
+        saveAndLoadVote(WrongVote)
+        ok
+      }
+
+      "save and load a OffTopic vote" in {
+        saveAndLoadVote(OffTopicVote)
+        ok
+      }
+
+      def saveAndLoadVote[A](vote: PostActionDto[A]) {
+        var savedVote: PostActionDto[A] = null
+
+        dao.savePageActions(testPage, List(vote)) must beLike {
+          case (_, List(vote: PostActionDto[A])) =>
+            savedVote = vote
+            vote must_== vote.copy(id = savedVote.id)
+        }
+
+        dao.loadPage(testPage.id) must beLike {
+          case Some(p: PageParts) => {
+            p.getActionById(savedVote.id) match {
+              case Some(vote: PostAction[A]) =>
+                vote.actionDto must_== savedVote
+              case _ =>
+                fail(s"Vote not found: $vote")
+            }
+          }
         }
       }
     }
-
-    var ex4_rating1Id = PageParts.NoId
-    lazy val ex4_rating1 =
-      T.rating.copy(id = UnassignedId2, postId = PageParts.BodyId, loginId = loginId,
-        userId = globalUserId, tags = "Funny"::Nil)
-    var ex4_rating2Id = PageParts.NoId
-    lazy val ex4_rating2 =
-      T.rating.copy(id = UnassignedId3, postId = PageParts.BodyId, loginId = loginId,
-        userId = globalUserId, tags = "Boring"::"Stupid"::Nil)
-    var ex4_rating3Id = PageParts.NoId
-    lazy val ex4_rating3 =
-      T.rating.copy(id = UnassignedId4, postId = PageParts.BodyId, loginId = loginId,
-        userId = globalUserId, tags = "Boring"::"Stupid"::"Funny"::Nil)
-
-    "save 3 ratings, with 1, 2 and 3 tags" in {
-      dao.savePageActions(testPage,
-                List(ex4_rating1, ex4_rating2, ex4_rating3)
-      ) must beLike {
-        case (_, List(r1: Rating, r2: Rating, r3: Rating)) =>
-          ex4_rating1Id = r1.id
-          r1 must matchRating(ex4_rating1, id = ex4_rating1Id)
-          ex4_rating2Id = r2.id
-          r2 must matchRating(ex4_rating2, id = ex4_rating2Id)
-          ex4_rating3Id = r3.id
-          r3 must matchRating(ex4_rating3, id = ex4_rating3Id)
-      }
-    }
-
-    "find the 3 ratings again" in {
-      dao.loadPage(testPage.id) must beLike {
-        case Some(d: PageParts) => {
-          d must haveRatingLike(ex4_rating1, id = ex4_rating1Id)
-          d must haveRatingLike(ex4_rating2, id = ex4_rating2Id)
-          d must haveRatingLike(ex4_rating3, id = ex4_rating3Id)
-        }
-      }
-    }
-    */
 
 
     // -------- Save approvals and rejections
@@ -1236,8 +1215,8 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
       var reviewSaved: PostActionDto[PAP.ReviewPost] = null
       val approval = if (isApproved) Some(Approval.Manual) else None
       val reviewNoId = PostActionDto.toReviewPost(
-         UnassignedId, postId = ex1_rootPost.id, loginId = loginId,
-         userId = globalUserId, newIp = None, ctime = now, approval = approval)
+         UnassignedId, postId = ex1_rootPost.id,
+        UserIdData.newTest(loginId, userId = globalUserId), ctime = now, approval = approval)
       dao.savePageActions(testPage, List(reviewNoId)) must beLike {
         case (_, List(review: PostActionDto[PAP.ReviewPost])) =>
           reviewSaved = review
@@ -1268,9 +1247,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
           creationDati = new ju.Date,
           payload = payload,
           postId = ex1_rootPost.id,
-          loginId = loginId,
-          userId = globalUserId,
-          newIp = None)
+          UserIdData.newTest(loginId, userId = globalUserId))
 
         dao.savePageActions(testPage, List(action)) must beLike {
           case (_, List(pinAction: PostActionDto[_])) =>
@@ -1327,13 +1304,13 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
         // Make edit actions
         val patchText = makePatch(from = post.payload.text, to = newText)
         val editNoId = PostActionDto.toEditPost(
-          id = UnassignedId, postId = post.id, ctime = now, loginId = loginId,
-          userId = globalUserId,
-          newIp = None, text = patchText, newMarkup = None,
+          id = UnassignedId, postId = post.id, ctime = now,
+          UserIdData.newTest(loginId, userId = globalUserId),
+          text = patchText, newMarkup = None,
           approval = None, autoApplied = false)
         val publNoId = EditApp(
-          id = UnassignedId2, editId = UnassignedId, postId = post.id, ctime = now,
-          loginId = loginId, userId = globalUserId, newIp = None, result = newText,
+          id = UnassignedId2, editId = UnassignedId, postId = post.id,
+          UserIdData.newTest(loginId, userId = globalUserId), ctime = now, result = newText,
           approval = None)
 
         // Save
@@ -1355,12 +1332,13 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
       "change the markup type" in {
         // Make edit actions
         val editNoId = PostActionDto.toEditPost(
-          id = UnassignedId, postId = post.id, ctime = now, loginId = loginId,
-          userId = globalUserId, newIp = None, text = "", newMarkup = Some("html"),
+          id = UnassignedId, postId = post.id, ctime = now,
+          UserIdData.newTest(loginId, userId = globalUserId),
+          text = "", newMarkup = Some("html"),
           approval = None, autoApplied = false)
         val publNoId = EditApp(
-          id = UnassignedId2, editId = UnassignedId, postId = post.id, ctime = now,
-          loginId = loginId, userId = globalUserId, newIp = None, result = newText,
+          id = UnassignedId2, editId = UnassignedId, postId = post.id,
+          UserIdData.newTest(loginId, userId = globalUserId), ctime = now, result = newText,
           approval = None)
 
         // Save
@@ -2828,8 +2806,8 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
             page.title must beLike {
               case Some(title) =>
                 title.currentText must_== homepageTitle.payload.text
-                title.login_! must_== SystemUser.Login
-                title.identity_! must_== SystemUser.Identity
+                title.login must_== None
+                title.identity must_== None
                 title.user_! must_== SystemUser.User
             }
         }

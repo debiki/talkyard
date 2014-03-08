@@ -126,9 +126,9 @@ class CachingSiteDao(siteDbDao: ChargingSiteDbDao)
   }
 
 
-  override def deleteVote(userId: UserId, pageId: PageId, postId: PostId,
+  override def deleteVote(userIdData: UserIdData, pageId: PageId, postId: PostId,
         voteType: PostActionPayload.Vote) {
-    super.deleteVote(userId, pageId, postId, voteType)
+    super.deleteVote(userIdData, pageId, postId, voteType)
     refreshPageInCache(pageId)
   }
 

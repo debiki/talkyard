@@ -52,6 +52,9 @@ import collection.{mutable => mut}
  */
 case class PageTrust(page: PageParts) {
 
+  // Comment in / fix tests in PageTrustTest, if I ever make this class
+  // work again.
+
   /** Analyzes number of ratings per IP and user, and returns a value
    *  between 0 and 1, where 1 means the rating is completely trustworthy.
    *

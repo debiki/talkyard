@@ -69,7 +69,7 @@ object AppSimple extends mvc.Controller {
 
     val actionsByPageId = Utils.parsePageActionIds(pageActionIds) { actionId =>
       PostActionDto(PageParts.UnassignedId, apiReq.ctime, payload, postId = actionId,
-        loginId = apiReq.loginId_!, userId = apiReq.user_!.id, newIp = None)
+        userIdData = apiReq.userIdData)
     }
 
     var pagesAndPatchSpecs = List[(PageParts, List[TreePatchSpec])]()
