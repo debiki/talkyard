@@ -39,31 +39,6 @@ import Utils.{OkHtml, OkXml}
 object Application extends mvc.Controller {
 
 
-  def rate = PostJsonAction(maxLength = 200) { request =>
-    val body = request.body
-    val pageId = (body \ "pageId").as[PageId]
-    val postId = (body \ "postId").as[PostId]
-    val ratingTags = (body \ "ratingTags").as[List[String]]
-
-    if (ratingTags.isEmpty)
-      throwBadReq("DwE84Ef6", "No rating tags")
-
-    val rating = Rating(
-      id = PageParts.UnassignedId, postId = postId, ctime = request.ctime,
-      loginId = request.loginId_!, userId = request.user_!.id, newIp = request.newIp,
-      tags = ratingTags.toList)
-
-    val pageReq = PageRequest.forPageThatExists(request, pageId) getOrElse throwNotFound(
-      "DwE59DK9", s"Page `$pageId' not found")
-
-    val (updatedPage, _) =
-      pageReq.dao.savePageActionsGenNotfs(pageReq, rating::Nil)
-
-    val json = BrowserPagePatcher(pageReq).jsonForPost(postId, updatedPage.parts)
-    OkSafeJson(json)
-  }
-
-
   def flag = PostJsonAction(maxLength = 2000) { request =>
     val body = request.body
     val pageId = (body \ "pageId").as[PageId]
@@ -78,7 +53,7 @@ object Application extends mvc.Controller {
       }
 
     val flag = Flag(id = PageParts.UnassignedId, postId = postId,
-      loginId = request.loginId_!, userId = request.user_!.id, newIp = request.newIp,
+      userIdData = request.userIdData,
       ctime = request.ctime, reason = reason, details = details)
 
     // Cancel any preliminary approval, sice post has been flagged.
@@ -125,8 +100,8 @@ object Application extends mvc.Controller {
     }
 
     val deletion = PostActionDto.toDeletePost(andReplies = wholeTree,
-      id = PageParts.UnassignedId, postIdToDelete = postId, loginId = pageReq.loginId_!,
-      userId = pageReq.user_!.id, newIp = pageReq.newIp,
+      id = PageParts.UnassignedId, postIdToDelete = postId,
+      userIdData = pageReq.userIdData,
       createdAt = pageReq.ctime)
 
     val (page, _) =

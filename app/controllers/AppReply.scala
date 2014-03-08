@@ -92,8 +92,8 @@ object AppReply extends mvc.Controller {
     val approval = AutoApprover.perhapsApprove(pageReq)
 
     val postNoId = PostActionDto(id = PageParts.UnassignedId, postId = PageParts.UnassignedId,
-      creationDati = pageReq.ctime, loginId = pageReq.loginId_!, userId = pageReq.user_!.id,
-      newIp = pageReq.newIp, payload = PAP.CreatePost(
+      creationDati = pageReq.ctime, userIdData = pageReq.userIdData,
+      payload = PAP.CreatePost(
         parentPostId = anyPostIdToReplyTo, text = text, markup = Markup.DefaultForComments.id,
         where = whereOpt, approval = approval))
 

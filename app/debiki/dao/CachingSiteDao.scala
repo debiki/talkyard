@@ -67,16 +67,22 @@ class CachingSiteDao(siteDbDao: ChargingSiteDbDao)
     val newPageAndActionsWithId =
       super.savePageActionsGenNotfsImpl(page, actions)
 
+    refreshPageInCache(page.id)
+    newPageAndActionsWithId
+  }
+
+
+  private def refreshPageInCache(pageId: PageId) {
     // Possible optimization: Examine all actions, and refresh cache only
     // if there are e.g. EditApp:s or approved Post:s (but ignore Edit:s --
     // unless applied & approved)
-    uncacheRenderedPage(pageId = page.id)
+    uncacheRenderedPage(pageId = pageId)
 
     // Who should know about all these uncache-this-on-change-
     // -of-that relationships? For now:
-    uncachePageMeta(page.id)
+    uncachePageMeta(pageId)
     // ... Like so perhaps? Each module registers change listeners?
-    firePageSaved(SitePageId(siteId = siteId, pageId = page.id))
+    firePageSaved(SitePageId(siteId = siteId, pageId = pageId))
 
     // if (is _site.conf || is any stylesheet or script)
     // then clear all asset bundle related caches. For ... all websites, for now??
@@ -115,10 +121,15 @@ class CachingSiteDao(siteDbDao: ChargingSiteDbDao)
         // the page from the database.
         replaced = _cache.cache.replace(key, oldPage, newPage)
     */
-    removeFromCache(_pageActionsKey(page.id))
+    removeFromCache(_pageActionsKey(pageId))
     // ------ /Page action cache
+  }
 
-   newPageAndActionsWithId
+
+  override def deleteVote(userIdData: UserIdData, pageId: PageId, postId: PostId,
+        voteType: PostActionPayload.Vote) {
+    super.deleteVote(userIdData, pageId, postId, voteType)
+    refreshPageInCache(pageId)
   }
 
 

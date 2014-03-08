@@ -42,10 +42,9 @@ trait NotfGeneratorTestValues {
   val rawBodyAuthzApproved = copyCreatePost(rawBody, approval = Some(Approval.AuthoritativeUser))
 
   val approvalOfBody =
-    PostActionDto.toReviewPost(2, postId = rawBody.id, loginId = reviewerLogin.id,
-      userId = reviewer.id,
-      newIp = None, ctime = new ju.Date(11000),
-      approval = Some(Approval.Manual))
+    PostActionDto.toReviewPost(2, postId = rawBody.id,
+      UserIdData.newTest(reviewerLogin.id, userId = reviewer.id),
+      ctime = new ju.Date(11000), approval = Some(Approval.Manual))
   val rejectionOfBody = copyReviewPost(approvalOfBody, id = 3, approval = None)
 
   val rawReply = copyCreatePost(PostTestValues.postSkeleton,
@@ -57,10 +56,9 @@ trait NotfGeneratorTestValues {
   val rawReplyAuthzApproved = copyCreatePost(rawReply, approval = Some(Approval.AuthoritativeUser))
 
   val approvalOfReply =
-    PostActionDto.toReviewPost(12, postId = rawReply.id, loginId = reviewerLogin.id,
-      userId = reviewer.id,
-      newIp = None, ctime = new ju.Date(11000),
-      approval = Some(Approval.Manual))
+    PostActionDto.toReviewPost(12, postId = rawReply.id,
+      UserIdData.newTest(reviewerLogin.id, userId = reviewer.id),
+      ctime = new ju.Date(11000), approval = Some(Approval.Manual))
   val rejectionOfReply = copyReviewPost(approvalOfReply, id = 13, approval = None)
 
   val EmptyPage = PageParts("pageId") ++ (People() +
@@ -151,7 +149,7 @@ class NotfGeneratorTest extends Specification with NotfGeneratorTestValues {
 
     "generate no notf when a reply is approved by the one replied to" in {
       val approval = approvalOfReply.copy(
-        loginId = bodyAuthorLogin.id, userId = bodyAuthor.id)
+        userIdData = UserIdData.newTest(bodyAuthorLogin.id, userId = bodyAuthor.id))
       val page = PageWithApprovedBody + rawReply
       val notfs = genNotfs(bodyAuthor, page, approval)
       notfs.length must_== 0

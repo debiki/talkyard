@@ -20,7 +20,7 @@ package test.e2e.code
 import com.debiki.core.Prelude._
 import org.openqa.selenium.WebDriver
 import org.scalatest.{BeforeAndAfterAll, FreeSpec}
-import org.scalatest.matchers.MustMatchers
+import org.scalatest.MustMatchers
 import org.scalatest.selenium.WebBrowser
 import org.scalatest.concurrent.{Eventually, ScaledTimeSpans}
 import org.scalatest.time.{Span, Seconds, Millis}

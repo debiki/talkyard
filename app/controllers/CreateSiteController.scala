@@ -55,7 +55,7 @@ object CreateSiteController extends mvc.Controller {
   }
 
 
-  def showWebsiteOwnerForm() = CheckSidActionNoBody { (sidOk, xsrfOk, request) =>
+  def showWebsiteOwnerForm() = CheckSidActionNoBody { (sidOk, xsrfOk, browserId, request) =>
     Ok(views.html.login.loginPage(xsrfToken = xsrfOk.value,
       returnToUrl = routes.CreateSiteController.showSiteTypeForm.url,
       title = "Choose Website Owner Account",
@@ -193,7 +193,7 @@ object CreateSiteController extends mvc.Controller {
   }
 
 
-  def welcomeOwner() = CheckSidActionNoBody { (sidOk, xsrfOk, request) =>
+  def welcomeOwner() = CheckSidActionNoBody { (sidOk, xsrfOk, browserId, request) =>
     // SHOULD log in user, so s/he can create pages or choose a template.
     // Like so? Pass a magic token in the URL, which is valid for 1 minute,
     // and then, here, check if DW1_LOGINS has *no logins* for the new websitew

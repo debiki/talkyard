@@ -115,15 +115,10 @@ class SiteDao(protected val siteDbDao: ChargingSiteDbDao)
   final def savePageActionsGenNotfs(pageReq: PageRequest[_], actions: Seq[PostActionDtoOld])
         : (PageNoPath, Seq[PostActionDtoOld]) = {
     val pagePartsNoAuthor = pageReq.pageNoPath_!.parts
-    // We're probably going to render parts of the page later, and then we need the
-    // user and the login, so add it to the page — they're otherwise absent if this
-    // is the user's first contribution to the page. (We need the login, because it
-    // knows the user's ip, which is needed when weighting post ratings.)
-    // Perhaps it'd be better if the ip was saved per post? Rather than per login.
-    // So this function didn't need to know that it has to add the login. That'd be simpler,
-    // but require somewhat more storage space.
-    val pageParts = pagePartsNoAuthor ++ pageReq.anyMeAsPeople +
-      pageReq.theLogin // <-- COULD remove if I ever make the ip part of the post
+    // We're probably going to render parts of the page later, and then we
+    // need the user, so add it to the page — it's otherwise absent if this is
+    // the user's first contribution to the page.
+    val pageParts = pagePartsNoAuthor ++ pageReq.anyMeAsPeople
     val page = PageNoPath(pageParts, pageReq.ancestorIdsParentFirst_!, pageReq.pageMeta_!)
     savePageActionsGenNotfsImpl(page, actions)
   }
@@ -159,6 +154,12 @@ class SiteDao(protected val siteDbDao: ChargingSiteDbDao)
       siteDbDao.savePageActions(page, actions.toList)
 
     (pageWithNewActions, actionsWithId)
+  }
+
+
+  def deleteVote(userIdData: UserIdData, pageId: PageId, postId: PostId,
+        voteType: PostActionPayload.Vote) {
+    siteDbDao.deleteVote(userIdData, pageId, postId, voteType)
   }
 
 

@@ -243,11 +243,11 @@ class PageStats(val debate: PageParts, val pageTrust: PageTrust) {
       val goodScore = sumMatching(good)
       val badScore = sumMatching(bad)
       goodScore - badScore
-    } */
+    }
 
     def addRating(rating: Rating) {
       if (rating.tags.isEmpty) return
-      val trustiness = pageTrust.trustinessOf(rating)
+      val trustiness: Float = ??? // pageTrust.trustinessOf(rating)
       if (trustiness == 0f) return
       val weight = trustiness / rating.tags.length
       tagCountMaxWeighted += weight
@@ -263,17 +263,19 @@ class PageStats(val debate: PageParts, val pageTrust: PageTrust) {
       ratingCountTrusty += trustiness
       if (rating.ctime.getTime > _lastRatingDateMillis)
         _lastRatingDateMillis = rating.ctime.getTime
-    }
+    } */
   }
 
   private val postRatingStats = mut.Map[ActionId, PostRatingStatsImpl]()
   private val postRatingStatsEmpty = new PostRatingStatsImpl
 
   // Calculate tag counts, store in mutable map.
-  for (r <- debate.ratings) {
+  /*
+  for (r: Rating <- debate.ratings) { was removed, I'm using VoteLike/Wrong/OffTopic instead
     postRatingStats.getOrElseUpdate(
         r.postId, new PostRatingStatsImpl).addRating(r)
   }
+  */
 
   // Convert tag counts to immutable post-rating-TagStats.
   for ((postId, ratingStats) <- postRatingStats) {
@@ -411,5 +413,26 @@ Other:
 Annat:
 
  */
+
+// Moved to here from PostActionDto.
+/** Classifies an action, e.g. tags a Post as being "interesting" and "funny".
+  *
+  *  If you rate an action many times, only the last rating counts.
+  *  - For an authenticated user, his/her most recent rating counts.
+  *  - For other users, the most recent rating for the login id / session id
+  *    counts.
+  *  - Could let different non-authenticated sessions with the same
+  *    user name, ip and email overwrite each other's ratings.
+  *    But I might as well ask them to login instead? Saves my time, and CPU.
+  *//*
+case class Rating (
+  id: ActionId,
+  postId: ActionId,
+  loginId: String,
+  userId: String,
+  newIp: Option[String],
+  ctime: ju.Date,
+  tags: List[String])
+*/
 
 // vim: fdm=marker et ts=2 sw=2 fo=tcqwn list

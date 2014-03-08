@@ -33,6 +33,7 @@ abstract class DebikiRequest[A] {
 
   def sid: SidStatus
   def xsrfToken: XsrfOk
+  def browserId: Option[BrowserId]
   def identity: Option[Identity]
   def user: Option[User]
   def dao: SiteDao
@@ -52,6 +53,15 @@ abstract class DebikiRequest[A] {
 
   def tenantId = dao.siteId
   def siteId = dao.siteId
+
+  def userIdData = UserIdData(
+    loginId = loginId,
+    userId = user.map(_.id) getOrElse UnknownUser.Id,
+    ip = ip,
+    browserIdCookie = browserId.map(_.cookieValue),
+    browserFingerprint = 0) // skip for now
+
+  def browserIdIsNew = browserId.map(_.isNew) == Some(true)
 
   def loginId: Option[String] = sid.loginId
 
@@ -89,7 +99,7 @@ abstract class DebikiRequest[A] {
 
   def session: mvc.Session = request.session
 
-  def ip = request.remoteAddress
+  def ip = realOrFakeIpOf(request)
 
   /**
    * The end user's IP address, *iff* it differs from the login address.

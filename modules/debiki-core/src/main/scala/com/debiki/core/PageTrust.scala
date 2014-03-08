@@ -52,6 +52,9 @@ import collection.{mutable => mut}
  */
 case class PageTrust(page: PageParts) {
 
+  // Comment in / fix tests in PageTrustTest, if I ever make this class
+  // work again.
+
   /** Analyzes number of ratings per IP and user, and returns a value
    *  between 0 and 1, where 1 means the rating is completely trustworthy.
    *
@@ -65,6 +68,7 @@ case class PageTrust(page: PageParts) {
    *  ... now at least they'd need to create a new OpenID account. This'll do
    *  for now.
    */
+  /*
   def trustinessOf(ratingDto: Rating): Float = {
     val otherRatsSameActn: RatingsOnAction =
       page.ratingsByActionId(ratingDto.postId) getOrElse {
@@ -106,6 +110,7 @@ case class PageTrust(page: PageParts) {
     if (ipCount == 0) { assert(false); return 0f }
     trust / ipCount
   }
+  */
 
 }
 

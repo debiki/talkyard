@@ -102,7 +102,6 @@ object PageParts {
     // Remap ids and update references to ids.
     def rmpd(id: ActionId) = remaps.getOrElse(id, id)
     def updateIds(action: T): T = (action match {
-      case r: Rating => r.copy(id = remaps(r.id), postId = rmpd(r.postId))
       case f: Flag => f.copy(id = remaps(f.id), postId = rmpd(f.postId))
       case a: EditApp => a.copy(id = remaps(a.id), editId = rmpd(a.editId),
         postId = rmpd(a.postId))
@@ -243,6 +242,9 @@ abstract class PostActionsWrapper { self: PageParts =>
         case _: PAP.EditPost => addActionByTargetId(action.postId)
         case _: PAP.ReviewPost => addActionByTargetId(action.postId)
         case _: PAP.PinPostAtPosition => addActionByTargetId(action.postId)
+        case PAP.VoteLike => addActionByTargetId(action.postId)
+        case PAP.VoteWrong => addActionByTargetId(action.postId)
+        case PAP.VoteOffTopic => addActionByTargetId(action.postId)
         case PAP.CollapsePost => addActionByTargetId(action.postId)
         case PAP.CollapseTree => addActionByTargetId(action.postId)
         case PAP.CloseTree => addActionByTargetId(action.postId)
@@ -268,16 +270,14 @@ abstract class PostActionsWrapper { self: PageParts =>
   * @param people People who has contributed to the page. If some people are missing,
   * certain functions might fail (e.g. a function that fetches the name of the author
   * of the page body). — This class never fetches anything lazily from database.
-  * @param ratings Deprecated, see below.
   * @param editApps Deprecated, see next line.
-  * @param flags Deprecated? I should convert Ratings, EditApps and Flags to PostActionDto:s
+  * @param flags Deprecated? I should convert EditApps and Flags to PostActionDto:s
   * and use only `actionDtos` instead?
   * @param actionDtos The actions that build up the page.
   */
 case class PageParts (
   guid: PageId,  // COULD rename to pageId?
   people: People = People.None,
-  ratings: List[Rating] = Nil,
   editApps: List[EditApp] = Nil,
   flags: List[Flag] = Nil,
   postStates: List[PostState] = Nil,
@@ -285,12 +285,11 @@ case class PageParts (
 
 
   def actionCount: Int =
-     ratings.size + editApps.size +
-     flags.size + actionDtos.size
+     editApps.size + flags.size + actionDtos.size
 
 
   def allActions: Seq[PostActionDtoOld] =
-     flags:::editApps:::ratings:::actionDtos
+     flags:::editApps:::actionDtos
 
 
   lazy val actionsByTimeAsc =
@@ -327,78 +326,6 @@ case class PageParts (
     }
     val immPostMap = buildImmMap(postMap)
     immPostMap
-  }
-
-
-  private class _RatingsOnActionImpl extends RatingsOnAction {
-    val _mostRecentByUserId = mut.Map[UserId, Rating]()
-    val _mostRecentByNonAuLoginId = mut.Map[LoginId, Rating]()
-    val _allRecentByNonAuIp =
-      mut.Map[String, List[Rating]]().withDefaultValue(Nil)
-
-    override def mostRecentByUserId: collection.Map[UserId, Rating] =
-      _mostRecentByUserId
-
-    override lazy val mostRecentByNonAuLoginId: collection.Map[LoginId, Rating] =
-      _mostRecentByNonAuLoginId
-
-    override lazy val allRecentByNonAuIp: collection.Map[String, List[Rating]] =
-      _allRecentByNonAuIp
-
-    override def curVersionOf(rating: Rating): Rating = {
-      val user = smart(rating).user_!
-      val curVer = user.isAuthenticated match {
-        case true => _mostRecentByUserId(user.id)
-        case false => _mostRecentByNonAuLoginId(rating.loginId)
-      }
-      assert(rating.ctime.getTime <= curVer.ctime.getTime)
-      assert(rating.postId == curVer.postId)
-      curVer
-    }
-  }
-
-  // Analyze ratings, per action.
-  private lazy val _ratingsByActionId: col.Map[ActionId, _RatingsOnActionImpl] = {
-    val mutRatsByPostId =
-      mut.Map[ActionId, _RatingsOnActionImpl]()
-
-    // Remember the most recent ratings per user and non-authenticated login id.
-    for (rating <- ratings) {
-      var singlePostRats = mutRatsByPostId.getOrElseUpdate(
-        rating.postId, new _RatingsOnActionImpl)
-      val user = smart(rating).user_!
-      val (recentRatsMap, key) = user.isAuthenticated match {
-        case true => (singlePostRats._mostRecentByUserId, user.id)
-        case false => (singlePostRats._mostRecentByNonAuLoginId, rating.loginId)
-      }
-
-      val perhapsOtherRating = recentRatsMap.getOrElseUpdate(key, rating)
-      if (perhapsOtherRating.ctime.getTime < rating.ctime.getTime) {
-        // Different ctime, must be different ratings
-        assert(perhapsOtherRating.id != rating.id)
-        // But by the same login, or user
-        assert(perhapsOtherRating.loginId == rating.loginId ||
-           smart(perhapsOtherRating).user.map(_.id) ==
-              smart(rating).user.map(_.id))
-        // Keep the most recent rating only.
-        recentRatsMap(key) = rating
-      }
-    }
-
-    // Remember all unauthenticated ratings, per IP.
-    // This cannot be done until the most recent ratings by each non-authn
-    // user has been found (in the for loop just above).
-    for {
-      singleActionRats <- mutRatsByPostId.values
-      nonAuRating <- singleActionRats._mostRecentByNonAuLoginId.values
-    } {
-      val byIp = singleActionRats._allRecentByNonAuIp
-      val ip = smart(nonAuRating).ip_!
-      val otherRatsSameIp = byIp(ip)
-      byIp(ip) = nonAuRating :: otherRatsSameIp
-    }
-
-    mutRatsByPostId
   }
 
 
@@ -466,30 +393,37 @@ case class PageParts (
   def pageConfigPost: Option[Post] = getPost(PageParts.ConfigPostId)
 
 
-  // -------- Ratings
+  // -------- Votes
 
-  private lazy val ratingsById: imm.Map[ActionId, Rating] =
-    imm.Map[ActionId, Rating](ratings.map(x => (x.id, x)): _*)
-
-  def rating(id: ActionId): Option[Rating] = ratingsById.get(id)
-
-  def ratingsByActionId(actionId: ActionId): Option[RatingsOnAction] =
-    _ratingsByActionId.get(actionId)
-
-  def ratingsByUser(withId: UserId): Seq[Rating] =
-    ratings.filter(smart(_).identity.map(_.userId) == Some(withId))
-
-  /** Lists all rating tags user 'userId' has assigned to each post s/he has rated.
+  /** Returns a map postId => UserPostVotes, with all votes by user userId.
     */
-  def ratingTagsByPostId(userId: UserId): Map[PostId, Seq[String]] = {
-    var ratingsMap = Map[PostId, Seq[String]]()
-    // Place old ratings first so they'll be overwritten by more recent ratings of the same post,
-    // since that's the effect of rating something many times.
-    val ratingsOldFirst = ratingsByUser(withId = userId).sortBy(_.ctime.getTime)
-    for (rating <- ratingsOldFirst) {
-      ratingsMap += rating.postId -> rating.tags
+  def userVotesMap(userIdData: UserIdData): Map[PostId, UserPostVotes] = {
+    val voteBitsByPostId = mut.HashMap[PostId, Int]()
+    for {
+      action <- actionDtos
+      if action.payload.isInstanceOf[PAP.Vote]
+      if userIdData.userId != UnknownUser.Id && action.userId == userIdData.userId
+    } {
+      val bits = action.payload match {
+        case PAP.VoteLike => 1
+        case PAP.VoteWrong => 2
+        case PAP.VoteOffTopic => 4
+      }
+      var voteBits = voteBitsByPostId.getOrElseUpdate(action.postId, 0)
+      voteBits |= bits
+      assert(voteBits <= 7)
+      voteBitsByPostId.put(action.postId, voteBits)
     }
-    ratingsMap
+
+    val postIdsAndVotes = voteBitsByPostId.toVector map { case (key: PostId, voteBits: Int) =>
+      val votes = UserPostVotes(
+        votedLike = (voteBits & 1) == 1,
+        votedWrong = (voteBits & 2) == 2,
+        votedOffTopic = (voteBits & 4) == 4)
+      (key, votes)
+    }
+
+    Map(postIdsAndVotes: _*)
   }
 
 
@@ -648,7 +582,6 @@ case class PageParts (
     */
   // COULD [T <: Action] instead of >: AnyRef?
   def ++[T >: AnyRef] (actions: Seq[T]): PageParts = {
-    var ratings2 = ratings
     var editApps2 = editApps
     var flags2 = flags
     var actions2 = this.actionDtos
@@ -661,9 +594,6 @@ case class PageParts (
       }
 
     for (a <- actions) a match {
-      case r: Rating =>
-        dieIfIdClash(ratings2, r)
-        ratings2 ::= r
       case a: EditApp =>
         dieIfIdClash(editApps2, a)
         editApps2 ::= a
@@ -676,8 +606,7 @@ case class PageParts (
       case x => runErr(
         "DwE8k3EC", "Unknown action type: "+ classNameOf(x))
     }
-    PageParts(id, people, ratings2,
-        editApps2, flags2, postStates, actions2)
+    PageParts(id, people, editApps2, flags2, postStates, actions2)
   }
 
 
@@ -690,13 +619,11 @@ case class PageParts (
     def happenedInTime(action: PostActionDtoOld) =
       action.ctime.getTime <= dati.getTime
 
-    val (ratingsBefore, ratingsAfter) = ratings partition happenedInTime
     val (editAppsBefore, editAppsAfter) = editApps partition happenedInTime
     val (flagsBefore, flagsAfter) = flags partition happenedInTime
     val (actionsBefore, actionsAfter) = actionDtos partition happenedInTime
 
     val pageUpToAndInclDati = copy(
-      ratings = ratingsBefore,
       editApps = editAppsBefore,
       flags = flagsBefore,
       actionDtos = actionsBefore)
@@ -764,4 +691,9 @@ case class PageParts (
 
 }
 
+
+case class UserPostVotes(
+  votedLike: Boolean,
+  votedWrong: Boolean,
+  votedOffTopic: Boolean)
 

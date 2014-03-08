@@ -135,6 +135,8 @@ html.js body.dw-render-actions-pending .dw-as
   // rather than below it.
   // There're no SVG arrows that can be cropped, see above, [8DbF3].
   float: none
+  // Left align the title.
+  margin-left: 0
 
 
 
@@ -325,7 +327,11 @@ span.dw-p-e-by
 .dw-p-link
   float: right
   font-family: monospace
-  padding: 2px 3px 2px 4px
+  // Don't add top/bottom padding, that causes text below to wrap too early.
+  // Instead, set `top: 1px`.
+  padding: 0 3px 0 5px
+  position: relative
+  top: 1px
 
 // For the *article* itself, make author and post date info less conspicuous,
 // or it steals attention from the page title. (But don't do this for any root
@@ -405,6 +411,11 @@ span.dw-p-e-by
   // by the adding of class dw-p-rez-e. Therefore:
   z-index: 10
 
+
+// Actions
+//---------------------------
+
+
 .dw-as
   margin: -6px 0 6px 28px
   // Use padding-top not margin-top here, or there'll be a tiny space between
@@ -418,6 +429,7 @@ span.dw-p-e-by
   position: relative // curve image placed relative
   padding-right: 20px
   margin: 10px 16px 0 12px
+  max-width: 45px; // or "Reply" text pushes thread columns rightwards
 
 // The reply button text can be customized, so it might be rather wide,
 // so set max-width and line height.
@@ -425,6 +437,7 @@ span.dw-p-e-by
   max-width: 8em
   display: inline-block // or max-width has no effect
   line-height: 120%
+  white-space: nowrap // or word wrap after reply icon, before "Reply" text
 
 .dw-a
   text-decoration: none
@@ -440,7 +453,14 @@ span.dw-p-e-by
 
 .DW .dw-t > .dw-as .dw-a
   display: inline-block
-  margin-right: 12px
+  margin-right: 16px
+
+.DW .dw-t > .dw-p-as .dw-a-like
+  margin-right: 5px
+
+// Highlight the heart or warning symbol if the user has voted Like or Wrong.
+.dw-a.dw-my-vote:before
+  color: hsl(8, 100%, 60%)  // red-red-orange-red
 
 // Show a ▾ icon after "More" text, same as class .icon-down-dir, but :after.
 // Don't use "▾" directly though; it breaks on my mobile.
@@ -459,11 +479,6 @@ span.dw-p-e-by
   color: hsl(210, 51%, 45%) !important // the color for most common actions
   //                                     (should be a Stylus/LESS variable)
 
-
-// Make the reply and rate links easy to notice.
-.dw-t > .dw-as > .dw-a-reply,
-.dw-t > .dw-as > .dw-a-rate
-  font-weight: bold
 
 .DW .dw-t > .dw-as > .dw-a-edit,
 .DW .dw-t > .dw-as > .dw-a-collapse-suggs,
@@ -498,7 +513,9 @@ span.dw-p-e-by
 
 // For now...
 .dw-p-as-hz > .dropdown,  // hide the More actions dropdown; it confuses testers
-.dw-p-as-hz > .dw-a-rate  // and one shouldn't be able to rate the article.
+.dw-p-as-hz > .dw-a-like  // and one shouldn't be able to rate the article.
+.dw-p-as-hz > .dw-a-wrong
+.dw-p-as-hz > .dw-a-offtopic
   display: none
 
 .dw-p-as
@@ -535,13 +552,8 @@ body.dw-u-ui-simple .dw-a-edit
 //.dw-p-rs-top
 
 .dw-p-hd .dw-p-by-me,
-.dw-p-hd .dw-p-r-by-me
   font-weight: bold
   color: #151515
-
-.dw-p-hd .dw-p-r-by-me > em
-  font-weight: normal
-  color: #111
 
 .dw-p-flgs-all,
 .dw-p-r-all
@@ -573,6 +585,10 @@ body.dw-u-ui-simple .dw-a-edit
   position: relative
   left: -2px
 
+
+.dw-p-hd
+  abbr
+    border-color: #999
 
 .dw-p-hd
   .dw-p-pin
@@ -926,6 +942,13 @@ body.dw-u-ui-simple .dw-a-edit
 #dw-lgi.ui-dialog-content
   padding: 0 2.7em 0 2em
 
+#dw-lgi-tos
+  font-size: 80%
+  max-width: 50ex
+  text-align: center
+  margin: 0 auto 15px
+  color: #666
+
 #dw-lgi-guest,
 #dw-lgi-pswd,
 #dw-lgi-more
@@ -938,7 +961,8 @@ body.dw-u-ui-simple .dw-a-edit
 #dw-lgi .icon-facebook
   margin-right: 0px
 
-#dw-lgi-guest
+#dw-lgi-guest,
+#dw-lgi-pswd
   margin-bottom: 0.5em
 
 #dw-lgi .btn
@@ -1092,54 +1116,6 @@ body.dw-login-to-login .dw-login-to-login
 .dw-fs-re .dw-inf-submitting-form
   top: auto
   bottom: 95px
-  left: 40px
-
-
-
-// Rate
-//===========================
-
-
-.dw-fs-r
-  margin: 0 0 30px 20px
-
-.dw-f-r
-  min-width: 250px // at least 2 rat-tag-set:s wide
-
-.dw-fs-r .dw-r-tag-set
-  float: left
-  max-width: 8em
-
-.dw-fs-r .dw-r-tag-set .ui-button
-  min-width: 7em
-
-.dw-fs-r .dw-show-more-r-tags
-  margin-top: 1em
-  float: left // otherwise margin-top has no effect, why not?
-  clear: both
-  font-size: 85%
-
-// Stack more-rating-tags horizontally.
-.dw-fs-r .dw-more-r-tags
-  display: none // shown on .dw-show-more-r-tags click
-  clear: both
-  margin-top: 1em
-  max-width: none
-
-.dw-fs-r .dw-more-r-tags label
-  float: left
-  min-width: 0 !important
-
-.dw-f-r .dw-inf
-  padding: 1ex
-  background-color: white
-
-.dw-f-r-inf-changing
-  display: none
-
-.dw-f-r .dw-inf-submitting-form
-  top: auto
-  bottom: 23px
   left: 40px
 
 

@@ -123,6 +123,7 @@ class AutoApproverSpec extends Specification with Mockito {
     PageRequest[Unit](
       sid = null,
       xsrfToken = null,
+      browserId = None,
       identity = Some(identity),
       user = Some(user),
       pageExists = true,
@@ -140,15 +141,15 @@ class AutoApproverSpec extends Specification with Mockito {
     tenantId = TenantId, ip = Some(Ip), roleId = None)
 
   val peopleNoLogins =
-    People() + guestIdty + openidIdty + guestUser + openidUser +
-      SystemUser.Identity + SystemUser.User
+    People() + guestIdty + openidIdty + guestUser + openidUser + SystemUser.User
 
   val testUserLoginId = "101"
 
 
   def testUserPageBody(implicit testUserId: String) =
     PostActionDto.forNewPageBody(creationDati = startDati,
-      loginId = testUserLoginId, userId = testUserId, text = "täxt-tåxt",
+      userIdData = UserIdData.newTest(loginId = testUserLoginId, userId = testUserId),
+      text = "täxt-tåxt",
       pageRole = PageRole.Generic, approval = None)
 
   val testUserReplyAId = 2
@@ -170,8 +171,8 @@ class AutoApproverSpec extends Specification with Mockito {
 
 
   val approvalOfReplyA: PostActionDto[PAP.ReviewPost] = PostActionDto.toReviewPost(
-    id = 10002, postId = testUserReplyAId, loginId = SystemUser.Login.id,
-    userId = SystemUser.User.id, ctime = later(10), approval = Some(Approval.Manual))
+    id = 10002, postId = testUserReplyAId, SystemUser.UserIdData,
+    ctime = later(10), approval = Some(Approval.Manual))
 
   val wellBehavedApprovalOfReplyA = approvalOfReplyA.copy(payload = PAP.WellBehavedApprovePost)
   val prelApprovalOfReplyA = approvalOfReplyA.copy(payload = PAP.PrelApprovePost)
@@ -186,13 +187,13 @@ class AutoApproverSpec extends Specification with Mockito {
   val rejectionOfReplyA: PostActionDto[PAP.ReviewPost] =
     approvalOfReplyA.copy(id = 10004, payload = PAP.RejectPost)
 
-  val flagOfReplyA = Flag(id = 10005, postId = testUserReplyAId, loginId = SystemUser.Login.id,
-    userId = SystemUser.User.id, newIp = None, ctime = later(20), reason = FlagReason.Other,
+  val flagOfReplyA = Flag(id = 10005, postId = testUserReplyAId,
+    SystemUser.UserIdData, ctime = later(20), reason = FlagReason.Other,
     details = "")
 
   val deletionOfReplyA: PostActionDto[_] = PostActionDto.toDeletePost(
     andReplies = false, id = 10006, postIdToDelete = testUserReplyAId,
-    loginId = SystemUser.Login.id, userId = SystemUser.User.id, createdAt = later(30))
+    SystemUser.UserIdData, createdAt = later(30))
 
   def replyAUnapprovedAndBPrelApproved(implicit testUserId: String): List[PostActionDto[_]] =
     List(testUserReplyA, testUserReplyB, prelApprovalOfReplyB)

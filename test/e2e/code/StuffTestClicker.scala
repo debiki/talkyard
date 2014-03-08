@@ -22,8 +22,7 @@ import com.debiki.core.Prelude._
 import com.debiki.core.{ActionId, PostId}
 import org.openqa.selenium.Keys
 import org.openqa.selenium.interactions.Actions
-import org.scalatest.time.{Seconds, Span}
-import play.api.test.Helpers.testServerPort
+import StuffTestClicker.currentFakeIpNr
 
 
 /**
@@ -139,11 +138,20 @@ trait StuffTestClicker extends DebikiSelectors {
   }
 
 
-  def gotoDiscussionPage(pageUrl: String) {
+  /** Opens the specified URL, and fakes a new unique IP number, to prevent errors
+    * related to running out of per IP quota and issues with comments hidden because
+    * they're pending moderation.
+    */
+  def gotoDiscussionPageAndFakeNewIp(pageUrl: String) {
     go to (new Page { val url = pageUrl })
     switchToAnyEmbeddedCommentsIframe()
     // Consider the page loaded when login/out links appear.
     waitForLoginLinks()
+
+    // Add the magic fake IP cookie. This cannot be done until after the URL has been
+    // opened (above), or Chrome throws an error: "Cookies are disabled inside 'data:' URLs".
+    add cookie ("dwCoFakeIp", s"0.0.0.$currentFakeIpNr")
+    currentFakeIpNr += 1
   }
 
 
@@ -205,7 +213,7 @@ trait StuffTestClicker extends DebikiSelectors {
 
 
   def clickGotoDashbarActivityTab() {
-    val dashboardLink = cssSelector("a[href='/-/admin/']")
+    val dashboardLink = cssSelector("a[href*='/-/admin']")
     scrollIntoView(dashboardLink)
     click on dashboardLink
     click on linkText("Activity")
@@ -292,3 +300,10 @@ trait StuffTestClicker extends DebikiSelectors {
 
 }
 
+
+
+object StuffTestClicker {
+
+  private var currentFakeIpNr = 1
+
+}

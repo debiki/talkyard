@@ -15,6 +15,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+import play.api.Play
+import play.api.Play.current
+
+
 package object requests {
 
   /**
@@ -29,5 +33,13 @@ package object requests {
   type PagePostRequest = PageRequest[Map[String, Seq[String]]]
 
   type PagePostRequest2 = PageRequest[JsonOrFormDataBody]
+
+
+  def realOrFakeIpOf(request: play.api.mvc.Request[_]): String = {
+    if (!Play.isTest)
+      request.remoteAddress
+    else
+      request.cookies.get("dwCoFakeIp").map(_.value) getOrElse request.remoteAddress
+  }
 
 }

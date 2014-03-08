@@ -108,10 +108,14 @@ object PageViewer extends mvc.Controller {
     val ownPostsIdsList = page.postsByUser(withId = my.id).map(_.id)
 
     // List the user's ratings so they can be highlighted so the user
-    // won't rate the same post again and again and again each day.
-    val ownRatingsMap = page.ratingTagsByPostId(userId = my.id)
-    val ownRatingsJsonMap = ownRatingsMap map { case (postId, tags) =>
-      postId.toString -> toJson(tags)
+    // won't rate the same post over and over again.
+    val userVotesMap = page.userVotesMap(pageReq.userIdData)
+    val ownRatingsJsonMap = userVotesMap map { case (postId, votes) =>
+      var voteStrs = Vector[String]()
+      if (votes.votedLike) voteStrs = voteStrs :+ "VoteLike"
+      if (votes.votedWrong) voteStrs = voteStrs :+ "VoteWrong"
+      if (votes.votedOffTopic) voteStrs = voteStrs :+ "VoteOffTopic"
+      postId.toString -> toJson(voteStrs)
     }
 
     // Generate html for any posts-by-this-user that are pending approval. Plus info

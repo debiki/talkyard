@@ -80,7 +80,8 @@ object AppEdit extends mvc.Controller {
             // These shouldn't matter when rendering the edit form anyway:
             parentPageId = None, publishDirectly = false)
         val pageReqWithMeta = pageReqPerhapsNoPage.copyWithPreloadedMeta(pageMeta)
-        val postToEdit = _createPostToEdit(pageReqWithMeta, postIdAsInt, DummyAuthorIds)
+        val postToEdit = _createPostToEdit(pageReqWithMeta, postIdAsInt,
+          DummyPage.DummyAuthorIdData)
         pageReqWithMeta.copyWithPreloadedActions(PageParts(pageId) + postToEdit)
       }
 
@@ -100,7 +101,7 @@ object AppEdit extends mvc.Controller {
     // — but you can edit existing post though, if you're not logged in.)
     val request = pageReqWithoutMe.copyWithAnyMeOnPage // needed?
 
-    val (vipo, lazyCreateOpt) = _getOrCreatePostToEdit(request, postId, DummyAuthorIds)
+    val (vipo, lazyCreateOpt) = _getOrCreatePostToEdit(request, postId, DummyPage.DummyAuthorIdData)
     val draftText = vipo.currentText  // in the future, load user's draft from db.
     val editForm = Utils.formHtml(request).editForm(
        vipo, newText = draftText, userName = request.sid.displayName)
@@ -341,8 +342,7 @@ object AppEdit extends mvc.Controller {
         : Option[(Option[PostActionDtoOld], PostActionDtoOld)] = {
 
     val (post, lazyCreateOpt) =
-      _getOrCreatePostToEdit(
-        pageReq, postId, AuthorIds(pageReq.loginId_!, userId = pageReq.user_!.id))
+      _getOrCreatePostToEdit(pageReq, postId, pageReq.userIdData)
     val markupChanged =
       newMarkupOpt.isDefined && newMarkupOpt != Some(post.markup)
     if (newText == post.currentText && !markupChanged)
@@ -376,7 +376,7 @@ object AppEdit extends mvc.Controller {
 
     var edit = PostActionDto.toEditPost(
       id = PageParts.UnassignedId, postId = post.id, ctime = pageReq.ctime,
-      loginId = pageReq.loginId_!, userId = pageReq.user_!.id, newIp = pageReq.newIp,
+      userIdData = pageReq.userIdData,
       text = patchText, newMarkup = newMarkupOpt,
       approval = approval, autoApplied = mayEdit)
 
@@ -455,13 +455,8 @@ object AppEdit extends mvc.Controller {
   private case class AuthorIds(loginId: String, userId: String)
 
 
-  private val DummyAuthorIds = AuthorIds(
-    loginId = DummyPage.DummyAuthorLogin.id,
-    userId = DummyPage.DummyAuthorUser.id)
-
-
   private def _getOrCreatePostToEdit(
-        pageReq: PageRequest[_], postId: ActionId, authorIds: AuthorIds)
+        pageReq: PageRequest[_], postId: ActionId, authorIdData: UserIdData)
         : (Post, Option[PostActionDto[PAP.CreatePost]]) = {
 
     val anyPost: Option[Post] = pageReq.page_!.getPost(postId)
@@ -476,7 +471,7 @@ object AppEdit extends mvc.Controller {
       // But create a title or template, lazily, if needed.
       else if (postId == PageParts.TitleId || postId == PageParts.ConfigPostId ||
           postId == PageParts.BodyId) {
-        Some(_createPostToEdit(pageReq, postId = postId, authorIds))
+        Some(_createPostToEdit(pageReq, postId = postId, authorIdData))
       }
       // Most post are not created automatically (instead error is returned).
       else {
@@ -494,7 +489,7 @@ object AppEdit extends mvc.Controller {
 
 
   private def _createPostToEdit(
-        pageReq: PageRequest[_], postId: ActionId, authorIds: AuthorIds)
+        pageReq: PageRequest[_], postId: ActionId, authorIdData: UserIdData)
         : PostActionDto[PAP.CreatePost] = {
 
     val markup =
@@ -506,7 +501,7 @@ object AppEdit extends mvc.Controller {
     // The post will be auto approved implicitly, if the Edit is auto approved.
     PostActionDto(
       id = postId, postId = postId, creationDati = pageReq.ctime,
-      loginId = authorIds.loginId, userId = authorIds.userId, newIp = pageReq.newIp,
+      userIdData = authorIdData,
       payload = PAP.CreatePost(
         parentPostId = None, text = "", markup = markup.id, where = None, approval = None))
   }

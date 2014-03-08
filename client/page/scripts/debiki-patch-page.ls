@@ -35,7 +35,7 @@ debiki.onPagePatched = !(callback) ->
  * Returns and object with info on what
  * was patched.
  */
-d.i.patchPage = (patches, { overwriteTrees } = {} ) ->
+d.i.patchPage = (patches, { overwriteTrees, replacePostHeadsOnly } = {} ) ->
   result = patchedThreads: [], patchedPosts: []
 
   for pageId, threadPatches of patches.threadsByPageId || {}
@@ -46,7 +46,10 @@ d.i.patchPage = (patches, { overwriteTrees } = {} ) ->
   for pageId, postPatches of patches.postsByPageId || {}
     if pageId is d.i.pageId
       for patch in postPatches
-        patchPostWith patch, { onPage: pageId, result }
+        if replacePostHeadsOnly
+          patchPostHeadWith patch, { onPage: pageId, result }
+        else
+          patchPostWith patch, { onPage: pageId, result }
 
   for c in onPagePatchedCallbacks
     c()
@@ -141,6 +144,20 @@ patchPostWith = (postPatch, { onPage, result }) ->
   result.patchedPosts.push $newThread
 
 
+
+patchPostHeadWith = (postPatch, { onPage, result }) ->
+  pageId = onPage
+  newPost = $(postPatch.html)
+  oldPost = $('#post-' + postPatch.postId)
+
+  replaceOldHead(newPost, onPage: pageId)
+  d.i.makePostHeaderPretty(oldPost.children('.dw-p-hd'))
+
+  thread = newPost.dwClosestThread!
+  result.patchedPosts.push(thread)
+
+
+
 /**
  * Inserts a HTML message above the post.
  */
@@ -176,6 +193,11 @@ replaceOldWith = ($new, { onPage }) ->
   $('#' + $new.attr 'id').replaceWith $new
   updateDepths($new)
 
+
+replaceOldHead = !($newPost, { onPage }) ->
+  oldHeader = $("##{$newPost.attr('id')}> .dw-p-hd")
+  newHeader = $newPost.children('.dw-p-hd')
+  oldHeader.replaceWith(newHeader)
 
 
 !function updateDepths(postOrThreadOrListItem)

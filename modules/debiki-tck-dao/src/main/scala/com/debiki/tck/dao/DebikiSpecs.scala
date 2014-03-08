@@ -66,7 +66,7 @@ object DebikiSpecs {
         parent: Option[PostId] = null,
         ctime: ju.Date = null,
         loginId: String = null,
-        newIp: String = null,
+        ip: String = null,
         text: String = null,
         where: Option[String] = null) = new Matcher[PageParts] {
     def apply[S <: PageParts](expectable: Expectable[S]) = {
@@ -77,7 +77,7 @@ object DebikiSpecs {
       left.getPost(id2) match {
         case Some(leftPost: Post) =>
           result(_matchPostImpl(
-              leftPost.actionDto, post, id, parent, ctime, loginId, newIp, text, where),
+              leftPost.actionDto, post, id, parent, ctime, loginId, ip, text, where),
             expectable)
         case None =>
           result(false, "", "Post missing, id: "+ id2, expectable)
@@ -91,7 +91,7 @@ object DebikiSpecs {
         parent: Option[PostId] = null,
         ctime: ju.Date = null,
         loginId: String = null,
-        newIp: String = null,
+        ip: String = null,
         text: String = null,
         where: Option[String] = null) =
           new Matcher[PostActionDto[PostActionPayload.CreatePost]] {
@@ -99,7 +99,7 @@ object DebikiSpecs {
           expectable: Expectable[S]) = {
       val left = expectable.value
       result(_matchPostImpl(
-          left, post, id, parent, ctime, loginId, newIp, text, where),
+          left, post, id, parent, ctime, loginId, ip, text, where),
         expectable)
     }
   }
@@ -111,7 +111,7 @@ object DebikiSpecs {
         parent: Option[ActionId],
         ctime: ju.Date,
         loginId: String,
-        newIp: String,
+        ip: String,
         text: String,
         where: Option[String]): (Boolean, String, String) = {
     val test = _test(leftPost, post) _
@@ -121,77 +121,9 @@ object DebikiSpecs {
         test("parent", parent, _.payload.parentPostId) :::
         test("ctime", ctime, _.creationDati) :::
         test("loginId", loginId, _.loginId) :::
-        test("newIp", newIp, _.newIp) :::
+        test("ip", ip, _.ip) :::
         test("text", text, _.payload.text) :::
         test("where", where, _.payload.where) ::: Nil
-    (errs isEmpty, "OK", errs.mkString(", and "))
-  }
-
-  def haveRatingLike(
-        rating: Rating = null,
-        id: ActionId = PageParts.NoId,
-        postId: ActionId = PageParts.NoId,
-        ctime: ju.Date = null,
-        loginId: String = null,
-        userId: String = null,
-        newIp: String = null,
-        tags: List[String] = null) = new Matcher[PageParts] {
-    def apply[S <: PageParts](expectable: Expectable[S]) = {
-      val left = expectable.value: PageParts
-      assert((id != PageParts.NoId) || (rating ne null))  // must know id
-      var id2 = id
-      if (id2 == PageParts.NoId) id2 = rating.id
-      left.rating(id2) match {
-        case Some(r: Rating) =>
-          result(
-            _matchRatingImpl(r, rating, id = id, postId = postId, ctime = ctime,
-              loginId = loginId, userId = userId, newIp = newIp, tags = tags),
-            expectable)
-        case None =>
-          result(false, "", "Rating missing, id: "+ id2, expectable)
-      }
-    }
-  }
-
-  def matchRating(
-        rating: Rating = null,
-        id: ActionId = PageParts.NoId,
-        postId: ActionId = PageParts.NoId,
-        ctime: ju.Date = null,
-        loginId: String = null,
-        userId: String = null,
-        newIp: String = null,
-        tags: List[String] = null) = new Matcher[Rating] {
-    def apply[S <: Rating](expectable: Expectable[S]) = {
-      val leftRating = expectable.value
-      result(
-        _matchRatingImpl(leftRating, rating, id, postId, ctime, loginId,
-            userId, newIp, tags),
-        expectable)
-    }
-  }
-
-  private def _matchRatingImpl(
-      leftRating: Rating,
-      rating: Rating,
-      id: ActionId = PageParts.NoId,
-      postId: ActionId = PageParts.NoId,
-      ctime: ju.Date,
-      loginId: String,
-      userId: String,
-      newIp: String,
-      tags: List[String]): (Boolean, String, String) = {
-    val test = _test(leftRating, rating) _
-    val testId = _testId(leftRating, rating) _
-    val errs =
-      testId("id", id, _.id) :::
-        testId("postId", postId, _.postId) :::
-        test("ctime", ctime, _.ctime) :::
-        test("loginId", loginId, _.loginId) :::
-        test("userId", userId, _.userId) :::
-        test("newIp", newIp, _.newIp) :::
-        test("tags", if (tags ne null) tags.sorted else null,
-          _.tags.sorted) ::: Nil
     (errs isEmpty, "OK", errs.mkString(", and "))
   }
 

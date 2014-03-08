@@ -92,17 +92,17 @@ object ApiActions {
   private def _ApiActionImpl[A]
         (parser: BodyParser[A])
         (f: ApiRequest[A] => Result) =
-    SafeActions.CheckSidAction[A](parser) { (sidOk, xsrfOk, request) =>
+    SafeActions.CheckSidAction[A](parser) { (sidOk, xsrfOk, browserId, request) =>
 
       val tenantId = DebikiHttp.lookupTenantIdOrThrow(request, Globals.systemDao)
 
       val dao = Globals.siteDao(siteId = tenantId,
-         ip = request.remoteAddress, sidOk.roleId)
+         ip = realOrFakeIpOf(request), sidOk.roleId)
 
       val (identity, user) = Utils.loadIdentityAndUserOrThrow(sidOk, dao)
 
       val apiRequest = ApiRequest[A](
-        sidOk, xsrfOk, identity, user, dao, request)
+        sidOk, xsrfOk, browserId, identity, user, dao, request)
 
       val result = f(apiRequest)
       result

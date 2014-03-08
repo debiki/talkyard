@@ -142,6 +142,11 @@ case class Post(
   def numUncollapsesToReview = state.numUncollapsesToReview + 0
 
 
+  def numLikeVotes = actions.filter(_.payload == PAP.VoteLike).length
+  def numWrongVotes = actions.filter(_.payload == PAP.VoteWrong).length
+  def numOffTopicVotes = actions.filter(_.payload == PAP.VoteOffTopic).length
+
+
   def pinnedPosition: Option[Int] =
     page.getPinnedPositionOf(this)
 

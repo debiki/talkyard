@@ -85,7 +85,7 @@ abstract class DeleteActivitySpecConstructor(iframe: Boolean)
   "Comments and comment trees can be deleted:" - {
 
     "open a test page" in {
-      gotoDiscussionPage(testPageUrl)
+      gotoDiscussionPageAndFakeNewIp(testPageUrl)
     }
 
     "login as admin" in {

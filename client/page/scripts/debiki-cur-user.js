@@ -91,7 +91,7 @@ d.i.makeCurUser = function() {
    */
   function clearMyPageInfo() {
     $('.dw-p-by-me').removeClass('dw-p-by-me');
-    $('.dw-p-r-by-me').remove();
+    $('.dw-my-vote').removeClass('dw-my-vote');
     setPermsOnPage({});
   }
 
@@ -159,7 +159,8 @@ d.i.makeCurUser = function() {
     }
 
     function markMyActions(actions) {
-      if (actions.ratings) $.each(actions.ratings, d.i.showMyRatings);
+      $('.dw-my-vote').removeClass('dw-my-vote');
+      if (actions.ratings) $.each(actions.ratings, showMyRatings);
       if (actions.authorOf) $.each(actions.authorOf, function(ix, postId) {
         d.i.markMyPost(postId);
       });
@@ -203,7 +204,7 @@ d.i.makeCurUser = function() {
           (permsOnPage.editGuestReply && $post.dwIsGuestReply());
     },
     getEmailNotfPrefs: function() { return emailPrefs; },
-    isEmailKnown: function() { return emailSpecified; }
+    isEmailKnown: function() { return emailSpecified; },
   };
 
   return api;
@@ -280,18 +281,17 @@ function fireLogoutImpl(Me) {
 };
 
 
-d.i.showMyRatings = function(postId, ratings) {
-  var $header = d.i.findPostHeader$(postId);
-  var $myRatings = $(  // i18n
-    '<span>. <span class="dw-p-r-by-me">You rated it <em></em></span></span>');
-  $myRatings.find('em').text(ratings.join(', '));
-  $header.children('.dw-p-r-by-me').remove(); // remove any old
-  // Insert after authorship, flags and ratings info.
-  $header.children('.dw-p-r-top, .dw-p-flgs-top, .dw-p-at')
-      .last().after($myRatings);
-  // Remove outer <span>.
-  $myRatings = $myRatings.children().unwrap();
-  return $myRatings;
+function showMyRatings(postId, ratings) {
+  var thread = d.i.findThread$(postId);
+  if (ratings.indexOf('VoteLike') !== -1) {
+    thread.find('> .dw-p-as .dw-a-like').addClass('dw-my-vote');
+  }
+  if (ratings.indexOf('VoteWrong') !== -1) {
+    thread.find('> .dw-p-as .dw-a-wrong').addClass('dw-my-vote');
+  }
+  if (ratings.indexOf('VoteOffTopic') !== -1) {
+    thread.find('> .dw-p-as .dw-a-offtopic').addClass('dw-my-vote');
+  }
 };
 
 

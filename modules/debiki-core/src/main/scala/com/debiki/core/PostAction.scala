@@ -97,7 +97,7 @@ class PostActionOld(val debate: PageParts, val action: PostActionDtoOld) {
   def id: ActionId = action.id
   def creationDati = action.ctime
   def loginId = action.loginId
-  def login: Option[Login] = debate.people.login(action.loginId)
+  def login: Option[Login] = action.loginId.flatMap(id => debate.people.login(id))
   def login_! : Login = login.getOrElse(runErr(
      "DwE6gG32", s"No login with id `${action.loginId}' for action $id"))
   def identity: Option[Identity] = login.flatMap(l =>
@@ -109,11 +109,9 @@ class PostActionOld(val debate: PageParts, val action: PostActionDtoOld) {
     action.userId
   }
   def user : Option[User] = debate.people.user(action.userId)
-  def user_! : User = debate.people.user_!(action.userId)
-  def ip: Option[String] = action.newIp.orElse(login.map(_.ip))
-  def ip_! : String = action.newIp.getOrElse(login_!.ip)
-  def ipSaltHash: Option[String] = ip.map(saltAndHashIp(_))
-  def ipSaltHash_! : String = saltAndHashIp(ip_!)
+  def user_! : User = user.getOrDie("DwE3905FU0", s"No user for action `$id', page `${page.id}'")
+  def ip: String = action.ip
+  def ipSaltHash: String = saltAndHashIp(ip)
 
 }
 

@@ -34,8 +34,10 @@ node_modules/
 # COULD place generated files in public/build/ instead? and ignore build/.
 public/res/combined-debiki*
 public/res/embedded-comments.js
+public/res/embedded-comments.min.js
 public/res/debiki-embedded-comments.*
 public/res/login-popup.js
+public/res/login-popup.min.js
 public/res/debiki-spa-*
 public/res/debiki-dashbar*
 public/res/debiki-pagedown*

@@ -31,6 +31,7 @@ import play.api.mvc.{Action => _, _}
 case class ApiRequest[A](
   sid: SidStatus,
   xsrfToken: XsrfOk,
+  browserId: Option[BrowserId],
   identity: Option[Identity],
   user: Option[User],
   dao: SiteDao,

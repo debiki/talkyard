@@ -38,10 +38,6 @@ import FlagReason.FlagReason
   *
   * @param id A local id, unique per page. "?" means unknown (used when
   * creating new posts).
-  * @param loginId the login session, which in turn identifies
-  * the user and IP and session creation time.
-  * @param newIp Always None, unless the post was sent from somewhere else than
-  * the relevant Login.ip.
   * @param payload What this action does. For example, creates a new post,
   * edits a post, flags it, closes a thread, etcetera.
   */
@@ -50,9 +46,7 @@ case class PostActionDto[P]( // [P <: PostActionPayload] -> compilation errors f
   creationDati: ju.Date,
   payload: P,
   postId: ActionId,
-  loginId: String,
-  userId: String,
-  newIp: Option[String]) extends PostActionDtoOld {
+  userIdData: UserIdData) extends PostActionDtoOld {
 
   require(id != PageParts.NoId)
 
@@ -66,9 +60,7 @@ object PostActionDto {
   def forNewPost(
       id: ActionId,
       creationDati: ju.Date,
-      loginId: String,
-      userId: String,
-      newIp: Option[String],
+      userIdData: UserIdData,
       parentPostId: Option[ActionId],
       text: String,
       markup: String,
@@ -78,7 +70,7 @@ object PostActionDto {
       assErr("DwE23GFf0")
 
     PostActionDto(
-      id, creationDati, postId = id, loginId = loginId, userId = userId, newIp = newIp,
+      id, creationDati, postId = id, userIdData = userIdData,
       payload = PAP.CreatePost(
         parentPostId = parentPostId, text = text,
         markup = markup, approval = approval, where = where))
@@ -86,26 +78,26 @@ object PostActionDto {
 
 
   def forNewTitleBySystem(text: String, creationDati: ju.Date) =
-    forNewTitle(text, creationDati, loginId = SystemUser.Login.id,
-      userId = SystemUser.User.id, approval = Some(Approval.AuthoritativeUser))
+    forNewTitle(text, creationDati, userIdData = SystemUser.UserIdData,
+      approval = Some(Approval.AuthoritativeUser))
 
 
   def forNewPageBodyBySystem(text: String, creationDati: ju.Date, pageRole: PageRole) =
-    forNewPageBody(text, creationDati, pageRole, loginId = SystemUser.Login.id,
-      userId = SystemUser.User.id, approval = Some(Approval.AuthoritativeUser))
+    forNewPageBody(text, creationDati, pageRole, userIdData = SystemUser.UserIdData,
+      approval = Some(Approval.AuthoritativeUser))
 
 
   def forNewTitle(text: String, creationDati: ju.Date,
-               loginId: String, userId: String, approval: Option[Approval]) =
-    forNewPost(PageParts.TitleId, creationDati, loginId = loginId, userId = userId,
-      newIp = None, parentPostId = None, text = text,
+               userIdData: UserIdData, approval: Option[Approval]) =
+    forNewPost(PageParts.TitleId, creationDati, userIdData = SystemUser.UserIdData,
+      parentPostId = None, text = text,
       markup = Markup.DefaultForPageTitle.id, approval = approval)
 
 
   def forNewPageBody(text: String, creationDati: ju.Date, pageRole: PageRole,
-                  loginId: String, userId: String, approval: Option[Approval]) =
-    forNewPost(PageParts.BodyId, creationDati, loginId = loginId, userId = userId,
-      newIp = None, parentPostId = None, text = text,
+                  userIdData: UserIdData, approval: Option[Approval]) =
+    forNewPost(PageParts.BodyId, creationDati, userIdData = userIdData,
+      parentPostId = None, text = text,
       markup = Markup.defaultForPageBody(pageRole).id, approval = approval)
 
 
@@ -115,7 +107,7 @@ object PostActionDto {
         creationDati: ju.Date = null,
         loginId: String = null,
         userId: String = null,
-        newIp: Option[String] = null,
+        ip: String = null,
         parentPostId: Option[PostId] = null,
         text: String = null,
         markup: String = null,
@@ -124,9 +116,12 @@ object PostActionDto {
       id = if (id != PageParts.NoId) id else old.id,
       postId = if (id != PageParts.NoId) id else old.id, // same as id
       creationDati =  if (creationDati ne null) creationDati else old.creationDati,
-      loginId = if (loginId ne null) loginId else old.loginId,
-      userId = if (userId ne null) userId else old.userId,
-      newIp = if (newIp ne null) newIp else old.newIp,
+      userIdData = UserIdData(
+        loginId = if (loginId ne null) Some(loginId) else old.userIdData.loginId,
+        userId = if (userId ne null) userId else old.userIdData.userId,
+        ip = if (ip ne null) ip else old.userIdData.ip,
+        browserIdCookie = old.userIdData.browserIdCookie,
+        browserFingerprint = old.userIdData.browserFingerprint),
       payload = PAP.CreatePost(
         parentPostId = if (parentPostId ne null) parentPostId else old.payload.parentPostId,
         text = if (text ne null) text else old.payload.text,
@@ -142,11 +137,11 @@ object PostActionDto {
 
   def toEditPost(
         id: ActionId, postId: ActionId, ctime: ju.Date,
-        loginId: String, userId: String, newIp: Option[String],
+        userIdData: UserIdData,
         text: String, autoApplied: Boolean, approval: Option[Approval],
         newMarkup: Option[String] = None) =
     PostActionDto(
-      id, ctime, postId = postId, loginId = loginId, userId = userId, newIp = newIp,
+      id, ctime, postId = postId, userIdData = userIdData,
       payload = PAP.EditPost(
         text = text, newMarkup = newMarkup, autoApplied = autoApplied, approval = approval))
 
@@ -158,7 +153,7 @@ object PostActionDto {
         createdAt: ju.Date = null,
         loginId: String = null,
         userId: String = null,
-        newIp: Option[String] = null,
+        ip: String = null,
         text: String = null,
         autoApplied: Option[Boolean] = None,
         approval: Option[Approval] = null,
@@ -167,9 +162,12 @@ object PostActionDto {
       id = if (id != PageParts.NoId) id else old.id,
       postId = if (postId != PageParts.NoId) postId else old.postId,
       creationDati =  if (createdAt ne null) createdAt else old.creationDati,
-      loginId = if (loginId ne null) loginId else old.loginId,
-      userId = if (userId ne null) userId else old.userId,
-      newIp = if (newIp ne null) newIp else old.newIp,
+      userIdData = UserIdData(
+        loginId = if (loginId ne null) Some(loginId) else old.userIdData.loginId,
+        userId = if (userId ne null) userId else old.userIdData.userId,
+        ip = if (ip ne null) ip else old.userIdData.ip,
+        browserIdCookie = old.userIdData.browserIdCookie,
+        browserFingerprint = old.userIdData.browserFingerprint),
       payload = PAP.EditPost(
         text = if (text ne null) text else old.payload.text,
         newMarkup = if (newMarkup ne null) newMarkup else old.payload.newMarkup,
@@ -180,14 +178,11 @@ object PostActionDto {
   def toReviewPost(
         id: ActionId,
         postId: ActionId,
-        loginId: String,
-        userId: String,
+        userIdData: UserIdData,
         ctime: ju.Date,
-        newIp: Option[String] = None,
         approval: Option[Approval]): PostActionDto[PAP.ReviewPost] =
     PostActionDto(
-      id, creationDati = ctime, postId = postId,
-      loginId = loginId, userId = userId, newIp = newIp,
+      id, creationDati = ctime, postId = postId, userIdData = userIdData,
       payload = PAP.ReviewPost(approval))
 
 
@@ -198,15 +193,18 @@ object PostActionDto {
         loginId: String = null,
         userId: String = null,
         createdAt: ju.Date = null,
-        newIp: Option[String] = null,
+        ip: String = null,
         approval: Option[Approval] = null): PostActionDto[PAP.ReviewPost] =
     PostActionDto(
       id = if (id != PageParts.NoId) id else old.id,
       creationDati = if (createdAt ne null) createdAt else old.creationDati,
       postId = if (postId != PageParts.NoId) postId else old.postId,
-      loginId = if (loginId ne null) loginId else old.loginId,
-      userId = if (userId ne null) userId else old.userId,
-      newIp = if (newIp ne null) newIp else old.newIp,
+      userIdData = UserIdData(
+        loginId = if (loginId ne null) Some(loginId) else old.userIdData.loginId,
+        userId = if (userId ne null) userId else old.userIdData.userId,
+        ip = if (ip ne null) ip else old.userIdData.ip,
+        browserIdCookie = old.userIdData.browserIdCookie,
+        browserFingerprint = old.userIdData.browserFingerprint),
       payload = if (approval ne null) PAP.ReviewPost(approval) else old.payload)
 
 
@@ -214,13 +212,10 @@ object PostActionDto {
         andReplies: Boolean,
         id: ActionId,
         postIdToDelete: ActionId,
-        loginId: String,
-        userId: String,
-        createdAt: ju.Date,
-        newIp: Option[String] = None) =
+        userIdData: UserIdData,
+        createdAt: ju.Date) =
     PostActionDto(
-      id, creationDati = createdAt, postId = postIdToDelete,
-      loginId = loginId, userId = userId, newIp = newIp,
+      id, creationDati = createdAt, postId = postIdToDelete, userIdData = userIdData,
       payload = if (andReplies) PAP.DeleteTree else PAP.DeletePost)
 
 }
@@ -297,6 +292,17 @@ object PostActionPayload {
   val PrelApprovePost = ReviewPost(Some(Approval.Preliminary))
   val WellBehavedApprovePost = ReviewPost(Some(Approval.WellBehavedUser))
   val ManuallyApprovePost = ReviewPost(Some(Approval.Manual))
+
+
+  class Vote extends PostActionPayload
+
+  /** The user liked the post, e.g. because it's funny or informative. */
+  case object VoteLike extends Vote
+
+  /** The user e.g. thinks the comment has factual errors, or disagrees with it. */
+  case object VoteWrong extends Vote
+
+  case object VoteOffTopic extends Vote
 
 
   /** Pins a post at e.g. position 3. This pushes any other posts already pinned
@@ -394,19 +400,23 @@ sealed abstract class PostActionDtoOld {
   def id: ActionId
   require(id != PageParts.NoId)
 
+  def userIdData: UserIdData
+
   /**
    * Identifies the login session, which in turn identifies
    * the user and IP and session creation time.
    */
-  def loginId: String
+  def loginId = userIdData.loginId
 
   /** The guest or role that did this action. */
-  def userId: String
+  def userId = userIdData.userId
 
-  /** Always None, unless the post was sent from somewhere else than
-   *  the relevant Login.ip.
-   */
-  def newIp: Option[String]
+  def ip = userIdData.ip
+
+  def browserIdCookie = userIdData.browserIdCookie
+
+  def browserFingerprint = userIdData.browserFingerprint
+
   def ctime: ju.Date
 
   def textLengthUtf8: Int = 0
@@ -414,55 +424,6 @@ sealed abstract class PostActionDtoOld {
   def anyGuestId = if (userId.headOption == Some('-')) Some(userId drop 1) else None
   def anyRoleId =  if (userId.headOption == Some('-')) None else Some(userId)
 
-}
-
-
-
-/** Classifies an action, e.g. tags a Post as being "interesting" and "funny".
- *
- *  If you rate an action many times, only the last rating counts.
- *  - For an authenticated user, his/her most recent rating counts.
- *  - For other users, the most recent rating for the login id / session id
- *    counts.
- *  - Could let different non-authenticated sessions with the same
- *    user name, ip and email overwrite each other's ratings.
- *    But I might as well ask them to login instead? Saves my time, and CPU.
- */
-case class Rating (
-  id: ActionId,
-  postId: ActionId,
-  loginId: String,
-  userId: String,
-  newIp: Option[String],
-  ctime: ju.Date,
-  tags: List[String]
-) extends PostActionDtoOld
-
-
-
-/** Info on all ratings on a certain action, grouped and sorted in
- *  various manners.
- */
-abstract class RatingsOnAction {
-
-  /** The most recent rating, by authenticated users. */
-  def mostRecentByUserId: collection.Map[String, Rating]
-
-  /** The most recent rating, by non authenticated users. */
-  // COULD rename to ...ByGuestId
-  def mostRecentByNonAuLoginId: collection.Map[String, Rating]
-
-  /** The most recent ratings, for all non authenticated users,
-   *  grouped by IP address.
-   */
-  // COULD rename to ...ByIdtyId
-  def allRecentByNonAuIp: collection.Map[String, List[Rating]]
-
-  /** The most recent version of the specified rating.
-   *  When you rate an action a second time, the most recent rating
-   *  overwrites the older one.
-   */
-  def curVersionOf(rating: Rating): Rating
 }
 
 
@@ -477,9 +438,7 @@ object FlagReason extends Enumeration {
 case class Flag(
   id: ActionId,
   postId: ActionId,
-  loginId: String,
-  userId: String,
-  newIp: Option[String],
+  userIdData: UserIdData,
   ctime: ju.Date,
   reason: FlagReason,
   details: String
@@ -502,9 +461,7 @@ case class EditApp(
   id: ActionId,
   editId: ActionId,
   postId: ActionId,
-  loginId: String,
-  userId: String,
-  newIp: Option[String],
+  userIdData: UserIdData,
   ctime: ju.Date,
   approval: Option[Approval],
 
