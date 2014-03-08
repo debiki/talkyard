@@ -110,7 +110,7 @@ object PageActions {
     // Load permissions.
     val permsReq = PermsOnPageQuery(
       tenantId = tenantId,
-      ip = request.remoteAddress,
+      ip = realOrFakeIpOf(request),
       loginId = sidStatus.loginId,
       identity = identity,
       user = user,
@@ -152,14 +152,14 @@ object PageActions {
       throwBadReq("DwE903XH3", s"Call on folders only, not pages: ${request.uri}")
 
     val dao = Globals.siteDao(siteId = pathIn.tenantId,
-      ip = request.remoteAddress, sidStatus.roleId)
+      ip = realOrFakeIpOf(request), sidStatus.roleId)
 
     val (identity, user) = Utils.loadIdentityAndUserOrThrow(sidStatus, dao)
 
     // Load permissions.
     val permsReq = PermsOnPageQuery(
       tenantId = pathIn.tenantId,
-      ip = request.remoteAddress,
+      ip = realOrFakeIpOf(request),
       loginId = sidStatus.loginId,
       identity = identity,
       user = user,
@@ -210,7 +210,7 @@ object PageActions {
     SafeActions.CheckSidAction[A](parser, maySetCookies = maySetCookies) {
         (sidStatus, xsrfOk, browserId, request) =>
       val dao = Globals.siteDao(siteId = pathIn.tenantId,
-         ip = request.remoteAddress, sidStatus.roleId)
+         ip = realOrFakeIpOf(request), sidStatus.roleId)
       dao.checkPagePath(pathIn) match {
         case Some(correct: PagePath) =>
           if (correct.path == pathIn.path) {

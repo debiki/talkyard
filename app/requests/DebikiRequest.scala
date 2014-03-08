@@ -99,7 +99,7 @@ abstract class DebikiRequest[A] {
 
   def session: mvc.Session = request.session
 
-  def ip = request.remoteAddress
+  def ip = realOrFakeIpOf(request)
 
   /**
    * The end user's IP address, *iff* it differs from the login address.

@@ -102,7 +102,7 @@ abstract class VoteSpecConstructor(val iframe: Boolean)
   "Anon user with a browser can" - {
 
     "open a test page" in {
-      gotoDiscussionPage(testPageUrl)
+      gotoDiscussionPageAndFakeNewIp(testPageUrl)
     }
 
     "login and post a reply, logout" in {

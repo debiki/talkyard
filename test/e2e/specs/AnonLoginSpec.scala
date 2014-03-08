@@ -128,7 +128,7 @@ abstract class AnonLoginSpecConstructor(val quick: Boolean)
   "Anon user with a browser can" - {
 
     "open a test page" in {
-      gotoDiscussionPage(testPageUrl)
+      gotoDiscussionPageAndFakeNewIp(testPageUrl)
     }
 
     "login and reply as new Anon User, specify no email" - {

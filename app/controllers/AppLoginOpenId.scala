@@ -30,6 +30,7 @@ import play.api.data._
 import play.api.data.Forms._
 import play.api.libs.concurrent._
 import play.api.libs.{openid => oid}
+import requests.realOrFakeIpOf
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.{Success, Failure}
@@ -178,7 +179,7 @@ object AppLoginOpenId extends mvc.Controller {
 
     val prevSidValOpt = urlDecodeCookie("dwCoSid", request)
     val prevSid = prevSidValOpt.map(Sid.check _) getOrElse SidAbsent
-    val addr = request.remoteAddress
+    val addr = realOrFakeIpOf(request)
     val tenantId = DebikiHttp.lookupTenantIdOrThrow(request, Globals.systemDao)
 
     def getQueryParam(paramName: String): Option[String] =
