@@ -397,12 +397,12 @@ case class PageParts (
 
   /** Returns a map postId => UserPostVotes, with all votes by user userId.
     */
-  def userVotesMap(userId: UserId): Map[PostId, UserPostVotes] = {
+  def userVotesMap(userIdData: UserIdData): Map[PostId, UserPostVotes] = {
     val voteBitsByPostId = mut.HashMap[PostId, Int]()
     for {
       action <- actionDtos
       if action.payload.isInstanceOf[PAP.Vote]
-      if action.userId == userId
+      if userIdData.userId != UnknownUser.Id && action.userId == userIdData.userId
     } {
       val bits = action.payload match {
         case PAP.VoteLike => 1

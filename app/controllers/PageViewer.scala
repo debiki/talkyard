@@ -109,7 +109,7 @@ object PageViewer extends mvc.Controller {
 
     // List the user's ratings so they can be highlighted so the user
     // won't rate the same post over and over again.
-    val userVotesMap = page.userVotesMap(userId = my.id)
+    val userVotesMap = page.userVotesMap(pageReq.userIdData)
     val ownRatingsJsonMap = userVotesMap map { case (postId, votes) =>
       var voteStrs = Vector[String]()
       if (votes.votedLike) voteStrs = voteStrs :+ "VoteLike"
