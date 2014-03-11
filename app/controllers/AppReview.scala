@@ -17,16 +17,16 @@
 
 package controllers
 
-import actions.ApiActions._
+import actions.ApiActions.PostJsonAction
 import com.debiki.core._
 import com.debiki.core.{PostActionPayload => PAP}
+import com.debiki.core.Prelude._
 import debiki._
 import debiki.DebikiHttp._
 import java.{util => ju}
 import play.api._
 import play.api.libs.json._
-import Prelude._
-import Utils.OkSafeJson
+import requests.JsonPostRequest
 import Utils.ValidationImplicits._
 
 

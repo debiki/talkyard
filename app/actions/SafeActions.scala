@@ -89,7 +89,7 @@ object SafeActions {
              .discardingCookies(DiscardingCookie("dwCoSid")))
       }
 
-      var resultOkSid =
+      val resultOkSid =
         if (newCookies.isEmpty && moreNewCookies.isEmpty) resultOldCookies
         else {
           assert(maySetCookies)

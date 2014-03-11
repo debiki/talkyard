@@ -18,7 +18,7 @@
 package controllers
 
 import actions.PageActions._
-import actions.ApiActions.{GetAction, GetRequest, PostFormDataAction, FormDataPostRequest}
+import actions.ApiActions.{GetAction, PostFormDataAction}
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki._

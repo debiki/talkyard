@@ -35,20 +35,6 @@ import controllers.Utils
   */
 object ApiActions {
 
-  /**
-   * A request with no post data.
-   */
-  type GetRequest = ApiRequest[Option[Any]]
-
-
-  /**
-   * A request with form data.
-   * @deprecated Use ApiRequest[JsonOrFormDataBody] instead.
-   */
-  type FormDataPostRequest = ApiRequest[Map[String, Seq[String]]]
-
-
-  type JsonPostRequest = ApiRequest[JsValue]
 
   def GetAction(f: GetRequest => Result) =
     _PlainApiAction(BodyParsers.parse.empty)(f)

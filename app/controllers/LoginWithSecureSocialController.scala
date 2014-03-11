@@ -26,7 +26,6 @@
 package controllers
 
 import actions.ApiActions.GetAction
-import actions.ApiActions.GetRequest
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki.DebikiHttp._
@@ -34,7 +33,7 @@ import play.api._
 import i18n.Messages
 import play.api.mvc.{Action => _, _}
 import play.api.Play.current
-import requests.ApiRequest
+import requests.GetRequest
 import securesocial.core._
 import securesocial.controllers.TemplatesPlugin
 import securesocial.core.providers.utils.RoutesHelper

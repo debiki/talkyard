@@ -26,8 +26,7 @@ import debiki._
 import debiki.DebikiHttp._
 import play.api._
 import play.api.mvc.{Action => _, _}
-import requests.{DebikiRequest, PageRequest}
-import actions.ApiActions.JsonPostRequest
+import requests._
 import BrowserPagePatcher.TreePatchSpec
 
 

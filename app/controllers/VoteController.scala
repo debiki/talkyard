@@ -18,14 +18,13 @@
 package controllers
 
 import actions.ApiActions.PostJsonAction
-import actions.ApiActions.JsonPostRequest
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki._
 import debiki.DebikiHttp._
 import play.api._
 import play.api.libs.json._
-import requests.{PageRequest}
+import requests.{PageRequest, JsonPostRequest}
 import Utils.OkSafeJson
 
 

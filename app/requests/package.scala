@@ -17,9 +17,25 @@
 
 import play.api.Play
 import play.api.Play.current
+import play.api.libs.json.JsValue
 
 
 package object requests {
+
+
+  /** A request with no post data.
+    */
+  type GetRequest = ApiRequest[Option[Any]]
+
+
+  /** A request with form data.
+    * @deprecated Use ApiRequest[JsonOrFormDataBody] instead.
+    */
+  type FormDataPostRequest = ApiRequest[Map[String, Seq[String]]]
+
+
+  type JsonPostRequest = ApiRequest[JsValue]
+
 
   /**
    * A PageRequest with no post data.

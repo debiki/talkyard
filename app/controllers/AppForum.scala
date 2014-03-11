@@ -17,7 +17,7 @@
 
 package controllers
 
-import actions.ApiActions._
+import actions.ApiActions.PostJsonAction
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki._
@@ -27,6 +27,7 @@ import libs.json.{JsString, JsValue}
 import play.api.data._
 import play.api.data.Forms._
 import play.api.mvc.{Action => _, _}
+import requests.JsonPostRequest
 import scala.collection.{mutable => mut}
 import Utils.{OkHtml, Passhasher}
 
