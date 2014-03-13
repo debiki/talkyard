@@ -1,3 +1,12 @@
-<div>
-  <p>Site wide settings.html</p>
+<div settings>
+  <h3>Site Wide Settings</h3>
+
+  <div ng-if="ctrl.settings == null">
+    Loading, please wait...
+  </div>
+
+  <setting title="Title" value="ctrl.settings.title" type="SiteSetting">
+    The site title.
+  </setting>
+
 </div>

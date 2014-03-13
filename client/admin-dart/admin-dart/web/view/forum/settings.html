@@ -1,3 +1,25 @@
-<div>
-  <p>Forum settings.html</p>
+<div settings>
+  <h3>Forum Settings</h3>
+
+  <div ng-if="ctrl.settings == null">
+    Loading, please wait...
+  </div>
+
+  <form ng-if="ctrl.settings != null" ng-submit="ctrl.saveSettings()">
+
+    <setting title="Title" value="ctrl.settings.title" type="ForumSetting">
+      The forum title.
+    </setting>
+
+    <setting title="Description" value="ctrl.settings.description" type="ForumSetting">
+      A one sentence description of the forum. Will be used as the
+        <kbd>&lt;html&gt;&lt;head&gt;&lt;description&gt;</kbd> tag.
+    </setting>
+
+    <setting title="Horizontal comments" value="ctrl.settings.horizontalComments" type="ForumSetting">
+      Shall comments be laid out horizontally, in two dimensions? Otherwise they're
+      shown in a single column, like everywhere else.
+    </setting>
+
+  </form>
 </div>

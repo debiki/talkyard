@@ -6,6 +6,7 @@ import 'dart:html';
 import 'package:angular/angular.dart';
 
 import 'debiki_data.dart';
+import 'settings.dart';
 import 'post.dart';
 import 'topic.dart';
 import 'user.dart';
@@ -20,6 +21,7 @@ class DebikiAdminQueryService {
   String get _approvePostUrl => '$_origin/-/approve';
   String get _rejectPostUrl => '$_origin/-/reject';
   String get _deletePostUrl => '$_origin/-/delete';
+  String get _saveSettingUrl => '$_origin/-/save-setting';
 
   Future _loaded;
 
@@ -102,4 +104,21 @@ class DebikiAdminQueryService {
     return '[{ "pageId": "${post.pageId}", "actionId": "${post.id}" }]';
   }
 
+  Future<Settings> loadSettings(SettingsTarget target) {
+    return new Future.value(new Settings( // TODO load JSON from server
+        target,
+        title: new Setting<String>('Section Title'),
+        description: new Setting<String>('hi', currentValue: 'current'),
+        horizontalComments: new Setting<bool>(false, currentValue: false)));
+  }
+
+  Future saveTextSetting(String pageId, Setting value) {
+    return _http.request(
+        _saveSettingUrl, withCredentials: true, method: 'POST',
+        requestHeaders: {
+          'Content-Type': 'application/json',
+          'X-XSRF-TOKEN': 'CorsFromDartEditor'
+        },
+        sendData: value.toJson);
+  }
 }

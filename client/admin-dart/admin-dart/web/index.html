@@ -20,6 +20,7 @@
     </div>
 
     <div ng-if="ctrl.pages.length > 0">
+      <hr>
       <h3>Pages</h3>
       <a class="btn btn-default" href="#/pages/list">Pages</a>
       <a class="btn btn-default" href="#/pages/recent-comments">Comments</a>
@@ -27,6 +28,8 @@
     </div>
 
     <div ng-if="ctrl.blogs.length > 0">
+      <hr>
+      <p ng-if="ctrl.blogs.length > 1">Blogs:</p>
       <div ng-repeat="blog in ctrl.blogs">
         <h3>{{ blog.prettyTitle }}</h3>
         <a class="btn btn-default" href="#/blog/{{blog.id}}/">Dashboard</a>
@@ -37,6 +40,8 @@
     </div>
 
     <div ng-if="ctrl.forums.length > 0">
+      <hr>
+      <p ng-if="ctrl.forums.length > 1"><b>Forums:</b></p>
       <div ng-repeat="forum in ctrl.forums">
         <h3>{{ forum.prettyTitle }}</h3>
         <a class="btn btn-default" href="#/fourm/{{forum.id}}/">Dashboard</a>
@@ -47,6 +52,7 @@
     </div>
 
     <div ng-if="ctrl.embeddedTopics.length > 0">
+      <hr>
       <h3>Embedded Comments</h3>
       <a class="btn btn-default" href="#/embedded-comments/recent-topics">Topics</a>
       <a class="btn btn-default" href="#/embedded-comments/recent-comments">Comments</a>
