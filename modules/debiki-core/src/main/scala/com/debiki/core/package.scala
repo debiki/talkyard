@@ -47,5 +47,6 @@ package object core {
 
   val DefaultPageRoot = Some(PageParts.BodyId)
 
+  type SettingNameValue[A] = (String, A)
 }
 

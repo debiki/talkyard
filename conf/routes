@@ -86,6 +86,10 @@ GET   /-/create-embedded-site/instructions                    controllers.Create
 GET   /-/admin/                 controllers.Application.viewAdminPage
 GET   /-/admin2                 controllers.Application.viewAdminPageDart
 
+GET   /-/load-site-settings     controllers.SettingsController.loadSiteSettings
+GET   /-/load-section-settings  controllers.SettingsController.loadSectionSettings(pageId)
+POST  /-/save-setting           controllers.SettingsController.saveSetting
+
 POST  /-/configure-user         controllers.AppConfigUser.handleConfiguration()
 GET   /-/load-my-page-activity  controllers.PageViewer.loadMyPageActivity(pageId)
 POST  /-/reply                  controllers.AppReply.handleReply

@@ -376,6 +376,10 @@ case class PageRequest[A](
 
   def pathAndMeta_! = PagePathAndMeta(pagePath, ancestorIdsParentFirst_!, pageMeta_!)
 
+
+  lazy val thePageSettings: PageSettings =
+    dao.loadPageSettings(pageId_!)
+
 }
 
 

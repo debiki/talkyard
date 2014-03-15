@@ -144,14 +144,16 @@ case class BrowserPagePatcher(
 
     val patchSpecs = sortAndMerge(patchSpecsDuplicatedUnsorted)
 
-    val pageRoot = request match {
-      case p: PageRequest[_] => p.pageRoot
-      case _ => Some(PageParts.BodyId)
+    val (pageRoot, horizontalComments) = request match {
+      case p: PageRequest[_] =>
+        (p.pageRoot, p.thePageSettings.horizontalComments)
+      case _ =>
+        (Some(PageParts.BodyId), request.siteSettings.horizontalComments)
     }
 
     val serializer = HtmlPageSerializer(
       page, PageTrust(page), pageRoot, request.host, showUnapproved = showUnapproved,
-      showStubsForDeleted = showStubsForDeleted)
+      showStubsForDeleted = showStubsForDeleted, horizontalComments = horizontalComments.value)
 
     var threadPatches = Vector[JsPatch]()
 

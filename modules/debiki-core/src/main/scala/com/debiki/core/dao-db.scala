@@ -127,6 +127,28 @@ abstract class SiteDbDao {
 
   def loadAncestorIdsParentFirst(pageId: PageId): List[PageId]
 
+  def savePageSetting(section: Section, setting: SettingNameValue[_])
+
+  /** Loads settings for pageIds, e.g. List(X, Y, Z), and settings for
+    * page X override settings for Y, Z, and settings for Y override Z,
+    * and whole-website settings are also loaded and used unless overridden
+    * by any of X, Y, Z.
+    *
+    * Example 1: X is a forum topic, Y is a subforum and Z is the main forum.
+    * X's parent would be Y and Y's parent would be Z.
+    * Example 2: X is a blog post and Y is a blog (and there is no Z).
+    * In this way, a single blog post can override blog specific settings,
+    * and the blog can override website settings.
+    *
+    * If both Section.SinglePage and Section.PageTree has been defined
+    * for X (i.e. pageIds.head), then the SinglePage settings override
+    * PageTree settings for X, because single page settings are more specific
+    * than settings for any whole subtree of pages that starts at X.
+    */
+  def loadPageSettings(pageIds: Seq[PageId]): PageSettings
+
+  def loadSiteSettings() = loadPageSettings(Nil)
+
 
   // ----- Moving and renaming pages
 
@@ -528,6 +550,16 @@ class ChargingSiteDbDao(
   def loadAncestorIdsParentFirst(pageId: PageId): List[PageId] = {
     _chargeForOneReadReq()
     _spi.loadAncestorIdsParentFirst(pageId)
+  }
+
+  def savePageSetting(section: Section, setting: SettingNameValue[_]) {
+    _chargeForOneWriteReq()
+    _spi.savePageSetting(section, setting)
+  }
+
+  def loadPageSettings(pageIds: Seq[PageId]): PageSettings = {
+    _chargeForOneReadReq()
+    _spi.loadPageSettings(pageIds)
   }
 
   def movePages(pageIds: Seq[String], fromFolder: String, toFolder: String) {

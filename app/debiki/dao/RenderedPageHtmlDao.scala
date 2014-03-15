@@ -30,7 +30,8 @@ case class RenderPageSettings(
   showTitle: Boolean,
   showAuthorAndDate: Boolean,
   showBody: Boolean,
-  showComments: Boolean)
+  showComments: Boolean,
+  horizontalComments: Boolean)
 
 
 case class RenderedPage(
@@ -61,6 +62,7 @@ trait RenderedPageHtmlDao {
 
     val page = pageReq.pageDesiredVersionWithDummies_!
     val renderer = HtmlPageSerializer(page, PageTrust(page), pageReq.pageRoot, pageReq.host,
+      horizontalComments = renderSettings.horizontalComments,
       // Use follow links for the article, unless it's a forum topic — anyone
       // may start a new forum topic.
       nofollowArticle = pageReq.pageRole_! == PageRole.ForumTopic)

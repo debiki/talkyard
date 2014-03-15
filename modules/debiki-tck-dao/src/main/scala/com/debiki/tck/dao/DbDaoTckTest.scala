@@ -875,6 +875,112 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
     }
 
 
+    // -------- Page settings
+
+    "load and save page settings" >> {
+
+      var forum: Page = null
+      var topic: Page = null
+
+      def forumPage(pageRole: PageRole, parentPageId: Option[String] = None): Page =
+        Page(
+          PageMeta.forNewPage(pageRole, loginGrant.user, PageParts("?"), now, parentPageId),
+          defaultPagePath.copy(folder = "/settings-forum/", showId = true,
+            pageSlug = pageRole.toString),
+          ancestorIdsParentFirst = parentPageId.toList,
+          PageParts(guid = "?"))
+
+      "create a forum and a topic" in {
+        val forumNoId = forumPage(PageRole.Forum)
+        forum = dao.createPage(forumNoId)
+        val topicNoId = forumPage(PageRole.ForumTopic, parentPageId = Some(forum.id))
+        topic = dao.createPage(topicNoId)
+        ok
+      }
+
+      "find default settings before any settings created" in {
+        val siteSettings = dao.loadSiteSettings()
+        siteSettings must_== PageSettings.Default
+        siteSettings.siteName.value must_== PageSettings.Default.siteName.value
+        siteSettings.siteName.value must_== PageSettings.Default.siteName.default
+
+        dao.loadPageSettings(pageIds = Seq(forum.id)) must_== PageSettings.Default
+        dao.loadPageSettings(pageIds = Seq(topic.id, forum.id)) must_== PageSettings.Default
+      }
+
+      "find default settings for non-existing page" in {
+        dao.loadPageSettings(pageIds = Seq("nonExistingPage")) must_== PageSettings.Default
+      }
+
+      "save and load site settings" >> {
+        "of type text" in {
+          dao.savePageSetting(Section.WholeSite, "site_name" -> "TheSiteName")
+          dao.savePageSetting(Section.WholeSite, "horizontal_comments" -> "T")
+          val settings = dao.loadSiteSettings()
+          settings.siteName.value must_== "TheSiteName"
+          settings.horizontalComments.value must_== "T"
+          // Verify that we didn't simply load the default:
+          PageSettings.Default.horizontalComments.value must_== "F"
+        }
+
+        "of type integer" in {
+          pending
+        }
+
+        "of type double" in {
+          pending
+        }
+      }
+
+      "override settings" in {
+        "create a section setting, override the site setting" in {
+          dao.savePageSetting(Section.PageTree(forum.id), "site_name" -> "TheForumName")
+          val siteSettings = dao.loadSiteSettings()
+          siteSettings.siteName.value must_== "TheSiteName"
+          val forumSettings = dao.loadPageSettings(forum.id::Nil)
+          forumSettings.siteName.value must_== "TheForumName"
+          val topicSettings = dao.loadPageSettings(topic.id::forum.id::Nil)
+          topicSettings.siteName.value must_== "TheForumName"
+        }
+
+        "create another section setting, override the previous section setting" in {
+          // Now we specify settings for topic.id as page tree root, not single page.
+          dao.savePageSetting(Section.PageTree(topic.id), "site_name" -> "TheTopicTreeName")
+          val siteSettings = dao.loadSiteSettings()
+          siteSettings.siteName.value must_== "TheSiteName"
+          val forumSettings = dao.loadPageSettings(forum.id::Nil)
+          forumSettings.siteName.value must_== "TheForumName"
+          val topicSettings = dao.loadPageSettings(topic.id::forum.id::Nil)
+          topicSettings.siteName.value must_== "TheTopicTreeName"
+        }
+
+        "create a page setting, override section settings that start on the same page" in {
+          // Now we specify settings for topic.id as single page, not page tree root.
+          // This will override the topic-tree settings starting at the same page,
+          // because a single topic is more specific than the whole tree.
+          dao.savePageSetting(Section.SinglePage(topic.id), "site_name" -> "TheTopicName")
+          val siteSettings = dao.loadSiteSettings()
+          siteSettings.siteName.value must_== "TheSiteName"
+          val forumSettings = dao.loadPageSettings(forum.id::Nil)
+          forumSettings.siteName.value must_== "TheForumName"
+          val topicSettings = dao.loadPageSettings(topic.id::forum.id::Nil)
+          topicSettings.siteName.value must_== "TheTopicName" // not "TheTopicTreeName"
+        }
+      }
+
+      "update settings" in {
+        "the site setting" in {
+        }
+
+        "the section setting" in {
+        }
+
+        "the page setting" in {
+        }
+      }
+    }
+
+
     // -------- Full text search
 
     "full text search forum contents" >> {
