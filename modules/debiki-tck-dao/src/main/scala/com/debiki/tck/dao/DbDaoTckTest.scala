@@ -898,85 +898,75 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
         ok
       }
 
-      "find default settings before any settings created" in {
-        val siteSettings = dao.loadSiteSettings()
-        siteSettings must_== PageSettings.Default
-        siteSettings.siteName.value must_== PageSettings.Default.siteName.value
-        siteSettings.siteName.value must_== PageSettings.Default.siteName.default
+      "find no settings before any settings created" in {
+        var rawSettings = Seq(dao.loadSiteSettings())
+        rawSettings.head.valuesBySettingName.isEmpty must_== true
 
-        dao.loadPageSettings(pageIds = Seq(forum.id)) must_== PageSettings.Default
-        dao.loadPageSettings(pageIds = Seq(topic.id, forum.id)) must_== PageSettings.Default
-      }
+        rawSettings = dao.loadSettings(Seq(Section.PageTree(forum.id)))
+        rawSettings.length must_== 1
+        rawSettings.head.valuesBySettingName.isEmpty must_== true
 
-      "find default settings for non-existing page" in {
-        dao.loadPageSettings(pageIds = Seq("nonExistingPage")) must_== PageSettings.Default
+        rawSettings = dao.loadSettings(Seq(
+          Section.SinglePage(topic.id), Section.PageTree(forum.id)))
+        rawSettings.length must_== 2
+        rawSettings.foreach { settings =>
+          settings.valuesBySettingName.isEmpty must_== true
+        }
       }
 
       "save and load site settings" >> {
         "of type text" in {
-          dao.savePageSetting(Section.WholeSite, "site_name" -> "TheSiteName")
-          dao.savePageSetting(Section.WholeSite, "horizontal_comments" -> "T")
+          dao.savePageSetting(Section.WholeSite, "SettingA" -> "TextValueA")
+          dao.savePageSetting(Section.WholeSite, "SettingB" -> "TextValueB")
           val settings = dao.loadSiteSettings()
-          settings.siteName.value must_== "TheSiteName"
-          settings.horizontalComments.value must_== "T"
-          // Verify that we didn't simply load the default:
-          PageSettings.Default.horizontalComments.value must_== "F"
+          settings.valuesBySettingName.get("SettingA") must_== Some("TextValueA")
+          settings.valuesBySettingName.get("SettingB") must_== Some("TextValueB")
+          settings.valuesBySettingName.get("AbsentSetting") must_== None
         }
 
         "of type integer" in {
-          pending
+          dao.savePageSetting(Section.WholeSite, "SettingC" -> 111)
+          dao.savePageSetting(Section.WholeSite, "SettingD" -> 222)
+          val settings = dao.loadSiteSettings()
+          settings.valuesBySettingName.get("SettingC") must_== Some(111)
+          settings.valuesBySettingName.get("SettingD") must_== Some(222)
         }
 
         "of type double" in {
-          pending
+          dao.savePageSetting(Section.WholeSite, "SettingE" -> 100.111)
+          dao.savePageSetting(Section.WholeSite, "SettingF" -> 200.222)
+          val settings = dao.loadSiteSettings()
+          settings.valuesBySettingName.get("SettingE") must_== Some(100.111)
+          settings.valuesBySettingName.get("SettingF") must_== Some(200.222)
         }
       }
 
-      "override settings" in {
-        "create a section setting, override the site setting" in {
-          dao.savePageSetting(Section.PageTree(forum.id), "site_name" -> "TheForumName")
-          val siteSettings = dao.loadSiteSettings()
-          siteSettings.siteName.value must_== "TheSiteName"
-          val forumSettings = dao.loadPageSettings(forum.id::Nil)
-          forumSettings.siteName.value must_== "TheForumName"
-          val topicSettings = dao.loadPageSettings(topic.id::forum.id::Nil)
-          topicSettings.siteName.value must_== "TheForumName"
-        }
-
-        "create another section setting, override the previous section setting" in {
-          // Now we specify settings for topic.id as page tree root, not single page.
-          dao.savePageSetting(Section.PageTree(topic.id), "site_name" -> "TheTopicTreeName")
-          val siteSettings = dao.loadSiteSettings()
-          siteSettings.siteName.value must_== "TheSiteName"
-          val forumSettings = dao.loadPageSettings(forum.id::Nil)
-          forumSettings.siteName.value must_== "TheForumName"
-          val topicSettings = dao.loadPageSettings(topic.id::forum.id::Nil)
-          topicSettings.siteName.value must_== "TheTopicTreeName"
-        }
-
-        "create a page setting, override section settings that start on the same page" in {
-          // Now we specify settings for topic.id as single page, not page tree root.
-          // This will override the topic-tree settings starting at the same page,
-          // because a single topic is more specific than the whole tree.
-          dao.savePageSetting(Section.SinglePage(topic.id), "site_name" -> "TheTopicName")
-          val siteSettings = dao.loadSiteSettings()
-          siteSettings.siteName.value must_== "TheSiteName"
-          val forumSettings = dao.loadPageSettings(forum.id::Nil)
-          forumSettings.siteName.value must_== "TheForumName"
-          val topicSettings = dao.loadPageSettings(topic.id::forum.id::Nil)
-          topicSettings.siteName.value must_== "TheTopicName" // not "TheTopicTreeName"
-        }
+      "save and load topic and section settings" >> {
+        dao.savePageSetting(Section.SinglePage(topic.id), "SettingA" -> "PageTextValueA")
+        dao.savePageSetting(Section.SinglePage(topic.id), "SettingC" -> 113)
+        dao.savePageSetting(Section.SinglePage(topic.id), "SettingE" -> 100.113)
+        dao.savePageSetting(Section.PageTree(forum.id), "SettingA" -> "ForumTextValueA")
+        dao.savePageSetting(Section.PageTree(forum.id), "SettingC" -> 112)
+        dao.savePageSetting(Section.PageTree(forum.id), "SettingE" -> 100.112)
+        val settings = dao.loadSettings(List(
+          Section.SinglePage(topic.id), Section.PageTree(forum.id)))
+        settings.length must_== 2
+        settings.head.valuesBySettingName.get("SettingA") must_== Some("PageTextValueA")
+        settings.head.valuesBySettingName.get("SettingC") must_== Some(113)
+        settings.head.valuesBySettingName.get("SettingE") must_== Some(100.113)
+        settings.last.valuesBySettingName.get("SettingA") must_== Some("ForumTextValueA")
+        settings.last.valuesBySettingName.get("SettingC") must_== Some(112)
+        settings.last.valuesBySettingName.get("SettingE") must_== Some(100.112)
       }
 
       "update settings" in {
-        "the site setting" in {
-        }
+        pending
+      }
 
-        "the section setting" in {
-        }
-
-        "the page setting" in {
-        }
+      "find no settings for non-existing page" in {
+        val rawSettings = dao.loadSettings(Seq(Section.PageTree("NonExistingPage")))
+        rawSettings.length must_== 1
+        rawSettings.head.valuesBySettingName.isEmpty must_== true
       }
     }
 

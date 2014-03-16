@@ -507,7 +507,7 @@ class TemplateProgrammingInterface(
     showComments: Boolean = !isHomepage)(
     contents: => play.api.templates.Html): xml.NodeSeq = {
 
-    val horizontalComments = pageReq.thePageSettings.horizontalComments.value
+    val horizontalComments = pageReq.thePageSettings.horizontalComments.valueIsTrue
     val viewsPageConfigPost = pageReq.pageRoot == Some(PageParts.ConfigPostId)
     renderPageSettings =
       if (viewsPageConfigPost || pageReq.pagePath.isConfigPage) {

@@ -1,5 +1,7 @@
 library page_settings;
 
+import 'package:debiki_admin/util.dart';
+
 
 class Setting<T> {
   final T defaultValue;
@@ -63,9 +65,18 @@ class Settings {
   factory Settings.fromJsonMap(SettingsTarget target, Map json) {
     return new Settings(
         target,
-        title: json['title'],
-        description: json['description'],
-        horizontalComments: json['horizontalComments']);
+        title: _makeSetting(json, 'title'),
+        description: _makeSetting(json, 'description'),
+        horizontalComments: _makeSetting(json, 'horizontalComments'));
+  }
+
+  static Setting _makeSetting(Map jsonMap, String settingName) {
+    // ? SHOULD change from currentValue to anyAssignedValue which might be null.
+    var jsonSetting = jsonMap[settingName];
+    errorIf(jsonSetting == null, "No such setting: `$settingName' [DwEKf980]");
+    return new Setting(
+        jsonSetting['defaultValue'],
+        currentValue: jsonSetting['anyAssignedValue']);
   }
 
 }

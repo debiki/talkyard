@@ -87,7 +87,7 @@ GET   /-/admin/                 controllers.Application.viewAdminPage
 GET   /-/admin2                 controllers.Application.viewAdminPageDart
 
 GET   /-/load-site-settings     controllers.SettingsController.loadSiteSettings
-GET   /-/load-section-settings  controllers.SettingsController.loadSectionSettings(pageId)
+GET   /-/load-section-settings  controllers.SettingsController.loadSectionSettings(rootPageId)
 POST  /-/save-setting           controllers.SettingsController.saveSetting
 
 POST  /-/configure-user         controllers.AppConfigUser.handleConfiguration()

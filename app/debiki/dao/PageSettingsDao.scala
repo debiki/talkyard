@@ -28,15 +28,31 @@ import Prelude._
 trait PageSettingsDao {
   self: SiteDao =>
 
-  def loadPageSettings(pageId: String): PageSettings = {
-    val ancestorIds = loadAncestorIdsParentFirst(pageId)
-    siteDbDao.loadPageSettings(pageId :: ancestorIds)
+  def loadSiteSettings(): Settings = {
+    val rawSettingsMaps = siteDbDao.loadSettings(Vector(Section.WholeSite))
+    Settings(SettingsChain(rawSettingsMaps))
   }
 
-  def loadSiteSettings(): PageSettings = {
-    siteDbDao.loadPageSettings(Nil)
+  def loadSectionSettings(pageId: PageId): Settings = {
+    val pageAndAncestorIds = loadAncestorIdsParentFirst(pageId)
+    val treeSections = pageAndAncestorIds.map(Section.PageTree(_))
+    val allSections = treeSections ++ Vector(Section.WholeSite)
+    val rawSettingsMaps = siteDbDao.loadSettings(allSections)
+    Settings(SettingsChain(rawSettingsMaps))
   }
 
+  def loadPageSettings(pageId: PageId): Settings = {
+    val pageSection = Section.SinglePage(pageId)
+    val pageAndAncestorIds = loadAncestorIdsParentFirst(pageId)
+    val treeSections = pageAndAncestorIds.map(Section.PageTree(_))
+    val allSections = Vector(pageSection) ++ treeSections ++ Vector(Section.WholeSite)
+    val rawSettingsMaps = siteDbDao.loadSettings(allSections)
+    Settings(SettingsChain(rawSettingsMaps))
+  }
+
+  def saveSetting(section: Section, name: String, value: Any) {
+    siteDbDao.savePageSetting(section, name -> value)
+  }
 }
 
 

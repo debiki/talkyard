@@ -54,8 +54,6 @@ abstract class DebikiRequest[A] {
   def tenantId = dao.siteId
   def siteId = dao.siteId
 
-  def siteSettings = dao.loadSiteSettings()
-
   def userIdData = UserIdData(
     loginId = loginId,
     userId = user.map(_.id) getOrElse UnknownUser.Id,

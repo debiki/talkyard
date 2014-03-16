@@ -20,50 +20,7 @@ package com.debiki.core
 
 
 
-case class Setting[A](name: String, value: A, default: A)
-
-
-
-object PageSettings {
-  val Default = PageSettings(Nil)
-}
-
-
-case class PageSettings(sectionSettings: Seq[SectionSettings]) {
-
-
-  def siteName: Setting[String] = setting("site_name", default = "Untitled Page")
-
-  def imageUrl: Setting[String] = setting("image_url", default = "/favicon.ico")
-
-  def horizontalComments: Setting[String] = setting("horizontal_comments", default = "F")
-
-
-  private def setting[A](name: String, default: A): Setting[A] = {
-    var effectiveValue: A = default
-    var i = 0
-    while (i < sectionSettings.size) {
-      val settings = sectionSettings(i)
-      i += 1
-      val anyAssignedValue = settings.valuesByName.get(name)
-      anyAssignedValue foreach { value =>
-        effectiveValue = value.asInstanceOf[A]
-        i = 999999 // break loop, value found
-      }
-    }
-    Setting(name, effectiveValue, default = default)
-  }
-
-}
-
-
-
-case class SectionSettings(
-  targetSection: Section,
-  namesAndValues: Seq[SettingNameValue[_]]) {
-
-  val valuesByName: Map[String, Any] = namesAndValues.toMap
-}
+case class RawSettings(target: Section, valuesBySettingName: Map[String, Any])
 
 
 

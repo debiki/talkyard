@@ -21,6 +21,8 @@ class DebikiAdminQueryService {
   String get _approvePostUrl => '$_origin/-/approve';
   String get _rejectPostUrl => '$_origin/-/reject';
   String get _deletePostUrl => '$_origin/-/delete';
+  String get _loadSiteSettingsUrl => '$_origin/-/load-site-settings';
+  String get _loadSectionSettingsUrl => '$_origin/-/load-section-settings';
   String get _saveSettingUrl => '$_origin/-/save-setting';
 
   Future _loaded;
@@ -104,12 +106,22 @@ class DebikiAdminQueryService {
     return '[{ "pageId": "${post.pageId}", "actionId": "${post.id}" }]';
   }
 
-  Future<Settings> loadSettings(SettingsTarget target) {
-    return new Future.value(new Settings( // TODO load JSON from server
-        target,
-        title: new Setting<String>('Section Title'),
-        description: new Setting<String>('hi', currentValue: 'current'),
-        horizontalComments: new Setting<bool>(false, currentValue: false)));
+  Future<Settings> loadSettings(SettingsTarget settingsTarget) {
+    var url;
+    if (settingsTarget.pageId != null) {
+      url = "$_loadSectionSettingsUrl?rootPageId=${settingsTarget.pageId}";
+    }
+    else {
+      error('Unimplemented [DwE52FH435]');
+    }
+    return _http.request(url, withCredentials: true) // .get(_recentPostsUrl)
+        .then((HttpResponse response) {
+      // `data` is a String here, but a json Map in _loadTopics, perhaps the reason is
+      // that I have to use `request` here not `get`?
+      // Also remove leading ")]}',\n", 6 chars.
+      Map json = JSON.decode(response.data.substring(6));
+      return new Settings.fromJsonMap(settingsTarget, json);
+    });
   }
 
   Future saveTextSetting(String pageId, Setting value) {

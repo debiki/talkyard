@@ -148,12 +148,13 @@ case class BrowserPagePatcher(
       case p: PageRequest[_] =>
         (p.pageRoot, p.thePageSettings.horizontalComments)
       case _ =>
-        (Some(PageParts.BodyId), request.siteSettings.horizontalComments)
+        (Some(PageParts.BodyId), request.dao.loadSiteSettings().horizontalComments)
     }
 
     val serializer = HtmlPageSerializer(
       page, PageTrust(page), pageRoot, request.host, showUnapproved = showUnapproved,
-      showStubsForDeleted = showStubsForDeleted, horizontalComments = horizontalComments.value)
+      showStubsForDeleted = showStubsForDeleted,
+      horizontalComments = horizontalComments.valueIsTrue)
 
     var threadPatches = Vector[JsPatch]()
 
