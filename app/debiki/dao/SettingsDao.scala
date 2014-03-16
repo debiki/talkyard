@@ -35,6 +35,7 @@ trait SettingsDao {
     Settings(SettingsChain(rawSettingsMaps))
   }
 
+
   def loadPageTreeSettings(pageId: PageId): Settings = {
     val pageAndAncestorIds = pageId :: loadAncestorIdsParentFirst(pageId)
     val treeTargets = pageAndAncestorIds.map(SettingsTarget.PageTree(_))
@@ -42,6 +43,7 @@ trait SettingsDao {
     val rawSettingsMaps = siteDbDao.loadSettings(allTargets)
     Settings(SettingsChain(rawSettingsMaps))
   }
+
 
   def loadSinglePageSettings(pageId: PageId): Settings = {
     val pageTarget = SettingsTarget.SinglePage(pageId)
@@ -52,14 +54,54 @@ trait SettingsDao {
     Settings(SettingsChain(rawSettingsMaps))
   }
 
+
   def saveSetting(target: SettingsTarget, name: String, value: Any) {
     siteDbDao.saveSetting(target, name -> value)
   }
 }
 
 
-trait CachingPageSettingsDao extends SettingsDao {
-  self: SiteDao with CachingDao =>
+
+trait CachingSettingsDao extends SettingsDao {
+  self: CachingSiteDao =>
+
+
+  override def loadWholeSiteSettings(): Settings = {
+    lookupInCache(
+      siteSettingsKey,
+      orCacheAndReturn =
+        Some(super.loadWholeSiteSettings())) getOrDie "DwE52WK8"
+  }
+
+
+  override def loadPageTreeSettings(pageId: PageId): Settings = {
+    lookupInCache(
+      pageTreeSettingsKey(pageId),
+      orCacheAndReturn =
+        Some(super.loadPageTreeSettings(pageId))) getOrDie "DwE77GY3"
+  }
+
+
+  override def loadSinglePageSettings(pageId: PageId): Settings = {
+    lookupInCache(
+      singlePageSettingsKey(pageId),
+      orCacheAndReturn =
+        Some(super.loadSinglePageSettings(pageId))) getOrDie "DwE3WCS0"
+  }
+
+
+  override def saveSetting(target: SettingsTarget, name: String, value: Any) {
+    super.saveSetting(target, name, value)
+    // SHOULD update a per-site cached timestamp that means that everything cached [freshcache]
+    // before that timestamp should be discarded.
+    // All other caches should also check that whole-site cache invalidation timestamp.
+    // But for now, simply require ... a server restart :-( if a config value is changed
+  }
+
+
+  private def siteSettingsKey = s"$siteId|SiteSettingsKey"
+  private def pageTreeSettingsKey(rootId: PageId) = s"$rootId|$siteId|PageTreeSettingsKey"
+  private def singlePageSettingsKey(pageId: PageId) = s"$pageId|$siteId|SinglePageSettingsKey"
 
 }
 
