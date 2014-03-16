@@ -939,24 +939,36 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
           settings.valuesBySettingName.get("SettingE") must_== Some(100.111)
           settings.valuesBySettingName.get("SettingF") must_== Some(200.222)
         }
+
+        "of type boolean" in {
+          dao.saveSetting(SettingsTarget.WholeSite, "SettingTrue" -> true)
+          dao.saveSetting(SettingsTarget.WholeSite, "SettingFalse" -> false)
+          val settings = dao.loadSiteSettings()
+          settings.valuesBySettingName.get("SettingTrue") must_== Some(true)
+          settings.valuesBySettingName.get("SettingFalse") must_== Some(false)
+        }
       }
 
       "save and load topic and section settings" >> {
         dao.saveSetting(SettingsTarget.SinglePage(topic.id), "SettingA" -> "PageTextValueA")
         dao.saveSetting(SettingsTarget.SinglePage(topic.id), "SettingC" -> 113)
         dao.saveSetting(SettingsTarget.SinglePage(topic.id), "SettingE" -> 100.113)
+        dao.saveSetting(SettingsTarget.SinglePage(topic.id), "SettingTrue" -> true)
         dao.saveSetting(SettingsTarget.PageTree(forum.id), "SettingA" -> "ForumTextValueA")
         dao.saveSetting(SettingsTarget.PageTree(forum.id), "SettingC" -> 112)
         dao.saveSetting(SettingsTarget.PageTree(forum.id), "SettingE" -> 100.112)
+        dao.saveSetting(SettingsTarget.PageTree(forum.id), "SettingFalse" -> false)
         val settings = dao.loadSettings(List(
           SettingsTarget.SinglePage(topic.id), SettingsTarget.PageTree(forum.id)))
         settings.length must_== 2
         settings.head.valuesBySettingName.get("SettingA") must_== Some("PageTextValueA")
         settings.head.valuesBySettingName.get("SettingC") must_== Some(113)
         settings.head.valuesBySettingName.get("SettingE") must_== Some(100.113)
+        settings.head.valuesBySettingName.get("SettingTrue") must_== Some(true)
         settings.last.valuesBySettingName.get("SettingA") must_== Some("ForumTextValueA")
         settings.last.valuesBySettingName.get("SettingC") must_== Some(112)
         settings.last.valuesBySettingName.get("SettingE") must_== Some(100.112)
+        settings.last.valuesBySettingName.get("SettingFalse") must_== Some(false)
       }
 
       "update settings" in {
