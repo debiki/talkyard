@@ -107,11 +107,14 @@ class DebikiAdminQueryService {
 
   Future<Settings> loadSettings(SettingsTarget settingsTarget) {
     var url;
-    if (settingsTarget.pageId != null) {
+    if (settingsTarget.type == 'WholeSite') {
+      url = _loadSiteSettingsUrl;
+    }
+    else if (settingsTarget.type == 'PageTree') {
       url = "$_loadSectionSettingsUrl?rootPageId=${settingsTarget.pageId}";
     }
     else {
-      error('Unimplemented [DwE52FH435]');
+      error('Unsupported settings target type: "${settingsTarget.type}" [DwE52FH435]');
     }
     return _http.request(url, withCredentials: true) // .get(_recentPostsUrl)
         .then((HttpResponse response) {
