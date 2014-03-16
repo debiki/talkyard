@@ -35,13 +35,13 @@ object SettingsController extends mvc.Controller {
 
 
   def loadSiteSettings = GetAction { request: GetRequest =>
-    val settings = request.dao.loadSiteSettings()
+    val settings = request.dao.loadWholeSiteSettings()
     OkSafeJson(settings.toJson)
   }
 
 
   def loadSectionSettings(rootPageId: PageId) = GetAction { request: GetRequest =>
-    val settings = request.dao.loadSectionSettings(rootPageId)
+    val settings = request.dao.loadPageTreeSettings(rootPageId)
     OkSafeJson(settings.toJson)
   }
 
@@ -67,11 +67,11 @@ object SettingsController extends mvc.Controller {
 
     val section = tyype match {
       case "WholeSite" =>
-        Section.WholeSite
+        SettingsTarget.WholeSite
       case "PageTree" =>
-        Section.PageTree(pageId getOrElse throwBadReq("DwE44GE0", "No page id specified"))
+        SettingsTarget.PageTree(pageId getOrElse throwBadReq("DwE44GE0", "No page id specified"))
       case "SinglePage" =>
-        Section.SinglePage(pageId getOrElse throwBadReq("DwE55XU1", "No page id specified"))
+        SettingsTarget.SinglePage(pageId getOrElse throwBadReq("DwE55XU1", "No page id specified"))
       case x =>
         throwBadReq("DwE48UFk9", s"Bad section type: `$x'")
     }

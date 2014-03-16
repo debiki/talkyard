@@ -902,12 +902,12 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
         var rawSettings = Seq(dao.loadSiteSettings())
         rawSettings.head.valuesBySettingName.isEmpty must_== true
 
-        rawSettings = dao.loadSettings(Seq(Section.PageTree(forum.id)))
+        rawSettings = dao.loadSettings(Seq(SettingsTarget.PageTree(forum.id)))
         rawSettings.length must_== 1
         rawSettings.head.valuesBySettingName.isEmpty must_== true
 
         rawSettings = dao.loadSettings(Seq(
-          Section.SinglePage(topic.id), Section.PageTree(forum.id)))
+          SettingsTarget.SinglePage(topic.id), SettingsTarget.PageTree(forum.id)))
         rawSettings.length must_== 2
         rawSettings.foreach { settings =>
           settings.valuesBySettingName.isEmpty must_== true
@@ -916,8 +916,8 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
 
       "save and load site settings" >> {
         "of type text" in {
-          dao.savePageSetting(Section.WholeSite, "SettingA" -> "TextValueA")
-          dao.savePageSetting(Section.WholeSite, "SettingB" -> "TextValueB")
+          dao.saveSetting(SettingsTarget.WholeSite, "SettingA" -> "TextValueA")
+          dao.saveSetting(SettingsTarget.WholeSite, "SettingB" -> "TextValueB")
           val settings = dao.loadSiteSettings()
           settings.valuesBySettingName.get("SettingA") must_== Some("TextValueA")
           settings.valuesBySettingName.get("SettingB") must_== Some("TextValueB")
@@ -925,16 +925,16 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
         }
 
         "of type integer" in {
-          dao.savePageSetting(Section.WholeSite, "SettingC" -> 111)
-          dao.savePageSetting(Section.WholeSite, "SettingD" -> 222)
+          dao.saveSetting(SettingsTarget.WholeSite, "SettingC" -> 111)
+          dao.saveSetting(SettingsTarget.WholeSite, "SettingD" -> 222)
           val settings = dao.loadSiteSettings()
           settings.valuesBySettingName.get("SettingC") must_== Some(111)
           settings.valuesBySettingName.get("SettingD") must_== Some(222)
         }
 
         "of type double" in {
-          dao.savePageSetting(Section.WholeSite, "SettingE" -> 100.111)
-          dao.savePageSetting(Section.WholeSite, "SettingF" -> 200.222)
+          dao.saveSetting(SettingsTarget.WholeSite, "SettingE" -> 100.111)
+          dao.saveSetting(SettingsTarget.WholeSite, "SettingF" -> 200.222)
           val settings = dao.loadSiteSettings()
           settings.valuesBySettingName.get("SettingE") must_== Some(100.111)
           settings.valuesBySettingName.get("SettingF") must_== Some(200.222)
@@ -942,14 +942,14 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
       }
 
       "save and load topic and section settings" >> {
-        dao.savePageSetting(Section.SinglePage(topic.id), "SettingA" -> "PageTextValueA")
-        dao.savePageSetting(Section.SinglePage(topic.id), "SettingC" -> 113)
-        dao.savePageSetting(Section.SinglePage(topic.id), "SettingE" -> 100.113)
-        dao.savePageSetting(Section.PageTree(forum.id), "SettingA" -> "ForumTextValueA")
-        dao.savePageSetting(Section.PageTree(forum.id), "SettingC" -> 112)
-        dao.savePageSetting(Section.PageTree(forum.id), "SettingE" -> 100.112)
+        dao.saveSetting(SettingsTarget.SinglePage(topic.id), "SettingA" -> "PageTextValueA")
+        dao.saveSetting(SettingsTarget.SinglePage(topic.id), "SettingC" -> 113)
+        dao.saveSetting(SettingsTarget.SinglePage(topic.id), "SettingE" -> 100.113)
+        dao.saveSetting(SettingsTarget.PageTree(forum.id), "SettingA" -> "ForumTextValueA")
+        dao.saveSetting(SettingsTarget.PageTree(forum.id), "SettingC" -> 112)
+        dao.saveSetting(SettingsTarget.PageTree(forum.id), "SettingE" -> 100.112)
         val settings = dao.loadSettings(List(
-          Section.SinglePage(topic.id), Section.PageTree(forum.id)))
+          SettingsTarget.SinglePage(topic.id), SettingsTarget.PageTree(forum.id)))
         settings.length must_== 2
         settings.head.valuesBySettingName.get("SettingA") must_== Some("PageTextValueA")
         settings.head.valuesBySettingName.get("SettingC") must_== Some(113)
@@ -964,7 +964,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
       }
 
       "find no settings for non-existing page" in {
-        val rawSettings = dao.loadSettings(Seq(Section.PageTree("NonExistingPage")))
+        val rawSettings = dao.loadSettings(Seq(SettingsTarget.PageTree("NonExistingPage")))
         rawSettings.length must_== 1
         rawSettings.head.valuesBySettingName.isEmpty must_== true
       }

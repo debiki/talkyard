@@ -127,14 +127,14 @@ abstract class SiteDbDao {
 
   def loadAncestorIdsParentFirst(pageId: PageId): List[PageId]
 
-  def savePageSetting(section: Section, setting: SettingNameValue[_])
+  def saveSetting(target: SettingsTarget, setting: SettingNameValue[_])
 
-  /** Loads settings for all listed sections, returns settings in the same order.
+  /** Loads settings for all listed targets, returns settings in the same order.
     */
-  def loadSettings(sections: Seq[Section]): Seq[RawSettings]
+  def loadSettings(targets: Seq[SettingsTarget]): Seq[RawSettings]
 
   def loadSiteSettings(): RawSettings =
-    loadSettings(Vector(Section.WholeSite)).headOption.getOrDie("DwE5fl09")
+    loadSettings(Vector(SettingsTarget.WholeSite)).headOption.getOrDie("DwE5fl09")
 
 
   // ----- Moving and renaming pages
@@ -539,14 +539,14 @@ class ChargingSiteDbDao(
     _spi.loadAncestorIdsParentFirst(pageId)
   }
 
-  def savePageSetting(section: Section, setting: SettingNameValue[_]) {
+  def saveSetting(target: SettingsTarget, setting: SettingNameValue[_]) {
     _chargeForOneWriteReq()
-    _spi.savePageSetting(section, setting)
+    _spi.saveSetting(target, setting)
   }
 
-  def loadSettings(sections: Seq[Section]): Seq[RawSettings] = {
+  def loadSettings(targets: Seq[SettingsTarget]): Seq[RawSettings] = {
     _chargeForOneReadReq()
-    _spi.loadSettings(sections)
+    _spi.loadSettings(targets)
   }
 
   def movePages(pageIds: Seq[String], fromFolder: String, toFolder: String) {

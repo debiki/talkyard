@@ -20,18 +20,18 @@ package com.debiki.core
 
 
 
-case class RawSettings(target: Section, valuesBySettingName: Map[String, Any])
+case class RawSettings(target: SettingsTarget, valuesBySettingName: Map[String, Any])
 
 
 
 /** Identifies a section of all pages, e.g. a forum, a subforum, a blog, or a single page.
   * Used to clarify what pages a setting should affect.
   */
-sealed abstract class Section
+sealed abstract class SettingsTarget
 
-object Section {
-  case object WholeSite extends Section
-  case class PageTree(rootPageId: PageId) extends Section
-  case class SinglePage(id: PageId) extends Section
+object SettingsTarget {
+  case object WholeSite extends SettingsTarget
+  case class PageTree(rootPageId: PageId) extends SettingsTarget
+  case class SinglePage(id: PageId) extends SettingsTarget
 }
 

@@ -379,7 +379,7 @@ case class PageRequest[A](
   def pathAndMeta_! = PagePathAndMeta(pagePath, ancestorIdsParentFirst_!, pageMeta_!)
 
 
-  lazy val thePageSettings: Settings = dao.loadPageSettings(thePageId)
+  lazy val thePageSettings: Settings = dao.loadSinglePageSettings(thePageId)
 
 }
 

@@ -148,7 +148,7 @@ case class BrowserPagePatcher(
       case p: PageRequest[_] =>
         (p.pageRoot, p.thePageSettings.horizontalComments)
       case _ =>
-        (Some(PageParts.BodyId), request.dao.loadSiteSettings().horizontalComments)
+        (Some(PageParts.BodyId), request.dao.loadWholeSiteSettings().horizontalComments)
     }
 
     val serializer = HtmlPageSerializer(

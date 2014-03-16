@@ -18,45 +18,47 @@
 package debiki.dao
 
 import com.debiki.core._
+import com.debiki.core.Prelude._
 import debiki._
 import java.{util => ju}
-import Prelude._
 
 
-/**
+
+/** Loads and saves settings for the whole website, a section of the website (e.g.
+  * a forum or a blog) and individual pages.
   */
-trait PageSettingsDao {
+trait SettingsDao {
   self: SiteDao =>
 
-  def loadSiteSettings(): Settings = {
-    val rawSettingsMaps = siteDbDao.loadSettings(Vector(Section.WholeSite))
+  def loadWholeSiteSettings(): Settings = {
+    val rawSettingsMaps = siteDbDao.loadSettings(Vector(SettingsTarget.WholeSite))
     Settings(SettingsChain(rawSettingsMaps))
   }
 
-  def loadSectionSettings(pageId: PageId): Settings = {
+  def loadPageTreeSettings(pageId: PageId): Settings = {
     val pageAndAncestorIds = pageId :: loadAncestorIdsParentFirst(pageId)
-    val treeSections = pageAndAncestorIds.map(Section.PageTree(_))
-    val allSections = treeSections ++ Vector(Section.WholeSite)
-    val rawSettingsMaps = siteDbDao.loadSettings(allSections)
+    val treeTargets = pageAndAncestorIds.map(SettingsTarget.PageTree(_))
+    val allTargets = treeTargets ++ Vector(SettingsTarget.WholeSite)
+    val rawSettingsMaps = siteDbDao.loadSettings(allTargets)
     Settings(SettingsChain(rawSettingsMaps))
   }
 
-  def loadPageSettings(pageId: PageId): Settings = {
-    val pageSection = Section.SinglePage(pageId)
+  def loadSinglePageSettings(pageId: PageId): Settings = {
+    val pageTarget = SettingsTarget.SinglePage(pageId)
     val pageAndAncestorIds = pageId :: loadAncestorIdsParentFirst(pageId)
-    val treeSections = pageAndAncestorIds.map(Section.PageTree(_))
-    val allSections = Vector(pageSection) ++ treeSections ++ Vector(Section.WholeSite)
-    val rawSettingsMaps = siteDbDao.loadSettings(allSections)
+    val treeTargets = pageAndAncestorIds.map(SettingsTarget.PageTree(_))
+    val allTargets = Vector(pageTarget) ++ treeTargets ++ Vector(SettingsTarget.WholeSite)
+    val rawSettingsMaps = siteDbDao.loadSettings(allTargets)
     Settings(SettingsChain(rawSettingsMaps))
   }
 
-  def saveSetting(section: Section, name: String, value: Any) {
-    siteDbDao.savePageSetting(section, name -> value)
+  def saveSetting(target: SettingsTarget, name: String, value: Any) {
+    siteDbDao.saveSetting(target, name -> value)
   }
 }
 
 
-trait CachingPageSettingsDao extends PageSettingsDao {
+trait CachingPageSettingsDao extends SettingsDao {
   self: SiteDao with CachingDao =>
 
 }

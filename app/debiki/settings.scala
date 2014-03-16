@@ -27,7 +27,7 @@ case class AnySetting(
   val name: String,
   val assignedValue: Option[Any],
   val default: Any,
-  val section: Option[Section]) {
+  val section: Option[SettingsTarget]) {
 
   def value: Any = assignedValue getOrElse default
   def valueIsTrue = value == "T" || value == true
@@ -43,7 +43,7 @@ case class SettingsChain(rawSettings: Seq[RawSettings]) {
 
   def deriveSetting(name: String, default: Any): AnySetting = {
     var anyAssignedValue: Option[Any] = None
-    var anySection: Option[Section] = None
+    var anySection: Option[SettingsTarget] = None
     var i = 0
     while (i < rawSettings.size) {
       val settings = rawSettings(i)
