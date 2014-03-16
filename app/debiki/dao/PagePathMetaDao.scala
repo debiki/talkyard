@@ -59,7 +59,6 @@ trait PagePathMetaDao {
     siteDbDao.loadPageMeta(pageId)
 
 
-  // COULD cache !!
   def loadAncestorIdsParentFirst(pageId: PageId): List[PageId] =
     siteDbDao.loadAncestorIdsParentFirst(pageId)
 
@@ -196,6 +195,14 @@ trait CachingPagePathMetaDao extends PagePathMetaDao {
       orCacheAndReturn = super.loadPageMeta(pageId))
 
 
+  override def loadAncestorIdsParentFirst(pageId: PageId): List[PageId] = {
+    // [freshcache] SHOULD discard cached values older than a certain whole-site-invalidation value.
+    lookupInCache(
+      ancestorIdsByIdKey(pageId),
+      orCacheAndReturn = Some(super.loadAncestorIdsParentFirst(pageId))) getOrDie "DwE4GLi6"
+  }
+
+
   override def updatePageMeta(meta: PageMeta, old: PageMeta) {
     // BUG SHOULD uncache meta for old and new parent page too,
     // if this page changes parent page?
@@ -215,13 +222,14 @@ trait CachingPagePathMetaDao extends PagePathMetaDao {
   private def _pathWithIdByPathKey(pagePath: PagePath) =
     s"${pagePath.tenantId}|${pagePath.path}|PagePathByPath"
 
-
   private def _pathByPageIdKey(pageId: String) =
     s"$siteId|$pageId|PagePathById"
 
-
   private def pageMetaByIdKey(pageId: String) =
     s"$siteId|$pageId|PageMetaById"
+
+  private def ancestorIdsByIdKey(pageId: PageId) =
+    s"$siteId|$pageId|AncestorIdsById"
 
 }
 

@@ -299,6 +299,8 @@ case class PageRequest[A](
   def pageId_! : String = pagePath.pageId getOrElse
     throwNotFound("DwE93kD4", "Page does not exist: "+ pagePath.path)
 
+  def thePageId = pageId_!
+
   /**
    * The page this PageRequest concerns, or None if not found
    * (e.g. if !pageExists, or if it was deleted just moments ago).
@@ -375,6 +377,9 @@ case class PageRequest[A](
 
 
   def pathAndMeta_! = PagePathAndMeta(pagePath, ancestorIdsParentFirst_!, pageMeta_!)
+
+
+  lazy val thePageSettings: Settings = dao.loadSinglePageSettings(thePageId)
 
 }
 

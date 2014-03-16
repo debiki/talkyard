@@ -1,3 +1,19 @@
-<div>
-  <p>Site wide settings.html</p>
+<div settings>
+  <h3>Site Wide Settings</h3>
+
+  <div ng-if="ctrl.settings == null">
+    Loading, please wait...
+  </div>
+  <div ng-if="ctrl.settings != null">
+
+    <setting title="Title" setting="ctrl.settings.title">
+      The site title.
+    </setting>
+
+    <setting title="Description" setting="ctrl.settings.description">
+      A one sentence description of the website. Will be used as the
+        <kbd>&lt;html&gt;&lt;head&gt;&lt;description&gt;</kbd> tag.
+    </setting>
+
+  </div>
 </div>

@@ -63,6 +63,7 @@ class SiteDao(protected val siteDbDao: ChargingSiteDbDao)
   extends AnyRef
   with AssetBundleDao
   with ConfigValueDao
+  with SettingsDao
   with PagePathMetaDao
   with PageSummaryDao
   with RenderedPageHtmlDao

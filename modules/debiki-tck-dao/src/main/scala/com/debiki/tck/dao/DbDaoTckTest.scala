@@ -875,6 +875,114 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
     }
 
 
+    // -------- Page settings
+
+    "load and save page settings" >> {
+
+      var forum: Page = null
+      var topic: Page = null
+
+      def forumPage(pageRole: PageRole, parentPageId: Option[String] = None): Page =
+        Page(
+          PageMeta.forNewPage(pageRole, loginGrant.user, PageParts("?"), now, parentPageId),
+          defaultPagePath.copy(folder = "/settings-forum/", showId = true,
+            pageSlug = pageRole.toString),
+          ancestorIdsParentFirst = parentPageId.toList,
+          PageParts(guid = "?"))
+
+      "create a forum and a topic" in {
+        val forumNoId = forumPage(PageRole.Forum)
+        forum = dao.createPage(forumNoId)
+        val topicNoId = forumPage(PageRole.ForumTopic, parentPageId = Some(forum.id))
+        topic = dao.createPage(topicNoId)
+        ok
+      }
+
+      "find no settings before any settings created" in {
+        var rawSettings = Seq(dao.loadSiteSettings())
+        rawSettings.head.valuesBySettingName.isEmpty must_== true
+
+        rawSettings = dao.loadSettings(Seq(SettingsTarget.PageTree(forum.id)))
+        rawSettings.length must_== 1
+        rawSettings.head.valuesBySettingName.isEmpty must_== true
+
+        rawSettings = dao.loadSettings(Seq(
+          SettingsTarget.SinglePage(topic.id), SettingsTarget.PageTree(forum.id)))
+        rawSettings.length must_== 2
+        rawSettings.foreach { settings =>
+          settings.valuesBySettingName.isEmpty must_== true
+        }
+      }
+
+      "save and load site settings" >> {
+        "of type text" in {
+          dao.saveSetting(SettingsTarget.WholeSite, "SettingA" -> "TextValueA")
+          dao.saveSetting(SettingsTarget.WholeSite, "SettingB" -> "TextValueB")
+          val settings = dao.loadSiteSettings()
+          settings.valuesBySettingName.get("SettingA") must_== Some("TextValueA")
+          settings.valuesBySettingName.get("SettingB") must_== Some("TextValueB")
+          settings.valuesBySettingName.get("AbsentSetting") must_== None
+        }
+
+        "of type integer" in {
+          dao.saveSetting(SettingsTarget.WholeSite, "SettingC" -> 111)
+          dao.saveSetting(SettingsTarget.WholeSite, "SettingD" -> 222)
+          val settings = dao.loadSiteSettings()
+          settings.valuesBySettingName.get("SettingC") must_== Some(111)
+          settings.valuesBySettingName.get("SettingD") must_== Some(222)
+        }
+
+        "of type double" in {
+          dao.saveSetting(SettingsTarget.WholeSite, "SettingE" -> 100.111)
+          dao.saveSetting(SettingsTarget.WholeSite, "SettingF" -> 200.222)
+          val settings = dao.loadSiteSettings()
+          settings.valuesBySettingName.get("SettingE") must_== Some(100.111)
+          settings.valuesBySettingName.get("SettingF") must_== Some(200.222)
+        }
+
+        "of type boolean" in {
+          dao.saveSetting(SettingsTarget.WholeSite, "SettingTrue" -> true)
+          dao.saveSetting(SettingsTarget.WholeSite, "SettingFalse" -> false)
+          val settings = dao.loadSiteSettings()
+          settings.valuesBySettingName.get("SettingTrue") must_== Some(true)
+          settings.valuesBySettingName.get("SettingFalse") must_== Some(false)
+        }
+      }
+
+      "save and load topic and section settings" >> {
+        dao.saveSetting(SettingsTarget.SinglePage(topic.id), "SettingA" -> "PageTextValueA")
+        dao.saveSetting(SettingsTarget.SinglePage(topic.id), "SettingC" -> 113)
+        dao.saveSetting(SettingsTarget.SinglePage(topic.id), "SettingE" -> 100.113)
+        dao.saveSetting(SettingsTarget.SinglePage(topic.id), "SettingTrue" -> true)
+        dao.saveSetting(SettingsTarget.PageTree(forum.id), "SettingA" -> "ForumTextValueA")
+        dao.saveSetting(SettingsTarget.PageTree(forum.id), "SettingC" -> 112)
+        dao.saveSetting(SettingsTarget.PageTree(forum.id), "SettingE" -> 100.112)
+        dao.saveSetting(SettingsTarget.PageTree(forum.id), "SettingFalse" -> false)
+        val settings = dao.loadSettings(List(
+          SettingsTarget.SinglePage(topic.id), SettingsTarget.PageTree(forum.id)))
+        settings.length must_== 2
+        settings.head.valuesBySettingName.get("SettingA") must_== Some("PageTextValueA")
+        settings.head.valuesBySettingName.get("SettingC") must_== Some(113)
+        settings.head.valuesBySettingName.get("SettingE") must_== Some(100.113)
+        settings.head.valuesBySettingName.get("SettingTrue") must_== Some(true)
+        settings.last.valuesBySettingName.get("SettingA") must_== Some("ForumTextValueA")
+        settings.last.valuesBySettingName.get("SettingC") must_== Some(112)
+        settings.last.valuesBySettingName.get("SettingE") must_== Some(100.112)
+        settings.last.valuesBySettingName.get("SettingFalse") must_== Some(false)
+      }
+
+      "update settings" in {
+        pending
+      }
+
+      "find no settings for non-existing page" in {
+        val rawSettings = dao.loadSettings(Seq(SettingsTarget.PageTree("NonExistingPage")))
+        rawSettings.length must_== 1
+        rawSettings.head.valuesBySettingName.isEmpty must_== true
+      }
+    }
+
+
     // -------- Full text search
 
     "full text search forum contents" >> {

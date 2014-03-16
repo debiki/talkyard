@@ -280,6 +280,7 @@ case class HtmlPageSerializer(
   pageTrust: PageTrust,
   pageRoot: AnyPageRoot,
   hostAndPort: String,
+  horizontalComments: Boolean,
   nofollowArticle: Boolean = true,
   showUnapproved: ShowUnapproved = ShowUnapproved.None,
   showStubsForDeleted: Boolean = false) {
@@ -295,6 +296,11 @@ case class HtmlPageSerializer(
   private def postRenderer =
     HtmlPostRenderer(page, pageStats, hostAndPort, nofollowArticle,
       showUnapproved = showUnapproved)
+
+  /** A CSS class that causes comments to be laid out horizontally, in two dimensions.
+    */
+  private val horizontalCommentsCss =
+    if (horizontalComments) "dw-hor" else ""
 
 
   def renderSingleThread(postId: PostId, pageRoot: AnyPageRoot = Some(PageParts.BodyId))
@@ -360,7 +366,7 @@ case class HtmlPageSerializer(
 
     val bodyAndComments =
       <div id={"dw-t-"+ rootPost.id}
-           class={"dw-t"+ cssArtclThread + cssDummy +" dw-hor"}>
+           class={s"dw-t $cssArtclThread $cssDummy $horizontalCommentsCss"}>
       {
         val renderedRoot = postRenderer.renderPost(rootPost.id)
         val anyBodyHtml =
@@ -397,7 +403,7 @@ case class HtmlPageSerializer(
   private def renderTopLevelPosts(): NodeSeq = {
     val topLevelComments = page.topLevelComments
     val html =
-      <div class="dw-t dw-hor">
+      <div class={s"dw-t $horizontalCommentsCss"}>
         {/* Include an empty div.dw-p, so arrows to top level posts are drawn. */}
         <div class="dw-p"></div>
         { makeCommentsToolbar() }
@@ -612,7 +618,7 @@ case class HtmlPageSerializer(
     }
 
     var thread = {
-      val cssHoriz = if (horizontal) " dw-hor" else ""
+      val cssHoriz = if (horizontal) s" $horizontalCommentsCss" else ""
       <li id={cssThreadId} class={"dw-t "+ cssInlineThread +
              cssFolded + cssHoriz + cssThreadDeleted + cssArticleQuestion}>{
         foldLink ++
