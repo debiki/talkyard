@@ -1,14 +1,19 @@
 library page_settings;
 
+import 'dart:convert';
+
 import 'package:debiki_admin/util.dart';
 
 
 class Setting<T> {
+  final SettingsTarget target;
+  final String name;
   final T defaultValue;
   T currentValue;
   T newValue;
 
-  Setting(T this.defaultValue, { T this.currentValue: null }) {
+  Setting(SettingsTarget this.target, String this.name, T this.defaultValue, {
+        T this.currentValue: null }) {
     if (currentValue == null) {
       currentValue = defaultValue;
     }
@@ -16,7 +21,12 @@ class Setting<T> {
   }
 
   String get toJson {
-    return 'Boo hooo';
+    return JSON.encode({
+      'type': target.type,
+      'pageId': target.pageId,
+      'name': name,
+      'newValue': newValue
+    });
   }
 }
 
@@ -24,25 +34,21 @@ class Setting<T> {
 class SettingsTarget {
   final String type;
   final String pageId;
-  final String roleId;
 
-  SettingsTarget(String this.type, String this.pageId, String this.roleId);
+  SettingsTarget(String this.type, String this.pageId);
 
   factory SettingsTarget.site() {
-    return new SettingsTarget('SiteSettings', null, null);
+    return new SettingsTarget('WholeSite', null);
   }
 
   factory SettingsTarget.section(String pageId) {
-    return new SettingsTarget('SectionSettings', pageId, null);
+    return new SettingsTarget('PageTree', pageId);
   }
 
   factory SettingsTarget.page(String pageId) {
-    return new SettingsTarget('PageSettings', pageId, null);
+    return new SettingsTarget('SinglePage', pageId);
   }
 
-  factory SettingsTarget.role(String roleId) {
-    return new SettingsTarget('PageSettings', null, roleId);
-  }
 }
 
 
@@ -65,16 +71,19 @@ class Settings {
   factory Settings.fromJsonMap(SettingsTarget target, Map json) {
     return new Settings(
         target,
-        title: _makeSetting(json, 'title'),
-        description: _makeSetting(json, 'description'),
-        horizontalComments: _makeSetting(json, 'horizontalComments'));
+        title: _makeSetting(target, 'title', json),
+        description: _makeSetting(target, 'description', json),
+        horizontalComments: _makeSetting(target, 'horizontalComments', json));
   }
 
-  static Setting _makeSetting(Map jsonMap, String settingName) {
+  static Setting _makeSetting(
+        SettingsTarget target, String name, Map valueMap) {
     // ? SHOULD change from currentValue to anyAssignedValue which might be null.
-    var jsonSetting = jsonMap[settingName];
-    errorIf(jsonSetting == null, "No such setting: `$settingName' [DwEKf980]");
+    var jsonSetting = valueMap[name];
+    errorIf(jsonSetting == null, "No such setting: `$name' [DwEKf980]");
     return new Setting(
+        target,
+        name,
         jsonSetting['defaultValue'],
         currentValue: jsonSetting['anyAssignedValue']);
   }

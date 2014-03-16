@@ -23,6 +23,7 @@ import com.debiki.core.Prelude._
 import debiki._
 import debiki.DebikiHttp._
 import play.api._
+import play.api.libs.json._
 import requests.{GetRequest, JsonPostRequest}
 import Utils.OkSafeJson
 
@@ -50,9 +51,19 @@ object SettingsController extends mvc.Controller {
     val pageId = (body \ "pageId").asOpt[PageId]
     val tyype = (body \ "type").as[String]
     val name = (body \ "name").as[String]
-    val anyTextValue = (body \ "textValue").asOpt[String]
-    val anyLongValue = (body \ "longValue").asOpt[Long]
-    val anyDoubleValue = (body \ "doubleValue").asOpt[Double]
+
+    val newValue: Any = (body \ "newValue") match {
+      case JsBoolean(value) =>
+        value
+      case JsNumber(value: BigDecimal) =>
+        if (value.isValidDouble) value.toDouble
+        else if (value.isValidLong) value.toLong
+        else throwBadReq("DwE2GKS6", s"Bad new number: $value")
+      case JsString(value) =>
+        value
+      case x =>
+        throwBadReq("DwE47XS0", s"Bad new value: `$x'")
+    }
 
     val section = tyype match {
       case "WholeSite" =>
@@ -61,12 +72,11 @@ object SettingsController extends mvc.Controller {
         Section.PageTree(pageId getOrElse throwBadReq("DwE44GE0", "No page id specified"))
       case "SinglePage" =>
         Section.SinglePage(pageId getOrElse throwBadReq("DwE55XU1", "No page id specified"))
+      case x =>
+        throwBadReq("DwE48UFk9", s"Bad section type: `$x'")
     }
 
-    val value = anyTextValue.orElse(anyLongValue).orElse(anyDoubleValue) getOrElse
-      throwBadReq("DwE0FSY5", "No value")
-
-    request.dao.saveSetting(section, name, value)
+    request.dao.saveSetting(section, name, newValue)
     Ok
   }
 

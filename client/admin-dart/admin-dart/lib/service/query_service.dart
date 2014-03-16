@@ -2,7 +2,6 @@ library debiki_admin_query_service;
 
 import 'dart:async';
 import 'dart:convert';
-import 'dart:html';
 import 'package:angular/angular.dart';
 
 import 'debiki_data.dart';
@@ -124,13 +123,13 @@ class DebikiAdminQueryService {
     });
   }
 
-  Future saveTextSetting(String pageId, Setting value) {
+  Future saveSetting(Setting setting) {
     return _http.request(
         _saveSettingUrl, withCredentials: true, method: 'POST',
         requestHeaders: {
           'Content-Type': 'application/json',
           'X-XSRF-TOKEN': 'CorsFromDartEditor'
         },
-        sendData: value.toJson);
+        sendData: setting.toJson);
   }
 }

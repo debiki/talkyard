@@ -4,15 +4,15 @@
   <label for="forumDescription" class="col-sm-2 control-labele">{{ cmp.title }}</label>
 
   <div ng-if="cmp.isTextSetting" class="col-sm-7">
-    <input ng-model="cmp.value.newValue" type="text" class="form-control" id="forumDescription">
-    <p><content></content> <span>Default value: <kbd>{{ cmp.value.defaultValue }}</kbd></span></p>
+    <input ng-model="cmp.setting.newValue" type="text" class="form-control" id="forumDescription">
+    <p><content></content> <span>Default value: <kbd>{{ cmp.setting.defaultValue }}</kbd></span></p>
   </div>
 
   <div ng-if="cmp.isBoolSetting" class="col-sm-7">
     <div class="checkbox">
-      <input ng-model="cmp.value.newValue" type="checkbox" id="forumDescription">
+      <input ng-model="cmp.setting.newValue" type="checkbox" id="forumDescription">
     </div>
-    <p><content></content> <span>Default value: <kbd>{{ cmp.value.defaultValue }}</kbd></span></p>
+    <p><content></content> <span>Default value: <kbd>{{ cmp.setting.defaultValue }}</kbd></span></p>
   </div>
 
   <div class="col-sm-3" ng-hide="!cmp.valueChanged">

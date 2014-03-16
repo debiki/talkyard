@@ -24,32 +24,32 @@ class SettingComponent {
   @NgAttr('page-id')
   String pageId = '';
 
-  @NgTwoWay('value')
-  Setting value;
+  @NgTwoWay('setting')
+  Setting setting;
 
-  bool get isTextSetting => value.newValue is String;
-  bool get isBoolSetting => value.newValue is bool;
-  bool get valueChanged => value.newValue != value.currentValue;
-  bool get hasDefaultValue => value.currentValue == value.defaultValue;
+  bool get isTextSetting => setting.newValue is String;
+  bool get isBoolSetting => setting.newValue is bool;
+  bool get valueChanged => setting.newValue != setting.currentValue;
+  bool get hasDefaultValue => setting.currentValue == setting.defaultValue;
 
 
   SettingComponent(DebikiAdminQueryService this._queryService) {
   }
 
   void save() {
-    _queryService.saveTextSetting(pageId, value).then((_) {
-      value.currentValue = value.newValue;
-    }, onError: (x, y, z) {
-      print('Error saving setting: $x, $y, $z');
+    _queryService.saveSetting(setting).then((_) {
+      setting.currentValue = setting.newValue;
+    }, onError: (x) {
+      print('Error saving setting: $x');
       // COULD show error message somehow
     });
   }
 
   void cancel() {
-    value.newValue = value.currentValue;
+    setting.newValue = setting.currentValue;
   }
 
   void setToDefault() {
-    value.newValue = value.defaultValue;
+    setting.newValue = setting.defaultValue;
   }
 }

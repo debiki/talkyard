@@ -34,7 +34,7 @@ trait PageSettingsDao {
   }
 
   def loadSectionSettings(pageId: PageId): Settings = {
-    val pageAndAncestorIds = loadAncestorIdsParentFirst(pageId)
+    val pageAndAncestorIds = pageId :: loadAncestorIdsParentFirst(pageId)
     val treeSections = pageAndAncestorIds.map(Section.PageTree(_))
     val allSections = treeSections ++ Vector(Section.WholeSite)
     val rawSettingsMaps = siteDbDao.loadSettings(allSections)
@@ -43,7 +43,7 @@ trait PageSettingsDao {
 
   def loadPageSettings(pageId: PageId): Settings = {
     val pageSection = Section.SinglePage(pageId)
-    val pageAndAncestorIds = loadAncestorIdsParentFirst(pageId)
+    val pageAndAncestorIds = pageId :: loadAncestorIdsParentFirst(pageId)
     val treeSections = pageAndAncestorIds.map(Section.PageTree(_))
     val allSections = Vector(pageSection) ++ treeSections ++ Vector(Section.WholeSite)
     val rawSettingsMaps = siteDbDao.loadSettings(allSections)

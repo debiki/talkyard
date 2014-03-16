@@ -88,14 +88,14 @@ case class Settings(settingsChain: SettingsChain) {
 
 
   def toJson =
-    JsObject(Seq(
+    Json.obj(
       "title" -> jsonFor(title),
       "description" -> jsonFor(description),
-      "horizontalComments" -> jsonFor(horizontalComments)))
+      "horizontalComments" -> jsonFor(horizontalComments))
 
 
   private def jsonFor(setting: AnySetting): JsObject = {
-    var jsObject = JsObject(Seq("defaultValue" -> anyToJsValue(setting.default)))
+    var jsObject = Json.obj("defaultValue" -> anyToJsValue(setting.default))
     setting.assignedValue foreach { value =>
       jsObject += "anyAssignedValue" -> anyToJsValue(value)
     }
