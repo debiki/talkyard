@@ -41,7 +41,7 @@ import Utils.ValidationImplicits._
  *    new-slug=
  *    show-id=t/f
  */
-object AppMoveRenamePage extends mvc.Controller {
+object MovePageController extends mvc.Controller {
 
 
   /*
@@ -93,7 +93,7 @@ object AppMoveRenamePage extends mvc.Controller {
         // The Admin SPA needs to know that [a page other than the one we
         // wanted to move] has been moved.
         OkSafeJson(toJson(Map(
-          "pagePushedToPrevLoc" -> AppList.jsonFor(pushedPagePath))))
+          "pagePushedToPrevLoc" -> ListController.jsonFor(pushedPagePath))))
     }
   }
 

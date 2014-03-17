@@ -43,7 +43,7 @@ import Utils.{OkSafeJson, OkHtml, Passhasher, parseIntOrThrowBadReq}
  *  -- I'm doing it *sometimes* when loading PermsOnPage via
  *  PageActions.PageReqAction?
  */
-object AppEdit extends mvc.Controller {
+object EditController extends mvc.Controller {
 
 
   def showEditForm(pathIn: PagePath, postId: ActionId)
@@ -182,7 +182,7 @@ object AppEdit extends mvc.Controller {
         val createPageReq = PageRequest.forPageToCreate(request, pagePathStr, pageId)
         val newPath = createPageReq.pagePath
 
-        val correctPasshash = AppCreatePage.makePagePasshash(
+        val correctPasshash = CreatePageController.makePagePasshash(
           prevPageApproval, pageRole, pageStatus, folder = newPath.folder,
           slug = newPath.pageSlug, showId = newPath.showId, pageId = pageId,
           parentPageId = parentPageId)
@@ -356,7 +356,7 @@ object AppEdit extends mvc.Controller {
     val patchText = makePatch(from = post.currentText, to = newText)
 
     val (mayEdit, mayEditReason) =
-      AppEdit.mayEdit(pageReq.user, post, pageReq.permsOnPage)
+      EditController.mayEdit(pageReq.user, post, pageReq.permsOnPage)
 
     def editsOwnPost = pageReq.user_!.id == post.userId
 

@@ -31,7 +31,7 @@ import play.api.libs.json.JsObject
 
 /** Pins a comment by position, or pins votes to it.
   */
-object Pin extends mvc.Controller {
+object PinController extends mvc.Controller {
 
 
   def pinAtPosition = PostJsonAction(maxLength = 1000) { apiReq =>

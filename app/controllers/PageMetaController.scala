@@ -29,7 +29,7 @@ import play.api.libs.json.util._
 /**
  * Changes the status of a page, e.g. from Draft to Published.
  */
-object AppChangePageMeta extends mvc.Controller {
+object PageMetaController extends mvc.Controller {
 
   /* Accepts this JSON, shown as YAML:
    * - pageId: page-id

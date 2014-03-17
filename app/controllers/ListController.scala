@@ -37,7 +37,7 @@ import Utils.ValidationImplicits._
 /**
  * Lists folders, pages and actions.
  */
-object AppList extends mvc.Controller {
+object ListController extends mvc.Controller {
 
 
   val ActionCountLimit = 100

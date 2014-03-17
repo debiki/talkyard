@@ -35,7 +35,7 @@ import Utils.{OkHtml, Passhasher}
 /**
  * Handles requests related to forums, forum topics and forum groups.
  */
-object AppForum extends mvc.Controller {
+object ForumController extends mvc.Controller {
 
 
   /**

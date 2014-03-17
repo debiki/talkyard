@@ -113,7 +113,7 @@ trait TestLoginner extends DebikiSelectors {
 
     // Update the browser: set cookies.
     val (_, _, sidAndXsrfCookies) = debiki.Xsrf.newSidAndXsrf(Some(loginGrant))
-    val userConfigCookie = controllers.AppConfigUser.userConfigCookie(loginGrant)
+    val userConfigCookie = controllers.ConfigUserController.userConfigCookie(loginGrant)
     for (cookie <- userConfigCookie :: sidAndXsrfCookies) {
       // Set cookie via Javascript: ...
       executeScript(

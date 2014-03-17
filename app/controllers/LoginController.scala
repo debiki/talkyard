@@ -38,7 +38,7 @@ import Utils.{OkHtml}
  * this class, AppLogin, which will eventually redirect back to the
  * returnToUrl.
  */
-object AppLogin extends mvc.Controller {
+object LoginController extends mvc.Controller {
 
 
   def loginWith(provider: String, returnToUrl: String) = ExceptionActionNoBody {
@@ -50,7 +50,7 @@ object AppLogin extends mvc.Controller {
   def loginWithPostData(returnToUrl: String) = ExceptionAction(
         parse.urlFormEncoded(maxLength = 200)) { implicit request =>
     // For now. Should handle guest login forms too.
-    AppLoginOpenId.asyncLoginWithPostData(returnToUrl = "")
+    LoginWithOpenIdController.asyncLoginWithPostData(returnToUrl = "")
   }
 
 
@@ -58,7 +58,7 @@ object AppLogin extends mvc.Controller {
         (implicit request: Request[Option[Any]]): Result = {
 
     def loginWithOpenId(identifier: String): AsyncResult = {
-      AppLoginOpenId.asyncLogin(openIdIdentifier = identifier,
+      LoginWithOpenIdController.asyncLogin(openIdIdentifier = identifier,
         returnToUrl = returnToUrl)(request)
     }
 
@@ -89,7 +89,7 @@ object AppLogin extends mvc.Controller {
     // Keep the xsrf cookie, so login dialog works:
     Ok.discardingCookies(
       DiscardingCookie("dwCoSid"),
-      DiscardingCookie(AppConfigUser.ConfigCookie))
+      DiscardingCookie(ConfigUserController.ConfigCookie))
   }
 
 }

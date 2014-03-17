@@ -19,7 +19,7 @@ package debiki
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
-import controllers.AppCreatePage
+import controllers.CreatePageController
 import debiki.dao.{SiteDao, ConfigValueDao}
 import java.{util => ju}
 
@@ -139,7 +139,7 @@ object SiteCreator {
 
   def makeConfigPage(text: String, siteId: String, creationDati: ju.Date, path: String)
         : Page = {
-    val pageId = AppCreatePage.generateNewPageId()
+    val pageId = CreatePageController.generateNewPageId()
     val pageBody = PostActionDto.forNewPageBodyBySystem(
       text, creationDati, PageRole.Code)
     val actions = PageParts(pageId, SystemUser.Person, actionDtos = List(pageBody))
@@ -161,7 +161,7 @@ object SiteCreator {
     * the blog or forum becomes the homepage.
     */
   private def createBlogOrForum(newSiteDao: SiteDao, pageRole: PageRole, createdAt: ju.Date) {
-    val pageId = AppCreatePage.generateNewPageId()
+    val pageId = CreatePageController.generateNewPageId()
     val emptyPage = PageParts(pageId, SystemUser.Person)
     val pageMeta = PageMeta.forNewPage(
       pageRole, SystemUser.User, emptyPage, createdAt, publishDirectly = true)
@@ -180,7 +180,7 @@ object SiteCreator {
    * is automatically moved from / to /_old/default-homepage.
    */
   private def createHomepage(newWebsiteDao: SiteDao, creationDati: ju.Date) {
-    val pageId = AppCreatePage.generateNewPageId()
+    val pageId = CreatePageController.generateNewPageId()
     val emptyPage = PageParts(pageId, SystemUser.Person)
     val pageMeta = PageMeta.forNewPage(
       PageRole.Generic, SystemUser.User, emptyPage, creationDati, publishDirectly = true)

@@ -43,7 +43,7 @@ import play.api.libs.json._
   *
   * 3. Shows an all-done page with a link to the admin dashboard.
   */
-object AppInstall extends mvc.Controller {
+object InstallationController extends mvc.Controller {
 
 
   /** A password the server admin needs to specify when creating the very first site.
@@ -71,7 +71,8 @@ object AppInstall extends mvc.Controller {
         val xsrfCookie = urlEncodeCookie(DebikiSecurity.XsrfCookieName, xsrfToken)
 
         Ok(views.html.login.loginPage(xsrfToken = xsrfToken,
-          returnToUrl = routes.AppInstall.createFirstSiteOwner(firstSiteOwnerPassword).url,
+          returnToUrl =
+            routes.InstallationController.createFirstSiteOwner(firstSiteOwnerPassword).url,
           showCreateAccountOption = true,
           title = "Installation",
           message = Some("The website needs an administrator."),

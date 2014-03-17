@@ -34,7 +34,7 @@ import Utils.ValidationImplicits._
  * Approves and rejects comments and edits of comments, and new pages,
  * etcetera.
  */
-object AppReview extends mvc.Controller {
+object ReviewController extends mvc.Controller {
 
 
   def approve = PostJsonAction(maxLength = 5000) { apiReq =>

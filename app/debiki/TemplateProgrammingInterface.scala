@@ -20,13 +20,13 @@ package debiki
 import com.debiki.core
 import com.debiki.core._
 import com.debiki.core.Prelude._
-import controllers.{SiteAssetBundles, routes}
+import controllers.{SiteAssetBundlesController, routes}
 import debiki.dao._
 import java.{util => ju}
 import play.{api => p}
 import play.api.Play.current
 import requests.{DebikiRequest, PageRequest}
-import SiteAssetBundles.{AssetBundleNameRegex, assetBundleFileName}
+import SiteAssetBundlesController.{AssetBundleNameRegex, assetBundleFileName}
 
 
 object InternalTemplateProgrammingInterface {
@@ -268,7 +268,7 @@ class SiteTpi protected (val debikiRequest: DebikiRequest[_])
     try {
       val version = dao.loadAssetBundleVersion(nameNoSuffix, suffix)
       val fileName = assetBundleFileName(nameNoSuffix, version, suffix)
-        <link rel="stylesheet" href={ routes.SiteAssetBundles.at(fileName).url }/>
+        <link rel="stylesheet" href={ routes.SiteAssetBundlesController.at(fileName).url }/>
     }
     catch {
       case ex: DebikiException =>

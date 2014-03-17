@@ -36,7 +36,7 @@ import DbDao.PathClashException
   * But this page is not saved until later on, by AppEdit, when/if the user edits
   * it and saves it.
   */
-object AppCreatePage extends mvc.Controller {
+object CreatePageController extends mvc.Controller {
 
 
     /*
@@ -148,7 +148,7 @@ object AppCreatePage extends mvc.Controller {
 
     val userPageDataJson =
       if (pageReq.user.isEmpty) ""
-      else PageViewer.buildUserPageDataJson(pageReq)
+      else ViewPageController.buildUserPageDataJson(pageReq)
 
     // If not logged in, then include an empty Yaml tag, so the browser
     // notices that it got that elem, and won't call GET ?page-info.

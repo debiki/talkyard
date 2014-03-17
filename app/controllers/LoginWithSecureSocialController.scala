@@ -119,7 +119,7 @@ object LoginWithSecureSocialController extends mvc.Controller {
     val loginGrant: LoginGrant = dao.saveLogin(loginAttempt)
 
     val (_, _, sidAndXsrfCookies) = debiki.Xsrf.newSidAndXsrf(Some(loginGrant))
-    val userConfigCookie = AppConfigUser.userConfigCookie(loginGrant)
+    val userConfigCookie = ConfigUserController.userConfigCookie(loginGrant)
     val newSessionCookies = userConfigCookie::sidAndXsrfCookies
 
     val response = request.request.cookies.get(ReturnToUrlCookieName) match {

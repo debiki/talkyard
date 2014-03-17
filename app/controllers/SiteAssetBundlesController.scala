@@ -34,7 +34,7 @@ import Prelude._
  * (So whenever the bundle contents changes, the URL also changes — and
  * we can ask the browser to cache forever. This is asset versioning.)
  */
-object SiteAssetBundles extends mvc.Controller {
+object SiteAssetBundlesController extends mvc.Controller {
 
 
   /**

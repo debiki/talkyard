@@ -18,7 +18,7 @@
 package test.e2e.specs
 
 import com.debiki.core.Prelude._
-import controllers.AppInstall
+import controllers.InstallationController
 import org.scalatest.time.{Span, Seconds}
 import org.scalatest.DoNotDiscover
 import test.e2e.code._
@@ -82,7 +82,7 @@ class ServerInstallationSpec extends DebikiBrowserSpec with TestLoginner {
     }
 
     "submit the correct create-first-site password" in {
-      firstSitePasswordField.value = AppInstall.firstSitePassword
+      firstSitePasswordField.value = InstallationController.firstSitePassword
       click on cssSelector("input[type='submit']")
     }
 

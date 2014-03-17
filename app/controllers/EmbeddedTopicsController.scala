@@ -121,7 +121,7 @@ object EmbeddedTopicsController extends mvc.Controller {
     val pageReqNoRoot = pageReqDefaultRoot.copyWithNewPageRoot(None)
 
     if (pageReqNoRoot.pageExists) {
-      PageViewer.viewPostImpl(pageReqNoRoot)
+      ViewPageController.viewPostImpl(pageReqNoRoot)
     }
     else {
       showNonExistingPage(pageReqNoRoot, topicPagePath)
@@ -145,7 +145,7 @@ object EmbeddedTopicsController extends mvc.Controller {
       Page(newTopicMeta, topicPagePath, ancestorIdsParentFirst = Nil, PageParts(topicId)),
       pageExists = false)
 
-    PageViewer.viewPostImpl(pageReq)
+    ViewPageController.viewPostImpl(pageReq)
   }
 
 

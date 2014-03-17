@@ -32,7 +32,7 @@ import EmailNotfPrefs.EmailNotfPrefs
 
 /** Configures a user, can e.g. change receive-email preferences.
   */
-object AppConfigUser extends mvc.Controller {
+object ConfigUserController extends mvc.Controller {
 
   val ConfigCookie = "dwCoConf"
   val ConfigCookieEmailNotfs = "EmNt"
@@ -123,7 +123,7 @@ object AppConfigUser extends mvc.Controller {
         (pageReq.user_!, pageReq.loginId_!, Nil)
       case Some(newAddr) =>
         val (loginGrant, newSessCookies) =
-          AppLoginGuest.loginGuestAgainWithNewEmail(pageReq, newAddr)
+          LoginAsGuestController.loginGuestAgainWithNewEmail(pageReq, newAddr)
         (loginGrant.user, loginGrant.login.id, newSessCookies)
     }
 

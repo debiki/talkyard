@@ -31,12 +31,9 @@ import Utils.ValidationImplicits._
 import BrowserPagePatcher.TreePatchSpec
 
 
-/** Handles simple actions like closing and collapsing trees and posts.
-  *
-  * (They're simple in the sense that they're represented by a case *object* only,
-  * and they can therefore be handled together here.)
+/** Closes and collapses trees and posts.
   */
-object AppSimple extends mvc.Controller {
+object CloseCollapseController extends mvc.Controller {
 
 
   def collapsePost = PostJsonAction(maxLength = 5000) { apiReq =>

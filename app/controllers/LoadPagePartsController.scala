@@ -34,7 +34,7 @@ import BrowserPagePatcher.TreePatchSpec
   * Use PageViewer to view a complete page however — it loads more stuff,
   * e.g. permissions and user specific data for the page.
   */
-object PagePartsLoader extends mvc.Controller {
+object LoadPagePartsController extends mvc.Controller {
 
 
   def loadTrees =

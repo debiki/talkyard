@@ -32,7 +32,7 @@ import Utils.parseIntOrThrowBadReq
 
 /** Shows edit history, and applies edit/improvement suggestions.
   */
-object AppEditHistory extends mvc.Controller {
+object EditHistoryController extends mvc.Controller {
 
 
   def showForm(pageId: PageId, postId: String) = GetAction { request: GetRequest =>
@@ -46,7 +46,7 @@ object AppEditHistory extends mvc.Controller {
       throwForbidden("DwE9kIJ4", s"Post `$postIdInt' not found")
 
     val (mayEdit, mayEditReason) =
-      AppEdit.mayEdit(pageReq.user, post, pageReq.permsOnPage)
+      EditController.mayEdit(pageReq.user, post, pageReq.permsOnPage)
 
     val form = Utils.formHtml(pageReq).editsDialog(
       post, page, pageReq.sid.displayName, mayEdit = mayEdit)
@@ -136,7 +136,7 @@ object AppEditHistory extends mvc.Controller {
         throwForbidden("DwE82U13k7", s"Post not found: `${editAffected.postId}'")
 
       val (mayEdit, mayEditReason) =
-        AppEdit.mayEdit(pageReq.user, postAffected, pageReq.permsOnPage)
+        EditController.mayEdit(pageReq.user, postAffected, pageReq.permsOnPage)
       if (!mayEdit)
         throwForbidden("DwE09253kr1", "Insufficient permissions")
 

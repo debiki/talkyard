@@ -106,54 +106,53 @@ object Global extends GlobalSettings {
 
     // Route based on the query string.
     import controllers._
-    val App = Application
     val GET = "GET"
     val POST = "POST"
     val action = (mainFun, request.method) match {
       case ("edit", GET) =>
-        AppEdit.showEditForm(pagePath, postId = mainFunValAsInt_!)
+        EditController.showEditForm(pagePath, postId = mainFunValAsInt_!)
       case ("view", GET) =>
-        PageViewer.viewPost(pagePath)
+        ViewPageController.viewPost(pagePath)
       case ("delete", POST) =>
-        App.handleDeleteForm(pagePath, postId = mainFunValAsInt_!)
+        Application.handleDeleteForm(pagePath, postId = mainFunValAsInt_!)
       case ("get-view-new-page-url", GET) =>
-        AppCreatePage.getViewNewPageUrl(pagePath)
+        CreatePageController.getViewNewPageUrl(pagePath)
       case ("view-new-page", GET) =>
-        AppCreatePage.viewNewPage(pagePath, pageId = mainFunVal_!)
+        CreatePageController.viewNewPage(pagePath, pageId = mainFunVal_!)
       case ("move-page", GET) =>
-        AppMoveRenamePage.showMovePageForm(pagePath)
+        MovePageController.showMovePageForm(pagePath)
       case ("move-page", POST) =>
-        AppMoveRenamePage.handleMovePageForm(pagePath)
+        MovePageController.handleMovePageForm(pagePath)
       case ("rename-slug", GET) =>
-        AppMoveRenamePage.showRenamePageSlugForm(pagePath)
+        MovePageController.showRenamePageSlugForm(pagePath)
       case ("rename-slug", POST) =>
-        AppMoveRenamePage.handleRenamePageSlugForm(pagePath)
+        MovePageController.handleRenamePageSlugForm(pagePath)
       case ("list-pages", GET) =>
-        AppList.listPages(pagePath, DebikiHttp.ContentType.Html)
+        ListController.listPages(pagePath, DebikiHttp.ContentType.Html)
       case ("list-pages.json", GET) =>
-        AppList.listPages(pagePath, DebikiHttp.ContentType.Json)
+        ListController.listPages(pagePath, DebikiHttp.ContentType.Json)
         /*
       case ("list-newest-pages", GET) =>
-        AppList.listNewestPages(pagePath, DebikiHttp.ContentType.Html)
+        ListController.listNewestPages(pagePath, DebikiHttp.ContentType.Html)
       case ("list-newest-pages.json", GET) =>
-        AppList.listNewestPages(pagePath, DebikiHttp.ContentType.Json)
+        ListController.listNewestPages(pagePath, DebikiHttp.ContentType.Json)
         */
       case ("list-actions", GET) =>
-        AppList.listActions(pagePath, DebikiHttp.ContentType.Html)
+        ListController.listActions(pagePath, DebikiHttp.ContentType.Html)
       case ("list-actions.json", GET) =>
-        AppList.listActions(pagePath, DebikiHttp.ContentType.Json)
+        ListController.listActions(pagePath, DebikiHttp.ContentType.Json)
       case ("feed", GET) =>
-        App.feed(pagePath)
+        Application.feed(pagePath)
       case ("act", GET) =>
-        PageViewer.showActionLinks(pagePath, postId = mainFunValAsInt_!)
+        ViewPageController.showActionLinks(pagePath, postId = mainFunValAsInt_!)
       case ("unsubscribe", GET) =>
-        AppUnsubscribe.showForm(tenantId)
+        UnsubscriptionController.showForm(tenantId)
       case ("unsubscribe", POST) =>
-        AppUnsubscribe.handleForm(tenantId)
+        UnsubscriptionController.handleForm(tenantId)
       // If no main function specified:
       case ("", GET) =>
         // CSS and JS are served via asset bundles, so they can be cached forever.
-        PageViewer.viewPost(pagePath)
+        ViewPageController.viewPost(pagePath)
       // If invalid function specified:
       case (fun, met) => throwBadReq(
         "DwEQ435", s"Bad method or query string: `$met' `?$fun'")

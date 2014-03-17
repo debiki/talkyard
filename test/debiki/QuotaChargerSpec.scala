@@ -18,7 +18,7 @@
 package debiki
 
 import com.debiki.core._
-import controllers.{AppCreatePage, CreateSiteController}
+import controllers.{CreatePageController, CreateSiteController}
 import debiki.dao.SiteDao
 import java.{util => ju}
 import org.scalatest._
@@ -372,7 +372,7 @@ class QuotaChargerSpec
 
   def createPage(loginId: String, author: User, dao: SiteDao) = {
     val creationDati = new ju.Date
-    val pageId = AppCreatePage.generateNewPageId()
+    val pageId = CreatePageController.generateNewPageId()
     val pageRole = PageRole.Generic
     val pageBody = PostActionDto.forNewPageBody("Page body.", creationDati, pageRole,
       UserIdData.newTest(loginId = loginId, userId = author.id),

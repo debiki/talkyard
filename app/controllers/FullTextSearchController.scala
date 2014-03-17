@@ -29,7 +29,7 @@ import Prelude._
 /** Full text search, for a whole site, or for a site section, e.g. a single
   * forum (including all sub forums and topics), a single blog, or wiki.
   */
-object FullTextSearch extends mvc.Controller {
+object FullTextSearchController extends mvc.Controller {
 
   private val SearchPhraseFieldName = "searchPhrase"
 

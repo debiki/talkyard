@@ -31,7 +31,7 @@ import play.api.libs.json.JsObject
 
 /** Logs in guest users.
   */
-object AppLoginGuest extends mvc.Controller {
+object LoginAsGuestController extends mvc.Controller {
 
 
   def loginGuest = PostJsonAction(maxLength = 1000) { request =>
@@ -72,7 +72,7 @@ object AppLoginGuest extends mvc.Controller {
     val loginGrant = Globals.siteDao(tenantId, ip = addr).saveLogin(loginAttempt)
 
     val (_, _, sidAndXsrfCookies) = Xsrf.newSidAndXsrf(Some(loginGrant))
-    val userConfigCookie = AppConfigUser.userConfigCookie(loginGrant)
+    val userConfigCookie = ConfigUserController.userConfigCookie(loginGrant)
 
     // Could include a <a href=last-page>Okay</a> link, see the
     // Logout dialog below. Only needed if javascript disabled though,

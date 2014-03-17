@@ -42,7 +42,7 @@ import Utils.{OkHtml}
  * web sites, in the Referer header. So only use each email id
  * for one distinct non-repeatable task?
  */
-object AppUnsubscribe extends mvc.Controller {
+object UnsubscriptionController extends mvc.Controller {
 
   val EmailIdParam = "email-id"
   val DoWhatParam = "do"

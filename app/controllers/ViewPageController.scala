@@ -42,7 +42,7 @@ import Utils.{OkHtml, OkXml}
   * comments that are pending approval — although such unapproved comments
   * aren't loaded, when other people view the page.
   */
-object PageViewer extends mvc.Controller {
+object ViewPageController extends mvc.Controller {
 
 
   def showActionLinks(pathIn: PagePath, postId: ActionId) =

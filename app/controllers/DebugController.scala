@@ -29,7 +29,7 @@ import play.api.libs.json.JsObject
 
 /** Intended for troubleshooting, via the browser.
   */
-object Debug extends mvc.Controller {
+object DebugController extends mvc.Controller {
 
 
   /** Via this function you can test whether or not comments by a certain identity

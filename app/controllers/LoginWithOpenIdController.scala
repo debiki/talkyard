@@ -38,7 +38,7 @@ import scala.util.control.NonFatal
 import Utils.ValidationImplicits._
 
 
-object AppLoginOpenId extends mvc.Controller {
+object LoginWithOpenIdController extends mvc.Controller {
 
 
   val Logger = play.api.Logger("app.openid")
@@ -83,7 +83,7 @@ object AppLoginOpenId extends mvc.Controller {
     var futureUrl: Future[String] =
       oid.OpenID.redirectURL(  // issues a HTTP request
         openIdIdentifier,
-        routes.AppLoginOpenId.loginCallback(returnToUrl).absoluteURL(),
+        routes.LoginWithOpenIdController.loginCallback(returnToUrl).absoluteURL(),
         RequiredAttrs,
         realm = Some(realm))
 
@@ -95,7 +95,7 @@ object AppLoginOpenId extends mvc.Controller {
       case NonFatal(exception) =>
         Logger.debug("OpenID provider redirection URL error, OpenId: " +
           openIdIdentifier +", error: "+ exception)
-        Redirect(routes.AppLoginOpenId.loginGet)
+        Redirect(routes.LoginWithOpenIdController.loginGet)
     })
 
     AsyncResult(futureResult)
@@ -220,7 +220,7 @@ object AppLoginOpenId extends mvc.Controller {
     // ----- Reply, with session cookies
 
     val (_, _, sidAndXsrfCookies) = Xsrf.newSidAndXsrf(Some(loginGrant))
-    val userConfigCookie = AppConfigUser.userConfigCookie(loginGrant)
+    val userConfigCookie = ConfigUserController.userConfigCookie(loginGrant)
 
     val result = returnToUrl match {
       case "" =>

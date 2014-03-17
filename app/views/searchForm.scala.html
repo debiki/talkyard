@@ -22,8 +22,8 @@
 
 @actionUrlPath = @{
   sectionId match {
-    case None => routes.FullTextSearch.searchWholeSite
-    case Some(id) => routes.FullTextSearch.searchSiteSection(id)
+    case None => routes.FullTextSearchController.searchWholeSite
+    case Some(id) => routes.FullTextSearchController.searchSiteSection(id)
   }
 }
 

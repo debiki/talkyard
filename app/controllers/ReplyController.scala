@@ -33,7 +33,7 @@ import BrowserPagePatcher.TreePatchSpec
 /** Handles reply form submissions. Lazily creates pages for embedded discussions
   * — such pages aren't created until the very first reply is posted.
   */
-object AppReply extends mvc.Controller {
+object ReplyController extends mvc.Controller {
 
 
   def handleReply = PostJsonAction(maxLength = MaxPostSize) { request: JsonPostRequest =>
