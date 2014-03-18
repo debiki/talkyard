@@ -128,15 +128,11 @@ trait CachingPageDao extends PageDao {
 
 
   private def refreshPageInCache(pageId: PageId) {
-    // Possible optimization: Examine all actions, and refresh cache only
+    // Possible optimization: Examine all actions, and refresh cache e.g.
+    // the RenderedPageHtmlDao cache only
     // if there are e.g. EditApp:s or approved Post:s (but ignore Edit:s --
-    // unless applied & approved)
-    uncacheRenderedPage(pageId = pageId)
+    // unless applied & approved). Include that info in the call to `firePageSaved` below.
 
-    // Who should know about all these uncache-this-on-change-
-    // -of-that relationships? For now:
-    uncachePageMeta(pageId)
-    // ... Like so perhaps? Each module registers change listeners?
     firePageSaved(SitePageId(siteId = siteId, pageId = pageId))
 
     // if (is _site.conf || is any stylesheet or script)

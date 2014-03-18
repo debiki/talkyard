@@ -114,6 +114,11 @@ trait CachingPagePathMetaDao extends PagePathMetaDao {
   }*/
 
 
+  onPageSaved { sitePageId =>
+    uncachePageMeta(sitePageId)
+  }
+
+
   override def moveRenamePage(pageId: String, newFolder: Option[String] = None,
         showId: Option[Boolean] = None, newSlug: Option[String] = None)
         : PagePath = {
@@ -191,7 +196,7 @@ trait CachingPagePathMetaDao extends PagePathMetaDao {
 
   override def loadPageMeta(pageId: String): Option[PageMeta] =
     lookupInCache[PageMeta](
-      pageMetaByIdKey(pageId),
+      pageMetaByIdKey(SitePageId(siteId, pageId)),
       orCacheAndReturn = super.loadPageMeta(pageId))
 
 
@@ -206,13 +211,13 @@ trait CachingPagePathMetaDao extends PagePathMetaDao {
   override def updatePageMeta(meta: PageMeta, old: PageMeta) {
     // BUG SHOULD uncache meta for old and new parent page too,
     // if this page changes parent page?
-    uncachePageMeta(meta.pageId)
+    uncachePageMeta(SitePageId(siteId, meta.pageId))
     super.updatePageMeta(meta, old = old)
   }
 
 
-  def uncachePageMeta(pageId: String) {
-    removeFromCache(pageMetaByIdKey(pageId))
+  def uncachePageMeta(sitePageId: SitePageId) {
+    removeFromCache(pageMetaByIdKey(sitePageId))
   }
 
 
@@ -225,8 +230,8 @@ trait CachingPagePathMetaDao extends PagePathMetaDao {
   private def _pathByPageIdKey(pageId: String) =
     s"$siteId|$pageId|PagePathById"
 
-  private def pageMetaByIdKey(pageId: String) =
-    s"$siteId|$pageId|PageMetaById"
+  private def pageMetaByIdKey(sitePageId: SitePageId) =
+    s"${sitePageId.siteId}|${sitePageId.pageId}|PageMetaById"
 
   private def ancestorIdsByIdKey(pageId: PageId) =
     s"$siteId|$pageId|AncestorIdsById"
