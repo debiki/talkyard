@@ -23,6 +23,7 @@ import debiki._
 import debiki.DebikiHttp._
 import java.{util => ju}
 import requests.PageRequest
+import CachingDao.CacheKey
 
 
 /** Loads and saves pages and page parts (e.g. posts and patches).
@@ -191,7 +192,7 @@ trait CachingPageDao extends PageDao {
       })
 
 
-  def _pageActionsKey(pageId: String): String = s"$pageId|$siteId|PageActions"
+  def _pageActionsKey(pageId: String) = CacheKey(siteId, s"$pageId|PageActions")
 
 }
 

@@ -18,9 +18,10 @@
 package debiki.dao
 
 import com.debiki.core._
+import com.debiki.core.Prelude._
 import debiki._
 import java.{util => ju}
-import Prelude._
+import CachingDao.{CacheKey, CacheValue}
 
 
 /**
@@ -151,21 +152,24 @@ trait CachingPageSummaryDao extends PageSummaryDao {
     }
 
     // Ask the database for any remaining summaries.
+    val siteCacheVersion = siteCacheVersionNow()
     val reaminingSummaries = super.loadPageSummaries(idsNotCached)
     for ((pageId, summary) <- reaminingSummaries) {
       summariesById += pageId -> summary
-      putInCache(cacheKey(pageId), summary)
+      putInCache(cacheKey(pageId), CacheValue(summary, siteCacheVersion))
     }
 
     summariesById
   }
 
 
-  private def cacheKey(pageId: String, otherSiteId: String = null): String =
-    s"$pageId|${if (otherSiteId ne null) otherSiteId else siteId}|PageSummary"
+  private def cacheKey(pageId: String, otherSiteId: String = null): CacheKey = {
+    val theSiteId = if (otherSiteId ne null) otherSiteId else siteId
+    CacheKey(theSiteId, s"$pageId|PageSummary")
+  }
 
 
-  private def cacheKey(sitePageId: SitePageId): String =
+  private def cacheKey(sitePageId: SitePageId): CacheKey =
     cacheKey(otherSiteId = sitePageId.siteId, pageId = sitePageId.pageId)
 
 }

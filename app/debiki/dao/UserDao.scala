@@ -23,6 +23,7 @@ import java.{util => ju}
 import requests.ApiRequest
 import Prelude._
 import EmailNotfPrefs.EmailNotfPrefs
+import CachingDao.{CacheKey, CacheValueIgnoreVersion}
 
 
 trait UserDao {
@@ -109,10 +110,12 @@ trait CachingUserDao extends UserDao {
 
 
   override def saveLogin(loginAttempt: LoginAttempt): LoginGrant = {
+    // Don't save any site cache version, because user specific data doesn't change
+    // when site specific data changes.
     val loginGrant = super.saveLogin(loginAttempt)
     putInCache(
       key(loginGrant.login.id),
-      (loginGrant.identity, loginGrant.user))
+      CacheValueIgnoreVersion((loginGrant.identity, loginGrant.user)))
     loginGrant
   }
 
@@ -124,10 +127,11 @@ trait CachingUserDao extends UserDao {
   }
 
 
-  override def loadIdtyAndUser(forLoginId: String): Option[(Identity, User)] =
+  override def loadIdtyAndUser(forLoginId: String): Option[(Identity, User)] = {
     lookupInCache[(Identity, User)](
       key(forLoginId),
       orCacheAndReturn = super.loadIdtyAndUser(forLoginId))
+  }
 
 
   override def configRole(loginId: String, ctime: ju.Date, roleId: String,
@@ -150,7 +154,7 @@ trait CachingUserDao extends UserDao {
   }
 
 
-  private def key(loginId: String) = s"$siteId|$loginId|UserByLoginId"
+  private def key(loginId: String) = CacheKey(siteId, s"$loginId|UserByLoginId")
 
 }
 

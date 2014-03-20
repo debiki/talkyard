@@ -21,9 +21,9 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki._
 import java.{util => ju}
-import scala.xml.NodeSeq
 import requests._
-
+import scala.xml.NodeSeq
+import CachingDao._
 
 
 case class RenderPageSettings(
@@ -140,17 +140,20 @@ trait CachingRenderedPageHtmlDao extends RenderedPageHtmlDao {
    * or https://www.debiki.com and http://www.debiki.com.
    */
   private def rememberOrigin(origin: String) {
+    // The origin list should never change, so don't invalidate the origin list cache
+    // item when the per site cache version changes. So use CacheValueIgnoreVersion.
     var done = false
     do {
       val originsKey = this.originsKey(siteId)
       lookupInCache[List[String]](originsKey) match {
         case None =>
-          done = putInCacheIfAbsent(originsKey, List(origin))
+          done = putInCacheIfAbsent(originsKey, CacheValueIgnoreVersion(List(origin)))
         case Some(knownOrigins) =>
           if (knownOrigins contains origin)
             return
           val newOrigins = origin :: knownOrigins
-          done = replaceInCache(originsKey, knownOrigins, newValue = newOrigins)
+          done = replaceInCache(originsKey, CacheValueIgnoreVersion(knownOrigins),
+            newValue = CacheValueIgnoreVersion(newOrigins))
       }
     }
     while (!done)
@@ -165,7 +168,8 @@ trait CachingRenderedPageHtmlDao extends RenderedPageHtmlDao {
     // Since the server address might be included in the generated html,
     // we need to uncache pageId for each server address that maps
     // to the current website (this.tenantId).
-    for (origin <- knownOrigins(sitePageId.siteId)) {
+    val origins = knownOrigins(sitePageId.siteId)
+    for (origin <- origins) {
       removeFromCache(_pageHtmlKey(sitePageId, origin))
     }
 
@@ -180,10 +184,11 @@ trait CachingRenderedPageHtmlDao extends RenderedPageHtmlDao {
 
 
   private def _pageHtmlKey(sitePageId: SitePageId, origin: String) =
-    s"${sitePageId.pageId}|${sitePageId.siteId}|$origin|PageHtml"
+    CacheKey(sitePageId.siteId, s"${sitePageId.pageId}|$origin|PageHtml")
 
 
-  private def originsKey(siteId: SiteId): String = s"$siteId|PossibleOrigins"
+  private def originsKey(siteId: SiteId) =
+    CacheKey(siteId, "|PossibleOrigins") // "|" required by a debug check function
 
 }
 

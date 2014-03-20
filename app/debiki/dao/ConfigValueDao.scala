@@ -18,9 +18,10 @@
 package debiki.dao
 
 import com.debiki.core._
+import com.debiki.core.Prelude._
 import debiki._
 import java.{util => ju}
-import Prelude._
+import CachingDao.{CacheKey, CacheValue}
 
 
 /**
@@ -146,8 +147,9 @@ trait CachingConfigValueDao extends ConfigValueDao {
     val mapOpt = lookupInCache[Map[String, Any]](key)
     mapOpt match {
       case None =>
+        val siteCacheVersion = siteCacheVersionNow()
         val map = super.loadConfigMap(sitePageId, configPostId = configPostId)
-        putInCache[Map[String, Any]](key, value = map)
+        putInCache(key, CacheValue(map, siteCacheVersion))
         map
       case Some(map) =>
         map
@@ -160,7 +162,7 @@ trait CachingConfigValueDao extends ConfigValueDao {
   // overwrite the cached value of the config map the page's body represents
   // (since they'd share the same keys, were `configPostId` not included in the key).
   private def configMapKey(sitePageId: SitePageId, configPostId: ActionId) =
-    s"${sitePageId.pageId}|${sitePageId.siteId}|$configPostId|ConfigMap"
+    CacheKey(sitePageId.siteId, s"${sitePageId.pageId}$configPostId|ConfigMap")
 
 }
 

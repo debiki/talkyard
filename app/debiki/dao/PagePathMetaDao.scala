@@ -18,8 +18,10 @@
 package debiki.dao
 
 import com.debiki.core._
+import com.debiki.core.Prelude._
 import java.{util => ju}
-import Prelude._
+import CachingDao.{CacheKey, CacheValue}
+
 
 
 trait PagePathMetaDao {
@@ -152,6 +154,7 @@ trait CachingPagePathMetaDao extends PagePathMetaDao {
     lookupInCache[PagePath](key) foreach { path =>
       return Some(path)
     }
+    val siteCacheVersion = siteCacheVersionNow()
     super.checkPagePath(pathToCheck) map { correctPath =>
       // Don't cache non-exact paths if page id shown, since there are
       // infinitely many such paths.
@@ -160,7 +163,7 @@ trait CachingPagePathMetaDao extends PagePathMetaDao {
       // and cache it, if found, regardless of if id shown in url.
       // Or better & much simpler: Cache SitePageId —> correctPath.
       if (!pathToCheck.showId || correctPath.path == pathToCheck.path)
-        putInCache(key, correctPath)
+        putInCache(key, CacheValue(correctPath, siteCacheVersion))
       return Some(correctPath)
     }
     None
@@ -225,16 +228,16 @@ trait CachingPagePathMetaDao extends PagePathMetaDao {
   // an URL to find which page to include in an asset bundle — the page
   // could be a public stylesheet from e.g. www.debik.com.)
   private def _pathWithIdByPathKey(pagePath: PagePath) =
-    s"${pagePath.tenantId}|${pagePath.path}|PagePathByPath"
+    CacheKey(pagePath.siteId, s"${pagePath.path}|PagePathByPath")
 
   private def _pathByPageIdKey(pageId: String) =
-    s"$siteId|$pageId|PagePathById"
+    CacheKey(siteId, s"$pageId|PagePathById")
 
   private def pageMetaByIdKey(sitePageId: SitePageId) =
-    s"${sitePageId.siteId}|${sitePageId.pageId}|PageMetaById"
+    CacheKey(sitePageId.siteId, s"${sitePageId.pageId}|PageMetaById")
 
   private def ancestorIdsByIdKey(pageId: PageId) =
-    s"$siteId|$pageId|AncestorIdsById"
+    CacheKey(siteId, s"$pageId|AncestorIdsById")
 
 }
 
