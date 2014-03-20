@@ -94,6 +94,9 @@ object CachingDao {
 trait CachingDao extends CacheEvents {
   self: { def siteId: SiteId } =>
 
+  val thisSitesCacheVersionNow = siteCacheVersionNow(this.siteId)
+
+
   /**
    * Looks up something in the cache. If not found, and
    * if `orCacheAndReturn` has been specified, evaluates it,
@@ -226,6 +229,9 @@ trait CachingDao extends CacheEvents {
 
 
   def siteCacheVersionNow(siteId: SiteId): Long = {
+    if (this.siteId == siteId)
+      return thisSitesCacheVersionNow
+
     val elem = ehcache.get(siteCacheVersionKey(siteId))
     if (elem eq null)
       return FirstSiteCacheVersion
