@@ -94,7 +94,22 @@ object CachingDao {
 trait CachingDao extends CacheEvents {
   self: { def siteId: SiteId } =>
 
-  val thisSitesCacheVersionNow = siteCacheVersionNow(this.siteId)
+
+  /** An EhCache instance. Right now, all caches use the same instance, could change that.
+    * However doesn't matter? Won't have 2 applications running in the same JVM.
+    * I suppose/guess it's good w.r.t. performance to have only 1 EhCache instance?
+    * So might as well reuse Play's?
+    *
+    * In class EhCachePlugin in play/api/cache/Cache.scala you'll see how Play
+    * creates its per-application cache, namely exactly like below.
+    */
+  private val ehcache: net.sf.ehcache.Cache =
+    net.sf.ehcache.CacheManager.create().getCache("play")
+
+
+  /** Remembers the current site's cache version, so we don't need to look it up in the cache.
+    */
+  private val thisSitesCacheVersionNow = lookupSiteCacheVersion(this.siteId)
 
 
   /**
@@ -189,18 +204,6 @@ trait CachingDao extends CacheEvents {
   }
 
 
-  /** An EhCache instance. Right now, all caches use the same instance, could change that.
-    * However doesn't matter? Won't have 2 applications running in the same JVM.
-    * I suppose/guess it's good w.r.t. performance to have only 1 EhCache instance?
-    * So might as well reuse Play's?
-    *
-    * In class EhCachePlugin in play/api/cache/Cache.scala you'll see how Play
-    * creates its per-application cache, namely exactly like below.
-    */
-  private val ehcache: net.sf.ehcache.Cache =
-      net.sf.ehcache.CacheManager.create().getCache("play")
-
-
   private def cacheElem(key: Any, value: CacheValue[_], expiration: Int = 0) = {
     val elem = new net.sf.ehcache.Element(key, value.value)
     elem.setVersion(value.siteCacheVersion)
@@ -230,8 +233,13 @@ trait CachingDao extends CacheEvents {
 
   def siteCacheVersionNow(siteId: SiteId): Long = {
     if (this.siteId == siteId)
-      return thisSitesCacheVersionNow
+      thisSitesCacheVersionNow
+    else
+      lookupSiteCacheVersion(siteId)
+  }
 
+
+  private def lookupSiteCacheVersion(siteId: SiteId): Long = {
     val elem = ehcache.get(siteCacheVersionKey(siteId))
     if (elem eq null)
       return FirstSiteCacheVersion
