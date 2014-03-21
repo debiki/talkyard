@@ -130,7 +130,8 @@ trait CachingUserDao extends UserDao {
   override def loadIdtyAndUser(forLoginId: String): Option[(Identity, User)] = {
     lookupInCache[(Identity, User)](
       key(forLoginId),
-      orCacheAndReturn = super.loadIdtyAndUser(forLoginId))
+      orCacheAndReturn = super.loadIdtyAndUser(forLoginId),
+      ignoreSiteCacheVersion = true)
   }
 
 

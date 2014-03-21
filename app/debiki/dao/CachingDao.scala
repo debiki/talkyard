@@ -120,6 +120,7 @@ trait CachingDao extends CacheEvents {
   def lookupInCache[A](
         key: CacheKey,
         orCacheAndReturn: => Option[A] = null,
+        ignoreSiteCacheVersion: Boolean = false,
         expiration: Int = 0)(
         implicit classTag: ClassTag[A]): Option[A] = {
     lookupInCacheToReplace(key) foreach { case CacheValue(value, version) =>
@@ -130,7 +131,10 @@ trait CachingDao extends CacheEvents {
 
     // Load the site version before we evaluate `orCacheAndReturn` (if ever), so
     // the `siteCacheVersion` will be from before we start calculating `orCacheAndReturn`.
-    val siteCacheVersion = siteCacheVersionNow(key.siteId)
+    val siteCacheVersion =
+      if (ignoreSiteCacheVersion) IgnoreSiteCacheVersion
+      else siteCacheVersionNow(key.siteId)
+
     val newValueOpt = orCacheAndReturn
     if (newValueOpt eq null)
       return None
