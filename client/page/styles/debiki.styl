@@ -41,6 +41,9 @@
   padding: 0 // if no CSS reset included
   line-height: normal // or PNG arrows and [-] offset incorrectly
 
+.DW.dw-vt .dw-t,
+.DW.dw-hz .dw-ar-t
+  max-width: 800px
 
 
 // Folded things
@@ -200,7 +203,7 @@
 
 .dw-hz > .dw-res > li
   display: table-cell
-  padding: 19px 0 10px 59px
+  padding: 22px 0 10px 59px
   // or Reply form pushes other <li>s down
   // which offsets PNG arrows incorrectly
   vertical-align: top
@@ -248,7 +251,6 @@
   > .dw-t
     padding-right: 3px
     // break out variable; see debiki-play.styl: :not(.dw-hz) > .dw-p > .dw-p-bd > .dw-p-bd-blk
-    max-width: 40em
 
   > .dw-depth-1
     width: auto !important
@@ -290,6 +292,16 @@
   border-left: none
   border-right: none
   line-height: 15px // or test w 120%
+
+// Threads are wider in vertical layout, so the headers are much larger.
+// Therefore make their backgrounds brighter.
+.DW.dw-vt
+  .dw-p-hd,
+  .dw-p.dw-zd
+    background-color: hsl(0, 0%, 97%)
+
+  .dw-ar-p-hd
+    background-color: transparent
 
 .dw-p-bd,
 .dw-p-diff // COULD place -bd on -diff too, remove this -diff row?
@@ -449,7 +461,7 @@
 
 .dw-arw-hz-line-to-this,
 .dw-arw-hz-line-to-sibling
-  top: -58px
+  top: -61px
   height: 3px
 
 .dw-arw-hz-line-to-this
@@ -518,7 +530,7 @@
 .dw-arw-hz-branch-to-reply-btn
   background: transparent url(img/arrows-etcetera-gray.png) no-repeat 0 0
   position: absolute
-  top: -60px
+  top: -63px
   left: -30px
   height: 34px
   width: 61px

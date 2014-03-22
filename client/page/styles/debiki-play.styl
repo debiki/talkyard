@@ -363,9 +363,6 @@ span.dw-p-e-by
   // Cancel .dw-p-bd 3px padding-left:, because the .dw-p-bd-blk is
   // 100% wide though, and without padding-right, text might be cropped.
   padding-right: 3px
-  // Adjus max comment width: don't span whole screen even if
-  // .post.cropped-e is removed.
-  max-width: 40em
 
 // Cancel .dw-p-bd-blk max width for code pages, and for the page config post.
 [data-page_role='Code'] .dw-hz > .dw-p > .dw-p-bd > .dw-p-bd-blk,
@@ -1000,7 +997,12 @@ body.dw-u-ui-simple .dw-a-edit
 
 .dw-cmts-tlbr
 
-  margin-top: 1.5em
+  margin: 45px 0 17px
+  border: 1px solid hsl(0, 0%, 75%)
+  background: hsl(0, 0%, 97%)
+  padding: 3px 7px
+  border-left: none
+  border-right: none
 
   .dw-cmts-count
     font-size: 17px
@@ -1017,6 +1019,8 @@ body.dw-u-ui-simple .dw-a-edit
   .dw-a-logout
     margin-left: 1em
 
+.dw-hz .dw-cmts-tlbr
+  margin: 25px 0 20px
 
 #dw-lgi-pswd .dw-reset-pswd
   display: block
