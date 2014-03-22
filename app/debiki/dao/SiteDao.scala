@@ -18,12 +18,11 @@
 package debiki.dao
 
 import com.debiki.core._
+import com.debiki.core.Prelude._
 import debiki._
 import java.{util => ju}
 import scala.concurrent.Future
-import requests._
-import DebikiHttp._
-import Prelude._
+
 
 
 abstract class SiteDaoFactory {
@@ -64,6 +63,7 @@ class SiteDao(protected val siteDbDao: ChargingSiteDbDao)
   with AssetBundleDao
   with ConfigValueDao
   with SettingsDao
+  with PageDao
   with PagePathMetaDao
   with PageSummaryDao
   with RenderedPageHtmlDao
@@ -98,80 +98,11 @@ class SiteDao(protected val siteDbDao: ChargingSiteDbDao)
 
   // ----- Pages
 
-  def createPage(page: Page): Page = siteDbDao.createPage(page)
-
   def listChildPages(parentPageId: String, sortBy: PageSortOrder,
         limit: Int, offset: Int = 0, filterPageRole: Option[PageRole] = None)
         : Seq[PagePathAndMeta] =
     siteDbDao.listChildPages(
         parentPageId, sortBy, limit = limit, offset = offset, filterPageRole)
-
-
-  // ----- Actions
-
-  /** Saves page actions and places messages in users' inboxes, as needed.
-    * Returns a pair with 1) the page including new actions plus the current user,
-    * and 2) the actions, but with ids assigned.
-    */
-  final def savePageActionsGenNotfs(pageReq: PageRequest[_], actions: Seq[PostActionDtoOld])
-        : (PageNoPath, Seq[PostActionDtoOld]) = {
-    val pagePartsNoAuthor = pageReq.pageNoPath_!.parts
-    // We're probably going to render parts of the page later, and then we
-    // need the user, so add it to the page — it's otherwise absent if this is
-    // the user's first contribution to the page.
-    val pageParts = pagePartsNoAuthor ++ pageReq.anyMeAsPeople
-    val page = PageNoPath(pageParts, pageReq.ancestorIdsParentFirst_!, pageReq.pageMeta_!)
-    savePageActionsGenNotfsImpl(page, actions)
-  }
-
-
-  final def savePageActionsGenNotfs(
-        pageId: PageId, actions: Seq[PostActionDtoOld], authors: People)
-        : (PageNoPath, Seq[PostActionDtoOld]) = {
-
-    val pageNoAuthor = loadPage(pageId) getOrElse throwBadReq(
-      "DwE6Xf80", s"Page not found, id: `$pageId'; could not do all changes")
-    val page = pageNoAuthor ++ authors
-
-    val pageMeta = siteDbDao.loadPageMeta(page.id) getOrElse
-      throwNotFound("DwE115Xf3", s"Found no meta for page ${page.id}")
-
-    val ancestorPageIds = loadAncestorIdsParentFirst(pageId)
-
-    savePageActionsGenNotfsImpl(PageNoPath(page, ancestorPageIds, pageMeta), actions)
-  }
-
-
-  def savePageActionsGenNotfsImpl(page: PageNoPath, actions: Seq[PostActionDtoOld])
-        : (PageNoPath, Seq[PostActionDtoOld]) = {
-    if (actions isEmpty)
-      return (page, Nil)
-
-    // COULD check that e.g. a deleted post is really a post, an applied edit is
-    // really an edit, an action undone is not itself an Undo action,
-    // and lots of other similar tests.
-
-    val (pageWithNewActions, actionsWithId) =
-      siteDbDao.savePageActions(page, actions.toList)
-
-    (pageWithNewActions, actionsWithId)
-  }
-
-
-  def deleteVote(userIdData: UserIdData, pageId: PageId, postId: PostId,
-        voteType: PostActionPayload.Vote) {
-    siteDbDao.deleteVote(userIdData, pageId, postId, voteType)
-  }
-
-
-  def loadPage(debateId: String): Option[PageParts] =
-    siteDbDao.loadPage(debateId)
-
-  def loadPageAnyTenant(sitePageId: SitePageId): Option[PageParts] =
-    loadPageAnyTenant(tenantId = sitePageId.siteId, pageId = sitePageId.pageId)
-
-  def loadPageAnyTenant(tenantId: String, pageId: String): Option[PageParts] =
-    siteDbDao.loadPage(pageId, tenantId = Some(tenantId))
 
   /**
    * Loads articles (title + body) e.g. for inclusion on a blog post list page.

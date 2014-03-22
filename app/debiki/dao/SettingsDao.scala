@@ -21,7 +21,7 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki._
 import java.{util => ju}
-
+import debiki.dao.CachingDao.CacheKey
 
 
 /** Loads and saves settings for the whole website, a section of the website (e.g.
@@ -92,16 +92,13 @@ trait CachingSettingsDao extends SettingsDao {
 
   override def saveSetting(target: SettingsTarget, name: String, value: Any) {
     super.saveSetting(target, name, value)
-    // SHOULD update a per-site cached timestamp that means that everything cached [freshcache]
-    // before that timestamp should be discarded.
-    // All other caches should also check that whole-site cache invalidation timestamp.
-    // But for now, simply require ... a server restart :-( if a config value is changed
+    emptyCache(siteId)
   }
 
 
-  private def siteSettingsKey = s"$siteId|SiteSettingsKey"
-  private def pageTreeSettingsKey(rootId: PageId) = s"$rootId|$siteId|PageTreeSettingsKey"
-  private def singlePageSettingsKey(pageId: PageId) = s"$pageId|$siteId|SinglePageSettingsKey"
+  private def siteSettingsKey = CacheKey(siteId, "SiteSettingsKey")
+  private def pageTreeSettingsKey(rootId: PageId) = CacheKey(siteId, s"$rootId|PgTrStngsKey")
+  private def singlePageSettingsKey(pageId: PageId) = CacheKey(siteId, s"$pageId|SnglPgStngsKey")
 
 }
 

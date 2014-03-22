@@ -18,10 +18,11 @@
 package debiki.dao
 
 import com.debiki.core._
+import com.debiki.core.Prelude._
 import debiki._
 import java.{util => ju}
-import Prelude._
 import CachingAssetBundleDao._
+import CachingDao.{CacheKey, CacheValue}
 
 
 case class AssetBundle(body: String, version: String)
@@ -108,9 +109,10 @@ trait CachingAssetBundleDao extends AssetBundleDao {
     // E.g. _site.conf, some-script.js, some-style.css, some-template.tpl.
     // But not blog posts or the homepage or other "normal pages".
 
+    val siteCacheVersion = siteCacheVersionNow()
     val bundleAndDeps = super.loadBundleAndDependencies(nameNoSuffix, suffix)
-    cacheDependencies(bundleName, bundleAndDeps)
-    putInCache(bundleKey, bundleAndDeps)
+    cacheDependencies(bundleName, bundleAndDeps, siteCacheVersion)
+    putInCache(bundleKey, CacheValue(bundleAndDeps, siteCacheVersion))
 
     bundleAndDeps
   }
@@ -123,21 +125,21 @@ trait CachingAssetBundleDao extends AssetBundleDao {
    * of those assets is created later on.
    */
   private def cacheDependencies(
-        bundleName: String, bundleAndDeps: AssetBundleAndDependencies) {
+        bundleName: String, bundleAndDeps: AssetBundleAndDependencies, siteCacheVersion: Long) {
     val bundleDeps = BundleDependencyData(bundleName, bundleAndDeps, siteId = siteId)
     for (sitePageId <- bundleDeps.dependeePageIds) {
       val depKey = makeDependencyKey(sitePageId)
-      putInCache(depKey, bundleDeps)
+      putInCache(depKey, CacheValue(bundleDeps, siteCacheVersion))
     }
 
     for (sitePath <- bundleDeps.missingOptAssetPaths) {
       val depKey = makeSitePathDependencyKey(sitePath)
-      putInCache(depKey, bundleDeps)
+      putInCache(depKey, CacheValue(bundleDeps, siteCacheVersion))
     }
   }
 
 
-  private def tryUncacheAll(dependencyKey: String) {
+  private def tryUncacheAll(dependencyKey: CacheKey) {
     lookupInCache[BundleDependencyData](dependencyKey) foreach { depsData =>
       doUncacheAll(depsData)
     }
@@ -167,15 +169,15 @@ trait CachingAssetBundleDao extends AssetBundleDao {
 
 
   private def makeBundleKey(bundleName: String, tenantId: String) =
-    s"$tenantId|$bundleName|AssetBundle"
+    CacheKey(siteId, s"$bundleName|AssetBundle")
 
   private def makeDependencyKey(sitePageId: SitePageId) =
-    s"${sitePageId.siteId}|${sitePageId.pageId}|BundleSitePageIdDep"
+    CacheKey(sitePageId.siteId, s"${sitePageId.pageId}|BundleSitePageIdDep")
 
-  private def makeSitePathDependencyKey(siteId: String, path: String): String =
-    s"$siteId|$path|BundleSitePathDep"
+  private def makeSitePathDependencyKey(siteId: String, path: String): CacheKey =
+    CacheKey(siteId, s"$path|BundleSitePathDep")
 
-  private def makeSitePathDependencyKey(sitePath: SitePath): String =
+  private def makeSitePathDependencyKey(sitePath: SitePath): CacheKey =
     makeSitePathDependencyKey(sitePath.siteId, path = sitePath.path)
 
 }

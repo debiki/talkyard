@@ -127,6 +127,9 @@ object Prelude {
        problem: => String = null) =
     if (condition) assErr(errorCode, problem)
 
+  def alwaysAssert(condition: Boolean, errorCode: String, problem: => String = null) =
+    if (!condition) assErr(errorCode, problem)
+
   def illArgErr(errorCode: String, problem: => String = null) =
     throw new IllegalArgumentException(formatErrorMessage(errorCode, problem))
 

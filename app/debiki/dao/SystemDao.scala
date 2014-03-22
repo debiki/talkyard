@@ -21,6 +21,7 @@ package debiki.dao
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import java.{util => ju}
+import CachingDao.{CacheKeyAnySite, CacheValueIgnoreVersion}
 
 
 /**
@@ -90,6 +91,8 @@ class SystemDao(protected val systemDbDao: SystemDbDao) {
 class CachingSystemDao(systemDbDao: SystemDbDao)
   extends SystemDao(systemDbDao) with CachingDao {
 
+  def siteId = "?"
+
 
   override def lookupTenant(scheme: String, host: String): TenantLookup = {
     val key = _tenantLookupByOriginKey(scheme, host)
@@ -103,14 +106,15 @@ class CachingSystemDao(systemDbDao: SystemDbDao)
         // DNS names *.debiki.net resolves to Debiki's servers.
         FoundNothing
       case tenantLookup =>
-        putInCache(key, tenantLookup)
+        putInCache(key, CacheValueIgnoreVersion(tenantLookup))
         tenantLookup
     }
   }
 
 
   private def _tenantLookupByOriginKey(scheme: String, host: String) =
-    s"$scheme|$host|TenantByOrigin"
+    // Site id unknown, that's what we're about to lookup.
+    CacheKeyAnySite(s"$scheme|$host|TenantByOrigin")
 
 }
 

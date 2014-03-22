@@ -87,6 +87,7 @@ case class PagePath(  // COULD move to debate.scala.  Rename to RequestPath?
     throw PagePathException(
       "DwE37ZQU2", s"Page slug contains whitespace: `$pageSlug'")
 
+  def siteId = tenantId
 
   def path: String =
     if (showId) {
