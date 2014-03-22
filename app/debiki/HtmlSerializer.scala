@@ -376,12 +376,26 @@ case class HtmlPageSerializer(
             // Include an empty placeholder so arrows to child threads are drawn.
             <div class="dw-p"></div>
 
+        val anyRootPostLikeCount =
+          if (rootPost.numLikeVotes == 0) Nil
+          else {
+            val people = if (rootPost.numLikeVotes == 1) "person" else "people"
+            <div class="dw-num-likes clearfix"><a
+              >{rootPost.numLikeVotes} {people} like this.</a></div>
+          }
+
+        val anyReplyLink =
+          if (!horizontalComments) Nil
+          else rootPostReplyListItem
+
         anyBodyHtml ++
         ifThen(showComments, {
+          renderedRoot.actionsHtml ++
+          anyRootPostLikeCount ++
           makeCommentsToolbar() ++
           <div class='dw-t-vspace'/>
           <ol class='dw-res'>
-            { renderedRoot.actionsHtml.copy(label = "li") }
+            { anyReplyLink }
             { renderThreads(rootPostsReplies, parentHorizontal = true) }
           </ol>
         })
@@ -409,14 +423,18 @@ case class HtmlPageSerializer(
         { makeCommentsToolbar() }
         <div class='dw-t-vspace'/>
         <ol class='dw-res'>
-          <li class="dw-p-as dw-as dw-p-as-hz">
-            <a class="dw-a dw-a-reply">Reply</a>
-          </li>
+          { rootPostReplyListItem }
           { renderThreads(topLevelComments, parentHorizontal = true) }
         </ol>
       </div>
     html
   }
+
+
+  private def rootPostReplyListItem =
+    <li class="dw-p-as dw-as dw-p-as-hz-reply">
+      <a class="dw-a dw-a-reply icon-reply">Reply</a>
+    </li>
 
 
   /** Sorts threads so 1) the interesting ones appear first, and

@@ -59,7 +59,7 @@ function bindActionLinksImpl(anyPost, bindFoldLinks) {
     }
   }
   else {
-    $actions = $('.dw-t > .dw-as, .dw-p-as-hz');
+    $actions = $('.dw-t > .dw-as, .dw-p-as-hz-reply');
     $collapses = $(collapseSelectors);
   }
 
@@ -91,7 +91,7 @@ function bindActionLinksImpl(anyPost, bindFoldLinks) {
   // Action links are shown on hover.
   $actions.css('visibility', 'hidden');
   // But show the article's reply button.
-  $('.dw-p-as-hz').css('visibility', 'visible');
+  $('.dw-p-as-hz-reply').css('visibility', 'visible');
 
   $collapses.click(d.i.$toggleCollapsed);
 };

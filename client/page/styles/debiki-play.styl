@@ -259,7 +259,7 @@ li.dw-fs-re:last-child .dw-arw-hz-line-to-sibling
 
 // Make the column separator at least this high. But don't do this for
 // .dw-fs because forms are folded/slided out, i.e. shrinked to zero height.
-.dw-p-as-hz,
+.dw-p-as-hz-reply,
 .dw-depth-1:not(.dw-i-t)
   min-height: 100px
 
@@ -268,7 +268,7 @@ li.dw-fs-re:last-child .dw-arw-hz-line-to-sibling
 .DW.DW .dw-hz:not(.dw-depth-0) > .dw-res
   margin-top: 35px
 
-.dw-hz:not(.dw-depth-0) > .dw-p-as-hz
+.dw-hz:not(.dw-depth-0) > .dw-p-as-hz-reply
   margin-top: 48px // aligns with the .dw-p:s to the right, which
                    // have some padding
 
@@ -422,7 +422,36 @@ span.dw-p-e-by
   padding: 5px 0 8px
   position: relative // for position: absolute 'Click this...' tips, inside
 
-.dw-p-as-hz
+.dw-depth-0 > .dw-p-as
+  // Always show actions for the article / root post.
+  visibility: visible !important;
+  margin: 9px 0 0
+
+.DW.DW .dw-depth-0 > .dw-p-as > .dw-a
+  // More whitespace between root post actions.
+  margin: 0 0 0 25px
+
+.dw-depth-0 > .dw-p-as > .dropdown
+  // This makes little sense for the root post:
+  .dw-a-offtopic,
+  .dw-a-pin,
+  .dw-a-collapse-tree,
+  .dw-a-collapse-post,
+  .dw-a-close-tree
+    display: none !important
+
+.dw-depth-0 > .dw-num-likes > a
+  float: right
+
+.dw-ar-t > .dw-p-as > .dw-a-wrong
+  // Don't make it possible to vote "Wrong" for the forum question or blog post.
+  display: none !important
+
+.DW.dw-hz .dw-ar-t > .dw-p-as > .dw-a-reply
+  // The reply button is placed as an <li> in the reply section instead.
+  display: none !important
+
+.dw-p-as-hz-reply
   position: relative // curve image placed relative
   padding-right: 20px
   margin: 10px 16px 0 12px
@@ -430,7 +459,7 @@ span.dw-p-e-by
 
 // The reply button text can be customized, so it might be rather wide,
 // so set max-width and line height.
-.dw-p-as-hz > .dw-a-reply
+.dw-p-as-hz-reply > .dw-a-reply
   max-width: 8em
   display: inline-block // or max-width has no effect
   line-height: 120%
@@ -440,6 +469,7 @@ span.dw-p-e-by
   text-decoration: none
   color: #3872ab
   font-size: 13px
+  float: right
 
 .dw-a-disabled
   color: #d2d2d2 !important
@@ -451,6 +481,11 @@ span.dw-p-e-by
 .DW .dw-t > .dw-as .dw-a
   display: inline-block
   margin-right: 16px
+
+  &:first-child
+    margin-right: 0;
+    padding-right: 0;
+
 
 .DW .dw-t > .dw-p-as .dw-a-like
   margin-right: 5px
@@ -466,8 +501,15 @@ span.dw-p-e-by
   font-family: "fontello"
 
 .DW.DW .dw-p-as-more > .dw-a
+  float: none
   display: block
   margin: 8px 10px 14px 12px
+
+.dropdown-menu.dw-p-as-more
+  // Draw actions above arrows, and above replies, so the More actions
+  // dropdown menu is drawn above "Click to show this thread" texts.
+  background: white // [9DKFW0]
+
 
 #dw-p-as-shown a
   color: hsl(210, 51%, 45%)
@@ -481,7 +523,6 @@ span.dw-p-e-by
 .DW .dw-t > .dw-as > .dw-a-collapse-suggs,
 .DW .dw-t > .dw-as > .dw-a-flag-suggs,
 .DW .dw-t > .dw-as > .dw-a-delete-suggs
-  float: right
   margin: 0 0 0 12px
   color: #888
 
@@ -494,26 +535,20 @@ span.dw-p-e-by
   color: #c77405 // jQuery UI's ui-state-hover color
   text-decoration: underline
 
-.dw-p-as-hz > .dw-a.dw-a-reply
+.dw-p-as-hz-reply > .dw-a.dw-a-reply
   font-size: 17px
   margin: 0
+  float: none
 
-.dw-p-as-hz > .dw-a
+.dw-p-as-hz-reply > .dw-a
   display: block
 
-.dw-p-as-hz > .dw-a:not(.dw-a-reply)
+.dw-p-as-hz-reply > .dw-a:not(.dw-a-reply)
   margin-top: 1.3em
   color: #777
 
-.dw-p-as-hz > .dw-a:not(.dw-a-reply):hover
+.dw-p-as-hz-reply > .dw-a:not(.dw-a-reply):hover
   color: hsl(211, 30%, 40%)
-
-// For now...
-.dw-p-as-hz > .dropdown,  // hide the More actions dropdown; it confuses testers
-.dw-p-as-hz > .dw-a-like  // and one shouldn't be able to rate the article.
-.dw-p-as-hz > .dw-a-wrong
-.dw-p-as-hz > .dw-a-offtopic
-  display: none
 
 .dw-p-as
   // Prevent collapsed posts from appearing too close to any post just below,
@@ -522,8 +557,7 @@ span.dw-p-e-by
   min-height: 17px
   // Draw actions above arrows, and above replies, so the More actions
   // dropdown menu is drawn above "Click to show this thread" texts.
-  z-index: 4
-  background: white
+  z-index: 4  // [9DKFW0]
 
 body.dw-u-ui-simple .dw-a-edit
   display: none !important
@@ -997,10 +1031,10 @@ body.dw-u-ui-simple .dw-a-edit
 
 .dw-cmts-tlbr
 
-  margin: 45px 0 17px
-  border: 1px solid hsl(0, 0%, 75%)
-  background: hsl(0, 0%, 97%)
-  padding: 3px 7px
+  margin: 25px 0 17px
+  border: 1px solid hsl(0, 0%, 77%)
+  background: hsl(0, 0%, 98%)
+  padding: 10px
   border-left: none
   border-right: none
 
@@ -1019,8 +1053,8 @@ body.dw-u-ui-simple .dw-a-edit
   .dw-a-logout
     margin-left: 1em
 
-.dw-hz .dw-cmts-tlbr
-  margin: 25px 0 20px
+.DW.dw-vt .dw-cmts-tlbr
+  margin-bottom: 45px
 
 #dw-lgi-pswd .dw-reset-pswd
   display: block

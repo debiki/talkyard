@@ -173,7 +173,7 @@ d.i.$showReplyForm = function(event, opt_where) {
   // $anyHorizReplyBtn is hidden/shown and the $replyForm is shown/removed.
   if (horizLayout) {
     $anyHorizReplyBtn =
-        $replyFormParent.prev().filter('.dw-p-as-hz').dwBugIfEmpty().hide();
+        $replyFormParent.prev().filter('.dw-p-as-hz-reply').dwBugIfEmpty().hide();
     $replyForm.find('.dw-submit-set .dw-fi-cancel').click(function() {
       d.i.slideAwayRemove($replyFormParent, function() {
         $anyHorizReplyBtn.show();
