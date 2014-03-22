@@ -300,7 +300,7 @@ case class HtmlPageSerializer(
   /** A CSS class that causes comments to be laid out horizontally, in two dimensions.
     */
   private val horizontalCommentsCss =
-    if (horizontalComments) "dw-hor" else ""
+    if (horizontalComments) "dw-hz" else ""
 
 
   def renderSingleThread(postId: PostId, pageRoot: AnyPageRoot = Some(PageParts.BodyId))

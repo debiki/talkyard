@@ -34,7 +34,7 @@ var d = { i: debiki.internal, u: debiki.v0.util };
 // Use singl column layout if max width/height < 1000 px.
 // (If height > 1000 but width < 1000, the user can rotate the device.)
 if (d.i.singleColumnLayout) {
-  $('.dw-hor').removeClass('dw-hor');
+  $('.dw-hz').removeClass('dw-hz');
 }
 
 

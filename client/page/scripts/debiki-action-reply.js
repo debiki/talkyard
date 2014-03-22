@@ -42,7 +42,7 @@ d.i.$showReplyForm = function(event, opt_where) {
   var postIdStr = $post.length ? $post.dwPostIdStr() : NO_ID;
   var postId = parseInt(postIdStr);
 
-  var horizLayout = $thread.is('.dw-hor');
+  var horizLayout = $thread.is('.dw-hz');
   var replyCountBefore = $thread.find('> .dw-res > .dw-t').length;
 
   $replyAction.dwActionLinkDisable();
@@ -150,7 +150,7 @@ d.i.$showReplyForm = function(event, opt_where) {
     $replyFormParent.prependTo(opt_where.elem);
     $replyForm.find('input[id^="dw-fi-reply-where"]')
         .val(opt_where.textStart);
-  } else if ($thread.is('.dw-hor')) {
+  } else if ($thread.is('.dw-hz')) {
     // Place the form in the child thread list, to the right
     // of the Reply button.
     var $actionsListItem = $thread.find('> ol.dw-res > li.dw-p-as');

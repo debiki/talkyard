@@ -98,7 +98,7 @@ dw-fs-e       edit form group (COULD rename to -f-e/re/rat ?)
 dw-fs-re      reply form group
 dw-fs-r       rating form group
 dw-fs-flg     flag for spam/abuse/etc form
-dw-hor-a      action stuff, layed out horizontally
+dw-hz         horizontal layout (comments laid out in two dimensions)
 dw-if-opera   shown only for Opera
 dw-if-lte-ie7 shown only for Internet Explorer <= version 7
 dw-i-t        inline thread (COULD use dw-i instead, already has dw-t class)

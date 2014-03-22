@@ -161,7 +161,7 @@ li.dw-fs-re:not(:last-child) .dw-arw-hz-line-to-sibling
   top: -39.5px
 
 // ... But only show that arrow if horizontal layout ...
-.dw-t:not(.dw-hor) > .dw-res > .dw-fs-re .dw-arw
+.dw-t:not(.dw-hz) > .dw-res > .dw-fs-re .dw-arw
   display: none
 
 // ... and if there're replies to the right.
@@ -265,10 +265,10 @@ li.dw-fs-re:last-child .dw-arw-hz-line-to-sibling
 
 // Add some whitespace above replies, when laid out horizontally,
 // so there's some space for the SVG arrows.
-.DW.DW .dw-hor:not(.dw-depth-0) > .dw-res
+.DW.DW .dw-hz:not(.dw-depth-0) > .dw-res
   margin-top: 35px
 
-.dw-hor:not(.dw-depth-0) > .dw-p-as-hz
+.dw-hz:not(.dw-depth-0) > .dw-p-as-hz
   margin-top: 48px // aligns with the .dw-p:s to the right, which
                    // have some padding
 
@@ -359,7 +359,7 @@ span.dw-p-e-by
   //float: left; // or the header will be as wide as the root thread
   //                fix the header instead? I need to fix it anayway
 
-:not(.dw-hor) > .dw-p > .dw-p-bd > .dw-p-bd-blk
+:not(.dw-hz) > .dw-p > .dw-p-bd > .dw-p-bd-blk
   // Cancel .dw-p-bd 3px padding-left:, because the .dw-p-bd-blk is
   // 100% wide though, and without padding-right, text might be cropped.
   padding-right: 3px
@@ -368,14 +368,14 @@ span.dw-p-e-by
   max-width: 40em
 
 // Cancel .dw-p-bd-blk max width for code pages, and for the page config post.
-[data-page_role='Code'] .dw-hor > .dw-p > .dw-p-bd > .dw-p-bd-blk,
-[data-page_role='Code'] .dw-hor > .dw-p > .dw-f-e > .dw-e-tabs > .dw-e-tab > .dw-p-bd-blk,
+[data-page_role='Code'] .dw-hz > .dw-p > .dw-p-bd > .dw-p-bd-blk,
+[data-page_role='Code'] .dw-hz > .dw-p > .dw-f-e > .dw-e-tabs > .dw-e-tab > .dw-p-bd-blk,
 #post-65503 > .dw-p-bd > .dw-p-bd-blk,
 #post-65503 > .dw-f-e > .dw-e-tabs > .dw-e-tab > .dw-p-bd-blk
   max-width: none
 
 // Cancel Twitter Bootsrap wrapping of <pre>
-.dw-hor > .dw-p > .dw-p-bd > .dw-p-bd-blk > pre
+.dw-hz > .dw-p > .dw-p-bd > .dw-p-bd-blk > pre
   white-space: pre
   word-wrap: normal
 
@@ -658,7 +658,7 @@ body.dw-u-ui-simple .dw-a-edit
 .dw-res > .dw-i-t
   display: none
 
-.dw-hor > .dw-p > .dw-p-bd > .dw-i-ts
+.dw-hz > .dw-p > .dw-p-bd > .dw-i-ts
   float: left
   margin-left: 120px // arrows from inline-marks to -threads drawn here
 
@@ -669,11 +669,11 @@ body.dw-u-ui-simple .dw-a-edit
 
 // For vertical layout, place inline threads below the .dw-p-bd-blk, indented.
 // (With horizontal layout, they're placed to the right of the post.)
-.dw-t:not(.dw-hor) > .dw-p > .dw-p-bd > .dw-i-ts
+.dw-t:not(.dw-hz) > .dw-p > .dw-p-bd > .dw-i-ts
   float: left
   clear: left
 
-.dw-t:not(.dw-hor) > .dw-p > .dw-p-bd > .dw-i-ts > .dw-i-t
+.dw-t:not(.dw-hz) > .dw-p > .dw-p-bd > .dw-i-ts > .dw-i-t
   margin-left: 70px // indents, and leaves space for SVG/fake arrows
 
 // Make inline comments less conspicuous.
@@ -690,7 +690,7 @@ body.dw-u-ui-simple .dw-a-edit
   clear: left
 
 // Adjust inline-replies to the root post.
-.dw-hor > .dw-p > .dw-p-bd > .dw-p-bd-blk + .dw-i-t
+.dw-hz > .dw-p > .dw-p-bd > .dw-p-bd-blk + .dw-i-t
   margin-left: 4em // move away from the root post text
 
 
@@ -802,7 +802,7 @@ body.dw-u-ui-simple .dw-a-edit
 .ui-dialog > .dw-fs
   margin-bottom: 11px // 20px (from just above) too much
 
-.dw-hor > .dw-res > .dw-fs
+.dw-hz > .dw-res > .dw-fs
   margin: 0
   padding-right: 19px
   padding-left: 0 // nothing to the left
@@ -873,7 +873,7 @@ body.dw-u-ui-simple .dw-a-edit
   border-color: #aaa // default black is too sharp
 
 // IE 7 bugfix, root thread reply textarea otherwise 2000 or 20000px wide.
-.dw-hor > .dw-res > .dw-fs-re textarea
+.dw-hz > .dw-res > .dw-fs-re textarea
   max-width: 440px
 
 // CodeMirror problem fix — don't change the height of CodeMirror's
@@ -1080,7 +1080,7 @@ body.dw-login-to-login .dw-login-to-login
   padding-top: 0
   margin-top: 0
 
-.dw-hor > .dw-res > .dw-fs-re > form
+.dw-hz > .dw-res > .dw-fs-re > form
   // There's nothing to the left.
   margin-left: 0
   padding-left: 0
@@ -1234,7 +1234,7 @@ body.dw-login-to-login .dw-login-to-login
   clear: both
 
 // Hide help text for comments; show only for page body.
-:not(.dw-hor) > .dw-p > .dw-f-e .dw-f-e-help-show
+:not(.dw-hz) > .dw-p > .dw-f-e .dw-f-e-help-show
   display: none
 
 .dw-ui-simple .dw-f-e-mup
