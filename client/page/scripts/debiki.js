@@ -303,6 +303,10 @@ function renderPageEtc() {
 
   steps.push(function() {
     $posts.each($initStep2)
+    // Show root post actions initially.
+    $('.dw-depth-0 > .dw-p-as').removeClass('dw-p-as-dimmed').attr('id', 'dw-p-as-shown');
+    // Don't dim any horizontal root post reply button.
+    $('.dw-p-as-hz-reply').removeClass('dw-p-as-dimmed');
   });
 
   steps.push(function() {

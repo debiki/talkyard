@@ -422,6 +422,15 @@ span.dw-p-e-by
   padding: 5px 0 8px
   position: relative // for position: absolute 'Click this...' tips, inside
 
+.dw-p-as-dimmed
+  opacity: 0.15
+  .dw-a:before
+    // Dim icons even more, since they are otherwise eye catching blubs of colors.
+    opacity: 0.6
+
+.dw-p-as.dw-p-as-shown
+  opacity: 1
+
 .dw-depth-0 > .dw-p-as
   // Always show actions for the article / root post.
   visibility: visible !important;
