@@ -10,14 +10,6 @@
 @views.html.themesbuiltin.default20121009.wrapper(tpi) {
 
 
-<ul class="nav-pills">
-  <li><a href="<%=faq_path%>">FAQ</a></li>
-  <li><a href="<%=tos_path%>">Terms of Service</a></li>
-  <li><a class="active" href="<%=privacy_path%>">Privacy</a></li>
-</ul>
-
-<%= markdown_content(:privacy_policy) do %>
-
 <div id="collect"></div>
 <h2><a href="#collect">What information do we collect?</a></h2>
 <p>
@@ -111,7 +103,5 @@
   This document is CC-BY-SA. It was last updated May 31, 2013.
   Originally adapted from the <a href="https://github.com/discourse/discourse/blob/master/app/views/static/privacy.en.html.erb">Discourse Privacy Policy</a>.
 </p>
-
-<% end %>
 
 }

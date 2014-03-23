@@ -254,6 +254,11 @@ class SiteTpi protected (val debikiRequest: DebikiRequest[_])
   }
 
 
+  def companyDomain = debikiRequest.siteSettings.companyDomain
+  def companyFullName = debikiRequest.siteSettings.companyFullName
+  def companyShortName = debikiRequest.siteSettings.companyShortName
+
+
   def stylesheetBundle(bundleName: String): xml.NodeSeq = {
 
     val (nameNoSuffix, suffix) = bundleName match {

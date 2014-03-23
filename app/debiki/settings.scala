@@ -81,17 +81,29 @@ case class SettingsChain(rawSettings: Seq[RawSettings]) {
 
 case class Settings(settingsChain: SettingsChain) {
 
-  val title = settingsChain.deriveSetting("title", "(no title)")
-  val description = settingsChain.deriveSetting("description", "(no description)")
+  val title = derive("title", "(no title)")
+  val description = derive("description", "(no description)")
 
-  val horizontalComments = settingsChain.deriveBoolSetting("horizontalComments", false)
+  // COULD rename to horizontal_comments
+  val horizontalComments = derive("horizontalComments", false)
+
+  val companyDomain = derive("company_domain", "www.example.com")
+  val companyFullName = derive("company_full_name", "Unnamed Company Full Name")
+  val companyShortName = derive("company_short_name", "Unnamed Company")
+
+
+  private def derive(settingName: String, default: Any) =
+    settingsChain.deriveSetting(settingName, default)
 
 
   def toJson =
     Json.obj(
       "title" -> jsonFor(title),
       "description" -> jsonFor(description),
-      "horizontalComments" -> jsonFor(horizontalComments))
+      "horizontalComments" -> jsonFor(horizontalComments),
+      "companyDomain" -> jsonFor(companyDomain),
+      "companyFullName" -> jsonFor(companyFullName),
+      "companyShortName" -> jsonFor(companyShortName))
 
 
   private def jsonFor(setting: AnySetting): JsObject = {
