@@ -152,7 +152,7 @@ d.i.slideAwayRemove = function($form, opt_complete) {
     next();
   }
   // COULD elliminate dupl code that determines whether to fold or slide.
-  if ($thread.filter('.dw-hor, .dw-debate').length &&  // COULD rm .dw-debate?
+  if ($thread.filter('.dw-hz, .dw-debate').length &&  // COULD rm .dw-debate?
       !$form.closest('ol').filter('.dw-i-ts').length) {
     $form.each($foldOutLeft).queue(rm);
   }

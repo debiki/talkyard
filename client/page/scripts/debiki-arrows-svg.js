@@ -96,7 +96,7 @@ debiki.internal.makeSvgDrawer = function($) {
     // COULD make use of `cache'. See arrowFromThreadToReply(…).
     var $bdyBlk = $mark.closest('.dw-p-bd-blk');
     var $thread = $bdyBlk.closest('.dw-t');
-    var horizontalLayout = $thread.is('.dw-hor');
+    var horizontalLayout = $thread.is('.dw-hz');
     var $svgRoot = findClosestRoot($mark);
     // Do not use $svgRoot.offset() as offset, because that seems to be the
     // offset of the northwest-most SVG element in the <svg> tag. Instead,
@@ -170,7 +170,7 @@ debiki.internal.makeSvgDrawer = function($) {
       // Do not use $svgRoot.offset() — see comment somewhere above, search
       // for "$svgRoot.offset()". COULD merge this somewhat duplicated code?
       cache.svgOffs = cache.$svgRoot.parent().offset();
-      cache.horizontalLayout = $thread.is('.dw-hor');
+      cache.horizontalLayout = $thread.is('.dw-hz');
       // The root post has a -vspace, in which SVG is drawn.
       cache.from = $thread.children('.dw-t-vspace').add($thread)
           .last() // not first() — $.add() sorts in document order

@@ -34,7 +34,7 @@ var d = { i: debiki.internal, u: debiki.v0.util };
 // Use singl column layout if max width/height < 1000 px.
 // (If height > 1000 but width < 1000, the user can rotate the device.)
 if (d.i.singleColumnLayout) {
-  $('.dw-hor').removeClass('dw-hor');
+  $('.dw-hz').removeClass('dw-hz');
 }
 
 
@@ -303,6 +303,10 @@ function renderPageEtc() {
 
   steps.push(function() {
     $posts.each($initStep2)
+    // Show root post actions initially.
+    $('.dw-depth-0 > .dw-p-as').removeClass('dw-p-as-dimmed').attr('id', 'dw-p-as-shown');
+    // Don't dim any horizontal root post reply button.
+    $('.dw-p-as-hz-reply').removeClass('dw-p-as-dimmed');
   });
 
   steps.push(function() {

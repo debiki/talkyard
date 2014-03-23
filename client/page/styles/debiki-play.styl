@@ -161,7 +161,7 @@ li.dw-fs-re:not(:last-child) .dw-arw-hz-line-to-sibling
   top: -39.5px
 
 // ... But only show that arrow if horizontal layout ...
-.dw-t:not(.dw-hor) > .dw-res > .dw-fs-re .dw-arw
+.dw-t:not(.dw-hz) > .dw-res > .dw-fs-re .dw-arw
   display: none
 
 // ... and if there're replies to the right.
@@ -259,16 +259,16 @@ li.dw-fs-re:last-child .dw-arw-hz-line-to-sibling
 
 // Make the column separator at least this high. But don't do this for
 // .dw-fs because forms are folded/slided out, i.e. shrinked to zero height.
-.dw-p-as-hz,
+.dw-p-as-hz-reply,
 .dw-depth-1:not(.dw-i-t)
   min-height: 100px
 
 // Add some whitespace above replies, when laid out horizontally,
 // so there's some space for the SVG arrows.
-.DW.DW .dw-hor:not(.dw-depth-0) > .dw-res
+.DW.DW .dw-hz:not(.dw-depth-0) > .dw-res
   margin-top: 35px
 
-.dw-hor:not(.dw-depth-0) > .dw-p-as-hz
+.dw-hz:not(.dw-depth-0) > .dw-p-as-hz-reply
   margin-top: 48px // aligns with the .dw-p:s to the right, which
                    // have some padding
 
@@ -359,23 +359,20 @@ span.dw-p-e-by
   //float: left; // or the header will be as wide as the root thread
   //                fix the header instead? I need to fix it anayway
 
-:not(.dw-hor) > .dw-p > .dw-p-bd > .dw-p-bd-blk
+:not(.dw-hz) > .dw-p > .dw-p-bd > .dw-p-bd-blk
   // Cancel .dw-p-bd 3px padding-left:, because the .dw-p-bd-blk is
   // 100% wide though, and without padding-right, text might be cropped.
   padding-right: 3px
-  // Adjus max comment width: don't span whole screen even if
-  // .post.cropped-e is removed.
-  max-width: 40em
 
 // Cancel .dw-p-bd-blk max width for code pages, and for the page config post.
-[data-page_role='Code'] .dw-hor > .dw-p > .dw-p-bd > .dw-p-bd-blk,
-[data-page_role='Code'] .dw-hor > .dw-p > .dw-f-e > .dw-e-tabs > .dw-e-tab > .dw-p-bd-blk,
+[data-page_role='Code'] .dw-hz > .dw-p > .dw-p-bd > .dw-p-bd-blk,
+[data-page_role='Code'] .dw-hz > .dw-p > .dw-f-e > .dw-e-tabs > .dw-e-tab > .dw-p-bd-blk,
 #post-65503 > .dw-p-bd > .dw-p-bd-blk,
 #post-65503 > .dw-f-e > .dw-e-tabs > .dw-e-tab > .dw-p-bd-blk
   max-width: none
 
 // Cancel Twitter Bootsrap wrapping of <pre>
-.dw-hor > .dw-p > .dw-p-bd > .dw-p-bd-blk > pre
+.dw-hz > .dw-p > .dw-p-bd > .dw-p-bd-blk > pre
   white-space: pre
   word-wrap: normal
 
@@ -425,7 +422,45 @@ span.dw-p-e-by
   padding: 5px 0 8px
   position: relative // for position: absolute 'Click this...' tips, inside
 
-.dw-p-as-hz
+.dw-p-as-dimmed
+  opacity: 0.15
+  .dw-a:before
+    // Dim icons even more, since they are otherwise eye catching blubs of colors.
+    opacity: 0.6
+
+.dw-p-as.dw-p-as-shown
+  opacity: 1
+
+.dw-depth-0 > .dw-p-as
+  // Always show actions for the article / root post.
+  visibility: visible !important;
+  margin: 9px 0 0
+
+.DW.DW .dw-depth-0 > .dw-p-as > .dw-a
+  // More whitespace between root post actions.
+  margin: 0 0 0 25px
+
+.dw-depth-0 > .dw-p-as > .dropdown
+  // This makes little sense for the root post:
+  .dw-a-offtopic,
+  .dw-a-pin,
+  .dw-a-collapse-tree,
+  .dw-a-collapse-post,
+  .dw-a-close-tree
+    display: none !important
+
+.dw-depth-0 > .dw-num-likes > a
+  float: right
+
+.dw-ar-t > .dw-p-as > .dw-a-wrong
+  // Don't make it possible to vote "Wrong" for the forum question or blog post.
+  display: none !important
+
+.DW.dw-hz .dw-ar-t > .dw-p-as > .dw-a-reply
+  // The reply button is placed as an <li> in the reply section instead.
+  display: none !important
+
+.dw-p-as-hz-reply
   position: relative // curve image placed relative
   padding-right: 20px
   margin: 10px 16px 0 12px
@@ -433,7 +468,7 @@ span.dw-p-e-by
 
 // The reply button text can be customized, so it might be rather wide,
 // so set max-width and line height.
-.dw-p-as-hz > .dw-a-reply
+.dw-p-as-hz-reply > .dw-a-reply
   max-width: 8em
   display: inline-block // or max-width has no effect
   line-height: 120%
@@ -443,6 +478,7 @@ span.dw-p-e-by
   text-decoration: none
   color: #3872ab
   font-size: 13px
+  float: right
 
 .dw-a-disabled
   color: #d2d2d2 !important
@@ -454,6 +490,11 @@ span.dw-p-e-by
 .DW .dw-t > .dw-as .dw-a
   display: inline-block
   margin-right: 16px
+
+  &:first-child
+    margin-right: 0;
+    padding-right: 0;
+
 
 .DW .dw-t > .dw-p-as .dw-a-like
   margin-right: 5px
@@ -469,8 +510,15 @@ span.dw-p-e-by
   font-family: "fontello"
 
 .DW.DW .dw-p-as-more > .dw-a
+  float: none
   display: block
   margin: 8px 10px 14px 12px
+
+.dropdown-menu.dw-p-as-more
+  // Draw actions above arrows, and above replies, so the More actions
+  // dropdown menu is drawn above "Click to show this thread" texts.
+  background: white // [9DKFW0]
+
 
 #dw-p-as-shown a
   color: hsl(210, 51%, 45%)
@@ -484,7 +532,6 @@ span.dw-p-e-by
 .DW .dw-t > .dw-as > .dw-a-collapse-suggs,
 .DW .dw-t > .dw-as > .dw-a-flag-suggs,
 .DW .dw-t > .dw-as > .dw-a-delete-suggs
-  float: right
   margin: 0 0 0 12px
   color: #888
 
@@ -497,26 +544,20 @@ span.dw-p-e-by
   color: #c77405 // jQuery UI's ui-state-hover color
   text-decoration: underline
 
-.dw-p-as-hz > .dw-a.dw-a-reply
+.dw-p-as-hz-reply > .dw-a.dw-a-reply
   font-size: 17px
   margin: 0
+  float: none
 
-.dw-p-as-hz > .dw-a
+.dw-p-as-hz-reply > .dw-a
   display: block
 
-.dw-p-as-hz > .dw-a:not(.dw-a-reply)
+.dw-p-as-hz-reply > .dw-a:not(.dw-a-reply)
   margin-top: 1.3em
   color: #777
 
-.dw-p-as-hz > .dw-a:not(.dw-a-reply):hover
+.dw-p-as-hz-reply > .dw-a:not(.dw-a-reply):hover
   color: hsl(211, 30%, 40%)
-
-// For now...
-.dw-p-as-hz > .dropdown,  // hide the More actions dropdown; it confuses testers
-.dw-p-as-hz > .dw-a-like  // and one shouldn't be able to rate the article.
-.dw-p-as-hz > .dw-a-wrong
-.dw-p-as-hz > .dw-a-offtopic
-  display: none
 
 .dw-p-as
   // Prevent collapsed posts from appearing too close to any post just below,
@@ -525,8 +566,7 @@ span.dw-p-e-by
   min-height: 17px
   // Draw actions above arrows, and above replies, so the More actions
   // dropdown menu is drawn above "Click to show this thread" texts.
-  z-index: 4
-  background: white
+  z-index: 4  // [9DKFW0]
 
 body.dw-u-ui-simple .dw-a-edit
   display: none !important
@@ -658,7 +698,7 @@ body.dw-u-ui-simple .dw-a-edit
 .dw-res > .dw-i-t
   display: none
 
-.dw-hor > .dw-p > .dw-p-bd > .dw-i-ts
+.dw-hz > .dw-p > .dw-p-bd > .dw-i-ts
   float: left
   margin-left: 120px // arrows from inline-marks to -threads drawn here
 
@@ -669,11 +709,11 @@ body.dw-u-ui-simple .dw-a-edit
 
 // For vertical layout, place inline threads below the .dw-p-bd-blk, indented.
 // (With horizontal layout, they're placed to the right of the post.)
-.dw-t:not(.dw-hor) > .dw-p > .dw-p-bd > .dw-i-ts
+.dw-t:not(.dw-hz) > .dw-p > .dw-p-bd > .dw-i-ts
   float: left
   clear: left
 
-.dw-t:not(.dw-hor) > .dw-p > .dw-p-bd > .dw-i-ts > .dw-i-t
+.dw-t:not(.dw-hz) > .dw-p > .dw-p-bd > .dw-i-ts > .dw-i-t
   margin-left: 70px // indents, and leaves space for SVG/fake arrows
 
 // Make inline comments less conspicuous.
@@ -690,7 +730,7 @@ body.dw-u-ui-simple .dw-a-edit
   clear: left
 
 // Adjust inline-replies to the root post.
-.dw-hor > .dw-p > .dw-p-bd > .dw-p-bd-blk + .dw-i-t
+.dw-hz > .dw-p > .dw-p-bd > .dw-p-bd-blk + .dw-i-t
   margin-left: 4em // move away from the root post text
 
 
@@ -802,7 +842,7 @@ body.dw-u-ui-simple .dw-a-edit
 .ui-dialog > .dw-fs
   margin-bottom: 11px // 20px (from just above) too much
 
-.dw-hor > .dw-res > .dw-fs
+.dw-hz > .dw-res > .dw-fs
   margin: 0
   padding-right: 19px
   padding-left: 0 // nothing to the left
@@ -873,7 +913,7 @@ body.dw-u-ui-simple .dw-a-edit
   border-color: #aaa // default black is too sharp
 
 // IE 7 bugfix, root thread reply textarea otherwise 2000 or 20000px wide.
-.dw-hor > .dw-res > .dw-fs-re textarea
+.dw-hz > .dw-res > .dw-fs-re textarea
   max-width: 440px
 
 // CodeMirror problem fix — don't change the height of CodeMirror's
@@ -1000,7 +1040,12 @@ body.dw-u-ui-simple .dw-a-edit
 
 .dw-cmts-tlbr
 
-  margin-top: 1.5em
+  margin: 25px 0 17px
+  border: 1px solid hsl(0, 0%, 77%)
+  background: hsl(0, 0%, 98%)
+  padding: 10px
+  border-left: none
+  border-right: none
 
   .dw-cmts-count
     font-size: 17px
@@ -1017,6 +1062,8 @@ body.dw-u-ui-simple .dw-a-edit
   .dw-a-logout
     margin-left: 1em
 
+.DW.dw-vt .dw-cmts-tlbr
+  margin-bottom: 45px
 
 #dw-lgi-pswd .dw-reset-pswd
   display: block
@@ -1080,7 +1127,7 @@ body.dw-login-to-login .dw-login-to-login
   padding-top: 0
   margin-top: 0
 
-.dw-hor > .dw-res > .dw-fs-re > form
+.dw-hz > .dw-res > .dw-fs-re > form
   // There's nothing to the left.
   margin-left: 0
   padding-left: 0
@@ -1234,7 +1281,7 @@ body.dw-login-to-login .dw-login-to-login
   clear: both
 
 // Hide help text for comments; show only for page body.
-:not(.dw-hor) > .dw-p > .dw-f-e .dw-f-e-help-show
+:not(.dw-hz) > .dw-p > .dw-f-e .dw-f-e-help-show
   display: none
 
 .dw-ui-simple .dw-f-e-mup

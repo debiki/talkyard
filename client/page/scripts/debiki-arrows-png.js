@@ -34,7 +34,7 @@ var $ = d.i.$;
 
 function $clearAndRedrawArrows() {
   var $thread = $(this).closest('.dw-t');
-  if ($thread.is('.dw-hor.dw-depth-0')) {
+  if ($thread.is('.dw-hz.dw-depth-0')) {
     clearAndRedrawArrowsHorizontally($thread);
   }
   else {
@@ -94,7 +94,7 @@ function clearAndRedrawArrowsVertically($thread) {
   // the original post.)
   var thisIsHzClosedSection =
     $thread.is('.dw-t-closed') &&
-    $thread.parent().closest('.dw-t').is('.dw-hor');
+    $thread.parent().closest('.dw-t').is('.dw-hz');
 
   var $childThreads = $thread.find('> .dw-res > .dw-t');
 

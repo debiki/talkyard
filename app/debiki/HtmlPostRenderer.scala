@@ -238,7 +238,7 @@ object HtmlPostRenderer {
       if (post.id == PageParts.BodyId) " dw-ar-p-hd"
       else ""
 
-    val likeVotes = post.numLikeVotes match {
+    val likeVotes = if (post.isArticleOrConfig) Nil else post.numLikeVotes match {
       case 0 => scala.xml.Null
       case 1 => <x>. <a class="dw-num-likes">1 person</a> likes this comment</x>.child
       case x => <x>. <a class="dw-num-likes">{x} people</a> like this comment</x>.child
@@ -246,7 +246,7 @@ object HtmlPostRenderer {
 
     var thisComment = if (likeVotes.nonEmpty) "it" else "this comment"
 
-    val isWrongVotes = post.numWrongVotes match {
+    val isWrongVotes = if (post.isArticleOrConfig) Nil else post.numWrongVotes match {
       case 0 => scala.xml.Null
       case 1 =>
         <x>. <a class="dw-num-wrongs">1 {if (likeVotes.nonEmpty) "" else "person"}</a
@@ -258,7 +258,7 @@ object HtmlPostRenderer {
 
     if (isWrongVotes.nonEmpty) thisComment = "it"
 
-    val offTopicVotes = post.numOffTopicVotes match {
+    val offTopicVotes = if (post.isArticleOrConfig) Nil else post.numOffTopicVotes match {
       case 0 => ""
       case 1 =>
         <x>. <a class="dw-num-offtopics">1 person</a> thinks {thisComment} is off-topic</x>.child
@@ -380,10 +380,12 @@ object HtmlPostRenderer {
 
     val replyLikeWrongLinks = {
       if (post.isDeletedSomehow) Nil
-      else
-        <a class="dw-a dw-a-reply icon-reply">Reply</a>
-        <a class="dw-a dw-a-like icon-heart" title="Like this">Like</a>
+      else {
+        // They float right, so they're placed in reverse order.
         <a class="dw-a dw-a-wrong icon-warning" title="Click if you think this post is wrong">Wrong</a>
+        <a class="dw-a dw-a-like icon-heart" title="Like this">Like</a> ++
+        <a class="dw-a dw-a-reply icon-reply">Reply</a>
+      }
     }
 
     // ----- Off-topic link
@@ -475,37 +477,26 @@ object HtmlPostRenderer {
 
 
     def moreDropdown =
-      <span class="dropdown">
+      // '.navbar-right' prevents the dropdown from overflowing to the right.
+      <span class="dropdown navbar-right dw-a">
         <a class="dw-a-more" data-toggle="dropdown" data-target="#">More</a>
         <div class="dropdown-menu dw-p-as-more">
           { moreActionLinks }
         </div>
       </span>
 
-    val renderActionsVertically = post.id == PageParts.BodyId // for now
-    if (renderActionsVertically) {
-      <div class="dw-p-as dw-as dw-p-as-hz">
-        { replyLikeWrongLinks }
-        { moreDropdown }
-        { suggestionsNew }
-        { suggestionsOld }
-      </div>
-    }
-    else {
-      // The suggestions float right. New not-yet-decided-on suggestions are always
-      // visible, and are hence placed to the very right (they need to appear first in
-      // the list below). Old suggestions are only shown when you hover the post with
-      // the mouse (so as not to clutter the GUI) (ignore touch devices for now),
-      // and are thus placed to the left of the new not-yet-decided-on suggestions.
-      <div class="dw-p-as dw-as">
-        {/* --- These float right --- */}
-        { suggestionsNew }
-        { suggestionsOld }
-        {/* --- The rest float left --- */}
-        { replyLikeWrongLinks }
-        { moreDropdown }
-      </div>
-    }
+    // Everything floats right. New not-yet-decided-on suggestions are always
+    // visible, and are hence placed to the very right (they need to appear first in
+    // the list below). Old suggestions are only shown when you hover the post with
+    // the mouse (so as not to clutter the GUI) (ignore touch devices for now),
+    // and are thus placed to the left of the new not-yet-decided-on suggestions.
+    <div class="dw-p-as dw-as">{
+      // Things float right, so they're placed in reverse order.
+      }{ suggestionsNew
+      }{ suggestionsOld
+      }{ moreDropdown
+      }{ replyLikeWrongLinks
+    }</div>
   }
 
   private def renderActionsForCollapsed(post: Post): Elem = {

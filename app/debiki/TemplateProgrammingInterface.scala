@@ -185,7 +185,7 @@ class SiteTpi protected (val debikiRequest: DebikiRequest[_])
   def anyCurrentPageId: Option[PageId] = None
 
   /** Classes for the <html> tag. */
-  val debikiHtmlTagClasses =
+  def debikiHtmlTagClasses =
     "DW dw-pri dw-ui-simple dw-render-actions-pending "
 
   def debikiDashbar = xml.Unparsed(views.html.dashbar().body)
@@ -477,6 +477,9 @@ class TemplateProgrammingInterface(
 
   var renderPageSettings: Option[RenderPageSettings] = None
 
+  val horizontalComments = pageReq.thePageSettings.horizontalComments.valueIsTrue
+
+
   lazy val renderedPage: RenderedPage =
     dao.renderPage(
       pageReq,
@@ -484,6 +487,10 @@ class TemplateProgrammingInterface(
         throw TemplateRenderer.BadTemplateException(
           "DwE3KR58", "Please wrap @tpi.title, @tpi.body etcerera inside a @tpi.page tag")
       })
+
+
+  override def debikiHtmlTagClasses =
+    super.debikiHtmlTagClasses + (if (horizontalComments) "dw-hz " else "dw-vt ")
 
 
   override def debikiAppendToBodyTags: xml.NodeSeq = {
@@ -507,7 +514,6 @@ class TemplateProgrammingInterface(
     showComments: Boolean = !isHomepage)(
     contents: => play.api.templates.Html): xml.NodeSeq = {
 
-    val horizontalComments = pageReq.thePageSettings.horizontalComments.valueIsTrue
     val viewsPageConfigPost = pageReq.pageRoot == Some(PageParts.ConfigPostId)
     renderPageSettings =
       if (viewsPageConfigPost || pageReq.pagePath.isConfigPage) {

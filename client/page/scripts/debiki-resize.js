@@ -40,7 +40,7 @@ d.i.makeThreadResizableForPost = function(post) {
   if (!Modernizr.touch)
     $thread.filter(function() {
       var $i = $(this);
-      return !$i.is('.dw-i-t') && $i.parent().closest('.dw-t').is('.dw-hor');
+      return !$i.is('.dw-i-t') && $i.parent().closest('.dw-t').is('.dw-hz');
     }).each($makeThreadEastResizable);
 };
 

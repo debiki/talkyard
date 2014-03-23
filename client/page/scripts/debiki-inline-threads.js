@@ -73,7 +73,7 @@ function $placeInlineMarks() {
           0, d.i.diffMatchPatch.maxMatchLength);
     }
     var match = d.i.diffMatchPatch.match_main(tagDogText, markStartText, loc);
-    var arrow = $parentThread.filter('.dw-hor').length ?
+    var arrow = $parentThread.filter('.dw-hz').length ?
         'ui-icon-arrow-1-e' : 'ui-icon-arrow-1-s';
     // COULD: When possible to mark a text range: Underline matched text?
     // COULD add i18n, here and in $(mark) below.
@@ -222,7 +222,7 @@ d.i.$splitBodyPlaceInlines = function() {
   // placed to the left and inline threads in a <ol> to the right, or
   // below (between) the body blocks.
   $(this).find('> .dw-p-bd > .dw-p-bd-blk').each(function(){
-    var $placeFun = $(this).closest('.dw-t').filter('.dw-hor').length ?
+    var $placeFun = $(this).closest('.dw-t').filter('.dw-hz').length ?
         $placeToTheRight : $placeInside;
     $placeFun.apply(this);
     // Now there should be one <div .dw-p-bd-blk> with many

@@ -59,7 +59,7 @@ function bindActionLinksImpl(anyPost, bindFoldLinks) {
     }
   }
   else {
-    $actions = $('.dw-t > .dw-as, .dw-p-as-hz');
+    $actions = $('.dw-t > .dw-as, .dw-p-as-hz-reply');
     $collapses = $(collapseSelectors);
   }
 
@@ -88,10 +88,7 @@ function bindActionLinksImpl(anyPost, bindFoldLinks) {
 
   $actions.find('.dw-a-flag-suggs').click(showNotImplMessage);
 
-  // Action links are shown on hover.
-  $actions.css('visibility', 'hidden');
-  // But show the article's reply button.
-  $('.dw-p-as-hz').css('visibility', 'visible');
+  $actions.addClass('dw-p-as-dimmed');
 
   $collapses.click(d.i.$toggleCollapsed);
 };
@@ -106,7 +103,7 @@ function showNotImplMessage() {
   */
 d.i.shohwActionLinksOnHoverPost  = function(post) {
   var $thread = $(post).dwCheckIs('.dw-p').closest('.dw-t');
-  var $post = $thread.filter(':not(.dw-depth-0)').children('.dw-p');
+  var $post = $thread.children('.dw-p');
   var $actions = $thread.children('.dw-p-as');
 
   // (Better avoid delegates for frequent events such as mouseenter.)
@@ -140,18 +137,29 @@ d.i.shohwActionLinksOnHoverPost  = function(post) {
 
 // Shows actions for the current post, or the last post hovered.
 d.i.$showActions = function() {
+  var actions = $(this).closest('.dw-t').children('.dw-as');
   // Hide any action links already shown; show actions for one post only.
-  d.i.hideActions();
+  d.i.hideActions(actions);
   // Show links for the the current post.
-  $(this).closest('.dw-t').children('.dw-as')
-    .css('visibility', 'visible')
+  actions
+    .stop()
+    .removeClass('dw-p-as-dimmed')
+    .animate({ opacity: 1 }, 400, 'linear') // [8GUfB0]
     .attr('id', 'dw-p-as-shown');
 };
 
 
-d.i.hideActions = function() {
-  $('#dw-p-as-shown')
-      .css('visibility', 'hidden')
+d.i.hideActions = function(actionsToShowInstead) {
+  var actionsToHide = $('#dw-p-as-shown');
+  if (actionsToHide.length && actionsToShowInstead.length &&
+      actionsToHide[0] === actionsToShowInstead[0])
+    return;
+
+  actionsToHide
+      .stop()
+      .animate({ opacity: 0.15 }, 400, 'linear', function() { // [8GUfB0]
+        $(this).addClass('dw-p-as-dimmed');
+      })
       .removeAttr('id');
 };
 

@@ -41,6 +41,9 @@
   padding: 0 // if no CSS reset included
   line-height: normal // or PNG arrows and [-] offset incorrectly
 
+.DW.dw-vt .dw-t,
+.DW.dw-hz .dw-ar-t
+  max-width: 800px
 
 
 // Folded things
@@ -189,26 +192,26 @@
   width: 25em // avoids > 1 column for this depth
 
 // Draw dashed line between horizontal threads, on hower.
-.DW.DW .dw-hor > .dw-res > li > .dw-t > .ui-resizable-e
+.DW.DW .dw-hz > .dw-res > li > .dw-t > .ui-resizable-e
   border-right: 1px dashed transparent
 
-.DW.DW .dw-hor > .dw-res > li:hover > .dw-t > .ui-resizable-e
+.DW.DW .dw-hz > .dw-res > li:hover > .dw-t > .ui-resizable-e
   border-right-color: lightgray
 
-.dw-hor > .dw-res
+.dw-hz > .dw-res
   display: table-row // doesn't work in IE7, fine
 
-.dw-hor > .dw-res > li
+.dw-hz > .dw-res > li
   display: table-cell
-  padding: 19px 0 10px 59px
+  padding: 22px 0 10px 59px
   // or Reply form pushes other <li>s down
   // which offsets PNG arrows incorrectly
   vertical-align: top
 
-.dw-hor > .dw-res > li:first-child
+.dw-hz > .dw-res > li:first-child
   padding-left: 0
 
-.dw-hor > .dw-res > li > .dw-t
+.dw-hz > .dw-res > li > .dw-t
   padding: 0 17px 0 0
   margin: 0
 
@@ -222,7 +225,7 @@
 // Vertical layout, nested threads
 //---------------------------
 
-.dw-depth-1:not(.dw-hor) .dw-t
+.dw-depth-1:not(.dw-hz) .dw-t
   float: none
   clear: both // else the rating form might float to the left
 
@@ -238,17 +241,16 @@
 // Vertical layout of whole page
 //---------------------------
 
-.dw-t:not(.dw-hor) > .dw-t-vspace
+.dw-t:not(.dw-hz) > .dw-t-vspace
   display: none
 
-.dw-depth-0:not(.dw-hor) > .dw-res > li
+.dw-depth-0:not(.dw-hz) > .dw-res > li
 
   margin: 2em 0
 
   > .dw-t
     padding-right: 3px
-    // break out variable; see debiki-play.styl: :not(.dw-hor) > .dw-p > .dw-p-bd > .dw-p-bd-blk
-    max-width: 40em
+    // break out variable; see debiki-play.styl: :not(.dw-hz) > .dw-p > .dw-p-bd > .dw-p-bd-blk
 
   > .dw-depth-1
     width: auto !important
@@ -290,6 +292,16 @@
   border-left: none
   border-right: none
   line-height: 15px // or test w 120%
+
+// Threads are wider in vertical layout, so the headers are much larger.
+// Therefore make their backgrounds brighter.
+.DW.dw-vt
+  .dw-p-hd,
+  .dw-p.dw-zd
+    background-color: hsl(0, 0%, 97%)
+
+  .dw-ar-p-hd
+    background-color: transparent
 
 .dw-p-bd,
 .dw-p-diff // COULD place -bd on -diff too, remove this -diff row?
@@ -339,14 +351,16 @@
 .debiki.dw-debate:after,
 // Makes the root post wrap its (floating) children, don't know if
 // needed for other horizontal threads.
-.dw-t.dw-hor > .dw-p:after,
+.dw-t.dw-hz > .dw-p:after,
 // Wraps any floating reply or rate form (Debiki's or some other framework's,
 // e.g. WordPress' reply form). Unless the .dw-t wraps it, PNG arrow hiders
 // won't hide PNG arrows correctly (because the .dw-t and thus the arrow
 // hiders wouldn't be tall enough, if it didn't wrap floating children).
 .dw-t:after,
 // Its children, .dw-p-bd-blk:s, float left.
-.dw-p-bd:after
+.dw-p-bd:after,
+// Comment actions
+.dw-p-as:after
   // Copied from jquery-ui-1.8.16.custom.css.
   content: "."
   display: block
@@ -449,7 +463,7 @@
 
 .dw-arw-hz-line-to-this,
 .dw-arw-hz-line-to-sibling
-  top: -58px
+  top: -61px
   height: 3px
 
 .dw-arw-hz-line-to-this
@@ -461,7 +475,7 @@
   width: 100%
 
 .dw-arw-vt-curve-to-this,
-.dw-depth-0:not(.dw-hor) > .dw-res > li > .dw-t > .dw-res > .dw-t > .dw-arw-vt-curve-to-this
+.dw-depth-0:not(.dw-hz) > .dw-res > li > .dw-t > .dw-res > .dw-t > .dw-arw-vt-curve-to-this
   position: absolute
   background-color: transparent
   background: url(img/arrows-etcetera-gray.png) no-repeat -33px -228px
@@ -487,7 +501,7 @@
 // However do show it, if we use single column layout, because then replies
 // to article replies are always indented (and an arrow is needed if there's
 // indentation).
-.dw-depth-0:not(.dw-hor) > .dw-res > li > .dw-t > .dw-res > .dw-t:last-child > .dw-arw-vt-curve-to-this
+.dw-depth-0:not(.dw-hz) > .dw-res > li > .dw-t > .dw-res > .dw-t:last-child > .dw-arw-vt-curve-to-this
   display: block
   background: url("img/arrows-etcetera-gray.png") no-repeat -33px -228px
   left: -10px
@@ -506,7 +520,7 @@
 .dw-res.dw-zd
   position: relative
 
-.dw-hor > .dw-res > li:last-child > .dw-t > .dw-arw-hz-curve-to-this,
+.dw-hz > .dw-res > li:last-child > .dw-t > .dw-arw-hz-curve-to-this,
 .dw-res > .dw-t:last-child > .dw-arw-vt-curve-to-this
   // Hide parts of the end of the horizontal or vertical line that spans
   // all child threads, by placing this arrow's background on top.
@@ -518,7 +532,7 @@
 .dw-arw-hz-branch-to-reply-btn
   background: transparent url(img/arrows-etcetera-gray.png) no-repeat 0 0
   position: absolute
-  top: -60px
+  top: -63px
   left: -30px
   height: 34px
   width: 61px
