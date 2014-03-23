@@ -286,7 +286,11 @@ case class PageMeta(
 
 sealed abstract class PageRole {
   def parentRole: Option[PageRole] = None
-  def childRole: Option[PageRole] = None
+
+  /** True if this page is e.g. a blog or a forum — they can have child pages
+    * (namely blog posts, forum topics).
+    */
+  def isSection: Boolean = false
 }
 
 
@@ -298,7 +302,7 @@ object PageRole {
   case object EmbeddedComments extends PageRole
 
   case object Blog extends PageRole {
-    override val childRole = Some(BlogPost)
+    override def isSection = true
   }
 
   case object BlogPost extends PageRole {
@@ -308,13 +312,12 @@ object PageRole {
   // Ooops, ForumGroup + Forum + ForumTopic feels over complicated. Should
   // remove ForumGroup and keep only Forum and ForumTopic.
   case object ForumGroup extends PageRole {
-    // BUG, childRole should include ForumGroup itself.
-    override val childRole = Some(Forum)
+    override def isSection = true
   }
 
   case object Forum extends PageRole {
     override val parentRole = Some(ForumGroup)
-    override val childRole = Some(ForumTopic)
+    override val isSection = true
   }
 
   case object ForumTopic extends PageRole {
@@ -322,7 +325,7 @@ object PageRole {
   }
 
   case object WikiMainPage extends PageRole {
-    override val childRole = Some(WikiPage)
+    override def isSection = true
   }
 
   case object WikiPage extends PageRole {
