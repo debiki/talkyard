@@ -379,9 +379,9 @@ case class HtmlPageSerializer(
         val anyRootPostLikeCount =
           if (rootPost.numLikeVotes == 0) Nil
           else {
-            val people = if (rootPost.numLikeVotes == 1) "person" else "people"
+            val peopleLike = if (rootPost.numLikeVotes == 1) "person likes" else "people like"
             <div class="dw-num-likes clearfix"><a
-              >{rootPost.numLikeVotes} {people} like this.</a></div>
+              >{rootPost.numLikeVotes} {peopleLike} this.</a></div>
           }
 
         val anyReplyLink =
