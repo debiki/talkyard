@@ -4,6 +4,12 @@
  * Licensed under CC-BY-SA.
  *@
 
+@(tpi: debiki.SiteTpi)
+
+@* For now, use the default theme, and ignore any site theme configuration. *@
+@views.html.themesbuiltin.default20121009.wrapper(tpi) {
+
+
 <ul class="nav-pills">
   <li><a href="<%=faq_path%>">FAQ</a></li>
   <li><a class="active" href="<%=tos_path%>">Terms of Service</a></li>
@@ -137,3 +143,4 @@
   which was in turn adapted from <a href="http://en.wordpress.com/tos/">WordPress Terms of Service</a>.
 </p>
 
+}

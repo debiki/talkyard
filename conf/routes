@@ -117,6 +117,9 @@ GET   /-/list-pages             controllers.ListController.listPages
 GET   /-/list-users             controllers.ListController.listUsers
 POST  /-/change-page-meta       controllers.PageMetaController.changeMeta
 
+GET   /-/terms-of-use           controllers.LegalController.viewTermsOfUsePage
+GET   /-/privacy-policy         controllers.LegalController.viewPrivacyPolicyPage
+
 GET   /-/debug/testAutoApprove  controllers.DebugController.testAutoApprove(ipAddress, identityId)
 
 GET   /-/site/*file             controllers.SiteAssetBundlesController.at(file)
