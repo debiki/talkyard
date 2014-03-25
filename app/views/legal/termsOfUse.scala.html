@@ -48,7 +48,20 @@
 
 <div id="3"></div>
 <h2><a href="#3">3. User Content License</a></h2>
-<%= markdown_content(:tos_user_content_license) %>
+
+<h3>Your Contributions</h3>
+
+You agree that all Content that You contribute to @companyShortName is perpetually and irrevocably dual licensed to @companyShortName under a <a href="http://creativecommons.org/licenses/by-sa/4.0/">Creative Commons Attribution-ShareAlike 4.0 International License</a> and a <a href="http://creativecommons.org/licenses/by-nc-sa/4.0/">Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International</a> (then @companyShortName can choose under which one of these two licenses to redistribute your Content). You grant @companyShortName the perpetual and irrevocable right and license to use, copy, cache, publish, display, distribute, modify, create derivative works and store such Content and to allow others to do so in any medium now known or hereinafter developed (“Content License”), even if such Content has been contributed and subsequently removed by You.
+<small>(This paragraph was based on http://stackexchange.com/legal, section 3 Subscriber Content.)</small>
+
+<h3>Content</h3>
+
+@* COULD make this user content license section configurable, like Discourse did.
+   That is, if a user_content_license site setting has been defined, let it replace
+   this section. But don't forget to replace the company-short-name with the short name.
+*@
+User contributions are licensed under a <a href="http://creativecommons.org/licenses/by-nc-sa/4.0/">Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License</a>. Without limiting any of those representations or warranties, @companyShortName has the right (though not the obligation) to, in @companyShortName’s sole discretion (i) refuse or remove any content that, in @companyShortName’s reasonable opinion, violates any @companyShortName policy or is in any way harmful or objectionable, or (ii) terminate or deny access to and use of the Website to any individual or entity for any reason, in @companyShortName’s sole discretion. @companyShortName will have no obligation to provide a refund of any amounts previously paid.
+
 
 <div id="4"></div>
 <h2><a href="#4">4. Payment and Renewal</a></h2>
@@ -135,13 +148,23 @@
 
 <div id="18"></div>
 <h2><a href="#18">18. Miscellaneous</a></h2>
-<%= markdown_content(:tos_miscellaneous) %>
+
+This Agreement constitutes the entire agreement between @companyShortName and you concerning the subject matter hereof, and they may only be modified by a written amendment signed by an authorized executive of @companyShortName, or by the posting by @companyShortName of a revised version.
+
+If any part of this Agreement is held invalid or unenforceable, that part will be construed to reflect the parties’ original intent, and the remaining portions will remain in full force and effect. A waiver by either party of any term or condition of this Agreement or any breach thereof, in any one instance, will not waive such term or condition or any subsequent breach thereof. You may assign your rights under this Agreement to any party that consents to, and agrees to be bound by, its terms and conditions; @companyShortName may assign its rights under this Agreement without condition. This Agreement will be binding upon and will inure to the benefit of the parties, their successors and permitted assigns.
+
+<h2><a href="#19">19. Jurisdiction</a></h2>
+
+@* COULD make this section configurable, like Discourse has done. For now however:
+ *@
+Except to the extent applicable law, if any, provides otherwise, this Agreement, any access to or use of the Website will be governed by the laws of the country and state where the owners of @companyShortName live, and in their native language or in English.
+
 
 <br>
 <br>
 <br>
 <p>
-  This document is CC-BY-SA. It was last updated May 31, 2013.<br/>
+  This document is CC-BY-SA. It was last updated Mars 24, 2014.<br/>
   Originally adapted from the <a href="https://raw.githubusercontent.com/discourse/discourse/master/app/views/static/tos.en.html.erb">Discourse Terms of Service</a>.
   which was in turn adapted from <a href="http://en.wordpress.com/tos/">WordPress Terms of Service</a>.
 </p>
