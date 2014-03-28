@@ -1,0 +1,20 @@
+
+<!-- This should be a tab, but I haven't yet found any AngularDart tabs that seems to work. -->
+
+<div class="form-group row">
+
+  <label for="{{cmp.rootPageId}}{{cmp.contentId}}" class="col-sm-3 control-label">{{ cmp.title }}</label>
+
+  <div class="col-sm-9">
+    <p><content></content></p>
+    <textarea ng-model="cmp.content.newText" type="text" class="form-control" id="{{cmp.rootPageId}}{{cmp.contentId}}"></textarea>
+
+    <div ng-hide="!cmp.valueChanged">
+      <button ng-click="cmp.save()" class="btn btn-default">Save</button>
+      <button ng-click="cmp.cancel()" class="btn btn-default">Cancel</button>
+    </div>
+    <div ng-hide="cmp.valueChanged || cmp.hasDefaultValue">
+      <button ng-click="cmp.setToDefault()" class="btn btn-default">Reset to default</button>
+    </div>
+  </div>
+</div>

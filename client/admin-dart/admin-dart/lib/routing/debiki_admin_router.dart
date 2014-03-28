@@ -76,6 +76,10 @@ class DebikiAdminRouteInitializer implements RouteInitializer {
                 path: 'settings',
                 enter: view('view/forum/settings.html'))
             ..addRoute(
+                name: 'forumSpecialContent',
+                path: 'special-content',
+                enter: view('view/forum/special_content.html'))
+            ..addRoute(
                 name: 'forumDashboard',
                 path: '',
                 enter: view('view/forum/dashboard.html')))

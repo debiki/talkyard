@@ -6,6 +6,7 @@ import 'package:angular/angular.dart';
 
 import 'debiki_data.dart';
 import 'settings.dart';
+import 'special_content.dart';
 import 'post.dart';
 import 'topic.dart';
 import 'user.dart';
@@ -23,6 +24,8 @@ class DebikiAdminQueryService {
   String get _loadSiteSettingsUrl => '$_origin/-/load-site-settings';
   String get _loadSectionSettingsUrl => '$_origin/-/load-section-settings';
   String get _saveSettingUrl => '$_origin/-/save-setting';
+  String get _loadSpecialContentUrl => '$_origin/-/load-special-content';
+  String get _saveSpecialContentUrl => '$_origin/-/save-special-content';
 
   Future _loaded;
 
@@ -134,5 +137,27 @@ class DebikiAdminQueryService {
           'X-XSRF-TOKEN': 'CorsFromDartEditor'
         },
         sendData: setting.toJson);
+  }
+
+  Future loadSpecialContent(String rootPageId, String contentId) {
+    var url = '$_loadSpecialContentUrl?rootPageId=$rootPageId&contentId=$contentId';
+    return _http.request(url, withCredentials: true) // .get(_loadSpecialContentUrl)
+        .then((HttpResponse response) {
+      // `data` is a String here, but a json Map in _loadTopics, perhaps the reason is
+      // that I have to use `request` here not `get`?
+      // Also remove leading ")]}',\n", 6 chars.
+      Map json = JSON.decode(response.data.substring(6));
+      return new SpecialContent.fromJsonMap(json);
+    });
+  }
+
+  Future saveSpecialContent(SpecialContent content) {
+    return _http.request(
+        _saveSpecialContentUrl, withCredentials: true, method: 'POST',
+        requestHeaders: {
+          'Content-Type': 'application/json',
+          'X-XSRF-TOKEN': 'CorsFromDartEditor'
+        },
+        sendData: content.toJson);
   }
 }

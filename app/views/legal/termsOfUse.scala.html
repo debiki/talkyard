@@ -16,6 +16,9 @@
 @views.html.themesbuiltin.default20121009.wrapper(tpi) {
 
 
+<h1>Terms of Use</h1>
+<br><br>
+
 <p>
   The following terms and conditions govern all use of the @companyDomain website and all content, services and products available at or through the website, including, but not limited to, @companyDomain Forum Software, @companyDomain Support Forums and the @companyDomain Hosting service (“Hosting”), (taken together, the Website). The Website is owned and operated by @companyFullName (“@companyShortName”). The Website is offered subject to your acceptance without modification of all of the terms and conditions contained herein and all other operating rules, policies (including, without limitation, @companyDomain’s <a href="@privacyUrl">Privacy Policy</a> and <a href="@faqUrl">Community Guidelines</a>) and procedures that may be published from time to time on this Site by @companyShortName (collectively, the “Agreement”).
 </p>
@@ -56,12 +59,9 @@ You agree that all Content that You contribute to @companyShortName is perpetual
 
 <h3>Content</h3>
 
-@* COULD make this user content license section configurable, like Discourse did.
-   That is, if a user_content_license site setting has been defined, let it replace
-   this section. But don't forget to replace the company-short-name with the short name.
-*@
-User contributions are licensed under a <a href="http://creativecommons.org/licenses/by-nc-sa/4.0/">Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License</a>. Without limiting any of those representations or warranties, @companyShortName has the right (though not the obligation) to, in @companyShortName’s sole discretion (i) refuse or remove any content that, in @companyShortName’s reasonable opinion, violates any @companyShortName policy or is in any way harmful or objectionable, or (ii) terminate or deny access to and use of the Website to any individual or entity for any reason, in @companyShortName’s sole discretion. @companyShortName will have no obligation to provide a refund of any amounts previously paid.
+@Html(tpi.specialContentPages.termsOfUseContentLicense)
 
+Without limiting any of those representations or warranties, @companyShortName has the right (though not the obligation) to, in @companyShortName’s sole discretion (i) refuse or remove any content that, in @companyShortName’s reasonable opinion, violates any @companyShortName policy or is in any way harmful or objectionable, or (ii) refuse or remove any content for any reason, or for no reason at all, or (iii) terminate or deny access to and use of the Website to any individual or entity for any reason, or for no reason at all, in @companyShortName’s sole discretion. @companyShortName will have no obligation to provide a refund of any amounts previously paid.
 
 <div id="4"></div>
 <h2><a href="#4">4. Payment and Renewal</a></h2>
@@ -155,9 +155,7 @@ If any part of this Agreement is held invalid or unenforceable, that part will b
 
 <h2><a href="#19">19. Jurisdiction</a></h2>
 
-@* COULD make this section configurable, like Discourse has done. For now however:
- *@
-Except to the extent applicable law, if any, provides otherwise, this Agreement, any access to or use of the Website will be governed by the laws of the country and state where the owners of @companyShortName live, and in their native language or in English.
+@Html(tpi.specialContentPages.termsOfUseJurisdiction)
 
 
 <br>
@@ -165,7 +163,7 @@ Except to the extent applicable law, if any, provides otherwise, this Agreement,
 <br>
 <p>
   This document is CC-BY-SA. It was last updated Mars 24, 2014.<br/>
-  Originally adapted from the <a href="https://raw.githubusercontent.com/discourse/discourse/master/app/views/static/tos.en.html.erb">Discourse Terms of Service</a>.
+  Originally adapted from the <a href="https://raw.githubusercontent.com/discourse/discourse/master/app/views/static/tos.en.html.erb">Discourse Terms of Service</a>,
   which was in turn adapted from <a href="http://en.wordpress.com/tos/">WordPress Terms of Service</a>.
 </p>
 

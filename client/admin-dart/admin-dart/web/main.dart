@@ -8,6 +8,7 @@ import 'package:debiki_admin/view_settings_controller.dart';
 import 'package:debiki_admin/component/view_topics_component.dart';
 import 'package:debiki_admin/component/view_comments_component.dart';
 import 'package:debiki_admin/component/setting_component.dart';
+import 'package:debiki_admin/component/special_content_component.dart';
 import 'package:debiki_admin/routing/debiki_admin_router.dart';
 import 'package:debiki_admin/service/query_service.dart';
 
@@ -31,6 +32,7 @@ class DebikiAdminModule extends Module {
     type(ViewCommentsComponent);
     type(ViewSettingsController);
     type(SettingComponent);
+    type(SpecialContentComponent);
     type(RouteInitializer, implementedBy: DebikiAdminRouteInitializer);
     factory(NgRoutingUsePushState, (_) => new NgRoutingUsePushState.value(false));
     type(Profiler, implementedBy: Profiler); // comment out to enable profiling

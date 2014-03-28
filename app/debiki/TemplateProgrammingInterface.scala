@@ -259,6 +259,9 @@ class SiteTpi protected (val debikiRequest: DebikiRequest[_])
   def companyShortName = debikiRequest.siteSettings.companyShortName
 
 
+  def specialContentPages = debikiRequest.dao.specialContentPages
+
+
   def stylesheetBundle(bundleName: String): xml.NodeSeq = {
 
     val (nameNoSuffix, suffix) = bundleName match {

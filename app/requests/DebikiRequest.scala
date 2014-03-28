@@ -80,6 +80,8 @@ abstract class DebikiRequest[A] {
   def loginId_! : String =
     loginId getOrElse throwForbidden("DwE03kRG4", "Not logged in")
 
+  def theUser = user_!
+
   def user_! : User =
     user getOrElse throwForbidden("DwE86Wb7", "Not logged in")
 
