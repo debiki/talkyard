@@ -87,9 +87,9 @@ case class Settings(settingsChain: SettingsChain) {
   // COULD rename to horizontal_comments
   val horizontalComments = derive("horizontalComments", false)
 
-  val companyDomain = derive("company_domain", "www.example.com")
-  val companyFullName = derive("company_full_name", "Unnamed Company Full Name")
-  val companyShortName = derive("company_short_name", "Unnamed Company")
+  val companyDomain = derive("companyDomain", "www.example.com")
+  val companyFullName = derive("companyFullName", "Unnamed Company Full Name")
+  val companyShortName = derive("companyShortName", "Unnamed Company")
 
 
   private def derive(settingName: String, default: Any) =
