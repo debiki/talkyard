@@ -86,7 +86,7 @@ case class NotfHtmlRenderer(siteDao: SiteDao, anyOrigin: Option[String]) {
   private def personalReply(notf: NotfOfPageAction): NodeSeq = {
     assert(notf.eventType == PersonalReply)
 
-    val page = siteDao.loadPage(notf.pageId) getOrElse {
+    val page = siteDao.loadPageParts(notf.pageId) getOrElse {
       return Nil
     }
     val pageMeta = siteDao.loadPageMeta(notf.pageId) getOrElse {

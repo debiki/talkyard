@@ -157,7 +157,7 @@ object SpecialContentController extends mvc.Controller {
 
 
   private def updatePage(request: DebikiRequest[_], pageId: PageId, newText: String) {
-    val page: PageParts = request.dao.loadPage(pageId) getOrDie "DwE52FY6"
+    val page: PageParts = request.dao.loadPageParts(pageId) getOrDie "DwE52FY6"
     val body: Post = page.body getOrDie "DwE10fF8"
 
     if (newText == body.currentText)
@@ -181,7 +181,7 @@ object SpecialContentController extends mvc.Controller {
 
 
   private def loadContentPage(dao: SiteDao, pageId: PageId): Option[SpecialContentPages.Content] = {
-    val anyPageParts = dao.loadPage(pageId)
+    val anyPageParts = dao.loadPageParts(pageId)
     val anyContent = anyPageParts flatMap { pageParts =>
       pageParts.body map { body =>
         // (It's okay to use `currentText` here, rather than `approvedText`

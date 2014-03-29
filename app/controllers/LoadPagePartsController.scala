@@ -55,7 +55,7 @@ object LoadPagePartsController extends mvc.Controller {
     var postIdsAndPages = Vector[(Seq[PostId], PageParts)]()
 
     postIdsByPage map { case (pageId, postIds) =>
-      val page = apiReq.dao.loadPage(pageId) getOrElse throwNotFound(
+      val page = apiReq.dao.loadPageParts(pageId) getOrElse throwNotFound(
         "DwE30EU5", s"Page not found, id: `$pageId'; could not load all posts")
       postIdsAndPages :+= (postIds, page)
     }
@@ -115,7 +115,7 @@ object LoadPagePartsController extends mvc.Controller {
     var pagesAndPatchSpecs = List[(PageParts, List[TreePatchSpec])]()
 
     postIdsByPage foreach { case (pageId, postIds) =>
-      val page = apiReq.dao.loadPage(pageId) getOrElse throwNotFound(
+      val page = apiReq.dao.loadPageParts(pageId) getOrElse throwNotFound(
         "DwE80Bw2", s"Page not found, id: `$pageId'; could not do all changes")
       val postIdsToLoad = loadWhatFn(page, postIds)
       pagesAndPatchSpecs ::= (page, postIdsToLoad)

@@ -447,7 +447,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
     }
 
     "find the debate and the post again" in {
-      dao.loadPage(testPage.id) must beLike {
+      dao.loadPageParts(testPage.id) must beLike {
         case Some(d: PageParts) => {
           d must havePostLike(ex1_rootPost)
         }
@@ -455,7 +455,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
     }
 
     "find the debate and the login and user again" in {
-      dao.loadPage(testPage.id) must beLike {
+      dao.loadPageParts(testPage.id) must beLike {
         case Some(d: PageParts) => {
           d.people.nilo(ex1_rootPost.loginId getOrDie "DwE986fJF3") must beLike {
             case Some(n: NiLo) =>  // COULD make separate NiLo test?
@@ -1257,7 +1257,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
     }
 
     "find the empty post again" in {
-      dao.loadPage(testPage.id) must beLike {
+      dao.loadPageParts(testPage.id) must beLike {
         case Some(d: PageParts) => {
           d must havePostLike(ex2_emptyPost, id = ex2_id)
         }
@@ -1295,7 +1295,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
             vote must_== vote.copy(id = savedVote.id)
         }
 
-        dao.loadPage(testPage.id) must beLike {
+        dao.loadPageParts(testPage.id) must beLike {
           case Some(p: PageParts) => {
             p.getActionById(savedVote.id) match {
               case Some(vote: PostAction[A]) =>
@@ -1331,7 +1331,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
           review must_== reviewNoId.copy(id = review.id)
       }
 
-      dao.loadPage(testPage.id) must beLike {
+      dao.loadPageParts(testPage.id) must beLike {
         case Some(page: PageParts) => {
           val postReviewed = page.getPost_!(reviewSaved.postId)
           postReviewed.lastReviewDati must_== Some(reviewSaved.ctime)
@@ -1363,7 +1363,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
             ok
         }
 
-        dao.loadPage(testPage.id) must beLike {
+        dao.loadPageParts(testPage.id) must beLike {
           case Some(page: PageParts) =>
             val pinAction =
               page.actionDtos.find(_.payload.isInstanceOf[PAP.PinPostAtPosition])
@@ -1428,7 +1428,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
         exEdit_editId = edit.id
 
         // Verify text changed
-        dao.loadPage(testPage.id) must beLike {
+        dao.loadPageParts(testPage.id) must beLike {
           case Some(d: PageParts) => {
             val editedPost = d.getPost_!(post.id)
             editedPost.currentText must_== newText
@@ -1454,7 +1454,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
           dao.savePageActions(testPage, List(editNoId, publNoId))._2
 
         // Verify markup type changed
-        dao.loadPage(testPage.id) must beLike {
+        dao.loadPageParts(testPage.id) must beLike {
           case Some(d: PageParts) => {
             val editedPost = d.getPost_!(post.id)
             editedPost.currentText must_== "Edited text 054F2x"
@@ -1750,7 +1750,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
           savedPost must matchPost(newPost, id = postId)
       }
 
-      dao.loadPage(testPage.id) must beLike {
+      dao.loadPageParts(testPage.id) must beLike {
         case Some(d: PageParts) =>
           d must havePostLike(newPost, id = postId)
           d.people.nilo(exOpenId_loginReq.login.id) must beLike {
@@ -2909,7 +2909,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
       "load the homepage title by SystemUser" in {
         // Now the DbDao must use SystemUser._ stuff instead of creating
         // new login, identity and user.
-        newWebsiteDao().loadPage(homepageId) must beLike {
+        newWebsiteDao().loadPageParts(homepageId) must beLike {
           case Some(page: PageParts) =>
             page.title must beLike {
               case Some(title) =>

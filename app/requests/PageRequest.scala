@@ -308,9 +308,9 @@ case class PageRequest[A](
   lazy val page_? : Option[PageParts] =
     _preloadedActions orElse {
       if (pageExists) {
-        val pageOpt = pageId.flatMap(id => dao.loadPage(id))
-        if (!addMeToPage) pageOpt
-        else pageOpt.map(_ ++ anyMeAsPeople)
+        val anyPage = pageId.flatMap(id => dao.loadPageParts(id))
+        if (!addMeToPage) anyPage
+        else anyPage.map(_ ++ anyMeAsPeople)
       } else {
         // Don't load the page even if it was *created* moments ago.
         // having !pageExists and page_? = Some(..) feels risky.

@@ -205,10 +205,10 @@ abstract class SiteDbDao {
   def deleteVote(userIdData: UserIdData, pageId: PageId, postId: PostId,
         voteType: PostActionPayload.Vote)
 
-  /**
-   * Loads another tenant's page, if tenantId is specified.
-   */
-  def loadPage(debateId: String, tenantId: Option[String] = None): Option[PageParts]
+  /** Returns None if the page doesn't exist or is empty.
+    * Loads another site's page, if siteId is specified.
+    */
+  def loadPageParts(debateId: String, tenantId: Option[String] = None): Option[PageParts]
 
   /**
    * For each PagePath, loads a Page (well, Debate) with actions loaded
@@ -620,9 +620,9 @@ class ChargingSiteDbDao(
     _spi.deleteVote(userIdData, pageId, postId, voteType)
   }
 
-  def loadPage(debateId: String, tenantId: Option[String]): Option[PageParts] = {
+  def loadPageParts(debateId: String, tenantId: Option[String]): Option[PageParts] = {
     _chargeForOneReadReq()
-    _spi.loadPage(debateId, tenantId)
+    _spi.loadPageParts(debateId, tenantId)
   }
 
   def loadPageBodiesTitles(pagePaths: Seq[String]): Map[String, PageParts] = {
