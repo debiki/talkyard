@@ -15,6 +15,7 @@ import '../service/user.dart';
     selector: 'view-comments',
     templateUrl: 'packages/debiki_admin/component/view_comments_component.html',
     cssUrl: 'packages/debiki_admin/component/view_comments_component.css',
+    applyAuthorStyles: true,
     publishAs: 'cmp')
 class ViewCommentsComponent extends ActiveTopicsFinder {
 
