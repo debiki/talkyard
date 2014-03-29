@@ -27,7 +27,8 @@ class ViewTopicsComponent extends ActiveTopicsFinder {
 
   Map<String, Topic> selectedTopicsById = {};
 
-  List<Topic> get selectedTopics => selectedTopicsById.values.toList();
+  List<Topic> _selectedTopics;
+  List<Topic> get selectedTopics => _selectedTopics;
 
   RouteProvider routeProvider;
 
@@ -43,6 +44,7 @@ class ViewTopicsComponent extends ActiveTopicsFinder {
     _queryService.getDebikiData().then((DebikiData debikiData) {
       allTopicsById = debikiData.topicsById;
       findActiveTopics();
+      _selectedTopics = selectedTopicsById.values.toList();
     });
   }
 

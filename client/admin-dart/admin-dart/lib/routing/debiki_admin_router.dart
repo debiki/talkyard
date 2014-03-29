@@ -2,11 +2,9 @@ library debiki_admin_routing;
 
 import 'package:angular/angular.dart';
 
-class DebikiAdminRouteInitializer implements RouteInitializer {
 
-
-  init(Router router, ViewFactory view) {
-    router.root
+RouteInitializerFn debikiAdminRouteInitializer = (Router router, RouteViewFactory view) {
+  router.root
       ..addRoute(
           name: 'allRecentTopics',
           path: '/all-recent-topics',
@@ -113,6 +111,4 @@ class DebikiAdminRouteInitializer implements RouteInitializer {
           enter: (_) {
               router.go('mainDashboard', {}, replace: false);
           });
-  }
-
-}
+};

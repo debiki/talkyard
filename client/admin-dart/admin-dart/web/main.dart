@@ -33,7 +33,7 @@ class DebikiAdminModule extends Module {
     type(ViewSettingsController);
     type(SettingComponent);
     type(SpecialContentComponent);
-    type(RouteInitializer, implementedBy: DebikiAdminRouteInitializer);
+    value(RouteInitializerFn, debikiAdminRouteInitializer);
     factory(NgRoutingUsePushState, (_) => new NgRoutingUsePushState.value(false));
     type(Profiler, implementedBy: Profiler); // comment out to enable profiling
   }
