@@ -9,6 +9,12 @@ packages:
     description: angular
     source: hosted
     version: "0.9.10"
+  angular_ui:
+    description:
+      path: "../../../modules/angular.dart.ui-kajmagnus79"
+      relative: true
+    source: path
+    version: "0.2.2"
   args:
     description: args
     source: hosted
