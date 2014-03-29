@@ -63,6 +63,7 @@ class SiteDao(protected val siteDbDao: ChargingSiteDbDao)
   with AssetBundleDao
   with ConfigValueDao
   with SettingsDao
+  with SpecialContentDao
   with PageDao
   with PagePathMetaDao
   with PageSummaryDao

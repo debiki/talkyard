@@ -54,6 +54,8 @@ abstract class DebikiRequest[A] {
   def tenantId = dao.siteId
   def siteId = dao.siteId
 
+  def siteSettings = dao.loadWholeSiteSettings()
+
   def userIdData = UserIdData(
     loginId = loginId,
     userId = user.map(_.id) getOrElse UnknownUser.Id,
@@ -77,6 +79,8 @@ abstract class DebikiRequest[A] {
    */
   def loginId_! : String =
     loginId getOrElse throwForbidden("DwE03kRG4", "Not logged in")
+
+  def theUser = user_!
 
   def user_! : User =
     user getOrElse throwForbidden("DwE86Wb7", "Not logged in")

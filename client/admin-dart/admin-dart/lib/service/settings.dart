@@ -56,6 +56,9 @@ class Settings {
 
   final SettingsTarget target;
 
+  Setting<String> companyFullName;
+  Setting<String> companyShortName;
+  Setting<String> companyDomain;
   Setting<String> title;
   Setting<String> description;
   //String imageUrl;
@@ -63,6 +66,9 @@ class Settings {
   Setting<bool> horizontalComments;
 
   Settings(SettingsTarget this.target, {
+    this.companyFullName: null,
+    this.companyShortName: null,
+    this.companyDomain: null,
     this.title: null,
     this.description: null,
     this.horizontalComments: null
@@ -71,6 +77,9 @@ class Settings {
   factory Settings.fromJsonMap(SettingsTarget target, Map json) {
     return new Settings(
         target,
+        companyFullName: _makeSetting(target, 'companyFullName', json),
+        companyShortName: _makeSetting(target, 'companyShortName', json),
+        companyDomain: _makeSetting(target, 'companyDomain', json),
         title: _makeSetting(target, 'title', json),
         description: _makeSetting(target, 'description', json),
         horizontalComments: _makeSetting(target, 'horizontalComments', json));

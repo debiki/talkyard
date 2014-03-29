@@ -90,6 +90,11 @@ GET   /-/load-site-settings     controllers.SettingsController.loadSiteSettings
 GET   /-/load-section-settings  controllers.SettingsController.loadSectionSettings(rootPageId)
 POST  /-/save-setting           controllers.SettingsController.saveSetting
 
+GET   /-/terms-of-use           controllers.LegalController.viewTermsOfUsePage
+GET   /-/privacy-policy         controllers.LegalController.viewPrivacyPolicyPage
+GET   /-/load-special-content   controllers.SpecialContentController.loadContent(rootPageId, contentId)
+POST  /-/save-special-content   controllers.SpecialContentController.saveContent
+
 POST  /-/configure-user         controllers.ConfigUserController.handleConfiguration()
 GET   /-/load-my-page-activity  controllers.ViewPageController.loadMyPageActivity(pageId)
 POST  /-/reply                  controllers.ReplyController.handleReply

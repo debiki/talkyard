@@ -46,6 +46,7 @@ class CachingSiteDao(siteDbDao: ChargingSiteDbDao)
   with CachingAssetBundleDao
   with CachingConfigValueDao
   with CachingSettingsDao
+  with CachingSpecialContentDao
   with CachingPageDao
   with CachingPagePathMetaDao
   with CachingPageSummaryDao

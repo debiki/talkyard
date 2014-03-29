@@ -254,6 +254,14 @@ class SiteTpi protected (val debikiRequest: DebikiRequest[_])
   }
 
 
+  def companyDomain = debikiRequest.siteSettings.companyDomain
+  def companyFullName = debikiRequest.siteSettings.companyFullName
+  def companyShortName = debikiRequest.siteSettings.companyShortName
+
+
+  def specialContentPages = debikiRequest.dao.specialContentPages
+
+
   def stylesheetBundle(bundleName: String): xml.NodeSeq = {
 
     val (nameNoSuffix, suffix) = bundleName match {
@@ -306,7 +314,6 @@ class InternalPageTpi protected (protected val _pageReq: PageRequest[_]) extends
   override def anyCurrentPageId = Some(pageId)
   def pageId = _pageReq.pageId_!
   def pageRole = _pageReq.pageRole_!
-  def childPageRole = pageRole.childRole
 
   def currentFolder = PathRanges(folders = Seq(_pageReq.pagePath.folder))
   def currentTree = PathRanges(trees = Seq(_pageReq.pagePath.folder))
@@ -544,8 +551,7 @@ class TemplateProgrammingInterface(
   def anyRootSectionPageId: Option[PageId] =
     _pageReq.ancestorIdsParentFirst_!.lastOption orElse {
       // If this page itself is a section, its id is the root section id.
-      val isSection = pageRole.childRole.isDefined
-      if (isSection) Some(pageId) else None
+      if (pageRole.isSection) Some(pageId) else None
     }
 
 

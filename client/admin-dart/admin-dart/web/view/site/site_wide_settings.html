@@ -1,0 +1,38 @@
+<div settings>
+  <h3>Site Wide Settings</h3>
+
+  <div ng-if="ctrl.settings == null">
+    Loading, please wait...
+  </div>
+  <div ng-if="ctrl.settings != null">
+
+    <setting title="company_full_name" setting="ctrl.settings.companyFullName">
+      The full name of the company or organization behind the website.
+      Used on the Terms of Use page.
+    </setting>
+
+    <setting title="company_short_name" setting="ctrl.settings.companyShortName">
+      The short name of the company or organization behind the website.
+      Used on the Terms of Use page.
+    </setting>
+
+    <setting title="company_domain" setting="ctrl.settings.companyDomain">
+      The address to the site. Used on the Terms of Use page.
+    </setting>
+
+    <setting title="Title" setting="ctrl.settings.title">
+      The site title.
+    </setting>
+
+    <setting title="Description" setting="ctrl.settings.description">
+      A one sentence description of the website. Will be used as the
+        <kbd>&lt;html&gt;&lt;head&gt;&lt;description&gt;</kbd> tag.
+    </setting>
+
+    <setting title="Horizontal comments" setting="ctrl.settings.horizontalComments">
+      Shall comments be laid out horizontally, in two dimensions? Otherwise they're
+      shown in a single column, like everywhere else.
+    </setting>
+
+  </div>
+</div>

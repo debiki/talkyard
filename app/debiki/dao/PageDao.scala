@@ -54,12 +54,14 @@ trait PageDao {
   final def savePageActionsGenNotfs(pageId: PageId, actions: Seq[PostActionDtoOld], authors: People)
       : (PageNoPath, Seq[PostActionDtoOld]) = {
 
-    val pageNoAuthor = loadPage(pageId) getOrElse throwBadReq(
-      "DwE6Xf80", s"Page not found, id: `$pageId'; could not do all changes")
-    val page = pageNoAuthor ++ authors
+    val pageMeta = siteDbDao.loadPageMeta(pageId) getOrElse
+      throwNotFound("DwE115Xf3", s"Page `${pageId}' does not exist")
 
-    val pageMeta = siteDbDao.loadPageMeta(page.id) getOrElse
-      throwNotFound("DwE115Xf3", s"Found no meta for page ${page.id}")
+    // BUG race condition: What if page deleted, here? Then we'd falsely return an empty page.
+
+    var pageNoAuthor = loadPageParts(pageId) getOrElse PageParts(pageId)
+
+    val page = pageNoAuthor ++ authors
 
     val ancestorPageIds = loadAncestorIdsParentFirst(pageId)
 
@@ -88,8 +90,8 @@ trait PageDao {
     siteDbDao.deleteVote(userIdData, pageId, postId, voteType)
   }
 
-  def loadPage(debateId: String): Option[PageParts] =
-    siteDbDao.loadPage(debateId)
+  def loadPageParts(debateId: String): Option[PageParts] =
+    siteDbDao.loadPageParts(debateId)
 
 
   def loadPageAnyTenant(sitePageId: SitePageId): Option[PageParts] =
@@ -97,7 +99,7 @@ trait PageDao {
 
 
   def loadPageAnyTenant(tenantId: String, pageId: String): Option[PageParts] =
-    siteDbDao.loadPage(pageId, tenantId = Some(tenantId))
+    siteDbDao.loadPageParts(pageId, tenantId = Some(tenantId))
 
 }
 
@@ -185,10 +187,10 @@ trait CachingPageDao extends PageDao {
   }
 
 
-  override def loadPage(pageId: String): Option[PageParts] =
+  override def loadPageParts(pageId: String): Option[PageParts] =
     lookupInCache[PageParts](_pageActionsKey(pageId),
       orCacheAndReturn = {
-        super.loadPage(pageId)
+        super.loadPageParts(pageId)
       })
 
 

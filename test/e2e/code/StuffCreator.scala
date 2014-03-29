@@ -191,7 +191,7 @@ trait StuffCreator {
     val pageStuffNoPeople = firstSiteDao.createPage(Page.newPage(
       pageRole, pagePath, debateNoId, publishDirectly = true, author = loginGrant.user))
 
-    val pageWithPeople = firstSiteDao.loadPage(pageStuffNoPeople.id).getOrElse(
+    val pageWithPeople = firstSiteDao.loadPageParts(pageStuffNoPeople.id).getOrElse(
       assErr("DwE381kK0", "Error loading page with people"))
 
     new TestPage(

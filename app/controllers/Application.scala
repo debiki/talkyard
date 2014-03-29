@@ -156,7 +156,7 @@ object Application extends mvc.Controller {
           errDbgDie("[error DwE012210u9]")
           "GotNoGuid"
         }
-        val page = pageReq.dao.loadPage(pageId)
+        val page = pageReq.dao.loadPageParts(pageId)
         page.map(p => List(feedPagePath -> p)).getOrElse(Nil)
     }
 
