@@ -299,6 +299,8 @@ object PageRole {
 
   case object Code extends PageRole
 
+  case object SpecialContent extends PageRole
+
   case object EmbeddedComments extends PageRole
 
   case object Blog extends PageRole {

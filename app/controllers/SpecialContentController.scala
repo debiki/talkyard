@@ -144,7 +144,7 @@ object SpecialContentController extends mvc.Controller {
 
     val newPage = Page(
       PageMeta.forNewPage(
-        PageRole.Generic, SystemUser.User, pageParts, request.ctime,
+        PageRole.SpecialContent, SystemUser.User, pageParts, request.ctime,
         parentPageId = None, publishDirectly = true),
       PagePath(
         tenantId = request.siteId, folder = "/",
