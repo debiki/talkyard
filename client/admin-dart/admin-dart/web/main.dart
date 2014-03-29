@@ -2,6 +2,8 @@ library debiki_admin;
 
 import 'package:angular/angular.dart';
 import 'package:perf_api/perf_api.dart';
+//import 'package:angular_ui/angular_ui.dart';   <-- no, then lots of weird errors
+import 'package:angular_ui/tabs/tabset.dart'; // <-- that's all that's needed right now
 
 import 'package:debiki_admin/debiki_admin_controller.dart';
 import 'package:debiki_admin/view_settings_controller.dart';
@@ -26,6 +28,8 @@ import 'package:debiki_admin/service/query_service.dart';
 
 class DebikiAdminModule extends Module {
   DebikiAdminModule() {
+    install(new TabsModule());
+
     type(DebikiAdminController);
     type(DebikiAdminQueryService);
     type(ViewTopicsComponent);

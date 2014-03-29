@@ -11,58 +11,70 @@
 <body id="details" ng-cloak>
 
   <div debiki-admin class="container">
-    <div ng-if="ctrl.numDistinctContentSections > 1">
-      <h3>All contents</h3>
+  <h1>Debiki Admin</h1>
+  <tabset>
+
+    <tab heading="Whole Site">
       <a class="btn btn-default" href="#/">Dashboard</a>
       <a class="btn btn-default" href="#/all-recent-topics">Contents</a>
       <a class="btn btn-default" href="#/all-recent-comments">Comments</a>
       <a class="btn btn-default" href="#/site-wide-settings">Settings</a>
       <a class="btn btn-default" href="#/site-wide-special-content">Special Content</a>
-    </div>
+    </tab>
 
-    <div ng-if="ctrl.pages.length > 0">
-      <hr>
-      <h3>Pages</h3>
+    <tab heading="Pages" ng-if="ctrl.pages.length > 0">
       <a class="btn btn-default" href="#/pages/list">Pages</a>
       <a class="btn btn-default" href="#/pages/recent-comments">Comments</a>
       <a class="btn btn-default" href="#/pages/settings">Settings</a>
-    </div>
+    </tab>
 
-    <div ng-if="ctrl.blogs.length > 0">
-      <hr>
-      <p ng-if="ctrl.blogs.length > 1">Blogs:</p>
-      <div ng-repeat="blog in ctrl.blogs">
-        <h3>{{ blog.prettyTitle }}</h3>
+    <tab ng-if="ctrl.blogs.length > 0"
+        heading="{{ ctrl.blogs.length == 1 ? 'Blog' : 'Blogs' }}">
+      <div ng-if="ctrl.blogs.length == 1">
+        <a class="btn btn-default" href="#/blog/{{ctrl.blogs[0].id}}/">Dashboard</a>
+        <a class="btn btn-default" href="#/blog/{{ctrl.blogs[0].id}}/recent-posts">Posts</a>
+        <a class="btn btn-default" href="#/blog/{{ctrl.blogs[0].id}}/recent-comments">Comments</a>
+        <a class="btn btn-default" href="#/blog/{{ctrl.blogs[0].id}}/settings">Settings</a>
+      </div>
+      <tabset ng-if="ctrl.blogs.length > 1">
+      <tab ng-repeat="blog in ctrl.blogs" header="{{ blog.prettyTitle }}">
         <a class="btn btn-default" href="#/blog/{{blog.id}}/">Dashboard</a>
         <a class="btn btn-default" href="#/blog/{{blog.id}}/recent-posts">Posts</a>
         <a class="btn btn-default" href="#/blog/{{blog.id}}/recent-comments">Comments</a>
         <a class="btn btn-default" href="#/blog/{{blog.id}}/settings">Settings</a>
-      </div>
-    </div>
+      </tab>
+      </tabset>
+    </tab>
 
-    <div ng-if="ctrl.forums.length > 0">
-      <hr>
-      <p ng-if="ctrl.forums.length > 1"><b>Forums:</b></p>
-      <div ng-repeat="forum in ctrl.forums">
-        <h3>{{ forum.prettyTitle }}</h3>
+    <tab ng-if="ctrl.forums.length > 0"
+        heading="{{ ctrl.forums.length == 1 ? 'Forum' : 'Fourms' }}">
+      <div ng-if="ctrl.forums.length == 1">
+        <a class="btn btn-default" href="#/fourm/{{ctrl.forums[0].id}}/">Dashboard</a>
+        <a class="btn btn-default" href="#/fourm/{{ctrl.forums[0].id}}/recent-topics">Topics</a>
+        <a class="btn btn-default" href="#/fourm/{{ctrl.forums[0].id}}/recent-comments">Comments</a>
+        <a class="btn btn-default" href="#/fourm/{{ctrl.forums[0].id}}/settings">Settings</a>
+        <a class="btn btn-default" href="#/fourm/{{ctrl.forums[0].id}}/special-content">Special Content</a>
+      </div>
+      <tabset ng-if="ctrl.forums.length > 1">
+      <tab ng-repeat="forum in ctrl.forums" heading="{{ forum.prettyTitle }}">
         <a class="btn btn-default" href="#/fourm/{{forum.id}}/">Dashboard</a>
         <a class="btn btn-default" href="#/fourm/{{forum.id}}/recent-topics">Topics</a>
         <a class="btn btn-default" href="#/fourm/{{forum.id}}/recent-comments">Comments</a>
         <a class="btn btn-default" href="#/fourm/{{forum.id}}/settings">Settings</a>
         <a class="btn btn-default" href="#/fourm/{{forum.id}}/special-content">Special Content</a>
-      </div>
-    </div>
+      </tab>
+      </tabset>
+    </tab>
 
-    <div ng-if="ctrl.embeddedTopics.length > 0">
-      <hr>
-      <h3>Embedded Comments</h3>
+    <tab headin="Embedded Comments" ng-if="ctrl.embeddedTopics.length > 0">
       <a class="btn btn-default" href="#/embedded-comments/recent-topics">Topics</a>
       <a class="btn btn-default" href="#/embedded-comments/recent-comments">Comments</a>
       <a class="btn btn-default" href="#/embedded-comments/settings">Settings</a>
-    </div>
+    </tab>
 
-    <hr>
     <ng-view></ng-view>
+
+  </tabset>
   </div>
 
   <script src="packages/shadow_dom/shadow_dom.min.js"></script>
