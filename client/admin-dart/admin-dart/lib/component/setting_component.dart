@@ -18,9 +18,6 @@ class SettingComponent {
   @NgAttr('title')
   String title = 'Topics';
 
-  @NgAttr('type')
-  String type = '';
-
   @NgAttr('page-id')
   String pageId = '';
 
