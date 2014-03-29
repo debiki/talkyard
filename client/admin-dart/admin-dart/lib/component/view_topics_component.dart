@@ -17,6 +17,12 @@ class ViewTopicsComponent extends ActiveTopicsFinder {
 
   DebikiAdminQueryService _queryService;
 
+  @NgAttr('root-page-id')
+  String rootPageId;
+
+  @NgAttr('page-role')
+  String pageRole;
+
   @NgAttr('title')
   String title = 'Topics';
 
@@ -43,7 +49,7 @@ class ViewTopicsComponent extends ActiveTopicsFinder {
       DebikiAdminQueryService this._queryService) {
     _queryService.getDebikiData().then((DebikiData debikiData) {
       allTopicsById = debikiData.topicsById;
-      findActiveTopics();
+      findActiveTopics(rootPageId, new TopicRole.fromString(pageRole));
       _selectedTopics = selectedTopicsById.values.toList();
     });
   }

@@ -15,64 +15,118 @@
   <tabset>
 
     <tab heading="Whole Site">
-      <a class="btn btn-default" href="#/">Dashboard</a>
-      <a class="btn btn-default" href="#/all-recent-topics">Contents</a>
-      <a class="btn btn-default" href="#/all-recent-comments">Comments</a>
-      <a class="btn btn-default" href="#/site-wide-settings">Settings</a>
-      <a class="btn btn-default" href="#/site-wide-special-content">Special Content</a>
-    </tab>
-
-    <tab heading="Pages" ng-if="ctrl.pages.length > 0">
-      <a class="btn btn-default" href="#/pages/list">Pages</a>
-      <a class="btn btn-default" href="#/pages/recent-comments">Comments</a>
-      <a class="btn btn-default" href="#/pages/settings">Settings</a>
-    </tab>
-
-    <tab ng-if="ctrl.blogs.length > 0"
-        heading="{{ ctrl.blogs.length == 1 ? 'Blog' : 'Blogs' }}">
-      <div ng-if="ctrl.blogs.length == 1">
-        <a class="btn btn-default" href="#/blog/{{ctrl.blogs[0].id}}/">Dashboard</a>
-        <a class="btn btn-default" href="#/blog/{{ctrl.blogs[0].id}}/recent-posts">Posts</a>
-        <a class="btn btn-default" href="#/blog/{{ctrl.blogs[0].id}}/recent-comments">Comments</a>
-        <a class="btn btn-default" href="#/blog/{{ctrl.blogs[0].id}}/settings">Settings</a>
-      </div>
-      <tabset ng-if="ctrl.blogs.length > 1">
-      <tab ng-repeat="blog in ctrl.blogs" header="{{ blog.prettyTitle }}">
-        <a class="btn btn-default" href="#/blog/{{blog.id}}/">Dashboard</a>
-        <a class="btn btn-default" href="#/blog/{{blog.id}}/recent-posts">Posts</a>
-        <a class="btn btn-default" href="#/blog/{{blog.id}}/recent-comments">Comments</a>
-        <a class="btn btn-default" href="#/blog/{{blog.id}}/settings">Settings</a>
-      </tab>
+      <tabset>
+        <tab heading="Contents">
+          <view-topics></view-topics>
+        </tab>
+        <tab heading="Comments">
+          <view-comments></view-comments>
+        </tab>
+        <tab heading="Settings">
+          <div settings>
+            <div ng-include="view/site/site_wide_settings.html"></div>
+          </div>
+        </tab>
+        <tab heading="Special Content">
+          <div special-content>
+            <div ng-include="view/site/site_wide_special_content.html"></div>
+          </div>
+        </tab>
       </tabset>
     </tab>
 
-    <tab ng-if="ctrl.forums.length > 0"
-        heading="{{ ctrl.forums.length == 1 ? 'Forum' : 'Fourms' }}">
-      <div ng-if="ctrl.forums.length == 1">
-        <a class="btn btn-default" href="#/fourm/{{ctrl.forums[0].id}}/">Dashboard</a>
-        <a class="btn btn-default" href="#/fourm/{{ctrl.forums[0].id}}/recent-topics">Topics</a>
-        <a class="btn btn-default" href="#/fourm/{{ctrl.forums[0].id}}/recent-comments">Comments</a>
-        <a class="btn btn-default" href="#/fourm/{{ctrl.forums[0].id}}/settings">Settings</a>
-        <a class="btn btn-default" href="#/fourm/{{ctrl.forums[0].id}}/special-content">Special Content</a>
-      </div>
-      <tabset ng-if="ctrl.forums.length > 1">
-      <tab ng-repeat="forum in ctrl.forums" heading="{{ forum.prettyTitle }}">
-        <a class="btn btn-default" href="#/fourm/{{forum.id}}/">Dashboard</a>
-        <a class="btn btn-default" href="#/fourm/{{forum.id}}/recent-topics">Topics</a>
-        <a class="btn btn-default" href="#/fourm/{{forum.id}}/recent-comments">Comments</a>
-        <a class="btn btn-default" href="#/fourm/{{forum.id}}/settings">Settings</a>
-        <a class="btn btn-default" href="#/fourm/{{forum.id}}/special-content">Special Content</a>
-      </tab>
+
+    <tab heading="Pages" ng-if="adminCtrl.pages.length > 0">
+      <tabset>
+        <tab heading="Pages">
+          <view-topics page-role="Generic"></view-topics>
+        </tab>
+        <tab heading="Comments">
+          <view-comments page-role="Generic"></view-comments>
+        </tab>
       </tabset>
     </tab>
 
-    <tab headin="Embedded Comments" ng-if="ctrl.embeddedTopics.length > 0">
-      <a class="btn btn-default" href="#/embedded-comments/recent-topics">Topics</a>
-      <a class="btn btn-default" href="#/embedded-comments/recent-comments">Comments</a>
-      <a class="btn btn-default" href="#/embedded-comments/settings">Settings</a>
+
+    <tab ng-if="adminCtrl.blogs.length > 0"
+        heading="{{ adminCtrl.blogs.length == 1 ? 'Blog' : 'Blogs' }}">
+
+      <tabset ng-if="adminCtrl.blogs.length == 1">
+        <tab heading="Posts">
+          <view-topics root-page-id="{{adminCtrl.blogs[0].id}}"></view-topics>
+        </tab>
+        <tab heading="Comments">
+          <view-comments root-page-id="{{adminCtrl.blogs[0].id}}"></view-comments>
+        </tab>
+      </tabset>
+
+      <tabset ng-if="adminCtrl.blogs.length > 1">
+        <tab ng-repeat="blog in adminCtrl.blogs" header="{{ blog.prettyTitle }}">
+          <tabset>
+            <tab heading="Posts">
+              <view-topics root-page-id="{{blog.id}}"></view-topics>
+            </tab>
+            <tab heading="Comments">
+              <view-comments root-page-id="{{blog.id}}"></view-comments>
+            </tab>
+          </tabset>
+        </tab>
+      </tabset>
+
     </tab>
 
-    <ng-view></ng-view>
+
+    <tab ng-if="adminCtrl.forums.length > 0"
+        heading="{{ adminCtrl.forums.length == 1 ? 'Forum' : 'Fourms' }}">
+
+      <tabset ng-if="adminCtrl.forums.length == 1">
+        <tab heading="Topics">
+          <view-topics root-page-id="{{adminCtrl.forums[0].id}}"></view-topics>
+        </tab>
+        <tab heading="Comments">
+          <view-comments root-page-id="{{adminCtrl.forums[0].id}}"></view-comments>
+        </tab>
+        <tab heading="Settings">
+          <div settings root-page-id="adminCtrl.forums[0].id">
+            <div ng-include="view/forum/forum_settings.html"></div>
+          </div>
+        </tab>
+      </tabset>
+
+      <tabset ng-if="adminCtrl.forums.length > 1">
+        <tab ng-repeat="forum in adminCtrl.forums" heading="{{ forum.prettyTitle }}">
+          <tabset>
+            <tab heading="Topics">
+              <view-topics root-page-id="{{forum.id}}"></view-topics>
+            </tab>
+            <tab heading="Comments">
+              <view-comments root-page-id="{{forum.id}}"></view-comments>
+            </tab>
+            <tab heading="Settings">
+              <div settings root-page-id="forum.id">
+                <div ng-include="view/forum/forum_settings.html"></div>
+              </div>
+            </tab>
+          </tabset>
+        </tab>
+      </tabset>
+
+    </tab>
+
+
+    <tab heading="Embedded Comments" ng-if="adminCtrl.embeddedTopics.length > 0">
+      <tabset>
+        <tab heading="Topics">
+          <view-topics page-role="EmbeddedComments"></view-topics>
+        </tab>
+        <tab heading="Comments">
+          <view-comments page-role="EmbeddedComments"></view-comments>
+        </tab>
+        <tab heading="Settings">
+          Settings
+        </tab>
+      </tabset>
+    </tab>
 
   </tabset>
   </div>

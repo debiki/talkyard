@@ -1,17 +1,15 @@
 library active_topics_finder;
 
-import 'package:angular/angular.dart';
-
 import '../service/topic.dart';
-import '../util.dart';
 
 
 /**
- * Finds out which topics to show, depending on the current route,
- *
- * Finds topic ids for all topics for which comments are to be shown.
- * For example, if we're in the /forum/:forumId/recent-comments view,
- * it'll find all topics in :forumId and insert them into _selectedTopicsById.
+ * Finds out which pages to show, depending on the specified root page,
+ * or page role: all pages below the specified root page are shown,
+ * or all pages with the specified role. For example, the root page
+ * could be a forum page id, and then all topics in the forum will be shown.
+ * Or the role could be 'EmbeddedComments' and then all embedded comments
+ * pages will be shown.
  */
 abstract class ActiveTopicsFinder {
 
@@ -19,31 +17,8 @@ abstract class ActiveTopicsFinder {
 
   Map<String, Topic> get selectedTopicsById;
 
-  RouteProvider get routeProvider;
 
-  void findActiveTopics() {
-    var anyBaseTopicId = null;
-    var anyPageRole = null;
-    if (routeProvider.routeName.contains('all')) {
-      // Leave anyBaseTopicId and anyPageRole = null, so we'll show all
-      // topics or all recent posts, whatever.
-    }
-    else if (routeProvider.routeName.contains('pages')) {
-      anyPageRole = TopicRole.Generic;
-    }
-    else if (routeProvider.routeName.contains('blog')) {
-      anyBaseTopicId = routeProvider.parameters['blogId'];
-    }
-    else if (routeProvider.routeName.contains('forum')) {
-      anyBaseTopicId = routeProvider.parameters['forumId'];
-    }
-    else if (routeProvider.routeName.contains('embeddedComments')) {
-      anyPageRole = TopicRole.EmbeddedComments;
-    }
-    else {
-      error('Bad route name: "${routeProvider.routeName}" [DwE97FE3]');
-    }
-
+  void findActiveTopics(String anyBaseTopicId, TopicRole anyPageRole) {
     print('Showing comments for base topic id: $anyBaseTopicId, page role: $anyPageRole');
 
     selectedTopicsById.clear();

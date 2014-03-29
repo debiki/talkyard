@@ -21,6 +21,12 @@ class ViewCommentsComponent extends ActiveTopicsFinder {
 
   DebikiAdminQueryService _queryService;
 
+  @NgAttr('root-page-id')
+  String rootPageId;
+
+  @NgAttr('page-role')
+  String pageRole;
+
   Scope _scope;
   RouteProvider routeProvider;
 
@@ -41,7 +47,7 @@ class ViewCommentsComponent extends ActiveTopicsFinder {
       allTopicsById = debikiData.topicsById;
       _recentUsersById = debikiData.usersById;
       _recentPosts = debikiData.recentPosts;
-      findActiveTopics();
+      findActiveTopics(rootPageId, new TopicRole.fromString(pageRole));
       // Filter away all comments that don't belong to one of the _selectedTopicsById.
       _selectedRecentPosts.clear();
       for (Post post in _recentPosts) {
