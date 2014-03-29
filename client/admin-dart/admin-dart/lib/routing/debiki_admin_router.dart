@@ -20,6 +20,10 @@ class DebikiAdminRouteInitializer implements RouteInitializer {
           path: '/site-wide-settings',
           enter: view('view/site-wide-settings.html'))
       ..addRoute(
+          name: 'siteWideSpecialContent',
+          path: '/site-wide-special-content',
+          enter: view('view/site/site_special_content.html'))
+      ..addRoute(
           name: 'pages',
           path: '/pages/',
           mount: (Route route) => route
