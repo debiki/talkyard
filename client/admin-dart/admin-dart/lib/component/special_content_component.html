@@ -7,7 +7,9 @@
 
   <div class="col-sm-9">
     <p><content></content></p>
-    <textarea ng-model="cmp.content.newText" type="text" class="form-control" id="{{cmp.rootPageId}}{{cmp.contentId}}"></textarea>
+    <textarea ng-model="cmp.content.newText" type="text"
+      class="form-control special-content-{{cmp.contentId}}"
+      id="{{cmp.rootPageId}}{{cmp.contentId}}"></textarea>
 
     <div ng-hide="!cmp.valueChanged">
       <button ng-click="cmp.save()" class="btn btn-default">Save</button>
