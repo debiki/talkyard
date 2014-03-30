@@ -1,5 +1,6 @@
 <div>
-  <nav>
+  <div ng-if="cmp.allTopicsById == null">Loading...</div>
+  <nav ng-if="cmp.allTopicsById != null" id="details">
     <table class="table">
       <thead>
         <tr>

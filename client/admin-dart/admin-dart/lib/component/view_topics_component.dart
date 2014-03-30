@@ -12,6 +12,7 @@ import '../util.dart';
 @NgComponent(
     selector: 'view-topics',
     templateUrl: 'packages/debiki_admin/component/view_topics_component.html',
+    applyAuthorStyles: true,
     publishAs: 'cmp')
 class ViewTopicsComponent extends ActiveTopicsFinder {
 

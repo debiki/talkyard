@@ -36,7 +36,7 @@ class ViewCommentsComponent extends ActiveTopicsFinder {
   List<Post> _selectedRecentPosts = [];
   List<Post> get selectedRecentPosts => _selectedRecentPosts;
 
-  Map<String, Topic> allTopicsById = {};
+  Map<String, Topic> allTopicsById = null;
 
   Map<String, Topic> selectedTopicsById = new Map<String, Topic>();
   List<Topic> get selectedTopics => selectedTopicsById.values.toList();
