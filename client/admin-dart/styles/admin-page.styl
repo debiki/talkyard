@@ -31,11 +31,36 @@
 body
   padding: 0 30px !important
 
+
+.admin-nav
+  margin: 40px auto 0
+  text-align: center
+
+  a
+    font-size: 18px
+    padding: 8px 15px
+
+    &.active
+      background: hsl(211, 100%, 92%)
+      color: hsl(211, 100%, 20%)
+
+
 h1
-  margin-bottom: 35px
+  margin-top: 50px !important
+  margin-bottom: 30px !important
+
+
+.main-tabs
+  margin-top: 40px
+
+.tab-content
+  margin-top: 25px
 
 .tab-content > .tab-pane
   padding-top: 20px
+
+.nav-tabs > li > a:hover
+  cursor: pointer  // why isn't this included in Bootstrap?
 
 .btn
   // Cancel Twitter Bootstrap's 14px .btn font size.
