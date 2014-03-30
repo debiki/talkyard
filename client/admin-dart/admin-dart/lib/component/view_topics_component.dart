@@ -12,10 +12,17 @@ import '../util.dart';
 @NgComponent(
     selector: 'view-topics',
     templateUrl: 'packages/debiki_admin/component/view_topics_component.html',
+    applyAuthorStyles: true,
     publishAs: 'cmp')
 class ViewTopicsComponent extends ActiveTopicsFinder {
 
   DebikiAdminQueryService _queryService;
+
+  @NgAttr('root-page-id')
+  String rootPageId;
+
+  @NgAttr('page-role')
+  String pageRole;
 
   @NgAttr('title')
   String title = 'Topics';
@@ -27,7 +34,8 @@ class ViewTopicsComponent extends ActiveTopicsFinder {
 
   Map<String, Topic> selectedTopicsById = {};
 
-  List<Topic> get selectedTopics => selectedTopicsById.values.toList();
+  List<Topic> _selectedTopics;
+  List<Topic> get selectedTopics => _selectedTopics;
 
   RouteProvider routeProvider;
 
@@ -42,7 +50,8 @@ class ViewTopicsComponent extends ActiveTopicsFinder {
       DebikiAdminQueryService this._queryService) {
     _queryService.getDebikiData().then((DebikiData debikiData) {
       allTopicsById = debikiData.topicsById;
-      findActiveTopics();
+      findActiveTopics(rootPageId, new TopicRole.fromString(pageRole));
+      _selectedTopics = selectedTopicsById.values.toList();
     });
   }
 

@@ -4,15 +4,19 @@ import 'package:angular/angular.dart';
 
 import 'package:debiki_admin/service/settings.dart';
 import 'package:debiki_admin/service/query_service.dart';
-import 'package:debiki_admin/util.dart';
 
 
 @NgController(
     selector: '[settings]',
     publishAs: 'ctrl')
-class ViewSettingsController {
+class ViewSettingsController extends NgAttachAware {
 
   DebikiAdminQueryService _queryService;
+
+  // I have no idea why, but @NgAttr = "{{forum.id}}" doesn't work, rootPageId always
+  // becomes = "". But @NgOneWayOneTime = "fourm.id" works:
+  @NgOneWayOneTime('root-page-id')
+  String rootPageId;
 
   RouteProvider routeProvider;
 
@@ -21,23 +25,17 @@ class ViewSettingsController {
 
   ViewSettingsController(DebikiAdminQueryService this._queryService,
       RouteProvider this.routeProvider) {
+  }
 
+
+  void attach() {
     SettingsTarget target;
-    if (routeProvider.routeName.contains('site')) {
+    if (rootPageId == null) {
       target = new SettingsTarget.site();
     }
-    else if (routeProvider.routeName.contains('blog')) {
-      var blogId = routeProvider.parameters['blogId'];
-      target = new SettingsTarget.section(blogId);
-    }
-    else if (routeProvider.routeName.contains('forum')) {
-      var forumId = routeProvider.parameters['forumId'];
-      target = new SettingsTarget.section(forumId);
-    }
     else {
-      error('Bad route name: "${routeProvider.routeName}" [DwE8GK3W0]');
+      target = new SettingsTarget.section(rootPageId);
     }
-
     _queryService.loadSettings(target).then((Settings loadedSettings) {
       this._settings = loadedSettings;
     });

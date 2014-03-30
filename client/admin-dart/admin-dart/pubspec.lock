@@ -4,19 +4,33 @@ packages:
   analyzer:
     description: analyzer
     source: hosted
-    version: "0.10.5"
+    version: "0.12.2"
   angular:
     description: angular
     source: hosted
-    version: "0.9.5+2"
+    version: "0.9.10"
+  angular_ui:
+    description:
+      path: "../../../modules/angular.dart.ui-kajmagnus79"
+      relative: true
+    source: path
+    version: "0.2.2"
   args:
     description: args
     source: hosted
-    version: "0.9.0"
+    version: "0.10.0+2"
+  barback:
+    description: barback
+    source: hosted
+    version: "0.11.1"
   browser:
     description: browser
     source: hosted
     version: "0.9.1"
+  code_transformers:
+    description: code_transformers
+    source: hosted
+    version: "0.0.1-dev.2"
   collection:
     description: collection
     source: hosted
@@ -24,27 +38,43 @@ packages:
   di:
     description: di
     source: hosted
-    version: "0.0.32"
+    version: "0.0.34"
   html5lib:
     description: html5lib
     source: hosted
-    version: "0.9.1"
+    version: "0.9.2"
   intl:
     description: intl
     source: hosted
-    version: "0.9.1"
+    version: "0.8.10+4"
   js:
     description: js
     source: hosted
-    version: "0.2.1"
+    version: "0.2.2"
   logging:
     description: logging
     source: hosted
     version: "0.9.1+1"
+  logging_handlers:
+    description: logging_handlers
+    source: hosted
+    version: "0.8.0"
+  matcher:
+    description: matcher
+    source: hosted
+    version: "0.10.0"
+  meta:
+    description: meta
+    source: hosted
+    version: "0.8.8"
+  mock:
+    description: mock
+    source: hosted
+    version: "0.10.0"
   path:
     description: path
     source: hosted
-    version: "1.0.0"
+    version: "1.1.0"
   perf_api:
     description: perf_api
     source: hosted
@@ -52,11 +82,11 @@ packages:
   route_hierarchical:
     description: route_hierarchical
     source: hosted
-    version: "0.4.10"
+    version: "0.4.15"
   shadow_dom:
     description: shadow_dom
     source: hosted
-    version: "0.9.1"
+    version: "0.9.2"
   source_maps:
     description: source_maps
     source: hosted
@@ -64,15 +94,11 @@ packages:
   stack_trace:
     description: stack_trace
     source: hosted
-    version: "0.9.1"
+    version: "0.9.3"
   unittest:
     description: unittest
     source: hosted
-    version: "0.9.3"
-  unmodifiable_collection:
-    description: unmodifiable_collection
-    source: hosted
-    version: "0.9.2"
+    version: "0.10.1+1"
   utf:
     description: utf
     source: hosted

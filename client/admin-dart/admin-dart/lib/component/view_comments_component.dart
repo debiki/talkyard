@@ -15,10 +15,17 @@ import '../service/user.dart';
     selector: 'view-comments',
     templateUrl: 'packages/debiki_admin/component/view_comments_component.html',
     cssUrl: 'packages/debiki_admin/component/view_comments_component.css',
+    applyAuthorStyles: true,
     publishAs: 'cmp')
 class ViewCommentsComponent extends ActiveTopicsFinder {
 
   DebikiAdminQueryService _queryService;
+
+  @NgAttr('root-page-id')
+  String rootPageId;
+
+  @NgAttr('page-role')
+  String pageRole;
 
   Scope _scope;
   RouteProvider routeProvider;
@@ -29,7 +36,7 @@ class ViewCommentsComponent extends ActiveTopicsFinder {
   List<Post> _selectedRecentPosts = [];
   List<Post> get selectedRecentPosts => _selectedRecentPosts;
 
-  Map<String, Topic> allTopicsById = {};
+  Map<String, Topic> allTopicsById = null;
 
   Map<String, Topic> selectedTopicsById = new Map<String, Topic>();
   List<Topic> get selectedTopics => selectedTopicsById.values.toList();
@@ -40,7 +47,7 @@ class ViewCommentsComponent extends ActiveTopicsFinder {
       allTopicsById = debikiData.topicsById;
       _recentUsersById = debikiData.usersById;
       _recentPosts = debikiData.recentPosts;
-      findActiveTopics();
+      findActiveTopics(rootPageId, new TopicRole.fromString(pageRole));
       // Filter away all comments that don't belong to one of the _selectedTopicsById.
       _selectedRecentPosts.clear();
       for (Post post in _recentPosts) {

@@ -5,7 +5,8 @@ dependencies:
   browser: any
   js: any
   shadow_dom: any
+  angular_ui:
+    path: ../../../modules/angular.dart.ui-kajmagnus79
 
 dev_dependencies:
   unittest: any
-

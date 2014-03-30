@@ -9,7 +9,7 @@ import 'package:debiki_admin/service/topic.dart';
 
 @NgController(
     selector: '[debiki-admin]',
-    publishAs: 'ctrl')
+    publishAs: 'adminCtrl')
 class DebikiAdminController {
 
   DebikiAdminQueryService _queryService;

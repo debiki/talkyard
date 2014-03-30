@@ -1,11 +1,11 @@
 
-<!-- This should be a tab, but I haven't yet found any AngularDart tabs that seems to work. -->
-
 <div class="form-group row">
+  <!-- This should be a tab, but I haven't yet found any AngularDart tabs that seems to work. -->
 
   <label for="{{cmp.rootPageId}}{{cmp.contentId}}" class="col-sm-3 control-label">{{ cmp.title }}</label>
 
-  <div class="col-sm-9">
+  <div ng-if="cmp.content == null">Loading ...</div>
+  <div ng-if="cmp.content != null" class="col-sm-9">
     <p><content></content></p>
     <textarea ng-model="cmp.content.newText" type="text"
       class="form-control special-content-{{cmp.contentId}}"
