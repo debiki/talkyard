@@ -288,12 +288,13 @@ li.dw-fs-re:last-child .dw-arw-hz-line-to-sibling
 
 // Don't pad the root post and titles (titles are already indented since
 // they're placed inside another post already).
-.dw-ar-p-hd,
-.dw-depth-0 > .dw-p > .dw-p-bd,
-.dw-p-ttl,
-.dw-p-ttl > .dw-p-bd
-  margin-left: 0
-  padding-left: 0
+.DW.DW
+  .dw-ar-p-hd,
+  .dw-depth-0 > .dw-p > .dw-p-bd,
+  .dw-p-ttl,
+  .dw-p-ttl > .dw-p-bd
+    margin-left: 0
+    padding-left: 0
 
 .dw-p-dl > .dw-p-hd
   margin-bottom: 24px // for now — there're currently no spacy hidden
@@ -354,7 +355,7 @@ span.dw-p-e-by
 .dw-depth-0 > .dw-z
   display: none
 
-.dw-depth-0 > .dw-p
+.DW.DW .dw-depth-0 > .dw-p
   margin-left: 0
   //float: left; // or the header will be as wide as the root thread
   //                fix the header instead? I need to fix it anayway

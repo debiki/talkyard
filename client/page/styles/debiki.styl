@@ -178,7 +178,7 @@
 
 .dw-t-exactly-one-reply > .dw-p-as
   // This places threads closer to each other, when using flat layout.
-  margin-bottom: -7px
+  margin-bottom: -5px
 
 .dw-depth-0.dw-t
   // Without this, SVG arrows are cropped a bit to the right. Why? [8DbF3]
@@ -231,7 +231,7 @@
 
 .DW.DW .dw-depth-1 .dw-res
   margin: 0 0 0 35px
-  padding-top: 3px
+  padding-top: 6px
 
 // Don't intent the last reply though
 .DW.DW .dw-depth-1 .dw-res > li:last-child
@@ -282,23 +282,31 @@
   // overflow: hidden; No, or sort order and reply btn tips won't appear
   background-color: white
 
+.DW.dw-vt .dw-p
+  // Vertical layout makes threads wider, and we can indend a bit more.
+  margin-left: 35px
+
 .dw-p-hd,
 .dw-p.dw-zd  // folded comment
   padding-left: 3px
   font-size: 10px
-  color: #141414
+  color: #000
   background-color: #f4f4f4
-  border: 1px solid #ededed
+  border: 1px solid hsl(0, 0%, 90%)
   border-left: none
   border-right: none
   line-height: 15px // or test w 120%
+
+.dw-vt .dw-p-hd,
+  // Make the border darker
+  border: 1px solid hsl(0, 0%, 80%)
 
 // Threads are wider in vertical layout, so the headers are much larger.
 // Therefore make their backgrounds brighter.
 .DW.dw-vt
   .dw-p-hd,
   .dw-p.dw-zd
-    background-color: hsl(0, 0%, 97%)
+    background-color: hsl(0, 0%, 95%)
 
   .dw-ar-p-hd
     background-color: transparent
