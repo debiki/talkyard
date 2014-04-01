@@ -47,7 +47,7 @@ object CreateEmbeddedSiteController extends mvc.Controller {
     Globals.SiteByIdHostnamePrefix + siteId + "." + Globals.baseDomain
 
   def adminUrlForEmbeddedSite(siteId: SiteId): String =
-    s"http://${hostnameToEmbeddedSite(siteId)}${routes.Application.viewAdminPage.url}"
+    s"http://${hostnameToEmbeddedSite(siteId)}${routes.AdminController.viewAdminPage.url}"
 
 
   def start = mvc.Action { request =>

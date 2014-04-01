@@ -16,12 +16,12 @@
  *@
 
 @css = @{("""
-
   h1 {
     margin-bottom: 1em;
   }
-
 """)}
+
+@adminPageUrl = @{ routes.AdminController.viewAdminPage.url }
 
 
 @main(Messages("securesocial.login.title"), css = css) {
@@ -32,7 +32,7 @@
     </p>
 
     <p>
-      Next, go to the <a href="/-/admin/">administration page</a>
+      Next, go to the <a href="@adminPageUrl">administration page</a>
       (and login again).
     </p>
 
