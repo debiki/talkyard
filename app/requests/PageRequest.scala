@@ -174,7 +174,12 @@ object PageRequest {
  *
  * Sometimes only the browser ip is known (then there'd be no
  * Login/Identity/User).
- */
+  *
+  * Naming convention: Functions that assume that the page exists, and throws
+  * a 404 Not Found error otherwise, are named like "thePage" or "thePageParts",
+  * whilst functions that instead require an Option are named simply "page" or
+  * "pageParts".
+  */
 case class PageRequest[A](
   sid: SidStatus,
   xsrfToken: XsrfOk,

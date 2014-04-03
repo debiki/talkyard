@@ -205,7 +205,8 @@ abstract class SiteDbDao {
   def deleteVote(userIdData: UserIdData, pageId: PageId, postId: PostId,
         voteType: PostActionPayload.Vote)
 
-  /** Returns None if the page doesn't exist or is empty.
+  /** Returns None if the page doesn't exist, and a
+    * Some(PageParts(the-page-id)) if it exists but is empty.
     * Loads another site's page, if siteId is specified.
     */
   def loadPageParts(debateId: String, tenantId: Option[String] = None): Option[PageParts]
