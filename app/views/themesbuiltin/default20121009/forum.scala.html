@@ -39,45 +39,6 @@
     }
   </div>
 
-  <!-- <p>
-    <b>Click to select forums.</b>
-    Topics from selected forums are then listed below.
-  </p> -->
-
-  @*
-  <ol class="forum-list">
-  @for(forum <- tpi.listPublishedSubForums()) {
-    <li>
-      <a href='@{forum.path}'>
-        <h2>@{forum.title}</h2>
-      </a>
-
-      @*
-      <ol class="subforum-list">
-        @for(subforum <- tpi.listPublishedSubForumsOf(forum)) @{
-          // Currently always empty, because a ForumGroup cannot have any
-          // ForumGroup children (should change this).
-        }
-      </ol> * @
-
-      <ol class="topic-list">
-        @for(topic <- tpi.listRecentForumTopicsIn(forum, limit = 5)) {
-        <li>
-          <a class="topic-title" href="@{topic.path}">
-            @{topic.title}
-            (@{topic.numRepliesApproved})
-          </a>
-        </li>
-        }
-        <li class='topic-count'>
-          <a>+ 99 @* @{tpi.forum.topicCount - 5} * @ other topics ...</a>
-        </li>
-      </ol>
-    </li>
-  }
-  </ol>
-  *@
-
   <table class="forum-table table">
   <thead>
     <tr>
@@ -95,14 +56,6 @@
           <p class="forum-description">@tpi.configValue("forum-description", pageId = Some(forum.id))
           </p>
           <p class="topic-count">@{forum.numTopics} topics</p>
-
-          @*
-          <ol class="subforum-list">
-            @for(subforum <- tpi.listPublishedSubForumsOf(forum)) @{
-            // Currently always empty, because a ForumGroup cannot have any
-            // ForumGroup children (should change this).
-            }
-          </ol> *@
         </td>
 
         <td>
@@ -121,11 +74,6 @@
                 </td>
               </tr>
             }
-            @* <tr>
-              <td>
-                <a class='topic-count'>+ 99 @* @{tpi.forum.topicCount - 5} * @ other topics ...</a>
-              </td>
-            </tr> *@
           </tbody>
           </table>
         </td>

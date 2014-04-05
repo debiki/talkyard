@@ -113,7 +113,6 @@ module.exports = (grunt) ->
       'target/client/page/scripts/debiki-util-play.js',
       'target/client/page/scripts/debiki-utterscroll-init-tips.js',#
       'client/page/scripts/debiki-utterscroll.js',#
-      'target/client/page/scripts/debiki-forum.js',
       'target/client/page/scripts/debiki-page-path.js',
       'target/client/page/scripts/debiki-create-page.js',
       'target/client/page/scripts/debiki.js',
@@ -181,7 +180,6 @@ module.exports = (grunt) ->
       'target/client/page/scripts/debiki-util.js',
       'target/client/page/scripts/debiki-util-browser.js',
       'target/client/page/scripts/debiki-util-play.js',
-      'target/client/page/scripts/debiki-forum.js',
       'target/client/page/scripts/debiki-page-path.js',
       'target/client/page/scripts/debiki-create-page.js',
       'target/client/page/scripts/debiki.js',
