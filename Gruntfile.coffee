@@ -20,6 +20,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 module.exports = (grunt) ->
 
   grunt.loadNpmTasks('grunt-livescript')
+  grunt.loadNpmTasks('grunt-typescript')
   grunt.loadNpmTasks('grunt-wrap')
   grunt.loadNpmTasks('grunt-contrib-concat')
   grunt.loadNpmTasks('grunt-contrib-watch')
@@ -116,7 +117,8 @@ module.exports = (grunt) ->
       'target/client/page/scripts/debiki-page-path.js',
       'target/client/page/scripts/debiki-create-page.js',
       'target/client/page/scripts/debiki.js',
-      'target/client/util/scripts/debiki-utils.js']
+      'target/client/util/scripts/debiki-utils.js',
+      'target/client/all-typescript.js']
 
   debikiTouchFiles = [
       'client/third-party/bootstrap/dropdown.js',
@@ -183,7 +185,8 @@ module.exports = (grunt) ->
       'target/client/page/scripts/debiki-page-path.js',
       'target/client/page/scripts/debiki-create-page.js',
       'target/client/page/scripts/debiki.js',
-      'target/client/util/scripts/debiki-utils.js']
+      'target/client/util/scripts/debiki-utils.js',
+      'target/client/all-typescript.js']
 
   # For both touch devices and desktops.
   loginPopupFiles = [
@@ -238,6 +241,16 @@ module.exports = (grunt) ->
           ext: '.js'
         }]
       }
+    },
+    typescript: {
+      all:
+        src: [ 'client/**/*.ts' ]
+        dest: 'target/client/all-typescript.js'
+        options:
+          target: 'es5'
+          sourceMap: true
+          comments: true
+          newLine: 'lf'
     },
     stylus: {
       serverMax: {
@@ -526,6 +539,7 @@ module.exports = (grunt) ->
         files: [
             'client/**/*.js',
             'client/**/*.ls',
+            'client/**/*.ts',
             'client/**/*.styl'],
         tasks: ['default']
       },
@@ -543,8 +557,8 @@ module.exports = (grunt) ->
     }
   })
 
-  grunt.registerTask('default', ['livescript', 'wrap', 'stylus', 'concat'])
-  grunt.registerTask('release', ['livescript', 'wrap', 'stylus', 'concat', 'uglify'])
+  grunt.registerTask('default', ['livescript', 'typescript', 'wrap', 'stylus', 'concat'])
+  grunt.registerTask('release', ['livescript', 'typescript', 'wrap', 'stylus', 'concat', 'uglify'])
 
 
 # vim: et ts=2 sw=2 list
