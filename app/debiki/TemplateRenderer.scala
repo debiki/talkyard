@@ -83,8 +83,8 @@ object TemplateRenderer {
       pageReq.pageRole_! match {
         case PageRole.BlogPost => "blogPost"
         case PageRole.Blog => "blog"
-        case PageRole.Forum => "forumGroup"
-        case PageRole.ForumCategory => "forum"
+        case PageRole.Forum => "forum"
+        case PageRole.ForumCategory => "forumCategory"
         case PageRole.ForumTopic => "forumTopic"
         case PageRole.Code => "codePage"
         case PageRole.EmbeddedComments => "embeddedComments"
