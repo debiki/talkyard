@@ -69,8 +69,8 @@ object AutoApprover {
         folderReq.dao.loadPageMeta(parentPageId.get) getOrElse throwNotFound(
           "DwE78BI21", s"Parent page not found, id: `${parentPageId.get}'")
 
-      if (parentMeta.pageRole != PageRole.Forum)
-        throwForbidden("DwE830BIR5", "A forum topic's parent page must be a forum")
+      if (parentMeta.pageRole != PageRole.ForumCategory)
+        throwForbidden("DwE830BIR5", "A ForumTopic's parent page must be a ForumCategory")
 
       // For now:
       return Some(Approval.Preliminary)

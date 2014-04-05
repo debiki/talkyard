@@ -403,7 +403,7 @@ class InternalPageTpi protected (protected val _pageReq: PageRequest[_]) extends
   private def listPubSubForumsImpl(parentPageId: String): Seq[tpi.Forum] =
     listPublishedChildren(
       parentPageId = Some(parentPageId),
-      filterPageRole = Some(PageRole.Forum)) map { pathAndMeta =>
+      filterPageRole = Some(PageRole.ForumCategory)) map { pathAndMeta =>
         tpi.Forum(pathAndMeta.meta, pathAndMeta.path)
       }
 

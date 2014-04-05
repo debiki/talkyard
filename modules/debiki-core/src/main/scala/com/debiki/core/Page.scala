@@ -311,19 +311,17 @@ object PageRole {
     override val parentRole = Some(Blog)
   }
 
-  // Ooops, ForumGroup + Forum + ForumTopic feels over complicated. Should
-  // remove ForumGroup and keep only Forum and ForumTopic.
-  case object ForumGroup extends PageRole {
+  case object Forum extends PageRole {
     override def isSection = true
   }
 
-  case object Forum extends PageRole {
-    override val parentRole = Some(ForumGroup)
+  case object ForumCategory extends PageRole {
+    override val parentRole = Some(Forum)
     override val isSection = true
   }
 
   case object ForumTopic extends PageRole {
-    override val parentRole = Some(Forum)
+    override val parentRole = Some(ForumCategory)
   }
 
   case object WikiMainPage extends PageRole {
@@ -339,7 +337,7 @@ object PageRole {
   // Perhaps use a match ... case list instead?
   private val _PageRoleLookup = Vector(
     Generic, EmbeddedComments, Blog, BlogPost,
-    ForumGroup, Forum, ForumTopic,
+    Forum, ForumCategory, ForumTopic,
     WikiMainPage, WikiPage,
     Code).map(x => (x, x.toString))
 

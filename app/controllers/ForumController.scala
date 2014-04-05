@@ -40,7 +40,7 @@ object ForumController extends mvc.Controller {
 
   /**
    * Wraps a forum in a forum group. That is, wraps a page F with role PageRole.Forum
-   * in a new page FG with role PageRole.ForumGroup. FG's parent will be F's
+   * in a new page FG with role PageRole.Forum. FG's parent will be F's
    * original parent, if any. F's new parent will be FG.
    *
    * JSON format, as Yaml:
@@ -84,7 +84,7 @@ object ForumController extends mvc.Controller {
       var makeIndexPage = false
 
       for (forum <- forumPathsAndMetas) {
-        if (forum.role != PageRole.Forum && forum.role != PageRole.ForumGroup) {
+        if (forum.role != PageRole.ForumCategory && forum.role != PageRole.Forum) {
           throwForbidden("DwE4UWx3", o"""Page `${forum.id}' is not a forum
             nor a forum group""")
         }
@@ -135,7 +135,7 @@ object ForumController extends mvc.Controller {
     val anyCommonParentId = commonAncestorIdsParentFirst.headOption
 
     val groupMeta = PageMeta.forNewPage(
-      PageRole.ForumGroup, request.user_!, PageParts("?"), request.ctime,
+      PageRole.Forum, request.user_!, PageParts("?"), request.ctime,
       parentPageId = anyCommonParentId, publishDirectly = true)
 
     val groupPath = PagePath(tenantId = request.tenantId, folder = commonParentFolder,

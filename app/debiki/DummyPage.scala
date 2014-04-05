@@ -42,8 +42,8 @@ object DummyPage {
 
     val texts: Texts = pageRole match {
       case PageRole.BlogPost => BlogPostTexts
-      case PageRole.ForumGroup => ForumGroupTexts
       case PageRole.Forum => ForumTexts
+      case PageRole.ForumCategory => ForumCategoryTexts
       case PageRole.ForumTopic => ForumTopicTexts
       case PageRole.Code => CodeTexts
       case _ => DefaultTexts
@@ -168,15 +168,15 @@ object DummyPage {
   }
 
 
-  private object ForumGroupTexts extends DefaultTexts with ForumBodyText {
-    override val noTitleText =
-      "New Forum Group Title (click to edit)"
-  }
-
-
   private object ForumTexts extends DefaultTexts with ForumBodyText {
     override val noTitleText =
       "New Forum Title (click to edit)"
+  }
+
+
+  private object ForumCategoryTexts extends DefaultTexts with ForumBodyText {
+    override val noTitleText =
+      "New Forum Category Title (click to edit)"
   }
 
 
