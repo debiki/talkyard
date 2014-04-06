@@ -16,16 +16,17 @@
  */
 
 /// <reference path="typedefs/angularjs/angular.d.ts" />
+/// <reference path="ForumApp.ts" />
+/// <reference path="ListTopicsController.ts" />
+/// <reference path="ListCategoriesController.ts" />
 
 //------------------------------------------------------------------------------
-  module forum {
+   module forum {
 //------------------------------------------------------------------------------
 
 
-export var forumApp = angular.module('ForumApp', ['ui.router', 'DebikiPageModule']);
-
-forumApp.config(['$stateProvider', '$urlRouterProvider', configForumApp]);
-forumApp.run(['$rootScope', '$state', '$stateParams', runForumApp]);
+forum.forumApp.config(['$stateProvider', '$urlRouterProvider', configForumApp]);
+forum.forumApp.run(['$rootScope', '$state', '$stateParams', runForumApp]);
 
 
 function configForumApp($stateProvider, $urlRouterProvider) {
@@ -41,26 +42,24 @@ function configForumApp($stateProvider, $urlRouterProvider) {
     })
     .state('latest', {
       url: '/latest/*categoryPath',
-      template: 'latest template',
-      controller: function($stateParams) {
+      template: '<div>Value of boo: {{ boo }}</div>',
+      controller: 'ListTopicsController' /* function($stateParams) {
         var categories = $stateParams.categoryPath ? $stateParams.categoryPath.split('/') : [];
         console.log('latest controller, categories: ' + categories);
-      }
+      } */
     })
     .state('top', {
       url: '/top/*categoryPath',
-      template: 'top template',
-      controller: function($stateParams) {
+      template: 'top template, and <b>Value of boo: {{ boo }}</b>',
+      controller: 'ListTopicsController' /* function($stateParams) {
         var categories = $stateParams.categoryPath ? $stateParams.categoryPath.split('/') : [];
         console.log('top controller, categories: ' + categories);
-      }
+      } */
     })
     .state('categories', {
       url: '/categories',
-      template: 'categories template',
-      controller: function($stateParams) {
-        console.log('categories controller');
-      }
+      template: 'categories template -- Value of boo: {{ boo }}',
+      controller: 'ListCategoriesController'
     })
 };
 
@@ -76,6 +75,6 @@ function runForumApp($rootScope, $state, $stateParams) {
 
 
 //------------------------------------------------------------------------------
-  }
+   }
 //------------------------------------------------------------------------------
 // vim: fdm=marker et ts=2 sw=2 tw=0 fo=tcqwn list

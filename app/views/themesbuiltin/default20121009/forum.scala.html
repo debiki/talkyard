@@ -48,15 +48,15 @@
   </noscript>noscript>
   *@
 
-  <div ng-controller="ForumController">
+  <div ng-controller="ForumNavBarController" ng-cloak>
   <div class="dw-forum-actionbar clearfix">
     <div class="dw-main-category-dropdown btn-group">
       <a class="btn btn-default dropdown-toggle" data-toggle="dropdown" href="#">
         {{ $state.params.categoryPath || "All Categories" }} <span class="caret"></span>
       </a>
       <ul class="dropdown-menu">
-        <li ng-repeat="(key, value) in categories">
-          <a ng-click="mv.changeCategory(key)">{{ key }}</a>
+        <li ng-repeat="category in categories">
+          <a ng-click="mv.changeCategory(category.name)">{{ category.name }}</a>
         </li>
       </ul>
     </div>

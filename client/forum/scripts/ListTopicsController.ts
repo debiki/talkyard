@@ -16,33 +16,27 @@
  */
 
 /// <reference path="typedefs/angularjs/angular.d.ts" />
-/// <reference path="forum.ts" />
+/// <reference path="ForumApp.ts" />
+
+//------------------------------------------------------------------------------
+   module forum {
+//------------------------------------------------------------------------------
 
 
-interface IForumScope extends ng.IScope {
-  mv: ForumController;
-  $state: any;
-  categories: Object;
-}
+class ListTopicsController {
 
-
-class ForumController {
-
-  private categories = { b123: {} };
-
-  constructor(private $scope: IForumScope) {
+  constructor(private $scope, $stateParams) {
     $scope.mv = this;
-  }
-
-  public changeCategory(newCategory: string) {
-    var nextState = '.';
-    if (this.$scope.$state.is('categories') || this.$scope.$state.is('index')) {
-      nextState = 'latest';
-    }
-    this.$scope.$state.go(nextState, { categoryPath: newCategory });
+    $scope.boo = "This is the boo value, in ListTopicsController, $stateParams: " + $stateParams.toString();
   }
 
 }
 
 
-forum.forumApp.controller("ForumController", ["$scope", ForumController]);
+forum.forumApp.controller('ListTopicsController', ['$scope', '$stateParams', ListTopicsController]);
+
+
+//------------------------------------------------------------------------------
+   }
+//------------------------------------------------------------------------------
+// vim: fdm=marker et ts=2 sw=2 tw=0 fo=tcqwn list
