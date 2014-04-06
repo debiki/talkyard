@@ -127,6 +127,8 @@ abstract class SiteDbDao {
 
   def loadAncestorIdsParentFirst(pageId: PageId): List[PageId]
 
+  def loadCategoryTree(rootPageId: PageId): Seq[Category]
+
   def saveSetting(target: SettingsTarget, setting: SettingNameValue[_])
 
   /** Loads settings for all listed targets, returns settings in the same order.
@@ -538,6 +540,11 @@ class ChargingSiteDbDao(
   def loadAncestorIdsParentFirst(pageId: PageId): List[PageId] = {
     _chargeForOneReadReq()
     _spi.loadAncestorIdsParentFirst(pageId)
+  }
+
+  def loadCategoryTree(rootPageId: PageId): Seq[Category] = {
+    _chargeForOneReadReq()
+    _spi.loadCategoryTree(rootPageId)
   }
 
   def saveSetting(target: SettingsTarget, setting: SettingNameValue[_]) {

@@ -368,3 +368,6 @@ object PageStatus {
 
 case class PagePostId(pageId: PageId, postId: PostId)
 
+
+case class Category(categoryName: String, pageId: String, subCategories: Seq[Category])
+

@@ -81,7 +81,7 @@ findRootScope = ->
   # to ask for that separately.
   pageDataText = $('#dw-page-data').text() || '{}'
   pageDataJson = JSON.parse(pageDataText)
-  $rootScope.categories = pageDataJson.categories || {}
+  $rootScope.categories = pageDataJson.categories || []
 
 
 /**

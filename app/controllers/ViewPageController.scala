@@ -88,22 +88,27 @@ object ViewPageController extends mvc.Controller {
   }
 
 
+  /** Generates JSON like this: (illustrated in Yaml)
+    *   categories:
+    *    - name: "Category Name",
+    *      pageId: "123abc",
+    *      subCategories: []
+    *    - ...
+    *    - ...
+    * Currently no sub categories are included.
+    */
   def buildPageDataJosn(pageReq: PageRequest[_]): String = {
-    val jsonStr = i"""{
-      |"categories": {
-      |  "hogs": {
-      |     "fat": {},
-      |     "thin": {}
-      |  },
-      |  "dogs": {
-      |     "red": {},
-      |     "green": {},
-      |     "blue": {}
-      |  },
-      |  "frogs": {}
-      |}}
-      |"""
-    jsonStr
+    if (pageReq.pageRole != Some(PageRole.Forum))
+      return ""
+
+    val categories: Seq[Category] = pageReq.dao.loadCategoryTree(pageReq.thePageId)
+    val categoriesJson = categories map { category =>
+      JsObject(Seq(
+        "name" -> JsString(category.categoryName),
+        "pageId" -> JsString(category.pageId),
+        "subCategories" -> JsArray()))
+    }
+    Json.obj("categories" -> categoriesJson).toString
   }
 
 

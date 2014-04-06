@@ -370,6 +370,8 @@ case class PageRequest[A](
     }) getOrElse DefaultPageRoot)
 
 
+  def pageRole: Option[PageRole] = pageMeta.map(_.pageRole)
+
   def pageRole_! : PageRole = pageMeta_!.pageRole
 
   def parentPageId_! : Option[String] = pageMeta_!.parentPageId
