@@ -58,12 +58,15 @@ object ViewPageController extends mvc.Controller {
 
 
   def viewPostImpl(pageReq: PageGetRequest) = {
+    val pageDataJson = buildPageDataJosn(pageReq)
     val userPageDataJson = pageReq.user.isEmpty ? "" | buildUserPageDataJson(pageReq)
-    // If not logged in, then include an empty Yaml tag, so the browser
-    // notices that it got that elem, and won't call GET ?page-info.
-    val infoNode = <pre class='dw-user-page-data'>{userPageDataJson}</pre>
-    val pageHtml =
-      pageReq.dao.renderTemplate(pageReq, appendToBody = infoNode)
+    // If not logged in, then include an empty user data tag, so the browser
+    // notices that it got something, and won't call GET ?page-info.
+    val dataNodes = <span>
+      <pre id="dw-page-data">{ pageDataJson }</pre>
+      <pre class="dw-user-page-data">{ userPageDataJson }</pre>
+      </span>
+    val pageHtml = pageReq.dao.renderTemplate(pageReq, appendToBody = dataNodes)
     Ok(pageHtml) as HTML
   }
 
@@ -82,6 +85,25 @@ object ViewPageController extends mvc.Controller {
       "DwE404FL9", s"Page `$pageId' not found")
     val json = buildUserPageDataJson(pageReq)
     Ok(json)
+  }
+
+
+  def buildPageDataJosn(pageReq: PageRequest[_]): String = {
+    val jsonStr = i"""{
+      |"categories": {
+      |  "hogs": {
+      |     "fat": {},
+      |     "thin": {}
+      |  },
+      |  "dogs": {
+      |     "red": {},
+      |     "green": {},
+      |     "blue": {}
+      |  },
+      |  "frogs": {}
+      |}}
+      |"""
+    jsonStr
   }
 
 

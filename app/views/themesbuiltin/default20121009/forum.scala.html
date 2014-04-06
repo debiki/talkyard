@@ -48,25 +48,26 @@
   </noscript>noscript>
   *@
 
+  <div ng-controller="ForumController">
   <div class="dw-forum-actionbar clearfix">
     <div class="dw-main-category-dropdown btn-group">
       <a class="btn btn-default dropdown-toggle" data-toggle="dropdown" href="#">
-        All Categories <span class="caret"></span>
+        {{ $state.params.categoryPath || "All Categories" }} <span class="caret"></span>
       </a>
       <ul class="dropdown-menu">
-        <li><a href="#">All Categories</a></li>
-        <li><a href="#">General</a></li>
-        <li><a href="#">Sandbox</a></li>
+        <li ng-repeat="(key, value) in categories">
+          <a ng-click="mv.changeCategory(key)">{{ key }}</a>
+        </li>
       </ul>
     </div>
 
     <ul class="nav nav-pills">
       <li ng-class="{active: $state.includes('latest') || $state.includes('index')}"
           title="View topics with recent posts">
-        <a ui-sref="latest">Latest</a>
+        <a ui-sref="latest($stateParams)">Latest</a>
       </li>
       <li ng-class="{active: $state.includes('top')}" title="View popular topics">
-        <a ui-sref="top">Top</a>
+        <a ui-sref="top($stateParams)">Top</a>
       </li>
       <li ng-class="{active: $state.includes('categories')}" title="View categories">
         <a ui-sref="categories">Categories</a>
@@ -83,6 +84,7 @@
     <div class="col-xs-12">
       <div class="well" ui-view></div>
     </div>
+  </div>
   </div>
 }
 

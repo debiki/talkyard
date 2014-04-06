@@ -22,7 +22,7 @@
 //------------------------------------------------------------------------------
 
 
-var forumApp = angular.module('ForumApp', ['ui.router', 'DebikiPageModule']);
+export var forumApp = angular.module('ForumApp', ['ui.router', 'DebikiPageModule']);
 
 forumApp.config(['$stateProvider', '$urlRouterProvider', configForumApp]);
 forumApp.run(['$rootScope', '$state', '$stateParams', runForumApp]);
@@ -40,18 +40,18 @@ function configForumApp($stateProvider, $urlRouterProvider) {
       }
     })
     .state('latest', {
-      url: '/latest/*path',
+      url: '/latest/*categoryPath',
       template: 'latest template',
       controller: function($stateParams) {
-        var categories = $stateParams.path ? $stateParams.path.split('/') : [];
+        var categories = $stateParams.categoryPath ? $stateParams.categoryPath.split('/') : [];
         console.log('latest controller, categories: ' + categories);
       }
     })
     .state('top', {
-      url: '/top/*path',
+      url: '/top/*categoryPath',
       template: 'top template',
       controller: function($stateParams) {
-        var categories = $stateParams.path ? $stateParams.path.split('/') : [];
+        var categories = $stateParams.categoryPath ? $stateParams.categoryPath.split('/') : [];
         console.log('top controller, categories: ' + categories);
       }
     })
