@@ -285,7 +285,6 @@ case class PageMeta(
 
 
 sealed abstract class PageRole {
-  def parentRole: Option[PageRole] = None
 
   /** True if this page is e.g. a blog or a forum — they can have child pages
     * (namely blog posts, forum topics).
@@ -295,6 +294,7 @@ sealed abstract class PageRole {
 
 
 object PageRole {
+
   case object Generic extends PageRole
 
   case object Code extends PageRole
@@ -307,30 +307,23 @@ object PageRole {
     override def isSection = true
   }
 
-  case object BlogPost extends PageRole {
-    override val parentRole = Some(Blog)
-  }
+  case object BlogPost extends PageRole
 
   case object Forum extends PageRole {
     override def isSection = true
   }
 
   case object ForumCategory extends PageRole {
-    override val parentRole = Some(Forum)
     override val isSection = true
   }
 
-  case object ForumTopic extends PageRole {
-    override val parentRole = Some(ForumCategory)
-  }
+  case object ForumTopic extends PageRole
 
   case object WikiMainPage extends PageRole {
     override def isSection = true
   }
 
-  case object WikiPage extends PageRole {
-    override val parentRole = Some(WikiMainPage)
-  }
+  case object WikiPage extends PageRole
 
 
   // Hmm, regrettably this breaks should I rename any case object.
