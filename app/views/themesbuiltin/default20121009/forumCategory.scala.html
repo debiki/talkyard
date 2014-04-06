@@ -30,43 +30,15 @@
   @views.html.searchForm(tpi, id = "forum-search", placeholderText = "Search whole forum",
     sectionId = tpi.anyRootSectionPageId)
 
-  @parentForumsList(tpi)
-
-    @tpi.page(showAuthorAndDate = false, showBody = false, showComments = false) {
-      <div class="forum-title">
-        @tpi.title
-      </div>
-      @tpi.bodyAndComments
-    }
-
-  <p>
-    Please enable Javascript to be able to start new topics.
-  </p>
-
-  <ol class="topic-table topic-list dw-forum-topic-list">
+  <noscript>
+    <p>Please enable Javascript to be able to start new topics.</p>
+    <h2>Recent topics:</h2>
     @for(topic <- tpi.listRecentForumTopics(limit = 40)) {
-      <li>
-        <div class="accordion-heading" >
-          <div>
-            <a class="topic-title" href="@{topic.path}">@{topic.title}</a>
-          </div>
-          <div class="topic-details">
-            <span class="topic-author">
-              By <a>@{topic.authorDisplayName}</a> –
-            </span>
-            <span class="topic-stats">
-              @{topic.numRepliesApproved} replies –
-            </span>
-            @if(topic.lastReplyDati.isDefined) {
-              <span class="topic-mod-dati">
-                updated @{datiTag(topic.lastReplyDati.get)}
-              </span>
-            }
-          </div>
-        </div>
-      </li>
+      <a class="topic-title" href="@{topic.path}">@{topic.title}</a><br>
     }
-  </ol>
+  </noscript>
+
+  <div x-dw-forum></div>
 
 }
 
