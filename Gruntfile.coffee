@@ -1,4 +1,6 @@
 ###
+(Run `gulp` instead, it'll call `grunt` for you.)
+
 Build file for client scripts and styles. See http://gruntjs.com/
 Copyright (C) 2012-2013 Kaj Magnus Lindberg (born 1979)
 
@@ -117,6 +119,7 @@ module.exports = (grunt) ->
       'target/client/page/scripts/debiki-create-page.js',
       'target/client/util/scripts/debiki-utils.js',
       'target/client/all-typescript.js',
+      'target/client/all-angular-templates.js',
       'target/client/page/scripts/debiki.js']
 
   debikiTouchFiles = [
@@ -183,6 +186,7 @@ module.exports = (grunt) ->
       'target/client/page/scripts/debiki-page-path.js',
       'target/client/page/scripts/debiki-create-page.js',
       'target/client/util/scripts/debiki-utils.js',
+      'target/client/all-angular-templates.js',
       'target/client/all-typescript.js',
       'target/client/page/scripts/debiki.js']
 
