@@ -1,0 +1,15 @@
+
+<div>
+<ol>
+  <li ng-repeat="category in categories">
+    <a href="{{ category.url }}">{{ category.name }}</a>
+
+    <ol>
+      <li ng-repeat="subCategory in category.subCategories">
+        <a href="{{ subCategory.url }}">{{ subCategory.name }}</a>
+      </li>
+    </ol>
+
+  </li>
+</ol>
+</div>

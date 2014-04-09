@@ -1,0 +1,25 @@
+
+<div>
+<table id="dw-topic-list">
+  <thead>
+    <tr>
+      <th>Topic</th>
+      <th>Category</th>
+      <th>Posts</th>
+      <th>Likes</th>
+      <th>Wrongs</th>
+      <th colspan="2">Activity</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr ng-repeat="topic in topics">
+      <td><a href="{{ topic.url }}">{{ topic.title }}</a></td>
+      <td>{{ topic.category }}</td>
+      <td>{{ topic.numPosts }}</td>
+      <td>{{ topic.numLikes }}</td>
+      <td>{{ topic.numWrongs }}</td>
+      <td>{{ topic.firstPostAt }}</td>
+      <td>{{ topic.lastPostAt }}</td>
+    </tr>
+</ol>
+</div>

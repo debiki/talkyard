@@ -19,6 +19,8 @@
 /// <reference path="ForumApp.ts" />
 /// <reference path="ListTopicsController.ts" />
 /// <reference path="ListCategoriesController.ts" />
+/// <reference path="../html/forum.listTopicsTemplate.html.ts" />
+/// <reference path="../html/forum.listCategoriesTemplate.html.ts" />
 
 //------------------------------------------------------------------------------
    module forum {
@@ -42,23 +44,17 @@ function configForumApp($stateProvider, $urlRouterProvider) {
     })
     .state('latest', {
       url: '/latest/*categoryPath',
-      template: '<div>Value of boo: {{ boo }}</div>',
-      controller: 'ListTopicsController' /* function($stateParams) {
-        var categories = $stateParams.categoryPath ? $stateParams.categoryPath.split('/') : [];
-        console.log('latest controller, categories: ' + categories);
-      } */
+      template: forum.listTopicsTemplate.html,
+      controller: 'ListTopicsController'
     })
     .state('top', {
       url: '/top/*categoryPath',
-      template: 'top template, and <b>Value of boo: {{ boo }}</b>',
-      controller: 'ListTopicsController' /* function($stateParams) {
-        var categories = $stateParams.categoryPath ? $stateParams.categoryPath.split('/') : [];
-        console.log('top controller, categories: ' + categories);
-      } */
+      template: forum.listTopicsTemplate.html,
+      controller: 'ListTopicsController'
     })
     .state('categories', {
       url: '/categories',
-      template: 'categories template -- Value of boo: {{ boo }}',
+      template: forum.listCategoriesTemplate.html,
       controller: 'ListCategoriesController'
     })
 };

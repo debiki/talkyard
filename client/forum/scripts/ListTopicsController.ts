@@ -23,11 +23,51 @@
 //------------------------------------------------------------------------------
 
 
+class Topic {
+  id: string;
+  title: string;
+  url: string;
+  categoryId: string;
+  subCategoryId: string;
+  numPosts: number;
+  numLikes: number;
+  numWrongs: number;
+  firstPostAt: Date;
+  lastPostAt: Date;
+}
+
+
+interface ListTopicsScope extends ng.IScope {
+  mv: ListTopicsController;
+  $state: any;
+  topics: Topic[];
+}
+
+
 class ListTopicsController {
 
-  constructor(private $scope, $stateParams) {
+  constructor(private $scope: ListTopicsScope, $stateParams) {
     $scope.mv = this;
-    $scope.boo = "This is the boo value, in ListTopicsController, $stateParams: " + $stateParams.toString();
+
+    var categories = $stateParams.categoryPath ? $stateParams.categoryPath.split('/') : [];
+    console.log('ListTopicsController, categories: ' + categories);
+
+    // ... load topics ... .done(function() {
+    $scope.topics = [
+      (() => {
+        var t = new Topic();
+        t.id = '123abc';
+        t.title = 'Topic Title';
+        t.url = '/nowhere';
+        t.categoryId = '123abcCategoryId';
+        t.subCategoryId = '123abcSubCategoryId';
+        t.numPosts = 10;
+        t.numLikes = 3;
+        t.numWrongs = 1;
+        t.firstPostAt = new Date(2014, 4, 3);
+        t.lastPostAt = new Date(2014, 4, 7);
+        return t;
+      })()];
   }
 
 }

@@ -244,8 +244,8 @@ module.exports = (grunt) ->
     },
     ts: { # typescript
       all:
-        src: ['client/forum/**/*.ts']
-        html: ['client/forum/**/*.html']
+        src: ['client/forum/scripts/*.ts']
+        html: ['client/forum/html/*.html']
         out: 'target/client/all-typescript.js'
         options:
           target: 'es5'
@@ -541,6 +541,7 @@ module.exports = (grunt) ->
             'client/**/*.js',
             'client/**/*.ls',
             'client/**/*.ts',
+            'client/**/*.html',
             'client/**/*.styl'],
         tasks: ['default']
       },
