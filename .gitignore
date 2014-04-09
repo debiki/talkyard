@@ -14,6 +14,10 @@ tmp
 debiki-app-play.iml
 RUNNING_PID
 
+# TypeScript: grunt-ts cache, and HTML files compiled to .ts by grunt-ts.
+.tscache/
+client/forum/html/*.ts
+
 # Eclipse
 .cache
 .classpath

@@ -20,7 +20,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 module.exports = (grunt) ->
 
   grunt.loadNpmTasks('grunt-livescript')
-  grunt.loadNpmTasks('grunt-typescript')
+  grunt.loadNpmTasks('grunt-ts') # typescript
   grunt.loadNpmTasks('grunt-wrap')
   grunt.loadNpmTasks('grunt-contrib-concat')
   grunt.loadNpmTasks('grunt-contrib-watch')
@@ -242,14 +242,15 @@ module.exports = (grunt) ->
         }]
       }
     },
-    typescript: {
+    ts: { # typescript
       all:
-        src: [ 'client/**/*.ts' ]
-        dest: 'target/client/all-typescript.js'
+        src: ['client/forum/**/*.ts']
+        html: ['client/forum/**/*.html']
+        out: 'target/client/all-typescript.js'
         options:
           target: 'es5'
           sourceMap: true
-          comments: true
+          removeComments: false
           newLine: 'lf'
     },
     stylus: {
@@ -557,8 +558,8 @@ module.exports = (grunt) ->
     }
   })
 
-  grunt.registerTask('default', ['livescript', 'typescript', 'wrap', 'stylus', 'concat'])
-  grunt.registerTask('release', ['livescript', 'typescript', 'wrap', 'stylus', 'concat', 'uglify'])
+  grunt.registerTask('default', ['livescript', 'ts', 'wrap', 'stylus', 'concat'])
+  grunt.registerTask('release', ['livescript', 'ts', 'wrap', 'stylus', 'concat', 'uglify'])
 
 
 # vim: et ts=2 sw=2 list

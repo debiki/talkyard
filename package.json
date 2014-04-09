@@ -24,6 +24,6 @@
     "grunt-contrib-watch": "~0.4.3",
     "grunt-contrib-uglify": "~0.2.0",
     "grunt-contrib-stylus": "~0.8.0",
-    "grunt-typescript": "~0.2.4"
+    "grunt-ts": "^1.10.0"
   }
 }
