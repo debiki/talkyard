@@ -24,8 +24,10 @@
     "grunt-contrib-watch": "~0.4.3",
     "grunt-contrib-uglify": "~0.2.0",
     "grunt-contrib-stylus": "~0.8.0",
-    "grunt-ts": "^1.10.0",
     "gulp": "^3.6.0",
-    "gulp-grunt": "^0.4.1"
+    "gulp-grunt": "^0.4.1",
+    "gulp-tsc": "^0.7.0",
+    "gulp-livescript": "^0.2.1",
+    "gulp-watch": "^0.5.3"
   }
 }

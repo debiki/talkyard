@@ -27,27 +27,52 @@
 
 
 var gulp = require('gulp');
-var templateCache = require('gulp-angular-templatecache');
 require('gulp-grunt')(gulp);
+var templateCache = require('gulp-angular-templatecache');
+var typeScript = require('gulp-tsc');
+var liveScript = require('gulp-livescript');
+var concat = require('gulp-concat');
 
 
-gulp.task('default', function () {
+gulp.task('compile-livescript', function () {
+  return gulp.src('client/**/*.ls')
+    .pipe(liveScript())
+    .pipe(gulp.dest('./target/client/'));
+  console.log('lsc done?');
+});
 
-  /*
-  // Compile typescript.
-  gulp.src(['src/**          /*.ts'])
-    .pipe(typescript())
-    .pipe(gulp.dest('dest/')); */
 
-  // Compile AngularJS templates.
-  gulp.src('client/forum/html/**/*.html')
+gulp.task('compile-typescript', function () {
+  return gulp.src(['client/forum/**/*.ts'])
+    .pipe(typeScript({
+      target: 'ES5',
+      allowBool: true,
+      tmpDir: 'target/client/',
+      out: 'all-typescript.js'
+    }))
+    .pipe(gulp.dest('target/client/'));
+  console.log('tsc done?');
+});
+
+
+gulp.task('compile-angularjs-templates', function () {
+  return gulp.src('client/forum/html/**/*.html')
       .pipe(templateCache({
         module: 'ForumApp',
         filename: 'all-angular-templates.js'
       }))
       .pipe(gulp.dest('target/client/'));
+  console.log('ang done?');
+});
 
-  gulp.run('grunt-default');
+
+gulp.task('run-grunt',
+    ['compile-livescript', 'compile-typescript', 'compile-angularjs-templates'],
+    function () {
+  return gulp.run('grunt-default');
+});
+
+gulp.task('default', ['run-grunt'], function () {
 });
 
 

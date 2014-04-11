@@ -21,8 +21,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 module.exports = (grunt) ->
 
-  grunt.loadNpmTasks('grunt-livescript')
-  grunt.loadNpmTasks('grunt-ts') # typescript
   grunt.loadNpmTasks('grunt-wrap')
   grunt.loadNpmTasks('grunt-contrib-concat')
   grunt.loadNpmTasks('grunt-contrib-watch')
@@ -230,33 +228,6 @@ module.exports = (grunt) ->
 
   grunt.initConfig({
     pkg: '<json:package.json>',
-    livescript: {
-      options: {
-        # See <https://github.com/DavidSouther/grunt-livescript/blob/master/
-        #        tasks/livescript.js>
-      },
-      server: {
-        files: [{
-          # Transpiled files will appear in target/client/**/*.js.
-          expand: true,
-          cwd: 'client/',
-          src: '**/*.ls',
-          dest: 'target/client',
-          ext: '.js'
-        }]
-      }
-    },
-    ts: { # typescript
-      all:
-        src: ['client/forum/scripts/*.ts']
-        html: ['client/forum/html/*.html']
-        out: 'target/client/all-typescript.js'
-        options:
-          target: 'es5'
-          sourceMap: true
-          removeComments: false
-          newLine: 'lf'
-    },
     stylus: {
       serverMax: {
         options: {
@@ -289,7 +260,7 @@ module.exports = (grunt) ->
         src: 'client/**/*.js',
         # Files will appear in target/client/**/*.js — apparently, 
         # the whole `src` path is appendet to `dest` (unlike the
-        # `livescript` task above, which only appends the `/**/*.ls`
+        # `livescript` task in gulpfile.js, which only appends the `/**/*.ls`
         # path to the destination path).
         dest: 'target/',
         wrapper: ['(function() {\n', '\n}).call(this);']
@@ -563,8 +534,8 @@ module.exports = (grunt) ->
     }
   })
 
-  grunt.registerTask('default', ['livescript', 'ts', 'wrap', 'stylus', 'concat'])
-  grunt.registerTask('release', ['livescript', 'ts', 'wrap', 'stylus', 'concat', 'uglify'])
+  grunt.registerTask('default', ['wrap', 'stylus', 'concat'])
+  grunt.registerTask('release', ['wrap', 'stylus', 'concat', 'uglify'])
 
 
 # vim: et ts=2 sw=2 list
