@@ -26,6 +26,7 @@
 interface IForumNavBarScope extends ng.IScope {
   mv: ForumNavBarController;
   $state: any;
+  changeCategory(newCategorySlug: string);
 }
 
 
@@ -36,13 +37,7 @@ class ForumNavBarController {
   }
 
   public changeCategory(newCategorySlug: string) {
-    var nextState = '.';
-    // The 'categories' and 'index' states cannot be combined with any category,
-    // so switch to the 'latest' state instead.
-    if (this.$scope.$state.is('categories') || this.$scope.$state.is('index')) {
-      nextState = 'latest';
-    }
-    this.$scope.$state.go(nextState, { categoryPath: newCategorySlug });
+    this.$scope.changeCategory(newCategorySlug);
   }
 
 }

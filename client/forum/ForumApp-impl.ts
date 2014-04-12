@@ -20,6 +20,12 @@
 /// <reference path="list-topics/ListTopicsController.ts" />
 /// <reference path="list-categories/ListCategoriesController.ts" />
 
+/**
+ * This file sets up routing and adds forum category state and selection
+ * functions to $rootScope. I'm not sure if the category related things ought to
+ * be broken out to a service instead?
+ */
+
 //------------------------------------------------------------------------------
    module forum {
 //------------------------------------------------------------------------------
@@ -55,7 +61,8 @@ function configForumApp($stateProvider, $urlRouterProvider) {
     .state('categories', {
       url: '/categories',
       templateUrl: 'list-categories/list-categories.html',
-      controller: 'ListCategoriesController'
+      controller: 'ListCategoriesController',
+      onEnter: clearCurrentCategories
     })
 };
 
@@ -73,14 +80,30 @@ function runForumApp($rootScope, $state, $stateParams) {
 
 /**
  * The server includes info on any blog or forum categories so we won't need
- * to ask for that separately. This function parses that data and adds the
- * category data to the $rootScope.
+ * to ask for that separately. This function parses that data and adds  it to the
+ * $rootScope. And also adds a function `$rootScope.changeCategory(newCategorySlug)`.
  */
 function setupCategories($rootScope) {
   var pageDataText = $('#dw-page-data').text() || '{}'
   var pageDataJson = JSON.parse(pageDataText)
   $rootScope.categories = pageDataJson.categories || []
+
+  $rootScope.changeCategory = function(newCategorySlug: string) {
+    var nextState = '.';
+    // The 'categories' and 'index' states cannot be combined with any category,
+    // so switch to the 'latest' state instead.
+    if ($rootScope.$state.is('categories') || $rootScope.$state.is('index')) {
+      nextState = 'latest';
+    }
+    $rootScope.$state.go(nextState, { categoryPath: newCategorySlug });
+  }
 }
+
+
+var clearCurrentCategories = ['$rootScope', function($rootScope) {
+  $rootScope.currentMainCategory = null;
+  $rootScope.currentSubCategory = null;
+}];
 
 
 /**
@@ -108,6 +131,10 @@ var updateCurrentCategories = ['$rootScope', '$stateParams', function($rootScope
   }
 
   // In the future: if $categoryPath.length > 1, then update $rootScope.currentSubCategory.
+
+  if (!$rootScope.currentMainCategory) {
+    $rootScope.changeCategory('');
+  }
 }];
 
 

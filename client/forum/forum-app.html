@@ -2,7 +2,7 @@
   <div class="dw-forum-actionbar clearfix">
     <div class="dw-main-category-dropdown btn-group">
       <a class="btn btn-default dropdown-toggle" data-toggle="dropdown" href="#">
-        {{ $state.currentMainCategory.name || "All Categories" }} <span class="caret"></span>
+        {{ currentMainCategory.name || "All Categories" }} <span class="caret"></span>
       </a>
       <ul class="dropdown-menu">
         <li ng-repeat="category in categories">
