@@ -48,43 +48,6 @@
   </noscript>noscript>
   *@
 
-  <div ng-controller="ForumNavBarController" ng-cloak>
-  <div class="dw-forum-actionbar clearfix">
-    <div class="dw-main-category-dropdown btn-group">
-      <a class="btn btn-default dropdown-toggle" data-toggle="dropdown" href="#">
-        {{ $state.params.categoryPath || "All Categories" }} <span class="caret"></span>
-      </a>
-      <ul class="dropdown-menu">
-        <li ng-repeat="category in categories">
-          <a ng-click="mv.changeCategory(category.name)">{{ category.name }}</a>
-        </li>
-      </ul>
-    </div>
-
-    <ul class="nav nav-pills">
-      <li ng-class="{active: $state.includes('latest') || $state.includes('index')}"
-          title="View topics with recent posts">
-        <a ui-sref="latest($stateParams)">Latest</a>
-      </li>
-      <li ng-class="{active: $state.includes('top')}" title="View popular topics">
-        <a ui-sref="top($stateParams)">Top</a>
-      </li>
-      <li ng-class="{active: $state.includes('categories')}" title="View categories">
-        <a ui-sref="categories">Categories</a>
-      </li>
-    </ul>
-
-    <button ng-show="!$state.includes('categories')"
-            class="btn btn-default">Create Topic</button>
-    <button ng-show="$state.includes('categories')"
-            class="btn btn-default">Create Category</button>
-  </div>
-
-  <div class="row">
-    <div class="col-xs-12">
-      <div class="well" ui-view></div>
-    </div>
-  </div>
-  </div>
+  <div ng-include="'forum.app.html'"></div>
 }
 
