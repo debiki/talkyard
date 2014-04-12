@@ -148,8 +148,8 @@ object ApplicationBuild extends Build {
   // Starts Grunt on play run. (Grunt transpiles Livescript to Javascript and bundles
   // minified Javascript and CSS files.)
   def startGruntTask = (_: jn.InetSocketAddress) => {
-    println("Starting `grunt watch` to build Javascript and CSS...")
-    gruntProcess = Some(Process("grunt watch").run)
+    println("Starting `gulp watch` to build Javascript and CSS...")
+    gulpProcess = Some(Process("gulp watch").run)
   }
 
   // Stop grunt when `play run` stops.
@@ -160,12 +160,12 @@ object ApplicationBuild extends Build {
   // there were no JNotifyException_linux errors so perhaps it's just my machine
   // that's stupid.
   def stopGruntTask = () => {
-    println("echo 'Stopping `grunt watch`...")
-    gruntProcess.map(p => p.destroy())
-    gruntProcess = None
+    println("echo 'Stopping `gulp watch`...")
+    gulpProcess.map(p => p.destroy())
+    gulpProcess = None
   }
 
-  private var gruntProcess: Option[Process] = None
+  private var gulpProcess: Option[Process] = None
 
 
 

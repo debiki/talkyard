@@ -23,7 +23,6 @@ module.exports = (grunt) ->
 
   grunt.loadNpmTasks('grunt-wrap')
   grunt.loadNpmTasks('grunt-contrib-concat')
-  grunt.loadNpmTasks('grunt-contrib-watch')
   grunt.loadNpmTasks('grunt-contrib-uglify')
 
   copyrightAndLicenseBanner = """
@@ -460,31 +459,6 @@ module.exports = (grunt) ->
         src: ['*.js', '!*.min.js'],
         dest: 'public/res/',
         ext: '.min.js',
-      }
-    },
-    watch: {
-      options: {
-        interrupt: true
-      },
-      server: {
-        files: [
-            'client/**/*.js',
-            'client/**/*.ls',
-            'client/**/*.ts',
-            'client/**/*.html',
-            'client/**/*.styl'],
-        tasks: ['default']
-      },
-      themes: {
-        files: [
-            'app/views/themes/**/*.js',
-            'app/views/themes/**/*.css']
-        # tasks: ['???'],
-      },
-      embeddedComments: {
-        files: [
-            'client/**/*.js',
-            'client/**/*.ls']
       }
     }
   })

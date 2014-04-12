@@ -140,6 +140,26 @@ gulp.task('compile-stylus', function () {
 });
 
 
+gulp.task('watch', function() {
+
+  function logChangeFn(fileType) {
+    return function(event) {
+      console.log(fileType + ' file '+ event.path +' was '+ event.type +', running tasks...');
+    };
+  };
+
+  gulp.watch('client/forum/**/*.html', ['run-grunt']).on('change', logChangeFn('HTML'));
+  gulp.watch('client/forum/**/*.ts', ['run-grunt']).on('change', logChangeFn('TypeScript'));
+  gulp.watch('client/**/*.ls', ['run-grunt']).on('change', logChangeFn('LiveScript'));
+  gulp.watch('client/**/*.js', ['run-grunt']).on('change', logChangeFn('Javascript'));
+  gulp.watch('client/**/*.styl', ['compile-stylus']).on('change', logChangeFn('Stylus'));
+
+  // what about theme files,?
+  //   app/views/themes/** /*.js
+  //   app/views/themes/** /*.css
+});
+
+
 gulp.task('default', ['run-grunt', 'compile-stylus'], function () {
 });
 
