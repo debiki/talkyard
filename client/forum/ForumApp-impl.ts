@@ -42,17 +42,17 @@ function configForumApp($stateProvider, $urlRouterProvider) {
     })
     .state('latest', {
       url: '/latest/*categoryPath',
-      templateUrl: 'forum.listTopicsTemplate.html',
+      templateUrl: 'list-topics/list-topics.html',
       controller: 'ListTopicsController'
     })
     .state('top', {
       url: '/top/*categoryPath',
-      templateUrl: 'forum.listTopicsTemplate.html',
+      templateUrl: 'list-topics/list-topics.html',
       controller: 'ListTopicsController'
     })
     .state('categories', {
       url: '/categories',
-      templateUrl: 'forum.listCategoriesTemplate.html',
+      templateUrl: 'list-categories/list-categories.html',
       controller: 'ListCategoriesController'
     })
 };

@@ -67,7 +67,7 @@ gulp.task('compile-typescript', function () {
 
 
 gulp.task('compile-angularjs-templates', function () {
-  return gulp.src('client/forum/html/**/*.html')
+  return gulp.src('client/forum/**/*.html')
       .pipe(templateCache({
         module: 'ForumApp',
         filename: 'all-angular-templates.js'
