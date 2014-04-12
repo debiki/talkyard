@@ -19,8 +19,6 @@
 /// <reference path="ForumApp.ts" />
 /// <reference path="ListTopicsController.ts" />
 /// <reference path="ListCategoriesController.ts" />
-/// <reference path="../html/forum.listTopicsTemplate.html.ts" />
-/// <reference path="../html/forum.listCategoriesTemplate.html.ts" />
 
 //------------------------------------------------------------------------------
    module forum {
