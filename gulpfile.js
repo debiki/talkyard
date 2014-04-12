@@ -35,8 +35,17 @@ var stylus = require('gulp-stylus');
 var minifyCSS = require('gulp-minify-css');
 var concat = require('gulp-concat');
 var header = require('gulp-header');
+var wrap = require('gulp-wrap');
 
 var watchAndLiveForever = false;
+
+
+gulp.task('wrap-javascript', function () {
+  // Prevent Javascript variables from polluting the global scope.
+  return gulp.src('client/**/*.js')
+    .pipe(wrap('(function() {\n<%= contents %>\n}).call(this);'))
+    .pipe(gulp.dest('./target/client/'));
+});
 
 
 gulp.task('compile-livescript', function () {
@@ -77,7 +86,7 @@ gulp.task('compile-angularjs-templates', function () {
 
 
 
-gulp.task('run-grunt', function () {
+gulp.task('wrap-javascript-run-grunt', ['wrap-javascript'], function () {
   return gulp.run('grunt-default');
 });
 
@@ -94,7 +103,7 @@ gulp.task('compile-angularjs-templates-run-grunt', ['compile-angularjs-templates
 });
 
 gulp.task('compile-all-run-grunt',
-    ['compile-livescript', 'compile-typescript', 'compile-angularjs-templates'],
+    ['wrap-javascript', 'compile-livescript', 'compile-typescript', 'compile-angularjs-templates'],
     function () {
   return gulp.run('grunt-default');
 });
@@ -178,7 +187,7 @@ gulp.task('watch', function() {
   gulp.watch('client/forum/**/*.html', ['compile-angularjs-templates-run-grunt']).on('change', logChangeFn('HTML'));
   gulp.watch('client/forum/**/*.ts', ['compile-typescript-run-grunt']).on('change', logChangeFn('TypeScript'));
   gulp.watch('client/**/*.ls', ['compile-livescript-run-grunt']).on('change', logChangeFn('LiveScript'));
-  gulp.watch('client/**/*.js', ['run-grunt']).on('change', logChangeFn('Javascript'));
+  gulp.watch('client/**/*.js', ['wrap-javascript-run-grunt']).on('change', logChangeFn('Javascript'));
   gulp.watch('client/**/*.styl', ['compile-stylus']).on('change', logChangeFn('Stylus'));
 
   // what about theme files,?

@@ -21,7 +21,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 module.exports = (grunt) ->
 
-  grunt.loadNpmTasks('grunt-wrap')
   grunt.loadNpmTasks('grunt-contrib-concat')
   grunt.loadNpmTasks('grunt-contrib-uglify')
 
@@ -209,17 +208,6 @@ module.exports = (grunt) ->
 
   grunt.initConfig({
     pkg: '<json:package.json>',
-    wrap: {
-      server_javascript: {
-        src: 'client/**/*.js',
-        # Files will appear in target/client/**/*.js — apparently, 
-        # the whole `src` path is appendet to `dest` (unlike the
-        # `livescript` task in gulpfile.js, which only appends the `/**/*.ls`
-        # path to the destination path).
-        dest: 'target/',
-        wrapper: ['(function() {\n', '\n}).call(this);']
-      }
-    },
     concat: {
       server: {
        options: {
@@ -463,8 +451,8 @@ module.exports = (grunt) ->
     }
   })
 
-  grunt.registerTask('default', ['wrap', 'concat'])
-  grunt.registerTask('release', ['wrap', 'concat', 'uglify'])
+  grunt.registerTask('default', ['concat'])
+  grunt.registerTask('release', ['concat', 'uglify'])
 
 
 # vim: et ts=2 sw=2 list
