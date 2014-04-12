@@ -1,4 +1,6 @@
 ###
+(Run `gulp` instead, it'll call `grunt` for you.)
+
 Build file for client scripts and styles. See http://gruntjs.com/
 Copyright (C) 2012-2013 Kaj Magnus Lindberg (born 1979)
 
@@ -19,13 +21,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 module.exports = (grunt) ->
 
-  grunt.loadNpmTasks('grunt-livescript')
-  grunt.loadNpmTasks('grunt-ts') # typescript
   grunt.loadNpmTasks('grunt-wrap')
   grunt.loadNpmTasks('grunt-contrib-concat')
-  grunt.loadNpmTasks('grunt-contrib-watch')
   grunt.loadNpmTasks('grunt-contrib-uglify')
-  grunt.loadNpmTasks('grunt-contrib-stylus')
 
   copyrightAndLicenseBanner = """
       /*!
@@ -117,6 +115,7 @@ module.exports = (grunt) ->
       'target/client/page/scripts/debiki-create-page.js',
       'target/client/util/scripts/debiki-utils.js',
       'target/client/all-typescript.js',
+      'target/client/all-angular-templates.js',
       'target/client/page/scripts/debiki.js']
 
   debikiTouchFiles = [
@@ -183,6 +182,7 @@ module.exports = (grunt) ->
       'target/client/page/scripts/debiki-page-path.js',
       'target/client/page/scripts/debiki-create-page.js',
       'target/client/util/scripts/debiki-utils.js',
+      'target/client/all-angular-templates.js',
       'target/client/all-typescript.js',
       'target/client/page/scripts/debiki.js']
 
@@ -206,86 +206,15 @@ module.exports = (grunt) ->
       'target/client/page/scripts/debiki-utterscroll-init-tips.js',
       'target/client/embedded-comments/scripts/iframe-parent.js']
 
-  stylusFiles = [
-      'public/res/jquery-ui/jquery-ui-1.9.2.custom.css',
-      'client/page/styles/debiki.styl',
-      'client/page/styles/tips.styl',
-      'client/page/styles/debiki-play.styl',
-      'client/page/styles/forum.styl']
-
-  iframeParentStylusFiles = [
-      'client/page/styles/tips.styl']
-
-  stylusAdminDartFiles = [
-      'client/admin-dart/styles/*.styl']
-
-  stylusAdminFiles = [
-      'client/admin/styles/admin-theme.styl',
-      'client/admin/styles/admin-page.styl',
-      'client/util/styles/debiki-shared.styl']
 
   grunt.initConfig({
     pkg: '<json:package.json>',
-    livescript: {
-      options: {
-        # See <https://github.com/DavidSouther/grunt-livescript/blob/master/
-        #        tasks/livescript.js>
-      },
-      server: {
-        files: [{
-          # Transpiled files will appear in target/client/**/*.js.
-          expand: true,
-          cwd: 'client/',
-          src: '**/*.ls',
-          dest: 'target/client',
-          ext: '.js'
-        }]
-      }
-    },
-    ts: { # typescript
-      all:
-        src: ['client/forum/scripts/*.ts']
-        html: ['client/forum/html/*.html']
-        out: 'target/client/all-typescript.js'
-        options:
-          target: 'es5'
-          sourceMap: true
-          removeComments: false
-          newLine: 'lf'
-    },
-    stylus: {
-      serverMax: {
-        options: {
-          compress: false,
-          linenos: true,
-          firebug: true
-        },
-        files: {
-          'public/res/combined-debiki.css': stylusFiles,
-          'public/res/debiki-embedded-comments.css': iframeParentStylusFiles,
-          'client/admin-dart/admin-dart/web/styles.css': stylusAdminDartFiles,
-          'public/res/admin.css': stylusAdminFiles
-        }
-      },
-      serverMin: {
-        options: {
-          compress: true,
-          banner: copyrightAndLicenseBanner
-        },
-        files: {
-          'public/res/combined-debiki.min.css': stylusFiles,
-          'public/res/debiki-embedded-comments.min.css': iframeParentStylusFiles,
-          'client/admin-dart/admin-dart/web/styles.min.css': stylusAdminDartFiles,
-          'public/res/admin.min.css': stylusAdminFiles
-        }
-      }
-    },
     wrap: {
       server_javascript: {
         src: 'client/**/*.js',
         # Files will appear in target/client/**/*.js — apparently, 
         # the whole `src` path is appendet to `dest` (unlike the
-        # `livescript` task above, which only appends the `/**/*.ls`
+        # `livescript` task in gulpfile.js, which only appends the `/**/*.ls`
         # path to the destination path).
         dest: 'target/',
         wrapper: ['(function() {\n', '\n}).call(this);']
@@ -531,36 +460,11 @@ module.exports = (grunt) ->
         dest: 'public/res/',
         ext: '.min.js',
       }
-    },
-    watch: {
-      options: {
-        interrupt: true
-      },
-      server: {
-        files: [
-            'client/**/*.js',
-            'client/**/*.ls',
-            'client/**/*.ts',
-            'client/**/*.html',
-            'client/**/*.styl'],
-        tasks: ['default']
-      },
-      themes: {
-        files: [
-            'app/views/themes/**/*.js',
-            'app/views/themes/**/*.css']
-        # tasks: ['???'],
-      },
-      embeddedComments: {
-        files: [
-            'client/**/*.js',
-            'client/**/*.ls']
-      }
     }
   })
 
-  grunt.registerTask('default', ['livescript', 'ts', 'wrap', 'stylus', 'concat'])
-  grunt.registerTask('release', ['livescript', 'ts', 'wrap', 'stylus', 'concat', 'uglify'])
+  grunt.registerTask('default', ['wrap', 'concat'])
+  grunt.registerTask('release', ['wrap', 'concat', 'uglify'])
 
 
 # vim: et ts=2 sw=2 list

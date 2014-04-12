@@ -19,8 +19,6 @@
 /// <reference path="ForumApp.ts" />
 /// <reference path="ListTopicsController.ts" />
 /// <reference path="ListCategoriesController.ts" />
-/// <reference path="../html/forum.listTopicsTemplate.html.ts" />
-/// <reference path="../html/forum.listCategoriesTemplate.html.ts" />
 
 //------------------------------------------------------------------------------
    module forum {
@@ -44,17 +42,17 @@ function configForumApp($stateProvider, $urlRouterProvider) {
     })
     .state('latest', {
       url: '/latest/*categoryPath',
-      template: forum.listTopicsTemplate.html,
+      templateUrl: 'forum.listTopicsTemplate.html',
       controller: 'ListTopicsController'
     })
     .state('top', {
       url: '/top/*categoryPath',
-      template: forum.listTopicsTemplate.html,
+      templateUrl: 'forum.listTopicsTemplate.html',
       controller: 'ListTopicsController'
     })
     .state('categories', {
       url: '/categories',
-      template: forum.listCategoriesTemplate.html,
+      templateUrl: 'forum.listCategoriesTemplate.html',
       controller: 'ListCategoriesController'
     })
 };
