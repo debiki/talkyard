@@ -17,8 +17,8 @@
 
 /// <reference path="typedefs/angularjs/angular.d.ts" />
 /// <reference path="ForumApp.ts" />
-/// <reference path="ListTopicsController.ts" />
-/// <reference path="ListCategoriesController.ts" />
+/// <reference path="list-topics/ListTopicsController.ts" />
+/// <reference path="list-categories/ListCategoriesController.ts" />
 
 //------------------------------------------------------------------------------
    module forum {
