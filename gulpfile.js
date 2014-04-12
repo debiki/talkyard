@@ -36,25 +36,33 @@ var minifyCSS = require('gulp-minify-css');
 var concat = require('gulp-concat');
 var header = require('gulp-header');
 
+var watchAndLiveForever = false;
+
 
 gulp.task('compile-livescript', function () {
   return gulp.src('client/**/*.ls')
     .pipe(liveScript())
     .pipe(gulp.dest('./target/client/'));
-  console.log('lsc done?');
 });
 
 
 gulp.task('compile-typescript', function () {
-  return gulp.src(['client/forum/**/*.ts'])
+  var stream = gulp.src(['client/forum/**/*.ts'])
+    //.pipe(cache('typescript'))
     .pipe(typeScript({
       target: 'ES5',
       allowBool: true,
       tmpDir: 'target/client/',
       out: 'all-typescript.js'
-    }))
-    .pipe(gulp.dest('target/client/'));
-  console.log('tsc done?');
+    }));
+
+  if (watchAndLiveForever) {
+    stream.on('error', function() {
+      console.log('\n!!! Error compiling TypeScript !!!\n');
+    });
+  }
+
+  return stream.pipe(gulp.dest('target/client/'));
 });
 
 
@@ -65,7 +73,6 @@ gulp.task('compile-angularjs-templates', function () {
         filename: 'all-angular-templates.js'
       }))
       .pipe(gulp.dest('target/client/'));
-  console.log('ang done?');
 });
 
 
@@ -159,6 +166,8 @@ gulp.task('compile-stylus', function () {
 
 
 gulp.task('watch', function() {
+
+  watchAndLiveForever = true;
 
   function logChangeFn(fileType) {
     return function(event) {
