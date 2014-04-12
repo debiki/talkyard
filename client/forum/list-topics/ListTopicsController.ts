@@ -49,9 +49,6 @@ class ListTopicsController {
   constructor(private $scope: ListTopicsScope, $stateParams) {
     $scope.mv = this;
 
-    var categories = $stateParams.categoryPath ? $stateParams.categoryPath.split('/') : [];
-    console.log('ListTopicsController, categories: ' + categories);
-
     // ... load topics ... .done(function() {
     $scope.topics = [
       (() => {

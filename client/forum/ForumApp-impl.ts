@@ -43,12 +43,14 @@ function configForumApp($stateProvider, $urlRouterProvider) {
     .state('latest', {
       url: '/latest/*categoryPath',
       templateUrl: 'list-topics/list-topics.html',
-      controller: 'ListTopicsController'
+      controller: 'ListTopicsController',
+      onEnter: updateCurrentCategories
     })
     .state('top', {
       url: '/top/*categoryPath',
       templateUrl: 'list-topics/list-topics.html',
-      controller: 'ListTopicsController'
+      controller: 'ListTopicsController',
+      onEnter: updateCurrentCategories
     })
     .state('categories', {
       url: '/categories',
@@ -65,7 +67,58 @@ function configForumApp($stateProvider, $urlRouterProvider) {
 function runForumApp($rootScope, $state, $stateParams) {
   $rootScope.$state = $state;
   $rootScope.$stateParams = $stateParams;
+  setupCategories($rootScope);
 };
+
+
+/**
+ * The server includes info on any blog or forum categories so we won't need
+ * to ask for that separately. This function parses that data and adds the
+ * category data to the $rootScope.
+ */
+function setupCategories($rootScope) {
+  var pageDataText = $('#dw-page-data').text() || '{}'
+  var pageDataJson = JSON.parse(pageDataText)
+  $rootScope.categories = pageDataJson.categories || []
+}
+
+
+/**
+ * Updates $rootScope.currentMainCategory and $rootScope.currentSubCategory given
+ * the categories listed in the URL.
+ */
+var updateCurrentCategories = ['$rootScope', '$stateParams', function($rootScope, $stateParams) {
+  var categoryPath = parseCategoryPath($stateParams.categoryPath);
+  console.log('$stateParams: ' + $stateParams);
+  console.log('$stateParams.categoryPath: ' + $stateParams.categoryPath);
+  console.log('cat path: ' + categoryPath);
+
+  $rootScope.currentMainCategory = null;
+  $rootScope.currentSubCategory = null;
+  if (categoryPath.length == 0)
+    return;
+
+  var categories = $rootScope.categories;
+  for (var i = 0; i < categories.length; ++i) {
+    var category = categories[i];
+    if (category.slug === categoryPath[0]) {
+      $rootScope.currentMainCategory = category;
+      break;
+    }
+  }
+
+  // In the future: if $categoryPath.length > 1, then update $rootScope.currentSubCategory.
+}];
+
+
+function parseCategoryPath(categoryPath: string): string[] {
+  var path = categoryPath;
+  if (!path || path.length == 0)
+    return [];
+
+  var paths = path.split('/');
+  return paths;
+}
 
 
 //------------------------------------------------------------------------------

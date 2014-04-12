@@ -35,14 +35,14 @@ class ForumNavBarController {
     $scope.mv = this;
   }
 
-  public changeCategory(newCategory: string) {
+  public changeCategory(newCategorySlug: string) {
     var nextState = '.';
     // The 'categories' and 'index' states cannot be combined with any category,
     // so switch to the 'latest' state instead.
     if (this.$scope.$state.is('categories') || this.$scope.$state.is('index')) {
       nextState = 'latest';
     }
-    this.$scope.$state.go(nextState, { categoryPath: newCategory });
+    this.$scope.$state.go(nextState, { categoryPath: newCategorySlug });
   }
 
 }

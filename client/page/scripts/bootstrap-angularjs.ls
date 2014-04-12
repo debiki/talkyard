@@ -77,12 +77,6 @@ findRootScope = ->
   $rootScope.clearCurrentUser = !->
     $rootScope.currentUser = void
 
-  # The server includes info on any blog or forum categories so we won't need
-  # to ask for that separately.
-  pageDataText = $('#dw-page-data').text() || '{}'
-  pageDataJson = JSON.parse(pageDataText)
-  $rootScope.categories = pageDataJson.categories || []
-
 
 /**
  * Executes `f($rootScope)` inside $rootScope.$apply.
