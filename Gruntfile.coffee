@@ -25,7 +25,6 @@ module.exports = (grunt) ->
   grunt.loadNpmTasks('grunt-contrib-concat')
   grunt.loadNpmTasks('grunt-contrib-watch')
   grunt.loadNpmTasks('grunt-contrib-uglify')
-  grunt.loadNpmTasks('grunt-contrib-stylus')
 
   copyrightAndLicenseBanner = """
       /*!
@@ -208,53 +207,9 @@ module.exports = (grunt) ->
       'target/client/page/scripts/debiki-utterscroll-init-tips.js',
       'target/client/embedded-comments/scripts/iframe-parent.js']
 
-  stylusFiles = [
-      'public/res/jquery-ui/jquery-ui-1.9.2.custom.css',
-      'client/page/styles/debiki.styl',
-      'client/page/styles/tips.styl',
-      'client/page/styles/debiki-play.styl',
-      'client/page/styles/forum.styl']
-
-  iframeParentStylusFiles = [
-      'client/page/styles/tips.styl']
-
-  stylusAdminDartFiles = [
-      'client/admin-dart/styles/*.styl']
-
-  stylusAdminFiles = [
-      'client/admin/styles/admin-theme.styl',
-      'client/admin/styles/admin-page.styl',
-      'client/util/styles/debiki-shared.styl']
 
   grunt.initConfig({
     pkg: '<json:package.json>',
-    stylus: {
-      serverMax: {
-        options: {
-          compress: false,
-          linenos: true,
-          firebug: true
-        },
-        files: {
-          'public/res/combined-debiki.css': stylusFiles,
-          'public/res/debiki-embedded-comments.css': iframeParentStylusFiles,
-          'client/admin-dart/admin-dart/web/styles.css': stylusAdminDartFiles,
-          'public/res/admin.css': stylusAdminFiles
-        }
-      },
-      serverMin: {
-        options: {
-          compress: true,
-          banner: copyrightAndLicenseBanner
-        },
-        files: {
-          'public/res/combined-debiki.min.css': stylusFiles,
-          'public/res/debiki-embedded-comments.min.css': iframeParentStylusFiles,
-          'client/admin-dart/admin-dart/web/styles.min.css': stylusAdminDartFiles,
-          'public/res/admin.min.css': stylusAdminFiles
-        }
-      }
-    },
     wrap: {
       server_javascript: {
         src: 'client/**/*.js',
@@ -534,8 +489,8 @@ module.exports = (grunt) ->
     }
   })
 
-  grunt.registerTask('default', ['wrap', 'stylus', 'concat'])
-  grunt.registerTask('release', ['wrap', 'stylus', 'concat', 'uglify'])
+  grunt.registerTask('default', ['wrap', 'concat'])
+  grunt.registerTask('release', ['wrap', 'concat', 'uglify'])
 
 
 # vim: et ts=2 sw=2 list

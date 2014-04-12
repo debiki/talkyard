@@ -31,6 +31,8 @@ require('gulp-grunt')(gulp);
 var templateCache = require('gulp-angular-templatecache');
 var typeScript = require('gulp-tsc');
 var liveScript = require('gulp-livescript');
+var stylus = require('gulp-stylus');
+var minifyCSS = require('gulp-minify-css');
 var concat = require('gulp-concat');
 
 
@@ -72,7 +74,64 @@ gulp.task('run-grunt',
   return gulp.run('grunt-default');
 });
 
-gulp.task('default', ['run-grunt'], function () {
+
+gulp.task('compile-stylus', function () {
+
+  var stylusOpts = {
+    linenos: true,
+    // Currently need to specify `filename: 'stdin'` because of a bug in gulp-stylus or stylus
+    // when specifying `linenos: true`, see:
+    //    https://github.com/stevelacy/gulp-stylus/issues/30#issuecomment-40267124
+    ///filename: 'stdin'
+    // Could include:  use: [nib()]
+  };
+
+  gulp.src([
+      'public/res/jquery-ui/jquery-ui-1.9.2.custom.css',
+      'client/page/styles/debiki.styl',
+      'client/page/styles/minimap.styl',
+      'client/page/styles/tips.styl',
+      'client/page/styles/debiki-play.styl',
+      'client/page/styles/forum.styl'])
+    .pipe(stylus(stylusOpts))
+    .pipe(concat('combined-debiki.css'))
+    .pipe(gulp.dest('public/res/'))
+    .pipe(concat('combined-debiki.min.css'))
+    .pipe(minifyCSS())
+    .pipe(gulp.dest('public/res/'));
+
+  gulp.src([
+      'client/page/styles/tips.styl'])
+    .pipe(stylus(stylusOpts))
+    .pipe(concat('debiki-embedded-comments.css'))
+    .pipe(gulp.dest('public/res/'))
+    .pipe(minifyCSS())
+    .pipe(concat('debiki-embedded-comments.min.css'))
+    .pipe(gulp.dest('public/res/'));
+
+  gulp.src([
+      'client/admin-dart/styles/*.styl'])
+    .pipe(stylus(stylusOpts))
+    .pipe(concat('styles.css'))
+    .pipe(gulp.dest('client/admin-dart/admin-dart/web/'))
+    .pipe(minifyCSS())
+    .pipe(concat('styles.min.css'))
+    .pipe(gulp.dest('client/admin-dart/admin-dart/web/'));
+
+  gulp.src([
+      'client/admin/styles/admin-theme.styl',
+      'client/admin/styles/admin-page.styl',
+      'client/util/styles/debiki-shared.styl'])
+    .pipe(stylus(stylusOpts))
+    .pipe(concat('admin.css'))
+    .pipe(gulp.dest('public/res/'))
+    .pipe(minifyCSS())
+    .pipe(concat('admin.min.css'))
+    .pipe(gulp.dest('public/res/'));
+});
+
+
+gulp.task('default', ['run-grunt', 'compile-stylus'], function () {
 });
 
 
