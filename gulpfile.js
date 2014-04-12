@@ -69,11 +69,29 @@ gulp.task('compile-angularjs-templates', function () {
 });
 
 
-gulp.task('run-grunt',
+
+gulp.task('run-grunt', function () {
+  return gulp.run('grunt-default');
+});
+
+gulp.task('compile-livescript-run-grunt', ['compile-livescript'], function () {
+  return gulp.run('grunt-default');
+});
+
+gulp.task('compile-typescript-run-grunt', ['compile-typescript'], function () {
+  return gulp.run('grunt-default');
+});
+
+gulp.task('compile-angularjs-templates-run-grunt', ['compile-angularjs-templates'], function () {
+  return gulp.run('grunt-default');
+});
+
+gulp.task('compile-all-run-grunt',
     ['compile-livescript', 'compile-typescript', 'compile-angularjs-templates'],
     function () {
   return gulp.run('grunt-default');
 });
+
 
 
 gulp.task('compile-stylus', function () {
@@ -148,9 +166,9 @@ gulp.task('watch', function() {
     };
   };
 
-  gulp.watch('client/forum/**/*.html', ['run-grunt']).on('change', logChangeFn('HTML'));
-  gulp.watch('client/forum/**/*.ts', ['run-grunt']).on('change', logChangeFn('TypeScript'));
-  gulp.watch('client/**/*.ls', ['run-grunt']).on('change', logChangeFn('LiveScript'));
+  gulp.watch('client/forum/**/*.html', ['compile-angularjs-templates-run-grunt']).on('change', logChangeFn('HTML'));
+  gulp.watch('client/forum/**/*.ts', ['compile-typescript-run-grunt']).on('change', logChangeFn('TypeScript'));
+  gulp.watch('client/**/*.ls', ['compile-livescript-run-grunt']).on('change', logChangeFn('LiveScript'));
   gulp.watch('client/**/*.js', ['run-grunt']).on('change', logChangeFn('Javascript'));
   gulp.watch('client/**/*.styl', ['compile-stylus']).on('change', logChangeFn('Stylus'));
 
@@ -160,7 +178,7 @@ gulp.task('watch', function() {
 });
 
 
-gulp.task('default', ['run-grunt', 'compile-stylus'], function () {
+gulp.task('default', ['compile-all-run-grunt', 'compile-stylus'], function () {
 });
 
 
