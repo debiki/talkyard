@@ -34,6 +34,7 @@ var liveScript = require('gulp-livescript');
 var stylus = require('gulp-stylus');
 var minifyCSS = require('gulp-minify-css');
 var concat = require('gulp-concat');
+var header = require('gulp-header');
 
 
 gulp.task('compile-livescript', function () {
@@ -86,6 +87,10 @@ gulp.task('compile-stylus', function () {
     // Could include:  use: [nib()]
   };
 
+  var minifyOpts = {
+    keepSpecialComments: 0
+  };
+
   gulp.src([
       'public/res/jquery-ui/jquery-ui-1.9.2.custom.css',
       'client/page/styles/debiki.styl',
@@ -96,8 +101,9 @@ gulp.task('compile-stylus', function () {
     .pipe(stylus(stylusOpts))
     .pipe(concat('combined-debiki.css'))
     .pipe(gulp.dest('public/res/'))
+    .pipe(minifyCSS(minifyOpts))
+    .pipe(header(copyrightAndLicenseBanner))
     .pipe(concat('combined-debiki.min.css'))
-    .pipe(minifyCSS())
     .pipe(gulp.dest('public/res/'));
 
   gulp.src([
@@ -105,7 +111,8 @@ gulp.task('compile-stylus', function () {
     .pipe(stylus(stylusOpts))
     .pipe(concat('debiki-embedded-comments.css'))
     .pipe(gulp.dest('public/res/'))
-    .pipe(minifyCSS())
+    .pipe(minifyCSS(minifyOpts))
+    .pipe(header(copyrightAndLicenseBanner))
     .pipe(concat('debiki-embedded-comments.min.css'))
     .pipe(gulp.dest('public/res/'));
 
@@ -114,7 +121,8 @@ gulp.task('compile-stylus', function () {
     .pipe(stylus(stylusOpts))
     .pipe(concat('styles.css'))
     .pipe(gulp.dest('client/admin-dart/admin-dart/web/'))
-    .pipe(minifyCSS())
+    .pipe(minifyCSS(minifyOpts))
+    .pipe(header(copyrightAndLicenseBanner))
     .pipe(concat('styles.min.css'))
     .pipe(gulp.dest('client/admin-dart/admin-dart/web/'));
 
@@ -125,7 +133,8 @@ gulp.task('compile-stylus', function () {
     .pipe(stylus(stylusOpts))
     .pipe(concat('admin.css'))
     .pipe(gulp.dest('public/res/'))
-    .pipe(minifyCSS())
+    .pipe(minifyCSS(minifyOpts))
+    .pipe(header(copyrightAndLicenseBanner))
     .pipe(concat('admin.min.css'))
     .pipe(gulp.dest('public/res/'));
 });
@@ -133,6 +142,25 @@ gulp.task('compile-stylus', function () {
 
 gulp.task('default', ['run-grunt', 'compile-stylus'], function () {
 });
+
+
+var copyrightAndLicenseBanner =
+  '/*!\n' +
+  ' * This file is copyrighted and licensed under the AGPL license.\n' +
+  ' * Some parts of it might be licensed under more permissive\n' +
+  ' * licenses, e.g. MIT or Apache 2. Find the source code and\n' +
+  ' * exact details here:\n' +
+  ' *   https://github.com/debiki/debiki-server\n' +
+  ' */\n';
+
+
+var thisIsAConcatenationMessage =
+  '/*!\n' +
+  ' * This file is a concatenation of many different files.\n' +
+  ' * Each such file has its own copyright notices. Some parts\n' +
+  ' * are released under other more permissive licenses\n' +
+  ' * than the AGPL. Files are separated by a "======" line.\n' +
+  ' */\n';
 
 
 // vim: et ts=2 sw=2 tw=0 list
