@@ -37,6 +37,8 @@ var concat = require('gulp-concat');
 var header = require('gulp-header');
 var wrap = require('gulp-wrap');
 var es = require('event-stream');
+var fs = require("fs");
+var path = require("path");
 
 var watchAndLiveForever = false;
 
@@ -475,6 +477,44 @@ gulp.task('compile-stylus', function () {
 });
 
 
+
+/**
+ * Copies app/views/themes/<themeName>/styles.css/*.css to
+ * public/themes/<themeName>/styles.css.
+ */
+gulp.task('build-themes', function () {
+
+  var themeDir = 'app/views/themes/';
+  var themeNames = listDirectories(themeDir);
+
+  function listDirectories(baseDirectory) {
+    var dirs = fs.readdirSync(baseDirectory).filter(function(file) {
+      return fs.statSync(path.join(baseDirectory, file)).isDirectory();
+    });
+    return dirs;
+  }
+
+  var themeStreams = themeNames.map(function(name) {
+    return makeThemeStream(name);
+  });
+
+  function makeThemeStream(themeName) {
+    var srcDir = themeDir + themeName + '/styles.css/**/*.css';
+    var destDir = 'public/themes/' + themeName;
+    return gulp.src(srcDir)
+      // COULD pipe through Stylus or LESS here, but which one? Or both somehow?
+      .pipe(concat('styles.css'))
+      .pipe(gulp.dest(destDir))
+      .pipe(minifyCSS())
+      .pipe(concat('styles.min.css'))
+      .pipe(gulp.dest(destDir));
+  };
+
+  return es.merge.apply(null, themeStreams);
+});
+
+
+
 gulp.task('watch', function() {
 
   watchAndLiveForever = true;
@@ -490,6 +530,7 @@ gulp.task('watch', function() {
   gulp.watch('client/**/*.ls', ['compile-livescript-run-grunt']).on('change', logChangeFn('LiveScript'));
   gulp.watch('client/**/*.js', ['wrap-javascript-run-grunt']).on('change', logChangeFn('Javascript'));
   gulp.watch('client/**/*.styl', ['compile-stylus']).on('change', logChangeFn('Stylus'));
+  gulp.watch('app/views/themes/**/*.css', ['build-themes']).on('change', logChangeFn('CSS'));
 
   // what about theme files,?
   //   app/views/themes/** /*.js
@@ -497,7 +538,7 @@ gulp.task('watch', function() {
 });
 
 
-gulp.task('default', ['compile-all-run-grunt', 'compile-stylus'], function () {
+gulp.task('default', ['compile-all-run-grunt', 'compile-stylus', 'build-themes'], function () {
 });
 
 

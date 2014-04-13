@@ -21,37 +21,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 module.exports = (grunt) ->
 
-  grunt.loadNpmTasks('grunt-contrib-concat')
   grunt.loadNpmTasks('grunt-contrib-uglify')
 
 
   grunt.initConfig({
     pkg: '<json:package.json>',
-    concat: {
-      # Finds theme specific files in app/views/themes/<themeName>/<bundleName>/*.css
-      # and concatenates them to public/themes/<themeName>/<bundleName>
-      # and <bundleName> must currently be 'styles.css'.
-      themes: {
-        files: [{
-          expand: true,
-          cwd: 'app/views/themes/',
-          src: '*/styles.css/*.css',
-          dest: 'public/themes/',
-          rename: (dest, src) ->
-            # `dest` is:  public/themes/
-            # `src` is:  <themeName>/<bundleName>/<fileName>
-            grunt.verbose.writeln('Placing source file: ' + src)
-            matchesArray = src.match(
-                #<theme name>   <bundle name>  <file name>
-                #e.g. ex_theme e.g. styles.css e.g. some-file.css
-                /^([a-z0-9_]+)\/([a-z0-9_.]+)\/[a-z0-9_.-]+$/)
-            themeName = matchesArray[1]
-            bundleName = matchesArray[2]
-            grunt.verbose.writeln('in theme/bundle: ' + themeName + '/' + bundleName)
-            dest + themeName + '/' + bundleName
-        }]
-      }
-    },
     uglify: {
       # Minifies ./public/res/*.js to *.min.js in the same directory.
       server: {
@@ -68,8 +42,8 @@ module.exports = (grunt) ->
     }
   })
 
-  grunt.registerTask('default', ['concat'])
-  grunt.registerTask('release', ['concat', 'uglify'])
+  grunt.registerTask('default', [])
+  grunt.registerTask('release', ['uglify'])
 
 
 # vim: et ts=2 sw=2 list
