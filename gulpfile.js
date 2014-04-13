@@ -437,10 +437,6 @@ gulp.task('compile-stylus', function () {
 
   var stylusOpts = {
     linenos: true,
-    // Currently need to specify `filename: 'stdin'` because of a bug in gulp-stylus or stylus
-    // when specifying `linenos: true`, see:
-    //    https://github.com/stevelacy/gulp-stylus/issues/30#issuecomment-40267124
-    ///filename: 'stdin'
     // Could include:  use: [nib()]
   };
 

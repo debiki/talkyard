@@ -20,7 +20,7 @@
     "gulp": "^3.6.0",
     "gulp-tsc": "^0.7.0",
     "gulp-livescript": "^0.2.1",
-    "gulp-stylus": "^0.2.0",
+    "gulp-stylus": "^0.2.1",
     "gulp-minify-css": "^0.3.1",
     "gulp-concat": "^2.2.0",
     "gulp-rename": "^1.2.0",
