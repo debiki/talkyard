@@ -16,26 +16,25 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-// To build Debiki's client resources, call `gulp`. It'll do some things, and
-// then call Grunt, to do even more things, which I have not yet ported to
-// Gulp.
-//
-// (I'm using both Gulp and Grunt. The reason is that there was some error with
-// Grunt compiling TypeScript files over and over again forever, and I worked
-// around the problem and by switching to Gulp instead since it's a lot faster
-// anyway. But I have not yet ported everything to Gulp.)
-
+/**
+ * Commands:
+ *
+ *   gulp                                - build everything for development
+ *   gulp ; gulp minify-scripts-no-deps  - build for release
+ *   gulp watch                          - continuously rebuild
+ */
 
 var gulp = require('gulp');
-require('gulp-grunt')(gulp);
 var templateCache = require('gulp-angular-templatecache');
 var typeScript = require('gulp-tsc');
 var liveScript = require('gulp-livescript');
 var stylus = require('gulp-stylus');
 var minifyCSS = require('gulp-minify-css');
 var concat = require('gulp-concat');
+var rename = require("gulp-rename");
 var header = require('gulp-header');
 var wrap = require('gulp-wrap');
+var uglify = require('gulp-uglify');
 var es = require('event-stream');
 var fs = require("fs");
 var path = require("path");
@@ -313,13 +312,15 @@ gulp.task('compile-angularjs-templates', function () {
 
 
 
-/**
- * Concatenates Javascripts but lists no dependencies, although it does depend
- * on some tasks above. By not listing dependencies, it's possible to avoid
- * compiling some dependencies that have already been compiled, when
- * using `gulp.watch`.
- */
-gulp.task('concat-scripts-ignore-dependencies', function() {
+gulp.task('concat-debiki-scripts', [
+    'wrap-javascript',
+    'compile-livescript',
+    'compile-typescript',
+    'compile-angularjs-templates'], function() {
+  return makeConcatDebikiScriptsStream();
+});
+
+function makeConcatDebikiScriptsStream() {
   function makeConcatStream(outputFileName, filesToConcat) {
     return gulp.src(filesToConcat)
         .pipe(header('\n\n//=== Next file: ===============================================================\n\n'))
@@ -366,10 +367,15 @@ gulp.task('concat-scripts-ignore-dependencies', function() {
       makeConcatStream('concat-debiki-pagedown.js', 'debiki-pagedown.js', [
           'modules/pagedown/Markdown.Converter.js',
           'client/compiledjs/PagedownJavaInterface.js']));
-});
+};
+
 
 
 gulp.task('concat-code-mirror-editor', function() {
+  return makeCodeMirrorScriptsStream();
+});
+
+function makeCodeMirrorScriptsStream() {
   function makeConcatStream(outputFileName, filesToConcat) {
     return gulp.src(filesToConcat)
         .pipe(concat(outputFileName))
@@ -379,37 +385,47 @@ gulp.task('concat-code-mirror-editor', function() {
   return es.merge(
       makeConcatStream('codemirror-3-13-custom.js', codeMirrorScripts),
       makeConcatStream('codemirror-3-13-custom.css', codeMirrorStyles));
-});
+};
+
 
 
 gulp.task('wrap-javascript-run-grunt', ['wrap-javascript'], function () {
-  concatFiles();
+  return makeConcatDebikiAndCodeMirrorScriptsStream();
 });
 
 gulp.task('compile-livescript-run-grunt', ['compile-livescript'], function () {
-  concatFiles();
+  return makeConcatDebikiAndCodeMirrorScriptsStream();
 });
 
 gulp.task('compile-typescript-run-grunt', ['compile-typescript'], function () {
-  concatFiles();
+  return makeConcatDebikiAndCodeMirrorScriptsStream();
 });
 
 gulp.task('compile-angularjs-templates-run-grunt', ['compile-angularjs-templates'], function () {
-  concatFiles();
+  return makeConcatDebikiAndCodeMirrorScriptsStream();
 });
 
 gulp.task('compile-all-run-grunt',
     ['wrap-javascript', 'compile-livescript', 'compile-typescript', 'compile-angularjs-templates'],
     function () {
-  concatFiles();
+  return makeConcatDebikiAndCodeMirrorScriptsStream();
 });
 
+function makeConcatDebikiAndCodeMirrorScriptsStream() {
+  return es.merge(
+      makeConcatDebikiScriptsStream(),
+      makeCodeMirrorScriptsStream());
+};
 
-function concatFiles() {
-  gulp.run('concat-scripts-ignore-dependencies');
-  gulp.run('concat-code-mirror-editor');
-  gulp.run('grunt-default');
-}
+
+
+gulp.task('minify-scripts', ['concat-debiki-scripts', 'concat-code-mirror-editor'], function() {
+  return gulp.src('public/res/*.js', { ignore: 'public/res/*.min.js' })
+      .pipe(uglify())
+      .pipe(rename({ extname: '.min.js' }))
+      .pipe(header(copyrightAndLicenseBanner))
+      .pipe(gulp.dest('public/res/'));
+});
 
 
 
@@ -540,6 +556,11 @@ gulp.task('watch', function() {
 
 gulp.task('default', ['compile-all-run-grunt', 'compile-stylus', 'build-themes'], function () {
 });
+
+
+gulp.task('release', ['minify-scripts', 'compile-stylus', 'build-themes'], function() {
+});
+
 
 
 // vim: et ts=2 sw=2 tw=0 list
