@@ -36,8 +36,229 @@ var minifyCSS = require('gulp-minify-css');
 var concat = require('gulp-concat');
 var header = require('gulp-header');
 var wrap = require('gulp-wrap');
+var es = require('event-stream');
 
 var watchAndLiveForever = false;
+
+
+
+var copyrightAndLicenseBanner =
+  '/*!\n' +
+  ' * This file is copyrighted and licensed under the AGPL license.\n' +
+  ' * Some parts of it might be licensed under more permissive\n' +
+  ' * licenses, e.g. MIT or Apache 2. Find the source code and\n' +
+  ' * exact details here:\n' +
+  ' *   https://github.com/debiki/debiki-server\n' +
+  ' */\n';
+
+var thisIsAConcatenationMessage =
+  '/*!\n' +
+  ' * This file is a concatenation of many different files.\n' +
+  ' * Each such file has its own copyright notices. Some parts\n' +
+  ' * are released under other more permissive licenses\n' +
+  ' * than the AGPL. Files are separated by a "======" line.\n' +
+  ' */\n';
+
+var codeMirrorBanner =
+  '/*!\n' +
+  ' * Copyright (C) 2013 Marijn Haverbeke <marijnh@gmail.com>\\n' +
+  ' * Source code available under the MIT license, see:\n' +
+  ' *   http://github.com/marijnh/CodeMirror\n' +
+  ' *\n' +
+  ' * Parts Copyright (C) 2013 Kaj Magnus Lindberg\n' +
+  ' * (a certain codemirror-show-markdown-line-breaks addon only)\n' +
+  ' */\n';
+
+
+
+var debikiDesktopFiles = [
+      'client/third-party/bootstrap/tooltip.js', //
+      'client/third-party/bootstrap/dropdown.js',
+      'client/third-party/bootstrap/tab.js',
+      'client/third-party/diff_match_patch.js',
+      'client/third-party/html-sanitizer-bundle.js',
+      'client/third-party/jquery-cookie.js',
+      'client/third-party/jquery-scrollable.js', //
+      'client/third-party/jquery.browser.js', //
+      'client/third-party/livescript/prelude-browser.js',
+      'client/third-party/popuplib.js',
+      'client/third-party/waypoints.js',
+      'client/util/scripts/modernizr-positionfixed.js',
+      'client/util/scripts/scrollfix2d.js',
+      'client/page/scripts/tagdog.js',
+      'target/client/page/scripts/debiki-page-module.js',
+      'target/client/page/scripts/bootstrap-angularjs.js',
+      'target/client/page/scripts/debiki-action-delete.js',
+      'target/client/page/scripts/debiki-action-dialogs.js',
+      'target/client/page/scripts/debiki-action-edit.js',
+      'target/client/page/scripts/debiki-action-flag.js',
+      'target/client/page/scripts/debiki-action-links.js',
+      'target/client/page/scripts/debiki-action-rate.js',
+      'target/client/page/scripts/debiki-action-reply.js',
+      'target/client/page/scripts/debiki-action-reply-form-html.js',
+      'target/client/page/scripts/debiki-actions-inline.js',
+      'target/client/page/scripts/debiki-arrows-png.js',
+      'target/client/page/scripts/debiki-arrows-svg.js',
+      'target/client/page/scripts/debiki-dashbar.js',
+      'target/client/page/scripts/debiki-cur-user.js',
+      'target/client/page/scripts/debiki-diff-match-patch.js',
+      'target/client/page/scripts/debiki-edit-history.js',
+      'target/client/page/scripts/debiki-form-anims.js',
+      'target/client/page/scripts/debiki-http-dialogs.js',
+      'target/client/page/scripts/debiki-inline-threads.js',
+      'target/client/page/scripts/debiki-iframe.js',
+      'target/client/util/scripts/debiki-jquery-dialogs.js',
+      'target/client/page/scripts/debiki-jquery-find.js',
+      'target/client/page/scripts/debiki-keyboard-shortcuts.js', //
+      'target/client/page/scripts/debiki-layout.js',
+      'target/client/page/scripts/debiki-load-page-parts.js',
+      'target/client/page/scripts/debiki-login.js',
+      'target/client/page/scripts/debiki-login-popup.js',
+      'target/client/login-popup/scripts/debiki-login-dialog.js',
+      'target/client/login-popup/scripts/debiki-login-guest.js',
+      'target/client/login-popup/scripts/debiki-login-password.js',
+      'target/client/login-popup/scripts/debiki-login-openid.js',
+      'target/client/login-popup/scripts/debiki-login-openid-dialog-html.js',
+      'target/client/page/scripts/debiki-markup.js',
+      'target/client/page/scripts/debiki-merge-changes.js',
+      'target/client/page/scripts/debiki-minimap.js',
+      'target/client/page/scripts/debiki-monitor-reading-progress.js',
+      'target/client/page/scripts/debiki-patch-page.js',
+      'target/client/page/scripts/debiki-pin.js',
+      'target/client/page/scripts/debiki-post-header.js',
+      'target/client/page/scripts/debiki-resize.js',
+      'target/client/page/scripts/debiki-scroll-into-view.js',
+      'target/client/page/scripts/debiki-show-and-highlight.js',
+      'target/client/page/scripts/debiki-show-interactions.js',
+      'target/client/page/scripts/debiki-show-location-in-nav.js',
+      'target/client/page/scripts/debiki-toggle-collapsed.js',
+      //'target/client/page/scripts/debiki-unread.js',
+      'target/client/page/scripts/debiki-util.js',
+      'target/client/page/scripts/debiki-util-browser.js',
+      'target/client/page/scripts/debiki-util-play.js',
+      'target/client/page/scripts/debiki-utterscroll-init-tips.js',//
+      'client/page/scripts/debiki-utterscroll.js',//
+      'target/client/page/scripts/debiki-page-path.js',
+      'target/client/page/scripts/debiki-create-page.js',
+      'target/client/util/scripts/debiki-utils.js',
+      'target/client/all-typescript.js',
+      'target/client/all-angular-templates.js',
+      'target/client/page/scripts/debiki.js'];
+
+
+var debikiTouchFiles = [
+      'client/third-party/bootstrap/dropdown.js',
+      'client/third-party/bootstrap/tab.js',
+      'client/third-party/diff_match_patch.js',
+      'client/third-party/html-sanitizer-bundle.js',
+      'client/third-party/jquery-cookie.js',
+      'client/third-party/livescript/prelude-browser.js',
+      'client/third-party/popuplib.js',
+      'client/third-party/waypoints.js',
+      'client/util/scripts/modernizr-positionfixed.js',
+      'client/util/scripts/scrollfix2d.js',
+      'client/page/scripts/tagdog.js',
+      'target/client/page/scripts/debiki-page-module.js',
+      'target/client/page/scripts/bootstrap-angularjs.js',
+      'target/client/page/scripts/debiki-action-delete.js',
+      'target/client/page/scripts/debiki-action-dialogs.js',
+      'target/client/page/scripts/debiki-action-edit.js',
+      'target/client/page/scripts/debiki-action-flag.js',
+      'target/client/page/scripts/debiki-action-links.js',
+      'target/client/page/scripts/debiki-action-rate.js',
+      'target/client/page/scripts/debiki-action-reply.js',
+      'target/client/page/scripts/debiki-action-reply-form-html.js',
+      'target/client/page/scripts/debiki-actions-inline.js',
+      'target/client/page/scripts/debiki-arrows-png.js',
+      'target/client/page/scripts/debiki-arrows-svg.js',
+      'target/client/page/scripts/debiki-dashbar.js',
+      'target/client/page/scripts/debiki-cur-user.js',
+      'target/client/page/scripts/debiki-diff-match-patch.js',
+      'target/client/page/scripts/debiki-edit-history.js',
+      'target/client/page/scripts/debiki-form-anims.js',
+      'target/client/page/scripts/debiki-http-dialogs.js',
+      'target/client/page/scripts/debiki-inline-threads.js',
+      'target/client/page/scripts/debiki-iframe.js',
+      'target/client/util/scripts/debiki-jquery-dialogs.js',
+      'target/client/page/scripts/debiki-jquery-find.js',
+      'target/client/page/scripts/debiki-layout.js',
+      'target/client/page/scripts/debiki-load-page-parts.js',
+      'target/client/page/scripts/debiki-login.js',
+      'target/client/page/scripts/debiki-login-popup.js',
+      'target/client/login-popup/scripts/debiki-login-dialog.js',
+      'target/client/login-popup/scripts/debiki-login-guest.js',
+      'target/client/login-popup/scripts/debiki-login-password.js',
+      'target/client/login-popup/scripts/debiki-login-openid.js',
+      'target/client/login-popup/scripts/debiki-login-openid-dialog-html.js',
+      'target/client/page/scripts/debiki-markup.js',
+      'target/client/page/scripts/debiki-merge-changes.js',
+      'target/client/page/scripts/debiki-minimap.js',
+      'target/client/page/scripts/debiki-monitor-reading-progress.js',
+      'target/client/page/scripts/debiki-patch-page.js',
+      'target/client/page/scripts/debiki-pin.js',
+      'target/client/page/scripts/debiki-post-header.js',
+      'target/client/page/scripts/debiki-resize.js',
+      'target/client/page/scripts/debiki-scroll-into-view.js',
+      'target/client/page/scripts/debiki-show-and-highlight.js',
+      'target/client/page/scripts/debiki-show-interactions.js',
+      'target/client/page/scripts/debiki-show-location-in-nav.js',
+      'target/client/page/scripts/debiki-toggle-collapsed.js',
+      //'target/client/page/scripts/debiki-unread.js',
+      'target/client/page/scripts/debiki-util.js',
+      'target/client/page/scripts/debiki-util-browser.js',
+      'target/client/page/scripts/debiki-util-play.js',
+      'target/client/page/scripts/debiki-page-path.js',
+      'target/client/page/scripts/debiki-create-page.js',
+      'target/client/util/scripts/debiki-utils.js',
+      'target/client/all-angular-templates.js',
+      'target/client/all-typescript.js',
+      'target/client/page/scripts/debiki.js'];
+
+
+// For both touch devices and desktops.
+var loginPopupFiles = [
+      'client/third-party/jquery-cookie.js',
+      'target/client/util/scripts/debiki-jquery-dialogs.js',
+      'target/client/util/scripts/debiki-utils.js',
+      'target/client/login-popup/scripts/debiki-login-dialog.js',
+      'target/client/login-popup/scripts/debiki-login-guest.js',
+      'target/client/login-popup/scripts/debiki-login-password.js',
+      'target/client/login-popup/scripts/debiki-login-openid.js',
+      'target/client/login-popup/scripts/debiki-login-openid-dialog-html.js'];
+
+
+// For both touch devices and desktops.
+var debikiEmbeddedCommentsFiles = [
+      'client/third-party/jquery-scrollable.js',
+      'client/third-party/jquery.browser.js',
+      'target/client/embedded-comments/scripts/debiki-utterscroll-iframe-parent.js',
+      'target/client/page/scripts/debiki-utterscroll-init-tips.js',
+      'target/client/embedded-comments/scripts/iframe-parent.js'];
+
+
+var codeMirrorScripts = [
+      'client/third-party/codemirror/lib/codemirror.js',
+      'client/third-party/codemirror/mode/css/css.js',
+      'client/third-party/codemirror/mode/xml/xml.js',
+      'client/third-party/codemirror/mode/javascript/javascript.js',
+      'client/third-party/codemirror/mode/markdown/markdown.js',
+      'client/third-party/codemirror/mode/yaml/yaml.js',
+      'client/third-party/codemirror/mode/htmlmixed/htmlmixed.js',
+      'client/third-party/codemirror/addon/dialog/dialog.js',
+      'client/third-party/codemirror/addon/search/search.js',
+      'client/third-party/codemirror/addon/search/searchcursor.js',
+      'client/third-party/codemirror/addon/edit/matchbrackets.js',
+      // No:
+      //'client/third-party/codemirror/addon/edit/trailingspace.js',
+      // Instead:
+      'client/third-party/codemirror-show-markdown-line-breaks.js'];
+
+
+var codeMirrorStyles = [
+      'client/third-party/codemirror/lib/codemirror.css',
+      'client/third-party/codemirror/addon/dialog/dialog.css', // for the search dialog
+      'client/third-party/codemirror-show-markdown-line-breaks.css'];
+
 
 
 gulp.task('wrap-javascript', function () {
@@ -86,27 +307,102 @@ gulp.task('compile-angularjs-templates', function () {
 
 
 
+/**
+ * Concatenates Javascripts but lists no dependencies, although it does depend
+ * on some tasks above. By not listing dependencies, it's possible to avoid
+ * compiling some dependencies that have already been compiled, when
+ * using `gulp.watch`.
+ */
+gulp.task('concat-scripts-ignore-dependencies', function() {
+  function makeConcatStream(outputFileName, filesToConcat) {
+    return gulp.src(filesToConcat)
+        .pipe(header('\n\n//=== Next file: ===============================================================\n\n'))
+        .pipe(concat(outputFileName))
+        .pipe(header(thisIsAConcatenationMessage))
+        .pipe(header(copyrightAndLicenseBanner))
+        .pipe(gulp.dest('public/res/'));
+  }
+
+  return es.merge(
+      makeConcatStream('combined-debiki-desktop.js', debikiDesktopFiles),
+      makeConcatStream('combined-debiki-touch.js', debikiTouchFiles),
+      makeConcatStream('login-popup.js', loginPopupFiles),
+
+      makeConcatStream('debiki-spa-common.js', [
+          'target/client/third-party/livescript/prelude-browser-min.js',
+          'target/client/third-party/bootstrap/tooltip.js', // -popup.js dependee
+          'target/client/third-party/bootstrap/*.js',
+          'target/client/third-party/angular-ui/module.js',
+          'target/client/third-party/angular-ui/directives/jq/jq.js',
+          'target/client/third-party/angular-ui/directives/modal/modal.js',
+          'target/client/page/scripts/debiki-util.js']),
+
+      makeConcatStream('debiki-spa-admin.js', [
+          'client/third-party/diff_match_patch.js',
+          'target/client/page/scripts/debiki-diff-match-patch.js',
+          'target/client/page/scripts/debiki-page-path.js',
+          // Include the module first; it's needed by modal-dialog.js.
+          'target/client/admin/scripts/module-and-services.js',
+          'target/client/admin/scripts/*.js']),
+
+      makeConcatStream('debiki-spa-install-first-site.js', [
+          'target/client/install/scripts/install-ng-app.js']),
+
+      makeConcatStream('debiki-spa-new-website-choose-owner.js', [
+          'target/client/new-site/scripts/new-website-choose-owner.js']),
+
+      makeConcatStream('debiki-spa-new-website-choose-name.js', [
+          'target/client/new-site/scripts/new-website-choose-name.js']),
+
+      // Warning: Duplicated rule. A corresponding rule is also present
+      // in the Makefile. Keep in sync.
+      makeConcatStream('concat-debiki-pagedown.js', 'debiki-pagedown.js', [
+          'modules/pagedown/Markdown.Converter.js',
+          'client/compiledjs/PagedownJavaInterface.js']));
+});
+
+
+gulp.task('concat-code-mirror-editor', function() {
+  function makeConcatStream(outputFileName, filesToConcat) {
+    return gulp.src(filesToConcat)
+        .pipe(concat(outputFileName))
+        .pipe(header(codeMirrorBanner))
+        .pipe(gulp.dest('public/res/'));
+  }
+  return es.merge(
+      makeConcatStream('codemirror-3-13-custom.js', codeMirrorScripts),
+      makeConcatStream('codemirror-3-13-custom.css', codeMirrorStyles));
+});
+
+
 gulp.task('wrap-javascript-run-grunt', ['wrap-javascript'], function () {
-  return gulp.run('grunt-default');
+  concatFiles();
 });
 
 gulp.task('compile-livescript-run-grunt', ['compile-livescript'], function () {
-  return gulp.run('grunt-default');
+  concatFiles();
 });
 
 gulp.task('compile-typescript-run-grunt', ['compile-typescript'], function () {
-  return gulp.run('grunt-default');
+  concatFiles();
 });
 
 gulp.task('compile-angularjs-templates-run-grunt', ['compile-angularjs-templates'], function () {
-  return gulp.run('grunt-default');
+  concatFiles();
 });
 
 gulp.task('compile-all-run-grunt',
     ['wrap-javascript', 'compile-livescript', 'compile-typescript', 'compile-angularjs-templates'],
     function () {
-  return gulp.run('grunt-default');
+  concatFiles();
 });
+
+
+function concatFiles() {
+  gulp.run('concat-scripts-ignore-dependencies');
+  gulp.run('concat-code-mirror-editor');
+  gulp.run('grunt-default');
+}
 
 
 
@@ -198,25 +494,6 @@ gulp.task('watch', function() {
 
 gulp.task('default', ['compile-all-run-grunt', 'compile-stylus'], function () {
 });
-
-
-var copyrightAndLicenseBanner =
-  '/*!\n' +
-  ' * This file is copyrighted and licensed under the AGPL license.\n' +
-  ' * Some parts of it might be licensed under more permissive\n' +
-  ' * licenses, e.g. MIT or Apache 2. Find the source code and\n' +
-  ' * exact details here:\n' +
-  ' *   https://github.com/debiki/debiki-server\n' +
-  ' */\n';
-
-
-var thisIsAConcatenationMessage =
-  '/*!\n' +
-  ' * This file is a concatenation of many different files.\n' +
-  ' * Each such file has its own copyright notices. Some parts\n' +
-  ' * are released under other more permissive licenses\n' +
-  ' * than the AGPL. Files are separated by a "======" line.\n' +
-  ' */\n';
 
 
 // vim: et ts=2 sw=2 tw=0 list
