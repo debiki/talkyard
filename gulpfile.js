@@ -1,5 +1,5 @@
 /**
- * Build file for client scripts and styles. Use `gulp` not `grunt`.
+ * Build file for client scripts and styles.
  * Copyright (C) 2014 Kaj Magnus Lindberg (born 1979)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -19,9 +19,9 @@
 /**
  * Commands:
  *
- *   gulp                                - build everything for development
- *   gulp ; gulp minify-scripts-no-deps  - build for release
- *   gulp watch                          - continuously rebuild
+ *   gulp          - build everything for development
+ *   gulp release  - build and minify everything, for release
+ *   gulp watch    - continuously rebuild things that change
  */
 
 var gulp = require('gulp');
@@ -70,6 +70,8 @@ var codeMirrorBanner =
   ' * (a certain codemirror-show-markdown-line-breaks addon only)\n' +
   ' */\n';
 
+var nextFileLine =
+  '\n\n//=== Next file: ===============================================================\n\n';
 
 
 var debikiDesktopFiles = [
@@ -301,7 +303,7 @@ gulp.task('compile-typescript', function () {
 });
 
 
-gulp.task('compile-angularjs-templates', function () {
+gulp.task('compile-templates', function () {
   return gulp.src('client/forum/**/*.html')
       .pipe(templateCache({
         module: 'ForumApp',
@@ -316,14 +318,14 @@ gulp.task('concat-debiki-scripts', [
     'wrap-javascript',
     'compile-livescript',
     'compile-typescript',
-    'compile-angularjs-templates'], function() {
+    'compile-templates'], function() {
   return makeConcatDebikiScriptsStream();
 });
 
 function makeConcatDebikiScriptsStream() {
   function makeConcatStream(outputFileName, filesToConcat) {
     return gulp.src(filesToConcat)
-        .pipe(header('\n\n//=== Next file: ===============================================================\n\n'))
+        .pipe(header(nextFileLine))
         .pipe(concat(outputFileName))
         .pipe(header(thisIsAConcatenationMessage))
         .pipe(header(copyrightAndLicenseBanner))
@@ -371,7 +373,7 @@ function makeConcatDebikiScriptsStream() {
 
 
 
-gulp.task('concat-code-mirror-editor', function() {
+gulp.task('concat-codemirror-scripts', function() {
   return makeCodeMirrorScriptsStream();
 });
 
@@ -389,24 +391,26 @@ function makeCodeMirrorScriptsStream() {
 
 
 
-gulp.task('wrap-javascript-run-grunt', ['wrap-javascript'], function () {
+gulp.task('wrap-javascript-concat-scripts', ['wrap-javascript'], function () {
+  // Perhaps some CodeMirror Javascript file has been upgraded, so
+  // concatenate CodeMirror scripts too, not only Debiki's scripts.
   return makeConcatDebikiAndCodeMirrorScriptsStream();
 });
 
-gulp.task('compile-livescript-run-grunt', ['compile-livescript'], function () {
-  return makeConcatDebikiAndCodeMirrorScriptsStream();
+gulp.task('compile-livescript-concat-scripts', ['compile-livescript'], function () {
+  return makeConcatDebikiScriptsStream();
 });
 
-gulp.task('compile-typescript-run-grunt', ['compile-typescript'], function () {
-  return makeConcatDebikiAndCodeMirrorScriptsStream();
+gulp.task('compile-typescript-concat-scripts', ['compile-typescript'], function () {
+  return makeConcatDebikiScriptsStream();
 });
 
-gulp.task('compile-angularjs-templates-run-grunt', ['compile-angularjs-templates'], function () {
-  return makeConcatDebikiAndCodeMirrorScriptsStream();
+gulp.task('compile-templates-concat-scripts', ['compile-templates'], function () {
+  return makeConcatDebikiScriptsStream();
 });
 
-gulp.task('compile-all-run-grunt',
-    ['wrap-javascript', 'compile-livescript', 'compile-typescript', 'compile-angularjs-templates'],
+gulp.task('compile-concat-scripts',
+    ['wrap-javascript', 'compile-livescript', 'compile-typescript', 'compile-templates'],
     function () {
   return makeConcatDebikiAndCodeMirrorScriptsStream();
 });
@@ -419,7 +423,7 @@ function makeConcatDebikiAndCodeMirrorScriptsStream() {
 
 
 
-gulp.task('minify-scripts', ['concat-debiki-scripts', 'concat-code-mirror-editor'], function() {
+gulp.task('minify-scripts', ['concat-debiki-scripts', 'concat-codemirror-scripts'], function() {
   return gulp.src('public/res/*.js', { ignore: 'public/res/*.min.js' })
       .pipe(uglify())
       .pipe(rename({ extname: '.min.js' }))
@@ -541,10 +545,10 @@ gulp.task('watch', function() {
     };
   };
 
-  gulp.watch('client/forum/**/*.html', ['compile-angularjs-templates-run-grunt']).on('change', logChangeFn('HTML'));
-  gulp.watch('client/forum/**/*.ts', ['compile-typescript-run-grunt']).on('change', logChangeFn('TypeScript'));
-  gulp.watch('client/**/*.ls', ['compile-livescript-run-grunt']).on('change', logChangeFn('LiveScript'));
-  gulp.watch('client/**/*.js', ['wrap-javascript-run-grunt']).on('change', logChangeFn('Javascript'));
+  gulp.watch('client/forum/**/*.html', ['compile-templates-concat-scripts']).on('change', logChangeFn('HTML'));
+  gulp.watch('client/forum/**/*.ts', ['compile-typescript-concat-scripts']).on('change', logChangeFn('TypeScript'));
+  gulp.watch('client/**/*.ls', ['compile-livescript-concat-scripts']).on('change', logChangeFn('LiveScript'));
+  gulp.watch('client/**/*.js', ['wrap-javascript-concat-scripts']).on('change', logChangeFn('Javascript'));
   gulp.watch('client/**/*.styl', ['compile-stylus']).on('change', logChangeFn('Stylus'));
   gulp.watch('app/views/themes/**/*.css', ['build-themes']).on('change', logChangeFn('CSS'));
 
@@ -554,7 +558,7 @@ gulp.task('watch', function() {
 });
 
 
-gulp.task('default', ['compile-all-run-grunt', 'compile-stylus', 'build-themes'], function () {
+gulp.task('default', ['compile-concat-scripts', 'compile-stylus', 'build-themes'], function () {
 });
 
 
