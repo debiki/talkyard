@@ -222,7 +222,7 @@ object HtmlPostRenderer {
               // Edited by the author. Don't repeat his/her name.
               Nil
             })
-          }{dateAbbr(post.textLastEditedAt, "dw-p-at")
+          } {dateAbbr(post.textLastEditedAt, "dw-p-at")
         }</span>
       }
 
