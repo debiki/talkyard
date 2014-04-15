@@ -450,7 +450,7 @@ gulp.task('compile-stylus', function () {
       'client/page/styles/minimap.styl',
       'client/page/styles/tips.styl',
       'client/page/styles/debiki-play.styl',
-      'client/page/styles/forum.styl'])
+      'client/forum/**/*.styl'])
     .pipe(stylus(stylusOpts))
     .pipe(concat('combined-debiki.css'))
     .pipe(gulp.dest('public/res/'))

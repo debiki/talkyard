@@ -5,21 +5,21 @@
     <tr>
       <th>Topic</th>
       <th>Category</th>
-      <th>Posts</th>
-      <th>Likes</th>
-      <th>Wrongs</th>
-      <th colspan="2">Activity</th>
+      <th class="num">Posts</th>
+      <th class="num">Likes</th>
+      <th class="num">Wrongs</th>
+      <th class="num" colspan="2">Activity</th>
     </tr>
   </thead>
   <tbody>
     <tr ng-repeat="topic in topics">
       <td><a href="{{ topic.url }}">{{ topic.title }}</a></td>
       <td>{{ topic.category }}</td>
-      <td>{{ topic.numPosts }}</td>
-      <td>{{ topic.numLikes }}</td>
-      <td>{{ topic.numWrongs }}</td>
-      <td>{{ topic.firstPostAt }}</td>
-      <td>{{ topic.lastPostAt }}</td>
+      <td class="num">{{ topic.numPosts }}</td>
+      <td class="num">{{ topic.numLikes }}</td>
+      <td class="num">{{ topic.numWrongs }}</td>
+      <td class="num">{{ topic.firstPostAt }}</td>
+      <td class="num">{{ topic.lastPostAt }}</td>
     </tr>
 </ol>
 </div>

@@ -1,4 +1,4 @@
-/*!
+/**
  * Copyright (C) 2014 Kaj Magnus Lindberg (born 1979)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -16,35 +16,31 @@
  */
 
 
+$firstCellPadding = 10px
 
-.dw-forum-actionbar
-  clear: both
-  padding-top: 20px
 
-  li
-    margin-left: 0
+#dw-topic-list
+  width: 100%
 
-  .dw-main-category-dropdown
-    float: left
-    margin-right: 10px
+  th
+    color: hsl(0, 0%, 55%)
+    &:first-child
+      padding-left: $firstCellPadding
 
-    .dropdown-toggle
-      padding: 5px 12px 5px 15px
+  .num
+    text-align: center
 
-  .nav
-    float: left
-    margin-left: 10px
+  tbody
+    tr
+      &:nth-child(odd)
+        background-color: hsl(0, 0%, 97%)
 
-    li
-      a
-        padding: 5px 15px
+      td
+        padding: 10px 5px
 
-      &.active a
-        background-color: hsl(211, 50%, 53%)
-
-  button
-    float: right
+        &:first-child
+          padding-left: $firstCellPadding
 
 
 
-// vim: fdm=marker et ts=2 sw=2 tw=100 fo=tcqwn list
+// vim: fdm=indent et ts=2 sw=2 tw=100 fo=tcqwn list

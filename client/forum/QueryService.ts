@@ -15,38 +15,47 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/// <reference path="../typedefs/angularjs/angular.d.ts" />
-/// <reference path="../ForumApp.ts" />
-/// <reference path="../model/Topic.ts" />
-/// <reference path="../QueryService.ts" />
+/// <reference path="ForumApp.ts" />
 
 //------------------------------------------------------------------------------
    module forum {
 //------------------------------------------------------------------------------
 
 
-interface ListTopicsScope extends ng.IScope {
-  mv: ListTopicsController;
-  $state: any;
-  topics: Topic[];
-}
+export class QueryService {
 
-
-class ListTopicsController {
-
-  public static $inject = ['$scope', '$stateParams', 'QueryService'];
-  constructor(private $scope: ListTopicsScope, $stateParams, queryService: QueryService) {
-    $scope.mv = this;
-    $scope.topics = queryService.loadTopics('dummy-cat-id');
+  public loadTopics(categoryId: string): Topic[] {
+    var t = new Topic();
+    t.id = '123abc';
+    t.title = 'Topic Title';
+    t.url = '/nowhere';
+    t.categoryId = '123abcCategoryId';
+    t.subCategoryId = '123abcSubCategoryId';
+    t.numPosts = 10;
+    t.numLikes = 3;
+    t.numWrongs = 1;
+    t.firstPostAt = new Date(2014, 4, 3);
+    t.lastPostAt = new Date(2014, 4, 7);
+    var t2 = new Topic();
+    t2.id = '567def';
+    t2.title = 'Another Topic Title';
+    t2.url = '/really-nowhere';
+    t2.categoryId = '456defCategoryId';
+    t2.subCategoryId = '456defSubCategoryId';
+    t2.numPosts = 38;
+    t2.numLikes = 9;
+    t2.numWrongs = 4;
+    t2.firstPostAt = new Date(2014, 2, 1);
+    t2.lastPostAt = new Date(2014, 4, 9);
+    return [t, t2];
   }
 
 }
 
 
-forum.forumApp.controller('ListTopicsController', ListTopicsController);
-
+forum.forumApp.service('QueryService', QueryService);
 
 //------------------------------------------------------------------------------
    }
 //------------------------------------------------------------------------------
-// vim: fdm=marker et ts=2 sw=2 tw=0 fo=tcqwn list
+// vim: et ts=2 sw=2 tw=0 fo=tcqwn list

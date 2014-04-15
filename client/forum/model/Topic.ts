@@ -15,38 +15,26 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/// <reference path="../typedefs/angularjs/angular.d.ts" />
-/// <reference path="../ForumApp.ts" />
-/// <reference path="../model/Topic.ts" />
-/// <reference path="../QueryService.ts" />
-
 //------------------------------------------------------------------------------
    module forum {
 //------------------------------------------------------------------------------
 
 
-interface ListTopicsScope extends ng.IScope {
-  mv: ListTopicsController;
-  $state: any;
-  topics: Topic[];
+export class Topic {
+  id: string;
+  title: string;
+  url: string;
+  categoryId: string;
+  subCategoryId: string;
+  numPosts: number;
+  numLikes: number;
+  numWrongs: number;
+  firstPostAt: Date;
+  lastPostAt: Date;
 }
-
-
-class ListTopicsController {
-
-  public static $inject = ['$scope', '$stateParams', 'QueryService'];
-  constructor(private $scope: ListTopicsScope, $stateParams, queryService: QueryService) {
-    $scope.mv = this;
-    $scope.topics = queryService.loadTopics('dummy-cat-id');
-  }
-
-}
-
-
-forum.forumApp.controller('ListTopicsController', ListTopicsController);
 
 
 //------------------------------------------------------------------------------
    }
 //------------------------------------------------------------------------------
-// vim: fdm=marker et ts=2 sw=2 tw=0 fo=tcqwn list
+// vim: et ts=2 sw=2 tw=0 fo=tcqwn list
