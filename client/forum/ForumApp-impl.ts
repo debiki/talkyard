@@ -20,22 +20,16 @@
 /// <reference path="list-topics/ListTopicsController.ts" />
 /// <reference path="list-categories/ListCategoriesController.ts" />
 
-/**
- * This file sets up routing and adds forum category state and selection
- * functions to $rootScope. I'm not sure if the category related things ought to
- * be broken out to a service instead?
- */
-
 //------------------------------------------------------------------------------
    module forum {
 //------------------------------------------------------------------------------
 
+/**
+ * Sets up routing using ui-router.
+ */
+forum.forumApp.config(['$stateProvider', '$urlRouterProvider',
+    function($stateProvider, $urlRouterProvider) {
 
-forum.forumApp.config(['$stateProvider', '$urlRouterProvider', configForumApp]);
-forum.forumApp.run(['$rootScope', '$state', '$stateParams', runForumApp]);
-
-
-function configForumApp($stateProvider, $urlRouterProvider) {
   $urlRouterProvider.otherwise('/');
 
   $stateProvider
@@ -50,102 +44,40 @@ function configForumApp($stateProvider, $urlRouterProvider) {
       url: '/latest/*categoryPath',
       templateUrl: 'list-topics/list-topics.html',
       controller: 'ListTopicsController',
-      onEnter: updateCurrentCategories
+      onEnter: ['$stateParams', 'CategoryService',
+          function($stateParams, categoryService: CategoryService) {
+        categoryService.updateCurrentCategories($stateParams);
+      }]
     })
     .state('top', {
       url: '/top/*categoryPath',
       templateUrl: 'list-topics/list-topics.html',
       controller: 'ListTopicsController',
-      onEnter: updateCurrentCategories
+      onEnter: ['$stateParams', 'CategoryService',
+          function($stateParams, categoryService: CategoryService) {
+        categoryService.updateCurrentCategories($stateParams);
+      }]
     })
     .state('categories', {
       url: '/categories',
       templateUrl: 'list-categories/list-categories.html',
       controller: 'ListCategoriesController',
-      onEnter: clearCurrentCategories
+      onEnter: ['CategoryService', function(categoryService: CategoryService) {
+        categoryService.clearCurrentCategories();
+      }]
     })
-};
+}]);
 
 
 /**
  * Adds UI-Router's $state and $stateParams to the root scope, so they're
  * accessible from everywhere.
  */
-function runForumApp($rootScope, $state, $stateParams) {
+forum.forumApp.run(['$rootScope', '$state', '$stateParams',
+    function($rootScope, $state, $stateParams) {
   $rootScope.$state = $state;
   $rootScope.$stateParams = $stateParams;
-  setupCategories($rootScope);
-};
-
-
-/**
- * The server includes info on any blog or forum categories so we won't need
- * to ask for that separately. This function parses that data and adds  it to the
- * $rootScope. And also adds a function `$rootScope.changeCategory(newCategorySlug)`.
- */
-function setupCategories($rootScope) {
-  var pageDataText = $('#dw-page-data').text() || '{}'
-  var pageDataJson = JSON.parse(pageDataText)
-  $rootScope.categories = pageDataJson.categories || []
-
-  $rootScope.changeCategory = function(newCategorySlug: string) {
-    var nextState = '.';
-    // The 'categories' and 'index' states cannot be combined with any category,
-    // so switch to the 'latest' state instead.
-    if ($rootScope.$state.is('categories') || $rootScope.$state.is('index')) {
-      nextState = 'latest';
-    }
-    $rootScope.$state.go(nextState, { categoryPath: newCategorySlug });
-  }
-}
-
-
-var clearCurrentCategories = ['$rootScope', function($rootScope) {
-  $rootScope.currentMainCategory = null;
-  $rootScope.currentSubCategory = null;
-}];
-
-
-/**
- * Updates $rootScope.currentMainCategory and $rootScope.currentSubCategory given
- * the categories listed in the URL.
- */
-var updateCurrentCategories = ['$rootScope', '$stateParams', function($rootScope, $stateParams) {
-  var categoryPath = parseCategoryPath($stateParams.categoryPath);
-  console.log('$stateParams: ' + $stateParams);
-  console.log('$stateParams.categoryPath: ' + $stateParams.categoryPath);
-  console.log('cat path: ' + categoryPath);
-
-  $rootScope.currentMainCategory = null;
-  $rootScope.currentSubCategory = null;
-  if (categoryPath.length == 0)
-    return;
-
-  var categories = $rootScope.categories;
-  for (var i = 0; i < categories.length; ++i) {
-    var category = categories[i];
-    if (category.slug === categoryPath[0]) {
-      $rootScope.currentMainCategory = category;
-      break;
-    }
-  }
-
-  // In the future: if $categoryPath.length > 1, then update $rootScope.currentSubCategory.
-
-  if (!$rootScope.currentMainCategory) {
-    $rootScope.changeCategory('');
-  }
-}];
-
-
-function parseCategoryPath(categoryPath: string): string[] {
-  var path = categoryPath;
-  if (!path || path.length == 0)
-    return [];
-
-  var paths = path.split('/');
-  return paths;
-}
+}]);
 
 
 //------------------------------------------------------------------------------
