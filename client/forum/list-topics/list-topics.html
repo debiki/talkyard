@@ -14,7 +14,7 @@
   <tbody>
     <tr ng-repeat="topic in topics">
       <td><a href="{{ topic.url }}">{{ topic.title }}</a></td>
-      <td>{{ topic.category }}</td>
+      <td>{{ topic.category.name }}</td>
       <td class="num">{{ topic.numPosts }}</td>
       <td class="num">{{ topic.numLikes }}</td>
       <td class="num">{{ topic.numWrongs }}</td>

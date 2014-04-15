@@ -20,31 +20,19 @@
 //------------------------------------------------------------------------------
 
 
-export class Topic {
+export class Category {
 
-  constructor(
-    private forumData: ForumData,
-    public id: string) {
+  constructor(private forumData: ForumData) {
   }
 
-  title: string;
-  url: string;
-  mainCategoryId: string;
-  subCategoryId: string;
-  numPosts: number;
-  numLikes: number;
-  numWrongs: number;
-  firstPostAt: Date;
-  lastPostAt: Date;
+  pageId: string;
+  name: string;
+  slug: string;
 
-  get categoryId(): string {
-    return this.subCategoryId ? this.subCategoryId : this.mainCategoryId;
-  }
-
-  public get category(): Category {
-    return this.forumData.categoriesById[this.categoryId];
-  }
-
+  // ?? which one of: ??
+  // anyParentCategoryId: string;
+  // subCategories: Category[];
+  // subCategoryIds: string[];
 }
 
 

@@ -24,30 +24,41 @@
 
 export class QueryService {
 
+  private debikiData: ForumData = (() => {
+    var d = new ForumData();
+    d.categoriesById['cat1'] = new Category(d);
+    d.categoriesById['cat1'].pageId = 'cat1';
+    d.categoriesById['cat1'].name = 'Cat 1';
+    d.categoriesById['cat1'].slug = 'cat-1';
+    d.categoriesById['subcat1'] = new Category(d);
+    d.categoriesById['subcat1'].pageId = 'subcat1';
+    d.categoriesById['subcat1'].name = 'SubCat 1';
+    d.categoriesById['subcat1'].slug = 'subcat-1';
+    return d;
+  })();
+
   public loadTopics(categoryId: string): Topic[] {
-    var t = new Topic();
-    t.id = '123abc';
+    var t = new Topic(this.debikiData, '123abc');
     t.title = 'Topic Title';
     t.url = '/nowhere';
-    t.categoryId = '123abcCategoryId';
-    t.subCategoryId = '123abcSubCategoryId';
+    t.mainCategoryId = 'cat1';
     t.numPosts = 10;
     t.numLikes = 3;
     t.numWrongs = 1;
     t.firstPostAt = new Date(2014, 4, 3);
     t.lastPostAt = new Date(2014, 4, 7);
-    var t2 = new Topic();
-    t2.id = '567def';
+    var t2 = new Topic(this.debikiData, '567def');
     t2.title = 'Another Topic Title';
     t2.url = '/really-nowhere';
-    t2.categoryId = '456defCategoryId';
-    t2.subCategoryId = '456defSubCategoryId';
+    t2.categoryId = 'cat1';
+    t2.subCategoryId = 'subcat1';
     t2.numPosts = 38;
     t2.numLikes = 9;
     t2.numWrongs = 4;
     t2.firstPostAt = new Date(2014, 2, 1);
     t2.lastPostAt = new Date(2014, 4, 9);
     return [t, t2];
+    return [t];
   }
 
 }

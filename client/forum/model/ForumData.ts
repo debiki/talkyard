@@ -20,31 +20,11 @@
 //------------------------------------------------------------------------------
 
 
-export class Topic {
+export class CategoriesMap { [id: string]: Category; }
 
-  constructor(
-    private forumData: ForumData,
-    public id: string) {
-  }
 
-  title: string;
-  url: string;
-  mainCategoryId: string;
-  subCategoryId: string;
-  numPosts: number;
-  numLikes: number;
-  numWrongs: number;
-  firstPostAt: Date;
-  lastPostAt: Date;
-
-  get categoryId(): string {
-    return this.subCategoryId ? this.subCategoryId : this.mainCategoryId;
-  }
-
-  public get category(): Category {
-    return this.forumData.categoriesById[this.categoryId];
-  }
-
+export class ForumData {
+  categoriesById: CategoriesMap = new CategoriesMap();
 }
 
 
