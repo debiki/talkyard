@@ -115,11 +115,11 @@ object ApplicationBuild extends Build {
   def mainSettings = List(
     scalaVersion := "2.10.1",
     compileRhinoTask := { "make compile_javascript"! },
-    compileJsAndCss := { "grunt release"! },
+    compileJsAndCss := { "gulp release"! },
 
-    // Make Grunt bundle JS files and CSS automatically.
-    playOnStarted += startGruntTask,
-    playOnStopped += stopGruntTask,
+    // Make Gulp bundle JS files and CSS automatically.
+    playOnStarted += startGulpTask,
+    playOnStopped += stopGulpTask,
 
     Keys.fork in Test := false, // or cannot place breakpoints in test suites
     Keys.compile in Compile <<=
@@ -141,25 +141,24 @@ object ApplicationBuild extends Build {
     "Invokes Rhino to compile Javascript to Java bytecode")
 
   def compileJsAndCss = TaskKey[Unit]("bundle-js-and-css",
-    "Invokes Grunt to transpile LiveScript to Javascript, " +
-      "and combine and minify Javascript and CSS")
+    "Invokes Gulp to compile TypeScript and Stylus etcetera")
 
 
-  // Starts Grunt on play run. (Grunt transpiles Livescript to Javascript and bundles
+  // Starts Gulp on play run. (Gulp compiles TypeScript to Javascript and bundles
   // minified Javascript and CSS files.)
-  def startGruntTask = (_: jn.InetSocketAddress) => {
+  def startGulpTask = (_: jn.InetSocketAddress) => {
     println("Starting `gulp watch` to build Javascript and CSS...")
     gulpProcess = Some(Process("gulp watch").run)
   }
 
-  // Stop grunt when `play run` stops.
+  // Stop Gulp when `play run` stops.
   // However! On my computer, there's a weird JNotifyException_linux error
-  // that prevents the `stopGruntTask` from running and stopping Grunt.
+  // that prevents the `stopGulpTask` from running and stopping Gulp.
   // Read more here: https://groups.google.com/forum/#!topic/play-framework/6Z34QLdl4e8
   // But when I installed everything on a clean Ubuntu 12.04 LTS server,
   // there were no JNotifyException_linux errors so perhaps it's just my machine
   // that's stupid.
-  def stopGruntTask = () => {
+  def stopGulpTask = () => {
     println("echo 'Stopping `gulp watch`...")
     gulpProcess.map(p => p.destroy())
     gulpProcess = None

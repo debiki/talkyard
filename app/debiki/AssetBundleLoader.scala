@@ -96,7 +96,7 @@ case class AssetBundleLoader(bundleNameNoSuffix: String,  bundleSuffix: String, 
 
 
   private def loadBundleFromJarFiles(): String = {
-    // Currently I've configured Grunt to bundle only:
+    // Currently I've configured Gulp to bundle only:
     //   app/views/themes/<themeName>/styles.css/*.css
     // to:
     //   public/themes/<themeName>/styles.css

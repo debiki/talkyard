@@ -20,7 +20,7 @@
  * Implements the Java interface to Markdown specified in
  * app/compiledjs/PagedownJs.java.
  *
- * (`grunt.js` ensures modules/pagedown/Markdown.Converter.js has
+ * (`gulpfile.js` ensures modules/pagedown/Markdown.Converter.js has
  * been prepended before this function.)
  */
 function makeHtml(jSource, jHostAndPort) {
