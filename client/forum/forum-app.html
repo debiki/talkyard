@@ -2,10 +2,10 @@
   <div class="dw-forum-actionbar clearfix">
     <div class="dw-main-category-dropdown btn-group">
       <a class="btn btn-default dropdown-toggle" data-toggle="dropdown" href="#">
-        {{ currentMainCategory.name || "All Categories" }} <span class="caret"></span>
+        {{ selectedCategories[0].name || "All Categories" }} <span class="caret"></span>
       </a>
       <ul class="dropdown-menu">
-        <li ng-repeat="category in categories">
+        <li ng-repeat="category in mv.allMainCategories">
           <a ng-click="mv.changeCategory(category.slug)">{{ category.name }}</a>
         </li>
       </ul>

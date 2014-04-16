@@ -24,17 +24,21 @@
 
 /**
  * Knows about all categories in the forum: lists categories, changes the
- * current category, clears the current choice of main and sub categories.
- *
- * Ooops! Modifies a scope. Then it should be a controller instead, only
- * controllers should modify scopes? Perhps I should split it into 1 service
- * and 1 controller?
+ * current category selection, clears the current choice of categories.
  */
 export class CategoryService {
+
+  private _selectedCategories = [];
+
 
   public static $inject = ['$rootScope'];
   constructor(private $rootScope) {
     this.setupCategories();
+  }
+
+
+  public get selectedCategories() {
+    return this._selectedCategories;
   }
 
 
@@ -44,13 +48,14 @@ export class CategoryService {
 
 
   public clearCurrentCategories() {
-    this.$rootScope.currentMainCategory = null;
-    this.$rootScope.currentSubCategory = null;
+    // Keep the original array, there might be other references to it that
+    // should be updated too.
+    this._selectedCategories.length = 0;
   }
 
 
   /**
-   * Updates $rootScope.currentMainCategory and $rootScope.currentSubCategory given
+   * Updates currentMainCategory and currentSubCategory given
    * the categories listed in the URL.
    */
   public updateCurrentCategories($stateParams) {
@@ -67,15 +72,16 @@ export class CategoryService {
     for (var i = 0; i < categories.length; ++i) {
       var category = categories[i];
       if (category.slug === categoryPath[0]) {
-        this.$rootScope.currentMainCategory = category;
+        this._selectedCategories.push(category);
         break;
       }
     }
 
-    // In the future: if $categoryPath.length > 1, then update $rootScope.currentSubCategory.
+    // In the future: if $categoryPath.length > 1, then push that category
+    // to _selectedCategories.
 
-    if (!this.$rootScope.currentMainCategory) {
-      this.$rootScope.changeCategory('');
+    if (!this._selectedCategories.length) {
+      this.changeCategory('');
     }
   }
 
@@ -93,23 +99,24 @@ export class CategoryService {
   /**
    * The server includes info on any blog or forum categories so we won't need
    * to ask for that separately. This function parses that data and adds  it to the
-   * $rootScope. And also adds a function `$rootScope.changeCategory(newCategorySlug)`.
+   * $rootScope. (Ooops services shouldn't update scopes!)
    */
   private setupCategories() {
     var pageDataText = $('#dw-page-data').text() || '{}'
     var pageDataJson = JSON.parse(pageDataText)
-    var $state = this.$rootScope.$state;
     this.$rootScope.categories = pageDataJson.categories || []
+  }
 
-    this.$rootScope.changeCategory = function(newCategorySlug: string) {
-      var nextState = '.';
-      // The 'categories' and 'index' states cannot be combined with any category,
-      // so switch to the 'latest' state instead.
-      if ($state.is('categories') || $state.is('index')) {
-        nextState = 'latest';
-      }
-      $state.go(nextState, { categoryPath: newCategorySlug });
+
+  public changeCategory(newCategorySlug: string) {
+    var $state = this.$rootScope.$state;
+    var nextState = '.';
+    // The 'categories' and 'index' states cannot be combined with any category,
+    // so switch to the 'latest' state instead.
+    if ($state.is('categories') || $state.is('index')) {
+      nextState = 'latest';
     }
+    $state.go(nextState, { categoryPath: newCategorySlug });
   }
 }
 
