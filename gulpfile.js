@@ -366,7 +366,7 @@ function makeConcatDebikiScriptsStream() {
 
       // Warning: Duplicated rule. A corresponding rule is also present
       // in the Makefile. Keep in sync.
-      makeConcatStream('concat-debiki-pagedown.js', 'debiki-pagedown.js', [
+      makeConcatStream('debiki-pagedown.js', [
           'modules/pagedown/Markdown.Converter.js',
           'client/compiledjs/PagedownJavaInterface.js']));
 };
