@@ -25,6 +25,7 @@
  */
 
 var gulp = require('gulp');
+var newer = require('gulp-newer');
 var templateCache = require('gulp-angular-templatecache');
 var typeScript = require('gulp-tsc');
 var liveScript = require('gulp-livescript');
@@ -285,7 +286,6 @@ gulp.task('compile-livescript', function () {
 
 gulp.task('compile-typescript', function () {
   var stream = gulp.src(['client/forum/**/*.ts'])
-    //.pipe(cache('typescript'))
     .pipe(typeScript({
       target: 'ES5',
       allowBool: true,
@@ -325,6 +325,9 @@ gulp.task('concat-debiki-scripts', [
 function makeConcatDebikiScriptsStream() {
   function makeConcatStream(outputFileName, filesToConcat) {
     return gulp.src(filesToConcat)
+        // `newer` here avoids rebuilding debiki-pagedown.js which would cause the
+        // Makefile to compile JS to Java followed by compilation of some Scala code.
+        .pipe(newer('public/res/' + outputFileName))
         .pipe(header(nextFileLine))
         .pipe(concat(outputFileName))
         .pipe(header(thisIsAConcatenationMessage))
@@ -366,7 +369,7 @@ function makeConcatDebikiScriptsStream() {
 
       // Warning: Duplicated rule. A corresponding rule is also present
       // in the Makefile. Keep in sync.
-      makeConcatStream('concat-debiki-pagedown.js', 'debiki-pagedown.js', [
+      makeConcatStream('debiki-pagedown.js', [
           'modules/pagedown/Markdown.Converter.js',
           'client/compiledjs/PagedownJavaInterface.js']));
 };
