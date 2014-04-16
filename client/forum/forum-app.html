@@ -5,7 +5,7 @@
         {{ selectedCategories[0].name || "All Categories" }} <span class="caret"></span>
       </a>
       <ul class="dropdown-menu">
-        <li ng-repeat="category in mv.allMainCategories">
+        <li ng-repeat="category in allMainCategories">
           <a ng-click="mv.changeCategory(category.slug)">{{ category.name }}</a>
         </li>
       </ul>

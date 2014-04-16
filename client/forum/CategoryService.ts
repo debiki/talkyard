@@ -29,6 +29,7 @@
 export class CategoryService {
 
   private _selectedCategories = [];
+  private _allCategories;
 
 
   public static $inject = ['$rootScope'];
@@ -42,8 +43,9 @@ export class CategoryService {
   }
 
 
-  public listCategories() {
-    return this.$rootScope.categories;
+  public get allMainCategories() {
+    // Currently the same as:
+    return this._allCategories;
   }
 
 
@@ -68,9 +70,8 @@ export class CategoryService {
     if (categoryPath.length == 0)
       return;
 
-    var categories = this.$rootScope.categories;
-    for (var i = 0; i < categories.length; ++i) {
-      var category = categories[i];
+    for (var i = 0; i < this._allCategories.length; ++i) {
+      var category = this._allCategories[i];
       if (category.slug === categoryPath[0]) {
         this._selectedCategories.push(category);
         break;
@@ -104,7 +105,7 @@ export class CategoryService {
   private setupCategories() {
     var pageDataText = $('#dw-page-data').text() || '{}'
     var pageDataJson = JSON.parse(pageDataText)
-    this.$rootScope.categories = pageDataJson.categories || []
+    this._allCategories = pageDataJson.categories || []
   }
 
 
@@ -117,6 +118,8 @@ export class CategoryService {
       nextState = 'latest';
     }
     $state.go(nextState, { categoryPath: newCategorySlug });
+    // The relevant `state.onEnter` function in ForumApp-impl.ts will call
+    // `this.updateCurrentCategories` once the state transition has happened.
   }
 }
 

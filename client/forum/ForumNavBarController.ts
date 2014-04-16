@@ -26,6 +26,7 @@
 interface IForumNavBarScope extends ng.IScope {
   mv: ForumNavBarController;
   selectedCategories;
+  allMainCategories;
   $state: any;
 }
 
@@ -35,15 +36,12 @@ class ForumNavBarController {
   public static $inject = ['$scope', 'CategoryService'];
   constructor(private $scope: IForumNavBarScope, private categoryService: CategoryService) {
     $scope.selectedCategories = categoryService.selectedCategories;
+    $scope.allMainCategories = categoryService.allMainCategories;
     $scope.mv = this;
   }
 
   public changeCategory(newCategorySlug: string) {
     this.categoryService.changeCategory(newCategorySlug);
-  }
-
-  public get allMainCategories() {
-    return this.categoryService.listCategories();
   }
 
 }
