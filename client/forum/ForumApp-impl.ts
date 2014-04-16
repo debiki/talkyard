@@ -35,10 +35,12 @@ forum.forumApp.config(['$stateProvider', '$urlRouterProvider',
   $stateProvider
     .state('index', {
       url: '/',
-      template: 'index template',
-      controller: function() {
-        console.log('index controller');
-      }
+      templateUrl: 'list-topics/list-topics.html',
+      controller: 'ListTopicsController',
+      onEnter: ['CategoryService',
+          function(categoryService: CategoryService) {
+        categoryService.updateCurrentCategories({});
+      }]
     })
     .state('latest', {
       url: '/latest/*categoryPath',
