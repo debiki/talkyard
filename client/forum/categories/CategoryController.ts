@@ -15,26 +15,26 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/// <reference path="typedefs/angularjs/angular.d.ts" />
-/// <reference path="ForumApp.ts" />
+/// <reference path="../typedefs/angularjs/angular.d.ts" />
+/// <reference path="../ForumApp.ts" />
 
 //------------------------------------------------------------------------------
    module forum {
 //------------------------------------------------------------------------------
 
 
-interface IForumNavBarScope extends ng.IScope {
-  mv: ForumNavBarController;
+interface CategoryScope extends ng.IScope {
+  mv: CategoryController;
   selectedCategories;
   allMainCategories;
   $state: any;
 }
 
 
-class ForumNavBarController {
+class CategoryController {
 
   public static $inject = ['$scope', 'CategoryService'];
-  constructor(private $scope: IForumNavBarScope, private categoryService: CategoryService) {
+  constructor(private $scope: CategoryScope, private categoryService: CategoryService) {
     $scope.selectedCategories = categoryService.selectedCategories;
     $scope.allMainCategories = categoryService.allMainCategories;
     $scope.mv = this;
@@ -47,7 +47,7 @@ class ForumNavBarController {
 }
 
 
-forum.forumApp.controller("ForumNavBarController", ForumNavBarController);
+forum.forumApp.controller("CategoryController", CategoryController);
 
 //------------------------------------------------------------------------------
    }
