@@ -5,7 +5,7 @@
     <tr>
       <th>Topic</th>
       <th>Category</th>
-      <th class="num">Posts</th>
+      <th class="num num-posts">Posts</th>
       <th class="num">Likes</th>
       <th class="num">Wrongs</th>
       <th class="num" colspan="2">Activity</th>
@@ -15,7 +15,7 @@
     <tr ng-repeat="topic in topics">
       <td><a href="{{ topic.url }}">{{ topic.title }}</a></td>
       <td>{{ topic.category.name }}</td>
-      <td class="num">{{ topic.numPosts }}</td>
+      <td class="num num-posts">{{ topic.numPosts }}</td>
       <td class="num">{{ topic.numLikes }}</td>
       <td class="num">{{ topic.numWrongs }}</td>
       <td class="num">{{ topic.createdAt }}</td>

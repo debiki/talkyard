@@ -75,6 +75,9 @@ object ForumController extends mvc.Controller {
       "pageId" -> category.id,
       "name" -> name,
       "slug" -> slug,
+      "description" -> "Forum category description, bla bla blah bla bla-bla bla-bla-bla bla blaa.",
+      "numTopics" -> category.meta.cachedNumChildPages, // COULD use ??cachedNumTopics?? instead?
+                                                // because child pages includes categories too.
       "recentTopics" -> recentTopicsJson)
   }
 

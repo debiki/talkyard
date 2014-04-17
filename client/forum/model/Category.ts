@@ -25,6 +25,8 @@ export class Category {
   pageId: string;
   name: string;
   slug: string;
+  description: string;
+  numTopics: number;
   recentTopics: Topic[] = [];
 
 
@@ -37,6 +39,8 @@ export class Category {
     c.pageId = json.pageId;
     c.name = json.name;
     c.slug = json.slug;
+    c.description = json.description;
+    c.numTopics = json.numTopics;
     for (var i = 0; i < (json.recentTopics || []).length; ++i) {
       var topicJson = json.recentTopics[i];
       var topic = Topic.fromJson(forumData, topicJson);
