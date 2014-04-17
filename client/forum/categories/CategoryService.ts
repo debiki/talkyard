@@ -33,13 +33,18 @@ export class CategoryService {
 
 
   public static $inject = ['$rootScope'];
-  constructor(private $rootScope) {
+  constructor(private $rootScope: RootScope) {
     this.setupCategories();
   }
 
 
   public get selectedCategories() {
     return this._selectedCategories;
+  }
+
+
+  public get allCategories() {
+    return this._allCategories;
   }
 
 
@@ -81,6 +86,9 @@ export class CategoryService {
     // In the future: if $categoryPath.length > 1, then push that category
     // to _selectedCategories.
 
+    // If the URL didn't match any category (no category specified, or perhaps
+    // the user entered a bad URL), select no category at all, and update
+    // the URL to reflect this.
     if (!this._selectedCategories.length) {
       this.changeCategory('');
     }

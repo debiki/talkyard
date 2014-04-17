@@ -15,49 +15,18 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/// <reference path="../typedefs/angularjs/angular.d.ts" />
-/// <reference path="../ForumApp.ts" />
-/// <reference path="../model/Topic.ts" />
-/// <reference path="../QueryService.ts" />
-/// <reference path="../categories/CategoryScope.ts" />
+/// <reference path="typedefs/angularjs/angular.d.ts" />
 
 //------------------------------------------------------------------------------
    module forum {
 //------------------------------------------------------------------------------
 
 
-interface ListTopicsScope extends CategoryScope {
-  topics: Topic[];
+export interface RootScope extends ng.IScope {
+  mv;
+  $state: any;
 }
 
-
-class ListTopicsController {
-
-  public static $inject = ['$scope', 'QueryService'];
-  constructor(private $scope: ListTopicsScope, private queryService: QueryService) {
-    console.log('New ListTopicsController.');
-    $scope.mv = this;
-    this.loadTopics();
-  }
-
-
-  private loadTopics() {
-    var categoryId = null;
-    if (this.$scope.selectedCategories.length == 1) {
-      categoryId = this.$scope.selectedCategories[0].pageId;
-    }
-    else if (this.$scope.selectedCategories.length == 2) {
-      categoryId = this.$scope.selectedCategories[1].pageId;
-    }
-
-    this.queryService.loadTopics(categoryId).then((topics: Topic[]) => {
-      this.$scope.topics = topics;
-    });
-  }
-}
-
-
-forum.forumApp.controller('ListTopicsController', ListTopicsController);
 
 //------------------------------------------------------------------------------
    }

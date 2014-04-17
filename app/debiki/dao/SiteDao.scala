@@ -99,6 +99,14 @@ class SiteDao(protected val siteDbDao: ChargingSiteDbDao)
 
   // ----- Pages
 
+  def listSuccessorPages(parentPageId: PageId, filterPageRole: Option[PageRole] = None)
+        : Seq[PagePathAndMeta] = {
+    // For now, consider direct children only:
+    listChildPages(parentPageId, PageSortOrder.ByPublTime, limit = 50,
+      filterPageRole = filterPageRole)
+  }
+
+
   def listChildPages(parentPageId: String, sortBy: PageSortOrder,
         limit: Int, offset: Int = 0, filterPageRole: Option[PageRole] = None)
         : Seq[PagePathAndMeta] =

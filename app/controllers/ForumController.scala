@@ -17,19 +17,16 @@
 
 package controllers
 
-import actions.ApiActions.PostJsonAction
+import actions.ApiActions.GetAction
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki._
-import debiki.DebikiHttp._
-import play.api._
-import libs.json.{JsString, JsValue}
-import play.api.data._
-import play.api.data.Forms._
+import java.{util => ju}
+import play.api.mvc
+import play.api.libs.json._
 import play.api.mvc.{Action => _, _}
 import requests.JsonPostRequest
-import scala.collection.{mutable => mut}
-import Utils.{OkHtml, Passhasher}
+import Utils.OkSafeJson
 
 
 /**
@@ -38,6 +35,30 @@ import Utils.{OkHtml, Passhasher}
 object ForumController extends mvc.Controller {
 
 
+  def listTopics(categoryId: PageId) = GetAction { request =>
+    val topics: Seq[PagePathAndMeta] = request.dao.listSuccessorPages(categoryId,
+      filterPageRole = Some(PageRole.ForumTopic))
+    val topicsJson: Seq[JsObject] = topics.map(topicToJson(_, categoryId))
+    var json = Json.obj("topics" -> topicsJson)
+    OkSafeJson(json)
+  }
+
+
+  private def topicToJson(topic: PagePathAndMeta, categoryId: PageId): JsObject = {
+    Json.obj(
+      "pageId" -> topic.id,
+      "title" -> topic.meta.cachedTitle,
+      "url" -> topic.path.path,
+      "mainCategoryId" -> categoryId,
+      "numPosts" -> 123,
+      "numLikes" -> 9,
+      "numWrongs" -> 4,
+      "firstPostAt" -> new ju.Date(0),
+      "lastPostAt" -> new ju.Date(Int.MaxValue))
+  }
+
+
+  /*
   /**
    * Wraps a forum in a forum group. That is, wraps a page F with role PageRole.Forum
    * in a new page FG with role PageRole.Forum. FG's parent will be F's
@@ -162,7 +183,7 @@ object ForumController extends mvc.Controller {
     // BrowserPagePatcher.jsonForNewAndEditedPages(
     //    newPages = List(PagePathAndMeta(groupPath, groupMeta)),
     //    modifiedPages = childForums)
-  }
+  }*/
 
 }
 

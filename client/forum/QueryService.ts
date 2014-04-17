@@ -16,6 +16,7 @@
  */
 
 /// <reference path="ForumApp.ts" />
+/// <reference path="plain-old-javascript.d.ts" />
 
 //------------------------------------------------------------------------------
    module forum {
@@ -24,43 +25,56 @@
 
 export class QueryService {
 
-  private debikiData: ForumData = (() => {
-    var d = new ForumData();
-    d.categoriesById['cat1'] = new Category(d);
-    d.categoriesById['cat1'].pageId = 'cat1';
-    d.categoriesById['cat1'].name = 'Cat 1';
-    d.categoriesById['cat1'].slug = 'cat-1';
-    d.categoriesById['subcat1'] = new Category(d);
-    d.categoriesById['subcat1'].pageId = 'subcat1';
-    d.categoriesById['subcat1'].name = 'SubCat 1';
-    d.categoriesById['subcat1'].slug = 'subcat-1';
-    return d;
-  })();
+  private forumId: string = this.getForumId();
+  private forumData: ForumData = new ForumData();
 
-  public loadTopics(categoryId: string): Topic[] {
-    var t = new Topic(this.debikiData, '123abc');
-    t.title = 'Topic Title';
-    t.url = '/nowhere';
-    t.mainCategoryId = 'cat1';
-    t.numPosts = 10;
-    t.numLikes = 3;
-    t.numWrongs = 1;
-    t.firstPostAt = new Date(2014, 4, 3);
-    t.lastPostAt = new Date(2014, 4, 7);
-    var t2 = new Topic(this.debikiData, '567def');
-    t2.title = 'Another Topic Title';
-    t2.url = '/really-nowhere';
-    t2.categoryId = 'cat1';
-    t2.subCategoryId = 'subcat1';
-    t2.numPosts = 38;
-    t2.numLikes = 9;
-    t2.numWrongs = 4;
-    t2.firstPostAt = new Date(2014, 2, 1);
-    t2.lastPostAt = new Date(2014, 4, 9);
-    return [t, t2];
-    return [t];
+
+  public static $inject = ['$http', '$q', 'CategoryService'];
+  constructor(private $http: ng.IHttpService, private $q: ng.IQService,
+      private categoryService: CategoryService) {
+
+    // Initialize forumData.categoriesById.
+    var categories = categoryService.allCategories;
+    for (var i = 0; i < categories.length; ++i) {
+      var category: Category = categories[i];
+      this.forumData.categoriesById[category.pageId] = category;
+    }
   }
 
+
+  public loadTopics(categoryId: string): ng.IPromise<Topic[]> {
+    var deferred = this.$q.defer<Topic[]>();
+    if (!categoryId) {
+      categoryId = this.forumId;
+    }
+    this.$http.get('/-/list-topics?categoryId=' + categoryId).success((response) => {
+      var topics: Topic[] = [];
+      for (var i = 0; i < response.topics.length; ++i) {
+        var data = response.topics[i];
+        var t = new Topic(this.forumData, data.id);
+          t.title = data.title;
+          t.url = data.url;
+          t.mainCategoryId = data.mainCategoryId;
+          t.numPosts = data.numPosts;
+          t.numLikes = data.numLikes;
+          t.numWrongs = data.numWrongs;
+          t.firstPostAt = data.firstPostAt;
+          t.lastPostAt = data.lastPostAt;
+        topics.push(t);
+      }
+      deferred.resolve(topics);
+    });
+
+    return deferred.promise;
+  }
+
+  /**
+   * The fourm id is the same as the page id.
+   */
+  private getForumId(): string {
+    // The page id is encoded in the HTML.
+    return debiki.getPageId();
+  }
 }
 
 

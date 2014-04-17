@@ -23,14 +23,6 @@
 //------------------------------------------------------------------------------
 
 
-interface CategoryScope extends ng.IScope {
-  mv: CategoryController;
-  selectedCategories;
-  allMainCategories;
-  $state: any;
-}
-
-
 class CategoryController {
 
   public static $inject = ['$scope', 'CategoryService'];
