@@ -22,18 +22,21 @@
    module forum {
 //------------------------------------------------------------------------------
 
+interface ListCategoriesScope extends CategoryScope {
+}
+
 
 class ListCategoriesController {
 
-  constructor(private $scope, $stateParams) {
+  public static $inject = ['$scope'];
+  constructor(private $scope: ListCategoriesScope) {
     $scope.mv = this;
-    $scope.boo = "This is the boo value, in ListCategoriesController";
   }
 
 }
 
 
-forum.forumApp.controller('ListCategoriesController', ['$scope', '$stateParams', ListCategoriesController]);
+forum.forumApp.controller('ListCategoriesController', ListCategoriesController);
 
 
 //------------------------------------------------------------------------------

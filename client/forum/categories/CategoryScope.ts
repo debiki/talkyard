@@ -24,8 +24,8 @@
 
 
 export interface CategoryScope extends RootScope {
-  selectedCategories;
-  allMainCategories;
+  selectedCategories: Category[];
+  allMainCategories: Category[];
 }
 
 

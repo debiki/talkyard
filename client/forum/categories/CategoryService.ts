@@ -28,8 +28,8 @@
  */
 export class CategoryService {
 
-  private _selectedCategories = [];
-  private _allCategories;
+  private _selectedCategories: Category[] = [];
+  private _allCategories: Category[] = [];
 
 
   public static $inject = ['$rootScope'];
