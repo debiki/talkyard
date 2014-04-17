@@ -25,7 +25,7 @@
             <td>
               <a class="topic-title" href="{{ topic.url }}">{{ topic.title }}</a>
               <span class="topic-details">
-                 – {{ topic.createdAt }} – {{ topic.numPosts }} posts
+                – {{ topic.numPosts }} posts, <span am-time-ago="topic.lastPostEpoch"></span>
               </span>
             </td>
           </tr>

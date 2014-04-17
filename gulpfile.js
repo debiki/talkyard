@@ -76,6 +76,8 @@ var nextFileLine =
 
 
 var debikiDesktopFiles = [
+      'bower_components/moment/min/moment.min.js',
+      'bower_components/angular-moment/angular-moment.min.js',
       'client/third-party/bootstrap/tooltip.js', //
       'client/third-party/bootstrap/dropdown.js',
       'client/third-party/bootstrap/tab.js',
@@ -151,6 +153,8 @@ var debikiDesktopFiles = [
 
 
 var debikiTouchFiles = [
+      'bower_components/moment/min/moment.min.js',
+      'bower_components/angular-moment/angular-moment.min.js',
       'client/third-party/bootstrap/dropdown.js',
       'client/third-party/bootstrap/tab.js',
       'client/third-party/diff_match_patch.js',

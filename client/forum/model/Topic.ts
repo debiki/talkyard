@@ -34,8 +34,8 @@ export class Topic {
   numPosts: number;
   numLikes: number;
   numWrongs: number;
-  createdAt: Date;
-  lastPostAt: Date;
+  createdEpoch: number;
+  lastPostEpoch: number;
 
 
   get categoryId(): string {
@@ -56,8 +56,8 @@ export class Topic {
     t.numPosts = json.numPosts;
     t.numLikes = json.numLikes;
     t.numWrongs = json.numWrongs;
-    t.createdAt = new Date(json.createdEpoch);
-    t.lastPostAt = new Date(json.lastPostEpoch);
+    t.createdEpoch = json.createdEpoch;
+    t.lastPostEpoch = json.lastPostEpoch;
     return t;
   }
 

@@ -25,7 +25,8 @@
 /**
  * Is initialized in ForumApp-impl.ts, to avoid cyclic file references.
  */
-export var forumApp = angular.module('ForumApp', ['ui.router', 'DebikiPageModule']);
+export var forumApp = angular.module('ForumApp', [
+    'ui.router', 'angularMoment', 'DebikiPageModule']);
 
 
 //------------------------------------------------------------------------------

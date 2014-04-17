@@ -8,7 +8,8 @@
       <th class="num num-posts">Posts</th>
       <th class="num">Likes</th>
       <th class="num">Wrongs</th>
-      <th class="num" colspan="2">Activity</th>
+      <th class="num">Created</th>
+      <th class="num">Last Post</th>
     </tr>
   </thead>
   <tbody>
@@ -18,8 +19,8 @@
       <td class="num num-posts">{{ topic.numPosts }}</td>
       <td class="num">{{ topic.numLikes }}</td>
       <td class="num">{{ topic.numWrongs }}</td>
-      <td class="num">{{ topic.createdAt }}</td>
-      <td class="num">{{ topic.lastPostAt }}</td>
+      <td class="num" am-time-ago="topic.createdEpoch"></td>
+      <td class="num" am-time-ago="topic.lastPostEpoch"></td>
     </tr>
 </ol>
 </div>
