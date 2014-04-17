@@ -22,12 +22,28 @@
 
 export class Category {
 
-  constructor(private forumData: ForumData) {
-  }
-
   pageId: string;
   name: string;
   slug: string;
+  recentTopics: Topic[] = [];
+
+
+  constructor(private forumData: ForumData) {
+  }
+
+
+  public static fromJson(forumData: ForumData, json): Category {
+    var c = new Category(forumData);
+    c.pageId = json.pageId;
+    c.name = json.name;
+    c.slug = json.slug;
+    for (var i = 0; i < (json.recentTopics || []).length; ++i) {
+      var topicJson = json.recentTopics[i];
+      var topic = Topic.fromJson(forumData, topicJson);
+      c.recentTopics.push(topic);
+    }
+    return c;
+  }
 
   // ?? which one of: ??
   // anyParentCategoryId: string;

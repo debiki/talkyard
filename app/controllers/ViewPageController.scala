@@ -106,19 +106,10 @@ object ViewPageController extends mvc.Controller {
       JsObject(Seq(
         "name" -> JsString(category.categoryName),
         "pageId" -> JsString(category.pageId),
-        "slug" -> JsString(categoryNameToSlug(category.categoryName)),
+        "slug" -> JsString(ForumController.categoryNameToSlug(category.categoryName)),
         "subCategories" -> JsArray()))
     }
     Json.obj("categories" -> categoriesJson).toString
-  }
-
-
-  /** For now only. In the future I'll generate the slug when the category is created?
-    */
-  private def categoryNameToSlug(name: String): String = {
-    name.toLowerCase.replaceAll(" ", "-") filterNot { char =>
-      "()!?[].," contains char
-    }
   }
 
 

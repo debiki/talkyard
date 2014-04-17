@@ -18,6 +18,7 @@
 package controllers
 
 import actions.ApiActions.GetAction
+import collection.mutable
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki._
@@ -29,8 +30,7 @@ import requests.JsonPostRequest
 import Utils.OkSafeJson
 
 
-/**
- * Handles requests related to forums, forum topics and forum groups.
+/** Handles requests related to forums and forum categories.
  */
 object ForumController extends mvc.Controller {
 
@@ -39,22 +39,68 @@ object ForumController extends mvc.Controller {
     val topics: Seq[PagePathAndMeta] = request.dao.listSuccessorPages(categoryId,
       filterPageRole = Some(PageRole.ForumTopic))
     val topicsJson: Seq[JsObject] = topics.map(topicToJson(_, categoryId))
-    var json = Json.obj("topics" -> topicsJson)
+    val json = Json.obj("topics" -> topicsJson)
     OkSafeJson(json)
   }
 
 
+  def listCategories(forumId: PageId) = GetAction { request =>
+    val categories = request.dao.listChildPages(parentPageId = forumId,
+      sortBy = PageSortOrder.ByPublTime, // COULD use PageSortOrder.Manual instead
+      limit = 999, filterPageRole = Some(PageRole.ForumCategory))
+
+    val recentTopicsByCategoryId =
+      mutable.Map[PageId, Seq[PagePathAndMeta]]()
+
+    for (category <- categories) {
+      val recentTopics = request.dao.listChildPages(parentPageId = category.id,
+        sortBy = PageSortOrder.ByPublTime, limit = 5, filterPageRole = Some(PageRole.ForumTopic))
+      recentTopicsByCategoryId(category.id) = recentTopics
+    }
+
+    val json = Json.obj("categories" -> categories.map({ category =>
+      categoryToJson(category, recentTopicsByCategoryId(category.id))
+    }))
+
+    OkSafeJson(json)
+  }
+
+
+  private def categoryToJson(category: PagePathAndMeta, recentTopics: Seq[PagePathAndMeta])
+        : JsObject = {
+    val name = category.meta.cachedTitle getOrElse "(Unnamed category)"
+    val slug = categoryNameToSlug(name)
+    val recentTopicsJson = recentTopics.map(topicToJson(_, category.id))
+    Json.obj(
+      "pageId" -> category.id,
+      "name" -> name,
+      "slug" -> slug,
+      "recentTopics" -> recentTopicsJson)
+  }
+
+
+  /** For now only. In the future I'll generate the slug when the category is created?
+    */
+  def categoryNameToSlug(name: String): String = {
+    name.toLowerCase.replaceAll(" ", "-") filterNot { char =>
+      "()!?[].," contains char
+    }
+  }
+
+
   private def topicToJson(topic: PagePathAndMeta, categoryId: PageId): JsObject = {
+    val createdEpoch = topic.meta.creationDati.getTime
+    val lastPostEpoch = topic.meta.cachedLastVisiblePostDati.map(_.getTime).get
     Json.obj(
       "pageId" -> topic.id,
       "title" -> topic.meta.cachedTitle,
       "url" -> topic.path.path,
       "mainCategoryId" -> categoryId,
-      "numPosts" -> 123,
-      "numLikes" -> 9,
-      "numWrongs" -> 4,
-      "firstPostAt" -> new ju.Date(0),
-      "lastPostAt" -> new ju.Date(Int.MaxValue))
+      "numPosts" -> JsNumber(topic.meta.cachedNumRepliesVisible + 1),
+      "numLikes" -> -1,
+      "numWrongs" -> -1,
+      "createdEpoch" -> createdEpoch,
+      "lastPostEpoch" -> lastPostEpoch)
   }
 
 

@@ -51,22 +51,33 @@ export class QueryService {
       var topics: Topic[] = [];
       for (var i = 0; i < response.topics.length; ++i) {
         var data = response.topics[i];
-        var t = new Topic(this.forumData, data.id);
-          t.title = data.title;
-          t.url = data.url;
-          t.mainCategoryId = data.mainCategoryId;
-          t.numPosts = data.numPosts;
-          t.numLikes = data.numLikes;
-          t.numWrongs = data.numWrongs;
-          t.firstPostAt = data.firstPostAt;
-          t.lastPostAt = data.lastPostAt;
+        var t = Topic.fromJson(this.forumData, data);
         topics.push(t);
       }
       deferred.resolve(topics);
     });
-
     return deferred.promise;
   }
+
+
+  /**
+   * Loads all categories including descriptions and topic counts and links to
+   * a few recent topics.
+   */
+  public loadCategoryDetails(): ng.IPromise<Category[]> {
+    var deferred = this.$q.defer<Category[]>();
+    this.$http.get('/-/list-categories?forumId=' + this.forumId).success((response) => {
+      var categories: Category[] = [];
+      for (var i = 0; i < response.categories.length; ++i) {
+        var data = response.categories[i];
+        var c = Category.fromJson(this.forumData, data);
+        categories.push(c);
+      }
+      deferred.resolve(categories);
+    });
+    return deferred.promise;
+  }
+
 
   /**
    * The fourm id is the same as the page id.

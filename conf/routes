@@ -98,6 +98,7 @@ GET   /-/load-special-content   controllers.SpecialContentController.loadContent
 POST  /-/save-special-content   controllers.SpecialContentController.saveContent
 
 GET   /-/list-topics            controllers.ForumController.listTopics(categoryId)
+GET   /-/list-categories        controllers.ForumController.listCategories(forumId)
 
 POST  /-/configure-user         controllers.ConfigUserController.handleConfiguration()
 GET   /-/load-my-page-activity  controllers.ViewPageController.loadMyPageActivity(pageId)

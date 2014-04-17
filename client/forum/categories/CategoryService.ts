@@ -67,9 +67,6 @@ export class CategoryService {
    */
   public updateCurrentCategories($stateParams) {
     var categoryPath = this.parseCategoryPath($stateParams.categoryPath);
-    console.log('$stateParams: ' + $stateParams);
-    console.log('$stateParams.categoryPath: ' + $stateParams.categoryPath);
-    console.log('cat path: ' + categoryPath);
 
     this.clearCurrentCategories();
     if (categoryPath.length == 0)

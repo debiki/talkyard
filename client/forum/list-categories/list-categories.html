@@ -8,7 +8,7 @@
     </tr>
   </thead>
   <tbody>
-    <tr ng-repeat="category in allMainCategories">
+    <tr ng-repeat="category in categoryDetails">
       <td class="forum-info">
         <div class="forum-title-wrap">
           <a class="forum-title" ui-sref="latest({ categoryPath: category.slug })">
@@ -23,9 +23,9 @@
         <tbody>
           <tr ng-repeat="topic in category.recentTopics">
             <td>
-              <a class="topic-title" href="@{topic.path}">{{ topic.title }}</a>
+              <a class="topic-title" href="{{ topic.url }}">{{ topic.title }}</a>
               <span class="topic-details">
-                 – {{ topic.createdAt }} – {{ topic.numRepliesApproved }} replies
+                 – {{ topic.createdAt }} – {{ topic.numPosts }} posts
               </span>
             </td>
           </tr>

@@ -23,14 +23,23 @@
 //------------------------------------------------------------------------------
 
 interface ListCategoriesScope extends CategoryScope {
+  categoryDetails: Category[];
 }
 
 
 class ListCategoriesController {
 
-  public static $inject = ['$scope'];
-  constructor(private $scope: ListCategoriesScope) {
+  public static $inject = ['$scope', 'QueryService'];
+  constructor(private $scope: ListCategoriesScope, private queryService: QueryService) {
     $scope.mv = this;
+    this.loadCategoryDetails();
+  }
+
+
+  private loadCategoryDetails() {
+    this.queryService.loadCategoryDetails().then((categoryDetails: Category[]) => {
+      this.$scope.categoryDetails = categoryDetails;
+    });
   }
 
 }

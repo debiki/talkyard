@@ -34,15 +34,31 @@ export class Topic {
   numPosts: number;
   numLikes: number;
   numWrongs: number;
-  firstPostAt: Date;
+  createdAt: Date;
   lastPostAt: Date;
+
 
   get categoryId(): string {
     return this.subCategoryId ? this.subCategoryId : this.mainCategoryId;
   }
 
+
   public get category(): Category {
     return this.forumData.categoriesById[this.categoryId];
+  }
+
+
+  public static fromJson(forumData: ForumData, json): Topic {
+    var t = new Topic(forumData, json.pageId);
+    t.title = json.title;
+    t.url = json.url;
+    t.mainCategoryId = json.mainCategoryId;
+    t.numPosts = json.numPosts;
+    t.numLikes = json.numLikes;
+    t.numWrongs = json.numWrongs;
+    t.createdAt = new Date(json.createdEpoch);
+    t.lastPostAt = new Date(json.lastPostEpoch);
+    return t;
   }
 
 }
