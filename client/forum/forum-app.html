@@ -28,6 +28,7 @@
     </ul>
 
     <button ng-show="!$state.includes('categories')"
+            ng-click="mv.createTopic()"
             class="btn btn-default">Create Topic</button>
     <button ng-show="$state.includes('categories')"
             class="btn btn-default">Create Category</button>

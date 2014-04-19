@@ -16,6 +16,7 @@
  */
 
 /// <reference path="../typedefs/angularjs/angular.d.ts" />
+/// <reference path="../typedefs/lodash/lodash.d.ts" />
 /// <reference path="../ForumApp.ts" />
 
 //------------------------------------------------------------------------------
@@ -32,8 +33,29 @@ class CategoryController {
     $scope.mv = this;
   }
 
+
   public changeCategory(newCategorySlug: string) {
     this.categoryService.changeCategory(newCategorySlug);
+  }
+
+
+  public get selectedCategoryOrForumId() {
+    var anySelectedCategory = _.last<Category>(this.$scope.selectedCategories);
+    if (!anySelectedCategory) {
+      // Return the forum id.
+      return this.$scope.pageId;
+    }
+    return anySelectedCategory.pageId;
+  }
+
+
+  public createTopic() {
+    debiki.internal.createChildPage({
+      pageRole: 'ForumTopic',
+      parentPageId: this.selectedCategoryOrForumId,
+      status: 'Published',
+      window: window
+    });
   }
 
 }

@@ -28,7 +28,9 @@ trait HasPageMeta {
     def ancestorIdsParentFirst: List[PageId]
   } =>
 
-  require(meta.parentPageId == ancestorIdsParentFirst.headOption)
+  require(meta.parentPageId == ancestorIdsParentFirst.headOption,
+    o"""Parent page id and ancestor ids mismatch, parent: ${meta.parentPageId}, ancestors:
+      ${ancestorIdsParentFirst} [DwE0FBY8]""")
 
   def id = meta.pageId
   def role = meta.pageRole

@@ -25,6 +25,14 @@
 export interface RootScope extends ng.IScope {
   mv;
   $state: any;
+
+  // These properties are added by client/page/scripts/bootstrap-angularjs.ls:
+  pageId: string;
+  pagePath: string;
+  pageRole: string;
+  pageStatus: string;
+  parentPageId: string;
+  pageExists: boolean;
 }
 
 
