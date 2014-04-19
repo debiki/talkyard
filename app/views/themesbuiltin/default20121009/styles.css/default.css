@@ -361,9 +361,7 @@ body > .container {
 }
 
 @media (max-width: 980px) {
-  .container,
-  .dw-p-ttl .dw-p-bd-blk,
-  .dw-ar-p-bd {
+  .container {
     width: 748px;
   }
   #topbar > .container {
@@ -395,14 +393,7 @@ body > .container {
     padding-bottom: 10px;
     display: inline-block;
   }
-  #topbar > .container {
-    padding-right: 0;
-    padding-left: 0;
-  }
-  #topbar { padding: 0 20px; } /* .container already has 20px padding */
-  .container,
-  .dw-p-ttl .dw-p-bd-blk,
-  .dw-ar-p-bd {
+  .container {
     width: 500px;
   }
 }
@@ -420,33 +411,41 @@ Add some manual shrinking here:
   .container { width: 450px; }
   /* But don't set `width` for the actual text contents; I think
   that then Android won't add line wraps to make paras fit on screen. */
+  /* This is wrong -- doesn't take into account .container's 20 x 2 px padding:
   .dw-ar-p-bd,
   .dw-p-ttl .dw-p-bd-blk,
   .dw-p-bd-blk { max-width: 450px; }
+  */
 }
 
 @media (max-width: 475px) {
   .container { width: 400px; }
+  /* This is wrong -- doesn't take into account .container's 20 x 2 px padding:
   .dw-ar-p-bd,
   .dw-p-ttl .dw-p-bd-blk,
   .dw-p-bd-blk { max-width: 400px; }
+  */
   /* Change from 20px to 10px padding. */
   #topbar, body > .container { padding: 0 10px; }
 }
 
 @media (max-width: 425px) {
   .container { width: 360px; }
+  /* This is wrong -- doesn't take into account .container's 20 x 2 px padding:
   .dw-ar-p-bd,
   .dw-p-ttl .dw-p-bd-blk,
-  .dw-p-bd-blk { max-width: 360px; } /* + 10px padding + 5 whitespace = 375px (next @media below) */
+  .dw-p-bd-blk { max-width: 360px; } / * + 10px padding + 5 whitespace = 375px (next @media below) * /
+  */
 }
 
 @media (max-width: 375px) {
   /* The smallest modern mobile phones are 320px wide. (?) */
   .container { width: 300px; }
+  /* This is wrong -- doesn't take into account .container's 20 x 2 px padding:
   .dw-ar-p-bd,
   .dw-p-ttl .dw-p-bd-blk,
   .dw-p-bd-blk { max-width: 300px; } /* + 2 x 10px padding = 320 */
+  */
 }
 
 
