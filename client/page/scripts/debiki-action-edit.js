@@ -42,9 +42,9 @@ d.i.$loadEditorDependencies = (function() {
       test: loadCodeMirror,
       yep: [
         assetsPrefix + 'codemirror-3-13-custom.css',
-        assetsPrefix + 'codemirror-3-13-custom.js'],
+        assetsPrefix + 'codemirror-3-13-custom.' + d.i.minMaxJs],
       both: [
-        assetsPrefix + 'debiki-pagedown.min.js'],
+        assetsPrefix + 'debiki-pagedown.' + d.i.minMaxJs],
       complete: function() {
         loadStatus.resolve();
       }
