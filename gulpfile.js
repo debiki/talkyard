@@ -535,6 +535,15 @@ gulp.task('build-themes', function () {
       .pipe(gulp.dest(destDir));
   };
 
+  // Also compile the default theme, which is placed in another folder.
+  var defaultThemeStream = gulp.src('app/views/themesbuiltin/default20121009/styles.css/**/*.css')
+      .pipe(concat('styles.css'))
+      .pipe(gulp.dest('public/themes/default20121009/'))
+      .pipe(minifyCSS())
+      .pipe(concat('styles.min.css'))
+      .pipe(gulp.dest('public/themes/default20121009/'));
+  themeStreams.push(defaultThemeStream);
+
   return es.merge.apply(null, themeStreams);
 });
 
@@ -555,7 +564,8 @@ gulp.task('watch', function() {
   gulp.watch('client/**/*.ls', ['compile-livescript-concat-scripts']).on('change', logChangeFn('LiveScript'));
   gulp.watch('client/**/*.js', ['wrap-javascript-concat-scripts']).on('change', logChangeFn('Javascript'));
   gulp.watch('client/**/*.styl', ['compile-stylus']).on('change', logChangeFn('Stylus'));
-  gulp.watch('app/views/themes/**/*.css', ['build-themes']).on('change', logChangeFn('CSS'));
+  gulp.watch(['app/views/themes/**/*.css', 'app/views/themesbuiltin/default20121009/styles.css/**/*.css'],
+      ['build-themes']).on('change', logChangeFn('CSS'));
 
   // what about theme files,?
   //   app/views/themes/** /*.js
