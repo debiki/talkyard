@@ -387,6 +387,17 @@ body > .container {
   }
 }
 
+/* Extra step */
+@media (max-width: 880px) {
+  #topbar > .container nav > a {
+    padding-bottom: 10px;
+    display: inline-block;
+  }
+  .container {
+    width: 648px;
+  }
+}
+
 /* 500px wide layout, mainly for mobile phones in landscape orientation. */
 @media (max-width: 767px) {
   #topbar > .container nav > a {
