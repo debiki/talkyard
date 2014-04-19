@@ -100,8 +100,8 @@ object ForumController extends mvc.Controller {
       "url" -> topic.path.path,
       "mainCategoryId" -> categoryId,
       "numPosts" -> JsNumber(topic.meta.cachedNumRepliesVisible + 1),
-      "numLikes" -> -1,
-      "numWrongs" -> -1,
+      "numLikes" -> topic.meta.cachedNumLikes,
+      "numWrongs" -> topic.meta.cachedNumWrongs,
       "createdEpoch" -> createdEpoch,
       "lastPostEpoch" -> lastPostEpoch)
   }

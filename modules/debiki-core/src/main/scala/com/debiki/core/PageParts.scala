@@ -373,7 +373,7 @@ case class PageParts (
   def title = titlePost // COULD remove `titlePost`
   def titlePost: Option[Post] = getPost(PageParts.TitleId)
 
-  /** The page title, as plain text, but the empty string is changed to None. */
+  /** The page title, as plain text. */
   def approvedTitleText: Option[String] =
     titlePost.flatMap(_.approvedText).filter(_.nonEmpty)
 
@@ -457,11 +457,15 @@ case class PageParts (
   }
 
   lazy val (
+      numLikes,
+      numWrongs,
       numPosters,
       numPostsDeleted,
       numRepliesVisible,
       numPostsToReview,
       lastVisiblePostDati) = {
+    var numLikes = 0
+    var numWrongs = 0
     var numDeleted = 0
     var numVisible = 0
     var numPendingReview = 0
@@ -481,12 +485,16 @@ case class PageParts (
           // to count them because they always exist (on normal pages) Num replies,
           // however, is interesting.
         }
+
         val isNewer = lastDati.isEmpty || lastDati.get.getTime < post.creationDati.getTime
         if (isNewer) lastDati = Some(post.creationDati)
+
+        numLikes += post.numLikeVotes
+        numWrongs += post.numWrongVotes
       }
       else numPendingReview += 1
     }
-    (posterUserIds.size, numDeleted, numVisible, numPendingReview, lastDati)
+    (numLikes, numWrongs, posterUserIds.size, numDeleted, numVisible, numPendingReview, lastDati)
   }
 
   def topLevelComments: Seq[Post] =

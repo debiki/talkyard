@@ -321,6 +321,8 @@ abstract class SiteDbDao {
 
 abstract class SystemDbDao {
 
+  def applyEvolutions()
+
   def close()  // remove? move to DbDaoFactory in some manner?
 
 

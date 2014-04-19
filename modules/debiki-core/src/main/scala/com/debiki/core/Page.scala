@@ -199,6 +199,8 @@ object PageMeta {
       cachedAuthorUserId = author.id,
       cachedNumPosters = parts.numPosters,
       cachedNumActions = parts.actionCount,
+      cachedNumLikes = parts.numLikes,
+      cachedNumWrongs = parts.numWrongs,
       cachedNumPostsToReview = parts.numPostsToReview,
       cachedNumPostsDeleted = parts.numPostsDeleted,
       cachedNumRepliesVisible = parts.numRepliesVisible,
@@ -218,11 +220,23 @@ object PageMeta {
       changedPage.modificationDati.map(_.getTime) getOrElse 0: Long,
       originalMeta.modDati.getTime))
 
+    val authorUserId = originalMeta.cachedAuthorUserId orIfEmpty {
+      changedPage.body.map(_.userId) getOrElse ""
+    }
+
+    val authorDispName = originalMeta.cachedAuthorDispName orIfEmpty {
+      changedPage.body.flatMap(post => post.user.map(_.displayName)) getOrElse ""
+    }
+
     originalMeta.copy(
       cachedTitle = changedPage.approvedTitleText,
       modDati = modifiedAt,
+      cachedAuthorDispName = authorDispName,
+      cachedAuthorUserId = authorUserId,
       cachedNumPosters = changedPage.numPosters,
       cachedNumActions = changedPage.actionCount,
+      cachedNumLikes = changedPage.numLikes,
+      cachedNumWrongs = changedPage.numWrongs,
       cachedNumPostsDeleted = changedPage.numPostsDeleted,
       cachedNumRepliesVisible = changedPage.numRepliesVisible,
       cachedNumPostsToReview = changedPage.numPostsToReview,
@@ -249,6 +263,8 @@ object PageMeta {
   * @param cachedAuthorUserId
   * @param cachedNumPosters
   * @param cachedNumActions
+  * @param cachedNumLikes
+  * @param cachedNumWrongs
   * @param cachedNumPostsDeleted
   * @param cachedNumRepliesVisible
   * @param cachedNumPostsToReview
@@ -270,6 +286,8 @@ case class PageMeta(
   cachedAuthorUserId: String,
   cachedNumPosters: Int = 0,
   cachedNumActions: Int = 0,
+  cachedNumLikes: Int = 0,
+  cachedNumWrongs: Int = 0,
   cachedNumPostsDeleted: Int = 0,
   cachedNumRepliesVisible: Int = 0,
   cachedNumPostsToReview: Int = 0,
