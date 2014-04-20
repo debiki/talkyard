@@ -623,13 +623,13 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
       }
 
       "find no child pages of a non-existing page" in {
-        val childs = dao.listChildPages("doesNotExist",
+        val childs = dao.listChildPages(Seq("doesNotExist"),
           PageSortOrder.ByPublTime, limit = 10)
         childs.length must_== 0
       }
 
       "find no child pages of a page with no children" in {
-        val childs = dao.listChildPages(blogArticleId,
+        val childs = dao.listChildPages(Seq(blogArticleId),
           PageSortOrder.ByPublTime, limit = 10)
         childs.length must_== 0
       }
@@ -651,20 +651,20 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
       }
 
       "find child pages of the Blog" in {
-        val childs = dao.listChildPages(blogMainPageId,
+        val childs = dao.listChildPages(Seq(blogMainPageId),
           PageSortOrder.ByPublTime, limit = 10)
         testFoundChild(childs)
       }
 
       "find child pages also when page role specified" in {
-        val childs = dao.listChildPages(blogMainPageId,
+        val childs = dao.listChildPages(Seq(blogMainPageId),
           PageSortOrder.ByPublTime, limit = 10,
           filterPageRole = Some(PageRole.BlogPost))
         testFoundChild(childs)
       }
 
       "find no child pages of the wrong page role" in {
-        val childs = dao.listChildPages(blogMainPageId,
+        val childs = dao.listChildPages(Seq(blogMainPageId),
           PageSortOrder.ByPublTime, limit = 10,
           filterPageRole = Some(PageRole.ForumTopic))
         childs.length must_== 0
@@ -858,7 +858,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
       }
 
       "can load ancestors, when listing child pages" in {
-        val forumChilds = dao.listChildPages(forum.id, PageSortOrder.ByPublTime, limit = 10)
+        val forumChilds = dao.listChildPages(Seq(forum.id), PageSortOrder.ByPublTime, limit = 10)
         forumChilds.length must_== 1
         forumChilds must beLike {
           case List(PagePathAndMeta(_, ancestorIdsParentFirst, _)) =>

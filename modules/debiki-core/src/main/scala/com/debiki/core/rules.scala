@@ -45,8 +45,11 @@ case class PermsOnPageQuery(
 sealed abstract class PageSortOrder
 object PageSortOrder {
   //case object ByTitle extends PageSortOrder
+  case object Any extends PageSortOrder
   case object ByPath extends PageSortOrder
   case object ByPublTime extends PageSortOrder
+  case object ByBumpTime extends PageSortOrder
+  case object ByNumLikes extends PageSortOrder
 }
 
 

@@ -355,7 +355,7 @@ class InternalPageTpi protected (protected val _pageReq: PageRequest[_]) extends
 
   def listNewestChildPages(): Seq[tpi.Page] = {
     val pathsAndMeta: Seq[PagePathAndMeta] =
-      _pageReq.dao.listChildPages(parentPageId = pageId,
+      _pageReq.dao.listChildPages(parentPageIds = Seq(pageId),
           sortBy = PageSortOrder.ByPublTime, limit = 10, offset = 0)
 
     // "Access control". Filter out pages that has not yet been published.
@@ -413,7 +413,7 @@ class InternalPageTpi protected (protected val _pageReq: PageRequest[_]) extends
     // via e.g. `listPublishedSubForums` — Might as well ask for all successor
     // pages from here, because if there *are* any successors, we will
     // likely list all of them.
-    val pathsAndMeta = _pageReq.dao.listChildPages(parentPageId = pageId,
+    val pathsAndMeta = _pageReq.dao.listChildPages(parentPageIds = Seq(pageId),
       sortBy = PageSortOrder.ByPublTime, limit = 1, offset = 0)
     pathsAndMeta.nonEmpty
   }
@@ -456,7 +456,7 @@ class InternalPageTpi protected (protected val _pageReq: PageRequest[_]) extends
         : Seq[PagePathAndMeta] = {
 
     val pathsAndMeta: Seq[PagePathAndMeta] =
-      _pageReq.dao.listChildPages(parentPageId = parentPageId getOrElse pageId,
+      _pageReq.dao.listChildPages(parentPageIds = Seq(parentPageId getOrElse pageId),
         sortBy = PageSortOrder.ByPublTime, limit = limit, offset = offset,
         filterPageRole = filterPageRole)
 

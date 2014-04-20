@@ -36,8 +36,14 @@ object ForumController extends mvc.Controller {
 
 
   def listTopics(categoryId: PageId) = GetAction { request =>
-    val topics: Seq[PagePathAndMeta] = request.dao.listSuccessorPages(categoryId,
-      filterPageRole = Some(PageRole.ForumTopic))
+    val childCategories = request.dao.listChildPages(parentPageIds = Seq(categoryId),
+      sortBy = PageSortOrder.Any, limit = 999, filterPageRole = Some(PageRole.ForumCategory))
+    val childCategoryIds = childCategories.map(_.id)
+    val allCategoryIds = childCategoryIds :+ categoryId
+
+    val topics: Seq[PagePathAndMeta] = request.dao.listChildPages(parentPageIds = allCategoryIds,
+      sortBy = PageSortOrder.ByBumpTime, limit = 50, filterPageRole = Some(PageRole.ForumTopic))
+
     val topicsJson: Seq[JsObject] = topics.map(topicToJson(_, categoryId))
     val json = Json.obj("topics" -> topicsJson)
     OkSafeJson(json)
@@ -45,7 +51,7 @@ object ForumController extends mvc.Controller {
 
 
   def listCategories(forumId: PageId) = GetAction { request =>
-    val categories = request.dao.listChildPages(parentPageId = forumId,
+    val categories = request.dao.listChildPages(parentPageIds = Seq(forumId),
       sortBy = PageSortOrder.ByPublTime, // COULD use PageSortOrder.Manual instead
       limit = 999, filterPageRole = Some(PageRole.ForumCategory))
 
@@ -53,7 +59,7 @@ object ForumController extends mvc.Controller {
       mutable.Map[PageId, Seq[PagePathAndMeta]]()
 
     for (category <- categories) {
-      val recentTopics = request.dao.listChildPages(parentPageId = category.id,
+      val recentTopics = request.dao.listChildPages(parentPageIds = Seq(category.id),
         sortBy = PageSortOrder.ByPublTime, limit = 5, filterPageRole = Some(PageRole.ForumTopic))
       recentTopicsByCategoryId(category.id) = recentTopics
     }

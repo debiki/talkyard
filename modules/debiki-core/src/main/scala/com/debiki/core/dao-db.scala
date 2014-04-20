@@ -186,7 +186,7 @@ abstract class SiteDbDao {
         limit: Int,
         offset: Int): Seq[PagePathAndMeta]
 
-  def listChildPages(parentPageId: String, sortBy: PageSortOrder,
+  def listChildPages(parentPageIds: Seq[String], sortBy: PageSortOrder,
         limit: Int, offset: Int = 0, filterPageRole: Option[PageRole] = None)
         : Seq[PagePathAndMeta]
 
@@ -607,11 +607,11 @@ class ChargingSiteDbDao(
     _spi.listPagePaths(pageRanges, include, sortBy, limit, offset)
   }
 
-  def listChildPages(parentPageId: String, sortBy: PageSortOrder,
+  def listChildPages(parentPageIds: Seq[String], sortBy: PageSortOrder,
         limit: Int, offset: Int = 0, filterPageRole: Option[PageRole])
         : Seq[PagePathAndMeta] = {
     _chargeForOneReadReq()
-    _spi.listChildPages(parentPageId, sortBy, limit = limit, offset = offset,
+    _spi.listChildPages(parentPageIds, sortBy, limit = limit, offset = offset,
       filterPageRole = filterPageRole)
   }
 
