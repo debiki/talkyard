@@ -48,7 +48,7 @@ object InternalPageTpi {
     safeBodyHtml: String)
 
 
-  case class Forum(
+  case class ForumOrCategory(
     id: String, path: String, title: String, numTopics: Int)
     // and, in the future: num topics, num contributors and num replies?
 
@@ -90,12 +90,28 @@ object InternalPageTpi {
   }
 
 
-  object Forum {
-    def apply(pageMeta: PageMeta, pagePath: PagePath): Forum = Forum(
-      id = pageMeta.pageId,
-      path = pagePath.path,
-      title = pageMeta.cachedTitle getOrElse "(Unnamed forum)",
-      numTopics = pageMeta.cachedNumChildPages)
+  object ForumOrCategory {
+    def apply(forumPath: String, pageMeta: PageMeta, pagePath: PagePath): ForumOrCategory = {
+      val path =
+        if (pagePath.path == forumPath) {
+          // This is the forum itself.
+          forumPath
+        }
+        else {
+          // This is a category.
+          // Currently the forum AngularJS app uses hash fragment URLs for navigation
+          // inside the forum, unfortunately, see: client/forum/ForumApp-impl.ts.
+          // Let's show the latest topics for this category:
+          val categoryName =
+            controllers.ForumController.categoryNameToSlug(pageMeta.cachedTitle getOrElse "")
+          s"$forumPath#/latest/$categoryName"
+        }
+      ForumOrCategory(
+        id = pageMeta.pageId,
+        path = path,
+        title = pageMeta.cachedTitle getOrElse "(Unnamed forum)",
+        numTopics = pageMeta.cachedNumChildPages)
+    }
   }
 
 
@@ -381,31 +397,45 @@ class InternalPageTpi protected (protected val _pageReq: PageRequest[_]) extends
   /**
    * Returns any parent forums, e.g.: grandparent-forum :: parent-forum :: Nil.
    */
-  def listParentForums(): Seq[tpi.Forum] = {
-    _pageReq.pageMeta_!.parentPageId match {
-      case None => Nil
-      case Some(pageId) =>
-        _pageReq.dao.listAncestorsAndOwnMeta(pageId) map { case (pagePath, pageMeta) =>
-          tpi.Forum(pageMeta, pagePath)
-        }
+  def listParentForums(): Seq[tpi.ForumOrCategory] = {
+    val parentPageId = _pageReq.pageMeta_!.parentPageId match {
+      case None => return Nil
+      case Some(pageId) => pageId
     }
+
+    val ancestorPatshAndMeta: Seq[(PagePath, PageMeta)] =
+      _pageReq.dao.listAncestorsAndOwnMeta(pageId).init
+
+    val (forumPath, forumMeta) = ancestorPatshAndMeta.headOption match {
+      case None => return Nil
+      case Some(pathAndMeta) => pathAndMeta
+    }
+
+    val forumsAndCats = ancestorPatshAndMeta map { case (pagePath, pageMeta) =>
+      tpi.ForumOrCategory(forumPath.path, pageMeta, pagePath)
+    }
+
+    forumsAndCats
   }
 
 
-  def listPublishedSubForums(): Seq[tpi.Forum] =
+  /* I can make these work again, later, if I implement non-Javascript version of the forum page:
+
+  def listPublishedSubForums(): Seq[tpi.ForumOrCategory] =
     listPubSubForumsImpl(pageId)
 
 
-  def listPublishedSubForumsOf(forum: tpi.Forum): Seq[tpi.Forum] =
+  def listPublishedSubForumsOf(forum: tpi.ForumOrCategory): Seq[tpi.ForumOrCategory] =
     listPubSubForumsImpl(forum.id)
 
 
-  private def listPubSubForumsImpl(parentPageId: String): Seq[tpi.Forum] =
+  private def listPubSubForumsImpl(parentPageId: String): Seq[tpi.ForumOrCategory] =
     listPublishedChildren(
       parentPageId = Some(parentPageId),
       filterPageRole = Some(PageRole.ForumCategory)) map { pathAndMeta =>
-        tpi.Forum(pathAndMeta.meta, pathAndMeta.path)
+        tpi.ForumOrCategory(pathAndMeta.meta, pathAndMeta.path)
       }
+  */
 
 
   def hasChildPages: Boolean = {
@@ -423,7 +453,7 @@ class InternalPageTpi protected (protected val _pageReq: PageRequest[_]) extends
     listRecentForumTopicsImpl(pageId, limit = limit)
 
 
-  def listRecentForumTopicsIn(forum: tpi.Forum, limit: Int): Seq[tpi.ForumTopic] =
+  def listRecentForumTopicsIn(forum: tpi.ForumOrCategory, limit: Int): Seq[tpi.ForumTopic] =
     listRecentForumTopicsImpl(forum.id, limit = limit)
 
 
