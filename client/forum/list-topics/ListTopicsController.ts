@@ -15,6 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+/// <reference path="../typedefs/lodash/lodash.d.ts" />
 /// <reference path="../typedefs/angularjs/angular.d.ts" />
 /// <reference path="../ForumApp.ts" />
 /// <reference path="../model/Topic.ts" />
@@ -42,15 +43,18 @@ class ListTopicsController {
 
 
   private loadTopics() {
-    var categoryId = null;
-    if (this.$scope.selectedCategories.length == 1) {
-      categoryId = this.$scope.selectedCategories[0].pageId;
-    }
-    else if (this.$scope.selectedCategories.length == 2) {
-      categoryId = this.$scope.selectedCategories[1].pageId;
+    var categoryId = undefined;
+    var anyCategory: Category = _.last(this.$scope.selectedCategories);
+    if (anyCategory) {
+      categoryId = anyCategory.pageId;
     }
 
-    this.queryService.loadTopics(categoryId).then((topics: Topic[]) => {
+    var sortOrder = TopicSortOrder.ByBumpTime;
+    if (this.$scope.$state.is('top')) {
+      sortOrder = TopicSortOrder.ByNumLikes;
+    }
+
+    this.queryService.loadTopics(categoryId, sortOrder).then((topics: Topic[]) => {
       this.$scope.topics = topics;
     });
   }

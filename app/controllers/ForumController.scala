@@ -28,6 +28,7 @@ import play.api.libs.json._
 import play.api.mvc.{Action => _, _}
 import requests.JsonPostRequest
 import Utils.OkSafeJson
+import DebikiHttp.throwBadReq
 
 
 /** Handles requests related to forums and forum categories.
@@ -35,14 +36,22 @@ import Utils.OkSafeJson
 object ForumController extends mvc.Controller {
 
 
-  def listTopics(categoryId: PageId) = GetAction { request =>
+  def listTopics(categoryId: PageId, sortOrder: String) = GetAction { request =>
+
+    // Break out and place where?
+    val pageSortOrder = sortOrder match {
+      case "ByBumpTime" => PageSortOrder.ByBumpTime
+      case "ByNumLikes" => PageSortOrder.ByNumLikes
+      case x => throwBadReq("DwE05YE2", s"Bad sort order: `$x'")
+    }
+
     val childCategories = request.dao.listChildPages(parentPageIds = Seq(categoryId),
       sortBy = PageSortOrder.Any, limit = 999, filterPageRole = Some(PageRole.ForumCategory))
     val childCategoryIds = childCategories.map(_.id)
     val allCategoryIds = childCategoryIds :+ categoryId
 
     val topics: Seq[PagePathAndMeta] = request.dao.listChildPages(parentPageIds = allCategoryIds,
-      sortBy = PageSortOrder.ByBumpTime, limit = 50, filterPageRole = Some(PageRole.ForumTopic))
+      sortBy = pageSortOrder, limit = 50, filterPageRole = Some(PageRole.ForumTopic))
 
     val topicsJson: Seq[JsObject] = topics.map(topicToJson(_, categoryId))
     val json = Json.obj("topics" -> topicsJson)

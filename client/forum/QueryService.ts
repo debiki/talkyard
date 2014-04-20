@@ -23,6 +23,12 @@
 //------------------------------------------------------------------------------
 
 
+export enum TopicSortOrder {
+  ByBumpTime,
+  ByNumLikes,
+}
+
+
 export class QueryService {
 
   private forumId: string = this.getForumId();
@@ -42,12 +48,15 @@ export class QueryService {
   }
 
 
-  public loadTopics(categoryId: string): ng.IPromise<Topic[]> {
+  public loadTopics(categoryId: string, sortOrder: TopicSortOrder): ng.IPromise<Topic[]> {
     var deferred = this.$q.defer<Topic[]>();
     if (!categoryId) {
       categoryId = this.forumId;
     }
-    this.$http.get('/-/list-topics?categoryId=' + categoryId).success((response) => {
+    var url = '/-/list-topics?categoryId=' + categoryId +
+        '&sortOrder=' + TopicSortOrder[sortOrder];
+
+    this.$http.get(url).success((response) => {
       var topics: Topic[] = [];
       for (var i = 0; i < response.topics.length; ++i) {
         var data = response.topics[i];

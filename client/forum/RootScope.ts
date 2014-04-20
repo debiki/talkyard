@@ -16,6 +16,7 @@
  */
 
 /// <reference path="typedefs/angularjs/angular.d.ts" />
+/// <reference path="typedefs/angular-ui/angular-ui-router.d.ts" />
 
 //------------------------------------------------------------------------------
    module forum {
@@ -24,7 +25,7 @@
 
 export interface RootScope extends ng.IScope {
   mv;
-  $state: any;
+  $state: ng.ui.IStateService;
 
   // These properties are added by client/page/scripts/bootstrap-angularjs.ls:
   pageId: string;

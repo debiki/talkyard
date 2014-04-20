@@ -97,7 +97,7 @@ GET   /-/privacy-policy         controllers.LegalController.viewPrivacyPolicyPag
 GET   /-/load-special-content   controllers.SpecialContentController.loadContent(rootPageId, contentId)
 POST  /-/save-special-content   controllers.SpecialContentController.saveContent
 
-GET   /-/list-topics            controllers.ForumController.listTopics(categoryId)
+GET   /-/list-topics            controllers.ForumController.listTopics(categoryId, sortOrder)
 GET   /-/list-categories        controllers.ForumController.listCategories(forumId)
 
 POST  /-/configure-user         controllers.ConfigUserController.handleConfiguration()
