@@ -36,15 +36,13 @@ export class QueryService {
 
 
   public static $inject = ['$http', '$q', 'CategoryService'];
-  constructor(private $http: ng.IHttpService, private $q: ng.IQService,
-      private categoryService: CategoryService) {
+  constructor(private $http: ng.IHttpService, private $q: ng.IQService) {
+    this.initializeCategories();
+  }
 
-    // Initialize forumData.categoriesById.
-    var categories = categoryService.allCategories;
-    for (var i = 0; i < categories.length; ++i) {
-      var category: Category = categories[i];
-      this.forumData.categoriesById[category.pageId] = category;
-    }
+
+  public getCategories(): Category[] {
+    return _.values(this.forumData.categoriesById);
   }
 
 
@@ -95,6 +93,23 @@ export class QueryService {
     // The page id is encoded in the HTML.
     return debiki.getPageId();
   }
+
+
+  /**
+   * The server includes info on any blog or forum categories in the HTML so we won't need
+   * to ask for that separately. This function parses that data and remembers the categories.
+   */
+  private initializeCategories() {
+    var pageDataText = $('#dw-page-data').text() || '{}';
+    var pageDataJson = JSON.parse(pageDataText);
+    var categoriesData = pageDataJson.categories || [];
+
+    for (var i = 0; i < categoriesData.length; ++i) {
+      var category: Category = Category.fromJson(this.forumData, categoriesData[i]);
+      this.forumData.categoriesById[category.pageId] = category;
+    }
+  }
+
 }
 
 

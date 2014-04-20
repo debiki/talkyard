@@ -53,7 +53,7 @@ object ForumController extends mvc.Controller {
     val topics: Seq[PagePathAndMeta] = request.dao.listChildPages(parentPageIds = allCategoryIds,
       sortBy = pageSortOrder, limit = 50, filterPageRole = Some(PageRole.ForumTopic))
 
-    val topicsJson: Seq[JsObject] = topics.map(topicToJson(_, categoryId))
+    val topicsJson: Seq[JsObject] = topics.map(topicToJson(_))
     val json = Json.obj("topics" -> topicsJson)
     OkSafeJson(json)
   }
@@ -85,7 +85,7 @@ object ForumController extends mvc.Controller {
         : JsObject = {
     val name = category.meta.cachedTitle getOrElse "(Unnamed category)"
     val slug = categoryNameToSlug(name)
-    val recentTopicsJson = recentTopics.map(topicToJson(_, category.id))
+    val recentTopicsJson = recentTopics.map(topicToJson(_))
     Json.obj(
       "pageId" -> category.id,
       "name" -> name,
@@ -106,14 +106,15 @@ object ForumController extends mvc.Controller {
   }
 
 
-  private def topicToJson(topic: PagePathAndMeta, categoryId: PageId): JsObject = {
+  private def topicToJson(topic: PagePathAndMeta): JsObject = {
     val createdEpoch = topic.meta.creationDati.getTime
     val lastPostEpoch = topic.meta.cachedLastVisiblePostDati.map(_.getTime).get
     Json.obj(
       "pageId" -> topic.id,
       "title" -> topic.meta.cachedTitle,
       "url" -> topic.path.path,
-      "mainCategoryId" -> categoryId,
+      "categoryId" -> topic.parentPageId.getOrDie(
+        "DwE49Fk3", s"Topic `${topic.id}', site `${topic.path.siteId}', has no parent page"),
       "numPosts" -> JsNumber(topic.meta.cachedNumRepliesVisible + 1),
       "numLikes" -> topic.meta.cachedNumLikes,
       "numWrongs" -> topic.meta.cachedNumWrongs,

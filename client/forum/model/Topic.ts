@@ -29,18 +29,12 @@ export class Topic {
 
   title: string;
   url: string;
-  mainCategoryId: string;
-  subCategoryId: string;
+  categoryId: string;
   numPosts: number;
   numLikes: number;
   numWrongs: number;
   createdEpoch: number;
   lastPostEpoch: number;
-
-
-  get categoryId(): string {
-    return this.subCategoryId ? this.subCategoryId : this.mainCategoryId;
-  }
 
 
   public get category(): Category {
@@ -52,7 +46,7 @@ export class Topic {
     var t = new Topic(forumData, json.pageId);
     t.title = json.title;
     t.url = json.url;
-    t.mainCategoryId = json.mainCategoryId;
+    t.categoryId = json.categoryId;
     t.numPosts = json.numPosts;
     t.numLikes = json.numLikes;
     t.numWrongs = json.numWrongs;
