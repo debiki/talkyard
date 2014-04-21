@@ -386,6 +386,22 @@ object PageStatus {
 }
 
 
+
+/** How to sort pages, and where to start listing them, e.g. if fetching additional
+  * pages after the user has scrolled down to the end of a page list.
+  */
+sealed abstract class PageOrderOffset
+
+object PageOrderOffset {
+  case object Any extends PageOrderOffset
+  case object ByPath extends PageOrderOffset
+  case object ByPublTime extends PageOrderOffset
+  case class ByBumpTime(offset: Option[ju.Date]) extends PageOrderOffset
+  case class ByLikesAndBumpTime(offset: Option[(Int, ju.Date)]) extends PageOrderOffset
+}
+
+
+
 case class PagePostId(pageId: PageId, postId: PostId)
 
 

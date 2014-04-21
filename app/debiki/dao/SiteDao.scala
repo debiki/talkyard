@@ -99,11 +99,10 @@ class SiteDao(protected val siteDbDao: ChargingSiteDbDao)
 
   // ----- Pages
 
-  def listChildPages(parentPageIds: Seq[String], sortBy: PageSortOrder,
-        limit: Int, offset: Int = 0, filterPageRole: Option[PageRole] = None)
+  def listChildPages(parentPageIds: Seq[String], orderOffset: PageOrderOffset,
+        limit: Int, filterPageRole: Option[PageRole] = None)
         : Seq[PagePathAndMeta] =
-    siteDbDao.listChildPages(
-        parentPageIds, sortBy, limit = limit, offset = offset, filterPageRole)
+    siteDbDao.listChildPages(parentPageIds, orderOffset, limit = limit, filterPageRole)
 
   /**
    * Loads articles (title + body) e.g. for inclusion on a blog post list page.
@@ -134,10 +133,9 @@ class SiteDao(protected val siteDbDao: ChargingSiteDbDao)
   def listPagePaths(
         pageRanges: PathRanges,
         include: List[PageStatus],
-        sortBy: PageSortOrder,
-        limit: Int,
-        offset: Int): Seq[PagePathAndMeta] =
-    siteDbDao.listPagePaths(pageRanges, include, sortBy, limit, offset)
+        orderOffset: PageOrderOffset,
+        limit: Int): Seq[PagePathAndMeta] =
+    siteDbDao.listPagePaths(pageRanges, include, orderOffset, limit)
 
 
   // ----- Notifications

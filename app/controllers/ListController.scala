@@ -68,9 +68,8 @@ object ListController extends mvc.Controller {
     val pathsAndDetails = request.dao.listPagePaths(
       pathRanges,
       include = PageStatus.All,
-      sortBy = PageSortOrder.ByPath,
-      limit = Int.MaxValue,
-      offset = 0)
+      orderOffset = PageOrderOffset.ByPath,
+      limit = Int.MaxValue)
 
     def renderPageListHtml(pagePathsDetails: Seq[PagePathAndMeta]) =
       <ol>{

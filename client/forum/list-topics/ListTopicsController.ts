@@ -49,14 +49,19 @@ class ListTopicsController {
       categoryId = anyCategory.pageId;
     }
 
-    var sortOrder = TopicSortOrder.ByBumpTime;
+    var sortOrder: OrderOffset = new OrderOffsets.ByBumpTime(null);
     if (this.$scope.$state.is('top')) {
-      sortOrder = TopicSortOrder.ByNumLikes;
+      sortOrder = new OrderOffsets.ByLikesAndBumpTime(null, null);
     }
 
     this.queryService.loadTopics(categoryId, sortOrder).then((topics: Topic[]) => {
       this.$scope.topics = topics;
     });
+  }
+
+
+  private loadMoreTopics() {
+    console.log("loadmore");
   }
 }
 

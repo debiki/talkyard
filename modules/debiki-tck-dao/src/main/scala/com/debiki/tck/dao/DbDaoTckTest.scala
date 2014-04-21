@@ -406,10 +406,8 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
       val pagePathsDetails = dao.listPagePaths(
         PathRanges(trees = Seq("/")),  // all pages
         include = PageStatus.All,
-        sortBy = PageSortOrder.ByPath,
-        limit = Int.MaxValue,
-        offset = 0
-      )
+        orderOffset = PageOrderOffset.ByPath,
+        limit = Int.MaxValue)
       pagePathsDetails.length must_== 0
     }
 
@@ -476,10 +474,8 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
       val pagePathsDetails = dao.listPagePaths(
         PathRanges(trees = Seq("/")),
         include = PageStatus.All,
-        sortBy = PageSortOrder.ByPath,
-        limit = Int.MaxValue,
-        offset = 0
-      )
+        orderOffset = PageOrderOffset.ByPath,
+        limit = Int.MaxValue)
       pagePathsDetails must beLike {
         case List(PagePathAndMeta(pagePath, _, pageDetails)) =>
           pagePath must_== defaultPagePath.copy(pageId = pagePath.pageId)
@@ -509,9 +505,8 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
       val pathAndDetails = dao.listPagePaths(
         PathRanges(trees = Seq("/")),
         include = PageStatus.All,
-        sortBy = PageSortOrder.ByPath,
-        limit = Int.MaxValue,
-        offset = 0)
+        orderOffset = PageOrderOffset.ByPath,
+        limit = Int.MaxValue)
       pathAndDetails.length must be_>=(1)
       val path: PagePath = pathAndDetails.head.path
 
@@ -624,13 +619,13 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
 
       "find no child pages of a non-existing page" in {
         val childs = dao.listChildPages(Seq("doesNotExist"),
-          PageSortOrder.ByPublTime, limit = 10)
+          PageOrderOffset.ByPublTime, limit = 10)
         childs.length must_== 0
       }
 
       "find no child pages of a page with no children" in {
         val childs = dao.listChildPages(Seq(blogArticleId),
-          PageSortOrder.ByPublTime, limit = 10)
+          PageOrderOffset.ByPublTime, limit = 10)
         childs.length must_== 0
       }
 
@@ -652,20 +647,20 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
 
       "find child pages of the Blog" in {
         val childs = dao.listChildPages(Seq(blogMainPageId),
-          PageSortOrder.ByPublTime, limit = 10)
+          PageOrderOffset.ByPublTime, limit = 10)
         testFoundChild(childs)
       }
 
       "find child pages also when page role specified" in {
         val childs = dao.listChildPages(Seq(blogMainPageId),
-          PageSortOrder.ByPublTime, limit = 10,
+          PageOrderOffset.ByPublTime, limit = 10,
           filterPageRole = Some(PageRole.BlogPost))
         testFoundChild(childs)
       }
 
       "find no child pages of the wrong page role" in {
         val childs = dao.listChildPages(Seq(blogMainPageId),
-          PageSortOrder.ByPublTime, limit = 10,
+          PageOrderOffset.ByPublTime, limit = 10,
           filterPageRole = Some(PageRole.ForumTopic))
         childs.length must_== 0
       }
@@ -858,7 +853,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
       }
 
       "can load ancestors, when listing child pages" in {
-        val forumChilds = dao.listChildPages(Seq(forum.id), PageSortOrder.ByPublTime, limit = 10)
+        val forumChilds = dao.listChildPages(Seq(forum.id), PageOrderOffset.ByPublTime, limit = 10)
         forumChilds.length must_== 1
         forumChilds must beLike {
           case List(PagePathAndMeta(_, ancestorIdsParentFirst, _)) =>
@@ -2500,10 +2495,8 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
         val pagePathsDetails = dao.listPagePaths(
           PathRanges(trees = Seq("/")),
           include = PageStatus.All,
-          sortBy = PageSortOrder.ByPath,
-          limit = Int.MaxValue,
-          offset = 0
-        )
+          orderOffset = PageOrderOffset.ByPath,
+          limit = Int.MaxValue)
         pagePathsDetails must beLike {
           case list: List[PagePathAndMeta] =>
             list.find(_.path == newPath) must beSome

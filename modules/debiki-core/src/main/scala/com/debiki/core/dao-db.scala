@@ -182,13 +182,11 @@ abstract class SiteDbDao {
   def listPagePaths(
         pageRanges: PathRanges,
         include: List[PageStatus],
-        sortBy: PageSortOrder,
-        limit: Int,
-        offset: Int): Seq[PagePathAndMeta]
+        orderOffset: PageOrderOffset,
+        limit: Int): Seq[PagePathAndMeta]
 
-  def listChildPages(parentPageIds: Seq[String], sortBy: PageSortOrder,
-        limit: Int, offset: Int = 0, filterPageRole: Option[PageRole] = None)
-        : Seq[PagePathAndMeta]
+  def listChildPages(parentPageIds: Seq[String], orderOffset: PageOrderOffset,
+        limit: Int, filterPageRole: Option[PageRole] = None): Seq[PagePathAndMeta]
 
 
   // ----- Loading and saving pages
@@ -600,19 +598,17 @@ class ChargingSiteDbDao(
   def listPagePaths(
         pageRanges: PathRanges,
         include: List[PageStatus],
-        sortBy: PageSortOrder,
-        limit: Int,
-        offset: Int): Seq[PagePathAndMeta] = {
+        orderOffset: PageOrderOffset,
+        limit: Int): Seq[PagePathAndMeta] = {
     _chargeForOneReadReq()
-    _spi.listPagePaths(pageRanges, include, sortBy, limit, offset)
+    _spi.listPagePaths(pageRanges, include, orderOffset, limit)
   }
 
-  def listChildPages(parentPageIds: Seq[String], sortBy: PageSortOrder,
-        limit: Int, offset: Int = 0, filterPageRole: Option[PageRole])
+  def listChildPages(parentPageIds: Seq[String], orderOffset: PageOrderOffset,
+        limit: Int, filterPageRole: Option[PageRole])
         : Seq[PagePathAndMeta] = {
     _chargeForOneReadReq()
-    _spi.listChildPages(parentPageIds, sortBy, limit = limit, offset = offset,
-      filterPageRole = filterPageRole)
+    _spi.listChildPages(parentPageIds, orderOffset, limit = limit, filterPageRole = filterPageRole)
   }
 
 

@@ -23,9 +23,18 @@
 //------------------------------------------------------------------------------
 
 
-export enum TopicSortOrder {
-  ByBumpTime,
-  ByNumLikes,
+export interface OrderOffset {}
+
+export module OrderOffsets {
+  export class ByBumpTime implements OrderOffset {
+    constructor(public date: Date) {
+    }
+  }
+
+  export class ByLikesAndBumpTime implements OrderOffset {
+    constructor(public numLikes: number, date: Date) {
+    }
+  }
 }
 
 
@@ -46,13 +55,21 @@ export class QueryService {
   }
 
 
-  public loadTopics(categoryId: string, sortOrder: TopicSortOrder): ng.IPromise<Topic[]> {
+  public loadTopics(categoryId: string, orderOffset: OrderOffset): ng.IPromise<Topic[]> {
     var deferred = this.$q.defer<Topic[]>();
+
     if (!categoryId) {
       categoryId = this.forumId;
     }
-    var url = '/-/list-topics?categoryId=' + categoryId +
-        '&sortOrder=' + TopicSortOrder[sortOrder];
+
+    var url = '/-/list-topics?categoryId=' + categoryId;
+
+    if (orderOffset instanceof OrderOffsets.ByBumpTime) {
+      url += '&sortOrder=ByBumpTime';
+    }
+    else if (orderOffset instanceof OrderOffsets.ByLikesAndBumpTime) {
+      url += '&sortOrder=ByLikesAndBumpTime';
+    } 
 
     this.$http.get(url).success((response) => {
       var topics: Topic[] = [];

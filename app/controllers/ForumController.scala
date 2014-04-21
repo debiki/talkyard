@@ -26,8 +26,9 @@ import java.{util => ju}
 import play.api.mvc
 import play.api.libs.json._
 import play.api.mvc.{Action => _, _}
-import requests.JsonPostRequest
+import requests.GetRequest
 import Utils.OkSafeJson
+import Utils.ValidationImplicits._
 import DebikiHttp.throwBadReq
 
 
@@ -36,22 +37,17 @@ import DebikiHttp.throwBadReq
 object ForumController extends mvc.Controller {
 
 
-  def listTopics(categoryId: PageId, sortOrder: String) = GetAction { request =>
+  def listTopics(categoryId: PageId) = GetAction { request =>
 
-    // Break out and place where?
-    val pageSortOrder = sortOrder match {
-      case "ByBumpTime" => PageSortOrder.ByBumpTime
-      case "ByNumLikes" => PageSortOrder.ByNumLikes
-      case x => throwBadReq("DwE05YE2", s"Bad sort order: `$x'")
-    }
+    val orderOffset = parseSortOrderAndOffset(request)
 
     val childCategories = request.dao.listChildPages(parentPageIds = Seq(categoryId),
-      sortBy = PageSortOrder.Any, limit = 999, filterPageRole = Some(PageRole.ForumCategory))
+      PageOrderOffset.Any, limit = 999, filterPageRole = Some(PageRole.ForumCategory))
     val childCategoryIds = childCategories.map(_.id)
     val allCategoryIds = childCategoryIds :+ categoryId
 
     val topics: Seq[PagePathAndMeta] = request.dao.listChildPages(parentPageIds = allCategoryIds,
-      sortBy = pageSortOrder, limit = 50, filterPageRole = Some(PageRole.ForumTopic))
+      orderOffset, limit = 50, filterPageRole = Some(PageRole.ForumTopic))
 
     val topicsJson: Seq[JsObject] = topics.map(topicToJson(_))
     val json = Json.obj("topics" -> topicsJson)
@@ -61,7 +57,7 @@ object ForumController extends mvc.Controller {
 
   def listCategories(forumId: PageId) = GetAction { request =>
     val categories = request.dao.listChildPages(parentPageIds = Seq(forumId),
-      sortBy = PageSortOrder.ByPublTime, // COULD use PageSortOrder.Manual instead
+      PageOrderOffset.ByPublTime, // COULD use PageOrderOffset.Manual instead
       limit = 999, filterPageRole = Some(PageRole.ForumCategory))
 
     val recentTopicsByCategoryId =
@@ -69,7 +65,7 @@ object ForumController extends mvc.Controller {
 
     for (category <- categories) {
       val recentTopics = request.dao.listChildPages(parentPageIds = Seq(category.id),
-        sortBy = PageSortOrder.ByPublTime, limit = 5, filterPageRole = Some(PageRole.ForumTopic))
+        PageOrderOffset.ByPublTime, limit = 5, filterPageRole = Some(PageRole.ForumTopic))
       recentTopicsByCategoryId(category.id) = recentTopics
     }
 
@@ -78,6 +74,29 @@ object ForumController extends mvc.Controller {
     }))
 
     OkSafeJson(json)
+  }
+
+
+  private def parseSortOrderAndOffset(request: GetRequest): PageOrderOffset = {
+    val sortOrderStr = request.queryString.getOrThrowBadReq("sortOrder")
+    def anyDateOffset = request.queryString.getInt("epoch") map (new ju.Date(_))
+    def anyNumOffset = request.queryString.getInt("num")
+
+    val orderOffset: PageOrderOffset = sortOrderStr match {
+      case "ByBumpTime" =>
+        PageOrderOffset.ByBumpTime(anyDateOffset)
+      case "ByLikesAndBumpTime" =>
+        (anyNumOffset, anyDateOffset) match {
+          case (Some(num), Some(date)) =>
+            PageOrderOffset.ByLikesAndBumpTime(Some(num, date))
+          case (None, None) =>
+            PageOrderOffset.ByLikesAndBumpTime(None)
+          case _ =>
+            throwBadReq("Please specify both 'num' and 'epoch' or none at all")
+        }
+      case x => throwBadReq("DwE05YE2", s"Bad sort order: `$x'")
+    }
+    orderOffset
   }
 
 

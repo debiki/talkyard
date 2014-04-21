@@ -337,11 +337,8 @@ class InternalPageTpi protected (protected val _pageReq: PageRequest[_]) extends
 
   def listNewestPages(pathRanges: PathRanges): Seq[tpi.Page] = {
     val pathsAndMeta = _pageReq.dao.listPagePaths(
-      pathRanges,
-      include = PageStatus.Published::Nil,
-      sortBy = PageSortOrder.ByPublTime,
-      limit = 10,
-      offset = 0)
+      pathRanges, include = PageStatus.Published::Nil,
+      orderOffset = PageOrderOffset.ByPublTime, limit = 10)
 
     // Access control.
     // Somewhat dupl code, see Application.feed.
@@ -371,8 +368,7 @@ class InternalPageTpi protected (protected val _pageReq: PageRequest[_]) extends
 
   def listNewestChildPages(): Seq[tpi.Page] = {
     val pathsAndMeta: Seq[PagePathAndMeta] =
-      _pageReq.dao.listChildPages(parentPageIds = Seq(pageId),
-          sortBy = PageSortOrder.ByPublTime, limit = 10, offset = 0)
+      _pageReq.dao.listChildPages(Seq(pageId), PageOrderOffset.ByPublTime, limit = 10)
 
     // "Access control". Filter out pages that has not yet been published.
     val pubPathsAndMeta = pathsAndMeta filter { pathAndMeta =>
@@ -443,8 +439,8 @@ class InternalPageTpi protected (protected val _pageReq: PageRequest[_]) extends
     // via e.g. `listPublishedSubForums` — Might as well ask for all successor
     // pages from here, because if there *are* any successors, we will
     // likely list all of them.
-    val pathsAndMeta = _pageReq.dao.listChildPages(parentPageIds = Seq(pageId),
-      sortBy = PageSortOrder.ByPublTime, limit = 1, offset = 0)
+    val pathsAndMeta = _pageReq.dao.listChildPages(
+      Seq(pageId), PageOrderOffset.ByPublTime, limit = 1)
     pathsAndMeta.nonEmpty
   }
 
@@ -486,9 +482,8 @@ class InternalPageTpi protected (protected val _pageReq: PageRequest[_]) extends
         : Seq[PagePathAndMeta] = {
 
     val pathsAndMeta: Seq[PagePathAndMeta] =
-      _pageReq.dao.listChildPages(parentPageIds = Seq(parentPageId getOrElse pageId),
-        sortBy = PageSortOrder.ByPublTime, limit = limit, offset = offset,
-        filterPageRole = filterPageRole)
+      _pageReq.dao.listChildPages(Seq(parentPageId getOrElse pageId), PageOrderOffset.ByPublTime,
+        limit = limit, filterPageRole = filterPageRole)
 
     // BUG This might result in fewer than `limit` pages being returned.
     // In the future, move filtering to `pageReq.dao` instead?
