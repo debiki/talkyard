@@ -334,8 +334,13 @@ class InternalPageTpi protected (protected val _pageReq: PageRequest[_]) extends
    * Returns any parent forums, e.g.: grandparent-forum :: parent-forum :: Nil.
    */
   def listParentForums(): Seq[tpi.ForumOrCategory] = {
+    val parentPageId = _pageReq.pageMeta_!.parentPageId match {
+      case None => return Nil
+      case Some(pageId) => pageId
+    }
+
     val ancestorPatshAndMeta: Seq[(PagePath, PageMeta)] =
-      _pageReq.dao.listAncestorsAndOwnMeta(pageId).init
+      _pageReq.dao.listAncestorsAndOwnMeta(parentPageId)
 
     val forumPath = ancestorPatshAndMeta.headOption match {
       case None => return Nil
