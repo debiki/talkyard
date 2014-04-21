@@ -55,7 +55,7 @@ class ListTopicsController {
     var anyEpoch = anyLastTopic ? anyLastTopic.lastPostEpoch : null;
     var anyNum = null;
 
-    if (this.$scope.$state.is('latest')) {
+    if (this.$scope.$state.is('index') || this.$scope.$state.is('latest')) {
       orderOffset = new OrderOffsets.ByBumpTime(anyEpoch);;
     }
     else if (this.$scope.$state.is('top')) {
