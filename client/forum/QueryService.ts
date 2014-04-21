@@ -27,12 +27,12 @@ export interface OrderOffset {}
 
 export module OrderOffsets {
   export class ByBumpTime implements OrderOffset {
-    constructor(public date: Date) {
+    constructor(public epoch: number) {
     }
   }
 
   export class ByLikesAndBumpTime implements OrderOffset {
-    constructor(public numLikes: number, date: Date) {
+    constructor(public numLikes: number, public epoch: number) {
     }
   }
 }
@@ -64,12 +64,25 @@ export class QueryService {
 
     var url = '/-/list-topics?categoryId=' + categoryId;
 
-    if (orderOffset instanceof OrderOffsets.ByBumpTime) {
+    if (orderOffset instanceof OrderOffsets.ByBumpTime) (() => {
       url += '&sortOrder=ByBumpTime';
-    }
-    else if (orderOffset instanceof OrderOffsets.ByLikesAndBumpTime) {
+      var ordOfs = <OrderOffsets.ByBumpTime> orderOffset;
+      if (ordOfs.epoch) {
+        url += '&epoch=' + ordOfs.epoch;
+      }
+    })();
+    else if (orderOffset instanceof OrderOffsets.ByLikesAndBumpTime) (() => {
       url += '&sortOrder=ByLikesAndBumpTime';
-    } 
+      var ordOfs = <OrderOffsets.ByLikesAndBumpTime> orderOffset;
+      if (ordOfs.numLikes !== null && ordOfs.epoch) {
+        url += '&num=' + ordOfs.numLikes;
+        url += '&epoch=' + ordOfs.epoch;
+      }
+    })();
+    else {
+      console.log('Bad orderOffset [DwE5FS0]');
+      return;
+    }
 
     this.$http.get(url).success((response) => {
       var topics: Topic[] = [];

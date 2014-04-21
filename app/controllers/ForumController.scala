@@ -79,7 +79,7 @@ object ForumController extends mvc.Controller {
 
   private def parseSortOrderAndOffset(request: GetRequest): PageOrderOffset = {
     val sortOrderStr = request.queryString.getOrThrowBadReq("sortOrder")
-    def anyDateOffset = request.queryString.getInt("epoch") map (new ju.Date(_))
+    def anyDateOffset = request.queryString.getLong("epoch") map (new ju.Date(_))
     def anyNumOffset = request.queryString.getInt("num")
 
     val orderOffset: PageOrderOffset = sortOrderStr match {

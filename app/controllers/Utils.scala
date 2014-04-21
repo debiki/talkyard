@@ -253,11 +253,18 @@ object Utils extends Results with http.ContentTypes {
           case Some(s) => s
         }
 
+      def getLong(param: String): Option[Long] =
+        getFirst(param) map { value =>
+          try { value.toLong }
+          catch {
+            case ex: jl.NumberFormatException =>
+              throwBadReq("DwE4XK71", s"Param `$param' is not an Long, it is: `$value'")
+          }
+        }
+
       def getInt(param: String): Option[Int] =
         getFirst(param) map { value =>
-          try {
-            value.toInt
-          }
+          try { value.toInt }
           catch {
             case ex: jl.NumberFormatException =>
               throwBadReq("DwE4XK71", s"Param `$param' is not an Int, it is: `$value'")

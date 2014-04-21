@@ -38,31 +38,51 @@ class ListTopicsController {
   constructor(private $scope: ListTopicsScope, private queryService: QueryService) {
     console.log('New ListTopicsController.');
     $scope.mv = this;
-    this.loadTopics();
+    $scope.topics = [];
+    this.loadMoreTopics();
   }
 
 
-  private loadTopics() {
+  loadMoreTopics() {
     var categoryId = undefined;
     var anyCategory: Category = _.last(this.$scope.selectedCategories);
     if (anyCategory) {
       categoryId = anyCategory.pageId;
     }
 
-    var sortOrder: OrderOffset = new OrderOffsets.ByBumpTime(null);
-    if (this.$scope.$state.is('top')) {
-      sortOrder = new OrderOffsets.ByLikesAndBumpTime(null, null);
+    var orderOffset: OrderOffset;
+    var anyLastTopic: Topic = _.last(this.$scope.topics);
+    var anyEpoch = anyLastTopic ? anyLastTopic.lastPostEpoch : null;
+    var anyNum = null;
+
+    if (this.$scope.$state.is('latest')) {
+      orderOffset = new OrderOffsets.ByBumpTime(anyEpoch);;
+    }
+    else if (this.$scope.$state.is('top')) {
+      if (anyLastTopic) {
+        anyNum = anyLastTopic.numLikes;
+      }
+      orderOffset = new OrderOffsets.ByLikesAndBumpTime(anyNum, anyEpoch);
+    }
+    else {
+      console.error('Bad state [DwE83RE20]');
+      return;
     }
 
-    this.queryService.loadTopics(categoryId, sortOrder).then((topics: Topic[]) => {
-      this.$scope.topics = topics;
+    this.queryService.loadTopics(categoryId, orderOffset).then((newTopics: Topic[]) => {
+      // `newTopics` includes at least the last topic in `$scope.topics`; don't add it again.
+      for (var i = 0; i < newTopics.length; ++i) {
+        var newTopic = newTopics[i];
+        var oldTopic = _.find(this.$scope.topics, (t: Topic) => {
+          return t.id === newTopic.id;
+        });
+        if (!oldTopic) {
+          this.$scope.topics.push(newTopic);
+        }
+      }
     });
   }
 
-
-  private loadMoreTopics() {
-    console.log("loadmore");
-  }
 }
 
 
