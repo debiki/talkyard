@@ -38,17 +38,9 @@ object ForumController extends mvc.Controller {
 
 
   def listTopics(categoryId: PageId) = GetAction { request =>
-
     val orderOffset = parseSortOrderAndOffset(request)
-
-    val childCategories = request.dao.listChildPages(parentPageIds = Seq(categoryId),
-      PageOrderOffset.Any, limit = 999, filterPageRole = Some(PageRole.ForumCategory))
-    val childCategoryIds = childCategories.map(_.id)
-    val allCategoryIds = childCategoryIds :+ categoryId
-
-    val topics: Seq[PagePathAndMeta] = request.dao.listChildPages(parentPageIds = allCategoryIds,
-      orderOffset, limit = 50, filterPageRole = Some(PageRole.ForumTopic))
-
+    val topics: Seq[PagePathAndMeta] =
+      request.dao.listTopicsInTree(rootPageId = categoryId, orderOffset, limit = 50)
     val topicsJson: Seq[JsObject] = topics.map(topicToJson(_))
     val json = Json.obj("topics" -> topicsJson)
     OkSafeJson(json)

@@ -37,16 +37,14 @@
     }
   </div>
 
-  @* TODO Paginate all topics, sorted by activity desc. Something like:
   <noscript>
     <h2>Recent Topics</h2>
     <ol>
-      @for(topic <- tpi.listRecentlyActiveTopics()) {
+      @for(topic <- tpi.listLatestForumTopics(limit = 30, offset = 0)) {
       <li><a class="topic-title" href="@{topic.path}">@{ topic.title }</a></li>
       }
     </ol>
-  </noscript>noscript>
-  *@
+  </noscript>
 
   <div ng-include="'forum-app.html'"></div>
 }

@@ -33,12 +33,10 @@
   <noscript>
     <p>Please enable Javascript to be able to start new topics.</p>
     <h2>Recent topics:</h2>
-    @for(topic <- tpi.listRecentForumTopics(limit = 40)) {
+    @for(topic <- tpi.listLatestForumTopics(limit = 40, offset = 0)) {
       <a class="topic-title" href="@{topic.path}">@{topic.title}</a><br>
     }
   </noscript>
-
-  <div x-dw-forum></div>
 
 }
 

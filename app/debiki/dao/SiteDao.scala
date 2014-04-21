@@ -97,12 +97,32 @@ class SiteDao(protected val siteDbDao: ChargingSiteDbDao)
     siteDbDao.lookupOtherTenant(scheme, host)
 
 
-  // ----- Pages
+  // ----- List pages
 
   def listChildPages(parentPageIds: Seq[String], orderOffset: PageOrderOffset,
         limit: Int, filterPageRole: Option[PageRole] = None)
         : Seq[PagePathAndMeta] =
     siteDbDao.listChildPages(parentPageIds, orderOffset, limit = limit, filterPageRole)
+
+
+  /** Lists all topics below rootPageId. Currently intended for forums only.
+    * Details: finds all categories with parent rootPageId, then all topics for
+    * those categories, plus topics that are  direct children of rootPageId.
+    * For now, allows one level of categories only (that is, no sub categories).
+    */
+  def listTopicsInTree(rootPageId: PageId, orderOffset: PageOrderOffset, limit: Int)
+        : Seq[PagePathAndMeta] = {
+    val childCategories = listChildPages(parentPageIds = Seq(rootPageId),
+      PageOrderOffset.Any, limit = 999, filterPageRole = Some(PageRole.ForumCategory))
+    val childCategoryIds = childCategories.map(_.id)
+    val allCategoryIds = childCategoryIds :+ rootPageId
+    val topics: Seq[PagePathAndMeta] = listChildPages(parentPageIds = allCategoryIds,
+      orderOffset, limit = limit, filterPageRole = Some(PageRole.ForumTopic))
+    topics
+  }
+
+
+  // ----- Load pages
 
   /**
    * Loads articles (title + body) e.g. for inclusion on a blog post list page.
