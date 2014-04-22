@@ -158,6 +158,7 @@ object ViewPageController extends mvc.Controller {
     // reply ++= "\nnotfs: ..."
 
     val json = toJson(Map(
+      "isAdmin" -> toJson(pageReq.user.map(_.isAdmin).getOrElse(false)),
       "permsOnPage" -> toJson(permsMap),
       "authorOf" -> toJson(ownPostsIdsList),
       "ratings" -> toJson(ownRatingsJsonMap),

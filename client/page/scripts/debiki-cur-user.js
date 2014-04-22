@@ -30,6 +30,7 @@ d.i.makeCurUser = function() {
   // 100 posts. The user id is checked frequently, to find out which
   // posts have the current user written.)
   var userProps;
+  var isAdmin = false;
   var emailPrefs = undefined;
   var emailSpecified = false;
   var permsOnPage = {};
@@ -151,6 +152,7 @@ d.i.makeCurUser = function() {
 
     function handleUserPageData(jsonData) {
       var myPageData = JSON.parse(jsonData);
+      isAdmin = myPageData.isAdmin;
       setPermsOnPage(myPageData.permsOnPage || {});
       markMyActions(myPageData);
       // In `myPageData.threadsByPageId` are any not-yet-approved comments
@@ -188,6 +190,7 @@ d.i.makeCurUser = function() {
     // xss attacks. E.g. never do: $(...).html(Me.getName()), but the
     // following should be okay though: $(...).text(Me.getName()).
     getName: function() { return userProps.name; },
+    isAdmin: function() { return isAdmin; },
     isLoggedIn: function() { return userProps.loginId ? true : false; },
     getLoginId: function() { return userProps.loginId; },
     getUserId: function() { return userProps.userId; },
@@ -242,6 +245,7 @@ function fireLoginImpl(Me) {
     // Why don't I expose a nice user = { name:, loginId:, ... } object?
     // Instead:
     $rootScope.setCurrentUser({
+      isAdmin: Me.isAdmin(),
       displayName: Me.getName(),
       loginId: Me.getLoginId(),
       userId: Me.getUserId(),
