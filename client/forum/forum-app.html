@@ -31,7 +31,11 @@
             ng-click="mv.createTopic()"
             class="btn btn-default">Create Topic</button>
     <button ng-show="$state.includes('categories')"
+            ng-click="mv.createCategory()"
             class="btn btn-default">Create Category</button>
+    <button ng-show="mv.selectedCategoryId !== null"
+            ng-click="mv.editCategory()"
+            class="btn btn-default">Edit Category</button>
   </div>
 
   <div ui-view></div>

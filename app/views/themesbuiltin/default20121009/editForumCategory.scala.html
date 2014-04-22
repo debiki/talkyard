@@ -25,18 +25,19 @@
 
 
 @wrapper(tpi) {
-  <!-- default20121009/forumCategory.scala.html -->
+  <!-- default20121009/editForumCategory.scala.html -->
 
-  @views.html.searchForm(tpi, id = "forum-search", placeholderText = "Search whole forum",
-    sectionId = tpi.anyRootSectionPageId)
+  <div class="category-definition">
+    @parentForumsList(tpi)
 
-  <noscript>
-    <p>Please enable Javascript to be able to start new topics.</p>
-    <h2>Recent topics:</h2>
-    @for(topic <- tpi.listLatestForumTopics(limit = 40, offset = 0)) {
-      <a class="topic-title" href="@{topic.path}">@{topic.title}</a><br>
+    @views.html.searchForm(tpi, id = "forum-search", placeholderText = "Search whole forum",
+      sectionId = tpi.anyRootSectionPageId)
+
+    @tpi.page(showAuthorAndDate = false) {
+      <h2 class="category-name-title-prefix">Category definition:</h2>
+      @tpi.title
+      @tpi.bodyAndComments
     }
-  </noscript>
-
+  </div>
 }
 

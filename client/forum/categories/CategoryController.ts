@@ -39,19 +39,48 @@ class CategoryController {
   }
 
 
-  public get selectedCategoryOrForumId() {
+  public get selectedCategoryId() {
     var anySelectedCategory = _.last<Category>(this.$scope.selectedCategories);
     if (!anySelectedCategory) {
-      // Return the forum id.
-      return this.$scope.pageId;
+      return null;
     }
     return anySelectedCategory.pageId;
   }
 
 
+  public get selectedCategoryOrForumId() {
+    var anyCategoryId = this.selectedCategoryId;
+    if (!anyCategoryId) {
+      // Return the forum id.
+      return this.$scope.pageId;
+    }
+    return anyCategoryId;
+  }
+
+
+  public editCategory() {
+    // No idea why, but in Chrome, this:
+    //   window.open('/-' + this.selectedCategoryOrForumId, '_self');
+    // results in an error:
+    //   "Script on the page used too much memory. reload to enable scripts again"
+    // However, this works fine:
+    location.href = '/-' + this.selectedCategoryOrForumId;
+  }
+
+
+  public createCategory() {
+    this.createChildPage('ForumCategory');
+  }
+
+
   public createTopic() {
+    this.createChildPage('ForumTopic');
+  }
+
+
+  private createChildPage(role: String) {
     debiki.internal.createChildPage({
-      pageRole: 'ForumTopic',
+      pageRole: role,
       parentPageId: this.selectedCategoryOrForumId,
       status: 'Published',
       window: window

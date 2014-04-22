@@ -85,7 +85,7 @@ object TemplateRenderer {
         case PageRole.BlogPost => "blogPost"
         case PageRole.Blog => "blog"
         case PageRole.Forum => "forum"
-        case PageRole.ForumCategory => "forumCategory"
+        case PageRole.ForumCategory => "editForumCategory"
         case PageRole.ForumTopic => "forumTopic"
         case PageRole.Code => "codePage"
         case PageRole.EmbeddedComments => "embeddedComments"
