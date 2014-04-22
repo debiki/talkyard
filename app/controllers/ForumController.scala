@@ -61,8 +61,14 @@ object ForumController extends mvc.Controller {
       recentTopicsByCategoryId(category.id) = recentTopics
     }
 
+    val summariesByCategoryId: Map[PageId, debiki.dao.PageSummary] =
+      request.dao.loadPageSummaries(categories.map(_.id))
+
     val json = Json.obj("categories" -> categories.map({ category =>
-      categoryToJson(category, recentTopicsByCategoryId(category.id))
+      categoryToJson(
+        category,
+        recentTopicsByCategoryId(category.id),
+        summariesByCategoryId(category.id))
     }))
 
     OkSafeJson(json)
@@ -92,8 +98,8 @@ object ForumController extends mvc.Controller {
   }
 
 
-  private def categoryToJson(category: PagePathAndMeta, recentTopics: Seq[PagePathAndMeta])
-        : JsObject = {
+  private def categoryToJson(category: PagePathAndMeta, recentTopics: Seq[PagePathAndMeta],
+      pageSummary: debiki.dao.PageSummary): JsObject = {
     val name = category.meta.cachedTitle getOrElse "(Unnamed category)"
     val slug = categoryNameToSlug(name)
     val recentTopicsJson = recentTopics.map(topicToJson(_))
@@ -101,7 +107,7 @@ object ForumController extends mvc.Controller {
       "pageId" -> category.id,
       "name" -> name,
       "slug" -> slug,
-      "description" -> "Forum category description, bla bla blah bla bla-bla bla-bla-bla bla blaa.",
+      "description" -> pageSummary.textExcerpt,
       "numTopics" -> category.meta.cachedNumChildPages, // COULD use ??cachedNumTopics?? instead?
                                                 // because child pages includes categories too.
       "recentTopics" -> recentTopicsJson)
