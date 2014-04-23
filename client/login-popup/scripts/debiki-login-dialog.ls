@@ -35,6 +35,7 @@ d.i.showLoginDialog = function(mode)
   | 'LoginToSubmit' => 'dw-login-to-submit'
   | 'LoginToComment' => 'dw-login-to-post-comment'
   | 'LoginToLogin' => 'dw-login-to-login'
+  | 'LoginToCreateTopic' => 'dw-login-to-create-topic'
   | _ => 'dw-login-to-login'
   $('body').addClass(doingWhatClass)
 
@@ -169,7 +170,7 @@ function loginDialogHtml
       </p>
 
       <p id="dw-lgi-or-login-using">
-        Login<span class="dw-login-to-post-comment">, and post your comment,</span>
+        Login<span class="dw-login-to-post-comment">, and post your comment,</span><span class="dw-login-to-create-topic">, and create a topic,</span>
         using your account (if any) at:</p>
       <div id="dw-lgi-other-sites">
         <a id="dw-lgi-google" class="btn btn-default" tabindex="111">

@@ -79,11 +79,14 @@ class CategoryController {
 
 
   private createChildPage(role: String) {
-    debiki.internal.createChildPage({
-      pageRole: role,
-      parentPageId: this.selectedCategoryOrForumId,
-      status: 'Published',
-      window: window
+    debiki.internal.loginIfNeeded('LoginToCreateTopic', () => {
+      // (Now we might be outside Angular.apply() but that's fine.)
+      debiki.internal.createChildPage({
+        pageRole: role,
+        parentPageId: this.selectedCategoryOrForumId,
+        status: 'Published',
+        window: window
+      });
     });
   }
 
