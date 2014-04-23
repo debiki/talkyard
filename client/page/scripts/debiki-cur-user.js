@@ -124,7 +124,7 @@ d.i.makeCurUser = function() {
     // Avoid a roundtrip by using any json data already inlined on the page.
     // Then delete it because it's only valid on page load.
     var hiddenUserDataTag = $('.dw-user-page-data');
-    if (hiddenUserDataTag.length) {
+    if (hiddenUserDataTag.text().length) {
       handleUserPageData(hiddenUserDataTag.text());
       hiddenUserDataTag.hide().removeClass('dw-user-page-data');
     }
