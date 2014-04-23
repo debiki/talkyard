@@ -29,16 +29,21 @@
 
 interface ListTopicsScope extends CategoryScope {
   topics: Topic[];
+  showLoadMoreButton: boolean;
 }
 
 
 class ListTopicsController {
+
+  /** Keep in sync with app/controllers/ForumController.NumTopicsToList. */
+  static NumNewTopicsPerRequest = 40;
 
   public static $inject = ['$scope', 'QueryService'];
   constructor(private $scope: ListTopicsScope, private queryService: QueryService) {
     console.log('New ListTopicsController.');
     $scope.mv = this;
     $scope.topics = [];
+    $scope.showLoadMoreButton = true;
     this.loadMoreTopics();
   }
 
@@ -80,6 +85,8 @@ class ListTopicsController {
           this.$scope.topics.push(newTopic);
         }
       }
+      this.$scope.showLoadMoreButton =
+          newTopics.length == ListTopicsController.NumNewTopicsPerRequest;
     });
   }
 

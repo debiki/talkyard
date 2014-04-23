@@ -36,11 +36,14 @@ import DebikiHttp.throwBadReq
  */
 object ForumController extends mvc.Controller {
 
+  /** Keep synced with client/forum/list-topics/ListTopicsController.NumNewTopicsPerRequest. */
+  val NumTopicsToList = 40
+
 
   def listTopics(categoryId: PageId) = GetAction { request =>
     val orderOffset = parseSortOrderAndOffset(request)
     val topics: Seq[PagePathAndMeta] =
-      request.dao.listTopicsInTree(rootPageId = categoryId, orderOffset, limit = 50)
+      request.dao.listTopicsInTree(rootPageId = categoryId, orderOffset, limit = NumTopicsToList)
     val topicsJson: Seq[JsObject] = topics.map(topicToJson(_))
     val json = Json.obj("topics" -> topicsJson)
     OkSafeJson(json)
