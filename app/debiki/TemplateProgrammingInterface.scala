@@ -48,27 +48,12 @@ object InternalPageTpi {
     safeBodyHtml: String)
 
 
-  case class Forum(
+  case class ForumOrCategory(
     id: String, path: String, title: String, numTopics: Int)
     // and, in the future: num topics, num contributors and num replies?
 
 
-
-  case class ForumTopic(
-    id: String,
-    path: String,
-    title: String,
-    excerpt: String,
-    authorDisplayName: String,
-    authorUserId: String,
-    numRepliesApproved: Int,
-    numRepliesRejected: Int,
-    numRepliesPendingReview: Int,
-    numRepliesFlagged: Int,
-    numRepliesDeleted: Int,
-    numContributors: Int,
-    pubDati: Option[ju.Date],
-    lastReplyDati: Option[ju.Date])
+  case class ForumTopic(id: String, path: String, title: String)
 
 
   object Page {
@@ -90,33 +75,37 @@ object InternalPageTpi {
   }
 
 
-  object Forum {
-    def apply(pageMeta: PageMeta, pagePath: PagePath): Forum = Forum(
-      id = pageMeta.pageId,
-      path = pagePath.path,
-      title = pageMeta.cachedTitle getOrElse "(Unnamed forum)",
-      numTopics = pageMeta.cachedNumChildPages)
+  object ForumOrCategory {
+    def apply(forumPath: String, pageMeta: PageMeta, pagePath: PagePath): ForumOrCategory = {
+      val path =
+        if (pagePath.path == forumPath) {
+          // This is the forum itself.
+          forumPath
+        }
+        else {
+          // This is a category.
+          // Currently the forum AngularJS app uses hash fragment URLs for navigation
+          // inside the forum, unfortunately, see: client/forum/ForumApp-impl.ts.
+          // Let's show the latest topics for this category:
+          val categoryName =
+            controllers.ForumController.categoryNameToSlug(pageMeta.cachedTitle getOrElse "")
+          s"$forumPath#/latest/$categoryName"
+        }
+      ForumOrCategory(
+        id = pageMeta.pageId,
+        path = path,
+        title = pageMeta.cachedTitle getOrElse "(Unnamed forum)",
+        numTopics = pageMeta.cachedNumChildPages)
+    }
   }
 
 
   object ForumTopic {
-    def apply(pageMeta: PageMeta, pagePath: PagePath, pageSummary: PageSummary)
-          : ForumTopic =
+    def apply(pathAndMeta: PagePathAndMeta): ForumTopic =
       ForumTopic(
-        id = pageMeta.pageId,
-        path = pagePath.path,
-        title = pageMeta.cachedTitle getOrElse "(Unnamed topic)",
-        excerpt = pageSummary.textExcerpt,
-        authorDisplayName = pageSummary.authorDisplayName,
-        authorUserId = pageSummary.authorUserId,
-        numRepliesApproved = pageSummary.numPostsApproved,
-        numRepliesRejected = pageSummary.numPostsRejected,
-        numRepliesPendingReview = pageSummary.numPostsPendingReview,
-        numRepliesFlagged = pageSummary.numPostsFlagged,
-        numRepliesDeleted = pageSummary.numPostsDeleted,
-        numContributors = pageSummary.numContributors,
-        pubDati = pageMeta.pubDati,
-        lastReplyDati = pageSummary.lastApprovedPostDati)
+        id = pathAndMeta.id,
+        path = pathAndMeta.path.path,
+        title = pathAndMeta.meta.cachedTitle getOrElse "(Unnamed topic)")
   }
 
 }
@@ -319,51 +308,14 @@ class InternalPageTpi protected (protected val _pageReq: PageRequest[_]) extends
   def currentTree = PathRanges(trees = Seq(_pageReq.pagePath.folder))
 
 
-  def listNewestPages(pathRanges: PathRanges): Seq[tpi.Page] = {
-    val pathsAndMeta = _pageReq.dao.listPagePaths(
-      pathRanges,
-      include = PageStatus.Published::Nil,
-      sortBy = PageSortOrder.ByPublTime,
-      limit = 10,
-      offset = 0)
-
-    // Access control.
-    // Somewhat dupl code, see Application.feed.
-    // ((As of now, this function is used to build blog article list pages.
-    // So exclude JS and CSS and template pages and hidden pages and
-    // folder/or/index/pages/, and hidden pages (even for admins).
-    // In the future: Pass info via URL to `listPagePaths` on which
-    // pages to include. Some PageType param? PageType.Article/Css/Js/etc.))
-    val articlePaths = pathsAndMeta map (_.path) filter (
-       controllers.Utils.isPublicArticlePage _)
-
-    // ----- Dupl code! See listNewestChildPages() below.
-
-    val pagesById: Map[String, PageParts] =
-      _pageReq.dao.loadPageBodiesTitles(
-        articlePaths.map(_.pageId getOrDie "DwE82AJ7"))
-
-    for {
-      pathAndMeta <- pathsAndMeta
-      pageParts <- pagesById.get(pathAndMeta.pageId)
-    } yield {
-      tpi.Page(
-        Page(pathAndMeta, pageParts), host = _pageReq.host)
-    }
-  }
-
-
   def listNewestChildPages(): Seq[tpi.Page] = {
     val pathsAndMeta: Seq[PagePathAndMeta] =
-      _pageReq.dao.listChildPages(parentPageId = pageId,
-          sortBy = PageSortOrder.ByPublTime, limit = 10, offset = 0)
+      _pageReq.dao.listChildPages(Seq(pageId), PageOrderOffset.ByPublTime, limit = 10)
 
     // "Access control". Filter out pages that has not yet been published.
     val pubPathsAndMeta = pathsAndMeta filter { pathAndMeta =>
       pathAndMeta.meta.pubDati.map(_.getTime < _pageReq.ctime.getTime) == Some(true)
     }
-
-    // ----- Dupl code! See listNewestPages() above.
 
     val pagesById: Map[String, PageParts] =
       _pageReq.dao.loadPageBodiesTitles(pubPathsAndMeta.map(_.pageId))
@@ -381,31 +333,57 @@ class InternalPageTpi protected (protected val _pageReq: PageRequest[_]) extends
   /**
    * Returns any parent forums, e.g.: grandparent-forum :: parent-forum :: Nil.
    */
-  def listParentForums(): Seq[tpi.Forum] = {
-    _pageReq.pageMeta_!.parentPageId match {
-      case None => Nil
-      case Some(pageId) =>
-        _pageReq.dao.listAncestorsAndOwnMeta(pageId) map { case (pagePath, pageMeta) =>
-          tpi.Forum(pageMeta, pagePath)
-        }
+  def listParentForums(): Seq[tpi.ForumOrCategory] = {
+    val parentPageId = _pageReq.pageMeta_!.parentPageId match {
+      case None => return Nil
+      case Some(pageId) => pageId
     }
+
+    val ancestorPatshAndMeta: Seq[(PagePath, PageMeta)] =
+      _pageReq.dao.listAncestorsAndOwnMeta(parentPageId)
+
+    val forumPath = ancestorPatshAndMeta.headOption match {
+      case None => return Nil
+      case Some((path, meta)) => path
+    }
+
+    val forumsAndCats = ancestorPatshAndMeta map { case (pagePath, pageMeta) =>
+      tpi.ForumOrCategory(forumPath.path, pageMeta, pagePath)
+    }
+
+    forumsAndCats
   }
 
 
-  def listPublishedSubForums(): Seq[tpi.Forum] =
+  /** Assuming the current page is a forum, lists all topics in this forum, the one
+    * with the most recent posts first.
+    */
+  def listLatestForumTopics(limit: Int, offset: Int): Seq[tpi.ForumTopic] = {
+    val topicPathsAndMeta: Seq[PagePathAndMeta] = dao.listTopicsInTree(rootPageId = pageId,
+      orderOffset = PageOrderOffset.ByLikesAndBumpTime(None), limit = 50)
+    val topics = topicPathsAndMeta.map(tpi.ForumTopic(_))
+    topics
+  }
+
+
+  /* I can make these work again, later, if I implement non-Javascript version of
+    the forum category list page:
+
+  def listPublishedSubForums(): Seq[tpi.ForumOrCategory] =
     listPubSubForumsImpl(pageId)
 
 
-  def listPublishedSubForumsOf(forum: tpi.Forum): Seq[tpi.Forum] =
+  def listPublishedSubForumsOf(forum: tpi.ForumOrCategory): Seq[tpi.ForumOrCategory] =
     listPubSubForumsImpl(forum.id)
 
 
-  private def listPubSubForumsImpl(parentPageId: String): Seq[tpi.Forum] =
+  private def listPubSubForumsImpl(parentPageId: String): Seq[tpi.ForumOrCategory] =
     listPublishedChildren(
       parentPageId = Some(parentPageId),
-      filterPageRole = Some(PageRole.Forum)) map { pathAndMeta =>
-        tpi.Forum(pathAndMeta.meta, pathAndMeta.path)
+      filterPageRole = Some(PageRole.ForumCategory)) map { pathAndMeta =>
+        tpi.ForumOrCategory(pathAndMeta.meta, pathAndMeta.path)
       }
+  */
 
 
   def hasChildPages: Boolean = {
@@ -413,38 +391,9 @@ class InternalPageTpi protected (protected val _pageReq: PageRequest[_]) extends
     // via e.g. `listPublishedSubForums` — Might as well ask for all successor
     // pages from here, because if there *are* any successors, we will
     // likely list all of them.
-    val pathsAndMeta = _pageReq.dao.listChildPages(parentPageId = pageId,
-      sortBy = PageSortOrder.ByPublTime, limit = 1, offset = 0)
+    val pathsAndMeta = _pageReq.dao.listChildPages(
+      Seq(pageId), PageOrderOffset.ByPublTime, limit = 1)
     pathsAndMeta.nonEmpty
-  }
-
-
-  def listRecentForumTopics(limit: Int): Seq[tpi.ForumTopic] =
-    listRecentForumTopicsImpl(pageId, limit = limit)
-
-
-  def listRecentForumTopicsIn(forum: tpi.Forum, limit: Int): Seq[tpi.ForumTopic] =
-    listRecentForumTopicsImpl(forum.id, limit = limit)
-
-
-  private def listRecentForumTopicsImpl(parentForumId: String, limit: Int)
-        : Seq[tpi.ForumTopic] = {
-    val topicPathsAndMeta: Seq[PagePathAndMeta] =
-      listPublishedChildren(
-        parentPageId = Some(parentForumId),
-        filterPageRole = Some(PageRole.ForumTopic),
-        limit = limit)
-
-    val topicSummaries: Map[String, PageSummary] =
-      _pageReq.dao.loadPageSummaries(topicPathsAndMeta.map(_.pageId))
-
-    for {
-      pathAndMeta <- topicPathsAndMeta
-      summary <- topicSummaries.get(pathAndMeta.pageId)
-    }
-    yield {
-      tpi.ForumTopic(pathAndMeta.meta, pathAndMeta.path, summary)
-    }
   }
 
 
@@ -456,9 +405,8 @@ class InternalPageTpi protected (protected val _pageReq: PageRequest[_]) extends
         : Seq[PagePathAndMeta] = {
 
     val pathsAndMeta: Seq[PagePathAndMeta] =
-      _pageReq.dao.listChildPages(parentPageId = parentPageId getOrElse pageId,
-        sortBy = PageSortOrder.ByPublTime, limit = limit, offset = offset,
-        filterPageRole = filterPageRole)
+      _pageReq.dao.listChildPages(Seq(parentPageId getOrElse pageId), PageOrderOffset.ByPublTime,
+        limit = limit, filterPageRole = filterPageRole)
 
     // BUG This might result in fewer than `limit` pages being returned.
     // In the future, move filtering to `pageReq.dao` instead?

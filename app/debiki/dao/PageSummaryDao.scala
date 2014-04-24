@@ -47,7 +47,7 @@ case class PageSummary(
 trait PageSummaryDao {
   self: SiteDao =>
 
-  val ExcerptLength = 500
+  val ExcerptLength = 250
 
   val logger = play.api.Logger("app.page-summary-dao")
 
@@ -99,11 +99,20 @@ trait PageSummaryDao {
       if (lastDefiniteApprovalDati.get.getTime == 0)
         lastDefiniteApprovalDati = None
 
+      // The text in the first paragraph, but at most ExcerptLength chars.
       val excerpt: String = page.approvedBodyText match {
         case None => ""
         case Some(text) =>
-          if (text.length <= ExcerptLength + 3) text
-          else text.take(ExcerptLength) + "..."
+          var exc =
+            if (text.length <= ExcerptLength + 3) text
+            else text.take(ExcerptLength) + "..."
+          var lastChar = 'x'
+          exc = exc takeWhile { ch =>
+            val newParagraph = ch == '\n' && lastChar == '\n'
+            lastChar = ch
+            !newParagraph
+          }
+          exc
       }
 
       val summary = PageSummary(

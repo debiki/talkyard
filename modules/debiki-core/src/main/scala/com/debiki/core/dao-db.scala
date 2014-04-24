@@ -127,6 +127,8 @@ abstract class SiteDbDao {
 
   def loadAncestorIdsParentFirst(pageId: PageId): List[PageId]
 
+  def loadCategoryTree(rootPageId: PageId): Seq[Category]
+
   def saveSetting(target: SettingsTarget, setting: SettingNameValue[_])
 
   /** Loads settings for all listed targets, returns settings in the same order.
@@ -180,13 +182,11 @@ abstract class SiteDbDao {
   def listPagePaths(
         pageRanges: PathRanges,
         include: List[PageStatus],
-        sortBy: PageSortOrder,
-        limit: Int,
-        offset: Int): Seq[PagePathAndMeta]
+        orderOffset: PageOrderOffset,
+        limit: Int): Seq[PagePathAndMeta]
 
-  def listChildPages(parentPageId: String, sortBy: PageSortOrder,
-        limit: Int, offset: Int = 0, filterPageRole: Option[PageRole] = None)
-        : Seq[PagePathAndMeta]
+  def listChildPages(parentPageIds: Seq[String], orderOffset: PageOrderOffset,
+        limit: Int, filterPageRole: Option[PageRole] = None): Seq[PagePathAndMeta]
 
 
   // ----- Loading and saving pages
@@ -318,6 +318,8 @@ abstract class SiteDbDao {
 
 
 abstract class SystemDbDao {
+
+  def applyEvolutions()
 
   def close()  // remove? move to DbDaoFactory in some manner?
 
@@ -540,6 +542,11 @@ class ChargingSiteDbDao(
     _spi.loadAncestorIdsParentFirst(pageId)
   }
 
+  def loadCategoryTree(rootPageId: PageId): Seq[Category] = {
+    _chargeForOneReadReq()
+    _spi.loadCategoryTree(rootPageId)
+  }
+
   def saveSetting(target: SettingsTarget, setting: SettingNameValue[_]) {
     _chargeForOneWriteReq()
     _spi.saveSetting(target, setting)
@@ -591,19 +598,17 @@ class ChargingSiteDbDao(
   def listPagePaths(
         pageRanges: PathRanges,
         include: List[PageStatus],
-        sortBy: PageSortOrder,
-        limit: Int,
-        offset: Int): Seq[PagePathAndMeta] = {
+        orderOffset: PageOrderOffset,
+        limit: Int): Seq[PagePathAndMeta] = {
     _chargeForOneReadReq()
-    _spi.listPagePaths(pageRanges, include, sortBy, limit, offset)
+    _spi.listPagePaths(pageRanges, include, orderOffset, limit)
   }
 
-  def listChildPages(parentPageId: String, sortBy: PageSortOrder,
-        limit: Int, offset: Int = 0, filterPageRole: Option[PageRole])
+  def listChildPages(parentPageIds: Seq[String], orderOffset: PageOrderOffset,
+        limit: Int, filterPageRole: Option[PageRole])
         : Seq[PagePathAndMeta] = {
     _chargeForOneReadReq()
-    _spi.listChildPages(parentPageId, sortBy, limit = limit, offset = offset,
-      filterPageRole = filterPageRole)
+    _spi.listChildPages(parentPageIds, orderOffset, limit = limit, filterPageRole = filterPageRole)
   }
 
 

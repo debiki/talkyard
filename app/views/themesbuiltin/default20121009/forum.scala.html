@@ -30,58 +30,22 @@
   @views.html.searchForm(tpi, id = "forum-search", placeholderText = "Search whole forum",
     sectionId = tpi.anyRootSectionPageId)
 
-  @parentForumsList(tpi)
-
+  <div class="forum-title">
     @tpi.page(showAuthorAndDate = false, showBody = false, showComments = false) {
-      <div class="forum-title">
-        @tpi.title
-      </div>
+      @tpi.title
       @tpi.bodyAndComments
     }
+  </div>
 
-  <form method="POST">
-    <input type="submit" value="New Topic" class="btn btn-default dw-a-new-forum-topic"></input>
-  </form>
+  <noscript>
+    <h2>Recent Topics</h2>
+    <ol>
+      @for(topic <- tpi.listLatestForumTopics(limit = 30, offset = 0)) {
+      <li><a class="topic-title" href="@{topic.path}">@{ topic.title }</a></li>
+      }
+    </ol>
+  </noscript>
 
-  <ol class="topic-table topic-list dw-forum-topic-list">
-    @for(topic <- tpi.listRecentForumTopics(limit = 40)) {
-      <li>
-        <div class="accordion-heading" >
-          <div>
-            <a class="topic-title" href="@{topic.path}">@{topic.title}</a>
-          </div>
-          <div class="topic-details">
-            <span class="topic-author">
-              By <a>@{topic.authorDisplayName}</a> –
-            </span>
-            @*
-            <span class="topic-pub-dati">
-              @{topic.pubDati.map(datiTag _) getOrElse "not published"} –
-            </span> *@
-            <span class="topic-stats">
-              @{topic.numRepliesApproved} replies –
-              @*
-              @{topic.numRepliesRejected} replies rejected,
-              @{topic.numRepliesPendingReview} pending review,
-              @{topic.numRepliesFlagged} flagged,
-              @{topic.numRepliesDeleted} deleted,
-              @{topic.numContributors} contributors,
-              *@
-            </span>
-            @if(topic.lastReplyDati.isDefined) {
-              <span class="topic-mod-dati">
-                updated @{datiTag(topic.lastReplyDati.get)}
-              </span>
-            }
-          </div>
-        </div>
-        <div class="accordion-toggle xcollapse topic-excerpt"
-             data-parent="#dw-forum-topic-list">
-          <em>Excerpt:</em> @{topic.excerpt}
-        </div>
-      </li>
-    }
-  </ol>
-
+  <div ng-include="'forum-app.html'"></div>
 }
 

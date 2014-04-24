@@ -30,6 +30,24 @@ var $ = d.i.$;
 var loginOnClickBtnClicked = null;
 
 
+// Any callback to call after login.
+var onLoginCallback = null;
+
+
+/**
+ * Logs in and then calls the callback.
+ */
+d.i.loginIfNeeded = function(reason, callback) {
+  if (d.i.Me.isLoggedIn()) {
+    callback();
+  }
+  else {
+    onLoginCallback = callback;
+    d.i.showLoginSubmitDialog(reason);
+  }
+};
+
+
 /**
  * `anyLoginReason` is optional and influences button titles in login dialogs.
  * It can one of 'LoginToComment', 'LoginToLogin' and 'LoginToSubmit'.
@@ -70,11 +88,20 @@ d.i.$loginThenSubmit = function(event) {
  * user having to log in.
  */
 d.i.continueAnySubmission = function() {
-  // If the login was initiated via a click on a
-  // .dw-loginsubmit-on-click button, continue the submission
-  // process that button is supposed to start.
-  $(loginOnClickBtnClicked).closest('form').submit();
-  loginOnClickBtnClicked = null;
+  if (onLoginCallback && loginOnClickBtnClicked) {
+    d.u.bug('DwE51GX7');
+  }
+  else if (onLoginCallback) {
+    onLoginCallback();
+    onLoginCallback = null;
+  }
+  else if (loginOnClickBtnClicked) {
+    // If the login was initiated via a click on a
+    // .dw-loginsubmit-on-click button, continue the submission
+    // process that button is supposed to start.
+    $(loginOnClickBtnClicked).closest('form').submit();
+    loginOnClickBtnClicked = null;
+  }
 };
 
 

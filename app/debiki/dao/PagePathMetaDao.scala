@@ -65,6 +65,10 @@ trait PagePathMetaDao {
     siteDbDao.loadAncestorIdsParentFirst(pageId)
 
 
+  def loadCategoryTree(rootPageId: PageId): Seq[Category] =
+    siteDbDao.loadCategoryTree(rootPageId)
+
+
   def loadPageMetaAndPath(pageId: String): Option[PagePathAndMeta] = {
     // I don't think writing a dedicated SQL query that does this in one
     // roundtrip is worth the trouble? Won't work with NoSQL databases anyway?

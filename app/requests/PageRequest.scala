@@ -370,6 +370,8 @@ case class PageRequest[A](
     }) getOrElse DefaultPageRoot)
 
 
+  def pageRole: Option[PageRole] = pageMeta.map(_.pageRole)
+
   def pageRole_! : PageRole = pageMeta_!.pageRole
 
   def parentPageId_! : Option[String] = pageMeta_!.parentPageId
@@ -384,7 +386,17 @@ case class PageRequest[A](
   def pathAndMeta_! = PagePathAndMeta(pagePath, ancestorIdsParentFirst_!, pageMeta_!)
 
 
-  lazy val thePageSettings: Settings = dao.loadSinglePageSettings(thePageId)
+  lazy val thePageSettings: Settings = {
+    if (pageExists) {
+      dao.loadSinglePageSettings(thePageId)
+    }
+    else if (parentPageId_!.isDefined) {
+      dao.loadPageTreeSettings(parentPageId_!.get)
+    }
+    else {
+      dao.loadWholeSiteSettings()
+    }
+  }
 
 }
 

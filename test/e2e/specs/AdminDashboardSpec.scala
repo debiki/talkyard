@@ -287,6 +287,9 @@ class AdminDashboardSpec extends DebikiBrowserSpec
       if (!saveTopicFirst)
         editForumTitle()
 
+      // Need to create a ForumCategory to save the topic in?
+      fail("Subsequent tests will fail, after I changed ForumGroup+Forum to Forum+ForumCategory")
+
       "create topic" in {
         clickCreateForumTopic()
       }

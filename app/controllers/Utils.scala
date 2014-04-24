@@ -24,7 +24,7 @@ import com.debiki.core.Prelude._
 import debiki._
 import debiki.DebikiHttp._
 import debiki.dao.SiteDao
-import java.{util => ju}
+import java.{util => ju, lang => jl}
 import play.api._
 import play.api.data._
 import play.api.data.Forms._
@@ -251,6 +251,24 @@ object Utils extends Results with http.ContentTypes {
         body.get(param).map(_.head) match {
           case None => ""
           case Some(s) => s
+        }
+
+      def getLong(param: String): Option[Long] =
+        getFirst(param) map { value =>
+          try { value.toLong }
+          catch {
+            case ex: jl.NumberFormatException =>
+              throwBadReq("DwE4XK71", s"Param `$param' is not an Long, it is: `$value'")
+          }
+        }
+
+      def getInt(param: String): Option[Int] =
+        getFirst(param) map { value =>
+          try { value.toInt }
+          catch {
+            case ex: jl.NumberFormatException =>
+              throwBadReq("DwE4XK71", s"Param `$param' is not an Int, it is: `$value'")
+          }
         }
 
       def getBool(param: String): Option[Boolean] =

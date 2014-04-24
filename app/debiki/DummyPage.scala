@@ -42,8 +42,8 @@ object DummyPage {
 
     val texts: Texts = pageRole match {
       case PageRole.BlogPost => BlogPostTexts
-      case PageRole.ForumGroup => ForumGroupTexts
       case PageRole.Forum => ForumTexts
+      case PageRole.ForumCategory => ForumCategoryTexts
       case PageRole.ForumTopic => ForumTopicTexts
       case PageRole.Code => CodeTexts
       case _ => DefaultTexts
@@ -168,15 +168,27 @@ object DummyPage {
   }
 
 
-  private object ForumGroupTexts extends DefaultTexts with ForumBodyText {
-    override val noTitleText =
-      "New Forum Group Title (click to edit)"
-  }
-
-
   private object ForumTexts extends DefaultTexts with ForumBodyText {
     override val noTitleText =
       "New Forum Title (click to edit)"
+  }
+
+
+  private object ForumCategoryTexts extends DefaultTexts with ForumBodyText {
+    override val noTitleText =
+      "Category Name (click to edit)"
+
+    override val noBodyText = i"""
+      |[Replace this first paragraph with a short description of this category.
+      |Please keep it short — the text will appear on the category list page.]
+      |
+      |Here, after the first paragraph, you can add a longer description, with
+      |for example category guidelines or rules.
+      |
+      |Below in the comments section, you can discuss this category. For example,
+      |should it be merged with another category? Or should it be split
+      |into many categories?
+      |"""
   }
 
 

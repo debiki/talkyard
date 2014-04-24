@@ -52,8 +52,8 @@ class TopicRole {
   static const EmbeddedComments = const TopicRole._('EmbeddedComments');
   static const Blog = const TopicRole._('Blog');
   static const BlogPost = const TopicRole._('BlogPost');
-  static const ForumGroup = const TopicRole._('ForumGroup');
   static const Forum = const TopicRole._('Forum');
+  static const ForumCategory = const TopicRole._('ForumCategory');
   static const ForumTopic = const TopicRole._('ForumTopic');
   static const WikiMainPage = const TopicRole._('WikiMainPage');
   static const WikiPage = const TopicRole._('WikiPage');
@@ -61,7 +61,7 @@ class TopicRole {
   static get values => [
       Generic, Code, EmbeddedComments,
       Blog, BlogPost,
-      ForumGroup, Forum, ForumTopic,
+      Forum, ForumCategory, ForumTopic,
       WikiMainPage, WikiPage];
 
   final String value;
@@ -75,8 +75,8 @@ class TopicRole {
       case 'EmbeddedComments': return TopicRole.EmbeddedComments; break;
       case 'Blog': return TopicRole.Blog; break;
       case 'BlogPost': return TopicRole.BlogPost; break;
-      case 'ForumGroup': return TopicRole.ForumGroup; break;
-      case 'Forum': return  TopicRole.Forum; break;
+      case 'Forum': return TopicRole.Forum; break;
+      case 'ForumCategory': return  TopicRole.ForumCategory; break;
       case 'ForumTopic': return TopicRole.ForumTopic; break;
       case 'WikiMainPage': return TopicRole.WikiMainPage; break;
       case 'WikiPage': return TopicRole.WikiPage; break;

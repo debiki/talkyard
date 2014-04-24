@@ -28,7 +28,9 @@ trait HasPageMeta {
     def ancestorIdsParentFirst: List[PageId]
   } =>
 
-  require(meta.parentPageId == ancestorIdsParentFirst.headOption)
+  require(meta.parentPageId == ancestorIdsParentFirst.headOption,
+    o"""Parent page id and ancestor ids mismatch, parent: ${meta.parentPageId}, ancestors:
+      ${ancestorIdsParentFirst} [DwE0FBY8]""")
 
   def id = meta.pageId
   def role = meta.pageRole
@@ -199,6 +201,8 @@ object PageMeta {
       cachedAuthorUserId = author.id,
       cachedNumPosters = parts.numPosters,
       cachedNumActions = parts.actionCount,
+      cachedNumLikes = parts.numLikes,
+      cachedNumWrongs = parts.numWrongs,
       cachedNumPostsToReview = parts.numPostsToReview,
       cachedNumPostsDeleted = parts.numPostsDeleted,
       cachedNumRepliesVisible = parts.numRepliesVisible,
@@ -218,11 +222,23 @@ object PageMeta {
       changedPage.modificationDati.map(_.getTime) getOrElse 0: Long,
       originalMeta.modDati.getTime))
 
+    val authorUserId = originalMeta.cachedAuthorUserId orIfEmpty {
+      changedPage.body.map(_.userId) getOrElse ""
+    }
+
+    val authorDispName = originalMeta.cachedAuthorDispName orIfEmpty {
+      changedPage.body.flatMap(post => post.user.map(_.displayName)) getOrElse ""
+    }
+
     originalMeta.copy(
       cachedTitle = changedPage.approvedTitleText,
       modDati = modifiedAt,
+      cachedAuthorDispName = authorDispName,
+      cachedAuthorUserId = authorUserId,
       cachedNumPosters = changedPage.numPosters,
       cachedNumActions = changedPage.actionCount,
+      cachedNumLikes = changedPage.numLikes,
+      cachedNumWrongs = changedPage.numWrongs,
       cachedNumPostsDeleted = changedPage.numPostsDeleted,
       cachedNumRepliesVisible = changedPage.numRepliesVisible,
       cachedNumPostsToReview = changedPage.numPostsToReview,
@@ -249,6 +265,8 @@ object PageMeta {
   * @param cachedAuthorUserId
   * @param cachedNumPosters
   * @param cachedNumActions
+  * @param cachedNumLikes
+  * @param cachedNumWrongs
   * @param cachedNumPostsDeleted
   * @param cachedNumRepliesVisible
   * @param cachedNumPostsToReview
@@ -270,6 +288,8 @@ case class PageMeta(
   cachedAuthorUserId: String,
   cachedNumPosters: Int = 0,
   cachedNumActions: Int = 0,
+  cachedNumLikes: Int = 0,
+  cachedNumWrongs: Int = 0,
   cachedNumPostsDeleted: Int = 0,
   cachedNumRepliesVisible: Int = 0,
   cachedNumPostsToReview: Int = 0,
@@ -285,7 +305,6 @@ case class PageMeta(
 
 
 sealed abstract class PageRole {
-  def parentRole: Option[PageRole] = None
 
   /** True if this page is e.g. a blog or a forum — they can have child pages
     * (namely blog posts, forum topics).
@@ -295,6 +314,7 @@ sealed abstract class PageRole {
 
 
 object PageRole {
+
   case object Generic extends PageRole
 
   case object Code extends PageRole
@@ -307,39 +327,30 @@ object PageRole {
     override def isSection = true
   }
 
-  case object BlogPost extends PageRole {
-    override val parentRole = Some(Blog)
-  }
+  case object BlogPost extends PageRole
 
-  // Ooops, ForumGroup + Forum + ForumTopic feels over complicated. Should
-  // remove ForumGroup and keep only Forum and ForumTopic.
-  case object ForumGroup extends PageRole {
+  case object Forum extends PageRole {
     override def isSection = true
   }
 
-  case object Forum extends PageRole {
-    override val parentRole = Some(ForumGroup)
+  case object ForumCategory extends PageRole {
     override val isSection = true
   }
 
-  case object ForumTopic extends PageRole {
-    override val parentRole = Some(Forum)
-  }
+  case object ForumTopic extends PageRole
 
   case object WikiMainPage extends PageRole {
     override def isSection = true
   }
 
-  case object WikiPage extends PageRole {
-    override val parentRole = Some(WikiMainPage)
-  }
+  case object WikiPage extends PageRole
 
 
   // Hmm, regrettably this breaks should I rename any case object.
   // Perhaps use a match ... case list instead?
   private val _PageRoleLookup = Vector(
     Generic, EmbeddedComments, Blog, BlogPost,
-    ForumGroup, Forum, ForumTopic,
+    Forum, ForumCategory, ForumTopic,
     WikiMainPage, WikiPage,
     Code).map(x => (x, x.toString))
 
@@ -375,5 +386,24 @@ object PageStatus {
 }
 
 
+
+/** How to sort pages, and where to start listing them, e.g. if fetching additional
+  * pages after the user has scrolled down to the end of a page list.
+  */
+sealed abstract class PageOrderOffset
+
+object PageOrderOffset {
+  case object Any extends PageOrderOffset
+  case object ByPath extends PageOrderOffset
+  case object ByPublTime extends PageOrderOffset
+  case class ByBumpTime(offset: Option[ju.Date]) extends PageOrderOffset
+  case class ByLikesAndBumpTime(offset: Option[(Int, ju.Date)]) extends PageOrderOffset
+}
+
+
+
 case class PagePostId(pageId: PageId, postId: PostId)
+
+
+case class Category(categoryName: String, pageId: String, subCategories: Seq[Category])
 

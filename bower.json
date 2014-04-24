@@ -1,0 +1,17 @@
+{
+  "name": "debiki-client",
+  "version": "0.0.1-SNAPSHOT",
+  "private": true,
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "angular-moment": "~0.6.2",
+    "momentjs": "~2.6.0",
+    "lodash": "~2.4.1"
+  }
+}

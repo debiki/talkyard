@@ -66,7 +66,7 @@ class DebikiAdminController {
       if (topic.anyParentPageId != null)
         continue;
 
-      if (topic.role == TopicRole.ForumGroup || topic.role == TopicRole.Forum) {
+      if (topic.role == TopicRole.Forum || topic.role == TopicRole.ForumCategory) {
         _forums.add(topic);
       }
       else if (topic.role == TopicRole.Blog) {

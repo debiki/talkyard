@@ -97,6 +97,9 @@ GET   /-/privacy-policy         controllers.LegalController.viewPrivacyPolicyPag
 GET   /-/load-special-content   controllers.SpecialContentController.loadContent(rootPageId, contentId)
 POST  /-/save-special-content   controllers.SpecialContentController.saveContent
 
+GET   /-/list-topics            controllers.ForumController.listTopics(categoryId)
+GET   /-/list-categories        controllers.ForumController.listCategories(forumId)
+
 POST  /-/configure-user         controllers.ConfigUserController.handleConfiguration()
 GET   /-/load-my-page-activity  controllers.ViewPageController.loadMyPageActivity(pageId)
 POST  /-/reply                  controllers.ReplyController.handleReply
@@ -107,7 +110,6 @@ POST  /-/edit                   controllers.EditController.edit
 GET   /-/improvements           controllers.EditHistoryController.showForm(pageId, postId)
 POST  /-/improve                controllers.EditHistoryController.handleForm(pageId)
 POST  /-/pin-at-position        controllers.PinController.pinAtPosition
-POST  /-/wrap-forums-in-group   controllers.ForumController.wrapForumsInNewGroup
 #POST /-/move-pages             controllers.MovePageController.movePages
 POST  /-/move-rename-page       controllers.MovePageController.moveRenamePage
 POST  /-/approve                controllers.ReviewController.approve

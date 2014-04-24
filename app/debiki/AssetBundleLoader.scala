@@ -96,7 +96,7 @@ case class AssetBundleLoader(bundleNameNoSuffix: String,  bundleSuffix: String, 
 
 
   private def loadBundleFromJarFiles(): String = {
-    // Currently I've configured Grunt to bundle only:
+    // Currently I've configured Gulp to bundle only:
     //   app/views/themes/<themeName>/styles.css/*.css
     // to:
     //   public/themes/<themeName>/styles.css
@@ -104,11 +104,7 @@ case class AssetBundleLoader(bundleNameNoSuffix: String,  bundleSuffix: String, 
     if (bundleName != "styles.css")
       return ""
 
-    val themeName = dao.loadWebsiteConfig().getText("theme") getOrElse {
-      return ""
-    }
-
-    Play.resource(s"public/themes/$themeName/$bundleName") match {
+    def loadBundleOrEmpty(path: String): String = Play.resource(path) match {
       case None => ""
       case Some(url) =>
         val inputStream = url.openStream()
@@ -116,6 +112,15 @@ case class AssetBundleLoader(bundleNameNoSuffix: String,  bundleSuffix: String, 
         inputStream.close()
         bundleText
     }
+
+    val defaultStyles =
+      loadBundleOrEmpty(s"public/themes/${TemplateRenderer.DefaultThemeName}/$bundleName")
+
+    val anyThemeStyles = dao.loadWebsiteConfig().getText("theme") map { themeName =>
+      loadBundleOrEmpty(s"public/themes/$themeName/$bundleName")
+    }
+
+    defaultStyles + "\n" + anyThemeStyles.getOrElse("")
   }
 
 

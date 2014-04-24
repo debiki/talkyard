@@ -42,14 +42,6 @@ case class PermsOnPageQuery(
 
 
 
-sealed abstract class PageSortOrder
-object PageSortOrder {
-  //case object ByTitle extends PageSortOrder
-  case object ByPath extends PageSortOrder
-  case object ByPublTime extends PageSortOrder
-}
-
-
 /** A certain user's or group's permissions on something.
  */
 sealed abstract class Perms

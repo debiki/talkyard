@@ -42,8 +42,11 @@ class ForumSpec extends DebikiBrowserSpec with TestEditor with TestLoginner {
 
   var forumWindow: WindowTarget = null
 
-  lazy val forumPage = createTestPage(
-    PageRole.Forum, pageSlug = "test-forum", title = "Test Forum 27KV09", body = None)
+  lazy val forumPage = {
+    fail("Subsequent tests will fail, after I changed ForumGroup+Forum to Forum+ForumCategory")
+    createTestPage(
+      PageRole.Forum, pageSlug = "test-forum", title = "Test Forum 27KV09", body = None)
+  }
 
 
   "An anonymous forum user can" - {

@@ -151,11 +151,6 @@ html.js body.dw-render-actions-pending .dw-as
 .dw-fs-re:hover .ui-resizable-se
   visibility: visible
 
-// Prevent the edit form from getting as wide as the page.
-.dw-depth-0 > .dw-p > .dw-f-e .dw-e-tabs
-  float: left
-  clear: both
-
 // For horizontal reply forms: An arrow to any replies to the right...
 li.dw-fs-re:not(:last-child) .dw-arw-hz-line-to-sibling
   top: -39.5px
@@ -1075,11 +1070,13 @@ body.dw-u-ui-simple .dw-a-edit
 // depending on what the user is doing.
 body .dw-login-to-submit,
 body .dw-login-to-post-comment,
+body .dw-login-to-create-topic,
 body .dw-login-to-login
   display: none
 
 body.dw-login-to-submit .dw-login-to-submit,
-body.dw-login-to-post-comment .dw-login-to-post-comment
+body.dw-login-to-post-comment .dw-login-to-post-comment,
+body.dw-login-to-create-topic .dw-login-to-create-topic,
 body.dw-login-to-login .dw-login-to-login
   display: inline
 // ---
@@ -1582,7 +1579,8 @@ form .dw-ntf
 //===========================
 
 
-.dw-user-page-data
+.dw-user-page-data,
+#dw-page-data
   display: none
 
 
@@ -1797,6 +1795,14 @@ img.debiki-0-inline
 // Things to move to app/views/themesbuiltin/default20121009/-somewhere-
 //===========================
 
+.category-definition
+
+  .category-name-title-prefix
+    margin-top: 50px !important  // why did I add 'important' to h2?
+    font-style: italic
+
+  .dw-p-ttl
+    margin-top: 0
 
 #forum-search
   float: right

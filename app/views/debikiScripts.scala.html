@@ -36,8 +36,11 @@ stylesheet references", http://modernizr.com/docs/#installing
 <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.@minMaxJs"></script>
 <script src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.9.2/jquery-ui.@minMaxJs"></script>
 
-<script src="//ajax.googleapis.com/ajax/libs/angularjs/1.0.8/angular.@minMaxJs"></script>
-<script src="//ajax.googleapis.com/ajax/libs/angularjs/1.0.8/angular-sanitize.@minMaxJs"></script>
+<script src="//ajax.googleapis.com/ajax/libs/angularjs/1.2.16/angular.@minMaxJs"></script>
+<script src="//ajax.googleapis.com/ajax/libs/angularjs/1.2.16/angular-sanitize.@minMaxJs"></script>
+
+@* For now only, should probably install via e.g. Bower? and include in JS bundle? *@
+<script src="//angular-ui.github.io/ui-router/release/angular-ui-router.js"></script>
 
 @* Could:
 <script>
@@ -58,6 +61,7 @@ See: http://stackoverflow.com/questions/1014203/best-way-to-use-googles-hosted-j
     v0: { util: {} },
     internal: {
       $: jQuery,
+      minMaxJs: '@minMaxJs',
       isInIframe: self !== top,
       serverOrigin: 'http://@serverAddress',
       pageUri: 'http://@serverAddress@pageUriPath',

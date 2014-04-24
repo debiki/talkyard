@@ -1,0 +1,30 @@
+
+<div>
+<table id="dw-topic-list">
+  <thead>
+    <tr>
+      <th>Topic</th>
+      <th>Category</th>
+      <th class="num num-posts">Posts</th>
+      <th class="num">Likes</th>
+      <th class="num">Wrongs</th>
+      <th class="num">Created</th>
+      <th class="num">Last Post</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr ng-repeat="topic in topics">
+      <td><a href="{{ topic.url }}">{{ topic.title }}</a></td>
+      <td>{{ topic.category.name }}</td>
+      <td class="num num-posts">{{ topic.numPosts }}</td>
+      <td class="num">{{ topic.numLikes }}</td>
+      <td class="num">{{ topic.numWrongs }}</td>
+      <td class="num" am-time-ago="topic.createdEpoch"></td>
+      <td class="num" am-time-ago="topic.lastPostEpoch"></td>
+    </tr>
+</table>
+<div>
+  <a class="load-more" ng-click="mv.loadMoreTopics()"
+      ng-show="showLoadMoreButton">Load more ...</a>
+</div>
+</div>

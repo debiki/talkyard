@@ -149,10 +149,10 @@ d.i.$showActions = function() {
 };
 
 
-d.i.hideActions = function(actionsToShowInstead) {
+d.i.hideActions = function(anyActionsToShowInstead) {
   var actionsToHide = $('#dw-p-as-shown');
-  if (actionsToHide.length && actionsToShowInstead.length &&
-      actionsToHide[0] === actionsToShowInstead[0])
+  if (actionsToHide.length && anyActionsToShowInstead && anyActionsToShowInstead.length &&
+      actionsToHide[0] === anyActionsToShowInstead[0])
     return;
 
   actionsToHide

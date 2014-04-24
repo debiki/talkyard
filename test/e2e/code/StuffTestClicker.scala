@@ -44,7 +44,11 @@ trait StuffTestClicker extends DebikiSelectors {
     val (newPageLink, newPageTitlePart) = (pageRole, suffix) match {
       case (PageRole.Generic, _) => ("create-info-page", "New Page")
       case (PageRole.Blog, _) => ("create-blog", "Example Blog Post")
-      case (PageRole.Forum, _) => ("create-forum", "New Forum")
+      case (PageRole.Forum, _) =>
+        fail("Subsequent tests will fail, after I changed ForumGroup+Forum to Forum+ForumCategory")
+        // not tested: ("create-forum", "New Forum")
+      case (PageRole.ForumCategory, _) =>
+        fail("Subsequent tests will fail, after I changed ForumGroup+Forum to Forum+ForumCategory")
       case (PageRole.Code, "css") => ("create-local-theme-style", "/themes/local/theme.css")
       case _ => fail(s"Bad page role: $pageRole")
     }

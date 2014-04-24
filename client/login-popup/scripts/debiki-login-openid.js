@@ -61,6 +61,7 @@ function initLoginOpenId() {
   openid.signin_text =
       '<span class="dw-login-to-submit">Login and submit</span>' +
       '<span class="dw-login-to-post-comment">Login and post comment</span>' +
+      '<span class="dw-login-to-create-topic">Login and create topic</span>' +
       '<span class="dw-login-to-login">Login</span>';
 
   $openid.dialog(d.i.newModalDialogSettings({

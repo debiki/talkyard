@@ -141,10 +141,8 @@ object Application extends mvc.Controller {
         Utils.parsePathRanges(pageReq.pagePath.folder, pageReq.request.queryString,
            urlParamPrefix = "for"),
         include = List(PageStatus.Published),
-        sortBy = PageSortOrder.ByPublTime,
-        limit = 10,
-        offset = 0
-      ).map(_.path)
+        orderOffset = PageOrderOffset.ByPublTime,
+        limit = 10).map(_.path)
 
     // Access control.
     // Somewhat dupl code, see AppList.listNewestPages.

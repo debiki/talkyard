@@ -35,14 +35,15 @@ class User
 
   $scope.userList = []
 
-  adminService.listUsers null, callbacks
-    where callbacks =
+  callbacks =
       onSuccess: !(json) ->
         $scope.userList =
           for userData in json.users
             User(userData)
       onError: !->
         console.log('Error listing users [DwE3BKI02]')
+
+  adminService.listUsers null, callbacks
 
   ]
 

@@ -27,8 +27,9 @@ import requests.PageRequest
 object TemplateRenderer {
 
 
+  val DefaultThemeName = "default20121009"
   private val BuiltinThemesPrefix = "builtin."  // after '/' has been replaced with '.'
-  private val DefaultThemeName = s"${BuiltinThemesPrefix}default20121009"
+  private val DefaultThemeFullName = s"$BuiltinThemesPrefix$DefaultThemeName"
 
 
   def renderTemplate(pageReq: PageRequest[_], appendToBody: xml.NodeSeq = Nil)
@@ -83,8 +84,8 @@ object TemplateRenderer {
       pageReq.pageRole_! match {
         case PageRole.BlogPost => "blogPost"
         case PageRole.Blog => "blog"
-        case PageRole.ForumGroup => "forumGroup"
         case PageRole.Forum => "forum"
+        case PageRole.ForumCategory => "editForumCategory"
         case PageRole.ForumTopic => "forumTopic"
         case PageRole.Code => "codePage"
         case PageRole.EmbeddedComments => "embeddedComments"
@@ -99,7 +100,7 @@ object TemplateRenderer {
 
 
   def getThemeName(tpi: SiteTpi): String = {
-    val themeUnsafe = tpi.websiteConfigValue("theme") orIfEmpty DefaultThemeName
+    val themeUnsafe = tpi.websiteConfigValue("theme") orIfEmpty DefaultThemeFullName
     // People place themes in file system dirs, so allow them to use "/" when
     // specifying in which directory the theme is located? This is more user friendly
     // than forcing them to use Javas package delimiter, '.'? But we need to convert to '.'
@@ -108,7 +109,7 @@ object TemplateRenderer {
     // Don't allow anyone to use the www.debiki.com template:
     if (themeNoDelims == "wwwdebikicom" && !tpi.debikiRequest.host.endsWith("debiki.com")
         && !tpi.debikiRequest.host.startsWith("localhost:"))
-      DefaultThemeName
+      DefaultThemeFullName
     else
       themeNoDelims
   }

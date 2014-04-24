@@ -33,6 +33,10 @@ import CachingDao.{CacheKeyAnySite, CacheValueIgnoreVersion}
  */
 class SystemDao(protected val systemDbDao: SystemDbDao) {
 
+  def applyEvolutions() {
+    systemDbDao.applyEvolutions()
+  }
+
 
   // ----- Websites (a.k.a. tenants)
 

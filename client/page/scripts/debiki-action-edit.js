@@ -42,9 +42,9 @@ d.i.$loadEditorDependencies = (function() {
       test: loadCodeMirror,
       yep: [
         assetsPrefix + 'codemirror-3-13-custom.css',
-        assetsPrefix + 'codemirror-3-13-custom.js'],
+        assetsPrefix + 'codemirror-3-13-custom.' + d.i.minMaxJs],
       both: [
-        assetsPrefix + 'debiki-pagedown.min.js'],
+        assetsPrefix + 'debiki-pagedown.' + d.i.minMaxJs],
       complete: function() {
         loadStatus.resolve();
       }
@@ -245,8 +245,16 @@ function _$showEditFormImpl() {
     var approxTitleAndBtnsHeight = 260; // page title + tabs + submit buttons
     var maxPanelHeight = Math.max(
         140, $(window).height() - approxTitleAndBtnsHeight);
-    var minPanelHeight = Math.max(140, $postBody.height() + 60);
+
+    var minPanelHeight;
+    if ($postBody.parent().is('.dw-p-ttl')) {
+      minPanelHeight = $postBody.height();
+    }
+    else {
+      minPanelHeight = Math.max(140, $postBody.height() + 60);
+    }
     if (minPanelHeight > maxPanelHeight) minPanelHeight = maxPanelHeight;
+
     var lastHeight = null;
 
     // Clearfix the tabs, because .dw-p-bd makes the preview tab float left.
@@ -288,6 +296,7 @@ function _$showEditFormImpl() {
       // Then e.g. CodeMirror can make the root post editor taller
       // dynamically, and the preview panel adjusts its size.
       $panel.height('auto');
+      $panel.css('min-height', minPanelHeight);
 
       if (lastHeight && $panel.height() < lastHeight) {
         $panel.height(lastHeight);
