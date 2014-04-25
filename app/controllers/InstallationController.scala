@@ -130,19 +130,10 @@ object InstallationController extends mvc.Controller {
   private def doCreateFirstSite(request: mvc.Request[JsValue]) {
     val now = new ju.Date()
 
-    val siteConfigPage = SiteCreator.makeConfigPage(
-      text = views.txt.install.firstSiteConfigPageText(DefaultThemeConfigPath).body,
-      path = s"/${ConfigValueDao.WebsiteConfigPageSlug}", siteId = "?", creationDati = now)
-
-    val defaultThemeConfigPage = SiteCreator.makeConfigPage(
-      text = views.txt.install.defaultThemeConfigPageText().body,
-      path = DefaultThemeConfigPath, siteId = "?", creationDati = now)
-
     val firstSiteData = new FirstSiteData {
       val name = "Main Website"
       val address = request.host
       val https = TenantHost.HttpsNone
-      val pagesToCreate = siteConfigPage :: defaultThemeConfigPage :: Nil
     }
 
     Globals.systemDao.createFirstSite(firstSiteData)

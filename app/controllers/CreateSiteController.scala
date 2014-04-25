@@ -49,8 +49,12 @@ object CreateSiteController extends mvc.Controller {
       "DwE30SC3", "You may not create a new website from this website")
     val siteConfig = dao.loadWebsiteConfig()
     val domain = Globals.baseDomain
+
     // Ensure other required config values are present too (fail fast).
-    siteConfig.getText(SiteCreator.ConfValNames.NewSiteConfigText) getOrElse die
+    // COULD remove this once I've found some other way to not allow creation of new
+    // sites via just any existing site (only via www.debiki.com).
+    siteConfig.getText("new-site-config-page-text") getOrElse die
+
     s"$websiteName.$domain"
   }
 

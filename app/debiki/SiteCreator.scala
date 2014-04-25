@@ -37,11 +37,6 @@ object SiteCreator {
 
   val DefaultHomepageTitle = "Default Homepage (click to edit)"
 
-  object ConfValNames {
-    val NewSiteConfigText = "new-site-config-page-text"
-    val NewSiteDomain = "new-site-domain"
-  }
-
 
   sealed abstract class NewSiteType
   object NewSiteType {
@@ -97,13 +92,6 @@ object SiteCreator {
 
     Globals.sendEmail(email, website.id)
 
-    val newSiteConfigText = dao.loadWebsiteConfig().getText(
-      ConfValNames.NewSiteConfigText) getOrDie "DwE74Vf9"
-
-    newWebsiteDao.createPage(makeConfigPage(
-      newSiteConfigText, siteId = website.id, creationDati = creationDati,
-      path = s"/${ConfigValueDao.WebsiteConfigPageSlug}"))
-
     siteType match {
       case NewSiteType.EmbeddedComments =>
         // Need create nothing.
@@ -134,26 +122,6 @@ object SiteCreator {
     }
     Email(EmailType.Notification, sendTo = owner.email, toUserId = Some(owner.id),
       subject = subject, bodyHtmlText = (emailId) => body)
-  }
-
-
-  def makeConfigPage(text: String, siteId: String, creationDati: ju.Date, path: String)
-        : Page = {
-    val pageId = CreatePageController.generateNewPageId()
-    val pageBody = PostActionDto.forNewPageBodyBySystem(
-      text, creationDati, PageRole.Code)
-    val actions = PageParts(pageId, SystemUser.Person, actionDtos = List(pageBody))
-    val parsedPagePath = PagePath.fromUrlPath(siteId, path = path) match {
-      case PagePath.Parsed.Good(pagePath) if !pagePath.showId => pagePath
-      case x => assErr("DwE7Bfh2", s"Bad hardcoded config page path: $path")
-    }
-    Page(
-      PageMeta.forNewPage(
-        PageRole.Code, SystemUser.User, actions, creationDati, publishDirectly = true),
-      PagePath(siteId, folder = parsedPagePath.folder,
-        pageId = Some(pageId), showId = false, pageSlug = parsedPagePath.pageSlug),
-      ancestorIdsParentFirst = Nil,
-      actions)
   }
 
 

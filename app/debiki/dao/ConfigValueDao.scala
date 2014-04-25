@@ -56,6 +56,7 @@ trait ConfigValueDao {
    *
    * Throws WebsiteConfigException e.g. if a config page cannot be found.
    */
+  @deprecated("Use DW1_SETTINGS instead", "Mars 2014")
   def loadWebsiteConfig(): WebsiteConfig = {
     var leaves: List[WebsiteConfigLeaf] = Nil
     var nextLeafUrl: Option[String] = Some(WebsiteConfigPageSlug)
@@ -123,6 +124,7 @@ object ConfigValueDao {
    *
    * COULD move to other module, but what module?
    */
+  @deprecated("Use table DW1_SETTINGS instead", "Mars 2014")
   val WebsiteConfigPageSlug = "_site.conf"
 }
 
