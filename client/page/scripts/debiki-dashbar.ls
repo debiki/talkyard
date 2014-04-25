@@ -52,7 +52,7 @@ function dwDashbar ($http)
           </span>
         </span>
 
-        <a ng-show="pageExists" class="page-settings">
+        <a ng-show="pageExists && isWwwDebikiComOrLocalhost()"  class="page-settings">
           View page settings
         </a>
       </span>
@@ -90,6 +90,10 @@ function dwDashbar ($http)
 
     unpublishPageBtn = element.find('a.unpublish-page')
     unpublishPageBtn.click !-> changePageMeta { newStatus: 'Draft' }
+
+    scope.isWwwDebikiComOrLocalhost = ->
+      console.log 'rint'
+      window.location.toString().search(/http:..localhost|http:..www.debiki.com/) != -1
 
     # Warning: Dupl code. See `createThisPageUnlessExists` in debiki-forum.ls.
     !function createThisPageUnlessExists (onSuccess)
