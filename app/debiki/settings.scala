@@ -84,8 +84,9 @@ case class Settings(settingsChain: SettingsChain) {
   val title = derive("title", "(no title)")
   val description = derive("description", "(no description)")
 
-  // COULD rename to horizontal_comments
   val horizontalComments = derive("horizontalComments", false)
+
+  val logoUrlOrHtml = derive("logoUrlOrHtml", "")
 
   val companyDomain = derive("companyDomain", "www.example.com")
   val companyFullName = derive("companyFullName", "Unnamed Company Full Name")
@@ -101,6 +102,7 @@ case class Settings(settingsChain: SettingsChain) {
       "title" -> jsonFor(title),
       "description" -> jsonFor(description),
       "horizontalComments" -> jsonFor(horizontalComments),
+      "logoUrlOrHtml" -> jsonFor(logoUrlOrHtml),
       "companyDomain" -> jsonFor(companyDomain),
       "companyFullName" -> jsonFor(companyFullName),
       "companyShortName" -> jsonFor(companyShortName))

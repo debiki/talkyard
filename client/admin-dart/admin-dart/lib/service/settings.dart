@@ -61,6 +61,7 @@ class Settings {
   Setting<String> companyDomain;
   Setting<String> title;
   Setting<String> description;
+  Setting<String> logoUrlOrHtml;
   //String imageUrl;
   //String faviconUrl;
   Setting<bool> horizontalComments;
@@ -71,6 +72,7 @@ class Settings {
     this.companyDomain: null,
     this.title: null,
     this.description: null,
+    this.logoUrlOrHtml: null,
     this.horizontalComments: null
   });
 
@@ -82,6 +84,7 @@ class Settings {
         companyDomain: _makeSetting(target, 'companyDomain', json),
         title: _makeSetting(target, 'title', json),
         description: _makeSetting(target, 'description', json),
+        logoUrlOrHtml: _makeSetting(target, 'logoUrlOrHtml', json),
         horizontalComments: _makeSetting(target, 'horizontalComments', json));
   }
 

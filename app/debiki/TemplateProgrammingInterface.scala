@@ -243,6 +243,19 @@ class SiteTpi protected (val debikiRequest: DebikiRequest[_])
   }
 
 
+  def logoHtml = {
+    val logoUrlOrHtml = debikiRequest.siteSettings.logoUrlOrHtml.value.toString.trim
+    if (logoUrlOrHtml.headOption == Some('<')) {
+      // It's HTML, use it as is
+      logoUrlOrHtml
+    }
+    else {
+      // It should be a URL, wrap in a tag.
+      <a href="/"><img src={logoUrlOrHtml}></img></a>.toString
+    }
+  }
+
+
   def companyDomain = debikiRequest.siteSettings.companyDomain
   def companyFullName = debikiRequest.siteSettings.companyFullName
   def companyShortName = debikiRequest.siteSettings.companyShortName

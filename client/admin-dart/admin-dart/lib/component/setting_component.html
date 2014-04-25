@@ -5,7 +5,7 @@
 
   <div ng-if="cmp.isTextSetting" class="col-sm-7">
     <input ng-model="cmp.setting.newValue" type="text" class="form-control" id="forumDescription">
-    <p><content></content> <span>Default value: <kbd>{{ cmp.setting.defaultValue }}</kbd></span></p>
+    <p><content></content> <span>Default value: "<kbd>{{ cmp.setting.defaultValue }}</kbd>"</span></p>
   </div>
 
   <div ng-if="cmp.isBoolSetting" class="col-sm-7 bool-setting">
