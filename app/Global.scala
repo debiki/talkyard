@@ -149,13 +149,9 @@ object Global extends GlobalSettings {
         UnsubscriptionController.showForm(tenantId)
       case ("unsubscribe", POST) =>
         UnsubscriptionController.handleForm(tenantId)
-      // If no main function specified:
-      case ("", GET) =>
+      case (_, GET) =>
         // CSS and JS are served via asset bundles, so they can be cached forever.
         ViewPageController.viewPost(pagePath)
-      // If invalid function specified:
-      case (fun, met) => throwBadReq(
-        "DwEQ435", s"Bad method or query string: `$met' `?$fun'")
     }
     Some(action)
   }

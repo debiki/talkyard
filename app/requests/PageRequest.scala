@@ -386,6 +386,13 @@ case class PageRequest[A](
   def pathAndMeta_! = PagePathAndMeta(pagePath, ancestorIdsParentFirst_!, pageMeta_!)
 
 
+  def horizontalComments =
+    request.queryString.getFirst("2d") match {
+      case Some("true") => true
+      case Some("false") => false
+      case _ => thePageSettings.horizontalComments.valueIsTrue
+    }
+
   lazy val thePageSettings: Settings = {
     if (pageExists) {
       dao.loadSinglePageSettings(thePageId)
