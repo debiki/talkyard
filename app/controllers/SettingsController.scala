@@ -17,7 +17,7 @@
 
 package controllers
 
-import actions.ApiActions.{GetAction, PostJsonAction}
+import actions.ApiActions.{AdminGetAction, AdminPostJsonAction}
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki._
@@ -34,19 +34,19 @@ import Utils.OkSafeJson
 object SettingsController extends mvc.Controller {
 
 
-  def loadSiteSettings = GetAction { request: GetRequest =>
+  def loadSiteSettings = AdminGetAction { request: GetRequest =>
     val settings = request.dao.loadWholeSiteSettings()
     OkSafeJson(settings.toJson)
   }
 
 
-  def loadSectionSettings(rootPageId: PageId) = GetAction { request: GetRequest =>
+  def loadSectionSettings(rootPageId: PageId) = AdminGetAction { request: GetRequest =>
     val settings = request.dao.loadPageTreeSettings(rootPageId)
     OkSafeJson(settings.toJson)
   }
 
 
-  def saveSetting = PostJsonAction(maxLength = 500) { request: JsonPostRequest =>
+  def saveSetting = AdminPostJsonAction(maxLength = 500) { request: JsonPostRequest =>
     val body = request.body
     val pageId = (body \ "pageId").asOpt[PageId]
     val tyype = (body \ "type").as[String]

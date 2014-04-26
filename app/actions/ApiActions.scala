@@ -37,13 +37,17 @@ object ApiActions {
 
 
   def GetAction(f: GetRequest => Result) =
-    _PlainApiAction(BodyParsers.parse.empty)(f)
+    PlainApiAction(BodyParsers.parse.empty)(f)
+
+
+  def AdminGetAction(f: GetRequest => Result) =
+    PlainApiAction(BodyParsers.parse.empty, adminOnly = true)(f)
 
 
   def JsonOrFormDataPostAction
         (maxBytes: Int)
         (f: ApiRequest[JsonOrFormDataBody] => Result) =
-    _PlainApiAction[JsonOrFormDataBody](
+    PlainApiAction[JsonOrFormDataBody](
       JsonOrFormDataBody.parser(maxBytes = maxBytes))(f)
 
 
@@ -53,7 +57,7 @@ object ApiActions {
   def PostFormDataAction
         (maxUrlEncFormBytes: Int)
         (f: FormDataPostRequest => Result) =
-    _PlainApiAction[Map[String, Seq[String]]](
+    PlainApiAction[Map[String, Seq[String]]](
       BodyParsers.parse.urlFormEncoded(maxLength = maxUrlEncFormBytes))(f)
 
 
@@ -65,18 +69,25 @@ object ApiActions {
   def PostJsonAction
         (maxLength: Int)
         (f: JsonPostRequest => Result) =
-    _PlainApiAction[JsValue](
+    PlainApiAction[JsValue](
       BodyParsers.parse.json(maxLength = maxLength))(f)
 
 
-  private def _PlainApiAction[A]
-        (parser: BodyParser[A])
+  def AdminPostJsonAction
+        (maxLength: Int)
+        (f: JsonPostRequest => Result) =
+    PlainApiAction[JsValue](
+      BodyParsers.parse.json(maxLength = maxLength), adminOnly = true)(f)
+
+
+  private def PlainApiAction[A]
+        (parser: BodyParser[A], adminOnly: Boolean = false)
         (f: ApiRequest[A] => Result) =
-      _ApiActionImpl[A](parser)(f)
+      ApiActionImpl[A](parser, adminOnly)(f)
 
 
-  private def _ApiActionImpl[A]
-        (parser: BodyParser[A])
+  private def ApiActionImpl[A]
+        (parser: BodyParser[A], adminOnly: Boolean)
         (f: ApiRequest[A] => Result) =
     SafeActions.CheckSidAction[A](parser) { (sidOk, xsrfOk, browserId, request) =>
 
@@ -86,6 +97,9 @@ object ApiActions {
          ip = realOrFakeIpOf(request), sidOk.roleId)
 
       val (identity, user) = Utils.loadIdentityAndUserOrThrow(sidOk, dao)
+
+      if (adminOnly && user.map(_.isAdmin) != Some(true))
+        throwForbidden("DwE1GfK7", "Please login as admin")
 
       val apiRequest = ApiRequest[A](
         sidOk, xsrfOk, browserId, identity, user, dao, request)
