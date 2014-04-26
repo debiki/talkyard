@@ -30,6 +30,11 @@
   <meta name="keywords" content="@tpi.configValue("keywords")">
 
   @tpi.debikiStyles
+
+  @* For now, use this font always, so if people create a new forum they'll get what they
+  saw at www.debiki.com. Later on, make this configurable somehow.  *@
+  <link rel='stylesheet' href='http://fonts.googleapis.com/css?family=Bree+Serif'>
+
   @Html(tpi.configValue("html-styles"))
   @Html(tpi.pageConfigValue("html-styles-this-page"))
   @tpi.stylesheetBundle("styles.css")

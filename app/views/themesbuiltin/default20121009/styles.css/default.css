@@ -17,6 +17,11 @@ article {
 }
 
 h1, h2, h3, h4, h5, h6 {
+  /* For now, always use Bree serif, so people that setup a forum get one that looks
+     like the demo forum. Later on, make the styles more configurabe. */
+  font-family: Bree serif, Georgia, serif;
+  font-weight: normal;
+
   letter-spacing: 1px;
   line-height: 1em;
   margin-top: 30px;
@@ -125,8 +130,7 @@ a:visited { color: hsl(211, 30%, 40%); }
 }
 
 #topbar > .container {
-  padding-top: 11px;
-  padding-bottom: 7px;
+  padding: 13px 0 12px;
   letter-spacing: 1px;
   line-height: 100%;
   font-size: 12px;
