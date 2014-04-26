@@ -24,6 +24,11 @@ class SettingComponent {
   @NgTwoWay('setting')
   Setting setting;
 
+  /** If a text setting should use a multiline editor, i.e. a <textarea> not an <input>. */
+  @NgOneWay('multiline')
+  bool multiline = false;
+
+
   bool get isTextSetting => setting.newValue is String;
   bool get isBoolSetting => setting.newValue is bool;
   bool get valueChanged => setting.newValue != setting.currentValue;

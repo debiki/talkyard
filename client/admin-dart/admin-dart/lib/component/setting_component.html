@@ -4,7 +4,8 @@
   <label for="forumDescription" class="col-sm-2 control-label setting-label">{{ cmp.title }}</label>
 
   <div ng-if="cmp.isTextSetting" class="col-sm-7">
-    <input ng-model="cmp.setting.newValue" type="text" class="form-control" id="forumDescription">
+    <textarea ng-if="cmp.multiline" ng-model="cmp.setting.newValue" type="text" class="form-control" id="forumDescription"></textarea>
+    <input ng-if="!cmp.multiline" ng-model="cmp.setting.newValue" type="text" class="form-control" id="forumDescription">
     <p><content></content> <span>Default value: "<kbd>{{ cmp.setting.defaultValue }}</kbd>"</span></p>
   </div>
 
