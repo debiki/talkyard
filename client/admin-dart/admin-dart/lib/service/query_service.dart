@@ -2,6 +2,7 @@ library debiki_admin_query_service;
 
 import 'dart:async';
 import 'dart:convert';
+import 'dart:html'; // change window.location if not logged in
 import 'package:angular/angular.dart';
 
 import 'debiki_data.dart';
@@ -126,6 +127,13 @@ class DebikiAdminQueryService {
       // Also remove leading ")]}',\n", 6 chars.
       Map json = JSON.decode(response.data.substring(6));
       return new Settings.fromJsonMap(settingsTarget, json);
+    }).catchError((response) {
+      if (response.status == 403) {
+        // Not logged in. Redirect to admin login page. (This works only when
+        // using the Javascript version connected to Play Framework, not when using
+        // DartEditor's built in development server.)
+        window.location.assign('/-/admin');
+      }
     });
   }
 
