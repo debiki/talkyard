@@ -28,7 +28,7 @@ DebikiDashbarModule.directive 'dwDashbar', ['$http', dwDashbar]
 function dwDashbar ($http)
   template: """
     <div ng-show="currentUser.isAuthenticated">
-      <a class="debiki-dashbar-logo" href="#{d.i.serverOrigin}/-/admin/">
+      <a class="debiki-dashbar-logo" href="#{d.i.serverOrigin}/-/admin">
         <img src="#{d.i.serverOrigin}/-/img/logo-128x120.png">
       </a>
       <span ng-show="!viewsPageConfigPost">
