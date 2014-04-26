@@ -1318,6 +1318,15 @@ body.dw-login-to-login .dw-login-to-login
   border: none // would cause overflow, scrollbars would appear in tab panel
   outline-offset: 0px // Chrome defualts to -2px
 
+// Remove margin & padding between title in tab pane and the top/bottom of the tab pane...
+.dw-e-tab .dw-p-bd-blk h1
+  margin: 0
+  padding: 0
+
+// ...Place the margin here instead.
+.dw-p-ttl > .dw-f-e
+  margin-top: 45px
+
 // Indicate focus.
 .dw-pri .dw-f-e .dw-e-tab-edit textarea:focus
   outline: 1px solid #91cdff // the .dw-keyrecvr color

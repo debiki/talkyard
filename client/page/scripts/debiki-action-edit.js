@@ -246,11 +246,8 @@ function _$showEditFormImpl() {
     var maxPanelHeight = Math.max(
         140, $(window).height() - approxTitleAndBtnsHeight);
 
-    var minPanelHeight;
-    if ($postBody.parent().is('.dw-p-ttl')) {
-      minPanelHeight = $postBody.height();
-    }
-    else {
+    var minPanelHeight = 0;
+    if (!$postBody.parent().is('.dw-p-ttl')) {
       minPanelHeight = Math.max(140, $postBody.height() + 60);
     }
     if (minPanelHeight > maxPanelHeight) minPanelHeight = maxPanelHeight;
@@ -328,7 +325,7 @@ function _$showEditFormImpl() {
       if (!codeMirrorEditor) {
         if (minPanelHeight < $panel.height())
           minPanelHeight = $panel.height();
-        else
+        else if (minPanelHeight)
           $panels.height(minPanelHeight);
       }
     });
