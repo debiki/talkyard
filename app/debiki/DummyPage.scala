@@ -161,7 +161,7 @@ object DummyPage {
     self: DefaultTexts =>
 
     override val noBodyText = i"""
-      |Optional forum info (instead of sticky topics).
+      |Forum description here. What is this forum about?
       |
       |$ClickToEditSelectImprove
       |"""
