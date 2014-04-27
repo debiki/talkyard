@@ -445,7 +445,7 @@ class TemplateProgrammingInterface(
 
   var renderPageSettings: Option[RenderPageSettings] = None
 
-  val horizontalComments = pageReq.horizontalComments
+  val horizontalComments = pageReq.thePageSettings.horizontalComments.valueIsTrue
 
 
   lazy val renderedPage: RenderedPage =

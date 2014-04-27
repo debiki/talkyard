@@ -295,6 +295,7 @@ function renderPageEtc() {
 
     d.i.layoutThreads();
     initStep1();
+    d.i.enableDisableHorizontalComments();
     $('html').removeClass('dw-render-actions-pending');
   });
 
