@@ -27,6 +27,8 @@ prelude.installPrelude(window);
 
 var d = { i: debiki.internal, u: debiki.v0.util };
 
+d.i.TitleId = 0;
+d.i.BodyId = 1;
 
 // Use singl column layout if max width/height < 1000 px.
 // (If height > 1000 but width < 1000, the user can rotate the device.)
