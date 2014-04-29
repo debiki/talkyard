@@ -129,7 +129,7 @@ object SiteCreator {
     * the blog or forum becomes the homepage.
     */
   private def createBlogOrForum(newSiteDao: SiteDao, pageRole: PageRole, createdAt: ju.Date) {
-    val pageId = CreatePageController.generateNewPageId()
+    val pageId = newSiteDao.nextPageId()
     val emptyPage = PageParts(pageId, SystemUser.Person)
     val pageMeta = PageMeta.forNewPage(
       pageRole, SystemUser.User, emptyPage, createdAt, publishDirectly = true)
@@ -148,7 +148,7 @@ object SiteCreator {
    * is automatically moved from / to /_old/default-homepage.
    */
   private def createHomepage(newWebsiteDao: SiteDao, creationDati: ju.Date) {
-    val pageId = CreatePageController.generateNewPageId()
+    val pageId = newWebsiteDao.nextPageId()
     val emptyPage = PageParts(pageId, SystemUser.Person)
     val pageMeta = PageMeta.forNewPage(
       PageRole.Generic, SystemUser.User, emptyPage, creationDati, publishDirectly = true)

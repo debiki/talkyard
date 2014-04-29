@@ -303,6 +303,16 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
                                     None, false, "page-title")
 
 
+    // -------- Generate page ids
+
+    "generate next page id" in {
+      val nextId = dao.nextPageId()
+      val nextNextId = dao.nextPageId()
+      nextId must_== "1"
+      nextNextId must_== "2"
+    }
+
+
     // -------- Simple logins
 
     "throw error for an invalid login id" in {

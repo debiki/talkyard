@@ -32,6 +32,9 @@ trait PageDao {
   self: SiteDao =>
 
 
+  def nextPageId(): PageId = siteDbDao.nextPageId()
+
+
   def createPage(page: Page): Page = siteDbDao.createPage(page)
 
 
