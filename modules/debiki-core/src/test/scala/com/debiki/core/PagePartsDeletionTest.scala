@@ -44,7 +44,7 @@ class PagePartsDeletionTest extends FreeSpec with MustMatchers {
   private def time(when: Int) = new ju.Date(when)
 
   val gp = PostActionDto.forNewPost(1001, creationDati = time(100),
-    userIdData = UserIdData.newTest(SystemUser.Login.id, userId = SystemUser.User.id),
+    userIdData = SystemUser.UserIdData,
     parentPostId = None, text = "gp-text", markup = Markup.DefaultForComments.id,
     approval = Some(Approval.AuthoritativeUser))
 
@@ -56,8 +56,7 @@ class PagePartsDeletionTest extends FreeSpec with MustMatchers {
 
   val delete_p_tree = PostActionDto(
     nextId(), creationDati = time(101), postId = p.id,
-      userIdData = UserIdData.newTest(SystemUser.Login.id, userId = SystemUser.User.id),
-      payload = PAP.DeleteTree)
+      userIdData = SystemUser.UserIdData, payload = PAP.DeleteTree)
 
   val delete_d = delete_p_tree.copy(id = nextId(), postId = d.id, payload = PAP.DeletePost)
 

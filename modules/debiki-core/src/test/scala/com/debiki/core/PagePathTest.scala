@@ -19,15 +19,16 @@
 package com.debiki.core
 
 
-import org.specs2.mutable._
-import Prelude._
+import org.scalatest._
+import java.{util => ju}
+import com.debiki.core.PostActionDto._
 
 
-class PagePathTest extends Specification {
+class PagePathTest extends FreeSpec with MustMatchers {
 
-  "PagePath" should {
+  "PagePath can" - {
 
-    "find its parent folder" >> {
+    "find its parent folder" in {
       val rootFldr: PagePath = PagePath(tenantId = "tenantId", folder = "/",
          pageSlug = "", pageId = None, showId = false)
       val indexPage = rootFldr.copy(pageId = Some("abcd"))
@@ -40,18 +41,18 @@ class PagePathTest extends Specification {
                               pageId = Some("muuid"), showId = true)
       val folderSubfolder = folder.copy(folder = "/folder/subfolder/")
 
-      rootFldr.parentFolder must_== None
-      indexPage.parentFolder must_== Some(rootFldr)
-      idPage.parentFolder must_== Some(rootFldr)
-      slugPage.parentFolder must_== Some(rootFldr)
-      slugPageWithId.parentFolder must_== Some(rootFldr)
-      folder.parentFolder must_== Some(rootFldr)
-      folderMuuPage.parentFolder must_== Some(folder)
-      folderMuuIdPage.parentFolder must_== Some(folder)
-      folderSubfolder.parentFolder must_== Some(folder)
+      rootFldr.parentFolder mustBe None
+      indexPage.parentFolder mustBe Some(rootFldr)
+      idPage.parentFolder mustBe Some(rootFldr)
+      slugPage.parentFolder mustBe Some(rootFldr)
+      slugPageWithId.parentFolder mustBe Some(rootFldr)
+      folder.parentFolder mustBe Some(rootFldr)
+      folderMuuPage.parentFolder mustBe Some(folder)
+      folderMuuIdPage.parentFolder mustBe Some(folder)
+      folderSubfolder.parentFolder mustBe Some(folder)
     }
 
-    "find what parent?? for /double-slash//" >> {
+    "find what parent?? for /double-slash//" in {
       // COULD make folder = "/doudle-slash//" work too?
       // Currently that results in "/doudle-slash/" I think.
     }
