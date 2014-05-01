@@ -89,7 +89,7 @@ case class PagePath(  // COULD move to debate.scala.  Rename to RequestPath?
 
   def siteId = tenantId
 
-  def path: String =
+  def value: String =
     if (showId) {
       val id = pageId.getOrElse(assErr( //Break out GuidLookup so cannot happen?
         "DwE23r124", "ID unknown."))
@@ -183,7 +183,7 @@ object PagePath {
     // Construct a PagePath, serialize it
     // and verify that the string can be parsed.
     val path = PagePath(tenantId, folder, pageId, false, pageSlug)
-    fromUrlPath(path.tenantId, path.path) match {
+    fromUrlPath(path.tenantId, path.value) match {
       case Parsed.Good(_) => ()
       case Parsed.Corrected(_) => _throw("DwE091IJ5", "Bad page path")
       case Parsed.Bad(error) => _throw("DwE56Ih5", "Bad page path: "+ error)
@@ -242,7 +242,7 @@ object PagePath {
       case _PageGuidRegex(guid) => (guid, "")  // can result in an empty guid
       case _PageSlugRegex(name) => ("", name)
       case _PageIdHyphenSlugRegex(id, slug) =>
-        return Parsed.Corrected(PagePath(tenantId, folder = folder, Some(id), true, slug).path)
+        return Parsed.Corrected(PagePath(tenantId, folder = folder, Some(id), true, slug).value)
       case idSlugSlash if idSlugSlash.endsWith("/") =>
         return Parsed.Corrected(s"$folder${idSlugSlash dropRight 1}")
       case _BadIdPerhapsOkSlug(id) => return Parsed.Bad("Bad page id: "+ id)

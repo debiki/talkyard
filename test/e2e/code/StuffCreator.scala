@@ -195,7 +195,7 @@ trait StuffCreator {
       assErr("DwE381kK0", "Error loading page with people"))
 
     new TestPage(
-      url = "http://" + firstSiteHost + pageStuffNoPeople.path.path,
+      url = "http://" + firstSiteHost + pageStuffNoPeople.path.value,
       id = pageStuffNoPeople.path.pageId.get)
   }
 

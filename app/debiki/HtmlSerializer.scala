@@ -263,7 +263,7 @@ object HtmlPageSerializer {
     def pageMeta = pathAndMeta.meta
     <div id={"page-"+ pageMeta.pageId} class='debiki dw-debate dw-page'
         data-page_exists={pageMeta.pageExists.toString}
-        data-page_path={pathAndMeta.path.path}
+        data-page_path={pathAndMeta.path.value}
         data-page_role={pageMeta.pageRole.toString}
         data-page_status={pageMeta.status.toString}
         data-parent_page_id={pageMeta.parentPageId.map(_.toString) getOrElse ""}>

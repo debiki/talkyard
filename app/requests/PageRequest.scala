@@ -63,10 +63,10 @@ object PageRequest {
 
         if (!pageMightExist)
           throw PageExistsException("DwE21VH8", o"""Page already exists,
-            id: ${pagePath.pageId.get} path: ${pagePath.path}""")
+            id: ${pagePath.pageId.get} path: ${pagePath.value}""")
 
         // Check for bad paths.
-        if (correctPath.path != pagePath.path && !fixBadPath)
+        if (correctPath.value != pagePath.value && !fixBadPath)
           throwNotFound("DwE305RI2", s"Mismatching page path: `$pagePath', " +
              s"should be `$correctPath'")
         // Fix any bad path:
@@ -302,7 +302,7 @@ case class PageRequest[A](
    * was specified in the request, *or* if the page exists.
    */
   def pageId_! : String = pagePath.pageId getOrElse
-    throwNotFound("DwE93kD4", "Page does not exist: "+ pagePath.path)
+    throwNotFound("DwE93kD4", "Page does not exist: "+ pagePath.value)
 
   def thePageId = pageId_!
 

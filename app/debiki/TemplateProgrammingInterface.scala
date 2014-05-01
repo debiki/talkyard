@@ -59,7 +59,7 @@ object InternalPageTpi {
   object Page {
     def apply(page: core.Page, host: String): Page = Page(
       id = page.id,
-      path = page.path.path,
+      path = page.path.value,
       title = titleOf(page),
       creationDati = page.meta.creationDati,
       pubDati = page.meta.pubDati,
@@ -78,7 +78,7 @@ object InternalPageTpi {
   object ForumOrCategory {
     def apply(forumPath: String, pageMeta: PageMeta, pagePath: PagePath): ForumOrCategory = {
       val path =
-        if (pagePath.path == forumPath) {
+        if (pagePath.value == forumPath) {
           // This is the forum itself.
           forumPath
         }
@@ -104,7 +104,7 @@ object InternalPageTpi {
     def apply(pathAndMeta: PagePathAndMeta): ForumTopic =
       ForumTopic(
         id = pathAndMeta.id,
-        path = pathAndMeta.path.path,
+        path = pathAndMeta.path.value,
         title = pathAndMeta.meta.cachedTitle getOrElse "(Unnamed topic)")
   }
 
@@ -361,7 +361,7 @@ class InternalPageTpi protected (protected val _pageReq: PageRequest[_]) extends
     }
 
     val forumsAndCats = ancestorPatshAndMeta map { case (pagePath, pageMeta) =>
-      tpi.ForumOrCategory(forumPath.path, pageMeta, pagePath)
+      tpi.ForumOrCategory(forumPath.value, pageMeta, pagePath)
     }
 
     forumsAndCats
@@ -519,7 +519,7 @@ class TemplateProgrammingInterface(
   def pageMeta = dao.renderPageMeta(pageReq)
 
 
-  def pageUrlPath = pageReq.pagePath.path
+  def pageUrlPath = pageReq.pagePath.value
 
 
   def isHomepage = pageUrlPath == "/"

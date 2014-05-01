@@ -97,7 +97,7 @@ object Utils extends Results with http.ContentTypes {
     } else {
       val queryString =
          queryStringAndHashToView(pageReq.pageRoot, pageReq.oldPageVersion)
-      Redirect(pageReq.pagePath.path + queryString)
+      Redirect(pageReq.pagePath.value + queryString)
     }
   }
 

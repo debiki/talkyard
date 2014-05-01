@@ -75,7 +75,7 @@ object ListController extends mvc.Controller {
       <ol>{
         for (PagePathAndMeta(pagePath, _, details) <- pagePathsDetails) yield {
           <li>
-            <a href={pagePath.path}>{pagePath.path}</a>,
+            <a href={pagePath.value}>{pagePath.value}</a>,
             { details.pageRole.toString +
               details.parentPageId.map(", parent page id: "+ _).getOrElse("") }
           </li>
@@ -299,7 +299,7 @@ object ListController extends mvc.Controller {
   private def _jsonMapFor(pagePath: PagePath): Map[String, JsString] = Map(
     "id" -> JsString(pagePath.pageId.get),
     "folder" -> JsString(pagePath.folder),
-    "path" -> JsString(pagePath.path))
+    "path" -> JsString(pagePath.value))
 
 
   private def _jsonFor(user: User): JsValue = {

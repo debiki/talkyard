@@ -52,7 +52,7 @@ object AtomFeedXml {
       warnDbgDie("Bad host URL: "+ safed(hostUrl))
 
     val baseUrl = hostUrl +"/"
-    def urlTo(pp: PagePath) = baseUrl + pp.path.dropWhile(_ == '/')
+    def urlTo(pp: PagePath) = baseUrl + pp.value.dropWhile(_ == '/')
 
     def pageToAtom(pathAndPage: (PagePath, PageParts)): NodeSeq = {
       val pagePath = pathAndPage._1

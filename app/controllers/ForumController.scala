@@ -132,7 +132,7 @@ object ForumController extends mvc.Controller {
     Json.obj(
       "pageId" -> topic.id,
       "title" -> topic.meta.cachedTitle,
-      "url" -> topic.path.path,
+      "url" -> topic.path.value,
       "categoryId" -> topic.parentPageId.getOrDie(
         "DwE49Fk3", s"Topic `${topic.id}', site `${topic.path.siteId}', has no parent page"),
       "numPosts" -> JsNumber(topic.meta.cachedNumRepliesVisible + 1),

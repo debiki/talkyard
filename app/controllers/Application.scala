@@ -168,7 +168,7 @@ object Application extends mvc.Controller {
     val feedXml = AtomFeedXml.renderFeed(
       hostUrl = "http://"+ pageReq.request.host,
       feedId = feedUrl,
-      feedTitle = tenant.name +", "+ pagePath.path,
+      feedTitle = tenant.name +", "+ pagePath.value,
       feedUpdated = mostRecentPageCtime,
       pathsAndPages)
 

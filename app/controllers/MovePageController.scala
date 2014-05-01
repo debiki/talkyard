@@ -124,7 +124,7 @@ object MovePageController extends mvc.Controller {
           // else, so it wasn't possible to push it away to any other location.
         }
         throwForbidden(
-          "DwE7IK96", s"Cannot move page to ${existingPagePath.path}. " +
+          "DwE7IK96", s"Cannot move page to ${existingPagePath.value}. " +
           "There is already another page at that location, " +
           "and I don't know to where I could move it instead " +
           "— you need to move it first yourself, please.")
@@ -232,7 +232,7 @@ object MovePageController extends mvc.Controller {
       pageReq.pageId_!, newFolder = newFolder,
       showId = showId, newSlug = newSlug)
 
-    SeeOther(newPagePath.path)
+    SeeOther(newPagePath.value)
   }
 
 }

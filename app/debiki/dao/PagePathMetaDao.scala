@@ -166,7 +166,7 @@ trait CachingPagePathMetaDao extends PagePathMetaDao {
       // pathToCheck was actually found in the database (in DW1_PAGE_PATHS),
       // and cache it, if found, regardless of if id shown in url.
       // Or better & much simpler: Cache SitePageId —> correctPath.
-      if (!pathToCheck.showId || correctPath.path == pathToCheck.path)
+      if (!pathToCheck.showId || correctPath.value == pathToCheck.value)
         putInCache(key, CacheValue(correctPath, siteCacheVersion))
       return Some(correctPath)
     }
@@ -232,7 +232,7 @@ trait CachingPagePathMetaDao extends PagePathMetaDao {
   // an URL to find which page to include in an asset bundle — the page
   // could be a public stylesheet from e.g. www.debik.com.)
   private def _pathWithIdByPathKey(pagePath: PagePath) =
-    CacheKey(pagePath.siteId, s"${pagePath.path}|PagePathByPath")
+    CacheKey(pagePath.siteId, s"${pagePath.value}|PagePathByPath")
 
   private def _pathByPageIdKey(pageId: String) =
     CacheKey(siteId, s"$pageId|PagePathById")

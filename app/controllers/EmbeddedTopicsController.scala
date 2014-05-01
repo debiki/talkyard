@@ -115,7 +115,7 @@ object EmbeddedTopicsController extends mvc.Controller {
       pageSlug = "")
 
     val pageReqDefaultRoot: PageGetRequest = PageRequest.forPageThatMightExist(
-      request, pagePathStr = topicPagePath.path, pageId = theId)
+      request, pagePathStr = topicPagePath.value, pageId = theId)
 
     // Include all top level comments, by specifying no particular root comment.
     val pageReqNoRoot = pageReqDefaultRoot.copyWithNewPageRoot(None)

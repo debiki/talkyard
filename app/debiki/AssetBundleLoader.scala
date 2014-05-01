@@ -154,7 +154,7 @@ case class AssetBundleLoader(bundleNameNoSuffix: String,  bundleSuffix: String, 
     // Die if we didn't find all assets to bundle.
     assetPathsAndPages find (_._2 isEmpty) match {
       case Some((pagePath, None)) =>
-        die(DebikiException("DwE53X03", o"""Asset '${pagePath.path}'
+        die(DebikiException("DwE53X03", o"""Asset '${pagePath.value}'
           in bundle '$bundleName' not found"""))
       case _ => ()
     }

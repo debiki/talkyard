@@ -75,7 +75,7 @@ object CreatePageController extends mvc.Controller {
       pageId = Some(pageId), showId = showId, pageSlug = pageSlug)
 
     val viewNewPageUrl =
-      s"${newPath.path}?view-new-page=$pageId" +
+      s"${newPath.value}?view-new-page=$pageId" +
       s"&passhash=$passhash" +
       s"&newPageApproval=${approval}" +
       s"&pageRole=$pageRole" +
@@ -120,7 +120,7 @@ object CreatePageController extends mvc.Controller {
               if (ex.existingPagePath.pageId.isEmpty) ""
               else ", with id " + ex.existingPagePath.pageId.get
             throwForbidden(
-              "DwE17Sf3", s"Cannot create new page at ${newPagePath.path}," +
+              "DwE17Sf3", s"Cannot create new page at ${newPagePath.value}," +
               s" with id `$pageId`: There is already another page at that" +
               " location" + duplicateIdInfo)
         }

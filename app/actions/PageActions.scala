@@ -213,12 +213,12 @@ object PageActions {
          ip = realOrFakeIpOf(request), sidStatus.roleId)
       dao.checkPagePath(pathIn) match {
         case Some(correct: PagePath) =>
-          if (correct.path == pathIn.path) {
+          if (correct.value == pathIn.value) {
             f(sidStatus, xsrfOk, browserId, Some(correct), dao, request)
           } else if (!fixPath) {
             f(sidStatus, xsrfOk, browserId, None, dao, request)
           } else {
-            Results.MovedPermanently(correct.path)
+            Results.MovedPermanently(correct.value)
           }
         case None => f(sidStatus, xsrfOk, browserId, None, dao, request)
       }
