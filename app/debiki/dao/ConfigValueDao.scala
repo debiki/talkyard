@@ -61,22 +61,27 @@ trait ConfigValueDao {
     var leaves: List[WebsiteConfigLeaf] = Nil
     var nextLeafUrl: Option[String] = Some(WebsiteConfigPageSlug)
     do {
-      val nextLeaf: WebsiteConfigLeaf = loadWebsiteConfigLeaf(nextLeafUrl.get)
-      leaves ::= nextLeaf
-      nextLeafUrl = nextLeaf.anyConfigUrlToExtend
+      loadWebsiteConfigLeaf(nextLeafUrl.get) match {
+        case Some(nextLeaf) =>
+          nextLeafUrl = nextLeaf.anyConfigUrlToExtend
+          leaves ::= nextLeaf
+          nextLeafUrl = nextLeaf.anyConfigUrlToExtend
+        case None =>
+          nextLeafUrl = None
+      }
     } while (nextLeafUrl.isDefined)
     WebsiteConfig(leaves.reverse)
   }
 
 
-  private def loadWebsiteConfigLeaf(url: String): WebsiteConfigLeaf = {
+  private def loadWebsiteConfigLeaf(url: String): Option[WebsiteConfigLeaf] = {
     import UrlToPagePathResolver.Result
     UrlToPagePathResolver.resolveUrl(
         url, this, baseSiteId = siteId, baseFolder = "/") match {
       case Result.HostNotFound(host) =>
         throw WebsiteConfigException("DwE4Dc30", s"Host not found, url: `$url'")
       case Result.PageNotFound =>
-        throw WebsiteConfigException("DwE7Ibx3", s"Config page not found: `$url'")
+        return None
       case Result.BadUrl(error) =>
         throw WebsiteConfigException("DwE8PkF1", s"Bad URL: `$url'")
       case Result.Ok(pagePath) =>
@@ -90,7 +95,7 @@ trait ConfigValueDao {
               throw WebsiteConfigException(
                 "DwE5bHD0", s"Cannot load website configuration: ${ex.getMessage}")
           }
-        WebsiteConfigLeaf.fromSnakeYamlMap(configMap, configSitePageId)
+        Some(WebsiteConfigLeaf.fromSnakeYamlMap(configMap, configSitePageId))
     }
   }
 
