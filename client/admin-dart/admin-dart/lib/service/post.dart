@@ -18,9 +18,9 @@ import 'user.dart';
  */
 class Post {
 
-  static int TitleId = 0;
-  static int BodyId = 1;
-  static int ConfigPostId = 65503;
+  static const int TitleId = 0;
+  static const int BodyId = 1;
+  static const int ConfigPostId = 65503;
 
   DebikiData _debikiData;
 
@@ -115,7 +115,7 @@ class Post {
   }
 
   String get url {
-    var queryStr = id === BodyId ? '?view=template' : '';  //??'template' really correct for BodyId?
+    var queryStr = id == BodyId ? '?view=template' : '';  //??'template' really correct for BodyId?
     var postPath = '/-$pageId$queryStr#post-$id';
     return postPath;
   }

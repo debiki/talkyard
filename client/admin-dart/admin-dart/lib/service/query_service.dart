@@ -2,7 +2,7 @@ library debiki_admin_query_service;
 
 import 'dart:async';
 import 'dart:convert';
-import 'dart:html'; // change window.location if not logged in
+import 'dart:html'; // read xsrf cookie, and change window.location if not logged in
 import 'package:angular/angular.dart';
 
 import 'debiki_data.dart';
@@ -33,9 +33,19 @@ class DebikiAdminQueryService {
   bool _dataLoaded = false;
   DebikiData _debikiData = new DebikiData();
 
+  // We in dev mode and running via DartEditor, there are no cookies, and then
+  // 'CorsFromDartEditor' works as xsrf token.
+  String _xsrfToken = 'CorsFromDartEditor';
+
   Http _http;
 
   DebikiAdminQueryService(Http this._http) {
+    var regex = new RegExp(r" XSRF-TOKEN=([^;]+)");
+    var anyMatch = regex.firstMatch(document.cookie);
+    if (anyMatch != null) {
+      _xsrfToken = anyMatch.group(1);
+      print('Setting xsrf token to "$_xsrfToken"');
+    }
     _loaded = Future.wait([_loadTopics(), _loadRecentPosts()]);
   }
 
@@ -100,7 +110,7 @@ class DebikiAdminQueryService {
         actionUrl, withCredentials: true, method: 'POST',
         requestHeaders: {
           'Content-Type': 'application/json',
-          'X-XSRF-TOKEN': 'CorsFromDartEditor'
+          'X-XSRF-TOKEN': _xsrfToken
         },
         sendData: _postToJson(post));
   }
@@ -142,7 +152,7 @@ class DebikiAdminQueryService {
         _saveSettingUrl, withCredentials: true, method: 'POST',
         requestHeaders: {
           'Content-Type': 'application/json',
-          'X-XSRF-TOKEN': 'CorsFromDartEditor'
+          'X-XSRF-TOKEN': _xsrfToken
         },
         sendData: setting.toJson);
   }
@@ -164,7 +174,7 @@ class DebikiAdminQueryService {
         _saveSpecialContentUrl, withCredentials: true, method: 'POST',
         requestHeaders: {
           'Content-Type': 'application/json',
-          'X-XSRF-TOKEN': 'CorsFromDartEditor'
+          'X-XSRF-TOKEN': _xsrfToken
         },
         sendData: content.toJson);
   }
