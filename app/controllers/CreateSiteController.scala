@@ -33,26 +33,19 @@ import Utils.ValidationImplicits._
 
 
 /** Creates new websites, including a homepage and a _site.conf page.
-  * COULD use url parameters instead of cookies, so the choices won't
-  * accidentally be remembered, if someone creates > 1 site.
   */
 object CreateSiteController extends mvc.Controller {
 
   private val log = play.api.Logger("app.create-site")
 
-  private val SiteNameCookieName = "dwCoSiteName"
-  private val SiteTypeCookieName = "dwCoSiteType"
-
 
   def start = mvc.Action { request =>
-    Redirect(routes.CreateSiteController.showWebsiteOwnerForm.url)
+    Redirect(routes.CreateSiteController.showWebsiteOwnerForm(""))
   }
 
 
   def startCreateForum = mvc.Action { request =>
-    Redirect(routes.CreateSiteController.showWebsiteOwnerForm.url)
-      .withSession(
-        request.session + (SiteTypeCookieName -> "NewForum"))
+    Redirect(routes.CreateSiteController.showWebsiteOwnerForm("NewForum"))
   }
 
 
@@ -71,20 +64,21 @@ object CreateSiteController extends mvc.Controller {
   }
 
 
-  def showWebsiteOwnerForm() = CheckSidActionNoBody { (sidOk, xsrfOk, browserId, request) =>
+  def showWebsiteOwnerForm(siteType: String) = CheckSidActionNoBody {
+        (sidOk, xsrfOk, browserId, request) =>
     Ok(views.html.login.loginPage(xsrfToken = xsrfOk.value,
-      returnToUrl = routes.CreateSiteController.showSiteTypeForm.url,
+      returnToUrl = routes.CreateSiteController.showSiteTypeForm(siteType).url,
       title = "Choose Website Owner Account",
       providerLoginMessage = "It will become the owner of the new website.",
       showCreateAccountOption = true))
   }
 
 
-  def showSiteTypeForm() = GetAction { request =>
+  def showSiteTypeForm(siteType: String) = GetAction { request =>
     _throwIfMayNotCreateWebsite(request)
-    if (request.session.get(SiteTypeCookieName).isDefined) {
+    if (siteType.nonEmpty) {
       // We already know what kind of site to create; skip this step.
-      Redirect(routes.CreateSiteController.showWebsiteNameForm.url)
+      Redirect(routes.CreateSiteController.showWebsiteNameForm(siteType))
     }
     else {
       val tpi = InternalTemplateProgrammingInterface(request.dao)
@@ -99,22 +93,18 @@ object CreateSiteController extends mvc.Controller {
         throwBadReq("DwE73Gb81", "Please specify site type")
     // Check that type can be parsed.
     parseSiteTypeOrThrow(siteType)
-    Redirect(routes.CreateSiteController.showWebsiteNameForm.url)
-      .withSession(
-        request.session + (SiteTypeCookieName -> siteType))
+    Redirect(routes.CreateSiteController.showWebsiteNameForm(siteType))
   }
 
 
-  def showWebsiteNameForm() = GetAction { request =>
+  def showWebsiteNameForm(siteType: String) = GetAction { request =>
     _throwIfMayNotCreateWebsite(request)
-
     val tpi = InternalTemplateProgrammingInterface(request.dao)
-    Ok(views.html.createsite.chooseName(tpi,
-      xsrfToken = request.xsrfToken.value))
+    Ok(views.html.createsite.chooseName(tpi, siteType, xsrfToken = request.xsrfToken.value))
   }
 
 
-  def handleWebsiteNameForm() = JsonOrFormDataPostAction(maxBytes = 200) {
+  def handleWebsiteNameForm(siteType: String) = JsonOrFormDataPostAction(maxBytes = 200) {
       request =>
 
     val newWebsiteName =
@@ -136,13 +126,11 @@ object CreateSiteController extends mvc.Controller {
     // *Preliminarily* test if it's possible & allowed to create the website.
     _throwIfMayNotCreateWebsite(request, newWebsiteAddr = Some(websiteAddr))
 
-    Redirect(routes.CreateSiteController.tryCreateWebsite.url)
-       .withSession(
-          request.session + (SiteNameCookieName -> newWebsiteName))
+    tryCreateWebsite(request, siteType, siteName = newWebsiteName)
   }
 
 
-  def tryCreateWebsite() = GetAction { request =>
+  private def tryCreateWebsite(request: DebikiRequest[_], siteType: String, siteName: String) = {
 
     // Check permissions — and load authentication details, so OpenID/OAuth
     // info can be replicated to a new identity + user in the new website.
@@ -172,19 +160,13 @@ object CreateSiteController extends mvc.Controller {
       //  xsrfToken = xsrfOk.value))
     }
 
-    val newSiteType = parseSiteTypeOrThrow(
-      request.session.get(SiteTypeCookieName) getOrElse throwForbidden(
-        "DwE5BJh95", s"No $SiteTypeCookieName cookie"))
+    val newSiteType = parseSiteTypeOrThrow(siteType)
 
-    val newWebsiteName = request.session.get(SiteNameCookieName) getOrElse {
-      throwForbidden("DwE091EQ7", s"No $SiteNameCookieName cookie")
-    }
-
-    val websiteAddr = newWebsiteAddr(newWebsiteName, request.dao)
+    val websiteAddr = newWebsiteAddr(siteName, request.dao)
 
     _throwIfMayNotCreateWebsite(request, newWebsiteAddr = Some(websiteAddr))
 
-    log.info(o"""Creating website, name: $newWebsiteName, type: $newSiteType,
+    log.info(o"""Creating website, name: $siteName, type: $newSiteType,
       address: $websiteAddr, on behalf of: $user""")
 
 
@@ -198,7 +180,7 @@ object CreateSiteController extends mvc.Controller {
         newSiteType,
         request.dao,
         request.ctime,
-        name = Some(newWebsiteName),
+        name = Some(siteName),
         host = Some(websiteAddr),
         embeddingSiteUrl = None,
         ownerIp = request.ip,
@@ -207,9 +189,8 @@ object CreateSiteController extends mvc.Controller {
         ownerRole = user) match {
       case Some(site) =>
         Redirect(s"http://$websiteAddr${routes.CreateSiteController.welcomeOwner.url}")
-          .withSession(request.session - SiteNameCookieName - SiteTypeCookieName)
       case None =>
-        Ok(views.html.createsite.failNotFirst())
+        Ok(views.html.createsite.failNotFirst(siteType))
     }
 
     result
@@ -227,7 +208,7 @@ object CreateSiteController extends mvc.Controller {
   }
 
 
-  def _throwIfMayNotCreateWebsite(request: ApiRequest[_],
+  def _throwIfMayNotCreateWebsite(request: DebikiRequest[_],
         newWebsiteAddr: Option[String] = None) {
     if (request.host != "www.debiki.com" &&
         !request.host.contains("localhost:") &&

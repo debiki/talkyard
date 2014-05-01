@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *@
 
-@(tpi: debiki.InternalTemplateProgrammingInterface, xsrfToken: String)
+@(tpi: debiki.InternalTemplateProgrammingInterface, siteType: String, xsrfToken: String)
 
 
 @Tpi = @{ debiki.TemplateProgrammingInterface }
@@ -94,7 +94,7 @@ the name to lowercase.
     <h1>Choose Site Name</h1>
 
     <form accept-charset='UTF-8' method='post' name="chooseNameForm"
-          action="@routes.CreateSiteController.handleWebsiteNameForm">
+          action="@routes.CreateSiteController.handleWebsiteNameForm(siteType)">
       <input name='dw-fi-xsrf' type='hidden' value='@xsrfToken'>
 
       <label for='website-name'>Enter a name for your new website/forum/blog

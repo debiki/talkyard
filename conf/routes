@@ -67,12 +67,11 @@ POST  /-/reset-password/choose-password/:resetPasswordEmailId  controllers.Reset
 GET   /-/reset-password/password-changed controllers.ResetPasswordController.showPasswordChangedPage
 
 GET   /-/create-site                controllers.CreateSiteController.start
-GET   /-/create-site/choose-owner   controllers.CreateSiteController.showWebsiteOwnerForm
-GET   /-/create-site/choose-type    controllers.CreateSiteController.showSiteTypeForm
+GET   /-/create-site/choose-owner   controllers.CreateSiteController.showWebsiteOwnerForm(siteType)
+GET   /-/create-site/choose-type    controllers.CreateSiteController.showSiteTypeForm(siteType)
 POST  /-/create-site/choose-type    controllers.CreateSiteController.handleSiteTypeForm
-GET   /-/create-site/choose-name    controllers.CreateSiteController.showWebsiteNameForm
-POST  /-/create-site/choose-name    controllers.CreateSiteController.handleWebsiteNameForm
-GET   /-/create-site/create         controllers.CreateSiteController.tryCreateWebsite
+GET   /-/create-site/choose-name    controllers.CreateSiteController.showWebsiteNameForm(siteType)
+POST  /-/create-site/choose-name    controllers.CreateSiteController.handleWebsiteNameForm(siteType)
 GET   /-/create-site/welcome-owner  controllers.CreateSiteController.welcomeOwner
 
 GET   /-/create-forum               controllers.CreateSiteController.startCreateForum

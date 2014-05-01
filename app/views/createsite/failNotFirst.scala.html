@@ -15,6 +15,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *@
 
+@(siteType: String)
+
+
 @css = @{("""
 """)}
 
@@ -27,7 +30,7 @@
     </p>
 
     <p>
-      <a href="@routes.CreateSiteController.showWebsiteNameForm.url">
+      <a href="@routes.CreateSiteController.showWebsiteNameForm(siteType).url">
         Okay, I'll try again
       </a>
     </p>
