@@ -250,8 +250,8 @@ class SiteTpi protected (val debikiRequest: DebikiRequest[_])
       logoUrlOrHtml
     }
     else {
-      // It should be a URL, wrap in a tag.
-      <a href="/"><img src={logoUrlOrHtml}></img></a>.toString
+      // `logoUrlOrHtml` should be an image URL, wrap in a tag.
+      <img src={logoUrlOrHtml}></img>.toString
     }
   }
 

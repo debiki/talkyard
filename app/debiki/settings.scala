@@ -86,7 +86,7 @@ case class Settings(settingsChain: SettingsChain) {
 
   val horizontalComments = derive("horizontalComments", false)
 
-  val logoUrlOrHtml = derive("logoUrlOrHtml", "")
+  val logoUrlOrHtml = derive("logoUrlOrHtml", """<span>Home</span>""")
 
   val companyDomain = derive("companyDomain", "www.example.com")
   val companyFullName = derive("companyFullName", "Unnamed Company Full Name")
