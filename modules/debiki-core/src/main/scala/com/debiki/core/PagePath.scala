@@ -91,12 +91,12 @@ case class PagePath(  // COULD move to debate.scala.  Rename to RequestPath?
 
   def path: String =
     if (showId) {
-      val g = pageId.getOrElse(assErr( //Break out GuidLookup so cannot happen?
+      val id = pageId.getOrElse(assErr( //Break out GuidLookup so cannot happen?
         "DwE23r124", "ID unknown."))
-      if (pageSlug isEmpty) folder +"-"+ g
-      else folder +"-"+ g +"-"+ pageSlug
+      if (pageSlug.isEmpty) s"$folder-$id"
+      else s"$folder-$id/$pageSlug"
     } else {
-      folder + pageSlug
+      s"$folder$pageSlug"
     }
 
 
@@ -206,13 +206,20 @@ object PagePath {
    * - (server)/fold/ers/page-name (here, the pageId is not shown in the path).
    */
   def fromUrlPath(tenantId: String, path: String): PagePath.Parsed = {
-    assert(path.head == '/')
-    val lastSlash = path.lastIndexOf('/')
+    require(path.head == '/', "DwE77BP4")
+
+    // Split into folder and any-id-and-slug parts.
+    val lastFolderSlash = {
+      // The folder ends at the first "/-" because "/-" means the page id and slug follows.
+      // If there's no "/-" then the last "/" is the end of the folder part.
+      val slashHyphenIndex = path.indexOf("/-")
+      if (slashHyphenIndex >= 0) slashHyphenIndex
+      else path.lastIndexOf('/')
+    }
     val (folder, pageIdSlug) =
-      if (lastSlash != -1) path.splitAt(lastSlash + 1)
+      if (lastFolderSlash != -1) path.splitAt(lastFolderSlash + 1)
       else (path, "")
     assert(folder.head == '/' && folder.last == '/')
-    assert(!pageIdSlug.contains('/'))
 
     // Check for bad folder paths.
     folder match {
@@ -228,19 +235,25 @@ object PagePath {
       // Fine
     }
 
+    // Split any-id-and-slug into id and slug.
     val (pageIdStr, pageSlug) = pageIdSlug match {
       case "" => ("", "")
-      case _PageGuidAndSlugRegex(guid, name) => (guid, name)
+      case _PageIdSlashSlugRegex(guid, name) => (guid, name)
       case _PageGuidRegex(guid) => (guid, "")  // can result in an empty guid
       case _PageSlugRegex(name) => ("", name)
+      case _PageIdHyphenSlugRegex(id, slug) =>
+        return Parsed.Corrected(PagePath(tenantId, folder = folder, Some(id), true, slug).path)
+      case idSlugSlash if idSlugSlash.endsWith("/") =>
+        return Parsed.Corrected(s"$folder${idSlugSlash dropRight 1}")
       case _BadIdPerhapsOkSlug(id) => return Parsed.Bad("Bad page id: "+ id)
       case _OkIdBadSlug(_, slug) => return Parsed.Bad("Bad page slug: "+ slug)
       case _ => return Parsed.Bad("Bad page id or slug")
     }
+
+    // Construct the PagePath.
     val (pageId, showId) =
       if (pageIdStr isEmpty) (None, false)
       else (Some(pageIdStr), true)
-
     val pagePath = PagePath(tenantId = tenantId, folder = folder,
       pageId = pageId, showId = showId, pageSlug = pageSlug)
     Parsed.Good(pagePath)
@@ -276,11 +289,12 @@ object PagePath {
   //  - PageSlugPtrn: "*+~" have special meanings
   //
   private val _PageGuidPtrn = "-([a-zA-Z0-9_]*)"  // empty guid ok, read above
-  private val _PageSlugPtrn = "([^-*+~][^*+~]*)"
-  private val _PageGuidAndSlugRegex = (_PageGuidPtrn +"-"+ _PageSlugPtrn).r
+  private val _PageSlugPtrn = "([^-*+~/][^*+~/]*)"
+  private val _PageIdSlashSlugRegex = s"${_PageGuidPtrn}/${_PageSlugPtrn}".r
+  private val _PageIdHyphenSlugRegex = s"${_PageGuidPtrn}-${_PageSlugPtrn}".r
   private val _PageGuidRegex = _PageGuidPtrn.r
   private val _PageSlugRegex = _PageSlugPtrn.r
-  private val _BadIdPerhapsOkSlug = "-([a-zA-Z0-9]*[^a-zA-Z0-9-]+[^-]*)-.*".r
+  private val _BadIdPerhapsOkSlug = "-([a-zA-Z0-9]*[^a-zA-Z0-9-]+[^-/]*)[-/].*".r
   // Catches corrupt page names iff used *after* PageGuidAndSlugRegex.
   // (Broken and effectively not in use??)
   private val _OkIdBadSlug = (_PageGuidPtrn +"-(.*[^a-zA-Z0-9_].*)").r

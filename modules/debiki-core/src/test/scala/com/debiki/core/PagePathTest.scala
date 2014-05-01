@@ -35,6 +35,11 @@ class PagePathTest extends FreeSpec with MustMatchers {
       pagePath
   }
 
+  def correct(urlPath: String): String = PagePath.fromUrlPath("tenantId", urlPath) match {
+    case PagePath.Parsed.Corrected(correctedPath) => correctedPath
+    case x => fail(s"Path was not corrected, instead got: $x")
+  }
+
   "PagePath can" - {
 
     "parse '/'" in {
@@ -100,27 +105,46 @@ class PagePathTest extends FreeSpec with MustMatchers {
       pagePath.pageId mustBe Some("pageId")
     }
 
-    "parse '/-pageId-slug'" in {
-      val pagePath = parse("/-pageId-slug")
+    "correct '/-pageId-slug', change last '-' to '/'" in {
+      correct("/-pageId-slug") mustBe "/-pageId/slug"
+    }
+
+    "correct '/folder/-pageId-slug', change last '-' to '/'" in {
+      correct("/folder/-pageId-slug") mustBe "/folder/-pageId/slug"
+    }
+
+    "correct '/so/many/folders/-pageId-slug', change last '-' to '/'" in {
+      correct("/so/many/folders/-pageId-slug") mustBe "/so/many/folders/-pageId/slug"
+    }
+
+    "parse '/-pageId/slug'" in {
+      val pagePath = parse("/-pageId/slug")
       pagePath.folder mustBe "/"
       pagePath.pageSlug mustBe "slug"
       pagePath.pageId mustBe Some("pageId")
     }
 
-    "parse '/folder/-pageId-slug'" in {
-      val pagePath = parse("/folder/-pageId-slug")
+    "parse '/folder/-pageId/slug'" in {
+      val pagePath = parse("/folder/-pageId/slug")
       pagePath.folder mustBe "/folder/"
       pagePath.pageSlug mustBe "slug"
       pagePath.pageId mustBe Some("pageId")
     }
 
-    "parse '/so/many/folders/-pageId-slug'" in {
-      val pagePath = parse("/so/many/folders/-pageId-slug")
+    "parse '/so/many/folders/-pageId/slug'" in {
+      val pagePath = parse("/so/many/folders/-pageId/slug")
       pagePath.folder mustBe "/so/many/folders/"
       pagePath.pageSlug mustBe "slug"
       pagePath.pageId mustBe Some("pageId")
     }
 
+    "correct '/-pageId/slug/', remove last '/'" in {
+      correct("/-pageId/slug/") mustBe "/-pageId/slug"
+    }
+
+    "correct '/folder/-pageId/slug/', remove last '/'" in {
+      correct("/folder/-pageId/slug/") mustBe "/folder/-pageId/slug"
+    }
 
     "find its parent folder" in {
       val rootFldr: PagePath = PagePath(tenantId = "tenantId", folder = "/",
@@ -149,6 +173,7 @@ class PagePathTest extends FreeSpec with MustMatchers {
     "find what parent?? for /double-slash//" in {
       // COULD make folder = "/doudle-slash//" work too?
       // Currently that results in "/doudle-slash/" I think.
+      pending
     }
   }
 
