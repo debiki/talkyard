@@ -18,6 +18,10 @@ import 'user.dart';
  */
 class Post {
 
+  static int TitleId = 0;
+  static int BodyId = 1;
+  static int ConfigPostId = 65503;
+
   DebikiData _debikiData;
 
   int id;
@@ -111,7 +115,7 @@ class Post {
   }
 
   String get url {
-    var queryStr = id == 65502 ? '?view=template' : '';
+    var queryStr = id === BodyId ? '?view=template' : '';  //??'template' really correct for BodyId?
     var postPath = '/-$pageId$queryStr#post-$id';
     return postPath;
   }
@@ -122,9 +126,9 @@ class Post {
   String get description {
     var what;
     switch(id) {
-      case 65501: what = 'Page title'; break;
-      case 65502: what = 'Page'; break;
-      case 65503: what = 'Page config'; break;
+      case TitleId: what = 'Page title'; break;
+      case BodyId: what = 'Page'; break;
+      case ConfigPostId: what = 'Page config'; break;
       default: what = 'Comment'; break;
     }
     var text;

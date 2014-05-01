@@ -113,6 +113,8 @@ abstract class SiteDbDao {
 
   // ----- New pages, page meta
 
+  def nextPageId(): PageId
+
   /**
    * Creates a page; returns it, but with an id assigned to the page,
    * if it didn't already have an id, and to actions, if they didn't
@@ -521,6 +523,11 @@ class ChargingSiteDbDao(
 
 
   // ----- Pages
+
+  def nextPageId(): PageId = {
+    _chargeForOneWriteReq()
+    _spi.nextPageId()
+  }
 
   def createPage(page: Page): Page = {
     _chargeFor(ResUsg.forStoring(page = page.parts))

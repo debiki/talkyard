@@ -62,7 +62,7 @@ object CreatePageController extends mvc.Controller {
       folderReq, pageRole, anyParentPageId) getOrElse
         throwForbidden("DwE53KVE0", "Page creation request rejected")
 
-    val pageId = generateNewPageId()
+    val pageId = folderReq.dao.nextPageId()
 
     val pageSlug = folderReq.queryString.getOrThrowBadReq("pageSlug")
     val showId = folderReq.queryString.getBoolOrTrue("showId")
@@ -157,9 +157,6 @@ object CreatePageController extends mvc.Controller {
 
     Ok(pageHtml) as HTML
   }
-
-
-  def generateNewPageId(): String = nextRandomPageId()
 
 
   private def newPagePathFromUrl(pageReq: PageRequest[_], pageId: String): PagePath = {

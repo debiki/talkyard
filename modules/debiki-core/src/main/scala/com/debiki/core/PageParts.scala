@@ -30,26 +30,28 @@ object PageParts {
 
 
   // IDs for some magic posts: page title, page body and page config post.
-  // - They don't start at 1, because I think it's nice to let ids 1, 2, 3 be
-  // comment ids instead (so the very first comment can have id 1).
-  // - They assume that usually one won't need more than 2 bytes to index
+  // - The firt post is the page title and body, with numbers 0 and 1, and the second post
+  // (which is the first reply) has id 2, and so on, for compatibility with Discourse.
+  // - Also seee `nextRandomActionId` later in this file.
+  val TitleId = 0
+  val BodyId = 1
+
+  // This assume that usually one won't need more than 2 bytes to index
   // all comments on a page (2^16 = 65536). (So I won't have to write any code
   // that avoids these IDs in the nearest future.)
-  // - Also seee `nextRandomActionId` later in this file.
-  val TitleId = 65501
-  val BodyId = 65502
+  @deprecated("Use DW1_SETTINGS instead", "Mars 2014")
   val ConfigPostId = 65503
 
-  val NoId = 0
+  val NoId = -1
 
   // These are used when new comments or actions are submitted to the server.
   // When they're submitted, their ids are unknown (the server has not yet
   // assigned them any id).
-  val UnassignedId = -1
-  val UnassignedId2 = -2
-  val UnassignedId3 = -3
-  val UnassignedId4 = -4
-  def isActionIdUnknown(id: ActionId) = id < 0
+  val UnassignedId = -1001
+  val UnassignedId2 = -1002
+  val UnassignedId3 = -1003
+  val UnassignedId4 = -1004
+  def isActionIdUnknown(id: ActionId) = id <= UnassignedId
 
 
   def isArticleOrConfigPostId(id: ActionId) =

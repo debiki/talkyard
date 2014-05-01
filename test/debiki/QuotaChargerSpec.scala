@@ -87,7 +87,7 @@ class QuotaChargerSpecRunner extends Suites(new QuotaChargerSpec {})
 @DoNotDiscover
 @test.tags.SlowTest
 class QuotaChargerSpec
-  extends RunningServerSpec(Map("new.site.freeDollars" -> 1))
+  extends RunningServerSpec(Map("new.site.freeDollars" -> 0.3))
   with RichFreeSpec with MustMatchers {
 
   import Globals.siteDao
@@ -110,7 +110,7 @@ class QuotaChargerSpec
         val siteAndIp = SiteAndIp(site.id, nextIp())
         val loginGrant = loginNewGuestUser("GuestTest", siteAndIp)
         val dao = tenantDao(site.id, nextIp())
-        loopUntilDeclined[QuotaConsumer.PerTenantIp](min = 20, max = 100) {
+        loopUntilDeclined[QuotaConsumer.PerTenantIp](min = 5, max = 30) {
           // We're charging the same site-id and IP all the time, so the IP
           // will run out of quota, for `site.id`.
           createPage(loginGrant.login.id, loginGrant.user, dao)
@@ -121,7 +121,7 @@ class QuotaChargerSpec
         val siteAndIp = SiteAndIp(site.id, nextIp())
         val loginGrant = loginNewOpenIdUser("RoleTestFixIp", siteAndIp)
         val dao = tenantDao(siteAndIp, Some(loginGrant.user.id))
-        loopUntilDeclined[QuotaConsumer.PerTenantIp](min = 20, max = 100) {
+        loopUntilDeclined[QuotaConsumer.PerTenantIp](min = 5, max = 30) {
           // We're charging the same site-id and IP and *role* all the time.
           // The role should run out of quota, for `site.id`, before the IP?
           // because when you login and get a role, the IP quota is larger than
@@ -132,7 +132,7 @@ class QuotaChargerSpec
 
       "charge a role, varying IP" in {
         val loginGrant = loginNewOpenIdUser("RoleTestVaryingIp", site.id, ip = nextIp())
-        loopUntilDeclined[QuotaConsumer.Role](min = 20, max = 100) {
+        loopUntilDeclined[QuotaConsumer.Role](min = 5, max = 30) {
           // We're charging the same site-id and role all the time, but a different IP.
           // The role should run out of quota.
           val dao = tenantDao(site.id, ip = nextIp(), roleId = Some(loginGrant.user.id))
@@ -155,7 +155,7 @@ class QuotaChargerSpec
         // So we're testing that the site can run out of quota.
 
         val pagesPerLap = 10
-        loopUntilDeclined[QuotaConsumer.Tenant](min = 200, max = 1000, perLap = pagesPerLap) {
+        loopUntilDeclined[QuotaConsumer.Tenant](min = 200, max = 2000, perLap = pagesPerLap) {
           // Try to charge for pages only, so all these "charge a ..." tests
           // are somewhat comparable. — Quota for one login grant per 10 pages
           // should be negligible?
@@ -187,7 +187,7 @@ class QuotaChargerSpec
             (site, guestLoginGrant, guestDao)
           }
 
-        loopUntilDeclined[QuotaConsumer.GlobalIp](min = 10, max = 100, perLap = numSites) {
+        loopUntilDeclined[QuotaConsumer.GlobalIp](min = 3, max = 30, perLap = numSites) {
           var siteIds = Set[String]()
           for ((site, guestLoginGrant, guestDao) <- siteGuestDaos) {
 
@@ -372,7 +372,7 @@ class QuotaChargerSpec
 
   def createPage(loginId: String, author: User, dao: SiteDao) = {
     val creationDati = new ju.Date
-    val pageId = CreatePageController.generateNewPageId()
+    val pageId = dao.nextPageId()
     val pageRole = PageRole.Generic
     val pageBody = PostActionDto.forNewPageBody("Page body.", creationDati, pageRole,
       UserIdData.newTest(loginId = loginId, userId = author.id),

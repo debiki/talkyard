@@ -19,15 +19,134 @@
 package com.debiki.core
 
 
-import org.specs2.mutable._
-import Prelude._
+import org.scalatest._
+import java.{util => ju}
+import com.debiki.core.PostActionDto._
 
 
-class PagePathTest extends Specification {
+class PagePathTest extends FreeSpec with MustMatchers {
 
-  "PagePath" should {
+  def parse(urlPath: String): PagePath = PagePath.fromUrlPath("tenantId", urlPath) match {
+    case PagePath.Parsed.Bad(error) =>
+      fail(s"Error parsing path: $urlPath, error: $error")
+    case PagePath.Parsed.Corrected(correctedPath) =>
+      fail(s"Error parsing path: `$urlPath', wants to correct it to: $correctedPath")
+    case PagePath.Parsed.Good(pagePath) =>
+      pagePath
+  }
 
-    "find its parent folder" >> {
+  def correct(urlPath: String): String = PagePath.fromUrlPath("tenantId", urlPath) match {
+    case PagePath.Parsed.Corrected(correctedPath) => correctedPath
+    case x => fail(s"Path was not corrected, instead got: $x")
+  }
+
+  "PagePath can" - {
+
+    "parse '/'" in {
+      val pagePath = parse("/")
+      pagePath.folder mustBe "/"
+      pagePath.pageSlug mustBe ""
+      pagePath.pageId mustBe None
+    }
+
+    "parse '/folder/'" in {
+      val pagePath = parse("/folder/")
+      pagePath.folder mustBe "/folder/"
+      pagePath.pageSlug mustBe ""
+      pagePath.pageId mustBe None
+    }
+
+    "parse '/so/many/foldes/'" in {
+      val pagePath = parse("/so/many/folders/")
+      pagePath.folder mustBe "/so/many/folders/"
+      pagePath.pageSlug mustBe ""
+      pagePath.pageId mustBe None
+    }
+
+    "parse '/slug'" in {
+      val pagePath = parse("/slug")
+      pagePath.folder mustBe "/"
+      pagePath.pageSlug mustBe "slug"
+      pagePath.pageId mustBe None
+    }
+
+    "parse '/folder/slug'" in {
+      val pagePath = parse("/folder/slug")
+      pagePath.folder mustBe "/folder/"
+      pagePath.pageSlug mustBe "slug"
+      pagePath.pageId mustBe None
+    }
+
+    "parse '/so/many/folders/slug'" in {
+      val pagePath = parse("/so/many/folders/slug")
+      pagePath.folder mustBe "/so/many/folders/"
+      pagePath.pageSlug mustBe "slug"
+      pagePath.pageId mustBe None
+    }
+
+    "parse '/-pageId'" in {
+      val pagePath = parse("/-pageId")
+      pagePath.folder mustBe "/"
+      pagePath.pageSlug mustBe ""
+      pagePath.pageId mustBe Some("pageId")
+    }
+
+    "parse '/folder/-pageId'" in {
+      val pagePath = parse("/folder/-pageId")
+      pagePath.folder mustBe "/folder/"
+      pagePath.pageSlug mustBe ""
+      pagePath.pageId mustBe Some("pageId")
+    }
+
+    "parse '/so/many/folders/-pageId'" in {
+      val pagePath = parse("/so/many/folders/-pageId")
+      pagePath.folder mustBe "/so/many/folders/"
+      pagePath.pageSlug mustBe ""
+      pagePath.pageId mustBe Some("pageId")
+    }
+
+    "correct '/-pageId-slug', change last '-' to '/'" in {
+      correct("/-pageId-slug") mustBe "/-pageId/slug"
+    }
+
+    "correct '/folder/-pageId-slug', change last '-' to '/'" in {
+      correct("/folder/-pageId-slug") mustBe "/folder/-pageId/slug"
+    }
+
+    "correct '/so/many/folders/-pageId-slug', change last '-' to '/'" in {
+      correct("/so/many/folders/-pageId-slug") mustBe "/so/many/folders/-pageId/slug"
+    }
+
+    "parse '/-pageId/slug'" in {
+      val pagePath = parse("/-pageId/slug")
+      pagePath.folder mustBe "/"
+      pagePath.pageSlug mustBe "slug"
+      pagePath.pageId mustBe Some("pageId")
+    }
+
+    "parse '/folder/-pageId/slug'" in {
+      val pagePath = parse("/folder/-pageId/slug")
+      pagePath.folder mustBe "/folder/"
+      pagePath.pageSlug mustBe "slug"
+      pagePath.pageId mustBe Some("pageId")
+    }
+
+    "parse '/so/many/folders/-pageId/slug'" in {
+      val pagePath = parse("/so/many/folders/-pageId/slug")
+      pagePath.folder mustBe "/so/many/folders/"
+      pagePath.pageSlug mustBe "slug"
+      pagePath.pageId mustBe Some("pageId")
+    }
+
+    "correct '/-pageId/slug/', remove last '/'" in {
+      correct("/-pageId/slug/") mustBe "/-pageId/slug"
+    }
+
+    "correct '/folder/-pageId/slug/', remove last '/'" in {
+      correct("/folder/-pageId/slug/") mustBe "/folder/-pageId/slug"
+    }
+
+    "find its parent folder" in {
       val rootFldr: PagePath = PagePath(tenantId = "tenantId", folder = "/",
          pageSlug = "", pageId = None, showId = false)
       val indexPage = rootFldr.copy(pageId = Some("abcd"))
@@ -40,20 +159,21 @@ class PagePathTest extends Specification {
                               pageId = Some("muuid"), showId = true)
       val folderSubfolder = folder.copy(folder = "/folder/subfolder/")
 
-      rootFldr.parentFolder must_== None
-      indexPage.parentFolder must_== Some(rootFldr)
-      idPage.parentFolder must_== Some(rootFldr)
-      slugPage.parentFolder must_== Some(rootFldr)
-      slugPageWithId.parentFolder must_== Some(rootFldr)
-      folder.parentFolder must_== Some(rootFldr)
-      folderMuuPage.parentFolder must_== Some(folder)
-      folderMuuIdPage.parentFolder must_== Some(folder)
-      folderSubfolder.parentFolder must_== Some(folder)
+      rootFldr.parentFolder mustBe None
+      indexPage.parentFolder mustBe Some(rootFldr)
+      idPage.parentFolder mustBe Some(rootFldr)
+      slugPage.parentFolder mustBe Some(rootFldr)
+      slugPageWithId.parentFolder mustBe Some(rootFldr)
+      folder.parentFolder mustBe Some(rootFldr)
+      folderMuuPage.parentFolder mustBe Some(folder)
+      folderMuuIdPage.parentFolder mustBe Some(folder)
+      folderSubfolder.parentFolder mustBe Some(folder)
     }
 
-    "find what parent?? for /double-slash//" >> {
+    "find what parent?? for /double-slash//" in {
       // COULD make folder = "/doudle-slash//" work too?
       // Currently that results in "/doudle-slash/" I think.
+      pending
     }
   }
 

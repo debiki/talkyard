@@ -144,8 +144,8 @@ function urlToPost(post)
 
 function describePost(post)
   what = switch post.id
-    | '65501' => 'Page title'
-    | '65502' => 'Page'
+    | "#{d.i.TitleId}" => 'Page title'
+    | "#{d.i.BodyId}" => 'Page'
     | '65503' => 'Page config'
     | _   => 'Comment'
 
