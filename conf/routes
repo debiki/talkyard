@@ -75,6 +75,8 @@ POST  /-/create-site/choose-name    controllers.CreateSiteController.handleWebsi
 GET   /-/create-site/create         controllers.CreateSiteController.tryCreateWebsite
 GET   /-/create-site/welcome-owner  controllers.CreateSiteController.welcomeOwner
 
+GET   /-/create-forum               controllers.CreateSiteController.startCreateForum
+
 GET   /-/create-embedded-site                                 controllers.CreateEmbeddedSiteController.start
 GET   /-/create-embedded-site/choose-owner                    controllers.CreateEmbeddedSiteController.showSiteOwnerForm
 GET   /-/create-embedded-site/specify-embedding-site-address  controllers.CreateEmbeddedSiteController.showEmbeddingSiteUrlForm
