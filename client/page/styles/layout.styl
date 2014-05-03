@@ -1,0 +1,89 @@
+/*!
+ * Copyright (C) 2010-2014 Kaj Magnus Lindberg (born 1979)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+
+.DW.DW .dw-res > li
+  list-style-type: none
+
+
+.dw-t
+  // SVG graphics is absolute positioned relative thread
+  position: relative
+  ///margin: 8px 0 0 5px
+
+
+// Horizontal layout
+//===========================
+
+
+.DW.dw-hz
+  color: black
+
+
+  // Empty space between a post and its replies, where arrows are drawn.
+  .dw-t-vspace
+    height: 84px
+    position: relative
+
+  .dw-t.dw-hz > .dw-res > li
+    padding-left: 60px
+    margin-left: 0
+
+    &.dw-p-as-hz-reply
+      padding-left: 0
+      padding-right: 57px
+
+  .dw-t:not(.dw-hz) > .dw-res > li
+    padding-left: 40px
+    margin-left: 0
+
+    &:last-child
+      padding-left: 0
+
+
+// Vertical layout
+//===========================
+
+
+.DW.dw-vt
+
+  .dw-depth-1.dw-t
+    width: auto !important
+
+  .dw-res > li
+    padding-left: 50px
+    margin-left: 0
+
+
+  // Avoid unnecessary indentation: Don't indent the last reply.
+  // (We use arrowse instead to draw relationships.)
+  // But do indent all replies to article replies, because article
+  // replies are stacked on top of each other, so we need to
+  // indent their replies.
+  .dw-t:not(.dw-depth-1) > .dw-res > li:last-child
+    padding-left: 0
+
+
+  .dw-t.dw-depth-0 > .dw-res > li
+    padding-left 0
+
+
+.dw-t:not(.dw-hz) > .dw-t-vspace
+  display: none
+
+
+// vim: fdm=marker et ts=2 sw=2 tw=100 fo=tcqwn list
