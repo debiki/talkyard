@@ -433,7 +433,7 @@ function makeConcatDebikiAndCodeMirrorScriptsStream() {
 
 
 gulp.task('minify-scripts', ['concat-debiki-scripts', 'concat-codemirror-scripts'], function() {
-  return gulp.src('public/res/*.js', { ignore: 'public/res/*.min.js' })
+  return gulp.src(['public/res/*.js', '!public/res/*.min.js'])
       .pipe(uglify())
       .pipe(rename({ extname: '.min.js' }))
       .pipe(header(copyrightAndLicenseBanner))
