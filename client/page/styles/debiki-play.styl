@@ -1208,96 +1208,11 @@ body.dw-u-ui-simple .dw-a-edit
 
 
 
-// Edit history / suggestions -— old not in use?
-//===========================
-
-
-.dw-fs-e // currently almost identical to <form>
-  position: relative
-  z-index: 1100
-
-.dw-fs-e form
-  margin: 1em 0
-  float: none // or won't be wide enough to fill up parent
-  clear: both // or show-form buttons appear to the left
-
-.dw-depth-0 .dw-fs-e
-  clear: both // or placed to the right of the action links
-
-.dw-fs-e > a
-  margin: 0.8em 0
-  float: left // or 100% wide when sliding up/down, weird
-  clear: both // or stacked horiz. when forms sliding up/down
-
-.dw-fs-e form:first-of-type,
-.dw-fs-e > a:first-of-type
-  margin-top: 0
-
-.dw-fs-e .ui-accordion
-  margin-top: 0.75em
-
-.dw-fs-e .ui-accordion-content
-  padding: 0.7em 0.2em 0 0.6em !important // otherwise too much padding
-  background: #f2f2f2 // jQuery UI's default bg is somewhat obtrusive
-  border: 1px solid #BBB
-
-.dw-fs-e .ui-accordion-content p
-  // Use same font/size as .dw-debate
-  font-family: Verdana, sans-serif
-  font-size: 93%
-  line-height: 110%
-
-.dw-fs-e .ui-accordion h4
-  font-weight: normal !important
-  font-size: 93%
-
-.dw-fs-e h4.dw-your-edit
-  font-weight: bold !important
-
-.dw-f-e-btns-vote,
-.dw-edit-liking-stats
-  margin: 1em 0 0
-
-.dw-edit-dates
-  margin: 0 0 1.1em
-
-.dw-edit-dates,
-.dw-edit-liking-stats
-  font-style: italic
-  font-size: 85%
-
-
 // Delete comment form
 //---------------------------
 
 #dw-fi-dl-tree
   margin: 1em 0 0
-
-
-// Create page form
-//---------------------------
-
-.dw-f-cr
-  margin: 60px 0 30px
-
-.dw-f-cr .dw-fi-submit
-  margin-top: 30px
-
-.dw-f-cr ul > li
-  list-style-type: disc // the page creation info list
-
-
-
-// Marks
-//===========================
-
-
-// Outline all posts in a new thread.
-//.dw-m-t-new > .dw-p > .dw-p-hd
-// border: 1px solid black  // no, ugly
-
-.dw-m-p-edited
-  border: 3px solid #f1cdbc
 
 
 
@@ -1372,33 +1287,6 @@ form .dw-ntf
   max-width: 133px
   text-align: center
   vertical-align: middle
-
-
-
-// Inbox
-//===========================
-
-// COULD get rid of #sidebar selector somehow — make selectors in
-// debiki-lift.css less inclusive?
-
-
-#sidebar .dw-ibx
-  margin-top: 2.2em
-  color: #777
-  font-size: 13px
-
-#sidebar .dw-ibx li
-  color: #777
-  margin-left: 0
-  font-size: 12px
-
-#sidebar a.dw-ibx-pg-ttl
-  color: #444 !important
-  --font-weight: bold
-
-#sidebar a.dw-ibx-p-bd
-  font-size: 90%
-  color: #666
 
 
 
