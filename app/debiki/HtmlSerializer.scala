@@ -384,10 +384,6 @@ case class HtmlPageSerializer(
               >{rootPost.numLikeVotes} {peopleLike} this.</a></div>
           }
 
-        val anyReplyLink =
-          if (!horizontalComments) Nil
-          else rootPostReplyListItem
-
         anyBodyHtml ++
         ifThen(showComments, {
           renderedRoot.actionsHtml ++
@@ -395,7 +391,7 @@ case class HtmlPageSerializer(
           makeCommentsToolbar() ++
           <div class='dw-t-vspace'/>
           <ol class='dw-res'>
-            { anyReplyLink }
+            { rootPostReplyListItem }
             { renderThreads(rootPostsReplies, parentHorizontal = true) }
           </ol>
         })
