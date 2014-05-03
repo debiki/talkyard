@@ -23,12 +23,14 @@
 .dw-t
   // SVG graphics is absolute positioned relative thread
   position: relative
-  ///margin: 8px 0 0 5px
+
+.dw-depth-0.dw-t
+  // Without this, SVG arrows are cropped a bit to the right. Why? [8DbF3]
+  float: left
 
 
 // Horizontal layout
 //===========================
-
 
 .DW.dw-hz
   color: black
@@ -45,7 +47,7 @@
 
   .dw-t.dw-hz > .dw-res > li
     padding-left: 60px
-    margin-left: 0
+    margin: 0
 
     &.dw-p-as-hz-reply
       padding-left: 0
@@ -53,7 +55,7 @@
 
   .dw-t:not(.dw-hz) > .dw-res > li
     padding-left: 40px
-    margin-left: 0
+    margin: 0
 
     &:last-child
       padding-left: 0
@@ -62,13 +64,11 @@
 // Vertical layout
 //===========================
 
-
 .DW.dw-vt
 
   .dw-res > li
     padding-left: 50px
-    margin-left: 0
-
+    margin: 0
 
   // Avoid unnecessary indentation: Don't indent the last reply.
   // (We use arrowse instead to draw relationships.)
@@ -78,13 +78,49 @@
   .dw-t:not(.dw-depth-1) > .dw-res > li:last-child
     padding-left: 0
 
-
   .dw-t.dw-depth-0 > .dw-res > li
     padding-left 0
 
 
 .dw-t:not(.dw-hz) > .dw-t-vspace
   display: none
+
+
+
+// Closed threads
+//===========================
+
+.dw-t-closed > .dw-p
+  margin-bottom: 30px
+  padding-bottom: 33px
+
+.dw-t-closed:not(.dw-depth-1) > .dw-p
+  margin-bottom: 0px
+  padding-bottom: 18px
+
+.dw-t-closed > .dw-p > h3,
+.dw-t-closed > .dw-p > h4
+  margin: 0
+  padding: 0
+
+
+
+// Space after end of thread
+//===========================
+/*
+
+I think this isn't needed, but let's not delete it yet.
+
+.dw-t.dw-t-exactly-one-reply
+  // This makes it clear where all replies to a certain comment has ended.
+  margin-bottom: 20px
+
+.dw-t-exactly-one-reply > .dw-p-as
+  // This places threads closer to each other, when using flat layout.
+  margin-bottom: -5px
+
+*/
+
 
 
 // vim: fdm=marker et ts=2 sw=2 tw=100 fo=tcqwn list
