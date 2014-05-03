@@ -49,10 +49,7 @@ object HtmlPageSerializer {
 
     // Use nofollow links in people's comments, so Google won't punish
     // the website if someone posts spam.
-    def isArticeOrArticleQuestion = isArticle // || post.meta.isArticleQuestion
-    val makeNofollowLinks =
-      !isArticeOrArticleQuestion || (nofollowArticle && post.id == PageParts.BodyId)
-
+    val makeNofollowLinks = !isArticle || (nofollowArticle && post.id == PageParts.BodyId)
 
     val text: String =
       if (showUnapproved.shallShow(post)) post.currentText
@@ -565,18 +562,16 @@ case class HtmlPageSerializer(
     val cssInlineThread = if (isInlineThread) " dw-i-t" else ""
     val replies = post.replies
     val isTitle = post.id == PageParts.TitleId
-    val isRootOrArtclQstn =
-          Some(post.id) == pageRoot // || post.meta.isArticleQuestion
+    val isRoot = Some(post.id) == pageRoot
 
-    // Layout replies horizontally, if this is an inline reply to
+    // Old comment: Layout replies horizontally, if this is an inline reply to
     // the root post, i.e. depth is 1 -- because then there's unused space
     // to the right. However, the horizontal layout results in a higher
     // thread if there's only one reply. So only do this if there's more
     // than one reply.
-    val horizontal = // (post.where.isDefined && depth == 1 && replies.length > 1) ||
-                    isRootOrArtclQstn
+    val horizontal = isRoot // (post.where.isDefined && depth == 1 && replies.length > 1) ||
+
     val cssThreadDeleted = if (post.isTreeDeleted) " dw-t-dl" else ""
-    val cssArticleQuestion = if (isRootOrArtclQstn) " dw-p-art-qst" else ""
     val postFitness = pageStats.ratingStatsFor(post.id).fitnessDefaultTags
       // For now: If with a probability of 90%, most people find this post
       // boring/faulty/off-topic, and if, on average,
@@ -611,7 +606,7 @@ case class HtmlPageSerializer(
     }
 
     val foldLink =
-      if (isTitle || isRootOrArtclQstn || post.isTreeDeleted) Nil
+      if (isTitle || isRoot || post.isTreeDeleted) Nil
       else <a class='dw-z'>{foldLinkText}</a>
 
     val repliesHtml = {
@@ -634,7 +629,7 @@ case class HtmlPageSerializer(
     var thread = {
       val cssHoriz = if (horizontal) s" $horizontalCommentsCss" else ""
       <li id={cssThreadId} class={"dw-t "+ cssInlineThread +
-             cssFolded + cssHoriz + cssThreadDeleted + cssArticleQuestion}>{
+             cssFolded + cssHoriz + cssThreadDeleted}>{
         foldLink ++
         renderedComment.headAndBodyHtml ++
         myActionsIfVerticalLayout ++
