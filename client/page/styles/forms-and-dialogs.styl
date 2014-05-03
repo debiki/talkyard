@@ -163,10 +163,6 @@
   padding-bottom: 0px // ...scrollbars appear
   border-color: #aaa // default black is too sharp
 
-// IE 7 bugfix, root thread reply textarea otherwise 2000 or 20000px wide.
-.dw-hz > .dw-res > .dw-fs-re textarea
-  max-width: 440px
-
 // CodeMirror problem fix — don't change the height of CodeMirror's
 // internal <textarea>, or CodeMirror won't work (it'll ignore most
 // key presses)
@@ -280,6 +276,14 @@
   top: auto
   bottom: 95px
   left: 40px
+
+
+// Hide the reply form resize handle unless hovering the form.
+.dw-fs-re .ui-resizable-se
+  visibility: hidden
+
+.dw-fs-re:hover .ui-resizable-se
+  visibility: visible
 
 
 
@@ -429,6 +433,9 @@
 .dw-depth-0 > .dw-p > .dw-f-e .dw-e-tabs > .dw-e-tab-diff
   width: 800px
 
+.dw-p-diff
+  line-height: normal // or becomes 120% so -diff lines lines overlap
+
 .dw-pri .dw-f-e .dw-e-tab-edit textarea
   height: 100%
   margin: 0
@@ -507,6 +514,80 @@
 
   &:after
     clear: both;
+
+
+
+// Notifications
+//===========================
+
+
+.dw-dlg-rsp
+  height: auto !important // or jQuery UI [1.8.16] sets 38px and scrollbars appear
+
+form .dw-ntf
+  float: left // or floating stuff might end up floating inside the .dw-ntf
+  clear: both
+  margin-bottom: 10px // or might overlap with resize form southeast handle
+
+.dw-ntf
+  font-family: monospace
+  margin-top: 1em
+
+.dw-ntf .ui-state-error
+  padding: 0.1em 0.1em 0.2em 0.4em
+
+.dw-ntf .ui-dialog-titlebar-close
+  float: right
+  height: 20px // easier to click, if 20px instead of default 16px
+  width: 20px
+
+.dw-ntf .dw-ntf-bd
+  margin-left: 20px // no text below the notification icon
+
+//.dw-ntf-sts
+
+.dw-ntf-msg
+  font-weight: bold
+
+.dw-ntf-at
+  font-size: 65%
+  margin-top: 1ex
+
+.dw-ntf-shw
+  font-style: italic
+  text-decoration: underline
+
+
+
+// Tips
+//===========================
+
+
+// A tips on how replies are sorted, in the horizontal layout
+#dw-tps-sort-order
+  position: absolute
+  top: -210px
+  left: -250px
+  white-space: nowrap
+
+.dw-tps-sort-order-arw
+  position: relative
+  height: 15px
+  top: 8px
+  width: 55px
+  display: inline-block
+  margin: 0 10px 0 0
+  background: url(img/arrows-etcetera-gray.png) no-repeat 0 -327px
+
+.dw-tps-sort-order-arw.dw-flip-hz
+  margin: 0 0 0 10px
+
+.dw-tps-sort-order-your-post
+  white-space: normal
+  display: inline-block
+  max-width: 133px
+  text-align: center
+  vertical-align: middle
 
 
 
