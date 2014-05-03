@@ -453,52 +453,52 @@ gulp.task('compile-stylus', function () {
     keepSpecialComments: 0
   };
 
-  gulp.src([
-      'public/res/jquery-ui/jquery-ui-1.9.2.custom.css',
-      'client/page/styles/debiki.styl',
-      'client/page/styles/minimap.styl',
-      'client/page/styles/tips.styl',
-      'client/page/styles/debiki-play.styl',
-      'client/forum/**/*.styl'])
-    .pipe(stylus(stylusOpts))
-    .pipe(concat('combined-debiki.css'))
-    .pipe(gulp.dest('public/res/'))
-    .pipe(minifyCSS(minifyOpts))
-    .pipe(header(copyrightAndLicenseBanner))
-    .pipe(concat('combined-debiki.min.css'))
-    .pipe(gulp.dest('public/res/'));
+  function makeStyleStream(destDir, destFile, sourceFiles) {
+    var stream = gulp.src(sourceFiles)
+      .pipe(stylus(stylusOpts));
 
-  gulp.src([
-      'client/page/styles/tips.styl'])
-    .pipe(stylus(stylusOpts))
-    .pipe(concat('debiki-embedded-comments.css'))
-    .pipe(gulp.dest('public/res/'))
-    .pipe(minifyCSS(minifyOpts))
-    .pipe(header(copyrightAndLicenseBanner))
-    .pipe(concat('debiki-embedded-comments.min.css'))
-    .pipe(gulp.dest('public/res/'));
+    if (watchAndLiveForever) {
+      // This has no effect, why not?
+      stream.on('error', function() {
+        console.log('\n!!! Error compiling Stylus !!!\n');
+      });
+    }
 
-  gulp.src([
-      'client/admin-dart/styles/*.styl'])
-    .pipe(stylus(stylusOpts))
-    .pipe(concat('styles.css'))
-    .pipe(gulp.dest('client/admin-dart/admin-dart/web/'))
-    .pipe(minifyCSS(minifyOpts))
-    .pipe(header(copyrightAndLicenseBanner))
-    .pipe(concat('styles.min.css'))
-    .pipe(gulp.dest('client/admin-dart/admin-dart/web/'));
+    return stream
+      .pipe(concat(destFile))
+      .pipe(gulp.dest(destDir))
+      .pipe(minifyCSS(minifyOpts))
+      .pipe(header(copyrightAndLicenseBanner))
+      .pipe(rename({ extname: '.min.css' }))
+      .pipe(gulp.dest(destDir));
+  }
 
-  gulp.src([
-      'client/admin/styles/admin-theme.styl',
-      'client/admin/styles/admin-page.styl',
-      'client/util/styles/debiki-shared.styl'])
-    .pipe(stylus(stylusOpts))
-    .pipe(concat('admin.css'))
-    .pipe(gulp.dest('public/res/'))
-    .pipe(minifyCSS(minifyOpts))
-    .pipe(header(copyrightAndLicenseBanner))
-    .pipe(concat('admin.min.css'))
-    .pipe(gulp.dest('public/res/'));
+  return es.merge(
+    makeStyleStream('public/res/', 'combined-debiki.css', [
+        'public/res/jquery-ui/jquery-ui-1.9.2.custom.css',
+        'client/page/styles/debiki.styl',
+        'client/page/styles/layout.styl',
+        'client/page/styles/minimap.styl',
+        'client/page/styles/arrows.styl',
+        'client/page/styles/tips.styl',
+        'client/page/styles/dashbar.styl',
+        'client/page/styles/debiki-play.styl',
+        'client/page/styles/post-actions.styl',
+        'client/page/styles/forms-and-dialogs.styl',
+        'client/page/styles/login-dialog.styl',
+        'client/page/styles/third-party.styl',
+        'client/forum/**/*.styl']),
+
+    makeStyleStream('public/res/', 'debiki-embedded-comments.css', [
+        'client/page/styles/tips.styl']),
+
+    makeStyleStream('client/admin-dart/admin-dart/web/', 'styles.css', [
+        'client/admin-dart/styles/*.styl']),
+
+    makeStyleStream('public/res/', 'admin.css', [
+        'client/admin/styles/admin-theme.styl',
+        'client/admin/styles/admin-page.styl',
+        'client/util/styles/debiki-shared.styl']));
 });
 
 

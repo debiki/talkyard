@@ -1,0 +1,156 @@
+/*!
+ * Copyright (C) 2010-2013 Kaj Magnus Lindberg (born 1979)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+
+
+// This avoids scrollbars in the login popup. Otherwise there's some padding-top
+// and -bottom, which surprisingly (?) results in scrollbars but only in the
+// login popup, not on "normal" pages.
+.DW .ui-dialog .ui-dialog-content
+  padding-top: 0
+  padding-bottom: 0
+  margin: 1.2em 0 1.5em
+
+
+// Assume user logged out
+.dw-u-info,
+.dw-a-logout
+  display: none
+
+#dw-lgi.ui-dialog-content
+  padding: 0 2.7em 0 2em
+
+#dw-lgi-tos
+  font-size: 80%
+  max-width: 50ex
+  text-align: center
+  margin: 0 auto 15px
+  color: #666
+
+#dw-lgi-guest,
+#dw-lgi-pswd,
+#dw-lgi-more
+  display: block
+
+#dw-lgi [class*="icon-"]
+  margin-right: 5px
+  margin-left: -3px
+
+#dw-lgi .icon-facebook
+  margin-right: 0px
+
+#dw-lgi-guest,
+#dw-lgi-pswd
+  margin-bottom: 0.5em
+
+#dw-lgi .btn
+  background-color: hsl(0, 0%, 97%)
+
+#dw-lgi .dw-fi-cancel
+  float: right
+  margin-top: 2em
+
+#dw-lgi-or-login-using
+  text-align: center
+  max-width: 300px
+  margin: 20px auto
+
+#dw-lgi-other-sites
+  margin: 16px 0 37px
+  text-align: center
+
+.dw-lgi-openid
+  padding: 0 30px 0 0
+  margin-right: 45px
+  height: 105px
+  width: 125px
+  position: absolute
+  left: 0 // or IE 7 places it far to the right
+
+.dw-a-login
+  margin-left: 10px
+  color: #3872AB
+
+.dw-u-name,
+.dw-a-login,
+.dw-a-logout
+  cursor: pointer
+
+.dw-cmts-tlbr
+
+  margin: 25px 0 17px
+  border: 1px solid hsl(0, 0%, 77%)
+  background: hsl(0, 0%, 98%)
+  padding: 10px
+  border-left: none
+  border-right: none
+
+  .dw-cmts-count
+    font-size: 17px
+    margin-right: 1em
+
+  .dw-u-lgi-lgo
+    display: inline // not block, which the topbar often sets
+
+  .dw-u-name,
+  .dw-a-login,
+  .dw-a-logout
+    color: hsl(0, 0%, 43%)
+
+  .dw-a-logout
+    margin-left: 1em
+
+.DW.dw-vt .dw-cmts-tlbr
+  margin-bottom: 45px
+
+#dw-lgi-pswd .dw-reset-pswd
+  display: block
+  margin-top: 10px
+
+// ---
+// This hides/shows "Login to Post Comment" / "Login to Submit" messages
+// depending on what the user is doing.
+body .dw-login-to-submit,
+body .dw-login-to-post-comment,
+body .dw-login-to-create-topic,
+body .dw-login-to-login
+  display: none
+
+body.dw-login-to-submit .dw-login-to-submit,
+body.dw-login-to-post-comment .dw-login-to-post-comment,
+body.dw-login-to-create-topic .dw-login-to-create-topic,
+body.dw-login-to-login .dw-login-to-login
+  display: inline
+// ---
+
+
+// Hide Google and Yahoo login buttons in OpenID dialog; they're available via direct links
+// instead, from the main login dialog.
+.google.openid_large_btn,
+.google_profile.openid_small_btn,
+.yahoo.openid_large_btn
+  display: none
+
+// Avoid float drop: remove pointless margin.
+#openid_form
+  margin-right: 0
+  padding-right: 0
+
+
+
+
+// vim: fdm=marker et ts=2 sw=2 tw=100 fo=tcqwn list

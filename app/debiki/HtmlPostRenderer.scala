@@ -339,22 +339,20 @@ object HtmlPostRenderer {
   private def renderPostBody(post: Post, hostAndPort: String, nofollowArticle: Boolean,
         showUnapproved: ShowUnapproved): RenderedPostBody = {
     val cssArtclBody = if (post.id != PageParts.BodyId) "" else " dw-ar-p-bd"
-    val isBodyOrArtclQstn = post.id == PageParts.BodyId // || post.meta.isArticleQuestion
+    val isBody = post.id == PageParts.BodyId
     val (xmlTextInclTemplCmds, approxLineCount) =
       HtmlPageSerializer._markupTextOf(post, hostAndPort, nofollowArticle,
         showUnapproved = showUnapproved)
 
     // Find any customized reply button text.
     var replyBtnText: NodeSeq = xml.Text("Reply")
-    if (isBodyOrArtclQstn) {
+    if (isBody) {
       HtmlPageSerializer.findChildrenOfNode(
         withClass = "debiki-0-reply-button-text",
         in = xmlTextInclTemplCmds) foreach { replyBtnText = _ }
     }
 
     val xmlText: NodeSeq = xmlTextInclTemplCmds // old rename
-    //if (!isRootOrArtclQstn) (Nil, xmlTextInclTemplCmds)
-    //else partitionChildsWithDataAttrs(in = xmlTextInclTemplCmds)
 
     val postBodyHtml =
       <div class={"dw-p-bd"+ cssArtclBody}>

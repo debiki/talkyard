@@ -1,0 +1,594 @@
+/*!
+ * Copyright (C) 2010-2013 Kaj Magnus Lindberg (born 1979)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+// Styles specific to Debiki's Play Framework application.
+
+
+
+// Hidden templates
+//---------------------------
+
+#dw-hidden-templates
+  display: none
+
+
+
+// Edit suggestions -- is in use? Merge with other edit suggestions section below?
+//---------------------------
+
+.dw-e-sgs
+  font-size: 85%
+
+.dw-e-sg
+  border-bottom: dotted 1px #ccc
+  padding: 7px 0 2px 0
+  margin: 0 0 0 0
+
+  &:last-child
+    border-bottom: none
+
+  &:hover
+    background-color: #e5e5e5
+
+.dw-e-sg-e
+  position: relative
+  margin-left: 30px
+
+.dw-e-sg .dw-e-text,
+.dw-e-sg .dw-e-rslt
+  display: none // text used by javascript diff algorithm
+
+
+
+// Full screen dialogs
+//===========================
+
+// See d.i.newModalDialogSettings() in debiki-jquery-dialogs.js.
+
+.DW .dw-dlg-fullscreen
+  position: static
+  top: 0 !important
+  left: 0 !important
+  width: 100% !important
+  height: 100% !important
+  overflow: auto !important
+
+  .dw-fs.ui-dialog-content
+    // jQuery UI might prefer to set a height and show scrollbars, so:
+    height: auto !important
+
+// Re `:not(.ui-widget-overlay)`: show overlays also in fullscreen dialog mode,
+// because some nested dialogs might open in non-fullscreen mode.
+.DW body.dw-fullscreen-dialog-mode > :not(.ui-widget-overlay)
+  display: none
+
+
+
+// Forms
+//===========================
+
+
+.dw-fs
+  margin: 10px 0 20px 5px // 5px, like .dw-t
+  position: relative // e.g. 'Submitting ...' with position: absolute inside
+
+.dw-f
+  position: relative // shouldn't use both .dw-fs and .dw-f though!
+
+// Reduce distance between a form and any parent jQuery UI dialog buttons.
+.ui-dialog > .dw-fs
+  margin-bottom: 11px // 20px (from just above) too much
+
+.dw-hz > .dw-res > .dw-fs
+  margin: 0
+  padding-right: 19px
+  padding-left: 0 // nothing to the left
+
+.dw-fs form
+  z-index: 1100 // place above column resize handle...
+  //              ... hmm but it has z-index: 1 only [0QKxg2]
+  position: relative
+  padding: 1em
+  margin-left: 10px // move away from any vertical arrow
+  // My Firifox 3.6 draws outlines very incorrectly for the Rating form,
+  // (but correctly for Reply and Edit), use borders instead.
+  // outline: #83c5df solid thick;
+
+.ui-dialog .dw-fs form
+  margin: 0 25px 0 8px
+  padding-top: 0.4em // smaller than 1em from above `.dw-fs form`
+
+// Remove any border above jQuery UI dialog buttons.
+.dw-pri .ui-dialog-buttonpane
+  border-top: none
+
+// Float drop fix. Was needed by #dw-fs-openid-login or #dw-fs-lgi-simple.
+// Now *sometimeis* needed by #dw-fs-flg, or some radio button float
+// drops and scrollbars appear. Sometimes? Yes, in Chrome `14.0.835.186'
+// on my KDE computer — but not in Chrome `14.0.835.186 beta' on my
+// Gnome computer. Perhaps better keep this fix, since hard to know if
+// it works everywhere, even if it works fine for you.
+.dw-fs.ui-dialog-content
+  // margin: 20px 0 0; // cancel .dw-fs too wide margin
+  // padding: 0 !important; // cancel jQuery UI's inline style
+  width: 100% !important
+
+.dw-fs.ui-dialog-content > form
+  border: none // the buttonpane is outside, same color as form
+  // Cancel z-index:1100 rule, otherwise the <form> would be placed
+  // lower than the jQuery UI dialog itself, and jQuery would stop clicks.
+  z-index: auto // cancel rule
+
+.dw-fs small
+  font-size: 70%
+
+.dw-fs form label
+  margin-top: 1ex
+  display: inline-block // or margin has no effect
+
+.dw-f textarea,
+.dw-fs textarea // COULD use only dw-f not -fs
+  display: block // This also ditches any descender space...
+  // ...The descender space below the textarea would otherwise cause
+  // overflow — a terrible vertical scrollbar would appear, in those
+  // cases where I've attempted to fit it exactly inside its parent.
+
+.dw-fs input[type='checkbox']
+  display: inline
+
+.DW .dw-page form input[type='text'],
+.DW .dw-page form textarea
+  font-family: Verdana, sans-serif // the font .dw-post .dw-text uses
+  margin-top: 0.7em
+
+.dw-pri form textarea
+  width: 100%
+  resize: none // disable Chrome's default-resizable (and
+  //              make the accordion resizable instead)
+  padding-right: 0px  // else 97% (above) often too large, so...
+  padding-bottom: 0px // ...scrollbars appear
+  border-color: #aaa // default black is too sharp
+
+// CodeMirror problem fix — don't change the height of CodeMirror's
+// internal <textarea>, or CodeMirror won't work (it'll ignore most
+// key presses)
+.CodeMirror textarea
+  height: auto !important
+
+// The default seems to be 10px wich is almost unreadable.
+.CodeMirror
+  font-size: 13px
+
+// Make CodeMirror auto-resize its height.
+// (Works also without .dw-prio -- although CodeMirror specifies 300px
+// *later*. Weird.)
+.DW .CodeMirror
+  height: auto
+  // overflow-y: hidden;
+  // overflow-x: auto;
+  // width: 100%;
+
+// Show tabs.
+.cm-tab:after
+  content: "\21e5"
+  display: inline-block
+  width: 0px
+  position: relative
+  overflow: visible
+  left: -1.4em
+  color: #aaa
+
+.dw-name-or-alias
+  float: left // COULD avoid floating everything?
+  clear: both
+  margin-top: 1.8em
+
+.dw-submit-set
+  float: right
+  clear: both
+  margin-top: 1.3em
+
+.dw-pri .dw-inf-submitting-form
+  position: absolute
+  padding: 1em 2em
+
+
+
+
+// Email notification preferences
+//===========================
+
+
+#dw-f-eml-prf .dw-submit-set
+  float: none
+
+#dw-f-eml-prf .ui-button
+  float: right
+
+#dw-fi-eml-prf-adr
+  width: 18em
+
+#dw-fi-eml-prf-submit-email
+  margin-top: 1.3em
+
+
+
+// Reply
+//===========================
+
+
+.dw-res > .dw-fs-re
+  position: relative // vertical png arrow positioned relative this
+
+.dw-fs-re > form
+  min-width: 210px
+  padding-top: 0
+  margin-top: 0
+
+.dw-hz > .dw-res > .dw-fs-re > form
+  // There's nothing to the left.
+  margin-left: 0
+  padding-left: 0
+
+.dw-fs-re label
+  display: inline-block
+  margin-right: 0.4em
+  margin-top: 0 !important
+  float: none // cancel Twitter Bootstrap's float: left
+  width: auto // cancel Twitter Bootstrap's width: NNNpx
+
+.dw-fs-re textarea
+  // need to disable Chrome's default-resizing-of-textarea,
+  // because the parent <form> (which is also resizable)
+  // isn't resized when the textarea is resized.
+  resize: none
+
+.dw-fs-re textarea:focus
+  border: 1px solid #91cdff // the .dw-keyrecvr color
+  outline: 1px solid #91cdff
+
+.dw-user-contrib-license
+  float: left // COULD? stop floating everything in the <form>s
+  clear: both
+  color: #666
+  font-size: 75%
+  margin: 9px 0 0
+  max-width: 34em // or license text makes reply-thread very wide
+
+.dw-pri .dw-user-contrib-license a
+  color: #99a
+
+.dw-fs-re .dw-inf-submitting-form
+  top: auto
+  bottom: 95px
+  left: 40px
+
+
+// Hide the reply form resize handle unless hovering the form.
+.dw-fs-re .ui-resizable-se
+  visibility: hidden
+
+.dw-fs-re:hover .ui-resizable-se
+  visibility: visible
+
+
+
+// Flags
+//===========================
+
+
+.dw-f-flg-rsns
+  margin: 0.5ex 0 1em
+
+
+
+// Pin comment
+//===========================
+
+
+#dw-f-pin-pos
+  input[name="position"]
+    width: 3em
+    text-align: right
+
+
+
+// Edits dialog
+//===========================
+
+
+// Dialog background made white by javascript.
+
+#dw-e-sgs
+  overflow: hidden // child height is 100%, so border exdends downw
+
+#dw-e-sgs > .row
+  margin-left: 0 // cancel Bootstrap's -15px
+
+#dw-e-sgss
+  padding-left: 0
+  border-left: none
+
+//#dw-e-sgs-diff
+
+#dw-e-sgs-save-diff
+  display: none // for now
+
+#dw-e-sgs-prvw
+  padding-right: 0
+
+#dw-e-sgs-org-src
+  display: none
+
+#dw-e-sgs .dw-e-sgs
+  margin: 1ex 0 25px 0
+
+#dw-e-sgs .dw-e-sg-e
+  margin-left: 9px
+
+#dw-e-sgs .dw-e-sgs .dw-as
+  margin: 7px 0px 3px 0px
+
+#dw-e-sgs .dw-e-sg .dw-as .ui-button-text
+  padding: .15em 1ex // or a relatively huge button
+
+#dw-e-sgs-diff-text,
+#dw-e-sgs-prvw-html
+  background: hsl(0, 0%, 94%)
+
+#dw-e-sgs .dw-submit-set
+  float: none
+  text-align: center
+
+
+
+// Edit form
+//===========================
+
+// (Some properties defined elsewhere, search for dw-e-tab.)
+
+// Place navigation tabs below the tab contents:
+.tab-content.dw-nav-tabs-below
+
+.nav.nav-tabs.dw-nav-tabs-below
+  border-bottom: none
+  margin-top: -2px
+
+.nav-tabs.dw-nav-tabs-below > li
+  margin-left: 1em
+
+.nav-tabs.dw-nav-tabs-below > li:first-child
+  margin-left: 0
+
+.nav-tabs.dw-nav-tabs-below > li.active > a
+  border-top: 2px solid hsl(0, 100%, 100%)
+  border-bottom-color: hsl(0, 0%, 87%)  // Bootstrap's default border color [introduceVariable]
+  border-radius: 0 0 5px 5px
+
+
+.dw-pri .dw-f-e .dw-e-tabs,
+.dw-pri .dw-f-e .ui-widget-header, // not needed, done in jQuery UI integr.
+.dw-pri .dw-f-e.ui-widget-content
+  background: transparent
+  border: none
+
+.dw-f-e-help-show
+  color: hsl(211, 85%, 35%)
+  float: left
+
+.dw-f-e-help-text
+  display: none
+  box-shadow: 3px 3px hsl(0, 0%, 50%)
+  background-color: #fcfcfc
+  border: 1px solid hsl(0, 0%, 50%)
+  padding: 3px 15px
+  margin: 5px 0 10px 3px
+  float: left // or wills whole screen
+  clear: both
+
+// Hide help text for comments; show only for page body.
+:not(.dw-hz) > .dw-p > .dw-f-e .dw-f-e-help-show
+  display: none
+
+.dw-ui-simple .dw-f-e-mup
+  display: none
+
+.dw-pri .dw-f-e .dw-e-tab
+  border: 1px solid #bbb
+  overflow: auto
+  padding: 0
+
+// ... the textarea is outlined on :focus — add paddding so outline visible.
+.dw-pri .dw-f-e .dw-e-tab-edit
+  padding: 1px
+
+// ... change padding for root post preview // and fix a bug
+.dw-depth-0 > .dw-p > .dw-f-e .dw-e-tab-prvw
+  padding: 1em
+
+// ... for other previews, place some padding on the -bd-blk (!)
+// not the -e-tab-prvw, because otherwise the panel becomes too wide
+// and its right part is cut of by the parent thread (which has
+// visibility:hidden) — some jQuery UI weird internal stuff?
+.dw-e-tab-prvw > .dw-p-bd-blk
+  padding: 1ex  // don't place directly on the .dw-e-tab-prvw
+
+// The root post has no width restriction on .dw-e-tabs,
+// since it's not placed inside a thread (which has a certain width).
+.dw-depth-0 > .dw-p > .dw-f-e .dw-e-tabs > .dw-e-tab-edit,
+.dw-depth-0 > .dw-p > .dw-f-e .dw-e-tabs > .dw-e-tab-diff
+  width: 800px
+
+.dw-p-diff
+  line-height: normal // or becomes 120% so -diff lines lines overlap
+
+.dw-pri .dw-f-e .dw-e-tab-edit textarea
+  height: 100%
+  margin: 0
+  padding: 0
+  border: none // would cause overflow, scrollbars would appear in tab panel
+  outline-offset: 0px // Chrome defualts to -2px
+
+// Remove margin & padding between title in tab pane and the top/bottom of the tab pane...
+.dw-e-tab .dw-p-bd-blk h1
+  margin: 0
+  padding: 0
+
+// ...Place the margin here instead.
+.dw-p-ttl > .dw-f-e
+  margin-top: 45px
+
+// Indicate focus.
+.dw-pri .dw-f-e .dw-e-tab-edit textarea:focus
+  outline: 1px solid #91cdff // the .dw-keyrecvr color
+
+// Indicate keyboard shortcut target.
+.dw-pri.dw-pri .dw-keyrecvr .dw-e-tab
+  border: 1px solid #91cdff
+
+.dw-f-e-inf-save,
+.dw-f-e .dw-f-e-sugg-info // COULD rename to .dw-f-e-inf-sg?
+  margin-top: 1em
+  padding: 6px
+  max-width: 32em
+  float: left // or margin-top has no effect
+  clear: both
+  background-color: #FFEFC6
+
+.dw-f-e-inf-save,
+.dw-f-e .dw-f-e-sugg-info > strong
+  color: green
+  font-weight: bold
+
+.dw-f-e-inf-save
+  display: none
+  float: none // or it floats to the left of the edit tabs
+
+// Place the stubmit buttons close to the edit form, away from
+// replies/arrows below, so it's easy to see what they are
+// related to.
+.dw-f-e .dw-submit-set
+  margin-top: 1.5em
+  margin-bottom: 1em
+  float: left
+
+.dw-f-e .dw-inf-submitting-form
+  top: auto
+  bottom: 80px
+  left: 60px
+
+
+
+// Delete comment form
+//---------------------------
+
+#dw-fi-dl-tree
+  margin: 1em 0 0
+
+
+
+// Clearfix
+//---------------------------
+
+.dw-fs,       // Contents might float
+.dw-fs form,  // Contents might float
+.dw-f.dw-f-e  // I suppose some edit form child floats left?
+  // Copied from Bootstrap 3.0.0's less/mixin.less.
+  &:before, &:after
+    content: " "
+    display: table
+
+  &:after
+    clear: both;
+
+
+
+// Notifications
+//===========================
+
+
+.dw-dlg-rsp
+  height: auto !important // or jQuery UI [1.8.16] sets 38px and scrollbars appear
+
+form .dw-ntf
+  float: left // or floating stuff might end up floating inside the .dw-ntf
+  clear: both
+  margin-bottom: 10px // or might overlap with resize form southeast handle
+
+.dw-ntf
+  font-family: monospace
+  margin-top: 1em
+
+.dw-ntf .ui-state-error
+  padding: 0.1em 0.1em 0.2em 0.4em
+
+.dw-ntf .ui-dialog-titlebar-close
+  float: right
+  height: 20px // easier to click, if 20px instead of default 16px
+  width: 20px
+
+.dw-ntf .dw-ntf-bd
+  margin-left: 20px // no text below the notification icon
+
+//.dw-ntf-sts
+
+.dw-ntf-msg
+  font-weight: bold
+
+.dw-ntf-at
+  font-size: 65%
+  margin-top: 1ex
+
+.dw-ntf-shw
+  font-style: italic
+  text-decoration: underline
+
+
+
+// Tips
+//===========================
+
+
+// A tips on how replies are sorted, in the horizontal layout
+#dw-tps-sort-order
+  position: absolute
+  top: -210px
+  left: -250px
+  white-space: nowrap
+
+.dw-tps-sort-order-arw
+  position: relative
+  height: 15px
+  top: 8px
+  width: 55px
+  display: inline-block
+  margin: 0 10px 0 0
+  background: url(img/arrows-etcetera-gray.png) no-repeat 0 -327px
+
+.dw-tps-sort-order-arw.dw-flip-hz
+  margin: 0 0 0 10px
+
+.dw-tps-sort-order-your-post
+  white-space: normal
+  display: inline-block
+  max-width: 133px
+  text-align: center
+  vertical-align: middle
+
+
+
+// vim: fdm=marker et ts=2 sw=2 tw=100 fo=tcqwn list

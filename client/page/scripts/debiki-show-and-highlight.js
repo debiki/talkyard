@@ -31,7 +31,6 @@ var $ = d.i.$;
     return $(this).dwLastChange() > myLastVersion;
   })
   newPosts.closest('.dw-t').addClass('dw-m-t-new');
-  // sometimes .dw-m-p-edited instead of -new
 })()
 */
 

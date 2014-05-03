@@ -29,22 +29,6 @@
 .dw-page a
   cursor: pointer
 
-.dw-depth-1 .dw-t
-  padding-left: 0
-  border-top: none
-
-.DW.DW .dw-res > li
-  list-style-type: none
-
-.DW.DW .dw-res
-  margin: 0
-  padding: 0 // if no CSS reset included
-  line-height: normal // or PNG arrows and [-] offset incorrectly
-
-.DW.dw-vt .dw-t,
-.DW.dw-hz .dw-ar-t
-  max-width: 800px
-  width: 100%
 
 
 // Folded things
@@ -118,7 +102,6 @@
 .dw-zd.dw-res > li > .dw-z
   position: relative !important // cancel position: absolute
   margin-bottom: 42px
-  margin-left: 25px
   display: block // don't hide the .dw-z, only hide everything else
 
 // For a folded thread, only the open link (.dw-z) is visible.
@@ -147,131 +130,6 @@
 // Search for '.dw-p.dw-zd' in this file.
 
 
-// Closed threads
-//---------------------------
-
-.dw-t-closed > .dw-p
-  margin-bottom: 30px
-  padding-bottom: 33px
-
-.dw-t-closed:not(.dw-depth-1) > .dw-p
-  margin-bottom: 0px
-  padding-bottom: 18px
-
-.dw-t-closed > .dw-p > h3,
-.dw-t-closed > .dw-p > h4
-  margin: 0
-  padding: 0
-
-
-
-// Horizontal layout
-//---------------------------
-
-.dw-t
-  // SVG graphics is absolute positioned relative thread
-  position: relative
-  margin: 8px 0 0 5px
-
-.dw-t.dw-t-exactly-one-reply
-  // This makes it clear where all replies to a certain comment has ended.
-  margin-bottom: 20px
-
-.dw-t-exactly-one-reply > .dw-p-as
-  // This places threads closer to each other, when using flat layout.
-  margin-bottom: -5px
-
-.dw-depth-0.dw-t
-  // Without this, SVG arrows are cropped a bit to the right. Why? [8DbF3]
-  float: left
-  // Ensure the root thread fits inside its parent, if the parent
-  // width is set to the root thread's width.
-  margin: 0
-  padding: 0
-
-.dw-depth-1
-  width: 25em // avoids > 1 column for this depth
-
-// Draw dashed line between horizontal threads, on hower.
-.DW.DW .dw-hz > .dw-res > li > .dw-t > .ui-resizable-e
-  border-right: 1px dashed transparent
-
-.DW.DW .dw-hz > .dw-res > li:hover > .dw-t > .ui-resizable-e
-  border-right-color: lightgray
-
-.dw-hz > .dw-res
-  display: table-row // doesn't work in IE7, fine
-
-.dw-hz > .dw-res > li
-  display: table-cell
-  padding: 22px 0 10px 59px
-  // or Reply form pushes other <li>s down
-  // which offsets PNG arrows incorrectly
-  vertical-align: top
-
-.dw-hz > .dw-res > li:first-child
-  padding-left: 0
-
-.dw-hz > .dw-res > li > .dw-t
-  padding: 0 17px 0 0
-  margin: 0
-
-// Empty space between a post and its child threads, when laid
-// out horizontally. SVG relationship arrows drawn here.
-.dw-t-vspace
-  height: 84px
-  position: relative
-
-
-// Vertical layout, nested threads
-//---------------------------
-
-.dw-depth-1:not(.dw-hz) .dw-t
-  float: none
-  clear: both // else the rating form might float to the left
-
-.DW.DW .dw-depth-1 .dw-res
-  margin: 0 0 0 35px
-  padding-top: 6px
-
-// Don't intent the last reply though
-.DW.DW .dw-depth-1 .dw-res > li:last-child
-  margin-left: -35px
-
-
-// Vertical layout of whole page
-//---------------------------
-
-.dw-t:not(.dw-hz) > .dw-t-vspace
-  display: none
-
-.dw-depth-0:not(.dw-hz) > .dw-res > li
-
-  margin: 2em 0
-
-  > .dw-t
-    padding-right: 3px
-    // break out variable; see debiki-play.styl: :not(.dw-hz) > .dw-p > .dw-p-bd > .dw-p-bd-blk
-
-  > .dw-depth-1
-    width: auto !important
-
-  > .dw-t > [class*="dw-arw-hz"]
-    display: none
-
-  > .dw-t,
-  > .dw-t > .dw-p,
-  > .dw-t > .dw-p-as
-    margin-left: 0;
-
-
-  > .dw-t > .dw-res
-    margin-left: 12px  // not sure why looks well
-
-
-  > .dw-t > .dw-res > li:last-child
-    margin-left: 0
-
 
 
 // Posts
@@ -279,13 +137,8 @@
 
 
 .dw-p
-  margin-left: 25px
   // overflow: hidden; No, or sort order and reply btn tips won't appear
   background-color: white
-
-.DW.dw-vt .dw-p
-  // Vertical layout makes threads wider, and we can indend a bit more.
-  margin-left: 35px
 
 .dw-p-hd,
 .dw-p.dw-zd  // folded comment
@@ -316,7 +169,7 @@
 
 .dw-p-bd,
 .dw-p-diff // COULD place -bd on -diff too, remove this -diff row?
-  padding: 6px 1px 0 3px // 3px aligns w .dw-p-hd (also padded left 3px)
+  padding: 6px 1px 9px 3px // 3px aligns w .dw-p-hd (also padded left 3px)
   position: relative
   background-color: white
   min-width: 5em
@@ -418,150 +271,6 @@
 // above ?? .dw-p:hover, with z-index: 10 ?? (rewrote old comment)
 .dw-depth-1 > .ui-resizable-handle
   z-index: 1 // [0QKxg2]
-
-
-
-// Arrows
-//===========================
-
-
-.dw-t svg
-  position: absolute
-  top: 0
-  left: 0
-  height: 100% // or Opera, only Opera, sets 150px, no idea why
-  width: 100% // perhaps some future version of Opera will break otherwise
-
-.dw-svg-parent > :not(svg) // [31Ik53]
-  z-index: 2 // or would not be clickable; <svg> would be above
-  position: relative // or z-index has no effect
-
-.dw-t svg path
-  fill: none
-  // Warning: stroke color also specified in debiki.js, $highlightOff().
-  stroke: #dbdbdb
-  stroke-width: 3
-
-// This doesn't work; cannot add class dw-highlight to a <path> at runtime.
-// COULD style an invisible elem in this manner, and read the props via
-// JavaScript. Then I can still place all CSS stuff in this file.
-//.dw-t svg path.dw-highlight {
-//  stroke-width: 4;
-//  stroke: #f0a005;
-//}
-
-
-// PNG arrows
-//---------------------------
-
-.dw-arw-hz-line-to-this,
-.dw-arw-hz-line-to-sibling,
-.dw-arw-vt-line-to-sibling-1,
-.dw-arw-vt-line-to-sibling-2
-  background-color: #ddd
-  position: absolute
-  z-index: 1
-
-.dw-arw-vt-line-to-sibling-1,
-.dw-arw-vt-line-to-sibling-2
-  height: 100%
-  width: 3px
-  left: -12px
-
-.dw-arw-vt-line-to-sibling-1
-  top: -34px
-  height: 34px
-
-.dw-arw-hz-line-to-this,
-.dw-arw-hz-line-to-sibling
-  top: -61px
-  height: 3px
-
-.dw-arw-hz-line-to-this
-  left: -60px
-  width: 60px
-
-.dw-arw-hz-line-to-sibling
-  left: 0
-  width: 100%
-
-.dw-arw-vt-curve-to-this,
-.dw-depth-0:not(.dw-hz) > .dw-res > li > .dw-t > .dw-res > .dw-t > .dw-arw-vt-curve-to-this
-  position: absolute
-  background-color: transparent
-  background: url(img/arrows-etcetera-gray.png) no-repeat -33px -228px
-  width: 33px
-  left: -15px
-  top: -25px
-  height: 34px
-
-// The last reply isn't indented.
-.dw-res > li:last-child > .dw-arw-vt-curve-to-this
-  left: 28px
-  top: -50px
-  width: 18px
-  height: 50px
-  background: url(img/arrows-etcetera-gray.png) no-repeat -57px -79px
-
-// Hide arrow to single reply, not needed, since it should be obvious
-// that the comment replies to its immediate parent.
-// Also see [90kfHW2] in debiki-arrows-peng.js.
-.dw-res > .dw-t:only-child > .dw-arw-vt-curve-to-this
-  display: none
-
-// However do show it, if we use single column layout, because then replies
-// to article replies are always indented (and an arrow is needed if there's
-// indentation).
-.dw-depth-0:not(.dw-hz) > .dw-res > li > .dw-t > .dw-res > .dw-t:last-child > .dw-arw-vt-curve-to-this
-  display: block
-  background: url("img/arrows-etcetera-gray.png") no-repeat -33px -228px
-  left: -10px
-  top: -25px
-  height: 34px
-
-// Tweak offset for arrows to collapsed replies (there's no .dw-t
-// that "adjusts" the offset)
-.dw-res.dw-zd .dw-arw-vt-curve-to-this
-  left: -39px
-  top: -50px
-  // Hide vertical arrow — there're no more replies below;
-  // all replies are collapsed.
-  z-index: 2
-
-.dw-res.dw-zd
-  position: relative
-
-.dw-hz > .dw-res > li:last-child > .dw-t > .dw-arw-hz-curve-to-this,
-.dw-res > .dw-t:last-child > .dw-arw-vt-curve-to-this
-  // Hide parts of the end of the horizontal or vertical line that spans
-  // all child threads, by placing this arrow's background on top.
-  // (The rest of the line is hiddenb by .dw-arw-vt-hide-line-from-parent
-  // and certain .dw-svg-fake-harrow:s.) Ooops it's been removed! rewrote.
-  z-index: 2
-
-.dw-arw-hz-curve-to-this,
-.dw-arw-hz-branch-to-reply-btn
-  background: transparent url(img/arrows-etcetera-gray.png) no-repeat 0 0
-  position: absolute
-  top: -63px
-  left: -30px
-  height: 34px
-  width: 61px
-
-.dw-arw-hz-branch-to-reply-btn,
-.dw-arw-hz-curve-to-reply-btn
-  background: url(img/arrows-etcetera-gray.png) no-repeat 0 -79px
-  position: absolute
-  top: 7px
-  left: 0px
-  height: 72px
-  width: 57px
-  z-index: 2
-
-.dw-arw-hz-curve-to-reply-btn
-  background: url(img/arrows-etcetera-gray.png) no-repeat 0 -152px
-  height: 72px
-  width: 38px
 
 
 
