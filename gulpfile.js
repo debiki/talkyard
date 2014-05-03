@@ -457,8 +457,12 @@ gulp.task('compile-stylus', function () {
       'public/res/jquery-ui/jquery-ui-1.9.2.custom.css',
       'client/page/styles/debiki.styl',
       'client/page/styles/minimap.styl',
+      'client/page/styles/arrows.styl',
       'client/page/styles/tips.styl',
+      'client/page/styles/dashbar.styl',
       'client/page/styles/debiki-play.styl',
+      'client/page/styles/login-dialog.styl',
+      'client/page/styles/third-party.styl',
       'client/forum/**/*.styl'])
     .pipe(stylus(stylusOpts))
     .pipe(concat('combined-debiki.css'))

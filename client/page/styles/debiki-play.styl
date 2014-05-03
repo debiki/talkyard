@@ -65,32 +65,9 @@ del
 
 
 
-// Dashbar
+// Dummy title and body
 //===========================
 
-
-#debiki-dashbar
-  background: black
-
-#debiki-dashbar .debiki-dashbar-logo img
-  width: 26px
-  padding: 0
-  margin: 0
-  position: relative
-
-#debiki-dashbar a
-  display: inline-block
-  color: hsl(0, 0%, 87%)
-  font-family: Verdana, sans-serif
-  text-decoration: none
-  font-weight: bold
-  height: 100%
-  padding: 5px 7px 6px 7px
-  vertical-align: middle
-
-#debiki-dashbar a:hover
-  background: #888
-  color: #fff
 
 // Hide reply button until a page body has been written. Unless it's an embedded
 // comments page, then there'll never be any page body, only comments.
@@ -104,6 +81,7 @@ del
     > .dw-res,
     > .dw-t-vspace
       display: block
+
 
 
 // Page rendering
@@ -228,24 +206,6 @@ li.dw-fs-re:last-child .dw-arw-hz-line-to-sibling
   border-bottom: 1px solid #888
   // padding-bottom: 3px; -- pointless: because of overflow, text might
   //                      end up immediately next to the border anyway
-
-
-
-// Hide interactions
-//---------------------------
-
-
-.dw-a-show-interactions
-  color: #3872AB !important
-  visibility: visible !important
-  font-size: 10px
-
-// Sync these selectors with showCommentsOnClick in debiki.js.
-.dw-hide-interactions .dw-ar-t > .dw-res,
-.dw-hide-interactions .dw-ar-t > .dw-p > .dw-p-bd > .dw-p-bd-blk .dw-i-m-start,
-.dw-hide-interactions .dw-ar-t > .dw-p > .dw-p-bd > .dw-i-ts,
-.dw-hide-interactions .dw-debate svg
-  display: none
 
 
 
@@ -566,6 +526,23 @@ span.dw-p-e-by
 
 body.dw-u-ui-simple .dw-a-edit
   display: none !important
+
+
+// Hide interactions
+//---------------------------
+
+.dw-a-show-interactions
+  color: #3872AB !important
+  visibility: visible !important
+  font-size: 10px
+
+// Sync these selectors with showCommentsOnClick in debiki.js.
+.dw-hide-interactions .dw-ar-t > .dw-res,
+.dw-hide-interactions .dw-ar-t > .dw-p > .dw-p-bd > .dw-p-bd-blk .dw-i-m-start,
+.dw-hide-interactions .dw-ar-t > .dw-p > .dw-p-bd > .dw-i-ts,
+.dw-hide-interactions .dw-debate svg
+  display: none
+
 
 
 
@@ -956,143 +933,6 @@ body.dw-u-ui-simple .dw-a-edit
   padding: 1em 2em
 
 
-
-// Login dialogs
-//===========================
-
-
-// This avoids scrollbars in the login popup. Otherwise there's some padding-top
-// and -bottom, which surprisingly (?) results in scrollbars but only in the
-// login popup, not on "normal" pages.
-.DW .ui-dialog .ui-dialog-content
-  padding-top: 0
-  padding-bottom: 0
-  margin: 1.2em 0 1.5em
-
-
-// Assume user logged out
-.dw-u-info,
-.dw-a-logout
-  display: none
-
-#dw-lgi.ui-dialog-content
-  padding: 0 2.7em 0 2em
-
-#dw-lgi-tos
-  font-size: 80%
-  max-width: 50ex
-  text-align: center
-  margin: 0 auto 15px
-  color: #666
-
-#dw-lgi-guest,
-#dw-lgi-pswd,
-#dw-lgi-more
-  display: block
-
-#dw-lgi [class*="icon-"]
-  margin-right: 5px
-  margin-left: -3px
-
-#dw-lgi .icon-facebook
-  margin-right: 0px
-
-#dw-lgi-guest,
-#dw-lgi-pswd
-  margin-bottom: 0.5em
-
-#dw-lgi .btn
-  background-color: hsl(0, 0%, 97%)
-
-#dw-lgi .dw-fi-cancel
-  float: right
-  margin-top: 2em
-
-#dw-lgi-or-login-using
-  text-align: center
-  max-width: 300px
-  margin: 20px auto
-
-#dw-lgi-other-sites
-  margin: 16px 0 37px
-  text-align: center
-
-.dw-lgi-openid
-  padding: 0 30px 0 0
-  margin-right: 45px
-  height: 105px
-  width: 125px
-  position: absolute
-  left: 0 // or IE 7 places it far to the right
-
-.dw-a-login
-  margin-left: 10px
-  color: #3872AB
-
-.dw-u-name,
-.dw-a-login,
-.dw-a-logout
-  cursor: pointer
-
-.dw-cmts-tlbr
-
-  margin: 25px 0 17px
-  border: 1px solid hsl(0, 0%, 77%)
-  background: hsl(0, 0%, 98%)
-  padding: 10px
-  border-left: none
-  border-right: none
-
-  .dw-cmts-count
-    font-size: 17px
-    margin-right: 1em
-
-  .dw-u-lgi-lgo
-    display: inline // not block, which the topbar often sets
-
-  .dw-u-name,
-  .dw-a-login,
-  .dw-a-logout
-    color: hsl(0, 0%, 43%)
-
-  .dw-a-logout
-    margin-left: 1em
-
-.DW.dw-vt .dw-cmts-tlbr
-  margin-bottom: 45px
-
-#dw-lgi-pswd .dw-reset-pswd
-  display: block
-  margin-top: 10px
-
-// ---
-// This hides/shows "Login to Post Comment" / "Login to Submit" messages
-// depending on what the user is doing.
-body .dw-login-to-submit,
-body .dw-login-to-post-comment,
-body .dw-login-to-create-topic,
-body .dw-login-to-login
-  display: none
-
-body.dw-login-to-submit .dw-login-to-submit,
-body.dw-login-to-post-comment .dw-login-to-post-comment,
-body.dw-login-to-create-topic .dw-login-to-create-topic,
-body.dw-login-to-login .dw-login-to-login
-  display: inline
-// ---
-
-
-// Hide Google and Yahoo login buttons in OpenID dialog; they're available via direct links
-// instead, from the main login dialog.
-.google.openid_large_btn,
-.google_profile.openid_small_btn,
-.yahoo.openid_large_btn
-  display: none
-
-// Avoid float drop: remove pointless margin.
-#openid_form
-  margin-right: 0
-  padding-right: 0
 
 
 // Email notification preferences
@@ -1606,168 +1446,6 @@ form .dw-ntf
 
   &:after
     clear: both;
-
-
-
-// jQuery UI integration
-//===========================
-
-// Here's a color blender: http://websitetips.com/colortools/colorblender/
-
-
-// Same color as the ui-buttons
-.dw-ui-state-default-color
-  color: #1c80c4   //1c94c4
-
-.dw-ui-state-default-color-bright
-  color: #83c5df
-
-.dw-ui-state-default-color-brighter
-  color: #c1e2ef
-
-.dw-ui-state-default-color-brightest
-  color: #eaf5fa
-
-// Same font
-.dw-ui-widget-font
-  font-family: 'Trebuchet MS', Tahoma, Verdana, Arial, sans-serif
-
-
-// Undo settings to .dw-pri .ui-widget, when they affect contents
-// inside widgets, rather than buttons and tabs.
-.dw-pri .ui-widget.ui-widget-content
-  font-family: Verdana, sans-serif // same as for .dw-debate
-  font-size: 100% // jQuery UI sets .dw-pri .ui-widget to 1.1em
-
-// Undo settings to .dw-pri .ui-widget textarea
-.dw-pri .ui-widget textarea
-  font-family: Verdana, sans-serif
-  font-size: 100% // else jQuery UI sets 1em
-
-// Undo link colors
-.dw-pri .ui-widget-content a
-  color: #00c  // same as a:link
-
-// Makes a jQuery-UI-button():ized <a> tag look more like a link
-.dw-ui-state-default-linkified
-  border: none !important
-  background: none !important
-
-// Make accordions smaller; jQuery UI padds a little bit too much?
-.dw-pri .ui-accordion .ui-accordion-header a
-  padding: 0.2em 0.2em 0.2em 0.7em
-
-// jQuery UI bug fix: in the jQuery-auto-generated file, ".debiki"
-// is missing (on the next line).
-.dw-pri input.ui-button
-  padding: .4em 1em
-
-
-
-// AngularJS
-//===========================
-
-// See: http://docs.angularjs.org/api/ng.directive:ngCloak
-[ng\:cloak], [ng-cloak], .ng-cloak
-  display: none !important
-
-
-
-// Twitter Bootstrap
-//===========================
-
-// Cancel .icon 14px width — I'm using Fontello's icons, instead of Twitter's.
-// There are some other icon styles that Bootstrap applies and that could be
-// cancelled here — what should be done, in fact, is to build Bootstrap
-// and comment out:  @import "./bootstrap/less/sprites.less
-// see http://drupal.org/node/1949992
-.DW [class^="icon-"],
-.DW [class*=" icon-"]
-  width: auto
-
-// From http://twitter.github.com/bootstrap/assets/css/bootstrap.css,
-// 2012-03-21, v.2.0.2.
-.tooltip
-  position: absolute
-  z-index: 1020
-  display: block
-  visibility: visible
-  padding: 5px
-  font-size: 11px
-  opacity: 0
-  // This line results in: "TypeError: expected rgba or hsla, but got unit:0".
-  // It was generated by `stylus --css ...`, i.e. when I converted from CSS to Stylues.
-  //filter: alpha(opacity=0)
-
-.tooltip.in
-  opacity: 0.8
-  //filter: alpha(opacity=80) // --> TypeError: expected rgba or hsla, but got unit:0
-
-.tooltip.top
-  margin-top: -2px
-
-.tooltip.right
-  margin-left: 2px
-
-.tooltip.bottom
-  margin-top: 2px
-
-.tooltip.left
-  margin-left: -2px
-
-.tooltip.top .tooltip-arrow
-  bottom: 0
-  left: 50%
-  margin-left: -5px
-  border-left: 5px solid transparent
-  border-right: 5px solid transparent
-  border-top: 5px solid #000000
-
-.tooltip.left .tooltip-arrow
-  top: 50%
-  right: 0
-  margin-top: -5px
-  border-top: 5px solid transparent
-  border-bottom: 5px solid transparent
-  border-left: 5px solid #000000
-
-.tooltip.bottom .tooltip-arrow
-  top: 0
-  left: 50%
-  margin-left: -5px
-  border-left: 5px solid transparent
-  border-right: 5px solid transparent
-  border-bottom: 5px solid #000000
-
-.tooltip.right .tooltip-arrow
-  top: 50%
-  left: 0
-  margin-top: -5px
-  border-top: 5px solid transparent
-  border-bottom: 5px solid transparent
-  border-right: 5px solid #000000
-
-.tooltip-inner
-  max-width: 200px
-  padding: 3px 8px
-  color: #ffffff
-  text-align: center
-  text-decoration: none
-  background-color: #000000
-  -webkit-border-radius: 4px
-  -moz-border-radius: 4px
-  border-radius: 4px
-
-.tooltip-arrow
-  position: absolute
-  width: 0
-  height: 0
-
-// [kajmagnus@debiki] Workarounds.
-.tooltip
-  // Otherwise Chrome makes it very thin, when outside browser window,
-  // so the tip arrow gets offset incorrectly:
-  width: 500px
 
 
 
