@@ -25,7 +25,7 @@ d.i.layoutThreads = !->
   # Increase width if there are many replies.
   for thread in $('.DW.dw-hz .dw-t.dw-depth-1')
     maxNesting = findMaxNesting thread
-    width = 330 + maxNesting * 20
+    width = 330 + maxNesting * 25
     width = min 440, width
     $(thread).css 'width', width + 'px'
 
