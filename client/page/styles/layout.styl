@@ -60,6 +60,18 @@
     &:last-child
       padding-left: 0
 
+  // Add an extra border above not-the-first sibling thread,
+  // so it's easier to see where they start and end (since I don't
+  // always indent).
+  // But don't do this for the depth-1 threads since they're placed
+  // in obvious columns anyway.
+  .dw-t:not(.dw-depth-0) > .dw-res > li:not(:first-child):not(:last-child)
+    > .dw-t > .dw-p,
+    > .dw-p
+      border-top: 1px solid hsl(0, 0%, 70%)
+      margin-top: 20px
+
+
 
 // Vertical layout
 //===========================
@@ -81,6 +93,14 @@
   .dw-t.dw-depth-0 > .dw-res > li
     padding-left 0
 
+  // Add an extra border above not-the-first sibling thread,
+  // so it's easier to see where they start and end (since I don't
+  // always indent).
+  .dw-t > .dw-res > li:not(:first-child):not(:last-child)
+    > .dw-t > .dw-p,
+    > .dw-p
+      border-top: 1px solid hsl(0, 0%, 70%)
+      margin-top: 20px
 
 .dw-t:not(.dw-hz) > .dw-t-vspace
   display: none
