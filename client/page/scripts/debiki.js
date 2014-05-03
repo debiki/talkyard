@@ -295,9 +295,9 @@ function renderPageEtc() {
       $(this).dwDepth();
     });
 
-    d.i.layoutThreads();
     initStep1();
     d.i.enableDisableHorizontalComments();
+    d.i.layoutThreads();
     $('html').removeClass('dw-render-actions-pending');
   });
 

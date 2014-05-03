@@ -33,6 +33,10 @@
 .DW.dw-hz
   color: black
 
+  .dw-depth-1
+    // Avoids > 1 column with replies for this depth. However, width
+    // adjusted by JS function d.i.layoutThreads() anyway.
+    width: 25em
 
   // Empty space between a post and its replies, where arrows are drawn.
   .dw-t-vspace
@@ -60,9 +64,6 @@
 
 
 .DW.dw-vt
-
-  .dw-depth-1.dw-t
-    width: auto !important
 
   .dw-res > li
     padding-left: 50px
