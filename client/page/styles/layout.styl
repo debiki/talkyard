@@ -16,9 +16,22 @@
  */
 
 
+.dw-depth-1 .dw-t
+  padding-left: 0
+  border-top: none
+
+.DW.DW .dw-res
+  margin: 0
+  padding: 0 // if no CSS reset included
+  line-height: normal // or PNG arrows and [-] offset incorrectly
+
 .DW.DW .dw-res > li
   list-style-type: none
 
+.DW.dw-vt .dw-t,
+.DW.dw-hz .dw-ar-t
+  max-width: 800px
+  width: 100%
 
 .dw-t
   // SVG graphics is absolute positioned relative thread
@@ -31,6 +44,17 @@
 
 // Horizontal layout
 //===========================
+
+
+.dw-hz > .dw-res
+  display: table-row
+
+.dw-hz > .dw-res > li
+  display: table-cell
+  padding: 22px 0 10px 59px
+  // Don't let the Reply form push other <li>s down, would offset PNG arrows incorrectly.
+  vertical-align: top
+
 
 .DW.dw-hz
   color: black
@@ -70,6 +94,14 @@
     > .dw-p
       border-top: 1px solid hsl(0, 0%, 70%)
       margin-top: 20px
+
+
+// Draw dashed line between horizontal threads, on hower.
+.DW.DW .dw-hz > .dw-res > li > .dw-t > .ui-resizable-e
+  border-right: 1px dashed transparent
+
+.DW.DW .dw-hz > .dw-res > li:hover > .dw-t > .ui-resizable-e
+  border-right-color: lightgray
 
 
 
