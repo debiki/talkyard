@@ -56,6 +56,12 @@
   // Don't let the Reply form push other <li>s down, would offset PNG arrows incorrectly.
   vertical-align: top
 
+// Make the column separator at least this high. But don't do this for
+// .dw-fs because forms are folded/slided out, i.e. shrinked to zero height.
+.dw-p-as-hz-reply,
+.DW.dw-hz .dw-depth-1:not(.dw-i-t)
+  min-height: 100px
+
 
 .DW.dw-hz
   color: black
@@ -106,9 +112,29 @@
   border-right-color: lightgray
 
 
+// Nested horizontal threads
+//---------------------------
+/* Currenty I've removed all such threads, but keep for a while, perhaps I'll enable again?
+
+// Add some whitespace above replies, when laid out horizontally,
+// so there's some space for the SVG arrows.
+.DW.DW .dw-hz:not(.dw-depth-0) > .dw-res
+  margin-top: 35px
+
+.dw-hz:not(.dw-depth-0) > .dw-p-as-hz-reply
+  margin-top: 48px // aligns with the .dw-p:s to the right, which
+                   // have some padding
+*/
+
 
 // Vertical layout
 //===========================
+
+
+// Hide horizontal article reply button for vertical layout.
+.dw-vt .dw-p-as-hz-reply
+  display: none;
+
 
 .DW.dw-vt
 
