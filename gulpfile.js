@@ -461,6 +461,8 @@ gulp.task('compile-stylus', function () {
       'client/page/styles/tips.styl',
       'client/page/styles/dashbar.styl',
       'client/page/styles/debiki-play.styl',
+      'client/page/styles/post-actions.styl',
+      'client/page/styles/forms-and-dialogs.styl',
       'client/page/styles/login-dialog.styl',
       'client/page/styles/third-party.styl',
       'client/forum/**/*.styl'])
