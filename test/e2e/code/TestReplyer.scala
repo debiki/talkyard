@@ -132,7 +132,10 @@ trait TestReplyer {
     pageSource contains "Comment pending moderation"
 
 
-  def articleReplyLink = cssSelector(".dw-p-as-hz > .dw-a-reply")
+  def articleReplyLink =
+    // Check reply link location for both horizontal and vertical layouts.
+    find(cssSelector(".dw-p-as-hz > .dw-a-reply")).orElse(
+      find(cssSelector(".dw-ar-t > .dw-p-as > .dw-a-reply"))).get
 
 
 }

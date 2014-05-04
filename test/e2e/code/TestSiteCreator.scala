@@ -41,14 +41,16 @@ trait TestSiteCreator extends TestLoginner {
 
   private var knownWindowHandles = Set[String]()
 
+  private var currentSiteId = -1
 
   val DefaultHomepageTitle = "Default Homepage"
 
 
-  def createWebsiteChooseTypePage = new Page {
-    val url = s"http://$newSiteDomain/-/create-site/choose-owner"
+  def createSiteStartPage = new Page {
+    val url = s"http://$newSiteDomain/-/create-site"
   }
 
+  def createForumStartPageUrl = s"http://$newSiteDomain/-/create-forum"
 
   def createEmbeddedCommentsSiteStartPage = new Page {
     val url = s"http://$newSiteDomain/-/create-embedded-site"
@@ -56,20 +58,22 @@ trait TestSiteCreator extends TestLoginner {
 
   def nextSiteName(): String = {
     nextWebsiteId += 1
+    currentSiteId = nextWebsiteId
     s"test-site-$nextWebsiteId"
   }
 
+  def currentSiteHomepageUrl = s"http://test-site-$currentSiteId.$newSiteDomain/"
 
-  def clickCreateSimpleWebsite(login: () => Unit, siteName: String = null): String = {
+
+  def clickCreateForum(login: () => Unit, siteName: String = null): String = {
     val name =
       if (siteName ne null) siteName
       else nextSiteName()
 
-    info("create site $name")
+    info("create forum $name")
 
-    go to createWebsiteChooseTypePage
+    go to createForumStartPageUrl
     login()
-    clickChooseSiteType(debiki.SiteCreator.NewSiteType.SimpleSite)
 
     click on "website-name"
     enter(name)
@@ -118,39 +122,48 @@ trait TestSiteCreator extends TestLoginner {
 
 
   private def verifyIsOnAdminPage(newSiteName: String) {
-    info("get to the admin age")
+    info("get to the admin page")
     eventually {
-      assert(pageSource contains "Admin Page")
+      assert(pageSource contains "Configure the Site")
     }
-    webDriver.getCurrentUrl() must fullyMatch regex s"${originOf(newSiteName)}/-/admin/#?"
+    // Currently, because I'm serving a static page and rendering the contents using
+    // AngularDart, the page is located at something like:
+    //   /-/assets/43/admin-dart-build/web/admin.html
+    webDriver.getCurrentUrl() must include ("/-/assets/")
+    webDriver.getCurrentUrl() must include ("admin-dart-build/web/admin.html")
+
+    // When the page has a better address, revert to:
+    //    ... must fullyMatch regex s"${originOf(newSiteName)}/-/admin/#/"
   }
 
 
-  def findSimpleSiteHomepage() {
-    findMainPage("Generic", linkText = "homepage", "No homepage link found")
-    //findMainPage("Code", linkText = "configuration", "No website config page link found")
+  def clickGoToSiteFindHomepage(siteName: String) {
+    go to originOf(siteName)
+    Thread.sleep(1000 * 1000)
+    ???
   }
 
-  def findBlogMainPage() {
-    findMainPage("Blog", linkText = "blog", "No blog main page link found")
+  def clickGoToSiteFindBlog(siteName: String) {
+    go to originOf(siteName)
+    Thread.sleep(1000 * 1000)
+    ???
   }
 
-  def findForumMainPage() {
-    findMainPage("Forum", linkText = "forum", "No forum main page link ffound")
-  }
-
-
-  private def findMainPage(tyype: String, linkText: String, errorMessage: String) {
+  def clickGoToSiteFindForum(siteName: String) {
+    go to originOf(siteName)
     eventually {
-      find(cssSelector(s"tr.page-role-$tyype > td a[href='/']")) match {
-        case Some(elem) =>
-          elem.text.toLowerCase must include(linkText)
-        case None =>
-          fail(errorMessage)
-      }
+      pageSource must include ("New Forum Title")
     }
   }
 
+
+  private def goToHomepage() {
+    // No idea why, but this finds the elem and then throws an error that """element
+    // is not attached to the page document""": (and eventually {...} doesn't work)
+    //  click on linkText ("Go to site")
+    // Instead:
+    go to currentSiteHomepageUrl
+  }
 
   def originOf(newSiteName: String) =
     s"http://$newSiteName.$newSiteDomain"

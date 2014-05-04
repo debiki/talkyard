@@ -28,7 +28,6 @@ import test.e2e.code._
   * in SBT:  test-only test.e2e.specs.DeleteActivitySpecRunner
   * in test:console:  (new test.e2e.specs.DeleteActivitySpecRunner).execute()
   */
-@DoNotDiscover
 class DeleteActivitySpecRunner extends org.scalatest.Suites(new DeleteActivitySpec)
 with StartServerAndChromeDriverFactory
 
@@ -36,7 +35,6 @@ with StartServerAndChromeDriverFactory
   * in SBT:  test-only test.e2e.specs.DeleteActivitySpecForEmbeddedCommentsRunner
   * in test:console:  (new test.e2e.specs.DeleteActivitySpecForEmbeddedCommentsRunner).execute()
   */
-@DoNotDiscover
 class DeleteActivitySpecForEmbeddedCommentsRunner
   extends org.scalatest.Suites(new DeleteActivitySpecForEmbeddedComments)
   with StartServerAndChromeDriverFactory

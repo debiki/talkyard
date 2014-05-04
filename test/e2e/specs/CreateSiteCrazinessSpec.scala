@@ -28,7 +28,6 @@ import test.e2e.code._
   * In Play:   test-only test.e2e.specs.CreateSiteCrazinessSpecRunner
   * In test:console:  (new test.e2e.specs.CreateSiteCrazinessSpecRunner).execute()
   */
-@DoNotDiscover
 class CreateSiteCrazinessSpecRunner
   extends Suites(new CreateSiteCrazinessSpec)
   with StartServerAndChromeDriverFactory
@@ -56,16 +55,12 @@ class CreateSiteCrazinessSpec extends DebikiBrowserSpec with TestSiteCreator {
 
   "A user with a browser can" - {
 
-    "go to site creation page" in {
-      go to createWebsiteChooseTypePage
+    "go to forum creation page" in {
+      go to createForumStartPageUrl
     }
 
     "create password account" in {
       createNewPasswordAccount(AdminsEmail, password = AdminsPassword)
-    }
-
-    "choose site type: a simple website" in {
-      clickChooseSiteType(debiki.SiteCreator.NewSiteType.SimpleSite)
     }
 
     "new site terms must be de-selected by default" in {
@@ -156,7 +151,6 @@ class CreateSiteCrazinessSpec extends DebikiBrowserSpec with TestSiteCreator {
 
     "submit site name" in {
       click on getSubmitButton
-      // We should now be taken to page /-/create-site/choose-owner.
     }
 
     "not create same site twice" - {
@@ -164,17 +158,16 @@ class CreateSiteCrazinessSpec extends DebikiBrowserSpec with TestSiteCreator {
         clickWelcomeLoginToDashboard(loginToAdminPage, firstSiteName)
       }
 
-      "find default homepage and website config page" in {
-        findSimpleSiteHomepage()
+      "find forum" in {
+        clickGoToSiteFindForum(firstSiteName)
       }
 
-      "return to site creation page, choose site type: simple site, again" in {
-        go to createWebsiteChooseTypePage
+      "return to forum creation page" in {
+        go to createForumStartPageUrl
       }
 
-      "login again, choose site type" in {
+      "login again" in {
         loginToAdminPage()
-        clickChooseSiteType(debiki.SiteCreator.NewSiteType.SimpleSite)
       }
 
       "not create a site with the same address" in {
@@ -192,7 +185,7 @@ class CreateSiteCrazinessSpec extends DebikiBrowserSpec with TestSiteCreator {
 
     "create another site with another address" - {
       s"create $secondSiteName" in {
-        clickCreateSimpleWebsite(loginToAdminPage, secondSiteName)
+        clickCreateForum(loginToAdminPage, secondSiteName)
         // oops don't use gmail login
       }
 
@@ -200,8 +193,8 @@ class CreateSiteCrazinessSpec extends DebikiBrowserSpec with TestSiteCreator {
         clickWelcomeLoginToDashboard(loginToAdminPage, secondSiteName)
       }
 
-      "again find default homepage and website config page" in {
-        findSimpleSiteHomepage()
+      "find the new forum" in {
+        clickGoToSiteFindForum(secondSiteName)
       }
     }
 

@@ -28,7 +28,6 @@ import test.e2e.code._
   * In Play:   test-only test.e2e.specs.PasswordSpecRunner
   * In test:console:  (new test.e2e.specs.PasswordSpecRunner).execute()
   */
-@DoNotDiscover
 class PasswordSpecRunner extends Suites(new PasswordSpec) with StartServerAndChromeDriverFactory
 
 
@@ -58,7 +57,7 @@ class PasswordSpec extends DebikiBrowserSpec with TestSiteCreator {
   "A user with a browser can" - {
 
     s"create an account, $AdminsEmail, and a website, $siteName" in {
-      clickCreateSimpleWebsite(login = () => {
+      clickCreateForum(login = () => {
           createNewPasswordAccount(AdminsEmail, password = AdminsPassword)
         }, siteName = siteName)
     }
@@ -149,7 +148,7 @@ class PasswordSpec extends DebikiBrowserSpec with TestSiteCreator {
         }
 
         "find default homepage and website config page" in {
-          findSimpleSiteHomepage()
+          clickGoToSiteFindForum(siteName)
         }
       }
 

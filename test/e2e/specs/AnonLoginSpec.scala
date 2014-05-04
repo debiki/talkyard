@@ -30,7 +30,6 @@ import test.e2e.code._
   * in SBT:  test-only test.e2e.specs.AnonLoginSpecRunner
   * In test:console:  (new test.e2e.specs.AnonLoginSpecRunner).execute()
   */
-@DoNotDiscover
 class AnonLoginSpecRunner extends org.scalatest.Suites(new AnonLoginSpec)
 with StartServerAndChromeDriverFactory
 
@@ -39,7 +38,6 @@ with StartServerAndChromeDriverFactory
   * in SBT:  test-only test.e2e.specs.AnonLoginSpecForEmbeddedCommentsRunner
   * In test:console:  (new test.e2e.specs.AnonLoginSpecForEmbeddedCommentsRunner).execute()
   */
-@DoNotDiscover
 class AnonLoginSpecForEmbeddedCommentsRunner_NothingPreLoaded
   extends org.scalatest.Suites(new AnonLoginSpecForEmbeddedComments_NothingPreLoaded)
 with StartServerAndChromeDriverFactory
@@ -54,7 +52,6 @@ with StartServerAndChromeDriverFactory
   * In test:console:
   *   (new test.e2e.specs.AnonLoginSpecForEmbeddedCommentsRunner_jQueryModernizrPreLoaded).execute()
   */
-@DoNotDiscover
 class AnonLoginSpecForEmbeddedCommentsRunner_jQueryModernizrPreLoaded
   extends org.scalatest.Suites(
     new AnonLoginSpecForEmbeddedComments_jQuery21PreLoaded,

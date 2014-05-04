@@ -24,6 +24,10 @@ import org.scalatest.DoNotDiscover
 import test.e2e.code._
 
 
+/* Currently totally broken, I've rewritten the admin interface from scratch.
+  Keep anyway in case I'd like to make styling one's site work again.
+
+
 /** Runs the StyleSiteSpec suite,
   * in SBT:  test-only test.e2e.specs.StyleSiteSpecRunner
   * in test:console:  (new test.e2e.specs.StyleSiteSpecRunner).execute()
@@ -165,3 +169,4 @@ class StyleSiteSpecSpec extends DebikiBrowserSpec
 
 }
 
+*/

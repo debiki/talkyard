@@ -32,17 +32,16 @@ import test.e2e.specs._
  */
 @test.tags.EndToEndTest
 class EndToEndSuite extends Suites(
-  new CreateSiteSpec_SimpleWebsite_GmailLogin,
-  new CreateSiteSpec_Blog_PasswordLogin,
+  new CreateSiteSpec_Forum_GmailLogin,
   new CreateSiteSpec_Forum_PasswordLogin,
   new CreateSiteSpec_Forum_ReuseOldPasswordLogin,
   new PasswordSpec,
   new DeleteActivitySpec,
-  //new AdminDashboardSpec, -- broken, I'm somewhat rewriting the admin dashboard
+  //new AdminDashboardSpec, -- broken, I've totally rewritten the admin section
   new AnonLoginSpec,
-  new VoteSpec,
-  new ForumSpec)
-  //new StyleSiteSpecSpec) -- broken, I'm somewhat rewriting the admin dashboard
+  new VoteSpec)
+  // new ForumSpec)         -- broken, I've totally rewritten the forum stuff
+  //new StyleSiteSpecSpec)  -- broken, I've totally rewritten the admin section
   with StartServerAndChromeDriverFactory
 
 

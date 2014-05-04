@@ -74,7 +74,7 @@ trait TestVoter {
       case _ => fail("Bad vote type")
     }
 
-    val voteActions = findAll(cssSelector(s".$cssClass"))
+    val voteActions = findAll(cssSelector(s"#dw-t-$postId > .dw-p-as .$cssClass"))
     val anyVisibleVoteAction = voteActions.filter(_.isDisplayed).toSeq.headOption
     anyVisibleVoteAction match {
       case None =>

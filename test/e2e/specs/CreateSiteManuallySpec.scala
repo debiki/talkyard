@@ -23,15 +23,11 @@ import org.scalatest.Suites
 import test.e2e.code._
 
 
-/**
- * Runs the CreateSiteManuallySpec suite
- * in SBT:
- *  test-only test.e2e.specs.CreateSiteManuallySpecRunner
- * in SBT's test:console:
- *  (new test.e2e.specs.CreateSiteManuallySpecRunner {}).execute()
- */
-@DoNotDiscover
-class CreateSiteManuallySpecRunner extends Suites(new CreateSiteManuallySpec)
+/** Runs the CreateForumManuallySpec suite
+  * in SBT:  test-only test.e2e.specs.CreateForumManuallySpecRunner
+  * in test:console:  (new test.e2e.specs.CreateForumManuallySpecRunner {}).execute()
+  */
+class CreateForumManuallySpecRunner extends Suites(new CreateForumManuallySpec)
   with StartServerAndChromeDriverFactory
 
 
@@ -39,12 +35,12 @@ class CreateSiteManuallySpecRunner extends Suites(new CreateSiteManuallySpec)
   * until you kill the server, or one year has passed.
   */
 @DoNotDiscover
-class CreateSiteManuallySpec extends DebikiBrowserSpec with TestSiteCreator {
+class CreateForumManuallySpec extends DebikiBrowserSpec with TestSiteCreator {
 
   "A human can" - {
 
-    "go to site creation page" in {
-      go to createWebsiteChooseTypePage
+    "go to forum creation page" in {
+      go to createForumStartPageUrl
     }
 
     "wait until browser closed" in {
@@ -57,12 +53,10 @@ class CreateSiteManuallySpec extends DebikiBrowserSpec with TestSiteCreator {
 
 
 
-/**
- * Runs the BuildSiteManuallySpec suite, in SBT:
- *  test-only test.e2e.specs.BuildSiteManuallySpecRunner
- */
-@DoNotDiscover
-class BuildSiteManuallySpecRunner extends Suites(new BuildSiteManuallySpec)
+/** Runs the BuildForumManuallySpec suite, in SBT:
+  *   test-only test.e2e.specs.BuildForumManuallySpecRunner
+  */
+class BuildForumManuallySpecRunner extends Suites(new BuildForumManuallySpec)
 with StartServerAndChromeDriverFactory
 
 
@@ -71,14 +65,14 @@ with StartServerAndChromeDriverFactory
  * test build a website. It's deleted later automatically.
  */
 @DoNotDiscover
-class BuildSiteManuallySpec extends DebikiBrowserSpec with TestSiteCreator {
+class BuildForumManuallySpec extends DebikiBrowserSpec with TestSiteCreator {
 
   val siteName = nextSiteName()
 
   "A human can" - {
 
-    "create new site" in {
-      clickCreateSimpleWebsite(loginWithGmailFullscreen, siteName)
+    "create new forum" in {
+      clickCreateForum(loginWithGmailFullscreen, siteName)
     }
 
     "login and goto admin page" in {
@@ -100,7 +94,6 @@ class BuildSiteManuallySpec extends DebikiBrowserSpec with TestSiteCreator {
  * in SBT:
  *  test-only test.e2e.specs.ContinueManualTestsRunner
  */
-@DoNotDiscover
 class ContinueManualTestsRunner extends Suites(new ContinueManualTests)
     with StartServerAndChromeDriverFactory {
   override val emptyDatabaseBeforeAll = false
