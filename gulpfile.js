@@ -250,6 +250,22 @@ var debikiEmbeddedCommentsFiles = [
       'client/embedded-comments/scripts/parent-footer.js'];  // not ^target/client/...
 
 
+var adminOldFiles = [
+      'target/client/third-party/livescript/prelude-browser-min.js',
+      'target/client/third-party/bootstrap/tooltip.js', // -popup.js dependee
+      'target/client/third-party/bootstrap/*.js',
+      'target/client/third-party/angular-ui/module.js',
+      'target/client/third-party/angular-ui/directives/jq/jq.js',
+      'target/client/third-party/angular-ui/directives/modal/modal.js',
+      'target/client/page/scripts/debiki-util.js',
+      'client/third-party/diff_match_patch.js',
+      'target/client/page/scripts/debiki-diff-match-patch.js',
+      'target/client/page/scripts/debiki-page-path.js',
+      // Include the module first; it's needed by modal-dialog.js.
+      'target/client/admin-old/scripts/module-and-services.js',
+      'target/client/admin-old/scripts/*.js'];
+
+
 var codeMirrorScripts = [
       'client/third-party/codemirror/lib/codemirror.js',
       'client/third-party/codemirror/mode/css/css.js',
@@ -328,6 +344,8 @@ gulp.task('concat-debiki-scripts', [
   return makeConcatDebikiScriptsStream();
 });
 
+
+
 function makeConcatDebikiScriptsStream() {
   function makeConcatStream(outputFileName, filesToConcat) {
     return gulp.src(filesToConcat)
@@ -346,23 +364,7 @@ function makeConcatDebikiScriptsStream() {
       makeConcatStream('combined-debiki-touch.js', debikiTouchFiles),
       makeConcatStream('login-popup.js', loginPopupFiles),
       makeConcatStream('embedded-comments.js', debikiEmbeddedCommentsFiles),
-
-      makeConcatStream('debiki-spa-common.js', [
-          'target/client/third-party/livescript/prelude-browser-min.js',
-          'target/client/third-party/bootstrap/tooltip.js', // -popup.js dependee
-          'target/client/third-party/bootstrap/*.js',
-          'target/client/third-party/angular-ui/module.js',
-          'target/client/third-party/angular-ui/directives/jq/jq.js',
-          'target/client/third-party/angular-ui/directives/modal/modal.js',
-          'target/client/page/scripts/debiki-util.js']),
-
-      makeConcatStream('debiki-spa-admin.js', [
-          'client/third-party/diff_match_patch.js',
-          'target/client/page/scripts/debiki-diff-match-patch.js',
-          'target/client/page/scripts/debiki-page-path.js',
-          // Include the module first; it's needed by modal-dialog.js.
-          'target/client/admin/scripts/module-and-services.js',
-          'target/client/admin/scripts/*.js']),
+      makeConcatStream('admin-old.js', adminOldFiles),
 
       makeConcatStream('debiki-spa-install-first-site.js', [
           'target/client/install/scripts/install-ng-app.js']),
@@ -495,9 +497,9 @@ gulp.task('compile-stylus', function () {
     makeStyleStream('client/admin-dart/admin-dart/web/', 'styles.css', [
         'client/admin-dart/styles/*.styl']),
 
-    makeStyleStream('public/res/', 'admin.css', [
-        'client/admin/styles/admin-theme.styl',
-        'client/admin/styles/admin-page.styl',
+    makeStyleStream('public/res/', 'admin-old.css', [
+        'client/admin-old/styles/admin-theme.styl',
+        'client/admin-old/styles/admin-page.styl',
         'client/util/styles/debiki-shared.styl']));
 });
 

@@ -46,7 +46,7 @@ object AdminController extends mvc.Controller {
         returnToUrl = apiReq.uri, title = "Login", message = Some(
           "Login as administrator to access this page.")))
     else
-      Ok(views.html.adminPage(apiReq.host).body) as HTML withCookies (
+      Ok(views.html.adminPageOld(apiReq.host).body) as HTML withCookies (
         mvc.Cookie(
           DebikiSecurity.XsrfCookieName, apiReq.xsrfToken.value,
           httpOnly = false))
