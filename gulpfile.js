@@ -147,7 +147,7 @@ var debikiDesktopFiles = [
       'client/app/utterscroll/utterscroll.js',//
       'target/client/app/utils/page-path.js',
       'target/client/app/utils/create-page.js',
-      'target/client/util/scripts/debiki-utils.js',
+      'target/client/shared/post-json.js',
       'target/client/all-typescript.js',
       'target/client/all-angular-templates.js',
       'target/client/app/startup.js'];
@@ -219,7 +219,7 @@ var debikiTouchFiles = [
       'target/client/app/utils/util-play.js',
       'target/client/app/utils/page-path.js',
       'target/client/app/utils/create-page.js',
-      'target/client/util/scripts/debiki-utils.js',
+      'target/client/shared/post-json.js',
       'target/client/all-typescript.js',
       'target/client/all-angular-templates.js',
       'target/client/app/startup.js'];
@@ -229,7 +229,7 @@ var debikiTouchFiles = [
 var loginDialogFiles = [
       'client/third-party/jquery-cookie.js',
       'target/client/shared/debiki-jquery-dialogs.js',
-      'target/client/util/scripts/debiki-utils.js',
+      'target/client/shared/post-json.js',
       'target/client/app/login/dialog/debiki-login-dialog.js',
       'target/client/app/login/dialog/debiki-login-guest.js',
       'target/client/app/login/dialog/debiki-login-password.js',
