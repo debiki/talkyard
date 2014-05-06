@@ -307,7 +307,7 @@ gulp.task('compile-livescript', function () {
 
 
 gulp.task('compile-typescript', function () {
-  var stream = gulp.src(['client/forum/**/*.ts'])
+  var stream = gulp.src(['client/app/**/*.ts'])
     .pipe(typeScript({
       target: 'ES5',
       allowBool: true,
@@ -326,7 +326,7 @@ gulp.task('compile-typescript', function () {
 
 
 gulp.task('compile-templates', function () {
-  return gulp.src('client/forum/**/*.html')
+  return gulp.src('client/app/forum/**/*.html')
       .pipe(templateCache({
         module: 'ForumApp',
         filename: 'all-angular-templates.js'
@@ -489,7 +489,7 @@ gulp.task('compile-stylus', function () {
         'client/page/styles/forms-and-dialogs.styl',
         'client/page/styles/login-dialog.styl',
         'client/page/styles/third-party.styl',
-        'client/forum/**/*.styl']),
+        'client/app/**/*.styl']),
 
     makeStyleStream('public/res/', 'debiki-embedded-comments.css', [
         'client/page/styles/tips.styl']),
@@ -561,8 +561,8 @@ gulp.task('watch', function() {
     };
   };
 
-  gulp.watch('client/forum/**/*.html', ['compile-templates-concat-scripts']).on('change', logChangeFn('HTML'));
-  gulp.watch('client/forum/**/*.ts', ['compile-typescript-concat-scripts']).on('change', logChangeFn('TypeScript'));
+  gulp.watch('client/app/**/*.html', ['compile-templates-concat-scripts']).on('change', logChangeFn('HTML'));
+  gulp.watch('client/app/**/*.ts', ['compile-typescript-concat-scripts']).on('change', logChangeFn('TypeScript'));
   gulp.watch('client/**/*.ls', ['compile-livescript-concat-scripts']).on('change', logChangeFn('LiveScript'));
   gulp.watch('client/**/*.js', ['wrap-javascript-concat-scripts']).on('change', logChangeFn('Javascript'));
   gulp.watch('client/**/*.styl', ['compile-stylus']).on('change', logChangeFn('Stylus'));

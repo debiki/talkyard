@@ -15,37 +15,18 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/// <reference path="../typedefs/angularjs/angular.d.ts" />
+/// <reference path="../../typedefs/angularjs/angular.d.ts" />
 /// <reference path="../ForumApp.ts" />
 
 //------------------------------------------------------------------------------
    module forum {
 //------------------------------------------------------------------------------
 
-interface ListCategoriesScope extends CategoryScope {
-  categoryDetails: Category[];
+
+export interface CategoryScope extends RootScope {
+  selectedCategories: Category[];
+  allMainCategories: Category[];
 }
-
-
-class ListCategoriesController {
-
-  public static $inject = ['$scope', 'QueryService'];
-  constructor(private $scope: ListCategoriesScope, private queryService: QueryService) {
-    $scope.mv = this;
-    this.loadCategoryDetails();
-  }
-
-
-  private loadCategoryDetails() {
-    this.queryService.loadCategoryDetails().then((categoryDetails: Category[]) => {
-      this.$scope.categoryDetails = categoryDetails;
-    });
-  }
-
-}
-
-
-forum.forumApp.controller('ListCategoriesController', ListCategoriesController);
 
 
 //------------------------------------------------------------------------------

@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/// <reference path="typedefs/angularjs/angular.d.ts" />
+/// <reference path="../typedefs/angularjs/angular.d.ts" />
 /// <reference path="ForumApp.ts" />
 /// <reference path="list-topics/ListTopicsController.ts" />
 /// <reference path="list-categories/ListCategoriesController.ts" />

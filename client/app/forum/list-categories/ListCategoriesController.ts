@@ -15,26 +15,37 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/// <reference path="typedefs/angularjs/angular.d.ts" />
-/// <reference path="typedefs/angular-ui/angular-ui-router.d.ts" />
+/// <reference path="../../typedefs/angularjs/angular.d.ts" />
+/// <reference path="../ForumApp.ts" />
 
 //------------------------------------------------------------------------------
    module forum {
 //------------------------------------------------------------------------------
 
-
-export interface RootScope extends ng.IScope {
-  mv;
-  $state: ng.ui.IStateService;
-
-  // These properties are added by client/page/scripts/bootstrap-angularjs.ls:
-  pageId: string;
-  pagePath: string;
-  pageRole: string;
-  pageStatus: string;
-  parentPageId: string;
-  pageExists: boolean;
+interface ListCategoriesScope extends CategoryScope {
+  categoryDetails: Category[];
 }
+
+
+class ListCategoriesController {
+
+  public static $inject = ['$scope', 'QueryService'];
+  constructor(private $scope: ListCategoriesScope, private queryService: QueryService) {
+    $scope.mv = this;
+    this.loadCategoryDetails();
+  }
+
+
+  private loadCategoryDetails() {
+    this.queryService.loadCategoryDetails().then((categoryDetails: Category[]) => {
+      this.$scope.categoryDetails = categoryDetails;
+    });
+  }
+
+}
+
+
+forum.forumApp.controller('ListCategoriesController', ListCategoriesController);
 
 
 //------------------------------------------------------------------------------
