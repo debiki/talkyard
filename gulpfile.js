@@ -478,21 +478,21 @@ gulp.task('compile-stylus', function () {
   return es.merge(
     makeStyleStream('public/res/', 'combined-debiki.css', [
         'public/res/jquery-ui/jquery-ui-1.9.2.custom.css',
-        'client/page/styles/debiki.styl',
-        'client/page/styles/layout.styl',
-        'client/page/styles/minimap.styl',
-        'client/page/styles/arrows.styl',
-        'client/page/styles/tips.styl',
-        'client/page/styles/dashbar.styl',
-        'client/page/styles/debiki-play.styl',
-        'client/page/styles/post-actions.styl',
-        'client/page/styles/forms-and-dialogs.styl',
-        'client/page/styles/login-dialog.styl',
-        'client/page/styles/third-party.styl',
+        'client/app/debiki.styl',
+        'client/app/posts/layout.styl',
+        'client/app/minimap/minimap.styl',
+        'client/app/arrows/arrows.styl',
+        'client/app/tips.styl',
+        'client/app/dashbar/dashbar.styl',
+        'client/app/debiki-play.styl',
+        'client/app/actions/action-links.styl',
+        'client/app/forms-and-dialogs.styl',
+        'client/app/login/login.styl',
+        'client/app/third-party.styl',
         'client/app/**/*.styl']),
 
     makeStyleStream('public/res/', 'debiki-embedded-comments.css', [
-        'client/page/styles/tips.styl']),
+        'client/app/tips.styl']),
 
     makeStyleStream('client/admin-dart/admin-dart/web/', 'styles.css', [
         'client/admin-dart/styles/*.styl']),
