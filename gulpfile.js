@@ -239,15 +239,15 @@ var loginPopupFiles = [
 
 // For both touch devices and desktops.
 // (parten-header.js and parent-footer.js wraps and lazy loads the files inbetween,
-// see client/embedded-comments/scripts/readme.txt.)
+// see client/embedded-comments/readme.txt.)
 var debikiEmbeddedCommentsFiles = [
-      'client/embedded-comments/scripts/parent-header.js',  // not ^target/client/...
+      'client/embedded-comments/parent-header.js',  // not ^target/client/...
       'client/third-party/jquery-scrollable.js',
       'client/third-party/jquery.browser.js',
-      'target/client/embedded-comments/scripts/debiki-utterscroll-iframe-parent.js',
+      'target/client/embedded-comments/debiki-utterscroll-iframe-parent.js',
       'target/client/page/scripts/debiki-utterscroll-init-tips.js',
-      'target/client/embedded-comments/scripts/iframe-parent.js',
-      'client/embedded-comments/scripts/parent-footer.js'];  // not ^target/client/...
+      'target/client/embedded-comments/iframe-parent.js',
+      'client/embedded-comments/parent-footer.js'];  // not ^target/client/...
 
 
 var adminOldFiles = [
