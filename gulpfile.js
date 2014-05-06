@@ -500,7 +500,7 @@ gulp.task('compile-stylus', function () {
     makeStyleStream('public/res/', 'admin-old.css', [
         'client/admin-old/styles/admin-theme.styl',
         'client/admin-old/styles/admin-page.styl',
-        'client/util/styles/debiki-shared.styl']));
+        'client/admin-old/styles/debiki-shared.styl']));
 });
 
 
