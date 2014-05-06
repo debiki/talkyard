@@ -121,11 +121,11 @@ var debikiDesktopFiles = [
       'target/client/app/posts/load-page-parts.js',
       'target/client/app/login/login.js',
       'target/client/app/login/login-popup.js',
-      'target/client/login-popup/scripts/debiki-login-dialog.js',
-      'target/client/login-popup/scripts/debiki-login-guest.js',
-      'target/client/login-popup/scripts/debiki-login-password.js',
-      'target/client/login-popup/scripts/debiki-login-openid.js',
-      'target/client/login-popup/scripts/debiki-login-openid-dialog-html.js',
+      'target/client/app/login/dialog/debiki-login-dialog.js',
+      'target/client/app/login/dialog/debiki-login-guest.js',
+      'target/client/app/login/dialog/debiki-login-password.js',
+      'target/client/app/login/dialog/debiki-login-openid.js',
+      'target/client/app/login/dialog/debiki-login-openid-dialog-html.js',
       'target/client/app/actions/edit/markup.js',
       'target/client/page/scripts/debiki-merge-changes.js',
       'target/client/app/minimap/minimap.js',
@@ -195,11 +195,11 @@ var debikiTouchFiles = [
       'target/client/app/posts/load-page-parts.js',
       'target/client/app/login/login.js',
       'target/client/app/login/login-popup.js',
-      'target/client/login-popup/scripts/debiki-login-dialog.js',
-      'target/client/login-popup/scripts/debiki-login-guest.js',
-      'target/client/login-popup/scripts/debiki-login-password.js',
-      'target/client/login-popup/scripts/debiki-login-openid.js',
-      'target/client/login-popup/scripts/debiki-login-openid-dialog-html.js',
+      'target/client/app/login/dialog/debiki-login-dialog.js',
+      'target/client/app/login/dialog/debiki-login-guest.js',
+      'target/client/app/login/dialog/debiki-login-password.js',
+      'target/client/app/login/dialog/debiki-login-openid.js',
+      'target/client/app/login/dialog/debiki-login-openid-dialog-html.js',
       'target/client/app/actions/edit/markup.js',
       'target/client/page/scripts/debiki-merge-changes.js',
       'target/client/app/minimap/minimap.js',
@@ -226,15 +226,15 @@ var debikiTouchFiles = [
 
 
 // For both touch devices and desktops.
-var loginPopupFiles = [
+var loginDialogFiles = [
       'client/third-party/jquery-cookie.js',
       'target/client/util/scripts/debiki-jquery-dialogs.js',
       'target/client/util/scripts/debiki-utils.js',
-      'target/client/login-popup/scripts/debiki-login-dialog.js',
-      'target/client/login-popup/scripts/debiki-login-guest.js',
-      'target/client/login-popup/scripts/debiki-login-password.js',
-      'target/client/login-popup/scripts/debiki-login-openid.js',
-      'target/client/login-popup/scripts/debiki-login-openid-dialog-html.js'];
+      'target/client/app/login/dialog/debiki-login-dialog.js',
+      'target/client/app/login/dialog/debiki-login-guest.js',
+      'target/client/app/login/dialog/debiki-login-password.js',
+      'target/client/app/login/dialog/debiki-login-openid.js',
+      'target/client/app/login/dialog/debiki-login-openid-dialog-html.js'];
 
 
 // For both touch devices and desktops.
@@ -362,7 +362,7 @@ function makeConcatDebikiScriptsStream() {
   return es.merge(
       makeConcatStream('combined-debiki-desktop.js', debikiDesktopFiles),
       makeConcatStream('combined-debiki-touch.js', debikiTouchFiles),
-      makeConcatStream('login-popup.js', loginPopupFiles),
+      makeConcatStream('login-popup.js', loginDialogFiles),
       makeConcatStream('embedded-comments.js', debikiEmbeddedCommentsFiles),
       makeConcatStream('admin-old.js', adminOldFiles),
 
