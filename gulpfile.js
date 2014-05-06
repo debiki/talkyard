@@ -114,7 +114,7 @@ var debikiDesktopFiles = [
       'target/client/app/utils/http-dialogs.js',
       'target/client/app/inline-threads-unused.js',
       'target/client/app/iframe.js',
-      'target/client/util/scripts/debiki-jquery-dialogs.js',
+      'target/client/shared/debiki-jquery-dialogs.js',
       'target/client/app/utils/jquery-find.js',
       'target/client/app/keyboard-shortcuts.js', //
       'target/client/app/posts/layout.js',
@@ -189,7 +189,7 @@ var debikiTouchFiles = [
       'target/client/app/utils/http-dialogs.js',
       'target/client/app/inline-threads-unused.js',
       'target/client/app/iframe.js',
-      'target/client/util/scripts/debiki-jquery-dialogs.js',
+      'target/client/shared/debiki-jquery-dialogs.js',
       'target/client/app/utils/jquery-find.js',
       'target/client/app/posts/layout.js',
       'target/client/app/posts/load-page-parts.js',
@@ -228,7 +228,7 @@ var debikiTouchFiles = [
 // For both touch devices and desktops.
 var loginDialogFiles = [
       'client/third-party/jquery-cookie.js',
-      'target/client/util/scripts/debiki-jquery-dialogs.js',
+      'target/client/shared/debiki-jquery-dialogs.js',
       'target/client/util/scripts/debiki-utils.js',
       'target/client/app/login/dialog/debiki-login-dialog.js',
       'target/client/app/login/dialog/debiki-login-guest.js',
