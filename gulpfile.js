@@ -90,67 +90,67 @@ var debikiDesktopFiles = [
       'client/third-party/livescript/prelude-browser.js',
       'client/third-party/popuplib.js',
       'client/third-party/waypoints.js',
-      'client/util/scripts/modernizr-positionfixed.js',
-      'client/util/scripts/scrollfix2d.js',
-      'client/page/scripts/tagdog.js',
-      'target/client/page/scripts/debiki-page-module.js',
-      'target/client/page/scripts/bootstrap-angularjs.js',
-      'target/client/page/scripts/debiki-action-delete.js',
-      'target/client/page/scripts/debiki-action-dialogs.js',
-      'target/client/page/scripts/debiki-action-edit.js',
-      'target/client/page/scripts/debiki-action-flag.js',
-      'target/client/page/scripts/debiki-action-links.js',
-      'target/client/page/scripts/debiki-action-rate.js',
-      'target/client/page/scripts/debiki-action-reply.js',
-      'target/client/page/scripts/debiki-action-reply-form-html.js',
-      'target/client/page/scripts/debiki-actions-inline.js',
-      'target/client/page/scripts/debiki-arrows-png.js',
-      'target/client/page/scripts/debiki-arrows-svg.js',
-      'target/client/page/scripts/debiki-dashbar.js',
-      'target/client/page/scripts/debiki-cur-user.js',
-      'target/client/page/scripts/debiki-diff-match-patch.js',
-      'target/client/page/scripts/debiki-edit-history.js',
-      'target/client/page/scripts/debiki-form-anims.js',
-      'target/client/page/scripts/debiki-http-dialogs.js',
-      'target/client/page/scripts/debiki-inline-threads.js',
-      'target/client/page/scripts/debiki-iframe.js',
-      'target/client/util/scripts/debiki-jquery-dialogs.js',
-      'target/client/page/scripts/debiki-jquery-find.js',
-      'target/client/page/scripts/debiki-keyboard-shortcuts.js', //
-      'target/client/page/scripts/debiki-layout.js',
-      'target/client/page/scripts/debiki-load-page-parts.js',
-      'target/client/page/scripts/debiki-login.js',
-      'target/client/page/scripts/debiki-login-popup.js',
-      'target/client/login-popup/scripts/debiki-login-dialog.js',
-      'target/client/login-popup/scripts/debiki-login-guest.js',
-      'target/client/login-popup/scripts/debiki-login-password.js',
-      'target/client/login-popup/scripts/debiki-login-openid.js',
-      'target/client/login-popup/scripts/debiki-login-openid-dialog-html.js',
-      'target/client/page/scripts/debiki-markup.js',
+      'client/third-party/modernizr-positionfixed.js',
+      'target/client/app/minimap/scrollfix2d.js',
+      'client/app/actions/edit/tagdog.js',
+      'target/client/app/page-module.js',
+      'target/client/app/bootstrap-angularjs.js',
+      'target/client/app/actions/delete.js',
+      'target/client/app/actions/dialogs.js',
+      'target/client/app/actions/edit/edit.js',
+      'target/client/app/actions/flag.js',
+      'target/client/app/actions/initialize.js',
+      'target/client/app/actions/vote.js',
+      'target/client/app/actions/reply.js',
+      'target/client/app/actions/reply-form-html.js',
+      'target/client/app/actions/popup-menu.js',
+      'target/client/app/arrows/arrows-png.js',
+      //'target/client/app/arrows/arrows-svg-unused.js',
+      'target/client/app/dashbar/dashbar.js',
+      'target/client/app/current-user.js',
+      'target/client/app/actions/edit/diff-match-patch.js',
+      'target/client/app/actions/edit/history.js',
+      'target/client/app/utils/form-animations.js',
+      'target/client/app/utils/http-dialogs.js',
+      //'target/client/app/inline-threads-unused.js',
+      'target/client/app/iframe.js',
+      'target/client/shared/debiki-jquery-dialogs.js',
+      'target/client/app/utils/jquery-find.js',
+      'target/client/app/keyboard-shortcuts.js', //
+      'target/client/app/posts/layout.js',
+      'target/client/app/posts/load-page-parts.js',
+      'target/client/app/login/login.js',
+      'target/client/app/login/login-popup.js',
+      'target/client/shared/login-dialog/login-dialog.js',
+      'target/client/shared/login-dialog/login-guest.js',
+      'target/client/shared/login-dialog/login-password.js',
+      'target/client/shared/login-dialog/login-openid.js',
+      'target/client/shared/login-dialog/login-openid-dialog-html.js',
+      'target/client/app/actions/edit/markup.js',
       'target/client/page/scripts/debiki-merge-changes.js',
-      'target/client/page/scripts/debiki-minimap.js',
-      'target/client/page/scripts/debiki-monitor-reading-progress.js',
-      'target/client/page/scripts/debiki-patch-page.js',
-      'target/client/page/scripts/debiki-pin.js',
-      'target/client/page/scripts/debiki-post-header.js',
-      'target/client/page/scripts/debiki-resize.js',
-      'target/client/page/scripts/debiki-scroll-into-view.js',
-      'target/client/page/scripts/debiki-show-and-highlight.js',
-      'target/client/page/scripts/debiki-show-interactions.js',
-      'target/client/page/scripts/debiki-show-location-in-nav.js',
-      'target/client/page/scripts/debiki-toggle-collapsed.js',
-      //'target/client/page/scripts/debiki-unread.js',
-      'target/client/page/scripts/debiki-util.js',
-      'target/client/page/scripts/debiki-util-browser.js',
-      'target/client/page/scripts/debiki-util-play.js',
-      'target/client/page/scripts/debiki-utterscroll-init-tips.js',//
-      'client/page/scripts/debiki-utterscroll.js',//
-      'target/client/page/scripts/debiki-page-path.js',
-      'target/client/page/scripts/debiki-create-page.js',
-      'target/client/util/scripts/debiki-utils.js',
+      'target/client/app/minimap/minimap.js',
+      //'target/client/app/posts/monitor-reading-progress-unused.js',
+      'target/client/app/posts/patch-page.js',
+      'target/client/app/actions/pin.js',
+      'target/client/app/posts/post-header.js',
+      'target/client/app/posts/resize.js',
+      'target/client/app/utils/scroll-into-view.js',
+      'target/client/app/utils/show-and-highlight.js',
+      'target/client/app/posts/show-comments-section.js',
+      'target/client/app/utils/show-location-in-nav.js',
+      'target/client/app/posts/toggle-collapsed.js',
+      //'target/client/app/posts/unread-unused.js',
+      'target/client/app/utils/util.js',
+      'target/client/app/utils/util-browser.js',
+      'target/client/app/utils/util-play.js',
+      'target/client/app/utterscroll/utterscroll-init-tips.js',//
+      'client/app/utterscroll/utterscroll.js',//
+      'target/client/app/utils/page-path.js',
+      'target/client/app/utils/create-page.js',
+      'target/client/shared/post-json.js',
       'target/client/all-typescript.js',
       'target/client/all-angular-templates.js',
-      'target/client/page/scripts/debiki.js'];
+      'target/client/app/startup.js'];
 
 
 var debikiTouchFiles = [
@@ -165,89 +165,105 @@ var debikiTouchFiles = [
       'client/third-party/livescript/prelude-browser.js',
       'client/third-party/popuplib.js',
       'client/third-party/waypoints.js',
-      'client/util/scripts/modernizr-positionfixed.js',
-      'client/util/scripts/scrollfix2d.js',
-      'client/page/scripts/tagdog.js',
-      'target/client/page/scripts/debiki-page-module.js',
-      'target/client/page/scripts/bootstrap-angularjs.js',
-      'target/client/page/scripts/debiki-action-delete.js',
-      'target/client/page/scripts/debiki-action-dialogs.js',
-      'target/client/page/scripts/debiki-action-edit.js',
-      'target/client/page/scripts/debiki-action-flag.js',
-      'target/client/page/scripts/debiki-action-links.js',
-      'target/client/page/scripts/debiki-action-rate.js',
-      'target/client/page/scripts/debiki-action-reply.js',
-      'target/client/page/scripts/debiki-action-reply-form-html.js',
-      'target/client/page/scripts/debiki-actions-inline.js',
-      'target/client/page/scripts/debiki-arrows-png.js',
-      'target/client/page/scripts/debiki-arrows-svg.js',
-      'target/client/page/scripts/debiki-dashbar.js',
-      'target/client/page/scripts/debiki-cur-user.js',
-      'target/client/page/scripts/debiki-diff-match-patch.js',
-      'target/client/page/scripts/debiki-edit-history.js',
-      'target/client/page/scripts/debiki-form-anims.js',
-      'target/client/page/scripts/debiki-http-dialogs.js',
-      'target/client/page/scripts/debiki-inline-threads.js',
-      'target/client/page/scripts/debiki-iframe.js',
-      'target/client/util/scripts/debiki-jquery-dialogs.js',
-      'target/client/page/scripts/debiki-jquery-find.js',
-      'target/client/page/scripts/debiki-layout.js',
-      'target/client/page/scripts/debiki-load-page-parts.js',
-      'target/client/page/scripts/debiki-login.js',
-      'target/client/page/scripts/debiki-login-popup.js',
-      'target/client/login-popup/scripts/debiki-login-dialog.js',
-      'target/client/login-popup/scripts/debiki-login-guest.js',
-      'target/client/login-popup/scripts/debiki-login-password.js',
-      'target/client/login-popup/scripts/debiki-login-openid.js',
-      'target/client/login-popup/scripts/debiki-login-openid-dialog-html.js',
-      'target/client/page/scripts/debiki-markup.js',
+      'client/third-party/modernizr-positionfixed.js',
+      'target/client/app/minimap/scrollfix2d.js',
+      'client/app/actions/edit/tagdog.js',
+      'target/client/app/page-module.js',
+      'target/client/app/bootstrap-angularjs.js',
+      'target/client/app/actions/delete.js',
+      'target/client/app/actions/dialogs.js',
+      'target/client/app/actions/edit/edit.js',
+      'target/client/app/actions/flag.js',
+      'target/client/app/actions/initialize.js',
+      'target/client/app/actions/vote.js',
+      'target/client/app/actions/reply.js',
+      'target/client/app/actions/reply-form-html.js',
+      'target/client/app/actions/popup-menu.js',
+      'target/client/app/arrows/arrows-png.js',
+      //'target/client/app/arrows/arrows-svg-unused.js',
+      'target/client/app/dashbar/dashbar.js',
+      'target/client/app/current-user.js',
+      'target/client/app/actions/edit/diff-match-patch.js',
+      'target/client/app/actions/edit/history.js',
+      'target/client/app/utils/form-animations.js',
+      'target/client/app/utils/http-dialogs.js',
+      //'target/client/app/inline-threads-unused.js',
+      'target/client/app/iframe.js',
+      'target/client/shared/debiki-jquery-dialogs.js',
+      'target/client/app/utils/jquery-find.js',
+      'target/client/app/posts/layout.js',
+      'target/client/app/posts/load-page-parts.js',
+      'target/client/app/login/login.js',
+      'target/client/app/login/login-popup.js',
+      'target/client/shared/login-dialog/login-dialog.js',
+      'target/client/shared/login-dialog/login-guest.js',
+      'target/client/shared/login-dialog/login-password.js',
+      'target/client/shared/login-dialog/login-openid.js',
+      'target/client/shared/login-dialog/login-openid-dialog-html.js',
+      'target/client/app/actions/edit/markup.js',
       'target/client/page/scripts/debiki-merge-changes.js',
-      'target/client/page/scripts/debiki-minimap.js',
-      'target/client/page/scripts/debiki-monitor-reading-progress.js',
-      'target/client/page/scripts/debiki-patch-page.js',
-      'target/client/page/scripts/debiki-pin.js',
-      'target/client/page/scripts/debiki-post-header.js',
-      'target/client/page/scripts/debiki-resize.js',
-      'target/client/page/scripts/debiki-scroll-into-view.js',
-      'target/client/page/scripts/debiki-show-and-highlight.js',
-      'target/client/page/scripts/debiki-show-interactions.js',
-      'target/client/page/scripts/debiki-show-location-in-nav.js',
-      'target/client/page/scripts/debiki-toggle-collapsed.js',
-      //'target/client/page/scripts/debiki-unread.js',
-      'target/client/page/scripts/debiki-util.js',
-      'target/client/page/scripts/debiki-util-browser.js',
-      'target/client/page/scripts/debiki-util-play.js',
-      'target/client/page/scripts/debiki-page-path.js',
-      'target/client/page/scripts/debiki-create-page.js',
-      'target/client/util/scripts/debiki-utils.js',
-      'target/client/all-angular-templates.js',
+      'target/client/app/minimap/minimap.js',
+      //'target/client/app/posts/monitor-reading-progress-unused.js',
+      'target/client/app/posts/patch-page.js',
+      'target/client/app/actions/pin.js',
+      'target/client/app/posts/post-header.js',
+      'target/client/app/posts/resize.js',
+      'target/client/app/utils/scroll-into-view.js',
+      'target/client/app/utils/show-and-highlight.js',
+      'target/client/app/posts/show-comments-section.js',
+      'target/client/app/utils/show-location-in-nav.js',
+      'target/client/app/posts/toggle-collapsed.js',
+      //'target/client/app/posts/unread-unused.js',
+      'target/client/app/utils/util.js',
+      'target/client/app/utils/util-browser.js',
+      'target/client/app/utils/util-play.js',
+      'target/client/app/utils/page-path.js',
+      'target/client/app/utils/create-page.js',
+      'target/client/shared/post-json.js',
       'target/client/all-typescript.js',
-      'target/client/page/scripts/debiki.js'];
+      'target/client/all-angular-templates.js',
+      'target/client/app/startup.js'];
 
 
 // For both touch devices and desktops.
-var loginPopupFiles = [
+var loginDialogFiles = [
       'client/third-party/jquery-cookie.js',
-      'target/client/util/scripts/debiki-jquery-dialogs.js',
-      'target/client/util/scripts/debiki-utils.js',
-      'target/client/login-popup/scripts/debiki-login-dialog.js',
-      'target/client/login-popup/scripts/debiki-login-guest.js',
-      'target/client/login-popup/scripts/debiki-login-password.js',
-      'target/client/login-popup/scripts/debiki-login-openid.js',
-      'target/client/login-popup/scripts/debiki-login-openid-dialog-html.js'];
+      'target/client/shared/debiki-jquery-dialogs.js',
+      'target/client/shared/post-json.js',
+      'target/client/shared/login-dialog/login-dialog.js',
+      'target/client/shared/login-dialog/login-guest.js',
+      'target/client/shared/login-dialog/login-password.js',
+      'target/client/shared/login-dialog/login-openid.js',
+      'target/client/shared/login-dialog/login-openid-dialog-html.js'];
 
 
 // For both touch devices and desktops.
 // (parten-header.js and parent-footer.js wraps and lazy loads the files inbetween,
-// see client/embedded-comments/scripts/readme.txt.)
+// see client/embedded-comments/readme.txt.)
 var debikiEmbeddedCommentsFiles = [
-      'client/embedded-comments/scripts/parent-header.js',  // not ^target/client/...
+      'client/embedded-comments/parent-header.js',  // not ^target/client/...
       'client/third-party/jquery-scrollable.js',
       'client/third-party/jquery.browser.js',
-      'target/client/embedded-comments/scripts/debiki-utterscroll-iframe-parent.js',
-      'target/client/page/scripts/debiki-utterscroll-init-tips.js',
-      'target/client/embedded-comments/scripts/iframe-parent.js',
-      'client/embedded-comments/scripts/parent-footer.js'];  // not ^target/client/...
+      'target/client/embedded-comments/debiki-utterscroll-iframe-parent.js',
+      'target/client/app/utterscroll/utterscroll-init-tips.js',
+      'target/client/embedded-comments/iframe-parent.js',
+      'client/embedded-comments/parent-footer.js'];  // not ^target/client/...
+
+
+var adminOldFiles = [
+      'target/client/third-party/livescript/prelude-browser-min.js',
+      'target/client/third-party/bootstrap/tooltip.js', // -popup.js dependee
+      'target/client/third-party/bootstrap/*.js',
+      'target/client/third-party/angular-ui/module.js',
+      'target/client/third-party/angular-ui/directives/jq/jq.js',
+      'target/client/third-party/angular-ui/directives/modal/modal.js',
+      'target/client/app/utils/util.js',
+      'client/third-party/diff_match_patch.js',
+      'target/client/app/actions/edit/diff-match-patch.js',
+      'target/client/app/utils/page-path.js',
+      // Include the module first; it's needed by modal-dialog.js.
+      'target/client/admin-old/scripts/module-and-services.js',
+      'target/client/admin-old/scripts/*.js'];
 
 
 var codeMirrorScripts = [
@@ -291,7 +307,7 @@ gulp.task('compile-livescript', function () {
 
 
 gulp.task('compile-typescript', function () {
-  var stream = gulp.src(['client/forum/**/*.ts'])
+  var stream = gulp.src(['client/app/**/*.ts'])
     .pipe(typeScript({
       target: 'ES5',
       allowBool: true,
@@ -310,7 +326,7 @@ gulp.task('compile-typescript', function () {
 
 
 gulp.task('compile-templates', function () {
-  return gulp.src('client/forum/**/*.html')
+  return gulp.src('client/app/forum/**/*.html')
       .pipe(templateCache({
         module: 'ForumApp',
         filename: 'all-angular-templates.js'
@@ -328,6 +344,8 @@ gulp.task('concat-debiki-scripts', [
   return makeConcatDebikiScriptsStream();
 });
 
+
+
 function makeConcatDebikiScriptsStream() {
   function makeConcatStream(outputFileName, filesToConcat) {
     return gulp.src(filesToConcat)
@@ -344,25 +362,9 @@ function makeConcatDebikiScriptsStream() {
   return es.merge(
       makeConcatStream('combined-debiki-desktop.js', debikiDesktopFiles),
       makeConcatStream('combined-debiki-touch.js', debikiTouchFiles),
-      makeConcatStream('login-popup.js', loginPopupFiles),
+      makeConcatStream('login-popup.js', loginDialogFiles),
       makeConcatStream('embedded-comments.js', debikiEmbeddedCommentsFiles),
-
-      makeConcatStream('debiki-spa-common.js', [
-          'target/client/third-party/livescript/prelude-browser-min.js',
-          'target/client/third-party/bootstrap/tooltip.js', // -popup.js dependee
-          'target/client/third-party/bootstrap/*.js',
-          'target/client/third-party/angular-ui/module.js',
-          'target/client/third-party/angular-ui/directives/jq/jq.js',
-          'target/client/third-party/angular-ui/directives/modal/modal.js',
-          'target/client/page/scripts/debiki-util.js']),
-
-      makeConcatStream('debiki-spa-admin.js', [
-          'client/third-party/diff_match_patch.js',
-          'target/client/page/scripts/debiki-diff-match-patch.js',
-          'target/client/page/scripts/debiki-page-path.js',
-          // Include the module first; it's needed by modal-dialog.js.
-          'target/client/admin/scripts/module-and-services.js',
-          'target/client/admin/scripts/*.js']),
+      makeConcatStream('admin-old.js', adminOldFiles),
 
       makeConcatStream('debiki-spa-install-first-site.js', [
           'target/client/install/scripts/install-ng-app.js']),
@@ -476,29 +478,29 @@ gulp.task('compile-stylus', function () {
   return es.merge(
     makeStyleStream('public/res/', 'combined-debiki.css', [
         'public/res/jquery-ui/jquery-ui-1.9.2.custom.css',
-        'client/page/styles/debiki.styl',
-        'client/page/styles/layout.styl',
-        'client/page/styles/minimap.styl',
-        'client/page/styles/arrows.styl',
-        'client/page/styles/tips.styl',
-        'client/page/styles/dashbar.styl',
-        'client/page/styles/debiki-play.styl',
-        'client/page/styles/post-actions.styl',
-        'client/page/styles/forms-and-dialogs.styl',
-        'client/page/styles/login-dialog.styl',
-        'client/page/styles/third-party.styl',
-        'client/forum/**/*.styl']),
+        'client/app/debiki.styl',
+        'client/app/posts/layout.styl',
+        'client/app/minimap/minimap.styl',
+        'client/app/arrows/arrows.styl',
+        'client/app/tips.styl',
+        'client/app/dashbar/dashbar.styl',
+        'client/app/debiki-play.styl',
+        'client/app/actions/action-links.styl',
+        'client/app/forms-and-dialogs.styl',
+        'client/app/login/login.styl',
+        'client/app/third-party.styl',
+        'client/app/**/*.styl']),
 
     makeStyleStream('public/res/', 'debiki-embedded-comments.css', [
-        'client/page/styles/tips.styl']),
+        'client/app/tips.styl']),
 
     makeStyleStream('client/admin-dart/admin-dart/web/', 'styles.css', [
         'client/admin-dart/styles/*.styl']),
 
-    makeStyleStream('public/res/', 'admin.css', [
-        'client/admin/styles/admin-theme.styl',
-        'client/admin/styles/admin-page.styl',
-        'client/util/styles/debiki-shared.styl']));
+    makeStyleStream('public/res/', 'admin-old.css', [
+        'client/admin-old/styles/admin-theme.styl',
+        'client/admin-old/styles/admin-page.styl',
+        'client/admin-old/styles/debiki-shared.styl']));
 });
 
 
@@ -559,8 +561,8 @@ gulp.task('watch', function() {
     };
   };
 
-  gulp.watch('client/forum/**/*.html', ['compile-templates-concat-scripts']).on('change', logChangeFn('HTML'));
-  gulp.watch('client/forum/**/*.ts', ['compile-typescript-concat-scripts']).on('change', logChangeFn('TypeScript'));
+  gulp.watch('client/app/**/*.html', ['compile-templates-concat-scripts']).on('change', logChangeFn('HTML'));
+  gulp.watch('client/app/**/*.ts', ['compile-typescript-concat-scripts']).on('change', logChangeFn('TypeScript'));
   gulp.watch('client/**/*.ls', ['compile-livescript-concat-scripts']).on('change', logChangeFn('LiveScript'));
   gulp.watch('client/**/*.js', ['wrap-javascript-concat-scripts']).on('change', logChangeFn('Javascript'));
   gulp.watch('client/**/*.styl', ['compile-stylus']).on('change', logChangeFn('Stylus'));

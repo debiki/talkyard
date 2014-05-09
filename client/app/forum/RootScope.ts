@@ -16,16 +16,24 @@
  */
 
 /// <reference path="../typedefs/angularjs/angular.d.ts" />
-/// <reference path="../ForumApp.ts" />
+/// <reference path="../typedefs/angular-ui/angular-ui-router.d.ts" />
 
 //------------------------------------------------------------------------------
    module forum {
 //------------------------------------------------------------------------------
 
 
-export interface CategoryScope extends RootScope {
-  selectedCategories: Category[];
-  allMainCategories: Category[];
+export interface RootScope extends ng.IScope {
+  mv;
+  $state: ng.ui.IStateService;
+
+  // These properties are added by client/page/scripts/bootstrap-angularjs.ls:
+  pageId: string;
+  pagePath: string;
+  pageRole: string;
+  pageStatus: string;
+  parentPageId: string;
+  pageExists: boolean;
 }
 
 
