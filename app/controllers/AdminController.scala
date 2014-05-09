@@ -39,7 +39,26 @@ import Utils.{OkHtml, OkXml}
 object AdminController extends mvc.Controller {
 
 
-  // Remove later.
+  def viewAdminPage() = GetAction { apiReq =>
+    if (apiReq.user.map(_.isAdmin) != Some(true)) {
+      Ok(views.html.login.loginPage(xsrfToken = apiReq.xsrfToken.value,
+        returnToUrl = apiReq.uri, title = "Login", message = Some(
+          "Login as administrator to access this page.")))
+    }
+    else {
+      val adminPageBody = views.html.adminPage(
+        hostname = apiReq.host,
+        minMaxJs = TemplateProgrammingInterface.minMaxJs,
+        minMaxCss = TemplateProgrammingInterface.minMaxCss).body
+      Ok(adminPageBody) as HTML withCookies (
+        mvc.Cookie(
+          DebikiSecurity.XsrfCookieName, apiReq.xsrfToken.value,
+          httpOnly = false))
+    }
+  }
+
+
+  // Remove later. (Dupl code, but I'm going to remove it anyway)
   def viewAdminPageOld() = GetAction { apiReq =>
     if (apiReq.user.map(_.isAdmin) != Some(true))
       Ok(views.html.login.loginPage(xsrfToken = apiReq.xsrfToken.value,
@@ -53,9 +72,10 @@ object AdminController extends mvc.Controller {
   }
 
 
-  def viewAdminPage = redirectTo("admin.html")
-  def viewModeratorPage = redirectTo("moderate.html")
-  def viewDesignerPage = redirectTo("design.html")
+  // Remove these three later.
+  def viewAdminDartAdminPage = redirectTo("admin.html")
+  def viewAdminDartModeratorPage = redirectTo("moderate.html")
+  def viewAdminDartDesignerPage = redirectTo("design.html")
 
 
   /** Redirects to a plain HTML file that loads Google Dart files that have been

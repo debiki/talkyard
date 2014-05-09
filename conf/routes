@@ -84,10 +84,12 @@ GET   /-/create-embedded-site/create                          controllers.Create
 GET   /-/create-embedded-site/welcome-owner                   controllers.CreateEmbeddedSiteController.welcomeOwner
 GET   /-/create-embedded-site/instructions                    controllers.CreateEmbeddedSiteController.embeddingSiteInstructionsPage
 
+GET   /-/admin/                 controllers.AdminController.viewAdminPage
+# Old admin pages:
+GET   /-/admin-dart             controllers.AdminController.viewAdminDartAdminPage
+GET   /-/admin-dart-moderator   controllers.AdminController.viewAdminDartModeratorPage
+GET   /-/admin-dart-designer    controllers.AdminController.viewAdminDartDesignerPage
 GET   /-/admin-old/             controllers.AdminController.viewAdminPageOld
-GET   /-/admin                  controllers.AdminController.viewAdminPage
-GET   /-/moderate               controllers.AdminController.viewModeratorPage
-GET   /-/design                 controllers.AdminController.viewDesignerPage
 
 GET   /-/load-site-settings     controllers.SettingsController.loadSiteSettings
 GET   /-/load-section-settings  controllers.SettingsController.loadSectionSettings(rootPageId)
