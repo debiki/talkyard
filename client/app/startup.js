@@ -100,7 +100,7 @@ function initStep1() {
 
 function $initStep2() {
   d.i.shohwActionLinksOnHoverPost(this);
-  d.i.placeInlineThreadsForPost(this);
+  // d.i.placeInlineThreadsForPost(this);
   d.i.makePostHeaderPretty($(this).children('.dw-p-hd'));
 };
 
@@ -347,7 +347,7 @@ function renderPageEtc() {
   steps.push(function() {
     debiki.scriptLoad.resolve();
     runSiteConfigScripts();
-    d.i.startReadingProgresMonitor();
+    //d.i.startReadingProgresMonitor();
   });
 
   steps.push(function() {
