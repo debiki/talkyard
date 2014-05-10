@@ -100,6 +100,8 @@ GET   /-/privacy-policy         controllers.LegalController.viewPrivacyPolicyPag
 GET   /-/load-special-content   controllers.SpecialContentController.loadContent(rootPageId, contentId)
 POST  /-/save-special-content   controllers.SpecialContentController.saveContent
 
+GET   /-/users/                 controllers.UserController.viewUserPage
+
 GET   /-/list-topics            controllers.ForumController.listTopics(categoryId)
 GET   /-/list-categories        controllers.ForumController.listCategories(forumId)
 

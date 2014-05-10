@@ -382,6 +382,10 @@ function renderEmptyPage() {
     d.i.initKeybdShortcuts($);
     d.i.initUtterscrollAndTips();
   }
+
+  // Start AngularJS
+  d.i.angularApply(function() {});
+
   fireLoginOrLogout();
 };
 
