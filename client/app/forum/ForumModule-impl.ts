@@ -21,13 +21,13 @@
 /// <reference path="list-categories/ListCategoriesController.ts" />
 
 //------------------------------------------------------------------------------
-   module forum {
+   module debiki2.forum {
 //------------------------------------------------------------------------------
 
 /**
  * Sets up routing using ui-router.
  */
-forum.forumModule.config(['$stateProvider', '$urlRouterProvider',
+forumModule.config(['$stateProvider', '$urlRouterProvider',
     function($stateProvider, $urlRouterProvider) {
 
   $urlRouterProvider.otherwise('/');
@@ -75,7 +75,7 @@ forum.forumModule.config(['$stateProvider', '$urlRouterProvider',
  * Adds UI-Router's $state and $stateParams to the root scope, so they're
  * accessible from everywhere.
  */
-forum.forumModule.run(['$rootScope', '$state', '$stateParams',
+forumModule.run(['$rootScope', '$state', '$stateParams',
     function($rootScope, $state, $stateParams) {
   $rootScope.$state = $state;
   $rootScope.$stateParams = $stateParams;

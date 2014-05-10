@@ -16,10 +16,10 @@
  */
 
 /// <reference path="ForumModule.ts" />
-/// <reference path="plain-old-javascript.d.ts" />
+/// <reference path="../plain-old-javascript.d.ts" />
 
 //------------------------------------------------------------------------------
-   module forum {
+   module debiki2.forum {
 //------------------------------------------------------------------------------
 
 
@@ -143,7 +143,7 @@ export class QueryService {
 }
 
 
-forum.forumModule.service('QueryService', QueryService);
+forumModule.service('QueryService', QueryService);
 
 //------------------------------------------------------------------------------
    }

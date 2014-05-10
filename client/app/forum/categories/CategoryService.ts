@@ -19,7 +19,7 @@
 /// <reference path="../ForumModule.ts" />
 
 //------------------------------------------------------------------------------
-   module forum {
+   module debiki2.forum {
 //------------------------------------------------------------------------------
 
 
@@ -130,7 +130,7 @@ export class CategoryService {
 }
 
 
-forum.forumModule.service('CategoryService', CategoryService);
+forumModule.service('CategoryService', CategoryService);
 
 //------------------------------------------------------------------------------
    }
