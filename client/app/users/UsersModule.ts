@@ -23,14 +23,15 @@
 //------------------------------------------------------------------------------
 
 
-export var usersModule = angular.module('UsersModule', ['ui.router', 'angularMoment']);
+export var usersModule = angular.module('DebikiUsersModule', ['ui.router', 'angularMoment']);
 
 
 /**
  * Sets up routing using ui-router.
  */
-usersModule.config(['$stateProvider', '$urlRouterProvider',
-    function($stateProvider: ng.ui.IStateProvider, $urlRouterProvider: ng.ui.IUrlRouterProvider) {
+usersModule.config(['$stateProvider', '$urlRouterProvider', function(
+    $stateProvider: ng.ui.IStateProvider,
+    $urlRouterProvider: ng.ui.IUrlRouterProvider) {
 
   $urlRouterProvider.otherwise('/');
 

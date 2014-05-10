@@ -43,10 +43,7 @@ bootstrapAngularJs = !->
 
   # See http://docs.angularjs.org/guide/bootstrap, "Manual Initialization".
   angular.element(document).ready !->
-    pageRole = $('.dw-page').dwPageMeta!pageRole
-    switch pageRole
-      | 'Forum' => angular.bootstrap document, ['ForumApp']
-      | _ => angular.bootstrap document, ['DebikiPageModule']
+    angular.bootstrap document, ['DebikiApp']
     initRootScope!
     angularStartup.resolve!
 

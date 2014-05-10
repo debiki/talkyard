@@ -328,7 +328,7 @@ gulp.task('compile-typescript', function () {
 gulp.task('compile-templates', function () {
   return gulp.src('client/app/forum/**/*.html')
       .pipe(templateCache({
-        module: 'ForumApp',
+        module: 'DebikiApp',
         filename: 'all-angular-templates.js'
       }))
       .pipe(gulp.dest('target/client/'));

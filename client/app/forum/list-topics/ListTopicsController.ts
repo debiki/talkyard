@@ -93,7 +93,7 @@ class ListTopicsController {
 }
 
 
-forum.forumApp.controller('ListTopicsController', ListTopicsController);
+forum.forumModule.controller('ListTopicsController', ListTopicsController);
 
 //------------------------------------------------------------------------------
    }

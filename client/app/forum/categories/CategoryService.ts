@@ -129,7 +129,7 @@ export class CategoryService {
 }
 
 
-forum.forumApp.service('CategoryService', CategoryService);
+forum.forumModule.service('CategoryService', CategoryService);
 
 //------------------------------------------------------------------------------
    }

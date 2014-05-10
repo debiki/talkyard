@@ -143,7 +143,7 @@ export class QueryService {
 }
 
 
-forum.forumApp.service('QueryService', QueryService);
+forum.forumModule.service('QueryService', QueryService);
 
 //------------------------------------------------------------------------------
    }

@@ -93,7 +93,7 @@ class CategoryController {
 }
 
 
-forum.forumApp.controller("CategoryController", CategoryController);
+forum.forumModule.controller("CategoryController", CategoryController);
 
 //------------------------------------------------------------------------------
    }

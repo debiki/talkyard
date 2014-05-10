@@ -45,7 +45,7 @@ class ListCategoriesController {
 }
 
 
-forum.forumApp.controller('ListCategoriesController', ListCategoriesController);
+forum.forumModule.controller('ListCategoriesController', ListCategoriesController);
 
 
 //------------------------------------------------------------------------------

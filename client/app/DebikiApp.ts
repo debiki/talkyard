@@ -1,5 +1,5 @@
-/**
- * Copyright (C) 2014 Kaj Magnus Lindberg (born 1979)
+/* An AngularJS module for the whole page.
+ * Copyright (C) 2012 - 2013 Kaj Magnus Lindberg (born 1979)
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -15,18 +15,32 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/// <reference path="../typedefs/angularjs/angular.d.ts" />
+/// <reference path="typedefs/angularjs/angular.d.ts" />
 
 //------------------------------------------------------------------------------
-   module forum {
+   module debiki2 {
 //------------------------------------------------------------------------------
 
+var d = { i: debiki.internal, u: debiki.v0.util };
 
-/**
- * Is initialized in ForumApp-impl.ts, to avoid cyclic file references.
- */
-export var forumModule = angular.module('DebikiForumModule', [
-    'ui.router', 'angularMoment']);
+var page: any = $('.dw-page');
+var pageRole = page.dwPageMeta().pageRole;
+
+
+var dependencies = [
+    'DebikiDashbarModule',
+    'ui.scrollfix'];
+
+if (pageRole === 'Forum') {
+  dependencies.push('DebikiForumModule');
+}
+
+if (window.location.pathname === '/-/users/') {
+  dependencies.push('DebikiUsersModule');
+}
+
+
+export var DebikiApp: ng.IModule = angular.module('DebikiApp', dependencies);
 
 
 //------------------------------------------------------------------------------

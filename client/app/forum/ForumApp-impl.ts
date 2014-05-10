@@ -27,7 +27,7 @@
 /**
  * Sets up routing using ui-router.
  */
-forum.forumApp.config(['$stateProvider', '$urlRouterProvider',
+forum.forumModule.config(['$stateProvider', '$urlRouterProvider',
     function($stateProvider, $urlRouterProvider) {
 
   $urlRouterProvider.otherwise('/');
@@ -75,7 +75,7 @@ forum.forumApp.config(['$stateProvider', '$urlRouterProvider',
  * Adds UI-Router's $state and $stateParams to the root scope, so they're
  * accessible from everywhere.
  */
-forum.forumApp.run(['$rootScope', '$state', '$stateParams',
+forum.forumModule.run(['$rootScope', '$state', '$stateParams',
     function($rootScope, $state, $stateParams) {
   $rootScope.$state = $state;
   $rootScope.$stateParams = $stateParams;
