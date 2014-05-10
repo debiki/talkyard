@@ -15,30 +15,29 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/// <reference path="typedefs/angularjs/angular.d.ts" />
-/// <reference path="typedefs/angular-ui/angular-ui-router.d.ts" />
-
 //------------------------------------------------------------------------------
-   module debiki2 {
+   module debiki2.users {
 //------------------------------------------------------------------------------
 
 
-export interface RootScope extends ng.IScope {
-  mv;
-  $state: ng.ui.IStateService;
-  $stateParams: any;
+export class UserInfo {
 
-  // These properties are added by client/page/scripts/bootstrap-angularjs.ls:
-  pageId: string;
-  pagePath: string;
-  pageRole: string;
-  pageStatus: string;
-  parentPageId: string;
-  pageExists: boolean;
+  displayName: String;
+
+  constructor() {
+  }
+
+
+  public static fromJson(json): UserInfo {
+    var i = new UserInfo();
+    i.displayName = json.displayName;
+    return i;
+  }
+
 }
 
 
 //------------------------------------------------------------------------------
    }
 //------------------------------------------------------------------------------
-// vim: fdm=marker et ts=2 sw=2 tw=0 fo=tcqwn list
+// vim: et ts=2 sw=2 tw=0 fo=tcqwn list

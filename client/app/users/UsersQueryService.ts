@@ -17,6 +17,7 @@
 
 /// <reference path="UsersModule.ts" />
 /// <reference path="action-list/ActionListItem.ts" />
+/// <reference path="user-info/UserInfo.ts" />
 
 //------------------------------------------------------------------------------
    module debiki2.users {
@@ -32,6 +33,14 @@ export class UsersQueryService {
   }
 
 
+  public loadUserInfo(userId: string): ng.IPromise<UserInfo> {
+    var deferred = this.$q.defer<UserInfo>();
+    // For now
+    deferred.resolve(DummyUserInfo);
+    return deferred.promise;
+  }
+
+
   public loadActions(): ng.IPromise<ActionListItem[]> {
     var deferred = this.$q.defer<ActionListItem[]>();
     // For now
@@ -41,6 +50,10 @@ export class UsersQueryService {
   }
 
 }
+
+
+var DummyUserInfo = new UserInfo();
+DummyUserInfo.displayName = 'Dummy User Disp Name';
 
 
 var DummyActions: ActionListItem[] = [

@@ -26,9 +26,13 @@
 
 class UsersController {
 
-  public static $inject = ['$scope'];
-  constructor(private $scope: UsersScope) {
+  public static $inject = ['$scope', 'UsersQueryService'];
+  constructor(private $scope: UsersScope, private queryService: UsersQueryService) {
     $scope.mv = this;
+
+    queryService.loadUserInfo($scope.$stateParams.userId).then((userInfo: UserInfo) => {
+      this.$scope.userInfo = userInfo;
+    });
   }
 
 }

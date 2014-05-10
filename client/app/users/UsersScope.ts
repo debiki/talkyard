@@ -24,6 +24,9 @@
 
 
 export interface UsersScope extends RootScope {
+
+  userInfo: UserInfo;
+
 }
 
 
