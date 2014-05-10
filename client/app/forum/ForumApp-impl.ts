@@ -35,7 +35,7 @@ forum.forumModule.config(['$stateProvider', '$urlRouterProvider',
   $stateProvider
     .state('index', {
       url: '/',
-      templateUrl: 'list-topics/list-topics.html',
+      templateUrl: 'forum/list-topics/list-topics.html',
       controller: 'ListTopicsController',
       onEnter: ['CategoryService',
           function(categoryService: CategoryService) {
@@ -44,7 +44,7 @@ forum.forumModule.config(['$stateProvider', '$urlRouterProvider',
     })
     .state('latest', {
       url: '/latest/*categoryPath',
-      templateUrl: 'list-topics/list-topics.html',
+      templateUrl: 'forum/list-topics/list-topics.html',
       controller: 'ListTopicsController',
       onEnter: ['$stateParams', 'CategoryService',
           function($stateParams, categoryService: CategoryService) {
@@ -53,7 +53,7 @@ forum.forumModule.config(['$stateProvider', '$urlRouterProvider',
     })
     .state('top', {
       url: '/top/*categoryPath',
-      templateUrl: 'list-topics/list-topics.html',
+      templateUrl: 'forum/list-topics/list-topics.html',
       controller: 'ListTopicsController',
       onEnter: ['$stateParams', 'CategoryService',
           function($stateParams, categoryService: CategoryService) {
@@ -62,7 +62,7 @@ forum.forumModule.config(['$stateProvider', '$urlRouterProvider',
     })
     .state('categories', {
       url: '/categories',
-      templateUrl: 'list-categories/list-categories.html',
+      templateUrl: 'forum/list-categories/list-categories.html',
       controller: 'ListCategoriesController',
       onEnter: ['CategoryService', function(categoryService: CategoryService) {
         categoryService.clearCurrentCategories();
