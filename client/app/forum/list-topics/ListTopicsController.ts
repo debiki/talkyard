@@ -17,7 +17,7 @@
 
 /// <reference path="../../typedefs/lodash/lodash.d.ts" />
 /// <reference path="../../typedefs/angularjs/angular.d.ts" />
-/// <reference path="../ForumApp.ts" />
+/// <reference path="../ForumModule.ts" />
 /// <reference path="../model/Topic.ts" />
 /// <reference path="../QueryService.ts" />
 /// <reference path="../categories/CategoryScope.ts" />

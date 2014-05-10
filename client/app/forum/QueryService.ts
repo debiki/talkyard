@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/// <reference path="ForumApp.ts" />
+/// <reference path="ForumModule.ts" />
 /// <reference path="plain-old-javascript.d.ts" />
 
 //------------------------------------------------------------------------------

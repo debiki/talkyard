@@ -16,7 +16,7 @@
  */
 
 /// <reference path="../typedefs/angularjs/angular.d.ts" />
-/// <reference path="ForumApp.ts" />
+/// <reference path="ForumModule.ts" />
 /// <reference path="list-topics/ListTopicsController.ts" />
 /// <reference path="list-categories/ListCategoriesController.ts" />
 

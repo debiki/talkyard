@@ -17,7 +17,7 @@
 
 /// <reference path="../../typedefs/angularjs/angular.d.ts" />
 /// <reference path="../../typedefs/lodash/lodash.d.ts" />
-/// <reference path="../ForumApp.ts" />
+/// <reference path="../ForumModule.ts" />
 
 //------------------------------------------------------------------------------
    module forum {
