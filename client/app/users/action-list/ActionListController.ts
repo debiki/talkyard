@@ -15,27 +15,47 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/// <reference path="../typedefs/angularjs/angular.d.ts" />
-/// <reference path="../typedefs/angular-ui/angular-ui-router.d.ts" />
+/// <reference path="../../typedefs/lodash/lodash.d.ts" />
+/// <reference path="../../typedefs/angularjs/angular.d.ts" />
+/// <reference path="../UsersModule.ts" />
+/// <reference path="../UsersQueryService.ts" />
 
 //------------------------------------------------------------------------------
-   module forum {
+   module debiki2.users {
 //------------------------------------------------------------------------------
 
 
-export interface RootScope extends ng.IScope {
-  mv;
-  $state: ng.ui.IStateService;
-
-  // These properties are added by client/page/scripts/bootstrap-angularjs.ls:
-  pageId: string;
-  pagePath: string;
-  pageRole: string;
-  pageStatus: string;
-  parentPageId: string;
-  pageExists: boolean;
+interface ActionListScope extends UsersScope {
+  actionListItems: ActionListItem[];
 }
 
+
+class ActionListController {
+
+
+  public static $inject = ['$scope', 'UsersQueryService'];
+  constructor(private $scope: ActionListScope, private queryService: UsersQueryService) {
+    console.log('New ListTopicsController.');
+    $scope.mv = this;
+    $scope.actionListItems = [];
+    this.loadMoreActions();
+  }
+
+
+  private loadMoreActions() {
+    this.queryService.loadActions().then((newActions: ActionListItem[]) => {
+      // TODO Don't add the same actions many times.
+      for (var i = 0; i < newActions.length; ++i) {
+        var newAction = newActions[i];
+        this.$scope.actionListItems.push(newAction);
+      }
+    });
+  }
+
+}
+
+
+usersModule.controller('ActionListController', ActionListController);
 
 //------------------------------------------------------------------------------
    }

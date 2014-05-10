@@ -15,45 +15,26 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+/// <reference path="UsersModule.ts" />
 /// <reference path="../typedefs/angularjs/angular.d.ts" />
-/// <reference path="../typedefs/angular-ui/angular-ui-router.d.ts" />
+/// <reference path="../typedefs/lodash/lodash.d.ts" />
 
 //------------------------------------------------------------------------------
    module debiki2.users {
 //------------------------------------------------------------------------------
 
 
-export var usersModule = angular.module('DebikiUsersModule', ['ui.router', 'angularMoment']);
+class UsersController {
+
+  public static $inject = ['$scope'];
+  constructor(private $scope: UsersScope) {
+    $scope.mv = this;
+  }
+
+}
 
 
-/**
- * Sets up routing using ui-router.
- */
-usersModule.config(['$stateProvider', '$urlRouterProvider', function(
-    $stateProvider: ng.ui.IStateProvider,
-    $urlRouterProvider: ng.ui.IUrlRouterProvider) {
-
-  $urlRouterProvider.otherwise('/');
-
-  $stateProvider
-    .state('userById', {
-      url: '/id/*userId',
-      templateUrl: 'users/users-view.html',
-      controller: 'UsersController'
-    })
-}]);
-
-
-/**
- * Adds UI-Router's $state and $stateParams to the root scope, so they're
- * accessible from everywhere.
- */
-usersModule.run(['$rootScope', '$state', '$stateParams',
-    function($rootScope, $state, $stateParams) {
-  $rootScope.$state = $state;
-  $rootScope.$stateParams = $stateParams;
-}]);
-
+usersModule.controller("UsersController", UsersController);
 
 //------------------------------------------------------------------------------
    }

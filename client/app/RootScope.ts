@@ -15,44 +15,26 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/// <reference path="../typedefs/angularjs/angular.d.ts" />
-/// <reference path="../typedefs/angular-ui/angular-ui-router.d.ts" />
+/// <reference path="typedefs/angularjs/angular.d.ts" />
+/// <reference path="typedefs/angular-ui/angular-ui-router.d.ts" />
 
 //------------------------------------------------------------------------------
-   module debiki2.users {
+   module debiki2 {
 //------------------------------------------------------------------------------
 
 
-export var usersModule = angular.module('DebikiUsersModule', ['ui.router', 'angularMoment']);
+export interface RootScope extends ng.IScope {
+  mv;
+  $state: ng.ui.IStateService;
 
-
-/**
- * Sets up routing using ui-router.
- */
-usersModule.config(['$stateProvider', '$urlRouterProvider', function(
-    $stateProvider: ng.ui.IStateProvider,
-    $urlRouterProvider: ng.ui.IUrlRouterProvider) {
-
-  $urlRouterProvider.otherwise('/');
-
-  $stateProvider
-    .state('userById', {
-      url: '/id/*userId',
-      templateUrl: 'users/users-view.html',
-      controller: 'UsersController'
-    })
-}]);
-
-
-/**
- * Adds UI-Router's $state and $stateParams to the root scope, so they're
- * accessible from everywhere.
- */
-usersModule.run(['$rootScope', '$state', '$stateParams',
-    function($rootScope, $state, $stateParams) {
-  $rootScope.$state = $state;
-  $rootScope.$stateParams = $stateParams;
-}]);
+  // These properties are added by client/page/scripts/bootstrap-angularjs.ls:
+  pageId: string;
+  pagePath: string;
+  pageRole: string;
+  pageStatus: string;
+  parentPageId: string;
+  pageExists: boolean;
+}
 
 
 //------------------------------------------------------------------------------

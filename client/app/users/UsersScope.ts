@@ -1,4 +1,4 @@
-@**
+/**
  * Copyright (C) 2014 Kaj Magnus Lindberg (born 1979)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -13,15 +13,21 @@
  *
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- *@
+ */
 
-@(tpi: debiki.SiteTpi)
+/// <reference path="../typedefs/angularjs/angular.d.ts" />
+/// <reference path="../RootScope.ts" />
+
+//------------------------------------------------------------------------------
+   module debiki2.users {
+//------------------------------------------------------------------------------
 
 
-@wrapper(tpi) {
-  <!-- default20121009/users.scala.html -->
-
-  <div ng-include="'users/users-page.html'"></div>
-
+export interface UsersScope extends RootScope {
 }
 
+
+//------------------------------------------------------------------------------
+   }
+//------------------------------------------------------------------------------
+// vim: fdm=marker et ts=2 sw=2 tw=0 fo=tcqwn list

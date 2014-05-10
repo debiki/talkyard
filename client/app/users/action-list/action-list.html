@@ -1,0 +1,26 @@
+<div ng-controller="ActionListController">
+<ol class="action-list">
+  <li ng-repeat="item in actionListItems">
+    On page <a href="{{ item.pageUrl }}">{{ item.pageTitle }}</a>,<br>
+
+    <a href="/-/users/#/id/{{ item.actingUserId }}">{{ item.actingUserDisplayName }}</a>
+    <span ng-show="item.anyReplyToPostId">
+      replied to
+    </span>
+    <span ng-show="item.anyLike > 0">
+      liked
+    </span>
+    <span ng-show="item.anyWrong > 0">
+      thought a post was wrong, namely
+    </span>
+    <span ng-show="item.anyOffTopic > 0">
+      thought a post was off-topic, namely
+    </span>
+    <a href="{{ item.pageUrl }}#post-{{ item.postId }}">post {{ item.postId }}</a>
+    <span>by <a href="/-/users/#/id/{{ item.targetUserId }}">{{ item.targetUserDisplayName }}</a></span>,
+    <span am-time-ago="item.createdAt"></span>.
+
+    <p>Excerpt: <i>{{ item.excerpt }}</i></p>
+  </li>
+</ol>
+</div>

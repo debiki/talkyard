@@ -23,7 +23,7 @@
 //------------------------------------------------------------------------------
 
 
-export interface CategoryScope extends RootScope {
+export interface CategoryScope extends debiki2.RootScope {
   selectedCategories: Category[];
   allMainCategories: Category[];
 }
