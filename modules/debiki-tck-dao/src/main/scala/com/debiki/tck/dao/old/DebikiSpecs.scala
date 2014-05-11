@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.debiki.tck.dao
+package com.debiki.tck.dao.old
 
 import com.debiki.core._
 import com.debiki.core.Prelude._

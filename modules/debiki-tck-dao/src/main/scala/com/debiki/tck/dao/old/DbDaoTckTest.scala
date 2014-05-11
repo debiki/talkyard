@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.debiki.tck.dao
+package com.debiki.tck.dao.old
 
 import com.debiki.core
 import com.debiki.core._
@@ -39,9 +39,13 @@ import PageParts.UnassignedId4
 /*
 
 ======================================
- Technology Compatibility Kit (TCK)
+ Technology Compatibility Kit (TCK)  -- OLD
 ======================================
 
+---
+Don't add any more tests to this huge monolithic test suite, add new test to
+the ScalaTest based suites in the parent folder instead.
+---
 
 1. Dependent project configuration requirement:
 
@@ -76,9 +80,7 @@ Could test:
 */
 
 
-trait TestContext {
-  def dbDaoFactory: DbDaoFactory
-  def quotaManager: QuotaCharger
+class TestContext(val dbDaoFactory: DbDaoFactory) {
   def shutdown() {
     dbDaoFactory.shutdown()
   }
