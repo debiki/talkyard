@@ -46,6 +46,9 @@ abstract class DbDaoFactory {
   def newSiteDbDao(quotaConsumers: QuotaConsumers): SiteDbDao
   def shutdown()
 
+  /** Helpful for search engine database tests. */
+  def debugDeleteRecreateSearchEngineIndexes() {}
+
   /** Helpful when writing unit test: waits e.g. for ElasticSearch to enter yellow status. */
   def debugWaitUntilSearchEngineStarted() {}
 
