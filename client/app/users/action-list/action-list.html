@@ -4,16 +4,16 @@
     On page <a href="{{ item.pageUrl }}">{{ item.pageTitle }}</a>,<br>
 
     <a href="/-/users/#/id/{{ item.actingUserId }}">{{ item.actingUserDisplayName }}</a>
-    <span ng-show="item.anyReplyToPostId">
+    <span ng-show="item.repliedToPostId">
       replied to
     </span>
-    <span ng-show="item.anyLike > 0">
+    <span ng-show="item.votedLike > 0">
       liked
     </span>
-    <span ng-show="item.anyWrong > 0">
+    <span ng-show="item.votedWrong > 0">
       thought a post was wrong, namely
     </span>
-    <span ng-show="item.anyOffTopic > 0">
+    <span ng-show="item.votedOffTopic > 0">
       thought a post was off-topic, namely
     </span>
     <a href="{{ item.pageUrl }}#post-{{ item.postId }}">post {{ item.postId }}</a>

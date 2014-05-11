@@ -17,7 +17,7 @@
 
 package controllers
 
-import actions.ApiActions.GetAction
+import actions.ApiActions._
 import collection.mutable
 import com.debiki.core._
 import com.debiki.core.Prelude._
@@ -30,6 +30,7 @@ import requests.GetRequest
 import Utils.OkSafeJson
 import Utils.ValidationImplicits._
 import DebikiHttp.throwBadReq
+
 
 
 /** Handles requests related to users (guests, roles, groups).
@@ -45,6 +46,67 @@ object UserController extends mvc.Controller {
       arguments = Seq(SiteTpi(request)))
     Ok(htmlStr) as HTML
   }
+
+
+  def loadUserInfo(userId: String) = GetAction { request =>
+    val userInfo = DummyUserInfo //request.dao.loadUserInfo(userId)
+  val json = Json.obj("userInfo" -> userInfoToJson(userInfo))
+    OkSafeJson(json)
+  }
+
+
+  def listUserActions(userId: String) = GetAction { request =>
+    val actionInfos: Seq[UserActionInfo] = Seq(DummyActionInfo)//request.dao.listUserActions(userId)
+    val json = Json.obj("actions" -> actionInfos.map(actionToJson(_)))
+    OkSafeJson(json)
+  }
+
+
+  private def userInfoToJson(userInfo: UserInfo): JsObject = {
+    Json.obj(
+      "userId" -> userInfo.userId,
+      "displayName" -> userInfo.displayName)
+  }
+
+
+  private def actionToJson(actionInfo: UserActionInfo): JsObject = {
+    Json.obj(
+      "pageUrl" -> JsString(actionInfo.pageUrl),
+      "pageTitle" -> JsString(actionInfo.pageTitle),
+      "postId" -> JsNumber(actionInfo.postId),
+      "actionId" -> JsNumber(actionInfo.actionId),
+      "actingUserId" -> JsString(actionInfo.actingUserId),
+      "actingUserDisplayName" -> JsString(actionInfo.actingUserDisplayName),
+      "targetUserId" -> JsString(actionInfo.targetUserId),
+      "targetUserDisplayName" -> JsString(actionInfo.targetUserDisplayName),
+      "createdAtEpoch" -> JsNumber(actionInfo.createdAt.getTime),
+      "excerpt" -> JsString(actionInfo.postExcerpt),
+      "repliedToPostId" -> actionInfo.repliedToPostId.map(JsNumber(_)),
+      "votedLike" -> JsBoolean(actionInfo.votedLike),
+      "votedWrong" -> JsBoolean(actionInfo.votedWrong),
+      "votedOffTopic" -> JsBoolean(actionInfo.votedOffTopic))
+  }
+
+
+  val DummyUserInfo = UserInfo(userId = "123", displayName = "Uber Gruber")
+
+
+  val DummyActionInfo = UserActionInfo(
+    userId = "123",
+    pageUrl = "/ab/cd",
+    pageTitle = "Boo Bää",
+    postId = 123,
+    postExcerpt = "Kvitter kvitter kvack",
+    actionId = 123,
+    actingUserId = "123",
+    actingUserDisplayName = "Casper Camel",
+    targetUserId = "345",
+    targetUserDisplayName = "Bo Bofink",
+    createdAt = new ju.Date,
+    repliedToPostId = Some(123),
+    votedLike = true,
+    votedWrong = true,
+    votedOffTopic = true)
 
 }
 

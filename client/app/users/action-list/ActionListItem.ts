@@ -40,11 +40,11 @@ export class ActionListItem {
   createdAt: Date;
   excerpt: string;
 
-  // This indicates what kind of actions this represents.
-  anyReplyToPostId: number;
-  anyLike: number;
-  anyWrong: number;
-  anyOffTopic: number;
+  // This indicates what kind of action this represents.
+  repliedToPostId: number;
+  votedLike: number;
+  votedWrong: number;
+  votedOffTopic: number;
 
 
   constructor() {
@@ -66,10 +66,10 @@ export class ActionListItem {
     a.targetUserDisplayName = json.targetUserDisplayName;
     a.createdAt = json.createdAt;
     a.excerpt = json.excerpt;
-    a.anyReplyToPostId = json.anyReplyToPostId;
-    a.anyLike = json.anyLike;
-    a.anyWrong = json.anyWrong;
-    a.anyOffTopic = json.anyOffTopic; 
+    a.repliedToPostId = json.repliedToPostId;
+    a.votedLike = json.votedLike;
+    a.votedWrong = json.votedWrong;
+    a.votedOffTopic = json.votedOffTopic;
     return a;
   }
 

@@ -35,80 +35,29 @@ export class UsersQueryService {
 
   public loadUserInfo(userId: string): ng.IPromise<UserInfo> {
     var deferred = this.$q.defer<UserInfo>();
-    // For now
-    deferred.resolve(DummyUserInfo);
+    this.$http.get('/-/load-user-info?userId=' + userId).success((response) => {
+      var userInfo = UserInfo.fromJson(response.userInfo);
+      deferred.resolve(userInfo);
+    });
     return deferred.promise;
   }
 
 
-  public loadActions(): ng.IPromise<ActionListItem[]> {
+  public loadActions(userId: string): ng.IPromise<ActionListItem[]> {
     var deferred = this.$q.defer<ActionListItem[]>();
-    // For now
-    var actions: ActionListItem[] = DummyActions;
-    deferred.resolve(actions);
+    this.$http.get('/-/list-user-actions?userId=' + userId).success((response) => {
+      var actionItems: ActionListItem[] = [];
+      for (var i = 0; i < response.actions.length; ++i) {
+        var json = response.actions[i];
+        var c = ActionListItem.fromJson(json);
+        actionItems.push(c);
+      }
+      deferred.resolve(actionItems);
+    });
     return deferred.promise;
   }
 
 }
-
-
-var DummyUserInfo = new UserInfo();
-DummyUserInfo.displayName = 'Dummy User Disp Name';
-
-
-var DummyActions: ActionListItem[] = [
-  ActionListItem.fromJson({
-    pageUrl: 'http://example.com',
-    pageTitle: 'Title',
-    postId: 1234,
-    actionId: 1234,
-    actingUserId: '345',
-    actingUserDisplayName: 'Actor',
-    targetUserId: '123',
-    targetUserDisplayName: 'Target User',
-    createdAt: new Date(),
-    excerpt: 'reitsns insrt gpupfu kitebtc 0wfk.',
-    anyReplyToPostId: 123
-  }),
-  ActionListItem.fromJson({
-    pageUrl: 'http://example.com',
-    pageTitle: 'Title',
-    postId: 1234,
-    actionId: 1234,
-    actingUserId: '345',
-    actingUserDisplayName: 'Actor',
-    targetUserId: '123',
-    targetUserDisplayName: 'Target User',
-    createdAt: new Date(),
-    excerpt: 'reitsns insrt gpupfu kitebtc 0wfk.',
-    anyLike: 1
-  }),
-  ActionListItem.fromJson({
-    pageUrl: 'http://example.com',
-    pageTitle: 'Title',
-    postId: 1234,
-    actionId: 1234,
-    actingUserId: '345',
-    actingUserDisplayName: 'Actor',
-    targetUserId: '123',
-    targetUserDisplayName: 'Target User',
-    createdAt: new Date(),
-    excerpt: 'reitsns insrt gpupfu kitebtc 0wfk.',
-    anyWrong: 1
-  }),
-  ActionListItem.fromJson({
-    pageUrl: 'http://example.com',
-    pageTitle: 'Title',
-    postId: 1234,
-    actionId: 1234,
-    actingUserId: '345',
-    actingUserDisplayName: 'Actor',
-    targetUserId: '123',
-    targetUserDisplayName: 'Target User',
-    createdAt: new Date(),
-    excerpt: 'reitsns insrt gpupfu kitebtc 0wfk.',
-    anyOffTopic: 1
-  })];
 
 
 usersModule.service('UsersQueryService', UsersQueryService);

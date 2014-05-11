@@ -43,7 +43,8 @@ class ActionListController {
 
 
   private loadMoreActions() {
-    this.queryService.loadActions().then((newActions: ActionListItem[]) => {
+    this.queryService.loadActions(this.$scope.$stateParams.userId).then(
+        (newActions: ActionListItem[]) => {
       // TODO Don't add the same actions many times.
       for (var i = 0; i < newActions.length; ++i) {
         var newAction = newActions[i];
