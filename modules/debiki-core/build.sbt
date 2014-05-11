@@ -4,7 +4,7 @@ organization := "com.debiki"
 
 version := "0.0.2-SNAPSHOT"
 
-scalaVersion := "2.10.1"
+scalaVersion := "2.10.3"
 
 resolvers += "Scala-Tools Maven2 Repository" at "http://scala-tools.org/repo-releases"
 
@@ -16,8 +16,7 @@ libraryDependencies ++= Seq(
   "org.mindrot" % "jbcrypt" % "0.3m", // perhaps try to move to debiki-server?
   "junit" % "junit" % "4.7" % "test",
   "org.specs2" %% "specs2" % "1.14" % "test",
-  "org.scalatest" % "scalatest_2.10" % "2.0.M5b" % "test",
-  "org.scala-lang" % "scala-actors" % "2.10.1" % "test" // needed by ScalaTest?
+  "org.scalatest" % "scalatest_2.10" % "2.1.5" % "test"
 )
 
 scalacOptions += "-deprecation"
