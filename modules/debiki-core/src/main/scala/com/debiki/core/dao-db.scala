@@ -272,6 +272,12 @@ abstract class SiteDbDao {
         forOpenIdDetails: OpenIdDetails = null,
         forEmailAddr: String = null): Option[(Identity, User)]
 
+  def loadUserInfoAndStats(userId: UserId): Option[UserInfoAndStats]
+
+  def loadUserStats(userId: UserId): UserStats
+
+  def listUserActions(userId: UserId): Seq[UserActionInfo]
+
   def loadPermsOnPage(reqInfo: PermsOnPageQuery): PermsOnPage
 
   def listUsers(userQuery: UserQuery): Seq[(User, Seq[String])]
@@ -687,6 +693,21 @@ class ChargingSiteDbDao(
     _chargeForOneReadReq()
     _spi.loadIdtyDetailsAndUser(forLoginId = forLoginId,
       forOpenIdDetails = forOpenIdDetails, forEmailAddr = forEmailAddr)
+  }
+
+  def loadUserInfoAndStats(userId: UserId): Option[UserInfoAndStats] = {
+    _chargeForOneReadReq()
+    _spi.loadUserInfoAndStats(userId)
+  }
+
+  def loadUserStats(userId: UserId): UserStats = {
+    _chargeForOneReadReq()
+    _spi.loadUserStats(userId)
+  }
+
+  def listUserActions(userId: UserId): Seq[UserActionInfo] = {
+    _chargeForOneReadReq()
+    _spi.listUserActions(userId)
   }
 
   def loadPermsOnPage(reqInfo: PermsOnPageQuery): PermsOnPage = {

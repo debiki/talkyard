@@ -24,7 +24,25 @@ import java.{util => ju}
   * and statistics on how many posts s/he has posted, how s/he has voted,
   * number of replies, number of likes received etcetera.
   */
-case class UserInfo(
-  userId: UserId,
-  displayName: String)
+case class UserInfoAndStats(
+  info: User,
+  stats: UserStats)
 
+
+case class UserStats(
+  numPages: Int,
+  numPosts: Int,
+  numReplies: Int,
+  numLikesGiven: Int,
+  numLikesReceived: Int,
+  numWrongsGiven: Int,
+  numWrongsReceived: Int,
+  numOffTopicsGiven: Int,
+  numOffTopicsReceived: Int)
+
+
+object UserStats {
+
+  val Zero = UserStats(0, 0, 0, 0, 0, 0, 0, 0, 0)
+
+}

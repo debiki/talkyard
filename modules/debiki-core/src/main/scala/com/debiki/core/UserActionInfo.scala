@@ -28,8 +28,9 @@ import java.{util => ju}
   */
 case class UserActionInfo(
   userId: UserId,
-  pageUrl: String,
+  pageId: String,
   pageTitle: String,
+  pageRole: PageRole,
   postId: PostId,
   postExcerpt: String,
   actionId: ActionId,
@@ -38,7 +39,9 @@ case class UserActionInfo(
   targetUserId: UserId,
   targetUserDisplayName: String,
   createdAt: ju.Date,
-  repliedToPostId: Option[ActionId],
+  createdNewPage: Boolean,
+  repliedToPostId: Option[PostId],
+  editedPostId: Option[PostId],
   votedLike: Boolean,
   votedWrong: Boolean,
   votedOffTopic: Boolean)
