@@ -68,7 +68,16 @@ object UserController extends mvc.Controller {
       "userId" -> userInfo.info.id,
       "displayName" -> userInfo.info.displayName,
       "isAdmin" -> userInfo.info.isAdmin,
-      "isModerator" -> false) // userInfo.info.isModerator)
+      "isModerator" -> false, // userInfo.info.isModerator,
+      "numPages" -> userInfo.stats.numPages,
+      "numPosts" -> userInfo.stats.numPosts,
+      "numReplies" -> userInfo.stats.numReplies,
+      "numLikesGiven" -> userInfo.stats.numLikesGiven,
+      "numLikesReceived" -> userInfo.stats.numLikesReceived,
+      "numWrongsGiven" -> userInfo.stats.numWrongsGiven,
+      "numWrongsReceived" -> userInfo.stats.numWrongsReceived,
+      "numOffTopicsGiven" -> userInfo.stats.numOffTopicsGiven,
+      "numOffTopicsReceived" -> userInfo.stats.numOffTopicsReceived)
 
     /* Discourse also includes:
       "avatar_template": ...

@@ -23,6 +23,15 @@
 export class UserInfo {
 
   displayName: String;
+  numPages: number;
+  numPosts: number;
+  numReplies: number;
+  numLikesGiven: number;
+  numLikesReceived: number;
+  numWrongsGiven: number;
+  numWrongsReceived: number;
+  numOffTopicsGiven: number;
+  numOffTopicsReceived: number;
 
   constructor() {
   }
@@ -31,6 +40,15 @@ export class UserInfo {
   public static fromJson(json): UserInfo {
     var i = new UserInfo();
     i.displayName = json.displayName;
+    i.numPages = json.numPages;
+    i.numPosts = json.numPosts;
+    i.numReplies = json.numReplies;
+    i.numLikesGiven = json.numLikesGiven;
+    i.numLikesReceived = json.numLikesReceived;
+    i.numWrongsGiven = json.numWrongsGiven;
+    i.numWrongsReceived = json.numWrongsReceived;
+    i.numOffTopicsGiven = json.numOffTopicsGiven;
+    i.numOffTopicsReceived = json.numOffTopicsReceived;
     return i;
   }
 
