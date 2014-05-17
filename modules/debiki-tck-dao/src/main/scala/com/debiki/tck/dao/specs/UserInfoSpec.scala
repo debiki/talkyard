@@ -119,15 +119,28 @@ class UserInfoSpec(daoFactory: DbDaoFactory) extends DbDaoSpec(daoFactory) {
       }
 
       "find user action infos" in {
+        def testActionInfo(info: UserActionInfo) {
+          info.actingUserId mustBe passwordRole.id
+          info.actingUserDisplayName mustBe siteUtils.DefaultPasswordUserName
+          var numThingsDone = 0
+          if (info.createdNewPage) numThingsDone += 1
+          if (info.repliedToPostId.isDefined) numThingsDone += 1
+          if (info.editedPostId.isDefined) numThingsDone += 1
+          if (info.votedLike) numThingsDone += 1
+          if (info.votedWrong) numThingsDone += 1
+          if (info.votedOffTopic) numThingsDone += 1
+          numThingsDone mustBe 1
+        }
         siteUtils.dao.listUserActions(passwordRole.id) match {
           case Seq(offTopicVote, wrongVote, likeVote, newPage) =>
-            System.out.println("vovve") /*
-            actionInfo.actingUserId mustBe passwordRole.id
-            actionInfo.createdNewTopic mustBe true
-            actionInfo.repliedToPostId mustBe None
-            actionInfo.votedLike mustBe false
-            actionInfo.votedWrong mustBe false
-            actionInfo.votedOffTopic mustBe false */
+            testActionInfo(offTopicVote)
+            testActionInfo(wrongVote)
+            testActionInfo(likeVote)
+            testActionInfo(newPage)
+            newPage.createdNewPage mustBe true
+            likeVote.votedLike mustBe true
+            wrongVote.votedWrong mustBe true
+            offTopicVote.votedOffTopic mustBe true
           case x => fail(s"Wrong number of actions, expected one, got: $x")
         }
       }
@@ -189,13 +202,15 @@ class SiteTestUtils(site: Tenant, val daoFactory: DbDaoFactory) {
       text = text, markup = "para", approval = None)
 
 
+  val DefaultPasswordUserName = "PasswordUser"
+
   def createPasswordRole(): (Identity, User) = {
     val email = "pswd-test@ex.com"
     val hash = DbDao.saltAndHashPassword(defaultPassword)
     val identityNoId = PasswordIdentity(
       id = "?", userId = "?", email = email, passwordSaltHash = hash)
     val userNoId = User(
-      id = "?", displayName = "PasswordUser", email = email,
+      id = "?", displayName = DefaultPasswordUserName, email = email,
       emailNotfPrefs = EmailNotfPrefs.Receive)
     dao.createPasswordIdentityAndRole(identityNoId, userNoId)
   }
