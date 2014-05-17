@@ -443,7 +443,8 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
       val actions = page.parts
       testPage = page.withoutPath
       actions.postCount must_== 1
-      actions.guid.length must be_>(1)  // not = '?'
+      actions.pageId must not(beEmpty)
+      actions.pageId must not(be("?"))
       actions must havePostLike(ex1_rootPost)
       page.meta.cachedAuthorDispName must_== loginGrant.user.displayName
       page.meta.cachedAuthorUserId must_== loginGrant.user.id
@@ -576,7 +577,8 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
         val actions = page.parts
         blogMainPageId = actions.pageId
         actions.postCount must_== 0
-        actions.pageId.length must be_>(1)  // not = '?'
+        actions.pageId must not(beEmpty)
+        actions.pageId must not(be("?"))
       }
 
       "look up meta info for the Blog, find no child pages" in {
@@ -605,7 +607,8 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
         val actions = page.parts
         blogArticleId = actions.pageId
         actions.postCount must_== 0
-        actions.pageId.length must be_>(1)  // not = '?'
+        actions.pageId must not(beEmpty)
+        actions.pageId must not(be("?"))
       }
 
       "look up meta info for the Blog again, find one child page" in {
