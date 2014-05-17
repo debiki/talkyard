@@ -42,6 +42,7 @@ export class ActionListItem {
 
   // This indicates what kind of action this represents.
   repliedToPostId: number;
+  editedPostId: number;
   votedLike: number;
   votedWrong: number;
   votedOffTopic: number;
@@ -64,9 +65,10 @@ export class ActionListItem {
     a.actingUserDisplayName = json.actingUserDisplayName;
     a.targetUserId = json.targetUserId;
     a.targetUserDisplayName = json.targetUserDisplayName;
-    a.createdAt = json.createdAt;
+    a.createdAt = new Date(json.createdAtEpoch);
     a.excerpt = json.excerpt;
     a.repliedToPostId = json.repliedToPostId;
+    a.editedPostId = json.editedPostId;
     a.votedLike = json.votedLike;
     a.votedWrong = json.votedWrong;
     a.votedOffTopic = json.votedOffTopic;
