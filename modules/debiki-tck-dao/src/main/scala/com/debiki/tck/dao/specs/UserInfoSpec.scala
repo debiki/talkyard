@@ -200,7 +200,7 @@ class SiteTestUtils(site: Tenant, val daoFactory: DbDaoFactory) {
   def defaultBody(loginGrant: LoginGrant, text: String) = PostActionDto.forNewPageBody(
     text = text,
     creationDati = new ju.Date,
-    userIdData = UserIdData.newTest(loginId = loginGrant.login.id, userId = loginGrant.user.id),
+    userIdData = loginGrant.testUserIdData,
     pageRole = PageRole.Generic,
     approval = Some(Approval.WellBehavedUser))
 
@@ -208,7 +208,7 @@ class SiteTestUtils(site: Tenant, val daoFactory: DbDaoFactory) {
   def defaultComment(loginGrant: LoginGrant, text: String = "Comment text") =
     PostActionDto.forNewPost(
       id = PageParts.UnassignedId, creationDati = new ju.Date,
-      userIdData = UserIdData.newTest(loginGrant.login.id, userId = loginGrant.user.id),
+      userIdData = loginGrant.testUserIdData,
       parentPostId = Some(PageParts.BodyId),
       text = text, markup = "para", approval = None)
 
@@ -282,7 +282,7 @@ class SiteTestUtils(site: Tenant, val daoFactory: DbDaoFactory) {
       id = PageParts.UnassignedId,
       postId = postId,
       creationDati = new ju.Date(),
-      userIdData = UserIdData.newTest(loginId = loginGrant.login.id, userId = loginGrant.user.id),
+      userIdData = loginGrant.testUserIdData,
       payload = voteType)
     dao.savePageActions(page, vote::Nil)
   }
