@@ -35,7 +35,9 @@ class UserInfoSpec(daoFactory: DbDaoFactory) extends DbDaoSpec(daoFactory) {
   "UserInfoSpec can" - {
 
     var page: PageNoPath = null
+    val PageText = "The page text"
     var comment: Post = null
+    val CommentText = "The comment text"
     var passwordIdentity: PasswordIdentity = null
     var passwordRole: User = null
     var passwordLoginGrant: LoginGrant = null
@@ -53,11 +55,13 @@ class UserInfoSpec(daoFactory: DbDaoFactory) extends DbDaoSpec(daoFactory) {
 
     "create a page, find one action" in {
       passwordLoginGrant = siteUtils.login(passwordIdentity)
-      page = siteUtils.createPageAndBody(passwordLoginGrant, PageRole.ForumTopic).withoutPath
+      page = siteUtils.createPageAndBody(
+        passwordLoginGrant, PageRole.ForumTopic, PageText).withoutPath
       siteUtils.dao.loadUserInfoAndStats(passwordRole.id) mustBe Some(
         UserInfoAndStats(info = passwordRole, stats = UserStats.Zero.copy(numPages = 1)))
       siteUtils.dao.listUserActions(passwordRole.id) match {
         case Seq(actionInfo) =>
+          actionInfo.postExcerpt mustBe PageText
           actionInfo.actingUserId mustBe passwordRole.id
           actionInfo.createdNewPage mustBe true
           actionInfo.repliedToPostId mustBe None
@@ -77,14 +81,15 @@ class UserInfoSpec(daoFactory: DbDaoFactory) extends DbDaoSpec(daoFactory) {
     }
 
     "add a comment, find one action" in {
-      val (pageAfter, newComment) = siteUtils.addComment(guestLoginGrant, page, "Comment text")
-      page = pageAfter
-      comment = newComment
+      val (page2, comment2) = siteUtils.addComment(guestLoginGrant, page, CommentText)
+      page = siteUtils.review(passwordLoginGrant, page2, comment2.id, Some(Approval.Manual))
+      comment = page.parts.getPost(comment2.id) getOrElse fail("Comment not found")
       siteUtils.dao.loadUserInfoAndStats(guestUser.id) mustBe Some(
         UserInfoAndStats(info = guestUser, stats = UserStats.Zero.copy(
           numPosts = 1)))
       siteUtils.dao.listUserActions(guestUser.id) match {
         case Seq(actionInfo) =>
+          actionInfo.postExcerpt mustBe CommentText
           actionInfo.actingUserId mustBe guestUser.id
           actionInfo.createdNewPage mustBe false
           actionInfo.repliedToPostId mustBe Some(PageParts.BodyId)
@@ -122,6 +127,12 @@ class UserInfoSpec(daoFactory: DbDaoFactory) extends DbDaoSpec(daoFactory) {
         def testActionInfo(info: UserActionInfo) {
           info.actingUserId mustBe passwordRole.id
           info.actingUserDisplayName mustBe siteUtils.DefaultPasswordUserName
+          if (info.postId == 1) {
+            info.postExcerpt mustBe PageText
+          }
+          else {
+            info.postExcerpt mustBe CommentText
+          }
           var numThingsDone = 0
           if (info.createdNewPage) numThingsDone += 1
           if (info.repliedToPostId.isDefined) numThingsDone += 1
@@ -132,7 +143,7 @@ class UserInfoSpec(daoFactory: DbDaoFactory) extends DbDaoSpec(daoFactory) {
           numThingsDone mustBe 1
         }
         siteUtils.dao.listUserActions(passwordRole.id) match {
-          case Seq(offTopicVote, wrongVote, likeVote, newPage) =>
+          case Seq(offTopicVote, wrongVote, likeVote, approvalOfComment, newPage) =>
             testActionInfo(offTopicVote)
             testActionInfo(wrongVote)
             testActionInfo(likeVote)
@@ -141,7 +152,7 @@ class UserInfoSpec(daoFactory: DbDaoFactory) extends DbDaoSpec(daoFactory) {
             likeVote.votedLike mustBe true
             wrongVote.votedWrong mustBe true
             offTopicVote.votedOffTopic mustBe true
-          case x => fail(s"Wrong number of actions, expected one, got: $x")
+          case x => fail(s"Wrong number of actions, got: $x")
         }
       }
     }
@@ -186,8 +197,8 @@ class SiteTestUtils(site: Tenant, val daoFactory: DbDaoFactory) {
   val defaultPagePath = PagePath(site.id, "/", None, showId = true, pageSlug = "slug")
   val defaultPassword = "ThePassword"
 
-  def defaultBody(loginGrant: LoginGrant) = PostActionDto.forNewPageBody(
-    text = "Text text text",
+  def defaultBody(loginGrant: LoginGrant, text: String) = PostActionDto.forNewPageBody(
+    text = text,
     creationDati = new ju.Date,
     userIdData = UserIdData.newTest(loginId = loginGrant.login.id, userId = loginGrant.user.id),
     pageRole = PageRole.Generic,
@@ -238,8 +249,8 @@ class SiteTestUtils(site: Tenant, val daoFactory: DbDaoFactory) {
   }
 
 
-  def createPageAndBody(loginGrant: LoginGrant, pageRole: PageRole): Page = {
-    val pagePartsNoId = PageParts(guid = "?", actionDtos = defaultBody(loginGrant)::Nil)
+  def createPageAndBody(loginGrant: LoginGrant, pageRole: PageRole, text: String): Page = {
+    val pagePartsNoId = PageParts(guid = "?", actionDtos = defaultBody(loginGrant, text)::Nil)
     val page = dao.createPage(Page.newPage(
       pageRole, defaultPagePath, pagePartsNoId, publishDirectly = true,
       author = loginGrant.user))
@@ -252,6 +263,16 @@ class SiteTestUtils(site: Tenant, val daoFactory: DbDaoFactory) {
     val (pageAfter, rawPost::Nil) = dao.savePageActions(page, postNoId::Nil)
     val post = pageAfter.parts.getPost(rawPost.id) getOrElse assErr("Dw7FK91R", "New post missing")
     (pageAfter, post)
+  }
+
+
+  def review(loginGrant: LoginGrant, page: PageNoPath, postId: PostId,
+        anyApproval: Option[Approval]): PageNoPath = {
+    val reviewNoId = PostActionDto.toReviewPost(
+      id = PageParts.UnassignedId, postId = postId, userIdData = loginGrant.testUserIdData,
+      ctime = new ju.Date(), approval = anyApproval)
+    val (updatedPage, review) = dao.savePageActions(page + loginGrant.user, reviewNoId::Nil)
+    updatedPage
   }
 
 
