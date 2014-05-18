@@ -15,17 +15,18 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/// <reference path="../typedefs/angularjs/angular.d.ts" />
-/// <reference path="../typedefs/angular-ui/angular-ui-router.d.ts" />
+/// <reference path="typedefs/angularjs/angular.d.ts" />
+/// <reference path="typedefs/angular-ui/angular-ui-router.d.ts" />
 
 //------------------------------------------------------------------------------
-   module forum {
+   module debiki2 {
 //------------------------------------------------------------------------------
 
 
 export interface RootScope extends ng.IScope {
   mv;
   $state: ng.ui.IStateService;
+  $stateParams: any;
 
   // These properties are added by client/page/scripts/bootstrap-angularjs.ls:
   pageId: string;

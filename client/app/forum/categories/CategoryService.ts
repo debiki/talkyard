@@ -15,10 +15,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/// <reference path="../ForumApp.ts" />
+/// <reference path="../../RootScope.ts" />
+/// <reference path="../ForumModule.ts" />
 
 //------------------------------------------------------------------------------
-   module forum {
+   module debiki2.forum {
 //------------------------------------------------------------------------------
 
 
@@ -33,7 +34,7 @@ export class CategoryService {
 
 
   public static $inject = ['$rootScope'];
-  constructor(private $rootScope: RootScope) {
+  constructor(private $rootScope: debiki2.RootScope) {
     this.setupCategories();
   }
 
@@ -129,7 +130,7 @@ export class CategoryService {
 }
 
 
-forum.forumApp.service('CategoryService', CategoryService);
+forumModule.service('CategoryService', CategoryService);
 
 //------------------------------------------------------------------------------
    }

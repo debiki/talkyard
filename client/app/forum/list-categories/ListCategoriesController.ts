@@ -16,10 +16,10 @@
  */
 
 /// <reference path="../../typedefs/angularjs/angular.d.ts" />
-/// <reference path="../ForumApp.ts" />
+/// <reference path="../ForumModule.ts" />
 
 //------------------------------------------------------------------------------
-   module forum {
+   module debiki2.forum {
 //------------------------------------------------------------------------------
 
 interface ListCategoriesScope extends CategoryScope {
@@ -45,7 +45,7 @@ class ListCategoriesController {
 }
 
 
-forum.forumApp.controller('ListCategoriesController', ListCategoriesController);
+forumModule.controller('ListCategoriesController', ListCategoriesController);
 
 
 //------------------------------------------------------------------------------

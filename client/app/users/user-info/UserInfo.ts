@@ -15,21 +15,47 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/// <reference path="../../typedefs/angularjs/angular.d.ts" />
-/// <reference path="../ForumModule.ts" />
-
 //------------------------------------------------------------------------------
-   module debiki2.forum {
+   module debiki2.users {
 //------------------------------------------------------------------------------
 
 
-export interface CategoryScope extends debiki2.RootScope {
-  selectedCategories: Category[];
-  allMainCategories: Category[];
+export class UserInfo {
+
+  displayName: String;
+  numPages: number;
+  numPosts: number;
+  numReplies: number;
+  numLikesGiven: number;
+  numLikesReceived: number;
+  numWrongsGiven: number;
+  numWrongsReceived: number;
+  numOffTopicsGiven: number;
+  numOffTopicsReceived: number;
+
+  constructor() {
+  }
+
+
+  public static fromJson(json): UserInfo {
+    var i = new UserInfo();
+    i.displayName = json.displayName;
+    i.numPages = json.numPages;
+    i.numPosts = json.numPosts;
+    i.numReplies = json.numReplies;
+    i.numLikesGiven = json.numLikesGiven;
+    i.numLikesReceived = json.numLikesReceived;
+    i.numWrongsGiven = json.numWrongsGiven;
+    i.numWrongsReceived = json.numWrongsReceived;
+    i.numOffTopicsGiven = json.numOffTopicsGiven;
+    i.numOffTopicsReceived = json.numOffTopicsReceived;
+    return i;
+  }
+
 }
 
 
 //------------------------------------------------------------------------------
    }
 //------------------------------------------------------------------------------
-// vim: fdm=marker et ts=2 sw=2 tw=0 fo=tcqwn list
+// vim: et ts=2 sw=2 tw=0 fo=tcqwn list

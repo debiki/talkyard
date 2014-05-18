@@ -15,19 +15,30 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/// <reference path="../../typedefs/angularjs/angular.d.ts" />
-/// <reference path="../ForumModule.ts" />
+/// <reference path="UsersModule.ts" />
+/// <reference path="../typedefs/angularjs/angular.d.ts" />
+/// <reference path="../typedefs/lodash/lodash.d.ts" />
 
 //------------------------------------------------------------------------------
-   module debiki2.forum {
+   module debiki2.users {
 //------------------------------------------------------------------------------
 
 
-export interface CategoryScope extends debiki2.RootScope {
-  selectedCategories: Category[];
-  allMainCategories: Category[];
+class UsersController {
+
+  public static $inject = ['$scope', 'UsersQueryService'];
+  constructor(private $scope: UsersScope, private queryService: UsersQueryService) {
+    $scope.mv = this;
+
+    queryService.loadUserInfo($scope.$stateParams.userId).then((userInfo: UserInfo) => {
+      this.$scope.userInfo = userInfo;
+    });
+  }
+
 }
 
+
+usersModule.controller("UsersController", UsersController);
 
 //------------------------------------------------------------------------------
    }

@@ -15,18 +15,18 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/// <reference path="../../typedefs/angularjs/angular.d.ts" />
-/// <reference path="../ForumModule.ts" />
+/// <reference path="../typedefs/angularjs/angular.d.ts" />
 
 //------------------------------------------------------------------------------
    module debiki2.forum {
 //------------------------------------------------------------------------------
 
 
-export interface CategoryScope extends debiki2.RootScope {
-  selectedCategories: Category[];
-  allMainCategories: Category[];
-}
+/**
+ * Is initialized in ForumApp-impl.ts, to avoid cyclic file references.
+ */
+export var forumModule = angular.module('DebikiForumModule', [
+    'ui.router', 'angularMoment']);
 
 
 //------------------------------------------------------------------------------

@@ -15,19 +15,48 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+/// <reference path="../../typedefs/lodash/lodash.d.ts" />
 /// <reference path="../../typedefs/angularjs/angular.d.ts" />
-/// <reference path="../ForumModule.ts" />
+/// <reference path="../UsersModule.ts" />
+/// <reference path="../UsersQueryService.ts" />
 
 //------------------------------------------------------------------------------
-   module debiki2.forum {
+   module debiki2.users {
 //------------------------------------------------------------------------------
 
 
-export interface CategoryScope extends debiki2.RootScope {
-  selectedCategories: Category[];
-  allMainCategories: Category[];
+interface ActionListScope extends UsersScope {
+  actionListItems: ActionListItem[];
 }
 
+
+class ActionListController {
+
+
+  public static $inject = ['$scope', 'UsersQueryService'];
+  constructor(private $scope: ActionListScope, private queryService: UsersQueryService) {
+    console.log('New ListTopicsController.');
+    $scope.mv = this;
+    $scope.actionListItems = [];
+    this.loadMoreActions();
+  }
+
+
+  private loadMoreActions() {
+    this.queryService.loadActions(this.$scope.$stateParams.userId).then(
+        (newActions: ActionListItem[]) => {
+      // TODO Don't add the same actions many times.
+      for (var i = 0; i < newActions.length; ++i) {
+        var newAction = newActions[i];
+        this.$scope.actionListItems.push(newAction);
+      }
+    });
+  }
+
+}
+
+
+usersModule.controller('ActionListController', ActionListController);
 
 //------------------------------------------------------------------------------
    }

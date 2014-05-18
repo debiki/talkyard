@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.debiki.tck.dao
+package com.debiki.tck.dao.old
 
 import com.debiki.core
 import com.debiki.core._
@@ -39,9 +39,13 @@ import PageParts.UnassignedId4
 /*
 
 ======================================
- Technology Compatibility Kit (TCK)
+ Technology Compatibility Kit (TCK)  -- OLD
 ======================================
 
+---
+Don't add any more tests to this huge monolithic test suite, add new test to
+the ScalaTest based suites in the parent folder instead.
+---
 
 1. Dependent project configuration requirement:
 
@@ -76,9 +80,7 @@ Could test:
 */
 
 
-trait TestContext {
-  def dbDaoFactory: DbDaoFactory
-  def quotaManager: QuotaCharger
+class TestContext(val dbDaoFactory: DbDaoFactory) {
   def shutdown() {
     dbDaoFactory.shutdown()
   }
@@ -441,7 +443,8 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
       val actions = page.parts
       testPage = page.withoutPath
       actions.postCount must_== 1
-      actions.guid.length must be_>(1)  // not = '?'
+      actions.pageId must not(beEmpty)
+      actions.pageId must not(be("?"))
       actions must havePostLike(ex1_rootPost)
       page.meta.cachedAuthorDispName must_== loginGrant.user.displayName
       page.meta.cachedAuthorUserId must_== loginGrant.user.id
@@ -574,7 +577,8 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
         val actions = page.parts
         blogMainPageId = actions.pageId
         actions.postCount must_== 0
-        actions.pageId.length must be_>(1)  // not = '?'
+        actions.pageId must not(beEmpty)
+        actions.pageId must not(be("?"))
       }
 
       "look up meta info for the Blog, find no child pages" in {
@@ -603,7 +607,8 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
         val actions = page.parts
         blogArticleId = actions.pageId
         actions.postCount must_== 0
-        actions.pageId.length must be_>(1)  // not = '?'
+        actions.pageId must not(beEmpty)
+        actions.pageId must not(be("?"))
       }
 
       "look up meta info for the Blog again, find one child page" in {

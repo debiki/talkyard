@@ -46,6 +46,9 @@ abstract class DbDaoFactory {
   def newSiteDbDao(quotaConsumers: QuotaConsumers): SiteDbDao
   def shutdown()
 
+  /** Helpful for search engine database tests. */
+  def debugDeleteRecreateSearchEngineIndexes() {}
+
   /** Helpful when writing unit test: waits e.g. for ElasticSearch to enter yellow status. */
   def debugWaitUntilSearchEngineStarted() {}
 
@@ -268,6 +271,12 @@ abstract class SiteDbDao {
   def loadIdtyDetailsAndUser(forLoginId: String = null,
         forOpenIdDetails: OpenIdDetails = null,
         forEmailAddr: String = null): Option[(Identity, User)]
+
+  def loadUserInfoAndStats(userId: UserId): Option[UserInfoAndStats]
+
+  def loadUserStats(userId: UserId): UserStats
+
+  def listUserActions(userId: UserId): Seq[UserActionInfo]
 
   def loadPermsOnPage(reqInfo: PermsOnPageQuery): PermsOnPage
 
@@ -684,6 +693,21 @@ class ChargingSiteDbDao(
     _chargeForOneReadReq()
     _spi.loadIdtyDetailsAndUser(forLoginId = forLoginId,
       forOpenIdDetails = forOpenIdDetails, forEmailAddr = forEmailAddr)
+  }
+
+  def loadUserInfoAndStats(userId: UserId): Option[UserInfoAndStats] = {
+    _chargeForOneReadReq()
+    _spi.loadUserInfoAndStats(userId)
+  }
+
+  def loadUserStats(userId: UserId): UserStats = {
+    _chargeForOneReadReq()
+    _spi.loadUserStats(userId)
+  }
+
+  def listUserActions(userId: UserId): Seq[UserActionInfo] = {
+    _chargeForOneReadReq()
+    _spi.listUserActions(userId)
   }
 
   def loadPermsOnPage(reqInfo: PermsOnPageQuery): PermsOnPage = {

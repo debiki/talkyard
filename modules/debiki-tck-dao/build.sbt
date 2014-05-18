@@ -4,11 +4,12 @@ organization := "com.debiki"
 
 version := "0.0.2-SNAPSHOT"
 
-scalaVersion := "2.10.1"
+scalaVersion := "2.10.3"
 
 libraryDependencies ++= Seq(
   "junit" % "junit" % "4.7",
-  "org.specs2" %% "specs2" % "1.14"
+  "org.scalatest" % "scalatest_2.10" % "2.1.5",
+  "org.specs2" %% "specs2" % "1.14"  // shouldn't use no more, ScalaTest is better
 )
 
 // See: https://groups.google.com/forum/?fromgroups=#!topic/simple-build-tool/bkF1IDZj4L0

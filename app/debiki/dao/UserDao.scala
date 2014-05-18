@@ -63,6 +63,14 @@ trait UserDao {
       forOpenIdDetails = forOpenIdDetails, forEmailAddr = forEmailAddr)
 
 
+  def loadUserInfoAndStats(userId: UserId): Option[UserInfoAndStats] =
+    siteDbDao.loadUserInfoAndStats(userId)
+
+
+  def listUserActions(userId: UserId): Seq[UserActionInfo] =
+    siteDbDao.listUserActions(userId)
+
+
   def loadPermsOnPage(reqInfo: PermsOnPageQuery): PermsOnPage =
     // Currently this results in no database request; there's nothing to cache.
     siteDbDao.loadPermsOnPage(reqInfo)

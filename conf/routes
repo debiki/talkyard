@@ -84,10 +84,12 @@ GET   /-/create-embedded-site/create                          controllers.Create
 GET   /-/create-embedded-site/welcome-owner                   controllers.CreateEmbeddedSiteController.welcomeOwner
 GET   /-/create-embedded-site/instructions                    controllers.CreateEmbeddedSiteController.embeddingSiteInstructionsPage
 
+GET   /-/admin/                 controllers.AdminController.viewAdminPage
+# Old admin pages:
+GET   /-/admin-dart             controllers.AdminController.viewAdminDartAdminPage
+GET   /-/admin-dart-moderator   controllers.AdminController.viewAdminDartModeratorPage
+GET   /-/admin-dart-designer    controllers.AdminController.viewAdminDartDesignerPage
 GET   /-/admin-old/             controllers.AdminController.viewAdminPageOld
-GET   /-/admin                  controllers.AdminController.viewAdminPage
-GET   /-/moderate               controllers.AdminController.viewModeratorPage
-GET   /-/design                 controllers.AdminController.viewDesignerPage
 
 GET   /-/load-site-settings     controllers.SettingsController.loadSiteSettings
 GET   /-/load-section-settings  controllers.SettingsController.loadSectionSettings(rootPageId)
@@ -98,10 +100,13 @@ GET   /-/privacy-policy         controllers.LegalController.viewPrivacyPolicyPag
 GET   /-/load-special-content   controllers.SpecialContentController.loadContent(rootPageId, contentId)
 POST  /-/save-special-content   controllers.SpecialContentController.saveContent
 
+GET   /-/users/                 controllers.UserController.viewUserPage
+GET   /-/list-user-actions      controllers.UserController.listUserActions(userId)
+GET   /-/load-user-info         controllers.UserController.loadUserInfo(userId)
+
 GET   /-/list-topics            controllers.ForumController.listTopics(categoryId)
 GET   /-/list-categories        controllers.ForumController.listCategories(forumId)
 
-POST  /-/configure-user         controllers.ConfigUserController.handleConfiguration()
 GET   /-/load-my-page-activity  controllers.ViewPageController.loadMyPageActivity(pageId)
 POST  /-/reply                  controllers.ReplyController.handleReply
 POST  /-/vote                   controllers.VoteController.handleVotes

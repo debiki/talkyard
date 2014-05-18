@@ -17,13 +17,13 @@
 
 /// <reference path="../../typedefs/lodash/lodash.d.ts" />
 /// <reference path="../../typedefs/angularjs/angular.d.ts" />
-/// <reference path="../ForumApp.ts" />
+/// <reference path="../ForumModule.ts" />
 /// <reference path="../model/Topic.ts" />
 /// <reference path="../QueryService.ts" />
 /// <reference path="../categories/CategoryScope.ts" />
 
 //------------------------------------------------------------------------------
-   module forum {
+   module debiki2.forum {
 //------------------------------------------------------------------------------
 
 
@@ -93,7 +93,7 @@ class ListTopicsController {
 }
 
 
-forum.forumApp.controller('ListTopicsController', ListTopicsController);
+forum.forumModule.controller('ListTopicsController', ListTopicsController);
 
 //------------------------------------------------------------------------------
    }

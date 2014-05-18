@@ -29,7 +29,7 @@ object TemplateRenderer {
 
   val DefaultThemeName = "default20121009"
   private val BuiltinThemesPrefix = "builtin."  // after '/' has been replaced with '.'
-  private val DefaultThemeFullName = s"$BuiltinThemesPrefix$DefaultThemeName"
+  val DefaultThemeFullName = s"$BuiltinThemesPrefix$DefaultThemeName"
 
 
   def renderTemplate(pageReq: PageRequest[_], appendToBody: xml.NodeSeq = Nil)

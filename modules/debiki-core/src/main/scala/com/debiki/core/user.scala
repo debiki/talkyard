@@ -20,7 +20,7 @@ package com.debiki.core
 import java.{util => ju}
 import EmailNotfPrefs.EmailNotfPrefs
 import Prelude._
-import User.checkId
+import User.{isRoleId, isGuestId, checkId}
 
 
 object People {
@@ -116,10 +116,10 @@ case class UserIdData(
   require(browserIdCookie.map(_.isEmpty) != Some(true), "DwE3GJ79")
 
   def anyGuestId: Option[String] =
-    if (userId.startsWith("-")) Some(userId drop 1) else None
+    if (isGuestId(userId)) Some(userId drop 1) else None
 
   def anyRoleId: Option[String] =
-    if (userId.startsWith("-")) None else Some(userId)
+    if (isRoleId(userId)) Some(userId) else None
 
   def isAnonymousUser = ip == "0.0.0.0"
   def isUnknownUser = userId == UnknownUser.Id
@@ -130,6 +130,9 @@ case class UserIdData(
 
 
 case object User {
+
+  def isGuestId(userId: UserId) = userId.startsWith("-") && userId.length > 1
+  def isRoleId(userId: UserId) = !isGuestId(userId) && userId.nonEmpty
 
   /**
    * Checks for weird ASCII chars in an user name.
@@ -222,14 +225,14 @@ case class User (
   isOwner: Boolean = false
 ){
   checkId(id, "DwE02k125r")
-  def isAuthenticated = !id.startsWith("-") && !id.startsWith("?")
+  def isAuthenticated = isRoleId(id) && !id.startsWith("?")
 
   /* COULD add:
     def roleId: Option[String] =
-    if (userId startsWith "-") None else Some(userId)
+    if (isRoleId(userId)) Some(userId) else None
 
   def idtySmplId: Option[String] =
-    if (userId startsWith "-") Some(userId drop 1) else None
+    if (isGuestId(userId)) Some(userId drop 1) else None
    */
 }
 
@@ -490,6 +493,9 @@ case class LoginGrant(
 
   def displayName: String = user.displayName
   def email: String = user.email
+
+  /** For test suites. */
+  def testUserIdData = UserIdData.newTest(login.id, userId = user.id)
 }
 
 

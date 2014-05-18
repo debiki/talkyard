@@ -183,7 +183,7 @@ object HtmlPageSerializer {
    */
   // COULD move to object HtmlPostSerializer
   def linkTo(user: User): NodeSeq = {
-    var url = ""  // since not implemented anyway: config.userUrl(nilo)
+    var url = s"/-/users/#/id/${user.id}"
 
     // COULD investigate: `url' is sometimes the email address!!
     // When signed in @gmail.com, it seems.
@@ -209,8 +209,7 @@ object HtmlPageSerializer {
       case _ => xml.Text(user.displayName)
     }
     val userLink = if (url nonEmpty) {
-      <a class='dw-p-by' href={url} data-dw-u-id={user.id}
-         rel='nofollow' target='_blank'>{nameElem}</a>
+      <a class='dw-p-by' href={url} data-dw-u-id={user.id} rel='nofollow'>{nameElem}</a>
     } else {
       <span class='dw-p-by' data-dw-u-id={user.id}>{nameElem}</span>
     }

@@ -15,21 +15,22 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/// <reference path="../../typedefs/angularjs/angular.d.ts" />
-/// <reference path="../ForumModule.ts" />
 
-//------------------------------------------------------------------------------
-   module debiki2.forum {
-//------------------------------------------------------------------------------
+package com.debiki.tck.dao
+
+import com.debiki.core.DbDaoFactory
+import org.scalatest._
 
 
-export interface CategoryScope extends debiki2.RootScope {
-  selectedCategories: Category[];
-  allMainCategories: Category[];
+/** All tests in ./specs/ should be listed here, or they won't be picked up
+  * by database access object modules that are tested by debiki-tck-dao.
+  */
+class DbDaoSuite(daoFactory: DbDaoFactory) extends Suites(
+  new specs.UserInfoSpec(daoFactory)) with BeforeAndAfterAll {
+
+  override def afterAll() {
+    daoFactory.shutdown()
+  }
+
 }
 
-
-//------------------------------------------------------------------------------
-   }
-//------------------------------------------------------------------------------
-// vim: fdm=marker et ts=2 sw=2 tw=0 fo=tcqwn list

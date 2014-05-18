@@ -15,18 +15,44 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/// <reference path="../../typedefs/angularjs/angular.d.ts" />
-/// <reference path="../ForumModule.ts" />
+/// <reference path="../typedefs/angularjs/angular.d.ts" />
+/// <reference path="../typedefs/angular-ui/angular-ui-router.d.ts" />
 
 //------------------------------------------------------------------------------
-   module debiki2.forum {
+   module debiki2.users {
 //------------------------------------------------------------------------------
 
 
-export interface CategoryScope extends debiki2.RootScope {
-  selectedCategories: Category[];
-  allMainCategories: Category[];
-}
+export var usersModule = angular.module('DebikiUsersModule', ['ui.router', 'angularMoment']);
+
+
+/**
+ * Sets up routing using ui-router.
+ */
+usersModule.config(['$stateProvider', '$urlRouterProvider', function(
+    $stateProvider: ng.ui.IStateProvider,
+    $urlRouterProvider: ng.ui.IUrlRouterProvider) {
+
+  $urlRouterProvider.otherwise('/');
+
+  $stateProvider
+    .state('userById', {
+      url: '/id/*userId',
+      templateUrl: 'users/users-view.html',
+      controller: 'UsersController'
+    })
+}]);
+
+
+/**
+ * Adds UI-Router's $state and $stateParams to the root scope, so they're
+ * accessible from everywhere.
+ */
+usersModule.run(['$rootScope', '$state', '$stateParams',
+    function($rootScope, $state, $stateParams) {
+  $rootScope.$state = $state;
+  $rootScope.$stateParams = $stateParams;
+}]);
 
 
 //------------------------------------------------------------------------------

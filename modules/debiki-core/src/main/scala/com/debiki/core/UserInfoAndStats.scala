@@ -15,21 +15,34 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/// <reference path="../../typedefs/angularjs/angular.d.ts" />
-/// <reference path="../ForumModule.ts" />
+package com.debiki.core
 
-//------------------------------------------------------------------------------
-   module debiki2.forum {
-//------------------------------------------------------------------------------
+import java.{util => ju}
 
 
-export interface CategoryScope extends debiki2.RootScope {
-  selectedCategories: Category[];
-  allMainCategories: Category[];
+/** Info about a user, for example his/her display name and when it was created
+  * and statistics on how many posts s/he has posted, how s/he has voted,
+  * number of replies, number of likes received etcetera.
+  */
+case class UserInfoAndStats(
+  info: User,
+  stats: UserStats)
+
+
+case class UserStats(
+  numPages: Int,
+  numPosts: Int,
+  numReplies: Int,
+  numLikesGiven: Int,
+  numLikesReceived: Int,
+  numWrongsGiven: Int,
+  numWrongsReceived: Int,
+  numOffTopicsGiven: Int,
+  numOffTopicsReceived: Int)
+
+
+object UserStats {
+
+  val Zero = UserStats(0, 0, 0, 0, 0, 0, 0, 0, 0)
+
 }
-
-
-//------------------------------------------------------------------------------
-   }
-//------------------------------------------------------------------------------
-// vim: fdm=marker et ts=2 sw=2 tw=0 fo=tcqwn list

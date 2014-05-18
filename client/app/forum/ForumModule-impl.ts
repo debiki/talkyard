@@ -16,18 +16,18 @@
  */
 
 /// <reference path="../typedefs/angularjs/angular.d.ts" />
-/// <reference path="ForumApp.ts" />
+/// <reference path="ForumModule.ts" />
 /// <reference path="list-topics/ListTopicsController.ts" />
 /// <reference path="list-categories/ListCategoriesController.ts" />
 
 //------------------------------------------------------------------------------
-   module forum {
+   module debiki2.forum {
 //------------------------------------------------------------------------------
 
 /**
  * Sets up routing using ui-router.
  */
-forum.forumApp.config(['$stateProvider', '$urlRouterProvider',
+forumModule.config(['$stateProvider', '$urlRouterProvider',
     function($stateProvider, $urlRouterProvider) {
 
   $urlRouterProvider.otherwise('/');
@@ -35,7 +35,7 @@ forum.forumApp.config(['$stateProvider', '$urlRouterProvider',
   $stateProvider
     .state('index', {
       url: '/',
-      templateUrl: 'list-topics/list-topics.html',
+      templateUrl: 'forum/list-topics/list-topics.html',
       controller: 'ListTopicsController',
       onEnter: ['CategoryService',
           function(categoryService: CategoryService) {
@@ -44,7 +44,7 @@ forum.forumApp.config(['$stateProvider', '$urlRouterProvider',
     })
     .state('latest', {
       url: '/latest/*categoryPath',
-      templateUrl: 'list-topics/list-topics.html',
+      templateUrl: 'forum/list-topics/list-topics.html',
       controller: 'ListTopicsController',
       onEnter: ['$stateParams', 'CategoryService',
           function($stateParams, categoryService: CategoryService) {
@@ -53,7 +53,7 @@ forum.forumApp.config(['$stateProvider', '$urlRouterProvider',
     })
     .state('top', {
       url: '/top/*categoryPath',
-      templateUrl: 'list-topics/list-topics.html',
+      templateUrl: 'forum/list-topics/list-topics.html',
       controller: 'ListTopicsController',
       onEnter: ['$stateParams', 'CategoryService',
           function($stateParams, categoryService: CategoryService) {
@@ -62,7 +62,7 @@ forum.forumApp.config(['$stateProvider', '$urlRouterProvider',
     })
     .state('categories', {
       url: '/categories',
-      templateUrl: 'list-categories/list-categories.html',
+      templateUrl: 'forum/list-categories/list-categories.html',
       controller: 'ListCategoriesController',
       onEnter: ['CategoryService', function(categoryService: CategoryService) {
         categoryService.clearCurrentCategories();
@@ -75,7 +75,7 @@ forum.forumApp.config(['$stateProvider', '$urlRouterProvider',
  * Adds UI-Router's $state and $stateParams to the root scope, so they're
  * accessible from everywhere.
  */
-forum.forumApp.run(['$rootScope', '$state', '$stateParams',
+forumModule.run(['$rootScope', '$state', '$stateParams',
     function($rootScope, $state, $stateParams) {
   $rootScope.$state = $state;
   $rootScope.$stateParams = $stateParams;
