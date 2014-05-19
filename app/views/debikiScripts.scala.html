@@ -75,7 +75,10 @@ See: http://stackoverflow.com/questions/1014203/best-way-to-use-googles-hosted-j
   Modernizr.load({
     test: Modernizr.touch,
     yep: '@asset(s"combined-debiki-touch.$minMaxJs")',
-    nope: '@asset(s"combined-debiki-desktop.$minMaxJs")'
+    nope: '@asset(s"combined-debiki-desktop.$minMaxJs")',
+    complete: function() {
+      debiki.internal.startup();
+    }
   });
 </script>
 

@@ -149,7 +149,8 @@ var debikiDesktopFiles = [
       'target/client/app/utils/create-page.js',
       'target/client/shared/post-json.js',
       'target/client/all-typescript.js',
-      'target/client/all-angular-templates.js',
+      'target/client/admin-app-angular-templates.js',
+      'target/client/page-app-angular-templates.js',
       'target/client/app/startup.js'];
 
 
@@ -221,7 +222,8 @@ var debikiTouchFiles = [
       'target/client/app/utils/create-page.js',
       'target/client/shared/post-json.js',
       'target/client/all-typescript.js',
-      'target/client/all-angular-templates.js',
+      'target/client/admin-app-angular-templates.js',
+      'target/client/page-app-angular-templates.js',
       'target/client/app/startup.js'];
 
 
@@ -248,7 +250,6 @@ var debikiEmbeddedCommentsFiles = [
       'target/client/app/utterscroll/utterscroll-init-tips.js',
       'target/client/embedded-comments/iframe-parent.js',
       'client/embedded-comments/parent-footer.js'];  // not ^target/client/...
-
 
 var adminOldFiles = [
       'target/client/third-party/livescript/prelude-browser-min.js',
@@ -307,7 +308,10 @@ gulp.task('compile-livescript', function () {
 
 
 gulp.task('compile-typescript', function () {
-  var stream = gulp.src(['client/app/**/*.ts'])
+  var stream = gulp.src([
+        'client/app/**/*.ts',
+        'client/admin-app/**/*.ts',
+        'client/typedefs/**/*.ts'])
     .pipe(typeScript({
       target: 'ES5',
       allowBool: true,
@@ -326,12 +330,23 @@ gulp.task('compile-typescript', function () {
 
 
 gulp.task('compile-templates', function () {
-  return gulp.src('client/app/**/*.html')
+  var pageAppTemplateStream = gulp.src('client/app/**/*.html')
       .pipe(templateCache({
         module: 'DebikiApp',
-        filename: 'all-angular-templates.js'
+        filename: 'page-app-angular-templates.js'
       }))
       .pipe(gulp.dest('target/client/'));
+
+  var adminAppTemplateStream = gulp.src('client/admin-app/**/*.html')
+      .pipe(templateCache({
+        module: 'DebikiAdminApp',
+        filename: 'admin-app-angular-templates.js'
+      }))
+      .pipe(gulp.dest('target/client/'));
+
+  return es.merge(
+      pageAppTemplateStream,
+      adminAppTemplateStream);
 });
 
 
@@ -494,6 +509,9 @@ gulp.task('compile-stylus', function () {
     makeStyleStream('public/res/', 'debiki-embedded-comments.css', [
         'client/app/tips.styl']),
 
+    makeStyleStream('public/res/', 'admin-app.css', [
+        'client/admin-app/**/*.styl']),
+
     makeStyleStream('client/admin-dart/admin-dart/web/', 'styles.css', [
         'client/admin-dart/styles/*.styl']),
 
@@ -561,8 +579,8 @@ gulp.task('watch', function() {
     };
   };
 
-  gulp.watch('client/app/**/*.html', ['compile-templates-concat-scripts']).on('change', logChangeFn('HTML'));
-  gulp.watch('client/app/**/*.ts', ['compile-typescript-concat-scripts']).on('change', logChangeFn('TypeScript'));
+  gulp.watch('client/**/*.html', ['compile-templates-concat-scripts']).on('change', logChangeFn('HTML'));
+  gulp.watch('client/**/*.ts', ['compile-typescript-concat-scripts']).on('change', logChangeFn('TypeScript'));
   gulp.watch('client/**/*.ls', ['compile-livescript-concat-scripts']).on('change', logChangeFn('LiveScript'));
   gulp.watch('client/**/*.js', ['wrap-javascript-concat-scripts']).on('change', logChangeFn('Javascript'));
   gulp.watch('client/**/*.styl', ['compile-stylus']).on('change', logChangeFn('Stylus'));

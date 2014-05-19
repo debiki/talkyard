@@ -390,13 +390,15 @@ function renderEmptyPage() {
 };
 
 
-if ($('.dw-page').length) {
-  renderPageEtc();
-}
-else {
-  // Skip most of the rendering step, since there is no Debiki page present.
-  renderEmptyPage();
-}
+d.i.startup = function() {
+  if ($('.dw-page').length) {
+    renderPageEtc();
+  }
+  else {
+    // Skip most of the rendering step, since there is no Debiki page present.
+    renderEmptyPage();
+  }
+};
 
 
 //------------------------------------------------------------------------------

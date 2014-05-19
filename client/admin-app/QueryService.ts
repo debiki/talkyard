@@ -15,22 +15,26 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/// <reference path="../../typedefs/angularjs/angular.d.ts" />
-/// <reference path="../RootScope.ts" />
+/// <reference path="AdminApp.ts" />
 
 //------------------------------------------------------------------------------
-   module debiki2.users {
+   module debiki2.admin {
 //------------------------------------------------------------------------------
 
 
-export interface UsersScope extends RootScope {
 
-  userInfo: UserInfo;
+export class QueryService {
+
+  public static $inject = ['$http', '$q'];
+  constructor(private $http: ng.IHttpService, private $q: ng.IQService) {
+  }
 
 }
 
 
+adminApp.service('QueryService', QueryService);
+
 //------------------------------------------------------------------------------
    }
 //------------------------------------------------------------------------------
-// vim: fdm=marker et ts=2 sw=2 tw=0 fo=tcqwn list
+// vim: et ts=2 sw=2 tw=0 fo=tcqwn list

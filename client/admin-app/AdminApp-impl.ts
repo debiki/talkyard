@@ -15,33 +15,37 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/// <reference path="../../typedefs/angularjs/angular.d.ts" />
-/// <reference path="ForumModule.ts" />
-/// <reference path="list-topics/ListTopicsController.ts" />
-/// <reference path="list-categories/ListCategoriesController.ts" />
+/// <reference path="../typedefs/angularjs/angular.d.ts" />
+/// <reference path="AdminApp.ts" />
 
 //------------------------------------------------------------------------------
-   module debiki2.forum {
+   module debiki2.admin {
 //------------------------------------------------------------------------------
 
 /**
  * Sets up routing using ui-router.
  */
-forumModule.config(['$stateProvider', '$urlRouterProvider',
+adminApp.config(['$stateProvider', '$urlRouterProvider',
     function($stateProvider, $urlRouterProvider) {
 
   $urlRouterProvider.otherwise('/');
 
   $stateProvider
-    .state('index', {
+    .state('dashboard', {
       url: '/',
-      templateUrl: 'forum/list-topics/list-topics.html',
-      controller: 'ListTopicsController',
-      onEnter: ['CategoryService',
-          function(categoryService: CategoryService) {
-        categoryService.updateCurrentCategories({});
-      }]
+      templateUrl: 'dashboard/dashboard.html',
+      controller: 'DashboardController',
     })
+    .state('settings', {
+      url: '/settings',
+      templateUrl: 'settings/settings.html',
+      controller: 'SettingsController'
+    })
+    .state('specialContents', {
+      url: '/special-contents',
+      templateUrl: 'special-content/special-content.html',
+      controller: 'SpecialContentController'
+    /*})
     .state('latest', {
       url: '/latest/*categoryPath',
       templateUrl: 'forum/list-topics/list-topics.html',
@@ -66,8 +70,8 @@ forumModule.config(['$stateProvider', '$urlRouterProvider',
       controller: 'ListCategoriesController',
       onEnter: ['CategoryService', function(categoryService: CategoryService) {
         categoryService.clearCurrentCategories();
-      }]
-    })
+      }] */
+    });
 }]);
 
 
@@ -75,7 +79,7 @@ forumModule.config(['$stateProvider', '$urlRouterProvider',
  * Adds UI-Router's $state and $stateParams to the root scope, so they're
  * accessible from everywhere.
  */
-forumModule.run(['$rootScope', '$state', '$stateParams',
+adminApp.run(['$rootScope', '$state', '$stateParams',
     function($rootScope, $state, $stateParams) {
   $rootScope.$state = $state;
   $rootScope.$stateParams = $stateParams;

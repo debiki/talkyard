@@ -1,0 +1,264 @@
+/**
+ * - Copyright (C) 2012-2013 Kaj Magnus Lindberg (born 1979)
+ *
+ * - Parts Copyright (C) 2012 Twitter, Inc. Search for "Copyright" in this
+ *   file to find Twitter's code. (It's licensed under the Apache 2 license.)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+// Styles for the admin/moderator dashboard.
+
+
+[ng-cloak], [data-ng-cloak], [x-ng-cloak], .ng-cloak, .x-ng-cloak, .ng-hide
+  display: none !important
+
+.ng-show
+  display: block !important
+
+
+body
+  padding: 0 30px !important
+
+
+.admin-nav
+  margin: 40px auto 0
+  text-align: center
+
+  a
+    font-size: 18px
+    padding: 8px 15px
+
+    &.active
+      background: hsl(211, 100%, 92%)
+      color: hsl(211, 100%, 20%)
+
+
+h1
+  margin-top: 50px !important
+  margin-bottom: 30px !important
+
+a
+  cursor: pointer
+
+.main-tabs
+  margin-top: 40px
+
+.tab-content
+  margin-top: 25px
+
+.tab-content > .tab-pane
+  padding-top: 20px
+
+.btn
+  // Cancel Twitter Bootstrap's 14px .btn font size.
+  // (I use Verdana, which is a fairly large font.)
+  font-size: 13px
+  color: hsl(211, 30%, 40%)
+
+.instruction-list
+  padding: 0 0 1.5em 25px
+
+#create-page-dropdown ul > li > a[disabled]
+  color: #aaa
+
+#create-page-dropdown kbd
+  font-size: 94%
+
+.selection-related-btns
+  min-height: 50px // if no buttons shown
+  margin: 5px 0
+  clear: both // clear any floating .help-tips
+
+.selection-related-btns > *
+  display: inline-block
+
+.selection-related-btns .dropdown form
+  padding: 15px 20px 20px
+
+// Copied from Twitter's `.dropdown-menu a`, but color changed from #666.
+// This single style is:
+//  Copyright 2012 Twitter, Inc.
+//  Licensed under the Apache License v2.0
+//  http://www.apache.org/licenses/LICENSE-2.0
+.dropdown-menu li span
+  display: block
+  padding: 3px 15px
+  clear: both
+  font-weight: normal
+  line-height: 18px
+  color: #555
+  white-space: nowrap
+  font-style: italic
+
+/*
+[ui-jq=tooltip]
+  // Make the tag shrink to fit only the contained text,
+  // so the tooltip points on the text (and not on whitespace
+  // *after* the text, in a <tr><td> that's mostly empty.)
+  float: left
+*/
+
+// Don't lett Debiki's other styles affect Bootstrap's tooltip text
+.tooltip
+  white-space: normal !important
+  font-size: 13px !important
+  font-weight: normal !important
+  font-style: normal !important
+
+.help-tips
+  float: left
+  padding: 1em 1.5em
+  margin: 1.3em 0 3em
+  box-shadow: 3px 3px 5px hsl(0, 0%, 53%)
+  border: 1px solid lightgray
+
+#help-create-blog-article ol
+  margin: 0 0 9px 25px
+
+#page-table td.page-title
+  color: hsl(211, 35%, 30%)
+
+#page-table .page-status-role
+  color: hsl(211, 0, 30%)
+  margin-left: 1em
+  &:before
+    content: "("
+  &:after
+    content: ")"
+
+
+#page-table tr:not(.page-depth-0) td
+  border-top: none
+
+#page-table tbody
+  // Copied color from Bootstrap
+  border-bottom: 1px solid hsl(0, 0%, 87%)
+
+#page-table tr.page-depth-1 td.page-title
+  padding-left: 3em
+
+#page-table tr.page-depth-2 td.page-title
+  padding-left: 6em
+
+#page-table tr.page-depth-3 td.page-title
+  padding-left: 9em
+
+#page-table tr.page-depth-4 td.page-title
+  padding-left: 12em
+
+#page-table tr.page-depth-5 td.page-title
+  padding-left: 15em
+
+#page-table tr.page-role-Code .page-title a
+  font: 94% monospace
+
+#marked-path
+  display: block !important
+
+.marked-path a
+  color: hsl(211, 100%, 45%) !important
+  font-weight: bold
+
+.page-notfs
+  color: black
+  font-style: italic
+
+.nav-tabs > li
+  margin-left: 0 // or space between Twitter Bootstrap tabs
+
+.path-message
+  color: #777 !important
+  font-style: italic
+  padding-left: 1ex
+
+#details > .tab-content
+  overflow: visible
+
+#details thead,
+#details tbody
+  font-size: 13px
+
+// The checkbox label should span the whole row (up-down not left-right).
+#details .row-selector
+  padding: 0
+
+#details table th label, #details table td label
+  margin: 0
+  padding: 8px 10px 8px 6px
+  position: relative
+  float: left // or fills up whole <td>, looks bad on hover (see below)
+
+#details table th label:hover, #details table td label:hover
+  cursor: pointer
+  background-color: #E5E5E5
+
+#details table td:not(.post-text)
+  white-space: nowrap // no line breaks in page paths
+
+//#details table td.post-text
+
+#details .action-path
+  font-size: 11px
+  font-family: monospace
+  white-space: normal !important // sometimes very long
+  max-width: 355px
+
+.inline-action,
+#details .inline-action
+  color: red !important
+
+#details .inline-action,
+#details .inline-message
+  margin-left: 1em
+
+#details .inline-action.new-flags-link
+  font-weight: bold
+
+#details .inline-action.old-flags-link
+  color: black !important
+
+// Improvement suggestions aren't reall the moderator's responsibility
+// (but rather the text author's responsibility) so give them a weaker
+// shade of red (50% not 100% saturation).
+#details .inline-action.suggestions-link
+  color: hsl(0, 50%, 50%) !important
+
+
+// For embedded comments sites, it's rather confusing with buttons intended
+// for forums and blogs and websites, so hide them.
+.hide-for-embedded-comments
+  display: none
+
+
+
+// Settins and Special Content tabs
+//--------------------------------------------
+
+
+
+.setting-label
+  text-align: right
+  margin-top: 10px
+
+
+textarea.special-content-_tou_content_license
+  min-height: 90px
+
+textarea.special-content-_tou_jurisdiction
+  min-height: 150px
+
+
+
+// vim: fdm=marker et ts=2 sw=2 tw=80 fo=tcqwn list

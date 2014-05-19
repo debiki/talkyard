@@ -1,1 +1,0 @@
-../../../../modules/definitely-typed/jquery/jquery.d.ts
