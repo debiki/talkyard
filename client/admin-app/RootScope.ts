@@ -15,34 +15,19 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/// <reference path="../../typedefs/angularjs/angular.d.ts" />
-/// <reference path="../AdminApp.ts" />
-/// <reference path="../RootScope.ts" />
-/// <reference path="../QueryService.ts" />
+/// <reference path="../typedefs/angularjs/angular.d.ts" />
+/// <reference path="../typedefs/angular-ui/angular-ui-router.d.ts" />
 
 //------------------------------------------------------------------------------
-   module debiki2.admin.settings {
+   module debiki2.admin {
 //------------------------------------------------------------------------------
 
-interface SettingsScope extends RootScope {
-  settings: model.Settings;
+
+export interface RootScope extends ng.IScope {
+  vm;
+  $state: ng.ui.IStateService;
+  $stateParams: any;
 }
-
-
-class SettingsController {
-
-  public static $inject = ['$scope', 'QueryService'];
-  constructor(private $scope: SettingsScope, private queryService: QueryService) {
-     this.queryService.loadSettings(model.SettingsTarget.forWholeSite()).then(
-        (loadedSettings: model.Settings) => {
-      this.$scope.settings = loadedSettings;
-    });
-  }
-
-}
-
-
-debiki2.admin.adminApp.controller('SettingsController', SettingsController);
 
 
 //------------------------------------------------------------------------------

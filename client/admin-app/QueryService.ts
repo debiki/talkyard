@@ -16,6 +16,8 @@
  */
 
 /// <reference path="AdminApp.ts" />
+/// <reference path="model/Settings.ts" />
+/// <reference path="../typedefs/angularjs/angular.d.ts" />
 
 //------------------------------------------------------------------------------
    module debiki2.admin {
@@ -25,10 +27,50 @@
 
 export class QueryService {
 
+  private RecentPostsUrl = '/?list-actions.json';
+  private PagesUrl = '/-/list-pages?in-tree';
+  private ApprovePostUrl = '/-/approve';
+  private RejectPostUrl = '/-/reject';
+  private DeletePostUrl = '/-/delete';
+  private LoadSiteSettingsUrl = '/-/load-site-settings';
+  private LoadSectionSettingsUrl = '/-/load-section-settings';
+  private SaveSettingUrl = '/-/save-setting';
+  private LoadSpecialContentUrl = '/-/load-special-content';
+  private SaveSpecialContentUrl = '/-/save-special-content';
+
+
   public static $inject = ['$http', '$q'];
   constructor(private $http: ng.IHttpService, private $q: ng.IQService) {
   }
 
+
+  public loadSettings(settingsTarget: model.SettingsTarget): ng.IPromise<model.Settings> {
+    var deferred = this.$q.defer<model.Settings>();
+    var url;
+    if (settingsTarget.type == 'WholeSite') {
+      url = this.LoadSiteSettingsUrl;
+    }
+    else if (settingsTarget.type == 'PageTree') {
+      url = this.LoadSectionSettingsUrl +'?rootPageId=' + settingsTarget.pageId;
+    }
+    else {
+      // error('Unsupported settings target type: "${settingsTarget.type}" [DwE52FH435]');
+    }
+    this.$http.get(url).success((response) => {
+      var settings = model.Settings.fromJsonMap(settingsTarget, response);
+      deferred.resolve(settings);
+    });
+    return deferred.promise;
+  }
+
+
+  public saveSetting(setting: model.Setting<any>): ng.IPromise<void> {
+    var deferred = this.$q.defer<void>();
+    this.$http.post(this.SaveSettingUrl, setting.toJson()).success(() => {
+      deferred.resolve();
+    });
+    return deferred.promise;
+  }
 }
 
 
