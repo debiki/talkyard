@@ -71,6 +71,27 @@ export class QueryService {
     });
     return deferred.promise;
   }
+
+
+  public loadSpecialContent(rootPageId: string, contentId: string):
+        ng.IPromise<model.SpecialContent> {
+    var deferred = this.$q.defer<model.SpecialContent>();
+    var url = this.LoadSpecialContentUrl +'?rootPageId='+ rootPageId +'&contentId='+ contentId;
+    this.$http.get(url).success((response) => {
+      var specialContent = model.SpecialContent.fromJsonMap(response);
+      deferred.resolve(specialContent);
+    });
+    return deferred.promise;
+  }
+
+  /*
+  public saveSpecialContent(SpecialContent specialContent): ng.IPromise<void> {
+    var deferred = this.$q.defer<void>();
+    this.$http.post(SaveSpecialContentUrl, specialContent.toJson()).success(() => {
+      deferred.resolve();
+    });
+    return deferred.promise;
+  }*/
 }
 
 

@@ -33,17 +33,17 @@ adminApp.config(['$stateProvider', '$urlRouterProvider',
   $stateProvider
     .state('dashboard', {
       url: '/',
-      templateUrl: 'dashboard/dashboard.html',
+      templateUrl: 'dashboard/dashboard-view.html',
       controller: 'DashboardController',
     })
     .state('settings', {
       url: '/settings',
-      templateUrl: 'settings/settings.html',
+      templateUrl: 'settings/settings-view.html',
       controller: 'SettingsController'
     })
     .state('specialContents', {
       url: '/special-contents',
-      templateUrl: 'special-content/special-content.html',
+      templateUrl: 'special-content/special-content-view.html',
       controller: 'SpecialContentController'
     /*})
     .state('latest', {
