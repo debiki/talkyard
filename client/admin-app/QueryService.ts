@@ -92,6 +92,48 @@ export class QueryService {
     });
     return deferred.promise;
   }
+
+
+  public loadRecentPosts(): ng.IPromise<moderation.Post[]> {
+    var deferred = this.$q.defer<moderation.Post[]>();
+    this.$http.get(this.RecentPostsUrl).success((response) => {
+      var posts: moderation.Post[] = [];
+      for (var i = 0; i < response.actions.length; ++i) {
+        var postJson = response.actions[i];
+        var post: moderation.Post = moderation.Post.fromJson(postJson);
+        posts.push(post);
+      }
+      deferred.resolve(posts);
+    });
+    return deferred.promise;
+  }
+
+
+  public approvePost(post: moderation.Post): ng.IPromise<void> {
+    return this.doSomethingWithPost(post, this.ApprovePostUrl);
+  }
+
+  public rejectPost(post: moderation.Post): ng.IPromise<void> {
+    return this.doSomethingWithPost(post, this.RejectPostUrl);
+  }
+
+  public deletePost(post: moderation.Post): ng.IPromise<void> {
+    throw "Unimplemented [DwE254FGU9]";
+  }
+
+
+  private doSomethingWithPost(post: moderation.Post, actionUrl: string): ng.IPromise<void> {
+    var deferred = this.$q.defer<void>();
+    this.$http.post(actionUrl, this.postToJson(post)).success((data) => {
+      deferred.resolve();
+    });
+    return deferred.promise;
+  }
+
+
+  private postToJson(post: moderation.Post): string {
+    return '[{ "pageId": "'+ post.pageId +'", "actionId": "'+ post.id +'" }]';
+  }
 }
 
 

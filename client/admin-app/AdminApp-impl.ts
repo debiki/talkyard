@@ -45,32 +45,11 @@ adminApp.config(['$stateProvider', '$urlRouterProvider',
       url: '/special-contents',
       templateUrl: 'special-content/special-content-view.html',
       controller: 'SpecialContentController'
-    /*})
-    .state('latest', {
-      url: '/latest/*categoryPath',
-      templateUrl: 'forum/list-topics/list-topics.html',
-      controller: 'ListTopicsController',
-      onEnter: ['$stateParams', 'CategoryService',
-          function($stateParams, categoryService: CategoryService) {
-        categoryService.updateCurrentCategories($stateParams);
-      }]
     })
-    .state('top', {
-      url: '/top/*categoryPath',
-      templateUrl: 'forum/list-topics/list-topics.html',
-      controller: 'ListTopicsController',
-      onEnter: ['$stateParams', 'CategoryService',
-          function($stateParams, categoryService: CategoryService) {
-        categoryService.updateCurrentCategories($stateParams);
-      }]
-    })
-    .state('categories', {
-      url: '/categories',
-      templateUrl: 'forum/list-categories/list-categories.html',
-      controller: 'ListCategoriesController',
-      onEnter: ['CategoryService', function(categoryService: CategoryService) {
-        categoryService.clearCurrentCategories();
-      }] */
+    .state('moderation', {
+      url: '/moderation',
+      templateUrl: 'moderation/moderation.html',
+      controller: 'ModerationController'
     });
 }]);
 
