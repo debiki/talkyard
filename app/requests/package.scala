@@ -51,11 +51,17 @@ package object requests {
   type PagePostRequest2 = PageRequest[JsonOrFormDataBody]
 
 
+  /** In prod mode: Always the real ip address of the client.
+    * Otherwise: Any 'fakeIp' query string parameter value, or any 'dwCoFakeIp' cookie.
+    * (If 'fakeIp' is specified, actions.SafeActions.scala copies the value to
+    * the dwCoFakeIp cookie.)
+    */
   def realOrFakeIpOf(request: play.api.mvc.Request[_]): String = {
-    if (!Play.isTest)
+    if (Play.isProd)
       request.remoteAddress
     else
-      request.cookies.get("dwCoFakeIp").map(_.value) getOrElse request.remoteAddress
+      request.queryString.get("fakeIp").flatMap(_.headOption).orElse(
+        request.cookies.get("dwCoFakeIp").map(_.value)) getOrElse request.remoteAddress
   }
 
 }
