@@ -31,6 +31,9 @@ interface SpecialContentScope extends RootScope {
   content: model.SpecialContent;
   valueChanged(): boolean;
   hasDefaultValue(): boolean;
+  cancel(): void;
+  setToDefault(): void;
+  save(): void;
 }
 
 
@@ -54,6 +57,23 @@ debiki2.admin.adminApp.directive('specialContent', () => {
 
       $scope.hasDefaultValue = () => {
         return $scope.content.currentText == $scope.content.defaultText;
+      };
+
+      $scope.cancel = () => {
+        $scope.content.newText = $scope.content.currentText;
+      };
+
+      $scope.setToDefault = () => {
+        $scope.content.newText = $scope.content.defaultText;
+      };
+
+      $scope.save = () => {
+        queryService.saveSpecialContent($scope.content).then(() => {
+          $scope.content.currentText = $scope.content.newText;
+        }).catch((reason) => {
+          // COULD show error message somehow
+          console.error('Error saving special content: ' + reason);
+        });
       };
 
       if ($scope.rootPageId == null)

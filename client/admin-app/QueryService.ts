@@ -84,14 +84,14 @@ export class QueryService {
     return deferred.promise;
   }
 
-  /*
-  public saveSpecialContent(SpecialContent specialContent): ng.IPromise<void> {
+
+  public saveSpecialContent(specialContent: model.SpecialContent): ng.IPromise<void> {
     var deferred = this.$q.defer<void>();
-    this.$http.post(SaveSpecialContentUrl, specialContent.toJson()).success(() => {
+    this.$http.post(this.SaveSpecialContentUrl, specialContent.toJson()).success(() => {
       deferred.resolve();
     });
     return deferred.promise;
-  }*/
+  }
 }
 
 
