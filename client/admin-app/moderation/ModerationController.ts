@@ -63,7 +63,7 @@ class ModerationController {
     }
 
 
-    var doInlineAction = (queryServiceFn: (Post) => ng.IPromise<void>, post: Post,
+    var doInlineAction = (queryServiceFn: (_: Post) => ng.IPromise<void>, post: Post,
         doneMessage: string) => {
       post.approveBtnText = '';
       post.hideRejectBtn = true;

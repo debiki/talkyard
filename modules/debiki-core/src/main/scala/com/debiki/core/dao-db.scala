@@ -128,6 +128,9 @@ abstract class SiteDbDao {
 
   def loadPageMeta(pageId: String): Option[PageMeta]
 
+  def loadPageMetasAsMap(pageIds: Seq[PageId], anySiteId: Option[SiteId] = None)
+        : Map[PageId, PageMeta]
+
   def updatePageMeta(meta: PageMeta, old: PageMeta)
 
   def loadAncestorIdsParentFirst(pageId: PageId): List[PageId]
@@ -546,6 +549,11 @@ class ChargingSiteDbDao(
   def loadPageMeta(pageId: String): Option[PageMeta] = {
     _chargeForOneReadReq()
     _spi.loadPageMeta(pageId)
+  }
+
+  def loadPageMetasAsMap(pageIds: Seq[PageId], anySiteId: Option[SiteId]): Map[PageId, PageMeta] = {
+    _chargeForOneReadReq()
+    _spi.loadPageMetasAsMap(pageIds, anySiteId)
   }
 
   def updatePageMeta(meta: PageMeta, old: PageMeta) {

@@ -61,6 +61,13 @@ trait PagePathMetaDao {
     siteDbDao.loadPageMeta(pageId)
 
 
+  // COULD override and use the page meta cache, but currently only called
+  // by the moderation page, so not needed right now.
+  def loadPageMetasAsMap(pageIds: Seq[PageId], anySiteId: Option[SiteId] = None)
+        : Map[PageId, PageMeta] =
+    siteDbDao.loadPageMetasAsMap(pageIds, anySiteId)
+
+
   def loadAncestorIdsParentFirst(pageId: PageId): List[PageId] =
     siteDbDao.loadAncestorIdsParentFirst(pageId)
 
