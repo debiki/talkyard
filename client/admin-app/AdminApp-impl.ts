@@ -28,14 +28,15 @@
 adminApp.config(['$stateProvider', '$urlRouterProvider',
     function($stateProvider, $urlRouterProvider) {
 
-  $urlRouterProvider.otherwise('/');
+  $urlRouterProvider.otherwise('/settings');
 
   $stateProvider
+    /*
     .state('dashboard', {
       url: '/',
       templateUrl: 'dashboard/dashboard-view.html',
       controller: 'DashboardController',
-    })
+    }) */
     .state('settings', {
       url: '/settings',
       templateUrl: 'settings/settings-view.html',
