@@ -143,7 +143,7 @@ d.i.makeCurUser = function() {
       });
 
       function showErrorIfPageExists() {
-        // This is a bit hacky but it'll go away when I've rewritten the client in Angular-Dart.
+        // This is a bit hacky but it'll go away when I've rewritten the client in AngularJS.
         var pageExistsForSure = $('.dw-page[data-page_exists="true"]').length > 0;
         if (pageExistsForSure)
           d.i.showServerResponseDialog(arguments);

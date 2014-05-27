@@ -122,17 +122,6 @@ object SafeActions {
     "P3P" -> """CP="This_is_not_a_privacy_policy""""
 
 
-  /** Dart launches its own server at localhost:3030, and and starts Chromium and
-    * connects to that server. We need to allow cross origin requests from pages
-    * pages served by that server and shown in Chromium, so that those pages can
-    * load data from Play and e.g. show a list of all pages.
-    * [DartEditor]
-    */
-  private def makeDartDebuggingWorkHeaders(request: Request[_]) = Vector(
-    "Access-Control-Allow-Origin" -> request.headers.get("Origin").getOrElse(""),
-    "Access-Control-Allow-Credentials" -> "true")
-
-
   /**
    * Converts DebikiHttp.ResultException to nice replies,
    * e.g. 403 Forbidden and a user friendly message,
@@ -156,10 +145,6 @@ object SafeActions {
     catch exceptionRecoverer
 
     import scala.concurrent.ExecutionContext.Implicits.global
-
-    if (Play.isDev)
-      perhapsAsyncResult =
-        perhapsAsyncResult.withHeaders(makeDartDebuggingWorkHeaders(request): _*)
 
     if (!Play.isProd) {
       val anyNewFakeIp = request.queryString.get("fakeIp").flatMap(_.headOption)

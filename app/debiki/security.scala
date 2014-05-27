@@ -57,14 +57,8 @@ object DebikiSecurity {
     // (On POST requests, however, we check the xsrf form input value)
     val xsrfCookieValOpt = urlDecodeCookie(XsrfCookieName, request)
 
-    def isDartCorsPreflight = {
-      // In dev mode, allow what probably is a CORS Pre-Flight request from a page
-      // served by DartEditor's built-in server. [DartEditor]
-      request.method == "OPTIONS" && Play.isDev
-    }
-
     val sidXsrfNewCookies: (SidStatus, XsrfOk, List[Cookie]) =
-      if (request.method == "GET" || isDartCorsPreflight) {
+      if (request.method == "GET") {
         // Accept this request, and create new XSRF token if needed.
 
         if (!sidStatus.isOk && sidStatus != SidAbsent)
@@ -115,16 +109,7 @@ object DebikiSecurity {
             throwForbidden("DwE0y321", "No XSRF token")
 
         val xsrfOk = {
-          val xsrfStatus =
-            if (Play.isDev && xsrfToken == "CorsFromDartEditor") {
-              // DartEditor pages are served from a different port, so Dart cannot
-              // read the XSRF cookie and update the XSRF header properly. So
-              // accept the above dummy value from Dart applications. [DartEditor]
-              XsrfOk(xsrfToken)
-            }
-            else {
-              Xsrf.check(xsrfToken, xsrfCookieValOpt)
-            }
+          val xsrfStatus = Xsrf.check(xsrfToken, xsrfCookieValOpt)
 
           if (!xsrfStatus.isOk) {
             // Create a new XSRF cookie so whatever-the-user-attempted
