@@ -15,17 +15,27 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/// <reference path="../../typedefs/angularjs/angular.d.ts" />
-/// <reference path="../RootScope.ts" />
-
 //------------------------------------------------------------------------------
-   module debiki2.users {
+   module debiki2.admin.model {
 //------------------------------------------------------------------------------
 
 
-export interface UsersScope extends RootScope {
+export class SettingsTarget {
 
-  userInfo: UserInfo;
+  constructor(public type: string, public pageId: string) {
+  }
+
+  static forWholeSite(): SettingsTarget {
+    return new SettingsTarget('WholeSite', null);
+  }
+
+  static forSection(pageId: string): SettingsTarget {
+    return new SettingsTarget('PageTree', pageId);
+  }
+
+  static forPage(pageId: string): SettingsTarget {
+    return new SettingsTarget('SinglePage', pageId);
+  }
 
 }
 

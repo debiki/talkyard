@@ -15,32 +15,43 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/// <reference path="../../typedefs/angularjs/angular.d.ts" />
-/// <reference path="../../typedefs/angular-ui/angular-ui-router.d.ts" />
+/// <reference path="../typedefs/angularjs/angular.d.ts" />
+/// <reference path="AdminApp.ts" />
 
 //------------------------------------------------------------------------------
-   module debiki2.users {
+   module debiki2.admin {
 //------------------------------------------------------------------------------
-
-
-export var usersModule = angular.module('DebikiUsersModule', ['ui.router', 'angularMoment']);
-
 
 /**
  * Sets up routing using ui-router.
  */
-usersModule.config(['$stateProvider', '$urlRouterProvider', function(
-    $stateProvider: ng.ui.IStateProvider,
-    $urlRouterProvider: ng.ui.IUrlRouterProvider) {
+adminApp.config(['$stateProvider', '$urlRouterProvider',
+    function($stateProvider, $urlRouterProvider) {
 
-  $urlRouterProvider.otherwise('/');
+  $urlRouterProvider.otherwise('/settings');
 
   $stateProvider
-    .state('userById', {
-      url: '/id/*userId',
-      templateUrl: 'users/users-view.html',
-      controller: 'UsersController'
+    /*
+    .state('dashboard', {
+      url: '/',
+      templateUrl: 'dashboard/dashboard-view.html',
+      controller: 'DashboardController',
+    }) */
+    .state('settings', {
+      url: '/settings',
+      templateUrl: 'settings/settings-view.html',
+      controller: 'SettingsController'
     })
+    .state('specialContents', {
+      url: '/special-contents',
+      templateUrl: 'special-content/special-content-view.html',
+      controller: 'SpecialContentController'
+    })
+    .state('moderation', {
+      url: '/moderation',
+      templateUrl: 'moderation/moderation.html',
+      controller: 'ModerationController'
+    });
 }]);
 
 
@@ -48,7 +59,7 @@ usersModule.config(['$stateProvider', '$urlRouterProvider', function(
  * Adds UI-Router's $state and $stateParams to the root scope, so they're
  * accessible from everywhere.
  */
-usersModule.run(['$rootScope', '$state', '$stateParams',
+adminApp.run(['$rootScope', '$state', '$stateParams',
     function($rootScope, $state, $stateParams) {
   $rootScope.$state = $state;
   $rootScope.$stateParams = $stateParams;

@@ -16,8 +16,8 @@
  */
 
 /// <reference path="UsersModule.ts" />
-/// <reference path="../typedefs/angularjs/angular.d.ts" />
-/// <reference path="../typedefs/lodash/lodash.d.ts" />
+/// <reference path="../../typedefs/angularjs/angular.d.ts" />
+/// <reference path="../../typedefs/lodash/lodash.d.ts" />
 
 //------------------------------------------------------------------------------
    module debiki2.users {

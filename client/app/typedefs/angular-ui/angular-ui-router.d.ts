@@ -1,1 +1,0 @@
-../../../../modules/definitely-typed/angular-ui/angular-ui-router.d.ts

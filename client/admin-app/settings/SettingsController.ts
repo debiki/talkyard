@@ -16,18 +16,33 @@
  */
 
 /// <reference path="../../typedefs/angularjs/angular.d.ts" />
+/// <reference path="../AdminApp.ts" />
 /// <reference path="../RootScope.ts" />
+/// <reference path="../QueryService.ts" />
 
 //------------------------------------------------------------------------------
-   module debiki2.users {
+   module debiki2.admin.settings {
 //------------------------------------------------------------------------------
 
+interface SettingsScope extends RootScope {
+  settings: model.Settings;
+}
 
-export interface UsersScope extends RootScope {
 
-  userInfo: UserInfo;
+class SettingsController {
+
+  public static $inject = ['$scope', 'QueryService'];
+  constructor(private $scope: SettingsScope, private queryService: QueryService) {
+     this.queryService.loadSettings(model.SettingsTarget.forWholeSite()).then(
+        (loadedSettings: model.Settings) => {
+      this.$scope.settings = loadedSettings;
+    });
+  }
 
 }
+
+
+debiki2.admin.adminApp.controller('SettingsController', SettingsController);
 
 
 //------------------------------------------------------------------------------

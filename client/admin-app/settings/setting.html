@@ -1,0 +1,25 @@
+<div class="form-group row">
+
+  <label for="{{ settingIdAttr() }}" class="col-sm-2 control-label setting-label">{{ title }}</label>
+
+  <div ng-if="isTextSetting()" class="col-sm-7">
+    <textarea ng-if="multiline" ng-model="setting.newValue" type="text" class="form-control" id="{{ settingIdAttr() }}"></textarea>
+    <input ng-if="!multiline" ng-model="setting.newValue" type="text" class="form-control" id="{{ settingIdAttr() }}">
+    <p><span ng-transclude></span> <span>Default value: "<samp>{{ setting.defaultValue }}</samp>"</span></p>
+  </div>
+
+  <div ng-if="isBoolSetting()" class="col-sm-7 bool-setting">
+    <div class="checkbox">
+      <input ng-model="setting.newValue" type="checkbox" id="{{ settingIdAttr() }}">
+    </div>
+    <p><span ng-transclude></span> <span>Default value: <samp>{{ setting.defaultValue }}</samp></span></p>
+  </div>
+
+  <div class="col-sm-3" ng-hide="!valueChanged()">
+    <button ng-click="save()" class="btn btn-default">Save</button>
+    <button ng-click="cancel()" class="btn btn-default">Cancel</button>
+  </div>
+  <div class="col-sm-3" ng-hide="valueChanged() || hasDefaultValue()">
+    <button ng-click="setToDefault()" class="btn btn-default">Reset to default</button>
+  </div>
+</div>

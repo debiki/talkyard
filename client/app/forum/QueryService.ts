@@ -16,7 +16,7 @@
  */
 
 /// <reference path="ForumModule.ts" />
-/// <reference path="../plain-old-javascript.d.ts" />
+/// <reference path="../../shared/plain-old-javascript.d.ts" />
 
 //------------------------------------------------------------------------------
    module debiki2.forum {

@@ -15,18 +15,18 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/// <reference path="../../typedefs/angularjs/angular.d.ts" />
-/// <reference path="../RootScope.ts" />
+/// <reference path="../typedefs/angularjs/angular.d.ts" />
+/// <reference path="../typedefs/angular-ui/angular-ui-router.d.ts" />
 
 //------------------------------------------------------------------------------
-   module debiki2.users {
+   module debiki2.admin {
 //------------------------------------------------------------------------------
 
 
-export interface UsersScope extends RootScope {
-
-  userInfo: UserInfo;
-
+export interface RootScope extends ng.IScope {
+  vm;
+  $state: ng.ui.IStateService;
+  $stateParams: any;
 }
 
 

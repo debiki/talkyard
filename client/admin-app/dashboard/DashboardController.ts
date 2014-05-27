@@ -16,18 +16,26 @@
  */
 
 /// <reference path="../../typedefs/angularjs/angular.d.ts" />
-/// <reference path="../RootScope.ts" />
+/// <reference path="../AdminApp.ts" />
 
 //------------------------------------------------------------------------------
-   module debiki2.users {
+   module debiki2.admin.dashboard {
 //------------------------------------------------------------------------------
 
+interface DashboardScope { // extends RootScope {
+}
 
-export interface UsersScope extends RootScope {
 
-  userInfo: UserInfo;
+class DashboardController {
+
+  public static $inject = ['$scope', 'QueryService'];
+  constructor(private $scope: DashboardScope, private queryService: QueryService) {
+  }
 
 }
+
+
+debiki2.admin.adminApp.controller('DashboardController', DashboardController);
 
 
 //------------------------------------------------------------------------------

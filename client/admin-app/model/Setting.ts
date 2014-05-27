@@ -15,18 +15,35 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/// <reference path="../../typedefs/angularjs/angular.d.ts" />
-/// <reference path="../RootScope.ts" />
+/// <reference path="SettingsTarget.ts" />
 
 //------------------------------------------------------------------------------
-   module debiki2.users {
+   module debiki2.admin.model {
 //------------------------------------------------------------------------------
 
 
-export interface UsersScope extends RootScope {
+export class Setting<T> {
+  public newValue: T;
 
-  userInfo: UserInfo;
+  constructor(
+      public target: SettingsTarget,
+      public name: string,
+      public defaultValue: T,
+      public currentValue: T = null) {
+    if (this.currentValue === null) {
+      this.currentValue = defaultValue;
+    }
+    this.newValue = this.currentValue;
+  }
 
+  public toJson(): string {
+    return JSON.stringify({
+      'type': this.target.type,
+      'pageId': this.target.pageId,
+      'name': this.name,
+      'newValue': this.newValue
+    });
+  }
 }
 
 

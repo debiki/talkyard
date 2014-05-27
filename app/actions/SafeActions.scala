@@ -161,6 +161,13 @@ object SafeActions {
       perhapsAsyncResult =
         perhapsAsyncResult.withHeaders(makeDartDebuggingWorkHeaders(request): _*)
 
+    if (!Play.isProd) {
+      val anyNewFakeIp = request.queryString.get("fakeIp").flatMap(_.headOption)
+      anyNewFakeIp foreach { fakeIp =>
+        perhapsAsyncResult = perhapsAsyncResult.withCookies(Cookie("dwCoFakeIp", fakeIp))
+      }
+    }
+
     perhapsAsyncResult match {
       case AsyncResult(futureResultMaybeException) =>
         val futureResult = futureResultMaybeException recover exceptionRecoverer

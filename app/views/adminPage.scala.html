@@ -17,8 +17,12 @@
 
 @(hostname: String, minMaxJs: String, minMaxCss: String)
 
+@asset(file: String) = @{
+  routes.Assets.at(path = "/public/res", file)
+}
+
 <!DOCTYPE html>
-<html ng-app>
+<html ng-app="DebikiAdminApp">
 <head>
   <title>Debiki Dashboard</title>
   <meta name="viewport" content="initial-scale=1.0, minimum-scale=0.01">
@@ -26,7 +30,10 @@
 
   <link rel="stylesheet" href="http://fonts.googleapis.com/css?family=Bree+Serif">
   <link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css">
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="@asset(s"admin-app.$minMaxCss")">
+
+  @* Needed by the page-app. *@
+  <script src="//cdnjs.cloudflare.com/ajax/libs/modernizr/2.6.2/modernizr.min.js"></script>
 
   <script src="//ajax.googleapis.com/ajax/libs/jquery/2.1.0/jquery.@minMaxJs"></script>
   <script src="//ajax.googleapis.com/ajax/libs/angularjs/1.2.16/angular.@minMaxJs"></script>
@@ -35,15 +42,26 @@
   @* For now only, should probably install via e.g. Bower? and include in JS bundle? *@
   <script src="//angular-ui.github.io/ui-router/release/angular-ui-router.js"></script>
 
+  @* Could perhaps provide a touch version too? Then could use Modernizr.load, but would
+  then have to start the app manually. See client/app/bootstrap-angularjs.ls.  *@
+  <script>
+    @* Old stuff needed by the page app bundled in the same JS file *@
+    var debiki = { internal: { $: jQuery }, v0: { util: {} } }
+  </script>
+  <script src="@asset(s"combined-debiki-desktop.$minMaxJs")"></script>
 </head>
 <body ng-cloak>
-<div debiki-admin class="container">
+  <div id="debiki-dashbar">
+    <div class="debiki-dashbar-logo"><img src="/-/img/logo-128x120.png"></div>
+    <a onclick="history.back();">Return to site</a>
+  </div>
+  <div debiki-admin class="container">
 
-  <h1>@hostname</h1>
+    <h1>@hostname</h1>
 
-  <div ng-include="'admin-app.html'"></div>
+    <div ng-include="'admin-app.html'"></div>
 
-</div>
+  </div>
 </body>
 </html>
 <!-- vim: set et ts=2 sw=2 tw=0 fdm=marker list :-->

@@ -166,17 +166,14 @@ object ListController extends mvc.Controller {
     val (posts, people: People) =
       pageReq.dao.loadPostsRecentlyActive(limit = ActionCountLimit)
 
+    val pageMetaByPageId = pageReq.dao.loadPageMetasAsMap(posts.map(_.pageParts.pageId).distinct)
+
     contentType match {
       case DebikiHttp.ContentType.Html =>
         unimplemented // Ok(views.html.listActions(actions))
       case DebikiHttp.ContentType.Json =>
-        // Include the SystemUser, because it's the author of the
-        // default homepage. (COULD skip adding it, in the future when
-        // there's a Robots table and it's added automatically, if needed.)
-        val peopleAndSystemUser = people + SystemUser.User
         OkSafeJson(toJson(Map(
-          "actions" -> JsArray(posts.map(_jsonFor _)),
-          "users" -> JsArray(peopleAndSystemUser.users.map(_jsonFor _)),
+          "actions" -> JsArray(posts.map(jsonForPost(_, pageMetaByPageId))),
           "postTextLengthLimit" -> JsNumber(PostTextLengthLimit),
           // This limit is only approximate, if you list pages both
           // by folder path and by page id. see
@@ -206,12 +203,19 @@ object ListController extends mvc.Controller {
   }
 
 
-  private def _jsonFor(action: PostActionOld): JsValue = {
+  private def jsonForPost(action: PostActionOld, pageMetaByPageId: Map[PageId, PageMeta])
+        : JsValue = {
+    val pageName = pageMetaByPageId.get(action.page.id)
+      .map(_.cachedTitle getOrElse "(Unnamed page)")
+      .getOrElse("(Page not found)")
+
     var data = Map[String, JsValue](
       "id" -> JsString(action.id.toString),
       "pageId" -> JsString(action.page.id),
+      "pageName" -> JsString(pageName),
       "type" -> JsString(classNameOf(action)),
-      "userId" -> JsString(action.user_!.id),
+      "userId" -> JsString(action.userId),
+      "userDisplayName" -> JsString(action.user_!.displayName),
       "cdati" -> JsString(toIso8601T(action.creationDati)))
 
     action.loginId foreach { id =>

@@ -15,18 +15,55 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/// <reference path="../../typedefs/angularjs/angular.d.ts" />
-/// <reference path="../RootScope.ts" />
+/// <reference path="SettingsTarget.ts" />
 
 //------------------------------------------------------------------------------
-   module debiki2.users {
+   module debiki2.admin.model {
 //------------------------------------------------------------------------------
 
 
-export interface UsersScope extends RootScope {
+export class SpecialContent {
 
-  userInfo: UserInfo;
+  public newText: string;
 
+
+  constructor(
+      public rootPageId: string,
+      public contentId: string,
+      public defaultText: string,
+      public currentText: string,
+      public markup: string = '???') {
+    if (!this.currentText) {
+      this.currentText = this.defaultText;
+    }
+    this.newText = this.currentText;
+  }
+
+
+  public static fromJsonMap(json: any) {
+    return new SpecialContent(
+        json['rootPageId'],
+        json['contentId'],
+        json['defaultText'],
+        json['anyCustomText'],
+        json['markup']);
+  }
+
+
+  public toJson(): string {
+    var map = {
+      'rootPageId': this.rootPageId,
+      'contentId': this.contentId,
+      'defaultText': this.defaultText,
+      'useDefaultText': this.newText == this.defaultText,
+      'markup': this.markup
+    };
+
+    if (this.newText != this.defaultText)
+      map['anyCustomText'] = this.newText;
+
+    return JSON.stringify(map);
+  }
 }
 
 

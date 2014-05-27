@@ -15,8 +15,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/// <reference path="../../typedefs/lodash/lodash.d.ts" />
-/// <reference path="../../typedefs/angularjs/angular.d.ts" />
+/// <reference path="../../../typedefs/lodash/lodash.d.ts" />
+/// <reference path="../../../typedefs/angularjs/angular.d.ts" />
 /// <reference path="../UsersModule.ts" />
 /// <reference path="../UsersQueryService.ts" />
 
