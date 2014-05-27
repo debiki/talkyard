@@ -51,13 +51,17 @@
   <script src="@asset(s"combined-debiki-desktop.$minMaxJs")"></script>
 </head>
 <body ng-cloak>
-<div debiki-admin class="container">
+  <div id="debiki-dashbar">
+    <div class="debiki-dashbar-logo"><img src="/-/img/logo-128x120.png"></div>
+    <a onclick="history.back();">Return to site</a>
+  </div>
+  <div debiki-admin class="container">
 
-  <h1>@hostname</h1>
+    <h1>@hostname</h1>
 
-  <div ng-include="'admin-app.html'"></div>
+    <div ng-include="'admin-app.html'"></div>
 
-</div>
+  </div>
 </body>
 </html>
 <!-- vim: set et ts=2 sw=2 tw=0 fdm=marker list :-->

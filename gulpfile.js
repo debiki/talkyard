@@ -510,6 +510,7 @@ gulp.task('compile-stylus', function () {
         'client/app/tips.styl']),
 
     makeStyleStream('public/res/', 'admin-app.css', [
+        'client/app/dashbar/dashbar.styl',
         'client/admin-app/**/*.styl']),
 
     makeStyleStream('client/admin-dart/admin-dart/web/', 'styles.css', [
