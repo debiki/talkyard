@@ -21,7 +21,7 @@
 	url = ../debiki-dao-rdb.git
 [submodule "modules/debiki-bootstrap"]
 	path = modules/debiki-bootstrap
-	url = git@github.com:debiki/debiki-bootstrap-stylus.git
+	url = https://github.com/debiki/debiki-bootstrap-stylus.git
 [submodule "modules/definitely-typed"]
 	path = modules/definitely-typed
 	url = https://github.com/borisyankov/DefinitelyTyped.git
