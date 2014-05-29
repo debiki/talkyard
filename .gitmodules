@@ -25,3 +25,6 @@
 [submodule "modules/angular.dart.ui-kajmagnus79"]
 	path = modules/angular.dart.ui-kajmagnus79
 	url = https://github.com/kajmagnus79/angular.dart.ui.git
+[submodule "modules/definitely-typed"]
+	path = modules/definitely-typed
+	url = https://github.com/borisyankov/DefinitelyTyped.git
