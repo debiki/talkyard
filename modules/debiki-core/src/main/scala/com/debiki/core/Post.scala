@@ -23,7 +23,7 @@ import java.{util => ju}
 import play.api.libs.json._
 import Prelude._
 import PageParts._
-import FlagReason.FlagReason
+import FlagType.FlagType
 
 
 
@@ -636,17 +636,17 @@ case class Post(
 
   lazy val lastFlag = flagsDescTime.headOption
 
-  lazy val flagsByReason: imm.Map[FlagReason, List[Flag]] = {
+  lazy val flagsByType: imm.Map[FlagType, List[Flag]] = {
     // Add reasons and flags to a mutable map.
-    var mmap = mut.Map[FlagReason, mut.Set[Flag]]()
+    var mmap = mut.Map[FlagType, mut.Set[Flag]]()
     for (f <- flags)
-      mmap.getOrElse(f.reason, {
+      mmap.getOrElse(f.tyype, {
         val s = mut.Set[Flag]()
-        mmap.put(f.reason, s)
+        mmap.put(f.tyype, s)
         s
       }) += f
     // Copy to an immutable version.
-    imm.Map[FlagReason, List[Flag]](
+    imm.Map[FlagType, List[Flag]](
       (for ((reason, flags) <- mmap)
       yield (reason, flags.toList)).toList: _*)
   }
@@ -654,8 +654,8 @@ case class Post(
   /** Pairs of (FlagReason, flags-for-that-reason), sorted by
    *  number of flags, descending.
    */
-  lazy val flagsByReasonSorted: List[(FlagReason, List[Flag])] = {
-    flagsByReason.toList.sortWith((a, b) => a._2.length > b._2.length)
+  lazy val flagsByTypeSorted: List[(FlagType, List[Flag])] = {
+    flagsByType.toList.sortWith((a, b) => a._2.length > b._2.length)
   }
 
 

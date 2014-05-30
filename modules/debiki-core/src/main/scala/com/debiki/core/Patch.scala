@@ -22,7 +22,7 @@ import collection.{immutable => imm, mutable => mut}
 import com.debiki.core.{PostActionPayload => PAP}
 import Prelude._
 import PageParts._
-import FlagReason.FlagReason
+import FlagType.FlagType
 
 
 

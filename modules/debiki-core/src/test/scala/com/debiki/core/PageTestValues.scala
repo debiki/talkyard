@@ -92,8 +92,8 @@ trait PageTestValues {
     */
 
   val flagOfBody = Flag(18, postId = bodySkeleton.id, UserIdData.newTest("118", userId = "?"),
-    ctime = new ju.Date(18000), reason = FlagReason.Spam,
-    details = "")
+    ctime = new ju.Date(18000), tyype = FlagType.Spam,
+    reason = "")
 
 
   case class PageWithEditApplied(

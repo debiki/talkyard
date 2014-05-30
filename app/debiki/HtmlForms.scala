@@ -22,7 +22,7 @@ import com.debiki.core._
 import java.{util => ju, io => jio}
 import scala.collection.JavaConversions._
 import _root_.scala.xml.{NodeSeq, Node, Elem, Text, XML, Attribute}
-import FlagReason.FlagReason
+import FlagType.FlagType
 import Prelude._
 import DebikiHttp._
 import HtmlUtils._
@@ -45,11 +45,11 @@ object HtmlForms {
 
   object FlagForm {
     object InputNames {
+      val Type = "dw-fi-flg-type"
       val Reason = "dw-fi-flg-reason"
-      val Details = "dw-fi-flg-details"
     }
-    import FlagReason._
-    def prettify(reason: FlagReason): String = (reason match {  // i18n
+    import FlagType._
+    def prettify(tyype: FlagType): String = (tyype match {  // i18n
       case CopyVio => "Copyright Violation"
       case x => x.toString
     })
@@ -236,21 +236,21 @@ class HtmlForms(xsrfToken: String, val pageRoot: AnyPageRoot, val permsOnPage: P
       <form class='dw-f-flg'>
         { _xsrfToken }
         <div class='dw-f-flg-rsns'>{
-          def input(idSuffix: String, r: FlagReason) = {
+          def input(idSuffix: String, r: FlagType) = {
             val id = "dw-fi-flgs-"+ idSuffix
-            <input type='radio' id={id} name={Inp.Reason} value={r.toString}/>
+            <input type='radio' id={id} name={Inp.Type} value={r.toString}/>
             <label for={id}>{FlagForm.prettify(r)}</label>
           }
-          import FlagReason._
+          import FlagType._
           input("spam", Spam) ++
           input("copy", CopyVio) ++
           input("ilgl", Illegal) ++
           input("othr", Other)
         }</div>
         <div>
-          <label for={Inp.Details}>Details (optional)</label><br/>
-          <textarea id={Inp.Details} rows='2' cols='30'
-                 name={Inp.Details} value=''></textarea>
+          <label for={Inp.Reason}>Details (optional)</label><br/>
+          <textarea id={Inp.Reason} rows='2' cols='30'
+                 name={Inp.Reason} value=''></textarea>
         </div>
         <div class='dw-submit-set'>
           <input class='dw-fi-submit' type='submit' value='Submit'/>

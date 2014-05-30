@@ -22,7 +22,7 @@ import collection.{immutable => imm, mutable => mut}
 import com.debiki.core.{PostActionPayload => PAP}
 import Prelude._
 import PageParts._
-import FlagReason.FlagReason
+import FlagType.FlagType
 
 
 /** Actions builds up a page: a page consists of various posts,
@@ -428,8 +428,8 @@ sealed abstract class PostActionDtoOld {
 
 
 
-object FlagReason extends Enumeration {
-  type FlagReason = Value
+object FlagType extends Enumeration {
+  type FlagType = Value
   val Spam, Illegal, /* Copyright Violation */ CopyVio, Other = Value
 }
 
@@ -440,10 +440,10 @@ case class Flag(
   postId: ActionId,
   userIdData: UserIdData,
   ctime: ju.Date,
-  reason: FlagReason,
-  details: String
+  tyype: FlagType,
+  reason: String
 ) extends PostActionDtoOld {
-  override def textLengthUtf8: Int = details.getBytes("UTF-8").length
+  override def textLengthUtf8: Int = reason.getBytes("UTF-8").length
 }
 
 

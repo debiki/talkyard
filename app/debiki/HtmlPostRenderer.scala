@@ -22,7 +22,7 @@ import com.debiki.core._
 import java.{util => ju, io => jio}
 import scala.collection.JavaConversions._
 import _root_.scala.xml.{NodeSeq, Node, Elem, Text, XML, Attribute}
-import FlagReason.FlagReason
+import FlagType.FlagType
 import Prelude._
 import HtmlUtils._
 import HtmlPostRenderer._
@@ -283,7 +283,7 @@ object HtmlPostRenderer {
 
     import HtmlForms.FlagForm.prettify
     val mtime = toIso8601T(post.lastFlag.get.ctime)
-    val fbr = post.flagsByReasonSorted
+    val fbr = post.flagsByTypeSorted
 
     val topFlags =
       <span class='dw-p-flgs-top'>, flagged <em>{
@@ -291,7 +291,7 @@ object HtmlPostRenderer {
       }</em></span>
 
     val allFlagListItems =
-      for ((r: FlagReason, fs: List[Flag]) <- fbr) yield
+      for ((r: FlagType, fs: List[Flag]) <- fbr) yield
         <li class="dw-flg">{
           // The `×' is the multiplication sign, "\u00D7".
           prettify(r).toLowerCase +" × "+ fs.length.toString

@@ -43,18 +43,18 @@ object Application extends mvc.Controller {
     val body = request.body
     val pageId = (body \ "pageId").as[PageId]
     val postId = (body \ "postId").as[PostId]
-    val reasonStr = (body \ "reason").as[String]
-    val details = (body \ "details").as[String]
+    val typeStr = (body \ "type").as[String]
+    val reason = (body \ "reason").as[String]
 
-    val reason = try { FlagReason withName reasonStr }
+    val tyype = try { FlagType withName typeStr }
       catch {
         case _: NoSuchElementException =>
-          throwBadReq("DwE93Kf3", "Invalid reason")
+          throwBadReq("DwE93Kf3", "Invalid flag type")
       }
 
     val flag = Flag(id = PageParts.UnassignedId, postId = postId,
       userIdData = request.userIdData,
-      ctime = request.ctime, reason = reason, details = details)
+      ctime = request.ctime, tyype = tyype, reason = reason)
 
     // Cancel any preliminary approval, sice post has been flagged.
     /*
