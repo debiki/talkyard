@@ -52,9 +52,9 @@ object Application extends mvc.Controller {
           throwBadReq("DwE93Kf3", "Invalid flag type")
       }
 
-    val flag = Flag(id = PageParts.UnassignedId, postId = postId,
-      userIdData = request.userIdData,
-      ctime = request.ctime, tyype = tyype, reason = reason)
+    val flag = PostActionDto(id = PageParts.UnassignedId, creationDati = request.ctime,
+      payload = PostActionPayload.Flag(tyype = tyype, reason = reason),
+      postId = postId, userIdData = request.userIdData)
 
     // Cancel any preliminary approval, sice post has been flagged.
     /*

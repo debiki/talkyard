@@ -40,6 +40,8 @@ case class NotfGenerator(pageExclNewActions: PageParts, newActions: Seq[PostActi
         Nil  // fix later, see "Note:" below
       case _: PAP.ReviewPost =>
         makeReviewNotfs(new Review(page, action.asInstanceOf[PostActionDto[PAP.ReviewPost]]))
+      case flag: PAP.Flag =>
+        Nil  // fix later, see note above
       case _ =>
         Nil // skip for now
     }
@@ -47,8 +49,6 @@ case class NotfGenerator(pageExclNewActions: PageParts, newActions: Seq[PostActi
     // If you add notfs (below) for other things than replies,
     // then, in debiki-server, update NotfHtmlRenderer.
     case app: EditApp =>
-      Nil  // fix later, see note above
-    case flag: Flag =>
       Nil  // fix later, see note above
     case _ =>
       Nil  // skip for now

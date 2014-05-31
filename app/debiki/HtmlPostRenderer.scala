@@ -291,7 +291,7 @@ object HtmlPostRenderer {
       }</em></span>
 
     val allFlagListItems =
-      for ((r: FlagType, fs: List[Flag]) <- fbr) yield
+      for ((r: FlagType, fs: List[PostActionDto[PostActionPayload.Flag]]) <- fbr) yield
         <li class="dw-flg">{
           // The `×' is the multiplication sign, "\u00D7".
           prettify(r).toLowerCase +" × "+ fs.length.toString

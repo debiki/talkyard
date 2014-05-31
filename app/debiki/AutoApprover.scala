@@ -213,7 +213,12 @@ object AutoApprover {
 
 
   private def _considerFlags(recentActions: List[PostActionOld]): Option[Approval] = {
-    for (flag: PostActionOld <- recentActions if flag.action.isInstanceOf[Flag]) {
+    def isFlag(rawPostAction: PostActionOld) = rawPostAction match {
+      case a: PostActionDto[_] => a.payload.isInstanceOf[PostActionPayload.Flag]
+      case _ => false
+    }
+
+    for (action: PostActionOld <- recentActions if isFlag(action)) {
       // If any post has been flagged, don't approve.
       return None
     }

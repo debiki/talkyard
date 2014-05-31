@@ -104,7 +104,6 @@ object PageParts {
     // Remap ids and update references to ids.
     def rmpd(id: ActionId) = remaps.getOrElse(id, id)
     def updateIds(action: T): T = (action match {
-      case f: Flag => f.copy(id = remaps(f.id), postId = rmpd(f.postId))
       case a: EditApp => a.copy(id = remaps(a.id), editId = rmpd(a.editId),
         postId = rmpd(a.postId))
       case a: PostActionDto[_] =>
@@ -241,19 +240,9 @@ abstract class PostActionsWrapper { self: PageParts =>
 
       action.payload match {
         case _: PAP.CreatePost => // doesn't affect any post; creates a new one
-        case _: PAP.EditPost => addActionByTargetId(action.postId)
-        case _: PAP.ReviewPost => addActionByTargetId(action.postId)
-        case _: PAP.PinPostAtPosition => addActionByTargetId(action.postId)
-        case PAP.VoteLike => addActionByTargetId(action.postId)
-        case PAP.VoteWrong => addActionByTargetId(action.postId)
-        case PAP.VoteOffTopic => addActionByTargetId(action.postId)
-        case PAP.CollapsePost => addActionByTargetId(action.postId)
-        case PAP.CollapseTree => addActionByTargetId(action.postId)
-        case PAP.CloseTree => addActionByTargetId(action.postId)
-        case PAP.DeletePost => addActionByTargetId(action.postId)
-        case PAP.DeleteTree => addActionByTargetId(action.postId)
         case PAP.Undo(targetActionId) => addActionByTargetId(targetActionId)
         case PAP.Delete(targetActionId) => addActionByTargetId(targetActionId)
+        case _: PAP => addActionByTargetId(action.postId)
       }
     }
 
@@ -272,8 +261,7 @@ abstract class PostActionsWrapper { self: PageParts =>
   * @param people People who has contributed to the page. If some people are missing,
   * certain functions might fail (e.g. a function that fetches the name of the author
   * of the page body). — This class never fetches anything lazily from database.
-  * @param editApps Deprecated, see next line.
-  * @param flags Deprecated? I should convert EditApps and Flags to PostActionDto:s
+  * @param editApps Deprecated. I should convert EditApps to PostActionDto:s
   * and use only `actionDtos` instead?
   * @param actionDtos The actions that build up the page.
   */
@@ -281,17 +269,16 @@ case class PageParts (
   guid: PageId,  // COULD rename to pageId?
   people: People = People.None,
   editApps: List[EditApp] = Nil,
-  flags: List[Flag] = Nil,
   postStates: List[PostState] = Nil,
   actionDtos: List[PostActionDto[_]] = Nil) extends PostActionsWrapper {
 
 
   def actionCount: Int =
-     editApps.size + flags.size + actionDtos.size
+     editApps.size + actionDtos.size
 
 
   def allActions: Seq[PostActionDtoOld] =
-     flags:::editApps:::actionDtos
+     editApps:::actionDtos
 
 
   lazy val actionsByTimeAsc =
@@ -556,12 +543,6 @@ case class PageParts (
     editApps.filter(_.id == withId).headOption
 
 
-  // -------- Flags
-
-  private lazy val flagsById: imm.Map[ActionId, Flag] =
-    imm.Map[ActionId, Flag](flags.map(x => (x.id, x)): _*)
-
-
   // -------- Reviews (manual approvals and rejections, no auto approvals)
 
   def getReview(reviewId: ActionId): Option[Review] = getActionById(reviewId) match {
@@ -593,7 +574,6 @@ case class PageParts (
   // COULD [T <: Action] instead of >: AnyRef?
   def ++[T >: AnyRef] (actions: Seq[T]): PageParts = {
     var editApps2 = editApps
-    var flags2 = flags
     var actions2 = this.actionDtos
     type SthWithId = { def id: ActionId }
     def dieIfIdClash(olds: Seq[SthWithId], a: SthWithId) =
@@ -607,16 +587,13 @@ case class PageParts (
       case a: EditApp =>
         dieIfIdClash(editApps2, a)
         editApps2 ::= a
-      case f: Flag =>
-        dieIfIdClash(flags2, f)
-        flags2 ::= f
       case a: PostActionDto[_] =>
         dieIfIdClash(actions2, a)
         actions2 ::= a
       case x => runErr(
         "DwE8k3EC", "Unknown action type: "+ classNameOf(x))
     }
-    PageParts(id, people, editApps2, flags2, postStates, actions2)
+    PageParts(id, people, editApps2, postStates, actions2)
   }
 
 
@@ -630,12 +607,10 @@ case class PageParts (
       action.ctime.getTime <= dati.getTime
 
     val (editAppsBefore, editAppsAfter) = editApps partition happenedInTime
-    val (flagsBefore, flagsAfter) = flags partition happenedInTime
     val (actionsBefore, actionsAfter) = actionDtos partition happenedInTime
 
     val pageUpToAndInclDati = copy(
       editApps = editAppsBefore,
-      flags = flagsBefore,
       actionDtos = actionsBefore)
 
     pageUpToAndInclDati

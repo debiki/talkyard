@@ -187,9 +187,9 @@ class AutoApproverSpec extends Specification with Mockito {
   val rejectionOfReplyA: PostActionDto[PAP.ReviewPost] =
     approvalOfReplyA.copy(id = 10004, payload = PAP.RejectPost)
 
-  val flagOfReplyA = Flag(id = 10005, postId = testUserReplyAId,
-    SystemUser.UserIdData, ctime = later(20), tyype = FlagType.Other,
-    reason = "")
+  val flagOfReplyA = PostActionDto[PAP.Flag](id = 10005, later(20),
+    PAP.Flag(tyype = FlagType.Other, reason = ""), postId = testUserReplyAId,
+    SystemUser.UserIdData)
 
   val deletionOfReplyA: PostActionDto[_] = PostActionDto.toDeletePost(
     andReplies = false, id = 10006, postIdToDelete = testUserReplyAId,

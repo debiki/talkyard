@@ -22,7 +22,6 @@ import com.debiki.core.{PostActionPayload => PAP}
 import java.{util => ju}
 import play.api.libs.json._
 import Prelude._
-import PageParts._
 import FlagType.FlagType
 
 
@@ -612,10 +611,12 @@ case class Post(
 
 
   // COULD optimize this, do once for all flags.
-  lazy val flags = debate.flags.filter(_.postId == this.id)
+  lazy val flags = debate.actionDtos filter { action =>
+    action.payload.isInstanceOf[PAP.Flag] && action.postId == this.id
+  } map (_.asInstanceOf[PostActionDto[PAP.Flag]])
 
 
-  def flagsDescTime: List[Flag] = flags.sortBy(- _.ctime.getTime)
+  def flagsDescTime: List[PostActionDto[PAP.Flag]] = flags.sortBy(- _.ctime.getTime)
 
 
   /**
@@ -623,8 +624,8 @@ case class Post(
    * already been reviewed.
    */
   lazy val (
-      flagsPendingReview: List[Flag],
-      flagsReviewed: List[Flag]) =
+      flagsPendingReview: List[PostActionDto[PAP.Flag]],
+      flagsReviewed: List[PostActionDto[PAP.Flag]]) =
     flagsDescTime span { flag =>
       if (lastAuthoritativeReviewDati isEmpty) true
       else lastAuthoritativeReviewDati.get.getTime <= flag.ctime.getTime
@@ -636,17 +637,17 @@ case class Post(
 
   lazy val lastFlag = flagsDescTime.headOption
 
-  lazy val flagsByType: imm.Map[FlagType, List[Flag]] = {
+  lazy val flagsByType: imm.Map[FlagType, List[PostActionDto[PAP.Flag]]] = {
     // Add reasons and flags to a mutable map.
-    var mmap = mut.Map[FlagType, mut.Set[Flag]]()
+    var mmap = mut.Map[FlagType, mut.Set[PostActionDto[PAP.Flag]]]()
     for (f <- flags)
-      mmap.getOrElse(f.tyype, {
-        val s = mut.Set[Flag]()
-        mmap.put(f.tyype, s)
+      mmap.getOrElse(f.payload.tyype, {
+        val s = mut.Set[PostActionDto[PAP.Flag]]()
+        mmap.put(f.payload.tyype, s)
         s
       }) += f
     // Copy to an immutable version.
-    imm.Map[FlagType, List[Flag]](
+    imm.Map[FlagType, List[PostActionDto[PAP.Flag]]](
       (for ((reason, flags) <- mmap)
       yield (reason, flags.toList)).toList: _*)
   }
@@ -654,7 +655,7 @@ case class Post(
   /** Pairs of (FlagReason, flags-for-that-reason), sorted by
    *  number of flags, descending.
    */
-  lazy val flagsByTypeSorted: List[(FlagType, List[Flag])] = {
+  lazy val flagsByTypeSorted: List[(FlagType, List[PostActionDto[PAP.Flag]])] = {
     flagsByType.toList.sortWith((a, b) => a._2.length > b._2.length)
   }
 

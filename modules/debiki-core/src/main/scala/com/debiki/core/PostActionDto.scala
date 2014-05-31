@@ -382,6 +382,11 @@ object PostActionPayload {
     */
   case class Undo(targetActionId: ActionId) extends PostActionPayload
 
+
+  /** Flags a post as e.g. spam, or inappropriate (offensive, illegal, whatever).
+    */
+  case class Flag(tyype: FlagType, reason: String) extends PostActionPayload
+
 }
 
 
@@ -431,19 +436,6 @@ sealed abstract class PostActionDtoOld {
 object FlagType extends Enumeration {
   type FlagType = Value
   val Spam, Illegal, /* Copyright Violation */ CopyVio, Other = Value
-}
-
-
-
-case class Flag(
-  id: ActionId,
-  postId: ActionId,
-  userIdData: UserIdData,
-  ctime: ju.Date,
-  tyype: FlagType,
-  reason: String
-) extends PostActionDtoOld {
-  override def textLengthUtf8: Int = reason.getBytes("UTF-8").length
 }
 
 
