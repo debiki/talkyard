@@ -124,16 +124,9 @@ trait TestSiteCreator extends TestLoginner {
   private def verifyIsOnAdminPage(newSiteName: String) {
     info("get to the admin page")
     eventually {
-      assert(pageSource contains "Configure the Site")
+      assert(pageSource contains "Return to site")
     }
-    // Currently, because I'm serving a static page and rendering the contents using
-    // AngularDart, the page is located at something like:
-    //   /-/assets/43/admin-dart-build/web/admin.html
-    webDriver.getCurrentUrl() must include ("/-/assets/")
-    webDriver.getCurrentUrl() must include ("admin-dart-build/web/admin.html")
-
-    // When the page has a better address, revert to:
-    //    ... must fullyMatch regex s"${originOf(newSiteName)}/-/admin/#/"
+    webDriver.getCurrentUrl() must startWith (s"${originOf(newSiteName)}/-/admin/")
   }
 
 
