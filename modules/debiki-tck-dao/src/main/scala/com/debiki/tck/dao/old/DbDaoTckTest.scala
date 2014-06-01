@@ -1431,13 +1431,12 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
           UserIdData.newTest(loginId, userId = globalUserId),
           text = patchText, newMarkup = None,
           approval = None, autoApplied = false)
-        val publNoId = EditApp(
-          id = UnassignedId2, editId = UnassignedId, postId = post.id,
-          UserIdData.newTest(loginId, userId = globalUserId), ctime = now, result = newText,
-          approval = None)
+        val publNoId = PostActionDto[PAP.EditApp](
+          id = UnassignedId2, now, PAP.EditApp(editId = UnassignedId, approval = None),
+          postId = post.id, UserIdData.newTest(loginId, userId = globalUserId))
 
         // Save
-        val List(edit: PostActionDto[PAP.EditPost], publ: EditApp) =
+        val List(edit: PostActionDto[PAP.EditPost], publ: PostActionDto[PAP.EditApp]) =
           dao.savePageActions(testPage, List(editNoId, publNoId))._2
 
         exEdit_editId = edit.id
@@ -1459,13 +1458,12 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
           UserIdData.newTest(loginId, userId = globalUserId),
           text = "", newMarkup = Some("html"),
           approval = None, autoApplied = false)
-        val publNoId = EditApp(
-          id = UnassignedId2, editId = UnassignedId, postId = post.id,
-          UserIdData.newTest(loginId, userId = globalUserId), ctime = now, result = newText,
-          approval = None)
+        val publNoId = PostActionDto[PAP.EditApp](
+          id = UnassignedId2, now, PAP.EditApp(editId = UnassignedId, approval = None),
+          postId = post.id, UserIdData.newTest(loginId, userId = globalUserId))
 
         // Save
-        val List(edit: PostActionDto[PAP.EditPost], publ: EditApp) =
+        val List(edit: PostActionDto[PAP.EditPost], publ: PostActionDto[PAP.EditApp]) =
           dao.savePageActions(testPage, List(editNoId, publNoId))._2
 
         // Verify markup type changed

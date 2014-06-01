@@ -378,7 +378,7 @@ case class Post(
       for (editApp <- page.editAppsByEdit(edit.id)) {
         // Ought to reuse PostActionsWrapper's wrapped actionDto:s rather than
         // creating new objects here.
-        if (editApp.approval.isDefined)
+        if (editApp.payload.approval.isDefined)
           implicitApprovals ::= new ApplyPatchAction(page, editApp)
 
         // In the future, deletions (and any other actions?) should also

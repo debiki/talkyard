@@ -68,7 +68,7 @@ class Patch(debate: PageParts, val edit: PostActionDto[PAP.EditPost])
 
   // COULD let isApplied, applicationDati, applierLoginId, applicationActionId
   // be functions, and remember only Some(applicationAction)?
-  val (isApplied, applicationDati,
+  lazy val (isApplied, applicationDati,
       applierUserId, applicationActionId,
       isReverted, revertionDati)
         : (Boolean, Option[ju.Date], Option[String], Option[ActionId],
@@ -90,14 +90,14 @@ class Patch(debate: PageParts, val edit: PostActionDto[PAP.EditPost])
       // this Edit is in effect. However, if the EditApp has been deleted,
       // there should be no other EditApp that has not also been deleted,
       // because you cannot apply an edit that's already been applied.
-      val lastEditApp = allEditApps.maxBy(_.ctime.getTime)
+      val lastEditApp = allEditApps.maxBy(_.creationDati.getTime)
       val revertionDati =
         (None // for now. Later, check Undo,
               // was before, broken now:  page.deletionFor(lastEditApp.id).map(_.ctime)
               // perhaps in the future:  lastEditApp.undoneAt
           orElse deletedAt)
       if (revertionDati isEmpty)
-        (true, Some(lastEditApp.ctime),
+        (true, Some(lastEditApp.creationDati),
            Some(lastEditApp.userId), Some(lastEditApp.id), false, None)
       else
         (false, None, None, None, true, Some(revertionDati.get))

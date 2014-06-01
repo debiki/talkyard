@@ -117,9 +117,9 @@ class PostActionOld(val debate: PageParts, val action: PostActionDtoOld) {
 
 
 
-class ApplyPatchAction(page: PageParts, val editApp: EditApp)
-  extends PostActionOld(page, editApp) with MaybeApproval {
-  def directApproval = editApp.approval
+class ApplyPatchAction(page: PageParts, val editApp: PostAction[PAP.EditApp])
+  extends PostAction(page, editApp.actionDto) with MaybeApproval {
+  def directApproval = editApp.payload.approval
 }
 
 

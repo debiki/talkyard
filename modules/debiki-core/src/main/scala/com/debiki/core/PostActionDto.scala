@@ -175,6 +175,31 @@ object PostActionDto {
         approval = if (approval ne null) approval else old.payload.approval))
 
 
+  def copyApplyEdit(
+        old: PostActionDto[PAP.EditApp],
+        id: ActionId = PageParts.NoId,
+        postId: ActionId = PageParts.NoId,
+        createdAt: ju.Date = null,
+        loginId: String = null,
+        userId: String = null,
+        ip: String = null,
+        editId: ActionId = PageParts.NoId,
+        approval: Option[Approval] = null) =
+    PostActionDto(
+      id = if (id != PageParts.NoId) id else old.id,
+      postId = if (postId != PageParts.NoId) postId else old.postId,
+      creationDati =  if (createdAt ne null) createdAt else old.creationDati,
+      userIdData = UserIdData(
+        loginId = if (loginId ne null) Some(loginId) else old.userIdData.loginId,
+        userId = if (userId ne null) userId else old.userIdData.userId,
+        ip = if (ip ne null) ip else old.userIdData.ip,
+        browserIdCookie = old.userIdData.browserIdCookie,
+        browserFingerprint = old.userIdData.browserFingerprint),
+      payload = PAP.EditApp(
+        editId = if (editId != PageParts.NoId) editId else old.payload.editId,
+        approval = if (approval ne null) approval else old.payload.approval))
+
+
   def toReviewPost(
         id: ActionId,
         postId: ActionId,
@@ -282,6 +307,12 @@ object PostActionPayload {
     // moderator review.)
     require(approval.isEmpty || autoApplied)
   }
+
+
+  /** Edit applications (i.e. when edits are applied).
+    * COULD rename to ApplyEdit
+    */
+  case class EditApp(editId: ActionId, approval: Option[Approval]) extends PostActionPayload
 
 
   /** Approves and rejects comments and edits of the related post.
@@ -437,47 +468,5 @@ object FlagType extends Enumeration {
   type FlagType = Value
   val Spam, Illegal, /* Copyright Violation */ CopyVio, Other = Value
 }
-
-
-
-/** Edit applications (i.e. when edits are applied).
- *
- *  COULD make generic: applying a Post means it's published.
- *  Applying an Edit means the relevant Post is edited.
- *  Applying a Flag means the relevant Post is hidden.
- *  Applying a Delete means whatever is whatever-happens-when-it's-deleted.
- *  And each Action could have a applied=true/false field?
- *  so they can be applied directly on creation?
- */
-case class EditApp(
-  id: ActionId,
-  editId: ActionId,
-  postId: ActionId,
-  userIdData: UserIdData,
-  ctime: ju.Date,
-  approval: Option[Approval],
-
-  /** The text after the edit was applied. Needed, in case an `Edit'
-   *  contains a diff, not the resulting text itself. Then we'd better not
-   *  find the resulting text by applying the diff to the previous
-   *  version, more than once -- that wouldn't be future compatible: the diff
-   *  algorithm might functioni differently depending on software version
-   *  (e.g. because of bugs).
-   *  So, only apply the diff algorithm once, to find the EddidApplied.result,
-   *  and thereafter always use EditApplied.result.
-   *
-   *  Update: What! I really don't think the diff alg will change in the
-   *  future! Anyone changing the diff file format would be insane,
-   *  and would not have been able to write a diff alg at all.
-   *  So `result' is *not* needed, except for perhaps improving performance.
-   *
-   *  COULD change to an Option[String] and define it only one time out of ten?
-   *  Then the entire post would be duplicated only 1 time out of 10 times,
-   *  and that would hardly affect storage space requirements,
-   *  but at the same time improving performance reasonably much ??
-   *  Or store cached post texts in a dedicated db table.
-   */
-  result: String
-) extends PostActionDtoOld
 
 

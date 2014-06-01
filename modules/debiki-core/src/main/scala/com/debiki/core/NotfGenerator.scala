@@ -32,12 +32,17 @@ case class NotfGenerator(pageExclNewActions: PageParts, newActions: Seq[PostActi
 
 
   def generateNotfs: Seq[NotfOfPageAction] = newActions flatMap (_ match {
+    // Note:
+    // If you add notfs (below) for other things than replies,
+    // then, in debiki-server, update NotfHtmlRenderer.
     case action: PostActionDto[_] => action.payload match {
       case p: PostActionPayload.CreatePost =>
         makePersonalReplyNotf(
           new Post(page, action.asInstanceOf[PostActionDto[PAP.CreatePost]]))
       case e: PAP.EditPost =>
         Nil  // fix later, see "Note:" below
+      case app: PAP.EditApp =>
+        Nil  // fix later, see note above
       case _: PAP.ReviewPost =>
         makeReviewNotfs(new Review(page, action.asInstanceOf[PostActionDto[PAP.ReviewPost]]))
       case flag: PAP.Flag =>
@@ -45,11 +50,6 @@ case class NotfGenerator(pageExclNewActions: PageParts, newActions: Seq[PostActi
       case _ =>
         Nil // skip for now
     }
-    // Note:
-    // If you add notfs (below) for other things than replies,
-    // then, in debiki-server, update NotfHtmlRenderer.
-    case app: EditApp =>
-      Nil  // fix later, see note above
     case _ =>
       Nil  // skip for now
   })

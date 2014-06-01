@@ -72,9 +72,9 @@ trait PageTestValues {
       payload = PAP.Delete(editSkeleton.id))
 
   val editAppSkeleton =
-    EditApp(id = 14, editId = editSkeleton.id, postId = editSkeleton.postId,
-      userIdData = UserIdData.newTest("114", userId = "?"), ctime = new ju.Date(14000),
-      approval = None, result = "ignored")
+    PostActionDto[PAP.EditApp](id = 14, new ju.Date(14000),
+      PAP.EditApp(editSkeleton.id, approval = None),
+      postId = editSkeleton.postId, UserIdData.newTest("114", userId = "?"))
 
   val deletionOfEditApp =
     PostActionDto(id = 15, postId = editAppSkeleton.postId,
@@ -123,11 +123,11 @@ trait PageTestValues {
 
   lazy val PageWithEditManuallyAppliedAndAutoApproved =
     EmptyPage + bodySkeletonAutoApproved + editSkeleton +
-       editAppSkeleton.copy(approval = Some(Approval.WellBehavedUser))
+       PostActionDto.copyApplyEdit(editAppSkeleton, approval = Some(Approval.WellBehavedUser))
 
   lazy val PageWithEditManuallyAppliedAndPrelApproved =
     EmptyPage + bodySkeletonAutoApproved + editSkeleton +
-       editAppSkeleton.copy(approval = Some(Approval.Preliminary))
+      PostActionDto.copyApplyEdit(editAppSkeleton, approval = Some(Approval.Preliminary))
 
   lazy val PageWithEditManuallyAppliedAndPrelApprovedThenRejected =
     PageWithEditManuallyAppliedAndPrelApproved + rejectionOfEditApp

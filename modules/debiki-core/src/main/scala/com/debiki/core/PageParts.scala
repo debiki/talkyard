@@ -104,8 +104,6 @@ object PageParts {
     // Remap ids and update references to ids.
     def rmpd(id: ActionId) = remaps.getOrElse(id, id)
     def updateIds(action: T): T = (action match {
-      case a: EditApp => a.copy(id = remaps(a.id), editId = rmpd(a.editId),
-        postId = rmpd(a.postId))
       case a: PostActionDto[_] =>
         val rmpdPaylad = a.payload match {
           case c: PAP.CreatePost =>
@@ -113,6 +111,7 @@ object PageParts {
               case None => c
               case Some(parentPostId) => c.copy(parentPostId = Some(rmpd(parentPostId)))
             }
+          case a: PAP.EditApp => a.copy(editId = rmpd(a.editId))
           case d: PAP.Delete => d.copy(targetActionId = rmpd(d.targetActionId))
           case u: PAP.Undo => u.copy(targetActionId = rmpd(u.targetActionId))
           case x => x
@@ -242,6 +241,7 @@ abstract class PostActionsWrapper { self: PageParts =>
         case _: PAP.CreatePost => // doesn't affect any post; creates a new one
         case PAP.Undo(targetActionId) => addActionByTargetId(targetActionId)
         case PAP.Delete(targetActionId) => addActionByTargetId(targetActionId)
+        case e: PAP.EditApp => addActionByTargetId(e.editId)
         case _: PAP => addActionByTargetId(action.postId)
       }
     }
@@ -261,24 +261,19 @@ abstract class PostActionsWrapper { self: PageParts =>
   * @param people People who has contributed to the page. If some people are missing,
   * certain functions might fail (e.g. a function that fetches the name of the author
   * of the page body). — This class never fetches anything lazily from database.
-  * @param editApps Deprecated. I should convert EditApps to PostActionDto:s
-  * and use only `actionDtos` instead?
   * @param actionDtos The actions that build up the page.
   */
 case class PageParts (
   guid: PageId,  // COULD rename to pageId?
   people: People = People.None,
-  editApps: List[EditApp] = Nil,
   postStates: List[PostState] = Nil,
   actionDtos: List[PostActionDto[_]] = Nil) extends PostActionsWrapper {
 
 
-  def actionCount: Int =
-     editApps.size + actionDtos.size
+  def actionCount: Int = actionDtos.size
 
 
-  def allActions: Seq[PostActionDtoOld] =
-     editApps:::actionDtos
+  def allActions: Seq[PostActionDtoOld] = actionDtos
 
 
   lazy val actionsByTimeAsc =
@@ -516,31 +511,24 @@ case class PageParts (
     case x => runErr("DwE0GK43", s"Action `$editId' is not a Patch but a: ${classNameOf(x)}")
   }
 
-  def editAppsByEdit(id: ActionId) = _editAppsByEditId.getOrElse(id, Nil)
+  def editAppsByEdit(id: ActionId) =
+    getActionsByTargetId(id).filter(_.payload.isInstanceOf[PAP.EditApp])
+      .asInstanceOf[Seq[PostAction[PAP.EditApp]]]
 
-  private lazy val _editAppsByEditId: imm.Map[ActionId, List[EditApp]] = {
-    editApps.groupBy(_.editId)
-    // Skip this List --> head conversion. There might be > 1 app per edit,
-    // since apps can be deleted -- then the edit can be applied again later.
-    //m.mapValues(list => {
-    //  errorIf(list.tail.nonEmpty, "Two ore more EditApps with "+
-    //          "same edit id: "+ list.head.editId)
-    //  list.head
-    //})
-  }
-
-  private lazy val editAppsByPostId: imm.Map[PostId, List[EditApp]] =
-    editApps.groupBy(ea => getPatch_!(ea.editId).postId)
+  private def editAppsByPostId(postId: PostId): Seq[PostActionDto[PAP.EditApp]] =
+    getActionsByPostId(postId).filter(_.payload.isInstanceOf[PAP.EditApp])
+      .asInstanceOf[Seq[PostActionDto[PAP.EditApp]]]
 
   /** Edits applied to the specified post, sorted by most-recent first.
    */
-  def editAppsTo(postId: PostId): List[EditApp] =
+  def editAppsTo(postId: PostId): Seq[PostActionDto[PAP.EditApp]] =
     // The list is probably already sorted, since new EditApp:s are
     // prefixed to the editApps list.
-    editAppsByPostId.getOrElse(postId, Nil).sortBy(- _.ctime.getTime)
+    editAppsByPostId(postId).sortBy(- _.ctime.getTime)
 
-  def editApp(withId: ActionId): Option[EditApp] =
-    editApps.filter(_.id == withId).headOption
+  def editApp(withId: ActionId): Option[PostActionDto[PAP.EditApp]] =
+    getActionById(withId).filter(_.payload.isInstanceOf[PAP.EditApp])
+      .asInstanceOf[Option[PostActionDto[PAP.EditApp]]]
 
 
   // -------- Reviews (manual approvals and rejections, no auto approvals)
@@ -573,7 +561,6 @@ case class PageParts (
     */
   // COULD [T <: Action] instead of >: AnyRef?
   def ++[T >: AnyRef] (actions: Seq[T]): PageParts = {
-    var editApps2 = editApps
     var actions2 = this.actionDtos
     type SthWithId = { def id: ActionId }
     def dieIfIdClash(olds: Seq[SthWithId], a: SthWithId) =
@@ -584,16 +571,13 @@ case class PageParts (
       }
 
     for (a <- actions) a match {
-      case a: EditApp =>
-        dieIfIdClash(editApps2, a)
-        editApps2 ::= a
       case a: PostActionDto[_] =>
         dieIfIdClash(actions2, a)
         actions2 ::= a
       case x => runErr(
         "DwE8k3EC", "Unknown action type: "+ classNameOf(x))
     }
-    PageParts(id, people, editApps2, postStates, actions2)
+    PageParts(id, people, postStates, actions2)
   }
 
 
@@ -605,14 +589,8 @@ case class PageParts (
   def asOf(dati: ju.Date): PageParts = {
     def happenedInTime(action: PostActionDtoOld) =
       action.ctime.getTime <= dati.getTime
-
-    val (editAppsBefore, editAppsAfter) = editApps partition happenedInTime
     val (actionsBefore, actionsAfter) = actionDtos partition happenedInTime
-
-    val pageUpToAndInclDati = copy(
-      editApps = editAppsBefore,
-      actionDtos = actionsBefore)
-
+    val pageUpToAndInclDati = copy(actionDtos = actionsBefore)
     pageUpToAndInclDati
   }
 
