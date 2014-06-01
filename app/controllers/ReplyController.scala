@@ -90,13 +90,13 @@ object ReplyController extends mvc.Controller {
 
     val approval = AutoApprover.perhapsApprove(pageReq)
 
-    val postNoId = PostActionDto(id = PageParts.UnassignedId, postId = PageParts.UnassignedId,
+    val postNoId = RawPostAction(id = PageParts.UnassignedId, postId = PageParts.UnassignedId,
       creationDati = pageReq.ctime, userIdData = pageReq.userIdData,
       payload = PAP.CreatePost(
         parentPostId = anyPostIdToReplyTo, text = text, markup = Markup.DefaultForComments.id,
         where = whereOpt, approval = approval))
 
-    val (pageWithNewPost, List(postWithId: PostActionDto[PAP.CreatePost])) =
+    val (pageWithNewPost, List(postWithId: RawPostAction[PAP.CreatePost])) =
       pageReq.dao.savePageActionsGenNotfs(pageReq, postNoId::Nil)
 
     val patchSpec = TreePatchSpec(postWithId.id, wholeTree = true)

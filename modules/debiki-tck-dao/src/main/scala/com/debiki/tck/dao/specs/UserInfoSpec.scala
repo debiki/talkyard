@@ -197,7 +197,7 @@ class SiteTestUtils(site: Tenant, val daoFactory: DbDaoFactory) {
   val defaultPagePath = PagePath(site.id, "/", None, showId = true, pageSlug = "slug")
   val defaultPassword = "ThePassword"
 
-  def defaultBody(loginGrant: LoginGrant, text: String) = PostActionDto.forNewPageBody(
+  def defaultBody(loginGrant: LoginGrant, text: String) = RawPostAction.forNewPageBody(
     text = text,
     creationDati = new ju.Date,
     userIdData = loginGrant.testUserIdData,
@@ -206,7 +206,7 @@ class SiteTestUtils(site: Tenant, val daoFactory: DbDaoFactory) {
 
 
   def defaultComment(loginGrant: LoginGrant, text: String = "Comment text") =
-    PostActionDto.forNewPost(
+    RawPostAction.forNewPost(
       id = PageParts.UnassignedId, creationDati = new ju.Date,
       userIdData = loginGrant.testUserIdData,
       parentPostId = Some(PageParts.BodyId),
@@ -250,7 +250,7 @@ class SiteTestUtils(site: Tenant, val daoFactory: DbDaoFactory) {
 
 
   def createPageAndBody(loginGrant: LoginGrant, pageRole: PageRole, text: String): Page = {
-    val pagePartsNoId = PageParts(guid = "?", actionDtos = defaultBody(loginGrant, text)::Nil)
+    val pagePartsNoId = PageParts(guid = "?", rawActions = defaultBody(loginGrant, text)::Nil)
     val page = dao.createPage(Page.newPage(
       pageRole, defaultPagePath, pagePartsNoId, publishDirectly = true,
       author = loginGrant.user))
@@ -268,7 +268,7 @@ class SiteTestUtils(site: Tenant, val daoFactory: DbDaoFactory) {
 
   def review(loginGrant: LoginGrant, page: PageNoPath, postId: PostId,
         anyApproval: Option[Approval]): PageNoPath = {
-    val reviewNoId = PostActionDto.toReviewPost(
+    val reviewNoId = RawPostAction.toReviewPost(
       id = PageParts.UnassignedId, postId = postId, userIdData = loginGrant.testUserIdData,
       ctime = new ju.Date(), approval = anyApproval)
     val (updatedPage, review) = dao.savePageActions(page + loginGrant.user, reviewNoId::Nil)
@@ -278,7 +278,7 @@ class SiteTestUtils(site: Tenant, val daoFactory: DbDaoFactory) {
 
   def vote(loginGrant: LoginGrant, page: PageNoPath, postId: PostId,
         voteType: PostActionPayload.Vote) {
-    val vote = PostActionDto(
+    val vote = RawPostAction(
       id = PageParts.UnassignedId,
       postId = postId,
       creationDati = new ju.Date(),

@@ -129,25 +129,6 @@ object Utils extends Results with http.ContentTypes {
   }
 
 
-  def localUrlTo(action: PostActionOld): String = {
-    // - Add `?view=<config-post-id>` for templates, since they're on their
-    // own virtual page not connected to the root post.
-    // - Add `?view` to paths that end with .js or .css or Debiki will
-    // render the page as text, not html. Currently done for all non-template
-    // pages.
-    val fragment = "/-"+ action.page.id
-    val query =
-      if (action.id == PageParts.ConfigPostId) "?view="+ PageParts.ConfigPostId
-      else "?view"
-    val hash = action match {
-      case post: Post => "#post-"+ action.id
-      case other: PostActionOld =>
-        "" // SHOULD be: "#post-"+ action.target.id  -- but not implemented
-    }
-    fragment + query + hash
-  }
-
-
   // COULD move to new object debiki.Utils?
   def isPublicArticlePage(pagePath: PagePath): Boolean =
     !isPrivatePage(pagePath) && !pagePath.isFolderOrIndexPage
@@ -339,10 +320,10 @@ object Utils extends Results with http.ContentTypes {
 
   /** Groups a list of (PageId, Action) by page id, so it becomes a Map[PageId, Seq[Action]].
     */
-  implicit class ActionsByPageIdGrouper[A](pageIdsAndActions: Seq[(PageId, PostActionDto[A])]) {
-    def groupedByPageId: Map[PageId, Seq[PostActionDto[A]]] =
+  implicit class ActionsByPageIdGrouper[A](pageIdsAndActions: Seq[(PageId, RawPostAction[A])]) {
+    def groupedByPageId: Map[PageId, Seq[RawPostAction[A]]] =
       pageIdsAndActions groupBy (_._1) mapValues {
-        pageIdsAndActions: Seq[(PageId, PostActionDto[A])] =>
+        pageIdsAndActions: Seq[(PageId, RawPostAction[A])] =>
           pageIdsAndActions.map(_._2)
       }
   }

@@ -19,7 +19,7 @@ package com.debiki.core
 
 import com.debiki.core.{PostActionPayload => PAP}
 import java.{util => ju}
-import PostActionDto.{copyCreatePost, copyReviewPost}
+import RawPostAction.{copyCreatePost, copyReviewPost}
 import Prelude._
 
 
@@ -39,7 +39,7 @@ trait PageTestValues {
   val textAfterFirstEdit = "body-text-after-first-edit"
 
   val bodySkeleton =
-    PostActionDto(id = PageParts.BodyId, postId = PageParts.BodyId,
+    RawPostAction(id = PageParts.BodyId, postId = PageParts.BodyId,
       userIdData = UserIdData.newTest("101", userId = "?"), creationDati = new ju.Date(1000),
       payload = PostActionPayload.CreatePost(
         parentPostId = None,
@@ -53,35 +53,35 @@ trait PageTestValues {
   val bodySkeletonPrelApproved =
     copyCreatePost(bodySkeleton, approval = Some(Approval.Preliminary))
 
-  val bodyApprovalSkeleton = PostActionDto.toReviewPost(
+  val bodyApprovalSkeleton = RawPostAction.toReviewPost(
     11, postId = bodySkeleton.id, UserIdData.newTest("111", userId = "?"),
         ctime = new ju.Date(11000), approval = Some(Approval.Manual))
 
   val bodyRejectionSkeleton = copyReviewPost(bodyApprovalSkeleton, approval = None)
 
   val editSkeleton =
-    PostActionDto.toEditPost(
+    RawPostAction.toEditPost(
         id = 12, postId = bodySkeleton.id, ctime = new ju.Date(12000),
         UserIdData.newTest("112", userId = "?"),
         text = makePatch(from = textInitially, to = textAfterFirstEdit),
         newMarkup = None, approval = None, autoApplied = false)
 
   def deletionOfEdit =
-    PostActionDto(id = 13, postId = editSkeleton.postId,
+    RawPostAction(id = 13, postId = editSkeleton.postId,
       userIdData = UserIdData.newTest("113", userId = "?"), creationDati = new ju.Date(13000),
       payload = PAP.Delete(editSkeleton.id))
 
   val editAppSkeleton =
-    EditApp(id = 14, editId = editSkeleton.id, postId = editSkeleton.postId,
-      userIdData = UserIdData.newTest("114", userId = "?"), ctime = new ju.Date(14000),
-      approval = None, result = "ignored")
+    RawPostAction[PAP.EditApp](id = 14, new ju.Date(14000),
+      PAP.EditApp(editSkeleton.id, approval = None),
+      postId = editSkeleton.postId, UserIdData.newTest("114", userId = "?"))
 
   val deletionOfEditApp =
-    PostActionDto(id = 15, postId = editAppSkeleton.postId,
+    RawPostAction(id = 15, postId = editAppSkeleton.postId,
         userIdData = UserIdData.newTest("115", userId = "?"), creationDati = new ju.Date(15000),
         payload = PAP.Delete(editSkeleton.id))
 
-  val approvalOfEditApp = PostActionDto.toReviewPost(id = 16, postId = editAppSkeleton.postId,
+  val approvalOfEditApp = RawPostAction.toReviewPost(id = 16, postId = editAppSkeleton.postId,
         userIdData = UserIdData.newTest("116", userId = "?"), ctime = new ju.Date(16000),
         approval = Some(Approval.Manual))
 
@@ -91,20 +91,22 @@ trait PageTestValues {
     userIdData = UserIdData.newTest("117", userId = "?"), ctime = new ju.Date(17000), tags = Nil)
     */
 
-  val flagOfBody = Flag(18, postId = bodySkeleton.id, UserIdData.newTest("118", userId = "?"),
-    ctime = new ju.Date(18000), reason = FlagReason.Spam,
-    details = "")
+  /*
+  val flagOfBody = RawPostAction(18, new ju.Date(18000),
+    PAP.Flag(tyype = FlagType.Spam, reason = ""), postId = bodySkeleton.id,
+    UserIdData.newTest("118", userId = "?"))
+    */
 
 
   case class PageWithEditApplied(
-    page: PageParts, edit: PostActionDto[PAP.EditPost], applDate: ju.Date)
+    page: PageParts, edit: RawPostAction[PAP.EditPost], applDate: ju.Date)
 
   val EmptyPage = PageParts("a")
 
   def makePageWithEditApplied(autoApplied: Boolean): PageWithEditApplied = {
     val (edit, editApplDati) =
       if (autoApplied)
-        (PostActionDto.copyEditPost(editSkeleton, autoApplied = Some(true)), editSkeleton.ctime)
+        (RawPostAction.copyEditPost(editSkeleton, autoApplied = Some(true)), editSkeleton.ctime)
       else
         (editSkeleton, editAppSkeleton.ctime)
     var page = EmptyPage + bodySkeletonAutoApproved + edit
@@ -121,11 +123,11 @@ trait PageTestValues {
 
   lazy val PageWithEditManuallyAppliedAndAutoApproved =
     EmptyPage + bodySkeletonAutoApproved + editSkeleton +
-       editAppSkeleton.copy(approval = Some(Approval.WellBehavedUser))
+       RawPostAction.copyApplyEdit(editAppSkeleton, approval = Some(Approval.WellBehavedUser))
 
   lazy val PageWithEditManuallyAppliedAndPrelApproved =
     EmptyPage + bodySkeletonAutoApproved + editSkeleton +
-       editAppSkeleton.copy(approval = Some(Approval.Preliminary))
+      RawPostAction.copyApplyEdit(editAppSkeleton, approval = Some(Approval.Preliminary))
 
   lazy val PageWithEditManuallyAppliedAndPrelApprovedThenRejected =
     PageWithEditManuallyAppliedAndPrelApproved + rejectionOfEditApp

@@ -128,7 +128,7 @@ object SpecialContentController extends mvc.Controller {
 
   private def createEmptyPage(request: DebikiRequest[_], rootPageId: PageId, contentId: PageId) {
     val defaultContent = SpecialContentPages.lookup(contentId) getOrDie "Dw53Rf1"
-    val emptyBody = PostActionDto(
+    val emptyBody = RawPostAction(
         id = PageParts.BodyId,
         postId = PageParts.BodyId,
         userIdData = SystemUser.UserIdData,
@@ -140,7 +140,7 @@ object SpecialContentController extends mvc.Controller {
           approval = Some(Approval.AuthoritativeUser)))
 
     val pageId = s"$rootPageId$contentId"
-    val pageParts = PageParts(pageId, people = SystemUser.Person, actionDtos = emptyBody::Nil)
+    val pageParts = PageParts(pageId, people = SystemUser.Person, rawActions = emptyBody::Nil)
 
     val newPage = Page(
       PageMeta.forNewPage(
@@ -165,7 +165,7 @@ object SpecialContentController extends mvc.Controller {
 
     val patchText = makePatch(from = body.currentText, to = newText)
 
-    var edit = PostActionDto.toEditPost(
+    var edit = RawPostAction.toEditPost(
       id = PageParts.UnassignedId,
       postId = body.id,
       ctime = request.ctime,

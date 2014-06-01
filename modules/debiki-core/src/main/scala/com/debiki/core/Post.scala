@@ -22,8 +22,7 @@ import com.debiki.core.{PostActionPayload => PAP}
 import java.{util => ju}
 import play.api.libs.json._
 import Prelude._
-import PageParts._
-import FlagReason.FlagReason
+import FlagType.FlagType
 
 
 
@@ -44,12 +43,12 @@ case class Post(
     pageParts: PageParts,
     private val state: PostState,
     private val isLoadedFromCache: Boolean = true)
-  extends PostAction[PAP.CreatePost](pageParts, state.creationPostActionDto)
+  extends PostAction[PAP.CreatePost](pageParts, state.creationAction)
   with MaybeApproval with PostActionActedUpon {
 
   require(postId == id)
 
-  def this(pageParts: PageParts, creationAction: PostActionDto[PAP.CreatePost]) {
+  def this(pageParts: PageParts, creationAction: RawPostAction[PAP.CreatePost]) {
     this(pageParts, PostState.whenCreated(creationAction), isLoadedFromCache = false)
   }
 
@@ -345,7 +344,7 @@ case class Post(
   /** The most recent reviews, or Nil if all most recent reviews might not
     * have been loaded.
     */
-  private lazy val _reviewsDescTime: List[PostActionOld with MaybeApproval] = {
+  private lazy val _reviewsDescTime: List[PostAction[_] with MaybeApproval] = {
     // If loaded from cache, we will have loaded no reviews, or only one review,
     // namely `this`, if this post was auto-approved (e.g. a preliminarily
     // approved comment, or a comment posted by an admin).
@@ -368,18 +367,18 @@ case class Post(
 
     val explicitReviewsDescTime =
       actions.filter(_.isInstanceOf[Review]).sortBy(-_.creationDati.getTime).
-      asInstanceOf[List[PostActionOld with MaybeApproval]]
+      asInstanceOf[List[PostAction[_] with MaybeApproval]]
 
-    var implicitApprovals = List[PostActionOld with MaybeApproval]()
+    var implicitApprovals = List[PostAction[_] with MaybeApproval]()
     if (directApproval.isDefined)
       implicitApprovals ::= this
     for (edit <- edits) {
       if (edit.directApproval.isDefined)
         implicitApprovals ::= edit
       for (editApp <- page.editAppsByEdit(edit.id)) {
-        // Ought to reuse PostActionsWrapper's wrapped actionDto:s rather than
+        // Ought to reuse PostActionsWrapper's wrapped rawAction:s rather than
         // creating new objects here.
-        if (editApp.approval.isDefined)
+        if (editApp.payload.approval.isDefined)
           implicitApprovals ::= new ApplyPatchAction(page, editApp)
 
         // In the future, deletions (and any other actions?) should also
@@ -423,12 +422,12 @@ case class Post(
   }
 
 
-  private lazy val lastApproval: Option[PostActionOld with MaybeApproval] = {
+  private lazy val lastApproval: Option[PostAction[_] with MaybeApproval] = {
     // A rejection cancels all earlier and contiguous preliminary auto
     // approvals, so loop through the reviews:
     var rejectionFound = false
     var reviewsLeft = _reviewsDescTime
-    var lastApproval: Option[PostActionOld with MaybeApproval] = None
+    var lastApproval: Option[PostAction[_] with MaybeApproval] = None
     while (reviewsLeft nonEmpty) {
       val review = reviewsLeft.head
       reviewsLeft = reviewsLeft.tail
@@ -449,12 +448,12 @@ case class Post(
    * The most recent review of this post by an admin or moderator.
    * (But not by seemingly well behaved users.)
    */
-  private def lastAuthoritativeReview: Option[PostActionOld with MaybeApproval] =
+  private def lastAuthoritativeReview: Option[PostAction[_] with MaybeApproval] =
     _reviewsDescTime.find(review =>
       review.directApproval.map(_.isAuthoritative) != Some(false))
 
 
-  private def lastPermanentApproval: Option[PostActionOld with MaybeApproval] =
+  private def lastPermanentApproval: Option[PostAction[_] with MaybeApproval] =
     _reviewsDescTime.find(review =>
         review.directApproval.map(_.isPermanent) == Some(true))
 
@@ -612,10 +611,12 @@ case class Post(
 
 
   // COULD optimize this, do once for all flags.
-  lazy val flags = debate.flags.filter(_.postId == this.id)
+  lazy val flags = page.rawActions filter { action =>
+    action.payload.isInstanceOf[PAP.Flag] && action.postId == this.id
+  } map (_.asInstanceOf[RawPostAction[PAP.Flag]])
 
 
-  def flagsDescTime: List[Flag] = flags.sortBy(- _.ctime.getTime)
+  def flagsDescTime: List[RawPostAction[PAP.Flag]] = flags.sortBy(- _.ctime.getTime)
 
 
   /**
@@ -623,8 +624,8 @@ case class Post(
    * already been reviewed.
    */
   lazy val (
-      flagsPendingReview: List[Flag],
-      flagsReviewed: List[Flag]) =
+      flagsPendingReview: List[RawPostAction[PAP.Flag]],
+      flagsReviewed: List[RawPostAction[PAP.Flag]]) =
     flagsDescTime span { flag =>
       if (lastAuthoritativeReviewDati isEmpty) true
       else lastAuthoritativeReviewDati.get.getTime <= flag.ctime.getTime
@@ -636,17 +637,17 @@ case class Post(
 
   lazy val lastFlag = flagsDescTime.headOption
 
-  lazy val flagsByReason: imm.Map[FlagReason, List[Flag]] = {
+  lazy val flagsByType: imm.Map[FlagType, List[RawPostAction[PAP.Flag]]] = {
     // Add reasons and flags to a mutable map.
-    var mmap = mut.Map[FlagReason, mut.Set[Flag]]()
+    var mmap = mut.Map[FlagType, mut.Set[RawPostAction[PAP.Flag]]]()
     for (f <- flags)
-      mmap.getOrElse(f.reason, {
-        val s = mut.Set[Flag]()
-        mmap.put(f.reason, s)
+      mmap.getOrElse(f.payload.tyype, {
+        val s = mut.Set[RawPostAction[PAP.Flag]]()
+        mmap.put(f.payload.tyype, s)
         s
       }) += f
     // Copy to an immutable version.
-    imm.Map[FlagReason, List[Flag]](
+    imm.Map[FlagType, List[RawPostAction[PAP.Flag]]](
       (for ((reason, flags) <- mmap)
       yield (reason, flags.toList)).toList: _*)
   }
@@ -654,8 +655,8 @@ case class Post(
   /** Pairs of (FlagReason, flags-for-that-reason), sorted by
    *  number of flags, descending.
    */
-  lazy val flagsByReasonSorted: List[(FlagReason, List[Flag])] = {
-    flagsByReason.toList.sortWith((a, b) => a._2.length > b._2.length)
+  lazy val flagsByTypeSorted: List[(FlagType, List[RawPostAction[PAP.Flag]])] = {
+    flagsByType.toList.sortWith((a, b) => a._2.length > b._2.length)
   }
 
 

@@ -22,7 +22,7 @@ import com.debiki.core._
 import java.{util => ju, io => jio}
 import scala.collection.JavaConversions._
 import _root_.scala.xml.{NodeSeq, Node, Elem, Text, XML, Attribute}
-import FlagReason.FlagReason
+import FlagType.FlagType
 import Prelude._
 import DebikiHttp._
 import HtmlUtils._

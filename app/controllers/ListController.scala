@@ -203,7 +203,7 @@ object ListController extends mvc.Controller {
   }
 
 
-  private def jsonForPost(action: PostActionOld, pageMetaByPageId: Map[PageId, PageMeta])
+  private def jsonForPost(action: PostAction[_], pageMetaByPageId: Map[PageId, PageMeta])
         : JsValue = {
     val pageName = pageMetaByPageId.get(action.page.id)
       .map(_.cachedTitle getOrElse "(Unnamed page)")

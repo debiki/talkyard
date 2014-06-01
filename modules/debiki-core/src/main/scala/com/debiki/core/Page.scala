@@ -170,7 +170,7 @@ case class PageNoPath(parts: PageParts, ancestorIdsParentFirst: List[PageId], me
   def +(user: User): PageNoPath =
     copy(parts = parts + user)
 
-  def +(actionDto: PostActionDtoOld): PageNoPath =
+  def +(actionDto: RawPostAction[_]): PageNoPath =
     copy(parts = parts + actionDto)
 
 }

@@ -414,7 +414,7 @@ Annat:
 
  */
 
-// Moved to here from PostActionDto.
+// Moved to here from RawPostAction.
 /** Classifies an action, e.g. tags a Post as being "interesting" and "funny".
   *
   *  If you rate an action many times, only the last rating counts.

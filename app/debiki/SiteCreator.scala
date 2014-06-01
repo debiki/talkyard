@@ -164,7 +164,7 @@ object SiteCreator {
     newWebsiteDao.moveRenamePage(pageId, newFolder = Some("/"), newSlug = Some(""))
 
     // Set homepage title.
-    val title = PostActionDto.forNewTitleBySystem(text = DefaultHomepageTitle, creationDati)
+    val title = RawPostAction.forNewTitleBySystem(text = DefaultHomepageTitle, creationDati)
     newWebsiteDao.savePageActionsGenNotfsImpl(
       PageNoPath(emptyPage, ancestorIdsParentFirst = Nil, pageMeta), List(title))
   }

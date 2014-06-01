@@ -125,7 +125,7 @@ object AutoApprover {
   /** Ought to load a user's history, not an identity's history?
     */
   private def loadUserHistory(dao: SiteDao, ip: IpAddress, identityId: IdentityId)
-        : List[PostActionOld] = {
+        : List[PostAction[_]] = {
     val (actionsFromIp, peopleFromIp) =
       dao.loadRecentActionExcerpts(fromIp = Some(ip), limit = RecentActionsLimit)
 
@@ -137,7 +137,7 @@ object AutoApprover {
     //   if (pageReq.emailAddr.isEmpty) Nil
     //   else pageReq.dao.loadRecentActionExcerpts(byEmail = pageReq.emailAddr)
 
-    val recentActions: List[PostActionOld] =
+    val recentActions: List[PostAction[_]] =
       (actionsFromIp.toList ::: actionsByIdentity.toList)
          .sortBy(- _.creationDati.getTime).distinct
 
@@ -145,7 +145,7 @@ object AutoApprover {
   }
 
 
-  def checkUserHistoryPerhapsApprove(recentActions: List[PostActionOld]): Option[Approval] = {
+  def checkUserHistoryPerhapsApprove(recentActions: List[PostAction[_]]): Option[Approval] = {
     val approval: Option[Approval] = for {
       approvalGivenPosts <- _considerPosts(recentActions)
       approvalGivenFlags <- _considerFlags(recentActions)
@@ -167,7 +167,7 @@ object AutoApprover {
   }
 
 
-  private def _considerPosts(recentActions: List[PostActionOld]): Option[Approval] = {
+  private def _considerPosts(recentActions: List[PostAction[_]]): Option[Approval] = {
     var anyCurrentApproval: Option[Approval] = None
     var numPosts = 0
 
@@ -212,8 +212,13 @@ object AutoApprover {
   }
 
 
-  private def _considerFlags(recentActions: List[PostActionOld]): Option[Approval] = {
-    for (flag: PostActionOld <- recentActions if flag.action.isInstanceOf[Flag]) {
+  private def _considerFlags(recentActions: List[PostAction[_]]): Option[Approval] = {
+    def isFlag(rawPostAction: PostAction[_]) = rawPostAction match {
+      case a: RawPostAction[_] => a.payload.isInstanceOf[PostActionPayload.Flag]
+      case _ => false
+    }
+
+    for (action <- recentActions if isFlag(action)) {
       // If any post has been flagged, don't approve.
       return None
     }
@@ -221,7 +226,7 @@ object AutoApprover {
   }
 
 
-  private def _considerRatings(recentActions: List[PostActionOld]): Option[Approval] = {
+  private def _considerRatings(recentActions: List[PostAction[_]]): Option[Approval] = {
     // Don't consider ratings at all, for now.
     Some(Approval.WellBehavedUser)
   }

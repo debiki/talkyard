@@ -24,7 +24,7 @@ import Prelude._
 
 object PostState {
 
-  def whenCreated(creationPostActionDto: PostActionDto[PAP.CreatePost]): PostState = {
+  def whenCreated(creationPostActionDto: RawPostAction[PAP.CreatePost]): PostState = {
     new PostState(
       creationPostActionDto,
       lastActedUponAt = creationPostActionDto.creationDati,
@@ -81,7 +81,7 @@ object PostVoteState {
   * so all historic info don't have to be reapplied to get to the current state.
   */
 class PostState(
-  val creationPostActionDto: PostActionDto[PostActionPayload.CreatePost],
+  val creationAction: RawPostAction[PostActionPayload.CreatePost],
   val lastActedUponAt: ju.Date,
   val lastReviewDati: Option[ju.Date],
   val lastAuthoritativeReviewDati: Option[ju.Date],
@@ -117,7 +117,7 @@ class PostState(
   def lastApprovalType: Option[Approval] = {
     // `lastApprovalDati` is empty, if `this` created by PostState.whenCreated(...).
     if (lastApprovalDati.isEmpty) None
-    else creationPostActionDto.payload.approval
+    else creationAction.payload.approval
   }
 
   require(lastAuthoritativeReviewDati.isEmpty || lastReviewDati.isDefined)

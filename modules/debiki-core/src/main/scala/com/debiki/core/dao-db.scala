@@ -204,8 +204,8 @@ abstract class SiteDbDao {
     * and generates notifications (for example, if you save a reply to Alice,
     * a notification to Alice is generated).
     */
-  def savePageActions[T <: PostActionDtoOld](
-        page: PageNoPath, actions: List[T]): (PageNoPath, List[T])
+  def savePageActions(page: PageNoPath, actions: List[RawPostAction[_]])
+        : (PageNoPath, List[RawPostAction[_]])
 
   /** Deletes a vote. If there's a user id, deletes the vote by user id (guest or role),
     * Otherwise by browser id cookie.
@@ -254,7 +254,7 @@ abstract class SiteDbDao {
         fromIp: Option[String] = None,
         byIdentity: Option[String] = None,
         pathRanges: PathRanges = PathRanges.Anywhere,
-        limit: Int): (Seq[PostActionOld], People)
+        limit: Int): (Seq[PostAction[_]], People)
 
 
   // ----- Users and permissions
@@ -638,8 +638,8 @@ class ChargingSiteDbDao(
 
   // ----- Actions
 
-  def savePageActions[T <: PostActionDtoOld](
-        page: PageNoPath, actions: List[T]): (PageNoPath, List[T]) = {
+  def savePageActions(page: PageNoPath, actions: List[RawPostAction[_]])
+        : (PageNoPath, List[RawPostAction[_]]) = {
     _chargeFor(ResUsg.forStoring(actions = actions))
     _spi.savePageActions(page, actions)
   }
@@ -669,7 +669,7 @@ class ChargingSiteDbDao(
         fromIp: Option[String] = None,
         byIdentity: Option[String] = None,
         pathRanges: PathRanges = PathRanges.Anywhere,
-        limit: Int): (Seq[PostActionOld], People) = {
+        limit: Int): (Seq[PostAction[_]], People) = {
     _chargeForOneReadReq()
     _spi.loadRecentActionExcerpts(fromIp = fromIp, byIdentity = byIdentity,
         pathRanges = pathRanges, limit = limit)

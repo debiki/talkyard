@@ -76,15 +76,15 @@ function initFlagDialog(flagDialog, postId) {
   // }}}
 
   $form.submit(function() {
-    var reason = $form.find('input:radio:checked').val() || 'Other';
-    var details = $form.find('textarea').val();
+    var type = $form.find('input:radio:checked').val() || 'Other';
+    var reason = $form.find('textarea').val();
     d.u.postJson({
         url: d.i.serverOrigin + '/-/flag',
         data: {
           pageId: d.i.pageId,
           postId: postId,
-          reason: reason,
-          details: details
+          type: type,
+          reason: reason
         },
         error: d.i.showServerResponseDialog,
         success: onFlagSaved

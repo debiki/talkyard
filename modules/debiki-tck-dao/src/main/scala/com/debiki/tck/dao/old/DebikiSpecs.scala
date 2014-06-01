@@ -61,7 +61,7 @@ object DebikiSpecs {
   }
 
   def havePostLike(
-        post: PostActionDto[PostActionPayload.CreatePost] = null,
+        post: RawPostAction[PostActionPayload.CreatePost] = null,
         id: ActionId = PageParts.NoId,
         parent: Option[PostId] = null,
         ctime: ju.Date = null,
@@ -77,7 +77,7 @@ object DebikiSpecs {
       left.getPost(id2) match {
         case Some(leftPost: Post) =>
           result(_matchPostImpl(
-              leftPost.actionDto, post, id, parent, ctime, loginId, ip, text, where),
+              leftPost.rawAction, post, id, parent, ctime, loginId, ip, text, where),
             expectable)
         case None =>
           result(false, "", "Post missing, id: "+ id2, expectable)
@@ -86,7 +86,7 @@ object DebikiSpecs {
   }
 
   def matchPost(  // COULD write unit test for this one!
-        post: PostActionDto[PostActionPayload.CreatePost] = null,
+        post: RawPostAction[PostActionPayload.CreatePost] = null,
         id: ActionId = PageParts.NoId,
         parent: Option[PostId] = null,
         ctime: ju.Date = null,
@@ -94,8 +94,8 @@ object DebikiSpecs {
         ip: String = null,
         text: String = null,
         where: Option[String] = null) =
-          new Matcher[PostActionDto[PostActionPayload.CreatePost]] {
-    def apply[S <: PostActionDto[PostActionPayload.CreatePost]](
+          new Matcher[RawPostAction[PostActionPayload.CreatePost]] {
+    def apply[S <: RawPostAction[PostActionPayload.CreatePost]](
           expectable: Expectable[S]) = {
       val left = expectable.value
       result(_matchPostImpl(
@@ -105,8 +105,8 @@ object DebikiSpecs {
   }
 
   private def _matchPostImpl(
-        leftPost: PostActionDto[PostActionPayload.CreatePost],
-        post: PostActionDto[PostActionPayload.CreatePost],
+        leftPost: RawPostAction[PostActionPayload.CreatePost],
+        post: RawPostAction[PostActionPayload.CreatePost],
         id: ActionId,
         parent: Option[ActionId],
         ctime: ju.Date,

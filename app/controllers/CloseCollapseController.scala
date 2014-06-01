@@ -66,7 +66,7 @@ object CloseCollapseController extends mvc.Controller {
     val pageActionIds = apiReq.body.as[List[Map[String, String]]]
 
     val actionsByPageId = Utils.parsePageActionIds(pageActionIds) { actionId =>
-      PostActionDto(PageParts.UnassignedId, apiReq.ctime, payload, postId = actionId,
+      RawPostAction(PageParts.UnassignedId, apiReq.ctime, payload, postId = actionId,
         userIdData = apiReq.userIdData)
     }
 

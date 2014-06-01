@@ -58,11 +58,8 @@ object PageParts {
     id == PageParts.BodyId || id == PageParts.TitleId || id == PageParts.ConfigPostId
 
 
-  def isReply(actionOld: PostActionDtoOld): Boolean = actionOld match {
-    case post: PostActionDto[_] => post.payload match {
-      case _: PAP.CreatePost if !isArticleOrConfigPostId(post.id) => true
-      case _ => false
-    }
+  def isReply(rawAction: RawPostAction[_]): Boolean = rawAction.payload match {
+    case _: PAP.CreatePost if !isArticleOrConfigPostId(rawAction.id) => true
     case _ => false
   }
 
@@ -74,12 +71,13 @@ object PageParts {
   /** Assigns ids to actions and updates references from e.g. Edits to Posts.
    *  Only remaps IDs that are unknown (< 0).
    */
-  def assignIdsTo[T <: PostActionDtoOld](actionsToRemap: List[T], nextNewReplyId: Int): List[T] = {
+  def assignIdsTo(actionsToRemap: Seq[RawPostAction[_]], nextNewReplyId: Int)
+        : Seq[RawPostAction[_]] = {
     val remaps = mut.Map[ActionId, ActionId]()
     var nextReplyId = nextNewReplyId
 
     // Generate new ids.
-    actionsToRemap foreach { a: T =>
+    actionsToRemap foreach { a: RawPostAction[_] =>
       require(!remaps.contains(a.id)) // each action must be remapped only once
       remaps(a.id) =
           if (isActionIdUnknown(a.id)) {
@@ -103,26 +101,22 @@ object PageParts {
 
     // Remap ids and update references to ids.
     def rmpd(id: ActionId) = remaps.getOrElse(id, id)
-    def updateIds(action: T): T = (action match {
-      case f: Flag => f.copy(id = remaps(f.id), postId = rmpd(f.postId))
-      case a: EditApp => a.copy(id = remaps(a.id), editId = rmpd(a.editId),
-        postId = rmpd(a.postId))
-      case a: PostActionDto[_] =>
-        val rmpdPaylad = a.payload match {
-          case c: PAP.CreatePost =>
-            c.parentPostId match {
-              case None => c
-              case Some(parentPostId) => c.copy(parentPostId = Some(rmpd(parentPostId)))
-            }
-          case d: PAP.Delete => d.copy(targetActionId = rmpd(d.targetActionId))
-          case u: PAP.Undo => u.copy(targetActionId = rmpd(u.targetActionId))
-          case x => x
-        }
-        a.copy(id = remaps(a.id), postId = rmpd(a.postId), payload = rmpdPaylad)
-      case x => assErr("DwE3RSEK9")
-    }).asInstanceOf[T]
+    def updateIds(action: RawPostAction[_]): RawPostAction[_] = {
+      val remappedPayload = action.payload match {
+        case c: PAP.CreatePost =>
+          c.parentPostId match {
+            case None => c
+            case Some(parentPostId) => c.copy(parentPostId = Some(rmpd(parentPostId)))
+          }
+        case a: PAP.EditApp => a.copy(editId = rmpd(a.editId))
+        case d: PAP.Delete => d.copy(targetActionId = rmpd(d.targetActionId))
+        case u: PAP.Undo => u.copy(targetActionId = rmpd(u.targetActionId))
+        case x => x
+      }
+      action.copy(id = remaps(action.id), postId = rmpd(action.postId), payload = remappedPayload)
+    }
 
-    val actionsRemapped: List[T] = actionsToRemap map updateIds
+    val actionsRemapped: Seq[RawPostAction[_]] = actionsToRemap map updateIds
     actionsRemapped
   }
 
@@ -162,16 +156,16 @@ object PageParts {
 
 
 
-/** Wraps PostActionDto:s in PostActions and groups them by post id.
+/** Wraps RawPostAction:s in PostActions and groups them by post id.
   *
-  * That is, for each PostActionDto, wraps it in a PostAction, and people
+  * That is, for each RawPostAction, wraps it in a PostAction, and people
   * can then use the PostAction, instead of the rather non-user-friendly
-  * PostActionDto (data-transfer-object).
+  * RawPostAction (data-transfer-object).
   */
 abstract class PostActionsWrapper { self: PageParts =>
 
 
-  def actionDtos: List[PostActionDto[_]]
+  def rawActions: List[RawPostAction[_]]
 
 
   def getActionById(id: ActionId): Option[PostAction[_]] =
@@ -208,8 +202,8 @@ abstract class PostActionsWrapper { self: PageParts =>
       addAction(new Post(self, state))
     }
 
-    for (actionDto <- actionDtos) {
-      def actionAs[T <: PAP] = actionDto.asInstanceOf[PostActionDto[T]]
+    for (actionDto <- rawActions) {
+      def actionAs[T <: PAP] = actionDto.asInstanceOf[RawPostAction[T]]
       val action = actionDto.payload match {
         case _: PAP.CreatePost => new Post(self, actionAs[PAP.CreatePost])
         case _: PAP.EditPost => new Patch(self, actionAs[PAP.EditPost])
@@ -232,7 +226,7 @@ abstract class PostActionsWrapper { self: PageParts =>
       actionsById(action.id) = action
       val otherActionsSamePost = actionsByPostId(action.postId)
       if (otherActionsSamePost.find(_.id == action.id).isEmpty)
-        actionsByPostId(action.actionDto.postId) = action :: otherActionsSamePost
+        actionsByPostId(action.rawAction.postId) = action :: otherActionsSamePost
 
       def addActionByTargetId(targetId: ActionId) {
         val otherActionsSameTarget = actionsByTargetId(action.postId)
@@ -241,19 +235,10 @@ abstract class PostActionsWrapper { self: PageParts =>
 
       action.payload match {
         case _: PAP.CreatePost => // doesn't affect any post; creates a new one
-        case _: PAP.EditPost => addActionByTargetId(action.postId)
-        case _: PAP.ReviewPost => addActionByTargetId(action.postId)
-        case _: PAP.PinPostAtPosition => addActionByTargetId(action.postId)
-        case PAP.VoteLike => addActionByTargetId(action.postId)
-        case PAP.VoteWrong => addActionByTargetId(action.postId)
-        case PAP.VoteOffTopic => addActionByTargetId(action.postId)
-        case PAP.CollapsePost => addActionByTargetId(action.postId)
-        case PAP.CollapseTree => addActionByTargetId(action.postId)
-        case PAP.CloseTree => addActionByTargetId(action.postId)
-        case PAP.DeletePost => addActionByTargetId(action.postId)
-        case PAP.DeleteTree => addActionByTargetId(action.postId)
         case PAP.Undo(targetActionId) => addActionByTargetId(targetActionId)
         case PAP.Delete(targetActionId) => addActionByTargetId(targetActionId)
+        case e: PAP.EditApp => addActionByTargetId(e.editId)
+        case _: PAP => addActionByTargetId(action.postId)
       }
     }
 
@@ -272,36 +257,29 @@ abstract class PostActionsWrapper { self: PageParts =>
   * @param people People who has contributed to the page. If some people are missing,
   * certain functions might fail (e.g. a function that fetches the name of the author
   * of the page body). — This class never fetches anything lazily from database.
-  * @param editApps Deprecated, see next line.
-  * @param flags Deprecated? I should convert EditApps and Flags to PostActionDto:s
-  * and use only `actionDtos` instead?
-  * @param actionDtos The actions that build up the page.
+  * @param rawActions The actions that build up the page.
   */
 case class PageParts (
   guid: PageId,  // COULD rename to pageId?
   people: People = People.None,
-  editApps: List[EditApp] = Nil,
-  flags: List[Flag] = Nil,
   postStates: List[PostState] = Nil,
-  actionDtos: List[PostActionDto[_]] = Nil) extends PostActionsWrapper {
+  rawActions: List[RawPostAction[_]] = Nil) extends PostActionsWrapper {
 
 
-  def actionCount: Int =
-     editApps.size + flags.size + actionDtos.size
+  def actionCount: Int = rawActions.size
 
 
-  def allActions: Seq[PostActionDtoOld] =
-     flags:::editApps:::actionDtos
+  @deprecated("use rawActions instead", "now")
+  def allActions: Seq[RawPostAction[_]] = rawActions
 
 
   lazy val actionsByTimeAsc =
-    actionDtos.toVector.sortBy(_.creationDati.getTime)
+    rawActions.toVector.sortBy(_.creationDati.getTime)
 
 
   // Try to remove/rewrite? Doesn't return e.g Post or Patch.
-  def smart(action: PostActionDtoOld) = new PostActionOld(this, action)
-  // ^ For the love of god, I have to rename this crap, this file is a mess.
-  // Fixed (soon). Rewrite to PostActionDto and use PostActionsWrapper.
+  @deprecated("use getActionById instead?", "now")
+  def smart(action: RawPostAction[_]) = new PostAction(this, action)
 
 
   lazy val (postsByParentId: Map[PostId, List[Post]]) = {
@@ -402,7 +380,7 @@ case class PageParts (
   def userVotesMap(userIdData: UserIdData): Map[PostId, UserPostVotes] = {
     val voteBitsByPostId = mut.HashMap[PostId, Int]()
     for {
-      action <- actionDtos
+      action <- rawActions
       if action.payload.isInstanceOf[PAP.Vote]
       if userIdData.userId != UnknownUser.Id && action.userId == userIdData.userId
     } {
@@ -479,7 +457,7 @@ case class PageParts (
       else if (post.someVersionApproved) {
         // posterUserIds.add(post.user_!.id) — breaks, users sometimes absent.
         // Wait until I've added DW1_PAGE_ACTIONS.USER_ID?
-        if (PageParts.isReply(post.action)) {
+        if (PageParts.isReply(post.rawAction)) {
           numVisible += 1
         }
         else {
@@ -529,37 +507,24 @@ case class PageParts (
     case x => runErr("DwE0GK43", s"Action `$editId' is not a Patch but a: ${classNameOf(x)}")
   }
 
-  def editAppsByEdit(id: ActionId) = _editAppsByEditId.getOrElse(id, Nil)
+  def editAppsByEdit(id: ActionId) =
+    getActionsByTargetId(id).filter(_.payload.isInstanceOf[PAP.EditApp])
+      .asInstanceOf[Seq[PostAction[PAP.EditApp]]]
 
-  private lazy val _editAppsByEditId: imm.Map[ActionId, List[EditApp]] = {
-    editApps.groupBy(_.editId)
-    // Skip this List --> head conversion. There might be > 1 app per edit,
-    // since apps can be deleted -- then the edit can be applied again later.
-    //m.mapValues(list => {
-    //  errorIf(list.tail.nonEmpty, "Two ore more EditApps with "+
-    //          "same edit id: "+ list.head.editId)
-    //  list.head
-    //})
-  }
-
-  private lazy val editAppsByPostId: imm.Map[PostId, List[EditApp]] =
-    editApps.groupBy(ea => getPatch_!(ea.editId).postId)
+  private def editAppsByPostId(postId: PostId): Seq[RawPostAction[PAP.EditApp]] =
+    getActionsByPostId(postId).filter(_.payload.isInstanceOf[PAP.EditApp])
+      .asInstanceOf[Seq[RawPostAction[PAP.EditApp]]]
 
   /** Edits applied to the specified post, sorted by most-recent first.
    */
-  def editAppsTo(postId: PostId): List[EditApp] =
+  def editAppsTo(postId: PostId): Seq[RawPostAction[PAP.EditApp]] =
     // The list is probably already sorted, since new EditApp:s are
     // prefixed to the editApps list.
-    editAppsByPostId.getOrElse(postId, Nil).sortBy(- _.ctime.getTime)
+    editAppsByPostId(postId).sortBy(- _.ctime.getTime)
 
-  def editApp(withId: ActionId): Option[EditApp] =
-    editApps.filter(_.id == withId).headOption
-
-
-  // -------- Flags
-
-  private lazy val flagsById: imm.Map[ActionId, Flag] =
-    imm.Map[ActionId, Flag](flags.map(x => (x.id, x)): _*)
+  def editApp(withId: ActionId): Option[RawPostAction[PAP.EditApp]] =
+    getActionById(withId).filter(_.payload.isInstanceOf[PAP.EditApp])
+      .asInstanceOf[Option[RawPostAction[PAP.EditApp]]]
 
 
   // -------- Reviews (manual approvals and rejections, no auto approvals)
@@ -573,7 +538,7 @@ case class PageParts (
 
   // -------- Construction
 
-  def +(actionDto: PostActionDtoOld) = ++(actionDto::Nil)
+  def +(actionDto: RawPostAction[_]) = ++(actionDto::Nil)
 
   // Could try not to add stuff that's already included in this.people.
   def ++(people: People): PageParts = this.copy(people = this.people ++ people)
@@ -592,9 +557,7 @@ case class PageParts (
     */
   // COULD [T <: Action] instead of >: AnyRef?
   def ++[T >: AnyRef] (actions: Seq[T]): PageParts = {
-    var editApps2 = editApps
-    var flags2 = flags
-    var actions2 = this.actionDtos
+    var actions2 = this.rawActions
     type SthWithId = { def id: ActionId }
     def dieIfIdClash(olds: Seq[SthWithId], a: SthWithId) =
       olds.find(_.id == a.id) match {
@@ -604,19 +567,13 @@ case class PageParts (
       }
 
     for (a <- actions) a match {
-      case a: EditApp =>
-        dieIfIdClash(editApps2, a)
-        editApps2 ::= a
-      case f: Flag =>
-        dieIfIdClash(flags2, f)
-        flags2 ::= f
-      case a: PostActionDto[_] =>
+      case a: RawPostAction[_] =>
         dieIfIdClash(actions2, a)
         actions2 ::= a
       case x => runErr(
         "DwE8k3EC", "Unknown action type: "+ classNameOf(x))
     }
-    PageParts(id, people, editApps2, flags2, postStates, actions2)
+    PageParts(id, people, postStates, actions2)
   }
 
 
@@ -626,18 +583,10 @@ case class PageParts (
   /** This page, as it was at some time in the past (everything more recent is dropped).
     */
   def asOf(dati: ju.Date): PageParts = {
-    def happenedInTime(action: PostActionDtoOld) =
+    def happenedInTime(action: RawPostAction[_]) =
       action.ctime.getTime <= dati.getTime
-
-    val (editAppsBefore, editAppsAfter) = editApps partition happenedInTime
-    val (flagsBefore, flagsAfter) = flags partition happenedInTime
-    val (actionsBefore, actionsAfter) = actionDtos partition happenedInTime
-
-    val pageUpToAndInclDati = copy(
-      editApps = editAppsBefore,
-      flags = flagsBefore,
-      actionDtos = actionsBefore)
-
+    val (actionsBefore, actionsAfter) = rawActions partition happenedInTime
+    val pageUpToAndInclDati = copy(rawActions = actionsBefore)
     pageUpToAndInclDati
   }
 
@@ -654,17 +603,17 @@ case class PageParts (
   /**
    * The action with the most recent creation dati.
    */
-  lazy val lastAction: Option[PostActionDtoOld] = oldestOrLatestAction(latest = true)
+  lazy val lastAction: Option[RawPostAction[_]] = oldestOrLatestAction(latest = true)
 
 
   /**
    * The action with the oldest creation dati.
    */
-  private def oldestAction: Option[PostActionDtoOld] = oldestOrLatestAction(latest = false)
+  private def oldestAction: Option[RawPostAction[_]] = oldestOrLatestAction(latest = false)
 
 
-  private def oldestOrLatestAction(latest: Boolean): Option[PostActionDtoOld] = {
-    def latestOrOldestAction(a: PostActionDtoOld, b: PostActionDtoOld) = {
+  private def oldestOrLatestAction(latest: Boolean): Option[RawPostAction[_]] = {
+    def latestOrOldestAction(a: RawPostAction[_], b: RawPostAction[_]) = {
       if (latest) {
         if (a.ctime.getTime < b.ctime.getTime) b else a
       }

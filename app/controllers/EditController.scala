@@ -251,7 +251,7 @@ object EditController extends mvc.Controller {
       // is currently not included in the associated People).
       val pageRequest = pageReqPerhapsNoMe.copyWithMeOnPage_!
 
-      var actions = List[PostActionDtoOld]()
+      var actions = List[RawPostAction[_]]()
       var idsOfEditedPosts = List[ActionId]()
 
       for (editMap <- editMaps) {
@@ -339,7 +339,7 @@ object EditController extends mvc.Controller {
   private def _saveEdits(pageReq: PageRequest[_],
         postId: ActionId, newText: String, newMarkupOpt: Option[String],
         anyNewPageApproval: Option[Approval])
-        : Option[(Option[PostActionDtoOld], PostActionDtoOld)] = {
+        : Option[(Option[RawPostAction[_]], RawPostAction[_])] = {
 
     val (post, lazyCreateOpt) =
       _getOrCreatePostToEdit(pageReq, postId, pageReq.userIdData)
@@ -374,7 +374,7 @@ object EditController extends mvc.Controller {
         else None
       })
 
-    var edit = PostActionDto.toEditPost(
+    var edit = RawPostAction.toEditPost(
       id = PageParts.UnassignedId, postId = post.id, ctime = pageReq.ctime,
       userIdData = pageReq.userIdData,
       text = patchText, newMarkup = newMarkupOpt,
@@ -457,13 +457,13 @@ object EditController extends mvc.Controller {
 
   private def _getOrCreatePostToEdit(
         pageReq: PageRequest[_], postId: ActionId, authorIdData: UserIdData)
-        : (Post, Option[PostActionDto[PAP.CreatePost]]) = {
+        : (Post, Option[RawPostAction[PAP.CreatePost]]) = {
 
     val anyPost: Option[Post] = pageReq.page_!.getPost(postId)
 
     // The page title and template are created automatically
     // if they don't exist, when they are to be edited.
-    val lazyCreateOpt: Option[PostActionDto[PAP.CreatePost]] = {
+    val lazyCreateOpt: Option[RawPostAction[PAP.CreatePost]] = {
       // Usually, the post-to-be-edited already exists.
       if (anyPost isDefined) {
         None
@@ -490,7 +490,7 @@ object EditController extends mvc.Controller {
 
   private def _createPostToEdit(
         pageReq: PageRequest[_], postId: ActionId, authorIdData: UserIdData)
-        : PostActionDto[PAP.CreatePost] = {
+        : RawPostAction[PAP.CreatePost] = {
 
     val markup =
       if (postId == PageParts.ConfigPostId) Markup.Code
@@ -499,7 +499,7 @@ object EditController extends mvc.Controller {
       else Markup.DefaultForComments
 
     // The post will be auto approved implicitly, if the Edit is auto approved.
-    PostActionDto(
+    RawPostAction(
       id = postId, postId = postId, creationDati = pageReq.ctime,
       userIdData = authorIdData,
       payload = PAP.CreatePost(

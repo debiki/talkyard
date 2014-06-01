@@ -20,9 +20,9 @@ package com.debiki.core
 
 import com.debiki.core.{PostActionPayload => PAP}
 import java.{util => ju}
-import org.scalatest.{BeforeAndAfterAll, FreeSpec}
-import org.scalatest.matchers.MustMatchers
-import PostActionDto.copyCreatePost
+import org.scalatest.FreeSpec
+import org.scalatest.MustMatchers
+import RawPostAction.copyCreatePost
 import Prelude._
 
 
@@ -43,7 +43,7 @@ class PagePartsDeletionTest extends FreeSpec with MustMatchers {
 
   private def time(when: Int) = new ju.Date(when)
 
-  val gp = PostActionDto.forNewPost(1001, creationDati = time(100),
+  val gp = RawPostAction.forNewPost(1001, creationDati = time(100),
     userIdData = SystemUser.UserIdData,
     parentPostId = None, text = "gp-text", markup = Markup.DefaultForComments.id,
     approval = Some(Approval.AuthoritativeUser))
@@ -54,17 +54,17 @@ class PagePartsDeletionTest extends FreeSpec with MustMatchers {
   val d = copyCreatePost(gp, id = nextId(), parentPostId = Some(gp.id), text = "d-text")
   val e = copyCreatePost(gp, id = nextId(), parentPostId = Some(gp.id), text = "e-text")
 
-  val delete_p_tree = PostActionDto(
+  val delete_p_tree = RawPostAction(
     nextId(), creationDati = time(101), postId = p.id,
       userIdData = SystemUser.UserIdData, payload = PAP.DeleteTree)
 
   val delete_d = delete_p_tree.copy(id = nextId(), postId = d.id, payload = PAP.DeletePost)
 
   val pageNoDeletes =
-    PageParts("pnd", actionDtos = gp::p::c::d::e::Nil)
+    PageParts("pnd", rawActions = gp::p::c::d::e::Nil)
 
   val pageWithDeletes =
-    PageParts("pwd", actionDtos = delete_p_tree::delete_d::pageNoDeletes.actionDtos)
+    PageParts("pwd", rawActions = delete_p_tree::delete_d::pageNoDeletes.rawActions)
 
 
   "PageParts' comments can be deleted:" - {
