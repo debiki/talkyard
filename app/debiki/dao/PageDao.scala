@@ -42,8 +42,8 @@ trait PageDao {
     * Returns a pair with 1) the page including new actions plus the current user,
     * and 2) the actions, but with ids assigned.
     */
-  final def savePageActionsGenNotfs(pageReq: PageRequest[_], actions: Seq[PostActionDtoOld])
-      : (PageNoPath, Seq[PostActionDtoOld]) = {
+  final def savePageActionsGenNotfs(pageReq: PageRequest[_], actions: Seq[PostActionDto[_]])
+      : (PageNoPath, Seq[PostActionDto[_]]) = {
     val pagePartsNoAuthor = pageReq.pageNoPath_!.parts
     // We're probably going to render parts of the page later, and then we
     // need the user, so add it to the page — it's otherwise absent if this is
@@ -54,8 +54,8 @@ trait PageDao {
   }
 
 
-  final def savePageActionsGenNotfs(pageId: PageId, actions: Seq[PostActionDtoOld], authors: People)
-      : (PageNoPath, Seq[PostActionDtoOld]) = {
+  final def savePageActionsGenNotfs(pageId: PageId, actions: Seq[PostActionDto[_]], authors: People)
+      : (PageNoPath, Seq[PostActionDto[_]]) = {
 
     val pageMeta = siteDbDao.loadPageMeta(pageId) getOrElse
       throwNotFound("DwE115Xf3", s"Page `${pageId}' does not exist")
@@ -72,8 +72,8 @@ trait PageDao {
   }
 
 
-  def savePageActionsGenNotfsImpl(page: PageNoPath, actions: Seq[PostActionDtoOld])
-      : (PageNoPath, Seq[PostActionDtoOld]) = {
+  def savePageActionsGenNotfsImpl(page: PageNoPath, actions: Seq[PostActionDto[_]])
+      : (PageNoPath, Seq[PostActionDto[_]]) = {
     if (actions isEmpty)
       return (page, Nil)
 
@@ -119,8 +119,8 @@ trait CachingPageDao extends PageDao {
   }
 
 
-  override def savePageActionsGenNotfsImpl(page: PageNoPath, actions: Seq[PostActionDtoOld])
-      : (PageNoPath, Seq[PostActionDtoOld]) = {
+  override def savePageActionsGenNotfsImpl(page: PageNoPath, actions: Seq[PostActionDto[_]])
+      : (PageNoPath, Seq[PostActionDto[_]]) = {
 
     if (actions isEmpty)
       return (page, Nil)

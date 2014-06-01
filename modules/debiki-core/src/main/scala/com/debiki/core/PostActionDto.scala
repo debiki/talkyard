@@ -41,16 +41,29 @@ import FlagType.FlagType
   * @param payload What this action does. For example, creates a new post,
   * edits a post, flags it, closes a thread, etcetera.
   */
-case class PostActionDto[P]( // [P <: PostActionPayload] -> compilation errors for PostAction
+case class PostActionDto[P](   // caused weird compilation errors:  [P <: PostActionPayload](
   id: ActionId,
   creationDati: ju.Date,
   payload: P,
   postId: ActionId,
-  userIdData: UserIdData) extends PostActionDtoOld {
+  userIdData: UserIdData) {
 
   require(id != PageParts.NoId)
+  require(payload.isInstanceOf[PAP]) // for now, until above template constraint works
 
   def ctime = creationDati
+
+  def loginId = userIdData.loginId
+  def userId = userIdData.userId
+  def ip = userIdData.ip
+
+  def anyGuestId = userIdData.anyGuestId
+  def anyRoleId = userIdData.anyRoleId
+
+  def browserFingerprint = userIdData.browserFingerprint
+  def browserIdCookie = userIdData.browserIdCookie
+
+  def textLengthUtf8: Int = payload.asInstanceOf[PAP].textLengthUtf8
 }
 
 
@@ -247,7 +260,9 @@ object PostActionDto {
 
 
 
-sealed abstract class PostActionPayload
+sealed abstract class PostActionPayload {
+  def textLengthUtf8: Int = 0
+}
 
 
 
@@ -269,7 +284,10 @@ object PostActionPayload {
     text: String,
     markup: String,
     approval: Option[Approval],
-    where: Option[String] = None) extends PostActionPayload
+    where: Option[String] = None) extends PostActionPayload {
+
+      override def textLengthUtf8: Int = text.getBytes("UTF-8").length
+  }
 
 
   /** Edits the text of a post, and/or changes the markup (from e.g. Markdown to HTML).
@@ -299,7 +317,7 @@ object PostActionPayload {
     autoApplied: Boolean,
     approval: Option[Approval]) extends PostActionPayload {
 
-    // override def textLengthUtf8: Int = text.getBytes("UTF-8").length
+    override def textLengthUtf8: Int = text.getBytes("UTF-8").length
 
     // An edit that hasn't been applied cannot have been approved.
     // (It might have been applied, but not approved, however, if a
@@ -417,48 +435,6 @@ object PostActionPayload {
   /** Flags a post as e.g. spam, or inappropriate (offensive, illegal, whatever).
     */
   case class Flag(tyype: FlagType, reason: String) extends PostActionPayload
-
-}
-
-
-
-/** Should use PostActionDto + PostActionPayload instead; then it's much
-  * easier to add new types of actions.
-  */
-sealed abstract class PostActionDtoOld {
-
-  /** The post that this action affects. */
-  def postId: ActionId
-
-  /** A local id, unique only in the Debate that this action modifies.
-    * Negative values means unknown id.
-    */
-  def id: ActionId
-  require(id != PageParts.NoId)
-
-  def userIdData: UserIdData
-
-  /**
-   * Identifies the login session, which in turn identifies
-   * the user and IP and session creation time.
-   */
-  def loginId = userIdData.loginId
-
-  /** The guest or role that did this action. */
-  def userId = userIdData.userId
-
-  def ip = userIdData.ip
-
-  def browserIdCookie = userIdData.browserIdCookie
-
-  def browserFingerprint = userIdData.browserFingerprint
-
-  def ctime: ju.Date
-
-  def textLengthUtf8: Int = 0
-
-  def anyGuestId = if (userId.headOption == Some('-')) Some(userId drop 1) else None
-  def anyRoleId =  if (userId.headOption == Some('-')) None else Some(userId)
 
 }
 

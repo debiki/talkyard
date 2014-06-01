@@ -212,11 +212,10 @@ class AutoApproverSpec extends Specification with Mockito {
   }
 
 
-  def newDaoMock(actionDtos: List[PostActionDto[_]], login: Login, testUserId: String,
-        actionDtosOld: List[PostActionDtoOld] = Nil) = {
+  def newDaoMock(actionDtos: List[PostActionDto[_]], login: Login, testUserId: String) = {
 
-    val actions: Seq[PostActionOld] = {
-      val page = PageParts("pageid") ++ actionDtos ++ actionDtosOld
+    val actions: Seq[PostAction[_]] = {
+      val page = PageParts("pageid") ++ actionDtos
       page.postsByUser(withId = testUserId)
     }
 
@@ -292,21 +291,23 @@ class AutoApproverSpec extends Specification with Mockito {
       }
 
       "not approve any further comments, when there's one unreviewed flag" >> {
-        val dao = newDaoMock(replyAPrelApprovedAndBManApproved,
-          guestLogin, testUserId, flagOfReplyA::Nil)
+        val dao = newDaoMock(flagOfReplyA::replyAPrelApprovedAndBManApproved,
+          guestLogin, testUserId)
         AutoApprover.perhapsApprove(pageReqGuest(dao)) must_== None
       }
 
       "do approve any further comments, when there's one reviewed and ignored flag" >> {
         // The very recent approval of A ignores the flag.
-        val dao = newDaoMock(veryRecentApprovalOfReplyA::replyAPrelApprovedAndBManApproved,
-          guestLogin,  testUserId,  flagOfReplyA::Nil)
+        val dao = newDaoMock(
+          flagOfReplyA::veryRecentApprovalOfReplyA::replyAPrelApprovedAndBManApproved,
+          guestLogin,  testUserId)
         AutoApprover.perhapsApprove(pageReqGuest(dao)) must_== Some(Approval.WellBehavedUser)
       }
 
       "not approve any further comments, when one comment flagged and deleted" >> {
-        val dao = newDaoMock(deletionOfReplyA::replyAPrelApprovedAndBManApproved,
-          guestLogin, testUserId,  flagOfReplyA::Nil)
+        val dao = newDaoMock(
+          flagOfReplyA::deletionOfReplyA::replyAPrelApprovedAndBManApproved,
+          guestLogin, testUserId)
         AutoApprover.perhapsApprove(pageReqGuest(dao)) must_== None
       }
     }

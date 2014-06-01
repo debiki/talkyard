@@ -58,11 +58,8 @@ object PageParts {
     id == PageParts.BodyId || id == PageParts.TitleId || id == PageParts.ConfigPostId
 
 
-  def isReply(actionOld: PostActionDtoOld): Boolean = actionOld match {
-    case post: PostActionDto[_] => post.payload match {
-      case _: PAP.CreatePost if !isArticleOrConfigPostId(post.id) => true
-      case _ => false
-    }
+  def isReply(rawAction: PostActionDto[_]): Boolean = rawAction.payload match {
+    case _: PAP.CreatePost if !isArticleOrConfigPostId(rawAction.id) => true
     case _ => false
   }
 
@@ -74,12 +71,13 @@ object PageParts {
   /** Assigns ids to actions and updates references from e.g. Edits to Posts.
    *  Only remaps IDs that are unknown (< 0).
    */
-  def assignIdsTo[T <: PostActionDtoOld](actionsToRemap: List[T], nextNewReplyId: Int): List[T] = {
+  def assignIdsTo(actionsToRemap: Seq[PostActionDto[_]], nextNewReplyId: Int)
+        : Seq[PostActionDto[_]] = {
     val remaps = mut.Map[ActionId, ActionId]()
     var nextReplyId = nextNewReplyId
 
     // Generate new ids.
-    actionsToRemap foreach { a: T =>
+    actionsToRemap foreach { a: PostActionDto[_] =>
       require(!remaps.contains(a.id)) // each action must be remapped only once
       remaps(a.id) =
           if (isActionIdUnknown(a.id)) {
@@ -103,24 +101,22 @@ object PageParts {
 
     // Remap ids and update references to ids.
     def rmpd(id: ActionId) = remaps.getOrElse(id, id)
-    def updateIds(action: T): T = (action match {
-      case a: PostActionDto[_] =>
-        val rmpdPaylad = a.payload match {
-          case c: PAP.CreatePost =>
-            c.parentPostId match {
-              case None => c
-              case Some(parentPostId) => c.copy(parentPostId = Some(rmpd(parentPostId)))
-            }
-          case a: PAP.EditApp => a.copy(editId = rmpd(a.editId))
-          case d: PAP.Delete => d.copy(targetActionId = rmpd(d.targetActionId))
-          case u: PAP.Undo => u.copy(targetActionId = rmpd(u.targetActionId))
-          case x => x
-        }
-        a.copy(id = remaps(a.id), postId = rmpd(a.postId), payload = rmpdPaylad)
-      case x => assErr("DwE3RSEK9")
-    }).asInstanceOf[T]
+    def updateIds(action: PostActionDto[_]): PostActionDto[_] = {
+      val remappedPayload = action.payload match {
+        case c: PAP.CreatePost =>
+          c.parentPostId match {
+            case None => c
+            case Some(parentPostId) => c.copy(parentPostId = Some(rmpd(parentPostId)))
+          }
+        case a: PAP.EditApp => a.copy(editId = rmpd(a.editId))
+        case d: PAP.Delete => d.copy(targetActionId = rmpd(d.targetActionId))
+        case u: PAP.Undo => u.copy(targetActionId = rmpd(u.targetActionId))
+        case x => x
+      }
+      action.copy(id = remaps(action.id), postId = rmpd(action.postId), payload = remappedPayload)
+    }
 
-    val actionsRemapped: List[T] = actionsToRemap map updateIds
+    val actionsRemapped: Seq[PostActionDto[_]] = actionsToRemap map updateIds
     actionsRemapped
   }
 
@@ -273,7 +269,8 @@ case class PageParts (
   def actionCount: Int = actionDtos.size
 
 
-  def allActions: Seq[PostActionDtoOld] = actionDtos
+  @deprecated("use actionDtos instead", "now")
+  def allActions: Seq[PostActionDto[_]] = actionDtos
 
 
   lazy val actionsByTimeAsc =
@@ -281,9 +278,8 @@ case class PageParts (
 
 
   // Try to remove/rewrite? Doesn't return e.g Post or Patch.
-  def smart(action: PostActionDtoOld) = new PostActionOld(this, action)
-  // ^ For the love of god, I have to rename this crap, this file is a mess.
-  // Fixed (soon). Rewrite to PostActionDto and use PostActionsWrapper.
+  @deprecated("use getActionById instead?", "now")
+  def smart(action: PostActionDto[_]) = new PostAction(this, action)
 
 
   lazy val (postsByParentId: Map[PostId, List[Post]]) = {
@@ -461,7 +457,7 @@ case class PageParts (
       else if (post.someVersionApproved) {
         // posterUserIds.add(post.user_!.id) — breaks, users sometimes absent.
         // Wait until I've added DW1_PAGE_ACTIONS.USER_ID?
-        if (PageParts.isReply(post.action)) {
+        if (PageParts.isReply(post.actionDto)) {
           numVisible += 1
         }
         else {
@@ -542,7 +538,7 @@ case class PageParts (
 
   // -------- Construction
 
-  def +(actionDto: PostActionDtoOld) = ++(actionDto::Nil)
+  def +(actionDto: PostActionDto[_]) = ++(actionDto::Nil)
 
   // Could try not to add stuff that's already included in this.people.
   def ++(people: People): PageParts = this.copy(people = this.people ++ people)
@@ -587,7 +583,7 @@ case class PageParts (
   /** This page, as it was at some time in the past (everything more recent is dropped).
     */
   def asOf(dati: ju.Date): PageParts = {
-    def happenedInTime(action: PostActionDtoOld) =
+    def happenedInTime(action: PostActionDto[_]) =
       action.ctime.getTime <= dati.getTime
     val (actionsBefore, actionsAfter) = actionDtos partition happenedInTime
     val pageUpToAndInclDati = copy(actionDtos = actionsBefore)
@@ -607,17 +603,17 @@ case class PageParts (
   /**
    * The action with the most recent creation dati.
    */
-  lazy val lastAction: Option[PostActionDtoOld] = oldestOrLatestAction(latest = true)
+  lazy val lastAction: Option[PostActionDto[_]] = oldestOrLatestAction(latest = true)
 
 
   /**
    * The action with the oldest creation dati.
    */
-  private def oldestAction: Option[PostActionDtoOld] = oldestOrLatestAction(latest = false)
+  private def oldestAction: Option[PostActionDto[_]] = oldestOrLatestAction(latest = false)
 
 
-  private def oldestOrLatestAction(latest: Boolean): Option[PostActionDtoOld] = {
-    def latestOrOldestAction(a: PostActionDtoOld, b: PostActionDtoOld) = {
+  private def oldestOrLatestAction(latest: Boolean): Option[PostActionDto[_]] = {
+    def latestOrOldestAction(a: PostActionDto[_], b: PostActionDto[_]) = {
       if (latest) {
         if (a.ctime.getTime < b.ctime.getTime) b else a
       }

@@ -344,7 +344,7 @@ case class Post(
   /** The most recent reviews, or Nil if all most recent reviews might not
     * have been loaded.
     */
-  private lazy val _reviewsDescTime: List[PostActionOld with MaybeApproval] = {
+  private lazy val _reviewsDescTime: List[PostAction[_] with MaybeApproval] = {
     // If loaded from cache, we will have loaded no reviews, or only one review,
     // namely `this`, if this post was auto-approved (e.g. a preliminarily
     // approved comment, or a comment posted by an admin).
@@ -367,9 +367,9 @@ case class Post(
 
     val explicitReviewsDescTime =
       actions.filter(_.isInstanceOf[Review]).sortBy(-_.creationDati.getTime).
-      asInstanceOf[List[PostActionOld with MaybeApproval]]
+      asInstanceOf[List[PostAction[_] with MaybeApproval]]
 
-    var implicitApprovals = List[PostActionOld with MaybeApproval]()
+    var implicitApprovals = List[PostAction[_] with MaybeApproval]()
     if (directApproval.isDefined)
       implicitApprovals ::= this
     for (edit <- edits) {
@@ -422,12 +422,12 @@ case class Post(
   }
 
 
-  private lazy val lastApproval: Option[PostActionOld with MaybeApproval] = {
+  private lazy val lastApproval: Option[PostAction[_] with MaybeApproval] = {
     // A rejection cancels all earlier and contiguous preliminary auto
     // approvals, so loop through the reviews:
     var rejectionFound = false
     var reviewsLeft = _reviewsDescTime
-    var lastApproval: Option[PostActionOld with MaybeApproval] = None
+    var lastApproval: Option[PostAction[_] with MaybeApproval] = None
     while (reviewsLeft nonEmpty) {
       val review = reviewsLeft.head
       reviewsLeft = reviewsLeft.tail
@@ -448,12 +448,12 @@ case class Post(
    * The most recent review of this post by an admin or moderator.
    * (But not by seemingly well behaved users.)
    */
-  private def lastAuthoritativeReview: Option[PostActionOld with MaybeApproval] =
+  private def lastAuthoritativeReview: Option[PostAction[_] with MaybeApproval] =
     _reviewsDescTime.find(review =>
       review.directApproval.map(_.isAuthoritative) != Some(false))
 
 
-  private def lastPermanentApproval: Option[PostActionOld with MaybeApproval] =
+  private def lastPermanentApproval: Option[PostAction[_] with MaybeApproval] =
     _reviewsDescTime.find(review =>
         review.directApproval.map(_.isPermanent) == Some(true))
 

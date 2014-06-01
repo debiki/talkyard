@@ -137,7 +137,7 @@ class SiteDao(protected val siteDbDao: ChargingSiteDbDao)
         fromIp: Option[String] = None,
         byIdentity: Option[String] = None,
         pathRanges: PathRanges = PathRanges.Anywhere,
-        limit: Int): (Seq[PostActionOld], People) =
+        limit: Int): (Seq[PostAction[_]], People) =
     siteDbDao.loadRecentActionExcerpts(fromIp = fromIp,
       byIdentity = byIdentity, pathRanges = pathRanges, limit = limit)
 

@@ -25,30 +25,46 @@ import PageParts._
 import FlagType.FlagType
 
 
-object PostActionOld {
-
-  // Remove, when all PostActionDtoOld have been replaced with PostActionDto.
-  def apply(page: PageParts, action: PostActionDtoOld): PostActionOld = action match {
-    case a: PostActionDto[_] => page.getActionById(action.id) getOrDie "DwE20KF58"
-    case a: PostActionDtoOld => new PostActionOld(page, a)
-  }
-
-}
-
-
-
 /** Represents a part of a page (e.g. the title, the body, or a comment — a "Post")
   * or a change to a part of the page (e.g. an edit of a comment — a "Patch").
   * PostAction wraps the PostActionDto instance that created / changed the page part,
   * and adds utility methods.
   */
 class PostAction[P](  // [P <: PostActionPayload] causes compilation errors
-  page: PageParts,
-  val actionDto: PostActionDto[P]) extends PostActionOld(page, actionDto) {
+  val page: PageParts,
+  val actionDto: PostActionDto[P]) {
 
   def postId = actionDto.postId
   def payload: P = actionDto.payload
 
+  @deprecated("use page instead", "now")
+  def debate = page
+
+  def id: ActionId = actionDto.id
+
+  def creationDati = actionDto.ctime
+
+  def userIdData = actionDto.userIdData
+
+  def loginId = userIdData.loginId
+  def login: Option[Login] = actionDto.userIdData.loginId.flatMap(id => debate.people.login(id))
+  def login_! : Login = login.getOrElse(runErr(
+    "DwE6gG32", s"No login with id `${userIdData.loginId}' for action $id"))
+
+  def identity: Option[Identity] = login.flatMap(l =>
+    page.people.identity(l.identityRef.identityId))
+  def identity_! : Identity = debate.people.identity_!(login_!.identityRef.identityId)
+
+  def userId = {
+    // Temporary (?) debug test: (I just introduced `userId`)
+    identity foreach { i => assErrIf(i.userId != userIdData.userId, "DwE43KbX6") }
+    userIdData.userId
+  }
+  def user : Option[User] = page.people.user(userIdData.userId)
+  def user_! : User = user.getOrDie("DwE3905FU0", s"No user for action `$id', page `${page.id}'")
+
+  def ip: String = userIdData.ip
+  def ipSaltHash: String = saltAndHashIp(ip)
 }
 
 
@@ -58,9 +74,9 @@ class PostAction[P](  // [P <: PostActionPayload] causes compilation errors
   * and does therefore not implement this trait.
   */
 trait PostActionActedUpon {
-  self: PostActionOld =>
+  self: PostAction[_] =>
 
-  protected def actions: List[PostAction[_]] = page.getActionsByTargetId(id)
+  protected def actions: List[PostAction[_]] = self.page.getActionsByTargetId(id)
 
   protected def findLastAction[P <: PostActionPayload](payload: P): Option[PostAction[P]] =
     actions.find { action =>
@@ -83,35 +99,6 @@ trait MaybeApproval {
     * Then Post.directApproval is None and Post.lastApproval is Some(...).
     */
   def directApproval: Option[Approval]
-
-}
-
-
-
-// SmartPageAction[Rating].
-/** A virtual Action, that is, an Action plus some utility methods that
- *  look up other stuff in the relevant Debate.
- */
-class PostActionOld(val debate: PageParts, val action: PostActionDtoOld) {
-  def page = debate // should rename `debate` to `page`
-  def id: ActionId = action.id
-  def creationDati = action.ctime
-  def loginId = action.loginId
-  def login: Option[Login] = action.loginId.flatMap(id => debate.people.login(id))
-  def login_! : Login = login.getOrElse(runErr(
-     "DwE6gG32", s"No login with id `${action.loginId}' for action $id"))
-  def identity: Option[Identity] = login.flatMap(l =>
-                                    debate.people.identity(l.identityRef.identityId))
-  def identity_! : Identity = debate.people.identity_!(login_!.identityRef.identityId)
-  def userId = {
-    // Temporary (?) debug test: (I just introduced `userId`)
-    identity foreach { i => assErrIf(i.userId != action.userId, "DwE43KbX6") }
-    action.userId
-  }
-  def user : Option[User] = debate.people.user(action.userId)
-  def user_! : User = user.getOrDie("DwE3905FU0", s"No user for action `$id', page `${page.id}'")
-  def ip: String = action.ip
-  def ipSaltHash: String = saltAndHashIp(ip)
 
 }
 

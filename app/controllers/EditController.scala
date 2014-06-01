@@ -251,7 +251,7 @@ object EditController extends mvc.Controller {
       // is currently not included in the associated People).
       val pageRequest = pageReqPerhapsNoMe.copyWithMeOnPage_!
 
-      var actions = List[PostActionDtoOld]()
+      var actions = List[PostActionDto[_]]()
       var idsOfEditedPosts = List[ActionId]()
 
       for (editMap <- editMaps) {
@@ -339,7 +339,7 @@ object EditController extends mvc.Controller {
   private def _saveEdits(pageReq: PageRequest[_],
         postId: ActionId, newText: String, newMarkupOpt: Option[String],
         anyNewPageApproval: Option[Approval])
-        : Option[(Option[PostActionDtoOld], PostActionDtoOld)] = {
+        : Option[(Option[PostActionDto[_]], PostActionDto[_])] = {
 
     val (post, lazyCreateOpt) =
       _getOrCreatePostToEdit(pageReq, postId, pageReq.userIdData)

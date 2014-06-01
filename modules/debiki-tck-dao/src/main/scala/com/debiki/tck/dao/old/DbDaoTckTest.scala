@@ -1414,6 +1414,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
 
       "save post" in {
         post = dao.savePageActions(testPage, List(postNoId))._2.head
+          .asInstanceOf[PostActionDto[PAP.CreatePost]]
         post.payload.text must_== "Initial text"
         post.payload.markup must_== "dmd0"
         exEdit_postId = post.id

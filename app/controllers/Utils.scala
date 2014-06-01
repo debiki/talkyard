@@ -129,25 +129,6 @@ object Utils extends Results with http.ContentTypes {
   }
 
 
-  def localUrlTo(action: PostActionOld): String = {
-    // - Add `?view=<config-post-id>` for templates, since they're on their
-    // own virtual page not connected to the root post.
-    // - Add `?view` to paths that end with .js or .css or Debiki will
-    // render the page as text, not html. Currently done for all non-template
-    // pages.
-    val fragment = "/-"+ action.page.id
-    val query =
-      if (action.id == PageParts.ConfigPostId) "?view="+ PageParts.ConfigPostId
-      else "?view"
-    val hash = action match {
-      case post: Post => "#post-"+ action.id
-      case other: PostActionOld =>
-        "" // SHOULD be: "#post-"+ action.target.id  -- but not implemented
-    }
-    fragment + query + hash
-  }
-
-
   // COULD move to new object debiki.Utils?
   def isPublicArticlePage(pagePath: PagePath): Boolean =
     !isPrivatePage(pagePath) && !pagePath.isFolderOrIndexPage

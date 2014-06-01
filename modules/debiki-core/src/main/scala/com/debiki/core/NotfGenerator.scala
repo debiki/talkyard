@@ -26,16 +26,16 @@ import Prelude._
  * Analyzes page actions, e.g. replies and their approvals, and
  * generates and returns the appropriate notifications.
  */
-case class NotfGenerator(pageExclNewActions: PageParts, newActions: Seq[PostActionDtoOld]) {
+case class NotfGenerator(pageExclNewActions: PageParts, newActions: Seq[PostActionDto[_]]) {
 
   def page = pageExclNewActions
 
 
-  def generateNotfs: Seq[NotfOfPageAction] = newActions flatMap (_ match {
+  def generateNotfs: Seq[NotfOfPageAction] = newActions flatMap { action =>
     // Note:
     // If you add notfs (below) for other things than replies,
     // then, in debiki-server, update NotfHtmlRenderer.
-    case action: PostActionDto[_] => action.payload match {
+    action.payload match {
       case p: PostActionPayload.CreatePost =>
         makePersonalReplyNotf(
           new Post(page, action.asInstanceOf[PostActionDto[PAP.CreatePost]]))
@@ -50,9 +50,7 @@ case class NotfGenerator(pageExclNewActions: PageParts, newActions: Seq[PostActi
       case _ =>
         Nil // skip for now
     }
-    case _ =>
-      Nil  // skip for now
-  })
+  }
 
 
   private def makePersonalReplyNotf(post: Post,

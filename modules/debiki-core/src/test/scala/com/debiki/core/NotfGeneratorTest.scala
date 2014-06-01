@@ -73,12 +73,12 @@ trait NotfGeneratorTestValues {
 
 class NotfGeneratorTest extends Specification with NotfGeneratorTestValues {
 
-  def genNotfs(user: User, page: PageParts, actions: PostActionDtoOld*) =
+  def genNotfs(user: User, page: PageParts, actions: PostActionDto[_]*) =
     NotfGenerator(page, actions).generateNotfs
 
   def checkThatFor(notf: NotfOfPageAction, recipient: User, actor: User,
-        recipientAction: PostActionDtoOld, actorAction: PostActionDtoOld,
-        triggerAction: PostActionDtoOld) = {
+        recipientAction: PostActionDto[_], actorAction: PostActionDto[_],
+        triggerAction: PostActionDto[_]) = {
     notf.recipientUserId must_== recipient.id
 
     notf.recipientActionId must_== recipientAction.id
