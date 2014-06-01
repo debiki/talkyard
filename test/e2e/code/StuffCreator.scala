@@ -160,7 +160,7 @@ trait StuffCreator {
       id = PageParts.BodyId, text = text, markup = Markup.Code.id)
     val pagePath = PagePath(
       firstSiteId, folder, pageId = None, showId = false, pageSlug = slug)
-    val page = PageParts(guid = "?", actionDtos = body::Nil)
+    val page = PageParts(guid = "?", rawActions = body::Nil)
     firstSiteDao.createPage(Page.newPage(
       PageRole.Generic, pagePath, page, publishDirectly = true, author = loginGrant.user))
   }
@@ -187,7 +187,7 @@ trait StuffCreator {
     val pagePath = PagePath(
       firstSiteId, "/", pageId = None, showId = true, pageSlug = pageSlug)
 
-    val debateNoId = PageParts(guid = "?", actionDtos = titlePost :: bodyPost.toList)
+    val debateNoId = PageParts(guid = "?", rawActions = titlePost :: bodyPost.toList)
     val pageStuffNoPeople = firstSiteDao.createPage(Page.newPage(
       pageRole, pagePath, debateNoId, publishDirectly = true, author = loginGrant.user))
 

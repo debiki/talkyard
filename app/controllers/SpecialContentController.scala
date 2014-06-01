@@ -140,7 +140,7 @@ object SpecialContentController extends mvc.Controller {
           approval = Some(Approval.AuthoritativeUser)))
 
     val pageId = s"$rootPageId$contentId"
-    val pageParts = PageParts(pageId, people = SystemUser.Person, actionDtos = emptyBody::Nil)
+    val pageParts = PageParts(pageId, people = SystemUser.Person, rawActions = emptyBody::Nil)
 
     val newPage = Page(
       PageMeta.forNewPage(

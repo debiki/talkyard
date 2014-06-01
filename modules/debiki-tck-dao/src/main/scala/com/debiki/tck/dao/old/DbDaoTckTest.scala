@@ -318,7 +318,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
     // -------- Simple logins
 
     "throw error for an invalid login id" in {
-      val debateBadLogin = PageParts(guid = "?", actionDtos =
+      val debateBadLogin = PageParts(guid = "?", rawActions =
           RawPostAction.copyCreatePost(T.post, id = PageParts.BodyId, parentPostId = None,
             loginId = "99999", userId = "99999")::Nil) // bad ids
       //SLog.info("Expecting ORA-02291: integrity constraint log message ------")
@@ -436,7 +436,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
       loginId = loginId, userId = globalUserId, text = ex1_postText)
 
     "create a debate with a root post" in {
-      val debateNoId = PageParts(guid = "?", actionDtos = ex1_rootPost::Nil)
+      val debateNoId = PageParts(guid = "?", rawActions = ex1_rootPost::Nil)
       val page = dao.createPage(Page.newPage(
         PageRole.Generic, defaultPagePath, debateNoId, publishDirectly = true,
         author = loginGrant.user))
@@ -1034,7 +1034,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
             parentPageId = ancestorPageIds.headOption),
           defaultPagePath.copy(folder = "/search-forum/", showId = true, pageSlug = pageSlug),
           ancestorIdsParentFirst = ancestorPageIds,
-          PageParts(guid = "?", actionDtos = posts.toList))
+          PageParts(guid = "?", rawActions = posts.toList))
 
       def search(phrase: String, anyRootPageId: Option[PageId]): FullTextSearchResult = {
         import scala.concurrent.duration.Duration
@@ -1314,7 +1314,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
           case Some(p: PageParts) => {
             p.getActionById(savedVote.id) match {
               case Some(vote: PostAction[A]) =>
-                vote.actionDto must_== savedVote
+                vote.rawAction must_== savedVote
               case _ =>
                 fail(s"Vote not found: $vote")
             }
@@ -1381,7 +1381,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
         dao.loadPageParts(testPage.id) must beLike {
           case Some(page: PageParts) =>
             val pinAction =
-              page.actionDtos.find(_.payload.isInstanceOf[PAP.PinPostAtPosition])
+              page.rawActions.find(_.payload.isInstanceOf[PAP.PinPostAtPosition])
               .getOrElse(fail("No PinPostAtPosition found"))
               .asInstanceOf[RawPostAction[PAP.PinPostAtPosition]]
             pinAction.postId must_== ex1_rootPost.id

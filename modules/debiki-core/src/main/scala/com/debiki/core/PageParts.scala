@@ -165,7 +165,7 @@ object PageParts {
 abstract class PostActionsWrapper { self: PageParts =>
 
 
-  def actionDtos: List[RawPostAction[_]]
+  def rawActions: List[RawPostAction[_]]
 
 
   def getActionById(id: ActionId): Option[PostAction[_]] =
@@ -202,7 +202,7 @@ abstract class PostActionsWrapper { self: PageParts =>
       addAction(new Post(self, state))
     }
 
-    for (actionDto <- actionDtos) {
+    for (actionDto <- rawActions) {
       def actionAs[T <: PAP] = actionDto.asInstanceOf[RawPostAction[T]]
       val action = actionDto.payload match {
         case _: PAP.CreatePost => new Post(self, actionAs[PAP.CreatePost])
@@ -226,7 +226,7 @@ abstract class PostActionsWrapper { self: PageParts =>
       actionsById(action.id) = action
       val otherActionsSamePost = actionsByPostId(action.postId)
       if (otherActionsSamePost.find(_.id == action.id).isEmpty)
-        actionsByPostId(action.actionDto.postId) = action :: otherActionsSamePost
+        actionsByPostId(action.rawAction.postId) = action :: otherActionsSamePost
 
       def addActionByTargetId(targetId: ActionId) {
         val otherActionsSameTarget = actionsByTargetId(action.postId)
@@ -257,24 +257,24 @@ abstract class PostActionsWrapper { self: PageParts =>
   * @param people People who has contributed to the page. If some people are missing,
   * certain functions might fail (e.g. a function that fetches the name of the author
   * of the page body). — This class never fetches anything lazily from database.
-  * @param actionDtos The actions that build up the page.
+  * @param rawActions The actions that build up the page.
   */
 case class PageParts (
   guid: PageId,  // COULD rename to pageId?
   people: People = People.None,
   postStates: List[PostState] = Nil,
-  actionDtos: List[RawPostAction[_]] = Nil) extends PostActionsWrapper {
+  rawActions: List[RawPostAction[_]] = Nil) extends PostActionsWrapper {
 
 
-  def actionCount: Int = actionDtos.size
+  def actionCount: Int = rawActions.size
 
 
-  @deprecated("use actionDtos instead", "now")
-  def allActions: Seq[RawPostAction[_]] = actionDtos
+  @deprecated("use rawActions instead", "now")
+  def allActions: Seq[RawPostAction[_]] = rawActions
 
 
   lazy val actionsByTimeAsc =
-    actionDtos.toVector.sortBy(_.creationDati.getTime)
+    rawActions.toVector.sortBy(_.creationDati.getTime)
 
 
   // Try to remove/rewrite? Doesn't return e.g Post or Patch.
@@ -380,7 +380,7 @@ case class PageParts (
   def userVotesMap(userIdData: UserIdData): Map[PostId, UserPostVotes] = {
     val voteBitsByPostId = mut.HashMap[PostId, Int]()
     for {
-      action <- actionDtos
+      action <- rawActions
       if action.payload.isInstanceOf[PAP.Vote]
       if userIdData.userId != UnknownUser.Id && action.userId == userIdData.userId
     } {
@@ -457,7 +457,7 @@ case class PageParts (
       else if (post.someVersionApproved) {
         // posterUserIds.add(post.user_!.id) — breaks, users sometimes absent.
         // Wait until I've added DW1_PAGE_ACTIONS.USER_ID?
-        if (PageParts.isReply(post.actionDto)) {
+        if (PageParts.isReply(post.rawAction)) {
           numVisible += 1
         }
         else {
@@ -557,7 +557,7 @@ case class PageParts (
     */
   // COULD [T <: Action] instead of >: AnyRef?
   def ++[T >: AnyRef] (actions: Seq[T]): PageParts = {
-    var actions2 = this.actionDtos
+    var actions2 = this.rawActions
     type SthWithId = { def id: ActionId }
     def dieIfIdClash(olds: Seq[SthWithId], a: SthWithId) =
       olds.find(_.id == a.id) match {
@@ -585,8 +585,8 @@ case class PageParts (
   def asOf(dati: ju.Date): PageParts = {
     def happenedInTime(action: RawPostAction[_]) =
       action.ctime.getTime <= dati.getTime
-    val (actionsBefore, actionsAfter) = actionDtos partition happenedInTime
-    val pageUpToAndInclDati = copy(actionDtos = actionsBefore)
+    val (actionsBefore, actionsAfter) = rawActions partition happenedInTime
+    val pageUpToAndInclDati = copy(rawActions = actionsBefore)
     pageUpToAndInclDati
   }
 

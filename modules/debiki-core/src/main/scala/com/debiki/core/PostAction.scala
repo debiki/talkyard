@@ -32,22 +32,22 @@ import FlagType.FlagType
   */
 class PostAction[P](  // [P <: PostActionPayload] causes compilation errors
   val page: PageParts,
-  val actionDto: RawPostAction[P]) {
+  val rawAction: RawPostAction[P]) {
 
-  def postId = actionDto.postId
-  def payload: P = actionDto.payload
+  def postId = rawAction.postId
+  def payload: P = rawAction.payload
 
   @deprecated("use page instead", "now")
   def debate = page
 
-  def id: ActionId = actionDto.id
+  def id: ActionId = rawAction.id
 
-  def creationDati = actionDto.ctime
+  def creationDati = rawAction.ctime
 
-  def userIdData = actionDto.userIdData
+  def userIdData = rawAction.userIdData
 
   def loginId = userIdData.loginId
-  def login: Option[Login] = actionDto.userIdData.loginId.flatMap(id => debate.people.login(id))
+  def login: Option[Login] = rawAction.userIdData.loginId.flatMap(id => debate.people.login(id))
   def login_! : Login = login.getOrElse(runErr(
     "DwE6gG32", s"No login with id `${userIdData.loginId}' for action $id"))
 
@@ -105,7 +105,7 @@ trait MaybeApproval {
 
 
 class ApplyPatchAction(page: PageParts, val editApp: PostAction[PAP.EditApp])
-  extends PostAction(page, editApp.actionDto) with MaybeApproval {
+  extends PostAction(page, editApp.rawAction) with MaybeApproval {
   def directApproval = editApp.payload.approval
 }
 

@@ -58,7 +58,7 @@ object Protocols {
       "where" -> getTextOrNull(post.where),
       "loginId" -> post.loginId,
       "userId" -> post.userId,
-      "ip" -> post.actionDto.ip,
+      "ip" -> post.rawAction.ip,
 
       "lastActedUponAt" -> toIso8601T(post.lastActedUponAt),
       "lastReviewDati" -> toDateStringOrNull(post.lastReviewDati),
@@ -122,7 +122,7 @@ object Protocols {
 
     val id = (json \ "postId").as[ActionId]
 
-    val creationPostActionDto = RawPostAction[PAP.CreatePost](
+    val creationAction = RawPostAction[PAP.CreatePost](
       id = id,
       creationDati = (json \ "createdAt").as[ju.Date],
       payload = payload,
@@ -159,7 +159,7 @@ object Protocols {
       undoCon = (json \ "numUndeleteTreeVotesCon").as[Int])
 
     val state = new PostState(
-      creationPostActionDto       = creationPostActionDto,
+      creationAction              = creationAction,
       lastActedUponAt             = (json \ "lastActedUponAt").as[ju.Date],
       lastReviewDati              = (json \ "lastReviewDati").asOpt[ju.Date],
       lastAuthoritativeReviewDati = (json \ "lastAuthoritativeReviewDati").asOpt[ju.Date],
@@ -193,7 +193,7 @@ object Protocols {
       numHandledFlags             = (json \ "numFlagsHandled").as[Int])
 
     val pageId = (json \ "pageId").as[String]
-    val page = PageParts(pageId, actionDtos = creationPostActionDto::Nil)
+    val page = PageParts(pageId, rawActions = creationAction::Nil)
 
     // COULD rename `isLoadedFromCache` to ... wasDeserialized? Or wasSavedAndLoaded?
     // or `isNew = false`?

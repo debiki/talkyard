@@ -77,7 +77,7 @@ object DebikiSpecs {
       left.getPost(id2) match {
         case Some(leftPost: Post) =>
           result(_matchPostImpl(
-              leftPost.actionDto, post, id, parent, ctime, loginId, ip, text, where),
+              leftPost.rawAction, post, id, parent, ctime, loginId, ip, text, where),
             expectable)
         case None =>
           result(false, "", "Post missing, id: "+ id2, expectable)

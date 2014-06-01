@@ -20,8 +20,8 @@ package com.debiki.core
 
 import com.debiki.core.{PostActionPayload => PAP}
 import java.{util => ju}
-import org.scalatest.{BeforeAndAfterAll, FreeSpec}
-import org.scalatest.matchers.MustMatchers
+import org.scalatest.FreeSpec
+import org.scalatest.MustMatchers
 import RawPostAction.copyCreatePost
 import Prelude._
 
@@ -61,10 +61,10 @@ class PagePartsDeletionTest extends FreeSpec with MustMatchers {
   val delete_d = delete_p_tree.copy(id = nextId(), postId = d.id, payload = PAP.DeletePost)
 
   val pageNoDeletes =
-    PageParts("pnd", actionDtos = gp::p::c::d::e::Nil)
+    PageParts("pnd", rawActions = gp::p::c::d::e::Nil)
 
   val pageWithDeletes =
-    PageParts("pwd", actionDtos = delete_p_tree::delete_d::pageNoDeletes.actionDtos)
+    PageParts("pwd", rawActions = delete_p_tree::delete_d::pageNoDeletes.rawActions)
 
 
   "PageParts' comments can be deleted:" - {

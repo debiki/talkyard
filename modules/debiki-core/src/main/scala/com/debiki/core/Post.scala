@@ -43,7 +43,7 @@ case class Post(
     pageParts: PageParts,
     private val state: PostState,
     private val isLoadedFromCache: Boolean = true)
-  extends PostAction[PAP.CreatePost](pageParts, state.creationPostActionDto)
+  extends PostAction[PAP.CreatePost](pageParts, state.creationAction)
   with MaybeApproval with PostActionActedUpon {
 
   require(postId == id)
@@ -376,7 +376,7 @@ case class Post(
       if (edit.directApproval.isDefined)
         implicitApprovals ::= edit
       for (editApp <- page.editAppsByEdit(edit.id)) {
-        // Ought to reuse PostActionsWrapper's wrapped actionDto:s rather than
+        // Ought to reuse PostActionsWrapper's wrapped rawAction:s rather than
         // creating new objects here.
         if (editApp.payload.approval.isDefined)
           implicitApprovals ::= new ApplyPatchAction(page, editApp)
@@ -611,7 +611,7 @@ case class Post(
 
 
   // COULD optimize this, do once for all flags.
-  lazy val flags = debate.actionDtos filter { action =>
+  lazy val flags = page.rawActions filter { action =>
     action.payload.isInstanceOf[PAP.Flag] && action.postId == this.id
   } map (_.asInstanceOf[RawPostAction[PAP.Flag]])
 

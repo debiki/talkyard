@@ -250,7 +250,7 @@ class SiteTestUtils(site: Tenant, val daoFactory: DbDaoFactory) {
 
 
   def createPageAndBody(loginGrant: LoginGrant, pageRole: PageRole, text: String): Page = {
-    val pagePartsNoId = PageParts(guid = "?", actionDtos = defaultBody(loginGrant, text)::Nil)
+    val pagePartsNoId = PageParts(guid = "?", rawActions = defaultBody(loginGrant, text)::Nil)
     val page = dao.createPage(Page.newPage(
       pageRole, defaultPagePath, pagePartsNoId, publishDirectly = true,
       author = loginGrant.user))
